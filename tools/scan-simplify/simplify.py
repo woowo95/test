@@ -8,7 +8,7 @@ y = bredd från vänster vägg i färdriktningen, z = höjd från golv.
 Skanningen används för att rätta upp bilen, kontrollera måtten och hitta hjulhus.
 Handmätta mått (--mått) har företräde framför skanningen.
 """
-import argparse, json, sys
+import argparse, json, re, sys
 import numpy as np
 from align import load_points, align_van
 
@@ -80,6 +80,27 @@ def lister():
     ]
 
 
+def planerare_objekt(model, m, namn, kind="van", kg=None, seats=None, rm=None):
+    """Fordonsobjekt i riggplanerarens schema: bara rätblock på golvet, [x, y, längd, bredd, höjd, namn]."""
+    W = model["grundlada"]["b"]; L = m["djup_till_dorr"]; H = model["grundlada"]["h"]
+    obst = []
+    for t in model["tillagg"]:
+        if t["form"] == "lada":
+            y = 0 if t["sida"] == "vanster" else W - t["inat_cm"]
+            obst.append([t["x"][0], round(y, 1), t["x"][1] - t["x"][0], t["inat_cm"], t["z"][1], "Hjulhus"])
+    r = m["ramp"]
+    obst.append([m["djup_till_ramp"], round((W - r["utstick_bredd"]) / 2, 1), r["utstick_djup"], r["utstick_bredd"], r["utstick_hojd"], "Ramp (utstick)"])
+    tie = {(p["x"], p["y"]) for p in model["surrningspunkter"]}
+    for l in model["fastlister"]:
+        y = 0 if l["sida"] == "vanster" else W
+        for a, b in l["segment"]:
+            x = a
+            while x <= b: tie.add((round(x, 1), y)); x += 25
+            tie.add((b, y))
+    return {"name": namn, "rm": rm, "kind": kind, "seats": seats, "L": L, "W": W, "H": H, "kg": kg,
+            "est": {"W": 0, "H": 0, "obst": 1, "tie": 0}, "obst": obst, "tie": sorted([list(t) for t in tie])}
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("skanning"); ap.add_argument("--mått", required=True); ap.add_argument("--ut", default="bil.json")
@@ -100,6 +121,10 @@ def main():
              "kontroll_skanning_vs_mått": {"skanning": scan,
                  "matt": {"lengd_front_till_ramp_cm": L, "bredd_cm": W, "hojd_cm": H}}}
     json.dump(model, open(args.ut, "w"), ensure_ascii=False, indent=2)
+    po = planerare_objekt(model, m, args.namn, kg=m.get("maxLast"), seats=m.get("seats"))
+    with open(args.ut.replace(".json", "_planerare.js"), "w") as f:
+        f.write("// Klistra in i riggplanerarens fordonslista. Mått i cm, kg. kg/seats saknas (null) tills de fylls i.\n")
+        f.write(re.sub(r'"(\w+)":', r'\1:', json.dumps(po, ensure_ascii=False)) + "\n")
     print(json.dumps(model["kontroll_skanning_vs_mått"], indent=1, ensure_ascii=False))
     from preview import draw
     draw(Q, s, model, args.bild)
