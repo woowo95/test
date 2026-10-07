@@ -1,0 +1,8 @@
+{
+  "bredd_mitten": 176.0, "bredd_tak": 146.9, "bredd_nere": 177.5, "hojd": 200.4,
+  "djup_till_ramp": 311.0, "djup_till_dorr": 328.4,
+  "bredd_mellan_hjulhus": 138.0,
+  "kil_start_hojd": 100.0,
+  "hjulhus": {"x_fran": 25, "x_till": 105, "hojd": 50},
+  "ramp": {"racke_bredd": 6, "utstick_djup": 12, "utstick_hojd": 3, "utstick_bredd": 88.7}
+}

@@ -1,0 +1,244 @@
+{
+  "namn": "Bil 1",
+  "typ": "bil",
+  "enhet": "cm",
+  "koordinater": "x=längd från främre vägg bakåt, y=bredd från vänster vägg (färdriktning), z=höjd från golv",
+  "grundlada": {
+    "l": 311.0,
+    "b": 176.0,
+    "h": 200.4
+  },
+  "djup_till_stangd_dorr": 328.4,
+  "maxLast": null,
+  "tillagg": [
+    {
+      "namn": "takkil_vanster",
+      "form": "kil_tak",
+      "sida": "vanster",
+      "x": [
+        0,
+        311.0
+      ],
+      "z": [
+        100.0,
+        200.4
+      ],
+      "inat_vid_tak_cm": 14.5,
+      "kalla": "mätt bredd mitten/tak + skanning (start på höjd)"
+    },
+    {
+      "namn": "hjulhus_vanster",
+      "form": "lada",
+      "sida": "vanster",
+      "x": [
+        25,
+        105
+      ],
+      "z": [
+        0,
+        50
+      ],
+      "inat_cm": 19.0,
+      "kalla": "mätt avstånd mellan hjulhus + skanning (läge/höjd)"
+    },
+    {
+      "namn": "takkil_hoger",
+      "form": "kil_tak",
+      "sida": "hoger",
+      "x": [
+        0,
+        311.0
+      ],
+      "z": [
+        100.0,
+        200.4
+      ],
+      "inat_vid_tak_cm": 14.5,
+      "kalla": "mätt bredd mitten/tak + skanning (start på höjd)"
+    },
+    {
+      "namn": "hjulhus_hoger",
+      "form": "lada",
+      "sida": "hoger",
+      "x": [
+        25,
+        105
+      ],
+      "z": [
+        0,
+        50
+      ],
+      "inat_cm": 19.0,
+      "kalla": "mätt avstånd mellan hjulhus + skanning (läge/höjd)"
+    }
+  ],
+  "blockeradeZoner": [
+    {
+      "namn": "ramp_utstick_nere",
+      "x": [
+        311.0,
+        323.0
+      ],
+      "y": [
+        43.65,
+        132.35
+      ],
+      "z": [
+        0,
+        3
+      ],
+      "status": "ANTAGANDE – bekräfta"
+    },
+    {
+      "namn": "rampräcken_sidor",
+      "bredd_cm": 6,
+      "status": "ANTAGANDE – bekräfta"
+    }
+  ],
+  "fastlister": [
+    {
+      "sida": "vanster",
+      "z": 80.5,
+      "pitch": 2.5,
+      "segment": [
+        [
+          12,
+          139
+        ],
+        [
+          156.5,
+          307.5
+        ]
+      ]
+    },
+    {
+      "sida": "hoger",
+      "z": 80.5,
+      "pitch": 2.5,
+      "segment": [
+        [
+          157,
+          307.5
+        ]
+      ]
+    }
+  ],
+  "surrningspunkter": [
+    {
+      "x": 0,
+      "y": 10,
+      "z": 10,
+      "typ": "fast"
+    },
+    {
+      "x": 0,
+      "y": 166.0,
+      "z": 10,
+      "typ": "fast"
+    },
+    {
+      "x": 0,
+      "y": 162.0,
+      "z": 158,
+      "typ": "fast",
+      "not": "endast höger sida i färdriktningen"
+    },
+    {
+      "x": 0,
+      "y": 169.0,
+      "z": 80,
+      "typ": "fast",
+      "not": "ANTAGANDE: höger sida (mening följde på 158 cm-fästet)"
+    },
+    {
+      "x": 110,
+      "y": 12,
+      "z": 0,
+      "typ": "golv",
+      "not": "ANTAGANDE: avstånd mätt från främre väggen"
+    },
+    {
+      "x": 110,
+      "y": 164.0,
+      "z": 0,
+      "typ": "golv",
+      "not": "ANTAGANDE: avstånd mätt från främre väggen"
+    },
+    {
+      "x": 145,
+      "y": 12,
+      "z": 0,
+      "typ": "golv",
+      "not": "ANTAGANDE: avstånd mätt från främre väggen"
+    },
+    {
+      "x": 145,
+      "y": 164.0,
+      "z": 0,
+      "typ": "golv",
+      "not": "ANTAGANDE: avstånd mätt från främre väggen"
+    },
+    {
+      "x": 188,
+      "y": 12,
+      "z": 0,
+      "typ": "golv",
+      "not": "ANTAGANDE: avstånd mätt från främre väggen"
+    },
+    {
+      "x": 188,
+      "y": 164.0,
+      "z": 0,
+      "typ": "golv",
+      "not": "ANTAGANDE: avstånd mätt från främre väggen"
+    },
+    {
+      "x": 23,
+      "y": 0,
+      "z": 161,
+      "typ": "vagg"
+    },
+    {
+      "x": 112,
+      "y": 0,
+      "z": 161,
+      "typ": "vagg"
+    },
+    {
+      "x": 199,
+      "y": 0,
+      "z": 161,
+      "typ": "vagg"
+    },
+    {
+      "x": 281,
+      "y": 0,
+      "z": 161,
+      "typ": "vagg"
+    },
+    {
+      "x": 199,
+      "y": 176.0,
+      "z": 161,
+      "typ": "vagg"
+    },
+    {
+      "x": 281,
+      "y": 176.0,
+      "z": 161,
+      "typ": "vagg"
+    }
+  ],
+  "kontroll_skanning_vs_mått": {
+    "skanning": {
+      "lengd_front_till_ramp_cm": 316.0,
+      "bredd_cm": 182.1,
+      "hojd_cm": 205.0
+    },
+    "matt": {
+      "lengd_front_till_ramp_cm": 311.0,
+      "bredd_cm": 176.0,
+      "hojd_cm": 200.4
+    }
+  }
+}
