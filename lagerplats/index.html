@@ -1,0 +1,1221 @@
+<title>Lagerplatsprogram</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: arbetsyta – artikelkort överst, lagerkarta i mitten, sidopanel till höger, kommandorad under kartan */
+:root{
+  --bg:#edf0f2; --panel:#fbfcfc; --ink:#17222a; --muted:#5a6873; --line:#d0d8dd;
+  --accent:#0e6a87; --accent-soft:#d6e9f0; --accent-ink:#ffffff;
+  --mark:#f0b400; --mark-ink:#1d1600;
+  --ok:#2d7a4c; --warn:#b4600f; --skip:#727a82; --danger:#b3261e;
+  --map-bg:#f7f9fa; --grid:#e1e6ea; --map-edge:#9aa7b0;
+  --f-display:"Barlow Condensed","Arial Narrow",sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#12181c; --panel:#1a2227; --ink:#e3e9ec; --muted:#93a1ab; --line:#2f3b42;
+  --accent:#45a9cc; --accent-soft:#16323d; --accent-ink:#06141a;
+  --mark:#f3c02b; --mark-ink:#1d1600;
+  --ok:#5bb882; --warn:#e3964f; --skip:#8d969e; --danger:#ef6b62;
+  --map-bg:#161d22; --grid:#222c32; --map-edge:#4c5b65; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12181c; --panel:#1a2227; --ink:#e3e9ec; --muted:#93a1ab; --line:#2f3b42;
+  --accent:#45a9cc; --accent-soft:#16323d; --accent-ink:#06141a;
+  --mark:#f3c02b; --mark-ink:#1d1600;
+  --ok:#5bb882; --warn:#e3964f; --skip:#8d969e; --danger:#ef6b62;
+  --map-bg:#161d22; --grid:#222c32; --map-edge:#4c5b65; color-scheme:dark}
+
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 32px}
+h1,h2,h3{font-family:var(--f-display);font-weight:600;letter-spacing:.01em;text-wrap:balance;margin:0}
+h2{font-size:1.5rem}
+h3{font-size:1.15rem}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:1px solid var(--line);background:var(--panel);border-radius:6px;padding:.45em .8em;min-height:40px}
+button:hover{border-color:var(--accent)}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+button.on{background:var(--mark);color:var(--mark-ink);border-color:var(--mark)}
+button.danger{color:var(--danger);border-color:var(--danger)}
+button:disabled{opacity:.45;cursor:default}
+input[type=text],input[type=search],input[type=number],select,textarea{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:.4em .55em;min-height:38px;max-width:100%}
+textarea{width:100%;min-height:64px;resize:vertical}
+kbd{font-family:var(--f-mono);font-size:.72em;border:1px solid currentColor;border-radius:3px;padding:0 .3em;opacity:.7;margin-left:.35em}
+
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;padding-block:10px;border-bottom:1px solid var(--line);margin-bottom:14px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.brand{font-family:var(--f-display);font-weight:700;font-size:1.35rem;letter-spacing:.02em;display:flex;align-items:baseline;gap:.4em}
+.brand small{font-family:var(--f-body);font-weight:500;font-size:.75rem;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+nav.tabs{display:flex;flex-wrap:wrap;gap:4px}
+nav.tabs button{border:none;background:none;min-height:36px;color:var(--muted);font-weight:500}
+nav.tabs button[aria-current="page"]{color:var(--ink);box-shadow:inset 0 -2px 0 var(--accent)}
+.sync{margin-left:auto;font-size:.8rem;color:var(--muted);display:flex;align-items:center;gap:6px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--ok);display:inline-block}
+.dot.busy{background:var(--mark)} .dot.err{background:var(--danger)} .dot.off{background:var(--skip)}
+
+.banner{border:1px solid var(--warn);background:color-mix(in srgb,var(--warn) 10%,var(--panel));border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:.9rem}
+.banner.err{border-color:var(--danger);background:color-mix(in srgb,var(--danger) 10%,var(--panel))}
+.muted{color:var(--muted)}
+.chip{display:inline-flex;align-items:center;gap:.3em;border-radius:999px;padding:.05em .6em;font-size:.78rem;font-weight:600;border:1px solid currentColor;white-space:nowrap}
+.st-placerad,.st-viacase{color:var(--ok)} .st-aterkom{color:var(--warn)} .st-sorteras_ej{color:var(--skip)} .st-kvar{color:var(--muted)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px}
+.stack{display:flex;flex-direction:column;gap:10px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+
+/* Översikt */
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:12px}
+.tile{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 14px}
+.tile b{display:block;font-family:var(--f-display);font-size:2rem;font-weight:600;line-height:1.1;font-variant-numeric:tabular-nums}
+.tile span{font-size:.75rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.bar{display:flex;height:10px;border-radius:5px;overflow:hidden;background:var(--grid);margin-bottom:18px}
+.bar i{display:block;height:100%}
+.modes{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin-bottom:22px}
+.mode{text-align:left;padding:12px 14px;border-radius:10px;min-height:76px;display:flex;flex-direction:column;gap:2px}
+.mode strong{font-family:var(--f-display);font-size:1.25rem;font-weight:600}
+.mode span{font-size:.82rem;color:var(--muted)}
+.mode.primary span{color:inherit;opacity:.85}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.88rem}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
+th{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+tr.click{cursor:pointer} tr.click:hover td{background:var(--accent-soft)}
+.minibar{display:flex;height:6px;width:100px;border-radius:3px;overflow:hidden;background:var(--grid)}
+.minibar i{display:block;height:100%}
+
+/* Inmatning */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 16px;text-align:center;margin:0 auto 12px;max-width:900px}
+.card .name{font-family:var(--f-display);font-size:clamp(1.5rem,3.2vw,2.2rem);font-weight:600;line-height:1.15;text-wrap:balance}
+.card .meta{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 14px;font-size:.88rem;color:var(--muted);margin-top:4px}
+.card .forval{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-top:8px}
+.counters{display:flex;flex-wrap:wrap;justify-content:center;gap:4px 18px;font-size:.82rem;color:var(--muted);margin-top:8px}
+.counters b{color:var(--ink);font-variant-numeric:tabular-nums}
+.work{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:12px}
+@media (max-width:900px){.work{grid-template-columns:minmax(0,1fr)}}
+.side{display:flex;flex-direction:column;gap:12px;min-width:0}
+.cmds{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.cmds button{flex:1 1 auto}
+.heights{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin-top:8px}
+.heights button{min-width:42px;padding:.3em .5em;font-family:var(--f-mono)}
+.places{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.places li{display:grid;grid-template-columns:26px minmax(0,1fr) auto;gap:6px;align-items:center;border:1px solid var(--line);border-radius:8px;padding:6px}
+.places li.via{border-style:dashed}
+.pin{width:24px;height:24px;border-radius:50%;background:var(--mark);color:var(--mark-ink);display:grid;place-items:center;font-size:.75rem;font-weight:700;font-family:var(--f-mono)}
+.pin.c{background:none;border:2px solid var(--accent);color:var(--accent)}
+.places .ctl{display:flex;gap:4px;align-items:center}
+.places select,.places input{min-height:32px;padding:.15em .3em;font-size:.85rem}
+.places input{width:58px}
+.places button{min-height:32px;padding:.1em .5em}
+.flow{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+@media (max-width:640px){.flow{grid-template-columns:1fr}}
+.flow ol{margin:0;padding-left:1.2em;font-size:.85rem}
+.flow li{margin-bottom:3px}
+.lbl{font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600;margin-bottom:4px;display:block}
+
+/* Karta */
+.mapbox{position:relative;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--map-bg);width:100%;aspect-ratio:var(--map-ar,1.45);max-height:max(300px,calc(100dvh - 300px));min-height:300px;touch-action:none;user-select:none;-webkit-user-select:none}
+.mapbox svg{width:100%;height:100%;display:block;touch-action:none}
+.maptools{position:absolute;top:8px;right:8px;display:flex;gap:4px;z-index:2}
+.maptools button{min-height:34px;padding:.2em .6em;background:color-mix(in srgb,var(--panel) 92%,transparent)}
+.hbadge{position:absolute;left:8px;top:8px;z-index:2;background:var(--mark);color:var(--mark-ink);border-radius:8px;padding:6px 10px;font-weight:700;font-size:.95rem;box-shadow:0 1px 4px rgba(0,0,0,.2)}
+.tip{position:absolute;z-index:3;pointer-events:none;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:.8rem;max-width:280px;box-shadow:0 4px 14px rgba(0,0,0,.18)}
+.tip b{display:block}
+.tip ul{margin:4px 0 0;padding-left:1.1em}
+svg .edge{fill:none;stroke:var(--map-edge);stroke-width:1.5;vector-effect:non-scaling-stroke}
+svg .gridl{stroke:var(--grid);stroke-width:1;vector-effect:non-scaling-stroke}
+svg .obj{stroke-width:1.5;vector-effect:non-scaling-stroke;fill-opacity:.32}
+svg .obj.zon{fill-opacity:.14;stroke-dasharray:6 4}
+svg .obj.sel{stroke-width:3;fill-opacity:.5}
+svg .olabel{fill:var(--ink);font-family:var(--f-body);font-weight:600;text-anchor:middle;dominant-baseline:central;pointer-events:none}
+svg .empty{fill:var(--muted);font-family:var(--f-body);text-anchor:middle}
+svg .mk{fill:var(--mark);stroke:var(--mark-ink);stroke-width:1.5;vector-effect:non-scaling-stroke;cursor:pointer}
+svg .mkz{fill:var(--mark);fill-opacity:.28;stroke:var(--mark);stroke-width:2;stroke-dasharray:5 3;vector-effect:non-scaling-stroke;cursor:pointer}
+svg .mkc{fill:var(--panel);stroke:var(--accent);stroke-width:2.5;vector-effect:non-scaling-stroke}
+svg .mkt{fill:var(--mark-ink);font-family:var(--f-mono);font-weight:700;text-anchor:middle;dominant-baseline:central;pointer-events:none}
+svg .mkct{fill:var(--accent);font-family:var(--f-mono);font-weight:700;text-anchor:middle;dominant-baseline:central;pointer-events:none}
+svg .draft{fill:var(--accent);fill-opacity:.15;stroke:var(--accent);stroke-width:2;stroke-dasharray:6 3;vector-effect:non-scaling-stroke}
+svg .handle{fill:var(--panel);stroke:var(--accent);stroke-width:2;vector-effect:non-scaling-stroke;cursor:nwse-resize}
+svg .other{fill:var(--muted);fill-opacity:.45}
+
+.edit{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:12px}
+@media (max-width:900px){.edit{grid-template-columns:minmax(0,1fr)}}
+.toolrow{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.toolrow button{min-height:36px}
+.form{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 10px;align-items:center;font-size:.9rem}
+.form input,.form select{width:100%}
+.objlist{max-height:260px;overflow:auto;font-size:.85rem}
+.objlist button{display:flex;width:100%;justify-content:space-between;border:none;border-bottom:1px solid var(--line);border-radius:0;min-height:34px;text-align:left;background:none}
+.results{list-style:none;margin:0;padding:0;max-height:340px;overflow:auto}
+.results li button{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;width:100%;text-align:left;border:none;border-bottom:1px solid var(--line);border-radius:0;background:none;padding:8px 4px}
+.results small{color:var(--muted);display:block}
+.sec{margin-bottom:22px}
+.sec h2{margin-bottom:8px}
+.drop{border:2px dashed var(--line);border-radius:10px;padding:16px;text-align:center}
+pre.log{font-family:var(--f-mono);font-size:.78rem;white-space:pre-wrap;margin:0;max-height:220px;overflow:auto}
+.done{text-align:center;padding:40px 10px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<header class="top">
+  <div class="brand">Lagerplatser <small>Ljus &amp; Nöje</small></div>
+  <nav class="tabs" id="tabs"></nav>
+  <div class="sync" id="sync"><span class="dot off"></span><span>Ansluter…</span></div>
+</header>
+<div id="banners"></div>
+<main id="main"><p class="muted">Läser in…</p></main>
+
+<script>
+"use strict";
+/* ---------- Konstanter och hjälpfunktioner ---------- */
+const NSH_ART = 12, NSH_GG = 8, MAPW = 1000;
+const TYPER = {
+  hylla:   {p:"H", namn:"Hylla",   farg:"#5b8db3"},
+  skap:    {p:"S", namn:"Skåp",    farg:"#8b70b8"},
+  golvyta: {p:"G", namn:"Golvyta", farg:"#98a3ab"},
+  pall:    {p:"P", namn:"Pall",    farg:"#b88a4a"},
+  zon:     {p:"Z", namn:"Zon",     farg:"#4f9e78"},
+};
+const STATUSNAMN = {placerad:"Placerad", aterkom:"Återkom", sorteras_ej:"Sorteras ej", viacase:"Via case", kvar:"Kvar"};
+const MODNAMN = {fortsatt:"Fortsätt", aterkom:"Återkom", kategori:"Kategori", sok:"Sök artikel"};
+const coll = new Intl.Collator("sv", {numeric:true, sensitivity:"base"});
+const $ = (s, r=document) => r.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const clone = o => o == null ? o : JSON.parse(JSON.stringify(o));
+const nu = () => new Date().toISOString();
+const r1 = v => Math.round(v * 10) / 10;
+function hash(s){ let h = 5381; for (const c of String(s)) h = ((h * 33) ^ c.charCodeAt(0)) >>> 0; return h; }
+const shardArt = id => hash(id) % NSH_ART, shardGG = id => hash(id) % NSH_GG;
+const keyOf = (id, ser) => ser == null ? id : id + "|" + ser;
+function splitKey(k){ const i = k.indexOf("|"); return i < 0 ? [k, null] : [k.slice(0, i), k.slice(i + 1)]; }
+
+/* ---------- Tillstånd ---------- */
+const S = {
+  db:null, dbState:"laddar", loaded:{art:false}, art:{}, gg:{}, obj:{}, prio:[], prioMeta:{}, meta:{}, karta:{hojd:700, raknare:{}},
+  view:"oversikt", mode:null, kategori:null, sokId:null,
+  cur:null, sel:[], osaker:false, text:"", hojd:null, forvalNote:"",
+  nav:[], navPos:null, handled:new Set(), forra:null,
+  sokFras:"", hplats:null, hAntal:"", hSok:"",
+  edit:{tool:"valj", selId:null, draft:null, confirmDel:false},
+  vb:null, panMode:false, saving:0, fel:null, importPrev:null, importRes:null, confirmWipe:false,
+};
+
+/* ---------- Skrivning med kö per dokument ---------- */
+const chains = {};
+function write(path, fn){
+  if (!S.db) return Promise.resolve();
+  S.saving++; renderSync();
+  chains[path] = (chains[path] || Promise.resolve()).then(fn).catch(async e => {
+    if (e && e.code === "unavailable") { await new Promise(r => setTimeout(r, 400 + Math.random()*600)); return fn(); }
+    throw e;
+  }).catch(e => { S.fel = (e && e.message) || String(e); console.error(e); })
+    .finally(() => { S.saving--; renderSync(); });
+  return chains[path];
+}
+function putGG(id, d){ S.gg[id] = d; invalidate(); write("genomgang/" + id, () => S.db.doc("genomgang/" + id).set(d)); }
+function writeRec(k, r){
+  const [id, ser] = splitKey(k);
+  const d = clone(S.gg[id]) || {};
+  d.id = id; d.shard = shardGG(id);
+  if (ser == null) Object.assign(d, r);
+  else { d.enheter = d.enheter || {}; d.enheter[ser] = r; }
+  d.andrad = nu();
+  putGG(id, d);
+}
+const LOGG = {id:"L" + Date.now().toString(36), start:nu(), entries:[]};
+function logg(a, k, d){
+  if (!S.db) return;
+  LOGG.entries.push({t:nu(), a, k:k || null, d:d || null});
+  if (LOGG.entries.length > 300){ LOGG.id = "L" + Date.now().toString(36); LOGG.start = nu(); LOGG.entries = LOGG.entries.slice(-1); }
+  const id = LOGG.id, data = {start:LOGG.start, entries:LOGG.entries.slice()};
+  write("logg/" + id, () => S.db.doc("logg/" + id).set(data));
+}
+
+/* ---------- Härledd data ---------- */
+let memo = null;
+function invalidate(){ memo = null; schedule(); }
+function isActive(id){ const a = S.art[id]; return !!a && a.aktiv !== false && !a.borttagen; }
+function byMGN(a, b){ const A = S.art[a], B = S.art[b];
+  return coll.compare(A.mapp || "", B.mapp || "") || coll.compare(A.grupp || "", B.grupp || "") || coll.compare(A.namn || "", B.namn || "") || coll.compare(a, b); }
+function M(){
+  if (memo) return memo;
+  const act = Object.keys(S.art).filter(isActive);
+  const cases = act.filter(id => S.art[id].arCase).sort(byMGN);
+  const used = new Set(cases);
+  const prio = [];
+  for (const id of S.prio) if (isActive(id) && !used.has(id)) { used.add(id); prio.push(id); }
+  const rest = act.filter(id => !used.has(id)).sort(byMGN);
+  const order = cases.concat(prio, rest);
+  const caseIdx = {};
+  for (const c of cases) for (const it of (S.art[c].innehall || [])) (caseIdx[it.id] = caseIdx[it.id] || []).push({caseId:c, antal:it.antal});
+  memo = {act, order, caseIdx, objIdx:null, mappar:null};
+  return memo;
+}
+function rec(k){ const [id, ser] = splitKey(k); const g = S.gg[id]; if (!g) return null;
+  if (ser == null) return g.status ? g : null; return (g.enheter && g.enheter[ser]) || null; }
+function processed(k){ const r = rec(k); return !!(r && r.status); }
+function units(id){ return ((S.art[id] && S.art[id].serienr) || []).slice().sort(coll.compare); }
+function isSplit(id){ return !!(S.gg[id] && S.gg[id].uppdelad) && units(id).length > 0; }
+function expand(id){ return isSplit(id) ? units(id).map(s => keyOf(id, s)) : [id]; }
+function casePlaces(caseId){ const g = S.gg[caseId]; return (g && g.status === "placerad" && g.platser) || []; }
+function viaCase(id){
+  return (M().caseIdx[id] || []).map(e => ({...e, platser:casePlaces(e.caseId)})).filter(e => e.platser.length);
+}
+function artStatus(id){
+  if (isSplit(id)){
+    const us = units(id).map(s => rec(keyOf(id, s)));
+    if (us.some(r => r && (r.status === "aterkom" || r.osaker))) return "aterkom";
+    if (us.every(r => r && r.status)) return us.some(r => r.status === "placerad") ? "placerad" : "sorteras_ej";
+    return "kvar";
+  }
+  const r = rec(id);
+  if (r){ if (r.status === "aterkom" || r.osaker) return "aterkom"; return r.status; }
+  return viaCase(id).length ? "viacase" : "kvar";
+}
+function allPlaces(){ // [{key, p}] egna platser för alla nycklar
+  const out = [];
+  for (const id in S.gg){ const g = S.gg[id]; if (!isActive(id)) continue;
+    if (g.status && !isSplit(id)) for (const p of (g.platser || [])) out.push({key:id, p});
+    if (isSplit(id) && g.enheter) for (const s in g.enheter){ const r = g.enheter[s]; if (r.status) for (const p of (r.platser || [])) out.push({key:keyOf(id, s), p}); }
+  }
+  return out;
+}
+function objIdx(){
+  const m = M(); if (m.objIdx) return m.objIdx;
+  const idx = {};
+  for (const {key, p} of allPlaces()) if (p.objektId) (idx[p.objektId] = idx[p.objektId] || new Set()).add(key);
+  m.objIdx = idx; return idx;
+}
+function keyName(k){ const [id, ser] = splitKey(k); const a = S.art[id]; return (a ? a.namn : id) + (ser != null ? " · SN " + ser : ""); }
+function objName(oid){ if (!oid) return "fri punkt"; const o = S.obj[oid]; return o ? (o.namn ? o.namn + " (" + oid + ")" : TYPER[o.typ].namn + " " + oid) : "borttaget objekt " + oid; }
+function placeText(p){
+  let t = (p.typ === "zon" ? "Zon" + (p.objektId ? " i " : "") : "") + (p.typ === "zon" && !p.objektId ? "" : objName(p.objektId));
+  if (p.hojd != null) t += p.hojd === 0 ? " · golv" : " · plan " + p.hojd;
+  if (p.antal) t += " · " + p.antal + " st";
+  return t;
+}
+
+/* ---------- Köer ---------- */
+function queue(limit, mode = S.mode){
+  const m = M(), keys = [], H = S.handled;
+  const push = k => { keys.push(k); return limit && keys.length >= limit; };
+  if (mode === "fortsatt"){
+    outer: for (const id of m.order) for (const k of expand(id)) if (!processed(k) && !H.has(k) && push(k)) break outer;
+  } else if (mode === "aterkom"){
+    outer2: for (const id of m.order) for (const k of expand(id)){ const r = rec(k); if (r && (r.status === "aterkom" || r.osaker) && !H.has(k) && push(k)) break outer2; }
+  } else if (mode === "kategori"){
+    const a = [], b = [];
+    for (const id of m.act.filter(id => (S.art[id].mapp || "(utan mapp)") === S.kategori).sort(byMGN))
+      for (const k of expand(id)) if (!H.has(k)) (processed(k) ? b : a).push(k);
+    return limit ? a.concat(b).slice(0, limit) : a.concat(b);
+  } else if (mode === "sok" && S.sokId){
+    for (const k of expand(S.sokId)) if (!H.has(k)) keys.push(k);
+  }
+  return keys;
+}
+
+/* ---------- Inmatningskommandon ---------- */
+function load(k){
+  const prevSel = S.sel;
+  S.cur = k; S.hojd = null; S.forvalNote = "";
+  if (!k){ S.sel = []; S.text = ""; S.osaker = false; }
+  else {
+    const r = rec(k), [id, ser] = splitKey(k);
+    if (r){ S.sel = clone(r.platser || []); S.osaker = !!r.osaker; S.text = r.text || ""; }
+    else if (ser != null && S.gg[id] && (S.gg[id].platser || []).length){ S.sel = clone(S.gg[id].platser); S.osaker = false; S.text = ""; S.forvalNote = "Förval: artikelns plats"; }
+    else { S.sel = []; S.osaker = false; S.text = ""; }
+  }
+  const ta = $("#fritext"); if (ta) ta.value = S.text;
+  return prevSel;
+}
+function startMode(mode, extra){
+  S.mode = mode; S.handled = new Set(); S.nav = []; S.navPos = null;
+  if (mode === "kategori") S.kategori = extra;
+  if (mode === "sok") S.sokId = extra;
+  S.view = "inmatning"; gotoCurrent();
+}
+function gotoCurrent(){
+  const k = S.navPos != null ? S.nav[S.navPos] : (queue(1)[0] || null);
+  load(k);
+  if (!k && S.mode === "sok"){ S.view = "sok"; }
+  render();
+}
+function cmdSpara(status){
+  const k = S.cur; if (!k) return;
+  const [id] = splitKey(k);
+  const st = status || ((S.sel.length || viaCase(id).length) ? "placerad" : "aterkom");
+  writeRec(k, {status:st, osaker:S.osaker, text:S.text, platser:clone(S.sel), andrad:nu()});
+  logg(st, k, {platser:S.sel.length, osaker:S.osaker});
+  if (S.sel.length) S.forra = clone(S.sel);
+  S.handled.add(k);
+  if (S.navPos != null){ S.navPos++; if (S.navPos >= S.nav.length) S.navPos = null; }
+  else { S.nav = S.nav.filter(x => x !== k); S.nav.push(k); }
+  gotoCurrent();
+}
+function cmdSamma(){ if (!S.forra || !S.cur) return; S.sel = S.sel.concat(clone(S.forra)); render(); }
+function cmdAngra(){ if (!S.cur || !S.sel.length) return; S.sel.pop(); render(); }
+function cmdBak(){
+  if (!S.nav.length) return;
+  if (S.navPos == null) S.navPos = S.nav.length - 1; else if (S.navPos > 0) S.navPos--; else return;
+  load(S.nav[S.navPos]); render();
+}
+function cmdFram(){ if (S.navPos == null) return; S.navPos++; if (S.navPos >= S.nav.length) S.navPos = null; gotoCurrent(); }
+function cmdOsaker(){ if (!S.cur) return; S.osaker = !S.osaker; render(); }
+function cmdHojd(n){ S.hojd = S.hojd === n ? null : n; render(); }
+function cmdDela(){
+  if (!S.cur) return;
+  const [id] = splitKey(S.cur);
+  const d = clone(S.gg[id]) || {id, shard:shardGG(id)};
+  d.uppdelad = !d.uppdelad; d.andrad = nu();
+  const keep = S.sel;
+  putGG(id, d); logg(d.uppdelad ? "dela_upp" : "sla_ihop", id);
+  if (d.uppdelad){
+    const ks = units(id).map(s => keyOf(id, s));
+    const k = ks.find(x => !processed(x) && !S.handled.has(x)) || ks[0];
+    load(k); if (!rec(k) && keep.length) S.sel = keep;
+  } else load(id);
+  render();
+}
+function addPlace(p){
+  if (S.view === "hylla"){ S.hplats = p; S.hojd = null; render(); return; }
+  if (!S.cur) return;
+  S.sel.push(p); S.hojd = null; render();
+}
+
+/* ---------- Kartan: SVG, zoom, panorering, klick ---------- */
+const svgNS = "http://www.w3.org/2000/svg";
+const svg = document.createElementNS(svgNS, "svg");
+svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
+svg.innerHTML = '<g id="g-bg"></g><g id="g-obj"></g><g id="g-mk"></g><g id="g-draft"></g>';
+const mapbox = document.createElement("div"); mapbox.className = "mapbox";
+mapbox.innerHTML = '<div class="maptools"><button type="button" data-z="pan" title="Panorera med ett finger">Panorera</button><button type="button" data-z="in" aria-label="Zooma in">+</button><button type="button" data-z="out" aria-label="Zooma ut">−</button><button type="button" data-z="fit">Hela</button></div><div class="hbadge" hidden></div><div class="tip" hidden></div>';
+mapbox.appendChild(svg);
+const tip = $(".tip", mapbox), hbadge = $(".hbadge", mapbox);
+function mapH(){ return Math.max(100, +S.karta.hojd || 700); }
+function fit(){ const m = 20; S.vb = {x:-m, y:-m, w:MAPW + 2*m, h:mapH() + 2*m}; mapbox.style.setProperty("--map-ar", ((MAPW + 2*m) / (mapH() + 2*m)).toFixed(3)); applyVB(); }
+function applyVB(){ const v = S.vb; svg.setAttribute("viewBox", `${v.x} ${v.y} ${v.w} ${v.h}`); renderMarks(); renderObjs(); }
+function scaleNow(){ const r = svg.getBoundingClientRect(); return Math.max(S.vb.w / (r.width || 1), S.vb.h / (r.height || 1)); }
+function toMap(cx, cy){ const pt = svg.createSVGPoint(); pt.x = cx; pt.y = cy; const ctm = svg.getScreenCTM(); if (!ctm) return {x:0, y:0}; const q = pt.matrixTransform(ctm.inverse()); return {x:q.x, y:q.y}; }
+function zoomAt(f, cx, cy){
+  const p = toMap(cx, cy), v = S.vb;
+  const nw = Math.min(Math.max(v.w * f, 40), MAPW * 4);
+  const k = nw / v.w;
+  S.vb = {x:p.x - (p.x - v.x) * k, y:p.y - (p.y - v.y) * k, w:nw, h:v.h * k}; applyVB();
+}
+mapbox.addEventListener("click", e => {
+  const b = e.target.closest("[data-z]"); if (!b) return;
+  const r = svg.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+  if (b.dataset.z === "in") zoomAt(0.7, cx, cy);
+  else if (b.dataset.z === "out") zoomAt(1 / 0.7, cx, cy);
+  else if (b.dataset.z === "fit") fit();
+  else if (b.dataset.z === "pan"){ S.panMode = !S.panMode; b.classList.toggle("on", S.panMode); }
+});
+svg.addEventListener("wheel", e => {
+  e.preventDefault();
+  if (e.ctrlKey || e.metaKey) zoomAt(Math.exp(e.deltaY * 0.01), e.clientX, e.clientY);
+  else { const s = scaleNow(); S.vb.x += e.deltaX * s; S.vb.y += e.deltaY * s; applyVB(); }
+}, {passive:false});
+let gScale = 1;
+svg.addEventListener("gesturestart", e => { e.preventDefault(); gScale = 1; });
+svg.addEventListener("gesturechange", e => { e.preventDefault(); zoomAt(gScale / e.scale, e.clientX, e.clientY); gScale = e.scale; });
+svg.addEventListener("contextmenu", e => e.preventDefault());
+
+function inPoly(p, pts){ let c = false; for (let i = 0, j = pts.length - 1; i < pts.length; j = i++){ const [xi, yi] = pts[i], [xj, yj] = pts[j]; if (((yi > p.y) !== (yj > p.y)) && (p.x < (xj - xi) * (p.y - yi) / (yj - yi) + xi)) c = !c; } return c; }
+function objPts(o){ return o.form === "poly" ? o.punkter : [[o.x, o.y], [o.x + o.w, o.y], [o.x + o.w, o.y + o.h], [o.x, o.y + o.h]]; }
+function objsSorted(){ return Object.values(S.obj).sort((a, b) => (a.typ === "zon" ? 0 : a.typ === "golvyta" ? 1 : 2) - (b.typ === "zon" ? 0 : b.typ === "golvyta" ? 1 : 2) || coll.compare(a.id, b.id)); }
+function objectAt(p){ const os = objsSorted(); for (let i = os.length - 1; i >= 0; i--) if (inPoly(p, objPts(os[i]))) return os[i]; return null; }
+function centroid(pts){ let x = 0, y = 0; for (const [a, b] of pts){ x += a; y += b; } return {x:x / pts.length, y:y / pts.length}; }
+
+const ptrs = new Map(); let gest = null, lpTimer = null;
+svg.addEventListener("pointerdown", e => {
+  if (e.button === 2 && e.pointerType === "mouse") { /* högerklick panorerar */ }
+  svg.setPointerCapture(e.pointerId);
+  ptrs.set(e.pointerId, {x:e.clientX, y:e.clientY});
+  hideTip();
+  if (ptrs.size === 2){
+    clearTimeout(lpTimer);
+    const [a, b] = [...ptrs.values()];
+    gest = {type:"pinch", d0:Math.hypot(a.x - b.x, a.y - b.y) || 1, m0:toMap((a.x + b.x) / 2, (a.y + b.y) / 2), vb0:{...S.vb}};
+    S.edit.draft = S.edit.tool === "poly" ? S.edit.draft : null; renderDraft();
+    return;
+  }
+  if (ptrs.size > 2) return;
+  const p = toMap(e.clientX, e.clientY);
+  const pan = S.panMode || e.button === 1 || e.button === 2 || e.altKey;
+  gest = {type:pan ? "pan" : "tap", sx:e.clientX, sy:e.clientY, p0:p, vb0:{...S.vb}, s0:scaleNow(), target:e.target, moved:false};
+  if (!pan && S.view === "karta") editorDown(e, p);
+  if (!pan && e.pointerType !== "mouse"){
+    lpTimer = setTimeout(() => { if (gest && gest.type === "tap" && !gest.moved){ gest.type = "lp"; showTip(p, e.clientX, e.clientY); } }, 550);
+  }
+});
+svg.addEventListener("pointermove", e => {
+  if (!ptrs.has(e.pointerId)){ if (e.pointerType === "mouse") hoverTip(e); return; }
+  ptrs.set(e.pointerId, {x:e.clientX, y:e.clientY});
+  if (!gest) return;
+  if (gest.type === "pinch" && ptrs.size === 2){
+    const [a, b] = [...ptrs.values()];
+    const d = Math.hypot(a.x - b.x, a.y - b.y) || 1, v0 = gest.vb0;
+    const w = Math.min(Math.max(v0.w * gest.d0 / d, 40), MAPW * 4), h = v0.h * w / v0.w;
+    S.vb = {x:0, y:0, w, h}; svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
+    const mNow = toMap((a.x + b.x) / 2, (a.y + b.y) / 2);
+    S.vb.x = gest.m0.x - mNow.x; S.vb.y = gest.m0.y - mNow.y; applyVB();
+    return;
+  }
+  const dx = e.clientX - gest.sx, dy = e.clientY - gest.sy;
+  if (!gest.moved && Math.hypot(dx, dy) > 6){ gest.moved = true; clearTimeout(lpTimer); }
+  if (gest.type === "pan"){ S.vb.x = gest.vb0.x - dx * gest.s0; S.vb.y = gest.vb0.y - dy * gest.s0; applyVB(); return; }
+  if (gest.type !== "tap" || !gest.moved) return;
+  const p = toMap(e.clientX, e.clientY);
+  if (S.view === "karta"){ editorMove(p); return; }
+  if (gest.target.closest && gest.target.closest("[data-sel]")) return;
+  gest.zone = {x1:gest.p0.x, y1:gest.p0.y, x2:p.x, y2:p.y};
+  const z = gest.zone;
+  $("#g-draft", svg).innerHTML = `<rect class="draft" x="${Math.min(z.x1, z.x2)}" y="${Math.min(z.y1, z.y2)}" width="${Math.abs(z.x2 - z.x1)}" height="${Math.abs(z.y2 - z.y1)}"/>`;
+});
+function endPtr(e){
+  ptrs.delete(e.pointerId); clearTimeout(lpTimer);
+  if (!gest) return;
+  const g = gest;
+  if (g.type === "pinch"){ if (ptrs.size === 0) gest = null; return; }
+  gest = null;
+  if (e.type === "pointercancel"){ $("#g-draft", svg).innerHTML = ""; renderDraft(); return; }
+  if (g.type === "lp"){ setTimeout(hideTip, 2500); return; }
+  if (g.type !== "tap") return;
+  const p = toMap(e.clientX, e.clientY);
+  if (S.view === "karta"){ editorUp(p, g); return; }
+  const selEl = g.target.closest && g.target.closest("[data-sel]");
+  if (!g.moved && selEl && S.view === "inmatning"){ S.sel.splice(+selEl.dataset.sel, 1); render(); return; }
+  if (!g.moved){
+    const o = objectAt(p);
+    addPlace({typ:"punkt", objektId:o ? o.id : null, x:r1(p.x), y:r1(p.y), hojd:S.hojd, antal:null});
+  } else if (g.zone){
+    $("#g-draft", svg).innerHTML = "";
+    const z = g.zone, x1 = Math.min(z.x1, z.x2), x2 = Math.max(z.x1, z.x2), y1 = Math.min(z.y1, z.y2), y2 = Math.max(z.y1, z.y2);
+    if (x2 - x1 < 2 || y2 - y1 < 2) return;
+    const o = objectAt({x:(x1 + x2) / 2, y:(y1 + y2) / 2});
+    addPlace({typ:"zon", objektId:o ? o.id : null, polygon:[[r1(x1), r1(y1)], [r1(x2), r1(y1)], [r1(x2), r1(y2)], [r1(x1), r1(y2)]], hojd:S.hojd, antal:null});
+  }
+}
+svg.addEventListener("pointerup", endPtr);
+svg.addEventListener("pointercancel", endPtr);
+svg.addEventListener("pointerleave", e => { if (e.pointerType === "mouse" && !ptrs.size) hideTip(); });
+
+function hoverTip(e){ const p = toMap(e.clientX, e.clientY); if (objectAt(p)) showTip(p, e.clientX, e.clientY); else hideTip(); }
+function showTip(p, cx, cy){
+  const o = objectAt(p); if (!o){ hideTip(); return; }
+  const keys = [...(objIdx()[o.id] || [])];
+  const inCase = [];
+  for (const k of keys){ const [id] = splitKey(k); if (S.art[id] && S.art[id].arCase) for (const it of (S.art[id].innehall || [])) inCase.push(it.id); }
+  const names = keys.map(keyName).sort(coll.compare);
+  let h = `<b>${esc(o.namn || TYPER[o.typ].namn)} <span class="mono muted">${esc(o.id)}</span></b>`;
+  h += names.length ? `<ul>${names.slice(0, 14).map(n => `<li>${esc(n)}</li>`).join("")}</ul>${names.length > 14 ? `<span class="muted">+${names.length - 14} till</span>` : ""}` : `<span class="muted">Inga artiklar placerade här</span>`;
+  if (inCase.length) h += `<div class="muted">+${inCase.length} artiklar via case</div>`;
+  tip.innerHTML = h; tip.hidden = false;
+  const r = mapbox.getBoundingClientRect();
+  let x = cx - r.left + 14, y = cy - r.top + 14;
+  if (x > r.width - 290) x = Math.max(4, cx - r.left - 290);
+  tip.style.left = x + "px"; tip.style.top = Math.min(y, r.height - 60) + "px";
+}
+function hideTip(){ tip.hidden = true; }
+
+function renderBg(){
+  const H = mapH(); let g = "";
+  for (let x = 50; x < MAPW; x += 50) g += `<line class="gridl" x1="${x}" y1="0" x2="${x}" y2="${H}"/>`;
+  for (let y = 50; y < H; y += 50) g += `<line class="gridl" x1="0" y1="${y}" x2="${MAPW}" y2="${y}"/>`;
+  g += `<rect class="edge" x="0" y="0" width="${MAPW}" height="${H}"/>`;
+  if (!Object.keys(S.obj).length) g += `<text class="empty" x="${MAPW / 2}" y="${H / 2 - 14}" font-size="22">Ingen lagerkarta ritad ännu</text><text class="empty" x="${MAPW / 2}" y="${H / 2 + 16}" font-size="15">Klick sparas ändå som koordinater. Rita hyllor och zoner under Karta.</text>`;
+  $("#g-bg", svg).innerHTML = g;
+}
+function renderObjs(){
+  let h = "";
+  for (const o of objsSorted()){
+    const sel = S.view === "karta" && S.edit.selId === o.id;
+    const cls = `obj ${o.typ}${sel ? " sel" : ""}`, st = `fill:${esc(o.farg)};stroke:${esc(o.farg)}`;
+    if (o.form === "poly") h += `<polygon class="${cls}" style="${st}" points="${o.punkter.map(p => p.join(",")).join(" ")}"/>`;
+    else h += `<rect class="${cls}" style="${st}" x="${o.x}" y="${o.y}" width="${o.w}" height="${o.h}"/>`;
+    const pts = objPts(o), c = centroid(pts);
+    const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
+    const bw = Math.max(...xs) - Math.min(...xs), bh = Math.max(...ys) - Math.min(...ys);
+    const label = o.namn || o.id;
+    const fs = Math.max(5, Math.min(22, bh * 0.45, bw / Math.max(3, label.length) * 1.7));
+    h += `<text class="olabel" x="${c.x}" y="${c.y}" font-size="${fs}">${esc(label)}</text>`;
+  }
+  $("#g-obj", svg).innerHTML = h;
+}
+function mkPoint(p, cls, tcls, label, dataSel){
+  const R = S.vb ? S.vb.w / 70 : 14;
+  const ds = dataSel != null ? ` data-sel="${dataSel}"` : "";
+  let h = `<circle class="${cls}"${ds} cx="${p.x}" cy="${p.y}" r="${R}"/><text class="${tcls}" x="${p.x}" y="${p.y}" font-size="${R * 1.05}">${esc(label)}</text>`;
+  if (p.hojd != null) h += `<text class="${tcls}" x="${p.x + R * 1.25}" y="${p.y - R * 1.1}" font-size="${R * 0.95}" style="fill:var(--ink)">${p.hojd === 0 ? "golv" : "p" + p.hojd}</text>`;
+  return h;
+}
+function mkPlace(p, label, dataSel, via){
+  if (p.typ === "zon" && p.polygon){
+    const ds = dataSel != null ? ` data-sel="${dataSel}"` : "";
+    const c = centroid(p.polygon);
+    return `<polygon class="${via ? "draft" : "mkz"}"${ds} points="${p.polygon.map(q => q.join(",")).join(" ")}"/>` + mkPoint({x:c.x, y:c.y, hojd:p.hojd}, via ? "mkc" : "mk", via ? "mkct" : "mkt", label, dataSel);
+  }
+  return mkPoint(p, via ? "mkc" : "mk", via ? "mkct" : "mkt", label, dataSel);
+}
+function renderMarks(){
+  let h = "";
+  if (S.view === "inmatning" && S.cur){
+    const [id] = splitKey(S.cur);
+    for (const v of viaCase(id)) for (const p of v.platser) h += mkPlace(p, "C", null, true);
+    S.sel.forEach((p, i) => { h += mkPlace(p, String(i + 1), i, false); });
+  }
+  if (S.view === "hylla" && S.hplats) h += mkPlace(S.hplats, "•", null, false);
+  $("#g-mk", svg).innerHTML = h;
+  hbadge.hidden = S.hojd == null || S.view === "karta";
+  if (S.hojd != null) hbadge.textContent = (S.hojd === 0 ? "Golv" : "Plan " + S.hojd) + " för nästa klick";
+}
+
+/* ---------- Kartredigering ---------- */
+const snap = v => Math.round(v / 5) * 5;
+function newObjId(typ){
+  const p = TYPER[typ].p, rk = {...(S.karta.raknare || {})};
+  let n = rk[p] || 0;
+  for (const id in S.obj) if (id.startsWith(p)){ const m = +id.slice(p.length); if (m > n) n = m; }
+  n++; rk[p] = n; S.karta = {...S.karta, raknare:rk}; saveKarta();
+  return p + n;
+}
+function saveKarta(){ const d = {hojd:mapH(), raknare:S.karta.raknare || {}}; write("config/karta", () => S.db.doc("config/karta").set(d)); }
+function saveObj(o){ S.obj[o.id] = o; invalidate(); const d = clone(o); write("kartobjekt/" + o.id, () => S.db.doc("kartobjekt/" + o.id).set(d)); }
+function editorDown(e, p){
+  const ed = S.edit, t = e.target;
+  if (ed.tool === "valj"){
+    const hd = t.closest && t.closest("[data-h]");
+    if (hd && ed.selId){ gest.edit = {kind:"handle", h:hd.dataset.h, orig:clone(S.obj[ed.selId])}; return; }
+    const o = objectAt(p);
+    if (o){ ed.selId = o.id; ed.confirmDel = false; gest.edit = {kind:"move", orig:clone(o)}; render(); }
+    else { gest.type = "pan"; ed.selId = null; ed.confirmDel = false; render(); }
+  } else if (ed.tool !== "poly"){ gest.edit = {kind:"draw"}; }
+}
+function editorMove(p){
+  const ed = S.edit, ge = gest && gest.edit; if (!ge) return;
+  const dx = p.x - gest.p0.x, dy = p.y - gest.p0.y;
+  if (ge.kind === "move"){
+    const o = clone(ge.orig);
+    if (o.form === "poly") o.punkter = o.punkter.map(([x, y]) => [snap(x + dx), snap(y + dy)]);
+    else { o.x = snap(o.x + dx); o.y = snap(o.y + dy); }
+    S.obj[o.id] = o; renderObjs(); renderDraft();
+  } else if (ge.kind === "handle"){
+    const o = clone(ge.orig);
+    if (o.form === "poly"){ const i = +ge.h; o.punkter[i] = [snap(p.x), snap(p.y)]; }
+    else {
+      let x1 = o.x, y1 = o.y, x2 = o.x + o.w, y2 = o.y + o.h;
+      if (ge.h.includes("w")) x1 = snap(p.x); if (ge.h.includes("e")) x2 = snap(p.x);
+      if (ge.h.includes("n")) y1 = snap(p.y); if (ge.h.includes("s")) y2 = snap(p.y);
+      o.x = Math.min(x1, x2); o.y = Math.min(y1, y2); o.w = Math.max(5, Math.abs(x2 - x1)); o.h = Math.max(5, Math.abs(y2 - y1));
+    }
+    S.obj[o.id] = o; renderObjs(); renderDraft();
+  } else if (ge.kind === "draw"){
+    ed.draft = {x1:snap(gest.p0.x), y1:snap(gest.p0.y), x2:snap(p.x), y2:snap(p.y)}; renderDraft();
+  }
+}
+function editorUp(p, g){
+  const ed = S.edit, ge = g.edit;
+  if (ed.tool === "poly"){
+    if (g.moved) return;
+    const d = ed.draft && ed.draft.poly ? ed.draft : {poly:[]};
+    d.poly.push([snap(p.x), snap(p.y)]); ed.draft = d; renderDraft(); renderEditPanel(); return;
+  }
+  if (!ge) return;
+  if (ge.kind === "move" || ge.kind === "handle"){ if (g.moved) saveObj(S.obj[ed.selId]); return; }
+  if (ge.kind === "draw"){
+    let x1, y1, x2, y2;
+    if (g.moved && ed.draft){ ({x1, y1, x2, y2} = ed.draft); }
+    else { const def = ed.tool === "pall" ? [40, 40] : ed.tool === "hylla" ? [80, 25] : [80, 60]; x1 = snap(p.x - def[0] / 2); y1 = snap(p.y - def[1] / 2); x2 = x1 + def[0]; y2 = y1 + def[1]; }
+    ed.draft = null;
+    if (Math.abs(x2 - x1) < 5 || Math.abs(y2 - y1) < 5){ renderDraft(); return; }
+    const typ = ed.tool, id = newObjId(typ);
+    const o = {id, typ, namn:"", farg:TYPER[typ].farg, form:"rect", x:Math.min(x1, x2), y:Math.min(y1, y2), w:Math.abs(x2 - x1), h:Math.abs(y2 - y1), skapad:nu()};
+    saveObj(o); logg("nytt_objekt", null, {id});
+    ed.selId = id; ed.tool = "valj"; render();
+  }
+}
+function finishPoly(){
+  const ed = S.edit; if (!ed.draft || !ed.draft.poly || ed.draft.poly.length < 3) return;
+  const id = newObjId("zon");
+  saveObj({id, typ:"zon", namn:"", farg:TYPER.zon.farg, form:"poly", punkter:ed.draft.poly, skapad:nu()});
+  logg("nytt_objekt", null, {id});
+  ed.draft = null; ed.selId = id; ed.tool = "valj"; render();
+}
+function renderDraft(){
+  const g = $("#g-draft", svg), ed = S.edit; let h = "";
+  if (S.view === "karta"){
+    if (ed.draft && ed.draft.poly){ const pts = ed.draft.poly; h += `<polyline class="draft" points="${pts.map(p => p.join(",")).join(" ")}"/>`; for (const [x, y] of pts) h += `<circle class="handle" cx="${x}" cy="${y}" r="${S.vb.w / 160}"/>`; }
+    else if (ed.draft){ const d = ed.draft; h += `<rect class="draft" x="${Math.min(d.x1, d.x2)}" y="${Math.min(d.y1, d.y2)}" width="${Math.abs(d.x2 - d.x1)}" height="${Math.abs(d.y2 - d.y1)}"/>`; }
+    const o = ed.selId && S.obj[ed.selId];
+    if (o){
+      const r = S.vb.w / 120;
+      if (o.form === "poly") o.punkter.forEach(([x, y], i) => { h += `<circle class="handle" data-h="${i}" cx="${x}" cy="${y}" r="${r}"/>`; });
+      else for (const [k, x, y] of [["nw", o.x, o.y], ["ne", o.x + o.w, o.y], ["sw", o.x, o.y + o.h], ["se", o.x + o.w, o.y + o.h]]) h += `<rect class="handle" data-h="${k}" x="${x - r}" y="${y - r}" width="${2 * r}" height="${2 * r}"/>`;
+    }
+  }
+  g.innerHTML = h;
+}
+function placeCount(oid){ return allPlaces().filter(x => x.p.objektId === oid).length; }
+
+/* ---------- Rendering ---------- */
+let rq = false;
+function schedule(){ if (!rq){ rq = true; requestAnimationFrame(() => { rq = false; render(); }); } }
+let mountedView = null;
+function render(){
+  renderTabs(); renderBanners(); renderSync();
+  if (!S.loaded.art && S.dbState !== "saknas"){ $("#main").innerHTML = '<p class="muted">Läser in artiklar och placeringar…</p>'; mountedView = null; return; }
+  if (mountedView !== S.view){ mountedView = S.view; VIEWS[S.view].mount(); }
+  VIEWS[S.view].update();
+}
+function renderTabs(){
+  const tabs = [["oversikt", "Översikt"], ["inmatning", "Inmatning"], ["hylla", "Hylla för hylla"], ["sok", "Sök"], ["karta", "Karta"], ["data", "Import och export"]];
+  $("#tabs").innerHTML = tabs.map(([v, n]) => `<button type="button" data-view="${v}"${S.view === v ? ' aria-current="page"' : ""}${v === "inmatning" && !S.mode ? " disabled" : ""}>${n}</button>`).join("");
+}
+function renderSync(){
+  const el = $("#sync"); if (!el) return;
+  let cls = "dot", t = "Sparat";
+  if (S.dbState === "saknas"){ cls += " off"; t = "Ingen databas"; }
+  else if (S.dbState === "laddar"){ cls += " off"; t = "Ansluter…"; }
+  else if (S.fel){ cls += " err"; t = "Fel vid sparning"; }
+  else if (S.saving > 0){ cls += " busy"; t = "Sparar…"; }
+  el.innerHTML = `<span class="${cls}"></span><span>${t}</span>`;
+}
+function renderBanners(){
+  let h = "";
+  if (S.dbState === "saknas") h += `<div class="banner err">Databasen nås inte i den här vyn, så inget sparas. Öppna programmet via dess länk på claude.ai, inloggad.</div>`;
+  if (S.fel) h += `<div class="banner err">Senaste sparningen misslyckades: ${esc(S.fel)} <button type="button" data-act="clearfel">Stäng</button></div>`;
+  if (S.meta && S.meta.test) h += `<div class="banner"><b>Testdata.</b> Artiklarna kommer från ${esc(S.meta.kalla || "en äldre export")}, som har andra artikelkoder än dagens Rentman. Prova gärna, men läs in en ny Rentman-export under <i>Import och export</i> innan den riktiga genomgången.</div>`;
+  $("#banners").innerHTML = h;
+}
+
+/* ---------- Vy: Översikt ---------- */
+function counts(ids){
+  const c = {total:0, placerad:0, viacase:0, aterkom:0, sorteras_ej:0, kvar:0};
+  for (const id of ids){ c.total++; c[artStatus(id)]++; }
+  return c;
+}
+function barHtml(c, cls){
+  const t = c.total || 1, seg = (n, col) => n ? `<i style="width:${n / t * 100}%;background:${col}"></i>` : "";
+  return `<div class="${cls}">${seg(c.placerad + c.viacase, "var(--ok)")}${seg(c.aterkom, "var(--warn)")}${seg(c.sorteras_ej, "var(--skip)")}</div>`;
+}
+const VIEWS = {};
+VIEWS.oversikt = {
+  mount(){ $("#main").innerHTML = `<div id="ov"></div>`; },
+  update(){
+    const m = M(), c = counts(m.act);
+    const mappar = {};
+    for (const id of m.act){ const k = S.art[id].mapp || "(utan mapp)"; (mappar[k] = mappar[k] || []).push(id); }
+    const fq = queue(0, "fortsatt").length, aq = queue(0, "aterkom").length;
+    const rows = Object.keys(mappar).sort(coll.compare).map(k => { const cc = counts(mappar[k]);
+      return `<tr class="click" data-kat="${esc(k)}"><td>${esc(k)}</td><td class="n">${cc.total}</td><td class="n">${cc.placerad + cc.viacase}</td><td class="n">${cc.aterkom}</td><td class="n">${cc.sorteras_ej}</td><td class="n">${cc.kvar}</td><td>${barHtml(cc, "minibar")}</td></tr>`; }).join("");
+    $("#ov").innerHTML = `
+      <div class="tiles">
+        <div class="tile"><span>Aktiva artiklar</span><b>${c.total}</b></div>
+        <div class="tile"><span>Placerade</span><b style="color:var(--ok)">${c.placerad + c.viacase}</b>${c.viacase ? `<small class="muted">varav ${c.viacase} bara via case</small>` : ""}</div>
+        <div class="tile"><span>Återkom</span><b style="color:var(--warn)">${c.aterkom}</b></div>
+        <div class="tile"><span>Sorteras ej</span><b style="color:var(--skip)">${c.sorteras_ej}</b></div>
+        <div class="tile"><span>Kvar</span><b>${c.kvar}</b></div>
+      </div>
+      ${barHtml(c, "bar")}
+      <div class="modes">
+        <button type="button" class="mode primary" data-mode="fortsatt"><strong>Fortsätt</strong><span>${fq} ej behandlade i standardordning: case, prioriteringslistan (${S.prio.length}), sedan mapp för mapp</span></button>
+        <button type="button" class="mode" data-mode="aterkom"><strong>Återkom</strong><span>${aq} utan plats eller osäkra</span></button>
+        <button type="button" class="mode" data-view="sok"><strong>Sök artikel</strong><span>Fritext på namn eller ID</span></button>
+        <button type="button" class="mode" data-view="hylla"><strong>Hylla för hylla</strong><span>Välj en plats och lägg till det som står där</span></button>
+        <button type="button" class="mode" data-view="karta"><strong>Karta</strong><span>${Object.keys(S.obj).length} objekt ritade</span></button>
+        <button type="button" class="mode" data-view="data"><strong>Import och export</strong><span>${S.meta.importerad ? "Senast inläst " + esc(S.meta.importerad.slice(0, 10)) : "Ingen export inläst"}</span></button>
+      </div>
+      <h2>Per mapp</h2>
+      <p class="muted" style="margin:2px 0 8px">Tryck på en mapp för att gå igenom bara den (läget Kategori).</p>
+      <div class="tablewrap"><table><thead><tr><th>Mapp</th><th class="n">Totalt</th><th class="n">Placerade</th><th class="n">Återkom</th><th class="n">Sorteras ej</th><th class="n">Kvar</th><th></th></tr></thead><tbody>${rows || `<tr><td colspan="7" class="muted">Inga artiklar inlästa. Läs in en Rentman-export under Import och export.</td></tr>`}</tbody></table></div>`;
+  }
+};
+
+/* ---------- Vy: Inmatning ---------- */
+VIEWS.inmatning = {
+  mount(){
+    $("#main").innerHTML = `
+      <div class="card" id="card"></div>
+      <div class="work">
+        <div style="min-width:0">
+          <div id="mapslot"></div>
+          <div class="heights" id="heights"></div>
+          <div class="cmds">
+            <button type="button" class="primary" data-cmd="spara">Spara<kbd>Enter</kbd></button>
+            <button type="button" data-cmd="samma">Samma som förra<kbd>Mellanslag</kbd></button>
+            <button type="button" data-cmd="sorteras_ej">Sorteras ej<kbd>⌫</kbd></button>
+            <button type="button" data-cmd="angra">Ångra plats<kbd>Esc</kbd></button>
+            <button type="button" data-cmd="bak">← Bakåt</button>
+            <button type="button" data-cmd="fram">Framåt →</button>
+            <button type="button" data-cmd="osaker" id="osakerBtn">Osäker</button>
+          </div>
+        </div>
+        <aside class="side">
+          <div class="panel"><span class="lbl">Valda platser</span><ul class="places" id="places"></ul></div>
+          <div class="panel"><label class="lbl" for="fritext">Instruktion till artikeln</label><textarea id="fritext" placeholder="T.ex. ligger i blå back längst in"></textarea></div>
+          <div class="panel"><div class="flow" style="margin:0;grid-template-columns:1fr"><div><span class="lbl">Nästa</span><ol id="nextq"></ol></div><div><span class="lbl">Senaste</span><ol id="hist"></ol></div></div></div>
+        </aside>
+      </div>`;
+    $("#mapslot").appendChild(mapbox);
+    $("#fritext").value = S.text;
+    $("#fritext").addEventListener("input", e => { S.text = e.target.value; });
+    if (!S.vb) fit(); else applyVB();
+    renderBg(); renderObjs();
+  },
+  update(){
+    const k = S.cur;
+    if (!k){
+      $("#card").innerHTML = `<div class="done"><h2>Klart i läget ${esc(MODNAMN[S.mode] || "")}</h2><p class="muted">Inga fler artiklar i den här genomgången.</p><div class="row" style="justify-content:center"><button type="button" data-view="oversikt">Till översikten</button>${S.nav.length ? `<button type="button" data-cmd="bak">← Senaste artikeln</button>` : ""}</div></div>`;
+    } else {
+      const [id, ser] = splitKey(k), a = S.art[id] || {namn:id};
+      const r = rec(k), vc = viaCase(id), m = M(), c = counts(m.act), us = units(id);
+      const qAll = queue();
+      const fv = [];
+      if (r) fv.push(`<span class="chip st-${r.osaker ? "aterkom" : r.status}">Sparad: ${STATUSNAMN[r.status]}${r.osaker ? ", osäker" : ""}</span>`);
+      for (const v of vc) fv.push(`<span class="chip" style="color:var(--accent)">via case ${esc(S.art[v.caseId] ? S.art[v.caseId].namn : v.caseId)} · ${v.antal || 1} st</span>`);
+      if (S.forvalNote) fv.push(`<span class="chip muted">${esc(S.forvalNote)}</span>`);
+      if (a.arCase) fv.push(`<span class="chip" style="color:var(--accent)">Case med ${(a.innehall || []).length} artiklar</span>`);
+      $("#card").innerHTML = `
+        <div class="name">${esc(a.namn)}</div>
+        <div class="meta"><span class="mono">ID ${esc(id)}</span>${ser != null ? `<span class="mono">SN ${esc(ser)}</span>` : ""}<span>${esc(a.mapp || "")}${a.grupp ? " › " + esc(a.grupp) : ""}</span>${us.length ? `<button type="button" data-cmd="dela" style="min-height:30px;padding:.1em .6em">${isSplit(id) ? "Slå ihop enheterna" : `Dela upp per enhet (${us.length} st)`}</button>` : ""}</div>
+        ${fv.length ? `<div class="forval">${fv.join("")}</div>` : ""}
+        <div class="counters"><span>Läge <b>${esc(MODNAMN[S.mode])}${S.mode === "kategori" ? ": " + esc(S.kategori) : ""}</b></span><span>Klara <b>${c.placerad + c.viacase + c.sorteras_ej} / ${c.total}</b></span><span>Återkom <b>${c.aterkom}</b></span><span>Kvar i läget <b>${S.navPos != null ? "bläddrar bakåt" : qAll.length}</b></span></div>`;
+    }
+    $("#heights").innerHTML = `<span class="lbl" style="margin:0 6px 0 0">Höjd för nästa klick</span>` + Array.from({length:10}, (_, i) => `<button type="button" data-h="${i}" class="${S.hojd === i ? "on" : ""}" title="${i === 0 ? "Golv" : "Hyllplan " + i}">${i}</button>`).join("");
+    $("#osakerBtn").classList.toggle("on", S.osaker);
+    const vcl = k ? viaCase(splitKey(k)[0]) : [];
+    $("#places").innerHTML = (vcl.map(v => `<li class="via"><span class="pin c">C</span><span>via case ${esc(S.art[v.caseId] ? S.art[v.caseId].namn : v.caseId)}<br><small class="muted">${esc(v.platser.map(placeText).join(", "))}</small></span><span class="muted" style="font-size:.8rem">${v.antal || 1} st</span></li>`).join("")) +
+      (S.sel.map((p, i) => `<li><span class="pin">${i + 1}</span><span>${esc(placeText({...p, hojd:null, antal:null}))}${p.typ === "zon" ? "" : `<br><small class="muted mono">${p.x}, ${p.y}</small>`}</span><span class="ctl">
+        <select data-ph="${i}" aria-label="Höjd"><option value="">–</option>${Array.from({length:10}, (_, n) => `<option value="${n}"${p.hojd === n ? " selected" : ""}>${n === 0 ? "golv" : "p" + n}</option>`).join("")}</select>
+        <input type="number" min="1" inputmode="numeric" data-pa="${i}" value="${p.antal || ""}" placeholder="st" aria-label="Antal">
+        <button type="button" data-prm="${i}" aria-label="Ta bort plats">✕</button></span></li>`).join("")) ||
+      `<li class="muted" style="border:none;display:block">Klicka på kartan för en plats, dra för en zon. Enter utan plats = Återkom.</li>`;
+    const nq = queue(4).filter(x => x !== k).slice(0, 3);
+    $("#nextq").innerHTML = S.navPos != null ? `<li class="muted">Du bläddrar bakåt. Framåt → går tillbaka.</li>` : (nq.map(x => `<li>${esc(keyName(x))}</li>`).join("") || `<li class="muted">Inga fler</li>`);
+    $("#hist").innerHTML = S.nav.slice(-3).reverse().map(x => { const r = rec(x); return `<li>${esc(keyName(x))}<br><small class="muted">${r ? esc(r.status === "placerad" ? ((r.platser || []).map(placeText).join(", ") || "via case") : STATUSNAMN[r.status]) : ""}</small></li>`; }).join("") || `<li class="muted">Inget ännu</li>`;
+    renderBg(); renderObjs(); renderMarks(); renderDraft();
+  }
+};
+
+/* ---------- Vy: Sök ---------- */
+function search(q, max){
+  const terms = q.toLowerCase().split(/\s+/).filter(Boolean); if (!terms.length) return [];
+  const out = [];
+  for (const id of M().order){ const a = S.art[id]; const hay = (id + " " + a.namn + " " + (a.mapp || "") + " " + (a.grupp || "") + " " + (a.serienr || []).join(" ")).toLowerCase();
+    if (terms.every(t => hay.includes(t))){ out.push(id); if (out.length >= max) break; } }
+  return out;
+}
+VIEWS.sok = {
+  mount(){
+    $("#main").innerHTML = `<div class="panel" style="max-width:760px;margin:0 auto"><label class="lbl" for="sokq">Sök på namn, ID, mapp eller serienummer</label>
+      <input type="search" id="sokq" style="width:100%" autocomplete="off" placeholder="T.ex. XLR 5 eller 1031">
+      <ul class="results" id="sokres" style="margin-top:10px;max-height:none"></ul></div>`;
+    const q = $("#sokq"); q.value = S.sokFras; q.focus();
+    q.addEventListener("input", () => { S.sokFras = q.value; VIEWS.sok.update(); });
+    q.addEventListener("keydown", e => { if (e.key === "Enter"){ const b = $("#sokres button"); if (b) b.click(); } });
+  },
+  update(){
+    const ids = search(S.sokFras, 60);
+    $("#sokres").innerHTML = ids.map(id => { const a = S.art[id], st = artStatus(id);
+      return `<li><button type="button" data-open="${esc(id)}"><span>${esc(a.namn)}<small><span class="mono">${esc(id)}</span> · ${esc(a.mapp || "")}${a.serienr && a.serienr.length ? " · " + a.serienr.length + " serienr" : ""}</small></span><span class="chip st-${st}">${STATUSNAMN[st]}</span></button></li>`; }).join("") ||
+      (S.sokFras ? `<li class="muted">Ingen träff.</li>` : `<li class="muted">Skriv för att söka bland ${M().act.length} aktiva artiklar.</li>`);
+  }
+};
+
+/* ---------- Vy: Hylla för hylla ---------- */
+function hAdd(k){
+  if (!S.hplats) return;
+  const r = clone(rec(k)) || {platser:[], text:"", osaker:false};
+  r.platser = (r.platser || []).concat([{...clone(S.hplats), antal:S.hAntal ? +S.hAntal : null}]);
+  r.status = "placerad"; r.andrad = nu();
+  writeRec(k, r); logg("hylla_lagg_till", k, {objektId:S.hplats.objektId});
+  S.hAntal = ""; render();
+}
+function hRemove(k, oid){
+  const r = clone(rec(k)); if (!r) return;
+  r.platser = (r.platser || []).filter(p => p.objektId !== oid);
+  if (!r.platser.length && !viaCase(splitKey(k)[0]).length && r.status === "placerad") r.status = "aterkom";
+  r.andrad = nu(); writeRec(k, r); logg("hylla_ta_bort", k, {objektId:oid}); render();
+}
+VIEWS.hylla = {
+  mount(){
+    $("#main").innerHTML = `<div class="work"><div style="min-width:0"><div id="mapslot"></div><div class="heights" id="heights"></div></div>
+      <aside class="side"><div class="panel stack" id="hpanel"></div>
+      <div class="panel"><label class="lbl" for="hsok">Lägg till artikel på platsen</label>
+        <div class="row"><input type="search" id="hsok" style="flex:1" autocomplete="off" placeholder="Sök namn eller ID"><input type="number" id="hantal" min="1" inputmode="numeric" placeholder="Antal" style="width:84px" aria-label="Antal"></div>
+        <ul class="results" id="hres" style="margin-top:8px"></ul></div>
+      <div class="panel"><span class="lbl">Står redan på objektet</span><ul class="results" id="hhere"></ul></div></aside></div>`;
+    $("#mapslot").appendChild(mapbox);
+    const q = $("#hsok"); q.value = S.hSok;
+    q.addEventListener("input", () => { S.hSok = q.value; VIEWS.hylla.update(); });
+    q.addEventListener("keydown", e => { if (e.key === "Enter"){ const b = $("#hres button"); if (b) b.click(); } });
+    const an = $("#hantal"); an.value = S.hAntal; an.addEventListener("input", () => { S.hAntal = an.value; });
+    if (!S.vb) fit(); else applyVB();
+  },
+  update(){
+    const p = S.hplats;
+    $("#hpanel").innerHTML = p ? `<span class="lbl">Vald plats</span><div style="font-size:1.1rem;font-weight:600">${esc(placeText(p))}</div><div class="muted mono" style="font-size:.8rem">${p.typ === "zon" ? "zon" : p.x + ", " + p.y}</div><div class="row"><button type="button" data-act="hclear">Välj annan plats</button></div>`
+      : `<span class="lbl">Vald plats</span><div class="muted">Klicka på kartan för att välja plats, eller dra för en zon. Välj höjd med siffra 0–9 före klicket.</div>`;
+    $("#heights").innerHTML = `<span class="lbl" style="margin:0 6px 0 0">Höjd för nästa klick</span>` + Array.from({length:10}, (_, i) => `<button type="button" data-h="${i}" class="${S.hojd === i ? "on" : ""}">${i}</button>`).join("");
+    const ids = search(S.hSok, 25);
+    const keys = []; for (const id of ids) for (const k of expand(id)) keys.push(k);
+    $("#hres").innerHTML = !p ? `<li class="muted">Välj först en plats på kartan.</li>` : keys.slice(0, 30).map(k => { const [id] = splitKey(k); const st = processed(k) ? rec(k).status : artStatus(id);
+      return `<li><button type="button" data-hadd="${esc(k)}"><span>${esc(keyName(k))}<small class="mono">${esc(id)} · ${esc(S.art[id].mapp || "")}</small></span><span class="chip st-${st}">+ Lägg till</span></button></li>`; }).join("") || `<li class="muted">${S.hSok ? "Ingen träff." : "Skriv för att söka."}</li>`;
+    const oid = p && p.objektId;
+    const here = oid ? [...(objIdx()[oid] || [])].sort((a, b) => coll.compare(keyName(a), keyName(b))) : [];
+    $("#hhere").innerHTML = !oid ? `<li class="muted">Platsen ligger inte på något ritat objekt.</li>` : here.map(k => `<li><button type="button" data-hrm="${esc(k)}"><span>${esc(keyName(k))}<small>${esc((rec(k).platser || []).filter(q => q.objektId === oid).map(placeText).join(", "))}</small></span><span class="chip" style="color:var(--danger)">Ta bort</span></button></li>`).join("") || `<li class="muted">Inget placerat här ännu.</li>`;
+    renderBg(); renderObjs(); renderMarks(); renderDraft();
+  }
+};
+
+/* ---------- Vy: Karta ---------- */
+function renderEditPanel(){
+  const ed = S.edit, o = ed.selId && S.obj[ed.selId], el = $("#epanel"); if (!el) return;
+  let h = "";
+  if (ed.tool === "poly") h += `<p class="muted" style="margin:0">Tryck ut hörnen ett i taget. ${ed.draft && ed.draft.poly ? ed.draft.poly.length : 0} punkter.</p><div class="row"><button type="button" class="primary" data-act="polydone" ${ed.draft && ed.draft.poly && ed.draft.poly.length >= 3 ? "" : "disabled"}>Klar</button><button type="button" data-act="polycancel">Avbryt</button></div>`;
+  else if (ed.tool !== "valj") h += `<p class="muted" style="margin:0">Dra på kartan för att rita en ${TYPER[ed.tool].namn.toLowerCase()}, eller tryck en gång för standardstorlek.</p>`;
+  if (o){
+    const n = placeCount(o.id);
+    h += `<div class="form">
+      <span>ID</span><b class="mono">${esc(o.id)}</b>
+      <label for="o-typ">Typ</label><select id="o-typ">${Object.keys(TYPER).map(t => `<option value="${t}"${o.typ === t ? " selected" : ""}>${TYPER[t].namn}</option>`).join("")}</select>
+      <label for="o-namn">Namn</label><input type="text" id="o-namn" value="${esc(o.namn || "")}" placeholder="T.ex. Mickskåp">
+      <label for="o-farg">Färg</label><input type="color" id="o-farg" value="${esc(o.farg)}" style="min-height:36px">
+      ${o.form === "poly" ? `<span>Form</span><span class="muted">Fri form, ${o.punkter.length} hörn</span>` : `<label for="o-x">X, Y</label><span class="row" style="flex-wrap:nowrap"><input type="number" id="o-x" value="${o.x}"><input type="number" id="o-y" value="${o.y}"></span>
+      <label for="o-w">Bredd, djup</label><span class="row" style="flex-wrap:nowrap"><input type="number" id="o-w" value="${o.w}"><input type="number" id="o-h" value="${o.h}"></span>`}
+      <span>Placeringar</span><span>${n}</span></div>
+      <div class="row" style="margin-top:10px">${ed.confirmDel ? `<button type="button" class="danger" data-act="odel2">Ja, ta bort ${esc(o.id)}</button><button type="button" data-act="odelno">Avbryt</button>` : `<button type="button" class="danger" data-act="odel">Ta bort objekt</button>`}</div>
+      ${ed.confirmDel && n ? `<p class="muted" style="font-size:.85rem">${n} placeringar pekar på objektet. De behåller sina koordinater och objekt-ID, men objektet syns inte längre på kartan.</p>` : ""}`;
+  } else if (ed.tool === "valj") h += `<p class="muted" style="margin:0">Tryck på ett objekt för att flytta, ändra storlek eller döpa om det. Dra på tom yta för att panorera.</p>`;
+  el.innerHTML = h;
+  const bind = (sel, fn) => { const i = $(sel, el); if (i) i.addEventListener("change", () => { const ob = clone(S.obj[ed.selId]); fn(ob, i.value); saveObj(ob); render(); }); };
+  bind("#o-typ", (ob, v) => { ob.typ = v; }); bind("#o-namn", (ob, v) => { ob.namn = v.trim(); }); bind("#o-farg", (ob, v) => { ob.farg = v; });
+  bind("#o-x", (ob, v) => { ob.x = +v || 0; }); bind("#o-y", (ob, v) => { ob.y = +v || 0; }); bind("#o-w", (ob, v) => { ob.w = Math.max(5, +v || 5); }); bind("#o-h", (ob, v) => { ob.h = Math.max(5, +v || 5); });
+}
+VIEWS.karta = {
+  mount(){
+    $("#main").innerHTML = `<div class="toolrow" id="tools"></div><div class="edit"><div style="min-width:0"><div id="mapslot"></div></div>
+      <aside class="side"><div class="panel stack" id="epanel"></div>
+      <div class="panel"><div class="form"><label for="k-h">Kartans djup</label><span class="row" style="flex-wrap:nowrap"><input type="number" id="k-h" min="100" max="4000" step="10" value="${mapH()}"><span class="muted" style="font-size:.8rem">bredden är 1000</span></span></div></div>
+      <div class="panel"><span class="lbl">Alla objekt</span><div class="objlist" id="olist"></div></div></aside></div>`;
+    $("#mapslot").appendChild(mapbox);
+    $("#k-h").addEventListener("change", e => { S.karta = {...S.karta, hojd:Math.min(4000, Math.max(100, +e.target.value || 700))}; saveKarta(); fit(); render(); });
+    if (!S.vb) fit(); else applyVB();
+  },
+  update(){
+    const ed = S.edit;
+    $("#tools").innerHTML = [["valj", "Välj och flytta"], ["hylla", "+ Hylla"], ["skap", "+ Skåp"], ["golvyta", "+ Golvyta"], ["pall", "+ Pall"], ["zon", "+ Zon (rektangel)"], ["poly", "+ Zon (fri form)"]]
+      .map(([t, n]) => `<button type="button" data-tool="${t}" class="${ed.tool === t ? "on" : ""}">${n}</button>`).join("");
+    $("#olist").innerHTML = objsSorted().slice().sort((a, b) => coll.compare(a.id, b.id)).map(o => `<button type="button" data-osel="${esc(o.id)}"${ed.selId === o.id ? ' style="background:var(--accent-soft)"' : ""}><span><b class="mono">${esc(o.id)}</b> ${esc(o.namn || "")}</span><span class="muted">${TYPER[o.typ].namn}</span></button>`).join("") || `<p class="muted">Inga objekt ännu. Välj en typ ovan och dra på kartan.</p>`;
+    renderEditPanel(); renderBg(); renderObjs(); renderMarks(); renderDraft();
+  }
+};
+
+/* ---------- Vy: Import och export ---------- */
+async function loadXLSX(){
+  if (window.XLSX) return;
+  await new Promise((res, rej) => { const s = document.createElement("script"); s.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"; s.onload = res; s.onerror = () => rej(new Error("Kunde inte ladda Excel-läsaren")); document.head.appendChild(s); });
+}
+async function readSheets(files){
+  await loadXLSX();
+  const out = [];
+  for (const f of files){
+    const wb = /\.(csv|txt|tsv)$/i.test(f.name) ? XLSX.read(await f.text(), {type:"string", raw:false}) : XLSX.read(await f.arrayBuffer(), {type:"array"});
+    for (const n of wb.SheetNames) out.push({fil:f.name, blad:n, rows:XLSX.utils.sheet_to_json(wb.Sheets[n], {header:1, defval:"", raw:false, blankrows:false})});
+  }
+  return out;
+}
+const ALIAS = {
+  id:["kod","id","rentman-id","rentman id","rentmanid","artikel-id","artikelid","artikelkod","code","nummer","number","artikelnummer","innehåll-kod","innehåll kod","innehåll-id","innehåll id"],
+  namn:["namn","namn (i databasen)","name","displayname","benämning","artikel","artikelnamn"],
+  mapp:["mapp","namn (mapp)","folder","mappnamn","kategori","category"],
+  grupp:["standard utrustningsgrupp","utrustningsgrupp","grupp","equipment group","default equipment group"],
+  typ:["type of equipment","typ","type","utrustningstyp"],
+  arkiverad:["arkiverad","archived","arkiv"],
+  serienr:["serienummer","serienr","serial","serial number","serial numbers","serienummer (lista)"],
+  innehall:["innehåll","caseinnehåll","case-innehåll","contents","case contents"],
+  caseId:["case-kod","case kod","case-id","case id","caseid","förälder","parent","i case"],
+  antal:["antal","quantity","qty","antal i case"],
+  arCase:["är case","case (ja/nej)","is case","iscase"],
+};
+const normH = s => String(s).toLowerCase().replace(/\s+/g, " ").trim();
+function detectCols(rows){
+  for (let r = 0; r < Math.min(10, rows.length); r++){
+    const cols = {}; rows[r].forEach((h, i) => { const n = normH(h); for (const k in ALIAS) if (cols[k] == null && ALIAS[k].includes(n)) cols[k] = i; });
+    if (cols.id != null) return {hdr:r, cols};
+  }
+  return null;
+}
+const yes = v => /^(ja|yes|true|1|x|sant)$/i.test(String(v).trim());
+const normId = v => String(v ?? "").trim().replace(/\.0+$/, "");
+function parseImport(sheets, opt){
+  const A = new Map(), log = [];
+  const get = id => { if (!A.has(id)) A.set(id, {id, namn:"", mapp:"", grupp:"", typ:"", arkiverad:false, arCase:false, serienr:new Set(), innehall:new Map()}); return A.get(id); };
+  for (const sh of sheets){
+    const d = detectCols(sh.rows);
+    if (!d){ log.push(`${sh.fil} / ${sh.blad}: ingen kolumn för artikel-ID, hoppas över`); continue; }
+    const {hdr, cols} = d, cell = (row, k) => cols[k] == null ? "" : String(row[cols[k]] ?? "").trim();
+    let n = 0;
+    for (const row of sh.rows.slice(hdr + 1)){
+      const id = normId(cell(row, "id")); if (!id) continue;
+      if (cols.caseId != null){
+        const c = normId(cell(row, "caseId")); if (!c) continue;
+        const ca = get(c); ca.arCase = true; ca.innehall.set(id, (ca.innehall.get(id) || 0) + (parseInt(cell(row, "antal")) || 1)); n++; continue;
+      }
+      const a = get(id);
+      for (const k of ["namn", "mapp", "grupp", "typ"]){ const v = cell(row, k); if (v && !a[k]) a[k] = v; }
+      if (cols.arkiverad != null && yes(cell(row, "arkiverad"))) a.arkiverad = true;
+      if (cols.arCase != null && yes(cell(row, "arCase"))) a.arCase = true;
+      for (const s of cell(row, "serienr").split(/[,;\n]+/)) if (s.trim()) a.serienr.add(s.trim());
+      for (const part of cell(row, "innehall").split(/[,;\n]+/)){
+        const m = part.trim().match(/^([^\s:x×*]+)\s*(?:[x×:*]\s*(\d+))?$/i); // "kod", "kod x 2" eller "kod:2"
+        if (m){ a.innehall.set(normId(m[1]), +(m[2] || 1)); a.arCase = true; }
+      }
+      n++;
+    }
+    log.push(`${sh.fil} / ${sh.blad}: ${n} rader`);
+  }
+  const items = [], skipped = {virtuella:0, utanNamn:0};
+  for (const a of A.values()){
+    const t = a.typ.toLowerCase();
+    if (!opt.virtuella && /virtual|virtuell/.test(t)){ skipped.virtuella++; continue; }
+    if (!a.namn && !S.art[a.id]){ skipped.utanNamn++; continue; }
+    if (/^case$/.test(t) || a.innehall.size) a.arCase = true;
+    items.push(a);
+  }
+  return {items, log, skipped};
+}
+function diffImport(P, wipe){
+  const ids = new Set(P.items.map(a => a.id)), sum = {antal:P.items.length, nya:0, andrade:0, borttagna:0, nyaSerienr:0, case:0, arkiverade:0};
+  for (const a of P.items){
+    const o = wipe ? null : S.art[a.id];
+    if (a.arCase) sum.case++; if (a.arkiverad) sum.arkiverade++;
+    if (!o) sum.nya++;
+    else {
+      if ((a.namn && a.namn !== o.namn) || (a.mapp && a.mapp !== o.mapp) || (a.grupp && a.grupp !== o.grupp) || (o.aktiv !== false) === a.arkiverad || o.borttagen) sum.andrade++;
+      if (isSplit(a.id)){ const old = new Set(o.serienr || []); for (const s of a.serienr) if (!old.has(s)) sum.nyaSerienr++; }
+    }
+  }
+  if (!wipe) for (const id in S.art) if (!ids.has(id) && !S.art[id].borttagen) sum.borttagna++;
+  return sum;
+}
+async function applyImport(){
+  const P = S.importPrev; if (!P || !S.db) return;
+  const wipe = !!P.wipe, now = nu(), sum = diffImport(P, wipe), ids = new Set(P.items.map(a => a.id));
+  S.importPrev = {...P, busy:true}; render();
+  try {
+    const next = {};
+    if (!wipe) for (const id in S.art) next[id] = clone(S.art[id]);
+    for (const a of P.items){
+      const o = next[a.id] || {};
+      next[a.id] = {id:a.id, namn:a.namn || o.namn || a.id, mapp:a.mapp || o.mapp || "", grupp:a.grupp || o.grupp || "", typ:a.typ || o.typ || "",
+        serienr:a.serienr.size ? [...a.serienr] : (o.serienr || []), arCase:a.arCase,
+        innehall:[...a.innehall].map(([id, antal]) => ({id, antal})), aktiv:!a.arkiverad, borttagen:false,
+        forstInlast:o.forstInlast || now, senastSedd:now};
+    }
+    for (const id in next) if (!ids.has(id)) next[id].borttagen = true;
+    if (wipe){
+      const gids = Object.keys(S.gg);
+      for (let i = 0; i < gids.length; i += 4) await Promise.all(gids.slice(i, i + 4).map(id => S.db.doc("genomgang/" + id).delete()));
+      S.gg = {};
+    }
+    const docs = Array.from({length:NSH_ART}, () => ({items:{}}));
+    for (const id in next) docs[shardArt(id)].items[id] = next[id];
+    for (let i = 0; i < NSH_ART; i++) await S.db.doc("artiklar/s" + i).set(docs[i]);
+    const meta = {kalla:P.filer.join(", "), importerad:now, test:false, sammanfattning:sum, rensad:wipe};
+    await S.db.doc("config/meta").set(meta);
+    S.art = next; S.meta = meta; S.importRes = sum; S.importPrev = null;
+    logg("import", null, sum); invalidate();
+  } catch (e){ S.fel = (e && e.message) || String(e); S.importPrev = {...P, busy:false}; render(); }
+}
+async function importPrio(files){
+  const sheets = await readSheets(files), ids = [], seen = new Set();
+  const sh = sheets[0]; if (!sh) return;
+  const d = detectCols(sh.rows), col = d ? d.cols.id : 0, start = d ? d.hdr + 1 : 0;
+  for (const row of sh.rows.slice(start)){ const id = normId(row[col]); if (id && /^[\w.-]+$/.test(id) && !seen.has(id)){ seen.add(id); ids.push(id); } }
+  const data = {ids, kalla:files[0].name, andrad:nu()};
+  S.prio = ids; S.prioMeta = data; invalidate();
+  write("config/prioritet", () => S.db.doc("config/prioritet").set(data));
+  logg("prioritetslista", null, {antal:ids.length});
+}
+function csv(rows){ return "﻿" + rows.map(r => r.map(v => { v = v == null ? "" : String(v); return /[",\n;]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }).join(",")).join("\r\n"); }
+function exportRows(kind){
+  const m = M(), H = ["Rentman-ID", "Namn", "Mapp", "Grupp", "Serienummer"];
+  const base = (id, ser) => { const a = S.art[id]; return [id, a.namn, a.mapp || "", a.grupp || "", ser ?? ""]; };
+  const out = [];
+  if (kind === "kartobjekt"){
+    out.push(["Objekt-ID", "Typ", "Namn", "Färg", "Form", "Koordinater"]);
+    for (const o of objsSorted().sort((a, b) => coll.compare(a.id, b.id))) out.push([o.id, TYPER[o.typ].namn, o.namn || "", o.farg, o.form === "poly" ? "fri form" : "rektangel", o.form === "poly" ? o.punkter.map(p => p.join(" ")).join("; ") : `${o.x} ${o.y}; ${o.x + o.w} ${o.y + o.h}`]);
+    return out;
+  }
+  if (kind === "placerade") out.push(H.concat(["Status", "Osäker", "Platstyp", "Objekt-ID", "Objektnamn", "Objekttyp", "X", "Y", "Zon (hörn)", "Höjd", "Antal", "Via case-ID", "Via case-namn", "Instruktion", "Senast ändrad"]));
+  if (kind === "aterkom") out.push(H.concat(["Orsak", "Sparade platser", "Instruktion", "Senast ändrad"]));
+  if (kind === "sorteras_ej") out.push(H.concat(["Instruktion", "Senast ändrad"]));
+  for (const id of m.order){
+    for (const k of expand(id)){
+      const [, ser] = splitKey(k), r = rec(k), vc = viaCase(id);
+      const st = r ? r.status : (vc.length ? "placerad" : null);
+      if (kind === "placerade" && st === "placerad"){
+        for (const p of ((r && r.platser) || [])){ const o = S.obj[p.objektId];
+          out.push(base(id, ser).concat(["Placerad", r.osaker ? "ja" : "", p.typ === "zon" ? "zon" : "punkt", p.objektId || "", o ? (o.namn || "") : (p.objektId ? "(borttaget objekt)" : ""), o ? TYPER[o.typ].namn : "", p.typ === "zon" ? "" : p.x, p.typ === "zon" ? "" : p.y, p.typ === "zon" ? p.polygon.map(q => q.join(" ")).join("; ") : "", p.hojd ?? "", p.antal ?? "", "", "", r.text || "", r.andrad || ""])); }
+        for (const v of vc) out.push(base(id, ser).concat(["Placerad", r && r.osaker ? "ja" : "", "via case", "", "", "", "", "", "", "", v.antal ?? "", v.caseId, S.art[v.caseId] ? S.art[v.caseId].namn : "", r ? r.text || "" : "", r ? r.andrad || "" : ""]));
+      }
+      if (kind === "aterkom" && r && (r.status === "aterkom" || r.osaker))
+        out.push(base(id, ser).concat([r.osaker ? "osäker" : "utan plats", (r.platser || []).map(placeText).join(" | "), r.text || "", r.andrad || ""]));
+      if (kind === "sorteras_ej" && r && r.status === "sorteras_ej") out.push(base(id, ser).concat([r.text || "", r.andrad || ""]));
+    }
+  }
+  return out;
+}
+async function doExport(kinds){
+  let dl = null;
+  try { dl = await window.claude.use("downloads"); } catch (e){ dl = null; }
+  const dag = new Date().toISOString().slice(0, 10);
+  const names = {placerade:"Placerade", aterkom:"Aterkom", sorteras_ej:"Sorteras_ej", kartobjekt:"Kartobjekt"};
+  if (!dl){ S.exportMsg = "Nedladdning är inte tillgänglig i den här vyn."; render(); return; }
+  S.exportMsg = "";
+  for (const k of kinds){
+    try { await dl.save({filename:`Lagerplatser_${names[k]}_${dag}.csv`, data:csv(exportRows(k))}); }
+    catch (e){ if (e && e.code === "declined") continue; S.exportMsg = "Exporten stoppades: " + ((e && e.message) || e); break; }
+  }
+  render();
+}
+VIEWS.data = {
+  mount(){
+    $("#main").innerHTML = `
+      <section class="sec"><h2>Läs in Rentman-export</h2>
+        <div class="panel stack">
+          <p style="margin:0">Välj en eller flera filer (.xlsx eller .csv). Programmet känner igen kolumnerna Kod, Namn, Mapp, Standard utrustningsgrupp, Type of equipment, Arkiverad och Serienummer. Serienummer och caseinnehåll kan ligga i egna blad eller filer: ett blad med Kod + Serienummer, eller Case-kod + Kod + Antal.</p>
+          <div class="drop"><input type="file" id="impfil" multiple accept=".xlsx,.xls,.csv,.tsv,.txt"></div>
+          <label class="row"><input type="checkbox" id="impvirt"> Ta med virtuella kombinationer (paket utan egen hyllplats)</label>
+          <div id="imppre"></div>
+        </div></section>
+      <section class="sec"><h2>Prioriteringslista</h2>
+        <div class="panel stack"><p style="margin:0" id="priotxt"></p>
+          <div class="drop"><input type="file" id="priofil" accept=".xlsx,.xls,.csv,.txt"></div>
+          <p class="muted" style="margin:0;font-size:.85rem">En kolumn med Rentman-ID i den ordning de ska komma i läget Fortsätt, efter alla case.</p></div></section>
+      <section class="sec"><h2>Exportera datablad</h2>
+        <div class="panel stack"><p style="margin:0">CSV-filer som öppnas i Google Sheets eller Numbers. Arkiverade och borttagna artiklar finns inte med.</p>
+          <div class="row"><button type="button" class="primary" data-exp="alla">Ladda ner alla fyra</button><button type="button" data-exp="placerade">Placerade</button><button type="button" data-exp="aterkom">Återkom</button><button type="button" data-exp="sorteras_ej">Sorteras ej</button><button type="button" data-exp="kartobjekt">Kartobjekt</button></div>
+          <p class="muted" id="expmsg" style="margin:0"></p></div></section>
+      <section class="sec"><h2>Nollställ inmatning</h2>
+        <div class="panel stack" id="wipebox"></div></section>`;
+    $("#impfil").addEventListener("change", async e => {
+      const files = [...e.target.files]; if (!files.length) return;
+      $("#imppre").innerHTML = `<p class="muted">Läser filerna…</p>`;
+      try {
+        const P = parseImport(await readSheets(files), {virtuella:$("#impvirt").checked});
+        S.importPrev = {...P, filer:files.map(f => f.name), wipe:!!S.meta.test}; S.importRes = null;
+      } catch (err){ S.importPrev = null; $("#imppre").innerHTML = `<p style="color:var(--danger)">${esc(err.message || err)}</p>`; return; }
+      render();
+    });
+    $("#priofil").addEventListener("change", async e => { const f = [...e.target.files]; if (f.length){ try { await importPrio(f); } catch (err){ S.fel = err.message || String(err); } render(); } });
+  },
+  update(){
+    const P = S.importPrev, el = $("#imppre");
+    if (P){
+      const sum = diffImport(P, P.wipe);
+      el.innerHTML = `<div class="tiles" style="margin:0"><div class="tile"><span>Artiklar i filen</span><b>${sum.antal}</b></div><div class="tile"><span>Nya</span><b>${sum.nya}</b></div><div class="tile"><span>Ändrade</span><b>${sum.andrade}</b></div><div class="tile"><span>Försvinner</span><b>${sum.borttagna}</b></div><div class="tile"><span>Case</span><b>${sum.case}</b></div><div class="tile"><span>Arkiverade</span><b>${sum.arkiverade}</b></div></div>
+        <pre class="log">${esc(P.log.join("\n"))}${P.skipped.virtuella ? `\n${P.skipped.virtuella} virtuella kombinationer hoppades över` : ""}${P.skipped.utanNamn ? `\n${P.skipped.utanNamn} rader utan namn hoppades över` : ""}${sum.nyaSerienr ? `\n${sum.nyaSerienr} nya serienummer på uppdelade artiklar` : ""}</pre>
+        <label class="row"><input type="checkbox" id="impwipe"${P.wipe ? " checked" : ""}> Ersätt allt: rensa alla gamla artiklar och all inmatning först${S.meta.test ? " (rekommenderas, nuvarande data är testdata)" : ""}</label>
+        <div class="row"><button type="button" class="primary" data-act="impgo"${P.busy ? " disabled" : ""}>${P.busy ? "Läser in…" : "Läs in " + sum.antal + " artiklar"}</button><button type="button" data-act="impcancel">Avbryt</button></div>`;
+      $("#impwipe").addEventListener("change", e => { S.importPrev = {...S.importPrev, wipe:e.target.checked}; render(); });
+    } else if (S.importRes){
+      const s = S.importRes;
+      el.innerHTML = `<p style="margin:0;color:var(--ok)"><b>Inläst.</b> ${s.antal} artiklar: ${s.nya} nya, ${s.andrade} ändrade, ${s.borttagna} borttagna eller arkiverade i Rentman.${s.nyaSerienr ? ` ${s.nyaSerienr} nya serienummer kommer upp i kön.` : ""}</p>`;
+    } else el.innerHTML = S.meta.importerad ? `<p class="muted" style="margin:0">Senast inläst ${esc(S.meta.importerad.slice(0, 16).replace("T", " "))} från ${esc(S.meta.kalla || "")}.</p>` : "";
+    $("#priotxt").innerHTML = `${S.prio.length} artiklar i listan${S.prioMeta.kalla ? `, från ${esc(S.prioMeta.kalla)}` : ""}. ${S.prio.filter(id => isActive(id)).length} av dem finns bland de inlästa artiklarna.`;
+    $("#expmsg").textContent = S.exportMsg || "";
+    const n = Object.keys(S.gg).length;
+    $("#wipebox").innerHTML = `<p style="margin:0">Raderar alla placeringar, statusar och instruktioner (${n} artiklar har inmatning). Artiklarna och kartan finns kvar.</p><div class="row">${S.confirmWipe ? `<button type="button" class="danger" data-act="wipe2">Ja, radera all inmatning</button><button type="button" data-act="wipeno">Avbryt</button>` : `<button type="button" class="danger" data-act="wipe"${n ? "" : " disabled"}>Radera all inmatning</button>`}</div>`;
+  }
+};
+
+/* ---------- Händelser ---------- */
+document.addEventListener("click", e => {
+  const t = e.target.closest("button, tr[data-kat]"); if (!t) return;
+  const d = t.dataset;
+  if (d.view){ if (d.view === "inmatning" && !S.mode) return; S.view = d.view; if (S.view === "inmatning" && !S.cur) gotoCurrent(); else render(); }
+  else if (d.mode) startMode(d.mode);
+  else if (d.kat != null) startMode("kategori", d.kat);
+  else if (d.open){ startMode("sok", d.open); }
+  else if (d.cmd){ ({spara:() => cmdSpara(), samma:cmdSamma, sorteras_ej:() => cmdSpara("sorteras_ej"), angra:cmdAngra, bak:cmdBak, fram:cmdFram, osaker:cmdOsaker, dela:cmdDela})[d.cmd](); }
+  else if (d.h != null && !t.closest("svg")) cmdHojd(+d.h);
+  else if (d.prm != null){ S.sel.splice(+d.prm, 1); render(); }
+  else if (d.hadd) hAdd(d.hadd);
+  else if (d.hrm) hRemove(d.hrm, S.hplats && S.hplats.objektId);
+  else if (d.tool){ S.edit.tool = d.tool; S.edit.draft = null; S.edit.confirmDel = false; if (d.tool !== "valj") S.edit.selId = null; render(); }
+  else if (d.osel){ S.edit.selId = d.osel; S.edit.tool = "valj"; S.edit.confirmDel = false; render(); }
+  else if (d.exp) doExport(d.exp === "alla" ? ["placerade", "aterkom", "sorteras_ej", "kartobjekt"] : [d.exp]);
+  else if (d.act){
+    const a = d.act;
+    if (a === "clearfel"){ S.fel = null; render(); }
+    else if (a === "hclear"){ S.hplats = null; render(); }
+    else if (a === "polydone") finishPoly();
+    else if (a === "polycancel"){ S.edit.draft = null; S.edit.tool = "valj"; render(); }
+    else if (a === "odel"){ S.edit.confirmDel = true; render(); }
+    else if (a === "odelno"){ S.edit.confirmDel = false; render(); }
+    else if (a === "odel2"){ const id = S.edit.selId; delete S.obj[id]; S.edit.selId = null; S.edit.confirmDel = false; invalidate(); write("kartobjekt/" + id, () => S.db.doc("kartobjekt/" + id).delete()); logg("ta_bort_objekt", null, {id}); }
+    else if (a === "impgo") applyImport();
+    else if (a === "impcancel"){ S.importPrev = null; render(); }
+    else if (a === "wipe"){ S.confirmWipe = true; render(); }
+    else if (a === "wipeno"){ S.confirmWipe = false; render(); }
+    else if (a === "wipe2"){ S.confirmWipe = false; const ids = Object.keys(S.gg); S.gg = {}; for (const id of ids) write("genomgang/" + id, () => S.db.doc("genomgang/" + id).delete()); logg("radera_inmatning", null, {antal:ids.length}); S.handled = new Set(); S.nav = []; S.navPos = null; invalidate(); }
+  }
+  if (t.tagName === "BUTTON") t.blur();
+});
+document.addEventListener("change", e => {
+  const t = e.target;
+  if (t.dataset.ph != null){ const p = S.sel[+t.dataset.ph]; if (p){ p.hojd = t.value === "" ? null : +t.value; renderMarks(); } }
+  if (t.dataset.pa != null){ const p = S.sel[+t.dataset.pa]; if (p) p.antal = t.value ? +t.value : null; }
+});
+document.addEventListener("keydown", e => {
+  const t = e.target, tag = t.tagName;
+  if (tag === "TEXTAREA" || tag === "SELECT" || (tag === "INPUT" && !["checkbox", "radio", "button"].includes(t.type)) || t.isContentEditable) return;
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  const v = S.view;
+  if (v === "karta"){
+    if (e.key === "Escape"){ S.edit.draft = null; if (S.edit.tool === "poly") S.edit.tool = "valj"; render(); }
+    else if (e.key === "Enter" && S.edit.tool === "poly"){ e.preventDefault(); finishPoly(); }
+    return;
+  }
+  if (v !== "inmatning" && v !== "hylla") return;
+  if (/^[0-9]$/.test(e.key)){ e.preventDefault(); cmdHojd(+e.key); return; }
+  if (v !== "inmatning") return;
+  const map = {Enter:() => cmdSpara(), " ":cmdSamma, Backspace:() => cmdSpara("sorteras_ej"), Escape:cmdAngra, ArrowLeft:cmdBak, ArrowRight:cmdFram};
+  if (map[e.key]){ e.preventDefault(); map[e.key](); }
+});
+window.addEventListener("resize", () => { if (S.vb) applyVB(); });
+
+/* ---------- Databasen ---------- */
+(async () => {
+  render();
+  let db = null;
+  try { db = await (window.claude && window.claude.use ? window.claude.use("db") : null); } catch (e){ db = null; }
+  if (!db){ S.dbState = "saknas"; S.loaded.art = true; render(); return; }
+  S.db = db; S.dbState = "ok";
+  const onErr = e => { S.fel = "Kontakten med databasen bröts (" + (e && e.code) + "). Ladda om sidan."; render(); };
+  db.collection("artiklar").onSnapshot(s => {
+    const art = {}; for (const d of s.docs){ const it = (d.data() || {}).items || {}; for (const id in it) art[id] = it[id]; }
+    S.art = art; S.loaded.art = true; invalidate();
+  }, onErr);
+  for (let k = 0; k < NSH_GG; k++){
+    db.collection("genomgang").where("shard", "==", k).limit(1000).onSnapshot(s => {
+      for (const ch of s.docChanges()){ if (ch.type === "removed") delete S.gg[ch.doc.id]; else S.gg[ch.doc.id] = ch.doc.data(); }
+      invalidate();
+    }, onErr);
+  }
+  db.collection("kartobjekt").limit(1000).onSnapshot(s => {
+    const drag = gest && gest.edit && S.edit.selId;
+    const o = {}; for (const d of s.docs) o[d.id] = d.data();
+    if (drag && S.obj[S.edit.selId]) o[S.edit.selId] = S.obj[S.edit.selId];
+    S.obj = o; invalidate();
+  }, onErr);
+  db.doc("config/meta").onSnapshot(d => { S.meta = (d.exists && d.data()) || {}; invalidate(); }, onErr);
+  db.doc("config/prioritet").onSnapshot(d => { const v = (d.exists && d.data()) || {}; S.prio = v.ids || []; S.prioMeta = v; invalidate(); }, onErr);
+  db.doc("config/karta").onSnapshot(d => { const v = (d.exists && d.data()) || {}; const h0 = mapH(); S.karta = {hojd:v.hojd || 700, raknare:v.raknare || {}}; if (mapH() !== h0) fit(); invalidate(); }, onErr);
+})();
+</script>
