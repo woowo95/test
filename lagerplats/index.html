@@ -391,25 +391,35 @@ function addPlace(p){
 const svgNS = "http://www.w3.org/2000/svg";
 const svg = document.createElementNS(svgNS, "svg");
 svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
-svg.innerHTML = '<g id="g-bg"></g><g id="g-obj"></g><g id="g-mk"></g><g id="g-draft"></g>';
+svg.innerHTML = '<g id="g-rot"><g id="g-bg"></g><g id="g-obj"></g><g id="g-mk"></g><g id="g-draft"></g></g>';
+const gRot = svg.querySelector("#g-rot");
+// Vridning av kartan (0/90/180/270°) gäller bara visningen och sparas per skärm i webbläsaren; koordinaterna i databasen är desamma.
+let ROT = 0;
+try { ROT = (+localStorage.getItem("lagerplats.vridning") || 0) % 360; } catch (e){ ROT = 0; }
+const rotV = ([x, y]) => ROT === 90 ? [-y, x] : ROT === 180 ? [-x, -y] : ROT === 270 ? [y, -x] : [x, y]; // karta → vy
+const unrotV = ([x, y]) => ROT === 90 ? [y, -x] : ROT === 180 ? [-x, -y] : ROT === 270 ? [-y, x] : [x, y]; // vy → karta
+const upright = (x, y, extra) => (ROT || extra) ? ` transform="rotate(${-ROT + (extra || 0)} ${x} ${y})"` : ""; // text som ska stå rätt på skärmen
 const mapbox = document.createElement("div"); mapbox.className = "mapbox";
-mapbox.innerHTML = '<div class="maptools"><button type="button" data-z="pan" title="Panorera med ett finger">Panorera</button><button type="button" data-z="in" aria-label="Zooma in">+</button><button type="button" data-z="out" aria-label="Zooma ut">−</button><button type="button" data-z="fit">Hela</button></div><div class="hbadge" hidden></div><div class="tip" hidden></div>';
+mapbox.innerHTML = '<div class="maptools"><button type="button" data-z="rot" title="Vrid kartan 90°">⟳ Vrid</button><button type="button" data-z="pan" title="Panorera med ett finger">Panorera</button><button type="button" data-z="in" aria-label="Zooma in">+</button><button type="button" data-z="out" aria-label="Zooma ut">−</button><button type="button" data-z="fit">Hela</button></div><div class="hbadge" hidden></div><div class="tip" hidden></div>';
 mapbox.appendChild(svg);
 const tip = $(".tip", mapbox), hbadge = $(".hbadge", mapbox);
 function mapH(){ return Math.max(100, +S.karta.hojd || 700); }
 function fit(){
   // Visa det som är ritat (eller hela ramen om kartan är tom), med lite luft runt om.
-  const os = Object.values(S.obj); let x1 = 0, y1 = 0, x2 = MAPW, y2 = mapH();
-  if (os.length){ const pts = os.flatMap(objPts); x1 = Math.min(...pts.map(p => p[0])); x2 = Math.max(...pts.map(p => p[0])); y1 = Math.min(...pts.map(p => p[1])); y2 = Math.max(...pts.map(p => p[1])); }
+  const os = Object.values(S.obj);
+  const pts = (os.length ? os.flatMap(objPts) : [[0, 0], [MAPW, 0], [MAPW, mapH()], [0, mapH()]]).map(rotV);
+  const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]), x1 = Math.min(...xs), x2 = Math.max(...xs), y1 = Math.min(...ys), y2 = Math.max(...ys);
   const m = Math.max(20, (x2 - x1) * 0.03);
   S.vb = {x:x1 - m, y:y1 - m, w:x2 - x1 + 2*m, h:y2 - y1 + 2*m};
   mapbox.style.setProperty("--map-ar", Math.min(2.2, Math.max(0.6, S.vb.w / S.vb.h)).toFixed(3)); applyVB();
 }
-function applyVB(){ const v = S.vb; svg.setAttribute("viewBox", `${v.x} ${v.y} ${v.w} ${v.h}`); renderMarks(); renderObjs(); }
+function applyVB(){ const v = S.vb; svg.setAttribute("viewBox", `${v.x} ${v.y} ${v.w} ${v.h}`); gRot.setAttribute("transform", ROT ? `rotate(${ROT})` : ""); renderBg(); renderMarks(); renderObjs(); }
 function scaleNow(){ const r = svg.getBoundingClientRect(); return Math.max(S.vb.w / (r.width || 1), S.vb.h / (r.height || 1)); }
-function toMap(cx, cy){ const pt = svg.createSVGPoint(); pt.x = cx; pt.y = cy; const ctm = svg.getScreenCTM(); if (!ctm) return {x:0, y:0}; const q = pt.matrixTransform(ctm.inverse()); return {x:q.x, y:q.y}; }
+function screenTo(el, cx, cy){ const pt = svg.createSVGPoint(); pt.x = cx; pt.y = cy; const ctm = el.getScreenCTM(); if (!ctm) return {x:0, y:0}; const q = pt.matrixTransform(ctm.inverse()); return {x:q.x, y:q.y}; }
+const toMap = (cx, cy) => screenTo(gRot, cx, cy);  // kartans koordinater (det som sparas)
+const toView = (cx, cy) => screenTo(svg, cx, cy);  // vyns koordinater (zoom och panorering)
 function zoomAt(f, cx, cy){
-  const p = toMap(cx, cy), v = S.vb;
+  const p = toView(cx, cy), v = S.vb;
   const nw = Math.min(Math.max(v.w * f, 40), MAPW * 4);
   const k = nw / v.w;
   S.vb = {x:p.x - (p.x - v.x) * k, y:p.y - (p.y - v.y) * k, w:nw, h:v.h * k}; applyVB();
@@ -420,6 +430,7 @@ mapbox.addEventListener("click", e => {
   if (b.dataset.z === "in") zoomAt(0.7, cx, cy);
   else if (b.dataset.z === "out") zoomAt(1 / 0.7, cx, cy);
   else if (b.dataset.z === "fit") fit();
+  else if (b.dataset.z === "rot"){ ROT = (ROT + 90) % 360; try { localStorage.setItem("lagerplats.vridning", String(ROT)); } catch (err){} fit(); renderDraft(); }
   else if (b.dataset.z === "pan"){ S.panMode = !S.panMode; b.classList.toggle("on", S.panMode); }
 });
 svg.addEventListener("wheel", e => {
@@ -449,7 +460,7 @@ svg.addEventListener("pointerdown", e => {
   if (ptrs.size === 2){
     clearTimeout(lpTimer);
     const [a, b] = [...ptrs.values()];
-    gest = {type:"pinch", d0:Math.hypot(a.x - b.x, a.y - b.y) || 1, m0:toMap((a.x + b.x) / 2, (a.y + b.y) / 2), vb0:{...S.vb}};
+    gest = {type:"pinch", d0:Math.hypot(a.x - b.x, a.y - b.y) || 1, m0:toView((a.x + b.x) / 2, (a.y + b.y) / 2), vb0:{...S.vb}};
     S.edit.draft = S.edit.tool === "poly" ? S.edit.draft : null; renderDraft();
     return;
   }
@@ -471,7 +482,7 @@ svg.addEventListener("pointermove", e => {
     const d = Math.hypot(a.x - b.x, a.y - b.y) || 1, v0 = gest.vb0;
     const w = Math.min(Math.max(v0.w * gest.d0 / d, 40), MAPW * 4), h = v0.h * w / v0.w;
     S.vb = {x:0, y:0, w, h}; svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
-    const mNow = toMap((a.x + b.x) / 2, (a.y + b.y) / 2);
+    const mNow = toView((a.x + b.x) / 2, (a.y + b.y) / 2);
     S.vb.x = gest.m0.x - mNow.x; S.vb.y = gest.m0.y - mNow.y; applyVB();
     return;
   }
@@ -537,7 +548,7 @@ function renderBg(){
   for (let x = 50; x < MAPW; x += 50) g += `<line class="gridl" x1="${x}" y1="0" x2="${x}" y2="${H}"/>`;
   for (let y = 50; y < H; y += 50) g += `<line class="gridl" x1="0" y1="${y}" x2="${MAPW}" y2="${y}"/>`;
   g += `<rect class="edge" x="0" y="0" width="${MAPW}" height="${H}"/>`;
-  if (!Object.keys(S.obj).length) g += `<text class="empty" x="${MAPW / 2}" y="${H / 2 - 14}" font-size="22">Ingen lagerkarta ritad ännu</text><text class="empty" x="${MAPW / 2}" y="${H / 2 + 16}" font-size="15">Klick sparas ändå som koordinater. Rita hyllor och zoner under Karta.</text>`;
+  if (!Object.keys(S.obj).length) g += `<g${upright(MAPW / 2, H / 2)}><text class="empty" x="${MAPW / 2}" y="${H / 2 - 14}" font-size="22">Ingen lagerkarta ritad ännu</text><text class="empty" x="${MAPW / 2}" y="${H / 2 + 16}" font-size="15">Klick sparas ändå som koordinater. Rita hyllor och zoner under Karta.</text></g>`;
   $("#g-bg", svg).innerHTML = g;
 }
 function renderObjs(){
@@ -548,25 +559,27 @@ function renderObjs(){
     if (o.form === "poly") h += `<polygon class="${cls}" style="${st}" points="${o.punkter.map(p => p.join(",")).join(" ")}"/>`;
     else h += `<rect class="${cls}" style="${st}" x="${o.x}" y="${o.y}" width="${o.w}" height="${o.h}"/>`;
     const pts = objPts(o), c = centroid(pts);
-    const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
+    const vp = pts.map(rotV), xs = vp.map(p => p[0]), ys = vp.map(p => p[1]); // mått som de syns på skärmen
     const bw = Math.max(...xs) - Math.min(...xs), bh = Math.max(...ys) - Math.min(...ys);
     const label = o.namn || o.id;
-    if (o.typ === "zon"){ // zonens namn i övre vänstra hörnet, så det inte hamnar under hyllorna
-      const fs = Math.max(5, Math.min(14, bh * 0.3, bw / Math.max(3, label.length) * 1.6)), x0 = Math.min(...xs), y0 = Math.min(...ys);
-      h += `<text class="olabel zl" x="${x0 + fs * 0.4}" y="${y0 + fs * 0.85}" font-size="${fs}">${esc(label)}</text>`;
+    if (o.typ === "zon"){ // zonens namn i övre vänstra hörnet (på skärmen), så det inte hamnar under hyllorna
+      const fs = Math.max(5, Math.min(14, bh * 0.3, bw / Math.max(3, label.length) * 1.6));
+      const [x0, y0] = unrotV([Math.min(...xs) + fs * 0.4, Math.min(...ys) + fs * 0.85]);
+      h += `<text class="olabel zl" x="${x0}" y="${y0}" font-size="${fs}"${upright(x0, y0)}>${esc(label)}</text>`;
       continue;
     }
     const upp = bh > bw * 1.4, [la, lb] = upp ? [bh, bw] : [bw, bh]; // smala stående hyllor får texten längs hyllan
     const fs = Math.max(4, Math.min(22, lb * 0.5, la / Math.max(3, label.length) * 1.7));
-    h += `<text class="olabel" x="${c.x}" y="${c.y}" font-size="${fs}"${upp ? ` transform="rotate(-90 ${c.x} ${c.y})"` : ""}>${esc(label)}</text>`;
+    h += `<text class="olabel" x="${c.x}" y="${c.y}" font-size="${fs}"${upright(c.x, c.y, upp ? -90 : 0)}>${esc(label)}</text>`;
   }
   $("#g-obj", svg).innerHTML = h;
 }
 function mkPoint(p, cls, tcls, label, dataSel){
   const R = S.vb ? S.vb.w / 70 : 14;
   const ds = dataSel != null ? ` data-sel="${dataSel}"` : "";
-  let h = `<circle class="${cls}"${ds} cx="${p.x}" cy="${p.y}" r="${R}"/><text class="${tcls}" x="${p.x}" y="${p.y}" font-size="${R * 1.05}">${esc(label)}</text>`;
-  if (p.hojd != null) h += `<text class="${tcls}" x="${p.x + R * 1.25}" y="${p.y - R * 1.1}" font-size="${R * 0.95}" style="fill:var(--ink)">${p.hojd === 0 ? "golv" : "p" + p.hojd}</text>`;
+  let h = `<circle class="${cls}"${ds} cx="${p.x}" cy="${p.y}" r="${R}"/><text class="${tcls}" x="${p.x}" y="${p.y}" font-size="${R * 1.05}"${upright(p.x, p.y)}>${esc(label)}</text>`;
+  if (p.hojd != null){ const [dx, dy] = unrotV([R * 1.25, -R * 1.1]), hx = p.x + dx, hy = p.y + dy;
+    h += `<text class="${tcls}" x="${hx}" y="${hy}" font-size="${R * 0.95}" style="fill:var(--ink)"${upright(hx, hy)}>${p.hojd === 0 ? "golv" : "p" + p.hojd}</text>`; }
   return h;
 }
 function mkPlace(p, label, dataSel, via){
