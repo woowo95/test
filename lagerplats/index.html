@@ -200,7 +200,7 @@ const S = {
   nav:[], navPos:null, handled:new Set(), forra:null,
   sokFras:"", hplats:null, hAntal:"", hSok:"",
   edit:{tool:"valj", selId:null, draft:null, confirmDel:false},
-  vb:null, panMode:false, saving:0, fel:null, importPrev:null, importRes:null, confirmWipe:false,
+  vb:null, panMode:false, riggPrev:null, riggRes:null, riggRak:true, saving:0, fel:null, importPrev:null, importRes:null, confirmWipe:false,
 };
 
 /* ---------- Skrivning med kö per dokument ---------- */
@@ -582,7 +582,7 @@ function newObjId(typ){
   n++; rk[p] = n; S.karta = {...S.karta, raknare:rk}; saveKarta();
   return p + n;
 }
-function saveKarta(){ const d = {hojd:mapH(), raknare:S.karta.raknare || {}}; write("config/karta", () => S.db.doc("config/karta").set(d)); }
+function saveKarta(){ const d = {hojd:mapH(), raknare:S.karta.raknare || {}, rigg:S.karta.rigg || null}; write("config/karta", () => S.db.doc("config/karta").set(d)); }
 function saveObj(o){ S.obj[o.id] = o; invalidate(); const d = clone(o); write("kartobjekt/" + o.id, () => S.db.doc("kartobjekt/" + o.id).set(d)); }
 function editorDown(e, p){
   const ed = S.edit, t = e.target;
@@ -895,18 +895,129 @@ function renderEditPanel(){
   bind("#o-typ", (ob, v) => { ob.typ = v; }); bind("#o-namn", (ob, v) => { ob.namn = v.trim(); }); bind("#o-farg", (ob, v) => { ob.farg = v; });
   bind("#o-x", (ob, v) => { ob.x = +v || 0; }); bind("#o-y", (ob, v) => { ob.y = +v || 0; }); bind("#o-w", (ob, v) => { ob.w = Math.max(5, +v || 5); }); bind("#o-h", (ob, v) => { ob.h = Math.max(5, +v || 5); });
 }
+/* ---------- Inläsning från Riggplaneraren ---------- */
+// Riggplaneraren ritar i meter med y nedåt; zon = polygon (pts), byggnad/tält = mittpunkt x,y, bredd w, djup h, vridning rot.
+const RIGGTYP = {zone:"zon", building:"hylla", tent:"skap"};
+function riggCorners(it){ const a = it.rot * Math.PI / 180, c = Math.cos(a), s = Math.sin(a);
+  return [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([u, v]) => { const lx = u * it.w / 2, ly = v * it.h / 2; return [it.x + lx * c - ly * s, it.y + lx * s + ly * c]; }); }
+function straightenZones(items){
+  // Hörn som ligger nästan i linje (inom 60 cm i x eller y) läggs på exakt samma linje, så sneda kanter från skissen blir raka och gemensamma kanter möts.
+  const refs = []; for (const it of items) if (it.pts) it.pts.forEach((p, i) => refs.push(p));
+  for (const ax of [0, 1]){
+    const srt = refs.slice().sort((a, b) => a[ax] - b[ax]);
+    for (let i = 0; i < srt.length;){
+      let j = i + 1; while (j < srt.length && srt[j][ax] - srt[i][ax] <= 0.6) j++;
+      const m = srt.slice(i, j).reduce((t, p) => t + p[ax], 0) / (j - i);
+      for (let k = i; k < j; k++) srt[k][ax] = Math.round(m * 100) / 100;
+      i = j;
+    }
+  }
+  for (const it of items) if (it.pts) it.pts = it.pts.filter((p, i, a) => { const q = a[(i + 1) % a.length]; return p[0] !== q[0] || p[1] !== q[1]; });
+}
+function riggParse(text, fil, straighten){
+  let d; try { d = JSON.parse(text); } catch (e){ throw new Error("Filen är inte en sparfil från Riggplaneraren"); }
+  const st = d && d.app === "Riggplaneraren" ? d.state : d, objs = st && st.area && st.area.objs;
+  if (!Array.isArray(objs)) throw new Error("Filen innehåller inget område från Riggplaneraren");
+  const items = [], ign = {};
+  for (const o of objs){
+    const typ = RIGGTYP[o.type];
+    if (!typ){ ign[o.type] = (ign[o.type] || 0) + 1; continue; }
+    if (o.type === "zone"){ if (Array.isArray(o.pts) && o.pts.length >= 3) items.push({riggId:o.id, typ, namn:(o.text || "").trim(), pts:o.pts.map(p => [+p[0], +p[1]])}); continue; }
+    let rot = (((+o.rot || 0) % 360) + 360) % 360;
+    if (straighten){ const r = Math.round(rot / 90) * 90; if (Math.abs(rot - r) <= 6) rot = r % 360; }
+    items.push({riggId:o.id, typ, namn:(o.text || "").trim(), x:+o.x, y:+o.y, w:+o.w || 1, h:+o.h || 1, rot});
+  }
+  if (straighten) straightenZones(items);
+  // Skala och nollpunkt bestäms vid första inläsningen och ligger sedan fast, så sparade klick inte flyttar sig.
+  let T = S.karta.rigg, ny = false;
+  const all = []; for (const it of items) for (const p of (it.pts || riggCorners(it))) all.push(p);
+  if (!all.length) throw new Error("Filen innehåller inga zoner, byggnader eller tält");
+  const xs = all.map(p => p[0]), ys = all.map(p => p[1]);
+  if (!T){ const x0 = Math.min(...xs) - 2, y0 = Math.min(...ys) - 2, span = Math.max(...xs) - x0 + 2;
+    T = {skala:Math.max(1, Math.min(20, Math.floor(MAPW / span))), x0:Math.round(x0 * 100) / 100, y0:Math.round(y0 * 100) / 100}; ny = true; }
+  const hojd = Math.max(ny && !Object.keys(S.obj).length ? 100 : mapH(), Math.ceil(((Math.max(...ys) - T.y0) + 2) * T.skala / 10) * 10);
+  const utanfor = Math.max(...xs) > T.x0 + MAPW / T.skala || Math.min(...xs) < T.x0 || Math.min(...ys) < T.y0;
+  const byRigg = {}; for (const o of Object.values(S.obj)) if (o.riggId != null) byRigg[o.riggId] = o;
+  const inFile = new Set(items.map(it => it.riggId));
+  const saknas = Object.values(byRigg).filter(o => !inFile.has(o.riggId));
+  return {fil, items, ign, T, ny, hojd, utanfor, straighten,
+    nya:items.filter(it => !byRigg[it.riggId]).length, upd:items.filter(it => byRigg[it.riggId]).length, saknas,
+    bredd:Math.round(Math.max(...xs) - Math.min(...xs)), djup:Math.round(Math.max(...ys) - Math.min(...ys))};
+}
+function riggGeo(it, T){
+  const P = ([mx, my]) => [r1((mx - T.x0) * T.skala), r1((my - T.y0) * T.skala)];
+  let pts = it.pts ? it.pts.map(P) : null;
+  if (!pts){
+    if (it.rot % 90 === 0){ const [w, h] = (it.rot / 90) % 2 ? [it.h, it.w] : [it.w, it.h], [cx, cy] = P([it.x, it.y]);
+      return {form:"rect", x:r1(cx - w * T.skala / 2), y:r1(cy - h * T.skala / 2), w:r1(w * T.skala), h:r1(h * T.skala)}; }
+    pts = riggCorners(it).map(P);
+  }
+  if (pts.length === 4 && pts.every((p, i) => { const q = pts[(i + 1) % 4]; return p[0] === q[0] || p[1] === q[1]; })){
+    const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]), x = Math.min(...xs), y = Math.min(...ys);
+    return {form:"rect", x, y, w:r1(Math.max(...xs) - x), h:r1(Math.max(...ys) - y)};
+  }
+  return {form:"poly", punkter:pts};
+}
+function riggApply(){
+  const R = S.riggPrev; if (!R) return;
+  const byRigg = {}; for (const o of Object.values(S.obj)) if (o.riggId != null) byRigg[o.riggId] = o;
+  S.karta = {...S.karta, hojd:R.hojd, rigg:{...R.T, fil:R.fil, importerad:nu()}};
+  for (const it of R.items){
+    const geo = riggGeo(it, R.T), old = byRigg[it.riggId];
+    if (old){
+      const o = clone(old); for (const k of ["x", "y", "w", "h", "punkter"]) delete o[k];
+      Object.assign(o, geo); if (it.namn) o.namn = it.namn;
+      saveObj(o);
+    } else saveObj({id:newObjId(it.typ), typ:it.typ, namn:it.namn, farg:TYPER[it.typ].farg, riggId:it.riggId, skapad:nu(), ...geo});
+  }
+  const kvar = [];
+  for (const o of R.saknas){ if (placeCount(o.id)) kvar.push(o.id); else { delete S.obj[o.id]; write("kartobjekt/" + o.id, () => S.db.doc("kartobjekt/" + o.id).delete()); } }
+  saveKarta(); logg("rigg_import", null, {fil:R.fil, nya:R.nya, upd:R.upd, borttagna:R.saknas.length - kvar.length});
+  S.riggRes = `Inläst från ${R.fil}: ${R.nya} nya objekt, ${R.upd} uppdaterade${R.saknas.length - kvar.length ? `, ${R.saknas.length - kvar.length} borttagna` : ""}.` +
+    (kvar.length ? ` ${kvar.join(", ")} finns inte längre i Riggplaneraren men har placeringar och ligger kvar. Ta bort dem för hand om de ska bort.` : "");
+  S.riggPrev = null; invalidate(); fit(); render(); renderRiggPanel();
+}
+function renderRiggPanel(){
+  const el = $("#riggpanel"); if (!el) return;
+  const R = S.riggPrev, T = S.karta.rigg;
+  let h = `<span class="lbl">Rita i Riggplaneraren</span>
+    <p style="margin:0;font-size:.88rem">Spara projektet i Riggplaneraren och välj filen här. Zoner blir zoner, byggnader blir hyllor och tält blir skåp. Läs in filen igen när du ritat mer: objekten uppdateras och placeringarna följer med.</p>
+    <input type="file" id="riggfil" accept=".json,application/json">
+    <label class="row" style="font-size:.88rem"><input type="checkbox" id="riggrak"${S.riggRak ? " checked" : ""}> Räta upp sneda linjer och vinklar</label>`;
+  if (R){
+    const ign = Object.entries(R.ign).map(([t, n]) => `${n} ${t}`).join(", ");
+    const cnt = t => R.items.filter(it => it.typ === t).length;
+    h += `<div style="font-size:.88rem"><b>${esc(R.fil)}</b><br>${cnt("zon")} zoner, ${cnt("hylla")} hyllor (byggnader), ${cnt("skap")} skåp (tält).<br>${R.nya} nya, ${R.upd} uppdateras${R.saknas.length ? `, ${R.saknas.length} finns inte längre i filen` : ""}.${ign ? `<br><span class="muted">Hoppar över: ${esc(ign)}.</span>` : ""}
+      <br><span class="muted">${R.ny ? `Skala 1 m = ${R.T.skala} enheter. Ritningen är ${R.bredd} × ${R.djup} m.` : `Samma skala som förra gången (1 m = ${R.T.skala}).`}</span>
+      ${R.utanfor ? `<br><span style="color:var(--warn)">En del ligger utanför kartans ursprungliga ram. Det fungerar, men syns först när du zoomar ut.</span>` : ""}</div>
+      <div class="row"><button type="button" class="primary" data-act="riggok">Läs in</button><button type="button" data-act="riggno">Avbryt</button></div>`;
+  } else if (S.riggRes) h += `<p style="margin:0;font-size:.88rem;color:var(--ok)">${esc(S.riggRes)}</p>`;
+  else if (T && T.fil) h += `<p class="muted" style="margin:0;font-size:.85rem">Senast inläst ${esc((T.importerad || "").slice(0, 10))} från ${esc(T.fil)}.</p>`;
+  el.innerHTML = h;
+  $("#riggrak", el).addEventListener("change", e => { S.riggRak = e.target.checked; });
+  $("#riggfil", el).addEventListener("change", async e => {
+    const f = e.target.files[0]; if (!f) return;
+    try { S.riggPrev = riggParse(await f.text(), f.name, S.riggRak); S.riggRes = null; }
+    catch (err){ S.riggPrev = null; S.riggRes = err.message || String(err); }
+    renderRiggPanel();
+  });
+}
+
 VIEWS.karta = {
   mount(){
     $("#main").innerHTML = `<div class="toolrow" id="tools"></div><div class="edit"><div style="min-width:0"><div id="mapslot"></div></div>
       <aside class="side"><div class="panel stack" id="epanel"></div>
+      <div class="panel stack" id="riggpanel"></div>
       <div class="panel"><div class="form"><label for="k-h">Kartans djup</label><span class="row" style="flex-wrap:nowrap"><input type="number" id="k-h" min="100" max="4000" step="10" value="${mapH()}"><span class="muted" style="font-size:.8rem">bredden är 1000</span></span></div></div>
       <div class="panel"><span class="lbl">Alla objekt</span><div class="objlist" id="olist"></div></div></aside></div>`;
     $("#mapslot").appendChild(mapbox);
     $("#k-h").addEventListener("change", e => { S.karta = {...S.karta, hojd:Math.min(4000, Math.max(100, +e.target.value || 700))}; saveKarta(); fit(); render(); });
     if (!S.vb) fit(); else applyVB();
+    renderRiggPanel();
   },
   update(){
-    const ed = S.edit;
+    const ed = S.edit, kh = $("#k-h");
+    if (kh && document.activeElement !== kh) kh.value = mapH();
     $("#tools").innerHTML = [["valj", "Välj och flytta"], ["hylla", "+ Hylla"], ["skap", "+ Skåp"], ["golvyta", "+ Golvyta"], ["pall", "+ Pall"], ["zon", "+ Zon (rektangel)"], ["poly", "+ Zon (fri form)"]]
       .map(([t, n]) => `<button type="button" data-tool="${t}" class="${ed.tool === t ? "on" : ""}">${n}</button>`).join("");
     $("#olist").innerHTML = objsSorted().slice().sort((a, b) => coll.compare(a.id, b.id)).map(o => `<button type="button" data-osel="${esc(o.id)}"${ed.selId === o.id ? ' style="background:var(--accent-soft)"' : ""}><span><b class="mono">${esc(o.id)}</b> ${esc(o.namn || "")}</span><span class="muted">${TYPER[o.typ].namn}</span></button>`).join("") || `<p class="muted">Inga objekt ännu. Välj en typ ovan och dra på kartan.</p>`;
@@ -1155,6 +1266,8 @@ document.addEventListener("click", e => {
     if (a === "clearfel"){ S.fel = null; render(); }
     else if (a === "hclear"){ S.hplats = null; render(); }
     else if (a === "polydone") finishPoly();
+    else if (a === "riggok") riggApply();
+    else if (a === "riggno"){ S.riggPrev = null; renderRiggPanel(); }
     else if (a === "polycancel"){ S.edit.draft = null; S.edit.tool = "valj"; render(); }
     else if (a === "odel"){ S.edit.confirmDel = true; render(); }
     else if (a === "odelno"){ S.edit.confirmDel = false; render(); }
@@ -1216,6 +1329,6 @@ window.addEventListener("resize", () => { if (S.vb) applyVB(); });
   }, onErr);
   db.doc("config/meta").onSnapshot(d => { S.meta = (d.exists && d.data()) || {}; invalidate(); }, onErr);
   db.doc("config/prioritet").onSnapshot(d => { const v = (d.exists && d.data()) || {}; S.prio = v.ids || []; S.prioMeta = v; invalidate(); }, onErr);
-  db.doc("config/karta").onSnapshot(d => { const v = (d.exists && d.data()) || {}; const h0 = mapH(); S.karta = {hojd:v.hojd || 700, raknare:v.raknare || {}}; if (mapH() !== h0) fit(); invalidate(); }, onErr);
+  db.doc("config/karta").onSnapshot(d => { const v = (d.exists && d.data()) || {}; const h0 = mapH(); S.karta = {hojd:v.hojd || 700, raknare:v.raknare || {}, rigg:v.rigg || null}; if (mapH() !== h0) fit(); invalidate(); }, onErr);
 })();
 </script>

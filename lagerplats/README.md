@@ -16,6 +16,10 @@ Programmet körs som en Claude-artifact: https://claude.ai/artifact/TFC2rzdhv9fs
 
 En plats är `{typ: "punkt" | "zon", objektId, x, y | polygon, hojd, antal}` i kartans koordinatsystem (x 0–1000, y 0–kartans djup). Platser "via case" lagras inte. De räknas fram från casets egna platser, så de följer med när caset flyttas.
 
+## Karta från Riggplaneraren
+
+Under Karta läses en sparfil från Riggplaneraren (`.json`) in. Zoner blir zoner, byggnader blir hyllor och tält blir skåp. Objekten får `riggId`, så en ny inläsning uppdaterar form och namn utan att placeringar tappar sitt objekt. Skala och nollpunkt (`config/karta.rigg`: `skala` enheter per meter, `x0`, `y0` i meter) sätts vid första inläsningen och ändras sedan inte. Rutan "Räta upp" lägger hörn som ligger inom 60 cm från varandra i x- eller y-led på samma linje och rätar vinklar som är högst 6° från 90°.
+
 ## Avvikelser från specifikationen
 
 - Platserna ligger i artikelns `genomgang`-dokument i stället för en egen samling `platser`, så att en artikel alltid sparas i en enda skrivning.
