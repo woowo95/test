@@ -1072,11 +1072,41 @@ async function loadXLSX(){
   if (window.XLSX) return;
   await new Promise((res, rej) => { const s = document.createElement("script"); s.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"; s.onload = res; s.onerror = () => rej(new Error("Kunde inte ladda Excel-läsaren")); document.head.appendChild(s); });
 }
+// CSV läses av en egen läsare: Rentmans export skriver tum-tecken (") i namn utan att dubbla dem, t.ex. "Subbas 2x18"";247;
+// Ett citattecken avslutar därför fältet bara när avgränsare eller radslut följer; "" före avgränsaren är ett tum-tecken plus fältets slut.
+function parseCSV(text){
+  text = text.replace(/^\ufeff/, "");
+  const first = text.slice(0, text.indexOf("\n") + 1 || text.length);
+  const cnt = c => first.split(c).length;
+  const d = [";", ",", "\t"].sort((a, b) => cnt(b) - cnt(a))[0];
+  const rows = []; let row = [], f = "", i = 0, q = false;
+  const end = c => c === d || c === "\n" || c === "\r" || c === undefined;
+  while (i < text.length){
+    const c = text[i];
+    if (q){
+      if (c === '"'){
+        if (text[i + 1] === '"' && end(text[i + 2])){ f += '"'; q = false; i += 2; continue; }
+        if (text[i + 1] === '"'){ f += '"'; i += 2; continue; }
+        if (end(text[i + 1])){ q = false; i++; continue; }
+        f += c; i++; continue; // citattecken mitt i texten
+      }
+      f += c; i++; continue;
+    }
+    if (c === '"' && f === ""){ q = true; i++; continue; }
+    if (c === d){ row.push(f); f = ""; i++; continue; }
+    if (c === "\r"){ i++; continue; }
+    if (c === "\n"){ row.push(f); rows.push(row); row = []; f = ""; i++; continue; }
+    f += c; i++;
+  }
+  if (f !== "" || row.length){ row.push(f); rows.push(row); }
+  return rows.filter(r => r.some(v => v !== ""));
+}
 async function readSheets(files){
-  await loadXLSX();
   const out = [];
   for (const f of files){
-    const wb = /\.(csv|txt|tsv)$/i.test(f.name) ? XLSX.read(await f.text(), {type:"string", raw:false}) : XLSX.read(await f.arrayBuffer(), {type:"array"});
+    if (/\.(csv|txt|tsv)$/i.test(f.name)){ out.push({fil:f.name, blad:"", rows:parseCSV(await f.text())}); continue; }
+    await loadXLSX();
+    const wb = XLSX.read(await f.arrayBuffer(), {type:"array"});
     for (const n of wb.SheetNames) out.push({fil:f.name, blad:n, rows:XLSX.utils.sheet_to_json(wb.Sheets[n], {header:1, defval:"", raw:false, blankrows:false})});
   }
   return out;
@@ -1084,11 +1114,12 @@ async function readSheets(files){
 const ALIAS = {
   id:["kod","id","rentman-id","rentman id","rentmanid","artikel-id","artikelid","artikelkod","code","nummer","number","artikelnummer","innehåll-kod","innehåll kod","innehåll-id","innehåll id"],
   namn:["namn","namn (i databasen)","name","displayname","benämning","artikel","artikelnamn"],
-  mapp:["mapp","namn (mapp)","folder","mappnamn","kategori","category"],
+  mapp:["path","mapp","namn (mapp)","mapp (mapp)","folder","mappnamn","kategori","category"],
   grupp:["standard utrustningsgrupp","utrustningsgrupp","grupp","equipment group","default equipment group"],
   typ:["type of equipment","typ","type","utrustningstyp"],
   arkiverad:["arkiverad","archived","arkiv"],
-  serienr:["serienummer","serienr","serial","serial number","serial numbers","serienummer (lista)"],
+  serienr:["serienummer","serienr","serial","serial number","serial numbers","serienummer (lista)","visa namn (serienummer)"],
+  serAktiv:["aktiv (serienummer)"],
   innehall:["innehåll","caseinnehåll","case-innehåll","contents","case contents"],
   caseId:["case-kod","case kod","case-id","case id","caseid","förälder","parent","i case"],
   antal:["antal","quantity","qty","antal i case"],
@@ -1122,21 +1153,21 @@ function parseImport(sheets, opt){
       for (const k of ["namn", "mapp", "grupp", "typ"]){ const v = cell(row, k); if (v && !a[k]) a[k] = v; }
       if (cols.arkiverad != null && yes(cell(row, "arkiverad"))) a.arkiverad = true;
       if (cols.arCase != null && yes(cell(row, "arCase"))) a.arCase = true;
-      for (const s of cell(row, "serienr").split(/[,;\n]+/)) if (s.trim()) a.serienr.add(s.trim());
+      if (cols.serAktiv == null || cell(row, "serAktiv") !== "0") for (const s of cell(row, "serienr").split(/[,;\n]+/)) if (s.trim()) a.serienr.add(s.trim());
       for (const part of cell(row, "innehall").split(/[,;\n]+/)){
         const m = part.trim().match(/^([^\s:x×*]+)\s*(?:[x×:*]\s*(\d+))?$/i); // "kod", "kod x 2" eller "kod:2"
         if (m){ a.innehall.set(normId(m[1]), +(m[2] || 1)); a.arCase = true; }
       }
       n++;
     }
-    log.push(`${sh.fil} / ${sh.blad}: ${n} rader`);
+    log.push(`${sh.fil}${sh.blad ? " / " + sh.blad : ""}: ${n} rader`);
   }
   const items = [], skipped = {virtuella:0, utanNamn:0};
   for (const a of A.values()){
     const t = a.typ.toLowerCase();
     if (!opt.virtuella && /virtual|virtuell/.test(t)){ skipped.virtuella++; continue; }
     if (!a.namn && !S.art[a.id]){ skipped.utanNamn++; continue; }
-    if (/^case$/.test(t) || a.innehall.size) a.arCase = true;
+    if (/^case$|physical combination|fysisk kombination/.test(t) || a.innehall.size) a.arCase = true;
     items.push(a);
   }
   return {items, log, skipped};
