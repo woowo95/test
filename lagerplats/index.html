@@ -295,7 +295,7 @@ function keyName(k){ const [id, ser] = splitKey(k); const a = S.art[id]; return 
 function objName(oid){ if (!oid) return "fri punkt"; const o = S.obj[oid]; return o ? (o.namn ? o.namn + " (" + oid + ")" : TYPER[o.typ].namn + " " + oid) : "borttaget objekt " + oid; }
 function placeText(p){
   let t = (p.typ === "zon" ? "Zon" + (p.objektId ? " i " : "") : "") + (p.typ === "zon" && !p.objektId ? "" : objName(p.objektId));
-  if (p.hojd != null) t += p.hojd === 0 ? " · golv" : " · plan " + p.hojd;
+  if (p.hojd != null) t += " · plan " + p.hojd;
   if (p.antal) t += " · " + p.antal + " st";
   return t;
 }
@@ -509,7 +509,10 @@ function endPtr(e){
   const p = toMap(e.clientX, e.clientY);
   if (S.view === "karta"){ editorUp(p, g); return; }
   const selEl = g.target.closest && g.target.closest("[data-sel]");
-  if (!g.moved && selEl && S.view === "inmatning"){ S.sel.splice(+selEl.dataset.sel, 1); render(); return; }
+  // Klick på en vald plats tar bort den, utom när en höjd är vald: då läggs en ny plats till på samma ställe (hyllplan ovanför varandra).
+  if (!g.moved && selEl && S.view === "inmatning" && S.hojd == null){ S.sel.splice(+selEl.dataset.sel, 1); render(); return; }
+  if (!g.moved && selEl && S.view === "inmatning"){ const q = S.sel[+selEl.dataset.sel];
+    if (q){ addPlace({...clone(q), hojd:S.hojd, antal:null}); return; } }
   if (!g.moved){
     const o = objectAt(p);
     addPlace({typ:"punkt", objektId:o ? o.id : null, x:r1(p.x), y:r1(p.y), hojd:S.hojd, antal:null});
@@ -579,7 +582,7 @@ function mkPoint(p, cls, tcls, label, dataSel){
   const ds = dataSel != null ? ` data-sel="${dataSel}"` : "";
   let h = `<circle class="${cls}"${ds} cx="${p.x}" cy="${p.y}" r="${R}"/><text class="${tcls}" x="${p.x}" y="${p.y}" font-size="${R * 1.05}"${upright(p.x, p.y)}>${esc(label)}</text>`;
   if (p.hojd != null){ const [dx, dy] = unrotV([R * 1.25, -R * 1.1]), hx = p.x + dx, hy = p.y + dy;
-    h += `<text class="${tcls}" x="${hx}" y="${hy}" font-size="${R * 0.95}" style="fill:var(--ink)"${upright(hx, hy)}>${p.hojd === 0 ? "golv" : "p" + p.hojd}</text>`; }
+    h += `<text class="${tcls}" x="${hx}" y="${hy}" font-size="${R * 0.95}" style="fill:var(--ink)"${upright(hx, hy)}>p${p.hojd}</text>`; }
   return h;
 }
 function mkPlace(p, label, dataSel, via){
@@ -595,12 +598,20 @@ function renderMarks(){
   if (S.view === "inmatning" && S.cur){
     const [id] = splitKey(S.cur);
     for (const v of viaCase(id)) for (const p of v.platser) h += mkPlace(p, "C", null, true);
-    S.sel.forEach((p, i) => { h += mkPlace(p, String(i + 1), i, false); });
+    // Platser på samma ställe (olika hyllplan) ritas bredvid varandra så att alla syns och går att trycka på; de sparas med samma koordinat.
+    const R = S.vb ? S.vb.w / 70 : 14, seen = [];
+    S.sel.forEach((p, i) => {
+      const c = p.typ === "zon" && p.polygon ? centroid(p.polygon) : p;
+      const k = seen.filter(q => Math.hypot(q.x - c.x, q.y - c.y) < R * 0.8).length; seen.push({x:c.x, y:c.y});
+      if (!k){ h += mkPlace(p, String(i + 1), i, false); return; }
+      const [dx, dy] = unrotV([k * R * 2.3, 0]);
+      h += mkPoint({x:c.x + dx, y:c.y + dy, hojd:p.hojd}, "mk", "mkt", String(i + 1), i);
+    });
   }
   if (S.view === "hylla" && S.hplats) h += mkPlace(S.hplats, "•", null, false);
   $("#g-mk", svg).innerHTML = h;
   hbadge.hidden = S.hojd == null || S.view === "karta";
-  if (S.hojd != null) hbadge.textContent = (S.hojd === 0 ? "Golv" : "Plan " + S.hojd) + " för nästa klick";
+  if (S.hojd != null) hbadge.textContent = "Plan " + S.hojd + " för nästa klick";
 }
 
 /* ---------- Kartredigering ---------- */
@@ -823,15 +834,15 @@ VIEWS.inmatning = {
         ${fv.length ? `<div class="forval">${fv.join("")}</div>` : ""}
         <div class="counters"><span>Läge <b>${esc(MODNAMN[S.mode])}${S.mode === "kategori" ? ": " + esc(S.kategori) : ""}</b></span><span>Klara <b>${c.placerad + c.viacase + c.sorteras_ej} / ${c.total}</b></span><span>Återkom <b>${c.aterkom}</b></span><span>Kvar i läget <b>${S.navPos != null ? "bläddrar bakåt" : qAll.length}</b></span></div>`;
     }
-    $("#heights").innerHTML = `<span class="lbl" style="margin:0 6px 0 0">Höjd för nästa klick</span>` + Array.from({length:10}, (_, i) => `<button type="button" data-h="${i}" class="${S.hojd === i ? "on" : ""}" title="${i === 0 ? "Golv" : "Hyllplan " + i}">${i}</button>`).join("");
+    $("#heights").innerHTML = `<span class="lbl" style="margin:0 6px 0 0">Höjd för nästa klick</span>` + Array.from({length:10}, (_, i) => `<button type="button" data-h="${i}" class="${S.hojd === i ? "on" : ""}" title="${i === 0 ? "Plan 0 (golvet)" : "Plan " + i}">${i}</button>`).join("");
     $("#osakerBtn").classList.toggle("on", S.osaker);
     const vcl = k ? viaCase(splitKey(k)[0]) : [];
     $("#places").innerHTML = (vcl.map(v => `<li class="via"><span class="pin c">C</span><span>via case ${esc(S.art[v.caseId] ? S.art[v.caseId].namn : v.caseId)}<br><small class="muted">${esc(v.platser.map(placeText).join(", "))}</small></span><span class="muted" style="font-size:.8rem">${v.antal || 1} st</span></li>`).join("")) +
       (S.sel.map((p, i) => `<li><span class="pin">${i + 1}</span><span>${esc(placeText({...p, hojd:null, antal:null}))}${p.typ === "zon" ? "" : `<br><small class="muted mono">${p.x}, ${p.y}</small>`}</span><span class="ctl">
-        <select data-ph="${i}" aria-label="Höjd"><option value="">–</option>${Array.from({length:10}, (_, n) => `<option value="${n}"${p.hojd === n ? " selected" : ""}>${n === 0 ? "golv" : "p" + n}</option>`).join("")}</select>
+        <select data-ph="${i}" aria-label="Höjd"><option value="">–</option>${Array.from({length:10}, (_, n) => `<option value="${n}"${p.hojd === n ? " selected" : ""}>p${n}</option>`).join("")}</select>
         <input type="number" min="1" inputmode="numeric" data-pa="${i}" value="${p.antal || ""}" placeholder="st" aria-label="Antal">
         <button type="button" data-prm="${i}" aria-label="Ta bort plats">✕</button></span></li>`).join("")) ||
-      `<li class="muted" style="border:none;display:block">Klicka på kartan för en plats, dra för en zon. Enter utan plats = Återkom.</li>`;
+      `<li class="muted" style="border:none;display:block">Klicka på kartan för en plats, dra för en zon. Ligger artikeln på flera hyllplan: välj siffra och klicka på samma ställe igen. Enter utan plats = Återkom.</li>`;
     const nq = queue(4).filter(x => x !== k).slice(0, 3);
     $("#nextq").innerHTML = S.navPos != null ? `<li class="muted">Du bläddrar bakåt. Framåt → går tillbaka.</li>` : (nq.map(x => `<li>${esc(keyName(x))}</li>`).join("") || `<li class="muted">Inga fler</li>`);
     $("#hist").innerHTML = S.nav.slice(-3).reverse().map(x => { const r = rec(x); return `<li>${esc(keyName(x))}<br><small class="muted">${r ? esc(r.status === "placerad" ? ((r.platser || []).map(placeText).join(", ") || "via case") : STATUSNAMN[r.status]) : ""}</small></li>`; }).join("") || `<li class="muted">Inget ännu</li>`;
