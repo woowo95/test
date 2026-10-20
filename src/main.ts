@@ -6,7 +6,7 @@ import {
   foodDays, timeLabel, temperature, serialize, compact, stat, migrate, hearthOf, igniterOf, fireHeat, heatRadius, fireWant, emberOn,
   ITEM_NAMES, FireLog, coverOf, groundOf, SEDER, SED_INFO, Sed, influence, duty, habitShare, habitTotal, Act,
   richness, stoneDist, Kind, KUNSKAP_NAMES, describe, Lardom, STUBBE_LIV,
-  zoneOf, pilesOf, inZone, STACK, STACK_ORDER, STACK_NAMES, amountOf, capacity, load, carryKind, Pile,
+  zoneOf, pilesOf, groundPiles, inZone, STACK_ORDER, STACK_NAMES, amountOf, capacity, load, carryKind, Pile, OUT_WEAR,
 } from './sim';
 import { HIGH, BAR, FOREST } from './sim/vag';
 
@@ -22,7 +22,8 @@ let speed = 1;
 let selected: number | undefined;
 let busy = false; // ikappräkning pågår
 let db: any = null, uid: string | null = null;
-let tab: 'folk' | 'logg' | 'person' | 'eld' | 'lager' | 'seder' = 'folk';
+let tab: 'folk' | 'logg' | 'person' | 'eld' | 'lager' | 'hog' | 'seder' = 'folk';
+let hogAt = { x: 0, y: 0 }; // rutan med högar utanför lagret som visas i panelen
 
 // ---------- sparning ----------
 function saveLocal() {
@@ -217,7 +218,10 @@ function drawPile(pl: Pile) {
   const spot = (i: number) => ({ x: x0 + 3 + (i % 3) * 4, y: y0 + 11 - Math.floor(i / 3) * 4 });
   for (let i = 0; i < n; i++) {
     const { x, y } = spot(i);
-    if (pl.k === 'mat') g.beginFill(i % 2 ? 0xa8463a : 0xc58b3e).drawRect(x, y, 4, 3).endFill();
+    if (pl.k === 'bar') g.beginFill(i % 2 ? 0xa8463a : 0xc58b3e).drawRect(x, y, 4, 3).endFill();
+    else if (pl.k === 'kott') g.beginFill(0x8e2f2a).drawRoundedRect(x, y, 4, 3, 1).endFill().beginFill(0xe8d8c0).drawRect(x + 3, y + 1, 1.5, 1).endFill();
+    else if (pl.k === 'fisk') g.beginFill(0x9fb4bf).drawEllipse(x + 2, y + 1.5, 2.2, 1.1).endFill().beginFill(0x9fb4bf).drawPolygon([x + 4, y + 1.5, x + 5.5, y + 0.3, x + 5.5, y + 2.7]).endFill();
+    else if (pl.k === 'svamp') g.beginFill(0xe7dcc4).drawRect(x + 1.5, y + 1.5, 1, 2).endFill().beginFill(0x9a6a3a).drawEllipse(x + 2, y + 1.3, 2, 1.2).endFill();
     else if (pl.k === 'ved') g.beginFill(0x6f4a2a).drawRoundedRect(x - 1, y, 6, 3, 1.5).endFill().beginFill(0xc9a46a).drawCircle(x - 0.5, y + 1.5, 1).endFill();
     else if (pl.k === 'grenar' || pl.k === 'pinnar') g.lineStyle(1, pl.k === 'grenar' ? 0x7a5a36 : 0x9a7a4e).moveTo(x - 1, y + 3).lineTo(x + 5, y).moveTo(x, y).lineTo(x + 4, y + 3).lineStyle(0);
     else if (pl.k === 'torrgras') g.lineStyle(1, 0xd8c070).moveTo(x, y + 3).lineTo(x - 1, y - 1).moveTo(x + 2, y + 3).lineTo(x + 2, y - 2).moveTo(x + 4, y + 3).lineTo(x + 5, y - 1).lineStyle(0);
@@ -234,7 +238,8 @@ function drawStructures(t: number) {
   // lagerplatsen: en ram runt rutorna, och en stack per ruta
   const z = zoneOf(s);
   structG.beginFill(0x5b4a35, 0.22).lineStyle(1, tab === 'lager' ? 0xffffff : 0x5b4a35, tab === 'lager' ? 0.9 : 0.5).drawRoundedRect(z.x * TS + 0.5, z.y * TS + 0.5, z.w * TS - 1, z.h * TS - 1, 3).endFill().lineStyle(0);
-  for (const pl of pilesOf(s)) if (pl.x >= 0) drawPile(pl);
+  for (const pl of pilesOf(s)) drawPile(pl);
+  for (const pl of groundPiles(s)) drawPile(pl);
   // stubbar: bleknar medan de ruttnar bort
   for (const k of s.stubbar ?? []) {
     const a = 1 - (s.now - k.t) / STUBBE_LIV, x = k.x * TS + TS * 0.65, y = k.y * TS + TS * 0.6;
@@ -374,7 +379,7 @@ function fireAt(gx: number, gy: number) {
 app.stage.on('pointertap', e => {
   if (drag && drag.moved > 6) return;
   const p = personAt(e.global.x, e.global.y);
-  if (p) selectPerson(p.id); else if (fireAt(e.global.x, e.global.y)) { tab = 'eld'; renderPanel(true); } else if (storeAt(e.global.x, e.global.y)) { tab = 'lager'; renderPanel(true); }
+  if (p) selectPerson(p.id); else if (fireAt(e.global.x, e.global.y)) { tab = 'eld'; renderPanel(true); } else if (storeAt(e.global.x, e.global.y)) { tab = 'lager'; renderPanel(true); } else { const c = tileAt(e.global.x, e.global.y); if (outPilesAt(c.x, c.y).length) { hogAt = c; tab = 'hog'; renderPanel(true); } }
 });
 app.stage.on('pointermove', e => {
   if (drag && (e.buttons & 1 || e.pointerType === 'touch')) {
@@ -384,7 +389,7 @@ app.stage.on('pointermove', e => {
     return;
   }
   showHover(e.global.x, e.global.y);
-  hovered = personAt(e.global.x, e.global.y)?.id; (app.view as HTMLCanvasElement).style.cursor = hovered || fireAt(e.global.x, e.global.y) || storeAt(e.global.x, e.global.y) ? 'pointer' : 'grab';
+  hovered = personAt(e.global.x, e.global.y)?.id; (app.view as HTMLCanvasElement).style.cursor = hovered || fireAt(e.global.x, e.global.y) || storeAt(e.global.x, e.global.y) || outPilesAt(tileAt(e.global.x, e.global.y).x, tileAt(e.global.x, e.global.y).y).length ? 'pointer' : 'grab';
 });
 (app.view as HTMLCanvasElement).addEventListener('wheel', e => { e.preventDefault(); const r = (app.view as HTMLCanvasElement).getBoundingClientRect(); zoomAt(e.deltaY < 0 ? 1.15 : 1 / 1.15, e.clientX - r.left, e.clientY - r.top); }, { passive: false });
 $('zIn').addEventListener('click', () => zoomAt(1.4));
@@ -396,6 +401,9 @@ function selectPerson(id: number) { selected = id; tab = 'person'; renderPanel(t
 // ---------- rutan i hörnet: vad som finns under musen ----------
 const RICH_WORD = (v: number) => v >= 0.7 ? 'gott om' : v >= 0.35 ? 'en del' : v >= 0.1 ? 'lite' : 'nästan inget';
 const fmtN = (n: number) => n >= 10 || Number.isInteger(n) ? String(Math.round(n)) : n.toFixed(1).replace('.', ',');
+// högar utanför lagret på en ruta: det som inte fick plats och det som lagts på marken
+const outPilesAt = (x: number, y: number) => [...pilesOf(s), ...groundPiles(s)].filter(q => q.out && q.x === x && q.y === y);
+function tileAt(gx: number, gy: number) { const w = world.toLocal(new PIXI.Point(gx, gy)); return { x: Math.floor(w.x / TS), y: Math.floor(w.y / TS) }; }
 function storeAt(gx: number, gy: number) { const w = world.toLocal(new PIXI.Point(gx, gy)); return inZone(zoneOf(s), Math.floor(w.x / TS), Math.floor(w.y / TS)); }
 function showHover(gx: number, gy: number) {
   const box = $('hoverBox'), w = world.toLocal(new PIXI.Point(gx, gy));
@@ -416,9 +424,11 @@ function showHover(gx: number, gy: number) {
   const near = (a: { x: number; y: number }, wd = 1, ht = 1) => x >= a.x && x < a.x + wd && y >= a.y && y < a.y + ht;
   if (near(m.fire)) rows.push(`Elden (${s.fire.lit ? 'brinner' : emberOn(s) ? 'glöder' : 'släckt'})`);
   if (inZone(zoneOf(s), x, y)) {
-    const pl = pilesOf(s).find(q => q.x === x && q.y === y);
+    const pl = pilesOf(s).find(q => q.x === x && q.y === y && !q.out);
     rows.push(`<b>Lagerplats</b> · ${pl ? `${STACK_NAMES[pl.k]}: ${fmtN(pl.n)} av ${pl.max}` : 'tom ruta'}`);
   }
+  const ute = outPilesAt(x, y);
+  if (ute.length) rows.push(`<b>${ute.some(q => q.out === 'mark') ? 'På marken' : 'Bredvid lagret'}</b> · ${ute.map(q => `${STACK_NAMES[q.k]}: ${fmtN(q.n)}`).join(', ')}`);
   const log = (s.stockar ?? []).find(k => Math.floor(k.x) === x && Math.floor(k.y) === y);
   if (log) rows.push(`Fällt träd, ca ${Math.ceil(log.ved)} ved kvar`);
   if ((s.stubbar ?? []).some(k => k.x === x && k.y === y)) rows.push('Stubbe efter ett fällt träd');
@@ -520,8 +530,8 @@ function knowledgeHtml(p: Person) {
 function renderPanel(force = false) {
   // elden har ingen egen flik: den öppnas genom att klicka på elden, och visas då i personfliken
   for (const b of document.querySelectorAll<HTMLButtonElement>('.tabs button')) {
-    b.setAttribute('aria-selected', String(b.dataset.tab === tab || ((tab === 'eld' || tab === 'lager') && b.dataset.tab === 'person')));
-    if (b.dataset.tab === 'person') b.textContent = tab === 'eld' ? 'Elden' : tab === 'lager' ? 'Lagret' : 'Person';
+    b.setAttribute('aria-selected', String(b.dataset.tab === tab || ((tab === 'eld' || tab === 'lager' || tab === 'hog') && b.dataset.tab === 'person')));
+    if (b.dataset.tab === 'person') b.textContent = tab === 'eld' ? 'Elden' : tab === 'lager' ? 'Lagret' : tab === 'hog' ? 'Högen' : 'Person';
   }
   const ppl = living(s);
   $('sPop').textContent = String(ppl.length);
@@ -545,6 +555,8 @@ function renderPanel(force = false) {
     box.innerHTML = fireHtml();
   } else if (tab === 'lager') {
     box.innerHTML = storeHtml();
+  } else if (tab === 'hog') {
+    box.innerHTML = heapHtml();
   } else if (tab === 'seder') {
     box.innerHTML = sederHtml();
   } else {
@@ -601,16 +613,25 @@ function carryTxt(p: Person) {
   const orkar = `orkar bära ${Math.round(cap * 100)} % av en full stack`;
   return parts.length ? `Bär ${parts.join(' och ')} (${Math.round(load(t!) / cap * 100)} % av vad hen orkar)` : `Bär inget just nu, ${orkar}`;
 }
-// lagret: öppnas genom att trycka på lagerplatsen på kartan
+// lagret: öppnas genom att trycka på lagerplatsen på kartan. Det som ligger utanför visas när man trycker på det
 function storeHtml() {
-  const z = zoneOf(s), ps = pilesOf(s), ute = ps.filter(p => p.x < 0).length;
-  const rows = STACK_ORDER.map(k => ({ k, n: amountOf(s, k), st: ps.filter(p => p.k === k).length })).filter(r => r.st > 0);
+  const ps = pilesOf(s).filter(p => !p.out), ute = pilesOf(s).length - ps.length + groundPiles(s).length;
+  const rows = STACK_ORDER.map(k => ({ k, n: ps.filter(p => p.k === k).reduce((a, p) => a + p.n, 0), st: ps.filter(p => p.k === k).length })).filter(r => r.st > 0);
   const bar = living(s).filter(p => p.task && (p.task.carry > 0.05 || p.task.items));
   return `
-    <div class="phead"><div><h2>Lagret</h2><p class="muted">Lagerplatsen är ${z.w} × ${z.h} rutor och rymmer ${z.w * z.h} stackar. ${ps.length} används.${ute ? ` ${ute} stackar får inte plats och ligger bredvid.` : ''} Byn gör den större när den blir full och mindre när den står tom.</p></div></div>
-    <h3>Stackar</h3>${rows.length ? `<dl class="kv">${rows.map(r => `<dt>${STACK_NAMES[r.k]}</dt><dd><span>${fmtN(r.n)} i ${r.st} ${r.st === 1 ? 'stack' : 'stackar'} (en full stack är ${STACK[r.k]})</span></dd>`).join('')}</dl>` : '<p class="muted">Lagret är tomt.</p>'}
-    <h3>På väg med saker</h3>${bar.length ? `<ul class="rels">${bar.map(p => `<li>${pLink(p)}<span class="muted">${esc(carryTxt(p))}</span></li>`).join('')}</ul>` : '<p class="muted">Ingen bär något just nu.</p>'}
-    <p class="muted">En full stack är vad en normalstark vuxen bär utan hjälpmedel. Starka bär mer, barn och svaga mindre. Den som har fullt går hem och lägger ner bördan.</p>`;
+    <div class="phead"><div><h2>Lagret</h2><p class="muted">Byn gör lagerplatsen större när den blir full och mindre när den står tom.${ute ? ' Det som ligger utanför slits fortare.' : ''}</p></div></div>
+    <h3>Stackar</h3>${rows.length ? `<dl class="kv">${rows.map(r => `<dt>${STACK_NAMES[r.k]}</dt><dd><span>${fmtN(r.n)}${r.st > 1 ? ` i ${r.st} stackar` : ''}</span></dd>`).join('')}</dl>` : '<p class="muted">Lagret är tomt.</p>'}
+    <h3>På väg med saker</h3>${bar.length ? `<ul class="rels">${bar.map(p => `<li>${pLink(p)}<span class="muted">${esc(carryTxt(p))}</span></li>`).join('')}</ul>` : '<p class="muted">Ingen bär något just nu.</p>'}`;
+}
+// en hög utanför lagret
+function heapHtml() {
+  const ps = outPilesAt(hogAt.x, hogAt.y), mark = ps.some(p => p.out === 'mark');
+  if (!ps.length) return '<p class="muted">Här ligger inget längre.</p>';
+  const who = living(s).filter(p => p.task?.act === 'bara' && Math.floor(p.task.tx) === hogAt.x && Math.floor(p.task.ty) === hogAt.y);
+  return `
+    <div class="phead"><div><h2>${mark ? 'På marken' : 'Bredvid lagret'}</h2><p class="muted">${mark ? 'Lades ner av någon som kallades bort till något annat.' : 'Fick inte plats i lagret.'} Slits ${OUT_WEAR} gånger fortare än i lagret.</p></div></div>
+    <dl class="kv">${ps.map(p => `<dt>${STACK_NAMES[p.k]}</dt><dd><span>${fmtN(p.n)}</span></dd>`).join('')}</dl>
+    ${mark ? `<p class="muted">${who.length ? `${who.map(p => pLink(p)).join(', ')} är på väg för att bära in det.` : 'Ingen har gått för att bära in det ännu.'}</p>` : ''}`;
 }
 function fireHtml() {
   const f = s.fire, h = hearthOf(f), now = s.now, ig = igniterOf(s);

@@ -6,6 +6,7 @@ import { temperature } from './vader';
 import { freeSpears, sharpTool, wantsSpear } from './redskap';
 import { areaOf, flintArea, pickSpot, prospectFor } from './minne';
 import { getMap } from './karta';
+import { groundTarget } from './lager';
 import { isForest, tread } from './mark';
 import { axeTask } from './skog';
 import { duty, dygn, habitShare, habitTotal } from './seder';
@@ -103,7 +104,9 @@ export function chooseTask(s: State, p: Person, live: boolean) {
   else if (p.warm < 0.4 + 0.15 * lazy && lit) set('varma', 'Fryser');
   else if (p.rest < (light ? 0.15 : 0.12) + 0.2 * lazy) set('vila', 'Är trött');
   else if (light) {
+    const gt = a >= 10 && s.marken?.length ? groundTarget(s) : undefined;
     if (a < 8) set('leka', 'Är barn och leker');
+    else if (gt && rnd(s) < 0.4) { set('bara', 'Det ligger saker på marken som ska in i lagret'); spot = gt; dur = 3 * HOUR; }
     else {
       const fd = foodDays(s), wd = woodDays(s), ai = ageIndex(s);
       const fs = 1 + 0.25 * sd.forsiktighet; // en försiktig by vill ha större förråd
@@ -186,7 +189,10 @@ export function chooseTask(s: State, p: Person, live: boolean) {
       const r = rnd(s);
       const story = (p.skill.berattande + (a > 50 ? 6 : 0)) / 40;
       const craft = (p.skill.hantverk + stat(p, 'flit', s.now)) / 70;
-      if (a < 8) { if (r < 0.6) set('samtal', 'Mörkt, sitter med de vuxna vid elden'); else set('sova', 'Barn sover på natten'); }
+      // på natten håller man sig vid lägret; de modiga går lite längre ut i mörkret för att bära in saker
+      const near = 2 + stat(p, 'mod', now) / 20 * 8, gt = a >= 12 && s.marken?.length ? groundTarget(s, near) : undefined;
+      if (gt && r < 0.35) { set('bara', near > 6 ? 'Mörkt, men är modig och bär in saker som ligger ute' : 'Mörkt, bär in saker som ligger nära lägret'); spot = gt; dur = 2 * HOUR; }
+      else if (a < 8) { if (r < 0.6) set('samtal', 'Mörkt, sitter med de vuxna vid elden'); else set('sova', 'Barn sover på natten'); }
       else if (r < story) set('beratta', 'Mörkt, berättar för de andra vid elden');
       else if (r < story + craft) set('hantverk', 'Mörkt, gör handarbete vid elden');
       else if (r < 0.9) set('samtal', 'Mörkt, umgås vid elden');

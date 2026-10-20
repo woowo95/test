@@ -1,8 +1,8 @@
 import { rotStumps } from './skog';
-import { capacity, carryKind, dropSpot, load, storeLoad, tidyStore } from './lager';
+import { addFood, capacity, dropSpot, homeKind, load, pickUp, storeLoad, takeFood, tidyStore, wearStore } from './lager';
 import { makeSpear, wearSpear } from './redskap';
 import { foodDays, workRate } from './ekonomi';
-import { GIFT, TRY_SEC, eatPoison, growFynd, handFish, packFynd, pickMushrooms, richness, takeFrom } from './fynd';
+import { TRY_SEC, eatPoison, growFynd, handFish, packFynd, pickMushrooms, richness, takeFrom } from './fynd';
 import { coldOf, temperature } from './vader';
 import { addFuel, addItems, canLight, fireWant, forageItems, fuelStock, hearthOf, heatAt, igniterOf, stepFire, takeCoal, takeFuel, tryLight } from './eld';
 import { ageOf, alive, living, log, stat, think } from './folk';
@@ -33,9 +33,7 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
   const ppl = living(s);
   const light = isLight(now);
   // förråd: ruttning och ved
-  const rot = Math.exp(-0.003 * (1 + s.food / 250) / 3600 * dtSec * (ai === 0 ? 0.5 : 1));
-  s.food = Math.max(0, s.food * rot);
-  if (s.items[GIFT]) s.items[GIFT] *= rot;
+  wearStore(s, dtSec, ai); // slitage per slag, fortare utanför lagret
   stepFire(s, dtSec, live, ppl);
   const fh = hearthOf(s.fire), coldRate = coldOf(temperature(s));
   const learn = 1 + 0.1 * s.seder.v.nyfikenhet; // en nyfiken by lär sig snabbare
@@ -66,7 +64,7 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
     if (p.toa <= 0) { p.toa = 1; if (a >= 3) think(p, 'Kissade på sig', -0.12, now, 4 * HOUR); }
     if (p.hunger < 0.45 && s.food >= 0.3) { // en hel portion, eller det som finns kvar
       const full = a < 10 ? 0.6 : 1, portion = Math.min(full, s.food);
-      s.food -= portion; p.hunger = clamp(p.hunger + 0.55 * portion / full, 0, 1); eatPoison(s, p);
+      takeFood(s, portion); p.hunger = clamp(p.hunger + 0.55 * portion / full, 0, 1); eatPoison(s, p);
     }
     // hälsa
     if (p.hunger <= 0) { p.health -= dtSec / (5 * 3600); if (rnd(s) < dtSec / 7200) think(p, 'Svälter', -0.25, now, 3 * HOUR); }
@@ -96,10 +94,11 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
     const lightDone = t?.act === 'tanda' && (s.fire.lit || !canLight(s));
     const mustGo = t && p.toa < 0.08 && t.act !== 'toa' && a >= 3; // nöden avbryter det man håller på med
     if (!t || (t.until < now && t.phase !== 'back') || ((phaseFlip || mustGo) && t.phase !== 'back') || lightDone) {
-      if (t && (t.carry > 0 || t.items) && t.act !== 'elda' && live) { t.phase = 'back'; const d = dropSpot(s, carryKind(t.act)); t.tx = d.x + (rnd(s) - 0.5) * 0.4; t.ty = d.y + (rnd(s) - 0.5) * 0.4; }
+      if (t && (t.carry > 0 || t.items) && t.act !== 'elda' && live) { t.phase = 'back'; const d = dropSpot(s, homeKind(t)); t.tx = d.x + (rnd(s) - 0.5) * 0.4; t.ty = d.y + (rnd(s) - 0.5) * 0.4; }
       else chooseTask(s, p, live);
     }
     const tk = p.task!;
+    if (!live && tk.act === 'bara' && tk.phase === 'do' && tk.until > now) { pickUp(s, p, tk); storeLoad(s, tk); tk.until = now; }
     if (live) {
       if (tk.phase === 'go' || tk.phase === 'back') {
         // vägsökning: gå ruta för ruta runt vatten, gärna längs stigar
@@ -133,7 +132,7 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
             } else { addFuel(s, p, tk.carry); tk.carry = 0; p.task = undefined; }
           } else if (tk.phase === 'back') {
             storeLoad(s, tk); p.task = undefined;
-          } else tk.phase = 'do';
+          } else { tk.phase = 'do'; if (tk.act === 'bara') { pickUp(s, p, tk); tk.until = now; } }
         } else { wear(g, ci, WEAR * sp); p.x += dx / d * sp; p.y += dy / d * sp; }
       } else if (tk.act !== 'sova' && tk.act !== 'vakt' && tk.act !== 'hantverk') {
         // småjustering så att de rör sig lite
@@ -166,7 +165,7 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
           fish += handFish(s, p, tk.tx, tk.ty, ageF, spear);
           if (spear) wearSpear(s, p);
         }
-        if (fish) { if (live) tk.carry += fish; else deliver(s, 'fiske', fish); }
+        if (fish) { if (live) tk.carry += fish; else addFood(s, 'fisk', fish); }
       }
       if (tk.act === 'hugga') {
         const got = chopStock(s, tk.ref, y);
@@ -180,7 +179,7 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
       if (tk.act === 'samla') {
         const got = forageItems(s, p, dtSec) ?? {};
         const svamp = pickMushrooms(s, p, tk.tx, tk.ty, dtSec, got);
-        if (svamp) { if (live) tk.carry += svamp; else deliver(s, 'samla', svamp); }
+        if (svamp) { if (live) { tk.items ??= {}; tk.items.svamp = (tk.items.svamp ?? 0) + svamp; } else addFood(s, 'svamp', svamp); }
         if (Object.keys(got).length) { if (live) { tk.items ??= {}; for (const k in got) tk.items[k] = (tk.items[k] ?? 0) + got[k]; } else addItems(s, got); }
       }
       const sk = base as Skill;
@@ -222,11 +221,11 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
   for (const k in s.items) if (s.items[k] < 1e-6) delete s.items[k];
 }
 
-// det som bärs hem läggs i förrådet: grenar, ved eller mat
+// det som bärs hem läggs i förrådet: grenar, ved eller mat av rätt slag
 function deliver(s: State, act: Act, n: number) {
   if (act === 'ved') addItems(s, { grenar: n });
   else if (act === 'hugga') s.wood += n;
-  else s.food += n;
+  else addFood(s, act === 'jakt' ? 'kott' : act === 'fiske' ? 'fisk' : 'bar', n);
 }
 
 export function serialize(s: State) {

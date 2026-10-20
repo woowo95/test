@@ -1,4 +1,4 @@
-import { fetchSpot, storeLoad } from './lager';
+import { dropLoad, fetchSpot, storeLoad } from './lager';
 import { coldOf, temperature } from './vader';
 import { ageOf, log, stat, think } from './folk';
 import { count, flintFactor } from './fynd';
@@ -116,7 +116,7 @@ export function addFuel(s: State, p: Person, n: number) {
 }
 function assign(s: State, p: Person, act: Act, tx: number, ty: number, dur: number, live: boolean, why: string) {
   if (!live) { p.x = tx; p.y = ty; tread(s, tx, ty, 1); }
-  if (p.task && (p.task.carry > 0 || p.task.items)) storeLoad(s, p.task); // bördan läggs i förrådet, den försvinner inte
+  if (p.task && (p.task.carry > 0 || p.task.items)) { if (live) dropLoad(s, p.task, p.x, p.y); else storeLoad(s, p.task); } // bördan läggs ner där hen står, den försvinner inte
   p.task = { act, phase: live ? 'go' : 'do', tx, ty, until: s.now + dur, carry: 0, why, dark: !isLight(s.now) };
 }
 const awake = (s: State, p: Person, minAge: number) => {

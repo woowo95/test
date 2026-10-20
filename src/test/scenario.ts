@@ -1,7 +1,7 @@
 // Scenariotester: ställ en by i ett visst läge, kör den en stund och kontrollera att det som ska hända händer.
 // npm run scenario            kör alla
 // npm run scenario -- glanta  kör bara ett
-import { createState, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, WEEK, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, inZone, ageOf, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, fuelStock, DAY, HOUR, W, State, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat } from '../sim';
+import { createState, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, WEEK, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, inZone, wearStore, dropLoad, isLight, T, ageOf, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, fuelStock, DAY, HOUR, W, State, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat } from '../sim';
 import { FOREST, HIGH, isSoil } from '../sim/vag';
 import { START } from './kor';
 
@@ -306,7 +306,7 @@ SCENARIER.lager = {
     }
     // den som har fullt går hem med en gång, även om uppgiften inte är klar
     const v = living(b).find(p => ageOf(p, b.now) >= 18)!;
-    v.task = { act: 'samla', phase: 'do', tx: v.x, ty: v.y, until: b.now + 3 * HOUR, carry: capacity(b, v) * STACK.mat, why: 'test', dark: false };
+    v.task = { act: 'samla', phase: 'do', tx: v.x, ty: v.y, until: b.now + 3 * HOUR, carry: capacity(b, v) * STACK.bar, why: 'test', dark: false };
     const mat0 = b.food;
     step(b, 2, true); step(b, 2, true);
     const gickHem = v.task?.phase === 'back' || b.food > mat0 + 10;
@@ -315,12 +315,55 @@ SCENARIER.lager = {
     s.food = 5; s.wood = 0; s.items = { flinta: 1 };
     kor(s, 12);
     return [
-      [`lagerplatsen växer när den blir full (${start} → ${stor} rutor för ${ps.length} stackar)`, stor > start && ps.every(p => inZone(z, p.x, p.y))],
+      [`lagerplatsen växer när den blir full (${start} → ${stor} rutor för ${ps.length} stackar)`, stor > start && ps.every(p => !p.out && inZone(z, p.x, p.y))],
       ['ingen stack är större än sin storlek, och stackarna innehåller allt i förrådet', ps.every(p => p.n <= p.max + 1e-9) && summaOk],
       [`folk bär hem saker, aldrig mer än de orkar (${hem} steg på väg hem, ${fullt} med full börda, högst ${(maxKvot * 100).toFixed(0)} % av förmågan)`, hem > 50 && maxKvot <= 1.15],
       ['den som bär så mycket hen orkar går hem med bördan', gickHem],
       ['den starke orkar bära mer än den svage', capacity(b, stark[0]) > capacity(b, stark[stark.length - 1])],
       [`lagerplatsen krymper när den står tom (${zoneOf(s).w * zoneOf(s).h} rutor)`, zoneOf(s).w * zoneOf(s).h < stor],
+    ];
+  },
+};
+
+SCENARIER.slitage = {
+  text: 'Maten finns i olika slag som ruttnar olika fort, saker utanför lagret slits fortare och högar på marken bärs in, på natten bara nära lägret',
+  kor: () => {
+    // fisk ruttnar fortare än bär
+    const a = createState(4, START);
+    a.mat = { fisk: 20, bar: 20 }; a.food = 40; a.wood = 25; a.items = { grenar: 50 };
+    const b = createState(4, START);
+    b.mat = { fisk: 20, bar: 20 }; b.food = 40; b.wood = 25; b.items = { grenar: 50 };
+    b.lager = { ...zoneOf(b), w: 1, h: 1 }; // för litet: det mesta ligger bredvid
+    wearStore(a, 24 * 3600, 2); wearStore(b, 24 * 3600, 2);
+    const fisk = amountOf(a, 'fisk'), bar = amountOf(a, 'bar');
+    const grenIn = 50 - amountOf(a, 'grenar'), grenUt = 50 - amountOf(b, 'grenar');
+    // högar på marken: en nära elden och en långt bort, mitt i natten
+    const m = getMap(5), f = m.fire, land = (x: number, y: number) => x >= 0 && y >= 0 && x < W && y < 40 && m.tiles[y * W + x] !== T.Vatten && m.tiles[y * W + x] !== T.Sten;
+    let nara: { x: number; y: number } | undefined, langt: { x: number; y: number } | undefined;
+    for (let y = 0; y < 40; y++) for (let x = 0; x < W; x++) {
+      const d = Math.hypot(x - f.x, y - f.y);
+      if (!nara && d >= 2.5 && d < 3.5 && land(x, y)) nara = { x, y };
+      if (!langt && d >= 13 && d < 16 && land(x, y)) langt = { x, y };
+    }
+    const n = createState(5, START);
+    n.now = new Date(n.now).setHours(23, 0, 0, 0);
+    const t0 = { act: 'samla' as const, phase: 'do' as const, tx: 0, ty: 0, until: 0, carry: 8, why: '', dark: true };
+    dropLoad(n, { ...t0 }, nara!.x + 0.5, nara!.y + 0.5); dropLoad(n, { ...t0, act: 'ved' as const }, langt!.x + 0.5, langt!.y + 0.5);
+    const lagd = (n.marken ?? []).length;
+    let bars = 0;
+    for (let i = 0; i < 3 * 3600 / 2 && !isLight(n.now); i++) { step(n, 2, true); bars = Math.max(bars, living(n).filter(p => p.task?.act === 'bara').length); }
+    const kvarNara = (n.marken ?? []).some(g => g.x === nara!.x && g.y === nara!.y);
+    const kvarLangt = (n.marken ?? []).some(g => g.x === langt!.x && g.y === langt!.y);
+    // på dagen bärs även det som ligger långt bort in
+    n.now = new Date(n.now).setHours(9, 0, 0, 0);
+    for (let i = 0; i < 6 * 3600 / 2 && (n.marken ?? []).length; i++) step(n, 2, true);
+    return [
+      [`fisk ruttnar fortare än bär (kvar efter ett dygn: fisk ${fisk.toFixed(1)}, bär ${bar.toFixed(1)})`, fisk < bar && fisk > 0],
+      [`grenar utanför lagret slits fortare (förlorat på ett dygn: i lagret ${grenIn.toFixed(2)}, bredvid ${grenUt.toFixed(2)})`, grenUt > 2 * grenIn && grenIn > 0],
+      ['ved och grenar som slits blir småpinnar', amountOf(a, 'pinnar') > 0],
+      [`den som kallas bort lägger bördan på marken (${lagd} högar)`, lagd === 2],
+      [`på natten bärs högen nära lägret in men inte den långt bort (${bars} bar på natten)`, !kvarNara && kvarLangt],
+      ['på dagen bärs även det som ligger långt bort in', !(n.marken ?? []).length],
     ];
   },
 };
