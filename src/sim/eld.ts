@@ -1,5 +1,6 @@
 import { ageOf, log, stat, think } from './folk';
 import { count, flintFactor } from './fynd';
+import { observe } from './minne';
 import { getMap } from './karta';
 import { tread } from './mark';
 import { moodOf } from './samtal';
@@ -192,6 +193,7 @@ export function forageItems(s: State, p: Person, dtSec: number): Record<string, 
   const ff = p.task ? flintFactor(s, p.task.tx, p.task.ty) : 0.4;
   if (item(s, 'flinta') + item(s, 'yxa') < 3 && chance(s, 0.025 * ff * sk / 3600, dtSec)) {
     got.flinta = 1; count(s, ff > 2 ? 'flintaSten' : 'flintaAnnan');
+    if (ff > 2 && p.task) observe(s, p, 'flinta', p.task.tx, p.task.ty);
     log(s, `${p.name} hittade en flintsten${ff > 2 ? ' vid stenarna' : ff > 1 ? ' i sanden vid stranden' : ''}.`, 'world', [p.id]);
   }
   return Object.keys(got).length ? got : undefined;

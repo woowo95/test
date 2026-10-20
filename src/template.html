@@ -111,6 +111,8 @@ h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: 
 .thoughts .pos span { color: var(--good); } .thoughts .neg span { color: var(--bad); }
 .rels li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; padding: 3px 0; }
 .rw.pos { color: var(--good); } .rw.neg { color: var(--bad); }
+.lard li { padding: 4px 0; } .lard li > span { display: block; padding-left: 10px; } .lard small { display: block; font-size: 11px; }
+.lard .fel { color: var(--bad); } .lard .fel::before { content: "⚠ "; } .lard li.fara { color: var(--warn, #e0a050); }
 .fame li::before { content: "◆ "; color: var(--accent); }
 .controls { border-top: 1px solid var(--line); padding: 10px 14px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
 .switch { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }

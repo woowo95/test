@@ -14,11 +14,11 @@ export const H = 40;
 
 export enum T { Vatten, Sand, Gras, Skog, Sten }
 
-export const STATS = ['styrka', 'uthallighet', 'intelligens', 'nyfikenhet', 'vanlighet', 'karisma', 'skonhet', 'flit', 'empati', 'mod'] as const;
+export const STATS = ['styrka', 'uthallighet', 'intelligens', 'nyfikenhet', 'vanlighet', 'karisma', 'skonhet', 'flit', 'empati', 'mod', 'minne'] as const;
 export type Stat = typeof STATS[number];
 export const STAT_NAMES: Record<Stat, string> = {
   styrka: 'Styrka', uthallighet: 'Uthållighet', intelligens: 'Intelligens', nyfikenhet: 'Nyfikenhet',
-  vanlighet: 'Vänlighet', karisma: 'Karisma', skonhet: 'Skönhet', flit: 'Flit', empati: 'Empati', mod: 'Mod',
+  vanlighet: 'Vänlighet', karisma: 'Karisma', skonhet: 'Skönhet', flit: 'Flit', empati: 'Empati', mod: 'Mod', minne: 'Minne',
 };
 export const SKILLS = ['samla', 'jakt', 'fiske', 'ved', 'hantverk', 'berattande', 'elda'] as const;
 export type Skill = typeof SKILLS[number];
@@ -56,12 +56,19 @@ export interface Person {
   habit: Record<string, number>; // timmar per aktivitet, bleknar med tiden (ger yrkestaggar)
   sickUntil?: number; poisonUntil?: number; pregnantSince?: number; lastBirth?: number;
   fiske?: { f: number; n: number; k: number }; // fiske med händerna: försök, napp och fångade fiskar
+  kunskap?: Record<string, { v: number; t: number }>; // det personen kan (alltid rätt), 0–1, och när det senast användes
+  lardomar?: Lardom[]; // det personen tror om platser (kan vara fel, överdrivet eller inaktuellt)
   thoughts: Thought[];
   x: number; y: number; task?: Task;
   fame: string[];
   hue: number;
   tag?: string; // yrkestagg efter vad personen ägnar mest tid åt
 }
+
+// En lärdom om en plats: k = vad, a = område (8×8 rutor), v = hur mycket (eller hur rädd), c = hur säker (0–1),
+// t = senast stärkt, src = vem den hördes av (saknas = egen upplevelse), led = hur många led från den som var där, om = vad som hände
+export type LKind = 'samla' | 'jakt' | 'fiske' | 'flinta' | 'fara';
+export interface Lardom { k: LKind; a: number; v: number; c: number; t: number; src?: number; led?: number; om?: string }
 
 export interface Rel { chem: number; op: number; rom: number; talks: number; flags: number }
 // flags: 1 = nära vänner loggat, 2 = ovänner loggat
@@ -81,7 +88,7 @@ export interface State {
   stockar?: Stock[]; // fällda träd som ligger och väntar på att huggas
   nextStock?: number; fallda?: number;
   fynd?: string; // hur mycket som tagits ur varje plats (bär, vilt, fisk), packat
-  kunskap?: Record<string, number>; // det byn lärt sig, 0–1 (t.ex. att känna igen giftig svamp)
+  kunskap?: Record<string, number>; // äldre sparfiler: byns gemensamma kunskap, flyttas till varje person
   stat?: Record<string, number>; // räknare: svamp, fiskeförsök, napp, fångst med mera
 }
 // ett fällt träd: ved och grenar som finns kvar att hugga ut

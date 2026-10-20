@@ -1,6 +1,7 @@
 import { ageOf, getRel, log, newPerson, think } from './folk';
+import { scout } from './minne';
 import { newSeder, sederTarget } from './seder';
-import { clamp, rnd } from './slump';
+import { clamp, gauss, rnd } from './slump';
 import { DAY, Fire, Person, SEC, SKILLS, State } from './typer';
 
 // ---------- skapa värld ----------
@@ -18,6 +19,7 @@ export function createState(seed: number, now: number): State {
   for (const p of s.people) {
     const a = ageOf(p, now);
     for (const k of SKILLS) p.skill[k] = clamp((a - 8) * 0.25 * (0.4 + rnd(s)) * (p.pot.intelligens / 12), 0, 12);
+    if (a >= 14) scout(s, p); // de vuxna har sett sig omkring och minns några platser
   }
   s.seder.v = sederTarget(s);
   log(s, `${s.people.length} människor slog sig ner vid sjön. De har ingen eld ännu.`, 'world');
@@ -35,7 +37,11 @@ export function migrate(s: State) {
     if (p.warm === undefined) p.warm = 1;
     if (p.toa === undefined) p.toa = 1;
     if (!p.habit) p.habit = {};
+    if (p.pot.minne === undefined) p.pot.minne = clamp(10 + gauss(s) * 7, 1, 20);
+    // byns gemensamma kunskap om svamp flyttas till var och en
+    if (s.kunskap?.svamp && p.died === undefined && !p.kunskap?.svamp) p.kunskap = { ...p.kunskap, svamp: { v: s.kunskap.svamp, t: s.now } };
   }
+  delete s.kunskap;
   if (!s.items) s.items = { gniststen: 1, torrgras: 8, pinnar: 8 };
   if (!s.fire) {
     s.fire = newFire();

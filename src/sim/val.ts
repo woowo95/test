@@ -1,7 +1,8 @@
 import { SEASON, WORK_STAT, foodDays, woodDays } from './ekonomi';
 import { emberOn, fireWant, needTinder } from './eld';
 import { ageOf, living, stat } from './folk';
-import { HAND_FISH, Kind, bestSpot, flintSpot, prospect, wantsFlint } from './fynd';
+import { HAND_FISH, Kind, flintSpot, wantsFlint } from './fynd';
+import { areaOf, flintArea, pickSpot, prospectFor } from './minne';
 import { getMap } from './karta';
 import { isForest, tread } from './mark';
 import { axeTask } from './skog';
@@ -47,7 +48,7 @@ function spotFor(s: State, act: Act, p: Person): { x: number; y: number } {
   }
   cands.sort((a, b) => a.d - b.d);
   // mat: gå dit det finns mest att hämta, inte för långt bort; annars en av de närmaste platserna
-  const c = (act === 'samla' || act === 'jakt' || act === 'fiske' ? bestSpot(s, act, cands) : cands[Math.floor(rnd(s) * Math.min(6, cands.length))]) ?? { x: f.x + 6, y: f.y };
+  const c = (act === 'samla' || act === 'jakt' || act === 'fiske' ? pickSpot(s, p, act, cands) : cands[Math.floor(rnd(s) * Math.min(6, cands.length))]) ?? { x: f.x + 6, y: f.y };
   return { x: c.x + 0.5, y: c.y + 0.5 };
 }
 
@@ -85,7 +86,7 @@ export function chooseTask(s: State, p: Person, live: boolean) {
         const need = w === 'ved' ? wWood : wFood;
         const tinder = w === 'samla' && needTinder(s);
         // nytta för byn; maten väger också in hur mycket platserna ger just nu och att fiske med händerna ger lite
-        const yieldF = w === 'ved' || tinder ? 1 : clamp(prospect(s, w as Kind), 0.05, 1.3) * (w === 'fiske' ? HAND_FISH : 1);
+        const yieldF = w === 'ved' || tinder ? 1 : clamp(prospectFor(s, p, w as Kind), 0.05, 1.3) * (w === 'fiske' ? HAND_FISH : 1);
         const col = need * (w === 'ved' ? 1 : tinder ? Math.max(0.8, SEASON[w][ai]) * 3 : SEASON[w][ai] * yieldF);
         const like = (4 + p.skill[w as Skill] + stat(p, WORK_STAT[w], now) / 3) * (1 + 2 * habitShare(p, [w], tot)); // egen lust och vana
         const sc = col * like * (0.6 + rnd(s) * 0.8);
@@ -106,8 +107,8 @@ export function chooseTask(s: State, p: Person, live: boolean) {
         set(best, workWhy());
         dur = (60 + rnd(s) * 120) * 60 * SEC;
         if (best === 'samla' && wantsFlint(s) && rnd(s) < 0.3) { // byn saknar flinta till en yxa
-          const fl = flintSpot(s);
-          if (fl) { spot = fl; why = `${why!} Letar efter flinta vid stenarna.`; }
+          const fa = flintArea(p), fl = (fa !== undefined && flintSpot(s, (x, y) => areaOf(x, y) === fa)) || flintSpot(s);
+          if (fl) { spot = fl; why = `${why!} Letar efter flinta vid stenarna${fa !== undefined ? ' där hen vet att det finns' : ''}.`; }
         }
         const ax = best === 'ved' ? axeTask(s, p) : undefined; // med yxa fälls träd och huggs ved
         if (ax) {

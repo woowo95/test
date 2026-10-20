@@ -1,7 +1,7 @@
 // Scenariotester: ställ en by i ett visst läge, kör den en stund och kontrollera att det som ska hända händer.
 // npm run scenario            kör alla
 // npm run scenario -- glanta  kör bara ett
-import { createState, step, living, groundOf, getMap, fuelStock, DAY, HOUR, W, State, takenOf, Kind } from '../sim';
+import { createState, step, living, groundOf, getMap, fuelStock, DAY, HOUR, W, State, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat } from '../sim';
 import { FOREST, HIGH, isSoil } from '../sim/vag';
 import { START } from './kor';
 
@@ -109,15 +109,15 @@ const SCENARIER: Record<string, { text: string; kor: () => Koll[] }> = {
     },
   },
   svamp: {
-    text: 'På hösten plockas kantareller, men ibland följer en giftig orange spindling med; efter förgiftningar lär sig byn skilja dem åt',
+    text: 'På hösten plockas kantareller, men ibland följer en giftig orange spindling med; den som förgiftas lär sig skilja dem åt och lär andra',
     kor: () => {
       const s = createState(16, START);
       kor(s, 21 * 24); // vår, sommar och höst
-      const st = s.stat ?? {};
+      const st = s.stat ?? {}, bast = Math.max(0, ...living(s).map(p => kn(p, 'svamp')));
       return [
         [`kantareller plockade (${st.svamp ?? 0})`, (st.svamp ?? 0) > 10],
         [`giftsvamp med i korgen (${st.giftsvamp ?? 0}) eller känd och lämnad (${st.giftsvampKand ?? 0})`, (st.giftsvamp ?? 0) + (st.giftsvampKand ?? 0) > 0],
-        [`förgiftningar (${st.forgiftad ?? 0}) ger kunskap (${(s.kunskap?.svamp ?? 0).toFixed(2)})`, !(st.forgiftad ?? 0) || (s.kunskap?.svamp ?? 0) > 0],
+        [`förgiftningar (${st.forgiftad ?? 0}) ger kunskap (bäst ${bast.toFixed(2)})`, !(st.forgiftad ?? 0) || bast > 0],
         ['byn lever', living(s).length > 0]];
     },
   },
@@ -132,6 +132,45 @@ const SCENARIER: Record<string, { text: string; kor: () => Koll[] }> = {
       }
       return [[`flinta vid stenarna ${sten}, på annat håll ${annan}`, sten > annan && sten > 0]];
     },
+  },
+};
+
+SCENARIER.kunskap = {
+  text: 'Var och en minns var det finns mat och flinta, berättar det för andra (ibland överdrivet), glömmer med tiden och blir rädd för platser där någon dött',
+  kor: () => {
+    const s = createState(31, START);
+    const ute = living(s).filter(p => (p.lardomar?.length ?? 0) > 0).length;
+    // en olycka långt från byn: de som såg den och de närmaste blir rädda
+    const f = getMap(s.seed).fire, offer = living(s)[0], vittne = living(s)[2];
+    offer.x = vittne.x = Math.min(W - 2, f.x + 14); offer.y = vittne.y = f.y;
+    offer.died = s.now;
+    fearPlace(s, offer, 'under en jakt');
+    const a = areaOf(offer.x, offer.y), radd0 = living(s).filter(p => findL(p, 'fara', a)).length;
+    // ingen förgiftning: svampkunskapen sprids genom samtal från en som kan
+    const larare = living(s)[3]; larare.kunskap = { svamp: { v: 1, t: s.now } };
+    kor(s, 8 * 24);
+    const L = living(s), alla = L.flatMap(p => p.lardomar ?? []);
+    const hort = alla.filter(l => l.src !== undefined), led2 = alla.filter(l => (l.led ?? 0) >= 2);
+    const radd = L.filter(p => findL(p, 'fara', a)).length, kan = L.filter(p => p !== larare && kn(p, 'svamp') > 0.1).length;
+    const fel = L.flatMap(p => (p.lardomar ?? []).map(l => describe(s, p, l).wrong)).filter(Boolean).length;
+    // minnet: den med bra minne glömmer långsammare
+    const [m1, m2] = L.slice().sort((x, y) => stat(y, 'minne', s.now) - stat(x, 'minne', s.now)).filter((_, i, A) => i === 0 || i === A.length - 1);
+    for (const p of [m1, m2]) p.lardomar = [{ k: 'samla', a: 0, v: 0.5, c: 1, t: s.now, led: 0 }];
+    forget(s, 72);
+    const c1 = m1.lardomar?.[0]?.c ?? 0, c2 = m2.lardomar?.[0]?.c ?? 0;
+    // gammal sparfil: byns svampkunskap flyttas till var och en, och alla får egenskapen Minne
+    const g = createState(32, START); g.kunskap = { svamp: 0.8 }; for (const p of g.people) delete (p.pot as Record<string, number>).minne;
+    migrate(g);
+    return [
+      [`de vuxna minns platser från början (${ute} personer)`, ute >= 6],
+      [`lärdomar sprids i samtal (${hort.length} hörda, ${led2.length} i andra hand eller längre)`, hort.length > 10 && led2.length > 0],
+      [`glömska (${s.stat?.glomt ?? 0} lärdomar glömda)`, (s.stat?.glomt ?? 0) > 0],
+      [`bra minne glömmer långsammare (säkerhet efter tre dygn ${c1.toFixed(2)} mot ${c2.toFixed(2)})`, c1 > c2 && c2 < 0.9],
+      [`rädsla efter olyckan: ${radd0} genast, ${radd} efter åtta dygn`, radd0 >= 1 && radd > radd0],
+      [`svampkunskap sprids utan förgiftning (${kan} har lärt sig)`, kan >= 2],
+      [`spelaren ser lärdomar som inte stämmer (${fel})`, fel > 0],
+      ['gammal sparfil flyttas', g.kunskap === undefined && g.people.every(p => p.pot.minne > 0 && kn(p, 'svamp') === 0.8)],
+    ];
   },
 };
 

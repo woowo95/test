@@ -2,6 +2,7 @@ import { ageOf, getRel, isKin, log, similarity, stat, think } from './folk';
 import { clamp, rnd } from './slump';
 import { Act, DAY, HOUR, Person, State } from './typer';
 import { pair } from './varld';
+import { share } from './minne';
 
 // ---------- samtal ----------
 export interface TalkEvent { a: number; b: number; kind: string; good: boolean; t: number }
@@ -45,6 +46,7 @@ export function converse(s: State, a: Person, others: Person[], events?: TalkEve
       const att = (stat(b, 'skonhet', now) + stat(b, 'karisma', now)) / 40;
       r.rom = clamp(r.rom + (out + att) * 4, 0, 100);
     }
+    share(s, a, b, r, kind); // man berättar vad man vet och lär ut vad man kan
   }
   r.op = clamp(r.op, -100, 100);
   r.talks++;

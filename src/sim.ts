@@ -16,3 +16,5 @@ export * from './sim/steg';
 export * from './sim/vag';
 export * from './sim/skog';
 export * from './sim/fynd';
+export * from './sim/kunskap';
+export * from './sim/minne';

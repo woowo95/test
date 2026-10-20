@@ -7,6 +7,7 @@ import { birth, die, emigrate } from './liv';
 import { WEAR, groundOf, growGround, packGround, tileOf } from './mark';
 import { FLIP, SOCIAL, TalkEvent, converse } from './samtal';
 import { HABIT_FADE, sedEvent, stepSeder, updateTags } from './seder';
+import { fearPlace, forget, lookAround } from './minne';
 import { chance, clamp, rnd } from './slump';
 import { ageIndex, isLight } from './tid';
 import { chopStock, fellTree, makeAxe } from './skog';
@@ -37,7 +38,7 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
   const learn = 1 + 0.1 * s.seder.v.nyfikenhet; // en nyfiken by lär sig snabbare
   if (Math.floor(now / HOUR) !== Math.floor((now - dtSec * SEC) / HOUR)) {
     stepSeder(s); updateTags(s);
-    growGround(s, 1, ai); growFynd(s, 1, ai);
+    growGround(s, 1, ai); growFynd(s, 1, ai); forget(s, 1);
   }
 
   const social: Person[] = [];
@@ -76,8 +77,8 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
     if (p.health <= 0) { die(s, p, p.hunger <= 0 ? 'av svält' : p.warm < 0.12 ? 'av kyla' : (p.poisonUntil ?? 0) > now ? 'av svampförgiftning' : 'av sjukdom'); continue; }
     // ålderdom och olyckor (Gompertz, per år = per dygn)
     const q = 0.0015 + 0.00004 * Math.exp(0.105 * a) + (a < 5 ? 0.02 : 0);
-    if (chance(s, q / 86400, dtSec)) { die(s, p, a > 55 ? 'av ålderdom' : a < 5 ? 'av en barnsjukdom' : 'i en olycka'); continue; }
-    if (p.task && (p.task.act === 'jakt') && p.task.phase === 'do' && chance(s, 0.0008 * (1 - p.skill.jakt / 25) / 3600, dtSec)) { die(s, p, 'under en jakt'); continue; }
+    if (chance(s, q / 86400, dtSec)) { die(s, p, a > 55 ? 'av ålderdom' : a < 5 ? 'av en barnsjukdom' : 'i en olycka'); if (a >= 5 && a <= 55) fearPlace(s, p, 'i en olycka'); continue; }
+    if (p.task && (p.task.act === 'jakt') && p.task.phase === 'do' && chance(s, 0.0008 * (1 - p.skill.jakt / 25) / 3600, dtSec)) { die(s, p, 'under en jakt'); fearPlace(s, p, 'under en jakt'); continue; }
     // graviditet
     if (p.pregnantSince !== undefined) { if (now - p.pregnantSince > 0.75 * DAY) birth(s, p); }
     else if (p.sex === 'k' && p.partner !== undefined && a >= 17 && a <= 43 && (!p.lastBirth || now - p.lastBirth > 1.6 * DAY)) {
@@ -152,6 +153,8 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
       const rich = tk.act === 'samla' || tk.act === 'jakt' ? richness(s, tk.act, tk.tx, tk.ty) : 1;
       const y = workRate(s, p, base) * dtSec * (live ? 1 : 0.8) * (tk.act === 'ved' ? 2 : tk.act === 'hugga' ? 1.5 : tk.act === 'falla' || tk.act === 'fiske' ? 0 : rich);
       if (tk.act === 'samla' || tk.act === 'jakt') { takeFrom(s, tk.act, tk.tx, tk.ty, y); if (rich < 0.08) tk.until = now; } // tomt här: gå hem eller vidare
+      // den som arbetar ser hur mycket som finns i området och minns det
+      if ((tk.act === 'samla' || tk.act === 'jakt' || tk.act === 'fiske') && (rich < 0.08 || chance(s, 1 / 1800, dtSec))) lookAround(s, p, tk.tx, tk.ty);
       if (tk.act === 'fiske') {
         // fiske med händerna: ett försök i taget
         tk.prog = (tk.prog ?? 0) + dtSec;

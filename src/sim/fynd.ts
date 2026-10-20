@@ -3,6 +3,7 @@ import { getMap, hash } from './karta';
 import { groundOf } from './mark';
 import { sedEvent } from './seder';
 import { chance, clamp, rnd } from './slump';
+import { kn, learnK, useK } from './kunskap';
 import { ageIndex } from './tid';
 import { DAY, H, HOUR, Person, State, T, W } from './typer';
 import { BAR, FOREST, HIGH, isSoil } from './vag';
@@ -121,22 +122,24 @@ export function bestSpot(s: State, k: Kind, cands: { x: number; y: number; d: nu
 }
 
 // hur mycket de bästa platserna inom räckhåll ger just nu (snitt av de tio bästa), räknas om en gång i timmen
-const prospects = new WeakMap<State, { hr: number; v: Partial<Record<Kind, number>> }>();
-export function prospect(s: State, k: Kind) {
+const prospects = new WeakMap<State, { hr: number; v: Partial<Record<string, number>> }>();
+export function prospect(s: State, k: Kind, r = 99) {
   const hr = Math.floor(s.now / HOUR);
   let c = prospects.get(s);
   if (!c || c.hr !== hr) { c = { hr, v: {} }; prospects.set(s, c); }
-  if (c.v[k] === undefined) {
+  const key = k + r;
+  if (c.v[key] === undefined) {
     const f = getMap(s.seed).fire, top: number[] = [];
     for (let y = Math.max(0, f.y - 13); y < Math.min(H, f.y + 14); y++) for (let x = Math.max(0, f.x - 17); x < Math.min(W, f.x + 18); x++) {
-      const r = richness(s, k, x + 0.5, y + 0.5) - Math.hypot(x - f.x, y - f.y) * 0.03;
-      if (r > 0) top.push(r);
+      if (Math.hypot(x - f.x, y - f.y) > r) continue;
+      const v = richness(s, k, x + 0.5, y + 0.5) - Math.hypot(x - f.x, y - f.y) * 0.03;
+      if (v > 0) top.push(v);
     }
     top.sort((a, b) => b - a);
     const n = Math.min(10, top.length);
-    c.v[k] = n ? top.slice(0, n).reduce((a, b) => a + b, 0) / n : 0;
+    c.v[key] = n ? top.slice(0, n).reduce((a, b) => a + b, 0) / n : 0;
   }
-  return c.v[k]!;
+  return c.v[key]!;
 }
 // fiske med händerna ger ungefär så mycket som insamling på en lagom rik plats gånger detta
 export const HAND_FISH = 0.55;
@@ -150,12 +153,12 @@ export function flintFactor(s: State, x: number, y: number) {
 // byn behöver flinta till en yxa
 export const wantsFlint = (s: State) => (s.items.flinta ?? 0) + (s.items.yxa ?? 0) < 1;
 // en plats att samla på nära stenarna, där flinta är vanlig
-export function flintSpot(s: State): { x: number; y: number } | undefined {
+export function flintSpot(s: State, area?: (x: number, y: number) => boolean): { x: number; y: number } | undefined {
   const m = getMap(s.seed), sd = stoneDist(s.seed), c: { x: number; y: number; d: number }[] = [];
   for (let i = 0; i < W * H; i++) {
     if (sd[i] < 1 || sd[i] > 2 || m.tiles[i] === T.Vatten || m.tiles[i] === T.Sten) continue;
     const x = i % W, y = Math.floor(i / W), d = Math.hypot(x - m.fire.x, y - m.fire.y);
-    if (d < 30) c.push({ x, y, d });
+    if (d < 30 && (!area || area(x, y))) c.push({ x, y, d });
   }
   if (!c.length) return undefined;
   c.sort((a, b) => a.d - b.d);
@@ -163,13 +166,12 @@ export function flintSpot(s: State): { x: number; y: number } | undefined {
   return { x: p.x + 0.5, y: p.y + 0.5 };
 }
 
-// ---------- räknare och kunskap ----------
+// ---------- räknare ----------
 export const count = (s: State, k: string, n = 1) => { (s.stat ??= {})[k] = (s.stat[k] ?? 0) + n; };
-export const known = (s: State, k: string) => s.kunskap?.[k] ?? 0;
-function learn(s: State, k: string, v: number) { (s.kunskap ??= {})[k] = clamp(known(s, k) + v, 0, 1); }
 
 // ---------- svamp ----------
-// Kantarellen är god. Den orangea spindlingen liknar den men är giftig. Byn lär sig skilja dem åt den hårda vägen.
+// Kantarellen är god. Den orangea spindlingen liknar den men är giftig. Den som blir förgiftad lär sig skilja dem åt
+// och kan sedan lära andra (kunskap.ts, minne.ts).
 const SVAMP_SEASON = [0, 0.15, 0.8, 1.5];
 export const GIFT = 'giftsvamp'; // giftig svamp som av misstag hamnat i förrådet (syns inte för invånarna)
 // svamp som hittas under en stund av insamling i skogen; ger hur mycket ätlig mat som hittades
@@ -185,8 +187,8 @@ export function pickMushrooms(s: State, p: Person, x: number, y: number, dtSec: 
     return 1;
   }
   // den giftiga: känner man igen den låter man den stå
-  const sure = clamp(known(s, 'svamp') + p.skill.samla / 40 + stat(p, 'intelligens', s.now) / 100, 0, 0.98);
-  if (rnd(s) < sure) { count(s, 'giftsvampKand'); return 0; }
+  const sure = clamp(kn(p, 'svamp') + p.skill.samla / 40 + stat(p, 'intelligens', s.now) / 100, 0, 0.98);
+  if (rnd(s) < sure) { count(s, 'giftsvampKand'); useK(p, 'svamp', s.now); return 0; }
   count(s, GIFT);
   got[GIFT] = (got[GIFT] ?? 0) + 1;
   return 1; // den ser ut som mat och läggs i förrådet
@@ -201,15 +203,15 @@ export function eatPoison(s: State, p: Person) {
   p.poisonUntil = p.sickUntil;
   p.health = clamp(p.health - 0.25, 0, 1);
   think(p, 'Blev förgiftad av en svamp', -0.3, s.now, DAY / 2);
-  const before = known(s, 'svamp');
-  learn(s, 'svamp', 0.4);
+  const before = kn(p, 'svamp'), v = learnK(p, 'svamp', 0.4, s.now);
   log(s, `${p.name} blev förgiftad av svamp ur förrådet.`, 'world', [p.id]);
-  if (before < 0.3) {
+  if ((s.stat!.forgiftad ?? 0) <= 1) {
     log(s, 'Byn misstänker att en av svamparna är giftig.', 'world');
     sedEvent(s, 'forsiktighet', 0.05, 'Någon blev förgiftad av svamp. Byn har blivit försiktigare med vad den äter.');
-  } else if (before < 0.75 && known(s, 'svamp') >= 0.75) log(s, 'Byn har lärt sig skilja kantarellen från den giftiga orangea spindlingen.', 'world');
-  // det man nu vet: den giftiga svampen sorteras bort ur förrådet
-  s.items[GIFT] = (s.items[GIFT] ?? 0) * (1 - known(s, 'svamp'));
+  }
+  if (before < 0.75 && v >= 0.75) log(s, `${p.name} har lärt sig skilja kantarellen från den giftiga orangea spindlingen.`, 'skill', [p.id]);
+  // det hen nu vet: den giftiga svampen sorteras bort ur förrådet
+  s.items[GIFT] = (s.items[GIFT] ?? 0) * (1 - v);
 }
 
 // ---------- fiske med händerna ----------

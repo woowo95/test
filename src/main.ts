@@ -5,7 +5,7 @@ import {
   createState, step, getMap, living, alive, ageOf, byId, relKey, moodOf, ageIndex, ageDay, yearNo, lightLevel, isLight,
   foodDays, timeLabel, serialize, compact, stat, migrate, hearthOf, igniterOf, fireHeat, heatRadius, fireWant, emberOn,
   ITEM_NAMES, FireLog, coverOf, groundOf, SEDER, SED_INFO, Sed, influence, duty, habitShare, habitTotal, Act,
-  richness, stoneDist, Kind,
+  richness, stoneDist, Kind, KUNSKAP_NAMES, describe, Lardom,
 } from './sim';
 import { HIGH, BAR, FOREST } from './sim/vag';
 
@@ -446,6 +446,20 @@ function relWord(s: State, p: Person, q: Person, op: number) {
   return op > 60 ? 'Nära vän' : op > 25 ? 'Vän' : op > -10 ? 'Bekant' : op > -45 ? 'Ogillar' : 'Ovän';
 }
 function pLink(p?: Person) { return p ? `<button class="plink" data-id="${p.id}" type="button">${esc(p.name)}</button>` : '–'; }
+const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
+// lärdomar om samma plats visas tillsammans, rädslorna först
+function groups(ls: Lardom[]) {
+  const m = new Map<string, Lardom[]>();
+  for (const l of ls) { const key = (l.k === 'fara' ? 'f' : 'p') + l.a; (m.get(key) ?? m.set(key, []).get(key)!).push(l); }
+  return [...m.values()];
+}
+// kunskap (alltid rätt) och lärdomar (det personen tror, kan vara fel). Spelaren ser vad som inte stämmer.
+function knowledgeHtml(p: Person) {
+  const ks = Object.entries(p.kunskap ?? {}).filter(([, e]) => e.v >= 0.05);
+  const ls = (p.lardomar ?? []).slice().sort((a, b) => (b.k === 'fara' ? 1 : 0) - (a.k === 'fara' ? 1 : 0) || b.c - a.c);
+  return `<h3>Kunskap</h3>${ks.length ? `<dl class="kv">${ks.map(([k, e]) => `<dt>${esc(KUNSKAP_NAMES[k] ?? k)}</dt><dd>${bar(e.v, 'skill')}<span>${Math.round(e.v * 100)} %</span></dd>`).join('')}</dl>` : '<p class="muted">Ingen särskild kunskap ännu.</p>'}
+      <h3>Lärdomar</h3>${ls.length ? `<ul class="lard">${groups(ls).map(g => `<li class="${g[0].k === 'fara' ? 'fara' : ''}"><b>${esc(cap(describe(s, p, g[0]).place))}</b>${g.map(l => { const d = describe(s, p, l); return `<span>${esc(d.what)} <small class="muted">${d.sure}, ${esc(d.src)}</small>${d.wrong ? `<small class="fel">${esc(d.wrong)}</small>` : ''}</span>`; }).join('')}</li>`).join('')}</ul>` : '<p class="muted">Inga lärdomar ännu.</p>'}`;
+}
 function renderPanel(force = false) {
   // elden har ingen egen flik: den öppnas genom att klicka på elden, och visas då i personfliken
   for (const b of document.querySelectorAll<HTMLButtonElement>('.tabs button')) {
@@ -495,6 +509,7 @@ function renderPanel(force = false) {
         ${p.thoughts.length ? `<ul class="thoughts">${p.thoughts.map(t => `<li class="${t.v < 0 ? 'neg' : 'pos'}">${esc(t.text)} <span>${t.v > 0 ? '+' : ''}${Math.round(t.v * 100)}</span></li>`).join('')}</ul>` : ''}` : ''}
       <h3>Egenskaper</h3><dl class="kv">${STATS.map(k => `<dt>${STAT_NAMES[k]}</dt><dd>${bar(stat(p, k, now) / 20)}<span>${stat(p, k, now).toFixed(1).replace('.', ',')}</span></dd>`).join('')}</dl>
       <h3>Färdigheter</h3><dl class="kv">${SKILLS.map(k => `<dt>${SKILL_NAMES[k]}</dt><dd>${bar(p.skill[k] / 20, 'skill')}<span>${p.skill[k].toFixed(1).replace('.', ',')}</span></dd>`).join('')}</dl>
+      ${knowledgeHtml(p)}
       <h3>Familj</h3><dl class="kv fam"><dt>Föräldrar</dt><dd>${p.mother || p.father ? [byId(s, p.mother), byId(s, p.father)].filter(Boolean).map(q => pLink(q)).join(' och ') : 'Bland de första i byn'}</dd>
         <dt>Partner</dt><dd>${pLink(byId(s, p.partner))}</dd><dt>Barn</dt><dd>${kids.length ? kids.map(pLink).join(', ') : '–'}</dd></dl>
       <h3>Relationer</h3>${rels.length ? `<ul class="rels">${rels.map(({ q, r }) => `<li>${pLink(q)}<span class="rw ${r.op < -10 ? 'neg' : r.op > 25 ? 'pos' : ''}">${relWord(s, p, q, r.op)}</span><span class="muted">${r.talks} samtal</span></li>`).join('')}</ul>` : '<p class="muted">Inga relationer ännu.</p>'}
