@@ -1,0 +1,453 @@
+import * as PIXI from 'pixi.js';
+import '@pixi/unsafe-eval';
+import {
+  State, Person, T, W, H, DAY, HOUR, STATS, STAT_NAMES, SKILLS, SKILL_NAMES, AGES, ACT_NAMES, TalkEvent, LogEntry,
+  createState, step, getMap, living, alive, ageOf, byId, relKey, moodOf, ageIndex, ageDay, yearNo, lightLevel, isLight,
+  foodDays, timeLabel, serialize, compact, stat,
+} from './sim';
+
+const TS = 16; // pixlar per ruta i världen
+const SAVE_KEY = 'samhalle-save-v1';
+const $ = (id: string) => document.getElementById(id)!;
+const esc = (t: string) => t.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
+
+let s: State;
+let realState: State | null = null; // sparad verklig by medan testläget körs
+let testMode = false;
+let speed = 1;
+let selected: number | undefined;
+let busy = false; // ikappräkning pågår
+let db: any = null, uid: string | null = null;
+let tab: 'folk' | 'logg' | 'person' = 'folk';
+
+// ---------- sparning ----------
+function saveLocal() {
+  if (testMode || !s) return;
+  try { compact(s); localStorage.setItem(SAVE_KEY, serialize(s)); } catch { /* ignoreras */ }
+}
+async function saveDb() {
+  if (testMode || !s || !db || !uid) return;
+  try { compact(s); await db.doc(`data/users/${uid}/save`).set({ state: serialize(s), savedAt: Date.now() }); } catch { /* ignoreras */ }
+}
+function parse(txt: string | null | undefined): State | null {
+  if (!txt) return null;
+  try { const o = JSON.parse(txt); return o && o.v === 1 && Array.isArray(o.people) ? o : null; } catch { return null; }
+}
+async function loadSaves(): Promise<State | null> {
+  let local: State | null = null;
+  try { local = parse(localStorage.getItem(SAVE_KEY)); } catch { /* ignoreras */ }
+  let remote: State | null = null;
+  try {
+    const c = (window as any).claude;
+    if (c?.use) {
+      const timeout = new Promise<null>(r => setTimeout(() => r(null), 5000));
+      const got = await Promise.race([(async () => {
+        const d = await c.use('db'); const u = await c.use('user');
+        if (!d || !u) return null;
+        const id = await u.id(); if (!id) return null;
+        db = d; uid = id;
+        const snap = await d.doc(`data/users/${id}/save`).get();
+        return snap.exists ? parse(String(snap.data()?.state ?? '')) : null;
+      })(), timeout]);
+      remote = got;
+    }
+  } catch { /* ignoreras */ }
+  if (local && remote) return local.now >= remote.now ? local : remote;
+  return local ?? remote;
+}
+
+// ---------- ikappräkning ----------
+async function catchUp(target: number, showOverlay: boolean) {
+  const span = target - s.now;
+  if (span <= 0) return;
+  busy = true;
+  const logStart = s.log.length ? s.log[s.log.length - 1].t : 0;
+  const from = s.now;
+  const ov = $('overlay');
+  if (showOverlay) { ov.hidden = false; $('ovBody').innerHTML = `<p class="ovLead">Byn har levt vidare medan du var borta.</p><div class="prog"><div id="progBar"></div></div><p class="muted" id="progTxt"></p>`; }
+  await new Promise<void>(resolve => {
+    const chunk = () => {
+      const t0 = performance.now();
+      while (s.now < target && performance.now() - t0 < 30) step(s, Math.min(300, (target - s.now) / 1000), false);
+      if (showOverlay) {
+        const f = Math.min(1, (s.now - from) / span);
+        const bar = document.getElementById('progBar'); if (bar) bar.style.width = (f * 100).toFixed(1) + '%';
+        const pt = document.getElementById('progTxt'); if (pt) pt.textContent = `${timeLabel(s, s.now)} · ${Math.round(f * 100)} %`;
+      }
+      if (s.now < target - 500) setTimeout(chunk, 0); else resolve();
+    };
+    chunk();
+  });
+  busy = false;
+  for (const p of living(s)) p.task = undefined;
+  if (showOverlay) showSummary(from, logStart);
+  saveLocal(); saveDb();
+  drawTerrain(true);
+}
+function showSummary(from: number, logStart: number) {
+  const ev = s.log.filter(l => l.t > logStart && l.t > from);
+  const years = (s.now - from) / DAY;
+  const births = ev.filter(e => e.kind === 'birth').length, deaths = ev.filter(e => e.kind === 'death').length;
+  const prio = (e: LogEntry) => e.kind === 'death' ? 5 : e.kind === 'birth' || e.kind === 'move' ? 4 : e.kind === 'skill' || /par\.|skilda/.test(e.text) ? 3 : e.kind === 'world' && /tiden|Byn/.test(e.text) ? 2 : e.kind === 'rel' ? 1 : 0;
+  const key = ev.map((e, i) => ({ e, i, p: prio(e) })).filter(x => x.p > 0).sort((a, b) => b.p - a.p || b.i - a.i).slice(0, 10).sort((a, b) => b.i - a.i).map(x => x.e);
+  const yrs = years >= 1 ? `${years.toFixed(1).replace('.', ',')} år` : `${Math.round(years * 12)} månader`;
+  $('ovBody').innerHTML = `
+    <p class="ovLead">Medan du var borta gick ${yrs}.</p>
+    <p class="muted">${births} födda · ${deaths} döda · ${living(s).length} lever nu i byn</p>
+    <ol class="sumList">${key.map(e => `<li><span class="when">${timeLabel(s, e.t)}</span>${esc(e.text)}</li>`).join('') || '<li>Inget särskilt hände.</li>'}</ol>
+    <button id="ovClose" class="primary" type="button">Till byn</button>`;
+  $('ovClose').onclick = () => { $('overlay').hidden = true; };
+}
+
+// ---------- grafik ----------
+const app = new PIXI.Application({ background: 0x1d2420, antialias: true, resolution: Math.min(2, window.devicePixelRatio || 1), autoDensity: true });
+const world = new PIXI.Container();
+const terrainG = new PIXI.Graphics();
+const structG = new PIXI.Graphics();
+const peopleG = new PIXI.Graphics();
+const bubbleG = new PIXI.Graphics();
+const nightG = new PIXI.Graphics();
+const glowG = new PIXI.Graphics();
+glowG.blendMode = PIXI.BLEND_MODES.ADD;
+const labels = new PIXI.Container();
+world.addChild(terrainG, structG, peopleG, bubbleG, nightG, glowG, labels);
+app.stage.addChild(world);
+const nameStyle = new PIXI.TextStyle({ fontFamily: 'Alegreya Sans, system-ui, sans-serif', fontSize: 22, fill: 0xffffff, stroke: 0x111111, strokeThickness: 5, fontWeight: '700' });
+
+const PAL = [
+  // istid, vårtid, sommartid, hösttid
+  { [T.Vatten]: 0xb9d2dc, [T.Sand]: 0xd8dbd3, [T.Gras]: 0xdfe5e6, [T.Skog]: 0xb0bdb9, [T.Sten]: 0xb7bab7, tree: 0x5c6e68 },
+  { [T.Vatten]: 0x4a7a95, [T.Sand]: 0xc9b98a, [T.Gras]: 0x8daa5f, [T.Skog]: 0x527d47, [T.Sten]: 0x8e8d84, tree: 0x355e33 },
+  { [T.Vatten]: 0x3e6e8a, [T.Sand]: 0xd2bf8b, [T.Gras]: 0x7c9a52, [T.Skog]: 0x426c3a, [T.Sten]: 0x8b8b82, tree: 0x2b4f2b },
+  { [T.Vatten]: 0x456f84, [T.Sand]: 0xc7b183, [T.Gras]: 0xa59450, [T.Skog]: 0x7b6a36, [T.Sten]: 0x8b867b, tree: 0xa95c26 },
+] as Array<Record<number, number> & { tree: number }>;
+let drawnAge = -1;
+function shadeCol(c: number, f: number) {
+  const r = Math.min(255, ((c >> 16) & 255) * f), g = Math.min(255, ((c >> 8) & 255) * f), b = Math.min(255, (c & 255) * f);
+  return (r << 16) | (g << 8) | b;
+}
+function drawTerrain(force = false) {
+  const ai = ageIndex(s);
+  if (!force && ai === drawnAge) return;
+  drawnAge = ai;
+  const m = getMap(s.seed), pal = PAL[ai];
+  terrainG.clear();
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const t = m.tiles[y * W + x], sh = m.shade[y * W + x];
+    terrainG.beginFill(shadeCol(pal[t], 0.94 + sh * 0.12)).drawRect(x * TS, y * TS, TS, TS).endFill();
+    if (t === T.Skog) {
+      terrainG.beginFill(pal.tree);
+      const n = 2 + Math.floor(sh * 2);
+      for (let i = 0; i < n; i++) {
+        const tx = x * TS + 3 + ((sh * 97 * (i + 1)) % 1) * 10, ty = y * TS + 3 + ((sh * 57 * (i + 2)) % 1) * 10;
+        terrainG.drawPolygon([tx, ty - 4, tx - 3.5, ty + 3.5, tx + 3.5, ty + 3.5]);
+      }
+      terrainG.endFill();
+    } else if (t === T.Sten) {
+      terrainG.beginFill(shadeCol(pal[t], 0.78)).drawCircle(x * TS + 5 + sh * 6, y * TS + 6 + sh * 4, 2.2).drawCircle(x * TS + 11, y * TS + 11 - sh * 3, 1.6).endFill();
+    } else if (t === T.Vatten && ai !== 0 && sh > 0.82) {
+      terrainG.lineStyle(1, 0xffffff, 0.25).moveTo(x * TS + 3, y * TS + 8).lineTo(x * TS + 9, y * TS + 8).lineStyle(0);
+    }
+  }
+}
+function drawStructures(t: number) {
+  const m = getMap(s.seed), ai = ageIndex(s);
+  structG.clear();
+  // förråd
+  const st = m.stock;
+  structG.beginFill(0x5b4a35, 0.35).drawRoundedRect(st.x * TS, st.y * TS, TS * 2, TS * 2, 3).endFill();
+  const nf = Math.min(12, Math.ceil(s.food / 25)), nw = Math.min(8, Math.ceil(s.wood / 6));
+  for (let i = 0; i < nf; i++) structG.beginFill(i % 2 ? 0xa8463a : 0xc58b3e).drawRect(st.x * TS + 2 + (i % 4) * 7, st.y * TS + 2 + Math.floor(i / 4) * 6, 5, 4).endFill();
+  for (let i = 0; i < nw; i++) structG.beginFill(0x6f4a2a).drawRoundedRect(st.x * TS + 2 + (i % 4) * 7, st.y * TS + 21 + Math.floor(i / 4) * 5, 6, 3, 1.5).endFill();
+  // hyddor
+  for (const h of m.huts) {
+    const x = h.x * TS, y = h.y * TS;
+    structG.beginFill(0x000000, 0.18).drawEllipse(x + TS, y + TS * 1.75, TS * 1.05, TS * 0.35).endFill();
+    structG.beginFill(ai === 0 ? 0xe8eef0 : 0x8a6a3f).drawPolygon([x + TS, y + 2, x + 2, y + TS * 1.7, x + TS * 2 - 2, y + TS * 1.7]).endFill();
+    structG.beginFill(0x3b2a1a).drawPolygon([x + TS, y + TS * 0.9, x + TS * 0.72, y + TS * 1.7, x + TS * 1.28, y + TS * 1.7]).endFill();
+  }
+  // eld
+  const f = m.fire, cx = f.x * TS + TS / 2, cy = f.y * TS + TS / 2;
+  structG.beginFill(0x5a5550).drawCircle(cx, cy, 8).endFill();
+  structG.beginFill(0x2d2620).drawCircle(cx, cy, 6).endFill();
+  if (s.wood > 0 || isLight(t)) {
+    const fl = 1 + Math.sin(t / 130) * 0.12 + Math.sin(t / 47) * 0.08;
+    structG.beginFill(0xe2702e).drawCircle(cx, cy, 4.6 * fl).endFill();
+    structG.beginFill(0xffd36b).drawCircle(cx, cy - 0.5, 2.4 * fl).endFill();
+  }
+}
+const bubbles: { id: number; kind: string; good: boolean; until: number }[] = [];
+function drawPeople(t: number) {
+  peopleG.clear(); bubbleG.clear();
+  labels.removeChildren().forEach(c => c.destroy());
+  const ppl = living(s);
+  for (const p of ppl) {
+    const a = ageOf(p, s.now);
+    const r = a < 3 ? 2.8 : a < 14 ? 3.8 : 5;
+    const x = p.x * TS, y = p.y * TS;
+    const sleeping = p.task?.act === 'sova';
+    const col = hsl(p.hue, sleeping ? 0.15 : 0.5, sleeping ? 0.5 : 0.58);
+    peopleG.beginFill(0x000000, 0.25).drawEllipse(x, y + r * 0.9, r * 0.9, r * 0.35).endFill();
+    if (p.id === selected) peopleG.lineStyle(2.5, 0xffffff, 1);
+    else peopleG.lineStyle(1.2, 0x1a1a1a, 0.8);
+    peopleG.beginFill(col).drawCircle(x, y, r).endFill();
+    peopleG.lineStyle(0);
+    if (p.sickUntil && p.sickUntil > s.now) peopleG.beginFill(0x8fc46a).drawCircle(x + r * 0.7, y - r * 0.7, 1.8).endFill();
+    if (p.pregnantSince !== undefined) peopleG.beginFill(0xf2c4d0).drawCircle(x - r * 0.7, y - r * 0.7, 1.6).endFill();
+    if (p.task?.carry && p.task.carry > 0.05) peopleG.beginFill(p.task.act === 'ved' ? 0x6f4a2a : 0xc58b3e).drawRect(x + r - 1, y - 1, 4, 4).endFill();
+  }
+  for (let i = bubbles.length - 1; i >= 0; i--) {
+    const b = bubbles[i];
+    if (b.until < t) { bubbles.splice(i, 1); continue; }
+    const p = byId(s, b.id); if (!p || !alive(p)) continue;
+    const x = p.x * TS + 4, y = p.y * TS - 13;
+    const col = b.kind === 'gräl' ? 0xd9534f : b.kind === 'flirt' ? 0xf0a3bd : b.kind === 'berättelse' ? 0xf2d27a : 0xffffff;
+    bubbleG.beginFill(col, 0.95).drawRoundedRect(x - 6, y - 4, 12, 8, 3).drawPolygon([x - 3, y + 4, x, y + 4, x - 4, y + 7]).endFill();
+    bubbleG.beginFill(0x333333);
+    for (let k = -1; k <= 1; k++) bubbleG.drawCircle(x + k * 3, y, 0.9);
+    bubbleG.endFill();
+  }
+  const sel = byId(s, selected);
+  for (const p of [sel, hovered !== selected ? byId(s, hovered) : undefined]) {
+    if (!p || !alive(p)) continue;
+    const tx = new PIXI.Text(p.name, nameStyle);
+    tx.scale.set(0.5); tx.anchor.set(0.5, 1); tx.position.set(p.x * TS, p.y * TS - 8);
+    labels.addChild(tx);
+  }
+}
+function drawNight(t: number) {
+  const L = lightLevel(t);
+  nightG.clear(); glowG.clear();
+  if (L >= 1) return;
+  const d = 1 - L;
+  nightG.beginFill(0x0a1430, 0.58 * d).drawRect(0, 0, W * TS, H * TS).endFill();
+  if (s.wood > 0) {
+    const m = getMap(s.seed); const cx = m.fire.x * TS + TS / 2, cy = m.fire.y * TS + TS / 2;
+    const fl = 1 + Math.sin(t / 160) * 0.05;
+    for (const [r, a] of [[TS * 6, 0.035], [TS * 4, 0.06], [TS * 2.4, 0.09], [TS * 1.1, 0.13]]) glowG.beginFill(0xff8a3a, a * d).drawCircle(cx, cy, r * fl).endFill();
+  }
+}
+function hsl(h: number, sat: number, l: number) {
+  const k = (n: number) => (n + h / 30) % 12, a = sat * Math.min(l, 1 - l);
+  const f = (n: number) => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+  return (Math.round(f(0) * 255) << 16) | (Math.round(f(8) * 255) << 8) | Math.round(f(4) * 255);
+}
+let zoom = 2.4, camX = -1, camY = -1;
+function layout() {
+  const el = $('map');
+  const w = el.clientWidth, h = el.clientHeight;
+  if (app.renderer.width !== w * app.renderer.resolution || app.renderer.height !== h * app.renderer.resolution) app.renderer.resize(w, h);
+  const fit = Math.min(w / (W * TS), h / (H * TS));
+  zoom = Math.max(1, Math.min(6, zoom));
+  const sc = fit * zoom;
+  if (camX < 0 && s) { const f = getMap(s.seed).fire; camX = f.x * TS; camY = f.y * TS; }
+  if (camX < 0) { camX = W * TS / 2; camY = H * TS / 2; }
+  const hw = w / 2 / sc, hh = h / 2 / sc;
+  camX = W * TS <= hw * 2 ? W * TS / 2 : Math.max(hw, Math.min(W * TS - hw, camX));
+  camY = H * TS <= hh * 2 ? H * TS / 2 : Math.max(hh, Math.min(H * TS - hh, camY));
+  world.scale.set(sc);
+  world.position.set(w / 2 - camX * sc, h / 2 - camY * sc);
+}
+function zoomAt(f: number, gx?: number, gy?: number) {
+  const el = $('map');
+  if (gx === undefined || gy === undefined) { gx = el.clientWidth / 2; gy = el.clientHeight / 2; }
+  const before = world.toLocal(new PIXI.Point(gx, gy));
+  zoom *= f; layout();
+  const after = world.toLocal(new PIXI.Point(gx, gy));
+  camX += before.x - after.x; camY += before.y - after.y; layout();
+}
+
+// ---------- interaktion ----------
+let hovered: number | undefined;
+function personAt(gx: number, gy: number) {
+  const p = world.toLocal(new PIXI.Point(gx, gy));
+  let best: Person | undefined, bd = 12;
+  for (const q of living(s)) { const d = Math.hypot(q.x * TS - p.x, q.y * TS - p.y); if (d < bd) { bd = d; best = q; } }
+  return best;
+}
+app.stage.eventMode = 'static';
+app.stage.hitArea = new PIXI.Rectangle(0, 0, 10000, 10000);
+let drag: { x: number; y: number; cx: number; cy: number; moved: number } | null = null;
+app.stage.on('pointerdown', e => { drag = { x: e.global.x, y: e.global.y, cx: camX, cy: camY, moved: 0 }; });
+app.stage.on('pointerup', () => { setTimeout(() => { drag = null; }, 0); });
+app.stage.on('pointerupoutside', () => { drag = null; });
+app.stage.on('pointertap', e => { if (drag && drag.moved > 6) return; const p = personAt(e.global.x, e.global.y); if (p) selectPerson(p.id); });
+app.stage.on('pointermove', e => {
+  if (drag && (e.buttons & 1 || e.pointerType === 'touch')) {
+    const dx = e.global.x - drag.x, dy = e.global.y - drag.y;
+    drag.moved = Math.max(drag.moved, Math.hypot(dx, dy));
+    if (drag.moved > 6) { camX = drag.cx - dx / world.scale.x; camY = drag.cy - dy / world.scale.y; layout(); }
+    return;
+  }
+  hovered = personAt(e.global.x, e.global.y)?.id; (app.view as HTMLCanvasElement).style.cursor = hovered ? 'pointer' : 'grab';
+});
+(app.view as HTMLCanvasElement).addEventListener('wheel', e => { e.preventDefault(); const r = (app.view as HTMLCanvasElement).getBoundingClientRect(); zoomAt(e.deltaY < 0 ? 1.15 : 1 / 1.15, e.clientX - r.left, e.clientY - r.top); }, { passive: false });
+$('zIn').addEventListener('click', () => zoomAt(1.4));
+$('zOut').addEventListener('click', () => zoomAt(1 / 1.4));
+$('zHome').addEventListener('click', () => { zoom = 2.4; const f = getMap(s.seed).fire; camX = f.x * TS; camY = f.y * TS; layout(); });
+
+function selectPerson(id: number) { selected = id; tab = 'person'; renderPanel(true); }
+
+// ---------- panel ----------
+function bar(v: number, cls = '') { return `<span class="bar ${cls}"><span style="width:${Math.round(Math.max(0, Math.min(1, v)) * 100)}%"></span></span>`; }
+function moodWord(m: number) { return m > 0.75 ? 'Lycklig' : m > 0.55 ? 'Nöjd' : m > 0.4 ? 'Okej' : m > 0.25 ? 'Nedstämd' : 'Olycklig'; }
+function relWord(s: State, p: Person, q: Person, op: number) {
+  if (p.partner === q.id) return 'Partner';
+  if (q.mother === p.id || q.father === p.id) return 'Barn';
+  if (p.mother === q.id || p.father === q.id) return 'Förälder';
+  if (p.mother !== undefined && (p.mother === q.mother || p.father === q.father)) return 'Syskon';
+  return op > 60 ? 'Nära vän' : op > 25 ? 'Vän' : op > -10 ? 'Bekant' : op > -45 ? 'Ogillar' : 'Ovän';
+}
+function pLink(p?: Person) { return p ? `<button class="plink" data-id="${p.id}" type="button">${esc(p.name)}</button>` : '–'; }
+function renderPanel(force = false) {
+  for (const b of document.querySelectorAll<HTMLButtonElement>('.tabs button')) b.setAttribute('aria-selected', String(b.dataset.tab === tab));
+  const ppl = living(s);
+  $('sPop').textContent = String(ppl.length);
+  const fd = foodDays(s);
+  $('sFood').textContent = `${Math.round(s.food)}`;
+  $('sFoodDays').textContent = `räcker ca ${fd >= 10 ? Math.round(fd) : fd.toFixed(1).replace('.', ',')} dygn`;
+  $('sWood').textContent = `${Math.round(s.wood)}`;
+  const box = $('panelBody');
+  if (!force && (busy || performance.now() - lastPointer < 800)) return;
+  if (tab === 'folk') {
+    const rows = ppl.slice().sort((a, b) => b.born < a.born ? 1 : -1).sort((a, b) => ageOf(b, s.now) - ageOf(a, s.now));
+    box.innerHTML = `<ul class="folk">${rows.map(p => {
+      const m = moodOf(p, s.now);
+      return `<li><button class="row" data-id="${p.id}" type="button"><span class="dot" style="background:#${hsl(p.hue, 0.5, 0.58).toString(16).padStart(6, '0')}"></span><span class="nm">${esc(p.name)}</span><span class="age">${Math.floor(ageOf(p, s.now))} år</span><span class="act">${p.task ? ACT_NAMES[p.task.act] : '–'}</span>${bar(m, m < 0.35 ? 'low' : '')}</button></li>`;
+    }).join('')}</ul>`;
+  } else if (tab === 'logg') {
+    box.innerHTML = `<ol class="logg">${s.log.slice().reverse().slice(0, 150).map(l => `<li class="k-${l.kind}"><span class="when">${timeLabel(s, l.t)}</span>${linkify(l)}</li>`).join('')}</ol>`;
+  } else {
+    const p = byId(s, selected);
+    if (!p) { box.innerHTML = `<p class="muted">Klicka på en person på kartan eller i listan för att se allt om hen.</p>`; return; }
+    const a = ageOf(p, s.now), now = s.now;
+    const kids = s.people.filter(q => q.mother === p.id || q.father === p.id);
+    const rels = s.people.filter(q => q.id !== p.id && s.rels[relKey(p.id, q.id)] && alive(q)).map(q => ({ q, r: s.rels[relKey(p.id, q.id)] }))
+      .sort((x, y) => Math.abs(y.r.op) - Math.abs(x.r.op)).slice(0, 8);
+    const status = alive(p) ? (p.task ? ACT_NAMES[p.task.act] : '–') : p.died !== undefined ? `Dog ${p.cause} (${timeLabel(s, p.died)})` : `Flyttade från byn (${timeLabel(s, p.left!)})`;
+    box.innerHTML = `
+      <div class="phead"><span class="dot big" style="background:#${hsl(p.hue, 0.5, 0.58).toString(16).padStart(6, '0')}"></span><div><h2>${esc(p.name)}</h2>
+      <p class="muted">${p.sex === 'k' ? 'Kvinna' : 'Man'}, ${Math.floor(a)} år · född ${timeLabel(s, p.born)}</p><p class="status">${status}</p></div></div>
+      ${alive(p) ? `<h3>Mående</h3><dl class="kv">
+        <dt>Humör</dt><dd>${bar(moodOf(p, now))}<span>${moodWord(moodOf(p, now))}</span></dd>
+        <dt>Mättnad</dt><dd>${bar(p.hunger)}</dd><dt>Vila</dt><dd>${bar(p.rest)}</dd>
+        <dt>Gemenskap</dt><dd>${bar(p.social)}</dd><dt>Hälsa</dt><dd>${bar(p.health, p.health < 0.5 ? 'low' : '')}</dd></dl>
+        ${p.thoughts.length ? `<ul class="thoughts">${p.thoughts.map(t => `<li class="${t.v < 0 ? 'neg' : 'pos'}">${esc(t.text)} <span>${t.v > 0 ? '+' : ''}${Math.round(t.v * 100)}</span></li>`).join('')}</ul>` : ''}` : ''}
+      <h3>Egenskaper</h3><dl class="kv">${STATS.map(k => `<dt>${STAT_NAMES[k]}</dt><dd>${bar(stat(p, k, now) / 20)}<span>${stat(p, k, now).toFixed(1).replace('.', ',')}</span></dd>`).join('')}</dl>
+      <h3>Färdigheter</h3><dl class="kv">${SKILLS.map(k => `<dt>${SKILL_NAMES[k]}</dt><dd>${bar(p.skill[k] / 20, 'skill')}<span>${p.skill[k].toFixed(1).replace('.', ',')}</span></dd>`).join('')}</dl>
+      <h3>Familj</h3><dl class="kv fam"><dt>Föräldrar</dt><dd>${p.mother || p.father ? [byId(s, p.mother), byId(s, p.father)].filter(Boolean).map(q => pLink(q)).join(' och ') : 'Bland de första i byn'}</dd>
+        <dt>Partner</dt><dd>${pLink(byId(s, p.partner))}</dd><dt>Barn</dt><dd>${kids.length ? kids.map(pLink).join(', ') : '–'}</dd></dl>
+      <h3>Relationer</h3>${rels.length ? `<ul class="rels">${rels.map(({ q, r }) => `<li>${pLink(q)}<span class="rw ${r.op < -10 ? 'neg' : r.op > 25 ? 'pos' : ''}">${relWord(s, p, q, r.op)}</span><span class="muted">${r.talks} samtal</span></li>`).join('')}</ul>` : '<p class="muted">Inga relationer ännu.</p>'}
+      <h3>Eftermäle</h3>${p.fame.length ? `<ul class="fame">${p.fame.map(f => `<li>${esc(f)}</li>`).join('')}</ul>` : '<p class="muted">Inget som minns ännu.</p>'}`;
+  }
+}
+function linkify(l: LogEntry) {
+  let t = esc(l.text);
+  for (const id of l.ids) { const p = byId(s, id); if (p) t = t.replace(esc(p.name), `<button class="plink" data-id="${p.id}" type="button">${esc(p.name)}</button>`); }
+  return t;
+}
+document.addEventListener('click', e => {
+  const b = (e.target as HTMLElement).closest('[data-id]') as HTMLElement | null;
+  if (b) { selectPerson(Number(b.dataset.id)); return; }
+  const tb = (e.target as HTMLElement).closest('.tabs button') as HTMLElement | null;
+  if (tb) { tab = tb.dataset.tab as any; renderPanel(true); }
+});
+
+function renderClock() {
+  const t = s.now;
+  const d = new Date(t);
+  const hh = String(d.getHours()).padStart(2, '0'), mm = String(d.getMinutes()).padStart(2, '0');
+  $('calYear').textContent = `År ${yearNo(s)}`;
+  $('calAge').textContent = `${AGES[ageIndex(s)]}, dag ${ageDay(s)} av 7`;
+  $('calTime').textContent = `${isLight(t) ? 'Ljus tid' : 'Mörk tid'} · ${hh}:${mm}${testMode ? ' (test)' : ''}`;
+}
+
+// ---------- kontroller ----------
+function setSpeed(v: number) {
+  speed = v;
+  for (const b of document.querySelectorAll<HTMLButtonElement>('#speeds button')) b.setAttribute('aria-pressed', String(Number(b.dataset.v) === v));
+}
+$('testToggle').addEventListener('change', async e => {
+  const on = (e.target as HTMLInputElement).checked;
+  if (on) {
+    saveLocal(); await saveDb();
+    realState = s;
+    s = JSON.parse(serialize(s));
+    testMode = true; $('speeds').hidden = false; document.body.classList.add('testing'); setSpeed(3600);
+  } else {
+    testMode = false; $('speeds').hidden = true; document.body.classList.remove('testing'); setSpeed(1);
+    if (realState) { s = realState; realState = null; }
+    for (const p of living(s)) p.task = undefined;
+    drawTerrain(true);
+    await catchUp(Date.now(), Date.now() - s.now > 10 * 60 * 1000);
+  }
+  renderClock(); renderPanel(true);
+});
+for (const b of document.querySelectorAll<HTMLButtonElement>('#speeds button')) b.addEventListener('click', () => setSpeed(Number(b.dataset.v)));
+$('newVillage').addEventListener('click', () => { $('confirmNew').hidden = false; });
+$('cancelNew').addEventListener('click', () => { $('confirmNew').hidden = true; });
+$('okNew').addEventListener('click', () => {
+  $('confirmNew').hidden = true;
+  if (testMode) { ($('testToggle') as HTMLInputElement).checked = false; testMode = false; realState = null; $('speeds').hidden = true; document.body.classList.remove('testing'); setSpeed(1); }
+  s = createState(Math.floor(Math.random() * 2 ** 31), Date.now());
+  selected = undefined; tab = 'folk'; camX = -1; layout();
+  drawTerrain(true); saveLocal(); saveDb(); renderPanel(true);
+});
+
+// ---------- huvudloop ----------
+const events: TalkEvent[] = [];
+let lastUi = 0, lastLocal = 0, lastDb = 0;
+function tick() {
+  if (!s || busy) return;
+  const realDt = Math.min(0.25, app.ticker.deltaMS / 1000);
+  if (testMode) {
+    let dt = realDt * speed;
+    if (speed > 60) { while (dt > 0) { const d = Math.min(300, dt); step(s, d, false); dt -= d; } for (const p of living(s)) if (p.task) { p.x = p.task.tx; p.y = p.task.ty; } }
+    else { while (dt > 0) { const d = Math.min(0.5, dt); step(s, d, true, events); dt -= d; } }
+  } else {
+    const lag = (Date.now() - s.now) / 1000;
+    if (lag > 120) { catchUp(Date.now(), lag > 600); return; }
+    let dt = lag;
+    if (dt <= 0.01) step(s, 0, true, events);
+    while (dt > 0.01) { const d = Math.min(0.5, dt); step(s, d, true, events); dt -= d; }
+  }
+  const now = performance.now();
+  for (const e of events.splice(0)) { bubbles.push({ id: e.a, kind: e.kind, good: e.good, until: now + 2600 }); }
+  drawTerrain();
+  drawStructures(now);
+  drawPeople(now);
+  drawNight(s.now);
+  if (now - lastUi > 600) { lastUi = now; renderClock(); renderPanel(); }
+  if (!testMode && now - lastLocal > 20000) { lastLocal = now; saveLocal(); }
+  if (!testMode && now - lastDb > 60000) { lastDb = now; saveDb(); }
+}
+let lastPointer = 0;
+document.addEventListener('pointerdown', () => { lastPointer = performance.now(); }, true);
+
+document.addEventListener('visibilitychange', () => { if (document.hidden) { saveLocal(); saveDb(); } });
+window.addEventListener('pagehide', () => { saveLocal(); });
+
+async function boot() {
+  $('map').appendChild(app.view as HTMLCanvasElement);
+  layout();
+  new ResizeObserver(layout).observe($('map'));
+  const loaded = await loadSaves();
+  if (loaded) {
+    s = loaded;
+    for (const p of living(s)) p.task = undefined;
+    camX = -1; layout();
+    drawTerrain(true);
+    renderClock(); renderPanel(true);
+    await catchUp(Date.now(), Date.now() - s.now > 10 * 60 * 1000);
+  } else {
+    s = createState(Math.floor(Math.random() * 2 ** 31), Date.now());
+    camX = -1; layout();
+    drawTerrain(true); saveLocal(); saveDb();
+  }
+  $('loading').hidden = true;
+  renderClock(); renderPanel(true);
+  app.ticker.add(tick);
+}
+boot();
+// gör DAY/HOUR tillgängliga för felsökning i konsolen
+(window as any).__byn = { get s() { return s; }, DAY, HOUR };

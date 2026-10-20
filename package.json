@@ -1,0 +1,25 @@
+{
+  "name": "samhallssimulatorn",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "tsx src/test.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/woowo95/test.git"
+  },
+  "bugs": {
+    "url": "https://github.com/woowo95/test/issues"
+  },
+  "homepage": "https://github.com/woowo95/test#readme",
+  "dependencies": {
+    "@pixi/unsafe-eval": "^7.4.3",
+    "esbuild": "^0.28.2",
+    "pixi.js": "^7.4.3",
+    "tsx": "^4.23.15"
+  },
+  "private": true,
+  "type": "module"
+}

@@ -1,0 +1,159 @@
+<title>Samhällssimulatorn</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Grenze:wght@500;700&family=Alegreya+Sans:wght@400;500;700&display=swap">
+<style>
+/* Layout: kartan fyller vänster yta, en smal journalpanel till höger; på mobil staplas de. */
+:root {
+  --bg: #e3e6df; --panel: #f1f3ee; --fg: #1e2420; --muted: #5d6860; --line: #c7cdc4;
+  --accent: #b5701a; --accent-fg: #ffffff; --good: #4f8a4a; --bad: #b8483b; --barbg: #d6dbd3;
+  --display: "Grenze", "Palatino Linotype", Georgia, serif;
+  --body: "Alegreya Sans", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #131816; --panel: #1b221f; --fg: #e2e6df; --muted: #93a096; --line: #2c3530;
+  --accent: #e3a045; --accent-fg: #1b1408; --good: #7dbb72; --bad: #e07a6c; --barbg: #2a332e; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #131816; --panel: #1b221f; --fg: #e2e6df; --muted: #93a096; --line: #2c3530;
+  --accent: #e3a045; --accent-fg: #1b1408; --good: #7dbb72; --bad: #e07a6c; --barbg: #2a332e; color-scheme: dark }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px; line-height: 1.4;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); box-sizing: border-box; }
+.app { height: 100%; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 10px; padding-block: 12px; box-sizing: border-box; }
+header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 18px; }
+h1 { font-family: var(--display); font-weight: 700; font-size: 1.7rem; margin: 0; letter-spacing: 0.01em; }
+.cal { display: flex; flex-wrap: wrap; gap: 4px 14px; font-variant-numeric: tabular-nums; color: var(--muted); }
+.cal b { color: var(--fg); font-weight: 700; }
+.main { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 12px; min-height: 0; }
+.mapwrap { position: relative; min-height: 0; border-radius: 6px; overflow: hidden; background: #1d2420; }
+#map { position: absolute; inset: 0; }
+#map canvas { display: block; touch-action: manipulation; }
+.chips { position: absolute; left: 10px; top: 10px; display: flex; flex-wrap: wrap; gap: 6px; pointer-events: none; }
+.zoom { position: absolute; right: 10px; bottom: 10px; display: flex; gap: 4px; }
+.zoom button { font: inherit; font-size: 14px; font-weight: 700; min-width: 32px; height: 32px; border-radius: 4px; border: 0; background: rgba(18, 22, 20, 0.72); color: #eef1ec; cursor: pointer; padding: 0 10px; }
+.zoom button:hover { background: rgba(18, 22, 20, 0.9); }
+.chip { background: rgba(18, 22, 20, 0.72); color: #eef1ec; border-radius: 4px; padding: 4px 9px; font-size: 13px; font-variant-numeric: tabular-nums; }
+.chip b { font-weight: 700; margin-right: 3px; }
+.chip span { opacity: 0.75; margin-left: 4px; }
+aside { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; min-height: 0; }
+.tabs { display: flex; border-bottom: 1px solid var(--line); }
+.tabs button { flex: 1; background: none; border: 0; border-bottom: 2px solid transparent; color: var(--muted); font: inherit; font-weight: 500; padding: 10px 6px 8px; cursor: pointer; }
+.tabs button[aria-selected="true"] { color: var(--fg); border-bottom-color: var(--accent); font-weight: 700; }
+#panelBody { overflow-y: auto; padding: 12px 14px 16px; min-width: 0; }
+.muted { color: var(--muted); }
+ul, ol { list-style: none; margin: 0; padding: 0; }
+.folk li + li { border-top: 1px solid var(--line); }
+.row { width: 100%; display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; grid-template-areas: "d n a" ". t b"; gap: 1px 8px; align-items: center; background: none; border: 0; color: inherit; font: inherit; text-align: left; padding: 7px 2px; cursor: pointer; border-radius: 4px; }
+.row:hover { background: color-mix(in srgb, var(--accent) 9%, transparent); }
+.row .dot { grid-area: d; }
+.row .nm { grid-area: n; font-weight: 700; }
+.row .age { grid-area: a; color: var(--muted); font-variant-numeric: tabular-nums; }
+.row .act { grid-area: t; color: var(--muted); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row .bar { grid-area: b; width: 70px; }
+.dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; box-shadow: 0 0 0 1px rgba(0,0,0,0.35); }
+.dot.big { width: 22px; height: 22px; flex: none; margin-top: 6px; }
+.bar { display: inline-block; height: 6px; border-radius: 3px; background: var(--barbg); overflow: hidden; vertical-align: middle; }
+.bar > span { display: block; height: 100%; background: var(--good); border-radius: 3px; }
+.bar.low > span { background: var(--bad); }
+.bar.skill > span { background: var(--accent); }
+.logg li { padding: 7px 0; border-top: 1px solid var(--line); }
+.logg li:first-child { border-top: 0; }
+.when { display: block; font-size: 12px; color: var(--muted); letter-spacing: 0.02em; }
+.logg .k-death { color: var(--bad); }
+.logg .k-death .when { color: var(--muted); }
+.logg .k-world { font-style: italic; }
+.plink { background: none; border: 0; padding: 0; font: inherit; font-weight: 700; color: inherit; text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--accent) 60%, transparent); text-underline-offset: 2px; cursor: pointer; }
+.phead { display: flex; gap: 10px; align-items: flex-start; }
+.phead h2 { font-family: var(--display); font-size: 1.5rem; margin: 0; line-height: 1.1; }
+.phead p { margin: 2px 0 0; }
+.status { font-weight: 500; }
+h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 16px 0 6px; font-weight: 700; }
+.kv { display: grid; grid-template-columns: 100px minmax(0, 1fr); gap: 4px 10px; margin: 0; align-items: center; }
+.kv dt { color: var(--muted); }
+.kv dd { margin: 0; display: flex; align-items: center; gap: 8px; font-variant-numeric: tabular-nums; }
+.kv dd .bar { flex: 1; max-width: 140px; }
+.kv.fam dd { display: block; }
+.thoughts { margin-top: 8px; display: grid; gap: 3px; }
+.thoughts li { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; }
+.thoughts .pos span { color: var(--good); } .thoughts .neg span { color: var(--bad); }
+.rels li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; padding: 3px 0; }
+.rw.pos { color: var(--good); } .rw.neg { color: var(--bad); }
+.fame li::before { content: "◆ "; color: var(--accent); }
+.controls { border-top: 1px solid var(--line); padding: 10px 14px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.switch { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+#speeds { display: flex; gap: 4px; flex-wrap: wrap; }
+#speeds button, .ghost, .primary { font: inherit; font-size: 13px; border-radius: 4px; padding: 4px 9px; cursor: pointer; border: 1px solid var(--line); background: transparent; color: var(--fg); }
+#speeds button[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); font-weight: 700; padding: 7px 14px; font-size: 15px; }
+.spacer { flex: 1; }
+#confirmNew { width: 100%; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 14px; }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+body.testing .mapwrap { box-shadow: 0 0 0 3px var(--accent); }
+#overlay, #loading { position: fixed; inset: 0; background: rgba(10, 14, 12, 0.55); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 20; }
+.card { background: var(--panel); color: var(--fg); border-radius: 8px; padding: 20px 22px; width: min(460px, 100%); max-height: 85vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.35); box-sizing: border-box; }
+.card h2 { font-family: var(--display); font-size: 1.6rem; margin: 0 0 4px; }
+.ovLead { font-size: 1.1rem; margin: 0 0 6px; }
+.prog { height: 8px; border-radius: 4px; background: var(--barbg); overflow: hidden; margin: 12px 0 6px; }
+#progBar { height: 100%; width: 0; background: var(--accent); transition: width 0.1s linear; }
+.sumList { margin: 12px 0 16px; display: grid; gap: 8px; }
+@media (max-width: 820px) {
+  html, body { height: auto; }
+  .app { height: auto; }
+  .main { grid-template-columns: 1fr; }
+  .mapwrap { aspect-ratio: 1.15; max-width: 100%; }
+  .chip { font-size: 12px; padding: 3px 7px; }
+  aside { min-height: 420px; }
+  #panelBody { max-height: 60vh; }
+}
+@media (prefers-reduced-motion: reduce) { #progBar { transition: none; } }
+</style>
+
+<div class="app">
+  <header>
+    <h1>Samhällssimulatorn</h1>
+    <div class="cal" aria-live="polite"><b id="calYear">År 1</b><span id="calAge">Vårtid</span><span id="calTime"></span></div>
+  </header>
+  <div class="main">
+    <section class="mapwrap" aria-label="Karta över byn">
+      <div id="map"></div>
+      <div class="chips">
+        <span class="chip"><b id="sPop">0</b>invånare</span>
+        <span class="chip"><b id="sFood">0</b>mat<span id="sFoodDays"></span></span>
+        <span class="chip"><b id="sWood">0</b>ved</span>
+      </div>
+      <div class="zoom">
+        <button type="button" id="zIn" aria-label="Zooma in">+</button>
+        <button type="button" id="zOut" aria-label="Zooma ut">−</button>
+        <button type="button" id="zHome">Byn</button>
+      </div>
+    </section>
+    <aside>
+      <nav class="tabs" role="tablist">
+        <button type="button" role="tab" data-tab="folk" aria-selected="true">Invånare</button>
+        <button type="button" role="tab" data-tab="logg" aria-selected="false">Händelser</button>
+        <button type="button" role="tab" data-tab="person" aria-selected="false">Person</button>
+      </nav>
+      <div id="panelBody"></div>
+      <div class="controls">
+        <label class="switch"><input type="checkbox" id="testToggle"> Testläge</label>
+        <div id="speeds" hidden>
+          <button type="button" data-v="1">1×</button>
+          <button type="button" data-v="60">1 min/s</button>
+          <button type="button" data-v="3600">1 tim/s</button>
+          <button type="button" data-v="86400">1 år/s</button>
+        </div>
+        <span class="spacer"></span>
+        <button type="button" class="ghost" id="newVillage">Ny by</button>
+        <div id="confirmNew" hidden>
+          <span>Den nuvarande byn försvinner för gott.</span>
+          <button type="button" class="ghost" id="cancelNew">Avbryt</button>
+          <button type="button" class="primary" id="okNew">Starta ny by</button>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+<div id="loading"><div class="card"><h2>Samhällssimulatorn</h2><p class="muted">Letar efter din by…</p></div></div>
+<div id="overlay" hidden><div class="card"><h2>Välkommen tillbaka</h2><div id="ovBody"></div></div></div>
+<script>/*BUNDLE*/</script>
