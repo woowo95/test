@@ -3,7 +3,8 @@ import '@pixi/unsafe-eval';
 import {
   State, Person, T, W, H, DAY, HOUR, STATS, STAT_NAMES, SKILLS, SKILL_NAMES, AGES, ACT_NAMES, TalkEvent, LogEntry,
   createState, step, getMap, living, alive, ageOf, byId, relKey, moodOf, ageIndex, ageDay, yearNo, lightLevel, isLight,
-  foodDays, timeLabel, serialize, compact, stat,
+  foodDays, timeLabel, serialize, compact, stat, migrate, hearthOf, igniterOf, fireHeat, heatRadius, fireTarget, emberOn,
+  ITEM_NAMES, FireLog,
 } from './sim';
 
 const TS = 16; // pixlar per ruta i världen
@@ -18,7 +19,7 @@ let speed = 1;
 let selected: number | undefined;
 let busy = false; // ikappräkning pågår
 let db: any = null, uid: string | null = null;
-let tab: 'folk' | 'logg' | 'person' = 'folk';
+let tab: 'folk' | 'logg' | 'person' | 'eld' = 'folk';
 
 // ---------- sparning ----------
 function saveLocal() {
@@ -31,7 +32,7 @@ async function saveDb() {
 }
 function parse(txt: string | null | undefined): State | null {
   if (!txt) return null;
-  try { const o = JSON.parse(txt); return o && o.v === 1 && Array.isArray(o.people) ? o : null; } catch { return null; }
+  try { const o = JSON.parse(txt); return o && o.v === 1 && Array.isArray(o.people) ? migrate(o) : null; } catch { return null; }
 }
 async function loadSaves(): Promise<State | null> {
   let local: State | null = null;
@@ -88,7 +89,7 @@ function showSummary(from: number, logStart: number) {
   const ev = s.log.filter(l => l.t > logStart && l.t > from);
   const years = (s.now - from) / DAY;
   const births = ev.filter(e => e.kind === 'birth').length, deaths = ev.filter(e => e.kind === 'death').length;
-  const prio = (e: LogEntry) => e.kind === 'death' ? 5 : e.kind === 'birth' || e.kind === 'move' ? 4 : e.kind === 'skill' || /par\.|skilda/.test(e.text) ? 3 : e.kind === 'world' && /tiden|Byn/.test(e.text) ? 2 : e.kind === 'rel' ? 1 : 0;
+  const prio = (e: LogEntry) => e.kind === 'death' ? 5 : e.kind === 'birth' || e.kind === 'move' ? 4 : e.kind === 'skill' || /par\.|skilda|tända elden|slocknade/.test(e.text) ? 3 : e.kind === 'world' && /tiden|Byn|gniststen/.test(e.text) ? 2 : e.kind === 'rel' ? 1 : 0;
   const key = ev.map((e, i) => ({ e, i, p: prio(e) })).filter(x => x.p > 0).sort((a, b) => b.p - a.p || b.i - a.i).slice(0, 10).sort((a, b) => b.i - a.i).map(x => x.e);
   const yrs = years >= 1 ? `${years.toFixed(1).replace('.', ',')} år` : `${Math.round(years * 12)} månader`;
   $('ovBody').innerHTML = `
@@ -168,12 +169,21 @@ function drawStructures(t: number) {
   }
   // eld
   const f = m.fire, cx = f.x * TS + TS / 2, cy = f.y * TS + TS / 2;
-  structG.beginFill(0x5a5550).drawCircle(cx, cy, 8).endFill();
-  structG.beginFill(0x2d2620).drawCircle(cx, cy, 6).endFill();
-  if (s.wood > 0 || isLight(t)) {
-    const fl = 1 + Math.sin(t / 130) * 0.12 + Math.sin(t / 47) * 0.08;
-    structG.beginFill(0xe2702e).drawCircle(cx, cy, 4.6 * fl).endFill();
-    structG.beginFill(0xffd36b).drawCircle(cx, cy - 0.5, 2.4 * fl).endFill();
+  // värmeområdet visas när eldens flik är öppen
+  if (tab === 'eld' && s.fire.lit) structG.beginFill(0xff9a4a, 0.1).lineStyle(1, 0xffb070, 0.5).drawCircle(cx, cy, heatRadius(s) * TS).endFill().lineStyle(0);
+  if (tab === 'eld') structG.lineStyle(1.5, 0xffffff, 0.9).drawCircle(cx, cy, 10).lineStyle(0);
+  structG.beginFill(0x4b4640).drawCircle(cx, cy, 7).endFill();
+  structG.beginFill(0x2d2620).drawCircle(cx, cy, 5.5).endFill();
+  const fuel = s.fire.fuel, fl = 1 + Math.sin(t / 130) * 0.12 + Math.sin(t / 47) * 0.08;
+  // vedträn: fler ju mer ved som ligger på
+  const logs = Math.min(5, Math.ceil(fuel));
+  for (let i = 0; i < logs; i++) { const a = i * 1.26 + 0.4; structG.lineStyle(2, 0x5a3a1e).moveTo(cx + Math.cos(a) * 1.5, cy + Math.sin(a) * 1.5).lineTo(cx + Math.cos(a) * 5.2, cy + Math.sin(a) * 5.2).lineStyle(0); }
+  if (s.fire.lit) {
+    const I = fireHeat(s);
+    structG.beginFill(0xe2702e).drawCircle(cx, cy, (2.6 + 3 * I) * fl).endFill();
+    structG.beginFill(0xffd36b).drawCircle(cx, cy - 0.5, (1.3 + 1.6 * I) * fl).endFill();
+  } else if (emberOn(s)) {
+    structG.beginFill(0xb3361e, 0.6 + Math.sin(t / 400) * 0.25).drawCircle(cx, cy, 2.6).endFill();
   }
 }
 const bubbles: { id: number; kind: string; good: boolean; until: number }[] = [];
@@ -194,7 +204,7 @@ function drawPeople(t: number) {
     peopleG.lineStyle(0);
     if (p.sickUntil && p.sickUntil > s.now) peopleG.beginFill(0x8fc46a).drawCircle(x + r * 0.7, y - r * 0.7, 1.8).endFill();
     if (p.pregnantSince !== undefined) peopleG.beginFill(0xf2c4d0).drawCircle(x - r * 0.7, y - r * 0.7, 1.6).endFill();
-    if (p.task?.carry && p.task.carry > 0.05) peopleG.beginFill(p.task.act === 'ved' ? 0x6f4a2a : 0xc58b3e).drawRect(x + r - 1, y - 1, 4, 4).endFill();
+    if (p.task?.carry && p.task.carry > 0.05) peopleG.beginFill(p.task.act === 'ved' || p.task.act === 'elda' ? 0x6f4a2a : 0xc58b3e).drawRect(x + r - 1, y - 1, 4, 4).endFill();
   }
   for (let i = bubbles.length - 1; i >= 0; i--) {
     const b = bubbles[i];
@@ -221,10 +231,11 @@ function drawNight(t: number) {
   if (L >= 1) return;
   const d = 1 - L;
   nightG.beginFill(0x0a1430, 0.58 * d).drawRect(0, 0, W * TS, H * TS).endFill();
-  if (s.wood > 0) {
+  const I = fireHeat(s);
+  if (I > 0 || emberOn(s)) {
     const m = getMap(s.seed); const cx = m.fire.x * TS + TS / 2, cy = m.fire.y * TS + TS / 2;
-    const fl = 1 + Math.sin(t / 160) * 0.05;
-    for (const [r, a] of [[TS * 6, 0.035], [TS * 4, 0.06], [TS * 2.4, 0.09], [TS * 1.1, 0.13]]) glowG.beginFill(0xff8a3a, a * d).drawCircle(cx, cy, r * fl).endFill();
+    const fl = 1 + Math.sin(t / 160) * 0.05, k = I > 0 ? 0.45 + 0.55 * I : 0.12;
+    for (const [r, a] of [[TS * 6, 0.035], [TS * 4, 0.06], [TS * 2.4, 0.09], [TS * 1.1, 0.13]]) glowG.beginFill(0xff8a3a, a * d * (I > 0 ? 1 : 0.5)).drawCircle(cx, cy, r * fl * k).endFill();
   }
 }
 function hsl(h: number, sat: number, l: number) {
@@ -271,7 +282,15 @@ let drag: { x: number; y: number; cx: number; cy: number; moved: number } | null
 app.stage.on('pointerdown', e => { drag = { x: e.global.x, y: e.global.y, cx: camX, cy: camY, moved: 0 }; });
 app.stage.on('pointerup', () => { setTimeout(() => { drag = null; }, 0); });
 app.stage.on('pointerupoutside', () => { drag = null; });
-app.stage.on('pointertap', e => { if (drag && drag.moved > 6) return; const p = personAt(e.global.x, e.global.y); if (p) selectPerson(p.id); });
+function fireAt(gx: number, gy: number) {
+  const p = world.toLocal(new PIXI.Point(gx, gy)), f = getMap(s.seed).fire;
+  return Math.hypot(f.x * TS + TS / 2 - p.x, f.y * TS + TS / 2 - p.y) < 12;
+}
+app.stage.on('pointertap', e => {
+  if (drag && drag.moved > 6) return;
+  const p = personAt(e.global.x, e.global.y);
+  if (p) selectPerson(p.id); else if (fireAt(e.global.x, e.global.y)) { tab = 'eld'; renderPanel(true); }
+});
 app.stage.on('pointermove', e => {
   if (drag && (e.buttons & 1 || e.pointerType === 'touch')) {
     const dx = e.global.x - drag.x, dy = e.global.y - drag.y;
@@ -279,7 +298,7 @@ app.stage.on('pointermove', e => {
     if (drag.moved > 6) { camX = drag.cx - dx / world.scale.x; camY = drag.cy - dy / world.scale.y; layout(); }
     return;
   }
-  hovered = personAt(e.global.x, e.global.y)?.id; (app.view as HTMLCanvasElement).style.cursor = hovered ? 'pointer' : 'grab';
+  hovered = personAt(e.global.x, e.global.y)?.id; (app.view as HTMLCanvasElement).style.cursor = hovered || fireAt(e.global.x, e.global.y) ? 'pointer' : 'grab';
 });
 (app.view as HTMLCanvasElement).addEventListener('wheel', e => { e.preventDefault(); const r = (app.view as HTMLCanvasElement).getBoundingClientRect(); zoomAt(e.deltaY < 0 ? 1.15 : 1 / 1.15, e.clientX - r.left, e.clientY - r.top); }, { passive: false });
 $('zIn').addEventListener('click', () => zoomAt(1.4));
@@ -307,6 +326,7 @@ function renderPanel(force = false) {
   $('sFood').textContent = `${Math.round(s.food)}`;
   $('sFoodDays').textContent = `räcker ca ${fd >= 10 ? Math.round(fd) : fd.toFixed(1).replace('.', ',')} dygn`;
   $('sWood').textContent = `${Math.round(s.wood)}`;
+  $('sFire').textContent = s.fire.lit ? 'brinner' : emberOn(s) ? 'glöder' : 'släckt';
   const box = $('panelBody');
   if (!force && (busy || performance.now() - lastPointer < 800)) return;
   if (tab === 'folk') {
@@ -317,6 +337,8 @@ function renderPanel(force = false) {
     }).join('')}</ul>`;
   } else if (tab === 'logg') {
     box.innerHTML = `<ol class="logg">${s.log.slice().reverse().slice(0, 150).map(l => `<li class="k-${l.kind}"><span class="when">${timeLabel(s, l.t)}</span>${linkify(l)}</li>`).join('')}</ol>`;
+  } else if (tab === 'eld') {
+    box.innerHTML = fireHtml();
   } else {
     const p = byId(s, selected);
     if (!p) { box.innerHTML = `<p class="muted">Klicka på en person på kartan eller i listan för att se allt om hen.</p>`; return; }
@@ -340,6 +362,66 @@ function renderPanel(force = false) {
       <h3>Relationer</h3>${rels.length ? `<ul class="rels">${rels.map(({ q, r }) => `<li>${pLink(q)}<span class="rw ${r.op < -10 ? 'neg' : r.op > 25 ? 'pos' : ''}">${relWord(s, p, q, r.op)}</span><span class="muted">${r.talks} samtal</span></li>`).join('')}</ul>` : '<p class="muted">Inga relationer ännu.</p>'}
       <h3>Eftermäle</h3>${p.fame.length ? `<ul class="fame">${p.fame.map(f => `<li>${esc(f)}</li>`).join('')}</ul>` : '<p class="muted">Inget som minns ännu.</p>'}`;
   }
+}
+const num = (v: number, d = 1) => v.toFixed(d).replace('.', ',');
+const times = (n: number) => `${n} ${n === 1 ? 'gång' : 'gånger'}`;
+function durTxt(ms: number) {
+  const h = ms / HOUR;
+  const min = Math.max(1, Math.round(ms / 60000));
+  return h >= 24 ? `${num(h / 24)} dygn` : h >= 1 ? `${num(h)} timmar` : `${min} ${min === 1 ? 'minut' : 'minuter'}`;
+}
+function clockTxt(t: number) { const d = new Date(t); return `${timeLabel(s, t)}, kl. ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; }
+function spreadWord(v: number) { return v >= 0.8 ? 'Hög' : v >= 0.3 ? 'Måttlig' : v >= 0.1 ? 'Låg' : 'Mycket låg'; }
+function fireEntry(e: FireLog) {
+  const who = pLink(byId(s, e.id));
+  const txt = e.k === 'tänd' ? (e.id ? `${who} tände elden${e.n && e.n > 1 ? ` efter ${e.n} försök` : ''}.` : 'Byns grundare tände elden.')
+    : e.k === 'fyll' ? `${who} lade på ${num(e.n ?? 0)} ved.`
+    : e.k === 'glöd' ? `${who} blåste liv i glöden.`
+    : e.k === 'sprack' ? `${who}s gniststen sprack.`
+    : `Elden slocknade. Den hade bränt ${num(e.n ?? 0)} ved.`;
+  return `<li><span class="when">${clockTxt(e.t)}</span>${txt}</li>`;
+}
+function fireHtml() {
+  const f = s.fire, h = hearthOf(f), now = s.now, ig = igniterOf(s);
+  const status = f.lit ? 'Brinner' : emberOn(s) ? `Glöder. Ny ved får den att brinna igen (${durTxt(f.emberUntil! - now)} kvar).` : 'Släckt. Den måste tändas på nytt.';
+  const tender = living(s).find(p => p.task?.act === 'elda'), lighter = living(s).find(p => p.task?.act === 'tanda');
+  const fills = Object.entries(f.fills).map(([id, n]) => ({ p: byId(s, Number(id)), n })).filter(x => x.p).sort((a, b) => b.n - a.n).slice(0, 6);
+  const tgt = fireTarget(s);
+  return `
+    <div class="phead"><span class="dot big" style="background:${f.lit ? '#e2702e' : emberOn(s) ? '#b3361e' : '#4b4640'}"></span><div><h2>${esc(h.name)}</h2>
+    <p class="muted">${esc(h.desc)}</p><p class="status">${status}</p></div></div>
+    <h3>Just nu</h3><dl class="kv">
+      <dt>Ved på elden</dt><dd>${bar(f.fuel / h.maxFuel)}<span>${num(f.fuel)} av ${h.maxFuel}</span></dd>
+      <dt>Värme</dt><dd>${bar(fireHeat(s))}<span>${f.lit ? `${num(heatRadius(s))} rutor ut` : '–'}</span></dd>
+      <dt>Förbrukning</dt><dd>${num(h.burn)} ved i timmen</dd>
+      <dt>Räcker</dt><dd>${f.lit ? `ca ${durTxt(f.fuel / h.burn * HOUR)}` : '–'}</dd>
+      <dt>Önskat</dt><dd>${num(tgt)} ved på elden</dd>
+      ${tender ? `<dt>Hämtar ved</dt><dd>${pLink(tender)}</dd>` : ''}
+    </dl>
+    ${f.lit ? `<h3>Denna eld</h3><dl class="kv fam">
+      <dt>Brunnit i</dt><dd>${durTxt(now - (f.litAt ?? now))}</dd>
+      <dt>Tändes</dt><dd>${f.litAt !== undefined ? clockTxt(f.litAt) : '–'}</dd>
+      <dt>Tänd av</dt><dd>${f.litBy !== undefined ? pLink(byId(s, f.litBy)) : 'Byns grundare'}</dd>
+      <dt>Ved använd</dt><dd>${num(f.burned)}</dd></dl>` : ''}
+    <h3>Tändning</h3><dl class="kv fam">
+      <dt>Tänddon</dt><dd>${ig ? `${esc(ig.name)} (${Math.floor(s.items[ig.id] ?? 0)} i förrådet)` : 'Inget. Någon måste hitta en gniststen.'}</dd>
+      <dt>Torrt gräs</dt><dd>${Math.floor(s.items.torrgras ?? 0)} i förrådet</dd>
+      <dt>Små pinnar</dt><dd>${Math.floor(s.items.pinnar ?? 0)} i förrådet</dd>
+      ${ig ? `<dt>Per försök</dt><dd>${ig.grass} gräs och ${ig.sticks} pinnar, ca ${ig.minutes} minuter</dd>` : ''}
+      ${!f.lit ? `<dt>Försök</dt><dd>${f.tries} sedan elden slocknade${lighter ? `, ${pLink(lighter)} försöker nu` : ''}</dd>` : ''}
+    </dl>
+    <h3>Totalt</h3><dl class="kv fam">
+      <dt>Brunnit</dt><dd>${f.litSec > 0 ? durTxt(f.litSec * 1000) : 'Aldrig'}</dd>
+      <dt>Ved bränd</dt><dd>${Math.round(f.totalBurned)}</dd>
+      <dt>Tänd</dt><dd>${times(f.lightings)}, ${f.tryTotal} försök</dd>
+      <dt>Slocknat</dt><dd>${times(f.outs)}</dd></dl>
+    <h3>Eldstaden</h3><dl class="kv fam">
+      <dt>Mest ved</dt><dd>${h.maxFuel}</dd>
+      <dt>Välbehag</dt><dd>+${Math.round(h.comfort * 100)} i humör nära elden</dd>
+      <dt>Inomhus</dt><dd>${h.indoor ? 'Ja' : 'Nej'}</dd>
+      <dt>Spridningsrisk</dt><dd>${spreadWord(h.spread)}</dd></dl>
+    ${fills.length ? `<h3>Fyller oftast på</h3><ul class="rels">${fills.map(x => `<li>${pLink(x.p)}<span></span><span class="muted">${times(x.n)}</span></li>`).join('')}</ul>` : ''}
+    <h3>Historik</h3>${f.log.length ? `<ol class="logg">${f.log.slice().reverse().slice(0, 40).map(fireEntry).join('')}</ol>` : '<p class="muted">Elden har aldrig brunnit.</p>'}`;
 }
 function linkify(l: LogEntry) {
   let t = esc(l.text);

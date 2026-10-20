@@ -21,6 +21,7 @@ En by som lever i verklig tid över många generationer: TypeScript och PixiJS, 
 npm install
 npm run build   # ger samhallssimulatorn.html
 npm test        # 90 dygns testkörning
+npm run check   # typkontroll
 ```
 
 Publicera alltid till samma artefakt-URL så att den sparade byn och länken finns kvar.
