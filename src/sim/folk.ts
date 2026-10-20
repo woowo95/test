@@ -1,0 +1,81 @@
+import { getMap } from './karta';
+import { clamp, gauss, pick, rnd } from './slump';
+import { DAY, LogEntry, Person, Rel, SKILLS, STATS, Skill, Stat, State } from './typer';
+
+// ---------- namn ----------
+const N1 = ['A', 'Bo', 'Da', 'E', 'Fa', 'Gu', 'Ha', 'I', 'Ka', 'Lo', 'Ma', 'Ny', 'O', 'Ra', 'Si', 'Tu', 'U', 'Ve', 'Y', 'Å', 'Ste', 'Tor', 'Al', 'Ger'];
+const N2 = ['r', 'n', 'l', 'rk', 'nd', 'st', 'g', 'v', 'm', 'sk', 'lv', 'rn', 'k', 'd'];
+const NK = ['a', 'e', 'ja', 'ra', 'dis', 'run', 'hild', 'frid', 'ny', 'vi', 'ka'];
+const NM = ['e', 'o', 'ar', 'ik', 'ulf', 'mund', 'björn', 'vid', 'stig', 'ger', 'an'];
+function makeName(s: State, sex: 'm' | 'k') {
+  for (let i = 0; i < 20; i++) {
+    const n = pick(s, N1) + (rnd(s) < 0.7 ? pick(s, N2) : '') + pick(s, sex === 'k' ? NK : NM);
+    const nn = n.charAt(0).toUpperCase() + n.slice(1).toLowerCase();
+    if (nn.length >= 3 && nn.length <= 9 && !s.people.some(p => p.name === nn && alive(p))) return nn;
+  }
+  return pick(s, N1) + pick(s, sex === 'k' ? NK : NM);
+}
+
+// ---------- personer ----------
+export const alive = (p: Person) => p.died === undefined && p.left === undefined;
+export const ageOf = (p: Person, now: number) => ((p.died ?? p.left ?? now) - p.born) / DAY;
+export function living(s: State) { return s.people.filter(alive); }
+export function byId(s: State, id?: number) { return id === undefined ? undefined : s.people.find(p => p.id === id); }
+
+export function stat(p: Person, k: Stat, now: number) {
+  const a = ageOf(p, now);
+  let g = clamp(0.06 + a / 18, 0.06, 1);
+  if ((k === 'styrka' || k === 'uthallighet') && a > 45) g *= clamp(1 - (a - 45) / 50, 0.3, 1);
+  if (k === 'skonhet' && a > 40) g *= clamp(1 - (a - 40) / 70, 0.5, 1);
+  return p.pot[k] * g;
+}
+
+export function newPerson(s: State, sex: 'm' | 'k', born: number, mother?: Person, father?: Person): Person {
+  const pot = {} as Record<Stat, number>;
+  for (const k of STATS) {
+    const base = mother && father ? (mother.pot[k] + father.pot[k]) / 2 : 10;
+    const spread = mother && father ? 3 : 4.5;
+    pot[k] = clamp(base + gauss(s) * spread * 1.6, 1, 20);
+  }
+  const skill = {} as Record<Skill, number>;
+  for (const k of SKILLS) skill[k] = 0;
+  const m = getMap(s.seed);
+  const p: Person = {
+    id: s.nextId++, name: '', sex, born, mother: mother?.id, father: father?.id,
+    pot, skill, hunger: 0.8, rest: 0.9, social: 0.7, health: 1, warm: 1, toa: 0.6 + rnd(s) * 0.4, habit: {}, thoughts: [],
+    x: m.fire.x + (rnd(s) - 0.5) * 3, y: m.fire.y + (rnd(s) - 0.5) * 3, fame: [],
+    hue: Math.floor(rnd(s) * 360),
+  };
+  p.name = makeName(s, sex);
+  return p;
+}
+
+export function relKey(a: number, b: number) { return a < b ? a + '-' + b : b + '-' + a; }
+export function getRel(s: State, a: Person, b: Person): Rel {
+  const k = relKey(a.id, b.id);
+  let r = s.rels[k];
+  if (!r) {
+    r = { chem: clamp(gauss(s) * 0.6, -1, 1), op: 0, rom: 0, talks: 0, flags: 0 };
+    if (isKin(a, b)) r.op = 25;
+    s.rels[k] = r;
+  }
+  return r;
+}
+export function isKin(a: Person, b: Person) {
+  return a.mother === b.id || a.father === b.id || b.mother === a.id || b.father === a.id ||
+    (a.mother !== undefined && a.mother === b.mother) || (a.father !== undefined && a.father === b.father);
+}
+export function similarity(a: Person, b: Person) {
+  let d = 0;
+  for (const k of ['nyfikenhet', 'vanlighet', 'flit', 'empati', 'mod'] as Stat[]) d += Math.abs(a.pot[k] - b.pot[k]);
+  return 1 - d / 50; // ~ -0.5..1
+}
+
+export function log(s: State, text: string, kind: LogEntry['kind'], ids: number[] = []) {
+  s.log.push({ t: s.now, text, kind, ids });
+  if (s.log.length > 400) s.log.splice(0, s.log.length - 400);
+}
+export function think(p: Person, text: string, v: number, now: number, dur: number) {
+  p.thoughts = p.thoughts.filter(t => t.text !== text);
+  p.thoughts.push({ text, v, until: now + dur });
+}

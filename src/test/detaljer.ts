@@ -1,5 +1,5 @@
 import { createState, step, living, DAY, AGES, ageIndex, ageOf, serialize, State, SEDER, coverOf, getMap } from '../sim';
-import { STIG, BAR, hasCover } from '../vag';
+import { STIG, BAR, hasCover } from '../sim/vag';
 
 const start = Date.parse('2026-10-20T08:00:00+02:00');
 const valda = process.argv.slice(2).map(Number);

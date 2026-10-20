@@ -1,6 +1,6 @@
 // Vägsökning och mark: invånarna går runt vatten och följer gärna stigar.
 // Där många går nöts gräset ner till stig och bar jord. Gräset växer långsamt tillbaka från grannrutorna.
-import { T, W, H } from './sim';
+import { T, W, H } from './typer';
 
 const BASE_SPEED = [0, 0.9, 1, 0.75, 0.8]; // Vatten, Sand, Gräs, Skog, Sten
 export const STIG = 0.6, BAR = 0.25; // under dessa värden syns stig respektive bar jord

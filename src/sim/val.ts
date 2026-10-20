@@ -1,0 +1,139 @@
+import { SEASON, WORK_STAT, foodDays, woodDays } from './ekonomi';
+import { emberOn, needTinder } from './eld';
+import { ageOf, living, stat } from './folk';
+import { getMap } from './karta';
+import { tread } from './mark';
+import { duty, dygn, habitShare, habitTotal } from './seder';
+import { clamp, rnd } from './slump';
+import { ageIndex, isLight } from './tid';
+import { Act, DAY, H, HOUR, Person, SEC, Skill, State, T, W, WORK } from './typer';
+
+// ---------- val av aktivitet ----------
+function spotFor(s: State, act: Act, p: Person): { x: number; y: number } {
+  const m = getMap(s.seed);
+  const f = m.fire;
+  if (act === 'samtal' || act === 'beratta' || act === 'hantverk' || act === 'vakt' || act === 'varma') {
+    const ang = rnd(s) * Math.PI * 2, r = act === 'vakt' ? 2.6 : 1.3 + rnd(s) * 0.9;
+    return { x: f.x + 0.5 + Math.cos(ang) * r, y: f.y + 0.5 + Math.sin(ang) * r };
+  }
+  if (act === 'kol') return { x: f.x + 0.5 + (rnd(s) - 0.5) * 0.6, y: f.y + 1.1 };
+  if (act === 'sova' || act === 'vila') { const h = m.huts[p.id % m.huts.length]; return { x: h.x + 0.6 + rnd(s) * 0.8, y: h.y + 0.6 + rnd(s) * 0.8 }; }
+  if (act === 'leka') { // lekplatsen ligger söder om elden, men aldrig i vattnet
+    for (let k = 0; k < 12; k++) {
+      const x = f.x + (rnd(s) - 0.5) * 8, y = f.y + 3 + rnd(s) * 3;
+      if (x >= 0 && y >= 0 && x < W && y < H && m.tiles[Math.floor(y) * W + Math.floor(x)] !== T.Vatten) return { x, y };
+    }
+    return { x: f.x + 0.5, y: f.y + 1.5 };
+  }
+  const want = (t: number, x: number, y: number) => {
+    if (act === 'fiske') {
+      if (t === T.Vatten) return false;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const xx = x + dx, yy = y + dy; if (xx >= 0 && yy >= 0 && xx < W && yy < H && m.tiles[yy * W + xx] === T.Vatten) return true; }
+      return false;
+    }
+    if (act === 'samla') return t === T.Gras || t === T.Skog;
+    if (act === 'toa') return t === T.Gras || t === T.Skog || t === T.Sand;
+    return t === T.Skog;
+  };
+  const cands: { x: number; y: number; d: number }[] = [];
+  for (let i = 0; i < 260; i++) {
+    const x = Math.floor(f.x + (rnd(s) - 0.5) * 34), y = Math.floor(f.y + (rnd(s) - 0.5) * 26);
+    if (x < 0 || y < 0 || x >= W || y >= H) continue;
+    const d = Math.hypot(x - f.x, y - f.y);
+    if (d < (act === 'samla' || act === 'toa' ? 5 : 4) || (act === 'toa' && d > 9)) continue;
+    if (want(m.tiles[y * W + x], x, y)) cands.push({ x, y, d });
+  }
+  cands.sort((a, b) => a.d - b.d);
+  const c = cands[Math.floor(rnd(s) * Math.min(6, cands.length))] ?? { x: f.x + 6, y: f.y };
+  return { x: c.x + 0.5, y: c.y + 0.5 };
+}
+
+// Viljan i tre steg:
+// 1. Nöd: sjuk, svag, fryser farligt eller måste på toa genast. Inget annat räknas.
+// 2. Grundbehov: toa, värme och vila. En lat person tillgodoser dem tidigare än en flitig.
+// 3. Byns behov mot egen lust, vägda med pliktkänslan.
+export function chooseTask(s: State, p: Person, live: boolean) {
+  const a = ageOf(p, s.now), now = s.now;
+  const light = isLight(now);
+  const sick = p.sickUntil !== undefined && p.sickUntil > now;
+  const lazy = 1 - duty(s, p), lit = s.fire.lit, sd = s.seder.v;
+  let act: Act, why: string;
+  let dur = (20 + rnd(s) * 40) * 60 * SEC; // 20–60 min
+  const set = (x: Act, w: string) => { act = x; why = w; };
+  if (a < 3) set('sova', 'Är ett litet barn');
+  else if (p.toa < 0.12) set('toa', 'Måste gå på toa genast');
+  else if (sick) set('sova', 'Är sjuk');
+  else if (p.health < 0.4) set('sova', 'Är för svag för att orka något');
+  else if (p.warm < 0.25 && lit) set('varma', 'Fryser farligt');
+  else if (!light && a > 68 && rnd(s) < 0.6) set('sova', 'Är gammal och sover på natten');
+  else if (p.toa < 0.25 + 0.1 * lazy) set('toa', 'Behöver gå på toa');
+  else if (p.warm < 0.4 + 0.15 * lazy && lit) set('varma', 'Fryser');
+  else if (p.rest < (light ? 0.15 : 0.12) + 0.2 * lazy) set('vila', 'Är trött');
+  else if (light) {
+    if (a < 8) set('leka', 'Är barn och leker');
+    else {
+      const fd = foodDays(s), wd = woodDays(s), ai = ageIndex(s);
+      const fs = 1 + 0.25 * sd.forsiktighet; // en försiktig by vill ha större förråd
+      const wFood = clamp(3.2 - fd / (2.5 * fs), 0.4, 3.5);
+      const wWood = clamp(2.5 - wd / (2 * fs), 0.15, 3);
+      const tot = habitTotal(p);
+      let best: Act = 'samla', bs = -1, burg = 0;
+      for (const w of WORK) {
+        const need = w === 'ved' ? wWood : wFood;
+        const tinder = w === 'samla' && needTinder(s);
+        const col = need * (w === 'ved' ? 1 : tinder ? Math.max(0.8, SEASON[w][ai]) * 3 : SEASON[w][ai]); // nytta för byn
+        const like = (4 + p.skill[w as Skill] + stat(p, WORK_STAT[w], now) / 3) * (1 + 2 * habitShare(p, [w], tot)); // egen lust och vana
+        const sc = col * like * (0.6 + rnd(s) * 0.8);
+        burg = Math.max(burg, col);
+        if (sc > bs) { bs = sc; best = w; }
+      }
+      const u = clamp(burg / 3, 0, 1); // hur akut byn behöver arbete
+      const sat = Math.min(p.hunger, p.rest, p.social); // hur väl de egna behoven är fyllda
+      const what = best === 'ved' ? `Byn behöver ved, förrådet räcker ${dygn(wd)}` : best === 'samla' && needTinder(s) ? 'Byn behöver tändmaterial till elden' : `Byn behöver mat, förrådet räcker ${dygn(fd)}`;
+      const workWhy = () => what + (lazy < 0.2 ? '. Plikttrogen.' : habitShare(p, [best], tot) > 0.25 ? '. Brukar göra det.' : p.skill[best as Skill] > 10 ? '. Skicklig på det.' : '.');
+      if (a >= 12 && (s.fire.ash ?? 0) >= 1 && !lit && !emberOn(s) && rnd(s) < 0.2 && !living(s).some(q => q.task?.act === 'kol')) {
+        set('kol', 'Det ligger kol kvar i den slocknade elden');
+        dur = 10 * 60 * SEC;
+      } else if (a < 14) {
+        if (rnd(s) < 0.45 + 0.2 * sd.barn) set('leka', 'Är barn och leker');
+        else set(best, `Hjälper till. ${what}.`);
+      } else if (rnd(s) < (1 - lazy) * (0.88 + 0.12 * u) + lazy * sat * (0.6 + 0.4 * u)) {
+        set(best, workWhy());
+        dur = (60 + rnd(s) * 120) * 60 * SEC;
+      } else {
+        // egen lust: vila, hantverk eller umgänge
+        const wv = (1 - p.rest) * 2 + lazy * 0.6;
+        const wh = (p.skill.hantverk / 10 + p.pot.flit / 20) * (u < 0.25 ? 1.5 : 0.6);
+        const wsoc = (1 - p.social) * 2;
+        const r = rnd(s) * (wv + wh + wsoc);
+        if (r < wv) set('vila', lazy > 0.5 ? 'Har det bra och tar det lugnt' : 'Tar en paus');
+        else if (r < wv + wh) set('hantverk', u < 0.25 ? 'Byn har det gott ställt, det finns tid för hantverk' : 'Tycker om att göra handarbete');
+        else set('samtal', 'Vill umgås');
+      }
+    }
+  } else {
+    const guardDay = Math.floor((s.now - s.founded - 7 * HOUR) / DAY);
+    const adults = living(s).filter(q => ageOf(q, s.now) >= 16 && ageOf(q, s.now) < 60);
+    if (guardDay !== s.lastGuardDay && adults.length) {
+      // välj nattens vakt (modigast med lite slump), byts varje natt
+      s.lastGuardDay = guardDay;
+      const g = adults.sort((x, y) => (y.pot.mod + rnd(s) * 8) - (x.pot.mod + rnd(s) * 8))[0];
+      g.task = undefined; (g as any)._guard = guardDay;
+    }
+    if ((p as any)._guard === guardDay && a >= 16) set('vakt', 'Håller vakt i natt');
+    else {
+      const r = rnd(s);
+      const story = (p.skill.berattande + (a > 50 ? 6 : 0)) / 40;
+      const craft = (p.skill.hantverk + stat(p, 'flit', s.now)) / 70;
+      if (a < 8) { if (r < 0.6) set('samtal', 'Mörkt, sitter med de vuxna vid elden'); else set('sova', 'Barn sover på natten'); }
+      else if (r < story) set('beratta', 'Mörkt, berättar för de andra vid elden');
+      else if (r < story + craft) set('hantverk', 'Mörkt, gör handarbete vid elden');
+      else if (r < 0.9) set('samtal', 'Mörkt, umgås vid elden');
+      else set('vila', 'Mörkt, vilar i hyddan');
+    }
+  }
+  if (act! === 'toa') dur = (4 + rnd(s) * 4) * 60 * SEC;
+  const sp = spotFor(s, act!, p);
+  if (!live) { p.x = sp.x; p.y = sp.y; tread(s, sp.x, sp.y, WORK.includes(act!) ? 2 : 1); }
+  p.task = { act: act!, phase: live ? 'go' : 'do', tx: sp.x, ty: sp.y, until: s.now + dur, carry: 0, why: why!, dark: !light };
+}
