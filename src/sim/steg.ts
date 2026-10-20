@@ -1,3 +1,4 @@
+import { rotStumps } from './skog';
 import { makeSpear, wearSpear } from './redskap';
 import { foodDays, workRate } from './ekonomi';
 import { GIFT, TRY_SEC, eatPoison, growFynd, handFish, packFynd, pickMushrooms, richness, takeFrom } from './fynd';
@@ -39,7 +40,7 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
   const learn = 1 + 0.1 * s.seder.v.nyfikenhet; // en nyfiken by lär sig snabbare
   if (Math.floor(now / HOUR) !== Math.floor((now - dtSec * SEC) / HOUR)) {
     stepSeder(s); updateTags(s);
-    growGround(s, 1, ai); growFynd(s, 1, ai); forget(s, 1);
+    growGround(s, 1, ai); growFynd(s, 1, ai); forget(s, 1); rotStumps(s);
   }
 
   const social: Person[] = [];
@@ -90,7 +91,7 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
     const t = p.task;
     const phaseFlip = t && t.dark !== !light && FLIP.includes(t.act); // dag blev natt eller tvärtom
     // ett träd som fällts färdigt eller en yxa som gjorts klar
-    if (t && t.phase === 'do' && t.until < now) { if (t.act === 'falla') fellTree(s, p, t.tx, t.ty); else if (t.act === 'yxa') makeAxe(s, p); else if (t.act === 'spjut') makeSpear(s, p); }
+    if (t && t.phase === 'do' && t.until < now) { if (t.act === 'falla') fellTree(s, p, t.tx, t.ty); else if (t.act === 'yxa') makeAxe(s, p); else if (t.act === 'spjut') makeSpear(s, p); else if (t.act === 'promenad') { lookAround(s, p, t.tx, t.ty); think(p, 'Tog en skön promenad', 0.06, now, 6 * HOUR); } else if (t.act === 'bada') { p.warm = Math.max(0.4, p.warm - 0.1); think(p, 'Badade i sjön', 0.08, now, 6 * HOUR); } }
     const lightDone = t?.act === 'tanda' && (s.fire.lit || !canLight(s));
     const mustGo = t && p.toa < 0.08 && t.act !== 'toa' && a >= 3; // nöden avbryter det man håller på med
     if (!t || (t.until < now && t.phase !== 'back') || ((phaseFlip || mustGo) && t.phase !== 'back') || lightDone) {

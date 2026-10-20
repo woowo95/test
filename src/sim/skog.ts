@@ -3,7 +3,7 @@ import { getMap } from './karta';
 import { groundOf, isForest } from './mark';
 import { sedEvent } from './seder';
 import { rnd } from './slump';
-import { Act, H, HOUR, Person, State, Stock, W } from './typer';
+import { Act, DAY, H, HOUR, Person, State, Stock, W } from './typer';
 
 // ---------- skog: fälla träd, hugga ved, flinta och yxa ----------
 // Utan yxa kan invånarna bara samla grenar på marken. Med en flintyxa kan de fälla träd.
@@ -40,12 +40,18 @@ export function fellTree(s: State, p: Person, x: number, y: number) {
   g.trees[i] = 0; g.cover[i] = 1;
   const k: Stock = { id: (s.nextStock = (s.nextStock ?? 0) + 1), x: Math.floor(x) + 0.5, y: Math.floor(y) + 0.5, ved: Math.round(STAM.ved * size), grenar: Math.round(STAM.grenar * size) };
   stocks(s).push(k);
+  (s.stubbar ??= []).push({ x: Math.floor(x), y: Math.floor(y), t: s.now });
   s.fallda = (s.fallda ?? 0) + 1;
   if (s.fallda === 1) {
     log(s, `${p.name} fällde byns första träd med flintyxan.`, 'world', [p.id]);
     p.fame.push('Fällde byns första träd');
     think(p, 'Fällde ett träd', 0.1, s.now, 12 * 3600 * 1000);
   }
+}
+// en stubbe står kvar efter trädet och ruttnar sakta bort
+export const STUBBE_LIV = 8 * DAY;
+export function rotStumps(s: State) {
+  if (s.stubbar?.length) s.stubbar = s.stubbar.filter(k => s.now - k.t < STUBBE_LIV);
 }
 // hugg ut ved och grenar ur en stam; ger det som blev, och tar bort stammen när den är slut
 export function chopStock(s: State, ref: number | undefined, amount: number) {

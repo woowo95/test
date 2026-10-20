@@ -8,7 +8,7 @@ import { share } from './minne';
 export interface TalkEvent { a: number; b: number; kind: string; good: boolean; t: number }
 export const SOCIAL: Act[] = ['samtal', 'beratta', 'hantverk', 'vakt', 'leka', 'varma'];
 // uppgifter som avbryts när dag blir natt eller natt blir dag
-export const FLIP: Act[] = ['samla', 'jakt', 'fiske', 'ved', 'leka', 'samtal', 'beratta', 'hantverk', 'vakt', 'vila'];
+export const FLIP: Act[] = ['samla', 'jakt', 'fiske', 'ved', 'leka', 'samtal', 'beratta', 'hantverk', 'vakt', 'vila', 'promenad', 'bada'];
 export function converse(s: State, a: Person, others: Person[], events?: TalkEvent[]) {
   const now = s.now;
   if (!others.length) return;
@@ -31,7 +31,12 @@ export function converse(s: State, a: Person, others: Person[], events?: TalkEve
   else if (rnd(s) < 0.25) kind = 'skämt';
   else kind = 'småprat';
 
-  let out = r.chem * 1.1 + similarity(a, b) * 0.7 + (stat(a, 'vanlighet', now) + stat(b, 'vanlighet', now)) / 40 - 0.55 + (rnd(s) - 0.5) * 1.3;
+  // hur samtalet går: kemi, likhet och vänlighet, och hur charmig och vacker den andra är. Den med låg karisma och
+  // skönhet blir lättare illa omtyckt.
+  const charm = (stat(b, 'karisma', now) + stat(b, 'skonhet', now)) / 2;
+  let out = r.chem * 1.1 + similarity(a, b) * 0.7 + (stat(a, 'vanlighet', now) + stat(b, 'vanlighet', now)) / 40 - 0.55 + (rnd(s) - 0.5) * 1.4;
+  // charmen påverkar vänskapen, inte förälskelsen (den har egen dragning), och inte mellan par och släkt
+  const like = a.partner === b.id || isKin(a, b) ? 0 : (charm - 8) / 15;
   if (isKin(a, b)) out += 0.35;
   const mult: Record<string, number> = { 'småprat': 1, 'skämt': 1.6, 'djupt samtal': 2.6, 'tröst': 2.2, 'berättelse': 1.2, 'flirt': 1, 'gräl': 0 };
   if (kind === 'gräl') {
@@ -39,8 +44,10 @@ export function converse(s: State, a: Person, others: Person[], events?: TalkEve
     think(a, `Grälade med ${b.name}`, -0.08, now, 6 * HOUR);
     think(b, `Grälade med ${a.name}`, -0.1, now, 6 * HOUR);
   } else {
-    r.op += mult[kind] * out * (kind === 'skämt' && out < 0 ? 1.2 : 1);
-    if (kind === 'tröst' && out > -0.3) think(b, `Tröstades av ${a.name}`, 0.08, now, 4 * HOUR);
+    // vänskap växer allt långsammare ju närmare man redan är; ovänskap fördjupas lättare
+    const d = mult[kind] * (out + like) * (kind === 'skämt' && out < 0 ? 1.2 : 1);
+    r.op += d;
+    if (kind === 'tröst' && out + like > -0.3) think(b, `Tröstades av ${a.name}`, 0.08, now, 4 * HOUR);
     if (kind === 'berättelse') { a.skill.berattande = clamp(a.skill.berattande + 0.04 * (0.5 + a.pot.intelligens / 20), 0, 20); }
     if (kind === 'flirt') {
       const att = (stat(b, 'skonhet', now) + stat(b, 'karisma', now)) / 40;

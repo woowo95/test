@@ -25,8 +25,11 @@ export function byId(s: State, id?: number) { return id === undefined ? undefine
 export function stat(p: Person, k: Stat, now: number) {
   const a = ageOf(p, now);
   let g = clamp(0.06 + a / 18, 0.06, 1);
-  if ((k === 'styrka' || k === 'uthallighet') && a > 45) g *= clamp(1 - (a - 45) / 50, 0.3, 1);
-  if (k === 'skonhet' && a > 40) g *= clamp(1 - (a - 40) / 70, 0.5, 1);
+  // åldrande: minne, styrka och uthållighet backar först och fortast, det mesta annat långsamt efter 60
+  if ((k === 'styrka' || k === 'uthallighet') && a > 45) g *= clamp(1 - (a - 45) / 45, 0.25, 1);
+  else if (k === 'minne' && a > 50) g *= clamp(1 - (a - 50) / 40, 0.3, 1);
+  else if (k === 'skonhet' && a > 40) g *= clamp(1 - (a - 40) / 70, 0.5, 1);
+  else if ((k === 'intelligens' || k === 'nyfikenhet' || k === 'flit' || k === 'mod') && a > 60) g *= clamp(1 - (a - 60) / 60, 0.5, 1);
   return p.pot[k] * g;
 }
 

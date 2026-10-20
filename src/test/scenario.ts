@@ -1,7 +1,7 @@
 // Scenariotester: ställ en by i ett visst läge, kör den en stund och kontrollera att det som ska hända händer.
 // npm run scenario            kör alla
 // npm run scenario -- glanta  kör bara ett
-import { createState, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, WEEK, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, fuelStock, DAY, HOUR, W, State, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat } from '../sim';
+import { createState, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, WEEK, sightOf, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, fuelStock, DAY, HOUR, W, State, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat } from '../sim';
 import { FOREST, HIGH, isSoil } from '../sim/vag';
 import { START } from './kor';
 
@@ -242,11 +242,45 @@ SCENARIER.bostad = {
     const f = getMap(s.seed).fire;
     let sov = 0, nara = 0;
     kor(s, 24, s => { for (const p of living(s)) if (p.task?.act === 'sova' && p.task.phase === 'do') { sov++; if (Math.hypot(p.x - f.x - 0.5, p.y - f.y - 0.5) < 3.5) nara++; } });
-    const p = living(s)[0]; p.x = f.x + 20; p.y = f.y;
+    const p = living(s)[0]; p.x = f.x + 20; p.y = f.y; // ute i skogen
+    const glanta = living(s)[1]; glanta.x = f.x + 1.5; glanta.y = f.y + 0.5;
+    const natt = sightOf(s, glanta); s.now = new Date(s.now).setHours(12, 0, 0, 0); // mitt på dagen
+    const dag = sightOf(s, glanta);
     return [
       ['ingen hydda finns på kartan', !('huts' in getMap(s.seed))],
       [`de som sover ligger nära elden (${nara} av ${sov})`, sov > 0 && nara === sov],
-      ['man ser runt sig där man står, inte vid elden', sees(p, f.x + 20, f.y + 3) && !sees(p, f.x, f.y)],
+      ['man ser runt sig där man står, inte vid elden', sees(s, p, f.x + 20, f.y + 3) && !sees(s, p, f.x, f.y)],
+      [`man ser kortare i mörker (${natt.toFixed(1)} mot ${dag.toFixed(1)} rutor i gläntan)`, natt <= dag],
+      [`man ser kortare i skogen än i gläntan (${sightOf(s, p).toFixed(1)} mot ${sightOf(s, glanta).toFixed(1)} rutor)`, sightOf(s, p) < sightOf(s, glanta)],
+    ];
+  },
+};
+
+SCENARIER.fritid = {
+  text: 'På fritiden tar folk promenader (de nyfikna och modiga längre bort) och badar när det är varmt',
+  kor: () => {
+    const s = createState(5, START);
+    s.founded = s.now - WEEK; // sommar
+    s.food = 40; s.wood = 40; // gott ställt, tid över
+    const f = getMap(s.seed).fire, gang = new Map<number, number>();
+    let prom = 0, bad = 0, badVarmt = true;
+    kor(s, 4 * 24, s => {
+      for (const p of living(s)) {
+        const t = p.task;
+        if (t?.phase !== 'do') continue;
+        if (t.act === 'promenad') { prom++; gang.set(p.id, Math.max(gang.get(p.id) ?? 0, Math.hypot(t.tx - f.x - 0.5, t.ty - f.y - 0.5))); }
+        if (t.act === 'bada') { bad++; if (temperature(s) < 14) badVarmt = false; }
+      }
+    });
+    // längst bort: de mest nyfikna och modiga mot de minst
+    const folk = s.people.filter(p => gang.has(p.id)).map(p => ({ d: gang.get(p.id)!, v: stat(p, 'nyfikenhet', s.now) + stat(p, 'mod', s.now) })).sort((a, b) => a.v - b.v);
+    const h = Math.floor(folk.length / 2), snitt = (l: { d: number }[]) => l.length ? l.reduce((x, y) => x + y.d, 0) / l.length : 0;
+    const lag = snitt(folk.slice(0, h)), hog = snitt(folk.slice(folk.length - h));
+    return [
+      [`folk tar promenader (${prom} femminuters-steg, ${gang.size} personer)`, prom > 20 && gang.size >= 3],
+      [`nyfikna och modiga går längre (${hog.toFixed(1)} mot ${lag.toFixed(1)} rutor)`, hog > lag],
+      [`folk badar på sommaren (${bad} femminuters-steg)`, bad > 10],
+      ['man badar bara när det är varmt', badVarmt],
     ];
   },
 };

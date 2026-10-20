@@ -4,6 +4,7 @@ import { getMap } from './karta';
 import { groundOf } from './mark';
 import { kn, learnK } from './kunskap';
 import { clamp, rnd } from './slump';
+import { lightLevel } from './tid';
 import { DAY, H, HOUR, LKind, Lardom, Person, Rel, State, T, W } from './typer';
 import { FOREST } from './vag';
 
@@ -17,7 +18,7 @@ import { FOREST } from './vag';
 export const AREA = 8, AW = Math.ceil(W / AREA), AH = Math.ceil(H / AREA);
 export const areaOf = (x: number, y: number) => Math.floor(clamp(y, 0, H - 1) / AREA) * AW + Math.floor(clamp(x, 0, W - 1) / AREA);
 export const areaCenter = (a: number) => ({ x: Math.min(W, (a % AW) * AREA + AREA / 2), y: Math.min(H, Math.floor(a / AW) * AREA + AREA / 2) });
-// synvidd: så långt runt sig man ser vad som finns utan att behöva minnas det
+// byns närområde, som man i stort sett känner till från elden
 export const SIGHT = 8;
 
 // hur mycket ett område ger just nu, så som man ser det när man går runt där: snittet av de fem bästa rutorna
@@ -71,7 +72,7 @@ export const trustUnknown = (s: State, p: Person) => 0.45 + stat(p, 'nyfikenhet'
 const believed = (l: Lardom | undefined, cap: number, u: number, pot = 1) => l ? Math.min(1, l.v) * l.c * Math.min(1.2, cap / Math.max(0.05, pot)) + cap * u * (1 - l.c) : cap * u;
 export function perceive(s: State, p: Person, k: Kind, x: number, y: number) {
   const a = areaOf(x, y);
-  const v = sees(p, x, y) ? richness(s, k, x + 0.5, y + 0.5) : believed(findL(p, k, a), capOf(s, k, y * W + x), trustUnknown(s, p), areaValue(s, k, a, true));
+  const v = sees(s, p, x, y) ? richness(s, k, x + 0.5, y + 0.5) : believed(findL(p, k, a), capOf(s, k, y * W + x), trustUnknown(s, p), areaValue(s, k, a, true));
   return v - fear(s, p, a);
 }
 // rädsla för ett område: den modige bryr sig mindre
@@ -81,13 +82,19 @@ export function fear(s: State, p: Person, a: number) {
 }
 // det bästa personen tror finns utanför närområdet, inom en halv dags gång
 // det man ser: rutorna runt där man står just nu
-export const sees = (p: Person, x: number, y: number) => Math.hypot(x + 0.5 - p.x, y + 0.5 - p.y) <= SIGHT;
+// synvidden beror på var man står: kort i skogen, längre i öppen terräng, och kortare i mörker
+export function sightOf(s: State, p: Person) {
+  const i = clamp(Math.floor(p.y), 0, H - 1) * W + clamp(Math.floor(p.x), 0, W - 1);
+  const base = groundOf(s).trees[i] >= FOREST ? 5 : 10;
+  return base * (0.4 + 0.6 * lightLevel(s.now));
+}
+export const sees = (s: State, p: Person, x: number, y: number) => Math.hypot(x + 0.5 - p.x, y + 0.5 - p.y) <= sightOf(s, p);
 export function bestKnown(s: State, p: Person, k: Kind) {
   const f = getMap(s.seed).fire, u = trustUnknown(s, p);
   let best = 0;
   for (let a = 0; a < AW * AH; a++) {
     const c = areaCenter(a), d = Math.hypot(c.x - f.x, c.y - f.y);
-    if (sees(p, c.x, c.y) || Math.abs(c.x - f.x) > 17 || Math.abs(c.y - f.y) > 13) continue;
+    if (sees(s, p, c.x, c.y) || Math.abs(c.x - f.x) > 17 || Math.abs(c.y - f.y) > 13) continue;
     best = Math.max(best, believed(findL(p, k, a), areaValue(s, k, a, true), u) - d * 0.03 - fear(s, p, a));
   }
   return best;
@@ -100,7 +107,7 @@ export function pickSpot(s: State, p: Person, k: Kind, cands: { x: number; y: nu
     const sc = perceive(s, p, k, c.x, c.y) - c.d * 0.03 + rnd(s) * 0.15;
     if (sc > bs) { bs = sc; best = c; }
   }
-  if (!best || sees(p, best.x, best.y)) return best;
+  if (!best || sees(s, p, best.x, best.y)) return best;
   // väl framme letar hen upp den bästa platsen i området
   const f = getMap(s.seed).fire, x0 = Math.max(0, best.x - 5), y0 = Math.max(0, best.y - 5);
   let r = best, rs = richness(s, k, best.x + 0.5, best.y + 0.5);

@@ -1,7 +1,8 @@
 import { SEASON, WORK_STAT, foodDays, woodDays } from './ekonomi';
 import { emberOn, fireWant, needTinder } from './eld';
 import { ageOf, living, stat } from './folk';
-import { HAND_FISH, Kind, SPEAR_FISH, flintSpot, wantsFlint } from './fynd';
+import { HAND_FISH, Kind, SPEAR_FISH, flintSpot, shoreOf, wantsFlint } from './fynd';
+import { temperature } from './vader';
 import { freeSpears, sharpTool, wantsSpear } from './redskap';
 import { areaOf, flintArea, pickSpot, prospectFor } from './minne';
 import { getMap } from './karta';
@@ -63,6 +64,27 @@ function spotFor(s: State, act: Act, p: Person): { x: number; y: number } {
 // 1. Nöd: sjuk, svag, fryser farligt eller måste på toa genast. Inget annat räknas.
 // 2. Grundbehov: toa, värme och vila. En lat person tillgodoser dem tidigare än en flitig.
 // 3. Byns behov mot egen lust, vägda med pliktkänslan.
+// en plats på land en bit bort åt ett slumpat håll
+function walkSpot(s: State, far: number) {
+  const m = getMap(s.seed), f = m.fire;
+  for (let k = 0; k < 20; k++) {
+    const ang = rnd(s) * Math.PI * 2, r = far * (0.7 + rnd(s) * 0.3);
+    const x = clamp(f.x + 0.5 + Math.cos(ang) * r, 0.5, W - 0.5), y = clamp(f.y + 0.5 + Math.sin(ang) * r, 0.5, H - 0.5);
+    if (m.tiles[Math.floor(y) * W + Math.floor(x)] !== T.Vatten) return { x, y };
+  }
+  return { x: f.x + 0.5, y: f.y + 3 };
+}
+// badplatsen: stranden närmast elden
+const bathCache = new Map<number, { x: number; y: number } | null>();
+export function bathSpot(s: State) {
+  if (!bathCache.has(s.seed)) {
+    const sh = shoreOf(s.seed), f = getMap(s.seed).fire;
+    let best: { x: number; y: number } | null = null, bd = 15;
+    for (let i = 0; i < W * H; i++) if (sh[i]) { const x = i % W, y = Math.floor(i / W), d = Math.hypot(x - f.x, y - f.y); if (d < bd) { bd = d; best = { x: x + 0.5, y: y + 0.5 }; } }
+    bathCache.set(s.seed, best);
+  }
+  return bathCache.get(s.seed) ?? undefined;
+}
 export function chooseTask(s: State, p: Person, live: boolean) {
   const a = ageOf(p, s.now), now = s.now;
   const light = isLight(now);
@@ -134,10 +156,20 @@ export function chooseTask(s: State, p: Person, live: boolean) {
         const wv = (1 - p.rest) * 2 + lazy * 0.6;
         const wh = (p.skill.hantverk / 10 + p.pot.flit / 20) * (u < 0.25 ? 1.5 : 0.6);
         const wsoc = (1 - p.social) * 2;
-        const r = rnd(s) * (wv + wh + wsoc);
+        // promenad: den nyfikne går gärna ut och ser sig omkring. Bad: när det är varmt i vattnet
+        const calm = u < 0.5 ? 1 : 0.3, temp = temperature(s), shore = bathSpot(s);
+        const wp = (0.3 + stat(p, 'nyfikenhet', now) / 15) * calm;
+        const wb = temp >= 15 && shore ? clamp((temp - 14) / 8, 0, 1.2) * calm : 0;
+        const r = rnd(s) * (wv + wh + wsoc + wp + wb);
         if (r < wv) set('vila', lazy > 0.5 ? 'Har det bra och tar det lugnt' : 'Tar en paus');
         else if (r < wv + wh) set('hantverk', u < 0.25 ? 'Byn har det gott ställt, det finns tid för hantverk' : 'Tycker om att göra handarbete');
-        else set('samtal', 'Vill umgås');
+        else if (r < wv + wh + wsoc) set('samtal', 'Vill umgås');
+        else if (r < wv + wh + wsoc + wp) {
+          // nyfikna och modiga går längre bort
+          const far = 4 + (stat(p, 'nyfikenhet', now) + stat(p, 'mod', now)) / 40 * 14;
+          set('promenad', far > 12 ? 'Är nyfiken och vill se vad som finns längre bort' : 'Vill sträcka på benen');
+          spot = walkSpot(s, far); dur = (60 + rnd(s) * 90) * 60 * SEC;
+        } else { set('bada', `Det är varmt (${Math.round(temp)} grader) och skönt att bada`); spot = shore; dur = (30 + rnd(s) * 30) * 60 * SEC; }
       }
     }
   } else {

@@ -78,13 +78,19 @@ export function updateTags(s: State) {
   const ppl = living(s).filter(p => ageOf(p, s.now) >= 14);
   const tot = new Map(ppl.map(p => [p, habitTotal(p)]));
   const avg = TAGS.map(t => ppl.reduce((a, p) => a + habitShare(p, t.acts, tot.get(p)), 0) / (ppl.length || 1));
+  // ju fler som redan har ett yrke, desto svårare att få samma (bara namnet, det påverkar inte vad man gör)
+  const holders = new Map<string, number>();
+  for (const p of ppl) if (p.tag) holders.set(p.tag, (holders.get(p.tag) ?? 0) + 1);
   for (const p of ppl) {
     let best: string | undefined, br = 0;
     if (tot.get(p)! >= 6) TAGS.forEach((t, i) => {
       const sh = habitShare(p, t.acts, tot.get(p)), keep = p.tag === t.tag, r = sh / (avg[i] || 1e-9);
-      if (sh >= t.min * (keep ? 0.8 : 1) && r >= (keep ? 1.2 : 1.5) && r * (keep ? 1.3 : 1) > br) { best = t.tag; br = r * (keep ? 1.3 : 1); }
+      const many = 1 + (keep ? 0.12 : 0.3) * ((holders.get(t.tag) ?? 0) - (keep ? 1 : 0));
+      if (sh >= t.min * (keep ? 0.8 : 1) && r >= (keep ? 1.2 : 1.5) * many && r * (keep ? 1.3 : 1) / many > br) { best = t.tag; br = r * (keep ? 1.3 : 1) / many; }
     });
     if (best !== p.tag) {
+      if (p.tag) holders.set(p.tag, holders.get(p.tag)! - 1);
+      if (best) holders.set(best, (holders.get(best) ?? 0) + 1);
       p.tag = best;
       const txt = `${p.name} kallas nu för ${best?.toLowerCase()}.`;
       if (best && best !== 'Dagdrivare' && !s.log.some(l => l.text === txt)) log(s, txt, 'skill', [p.id]);

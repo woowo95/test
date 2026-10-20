@@ -73,13 +73,17 @@ ul, ol { list-style: none; margin: 0; padding: 0; }
 .row .nm { grid-area: n; font-weight: 700; }
 .row .age { grid-area: a; color: var(--muted); font-variant-numeric: tabular-nums; }
 .row .act { grid-area: t; color: var(--muted); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.row .bar { grid-area: b; width: 70px; }
+.row .rb { grid-area: b; display: flex; align-items: center; justify-content: flex-end; }
+.row .bar { width: 70px; }
 .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; box-shadow: 0 0 0 1px rgba(0,0,0,0.35); }
 .dot.big { width: 22px; height: 22px; flex: none; margin-top: 6px; }
 .bar { display: inline-block; height: 6px; border-radius: 3px; background: var(--barbg); overflow: hidden; vertical-align: middle; }
 .bar > span { display: block; height: 100%; background: var(--good); border-radius: 3px; }
 .bar.low > span { background: var(--bad); }
 .bar.skill > span { background: var(--accent); }
+.trend { font-size: 9px; margin-left: 3px; vertical-align: middle; line-height: 1; }
+.trend.up { color: var(--good); }
+.trend.down { color: var(--bad); }
 .tag { color: var(--accent); font-weight: 500; font-size: 12px; margin: 0; }
 .why { margin: 2px 0 0; font-size: 13px; color: var(--muted); font-style: italic; }
 .small { font-size: 12px; margin: 4px 0 0; }

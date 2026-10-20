@@ -28,13 +28,13 @@ export const SKILL_NAMES: Record<Skill, string> = {
 
 export const AGES = ['Istid', 'Vårtid', 'Sommartid', 'Hösttid'];
 
-export type Act = 'samla' | 'jakt' | 'fiske' | 'ved' | 'leka' | 'vila' | 'samtal' | 'beratta' | 'hantverk' | 'vakt' | 'sova' | 'elda' | 'tanda' | 'varma' | 'toa' | 'kol' | 'falla' | 'hugga' | 'yxa' | 'spjut';
+export type Act = 'samla' | 'jakt' | 'fiske' | 'ved' | 'leka' | 'vila' | 'samtal' | 'beratta' | 'hantverk' | 'vakt' | 'sova' | 'elda' | 'tanda' | 'varma' | 'toa' | 'kol' | 'falla' | 'hugga' | 'yxa' | 'spjut' | 'promenad' | 'bada';
 export const ACT_NAMES: Record<Act, string> = {
   samla: 'Samlar bär och rötter', jakt: 'Jagar', fiske: 'Fiskar med händerna', ved: 'Samlar grenar', leka: 'Leker',
   vila: 'Vilar', samtal: 'Samtalar vid elden', beratta: 'Berättar vid elden', hantverk: 'Gör handarbete',
   vakt: 'Håller vakt', sova: 'Sover', elda: 'Lägger ved på elden', tanda: 'Försöker tända elden', varma: 'Värmer sig vid elden',
   toa: 'Går avsides på toa', kol: 'Hämtar kol ur den slocknade elden',
-  falla: 'Fäller ett träd med yxa', hugga: 'Hugger ved av ett fällt träd', yxa: 'Gör en yxa av en pinne och flinta', spjut: 'Täljer ett fiskespjut',
+  falla: 'Fäller ett träd med yxa', hugga: 'Hugger ved av ett fällt träd', yxa: 'Gör en yxa av en pinne och flinta', spjut: 'Täljer ett fiskespjut', promenad: 'Tar en promenad', bada: 'Badar i sjön',
 };
 export const WORK: Act[] = ['samla', 'jakt', 'fiske', 'ved'];
 export const GREN = 0.4; // en gren ger lika mycket bränsle som 0,4 ved: grenar brinner fort
@@ -87,6 +87,7 @@ export interface State {
   mark?: string; // markens grästäcke per ruta (stigar), packat
   skog?: string; // trädens tillväxt per ruta, packat
   stockar?: Stock[]; // fällda träd som ligger och väntar på att huggas
+  stubbar?: { x: number; y: number; t: number }[]; // stubbar efter fällda träd, t = när trädet fälldes
   nextStock?: number; fallda?: number;
   fynd?: string; // hur mycket som tagits ur varje plats (bär, vilt, fisk), packat
   kunskap?: Record<string, number>; // äldre sparfiler: byns gemensamma kunskap, flyttas till varje person

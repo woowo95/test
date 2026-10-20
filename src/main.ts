@@ -5,7 +5,7 @@ import {
   createState, step, getMap, living, alive, ageOf, byId, relKey, moodOf, ageIndex, ageDay, yearNo, lightLevel, isLight,
   foodDays, timeLabel, temperature, serialize, compact, stat, migrate, hearthOf, igniterOf, fireHeat, heatRadius, fireWant, emberOn,
   ITEM_NAMES, FireLog, coverOf, groundOf, SEDER, SED_INFO, Sed, influence, duty, habitShare, habitTotal, Act,
-  richness, stoneDist, Kind, KUNSKAP_NAMES, describe, Lardom,
+  richness, stoneDist, Kind, KUNSKAP_NAMES, describe, Lardom, STUBBE_LIV,
 } from './sim';
 import { HIGH, BAR, FOREST } from './sim/vag';
 
@@ -66,6 +66,7 @@ async function catchUp(target: number, showOverlay: boolean) {
   busy = true;
   const logStart = s.log.length ? s.log[s.log.length - 1].t : 0;
   const from = s.now;
+  const before = knowSnapshot();
   const ov = $('overlay');
   if (showOverlay) { ov.hidden = false; $('ovBody').innerHTML = `<p class="ovLead">Byn har levt vidare medan du var borta.</p><div class="prog"><div id="progBar"></div></div><p class="muted" id="progTxt"></p>`; }
   await new Promise<void>(resolve => {
@@ -83,11 +84,38 @@ async function catchUp(target: number, showOverlay: boolean) {
   });
   busy = false;
   for (const p of living(s)) p.task = undefined;
-  if (showOverlay) showSummary(from, logStart);
+  if (showOverlay) showSummary(from, logStart, before);
   saveLocal(); saveDb();
   drawTerrain(true);
 }
-function showSummary(from: number, logStart: number) {
+// vad var och en kan och tror innan ikappräkningen, för att visa det nya i sammanställningen
+function knowSnapshot() {
+  const m = new Map<number, { k: Record<string, number>; l: Set<string> }>();
+  for (const p of living(s)) m.set(p.id, { k: Object.fromEntries(Object.entries(p.kunskap ?? {}).map(([k, e]) => [k, e.v])), l: new Set((p.lardomar ?? []).map(l => l.k + ':' + l.a)) });
+  return m;
+}
+const LKIND_NAMES: Record<string, string> = { samla: 'bär och rötter', jakt: 'vilt', fiske: 'fisk', flinta: 'flinta', fara: 'farliga platser' };
+function knowHtml(before: ReturnType<typeof knowSnapshot>) {
+  const nyK: string[] = [], per: Record<string, number> = {}, ex: string[] = [];
+  let nyL = 0;
+  for (const p of living(s)) {
+    const b = before.get(p.id);
+    for (const [k, e] of Object.entries(p.kunskap ?? {})) {
+      const v0 = b?.k[k] ?? 0;
+      if (e.v - v0 >= 0.2) nyK.push(`${esc(p.name)} har lärt sig ${esc((KUNSKAP_NAMES[k] ?? k).toLowerCase())} (${Math.round(v0 * 100)} → ${Math.round(e.v * 100)} %)`);
+    }
+    for (const l of p.lardomar ?? []) {
+      if (b?.l.has(l.k + ':' + l.a)) continue;
+      nyL++; per[l.k] = (per[l.k] ?? 0) + 1;
+      if (ex.length < 4 && (l.k === 'fara' || l.k === 'flinta' || l.c >= 0.75)) ex.push(`${esc(p.name)}: ${esc(describe(s, p, l).text)}`);
+    }
+  }
+  if (!nyK.length && !nyL) return '';
+  const delar = Object.entries(per).sort((a, b) => b[1] - a[1]).map(([k, n]) => `${n} om ${LKIND_NAMES[k] ?? k}`).join(', ');
+  return `<h3>Ny kunskap och nya lärdomar</h3><ul class="sumList">${nyK.slice(0, 6).map(x => `<li>${x}</li>`).join('')}${nyK.length > 6 ? `<li class="muted">och ${nyK.length - 6} till</li>` : ''}
+    ${nyL ? `<li>${nyL} nya lärdomar: ${delar}</li>${ex.map(x => `<li class="muted">${x}</li>`).join('')}` : ''}</ul>`;
+}
+function showSummary(from: number, logStart: number, before = knowSnapshot()) {
   const ev = s.log.filter(l => l.t > logStart && l.t > from);
   const years = (s.now - from) / DAY;
   const births = ev.filter(e => e.kind === 'birth').length, deaths = ev.filter(e => e.kind === 'death').length;
@@ -98,6 +126,7 @@ function showSummary(from: number, logStart: number) {
     <p class="ovLead">Medan du var borta gick ${yrs}.</p>
     <p class="muted">${births} födda · ${deaths} döda · ${living(s).length} lever nu i byn</p>
     <ol class="sumList">${key.map(e => `<li><span class="when">${timeLabel(s, e.t)}</span>${esc(e.text)}</li>`).join('') || '<li>Inget särskilt hände.</li>'}</ol>
+    ${knowHtml(before)}
     <button id="ovClose" class="primary" type="button">Till byn</button>`;
   $('ovClose').onclick = () => { $('overlay').hidden = true; };
 }
@@ -190,6 +219,12 @@ function drawStructures(t: number) {
   for (let i = 0; i < nf; i++) structG.beginFill(i % 2 ? 0xa8463a : 0xc58b3e).drawRect(st.x * TS + 2 + (i % 4) * 7, st.y * TS + 2 + Math.floor(i / 4) * 6, 5, 4).endFill();
   for (let i = 0; i < nw; i++) structG.beginFill(0x6f4a2a).drawRoundedRect(st.x * TS + 2 + (i % 4) * 7, st.y * TS + 21 + Math.floor(i / 4) * 5, 6, 3, 1.5).endFill();
   for (let i = nw; i < nw + ng; i++) { const gx = st.x * TS + 2 + (i % 4) * 7, gy = st.y * TS + 22 + Math.floor(i / 4) * 5; structG.lineStyle(1, 0x7a5a36).moveTo(gx, gy + 2).lineTo(gx + 6, gy).moveTo(gx + 1, gy).lineTo(gx + 5, gy + 3).lineStyle(0); }
+  // stubbar: bleknar medan de ruttnar bort
+  for (const k of s.stubbar ?? []) {
+    const a = 1 - (s.now - k.t) / STUBBE_LIV, x = k.x * TS + TS * 0.65, y = k.y * TS + TS * 0.6;
+    structG.beginFill(0x4a3420, 0.9 * a).drawCircle(x, y, 3.2).endFill();
+    structG.beginFill(0xb08a58, 0.9 * a).drawCircle(x, y - 0.6, 2.2).endFill();
+  }
   // fällda träd som ligger och väntar på att huggas till ved
   for (const k of s.stockar ?? []) {
     const x = k.x * TS, y = k.y * TS, len = 6 + Math.min(8, k.ved);
@@ -365,6 +400,7 @@ function showHover(gx: number, gy: number) {
   if (near(m.stock, 2, 2)) rows.push(`Förrådet: ${Math.round(s.food)} mat, ${Math.round(s.wood)} ved`);
   const log = (s.stockar ?? []).find(k => Math.floor(k.x) === x && Math.floor(k.y) === y);
   if (log) rows.push(`Fällt träd, ca ${Math.ceil(log.ved)} ved kvar`);
+  if ((s.stubbar ?? []).some(k => k.x === x && k.y === y)) rows.push('Stubbe efter ett fällt träd');
   const here = living(s).filter(p => Math.floor(p.x) === x && Math.floor(p.y) === y);
   if (here.length) rows.push(here.map(p => `${esc(p.name)} (${p.task ? taskName(p.task).toLowerCase() : 'vilar'})`).join(', '));
   box.innerHTML = rows.map(r => `<p>${r}</p>`).join('');
@@ -412,8 +448,8 @@ function showTip(id: number) {
   const m = moodOf(p, s.now);
   tip.innerHTML = `<h4>${esc(p.name)}</h4><p class="op">${p.sex === 'k' ? 'Kvinna' : 'Man'}, ${Math.floor(ageOf(p, s.now))} år${p.tag ? ' · ' + esc(p.tag) : ''}</p>
     <p>${shortAct(p)}</p>${p.task?.why ? `<p class="op">${esc(p.task.why)}</p>` : ''}
-    <dl><dt>Humör</dt><dd>${bar(m, m < 0.35 ? 'low' : '')}</dd><dt>Mättnad</dt><dd>${bar(p.hunger, p.hunger < 0.25 ? 'low' : '')}</dd>
-    <dt>Vila</dt><dd>${bar(p.rest)}</dd><dt>Hälsa</dt><dd>${bar(p.health, p.health < 0.5 ? 'low' : '')}</dd><dt>Värme</dt><dd>${bar(p.warm, p.warm < 0.4 ? 'low' : '')}</dd></dl>
+    <dl><dt>Humör</dt><dd>${bar(m, m < 0.35 ? 'low' : '', trend(p, 'humor', m))}</dd><dt>Mättnad</dt><dd>${bar(p.hunger, p.hunger < 0.25 ? 'low' : '', trend(p, 'hunger', p.hunger))}</dd>
+    <dt>Vila</dt><dd>${bar(p.rest, '', trend(p, 'rest', p.rest))}</dd><dt>Hälsa</dt><dd>${bar(p.health, p.health < 0.5 ? 'low' : '', trend(p, 'health', p.health))}</dd><dt>Värme</dt><dd>${bar(p.warm, p.warm < 0.4 ? 'low' : '', trend(p, 'warm', p.warm))}</dd></dl>
     <p class="op">Klicka för att välja, dubbelklicka för att följa.</p>`;
   const wrap = $('ports').parentElement!.getBoundingClientRect(), r = el.getBoundingClientRect();
   tip.hidden = false;
@@ -428,7 +464,15 @@ $('ports').addEventListener('click', e => { const b = (e.target as HTMLElement).
 $('ports').addEventListener('dblclick', e => { const b = (e.target as HTMLElement).closest<HTMLElement>('.port'); if (b) startFollow(Number(b.dataset.id)); });
 
 // ---------- panel ----------
-function bar(v: number, cls = '') { return `<span class="bar ${cls}"><span style="width:${Math.round(Math.max(0, Math.min(1, v)) * 100)}%"></span></span>`; }
+function bar(v: number, cls = '', tr = '') { return `<span class="bar ${cls}"><span style="width:${Math.round(Math.max(0, Math.min(1, v)) * 100)}%"></span></span>${tr}`; }
+// pil vid en stapel som ändras märkbart just nu: jämför med värdet för en stund sedan (speltid)
+const trendHist = new Map<string, { v: number; t: number; d: number }>();
+function trend(p: Person, key: string, v: number) {
+  const id = p.id + ':' + key, h = trendHist.get(id), now = s.now;
+  if (!h || now < h.t) { trendHist.set(id, { v, t: now, d: 0 }); return ''; }
+  if (now - h.t >= 10 * 60 * 1000) { h.d = (v - h.v) / ((now - h.t) / HOUR); h.v = v; h.t = now; }
+  return h.d > 0.08 ? '<span class="trend up" title="Stiger">▲</span>' : h.d < -0.08 ? '<span class="trend down" title="Sjunker">▼</span>' : '';
+}
 function moodWord(m: number) { return m > 0.75 ? 'Lycklig' : m > 0.55 ? 'Nöjd' : m > 0.4 ? 'Okej' : m > 0.25 ? 'Nedstämd' : 'Olycklig'; }
 function relWord(s: State, p: Person, q: Person, op: number) {
   if (p.partner === q.id) return 'Partner';
@@ -472,7 +516,7 @@ function renderPanel(force = false) {
     const rows = ppl.slice().sort((a, b) => b.born < a.born ? 1 : -1).sort((a, b) => ageOf(b, s.now) - ageOf(a, s.now));
     box.innerHTML = `<ul class="folk">${rows.map(p => {
       const m = moodOf(p, s.now);
-      return `<li><button class="row" data-id="${p.id}" type="button"><span class="dot" style="background:#${hsl(p.hue, 0.5, 0.58).toString(16).padStart(6, '0')}"></span><span class="nm">${esc(p.name)}${p.tag ? ` <span class="tag">${esc(p.tag)}</span>` : ''}</span><span class="age">${Math.floor(ageOf(p, s.now))} år</span><span class="act">${p.task ? taskName(p.task) : '–'}</span>${bar(m, m < 0.35 ? 'low' : '')}</button></li>`;
+      return `<li><button class="row" data-id="${p.id}" type="button"><span class="dot" style="background:#${hsl(p.hue, 0.5, 0.58).toString(16).padStart(6, '0')}"></span><span class="nm">${esc(p.name)}${p.tag ? ` <span class="tag">${esc(p.tag)}</span>` : ''}</span><span class="age">${Math.floor(ageOf(p, s.now))} år</span><span class="act">${p.task ? taskName(p.task) : '–'}</span><span class="rb">${bar(m, m < 0.35 ? 'low' : '', trend(p, 'humor', m))}</span></button></li>`;
     }).join('')}</ul>`;
   } else if (tab === 'logg') {
     box.innerHTML = `<ol class="logg">${s.log.slice().reverse().slice(0, 150).map(l => `<li class="k-${l.kind}"><span class="when">${timeLabel(s, l.t)}</span>${linkify(l)}</li>`).join('')}</ol>`;
@@ -492,10 +536,10 @@ function renderPanel(force = false) {
       <div class="phead"><span class="dot big" style="background:#${hsl(p.hue, 0.5, 0.58).toString(16).padStart(6, '0')}"></span><div><h2>${esc(p.name)}</h2>${p.tag && alive(p) ? `<p class="tag">${esc(p.tag)}</p>` : ''}
       <p class="muted">${p.sex === 'k' ? 'Kvinna' : 'Man'}, ${Math.floor(a)} år · född ${timeLabel(s, p.born)}</p><p class="status">${status}</p>${alive(p) && p.task?.why ? `<p class="why">Varför: ${esc(p.task.why)}</p>` : ''}</div></div>
       ${alive(p) ? `<h3>Mående</h3><dl class="kv">
-        <dt>Humör</dt><dd>${bar(moodOf(p, now))}<span>${moodWord(moodOf(p, now))}</span></dd>
-        <dt>Mättnad</dt><dd>${bar(p.hunger)}</dd><dt>Vila</dt><dd>${bar(p.rest)}</dd>
-        <dt>Gemenskap</dt><dd>${bar(p.social)}</dd><dt>Hälsa</dt><dd>${bar(p.health, p.health < 0.5 ? 'low' : '')}</dd>
-        <dt>Värme</dt><dd>${bar(p.warm, p.warm < 0.4 ? 'low' : '')}</dd><dt>Toa</dt><dd>${bar(p.toa, p.toa < 0.25 ? 'low' : '')}</dd></dl>
+        <dt>Humör</dt><dd>${bar(moodOf(p, now), '', trend(p, 'humor', moodOf(p, now)))}<span>${moodWord(moodOf(p, now))}</span></dd>
+        <dt>Mättnad</dt><dd>${bar(p.hunger, '', trend(p, 'hunger', p.hunger))}</dd><dt>Vila</dt><dd>${bar(p.rest, '', trend(p, 'rest', p.rest))}</dd>
+        <dt>Gemenskap</dt><dd>${bar(p.social, '', trend(p, 'social', p.social))}</dd><dt>Hälsa</dt><dd>${bar(p.health, p.health < 0.5 ? 'low' : '', trend(p, 'health', p.health))}</dd>
+        <dt>Värme</dt><dd>${bar(p.warm, p.warm < 0.4 ? 'low' : '', trend(p, 'warm', p.warm))}</dd><dt>Toa</dt><dd>${bar(p.toa, p.toa < 0.25 ? 'low' : '', trend(p, 'toa', p.toa))}</dd></dl>
         ${p.fiske ? `<h3>Fiske med händerna</h3><p class="muted">${p.fiske.f} försök, ${p.fiske.n} napp, ${p.fiske.k} ${p.fiske.k === 1 ? 'fisk' : 'fiskar'}</p>` : ''}
         ${a >= 8 ? willHtml(p) : ''}
         ${p.thoughts.length ? `<ul class="thoughts">${p.thoughts.map(t => `<li class="${t.v < 0 ? 'neg' : 'pos'}">${esc(t.text)} <span>${t.v > 0 ? '+' : ''}${Math.round(t.v * 100)}</span></li>`).join('')}</ul>` : ''}` : ''}
