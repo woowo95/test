@@ -1,3 +1,4 @@
+import { findPath, pathTree, speedAt, wear, regrow, encodeCover, decodeCover } from './vag';
 // Samhällssimulatorn – simuleringskärna (ingen grafik här)
 // Tidsmodell: 1 verkligt dygn = 1 levnadsår. En tidsålder = 1 vecka. Ljus tid 07–19 lokal tid.
 
@@ -25,18 +26,18 @@ export const SKILL_NAMES: Record<Skill, string> = {
 
 export const AGES = ['Istid', 'Vårtid', 'Sommartid', 'Hösttid'];
 
-export type Act = 'samla' | 'jakt' | 'fiske' | 'ved' | 'leka' | 'vila' | 'samtal' | 'beratta' | 'hantverk' | 'vakt' | 'sova' | 'elda' | 'tanda' | 'varma' | 'toa';
+export type Act = 'samla' | 'jakt' | 'fiske' | 'ved' | 'leka' | 'vila' | 'samtal' | 'beratta' | 'hantverk' | 'vakt' | 'sova' | 'elda' | 'tanda' | 'varma' | 'toa' | 'kol';
 export const ACT_NAMES: Record<Act, string> = {
   samla: 'Samlar bär och rötter', jakt: 'Jagar', fiske: 'Fiskar', ved: 'Hugger ved', leka: 'Leker',
   vila: 'Vilar', samtal: 'Samtalar vid elden', beratta: 'Berättar vid elden', hantverk: 'Gör handarbete',
   vakt: 'Håller vakt', sova: 'Sover', elda: 'Lägger ved på elden', tanda: 'Försöker tända elden', varma: 'Värmer sig vid elden',
-  toa: 'Går avsides på toa',
+  toa: 'Går avsides på toa', kol: 'Hämtar kol ur den slocknade elden',
 };
 const WORK: Act[] = ['samla', 'jakt', 'fiske', 'ved'];
 
 export interface Thought { text: string; v: number; until: number }
 // why = varför personen valde uppgiften, dark = påbörjad under mörk tid
-export interface Task { act: Act; phase: 'go' | 'do' | 'back'; tx: number; ty: number; until: number; carry: number; items?: Record<string, number>; why?: string; dark?: boolean }
+export interface Task { act: Act; phase: 'go' | 'do' | 'back'; tx: number; ty: number; until: number; carry: number; items?: Record<string, number>; why?: string; dark?: boolean; path?: number[]; pk?: string }
 
 export interface Person {
   id: number; name: string; sex: 'm' | 'k';
@@ -68,6 +69,7 @@ export interface State {
   items: Record<string, number>; // föremål i förrådet, t.ex. gniststen, torrt gräs, små pinnar
   fire: Fire;
   seder: Seder;
+  mark?: string; // markens grästäcke per ruta (stigar), packat
 }
 
 // ---------- seder ----------
@@ -103,7 +105,7 @@ export const IGNITERS: Igniter[] = [
   { id: 'eldstal', name: 'Eldstål och flinta', desc: 'Stål mot flinta ger heta gnistor som fångas i fnöske.', chance: 0.45, grass: 1, sticks: 1, minutes: 5, requires: 'Smide' },
   { id: 'tandstickor', name: 'Tändstickor', desc: 'Tänds med ett drag.', chance: 0.9, grass: 0.5, sticks: 0.5, minutes: 1, requires: 'Kemi' },
 ];
-export const ITEM_NAMES: Record<string, string> = { gniststen: 'Gniststen', torrgras: 'Torrt gräs', pinnar: 'Små pinnar' };
+export const ITEM_NAMES: Record<string, string> = { gniststen: 'Gniststen', torrgras: 'Torrt gräs', pinnar: 'Små pinnar', kol: 'Kol' };
 
 export interface FireLog { t: number; k: 'tänd' | 'fyll' | 'slocknade' | 'glöd' | 'sprack'; id?: number; n?: number }
 export interface Fire {
@@ -113,6 +115,7 @@ export interface Fire {
   tries: number; tryTotal: number; tryProg: number; // försök sedan elden senast brann, totalt, sekunder in i pågående försök
   fills: Record<string, number>; log: FireLog[];
   want?: number; wantBy?: number; wantWhy?: string; // största önskan om ved på elden just nu, och vems
+  ash?: number; ashUntil?: number; // kolhög efter en utbrunnen eld
 }
 
 // ---------- slump ----------
@@ -191,6 +194,24 @@ export function getMap(seed: number): MapData {
   const m: MapData = { tiles, fire: f, huts, stock: { x: f.x + 4, y: f.y - 1 }, shade };
   mapCache.set(seed, m);
   return m;
+}
+
+// ---------- mark och stigar ----------
+const covers = new WeakMap<State, Float32Array>();
+export function coverOf(s: State) {
+  let c = covers.get(s);
+  if (!c) { c = decodeCover(s.mark); covers.set(s, c); }
+  return c;
+}
+const GROW = [0.1, 1.2, 1, 0.6]; // grästillväxt per tidsålder
+const WEAR = 0.008; // slitage när någon går över en ruta
+const tileOf = (x: number, y: number) => Math.max(0, Math.min(H - 1, Math.floor(y))) * W + Math.max(0, Math.min(W - 1, Math.floor(x)));
+let tree: { key: string; came: Int32Array } | undefined;
+// vid ikappräkning går ingen på riktigt: slitaget läggs längs bästa vägen mellan elden och målet
+function tread(s: State, tx: number, ty: number, trips: number) {
+  const m = getMap(s.seed), cov = coverOf(s), key = `${s.seed}:${Math.floor(s.now / (4 * HOUR))}`;
+  if (tree?.key !== key) tree = { key, came: pathTree(m.tiles, cov, m.fire.x, m.fire.y) };
+  for (let i = tileOf(tx, ty), n = 0; i >= 0 && n < 200; i = tree.came[i], n++) wear(m.tiles, cov, i, WEAR * trips);
 }
 
 // ---------- namn ----------
@@ -400,6 +421,7 @@ function lightFire(s: State, p: Person) {
   s.wood -= start;
   Object.assign(f, { lit: true, fuel: start, litAt: s.now, litBy: p.id, burned: 0, emberUntil: undefined, tryProg: 0 });
   f.lightings++;
+  if (f.ash) { takeCoal(s, p, 'krattade undan'); }
   fireLog(s, { k: 'tänd', id: p.id, n: f.tries });
   log(s, `${p.name} lyckades tända elden${f.tries > 1 ? ` efter ${f.tries} försök` : ''}.`, 'world', [p.id]);
   think(p, 'Tände elden', 0.15, s.now, DAY / 2);
@@ -420,6 +442,13 @@ function tryLight(s: State, p: Person) {
   }
   return false;
 }
+function takeCoal(s: State, p: Person, verb: string) {
+  const n = s.fire.ash ?? 0;
+  if (n < 1) return;
+  addItems(s, { kol: n });
+  s.fire.ash = 0; s.fire.ashUntil = undefined;
+  log(s, `${p.name} ${verb} ${n} kol ur den gamla elden och lade dem i förrådet.`, 'world', [p.id]);
+}
 function addFuel(s: State, p: Person, n: number) {
   const f = s.fire, h = hearthOf(f);
   if (!f.lit && !emberOn(s)) { s.wood += n; return; } // elden hann slockna: veden går tillbaka
@@ -435,7 +464,7 @@ function addFuel(s: State, p: Person, n: number) {
   p.skill.elda = clamp(p.skill.elda + 0.01 * (1 - p.skill.elda / 21), 0, 20);
 }
 function assign(s: State, p: Person, act: Act, tx: number, ty: number, dur: number, live: boolean, why: string) {
-  if (!live) { p.x = tx; p.y = ty; }
+  if (!live) { p.x = tx; p.y = ty; tread(s, tx, ty, 1); }
   p.task = { act, phase: live ? 'go' : 'do', tx, ty, until: s.now + dur, carry: 0, why, dark: !isLight(s.now) };
 }
 const awake = (s: State, p: Person, minAge: number) => {
@@ -454,7 +483,13 @@ function stepFire(s: State, dtSec: number, live: boolean, ppl: Person[]) {
       log(s, `Elden slocknade efter att ha brunnit i ${durText((now - (f.litAt ?? now)) / SEC)}. Glöden lever en stund till.`, 'world');
     }
   }
-  if (f.emberUntil !== undefined && !f.lit && f.emberUntil <= now) f.emberUntil = undefined;
+  if (f.emberUntil !== undefined && !f.lit && f.emberUntil <= now) {
+    // glöden dog: kvar blir en svart hög med lite kol, som ligger några dygn
+    f.emberUntil = undefined;
+    const coal = Math.min(8, Math.round(f.burned * 0.05));
+    if (coal >= 1) { f.ash = (f.ash ?? 0) + coal; f.ashUntil = now + 3 * DAY; log(s, `Elden har brunnit ut. Kvar ligger en svart hög med ${coal} kol.`, 'world'); }
+  }
+  if (f.ash && (f.ashUntil ?? 0) <= now) { f.ash = 0; f.ashUntil = undefined; }
   // vilja: varje vaken invånare vill ha olika mycket ved på elden
   const vc = ppl.reduce((a, p) => a + clamp(0.6 - p.warm, 0, 0.6) / 0.6, 0) / (ppl.length || 1);
   const cands: { p: Person; w: Wish }[] = [];
@@ -605,6 +640,7 @@ function spotFor(s: State, act: Act, p: Person): { x: number; y: number } {
     const ang = rnd(s) * Math.PI * 2, r = act === 'vakt' ? 2.6 : 1.3 + rnd(s) * 0.9;
     return { x: f.x + 0.5 + Math.cos(ang) * r, y: f.y + 0.5 + Math.sin(ang) * r };
   }
+  if (act === 'kol') return { x: f.x + 0.5 + (rnd(s) - 0.5) * 0.6, y: f.y + 1.1 };
   if (act === 'sova' || act === 'vila') { const h = m.huts[p.id % m.huts.length]; return { x: h.x + 0.6 + rnd(s) * 0.8, y: h.y + 0.6 + rnd(s) * 0.8 }; }
   if (act === 'leka') return { x: f.x + (rnd(s) - 0.5) * 8, y: f.y + 3 + rnd(s) * 3 };
   const want = (t: number, x: number, y: number) => {
@@ -673,7 +709,10 @@ function chooseTask(s: State, p: Person, live: boolean) {
       const sat = Math.min(p.hunger, p.rest, p.social); // hur väl de egna behoven är fyllda
       const what = best === 'ved' ? `Byn behöver ved, förrådet räcker ${dygn(wd)}` : best === 'samla' && needTinder(s) ? 'Byn behöver tändmaterial till elden' : `Byn behöver mat, förrådet räcker ${dygn(fd)}`;
       const workWhy = () => what + (lazy < 0.2 ? '. Plikttrogen.' : habitShare(p, [best], tot) > 0.25 ? '. Brukar göra det.' : p.skill[best as Skill] > 10 ? '. Skicklig på det.' : '.');
-      if (a < 14) {
+      if (a >= 12 && (s.fire.ash ?? 0) >= 1 && !lit && !emberOn(s) && rnd(s) < 0.2 && !living(s).some(q => q.task?.act === 'kol')) {
+        set('kol', 'Det ligger kol kvar i den slocknade elden');
+        dur = 10 * 60 * SEC;
+      } else if (a < 14) {
         if (rnd(s) < 0.45 + 0.2 * sd.barn) set('leka', 'Är barn och leker');
         else set(best, `Hjälper till. ${what}.`);
       } else if (rnd(s) < (1 - lazy) * (0.88 + 0.12 * u) + lazy * sat * (0.6 + 0.4 * u)) {
@@ -713,7 +752,7 @@ function chooseTask(s: State, p: Person, live: boolean) {
   }
   if (act! === 'toa') dur = (4 + rnd(s) * 4) * 60 * SEC;
   const sp = spotFor(s, act!, p);
-  if (!live) { p.x = sp.x; p.y = sp.y; }
+  if (!live) { p.x = sp.x; p.y = sp.y; tread(s, sp.x, sp.y, WORK.includes(act!) ? 2 : 1); }
   p.task = { act: act!, phase: live ? 'go' : 'do', tx: sp.x, ty: sp.y, until: s.now + dur, carry: 0, why: why!, dark: !light };
 }
 
@@ -846,7 +885,10 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
   stepFire(s, dtSec, live, ppl);
   const fh = hearthOf(s.fire), coldRate = COLD[ai][light ? 0 : 1];
   const learn = 1 + 0.1 * s.seder.v.nyfikenhet; // en nyfiken by lär sig snabbare
-  if (Math.floor(now / HOUR) !== Math.floor((now - dtSec * SEC) / HOUR)) { stepSeder(s); updateTags(s); }
+  if (Math.floor(now / HOUR) !== Math.floor((now - dtSec * SEC) / HOUR)) {
+    stepSeder(s); updateTags(s);
+    const m = getMap(s.seed); regrow(m.tiles, coverOf(s), 1, GROW[ai], [m.fire.y * W + m.fire.x]);
+  }
 
   const social: Person[] = [];
   for (const p of ppl) {
@@ -902,9 +944,27 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
     const tk = p.task!;
     if (live) {
       if (tk.phase === 'go' || tk.phase === 'back') {
+        // vägsökning: gå ruta för ruta runt vatten, gärna längs stigar
+        const m = getMap(s.seed), cov = coverOf(s);
+        const key = `${tk.tx.toFixed(2)},${tk.ty.toFixed(2)}`;
+        if (tk.pk !== key) { tk.pk = key; tk.path = findPath(m.tiles, cov, p.x, p.y, tk.tx, tk.ty) ?? []; }
+        const off = (((p.id * 37) % 7) - 3) * 0.06; // var och en går lite vid sidan av, så att de inte täcker varandra
+        let budget = (a < 6 ? 0.9 : a > 65 ? 1 : 1.6) * dtSec;
+        while (tk.path && tk.path.length && budget > 0) {
+          const i = tk.path[0], wx = (i % W) + 0.5 + off, wy = Math.floor(i / W) + 0.5 - off;
+          const ci = tileOf(p.x, p.y), sp = speedAt(m.tiles, cov, ci) || 1;
+          const dx = wx - p.x, dy = wy - p.y, d = Math.hypot(dx, dy), can = budget * sp;
+          const mv = Math.min(d, can);
+          wear(m.tiles, cov, ci, WEAR * mv);
+          if (d <= can) { p.x = wx; p.y = wy; tk.path.shift(); budget -= d / sp; }
+          else { p.x += dx / d * can; p.y += dy / d * can; budget = 0; }
+        }
+        const ci = tileOf(p.x, p.y), spd = speedAt(m.tiles, cov, ci) || 1;
         const dx = tk.tx - p.x, dy = tk.ty - p.y, d = Math.hypot(dx, dy);
-        const sp = (a < 6 ? 0.9 : a > 65 ? 1 : 1.6) * dtSec;
-        if (d <= sp) {
+        const sp = budget * spd;
+        if (budget <= 0) { /* väntar på nästa steg */ }
+        else if (d <= sp) {
+          tk.path = undefined; tk.pk = undefined;
           p.x = tk.tx; p.y = tk.ty;
           if (tk.act === 'elda') {
             if (tk.phase === 'go') {
@@ -918,13 +978,14 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
             if (tk.items) addItems(s, tk.items);
             tk.carry = 0; p.task = undefined;
           } else tk.phase = 'do';
-        } else { p.x += dx / d * sp; p.y += dy / d * sp; }
+        } else { wear(m.tiles, cov, ci, WEAR * sp); p.x += dx / d * sp; p.y += dy / d * sp; }
       } else if (tk.act !== 'sova' && tk.act !== 'vakt' && tk.act !== 'hantverk') {
         // småjustering så att de rör sig lite
-        if (rnd(s) < dtSec * 0.08) { p.x += (rnd(s) - 0.5) * 0.4; p.y += (rnd(s) - 0.5) * 0.4; }
+        if (rnd(s) < dtSec * 0.08) { const nx = p.x + (rnd(s) - 0.5) * 0.4, ny = p.y + (rnd(s) - 0.5) * 0.4; if (getMap(s.seed).tiles[tileOf(nx, ny)] !== T.Vatten) { p.x = nx; p.y = ny; } }
       }
     }
     if (tk.phase === 'do' && tk.act === 'toa') p.toa = 1;
+    if (tk.phase === 'do' && tk.act === 'kol') takeCoal(s, p, 'hämtade');
     // vana: tiden räknas mot yrkestaggar
     const hf = Math.exp(-dtSec * SEC / HABIT_FADE);
     for (const k in p.habit) p.habit[k] *= hf;
@@ -975,6 +1036,7 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
 }
 
 export function serialize(s: State) {
+  s.mark = encodeCover(coverOf(s));
   return JSON.stringify(s, (k, v) => (typeof v === 'number' && !Number.isInteger(v) ? Math.round(v * 1000) / 1000 : v));
 }
 

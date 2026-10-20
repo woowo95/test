@@ -1,4 +1,5 @@
-import { createState, step, living, DAY, AGES, ageIndex, ageOf, serialize, State, SEDER } from './sim';
+import { createState, step, living, DAY, AGES, ageIndex, ageOf, serialize, State, SEDER, coverOf, getMap } from './sim';
+import { STIG, BAR, hasCover } from './vag';
 
 const start = Date.parse('2026-10-20T08:00:00+02:00');
 for (const seed of [1, 42, 777]) {
@@ -32,5 +33,8 @@ for (const seed of [1, 42, 777]) {
   console.log('seder:', SEDER.map(k => `${k} ${s.seder.v[k].toFixed(2)}`).join(', '), '| olyckor på toa', accidents);
   console.log('taggar:', living(s).filter(p => p.tag).map(p => `${p.name}: ${p.tag}`).join(', '), '| tagg-loggar', s.log.filter(l => l.text.includes('kallas nu')).length);
   console.log(s.seder.log.map(l => l.text).join('\n'));
+  const cov = coverOf(s), tl = getMap(s.seed).tiles;
+  let stig = 0, bar = 0; for (let i = 0; i < cov.length; i++) if (hasCover(tl[i])) { if (cov[i] < BAR) bar++; else if (cov[i] < STIG) stig++; }
+  console.log(`mark: ${stig} rutor stig, ${bar} rutor bar jord | kol i förrådet ${Math.round(s.items.kol ?? 0)}, kolhög ${s.fire.ash ?? 0}`);
 }
 function roundItems(s: State) { const o: Record<string, number> = {}; for (const k in s.items) o[k] = Math.round(s.items[k]); return o; }

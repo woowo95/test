@@ -4,7 +4,7 @@ import {
   State, Person, T, W, H, DAY, HOUR, STATS, STAT_NAMES, SKILLS, SKILL_NAMES, AGES, ACT_NAMES, TalkEvent, LogEntry,
   createState, step, getMap, living, alive, ageOf, byId, relKey, moodOf, ageIndex, ageDay, yearNo, lightLevel, isLight,
   foodDays, timeLabel, serialize, compact, stat, migrate, hearthOf, igniterOf, fireHeat, heatRadius, fireWant, emberOn,
-  ITEM_NAMES, FireLog, SEDER, SED_INFO, Sed, influence, duty, habitShare, habitTotal, Act,
+  ITEM_NAMES, FireLog, coverOf, SEDER, SED_INFO, Sed, influence, duty, habitShare, habitTotal, Act,
 } from './sim';
 
 const TS = 16; // pixlar per ruta i världen
@@ -122,20 +122,37 @@ const PAL = [
   { [T.Vatten]: 0x3e6e8a, [T.Sand]: 0xd2bf8b, [T.Gras]: 0x7c9a52, [T.Skog]: 0x426c3a, [T.Sten]: 0x8b8b82, tree: 0x2b4f2b },
   { [T.Vatten]: 0x456f84, [T.Sand]: 0xc7b183, [T.Gras]: 0xa59450, [T.Skog]: 0x7b6a36, [T.Sten]: 0x8b867b, tree: 0xa95c26 },
 ] as Array<Record<number, number> & { tree: number }>;
-let drawnAge = -1;
+let drawnAge = -1, drawnSig = -1, lastSigCheck = 0;
+const PATH_COL = [0xb4b9b3, 0x8e7752, 0x9a8258, 0x846c47]; // upptrampad mark per tidsålder (snö i istiden)
+// hur sliten en ruta ser ut, i fem steg: 0 = orörd, 4 = bar jord
+const wornLevel = (c: number) => c >= 0.85 ? 0 : c >= 0.65 ? 1 : c >= 0.45 ? 2 : c >= 0.25 ? 3 : 4;
+function coverSig() {
+  const c = coverOf(s); let h = 0;
+  for (let i = 0; i < c.length; i++) h = (Math.imul(h, 31) + wornLevel(c[i])) | 0;
+  return h;
+}
+function mix(a: number, b: number, f: number) {
+  const ch = (sh: number) => Math.round(((a >> sh) & 255) * (1 - f) + ((b >> sh) & 255) * f);
+  return (ch(16) << 16) | (ch(8) << 8) | ch(0);
+}
 function shadeCol(c: number, f: number) {
   const r = Math.min(255, ((c >> 16) & 255) * f), g = Math.min(255, ((c >> 8) & 255) * f), b = Math.min(255, (c & 255) * f);
   return (r << 16) | (g << 8) | b;
 }
 function drawTerrain(force = false) {
-  const ai = ageIndex(s);
-  if (!force && ai === drawnAge) return;
-  drawnAge = ai;
-  const m = getMap(s.seed), pal = PAL[ai];
+  const ai = ageIndex(s), now = performance.now();
+  // stigarna ändras långsamt: kolla högst en gång i sekunden om något syns annorlunda
+  let sig = drawnSig;
+  if (force || now - lastSigCheck > 1000) { lastSigCheck = now; sig = coverSig(); }
+  if (!force && ai === drawnAge && sig === drawnSig) return;
+  drawnAge = ai; drawnSig = sig;
+  const m = getMap(s.seed), pal = PAL[ai], cov = coverOf(s);
   terrainG.clear();
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     const t = m.tiles[y * W + x], sh = m.shade[y * W + x];
-    terrainG.beginFill(shadeCol(pal[t], 0.94 + sh * 0.12)).drawRect(x * TS, y * TS, TS, TS).endFill();
+    let col = shadeCol(pal[t], 0.94 + sh * 0.12);
+    if (t === T.Gras || t === T.Skog) { const lv = wornLevel(cov[y * W + x]); if (lv) col = mix(col, shadeCol(PATH_COL[ai], 0.95 + sh * 0.1), lv * 0.22); }
+    terrainG.beginFill(col).drawRect(x * TS, y * TS, TS, TS).endFill();
     if (t === T.Skog) {
       terrainG.beginFill(pal.tree);
       const n = 2 + Math.floor(sh * 2);
@@ -184,6 +201,11 @@ function drawStructures(t: number) {
     structG.beginFill(0xffd36b).drawCircle(cx, cy - 0.5, (1.3 + 1.6 * I) * fl).endFill();
   } else if (emberOn(s)) {
     structG.beginFill(0xb3361e, 0.6 + Math.sin(t / 400) * 0.25).drawCircle(cx, cy, 2.6).endFill();
+  } else if ((s.fire.ash ?? 0) >= 1) {
+    // kolhög efter en utbrunnen eld
+    structG.beginFill(0x1a1714).drawEllipse(cx, cy + 0.5, 5.5, 4.5).endFill();
+    const n = Math.min(8, s.fire.ash!);
+    for (let i = 0; i < n; i++) { const a = i * 2.4; structG.beginFill(i % 3 ? 0x3a3530 : 0x55504a).drawRect(cx + Math.cos(a) * 2.6 - 1, cy + Math.sin(a) * 2.2 - 1, 2, 2).endFill(); }
   }
 }
 const bubbles: { id: number; kind: string; good: boolean; until: number }[] = [];
@@ -387,7 +409,7 @@ function fireEntry(e: FireLog) {
 }
 function fireHtml() {
   const f = s.fire, h = hearthOf(f), now = s.now, ig = igniterOf(s);
-  const status = f.lit ? 'Brinner' : emberOn(s) ? `Glöder. Ny ved får den att brinna igen (${durTxt(f.emberUntil! - now)} kvar).` : 'Släckt. Den måste tändas på nytt.';
+  const status = f.lit ? 'Brinner' : emberOn(s) ? `Glöder. Ny ved får den att brinna igen (${durTxt(f.emberUntil! - now)} kvar).` : (f.ash ?? 0) >= 1 ? 'Utbrunnen. Kvar ligger en svart hög med kol.' : 'Släckt. Den måste tändas på nytt.';
   const tender = living(s).find(p => p.task?.act === 'elda'), lighter = living(s).find(p => p.task?.act === 'tanda');
   const fills = Object.entries(f.fills).map(([id, n]) => ({ p: byId(s, Number(id)), n })).filter(x => x.p).sort((a, b) => b.n - a.n).slice(0, 6);
   const tgt = fireWant(s);
@@ -412,6 +434,8 @@ function fireHtml() {
       <dt>Tänddon</dt><dd>${ig ? `${esc(ig.name)} (${Math.floor(s.items[ig.id] ?? 0)} i förrådet)` : 'Inget. Någon måste hitta en gniststen.'}</dd>
       <dt>Torrt gräs</dt><dd>${Math.floor(s.items.torrgras ?? 0)} i förrådet</dd>
       <dt>Små pinnar</dt><dd>${Math.floor(s.items.pinnar ?? 0)} i förrådet</dd>
+      ${(f.ash ?? 0) >= 1 ? `<dt>Kolhög</dt><dd>${f.ash} kol i den gamla elden, ligger kvar ca ${durTxt((f.ashUntil ?? now) - now)}</dd>` : ''}
+      ${(s.items.kol ?? 0) >= 1 ? `<dt>Kol</dt><dd>${Math.floor(s.items.kol)} i förrådet</dd>` : ''}
       ${ig ? `<dt>Per försök</dt><dd>${ig.grass} gräs och ${ig.sticks} pinnar, ca ${ig.minutes} minuter</dd>` : ''}
       ${!f.lit ? `<dt>Försök</dt><dd>${f.tries} sedan elden slocknade${lighter ? `, ${pLink(lighter)} försöker nu` : ''}</dd>` : ''}
     </dl>
@@ -568,4 +592,4 @@ async function boot() {
 }
 boot();
 // gör DAY/HOUR tillgängliga för felsökning i konsolen
-(window as any).__byn = { get s() { return s; }, DAY, HOUR };
+(window as any).__byn = { get s() { return s; }, DAY, HOUR, getMap, coverOf };
