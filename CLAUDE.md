@@ -16,6 +16,9 @@ Björn programmerar inte; Claude skriver all kod. Svara på svenska.
 ## Bygga och publicera
 
 - `npm install`, sedan `npm run build`, som ger `samhallssimulatorn.html`.
+- Publicera alltid till samma artefakt-URL så att Björns sparade by och länk finns kvar.
+- Lägg uppdaterad källkod under `kalla/` i artefakten vid varje publicering (filnamn med `.txt`).
+- Uppdatera "Läget just nu" i designdokumentet när något nytt är byggt.
 
 ## Tester (spara tokens)
 
@@ -24,6 +27,3 @@ Björn programmerar inte; Claude skriver all kod. Svara på svenska.
 - `npm run balans -- [antal] [dygn]`: många byar parallellt, median/sämst/bäst. Använd vid balansering.
 - `npm run detaljer -- [by]`: den långa utskriften, bara när något behöver undersökas.
 - Ta skärmbilder bara när utseendet ändrats; kontrollera annars text på sidan.
-- Publicera alltid till samma artefakt-URL så att Björns sparade by och länk finns kvar.
-- Lägg uppdaterad källkod under `kalla/` i artefakten vid varje publicering (filnamn med `.txt`).
-- Uppdatera "Läget just nu" i designdokumentet när något nytt är byggt.
