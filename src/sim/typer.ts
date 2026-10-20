@@ -81,7 +81,7 @@ export interface State {
   people: Person[]; rels: Record<string, Rel>; nextId: number;
   food: number; wood: number; log: LogEntry[];
   lastAgeIdx: number; lastGuardDay: number;
-  items: Record<string, number>; // föremål i förrådet, t.ex. gniststen, torrt gräs, små pinnar
+  items: Record<string, number>; // föremål i förrådet, t.ex. gniststen, torrt gräs, grenar
   fire: Fire;
   seder: Seder;
   mark?: string; // markens grästäcke per ruta (stigar), packat
@@ -134,7 +134,7 @@ export const IGNITERS: Igniter[] = [
   { id: 'eldstal', name: 'Eldstål och flinta', desc: 'Stål mot flinta ger heta gnistor som fångas i fnöske.', chance: 0.45, grass: 1, sticks: 1, minutes: 5, requires: 'Smide' },
   { id: 'tandstickor', name: 'Tändstickor', desc: 'Tänds med ett drag.', chance: 0.9, grass: 0.5, sticks: 0.5, minutes: 1, requires: 'Kemi' },
 ];
-export const ITEM_NAMES: Record<string, string> = { gniststen: 'Gniststen', torrgras: 'Torrt gräs', pinnar: 'Små pinnar', kol: 'Kol', grenar: 'Grenar', flinta: 'Flinta', yxa: 'Flintyxa' };
+export const ITEM_NAMES: Record<string, string> = { gniststen: 'Gniststen', torrgras: 'Torrt gräs', kol: 'Kol', grenar: 'Grenar', flinta: 'Flinta', yxa: 'Flintyxa' };
 
 export interface FireLog { t: number; k: 'tänd' | 'fyll' | 'slocknade' | 'glöd' | 'sprack'; id?: number; n?: number }
 export interface Fire {

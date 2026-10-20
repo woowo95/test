@@ -40,7 +40,11 @@ export function migrate(s: State) {
     if (s.kunskap?.svamp && p.died === undefined && !p.kunskap?.svamp) p.kunskap = { ...p.kunskap, svamp: { v: s.kunskap.svamp, t: s.now } };
   }
   delete s.kunskap;
-  if (!s.items) s.items = { gniststen: 1, torrgras: 8, pinnar: 8 };
+  if (!s.items) s.items = { gniststen: 1, torrgras: 8, grenar: 8 };
+  // små pinnar finns inte längre: de räknas som grenar
+  if (s.items.pinnar) { s.items.grenar = (s.items.grenar ?? 0) + s.items.pinnar; delete s.items.pinnar; }
+  for (const a of s.stackar ?? []) if (a.k === 'pinnar') a.k = 'grenar';
+  for (const p of s.people) { const t = p.task; if (t?.items?.pinnar) { t.items.grenar = (t.items.grenar ?? 0) + t.items.pinnar; delete t.items.pinnar; if (t.cond?.pinnar !== undefined) { t.cond.grenar ??= t.cond.pinnar; delete t.cond.pinnar; } } }
   if (!s.fire) {
     s.fire = newFire();
     Object.assign(s.fire, { lit: true, fuel: 4, litAt: s.founded, lightings: 1, litSec: (s.now - s.founded) / SEC });

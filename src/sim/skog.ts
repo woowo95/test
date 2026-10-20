@@ -1,3 +1,4 @@
+import { campCenter, campDist } from './plats';
 import { ageOf, living, log, think } from './folk';
 import { getMap } from './karta';
 import { groundOf, isForest } from './mark';
@@ -15,12 +16,12 @@ export const stocks = (s: State) => (s.stockar ??= []);
 
 // närmaste vuxna träd att fälla, helst i skogskanten nära byn
 export function treeSpot(s: State, taken: Set<number>): { x: number; y: number } | undefined {
-  const m = getMap(s.seed), g = groundOf(s), f = m.fire;
+  const g = groundOf(s), f = campCenter(s);
   const c: { i: number; d: number }[] = [];
   for (let y = Math.max(0, f.y - 18); y < Math.min(H, f.y + 19); y++) for (let x = Math.max(0, f.x - 24); x < Math.min(W, f.x + 25); x++) {
     const i = y * W + x;
     if (g.trees[i] < 0.95 || taken.has(i)) continue;
-    c.push({ i, d: Math.hypot(x - f.x, y - f.y) });
+    c.push({ i, d: campDist(s, x, y) });
   }
   if (!c.length) return undefined;
   c.sort((a, b) => a.d - b.d);
@@ -28,8 +29,7 @@ export function treeSpot(s: State, taken: Set<number>): { x: number; y: number }
   return { x: (i % W) + 0.5, y: Math.floor(i / W) + 0.5 };
 }
 export const nearestStock = (s: State) => {
-  const f = getMap(s.seed).fire;
-  return stocks(s).filter(k => k.ved > 0).sort((a, b) => Math.hypot(a.x - f.x, a.y - f.y) - Math.hypot(b.x - f.x, b.y - f.y))[0];
+  return stocks(s).filter(k => k.ved > 0).sort((a, b) => campDist(s, a.x, a.y) - campDist(s, b.x, b.y))[0];
 };
 
 // trädet faller: det blir en liggande stam, och där det stod växer högt gräs
@@ -65,11 +65,11 @@ export function chopStock(s: State, ref: number | undefined, amount: number) {
 
 // hur många yxor byn vill ha
 export const axesWanted = (_s: State, adults: number) => Math.max(1, Math.min(3, Math.floor(adults / 4)));
-export const canMakeAxe = (s: State) => item(s, 'flinta') >= 1 && item(s, 'grenar') + item(s, 'pinnar') >= 1;
+export const canMakeAxe = (s: State) => item(s, 'flinta') >= 1 && item(s, 'grenar') >= 1;
 export function makeAxe(s: State, p: Person) {
   if (!canMakeAxe(s)) return;
   s.items.flinta--;
-  if (item(s, 'grenar') >= 1) s.items.grenar--; else s.items.pinnar--;
+  s.items.grenar--;
   s.items.yxa = item(s, 'yxa') + 1;
   if (s.items.yxa === 1 && !s.log.some(l => l.text.includes('byns första yxa'))) {
     log(s, `${p.name} gjorde byns första yxa av en pinne och en flintsten. Nu kan byn fälla träd.`, 'world', [p.id]);

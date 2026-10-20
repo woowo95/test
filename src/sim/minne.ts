@@ -1,5 +1,6 @@
+import { campCenter, campDist } from './plats';
 import { byId, living, log, stat } from './folk';
-import { Kind, capOf, count, prospect, richness, stoneDist } from './fynd';
+import { Kind, capOf, count, prospect, richness, shoreOf, stoneDist } from './fynd';
 import { getMap } from './karta';
 import { groundOf } from './mark';
 import { kn, learnK } from './kunskap';
@@ -90,10 +91,10 @@ export function sightOf(s: State, p: Person) {
 }
 export const sees = (s: State, p: Person, x: number, y: number) => Math.hypot(x + 0.5 - p.x, y + 0.5 - p.y) <= sightOf(s, p);
 export function bestKnown(s: State, p: Person, k: Kind) {
-  const f = getMap(s.seed).fire, u = trustUnknown(s, p);
+  const f = campCenter(s), u = trustUnknown(s, p);
   let best = 0;
   for (let a = 0; a < AW * AH; a++) {
-    const c = areaCenter(a), d = Math.hypot(c.x - f.x, c.y - f.y);
+    const c = areaCenter(a), d = campDist(s, c.x, c.y);
     if (sees(s, p, c.x, c.y) || Math.abs(c.x - f.x) > 17 || Math.abs(c.y - f.y) > 13) continue;
     best = Math.max(best, believed(findL(p, k, a), areaValue(s, k, a, true), u) - d * 0.03 - fear(s, p, a));
   }
@@ -109,11 +110,14 @@ export function pickSpot(s: State, p: Person, k: Kind, cands: { x: number; y: nu
   }
   if (!best || sees(s, p, best.x, best.y)) return best;
   // väl framme letar hen upp den bästa platsen i området
-  const f = getMap(s.seed).fire, x0 = Math.max(0, best.x - 5), y0 = Math.max(0, best.y - 5);
+  const x0 = Math.max(0, best.x - 5), y0 = Math.max(0, best.y - 5);
+  const tiles = getMap(s.seed).tiles, shore = shoreOf(s.seed);
   let r = best, rs = richness(s, k, best.x + 0.5, best.y + 0.5);
   for (let y = y0; y < Math.min(H, best.y + 6); y++) for (let x = x0; x < Math.min(W, best.x + 6); x++) {
+    const i = y * W + x; // bara land, och för fiske bara stranden
+    if (tiles[i] === T.Vatten || (k === 'fiske' && !shore[i])) continue;
     const v = richness(s, k, x + 0.5, y + 0.5) - Math.hypot(x - best.x, y - best.y) * 0.01;
-    if (v > rs) { rs = v; r = { x, y, d: Math.hypot(x - f.x, y - f.y) }; }
+    if (v > rs) { rs = v; r = { x, y, d: campDist(s, x, y) }; }
   }
   return r;
 }
@@ -128,8 +132,7 @@ export function flintArea(p: Person) {
 
 // en olycka: de som såg den, och de närmaste, blir rädda för platsen
 export function fearPlace(s: State, victim: Person, cause: string) {
-  const f = getMap(s.seed).fire;
-  if (Math.hypot(victim.x - f.x, victim.y - f.y) < 6) return; // inte mitt i byn
+  if (campDist(s, victim.x, victim.y) < 6) return; // inte mitt i byn
   const a = areaOf(victim.x, victim.y), om = `${victim.name} dog ${cause} där`;
   for (const q of living(s)) {
     const saw = Math.hypot(q.x - victim.x, q.y - victim.y) < 10;
@@ -217,7 +220,7 @@ export function forget(s: State, hours: number) {
 // ---------- att visa ----------
 const DIRS = ['öster', 'sydost', 'söder', 'sydväst', 'väster', 'nordväst', 'norr', 'nordost'];
 export function placeName(s: State, a: number) {
-  const m = getMap(s.seed), g = groundOf(s), f = m.fire;
+  const m = getMap(s.seed), g = groundOf(s), f = campCenter(s);
   const x0 = (a % AW) * AREA, y0 = Math.floor(a / AW) * AREA;
   let n = 0, wat = 0, sten = 0, skog = 0, sand = 0;
   for (let y = y0; y < Math.min(H, y0 + AREA); y++) for (let x = x0; x < Math.min(W, x0 + AREA); x++) {
@@ -226,7 +229,7 @@ export function placeName(s: State, a: number) {
   }
   const terr = sten > 6 ? 'vid stenarna' : wat > n * 0.25 ? 'vid vattnet' : skog > n * 0.5 ? 'i skogen' : sand > n * 0.3 ? 'på stranden' : 'på ängen';
   const c = areaCenter(a), dx = c.x - f.x, dy = c.y - f.y;
-  if (Math.hypot(dx, dy) < 5) return `${terr} nära byn`;
+  if (campDist(s, c.x, c.y) < 5) return `${terr} nära byn`;
   const dir = DIRS[(Math.round(Math.atan2(dy, dx) / (Math.PI / 4)) + 8) % 8];
   return `${terr} ${dir} om byn`;
 }

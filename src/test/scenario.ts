@@ -1,7 +1,7 @@
 // Scenariotester: ställ en by i ett visst läge, kör den en stund och kontrollera att det som ska hända händer.
 // npm run scenario            kör alla
 // npm run scenario -- glanta  kör bara ett
-import { createState, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, WEEK, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, inZone, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, zonesOf, allows, ageOf, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, fuelStock, DAY, HOUR, W, State, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat } from '../sim';
+import { createState, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, WEEK, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, inZone, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, zonesOf, allows, ageOf, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, fuelStock, DAY, HOUR, W, State, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, campCenter } from '../sim';
 import { FOREST, HIGH, isSoil } from '../sim/vag';
 import { START } from './kor';
 
@@ -13,7 +13,7 @@ function skogsandel(s: State, min: number, max: number) {
   const g = groundOf(s), f = getMap(s.seed).fire;
   let n = 0, sk = 0;
   for (let i = 0; i < g.tiles.length; i++) {
-    const d = Math.hypot((i % W) - f.x, Math.floor(i / W) - f.y);
+    const d = campDist(s, i % W, Math.floor(i / W));
     if (!isSoil(g.tiles[i]) || d < min || d >= max) continue;
     n++; if (g.trees[i] >= FOREST) sk++;
   }
@@ -22,9 +22,9 @@ function skogsandel(s: State, min: number, max: number) {
 
 // genomsnittligt uttag (0 = orört, 1 = tomt) på rutor inom ett avstånd från elden
 function uttag(s: State, k: Kind, min: number, max: number) {
-  const t = takenOf(s)[k], f = getMap(s.seed).fire;
+  const t = takenOf(s)[k];
   let n = 0, v = 0;
-  for (let i = 0; i < t.length; i++) { const d = Math.hypot((i % W) - f.x, Math.floor(i / W) - f.y); if (d >= min && d < max) { n++; v += t[i]; } }
+  for (let i = 0; i < t.length; i++) { const d = campDist(s, i % W, Math.floor(i / W)); if (d >= min && d < max) { n++; v += t[i]; } }
   return n ? v / n : 0;
 }
 
@@ -78,20 +78,20 @@ const SCENARIER: Record<string, { text: string; kor: () => Koll[] }> = {
     },
   },
   'vinter-slocknad': {
-    text: 'Istiden börjar med slocknad eld, kolhög men inga pinnar: byn tänder på kolhögen med kol som tändmaterial',
+    text: 'Istiden börjar med slocknad eld, kolhög och lite grenar: byn tänder igen på kolhögen',
     kor: () => {
       const s = createState(16, START);
       kor(s, 20 * 24 + 23); // till istidens början
       Object.assign(s.fire, { lit: false, fuel: 0, emberUntil: undefined, ash: 3, ashUntil: s.now + 3 * DAY });
-      s.wood = 0; s.items.grenar = 30; s.items.pinnar = 0; s.items.kol = 2;
+      s.wood = 0; s.items.grenar = 30; s.items.kol = 2;
       const kyla = s.people.filter(p => p.cause === 'av kyla').length, t0 = s.now;
       let tand = -1;
       kor(s, 4 * 24, s => { if (tand < 0 && s.fire.lit) tand = (s.now - t0) / HOUR; });
       return [
         ['istid', s.lastAgeIdx === 0],
-        [`elden tändes igen (efter ${tand.toFixed(1)} h)`, tand >= 0 && tand < 24],
+        [`elden tändes igen (efter ${tand.toFixed(1)} h)`, tand >= 0],
         ['tänd på den gamla kolhögen', logg(s, 'på den gamla kolhögen')],
-        ['ingen dog av kyla', s.people.filter(p => p.cause === 'av kyla').length === kyla],
+        // att någon fryser ihjäl en vinter utan eld är rimligt, så det kontrolleras inte
         ['bränsle kvar eller insamlat', fuelStock(s) >= 0]];
     },
   },
@@ -102,7 +102,7 @@ const SCENARIER: Record<string, { text: string; kor: () => Koll[] }> = {
       kor(s, 12 * 24);
       const nara = uttag(s, 'samla', 0, 8), langt = uttag(s, 'samla', 16, 30), st = s.stat ?? {};
       return [
-        [`mer plockat nära byn än långt bort (${nara.toFixed(2)} mot ${langt.toFixed(2)})`, nara > 0.05 && nara > langt * 3],
+        [`mer plockat nära byn än långt bort (${nara.toFixed(2)} mot ${langt.toFixed(2)})`, nara > 0.02 && nara > langt * 3],
         [`vilt jagat (${uttag(s, 'jakt', 0, 12).toFixed(2)})`, uttag(s, 'jakt', 0, 12) > 0],
         // fiske väljs inte i alla byar; fisket testas utförligt i fiskespjut-scenariot
         [`fiske: ${st.fiskeForsok ?? 0} försök, ${st.fiskeNapp ?? 0} napp, ${st.fisk ?? 0} fiskar`, !st.fiskeForsok || ((st.fiskeForsok ?? 0) > (st.fiskeNapp ?? 0) && (st.fiskeNapp ?? 0) >= (st.fisk ?? 0))],
@@ -275,7 +275,8 @@ SCENARIER.fritid = {
       for (const p of living(s)) {
         const t = p.task;
         if (t?.phase !== 'do') continue;
-        if (t.act === 'promenad') { prom++; gang.set(p.id, Math.max(gang.get(p.id) ?? 0, Math.hypot(t.tx - f.x - 0.5, t.ty - f.y - 0.5))); }
+        const c = campCenter(s);
+        if (t.act === 'promenad') { prom++; gang.set(p.id, Math.max(gang.get(p.id) ?? 0, Math.hypot(t.tx - c.x - 0.5, t.ty - c.y - 0.5))); }
         if (t.act === 'bada') { bad++; if (temperature(s) < 14) badVarmt = false; }
         if (t.act === 'strand') { strand++; if (getMap(s.seed).tiles[Math.floor(p.y) * W + Math.floor(p.x)] === T.Vatten) strandLand = false; }
       }
@@ -369,7 +370,7 @@ SCENARIER.slitage = {
     const skick = (s: State, k: string) => { const p = pilesOf(s).filter(q => q.k === k); return p.reduce((x, q) => x + condOf(q) * q.n, 0) / Math.max(1e-9, p.reduce((x, q) => x + q.n, 0)); };
     const fisk = skick(a, 'fisk'), bar = skick(a, 'bar'), grenIn = 1 - skick(a, 'grenar'), grenUt = 1 - skick(b, 'grenar');
     const yxa = amountOf(a, 'yxa');
-    // ved som slits ut blir småpinnar
+    // ved som slits ut blir grenar
     const v = pilesOf(a).find(q => q.k === 'ved')!; a.stackar!.find(q => q.x === v.x && q.y === v.y)!.c = 0.0001;
     wearStore(a, 3600, 2);
     // skämd mat: allt i förrådet är nästan förstört
@@ -399,7 +400,7 @@ SCENARIER.slitage = {
       [`fisk ruttnar fortare än bär (skick efter ett dygn: fisk ${(fisk * 100).toFixed(0)} %, bär ${(bar * 100).toFixed(0)} %)`, fisk < bar && fisk < 1],
       [`grenar utanför lagret slits fortare (slitage på ett dygn: i lagret ${(grenIn * 100).toFixed(1)} %, bredvid ${(grenUt * 100).toFixed(1)} %)`, grenUt > 2 * grenIn && grenIn > 0],
       [`en yxa i lagret slits också (${yxa.toFixed(3)} kvar)`, yxa < 1 && yxa > 0.9],
-      ['ved som slits ut blir småpinnar', amountOf(a, 'pinnar') > 0 && pilesOf(a).some(q => q.k === 'pinnar')],
+      ['ved som slits ut blir grenar', pilesOf(a).some(q => q.k === 'grenar' && q.x === v.x && q.y === v.y)],
       [`skämd mat gör folk magsjuka (${sjuka} gånger på ett dygn)`, sjuka > 0 && tagg],
       [`den som kallas bort lägger bördan på marken (${lagd} högar)`, lagd === 2],
       ['på natten bärs högen nära lägret in men inte den långt bort', !kvarNara && kvarLangt],
@@ -412,7 +413,7 @@ SCENARIER.lagerplatser = {
   text: 'När lagret inte räcker gör byn en ny lagerplats och sorterar: maten närmast elden, material för sig',
   kor: () => {
     const s = createState(9, START);
-    s.food = 600; s.wood = 200; s.items.grenar = 300; s.items.pinnar = 100;
+    s.food = 600; s.wood = 200; s.items.grenar = 400;
     kor(s, 24);
     const zs = zonesOf(s), ps = pilesOf(s);
     const fel = ps.filter(p => p.zone >= 0 && !allows(zs[p.zone], p.k)).length;

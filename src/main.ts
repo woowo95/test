@@ -6,7 +6,7 @@ import {
   timeLabel, temperature, serialize, compact, stat, migrate, hearthOf, igniterOf, fireHeat, heatRadius, fireWant, emberOn,
   ITEM_NAMES, FireLog, coverOf, groundOf, SEDER, SED_INFO, Sed, influence, duty, habitShare, habitTotal, Act,
   richness, stoneDist, Kind, KUNSKAP_NAMES, describe, Lardom, STUBBE_LIV,
-  zonesOf, zoneAt, pilesOf, inZone, STACK_NAMES, amountOf, capacity, load, carryKind, Pile, OUT_WEAR, condOf, FOLDERS, STACK,
+  zonesOf, zoneAt, pilesOf, inZone, STACK_NAMES, amountOf, capacity, load, carryKind, Pile, OUT_WEAR, condOf, FOLDERS, STACK, campCenter,
 } from './sim';
 import { HIGH, BAR, FOREST } from './sim/vag';
 import { hasIcon, iconCanvas, iconImg } from './ikoner';
@@ -248,6 +248,8 @@ function drawStructures(t: number) {
   });
   spriteN = 0;
   for (const pl of pilesOf(s)) drawPile(pl);
+  // markerad hög utanför lagret: vit kant runt rutan, som lagerplatsen får
+  if (tab === 'hog' && outPilesAt(hogAt.x, hogAt.y).length) structG.lineStyle(1, 0xffffff, 0.9).drawRoundedRect(hogAt.x * TS + 0.5, hogAt.y * TS + 0.5, TS - 1, TS - 1, 3).lineStyle(0);
   for (let i = spriteN; i < pileLayer.children.length; i++) pileLayer.children[i].visible = false;
   // stubbar: bleknar medan de ruttnar bort
   for (const k of s.stubbar ?? []) {
@@ -403,7 +405,7 @@ app.stage.on('pointermove', e => {
 (app.view as HTMLCanvasElement).addEventListener('wheel', e => { e.preventDefault(); const r = (app.view as HTMLCanvasElement).getBoundingClientRect(); zoomAt(e.deltaY < 0 ? 1.15 : 1 / 1.15, e.clientX - r.left, e.clientY - r.top); }, { passive: false });
 $('zIn').addEventListener('click', () => zoomAt(1.4));
 $('zOut').addEventListener('click', () => zoomAt(1 / 1.4));
-$('zHome').addEventListener('click', () => { stopFollow(); zoom = 2.4; const f = getMap(s.seed).fire; camX = f.x * TS; camY = f.y * TS; layout(); });
+$('zHome').addEventListener('click', () => { stopFollow(); zoom = 2.4; const f = campCenter(s); camX = f.x * TS; camY = f.y * TS; layout(); });
 
 function selectPerson(id: number) { selected = id; tab = 'person'; renderPanel(true); renderPorts(); }
 
@@ -686,11 +688,11 @@ function fireHtml() {
     <h3>Tändning</h3><dl class="kv fam">
       <dt>Tänddon</dt><dd>${ig ? `${esc(ig.name)} (${Math.floor(s.items[ig.id] ?? 0)} i förrådet)` : 'Inget. Någon måste hitta en gniststen.'}</dd>
       <dt>Torrt gräs</dt><dd>${Math.floor(s.items.torrgras ?? 0)} i förrådet</dd>
-      <dt>Små pinnar</dt><dd>${Math.floor(s.items.pinnar ?? 0)} i förrådet</dd>
+      <dt>Grenar</dt><dd>${Math.floor(s.items.grenar ?? 0)} i förrådet</dd>
       <dt>Bränsle</dt><dd>${Math.floor(s.wood)} ved och ${Math.floor(s.items.grenar ?? 0)} grenar i förrådet (grenar brinner fort)</dd>
       ${(f.ash ?? 0) >= 1 ? `<dt>Kolhög</dt><dd>${f.ash} kol i den gamla elden, ligger kvar ca ${durTxt((f.ashUntil ?? now) - now)}</dd>` : ''}
       ${(s.items.kol ?? 0) >= 1 ? `<dt>Kol</dt><dd>${Math.floor(s.items.kol)} i förrådet</dd>` : ''}
-      ${ig ? `<dt>Per försök</dt><dd>${ig.grass} gräs och ${ig.sticks} pinnar (eller 1 kol), ca ${ig.minutes} minuter${(f.ash ?? 0) >= 1 ? '. Kolhögen tar lättare fyr.' : ''}</dd>` : ''}
+      ${ig ? `<dt>Per försök</dt><dd>${ig.grass} gräs och ${ig.sticks} grenar (eller 1 kol), ca ${ig.minutes} minuter${(f.ash ?? 0) >= 1 ? '. Kolhögen tar lättare fyr.' : ''}</dd>` : ''}
       ${!f.lit ? `<dt>Försök</dt><dd>${f.tries} sedan elden slocknade${lighter ? `, ${pLink(lighter)} försöker nu` : ''}</dd>` : ''}
     </dl>
     <h3>Totalt</h3><dl class="kv fam">
@@ -851,4 +853,4 @@ async function boot() {
 }
 boot();
 // gör DAY/HOUR tillgängliga för felsökning i konsolen
-(window as any).__byn = { get s() { return s; }, DAY, HOUR, getMap, coverOf, groundOf };
+(window as any).__byn = { get s() { return s; }, DAY, HOUR, getMap, coverOf, groundOf, get world() { return world; } };

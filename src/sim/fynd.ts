@@ -1,3 +1,4 @@
+import { campCenter, campDist } from './plats';
 import { stat, log, think } from './folk';
 import { getMap, hash } from './karta';
 import { groundOf } from './mark';
@@ -124,10 +125,11 @@ export function prospect(s: State, k: Kind, r = 99) {
   if (!c || c.hr !== hr) { c = { hr, v: {} }; prospects.set(s, c); }
   const key = k + r;
   if (c.v[key] === undefined) {
-    const f = getMap(s.seed).fire, top: number[] = [];
+    const f = campCenter(s), top: number[] = [];
     for (let y = Math.max(0, f.y - 13); y < Math.min(H, f.y + 14); y++) for (let x = Math.max(0, f.x - 17); x < Math.min(W, f.x + 18); x++) {
-      if (Math.hypot(x - f.x, y - f.y) > r) continue;
-      const v = richness(s, k, x + 0.5, y + 0.5) - Math.hypot(x - f.x, y - f.y) * 0.03;
+      const d = campDist(s, x, y);
+      if (d > r) continue;
+      const v = richness(s, k, x + 0.5, y + 0.5) - d * 0.03;
       if (v > 0) top.push(v);
     }
     top.sort((a, b) => b - a);
@@ -152,7 +154,7 @@ export function flintSpot(s: State, area?: (x: number, y: number) => boolean): {
   const m = getMap(s.seed), sd = stoneDist(s.seed), c: { x: number; y: number; d: number }[] = [];
   for (let i = 0; i < W * H; i++) {
     if (sd[i] < 1 || sd[i] > 2 || m.tiles[i] === T.Vatten || m.tiles[i] === T.Sten) continue;
-    const x = i % W, y = Math.floor(i / W), d = Math.hypot(x - m.fire.x, y - m.fire.y);
+    const x = i % W, y = Math.floor(i / W), d = campDist(s, x, y);
     if (d < 30 && (!area || area(x, y))) c.push({ x, y, d });
   }
   if (!c.length) return undefined;

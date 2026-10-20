@@ -59,10 +59,10 @@ export function fireWish(s: State, p: Person, vc: number): Wish {
 const tinderWant = (s: State) => (s.fire.lit ? 12 : 36);
 export function canLight(s: State) {
   const ig = igniterOf(s);
-  return !!ig && item(s, 'torrgras') >= ig.grass && (item(s, 'pinnar') >= ig.sticks || item(s, 'kol') >= 1) && fuelStock(s) >= 1;
+  return !!ig && item(s, 'torrgras') >= ig.grass && (item(s, 'grenar') >= ig.sticks || item(s, 'kol') >= 1) && fuelStock(s) >= 1;
 }
 export function needTinder(s: State) {
-  return !s.fire.lit && !emberOn(s) && (item(s, 'gniststen') < 1 || item(s, 'torrgras') < 12 || item(s, 'pinnar') < 12);
+  return !s.fire.lit && !emberOn(s) && (item(s, 'gniststen') < 1 || item(s, 'torrgras') < 12 || item(s, 'grenar') < 12);
 }
 function durText(sec: number) { const h = sec / 3600; return h >= 24 ? `${(h / 24).toFixed(1).replace('.', ',')} dygn` : h >= 1 ? `${Math.round(h)} timmar` : `${Math.round(sec / 60)} minuter`; }
 function lightFire(s: State, p: Person) {
@@ -80,8 +80,8 @@ function lightFire(s: State, p: Person) {
 export function tryLight(s: State, p: Person) {
   const ig = igniterOf(s)!, f = s.fire;
   s.items.torrgras = item(s, 'torrgras') - ig.grass;
-  if (item(s, 'pinnar') >= ig.sticks) s.items.pinnar = item(s, 'pinnar') - ig.sticks;
-  else s.items.kol = item(s, 'kol') - 1; // lite kol kan ersätta pinnarna
+  if (item(s, 'grenar') >= ig.sticks) addItems(s, { grenar: -ig.sticks });
+  else s.items.kol = item(s, 'kol') - 1; // lite kol kan ersätta grenarna
 
   f.tries++; f.tryTotal++;
   p.skill.elda = clamp(p.skill.elda + 0.08 * (0.5 + p.pot.intelligens / 20) * (1 - p.skill.elda / 21), 0, 20);
@@ -186,7 +186,7 @@ export function forageItems(s: State, p: Person, dtSec: number): Record<string, 
   const sk = 0.6 + p.skill.samla / 25;
   const got: Record<string, number> = {};
   if (item(s, 'torrgras') < want) got.torrgras = 3 * GRASS_SEASON[ai] * sk * hrs;
-  if (item(s, 'pinnar') < want) got.pinnar = 3 * (ai === 0 ? 0.6 : 1) * sk * hrs;
+  if (item(s, 'grenar') < want) got.grenar = 3 * (ai === 0 ? 0.6 : 1) * sk * hrs;
   if (item(s, 'gniststen') < 2 && chance(s, 0.08 * sk / 3600, dtSec)) {
     got.gniststen = 1;
     log(s, `${p.name} hittade en gniststen.`, 'world', [p.id]);

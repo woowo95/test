@@ -1,3 +1,4 @@
+import { campCenter, campDist } from './plats';
 import { SEASON, WORK_STAT, foodDays, woodDays } from './ekonomi';
 import { emberOn, fireWant, needTinder } from './eld';
 import { ageOf, living, stat } from './folk';
@@ -47,27 +48,40 @@ function spotFor(s: State, act: Act, p: Person): { x: number; y: number } {
     if (act === 'toa') return t === T.Gras || t === T.Skog || t === T.Sand;
     return isForest(s, y * W + x); // grenar och vilt finns i skogen
   };
-  const cands: { x: number; y: number; d: number }[] = [];
+  // arbetsplatser räknas från byns läger (eld och lagerplatser), inte bara från elden
+  const cands: { x: number; y: number; d: number }[] = [], mid = campCenter(s);
   for (let i = 0; i < 260; i++) {
-    const x = Math.floor(f.x + (rnd(s) - 0.5) * 34), y = Math.floor(f.y + (rnd(s) - 0.5) * 26);
+    const x = Math.floor(mid.x + (rnd(s) - 0.5) * 34), y = Math.floor(mid.y + (rnd(s) - 0.5) * 26);
     if (x < 0 || y < 0 || x >= W || y >= H) continue;
-    const d = Math.hypot(x - f.x, y - f.y);
+    const d = campDist(s, x, y);
     if (d < (act === 'samla' || act === 'toa' ? 5 : 4) || (act === 'toa' && d > 9)) continue;
     if (want(m.tiles[y * W + x], x, y)) cands.push({ x, y, d });
   }
   cands.sort((a, b) => a.d - b.d);
   // mat: gå dit det finns mest att hämta, inte för långt bort; annars en av de närmaste platserna
-  const c = (act === 'samla' || act === 'jakt' || act === 'fiske' ? pickSpot(s, p, act, cands) : cands[Math.floor(rnd(s) * Math.min(6, cands.length))]) ?? { x: f.x + 6, y: f.y };
+  const c = (act === 'samla' || act === 'jakt' || act === 'fiske' ? pickSpot(s, p, act, cands) : cands[Math.floor(rnd(s) * Math.min(6, cands.length))]) ?? nearestWanted(s, want) ?? { x: mid.x, y: mid.y };
   return { x: c.x + 0.5, y: c.y + 0.5 };
 }
 
+// ingen plats hittades i närheten: den närmaste rutan som passar, var den än ligger
+function nearestWanted(s: State, want: (t: number, x: number, y: number) => boolean) {
+  const m = getMap(s.seed);
+  let best: { x: number; y: number } | undefined, bd = Infinity;
+  for (let i = 0; i < W * H; i++) {
+    const x = i % W, y = Math.floor(i / W);
+    if (!want(m.tiles[i], x, y)) continue;
+    const d = campDist(s, x, y);
+    if (d < bd) { bd = d; best = { x, y }; }
+  }
+  return best;
+}
 // Viljan i tre steg:
 // 1. Nöd: sjuk, svag, fryser farligt eller måste på toa genast. Inget annat räknas.
 // 2. Grundbehov: toa, värme och vila. En lat person tillgodoser dem tidigare än en flitig.
 // 3. Byns behov mot egen lust, vägda med pliktkänslan.
 // en plats på land en bit bort åt ett slumpat håll
 function walkSpot(s: State, far: number) {
-  const m = getMap(s.seed), f = m.fire;
+  const m = getMap(s.seed), f = campCenter(s);
   for (let k = 0; k < 20; k++) {
     const ang = rnd(s) * Math.PI * 2, r = far * (0.7 + rnd(s) * 0.3);
     const x = clamp(f.x + 0.5 + Math.cos(ang) * r, 0.5, W - 0.5), y = clamp(f.y + 0.5 + Math.sin(ang) * r, 0.5, H - 0.5);
@@ -75,21 +89,24 @@ function walkSpot(s: State, far: number) {
   }
   return { x: f.x + 0.5, y: f.y + 3 };
 }
-// badplatsen: stranden närmast elden
-const bathCache = new Map<number, { x: number; y: number } | null>();
+// badplatsen: stranden närmast byns läger. Sparas tills lägret ändras
+const bathCache = new Map<string, { x: number; y: number } | null>();
+const campKey = (s: State) => `${s.seed}:${(s.lagren ?? []).map(z => `${z.x},${z.y},${z.w},${z.h}`).join(';')}`;
 export function bathSpot(s: State) {
-  if (!bathCache.has(s.seed)) {
-    const sh = shoreOf(s.seed), f = getMap(s.seed).fire;
+  const key = campKey(s);
+  if (!bathCache.has(key)) {
+    if (bathCache.size > 50) bathCache.clear();
+    const sh = shoreOf(s.seed);
     let best: { x: number; y: number } | null = null, bd = 15;
-    for (let i = 0; i < W * H; i++) if (sh[i]) { const x = i % W, y = Math.floor(i / W), d = Math.hypot(x - f.x, y - f.y); if (d < bd) { bd = d; best = { x: x + 0.5, y: y + 0.5 }; } }
-    bathCache.set(s.seed, best);
+    for (let i = 0; i < W * H; i++) if (sh[i]) { const x = i % W, y = Math.floor(i / W), d = campDist(s, x, y); if (d < bd) { bd = d; best = { x: x + 0.5, y: y + 0.5 }; } }
+    bathCache.set(key, best);
   }
-  return bathCache.get(s.seed) ?? undefined;
+  return bathCache.get(key) ?? undefined;
 }
-// en plats på land vid vattnet, inte för långt från elden
+// en plats på land vid vattnet, inte för långt från byns läger
 export function strandSpot(s: State) {
-  const sh = shoreOf(s.seed), f = getMap(s.seed).fire, ok: number[] = [];
-  for (let i = 0; i < W * H; i++) if (sh[i] && Math.hypot(i % W - f.x, Math.floor(i / W) - f.y) < 15) ok.push(i);
+  const sh = shoreOf(s.seed), ok: number[] = [];
+  for (let i = 0; i < W * H; i++) if (sh[i] && campDist(s, i % W, Math.floor(i / W)) < 15) ok.push(i);
   if (!ok.length) return bathSpot(s);
   const i = ok[Math.floor(rnd(s) * ok.length)];
   return { x: i % W + 0.5, y: Math.floor(i / W) + 0.5 };

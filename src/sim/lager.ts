@@ -1,3 +1,4 @@
+import { campDist } from './plats';
 import { stat, ageOf, log } from './folk';
 import { getMap } from './karta';
 import { Act, H, Person, State, T, Task, W } from './typer';
@@ -12,13 +13,13 @@ import { GIFT } from './fynd';
 // Lagerplatserna (zoner) görs större, mindre och nya av invånarna själva. Två eller fler sorteras: maten för sig och
 // material för sig, och den viktigaste ligger närmast elden.
 export const FOOD = ['fisk', 'kott', 'svamp', 'bar', 'rotter']; // i den ordning de äts: det som förstörs fortast först
-export const STACK: Record<string, number> = { bar: 25, rotter: 25, kott: 25, fisk: 25, svamp: 25, ved: 25, grenar: 50, pinnar: 50, torrgras: 50, kol: 25, flinta: 10, gniststen: 10, yxa: 1, fiskespjut: 1 };
+export const STACK: Record<string, number> = { bar: 25, rotter: 25, kott: 25, fisk: 25, svamp: 25, ved: 25, grenar: 50, torrgras: 50, kol: 25, flinta: 10, gniststen: 10, yxa: 1, fiskespjut: 1 };
 export const STACK_ORDER = Object.keys(STACK);
-export const STACK_NAMES: Record<string, string> = { bar: 'Bär', rotter: 'Rötter', kott: 'Kött', fisk: 'Fisk', svamp: 'Svamp', ved: 'Ved', grenar: 'Grenar', pinnar: 'Små pinnar', torrgras: 'Torrt gräs', kol: 'Kol', flinta: 'Flinta', gniststen: 'Gniststen', yxa: 'Flintyxa', fiskespjut: 'Fiskespjut' };
+export const STACK_NAMES: Record<string, string> = { bar: 'Bär', rotter: 'Rötter', kott: 'Kött', fisk: 'Fisk', svamp: 'Svamp', ved: 'Ved', grenar: 'Grenar', torrgras: 'Torrt gräs', kol: 'Kol', flinta: 'Flinta', gniststen: 'Gniststen', yxa: 'Flintyxa', fiskespjut: 'Fiskespjut' };
 // mappar i listan över allt byn äger
 export const FOLDERS: { namn: string; k: string[] }[] = [
   { namn: 'Mat', k: FOOD.slice().reverse() },
-  { namn: 'Bränsle', k: ['ved', 'grenar', 'pinnar', 'torrgras', 'kol'] },
+  { namn: 'Bränsle', k: ['ved', 'grenar', 'torrgras', 'kol'] },
   { namn: 'Sten', k: ['flinta', 'gniststen'] },
   { namn: 'Redskap', k: ['yxa', 'fiskespjut'] },
 ];
@@ -185,13 +186,13 @@ export function pilesOf(s: State): Pile[] {
 export const pilesNeeded = (s: State) => pilesOf(s).filter(p => p.stored).length;
 
 // ---------- slitage ----------
-// Skicket sjunker varje timme. Mat ruttnar (fisk fortast). Ved och grenar faller till sist sönder till småpinnar,
-// pinnar och gräs multnar bort, redskap slits sakta även när de ligger still. Sten slits inte.
+// Skicket sjunker varje timme. Mat ruttnar (fisk fortast). Ved faller till sist sönder till grenar,
+// grenar och gräs multnar bort, redskap slits sakta även när de ligger still. Sten slits inte.
 // Utanför lagret slits allt fortare, under tak långsammare.
 const FOOD_WEAR: Record<string, number> = { fisk: 2, kott: 1.2, svamp: 1, bar: 0.7, rotter: 0.35 };
-const WEAR_H: Record<string, number> = { ved: 0.0004, grenar: 0.0006, pinnar: 0.0008, torrgras: 0.0015, yxa: 0.0004, fiskespjut: 0.001 };
-const INTO: Record<string, string> = { ved: 'pinnar', grenar: 'pinnar' };
-const PER_UNIT: Record<string, number> = { ved: 2, grenar: 1 }; // en ved blir två småpinnar
+const WEAR_H: Record<string, number> = { ved: 0.0004, grenar: 0.0006, torrgras: 0.0015, yxa: 0.0004, fiskespjut: 0.001 };
+const INTO: Record<string, string> = { ved: 'grenar' };
+const PER_UNIT: Record<string, number> = { ved: 2 }; // en ved blir två grenar
 export function wearRate(s: State, k: string, ai: number) {
   if (isFood(k) || k === GIFT) return 0.003 * (1 + s.food / 250) * (ai === 0 ? 0.5 : 1) * (FOOD_WEAR[k] ?? 1);
   return WEAR_H[k] ?? 0;
@@ -247,13 +248,13 @@ function growOf(s: State, i: number): Zone | undefined {
     .filter(n => n.w <= MAX_W && n.h <= MAX_H && allUsable(s, n) && !zs.some((o, j) => j !== i && overlaps(n, o, 1)))
     .sort((a, b) => Math.abs(a.w - a.h) - Math.abs(b.w - b.h))[0];
 }
-// en ny lagerplats nära elden. Den första uppdelningen sorterar: maten får den gamla platsen, materialet den nya
+// en ny lagerplats nära byns läger (eld och andra lagerplatser), men inte inpå elden. Den första uppdelningen sorterar: maten får den gamla platsen, materialet den nya
 function newZone(s: State) {
   const zs = zonesOf(s), f = getMap(s.seed).fire, z0 = zs[0];
   let best: Zone | undefined, bd = Infinity;
   for (let y = 0; y < H - 2; y++) for (let x = 0; x < W - 2; x++) {
     const c: Zone = { x, y, w: 3, h: 2 }, df = Math.hypot(x + 1.5 - f.x, y + 1 - f.y);
-    if (df < 3 || df > 10 || !allUsable(s, c) || zs.some(o => overlaps(c, o, 1))) continue;
+    if (df < 3 || campDist(s, x + 1, y + 0.5) > 8 || !allUsable(s, c) || zs.some(o => overlaps(c, o, 1))) continue;
     const d = Math.hypot(x - z0.x, y - z0.y);
     if (d < bd) { bd = d; best = c; }
   }
@@ -311,12 +312,12 @@ export function dropLoad(s: State, t: Task, x: number, y: number) {
 // stackar som någon borde bära: saker på marken långt bort, saker bredvid lagret när det finns plats i det, saker i
 // fel lagerplats och saker som kan flyttas till en viktigare lagerplats. near = bara inom så många rutor från elden
 export function haulJob(s: State, near?: number) {
-  const f = getMap(s.seed).fire, zs = zonesOf(s), occ = occupancy(s);
+  const zs = zonesOf(s), occ = occupancy(s);
   const taken = new Set(s.people.filter(p => p.task?.act === 'bara' && p.task.phase === 'go').map(p => key(Math.floor(p.task!.tx), Math.floor(p.task!.ty))));
   let best: { x: number; y: number; why: string } | undefined, bs = Infinity;
   for (const a of stacksOf(s)) {
     if (taken.has(key(a.x, a.y))) continue;
-    const d = Math.hypot(a.x - f.x, a.y - f.y);
+    const d = campDist(s, a.x, a.y); // nära lägret: elden eller någon lagerplats
     if (near !== undefined && d > near) continue;
     const zi = zoneAt(s, a.x, a.y);
     let why: string | undefined, sc = d;

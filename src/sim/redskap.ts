@@ -12,14 +12,14 @@ export const spears = (s: State) => Math.ceil(item(s, 'fiskespjut') - 1e-9);
 // lediga spjut: de som inte redan används av någon annan som fiskar
 export const freeSpears = (s: State, p: Person) => spears(s) - living(s).filter(q => q !== p && q.task?.tool === 'fiskespjut').length;
 export const sharpTool = (s: State) => item(s, 'yxa') >= 1 ? 'yxa' : item(s, 'flinta') >= 1 ? 'flinta' : undefined;
-export const canMakeSpear = (s: State) => !!sharpTool(s) && item(s, 'pinnar') + item(s, 'grenar') >= 1;
+export const canMakeSpear = (s: State) => !!sharpTool(s) && item(s, 'grenar') >= 1;
 // byn vill ha ungefär ett spjut per tre vuxna, när någon väl har börjat fiska
 export const spearsWanted = (s: State) => (s.stat?.fiskeForsok ?? 0) > 0 ? Math.max(1, Math.min(4, Math.floor(living(s).filter(p => ageOf(p, s.now) >= 14).length / 3))) : 0;
 export const wantsSpear = (s: State, p: Person) => canMakeSpear(s) && spears(s) < spearsWanted(s) && !living(s).some(q => q !== p && q.task?.act === 'spjut');
 export function makeSpear(s: State, p: Person) {
   const tool = sharpTool(s);
   if (!tool || !canMakeSpear(s)) return;
-  if (item(s, 'pinnar') >= 1) s.items.pinnar--; else s.items.grenar--;
+  s.items.grenar--;
   s.items.fiskespjut = item(s, 'fiskespjut') + 1;
   count(s, 'spjutGjorda');
   if (s.stat!.spjutGjorda === 1) log(s, `${p.name} täljde byns första fiskespjut med ${tool === 'yxa' ? 'en yxa' : 'en flintsten'}. Nu går fisket lättare.`, 'world', [p.id]);
