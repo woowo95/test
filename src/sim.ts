@@ -15,3 +15,4 @@ export * from './sim/liv';
 export * from './sim/steg';
 export * from './sim/vag';
 export * from './sim/skog';
+export * from './sim/fynd';

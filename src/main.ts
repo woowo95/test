@@ -5,7 +5,9 @@ import {
   createState, step, getMap, living, alive, ageOf, byId, relKey, moodOf, ageIndex, ageDay, yearNo, lightLevel, isLight,
   foodDays, timeLabel, serialize, compact, stat, migrate, hearthOf, igniterOf, fireHeat, heatRadius, fireWant, emberOn,
   ITEM_NAMES, FireLog, coverOf, groundOf, SEDER, SED_INFO, Sed, influence, duty, habitShare, habitTotal, Act,
+  richness, stoneDist, Kind,
 } from './sim';
+import { HIGH, BAR, FOREST } from './sim/vag';
 
 const TS = 16; // pixlar per ruta i världen
 const SAVE_KEY = 'samhalle-save-v1';
@@ -334,17 +336,104 @@ app.stage.on('pointermove', e => {
   if (drag && (e.buttons & 1 || e.pointerType === 'touch')) {
     const dx = e.global.x - drag.x, dy = e.global.y - drag.y;
     drag.moved = Math.max(drag.moved, Math.hypot(dx, dy));
-    if (drag.moved > 6) { camX = drag.cx - dx / world.scale.x; camY = drag.cy - dy / world.scale.y; layout(); }
+    if (drag.moved > 6) { stopFollow(); camX = drag.cx - dx / world.scale.x; camY = drag.cy - dy / world.scale.y; layout(); }
     return;
   }
+  showHover(e.global.x, e.global.y);
   hovered = personAt(e.global.x, e.global.y)?.id; (app.view as HTMLCanvasElement).style.cursor = hovered || fireAt(e.global.x, e.global.y) ? 'pointer' : 'grab';
 });
 (app.view as HTMLCanvasElement).addEventListener('wheel', e => { e.preventDefault(); const r = (app.view as HTMLCanvasElement).getBoundingClientRect(); zoomAt(e.deltaY < 0 ? 1.15 : 1 / 1.15, e.clientX - r.left, e.clientY - r.top); }, { passive: false });
 $('zIn').addEventListener('click', () => zoomAt(1.4));
 $('zOut').addEventListener('click', () => zoomAt(1 / 1.4));
-$('zHome').addEventListener('click', () => { zoom = 2.4; const f = getMap(s.seed).fire; camX = f.x * TS; camY = f.y * TS; layout(); });
+$('zHome').addEventListener('click', () => { stopFollow(); zoom = 2.4; const f = getMap(s.seed).fire; camX = f.x * TS; camY = f.y * TS; layout(); });
 
-function selectPerson(id: number) { selected = id; tab = 'person'; renderPanel(true); }
+function selectPerson(id: number) { selected = id; tab = 'person'; renderPanel(true); renderPorts(); }
+
+// ---------- rutan i hörnet: vad som finns under musen ----------
+const RICH_WORD = (v: number) => v >= 0.7 ? 'gott om' : v >= 0.35 ? 'en del' : v >= 0.1 ? 'lite' : 'nästan inget';
+function showHover(gx: number, gy: number) {
+  const box = $('hoverBox'), w = world.toLocal(new PIXI.Point(gx, gy));
+  const x = Math.floor(w.x / TS), y = Math.floor(w.y / TS);
+  if (x < 0 || y < 0 || x >= W || y >= H) { box.hidden = true; return; }
+  const m = getMap(s.seed), g = groundOf(s), i = y * W + x, t = m.tiles[i], tr = g.trees[i], c = g.cover[i];
+  const soil = t === T.Gras || t === T.Skog;
+  const ground = t === T.Vatten ? 'Vatten' : t === T.Sand ? 'Sand' : t === T.Sten ? 'Sten' : tr >= FOREST ? 'Skogsmark' : c >= HIGH ? 'Högt gräs' : c >= BAR ? 'Kort gräs' : 'Bar jord, stig';
+  const rows: string[] = [`<b>${ground}</b>${soil && tr > 0 ? ` · ${tr >= FOREST ? 'skog' : tr >= 0.25 ? 'ungskog' : 'plantor'}` : ''}`];
+  // bär och rötter i alla tider utom istiden, vilt där det finns skydd, fisk vid stranden
+  const ai = ageIndex(s), finds: string[] = [];
+  const add = (k: Kind, name: string) => { const cap = richness(s, k, x, y); if (cap > 0.04) finds.push(`${name}: ${RICH_WORD(cap)}`); };
+  if (soil && ai !== 0) add('samla', 'Bär och rötter');
+  if (soil) add('jakt', 'Vilt');
+  add('fiske', 'Fisk');
+  if (finds.length) rows.push(finds.join(' · '));
+  if (t !== T.Vatten && stoneDist(s.seed)[i] <= 2) rows.push('Flinta är vanlig här');
+  const near = (a: { x: number; y: number }, wd = 1, ht = 1) => x >= a.x && x < a.x + wd && y >= a.y && y < a.y + ht;
+  if (near(m.fire)) rows.push(`Elden (${s.fire.lit ? 'brinner' : emberOn(s) ? 'glöder' : 'släckt'})`);
+  if (near(m.stock, 2, 2)) rows.push(`Förrådet: ${Math.round(s.food)} mat, ${Math.round(s.wood)} ved`);
+  if (m.huts.some(h => near(h, 2, 2))) rows.push('Hydda');
+  const log = (s.stockar ?? []).find(k => Math.floor(k.x) === x && Math.floor(k.y) === y);
+  if (log) rows.push(`Fällt träd, ca ${Math.ceil(log.ved)} ved kvar`);
+  const here = living(s).filter(p => Math.floor(p.x) === x && Math.floor(p.y) === y);
+  if (here.length) rows.push(here.map(p => `${esc(p.name)} (${p.task ? ACT_NAMES[p.task.act].toLowerCase() : 'vilar'})`).join(', '));
+  box.innerHTML = rows.map(r => `<p>${r}</p>`).join('');
+  box.hidden = false;
+}
+
+// ---------- porträttraden överst på kartan ----------
+let follow: number | undefined;
+function stopFollow() { if (follow === undefined) return; follow = undefined; $('followChip').hidden = true; }
+function startFollow(id: number) {
+  follow = id; const chip = $('followChip'), p = byId(s, id);
+  chip.hidden = false; chip.textContent = `Följer ${p?.name ?? ''} ✕`;
+}
+$('followChip').addEventListener('click', stopFollow);
+const portEls = new Map<number, HTMLButtonElement>();
+const hex = (p: Person) => '#' + hsl(p.hue, 0.5, 0.58).toString(16).padStart(6, '0');
+const shortAct = (p: Person) => p.task ? ACT_NAMES[p.task.act] : '–';
+function renderPorts() {
+  const row = $('ports'), ppl = living(s).slice().sort((a, b) => a.born - b.born);
+  const ids = new Set(ppl.map(p => p.id));
+  for (const [id, el] of portEls) if (!ids.has(id)) { el.remove(); portEls.delete(id); }
+  ppl.forEach((p, k) => {
+    let el = portEls.get(p.id);
+    if (!el) {
+      el = document.createElement('button'); el.type = 'button'; el.className = 'port'; el.dataset.id = String(p.id);
+      el.innerHTML = `<span class="dot"></span><span class="pn"></span><span class="pi"></span><span class="pa"></span>`;
+      portEls.set(p.id, el);
+    }
+    if (row.children[k] !== el) row.insertBefore(el, row.children[k] ?? null);
+    const low = p.hunger < 0.25 || p.health < 0.4 || p.warm < 0.3 || moodOf(p, s.now) < 0.25;
+    el.classList.toggle('low', low);
+    el.setAttribute('aria-pressed', String(selected === p.id));
+    (el.children[0] as HTMLElement).style.background = hex(p);
+    el.children[1].textContent = p.name;
+    el.children[2].textContent = `${Math.floor(ageOf(p, s.now))} år${p.tag ? ' · ' + p.tag : ''}`;
+    el.children[3].textContent = shortAct(p);
+  });
+  if (tipId !== undefined) showTip(tipId);
+}
+let tipId: number | undefined;
+function showTip(id: number) {
+  const p = byId(s, id), el = portEls.get(id), tip = $('portTip');
+  if (!p || !el || !alive(p)) { hideTip(); return; }
+  tipId = id;
+  const m = moodOf(p, s.now);
+  tip.innerHTML = `<h4>${esc(p.name)}</h4><p class="op">${p.sex === 'k' ? 'Kvinna' : 'Man'}, ${Math.floor(ageOf(p, s.now))} år${p.tag ? ' · ' + esc(p.tag) : ''}</p>
+    <p>${shortAct(p)}</p>${p.task?.why ? `<p class="op">${esc(p.task.why)}</p>` : ''}
+    <dl><dt>Humör</dt><dd>${bar(m, m < 0.35 ? 'low' : '')}</dd><dt>Mättnad</dt><dd>${bar(p.hunger, p.hunger < 0.25 ? 'low' : '')}</dd>
+    <dt>Vila</dt><dd>${bar(p.rest)}</dd><dt>Hälsa</dt><dd>${bar(p.health, p.health < 0.5 ? 'low' : '')}</dd><dt>Värme</dt><dd>${bar(p.warm, p.warm < 0.4 ? 'low' : '')}</dd></dl>
+    <p class="op">Klicka för att välja, dubbelklicka för att följa.</p>`;
+  const wrap = $('ports').parentElement!.getBoundingClientRect(), r = el.getBoundingClientRect();
+  tip.hidden = false;
+  tip.style.top = `${r.bottom - wrap.top + 6}px`;
+  tip.style.left = `${Math.max(8, Math.min(wrap.width - tip.offsetWidth - 8, r.left - wrap.left))}px`;
+}
+function hideTip() { tipId = undefined; $('portTip').hidden = true; }
+$('ports').addEventListener('pointerover', e => { const b = (e.target as HTMLElement).closest<HTMLElement>('.port'); if (b) showTip(Number(b.dataset.id)); });
+$('ports').addEventListener('pointerleave', hideTip);
+(app.view as HTMLCanvasElement).addEventListener('pointerleave', () => { $('hoverBox').hidden = true; });
+$('ports').addEventListener('click', e => { const b = (e.target as HTMLElement).closest<HTMLElement>('.port'); if (b) selectPerson(Number(b.dataset.id)); });
+$('ports').addEventListener('dblclick', e => { const b = (e.target as HTMLElement).closest<HTMLElement>('.port'); if (b) startFollow(Number(b.dataset.id)); });
 
 // ---------- panel ----------
 function bar(v: number, cls = '') { return `<span class="bar ${cls}"><span style="width:${Math.round(Math.max(0, Math.min(1, v)) * 100)}%"></span></span>`; }
@@ -401,6 +490,7 @@ function renderPanel(force = false) {
         <dt>Mättnad</dt><dd>${bar(p.hunger)}</dd><dt>Vila</dt><dd>${bar(p.rest)}</dd>
         <dt>Gemenskap</dt><dd>${bar(p.social)}</dd><dt>Hälsa</dt><dd>${bar(p.health, p.health < 0.5 ? 'low' : '')}</dd>
         <dt>Värme</dt><dd>${bar(p.warm, p.warm < 0.4 ? 'low' : '')}</dd><dt>Toa</dt><dd>${bar(p.toa, p.toa < 0.25 ? 'low' : '')}</dd></dl>
+        ${p.fiske ? `<h3>Fiske med händerna</h3><p class="muted">${p.fiske.f} försök, ${p.fiske.n} napp, ${p.fiske.k} ${p.fiske.k === 1 ? 'fisk' : 'fiskar'}</p>` : ''}
         ${a >= 8 ? willHtml(p) : ''}
         ${p.thoughts.length ? `<ul class="thoughts">${p.thoughts.map(t => `<li class="${t.v < 0 ? 'neg' : 'pos'}">${esc(t.text)} <span>${t.v > 0 ? '+' : ''}${Math.round(t.v * 100)}</span></li>`).join('')}</ul>` : ''}` : ''}
       <h3>Egenskaper</h3><dl class="kv">${STATS.map(k => `<dt>${STAT_NAMES[k]}</dt><dd>${bar(stat(p, k, now) / 20)}<span>${stat(p, k, now).toFixed(1).replace('.', ',')}</span></dd>`).join('')}</dl>
@@ -578,11 +668,15 @@ function tick() {
   }
   const now = performance.now();
   for (const e of events.splice(0)) { bubbles.push({ id: e.a, kind: e.kind, good: e.good, until: now + 2600 }); }
+  if (follow !== undefined) {
+    const p = byId(s, follow);
+    if (p && alive(p)) { camX = p.x * TS + TS / 2; camY = p.y * TS + TS / 2; layout(); } else stopFollow();
+  }
   drawTerrain();
   drawStructures(now);
   drawPeople(now);
   drawNight(s.now);
-  if (now - lastUi > 600) { lastUi = now; renderClock(); renderPanel(); }
+  if (now - lastUi > 600) { lastUi = now; renderClock(); renderPanel(); renderPorts(); }
   if (!testMode && now - lastLocal > 20000) { lastLocal = now; saveLocal(); }
   if (!testMode && now - lastDb > 60000) { lastDb = now; saveDb(); }
 }

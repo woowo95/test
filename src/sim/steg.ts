@@ -1,4 +1,5 @@
 import { foodDays, workRate } from './ekonomi';
+import { GIFT, TRY_SEC, eatPoison, growFynd, handFish, newCrop, packFynd, pickMushrooms, richness, takeFrom } from './fynd';
 import { COLD, addFuel, addItems, canLight, fireWant, forageItems, fuelStock, hearthOf, heatAt, igniterOf, stepFire, takeCoal, takeFuel, tryLight } from './eld';
 import { ageOf, alive, living, log, stat, think } from './folk';
 import { getMap } from './karta';
@@ -23,17 +24,20 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
     s.lastAgeIdx = ai;
     const msg = ['Istiden har börjat. Sjön fryser och maten blir knapp.', 'Vårtiden har kommit. Isen släpper och marken tinar.', 'Sommartiden är här. Bär och fisk finns i överflöd.', 'Hösttiden har börjat. Nu gäller det att samla inför istiden.'][ai];
     log(s, msg, 'world');
+    newCrop(s, ai);
   }
   const ppl = living(s);
   const light = isLight(now);
   // förråd: ruttning och ved
-  s.food = Math.max(0, s.food * Math.exp(-0.003 * (1 + s.food / 250) / 3600 * dtSec * (ai === 0 ? 0.5 : 1)));
+  const rot = Math.exp(-0.003 * (1 + s.food / 250) / 3600 * dtSec * (ai === 0 ? 0.5 : 1));
+  s.food = Math.max(0, s.food * rot);
+  if (s.items[GIFT]) s.items[GIFT] *= rot;
   stepFire(s, dtSec, live, ppl);
   const fh = hearthOf(s.fire), coldRate = COLD[ai][light ? 0 : 1];
   const learn = 1 + 0.1 * s.seder.v.nyfikenhet; // en nyfiken by lär sig snabbare
   if (Math.floor(now / HOUR) !== Math.floor((now - dtSec * SEC) / HOUR)) {
     stepSeder(s); updateTags(s);
-    growGround(s, 1, ai);
+    growGround(s, 1, ai); growFynd(s, 1, ai);
   }
 
   const social: Person[] = [];
@@ -57,7 +61,10 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
     // toa: behovet växer på ungefär sju timmar, långsammare i sömnen
     p.toa = clamp(p.toa - dtSec / (7 * 3600) * (p.task?.act === 'sova' ? 0.5 : 1), 0, 1);
     if (p.toa <= 0) { p.toa = 1; if (a >= 3) think(p, 'Kissade på sig', -0.12, now, 4 * HOUR); }
-    if (p.hunger < 0.45 && s.food >= 0.6) { const portion = a < 10 ? 0.6 : 1; s.food -= portion; p.hunger = clamp(p.hunger + 0.55, 0, 1); }
+    if (p.hunger < 0.45 && s.food >= 0.3) { // en hel portion, eller det som finns kvar
+      const full = a < 10 ? 0.6 : 1, portion = Math.min(full, s.food);
+      s.food -= portion; p.hunger = clamp(p.hunger + 0.55 * portion / full, 0, 1); eatPoison(s, p);
+    }
     // hälsa
     if (p.hunger <= 0) { p.health -= dtSec / (5 * 3600); if (rnd(s) < dtSec / 7200) think(p, 'Svälter', -0.25, now, 3 * HOUR); }
     else if (p.warm < 0.12) p.health -= dtSec / (20 * 3600);
@@ -66,7 +73,7 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
     if (!p.sickUntil || p.sickUntil < now) {
       if (chance(s, (ai === 0 ? 0.12 : 0.05) / 86400, dtSec)) { const dur = (3 + rnd(s) * 8) * HOUR; p.sickUntil = now + dur; if (dur > 8 * HOUR) log(s, `${p.name} blev svårt sjuk.`, 'world', [p.id]); }
     }
-    if (p.health <= 0) { die(s, p, p.hunger <= 0 ? 'av svält' : p.warm < 0.12 ? 'av kyla' : 'av sjukdom'); continue; }
+    if (p.health <= 0) { die(s, p, p.hunger <= 0 ? 'av svält' : p.warm < 0.12 ? 'av kyla' : (p.poisonUntil ?? 0) > now ? 'av svampförgiftning' : 'av sjukdom'); continue; }
     // ålderdom och olyckor (Gompertz, per år = per dygn)
     const q = 0.0015 + 0.00004 * Math.exp(0.105 * a) + (a < 5 ? 0.02 : 0);
     if (chance(s, q / 86400, dtSec)) { die(s, p, a > 55 ? 'av ålderdom' : a < 5 ? 'av en barnsjukdom' : 'i en olycka'); continue; }
@@ -141,7 +148,18 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
     if (tk.phase === 'do' && isWork(tk.act)) {
       const axe = AXE_WORK.includes(tk.act), base: Act = axe ? 'ved' : tk.act;
       // utan yxa samlas grenar på marken (två grenar på den tid det tar att hugga en ved); med yxa huggs ved ur en fälld stam
-      const y = workRate(s, p, base) * dtSec * (live ? 1 : 0.8) * (tk.act === 'ved' ? 2 : tk.act === 'hugga' ? 1.5 : tk.act === 'falla' ? 0 : 1);
+      // bär, rötter och vilt: platsen ger mindre ju mer som redan tagits där
+      const rich = tk.act === 'samla' || tk.act === 'jakt' ? richness(s, tk.act, tk.tx, tk.ty) : 1;
+      const y = workRate(s, p, base) * dtSec * (live ? 1 : 0.8) * (tk.act === 'ved' ? 2 : tk.act === 'hugga' ? 1.5 : tk.act === 'falla' || tk.act === 'fiske' ? 0 : rich);
+      if (tk.act === 'samla' || tk.act === 'jakt') { takeFrom(s, tk.act, tk.tx, tk.ty, y); if (rich < 0.08) tk.until = now; } // tomt här: gå hem eller vidare
+      if (tk.act === 'fiske') {
+        // fiske med händerna: ett försök i taget
+        tk.prog = (tk.prog ?? 0) + dtSec;
+        const ageF = (a < 14 ? 0.3 : a > 60 ? 0.6 : 1) * (p.sickUntil && p.sickUntil > now ? 0.3 : 1);
+        let fish = 0;
+        while (tk.prog >= TRY_SEC) { tk.prog -= TRY_SEC; fish += handFish(s, p, tk.tx, tk.ty, ageF); }
+        if (fish) { if (live) tk.carry += fish; else deliver(s, 'fiske', fish); }
+      }
       if (tk.act === 'hugga') {
         const got = chopStock(s, tk.ref, y);
         if (!got) tk.until = now; // stammen är slut
@@ -152,8 +170,10 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
         }
       } else if (y > 0) { if (live) tk.carry += y; else deliver(s, tk.act, y); }
       if (tk.act === 'samla') {
-        const got = forageItems(s, p, dtSec);
-        if (got) { if (live) { tk.items ??= {}; for (const k in got) tk.items[k] = (tk.items[k] ?? 0) + got[k]; } else addItems(s, got); }
+        const got = forageItems(s, p, dtSec) ?? {};
+        const svamp = pickMushrooms(s, p, tk.tx, tk.ty, dtSec, got);
+        if (svamp) { if (live) tk.carry += svamp; else deliver(s, 'samla', svamp); }
+        if (Object.keys(got).length) { if (live) { tk.items ??= {}; for (const k in got) tk.items[k] = (tk.items[k] ?? 0) + got[k]; } else addItems(s, got); }
       }
       const sk = base as Skill;
       const before = p.skill[sk];
@@ -201,7 +221,7 @@ function deliver(s: State, act: Act, n: number) {
 }
 
 export function serialize(s: State) {
-  packGround(s);
+  packGround(s); packFynd(s);
   return JSON.stringify(s, (k, v) => (typeof v === 'number' && !Number.isInteger(v) ? Math.round(v * 1000) / 1000 : v));
 }
 

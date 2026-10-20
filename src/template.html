@@ -29,7 +29,30 @@ h1 { font-family: var(--display); font-weight: 700; font-size: 1.7rem; margin: 0
 .mapwrap { position: relative; min-height: 0; border-radius: 6px; overflow: hidden; background: #1d2420; }
 #map { position: absolute; inset: 0; }
 #map canvas { display: block; touch-action: manipulation; }
-.chips { position: absolute; left: 10px; top: 10px; display: flex; flex-wrap: wrap; gap: 6px; pointer-events: none; }
+.chips { position: absolute; left: 10px; top: 72px; display: flex; flex-wrap: wrap; gap: 6px; pointer-events: none; }
+.chips button.chip { pointer-events: auto; border: 0; font: inherit; font-size: 13px; cursor: pointer; }
+/* invånarna överst på kartan, som i RimWorld */
+.ports { position: absolute; left: 8px; right: 8px; top: 8px; display: flex; gap: 4px; overflow-x: auto; scrollbar-width: thin; padding-bottom: 2px; }
+.port { flex: none; width: 92px; display: grid; grid-template-columns: 14px minmax(0, 1fr); grid-template-areas: "d n" "i i" "a a"; gap: 0 5px; align-items: center; text-align: left;
+  background: rgba(18, 22, 20, 0.72); color: #eef1ec; border: 1px solid transparent; border-radius: 4px; padding: 4px 6px; font: inherit; font-size: 12px; line-height: 1.25; cursor: pointer; }
+.port:hover { background: rgba(18, 22, 20, 0.9); }
+.port[aria-pressed="true"] { border-color: #f0c070; }
+.port .dot { grid-area: d; width: 12px; height: 12px; }
+.port .pn { grid-area: n; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.port .pi { grid-area: i; opacity: 0.75; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.port .pa { grid-area: a; opacity: 0.9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.port.low .pn::after { content: " !"; color: #ff9a8a; }
+.tip { position: absolute; z-index: 5; width: 210px; background: rgba(18, 22, 20, 0.92); color: #eef1ec; border-radius: 6px; padding: 8px 10px; font-size: 13px; pointer-events: none; }
+.tip h4 { margin: 0; font-size: 14px; }
+.tip p { margin: 2px 0 0; }
+.tip .op { opacity: 0.75; }
+.tip dl { display: grid; grid-template-columns: 70px minmax(0, 1fr); gap: 2px 8px; margin: 6px 0 0; align-items: center; }
+.tip dd { margin: 0; }
+.tip .bar { width: 100%; background: rgba(255,255,255,0.15); }
+/* rutan som visar vad musen är över */
+.hoverBox { position: absolute; left: 10px; bottom: 10px; max-width: min(260px, calc(100% - 140px)); background: rgba(18, 22, 20, 0.6); color: #eef1ec; border-radius: 4px; padding: 6px 9px; font-size: 12px; line-height: 1.35; pointer-events: none; }
+.hoverBox b { font-weight: 700; }
+.hoverBox p { margin: 0; }
 .zoom { position: absolute; right: 10px; bottom: 10px; display: flex; gap: 4px; }
 .zoom button { font: inherit; font-size: 14px; font-weight: 700; min-width: 32px; height: 32px; border-radius: 4px; border: 0; background: rgba(18, 22, 20, 0.72); color: #eef1ec; cursor: pointer; padding: 0 10px; }
 .zoom button:hover { background: rgba(18, 22, 20, 0.9); }
@@ -112,6 +135,9 @@ body.testing .mapwrap { box-shadow: 0 0 0 3px var(--accent); }
   .main { grid-template-columns: 1fr; }
   .mapwrap { aspect-ratio: 1.15; max-width: 100%; }
   .chip { font-size: 12px; padding: 3px 7px; }
+  .chips { top: 66px; }
+  .port { width: 78px; }
+  .hoverBox { display: none; }
   aside { min-height: 420px; }
   #panelBody { max-height: 60vh; }
 }
@@ -126,11 +152,15 @@ body.testing .mapwrap { box-shadow: 0 0 0 3px var(--accent); }
   <div class="main">
     <section class="mapwrap" aria-label="Karta över byn">
       <div id="map"></div>
+      <div id="ports" class="ports" aria-label="Invånare"></div>
+      <div id="portTip" class="tip" hidden></div>
+      <div id="hoverBox" class="hoverBox" hidden></div>
       <div class="chips">
         <span class="chip"><b id="sPop">0</b>invånare</span>
         <span class="chip"><b id="sFood">0</b>mat<span id="sFoodDays"></span></span>
         <span class="chip"><b id="sWood">0</b>ved<span id="sGren"></span></span>
         <span class="chip">elden <b id="sFire">–</b></span>
+        <button type="button" class="chip" id="followChip" hidden></button>
       </div>
       <div class="zoom">
         <button type="button" id="zIn" aria-label="Zooma in">+</button>

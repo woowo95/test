@@ -1,6 +1,7 @@
 import { SEASON, WORK_STAT, foodDays, woodDays } from './ekonomi';
 import { emberOn, fireWant, needTinder } from './eld';
 import { ageOf, living, stat } from './folk';
+import { HAND_FISH, Kind, bestSpot, flintSpot, prospect, wantsFlint } from './fynd';
 import { getMap } from './karta';
 import { isForest, tread } from './mark';
 import { axeTask } from './skog';
@@ -45,7 +46,8 @@ function spotFor(s: State, act: Act, p: Person): { x: number; y: number } {
     if (want(m.tiles[y * W + x], x, y)) cands.push({ x, y, d });
   }
   cands.sort((a, b) => a.d - b.d);
-  const c = cands[Math.floor(rnd(s) * Math.min(6, cands.length))] ?? { x: f.x + 6, y: f.y };
+  // mat: gå dit det finns mest att hämta, inte för långt bort; annars en av de närmaste platserna
+  const c = (act === 'samla' || act === 'jakt' || act === 'fiske' ? bestSpot(s, act, cands) : cands[Math.floor(rnd(s) * Math.min(6, cands.length))]) ?? { x: f.x + 6, y: f.y };
   return { x: c.x + 0.5, y: c.y + 0.5 };
 }
 
@@ -76,13 +78,15 @@ export function chooseTask(s: State, p: Person, live: boolean) {
       const fd = foodDays(s), wd = woodDays(s), ai = ageIndex(s);
       const fs = 1 + 0.25 * sd.forsiktighet; // en försiktig by vill ha större förråd
       const wFood = clamp(3.2 - fd / (2.5 * fs), 0.4, 3.5);
-      const wWood = clamp(2.5 - wd / (2 * fs), 0.15, 3);
+      const wWood = clamp(3.2 - wd / (2 * fs), 0.15, 3.5) * (ai === 3 || ai === 0 ? 1.3 : 1); // inför och under istiden väger veden tyngre
       const tot = habitTotal(p);
       let best: Act = 'samla', bs = -1, burg = 0;
       for (const w of WORK) {
         const need = w === 'ved' ? wWood : wFood;
         const tinder = w === 'samla' && needTinder(s);
-        const col = need * (w === 'ved' ? 1 : tinder ? Math.max(0.8, SEASON[w][ai]) * 3 : SEASON[w][ai]); // nytta för byn
+        // nytta för byn; maten väger också in hur mycket platserna ger just nu och att fiske med händerna ger lite
+        const yieldF = w === 'ved' || tinder ? 1 : clamp(prospect(s, w as Kind), 0.05, 1.3) * (w === 'fiske' ? HAND_FISH : 1);
+        const col = need * (w === 'ved' ? 1 : tinder ? Math.max(0.8, SEASON[w][ai]) * 3 : SEASON[w][ai] * yieldF);
         const like = (4 + p.skill[w as Skill] + stat(p, WORK_STAT[w], now) / 3) * (1 + 2 * habitShare(p, [w], tot)); // egen lust och vana
         const sc = col * like * (0.6 + rnd(s) * 0.8);
         burg = Math.max(burg, col);
@@ -101,6 +105,10 @@ export function chooseTask(s: State, p: Person, live: boolean) {
       } else if (rnd(s) < (1 - lazy) * (0.88 + 0.12 * u) + lazy * sat * (0.6 + 0.4 * u)) {
         set(best, workWhy());
         dur = (60 + rnd(s) * 120) * 60 * SEC;
+        if (best === 'samla' && wantsFlint(s) && rnd(s) < 0.3) { // byn saknar flinta till en yxa
+          const fl = flintSpot(s);
+          if (fl) { spot = fl; why = `${why!} Letar efter flinta vid stenarna.`; }
+        }
         const ax = best === 'ved' ? axeTask(s, p) : undefined; // med yxa fälls träd och huggs ved
         if (ax) {
           set(ax.act, `${what}. ${ax.why}.`);

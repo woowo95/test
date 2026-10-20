@@ -1,7 +1,7 @@
 // Scenariotester: ställ en by i ett visst läge, kör den en stund och kontrollera att det som ska hända händer.
 // npm run scenario            kör alla
 // npm run scenario -- glanta  kör bara ett
-import { createState, step, living, groundOf, getMap, fuelStock, DAY, HOUR, W, State } from '../sim';
+import { createState, step, living, groundOf, getMap, fuelStock, DAY, HOUR, W, State, takenOf, Kind } from '../sim';
 import { FOREST, HIGH, isSoil } from '../sim/vag';
 import { START } from './kor';
 
@@ -18,6 +18,14 @@ function skogsandel(s: State, min: number, max: number) {
     n++; if (g.trees[i] >= FOREST) sk++;
   }
   return n ? sk / n : 0;
+}
+
+// genomsnittligt uttag (0 = orört, 1 = tomt) på rutor inom ett avstånd från elden
+function uttag(s: State, k: Kind, min: number, max: number) {
+  const t = takenOf(s)[k], f = getMap(s.seed).fire;
+  let n = 0, v = 0;
+  for (let i = 0; i < t.length; i++) { const d = Math.hypot((i % W) - f.x, Math.floor(i / W) - f.y); if (d >= min && d < max) { n++; v += t[i]; } }
+  return n ? v / n : 0;
 }
 
 const SCENARIER: Record<string, { text: string; kor: () => Koll[] }> = {
@@ -72,7 +80,7 @@ const SCENARIER: Record<string, { text: string; kor: () => Koll[] }> = {
   'vinter-slocknad': {
     text: 'Istiden börjar med slocknad eld, kolhög men inga pinnar: byn tänder på kolhögen med kol som tändmaterial',
     kor: () => {
-      const s = createState(14, START);
+      const s = createState(16, START);
       kor(s, 20 * 24 + 23); // till istidens början
       Object.assign(s.fire, { lit: false, fuel: 0, emberUntil: undefined, ash: 3, ashUntil: s.now + 3 * DAY });
       s.wood = 0; s.items.grenar = 30; s.items.pinnar = 0; s.items.kol = 2;
@@ -85,6 +93,44 @@ const SCENARIER: Record<string, { text: string; kor: () => Koll[] }> = {
         ['tänd på den gamla kolhögen', logg(s, 'på den gamla kolhögen')],
         ['ingen dog av kyla', s.people.filter(p => p.cause === 'av kyla').length === kyla],
         ['bränsle kvar eller insamlat', fuelStock(s) >= 0]];
+    },
+  },
+  knapphet: {
+    text: 'Bär, rötter och vilt tar slut nära byn för en tid, så invånarna går längre bort; fiske med händerna ger få fiskar per försök',
+    kor: () => {
+      const s = createState(15, START);
+      kor(s, 12 * 24);
+      const nara = uttag(s, 'samla', 0, 8), langt = uttag(s, 'samla', 16, 30), st = s.stat ?? {};
+      return [
+        [`mer plockat nära byn än långt bort (${nara.toFixed(2)} mot ${langt.toFixed(2)})`, nara > 0.05 && nara > langt * 3],
+        [`vilt jagat (${uttag(s, 'jakt', 0, 12).toFixed(2)})`, uttag(s, 'jakt', 0, 12) > 0],
+        [`fiske: ${st.fiskeForsok ?? 0} försök, ${st.fiskeNapp ?? 0} napp, ${st.fisk ?? 0} fiskar`, (st.fiskeForsok ?? 0) > (st.fiskeNapp ?? 0) && (st.fiskeNapp ?? 0) >= (st.fisk ?? 0)],
+        ['ingen svalt ihjäl', !s.people.some(p => p.cause === 'av svält')]];
+    },
+  },
+  svamp: {
+    text: 'På hösten plockas kantareller, men ibland följer en giftig orange spindling med; efter förgiftningar lär sig byn skilja dem åt',
+    kor: () => {
+      const s = createState(16, START);
+      kor(s, 21 * 24); // vår, sommar och höst
+      const st = s.stat ?? {};
+      return [
+        [`kantareller plockade (${st.svamp ?? 0})`, (st.svamp ?? 0) > 10],
+        [`giftsvamp med i korgen (${st.giftsvamp ?? 0}) eller känd och lämnad (${st.giftsvampKand ?? 0})`, (st.giftsvamp ?? 0) + (st.giftsvampKand ?? 0) > 0],
+        [`förgiftningar (${st.forgiftad ?? 0}) ger kunskap (${(s.kunskap?.svamp ?? 0).toFixed(2)})`, !(st.forgiftad ?? 0) || (s.kunskap?.svamp ?? 0) > 0],
+        ['byn lever', living(s).length > 0]];
+    },
+  },
+  flinta: {
+    text: 'Flinta hittas mest vid stenarna',
+    kor: () => {
+      let sten = 0, annan = 0;
+      for (const seed of [21, 22, 23, 24]) {
+        const s = createState(seed, START);
+        kor(s, 10 * 24, s => { if (s.items.flinta) s.items.flinta = 0; }); // byn letar hela tiden
+        sten += s.stat?.flintaSten ?? 0; annan += s.stat?.flintaAnnan ?? 0;
+      }
+      return [[`flinta vid stenarna ${sten}, på annat håll ${annan}`, sten > annan && sten > 0]];
     },
   },
 };

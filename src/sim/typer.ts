@@ -30,7 +30,7 @@ export const AGES = ['Istid', 'Vårtid', 'Sommartid', 'Hösttid'];
 
 export type Act = 'samla' | 'jakt' | 'fiske' | 'ved' | 'leka' | 'vila' | 'samtal' | 'beratta' | 'hantverk' | 'vakt' | 'sova' | 'elda' | 'tanda' | 'varma' | 'toa' | 'kol' | 'falla' | 'hugga' | 'yxa';
 export const ACT_NAMES: Record<Act, string> = {
-  samla: 'Samlar bär och rötter', jakt: 'Jagar', fiske: 'Fiskar', ved: 'Samlar grenar', leka: 'Leker',
+  samla: 'Samlar bär och rötter', jakt: 'Jagar', fiske: 'Fiskar med händerna', ved: 'Samlar grenar', leka: 'Leker',
   vila: 'Vilar', samtal: 'Samtalar vid elden', beratta: 'Berättar vid elden', hantverk: 'Gör handarbete',
   vakt: 'Håller vakt', sova: 'Sover', elda: 'Lägger ved på elden', tanda: 'Försöker tända elden', varma: 'Värmer sig vid elden',
   toa: 'Går avsides på toa', kol: 'Hämtar kol ur den slocknade elden',
@@ -43,7 +43,7 @@ export const isWork = (a: Act) => WORK.includes(a) || AXE_WORK.includes(a);
 
 export interface Thought { text: string; v: number; until: number }
 // why = varför personen valde uppgiften, dark = påbörjad under mörk tid
-export interface Task { act: Act; phase: 'go' | 'do' | 'back'; tx: number; ty: number; until: number; carry: number; items?: Record<string, number>; why?: string; dark?: boolean; path?: number[]; pk?: string; ref?: number }
+export interface Task { act: Act; phase: 'go' | 'do' | 'back'; tx: number; ty: number; until: number; carry: number; items?: Record<string, number>; why?: string; dark?: boolean; path?: number[]; pk?: string; ref?: number; prog?: number }
 
 export interface Person {
   id: number; name: string; sex: 'm' | 'k';
@@ -54,7 +54,8 @@ export interface Person {
   warm: number; // kroppsvärme 0–1
   toa: number; // 1 = inget behov, 0 = olycka
   habit: Record<string, number>; // timmar per aktivitet, bleknar med tiden (ger yrkestaggar)
-  sickUntil?: number; pregnantSince?: number; lastBirth?: number;
+  sickUntil?: number; poisonUntil?: number; pregnantSince?: number; lastBirth?: number;
+  fiske?: { f: number; n: number; k: number }; // fiske med händerna: försök, napp och fångade fiskar
   thoughts: Thought[];
   x: number; y: number; task?: Task;
   fame: string[];
@@ -79,6 +80,9 @@ export interface State {
   skog?: string; // trädens tillväxt per ruta, packat
   stockar?: Stock[]; // fällda träd som ligger och väntar på att huggas
   nextStock?: number; fallda?: number;
+  fynd?: string; // hur mycket som tagits ur varje plats (bär, vilt, fisk), packat
+  kunskap?: Record<string, number>; // det byn lärt sig, 0–1 (t.ex. att känna igen giftig svamp)
+  stat?: Record<string, number>; // räknare: svamp, fiskeförsök, napp, fångst med mera
 }
 // ett fällt träd: ved och grenar som finns kvar att hugga ut
 export interface Stock { id: number; x: number; y: number; ved: number; grenar: number }
