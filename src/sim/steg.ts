@@ -1,5 +1,5 @@
 import { rotStumps } from './skog';
-import { addFood, capacity, dropSpot, homeKind, load, pickUp, storeLoad, takeFood, tidyStore, wearStore } from './lager';
+import { ROOT_SHARE, addFood, capacity, dropSpot, homeKind, load, pickUp, storeLoad, takeFood, tidyStore, wearStore } from './lager';
 import { makeSpear, wearSpear } from './redskap';
 import { foodDays, workRate } from './ekonomi';
 import { TRY_SEC, count, eatPoison, growFynd, handFish, packFynd, pickMushrooms, richness, takeFrom } from './fynd';
@@ -97,7 +97,7 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
     const t = p.task;
     const phaseFlip = t && t.dark !== !light && FLIP.includes(t.act); // dag blev natt eller tvärtom
     // ett träd som fällts färdigt eller en yxa som gjorts klar
-    if (t && t.phase === 'do' && t.until < now) { if (t.act === 'falla') fellTree(s, p, t.tx, t.ty); else if (t.act === 'yxa') makeAxe(s, p); else if (t.act === 'spjut') makeSpear(s, p); else if (t.act === 'promenad') { lookAround(s, p, t.tx, t.ty); think(p, 'Tog en skön promenad', 0.06, now, 6 * HOUR); } else if (t.act === 'bada') { p.warm = Math.max(0.4, p.warm - 0.1); think(p, 'Badade i sjön', 0.08, now, 6 * HOUR); } }
+    if (t && t.phase === 'do' && t.until < now) { if (t.act === 'falla') fellTree(s, p, t.tx, t.ty); else if (t.act === 'yxa') makeAxe(s, p); else if (t.act === 'spjut') makeSpear(s, p); else if (t.act === 'promenad') { lookAround(s, p, t.tx, t.ty); think(p, 'Tog en skön promenad', 0.06, now, 6 * HOUR); } else if (t.act === 'bada') { p.warm = Math.max(0.4, p.warm - 0.1); think(p, 'Badade i sjön', 0.08, now, 6 * HOUR); } else if (t.act === 'strand') { p.rest = Math.min(1, p.rest + 0.05); think(p, 'Satt vid vattnet och fick ro', 0.06, now, 6 * HOUR); } }
     const lightDone = t?.act === 'tanda' && (s.fire.lit || !canLight(s));
     const mustGo = t && p.toa < 0.08 && t.act !== 'toa' && a >= 3; // nöden avbryter det man håller på med
     if (!t || (t.until < now && t.phase !== 'back') || ((phaseFlip || mustGo) && t.phase !== 'back') || lightDone) {
@@ -182,6 +182,10 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
           else { s.wood += got.ved; addItems(s, { grenar: got.grenar }); }
           if (got.done) tk.until = now;
         }
+      } else if (y > 0 && tk.act === 'samla') {
+        const r = y * ROOT_SHARE[ageIndex(s)]; // en del av det man samlar är rötter
+        if (live) { tk.carry += y - r; tk.items ??= {}; tk.items.rotter = (tk.items.rotter ?? 0) + r; }
+        else { addFood(s, 'bar', y - r); addFood(s, 'rotter', r); }
       } else if (y > 0) { if (live) tk.carry += y; else deliver(s, tk.act, y); }
       if (tk.act === 'samla') {
         const got = forageItems(s, p, dtSec) ?? {};

@@ -104,7 +104,8 @@ const SCENARIER: Record<string, { text: string; kor: () => Koll[] }> = {
       return [
         [`mer plockat nära byn än långt bort (${nara.toFixed(2)} mot ${langt.toFixed(2)})`, nara > 0.05 && nara > langt * 3],
         [`vilt jagat (${uttag(s, 'jakt', 0, 12).toFixed(2)})`, uttag(s, 'jakt', 0, 12) > 0],
-        [`fiske: ${st.fiskeForsok ?? 0} försök, ${st.fiskeNapp ?? 0} napp, ${st.fisk ?? 0} fiskar`, (st.fiskeForsok ?? 0) > (st.fiskeNapp ?? 0) && (st.fiskeNapp ?? 0) >= (st.fisk ?? 0)],
+        // fiske väljs inte i alla byar; fisket testas utförligt i fiskespjut-scenariot
+        [`fiske: ${st.fiskeForsok ?? 0} försök, ${st.fiskeNapp ?? 0} napp, ${st.fisk ?? 0} fiskar`, !st.fiskeForsok || ((st.fiskeForsok ?? 0) > (st.fiskeNapp ?? 0) && (st.fiskeNapp ?? 0) >= (st.fisk ?? 0))],
         ['ingen svalt ihjäl', !s.people.some(p => p.cause === 'av svält')]];
     },
   },
@@ -148,9 +149,10 @@ SCENARIER.kunskap = {
     const a = areaOf(offer.x, offer.y), radd0 = living(s).filter(p => findL(p, 'fara', a)).length;
     // ingen förgiftning: svampkunskapen sprids genom samtal från en som kan
     const larare = living(s)[3]; larare.kunskap = { svamp: { v: 1, t: s.now } };
-    kor(s, 8 * 24);
+    let led2 = 0; // lärdomar i andra hand eller längre, räknat under hela tiden eftersom de också glöms
+    kor(s, 8 * 24, s => { led2 = Math.max(led2, living(s).flatMap(p => p.lardomar ?? []).filter(l => (l.led ?? 0) >= 2).length); });
     const L = living(s), alla = L.flatMap(p => p.lardomar ?? []);
-    const hort = alla.filter(l => l.src !== undefined), led2 = alla.filter(l => (l.led ?? 0) >= 2);
+    const hort = alla.filter(l => l.src !== undefined);
     const radd = L.filter(p => findL(p, 'fara', a)).length, kan = L.filter(p => p !== larare && kn(p, 'svamp') > 0.1).length;
     const fel = L.flatMap(p => (p.lardomar ?? []).map(l => describe(s, p, l).wrong)).filter(Boolean).length;
     // minnet: den med bra minne glömmer långsammare
@@ -163,7 +165,7 @@ SCENARIER.kunskap = {
     migrate(g);
     return [
       [`ingen minns några platser från början (${ute} personer gör det)`, ute === 0],
-      [`lärdomar sprids i samtal (${hort.length} hörda, ${led2.length} i andra hand eller längre)`, hort.length > 10 && led2.length > 0],
+      [`lärdomar sprids i samtal (${hort.length} hörda, ${led2} i andra hand eller längre)`, hort.length > 10 && led2 > 0],
       [`glömska (${s.stat?.glomt ?? 0} lärdomar glömda)`, (s.stat?.glomt ?? 0) > 0],
       [`bra minne glömmer långsammare (säkerhet efter tre dygn ${c1.toFixed(2)} mot ${c2.toFixed(2)})`, c1 > c2 && c2 < 0.9],
       [`rädsla efter olyckan: ${radd0} genast, ${radd} efter åtta dygn`, radd0 >= 1 && radd > radd0],
@@ -260,10 +262,10 @@ SCENARIER.bostad = {
 };
 
 SCENARIER.fritid = {
-  text: 'På fritiden tar folk promenader (de nyfikna och modiga längre bort) och badar när det är varmt',
+  text: 'På fritiden tar folk promenader (de nyfikna och modiga längre bort), badar när det är varmt och sitter vid stranden',
   kor: () => {
     const folk: { d: number; v: number }[] = [];
-    let prom = 0, bad = 0, badVarmt = true, n = 0;
+    let prom = 0, bad = 0, badVarmt = true, n = 0, strand = 0, strandLand = true;
     for (const seed of [5, 6]) { // två byar, så att slumpen inte avgör
     const s = createState(seed, START), gang = new Map<number, number>();
     s.founded = s.now - WEEK; // sommar
@@ -275,6 +277,7 @@ SCENARIER.fritid = {
         if (t?.phase !== 'do') continue;
         if (t.act === 'promenad') { prom++; gang.set(p.id, Math.max(gang.get(p.id) ?? 0, Math.hypot(t.tx - f.x - 0.5, t.ty - f.y - 0.5))); }
         if (t.act === 'bada') { bad++; if (temperature(s) < 14) badVarmt = false; }
+        if (t.act === 'strand') { strand++; if (getMap(s.seed).tiles[Math.floor(p.y) * W + Math.floor(p.x)] === T.Vatten) strandLand = false; }
       }
     });
     // längst bort: de mest nyfikna och modiga mot de minst
@@ -289,6 +292,28 @@ SCENARIER.fritid = {
       [`nyfikna och modiga går längre (${hog.toFixed(1)} mot ${lag.toFixed(1)} rutor)`, hog > lag],
       [`folk badar på sommaren (${bad} femminuters-steg)`, bad > 10],
       ['man badar bara när det är varmt', badVarmt],
+      [`folk sitter vid stranden (${strand} femminuters-steg)`, strand > 5],
+      ['den som sitter vid stranden sitter på land', strandLand],
+    ];
+  },
+};
+
+SCENARIER.rotter = {
+  text: 'Bär och rötter är olika slag i egna stackar; på sommaren samlar man mest bär, i istiden mest rötter',
+  kor: () => {
+    const andel = (vecka: number) => {
+      const s = createState(7, START);
+      s.founded = s.now - vecka * WEEK;
+      s.mat = { kott: 300 }; s.food = 300; // kött äts före bär och rötter, så det man samlar blir kvar
+      kor(s, 48);
+      const b = amountOf(s, 'bar'), r = amountOf(s, 'rotter');
+      return { b, r, skild: !pilesOf(s).some(p => p.k === 'bar' && p.n > STACK.bar + 1e-6) };
+    };
+    const sommar = andel(1), istid = andel(3);
+    return [
+      [`både bär och rötter samlas (sommar ${sommar.b.toFixed(0)} bär, ${sommar.r.toFixed(0)} rötter)`, sommar.b > 0 && sommar.r > 0],
+      [`i istiden mest rötter (${istid.r.toFixed(0)} rötter mot ${istid.b.toFixed(0)} bär)`, istid.r > istid.b],
+      [`på sommaren mest bär`, sommar.b > sommar.r],
     ];
   },
 };
@@ -299,7 +324,7 @@ SCENARIER.lager = {
     const s = createState(3, START);
     const start = zoneOf(s).w * zoneOf(s).h;
     s.food = 230; s.wood = 90; s.items.grenar = 70; s.items.flinta = 3; // mycket på en gång
-    kor(s, 12);
+    kor(s, 18);
     const z = zoneOf(s), ps = pilesOf(s), stor = z.w * z.h;
     const summaOk = Object.keys(STACK).every(k => Math.abs(ps.filter(p => p.k === k).reduce((a, p) => a + p.n, 0) - (amountOf(s, k) >= (STACK[k] === 1 ? 1e-6 : 0.5) ? amountOf(s, k) : 0)) < 1e-6);
     // bära: kör en stund med gående invånare och se hur mycket de bär hem

@@ -86,6 +86,14 @@ export function bathSpot(s: State) {
   }
   return bathCache.get(s.seed) ?? undefined;
 }
+// en plats på land vid vattnet, inte för långt från elden
+export function strandSpot(s: State) {
+  const sh = shoreOf(s.seed), f = getMap(s.seed).fire, ok: number[] = [];
+  for (let i = 0; i < W * H; i++) if (sh[i] && Math.hypot(i % W - f.x, Math.floor(i / W) - f.y) < 15) ok.push(i);
+  if (!ok.length) return bathSpot(s);
+  const i = ok[Math.floor(rnd(s) * ok.length)];
+  return { x: i % W + 0.5, y: Math.floor(i / W) + 0.5 };
+}
 export function chooseTask(s: State, p: Person, live: boolean) {
   const a = ageOf(p, s.now), now = s.now;
   const light = isLight(now);
@@ -163,7 +171,9 @@ export function chooseTask(s: State, p: Person, live: boolean) {
         const calm = u < 0.5 ? 1 : 0.3, temp = temperature(s), shore = bathSpot(s);
         const wp = (0.3 + stat(p, 'nyfikenhet', now) / 15) * calm;
         const wb = temp >= 15 && shore ? clamp((temp - 14) / 8, 0, 1.2) * calm : 0;
-        const r = rnd(s) * (wv + wh + wsoc + wp + wb);
+        // sitta vid stranden och se ut över vattnet: lugnt, året om, mest för den som inte är så sällskaplig
+        const ws = shore ? (0.2 + (20 - stat(p, 'vanlighet', now)) / 60) * calm : 0;
+        const r = rnd(s) * (wv + wh + wsoc + wp + wb + ws);
         if (r < wv) set('vila', lazy > 0.5 ? 'Har det bra och tar det lugnt' : 'Tar en paus');
         else if (r < wv + wh) set('hantverk', u < 0.25 ? 'Byn har det gott ställt, det finns tid för hantverk' : 'Tycker om att göra handarbete');
         else if (r < wv + wh + wsoc) set('samtal', 'Vill umgås');
@@ -172,7 +182,8 @@ export function chooseTask(s: State, p: Person, live: boolean) {
           const far = 4 + (stat(p, 'nyfikenhet', now) + stat(p, 'mod', now)) / 40 * 14;
           set('promenad', far > 12 ? 'Är nyfiken och vill se vad som finns längre bort' : 'Vill sträcka på benen');
           spot = walkSpot(s, far); dur = (60 + rnd(s) * 90) * 60 * SEC;
-        } else { set('bada', `Det är varmt (${Math.round(temp)} grader) och skönt att bada`); spot = shore; dur = (30 + rnd(s) * 30) * 60 * SEC; }
+        } else if (r < wv + wh + wsoc + wp + wb) { set('bada', `Det är varmt (${Math.round(temp)} grader) och skönt att bada`); spot = shore; dur = (30 + rnd(s) * 30) * 60 * SEC; }
+        else { set('strand', ai === 0 ? 'Vill se ut över isen en stund' : 'Vill sitta vid vattnet och se ut över sjön'); spot = strandSpot(s); dur = (30 + rnd(s) * 60) * 60 * SEC; }
       }
     }
   } else {

@@ -11,10 +11,10 @@ import { GIFT } from './fynd';
 // det som tas utan att hämtas tas ur de sämsta stackarna först.
 // Lagerplatserna (zoner) görs större, mindre och nya av invånarna själva. Två eller fler sorteras: maten för sig och
 // material för sig, och den viktigaste ligger närmast elden.
-export const FOOD = ['fisk', 'kott', 'svamp', 'bar']; // i den ordning de äts: det som förstörs fortast först
-export const STACK: Record<string, number> = { bar: 25, kott: 25, fisk: 25, svamp: 25, ved: 25, grenar: 50, pinnar: 50, torrgras: 50, kol: 25, flinta: 10, gniststen: 10, yxa: 1, fiskespjut: 1 };
+export const FOOD = ['fisk', 'kott', 'svamp', 'bar', 'rotter']; // i den ordning de äts: det som förstörs fortast först
+export const STACK: Record<string, number> = { bar: 25, rotter: 25, kott: 25, fisk: 25, svamp: 25, ved: 25, grenar: 50, pinnar: 50, torrgras: 50, kol: 25, flinta: 10, gniststen: 10, yxa: 1, fiskespjut: 1 };
 export const STACK_ORDER = Object.keys(STACK);
-export const STACK_NAMES: Record<string, string> = { bar: 'Bär och rötter', kott: 'Kött', fisk: 'Fisk', svamp: 'Svamp', ved: 'Ved', grenar: 'Grenar', pinnar: 'Små pinnar', torrgras: 'Torrt gräs', kol: 'Kol', flinta: 'Flinta', gniststen: 'Gniststen', yxa: 'Flintyxa', fiskespjut: 'Fiskespjut' };
+export const STACK_NAMES: Record<string, string> = { bar: 'Bär', rotter: 'Rötter', kott: 'Kött', fisk: 'Fisk', svamp: 'Svamp', ved: 'Ved', grenar: 'Grenar', pinnar: 'Små pinnar', torrgras: 'Torrt gräs', kol: 'Kol', flinta: 'Flinta', gniststen: 'Gniststen', yxa: 'Flintyxa', fiskespjut: 'Fiskespjut' };
 // mappar i listan över allt byn äger
 export const FOLDERS: { namn: string; k: string[] }[] = [
   { namn: 'Mat', k: FOOD.slice().reverse() },
@@ -188,7 +188,7 @@ export const pilesNeeded = (s: State) => pilesOf(s).filter(p => p.stored).length
 // Skicket sjunker varje timme. Mat ruttnar (fisk fortast). Ved och grenar faller till sist sönder till småpinnar,
 // pinnar och gräs multnar bort, redskap slits sakta även när de ligger still. Sten slits inte.
 // Utanför lagret slits allt fortare, under tak långsammare.
-const FOOD_WEAR: Record<string, number> = { fisk: 2, kott: 1.2, svamp: 1, bar: 0.7 };
+const FOOD_WEAR: Record<string, number> = { fisk: 2, kott: 1.2, svamp: 1, bar: 0.7, rotter: 0.35 };
 const WEAR_H: Record<string, number> = { ved: 0.0004, grenar: 0.0006, pinnar: 0.0008, torrgras: 0.0015, yxa: 0.0004, fiskespjut: 0.001 };
 const INTO: Record<string, string> = { ved: 'pinnar', grenar: 'pinnar' };
 const PER_UNIT: Record<string, number> = { ved: 2, grenar: 1 }; // en ved blir två småpinnar
@@ -269,6 +269,8 @@ function newZone(s: State) {
 }
 
 // ---------- bära ----------
+// hur stor del av insamlingen som är rötter, per årstid (istid, vår, sommar, höst): bär finns mest på sommaren och hösten
+export const ROOT_SHARE = [0.85, 0.6, 0.2, 0.35];
 // det en uppgift ger: bär från insamling, kött från jakt, fisk från fiske, grenar från vedplockning, ved från huggning
 export const carryKind = (act: Act) => act === 'ved' ? 'grenar' : act === 'hugga' || act === 'elda' ? 'ved' : act === 'jakt' ? 'kott' : act === 'fiske' ? 'fisk' : 'bar';
 // vart bördan ska: till en stack av det man mest bär

@@ -3,12 +3,13 @@ import '@pixi/unsafe-eval';
 import {
   State, Person, T, W, H, DAY, HOUR, STATS, STAT_NAMES, SKILLS, SKILL_NAMES, AGES, ACT_NAMES, taskName, TalkEvent, LogEntry,
   createState, step, getMap, living, alive, ageOf, byId, relKey, moodOf, ageIndex, ageDay, yearNo, lightLevel, isLight,
-  foodDays, timeLabel, temperature, serialize, compact, stat, migrate, hearthOf, igniterOf, fireHeat, heatRadius, fireWant, emberOn,
+  timeLabel, temperature, serialize, compact, stat, migrate, hearthOf, igniterOf, fireHeat, heatRadius, fireWant, emberOn,
   ITEM_NAMES, FireLog, coverOf, groundOf, SEDER, SED_INFO, Sed, influence, duty, habitShare, habitTotal, Act,
   richness, stoneDist, Kind, KUNSKAP_NAMES, describe, Lardom, STUBBE_LIV,
   zonesOf, zoneAt, pilesOf, inZone, STACK_NAMES, amountOf, capacity, load, carryKind, Pile, OUT_WEAR, condOf, FOLDERS, STACK,
 } from './sim';
 import { HIGH, BAR, FOREST } from './sim/vag';
+import { hasIcon, iconCanvas, iconImg } from './ikoner';
 
 const TS = 16; // pixlar per ruta i världen
 const SAVE_KEY = 'samhalle-save-v1';
@@ -139,13 +140,14 @@ const app = new PIXI.Application({ background: 0x1d2420, antialias: true, resolu
 const world = new PIXI.Container();
 const terrainG = new PIXI.Graphics();
 const structG = new PIXI.Graphics();
+const pileLayer = new PIXI.Container();
 const peopleG = new PIXI.Graphics();
 const bubbleG = new PIXI.Graphics();
 const nightG = new PIXI.Graphics();
 const glowG = new PIXI.Graphics();
 glowG.blendMode = PIXI.BLEND_MODES.ADD;
 const labels = new PIXI.Container();
-world.addChild(terrainG, structG, peopleG, bubbleG, nightG, glowG, labels);
+world.addChild(terrainG, structG, pileLayer, peopleG, bubbleG, nightG, glowG, labels);
 app.stage.addChild(world);
 const nameStyle = new PIXI.TextStyle({ fontFamily: 'Alegreya Sans, system-ui, sans-serif', fontSize: 22, fill: 0xffffff, stroke: 0x111111, strokeThickness: 5, fontWeight: '700' });
 
@@ -218,22 +220,22 @@ function drawPile(pl: Pile) {
   const x0 = pl.x * TS, y0 = pl.y * TS, f = Math.min(1, pl.n / pl.max), g = structG, c = condOf(pl);
   // liten stapel för skicket längst ner i rutan
   g.beginFill(0x161210, 0.7).drawRect(x0 + 2, y0 + 13.5, 12, 2).endFill().beginFill(condCol(c)).drawRect(x0 + 2, y0 + 13.5, 12 * Math.max(0, Math.min(1, c)), 2).endFill();
-  const n = pl.max === 1 ? 1 : Math.max(1, Math.round(f * 6));
-  const spot = (i: number) => ({ x: x0 + 3 + (i % 3) * 4, y: y0 + 11 - Math.floor(i / 3) * 4 });
-  for (let i = 0; i < n; i++) {
-    const { x, y } = spot(i);
-    if (pl.k === 'bar') g.beginFill(i % 2 ? 0xa8463a : 0xc58b3e).drawRect(x, y, 4, 3).endFill();
-    else if (pl.k === 'kott') g.beginFill(0x8e2f2a).drawRoundedRect(x, y, 4, 3, 1).endFill().beginFill(0xe8d8c0).drawRect(x + 3, y + 1, 1.5, 1).endFill();
-    else if (pl.k === 'fisk') g.beginFill(0x9fb4bf).drawEllipse(x + 2, y + 1.5, 2.2, 1.1).endFill().beginFill(0x9fb4bf).drawPolygon([x + 4, y + 1.5, x + 5.5, y + 0.3, x + 5.5, y + 2.7]).endFill();
-    else if (pl.k === 'svamp') g.beginFill(0xe7dcc4).drawRect(x + 1.5, y + 1.5, 1, 2).endFill().beginFill(0x9a6a3a).drawEllipse(x + 2, y + 1.3, 2, 1.2).endFill();
-    else if (pl.k === 'ved') g.beginFill(0x6f4a2a).drawRoundedRect(x - 1, y, 6, 3, 1.5).endFill().beginFill(0xc9a46a).drawCircle(x - 0.5, y + 1.5, 1).endFill();
-    else if (pl.k === 'grenar' || pl.k === 'pinnar') g.lineStyle(1, pl.k === 'grenar' ? 0x7a5a36 : 0x9a7a4e).moveTo(x - 1, y + 3).lineTo(x + 5, y).moveTo(x, y).lineTo(x + 4, y + 3).lineStyle(0);
-    else if (pl.k === 'torrgras') g.lineStyle(1, 0xd8c070).moveTo(x, y + 3).lineTo(x - 1, y - 1).moveTo(x + 2, y + 3).lineTo(x + 2, y - 2).moveTo(x + 4, y + 3).lineTo(x + 5, y - 1).lineStyle(0);
-    else if (pl.k === 'kol') g.beginFill(0x24201c).drawRect(x, y, 3, 3).endFill();
-    else if (pl.k === 'flinta' || pl.k === 'gniststen') g.beginFill(pl.k === 'flinta' ? 0x8f9396 : 0x55595c).drawPolygon([x, y + 3, x + 2, y, x + 4, y + 3]).endFill();
-    else if (pl.k === 'yxa') g.lineStyle(1.5, 0x7a5a36).moveTo(x0 + 4, y0 + 13).lineTo(x0 + 10, y0 + 4).lineStyle(0).beginFill(0x8f9396).drawPolygon([x0 + 8, y0 + 2, x0 + 13, y0 + 4, x0 + 10, y0 + 7]).endFill();
-    else if (pl.k === 'fiskespjut') g.lineStyle(1.2, 0x8a6a40).moveTo(x0 + 2, y0 + 14).lineTo(x0 + 14, y0 + 2).lineStyle(0);
-  }
+  // ikoner: ju fullare stacken är desto fler, redskap som en större bild
+  if (pl.max === 1) { pileSprite(pl.k, x0 + 2, y0, 1.5); return; }
+  const n = Math.max(1, Math.min(4, Math.ceil(f * 4)));
+  for (const [dx, dy] of PILE_LAYOUT[n - 1]) pileSprite(pl.k, x0 + dx, y0 + dy, 1);
+}
+// var ikonerna ligger i rutan, bakersta först
+const PILE_LAYOUT = [[[4, 5]], [[1, 5], [7, 5]], [[4, 1], [1, 5], [7, 5]], [[2, 0], [6, 1], [0, 5], [8, 5]]];
+const textures: Record<string, PIXI.Texture> = {};
+let spriteN = 0;
+function pileSprite(k: string, x: number, y: number, sc: number) {
+  if (!hasIcon(k)) return;
+  textures[k] ??= PIXI.Texture.from(iconCanvas(k), { scaleMode: PIXI.SCALE_MODES.NEAREST });
+  let sp = pileLayer.children[spriteN] as PIXI.Sprite | undefined;
+  if (!sp) { sp = new PIXI.Sprite(); pileLayer.addChild(sp); }
+  spriteN++;
+  sp.texture = textures[k]; sp.position.set(x, y); sp.scale.set(sc); sp.visible = true;
 }
 function drawStructures(t: number) {
   const m = getMap(s.seed), ai = ageIndex(s);
@@ -244,7 +246,9 @@ function drawStructures(t: number) {
     const on = tab === 'lager' && lagerNr === i;
     structG.beginFill(0x5b4a35, 0.22).lineStyle(1, on ? 0xffffff : 0x5b4a35, on ? 0.9 : 0.5).drawRoundedRect(z.x * TS + 0.5, z.y * TS + 0.5, z.w * TS - 1, z.h * TS - 1, 3).endFill().lineStyle(0);
   });
+  spriteN = 0;
   for (const pl of pilesOf(s)) drawPile(pl);
+  for (let i = spriteN; i < pileLayer.children.length; i++) pileLayer.children[i].visible = false;
   // stubbar: bleknar medan de ruttnar bort
   for (const k of s.stubbar ?? []) {
     const a = 1 - (s.now - k.t) / STUBBE_LIV, x = k.x * TS + TS * 0.65, y = k.y * TS + TS * 0.6;
@@ -541,13 +545,6 @@ function renderPanel(force = false) {
     if (b.dataset.tab === 'person') b.textContent = tab === 'eld' ? 'Elden' : tab === 'lager' ? 'Lagret' : tab === 'hog' ? 'Högen' : 'Person';
   }
   const ppl = living(s);
-  $('sPop').textContent = String(ppl.length);
-  const fd = foodDays(s);
-  $('sFood').textContent = `${Math.round(s.food)}`;
-  $('sFoodDays').textContent = `räcker ca ${fd >= 10 ? Math.round(fd) : fd.toFixed(1).replace('.', ',')} dygn`;
-  $('sWood').textContent = `${Math.round(s.wood)}`;
-  $('sGren').textContent = `${Math.round(s.items.grenar ?? 0)} grenar`;
-  $('sFire').textContent = s.fire.lit ? 'brinner' : emberOn(s) ? 'glöder' : 'släckt';
   renderOwned();
   const box = $('panelBody');
   if (!force && (busy || performance.now() - lastPointer < 800)) return;
@@ -631,7 +628,7 @@ function storeHtml() {
   const what = !z.slag ? '' : z.slag === 'mat' ? 'Här läggs maten. ' : 'Här läggs material och redskap. ';
   return `
     <div class="phead"><div><h2>${esc(z.namn ?? 'Lagret')}</h2><p class="muted">${what}Byn gör lagerplatsen större när den blir full och mindre när den står tom.${zs.length > 1 ? ` Prioritet ${z.prio ?? 0} av ${zs.length}.` : ''}</p></div></div>
-    <h3>Stackar</h3>${ps.length ? `<dl class="kv stk">${ps.map(p => `<dt>${STACK_NAMES[p.k]}${p.max === 1 ? '' : ` ${fmtN(p.n)} st`}</dt><dd>${condBar(condOf(p))}<span>${Math.round(condOf(p) * 100)} %</span></dd>`).join('')}</dl>` : '<p class="muted">Lagret är tomt.</p>'}
+    <h3>Stackar</h3>${ps.length ? `<dl class="kv stk">${ps.map(p => `<dt>${iconImg(p.k)}${STACK_NAMES[p.k]}${p.max === 1 ? '' : ` ${fmtN(p.n)} st`}</dt><dd>${condBar(condOf(p))}<span>${Math.round(condOf(p) * 100)} %</span></dd>`).join('')}</dl>` : '<p class="muted">Lagret är tomt.</p>'}
     <h3>På väg med saker</h3>${bar.length ? `<ul class="rels">${bar.map(p => `<li>${pLink(p)}<span class="muted">${esc(carryTxt(p))}</span></li>`).join('')}</ul>` : '<p class="muted">Ingen bär något just nu.</p>'}`;
 }
 // en hög utanför lagerplatserna
@@ -641,7 +638,7 @@ function heapHtml() {
   const who = living(s).filter(p => p.task?.act === 'bara' && Math.floor(p.task.tx) === hogAt.x && Math.floor(p.task.ty) === hogAt.y);
   return `
     <div class="phead"><div><h2>${mark ? 'På marken' : 'Bredvid lagret'}</h2><p class="muted">${mark ? 'Lades ner av någon som kallades bort till något annat.' : 'Fick inte plats i lagret.'} Slits ${OUT_WEAR} gånger fortare än i lagret.</p></div></div>
-    <dl class="kv">${ps.map(p => `<dt>${STACK_NAMES[p.k]}${p.max === 1 ? '' : ` ${fmtN(p.n)} st`}</dt><dd>${condBar(condOf(p))}<span>${Math.round(condOf(p) * 100)} %</span></dd>`).join('')}</dl>
+    <dl class="kv">${ps.map(p => `<dt>${iconImg(p.k)}${STACK_NAMES[p.k]}${p.max === 1 ? '' : ` ${fmtN(p.n)} st`}</dt><dd>${condBar(condOf(p))}<span>${Math.round(condOf(p) * 100)} %</span></dd>`).join('')}</dl>
     ${who.length ? `<p class="muted">${who.map(p => pLink(p)).join(', ')} är på väg för att bära in det.</p>` : ''}`;
 }
 // listan till vänster över allt byn äger, i mappar som kan fällas ihop
@@ -652,7 +649,7 @@ function renderOwned() {
   const ute = pilesOf(s).filter(p => !p.stored);
   const html = `<h4>Byn äger</h4>${rows.map(({ f, ks }) => {
     const sum = f.namn === 'Mat' || f.namn === 'Bränsle' ? ` <span class="n">${Math.round(ks.reduce((a, r) => a + r.n, 0))}</span>` : '';
-    return `<button type="button" class="fold" data-f="${f.namn}" aria-expanded="${!closed.has(f.namn)}">${closed.has(f.namn) ? '▸' : '▾'} ${f.namn}${sum}</button>${closed.has(f.namn) ? '' : `<ul>${ks.map(r => `<li><span>${STACK_NAMES[r.k]}</span><span class="n">${STACK[r.k] === 1 ? Math.ceil(r.n - 1e-9) : Math.round(r.n)}</span></li>`).join('')}</ul>`}`;
+    return `<button type="button" class="fold" data-f="${f.namn}" aria-expanded="${!closed.has(f.namn)}">${closed.has(f.namn) ? '▸' : '▾'} ${f.namn}${sum}</button>${closed.has(f.namn) ? '' : `<ul>${ks.map(r => `<li><span>${iconImg(r.k)}${STACK_NAMES[r.k]}</span><span class="n">${STACK[r.k] === 1 ? Math.ceil(r.n - 1e-9) : Math.round(r.n)}</span></li>`).join('')}</ul>`}`;
   }).join('') || '<p>Inget ännu</p>'}${ute.length ? `<p class="ute">${ute.length} ${ute.length === 1 ? 'hög' : 'högar'} på marken</p>` : ''}`;
   if (html === ownedKey) return;
   ownedKey = html; $('owned').innerHTML = html;

@@ -8,7 +8,7 @@ import { share } from './minne';
 export interface TalkEvent { a: number; b: number; kind: string; good: boolean; t: number }
 export const SOCIAL: Act[] = ['samtal', 'beratta', 'hantverk', 'vakt', 'leka', 'varma'];
 // uppgifter som avbryts när dag blir natt eller natt blir dag
-export const FLIP: Act[] = ['samla', 'jakt', 'fiske', 'ved', 'leka', 'samtal', 'beratta', 'hantverk', 'vakt', 'vila', 'promenad', 'bada'];
+export const FLIP: Act[] = ['samla', 'jakt', 'fiske', 'ved', 'leka', 'samtal', 'beratta', 'hantverk', 'vakt', 'vila', 'promenad', 'bada', 'strand'];
 export function converse(s: State, a: Person, others: Person[], events?: TalkEvent[]) {
   const now = s.now;
   if (!others.length) return;

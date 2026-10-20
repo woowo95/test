@@ -25,6 +25,6 @@ Björn programmerar inte; Claude skriver all kod. Svara på svenska.
 - `npm test`: tre byar i 90 dygn utan grafik, en rad per by, jämfört med `test/facit.json`. Visar bara det som ändrats, alltid om en by dött ut och återgrundats, och vakter som larmar om något omöjligt händer (NaN, negativa förråd, folk i vattnet).
 - `npm run facit`: spara nytt facit när en ändring är avsiktlig.
 - `npm run balans -- [antal] [dygn]`: många byar parallellt, median/sämst/bäst. Använd vid balansering.
-- `npm run scenario -- [namn]`: scenariotester (glanta, ingen-yxa, yxa, vinter-slocknad, knapphet, svamp, flinta, kunskap, temperatur, befolkning, fiskespjut, bostad, fritid, lager, slitage, lagerplatser) som kontrollerar att det som ska hända händer. Lägg till ett scenario när ett nytt system byggs.
+- `npm run scenario -- [namn]`: scenariotester (glanta, ingen-yxa, yxa, vinter-slocknad, knapphet, svamp, flinta, kunskap, temperatur, befolkning, fiskespjut, bostad, fritid, lager, slitage, lagerplatser, rotter) som kontrollerar att det som ska hända händer. Lägg till ett scenario när ett nytt system byggs.
 - `npm run detaljer -- [by]`: den långa utskriften, bara när något behöver undersökas.
 - Ta skärmbilder bara när utseendet ändrats; kontrollera annars text på sidan.
