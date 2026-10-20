@@ -32,7 +32,7 @@ export function startForest(seed: number) {
 }
 export const isForest = (s: State, i: number) => groundOf(s).trees[i] >= FOREST;
 
-// rutor där inget får växa: elden, hyddorna och förrådet
+// rutor där inget får växa: elden och förrådet
 const builtCache = new Map<number, Uint8Array>();
 function built(seed: number) {
   let b = builtCache.get(seed);
@@ -40,7 +40,6 @@ function built(seed: number) {
   const m = getMap(seed); b = new Uint8Array(W * H);
   const mark = (x: number, y: number, r: number) => { for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) { const xx = x + dx, yy = y + dy; if (xx >= 0 && yy >= 0 && xx < W && yy < H) b![yy * W + xx] = 1; } };
   mark(m.fire.x, m.fire.y, 1);
-  for (const h of m.huts) mark(h.x + 1, h.y + 1, 1);
   mark(m.stock.x + 1, m.stock.y, 1);
   builtCache.set(seed, b);
   return b;

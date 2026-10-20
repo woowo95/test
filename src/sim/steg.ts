@@ -1,9 +1,11 @@
+import { makeSpear, wearSpear } from './redskap';
 import { foodDays, workRate } from './ekonomi';
-import { GIFT, TRY_SEC, eatPoison, growFynd, handFish, newCrop, packFynd, pickMushrooms, richness, takeFrom } from './fynd';
-import { COLD, addFuel, addItems, canLight, fireWant, forageItems, fuelStock, hearthOf, heatAt, igniterOf, stepFire, takeCoal, takeFuel, tryLight } from './eld';
+import { GIFT, TRY_SEC, eatPoison, growFynd, handFish, packFynd, pickMushrooms, richness, takeFrom } from './fynd';
+import { coldOf, temperature } from './vader';
+import { addFuel, addItems, canLight, fireWant, forageItems, fuelStock, hearthOf, heatAt, igniterOf, stepFire, takeCoal, takeFuel, tryLight } from './eld';
 import { ageOf, alive, living, log, stat, think } from './folk';
 import { getMap } from './karta';
-import { birth, die, emigrate } from './liv';
+import { birth, birthWish, die, regulate } from './liv';
 import { WEAR, groundOf, growGround, packGround, tileOf } from './mark';
 import { FLIP, SOCIAL, TalkEvent, converse } from './samtal';
 import { HABIT_FADE, sedEvent, stepSeder, updateTags } from './seder';
@@ -25,7 +27,6 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
     s.lastAgeIdx = ai;
     const msg = ['Istiden har börjat. Sjön fryser och maten blir knapp.', 'Vårtiden har kommit. Isen släpper och marken tinar.', 'Sommartiden är här. Bär och fisk finns i överflöd.', 'Hösttiden har börjat. Nu gäller det att samla inför istiden.'][ai];
     log(s, msg, 'world');
-    newCrop(s, ai);
   }
   const ppl = living(s);
   const light = isLight(now);
@@ -34,7 +35,7 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
   s.food = Math.max(0, s.food * rot);
   if (s.items[GIFT]) s.items[GIFT] *= rot;
   stepFire(s, dtSec, live, ppl);
-  const fh = hearthOf(s.fire), coldRate = COLD[ai][light ? 0 : 1];
+  const fh = hearthOf(s.fire), coldRate = coldOf(temperature(s));
   const learn = 1 + 0.1 * s.seder.v.nyfikenhet; // en nyfiken by lär sig snabbare
   if (Math.floor(now / HOUR) !== Math.floor((now - dtSec * SEC) / HOUR)) {
     stepSeder(s); updateTags(s);
@@ -49,10 +50,9 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
     const working = p.task && isWork(p.task.act) && p.task.phase === 'do';
     const resting = p.task && (p.task.act === 'vila' || p.task.act === 'sova' || p.task.act === 'samtal' || p.task.act === 'hantverk' || p.task.act === 'varma');
     p.rest = clamp(p.rest + dtSec / 3600 * (resting ? 0.09 : working ? -0.06 : -0.03), 0, 1);
-    // värme: elden värmer i ett område, hyddan skyddar mot halva kylan
+    // värme: elden värmer i ett område; ingen bostad finns ännu
     const heat = heatAt(s, p.x, p.y);
-    const inHut = p.task?.phase === 'do' && (p.task.act === 'sova' || p.task.act === 'vila');
-    p.warm = clamp(p.warm + dtSec / 3600 * (heat * 2 - coldRate * (inHut ? 0.5 : 1) + (coldRate === 0 ? 0.5 : 0)), 0, 1);
+    p.warm = clamp(p.warm + dtSec / 3600 * (heat * 2 - coldRate + (coldRate === 0 ? 0.5 : 0)), 0, 1);
     if (heat > 0.15) {
       think(p, 'Värms av elden', fh.comfort, now, HOUR);
       p.rest = clamp(p.rest + dtSec / 3600 * fh.comfort * heat, 0, 1); // avslappning vid elden
@@ -83,14 +83,14 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
     if (p.pregnantSince !== undefined) { if (now - p.pregnantSince > 0.75 * DAY) birth(s, p); }
     else if (p.sex === 'k' && p.partner !== undefined && a >= 17 && a <= 43 && (!p.lastBirth || now - p.lastBirth > 1.6 * DAY)) {
       const pop = ppl.length;
-      const f = (pop >= 26 ? 0.15 : 1) * clamp(foodDays(s) / 4, 0.15, 1) * (1 + 0.2 * s.seder.v.barn);
+      const f = birthWish(pop) * clamp(foodDays(s) / 4, 0.15, 1) * (1 + 0.2 * s.seder.v.barn);
       if (chance(s, 0.3 * f / 86400, dtSec)) { p.pregnantSince = now; (p as any)._by = p.partner; }
     }
     // uppgift
     const t = p.task;
     const phaseFlip = t && t.dark !== !light && FLIP.includes(t.act); // dag blev natt eller tvärtom
     // ett träd som fällts färdigt eller en yxa som gjorts klar
-    if (t && t.phase === 'do' && t.until < now) { if (t.act === 'falla') fellTree(s, p, t.tx, t.ty); else if (t.act === 'yxa') makeAxe(s, p); }
+    if (t && t.phase === 'do' && t.until < now) { if (t.act === 'falla') fellTree(s, p, t.tx, t.ty); else if (t.act === 'yxa') makeAxe(s, p); else if (t.act === 'spjut') makeSpear(s, p); }
     const lightDone = t?.act === 'tanda' && (s.fire.lit || !canLight(s));
     const mustGo = t && p.toa < 0.08 && t.act !== 'toa' && a >= 3; // nöden avbryter det man håller på med
     if (!t || (t.until < now && t.phase !== 'back') || ((phaseFlip || mustGo) && t.phase !== 'back') || lightDone) {
@@ -156,11 +156,16 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
       // den som arbetar ser hur mycket som finns i området och minns det
       if ((tk.act === 'samla' || tk.act === 'jakt' || tk.act === 'fiske') && (rich < 0.08 || chance(s, 1 / 1800, dtSec))) lookAround(s, p, tk.tx, tk.ty);
       if (tk.act === 'fiske') {
-        // fiske med händerna: ett försök i taget
+        // fiske med händerna eller spjut: ett försök i taget
         tk.prog = (tk.prog ?? 0) + dtSec;
         const ageF = (a < 14 ? 0.3 : a > 60 ? 0.6 : 1) * (p.sickUntil && p.sickUntil > now ? 0.3 : 1);
         let fish = 0;
-        while (tk.prog >= TRY_SEC) { tk.prog -= TRY_SEC; fish += handFish(s, p, tk.tx, tk.ty, ageF); }
+        while (tk.prog >= TRY_SEC) {
+          tk.prog -= TRY_SEC;
+          const spear = tk.tool === 'fiskespjut';
+          fish += handFish(s, p, tk.tx, tk.ty, ageF, spear);
+          if (spear) wearSpear(s, p);
+        }
         if (fish) { if (live) tk.carry += fish; else deliver(s, 'fiske', fish); }
       }
       if (tk.act === 'hugga') {
@@ -192,7 +197,7 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
       const per = igniterOf(s)!.minutes * 60;
       while (s.fire.tryProg >= per && canLight(s) && !s.fire.lit) { s.fire.tryProg -= per; if (tryLight(s, p)) { p.task = undefined; break; } }
     }
-    if (tk.phase === 'do' && (tk.act === 'hantverk' || tk.act === 'yxa')) p.skill.hantverk = clamp(p.skill.hantverk + dtSec / 3600 * 0.1 * learn * (1 - p.skill.hantverk / 21), 0, 20);
+    if (tk.phase === 'do' && (tk.act === 'hantverk' || tk.act === 'yxa' || tk.act === 'spjut')) p.skill.hantverk = clamp(p.skill.hantverk + dtSec / 3600 * 0.1 * learn * (1 - p.skill.hantverk / 21), 0, 20);
     if (tk.phase === 'do' && SOCIAL.includes(tk.act)) social.push(p);
     p.thoughts = p.thoughts.filter(x => x.until > now);
   }
@@ -211,8 +216,8 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
     const k = Math.exp(-0.04 * (600 / 86400));
     for (const key in s.rels) { const r = s.rels[key]; r.op *= k; r.rom *= k; }
   }
-  if (living(s).length > 30) emigrate(s);
-  if (living(s).length === 0 && !s.log.some(l => l.text.startsWith('Byn är tom'))) log(s, 'Byn är tom. Ingen finns kvar vid elden.', 'world');
+  if (living(s).length === 0) log(s, 'Byn är tom. Ingen finns kvar vid elden.', 'world');
+  regulate(s, dtSec);
   for (const k in s.items) if (s.items[k] < 1e-6) delete s.items[k];
 }
 

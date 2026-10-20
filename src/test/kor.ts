@@ -4,7 +4,8 @@ import { createState, step, living, DAY, ageIndex, moodOf, serialize, getMap, fu
 export const START = Date.parse('2026-10-20T08:00:00+02:00');
 
 export interface Nyckeltal {
-  pop: number; fodda: number; doda: number; svalt: number; kyla: number;
+  pop: number; atergrundad: number; // gånger alla dog eller flyttade och en vandrare grundade byn på nytt
+  invandrade: number; utvandrade: number; fodda: number; doda: number; svalt: number; kyla: number;
   hunger: number; // timmar då någon i byn var mycket hungrig
   humor: number; // snitthumör, mätt varje timme
   vintermat: number; vinterved: number; // lägsta förråd när en istid tar slut
@@ -48,6 +49,9 @@ export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => voi
   const dod = s.people.filter(p => p.died !== undefined);
   const n: Nyckeltal = {
     pop: living(s).length,
+    atergrundad: s.stat?.atergrundad ?? 0,
+    invandrade: s.stat?.invandrade ?? 0,
+    utvandrade: s.stat?.utvandrade ?? 0,
     fodda: s.log.filter(l => l.kind === 'birth').length,
     doda: dod.length,
     svalt: dod.filter(p => p.cause === 'av svält').length,
@@ -66,5 +70,5 @@ export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => voi
 
 export function rad(r: Resultat) {
   const n = r.n;
-  return `by ${String(r.seed).padEnd(5)} pop ${n.pop}, födda ${n.fodda}, döda ${n.doda} (svält ${n.svalt}, kyla ${n.kyla}), hunger ${n.hunger} h, humör ${n.humor.toFixed(2)}, vintermat ${n.vintermat}, vinterved ${n.vinterved}, eld ${n.eld} % | ${(n.ms / 1000).toFixed(1)} s, ${n.kb} KB`;
+  return `by ${String(r.seed).padEnd(5)} pop ${n.pop}${n.atergrundad ? ` ÅTERGRUNDAD ${n.atergrundad} GGR` : ''}, in ${n.invandrade}, ut ${n.utvandrade}, födda ${n.fodda}, döda ${n.doda} (svält ${n.svalt}, kyla ${n.kyla}), hunger ${n.hunger} h, humör ${n.humor.toFixed(2)}, vintermat ${n.vintermat}, vinterved ${n.vinterved}, eld ${n.eld} % | ${(n.ms / 1000).toFixed(1)} s, ${n.kb} KB`;
 }

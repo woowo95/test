@@ -28,22 +28,23 @@ export const SKILL_NAMES: Record<Skill, string> = {
 
 export const AGES = ['Istid', 'Vårtid', 'Sommartid', 'Hösttid'];
 
-export type Act = 'samla' | 'jakt' | 'fiske' | 'ved' | 'leka' | 'vila' | 'samtal' | 'beratta' | 'hantverk' | 'vakt' | 'sova' | 'elda' | 'tanda' | 'varma' | 'toa' | 'kol' | 'falla' | 'hugga' | 'yxa';
+export type Act = 'samla' | 'jakt' | 'fiske' | 'ved' | 'leka' | 'vila' | 'samtal' | 'beratta' | 'hantverk' | 'vakt' | 'sova' | 'elda' | 'tanda' | 'varma' | 'toa' | 'kol' | 'falla' | 'hugga' | 'yxa' | 'spjut';
 export const ACT_NAMES: Record<Act, string> = {
   samla: 'Samlar bär och rötter', jakt: 'Jagar', fiske: 'Fiskar med händerna', ved: 'Samlar grenar', leka: 'Leker',
   vila: 'Vilar', samtal: 'Samtalar vid elden', beratta: 'Berättar vid elden', hantverk: 'Gör handarbete',
   vakt: 'Håller vakt', sova: 'Sover', elda: 'Lägger ved på elden', tanda: 'Försöker tända elden', varma: 'Värmer sig vid elden',
   toa: 'Går avsides på toa', kol: 'Hämtar kol ur den slocknade elden',
-  falla: 'Fäller ett träd med yxa', hugga: 'Hugger ved av ett fällt träd', yxa: 'Gör en yxa av en pinne och flinta',
+  falla: 'Fäller ett träd med yxa', hugga: 'Hugger ved av ett fällt träd', yxa: 'Gör en yxa av en pinne och flinta', spjut: 'Täljer ett fiskespjut',
 };
 export const WORK: Act[] = ['samla', 'jakt', 'fiske', 'ved'];
 export const GREN = 0.4; // en gren ger lika mycket bränsle som 0,4 ved: grenar brinner fort
 export const AXE_WORK: Act[] = ['falla', 'hugga']; // arbete med yxa, räknas som vedarbete
 export const isWork = (a: Act) => WORK.includes(a) || AXE_WORK.includes(a);
+export const taskName = (t: Task) => t.act === 'fiske' && t.tool === 'fiskespjut' ? 'Fiskar med spjut' : ACT_NAMES[t.act];
 
 export interface Thought { text: string; v: number; until: number }
 // why = varför personen valde uppgiften, dark = påbörjad under mörk tid
-export interface Task { act: Act; phase: 'go' | 'do' | 'back'; tx: number; ty: number; until: number; carry: number; items?: Record<string, number>; why?: string; dark?: boolean; path?: number[]; pk?: string; ref?: number; prog?: number }
+export interface Task { act: Act; phase: 'go' | 'do' | 'back'; tx: number; ty: number; until: number; carry: number; items?: Record<string, number>; why?: string; dark?: boolean; path?: number[]; pk?: string; ref?: number; prog?: number; tool?: string } // tool = redskap som används, t.ex. fiskespjut
 
 export interface Person {
   id: number; name: string; sex: 'm' | 'k';

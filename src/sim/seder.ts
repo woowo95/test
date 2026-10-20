@@ -80,7 +80,7 @@ export function updateTags(s: State) {
   const avg = TAGS.map(t => ppl.reduce((a, p) => a + habitShare(p, t.acts, tot.get(p)), 0) / (ppl.length || 1));
   for (const p of ppl) {
     let best: string | undefined, br = 0;
-    if (tot.get(p)! >= 24) TAGS.forEach((t, i) => {
+    if (tot.get(p)! >= 6) TAGS.forEach((t, i) => {
       const sh = habitShare(p, t.acts, tot.get(p)), keep = p.tag === t.tag, r = sh / (avg[i] || 1e-9);
       if (sh >= t.min * (keep ? 0.8 : 1) && r >= (keep ? 1.2 : 1.5) && r * (keep ? 1.3 : 1) > br) { best = t.tag; br = r * (keep ? 1.3 : 1); }
     });

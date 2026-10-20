@@ -1,7 +1,7 @@
 // Scenariotester: ställ en by i ett visst läge, kör den en stund och kontrollera att det som ska hända händer.
 // npm run scenario            kör alla
 // npm run scenario -- glanta  kör bara ett
-import { createState, step, living, groundOf, getMap, fuelStock, DAY, HOUR, W, State, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat } from '../sim';
+import { createState, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, WEEK, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, fuelStock, DAY, HOUR, W, State, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat } from '../sim';
 import { FOREST, HIGH, isSoil } from '../sim/vag';
 import { START } from './kor';
 
@@ -162,7 +162,7 @@ SCENARIER.kunskap = {
     const g = createState(32, START); g.kunskap = { svamp: 0.8 }; for (const p of g.people) delete (p.pot as Record<string, number>).minne;
     migrate(g);
     return [
-      [`de vuxna minns platser från början (${ute} personer)`, ute >= 6],
+      [`ingen minns några platser från början (${ute} personer gör det)`, ute === 0],
       [`lärdomar sprids i samtal (${hort.length} hörda, ${led2.length} i andra hand eller längre)`, hort.length > 10 && led2.length > 0],
       [`glömska (${s.stat?.glomt ?? 0} lärdomar glömda)`, (s.stat?.glomt ?? 0) > 0],
       [`bra minne glömmer långsammare (säkerhet efter tre dygn ${c1.toFixed(2)} mot ${c2.toFixed(2)})`, c1 > c2 && c2 < 0.9],
@@ -170,6 +170,83 @@ SCENARIER.kunskap = {
       [`svampkunskap sprids utan förgiftning (${kan} har lärt sig)`, kan >= 2],
       [`spelaren ser lärdomar som inte stämmer (${fel})`, fel > 0],
       ['gammal sparfil flyttas', g.kunskap === undefined && g.people.every(p => p.pot.minne > 0 && kn(p, 'svamp') === 0.8)],
+    ];
+  },
+};
+
+SCENARIER.temperatur = {
+  text: 'Temperaturen följer årstiden och solen med lite slump, och kylan beror på den',
+  kor: () => {
+    const s = createState(5, START);
+    const snitt = (fran: number, timmar: number[]) => { let v = 0, n = 0; for (let d = 0; d < 7; d++) for (const h of timmar) { v += temperature(s, fran + d * DAY + h * HOUR); n++; } return v / n; };
+    const t0 = new Date(s.founded).setHours(0, 0, 0, 0) + DAY; // midnatt efter grundandet
+    const var_ = t0, istid = t0 + 3 * WEEK, sommar = t0 + WEEK;
+    const dag = snitt(sommar, [13, 14, 15, 16]), natt = snitt(sommar, [2, 3, 4, 5]);
+    const ist = snitt(istid, [0, 6, 12, 18]), som = snitt(sommar, [0, 6, 12, 18]), vr = snitt(var_, [0, 6, 12, 18]);
+    // slumpen: samma klockslag olika dagar ger olika temperatur
+    const kl12 = Array.from({ length: 7 }, (_, d) => temperature(s, sommar + d * DAY + 12 * HOUR));
+    return [
+      [`istiden är kallast och sommaren varmast (istid ${ist.toFixed(0)}°, vår ${vr.toFixed(0)}°, sommar ${som.toFixed(0)}°)`, ist < 0 && ist < vr && vr < som && ageIndex(s, istid) === 0],
+      [`dagen är varmare än natten (${dag.toFixed(0)}° mot ${natt.toFixed(0)}°)`, dag > natt + 4],
+      [`vädret varierar (${Math.min(...kl12).toFixed(0)}° till ${Math.max(...kl12).toFixed(0)}° kl. 12)`, Math.max(...kl12) - Math.min(...kl12) > 2],
+      ['kylan växer när det blir kallare och försvinner när det är varmt', coldOf(-15) > coldOf(0) && coldOf(0) > 0 && coldOf(15) === 0],
+    ];
+  },
+};
+
+SCENARIER.befolkning = {
+  text: 'En stor by blir trång och folk flyttar, en liten by får nybyggare, och en tom by grundas på nytt',
+  kor: () => {
+    const s = createState(9, START);
+    for (const p of s.people) p.died = s.now; // alla dör på en gång
+    kor(s, 1);
+    const ny = living(s).length;
+    kor(s, 10 * 24);
+    return [
+      [`en vandrare grundar byn på nytt (${s.stat?.atergrundad ?? 0} gång)`, ny >= 1 && s.stat?.atergrundad === 1 && logg(s, 'grundade byn på nytt')],
+      [`fler nybyggare kommer till den lilla byn (${s.stat?.invandrade ?? 0} på tio dygn)`, (s.stat?.invandrade ?? 0) >= 2],
+      ['en trång by vill ha färre barn, en liten fler', birthWish(30) < 0.6 && birthWish(4) > 1 && birthWish(12) === 1],
+      ['trängsel får folk att flytta, mer om de är missnöjda', emigrationRate(10, 0.6) === 0 && emigrationRate(30, 0.65) > 0.2 && emigrationRate(30, 0.4) > emigrationRate(30, 0.65) * 3],
+      ['humöret betyder mindre i en liten by', emigrationRate(8, 0.4) < emigrationRate(26, 0.4) / 5],
+      ['att hålla nere är starkare än att höja', 1 - birthWish(36) > birthWish(0) - 1 && immigrationRate(12) === 0],
+    ];
+  },
+};
+
+SCENARIER.fiskespjut = {
+  text: 'Ett fiskespjut täljs av en pinne med flinta eller yxa, ger mer fisk än händerna och slits fort',
+  kor: () => {
+    const s = createState(4, START);
+    s.items = { grenar: 10, flinta: 1 };
+    const p = living(s).find(q => q.task === undefined || true)!;
+    makeSpear(s, p);
+    const gjort = spears(s) === 1 && s.items.flinta === 1; // flintan finns kvar
+    s.stat = { ...(s.stat ?? {}), fiskeForsok: 1 };
+    s.food = 3; // byn behöver mat
+    kor(s, 4 * 24);
+    const st = s.stat!, hand = (st.fiskeForsok ?? 0) - (st.spjutForsok ?? 0);
+    const takt = (f: number, n: number) => n ? f / n : 0;
+    return [
+      ['spjutet täljs och det vassa verktyget finns kvar', gjort],
+      [`spjutet används (${st.spjutForsok ?? 0} försök med spjut, ${hand} med händerna)`, (st.spjutForsok ?? 0) > 20],
+      [`spjut ger mer fisk per försök (${takt(st.spjutFisk ?? 0, st.spjutForsok ?? 0).toFixed(2)} mot ${takt((st.fisk ?? 0) - (st.spjutFisk ?? 0), hand).toFixed(2)})`, hand < 20 || takt(st.spjutFisk ?? 0, st.spjutForsok ?? 0) > takt((st.fisk ?? 0) - (st.spjutFisk ?? 0), hand)],
+      [`spjuten går sönder efter ${SPJUT_FORSOK} försök (${st.spjutTrasiga ?? 0} trasiga, ${st.spjutGjorda ?? 0} täljda)`, (st.spjutTrasiga ?? 0) >= 1 && (st.spjutGjorda ?? 0) >= 2],
+    ];
+  },
+};
+
+SCENARIER.bostad = {
+  text: 'En ny by har ingen bostad: man sover på marken nära elden, och synvidden följer personen',
+  kor: () => {
+    const s = createState(12, START);
+    const f = getMap(s.seed).fire;
+    let sov = 0, nara = 0;
+    kor(s, 24, s => { for (const p of living(s)) if (p.task?.act === 'sova' && p.task.phase === 'do') { sov++; if (Math.hypot(p.x - f.x - 0.5, p.y - f.y - 0.5) < 3.5) nara++; } });
+    const p = living(s)[0]; p.x = f.x + 20; p.y = f.y;
+    return [
+      ['ingen hydda finns på kartan', !('huts' in getMap(s.seed))],
+      [`de som sover ligger nära elden (${nara} av ${sov})`, sov > 0 && nara === sov],
+      ['man ser runt sig där man står, inte vid elden', sees(p, f.x + 20, f.y + 3) && !sees(p, f.x, f.y)],
     ];
   },
 };

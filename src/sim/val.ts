@@ -1,7 +1,8 @@
 import { SEASON, WORK_STAT, foodDays, woodDays } from './ekonomi';
 import { emberOn, fireWant, needTinder } from './eld';
 import { ageOf, living, stat } from './folk';
-import { HAND_FISH, Kind, flintSpot, wantsFlint } from './fynd';
+import { HAND_FISH, Kind, SPEAR_FISH, flintSpot, wantsFlint } from './fynd';
+import { freeSpears, sharpTool, wantsSpear } from './redskap';
 import { areaOf, flintArea, pickSpot, prospectFor } from './minne';
 import { getMap } from './karta';
 import { isForest, tread } from './mark';
@@ -15,12 +16,18 @@ import { Act, DAY, H, HOUR, Person, SEC, Skill, State, T, W, WORK, isWork } from
 function spotFor(s: State, act: Act, p: Person): { x: number; y: number } {
   const m = getMap(s.seed);
   const f = m.fire;
-  if (act === 'samtal' || act === 'beratta' || act === 'hantverk' || act === 'vakt' || act === 'varma' || act === 'yxa') {
+  if (act === 'samtal' || act === 'beratta' || act === 'hantverk' || act === 'vakt' || act === 'varma' || act === 'yxa' || act === 'spjut') {
     const ang = rnd(s) * Math.PI * 2, r = act === 'vakt' ? 2.6 : 1.3 + rnd(s) * 0.9;
     return { x: f.x + 0.5 + Math.cos(ang) * r, y: f.y + 0.5 + Math.sin(ang) * r };
   }
   if (act === 'kol') return { x: f.x + 0.5 + (rnd(s) - 0.5) * 0.6, y: f.y + 1.1 };
-  if (act === 'sova' || act === 'vila') { const h = m.huts[p.id % m.huts.length]; return { x: h.x + 0.6 + rnd(s) * 0.8, y: h.y + 0.6 + rnd(s) * 0.8 }; }
+  if (act === 'sova' || act === 'vila') { // ingen bostad ännu: man sover på marken en bit från elden
+    for (let k = 0; k < 12; k++) {
+      const ang = (p.id * 2.399 + rnd(s) * 0.5) % (Math.PI * 2), r = 1.8 + rnd(s) * 1.2, x = f.x + 0.5 + Math.cos(ang) * r, y = f.y + 0.5 + Math.sin(ang) * r;
+      if (x >= 0 && y >= 0 && x < W && y < H && m.tiles[Math.floor(y) * W + Math.floor(x)] !== T.Vatten) return { x, y };
+    }
+    return { x: f.x + 0.5, y: f.y + 2 };
+  }
   if (act === 'leka') { // lekplatsen ligger söder om elden, men aldrig i vattnet
     for (let k = 0; k < 12; k++) {
       const x = f.x + (rnd(s) - 0.5) * 8, y = f.y + 3 + rnd(s) * 3;
@@ -61,7 +68,7 @@ export function chooseTask(s: State, p: Person, live: boolean) {
   const light = isLight(now);
   const sick = p.sickUntil !== undefined && p.sickUntil > now;
   const lazy = 1 - duty(s, p), lit = s.fire.lit, sd = s.seder.v;
-  let act: Act, why: string, spot: { x: number; y: number } | undefined, ref: number | undefined;
+  let act: Act, why: string, spot: { x: number; y: number } | undefined, ref: number | undefined, tool: string | undefined;
   let dur = (20 + rnd(s) * 40) * 60 * SEC; // 20–60 min
   const set = (x: Act, w: string) => { act = x; why = w; };
   if (a < 3) set('sova', 'Är ett litet barn');
@@ -81,12 +88,13 @@ export function chooseTask(s: State, p: Person, live: boolean) {
       const wFood = clamp(3.2 - fd / (2.5 * fs), 0.4, 3.5);
       const wWood = clamp(3.2 - wd / (2 * fs), 0.15, 3.5) * (ai === 3 || ai === 0 ? 1.3 : 1); // inför och under istiden väger veden tyngre
       const tot = habitTotal(p);
+      const spearReady = freeSpears(s, p) > 0 || wantsSpear(s, p); // spjut finns eller kan täljas
       let best: Act = 'samla', bs = -1, burg = 0;
       for (const w of WORK) {
         const need = w === 'ved' ? wWood : wFood;
         const tinder = w === 'samla' && needTinder(s);
         // nytta för byn; maten väger också in hur mycket platserna ger just nu och att fiske med händerna ger lite
-        const yieldF = w === 'ved' || tinder ? 1 : clamp(prospectFor(s, p, w as Kind), 0.05, 1.3) * (w === 'fiske' ? HAND_FISH : 1);
+        const yieldF = w === 'ved' || tinder ? 1 : clamp(prospectFor(s, p, w as Kind), 0.05, 1.3) * (w === 'fiske' ? HAND_FISH * (spearReady ? SPEAR_FISH : 1) : 1);
         const col = need * (w === 'ved' ? 1 : tinder ? Math.max(0.8, SEASON[w][ai]) * 3 : SEASON[w][ai] * yieldF);
         const like = (4 + p.skill[w as Skill] + stat(p, WORK_STAT[w], now) / 3) * (1 + 2 * habitShare(p, [w], tot)); // egen lust och vana
         const sc = col * like * (0.6 + rnd(s) * 0.8);
@@ -117,6 +125,10 @@ export function chooseTask(s: State, p: Person, live: boolean) {
           if (ax.act !== 'yxa') spot = { x: ax.x, y: ax.y };
           ref = ax.ref;
         }
+        if (best === 'fiske') { // med spjut om det finns ett ledigt, annars täljer hen ett först
+          if (freeSpears(s, p) > 0) { tool = 'fiskespjut'; why = why!.replace(/\.$/, '') + '. Tar ett fiskespjut.'; }
+          else if (wantsSpear(s, p)) { set('spjut', `${what}. Täljer ett fiskespjut med ${sharpTool(s) === 'yxa' ? 'yxan' : 'en flintsten'}.`); dur = 40 * 60 * SEC; }
+        }
       } else {
         // egen lust: vila, hantverk eller umgänge
         const wv = (1 - p.rest) * 2 + lazy * 0.6;
@@ -146,11 +158,11 @@ export function chooseTask(s: State, p: Person, live: boolean) {
       else if (r < story) set('beratta', 'Mörkt, berättar för de andra vid elden');
       else if (r < story + craft) set('hantverk', 'Mörkt, gör handarbete vid elden');
       else if (r < 0.9) set('samtal', 'Mörkt, umgås vid elden');
-      else set('vila', 'Mörkt, vilar i hyddan');
+      else set('vila', 'Mörkt, vilar vid elden');
     }
   }
   if (act! === 'toa') dur = (4 + rnd(s) * 4) * 60 * SEC;
   const sp = spot ?? spotFor(s, act!, p);
   if (!live) { p.x = sp.x; p.y = sp.y; tread(s, sp.x, sp.y, isWork(act!) ? 2 : 1); }
-  p.task = { act: act!, phase: live ? 'go' : 'do', tx: sp.x, ty: sp.y, until: s.now + dur, carry: 0, why: why!, dark: !light, ref };
+  p.task = { act: act!, phase: live ? 'go' : 'do', tx: sp.x, ty: sp.y, until: s.now + dur, carry: 0, why: why!, dark: !light, ref, tool };
 }

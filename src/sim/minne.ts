@@ -17,7 +17,7 @@ import { FOREST } from './vag';
 export const AREA = 8, AW = Math.ceil(W / AREA), AH = Math.ceil(H / AREA);
 export const areaOf = (x: number, y: number) => Math.floor(clamp(y, 0, H - 1) / AREA) * AW + Math.floor(clamp(x, 0, W - 1) / AREA);
 export const areaCenter = (a: number) => ({ x: Math.min(W, (a % AW) * AREA + AREA / 2), y: Math.min(H, Math.floor(a / AW) * AREA + AREA / 2) });
-// byns närområde: här ser alla vad som finns utan att behöva minnas det
+// synvidd: så långt runt sig man ser vad som finns utan att behöva minnas det
 export const SIGHT = 8;
 
 // hur mycket ett område ger just nu, så som man ser det när man går runt där: snittet av de fem bästa rutorna
@@ -69,9 +69,9 @@ export function lookAround(s: State, p: Person, x: number, y: number) {
 // Den nyfikne tror mer på det okända.
 export const trustUnknown = (s: State, p: Person) => 0.45 + stat(p, 'nyfikenhet', s.now) / 40;
 const believed = (l: Lardom | undefined, cap: number, u: number, pot = 1) => l ? Math.min(1, l.v) * l.c * Math.min(1.2, cap / Math.max(0.05, pot)) + cap * u * (1 - l.c) : cap * u;
-export function perceive(s: State, p: Person, k: Kind, x: number, y: number, dFire: number) {
+export function perceive(s: State, p: Person, k: Kind, x: number, y: number) {
   const a = areaOf(x, y);
-  const v = dFire <= SIGHT ? richness(s, k, x + 0.5, y + 0.5) : believed(findL(p, k, a), capOf(s, k, y * W + x), trustUnknown(s, p), areaValue(s, k, a, true));
+  const v = sees(p, x, y) ? richness(s, k, x + 0.5, y + 0.5) : believed(findL(p, k, a), capOf(s, k, y * W + x), trustUnknown(s, p), areaValue(s, k, a, true));
   return v - fear(s, p, a);
 }
 // rädsla för ett område: den modige bryr sig mindre
@@ -80,12 +80,14 @@ export function fear(s: State, p: Person, a: number) {
   return l ? l.v * l.c * clamp(1.3 - stat(p, 'mod', s.now) / 20, 0.2, 1.3) : 0;
 }
 // det bästa personen tror finns utanför närområdet, inom en halv dags gång
+// det man ser: rutorna runt där man står just nu
+export const sees = (p: Person, x: number, y: number) => Math.hypot(x + 0.5 - p.x, y + 0.5 - p.y) <= SIGHT;
 export function bestKnown(s: State, p: Person, k: Kind) {
   const f = getMap(s.seed).fire, u = trustUnknown(s, p);
   let best = 0;
   for (let a = 0; a < AW * AH; a++) {
     const c = areaCenter(a), d = Math.hypot(c.x - f.x, c.y - f.y);
-    if (d <= SIGHT || Math.abs(c.x - f.x) > 17 || Math.abs(c.y - f.y) > 13) continue;
+    if (sees(p, c.x, c.y) || Math.abs(c.x - f.x) > 17 || Math.abs(c.y - f.y) > 13) continue;
     best = Math.max(best, believed(findL(p, k, a), areaValue(s, k, a, true), u) - d * 0.03 - fear(s, p, a));
   }
   return best;
@@ -95,10 +97,10 @@ export function bestKnown(s: State, p: Person, k: Kind) {
 export function pickSpot(s: State, p: Person, k: Kind, cands: { x: number; y: number; d: number }[]) {
   let best: { x: number; y: number; d: number } | undefined, bs = -1e9;
   for (const c of cands) {
-    const sc = perceive(s, p, k, c.x, c.y, c.d) - c.d * 0.03 + rnd(s) * 0.15;
+    const sc = perceive(s, p, k, c.x, c.y) - c.d * 0.03 + rnd(s) * 0.15;
     if (sc > bs) { bs = sc; best = c; }
   }
-  if (!best || best.d <= SIGHT) return best;
+  if (!best || sees(p, best.x, best.y)) return best;
   // väl framme letar hen upp den bästa platsen i området
   const f = getMap(s.seed).fire, x0 = Math.max(0, best.x - 5), y0 = Math.max(0, best.y - 5);
   let r = best, rs = richness(s, k, best.x + 0.5, best.y + 0.5);
@@ -202,15 +204,6 @@ export function forget(s: State, hours: number) {
       if (now - e.t > 2 * DAY) e.v *= Math.exp(-hours / (24 * 30 * (0.5 + m / 10)));
       if (e.v < 0.03) delete p.kunskap[k];
     }
-  }
-}
-
-// de första invånarna har sett sig omkring innan de slog sig ner
-export function scout(s: State, p: Person) {
-  const f = getMap(s.seed).fire;
-  for (let i = 0; i < 8; i++) {
-    const x = clamp(f.x + (rnd(s) - 0.5) * 36, 0, W - 1), y = clamp(f.y + (rnd(s) - 0.5) * 26, 0, H - 1);
-    for (const k of ['samla', 'jakt', 'fiske'] as Kind[]) if (areaValue(s, k, areaOf(x, y)) > 0.05) observe(s, p, k, x, y, 0.5);
   }
 }
 

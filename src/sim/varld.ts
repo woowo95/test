@@ -1,5 +1,4 @@
 import { ageOf, getRel, log, newPerson, think } from './folk';
-import { scout } from './minne';
 import { newSeder, sederTarget } from './seder';
 import { clamp, gauss, rnd } from './slump';
 import { DAY, Fire, Person, SEC, SKILLS, State } from './typer';
@@ -19,7 +18,6 @@ export function createState(seed: number, now: number): State {
   for (const p of s.people) {
     const a = ageOf(p, now);
     for (const k of SKILLS) p.skill[k] = clamp((a - 8) * 0.25 * (0.4 + rnd(s)) * (p.pot.intelligens / 12), 0, 12);
-    if (a >= 14) scout(s, p); // de vuxna har sett sig omkring och minns några platser
   }
   s.seder.v = sederTarget(s);
   log(s, `${s.people.length} människor slog sig ner vid sjön. De har ingen eld ännu.`, 'world');

@@ -16,7 +16,7 @@ function fbm(seed: number, x: number, y: number) {
   return vnoise(seed, x / 12, y / 12) * 0.55 + vnoise(seed + 7, x / 6, y / 6) * 0.3 + vnoise(seed + 13, x / 3, y / 3) * 0.15;
 }
 
-export interface MapData { tiles: Uint8Array; fire: { x: number; y: number }; huts: { x: number; y: number }[]; stock: { x: number; y: number }; shade: Float32Array }
+export interface MapData { tiles: Uint8Array; fire: { x: number; y: number }; stock: { x: number; y: number }; shade: Float32Array }
 
 const mapCache = new Map<number, MapData>();
 export function getMap(seed: number): MapData {
@@ -60,8 +60,7 @@ export function getMap(seed: number): MapData {
     if (sc > bs) { bs = sc; best = { x, y }; }
   }
   const f = best;
-  const huts = [{ x: f.x - 3, y: f.y - 3 }, { x: f.x + 2, y: f.y - 3 }, { x: f.x - 3, y: f.y + 2 }, { x: f.x + 2, y: f.y + 2 }];
-  const m: MapData = { tiles, fire: f, huts, stock: { x: f.x + 4, y: f.y - 1 }, shade };
+  const m: MapData = { tiles, fire: f, stock: { x: f.x + 4, y: f.y - 1 }, shade };
   mapCache.set(seed, m);
   return m;
 }

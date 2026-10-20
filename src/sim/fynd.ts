@@ -15,8 +15,9 @@ export type Kind = 'samla' | 'jakt' | 'fiske';
 export const KINDS: Kind[] = ['samla', 'jakt', 'fiske'];
 const FULL: Record<Kind, number> = { samla: 1.2, jakt: 6, fiske: 4 }; // så mycket mat en full plats ger innan den är tom
 const REACH: Record<Kind, number> = { samla: 1, jakt: 3, fiske: 1 }; // vilt springer: jakt tömmer ett större område
-// hur fort en plats växer tillbaka, del per timme och tidsålder (istid, vår, sommar, höst)
-const REGROW: Record<Kind, number[]> = { samla: [0, 1 / 70, 1 / 40, 1 / 60], jakt: [1 / 300, 1 / 160, 1 / 160, 1 / 200], fiske: [1 / 300, 1 / 100, 1 / 100, 1 / 140] };
+// hur fort en plats växer tillbaka, del per timme och tidsålder (istid, vår, sommar, höst).
+// Bären mognar fortast på sommaren och hösten, så buskarna bär igen även där man plockat.
+const REGROW: Record<Kind, number[]> = { samla: [0, 1 / 70, 1 / 24, 1 / 32], jakt: [1 / 300, 1 / 160, 1 / 160, 1 / 200], fiske: [1 / 300, 1 / 100, 1 / 100, 1 / 140] };
 
 const store = new WeakMap<State, Record<Kind, Float32Array>>();
 // uttag per ruta: 0 = orörd, 1 = tom
@@ -104,12 +105,6 @@ export function growFynd(s: State, hours: number, season: number) {
     const f = Math.exp(-REGROW[k][season] * hours), a = d[k];
     if (f < 1) for (let i = 0; i < a.length; i++) if (a[i] > 0) a[i] = a[i] * f < 0.004 ? 0 : a[i] * f;
   }
-}
-// en ny skörd mognar när sommaren och hösten börjar: buskarna bär igen även där man plockat
-export function newCrop(s: State, season: number) {
-  if (season !== 2 && season !== 3) return;
-  const a = takenOf(s).samla;
-  for (let i = 0; i < a.length; i++) a[i] *= 0.3;
 }
 // den bästa platsen bland kandidaterna: mycket att hämta och inte för långt bort
 export function bestSpot(s: State, k: Kind, cands: { x: number; y: number; d: number }[]) {
@@ -218,16 +213,18 @@ export function eatPoison(s: State, p: Person) {
 // Man står i strandkanten och försöker gripa fisken. Ett försök tar fem minuter. Ibland nappar det, alltså att man
 // får tag i en fisk, men oftast slinker den ur händerna. Skickliga fiskare håller fast oftare.
 export const TRY_SEC = 300;
-export function handFish(s: State, p: Person, x: number, y: number, ageF: number) {
+// Med fiskespjut träffar man fisken oftare och den sitter kvar på spjutet.
+export const SPEAR_FISH = 2.4; // ungefär så mycket mer ett spjut ger än händerna
+export function handFish(s: State, p: Person, x: number, y: number, ageF: number, spear = false) {
   const st = (p.fiske ??= { f: 0, n: 0, k: 0 });
-  st.f++; count(s, 'fiskeForsok');
+  st.f++; count(s, 'fiskeForsok'); if (spear) count(s, 'spjutForsok');
   const ai = ageIndex(s), season = [0.45, 1, 1.1, 1][ai];
-  if (rnd(s) >= 0.08 * season * Math.min(1.3, richness(s, 'fiske', x, y)) * ageF) return 0;
+  if (rnd(s) >= (spear ? 0.13 : 0.08) * season * Math.min(1.3, richness(s, 'fiske', x, y)) * ageF) return 0;
   st.n++; count(s, 'fiskeNapp');
-  const hold = 0.2 + p.skill.fiske / 40 + stat(p, 'uthallighet', s.now) / 100;
+  const hold = (spear ? 0.5 : 0.2) + p.skill.fiske / 40 + stat(p, 'uthallighet', s.now) / 100;
   if (rnd(s) >= hold) return 0;
-  st.k++; count(s, 'fisk');
+  st.k++; count(s, 'fisk'); if (spear) count(s, 'spjutFisk');
   takeFrom(s, 'fiske', x, y, 1);
-  if (s.stat!.fisk === 1) log(s, `${p.name} fångade byns första fisk med händerna, efter ${s.stat!.fiskeForsok} försök.`, 'world', [p.id]);
+  if (s.stat!.fisk === 1) log(s, `${p.name} fångade byns första fisk ${spear ? 'med spjut' : 'med händerna'}, efter ${s.stat!.fiskeForsok} försök.`, 'world', [p.id]);
   return 1;
 }

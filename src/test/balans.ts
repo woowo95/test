@@ -26,7 +26,7 @@ await Promise.all(Array.from({ length: Math.max(1, cpus().length) }, async () =>
   while (nasta < seeds.length) res.push(await kor(seeds[nasta++]));
 }));
 
-const NAMN: [keyof Nyckeltal, string][] = [['pop', 'invånare'], ['fodda', 'födda'], ['doda', 'döda'], ['svalt', 'svalt ihjäl'], ['kyla', 'frös ihjäl'],
+const NAMN: [keyof Nyckeltal, string][] = [['pop', 'invånare'], ['invandrade', 'invandrade'], ['utvandrade', 'utvandrade'], ['fodda', 'födda'], ['doda', 'döda'], ['svalt', 'svalt ihjäl'], ['kyla', 'frös ihjäl'],
   ['hunger', 'hungertimmar'], ['humor', 'humör'], ['vintermat', 'mat efter vintern'], ['vinterved', 'ved efter vintern'], ['eld', 'eld brann %'], ['ms', 'körtid ms']];
 console.log(`${antal} byar, ${dagar} dygn (${((Date.now() - t0) / 1000).toFixed(0)} s)`);
 console.log('                     median   sämst    bäst');
@@ -37,7 +37,7 @@ for (const [k, namn] of NAMN) {
   const f = (x: number) => (k === 'humor' ? x.toFixed(2) : String(Math.round(x))).padStart(8);
   console.log(namn.padEnd(20) + f(med) + f(hogBra ? v[0] : v[v.length - 1]) + f(hogBra ? v[v.length - 1] : v[0]));
 }
-const utdoda = res.filter(r => r.n.pop === 0).map(r => r.seed);
-console.log(`utdöda byar: ${utdoda.length}${utdoda.length ? ' (' + utdoda.join(', ') + ')' : ''}, under 6 invånare: ${res.filter(r => r.n.pop < 6).length}`);
+const utdoda = res.filter(r => r.n.atergrundad > 0).map(r => `${r.seed}: ${r.n.atergrundad} ggr`);
+console.log(`utdöda och återgrundade byar: ${utdoda.length}${utdoda.length ? ' (' + utdoda.join(', ') + ')' : ''}, under 6 invånare: ${res.filter(r => r.n.pop < 6).length}`);
 const vakter = res.flatMap(r => r.vakter.map(v => `by ${r.seed}: ${v}`));
 console.log(vakter.length ? 'VAKTER LARMAR:\n  ' + vakter.join('\n  ') : 'Vakter: inga fel.');

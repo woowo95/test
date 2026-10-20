@@ -1,9 +1,9 @@
 import * as PIXI from 'pixi.js';
 import '@pixi/unsafe-eval';
 import {
-  State, Person, T, W, H, DAY, HOUR, STATS, STAT_NAMES, SKILLS, SKILL_NAMES, AGES, ACT_NAMES, TalkEvent, LogEntry,
+  State, Person, T, W, H, DAY, HOUR, STATS, STAT_NAMES, SKILLS, SKILL_NAMES, AGES, ACT_NAMES, taskName, TalkEvent, LogEntry,
   createState, step, getMap, living, alive, ageOf, byId, relKey, moodOf, ageIndex, ageDay, yearNo, lightLevel, isLight,
-  foodDays, timeLabel, serialize, compact, stat, migrate, hearthOf, igniterOf, fireHeat, heatRadius, fireWant, emberOn,
+  foodDays, timeLabel, temperature, serialize, compact, stat, migrate, hearthOf, igniterOf, fireHeat, heatRadius, fireWant, emberOn,
   ITEM_NAMES, FireLog, coverOf, groundOf, SEDER, SED_INFO, Sed, influence, duty, habitShare, habitTotal, Act,
   richness, stoneDist, Kind, KUNSKAP_NAMES, describe, Lardom,
 } from './sim';
@@ -196,13 +196,6 @@ function drawStructures(t: number) {
     structG.lineStyle(4, 0x5a3c22).moveTo(x - len / 2, y + 2).lineTo(x + len / 2, y - 1).lineStyle(0);
     structG.beginFill(0xc9a46a).drawCircle(x - len / 2, y + 2, 1.8).endFill();
   }
-  // hyddor
-  for (const h of m.huts) {
-    const x = h.x * TS, y = h.y * TS;
-    structG.beginFill(0x000000, 0.18).drawEllipse(x + TS, y + TS * 1.75, TS * 1.05, TS * 0.35).endFill();
-    structG.beginFill(ai === 0 ? 0xe8eef0 : 0x8a6a3f).drawPolygon([x + TS, y + 2, x + 2, y + TS * 1.7, x + TS * 2 - 2, y + TS * 1.7]).endFill();
-    structG.beginFill(0x3b2a1a).drawPolygon([x + TS, y + TS * 0.9, x + TS * 0.72, y + TS * 1.7, x + TS * 1.28, y + TS * 1.7]).endFill();
-  }
   // eld
   const f = m.fire, cx = f.x * TS + TS / 2, cy = f.y * TS + TS / 2;
   // värmeområdet visas när eldens flik är öppen
@@ -370,11 +363,10 @@ function showHover(gx: number, gy: number) {
   const near = (a: { x: number; y: number }, wd = 1, ht = 1) => x >= a.x && x < a.x + wd && y >= a.y && y < a.y + ht;
   if (near(m.fire)) rows.push(`Elden (${s.fire.lit ? 'brinner' : emberOn(s) ? 'glöder' : 'släckt'})`);
   if (near(m.stock, 2, 2)) rows.push(`Förrådet: ${Math.round(s.food)} mat, ${Math.round(s.wood)} ved`);
-  if (m.huts.some(h => near(h, 2, 2))) rows.push('Hydda');
   const log = (s.stockar ?? []).find(k => Math.floor(k.x) === x && Math.floor(k.y) === y);
   if (log) rows.push(`Fällt träd, ca ${Math.ceil(log.ved)} ved kvar`);
   const here = living(s).filter(p => Math.floor(p.x) === x && Math.floor(p.y) === y);
-  if (here.length) rows.push(here.map(p => `${esc(p.name)} (${p.task ? ACT_NAMES[p.task.act].toLowerCase() : 'vilar'})`).join(', '));
+  if (here.length) rows.push(here.map(p => `${esc(p.name)} (${p.task ? taskName(p.task).toLowerCase() : 'vilar'})`).join(', '));
   box.innerHTML = rows.map(r => `<p>${r}</p>`).join('');
   box.hidden = false;
 }
@@ -389,7 +381,7 @@ function startFollow(id: number) {
 $('followChip').addEventListener('click', stopFollow);
 const portEls = new Map<number, HTMLButtonElement>();
 const hex = (p: Person) => '#' + hsl(p.hue, 0.5, 0.58).toString(16).padStart(6, '0');
-const shortAct = (p: Person) => p.task ? ACT_NAMES[p.task.act] : '–';
+const shortAct = (p: Person) => p.task ? taskName(p.task) : '–';
 function renderPorts() {
   const row = $('ports'), ppl = living(s).slice().sort((a, b) => a.born - b.born);
   const ids = new Set(ppl.map(p => p.id));
@@ -480,7 +472,7 @@ function renderPanel(force = false) {
     const rows = ppl.slice().sort((a, b) => b.born < a.born ? 1 : -1).sort((a, b) => ageOf(b, s.now) - ageOf(a, s.now));
     box.innerHTML = `<ul class="folk">${rows.map(p => {
       const m = moodOf(p, s.now);
-      return `<li><button class="row" data-id="${p.id}" type="button"><span class="dot" style="background:#${hsl(p.hue, 0.5, 0.58).toString(16).padStart(6, '0')}"></span><span class="nm">${esc(p.name)}${p.tag ? ` <span class="tag">${esc(p.tag)}</span>` : ''}</span><span class="age">${Math.floor(ageOf(p, s.now))} år</span><span class="act">${p.task ? ACT_NAMES[p.task.act] : '–'}</span>${bar(m, m < 0.35 ? 'low' : '')}</button></li>`;
+      return `<li><button class="row" data-id="${p.id}" type="button"><span class="dot" style="background:#${hsl(p.hue, 0.5, 0.58).toString(16).padStart(6, '0')}"></span><span class="nm">${esc(p.name)}${p.tag ? ` <span class="tag">${esc(p.tag)}</span>` : ''}</span><span class="age">${Math.floor(ageOf(p, s.now))} år</span><span class="act">${p.task ? taskName(p.task) : '–'}</span>${bar(m, m < 0.35 ? 'low' : '')}</button></li>`;
     }).join('')}</ul>`;
   } else if (tab === 'logg') {
     box.innerHTML = `<ol class="logg">${s.log.slice().reverse().slice(0, 150).map(l => `<li class="k-${l.kind}"><span class="when">${timeLabel(s, l.t)}</span>${linkify(l)}</li>`).join('')}</ol>`;
@@ -495,7 +487,7 @@ function renderPanel(force = false) {
     const kids = s.people.filter(q => q.mother === p.id || q.father === p.id);
     const rels = s.people.filter(q => q.id !== p.id && s.rels[relKey(p.id, q.id)] && alive(q)).map(q => ({ q, r: s.rels[relKey(p.id, q.id)] }))
       .sort((x, y) => Math.abs(y.r.op) - Math.abs(x.r.op)).slice(0, 8);
-    const status = alive(p) ? (p.task ? ACT_NAMES[p.task.act] : '–') : p.died !== undefined ? `Dog ${p.cause} (${timeLabel(s, p.died)})` : `Flyttade från byn (${timeLabel(s, p.left!)})`;
+    const status = alive(p) ? (p.task ? taskName(p.task) : '–') : p.died !== undefined ? `Dog ${p.cause} (${timeLabel(s, p.died)})` : `Flyttade från byn (${timeLabel(s, p.left!)})`;
     box.innerHTML = `
       <div class="phead"><span class="dot big" style="background:#${hsl(p.hue, 0.5, 0.58).toString(16).padStart(6, '0')}"></span><div><h2>${esc(p.name)}</h2>${p.tag && alive(p) ? `<p class="tag">${esc(p.tag)}</p>` : ''}
       <p class="muted">${p.sex === 'k' ? 'Kvinna' : 'Man'}, ${Math.floor(a)} år · född ${timeLabel(s, p.born)}</p><p class="status">${status}</p>${alive(p) && p.task?.why ? `<p class="why">Varför: ${esc(p.task.why)}</p>` : ''}</div></div>
@@ -629,6 +621,7 @@ function renderClock() {
   const hh = String(d.getHours()).padStart(2, '0'), mm = String(d.getMinutes()).padStart(2, '0');
   $('calYear').textContent = `År ${yearNo(s)}`;
   $('calAge').textContent = `${AGES[ageIndex(s)]}, dag ${ageDay(s)} av 7`;
+  { const c = Math.round(temperature(s, t)); $('calTemp').textContent = `🌡 ${c > 0 ? '+' : c < 0 ? '−' : ''}${Math.abs(c)} °C`; }
   $('calTime').textContent = `${isLight(t) ? 'Ljus tid' : 'Mörk tid'} · ${hh}:${mm}${testMode ? ' (test)' : ''}`;
 }
 

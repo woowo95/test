@@ -1,3 +1,4 @@
+import { coldOf, temperature } from './vader';
 import { ageOf, log, stat, think } from './folk';
 import { count, flintFactor } from './fynd';
 import { observe } from './minne';
@@ -42,7 +43,7 @@ export interface Wish { v: number; why: string }
 const relightHard = (s: State) => 1 - (igniterOf(s) ?? IGNITERS[0]).chance;
 // varje invånares egen önskan om ved på elden; vc = hur mycket byn fryser 0–1
 export function fireWish(s: State, p: Person, vc: number): Wish {
-  const light = isLight(s.now), cold = COLD[ageIndex(s)][light ? 0 : 1], sd = s.seder.v;
+  const light = isLight(s.now), cold = coldOf(temperature(s)), sd = s.seder.v;
   const opts: Wish[] = [
     { v: clamp((1 - p.warm) * 1.2 + cold * 2.4, 0, 1), why: p.warm < 0.5 ? 'Fryser och vill ha mer värme' : 'Det är kallt och hen vill hålla värmen' },
     { v: clamp(vc * (p.pot.empati / 10) * (0.6 + 0.4 * sd.gemenskap), 0, 1), why: 'Andra i byn fryser' },
@@ -176,7 +177,6 @@ export function stepFire(s: State, dtSec: number, live: boolean, ppl: Person[]) 
   }
 }
 // värmeförlust per timme utan eld: [ljus tid, mörk tid] per tidsålder
-export const COLD = [[1 / 5, 1 / 3], [0, 1 / 12], [0, 0], [0, 1 / 10]];
 // insamling hittar tändmaterial och gniststen när förrådet behöver det
 const GRASS_SEASON = [0.25, 0.6, 1, 1.3];
 export function forageItems(s: State, p: Person, dtSec: number): Record<string, number> | undefined {

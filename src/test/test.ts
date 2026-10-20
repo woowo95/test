@@ -13,6 +13,9 @@ const TOL: Partial<Record<keyof Nyckeltal, (a: number, b: number) => boolean>> =
 
 const res = BYAR.map(seed => korBy(seed, DAGAR));
 for (const r of res) console.log(rad(r));
+// återgrundning skrivs alltid ut, så att det syns om en by dött ut och börjat om
+const ater = res.filter(r => r.n.atergrundad > 0);
+console.log(ater.length ? 'ÅTERGRUNDADE BYAR: ' + ater.map(r => `by ${r.seed} (${r.n.atergrundad} ggr)`).join(', ') : 'Återgrundade byar: inga.');
 
 const nu: Record<string, Nyckeltal> = {};
 for (const r of res) nu[r.seed] = r.n;
