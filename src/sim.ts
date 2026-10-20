@@ -25,16 +25,18 @@ export const SKILL_NAMES: Record<Skill, string> = {
 
 export const AGES = ['Istid', 'Vårtid', 'Sommartid', 'Hösttid'];
 
-export type Act = 'samla' | 'jakt' | 'fiske' | 'ved' | 'leka' | 'vila' | 'samtal' | 'beratta' | 'hantverk' | 'vakt' | 'sova' | 'elda' | 'tanda' | 'varma';
+export type Act = 'samla' | 'jakt' | 'fiske' | 'ved' | 'leka' | 'vila' | 'samtal' | 'beratta' | 'hantverk' | 'vakt' | 'sova' | 'elda' | 'tanda' | 'varma' | 'toa';
 export const ACT_NAMES: Record<Act, string> = {
   samla: 'Samlar bär och rötter', jakt: 'Jagar', fiske: 'Fiskar', ved: 'Hugger ved', leka: 'Leker',
   vila: 'Vilar', samtal: 'Samtalar vid elden', beratta: 'Berättar vid elden', hantverk: 'Gör handarbete',
   vakt: 'Håller vakt', sova: 'Sover', elda: 'Lägger ved på elden', tanda: 'Försöker tända elden', varma: 'Värmer sig vid elden',
+  toa: 'Går avsides på toa',
 };
 const WORK: Act[] = ['samla', 'jakt', 'fiske', 'ved'];
 
 export interface Thought { text: string; v: number; until: number }
-export interface Task { act: Act; phase: 'go' | 'do' | 'back'; tx: number; ty: number; until: number; carry: number; items?: Record<string, number> }
+// why = varför personen valde uppgiften, dark = påbörjad under mörk tid
+export interface Task { act: Act; phase: 'go' | 'do' | 'back'; tx: number; ty: number; until: number; carry: number; items?: Record<string, number>; why?: string; dark?: boolean }
 
 export interface Person {
   id: number; name: string; sex: 'm' | 'k';
@@ -43,11 +45,14 @@ export interface Person {
   pot: Record<Stat, number>; skill: Record<Skill, number>;
   hunger: number; rest: number; social: number; health: number;
   warm: number; // kroppsvärme 0–1
+  toa: number; // 1 = inget behov, 0 = olycka
+  habit: Record<string, number>; // timmar per aktivitet, bleknar med tiden (ger yrkestaggar)
   sickUntil?: number; pregnantSince?: number; lastBirth?: number;
   thoughts: Thought[];
   x: number; y: number; task?: Task;
   fame: string[];
   hue: number;
+  tag?: string; // yrkestagg efter vad personen ägnar mest tid åt
 }
 
 export interface Rel { chem: number; op: number; rom: number; talks: number; flags: number }
@@ -62,7 +67,22 @@ export interface State {
   lastAgeIdx: number; lastGuardDay: number;
   items: Record<string, number>; // föremål i förrådet, t.ex. gniststen, torrt gräs, små pinnar
   fire: Fire;
+  seder: Seder;
 }
+
+// ---------- seder ----------
+// Byns gemensamma värderingar, -1..1. Växer fram ur invånarnas personlighet och det byn varit med om.
+export const SEDER = ['arbete', 'gemenskap', 'barn', 'nyfikenhet', 'forsiktighet'] as const;
+export type Sed = typeof SEDER[number];
+export const SED_INFO: Record<Sed, { pos: string; neg: string; effect: string }> = {
+  arbete: { pos: 'Arbete', neg: 'Lugn', effect: 'Pliktkänsla: hur mycket man jobbar för byn och hur mycket man vilar.' },
+  gemenskap: { pos: 'Gemenskap', neg: 'Var och en för sig', effect: 'Hur mycket man bryr sig om att andra fryser och hjälper dem med elden.' },
+  barn: { pos: 'Barnkär', neg: 'Barnsnål', effect: 'Hur gärna par skaffar barn, och om barnen får leka eller måste hjälpa till.' },
+  nyfikenhet: { pos: 'Nyfikenhet', neg: 'Tradition', effect: 'Hur snabbt invånarna lär sig nya färdigheter.' },
+  forsiktighet: { pos: 'Försiktighet', neg: 'Leva i nuet', effect: 'Hur stora förråd byn vill ha innan man slappnar av, och om elden hålls vid liv.' },
+};
+// v = sederna nu, ev = tillskott från händelser (bleknar), at = senaste omräkning
+export interface Seder { v: Record<Sed, number>; ev: Record<Sed, number>; log: { t: number; text: string }[]; at?: number }
 
 // ---------- eldstäder och tänddon ----------
 // Bara lägerelden går att ha i dag. De andra är förberedda och byggs när bygg- och teknikträdet finns.
@@ -92,6 +112,7 @@ export interface Fire {
   totalBurned: number; litSec: number; lightings: number; outs: number;
   tries: number; tryTotal: number; tryProg: number; // försök sedan elden senast brann, totalt, sekunder in i pågående försök
   fills: Record<string, number>; log: FireLog[];
+  want?: number; wantBy?: number; wantWhy?: string; // största önskan om ved på elden just nu, och vems
 }
 
 // ---------- slump ----------
@@ -212,7 +233,7 @@ function newPerson(s: State, sex: 'm' | 'k', born: number, mother?: Person, fath
   const m = getMap(s.seed);
   const p: Person = {
     id: s.nextId++, name: '', sex, born, mother: mother?.id, father: father?.id,
-    pot, skill, hunger: 0.8, rest: 0.9, social: 0.7, health: 1, warm: 1, thoughts: [],
+    pot, skill, hunger: 0.8, rest: 0.9, social: 0.7, health: 1, warm: 1, toa: 0.6 + rnd(s) * 0.4, habit: {}, thoughts: [],
     x: m.fire.x + (rnd(s) - 0.5) * 3, y: m.fire.y + (rnd(s) - 0.5) * 3, fame: [],
     hue: Math.floor(rnd(s) * 360),
   };
@@ -269,7 +290,7 @@ export function timeLabel(s: State, t: number) {
 
 // ---------- skapa värld ----------
 export function createState(seed: number, now: number): State {
-  const s: State = { v: 1, seed, rng: seed, founded: now, now, people: [], rels: {}, nextId: 1, food: 60, wood: 25, log: [], lastAgeIdx: 1, lastGuardDay: -1, items: {}, fire: newFire() };
+  const s: State = { v: 1, seed, rng: seed, founded: now, now, people: [], rels: {}, nextId: 1, food: 60, wood: 25, log: [], lastAgeIdx: 1, lastGuardDay: -1, items: {}, fire: newFire(), seder: newSeder() };
   const adults: [string, number][] = [['m', 38], ['k', 35], ['m', 27], ['k', 25], ['m', 22], ['k', 21], ['m', 44], ['k', 19]];
   for (const [sex, age] of adults) s.people.push(newPerson(s, sex as 'm' | 'k', now - (age + rnd(s)) * DAY));
   const [a, b, c, d] = s.people;
@@ -283,6 +304,7 @@ export function createState(seed: number, now: number): State {
     const a = ageOf(p, now);
     for (const k of SKILLS) p.skill[k] = clamp((a - 8) * 0.25 * (0.4 + rnd(s)) * (p.pot.intelligens / 12), 0, 12);
   }
+  s.seder.v = sederTarget(s);
   log(s, `${s.people.length} människor slog sig ner vid sjön. De har ingen eld ännu.`, 'world');
   return s;
 }
@@ -296,6 +318,8 @@ export function migrate(s: State) {
   for (const p of s.people) {
     if (p.skill.elda === undefined) p.skill.elda = clamp((ageOf(p, s.now) - 10) * 0.15, 0, 6);
     if (p.warm === undefined) p.warm = 1;
+    if (p.toa === undefined) p.toa = 1;
+    if (!p.habit) p.habit = {};
   }
   if (!s.items) s.items = { gniststen: 1, torrgras: 8, pinnar: 8 };
   if (!s.fire) {
@@ -303,6 +327,7 @@ export function migrate(s: State) {
     Object.assign(s.fire, { lit: true, fuel: 4, litAt: s.founded, lightings: 1, litSec: (s.now - s.founded) / SEC });
     s.fire.log.push({ t: s.founded, k: 'tänd' });
   }
+  if (!s.seder) { s.seder = newSeder(); s.seder.v = sederTarget(s); }
   return s;
 }
 function pair(s: State, a: Person, b: Person, silent = false) {
@@ -343,10 +368,22 @@ export function heatAt(s: State, x: number, y: number) {
   const d = Math.hypot(x - (m.fire.x + 0.5), y - (m.fire.y + 0.5));
   return d >= r ? 0 : I * (1 - d / r);
 }
-// hur mycket ved invånarna vill ha på elden: mest i istiden och på natten
-export function fireTarget(s: State) {
-  const ai = ageIndex(s), light = isLight(s.now);
-  return hearthOf(s.fire).maxFuel * (ai === 0 ? 1 : !light ? 0.7 : ai === 2 ? 0.25 : 0.4);
+// hur mycket ved som önskas på elden just nu (den som vill ha mest)
+export const fireWant = (s: State) => s.fire.want ?? 0;
+export interface Wish { v: number; why: string }
+const relightHard = (s: State) => 1 - (igniterOf(s) ?? IGNITERS[0]).chance;
+// varje invånares egen önskan om ved på elden; vc = hur mycket byn fryser 0–1
+export function fireWish(s: State, p: Person, vc: number): Wish {
+  const light = isLight(s.now), cold = COLD[ageIndex(s)][light ? 0 : 1], sd = s.seder.v;
+  const opts: Wish[] = [
+    { v: clamp((1 - p.warm) * 1.2 + cold * 2.4, 0, 1), why: p.warm < 0.5 ? 'Fryser och vill ha mer värme' : 'Det är kallt och hen vill hålla värmen' },
+    { v: clamp(vc * (p.pot.empati / 10) * (0.6 + 0.4 * sd.gemenskap), 0, 1), why: 'Andra i byn fryser' },
+    { v: (light ? 0.12 : 0.55) * clamp(1.5 - moodOf(p, s.now), 0.4, 1), why: light ? 'Vill ha en trivsam eld' : 'Vill ha en trivsam eld att samlas kring i mörkret' },
+    { v: clamp((p.pot.intelligens - 11) / 9, 0, 1) * relightHard(s) * (0.6 + 0.4 * sd.forsiktighet) * 0.14, why: 'Vill inte att elden slocknar, den är svår att tända igen' },
+  ];
+  if (!s.fire.lightings) opts.push({ v: 0.3 * (0.6 + p.pot.nyfikenhet / 25), why: 'Byn har aldrig haft eld' });
+  const b = opts.reduce((a, o) => (o.v > a.v ? o : a));
+  return { v: b.v * hearthOf(s.fire).maxFuel, why: b.why };
 }
 // tändmaterial som invånarna vill ha i förrådet
 const tinderWant = (s: State) => (s.fire.lit ? 12 : 36);
@@ -366,7 +403,7 @@ function lightFire(s: State, p: Person) {
   fireLog(s, { k: 'tänd', id: p.id, n: f.tries });
   log(s, `${p.name} lyckades tända elden${f.tries > 1 ? ` efter ${f.tries} försök` : ''}.`, 'world', [p.id]);
   think(p, 'Tände elden', 0.15, s.now, DAY / 2);
-  if (f.lightings === 1) p.fame.push('Tände byns första eld');
+  if (f.lightings === 1) { p.fame.push('Tände byns första eld'); sedEvent(s, 'nyfikenhet', 0.1, 'Elden har gjort byn nyfiken på vad mer som går att lära sig.'); }
   f.tries = 0;
 }
 // ett försök att tända med det bästa tänddonet i förrådet
@@ -397,9 +434,9 @@ function addFuel(s: State, p: Person, n: number) {
   fireLog(s, { k: 'fyll', id: p.id, n: put });
   p.skill.elda = clamp(p.skill.elda + 0.01 * (1 - p.skill.elda / 21), 0, 20);
 }
-function assign(s: State, p: Person, act: Act, tx: number, ty: number, dur: number, live: boolean) {
+function assign(s: State, p: Person, act: Act, tx: number, ty: number, dur: number, live: boolean, why: string) {
   if (!live) { p.x = tx; p.y = ty; }
-  p.task = { act, phase: live ? 'go' : 'do', tx, ty, until: s.now + dur, carry: 0 };
+  p.task = { act, phase: live ? 'go' : 'do', tx, ty, until: s.now + dur, carry: 0, why, dark: !isLight(s.now) };
 }
 const awake = (s: State, p: Person, minAge: number) => {
   const t = p.task;
@@ -418,24 +455,38 @@ function stepFire(s: State, dtSec: number, live: boolean, ppl: Person[]) {
     }
   }
   if (f.emberUntil !== undefined && !f.lit && f.emberUntil <= now) f.emberUntil = undefined;
-  // påfyllning: en person i taget hämtar ved i förrådet
-  const tgt = fireTarget(s);
-  if ((f.lit || emberOn(s)) && f.fuel < tgt * 0.5 && s.wood >= 0.5 && !ppl.some(p => p.task?.act === 'elda')) {
-    const cands = ppl.filter(p => awake(s, p, 8));
+  // vilja: varje vaken invånare vill ha olika mycket ved på elden
+  const vc = ppl.reduce((a, p) => a + clamp(0.6 - p.warm, 0, 0.6) / 0.6, 0) / (ppl.length || 1);
+  const cands: { p: Person; w: Wish }[] = [];
+  let top: { p: Person; w: Wish } | undefined;
+  for (const p of ppl) {
+    if (!awake(s, p, 8)) continue;
+    const c = { p, w: fireWish(s, p, vc) };
+    cands.push(c);
+    if (!top || c.w.v > top.w.v) top = c;
+  }
+  f.want = top?.w.v ?? 0; f.wantBy = top?.p.id; f.wantWhy = top?.w.why;
+  // påfyllning: den som vill ha klart mer ved än det som ligger på hämtar, plikttrogna och nära först
+  if ((f.lit || emberOn(s)) && s.wood >= 0.5 && !ppl.some(p => p.task?.act === 'elda')) {
     const fx = m.fire.x + 0.5, fy = m.fire.y + 0.5;
-    cands.sort((a, b) => (Math.hypot(a.x - fx, a.y - fy) - (a.task?.act === 'vakt' ? 50 : 0)) - (Math.hypot(b.x - fx, b.y - fy) - (b.task?.act === 'vakt' ? 50 : 0)));
-    const p = cands[0];
-    if (p) {
-      const n = Math.min(3, tgt - f.fuel, s.wood);
-      if (live) { assign(s, p, 'elda', m.stock.x + 0.5 + rnd(s) * 1.5, m.stock.y + 0.5 + rnd(s), HOUR, true); }
+    let best: { p: Person; w: Wish } | undefined, bs = -1e9;
+    for (const c of cands) {
+      if (c.w.v < f.fuel * 2 + 0.2) continue;
+      const sc = (c.w.v - f.fuel) / h.maxFuel * (0.4 + duty(s, c.p)) - Math.hypot(c.p.x - fx, c.p.y - fy) / 25 + (c.p.task?.act === 'vakt' ? 0.3 : 0) + rnd(s) * 0.1;
+      if (sc > bs) { bs = sc; best = c; }
+    }
+    if (best) {
+      const p = best.p, n = Math.min(3, Math.max(1, best.w.v - f.fuel), s.wood);
+      if (live) assign(s, p, 'elda', m.stock.x + 0.5 + rnd(s) * 1.5, m.stock.y + 0.5 + rnd(s), HOUR, true, best.w.why);
       else { s.wood -= n; addFuel(s, p, n); }
     }
   }
-  // tändning: en person i taget försöker när elden är släckt och tändmaterial finns
-  if (!f.lit && !emberOn(s) && canLight(s) && !ppl.some(p => p.task?.act === 'tanda')) {
-    const cands = ppl.filter(p => awake(s, p, 12)).sort((a, b) => (b.skill.elda + stat(b, 'flit', now) / 2 + rnd(s) * 3) - (a.skill.elda + stat(a, 'flit', now) / 2 + rnd(s) * 3));
-    const p = cands[0];
-    if (p) assign(s, p, 'tanda', m.fire.x + 0.5 + (rnd(s) - 0.5) * 1.2, m.fire.y + 1.3, 3 * HOUR, live);
+  // tändning: när elden är släckt och någon vill ha eld försöker en person i taget
+  if (!f.lit && !emberOn(s) && canLight(s) && f.want >= h.maxFuel * 0.1 && !ppl.some(p => p.task?.act === 'tanda')) {
+    const ok = cands.filter(c => ageOf(c.p, now) >= 12 && c.w.v >= h.maxFuel * 0.05)
+      .sort((a, b) => (b.p.skill.elda + stat(b.p, 'flit', now) / 2 + rnd(s) * 3) - (a.p.skill.elda + stat(a.p, 'flit', now) / 2 + rnd(s) * 3));
+    const c = ok[0];
+    if (c) assign(s, c.p, 'tanda', m.fire.x + 0.5 + (rnd(s) - 0.5) * 1.2, m.fire.y + 1.3, 3 * HOUR, live, `Vill ha eld. ${c.w.why}`);
   }
 }
 // värmeförlust per timme utan eld: [ljus tid, mörk tid] per tidsålder
@@ -456,6 +507,96 @@ function forageItems(s: State, p: Person, dtSec: number): Record<string, number>
 }
 function addItems(s: State, got: Record<string, number>) { for (const k in got) s.items[k] = item(s, k) + got[k]; }
 
+// ---------- seder ----------
+function newSeder(): Seder {
+  const z = () => ({ arbete: 0, gemenskap: 0, barn: 0, nyfikenhet: 0, forsiktighet: 0 });
+  return { v: z(), ev: z(), log: [] };
+}
+const dev = (v: number) => (v - 10) / 6;
+// åt vilket håll personen drar sederna, efter sin personlighet
+export function personSeder(s: State, p: Person): Record<Sed, number> {
+  const q = p.pot, kids = s.people.some(c => c.mother === p.id || c.father === p.id);
+  return {
+    arbete: dev(q.flit),
+    gemenskap: dev((q.empati + q.vanlighet) / 2),
+    barn: dev(q.empati) * 0.5 + dev(q.vanlighet) * 0.3 + (kids ? 0.1 : 0),
+    nyfikenhet: dev((q.nyfikenhet + q.intelligens) / 2),
+    forsiktighet: -dev(q.mod) * 0.7 + dev(q.intelligens) * 0.3,
+  };
+}
+// inflytande över sederna: vuxna och äldre väger mest, karismatiska hörs mer
+export function influence(s: State, p: Person) {
+  const a = ageOf(p, s.now);
+  return (a < 14 ? 0 : a < 20 ? 0.5 : a > 50 ? 1.5 : 1) * (0.5 + p.pot.karisma / 20);
+}
+function sederTarget(s: State): Record<Sed, number> {
+  const t = { arbete: 0, gemenskap: 0, barn: 0, nyfikenhet: 0, forsiktighet: 0 };
+  let tw = 0;
+  for (const p of living(s)) {
+    const w = influence(s, p); if (!w) continue;
+    tw += w; const ps = personSeder(s, p);
+    for (const k of SEDER) t[k] += ps[k] * w;
+  }
+  for (const k of SEDER) t[k] = clamp((tw ? t[k] / tw : 0) * 1.8 + s.seder.ev[k], -1, 1);
+  return t;
+}
+// händelser som formar sederna; effekten bleknar under några veckor
+function sedEvent(s: State, k: Sed, d: number, text?: string) {
+  s.seder.ev[k] = clamp(s.seder.ev[k] + d, -0.4, 0.4);
+  if (text) { s.seder.log.push({ t: s.now, text }); if (s.seder.log.length > 30) s.seder.log.splice(0, s.seder.log.length - 30); }
+}
+// sederna rör sig långsamt mot det invånarna och händelserna drar mot
+function stepSeder(s: State) {
+  const sd = s.seder, dt = s.now - (sd.at ?? s.now);
+  sd.at = s.now;
+  if (dt <= 0) return;
+  const kd = Math.exp(-dt / (6 * DAY));
+  for (const k of SEDER) sd.ev[k] *= kd;
+  if (foodDays(s) > 20) sedEvent(s, 'arbete', -0.0005 * dt / HOUR); // långt överflöd gör byn lugnare
+  const t = sederTarget(s), f = 1 - Math.exp(-dt / (2 * DAY));
+  for (const k of SEDER) sd.v[k] += (t[k] - sd.v[k]) * f;
+}
+
+// ---------- vilja ----------
+// pliktkänsla 0–1: hur mycket personen jobbar för byn i stället för sig själv
+export function duty(s: State, p: Person) {
+  return clamp(0.6 + (p.pot.flit - 10) * 0.035 + (p.pot.empati - 10) * 0.015 + s.seder.v.arbete * 0.08, 0.05, 0.98);
+}
+// tid räknas mot yrkestaggar och bleknar, så att de senaste åren väger mest
+const HABIT_FADE = 4 * DAY;
+export const habitTotal = (p: Person) => { let t = 0; for (const k in p.habit) t += p.habit[k]; return t; };
+export const habitShare = (p: Person, acts: Act[], tot = habitTotal(p)) => tot > 0 ? acts.reduce((a, k) => a + (p.habit[k] ?? 0), 0) / tot : 0;
+export const TAGS: { tag: string; acts: Act[]; min: number }[] = [
+  { tag: 'Jägare', acts: ['jakt'], min: 0.2 },
+  { tag: 'Fiskare', acts: ['fiske'], min: 0.2 },
+  { tag: 'Samlare', acts: ['samla'], min: 0.2 },
+  { tag: 'Vedhuggare', acts: ['ved'], min: 0.15 },
+  { tag: 'Hantverkare', acts: ['hantverk'], min: 0.15 },
+  { tag: 'Berättare', acts: ['beratta'], min: 0.06 },
+  { tag: 'Eldvaktare', acts: ['elda', 'tanda'], min: 0.02 },
+  { tag: 'Väktare', acts: ['vakt'], min: 0.08 },
+  { tag: 'Dagdrivare', acts: ['vila'], min: 0.3 },
+];
+// taggen går till den som gör något klart mer än andra i byn; den som redan har en tagg behåller den lättare
+function updateTags(s: State) {
+  const ppl = living(s).filter(p => ageOf(p, s.now) >= 14);
+  const tot = new Map(ppl.map(p => [p, habitTotal(p)]));
+  const avg = TAGS.map(t => ppl.reduce((a, p) => a + habitShare(p, t.acts, tot.get(p)), 0) / (ppl.length || 1));
+  for (const p of ppl) {
+    let best: string | undefined, br = 0;
+    if (tot.get(p)! >= 24) TAGS.forEach((t, i) => {
+      const sh = habitShare(p, t.acts, tot.get(p)), keep = p.tag === t.tag, r = sh / (avg[i] || 1e-9);
+      if (sh >= t.min * (keep ? 0.8 : 1) && r >= (keep ? 1.2 : 1.5) && r * (keep ? 1.3 : 1) > br) { best = t.tag; br = r * (keep ? 1.3 : 1); }
+    });
+    if (best !== p.tag) {
+      p.tag = best;
+      const txt = `${p.name} kallas nu för ${best?.toLowerCase()}.`;
+      if (best && best !== 'Dagdrivare' && !s.log.some(l => l.text === txt)) log(s, txt, 'skill', [p.id]);
+    }
+  }
+}
+const dygn = (v: number) => `${v >= 10 ? Math.round(v) : v.toFixed(1).replace('.', ',')} dygn`;
+
 // ---------- val av aktivitet ----------
 function spotFor(s: State, act: Act, p: Person): { x: number; y: number } {
   const m = getMap(s.seed);
@@ -473,6 +614,7 @@ function spotFor(s: State, act: Act, p: Person): { x: number; y: number } {
       return false;
     }
     if (act === 'samla') return t === T.Gras || t === T.Skog;
+    if (act === 'toa') return t === T.Gras || t === T.Skog || t === T.Sand;
     return t === T.Skog;
   };
   const cands: { x: number; y: number; d: number }[] = [];
@@ -480,7 +622,7 @@ function spotFor(s: State, act: Act, p: Person): { x: number; y: number } {
     const x = Math.floor(f.x + (rnd(s) - 0.5) * 34), y = Math.floor(f.y + (rnd(s) - 0.5) * 26);
     if (x < 0 || y < 0 || x >= W || y >= H) continue;
     const d = Math.hypot(x - f.x, y - f.y);
-    if (d < (act === 'samla' ? 5 : 4)) continue;
+    if (d < (act === 'samla' || act === 'toa' ? 5 : 4) || (act === 'toa' && d > 9)) continue;
     if (want(m.tiles[y * W + x], x, y)) cands.push({ x, y, d });
   }
   cands.sort((a, b) => a.d - b.d);
@@ -488,36 +630,65 @@ function spotFor(s: State, act: Act, p: Person): { x: number; y: number } {
   return { x: c.x + 0.5, y: c.y + 0.5 };
 }
 
+// Viljan i tre steg:
+// 1. Nöd: sjuk, svag, fryser farligt eller måste på toa genast. Inget annat räknas.
+// 2. Grundbehov: toa, värme och vila. En lat person tillgodoser dem tidigare än en flitig.
+// 3. Byns behov mot egen lust, vägda med pliktkänslan.
 function chooseTask(s: State, p: Person, live: boolean) {
-  const a = ageOf(p, s.now);
-  const light = isLight(s.now);
-  const sick = p.sickUntil !== undefined && p.sickUntil > s.now;
-  let act: Act;
+  const a = ageOf(p, s.now), now = s.now;
+  const light = isLight(now);
+  const sick = p.sickUntil !== undefined && p.sickUntil > now;
+  const lazy = 1 - duty(s, p), lit = s.fire.lit, sd = s.seder.v;
+  let act: Act, why: string;
   let dur = (20 + rnd(s) * 40) * 60 * SEC; // 20–60 min
-  if (a < 3 || sick || (!light && a > 68 && rnd(s) < 0.6) || p.health < 0.4) act = 'sova';
-  else if (p.warm < 0.45 && s.fire.lit) act = 'varma';
+  const set = (x: Act, w: string) => { act = x; why = w; };
+  if (a < 3) set('sova', 'Är ett litet barn');
+  else if (p.toa < 0.12) set('toa', 'Måste gå på toa genast');
+  else if (sick) set('sova', 'Är sjuk');
+  else if (p.health < 0.4) set('sova', 'Är för svag för att orka något');
+  else if (p.warm < 0.25 && lit) set('varma', 'Fryser farligt');
+  else if (!light && a > 68 && rnd(s) < 0.6) set('sova', 'Är gammal och sover på natten');
+  else if (p.toa < 0.25 + 0.1 * lazy) set('toa', 'Behöver gå på toa');
+  else if (p.warm < 0.4 + 0.15 * lazy && lit) set('varma', 'Fryser');
+  else if (p.rest < (light ? 0.15 : 0.12) + 0.2 * lazy) set('vila', 'Är trött');
   else if (light) {
-    if (a < 8) act = 'leka';
-    else if (p.rest < 0.25 || rnd(s) < 0.22 - stat(p, 'flit', s.now) / 110) act = 'vila';
-    else if (a < 14) {
-      act = rnd(s) < 0.45 ? 'leka' : pick(s, WORK);
-    } else if (foodDays(s) > 14 && woodDays(s) > 4 && rnd(s) < 0.45) {
-      act = 'hantverk'; // överflöd ger tid för hantverk och kultur
-    } else {
-      const fd = foodDays(s), wd = woodDays(s);
-      const ai = ageIndex(s);
-      const wFood = clamp(3.2 - fd / 2.5, 0.4, 3.5);
-      const wWood = clamp(2.5 - wd / 2, 0.15, 3);
-      const opts: [Act, number][] = WORK.map(w => {
+    if (a < 8) set('leka', 'Är barn och leker');
+    else {
+      const fd = foodDays(s), wd = woodDays(s), ai = ageIndex(s);
+      const fs = 1 + 0.25 * sd.forsiktighet; // en försiktig by vill ha större förråd
+      const wFood = clamp(3.2 - fd / (2.5 * fs), 0.4, 3.5);
+      const wWood = clamp(2.5 - wd / (2 * fs), 0.15, 3);
+      const tot = habitTotal(p);
+      let best: Act = 'samla', bs = -1, burg = 0;
+      for (const w of WORK) {
         const need = w === 'ved' ? wWood : wFood;
         const tinder = w === 'samla' && needTinder(s);
-        const sf = w === 'ved' ? 1 : tinder ? Math.max(0.8, SEASON[w][ai]) * 3 : SEASON[w][ai];
-        const like = 4 + p.skill[w as Skill] + stat(p, WORK_STAT[w], s.now) / 3;
-        return [w, need * sf * like * (0.6 + rnd(s) * 0.8)];
-      });
-      opts.sort((x, y) => y[1] - x[1]);
-      act = opts[0][0];
-      dur = (60 + rnd(s) * 120) * 60 * SEC;
+        const col = need * (w === 'ved' ? 1 : tinder ? Math.max(0.8, SEASON[w][ai]) * 3 : SEASON[w][ai]); // nytta för byn
+        const like = (4 + p.skill[w as Skill] + stat(p, WORK_STAT[w], now) / 3) * (1 + 2 * habitShare(p, [w], tot)); // egen lust och vana
+        const sc = col * like * (0.6 + rnd(s) * 0.8);
+        burg = Math.max(burg, col);
+        if (sc > bs) { bs = sc; best = w; }
+      }
+      const u = clamp(burg / 3, 0, 1); // hur akut byn behöver arbete
+      const sat = Math.min(p.hunger, p.rest, p.social); // hur väl de egna behoven är fyllda
+      const what = best === 'ved' ? `Byn behöver ved, förrådet räcker ${dygn(wd)}` : best === 'samla' && needTinder(s) ? 'Byn behöver tändmaterial till elden' : `Byn behöver mat, förrådet räcker ${dygn(fd)}`;
+      const workWhy = () => what + (lazy < 0.2 ? '. Plikttrogen.' : habitShare(p, [best], tot) > 0.25 ? '. Brukar göra det.' : p.skill[best as Skill] > 10 ? '. Skicklig på det.' : '.');
+      if (a < 14) {
+        if (rnd(s) < 0.45 + 0.2 * sd.barn) set('leka', 'Är barn och leker');
+        else set(best, `Hjälper till. ${what}.`);
+      } else if (rnd(s) < (1 - lazy) * (0.88 + 0.12 * u) + lazy * sat * (0.6 + 0.4 * u)) {
+        set(best, workWhy());
+        dur = (60 + rnd(s) * 120) * 60 * SEC;
+      } else {
+        // egen lust: vila, hantverk eller umgänge
+        const wv = (1 - p.rest) * 2 + lazy * 0.6;
+        const wh = (p.skill.hantverk / 10 + p.pot.flit / 20) * (u < 0.25 ? 1.5 : 0.6);
+        const wsoc = (1 - p.social) * 2;
+        const r = rnd(s) * (wv + wh + wsoc);
+        if (r < wv) set('vila', lazy > 0.5 ? 'Har det bra och tar det lugnt' : 'Tar en paus');
+        else if (r < wv + wh) set('hantverk', u < 0.25 ? 'Byn har det gott ställt, det finns tid för hantverk' : 'Tycker om att göra handarbete');
+        else set('samtal', 'Vill umgås');
+      }
     }
   } else {
     const guardDay = Math.floor((s.now - s.founded - 7 * HOUR) / DAY);
@@ -528,23 +699,29 @@ function chooseTask(s: State, p: Person, live: boolean) {
       const g = adults.sort((x, y) => (y.pot.mod + rnd(s) * 8) - (x.pot.mod + rnd(s) * 8))[0];
       g.task = undefined; (g as any)._guard = guardDay;
     }
-    if ((p as any)._guard === guardDay && a >= 16) act = 'vakt';
-    else if (p.rest < 0.2) act = 'vila';
+    if ((p as any)._guard === guardDay && a >= 16) set('vakt', 'Håller vakt i natt');
     else {
       const r = rnd(s);
       const story = (p.skill.berattande + (a > 50 ? 6 : 0)) / 40;
       const craft = (p.skill.hantverk + stat(p, 'flit', s.now)) / 70;
-      act = a < 8 ? (r < 0.6 ? 'samtal' : 'sova') : r < story ? 'beratta' : r < story + craft ? 'hantverk' : r < 0.9 ? 'samtal' : 'vila';
+      if (a < 8) { if (r < 0.6) set('samtal', 'Mörkt, sitter med de vuxna vid elden'); else set('sova', 'Barn sover på natten'); }
+      else if (r < story) set('beratta', 'Mörkt, berättar för de andra vid elden');
+      else if (r < story + craft) set('hantverk', 'Mörkt, gör handarbete vid elden');
+      else if (r < 0.9) set('samtal', 'Mörkt, umgås vid elden');
+      else set('vila', 'Mörkt, vilar i hyddan');
     }
   }
-  const sp = spotFor(s, act, p);
+  if (act! === 'toa') dur = (4 + rnd(s) * 4) * 60 * SEC;
+  const sp = spotFor(s, act!, p);
   if (!live) { p.x = sp.x; p.y = sp.y; }
-  p.task = { act, phase: live ? 'go' : 'do', tx: sp.x, ty: sp.y, until: s.now + dur, carry: 0 };
+  p.task = { act: act!, phase: live ? 'go' : 'do', tx: sp.x, ty: sp.y, until: s.now + dur, carry: 0, why: why!, dark: !light };
 }
 
 // ---------- samtal ----------
 export interface TalkEvent { a: number; b: number; kind: string; good: boolean; t: number }
 const SOCIAL: Act[] = ['samtal', 'beratta', 'hantverk', 'vakt', 'leka', 'varma'];
+// uppgifter som avbryts när dag blir natt eller natt blir dag
+const FLIP: Act[] = ['samla', 'jakt', 'fiske', 'ved', 'leka', 'samtal', 'beratta', 'hantverk', 'vakt', 'vila'];
 function converse(s: State, a: Person, others: Person[], events?: TalkEvent[]) {
   const now = s.now;
   if (!others.length) return;
@@ -613,6 +790,10 @@ function die(s: State, p: Person, cause: string) {
   p.died = s.now; p.cause = cause; p.task = undefined;
   const a = Math.floor(ageOf(p, s.now));
   log(s, `${p.name} dog ${cause}, ${a} år gammal.`, 'death', [p.id]);
+  if (cause === 'av svält') sedEvent(s, 'forsiktighet', 0.15, `${p.name} svalt ihjäl. Byn har blivit mer försiktig.`);
+  else if (cause === 'av kyla') sedEvent(s, 'forsiktighet', 0.1, `${p.name} frös ihjäl. Byn har blivit mer försiktig.`);
+  else if (cause === 'under en jakt') sedEvent(s, 'forsiktighet', 0.04, `${p.name} dog under en jakt. Byn blev lite försiktigare.`);
+  if (a < 5) sedEvent(s, 'barn', 0.08, `Byn sörjer barnet ${p.name} och värnar mer om sina barn.`);
   if (a >= 70) p.fame.push(`Blev ${a} år gammal`);
   for (const q of living(s)) {
     if (q.partner === p.id) { q.partner = undefined; think(q, `Sörjer ${p.name}`, -0.3, s.now, 1.2 * DAY); }
@@ -664,6 +845,8 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
   s.food = Math.max(0, s.food * Math.exp(-0.003 * (1 + s.food / 250) / 3600 * dtSec * (ai === 0 ? 0.5 : 1)));
   stepFire(s, dtSec, live, ppl);
   const fh = hearthOf(s.fire), coldRate = COLD[ai][light ? 0 : 1];
+  const learn = 1 + 0.1 * s.seder.v.nyfikenhet; // en nyfiken by lär sig snabbare
+  if (Math.floor(now / HOUR) !== Math.floor((now - dtSec * SEC) / HOUR)) { stepSeder(s); updateTags(s); }
 
   const social: Person[] = [];
   for (const p of ppl) {
@@ -683,6 +866,9 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
     }
     if (p.warm < 0.35) think(p, 'Fryser', -0.12, now, HOUR);
     p.social = clamp(p.social - dtSec / (18 * 3600), 0, 1);
+    // toa: behovet växer på ungefär sju timmar, långsammare i sömnen
+    p.toa = clamp(p.toa - dtSec / (7 * 3600) * (p.task?.act === 'sova' ? 0.5 : 1), 0, 1);
+    if (p.toa <= 0) { p.toa = 1; if (a >= 3) think(p, 'Kissade på sig', -0.12, now, 4 * HOUR); }
     if (p.hunger < 0.45 && s.food >= 0.6) { const portion = a < 10 ? 0.6 : 1; s.food -= portion; p.hunger = clamp(p.hunger + 0.55, 0, 1); }
     // hälsa
     if (p.hunger <= 0) { p.health -= dtSec / (5 * 3600); if (rnd(s) < dtSec / 7200) think(p, 'Svälter', -0.25, now, 3 * HOUR); }
@@ -701,14 +887,15 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
     if (p.pregnantSince !== undefined) { if (now - p.pregnantSince > 0.75 * DAY) birth(s, p); }
     else if (p.sex === 'k' && p.partner !== undefined && a >= 17 && a <= 43 && (!p.lastBirth || now - p.lastBirth > 1.6 * DAY)) {
       const pop = ppl.length;
-      const f = (pop >= 26 ? 0.15 : 1) * clamp(foodDays(s) / 4, 0.15, 1);
+      const f = (pop >= 26 ? 0.15 : 1) * clamp(foodDays(s) / 4, 0.15, 1) * (1 + 0.2 * s.seder.v.barn);
       if (chance(s, 0.3 * f / 86400, dtSec)) { p.pregnantSince = now; (p as any)._by = p.partner; }
     }
     // uppgift
     const t = p.task;
-    const phaseFlip = t && (WORK.includes(t.act) || t.act === 'leka' ? !light : light && (t.act === 'samtal' || t.act === 'beratta' || t.act === 'hantverk' || t.act === 'vakt'));
+    const phaseFlip = t && t.dark !== !light && FLIP.includes(t.act); // dag blev natt eller tvärtom
     const lightDone = t?.act === 'tanda' && (s.fire.lit || !canLight(s));
-    if (!t || (t.until < now && t.phase !== 'back') || (phaseFlip && t.phase !== 'back') || lightDone) {
+    const mustGo = t && p.toa < 0.08 && t.act !== 'toa' && a >= 3; // nöden avbryter det man håller på med
+    if (!t || (t.until < now && t.phase !== 'back') || ((phaseFlip || mustGo) && t.phase !== 'back') || lightDone) {
       if (t && (t.carry > 0 || t.items) && t.act !== 'elda' && live) { t.phase = 'back'; const m = getMap(s.seed); t.tx = m.stock.x + 0.5 + rnd(s) * 1.5; t.ty = m.stock.y + 0.5 + rnd(s); }
       else chooseTask(s, p, live);
     }
@@ -722,7 +909,7 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
           if (tk.act === 'elda') {
             if (tk.phase === 'go') {
               // vid förrådet: ta en famn ved och gå till elden
-              const m = getMap(s.seed), n = Math.min(3, Math.max(0, fireTarget(s) - s.fire.fuel), s.wood);
+              const m = getMap(s.seed), n = s.fire.fuel >= fireWant(s) ? 0 : Math.min(3, Math.max(1, fireWant(s) - s.fire.fuel), s.wood);
               if (n <= 0) p.task = undefined;
               else { s.wood -= n; tk.carry = n; tk.phase = 'back'; tk.tx = m.fire.x + 0.5 + (rnd(s) - 0.5) * 1.2; tk.ty = m.fire.y + 1.2; }
             } else { addFuel(s, p, tk.carry); tk.carry = 0; p.task = undefined; }
@@ -737,6 +924,11 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
         if (rnd(s) < dtSec * 0.08) { p.x += (rnd(s) - 0.5) * 0.4; p.y += (rnd(s) - 0.5) * 0.4; }
       }
     }
+    if (tk.phase === 'do' && tk.act === 'toa') p.toa = 1;
+    // vana: tiden räknas mot yrkestaggar
+    const hf = Math.exp(-dtSec * SEC / HABIT_FADE);
+    for (const k in p.habit) p.habit[k] *= hf;
+    p.habit[tk.act] = (p.habit[tk.act] ?? 0) + dtSec / 3600;
     if (tk.phase === 'do' && WORK.includes(tk.act)) {
       const y = workRate(s, p, tk.act) * dtSec * (live ? 1 : 0.8);
       if (live) tk.carry += y; else if (tk.act === 'ved') s.wood += y; else s.food += y;
@@ -746,15 +938,19 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
       }
       const sk = tk.act as Skill;
       const before = p.skill[sk];
-      p.skill[sk] = clamp(p.skill[sk] + dtSec / 3600 * 0.12 * (0.4 + stat(p, 'intelligens', now) / 20) * (1 - p.skill[sk] / 21), 0, 20);
-      if (before < 16 && p.skill[sk] >= 16) { p.fame.push(`Mästare i ${SKILL_NAMES[sk].toLowerCase()}`); log(s, `${p.name} har blivit en mästare i ${SKILL_NAMES[sk].toLowerCase()}.`, 'skill', [p.id]); }
+      p.skill[sk] = clamp(p.skill[sk] + dtSec / 3600 * 0.12 * learn * (0.4 + stat(p, 'intelligens', now) / 20) * (1 - p.skill[sk] / 21), 0, 20);
+      if (before < 16 && p.skill[sk] >= 16) {
+        const title = `Mästare i ${SKILL_NAMES[sk].toLowerCase()}`, first = !s.people.some(q => q.fame.includes(title));
+        p.fame.push(title); log(s, `${p.name} har blivit en mästare i ${SKILL_NAMES[sk].toLowerCase()}.`, 'skill', [p.id]);
+        sedEvent(s, 'nyfikenhet', first ? 0.06 : 0.01, first ? `${p.name} blev byns första mästare i ${SKILL_NAMES[sk].toLowerCase()}. Byn ser vad kunskap kan ge.` : undefined);
+      }
     }
     if (tk.phase === 'do' && tk.act === 'tanda' && canLight(s)) {
       s.fire.tryProg += dtSec;
       const per = igniterOf(s)!.minutes * 60;
       while (s.fire.tryProg >= per && canLight(s) && !s.fire.lit) { s.fire.tryProg -= per; if (tryLight(s, p)) { p.task = undefined; break; } }
     }
-    if (tk.phase === 'do' && tk.act === 'hantverk') p.skill.hantverk = clamp(p.skill.hantverk + dtSec / 3600 * 0.1 * (1 - p.skill.hantverk / 21), 0, 20);
+    if (tk.phase === 'do' && tk.act === 'hantverk') p.skill.hantverk = clamp(p.skill.hantverk + dtSec / 3600 * 0.1 * learn * (1 - p.skill.hantverk / 21), 0, 20);
     if (tk.phase === 'do' && SOCIAL.includes(tk.act)) social.push(p);
     p.thoughts = p.thoughts.filter(x => x.until > now);
   }

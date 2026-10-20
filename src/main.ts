@@ -3,8 +3,8 @@ import '@pixi/unsafe-eval';
 import {
   State, Person, T, W, H, DAY, HOUR, STATS, STAT_NAMES, SKILLS, SKILL_NAMES, AGES, ACT_NAMES, TalkEvent, LogEntry,
   createState, step, getMap, living, alive, ageOf, byId, relKey, moodOf, ageIndex, ageDay, yearNo, lightLevel, isLight,
-  foodDays, timeLabel, serialize, compact, stat, migrate, hearthOf, igniterOf, fireHeat, heatRadius, fireTarget, emberOn,
-  ITEM_NAMES, FireLog,
+  foodDays, timeLabel, serialize, compact, stat, migrate, hearthOf, igniterOf, fireHeat, heatRadius, fireWant, emberOn,
+  ITEM_NAMES, FireLog, SEDER, SED_INFO, Sed, influence, duty, habitShare, habitTotal, Act,
 } from './sim';
 
 const TS = 16; // pixlar per ruta i världen
@@ -19,7 +19,7 @@ let speed = 1;
 let selected: number | undefined;
 let busy = false; // ikappräkning pågår
 let db: any = null, uid: string | null = null;
-let tab: 'folk' | 'logg' | 'person' | 'eld' = 'folk';
+let tab: 'folk' | 'logg' | 'person' | 'eld' | 'seder' = 'folk';
 
 // ---------- sparning ----------
 function saveLocal() {
@@ -333,12 +333,14 @@ function renderPanel(force = false) {
     const rows = ppl.slice().sort((a, b) => b.born < a.born ? 1 : -1).sort((a, b) => ageOf(b, s.now) - ageOf(a, s.now));
     box.innerHTML = `<ul class="folk">${rows.map(p => {
       const m = moodOf(p, s.now);
-      return `<li><button class="row" data-id="${p.id}" type="button"><span class="dot" style="background:#${hsl(p.hue, 0.5, 0.58).toString(16).padStart(6, '0')}"></span><span class="nm">${esc(p.name)}</span><span class="age">${Math.floor(ageOf(p, s.now))} år</span><span class="act">${p.task ? ACT_NAMES[p.task.act] : '–'}</span>${bar(m, m < 0.35 ? 'low' : '')}</button></li>`;
+      return `<li><button class="row" data-id="${p.id}" type="button"><span class="dot" style="background:#${hsl(p.hue, 0.5, 0.58).toString(16).padStart(6, '0')}"></span><span class="nm">${esc(p.name)}${p.tag ? ` <span class="tag">${esc(p.tag)}</span>` : ''}</span><span class="age">${Math.floor(ageOf(p, s.now))} år</span><span class="act">${p.task ? ACT_NAMES[p.task.act] : '–'}</span>${bar(m, m < 0.35 ? 'low' : '')}</button></li>`;
     }).join('')}</ul>`;
   } else if (tab === 'logg') {
     box.innerHTML = `<ol class="logg">${s.log.slice().reverse().slice(0, 150).map(l => `<li class="k-${l.kind}"><span class="when">${timeLabel(s, l.t)}</span>${linkify(l)}</li>`).join('')}</ol>`;
   } else if (tab === 'eld') {
     box.innerHTML = fireHtml();
+  } else if (tab === 'seder') {
+    box.innerHTML = sederHtml();
   } else {
     const p = byId(s, selected);
     if (!p) { box.innerHTML = `<p class="muted">Klicka på en person på kartan eller i listan för att se allt om hen.</p>`; return; }
@@ -348,12 +350,14 @@ function renderPanel(force = false) {
       .sort((x, y) => Math.abs(y.r.op) - Math.abs(x.r.op)).slice(0, 8);
     const status = alive(p) ? (p.task ? ACT_NAMES[p.task.act] : '–') : p.died !== undefined ? `Dog ${p.cause} (${timeLabel(s, p.died)})` : `Flyttade från byn (${timeLabel(s, p.left!)})`;
     box.innerHTML = `
-      <div class="phead"><span class="dot big" style="background:#${hsl(p.hue, 0.5, 0.58).toString(16).padStart(6, '0')}"></span><div><h2>${esc(p.name)}</h2>
-      <p class="muted">${p.sex === 'k' ? 'Kvinna' : 'Man'}, ${Math.floor(a)} år · född ${timeLabel(s, p.born)}</p><p class="status">${status}</p></div></div>
+      <div class="phead"><span class="dot big" style="background:#${hsl(p.hue, 0.5, 0.58).toString(16).padStart(6, '0')}"></span><div><h2>${esc(p.name)}</h2>${p.tag && alive(p) ? `<p class="tag">${esc(p.tag)}</p>` : ''}
+      <p class="muted">${p.sex === 'k' ? 'Kvinna' : 'Man'}, ${Math.floor(a)} år · född ${timeLabel(s, p.born)}</p><p class="status">${status}</p>${alive(p) && p.task?.why ? `<p class="why">Varför: ${esc(p.task.why)}</p>` : ''}</div></div>
       ${alive(p) ? `<h3>Mående</h3><dl class="kv">
         <dt>Humör</dt><dd>${bar(moodOf(p, now))}<span>${moodWord(moodOf(p, now))}</span></dd>
         <dt>Mättnad</dt><dd>${bar(p.hunger)}</dd><dt>Vila</dt><dd>${bar(p.rest)}</dd>
-        <dt>Gemenskap</dt><dd>${bar(p.social)}</dd><dt>Hälsa</dt><dd>${bar(p.health, p.health < 0.5 ? 'low' : '')}</dd></dl>
+        <dt>Gemenskap</dt><dd>${bar(p.social)}</dd><dt>Hälsa</dt><dd>${bar(p.health, p.health < 0.5 ? 'low' : '')}</dd>
+        <dt>Värme</dt><dd>${bar(p.warm, p.warm < 0.4 ? 'low' : '')}</dd><dt>Toa</dt><dd>${bar(p.toa, p.toa < 0.25 ? 'low' : '')}</dd></dl>
+        ${a >= 8 ? willHtml(p) : ''}
         ${p.thoughts.length ? `<ul class="thoughts">${p.thoughts.map(t => `<li class="${t.v < 0 ? 'neg' : 'pos'}">${esc(t.text)} <span>${t.v > 0 ? '+' : ''}${Math.round(t.v * 100)}</span></li>`).join('')}</ul>` : ''}` : ''}
       <h3>Egenskaper</h3><dl class="kv">${STATS.map(k => `<dt>${STAT_NAMES[k]}</dt><dd>${bar(stat(p, k, now) / 20)}<span>${stat(p, k, now).toFixed(1).replace('.', ',')}</span></dd>`).join('')}</dl>
       <h3>Färdigheter</h3><dl class="kv">${SKILLS.map(k => `<dt>${SKILL_NAMES[k]}</dt><dd>${bar(p.skill[k] / 20, 'skill')}<span>${p.skill[k].toFixed(1).replace('.', ',')}</span></dd>`).join('')}</dl>
@@ -386,7 +390,7 @@ function fireHtml() {
   const status = f.lit ? 'Brinner' : emberOn(s) ? `Glöder. Ny ved får den att brinna igen (${durTxt(f.emberUntil! - now)} kvar).` : 'Släckt. Den måste tändas på nytt.';
   const tender = living(s).find(p => p.task?.act === 'elda'), lighter = living(s).find(p => p.task?.act === 'tanda');
   const fills = Object.entries(f.fills).map(([id, n]) => ({ p: byId(s, Number(id)), n })).filter(x => x.p).sort((a, b) => b.n - a.n).slice(0, 6);
-  const tgt = fireTarget(s);
+  const tgt = fireWant(s);
   return `
     <div class="phead"><span class="dot big" style="background:${f.lit ? '#e2702e' : emberOn(s) ? '#b3361e' : '#4b4640'}"></span><div><h2>${esc(h.name)}</h2>
     <p class="muted">${esc(h.desc)}</p><p class="status">${status}</p></div></div>
@@ -396,6 +400,7 @@ function fireHtml() {
       <dt>Förbrukning</dt><dd>${num(h.burn)} ved i timmen</dd>
       <dt>Räcker</dt><dd>${f.lit ? `ca ${durTxt(f.fuel / h.burn * HOUR)}` : '–'}</dd>
       <dt>Önskat</dt><dd>${num(tgt)} ved på elden</dd>
+      ${f.wantWhy && byId(s, f.wantBy) ? `<dt>Önskas av</dt><dd>${pLink(byId(s, f.wantBy))}: ${esc(f.wantWhy).toLowerCase()}</dd>` : ''}
       ${tender ? `<dt>Hämtar ved</dt><dd>${pLink(tender)}</dd>` : ''}
     </dl>
     ${f.lit ? `<h3>Denna eld</h3><dl class="kv fam">
@@ -422,6 +427,37 @@ function fireHtml() {
       <dt>Spridningsrisk</dt><dd>${spreadWord(h.spread)}</dd></dl>
     ${fills.length ? `<h3>Fyller oftast på</h3><ul class="rels">${fills.map(x => `<li>${pLink(x.p)}<span></span><span class="muted">${times(x.n)}</span></li>`).join('')}</ul>` : ''}
     <h3>Historik</h3>${f.log.length ? `<ol class="logg">${f.log.slice().reverse().slice(0, 40).map(fireEntry).join('')}</ol>` : '<p class="muted">Elden har aldrig brunnit.</p>'}`;
+}
+const HABIT_GROUPS: { name: string; acts: Act[] }[] = [
+  { name: 'Jakt', acts: ['jakt'] }, { name: 'Fiske', acts: ['fiske'] }, { name: 'Samla mat', acts: ['samla'] }, { name: 'Hugga ved', acts: ['ved'] },
+  { name: 'Hantverk', acts: ['hantverk'] }, { name: 'Berätta', acts: ['beratta'] }, { name: 'Sköta elden', acts: ['elda', 'tanda'] },
+  { name: 'Hålla vakt', acts: ['vakt'] }, { name: 'Prata', acts: ['samtal'] }, { name: 'Vila', acts: ['vila'] }, { name: 'Leka', acts: ['leka'] },
+];
+function willHtml(p: Person) {
+  const d = duty(s, p), tot = habitTotal(p);
+  const top = tot > 0 ? HABIT_GROUPS.map(g => ({ g, v: habitShare(p, g.acts, tot) })).filter(x => x.v >= 0.04).sort((a, b) => b.v - a.v).slice(0, 4) : [];
+  return `<h3>Vilja</h3><dl class="kv">
+    <dt>Pliktkänsla</dt><dd>${bar(d, 'skill')}<span>${d > 0.75 ? 'Plikttrogen' : d > 0.5 ? 'Gör sin del' : d > 0.3 ? 'Bekväm' : 'Lat'}</span></dd>
+    ${top.map(x => `<dt>${x.g.name}</dt><dd>${bar(x.v / top[0].v)}<span>${Math.round(x.v * 100)} %</span></dd>`).join('')}</dl>
+    ${top.length ? '<p class="muted small">Staplarna visar vad hen ägnat sin vakna tid åt de senaste dygnen.</p>' : ''}`;
+}
+function sedBar(v: number) {
+  const w = Math.round(Math.abs(v) * 50);
+  return `<span class="sbar"><span style="${v >= 0 ? `left:50%;width:${w}%` : `left:${50 - w}%;width:${w}%`}"></span></span>`;
+}
+function sedWord(k: Sed, v: number) {
+  const i = SED_INFO[k], a = Math.abs(v);
+  if (a < 0.12) return 'Ingen tydlig hållning';
+  return `${a > 0.55 ? 'Starkt' : a > 0.3 ? 'Tydligt' : 'Lite'}: ${(v > 0 ? i.pos : i.neg).toLowerCase()}`;
+}
+function sederHtml() {
+  const sd = s.seder;
+  const voices = living(s).map(p => ({ p, w: influence(s, p) })).filter(x => x.w > 0).sort((a, b) => b.w - a.w).slice(0, 5);
+  return `<p class="muted">Byns seder är vad invånarna tillsammans tycker är viktigt. De växer fram ur deras egenskaper och ur det som händer byn. Äldre och karismatiska röster väger tyngst. Sederna påverkar vad var och en väljer att göra.</p>
+    <ul class="seder">${SEDER.map(k => `<li><div class="sedtop"><span>${SED_INFO[k].neg}</span><span>${SED_INFO[k].pos}</span></div>${sedBar(sd.v[k])}
+      <p class="sedw">${sedWord(k, sd.v[k])}</p><p class="muted small">${SED_INFO[k].effect}</p></li>`).join('')}</ul>
+    <h3>Tyngst röster</h3>${voices.length ? `<ul class="rels">${voices.map(x => `<li>${pLink(x.p)}<span></span><span class="muted">${Math.floor(ageOf(x.p, s.now))} år${x.p.tag ? `, ${esc(x.p.tag.toLowerCase())}` : ''}</span></li>`).join('')}</ul>` : '<p class="muted">–</p>'}
+    <h3>Det som format sederna</h3>${sd.log.length ? `<ol class="logg">${sd.log.slice().reverse().map(l => `<li><span class="when">${timeLabel(s, l.t)}</span>${esc(l.text)}</li>`).join('')}</ol>` : '<p class="muted">Inget särskilt har hänt ännu.</p>'}`;
 }
 function linkify(l: LogEntry) {
   let t = esc(l.text);
