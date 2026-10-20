@@ -4,7 +4,10 @@
   "description": "",
   "scripts": {
     "build": "node build.mjs",
-    "test": "tsx src/test.ts",
+    "test": "tsx src/test/test.ts",
+    "facit": "tsx src/test/test.ts --spara",
+    "balans": "tsx src/test/balans.ts",
+    "detaljer": "tsx src/test/detaljer.ts",
     "check": "tsc -p ."
   },
   "repository": {
@@ -24,6 +27,7 @@
   "private": true,
   "type": "module",
   "devDependencies": {
+    "@types/node": "^22.20.5",
     "typescript": "^5.9.3"
   }
 }

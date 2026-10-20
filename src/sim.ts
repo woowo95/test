@@ -642,7 +642,13 @@ function spotFor(s: State, act: Act, p: Person): { x: number; y: number } {
   }
   if (act === 'kol') return { x: f.x + 0.5 + (rnd(s) - 0.5) * 0.6, y: f.y + 1.1 };
   if (act === 'sova' || act === 'vila') { const h = m.huts[p.id % m.huts.length]; return { x: h.x + 0.6 + rnd(s) * 0.8, y: h.y + 0.6 + rnd(s) * 0.8 }; }
-  if (act === 'leka') return { x: f.x + (rnd(s) - 0.5) * 8, y: f.y + 3 + rnd(s) * 3 };
+  if (act === 'leka') { // lekplatsen ligger söder om elden, men aldrig i vattnet
+    for (let k = 0; k < 12; k++) {
+      const x = f.x + (rnd(s) - 0.5) * 8, y = f.y + 3 + rnd(s) * 3;
+      if (x >= 0 && y >= 0 && x < W && y < H && m.tiles[Math.floor(y) * W + Math.floor(x)] !== T.Vatten) return { x, y };
+    }
+    return { x: f.x + 0.5, y: f.y + 1.5 };
+  }
   const want = (t: number, x: number, y: number) => {
     if (act === 'fiske') {
       if (t === T.Vatten) return false;

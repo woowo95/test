@@ -1,8 +1,9 @@
-import { createState, step, living, DAY, AGES, ageIndex, ageOf, serialize, State, SEDER, coverOf, getMap } from './sim';
-import { STIG, BAR, hasCover } from './vag';
+import { createState, step, living, DAY, AGES, ageIndex, ageOf, serialize, State, SEDER, coverOf, getMap } from '../sim';
+import { STIG, BAR, hasCover } from '../vag';
 
 const start = Date.parse('2026-10-20T08:00:00+02:00');
-for (const seed of [1, 42, 777]) {
+const valda = process.argv.slice(2).map(Number);
+for (const seed of valda.length ? valda : [1, 42, 777]) {
   const s = createState(seed, start);
   const days = 90;
   const t0 = performance.now();

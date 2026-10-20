@@ -15,7 +15,15 @@ Björn programmerar inte; Claude skriver all kod. Svara på svenska.
 
 ## Bygga och publicera
 
-- `npm install`, sedan `npm run build`, som ger `samhallssimulatorn.html`. `npm test` kör 90 dygn utan grafik.
+- `npm install`, sedan `npm run build`, som ger `samhallssimulatorn.html`.
+
+## Tester (spara tokens)
+
+- `npm test`: tre byar i 90 dygn utan grafik, en rad per by, jämfört med `test/facit.json`. Visar bara det som ändrats, och vakter som larmar om något omöjligt händer (NaN, negativa förråd, folk i vattnet).
+- `npm run facit`: spara nytt facit när en ändring är avsiktlig.
+- `npm run balans -- [antal] [dygn]`: många byar parallellt, median/sämst/bäst. Använd vid balansering.
+- `npm run detaljer -- [by]`: den långa utskriften, bara när något behöver undersökas.
+- Ta skärmbilder bara när utseendet ändrats; kontrollera annars text på sidan.
 - Publicera alltid till samma artefakt-URL så att Björns sparade by och länk finns kvar.
 - Lägg uppdaterad källkod under `kalla/` i artefakten vid varje publicering (filnamn med `.txt`).
 - Uppdatera "Läget just nu" i designdokumentet när något nytt är byggt.
