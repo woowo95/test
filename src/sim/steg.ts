@@ -2,7 +2,7 @@ import { rotStumps } from './skog';
 import { addFood, capacity, dropSpot, homeKind, load, pickUp, storeLoad, takeFood, tidyStore, wearStore } from './lager';
 import { makeSpear, wearSpear } from './redskap';
 import { foodDays, workRate } from './ekonomi';
-import { TRY_SEC, eatPoison, growFynd, handFish, packFynd, pickMushrooms, richness, takeFrom } from './fynd';
+import { TRY_SEC, count, eatPoison, growFynd, handFish, packFynd, pickMushrooms, richness, takeFrom } from './fynd';
 import { coldOf, temperature } from './vader';
 import { addFuel, addItems, canLight, fireWant, forageItems, fuelStock, hearthOf, heatAt, igniterOf, stepFire, takeCoal, takeFuel, tryLight } from './eld';
 import { ageOf, alive, living, log, stat, think } from './folk';
@@ -64,7 +64,14 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
     if (p.toa <= 0) { p.toa = 1; if (a >= 3) think(p, 'Kissade på sig', -0.12, now, 4 * HOUR); }
     if (p.hunger < 0.45 && s.food >= 0.3) { // en hel portion, eller det som finns kvar
       const full = a < 10 ? 0.6 : 1, portion = Math.min(full, s.food);
-      takeFood(s, portion); p.hunger = clamp(p.hunger + 0.55 * portion / full, 0, 1); eatPoison(s, p);
+      const q = takeFood(s, portion); // maten under halva skicket mättar sämre, under en fjärdedel kan man bli sjuk
+      p.hunger = clamp(p.hunger + 0.55 * portion / full * (q >= 0.5 ? 1 : 0.5 + q), 0, 1); eatPoison(s, p);
+      if (q < 0.5) think(p, 'Maten var dålig', -0.05, now, 6 * HOUR);
+      if (q < 0.25 && rnd(s) < (0.25 - q) / 0.25 * 0.35) {
+        p.sickUntil = Math.max(p.sickUntil ?? 0, now + (4 + rnd(s) * 8) * HOUR); p.sickWhy = 'Magsjuk av skämd mat';
+        think(p, 'Åt skämd mat och blev magsjuk', -0.2, now, DAY / 2); count(s, 'skamdMat');
+        log(s, `${p.name} blev magsjuk av skämd mat.`, 'world', [p.id]);
+      }
     }
     // hälsa
     if (p.hunger <= 0) { p.health -= dtSec / (5 * 3600); if (rnd(s) < dtSec / 7200) think(p, 'Svälter', -0.25, now, 3 * HOUR); }
@@ -72,7 +79,7 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
     else if (p.hunger > 0.3 && !(p.sickUntil && p.sickUntil > now)) p.health = clamp(p.health + dtSec / (10 * 3600), 0, 1);
     if (p.sickUntil && p.sickUntil > now) p.health -= dtSec / (40 * 3600);
     if (!p.sickUntil || p.sickUntil < now) {
-      if (chance(s, (ai === 0 ? 0.12 : 0.05) / 86400, dtSec)) { const dur = (3 + rnd(s) * 8) * HOUR; p.sickUntil = now + dur; if (dur > 8 * HOUR) log(s, `${p.name} blev svårt sjuk.`, 'world', [p.id]); }
+      if (chance(s, (ai === 0 ? 0.12 : 0.05) / 86400, dtSec)) { const dur = (3 + rnd(s) * 8) * HOUR; p.sickUntil = now + dur; p.sickWhy = 'Sjuk'; if (dur > 8 * HOUR) log(s, `${p.name} blev svårt sjuk.`, 'world', [p.id]); }
     }
     if (p.health <= 0) { die(s, p, p.hunger <= 0 ? 'av svält' : p.warm < 0.12 ? 'av kyla' : (p.poisonUntil ?? 0) > now ? 'av svampförgiftning' : 'av sjukdom'); continue; }
     // ålderdom och olyckor (Gompertz, per år = per dygn)
@@ -131,7 +138,7 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
               else { tk.carry = takeFuel(s, n); tk.phase = 'back'; tk.tx = m.fire.x + 0.5 + (rnd(s) - 0.5) * 1.2; tk.ty = m.fire.y + 1.2; }
             } else { addFuel(s, p, tk.carry); tk.carry = 0; p.task = undefined; }
           } else if (tk.phase === 'back') {
-            storeLoad(s, tk); p.task = undefined;
+            storeLoad(s, tk, p.x, p.y); p.task = undefined;
           } else { tk.phase = 'do'; if (tk.act === 'bara') { pickUp(s, p, tk); tk.until = now; } }
         } else { wear(g, ci, WEAR * sp); p.x += dx / d * sp; p.y += dy / d * sp; }
       } else if (tk.act !== 'sova' && tk.act !== 'vakt' && tk.act !== 'hantverk') {

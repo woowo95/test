@@ -44,7 +44,7 @@ export const taskName = (t: Task) => t.act === 'fiske' && t.tool === 'fiskespjut
 
 export interface Thought { text: string; v: number; until: number }
 // why = varför personen valde uppgiften, dark = påbörjad under mörk tid
-export interface Task { act: Act; phase: 'go' | 'do' | 'back'; tx: number; ty: number; until: number; carry: number; items?: Record<string, number>; why?: string; dark?: boolean; path?: number[]; pk?: string; ref?: number; prog?: number; tool?: string } // tool = redskap som används, t.ex. fiskespjut
+export interface Task { act: Act; phase: 'go' | 'do' | 'back'; tx: number; ty: number; until: number; carry: number; items?: Record<string, number>; cond?: Record<string, number>; why?: string; dark?: boolean; path?: number[]; pk?: string; ref?: number; prog?: number; tool?: string } // tool = redskap som används, t.ex. fiskespjut
 
 export interface Person {
   id: number; name: string; sex: 'm' | 'k';
@@ -55,7 +55,7 @@ export interface Person {
   warm: number; // kroppsvärme 0–1
   toa: number; // 1 = inget behov, 0 = olycka
   habit: Record<string, number>; // timmar per aktivitet, bleknar med tiden (ger yrkestaggar)
-  sickUntil?: number; poisonUntil?: number; pregnantSince?: number; lastBirth?: number;
+  sickUntil?: number; sickWhy?: string; poisonUntil?: number; pregnantSince?: number; lastBirth?: number;
   fiske?: { f: number; n: number; k: number }; // fiske med händerna: försök, napp och fångade fiskar
   kunskap?: Record<string, { v: number; t: number }>; // det personen kan (alltid rätt), 0–1, och när det senast användes
   lardomar?: Lardom[]; // det personen tror om platser (kan vara fel, överdrivet eller inaktuellt)
@@ -89,7 +89,9 @@ export interface State {
   stockar?: Stock[]; // fällda träd som ligger och väntar på att huggas
   lager?: { x: number; y: number; w: number; h: number }; // lagerplatsen, rutor
   mat?: Record<string, number>; // maten per slag (bär, kött, fisk, svamp); s.food är summan
-  marken?: { x: number; y: number; k: string; n: number }[]; // saker som lagts ner på marken utanför lagret
+  marken?: { x: number; y: number; k: string; n: number }[]; // gamla sparfiler: saker på marken (nu i stackar)
+  lagren?: { x: number; y: number; w: number; h: number; namn?: string; slag?: 'mat' | 'material'; prio?: number }[]; // lagerplatserna
+  stackar?: { k: string; n: number; c: number; x: number; y: number }[]; // alla stackar med plats och skick (c: 1 = nytt)
   stubbar?: { x: number; y: number; t: number }[]; // stubbar efter fällda träd, t = när trädet fälldes
   nextStock?: number; fallda?: number;
   fynd?: string; // hur mycket som tagits ur varje plats (bär, vilt, fisk), packat

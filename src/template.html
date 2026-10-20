@@ -49,6 +49,15 @@ h1 { font-family: var(--display); font-weight: 700; font-size: 1.7rem; margin: 0
 .tip dl { display: grid; grid-template-columns: 70px minmax(0, 1fr); gap: 2px 8px; margin: 6px 0 0; align-items: center; }
 .tip dd { margin: 0; }
 .tip .bar { width: 100%; background: rgba(255,255,255,0.15); }
+/* lista till vänster över allt byn äger */
+.owned { position: absolute; left: 10px; top: 108px; width: 158px; max-height: calc(100% - 200px); overflow-y: auto; background: rgba(18, 22, 20, 0.6); color: #eef1ec; border-radius: 4px; padding: 6px 8px; font-size: 12px; line-height: 1.4; scrollbar-width: thin; }
+.owned h4 { margin: 0 0 3px; font-size: 12px; opacity: 0.8; font-weight: 700; }
+.owned .fold { display: block; width: 100%; text-align: left; border: 0; background: none; color: inherit; font: inherit; font-weight: 700; padding: 2px 0; cursor: pointer; }
+.owned .fold .n { float: right; font-weight: 400; opacity: 0.8; }
+.owned ul { list-style: none; margin: 0 0 2px; padding: 0 0 0 12px; }
+.owned li { display: flex; justify-content: space-between; gap: 6px; }
+.owned .n { font-variant-numeric: tabular-nums; }
+.owned p { margin: 2px 0 0; opacity: 0.8; }
 /* rutan som visar vad musen är över */
 .hoverBox { position: absolute; left: 10px; bottom: 10px; max-width: min(260px, calc(100% - 140px)); background: rgba(18, 22, 20, 0.6); color: #eef1ec; border-radius: 4px; padding: 6px 9px; font-size: 12px; line-height: 1.35; pointer-events: none; }
 .hoverBox b { font-weight: 700; }
@@ -85,6 +94,7 @@ ul, ol { list-style: none; margin: 0; padding: 0; }
 .trend.up { color: var(--good); }
 .trend.down { color: var(--bad); }
 .tag { color: var(--accent); font-weight: 500; font-size: 12px; margin: 0; }
+.tag.sjuk { color: var(--bad); }
 .why { margin: 2px 0 0; font-size: 13px; color: var(--muted); font-style: italic; }
 .small { font-size: 12px; margin: 4px 0 0; }
 .seder li { padding: 10px 0; border-top: 1px solid var(--line); }
@@ -110,6 +120,7 @@ h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: 
 .kv dd { margin: 0; display: flex; align-items: center; gap: 8px; font-variant-numeric: tabular-nums; }
 .kv dd .bar { flex: 1; max-width: 140px; }
 .kv.fam dd { display: block; }
+.kv.stk { grid-template-columns: max-content minmax(0, 1fr); }
 .thoughts { margin-top: 8px; display: grid; gap: 3px; }
 .thoughts li { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; }
 .thoughts .pos span { color: var(--good); } .thoughts .neg span { color: var(--bad); }
@@ -143,7 +154,7 @@ body.testing .mapwrap { box-shadow: 0 0 0 3px var(--accent); }
   .chip { font-size: 12px; padding: 3px 7px; }
   .chips { top: 66px; }
   .port { width: 78px; }
-  .hoverBox { display: none; }
+  .hoverBox, .owned { display: none; }
   aside { min-height: 420px; }
   #panelBody { max-height: 60vh; }
 }
@@ -161,6 +172,7 @@ body.testing .mapwrap { box-shadow: 0 0 0 3px var(--accent); }
       <div id="ports" class="ports" aria-label="Invånare"></div>
       <div id="portTip" class="tip" hidden></div>
       <div id="hoverBox" class="hoverBox" hidden></div>
+      <div id="owned" class="owned" aria-label="Allt byn äger"></div>
       <div class="chips">
         <span class="chip"><b id="sPop">0</b>invånare</span>
         <span class="chip"><b id="sFood">0</b>mat<span id="sFoodDays"></span></span>

@@ -6,7 +6,7 @@ import {
   foodDays, timeLabel, temperature, serialize, compact, stat, migrate, hearthOf, igniterOf, fireHeat, heatRadius, fireWant, emberOn,
   ITEM_NAMES, FireLog, coverOf, groundOf, SEDER, SED_INFO, Sed, influence, duty, habitShare, habitTotal, Act,
   richness, stoneDist, Kind, KUNSKAP_NAMES, describe, Lardom, STUBBE_LIV,
-  zoneOf, pilesOf, groundPiles, inZone, STACK_ORDER, STACK_NAMES, amountOf, capacity, load, carryKind, Pile, OUT_WEAR,
+  zonesOf, zoneAt, pilesOf, inZone, STACK_NAMES, amountOf, capacity, load, carryKind, Pile, OUT_WEAR, condOf, FOLDERS, STACK,
 } from './sim';
 import { HIGH, BAR, FOREST } from './sim/vag';
 
@@ -24,6 +24,7 @@ let busy = false; // ikappräkning pågår
 let db: any = null, uid: string | null = null;
 let tab: 'folk' | 'logg' | 'person' | 'eld' | 'lager' | 'hog' | 'seder' = 'folk';
 let hogAt = { x: 0, y: 0 }; // rutan med högar utanför lagret som visas i panelen
+let lagerNr = 0; // vilken lagerplats som visas i panelen
 
 // ---------- sparning ----------
 function saveLocal() {
@@ -212,8 +213,11 @@ function drawTerrain(force = false) {
   }
 }
 // en stack: ju fullare desto fler saker i högen
+const condCol = (c: number) => c >= 0.5 ? 0x6fbf5a : c >= 0.25 ? 0xe0b040 : 0xd2553f;
 function drawPile(pl: Pile) {
-  const x0 = pl.x * TS, y0 = pl.y * TS, f = Math.min(1, pl.n / pl.max), g = structG;
+  const x0 = pl.x * TS, y0 = pl.y * TS, f = Math.min(1, pl.n / pl.max), g = structG, c = condOf(pl);
+  // liten stapel för skicket längst ner i rutan
+  g.beginFill(0x161210, 0.7).drawRect(x0 + 2, y0 + 13.5, 12, 2).endFill().beginFill(condCol(c)).drawRect(x0 + 2, y0 + 13.5, 12 * Math.max(0, Math.min(1, c)), 2).endFill();
   const n = pl.max === 1 ? 1 : Math.max(1, Math.round(f * 6));
   const spot = (i: number) => ({ x: x0 + 3 + (i % 3) * 4, y: y0 + 11 - Math.floor(i / 3) * 4 });
   for (let i = 0; i < n; i++) {
@@ -236,10 +240,11 @@ function drawStructures(t: number) {
   structG.clear();
   // förråd
   // lagerplatsen: en ram runt rutorna, och en stack per ruta
-  const z = zoneOf(s);
-  structG.beginFill(0x5b4a35, 0.22).lineStyle(1, tab === 'lager' ? 0xffffff : 0x5b4a35, tab === 'lager' ? 0.9 : 0.5).drawRoundedRect(z.x * TS + 0.5, z.y * TS + 0.5, z.w * TS - 1, z.h * TS - 1, 3).endFill().lineStyle(0);
+  zonesOf(s).forEach((z, i) => {
+    const on = tab === 'lager' && lagerNr === i;
+    structG.beginFill(0x5b4a35, 0.22).lineStyle(1, on ? 0xffffff : 0x5b4a35, on ? 0.9 : 0.5).drawRoundedRect(z.x * TS + 0.5, z.y * TS + 0.5, z.w * TS - 1, z.h * TS - 1, 3).endFill().lineStyle(0);
+  });
   for (const pl of pilesOf(s)) drawPile(pl);
-  for (const pl of groundPiles(s)) drawPile(pl);
   // stubbar: bleknar medan de ruttnar bort
   for (const k of s.stubbar ?? []) {
     const a = 1 - (s.now - k.t) / STUBBE_LIV, x = k.x * TS + TS * 0.65, y = k.y * TS + TS * 0.6;
@@ -379,7 +384,7 @@ function fireAt(gx: number, gy: number) {
 app.stage.on('pointertap', e => {
   if (drag && drag.moved > 6) return;
   const p = personAt(e.global.x, e.global.y);
-  if (p) selectPerson(p.id); else if (fireAt(e.global.x, e.global.y)) { tab = 'eld'; renderPanel(true); } else if (storeAt(e.global.x, e.global.y)) { tab = 'lager'; renderPanel(true); } else { const c = tileAt(e.global.x, e.global.y); if (outPilesAt(c.x, c.y).length) { hogAt = c; tab = 'hog'; renderPanel(true); } }
+  if (p) selectPerson(p.id); else if (fireAt(e.global.x, e.global.y)) { tab = 'eld'; renderPanel(true); } else if (storeAt(e.global.x, e.global.y)) { lagerNr = storeAt(e.global.x, e.global.y) - 1; tab = 'lager'; renderPanel(true); } else { const c = tileAt(e.global.x, e.global.y); if (outPilesAt(c.x, c.y).length) { hogAt = c; tab = 'hog'; renderPanel(true); } }
 });
 app.stage.on('pointermove', e => {
   if (drag && (e.buttons & 1 || e.pointerType === 'touch')) {
@@ -402,9 +407,10 @@ function selectPerson(id: number) { selected = id; tab = 'person'; renderPanel(t
 const RICH_WORD = (v: number) => v >= 0.7 ? 'gott om' : v >= 0.35 ? 'en del' : v >= 0.1 ? 'lite' : 'nästan inget';
 const fmtN = (n: number) => n >= 10 || Number.isInteger(n) ? String(Math.round(n)) : n.toFixed(1).replace('.', ',');
 // högar utanför lagret på en ruta: det som inte fick plats och det som lagts på marken
-const outPilesAt = (x: number, y: number) => [...pilesOf(s), ...groundPiles(s)].filter(q => q.out && q.x === x && q.y === y);
+const outPilesAt = (x: number, y: number) => pilesOf(s).filter(q => q.out && q.x === x && q.y === y);
+const pileTxt = (p: Pile) => `${STACK_NAMES[p.k]} ${p.max === 1 ? '' : `${fmtN(p.n)} st, `}skick ${Math.round(condOf(p) * 100)} %`;
 function tileAt(gx: number, gy: number) { const w = world.toLocal(new PIXI.Point(gx, gy)); return { x: Math.floor(w.x / TS), y: Math.floor(w.y / TS) }; }
-function storeAt(gx: number, gy: number) { const w = world.toLocal(new PIXI.Point(gx, gy)); return inZone(zoneOf(s), Math.floor(w.x / TS), Math.floor(w.y / TS)); }
+function storeAt(gx: number, gy: number) { const c = tileAt(gx, gy); return zoneAt(s, c.x, c.y) + 1; } // 0 = ingen lagerplats
 function showHover(gx: number, gy: number) {
   const box = $('hoverBox'), w = world.toLocal(new PIXI.Point(gx, gy));
   const x = Math.floor(w.x / TS), y = Math.floor(w.y / TS);
@@ -423,12 +429,13 @@ function showHover(gx: number, gy: number) {
   if (t !== T.Vatten && stoneDist(s.seed)[i] <= 2) rows.push('Flinta är vanlig här');
   const near = (a: { x: number; y: number }, wd = 1, ht = 1) => x >= a.x && x < a.x + wd && y >= a.y && y < a.y + ht;
   if (near(m.fire)) rows.push(`Elden (${s.fire.lit ? 'brinner' : emberOn(s) ? 'glöder' : 'släckt'})`);
-  if (inZone(zoneOf(s), x, y)) {
-    const pl = pilesOf(s).find(q => q.x === x && q.y === y && !q.out);
-    rows.push(`<b>Lagerplats</b> · ${pl ? `${STACK_NAMES[pl.k]}: ${fmtN(pl.n)} av ${pl.max}` : 'tom ruta'}`);
+  const zi = zoneAt(s, x, y);
+  if (zi >= 0) {
+    const pl = pilesOf(s).find(q => q.x === x && q.y === y);
+    rows.push(`<b>${esc(zonesOf(s)[zi].namn ?? 'Lagret')}</b> · ${pl ? pileTxt(pl) : 'tom ruta'}`);
   }
   const ute = outPilesAt(x, y);
-  if (ute.length) rows.push(`<b>${ute.some(q => q.out === 'mark') ? 'På marken' : 'Bredvid lagret'}</b> · ${ute.map(q => `${STACK_NAMES[q.k]}: ${fmtN(q.n)}`).join(', ')}`);
+  if (ute.length) rows.push(`<b>${ute.some(q => !q.stored) ? 'På marken' : 'Bredvid lagret'}</b> · ${ute.map(pileTxt).join(', ')}`);
   const log = (s.stockar ?? []).find(k => Math.floor(k.x) === x && Math.floor(k.y) === y);
   if (log) rows.push(`Fällt träd, ca ${Math.ceil(log.ved)} ved kvar`);
   if ((s.stubbar ?? []).some(k => k.x === x && k.y === y)) rows.push('Stubbe efter ett fällt träd');
@@ -541,13 +548,14 @@ function renderPanel(force = false) {
   $('sWood').textContent = `${Math.round(s.wood)}`;
   $('sGren').textContent = `${Math.round(s.items.grenar ?? 0)} grenar`;
   $('sFire').textContent = s.fire.lit ? 'brinner' : emberOn(s) ? 'glöder' : 'släckt';
+  renderOwned();
   const box = $('panelBody');
   if (!force && (busy || performance.now() - lastPointer < 800)) return;
   if (tab === 'folk') {
     const rows = ppl.slice().sort((a, b) => b.born < a.born ? 1 : -1).sort((a, b) => ageOf(b, s.now) - ageOf(a, s.now));
     box.innerHTML = `<ul class="folk">${rows.map(p => {
       const m = moodOf(p, s.now);
-      return `<li><button class="row" data-id="${p.id}" type="button"><span class="dot" style="background:#${hsl(p.hue, 0.5, 0.58).toString(16).padStart(6, '0')}"></span><span class="nm">${esc(p.name)}${p.tag ? ` <span class="tag">${esc(p.tag)}</span>` : ''}</span><span class="age">${Math.floor(ageOf(p, s.now))} år</span><span class="act">${p.task ? taskName(p.task) : '–'}</span><span class="rb">${bar(m, m < 0.35 ? 'low' : '', trend(p, 'humor', m))}</span></button></li>`;
+      return `<li><button class="row" data-id="${p.id}" type="button"><span class="dot" style="background:#${hsl(p.hue, 0.5, 0.58).toString(16).padStart(6, '0')}"></span><span class="nm">${esc(p.name)}${p.tag ? ` <span class="tag">${esc(p.tag)}</span>` : ''}${sickNow(p) ? ` <span class="tag sjuk">sjuk</span>` : ''}</span><span class="age">${Math.floor(ageOf(p, s.now))} år</span><span class="act">${p.task ? taskName(p.task) : '–'}</span><span class="rb">${bar(m, m < 0.35 ? 'low' : '', trend(p, 'humor', m))}</span></button></li>`;
     }).join('')}</ul>`;
   } else if (tab === 'logg') {
     box.innerHTML = `<ol class="logg">${s.log.slice().reverse().slice(0, 150).map(l => `<li class="k-${l.kind}"><span class="when">${timeLabel(s, l.t)}</span>${linkify(l)}</li>`).join('')}</ol>`;
@@ -569,7 +577,7 @@ function renderPanel(force = false) {
     const status = alive(p) ? (p.task ? taskName(p.task) : '–') : p.died !== undefined ? `Dog ${p.cause} (${timeLabel(s, p.died)})` : `Flyttade från byn (${timeLabel(s, p.left!)})`;
     box.innerHTML = `
       <div class="phead"><span class="dot big" style="background:#${hsl(p.hue, 0.5, 0.58).toString(16).padStart(6, '0')}"></span><div><h2>${esc(p.name)}</h2>${p.tag && alive(p) ? `<p class="tag">${esc(p.tag)}</p>` : ''}
-      <p class="muted">${p.sex === 'k' ? 'Kvinna' : 'Man'}, ${Math.floor(a)} år · född ${timeLabel(s, p.born)}</p><p class="status">${status}</p>${alive(p) && p.task?.why ? `<p class="why">Varför: ${esc(p.task.why)}</p>` : ''}${alive(p) ? `<p class="muted">${carryTxt(p)}</p>` : ''}</div></div>
+      <p class="muted">${p.sex === 'k' ? 'Kvinna' : 'Man'}, ${Math.floor(a)} år · född ${timeLabel(s, p.born)}</p><p class="status">${status}</p>${alive(p) && p.task?.why ? `<p class="why">Varför: ${esc(p.task.why)}</p>` : ''}${alive(p) && sickNow(p) ? `<p class="why">${esc(p.sickWhy ?? 'Sjuk')}, ${durTxt(p.sickUntil! - now)} kvar</p>` : ''}${alive(p) ? `<p class="muted">${carryTxt(p)}</p>` : ''}</div></div>
       ${alive(p) ? `<h3>Mående</h3><dl class="kv">
         <dt>Humör</dt><dd>${bar(moodOf(p, now), '', trend(p, 'humor', moodOf(p, now)))}<span>${moodWord(moodOf(p, now))}</span></dd>
         <dt>Mättnad</dt><dd>${bar(p.hunger, '', trend(p, 'hunger', p.hunger))}</dd><dt>Vila</dt><dd>${bar(p.rest, '', trend(p, 'rest', p.rest))}</dd>
@@ -605,6 +613,7 @@ function fireEntry(e: FireLog) {
     : `Elden slocknade. Den hade bränt ${num(e.n ?? 0)} ved.`;
   return `<li><span class="when">${clockTxt(e.t)}</span>${txt}</li>`;
 }
+const sickNow = (p: Person) => !!p.sickUntil && p.sickUntil > s.now;
 // vad en person bär och hur mycket hen orkar
 function carryTxt(p: Person) {
   const t = p.task, cap = capacity(s, p), parts: string[] = [];
@@ -613,26 +622,47 @@ function carryTxt(p: Person) {
   const orkar = `orkar bära ${Math.round(cap * 100)} % av en full stack`;
   return parts.length ? `Bär ${parts.join(' och ')} (${Math.round(load(t!) / cap * 100)} % av vad hen orkar)` : `Bär inget just nu, ${orkar}`;
 }
-// lagret: öppnas genom att trycka på lagerplatsen på kartan. Det som ligger utanför visas när man trycker på det
+const condBar = (c: number) => bar(c, c < 0.5 ? 'low' : '');
+// en lagerplats: öppnas genom att trycka på den på kartan. Varje stack för sig, med sitt skick
 function storeHtml() {
-  const ps = pilesOf(s).filter(p => !p.out), ute = pilesOf(s).length - ps.length + groundPiles(s).length;
-  const rows = STACK_ORDER.map(k => ({ k, n: ps.filter(p => p.k === k).reduce((a, p) => a + p.n, 0), st: ps.filter(p => p.k === k).length })).filter(r => r.st > 0);
+  const zs = zonesOf(s), z = zs[Math.min(lagerNr, zs.length - 1)], zi = zs.indexOf(z);
+  const ps = pilesOf(s).filter(p => p.zone === zi).sort((a, b) => STACK_NAMES[a.k].localeCompare(STACK_NAMES[b.k], 'sv') || b.n - a.n || condOf(b) - condOf(a));
   const bar = living(s).filter(p => p.task && (p.task.carry > 0.05 || p.task.items));
+  const what = !z.slag ? '' : z.slag === 'mat' ? 'Här läggs maten. ' : 'Här läggs material och redskap. ';
   return `
-    <div class="phead"><div><h2>Lagret</h2><p class="muted">Byn gör lagerplatsen större när den blir full och mindre när den står tom.${ute ? ' Det som ligger utanför slits fortare.' : ''}</p></div></div>
-    <h3>Stackar</h3>${rows.length ? `<dl class="kv">${rows.map(r => `<dt>${STACK_NAMES[r.k]}</dt><dd><span>${fmtN(r.n)}${r.st > 1 ? ` i ${r.st} stackar` : ''}</span></dd>`).join('')}</dl>` : '<p class="muted">Lagret är tomt.</p>'}
+    <div class="phead"><div><h2>${esc(z.namn ?? 'Lagret')}</h2><p class="muted">${what}Byn gör lagerplatsen större när den blir full och mindre när den står tom.${zs.length > 1 ? ` Prioritet ${z.prio ?? 0} av ${zs.length}.` : ''}</p></div></div>
+    <h3>Stackar</h3>${ps.length ? `<dl class="kv stk">${ps.map(p => `<dt>${STACK_NAMES[p.k]}${p.max === 1 ? '' : ` ${fmtN(p.n)} st`}</dt><dd>${condBar(condOf(p))}<span>${Math.round(condOf(p) * 100)} %</span></dd>`).join('')}</dl>` : '<p class="muted">Lagret är tomt.</p>'}
     <h3>På väg med saker</h3>${bar.length ? `<ul class="rels">${bar.map(p => `<li>${pLink(p)}<span class="muted">${esc(carryTxt(p))}</span></li>`).join('')}</ul>` : '<p class="muted">Ingen bär något just nu.</p>'}`;
 }
-// en hög utanför lagret
+// en hög utanför lagerplatserna
 function heapHtml() {
-  const ps = outPilesAt(hogAt.x, hogAt.y), mark = ps.some(p => p.out === 'mark');
+  const ps = outPilesAt(hogAt.x, hogAt.y), mark = ps.some(p => !p.stored);
   if (!ps.length) return '<p class="muted">Här ligger inget längre.</p>';
   const who = living(s).filter(p => p.task?.act === 'bara' && Math.floor(p.task.tx) === hogAt.x && Math.floor(p.task.ty) === hogAt.y);
   return `
     <div class="phead"><div><h2>${mark ? 'På marken' : 'Bredvid lagret'}</h2><p class="muted">${mark ? 'Lades ner av någon som kallades bort till något annat.' : 'Fick inte plats i lagret.'} Slits ${OUT_WEAR} gånger fortare än i lagret.</p></div></div>
-    <dl class="kv">${ps.map(p => `<dt>${STACK_NAMES[p.k]}</dt><dd><span>${fmtN(p.n)}</span></dd>`).join('')}</dl>
-    ${mark ? `<p class="muted">${who.length ? `${who.map(p => pLink(p)).join(', ')} är på väg för att bära in det.` : 'Ingen har gått för att bära in det ännu.'}</p>` : ''}`;
+    <dl class="kv">${ps.map(p => `<dt>${STACK_NAMES[p.k]}${p.max === 1 ? '' : ` ${fmtN(p.n)} st`}</dt><dd>${condBar(condOf(p))}<span>${Math.round(condOf(p) * 100)} %</span></dd>`).join('')}</dl>
+    ${who.length ? `<p class="muted">${who.map(p => pLink(p)).join(', ')} är på väg för att bära in det.</p>` : ''}`;
 }
+// listan till vänster över allt byn äger, i mappar som kan fällas ihop
+const closed = new Set<string>();
+let ownedKey = '';
+function renderOwned() {
+  const rows = FOLDERS.map(f => ({ f, ks: f.k.map(k => ({ k, n: amountOf(s, k) })).filter(r => r.n >= (STACK[r.k] === 1 ? 1e-6 : 0.5)) })).filter(r => r.ks.length);
+  const ute = pilesOf(s).filter(p => !p.stored);
+  const html = `<h4>Byn äger</h4>${rows.map(({ f, ks }) => {
+    const sum = f.namn === 'Mat' || f.namn === 'Bränsle' ? ` <span class="n">${Math.round(ks.reduce((a, r) => a + r.n, 0))}</span>` : '';
+    return `<button type="button" class="fold" data-f="${f.namn}" aria-expanded="${!closed.has(f.namn)}">${closed.has(f.namn) ? '▸' : '▾'} ${f.namn}${sum}</button>${closed.has(f.namn) ? '' : `<ul>${ks.map(r => `<li><span>${STACK_NAMES[r.k]}</span><span class="n">${STACK[r.k] === 1 ? Math.ceil(r.n - 1e-9) : Math.round(r.n)}</span></li>`).join('')}</ul>`}`;
+  }).join('') || '<p>Inget ännu</p>'}${ute.length ? `<p class="ute">${ute.length} ${ute.length === 1 ? 'hög' : 'högar'} på marken</p>` : ''}`;
+  if (html === ownedKey) return;
+  ownedKey = html; $('owned').innerHTML = html;
+}
+$('owned').addEventListener('click', e => {
+  const b = (e.target as HTMLElement).closest<HTMLButtonElement>('button.fold');
+  if (!b) return;
+  const f = b.dataset.f!; if (closed.has(f)) closed.delete(f); else closed.add(f);
+  renderOwned();
+});
 function fireHtml() {
   const f = s.fire, h = hearthOf(f), now = s.now, ig = igniterOf(s);
   const status = f.lit ? 'Brinner' : emberOn(s) ? `Glöder. Ny ved får den att brinna igen (${durTxt(f.emberUntil! - now)} kvar).` : (f.ash ?? 0) >= 1 ? 'Utbrunnen. Kvar ligger en svart hög med kol.' : 'Släckt. Den måste tändas på nytt.';

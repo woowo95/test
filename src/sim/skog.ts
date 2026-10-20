@@ -10,7 +10,7 @@ import { Act, DAY, H, HOUR, Person, State, Stock, W } from './typer';
 // Ett fällt träd blir en liggande stam som sedan huggs till ved, och då blir det grenar också.
 const STAM = { ved: 8, grenar: 5 }; // vad ett vuxet träd ger
 const item = (s: State, k: string) => s.items[k] ?? 0;
-export const axes = (s: State) => Math.floor(item(s, 'yxa'));
+export const axes = (s: State) => Math.ceil(item(s, 'yxa') - 1e-9); // en sliten yxa är fortfarande en yxa
 export const stocks = (s: State) => (s.stockar ??= []);
 
 // närmaste vuxna träd att fälla, helst i skogskanten nära byn

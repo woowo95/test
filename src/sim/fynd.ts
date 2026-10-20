@@ -195,7 +195,7 @@ export function eatPoison(s: State, p: Person) {
   s.items[GIFT] = gift - 1;
   count(s, 'forgiftad');
   p.sickUntil = Math.max(p.sickUntil ?? 0, s.now + (6 + rnd(s) * 10) * HOUR);
-  p.poisonUntil = p.sickUntil;
+  p.poisonUntil = p.sickUntil; p.sickWhy = 'Förgiftad av svamp';
   p.health = clamp(p.health - 0.25, 0, 1);
   think(p, 'Blev förgiftad av en svamp', -0.3, s.now, DAY / 2);
   const before = kn(p, 'svamp'), v = learnK(p, 'svamp', 0.4, s.now);

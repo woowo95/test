@@ -1,7 +1,7 @@
 // Scenariotester: ställ en by i ett visst läge, kör den en stund och kontrollera att det som ska hända händer.
 // npm run scenario            kör alla
 // npm run scenario -- glanta  kör bara ett
-import { createState, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, WEEK, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, inZone, wearStore, dropLoad, isLight, T, ageOf, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, fuelStock, DAY, HOUR, W, State, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat } from '../sim';
+import { createState, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, WEEK, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, inZone, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, zonesOf, allows, ageOf, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, fuelStock, DAY, HOUR, W, State, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat } from '../sim';
 import { FOREST, HIGH, isSoil } from '../sim/vag';
 import { START } from './kor';
 
@@ -202,9 +202,12 @@ SCENARIER.befolkning = {
     kor(s, 1);
     const ny = living(s).length;
     kor(s, 10 * 24);
+    // nybyggare kommer slumpvis: räkna i tre små byar så att slumpen inte avgör
+    let inv = s.stat?.invandrade ?? 0;
+    for (const seed of [10, 11]) { const b = createState(seed, START); for (const p of b.people) p.died = b.now; kor(b, 10 * 24 + 1); inv += b.stat?.invandrade ?? 0; }
     return [
       [`en vandrare grundar byn på nytt (${s.stat?.atergrundad ?? 0} gång)`, ny >= 1 && s.stat?.atergrundad === 1 && logg(s, 'grundade byn på nytt')],
-      [`fler nybyggare kommer till den lilla byn (${s.stat?.invandrade ?? 0} på tio dygn)`, (s.stat?.invandrade ?? 0) >= 2],
+      [`fler nybyggare kommer till den lilla byn (${inv} på tio dygn i tre byar)`, inv >= 6],
       ['en trång by vill ha färre barn, en liten fler', birthWish(30) < 0.6 && birthWish(4) > 1 && birthWish(12) === 1],
       ['trängsel får folk att flytta, mer om de är missnöjda', emigrationRate(10, 0.6) === 0 && emigrationRate(30, 0.65) > 0.2 && emigrationRate(30, 0.4) > emigrationRate(30, 0.65) * 3],
       ['humöret betyder mindre i en liten by', emigrationRate(8, 0.4) < emigrationRate(26, 0.4) / 5],
@@ -259,11 +262,13 @@ SCENARIER.bostad = {
 SCENARIER.fritid = {
   text: 'På fritiden tar folk promenader (de nyfikna och modiga längre bort) och badar när det är varmt',
   kor: () => {
-    const s = createState(5, START);
+    const folk: { d: number; v: number }[] = [];
+    let prom = 0, bad = 0, badVarmt = true, n = 0;
+    for (const seed of [5, 6]) { // två byar, så att slumpen inte avgör
+    const s = createState(seed, START), gang = new Map<number, number>();
     s.founded = s.now - WEEK; // sommar
     s.food = 40; s.wood = 40; // gott ställt, tid över
-    const f = getMap(s.seed).fire, gang = new Map<number, number>();
-    let prom = 0, bad = 0, badVarmt = true;
+    const f = getMap(s.seed).fire;
     kor(s, 4 * 24, s => {
       for (const p of living(s)) {
         const t = p.task;
@@ -273,11 +278,14 @@ SCENARIER.fritid = {
       }
     });
     // längst bort: de mest nyfikna och modiga mot de minst
-    const folk = s.people.filter(p => gang.has(p.id)).map(p => ({ d: gang.get(p.id)!, v: stat(p, 'nyfikenhet', s.now) + stat(p, 'mod', s.now) })).sort((a, b) => a.v - b.v);
+    folk.push(...s.people.filter(p => gang.has(p.id)).map(p => ({ d: gang.get(p.id)!, v: stat(p, 'nyfikenhet', s.now) + stat(p, 'mod', s.now) })));
+    n = Math.max(n, gang.size);
+    }
+    folk.sort((a, b) => a.v - b.v);
     const h = Math.floor(folk.length / 2), snitt = (l: { d: number }[]) => l.length ? l.reduce((x, y) => x + y.d, 0) / l.length : 0;
     const lag = snitt(folk.slice(0, h)), hog = snitt(folk.slice(folk.length - h));
     return [
-      [`folk tar promenader (${prom} femminuters-steg, ${gang.size} personer)`, prom > 20 && gang.size >= 3],
+      [`folk tar promenader (${prom} femminuters-steg, upp till ${n} personer i en by)`, prom > 20 && n >= 3],
       [`nyfikna och modiga går längre (${hog.toFixed(1)} mot ${lag.toFixed(1)} rutor)`, hog > lag],
       [`folk badar på sommaren (${bad} femminuters-steg)`, bad > 10],
       ['man badar bara när det är varmt', badVarmt],
@@ -291,7 +299,7 @@ SCENARIER.lager = {
     const s = createState(3, START);
     const start = zoneOf(s).w * zoneOf(s).h;
     s.food = 230; s.wood = 90; s.items.grenar = 70; s.items.flinta = 3; // mycket på en gång
-    kor(s, 3);
+    kor(s, 12);
     const z = zoneOf(s), ps = pilesOf(s), stor = z.w * z.h;
     const summaOk = Object.keys(STACK).every(k => Math.abs(ps.filter(p => p.k === k).reduce((a, p) => a + p.n, 0) - (amountOf(s, k) >= (STACK[k] === 1 ? 1e-6 : 0.5) ? amountOf(s, k) : 0)) < 1e-6);
     // bära: kör en stund med gående invånare och se hur mycket de bär hem
@@ -315,7 +323,7 @@ SCENARIER.lager = {
     s.food = 5; s.wood = 0; s.items = { flinta: 1 };
     kor(s, 12);
     return [
-      [`lagerplatsen växer när den blir full (${start} → ${stor} rutor för ${ps.length} stackar)`, stor > start && ps.every(p => !p.out && inZone(z, p.x, p.y))],
+      [`lagerplatsen växer när den blir full (${start} → ${stor} rutor, ${zonesOf(s).length} lagerplatser, ${ps.filter(p => p.out).length} av ${ps.length} stackar utanför)`, stor > start && ps.every(p => !p.out)],
       ['ingen stack är större än sin storlek, och stackarna innehåller allt i förrådet', ps.every(p => p.n <= p.max + 1e-9) && summaOk],
       [`folk bär hem saker, aldrig mer än de orkar (${hem} steg på väg hem, ${fullt} med full börda, högst ${(maxKvot * 100).toFixed(0)} % av förmågan)`, hem > 50 && maxKvot <= 1.15],
       ['den som bär så mycket hen orkar går hem med bördan', gickHem],
@@ -326,44 +334,69 @@ SCENARIER.lager = {
 };
 
 SCENARIER.slitage = {
-  text: 'Maten finns i olika slag som ruttnar olika fort, saker utanför lagret slits fortare och högar på marken bärs in, på natten bara nära lägret',
+  text: 'Varje stack har ett skick: fisk ruttnar fortast, utanför lagret slits allt fortare, redskap slits i lagret, skämd mat gör folk sjuka och högar på marken bärs in (på natten bara nära lägret)',
   kor: () => {
-    // fisk ruttnar fortare än bär
-    const a = createState(4, START);
-    a.mat = { fisk: 20, bar: 20 }; a.food = 40; a.wood = 25; a.items = { grenar: 50 };
-    const b = createState(4, START);
-    b.mat = { fisk: 20, bar: 20 }; b.food = 40; b.wood = 25; b.items = { grenar: 50 };
-    b.lager = { ...zoneOf(b), w: 1, h: 1 }; // för litet: det mesta ligger bredvid
+    const setup = (b: State) => { b.mat = { fisk: 20, bar: 20 }; b.food = 40; b.wood = 25; b.items = { grenar: 50, yxa: 1 }; };
+    const a = createState(4, START); setup(a);
+    const b = createState(4, START); setup(b);
+    b.lagren = [{ ...zoneOf(b), w: 1, h: 1 }]; // för litet: det mesta ligger bredvid
     wearStore(a, 24 * 3600, 2); wearStore(b, 24 * 3600, 2);
-    const fisk = amountOf(a, 'fisk'), bar = amountOf(a, 'bar');
-    const grenIn = 50 - amountOf(a, 'grenar'), grenUt = 50 - amountOf(b, 'grenar');
+    const skick = (s: State, k: string) => { const p = pilesOf(s).filter(q => q.k === k); return p.reduce((x, q) => x + condOf(q) * q.n, 0) / Math.max(1e-9, p.reduce((x, q) => x + q.n, 0)); };
+    const fisk = skick(a, 'fisk'), bar = skick(a, 'bar'), grenIn = 1 - skick(a, 'grenar'), grenUt = 1 - skick(b, 'grenar');
+    const yxa = amountOf(a, 'yxa');
+    // ved som slits ut blir småpinnar
+    const v = pilesOf(a).find(q => q.k === 'ved')!; a.stackar!.find(q => q.x === v.x && q.y === v.y)!.c = 0.0001;
+    wearStore(a, 3600, 2);
+    // skämd mat: allt i förrådet är nästan förstört
+    const m = createState(6, START);
+    m.food = 200; pilesOf(m); for (const st of m.stackar!) st.c = 0.08;
+    kor(m, 24, s => { for (const st of s.stackar!) if (FOOD.includes(st.k)) st.c = Math.min(st.c, 0.08); });
+    const sjuka = m.stat?.skamdMat ?? 0, tagg = living(m).some(p => p.sickWhy === 'Magsjuk av skämd mat');
     // högar på marken: en nära elden och en långt bort, mitt i natten
-    const m = getMap(5), f = m.fire, land = (x: number, y: number) => x >= 0 && y >= 0 && x < W && y < 40 && m.tiles[y * W + x] !== T.Vatten && m.tiles[y * W + x] !== T.Sten;
+    const mp = getMap(5), f = mp.fire, land = (x: number, y: number) => x >= 0 && y >= 0 && x < W && y < 40 && mp.tiles[y * W + x] !== T.Vatten && mp.tiles[y * W + x] !== T.Sten;
+    const n = createState(5, START);
+    n.now = new Date(n.now).setHours(23, 0, 0, 0);
     let nara: { x: number; y: number } | undefined, langt: { x: number; y: number } | undefined;
     for (let y = 0; y < 40; y++) for (let x = 0; x < W; x++) {
       const d = Math.hypot(x - f.x, y - f.y);
-      if (!nara && d >= 2.5 && d < 3.5 && land(x, y)) nara = { x, y };
+      if (!nara && d >= 2.5 && d < 3.5 && land(x, y) && !isStored(n, x, y)) nara = { x, y };
       if (!langt && d >= 13 && d < 16 && land(x, y)) langt = { x, y };
     }
-    const n = createState(5, START);
-    n.now = new Date(n.now).setHours(23, 0, 0, 0);
     const t0 = { act: 'samla' as const, phase: 'do' as const, tx: 0, ty: 0, until: 0, carry: 8, why: '', dark: true };
     dropLoad(n, { ...t0 }, nara!.x + 0.5, nara!.y + 0.5); dropLoad(n, { ...t0, act: 'ved' as const }, langt!.x + 0.5, langt!.y + 0.5);
-    const lagd = (n.marken ?? []).length;
-    let bars = 0;
-    for (let i = 0; i < 3 * 3600 / 2 && !isLight(n.now); i++) { step(n, 2, true); bars = Math.max(bars, living(n).filter(p => p.task?.act === 'bara').length); }
-    const kvarNara = (n.marken ?? []).some(g => g.x === nara!.x && g.y === nara!.y);
-    const kvarLangt = (n.marken ?? []).some(g => g.x === langt!.x && g.y === langt!.y);
-    // på dagen bärs även det som ligger långt bort in
+    const ute = () => pilesOf(n).filter(p => !p.stored);
+    const lagd = ute().length;
+    for (let i = 0; i < 3 * 3600 / 2 && !isLight(n.now); i++) step(n, 2, true);
+    const kvarNara = ute().some(g => g.x === nara!.x && g.y === nara!.y), kvarLangt = ute().some(g => g.x === langt!.x && g.y === langt!.y);
     n.now = new Date(n.now).setHours(9, 0, 0, 0);
-    for (let i = 0; i < 6 * 3600 / 2 && (n.marken ?? []).length; i++) step(n, 2, true);
+    for (let i = 0; i < 6 * 3600 / 2 && ute().length; i++) step(n, 2, true);
     return [
-      [`fisk ruttnar fortare än bär (kvar efter ett dygn: fisk ${fisk.toFixed(1)}, bär ${bar.toFixed(1)})`, fisk < bar && fisk > 0],
-      [`grenar utanför lagret slits fortare (förlorat på ett dygn: i lagret ${grenIn.toFixed(2)}, bredvid ${grenUt.toFixed(2)})`, grenUt > 2 * grenIn && grenIn > 0],
-      ['ved och grenar som slits blir småpinnar', amountOf(a, 'pinnar') > 0],
+      [`fisk ruttnar fortare än bär (skick efter ett dygn: fisk ${(fisk * 100).toFixed(0)} %, bär ${(bar * 100).toFixed(0)} %)`, fisk < bar && fisk < 1],
+      [`grenar utanför lagret slits fortare (slitage på ett dygn: i lagret ${(grenIn * 100).toFixed(1)} %, bredvid ${(grenUt * 100).toFixed(1)} %)`, grenUt > 2 * grenIn && grenIn > 0],
+      [`en yxa i lagret slits också (${yxa.toFixed(3)} kvar)`, yxa < 1 && yxa > 0.9],
+      ['ved som slits ut blir småpinnar', amountOf(a, 'pinnar') > 0 && pilesOf(a).some(q => q.k === 'pinnar')],
+      [`skämd mat gör folk magsjuka (${sjuka} gånger på ett dygn)`, sjuka > 0 && tagg],
       [`den som kallas bort lägger bördan på marken (${lagd} högar)`, lagd === 2],
-      [`på natten bärs högen nära lägret in men inte den långt bort (${bars} bar på natten)`, !kvarNara && kvarLangt],
-      ['på dagen bärs även det som ligger långt bort in', !(n.marken ?? []).length],
+      ['på natten bärs högen nära lägret in men inte den långt bort', !kvarNara && kvarLangt],
+      ['på dagen bärs även det som ligger långt bort in', !ute().length],
+    ];
+  },
+};
+
+SCENARIER.lagerplatser = {
+  text: 'När lagret inte räcker gör byn en ny lagerplats och sorterar: maten närmast elden, material för sig',
+  kor: () => {
+    const s = createState(9, START);
+    s.food = 600; s.wood = 200; s.items.grenar = 300; s.items.pinnar = 100;
+    kor(s, 24);
+    const zs = zonesOf(s), ps = pilesOf(s);
+    const fel = ps.filter(p => p.zone >= 0 && !allows(zs[p.zone], p.k)).length;
+    const summaOk = Object.keys(STACK).every(k => Math.abs(ps.filter(p => p.k === k && p.stored).reduce((a, p) => a + p.n, 0) - amountOf(s, k)) < 1e-3);
+    return [
+      [`en ny lagerplats görs när den första inte kan växa mer (${zs.length} lagerplatser)`, zs.length >= 2],
+      [`maten får den första och material den nya (${zs.map(z => z.namn).join(', ')})`, zs[0].slag === 'mat' && zs[1]?.slag === 'material'],
+      [`sakerna sorteras till rätt lagerplats (${fel} stackar ligger fel efter ett dygn)`, fel <= 2],
+      ['stackarna innehåller allt i förrådet', summaOk && ps.every(p => p.n <= p.max + 1e-9)],
     ];
   },
 };
