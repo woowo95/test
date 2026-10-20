@@ -1,4 +1,5 @@
 import { rotStumps } from './skog';
+import { capacity, carryKind, dropSpot, load, storeLoad, tidyStore } from './lager';
 import { makeSpear, wearSpear } from './redskap';
 import { foodDays, workRate } from './ekonomi';
 import { GIFT, TRY_SEC, eatPoison, growFynd, handFish, packFynd, pickMushrooms, richness, takeFrom } from './fynd';
@@ -40,7 +41,7 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
   const learn = 1 + 0.1 * s.seder.v.nyfikenhet; // en nyfiken by lär sig snabbare
   if (Math.floor(now / HOUR) !== Math.floor((now - dtSec * SEC) / HOUR)) {
     stepSeder(s); updateTags(s);
-    growGround(s, 1, ai); growFynd(s, 1, ai); forget(s, 1); rotStumps(s);
+    growGround(s, 1, ai); growFynd(s, 1, ai); forget(s, 1); rotStumps(s); tidyStore(s);
   }
 
   const social: Person[] = [];
@@ -95,7 +96,7 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
     const lightDone = t?.act === 'tanda' && (s.fire.lit || !canLight(s));
     const mustGo = t && p.toa < 0.08 && t.act !== 'toa' && a >= 3; // nöden avbryter det man håller på med
     if (!t || (t.until < now && t.phase !== 'back') || ((phaseFlip || mustGo) && t.phase !== 'back') || lightDone) {
-      if (t && (t.carry > 0 || t.items) && t.act !== 'elda' && live) { t.phase = 'back'; const m = getMap(s.seed); t.tx = m.stock.x + 0.5 + rnd(s) * 1.5; t.ty = m.stock.y + 0.5 + rnd(s); }
+      if (t && (t.carry > 0 || t.items) && t.act !== 'elda' && live) { t.phase = 'back'; const d = dropSpot(s, carryKind(t.act)); t.tx = d.x + (rnd(s) - 0.5) * 0.4; t.ty = d.y + (rnd(s) - 0.5) * 0.4; }
       else chooseTask(s, p, live);
     }
     const tk = p.task!;
@@ -131,9 +132,7 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
               else { tk.carry = takeFuel(s, n); tk.phase = 'back'; tk.tx = m.fire.x + 0.5 + (rnd(s) - 0.5) * 1.2; tk.ty = m.fire.y + 1.2; }
             } else { addFuel(s, p, tk.carry); tk.carry = 0; p.task = undefined; }
           } else if (tk.phase === 'back') {
-            deliver(s, tk.act, tk.carry);
-            if (tk.items) addItems(s, tk.items);
-            tk.carry = 0; p.task = undefined;
+            storeLoad(s, tk); p.task = undefined;
           } else tk.phase = 'do';
         } else { wear(g, ci, WEAR * sp); p.x += dx / d * sp; p.y += dy / d * sp; }
       } else if (tk.act !== 'sova' && tk.act !== 'vakt' && tk.act !== 'hantverk') {
@@ -193,6 +192,7 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
         sedEvent(s, 'nyfikenhet', first ? 0.06 : 0.01, first ? `${p.name} blev byns första mästare i ${SKILL_NAMES[sk].toLowerCase()}. Byn ser vad kunskap kan ge.` : undefined);
       }
     }
+    if (live && tk.phase === 'do' && isWork(tk.act) && load(tk) >= capacity(s, p)) tk.until = now; // full börda: bär hem den
     if (tk.phase === 'do' && tk.act === 'tanda' && canLight(s)) {
       s.fire.tryProg += dtSec;
       const per = igniterOf(s)!.minutes * 60;

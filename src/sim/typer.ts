@@ -87,6 +87,7 @@ export interface State {
   mark?: string; // markens grästäcke per ruta (stigar), packat
   skog?: string; // trädens tillväxt per ruta, packat
   stockar?: Stock[]; // fällda träd som ligger och väntar på att huggas
+  lager?: { x: number; y: number; w: number; h: number }; // lagerplatsen, rutor
   stubbar?: { x: number; y: number; t: number }[]; // stubbar efter fällda träd, t = när trädet fälldes
   nextStock?: number; fallda?: number;
   fynd?: string; // hur mycket som tagits ur varje plats (bär, vilt, fisk), packat

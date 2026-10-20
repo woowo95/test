@@ -1,7 +1,7 @@
 // Scenariotester: ställ en by i ett visst läge, kör den en stund och kontrollera att det som ska hända händer.
 // npm run scenario            kör alla
 // npm run scenario -- glanta  kör bara ett
-import { createState, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, WEEK, sightOf, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, fuelStock, DAY, HOUR, W, State, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat } from '../sim';
+import { createState, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, WEEK, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, inZone, ageOf, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, fuelStock, DAY, HOUR, W, State, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat } from '../sim';
 import { FOREST, HIGH, isSoil } from '../sim/vag';
 import { START } from './kor';
 
@@ -281,6 +281,46 @@ SCENARIER.fritid = {
       [`nyfikna och modiga går längre (${hog.toFixed(1)} mot ${lag.toFixed(1)} rutor)`, hog > lag],
       [`folk badar på sommaren (${bad} femminuters-steg)`, bad > 10],
       ['man badar bara när det är varmt', badVarmt],
+    ];
+  },
+};
+
+SCENARIER.lager = {
+  text: 'Saker ligger i stackar på en lagerplats som byn gör större och mindre, och var och en bär efter sin styrka',
+  kor: () => {
+    const s = createState(3, START);
+    const start = zoneOf(s).w * zoneOf(s).h;
+    s.food = 230; s.wood = 90; s.items.grenar = 70; s.items.flinta = 3; // mycket på en gång
+    kor(s, 3);
+    const z = zoneOf(s), ps = pilesOf(s), stor = z.w * z.h;
+    const summaOk = Object.keys(STACK).every(k => Math.abs(ps.filter(p => p.k === k).reduce((a, p) => a + p.n, 0) - (amountOf(s, k) >= (STACK[k] === 1 ? 1e-6 : 0.5) ? amountOf(s, k) : 0)) < 1e-6);
+    // bära: kör en stund med gående invånare och se hur mycket de bär hem
+    const b = createState(8, START);
+    b.now = new Date(b.now).setHours(7, 0, 0, 0); b.food = 2; // morgon, och byn behöver mat
+    let hem = 0, maxKvot = 0, fullt = 0;
+    for (let i = 0; i < 8 * 3600 / 2; i++) {
+      step(b, 2, true);
+      for (const p of living(b)) if (p.task?.phase === 'back' && p.task.act !== 'elda') {
+        const kv = load(p.task) / capacity(b, p); hem++; maxKvot = Math.max(maxKvot, kv); if (kv >= 0.95) fullt++;
+      }
+    }
+    // den som har fullt går hem med en gång, även om uppgiften inte är klar
+    const v = living(b).find(p => ageOf(p, b.now) >= 18)!;
+    v.task = { act: 'samla', phase: 'do', tx: v.x, ty: v.y, until: b.now + 3 * HOUR, carry: capacity(b, v) * STACK.mat, why: 'test', dark: false };
+    const mat0 = b.food;
+    step(b, 2, true); step(b, 2, true);
+    const gickHem = v.task?.phase === 'back' || b.food > mat0 + 10;
+    const stark = living(b).slice().sort((x, y) => stat(y, 'styrka', b.now) - stat(x, 'styrka', b.now));
+    // tomt lager krymper
+    s.food = 5; s.wood = 0; s.items = { flinta: 1 };
+    kor(s, 12);
+    return [
+      [`lagerplatsen växer när den blir full (${start} → ${stor} rutor för ${ps.length} stackar)`, stor > start && ps.every(p => inZone(z, p.x, p.y))],
+      ['ingen stack är större än sin storlek, och stackarna innehåller allt i förrådet', ps.every(p => p.n <= p.max + 1e-9) && summaOk],
+      [`folk bär hem saker, aldrig mer än de orkar (${hem} steg på väg hem, ${fullt} med full börda, högst ${(maxKvot * 100).toFixed(0)} % av förmågan)`, hem > 50 && maxKvot <= 1.15],
+      ['den som bär så mycket hen orkar går hem med bördan', gickHem],
+      ['den starke orkar bära mer än den svage', capacity(b, stark[0]) > capacity(b, stark[stark.length - 1])],
+      [`lagerplatsen krymper när den står tom (${zoneOf(s).w * zoneOf(s).h} rutor)`, zoneOf(s).w * zoneOf(s).h < stor],
     ];
   },
 };

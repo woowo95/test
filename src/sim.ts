@@ -20,3 +20,4 @@ export * from './sim/kunskap';
 export * from './sim/minne';
 export * from './sim/vader';
 export * from './sim/redskap';
+export * from './sim/lager';

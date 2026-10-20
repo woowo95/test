@@ -1,3 +1,4 @@
+import { fetchSpot, storeLoad } from './lager';
 import { coldOf, temperature } from './vader';
 import { ageOf, log, stat, think } from './folk';
 import { count, flintFactor } from './fynd';
@@ -115,6 +116,7 @@ export function addFuel(s: State, p: Person, n: number) {
 }
 function assign(s: State, p: Person, act: Act, tx: number, ty: number, dur: number, live: boolean, why: string) {
   if (!live) { p.x = tx; p.y = ty; tread(s, tx, ty, 1); }
+  if (p.task && (p.task.carry > 0 || p.task.items)) storeLoad(s, p.task); // bördan läggs i förrådet, den försvinner inte
   p.task = { act, phase: live ? 'go' : 'do', tx, ty, until: s.now + dur, carry: 0, why, dark: !isLight(s.now) };
 }
 const awake = (s: State, p: Person, minAge: number) => {
@@ -164,7 +166,7 @@ export function stepFire(s: State, dtSec: number, live: boolean, ppl: Person[]) 
     }
     if (best) {
       const p = best.p, n = Math.min(3, Math.max(1, best.w.v - f.fuel), fuelStock(s));
-      if (live) assign(s, p, 'elda', m.stock.x + 0.5 + rnd(s) * 1.5, m.stock.y + 0.5 + rnd(s), HOUR, true, best.w.why);
+      if (live) { const at = fetchSpot(s, s.wood >= 1 ? 'ved' : 'grenar'); assign(s, p, 'elda', at.x, at.y, HOUR, true, best.w.why); }
       else addFuel(s, p, takeFuel(s, n));
     }
   }
