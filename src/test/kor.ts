@@ -1,5 +1,5 @@
 // Kör en by utan grafik och samlar nyckeltal. Vakterna larmar om något blir omöjligt (NaN, negativa förråd, folk i vattnet).
-import { createState, step, living, DAY, ageIndex, moodOf, serialize, getMap, ACT_NAMES, T, W, H, State } from '../sim';
+import { createState, step, living, DAY, ageIndex, moodOf, serialize, getMap, fuelStock, ACT_NAMES, T, W, H, State } from '../sim';
 
 export const START = Date.parse('2026-10-20T08:00:00+02:00');
 
@@ -29,6 +29,7 @@ export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => voi
     const dag = ((s.now - START) / DAY).toFixed(1);
     if (!(s.food >= 0) || !(s.wood >= 0)) larm('förråd', `dag ${dag}: mat ${s.food}, ved ${s.wood}`);
     for (const k in s.items) if (!(s.items[k] >= 0)) larm('föremål', `dag ${dag}: ${k} = ${s.items[k]}`);
+    for (const k of s.stockar ?? []) if (!(k.ved >= 0) || !(k.grenar >= 0)) larm('stam', `dag ${dag}: stam ${k.id} ved ${k.ved}, grenar ${k.grenar}`);
     const folk = living(s);
     for (const p of folk) {
       for (const k of ['hunger', 'rest', 'social', 'health', 'warm', 'toa'] as const) if (!ok01(p[k])) larm('behov ' + k, `dag ${dag}: ${p.name} ${k} = ${p[k]}`);
@@ -41,7 +42,7 @@ export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => voi
       for (const p of folk) { humor += moodOf(p, s.now); humorN++; }
     }
     const ai = ageIndex(s);
-    if (forraAlder === 0 && ai === 1) { vintermat = Math.min(vintermat, s.food); vinterved = Math.min(vinterved, s.wood); }
+    if (forraAlder === 0 && ai === 1) { vintermat = Math.min(vintermat, s.food); vinterved = Math.min(vinterved, fuelStock(s)); }
     forraAlder = ai;
   }
   const dod = s.people.filter(p => p.died !== undefined);

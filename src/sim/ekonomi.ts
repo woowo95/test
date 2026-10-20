@@ -1,4 +1,4 @@
-import { hearthOf } from './eld';
+import { fuelStock, hearthOf } from './eld';
 import { ageOf, living, stat } from './folk';
 import { ageIndex } from './tid';
 import { Act, Person, Skill, Stat, State } from './typer';
@@ -14,4 +14,4 @@ export function workRate(s: State, p: Person, act: Act) {
   return BASE[act] / 3600 * SEASON[act][ageIndex(s)] * (0.45 + p.skill[sk] / 20 + stat(p, WORK_STAT[act], s.now) / 40) * ageF * (p.sickUntil && p.sickUntil > s.now ? 0.3 : 1);
 }
 export function foodDays(s: State) { const n = living(s).length || 1; return s.food / (n * 1.6); }
-export function woodDays(s: State) { return s.wood / (hearthOf(s.fire).burn * 24); }
+export function woodDays(s: State) { return fuelStock(s) / (hearthOf(s.fire).burn * 24); }

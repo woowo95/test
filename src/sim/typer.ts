@@ -28,18 +28,22 @@ export const SKILL_NAMES: Record<Skill, string> = {
 
 export const AGES = ['Istid', 'Vårtid', 'Sommartid', 'Hösttid'];
 
-export type Act = 'samla' | 'jakt' | 'fiske' | 'ved' | 'leka' | 'vila' | 'samtal' | 'beratta' | 'hantverk' | 'vakt' | 'sova' | 'elda' | 'tanda' | 'varma' | 'toa' | 'kol';
+export type Act = 'samla' | 'jakt' | 'fiske' | 'ved' | 'leka' | 'vila' | 'samtal' | 'beratta' | 'hantverk' | 'vakt' | 'sova' | 'elda' | 'tanda' | 'varma' | 'toa' | 'kol' | 'falla' | 'hugga' | 'yxa';
 export const ACT_NAMES: Record<Act, string> = {
-  samla: 'Samlar bär och rötter', jakt: 'Jagar', fiske: 'Fiskar', ved: 'Hugger ved', leka: 'Leker',
+  samla: 'Samlar bär och rötter', jakt: 'Jagar', fiske: 'Fiskar', ved: 'Samlar grenar', leka: 'Leker',
   vila: 'Vilar', samtal: 'Samtalar vid elden', beratta: 'Berättar vid elden', hantverk: 'Gör handarbete',
   vakt: 'Håller vakt', sova: 'Sover', elda: 'Lägger ved på elden', tanda: 'Försöker tända elden', varma: 'Värmer sig vid elden',
   toa: 'Går avsides på toa', kol: 'Hämtar kol ur den slocknade elden',
+  falla: 'Fäller ett träd med yxa', hugga: 'Hugger ved av ett fällt träd', yxa: 'Gör en yxa av en pinne och flinta',
 };
 export const WORK: Act[] = ['samla', 'jakt', 'fiske', 'ved'];
+export const GREN = 0.4; // en gren ger lika mycket bränsle som 0,4 ved: grenar brinner fort
+export const AXE_WORK: Act[] = ['falla', 'hugga']; // arbete med yxa, räknas som vedarbete
+export const isWork = (a: Act) => WORK.includes(a) || AXE_WORK.includes(a);
 
 export interface Thought { text: string; v: number; until: number }
 // why = varför personen valde uppgiften, dark = påbörjad under mörk tid
-export interface Task { act: Act; phase: 'go' | 'do' | 'back'; tx: number; ty: number; until: number; carry: number; items?: Record<string, number>; why?: string; dark?: boolean; path?: number[]; pk?: string }
+export interface Task { act: Act; phase: 'go' | 'do' | 'back'; tx: number; ty: number; until: number; carry: number; items?: Record<string, number>; why?: string; dark?: boolean; path?: number[]; pk?: string; ref?: number }
 
 export interface Person {
   id: number; name: string; sex: 'm' | 'k';
@@ -72,7 +76,12 @@ export interface State {
   fire: Fire;
   seder: Seder;
   mark?: string; // markens grästäcke per ruta (stigar), packat
+  skog?: string; // trädens tillväxt per ruta, packat
+  stockar?: Stock[]; // fällda träd som ligger och väntar på att huggas
+  nextStock?: number; fallda?: number;
 }
+// ett fällt träd: ved och grenar som finns kvar att hugga ut
+export interface Stock { id: number; x: number; y: number; ved: number; grenar: number }
 
 // ---------- seder ----------
 // Byns gemensamma värderingar, -1..1. Växer fram ur invånarnas personlighet och det byn varit med om.
@@ -107,7 +116,7 @@ export const IGNITERS: Igniter[] = [
   { id: 'eldstal', name: 'Eldstål och flinta', desc: 'Stål mot flinta ger heta gnistor som fångas i fnöske.', chance: 0.45, grass: 1, sticks: 1, minutes: 5, requires: 'Smide' },
   { id: 'tandstickor', name: 'Tändstickor', desc: 'Tänds med ett drag.', chance: 0.9, grass: 0.5, sticks: 0.5, minutes: 1, requires: 'Kemi' },
 ];
-export const ITEM_NAMES: Record<string, string> = { gniststen: 'Gniststen', torrgras: 'Torrt gräs', pinnar: 'Små pinnar', kol: 'Kol' };
+export const ITEM_NAMES: Record<string, string> = { gniststen: 'Gniststen', torrgras: 'Torrt gräs', pinnar: 'Små pinnar', kol: 'Kol', grenar: 'Grenar', flinta: 'Flinta', yxa: 'Flintyxa' };
 
 export interface FireLog { t: number; k: 'tänd' | 'fyll' | 'slocknade' | 'glöd' | 'sprack'; id?: number; n?: number }
 export interface Fire {

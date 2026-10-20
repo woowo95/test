@@ -1,18 +1,19 @@
 import { SEASON, WORK_STAT, foodDays, woodDays } from './ekonomi';
-import { emberOn, needTinder } from './eld';
+import { emberOn, fireWant, needTinder } from './eld';
 import { ageOf, living, stat } from './folk';
 import { getMap } from './karta';
-import { tread } from './mark';
+import { isForest, tread } from './mark';
+import { axeTask } from './skog';
 import { duty, dygn, habitShare, habitTotal } from './seder';
 import { clamp, rnd } from './slump';
 import { ageIndex, isLight } from './tid';
-import { Act, DAY, H, HOUR, Person, SEC, Skill, State, T, W, WORK } from './typer';
+import { Act, DAY, H, HOUR, Person, SEC, Skill, State, T, W, WORK, isWork } from './typer';
 
 // ---------- val av aktivitet ----------
 function spotFor(s: State, act: Act, p: Person): { x: number; y: number } {
   const m = getMap(s.seed);
   const f = m.fire;
-  if (act === 'samtal' || act === 'beratta' || act === 'hantverk' || act === 'vakt' || act === 'varma') {
+  if (act === 'samtal' || act === 'beratta' || act === 'hantverk' || act === 'vakt' || act === 'varma' || act === 'yxa') {
     const ang = rnd(s) * Math.PI * 2, r = act === 'vakt' ? 2.6 : 1.3 + rnd(s) * 0.9;
     return { x: f.x + 0.5 + Math.cos(ang) * r, y: f.y + 0.5 + Math.sin(ang) * r };
   }
@@ -33,7 +34,7 @@ function spotFor(s: State, act: Act, p: Person): { x: number; y: number } {
     }
     if (act === 'samla') return t === T.Gras || t === T.Skog;
     if (act === 'toa') return t === T.Gras || t === T.Skog || t === T.Sand;
-    return t === T.Skog;
+    return isForest(s, y * W + x); // grenar och vilt finns i skogen
   };
   const cands: { x: number; y: number; d: number }[] = [];
   for (let i = 0; i < 260; i++) {
@@ -57,7 +58,7 @@ export function chooseTask(s: State, p: Person, live: boolean) {
   const light = isLight(now);
   const sick = p.sickUntil !== undefined && p.sickUntil > now;
   const lazy = 1 - duty(s, p), lit = s.fire.lit, sd = s.seder.v;
-  let act: Act, why: string;
+  let act: Act, why: string, spot: { x: number; y: number } | undefined, ref: number | undefined;
   let dur = (20 + rnd(s) * 40) * 60 * SEC; // 20–60 min
   const set = (x: Act, w: string) => { act = x; why = w; };
   if (a < 3) set('sova', 'Är ett litet barn');
@@ -91,7 +92,7 @@ export function chooseTask(s: State, p: Person, live: boolean) {
       const sat = Math.min(p.hunger, p.rest, p.social); // hur väl de egna behoven är fyllda
       const what = best === 'ved' ? `Byn behöver ved, förrådet räcker ${dygn(wd)}` : best === 'samla' && needTinder(s) ? 'Byn behöver tändmaterial till elden' : `Byn behöver mat, förrådet räcker ${dygn(fd)}`;
       const workWhy = () => what + (lazy < 0.2 ? '. Plikttrogen.' : habitShare(p, [best], tot) > 0.25 ? '. Brukar göra det.' : p.skill[best as Skill] > 10 ? '. Skicklig på det.' : '.');
-      if (a >= 12 && (s.fire.ash ?? 0) >= 1 && !lit && !emberOn(s) && rnd(s) < 0.2 && !living(s).some(q => q.task?.act === 'kol')) {
+      if (a >= 12 && (s.fire.ash ?? 0) >= 1 && !lit && !emberOn(s) && fireWant(s) < 0.6 && rnd(s) < 0.2 && !living(s).some(q => q.task?.act === 'kol')) {
         set('kol', 'Det ligger kol kvar i den slocknade elden');
         dur = 10 * 60 * SEC;
       } else if (a < 14) {
@@ -100,6 +101,13 @@ export function chooseTask(s: State, p: Person, live: boolean) {
       } else if (rnd(s) < (1 - lazy) * (0.88 + 0.12 * u) + lazy * sat * (0.6 + 0.4 * u)) {
         set(best, workWhy());
         dur = (60 + rnd(s) * 120) * 60 * SEC;
+        const ax = best === 'ved' ? axeTask(s, p) : undefined; // med yxa fälls träd och huggs ved
+        if (ax) {
+          set(ax.act, `${what}. ${ax.why}.`);
+          if (ax.dur) dur = ax.dur;
+          if (ax.act !== 'yxa') spot = { x: ax.x, y: ax.y };
+          ref = ax.ref;
+        }
       } else {
         // egen lust: vila, hantverk eller umgänge
         const wv = (1 - p.rest) * 2 + lazy * 0.6;
@@ -133,7 +141,7 @@ export function chooseTask(s: State, p: Person, live: boolean) {
     }
   }
   if (act! === 'toa') dur = (4 + rnd(s) * 4) * 60 * SEC;
-  const sp = spotFor(s, act!, p);
-  if (!live) { p.x = sp.x; p.y = sp.y; tread(s, sp.x, sp.y, WORK.includes(act!) ? 2 : 1); }
-  p.task = { act: act!, phase: live ? 'go' : 'do', tx: sp.x, ty: sp.y, until: s.now + dur, carry: 0, why: why!, dark: !light };
+  const sp = spot ?? spotFor(s, act!, p);
+  if (!live) { p.x = sp.x; p.y = sp.y; tread(s, sp.x, sp.y, isWork(act!) ? 2 : 1); }
+  p.task = { act: act!, phase: live ? 'go' : 'do', tx: sp.x, ty: sp.y, until: s.now + dur, carry: 0, why: why!, dark: !light, ref };
 }

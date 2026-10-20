@@ -1,15 +1,16 @@
 import { foodDays, workRate } from './ekonomi';
-import { COLD, addFuel, addItems, canLight, fireWant, forageItems, hearthOf, heatAt, igniterOf, stepFire, takeCoal, tryLight } from './eld';
+import { COLD, addFuel, addItems, canLight, fireWant, forageItems, fuelStock, hearthOf, heatAt, igniterOf, stepFire, takeCoal, takeFuel, tryLight } from './eld';
 import { ageOf, alive, living, log, stat, think } from './folk';
 import { getMap } from './karta';
 import { birth, die, emigrate } from './liv';
-import { GROW, WEAR, coverOf, tileOf } from './mark';
+import { WEAR, groundOf, growGround, packGround, tileOf } from './mark';
 import { FLIP, SOCIAL, TalkEvent, converse } from './samtal';
 import { HABIT_FADE, sedEvent, stepSeder, updateTags } from './seder';
 import { chance, clamp, rnd } from './slump';
 import { ageIndex, isLight } from './tid';
-import { DAY, HOUR, Person, SEC, SKILL_NAMES, Skill, State, T, W, WORK } from './typer';
-import { encodeCover, findPath, regrow, speedAt, wear } from './vag';
+import { chopStock, fellTree, makeAxe } from './skog';
+import { AXE_WORK, Act, DAY, HOUR, Person, SEC, SKILL_NAMES, Skill, State, T, W, isWork } from './typer';
+import { findPath, speedAt, wear } from './vag';
 import { chooseTask } from './val';
 
 // ---------- huvudsteg ----------
@@ -32,7 +33,7 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
   const learn = 1 + 0.1 * s.seder.v.nyfikenhet; // en nyfiken by lär sig snabbare
   if (Math.floor(now / HOUR) !== Math.floor((now - dtSec * SEC) / HOUR)) {
     stepSeder(s); updateTags(s);
-    const m = getMap(s.seed); regrow(m.tiles, coverOf(s), 1, GROW[ai], [m.fire.y * W + m.fire.x]);
+    growGround(s, 1, ai);
   }
 
   const social: Person[] = [];
@@ -40,7 +41,7 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
     const a = ageOf(p, now);
     // behov
     p.hunger = clamp(p.hunger - dtSec / (16 * 3600) * (a < 10 ? 0.7 : 1), 0, 1);
-    const working = p.task && WORK.includes(p.task.act) && p.task.phase === 'do';
+    const working = p.task && isWork(p.task.act) && p.task.phase === 'do';
     const resting = p.task && (p.task.act === 'vila' || p.task.act === 'sova' || p.task.act === 'samtal' || p.task.act === 'hantverk' || p.task.act === 'varma');
     p.rest = clamp(p.rest + dtSec / 3600 * (resting ? 0.09 : working ? -0.06 : -0.03), 0, 1);
     // värme: elden värmer i ett område, hyddan skyddar mot halva kylan
@@ -80,6 +81,8 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
     // uppgift
     const t = p.task;
     const phaseFlip = t && t.dark !== !light && FLIP.includes(t.act); // dag blev natt eller tvärtom
+    // ett träd som fällts färdigt eller en yxa som gjorts klar
+    if (t && t.phase === 'do' && t.until < now) { if (t.act === 'falla') fellTree(s, p, t.tx, t.ty); else if (t.act === 'yxa') makeAxe(s, p); }
     const lightDone = t?.act === 'tanda' && (s.fire.lit || !canLight(s));
     const mustGo = t && p.toa < 0.08 && t.act !== 'toa' && a >= 3; // nöden avbryter det man håller på med
     if (!t || (t.until < now && t.phase !== 'back') || ((phaseFlip || mustGo) && t.phase !== 'back') || lightDone) {
@@ -90,21 +93,21 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
     if (live) {
       if (tk.phase === 'go' || tk.phase === 'back') {
         // vägsökning: gå ruta för ruta runt vatten, gärna längs stigar
-        const m = getMap(s.seed), cov = coverOf(s);
+        const g = groundOf(s);
         const key = `${tk.tx.toFixed(2)},${tk.ty.toFixed(2)}`;
-        if (tk.pk !== key) { tk.pk = key; tk.path = findPath(m.tiles, cov, p.x, p.y, tk.tx, tk.ty) ?? []; }
+        if (tk.pk !== key) { tk.pk = key; tk.path = findPath(g, p.x, p.y, tk.tx, tk.ty) ?? []; }
         const off = (((p.id * 37) % 7) - 3) * 0.06; // var och en går lite vid sidan av, så att de inte täcker varandra
         let budget = (a < 6 ? 0.9 : a > 65 ? 1 : 1.6) * dtSec;
         while (tk.path && tk.path.length && budget > 0) {
           const i = tk.path[0], wx = (i % W) + 0.5 + off, wy = Math.floor(i / W) + 0.5 - off;
-          const ci = tileOf(p.x, p.y), sp = speedAt(m.tiles, cov, ci) || 1;
+          const ci = tileOf(p.x, p.y), sp = speedAt(g, ci) || 1;
           const dx = wx - p.x, dy = wy - p.y, d = Math.hypot(dx, dy), can = budget * sp;
           const mv = Math.min(d, can);
-          wear(m.tiles, cov, ci, WEAR * mv);
+          wear(g, ci, WEAR * mv);
           if (d <= can) { p.x = wx; p.y = wy; tk.path.shift(); budget -= d / sp; }
           else { p.x += dx / d * can; p.y += dy / d * can; budget = 0; }
         }
-        const ci = tileOf(p.x, p.y), spd = speedAt(m.tiles, cov, ci) || 1;
+        const ci = tileOf(p.x, p.y), spd = speedAt(g, ci) || 1;
         const dx = tk.tx - p.x, dy = tk.ty - p.y, d = Math.hypot(dx, dy);
         const sp = budget * spd;
         if (budget <= 0) { /* väntar på nästa steg */ }
@@ -114,16 +117,16 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
           if (tk.act === 'elda') {
             if (tk.phase === 'go') {
               // vid förrådet: ta en famn ved och gå till elden
-              const m = getMap(s.seed), n = s.fire.fuel >= fireWant(s) ? 0 : Math.min(3, Math.max(1, fireWant(s) - s.fire.fuel), s.wood);
+              const m = getMap(s.seed), n = s.fire.fuel >= fireWant(s) ? 0 : Math.min(3, Math.max(1, fireWant(s) - s.fire.fuel), fuelStock(s));
               if (n <= 0) p.task = undefined;
-              else { s.wood -= n; tk.carry = n; tk.phase = 'back'; tk.tx = m.fire.x + 0.5 + (rnd(s) - 0.5) * 1.2; tk.ty = m.fire.y + 1.2; }
+              else { tk.carry = takeFuel(s, n); tk.phase = 'back'; tk.tx = m.fire.x + 0.5 + (rnd(s) - 0.5) * 1.2; tk.ty = m.fire.y + 1.2; }
             } else { addFuel(s, p, tk.carry); tk.carry = 0; p.task = undefined; }
           } else if (tk.phase === 'back') {
-            if (tk.act === 'ved') s.wood += tk.carry; else s.food += tk.carry;
+            deliver(s, tk.act, tk.carry);
             if (tk.items) addItems(s, tk.items);
             tk.carry = 0; p.task = undefined;
           } else tk.phase = 'do';
-        } else { wear(m.tiles, cov, ci, WEAR * sp); p.x += dx / d * sp; p.y += dy / d * sp; }
+        } else { wear(g, ci, WEAR * sp); p.x += dx / d * sp; p.y += dy / d * sp; }
       } else if (tk.act !== 'sova' && tk.act !== 'vakt' && tk.act !== 'hantverk') {
         // småjustering så att de rör sig lite
         if (rnd(s) < dtSec * 0.08) { const nx = p.x + (rnd(s) - 0.5) * 0.4, ny = p.y + (rnd(s) - 0.5) * 0.4; if (getMap(s.seed).tiles[tileOf(nx, ny)] !== T.Vatten) { p.x = nx; p.y = ny; } }
@@ -135,14 +138,24 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
     const hf = Math.exp(-dtSec * SEC / HABIT_FADE);
     for (const k in p.habit) p.habit[k] *= hf;
     p.habit[tk.act] = (p.habit[tk.act] ?? 0) + dtSec / 3600;
-    if (tk.phase === 'do' && WORK.includes(tk.act)) {
-      const y = workRate(s, p, tk.act) * dtSec * (live ? 1 : 0.8);
-      if (live) tk.carry += y; else if (tk.act === 'ved') s.wood += y; else s.food += y;
+    if (tk.phase === 'do' && isWork(tk.act)) {
+      const axe = AXE_WORK.includes(tk.act), base: Act = axe ? 'ved' : tk.act;
+      // utan yxa samlas grenar på marken (två grenar på den tid det tar att hugga en ved); med yxa huggs ved ur en fälld stam
+      const y = workRate(s, p, base) * dtSec * (live ? 1 : 0.8) * (tk.act === 'ved' ? 2 : tk.act === 'hugga' ? 1.5 : tk.act === 'falla' ? 0 : 1);
+      if (tk.act === 'hugga') {
+        const got = chopStock(s, tk.ref, y);
+        if (!got) tk.until = now; // stammen är slut
+        else {
+          if (live) { tk.carry += got.ved; tk.items ??= {}; tk.items.grenar = (tk.items.grenar ?? 0) + got.grenar; }
+          else { s.wood += got.ved; addItems(s, { grenar: got.grenar }); }
+          if (got.done) tk.until = now;
+        }
+      } else if (y > 0) { if (live) tk.carry += y; else deliver(s, tk.act, y); }
       if (tk.act === 'samla') {
         const got = forageItems(s, p, dtSec);
         if (got) { if (live) { tk.items ??= {}; for (const k in got) tk.items[k] = (tk.items[k] ?? 0) + got[k]; } else addItems(s, got); }
       }
-      const sk = tk.act as Skill;
+      const sk = base as Skill;
       const before = p.skill[sk];
       p.skill[sk] = clamp(p.skill[sk] + dtSec / 3600 * 0.12 * learn * (0.4 + stat(p, 'intelligens', now) / 20) * (1 - p.skill[sk] / 21), 0, 20);
       if (before < 16 && p.skill[sk] >= 16) {
@@ -156,7 +169,7 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
       const per = igniterOf(s)!.minutes * 60;
       while (s.fire.tryProg >= per && canLight(s) && !s.fire.lit) { s.fire.tryProg -= per; if (tryLight(s, p)) { p.task = undefined; break; } }
     }
-    if (tk.phase === 'do' && tk.act === 'hantverk') p.skill.hantverk = clamp(p.skill.hantverk + dtSec / 3600 * 0.1 * learn * (1 - p.skill.hantverk / 21), 0, 20);
+    if (tk.phase === 'do' && (tk.act === 'hantverk' || tk.act === 'yxa')) p.skill.hantverk = clamp(p.skill.hantverk + dtSec / 3600 * 0.1 * learn * (1 - p.skill.hantverk / 21), 0, 20);
     if (tk.phase === 'do' && SOCIAL.includes(tk.act)) social.push(p);
     p.thoughts = p.thoughts.filter(x => x.until > now);
   }
@@ -180,8 +193,15 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
   for (const k in s.items) if (s.items[k] < 1e-6) delete s.items[k];
 }
 
+// det som bärs hem läggs i förrådet: grenar, ved eller mat
+function deliver(s: State, act: Act, n: number) {
+  if (act === 'ved') addItems(s, { grenar: n });
+  else if (act === 'hugga') s.wood += n;
+  else s.food += n;
+}
+
 export function serialize(s: State) {
-  s.mark = encodeCover(coverOf(s));
+  packGround(s);
   return JSON.stringify(s, (k, v) => (typeof v === 'number' && !Number.isInteger(v) ? Math.round(v * 1000) / 1000 : v));
 }
 

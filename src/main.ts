@@ -4,7 +4,7 @@ import {
   State, Person, T, W, H, DAY, HOUR, STATS, STAT_NAMES, SKILLS, SKILL_NAMES, AGES, ACT_NAMES, TalkEvent, LogEntry,
   createState, step, getMap, living, alive, ageOf, byId, relKey, moodOf, ageIndex, ageDay, yearNo, lightLevel, isLight,
   foodDays, timeLabel, serialize, compact, stat, migrate, hearthOf, igniterOf, fireHeat, heatRadius, fireWant, emberOn,
-  ITEM_NAMES, FireLog, coverOf, SEDER, SED_INFO, Sed, influence, duty, habitShare, habitTotal, Act,
+  ITEM_NAMES, FireLog, coverOf, groundOf, SEDER, SED_INFO, Sed, influence, duty, habitShare, habitTotal, Act,
 } from './sim';
 
 const TS = 16; // pixlar per ruta i världen
@@ -126,9 +126,11 @@ let drawnAge = -1, drawnSig = -1, lastSigCheck = 0;
 const PATH_COL = [0xb4b9b3, 0x8e7752, 0x9a8258, 0x846c47]; // upptrampad mark per tidsålder (snö i istiden)
 // hur sliten en ruta ser ut, i fem steg: 0 = orörd, 4 = bar jord
 const wornLevel = (c: number) => c >= 0.85 ? 0 : c >= 0.65 ? 1 : c >= 0.45 ? 2 : c >= 0.25 ? 3 : 4;
+// trädens storlek i fyra steg: 0 = inga, 1–2 = plantor, 3 = skog
+const treeLevel = (v: number) => v >= 0.5 ? 3 : v >= 0.25 ? 2 : v > 0 ? 1 : 0;
 function coverSig() {
-  const c = coverOf(s); let h = 0;
-  for (let i = 0; i < c.length; i++) h = (Math.imul(h, 31) + wornLevel(c[i])) | 0;
+  const g = groundOf(s); let h = 0;
+  for (let i = 0; i < g.cover.length; i++) h = (Math.imul(h, 31) + wornLevel(g.cover[i]) * 4 + treeLevel(g.trees[i])) | 0;
   return h;
 }
 function mix(a: number, b: number, f: number) {
@@ -146,21 +148,29 @@ function drawTerrain(force = false) {
   if (force || now - lastSigCheck > 1000) { lastSigCheck = now; sig = coverSig(); }
   if (!force && ai === drawnAge && sig === drawnSig) return;
   drawnAge = ai; drawnSig = sig;
-  const m = getMap(s.seed), pal = PAL[ai], cov = coverOf(s);
+  const m = getMap(s.seed), pal = PAL[ai], g = groundOf(s);
   terrainG.clear();
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-    const t = m.tiles[y * W + x], sh = m.shade[y * W + x];
-    let col = shadeCol(pal[t], 0.94 + sh * 0.12);
-    if (t === T.Gras || t === T.Skog) { const lv = wornLevel(cov[y * W + x]); if (lv) col = mix(col, shadeCol(PATH_COL[ai], 0.95 + sh * 0.1), lv * 0.22); }
+    const i = y * W + x, t = m.tiles[i], sh = m.shade[i];
+    const soil = t === T.Gras || t === T.Skog, tr = soil ? g.trees[i] : 0;
+    // jord: skogsmark under träden, annars gräs som trampas ner till kort gräs och bar jord
+    let col = shadeCol(soil ? pal[tr >= 0.5 ? T.Skog : T.Gras] : pal[t], 0.94 + sh * 0.12);
+    if (soil) { const lv = wornLevel(g.cover[i]); if (lv) col = mix(col, shadeCol(PATH_COL[ai], 0.95 + sh * 0.1), lv * 0.22); }
     terrainG.beginFill(col).drawRect(x * TS, y * TS, TS, TS).endFill();
-    if (t === T.Skog) {
+    if (tr > 0) {
+      // vuxna träd: två eller tre granar; plantor: en liten gran som växer
+      const n = tr >= 0.5 ? 2 + Math.floor(sh * 2) : 1, k = tr >= 0.5 ? 1 : 0.35 + tr;
       terrainG.beginFill(pal.tree);
-      const n = 2 + Math.floor(sh * 2);
-      for (let i = 0; i < n; i++) {
-        const tx = x * TS + 3 + ((sh * 97 * (i + 1)) % 1) * 10, ty = y * TS + 3 + ((sh * 57 * (i + 2)) % 1) * 10;
-        terrainG.drawPolygon([tx, ty - 4, tx - 3.5, ty + 3.5, tx + 3.5, ty + 3.5]);
+      for (let j = 0; j < n; j++) {
+        const tx = x * TS + 3 + ((sh * 97 * (j + 1)) % 1) * 10, ty = y * TS + 3 + ((sh * 57 * (j + 2)) % 1) * 10;
+        terrainG.drawPolygon([tx, ty - 4 * k, tx - 3.5 * k, ty + 3.5 * k, tx + 3.5 * k, ty + 3.5 * k]);
       }
       terrainG.endFill();
+    } else if (soil && g.cover[i] >= 0.9 && ai !== 0) {
+      // högt gräs: några strån
+      terrainG.lineStyle(1, shadeCol(pal[T.Gras], 0.72), 0.8);
+      for (let j = 0; j < 3; j++) { const gx = x * TS + 3 + ((sh * 71 * (j + 1)) % 1) * 10, gy = y * TS + 5 + ((sh * 43 * (j + 3)) % 1) * 8; terrainG.moveTo(gx, gy + 4).lineTo(gx - 1, gy).moveTo(gx + 1.5, gy + 4).lineTo(gx + 2.5, gy + 0.5); }
+      terrainG.lineStyle(0);
     } else if (t === T.Sten) {
       terrainG.beginFill(shadeCol(pal[t], 0.78)).drawCircle(x * TS + 5 + sh * 6, y * TS + 6 + sh * 4, 2.2).drawCircle(x * TS + 11, y * TS + 11 - sh * 3, 1.6).endFill();
     } else if (t === T.Vatten && ai !== 0 && sh > 0.82) {
@@ -174,9 +184,16 @@ function drawStructures(t: number) {
   // förråd
   const st = m.stock;
   structG.beginFill(0x5b4a35, 0.35).drawRoundedRect(st.x * TS, st.y * TS, TS * 2, TS * 2, 3).endFill();
-  const nf = Math.min(12, Math.ceil(s.food / 25)), nw = Math.min(8, Math.ceil(s.wood / 6));
+  const nf = Math.min(12, Math.ceil(s.food / 25)), nw = Math.min(8, Math.ceil(s.wood / 6)), ng = Math.min(8 - nw, Math.ceil((s.items.grenar ?? 0) / 15));
   for (let i = 0; i < nf; i++) structG.beginFill(i % 2 ? 0xa8463a : 0xc58b3e).drawRect(st.x * TS + 2 + (i % 4) * 7, st.y * TS + 2 + Math.floor(i / 4) * 6, 5, 4).endFill();
   for (let i = 0; i < nw; i++) structG.beginFill(0x6f4a2a).drawRoundedRect(st.x * TS + 2 + (i % 4) * 7, st.y * TS + 21 + Math.floor(i / 4) * 5, 6, 3, 1.5).endFill();
+  for (let i = nw; i < nw + ng; i++) { const gx = st.x * TS + 2 + (i % 4) * 7, gy = st.y * TS + 22 + Math.floor(i / 4) * 5; structG.lineStyle(1, 0x7a5a36).moveTo(gx, gy + 2).lineTo(gx + 6, gy).moveTo(gx + 1, gy).lineTo(gx + 5, gy + 3).lineStyle(0); }
+  // fällda träd som ligger och väntar på att huggas till ved
+  for (const k of s.stockar ?? []) {
+    const x = k.x * TS, y = k.y * TS, len = 6 + Math.min(8, k.ved);
+    structG.lineStyle(4, 0x5a3c22).moveTo(x - len / 2, y + 2).lineTo(x + len / 2, y - 1).lineStyle(0);
+    structG.beginFill(0xc9a46a).drawCircle(x - len / 2, y + 2, 1.8).endFill();
+  }
   // hyddor
   for (const h of m.huts) {
     const x = h.x * TS, y = h.y * TS;
@@ -341,13 +358,18 @@ function relWord(s: State, p: Person, q: Person, op: number) {
 }
 function pLink(p?: Person) { return p ? `<button class="plink" data-id="${p.id}" type="button">${esc(p.name)}</button>` : '–'; }
 function renderPanel(force = false) {
-  for (const b of document.querySelectorAll<HTMLButtonElement>('.tabs button')) b.setAttribute('aria-selected', String(b.dataset.tab === tab));
+  // elden har ingen egen flik: den öppnas genom att klicka på elden, och visas då i personfliken
+  for (const b of document.querySelectorAll<HTMLButtonElement>('.tabs button')) {
+    b.setAttribute('aria-selected', String(b.dataset.tab === tab || (tab === 'eld' && b.dataset.tab === 'person')));
+    if (b.dataset.tab === 'person') b.textContent = tab === 'eld' ? 'Elden' : 'Person';
+  }
   const ppl = living(s);
   $('sPop').textContent = String(ppl.length);
   const fd = foodDays(s);
   $('sFood').textContent = `${Math.round(s.food)}`;
   $('sFoodDays').textContent = `räcker ca ${fd >= 10 ? Math.round(fd) : fd.toFixed(1).replace('.', ',')} dygn`;
   $('sWood').textContent = `${Math.round(s.wood)}`;
+  $('sGren').textContent = `${Math.round(s.items.grenar ?? 0)} grenar`;
   $('sFire').textContent = s.fire.lit ? 'brinner' : emberOn(s) ? 'glöder' : 'släckt';
   const box = $('panelBody');
   if (!force && (busy || performance.now() - lastPointer < 800)) return;
@@ -434,9 +456,10 @@ function fireHtml() {
       <dt>Tänddon</dt><dd>${ig ? `${esc(ig.name)} (${Math.floor(s.items[ig.id] ?? 0)} i förrådet)` : 'Inget. Någon måste hitta en gniststen.'}</dd>
       <dt>Torrt gräs</dt><dd>${Math.floor(s.items.torrgras ?? 0)} i förrådet</dd>
       <dt>Små pinnar</dt><dd>${Math.floor(s.items.pinnar ?? 0)} i förrådet</dd>
+      <dt>Bränsle</dt><dd>${Math.floor(s.wood)} ved och ${Math.floor(s.items.grenar ?? 0)} grenar i förrådet (grenar brinner fort)</dd>
       ${(f.ash ?? 0) >= 1 ? `<dt>Kolhög</dt><dd>${f.ash} kol i den gamla elden, ligger kvar ca ${durTxt((f.ashUntil ?? now) - now)}</dd>` : ''}
       ${(s.items.kol ?? 0) >= 1 ? `<dt>Kol</dt><dd>${Math.floor(s.items.kol)} i förrådet</dd>` : ''}
-      ${ig ? `<dt>Per försök</dt><dd>${ig.grass} gräs och ${ig.sticks} pinnar, ca ${ig.minutes} minuter</dd>` : ''}
+      ${ig ? `<dt>Per försök</dt><dd>${ig.grass} gräs och ${ig.sticks} pinnar (eller 1 kol), ca ${ig.minutes} minuter${(f.ash ?? 0) >= 1 ? '. Kolhögen tar lättare fyr.' : ''}</dd>` : ''}
       ${!f.lit ? `<dt>Försök</dt><dd>${f.tries} sedan elden slocknade${lighter ? `, ${pLink(lighter)} försöker nu` : ''}</dd>` : ''}
     </dl>
     <h3>Totalt</h3><dl class="kv fam">
@@ -592,4 +615,4 @@ async function boot() {
 }
 boot();
 // gör DAY/HOUR tillgängliga för felsökning i konsolen
-(window as any).__byn = { get s() { return s; }, DAY, HOUR, getMap, coverOf };
+(window as any).__byn = { get s() { return s; }, DAY, HOUR, getMap, coverOf, groundOf };

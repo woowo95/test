@@ -5,7 +5,7 @@ import { DAY, Fire, Person, SEC, SKILLS, State } from './typer';
 
 // ---------- skapa värld ----------
 export function createState(seed: number, now: number): State {
-  const s: State = { v: 1, seed, rng: seed, founded: now, now, people: [], rels: {}, nextId: 1, food: 60, wood: 25, log: [], lastAgeIdx: 1, lastGuardDay: -1, items: {}, fire: newFire(), seder: newSeder() };
+  const s: State = { v: 1, seed, rng: seed, founded: now, now, people: [], rels: {}, nextId: 1, food: 60, wood: 0, log: [], lastAgeIdx: 1, lastGuardDay: -1, items: { grenar: 40 }, fire: newFire(), seder: newSeder() };
   const adults: [string, number][] = [['m', 38], ['k', 35], ['m', 27], ['k', 25], ['m', 22], ['k', 21], ['m', 44], ['k', 19]];
   for (const [sex, age] of adults) s.people.push(newPerson(s, sex as 'm' | 'k', now - (age + rnd(s)) * DAY));
   const [a, b, c, d] = s.people;

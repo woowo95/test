@@ -1,44 +1,44 @@
 {
  "1": {
-  "pop": 17,
-  "fodda": 28,
+  "pop": 20,
+  "fodda": 24,
+  "doda": 25,
+  "svalt": 0,
+  "kyla": 0,
+  "hunger": 0,
+  "humor": 0.593,
+  "vintermat": 114,
+  "vinterved": 41,
+  "eld": 98,
+  "ms": 6496,
+  "kb": 123
+ },
+ "42": {
+  "pop": 1,
+  "fodda": 12,
   "doda": 22,
   "svalt": 0,
   "kyla": 0,
   "hunger": 0,
-  "humor": 0.629,
-  "vintermat": 141,
+  "humor": 0.626,
+  "vintermat": 88,
   "vinterved": 46,
-  "eld": 98,
-  "ms": 4745,
-  "kb": 102
- },
- "42": {
-  "pop": 19,
-  "fodda": 10,
-  "doda": 23,
-  "svalt": 0,
-  "kyla": 0,
-  "hunger": 0,
-  "humor": 0.504,
-  "vintermat": 104,
-  "vinterved": 44,
   "eld": 100,
-  "ms": 5737,
-  "kb": 147
+  "ms": 2881,
+  "kb": 62
  },
  "777": {
-  "pop": 2,
-  "fodda": 6,
-  "doda": 15,
+  "pop": 17,
+  "fodda": 32,
+  "doda": 28,
   "svalt": 0,
   "kyla": 0,
   "hunger": 0,
-  "humor": 0.631,
-  "vintermat": 53,
-  "vinterved": 41,
+  "humor": 0.619,
+  "vintermat": 86,
+  "vinterved": 31,
   "eld": 100,
-  "ms": 2203,
-  "kb": 48
+  "ms": 5464,
+  "kb": 116
  }
 }

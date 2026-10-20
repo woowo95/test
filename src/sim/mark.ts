@@ -1,21 +1,89 @@
-import { getMap } from './karta';
+import { getMap, hash } from './karta';
 import { H, HOUR, State, W } from './typer';
-import { decodeCover, pathTree, wear } from './vag';
+import { FOREST, Ground, HIGH, decodeCover, encodeCover, isSoil, pathTree, wear } from './vag';
 
-// ---------- mark och stigar ----------
-const covers = new WeakMap<State, Float32Array>();
-export function coverOf(s: State) {
-  let c = covers.get(s);
-  if (!c) { c = decodeCover(s.mark); covers.set(s, c); }
-  return c;
+// ---------- mark: gräs, stigar och skog ----------
+// Förr fanns skog överallt där det är jord. Byn börjar i en liten glänta; resten är skog.
+const grounds = new WeakMap<State, Ground>();
+export function groundOf(s: State): Ground {
+  let g = grounds.get(s);
+  if (!g) {
+    const m = getMap(s.seed);
+    g = { tiles: m.tiles, cover: decodeCover(s.mark), trees: s.skog ? decodeCover(s.skog, 0) : startForest(s.seed) };
+    if (!s.skog) for (let i = 0; i < g.trees.length; i++) if (g.cover[i] < HIGH) g.trees[i] = 0; // äldre sparfil: inga träd på stigarna
+    grounds.set(s, g);
+  }
+  return g;
 }
+export const coverOf = (s: State) => groundOf(s).cover;
+export function packGround(s: State) { const g = groundOf(s); s.mark = encodeCover(g.cover); s.skog = encodeCover(g.trees); }
+
+// skog på all jord utom en glänta runt byplatsen (lite ojämn kant)
+export function startForest(seed: number) {
+  const m = getMap(seed), trees = new Float32Array(W * H);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const i = y * W + x;
+    if (!isSoil(m.tiles[i])) continue;
+    const d = Math.hypot(x - m.fire.x, (y - m.fire.y) * 1.1);
+    const edge = 5.5 + hash(seed + 31, x, y) * 1.6;
+    trees[i] = d < edge ? 0 : d < edge + 1 ? 0.6 : 1;
+  }
+  return trees;
+}
+export const isForest = (s: State, i: number) => groundOf(s).trees[i] >= FOREST;
+
+// rutor där inget får växa: elden, hyddorna och förrådet
+const builtCache = new Map<number, Uint8Array>();
+function built(seed: number) {
+  let b = builtCache.get(seed);
+  if (b) return b;
+  const m = getMap(seed); b = new Uint8Array(W * H);
+  const mark = (x: number, y: number, r: number) => { for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) { const xx = x + dx, yy = y + dy; if (xx >= 0 && yy >= 0 && xx < W && yy < H) b![yy * W + xx] = 1; } };
+  mark(m.fire.x, m.fire.y, 1);
+  for (const h of m.huts) mark(h.x + 1, h.y + 1, 1);
+  mark(m.stock.x + 1, m.stock.y, 1);
+  builtCache.set(seed, b);
+  return b;
+}
+
 export const GROW = [0.1, 1.2, 1, 0.6]; // grästillväxt per tidsålder
+const TREE_SEASON = [0, 1.2, 1, 0.5]; // trädens tillväxt per tidsålder
+const TREE_GROW = 1 / (10 * 24); // en planta blir vuxen skog på ungefär tio dygn
+const SPREAD = 0.0015, FAR = 0.00002; // chans per timme att ett frö gror: per skogsgranne, och långt bort
+// en timme: gräset växer tillbaka från grannrutorna, skogen sprider sig som en våg och plantor växer
+export function growGround(s: State, hours: number, season: number) {
+  const g = groundOf(s), b = built(s.seed), { tiles, cover, trees } = g;
+  const old = cover.slice(), hr = Math.floor(s.now / HOUR), ts = TREE_SEASON[season];
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const i = y * W + x;
+    if (!isSoil(tiles[i])) continue;
+    if (b[i]) { cover[i] = Math.min(cover[i], 0.5); trees[i] = 0; continue; }
+    if (old[i] < 1) {
+      let n = 0, c = 0;
+      if (x > 0 && isSoil(tiles[i - 1])) { n += old[i - 1]; c++; }
+      if (x < W - 1 && isSoil(tiles[i + 1])) { n += old[i + 1]; c++; }
+      if (y > 0 && isSoil(tiles[i - W])) { n += old[i - W]; c++; }
+      if (y < H - 1 && isSoil(tiles[i + W])) { n += old[i + W]; c++; }
+      const nb = c ? n / c : 0.5;
+      cover[i] = Math.min(1, old[i] + hours * 0.01 * GROW[season] * (0.25 + 0.75 * nb));
+    }
+    if (!ts || old[i] < HIGH) continue; // stigar och kort gräs stoppar ny skog
+    if (trees[i] > 0) { if (trees[i] < 1) trees[i] = Math.min(1, trees[i] + hours * TREE_GROW * ts); continue; }
+    let n = 0;
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+      const xx = x + dx, yy = y + dy;
+      if ((dx || dy) && xx >= 0 && yy >= 0 && xx < W && yy < H && trees[yy * W + xx] >= FOREST) n++;
+    }
+    if (hash(s.seed + hr, x, y) < hours * (SPREAD * n + FAR) * ts) trees[i] = 0.05;
+  }
+}
+
 export const WEAR = 0.008; // slitage när någon går över en ruta
 export const tileOf = (x: number, y: number) => Math.max(0, Math.min(H - 1, Math.floor(y))) * W + Math.max(0, Math.min(W - 1, Math.floor(x)));
 let tree: { key: string; came: Int32Array } | undefined;
 // vid ikappräkning går ingen på riktigt: slitaget läggs längs bästa vägen mellan elden och målet
 export function tread(s: State, tx: number, ty: number, trips: number) {
-  const m = getMap(s.seed), cov = coverOf(s), key = `${s.seed}:${Math.floor(s.now / (4 * HOUR))}`;
-  if (tree?.key !== key) tree = { key, came: pathTree(m.tiles, cov, m.fire.x, m.fire.y) };
-  for (let i = tileOf(tx, ty), n = 0; i >= 0 && n < 200; i = tree.came[i], n++) wear(m.tiles, cov, i, WEAR * trips);
+  const m = getMap(s.seed), g = groundOf(s), key = `${s.seed}:${Math.floor(s.now / (4 * HOUR))}`;
+  if (tree?.key !== key) tree = { key, came: pathTree(g, m.fire.x, m.fire.y) };
+  for (let i = tileOf(tx, ty), n = 0; i >= 0 && n < 200; i = tree.came[i], n++) wear(g, i, WEAR * trips);
 }

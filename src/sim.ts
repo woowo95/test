@@ -14,3 +14,4 @@ export * from './sim/samtal';
 export * from './sim/liv';
 export * from './sim/steg';
 export * from './sim/vag';
+export * from './sim/skog';
