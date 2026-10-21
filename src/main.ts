@@ -6,7 +6,7 @@ import {
   timeLabel, temperature, serialize, compact, stat, migrate, hearthOf, igniterOf, fireHeat, heatRadius, fireWant, emberOn,
   ITEM_NAMES, FireLog, coverOf, groundOf, SEDER, SED_INFO, Sed, influence, duty, habitShare, habitTotal, Act,
   richness, stoneDist, Kind, KUNSKAP_NAMES, describe, Lardom, STUBBE_LIV,
-  zonesOf, zoneAt, pilesOf, inZone, STACK_NAMES, amountOf, capacity, load, carryKind, Pile, OUT_WEAR, condOf, FOLDERS, STACK, campCenter,
+  zonesOf, zoneAt, pilesOf, inZone, STACK_NAMES, amountOf, capacity, load, carryKind, Pile, OUT_WEAR, condOf, FOLDERS, STACK, campCenter, SOCIAL,
 } from './sim';
 import { HIGH, BAR, FOREST } from './sim/vag';
 import { hasIcon, iconCanvas, iconImg } from './ikoner';
@@ -143,11 +143,12 @@ const structG = new PIXI.Graphics();
 const pileLayer = new PIXI.Container();
 const peopleG = new PIXI.Graphics();
 const bubbleG = new PIXI.Graphics();
+const markLayer = new PIXI.Container(); // symboler över huvudet: vad var och en håller på med
 const nightG = new PIXI.Graphics();
 const glowG = new PIXI.Graphics();
 glowG.blendMode = PIXI.BLEND_MODES.ADD;
 const labels = new PIXI.Container();
-world.addChild(terrainG, structG, pileLayer, peopleG, bubbleG, nightG, glowG, labels);
+world.addChild(terrainG, structG, pileLayer, peopleG, nightG, glowG, bubbleG, markLayer, labels);
 app.stage.addChild(world);
 const nameStyle = new PIXI.TextStyle({ fontFamily: 'Alegreya Sans, system-ui, sans-serif', fontSize: 22, fill: 0xffffff, stroke: 0x111111, strokeThickness: 5, fontWeight: '700' });
 
@@ -229,12 +230,11 @@ function drawPile(pl: Pile) {
 const PILE_LAYOUT = [[[4, 5]], [[1, 5], [7, 5]], [[4, 1], [1, 5], [7, 5]], [[2, 0], [6, 1], [0, 5], [8, 5]]];
 const textures: Record<string, PIXI.Texture> = {};
 let spriteN = 0;
-function pileSprite(k: string, x: number, y: number, sc: number) {
+function pileSprite(k: string, x: number, y: number, sc: number, layer = pileLayer, n = spriteN++) {
   if (!hasIcon(k)) return;
   textures[k] ??= PIXI.Texture.from(iconCanvas(k), { scaleMode: PIXI.SCALE_MODES.NEAREST });
-  let sp = pileLayer.children[spriteN] as PIXI.Sprite | undefined;
-  if (!sp) { sp = new PIXI.Sprite(); pileLayer.addChild(sp); }
-  spriteN++;
+  let sp = layer.children[n] as PIXI.Sprite | undefined;
+  if (!sp) { sp = new PIXI.Sprite(); layer.addChild(sp); }
   sp.texture = textures[k]; sp.position.set(x, y); sp.scale.set(sc); sp.visible = true;
 }
 function drawStructures(t: number) {
@@ -288,6 +288,37 @@ function drawStructures(t: number) {
   }
 }
 const bubbles: { id: number; kind: string; good: boolean; until: number }[] = [];
+// vem var och en senast pratade med: bubblan står kvar så länge båda är kvar i samtalet
+const talkWith = new Map<number, number>();
+// symbolen över huvudet för det man gör på platsen
+function markOf(p: Person): string | undefined {
+  const t = p.task; if (!t || t.phase !== 'do') return;
+  switch (t.act) {
+    case 'sova': case 'vila': return 'zzz';
+    case 'falla': case 'hugga': return 'yxa';
+    case 'ved': return 'grenar';
+    case 'samla': return 'korg';
+    case 'jakt': case 'spjut': return 'fiskespjut';
+    case 'fiske': return t.tool === 'fiskespjut' ? 'fiskespjut' : 'fisk';
+    case 'yxa': return 'flinta';
+  }
+}
+// pratbubblan: utseendet följer relationen, ett nytt samtal syns en stund i sin egen färg
+function drawBubble(x: number, y: number, kind: string | undefined, rel: 'karlek' | 'van' | 'ovan' | 'neutral', t: number, seed: number) {
+  const fill = kind === 'gräl' ? 0xd9534f : kind === 'flirt' ? 0xf0a3bd : kind === 'berättelse' ? 0xf2d27a : kind ? 0xffffff
+    : rel === 'karlek' ? 0xf6c6d6 : rel === 'ovan' ? 0xc98a80 : rel === 'van' ? 0xe4f2d8 : 0xf2f2ee;
+  const edge = rel === 'karlek' ? 0xd0607e : rel === 'ovan' ? 0x7a2a22 : rel === 'van' ? 0x5f9a44 : 0x555555;
+  bubbleG.lineStyle(0.8, edge, 0.9).beginFill(fill, 0.95).drawRoundedRect(x - 6, y - 4, 12, 8, 3).endFill().lineStyle(0);
+  bubbleG.beginFill(fill, 0.95).drawPolygon([x - 3, y + 3.6, x, y + 3.6, x - 4, y + 7]).endFill();
+  if (kind === 'gräl' || (!kind && rel === 'ovan')) { // sicksack: osams
+    bubbleG.lineStyle(1, 0x3a1410, 0.9).moveTo(x - 4, y + 1).lineTo(x - 2, y - 1.5).lineTo(x, y + 1).lineTo(x + 2, y - 1.5).lineTo(x + 4, y + 1).lineStyle(0);
+  } else if (kind === 'flirt' || (!kind && rel === 'karlek')) { // hjärta
+    bubbleG.beginFill(0xc0304e).drawCircle(x - 1.2, y - 0.8, 1.4).drawCircle(x + 1.2, y - 0.8, 1.4).drawPolygon([x - 2.6, y - 0.4, x + 2.6, y - 0.4, x, y + 2.6]).endFill();
+  } else { // tre punkter som tänds en i taget
+    const on = Math.floor(t / 400 + seed) % 3;
+    for (let k = -1; k <= 1; k++) bubbleG.beginFill(0x333333, k + 1 === on ? 1 : 0.45).drawCircle(x + k * 3, y, 0.9).endFill();
+  }
+}
 function drawPeople(t: number) {
   peopleG.clear(); bubbleG.clear();
   labels.removeChildren().forEach(c => c.destroy());
@@ -307,17 +338,34 @@ function drawPeople(t: number) {
     if (p.pregnantSince !== undefined) peopleG.beginFill(0xf2c4d0).drawCircle(x - r * 0.7, y - r * 0.7, 1.6).endFill();
     if (p.task?.carry && p.task.carry > 0.05) peopleG.beginFill(p.task.act === 'ved' || p.task.act === 'elda' ? 0x6f4a2a : 0xc58b3e).drawRect(x + r - 1, y - 1, 4, 4).endFill();
   }
-  for (let i = bubbles.length - 1; i >= 0; i--) {
-    const b = bubbles[i];
-    if (b.until < t) { bubbles.splice(i, 1); continue; }
-    const p = byId(s, b.id); if (!p || !alive(p)) continue;
-    const x = p.x * TS + 4, y = p.y * TS - 13;
-    const col = b.kind === 'gräl' ? 0xd9534f : b.kind === 'flirt' ? 0xf0a3bd : b.kind === 'berättelse' ? 0xf2d27a : 0xffffff;
-    bubbleG.beginFill(col, 0.95).drawRoundedRect(x - 6, y - 4, 12, 8, 3).drawPolygon([x - 3, y + 4, x, y + 4, x - 4, y + 7]).endFill();
-    bubbleG.beginFill(0x333333);
-    for (let k = -1; k <= 1; k++) bubbleG.drawCircle(x + k * 3, y, 0.9);
-    bubbleG.endFill();
+  // pågående samtal och symboler
+  let mk = 0;
+  const flash = new Map<number, string>();
+  for (let i = bubbles.length - 1; i >= 0; i--) { const b = bubbles[i]; if (b.until < t) bubbles.splice(i, 1); else flash.set(b.id, b.kind); }
+  for (const p of ppl) {
+    const x = p.x * TS, y = p.y * TS, a = ageOf(p, s.now), top = y - (a < 3 ? 9 : a < 14 ? 11 : 13);
+    const o = talkWith.get(p.id), q = o !== undefined ? byId(s, o) : undefined;
+    const talking = q && alive(q) && p.task?.phase === 'do' && SOCIAL.includes(p.task.act) && q.task?.phase === 'do' && SOCIAL.includes(q.task.act) && Math.hypot(q.x - p.x, q.y - p.y) < 4;
+    if (!talking && o !== undefined && !flash.has(p.id)) talkWith.delete(p.id);
+    if (talking || flash.has(p.id)) {
+      const r = q ? s.rels[relKey(p.id, q.id)] : undefined;
+      const rel = q && (p.partner === q.id || (r?.rom ?? 0) > 40) ? 'karlek' : (r?.op ?? 0) < -20 ? 'ovan' : (r?.op ?? 0) > 30 ? 'van' : 'neutral';
+      drawBubble(x + 4, top, flash.get(p.id), rel, t, p.id);
+      continue;
+    }
+    const m = markOf(p);
+    if (m === 'zzz') { // z som stiger och bleknar
+      for (let k = 0; k < 2; k++) {
+        const f = ((t / 1800 + p.id * 0.37 + k * 0.5) % 1), w = 2 + f * 2, zx = x + 3 + f * 3, zy = top + 2 - f * 6;
+        bubbleG.lineStyle(1, 0xdfe6ff, 0.9 * (1 - f)).moveTo(zx, zy).lineTo(zx + w, zy).lineTo(zx, zy + w).lineTo(zx + w, zy + w).lineStyle(0);
+      }
+    } else if (m) {
+      const bob = Math.sin(t / 500 + p.id) * 0.6;
+      bubbleG.beginFill(0x111111, 0.35).drawRoundedRect(x - 5, top - 5 + bob, 10, 10, 3).endFill();
+      pileSprite(m, x - 4, top - 4 + bob, 1, markLayer, mk++);
+    }
   }
+  for (let i = mk; i < markLayer.children.length; i++) markLayer.children[i].visible = false;
   const sel = byId(s, selected);
   for (const p of [sel, hovered !== selected ? byId(s, hovered) : undefined]) {
     if (!p || !alive(p)) continue;
@@ -811,7 +859,7 @@ function tick() {
     while (dt > 0.01) { const d = Math.min(0.5, dt); step(s, d, true, events); dt -= d; }
   }
   const now = performance.now();
-  for (const e of events.splice(0)) { bubbles.push({ id: e.a, kind: e.kind, good: e.good, until: now + 2600 }); }
+  for (const e of events.splice(0)) { bubbles.push({ id: e.a, kind: e.kind, good: e.good, until: now + 2600 }); talkWith.set(e.a, e.b); talkWith.set(e.b, e.a); }
   if (follow !== undefined) {
     const p = byId(s, follow);
     if (p && alive(p)) { camX = p.x * TS + TS / 2; camY = p.y * TS + TS / 2; layout(); } else stopFollow();

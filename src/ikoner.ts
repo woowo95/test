@@ -15,9 +15,21 @@ const PAL: Record<string, Record<string, string>> = {
   gniststen: { k: '#55595c', K: '#8a8f94', y: '#ffd060' },
   yxa: { h: '#7a5a36', g: '#8f9396', G: '#c9cdd0' },
   fiskespjut: { h: '#8a6a40', g: '#8f9396', G: '#c9cdd0' },
+  korg: { t: '#6e4e2e', o: '#9a6a3e', O: '#c99a62', r: '#c4334a' },
 };
 
 const PIX: Record<string, string[]> = {
+  // korgen visas över huvudet på den som plockar bär
+  korg: [
+    '..tttt..',
+    '.t.r.rt.',
+    '.trrrrt.',
+    'oOoOoOoO',
+    'OoOoOoOo',
+    '.oOoOoO.',
+    '.OoOoOo.',
+    '..oooo..',
+  ],
   bar: [
     '....g...',
     '...gg...',

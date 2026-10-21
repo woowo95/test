@@ -9,7 +9,8 @@
     "balans": "tsx src/test/balans.ts",
     "scenario": "tsx src/test/scenario.ts",
     "detaljer": "tsx src/test/detaljer.ts",
-    "check": "tsc -p ."
+    "check": "tsc -p .",
+    "takt": "tsx src/test/takt.ts"
   },
   "repository": {
     "type": "git",

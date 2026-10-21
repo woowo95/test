@@ -9,13 +9,22 @@ import { ageOf, alive, living, log, stat, think } from './folk';
 import { getMap } from './karta';
 import { birth, birthWish, die, regulate } from './liv';
 import { WEAR, groundOf, growGround, packGround, tileOf } from './mark';
+// arbete i levande läge: korgen rymmer en tredjedel av vad man kan bära, och man bär hem det man har efter ett pass på
+// STINT_MIN–2·STINT_MIN minuter. Fler turer ger fler fotsteg, så slitaget per steg sänks för att stigarna ska växa som förut
+const WORK_LOAD = 1 / 3, STINT_MIN = 20, LIVE_WEAR = 0.3;
+const STINT: Act[] = ['samla', 'jakt', 'fiske', 'ved', 'hugga'];
+// rörelse på platsen: radie i rutor, hur länge man står still (sekunder) och hur fort man går
+const WANDER: Partial<Record<Act, { r: number; h0: number; h1: number; v: number }>> = {
+  samla: { r: 2, h0: 20, h1: 60, v: 0.6 }, jakt: { r: 3, h0: 30, h1: 90, v: 0.7 },
+  promenad: { r: 4, h0: 1, h1: 4, v: 0.8 }, leka: { r: 2, h0: 2, h1: 6, v: 1.3 },
+};
 import { FLIP, SOCIAL, TalkEvent, converse } from './samtal';
 import { HABIT_FADE, sedEvent, stepSeder, updateTags } from './seder';
 import { fearPlace, forget, lookAround } from './minne';
 import { chance, clamp, rnd } from './slump';
 import { ageIndex, isLight } from './tid';
 import { chopStock, fellTree, makeAxe } from './skog';
-import { AXE_WORK, Act, DAY, HOUR, Person, SEC, SKILL_NAMES, Skill, State, T, W, isWork } from './typer';
+import { AXE_WORK, Act, DAY, HOUR, Person, SEC, SKILL_NAMES, Skill, State, T, W, H, isWork } from './typer';
 import { findPath, speedAt, wear } from './vag';
 import { chooseTask } from './val';
 
@@ -119,7 +128,7 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
           const ci = tileOf(p.x, p.y), sp = speedAt(g, ci) || 1;
           const dx = wx - p.x, dy = wy - p.y, d = Math.hypot(dx, dy), can = budget * sp;
           const mv = Math.min(d, can);
-          wear(g, ci, WEAR * mv);
+          wear(g, ci, WEAR * LIVE_WEAR * mv);
           if (d <= can) { p.x = wx; p.y = wy; tk.path.shift(); budget -= d / sp; }
           else { p.x += dx / d * can; p.y += dy / d * can; budget = 0; }
         }
@@ -133,14 +142,43 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
           if (tk.act === 'elda') {
             if (tk.phase === 'go') {
               // vid förrådet: ta en famn ved och gå till elden
-              const m = getMap(s.seed), n = s.fire.fuel >= fireWant(s) ? 0 : Math.min(3, Math.max(1, fireWant(s) - s.fire.fuel), fuelStock(s));
+              const m = getMap(s.seed), n = s.fire.fuel >= fireWant(s) ? 0 : Math.min(1, fuelStock(s)); // en famn i taget, så att elden matas oftare
               if (n <= 0) p.task = undefined;
               else { tk.carry = takeFuel(s, n); tk.phase = 'back'; tk.tx = m.fire.x + 0.5 + (rnd(s) - 0.5) * 1.2; tk.ty = m.fire.y + 1.2; }
             } else { addFuel(s, p, tk.carry); tk.carry = 0; p.task = undefined; }
           } else if (tk.phase === 'back') {
-            storeLoad(s, tk, p.x, p.y); p.task = undefined;
-          } else { tk.phase = 'do'; if (tk.act === 'bara') { pickUp(s, p, tk); tk.until = now; } }
-        } else { wear(g, ci, WEAR * sp); p.x += dx / d * sp; p.y += dy / d * sp; }
+            storeLoad(s, tk, p.x, p.y);
+            // ett arbetspass är klart: gå tillbaka och fortsätt om arbetet inte är slut och dagen inte vänt
+            const r = tk.res;
+            if (r && r.until > now + 5 * 60 * SEC && tk.dark === !light) { tk.phase = 'go'; tk.tx = r.x; tk.ty = r.y; tk.until = r.until; tk.res = undefined; tk.wx = tk.wy = tk.hold = undefined; }
+            else p.task = undefined;
+          } else {
+            tk.phase = 'do'; if (tk.act === 'bara') { pickUp(s, p, tk); tk.until = now; }
+            if (STINT.includes(tk.act)) tk.stint = now + (STINT_MIN + rnd(s) * STINT_MIN) * 60 * SEC;
+          }
+        } else { wear(g, ci, WEAR * LIVE_WEAR * sp); p.x += dx / d * sp; p.y += dy / d * sp; }
+      } else if (WANDER[tk.act]) {
+        // på platsen: stå still en stund, gå några steg, stå still igen (från buske till buske, spana efter vilt)
+        const w = WANDER[tk.act]!;
+        if (tk.hold === undefined) tk.hold = now + (w.h0 + rnd(s) * (w.h1 - w.h0)) * SEC;
+        if (tk.wx === undefined && now > tk.hold) {
+          const m = getMap(s.seed);
+          for (let k = 0; k < 6; k++) {
+            const ang = rnd(s) * Math.PI * 2, r = w.r * Math.sqrt(rnd(s)), nx = tk.tx + Math.cos(ang) * r, ny = tk.ty + Math.sin(ang) * r;
+            if (nx > 0 && ny > 0 && nx < W && ny < H && m.tiles[tileOf(nx, ny)] !== T.Vatten) { tk.wx = nx; tk.wy = ny; break; }
+          }
+          if (tk.wx === undefined) tk.hold = now + w.h0 * SEC;
+        }
+        if (tk.wx !== undefined) {
+          const g = groundOf(s), ci = tileOf(p.x, p.y), sp = (speedAt(g, ci) || 1) * w.v * (a < 6 ? 0.6 : 1) * dtSec;
+          const dx = tk.wx - p.x, dy = tk.wy! - p.y, d = Math.hypot(dx, dy), mv = Math.min(d, sp);
+          const nx = d <= sp ? tk.wx : p.x + dx / d * sp, ny = d <= sp ? tk.wy! : p.y + dy / d * sp;
+          if (getMap(s.seed).tiles[tileOf(nx, ny)] === T.Vatten) { tk.wx = tk.wy = undefined; tk.hold = now + w.h0 * SEC; }
+          else {
+            wear(g, ci, WEAR * LIVE_WEAR * 0.15 * mv); p.x = nx; p.y = ny;
+            if (d <= sp) { tk.wx = tk.wy = undefined; tk.hold = now + (w.h0 + rnd(s) * (w.h1 - w.h0)) * SEC; }
+          }
+        }
       } else if (tk.act !== 'sova' && tk.act !== 'vakt' && tk.act !== 'hantverk') {
         // småjustering så att de rör sig lite
         if (rnd(s) < dtSec * 0.08) { const nx = p.x + (rnd(s) - 0.5) * 0.4, ny = p.y + (rnd(s) - 0.5) * 0.4; if (getMap(s.seed).tiles[tileOf(nx, ny)] !== T.Vatten) { p.x = nx; p.y = ny; } }
@@ -157,7 +195,8 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
       // utan yxa samlas grenar på marken (två grenar på den tid det tar att hugga en ved); med yxa huggs ved ur en fälld stam
       // bär, rötter och vilt: platsen ger mindre ju mer som redan tagits där
       const rich = tk.act === 'samla' || tk.act === 'jakt' ? richness(s, tk.act, tk.tx, tk.ty) : 1;
-      const y = workRate(s, p, base) * dtSec * (live ? 1 : 0.8) * (tk.act === 'ved' ? 2 : tk.act === 'hugga' ? 1.5 : tk.act === 'falla' || tk.act === 'fiske' ? 0 : rich);
+      const y = workRate(s, p, base) * dtSec * (live ? (tk.act === 'samla' ? 1.1 : 1) : 0.8) * (tk.act === 'ved' ? 2 : tk.act === 'hugga' ? 1.5 : tk.act === 'falla' || tk.act === 'fiske' ? 0 : rich);
+      if (y > 0) count(s, 'prod_' + tk.act, y);
       if (tk.act === 'samla' || tk.act === 'jakt') { takeFrom(s, tk.act, tk.tx, tk.ty, y); if (rich < 0.08) tk.until = now; } // tomt här: gå hem eller vidare
       // den som arbetar ser hur mycket som finns i området och minns det
       if ((tk.act === 'samla' || tk.act === 'jakt' || tk.act === 'fiske') && (rich < 0.08 || chance(s, 1 / 1800, dtSec))) lookAround(s, p, tk.tx, tk.ty);
@@ -202,7 +241,15 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
         sedEvent(s, 'nyfikenhet', first ? 0.06 : 0.01, first ? `${p.name} blev byns första mästare i ${SKILL_NAMES[sk].toLowerCase()}. Byn ser vad kunskap kan ge.` : undefined);
       }
     }
-    if (live && tk.phase === 'do' && isWork(tk.act) && load(tk) >= capacity(s, p)) tk.until = now; // full börda: bär hem den
+    if (live && tk.phase === 'do' && isWork(tk.act)) {
+      // arbetet sker i korta pass: när passet är slut eller korgen full bärs det hem, sedan fortsätter man
+      const full = load(tk) >= capacity(s, p) * WORK_LOAD, has = tk.carry > 0 || !!tk.items;
+      if (full || (tk.stint !== undefined && now > tk.stint)) {
+        if (has && tk.until > now + 10 * 60 * SEC) { tk.res = { x: tk.tx, y: tk.ty, until: tk.until }; tk.until = now; }
+        else if (has && full) tk.until = now;
+        else if (tk.stint !== undefined) tk.stint = now + STINT_MIN * 60 * SEC;
+      }
+    }
     if (tk.phase === 'do' && tk.act === 'tanda' && canLight(s)) {
       s.fire.tryProg += dtSec;
       const per = igniterOf(s)!.minutes * 60;

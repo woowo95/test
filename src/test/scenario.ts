@@ -427,6 +427,65 @@ SCENARIER.lagerplatser = {
   },
 };
 
+SCENARIER.aktivitet = {
+  text: 'I levande läge arbetar man i korta pass med en lätt korg och går fram och tillbaka; vid bärplockning och jakt står man still en stund och går några steg, på promenad går man hela tiden. Det ger lika mycket som förut',
+  kor: () => {
+    const s = createState(5, START);
+    s.wood = 20; Object.assign(s.fire, { lit: true, fuel: 0.5 }); // tänd eld och ved i förrådet, så att någon matar elden
+    const m = getMap(s.seed);
+    const rad: Record<string, number> = { samla: 2, jakt: 3, promenad: 4 };
+    const gick: Record<string, number> = {}, stod: Record<string, number> = {};
+    let utanfor = 0, vatten = 0, tungt = 0, turer = 0, aterupp = 0, eldMax = 0;
+    const fore = new Map<number, { x: number; y: number; ph: string; act: string }>();
+    for (let i = 0; i < 10 * 3600 * 2; i++) {
+      step(s, 0.5, true);
+      if (i === 3600) { // en jägare och en som promenerar, så att båda syns i provet
+        const c = campCenter(s), vuxna = living(s).filter(p => ageOf(p, s.now) >= 16).slice(0, 2);
+        vuxna.forEach((p, j) => {
+          let x = 0, y = 0;
+          for (let r = 7; r < 30; r++) { x = c.x + 0.5 + (j ? -r : r); y = c.y + 0.5 + r * 0.3; if (m.tiles[Math.floor(y) * W + Math.floor(x)] !== T.Vatten) break; }
+          p.task = { act: j ? 'promenad' : 'jakt', phase: 'go', tx: x, ty: y, until: s.now + 3 * HOUR, carry: 0, why: 'prov', dark: !isLight(s.now) };
+        });
+      }
+      for (const p of living(s)) {
+        const t = p.task, f = fore.get(p.id);
+        if (m.tiles[Math.floor(p.y) * W + Math.floor(p.x)] === T.Vatten) vatten++;
+        if (t && f && f.act === t.act) {
+          if (f.ph === 'do' && t.phase === 'back') { turer++; if (t.act !== 'bara' && load(t) > capacity(s, p) / 3 + 0.05) tungt++; } // bärandet av högar får ta en full famn
+          if (f.ph === 'back' && t.phase === 'go') aterupp++;
+        }
+        if (t?.act === 'elda' && t.phase === 'back') eldMax = Math.max(eldMax, t.carry);
+        if (t && t.phase === 'do' && rad[t.act] && f?.ph === 'do' && f.act === t.act) {
+          const rorde = Math.hypot(p.x - f.x, p.y - f.y) > 1e-6;
+          (rorde ? gick : stod)[t.act] = ((rorde ? gick : stod)[t.act] ?? 0) + 1;
+          if (Math.hypot(p.x - t.tx, p.y - t.ty) > rad[t.act] + 0.6) utanfor++;
+        }
+        fore.set(p.id, { x: p.x, y: p.y, ph: t?.phase ?? '', act: t?.act ?? '' });
+      }
+    }
+    const andel = (k: string) => (gick[k] ?? 0) / Math.max(1, (gick[k] ?? 0) + (stod[k] ?? 0));
+    // snabbläget: samma by räknad i stora steg ska ge ungefär lika mycket per arbetstimme som i levande läge
+    const prod = (live: boolean) => {
+      const q = createState(5, START); let tim = 0; const dt = live ? 0.5 : 60;
+      for (let i = 0; i < 24 * 3600 / dt; i++) { step(q, dt, live); for (const p of living(q)) if (p.task?.act === 'samla') tim += dt / 3600; }
+      return ((q.stat?.prod_samla as number) ?? 0) / Math.max(1, tim);
+    };
+    const pl = prod(true), ps = prod(false);
+    return [
+      [`många turer hem med lätt korg (${turer} turer på tio timmar, ${aterupp} gånger tillbaka till samma plats)`, turer > 40 && aterupp > 10],
+      [`ingen bär mer än en tredjedel av vad hen orkar från arbetet (${tungt} för tunga)`, tungt === 0],
+      [`bärplockare står mest still men går ibland (går ${Math.round(andel('samla') * 100)} % av tiden)`, andel('samla') > 0.02 && andel('samla') < 0.5],
+      [`jägare står mest still men går ibland (går ${Math.round(andel('jakt') * 100)} % av tiden)`, !!stod.jakt && (andel('jakt') > 0.02 && andel('jakt') < 0.5)],
+      [`den som promenerar går nästan hela tiden (${Math.round(andel('promenad') * 100)} %)`, !!gick.promenad && andel('promenad') > 0.5],
+      [`man håller sig nära platsen (${utanfor} gånger utanför)`, utanfor === 0],
+      ['ingen går ut i vattnet', vatten === 0],
+      [`elden matas med en famn i taget (högst ${eldMax.toFixed(1)})`, eldMax > 0 && eldMax <= 1 + 1e-9],
+      // före de korta passen gav en timmes bärplockning med gångtiden 0,30 i levande läge och 0,19 i snabbläget
+      [`bärplockning ger lika mycket per timme som förut (${pl.toFixed(2)} i levande läge, ${ps.toFixed(2)} i snabbläget)`, pl > 0.2 && pl < 0.4 && Math.abs(ps - 0.19) < 0.05],
+    ];
+  },
+};
+
 const val = process.argv[2];
 let fel = 0;
 for (const [namn, sc] of Object.entries(SCENARIER)) {
@@ -434,6 +493,6 @@ for (const [namn, sc] of Object.entries(SCENARIER)) {
   const k = sc.kor(), ok = k.every(([, b]) => b);
   if (!ok) fel++;
   console.log(`${ok ? 'OK  ' : 'FEL '} ${namn}: ${sc.text}`);
-  for (const [t, b] of k) if (!ok || !b) console.log(`     ${b ? '✓' : '✗'} ${t}`);
+  for (const [t, b] of k) if (!ok || !b || process.env.ALLA) console.log(`     ${b ? '✓' : '✗'} ${t}`);
 }
 if (fel) { console.log(`${fel} scenario misslyckades.`); process.exitCode = 1; }
