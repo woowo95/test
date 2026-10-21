@@ -1,7 +1,7 @@
 // Scenariotester: ställ en by i ett visst läge, kör den en stund och kontrollera att det som ska hända händer.
 // npm run scenario            kör alla
 // npm run scenario -- glanta  kör bara ett
-import { createState, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, WEEK, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, zonesOf, allows, ageOf, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, fuelStock, DAY, HOUR, W, State, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, campCenter, TEKNIK, knows, thinkWhileWorking, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, beds, isWall, Bit, wearBuild, FYND, FYND_IDS, GRUPPER, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, LAGER_R, observe, hoped } from '../sim';
+import { createState, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, WEEK, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, zonesOf, allows, ageOf, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, fuelStock, DAY, HOUR, W, State, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, campCenter, TEKNIK, knows, thinkWhileWorking, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, beds, isWall, Bit, wearBuild, FYND, FYND_IDS, GRUPPER, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, LAGER_R, observe, hoped, Lager, skyggOf, SKYGG_R, share } from '../sim';
 import { findPath } from '../sim/vag';
 import { FOREST, HIGH, isSoil } from '../sim/vag';
 import { START } from './kor';
@@ -24,7 +24,7 @@ function skogsandel(s: State, min: number, max: number) {
 
 // genomsnittligt uttag (0 = orört, 1 = tomt) på rutor inom ett avstånd från elden
 function uttag(s: State, k: Kind, min: number, max: number) {
-  const t = takenOf(s)[k];
+  const t = takenOf(s)[k === 'samla' ? 'bar' : k]!;
   let n = 0, v = 0;
   for (let i = 0; i < t.length; i++) { const d = campDist(s, i % W, Math.floor(i / W)); if (d >= min && d < max) { n++; v += t[i]; } }
   return n ? v / n : 0;
@@ -598,14 +598,14 @@ SCENARIER.bygg = {
 };
 
 SCENARIER.varmekarta = {
-  text: 'Värmekartorna: bär i små snår som står kvar, svamp glest i skogen, kaniner helst i gräs, fisk i vattnet och flinta vid stenarna. Inget växer i lägret, mönstren kryper med tiden, uttag tömmer platsen som växer tillbaka, och den som ser en plockad plats vet att den växer tillbaka',
+  text: 'Värmekartorna: bär i små snår som står kvar, svamp i skogen, rötter glest överallt även på vintern, kaniner helst i gräs och borta från folk, fisk i vattnet och flinta vid stenarna. Inget växer i lägret, mönstren kryper med tiden, uttag tömmer platsen som växer tillbaka, och den som ser en plockad plats vet att den växer tillbaka',
   kor: () => {
     const s = createState(21, START), g = groundOf(s), m = getMap(s.seed);
     const vid = (ai: number) => { s.now = s.founded + ((ai + 3) % 4) * WEEK + HOUR; };
-    const summa = (k: typeof FYND_IDS[number]) => { let v = 0; for (let i = 0; i < W * H; i++) v += fyndAt(s, k, i); return v; };
+    const summa = (k: Lager) => { let v = 0; for (let i = 0; i < W * H; i++) v += fyndAt(s, k, i); return v; };
     const land = (i: number) => isSoil(g.tiles[i]), skog = (i: number) => land(i) && g.trees[i] >= FOREST;
     vid(0); const kIstid = summa('kantarell');
-    vid(3); const kHost = summa('kantarell'), bHost = summa('samla');
+    vid(3); const kHost = summa('kantarell'), bHost = summa('bar');
     // svamp bara i skogen; kantarell och spindling har egna områden som ibland går in i varandra
     let svampUtanfor = 0, bada = 0, baraK = 0;
     for (let i = 0; i < W * H; i++) {
@@ -615,10 +615,18 @@ SCENARIER.varmekarta = {
     }
     // bärbuskar i små snår: få rutor, men rika
     let jord = 0, buskar = 0;
-    for (let i = 0; i < W * H; i++) if (land(i)) { jord++; if (vaxerAt(s, 'samla', i) > 1) buskar++; }
-    // kaniner trivs bäst i gräs
+    for (let i = 0; i < W * H; i++) if (land(i)) { jord++; if (vaxerAt(s, 'bar', i) > 1) buskar++; }
+    // rötter: glest men nästan överallt på land, och de finns kvar på vintern när bär och svamp är borta
+    let rotLand = 0, rotRik = 0; const rotTopp = FYND.rotter.topp;
+    for (let i = 0; i < W * H; i++) if (land(i) && campDist(s, i % W, Math.floor(i / W)) >= LAGER_R) { if (vaxerAt(s, 'rotter', i) > 0) rotLand++; if (vaxerAt(s, 'rotter', i) > rotTopp * 0.5) rotRik++; }
+    vid(0); const rotVinter = summa('rotter'), barVinter = summa('bar'); vid(3);
+    // kaninerna håller sig borta från lägret och från platser där folk trampat
+    const sk0 = skyggOf(s);
+    let nara = 0, naraN = 0, langt = 0, langtN = 0;
+    for (let i = 0; i < W * H; i++) if (land(i)) { const d = campDist(s, i % W, Math.floor(i / W)); if (d >= LAGER_R && d < LAGER_R + 3) { nara += sk0[i]; naraN++; } else if (d > LAGER_R + SKYGG_R) { langt += sk0[i]; langtN++; } }
+    // kaniner trivs bäst i gräs (räknat utan skyggheten)
     let gr = 0, grN = 0, sk = 0, skN = 0;
-    for (let i = 0; i < W * H; i++) if (land(i) && campDist(s, i % W, Math.floor(i / W)) >= 3) { if (g.trees[i] >= FOREST) { sk += vaxerAt(s, 'jakt', i); skN++; } else if (g.trees[i] === 0) { gr += vaxerAt(s, 'jakt', i); grN++; } }
+    for (let i = 0; i < W * H; i++) if (land(i) && sk0[i] > 0.02) { const v = vaxerAt(s, 'jakt', i) / sk0[i]; if (g.trees[i] >= FOREST) { sk += v; skN++; } else { gr += v; grN++; } }
     // fisk bara i vattnet, men man når den från stranden
     let fiskLand = 0, strand = -1;
     for (let i = 0; i < W * H; i++) { if (m.tiles[i] !== T.Vatten && fyndAt(s, 'fiske', i) > 0) fiskLand++; if (strand < 0 && m.tiles[i] !== T.Vatten && richness(s, 'fiske', i % W + 0.5, Math.floor(i / W) + 0.5) > 0.3) strand = i; }
@@ -628,8 +636,8 @@ SCENARIER.varmekarta = {
     // inget växer i lägret
     let iLagret = 0;
     for (let i = 0; i < W * H; i++) if (campDist(s, i % W, Math.floor(i / W)) < LAGER_R) for (const k of FYND_IDS) if (k !== 'fiske' && fyndAt(s, k, i) > 0) iLagret++;
-    // mönstren kryper: bärsnåren står nästan kvar på två veckor, kaninerna har flyttat mer
-    const kvar = (k: 'samla' | 'jakt', dygn: number, grans: number) => {
+    // mönstren kryper: bärsnåren står nästan kvar ett speldygnsvarv (4 veckor = samma årstid igen), kaninerna har flyttat mer
+    const kvar = (k: Lager, dygn: number, grans: number) => {
       const t0 = s.now, fore: boolean[] = [];
       for (let i = 0; i < W * H; i++) fore.push(vaxerAt(s, k, i) > grans);
       s.now = t0 + dygn * DAY;
@@ -638,7 +646,7 @@ SCENARIER.varmekarta = {
       s.now = t0;
       return n ? same / n : 0;
     };
-    const barKvar = kvar('samla', 14, 1), kaninKvar = kvar('jakt', 14, 0.6), barSenare = kvar('samla', 200, 1);
+    const barKvar = kvar('bar', 28, 1), kaninKvar = kvar('jakt', 28, 0.6), barSenare = kvar('bar', 280, 1);
     // ta ur en rik ruta och låt den växa tillbaka
     let bast = 0; for (let i = 0; i < W * H; i++) if (fyndAt(s, 'kantarell', i) > fyndAt(s, 'kantarell', bast)) bast = i;
     const x = bast % W + 0.5, y = Math.floor(bast / W) + 0.5, fore = fyndAt(s, 'kantarell', bast);
@@ -648,10 +656,18 @@ SCENARIER.varmekarta = {
     const kopia = JSON.parse(JSON.stringify(s)) as State;
     const sparad = Math.abs(fyndAt(kopia, 'kantarell', bast) - efter) < 0.01;
     // den som ser en plockad plats minns att det växer där och tror att det växt tillbaka om ett tag
-    let snar = 0; for (let i = 0; i < W * H; i++) if (vaxerAt(s, 'samla', i) > vaxerAt(s, 'samla', snar) && campDist(s, i % W, Math.floor(i / W)) > 6) snar = i;
+    let snar = 0; for (let i = 0; i < W * H; i++) if (vaxerAt(s, 'bar', i) > vaxerAt(s, 'bar', snar) && campDist(s, i % W, Math.floor(i / W)) > 6) snar = i;
     const bx = snar % W, by = Math.floor(snar / W), p = living(s)[0];
     for (let dy = -4; dy <= 4; dy++) for (let dx = -4; dx <= 4; dx++) for (let n = 0; n < 6; n++) takeFrom(s, 'samla', bx + dx + 0.5, by + dy + 0.5, 1);
+    // en annan har hört att platsen är rik; när hen kommer dit och ser att den är tömd rättas lärdomen och sprids
+    const q = living(s)[1], r2 = living(s)[2], aa = areaOf(bx, by);
+    (q.lardomar ??= []).push({ k: 'samla', a: aa, v: 3, c: 0.9, t: s.now - HOUR, src: p.id, led: 1 });
+    (r2.lardomar ??= []).push({ k: 'samla', a: aa, v: 3, c: 0.6, t: s.now - HOUR, src: p.id, led: 1 });
     s.now += HOUR; observe(s, p, 'samla', bx, by);
+    const fore2 = s.stat?.rattat ?? 0; observe(s, q, 'samla', bx, by);
+    const ql = findL(q, 'samla', aa)!, rattad = (s.stat?.rattat ?? 0) > fore2 && ql.ny !== undefined, qText = describe(s, ql).what;
+    for (let n = 0; n < 200 && findL(r2, 'samla', aa)!.v > 2; n++) share(s, q, r2, { op: 60 } as never, 'berättelse');
+    const spridd = findL(r2, 'samla', aa)!.v;
     const l = findL(p, 'samla', areaOf(bx, by))!, nyss = hoped(s, l), text = describe(s, l).what;
     s.now += 3 * DAY; const sen = hoped(s, l);
     growFynd(s, 48, 3);
@@ -665,12 +681,15 @@ SCENARIER.varmekarta = {
       ['varje lager hör till en grupp i filtret', FYND_IDS.every(k => GRUPPER[FYND[k].grupp] && FYND[k].topp > 0)],
       [`ingen svamp i istiden (${kIstid.toFixed(1)}), en del på hösten (${kHost.toFixed(0)})`, kIstid === 0 && kHost > 20],
       [`svamp bara i skogen (${svampUtanfor} rutor utanför)`, svampUtanfor === 0],
-      [`kantarell och spindling växer ibland ihop (${bada} rutor) och ibland var för sig (${baraK} bara kantarell)`, bada > 0 && baraK > bada],
+      [`kantarell och spindling växer ibland ihop (${bada} rutor) och ibland var för sig (${baraK} bara kantarell)`, bada > 0 && baraK > bada * 0.2],
       [`bärbuskar i små snår (${Math.round(buskar / jord * 100)} % av marken), bär och rötter finns (${bHost.toFixed(0)})`, buskar > 0 && buskar / jord < 0.2 && bHost > 100],
-      [`kaniner trivs bättre i gräs (${(gr / grN).toFixed(2)}) än i skog (${(sk / skN).toFixed(2)})`, gr / grN > sk / skN],
+      [`rötter glest men nästan överallt (${Math.round(rotLand / jord * 100)} % av marken, ${Math.round(rotRik / jord * 100)} % rik), kvar på vintern (${rotVinter.toFixed(0)}) när bären är borta (${barVinter.toFixed(0)})`, rotLand / jord > 0.8 && rotRik / jord < 0.3 && rotVinter > 20 && barVinter < 1],
+      [`kaninerna skyr lägret (${(nara / naraN).toFixed(2)} nära mot ${(langt / langtN).toFixed(2)} långt bort)`, nara / naraN < 0.4 && langt / langtN > 0.7],
+      [`den som kommer till en tömd plats rättar sig ("${qText}") och berättar det (${spridd.toFixed(2)} hos den som hörde det)`, rattad && qText.includes('sämre än man trott') && spridd < 2],
+      [`kaniner trivs bättre i öppen mark (${(gr / grN).toFixed(2)}) än i skog (${(sk / skN).toFixed(2)})`, gr / grN > sk / skN],
       [`fisk bara i vattnet (${fiskLand} rutor på land), och man når den från stranden (${fiskFore.toFixed(2)} → ${fiskEfter.toFixed(2)} efter fiske)`, fiskLand === 0 && fiskFore > 0.3 && fiskEfter < fiskFore * 0.7],
       [`inget växer i lägret (${iLagret})`, iLagret === 0],
-      [`bärsnåren står kvar (${Math.round(barKvar * 100)} % efter två veckor, ${Math.round(barSenare * 100)} % efter 200 dygn), kaninerna flyttar fortare (${Math.round(kaninKvar * 100)} %)`, barKvar > 0.7 && kaninKvar < barKvar && barSenare < 0.6],
+      [`bärsnåren står kvar (${Math.round(barKvar * 100)} % efter 28 speldygn, ${Math.round(barSenare * 100)} % efter 280), kaninerna flyttar fortare (${Math.round(kaninKvar * 100)} %)`, barKvar > 0.5 && kaninKvar < barKvar && barSenare < 0.6],
       [`uttag tömmer platsen (${fore.toFixed(2)} → ${efter.toFixed(2)})`, efter < fore * 0.3],
       ['uttaget sparas', sparad],
       [`platsen växer tillbaka på hösten (${vuxit.toFixed(2)})`, vuxit > efter + 0.1],

@@ -255,8 +255,6 @@ function newZone(s: State) {
 }
 
 // ---------- bära ----------
-// hur stor del av insamlingen som är rötter, per årstid (istid, vår, sommar, höst): bär finns mest på sommaren och hösten
-export const ROOT_SHARE = [0.85, 0.6, 0.2, 0.35];
 // det en uppgift ger (handlingar.ts): bär från insamling, kött från jakt, fisk från fiske, grenar från vedplockning, ved från huggning
 export const carryKind = (act: Act) => ACTS[act].ger ?? 'bar';
 // vart bördan ska: till en stack av det man mest bär

@@ -10,7 +10,7 @@ import { DAY, H, HOUR, Person, State, T, W, inMap } from './typer';
 import { BAR, FOREST, HIGH, isSoil } from './vag';
 
 // ---------- fynd: mat och saker finns på olika platser ----------
-// Varje ruta har en egen rikedom av bär och rötter, vilt och fisk. Den som samlar, jagar eller fiskar tar ur platsen,
+// Varje ruta har en egen rikedom av bär, rötter, vilt och fisk. Den som samlar, jagar eller fiskar tar ur platsen,
 // och den växer långsamt tillbaka. Därför går invånarna vidare till nya platser när det tar slut nära byn.
 export type Kind = 'samla' | 'jakt' | 'fiske';
 export const KINDS: Kind[] = ['samla', 'jakt', 'fiske'];
@@ -59,15 +59,14 @@ const SVAMP_UTTAG: Uttag = { full: 2.5, reach: 1, regrow: [1 / 400, 1 / 150, 1 /
 const land = (s: State, i: number) => isSoil(groundOf(s).tiles[i]);
 // Ordningen bland lagren med uttag är ordningen i sparfilen: nya lager med uttag läggs sist.
 const DEF = {
-  // bärbuskar i små täta snår i skog och högt gräs; de flyttar sig mycket långsamt. Rötter finns glest överallt.
-  samla: {
-    namn: 'Bär och rötter', grupp: 'vaxter', ikon: 'bar', farg: 0x7a4ce0, topp: 2,
-    monster: { salt: 71, skala: 2.5, period: 56, troskel: 0.6 },
+  // bärbuskar i små täta snår i skog och högt gräs; de flyttar sig mycket långsamt. Inga bär i istiden
+  bar: {
+    namn: 'Bär', grupp: 'vaxter', ikon: 'bar', farg: 0x9a5cff, topp: 3, arstid: [0, 0.5, 1, 1.15],
+    monster: { salt: 71, skala: 2.5, period: 56, troskel: 0.68 },
     bas(s, i, m) {
       if (!land(s, i)) return 0;
-      const g = groundOf(s), tr = g.trees[i], c = g.cover[i];
-      const rot = tr >= 0.15 || c >= HIGH ? 0.8 : c >= BAR ? 0.6 : 0.15, buske = tr >= FOREST ? 0.8 : tr >= 0.15 || c >= HIGH ? 1 : 0;
-      return rot * 0.35 + buske * 2.6 * m;
+      const g = groundOf(s), tr = g.trees[i];
+      return (tr >= FOREST ? 0.8 : tr >= 0.15 || g.cover[i] >= HIGH ? 1 : 0) * 4 * m;
     },
     uttag: { full: 1.2, reach: 1, regrow: [0, 1 / 70, 1 / 24, 1 / 32] },
   },
@@ -78,7 +77,7 @@ const DEF = {
     bas(s, i, m) {
       if (!land(s, i)) return 0;
       const g = groundOf(s), tr = g.trees[i];
-      return (tr >= FOREST ? 0.5 : tr >= 0.15 ? 0.75 : g.cover[i] >= BAR ? 1 : 0.3) * (0.15 + 1.3 * m);
+      return (tr >= FOREST ? 0.85 : tr >= 0.15 ? 0.9 : g.cover[i] >= BAR ? 1 : 0.3) * (0.15 + 1.3 * m) * skyggOf(s)[i];
     },
     uttag: { full: 6, reach: 3, regrow: [1 / 400, 1 / 240, 1 / 240, 1 / 300] },
   },
@@ -91,15 +90,15 @@ const DEF = {
   },
   // kantarellen växer bara i skogen, utspridd över större områden som vandrar långsamt. Mest på hösten
   kantarell: {
-    namn: 'Kantarell', grupp: 'vaxter', ikon: 'svamp', farg: 0xa0602e, topp: 0.8, arstid: SVAMP_SEASON,
-    monster: { salt: 83, skala: 6, period: 28, troskel: 0.4, gles: 0.55 },
+    namn: 'Kantarell', grupp: 'vaxter', ikon: 'svamp', farg: 0xffd21f, topp: 0.8, arstid: SVAMP_SEASON,
+    monster: { salt: 83, skala: 8, period: 28, troskel: 0.3, gles: 0.5 },
     bas: (s, i, m) => land(s, i) && groundOf(s).trees[i] >= FOREST ? 0.9 * m : 0,
     uttag: SVAMP_UTTAG,
   },
   // den giftiga orangea spindlingen liknar kantarellen. Den har egna områden som kan gå in i kantarellens
   spindling: {
-    namn: 'Orange spindling (giftig)', grupp: 'vaxter', ikon: 'spindling', farg: 0xe02818, topp: 0.8, arstid: SVAMP_SEASON,
-    monster: { salt: 89, skala: 6, period: 28, troskel: 0.5, gles: 0.4 },
+    namn: 'Orange spindling (giftig)', grupp: 'vaxter', ikon: 'spindling', farg: 0xff2d6f, topp: 0.8, arstid: SVAMP_SEASON,
+    monster: { salt: 89, skala: 8, period: 28, troskel: 0.4, gles: 0.35 },
     bas: (s, i, m) => land(s, i) && groundOf(s).trees[i] >= FOREST ? 0.9 * m : 0,
     uttag: SVAMP_UTTAG,
   },
@@ -109,11 +108,30 @@ const DEF = {
     bas: (s, i) => getMap(s.seed).tiles[i] === T.Vatten ? 0 : stoneDist(s.seed)[i] <= 2 ? 4 : getMap(s.seed).tiles[i] === T.Sand ? 1.5 : 0.4,
     uttag: { full: 2, reach: 1, regrow: [1 / 500, 1 / 300, 1 / 300, 1 / 300] },
   },
+  // rötter finns mycket glest men nästan överallt på jorden. De ger minst, men finns kvar i istiden när bär och svamp är borta
+  rotter: {
+    namn: 'Rötter', grupp: 'vaxter', ikon: 'rotter', farg: 0xf2d9a0, topp: 0.5, arstid: [0.6, 1, 0.8, 1],
+    monster: { salt: 97, skala: 3, period: 84, troskel: 0, gles: 0.25 },
+    bas(s, i, m) {
+      if (!land(s, i)) return 0;
+      const g = groundOf(s), c = g.cover[i];
+      return (g.trees[i] >= 0.15 || c >= HIGH ? 0.5 : c >= BAR ? 0.4 : 0.1) * m;
+    },
+    uttag: { full: 0.6, reach: 1, regrow: [1 / 200, 1 / 60, 1 / 60, 1 / 80] },
+  },
 } satisfies Record<string, FyndDef>;
 export type FyndId = keyof typeof DEF;
 export const FYND: Record<FyndId, FyndDef> = DEF;
 export const FYND_IDS = Object.keys(FYND) as FyndId[];
 const UTTAG_IDS = FYND_IDS.filter(k => FYND[k].uttag);
+// en handling kan ta ur flera lager: den som samlar tar både bär och rötter
+export type Lager = FyndId | Kind;
+const LAGREN: Partial<Record<Lager, FyndId[]>> = { samla: ['bar', 'rotter'] };
+export const lagren = (k: Lager): FyndId[] => LAGREN[k] ?? [k as FyndId];
+const summa = (k: Lager, fn: (j: FyndId) => number) => { let v = 0; for (const j of lagren(k)) v += fn(j); return v; };
+// ungefär vad en mycket rik ruta har, och hur fort platsen växer tillbaka (det snabbaste lagret)
+export const toppOf = (k: Lager) => summa(k, j => FYND[j].topp);
+export const regrowOf = (k: Lager, ai: number) => Math.max(...lagren(k).map(j => FYND[j].uttag?.regrow[ai] ?? 0));
 
 // mönstret räknas om en gång per dygn (det kryper långsamt) och är detsamma i levande läge och snabbläget
 const monstren = new WeakMap<State, { dag: number; v: Partial<Record<FyndId, { m: Float32Array; snitt: number }>> }>();
@@ -142,6 +160,25 @@ function monsterOf(s: State, k: FyndId) {
 // i byns läger växer inget: allt är redan hämtat och marken nött. Lägret växer när byn får fler lagerplatser
 export const LAGER_R = 3;
 const iLagret = (s: State, i: number) => campDist(s, i % W, Math.floor(i / W)) < LAGER_R && getMap(s.seed).tiles[i] !== T.Vatten;
+// vilt skyr människor: ett stort område runt lägret, och marken där många går (stigar och nött mark).
+// Räknas om en gång per dygn.
+export const SKYGG_R = 7; // rutor utanför lägret innan vilt vågar sig fram helt
+const skygghet = new WeakMap<State, { dag: number; v: Float32Array }>();
+export function skyggOf(s: State) {
+  const dag = Math.floor(s.now / DAY);
+  let c = skygghet.get(s);
+  if (c?.dag === dag) return c.v;
+  const g = groundOf(s), v = new Float32Array(W * H), nott = new Uint8Array(W * H);
+  for (let i = 0; i < W * H; i++) nott[i] = isSoil(g.tiles[i]) && g.trees[i] < 0.15 && g.cover[i] < BAR ? 1 : 0;
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const d = clamp((campDist(s, x, y) - LAGER_R) / SKYGG_R, 0, 1);
+    let n = 0;
+    for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) if (inMap(x + dx, y + dy)) n += nott[(y + dy) * W + x + dx];
+    v[y * W + x] = d * d * (3 - 2 * d) * (1 - Math.min(0.8, n / 10));
+  }
+  skygghet.set(s, c = { dag, v });
+  return v;
+}
 // vad en orörd ruta ger nu (utan årstid och uttag)
 export function capOf(s: State, k: FyndId, i: number) {
   if (iLagret(s, i)) return 0;
@@ -149,14 +186,13 @@ export function capOf(s: State, k: FyndId, i: number) {
   return f.bas(s, i, f.monster ? monsterOf(s, k).m[i] : 1);
 }
 // vad rutan ser ut att kunna ge på håll: marken syns, men inte var fläckarna är
-export function synsOf(s: State, k: FyndId, i: number) {
+export function synsOf(s: State, k: Lager, i: number): number {
   if (iLagret(s, i)) return 0;
-  const f = FYND[k];
-  return f.bas(s, i, f.monster ? monsterOf(s, k).snitt : 1);
+  return summa(k, j => { const f = FYND[j]; return f.bas(s, i, f.monster ? monsterOf(s, j).snitt : 1) * sasong(s, j); });
 }
 const sasong = (s: State, k: FyndId) => FYND[k].arstid?.[ageIndex(s)] ?? 1;
 // var det växer just nu, med årstiden men utan uttaget: det man ser av buskar och spår även när det är plockat
-export const vaxerAt = (s: State, k: FyndId, i: number) => capOf(s, k, i) * sasong(s, k);
+export const vaxerAt = (s: State, k: Lager, i: number) => summa(k, j => capOf(s, j, i) * sasong(s, j));
 const store = new WeakMap<State, Partial<Record<FyndId, Float32Array>>>();
 // uttag per ruta: 0 = orörd, 1 = tom
 export function takenOf(s: State) {
@@ -170,7 +206,7 @@ export function takenOf(s: State) {
     } catch { /* ny mark */ }
     store.set(s, d);
   }
-  return d as Record<Kind, Float32Array> & Partial<Record<FyndId, Float32Array>>;
+  return d;
 }
 export function packFynd(s: State) {
   const d = takenOf(s);
@@ -210,9 +246,9 @@ export function stoneDist(seed: number) {
 }
 
 // vad lagret har på rutan just nu: det filtret visar
-export function fyndAt(s: State, k: FyndId, i: number) {
-  const t = takenOf(s)[k];
-  return vaxerAt(s, k, i) * (t ? 1 - t[i] : 1);
+export function fyndAt(s: State, k: Lager, i: number) {
+  const d = takenOf(s);
+  return summa(k, j => { const t = d[j]; return vaxerAt(s, j, i) * (t ? 1 - t[i] : 1); });
 }
 // rutorna i vattnet som man når från stranden, med vikt efter avståndet
 function vattenRunt(s: State, k: FyndId, cx: number, cy: number, fn: (i: number, w: number) => void) {
@@ -223,18 +259,26 @@ function vattenRunt(s: State, k: FyndId, cx: number, cy: number, fn: (i: number,
   }
 }
 // vad den som står på rutan når av ett mått per ruta (fn). För fisk: snittet ute i vattnet framför stranden
-export function standAt(s: State, k: FyndId, x: number, y: number, fn: (i: number) => number) {
+export function standAt(s: State, k: Lager, x: number, y: number, fn: (i: number) => number) {
   const cx = Math.floor(clamp(x, 0, W - 1)), cy = Math.floor(clamp(y, 0, H - 1)), i = cy * W + cx;
-  if (!FYND[k].vatten) return fn(i);
+  if (!FYND[lagren(k)[0]].vatten) return fn(i);
   if (getMap(s.seed).tiles[i] === T.Vatten) return 0;
   let sum = 0, n = 0;
-  vattenRunt(s, k, cx, cy, (j, w) => { sum += fn(j) * w; n += w; });
+  vattenRunt(s, lagren(k)[0], cx, cy, (j, w) => { sum += fn(j) * w; n += w; });
   return n ? sum / n : 0;
 }
 // vad platsen ger den som står där just nu, 0 = inget
-export const richness = (s: State, k: FyndId, x: number, y: number) => standAt(s, k, x, y, i => fyndAt(s, k, i));
-// ta ur en plats: mest ur rutan, lite ur grannarna. Fisk tas ur vattnet framför stranden
-export function takeFrom(s: State, k: FyndId, x: number, y: number, amount: number) {
+export const richness = (s: State, k: Lager, x: number, y: number) => standAt(s, k, x, y, i => fyndAt(s, k, i));
+// ta ur en plats: mest ur rutan, lite ur grannarna. Fisk tas ur vattnet framför stranden.
+// Tar man ur flera lager (bär och rötter) delas uttaget efter hur mycket av vart och ett som finns där.
+export function takeFrom(s: State, k: Lager, x: number, y: number, amount: number) {
+  const ls = lagren(k);
+  if (ls.length > 1) {
+    const r = ls.map(j => richness(s, j, x, y)), sum = r.reduce((a, b) => a + b, 0);
+    if (sum > 0) ls.forEach((j, n) => { if (r[n] > 0) takeFrom(s, j, x, y, amount * r[n] / sum); });
+    return;
+  }
+  k = ls[0];
   const d = takenOf(s)[k], u = FYND[k].uttag;
   if (!d || !u) return;
   const cx = Math.floor(x), cy = Math.floor(y);

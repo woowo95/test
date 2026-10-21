@@ -5,6 +5,7 @@ import { TS, app, cam, layout, view, world } from './ui/scen';
 import { drawNight, drawTerrain } from './ui/terrang';
 import { drawStructures } from './ui/foremal';
 import { drawFilter } from './ui/filter';
+import { drawPlants } from './ui/vaxter';
 import { addTalks, drawPeople } from './ui/manniskor';
 import { renderPanel } from './ui/panel';
 import { renderPorts, stopFollow } from './ui/portratt';
@@ -41,7 +42,7 @@ $('testToggle').addEventListener('change', async e => {
     leaveTest();
     if (realState) { setByn(realState); realState = null; }
     for (const p of living(s)) p.task = undefined;
-    drawTerrain(true);
+    drawTerrain(true); drawPlants(true);
     await catchUp(Date.now(), Date.now() - s.now > 10 * 60 * 1000);
   }
   renderClock(); renderPanel(true);
@@ -54,7 +55,7 @@ $('okNew').addEventListener('click', () => {
   if (ui.testMode) { ($('testToggle') as HTMLInputElement).checked = false; realState = null; leaveTest(); }
   setByn(createState(Math.floor(Math.random() * 2 ** 31), Date.now()));
   ui.selected = undefined; ui.tab = 'folk'; cam.x = -1; layout();
-  drawTerrain(true); saveLocal(); saveDb(); renderPanel(true);
+  drawTerrain(true); drawPlants(true); saveLocal(); saveDb(); renderPanel(true);
 });
 
 // ---------- huvudloop ----------
@@ -82,6 +83,7 @@ function tick() {
     if (p && alive(p)) { cam.x = p.x * TS + TS / 2; cam.y = p.y * TS + TS / 2; layout(); } else stopFollow();
   }
   drawTerrain();
+  drawPlants();
   drawStructures(now);
   drawPeople(now);
   drawNight(s.now);
@@ -103,13 +105,13 @@ async function boot() {
     setByn(loaded);
     for (const p of living(s)) p.task = undefined;
     cam.x = -1; layout();
-    drawTerrain(true);
+    drawTerrain(true); drawPlants(true);
     renderClock(); renderPanel(true);
     await catchUp(Date.now(), Date.now() - s.now > 10 * 60 * 1000);
   } else {
     setByn(createState(Math.floor(Math.random() * 2 ** 31), Date.now()));
     cam.x = -1; layout();
-    drawTerrain(true); saveLocal(); saveDb();
+    drawTerrain(true); drawPlants(true); saveLocal(); saveDb();
   }
   $('loading').hidden = true;
   renderClock(); renderPanel(true);

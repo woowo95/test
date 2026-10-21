@@ -1,7 +1,7 @@
 import { campCenter, campDist } from './plats';
 import { byId, count, living, log, stat } from './folk';
 import { teach } from './teknik';
-import { FYND, Kind, prospect, richness, shoreOf, standAt, stoneDist, synsOf, vaxerAt } from './fynd';
+import { Kind, prospect, regrowOf, richness, shoreOf, standAt, stoneDist, synsOf, toppOf, vaxerAt } from './fynd';
 import { getMap } from './karta';
 import { groundOf } from './mark';
 import { kn, learnK } from './kunskap';
@@ -61,12 +61,21 @@ function trim(s: State, p: Person) {
   count(s, 'glomt', L.length - MAX); // det minst säkra trängs undan
   L.length = MAX;
 }
+// hur mycket ett värde är jämfört med en rik plats av samma slag (1 ≈ gott om)
+const relOf = (k: LKind, v: number) => k === 'fara' || k === 'flinta' ? v : v / (toppOf(k) * 0.6);
 // egen upplevelse: personen ser hur mycket som finns i området
 // Man ser också om det växer där (buskar, svampmark, spår), så att man vet om platsen är plockad eller död.
+// Var platsen mycket sämre än man trott rättas lärdomen, och det blir en nyhet som gärna berättas vidare.
 export function observe(s: State, p: Person, k: LKind, x: number, y: number, c = 1) {
   const a = areaOf(x, y), v = areaValue(s, k, a), g = k === 'flinta' ? undefined : areaValue(s, k, a, 'vaxer');
   const l = findL(p, k, a);
-  if (l) { l.v = v; l.g = g; l.c = Math.max(c, l.src === undefined ? l.c : 0); l.t = s.now; l.src = undefined; l.led = 0; return; }
+  if (l) {
+    const fel = k !== 'flinta' && k !== 'fara' && relOf(k, Math.min(3, hoped(s, l))) - relOf(k, v) > 0.4;
+    if (fel) count(s, 'rattat');
+    l.v = v; l.g = g; l.c = Math.max(c, l.src === undefined ? l.c : 0); l.t = s.now; l.src = undefined; l.led = 0;
+    if (fel) l.ny = s.now; else delete l.ny;
+    return;
+  }
   (p.lardomar ??= []).push({ k, a, v, ...(g !== undefined ? { g } : {}), c, t: s.now, led: 0 });
   trim(s, p);
 }
@@ -81,7 +90,7 @@ export const trustUnknown = (s: State, p: Person) => 0.45 + stat(p, 'nyfikenhet'
 // En plats man minns som plockad tror man har vuxit tillbaka efter en tid; en plats där inget växer längre blir inte bättre.
 export function hoped(s: State, l: Lardom) {
   if (l.g === undefined || l.g <= l.v || l.k === 'flinta' || l.k === 'fara') return l.v;
-  const r = FYND[l.k].uttag?.regrow[ageIndex(s)] ?? 0;
+  const r = regrowOf(l.k, ageIndex(s));
   return l.g - (l.g - l.v) * Math.exp(-r * (s.now - l.t) / HOUR);
 }
 // syns: vad rutan ser ut att kunna ge, pot: samma för hela området
@@ -107,11 +116,12 @@ export function sightOf(s: State, p: Person) {
 export const sees = (s: State, p: Person, x: number, y: number, sight = sightOf(s, p)) => Math.hypot(x + 0.5 - p.x, y + 0.5 - p.y) <= sight;
 // det bästa personen tror finns utanför närområdet, inom en halv dags gång
 export function bestKnown(s: State, p: Person, k: Kind) {
-  const f = campCenter(s), u = trustUnknown(s, p), sight = sightOf(s, p);
+  const f = campCenter(s), u = trustUnknown(s, p);
   let best = 0;
+  // det som syns från lägret räknas redan i prospect; här bara platser längre bort, oavsett var personen står just nu
   for (let a = 0; a < AW * AH; a++) {
     const c = areaCenter(a), d = campDist(s, c.x, c.y);
-    if (sees(s, p, c.x, c.y, sight) || Math.abs(c.x - f.x) > 17 || Math.abs(c.y - f.y) > 13) continue;
+    if (d <= SIGHT || Math.abs(c.x - f.x) > 17 || Math.abs(c.y - f.y) > 13) continue;
     best = Math.max(best, believed(s, findL(p, k, a), areaValue(s, k, a, 'syns'), u) - d * 0.03 - fear(s, p, a));
   }
   return best;
@@ -169,9 +179,9 @@ export function share(s: State, a: Person, b: Person, r: Rel, kind: string) {
   teach(s, a, b, kind);
   const talk = 0.03 + (stat(a, 'karisma', now) + stat(a, 'vanlighet', now)) / 200 + (kind === 'berättelse' ? 0.35 : kind === 'djupt samtal' ? 0.12 : 0);
   if (a.lardomar?.length && rnd(s) < talk) {
-    // man berättar helst om rädslor och om rika platser
+    // man berättar helst om rädslor, rika platser och platser som visat sig sämre än man trott
     let tot = 0;
-    const w = a.lardomar.map(l => { const v = (l.k === 'fara' ? 1.5 : l.k === 'flinta' ? 1 : l.v) * l.c; tot += v; return v; });
+    const w = a.lardomar.map(l => { const v = (l.k === 'fara' ? 1.5 : l.k === 'flinta' ? 1 : nyhet(s, l) ? Math.max(1, l.v) : l.v) * l.c; tot += v; return v; });
     let x = rnd(s) * tot, l = a.lardomar[0];
     for (let i = 0; i < w.length; i++) { x -= w[i]; if (x <= 0) { l = a.lardomar[i]; break; } }
     tell(s, a, b, l, r);
@@ -186,6 +196,8 @@ export function share(s: State, a: Person, b: Person, r: Rel, kind: string) {
     }
   }
 }
+// en rättelse är en nyhet i två dygn
+const nyhet = (s: State, l: Lardom) => l.ny !== undefined && s.now - l.ny < 2 * DAY;
 function tell(s: State, a: Person, b: Person, l: Lardom, r: Rel) {
   const now = s.now;
   // att berätta stärker det egna minnet
@@ -196,13 +208,15 @@ function tell(s: State, a: Person, b: Person, l: Lardom, r: Rel) {
   const v = clamp(l.v * (l.k === 'fara' ? 1 + (rnd(s) - 0.25) * 0.5 : 1 + (rnd(s) - 0.4) * 0.35), 0, l.k === 'fara' ? 1.6 : 3);
   const e = findL(b, l.k, l.a);
   if (e) {
-    if (e.src === undefined && e.led === 0 && e.c >= c) return; // egen upplevelse väger tyngre
-    e.v = (e.v * e.c + v * c) / (e.c + c); if (l.g !== undefined) e.g = l.g; e.c = Math.max(e.c, c); e.t = now;
+    if (e.src === undefined && e.led === 0 && e.c >= c && !nyhet(s, l)) return; // egen upplevelse väger tyngre, utom mot en nyhet
+    // en nyhet om att platsen blivit sämre ersätter det man trodde; annars vägs det ihop
+    e.v = nyhet(s, l) ? v : (e.v * e.c + v * c) / (e.c + c); if (l.g !== undefined) e.g = l.g; e.c = Math.max(e.c, c); e.t = now;
+    if (nyhet(s, l)) e.ny = l.ny;
     if ((e.src !== undefined || e.led) && (l.led ?? 0) + 1 < (e.led ?? 1)) { e.src = a.id; e.led = (l.led ?? 0) + 1; } // kortare väg till källan
     if (l.om && !e.om) e.om = l.om;
     return;
   }
-  (b.lardomar ??= []).push({ k: l.k, a: l.a, v, ...(l.g !== undefined ? { g: l.g } : {}), c, t: now, src: a.id, led: (l.led ?? 0) + 1, ...(l.om ? { om: l.om } : {}) });
+  (b.lardomar ??= []).push({ k: l.k, a: l.a, v, ...(l.g !== undefined ? { g: l.g } : {}), c, t: now, src: a.id, led: (l.led ?? 0) + 1, ...(l.om ? { om: l.om } : {}), ...(nyhet(s, l) ? { ny: l.ny } : {}) });
   trim(s, b);
   count(s, 'berattat');
   if (l.k === 'fara' && l.om) {
@@ -256,10 +270,11 @@ const amount = (v: number) => v >= 0.7 ? 'Gott om' : v >= 0.35 ? 'En del' : v >=
 // en lärdom i ord, med hur säker personen är, varifrån den kommer och om den stämmer. what är texten utan platsen.
 export function describe(s: State, l: Lardom) {
   const place = placeName(s, l.a);
-  const rel = (v: number) => l.k === 'fara' || l.k === 'flinta' ? v : v / (FYND[l.k].topp * 0.6);
-  const what = l.k === 'fara' ? `Farligt${l.om ? `: ${l.om}` : ''}` : l.k === 'flinta' ? 'Flinta finns'
+  const rel = (v: number) => relOf(l.k, v);
+  const what0 = l.k === 'fara' ? `Farligt${l.om ? `: ${l.om}` : ''}` : l.k === 'flinta' ? 'Flinta finns'
     : l.g !== undefined && rel(l.g) < 0.1 ? `${l.k === 'fiske' ? 'Ingen fisk' : `Inga ${WHAT[l.k]}`} längre`
     : l.g !== undefined && rel(l.g) > rel(l.v) + 0.35 ? `${amount(rel(l.v))} ${WHAT[l.k]}, växer tillbaka` : `${amount(rel(l.v))} ${WHAT[l.k]}`;
+  const what = what0 + (nyhet(s, l) ? ', sämre än man trott' : '');
   const text = l.k === 'fara' ? `Rädd för platsen ${place}${l.om ? ` (${l.om})` : ''}` : `${what} ${place}`;
   const src = l.src === undefined ? (l.led ? 'fick höra om det' : 'egen erfarenhet') : `hört av ${byId(s, l.src)?.name ?? 'någon'}${(l.led ?? 1) > 1 ? `, ${l.led} led från den som var där` : ''}`;
   const sure = l.c >= 0.75 ? 'säker' : l.c >= 0.4 ? 'ganska säker' : 'osäker';

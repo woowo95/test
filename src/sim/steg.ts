@@ -1,5 +1,5 @@
 import { rotStumps } from './skog';
-import { ROOT_SHARE, addFood, addTo, capacity, dropSpot, fetchSpot, homeKind, load, pickUp, storeLoad, takeFood, tidyStore, wearStore } from './lager';
+import { addFood, addTo, capacity, dropSpot, fetchSpot, homeKind, load, pickUp, storeLoad, takeFood, tidyStore, wearStore } from './lager';
 import { KORG_SKORD, makeBasket, makeSpear, wearBasket, wearSpear } from './redskap';
 import { thinkWhileWorking } from './teknik';
 import { foodDays, workRate } from './ekonomi';
@@ -328,7 +328,7 @@ function workStep(s: State, p: Person, tk: Task, dtSec: number, live: boolean, a
       if (got.done) tk.until = now;
     }
   } else if (y > 0 && tk.act === 'samla') {
-    const r = y * ROOT_SHARE[ageIndex(s)]; // en del av det man samlar är rötter
+    const r = rich > 0 ? y * Math.min(1, richness(s, 'rotter', tk.tx, tk.ty) / rich) : 0; // rötterna efter hur mycket av platsen som är rötter
     if (live) { tk.carry += y - r; tk.items ??= {}; tk.items.rotter = (tk.items.rotter ?? 0) + r; }
     else { addFood(s, 'bar', y - r); addFood(s, 'rotter', r); }
   } else if (y > 0) { if (live) tk.carry += y; else addTo(s, d.ger!, y); } // snabbläget: rakt in i förrådet

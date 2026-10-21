@@ -2,6 +2,7 @@ import { DAY, KUNSKAP_NAMES, LogEntry, State, compact, describe, living, migrate
 import { $, esc } from './hjalp';
 import { s, ui } from './lage';
 import { drawTerrain } from './terrang';
+import { drawPlants } from './vaxter';
 
 // ---------- sparning: i webbläsaren och i artefaktens databas; den nyaste vinner när byn läses in ----------
 const SAVE_KEY = 'samhalle-save-v1';
@@ -68,7 +69,7 @@ export async function catchUp(target: number, showOverlay: boolean) {
   for (const p of living(s)) p.task = undefined;
   if (showOverlay) showSummary(from, logStart, before);
   saveLocal(); saveDb();
-  drawTerrain(true);
+  drawTerrain(true); drawPlants(true);
 }
 // vad var och en kan och tror innan ikappräkningen, för att visa det nya i sammanställningen
 function knowSnapshot() {
