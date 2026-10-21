@@ -4,7 +4,7 @@ import { emberOn, fireWant, needTinder } from './eld';
 import { ageOf, living, stat } from './folk';
 import { HAND_FISH, Kind, SPEAR_FISH, flintSpot, shoreOf, wantsFlint } from './fynd';
 import { temperature } from './vader';
-import { freeSpears, sharpTool, wantsSpear } from './redskap';
+import { freeBaskets, freeSpears, sharpTool, wantsBasket, wantsSpear } from './redskap';
 import { areaOf, flintArea, pickSpot, prospectFor } from './minne';
 import { getMap } from './karta';
 import { haulJob } from './lager';
@@ -19,7 +19,7 @@ import { Act, DAY, H, HOUR, Person, SEC, Skill, State, T, W, WORK, isWork } from
 function spotFor(s: State, act: Act, p: Person): { x: number; y: number } {
   const m = getMap(s.seed);
   const f = m.fire;
-  if (act === 'samtal' || act === 'beratta' || act === 'hantverk' || act === 'vakt' || act === 'varma' || act === 'yxa' || act === 'spjut') {
+  if (act === 'samtal' || act === 'beratta' || act === 'hantverk' || act === 'vakt' || act === 'varma' || act === 'yxa' || act === 'spjut' || act === 'korg') {
     const ang = rnd(s) * Math.PI * 2, r = act === 'vakt' ? 2.6 : 1.3 + rnd(s) * 0.9;
     return { x: f.x + 0.5 + Math.cos(ang) * r, y: f.y + 0.5 + Math.sin(ang) * r };
   }
@@ -174,6 +174,10 @@ export function chooseTask(s: State, p: Person, live: boolean) {
           if (ax.dur) dur = ax.dur;
           if (ax.act !== 'yxa') spot = { x: ax.x, y: ax.y };
           ref = ax.ref;
+        }
+        if (act! === 'samla') { // med korg om det finns en ledig, annars flätar den som kan en först
+          if (freeBaskets(s, p) > 0) { tool = 'korg'; why = why!.replace(/\.$/, '') + '. Tar en korg.'; }
+          else if (wantsBasket(s, p)) { set('korg', `${what}. Flätar en korg av torrt gräs.`); dur = 40 * 60 * SEC; }
         }
         if (best === 'fiske') { // med spjut om det finns ett ledigt, annars täljer hen ett först
           if (freeSpears(s, p) > 0) { tool = 'fiskespjut'; why = why!.replace(/\.$/, '') + '. Tar ett fiskespjut.'; }

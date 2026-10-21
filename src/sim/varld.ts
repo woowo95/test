@@ -1,3 +1,4 @@
+import { migrateTek } from './teknik';
 import { ageOf, getRel, log, newPerson, think } from './folk';
 import { newSeder, sederTarget } from './seder';
 import { clamp, gauss, rnd } from './slump';
@@ -40,6 +41,7 @@ export function migrate(s: State) {
     if (s.kunskap?.svamp && p.died === undefined && !p.kunskap?.svamp) p.kunskap = { ...p.kunskap, svamp: { v: s.kunskap.svamp, t: s.now } };
   }
   delete s.kunskap;
+  migrateTek(s);
   if (!s.items) s.items = { gniststen: 1, torrgras: 8, grenar: 8 };
   // små pinnar finns inte längre: de räknas som grenar
   if (s.items.pinnar) { s.items.grenar = (s.items.grenar ?? 0) + s.items.pinnar; delete s.items.pinnar; }

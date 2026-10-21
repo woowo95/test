@@ -1,6 +1,7 @@
 import { rotStumps } from './skog';
 import { ROOT_SHARE, addFood, capacity, dropSpot, homeKind, load, pickUp, storeLoad, takeFood, tidyStore, wearStore } from './lager';
-import { makeSpear, wearSpear } from './redskap';
+import { KORG_SKORD, makeBasket, makeSpear, wearBasket, wearSpear } from './redskap';
+import { thinkWhileWorking } from './teknik';
 import { foodDays, workRate } from './ekonomi';
 import { TRY_SEC, count, eatPoison, growFynd, handFish, packFynd, pickMushrooms, richness, takeFrom } from './fynd';
 import { coldOf, temperature } from './vader';
@@ -9,13 +10,17 @@ import { ageOf, alive, living, log, stat, think } from './folk';
 import { getMap } from './karta';
 import { birth, birthWish, die, regulate } from './liv';
 import { WEAR, groundOf, growGround, packGround, tileOf } from './mark';
-// arbete i levande läge: korgen rymmer en tredjedel av vad man kan bära, och man bär hem det man har efter ett pass på
-// STINT_MIN–2·STINT_MIN minuter. Fler turer ger fler fotsteg, så slitaget per steg sänks för att stigarna ska växa som förut
-const WORK_LOAD = 1 / 3, STINT_MIN = 20, LIVE_WEAR = 0.3;
-const STINT: Act[] = ['samla', 'jakt', 'fiske', 'ved', 'hugga'];
-// rörelse på platsen: radie i rutor, hur länge man står still (sekunder) och hur fort man går
+// arbete i levande läge: man bär hem det man har efter några fynd (fler med korg), fiskaren efter varje fångst, och går
+// sedan tillbaka. Man bär aldrig mer än en tredjedel av vad man orkar från arbetet. Fler turer ger fler fotsteg, så
+// slitaget per steg sänks för att stigarna ska växa som förut, och det man får per fynd höjs så att en arbetstimme
+// räknat med gångtiden ger lika mycket som i snabbläget
+const WORK_LOAD = 1 / 3, LIVE_WEAR = 0.03, KORG_FYND = 2.5;
+const FYND: Partial<Record<Act, [number, number]>> = { samla: [3, 5], jakt: [3, 5], ved: [3, 5] };
+const LIVE_YIELD: Partial<Record<Act, number>> = { samla: 1.5, jakt: 1.4, ved: 1.17 };
+// rörelse på platsen: radie i rutor, hur länge man står still (sekunder) och hur fort man går. Varje gång man stannar
+// på ett nytt ställe räknas som ett fynd
 const WANDER: Partial<Record<Act, { r: number; h0: number; h1: number; v: number }>> = {
-  samla: { r: 2, h0: 20, h1: 60, v: 0.6 }, jakt: { r: 3, h0: 30, h1: 90, v: 0.7 },
+  samla: { r: 2, h0: 3, h1: 10, v: 0.6 }, jakt: { r: 3, h0: 3, h1: 10, v: 0.7 }, ved: { r: 2, h0: 3, h1: 10, v: 0.6 },
   promenad: { r: 4, h0: 1, h1: 4, v: 0.8 }, leka: { r: 2, h0: 2, h1: 6, v: 1.3 },
 };
 import { FLIP, SOCIAL, TalkEvent, converse } from './samtal';
@@ -106,7 +111,7 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
     const t = p.task;
     const phaseFlip = t && t.dark !== !light && FLIP.includes(t.act); // dag blev natt eller tvärtom
     // ett träd som fällts färdigt eller en yxa som gjorts klar
-    if (t && t.phase === 'do' && t.until < now) { if (t.act === 'falla') fellTree(s, p, t.tx, t.ty); else if (t.act === 'yxa') makeAxe(s, p); else if (t.act === 'spjut') makeSpear(s, p); else if (t.act === 'promenad') { lookAround(s, p, t.tx, t.ty); think(p, 'Tog en skön promenad', 0.06, now, 6 * HOUR); } else if (t.act === 'bada') { p.warm = Math.max(0.4, p.warm - 0.1); think(p, 'Badade i sjön', 0.08, now, 6 * HOUR); } else if (t.act === 'strand') { p.rest = Math.min(1, p.rest + 0.05); think(p, 'Satt vid vattnet och fick ro', 0.06, now, 6 * HOUR); } }
+    if (t && t.phase === 'do' && t.until < now) { if (t.act === 'falla') fellTree(s, p, t.tx, t.ty); else if (t.act === 'yxa') makeAxe(s, p); else if (t.act === 'spjut') makeSpear(s, p); else if (t.act === 'korg') makeBasket(s, p); else if (t.act === 'promenad') { lookAround(s, p, t.tx, t.ty); think(p, 'Tog en skön promenad', 0.06, now, 6 * HOUR); } else if (t.act === 'bada') { p.warm = Math.max(0.4, p.warm - 0.1); think(p, 'Badade i sjön', 0.08, now, 6 * HOUR); } else if (t.act === 'strand') { p.rest = Math.min(1, p.rest + 0.05); think(p, 'Satt vid vattnet och fick ro', 0.06, now, 6 * HOUR); } }
     const lightDone = t?.act === 'tanda' && (s.fire.lit || !canLight(s));
     const mustGo = t && p.toa < 0.08 && t.act !== 'toa' && a >= 3; // nöden avbryter det man håller på med
     if (!t || (t.until < now && t.phase !== 'back') || ((phaseFlip || mustGo) && t.phase !== 'back') || lightDone) {
@@ -150,11 +155,12 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
             storeLoad(s, tk, p.x, p.y);
             // ett arbetspass är klart: gå tillbaka och fortsätt om arbetet inte är slut och dagen inte vänt
             const r = tk.res;
-            if (r && r.until > now + 5 * 60 * SEC && tk.dark === !light) { tk.phase = 'go'; tk.tx = r.x; tk.ty = r.y; tk.until = r.until; tk.res = undefined; tk.wx = tk.wy = tk.hold = undefined; }
+            if (r && r.until > now + 2 * 60 * SEC && tk.dark === !light) { tk.phase = 'go'; tk.tx = r.x; tk.ty = r.y; tk.until = r.until; tk.res = undefined; tk.wx = tk.wy = tk.hold = undefined; }
             else p.task = undefined;
           } else {
             tk.phase = 'do'; if (tk.act === 'bara') { pickUp(s, p, tk); tk.until = now; }
-            if (STINT.includes(tk.act)) tk.stint = now + (STINT_MIN + rnd(s) * STINT_MIN) * 60 * SEC;
+            const f = FYND[tk.act];
+            tk.fynd = 0; tk.lim = f ? Math.round((f[0] + rnd(s) * (f[1] - f[0])) * (tk.tool === 'korg' ? KORG_FYND : 1)) : undefined;
           }
         } else { wear(g, ci, WEAR * LIVE_WEAR * sp); p.x += dx / d * sp; p.y += dy / d * sp; }
       } else if (WANDER[tk.act]) {
@@ -176,7 +182,7 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
           if (getMap(s.seed).tiles[tileOf(nx, ny)] === T.Vatten) { tk.wx = tk.wy = undefined; tk.hold = now + w.h0 * SEC; }
           else {
             wear(g, ci, WEAR * LIVE_WEAR * 0.15 * mv); p.x = nx; p.y = ny;
-            if (d <= sp) { tk.wx = tk.wy = undefined; tk.hold = now + (w.h0 + rnd(s) * (w.h1 - w.h0)) * SEC; }
+            if (d <= sp) { tk.fynd = (tk.fynd ?? 0) + 1; tk.wx = tk.wy = undefined; tk.hold = now + (w.h0 + rnd(s) * (w.h1 - w.h0)) * SEC; }
           }
         }
       } else if (tk.act !== 'sova' && tk.act !== 'vakt' && tk.act !== 'hantverk') {
@@ -191,11 +197,13 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
     for (const k in p.habit) p.habit[k] *= hf;
     p.habit[tk.act] = (p.habit[tk.act] ?? 0) + dtSec / 3600;
     if (tk.phase === 'do' && isWork(tk.act)) {
+      thinkWhileWorking(s, p, tk.act, dtSec); // den som arbetar kommer så småningom på hur det kan göras bättre
+      if (tk.tool === 'korg') wearBasket(s, p, dtSec / 3600);
       const axe = AXE_WORK.includes(tk.act), base: Act = axe ? 'ved' : tk.act;
       // utan yxa samlas grenar på marken (två grenar på den tid det tar att hugga en ved); med yxa huggs ved ur en fälld stam
       // bär, rötter och vilt: platsen ger mindre ju mer som redan tagits där
       const rich = tk.act === 'samla' || tk.act === 'jakt' ? richness(s, tk.act, tk.tx, tk.ty) : 1;
-      const y = workRate(s, p, base) * dtSec * (live ? (tk.act === 'samla' ? 1.1 : 1) : 0.8) * (tk.act === 'ved' ? 2 : tk.act === 'hugga' ? 1.5 : tk.act === 'falla' || tk.act === 'fiske' ? 0 : rich);
+      const y = workRate(s, p, base) * dtSec * (live ? LIVE_YIELD[tk.act] ?? 1 : 0.8) * (tk.tool === 'korg' ? KORG_SKORD : 1) * (tk.act === 'ved' ? 2 : tk.act === 'hugga' ? 1.5 : tk.act === 'falla' || tk.act === 'fiske' ? 0 : rich);
       if (y > 0) count(s, 'prod_' + tk.act, y);
       if (tk.act === 'samla' || tk.act === 'jakt') { takeFrom(s, tk.act, tk.tx, tk.ty, y); if (rich < 0.08) tk.until = now; } // tomt här: gå hem eller vidare
       // den som arbetar ser hur mycket som finns i området och minns det
@@ -242,12 +250,12 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
       }
     }
     if (live && tk.phase === 'do' && isWork(tk.act)) {
-      // arbetet sker i korta pass: när passet är slut eller korgen full bärs det hem, sedan fortsätter man
+      // arbetet sker i korta turer: efter några fynd, en fångst eller när bördan är full bärs det hem, sedan fortsätter man
       const full = load(tk) >= capacity(s, p) * WORK_LOAD, has = tk.carry > 0 || !!tk.items;
-      if (full || (tk.stint !== undefined && now > tk.stint)) {
-        if (has && tk.until > now + 10 * 60 * SEC) { tk.res = { x: tk.tx, y: tk.ty, until: tk.until }; tk.until = now; }
+      if (full || (tk.lim !== undefined && (tk.fynd ?? 0) >= tk.lim) || (tk.act === 'fiske' && tk.carry > 0)) {
+        if (has && tk.until > now + 2 * 60 * SEC) { tk.res = { x: tk.tx, y: tk.ty, until: tk.until }; tk.until = now; }
         else if (has && full) tk.until = now;
-        else if (tk.stint !== undefined) tk.stint = now + STINT_MIN * 60 * SEC;
+        else tk.fynd = 0;
       }
     }
     if (tk.phase === 'do' && tk.act === 'tanda' && canLight(s)) {
@@ -255,7 +263,7 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
       const per = igniterOf(s)!.minutes * 60;
       while (s.fire.tryProg >= per && canLight(s) && !s.fire.lit) { s.fire.tryProg -= per; if (tryLight(s, p)) { p.task = undefined; break; } }
     }
-    if (tk.phase === 'do' && (tk.act === 'hantverk' || tk.act === 'yxa' || tk.act === 'spjut')) p.skill.hantverk = clamp(p.skill.hantverk + dtSec / 3600 * 0.1 * learn * (1 - p.skill.hantverk / 21), 0, 20);
+    if (tk.phase === 'do' && (tk.act === 'hantverk' || tk.act === 'yxa' || tk.act === 'spjut' || tk.act === 'korg')) p.skill.hantverk = clamp(p.skill.hantverk + dtSec / 3600 * 0.1 * learn * (1 - p.skill.hantverk / 21), 0, 20);
     if (tk.phase === 'do' && SOCIAL.includes(tk.act)) social.push(p);
     p.thoughts = p.thoughts.filter(x => x.until > now);
   }

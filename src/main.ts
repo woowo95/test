@@ -6,7 +6,7 @@ import {
   timeLabel, temperature, serialize, compact, stat, migrate, hearthOf, igniterOf, fireHeat, heatRadius, fireWant, emberOn,
   ITEM_NAMES, FireLog, coverOf, groundOf, SEDER, SED_INFO, Sed, influence, duty, habitShare, habitTotal, Act,
   richness, stoneDist, Kind, KUNSKAP_NAMES, describe, Lardom, STUBBE_LIV,
-  zonesOf, zoneAt, pilesOf, inZone, STACK_NAMES, amountOf, capacity, load, carryKind, Pile, OUT_WEAR, condOf, FOLDERS, STACK, campCenter, SOCIAL,
+  zonesOf, zoneAt, pilesOf, inZone, STACK_NAMES, amountOf, capacity, load, carryKind, Pile, OUT_WEAR, condOf, FOLDERS, STACK, campCenter, SOCIAL, TEKNIK, TEK, knows, hasMaterial,
 } from './sim';
 import { HIGH, BAR, FOREST } from './sim/vag';
 import { hasIcon, iconCanvas, iconImg } from './ikoner';
@@ -23,7 +23,7 @@ let speed = 1;
 let selected: number | undefined;
 let busy = false; // ikappräkning pågår
 let db: any = null, uid: string | null = null;
-let tab: 'folk' | 'logg' | 'person' | 'eld' | 'lager' | 'hog' | 'seder' = 'folk';
+let tab: 'folk' | 'logg' | 'person' | 'eld' | 'lager' | 'hog' | 'seder' | 'teknik' = 'folk';
 let hogAt = { x: 0, y: 0 }; // rutan med högar utanför lagret som visas i panelen
 let lagerNr = 0; // vilken lagerplats som visas i panelen
 
@@ -296,8 +296,8 @@ function markOf(p: Person): string | undefined {
   switch (t.act) {
     case 'sova': case 'vila': return 'zzz';
     case 'falla': case 'hugga': return 'yxa';
-    case 'ved': return 'grenar';
-    case 'samla': return 'korg';
+    case 'ved': case 'samla': return 'korg';
+    case 'korg': return 'torrgras';
     case 'jakt': case 'spjut': return 'fiskespjut';
     case 'fiske': return t.tool === 'fiskespjut' ? 'fiskespjut' : 'fisk';
     case 'yxa': return 'flinta';
@@ -585,7 +585,10 @@ function groups(ls: Lardom[]) {
 function knowledgeHtml(p: Person) {
   const ks = Object.entries(p.kunskap ?? {}).filter(([, e]) => e.v >= 0.05);
   const ls = (p.lardomar ?? []).slice().sort((a, b) => (b.k === 'fara' ? 1 : 0) - (a.k === 'fara' ? 1 : 0) || b.c - a.c);
-  return `<h3>Kunskap</h3>${ks.length ? `<dl class="kv">${ks.map(([k, e]) => `<dt>${esc(KUNSKAP_NAMES[k] ?? k)}</dt><dd>${bar(e.v, 'skill')}<span>${Math.round(e.v * 100)} %</span></dd>`).join('')}</dl>` : '<p class="muted">Ingen särskild kunskap ännu.</p>'}
+  // teknik: det personen kan och det hen funderar på
+  const tk = TEKNIK.filter(x => (p.tek?.[x.id] ?? 0) > 0.01).map(x => ({ n: knows(p, x.id) ? `Kan göra ${x.namn.toLowerCase()}` : `Funderar på ${x.namn.toLowerCase()}`, v: p.tek![x.id] }));
+  const rows = [...ks.map(([k, e]) => ({ n: KUNSKAP_NAMES[k] ?? k, v: e.v })), ...tk];
+  return `<h3>Kunskap</h3>${rows.length ? `<dl class="kv">${rows.map(r => `<dt>${esc(r.n)}</dt><dd>${bar(r.v, 'skill')}<span>${Math.round(r.v * 100)} %</span></dd>`).join('')}</dl>` : '<p class="muted">Ingen särskild kunskap ännu.</p>'}
       <h3>Lärdomar</h3>${ls.length ? `<ul class="lard">${groups(ls).map(g => `<li class="${g[0].k === 'fara' ? 'fara' : ''}"><b>${esc(cap(describe(s, p, g[0]).place))}</b>${g.map(l => { const d = describe(s, p, l); return `<span>${esc(d.what)} <small class="muted">${d.sure}, ${esc(d.src)}</small>${d.wrong ? `<small class="fel">${esc(d.wrong)}</small>` : ''}</span>`; }).join('')}</li>`).join('')}</ul>` : '<p class="muted">Inga lärdomar ännu.</p>'}`;
 }
 function renderPanel(force = false) {
@@ -614,6 +617,8 @@ function renderPanel(force = false) {
     box.innerHTML = heapHtml();
   } else if (tab === 'seder') {
     box.innerHTML = sederHtml();
+  } else if (tab === 'teknik') {
+    box.innerHTML = tekHtml();
   } else {
     const p = byId(s, selected);
     if (!p) { box.innerHTML = `<p class="muted">Klicka på en person på kartan eller i listan för att se allt om hen.</p>`; return; }
@@ -777,6 +782,22 @@ function sedWord(k: Sed, v: number) {
   const i = SED_INFO[k], a = Math.abs(v);
   if (a < 0.12) return 'Ingen tydlig hållning';
   return `${a > 0.55 ? 'Starkt' : a > 0.3 ? 'Tydligt' : 'Lite'}: ${(v > 0 ? i.pos : i.neg).toLowerCase()}`;
+}
+// teknikträdet: allt syns, med vilka som kan det och vilka som är på väg att komma på det
+function tekHtml() {
+  const ppl = living(s);
+  return `<p class="muted">Den som arbetar med något kommer så småningom på hur det kan göras bättre. Nyfikenheten avgör hur ofta hen funderar på det och intelligensen hur fort det går. Det man kan lär man ut i samtal. Dör alla som kan något försvinner kunskapen.</p>
+    <ul class="tek">${TEKNIK.map(t => {
+      const kan = ppl.filter(p => knows(p, t.id));
+      const pa = ppl.filter(p => !knows(p, t.id) && (p.tek?.[t.id] ?? 0) > 0.01).sort((a, b) => b.tek![t.id] - a.tek![t.id]).slice(0, 4);
+      const mat = t.material.map(g => g.map(k => STACK_NAMES[k] ?? k).join(' eller ').toLowerCase()).join(' och ');
+      const omr = [...new Set(t.omr.map(a => ACT_NAMES[a].toLowerCase()))].join(', ');
+      return `<li><div class="tektop">${iconImg(t.id, 20)}<b>${esc(t.namn)}</b></div>
+        <p class="small">${esc(t.text)} ${esc(t.effekt)}</p>
+        <p class="muted small">Kommer på när man ${esc(omr)}${t.krav.length ? `, och kan ${t.krav.map(k => TEK[k].namn.toLowerCase()).join(' och ')}` : ''}. Kräver att byn har ${esc(mat)}${hasMaterial(s, t) ? '' : ' (saknas nu)'}.</p>
+        ${kan.length ? `<p class="kan">Kan: ${kan.map(pLink).join(', ')}</p>` : '<p class="muted small">Ingen i byn kan det.</p>'}
+        ${pa.length ? `<div class="tank">${pa.map(p => `${pLink(p)}${bar(p.tek![t.id], 'skill')}`).join('')}</div>` : ''}</li>`;
+    }).join('')}</ul>`;
 }
 function sederHtml() {
   const sd = s.seder;

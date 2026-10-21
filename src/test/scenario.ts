@@ -1,7 +1,7 @@
 // Scenariotester: ställ en by i ett visst läge, kör den en stund och kontrollera att det som ska hända händer.
 // npm run scenario            kör alla
 // npm run scenario -- glanta  kör bara ett
-import { createState, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, WEEK, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, inZone, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, zonesOf, allows, ageOf, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, fuelStock, DAY, HOUR, W, State, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, campCenter } from '../sim';
+import { createState, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, WEEK, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, inZone, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, zonesOf, allows, ageOf, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, fuelStock, DAY, HOUR, W, State, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, campCenter, TEKNIK, knows, thinkWhileWorking, die } from '../sim';
 import { FOREST, HIGH, isSoil } from '../sim/vag';
 import { START } from './kor';
 
@@ -223,6 +223,7 @@ SCENARIER.fiskespjut = {
   kor: () => {
     const s = createState(4, START);
     s.items = { grenar: 10, flinta: 1 };
+    for (const q of s.people) q.tek = { fiskespjut: 1 }; // alla kan tälja spjut från början
     const p = living(s).find(q => q.task === undefined || true)!;
     makeSpear(s, p);
     const gjort = spears(s) === 1 && s.items.flinta === 1; // flintan finns kvar
@@ -428,7 +429,7 @@ SCENARIER.lagerplatser = {
 };
 
 SCENARIER.aktivitet = {
-  text: 'I levande läge arbetar man i korta pass med en lätt korg och går fram och tillbaka; vid bärplockning och jakt står man still en stund och går några steg, på promenad går man hela tiden. Det ger lika mycket som förut',
+  text: 'I levande läge bär man hem efter några fynd och går tillbaka; vid bärplockning och jakt står man still en stund och går några steg, på promenad går man hela tiden. Det ger lika mycket som förut',
   kor: () => {
     const s = createState(5, START);
     s.wood = 20; Object.assign(s.fire, { lit: true, fuel: 0.5 }); // tänd eld och ved i förrådet, så att någon matar elden
@@ -439,12 +440,12 @@ SCENARIER.aktivitet = {
     const fore = new Map<number, { x: number; y: number; ph: string; act: string }>();
     for (let i = 0; i < 10 * 3600 * 2; i++) {
       step(s, 0.5, true);
-      if (i === 3600) { // en jägare och en som promenerar, så att båda syns i provet
-        const c = campCenter(s), vuxna = living(s).filter(p => ageOf(p, s.now) >= 16).slice(0, 2);
+      if (i === 3600) { // en jägare, en som promenerar och en bärplockare, så att alla syns i provet
+        const c = campCenter(s), vuxna = living(s).filter(p => ageOf(p, s.now) >= 16).slice(0, 3), akt = ['jakt', 'promenad', 'samla'] as const;
         vuxna.forEach((p, j) => {
           let x = 0, y = 0;
-          for (let r = 7; r < 30; r++) { x = c.x + 0.5 + (j ? -r : r); y = c.y + 0.5 + r * 0.3; if (m.tiles[Math.floor(y) * W + Math.floor(x)] !== T.Vatten) break; }
-          p.task = { act: j ? 'promenad' : 'jakt', phase: 'go', tx: x, ty: y, until: s.now + 3 * HOUR, carry: 0, why: 'prov', dark: !isLight(s.now) };
+          for (let r = 7; r < 30; r++) { x = c.x + 0.5 + (j === 1 ? -r : r); y = c.y + 0.5 + (j === 2 ? -r : r) * 0.3; if (m.tiles[Math.floor(y) * W + Math.floor(x)] !== T.Vatten) break; }
+          p.task = { act: akt[j], phase: 'go', tx: x, ty: y, until: s.now + 3 * HOUR, carry: 0, why: 'prov', dark: !isLight(s.now) };
         });
       }
       for (const p of living(s)) {
@@ -472,7 +473,7 @@ SCENARIER.aktivitet = {
     };
     const pl = prod(true), ps = prod(false);
     return [
-      [`många turer hem med lätt korg (${turer} turer på tio timmar, ${aterupp} gånger tillbaka till samma plats)`, turer > 40 && aterupp > 10],
+      [`många korta turer hem (${turer} turer på tio timmar, ${aterupp} gånger tillbaka till samma plats)`, turer > 40 && aterupp > 10],
       [`ingen bär mer än en tredjedel av vad hen orkar från arbetet (${tungt} för tunga)`, tungt === 0],
       [`bärplockare står mest still men går ibland (går ${Math.round(andel('samla') * 100)} % av tiden)`, andel('samla') > 0.02 && andel('samla') < 0.5],
       [`jägare står mest still men går ibland (går ${Math.round(andel('jakt') * 100)} % av tiden)`, !!stod.jakt && (andel('jakt') > 0.02 && andel('jakt') < 0.5)],
@@ -482,6 +483,47 @@ SCENARIER.aktivitet = {
       [`elden matas med en famn i taget (högst ${eldMax.toFixed(1)})`, eldMax > 0 && eldMax <= 1 + 1e-9],
       // före de korta passen gav en timmes bärplockning med gångtiden 0,30 i levande läge och 0,19 i snabbläget
       [`bärplockning ger lika mycket per timme som förut (${pl.toFixed(2)} i levande läge, ${ps.toFixed(2)} i snabbläget)`, pl > 0.2 && pl < 0.4 && Math.abs(ps - 0.19) < 0.05],
+    ];
+  },
+};
+
+SCENARIER.teknik = {
+  text: 'Ingen kan göra yxa, spjut eller korg från början: den som arbetar kommer på det (nyfikna och intelligenta fortare), lär ut det i samtal, och kunskapen dör med den sista som kan den',
+  kor: () => {
+    const s = createState(3, START);
+    const forst: Record<string, number> = {};
+    let yxaInnan = false, korgInnan = false;
+    const kanFran = TEKNIK.every(t => !s.people.some(p => knows(p, t.id)));
+    kor(s, 20 * 24, s => {
+      for (const t of TEKNIK) if (forst[t.id] === undefined && living(s).some(p => knows(p, t.id))) forst[t.id] = (s.now - s.founded) / DAY;
+      if ((s.items.yxa ?? 0) > 0 && forst.yxa === undefined) yxaInnan = true;
+      if ((s.items.korg ?? 0) > 0 && forst.korg === undefined) korgInnan = true;
+    });
+    const kan = (id: string) => living(s).filter(p => knows(p, id)).length;
+    // nyfikna och intelligenta kommer på det fortare
+    const q = createState(4, START), [a, b] = living(q).filter(p => ageOf(p, q.now) >= 20);
+    a.pot.nyfikenhet = a.pot.intelligens = 16; b.pot.nyfikenhet = b.pot.intelligens = 6; a.tek = {}; b.tek = {};
+    q.items.torrgras = 10;
+    thinkWhileWorking(q, a, 'samla', 3600); thinkWhileWorking(q, b, 'samla', 3600);
+    const snabb = (a.tek.korg ?? 0) > (b.tek.korg ?? 0) * 3;
+    // utan material kommer man inte på något
+    const c = living(q).filter(p => ageOf(p, q.now) >= 20)[2]; c.tek = {}; q.items.flinta = 0; q.items.yxa = 0;
+    thinkWhileWorking(q, c, 'ved', 10 * 3600);
+    const utanMaterial = !(c.tek.yxa);
+    // den sista som kan yxa dör
+    const ens = living(s).filter(p => knows(p, 'yxa'));
+    ens.slice(1).forEach(p => { p.tek!.yxa = 0; });
+    if (ens[0]) die(s, ens[0], 'i en olycka');
+    const dott = kan('yxa') === 0;
+    const dagar = (k: string) => forst[k] === undefined ? 'aldrig' : `dygn ${forst[k].toFixed(1)}`;
+    return [
+      ['ingen kan något från början', kanFran],
+      [`korgen kommer på (${dagar('korg')}), yxan (${dagar('yxa')}) och spjutet (${dagar('fiskespjut')})`, forst.korg !== undefined && forst.yxa !== undefined && forst.korg > 0.2 && forst.yxa > 0.5],
+      ['ingen gör en yxa eller korg innan någon kommit på hur', !yxaInnan && !korgInnan],
+      [`kunskapen sprids i samtal (${kan('korg')} kan göra korg, ${kan('yxa')} yxa)`, kan('korg') >= 3 && ens.length >= 3],
+      ['en nyfiken och intelligent person kommer på det mycket fortare', snabb],
+      ['utan flinta kommer ingen på yxan', utanMaterial],
+      ['när den sista som kan yxa dör finns kunskapen inte kvar', dott],
     ];
   },
 };

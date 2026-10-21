@@ -11,6 +11,7 @@ export * from './sim/eld';
 export * from './sim/seder';
 export * from './sim/val';
 export * from './sim/samtal';
+export * from './sim/teknik';
 export * from './sim/liv';
 export * from './sim/steg';
 export * from './sim/vag';

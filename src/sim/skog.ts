@@ -3,6 +3,7 @@ import { ageOf, living, log, think } from './folk';
 import { getMap } from './karta';
 import { groundOf, isForest } from './mark';
 import { sedEvent } from './seder';
+import { knows } from './teknik';
 import { rnd } from './slump';
 import { Act, DAY, H, HOUR, Person, State, Stock, W } from './typer';
 
@@ -90,7 +91,7 @@ export function axeTask(s: State, p: Person): { act: Act; x: number; y: number; 
     if (t) return { act: 'falla', x: t.x, y: t.y, dur: 2.2 * HOUR, why: 'Har en yxa och fäller ett träd till ved' };
   }
   const adults = ppl.filter(q => ageOf(q, s.now) >= 16).length;
-  if (canMakeAxe(s) && axes(s) < axesWanted(s, adults) && !others.some(q => q.task?.act === 'yxa')) {
+  if (knows(p, 'yxa') && canMakeAxe(s) && axes(s) < axesWanted(s, adults) && !others.some(q => q.task?.act === 'yxa')) {
     return { act: 'yxa', x: 0, y: 0, dur: 2 * HOUR, why: 'Har flinta och vill göra en yxa för att kunna fälla träd' };
   }
   return undefined;

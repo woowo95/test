@@ -101,6 +101,11 @@ ul, ol { list-style: none; margin: 0; padding: 0; }
 .why { margin: 2px 0 0; font-size: 13px; color: var(--muted); font-style: italic; }
 .small { font-size: 12px; margin: 4px 0 0; }
 .seder li { padding: 10px 0; border-top: 1px solid var(--line); }
+.tek li { padding: 10px 0; border-top: 1px solid var(--line); }
+.tektop { display: flex; align-items: center; gap: 8px; }
+.tektop .ikon { image-rendering: pixelated; }
+.tek .kan { color: #8fc46a; font-size: 13px; }
+.tek .tank { display: grid; grid-template-columns: auto 1fr; gap: 2px 8px; align-items: center; font-size: 13px; margin-top: 4px; }
 .sedtop { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); margin-bottom: 4px; }
 .sbar { display: block; position: relative; height: 8px; border-radius: 4px; background: var(--barbg); }
 .sbar::after { content: ''; position: absolute; left: 50%; top: -2px; bottom: -2px; width: 1px; background: var(--muted); }
@@ -191,6 +196,7 @@ body.testing .mapwrap { box-shadow: 0 0 0 3px var(--accent); }
         <button type="button" role="tab" data-tab="logg" aria-selected="false">Händelser</button>
         <button type="button" role="tab" data-tab="person" aria-selected="false">Person</button>
         <button type="button" role="tab" data-tab="seder" aria-selected="false">Seder</button>
+        <button type="button" role="tab" data-tab="teknik" aria-selected="false">Teknik</button>
       </nav>
       <div id="panelBody"></div>
       <div class="controls">

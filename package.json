@@ -10,7 +10,8 @@
     "scenario": "tsx src/test/scenario.ts",
     "detaljer": "tsx src/test/detaljer.ts",
     "check": "tsc -p .",
-    "takt": "tsx src/test/takt.ts"
+    "takt": "tsx src/test/takt.ts",
+    "teknik": "tsx src/test/teknik.ts"
   },
   "repository": {
     "type": "git",
