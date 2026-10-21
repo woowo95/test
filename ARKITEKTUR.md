@@ -23,7 +23,7 @@ Simuleringen importerar aldrig från `ui/`. Gränssnittet importerar bara från 
 | `val.ts` | Vad en person väljer att göra och var: nöd → grundbehov → dag (arbete, bygge, fritid) eller natt |
 | `varld.ts` | Ny by (`createState`) och `migrate()`, som lagar äldre sparfiler |
 | `karta.ts` | Kartan, som skapas ur fröet (vatten, sand, gräs, sten, var elden står) |
-| `mark.ts`, `vag.ts` | Marken: gräs som nöts till stigar, skog som växer, vägsökning och gångfart |
+| `mark.ts`, `vag.ts` | Marken: skog och ängar (högt gräs) från början, gräs som nöts till stigar och läker, skog som växer, vägsökning och gångfart |
 | `fynd.ts` | **Registret över värmekartor** (FYND): var varje art och flinta finns (sanningen, inte vad byn vet), mönster som kryper med tiden, lägerzonen där inget växer, årstid, hur platser töms och växer tillbaka, fisk i vattnet, svampplockning (kantarell och giftig spindling), vilt som skyr lägret och nött mark (`skyggOf`). En aktivitet kan hämta ur flera lager: `samla` = bär + rötter (`lagren`) |
 | `minne.ts`, `kunskap.ts` | Vad var och en vet (kunskap, alltid rätt) och tror (lärdomar, kan vara fel), synvidd, rädsla, glömska. Den som kommer till en plats som är sämre än hen trott rättar lärdomen (`ny`), och rättelsen sprids som en nyhet i två speldygn |
 | `lager.ts` | Stackar och lagerplatser, att bära in, slitage och ruttning per stack |

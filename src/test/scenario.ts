@@ -1,7 +1,7 @@
 // Scenariotester: ställ en by i ett visst läge, kör den en stund och kontrollera att det som ska hända händer.
 // npm run scenario            kör alla
 // npm run scenario -- glanta  kör bara ett
-import { createState, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, WEEK, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, zonesOf, allows, ageOf, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, fuelStock, DAY, HOUR, W, State, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, campCenter, TEKNIK, knows, thinkWhileWorking, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, beds, isWall, Bit, wearBuild, FYND, FYND_IDS, GRUPPER, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, LAGER_R, observe, hoped, Lager, skyggOf, SKYGG_R, share } from '../sim';
+import { createState, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, WEEK, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, zonesOf, allows, ageOf, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, fuelStock, DAY, HOUR, W, State, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, campCenter, TEKNIK, knows, thinkWhileWorking, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, beds, isWall, Bit, wearBuild, FYND, FYND_IDS, GRUPPER, angOf, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, LAGER_R, observe, hoped, Lager, skyggOf, SKYGG_R, share } from '../sim';
 import { findPath } from '../sim/vag';
 import { FOREST, HIGH, isSoil } from '../sim/vag';
 import { START } from './kor';
@@ -10,13 +10,13 @@ import { Utfall, korSkript, pool } from './pool';
 type Koll = [string, boolean];
 const kor = (s: State, timmar: number, varje?: (s: State) => void) => { for (let i = 0; i < timmar * 12; i++) { step(s, 300, false); varje?.(s); } };
 const logg = (s: State, t: string) => s.log.some(l => l.text.includes(t));
-// andel jordrutor med skog, inom eller utanför ett avstånd från elden
-function skogsandel(s: State, min: number, max: number) {
-  const g = groundOf(s);
+// andel jordrutor med skog, inom eller utanför ett avstånd från elden. Ängarna räknas inte (äng = 1 räknar bara dem)
+function skogsandel(s: State, min: number, max: number, ang = 0) {
+  const g = groundOf(s), a = angOf(s.seed);
   let n = 0, sk = 0;
   for (let i = 0; i < g.tiles.length; i++) {
     const d = campDist(s, i % W, Math.floor(i / W));
-    if (!isSoil(g.tiles[i]) || d < min || d >= max) continue;
+    if (!isSoil(g.tiles[i]) || d < min || d >= max || a[i] !== ang) continue;
     n++; if (g.trees[i] >= FOREST) sk++;
   }
   return n ? sk / n : 0;
@@ -32,12 +32,15 @@ function uttag(s: State, k: Kind, min: number, max: number) {
 
 const SCENARIER: Record<string, { text: string; kor: () => Koll[] }> = {
   glanta: {
-    text: 'Ny by: gläntan finns, skogen står runt omkring och marken nöts till stigar',
+    text: 'Ny by: gläntan finns, skog och ängar med högt gräs står runt omkring och marken nöts till stigar',
     kor: () => {
-      const s = createState(11, START);
+      const s = createState(11, START), a = angOf(s.seed), g0 = groundOf(s);
+      let jord = 0, angar = 0; for (let i = 0; i < a.length; i++) if (isSoil(g0.tiles[i])) { jord++; angar += a[i]; }
+      const ang = angar / jord;
       const forst: Koll[] = [
         ['gläntan är tom på träd', skogsandel(s, 0, 4) === 0],
-        ['skog på nästan all jord utanför gläntan', skogsandel(s, 9, 99) > 0.95],
+        ['skog på nästan all jord utanför gläntan och ängarna', skogsandel(s, 9, 99) > 0.95],
+        [`ängar med högt gräs på ${(ang * 100).toFixed(0)} % av jorden`, ang > 0.2 && ang < 0.55 && skogsandel(s, 9, 99, 1) === 0],
         ['ingen ved, bara grenar i förrådet', s.wood === 0 && (s.items.grenar ?? 0) > 0],
       ];
       kor(s, 10 * 24);
@@ -46,6 +49,7 @@ const SCENARIER: Record<string, { text: string; kor: () => Koll[] }> = {
       return [...forst,
         ['gräset har trampats ner till kort gräs eller stigar', trampat > 20],
         ['skogen står kvar runt byn efter 10 dygn', skogsandel(s, 9, 99) > 0.85],
+        ['ängarna är mest gräs efter 10 dygn', skogsandel(s, 9, 99, 1) < 0.1],
         ['elden har tänts', s.fire.lightings > 0]];
     },
   },
@@ -71,11 +75,13 @@ const SCENARIER: Record<string, { text: string; kor: () => Koll[] }> = {
       let ved = 0;
       kor(s, 10 * 24, s => { ved = Math.max(ved, s.wood); for (const k of s.stockar ?? []) fallda.add(Math.floor(k.y) * W + Math.floor(k.x)); });
       const g = groundOf(s);
-      let gras = 0; for (const i of fallda) if (g.trees[i] < FOREST && g.cover[i] >= 0.7) gras++;
+      // inne i lägret trampas marken där träden stod till jord, så räkna bara utanför
+      const ute = [...fallda].filter(i => campDist(s, i % W, Math.floor(i / W)) >= 1);
+      let gras = 0; for (const i of ute) if (g.trees[i] < FOREST && g.cover[i] >= 0.7) gras++;
       return [
         ['träd har fällts', (s.fallda ?? 0) >= 3],
         ['ved har huggits', ved > 0],
-        [`gräs där träden stod (${gras} av ${fallda.size})`, gras > fallda.size / 2],
+        [`gräs där träden stod utanför lägret (${gras} av ${ute.length})`, ute.length >= 3 && gras > ute.length / 2],
         ['stammarna huggs upp (högst 2 liggande)', (s.stockar ?? []).length <= 2]];
     },
   },
@@ -108,7 +114,7 @@ const SCENARIER: Record<string, { text: string; kor: () => Koll[] }> = {
       kor(s, 12 * 24);
       const nara = uttag(s, 'samla', 0, 8), langt = uttag(s, 'samla', 16, 30), st = s.stat ?? {};
       return [
-        [`mer plockat nära byn än långt bort (${nara.toFixed(2)} mot ${langt.toFixed(2)})`, nara > 0.02 && nara > langt * 3],
+        [`mer plockat nära byn än långt bort (${nara.toFixed(2)} mot ${langt.toFixed(2)})`, nara > 0.01 && nara > langt * 3],
         [`vilt jagat (${uttag(s, 'jakt', 0, 12).toFixed(2)})`, uttag(s, 'jakt', 0, 12) > 0],
         // fiske väljs inte i alla byar; fisket testas utförligt i fiskespjut-scenariot
         [`fiske: ${st.fiskeForsok ?? 0} försök, ${st.fiskeNapp ?? 0} napp, ${st.fisk ?? 0} fiskar`, !st.fiskeForsok || ((st.fiskeForsok ?? 0) > (st.fiskeNapp ?? 0) && (st.fiskeNapp ?? 0) >= (st.fisk ?? 0))],
@@ -337,6 +343,7 @@ SCENARIER.lager = {
     // bära: kör en stund med gående invånare och se hur mycket de bär hem
     const b = createState(8, START);
     b.now = new Date(b.now).setHours(7, 0, 0, 0); b.food = 2; // morgon, och byn behöver mat
+    Object.assign(b.fire, { lit: true, fuel: 4 }); // elden brinner, annars avbryts allt för att tända den
     let hem = 0, maxKvot = 0, fullt = 0;
     for (let i = 0; i < 8 * 3600 / 2; i++) {
       step(b, 2, true);

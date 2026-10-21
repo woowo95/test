@@ -20,7 +20,7 @@ export function speedAt(g: Ground, i: number) {
   return g.cover[i] >= HIGH ? 0.8 : 1;
 }
 // kostnad att gå in på en ruta: man följer hellre en upptrampad stig än går över orörd mark
-const stepCost = (g: Ground, i: number) => (isSoil(g.tiles[i]) ? 0.6 + 0.4 * g.cover[i] : 1) / speedAt(g, i);
+const stepCost = (g: Ground, i: number) => (isSoil(g.tiles[i]) ? 0.45 + 0.55 * g.cover[i] : 1) / speedAt(g, i);
 
 // vatten och väggar går man inte genom
 const stop = (g: Ground, i: number) => g.tiles[i] === T.Vatten || g.solid?.[i] === 1;

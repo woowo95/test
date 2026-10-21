@@ -2,7 +2,7 @@
 // varje tecken är en pixel, '.' är genomskinlig
 
 const PAL: Record<string, Record<string, string>> = {
-  bar: { r: '#b3263a', R: '#e8687a', d: '#6e1224', g: '#4f8a3a' },
+  bar: { r: '#8a4ad8', R: '#b88aff', d: '#4e2280', g: '#4f8a3a' },
   rotter: { o: '#9a6a3e', O: '#c99a62', d: '#5e3c20', g: '#5f9a44' },
   kott: { r: '#9c3328', R: '#d26a56', w: '#eee2c8' },
   kanin: { b: '#9a7650', B: '#c8a478', w: '#f2ece0', k: '#1a1a1a', p: '#d88a8a' },
@@ -17,7 +17,7 @@ const PAL: Record<string, Record<string, string>> = {
   gniststen: { k: '#55595c', K: '#8a8f94', y: '#ffd060' },
   yxa: { h: '#7a5a36', g: '#8f9396', G: '#c9cdd0' },
   fiskespjut: { h: '#8a6a40', g: '#8f9396', G: '#c9cdd0' },
-  korg: { t: '#6e4e2e', o: '#9a6a3e', O: '#c99a62', r: '#c4334a' },
+  korg: { t: '#6e4e2e', o: '#9a6a3e', O: '#c99a62', r: '#8a4ad8' },
   risvagg: { p: '#5a3c22', b: '#8a6a40', B: '#b08a58' },
   hogolv: { y: '#d8c070', Y: '#f0dc94', d: '#7a5a3a' },
   bygga: { b: '#8a6a40', B: '#b08a58', d: '#3a2a1a', y: '#d8c070' },

@@ -28,11 +28,11 @@ export function drawPlants(force = false) {
         plantG.endFill();
       }
     }
-    // svamp: en liten fot och hatt i svampens färg, dämpad mot marken
+    // svamp: en liten fot och hatt i svampens färg, dämpad mot marken. På våren växer det lite, då syns färre och mindre
     for (const [k, f, j0] of [['kantarell', kant, 10], ['spindling', spin, 20]] as const) {
       const v = fyndAt(s, k, i) / f.topp;
-      if (v < 0.3) continue;
-      const mx = x + 3 + plats(i, j0) * 10, my = y + 4 + plats(i, j0 + 1) * 9, sz = 0.8 + Math.min(1, v) * 0.4 + sh[i] * 0.2;
+      if (v < 0.1) continue;
+      const mx = x + 3 + plats(i, j0) * 10, my = y + 4 + plats(i, j0 + 1) * 9, sz = 0.7 + Math.min(1, v) * 0.5 + sh[i] * 0.2;
       plantG.beginFill(0xe8dcc0, 0.7).drawRect(mx - 0.4 * sz, my, 0.8 * sz, 1.6 * sz).endFill();
       plantG.beginFill(f.farg, 0.65).drawEllipse(mx, my, 1.4 * sz, 0.8 * sz).endFill();
     }

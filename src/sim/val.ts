@@ -173,12 +173,13 @@ function day(s: State, p: Person, v: Val, a: number, lazy: number, live: boolean
   if (s.stackar?.length && rnd(s) < 0.25 && (gt = haulJob(s))) { set(v, 'bara', gt.why); v.spot = gt; v.dur = 3 * HOUR; return; }
   const fd = foodDays(s), wd = woodDays(s), ai = ageIndex(s), tot = habitTotal(p);
   let { best, bs, burg } = bestWork(s, p, fd, wd, ai, tot);
-  // bygget: väger mer ju fler som saknar sovplats under tak, inför och under istiden, och när en vägg behöver lagas
+  // bygget: väger mer ju fler som saknar sovplats under tak, inför och under istiden, när en vägg behöver lagas och när huset inte är klart
   const job = buildJob(s, p), ppl = living(s);
   let build = false;
   if (job) {
     const homeless = Math.max(0, ppl.length - beds(s).length) / (ppl.length || 1);
-    const col = ((job.repair ? 1.2 : 0.5) + 2.4 * homeless) * (ai === 3 || ai === 0 ? 1.4 : 1);
+    const halvt = !job.repair && !s.hus?.find(h => h.id === job.bit.hus)?.klar; // ett påbörjat hus vill man göra klart, även när det sista är ett hörn
+    const col = ((job.repair ? 1.2 : halvt ? 1 : 0.5) + 2.4 * homeless) * (ai === 3 || ai === 0 ? 1.4 : 1);
     const like = (4 + p.skill.hantverk + stat(p, 'flit', now) / 3) * (1 + 2 * habitShare(p, ['bygga'], tot));
     const sc = col * like * (0.6 + rnd(s) * 0.8);
     burg = Math.max(burg, col);
@@ -238,7 +239,7 @@ function building(s: State, v: Val, job: NonNullable<ReturnType<typeof buildJob>
 
 // arbetet med redskap: flinta letas vid stenarna, yxan fäller träd, korgen och spjutet görs först om de saknas
 function withTools(s: State, p: Person, v: Val, best: Act, what: string) {
-  if (best === 'samla' && wantsFlint(s) && rnd(s) < 0.3) { // byn saknar flinta till en yxa
+  if (best === 'samla' && wantsFlint(s) && rnd(s) < 0.5) { // byn saknar flinta till en yxa
     const fa = flintArea(p), fl = (fa !== undefined && flintSpot(s, (x, y) => areaOf(x, y) === fa)) || flintSpot(s);
     if (fl) { v.spot = fl; v.why = `${v.why} Letar efter flinta vid stenarna${fa !== undefined ? ' där hen vet att det finns' : ''}.`; }
   }

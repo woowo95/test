@@ -20,7 +20,7 @@ export const TEKNIK: Tek[] = [
   { id: 'korg', namn: 'Korg', text: 'En korg flätad av torrt gräs.', effekt: 'Man bär hem mer från varje tur och spiller mindre bär.',
     omr: ['samla'], krav: [], material: [['torrgras']], tid: 24 },
   { id: 'yxa', namn: 'Flintyxa', text: 'En vass flintsten bunden vid en pinne.', effekt: 'Med yxa kan man fälla träd och hugga ved.',
-    omr: ['samla', 'ved'], krav: [], material: [['flinta'], ['grenar']], tid: 24 },
+    omr: ['samla', 'ved', 'hantverk'], krav: [], material: [['flinta'], ['grenar']], tid: 10 },
   { id: 'fiskespjut', namn: 'Fiskespjut', text: 'En pinne som täljts spetsig med en flintsten eller en yxa.', effekt: 'Ger mycket mer fisk än händerna, men slits fort.',
     omr: ['fiske', 'ved'], krav: [], material: [['grenar'], ['flinta', 'yxa']], tid: 20 },
   { id: 'risvagg', namn: 'Risvägg', text: 'Grenar som flätas mellan nedstuckna pinnar till en vägg.', effekt: 'Byn kan bygga hus att sova i, med väggar av ris.',
