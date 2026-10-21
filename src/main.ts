@@ -4,6 +4,7 @@ import { s, setByn, ui, nyBild } from './ui/lage';
 import { TS, app, cam, layout, view, world } from './ui/scen';
 import { drawNight, drawTerrain } from './ui/terrang';
 import { drawStructures } from './ui/foremal';
+import { drawFilter } from './ui/filter';
 import { addTalks, drawPeople } from './ui/manniskor';
 import { renderPanel } from './ui/panel';
 import { renderPorts, stopFollow } from './ui/portratt';
@@ -84,6 +85,7 @@ function tick() {
   drawStructures(now);
   drawPeople(now);
   drawNight(s.now);
+  drawFilter();
   if (now - lastUi > 600) { lastUi = now; renderClock(); renderPanel(); renderPorts(); }
   if (!ui.testMode && now - lastLocal > 20000) { lastLocal = now; saveLocal(); }
   if (!ui.testMode && now - lastDb > 60000) { lastDb = now; saveDb(); }

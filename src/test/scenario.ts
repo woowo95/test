@@ -1,7 +1,7 @@
 // Scenariotester: ställ en by i ett visst läge, kör den en stund och kontrollera att det som ska hända händer.
 // npm run scenario            kör alla
 // npm run scenario -- glanta  kör bara ett
-import { createState, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, WEEK, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, zonesOf, allows, ageOf, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, fuelStock, DAY, HOUR, W, State, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, campCenter, TEKNIK, knows, thinkWhileWorking, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, beds, isWall, Bit, wearBuild } from '../sim';
+import { createState, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, WEEK, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, zonesOf, allows, ageOf, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, fuelStock, DAY, HOUR, W, State, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, campCenter, TEKNIK, knows, thinkWhileWorking, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, beds, isWall, Bit, wearBuild, FYND, FYND_IDS, GRUPPER, fyndAt, takeFrom, packFynd, growFynd, H } from '../sim';
 import { findPath } from '../sim/vag';
 import { FOREST, HIGH, isSoil } from '../sim/vag';
 import { START } from './kor';
@@ -593,6 +593,41 @@ SCENARIER.bygg = {
       [`ingen står i en vägg (${iVagg})`, iVagg === 0],
       ['slitna väggar lagas', lagat],
       [`byn bygger i levande läge (${hL?.klar ? `klart efter ${((hL.klar - L.founded) / HOUR).toFixed(0)} h` : 'inte klart'})`, !!hL?.klar],
+    ];
+  },
+};
+
+SCENARIER.varmekarta = {
+  text: 'Värmekartorna: varje lager har ett värde per ruta. Svampen finns mest på hösten, kantarell och giftig spindling växer på olika ställen, uttag tömmer platsen som sedan växer tillbaka, och allt sparas',
+  kor: () => {
+    const s = createState(21, START), g = groundOf(s);
+    const vid = (ai: number) => { s.now = s.founded + ((ai + 3) % 4) * WEEK + HOUR; };
+    const summa = (k: typeof FYND_IDS[number]) => { let v = 0; for (let i = 0; i < W * H; i++) v += fyndAt(s, k, i); return v; };
+    vid(0); const kIstid = summa('kantarell');
+    vid(3); const kHost = summa('kantarell'), bHost = summa('samla');
+    // kantarell och spindling på olika ställen: spindlingen saknas på många skogsrutor där kantarellen finns
+    let skog = 0, utanGift = 0;
+    for (let i = 0; i < W * H; i++) if (isSoil(g.tiles[i]) && g.trees[i] >= FOREST) { skog++; if (fyndAt(s, 'spindling', i) === 0) utanGift++; }
+    // ta ur en rik ruta och låt den växa tillbaka
+    let bast = 0; for (let i = 0; i < W * H; i++) if (fyndAt(s, 'kantarell', i) > fyndAt(s, 'kantarell', bast)) bast = i;
+    const x = bast % W + 0.5, y = Math.floor(bast / W) + 0.5, fore = fyndAt(s, 'kantarell', bast);
+    for (let n = 0; n < 8; n++) takeFrom(s, 'kantarell', x, y, 0.5);
+    const efter = fyndAt(s, 'kantarell', bast);
+    packFynd(s);
+    const kopia = JSON.parse(JSON.stringify(s)) as State;
+    const sparad = Math.abs(fyndAt(kopia, 'kantarell', bast) - efter) < 0.01;
+    growFynd(s, 48, 3);
+    const vuxit = fyndAt(s, 'kantarell', bast);
+    const flinta = (() => { let n = 0; for (let i = 0; i < W * H; i++) if (fyndAt(s, 'flinta', i) >= 4) n++; return n; })();
+    return [
+      ['varje lager hör till en grupp i filtret', FYND_IDS.every(k => GRUPPER[FYND[k].grupp] && FYND[k].topp > 0)],
+      [`ingen svamp i istiden (${kIstid.toFixed(1)}), gott om på hösten (${kHost.toFixed(0)})`, kIstid === 0 && kHost > 50],
+      [`bär och rötter finns (${bHost.toFixed(0)})`, bHost > 100],
+      [`spindlingen saknas på många skogsrutor (${Math.round(utanGift / skog * 100)} %)`, utanGift / skog > 0.3 && utanGift < skog],
+      [`uttag tömmer platsen (${fore.toFixed(2)} → ${efter.toFixed(2)})`, efter < fore * 0.3],
+      ['uttaget sparas', sparad],
+      [`platsen växer tillbaka på hösten (${vuxit.toFixed(2)})`, vuxit > efter + 0.1],
+      [`flinta är vanlig vid stenarna (${flinta} rutor)`, flinta > 0],
     ];
   },
 };

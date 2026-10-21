@@ -68,6 +68,13 @@ h1 { font-family: var(--display); font-weight: 700; font-size: 1.7rem; margin: 0
 .zoom { position: absolute; right: 10px; bottom: 10px; display: flex; gap: 4px; }
 .zoom button { font: inherit; font-size: 14px; font-weight: 700; min-width: 32px; height: 32px; border-radius: 4px; border: 0; background: rgba(18, 22, 20, 0.72); color: #eef1ec; cursor: pointer; padding: 0 10px; }
 .zoom button:hover { background: rgba(18, 22, 20, 0.9); }
+.filters { position: absolute; right: 10px; bottom: 50px; display: flex; flex-direction: column; gap: 4px; }
+.filters button { width: 32px; height: 32px; border-radius: 4px; border: 0; background: rgba(18, 22, 20, 0.72); cursor: pointer; display: grid; place-items: center; padding: 0; }
+.filters button:hover { background: rgba(18, 22, 20, 0.9); }
+.filters button[aria-pressed="true"] { outline: 2px solid #f0c070; }
+.legend { position: absolute; right: 50px; bottom: 50px; background: rgba(18, 22, 20, 0.6); border-radius: 4px; padding: 5px 7px; display: flex; flex-direction: column; gap: 3px; }
+.legend span { display: flex; align-items: center; gap: 5px; }
+.legend i { width: 12px; height: 12px; border-radius: 2px; display: inline-block; }
 .chip { background: rgba(18, 22, 20, 0.72); color: #eef1ec; border-radius: 4px; padding: 4px 9px; font-size: 13px; font-variant-numeric: tabular-nums; }
 .chip b { font-weight: 700; margin-right: 3px; }
 .chip span { opacity: 0.75; margin-left: 4px; }
@@ -208,6 +215,8 @@ body.testing .mapwrap { box-shadow: 0 0 0 3px var(--accent); }
       <div class="chips">
         <button type="button" class="chip" id="followChip" hidden></button>
       </div>
+      <div id="filters" class="filters" aria-label="Filter på kartan"></div>
+      <div id="legend" class="legend" hidden></div>
       <div class="zoom">
         <button type="button" id="zIn" aria-label="Zooma in">+</button>
         <button type="button" id="zOut" aria-label="Zooma ut">−</button>

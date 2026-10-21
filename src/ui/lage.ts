@@ -1,4 +1,4 @@
-import { Pile, State, pilesOf } from '../sim';
+import { Grupp, Pile, State, pilesOf } from '../sim';
 import type { FlikId } from './panel';
 
 // det hela gränssnittet delar: byn som visas och vad spelaren har valt.
@@ -15,6 +15,7 @@ export const ui = {
   lastPointer: 0, // när spelaren senast tryckte: panelen byts inte ut mitt i ett tryck
   hogAt: { x: 0, y: 0 }, // rutan med högar utanför lagret som visas i panelen
   lagerNr: 0, // vilken lagerplats som visas i panelen
+  filter: undefined as Grupp | undefined, // värmekartan som visas på kartan
 };
 
 // stackarna räknas fram en gång per bildruta, inte för varje sak som ritas eller visas

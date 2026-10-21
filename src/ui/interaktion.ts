@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { BAR, FOREST, H, HIGH, Kind, MATERIAL, Person, T, W, ageIndex, bitAt, campCenter, condOf, emberOn, getMap, groundOf, housesOf, insulation, living, richness, roomAt, sakNamn, stoneDist, taskName, zoneAt, zonesOf, Pile } from '../sim';
+import { BAR, FOREST, FYND, FYND_IDS, H, HIGH, MATERIAL, Person, T, W, bitAt, campCenter, condOf, emberOn, fyndAt, getMap, groundOf, housesOf, insulation, living, roomAt, sakNamn, taskName, zoneAt, zonesOf, Pile } from '../sim';
 import { iconImg } from '../ikoner';
 import { $, esc, fmtN } from './hjalp';
 import { outPilesAt, piles, s, ui } from './lage';
@@ -55,7 +55,7 @@ $('zOut').addEventListener('click', () => zoomAt(1 / 1.4));
 $('zHome').addEventListener('click', () => { stopFollow(); cam.zoom = 2.4; const f = campCenter(s); cam.x = f.x * TS; cam.y = f.y * TS; layout(); });
 
 // ---------- rutan i hörnet: vad som finns under musen ----------
-const RICH_WORD = (v: number) => v >= 0.7 ? 'gott om' : v >= 0.35 ? 'en del' : v >= 0.1 ? 'lite' : 'nästan inget';
+const RICH_WORD = (v: number) => v >= 0.6 ? 'gott om' : v >= 0.3 ? 'en del' : v >= 0.08 ? 'lite' : 'nästan inget';
 const pileTxt = (p: Pile) => `${sakNamn(p.k)} ${p.max === 1 ? '' : `${fmtN(p.n)} st, `}skick ${Math.round(condOf(p) * 100)} %`;
 function showHover(gx: number, gy: number) {
   const box = $('hoverBox'), { x, y } = tileAt(gx, gy);
@@ -64,14 +64,13 @@ function showHover(gx: number, gy: number) {
   const soil = t === T.Gras || t === T.Skog;
   const ground = t === T.Vatten ? 'Vatten' : t === T.Sand ? 'Sand' : t === T.Sten ? 'Sten' : tr >= FOREST ? 'Skogsmark' : c >= HIGH ? 'Högt gräs' : c >= BAR ? 'Kort gräs' : 'Bar jord, stig';
   const rows: string[] = [`<b>${ground}</b>${soil && tr > 0 ? ` · ${tr >= FOREST ? 'skog' : tr >= 0.25 ? 'ungskog' : 'plantor'}` : ''}`];
-  // bär och rötter i alla tider utom istiden, vilt där det finns skydd, fisk vid stranden
-  const ai = ageIndex(s), finds: string[] = [];
-  const add = (k: Kind, name: string) => { const cap = richness(s, k, x, y); if (cap > 0.04) finds.push(`${name}: ${RICH_WORD(cap)}`); };
-  if (soil && ai !== 0) add('samla', 'Bär och rötter');
-  if (soil) add('jakt', 'Vilt');
-  add('fiske', 'Fisk');
-  if (finds.length && !bitAt(s, x, y)) rows.push(finds.join(' · '));
-  if (t !== T.Vatten && stoneDist(s.seed)[i] <= 2) rows.push('Flinta är vanlig här');
+  // vad lagren har på rutan (värmekartorna): bär och rötter, svamp, vilt, fisk och flinta
+  const finds: string[] = [];
+  if (!bitAt(s, x, y)) for (const k of FYND_IDS) {
+    const v = fyndAt(s, k, i) / FYND[k].topp;
+    if (v >= (k === 'flinta' ? 0.3 : 0.04)) finds.push(`${iconImg(FYND[k].ikon, 12)} ${esc(FYND[k].namn)}: ${RICH_WORD(v)}`);
+  }
+  if (finds.length) rows.push(finds.join('<br>'));
   if (x === m.fire.x && y === m.fire.y) rows.push(`Elden (${s.fire.lit ? 'brinner' : emberOn(s) ? 'glöder' : 'släckt'})`);
   const zi = zoneAt(s, x, y);
   if (zi >= 0) {

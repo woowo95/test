@@ -14,30 +14,117 @@ import { BAR, FOREST, HIGH, isSoil } from './vag';
 // och den växer långsamt tillbaka. Därför går invånarna vidare till nya platser när det tar slut nära byn.
 export type Kind = 'samla' | 'jakt' | 'fiske';
 export const KINDS: Kind[] = ['samla', 'jakt', 'fiske'];
-const FULL: Record<Kind, number> = { samla: 1.2, jakt: 6, fiske: 4 }; // så mycket mat en full plats ger innan den är tom
-const REACH: Record<Kind, number> = { samla: 1, jakt: 3, fiske: 1 }; // vilt springer: jakt tömmer ett större område
-// hur fort en plats växer tillbaka, del per timme och tidsålder (istid, vår, sommar, höst).
-// Bären mognar fortast på sommaren och hösten, så buskarna bär igen även där man plockat.
-const REGROW: Record<Kind, number[]> = { samla: [0, 1 / 70, 1 / 24, 1 / 32], jakt: [1 / 300, 1 / 160, 1 / 160, 1 / 200], fiske: [1 / 300, 1 / 100, 1 / 100, 1 / 140] };
 
-const store = new WeakMap<State, Record<Kind, Float32Array>>();
+// ---------- värmekartor: ett lager per sorts resurs ----------
+// Varje lager har ett värde per ruta: hur mycket som finns där just nu. Det är sanningen; vad invånarna tror står i
+// deras lärdomar (minne.ts). Ett lager med uttag töms där man tar och växer tillbaka efter årstiden.
+// Ett nytt lager är en ny rad i FYND. Filtret på kartan, rutan i hörnet och sparningen följer med.
+export type Grupp = 'vaxter' | 'djur' | 'sten';
+// filtren på kartan: varje grupp visar alla sina lager samtidigt, ett i taget med egen färg
+export const GRUPPER: Record<Grupp, { namn: string; ikon: string }> = {
+  vaxter: { namn: 'Växter', ikon: 'bar' },
+  djur: { namn: 'Djur', ikon: 'kott' },
+  sten: { namn: 'Sten', ikon: 'flinta' },
+};
+interface Uttag {
+  full: number; // så mycket en full plats ger innan den är tom
+  reach: number; // hur stort område ett uttag tömmer (vilt springer)
+  regrow: number[]; // hur fort platsen växer tillbaka, del per timme och tidsålder (istid, vår, sommar, höst)
+}
+interface FyndDef {
+  namn: string;
+  grupp: Grupp;
+  ikon: string;
+  farg: number; // färgen i filtret
+  topp: number; // ungefär vad en mycket rik ruta har; full färg i filtret
+  bas(s: State, i: number): number; // vad en orörd ruta kan ge, efter marken
+  arstid?: number[]; // hur mycket som finns per tidsålder (istid, vår, sommar, höst), annars lika året om
+  uttag?: Uttag;
+}
+// rikare och fattigare fläckar, två rutor stora
+const flack = (s: State, salt: number, i: number) => 0.6 + 0.8 * hash(s.seed + salt, (i % W) >> 1, Math.floor(i / W) >> 1);
+// glesa fläckar, fyra rutor stora: noll på drygt halva marken
+const glesFlack = (s: State, salt: number, i: number) => Math.max(0, hash(s.seed + salt, (i % W) >> 2, Math.floor(i / W) >> 2) - 0.45) / 0.55 * 1.4;
+const SVAMP_SEASON = [0, 0.15, 0.8, 1.5];
+const SVAMP_UTTAG: Uttag = { full: 2.5, reach: 1, regrow: [1 / 400, 1 / 150, 1 / 40, 1 / 40] };
+// Ordningen är ordningen i sparfilen: nya lager läggs sist.
+const DEF = {
+  // bär i högt gräs och på hyggen, blåbär i skogen, rötter året om
+  samla: {
+    namn: 'Bär och rötter', grupp: 'vaxter', ikon: 'bar', farg: 0x7a4ce0, topp: 1.2,
+    bas(s, i) {
+      const g = groundOf(s);
+      if (!isSoil(g.tiles[i])) return 0;
+      const tr = g.trees[i], c = g.cover[i];
+      return flack(s, 71, i) * (tr >= FOREST ? 0.7 : tr >= 0.15 ? 1.1 : c >= HIGH ? 1 : c >= BAR ? 0.5 : 0.15);
+    },
+    uttag: { full: 1.2, reach: 1, regrow: [0, 1 / 70, 1 / 24, 1 / 32] },
+  },
+  // vilt i skogen, lite i ungskog och högt gräs
+  jakt: {
+    namn: 'Vilt', grupp: 'djur', ikon: 'kott', farg: 0x8a4a1c, topp: 1.2,
+    bas(s, i) {
+      const g = groundOf(s);
+      if (!isSoil(g.tiles[i])) return 0;
+      const tr = g.trees[i];
+      return flack(s, 73, i) * (tr >= FOREST ? 1 : tr > 0 || g.cover[i] >= HIGH ? 0.45 : 0.1);
+    },
+    uttag: { full: 6, reach: 3, regrow: [1 / 300, 1 / 160, 1 / 160, 1 / 200] },
+  },
+  // fisk vid stranden
+  fiske: {
+    namn: 'Fisk', grupp: 'djur', ikon: 'fisk', farg: 0x2f7fd0, topp: 1.2,
+    bas: (s, i) => shoreOf(s.seed)[i] ? flack(s, 79, i) : 0,
+    uttag: { full: 4, reach: 1, regrow: [1 / 300, 1 / 100, 1 / 100, 1 / 140] },
+  },
+  // flinta vid stenarna, ibland i sanden vid stranden och sällan annars. Den tar inte slut
+  flinta: {
+    namn: 'Flinta', grupp: 'sten', ikon: 'flinta', farg: 0xe8eef2, topp: 4,
+    bas: (s, i) => getMap(s.seed).tiles[i] === T.Vatten ? 0 : flintAt(s, i),
+  },
+  // kantarellen växer i mossig gammal skog, mest på hösten
+  kantarell: {
+    namn: 'Kantarell', grupp: 'vaxter', ikon: 'svamp', farg: 0xf0b020, topp: 1.2, arstid: SVAMP_SEASON,
+    bas(s, i) {
+      const g = groundOf(s), tr = g.trees[i];
+      return isSoil(g.tiles[i]) && tr >= 0.15 ? flack(s, 83, i) * (tr >= FOREST ? 0.45 : 0.35) : 0;
+    },
+    uttag: SVAMP_UTTAG,
+  },
+  // den giftiga orangea spindlingen liknar kantarellen. Den växer i glesa fläckar, helst i ung skog
+  spindling: {
+    namn: 'Orange spindling (giftig)', grupp: 'vaxter', ikon: 'spindling', farg: 0xe02818, topp: 0.8, arstid: SVAMP_SEASON,
+    bas(s, i) {
+      const g = groundOf(s), tr = g.trees[i];
+      return isSoil(g.tiles[i]) && tr >= 0.15 ? glesFlack(s, 89, i) * (tr >= FOREST ? 0.5 : 0.8) : 0;
+    },
+    uttag: SVAMP_UTTAG,
+  },
+} satisfies Record<string, FyndDef>;
+export type FyndId = keyof typeof DEF;
+export const FYND: Record<FyndId, FyndDef> = DEF;
+export const FYND_IDS = Object.keys(FYND) as FyndId[];
+const UTTAG_IDS = FYND_IDS.filter(k => FYND[k].uttag);
+
+const store = new WeakMap<State, Partial<Record<FyndId, Float32Array>>>();
 // uttag per ruta: 0 = orörd, 1 = tom
 export function takenOf(s: State) {
   let d = store.get(s);
   if (!d) {
-    d = { samla: new Float32Array(W * H), jakt: new Float32Array(W * H), fiske: new Float32Array(W * H) };
+    d = {};
+    for (const k of UTTAG_IDS) d[k] = new Float32Array(W * H);
     if (s.fynd) try {
       const bin = atob(s.fynd);
-      KINDS.forEach((k, j) => { for (let i = 0; i < W * H && j * W * H + i < bin.length; i++) d![k][i] = bin.charCodeAt(j * W * H + i) / 255; });
+      UTTAG_IDS.forEach((k, j) => { for (let i = 0; i < W * H && j * W * H + i < bin.length; i++) d![k]![i] = bin.charCodeAt(j * W * H + i) / 255; });
     } catch { /* ny mark */ }
     store.set(s, d);
   }
-  return d;
+  return d as Record<Kind, Float32Array> & Partial<Record<FyndId, Float32Array>>;
 }
 export function packFynd(s: State) {
   const d = takenOf(s);
   let bin = '';
-  for (const k of KINDS) for (let i = 0; i < W * H; i++) bin += String.fromCharCode(Math.round(clamp(d[k][i], 0, 1) * 255));
+  for (const k of UTTAG_IDS) for (let i = 0; i < W * H; i++) bin += String.fromCharCode(Math.round(clamp(d[k]![i], 0, 1) * 255));
   s.fynd = btoa(bin);
 }
 
@@ -71,24 +158,20 @@ export function stoneDist(seed: number) {
   return b;
 }
 
-// hur mycket en orörd ruta ger: bär i högt gräs och på hyggen, svamp och blåbär i skogen, vilt i skogen, fisk vid stranden
-export function capOf(s: State, k: Kind, i: number) {
-  const g = groundOf(s), t = g.tiles[i], x = i % W, y = Math.floor(i / W);
-  const v = 0.6 + 0.8 * hash(s.seed + (k === 'samla' ? 71 : k === 'jakt' ? 73 : 79), x >> 1, y >> 1); // rikare och fattigare fläckar
-  if (k === 'fiske') return shoreOf(s.seed)[i] ? v : 0;
-  if (!isSoil(t)) return 0;
-  const tr = g.trees[i], c = g.cover[i];
-  if (k === 'jakt') return v * (tr >= FOREST ? 1 : tr > 0 || c >= HIGH ? 0.45 : 0.1);
-  return v * (tr >= FOREST ? 0.7 : tr >= 0.15 ? 1.1 : c >= HIGH ? 1 : c >= BAR ? 0.5 : 0.15);
+// hur mycket en orörd ruta ger
+export const capOf = (s: State, k: FyndId, i: number) => FYND[k].bas(s, i);
+// vad lagret har på rutan just nu: det filtret visar
+export function fyndAt(s: State, k: FyndId, i: number) {
+  const f = FYND[k], t = takenOf(s)[k];
+  return f.bas(s, i) * (f.arstid ? f.arstid[ageIndex(s)] : 1) * (t ? 1 - t[i] : 1);
 }
 // vad platsen ger just nu, 0 = inget
-export function richness(s: State, k: Kind, x: number, y: number) {
-  const i = Math.floor(clamp(y, 0, H - 1)) * W + Math.floor(clamp(x, 0, W - 1));
-  return capOf(s, k, i) * (1 - takenOf(s)[k][i]);
-}
+export const richness = (s: State, k: FyndId, x: number, y: number) => fyndAt(s, k, Math.floor(clamp(y, 0, H - 1)) * W + Math.floor(clamp(x, 0, W - 1)));
 // ta mat ur en plats: mest ur rutan, lite ur grannarna
-export function takeFrom(s: State, k: Kind, x: number, y: number, amount: number) {
-  const d = takenOf(s)[k], r = REACH[k], cx = Math.floor(x), cy = Math.floor(y);
+export function takeFrom(s: State, k: FyndId, x: number, y: number, amount: number) {
+  const d = takenOf(s)[k], u = FYND[k].uttag;
+  if (!d || !u) return;
+  const r = u.reach, cx = Math.floor(x), cy = Math.floor(y);
   let sum = 0;
   const w = (dx: number, dy: number) => Math.max(0, 1 - Math.hypot(dx, dy) / (r + 1));
   for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) sum += w(dx, dy);
@@ -96,14 +179,14 @@ export function takeFrom(s: State, k: Kind, x: number, y: number, amount: number
     const xx = cx + dx, yy = cy + dy;
     if (xx < 0 || yy < 0 || xx >= W || yy >= H) continue;
     const i = yy * W + xx;
-    d[i] = Math.min(1, d[i] + amount * w(dx, dy) / sum * (r + 1) / FULL[k]);
+    d[i] = Math.min(1, d[i] + amount * w(dx, dy) / sum * (r + 1) / u.full);
   }
 }
 // en timme: platserna växer tillbaka
 export function growFynd(s: State, hours: number, season: number) {
   const d = takenOf(s);
-  for (const k of KINDS) {
-    const f = Math.exp(-REGROW[k][season] * hours), a = d[k];
+  for (const k of UTTAG_IDS) {
+    const f = Math.exp(-FYND[k].uttag!.regrow[season] * hours), a = d[k]!;
     if (f < 1) for (let i = 0; i < a.length; i++) if (a[i] > 0) a[i] = a[i] * f < 0.004 ? 0 : a[i] * f;
   }
 }
@@ -133,10 +216,8 @@ export const HAND_FISH = 0.55;
 
 // ---------- flinta ----------
 // flinta hittas oftast vid stenarna, ibland i sanden vid stranden och sällan annars
-export function flintFactor(s: State, x: number, y: number) {
-  const i = Math.floor(clamp(y, 0, H - 1)) * W + Math.floor(clamp(x, 0, W - 1));
-  return stoneDist(s.seed)[i] <= 2 ? 4 : getMap(s.seed).tiles[i] === T.Sand ? 1.5 : 0.4;
-}
+const flintAt = (s: State, i: number) => stoneDist(s.seed)[i] <= 2 ? 4 : getMap(s.seed).tiles[i] === T.Sand ? 1.5 : 0.4;
+export const flintFactor = (s: State, x: number, y: number) => flintAt(s, Math.floor(clamp(y, 0, H - 1)) * W + Math.floor(clamp(x, 0, W - 1)));
 // byn behöver flinta till en yxa
 export const wantsFlint = (s: State) => (s.items.flinta ?? 0) + (s.items.yxa ?? 0) < 1;
 // en plats att samla på nära stenarna, där flinta är vanlig
@@ -158,16 +239,16 @@ export function flintSpot(s: State, area?: (x: number, y: number) => boolean): {
 // ---------- svamp ----------
 // Kantarellen är god. Den orangea spindlingen liknar den men är giftig. Den som blir förgiftad lär sig skilja dem åt
 // och kan sedan lära andra (kunskap.ts, minne.ts).
-const SVAMP_SEASON = [0, 0.15, 0.8, 1.5];
 export const GIFT = 'giftsvamp'; // giftig svamp som av misstag hamnat i förrådet (syns inte för invånarna)
-// svamp som hittas under en stund av insamling i skogen; ger hur mycket ätlig mat som hittades
+// svamp som hittas under en stund av insamling i skogen; ger hur mycket ätlig mat som hittades.
+// Kantarellen och spindlingen har var sitt lager, så de växer på olika ställen.
 export function pickMushrooms(s: State, p: Person, x: number, y: number, dtSec: number, got: Record<string, number>) {
-  const g = groundOf(s), i = Math.floor(y) * W + Math.floor(x);
-  if (!isSoil(g.tiles[i]) || g.trees[i] < 0.15) return 0;
-  const rate = 0.5 * SVAMP_SEASON[ageIndex(s)] * (0.6 + p.skill.samla / 25) * Math.max(0.2, richness(s, 'samla', x, y));
+  const kv = richness(s, 'kantarell', x, y), gv = richness(s, 'spindling', x, y);
+  if (kv + gv <= 0) return 0;
+  const rate = 0.5 * (0.6 + p.skill.samla / 25) * (kv + gv);
   if (!chance(s, rate / 3600, dtSec)) return 0;
-  takeFrom(s, 'samla', x, y, 0.5);
-  if (rnd(s) < 0.7) {
+  if (rnd(s) < kv / (kv + gv)) {
+    takeFrom(s, 'kantarell', x, y, 0.5);
     count(s, 'svamp');
     if (!s.stat!.svamp1) { s.stat!.svamp1 = 1; log(s, `${p.name} hittade kantareller i skogen.`, 'world', [p.id]); }
     return 1;
@@ -175,6 +256,7 @@ export function pickMushrooms(s: State, p: Person, x: number, y: number, dtSec: 
   // den giftiga: känner man igen den låter man den stå
   const sure = clamp(kn(p, 'svamp') + p.skill.samla / 40 + stat(p, 'intelligens', s.now) / 100, 0, 0.98);
   if (rnd(s) < sure) { count(s, 'giftsvampKand'); useK(p, 'svamp', s.now); return 0; }
+  takeFrom(s, 'spindling', x, y, 0.5);
   count(s, GIFT);
   got[GIFT] = (got[GIFT] ?? 0) + 1;
   return 1; // den ser ut som mat och läggs i förrådet
