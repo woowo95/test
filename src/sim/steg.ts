@@ -16,7 +16,7 @@ import { WEAR, groundOf, growGround, packGround, tileOf } from './mark';
 // räknat med gångtiden ger lika mycket som i snabbläget
 const WORK_LOAD = 1 / 3, LIVE_WEAR = 0.03, KORG_FYND = 2.5;
 const FYND: Partial<Record<Act, [number, number]>> = { samla: [3, 5], jakt: [3, 5], ved: [3, 5] };
-const LIVE_YIELD: Partial<Record<Act, number>> = { samla: 1.5, jakt: 1.4, ved: 1.17 };
+const LIVE_YIELD: Partial<Record<Act, number>> = { samla: 1.08, jakt: 1.15, ved: 0.99, hugga: 0.77 }; // avstämt med npm run likhet
 // rörelse på platsen: radie i rutor, hur länge man står still (sekunder) och hur fort man går. Varje gång man stannar
 // på ett nytt ställe räknas som ett fynd
 const WANDER: Partial<Record<Act, { r: number; h0: number; h1: number; v: number }>> = {
@@ -196,8 +196,9 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
     const hf = Math.exp(-dtSec * SEC / HABIT_FADE);
     for (const k in p.habit) p.habit[k] *= hf;
     p.habit[tk.act] = (p.habit[tk.act] ?? 0) + dtSec / 3600;
+    // den som arbetar kommer så småningom på hur det kan göras bättre; man funderar också på vägen dit och hem
+    if (isWork(tk.act)) thinkWhileWorking(s, p, tk.act, dtSec);
     if (tk.phase === 'do' && isWork(tk.act)) {
-      thinkWhileWorking(s, p, tk.act, dtSec); // den som arbetar kommer så småningom på hur det kan göras bättre
       if (tk.tool === 'korg') wearBasket(s, p, dtSec / 3600);
       const axe = AXE_WORK.includes(tk.act), base: Act = axe ? 'ved' : tk.act;
       // utan yxa samlas grenar på marken (två grenar på den tid det tar att hugga en ved); med yxa huggs ved ur en fälld stam
@@ -273,8 +274,10 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
       if (!alive(p)) continue;
       const expect = dtSec / 240 * (0.6 + stat(p, 'vanlighet', now) / 25);
       let n = Math.floor(expect); if (rnd(s) < expect - n) n++;
-      const others = social.filter(q => q !== p && alive(q) && (!live || Math.hypot(q.x - p.x, q.y - p.y) < 4));
+      // bara med dem som är nära; i snabbläget står var och en på sin plats för uppgiften, så det blir samma grupper
+      const others = social.filter(q => q !== p && alive(q) && Math.hypot(q.x - p.x, q.y - p.y) < 4);
       for (let i = 0; i < n; i++) converse(s, p, others, live ? events : undefined);
+      if (n && others.length) count(s, 'samtal', n);
     }
   }
   // relationer bleknar långsamt utan umgänge

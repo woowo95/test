@@ -44,8 +44,7 @@ export const baskets = (s: State) => Math.ceil(item(s, 'korg') - 1e-9);
 export const freeBaskets = (s: State, p: Person) => baskets(s) - living(s).filter(q => q !== p && q.task?.tool === 'korg').length;
 // ungefär en korg per tre vuxna
 export const basketsWanted = (s: State) => Math.max(1, Math.min(5, Math.floor(living(s).filter(p => ageOf(p, s.now) >= 14).length / 3)));
-// gräset till elden går först: korgen flätas bara när elden brinner och det finns gräs över till tändning
-export const wantsBasket = (s: State, p: Person) => knows(p, 'korg') && s.fire.lit && item(s, 'torrgras') >= KORG_GRAS + 6 && baskets(s) < basketsWanted(s) && !living(s).some(q => q !== p && q.task?.act === 'korg');
+export const wantsBasket = (s: State, p: Person) => knows(p, 'korg') && item(s, 'torrgras') >= KORG_GRAS && baskets(s) < basketsWanted(s) && !living(s).some(q => q !== p && q.task?.act === 'korg');
 export function makeBasket(s: State, p: Person) {
   if (item(s, 'torrgras') < KORG_GRAS) return;
   s.items.torrgras -= KORG_GRAS;

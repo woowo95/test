@@ -11,7 +11,8 @@
     "detaljer": "tsx src/test/detaljer.ts",
     "check": "tsc -p .",
     "takt": "tsx src/test/takt.ts",
-    "teknik": "tsx src/test/teknik.ts"
+    "teknik": "tsx src/test/teknik.ts",
+    "likhet": "bash src/test/likhet.sh"
   },
   "repository": {
     "type": "git",

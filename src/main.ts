@@ -586,9 +586,13 @@ function knowledgeHtml(p: Person) {
   const ks = Object.entries(p.kunskap ?? {}).filter(([, e]) => e.v >= 0.05);
   const ls = (p.lardomar ?? []).slice().sort((a, b) => (b.k === 'fara' ? 1 : 0) - (a.k === 'fara' ? 1 : 0) || b.c - a.c);
   // teknik: det personen kan och det hen funderar på
-  const tk = TEKNIK.filter(x => (p.tek?.[x.id] ?? 0) > 0.01).map(x => ({ n: knows(p, x.id) ? `Kan göra ${x.namn.toLowerCase()}` : `Funderar på ${x.namn.toLowerCase()}`, v: p.tek![x.id] }));
-  const rows = [...ks.map(([k, e]) => ({ n: KUNSKAP_NAMES[k] ?? k, v: e.v })), ...tk];
-  return `<h3>Kunskap</h3>${rows.length ? `<dl class="kv">${rows.map(r => `<dt>${esc(r.n)}</dt><dd>${bar(r.v, 'skill')}<span>${Math.round(r.v * 100)} %</span></dd>`).join('')}</dl>` : '<p class="muted">Ingen särskild kunskap ännu.</p>'}
+  // teknik som symboler: det hen kan fullt, det hen funderar på blekt med en ring som visar hur långt hen kommit
+  const tk = TEKNIK.filter(x => (p.tek?.[x.id] ?? 0) > 0.01).map(x => {
+    const v = p.tek![x.id], kan = v >= 1, title = `${kan ? 'Kan göra' : 'Funderar på'} ${x.namn.toLowerCase()}${kan ? '' : ` (${Math.round(v * 100)} %)`}`;
+    return `<button type="button" class="tnod liten ${kan ? 'kan' : 'pa'}" data-tekgo="${x.id}" title="${esc(title)}" aria-label="${esc(title)}">${iconImg(x.id, 16)}${kan ? '' : `<svg class="ring" viewBox="0 0 36 36"><circle cx="18" cy="18" r="16" pathLength="100" stroke-dasharray="${Math.round(v * 100)} 100"/></svg>`}</button>`;
+  });
+  const rows = ks.map(([k, e]) => ({ n: KUNSKAP_NAMES[k] ?? k, v: e.v }));
+  return `${tk.length ? `<h3>Teknik</h3><div class="tekrad">${tk.join('')}</div>` : ''}<h3>Kunskap</h3>${rows.length ? `<dl class="kv">${rows.map(r => `<dt>${esc(r.n)}</dt><dd>${bar(r.v, 'skill')}<span>${Math.round(r.v * 100)} %</span></dd>`).join('')}</dl>` : '<p class="muted">Ingen särskild kunskap ännu.</p>'}
       <h3>Lärdomar</h3>${ls.length ? `<ul class="lard">${groups(ls).map(g => `<li class="${g[0].k === 'fara' ? 'fara' : ''}"><b>${esc(cap(describe(s, p, g[0]).place))}</b>${g.map(l => { const d = describe(s, p, l); return `<span>${esc(d.what)} <small class="muted">${d.sure}, ${esc(d.src)}</small>${d.wrong ? `<small class="fel">${esc(d.wrong)}</small>` : ''}</span>`; }).join('')}</li>`).join('')}</ul>` : '<p class="muted">Inga lärdomar ännu.</p>'}`;
 }
 function renderPanel(force = false) {
@@ -783,21 +787,61 @@ function sedWord(k: Sed, v: number) {
   if (a < 0.12) return 'Ingen tydlig hållning';
   return `${a > 0.55 ? 'Starkt' : a > 0.3 ? 'Tydligt' : 'Lite'}: ${(v > 0 ? i.pos : i.neg).toLowerCase()}`;
 }
-// teknikträdet: allt syns, med vilka som kan det och vilka som är på väg att komma på det
+// teknikträdet som symboler: arbetet till vänster, teknikerna till höger, sträck mellan det som hänger ihop.
+// Ett tryck på en symbol visar mer om den.
+let tekSel: string | undefined, tekHelp = false;
+const TEK_ROT: Partial<Record<Act, string>> = { samla: 'bar', ved: 'grenar', fiske: 'fisk' }; // arbetet visas med sin ikon
+// teknik som en annan teknik bygger på: krav, eller ett redskap som kan användas som material
+const tekFrom = (t: (typeof TEKNIK)[number]) => [...new Set([...t.krav, ...t.material.flat().filter(k => TEK[k])])];
 function tekHtml() {
   const ppl = living(s);
-  return `<p class="muted">Den som arbetar med något kommer så småningom på hur det kan göras bättre. Nyfikenheten avgör hur ofta hen funderar på det och intelligensen hur fort det går. Det man kan lär man ut i samtal. Dör alla som kan något försvinner kunskapen.</p>
-    <ul class="tek">${TEKNIK.map(t => {
-      const kan = ppl.filter(p => knows(p, t.id));
-      const pa = ppl.filter(p => !knows(p, t.id) && (p.tek?.[t.id] ?? 0) > 0.01).sort((a, b) => b.tek![t.id] - a.tek![t.id]).slice(0, 4);
-      const mat = t.material.map(g => g.map(k => STACK_NAMES[k] ?? k).join(' eller ').toLowerCase()).join(' och ');
-      const omr = [...new Set(t.omr.map(a => ACT_NAMES[a].toLowerCase()))].join(', ');
-      return `<li><div class="tektop">${iconImg(t.id, 20)}<b>${esc(t.namn)}</b></div>
-        <p class="small">${esc(t.text)} ${esc(t.effekt)}</p>
-        <p class="muted small">Kommer på när man ${esc(omr)}${t.krav.length ? `, och kan ${t.krav.map(k => TEK[k].namn.toLowerCase()).join(' och ')}` : ''}. Kräver att byn har ${esc(mat)}${hasMaterial(s, t) ? '' : ' (saknas nu)'}.</p>
-        ${kan.length ? `<p class="kan">Kan: ${kan.map(pLink).join(', ')}</p>` : '<p class="muted small">Ingen i byn kan det.</p>'}
-        ${pa.length ? `<div class="tank">${pa.map(p => `${pLink(p)}${bar(p.tek![t.id], 'skill')}`).join('')}</div>` : ''}</li>`;
-    }).join('')}</ul>`;
+  const roots = (Object.keys(TEK_ROT) as Act[]).filter(a => TEKNIK.some(t => t.omr.includes(a)));
+  const depth: Record<string, number> = {};
+  const dep = (id: string): number => depth[id] ??= 1 + Math.max(0, ...tekFrom(TEK[id]).map(dep));
+  TEKNIK.forEach(t => dep(t.id));
+  const cols = Math.max(...Object.values(depth)) + 1;
+  // plats för varje nod i procent: kolumn efter djup, jämnt fördelat i höjdled
+  const pos: Record<string, { x: number; y: number }> = {};
+  const place = (ids: string[], col: number) => ids.forEach((id, i) => { pos[id] = { x: 12 + col * (76 / (cols - 1)), y: (i + 0.5) / ids.length * 100 }; });
+  place(roots.map(r => 'a:' + r), 0);
+  for (let c = 1; c < cols; c++) place(TEKNIK.filter(t => depth[t.id] === c).map(t => t.id), c);
+  const lines: string[] = [];
+  for (const t of TEKNIK) {
+    for (const a of t.omr) if (pos['a:' + a]) lines.push(`<line class="omr" x1="${pos['a:' + a].x}" y1="${pos['a:' + a].y}" x2="${pos[t.id].x}" y2="${pos[t.id].y}"/>`);
+    for (const k of tekFrom(t)) lines.push(`<line class="${t.krav.includes(k) ? 'krav' : 'mat'}" x1="${pos[k].x}" y1="${pos[k].y}" x2="${pos[t.id].x}" y2="${pos[t.id].y}"/>`);
+  }
+  const node = (id: string, inner: string, cls: string, title: string, extra = '') =>
+    `<button type="button" class="tnod ${cls}${tekSel === id ? ' sel' : ''}" data-tek="${id}" style="left:${pos[id].x}%;top:${pos[id].y}%" title="${esc(title)}" aria-label="${esc(title)}">${inner}${extra}</button>`;
+  const nodes = [
+    ...roots.map(a => node('a:' + a, iconImg(TEK_ROT[a]!, 20), 'rot', ACT_NAMES[a])),
+    ...TEKNIK.map(t => {
+      const kan = ppl.filter(p => knows(p, t.id)).length, best = Math.max(0, ...ppl.map(p => p.tek?.[t.id] ?? 0));
+      const ring = !kan && best > 0.01 ? `<svg class="ring" viewBox="0 0 36 36"><circle cx="18" cy="18" r="16" pathLength="100" stroke-dasharray="${Math.round(best * 100)} 100"/></svg>` : '';
+      return node(t.id, iconImg(t.id, 24), kan ? 'kan' : best > 0.01 ? 'pa' : 'ok', t.namn, ring + (kan ? `<span class="antal">${kan}</span>` : '') + (hasMaterial(s, t) ? '' : '<span class="brist">!</span>'));
+    }),
+  ];
+  const h = Math.max(150, Math.max(roots.length, ...Array.from({ length: cols }, (_, c) => TEKNIK.filter(t => depth[t.id] === c).length)) * 64);
+  return `<div class="tekhead"><button type="button" class="hjalp" data-tekhelp aria-expanded="${tekHelp}" title="Hur fungerar teknik?">?</button></div>
+    ${tekHelp ? `<p class="muted small">Den som arbetar med något kommer så småningom på hur det kan göras bättre. Nyfikenheten avgör hur ofta hen funderar och intelligensen hur fort det går. Det man kan lärs ut i samtal. Dör alla som kan något försvinner kunskapen. Siffran är hur många som kan tekniken, ringen hur långt den som funderat mest har kommit, och ! att materialet saknas i byn.</p>` : ''}
+    <div class="ttrad" style="height:${h}px"><svg class="tlinjer" viewBox="0 0 100 100" preserveAspectRatio="none">${lines.join('')}</svg>${nodes.join('')}</div>
+    ${tekInfo(ppl)}`;
+}
+// det som visas när man tryckt på en symbol i trädet
+function tekInfo(ppl: Person[]) {
+  if (!tekSel) return '';
+  if (tekSel.startsWith('a:')) {
+    const a = tekSel.slice(2) as Act, ts = TEKNIK.filter(t => t.omr.includes(a));
+    return `<div class="tinfo"><div class="tektop">${iconImg(TEK_ROT[a]!, 20)}<b>${esc(ACT_NAMES[a])}</b></div><p class="small muted">Den som arbetar med det här kan komma på ${ts.map(t => iconImg(t.id, 14) + ' ' + esc(t.namn.toLowerCase())).join(', ')}.</p></div>`;
+  }
+  const t = TEK[tekSel];
+  if (!t) return '';
+  const kan = ppl.filter(p => knows(p, t.id));
+  const pa = ppl.filter(p => !knows(p, t.id) && (p.tek?.[t.id] ?? 0) > 0.01).sort((a, b) => b.tek![t.id] - a.tek![t.id]).slice(0, 5);
+  const mat = t.material.map(g => g.map(k => `<span class="${(s.items[k] ?? 0) >= 1 ? '' : 'saknas'}" title="${esc(STACK_NAMES[k] ?? k)}">${iconImg(k, 16) || esc(STACK_NAMES[k] ?? k)}</span>`).join('<i>/</i>')).join('<i>+</i>');
+  return `<div class="tinfo"><div class="tektop">${iconImg(t.id, 24)}<b>${esc(t.namn)}</b><span class="tmat">${mat}</span></div>
+    <p class="small">${esc(t.text)} ${esc(t.effekt)}</p>
+    ${kan.length ? `<p class="kan">${kan.map(pLink).join(', ')}</p>` : '<p class="muted small">Ingen kan det.</p>'}
+    ${pa.length ? `<div class="tank">${pa.map(p => `${pLink(p)}${bar(p.tek![t.id], 'skill')}`).join('')}</div>` : ''}</div>`;
 }
 function sederHtml() {
   const sd = s.seder;
@@ -816,6 +860,11 @@ function linkify(l: LogEntry) {
 document.addEventListener('click', e => {
   const b = (e.target as HTMLElement).closest('[data-id]') as HTMLElement | null;
   if (b) { selectPerson(Number(b.dataset.id)); return; }
+  const tn = (e.target as HTMLElement).closest('[data-tek]') as HTMLElement | null;
+  if (tn) { tekSel = tekSel === tn.dataset.tek ? undefined : tn.dataset.tek; renderPanel(true); return; }
+  const tg = (e.target as HTMLElement).closest('[data-tekgo]') as HTMLElement | null;
+  if (tg) { tab = 'teknik'; tekSel = tg.dataset.tekgo; renderPanel(true); return; }
+  if ((e.target as HTMLElement).closest('[data-tekhelp]')) { tekHelp = !tekHelp; renderPanel(true); return; }
   const tb = (e.target as HTMLElement).closest('.tabs button') as HTMLElement | null;
   if (tb) { tab = tb.dataset.tab as any; renderPanel(true); }
 });

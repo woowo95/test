@@ -80,19 +80,23 @@ const SCENARIER: Record<string, { text: string; kor: () => Koll[] }> = {
   'vinter-slocknad': {
     text: 'Istiden börjar med slocknad eld, kolhög och lite grenar: byn tänder igen på kolhögen',
     kor: () => {
-      const s = createState(16, START);
-      kor(s, 20 * 24 + 23); // till istidens början
-      Object.assign(s.fire, { lit: false, fuel: 0, emberUntil: undefined, ash: 3, ashUntil: s.now + 3 * DAY });
-      s.wood = 0; s.items.grenar = 30; s.items.kol = 2;
-      const kyla = s.people.filter(p => p.cause === 'av kyla').length, t0 = s.now;
-      let tand = -1;
-      kor(s, 4 * 24, s => { if (tand < 0 && s.fire.lit) tand = (s.now - t0) / HOUR; });
+      // gniststenen lyckas bara ibland (några procent per försök), så provet körs i fem byar och minst två ska få fyr
+      const byar = [16, 17, 18, 19, 20].map(seed => {
+        const s = createState(seed, START);
+        kor(s, 20 * 24 + 23); // till istidens början
+        Object.assign(s.fire, { lit: false, fuel: 0, emberUntil: undefined, ash: 3, ashUntil: s.now + 3 * DAY });
+        s.wood = 0; s.items.grenar = 30; s.items.kol = 2; s.items.torrgras = 150; // ett känt förråd, så att provet inte beror på vad byn råkade ha
+        const t0 = s.now;
+        let tand = -1;
+        kor(s, 4 * 24, s => { if (tand < 0 && s.fire.lit) tand = (s.now - t0) / HOUR; });
+        return { s, tand };
+      });
       return [
-        ['istid', s.lastAgeIdx === 0],
-        [`elden tändes igen (efter ${tand.toFixed(1)} h)`, tand >= 0],
-        ['tänd på den gamla kolhögen', logg(s, 'på den gamla kolhögen')],
+        ['istid', byar.every(b => b.s.lastAgeIdx === 0)],
+        [`elden tändes igen (efter ${byar.map(b => b.tand < 0 ? '–' : b.tand.toFixed(1) + ' h').join(', ')})`, byar.filter(b => b.tand >= 0).length >= 2],
+        ['tänd på den gamla kolhögen', byar.some(b => logg(b.s, 'på den gamla kolhögen'))],
         // att någon fryser ihjäl en vinter utan eld är rimligt, så det kontrolleras inte
-        ['bränsle kvar eller insamlat', fuelStock(s) >= 0]];
+        ['bränsle kvar eller insamlat', byar.every(b => fuelStock(b.s) >= 0)]];
     },
   },
   knapphet: {

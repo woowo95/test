@@ -3,7 +3,7 @@ import { SEASON, WORK_STAT, foodDays, woodDays } from './ekonomi';
 import { emberOn, fireWant, needTinder } from './eld';
 import { ageOf, living, stat } from './folk';
 import { HAND_FISH, Kind, SPEAR_FISH, flintSpot, shoreOf, wantsFlint } from './fynd';
-import { temperature } from './vader';
+import { coldOf, temperature } from './vader';
 import { freeBaskets, freeSpears, sharpTool, wantsBasket, wantsSpear } from './redskap';
 import { areaOf, flintArea, pickSpot, prospectFor } from './minne';
 import { getMap } from './karta';
@@ -111,6 +111,13 @@ export function strandSpot(s: State) {
   const i = ok[Math.floor(rnd(s) * ok.length)];
   return { x: i % W + 0.5, y: Math.floor(i / W) + 0.5 };
 }
+// Faror går före förbättringar. En korg eller ett spjut gör maten lättare att få tag i, men när kylan är en fara väntar
+// sådant: tid och torrt gräs går då först till värmen. Inför och under istiden sparar man gräs till det.
+export function dangers(s: State) {
+  const ppl = living(s), freezing = ppl.filter(q => q.warm < 0.4).length / (ppl.length || 1), ai = ageIndex(s);
+  const cold = coldOf(temperature(s)) > 0 || freezing > 0.25;
+  return { kyla: cold && !s.fire.lit && !emberOn(s), gras: ai === 0 || ai === 3 || cold ? 12 : 0, svalt: foodDays(s) < 1 };
+}
 export function chooseTask(s: State, p: Person, live: boolean) {
   const a = ageOf(p, s.now), now = s.now;
   const light = isLight(now);
@@ -175,13 +182,14 @@ export function chooseTask(s: State, p: Person, live: boolean) {
           if (ax.act !== 'yxa') spot = { x: ax.x, y: ax.y };
           ref = ax.ref;
         }
+        const { kyla, gras } = dangers(s);
         if (act! === 'samla') { // med korg om det finns en ledig, annars flätar den som kan en först
           if (freeBaskets(s, p) > 0) { tool = 'korg'; why = why!.replace(/\.$/, '') + '. Tar en korg.'; }
-          else if (wantsBasket(s, p)) { set('korg', `${what}. Flätar en korg av torrt gräs.`); dur = 40 * 60 * SEC; }
+          else if (!kyla && (s.items.torrgras ?? 0) >= gras && wantsBasket(s, p)) { set('korg', `${what}. Flätar en korg av torrt gräs.`); dur = 40 * 60 * SEC; }
         }
         if (best === 'fiske') { // med spjut om det finns ett ledigt, annars täljer hen ett först
           if (freeSpears(s, p) > 0) { tool = 'fiskespjut'; why = why!.replace(/\.$/, '') + '. Tar ett fiskespjut.'; }
-          else if (wantsSpear(s, p)) { set('spjut', `${what}. Täljer ett fiskespjut med ${sharpTool(s) === 'yxa' ? 'yxan' : 'en flintsten'}.`); dur = 40 * 60 * SEC; }
+          else if (!kyla && wantsSpear(s, p)) { set('spjut', `${what}. Täljer ett fiskespjut med ${sharpTool(s) === 'yxa' ? 'yxan' : 'en flintsten'}.`); dur = 40 * 60 * SEC; }
         }
       } else {
         // egen lust: vila, hantverk eller umgänge

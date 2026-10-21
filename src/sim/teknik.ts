@@ -50,7 +50,8 @@ export function thinkWhileWorking(s: State, p: Person, act: Act, dtSec: number) 
   for (const t of TEKNIK) {
     if (!t.omr.includes(act) || !canThink(p, t) || !hasMaterial(s, t)) continue;
     p.tek ??= {};
-    p.tek[t.id] = Math.min(1, (p.tek[t.id] ?? 0) + dtSec / 3600 / t.tid * nyf * intel);
+    const d = Math.min(1 - (p.tek[t.id] ?? 0), dtSec / 3600 / t.tid * nyf * intel);
+    p.tek[t.id] = (p.tek[t.id] ?? 0) + d; count(s, 'tekTankt', d);
     if (p.tek[t.id] >= 1) learn(s, p, t);
   }
 }
@@ -62,7 +63,8 @@ export function teach(s: State, a: Person, b: Person, kind: string) {
     if (!knows(a, t.id) || knows(b, t.id) || !t.krav.every(k => knows(b, k))) continue;
     if (rnd(s) > (kind === 'berättelse' || kind === 'djupt samtal' ? 0.5 : 0.2)) continue;
     b.tek ??= {};
-    b.tek[t.id] = Math.min(1, (b.tek[t.id] ?? 0) + 0.2 * (0.5 + stat(b, 'intelligens', s.now) / 20));
+    const d = Math.min(1 - (b.tek[t.id] ?? 0), 0.2 * (0.5 + stat(b, 'intelligens', s.now) / 20));
+    b.tek[t.id] = (b.tek[t.id] ?? 0) + d; count(s, 'tekLart', d);
     if (b.tek[t.id] >= 1) learn(s, b, t, a);
   }
 }
