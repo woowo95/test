@@ -18,5 +18,8 @@ for (const f of kalla) {
   copyFileSync(f, 'publicera/' + ut);
   filer[ut] = 'publicera/' + ut;
 }
+writeFileSync('publicera/kalla/LASMIG.txt', 'Källkoden till spelet. Filerna under sim/, ui/ och test/ ligger i src/ i repot, och alla har fått .txt sist i namnet.\n'
+  + 'Byggs med npm install och npm run build. Vilken fil som gör vad står i ARKITEKTUR.md.txt. Källkoden finns också i GitHub-repot woowo95/test.\n');
+filer['kalla/LASMIG.txt'] = 'publicera/kalla/LASMIG.txt';
 writeFileSync('publicera/filer.json', JSON.stringify(filer, null, 1) + '\n');
 console.log('byggd', (html.length / 1024).toFixed(0) + ' KB, källkoden', kalla.length, 'filer i publicera/');
