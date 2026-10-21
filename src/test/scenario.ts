@@ -556,9 +556,9 @@ SCENARIER.bygg = {
     const q = createState(6, START);
     for (const p of living(q)) if (ageOf(p, q.now) >= 14) (p.tek ??= {}).risvagg = 1;
     q.items.grenar = (q.items.grenar ?? 0) + 200;
-    let inne = 0, sov = 0;
+    let inne = 0, sov = 0; // räknas när huset är klart, så att det inte beror på hur fort det råkar bli klart
     kor(q, 3 * 24, q => {
-      for (const p of living(q)) if (p.task?.act === 'sova' && p.task.phase === 'do') { sov++; if (roomAt(q, p.x, p.y)) inne++; }
+      if (housesOf(q)[0]?.klar) for (const p of living(q)) if (p.task?.act === 'sova' && p.task.phase === 'do') { sov++; if (roomAt(q, p.x, p.y)) inne++; }
     });
     // en kall natt utan eld: den som är inne kyls långsammare än den som är ute
     const k = structuredClone(q); k.now = k.founded + 3 * WEEK + 3 * HOUR; k.fire.lit = false; k.fire.fuel = 0;
@@ -588,7 +588,7 @@ SCENARIER.bygg = {
       [`rummet håller värmen men öppningen läcker (${iso.toFixed(2)})`, iso > 0.2 && iso < 0.55],
       ['en helt sliten vägg rasar och rummet är inte längre under tak', rasat],
       [`byn bygger ${h?.namn ?? 'inget hus'} i snabbläget (${h ? `${h.w}×${h.h}` : '-'}, ${b} sovplatser för ${folk})`, !!h?.klar && b > 0],
-      [`folk sover inne (${inne} av ${sov})`, inne > sov * 0.3],
+      [`folk sover inne när huset är klart (${inne} av ${sov})`, sov > 0 && inne > sov * 0.5],
       [`en kall natt utan eld är de som är inne varmare (${(varmInne / (ni || 1)).toFixed(2)} mot ${(varmUte / (nu || 1)).toFixed(2)})`, ni > 0 && nu > 0 && varmInne / ni > varmUte / nu],
       [`ingen står i en vägg (${iVagg})`, iVagg === 0],
       ['slitna väggar lagas', lagat],

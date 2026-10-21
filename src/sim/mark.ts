@@ -84,7 +84,7 @@ export const tileOf = (x: number, y: number) => Math.max(0, Math.min(H - 1, Math
 // Vägarna räknas om var fjärde timme (stigarna ändras långsamt) och när något byggs
 const paths = new WeakMap<State, { key: string; came: Int32Array }>();
 export function tread(s: State, tx: number, ty: number, trips: number) {
-  const m = getMap(s.seed), g = groundOf(s), key = `${Math.floor(s.now / (4 * HOUR))}`;
+  const m = getMap(s.seed), g = groundOf(s), key = `${Math.floor(s.now / (4 * HOUR))},${s.byggV ?? 0}`;
   let t = paths.get(s);
   if (t?.key !== key) paths.set(s, t = { key, came: pathTree(g, m.fire.x, m.fire.y) });
   for (let i = tileOf(tx, ty), n = 0; i >= 0 && n < 200; i = t.came[i], n++) wear(g, i, WEAR * trips);
