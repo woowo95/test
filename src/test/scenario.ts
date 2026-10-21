@@ -1,17 +1,18 @@
 // Scenariotester: ställ en by i ett visst läge, kör den en stund och kontrollera att det som ska hända händer.
 // npm run scenario            kör alla
 // npm run scenario -- glanta  kör bara ett
-import { createState, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, WEEK, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, inZone, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, zonesOf, allows, ageOf, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, fuelStock, DAY, HOUR, W, State, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, campCenter, TEKNIK, knows, thinkWhileWorking, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, beds, isWall, Bit, wearBuild } from '../sim';
+import { createState, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, WEEK, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, zonesOf, allows, ageOf, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, fuelStock, DAY, HOUR, W, State, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, campCenter, TEKNIK, knows, thinkWhileWorking, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, beds, isWall, Bit, wearBuild } from '../sim';
 import { findPath } from '../sim/vag';
 import { FOREST, HIGH, isSoil } from '../sim/vag';
 import { START } from './kor';
+import { Utfall, korSkript, pool } from './pool';
 
 type Koll = [string, boolean];
 const kor = (s: State, timmar: number, varje?: (s: State) => void) => { for (let i = 0; i < timmar * 12; i++) { step(s, 300, false); varje?.(s); } };
 const logg = (s: State, t: string) => s.log.some(l => l.text.includes(t));
 // andel jordrutor med skog, inom eller utanför ett avstånd från elden
 function skogsandel(s: State, min: number, max: number) {
-  const g = groundOf(s), f = getMap(s.seed).fire;
+  const g = groundOf(s);
   let n = 0, sk = 0;
   for (let i = 0; i < g.tiles.length; i++) {
     const d = campDist(s, i % W, Math.floor(i / W));
@@ -159,7 +160,7 @@ SCENARIER.kunskap = {
     const L = living(s), alla = L.flatMap(p => p.lardomar ?? []);
     const hort = alla.filter(l => l.src !== undefined);
     const radd = L.filter(p => findL(p, 'fara', a)).length, kan = L.filter(p => p !== larare && kn(p, 'svamp') > 0.1).length;
-    const fel = L.flatMap(p => (p.lardomar ?? []).map(l => describe(s, p, l).wrong)).filter(Boolean).length;
+    const fel = L.flatMap(p => (p.lardomar ?? []).map(l => describe(s, l).wrong)).filter(Boolean).length;
     // minnet: den med bra minne glömmer långsammare
     const [m1, m2] = L.slice().sort((x, y) => stat(y, 'minne', s.now) - stat(x, 'minne', s.now)).filter((_, i, A) => i === 0 || i === A.length - 1);
     for (const p of [m1, m2]) p.lardomar = [{ k: 'samla', a: 0, v: 0.5, c: 1, t: s.now, led: 0 }];
@@ -276,7 +277,6 @@ SCENARIER.fritid = {
     const s = createState(seed, START), gang = new Map<number, number>();
     s.founded = s.now - WEEK; // sommar
     s.food = 40; s.wood = 40; // gott ställt, tid över
-    const f = getMap(s.seed).fire;
     kor(s, 4 * 24, s => {
       for (const p of living(s)) {
         const t = p.task;
@@ -579,6 +579,7 @@ SCENARIER.bygg = {
     const L = createState(6, START);
     for (const p of living(L)) if (ageOf(p, L.now) >= 14) (p.tek ??= {}).risvagg = 1;
     L.items.grenar = (L.items.grenar ?? 0) + 200;
+    Object.assign(L.fire, { lit: true, fuel: 4 }); // elden brinner redan: annars hänger testet på hur fort den råkar tändas (ett försök lyckas ungefär var femtionde gång)
     for (let i = 0; i < 2 * 24 * 3600 / 0.5 && !housesOf(L)[0]?.klar; i++) step(L, 0.5, true);
     const hL = housesOf(L)[0];
     return [
@@ -596,13 +597,26 @@ SCENARIER.bygg = {
   },
 };
 
+// Utan namn körs alla scenarier samtidigt, vart och ett i en egen process. Med ett namn körs bara det, här.
 const val = process.argv[2];
-let fel = 0;
-for (const [namn, sc] of Object.entries(SCENARIER)) {
-  if (val && val !== namn) continue;
-  const k = sc.kor(), ok = k.every(([, b]) => b);
-  if (!ok) fel++;
-  console.log(`${ok ? 'OK  ' : 'FEL '} ${namn}: ${sc.text}`);
+if (val) {
+  const sc = SCENARIER[val];
+  if (!sc) { console.log(`Okänt scenario: ${val}. Finns: ${Object.keys(SCENARIER).join(', ')}`); process.exit(1); }
+  const t0 = Date.now(), k = sc.kor(), ok = k.every(([, b]) => b);
+  console.log(`${ok ? 'OK  ' : 'FEL '} ${val} (${((Date.now() - t0) / 1000).toFixed(0)} s): ${sc.text}`);
   for (const [t, b] of k) if (!ok || !b || process.env.ALLA) console.log(`     ${b ? '✓' : '✗'} ${t}`);
+  if (!ok) process.exitCode = 1;
+} else {
+  // de långsammaste startas först, så att alla blir klara ungefär samtidigt; utskriften kommer ändå i vanlig ordning
+  const LANGSAMMA = ['vinter-slocknad', 'aktivitet', 'flinta', 'ingen-yxa', 'bygg', 'svamp', 'teknik'];
+  const namn = Object.keys(SCENARIER), ordning = [...LANGSAMMA.filter(n => SCENARIER[n]), ...namn.filter(n => !LANGSAMMA.includes(n))];
+  const svar: Record<string, Utfall> = {};
+  await pool(ordning.map(n => async () => { svar[n] = await korSkript('scenario.ts', [n]); }));
+  let fel = 0;
+  for (const n of namn) {
+    const u = svar[n];
+    if (u.code) fel++;
+    process.stdout.write(u.out || `FEL  ${n}: kraschade\n${u.err.slice(-1500)}\n`);
+  }
+  if (fel) { console.log(`${fel} scenario misslyckades.`); process.exitCode = 1; }
 }
-if (fel) { console.log(`${fel} scenario misslyckades.`); process.exitCode = 1; }

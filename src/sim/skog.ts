@@ -1,17 +1,16 @@
 import { campCenter, campDist } from './plats';
 import { ageOf, living, log, think } from './folk';
-import { getMap } from './karta';
 import { groundOf, isForest } from './mark';
 import { sedEvent } from './seder';
 import { knows } from './teknik';
 import { rnd } from './slump';
 import { Act, DAY, H, HOUR, Person, State, Stock, W } from './typer';
+import { item } from './saker';
 
 // ---------- skog: fälla träd, hugga ved, flinta och yxa ----------
 // Utan yxa kan invånarna bara samla grenar på marken. Med en flintyxa kan de fälla träd.
 // Ett fällt träd blir en liggande stam som sedan huggs till ved, och då blir det grenar också.
 const STAM = { ved: 8, grenar: 5 }; // vad ett vuxet träd ger
-const item = (s: State, k: string) => s.items[k] ?? 0;
 export const axes = (s: State) => Math.ceil(item(s, 'yxa') - 1e-9); // en sliten yxa är fortfarande en yxa
 export const stocks = (s: State) => (s.stockar ??= []);
 
@@ -65,7 +64,7 @@ export function chopStock(s: State, ref: number | undefined, amount: number) {
 }
 
 // hur många yxor byn vill ha
-export const axesWanted = (_s: State, adults: number) => Math.max(1, Math.min(3, Math.floor(adults / 4)));
+export const axesWanted = (adults: number) => Math.max(1, Math.min(3, Math.floor(adults / 4)));
 export const canMakeAxe = (s: State) => item(s, 'flinta') >= 1 && item(s, 'grenar') >= 1;
 export function makeAxe(s: State, p: Person) {
   if (!canMakeAxe(s)) return;
@@ -91,7 +90,7 @@ export function axeTask(s: State, p: Person): { act: Act; x: number; y: number; 
     if (t) return { act: 'falla', x: t.x, y: t.y, dur: 2.2 * HOUR, why: 'Har en yxa och fäller ett träd till ved' };
   }
   const adults = ppl.filter(q => ageOf(q, s.now) >= 16).length;
-  if (knows(p, 'yxa') && canMakeAxe(s) && axes(s) < axesWanted(s, adults) && !others.some(q => q.task?.act === 'yxa')) {
+  if (knows(p, 'yxa') && canMakeAxe(s) && axes(s) < axesWanted(adults) && !others.some(q => q.task?.act === 'yxa')) {
     return { act: 'yxa', x: 0, y: 0, dur: 2 * HOUR, why: 'Har flinta och vill göra en yxa för att kunna fälla träd' };
   }
   return undefined;

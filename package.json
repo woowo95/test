@@ -12,7 +12,8 @@
     "check": "tsc -p .",
     "takt": "tsx src/test/takt.ts",
     "teknik": "tsx src/test/teknik.ts",
-    "likhet": "bash src/test/likhet.sh"
+    "likhet": "bash src/test/likhet.sh",
+    "koll": "tsx src/test/koll.ts"
   },
   "repository": {
     "type": "git",

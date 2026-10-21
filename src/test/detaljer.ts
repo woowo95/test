@@ -1,4 +1,4 @@
-import { createState, step, living, DAY, AGES, ageIndex, ageOf, serialize, State, SEDER, groundOf } from '../sim';
+import { createState, step, living, AGES, ageIndex, ageOf, serialize, State, SEDER, groundOf } from '../sim';
 import { BAR, FOREST, HIGH, isSoil } from '../sim/vag';
 
 const start = Date.parse('2026-10-20T08:00:00+02:00');

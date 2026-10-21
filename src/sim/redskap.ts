@@ -1,13 +1,12 @@
-import { ageOf, living, log } from './folk';
-import { count } from './fynd';
+import { ageOf, count, living, log } from './folk';
 import { knows } from './teknik';
 import { State, Person } from './typer';
+import { item } from './saker';
 
 // ---------- redskap: fiskespjut ----------
 // En pinne som täljs spetsig med något vasst, en flintsten eller en yxa. Det vassa används bara som verktyg och finns kvar.
 // Med spjut får man fisk mycket oftare än med händerna, men spjutet håller inte länge: det slits lite vid varje försök.
 // Byns spjut ligger i förrådet; ett halvt slitet spjut räknas som 0,5.
-const item = (s: State, k: string) => s.items[k] ?? 0;
 export const SPJUT_FORSOK = 60; // så många fiskeförsök (fem minuter vardera) ett spjut håller
 export const spears = (s: State) => Math.ceil(item(s, 'fiskespjut') - 1e-9);
 // lediga spjut: de som inte redan används av någon annan som fiskar

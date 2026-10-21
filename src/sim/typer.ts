@@ -1,5 +1,5 @@
-import { log } from './folk';
-import { chance } from './slump';
+import type { Act } from './handlingar';
+export type { Act } from './handlingar';
 
 // Samhällssimulatorn – simuleringskärna (ingen grafik här)
 // Tidsmodell: 1 verkligt dygn = 1 levnadsår. En tidsålder = 1 vecka. Ljus tid 07–19 lokal tid.
@@ -11,6 +11,7 @@ export const WEEK = 7 * DAY; // = en tidsålder
 
 export const W = 64;
 export const H = 40;
+export const inMap = (x: number, y: number) => x >= 0 && y >= 0 && x < W && y < H; // punkten eller rutan ligger på kartan
 
 export enum T { Vatten, Sand, Gras, Skog, Sten }
 
@@ -28,19 +29,7 @@ export const SKILL_NAMES: Record<Skill, string> = {
 
 export const AGES = ['Istid', 'Vårtid', 'Sommartid', 'Hösttid'];
 
-export type Act = 'samla' | 'jakt' | 'fiske' | 'ved' | 'leka' | 'vila' | 'samtal' | 'beratta' | 'hantverk' | 'vakt' | 'sova' | 'elda' | 'tanda' | 'varma' | 'toa' | 'kol' | 'falla' | 'hugga' | 'yxa' | 'spjut' | 'promenad' | 'bada' | 'bara' | 'strand' | 'korg' | 'bygga';
-export const ACT_NAMES: Record<Act, string> = {
-  samla: 'Samlar bär och rötter', jakt: 'Jagar', fiske: 'Fiskar med händerna', ved: 'Samlar grenar', leka: 'Leker',
-  vila: 'Vilar', samtal: 'Samtalar vid elden', beratta: 'Berättar vid elden', hantverk: 'Gör handarbete',
-  vakt: 'Håller vakt', sova: 'Sover', elda: 'Lägger ved på elden', tanda: 'Försöker tända elden', varma: 'Värmer sig vid elden',
-  toa: 'Går avsides på toa', kol: 'Hämtar kol ur den slocknade elden',
-  falla: 'Fäller ett träd med yxa', hugga: 'Hugger ved av ett fällt träd', yxa: 'Gör en yxa av en pinne och flinta', spjut: 'Täljer ett fiskespjut', promenad: 'Tar en promenad', bada: 'Badar i sjön', bara: 'Bär in saker till lagret', strand: 'Sitter vid stranden och ser ut över vattnet', korg: 'Flätar en korg av torrt gräs', bygga: 'Bygger',
-};
-export const WORK: Act[] = ['samla', 'jakt', 'fiske', 'ved'];
 export const GREN = 0.4; // en gren ger lika mycket bränsle som 0,4 ved: grenar brinner fort
-export const AXE_WORK: Act[] = ['falla', 'hugga']; // arbete med yxa, räknas som vedarbete
-export const isWork = (a: Act) => WORK.includes(a) || AXE_WORK.includes(a);
-export const taskName = (t: Task) => t.act === 'bygga' ? (t.tool === 'laga' ? 'Lagar en vägg' : t.tool === 'golv' ? 'Lägger golv' : 'Bygger en vägg') : t.act === 'fiske' && t.tool === 'fiskespjut' ? 'Fiskar med spjut' : t.act === 'samla' && t.tool === 'korg' ? 'Samlar bär och rötter med korg' : ACT_NAMES[t.act];
 
 export interface Thought { text: string; v: number; until: number }
 // why = varför personen valde uppgiften, dark = påbörjad under mörk tid
@@ -55,7 +44,7 @@ export interface Person {
   warm: number; // kroppsvärme 0–1
   toa: number; // 1 = inget behov, 0 = olycka
   habit: Record<string, number>; // timmar per aktivitet, bleknar med tiden (ger yrkestaggar)
-  sickUntil?: number; sickWhy?: string; poisonUntil?: number; pregnantSince?: number; lastBirth?: number;
+  sickUntil?: number; sickWhy?: string; poisonUntil?: number; pregnantSince?: number; pregnantBy?: number; lastBirth?: number; guardDay?: number; // pregnantBy: barnets far; guardDay: dygnet hen valdes till nattens vakt
   fiske?: { f: number; n: number; k: number }; // fiske med händerna: försök, napp och fångade fiskar
   tek?: Record<string, number>; // teknik: hur nära personen är att komma på något, 1 = kan det
   kunskap?: Record<string, { v: number; t: number }>; // det personen kan (alltid rätt), 0–1, och när det senast användes
@@ -96,7 +85,7 @@ export interface State {
   stubbar?: { x: number; y: number; t: number }[]; // stubbar efter fällda träd, t = när trädet fälldes
   nextStock?: number; fallda?: number;
   fynd?: string; // hur mycket som tagits ur varje plats (bär, vilt, fisk), packat
-  byggen?: import('./bygg').Bit[]; hus?: import('./bygg').Hus[]; byggV?: number; nextBit?: number; byggSok?: number; // väggar, golv och öppningar, husen byn planerat, ändringsräknare
+  byggen?: import('./byggnad').Bit[]; hus?: import('./byggnad').Hus[]; byggV?: number; nextBit?: number; byggSok?: number; // väggar, golv och öppningar, husen byn planerat, ändringsräknare
   kunskap?: Record<string, number>; // äldre sparfiler: byns gemensamma kunskap, flyttas till varje person
   stat?: Record<string, number>; // räknare: svamp, fiskeförsök, napp, fångst med mera
 }
@@ -136,7 +125,6 @@ export const IGNITERS: Igniter[] = [
   { id: 'eldstal', name: 'Eldstål och flinta', desc: 'Stål mot flinta ger heta gnistor som fångas i fnöske.', chance: 0.45, grass: 1, sticks: 1, minutes: 5, requires: 'Smide' },
   { id: 'tandstickor', name: 'Tändstickor', desc: 'Tänds med ett drag.', chance: 0.9, grass: 0.5, sticks: 0.5, minutes: 1, requires: 'Kemi' },
 ];
-export const ITEM_NAMES: Record<string, string> = { gniststen: 'Gniststen', torrgras: 'Torrt gräs', kol: 'Kol', grenar: 'Grenar', flinta: 'Flinta', yxa: 'Flintyxa' };
 
 export interface FireLog { t: number; k: 'tänd' | 'fyll' | 'slocknade' | 'glöd' | 'sprack'; id?: number; n?: number }
 export interface Fire {

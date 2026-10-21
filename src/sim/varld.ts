@@ -37,6 +37,10 @@ export function migrate(s: State) {
     if (p.toa === undefined) p.toa = 1;
     if (!p.habit) p.habit = {};
     if (p.pot.minne === undefined) p.pot.minne = clamp(10 + gauss(s) * 7, 1, 20);
+    // äldre sparfiler: fälten hette _by och _guard
+    const o = p as Person & { _by?: number; _guard?: number };
+    if (o._by !== undefined) { p.pregnantBy ??= o._by; delete o._by; }
+    if (o._guard !== undefined) { p.guardDay ??= o._guard; delete o._guard; }
     // byns gemensamma kunskap om svamp flyttas till var och en
     if (s.kunskap?.svamp && p.died === undefined && !p.kunskap?.svamp) p.kunskap = { ...p.kunskap, svamp: { v: s.kunskap.svamp, t: s.now } };
   }

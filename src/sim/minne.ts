@@ -1,7 +1,7 @@
 import { campCenter, campDist } from './plats';
-import { byId, living, log, stat } from './folk';
+import { byId, count, living, log, stat } from './folk';
 import { teach } from './teknik';
-import { Kind, capOf, count, prospect, richness, shoreOf, stoneDist } from './fynd';
+import { Kind, capOf, prospect, richness, shoreOf, stoneDist } from './fynd';
 import { getMap } from './karta';
 import { groundOf } from './mark';
 import { kn, learnK } from './kunskap';
@@ -23,15 +23,17 @@ export const areaCenter = (a: number) => ({ x: Math.min(W, (a % AW) * AREA + ARE
 // byns närområde, som man i stort sett känner till från elden
 export const SIGHT = 8;
 
-// hur mycket ett område ger just nu, så som man ser det när man går runt där: snittet av de fem bästa rutorna
-const areaCache = new WeakMap<State, { hr: number; v: Map<string, number> }>();
+// hur mycket ett område ger just nu, så som man ser det när man går runt där: snittet av de fem bästa rutorna.
+// Sparas en timme i taget, med en plats per slag, område och om det gäller det som kan växa (pot).
+const LKINDS: LKind[] = ['samla', 'jakt', 'fiske', 'flinta', 'fara'];
+const areaCache = new WeakMap<State, { hr: number; v: Float64Array }>();
 export function areaValue(s: State, k: LKind, a: number, pot = false) {
   const hr = Math.floor(s.now / HOUR);
   let c = areaCache.get(s);
-  if (!c || c.hr !== hr) { c = { hr, v: new Map() }; areaCache.set(s, c); }
-  const key = (pot ? 'p' : '') + k + a;
-  let v = c.v.get(key);
-  if (v === undefined) {
+  if (!c || c.hr !== hr) { c = { hr, v: new Float64Array(LKINDS.length * AW * AH * 2).fill(NaN) }; areaCache.set(s, c); }
+  const key = (LKINDS.indexOf(k) * AW * AH + a) * 2 + (pot ? 1 : 0);
+  let v = c.v[key];
+  if (Number.isNaN(v)) {
     const x0 = (a % AW) * AREA, y0 = Math.floor(a / AW) * AREA, top: number[] = [];
     if (k === 'flinta') { const sd = stoneDist(s.seed); v = 0; for (let y = y0; y < Math.min(H, y0 + AREA); y++) for (let x = x0; x < Math.min(W, x0 + AREA); x++) if (sd[y * W + x] <= 2) v = 1; }
     else if (k === 'fara') v = 0;
@@ -40,7 +42,7 @@ export function areaValue(s: State, k: LKind, a: number, pot = false) {
       top.sort((p, q) => q - p);
       v = top.slice(0, 5).reduce((p, q) => p + q, 0) / 5;
     }
-    c.v.set(key, v);
+    c.v[key] = v;
   }
   return v;
 }
@@ -72,9 +74,9 @@ export function lookAround(s: State, p: Person, x: number, y: number) {
 // Den nyfikne tror mer på det okända.
 export const trustUnknown = (s: State, p: Person) => 0.45 + stat(p, 'nyfikenhet', s.now) / 40;
 const believed = (l: Lardom | undefined, cap: number, u: number, pot = 1) => l ? Math.min(1, l.v) * l.c * Math.min(1.2, cap / Math.max(0.05, pot)) + cap * u * (1 - l.c) : cap * u;
-export function perceive(s: State, p: Person, k: Kind, x: number, y: number) {
+export function perceive(s: State, p: Person, k: Kind, x: number, y: number, sight = sightOf(s, p)) {
   const a = areaOf(x, y);
-  const v = sees(s, p, x, y) ? richness(s, k, x + 0.5, y + 0.5) : believed(findL(p, k, a), capOf(s, k, y * W + x), trustUnknown(s, p), areaValue(s, k, a, true));
+  const v = sees(s, p, x, y, sight) ? richness(s, k, x + 0.5, y + 0.5) : believed(findL(p, k, a), capOf(s, k, y * W + x), trustUnknown(s, p), areaValue(s, k, a, true));
   return v - fear(s, p, a);
 }
 // rädsla för ett område: den modige bryr sig mindre
@@ -82,21 +84,22 @@ export function fear(s: State, p: Person, a: number) {
   const l = findL(p, 'fara', a);
   return l ? l.v * l.c * clamp(1.3 - stat(p, 'mod', s.now) / 20, 0.2, 1.3) : 0;
 }
-// det bästa personen tror finns utanför närområdet, inom en halv dags gång
-// det man ser: rutorna runt där man står just nu
-// synvidden beror på var man står: kort i skogen, längre i öppen terräng, och kortare i mörker
+// det man ser: rutorna runt där man står just nu.
+// Synvidden beror på var man står: kort i skogen, längre i öppen terräng, och kortare i mörker
 export function sightOf(s: State, p: Person) {
   const i = clamp(Math.floor(p.y), 0, H - 1) * W + clamp(Math.floor(p.x), 0, W - 1);
   const base = groundOf(s).trees[i] >= FOREST ? 5 : 10;
   return base * (0.4 + 0.6 * lightLevel(s.now));
 }
-export const sees = (s: State, p: Person, x: number, y: number) => Math.hypot(x + 0.5 - p.x, y + 0.5 - p.y) <= sightOf(s, p);
+// sight kan räknas ut i förväg när samma person frågas om många rutor
+export const sees = (s: State, p: Person, x: number, y: number, sight = sightOf(s, p)) => Math.hypot(x + 0.5 - p.x, y + 0.5 - p.y) <= sight;
+// det bästa personen tror finns utanför närområdet, inom en halv dags gång
 export function bestKnown(s: State, p: Person, k: Kind) {
-  const f = campCenter(s), u = trustUnknown(s, p);
+  const f = campCenter(s), u = trustUnknown(s, p), sight = sightOf(s, p);
   let best = 0;
   for (let a = 0; a < AW * AH; a++) {
     const c = areaCenter(a), d = campDist(s, c.x, c.y);
-    if (sees(s, p, c.x, c.y) || Math.abs(c.x - f.x) > 17 || Math.abs(c.y - f.y) > 13) continue;
+    if (sees(s, p, c.x, c.y, sight) || Math.abs(c.x - f.x) > 17 || Math.abs(c.y - f.y) > 13) continue;
     best = Math.max(best, believed(findL(p, k, a), areaValue(s, k, a, true), u) - d * 0.03 - fear(s, p, a));
   }
   return best;
@@ -105,11 +108,12 @@ export function bestKnown(s: State, p: Person, k: Kind) {
 // och går till den bästa rutan i närheten.
 export function pickSpot(s: State, p: Person, k: Kind, cands: { x: number; y: number; d: number }[]) {
   let best: { x: number; y: number; d: number } | undefined, bs = -1e9;
+  const sight = sightOf(s, p);
   for (const c of cands) {
-    const sc = perceive(s, p, k, c.x, c.y) - c.d * 0.03 + rnd(s) * 0.15;
+    const sc = perceive(s, p, k, c.x, c.y, sight) - c.d * 0.03 + rnd(s) * 0.15;
     if (sc > bs) { bs = sc; best = c; }
   }
-  if (!best || sees(s, p, best.x, best.y)) return best;
+  if (!best || sees(s, p, best.x, best.y, sight)) return best;
   // väl framme letar hen upp den bästa platsen i området
   const x0 = Math.max(0, best.x - 5), y0 = Math.max(0, best.y - 5);
   const tiles = getMap(s.seed).tiles, shore = shoreOf(s.seed);
@@ -238,7 +242,7 @@ export function placeName(s: State, a: number) {
 const WHAT: Record<LKind, string> = { samla: 'bär och rötter', jakt: 'vilt', fiske: 'fisk i vattnet', flinta: 'flinta', fara: '' };
 const amount = (v: number) => v >= 0.7 ? 'Gott om' : v >= 0.35 ? 'En del' : v >= 0.1 ? 'Lite' : 'Nästan inga';
 // en lärdom i ord, med hur säker personen är, varifrån den kommer och om den stämmer. what är texten utan platsen.
-export function describe(s: State, p: Person, l: Lardom) {
+export function describe(s: State, l: Lardom) {
   const place = placeName(s, l.a);
   const what = l.k === 'fara' ? `Farligt${l.om ? `: ${l.om}` : ''}` : l.k === 'flinta' ? 'Flinta finns' : `${amount(l.v)} ${WHAT[l.k]}`;
   const text = l.k === 'fara' ? `Rädd för platsen ${place}${l.om ? ` (${l.om})` : ''}` : `${what} ${place}`;

@@ -1,6 +1,5 @@
-import { ageOf, alive, byId, living, log, newPerson, relKey, think } from './folk';
+import { ageOf, alive, byId, count, living, log, newPerson, relKey, think } from './folk';
 import { sedEvent } from './seder';
-import { count } from './fynd';
 import { pair } from './varld';
 import { moodOf } from './samtal';
 import { chance, clamp, pick, rnd } from './slump';
@@ -24,7 +23,7 @@ export function die(s: State, p: Person, cause: string) {
 }
 
 export function birth(s: State, mother: Person) {
-  const father = byId(s, mother.partner) ?? byId(s, (mother as any)._by);
+  const father = byId(s, mother.partner) ?? byId(s, mother.pregnantBy);
   mother.pregnantSince = undefined; mother.lastBirth = s.now;
   const ch = newPerson(s, rnd(s) < 0.5 ? 'm' : 'k', s.now, mother, father);
   ch.x = mother.x; ch.y = mother.y;

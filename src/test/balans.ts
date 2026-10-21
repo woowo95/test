@@ -1,29 +1,17 @@
 // npm run balans -- [antal byar = 20] [dygn = 90]
 // Kör många slumpade byar parallellt och visar median, sämsta och bästa värde för varje nyckeltal.
-import { spawn } from 'node:child_process';
-import { cpus } from 'node:os';
-import { fileURLToPath } from 'node:url';
+import { korSkript, pool, sistaJson } from './pool';
 import type { Nyckeltal } from './kor';
 
 const [antal = 20, dagar = 90] = process.argv.slice(2).map(Number);
-const EN = fileURLToPath(new URL('./en.ts', import.meta.url));
 const seeds = Array.from({ length: antal }, (_, i) => 1001 + i * 7919);
 type Ut = { seed: number; n: Nyckeltal; vakter: string[] };
 
-function kor(seed: number) {
-  return new Promise<Ut>((ok, fel) => {
-    const c = spawn(process.execPath, ['--import', 'tsx', EN, String(seed), String(dagar)]);
-    let out = '', err = '';
-    c.stdout.on('data', d => out += d); c.stderr.on('data', d => err += d);
-    c.on('close', code => code === 0 ? ok(JSON.parse(out.trim().split('\n').pop()!)) : fel(new Error(`by ${seed}: ${err.slice(-500)}`)));
-  });
-}
-
 const t0 = Date.now();
-const res: Ut[] = [];
-let nasta = 0;
-await Promise.all(Array.from({ length: Math.max(1, cpus().length) }, async () => {
-  while (nasta < seeds.length) res.push(await kor(seeds[nasta++]));
+const res = await pool(seeds.map(seed => async () => {
+  const u = await korSkript('en.ts', [String(seed), String(dagar)]);
+  if (u.code) throw new Error(`by ${seed}: ${u.err.slice(-500)}`);
+  return sistaJson<Ut>(u);
 }));
 
 const NAMN: [keyof Nyckeltal, string][] = [['pop', 'invånare'], ['invandrade', 'invandrade'], ['utvandrade', 'utvandrade'], ['fodda', 'födda'], ['doda', 'döda'], ['svalt', 'svalt ihjäl'], ['kyla', 'frös ihjäl'],

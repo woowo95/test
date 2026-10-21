@@ -4,9 +4,9 @@ import {
   State, Person, T, W, H, DAY, HOUR, STATS, STAT_NAMES, SKILLS, SKILL_NAMES, AGES, ACT_NAMES, taskName, TalkEvent, LogEntry,
   createState, step, getMap, living, alive, ageOf, byId, relKey, moodOf, ageIndex, ageDay, yearNo, lightLevel, isLight,
   timeLabel, temperature, serialize, compact, stat, migrate, hearthOf, igniterOf, fireHeat, heatRadius, fireWant, emberOn,
-  ITEM_NAMES, FireLog, coverOf, groundOf, SEDER, SED_INFO, Sed, influence, duty, habitShare, habitTotal, Act,
+  sakNamn, sak, ACTS, ACT_LIST, FireLog, coverOf, groundOf, SEDER, SED_INFO, Sed, influence, duty, habitShare, habitTotal, Act,
   richness, stoneDist, Kind, KUNSKAP_NAMES, describe, Lardom, STUBBE_LIV,
-  zonesOf, zoneAt, pilesOf, inZone, STACK_NAMES, amountOf, capacity, load, carryKind, Pile, OUT_WEAR, condOf, FOLDERS, STACK, campCenter, SOCIAL, TEKNIK, TEK, knows, hasMaterial,
+  zonesOf, zoneAt, pilesOf, amountOf, capacity, load, carryKind, Pile, OUT_WEAR, condOf, FOLDERS, STACK, campCenter, TEKNIK, TEK, knows, hasMaterial,
   bitsOf, bitAt, housesOf, roomAt, insulation, MATERIAL,
 } from './sim';
 import { HIGH, BAR, FOREST } from './sim/vag';
@@ -112,7 +112,7 @@ function knowHtml(before: ReturnType<typeof knowSnapshot>) {
     for (const l of p.lardomar ?? []) {
       if (b?.l.has(l.k + ':' + l.a)) continue;
       nyL++; per[l.k] = (per[l.k] ?? 0) + 1;
-      if (ex.length < 4 && (l.k === 'fara' || l.k === 'flinta' || l.c >= 0.75)) ex.push(`${esc(p.name)}: ${esc(describe(s, p, l).text)}`);
+      if (ex.length < 4 && (l.k === 'fara' || l.k === 'flinta' || l.c >= 0.75)) ex.push(`${esc(p.name)}: ${esc(describe(s, l).text)}`);
     }
   }
   if (!nyK.length && !nyL) return '';
@@ -239,7 +239,7 @@ function pileSprite(k: string, x: number, y: number, sc: number, layer = pileLay
   sp.texture = textures[k]; sp.position.set(x, y); sp.scale.set(sc); sp.visible = true;
 }
 function drawStructures(t: number) {
-  const m = getMap(s.seed), ai = ageIndex(s);
+  const m = getMap(s.seed);
   structG.clear();
   // förråd
   // lagerplatsen: en ram runt rutorna, och en stack per ruta
@@ -312,19 +312,11 @@ function drawBuild() {
 const bubbles: { id: number; kind: string; good: boolean; until: number }[] = [];
 // vem var och en senast pratade med: bubblan står kvar så länge båda är kvar i samtalet
 const talkWith = new Map<number, number>();
-// symbolen över huvudet för det man gör på platsen
+// symbolen över huvudet för det man gör på platsen (mark i handlingar.ts); vissa redskap och material syns i stället
+const MARK_TOOL: Record<string, string> = { fiskespjut: 'fiskespjut', golv: 'hogolv' };
 function markOf(p: Person): string | undefined {
   const t = p.task; if (!t || t.phase !== 'do') return;
-  switch (t.act) {
-    case 'sova': case 'vila': return 'zzz';
-    case 'falla': case 'hugga': return 'yxa';
-    case 'ved': case 'samla': return 'korg';
-    case 'korg': return 'torrgras';
-    case 'jakt': case 'spjut': return 'fiskespjut';
-    case 'fiske': return t.tool === 'fiskespjut' ? 'fiskespjut' : 'fisk';
-    case 'yxa': return 'flinta';
-    case 'bygga': return t.tool === 'golv' ? 'hogolv' : 'bygga';
-  }
+  return (t.tool && MARK_TOOL[t.tool]) || ACTS[t.act].mark;
 }
 // pratbubblan: utseendet följer relationen, ett nytt samtal syns en stund i sin egen färg
 function drawBubble(x: number, y: number, kind: string | undefined, rel: 'karlek' | 'van' | 'ovan' | 'neutral', t: number, seed: number) {
@@ -359,7 +351,7 @@ function drawPeople(t: number) {
     peopleG.lineStyle(0);
     if (p.sickUntil && p.sickUntil > s.now) peopleG.beginFill(0x8fc46a).drawCircle(x + r * 0.7, y - r * 0.7, 1.8).endFill();
     if (p.pregnantSince !== undefined) peopleG.beginFill(0xf2c4d0).drawCircle(x - r * 0.7, y - r * 0.7, 1.6).endFill();
-    if (p.task?.carry && p.task.carry > 0.05) peopleG.beginFill(p.task.act === 'ved' || p.task.act === 'elda' ? 0x6f4a2a : 0xc58b3e).drawRect(x + r - 1, y - 1, 4, 4).endFill();
+    if (p.task?.carry && p.task.carry > 0.05) peopleG.beginFill(sak(ACTS[p.task.act].ger ?? '')?.mapp === 'Bränsle' ? 0x6f4a2a : 0xc58b3e).drawRect(x + r - 1, y - 1, 4, 4).endFill();
   }
   // pågående samtal och symboler
   let mk = 0;
@@ -368,7 +360,7 @@ function drawPeople(t: number) {
   for (const p of ppl) {
     const x = p.x * TS, y = p.y * TS, a = ageOf(p, s.now), top = y - (a < 3 ? 9 : a < 14 ? 11 : 13);
     const o = talkWith.get(p.id), q = o !== undefined ? byId(s, o) : undefined;
-    const talking = q && alive(q) && p.task?.phase === 'do' && SOCIAL.includes(p.task.act) && q.task?.phase === 'do' && SOCIAL.includes(q.task.act) && Math.hypot(q.x - p.x, q.y - p.y) < 4;
+    const talking = q && alive(q) && p.task?.phase === 'do' && ACTS[p.task.act].social && q.task?.phase === 'do' && ACTS[q.task.act].social && Math.hypot(q.x - p.x, q.y - p.y) < 4;
     if (!talking && o !== undefined && !flash.has(p.id)) talkWith.delete(p.id);
     if (talking || flash.has(p.id)) {
       const r = q ? s.rels[relKey(p.id, q.id)] : undefined;
@@ -485,7 +477,7 @@ const RICH_WORD = (v: number) => v >= 0.7 ? 'gott om' : v >= 0.35 ? 'en del' : v
 const fmtN = (n: number) => n >= 10 || Number.isInteger(n) ? String(Math.round(n)) : n.toFixed(1).replace('.', ',');
 // högar utanför lagret på en ruta: det som inte fick plats och det som lagts på marken
 const outPilesAt = (x: number, y: number) => pilesOf(s).filter(q => q.out && q.x === x && q.y === y);
-const pileTxt = (p: Pile) => `${STACK_NAMES[p.k]} ${p.max === 1 ? '' : `${fmtN(p.n)} st, `}skick ${Math.round(condOf(p) * 100)} %`;
+const pileTxt = (p: Pile) => `${sakNamn(p.k)} ${p.max === 1 ? '' : `${fmtN(p.n)} st, `}skick ${Math.round(condOf(p) * 100)} %`;
 function tileAt(gx: number, gy: number) { const w = world.toLocal(new PIXI.Point(gx, gy)); return { x: Math.floor(w.x / TS), y: Math.floor(w.y / TS) }; }
 function storeAt(gx: number, gy: number) { const c = tileAt(gx, gy); return zoneAt(s, c.x, c.y) + 1; } // 0 = ingen lagerplats
 function showHover(gx: number, gy: number) {
@@ -519,7 +511,7 @@ function showHover(gx: number, gy: number) {
   const bit = bitAt(s, x, y);
   if (bit) {
     const M = MATERIAL[bit.m], hus = housesOf(s).find(h => h.id === bit.hus);
-    const st = bit.b < 1 ? `byggs, ${Math.round(bit.b * 100)} %${M.n ? `, material ${Math.round(bit.mat)} av ${M.n} ${STACK_NAMES[M.item as keyof typeof STACK_NAMES]?.toLowerCase() ?? M.item}` : ''}` : M.slit ? `skick ${Math.round(bit.c * 100)} %` : '';
+    const st = bit.b < 1 ? `byggs, ${Math.round(bit.b * 100)} %${M.n ? `, material ${Math.round(bit.mat)} av ${M.n} ${sakNamn(M.item!).toLowerCase()}` : ''}` : M.slit ? `skick ${Math.round(bit.c * 100)} %` : '';
     rows.push(`${iconImg(bit.k === 'vagg' ? 'risvagg' : bit.m === 'ho' ? 'hogolv' : '', 12)} <b>${esc(M.namn)}</b>${hus ? ` i ${esc(hus.namn.toLowerCase())}` : ''}${st ? ' · ' + st : ''}`);
   }
   const rum = roomAt(s, x, y);
@@ -597,7 +589,7 @@ function trend(p: Person, key: string, v: number) {
   return h.d > 0.08 ? '<span class="trend up" title="Stiger">▲</span>' : h.d < -0.08 ? '<span class="trend down" title="Sjunker">▼</span>' : '';
 }
 function moodWord(m: number) { return m > 0.75 ? 'Lycklig' : m > 0.55 ? 'Nöjd' : m > 0.4 ? 'Okej' : m > 0.25 ? 'Nedstämd' : 'Olycklig'; }
-function relWord(s: State, p: Person, q: Person, op: number) {
+function relWord(p: Person, q: Person, op: number) {
   if (p.partner === q.id) return 'Partner';
   if (q.mother === p.id || q.father === p.id) return 'Barn';
   if (p.mother === q.id || p.father === q.id) return 'Förälder';
@@ -624,7 +616,7 @@ function knowledgeHtml(p: Person) {
   });
   const rows = ks.map(([k, e]) => ({ n: KUNSKAP_NAMES[k] ?? k, v: e.v }));
   return `${tk.length ? `<h3>Teknik</h3><div class="tekrad">${tk.join('')}</div>` : ''}<h3>Kunskap</h3>${rows.length ? `<dl class="kv">${rows.map(r => `<dt>${esc(r.n)}</dt><dd>${bar(r.v, 'skill')}<span>${Math.round(r.v * 100)} %</span></dd>`).join('')}</dl>` : '<p class="muted">Ingen särskild kunskap ännu.</p>'}
-      <h3>Lärdomar</h3>${ls.length ? `<ul class="lard">${groups(ls).map(g => `<li class="${g[0].k === 'fara' ? 'fara' : ''}"><b>${esc(cap(describe(s, p, g[0]).place))}</b>${g.map(l => { const d = describe(s, p, l); return `<span>${esc(d.what)} <small class="muted">${d.sure}, ${esc(d.src)}</small>${d.wrong ? `<small class="fel">${esc(d.wrong)}</small>` : ''}</span>`; }).join('')}</li>`).join('')}</ul>` : '<p class="muted">Inga lärdomar ännu.</p>'}`;
+      <h3>Lärdomar</h3>${ls.length ? `<ul class="lard">${groups(ls).map(g => `<li class="${g[0].k === 'fara' ? 'fara' : ''}"><b>${esc(cap(describe(s, g[0]).place))}</b>${g.map(l => { const d = describe(s, l); return `<span>${esc(d.what)} <small class="muted">${d.sure}, ${esc(d.src)}</small>${d.wrong ? `<small class="fel">${esc(d.wrong)}</small>` : ''}</span>`; }).join('')}</li>`).join('')}</ul>` : '<p class="muted">Inga lärdomar ännu.</p>'}`;
 }
 function renderPanel(force = false) {
   // elden har ingen egen flik: den öppnas genom att klicka på elden, och visas då i personfliken
@@ -678,7 +670,7 @@ function renderPanel(force = false) {
       ${knowledgeHtml(p)}
       <h3>Familj</h3><dl class="kv fam"><dt>Föräldrar</dt><dd>${p.mother || p.father ? [byId(s, p.mother), byId(s, p.father)].filter(Boolean).map(q => pLink(q)).join(' och ') : 'Bland de första i byn'}</dd>
         <dt>Partner</dt><dd>${pLink(byId(s, p.partner))}</dd><dt>Barn</dt><dd>${kids.length ? kids.map(pLink).join(', ') : '–'}</dd></dl>
-      <h3>Relationer</h3>${rels.length ? `<ul class="rels">${rels.map(({ q, r }) => `<li>${pLink(q)}<span class="rw ${r.op < -10 ? 'neg' : r.op > 25 ? 'pos' : ''}">${relWord(s, p, q, r.op)}</span><span class="muted">${r.talks} samtal</span></li>`).join('')}</ul>` : '<p class="muted">Inga relationer ännu.</p>'}
+      <h3>Relationer</h3>${rels.length ? `<ul class="rels">${rels.map(({ q, r }) => `<li>${pLink(q)}<span class="rw ${r.op < -10 ? 'neg' : r.op > 25 ? 'pos' : ''}">${relWord(p, q, r.op)}</span><span class="muted">${r.talks} samtal</span></li>`).join('')}</ul>` : '<p class="muted">Inga relationer ännu.</p>'}
       <h3>Eftermäle</h3>${p.fame.length ? `<ul class="fame">${p.fame.map(f => `<li>${esc(f)}</li>`).join('')}</ul>` : '<p class="muted">Inget som minns ännu.</p>'}`;
   }
 }
@@ -704,8 +696,8 @@ const sickNow = (p: Person) => !!p.sickUntil && p.sickUntil > s.now;
 // vad en person bär och hur mycket hen orkar
 function carryTxt(p: Person) {
   const t = p.task, cap = capacity(s, p), parts: string[] = [];
-  if (t && t.carry > 0.05) parts.push(`${fmtN(t.carry)} ${STACK_NAMES[carryKind(t.act)].toLowerCase()}`);
-  for (const k in t?.items ?? {}) if (t!.items![k] >= 0.5) parts.push(`${fmtN(t!.items![k])} ${(STACK_NAMES[k] ?? ITEM_NAMES[k] ?? k).toLowerCase()}`);
+  if (t && t.carry > 0.05) parts.push(`${fmtN(t.carry)} ${sakNamn(carryKind(t.act)).toLowerCase()}`);
+  for (const k in t?.items ?? {}) if (t!.items![k] >= 0.5 && !sak(k)?.dold) parts.push(`${fmtN(t!.items![k])} ${sakNamn(k).toLowerCase()}`);
   const orkar = `orkar bära ${Math.round(cap * 100)} % av en full stack`;
   return parts.length ? `Bär ${parts.join(' och ')} (${Math.round(load(t!) / cap * 100)} % av vad hen orkar)` : `Bär inget just nu, ${orkar}`;
 }
@@ -713,12 +705,12 @@ const condBar = (c: number) => bar(c, c < 0.5 ? 'low' : '');
 // en lagerplats: öppnas genom att trycka på den på kartan. Varje stack för sig, med sitt skick
 function storeHtml() {
   const zs = zonesOf(s), z = zs[Math.min(lagerNr, zs.length - 1)], zi = zs.indexOf(z);
-  const ps = pilesOf(s).filter(p => p.zone === zi).sort((a, b) => STACK_NAMES[a.k].localeCompare(STACK_NAMES[b.k], 'sv') || b.n - a.n || condOf(b) - condOf(a));
+  const ps = pilesOf(s).filter(p => p.zone === zi).sort((a, b) => sakNamn(a.k).localeCompare(sakNamn(b.k), 'sv') || b.n - a.n || condOf(b) - condOf(a));
   const bar = living(s).filter(p => p.task && (p.task.carry > 0.05 || p.task.items));
   const what = !z.slag ? '' : z.slag === 'mat' ? 'Här läggs maten. ' : 'Här läggs material och redskap. ';
   return `
     <div class="phead"><div><h2>${esc(z.namn ?? 'Lagret')}</h2><p class="muted">${what}Byn gör lagerplatsen större när den blir full och mindre när den står tom.${zs.length > 1 ? ` Prioritet ${z.prio ?? 0} av ${zs.length}.` : ''}</p></div></div>
-    <h3>Stackar</h3>${ps.length ? `<dl class="kv stk">${ps.map(p => `<dt>${iconImg(p.k)}${STACK_NAMES[p.k]}${p.max === 1 ? '' : ` ${fmtN(p.n)} st`}</dt><dd>${condBar(condOf(p))}<span>${Math.round(condOf(p) * 100)} %</span></dd>`).join('')}</dl>` : '<p class="muted">Lagret är tomt.</p>'}
+    <h3>Stackar</h3>${ps.length ? `<dl class="kv stk">${ps.map(p => `<dt>${iconImg(p.k)}${sakNamn(p.k)}${p.max === 1 ? '' : ` ${fmtN(p.n)} st`}</dt><dd>${condBar(condOf(p))}<span>${Math.round(condOf(p) * 100)} %</span></dd>`).join('')}</dl>` : '<p class="muted">Lagret är tomt.</p>'}
     <h3>På väg med saker</h3>${bar.length ? `<ul class="rels">${bar.map(p => `<li>${pLink(p)}<span class="muted">${esc(carryTxt(p))}</span></li>`).join('')}</ul>` : '<p class="muted">Ingen bär något just nu.</p>'}`;
 }
 // en hög utanför lagerplatserna
@@ -728,7 +720,7 @@ function heapHtml() {
   const who = living(s).filter(p => p.task?.act === 'bara' && Math.floor(p.task.tx) === hogAt.x && Math.floor(p.task.ty) === hogAt.y);
   return `
     <div class="phead"><div><h2>${mark ? 'På marken' : 'Bredvid lagret'}</h2><p class="muted">${mark ? 'Lades ner av någon som kallades bort till något annat.' : 'Fick inte plats i lagret.'} Slits ${OUT_WEAR} gånger fortare än i lagret.</p></div></div>
-    <dl class="kv">${ps.map(p => `<dt>${iconImg(p.k)}${STACK_NAMES[p.k]}${p.max === 1 ? '' : ` ${fmtN(p.n)} st`}</dt><dd>${condBar(condOf(p))}<span>${Math.round(condOf(p) * 100)} %</span></dd>`).join('')}</dl>
+    <dl class="kv">${ps.map(p => `<dt>${iconImg(p.k)}${sakNamn(p.k)}${p.max === 1 ? '' : ` ${fmtN(p.n)} st`}</dt><dd>${condBar(condOf(p))}<span>${Math.round(condOf(p) * 100)} %</span></dd>`).join('')}</dl>
     ${who.length ? `<p class="muted">${who.map(p => pLink(p)).join(', ')} är på väg för att bära in det.</p>` : ''}`;
 }
 // listan till vänster över allt byn äger, i mappar som kan fällas ihop
@@ -739,7 +731,7 @@ function renderOwned() {
   const ute = pilesOf(s).filter(p => !p.stored);
   const html = `<h4>Byn äger</h4>${rows.map(({ f, ks }) => {
     const sum = f.namn === 'Mat' || f.namn === 'Bränsle' ? ` <span class="n">${Math.round(ks.reduce((a, r) => a + r.n, 0))}</span>` : '';
-    return `<button type="button" class="fold" data-f="${f.namn}" aria-expanded="${!closed.has(f.namn)}">${closed.has(f.namn) ? '▸' : '▾'} ${f.namn}${sum}</button>${closed.has(f.namn) ? '' : `<ul>${ks.map(r => `<li><span>${iconImg(r.k)}${STACK_NAMES[r.k]}</span><span class="n">${STACK[r.k] === 1 ? Math.ceil(r.n - 1e-9) : Math.round(r.n)}</span></li>`).join('')}</ul>`}`;
+    return `<button type="button" class="fold" data-f="${f.namn}" aria-expanded="${!closed.has(f.namn)}">${closed.has(f.namn) ? '▸' : '▾'} ${f.namn}${sum}</button>${closed.has(f.namn) ? '' : `<ul>${ks.map(r => `<li><span>${iconImg(r.k)}${sakNamn(r.k)}</span><span class="n">${STACK[r.k] === 1 ? Math.ceil(r.n - 1e-9) : Math.round(r.n)}</span></li>`).join('')}</ul>`}`;
   }).join('') || '<p>Inget ännu</p>'}${ute.length ? `<p class="ute">${ute.length} ${ute.length === 1 ? 'hög' : 'högar'} på marken</p>` : ''}`;
   if (html === ownedKey) return;
   ownedKey = html; $('owned').innerHTML = html;
@@ -821,12 +813,11 @@ function sedWord(k: Sed, v: number) {
 // teknikträdet som symboler: arbetet till vänster, teknikerna till höger, sträck mellan det som hänger ihop.
 // Ett tryck på en symbol visar mer om den.
 let tekSel: string | undefined, tekHelp = false;
-const TEK_ROT: Partial<Record<Act, string>> = { samla: 'bar', ved: 'grenar', fiske: 'fisk', bygga: 'bygga', hantverk: 'korg' }; // arbetet visas med sin ikon
 // teknik som en annan teknik bygger på: krav, eller ett redskap som kan användas som material
 const tekFrom = (t: (typeof TEKNIK)[number]) => [...new Set([...t.krav, ...t.material.flat().filter(k => TEK[k])])];
 function tekHtml() {
   const ppl = living(s);
-  const roots = (Object.keys(TEK_ROT) as Act[]).filter(a => TEKNIK.some(t => t.omr.includes(a)));
+  const roots = ACT_LIST.filter(a => ACTS[a].ikon && TEKNIK.some(t => t.omr.includes(a))); // arbetet visas med sin ikon
   const depth: Record<string, number> = {};
   const dep = (id: string): number => depth[id] ??= 1 + Math.max(0, ...tekFrom(TEK[id]).map(dep));
   TEKNIK.forEach(t => dep(t.id));
@@ -844,7 +835,7 @@ function tekHtml() {
   const node = (id: string, inner: string, cls: string, title: string, extra = '') =>
     `<button type="button" class="tnod ${cls}${tekSel === id ? ' sel' : ''}" data-tek="${id}" style="left:${pos[id].x}%;top:${pos[id].y}%" title="${esc(title)}" aria-label="${esc(title)}">${inner}${extra}</button>`;
   const nodes = [
-    ...roots.map(a => node('a:' + a, iconImg(TEK_ROT[a]!, 20), 'rot', ACT_NAMES[a])),
+    ...roots.map(a => node('a:' + a, iconImg(ACTS[a].ikon!, 20), 'rot', ACT_NAMES[a])),
     ...TEKNIK.map(t => {
       const kan = ppl.filter(p => knows(p, t.id)).length, best = Math.max(0, ...ppl.map(p => p.tek?.[t.id] ?? 0));
       const ring = !kan && best > 0.01 ? `<svg class="ring" viewBox="0 0 36 36"><circle cx="18" cy="18" r="16" pathLength="100" stroke-dasharray="${Math.round(best * 100)} 100"/></svg>` : '';
@@ -862,13 +853,13 @@ function tekInfo(ppl: Person[]) {
   if (!tekSel) return '';
   if (tekSel.startsWith('a:')) {
     const a = tekSel.slice(2) as Act, ts = TEKNIK.filter(t => t.omr.includes(a));
-    return `<div class="tinfo"><div class="tektop">${iconImg(TEK_ROT[a]!, 20)}<b>${esc(ACT_NAMES[a])}</b></div><p class="small muted">Den som arbetar med det här kan komma på ${ts.map(t => iconImg(t.id, 14) + ' ' + esc(t.namn.toLowerCase())).join(', ')}.</p></div>`;
+    return `<div class="tinfo"><div class="tektop">${iconImg(ACTS[a].ikon!, 20)}<b>${esc(ACT_NAMES[a])}</b></div><p class="small muted">Den som arbetar med det här kan komma på ${ts.map(t => iconImg(t.id, 14) + ' ' + esc(t.namn.toLowerCase())).join(', ')}.</p></div>`;
   }
   const t = TEK[tekSel];
   if (!t) return '';
   const kan = ppl.filter(p => knows(p, t.id));
   const pa = ppl.filter(p => !knows(p, t.id) && (p.tek?.[t.id] ?? 0) > 0.01).sort((a, b) => b.tek![t.id] - a.tek![t.id]).slice(0, 5);
-  const mat = t.material.map(g => g.map(k => `<span class="${(s.items[k] ?? 0) >= 1 ? '' : 'saknas'}" title="${esc(STACK_NAMES[k] ?? k)}">${iconImg(k, 16) || esc(STACK_NAMES[k] ?? k)}</span>`).join('<i>/</i>')).join('<i>+</i>');
+  const mat = t.material.map(g => g.map(k => `<span class="${(s.items[k] ?? 0) >= 1 ? '' : 'saknas'}" title="${esc(sakNamn(k))}">${iconImg(k, 16) || esc(sakNamn(k))}</span>`).join('<i>/</i>')).join('<i>+</i>');
   return `<div class="tinfo"><div class="tektop">${iconImg(t.id, 24)}<b>${esc(t.namn)}</b><span class="tmat">${mat}</span></div>
     <p class="small">${esc(t.text)} ${esc(t.effekt)}</p>
     ${kan.length ? `<p class="kan">${kan.map(pLink).join(', ')}</p>` : '<p class="muted small">Ingen kan det.</p>'}

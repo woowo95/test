@@ -1,5 +1,6 @@
 import { getMap, hash } from './karta';
-import { H, HOUR, State, W } from './typer';
+import { campKey } from './plats';
+import { H, HOUR, State, W, inMap } from './typer';
 import { FOREST, Ground, HIGH, decodeCover, encodeCover, isSoil, pathTree, wear } from './vag';
 
 // ---------- mark: gräs, stigar och skog ----------
@@ -32,16 +33,16 @@ export function startForest(seed: number) {
 }
 export const isForest = (s: State, i: number) => groundOf(s).trees[i] >= FOREST;
 
-// rutor där inget får växa: elden och förrådet
-const builtCache = new Map<number, Uint8Array>();
-function built(seed: number) {
-  let b = builtCache.get(seed);
-  if (b) return b;
-  const m = getMap(seed); b = new Uint8Array(W * H);
-  const mark = (x: number, y: number, r: number) => { for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) { const xx = x + dx, yy = y + dy; if (xx >= 0 && yy >= 0 && xx < W && yy < H) b![yy * W + xx] = 1; } };
-  mark(m.fire.x, m.fire.y, 1);
-  mark(m.stock.x + 1, m.stock.y, 1);
-  builtCache.set(seed, b);
+// rutor där inget får växa: runt elden och på lagerplatserna (husen står i g.built). Räknas om när lägret ändras
+const builtCache = new WeakMap<State, { key: string; b: Uint8Array }>();
+function built(s: State) {
+  const key = campKey(s);
+  let c = builtCache.get(s);
+  if (c?.key === key) return c.b;
+  const m = getMap(s.seed), b = new Uint8Array(W * H);
+  for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (inMap(m.fire.x + dx, m.fire.y + dy)) b[(m.fire.y + dy) * W + m.fire.x + dx] = 1;
+  for (const z of s.lagren ?? []) for (let y = z.y; y < z.y + z.h; y++) for (let x = z.x; x < z.x + z.w; x++) if (inMap(x, y)) b[y * W + x] = 1;
+  builtCache.set(s, c = { key, b });
   return b;
 }
 
@@ -51,7 +52,7 @@ const TREE_GROW = 1 / (10 * 24); // en planta blir vuxen skog på ungefär tio d
 const SPREAD = 0.0015, FAR = 0.00002; // chans per timme att ett frö gror: per skogsgranne, och långt bort
 // en timme: gräset växer tillbaka från grannrutorna, skogen sprider sig som en våg och plantor växer
 export function growGround(s: State, hours: number, season: number) {
-  const g = groundOf(s), b = built(s.seed), { tiles, cover, trees } = g;
+  const g = groundOf(s), b = built(s), { tiles, cover, trees } = g;
   const old = cover.slice(), hr = Math.floor(s.now / HOUR), ts = TREE_SEASON[season];
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     const i = y * W + x;
@@ -71,7 +72,7 @@ export function growGround(s: State, hours: number, season: number) {
     let n = 0;
     for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
       const xx = x + dx, yy = y + dy;
-      if ((dx || dy) && xx >= 0 && yy >= 0 && xx < W && yy < H && trees[yy * W + xx] >= FOREST) n++;
+      if ((dx || dy) && inMap(xx, yy) && trees[yy * W + xx] >= FOREST) n++;
     }
     if (hash(s.seed + hr, x, y) < hours * (SPREAD * n + FAR) * ts) trees[i] = 0.05;
   }
@@ -79,10 +80,12 @@ export function growGround(s: State, hours: number, season: number) {
 
 export const WEAR = 0.008; // slitage när någon går över en ruta
 export const tileOf = (x: number, y: number) => Math.max(0, Math.min(H - 1, Math.floor(y))) * W + Math.max(0, Math.min(W - 1, Math.floor(x)));
-let tree: { key: string; came: Int32Array } | undefined;
-// vid ikappräkning går ingen på riktigt: slitaget läggs längs bästa vägen mellan elden och målet
+// vid ikappräkning går ingen på riktigt: slitaget läggs längs bästa vägen mellan elden och målet.
+// Vägarna räknas om var fjärde timme (stigarna ändras långsamt) och när något byggs
+const paths = new WeakMap<State, { key: string; came: Int32Array }>();
 export function tread(s: State, tx: number, ty: number, trips: number) {
-  const m = getMap(s.seed), g = groundOf(s), key = `${s.seed}:${Math.floor(s.now / (4 * HOUR))}`;
-  if (tree?.key !== key) tree = { key, came: pathTree(g, m.fire.x, m.fire.y) };
-  for (let i = tileOf(tx, ty), n = 0; i >= 0 && n < 200; i = tree.came[i], n++) wear(g, i, WEAR * trips);
+  const m = getMap(s.seed), g = groundOf(s), key = `${Math.floor(s.now / (4 * HOUR))}`;
+  let t = paths.get(s);
+  if (t?.key !== key) paths.set(s, t = { key, came: pathTree(g, m.fire.x, m.fire.y) });
+  for (let i = tileOf(tx, ty), n = 0; i >= 0 && n < 200; i = t.came[i], n++) wear(g, i, WEAR * trips);
 }

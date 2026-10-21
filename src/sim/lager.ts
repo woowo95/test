@@ -2,8 +2,10 @@ import { campDist } from './plats';
 import { stat, ageOf, log } from './folk';
 import { getMap } from './karta';
 import { Act, H, Person, State, T, Task, W } from './typer';
-import { GIFT } from './fynd';
-import { bitAt, roofed } from './bygg';
+import { bitAt, roofed } from './byggnad';
+import { ACTS } from './handlingar';
+import { FOOD, SAKER, SAK_LIST, STACK, STACK_ORDER, isFood, isTool, sakNamn } from './saker';
+const NO_STACK = SAK_LIST.filter(k => !STACK[k]);
 
 // ---------- lager och stackar ----------
 // Byns saker ligger i stackar. En ruta rymmer en stack av ett slag. Tunga och skrymmande saker har mindre stackar.
@@ -12,18 +14,7 @@ import { bitAt, roofed } from './bygg';
 // har i sina lager; stackarna hålls i takt med dem: det som läggs till utan att bäras dit hamnar på en ledig plats,
 // det som tas utan att hämtas tas ur de sämsta stackarna först.
 // Lagerplatserna (zoner) görs större, mindre och nya av invånarna själva. Två eller fler sorteras: maten för sig och
-// material för sig, och den viktigaste ligger närmast elden.
-export const FOOD = ['fisk', 'kott', 'svamp', 'bar', 'rotter']; // i den ordning de äts: det som förstörs fortast först
-export const STACK: Record<string, number> = { bar: 25, rotter: 25, kott: 25, fisk: 25, svamp: 25, ved: 25, grenar: 50, torrgras: 50, kol: 25, flinta: 10, gniststen: 10, yxa: 1, fiskespjut: 1, korg: 1 };
-export const STACK_ORDER = Object.keys(STACK);
-export const STACK_NAMES: Record<string, string> = { bar: 'Bär', rotter: 'Rötter', kott: 'Kött', fisk: 'Fisk', svamp: 'Svamp', ved: 'Ved', grenar: 'Grenar', torrgras: 'Torrt gräs', kol: 'Kol', flinta: 'Flinta', gniststen: 'Gniststen', yxa: 'Flintyxa', fiskespjut: 'Fiskespjut', korg: 'Korg' };
-// mappar i listan över allt byn äger
-export const FOLDERS: { namn: string; k: string[] }[] = [
-  { namn: 'Mat', k: FOOD.slice().reverse() },
-  { namn: 'Bränsle', k: ['ved', 'grenar', 'torrgras', 'kol'] },
-  { namn: 'Sten', k: ['flinta', 'gniststen'] },
-  { namn: 'Redskap', k: ['yxa', 'fiskespjut', 'korg'] },
-];
+// material för sig, och den viktigaste ligger närmast elden. Vilka saker som finns, och hur stora stackarna är, står i saker.ts.
 export interface Zone { x: number; y: number; w: number; h: number; namn?: string; slag?: 'mat' | 'material'; prio?: number }
 export interface Stack { k: string; n: number; c: number; x: number; y: number }
 // en stack som den visas: out = utanför lagerplatserna, stored = hör till byns förråd (i lagret eller precis bredvid)
@@ -32,8 +23,6 @@ const MAX_W = 6, MAX_H = 5, MAX_ZONES = 4;
 export const OUT_WEAR = 3; // saker utanför lagret slits tre gånger fortare
 export const INDOOR_WEAR = 0.4; // under tak slits saker mindre
 
-export const isFood = (k: string) => FOOD.includes(k);
-export const isTool = (k: string) => STACK[k] === 1;
 // skick: för redskap är det hur mycket som finns kvar av redskapet
 export const condOf = (a: Stack) => isTool(a.k) ? a.n : a.c;
 export const inZone = (z: Zone, x: number, y: number) => x >= z.x && x < z.x + z.w && y >= z.y && y < z.y + z.h;
@@ -71,7 +60,7 @@ export function syncFood(s: State) {
 }
 export function addFood(s: State, k: string, n: number) { const m = syncFood(s); m[k] = (m[k] ?? 0) + n; s.food += n; }
 export const amountOf = (s: State, k: string) => isFood(k) ? syncFood(s)[k] ?? 0 : k === 'ved' ? s.wood : s.items[k] ?? 0;
-function addTo(s: State, k: string, n: number) { if (isFood(k)) addFood(s, k, n); else if (k === 'ved') s.wood += n; else s.items[k] = (s.items[k] ?? 0) + n; }
+export function addTo(s: State, k: string, n: number) { if (isFood(k)) addFood(s, k, n); else if (k === 'ved') s.wood += n; else s.items[k] = (s.items[k] ?? 0) + n; }
 
 // ---------- platser ----------
 function usable(s: State, x: number, y: number) {
@@ -132,6 +121,7 @@ export const fetchSpot = (s: State, k: string) => {
 // lägg n av ett slag med skicket c: på rutan at om det går, annars på bästa lediga plats. totals = räkna in det i summorna
 function place(s: State, k: string, n: number, c: number, totals: boolean, at?: { x: number; y: number }) {
   if (totals) addTo(s, k, n);
+  if (!STACK[k]) return; // saker utan egen stack (giftig svamp bland den ätliga) finns bara i summorna
   const st = stacksOf(s), max = STACK[k] ?? 25;
   for (let g = 0; n > 1e-9 && g < 60; g++) {
     const occ = occupancy(s);
@@ -182,19 +172,15 @@ export function pilesOf(s: State): Pile[] {
   reconcile(s);
   return stacksOf(s).map(a => { const zone = zoneAt(s, a.x, a.y); return { ...a, max: STACK[a.k] ?? 25, zone, out: zone < 0, stored: isStored(s, a.x, a.y) }; });
 }
-export const pilesNeeded = (s: State) => pilesOf(s).filter(p => p.stored).length;
 
 // ---------- slitage ----------
 // Skicket sjunker varje timme. Mat ruttnar (fisk fortast). Ved faller till sist sönder till grenar,
 // grenar och gräs multnar bort, redskap slits sakta även när de ligger still. Sten slits inte.
-// Utanför lagret slits allt fortare, under tak långsammare.
-const FOOD_WEAR: Record<string, number> = { fisk: 2, kott: 1.2, svamp: 1, bar: 0.7, rotter: 0.35 };
-const WEAR_H: Record<string, number> = { ved: 0.0004, grenar: 0.0006, torrgras: 0.0015, yxa: 0.0004, fiskespjut: 0.001, korg: 0.001 };
-const INTO: Record<string, string> = { ved: 'grenar' };
-const PER_UNIT: Record<string, number> = { ved: 2 }; // en ved blir två grenar
+// Utanför lagret slits allt fortare, under tak långsammare. Hur fort varje sak slits står i saker.ts.
 export function wearRate(s: State, k: string, ai: number) {
-  if (isFood(k) || k === GIFT) return 0.003 * (1 + s.food / 250) * (ai === 0 ? 0.5 : 1) * (FOOD_WEAR[k] ?? 1);
-  return WEAR_H[k] ?? 0;
+  const d = SAKER[k];
+  if (d?.ruttnar !== undefined) return 0.003 * (1 + s.food / 250) * (ai === 0 ? 0.5 : 1) * d.ruttnar;
+  return d?.slits ?? 0;
 }
 export const wearMult = (s: State, x: number, y: number) => roofed(s, x, y) ? INDOOR_WEAR : zoneAt(s, x, y) >= 0 ? 1 : OUT_WEAR;
 export function wearStore(s: State, dtSec: number, ai: number) {
@@ -207,13 +193,13 @@ export function wearStore(s: State, dtSec: number, ai: number) {
     if (isTool(a.k)) { const v = Math.min(a.n, r); a.n -= v; if (stored) addTo(s, a.k, -v); continue; }
     a.c -= r;
     if (a.c > 0) continue;
-    const into = INTO[a.k];
+    const into = SAKER[a.k]?.blir; // ved faller sönder till grenar
     if (stored) addTo(s, a.k, -a.n);
-    if (into) { a.n = Math.min(STACK[into], a.n * PER_UNIT[a.k]); a.k = into; a.c = 0.5; if (stored) addTo(s, into, a.n); }
+    if (into) { a.n = Math.min(STACK[into.k], a.n * into.per); a.k = into.k; a.c = 0.5; if (stored) addTo(s, into.k, a.n); }
     else a.n = 0;
   }
   s.stackar = stacksOf(s).filter(a => a.n > 1e-6);
-  if (s.items[GIFT]) s.items[GIFT] *= Math.exp(-wearRate(s, GIFT, ai) * h);
+  for (const k of NO_STACK) if (s.items[k]) s.items[k] *= Math.exp(-wearRate(s, k, ai) * h); // saker utan egen stack slits i summan
   s.food = Math.max(0, s.food);
 }
 
@@ -271,8 +257,8 @@ function newZone(s: State) {
 // ---------- bära ----------
 // hur stor del av insamlingen som är rötter, per årstid (istid, vår, sommar, höst): bär finns mest på sommaren och hösten
 export const ROOT_SHARE = [0.85, 0.6, 0.2, 0.35];
-// det en uppgift ger: bär från insamling, kött från jakt, fisk från fiske, grenar från vedplockning, ved från huggning
-export const carryKind = (act: Act) => act === 'ved' ? 'grenar' : act === 'hugga' || act === 'elda' ? 'ved' : act === 'jakt' ? 'kott' : act === 'fiske' ? 'fisk' : 'bar';
+// det en uppgift ger (handlingar.ts): bär från insamling, kött från jakt, fisk från fiske, grenar från vedplockning, ved från huggning
+export const carryKind = (act: Act) => ACTS[act].ger ?? 'bar';
 // vart bördan ska: till en stack av det man mest bär
 export function homeKind(t: Task) {
   if (t.carry > 0 || !t.items) return carryKind(t.act);
@@ -303,6 +289,7 @@ export function dropLoad(s: State, t: Task, x: number, y: number) {
   const all = loadOf(t), st = stacksOf(s);
   for (const k in all) {
     if (all[k] < 1e-6) continue;
+    if (!STACK[k]) { addTo(s, k, all[k]); continue; } // utan egen stack: bara i summorna
     const c = t.cond?.[k] ?? 1, g = st.find(q => q.x === tx && q.y === ty && q.k === k);
     if (g) { g.c = (g.c * g.n + c * all[k]) / (g.n + all[k]); g.n += all[k]; } else st.push({ x: tx, y: ty, k, n: all[k], c });
   }
@@ -322,7 +309,7 @@ export function haulJob(s: State, near?: number) {
     let why: string | undefined, sc = d;
     if (!isStored(s, a.x, a.y)) why = 'Det ligger saker på marken som ska in i lagret';
     else if (zi < 0) { if (zoneSpot(s, a.k, -Infinity, occ)) { why = 'Det ligger saker bredvid lagret och nu finns det plats'; sc += 50; } }
-    else if (!allows(zs[zi], a.k)) { if (zoneSpot(s, a.k, -Infinity, occ)) { why = `Sorterar: flyttar ${STACK_NAMES[a.k].toLowerCase()} till ${zs.find(z => allows(z, a.k))?.namn?.toLowerCase() ?? 'rätt lager'}`; sc += 100; } }
+    else if (!allows(zs[zi], a.k)) { if (zoneSpot(s, a.k, -Infinity, occ)) { why = `Sorterar: flyttar ${sakNamn(a.k).toLowerCase()} till ${zs.find(z => allows(z, a.k))?.namn?.toLowerCase() ?? 'rätt lager'}`; sc += 100; } }
     else if (zoneSpot(s, a.k, zs[zi].prio ?? 0, occ)) { why = 'Flyttar saker till ett lager närmare elden'; sc += 150; }
     if (why && sc < bs) { bs = sc; best = { x: a.x + 0.5, y: a.y + 0.5, why }; }
   }

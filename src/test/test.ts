@@ -1,17 +1,23 @@
 // npm test: tre byar i 90 dygn, en rad per by. Jämför med facit och skriver bara ut det som ändrats.
-// npm run facit sparar dagens resultat som nytt facit.
+// npm run facit sparar dagens resultat som nytt facit. Byarna körs samtidigt i egna processer.
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
-import { korBy, rad, Nyckeltal } from './kor';
+import { rad, Nyckeltal, Resultat } from './kor';
+import { korSkript, pool, sistaJson } from './pool';
 
 const FACIT = new URL('../../test/facit.json', import.meta.url);
 const BYAR = [1, 42, 777], DAGAR = 90;
 // hur mycket ett tal får ändras innan det räknas som en ändring (tid och storlek varierar mellan körningar)
 const TOL: Partial<Record<keyof Nyckeltal, (a: number, b: number) => boolean>> = {
-  ms: (a, b) => Math.abs(a - b) <= Math.max(500, b * 0.3),
+  ms: () => true, // körtiden beror på hur mycket annat datorn gör samtidigt, så den visas men jämförs inte
   kb: (a, b) => Math.abs(a - b) <= Math.max(2, b * 0.1),
 };
 
-const res = BYAR.map(seed => korBy(seed, DAGAR));
+type Ut = Pick<Resultat, 'seed' | 'dagar' | 'n' | 'vakter'>;
+const res = await pool(BYAR.map(seed => async () => {
+  const u = await korSkript('en.ts', [String(seed), String(DAGAR)]);
+  if (u.code) { console.log(`by ${seed} kraschade:\n${u.err.slice(-1500)}`); process.exit(1); }
+  return { ...sistaJson<Ut>(u), dagar: DAGAR };
+}));
 for (const r of res) console.log(rad(r));
 // återgrundning skrivs alltid ut, så att det syns om en by dött ut och börjat om
 const ater = res.filter(r => r.n.atergrundad > 0);

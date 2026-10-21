@@ -1,5 +1,5 @@
 import { getMap } from './karta';
-import { freeNear } from './bygg';
+import { freeNear } from './byggnad';
 import { clamp, gauss, pick, rnd } from './slump';
 import { DAY, LogEntry, Person, Rel, SKILLS, STATS, Skill, Stat, State } from './typer';
 
@@ -80,6 +80,8 @@ export function log(s: State, text: string, kind: LogEntry['kind'], ids: number[
   s.log.push({ t: s.now, text, kind, ids });
   if (s.log.length > 400) s.log.splice(0, s.log.length - 400);
 }
+// räknar det som händer i byn (statistiken i s.stat)
+export const count = (s: State, k: string, n = 1) => { (s.stat ??= {})[k] = (s.stat[k] ?? 0) + n; };
 export function think(p: Person, text: string, v: number, now: number, dur: number) {
   p.thoughts = p.thoughts.filter(t => t.text !== text);
   p.thoughts.push({ text, v, until: now + dur });

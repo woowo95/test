@@ -59,7 +59,7 @@ export function findPath(g: Ground, x0: number, y0: number, x1: number, y1: numb
 
 // kortaste vägar från en punkt till alla rutor (används vid ikappräkning, då ingen går på riktigt)
 export function pathTree(g: Ground, x0: number, y0: number): Int32Array {
-  const N = W * H, tiles = g.tiles, src = clampI(y0, H) * W + clampI(x0, W);
+  const N = W * H, src = clampI(y0, H) * W + clampI(x0, W);
   const gs = new Float64Array(N).fill(Infinity), came = new Int32Array(N).fill(-1), closed = new Uint8Array(N);
   const heap = new Heap();
   gs[src] = 0; heap.push(src, 0);

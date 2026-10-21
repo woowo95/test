@@ -1,20 +1,20 @@
 import { dropLoad, fetchSpot, storeLoad } from './lager';
 import { coldOf, temperature } from './vader';
-import { ageOf, log, stat, think } from './folk';
-import { count, flintFactor } from './fynd';
+import { ageOf, count, log, stat, think } from './folk';
+import { flintFactor } from './fynd';
 import { observe } from './minne';
 import { getMap } from './karta';
 import { tread } from './mark';
 import { moodOf } from './samtal';
-import { duty, dygn, sedEvent } from './seder';
+import { duty, sedEvent } from './seder';
 import { chance, clamp, rnd } from './slump';
 import { ageIndex, isLight } from './tid';
 import { Act, DAY, Fire, FireLog, GREN, HEARTHS, HOUR, IGNITERS, Person, SEC, State } from './typer';
+import { item } from './saker';
 
 // ---------- eld ----------
 export const hearthOf = (f: Fire) => HEARTHS.find(h => h.id === f.hearth) ?? HEARTHS[0];
 export const igniterOf = (s: State) => IGNITERS.find(i => (s.items[i.id] ?? 0) >= 1);
-const item = (s: State, k: string) => s.items[k] ?? 0;
 // bränsle i förrådet räknat i ved: ved och grenar
 export const fuelStock = (s: State) => s.wood + item(s, 'grenar') * GREN;
 // ta bränsle ur förrådet, ved först och sedan grenar; ger hur mycket som togs
@@ -201,3 +201,5 @@ export function forageItems(s: State, p: Person, dtSec: number): Record<string, 
   return Object.keys(got).length ? got : undefined;
 }
 export function addItems(s: State, got: Record<string, number>) { for (const k in got) s.items[k] = item(s, k) + got[k]; }
+// så många dygn bränslet i förrådet räcker
+export function woodDays(s: State) { return fuelStock(s) / (hearthOf(s.fire).burn * 24); }

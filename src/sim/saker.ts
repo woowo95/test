@@ -1,0 +1,53 @@
+import type { State } from './typer';
+
+// ---------- saker ----------
+// Allt byn kan äga står här: mat, bränsle, sten och redskap. Lager, slitage, listorna i panelen och det som bärs hem
+// frågar registret. En ny sak läggs till här (och får en ikon i ikoner.ts).
+export interface SakDef {
+  namn: string;
+  stack?: number; // hur mycket som ryms i en stack, en full stack är vad en normalstark vuxen bär. Saknas = ingen egen stack
+  mapp?: string; // mappen i listan över allt byn äger
+  mat?: number; // mat: i vilken ordning den äts, lägst först (det som förstörs fortast)
+  ruttnar?: number; // mat och sådant som ruttnar som mat: hur fort, jämfört med annan mat
+  slits?: number; // det som försvinner av skicket per timme
+  blir?: { k: string; per: number }; // det den faller sönder till när skicket är slut, och hur många av den per styck
+  redskap?: true; // räknas styckvis; skicket är hur mycket som finns kvar av redskapet
+  dold?: true; // syns inte för invånarna
+}
+
+// Ordningen är den stackarna läggs ut i, så den ska inte ändras (nya saker läggs sist)
+const DEF = {
+  bar: { namn: 'Bär', stack: 25, mapp: 'Mat', mat: 4, ruttnar: 0.7 },
+  rotter: { namn: 'Rötter', stack: 25, mapp: 'Mat', mat: 5, ruttnar: 0.35 },
+  kott: { namn: 'Kött', stack: 25, mapp: 'Mat', mat: 2, ruttnar: 1.2 },
+  fisk: { namn: 'Fisk', stack: 25, mapp: 'Mat', mat: 1, ruttnar: 2 },
+  svamp: { namn: 'Svamp', stack: 25, mapp: 'Mat', mat: 3, ruttnar: 1 },
+  ved: { namn: 'Ved', stack: 25, mapp: 'Bränsle', slits: 0.0004, blir: { k: 'grenar', per: 2 } },
+  grenar: { namn: 'Grenar', stack: 50, mapp: 'Bränsle', slits: 0.0006 },
+  torrgras: { namn: 'Torrt gräs', stack: 50, mapp: 'Bränsle', slits: 0.0015 },
+  kol: { namn: 'Kol', stack: 25, mapp: 'Bränsle' },
+  flinta: { namn: 'Flinta', stack: 10, mapp: 'Sten' },
+  gniststen: { namn: 'Gniststen', stack: 10, mapp: 'Sten' },
+  yxa: { namn: 'Flintyxa', stack: 1, mapp: 'Redskap', slits: 0.0004, redskap: true },
+  fiskespjut: { namn: 'Fiskespjut', stack: 1, mapp: 'Redskap', slits: 0.001, redskap: true },
+  korg: { namn: 'Korg', stack: 1, mapp: 'Redskap', slits: 0.001, redskap: true },
+  // giftig svamp som av misstag hamnat i förrådet bland den ätliga (fynd.ts). Den ligger i svampstacken och syns inte
+  giftsvamp: { namn: 'Giftig svamp', ruttnar: 1, dold: true },
+} satisfies Record<string, SakDef>;
+
+export type Sak = keyof typeof DEF;
+export const SAKER: Record<string, SakDef | undefined> = DEF;
+export const SAK_LIST = Object.keys(DEF) as Sak[];
+export const sak = (k: string) => SAKER[k];
+export const sakNamn = (k: string) => SAKER[k]?.namn ?? k;
+export const item = (s: State, k: string) => s.items[k] ?? 0; // hur mycket av en sak (inte mat eller ved) byn har
+
+export const STACK: Record<string, number> = Object.fromEntries(SAK_LIST.filter(k => SAKER[k]!.stack).map(k => [k, SAKER[k]!.stack!]));
+export const STACK_ORDER = Object.keys(STACK);
+export const FOOD = SAK_LIST.filter(k => SAKER[k]!.mat !== undefined).sort((a, b) => SAKER[a]!.mat! - SAKER[b]!.mat!) as string[]; // i den ordning de äts
+export const isFood = (k: string) => SAKER[k]?.mat !== undefined;
+export const isTool = (k: string) => !!SAKER[k]?.redskap;
+// mappar i listan över allt byn äger; maten med det som håller längst först
+export const FOLDERS: { namn: string; k: string[] }[] = [...new Set(SAK_LIST.map(k => SAKER[k]!.mapp).filter(m => m))].map(namn => ({
+  namn: namn!, k: SAK_LIST.filter(k => SAKER[k]!.mapp === namn).sort((a, b) => (SAKER[b]!.mat ?? 0) - (SAKER[a]!.mat ?? 0)),
+}));

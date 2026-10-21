@@ -1,8 +1,8 @@
-import { ageOf, living, log, stat, think } from './folk';
-import { count } from './fynd';
+import { ageOf, count, log, stat, think } from './folk';
 import { sedEvent } from './seder';
 import { rnd } from './slump';
-import { Act, Person, State } from './typer';
+import { item } from './saker';
+import { Act, HOUR, Person, State } from './typer';
 
 // ---------- teknik ----------
 // Ingen föds med kunskapen om hur man gör en yxa. Den som arbetar med något kommer så småningom på hur det kan göras
@@ -30,9 +30,7 @@ export const TEKNIK: Tek[] = [
 ];
 export const TEK = Object.fromEntries(TEKNIK.map(t => [t.id, t])) as Record<string, Tek>;
 
-const item = (s: State, k: string) => s.items[k] ?? 0;
 export const knows = (p: Person, id: string) => (p.tek?.[id] ?? 0) >= 1;
-export const knownBy = (s: State, id: string) => living(s).filter(p => knows(p, id));
 export const hasMaterial = (s: State, t: Tek) => t.material.every(g => g.some(k => item(s, k) >= 1));
 const canThink = (p: Person, t: Tek) => !knows(p, t.id) && t.krav.every(k => knows(p, k));
 
@@ -43,13 +41,14 @@ function learn(s: State, p: Person, t: Tek, from?: Person) {
   const first = !s.people.some(q => q !== p && knows(q, t.id)) && !(s.stat?.['tek_' + t.id]);
   count(s, 'tek_' + t.id);
   log(s, `${p.name} kom på hur man gör ${t.namn.toLowerCase()}. ${t.effekt}`, 'skill', [p.id]);
-  think(p, `Kom på hur man gör ${t.namn.toLowerCase()}`, 0.15, s.now, 12 * 3600 * 1000);
+  think(p, `Kom på hur man gör ${t.namn.toLowerCase()}`, 0.15, s.now, 12 * HOUR);
   if (first) { p.fame.push(`Kom på ${t.namn.toLowerCase()}`); sedEvent(s, 'nyfikenhet', 0.04); }
 }
 
-// arbete för tankarna framåt mot det som hör till arbetet
+// arbete för tankarna framåt mot det som hör till arbetet (omr). Andra handlingar ger inga idéer
+const OMR = new Set(TEKNIK.flatMap(t => t.omr));
 export function thinkWhileWorking(s: State, p: Person, act: Act, dtSec: number) {
-  if (ageOf(p, s.now) < 12) return;
+  if (!OMR.has(act) || ageOf(p, s.now) < 12) return;
   const nyf = stat(p, 'nyfikenhet', s.now) / 10, intel = stat(p, 'intelligens', s.now) / 10;
   for (const t of TEKNIK) {
     if (!t.omr.includes(act) || !canThink(p, t) || !hasMaterial(s, t)) continue;

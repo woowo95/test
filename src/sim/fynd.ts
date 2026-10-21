@@ -1,12 +1,12 @@
 import { campCenter, campDist } from './plats';
-import { stat, log, think } from './folk';
+import { count, stat, log, think } from './folk';
 import { getMap, hash } from './karta';
 import { groundOf } from './mark';
 import { sedEvent } from './seder';
 import { chance, clamp, rnd } from './slump';
 import { kn, learnK, useK } from './kunskap';
 import { ageIndex } from './tid';
-import { DAY, H, HOUR, Person, State, T, W } from './typer';
+import { DAY, H, HOUR, Person, State, T, W, inMap } from './typer';
 import { BAR, FOREST, HIGH, isSoil } from './vag';
 
 // ---------- fynd: mat och saker finns på olika platser ----------
@@ -49,7 +49,7 @@ export function shoreOf(seed: number) {
   const t = getMap(seed).tiles; b = new Uint8Array(W * H);
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     if (t[y * W + x] === T.Vatten) continue;
-    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const xx = x + dx, yy = y + dy; if (xx >= 0 && yy >= 0 && xx < W && yy < H && t[yy * W + xx] === T.Vatten) b[y * W + x] = 1; }
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const xx = x + dx, yy = y + dy; if (inMap(xx, yy) && t[yy * W + xx] === T.Vatten) b[y * W + x] = 1; }
   }
   shoreCache.set(seed, b);
   return b;
@@ -64,7 +64,7 @@ export function stoneDist(seed: number) {
     const x0 = i % W, y0 = Math.floor(i / W);
     for (let dy = -8; dy <= 8; dy++) for (let dx = -8; dx <= 8; dx++) {
       const x = x0 + dx, y = y0 + dy;
-      if (x >= 0 && y >= 0 && x < W && y < H) b[y * W + x] = Math.min(b[y * W + x], Math.round(Math.hypot(dx, dy)));
+      if (inMap(x, y)) b[y * W + x] = Math.min(b[y * W + x], Math.round(Math.hypot(dx, dy)));
     }
   }
   stoneCache.set(seed, b);
@@ -107,16 +107,6 @@ export function growFynd(s: State, hours: number, season: number) {
     if (f < 1) for (let i = 0; i < a.length; i++) if (a[i] > 0) a[i] = a[i] * f < 0.004 ? 0 : a[i] * f;
   }
 }
-// den bästa platsen bland kandidaterna: mycket att hämta och inte för långt bort
-export function bestSpot(s: State, k: Kind, cands: { x: number; y: number; d: number }[]) {
-  let best: { x: number; y: number; d: number } | undefined, bs = -1e9;
-  for (const c of cands) {
-    const sc = richness(s, k, c.x + 0.5, c.y + 0.5) - c.d * 0.03 + rnd(s) * 0.15;
-    if (sc > bs) { bs = sc; best = c; }
-  }
-  return best;
-}
-
 // hur mycket de bästa platserna inom räckhåll ger just nu (snitt av de tio bästa), räknas om en gång i timmen
 const prospects = new WeakMap<State, { hr: number; v: Partial<Record<string, number>> }>();
 export function prospect(s: State, k: Kind, r = 99) {
@@ -164,7 +154,6 @@ export function flintSpot(s: State, area?: (x: number, y: number) => boolean): {
 }
 
 // ---------- räknare ----------
-export const count = (s: State, k: string, n = 1) => { (s.stat ??= {})[k] = (s.stat[k] ?? 0) + n; };
 
 // ---------- svamp ----------
 // Kantarellen är god. Den orangea spindlingen liknar den men är giftig. Den som blir förgiftad lär sig skilja dem åt
