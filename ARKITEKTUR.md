@@ -24,7 +24,7 @@ Simuleringen importerar aldrig från `ui/`. Gränssnittet importerar bara från 
 | `varld.ts` | Ny by (`createState`) och `migrate()`, som lagar äldre sparfiler |
 | `karta.ts` | Kartan, som skapas ur fröet (vatten, sand, gräs, sten, var elden står) |
 | `mark.ts`, `vag.ts` | Marken: gräs som nöts till stigar, skog som växer, vägsökning och gångfart |
-| `fynd.ts` | **Registret över värmekartor** (FYND): var varje art och flinta finns (sanningen, inte vad byn vet), årstid, hur platser töms och växer tillbaka, svampplockning (kantarell och giftig spindling) |
+| `fynd.ts` | **Registret över värmekartor** (FYND): var varje art och flinta finns (sanningen, inte vad byn vet), mönster som kryper med tiden, lägerzonen där inget växer, årstid, hur platser töms och växer tillbaka, fisk i vattnet, svampplockning (kantarell och giftig spindling) |
 | `minne.ts`, `kunskap.ts` | Vad var och en vet (kunskap, alltid rätt) och tror (lärdomar, kan vara fel), synvidd, rädsla, glömska |
 | `lager.ts` | Stackar och lagerplatser, att bära in, slitage och ruttning per stack |
 | `eld.ts` | Elden: bränsle, att tända, glöd, värme, eldstäder och tändsätt |
@@ -46,7 +46,7 @@ Simuleringen importerar aldrig från `ui/`. Gränssnittet importerar bara från 
 | `ui/terrang.ts` | Marken och natten |
 | `ui/foremal.ts` | Det som står på marken: lagerplatser, stackar, hus, stubbar, stockar och elden |
 | `ui/manniskor.ts` | Människorna, det de bär, pratbubblor, symbolen över huvudet och namnet |
-| `ui/filter.ts` | Filterknapparna (en per grupp i `GRUPPER`), teckenförklaringen och prickarna som visar värmekartorna |
+| `ui/filter.ts` | Filterknapparna (en per grupp i `GRUPPER`), teckenförklaringen (tryck på en art för att bara se den) och värmekartorna: prick = finns nu, ring = växer här men är plockat |
 | `ui/interaktion.ts` | Mus och tryck på kartan (välja, dra, zooma) och rutan som visar vad som finns under musen |
 | `ui/portratt.ts` | Porträttraden överst och att följa en person med kameran |
 | `ui/panel.ts` | **Flikregistret** (FLIKAR) och listan över allt byn äger |
@@ -76,7 +76,7 @@ Simuleringen importerar aldrig från `ui/`. Gränssnittet importerar bara från 
 
 **Ett nytt system.** Skapa en ny fil i `sim/`, exportera den i `src/sim.ts` och anropa den från `step()`. Det som ändras långsamt anropas i timblocket, och det som gäller varje person anropas i personslingan. Tillståndet läggs i `State` eller `Person` i `typer.ts` (regel 3). Lägg till ett scenario i `src/test/scenario.ts`.
 
-**Ett nytt lager i värmekartan** (en art eller en tillgång på marken). Lägg en rad i `DEF` i `fynd.ts`: namn, grupp, ikon, färg, `topp` (värdet som räknas som mycket), `bas(s, i)` för var den finns, `arstid` om den växlar med årstiden och `uttag` om den kan tömmas. Lägg rader med `uttag` sist, eftersom ordningen styr hur de sparas. Filtret, teckenförklaringen och rutan under musen följer med. Den som skördar arten använder `richness`, `fyndAt` och `takeFrom`.
+**Ett nytt lager i värmekartan** (en art eller en tillgång på marken). Lägg en rad i `DEF` i `fynd.ts`: namn, grupp, ikon, färg, `topp` (värdet som räknas som mycket), `bas(s, i, m)` för var den kan finnas (`m` är mönstret, 0–1), `monster` om den växer fläckvis och kryper (`skala` = fläckarnas storlek i rutor, `period` = dygn mellan två lägen, 0 = står still, `troskel` = hur stor del som är tom, `gles` = glest inom fläcken), `arstid` om den växlar med årstiden, `uttag` om den kan tömmas och `vatten` (räckvidd) om den lever i vattnet och nås från stranden. Lägg rader med `uttag` sist, eftersom ordningen styr hur de sparas. Inget växer i lägret (`iLagret`, `LAGER_R` rutor från elden och lagerplatserna), så zonen växer med byn. Tre värden per ruta: `vaxerAt` (vad som växer där nu, årstiden inräknad), `fyndAt` (vad som finns kvar efter uttag) och `synsOf` (vad man kan gissa från marken, utan mönstret). `standAt`/`richness` räknar värdet där man står (för vattenlager: vattnet runt omkring). Lärdomar sparar `g` (vad som växer) och `hoped` uppskattar återväxten. Filtret, teckenförklaringen och rutan under musen följer med. Den som skördar arten använder `richness`, `fyndAt` och `takeFrom`.
 
 **En ny flik.** Skapa en fil i `ui/flikar/` som exporterar en `Flik` (`namn`, `html()` och vid behov `klick()`). Lägg den sedan i `FLIKAR` i `ui/panel.ts`. Flikknappen skapas av sig själv. En flik som öppnas från kartan får `knapp: 'person'` och ingen egen knapp.
 

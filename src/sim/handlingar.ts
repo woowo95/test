@@ -32,7 +32,7 @@ export interface ActDef {
 
 const DEF = {
   samla: { namn: 'Samlar bär och rötter', mark: 'korg', verktyg: { korg: 'Samlar bär och rötter med korg' }, ikon: 'bar', arbete: 'samla', bas: 0.65, sasong: [0.08, 0.7, 1.25, 1.6], egenskap: 'uthallighet', ger: 'bar', resurs: 'samla', fynd: [3, 5], levande: 1.08, vandra: { r: 2, h0: 3, h1: 10, v: 0.6 }, tungt: true, dygn: true, plats: 'ang' },
-  jakt: { namn: 'Jagar', mark: 'fiskespjut', ikon: 'kott', arbete: 'jakt', bas: 0.7, sasong: [0.7, 0.9, 1.0, 1.15], egenskap: 'mod', ger: 'kott', resurs: 'jakt', fara: { risk: 0.0008, text: 'under en jakt' }, fynd: [3, 5], levande: 1.15, vandra: { r: 3, h0: 3, h1: 10, v: 0.7 }, tungt: true, dygn: true, plats: 'skog' },
+  jakt: { namn: 'Jagar', mark: 'fiskespjut', ikon: 'kott', arbete: 'jakt', bas: 0.7, sasong: [0.7, 0.9, 1.0, 1.15], egenskap: 'mod', ger: 'kott', resurs: 'jakt', fara: { risk: 0.0008, text: 'under en jakt' }, fynd: [3, 5], levande: 1.15, vandra: { r: 3, h0: 3, h1: 10, v: 0.7 }, tungt: true, dygn: true, plats: 'ang' },
   fiske: { namn: 'Fiskar med händerna', mark: 'fisk', verktyg: { fiskespjut: 'Fiskar med spjut' }, ikon: 'fisk', arbete: 'fiske', bas: 0.65, sasong: [0.45, 1.0, 1.1, 1.0], egenskap: 'uthallighet', ger: 'fisk', takt: 0, resurs: 'fiske', tungt: true, dygn: true, plats: 'strand' },
   ved: { namn: 'Samlar grenar', mark: 'korg', ikon: 'grenar', arbete: 'ved', bas: 1.3, sasong: [0.9, 1, 1, 1], egenskap: 'styrka', ger: 'grenar', takt: 2, fynd: [3, 5], levande: 0.99, vandra: { r: 2, h0: 3, h1: 10, v: 0.6 }, tungt: true, dygn: true, plats: 'skog' },
   leka: { namn: 'Leker', vandra: { r: 2, h0: 2, h1: 6, v: 1.3 }, social: true, dygn: true, plats: 'lek' },

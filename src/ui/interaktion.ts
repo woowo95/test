@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { BAR, FOREST, FYND, FYND_IDS, H, HIGH, MATERIAL, Person, T, W, bitAt, campCenter, condOf, emberOn, fyndAt, getMap, groundOf, housesOf, insulation, living, roomAt, sakNamn, taskName, zoneAt, zonesOf, Pile } from '../sim';
+import { BAR, FOREST, FYND, FYND_IDS, H, HIGH, MATERIAL, Person, T, W, bitAt, campCenter, condOf, emberOn, fyndAt, getMap, groundOf, housesOf, vaxerAt, insulation, living, roomAt, sakNamn, taskName, zoneAt, zonesOf, Pile } from '../sim';
 import { iconImg } from '../ikoner';
 import { $, esc, fmtN } from './hjalp';
 import { outPilesAt, piles, s, ui } from './lage';
@@ -67,8 +67,8 @@ function showHover(gx: number, gy: number) {
   // vad lagren har på rutan (värmekartorna): bär och rötter, svamp, vilt, fisk och flinta
   const finds: string[] = [];
   if (!bitAt(s, x, y)) for (const k of FYND_IDS) {
-    const v = fyndAt(s, k, i) / FYND[k].topp;
-    if (v >= (k === 'flinta' ? 0.3 : 0.04)) finds.push(`${iconImg(FYND[k].ikon, 12)} ${esc(FYND[k].namn)}: ${RICH_WORD(v)}`);
+    const v = fyndAt(s, k, i) / FYND[k].topp, g = vaxerAt(s, k, i) / FYND[k].topp; // finns nu, växer här
+    if (g >= (k === 'flinta' ? 0.3 : 0.04)) finds.push(`${iconImg(FYND[k].ikon, 12)} ${esc(FYND[k].namn)}: ${RICH_WORD(v)}${g > v + 0.25 ? ' (plockat, växer tillbaka)' : ''}`);
   }
   if (finds.length) rows.push(finds.join('<br>'));
   if (x === m.fire.x && y === m.fire.y) rows.push(`Elden (${s.fire.lit ? 'brinner' : emberOn(s) ? 'glöder' : 'släckt'})`);

@@ -73,7 +73,9 @@ h1 { font-family: var(--display); font-weight: 700; font-size: 1.7rem; margin: 0
 .filters button:hover { background: rgba(18, 22, 20, 0.9); }
 .filters button[aria-pressed="true"] { outline: 2px solid #f0c070; }
 .legend { position: absolute; right: 50px; bottom: 50px; background: rgba(18, 22, 20, 0.6); border-radius: 4px; padding: 5px 7px; display: flex; flex-direction: column; gap: 3px; }
-.legend span { display: flex; align-items: center; gap: 5px; }
+.legend button { display: flex; align-items: center; gap: 5px; background: none; border: 0; padding: 2px 3px; border-radius: 3px; cursor: pointer; }
+.legend button:hover { background: rgba(255, 255, 255, 0.12); }
+.legend button[aria-pressed="true"] { outline: 2px solid #f0c070; }
 .legend i { width: 12px; height: 12px; border-radius: 2px; display: inline-block; }
 .chip { background: rgba(18, 22, 20, 0.72); color: #eef1ec; border-radius: 4px; padding: 4px 9px; font-size: 13px; font-variant-numeric: tabular-nums; }
 .chip b { font-weight: 700; margin-right: 3px; }

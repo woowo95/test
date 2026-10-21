@@ -1,7 +1,7 @@
 // Scenariotester: ställ en by i ett visst läge, kör den en stund och kontrollera att det som ska hända händer.
 // npm run scenario            kör alla
 // npm run scenario -- glanta  kör bara ett
-import { createState, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, WEEK, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, zonesOf, allows, ageOf, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, fuelStock, DAY, HOUR, W, State, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, campCenter, TEKNIK, knows, thinkWhileWorking, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, beds, isWall, Bit, wearBuild, FYND, FYND_IDS, GRUPPER, fyndAt, takeFrom, packFynd, growFynd, H } from '../sim';
+import { createState, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, WEEK, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, zonesOf, allows, ageOf, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, fuelStock, DAY, HOUR, W, State, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, campCenter, TEKNIK, knows, thinkWhileWorking, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, beds, isWall, Bit, wearBuild, FYND, FYND_IDS, GRUPPER, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, LAGER_R, observe, hoped } from '../sim';
 import { findPath } from '../sim/vag';
 import { FOREST, HIGH, isSoil } from '../sim/vag';
 import { START } from './kor';
@@ -486,8 +486,8 @@ SCENARIER.aktivitet = {
       [`man håller sig nära platsen (${utanfor} gånger utanför)`, utanfor === 0],
       ['ingen går ut i vattnet', vatten === 0],
       [`elden matas med en famn i taget (högst ${eldMax.toFixed(1)})`, eldMax > 0 && eldMax <= 1 + 1e-9],
-      // före de korta passen gav en timmes bärplockning med gångtiden 0,30 i levande läge och 0,19 i snabbläget
-      [`bärplockning ger lika mycket per timme som förut (${pl.toFixed(2)} i levande läge, ${ps.toFixed(2)} i snabbläget)`, pl > 0.2 && pl < 0.4 && Math.abs(ps - 0.19) < 0.05],
+      // med bärsnåren (v24) ger en timmes bärplockning med gångtiden runt 0,3 i båda lägena
+      [`bärplockning ger ungefär lika mycket per timme i båda lägena (${pl.toFixed(2)} i levande läge, ${ps.toFixed(2)} i snabbläget)`, pl > 0.2 && pl < 0.45 && ps > 0.15 && Math.abs(pl - ps) < 0.1],
     ];
   },
 };
@@ -598,16 +598,47 @@ SCENARIER.bygg = {
 };
 
 SCENARIER.varmekarta = {
-  text: 'Värmekartorna: varje lager har ett värde per ruta. Svampen finns mest på hösten, kantarell och giftig spindling växer på olika ställen, uttag tömmer platsen som sedan växer tillbaka, och allt sparas',
+  text: 'Värmekartorna: bär i små snår som står kvar, svamp glest i skogen, kaniner helst i gräs, fisk i vattnet och flinta vid stenarna. Inget växer i lägret, mönstren kryper med tiden, uttag tömmer platsen som växer tillbaka, och den som ser en plockad plats vet att den växer tillbaka',
   kor: () => {
-    const s = createState(21, START), g = groundOf(s);
+    const s = createState(21, START), g = groundOf(s), m = getMap(s.seed);
     const vid = (ai: number) => { s.now = s.founded + ((ai + 3) % 4) * WEEK + HOUR; };
     const summa = (k: typeof FYND_IDS[number]) => { let v = 0; for (let i = 0; i < W * H; i++) v += fyndAt(s, k, i); return v; };
+    const land = (i: number) => isSoil(g.tiles[i]), skog = (i: number) => land(i) && g.trees[i] >= FOREST;
     vid(0); const kIstid = summa('kantarell');
     vid(3); const kHost = summa('kantarell'), bHost = summa('samla');
-    // kantarell och spindling på olika ställen: spindlingen saknas på många skogsrutor där kantarellen finns
-    let skog = 0, utanGift = 0;
-    for (let i = 0; i < W * H; i++) if (isSoil(g.tiles[i]) && g.trees[i] >= FOREST) { skog++; if (fyndAt(s, 'spindling', i) === 0) utanGift++; }
+    // svamp bara i skogen; kantarell och spindling har egna områden som ibland går in i varandra
+    let svampUtanfor = 0, bada = 0, baraK = 0;
+    for (let i = 0; i < W * H; i++) {
+      const k = fyndAt(s, 'kantarell', i), sp = fyndAt(s, 'spindling', i);
+      if (!skog(i) && k + sp > 0) svampUtanfor++;
+      if (k > 0.05 && sp > 0.05) bada++; else if (k > 0.05) baraK++;
+    }
+    // bärbuskar i små snår: få rutor, men rika
+    let jord = 0, buskar = 0;
+    for (let i = 0; i < W * H; i++) if (land(i)) { jord++; if (vaxerAt(s, 'samla', i) > 1) buskar++; }
+    // kaniner trivs bäst i gräs
+    let gr = 0, grN = 0, sk = 0, skN = 0;
+    for (let i = 0; i < W * H; i++) if (land(i) && campDist(s, i % W, Math.floor(i / W)) >= 3) { if (g.trees[i] >= FOREST) { sk += vaxerAt(s, 'jakt', i); skN++; } else if (g.trees[i] === 0) { gr += vaxerAt(s, 'jakt', i); grN++; } }
+    // fisk bara i vattnet, men man når den från stranden
+    let fiskLand = 0, strand = -1;
+    for (let i = 0; i < W * H; i++) { if (m.tiles[i] !== T.Vatten && fyndAt(s, 'fiske', i) > 0) fiskLand++; if (strand < 0 && m.tiles[i] !== T.Vatten && richness(s, 'fiske', i % W + 0.5, Math.floor(i / W) + 0.5) > 0.3) strand = i; }
+    const sx = strand % W + 0.5, sy = Math.floor(strand / W) + 0.5, fiskFore = richness(s, 'fiske', sx, sy);
+    for (let n = 0; n < 4; n++) takeFrom(s, 'fiske', sx, sy, 1);
+    const fiskEfter = richness(s, 'fiske', sx, sy);
+    // inget växer i lägret
+    let iLagret = 0;
+    for (let i = 0; i < W * H; i++) if (campDist(s, i % W, Math.floor(i / W)) < LAGER_R) for (const k of FYND_IDS) if (k !== 'fiske' && fyndAt(s, k, i) > 0) iLagret++;
+    // mönstren kryper: bärsnåren står nästan kvar på två veckor, kaninerna har flyttat mer
+    const kvar = (k: 'samla' | 'jakt', dygn: number, grans: number) => {
+      const t0 = s.now, fore: boolean[] = [];
+      for (let i = 0; i < W * H; i++) fore.push(vaxerAt(s, k, i) > grans);
+      s.now = t0 + dygn * DAY;
+      let same = 0, n = 0;
+      for (let i = 0; i < W * H; i++) if (fore[i]) { n++; if (vaxerAt(s, k, i) > grans) same++; }
+      s.now = t0;
+      return n ? same / n : 0;
+    };
+    const barKvar = kvar('samla', 14, 1), kaninKvar = kvar('jakt', 14, 0.6), barSenare = kvar('samla', 200, 1);
     // ta ur en rik ruta och låt den växa tillbaka
     let bast = 0; for (let i = 0; i < W * H; i++) if (fyndAt(s, 'kantarell', i) > fyndAt(s, 'kantarell', bast)) bast = i;
     const x = bast % W + 0.5, y = Math.floor(bast / W) + 0.5, fore = fyndAt(s, 'kantarell', bast);
@@ -616,18 +647,35 @@ SCENARIER.varmekarta = {
     packFynd(s);
     const kopia = JSON.parse(JSON.stringify(s)) as State;
     const sparad = Math.abs(fyndAt(kopia, 'kantarell', bast) - efter) < 0.01;
+    // den som ser en plockad plats minns att det växer där och tror att det växt tillbaka om ett tag
+    let snar = 0; for (let i = 0; i < W * H; i++) if (vaxerAt(s, 'samla', i) > vaxerAt(s, 'samla', snar) && campDist(s, i % W, Math.floor(i / W)) > 6) snar = i;
+    const bx = snar % W, by = Math.floor(snar / W), p = living(s)[0];
+    for (let dy = -4; dy <= 4; dy++) for (let dx = -4; dx <= 4; dx++) for (let n = 0; n < 6; n++) takeFrom(s, 'samla', bx + dx + 0.5, by + dy + 0.5, 1);
+    s.now += HOUR; observe(s, p, 'samla', bx, by);
+    const l = findL(p, 'samla', areaOf(bx, by))!, nyss = hoped(s, l), text = describe(s, l).what;
+    s.now += 3 * DAY; const sen = hoped(s, l);
     growFynd(s, 48, 3);
     const vuxit = fyndAt(s, 'kantarell', bast);
-    const flinta = (() => { let n = 0; for (let i = 0; i < W * H; i++) if (fyndAt(s, 'flinta', i) >= 4) n++; return n; })();
+    // flinta vid stenarna tar slut där man hittat den och kommer sakta tillbaka
+    let fl = 0; for (let i = 0; i < W * H; i++) if (fyndAt(s, 'flinta', i) >= 4) { fl = i; break; }
+    const flFore = fyndAt(s, 'flinta', fl); takeFrom(s, 'flinta', fl % W + 0.5, Math.floor(fl / W) + 0.5, 1);
+    const flEfter = fyndAt(s, 'flinta', fl); growFynd(s, 24 * 7, 2);
+    const flSen = fyndAt(s, 'flinta', fl);
     return [
       ['varje lager hör till en grupp i filtret', FYND_IDS.every(k => GRUPPER[FYND[k].grupp] && FYND[k].topp > 0)],
-      [`ingen svamp i istiden (${kIstid.toFixed(1)}), gott om på hösten (${kHost.toFixed(0)})`, kIstid === 0 && kHost > 50],
-      [`bär och rötter finns (${bHost.toFixed(0)})`, bHost > 100],
-      [`spindlingen saknas på många skogsrutor (${Math.round(utanGift / skog * 100)} %)`, utanGift / skog > 0.3 && utanGift < skog],
+      [`ingen svamp i istiden (${kIstid.toFixed(1)}), en del på hösten (${kHost.toFixed(0)})`, kIstid === 0 && kHost > 20],
+      [`svamp bara i skogen (${svampUtanfor} rutor utanför)`, svampUtanfor === 0],
+      [`kantarell och spindling växer ibland ihop (${bada} rutor) och ibland var för sig (${baraK} bara kantarell)`, bada > 0 && baraK > bada],
+      [`bärbuskar i små snår (${Math.round(buskar / jord * 100)} % av marken), bär och rötter finns (${bHost.toFixed(0)})`, buskar > 0 && buskar / jord < 0.2 && bHost > 100],
+      [`kaniner trivs bättre i gräs (${(gr / grN).toFixed(2)}) än i skog (${(sk / skN).toFixed(2)})`, gr / grN > sk / skN],
+      [`fisk bara i vattnet (${fiskLand} rutor på land), och man når den från stranden (${fiskFore.toFixed(2)} → ${fiskEfter.toFixed(2)} efter fiske)`, fiskLand === 0 && fiskFore > 0.3 && fiskEfter < fiskFore * 0.7],
+      [`inget växer i lägret (${iLagret})`, iLagret === 0],
+      [`bärsnåren står kvar (${Math.round(barKvar * 100)} % efter två veckor, ${Math.round(barSenare * 100)} % efter 200 dygn), kaninerna flyttar fortare (${Math.round(kaninKvar * 100)} %)`, barKvar > 0.7 && kaninKvar < barKvar && barSenare < 0.6],
       [`uttag tömmer platsen (${fore.toFixed(2)} → ${efter.toFixed(2)})`, efter < fore * 0.3],
       ['uttaget sparas', sparad],
       [`platsen växer tillbaka på hösten (${vuxit.toFixed(2)})`, vuxit > efter + 0.1],
-      [`flinta är vanlig vid stenarna (${flinta} rutor)`, flinta > 0],
+      [`en plockad plats: "${text}", tros växa tillbaka (${nyss.toFixed(2)} → ${sen.toFixed(2)} efter tre dygn)`, text.includes('växer tillbaka') && sen > nyss + 0.2],
+      [`flinta vid stenarna tar slut och kommer tillbaka (${flFore} → ${flEfter.toFixed(1)} → ${flSen.toFixed(1)})`, flFore >= 4 && flEfter < flFore - 0.5 && flSen > flEfter + 0.3],
     ];
   },
 };

@@ -59,7 +59,7 @@ export interface Person {
 // En lärdom om en plats: k = vad, a = område (8×8 rutor), v = hur mycket (eller hur rädd), c = hur säker (0–1),
 // t = senast stärkt, src = vem den hördes av (saknas = egen upplevelse), led = hur många led från den som var där, om = vad som hände
 export type LKind = 'samla' | 'jakt' | 'fiske' | 'flinta' | 'fara';
-export interface Lardom { k: LKind; a: number; v: number; c: number; t: number; src?: number; led?: number; om?: string }
+export interface Lardom { k: LKind; a: number; v: number; g?: number; c: number; t: number; src?: number; led?: number; om?: string }
 
 export interface Rel { chem: number; op: number; rom: number; talks: number; flags: number }
 // flags: 1 = nära vänner loggat, 2 = ovänner loggat

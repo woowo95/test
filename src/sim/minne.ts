@@ -1,12 +1,12 @@
 import { campCenter, campDist } from './plats';
 import { byId, count, living, log, stat } from './folk';
 import { teach } from './teknik';
-import { Kind, capOf, prospect, richness, shoreOf, stoneDist } from './fynd';
+import { FYND, Kind, prospect, richness, shoreOf, standAt, stoneDist, synsOf, vaxerAt } from './fynd';
 import { getMap } from './karta';
 import { groundOf } from './mark';
 import { kn, learnK } from './kunskap';
 import { clamp, rnd } from './slump';
-import { lightLevel } from './tid';
+import { ageIndex, lightLevel } from './tid';
 import { DAY, H, HOUR, LKind, Lardom, Person, Rel, State, T, W } from './typer';
 import { FOREST } from './vag';
 
@@ -23,22 +23,26 @@ export const areaCenter = (a: number) => ({ x: Math.min(W, (a % AW) * AREA + ARE
 // byns närområde, som man i stort sett känner till från elden
 export const SIGHT = 8;
 
-// hur mycket ett område ger just nu, så som man ser det när man går runt där: snittet av de fem bästa rutorna.
-// Sparas en timme i taget, med en plats per slag, område och om det gäller det som kan växa (pot).
+// hur mycket ett område ger, så som man ser det när man går runt där: snittet av de fem bästa rutorna.
+// 'nu' är det som finns kvar, 'vaxer' var det växer (buskar och spår syns även när det är plockat) och 'syns'
+// vad marken ser ut att kunna ge för den som inte varit där. Sparas en timme i taget.
 const LKINDS: LKind[] = ['samla', 'jakt', 'fiske', 'flinta', 'fara'];
+const MODES = ['nu', 'vaxer', 'syns'] as const;
+type Mode = typeof MODES[number];
 const areaCache = new WeakMap<State, { hr: number; v: Float64Array }>();
-export function areaValue(s: State, k: LKind, a: number, pot = false) {
+export function areaValue(s: State, k: LKind, a: number, mode: Mode = 'nu') {
   const hr = Math.floor(s.now / HOUR);
   let c = areaCache.get(s);
-  if (!c || c.hr !== hr) { c = { hr, v: new Float64Array(LKINDS.length * AW * AH * 2).fill(NaN) }; areaCache.set(s, c); }
-  const key = (LKINDS.indexOf(k) * AW * AH + a) * 2 + (pot ? 1 : 0);
+  if (!c || c.hr !== hr) { c = { hr, v: new Float64Array(LKINDS.length * AW * AH * 3).fill(NaN) }; areaCache.set(s, c); }
+  const key = (LKINDS.indexOf(k) * AW * AH + a) * 3 + MODES.indexOf(mode);
   let v = c.v[key];
   if (Number.isNaN(v)) {
     const x0 = (a % AW) * AREA, y0 = Math.floor(a / AW) * AREA, top: number[] = [];
     if (k === 'flinta') { const sd = stoneDist(s.seed); v = 0; for (let y = y0; y < Math.min(H, y0 + AREA); y++) for (let x = x0; x < Math.min(W, x0 + AREA); x++) if (sd[y * W + x] <= 2) v = 1; }
     else if (k === 'fara') v = 0;
     else {
-      for (let y = y0; y < Math.min(H, y0 + AREA); y++) for (let x = x0; x < Math.min(W, x0 + AREA); x++) top.push(pot ? capOf(s, k, y * W + x) : richness(s, k, x + 0.5, y + 0.5));
+      const fn = mode === 'nu' ? undefined : mode === 'vaxer' ? (i: number) => vaxerAt(s, k, i) : (i: number) => synsOf(s, k, i);
+      for (let y = y0; y < Math.min(H, y0 + AREA); y++) for (let x = x0; x < Math.min(W, x0 + AREA); x++) top.push(fn ? standAt(s, k, x, y, fn) : richness(s, k, x + 0.5, y + 0.5));
       top.sort((p, q) => q - p);
       v = top.slice(0, 5).reduce((p, q) => p + q, 0) / 5;
     }
@@ -58,11 +62,12 @@ function trim(s: State, p: Person) {
   L.length = MAX;
 }
 // egen upplevelse: personen ser hur mycket som finns i området
+// Man ser också om det växer där (buskar, svampmark, spår), så att man vet om platsen är plockad eller död.
 export function observe(s: State, p: Person, k: LKind, x: number, y: number, c = 1) {
-  const a = areaOf(x, y), v = areaValue(s, k, a);
+  const a = areaOf(x, y), v = areaValue(s, k, a), g = k === 'flinta' ? undefined : areaValue(s, k, a, 'vaxer');
   const l = findL(p, k, a);
-  if (l) { l.v = v; l.c = Math.max(c, l.src === undefined ? l.c : 0); l.t = s.now; l.src = undefined; l.led = 0; return; }
-  (p.lardomar ??= []).push({ k, a, v, c, t: s.now, led: 0 });
+  if (l) { l.v = v; l.g = g; l.c = Math.max(c, l.src === undefined ? l.c : 0); l.t = s.now; l.src = undefined; l.led = 0; return; }
+  (p.lardomar ??= []).push({ k, a, v, ...(g !== undefined ? { g } : {}), c, t: s.now, led: 0 });
   trim(s, p);
 }
 // den som arbetar i ett område ser också vad mer som finns där: bär, spår av vilt och fisk i vattnet
@@ -73,10 +78,17 @@ export function lookAround(s: State, p: Person, x: number, y: number) {
 // men inte hur mycket andra redan tagit där: då gäller minnet, och utan minne en gissning efter hur marken ser ut.
 // Den nyfikne tror mer på det okända.
 export const trustUnknown = (s: State, p: Person) => 0.45 + stat(p, 'nyfikenhet', s.now) / 40;
-const believed = (l: Lardom | undefined, cap: number, u: number, pot = 1) => l ? Math.min(1, l.v) * l.c * Math.min(1.2, cap / Math.max(0.05, pot)) + cap * u * (1 - l.c) : cap * u;
+// En plats man minns som plockad tror man har vuxit tillbaka efter en tid; en plats där inget växer längre blir inte bättre.
+export function hoped(s: State, l: Lardom) {
+  if (l.g === undefined || l.g <= l.v || l.k === 'flinta' || l.k === 'fara') return l.v;
+  const r = FYND[l.k].uttag?.regrow[ageIndex(s)] ?? 0;
+  return l.g - (l.g - l.v) * Math.exp(-r * (s.now - l.t) / HOUR);
+}
+// syns: vad rutan ser ut att kunna ge, pot: samma för hela området
+const believed = (s: State, l: Lardom | undefined, syns: number, u: number, pot = syns) => l ? Math.min(3, hoped(s, l)) * l.c * Math.min(1.2, syns / Math.max(0.05, pot)) + syns * u * (1 - l.c) : syns * u;
 export function perceive(s: State, p: Person, k: Kind, x: number, y: number, sight = sightOf(s, p)) {
   const a = areaOf(x, y);
-  const v = sees(s, p, x, y, sight) ? richness(s, k, x + 0.5, y + 0.5) : believed(findL(p, k, a), capOf(s, k, y * W + x), trustUnknown(s, p), areaValue(s, k, a, true));
+  const v = sees(s, p, x, y, sight) ? richness(s, k, x + 0.5, y + 0.5) : believed(s, findL(p, k, a), standAt(s, k, x, y, i => synsOf(s, k, i)), trustUnknown(s, p), areaValue(s, k, a, 'syns'));
   return v - fear(s, p, a);
 }
 // rädsla för ett område: den modige bryr sig mindre
@@ -100,7 +112,7 @@ export function bestKnown(s: State, p: Person, k: Kind) {
   for (let a = 0; a < AW * AH; a++) {
     const c = areaCenter(a), d = campDist(s, c.x, c.y);
     if (sees(s, p, c.x, c.y, sight) || Math.abs(c.x - f.x) > 17 || Math.abs(c.y - f.y) > 13) continue;
-    best = Math.max(best, believed(findL(p, k, a), areaValue(s, k, a, true), u) - d * 0.03 - fear(s, p, a));
+    best = Math.max(best, believed(s, findL(p, k, a), areaValue(s, k, a, 'syns'), u) - d * 0.03 - fear(s, p, a));
   }
   return best;
 }
@@ -181,16 +193,16 @@ function tell(s: State, a: Person, b: Person, l: Lardom, r: Rel) {
   const trust = clamp(0.45 + r.op / 160, 0.15, 0.95);
   const c = l.c * trust * 0.85;
   // man överdriver gärna, särskilt det som är farligt
-  const v = clamp(l.v * (l.k === 'fara' ? 1 + (rnd(s) - 0.25) * 0.5 : 1 + (rnd(s) - 0.4) * 0.35), 0, l.k === 'fara' ? 1.6 : 1);
+  const v = clamp(l.v * (l.k === 'fara' ? 1 + (rnd(s) - 0.25) * 0.5 : 1 + (rnd(s) - 0.4) * 0.35), 0, l.k === 'fara' ? 1.6 : 3);
   const e = findL(b, l.k, l.a);
   if (e) {
     if (e.src === undefined && e.led === 0 && e.c >= c) return; // egen upplevelse väger tyngre
-    e.v = (e.v * e.c + v * c) / (e.c + c); e.c = Math.max(e.c, c); e.t = now;
+    e.v = (e.v * e.c + v * c) / (e.c + c); if (l.g !== undefined) e.g = l.g; e.c = Math.max(e.c, c); e.t = now;
     if ((e.src !== undefined || e.led) && (l.led ?? 0) + 1 < (e.led ?? 1)) { e.src = a.id; e.led = (l.led ?? 0) + 1; } // kortare väg till källan
     if (l.om && !e.om) e.om = l.om;
     return;
   }
-  (b.lardomar ??= []).push({ k: l.k, a: l.a, v, c, t: now, src: a.id, led: (l.led ?? 0) + 1, ...(l.om ? { om: l.om } : {}) });
+  (b.lardomar ??= []).push({ k: l.k, a: l.a, v, ...(l.g !== undefined ? { g: l.g } : {}), c, t: now, src: a.id, led: (l.led ?? 0) + 1, ...(l.om ? { om: l.om } : {}) });
   trim(s, b);
   count(s, 'berattat');
   if (l.k === 'fara' && l.om) {
@@ -239,12 +251,15 @@ export function placeName(s: State, a: number) {
   const dir = DIRS[(Math.round(Math.atan2(dy, dx) / (Math.PI / 4)) + 8) % 8];
   return `${terr} ${dir} om byn`;
 }
-const WHAT: Record<LKind, string> = { samla: 'bär och rötter', jakt: 'vilt', fiske: 'fisk i vattnet', flinta: 'flinta', fara: '' };
+const WHAT: Record<LKind, string> = { samla: 'bär och rötter', jakt: 'kaniner', fiske: 'fisk i vattnet', flinta: 'flinta', fara: '' };
 const amount = (v: number) => v >= 0.7 ? 'Gott om' : v >= 0.35 ? 'En del' : v >= 0.1 ? 'Lite' : 'Nästan inga';
 // en lärdom i ord, med hur säker personen är, varifrån den kommer och om den stämmer. what är texten utan platsen.
 export function describe(s: State, l: Lardom) {
   const place = placeName(s, l.a);
-  const what = l.k === 'fara' ? `Farligt${l.om ? `: ${l.om}` : ''}` : l.k === 'flinta' ? 'Flinta finns' : `${amount(l.v)} ${WHAT[l.k]}`;
+  const rel = (v: number) => l.k === 'fara' || l.k === 'flinta' ? v : v / (FYND[l.k].topp * 0.6);
+  const what = l.k === 'fara' ? `Farligt${l.om ? `: ${l.om}` : ''}` : l.k === 'flinta' ? 'Flinta finns'
+    : l.g !== undefined && rel(l.g) < 0.1 ? `${l.k === 'fiske' ? 'Ingen fisk' : `Inga ${WHAT[l.k]}`} längre`
+    : l.g !== undefined && rel(l.g) > rel(l.v) + 0.35 ? `${amount(rel(l.v))} ${WHAT[l.k]}, växer tillbaka` : `${amount(rel(l.v))} ${WHAT[l.k]}`;
   const text = l.k === 'fara' ? `Rädd för platsen ${place}${l.om ? ` (${l.om})` : ''}` : `${what} ${place}`;
   const src = l.src === undefined ? (l.led ? 'fick höra om det' : 'egen erfarenhet') : `hört av ${byId(s, l.src)?.name ?? 'någon'}${(l.led ?? 1) > 1 ? `, ${l.led} led från den som var där` : ''}`;
   const sure = l.c >= 0.75 ? 'säker' : l.c >= 0.4 ? 'ganska säker' : 'osäker';
@@ -253,8 +268,8 @@ export function describe(s: State, l: Lardom) {
   else {
     const real = areaValue(s, l.k, l.a);
     if (l.k === 'flinta') { if (real < 0.5) wrong = 'fel, där finns ingen flinta'; }
-    else if (l.v > real + 0.25) wrong = l.src === undefined && !l.led ? 'stämmer inte längre' : 'överdrivet eller inaktuellt';
-    else if (real > l.v + 0.35) wrong = 'det finns mer än hen tror';
+    else if (rel(l.v) > rel(real) + 0.25) wrong = l.src === undefined && !l.led ? 'stämmer inte längre' : 'överdrivet eller inaktuellt';
+    else if (rel(real) > rel(l.v) + 0.35) wrong = 'det finns mer än hen tror';
   }
   return { text, what, place, src, sure, wrong };
 }
