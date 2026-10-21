@@ -83,89 +83,11 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
   for (const p of ppl) { const r = roomAt(s, p.x, p.y); if (r) inRum.set(r.id, (inRum.get(r.id) ?? 0) + 1); }
   for (const p of ppl) {
     const a = ageOf(p, now);
-    // behov
-    p.hunger = clamp(p.hunger - dtSec / (16 * 3600) * (a < 10 ? 0.7 : 1), 0, 1);
-    const pd = p.task && ACTS[p.task.act];
-    const working = pd && pd.tungt && p.task!.phase === 'do';
-    const resting = pd && pd.vila;
-    p.rest = clamp(p.rest + dtSec / 3600 * (resting ? 0.09 : working ? -0.06 : -0.03), 0, 1);
-    // värme: elden värmer i ett område, och inne i ett hus kyls man långsammare (sämre ju fler öppningar)
-    const heat = heatAt(s, p.x, p.y), rum = roomAt(s, p.x, p.y), shelter = rum ? shelterOf(s, rum, inRum.get(rum.id) ?? 1) : 0;
-    p.warm = clamp(p.warm + dtSec / 3600 * (heat * 2 - coldRate * (1 - shelter) + (coldRate === 0 ? 0.5 : 0)), 0, 1);
-    if (rum && resting && p.task!.phase === 'do' && pd.plats === 'sang') { // man vilar bättre under tak, och mjukast på ett gräsgolv
-      const soft = gridOf(s).at.get(Math.floor(p.y) * W + Math.floor(p.x))?.m === 'ho';
-      p.rest = clamp(p.rest + dtSec / 3600 * (soft ? 0.03 : 0.02), 0, 1);
-      if (p.task!.act === 'sova') think(p, soft ? 'Sov mjukt på gräsgolvet i huset' : 'Sov under tak', soft ? 0.07 : 0.05, now, 8 * HOUR);
-    }
-    if (heat > 0.15) {
-      think(p, 'Värms av elden', fh.comfort, now, HOUR);
-      p.rest = clamp(p.rest + dtSec / 3600 * fh.comfort * heat, 0, 1); // avslappning vid elden
-    }
-    if (p.warm < 0.35) think(p, 'Fryser', -0.12, now, HOUR);
-    p.social = clamp(p.social - dtSec / (18 * 3600), 0, 1);
-    // toa: behovet växer på ungefär sju timmar, långsammare i sömnen
-    p.toa = clamp(p.toa - dtSec / (7 * 3600) * (p.task?.act === 'sova' ? 0.5 : 1), 0, 1);
-    if (p.toa <= 0) { p.toa = 1; if (a >= 3) think(p, 'Kissade på sig', -0.12, now, 4 * HOUR); }
-    if (p.hunger < 0.45 && s.food >= 0.3) { // en hel portion, eller det som finns kvar
-      const full = a < 10 ? 0.6 : 1, portion = Math.min(full, s.food);
-      const q = takeFood(s, portion); // maten under halva skicket mättar sämre, under en fjärdedel kan man bli sjuk
-      p.hunger = clamp(p.hunger + 0.55 * portion / full * (q >= 0.5 ? 1 : 0.5 + q), 0, 1); eatPoison(s, p);
-      if (q < 0.5) think(p, 'Maten var dålig', -0.05, now, 6 * HOUR);
-      if (q < 0.25 && rnd(s) < (0.25 - q) / 0.25 * 0.35) {
-        p.sickUntil = Math.max(p.sickUntil ?? 0, now + (4 + rnd(s) * 8) * HOUR); p.sickWhy = 'Magsjuk av skämd mat';
-        think(p, 'Åt skämd mat och blev magsjuk', -0.2, now, DAY / 2); count(s, 'skamdMat');
-        log(s, `${p.name} blev magsjuk av skämd mat.`, 'world', [p.id]);
-      }
-    }
-    // hälsa
-    if (p.hunger <= 0) { p.health -= dtSec / (5 * 3600); if (rnd(s) < dtSec / 7200) think(p, 'Svälter', -0.25, now, 3 * HOUR); }
-    else if (p.warm < 0.12) p.health -= dtSec / (20 * 3600);
-    else if (p.hunger > 0.3 && !(p.sickUntil && p.sickUntil > now)) p.health = clamp(p.health + dtSec / (10 * 3600), 0, 1);
-    if (p.sickUntil && p.sickUntil > now) p.health -= dtSec / (40 * 3600);
-    if (!p.sickUntil || p.sickUntil < now) {
-      if (chance(s, (ai === 0 ? 0.12 : 0.05) / 86400, dtSec)) { const dur = (3 + rnd(s) * 8) * HOUR; p.sickUntil = now + dur; p.sickWhy = 'Sjuk'; if (dur > 8 * HOUR) log(s, `${p.name} blev svårt sjuk.`, 'world', [p.id]); }
-    }
-    if (p.health <= 0) { die(s, p, p.hunger <= 0 ? 'av svält' : p.warm < 0.12 ? 'av kyla' : (p.poisonUntil ?? 0) > now ? 'av svampförgiftning' : 'av sjukdom'); continue; }
-    // ålderdom och olyckor (Gompertz, per år = per dygn)
-    const q = 0.0015 + 0.00004 * Math.exp(0.105 * a) + (a < 5 ? 0.02 : 0);
-    if (chance(s, q / 86400, dtSec)) { die(s, p, a > 55 ? 'av ålderdom' : a < 5 ? 'av en barnsjukdom' : 'i en olycka'); if (a >= 5 && a <= 55) fearPlace(s, p, 'i en olycka'); continue; }
-    const fara = pd && pd.fara; // farligt arbete, som jakt
-    if (fara && p.task!.phase === 'do' && chance(s, fara.risk * (1 - (pd.arbete ? p.skill[pd.arbete] : 0) / 25) / 3600, dtSec)) { die(s, p, fara.text); fearPlace(s, p, fara.text); continue; }
-    // graviditet
-    if (p.pregnantSince !== undefined) { if (now - p.pregnantSince > 0.75 * DAY) birth(s, p); }
-    else if (p.sex === 'k' && p.partner !== undefined && a >= 17 && a <= 43 && (!p.lastBirth || now - p.lastBirth > 1.6 * DAY)) {
-      const pop = ppl.length;
-      const f = birthWish(pop) * clamp(foodDays(s) / 4, 0.15, 1) * (1 + 0.2 * s.seder.v.barn);
-      if (chance(s, 0.3 * f / 86400, dtSec)) { p.pregnantSince = now; p.pregnantBy = p.partner; }
-    }
-    // uppgift
-    const t = p.task;
-    const phaseFlip = t && t.dark !== !light && ACTS[t.act].dygn; // dag blev natt eller tvärtom
-    if (t && t.phase === 'do' && t.until < now) KLAR[t.act]?.(s, p, t, dtSec, live); // ett träd som fällts färdigt, en yxa som gjorts klar
-
-    const lightDone = t?.act === 'tanda' && (s.fire.lit || !canLight(s));
-    const mustGo = t && p.toa < 0.08 && t.act !== 'toa' && a >= 3; // nöden avbryter det man håller på med
-    if (!t || (t.until < now && t.phase !== 'back') || ((phaseFlip || mustGo) && t.phase !== 'back') || lightDone) {
-      if (t && (t.carry > 0 || t.items) && t.act !== 'elda' && live) { t.phase = 'back'; const d = dropSpot(s, homeKind(t)); t.tx = d.x + (rnd(s) - 0.5) * 0.4; t.ty = d.y + (rnd(s) - 0.5) * 0.4; }
-      else chooseTask(s, p, live);
-    }
-    const tk = p.task!;
-    if (!live && tk.act === 'bara' && tk.phase === 'do' && tk.until > now) { pickUp(s, p, tk); storeLoad(s, tk); tk.until = now; }
-    if (live) moveLive(s, p, tk, dtSec, a, light);
-    // vana: tiden räknas mot yrkestaggar
-    const hf = Math.exp(-dtSec * SEC / HABIT_FADE);
-    for (const k in p.habit) p.habit[k] *= hf;
-    p.habit[tk.act] = (p.habit[tk.act] ?? 0) + dtSec / 3600;
-    // den som arbetar kommer så småningom på hur det kan göras bättre; man funderar också på vägen dit och hem
-    thinkWhileWorking(s, p, tk.act, dtSec);
-    const d = ACTS[tk.act];
-    if (tk.phase === 'do') {
-      MEDAN[tk.act]?.(s, p, tk, dtSec, live);
-      if (d.arbete) workStep(s, p, tk, dtSec, live, a, learn);
-    }
-    // (bygget kan just ha skickat iväg personen efter mer material)
-    if (tk.phase === 'do' && d.hantverk) p.skill.hantverk = clamp(p.skill.hantverk + dtSec / 3600 * 0.1 * learn * (1 - p.skill.hantverk / 21), 0, 20);
-    if (tk.phase === 'do' && d.social) social.push(p);
+    needsStep(s, p, a, dtSec, coldRate, fh, inRum);
+    if (p.hunger < 0.45 && s.food >= 0.3) eat(s, p, a);
+    if (healthStep(s, p, a, ai, dtSec)) continue; // dog
+    pregnancy(s, p, a, ppl.length, dtSec);
+    taskStep(s, p, a, dtSec, live, light, learn, social);
     if (p.thoughts.some(x => x.until <= now)) p.thoughts = p.thoughts.filter(x => x.until > now);
   }
   // samtal: ca ett per 4 minuter per person i social aktivitet
@@ -188,6 +110,106 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
   if (living(s).length === 0) log(s, 'Byn är tom. Ingen finns kvar vid elden.', 'world');
   regulate(s, dtSec);
   for (const k in s.items) if (s.items[k] < 1e-6) delete s.items[k];
+}
+
+
+// behoven: hunger, vila, värme, umgänge och toa. Elden värmer i ett område, och inne i ett hus kyls man långsammare
+// (sämre ju fler öppningar)
+function needsStep(s: State, p: Person, a: number, dtSec: number, coldRate: number, fh: ReturnType<typeof hearthOf>, inRum: Map<number, number>) {
+  const now = s.now;
+  p.hunger = clamp(p.hunger - dtSec / (16 * 3600) * (a < 10 ? 0.7 : 1), 0, 1);
+  const pd = p.task && ACTS[p.task.act];
+  const working = pd && pd.tungt && p.task!.phase === 'do';
+  const resting = pd && pd.vila;
+  p.rest = clamp(p.rest + dtSec / 3600 * (resting ? 0.09 : working ? -0.06 : -0.03), 0, 1);
+  const heat = heatAt(s, p.x, p.y), rum = roomAt(s, p.x, p.y), shelter = rum ? shelterOf(s, rum, inRum.get(rum.id) ?? 1) : 0;
+  p.warm = clamp(p.warm + dtSec / 3600 * (heat * 2 - coldRate * (1 - shelter) + (coldRate === 0 ? 0.5 : 0)), 0, 1);
+  if (rum && resting && p.task!.phase === 'do' && pd.plats === 'sang') { // man vilar bättre under tak, och mjukast på ett gräsgolv
+    const soft = gridOf(s).at.get(Math.floor(p.y) * W + Math.floor(p.x))?.m === 'ho';
+    p.rest = clamp(p.rest + dtSec / 3600 * (soft ? 0.03 : 0.02), 0, 1);
+    if (p.task!.act === 'sova') think(p, soft ? 'Sov mjukt på gräsgolvet i huset' : 'Sov under tak', soft ? 0.07 : 0.05, now, 8 * HOUR);
+  }
+  if (heat > 0.15) {
+    think(p, 'Värms av elden', fh.comfort, now, HOUR);
+    p.rest = clamp(p.rest + dtSec / 3600 * fh.comfort * heat, 0, 1); // avslappning vid elden
+  }
+  if (p.warm < 0.35) think(p, 'Fryser', -0.12, now, HOUR);
+  p.social = clamp(p.social - dtSec / (18 * 3600), 0, 1);
+  // toa: behovet växer på ungefär sju timmar, långsammare i sömnen
+  p.toa = clamp(p.toa - dtSec / (7 * 3600) * (p.task?.act === 'sova' ? 0.5 : 1), 0, 1);
+  if (p.toa <= 0) { p.toa = 1; if (a >= 3) think(p, 'Kissade på sig', -0.12, now, 4 * HOUR); }
+}
+
+// en hel portion, eller det som finns kvar. Maten under halva skicket mättar sämre, under en fjärdedel kan man bli sjuk
+function eat(s: State, p: Person, a: number) {
+  const now = s.now, full = a < 10 ? 0.6 : 1, portion = Math.min(full, s.food);
+  const q = takeFood(s, portion);
+  p.hunger = clamp(p.hunger + 0.55 * portion / full * (q >= 0.5 ? 1 : 0.5 + q), 0, 1); eatPoison(s, p);
+  if (q < 0.5) think(p, 'Maten var dålig', -0.05, now, 6 * HOUR);
+  if (q < 0.25 && rnd(s) < (0.25 - q) / 0.25 * 0.35) {
+    p.sickUntil = Math.max(p.sickUntil ?? 0, now + (4 + rnd(s) * 8) * HOUR); p.sickWhy = 'Magsjuk av skämd mat';
+    think(p, 'Åt skämd mat och blev magsjuk', -0.2, now, DAY / 2); count(s, 'skamdMat');
+    log(s, `${p.name} blev magsjuk av skämd mat.`, 'world', [p.id]);
+  }
+}
+
+// hälsa, sjukdom och död: svält, kyla, sjukdom, ålderdom och olyckor. true = personen dog
+function healthStep(s: State, p: Person, a: number, ai: number, dtSec: number) {
+  const now = s.now;
+  if (p.hunger <= 0) { p.health -= dtSec / (5 * 3600); if (rnd(s) < dtSec / 7200) think(p, 'Svälter', -0.25, now, 3 * HOUR); }
+  else if (p.warm < 0.12) p.health -= dtSec / (20 * 3600);
+  else if (p.hunger > 0.3 && !(p.sickUntil && p.sickUntil > now)) p.health = clamp(p.health + dtSec / (10 * 3600), 0, 1);
+  if (p.sickUntil && p.sickUntil > now) p.health -= dtSec / (40 * 3600);
+  if (!p.sickUntil || p.sickUntil < now) {
+    if (chance(s, (ai === 0 ? 0.12 : 0.05) / 86400, dtSec)) { const dur = (3 + rnd(s) * 8) * HOUR; p.sickUntil = now + dur; p.sickWhy = 'Sjuk'; if (dur > 8 * HOUR) log(s, `${p.name} blev svårt sjuk.`, 'world', [p.id]); }
+  }
+  if (p.health <= 0) { die(s, p, p.hunger <= 0 ? 'av svält' : p.warm < 0.12 ? 'av kyla' : (p.poisonUntil ?? 0) > now ? 'av svampförgiftning' : 'av sjukdom'); return true; }
+  // ålderdom och olyckor (Gompertz, per år = per dygn)
+  const q = 0.0015 + 0.00004 * Math.exp(0.105 * a) + (a < 5 ? 0.02 : 0);
+  if (chance(s, q / 86400, dtSec)) { die(s, p, a > 55 ? 'av ålderdom' : a < 5 ? 'av en barnsjukdom' : 'i en olycka'); if (a >= 5 && a <= 55) fearPlace(s, p, 'i en olycka'); return true; }
+  const pd = p.task && ACTS[p.task.act], fara = pd && pd.fara; // farligt arbete, som jakt
+  if (fara && p.task!.phase === 'do' && chance(s, fara.risk * (1 - (pd.arbete ? p.skill[pd.arbete] : 0) / 25) / 3600, dtSec)) { die(s, p, fara.text); fearPlace(s, p, fara.text); return true; }
+  return false;
+}
+
+// graviditet: en kvinna med partner kan bli gravid; viljan styrs av hur många byn är, maten och sederna
+function pregnancy(s: State, p: Person, a: number, pop: number, dtSec: number) {
+  const now = s.now;
+  if (p.pregnantSince !== undefined) { if (now - p.pregnantSince > 0.75 * DAY) birth(s, p); }
+  else if (p.sex === 'k' && p.partner !== undefined && a >= 17 && a <= 43 && (!p.lastBirth || now - p.lastBirth > 1.6 * DAY)) {
+    const f = birthWish(pop) * clamp(foodDays(s) / 4, 0.15, 1) * (1 + 0.2 * s.seder.v.barn);
+    if (chance(s, 0.3 * f / 86400, dtSec)) { p.pregnantSince = now; p.pregnantBy = p.partner; }
+  }
+}
+
+// uppgiften: avsluta den som är klar, välj en ny, gå dit och gör den. Vanor och idéer växer medan man håller på
+function taskStep(s: State, p: Person, a: number, dtSec: number, live: boolean, light: boolean, learn: number, social: Person[]) {
+  const now = s.now, t = p.task;
+  const phaseFlip = t && t.dark !== !light && ACTS[t.act].dygn; // dag blev natt eller tvärtom
+  if (t && t.phase === 'do' && t.until < now) KLAR[t.act]?.(s, p, t, dtSec, live); // ett träd som fällts färdigt, en yxa som gjorts klar
+  const lightDone = t?.act === 'tanda' && (s.fire.lit || !canLight(s));
+  const mustGo = t && p.toa < 0.08 && t.act !== 'toa' && a >= 3; // nöden avbryter det man håller på med
+  if (!t || (t.until < now && t.phase !== 'back') || ((phaseFlip || mustGo) && t.phase !== 'back') || lightDone) {
+    if (t && (t.carry > 0 || t.items) && t.act !== 'elda' && live) { t.phase = 'back'; const d = dropSpot(s, homeKind(t)); t.tx = d.x + (rnd(s) - 0.5) * 0.4; t.ty = d.y + (rnd(s) - 0.5) * 0.4; }
+    else chooseTask(s, p, live);
+  }
+  const tk = p.task!;
+  if (!live && tk.act === 'bara' && tk.phase === 'do' && tk.until > now) { pickUp(s, p, tk); storeLoad(s, tk); tk.until = now; }
+  if (live) moveLive(s, p, tk, dtSec, a, light);
+  // vana: tiden räknas mot yrkestaggar
+  const hf = Math.exp(-dtSec * SEC / HABIT_FADE);
+  for (const k in p.habit) p.habit[k] *= hf;
+  p.habit[tk.act] = (p.habit[tk.act] ?? 0) + dtSec / 3600;
+  // den som arbetar kommer så småningom på hur det kan göras bättre; man funderar också på vägen dit och hem
+  thinkWhileWorking(s, p, tk.act, dtSec);
+  const d = ACTS[tk.act];
+  if (tk.phase === 'do') {
+    MEDAN[tk.act]?.(s, p, tk, dtSec, live);
+    if (d.arbete) workStep(s, p, tk, dtSec, live, a, learn);
+  }
+  // (bygget kan just ha skickat iväg personen efter mer material)
+  if (tk.phase === 'do' && d.hantverk) p.skill.hantverk = clamp(p.skill.hantverk + dtSec / 3600 * 0.1 * learn * (1 - p.skill.hantverk / 21), 0, 20);
+  if (tk.phase === 'do' && d.social) social.push(p);
 }
 
 // levande läge: gå till platsen och tillbaka, och rör sig på platsen

@@ -18,18 +18,20 @@ Björn programmerar inte; Claude skriver all kod. Svara på svenska.
 
 - Spelet (artefakt): https://claude.ai/artifact/TdCUKPj4wC55BVGq7db14n
 - Designdokument (Claude Docs): https://claude.ai/artifact/McP5446XiGQaJ3hbs9YXrc. Läs avsnittet "Läget just nu" först.
+- Koden: läs `ARKITEKTUR.md` först. Den säger vilken fil som gör vad, vilka regler som håller ihop koden och hur man lägger till en handling, en sak, en teknik, en flik eller ett nytt system. Öppna sedan bara de filer som berörs.
 
 ## Bygga och publicera
 
-- `npm install`, sedan `npm run build`, som ger `samhallssimulatorn.html`.
-- Publicera alltid till samma artefakt-URL så att Björns sparade by och länk finns kvar.
-- Lägg uppdaterad källkod under `kalla/` i artefakten vid varje publicering (filnamn med `.txt`).
+- `npm install`, sedan `npm run build`. Det ger `samhallssimulatorn.html`, och i `publicera/` källkoden som .txt och fillistan `filer.json`.
+- Publicera alltid till samma artefakt-URL så att Björns sparade by och länk finns kvar: `file_path` = `samhallssimulatorn.html`, `url` = spelets URL och `files` = innehållet i `publicera/filer.json`. Då kommer källkoden med under `kalla/`.
 - Uppdatera "Läget just nu" i designdokumentet när något nytt är byggt.
 
 ## Tester (spara tokens)
 
+- `npm run koll`: kör efter varje ändring (ca 40 s). Det kör typkontrollen, `npm test`, alla scenarier och samma-kollen samtidigt och skriver bara ut det som behövs.
+- `npm run samma`: utvecklas byarna exakt som förut (ca 5 s)? Används vid ombyggnad som inte ska ändra något i spelet.
 - `npm test`: tre byar i 90 dygn utan grafik, en rad per by, jämfört med `test/facit.json`. Visar bara det som ändrats, alltid om en by dött ut och återgrundats, och vakter som larmar om något omöjligt händer (NaN, negativa förråd, folk i vattnet).
-- `npm run facit`: spara nytt facit när en ändring är avsiktlig.
+- `npm run facit`: spara nytt facit (och ny samma-koll) när en ändring i spelet är avsiktlig.
 - `npm run balans -- [antal] [dygn]`: många byar parallellt, median/sämst/bäst. Använd vid balansering.
 - `npm run scenario -- [namn]`: scenariotester (glanta, ingen-yxa, yxa, vinter-slocknad, knapphet, svamp, flinta, kunskap, temperatur, befolkning, fiskespjut, bostad, fritid, lager, slitage, lagerplatser, rotter, aktivitet, teknik, bygg) som kontrollerar att det som ska hända händer. Lägg till ett scenario när ett nytt system byggs.
 - `npm run takt -- [by] live|snabb [timmar]`: hur mycket en arbetstimme ger i levande läge och snabbläget, antal turer hem och hur mycket mark som nötts. Använd när arbete, bördor eller gång ändras.

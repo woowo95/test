@@ -5,7 +5,7 @@
   "scripts": {
     "build": "node build.mjs",
     "test": "tsx src/test/test.ts",
-    "facit": "tsx src/test/test.ts --spara",
+    "facit": "tsx src/test/test.ts --spara && tsx src/test/samma.ts --spara",
     "balans": "tsx src/test/balans.ts",
     "scenario": "tsx src/test/scenario.ts",
     "detaljer": "tsx src/test/detaljer.ts",
@@ -13,7 +13,8 @@
     "takt": "tsx src/test/takt.ts",
     "teknik": "tsx src/test/teknik.ts",
     "likhet": "bash src/test/likhet.sh",
-    "koll": "tsx src/test/koll.ts"
+    "koll": "tsx src/test/koll.ts",
+    "samma": "tsx src/test/samma.ts"
   },
   "repository": {
     "type": "git",

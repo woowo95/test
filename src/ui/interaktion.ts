@@ -1,6 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { H, Kind, MATERIAL, Person, T, W, ageIndex, bitAt, campCenter, condOf, emberOn, getMap, groundOf, housesOf, insulation, living, richness, roomAt, sakNamn, stoneDist, taskName, zoneAt, zonesOf, Pile } from '../sim';
-import { BAR, FOREST, HIGH } from '../sim/vag';
+import { BAR, FOREST, H, HIGH, Kind, MATERIAL, Person, T, W, ageIndex, bitAt, campCenter, condOf, emberOn, getMap, groundOf, housesOf, insulation, living, richness, roomAt, sakNamn, stoneDist, taskName, zoneAt, zonesOf, Pile } from '../sim';
 import { iconImg } from '../ikoner';
 import { $, esc, fmtN } from './hjalp';
 import { outPilesAt, piles, s, ui } from './lage';
