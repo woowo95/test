@@ -28,23 +28,23 @@ export const SKILL_NAMES: Record<Skill, string> = {
 
 export const AGES = ['Istid', 'Vårtid', 'Sommartid', 'Hösttid'];
 
-export type Act = 'samla' | 'jakt' | 'fiske' | 'ved' | 'leka' | 'vila' | 'samtal' | 'beratta' | 'hantverk' | 'vakt' | 'sova' | 'elda' | 'tanda' | 'varma' | 'toa' | 'kol' | 'falla' | 'hugga' | 'yxa' | 'spjut' | 'promenad' | 'bada' | 'bara' | 'strand' | 'korg';
+export type Act = 'samla' | 'jakt' | 'fiske' | 'ved' | 'leka' | 'vila' | 'samtal' | 'beratta' | 'hantverk' | 'vakt' | 'sova' | 'elda' | 'tanda' | 'varma' | 'toa' | 'kol' | 'falla' | 'hugga' | 'yxa' | 'spjut' | 'promenad' | 'bada' | 'bara' | 'strand' | 'korg' | 'bygga';
 export const ACT_NAMES: Record<Act, string> = {
   samla: 'Samlar bär och rötter', jakt: 'Jagar', fiske: 'Fiskar med händerna', ved: 'Samlar grenar', leka: 'Leker',
   vila: 'Vilar', samtal: 'Samtalar vid elden', beratta: 'Berättar vid elden', hantverk: 'Gör handarbete',
   vakt: 'Håller vakt', sova: 'Sover', elda: 'Lägger ved på elden', tanda: 'Försöker tända elden', varma: 'Värmer sig vid elden',
   toa: 'Går avsides på toa', kol: 'Hämtar kol ur den slocknade elden',
-  falla: 'Fäller ett träd med yxa', hugga: 'Hugger ved av ett fällt träd', yxa: 'Gör en yxa av en pinne och flinta', spjut: 'Täljer ett fiskespjut', promenad: 'Tar en promenad', bada: 'Badar i sjön', bara: 'Bär in saker till lagret', strand: 'Sitter vid stranden och ser ut över vattnet', korg: 'Flätar en korg av torrt gräs',
+  falla: 'Fäller ett träd med yxa', hugga: 'Hugger ved av ett fällt träd', yxa: 'Gör en yxa av en pinne och flinta', spjut: 'Täljer ett fiskespjut', promenad: 'Tar en promenad', bada: 'Badar i sjön', bara: 'Bär in saker till lagret', strand: 'Sitter vid stranden och ser ut över vattnet', korg: 'Flätar en korg av torrt gräs', bygga: 'Bygger',
 };
 export const WORK: Act[] = ['samla', 'jakt', 'fiske', 'ved'];
 export const GREN = 0.4; // en gren ger lika mycket bränsle som 0,4 ved: grenar brinner fort
 export const AXE_WORK: Act[] = ['falla', 'hugga']; // arbete med yxa, räknas som vedarbete
 export const isWork = (a: Act) => WORK.includes(a) || AXE_WORK.includes(a);
-export const taskName = (t: Task) => t.act === 'fiske' && t.tool === 'fiskespjut' ? 'Fiskar med spjut' : t.act === 'samla' && t.tool === 'korg' ? 'Samlar bär och rötter med korg' : ACT_NAMES[t.act];
+export const taskName = (t: Task) => t.act === 'bygga' ? (t.tool === 'laga' ? 'Lagar en vägg' : t.tool === 'golv' ? 'Lägger golv' : 'Bygger en vägg') : t.act === 'fiske' && t.tool === 'fiskespjut' ? 'Fiskar med spjut' : t.act === 'samla' && t.tool === 'korg' ? 'Samlar bär och rötter med korg' : ACT_NAMES[t.act];
 
 export interface Thought { text: string; v: number; until: number }
 // why = varför personen valde uppgiften, dark = påbörjad under mörk tid
-export interface Task { act: Act; phase: 'go' | 'do' | 'back'; tx: number; ty: number; until: number; carry: number; items?: Record<string, number>; cond?: Record<string, number>; why?: string; dark?: boolean; path?: number[]; pk?: string; ref?: number; prog?: number; tool?: string; stint?: number; fynd?: number; lim?: number; res?: { x: number; y: number; until: number }; wx?: number; wy?: number; hold?: number } // tool = redskap som används, t.ex. fiskespjut. stint = när arbetspasset slutar och bördan bärs hem, res = var och till när arbetet fortsätter efteråt, wx/wy/hold = vart man går härnäst på platsen och hur länge man står still
+export interface Task { act: Act; phase: 'go' | 'do' | 'back'; tx: number; ty: number; until: number; carry: number; items?: Record<string, number>; cond?: Record<string, number>; why?: string; dark?: boolean; path?: number[]; pk?: string; ref?: number; prog?: number; tool?: string; stint?: number; fynd?: number; lim?: number; res?: { x: number; y: number; until: number }; wx?: number; wy?: number; hold?: number; site?: { x: number; y: number } } // tool = redskap som används, t.ex. fiskespjut. stint = när arbetspasset slutar och bördan bärs hem, res = var och till när arbetet fortsätter efteråt, wx/wy/hold = vart man går härnäst på platsen och hur länge man står still, site = bygget man går till efter att ha hämtat material
 
 export interface Person {
   id: number; name: string; sex: 'm' | 'k';
@@ -96,6 +96,7 @@ export interface State {
   stubbar?: { x: number; y: number; t: number }[]; // stubbar efter fällda träd, t = när trädet fälldes
   nextStock?: number; fallda?: number;
   fynd?: string; // hur mycket som tagits ur varje plats (bär, vilt, fisk), packat
+  byggen?: import('./bygg').Bit[]; hus?: import('./bygg').Hus[]; byggV?: number; nextBit?: number; byggSok?: number; // väggar, golv och öppningar, husen byn planerat, ändringsräknare
   kunskap?: Record<string, number>; // äldre sparfiler: byns gemensamma kunskap, flyttas till varje person
   stat?: Record<string, number>; // räknare: svamp, fiskeförsök, napp, fångst med mera
 }

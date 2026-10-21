@@ -3,6 +3,7 @@ import { stat, ageOf, log } from './folk';
 import { getMap } from './karta';
 import { Act, H, Person, State, T, Task, W } from './typer';
 import { GIFT } from './fynd';
+import { bitAt, roofed } from './bygg';
 
 // ---------- lager och stackar ----------
 // Byns saker ligger i stackar. En ruta rymmer en stack av ett slag. Tunga och skrymmande saker har mindre stackar.
@@ -29,7 +30,7 @@ export interface Stack { k: string; n: number; c: number; x: number; y: number }
 export interface Pile extends Stack { max: number; out: boolean; stored: boolean; zone: number }
 const MAX_W = 6, MAX_H = 5, MAX_ZONES = 4;
 export const OUT_WEAR = 3; // saker utanför lagret slits tre gånger fortare
-export const INDOOR_WEAR = 0.4; // under tak slits saker mindre (inget taksystem ännu)
+export const INDOOR_WEAR = 0.4; // under tak slits saker mindre
 
 export const isFood = (k: string) => FOOD.includes(k);
 export const isTool = (k: string) => STACK[k] === 1;
@@ -38,8 +39,6 @@ export const condOf = (a: Stack) => isTool(a.k) ? a.n : a.c;
 export const inZone = (z: Zone, x: number, y: number) => x >= z.x && x < z.x + z.w && y >= z.y && y < z.y + z.h;
 const near = (z: Zone, x: number, y: number, d: number) => x >= z.x - d && x < z.x + z.w + d && y >= z.y - d && y < z.y + z.h + d;
 export const allows = (z: Zone, k: string) => !z.slag || (z.slag === 'mat') === isFood(k);
-// tak över rutan: förberett för bostäder och förråd med tak
-export const roofed = (_s: State, _x: number, _y: number) => false;
 
 export function zonesOf(s: State): Zone[] {
   if (!s.lagren) {
@@ -79,7 +78,7 @@ function usable(s: State, x: number, y: number) {
   const m = getMap(s.seed), f = m.fire;
   if (x < 0 || y < 0 || x >= W || y >= H) return false;
   const t = m.tiles[y * W + x];
-  return t !== T.Vatten && t !== T.Sten && Math.max(Math.abs(x - f.x), Math.abs(y - f.y)) > 1;
+  return t !== T.Vatten && t !== T.Sten && Math.max(Math.abs(x - f.x), Math.abs(y - f.y)) > 1 && !bitAt(s, x, y);
 }
 const allUsable = (s: State, z: Zone) => { for (let y = z.y; y < z.y + z.h; y++) for (let x = z.x; x < z.x + z.w; x++) if (!usable(s, x, y)) return false; return true; };
 const overlaps = (a: Zone, b: Zone, gap: number) => a.x < b.x + b.w + gap && b.x < a.x + a.w + gap && a.y < b.y + b.h + gap && b.y < a.y + a.h + gap;
@@ -197,7 +196,7 @@ export function wearRate(s: State, k: string, ai: number) {
   if (isFood(k) || k === GIFT) return 0.003 * (1 + s.food / 250) * (ai === 0 ? 0.5 : 1) * (FOOD_WEAR[k] ?? 1);
   return WEAR_H[k] ?? 0;
 }
-export const wearMult = (s: State, x: number, y: number) => zoneAt(s, x, y) >= 0 ? (roofed(s, x, y) ? INDOOR_WEAR : 1) : OUT_WEAR;
+export const wearMult = (s: State, x: number, y: number) => roofed(s, x, y) ? INDOOR_WEAR : zoneAt(s, x, y) >= 0 ? 1 : OUT_WEAR;
 export function wearStore(s: State, dtSec: number, ai: number) {
   reconcile(s);
   const h = dtSec / 3600;

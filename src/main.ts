@@ -7,6 +7,7 @@ import {
   ITEM_NAMES, FireLog, coverOf, groundOf, SEDER, SED_INFO, Sed, influence, duty, habitShare, habitTotal, Act,
   richness, stoneDist, Kind, KUNSKAP_NAMES, describe, Lardom, STUBBE_LIV,
   zonesOf, zoneAt, pilesOf, inZone, STACK_NAMES, amountOf, capacity, load, carryKind, Pile, OUT_WEAR, condOf, FOLDERS, STACK, campCenter, SOCIAL, TEKNIK, TEK, knows, hasMaterial,
+  bitsOf, bitAt, housesOf, roomAt, insulation, MATERIAL,
 } from './sim';
 import { HIGH, BAR, FOREST } from './sim/vag';
 import { hasIcon, iconCanvas, iconImg } from './ikoner';
@@ -246,6 +247,7 @@ function drawStructures(t: number) {
     const on = tab === 'lager' && lagerNr === i;
     structG.beginFill(0x5b4a35, 0.22).lineStyle(1, on ? 0xffffff : 0x5b4a35, on ? 0.9 : 0.5).drawRoundedRect(z.x * TS + 0.5, z.y * TS + 0.5, z.w * TS - 1, z.h * TS - 1, 3).endFill().lineStyle(0);
   });
+  drawBuild();
   spriteN = 0;
   for (const pl of pilesOf(s)) drawPile(pl);
   // markerad hög utanför lagret: vit kant runt rutan, som lagerplatsen får
@@ -287,6 +289,26 @@ function drawStructures(t: number) {
     for (let i = 0; i < n; i++) { const a = i * 2.4; structG.beginFill(i % 3 ? 0x3a3530 : 0x55504a).drawRect(cx + Math.cos(a) * 2.6 - 1, cy + Math.sin(a) * 2.2 - 1, 2, 2).endFill(); }
   }
 }
+// husen: golv, väggar av flätat ris och öppningar. Det som är planerat syns som en svag kontur, det som byggs fylls i
+function drawBuild() {
+  for (const b of bitsOf(s)) {
+    const x = b.x * TS, y = b.y * TS;
+    if (b.k === 'golv') {
+      const col = b.m === 'ho' ? 0xd2b866 : 0x7a5a3a, a = b.b >= 1 ? (b.m === 'ho' ? 0.75 : 0.55) : 0.12 + 0.3 * b.b;
+      structG.beginFill(col, a).drawRect(x, y, TS, TS).endFill();
+    } else if (b.k === 'vagg') {
+      if (b.b <= 0 && b.mat <= 0) { structG.lineStyle(1, 0x5a3c22, 0.45).drawRect(x + 1.5, y + 1.5, TS - 3, TS - 3).lineStyle(0); continue; }
+      const a = b.b >= 1 ? 0.55 + 0.45 * b.c : 0.25 + 0.5 * b.b;
+      structG.beginFill(0x6b4a2a, a).drawRect(x + 1, y + 1, TS - 2, TS - 2).endFill();
+      // flätningen: vågiga streck, färre ju mer slitet
+      const n = b.b >= 1 ? Math.max(1, Math.round(3 * b.c)) : Math.ceil(3 * b.b);
+      for (let k = 0; k < n; k++) { const yy = y + TS * (0.28 + 0.22 * k); structG.lineStyle(1, 0xb08a58, a).moveTo(x + 2, yy).lineTo(x + TS / 2, yy + 1.5).lineTo(x + TS - 2, yy).lineStyle(0); }
+      for (let k = 1; k < 3; k++) structG.lineStyle(1, 0x3a2614, a).moveTo(x + TS * k / 3, y + 1).lineTo(x + TS * k / 3, y + TS - 1).lineStyle(0);
+    } else {
+      structG.beginFill(0x7a5a3a, 0.35).drawRect(x + 1, y + 1, TS - 2, TS - 2).endFill(); // öppningen: trampad jord
+    }
+  }
+}
 const bubbles: { id: number; kind: string; good: boolean; until: number }[] = [];
 // vem var och en senast pratade med: bubblan står kvar så länge båda är kvar i samtalet
 const talkWith = new Map<number, number>();
@@ -301,6 +323,7 @@ function markOf(p: Person): string | undefined {
     case 'jakt': case 'spjut': return 'fiskespjut';
     case 'fiske': return t.tool === 'fiskespjut' ? 'fiskespjut' : 'fisk';
     case 'yxa': return 'flinta';
+    case 'bygga': return t.tool === 'golv' ? 'hogolv' : 'bygga';
   }
 }
 // pratbubblan: utseendet följer relationen, ett nytt samtal syns en stund i sin egen färg
@@ -479,7 +502,7 @@ function showHover(gx: number, gy: number) {
   if (soil && ai !== 0) add('samla', 'Bär och rötter');
   if (soil) add('jakt', 'Vilt');
   add('fiske', 'Fisk');
-  if (finds.length) rows.push(finds.join(' · '));
+  if (finds.length && !bitAt(s, x, y)) rows.push(finds.join(' · '));
   if (t !== T.Vatten && stoneDist(s.seed)[i] <= 2) rows.push('Flinta är vanlig här');
   const near = (a: { x: number; y: number }, wd = 1, ht = 1) => x >= a.x && x < a.x + wd && y >= a.y && y < a.y + ht;
   if (near(m.fire)) rows.push(`Elden (${s.fire.lit ? 'brinner' : emberOn(s) ? 'glöder' : 'släckt'})`);
@@ -493,6 +516,14 @@ function showHover(gx: number, gy: number) {
   const log = (s.stockar ?? []).find(k => Math.floor(k.x) === x && Math.floor(k.y) === y);
   if (log) rows.push(`Fällt träd, ca ${Math.ceil(log.ved)} ved kvar`);
   if ((s.stubbar ?? []).some(k => k.x === x && k.y === y)) rows.push('Stubbe efter ett fällt träd');
+  const bit = bitAt(s, x, y);
+  if (bit) {
+    const M = MATERIAL[bit.m], hus = housesOf(s).find(h => h.id === bit.hus);
+    const st = bit.b < 1 ? `byggs, ${Math.round(bit.b * 100)} %${M.n ? `, material ${Math.round(bit.mat)} av ${M.n} ${STACK_NAMES[M.item as keyof typeof STACK_NAMES]?.toLowerCase() ?? M.item}` : ''}` : M.slit ? `skick ${Math.round(bit.c * 100)} %` : '';
+    rows.push(`${iconImg(bit.k === 'vagg' ? 'risvagg' : bit.m === 'ho' ? 'hogolv' : '', 12)} <b>${esc(M.namn)}</b>${hus ? ` i ${esc(hus.namn.toLowerCase())}` : ''}${st ? ' · ' + st : ''}`);
+  }
+  const rum = roomAt(s, x, y);
+  if (rum) { const hus = housesOf(s).find(h => h.id === rum.hus); rows.push(`Under tak${hus ? ` (${esc(hus.namn)})` : ''} · ${rum.tiles.length} sovplatser · håller värmen ${Math.round(insulation(s, rum) * 100)} %`); }
   const here = living(s).filter(p => Math.floor(p.x) === x && Math.floor(p.y) === y);
   if (here.length) rows.push(here.map(p => `${esc(p.name)} (${p.task ? taskName(p.task).toLowerCase() : 'vilar'})`).join(', '));
   box.innerHTML = rows.map(r => `<p>${r}</p>`).join('');
@@ -790,7 +821,7 @@ function sedWord(k: Sed, v: number) {
 // teknikträdet som symboler: arbetet till vänster, teknikerna till höger, sträck mellan det som hänger ihop.
 // Ett tryck på en symbol visar mer om den.
 let tekSel: string | undefined, tekHelp = false;
-const TEK_ROT: Partial<Record<Act, string>> = { samla: 'bar', ved: 'grenar', fiske: 'fisk' }; // arbetet visas med sin ikon
+const TEK_ROT: Partial<Record<Act, string>> = { samla: 'bar', ved: 'grenar', fiske: 'fisk', bygga: 'bygga', hantverk: 'korg' }; // arbetet visas med sin ikon
 // teknik som en annan teknik bygger på: krav, eller ett redskap som kan användas som material
 const tekFrom = (t: (typeof TEKNIK)[number]) => [...new Set([...t.krav, ...t.material.flat().filter(k => TEK[k])])];
 function tekHtml() {

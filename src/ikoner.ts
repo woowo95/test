@@ -16,6 +16,9 @@ const PAL: Record<string, Record<string, string>> = {
   yxa: { h: '#7a5a36', g: '#8f9396', G: '#c9cdd0' },
   fiskespjut: { h: '#8a6a40', g: '#8f9396', G: '#c9cdd0' },
   korg: { t: '#6e4e2e', o: '#9a6a3e', O: '#c99a62', r: '#c4334a' },
+  risvagg: { p: '#5a3c22', b: '#8a6a40', B: '#b08a58' },
+  hogolv: { y: '#d8c070', Y: '#f0dc94', d: '#7a5a3a' },
+  bygga: { b: '#8a6a40', B: '#b08a58', d: '#3a2a1a', y: '#d8c070' },
 };
 
 const PIX: Record<string, string[]> = {
@@ -149,6 +152,38 @@ const PIX: Record<string, string[]> = {
     '.h......',
     'h.......',
     'h.......',
+  ],
+  // flätade grenar mellan pinnar
+  risvagg: [
+    'p..p..p.',
+    'pBbpBbpB',
+    'pbBpbBpb',
+    'pBbpBbpB',
+    'pbBpbBpb',
+    'pBbpBbpB',
+    'pbBpbBpb',
+    'p..p..p.',
+  ],
+  hogolv: [
+    '........',
+    '........',
+    '........',
+    '.Y.y.Y..',
+    'yYyYyYyY',
+    'YyYyYyYy',
+    'dddddddd',
+    '........',
+  ],
+  // ett litet hus: den som bygger har det över huvudet
+  bygga: [
+    '...bb...',
+    '..bBBb..',
+    '.bBbbBb.',
+    'bBbbbbBb',
+    '.BbddbB.',
+    '.bBddBb.',
+    '.Bbddbb.',
+    'yyyyyyyy',
   ],
   fiskespjut: [
     '......Gg',

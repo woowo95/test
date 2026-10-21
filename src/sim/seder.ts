@@ -68,6 +68,7 @@ export const TAGS: { tag: string; acts: Act[]; min: number }[] = [
   { tag: 'Samlare', acts: ['samla'], min: 0.2 },
   { tag: 'Vedhuggare', acts: ['ved', 'falla', 'hugga'], min: 0.15 },
   { tag: 'Hantverkare', acts: ['hantverk'], min: 0.15 },
+  { tag: 'Byggare', acts: ['bygga'], min: 0.12 },
   { tag: 'Berättare', acts: ['beratta'], min: 0.06 },
   { tag: 'Eldvaktare', acts: ['elda', 'tanda'], min: 0.02 },
   { tag: 'Väktare', acts: ['vakt'], min: 0.08 },

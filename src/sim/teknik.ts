@@ -23,6 +23,10 @@ export const TEKNIK: Tek[] = [
     omr: ['samla', 'ved'], krav: [], material: [['flinta'], ['grenar']], tid: 24 },
   { id: 'fiskespjut', namn: 'Fiskespjut', text: 'En pinne som täljts spetsig med en flintsten eller en yxa.', effekt: 'Ger mycket mer fisk än händerna, men slits fort.',
     omr: ['fiske', 'ved'], krav: [], material: [['grenar'], ['flinta', 'yxa']], tid: 20 },
+  { id: 'risvagg', namn: 'Risvägg', text: 'Grenar som flätas mellan nedstuckna pinnar till en vägg.', effekt: 'Byn kan bygga hus att sova i, med väggar av ris.',
+    omr: ['ved', 'hantverk'], krav: [], material: [['grenar']], tid: 20 },
+  { id: 'hogolv', namn: 'Golv av torrt gräs', text: 'Torrt gräs som breds ut över golvet i huset.', effekt: 'Mjukare och varmare att sova på än jordgolv.',
+    omr: ['samla', 'bygga'], krav: ['risvagg'], material: [['torrgras']], tid: 16 },
 ];
 export const TEK = Object.fromEntries(TEKNIK.map(t => [t.id, t])) as Record<string, Tek>;
 

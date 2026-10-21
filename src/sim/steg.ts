@@ -1,5 +1,5 @@
 import { rotStumps } from './skog';
-import { ROOT_SHARE, addFood, capacity, dropSpot, homeKind, load, pickUp, storeLoad, takeFood, tidyStore, wearStore } from './lager';
+import { ROOT_SHARE, addFood, capacity, dropSpot, fetchSpot, homeKind, load, pickUp, storeLoad, takeFood, tidyStore, wearStore } from './lager';
 import { KORG_SKORD, makeBasket, makeSpear, wearBasket, wearSpear } from './redskap';
 import { thinkWhileWorking } from './teknik';
 import { foodDays, workRate } from './ekonomi';
@@ -29,9 +29,10 @@ import { fearPlace, forget, lookAround } from './minne';
 import { chance, clamp, rnd } from './slump';
 import { ageIndex, isLight } from './tid';
 import { chopStock, fellTree, makeAxe } from './skog';
-import { AXE_WORK, Act, DAY, HOUR, Person, SEC, SKILL_NAMES, Skill, State, T, W, H, isWork } from './typer';
+import { AXE_WORK, Act, DAY, HOUR, Person, SEC, SKILL_NAMES, Skill, State, T, Task, W, H, isWork } from './typer';
 import { findPath, speedAt, wear } from './vag';
 import { chooseTask } from './val';
+import { Job, MATERIAL, avail, bitById, blocked, buildJob, deliver as deliverBit, gridOf, lacks, shelterOf, needOf, planBuild, roomAt, siteOf, takeFor, wearBuild, workOn } from './bygg';
 
 // ---------- huvudsteg ----------
 // dt i sekunder. live=true: personer går och bär; live=false: grovt steg (ikappräkning/snabbspolning)
@@ -46,6 +47,7 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
   }
   const ppl = living(s);
   const light = isLight(now);
+  gridOf(s); // väggarna och rummen, så att vägsökningen vet var väggarna står
   // förråd: ruttning och ved
   wearStore(s, dtSec, ai); // slitage per slag, fortare utanför lagret
   stepFire(s, dtSec, live, ppl);
@@ -54,19 +56,27 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
   if (Math.floor(now / HOUR) !== Math.floor((now - dtSec * SEC) / HOUR)) {
     stepSeder(s); updateTags(s);
     growGround(s, 1, ai); growFynd(s, 1, ai); forget(s, 1); rotStumps(s); tidyStore(s);
+    wearBuild(s, 1, ai); planBuild(s);
   }
 
   const social: Person[] = [];
+  const inRum = new Map<number, number>(); // hur många som är i varje rum
+  for (const p of ppl) { const r = roomAt(s, p.x, p.y); if (r) inRum.set(r.id, (inRum.get(r.id) ?? 0) + 1); }
   for (const p of ppl) {
     const a = ageOf(p, now);
     // behov
     p.hunger = clamp(p.hunger - dtSec / (16 * 3600) * (a < 10 ? 0.7 : 1), 0, 1);
-    const working = p.task && isWork(p.task.act) && p.task.phase === 'do';
+    const working = p.task && (isWork(p.task.act) || p.task.act === 'bygga') && p.task.phase === 'do';
     const resting = p.task && (p.task.act === 'vila' || p.task.act === 'sova' || p.task.act === 'samtal' || p.task.act === 'hantverk' || p.task.act === 'varma');
     p.rest = clamp(p.rest + dtSec / 3600 * (resting ? 0.09 : working ? -0.06 : -0.03), 0, 1);
-    // värme: elden värmer i ett område; ingen bostad finns ännu
-    const heat = heatAt(s, p.x, p.y);
-    p.warm = clamp(p.warm + dtSec / 3600 * (heat * 2 - coldRate + (coldRate === 0 ? 0.5 : 0)), 0, 1);
+    // värme: elden värmer i ett område, och inne i ett hus kyls man långsammare (sämre ju fler öppningar)
+    const heat = heatAt(s, p.x, p.y), rum = roomAt(s, p.x, p.y), shelter = rum ? shelterOf(s, rum, inRum.get(rum.id) ?? 1) : 0;
+    p.warm = clamp(p.warm + dtSec / 3600 * (heat * 2 - coldRate * (1 - shelter) + (coldRate === 0 ? 0.5 : 0)), 0, 1);
+    if (rum && resting && p.task!.phase === 'do' && (p.task!.act === 'sova' || p.task!.act === 'vila')) { // man vilar bättre under tak, och mjukast på ett gräsgolv
+      const soft = gridOf(s).at.get(Math.floor(p.y) * W + Math.floor(p.x))?.m === 'ho';
+      p.rest = clamp(p.rest + dtSec / 3600 * (soft ? 0.03 : 0.02), 0, 1);
+      if (p.task!.act === 'sova') think(p, soft ? 'Sov mjukt på gräsgolvet i huset' : 'Sov under tak', soft ? 0.07 : 0.05, now, 8 * HOUR);
+    }
     if (heat > 0.15) {
       think(p, 'Värms av elden', fh.comfort, now, HOUR);
       p.rest = clamp(p.rest + dtSec / 3600 * fh.comfort * heat, 0, 1); // avslappning vid elden
@@ -124,7 +134,7 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
       if (tk.phase === 'go' || tk.phase === 'back') {
         // vägsökning: gå ruta för ruta runt vatten, gärna längs stigar
         const g = groundOf(s);
-        const key = `${tk.tx.toFixed(2)},${tk.ty.toFixed(2)}`;
+        const key = `${tk.tx.toFixed(2)},${tk.ty.toFixed(2)},${s.byggV ?? 0}`; // en ny vägg kan stänga vägen
         if (tk.pk !== key) { tk.pk = key; tk.path = findPath(g, p.x, p.y, tk.tx, tk.ty) ?? []; }
         const off = (((p.id * 37) % 7) - 3) * 0.06; // var och en går lite vid sidan av, så att de inte täcker varandra
         let budget = (a < 6 ? 0.9 : a > 65 ? 1 : 1.6) * dtSec;
@@ -151,6 +161,11 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
               if (n <= 0) p.task = undefined;
               else { tk.carry = takeFuel(s, n); tk.phase = 'back'; tk.tx = m.fire.x + 0.5 + (rnd(s) - 0.5) * 1.2; tk.ty = m.fire.y + 1.2; }
             } else { addFuel(s, p, tk.carry); tk.carry = 0; p.task = undefined; }
+          } else if (tk.act === 'bygga' && tk.phase === 'go' && tk.site) {
+            // vid lagret: ta materialet och gå till bygget
+            const b = bitById(s, tk.ref), k = b && MATERIAL[b.m].item, n = b ? needOf(b) : 0;
+            if (!b || !k || avail(s, k) < n) p.task = undefined;
+            else { s.items[k] -= n; tk.items = { [k]: n }; tk.tx = tk.site.x; tk.ty = tk.site.y; tk.site = undefined; }
           } else if (tk.phase === 'back') {
             storeLoad(s, tk, p.x, p.y);
             // ett arbetspass är klart: gå tillbaka och fortsätt om arbetet inte är slut och dagen inte vänt
@@ -168,10 +183,9 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
         const w = WANDER[tk.act]!;
         if (tk.hold === undefined) tk.hold = now + (w.h0 + rnd(s) * (w.h1 - w.h0)) * SEC;
         if (tk.wx === undefined && now > tk.hold) {
-          const m = getMap(s.seed);
           for (let k = 0; k < 6; k++) {
             const ang = rnd(s) * Math.PI * 2, r = w.r * Math.sqrt(rnd(s)), nx = tk.tx + Math.cos(ang) * r, ny = tk.ty + Math.sin(ang) * r;
-            if (nx > 0 && ny > 0 && nx < W && ny < H && m.tiles[tileOf(nx, ny)] !== T.Vatten) { tk.wx = nx; tk.wy = ny; break; }
+            if (nx > 0 && ny > 0 && nx < W && ny < H && !blocked(s, nx, ny)) { tk.wx = nx; tk.wy = ny; break; }
           }
           if (tk.wx === undefined) tk.hold = now + w.h0 * SEC;
         }
@@ -179,15 +193,15 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
           const g = groundOf(s), ci = tileOf(p.x, p.y), sp = (speedAt(g, ci) || 1) * w.v * (a < 6 ? 0.6 : 1) * dtSec;
           const dx = tk.wx - p.x, dy = tk.wy! - p.y, d = Math.hypot(dx, dy), mv = Math.min(d, sp);
           const nx = d <= sp ? tk.wx : p.x + dx / d * sp, ny = d <= sp ? tk.wy! : p.y + dy / d * sp;
-          if (getMap(s.seed).tiles[tileOf(nx, ny)] === T.Vatten) { tk.wx = tk.wy = undefined; tk.hold = now + w.h0 * SEC; }
+          if (blocked(s, nx, ny)) { tk.wx = tk.wy = undefined; tk.hold = now + w.h0 * SEC; }
           else {
             wear(g, ci, WEAR * LIVE_WEAR * 0.15 * mv); p.x = nx; p.y = ny;
             if (d <= sp) { tk.fynd = (tk.fynd ?? 0) + 1; tk.wx = tk.wy = undefined; tk.hold = now + (w.h0 + rnd(s) * (w.h1 - w.h0)) * SEC; }
           }
         }
-      } else if (tk.act !== 'sova' && tk.act !== 'vakt' && tk.act !== 'hantverk') {
+      } else if (tk.act !== 'sova' && tk.act !== 'vakt' && tk.act !== 'hantverk' && tk.act !== 'bygga') {
         // småjustering så att de rör sig lite
-        if (rnd(s) < dtSec * 0.08) { const nx = p.x + (rnd(s) - 0.5) * 0.4, ny = p.y + (rnd(s) - 0.5) * 0.4; if (getMap(s.seed).tiles[tileOf(nx, ny)] !== T.Vatten) { p.x = nx; p.y = ny; } }
+        if (rnd(s) < dtSec * 0.08) { const nx = p.x + (rnd(s) - 0.5) * 0.4, ny = p.y + (rnd(s) - 0.5) * 0.4; if (!blocked(s, nx, ny)) { p.x = nx; p.y = ny; } }
       }
     }
     if (tk.phase === 'do' && tk.act === 'toa') p.toa = 1;
@@ -197,7 +211,8 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
     for (const k in p.habit) p.habit[k] *= hf;
     p.habit[tk.act] = (p.habit[tk.act] ?? 0) + dtSec / 3600;
     // den som arbetar kommer så småningom på hur det kan göras bättre; man funderar också på vägen dit och hem
-    if (isWork(tk.act)) thinkWhileWorking(s, p, tk.act, dtSec);
+    if (isWork(tk.act) || tk.act === 'bygga' || tk.act === 'hantverk') thinkWhileWorking(s, p, tk.act, dtSec);
+    if (tk.phase === 'do' && tk.act === 'bygga') buildStep(s, p, tk, dtSec, live);
     if (tk.phase === 'do' && isWork(tk.act)) {
       if (tk.tool === 'korg') wearBasket(s, p, dtSec / 3600);
       const axe = AXE_WORK.includes(tk.act), base: Act = axe ? 'ved' : tk.act;
@@ -264,7 +279,7 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
       const per = igniterOf(s)!.minutes * 60;
       while (s.fire.tryProg >= per && canLight(s) && !s.fire.lit) { s.fire.tryProg -= per; if (tryLight(s, p)) { p.task = undefined; break; } }
     }
-    if (tk.phase === 'do' && (tk.act === 'hantverk' || tk.act === 'yxa' || tk.act === 'spjut' || tk.act === 'korg')) p.skill.hantverk = clamp(p.skill.hantverk + dtSec / 3600 * 0.1 * learn * (1 - p.skill.hantverk / 21), 0, 20);
+    if (tk.phase === 'do' && (tk.act === 'hantverk' || tk.act === 'yxa' || tk.act === 'spjut' || tk.act === 'korg' || tk.act === 'bygga')) p.skill.hantverk = clamp(p.skill.hantverk + dtSec / 3600 * 0.1 * learn * (1 - p.skill.hantverk / 21), 0, 20);
     if (tk.phase === 'do' && SOCIAL.includes(tk.act)) social.push(p);
     p.thoughts = p.thoughts.filter(x => x.until > now);
   }
@@ -288,6 +303,31 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
   if (living(s).length === 0) log(s, 'Byn är tom. Ingen finns kvar vid elden.', 'world');
   regulate(s, dtSec);
   for (const k in s.items) if (s.items[k] < 1e-6) delete s.items[k];
+}
+
+// bygge: lägg det man bär på bygget och arbeta. När rutan är klar, eller materialet tagit slut, tas nästa ruta
+function buildStep(s: State, p: Person, tk: Task, dtSec: number, live: boolean) {
+  const b = bitById(s, tk.ref);
+  if (!b) { tk.until = s.now; return; }
+  const k = MATERIAL[b.m].item;
+  if (tk.items && k && tk.items[k]) { deliverBit(s, b, tk.items[k], b.b >= 1); delete tk.items[k]; if (!Object.keys(tk.items).length) tk.items = undefined; }
+  const done = b.b >= 1 && b.lp === undefined && b.c >= 0.5;
+  if (!done && !lacks(b) && !workOn(s, p, b, dtSec)) return;
+  const j = buildJob(s, p);
+  if (!j || j.missing || !startBuild(s, p, tk, j, live)) tk.until = s.now;
+}
+// sätt upp nästa bit av bygget: i levande läge går man först till lagret om det behövs material
+function startBuild(s: State, p: Person, tk: Task, j: Job, live: boolean) {
+  const site = siteOf(s, j.bit);
+  tk.ref = j.bit.id; tk.tool = j.repair ? 'laga' : j.bit.k === 'golv' ? 'golv' : 'vagg';
+  if (live) {
+    tk.phase = 'go';
+    if (j.need > 0) { const f = fetchSpot(s, j.item!); tk.tx = f.x; tk.ty = f.y; tk.site = site; } else { tk.tx = site.x; tk.ty = site.y; }
+    return true;
+  }
+  if (!takeFor(s, j)) return false;
+  p.x = site.x; p.y = site.y; tk.tx = site.x; tk.ty = site.y;
+  return true;
 }
 
 // det som bärs hem läggs i förrådet: grenar, ved eller mat av rätt slag

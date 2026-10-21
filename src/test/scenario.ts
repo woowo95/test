@@ -1,7 +1,8 @@
 // Scenariotester: ställ en by i ett visst läge, kör den en stund och kontrollera att det som ska hända händer.
 // npm run scenario            kör alla
 // npm run scenario -- glanta  kör bara ett
-import { createState, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, WEEK, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, inZone, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, zonesOf, allows, ageOf, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, fuelStock, DAY, HOUR, W, State, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, campCenter, TEKNIK, knows, thinkWhileWorking, die } from '../sim';
+import { createState, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, WEEK, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, inZone, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, zonesOf, allows, ageOf, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, fuelStock, DAY, HOUR, W, State, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, campCenter, TEKNIK, knows, thinkWhileWorking, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, beds, isWall, Bit, wearBuild } from '../sim';
+import { findPath } from '../sim/vag';
 import { FOREST, HIGH, isSoil } from '../sim/vag';
 import { START } from './kor';
 
@@ -528,6 +529,69 @@ SCENARIER.teknik = {
       ['en nyfiken och intelligent person kommer på det mycket fortare', snabb],
       ['utan flinta kommer ingen på yxan', utanMaterial],
       ['när den sista som kan yxa dör finns kunskapen inte kvar', dott],
+    ];
+  },
+};
+
+SCENARIER.bygg = {
+  text: 'Byn bygger själv ett hus av risväggar när någon kan det och sovplatser saknas: väggar stänger vägen, golvet under tak blir sovplatser, rummet håller värmen, och slitna väggar lagas eller rasar',
+  kor: () => {
+    // handbyggt rum: 4×4 väggar med en öppning, 2×2 golv inuti
+    const s = createState(5, START), f = getMap(s.seed).fire;
+    const x0 = f.x + 5, y0 = f.y - 2, bit = (x: number, y: number, k: Bit['k'], m: string): Bit => ({ id: 9000 + y * 100 + x, x, y, k, m, b: 1, mat: 9, c: 1 });
+    for (let x = x0; x < x0 + 4; x++) for (let y = y0; y < y0 + 4; y++) {
+      const kant = x === x0 || y === y0 || x === x0 + 3 || y === y0 + 3;
+      bitsOf(s).push(bit(x, y, !kant ? 'golv' : x === x0 && y === y0 + 1 ? 'oppning' : 'vagg', !kant ? 'jord' : x === x0 && y === y0 + 1 ? 'oppning' : 'ris'));
+    }
+    touch(s);
+    const rum = roomAt(s, x0 + 1.5, y0 + 1.5), g = groundOf(s);
+    gridOf(s);
+    const path = findPath(g, x0 - 2.5, y0 + 1.5, x0 + 5.5, y0 + 1.5) ?? [];
+    const genomVagg = path.some(i => isWall(s, i % W, Math.floor(i / W)));
+    const iso = rum ? insulation(s, rum) : 0;
+    // slitage: en vägg utan skick rasar
+    const v = bitsOf(s).find(b => b.k === 'vagg' && b.x === x0 + 1 && b.y === y0)!; v.c = 0.001; wearBuild(s, 1, 0);
+    const rasat = v.b === 0 && !roomAt(s, x0 + 1.5, y0 + 1.5);
+    // en by där alla vuxna kan göra risväggar bygger ett hus själv
+    const q = createState(6, START);
+    for (const p of living(q)) if (ageOf(p, q.now) >= 14) (p.tek ??= {}).risvagg = 1;
+    q.items.grenar = (q.items.grenar ?? 0) + 200;
+    let inne = 0, sov = 0;
+    kor(q, 3 * 24, q => {
+      for (const p of living(q)) if (p.task?.act === 'sova' && p.task.phase === 'do') { sov++; if (roomAt(q, p.x, p.y)) inne++; }
+    });
+    // en kall natt utan eld: den som är inne kyls långsammare än den som är ute
+    const k = structuredClone(q); k.now = k.founded + 3 * WEEK + 3 * HOUR; k.fire.lit = false; k.fire.fuel = 0;
+    let varmInne = 0, varmUte = 0, ni = 0, nu = 0;
+    const b2 = beds(k);
+    living(k).forEach((p, i) => { p.warm = 0.8; if (i < 3 && b2[i] !== undefined) { p.x = b2[i] % W + 0.5; p.y = Math.floor(b2[i] / W) + 0.5; } });
+    const fore = new Map(living(k).map(p => [p.id, { inne: !!roomAt(k, p.x, p.y), ute: heatAt(k, p.x, p.y) < 0.05 }]));
+    step(k, 120, false);
+    for (const p of living(k)) { const f = fore.get(p.id); if (!f) continue; if (f.inne) { varmInne += p.warm; ni++; } else if (f.ute) { varmUte += p.warm; nu++; } }
+    const h = housesOf(q)[0], folk = living(q).length, b = beds(q).length;
+    const iVagg = living(q).filter(p => isWall(q, p.x, p.y)).length;
+    // nötning: väggarna slits och lagas
+    for (const b of bitsOf(q)) if (b.k === 'vagg') b.c = 0.3;
+    q.items.grenar = (q.items.grenar ?? 0) + 100;
+    kor(q, 24);
+    const lagat = (q.stat?.lagat ?? 0) > 0;
+    // samma by i levande läge bygger också
+    const L = createState(6, START);
+    for (const p of living(L)) if (ageOf(p, L.now) >= 14) (p.tek ??= {}).risvagg = 1;
+    L.items.grenar = (L.items.grenar ?? 0) + 200;
+    for (let i = 0; i < 2 * 24 * 3600 / 0.5 && !housesOf(L)[0]?.klar; i++) step(L, 0.5, true);
+    const hL = housesOf(L)[0];
+    return [
+      ['ett slutet rum med väggar räknas som under tak', !!rum && rum.tiles.length === 4],
+      [`vägen går runt väggarna (${path.length} steg)`, path.length > 0 && !genomVagg],
+      [`rummet håller värmen men öppningen läcker (${iso.toFixed(2)})`, iso > 0.2 && iso < 0.55],
+      ['en helt sliten vägg rasar och rummet är inte längre under tak', rasat],
+      [`byn bygger ${h?.namn ?? 'inget hus'} i snabbläget (${h ? `${h.w}×${h.h}` : '-'}, ${b} sovplatser för ${folk})`, !!h?.klar && b > 0],
+      [`folk sover inne (${inne} av ${sov})`, inne > sov * 0.3],
+      [`en kall natt utan eld är de som är inne varmare (${(varmInne / (ni || 1)).toFixed(2)} mot ${(varmUte / (nu || 1)).toFixed(2)})`, ni > 0 && nu > 0 && varmInne / ni > varmUte / nu],
+      [`ingen står i en vägg (${iVagg})`, iVagg === 0],
+      ['slitna väggar lagas', lagat],
+      [`byn bygger i levande läge (${hL?.klar ? `klart efter ${((hL.klar - L.founded) / HOUR).toFixed(0)} h` : 'inte klart'})`, !!hL?.klar],
     ];
   },
 };

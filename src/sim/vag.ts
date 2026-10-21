@@ -3,7 +3,7 @@
 // (1 = högt gräs, mitten = kort gräs, under BAR = bar jord; en stig är bar jord i en linje).
 import { T, W, H } from './typer';
 
-export interface Ground { tiles: Uint8Array; cover: Float32Array; trees: Float32Array }
+export interface Ground { tiles: Uint8Array; cover: Float32Array; trees: Float32Array; solid?: Uint8Array; built?: Uint8Array } // solid = väggar, built = byggda eller planerade rutor
 export const HIGH = 0.9, BAR = 0.3; // högt gräs över HIGH, bar jord under BAR
 export const FOREST = 0.5; // träd från detta värde räknas som skog
 export const isSoil = (t: number) => t === T.Gras || t === T.Skog;
@@ -22,13 +22,15 @@ export function speedAt(g: Ground, i: number) {
 // kostnad att gå in på en ruta: man följer hellre en upptrampad stig än går över orörd mark
 const stepCost = (g: Ground, i: number) => (isSoil(g.tiles[i]) ? 0.6 + 0.4 * g.cover[i] : 1) / speedAt(g, i);
 
-// A* med 8 riktningar. Inte över vatten och inte snett förbi en vattenhörna. Start och mål får vara vatten.
+// vatten och väggar går man inte genom
+const stop = (g: Ground, i: number) => g.tiles[i] === T.Vatten || g.solid?.[i] === 1;
+// A* med 8 riktningar. Inte över vatten eller väggar och inte snett förbi en hörna. Start och mål får vara vatten.
 // Ger rutorna mellan start och mål (utan båda), eller null om det inte finns någon väg.
 export function findPath(g: Ground, x0: number, y0: number, x1: number, y1: number): number[] | null {
   const sx = clampI(x0, W), sy = clampI(y0, H), gx = clampI(x1, W), gy = clampI(y1, H);
   const start = sy * W + sx, goal = gy * W + gx;
   if (start === goal) return [];
-  const N = W * H, tiles = g.tiles;
+  const N = W * H, tiles = g.tiles, solid = g.solid;
   const gs = new Float64Array(N).fill(Infinity), came = new Int32Array(N).fill(-1), closed = new Uint8Array(N);
   const heap = new Heap();
   gs[start] = 0; heap.push(start, 0);
@@ -43,8 +45,8 @@ export function findPath(g: Ground, x0: number, y0: number, x1: number, y1: numb
       const nx = x + dx, ny = y + dy;
       if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
       const ni = ny * W + nx;
-      if (closed[ni] || (tiles[ni] === T.Vatten && ni !== goal)) continue;
-      if (dx && dy && (tiles[y * W + nx] === T.Vatten || tiles[ny * W + x] === T.Vatten)) continue;
+      if (closed[ni] || ((tiles[ni] === T.Vatten || solid?.[ni]) && ni !== goal)) continue;
+      if (dx && dy && (stop(g, y * W + nx) || stop(g, ny * W + x))) continue;
       const ng = gs[i] + (dx && dy ? SQ2 : 1) * (tiles[ni] === T.Vatten ? 1 : stepCost(g, ni));
       if (ng < gs[ni]) { gs[ni] = ng; came[ni] = i; heap.push(ni, ng + Math.hypot(nx - gx, ny - gy) * 0.52); }
     }
@@ -71,8 +73,8 @@ export function pathTree(g: Ground, x0: number, y0: number): Int32Array {
       const nx = x + dx, ny = y + dy;
       if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
       const ni = ny * W + nx;
-      if (closed[ni] || tiles[ni] === T.Vatten) continue;
-      if (dx && dy && (tiles[y * W + nx] === T.Vatten || tiles[ny * W + x] === T.Vatten)) continue;
+      if (closed[ni] || stop(g, ni)) continue;
+      if (dx && dy && (stop(g, y * W + nx) || stop(g, ny * W + x))) continue;
       const ng = gs[i] + (dx && dy ? SQ2 : 1) * stepCost(g, ni);
       if (ng < gs[ni]) { gs[ni] = ng; came[ni] = i; heap.push(ni, ng); }
     }

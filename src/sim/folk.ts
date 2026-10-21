@@ -1,4 +1,5 @@
 import { getMap } from './karta';
+import { freeNear } from './bygg';
 import { clamp, gauss, pick, rnd } from './slump';
 import { DAY, LogEntry, Person, Rel, SKILLS, STATS, Skill, Stat, State } from './typer';
 
@@ -50,6 +51,7 @@ export function newPerson(s: State, sex: 'm' | 'k', born: number, mother?: Perso
     hue: Math.floor(rnd(s) * 360),
   };
   p.name = makeName(s, sex);
+  const at = freeNear(s, p.x, p.y); p.x = at.x; p.y = at.y; // inte i en husvägg
   return p;
 }
 
