@@ -11,8 +11,8 @@ import { getMap } from './karta';
 import { fetchSpot, haulJob } from './lager';
 import { bedFor, buildJob, siteOf, takeFor } from './bygg';
 import { beds, bitAt, blocked, freeNear, roomAt, shelterOf } from './byggnad';
-import { isForest, tread } from './mark';
-import { axeTask } from './skog';
+import { groundOf, isForest, tread } from './mark';
+import { FALL_TID, axeTask } from './skog';
 import { duty, dygn, habitShare, habitTotal } from './seder';
 import { clamp, rnd } from './slump';
 import { ageIndex, isLight } from './tid';
@@ -179,7 +179,7 @@ function day(s: State, p: Person, v: Val, a: number, lazy: number, live: boolean
   if (job) {
     const homeless = Math.max(0, ppl.length - beds(s).length) / (ppl.length || 1);
     const halvt = !job.repair && !s.hus?.find(h => h.id === job.bit.hus)?.klar; // ett påbörjat hus vill man göra klart, även när det sista är ett hörn
-    const col = ((job.repair ? 1.2 : halvt ? 1 : 0.5) + 2.4 * homeless) * (ai === 3 || ai === 0 ? 1.4 : 1);
+    const col = ((job.repair ? 1.2 : halvt ? 2 : 0.5) + 2.4 * homeless) * (ai === 3 || ai === 0 ? 1.4 : 1);
     const like = (4 + p.skill.hantverk + stat(p, 'flit', now) / 3) * (1 + 2 * habitShare(p, ['bygga'], tot));
     const sc = col * like * (0.6 + rnd(s) * 0.8);
     burg = Math.max(burg, col);
@@ -187,7 +187,7 @@ function day(s: State, p: Person, v: Val, a: number, lazy: number, live: boolean
   }
   const u = clamp(burg / 3, 0, 1); // hur akut byn behöver arbete
   const sat = Math.min(p.hunger, p.rest, p.social); // hur väl de egna behoven är fyllda
-  const what = build && job!.missing ? `Bygget behöver ${job!.item === 'torrgras' ? 'torrt gräs' : 'grenar'}` : best === 'ved' ? `Byn behöver ved, förrådet räcker ${dygn(wd)}` : best === 'samla' && needTinder(s) ? 'Byn behöver tändmaterial till elden' : `Byn behöver mat, förrådet räcker ${dygn(fd)}`;
+  const what = build && job!.missing ? `Bygget behöver ${job!.item === 'torrgras' ? 'torrt gräs' : job!.item === 'ved' ? 'trä' : 'grenar'}` : best === 'ved' ? `Byn behöver trä, förrådet räcker ${dygn(wd)}` : best === 'samla' && needTinder(s) ? 'Byn behöver tändmaterial till elden' : `Byn behöver mat, förrådet räcker ${dygn(fd)}`;
   let works = false;
   if (a >= 12 && (s.fire.ash ?? 0) >= 1 && !s.fire.lit && !emberOn(s) && fireWant(s) < 0.6 && rnd(s) < 0.2 && !ppl.some(q => q.task?.act === 'kol')) {
     set(v, 'kol', 'Det ligger kol kvar i den slocknade elden');
@@ -201,6 +201,7 @@ function day(s: State, p: Person, v: Val, a: number, lazy: number, live: boolean
     set(v, best, what + (lazy < 0.2 ? '. Plikttrogen.' : habitShare(p, [best], tot) > 0.25 ? '. Brukar göra det.' : p.skill[best as Skill] > 10 ? '. Skicklig på det.' : '.'));
     v.dur = (60 + rnd(s) * 120) * MIN;
     withTools(s, p, v, best, what);
+    if (build && job!.missing && job!.item === 'ved' && v.act === 'falla') { v.ref = job!.bit.hus; v.why = `${v.why} Stocken ska bli en vägg.`; } // trädet fälls för bygget
   } else leisure(s, p, v, u, lazy, ai);
 }
 
@@ -229,6 +230,11 @@ function bestWork(s: State, p: Person, fd: number, wd: number, ai: number, tot: 
 // att bygga eller laga en del av ett hus. Saknas material hämtar man det först (i snabbläget tas det direkt)
 function building(s: State, v: Val, job: NonNullable<ReturnType<typeof buildJob>>, pop: number, live: boolean) {
   const b = job.bit, hus = s.hus?.find(h => h.id === b.hus)?.namn.toLowerCase() ?? 'huset';
+  if (job.fell) { // först fälls träden där huset ska stå
+    set(v, 'falla', `Fäller ett träd där ${hus} ska stå.`);
+    v.dur = FALL_TID * Math.max(0.5, groundOf(s).trees[b.y * W + b.x]); v.spot = { x: b.x + 0.5, y: b.y + 0.5 }; // ett litet träd fälls fortare
+    return;
+  }
   set(v, 'bygga', job.repair ? `En vägg i ${hus} är sliten och behöver lagas.` : `${b.k === 'golv' ? 'Lägger golv i' : 'Bygger på'} ${hus}. ${beds(s).length < pop ? 'Alla har inte en sovplats under tak.' : ''}`.trim());
   v.tool = job.repair ? 'laga' : b.k === 'golv' ? 'golv' : 'vagg'; v.ref = b.id;
   v.dur = (60 + rnd(s) * 90) * MIN;

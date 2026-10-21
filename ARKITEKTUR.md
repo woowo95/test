@@ -28,9 +28,9 @@ Simuleringen importerar aldrig från `ui/`. Gränssnittet importerar bara från 
 | `minne.ts`, `kunskap.ts` | Vad var och en vet (kunskap, alltid rätt) och tror (lärdomar, kan vara fel), synvidd, rädsla, glömska. Den som kommer till en plats som är sämre än hen trott rättar lärdomen (`ny`), och rättelsen sprids som en nyhet i två speldygn |
 | `lager.ts` | Stackar och lagerplatser, att bära in, slitage och ruttning per stack |
 | `eld.ts` | Elden: bränsle, att tända, glöd, värme, eldstäder och tändsätt |
-| `skog.ts`, `redskap.ts` | Att fälla träd och hugga ved, yxan, fiskespjutet och korgen |
+| `skog.ts`, `redskap.ts` | Att fälla träd och hugga trä (id:t är fortfarande `ved`, för sparfilernas skull), yxan, fiskespjutet och korgen. Träd där ett hus ska stå fälls först |
 | `byggnad.ts` | Vad som står byggt: väggar, golv, öppningar, rum under tak, skydd mot kyla, sovplatser |
-| `bygg.ts` | Att bygga: byn planerar hus, hämtar material, bygger och lagar |
+| `bygg.ts` | Att bygga: byn planerar hus (utan hänsyn till träden), fäller träden på platsen, hämtar material, bygger och lagar. Stockar från platsen, och träd som fälls för bygget, går direkt in i väggarna (`toWalls`) |
 | `folk.ts`, `liv.ts` | Personer (ålder, egenskaper, tankar, logg) och liv och död: födsel, död, flytt, befolkningens reglering |
 | `samtal.ts`, `seder.ts` | Samtal och relationer, och byns seder, plikt, vanor och yrkestaggar |
 | `plats.ts` | Byns läger (elden och lagerplatserna): mitten, avstånd till byn och `campKey` för cacher |

@@ -19,6 +19,7 @@ const PAL: Record<string, Record<string, string>> = {
   fiskespjut: { h: '#8a6a40', g: '#8f9396', G: '#c9cdd0' },
   korg: { t: '#6e4e2e', o: '#9a6a3e', O: '#c99a62', r: '#8a4ad8' },
   risvagg: { p: '#5a3c22', b: '#8a6a40', B: '#b08a58' },
+  timmervagg: { d: '#4a3018', b: '#8a5e34', B: '#b8885a', e: '#d8b480' },
   hogolv: { y: '#d8c070', Y: '#f0dc94', d: '#7a5a3a' },
   bygga: { b: '#8a6a40', B: '#b08a58', d: '#3a2a1a', y: '#d8c070' },
 };
@@ -174,6 +175,17 @@ const PIX: Record<string, string[]> = {
     '.h......',
     'h.......',
     'h.......',
+  ],
+  // stockar lagda på varandra, med ändarna synliga
+  timmervagg: [
+    'eBbbbbBe',
+    'dddddddd',
+    'eBbbbbBe',
+    'dddddddd',
+    'eBbbbbBe',
+    'dddddddd',
+    'eBbbbbBe',
+    'dddddddd',
   ],
   // flätade grenar mellan pinnar
   risvagg: [

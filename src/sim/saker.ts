@@ -22,7 +22,7 @@ const DEF = {
   kott: { namn: 'Kött', stack: 25, mapp: 'Mat', mat: 2, ruttnar: 1.2 },
   fisk: { namn: 'Fisk', stack: 25, mapp: 'Mat', mat: 1, ruttnar: 2 },
   svamp: { namn: 'Svamp', stack: 25, mapp: 'Mat', mat: 3, ruttnar: 1 },
-  ved: { namn: 'Ved', stack: 25, mapp: 'Bränsle', slits: 0.0004, blir: { k: 'grenar', per: 2 } },
+  ved: { namn: 'Trä', stack: 25, mapp: 'Bränsle', slits: 0.0004, blir: { k: 'grenar', per: 2 } },
   grenar: { namn: 'Grenar', stack: 50, mapp: 'Bränsle', slits: 0.0006 },
   torrgras: { namn: 'Torrt gräs', stack: 50, mapp: 'Bränsle', slits: 0.0015 },
   kol: { namn: 'Kol', stack: 25, mapp: 'Bränsle' },

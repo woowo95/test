@@ -69,7 +69,7 @@ export function drawStructures(t: number) {
     for (let i = 0; i < n; i++) { const a = i * 2.4; structG.beginFill(i % 3 ? 0x3a3530 : 0x55504a).drawRect(cx + Math.cos(a) * 2.6 - 1, cy + Math.sin(a) * 2.2 - 1, 2, 2).endFill(); }
   }
 }
-// husen: golv, väggar av flätat ris och öppningar. Det som är planerat syns som en svag kontur, det som byggs fylls i
+// husen: golv, väggar av timmer (eller flätat ris i äldre byar) och öppningar. Det som är planerat syns som en svag kontur, det som byggs fylls i
 function drawBuild() {
   for (const b of bitsOf(s)) {
     const x = b.x * TS, y = b.y * TS;
@@ -79,6 +79,17 @@ function drawBuild() {
     } else if (b.k === 'vagg') {
       if (b.b <= 0 && b.mat <= 0) { structG.lineStyle(1, 0x5a3c22, 0.45).drawRect(x + 1.5, y + 1.5, TS - 3, TS - 3).lineStyle(0); continue; }
       const a = b.b >= 1 ? 0.55 + 0.45 * b.c : 0.25 + 0.5 * b.b;
+      if (b.m === 'timmer') {
+        // stockarna läggs en i taget nerifrån: fler ju längre bygget kommit
+        const n = b.b >= 1 ? 4 : Math.ceil(4 * b.b), h = (TS - 2) / 4;
+        if (!n) { structG.lineStyle(1, 0x5a3c22, 0.45).drawRect(x + 1.5, y + 1.5, TS - 3, TS - 3).lineStyle(0); continue; }
+        for (let k = 0; k < n; k++) {
+          const yy = y + TS - 1 - (k + 1) * h;
+          structG.beginFill(0x8a5e34, a).drawRoundedRect(x + 1, yy + 0.3, TS - 2, h - 0.6, 1.5).endFill();
+          structG.lineStyle(0.8, 0x4a3018, a).moveTo(x + 1.5, yy + h - 0.3).lineTo(x + TS - 1.5, yy + h - 0.3).lineStyle(0);
+        }
+        continue;
+      }
       structG.beginFill(0x6b4a2a, a).drawRect(x + 1, y + 1, TS - 2, TS - 2).endFill();
       // flätningen: vågiga streck, färre ju mer slitet
       const n = b.b >= 1 ? Math.max(1, Math.round(3 * b.c)) : Math.ceil(3 * b.b);

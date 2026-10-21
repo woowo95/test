@@ -58,7 +58,7 @@ function knowledgeHtml(p: Person) {
 }
 // vad personen brukar ägna sin tid åt, i grupper
 const HABIT_GROUPS: { name: string; acts: Act[] }[] = [
-  { name: 'Jakt', acts: ['jakt'] }, { name: 'Fiske', acts: ['fiske'] }, { name: 'Samla mat', acts: ['samla'] }, { name: 'Hugga ved', acts: ['ved'] },
+  { name: 'Jakt', acts: ['jakt'] }, { name: 'Fiske', acts: ['fiske'] }, { name: 'Samla mat', acts: ['samla'] }, { name: 'Hugga trä', acts: ['ved'] },
   { name: 'Hantverk', acts: ['hantverk'] }, { name: 'Berätta', acts: ['beratta'] }, { name: 'Sköta elden', acts: ['elda', 'tanda'] },
   { name: 'Hålla vakt', acts: ['vakt'] }, { name: 'Prata', acts: ['samtal'] }, { name: 'Vila', acts: ['vila'] }, { name: 'Leka', acts: ['leka'] },
 ];

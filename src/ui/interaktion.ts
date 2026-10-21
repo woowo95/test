@@ -80,13 +80,13 @@ function showHover(gx: number, gy: number) {
   const ute = outPilesAt(x, y);
   if (ute.length) rows.push(`<b>${ute.some(q => !q.stored) ? 'På marken' : 'Bredvid lagret'}</b> · ${ute.map(pileTxt).join(', ')}`);
   const log = (s.stockar ?? []).find(k => Math.floor(k.x) === x && Math.floor(k.y) === y);
-  if (log) rows.push(`Fällt träd, ca ${Math.ceil(log.ved)} ved kvar`);
+  if (log) rows.push(`Fällt träd, ca ${Math.ceil(log.ved)} trä kvar`);
   if ((s.stubbar ?? []).some(k => k.x === x && k.y === y)) rows.push('Stubbe efter ett fällt träd');
   const bit = bitAt(s, x, y);
   if (bit) {
     const M = MATERIAL[bit.m], hus = housesOf(s).find(h => h.id === bit.hus);
     const st = bit.b < 1 ? `byggs, ${Math.round(bit.b * 100)} %${M.n ? `, material ${Math.round(bit.mat)} av ${M.n} ${sakNamn(M.item!).toLowerCase()}` : ''}` : M.slit ? `skick ${Math.round(bit.c * 100)} %` : '';
-    rows.push(`${iconImg(bit.k === 'vagg' ? 'risvagg' : bit.m === 'ho' ? 'hogolv' : '', 12)} <b>${esc(M.namn)}</b>${hus ? ` i ${esc(hus.namn.toLowerCase())}` : ''}${st ? ' · ' + st : ''}`);
+    rows.push(`${iconImg(bit.k === 'vagg' ? (bit.m === 'ris' ? 'risvagg' : 'timmervagg') : bit.m === 'ho' ? 'hogolv' : '', 12)} <b>${esc(M.namn)}</b>${hus ? ` i ${esc(hus.namn.toLowerCase())}` : ''}${st ? ' · ' + st : ''}`);
   }
   const rum = roomAt(s, x, y);
   if (rum) { const hus = housesOf(s).find(h => h.id === rum.hus); rows.push(`Under tak${hus ? ` (${esc(hus.namn)})` : ''} · ${rum.tiles.length} sovplatser · håller värmen ${Math.round(insulation(s, rum) * 100)} %`); }

@@ -15,12 +15,12 @@ import { HABIT_FADE, sedEvent, stepSeder, updateTags } from './seder';
 import { fearPlace, forget, lookAround } from './minne';
 import { chance, clamp, rnd } from './slump';
 import { ageIndex, isLight } from './tid';
-import { chopStock, fellTree, makeAxe } from './skog';
+import { chopStock, fellTree, makeAxe, stocks } from './skog';
 import { ACTS } from './handlingar';
 import { Act, DAY, HOUR, Person, SEC, SKILL_NAMES, State, Task, W, H } from './typer';
 import { findPath, speedAt, wear } from './vag';
 import { chooseTask } from './val';
-import { Job, avail, bitById, buildJob, deliver as deliverBit, lacks, needOf, planBuild, siteOf, takeFor, wearBuild, workOn } from './bygg';
+import { Job, avail, bitById, buildJob, deliver as deliverBit, lacks, needOf, planBuild, siteOf, takeFor, toWalls, wearBuild, workOn } from './bygg';
 import { MATERIAL, blocked, gridOf, roomAt, shelterOf } from './byggnad';
 
 // arbete i levande läge: man bär hem det man har efter några fynd (fler med korg), fiskaren efter varje fångst, och går
@@ -44,7 +44,10 @@ const MEDAN: Partial<Record<Act, Krok>> = {
 };
 // det som händer när en handling är klar
 const KLAR: Partial<Record<Act, Krok>> = {
-  falla: (s, p, t) => fellTree(s, p, t.tx, t.ty),
+  falla: (s, p, t) => { // ett träd där ett hus ska stå, eller som fälldes för bygget, blir stockar i husets väggar direkt; resten huggs till trä
+    const k = fellTree(s, p, t.tx, t.ty);
+    if (k) { k.ved -= toWalls(s, Math.floor(k.x), Math.floor(k.y), k.ved, t.ref); if (k.ved <= 1e-6) s.stockar = stocks(s).filter(q => q !== k); }
+  },
   yxa: (s, p) => makeAxe(s, p),
   spjut: (s, p) => makeSpear(s, p),
   korg: (s, p) => makeBasket(s, p),
@@ -280,7 +283,7 @@ function arrive(s: State, p: Person, tk: Task, light: boolean) {
     // vid lagret: ta materialet och gå till bygget
     const b = bitById(s, tk.ref), k = b && MATERIAL[b.m].item, n = b ? needOf(b) : 0;
     if (!b || !k || avail(s, k) < n) p.task = undefined;
-    else { s.items[k] -= n; tk.items = { [k]: n }; tk.tx = tk.site.x; tk.ty = tk.site.y; tk.site = undefined; }
+    else { addTo(s, k, -n); tk.items = { [k]: n }; tk.tx = tk.site.x; tk.ty = tk.site.y; tk.site = undefined; }
   } else if (tk.phase === 'back') {
     storeLoad(s, tk, p.x, p.y);
     // ett arbetspass är klart: gå tillbaka och fortsätt om arbetet inte är slut och dagen inte vänt
@@ -320,9 +323,10 @@ function workStep(s: State, p: Person, tk: Task, dtSec: number, live: boolean, a
     if (fish) { if (live) tk.carry += fish; else addFood(s, 'fisk', fish); }
   }
   if (tk.act === 'hugga') {
-    const got = chopStock(s, tk.ref, y);
+    const k = stocks(s).find(q => q.id === tk.ref), got = chopStock(s, tk.ref, y);
     if (!got) tk.until = now; // stammen är slut
     else {
+      if (k) got.ved -= toWalls(s, Math.floor(k.x), Math.floor(k.y), got.ved); // står stammen där ett hus byggs blir träet väggar
       if (live) { tk.carry += got.ved; tk.items ??= {}; tk.items.grenar = (tk.items.grenar ?? 0) + got.grenar; }
       else { s.wood += got.ved; addItems(s, { grenar: got.grenar }); }
       if (got.done) tk.until = now;
@@ -366,7 +370,7 @@ function buildStep(s: State, p: Person, tk: Task, dtSec: number, live: boolean) 
   const done = b.b >= 1 && b.lp === undefined && b.c >= 0.5;
   if (!done && !lacks(b) && !workOn(s, p, b, dtSec)) return;
   const j = buildJob(s, p);
-  if (!j || j.missing || !startBuild(s, p, tk, j, live)) tk.until = s.now;
+  if (!j || j.missing || j.fell || !startBuild(s, p, tk, j, live)) tk.until = s.now; // ett träd i vägen: välj på nytt
 }
 // sätt upp nästa bit av bygget: i levande läge går man först till lagret om det behövs material
 function startBuild(s: State, p: Person, tk: Task, j: Job, live: boolean) {

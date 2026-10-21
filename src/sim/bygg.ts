@@ -6,11 +6,13 @@ import { campCenter } from './plats';
 import { sedEvent } from './seder';
 import { rnd } from './slump';
 import { knows } from './teknik';
-import { zonesOf } from './lager';
+import { addTo, amountOf, zonesOf } from './lager';
+import { axes } from './skog';
+import { FOREST } from './vag';
 import { H, HOUR, Person, State, T, W } from './typer';
 
 // ---------- att bygga ----------
-const RESERVE: Record<string, number> = { grenar: 15, torrgras: 6 }; // det som lämnas kvar i förrådet till elden
+const RESERVE: Record<string, number> = { grenar: 15, torrgras: 6, ved: 6 }; // det som lämnas kvar i förrådet till elden
 const MAX_INNE = 24; // största hus: så många sovplatser
 const LAGA = 0.5; // väggar under det skicket lagas
 
@@ -26,16 +28,17 @@ export function bedFor(s: State, p: Person) {
 const tileOk = (s: State, x: number, y: number) => {
   if (x < 1 || y < 1 || x >= W - 1 || y >= H - 1) return false;
   const m = getMap(s.seed), i = y * W + x, t = m.tiles[i], f = m.fire;
-  if (t === T.Vatten || t === T.Sten || groundOf(s).trees[i] >= 0.95) return false; // sly röjs, men fullvuxna träd står kvar
+  if (t === T.Vatten || t === T.Sten) return false; // träden spelar ingen roll: de fälls innan bygget börjar
   if (Math.max(Math.abs(x - f.x), Math.abs(y - f.y)) < 2) return false; // inte inpå elden
   if (gridOf(s).at.has(i)) return false;
   if (zonesOf(s).some(z => x >= z.x - 1 && x < z.x + z.w + 1 && y >= z.y - 1 && y < z.y + z.h + 1)) return false;
   if ((s.stackar ?? []).some(a => a.x === x && a.y === y) || (s.stockar ?? []).some(k => Math.floor(k.x) === x && Math.floor(k.y) === y) || (s.stubbar ?? []).some(k => k.x === x && k.y === y)) return false;
   return true;
 };
-// en plats för ett hus med yttermåtten w×h inom byområdet, helst en bit från elden och inte på lekplatsen
+// en plats för ett hus med yttermåtten w×h inom byområdet, helst en bit från elden och inte på lekplatsen. Träden där
+// huset ska stå fälls först, så de tas det ingen hänsyn till
 function siteFor(s: State, w: number, h: number, okAt: Uint8Array) {
-  const f = getMap(s.seed).fire, mid = campCenter(s), R = 7 + living(s).length * 0.25;
+  const f = getMap(s.seed).fire, mid = campCenter(s), R = 9 + living(s).length * 0.25;
   let best: { x: number; y: number } | undefined, bs = Infinity;
   for (let y = 1; y + h < H; y++) for (let x = 1; x + w < W; x++) {
     const cx = x + w / 2, cy = y + h / 2;
@@ -46,16 +49,15 @@ function siteFor(s: State, w: number, h: number, okAt: Uint8Array) {
       if (inside ? !okAt[yy * W + xx] : gridOf(s).at.has(yy * W + xx)) ok = false; // en ruta fritt runt andra hus
     }
     if (!ok) continue;
-    let sly = 0;
-    for (let yy = y; yy < y + h; yy++) for (let xx = x; xx < x + w; xx++) if (okAt[yy * W + xx] === 2) sly++;
     const dx = Math.max(x - f.x, 0, f.x - (x + w - 1)), dy = Math.max(y - f.y, 0, f.y - (y + h - 1)), near = Math.hypot(dx, dy);
     const lek = x <= f.x + 4 && x + w > f.x - 4 && y <= f.y + 6 && y + h > f.y + 3 ? 3 : 0;
-    const sc = Math.abs(near - 3.5) + 0.2 * Math.hypot(cx - mid.x, cy - mid.y) + lek + 0.3 * sly;
+    const sc = Math.abs(near - HUS_AVST) + 0.2 * Math.hypot(cx - mid.x, cy - mid.y) + lek;
     if (sc < bs) { bs = sc; best = { x, y }; }
   }
   return best;
 }
-const canBuildWalls = (p: Person, s: State) => ageOf(p, s.now) >= 14 && knows(p, 'risvagg');
+const HUS_AVST = 5.5; // så långt från elden man helst bygger (rutor till husets närmaste vägg)
+const canBuildWalls = (p: Person, s: State) => ageOf(p, s.now) >= 14 && knows(p, 'timmervagg');
 // en gång i timmen: planera ett nytt hus om någon kan bygga väggar och alla inte har en sovplats under tak
 export function planBuild(s: State) {
   const ppl = living(s), hs = housesOf(s);
@@ -69,7 +71,7 @@ export function planBuild(s: State) {
   const want = Math.min(MAX_INNE, need + 2);
   sizes.sort((a, b) => (a.w * a.h < want ? 1000 - a.w * a.h : 0) - (b.w * b.h < want ? 1000 - b.w * b.h : 0) || a.w * a.h - b.w * b.h || (a.w - a.h) - (b.w - b.h));
   const okAt = new Uint8Array(W * H);
-  for (let i = 0; i < W * H; i++) okAt[i] = !tileOk(s, i % W, Math.floor(i / W)) ? 0 : groundOf(s).trees[i] > 0.05 ? 2 : 1;
+  for (let i = 0; i < W * H; i++) okAt[i] = tileOk(s, i % W, Math.floor(i / W)) ? 1 : 0;
   for (const { w, h } of sizes) {
     const at = siteFor(s, w + 2, h + 2, okAt);
     if (!at) continue;
@@ -84,7 +86,7 @@ export function planBuild(s: State) {
     const golv = knows(by, 'hogolv') ? 'ho' : 'jord';
     for (let y = at.y; y < at.y + h + 2; y++) for (let x = at.x; x < at.x + w + 2; x++) {
       const edge = x === at.x || y === at.y || x === at.x + w + 1 || y === at.y + h + 1, open = x === ox && y === oy;
-      const m = open ? 'oppning' : edge ? 'ris' : golv;
+      const m = open ? 'oppning' : edge ? 'timmer' : golv;
       bitsOf(s).push({ id: s.nextBit++, x, y, k: MATERIAL[m].k, m, b: open ? 1 : 0, mat: 0, c: 1, hus: hus.id });
     }
     hs.push(hus); touch(s);
@@ -95,16 +97,31 @@ export function planBuild(s: State) {
 }
 
 // ---------- arbete ----------
-export interface Job { bit: Bit; repair: boolean; item?: string; need: number; missing: boolean }
-export const avail = (s: State, k: string) => (s.items[k] ?? 0) - (RESERVE[k] ?? 0);
+// fell = ett träd står där biten ska byggas och måste fällas först
+export interface Job { bit: Bit; repair: boolean; item?: string; need: number; missing: boolean; fell?: boolean }
+export const avail = (s: State, k: string) => amountOf(s, k) - (RESERVE[k] ?? 0);
+export const treeOn = (s: State, b: Bit) => groundOf(s).trees[b.y * W + b.x] >= FOREST;
 // det p kan bygga härnäst: lagning av slitna väggar först, sedan golv, sedan väggar. Det andra redan bygger tas inte
 export function buildJob(s: State, p: Person): Job | undefined {
   if (ageOf(p, s.now) < 12) return;
-  const taken = new Set(living(s).filter(q => q !== p && q.task?.act === 'bygga').map(q => q.task!.ref));
+  const others = living(s).filter(q => q !== p);
+  const taken = new Set(others.filter(q => q.task?.act === 'bygga').map(q => q.task!.ref));
+  // först fälls träden där huset ska stå, även inne i huset, av den som har en ledig yxa
+  const fallers = others.filter(q => q.task?.act === 'falla' || q.task?.act === 'hugga');
+  if (axes(s) > fallers.length) {
+    const felling = new Set(fallers.filter(q => q.task!.act === 'falla').map(q => Math.floor(q.task!.ty) * W + Math.floor(q.task!.tx)));
+    let fb: Bit | undefined, fs = Infinity;
+    for (const b of bitsOf(s)) {
+      if ((b.b >= 1 && b.k !== 'oppning') || !treeOn(s, b) || felling.has(b.y * W + b.x)) continue;
+      const d = Math.hypot(b.x - p.x, b.y - p.y);
+      if (d < fs) { fs = d; fb = b; }
+    }
+    if (fb) return { bit: fb, repair: false, need: 0, missing: false, fell: true };
+  }
   if (taken.size >= 4) return;
   let best: Job | undefined, bs = Infinity;
   for (const b of bitsOf(s)) {
-    if (taken.has(b.id) || b.k === 'oppning') continue;
+    if (taken.has(b.id) || b.k === 'oppning' || (b.b < 1 && treeOn(s, b))) continue;
     const M = MATERIAL[b.m], repair = b.b >= 1;
     if (repair && b.c >= LAGA) continue;
     if (M.tek && !knows(p, M.tek)) continue;
@@ -134,11 +151,21 @@ export function siteOf(s: State, b: Bit) {
 const inHus = (h: Hus | undefined, o: { x: number; y: number }) => h && o.x > h.x && o.y > h.y && o.x < h.x + h.w - 1 && o.y < h.y + h.h - 1 ? 1 : 0;
 // lägg material på bygget
 export function deliver(b: Bit, n: number, repair: boolean) { if (repair) b.lm = (b.lm ?? 0) + n; else b.mat += n; }
+// stockar till ett hus som byggs läggs direkt i väggarna: från träd som stod där huset ska stå, eller som fälldes
+// för bygget (hus = husets id). Ger hur mycket som gick åt
+export function toWalls(s: State, x: number, y: number, n: number, hus?: number) {
+  const h = housesOf(s).find(q => !q.klar && (hus ? q.id === hus : x >= q.x && y >= q.y && x < q.x + q.w && y < q.y + q.h));
+  if (!h || n <= 0) return 0;
+  let used = 0;
+  const walls = bitsOf(s).filter(b => b.hus === h.id && b.b < 1 && MATERIAL[b.m].item === 'ved' && lacks(b)).sort((a, b) => Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y));
+  for (const b of walls) { const d = Math.min(needOf(b), n - used); deliver(b, d, false); used += d; if (used >= n - 1e-9) break; }
+  return used;
+}
 // ta material ur förrådet till bygget (snabbläget, där ingen bär)
 export function takeFor(s: State, j: Job) {
   if (!j.item || j.need <= 0) return true;
   if (avail(s, j.item) < j.need) return false;
-  s.items[j.item] -= j.need; deliver(j.bit, j.need, j.repair);
+  addTo(s, j.item, -j.need); deliver(j.bit, j.need, j.repair);
   return true;
 }
 // en stunds arbete på en ruta. Ger true när rutan är klar

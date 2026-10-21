@@ -1,6 +1,7 @@
 import { campCenter, campDist } from './plats';
 import { ageOf, living, log, think } from './folk';
 import { groundOf, isForest } from './mark';
+import { FOREST } from './vag';
 import { sedEvent } from './seder';
 import { knows } from './teknik';
 import { rnd } from './slump';
@@ -13,10 +14,15 @@ import { item } from './saker';
 const STAM = { ved: 8, grenar: 5 }; // vad ett vuxet träd ger
 export const axes = (s: State) => Math.ceil(item(s, 'yxa') - 1e-9); // en sliten yxa är fortfarande en yxa
 export const stocks = (s: State) => (s.stockar ??= []);
+export const FALL_TID = 1.2 * HOUR; // så lång tid det tar att fälla ett träd
 
 // närmaste vuxna träd att fälla, helst i skogskanten nära byn
 export function treeSpot(s: State, taken: Set<number>): { x: number; y: number } | undefined {
   const g = groundOf(s), f = campCenter(s);
+  // först träden där ett hus ska stå: de måste bort ändå, och stockarna blir husets väggar
+  let site = -1, sd = Infinity;
+  if (g.built) for (let i = 0; i < W * H; i++) if (g.built[i] && g.trees[i] >= FOREST && !taken.has(i)) { const d = campDist(s, i % W, Math.floor(i / W)); if (d < sd) { sd = d; site = i; } }
+  if (site >= 0) return { x: (site % W) + 0.5, y: Math.floor(site / W) + 0.5 };
   const c: { i: number; d: number }[] = [];
   for (let y = Math.max(0, f.y - 18); y < Math.min(H, f.y + 19); y++) for (let x = Math.max(0, f.x - 24); x < Math.min(W, f.x + 25); x++) {
     const i = y * W + x;
@@ -29,7 +35,8 @@ export function treeSpot(s: State, taken: Set<number>): { x: number; y: number }
   return { x: (i % W) + 0.5, y: Math.floor(i / W) + 0.5 };
 }
 export const nearestStock = (s: State) => {
-  return stocks(s).filter(k => k.ved > 0).sort((a, b) => campDist(s, a.x, a.y) - campDist(s, b.x, b.y))[0];
+  const b = groundOf(s).built, onSite = (k: Stock) => b?.[Math.floor(k.y) * W + Math.floor(k.x)] ? 0 : 1; // stammarna där huset ska stå först
+  return stocks(s).filter(k => k.ved > 0).sort((a, c) => onSite(a) - onSite(c) || campDist(s, a.x, a.y) - campDist(s, c.x, c.y))[0];
 };
 
 // trädet faller: det blir en liggande stam, och där det stod växer högt gräs
@@ -40,13 +47,14 @@ export function fellTree(s: State, p: Person, x: number, y: number) {
   g.trees[i] = 0; g.cover[i] = 1;
   const k: Stock = { id: (s.nextStock = (s.nextStock ?? 0) + 1), x: Math.floor(x) + 0.5, y: Math.floor(y) + 0.5, ved: Math.round(STAM.ved * size), grenar: Math.round(STAM.grenar * size) };
   stocks(s).push(k);
-  (s.stubbar ??= []).push({ x: Math.floor(x), y: Math.floor(y), t: s.now });
+  if (!groundOf(s).built?.[i]) (s.stubbar ??= []).push({ x: Math.floor(x), y: Math.floor(y), t: s.now }); // där ett hus ska stå grävs stubben upp
   s.fallda = (s.fallda ?? 0) + 1;
   if (s.fallda === 1) {
     log(s, `${p.name} fällde byns första träd med flintyxan.`, 'world', [p.id]);
     p.fame.push('Fällde byns första träd');
     think(p, 'Fällde ett träd', 0.1, s.now, 12 * 3600 * 1000);
   }
+  return k;
 }
 // en stubbe står kvar efter trädet och ruttnar sakta bort
 export const STUBBE_LIV = 8 * DAY;
@@ -63,7 +71,7 @@ export function chopStock(s: State, ref: number | undefined, amount: number) {
   return { ved, grenar: gr, done: k.ved <= 1e-6 };
 }
 
-// hur många yxor byn vill ha
+// hur många yxor byn vill ha (en till medan ett hus byggs, för träden där det ska stå)
 export const axesWanted = (adults: number) => Math.max(1, Math.min(3, Math.floor(adults / 4)));
 export const canMakeAxe = (s: State) => item(s, 'flinta') >= 1 && item(s, 'grenar') >= 1;
 export function makeAxe(s: State, p: Person) {
@@ -84,13 +92,13 @@ export function axeTask(s: State, p: Person): { act: Act; x: number; y: number; 
   const busy = others.filter(q => q.task?.act === 'falla' || q.task?.act === 'hugga');
   if (axes(s) > busy.length) {
     const k = nearestStock(s);
-    if (k) return { act: 'hugga', x: k.x + 0.3, y: k.y + 0.2, ref: k.id, why: 'Hugger ved av en fälld stam' };
+    if (k) return { act: 'hugga', x: k.x + 0.3, y: k.y + 0.2, ref: k.id, why: 'Hugger trä av en fälld stam' };
     const taken = new Set(busy.filter(q => q.task!.act === 'falla').map(q => Math.floor(q.task!.ty) * W + Math.floor(q.task!.tx)));
     const t = treeSpot(s, taken);
-    if (t) return { act: 'falla', x: t.x, y: t.y, dur: 2.2 * HOUR, why: 'Har en yxa och fäller ett träd till ved' };
+    if (t) return { act: 'falla', x: t.x, y: t.y, dur: FALL_TID, why: 'Har en yxa och fäller ett träd till trä' };
   }
   const adults = ppl.filter(q => ageOf(q, s.now) >= 16).length;
-  if (knows(p, 'yxa') && canMakeAxe(s) && axes(s) < axesWanted(adults) && !others.some(q => q.task?.act === 'yxa')) {
+  if (knows(p, 'yxa') && canMakeAxe(s) && axes(s) < axesWanted(adults) + (s.hus?.some(h => !h.klar) ? 1 : 0) && !others.some(q => q.task?.act === 'yxa')) {
     return { act: 'yxa', x: 0, y: 0, dur: 2 * HOUR, why: 'Har flinta och vill göra en yxa för att kunna fälla träd' };
   }
   return undefined;

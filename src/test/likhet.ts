@@ -5,9 +5,9 @@ import { START } from './kor';
 const [seed, live, timmar] = [Number(process.argv[2] ?? 3), process.argv[3] !== 'snabb', Number(process.argv[4] ?? 48)];
 const s: State = createState(seed, START);
 const dt = live ? 0.5 : 300;
-if (process.env.BYGG) { // BYGG=1: alla vuxna kan risvägg från början, så att bygget kan jämföras
-  for (const p of living(s)) if (ageOf(p, s.now) >= 14) (p.tek ??= {}).risvagg = 1;
-  s.items.grenar = (s.items.grenar ?? 0) + 100;
+if (process.env.BYGG) { // BYGG=1: alla vuxna kan timmervägg och byn har yxor från början, så att bygget kan jämföras
+  for (const p of living(s)) if (ageOf(p, s.now) >= 14) Object.assign((p.tek ??= {}), { yxa: 1, timmervagg: 1 });
+  s.items.yxa = 2;
 }
 const tid: Record<string, number> = {}, forst: Record<string, number> = {};
 for (let i = 0; i < timmar * 3600 / dt; i++) {
