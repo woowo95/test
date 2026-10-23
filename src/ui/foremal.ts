@@ -52,6 +52,8 @@ export function drawStructures(t: number) {
   if (tab === 'eld') structG.lineStyle(1.5, 0xffffff, 0.9).drawCircle(cx, cy, 10).lineStyle(0);
   structG.beginFill(0x4b4640).drawCircle(cx, cy, 7).endFill();
   structG.beginFill(0x2d2620).drawCircle(cx, cy, 5.5).endFill();
+  // ringen av stenar, som ligger kvar när elden slocknat
+  if (s.fire.ring) for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4 + 0.2; structG.beginFill(i % 2 ? 0x8a8f94 : 0x6a6e72).drawEllipse(cx + Math.cos(a) * 7, cy + Math.sin(a) * 6.5, 2.2, 1.8).endFill(); }
   const fuel = s.fire.fuel, fl = 1 + Math.sin(t / 130) * 0.12 + Math.sin(t / 47) * 0.08;
   // vedträn: fler ju mer ved som ligger på
   const logs = Math.min(5, Math.ceil(fuel));

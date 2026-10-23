@@ -28,12 +28,16 @@ const DEF = {
   torrgras: { namn: 'Hö', stack: 50, mapp: 'Bränsle', slits: 0.0015 },
   kol: { namn: 'Kol', stack: 25, mapp: 'Bränsle' },
   flinta: { namn: 'Flinta', stack: 10, mapp: 'Sten' },
-  gniststen: { namn: 'Gniststen', stack: 10, mapp: 'Sten' },
   yxa: { namn: 'Flintyxa', stack: 1, mapp: 'Redskap', slits: 0.0004, redskap: true },
-  fiskespjut: { namn: 'Fiskespjut', stack: 1, mapp: 'Redskap', slits: 0.001, redskap: true },
+  fiskespjut: { namn: 'Träspjut', stack: 1, mapp: 'Redskap', slits: 0.001, redskap: true },
   korg: { namn: 'Korg', stack: 1, mapp: 'Redskap', slits: 0.001, redskap: true },
   // giftig svamp som av misstag hamnat i förrådet bland den ätliga (fynd.ts). Den ligger i svampstacken och syns inte
   giftsvamp: { namn: 'Giftig svamp', ruttnar: 1, dold: true },
+  sten: { namn: 'Sten', stack: 10, mapp: 'Sten' },
+  rep: { namn: 'Rep', stack: 20, mapp: 'Material', slits: 0.0003 },
+  ben: { namn: 'Ben', stack: 20, mapp: 'Material' },
+  flintspjut: { namn: 'Flintspjut', stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true },
+  metspo: { namn: 'Metspö', stack: 1, mapp: 'Redskap', slits: 0.0005, redskap: true },
 } satisfies Record<string, SakDef>;
 
 export type Sak = keyof typeof DEF;

@@ -1,7 +1,7 @@
 // Scenariotester: ställ en by i ett visst läge, kör den en stund och kontrollera att det som ska hända händer.
 // npm run scenario            kör alla
 // npm run scenario -- glanta  kör bara ett
-import { createState, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, WEEK, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, zonesOf, allows, ageOf, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, fuelStock, DAY, HOUR, W, State, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, campCenter, TEKNIK, knows, thinkWhileWorking, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, beds, isWall, Bit, wearBuild, FYND, FYND_IDS, GRUPPER, angOf, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, LAGER_R, observe, hoped, Lager, skyggOf, SKYGG_R, share, treeOn } from '../sim';
+import { Person, createState, twineRope, makeRod, wearSpear, isSpear, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, WEEK, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, zonesOf, allows, ageOf, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, fuelStock, DAY, HOUR, W, State, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, campCenter, TEKNIK, knows, thinkWhileWorking, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, beds, isWall, Bit, wearBuild, FYND, FYND_IDS, GRUPPER, angOf, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, LAGER_R, observe, hoped, Lager, skyggOf, SKYGG_R, share, treeOn } from '../sim';
 import { findPath } from '../sim/vag';
 import { FOREST, HIGH, isSoil } from '../sim/vag';
 import { START } from './kor';
@@ -57,10 +57,11 @@ const SCENARIER: Record<string, { text: string; kor: () => Koll[] }> = {
     },
   },
   'ingen-yxa': {
-    text: 'Byn hittar ingen flinta: inga träd fälls, elden hålls vid liv med grenar',
+    text: 'Byn har bara en flinta, som behövs till elden: ingen yxa görs, inga träd fälls och elden hålls vid liv med grenar',
     kor: () => {
       const s = createState(12, START);
-      kor(s, 30 * 24, s => { if (s.items.flinta) s.items.flinta = 0; });
+      s.items.flinta = 1;
+      kor(s, 30 * 24, s => { if (s.items.flinta > 1) s.items.flinta = 1; });
       return [
         ['ingen yxa', !(s.items.yxa ?? 0)],
         ['inga träd fällda', !(s.fallda ?? 0)],
@@ -92,7 +93,7 @@ const SCENARIER: Record<string, { text: string; kor: () => Koll[] }> = {
   'vinter-slocknad': {
     text: 'Istiden börjar med slocknad eld, kolhög och lite grenar: byn tänder igen på kolhögen',
     kor: () => {
-      // gniststenen lyckas bara ibland (några procent per försök), så provet körs i fem byar och minst två ska få fyr
+      // flintan lyckas bara ibland (några procent per försök), så provet körs i fem byar och minst två ska få fyr
       const byar = [16, 17, 18, 19, 20].map(seed => {
         const s = createState(seed, START);
         kor(s, 20 * 24 + 23); // till istidens början
@@ -234,11 +235,36 @@ SCENARIER.befolkning = {
   },
 };
 
+SCENARIER.stenring = {
+  text: 'Den första elden läggs i en ring av stenar som samlas in, och tänds med flinta. Ringen ligger kvar när elden slocknat',
+  kor: () => {
+    const s = createState(1, START);
+    let h = 0;
+    while (!s.fire.lightings && h < 24 * 4) { kor(s, 1); h++; }
+    const tand = s.fire.lightings > 0, ring = !!s.fire.ring, kvar = s.items.sten ?? 0;
+    Object.assign(s.fire, { lit: false, fuel: 0, emberUntil: undefined }); // elden slocknar
+    kor(s, 2);
+    // en äldre sparfil med gniststen: den blir flinta, och byn som haft eld har sin ring
+    const g = createState(2, START);
+    g.items = { gniststen: 1 }; g.stackar = [{ k: 'gniststen', n: 1, x: 1, y: 1, c: 1 }]; g.fire.lightings = 3;
+    delete (g.fire as { ring?: boolean }).ring;
+    migrate(g);
+    return [
+      [`stenar samlas och elden tänds (efter ${h} timmar)`, tand && logg(s, 'ring av stenar')],
+      [`stenarna blir en ring runt elden (${kvar.toFixed(1)} stenar kvar i förrådet)`, ring && kvar < 1],
+      ['elden tänds med flinta, gniststen finns inte', s.fire.log.some(e => e.k === 'tänd') && !('gniststen' in s.items) && !logg(s, 'gniststen')],
+      ['ringen ligger kvar när elden slocknat', !!s.fire.ring],
+      ['äldre sparfil: gniststenen blir flinta och ringen finns', g.items.flinta === 1 && !g.items.gniststen && g.stackar!.every(a => a.k !== 'gniststen') && !!g.fire.ring],
+    ];
+  },
+};
+
 SCENARIER.fiskespjut = {
   text: 'Ett fiskespjut täljs av en pinne med flinta eller yxa, ger mer fisk än händerna och slits fort',
   kor: () => {
     const s = createState(4, START);
     s.items = { grenar: 10, flinta: 1 };
+    Object.assign(s.fire, { lit: true, fuel: 4, ring: true }); // elden brinner, så att ingen behöver leta stenar och flinta
     for (const q of s.people) q.tek = { fiskespjut: 1 }; // alla kan tälja spjut från början
     const p = living(s).find(q => q.task === undefined || true)!;
     makeSpear(s, p);
@@ -253,6 +279,51 @@ SCENARIER.fiskespjut = {
       [`spjutet används (${st.spjutForsok ?? 0} försök med spjut, ${hand} med händerna)`, (st.spjutForsok ?? 0) > 20],
       [`spjut ger mer fisk per försök (${takt(st.spjutFisk ?? 0, st.spjutForsok ?? 0).toFixed(2)} mot ${takt((st.fisk ?? 0) - (st.spjutFisk ?? 0), hand).toFixed(2)})`, hand < 20 || takt(st.spjutFisk ?? 0, st.spjutForsok ?? 0) > takt((st.fisk ?? 0) - (st.spjutFisk ?? 0), hand)],
       [`spjuten går sönder efter ${SPJUT_FORSOK} försök (${st.spjutTrasiga ?? 0} trasiga, ${st.spjutGjorda ?? 0} täljda)`, (st.spjutTrasiga ?? 0) >= 1 && (st.spjutGjorda ?? 0) >= 2],
+    ];
+  },
+};
+
+SCENARIER.redskap = {
+  text: 'Rep tvinnas av hö vid elden och fås av senor vid jakt. Flintspjut (gren, flinta, rep) håller längre än träspjut och används till fiske och jakt. Metspö (gren, rep, ben) med mask ger mest fisk',
+  kor: () => {
+    const s = createState(4, START);
+    s.items = { grenar: 20, flinta: 3, torrgras: 40, ben: 2 };
+    Object.assign(s.fire, { lit: true, fuel: 4, ring: true });
+    for (const q of s.people) q.tek = { fiskespjut: 1, rep: 1, flintspjut: 1, metspo: 1 };
+    const p = living(s).find(q => ageOf(q, s.now) >= 18)!;
+    twineRope(s, p, 2);
+    const rep = s.items.rep === 2 && s.items.torrgras === 36;
+    makeSpear(s, p);
+    const flint = s.items.flintspjut === 1 && s.items.flinta === 2 && s.items.rep === 1 && !s.items.fiskespjut;
+    p.task = { act: 'fiske', phase: 'do', tx: p.x, ty: p.y, until: s.now + HOUR, carry: 0, tool: 'flintspjut' };
+    for (let i = 0; i < 60; i++) wearSpear(s, p);
+    const haller = spears(s) === 1 && Math.abs(s.items.flintspjut - 0.75) < 1e-9; // 60 försök tar en fjärdedel
+    makeRod(s, p);
+    const spo = s.items.metspo === 1 && s.items.ben === 1 && s.items.rep === 0;
+    // jakt med flintspjutet: ger ben och senor (rep), och spjutet slits
+    const c = campCenter(s), m = getMap(s.seed);
+    let bx = c.x, by = c.y, bast = 0;
+    for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) { const v = richness(s, 'jakt', x + 0.5, y + 0.5); if (v > bast && m.tiles[y * W + x] !== T.Vatten && Math.hypot(x - c.x, y - c.y) < 20) { bast = v; bx = x + 0.5; by = y + 0.5; } }
+    const ben0 = s.items.ben, sp0 = s.items.flintspjut;
+    let medSpjut = 0;
+    for (let i = 0; i < 12 * 3; i++) {
+      p.task = { act: 'jakt', phase: 'do', tx: bx, ty: by, until: s.now + HOUR, carry: 0, tool: 'flintspjut', why: 'prov', dark: !isLight(s.now) };
+      p.x = bx; p.y = by; step(s, 300, false);
+      if (p.task?.act === 'jakt' && isSpear(p.task.tool)) medSpjut++;
+    }
+    const jakt = s.items.ben > ben0 && (s.items.rep ?? 0) > 0 && s.items.flintspjut < sp0;
+    // byn fiskar själv några dygn: metspö, spjut och händer
+    s.food = 3;
+    kor(s, 4 * 24, q => { if ((q.items.ben ?? 0) < 1) q.items.ben = 1; if ((q.items.flinta ?? 0) < 3) q.items.flinta = 3; });
+    const st = s.stat!, takt = (f: number, n: number) => n ? f / n : 0;
+    const met = takt(st.metFisk ?? 0, st.metForsok ?? 0), spjut = takt(st.spjutFisk ?? 0, st.spjutForsok ?? 0);
+    return [
+      [`rep tvinnas av hö (2 rep av 4 hö på två timmar)`, rep],
+      ['ett flintspjut görs av gren, flinta och rep, och en flinta sparas till elden', flint],
+      ['flintspjutet håller fyra gånger så länge som ett träspjut', haller],
+      ['ett metspö görs av gren, rep och ben', spo],
+      [`jakt med spjut ger ben och senor till rep, och slits (${medSpjut} av 36 steg med spjut)`, jakt && medSpjut > 30],
+      [`metspöet används och ger mest fisk per försök (${met.toFixed(2)} mot spjutets ${spjut.toFixed(2)}, ${st.metForsok ?? 0} försök)`, (st.metForsok ?? 0) > 20 && met > spjut],
     ];
   },
 };
@@ -343,7 +414,7 @@ SCENARIER.lager = {
     s.food = 230; s.wood = 90; s.items.grenar = 70; s.items.flinta = 3; // mycket på en gång
     kor(s, 18);
     const z = zoneOf(s), ps = pilesOf(s), stor = z.w * z.h;
-    const summaOk = Object.keys(STACK).every(k => Math.abs(ps.filter(p => p.k === k).reduce((a, p) => a + p.n, 0) - (amountOf(s, k) >= (STACK[k] === 1 ? 1e-6 : 0.5) ? amountOf(s, k) : 0)) < 1e-6);
+    const summaOk = Object.keys(STACK).every(k => Math.abs(ps.filter(p => p.k === k).reduce((a, p) => a + p.n, 0) - amountOf(s, k)) < 1e-6);
     // bära: kör en stund med gående invånare och se hur mycket de bär hem
     const b = createState(8, START);
     b.now = new Date(b.now).setHours(7, 0, 0, 0); b.food = 2; // morgon, och byn behöver mat
@@ -430,7 +501,7 @@ SCENARIER.lagerplatser = {
   text: 'När lagret inte räcker gör byn en ny lagerplats och sorterar: maten närmast elden, material för sig',
   kor: () => {
     const s = createState(9, START);
-    s.food = 600; s.wood = 200; s.items.grenar = 400;
+    s.food = 600; s.wood = 200; s.items.grenar = 400; s.items.flinta = 1; s.fire.ring = true; // byn kan tända sin eld och har tid att sortera
     kor(s, 24);
     const zs = zonesOf(s), ps = pilesOf(s);
     const fel = ps.filter(p => p.zone >= 0 && !allows(zs[p.zone], p.k)).length;
@@ -448,19 +519,28 @@ SCENARIER.aktivitet = {
   text: 'I levande läge bär man hem efter några fynd och går tillbaka; vid bärplockning och jakt står man still en stund och går några steg, på promenad går man hela tiden. Det ger lika mycket som förut',
   kor: () => {
     const s = createState(5, START);
-    s.wood = 20; Object.assign(s.fire, { lit: true, fuel: 0.5 }); // tänd eld och ved i förrådet, så att någon matar elden
+    s.now = new Date(s.now).setHours(10, 0, 0, 0); // mitt på dagen, så att ingen går hem för att det blir mörkt
+    s.wood = 20; Object.assign(s.fire, { lit: true, fuel: 0.5, ring: true }); // tänd eld och ved i förrådet, så att någon matar elden
     const m = getMap(s.seed);
     const rad: Record<string, number> = { samla: 2, jakt: 3, promenad: 4 };
     const gick: Record<string, number> = {}, stod: Record<string, number> = {};
     let utanfor = 0, vatten = 0, tungt = 0, turer = 0, aterupp = 0, eldMax = 0;
     const fore = new Map<number, { x: number; y: number; ph: string; act: string }>();
+    let prov: Person[] = [];
     for (let i = 0; i < 10 * 3600 * 2; i++) {
       step(s, 0.5, true);
-      if (i === 3600) { // en jägare, en som promenerar och en bärplockare, så att alla syns i provet
-        const c = campCenter(s), vuxna = living(s).filter(p => ageOf(p, s.now) >= 16).slice(0, 3), akt = ['jakt', 'promenad', 'samla'] as const;
-        vuxna.forEach((p, j) => {
+      // en jägare, en som promenerar och en bärplockare, så att alla syns i provet. Den som avbryts på vägen (t.ex. för ett samtal) får uppgiften igen
+      if (i === 3600) prov = living(s).filter(p => ageOf(p, s.now) >= 16).slice(0, 3);
+      if (i >= 3600 && i < 3600 * 7 && i % 600 === 0) {
+        const c = campCenter(s), akt = ['jakt', 'promenad', 'samla'] as const;
+        prov.forEach((p, j) => {
+          if (p.task?.act === akt[j] || p.died !== undefined) return;
           let x = 0, y = 0;
           for (let r = 7; r < 30; r++) { x = c.x + 0.5 + (j === 1 ? -r : r); y = c.y + 0.5 + (j === 2 ? -r : r) * 0.3; if (m.tiles[Math.floor(y) * W + Math.floor(x)] !== T.Vatten) break; }
+          if (j === 0) { // jägaren går dit det finns mest vilt
+            let bast = 0;
+            for (let yy = 1; yy < H - 1; yy++) for (let xx = 1; xx < W - 1; xx++) { const v = richness(s, 'jakt', xx + 0.5, yy + 0.5); if (v > bast && m.tiles[yy * W + xx] !== T.Vatten && Math.hypot(xx - c.x, yy - c.y) < 20) { bast = v; x = xx + 0.5; y = yy + 0.5; } }
+          }
           p.task = { act: akt[j], phase: 'go', tx: x, ty: y, until: s.now + 3 * HOUR, carry: 0, why: 'prov', dark: !isLight(s.now) };
         });
       }

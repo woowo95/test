@@ -38,7 +38,7 @@ export const GREN = 0.4; // en gren ger lika mycket bränsle som 0,4 ved: grenar
 
 export interface Thought { text: string; v: number; until: number }
 // why = varför personen valde uppgiften, dark = påbörjad under mörk tid
-export interface Task { act: Act; phase: 'go' | 'do' | 'back'; tx: number; ty: number; until: number; carry: number; items?: Record<string, number>; cond?: Record<string, number>; why?: string; dark?: boolean; path?: number[]; pk?: string; ref?: number; prog?: number; tool?: string; stint?: number; fynd?: number; lim?: number; res?: { x: number; y: number; until: number }; wx?: number; wy?: number; hold?: number; site?: { x: number; y: number } } // tool = redskap som används, t.ex. fiskespjut. stint = när arbetspasset slutar och bördan bärs hem, res = var och till när arbetet fortsätter efteråt, wx/wy/hold = vart man går härnäst på platsen och hur länge man står still, site = bygget man går till efter att ha hämtat material
+export interface Task { act: Act; phase: 'go' | 'do' | 'back'; tx: number; ty: number; until: number; carry: number; items?: Record<string, number>; cond?: Record<string, number>; why?: string; dark?: boolean; path?: number[]; pk?: string; ref?: number; prog?: number; tool?: string; stint?: number; fynd?: number; lim?: number; res?: { x: number; y: number; until: number }; wx?: number; wy?: number; hold?: number; site?: { x: number; y: number }; mask?: number } // mask = maskar på kroken till metspöet // tool = redskap som används, t.ex. fiskespjut. stint = när arbetspasset slutar och bördan bärs hem, res = var och till när arbetet fortsätter efteråt, wx/wy/hold = vart man går härnäst på platsen och hur länge man står still, site = bygget man går till efter att ha hämtat material
 
 export interface Person {
   id: number; name: string; sex: 'm' | 'k';
@@ -79,7 +79,7 @@ export interface State {
   people: Person[]; rels: Record<string, Rel>; nextId: number;
   food: number; wood: number; log: LogEntry[];
   lastAgeIdx: number; lastGuardDay: number;
-  items: Record<string, number>; // föremål i förrådet, t.ex. gniststen, hö, grenar
+  items: Record<string, number>; // föremål i förrådet, t.ex. flinta, hö, grenar
   fire: Fire;
   seder: Seder;
   mark?: string; // markens grästäcke per ruta (stigar), packat
@@ -119,7 +119,7 @@ export interface Seder { v: Record<Sed, number>; ev: Record<Sed, number>; log: {
 // spread = relativ risk att elden tar sig ut i omgivningen (används när brandsystemet finns).
 export interface Hearth { id: string; name: string; desc: string; indoor: boolean; maxFuel: number; burn: number; radius: number; comfort: number; spread: number; requires: string }
 export const HEARTHS: Hearth[] = [
-  { id: 'lagereld', name: 'Lägereld', desc: 'Trä staplat direkt på marken. Lätt att göra, men mycket värme går förlorad och den kan inte stå inomhus.', indoor: false, maxFuel: 6, burn: 0.5, radius: 5, comfort: 0.04, spread: 1, requires: 'Eld' },
+  { id: 'lagereld', name: 'Lägereld', desc: 'Trä staplat på marken innanför en ring av stenar. Lätt att göra, men mycket värme går förlorad och den kan inte stå inomhus.', indoor: false, maxFuel: 6, burn: 0.5, radius: 5, comfort: 0.04, spread: 1, requires: 'Eld' },
   { id: 'stenring', name: 'Stenring', desc: 'Elden ligger i en ring av stenar som håller glöden samlad och stänger ute vinden.', indoor: false, maxFuel: 8, burn: 0.45, radius: 5.5, comfort: 0.05, spread: 0.5, requires: 'Stenhuggning' },
   { id: 'hard', name: 'Härd', desc: 'Stensatt härd i golvet med rökhål i taket. Den första elden som går att ha inomhus.', indoor: true, maxFuel: 10, burn: 0.4, radius: 6, comfort: 0.07, spread: 0.3, requires: 'Bofast by' },
   { id: 'murad', name: 'Murad eldstad', desc: 'Eldstad av sten och lera med rökgång. Röken leds ut och värmen stannar i rummet.', indoor: true, maxFuel: 14, burn: 0.35, radius: 7, comfort: 0.09, spread: 0.12, requires: 'Murning' },
@@ -128,7 +128,7 @@ export const HEARTHS: Hearth[] = [
 // chance = chans per försök, grass/sticks = tändmaterial per försök, minutes = tid per försök
 export interface Igniter { id: string; name: string; desc: string; chance: number; grass: number; sticks: number; minutes: number; requires: string }
 export const IGNITERS: Igniter[] = [
-  { id: 'gniststen', name: 'Gniststen', desc: 'Slås mot en annan sten så att gnistor faller i tändmaterialet. Kräver tålamod och mycket tändmaterial.', chance: 0.025, grass: 3, sticks: 3, minutes: 15, requires: '–' },
+  { id: 'flinta', name: 'Flinta', desc: 'Flintan slås mot en annan sten så att gnistor faller i tändmaterialet. Kräver tålamod och mycket tändmaterial.', chance: 0.025, grass: 3, sticks: 3, minutes: 15, requires: '–' },
   { id: 'bagborr', name: 'Bågborr', desc: 'En pinne snurras snabbt mot en träskiva med hjälp av en båge tills glöd bildas.', chance: 0.2, grass: 2, sticks: 1, minutes: 10, requires: 'Träbearbetning' },
   { id: 'eldstal', name: 'Eldstål och flinta', desc: 'Stål mot flinta ger heta gnistor som fångas i fnöske.', chance: 0.45, grass: 1, sticks: 1, minutes: 5, requires: 'Smide' },
   { id: 'tandstickor', name: 'Tändstickor', desc: 'Tänds med ett drag.', chance: 0.9, grass: 0.5, sticks: 0.5, minutes: 1, requires: 'Kemi' },
@@ -136,7 +136,7 @@ export const IGNITERS: Igniter[] = [
 
 export interface FireLog { t: number; k: 'tänd' | 'fyll' | 'slocknade' | 'glöd' | 'sprack'; id?: number; n?: number }
 export interface Fire {
-  hearth: string; fuel: number; lit: boolean; emberUntil?: number;
+  hearth: string; fuel: number; lit: boolean; emberUntil?: number; ring?: boolean; // ringen av stenar runt eldplatsen
   litAt?: number; litBy?: number; burned: number; // denna eld
   totalBurned: number; litSec: number; lightings: number; outs: number;
   tries: number; tryTotal: number; tryProg: number; // försök sedan elden senast brann, totalt, sekunder in i pågående försök

@@ -335,8 +335,8 @@ export const HAND_FISH = 0.55;
 // flinta hittas oftast vid stenarna, ibland i sanden vid stranden och sällan annars
 // hur lätt det är att hitta flinta på platsen just nu: platser där man hittat flinta har mindre kvar ett tag
 export const flintFactor = (s: State, x: number, y: number) => richness(s, 'flinta', x, y);
-// byn behöver flinta till en yxa
-export const wantsFlint = (s: State) => (s.items.flinta ?? 0) + (s.items.yxa ?? 0) < 1;
+// byn behöver flinta att tända eld med och till en yxa
+export const wantsFlint = (s: State) => (s.items.flinta ?? 0) < 1 || (s.items.flinta ?? 0) + (s.items.yxa ?? 0) < 2;
 // en plats att samla på nära stenarna, där flinta är vanlig
 export function flintSpot(s: State, area?: (x: number, y: number) => boolean): { x: number; y: number } | undefined {
   const m = getMap(s.seed), sd = stoneDist(s.seed), c: { x: number; y: number; d: number }[] = [];
@@ -405,16 +405,19 @@ export function eatPoison(s: State, p: Person) {
 export const TRY_SEC = 300;
 // Med fiskespjut träffar man fisken oftare och den sitter kvar på spjutet.
 export const SPEAR_FISH = 2.4; // ungefär så mycket mer ett spjut ger än händerna
-export function handFish(s: State, p: Person, x: number, y: number, ageF: number, spear = false) {
-  const st = (p.fiske ??= { f: 0, n: 0, k: 0 });
-  st.f++; count(s, 'fiskeForsok'); if (spear) count(s, 'spjutForsok');
+// med metspö nappar fisken oftare och sitter kvar bättre på kroken (masken grävs fram i steg.ts)
+export type Fiskedon = 'hand' | 'spjut' | 'metspo';
+const NAPP: Record<Fiskedon, number> = { hand: 0.08, spjut: 0.13, metspo: 0.17 }, HALL: Record<Fiskedon, number> = { hand: 0.2, spjut: 0.5, metspo: 0.65 };
+export function handFish(s: State, p: Person, x: number, y: number, ageF: number, gear: Fiskedon = 'hand') {
+  const st = (p.fiske ??= { f: 0, n: 0, k: 0 }), spear = gear === 'spjut';
+  st.f++; count(s, 'fiskeForsok'); if (spear) count(s, 'spjutForsok'); if (gear === 'metspo') count(s, 'metForsok');
   const ai = ageIndex(s), season = [0.45, 1, 1.1, 1][ai];
-  if (rnd(s) >= (spear ? 0.13 : 0.08) * season * Math.min(1.3, richness(s, 'fiske', x, y)) * ageF) return 0;
+  if (rnd(s) >= NAPP[gear] * season * Math.min(1.3, richness(s, 'fiske', x, y)) * ageF) return 0;
   st.n++; count(s, 'fiskeNapp');
-  const hold = (spear ? 0.5 : 0.2) + p.skill.fiske / 40 + stat(p, 'uthallighet', s.now) / 100;
+  const hold = HALL[gear] + p.skill.fiske / 40 + stat(p, 'uthallighet', s.now) / 100;
   if (rnd(s) >= hold) return 0;
-  st.k++; count(s, 'fisk'); if (spear) count(s, 'spjutFisk');
+  st.k++; count(s, 'fisk'); if (spear) count(s, 'spjutFisk'); if (gear === 'metspo') count(s, 'metFisk');
   takeFrom(s, 'fiske', x, y, 1);
-  if (s.stat!.fisk === 1) log(s, `${p.name} fångade byns första fisk ${spear ? 'med spjut' : 'med händerna'}, efter ${s.stat!.fiskeForsok} försök.`, 'world', [p.id]);
+  if (s.stat!.fisk === 1) log(s, `${p.name} fångade byns första fisk ${spear ? 'med spjut' : gear === 'metspo' ? 'med metspö' : 'med händerna'}, efter ${s.stat!.fiskeForsok} försök.`, 'world', [p.id]);
   return 1;
 }

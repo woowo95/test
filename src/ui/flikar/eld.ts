@@ -1,4 +1,4 @@
-import { FireLog, HOUR, byId, emberOn, fireHeat, fireWant, hearthOf, heatRadius, igniterOf, living } from '../../sim';
+import { FireLog, HOUR, RING, byId, emberOn, fireHeat, fireWant, hearthOf, heatRadius, igniterOf, living } from '../../sim';
 import { bar, clockTxt, durTxt, esc, fmtN, num, pLink, times } from '../hjalp';
 import { s } from '../lage';
 import type { Flik } from '../panel';
@@ -12,7 +12,7 @@ function fireEntry(e: FireLog) {
   const txt = e.k === 'tänd' ? (e.id ? `${who} tände elden${e.n && e.n > 1 ? ` efter ${e.n} försök` : ''}.` : 'Byns grundare tände elden.')
     : e.k === 'fyll' ? `${who} lade på ${fmtN(e.n ?? 0)} trä.`
     : e.k === 'glöd' ? `${who} blåste liv i glöden.`
-    : e.k === 'sprack' ? `${who}s gniststen sprack.`
+    : e.k === 'sprack' ? `Flintan som ${who} slog med sprack.`
     : `Elden slocknade. Den hade bränt ${fmtN(e.n ?? 0)} trä.`;
   return `<li><span class="when">${clockTxt(e.t)}</span>${txt}</li>`;
 }
@@ -40,7 +40,8 @@ function fireHtml() {
       <dt>Tänd av</dt><dd>${f.litBy !== undefined ? pLink(byId(s, f.litBy)) : 'Byns grundare'}</dd>
       <dt>Trä använt</dt><dd>${fmtN(f.burned)}</dd></dl>` : ''}
     <h3>Tändning</h3><dl class="kv fam">
-      <dt>Tänddon</dt><dd>${ig ? `${esc(ig.name)} (${Math.floor(s.items[ig.id] ?? 0)} i förrådet)` : 'Inget. Någon måste hitta en gniststen.'}</dd>
+      <dt>Tänddon</dt><dd>${ig ? `${esc(ig.name)} (${Math.floor(s.items[ig.id] ?? 0)} i förrådet)` : 'Inget. Någon måste hitta en flinta.'}</dd>
+      <dt>Stenring</dt><dd>${f.ring ? 'Ligger runt eldplatsen' : `Behövs till den första elden: ${Math.floor(s.items.sten ?? 0)} av ${RING} stenar`}</dd>
       <dt>Hö</dt><dd>${Math.floor(s.items.torrgras ?? 0)} i förrådet</dd>
       <dt>Grenar</dt><dd>${Math.floor(s.items.grenar ?? 0)} i förrådet</dd>
       <dt>Bränsle</dt><dd>${Math.floor(s.wood)} trä och ${Math.floor(s.items.grenar ?? 0)} grenar i förrådet (grenar brinner fort)</dd>

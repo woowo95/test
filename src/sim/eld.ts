@@ -1,10 +1,10 @@
 import { dropLoad, fetchSpot, storeLoad } from './lager';
 import { coldOf, temperature } from './vader';
 import { ageOf, count, log, stat, think } from './folk';
-import { flintFactor, takeFrom } from './fynd';
+import { flintFactor, stoneDist, takeFrom } from './fynd';
 import { observe } from './minne';
 import { getMap } from './karta';
-import { tread } from './mark';
+import { tileOf, tread } from './mark';
 import { moodOf } from './samtal';
 import { duty, sedEvent } from './seder';
 import { chance, clamp, rnd } from './slump';
@@ -57,18 +57,22 @@ export function fireWish(s: State, p: Person, vc: number): Wish {
 }
 // tändmaterial som invånarna vill ha i förrådet
 const tinderWant = (s: State) => (s.fire.lit ? 12 : 36);
+// den första elden läggs i en ring av stenar; ringen ligger kvar när elden slocknat
+export const RING = 6;
+export const needStones = (s: State) => !s.fire.ring && item(s, 'sten') < RING;
 export function canLight(s: State) {
   const ig = igniterOf(s);
-  return !!ig && item(s, 'torrgras') >= ig.grass && (item(s, 'grenar') >= ig.sticks || item(s, 'kol') >= 1) && fuelStock(s) >= 1;
+  return !!ig && !needStones(s) && item(s, 'torrgras') >= ig.grass && (item(s, 'grenar') >= ig.sticks || item(s, 'kol') >= 1) && fuelStock(s) >= 1;
 }
 export function needTinder(s: State) {
-  return !s.fire.lit && !emberOn(s) && (item(s, 'gniststen') < 1 || item(s, 'torrgras') < 12 || item(s, 'grenar') < 12);
+  return !s.fire.lit && !emberOn(s) && (item(s, 'flinta') < 1 || needStones(s) || item(s, 'torrgras') < 12 || item(s, 'grenar') < 12);
 }
 function durText(sec: number) { const h = sec / 3600; return h >= 24 ? `${(h / 24).toFixed(1).replace('.', ',')} dygn` : h >= 1 ? `${Math.round(h)} timmar` : `${Math.round(sec / 60)} minuter`; }
 function lightFire(s: State, p: Person) {
   const f = s.fire, start = takeFuel(s, 2), onCoal = (f.ash ?? 0) >= 1;
   Object.assign(f, { lit: true, fuel: start, litAt: s.now, litBy: p.id, burned: 0, emberUntil: undefined, tryProg: 0 });
   f.lightings++;
+  if (!f.ring) { s.items.sten = item(s, 'sten') - RING; f.ring = true; log(s, `${p.name} lade en ring av stenar runt eldplatsen.`, 'world', [p.id]); }
   if (onCoal) { f.ash = 0; f.ashUntil = undefined; } // kolet i den gamla högen tar fyr och blir en del av den nya elden
   fireLog(s, { k: 'tänd', id: p.id, n: f.tries });
   log(s, `${p.name} lyckades tända elden${onCoal ? ' på den gamla kolhögen' : ''}${f.tries > 1 ? ` efter ${f.tries} försök` : ''}.`, 'world', [p.id]);
@@ -87,9 +91,9 @@ export function tryLight(s: State, p: Person) {
   p.skill.elda = clamp(p.skill.elda + 0.08 * (0.5 + p.pot.intelligens / 20) * (1 - p.skill.elda / 21), 0, 20);
   const c = ig.chance * (0.5 + p.skill.elda / 20 + stat(p, 'intelligens', s.now) / 40) * (ageIndex(s) === 0 ? 0.6 : 1) * ((f.ash ?? 0) >= 1 ? 1.5 : 1); // en gammal kolhög tar lättare fyr
   if (rnd(s) < c) { lightFire(s, p); return true; }
-  if (ig.id === 'gniststen' && rnd(s) < 0.01) {
-    s.items.gniststen--; fireLog(s, { k: 'sprack', id: p.id });
-    log(s, `${p.name}s gniststen sprack.`, 'world', [p.id]);
+  if (ig.id === 'flinta' && rnd(s) < 0.004) {
+    s.items.flinta--; fireLog(s, { k: 'sprack', id: p.id });
+    log(s, `Flintan som ${p.name} slog med sprack.`, 'world', [p.id]);
   }
   return false;
 }
@@ -179,7 +183,7 @@ export function stepFire(s: State, dtSec: number, live: boolean, ppl: Person[]) 
   }
 }
 // värmeförlust per timme utan eld: [ljus tid, mörk tid] per tidsålder
-// samling hittar tändmaterial och gniststen när förrådet behöver det
+// samling hittar tändmaterial, sten och flinta när förrådet behöver det
 const GRASS_SEASON = [0.25, 0.6, 1, 1.3];
 export function forageItems(s: State, p: Person, dtSec: number): Record<string, number> | undefined {
   const ai = ageIndex(s), want = tinderWant(s), hrs = dtSec / 3600;
@@ -187,13 +191,14 @@ export function forageItems(s: State, p: Person, dtSec: number): Record<string, 
   const got: Record<string, number> = {};
   if (item(s, 'torrgras') < want) got.torrgras = 3 * GRASS_SEASON[ai] * sk * hrs;
   if (item(s, 'grenar') < want) got.grenar = 3 * (ai === 0 ? 0.6 : 1) * sk * hrs;
-  if (item(s, 'gniststen') < 2 && chance(s, 0.08 * sk / 3600, dtSec)) {
-    got.gniststen = 1;
-    log(s, `${p.name} hittade en gniststen.`, 'world', [p.id]);
+  // stenar till eldringen: många vid stenarna, några i sanden, få annars
+  if (needStones(s)) {
+    const d = p.task ? stoneDist(s.seed)[tileOf(p.task.tx, p.task.ty)] : 9;
+    got.sten = 0.8 * (d <= 1 ? 3 : d <= 3 ? 1.5 : 0.4) * sk * hrs;
   }
-  // flinta är ovanlig och hittas oftast vid stenarna; med en flintsten och en pinne kan man göra en yxa
+  // flinta är ovanlig och hittas oftast vid stenarna. Den slås mot en sten för att tända eld, och med en pinne blir den en yxa
   const ff = p.task ? flintFactor(s, p.task.tx, p.task.ty) : 0.4;
-  if (item(s, 'flinta') + item(s, 'yxa') < 3 && chance(s, 0.025 * ff * sk / 3600, dtSec)) {
+  if (item(s, 'flinta') + item(s, 'yxa') < 4 && chance(s, 0.04 * ff * sk / 3600, dtSec)) {
     got.flinta = 1; count(s, ff > 2 ? 'flintaSten' : 'flintaAnnan');
     if (p.task) takeFrom(s, 'flinta', p.task.tx, p.task.ty, 1);
     if (ff > 2 && p.task) observe(s, p, 'flinta', p.task.tx, p.task.ty);

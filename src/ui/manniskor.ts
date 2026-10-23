@@ -13,7 +13,7 @@ export function addTalks(events: TalkEvent[], now: number) {
   for (const e of events.splice(0)) { bubbles.push({ id: e.a, kind: e.kind, good: e.good, until: now + 2600 }); talkWith.set(e.a, e.b); talkWith.set(e.b, e.a); }
 }
 // symbolen över huvudet för det man gör på platsen (mark i handlingar.ts); vissa redskap och material syns i stället
-const MARK_TOOL: Record<string, string> = { fiskespjut: 'fiskespjut', golv: 'tragolv' };
+const MARK_TOOL: Record<string, string> = { fiskespjut: 'fiskespjut', flintspjut: 'flintspjut', metspo: 'metspo', rep: 'rep', golv: 'tragolv' };
 function markOf(p: Person): string | undefined {
   const t = p.task; if (!t || t.phase !== 'do') return;
   return (t.tool && MARK_TOOL[t.tool]) || ACTS[t.act].mark;

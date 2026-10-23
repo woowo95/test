@@ -14,10 +14,13 @@ const PAL: Record<string, Record<string, string>> = {
   torrgras: { y: '#d8c070', Y: '#f0dc94', t: '#8a6a3a' },
   kol: { k: '#24201c', K: '#4f4842' },
   flinta: { g: '#8f9396', G: '#c9cdd0', d: '#5f6366' },
-  gniststen: { k: '#55595c', K: '#8a8f94', y: '#ffd060' },
+  sten: { k: '#6a6e72', K: '#a4a9ae', d: '#4a4e52' },
   yxa: { h: '#7a5a36', g: '#8f9396', G: '#c9cdd0' },
   fiskespjut: { h: '#8a6a40', H: '#b08a58', w: '#e8d0a0' },
-  stenspjut: { h: '#8a6a40', g: '#8f9396', G: '#c9cdd0' },
+  flintspjut: { h: '#8a6a40', g: '#8f9396', G: '#c9cdd0', r: '#c8b07a' },
+  rep: { y: '#c8b07a', Y: '#e8d4a0', d: '#8a7448' },
+  ben: { w: '#e8e2d0', W: '#fffaf0', d: '#b8ae98' },
+  metspo: { h: '#8a6a40', y: '#c8b07a', w: '#e8e2d0' },
   korg: { t: '#6e4e2e', o: '#9a6a3e', O: '#c99a62', d: '#5e3c20' },
   risvagg: { p: '#5a3c22', b: '#8a6a40', B: '#b08a58' },
   timmervagg: { d: '#4a3018', b: '#8a5e34', B: '#b8885a', e: '#d8b480' },
@@ -158,14 +161,14 @@ const PIX: Record<string, string[]> = {
     '.ggdddd.',
     '........',
   ],
-  gniststen: [
-    '......y.',
-    '.....y.y',
-    '...kk.y.',
-    '..kKkk..',
-    '.kKkkkk.',
-    'kkkkkkkk',
-    '.kkkkkk.',
+  sten: [
+    '........',
+    '........',
+    '..KKk...',
+    '.KkkkdKk',
+    '.kkkddkk',
+    '..ddd.kd',
+    '........',
     '........',
   ],
   yxa: [
@@ -232,16 +235,49 @@ const PIX: Record<string, string[]> = {
     '.Hh.....',
     'h.......',
   ],
-  // spjut med stenspets (sparas till stenspjutet)
-  stenspjut: [
+  // spjut med flintspets surrad med rep
+  flintspjut: [
     '......Gg',
-    '.....hG.',
+    '.....rG.',
     '....h...',
     '...h....',
     '..h.....',
     '.h......',
     'h.......',
     '........',
+  ],
+  // en rulle rep
+  rep: [
+    '........',
+    '..yYYy..',
+    '.yd..dy.',
+    '.Y.yy.Y.',
+    '.Y.yy.Y.',
+    '.yd..dy.',
+    '..yYYy..',
+    '........',
+  ],
+  // ett ben
+  ben: [
+    '......Ww',
+    '.....wWd',
+    '....wd..',
+    '...wd...',
+    '..wd....',
+    'Ww......',
+    'wd......',
+    '........',
+  ],
+  // ett spö med rev och krok av ben
+  metspo: [
+    'h.......',
+    '.hyy....',
+    '..h.y...',
+    '...h.y..',
+    '....h.y.',
+    '.....h.y',
+    '......hy',
+    '......ww',
   ],
   // golv av plankor
   tragolv: [

@@ -73,7 +73,8 @@ export function chopStock(s: State, ref: number | undefined, amount: number) {
 
 // hur många yxor byn vill ha (en till medan ett hus byggs, för träden där det ska stå)
 export const axesWanted = (adults: number) => Math.max(1, Math.min(3, Math.floor(adults / 4)));
-export const canMakeAxe = (s: State) => item(s, 'flinta') >= 1 && item(s, 'grenar') >= 1;
+// en flinta sparas att tända eld med
+export const canMakeAxe = (s: State) => item(s, 'flinta') >= 2 && item(s, 'grenar') >= 1;
 export function makeAxe(s: State, p: Person) {
   if (!canMakeAxe(s)) return;
   s.items.flinta--;

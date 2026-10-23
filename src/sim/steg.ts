@@ -1,7 +1,8 @@
 import { rotStumps } from './skog';
 import { addFood, addTo, capacity, dropSpot, fetchSpot, homeKind, load, pickUp, storeLoad, takeFood, tidyStore, wearStore } from './lager';
-import { KORG_SKORD, makeBasket, makeSpear, wearBasket, wearSpear } from './redskap';
-import { thinkWhileWorking } from './teknik';
+import { KORG_SKORD, MASK_PER_GRAV, REP_VILL, SENOR, isSpear, makeBasket, makeRod, makeSpear, twineRope, wearBasket, wearRod, wearSpear } from './redskap';
+import { knows, thinkWhileWorking } from './teknik';
+import { item } from './saker';
 import { foodDays, workRate } from './ekonomi';
 import { TRY_SEC, eatPoison, growFynd, handFish, packFynd, pickMushrooms, richness, takeFrom } from './fynd';
 import { coldOf, temperature } from './vader';
@@ -28,6 +29,7 @@ import { MATERIAL, blocked, gridOf, roomAt, shelterOf } from './byggnad';
 // slitaget per steg sänks för att stigarna ska växa som förut, och det man får per fynd höjs (levande i handlingar.ts)
 // så att en arbetstimme räknat med gångtiden ger lika mycket som i snabbläget
 const WORK_LOAD = 1 / 3, LIVE_WEAR = 0.03, KORG_FYND = 2.5;
+const JAKT_SPJUT = 1.4, BEN = 0.1; // jakt med spjut ger så mycket mer; ben per kött
 
 type Krok = (s: State, p: Person, t: Task, dtSec: number, live: boolean) => void;
 // det som händer medan man gör något (efter att ha kommit fram). Arbete för byn sköts av workStep
@@ -35,6 +37,7 @@ const MEDAN: Partial<Record<Act, Krok>> = {
   toa: (_s, p) => { p.toa = 1; },
   kol: (s, p) => takeCoal(s, p, 'hämtade'),
   bygga: (s, p, t, dtSec, live) => buildStep(s, p, t, dtSec, live),
+  hantverk: (s, p, t, dtSec) => { if (t.tool === 'rep') twineRope(s, p, dtSec / 3600); },
   tanda: (s, p, _t, dtSec) => {
     if (!canLight(s)) return;
     s.fire.tryProg += dtSec;
@@ -50,6 +53,7 @@ const KLAR: Partial<Record<Act, Krok>> = {
   },
   yxa: (s, p) => makeAxe(s, p),
   spjut: (s, p) => makeSpear(s, p),
+  metspo: (s, p) => makeRod(s, p),
   korg: (s, p) => makeBasket(s, p),
   promenad: (s, p, t) => { lookAround(s, p, t.tx, t.ty); think(p, 'Tog en skön promenad', 0.06, s.now, 6 * HOUR); },
   bada: (s, p) => { p.warm = Math.max(0.4, p.warm - 0.1); think(p, 'Badade i sjön', 0.08, s.now, 6 * HOUR); },
@@ -305,7 +309,8 @@ function workStep(s: State, p: Person, tk: Task, dtSec: number, live: boolean, a
   // utan yxa samlas grenar på marken (två grenar på den tid det tar att hugga en ved); med yxa huggs ved ur en fälld stam
   // bär, rötter och vilt: platsen ger mindre ju mer som redan tagits där
   const res = d.resurs, rich = res && d.takt === undefined ? richness(s, res, tk.tx, tk.ty) : 1;
-  const y = workRate(s, p, tk.act) * dtSec * (live ? d.levande ?? 1 : 0.8) * (tk.tool === 'korg' ? KORG_SKORD : 1) * (d.takt ?? rich);
+  const spjut = isSpear(tk.tool);
+  const y = workRate(s, p, tk.act) * dtSec * (live ? d.levande ?? 1 : 0.8) * (tk.tool === 'korg' ? KORG_SKORD : 1) * (tk.act === 'jakt' && spjut ? JAKT_SPJUT : 1) * (d.takt ?? rich);
   if (y > 0) count(s, 'prod_' + tk.act, y);
   if (res && d.takt === undefined) { takeFrom(s, res, tk.tx, tk.ty, y); if (rich < 0.08) tk.until = now; } // tomt här: gå hem eller vidare
   // den som arbetar ser hur mycket som finns i området och minns det
@@ -317,9 +322,12 @@ function workStep(s: State, p: Person, tk: Task, dtSec: number, live: boolean, a
     let fish = 0;
     while (tk.prog >= TRY_SEC) {
       tk.prog -= TRY_SEC;
-      const spear = tk.tool === 'fiskespjut';
-      fish += handFish(s, p, tk.tx, tk.ty, ageF, spear);
-      if (spear) wearSpear(s, p);
+      const gear = tk.tool === 'metspo' ? 'metspo' : isSpear(tk.tool) ? 'spjut' : 'hand';
+      if (gear === 'metspo' && (tk.mask ?? 0) < 1) { tk.mask = (tk.mask ?? 0) + MASK_PER_GRAV; continue; } // gräver fram mask först
+      const napp = p.fiske?.n ?? 0;
+      fish += handFish(s, p, tk.tx, tk.ty, ageF, gear);
+      if (gear === 'metspo') { if ((p.fiske?.n ?? 0) > napp) tk.mask!--; wearRod(s, p); } // varje napp tar en mask
+      else if (gear === 'spjut') wearSpear(s, p);
     }
     if (fish) { if (live) tk.carry += fish; else addFood(s, 'fisk', fish); }
   }
@@ -337,6 +345,14 @@ function workStep(s: State, p: Person, tk: Task, dtSec: number, live: boolean, a
     if (live) { tk.carry += y - r; tk.items ??= {}; tk.items.rotter = (tk.items.rotter ?? 0) + r; }
     else { addFood(s, 'bar', y - r); addFood(s, 'rotter', r); }
   } else if (y > 0) { if (live) tk.carry += y; else addTo(s, d.ger!, y); } // snabbläget: rakt in i förrådet
+  if (tk.act === 'jakt') {
+    if (spjut) wearSpear(s, p, dtSec / TRY_SEC); // spjutet slits lika mycket per fem minuter som vid ett fiskeförsök
+    // vilt ger ben, och senor som blir rep för den som kan det
+    const got: Record<string, number> = {};
+    if (y > 0 && item(s, 'ben') < 6) got.ben = y * BEN;
+    if (y > 0 && knows(p, 'rep') && item(s, 'rep') < REP_VILL) got.rep = y * SENOR;
+    if (Object.keys(got).length) { if (live) { tk.items ??= {}; for (const k in got) tk.items[k] = (tk.items[k] ?? 0) + got[k]; } else addItems(s, got); }
+  }
   if (tk.act === 'samla') {
     const got = forageItems(s, p, dtSec) ?? {};
     const svamp = pickMushrooms(s, p, tk.tx, tk.ty, dtSec, got);

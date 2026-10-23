@@ -15,7 +15,7 @@ Simuleringen importerar aldrig från `ui/`. Gränssnittet importerar bara från 
 
 | Fil | Innehåll |
 |---|---|
-| `typer.ts` | Alla typer (State, Person, Task …) och konstanter: tid, kartans storlek, egenskaper, färdigheter, seder, eldstäder |
+| `typer.ts` | Alla typer (State, Person, Task …) och konstanter: tid, kartans storlek (`W`/`H` gäller byn som körs; `useMap(s)` sätter dem efter byns egen storlek, och cacher för kartan har nyckeln `mapKey(seed)`), egenskaper, färdigheter, seder, eldstäder |
 | `handlingar.ts` | **Registret över allt en person kan göra** (ACTS): namn, symbol, arbete, avkastning, årstid, plats, fara |
 | `saker.ts` | **Registret över allt byn kan äga** (SAKER): stackstorlek, mapp, mat, ruttning, slitage, redskap |
 | `teknik.ts` | **Registret över tekniker** (TEKNIK), och hur man kommer på dem och lär ut dem |
@@ -27,8 +27,8 @@ Simuleringen importerar aldrig från `ui/`. Gränssnittet importerar bara från 
 | `fynd.ts` | **Registret över värmekartor** (FYND): var varje art och flinta finns (sanningen, inte vad byn vet), mönster som kryper med tiden, lägerzonen där inget växer, årstid, hur platser töms och växer tillbaka, fisk i vattnet, svampplockning (kantarell och giftig spindling), vilt som skyr lägret och nött mark (`skyggOf`). En aktivitet kan hämta ur flera lager: `samla` = bär + rötter (`lagren`) |
 | `minne.ts`, `kunskap.ts` | Vad var och en vet (kunskap, alltid rätt) och tror (lärdomar, kan vara fel), synvidd, rädsla, glömska. Den som kommer till en plats som är sämre än hen trott rättar lärdomen (`ny`), och rättelsen sprids som en nyhet i två speldygn |
 | `lager.ts` | Stackar och lagerplatser, att bära in, slitage och ruttning per stack |
-| `eld.ts` | Elden: bränsle, att tända, glöd, värme, eldstäder och tändsätt |
-| `skog.ts`, `redskap.ts` | Att fälla träd och hugga trä (id:t är fortfarande `ved`, för sparfilernas skull), yxan, fiskespjutet och korgen. Träd där ett hus ska stå fälls först |
+| `eld.ts` | Elden: bränsle, att tända, glöd, värme, eldstäder och tändsätt. Elden tänds med flinta (som kan spricka), och första gången läggs en ring av `RING` stenar runt eldplatsen (`fire.ring`). Insamling av tändmaterial, stenar och flinta (`forageItems`) |
+| `skog.ts`, `redskap.ts` | Att fälla träd och hugga trä (id:t är fortfarande `ved`, för sparfilernas skull), yxan, spjuten (träspjut och flintspjut, för fiske och jakt), rep (tvinnas av hö eller tas från senor vid jakt), metspöet (gren, rep och benkrok; mask grävs före fisket) och korgen. Träd där ett hus ska stå fälls först |
 | `byggnad.ts` | Vad som står byggt: väggar, golv, öppningar, rum under tak, skydd mot kyla, sovplatser |
 | `bygg.ts` | Att bygga: byn planerar hus (utan hänsyn till träden), fäller träden på platsen, hämtar material, bygger och lagar. Stockar från platsen, och träd som fälls för bygget, går direkt in i väggarna (`toWalls`) |
 | `folk.ts`, `liv.ts` | Personer (ålder, egenskaper, tankar, logg) och liv och död: födsel, död, flytt, befolkningens reglering |

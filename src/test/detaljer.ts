@@ -28,7 +28,7 @@ for (const seed of valda.length ? valda : [1, 42, 777]) {
   const f = s.fire;
   console.log('logg', kinds, 'dödsorsaker', dc, 'minFood', minFood.toFixed(0), 'tid', (performance.now() - t0).toFixed(0) + 'ms', 'storlek', (serialize(s).length / 1024).toFixed(0) + 'KB');
   console.log(`eld: första efter ${firstFire.toFixed(1)} h, brann ${(litSteps / steps * 100).toFixed(0)} % av tiden, tänd ${f.lightings} ggr, slocknade ${f.outs} ggr, försök totalt ${f.tryTotal}, ved bränd ${f.totalBurned.toFixed(0)}, förråd ${JSON.stringify(roundItems(s))}`);
-  console.log(s.log.filter(l => /eld|glöd|gniststen/i.test(l.text)).slice(0, 6).map(l => l.text).join('\n'));
+  console.log(s.log.filter(l => /eld|glöd|flint|sten/i.test(l.text)).slice(0, 6).map(l => l.text).join('\n'));
   const ta = Object.values(acts).reduce((a, b) => a + b, 0);
   console.log('vuxnas tid:', Object.entries(acts).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${(v / ta * 100).toFixed(0)}%`).join(', '));
   console.log('seder:', SEDER.map(k => `${k} ${s.seder.v[k].toFixed(2)}`).join(', '), '| olyckor på toa', accidents);

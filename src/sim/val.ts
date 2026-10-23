@@ -1,11 +1,11 @@
 import { campCenter, campDist, campKey } from './plats';
 import { foodDays } from './ekonomi';
 import { ACTS, WORK, isWork } from './handlingar';
-import { canLight, emberOn, heatAt, fireWant, needTinder, woodDays } from './eld';
+import { canLight, emberOn, heatAt, fireWant, needStones, needTinder, woodDays } from './eld';
 import { ageOf, living, stat } from './folk';
 import { HAND_FISH, Kind, SPEAR_FISH, flintSpot, shoreOf, wantsFlint } from './fynd';
 import { coldOf, temperature } from './vader';
-import { freeBaskets, freeSpears, sharpTool, wantsBasket, wantsSpear } from './redskap';
+import { freeBaskets, freeRod, freeSpear, freeSpears, sharpTool, spearKind, wantsBasket, wantsRod, wantsRope, wantsSpear } from './redskap';
 import { areaOf, flintArea, pickSpot, prospectFor } from './minne';
 import { getMap } from './karta';
 import { fetchSpot, haulJob } from './lager';
@@ -210,7 +210,7 @@ function bestWork(s: State, p: Person, fd: number, wd: number, ai: number, tot: 
   const fs = 1 + 0.25 * s.seder.v.forsiktighet; // en försiktig by vill ha större förråd
   const wFood = clamp(3.2 - fd / (2.5 * fs), 0.4, 3.5);
   const wWood = clamp(3.2 - wd / (2 * fs), 0.15, 3.5) * (ai === 3 || ai === 0 ? 1.3 : 1); // inför och under istiden väger veden tyngre
-  const spearReady = freeSpears(s, p) > 0 || wantsSpear(s, p); // spjut finns eller kan täljas
+  const spearReady = freeSpears(s, p) > 0 || freeRod(s, p) || wantsSpear(s, p) || wantsRod(s, p); // spjut eller metspö finns eller kan göras
   let best: Act = 'samla', bs = -1, burg = 0;
   for (const w of WORK) {
     const need = w === 'ved' ? wWood : wFood;
@@ -245,9 +245,10 @@ function building(s: State, v: Val, job: NonNullable<ReturnType<typeof buildJob>
 
 // arbetet med redskap: flinta letas vid stenarna, yxan fäller träd, korgen och spjutet görs först om de saknas
 function withTools(s: State, p: Person, v: Val, best: Act, what: string) {
-  if (best === 'samla' && wantsFlint(s) && rnd(s) < 0.5) { // byn saknar flinta till en yxa
+  const stones = needStones(s);
+  if (best === 'samla' && (wantsFlint(s) || stones) && rnd(s) < 0.5) { // byn saknar flinta eller stenar till eldringen
     const fa = flintArea(p), fl = (fa !== undefined && flintSpot(s, (x, y) => areaOf(x, y) === fa)) || flintSpot(s);
-    if (fl) { v.spot = fl; v.why = `${v.why} Letar efter flinta vid stenarna${fa !== undefined ? ' där hen vet att det finns' : ''}.`; }
+    if (fl) { v.spot = fl; v.why = `${v.why} Letar efter ${stones ? 'stenar till en eldring' : 'flinta'} vid stenarna${fa !== undefined ? ' där hen vet att det finns flinta' : ''}.`; }
   }
   const ax = best === 'ved' ? axeTask(s, p) : undefined; // med yxa fälls träd och huggs ved
   if (ax) {
@@ -261,10 +262,25 @@ function withTools(s: State, p: Person, v: Val, best: Act, what: string) {
     if (freeBaskets(s, p) > 0) { v.tool = 'korg'; v.why = v.why.replace(/\.$/, '') + '. Tar en korg.'; }
     else if (!kyla && (s.items.torrgras ?? 0) >= gras && wantsBasket(s, p)) { set(v, 'korg', `${what}. Flätar en korg av hö.`); v.dur = 40 * MIN; }
   }
-  if (best === 'fiske') { // med spjut om det finns ett ledigt, annars täljer hen ett först
-    if (freeSpears(s, p) > 0) { v.tool = 'fiskespjut'; v.why = v.why.replace(/\.$/, '') + '. Tar ett fiskespjut.'; }
-    else if (!kyla && wantsSpear(s, p)) { set(v, 'spjut', `${what}. Täljer ett fiskespjut med ${sharpTool(s) === 'yxa' ? 'yxan' : 'en flintsten'}.`); v.dur = 40 * MIN; }
+  const sp = v.act === 'fiske' || v.act === 'jakt' ? freeSpear(s, p) : undefined;
+  if (v.act === 'fiske') { // med metspö eller spjut om det finns ett ledigt, annars gör hen ett först
+    if (freeRod(s, p)) { v.tool = 'metspo'; v.why = v.why.replace(/\.$/, '') + '. Tar ett metspö och gräver fram mask.'; }
+    else if (!kyla && wantsRod(s, p)) { set(v, 'metspo', `${what}. Gör ett metspö med en krok av ben.`); v.dur = 60 * MIN; }
+    else if (sp) { v.tool = sp; v.why = v.why.replace(/\.$/, '') + `. Tar ett ${sp === 'flintspjut' ? 'flintspjut' : 'träspjut'}.`; }
+    else if (!kyla && wantsSpear(s, p)) makeSpearTask(s, p, v, what);
+  } else if (v.act === 'jakt') { // jakten går bättre med spjut
+    if (sp) { v.tool = sp; v.why = v.why.replace(/\.$/, '') + `. Tar ett ${sp === 'flintspjut' ? 'flintspjut' : 'träspjut'}.`; }
+    else if (!kyla && wantsSpear(s, p)) makeSpearTask(s, p, v, what);
   }
+}
+function makeSpearTask(s: State, p: Person, v: Val, what: string) {
+  if (spearKind(s, p) === 'flintspjut') { set(v, 'spjut', `${what}. Gör ett flintspjut med flinta och rep.`); v.tool = 'flintspjut'; v.dur = 60 * MIN; }
+  else { set(v, 'spjut', `${what}. Täljer ett träspjut med ${sharpTool(s) === 'yxa' ? 'yxan' : 'en flintsten'}.`); v.dur = 40 * MIN; }
+}
+// handarbete vid elden: den som kan tvinna rep gör det när byn behöver rep
+function craft(s: State, p: Person, v: Val, why: string) {
+  set(v, 'hantverk', why);
+  if (wantsRope(s, p)) { v.tool = 'rep'; v.why = `${why}. Tvinnar rep av hö.`; }
 }
 
 // egen lust: vila, hantverk, umgänge, promenad, bad eller att sitta vid stranden. u = hur akut byn behöver arbete
@@ -281,7 +297,7 @@ function leisure(s: State, p: Person, v: Val, u: number, lazy: number, ai: numbe
   const ws = shore ? (0.2 + (20 - stat(p, 'vanlighet', now)) / 60) * calm : 0;
   const r = rnd(s) * (wv + wh + wsoc + wp + wb + ws);
   if (r < wv) set(v, 'vila', lazy > 0.5 ? 'Har det bra och tar det lugnt' : 'Tar en paus');
-  else if (r < wv + wh) set(v, 'hantverk', u < 0.25 ? 'Byn har det gott ställt, det finns tid för hantverk' : 'Tycker om att göra handarbete');
+  else if (r < wv + wh) craft(s, p, v, u < 0.25 ? 'Byn har det gott ställt, det finns tid för hantverk' : 'Tycker om att göra handarbete');
   else if (r < wv + wh + wsoc) set(v, 'samtal', 'Vill umgås');
   else if (r < wv + wh + wsoc + wp) {
     // nyfikna och modiga går längre bort
@@ -306,13 +322,13 @@ function night(s: State, p: Person, v: Val, a: number) {
   if (p.guardDay === guardDay && a >= 16) { set(v, 'vakt', 'Håller vakt i natt'); return; }
   const r = rnd(s);
   const story = (p.skill.berattande + (a > 50 ? 6 : 0)) / 40;
-  const craft = (p.skill.hantverk + stat(p, 'flit', now)) / 70;
+  const craftW = (p.skill.hantverk + stat(p, 'flit', now)) / 70;
   // på natten håller man sig vid lägret; de modiga går lite längre ut i mörkret för att bära in saker
   const near = 2 + stat(p, 'mod', now) / 20 * 8, gt = a >= 12 && r < 0.35 && s.stackar?.length ? haulJob(s, near) : undefined;
   if (gt) { set(v, 'bara', `Mörkt, ${near > 6 ? 'men är modig och ' : ''}${gt.why[0].toLowerCase()}${gt.why.slice(1)}`); v.spot = gt; v.dur = 2 * HOUR; }
   else if (a < 8) { if (r < 0.6) set(v, 'samtal', 'Mörkt, sitter med de vuxna vid elden'); else set(v, 'sova', 'Barn sover på natten'); }
   else if (r < story) set(v, 'beratta', 'Mörkt, berättar för de andra vid elden');
-  else if (r < story + craft) set(v, 'hantverk', 'Mörkt, gör handarbete vid elden');
+  else if (r < story + craftW) craft(s, p, v, 'Mörkt, gör handarbete vid elden');
   else if (r < 0.9) set(v, 'samtal', 'Mörkt, umgås vid elden');
   else set(v, 'vila', 'Mörkt, vilar vid elden');
 }

@@ -46,7 +46,10 @@ export function migrate(s: State) {
   }
   delete s.kunskap;
   migrateTek(s);
-  if (!s.items) s.items = { gniststen: 1, torrgras: 8, grenar: 8 };
+  if (!s.items) s.items = { flinta: 1, torrgras: 8, grenar: 8 };
+  // gniststenen finns inte längre: elden tänds med flinta
+  if (s.items.gniststen) { s.items.flinta = (s.items.flinta ?? 0) + s.items.gniststen; delete s.items.gniststen; }
+  for (const a of s.stackar ?? []) if (a.k === 'gniststen') a.k = 'flinta';
   // små pinnar finns inte längre: de räknas som grenar
   if (s.items.pinnar) { s.items.grenar = (s.items.grenar ?? 0) + s.items.pinnar; delete s.items.pinnar; }
   for (const a of s.stackar ?? []) if (a.k === 'pinnar') a.k = 'grenar';
@@ -56,6 +59,7 @@ export function migrate(s: State) {
     Object.assign(s.fire, { lit: true, fuel: 4, litAt: s.founded, lightings: 1, litSec: (s.now - s.founded) / SEC });
     s.fire.log.push({ t: s.founded, k: 'tänd' });
   }
+  s.fire.ring ??= s.fire.lightings > 0; // en by som redan haft eld har sin stenring
   if (!s.seder) { s.seder = newSeder(); s.seder.v = sederTarget(s); }
   return s;
 }

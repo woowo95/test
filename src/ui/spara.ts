@@ -103,7 +103,7 @@ function showSummary(from: number, logStart: number, before = knowSnapshot()) {
   const ev = s.log.filter(l => l.t > logStart && l.t > from);
   const years = (s.now - from) / DAY;
   const births = ev.filter(e => e.kind === 'birth').length, deaths = ev.filter(e => e.kind === 'death').length;
-  const prio = (e: LogEntry) => e.kind === 'death' ? 5 : e.kind === 'birth' || e.kind === 'move' ? 4 : e.kind === 'skill' || /par\.|skilda|tända elden|slocknade/.test(e.text) ? 3 : e.kind === 'world' && /tiden|Byn|gniststen/.test(e.text) ? 2 : e.kind === 'rel' ? 1 : 0;
+  const prio = (e: LogEntry) => e.kind === 'death' ? 5 : e.kind === 'birth' || e.kind === 'move' ? 4 : e.kind === 'skill' || /par\.|skilda|tända elden|slocknade/.test(e.text) ? 3 : e.kind === 'world' && /tiden|Byn|flinta|stenar/.test(e.text) ? 2 : e.kind === 'rel' ? 1 : 0;
   const key = ev.map((e, i) => ({ e, i, p: prio(e) })).filter(x => x.p > 0).sort((a, b) => b.p - a.p || b.i - a.i).slice(0, 10).sort((a, b) => b.i - a.i).map(x => x.e);
   const yrs = years >= 1 ? `${years.toFixed(1).replace('.', ',')} år` : `${Math.round(years * 12)} månader`;
   $('ovBody').innerHTML = `
