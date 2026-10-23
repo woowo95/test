@@ -33,7 +33,6 @@ const WORK_LOAD = 1 / 3, LIVE_WEAR = 0.03, KORG_FYND = 2.5;
 // i levande läge arbetar man bara en del av tiden på platsen (resten går åt till att bära hem). Det som räknas per
 // arbetssekund (fynd av flinta och svamp, inlärning, slitage) jämkas lika mycket som avkastningen
 const FAST = 0.8;
-const HEMVAG = 15 * 60 * SEC; // snabbläget: så länge en jägare eller fiskare går hem med fångsten
 const liveF = (act: Act, live: boolean) => live ? (ACTS[act].levande ?? 1) / FAST : 1;
 const JAKT_SPJUT = 1.4; // jakt med spjut ger så mycket mer
 
@@ -331,8 +330,9 @@ function workStep(s: State, p: Person, tk: Task, dtSec: number, live: boolean, a
   // den som arbetar ser hur mycket som finns i området och minns det
   if (res && (rich < 0.08 || chance(s, 1 / 1800, dtSec))) lookAround(s, p, tk.tx, tk.ty);
   if (tk.act === 'fiske') {
-    // fiske med händerna eller spjut: ett försök i taget
-    tk.prog = (tk.prog ?? 0) + dtSec;
+    // fiske med händerna eller spjut: ett försök i taget. Fiskaren och jägaren går hem med varje fångst i levande läge,
+    // men vägen är kort och de är på platsen nästan hela tiden, så de jämkas inte för gångtiden (levande = FAST)
+    tk.prog = (tk.prog ?? 0) + dtSec * lf;
     const ageF = (a < 14 ? 0.3 : a > 60 ? 0.6 : 1) * (p.sickUntil && p.sickUntil > now ? 0.3 : 1);
     let fish = 0;
     while (tk.prog >= TRY_SEC) {
@@ -344,8 +344,8 @@ function workStep(s: State, p: Person, tk: Task, dtSec: number, live: boolean, a
       if (gear === 'metspo') { if ((p.fiske?.n ?? 0) > napp) tk.mask!--; wearRod(s, p); } // varje napp tar en mask
       else if (gear === 'spjut') wearSpear(s, p);
     }
-    // snabbläget: fiskaren går hem med fångsten som i levande läget (det tar en stund), och väljer sedan på nytt
-    if (fish) { if (live) tk.carry += fish; else { addFood(s, 'fisk', fish); tk.until = Math.min(tk.until, now + HEMVAG); } }
+    // snabbläget: fångsten läggs direkt i förrådet och fiskaren fortsätter, som i levande läget där hen går tillbaka
+    if (fish) { if (live) tk.carry += fish; else addFood(s, 'fisk', fish); }
   }
   if (tk.act === 'hugga') {
     const k = stocks(s).find(q => q.id === tk.ref), got = chopStock(s, tk.ref, y);
@@ -368,7 +368,7 @@ function workStep(s: State, p: Person, tk: Task, dtSec: number, live: boolean, a
     if (y > 0 && rnd(s) < y / KANIN) {
       count(s, 'kaniner');
       if (s.stat!.kaniner === 1) log(s, `${p.name} fångade byns första kanin och bar hem den hel.`, 'world', [p.id]);
-      if (live) tk.carry += KANIN; else { addFood(s, 'vilt', KANIN); tk.until = Math.min(tk.until, now + HEMVAG); }
+      if (live) tk.carry += KANIN; else addFood(s, 'vilt', KANIN);
     }
   }
   if (tk.act === 'samla') {
