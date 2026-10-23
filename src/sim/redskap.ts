@@ -2,6 +2,7 @@ import { ageOf, count, living, log } from './folk';
 import { knows } from './teknik';
 import { State, Person } from './typer';
 import { item } from './saker';
+import { addFood } from './lager';
 
 // ---------- redskap: spjut ----------
 // Ett träspjut är en pinne som täljs spetsig med något vasst, en flintsten eller en yxa. Det vassa används bara som verktyg
@@ -56,7 +57,7 @@ export function wearSpear(s: State, p: Person, n = 1) {
 }
 
 // ---------- rep ----------
-// Rep tvinnas av växtfibrer (hö) vid elden på kvällen av den som kan det, eller tas från senor vid jakt. Det är samma rep
+// Rep tvinnas av växtfibrer (hö) vid elden på kvällen av den som kan det, eller tas från senor när vilt slaktas. Det är samma rep
 // oavsett material. Rep behövs till flintspjut och metspö.
 export const REP_GRAS = 2, REP_TIMME = 1, REP_VILL = 4;
 export const wantsRope = (s: State, p: Person) => knows(p, 'rep') && item(s, 'rep') < REP_VILL && item(s, 'torrgras') >= REP_GRAS + 6; // lite hö sparas till elden
@@ -69,8 +70,6 @@ export function twineRope(s: State, p: Person, hours: number) {
   count(s, 'rep', n);
   if (first) log(s, `${p.name} började tvinna rep av hö vid elden.`, 'world', [p.id]);
 }
-// senor från vilt blir rep, för den som kan det
-export const SENOR = 0.06; // rep per kött
 
 // ---------- redskap: metspö ----------
 // Ett metspö görs av en gren, ett rep och en krok av ben. Mask grävs fram före fisket och sätts på kroken; varje napp
@@ -117,4 +116,35 @@ export function wearBasket(s: State, p: Person, hours: number) {
     if (p.task) p.task.tool = undefined;
     if (s.stat!.korgarTrasiga === 1) log(s, `${p.name}s korg gick sönder.`, 'world', [p.id]);
   }
+}
+
+// ---------- redskap: kniv och slakt ----------
+// En flintkniv är en vass flintskärva med ett skaft. Utan kniv äter byn direkt av det fällda djuret. Med kniv slaktas det
+// vid elden till mer kött, ett ben, ett skinn och senor, som blir rep för den som kan det. Kött, ben och skinn är samma
+// vilket djur det än kommer från. Kniven kräver en flinta utöver den som sparas att tända eld med.
+export const KANIN = 1.6; // så mycket mat en kanin är, uppäten som den är (en stack fällt vilt)
+export const SLAKT = { kott: 2.1, ben: 1, skinn: 1, rep: 0.4 }; // det en kanin ger slaktad
+export const SLAKT_TIMME = 3; // kaniner per timme
+export const knives = (s: State) => count1(s, 'kniv');
+export const vilt = (s: State) => s.mat?.vilt ?? 0;
+export const wantsKnife = (s: State, p: Person) => knows(p, 'kniv') && knives(s) < 1 && item(s, 'flinta') >= 2 && item(s, 'grenar') >= 1 && !living(s).some(q => q !== p && q.task?.act === 'kniv');
+export function makeKnife(s: State, p: Person) {
+  if (item(s, 'flinta') < 2 || item(s, 'grenar') < 1) return;
+  s.items.flinta--; s.items.grenar--;
+  s.items.kniv = item(s, 'kniv') + 1;
+  count(s, 'knivarGjorda');
+  if (s.stat!.knivarGjorda === 1) log(s, `${p.name} gjorde byns första flintkniv. Nu kan viltet slaktas.`, 'world', [p.id]);
+}
+// det finns vilt att slakta (minst en halv kanin) och en kniv som ingen annan slaktar med
+export const canSlaughter = (s: State, p: Person) => knows(p, 'kniv') && knives(s) >= 1 && vilt(s) >= KANIN / 2 && !living(s).some(q => q !== p && q.task?.act === 'slakta');
+export function slaughter(s: State, p: Person, hours: number) {
+  const n = Math.min(hours * SLAKT_TIMME, vilt(s) / KANIN); // kaniner
+  if (n <= 0 || knives(s) < 1) { if (p.task) p.task.until = s.now; return; }
+  addFood(s, 'vilt', -n * KANIN); addFood(s, 'kott', n * SLAKT.kott);
+  s.items.ben = item(s, 'ben') + n * SLAKT.ben; s.items.skinn = item(s, 'skinn') + n * SLAKT.skinn;
+  if (knows(p, 'rep') && item(s, 'rep') < REP_VILL) s.items.rep = item(s, 'rep') + n * SLAKT.rep;
+  s.items.kniv = Math.max(0, item(s, 'kniv') - n * 0.004); // kniven håller för ungefär 250 kaniner
+  const first = !(s.stat?.slaktat);
+  count(s, 'slaktat', n);
+  if (first) log(s, `${p.name} slaktade byns första vilt med en flintkniv. Det gav mer kött, ett ben och ett skinn.`, 'world', [p.id]);
 }

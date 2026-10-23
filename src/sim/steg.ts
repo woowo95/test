@@ -1,8 +1,7 @@
 import { rotStumps } from './skog';
 import { addFood, addTo, capacity, dropSpot, fetchSpot, homeKind, load, pickUp, storeLoad, takeFood, tidyStore, wearStore } from './lager';
-import { KORG_SKORD, MASK_PER_GRAV, REP_VILL, SENOR, isSpear, makeBasket, makeRod, makeSpear, twineRope, wearBasket, wearRod, wearSpear } from './redskap';
-import { knows, thinkWhileWorking } from './teknik';
-import { item } from './saker';
+import { KANIN, KORG_SKORD, MASK_PER_GRAV, isSpear, makeBasket, makeKnife, makeRod, makeSpear, slaughter, twineRope, wearBasket, wearRod, wearSpear } from './redskap';
+import { thinkWhileWorking } from './teknik';
 import { foodDays, workRate } from './ekonomi';
 import { TRY_SEC, eatPoison, growFynd, handFish, packFynd, pickMushrooms, richness, takeFrom } from './fynd';
 import { coldOf, temperature } from './vader';
@@ -21,6 +20,7 @@ import { ACTS } from './handlingar';
 import { Act, DAY, HOUR, Person, SEC, SKILL_NAMES, State, Task, W, H, useMap } from './typer';
 import { findPath, speedAt, wear } from './vag';
 import { chooseTask } from './val';
+import { nearestDjur } from './djur';
 import { Job, avail, bitById, buildJob, deliver as deliverBit, lacks, needOf, planBuild, siteOf, takeFor, toWalls, wearBuild, workOn } from './bygg';
 import { MATERIAL, blocked, gridOf, roomAt, shelterOf } from './byggnad';
 
@@ -29,7 +29,12 @@ import { MATERIAL, blocked, gridOf, roomAt, shelterOf } from './byggnad';
 // slitaget per steg sänks för att stigarna ska växa som förut, och det man får per fynd höjs (levande i handlingar.ts)
 // så att en arbetstimme räknat med gångtiden ger lika mycket som i snabbläget
 const WORK_LOAD = 1 / 3, LIVE_WEAR = 0.03, KORG_FYND = 2.5;
-const JAKT_SPJUT = 1.4, BEN = 0.1; // jakt med spjut ger så mycket mer; ben per kött
+// i levande läge arbetar man bara en del av tiden på platsen (resten går åt till att bära hem). Det som räknas per
+// arbetssekund (fynd av flinta och svamp, inlärning, slitage) jämkas lika mycket som avkastningen
+const FAST = 0.8;
+const HEMVAG = 15 * 60 * SEC; // snabbläget: så länge en jägare eller fiskare går hem med fångsten
+const liveF = (act: Act, live: boolean) => live ? (ACTS[act].levande ?? 1) / FAST : 1;
+const JAKT_SPJUT = 1.4; // jakt med spjut ger så mycket mer
 
 type Krok = (s: State, p: Person, t: Task, dtSec: number, live: boolean) => void;
 // det som händer medan man gör något (efter att ha kommit fram). Arbete för byn sköts av workStep
@@ -38,6 +43,7 @@ const MEDAN: Partial<Record<Act, Krok>> = {
   kol: (s, p) => takeCoal(s, p, 'hämtade'),
   bygga: (s, p, t, dtSec, live) => buildStep(s, p, t, dtSec, live),
   hantverk: (s, p, t, dtSec) => { if (t.tool === 'rep') twineRope(s, p, dtSec / 3600); },
+  slakta: (s, p, _t, dtSec) => slaughter(s, p, dtSec / 3600),
   tanda: (s, p, _t, dtSec) => {
     if (!canLight(s)) return;
     s.fire.tryProg += dtSec;
@@ -54,6 +60,7 @@ const KLAR: Partial<Record<Act, Krok>> = {
   yxa: (s, p) => makeAxe(s, p),
   spjut: (s, p) => makeSpear(s, p),
   metspo: (s, p) => makeRod(s, p),
+  kniv: (s, p) => makeKnife(s, p),
   korg: (s, p) => makeBasket(s, p),
   promenad: (s, p, t) => { lookAround(s, p, t.tx, t.ty); think(p, 'Tog en skön promenad', 0.06, s.now, 6 * HOUR); },
   bada: (s, p) => { p.warm = Math.max(0.4, p.warm - 0.1); think(p, 'Badade i sjön', 0.08, s.now, 6 * HOUR); },
@@ -192,12 +199,14 @@ function pregnancy(s: State, p: Person, a: number, pop: number, dtSec: number) {
 
 // uppgiften: avsluta den som är klar, välj en ny, gå dit och gör den. Vanor och idéer växer medan man håller på
 function taskStep(s: State, p: Person, a: number, dtSec: number, live: boolean, light: boolean, learn: number, social: Person[]) {
-  const now = s.now, t = p.task;
+  // snabbläget tar steg om fem minuter: en uppgift slutar i det steg som ligger närmast sluttiden, så att den varar lika
+  // länge som i levande läget i snitt (annars blir korta uppgifter som toa nästan dubbelt så långa)
+  const now = s.now, t = p.task, end = live ? now : now + dtSec * SEC / 2;
   const phaseFlip = t && t.dark !== !light && ACTS[t.act].dygn; // dag blev natt eller tvärtom
-  if (t && t.phase === 'do' && t.until < now) KLAR[t.act]?.(s, p, t, dtSec, live); // ett träd som fällts färdigt, en yxa som gjorts klar
+  if (t && t.phase === 'do' && t.until < end) KLAR[t.act]?.(s, p, t, dtSec, live); // ett träd som fällts färdigt, en yxa som gjorts klar
   const lightDone = t?.act === 'tanda' && (s.fire.lit || !canLight(s));
   const mustGo = t && p.toa < 0.08 && t.act !== 'toa' && a >= 3; // nöden avbryter det man håller på med
-  if (!t || (t.until < now && t.phase !== 'back') || ((phaseFlip || mustGo) && t.phase !== 'back') || lightDone) {
+  if (!t || (t.until < end && t.phase !== 'back') || ((phaseFlip || mustGo) && t.phase !== 'back') || lightDone) {
     if (t && (t.carry > 0 || t.items) && t.act !== 'elda' && live) { t.phase = 'back'; const d = dropSpot(s, homeKind(t)); t.tx = d.x + (rnd(s) - 0.5) * 0.4; t.ty = d.y + (rnd(s) - 0.5) * 0.4; }
     else chooseTask(s, p, live);
   }
@@ -257,6 +266,9 @@ function moveLive(s: State, p: Person, tk: Task, dtSec: number, a: number, light
         const ang = rnd(s) * Math.PI * 2, r = w.r * Math.sqrt(rnd(s)), nx = tk.tx + Math.cos(ang) * r, ny = tk.ty + Math.sin(ang) * r;
         if (nx > 0 && ny > 0 && nx < W && ny < H && !blocked(s, nx, ny)) { tk.wx = nx; tk.wy = ny; break; }
       }
+      // jägaren smyger mot den närmaste kaninen
+      const dj = tk.act === 'jakt' ? nearestDjur(s, tk.tx, tk.ty, w.r) : undefined;
+      if (dj && !blocked(s, dj.x, dj.y)) { tk.wx = dj.x; tk.wy = dj.y; }
       if (tk.wx === undefined) tk.hold = now + w.h0 * SEC;
     }
     if (tk.wx !== undefined) {
@@ -305,12 +317,13 @@ function arrive(s: State, p: Person, tk: Task, light: boolean) {
 // arbete för byn (handlingar med arbete): det man får, det platsen har kvar, redskapen som slits och det man lär sig
 function workStep(s: State, p: Person, tk: Task, dtSec: number, live: boolean, a: number, learn: number) {
   const now = s.now, d = ACTS[tk.act];
-  if (tk.tool === 'korg') wearBasket(s, p, dtSec / 3600);
+  const lf = liveF(tk.act, live);
+  if (tk.tool === 'korg') wearBasket(s, p, dtSec * lf / 3600);
   // utan yxa samlas grenar på marken (två grenar på den tid det tar att hugga en ved); med yxa huggs ved ur en fälld stam
   // bär, rötter och vilt: platsen ger mindre ju mer som redan tagits där
   const res = d.resurs, rich = res && d.takt === undefined ? richness(s, res, tk.tx, tk.ty) : 1;
   const spjut = isSpear(tk.tool);
-  const y = workRate(s, p, tk.act) * dtSec * (live ? d.levande ?? 1 : 0.8) * (tk.tool === 'korg' ? KORG_SKORD : 1) * (tk.act === 'jakt' && spjut ? JAKT_SPJUT : 1) * (d.takt ?? rich);
+  const y = workRate(s, p, tk.act) * dtSec * (live ? d.levande ?? 1 : FAST) * (tk.tool === 'korg' ? KORG_SKORD : 1) * (tk.act === 'jakt' && spjut ? JAKT_SPJUT : 1) * (d.takt ?? rich);
   if (y > 0) count(s, 'prod_' + tk.act, y);
   if (res && d.takt === undefined) { takeFrom(s, res, tk.tx, tk.ty, y); if (rich < 0.08) tk.until = now; } // tomt här: gå hem eller vidare
   // den som arbetar ser hur mycket som finns i området och minns det
@@ -329,7 +342,8 @@ function workStep(s: State, p: Person, tk: Task, dtSec: number, live: boolean, a
       if (gear === 'metspo') { if ((p.fiske?.n ?? 0) > napp) tk.mask!--; wearRod(s, p); } // varje napp tar en mask
       else if (gear === 'spjut') wearSpear(s, p);
     }
-    if (fish) { if (live) tk.carry += fish; else addFood(s, 'fisk', fish); }
+    // snabbläget: fiskaren går hem med fångsten som i levande läget (det tar en stund), och väljer sedan på nytt
+    if (fish) { if (live) tk.carry += fish; else { addFood(s, 'fisk', fish); tk.until = Math.min(tk.until, now + HEMVAG); } }
   }
   if (tk.act === 'hugga') {
     const k = stocks(s).find(q => q.id === tk.ref), got = chopStock(s, tk.ref, y);
@@ -344,24 +358,26 @@ function workStep(s: State, p: Person, tk: Task, dtSec: number, live: boolean, a
     const r = rich > 0 ? y * Math.min(1, richness(s, 'rotter', tk.tx, tk.ty) / rich) : 0; // rötterna efter hur mycket av platsen som är rötter
     if (live) { tk.carry += y - r; tk.items ??= {}; tk.items.rotter = (tk.items.rotter ?? 0) + r; }
     else { addFood(s, 'bar', y - r); addFood(s, 'rotter', r); }
-  } else if (y > 0) { if (live) tk.carry += y; else addTo(s, d.ger!, y); } // snabbläget: rakt in i förrådet
+  } else if (y > 0 && tk.act !== 'jakt') { if (live) tk.carry += y; else addTo(s, d.ger!, y); } // snabbläget: rakt in i förrådet
   if (tk.act === 'jakt') {
-    if (spjut) wearSpear(s, p, dtSec / TRY_SEC); // spjutet slits lika mycket per fem minuter som vid ett fiskeförsök
-    // vilt ger ben, och senor som blir rep för den som kan det
-    const got: Record<string, number> = {};
-    if (y > 0 && item(s, 'ben') < 6) got.ben = y * BEN;
-    if (y > 0 && knows(p, 'rep') && item(s, 'rep') < REP_VILL) got.rep = y * SENOR;
-    if (Object.keys(got).length) { if (live) { tk.items ??= {}; for (const k in got) tk.items[k] = (tk.items[k] ?? 0) + got[k]; } else addItems(s, got); }
+    if (spjut) wearSpear(s, p, dtSec * lf / TRY_SEC); // spjutet slits lika mycket per fem minuter som vid ett fiskeförsök
+    // man fångar hela djur, än så länge bara kaniner. Chansen är sådan att man i snitt får lika mycket som platsen ger.
+    // Kaninen fyller famnen och bärs hem hel
+    if (y > 0 && rnd(s) < y / KANIN) {
+      count(s, 'kaniner');
+      if (s.stat!.kaniner === 1) log(s, `${p.name} fångade byns första kanin och bar hem den hel.`, 'world', [p.id]);
+      if (live) tk.carry += KANIN; else { addFood(s, 'vilt', KANIN); tk.until = Math.min(tk.until, now + HEMVAG); }
+    }
   }
   if (tk.act === 'samla') {
-    const got = forageItems(s, p, dtSec) ?? {};
-    const svamp = pickMushrooms(s, p, tk.tx, tk.ty, dtSec, got);
+    const got = forageItems(s, p, dtSec * lf) ?? {};
+    const svamp = pickMushrooms(s, p, tk.tx, tk.ty, dtSec * lf, got);
     if (svamp) { if (live) { tk.items ??= {}; tk.items.svamp = (tk.items.svamp ?? 0) + svamp; } else addFood(s, 'svamp', svamp); }
     if (Object.keys(got).length) { if (live) { tk.items ??= {}; for (const k in got) tk.items[k] = (tk.items[k] ?? 0) + got[k]; } else addItems(s, got); }
   }
   const sk = d.arbete!;
   const before = p.skill[sk];
-  p.skill[sk] = clamp(p.skill[sk] + dtSec / 3600 * 0.12 * learn * (0.4 + stat(p, 'intelligens', now) / 20) * (1 - p.skill[sk] / 21), 0, 20);
+  p.skill[sk] = clamp(p.skill[sk] + dtSec * lf / 3600 * 0.12 * learn * (0.4 + stat(p, 'intelligens', now) / 20) * (1 - p.skill[sk] / 21), 0, 20);
   if (before < 16 && p.skill[sk] >= 16) {
     const title = `Mästare i ${SKILL_NAMES[sk].toLowerCase()}`, first = !s.people.some(q => q.fame.includes(title));
     p.fame.push(title); log(s, `${p.name} har blivit en mästare i ${SKILL_NAMES[sk].toLowerCase()}.`, 'skill', [p.id]);

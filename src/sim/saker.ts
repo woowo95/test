@@ -20,7 +20,7 @@ export interface SakDef {
 const DEF = {
   bar: { namn: 'Bär', stack: 25, ruta: 75, mapp: 'Mat', mat: 4, ruttnar: 0.7 },
   rotter: { namn: 'Rötter', stack: 25, ruta: 75, mapp: 'Mat', mat: 5, ruttnar: 0.35 },
-  kott: { namn: 'Kött', stack: 25, ruta: 75, mapp: 'Mat', mat: 2, ruttnar: 0.8 }, // jakt ger lite mindre än fiske men köttet håller längre
+  kott: { namn: 'Kött', stack: 25, ruta: 75, mapp: 'Mat', mat: 2, ruttnar: 0.8 }, // slaktat vilt; köttet håller längre än fisk
   fisk: { namn: 'Fisk', stack: 25, ruta: 75, mapp: 'Mat', mat: 1, ruttnar: 2 },
   svamp: { namn: 'Svamp', stack: 25, ruta: 75, mapp: 'Mat', mat: 3, ruttnar: 1 },
   ved: { namn: 'Trä', stack: 25, mapp: 'Bränsle', slits: 0.0004, blir: { k: 'grenar', per: 2 } },
@@ -38,6 +38,10 @@ const DEF = {
   ben: { namn: 'Ben', stack: 20, mapp: 'Material' },
   flintspjut: { namn: 'Flintspjut', stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true },
   metspo: { namn: 'Metspö', stack: 1, mapp: 'Redskap', slits: 0.0005, redskap: true },
+  // ett fällt djur, helt som det är (vilket djur det än är). En kanin fyller famnen, så stacken är en kanin
+  vilt: { namn: 'Fällt vilt', stack: 1.6, ruta: 16, mapp: 'Mat', mat: 1.5, ruttnar: 1.1 },
+  kniv: { namn: 'Flintkniv', stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true },
+  skinn: { namn: 'Skinn', stack: 10, mapp: 'Material', slits: 0.0006 },
 } satisfies Record<string, SakDef>;
 
 export type Sak = keyof typeof DEF;

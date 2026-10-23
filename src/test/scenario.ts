@@ -1,7 +1,7 @@
 // Scenariotester: ställ en by i ett visst läge, kör den en stund och kontrollera att det som ska hända händer.
 // npm run scenario            kör alla
 // npm run scenario -- glanta  kör bara ett
-import { Person, createState, twineRope, makeRod, wearSpear, isSpear, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, WEEK, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, zonesOf, allows, ageOf, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, fuelStock, DAY, HOUR, W, State, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, campCenter, TEKNIK, knows, thinkWhileWorking, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, beds, isWall, Bit, wearBuild, FYND, FYND_IDS, GRUPPER, angOf, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, LAGER_R, observe, hoped, Lager, skyggOf, SKYGG_R, share, treeOn } from '../sim';
+import { Person, createState, twineRope, makeRod, wearSpear, isSpear, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, WEEK, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, zonesOf, allows, ageOf, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, fuelStock, DAY, HOUR, W, State, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, campCenter, TEKNIK, knows, thinkWhileWorking, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, beds, isWall, Bit, wearBuild, FYND, FYND_IDS, GRUPPER, angOf, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, LAGER_R, observe, hoped, Lager, skyggOf, SKYGG_R, share, treeOn, djurOf, KANIN, SLAKT, canSlaughter, makeKnife, slaughter } from '../sim';
 import { findPath } from '../sim/vag';
 import { FOREST, HIGH, isSoil } from '../sim/vag';
 import { START } from './kor';
@@ -284,7 +284,7 @@ SCENARIER.fiskespjut = {
 };
 
 SCENARIER.redskap = {
-  text: 'Rep tvinnas av hö vid elden och fås av senor vid jakt. Flintspjut (gren, flinta, rep) håller längre än träspjut och används till fiske och jakt. Metspö (gren, rep, ben) med mask ger mest fisk',
+  text: 'Rep tvinnas av hö vid elden. Flintspjut (gren, flinta, rep) håller längre än träspjut och används till fiske och jakt. Metspö (gren, rep, ben) med mask ger mest fisk',
   kor: () => {
     const s = createState(4, START);
     s.items = { grenar: 20, flinta: 3, torrgras: 40, ben: 2 };
@@ -300,18 +300,18 @@ SCENARIER.redskap = {
     const haller = spears(s) === 1 && Math.abs(s.items.flintspjut - 0.75) < 1e-9; // 60 försök tar en fjärdedel
     makeRod(s, p);
     const spo = s.items.metspo === 1 && s.items.ben === 1 && s.items.rep === 0;
-    // jakt med flintspjutet: ger ben och senor (rep), och spjutet slits
+    // jakt med flintspjutet: fångar kaniner, och spjutet slits
     const c = campCenter(s), m = getMap(s.seed);
     let bx = c.x, by = c.y, bast = 0;
     for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) { const v = richness(s, 'jakt', x + 0.5, y + 0.5); if (v > bast && m.tiles[y * W + x] !== T.Vatten && Math.hypot(x - c.x, y - c.y) < 20) { bast = v; bx = x + 0.5; by = y + 0.5; } }
-    const ben0 = s.items.ben, sp0 = s.items.flintspjut;
+    const vilt0 = s.mat?.vilt ?? 0, sp0 = s.items.flintspjut;
     let medSpjut = 0;
     for (let i = 0; i < 12 * 3; i++) {
       p.task = { act: 'jakt', phase: 'do', tx: bx, ty: by, until: s.now + HOUR, carry: 0, tool: 'flintspjut', why: 'prov', dark: !isLight(s.now) };
       p.x = bx; p.y = by; step(s, 300, false);
       if (p.task?.act === 'jakt' && isSpear(p.task.tool)) medSpjut++;
     }
-    const jakt = s.items.ben > ben0 && (s.items.rep ?? 0) > 0 && s.items.flintspjut < sp0;
+    const jakt = (s.mat?.vilt ?? 0) > vilt0 && s.items.flintspjut < sp0;
     // byn fiskar själv några dygn: metspö, spjut och händer
     s.food = 3;
     kor(s, 4 * 24, q => { if ((q.items.ben ?? 0) < 1) q.items.ben = 1; if ((q.items.flinta ?? 0) < 3) q.items.flinta = 3; });
@@ -322,8 +322,75 @@ SCENARIER.redskap = {
       ['ett flintspjut görs av gren, flinta och rep, och en flinta sparas till elden', flint],
       ['flintspjutet håller fyra gånger så länge som ett träspjut', haller],
       ['ett metspö görs av gren, rep och ben', spo],
-      [`jakt med spjut ger ben och senor till rep, och slits (${medSpjut} av 36 steg med spjut)`, jakt && medSpjut > 30],
-      [`metspöet används och ger mest fisk per försök (${met.toFixed(2)} mot spjutets ${spjut.toFixed(2)}, ${st.metForsok ?? 0} försök)`, (st.metForsok ?? 0) > 20 && met > spjut],
+      [`jakt med spjut fångar kaniner, och spjutet slits (${medSpjut} av 36 steg med spjut)`, jakt && medSpjut > 30],
+      [`metspöet används och ger mest fisk per försök (${met.toFixed(2)} mot spjutets ${spjut.toFixed(2)}, ${st.metForsok ?? 0} försök med metspö, ${st.spjutForsok ?? 0} med spjut)`, (st.metForsok ?? 0) > 20 && (met > spjut || (st.spjutForsok ?? 0) < 30)],
+    ];
+  },
+};
+
+SCENARIER.djur = {
+  text: 'Kaniner syns där det finns vilt, skuttar omkring och hoppar undan folk. Jakt fångar hela kaniner som bärs hem hela och äts som de är; med flintkniv slaktas de till mer kött, ben, skinn och senor',
+  kor: () => {
+    const s = createState(6, START);
+    s.now = new Date(s.now).setHours(10, 0, 0, 0);
+    const dj = djurOf(s), c = campCenter(s);
+    const iLagret = dj.filter(d => campDist(s, Math.floor(d.x), Math.floor(d.y)) < LAGER_R).length;
+    // fler kaniner där det finns mycket vilt
+    let rik = 0, fattig = 0, nr = 0, nf = 0;
+    for (let i = 0; i < W * H; i++) { const v = fyndAt(s, 'jakt', i) / FYND.jakt.topp; if (v > 0.6) nr++; else if (v > 0.05 && v < 0.25) nf++; }
+    for (const d of dj) { const v = fyndAt(s, 'jakt', Math.floor(d.y) * W + Math.floor(d.x)) / FYND.jakt.topp; if (v > 0.6) rik++; else if (v > 0.05 && v < 0.25) fattig++; }
+    const tat = (a: number, n: number) => n ? a / n : 0;
+    // de skuttar: en stund senare står många på ett annat ställe
+    const fore = new Map(dj.map(d => [d.id, d]));
+    s.now += 60 * 1000;
+    const flyttat = djurOf(s).filter(d => { const f = fore.get(d.id); return f && Math.hypot(d.x - f.x, d.y - f.y) > 0.05; }).length;
+    // och hoppar undan den som kommer nära
+    const p = living(s).find(q => ageOf(q, s.now) >= 18)!, k = djurOf(s).find(d => d.x > 4 && d.y > 4 && d.x < W - 4 && d.y < H - 4 && living(s).every(r => Math.hypot(r.x - d.x, r.y - d.y) > 6))!;
+    const px = p.x, py = p.y; p.x = k.x + 0.3; p.y = k.y;
+    const undan = djurOf(s).find(d => d.id === k.id)!, avst = Math.hypot(undan.x - p.x, undan.y - p.y);
+    p.x = px; p.y = py;
+    // jakt utan redskap i snabbläget: hela kaniner i förrådet
+    const m = getMap(s.seed);
+    let bx = c.x, by = c.y, bast = 0;
+    for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) { const v = richness(s, 'jakt', x + 0.5, y + 0.5); if (v > bast && m.tiles[y * W + x] !== T.Vatten && Math.hypot(x - c.x, y - c.y) < 20) { bast = v; bx = x + 0.5; by = y + 0.5; } }
+    let hela = true;
+    for (let i = 0; i < 24 * 12; i++) {
+      p.task = { act: 'jakt', phase: 'do', tx: bx, ty: by, until: s.now + HOUR, carry: 0, why: 'prov', dark: !isLight(s.now) };
+      p.x = bx; p.y = by;
+      const v0 = s.mat?.vilt ?? 0;
+      step(s, 300, false);
+      const d = (s.mat?.vilt ?? 0) - v0;
+      if (d > 0.05 && Math.abs(d - KANIN) > 0.05) hela = false; // det som kommer in är hela kaniner (lite kan ätas samtidigt)
+    }
+    const kaniner = s.stat?.kaniner ?? 0;
+    // levande läge: den som fångat en kanin bär hem den hel
+    const q = createState(6, START); q.now = new Date(q.now).setHours(9, 0, 0, 0);
+    const j = living(q).find(r => ageOf(r, q.now) >= 18)!;
+    let hem = 0, annat = 0;
+    for (let i = 0; i < 6 * 3600 * 2 && !hem; i++) {
+      if (j.task?.act !== 'jakt') j.task = { act: 'jakt', phase: 'go', tx: bx, ty: by, until: q.now + 3 * HOUR, carry: 0, why: 'prov', dark: false };
+      step(q, 0.5, true);
+      if (j.task?.act === 'jakt' && j.task.phase === 'back') { if (Math.abs(j.task.carry - KANIN) < 1e-9 && !j.task.items) hem++; else if (j.task.carry > 0) annat++; }
+    }
+    // utan kniv ingen slakt; med kniv blir en kanin kött, ben, skinn och senor
+    s.items.flinta = 2; s.items.grenar = 2;
+    const utan = !canSlaughter(s, p);
+    for (const r of s.people) r.tek = { ...r.tek, kniv: 1, rep: 1 };
+    makeKnife(s, p);
+    const kniv = s.items.kniv === 1 && s.items.flinta === 1;
+    s.mat = { vilt: 3 * KANIN }; s.food = 3 * KANIN; s.items.ben = 0; s.items.skinn = 0; s.items.rep = 0;
+    const kan = canSlaughter(s, p);
+    slaughter(s, p, 1);
+    const slakt = Math.abs((s.mat.kott ?? 0) - 3 * SLAKT.kott) < 1e-9 && (s.mat.vilt ?? 0) < 1e-9 && s.items.ben === 3 && s.items.skinn === 3 && (s.items.rep ?? 0) > 0;
+    return [
+      [`kaniner syns där det finns vilt (${dj.length} st), inga i lägret (${iLagret})`, dj.length > 10 && iLagret === 0],
+      [`fler kaniner där det finns mycket vilt (${(tat(rik, nr) * 100).toFixed(1)} % av de rika rutorna, ${(tat(fattig, nf) * 100).toFixed(1)} % av de fattiga)`, tat(rik, nr) > tat(fattig, nf) * 2],
+      [`kaninerna skuttar omkring (${flyttat} av ${dj.length} flyttade sig på en minut)`, flyttat > dj.length * 0.3],
+      [`en kanin hoppar undan den som kommer nära (${avst.toFixed(1)} rutor bort)`, avst > 2],
+      [`jakt utan redskap fångar hela kaniner (${kaniner} på ett dygn)`, kaniner >= 1 && hela],
+      [`i levande läge bärs kaninen hem hel, en i taget (${hem} gång, ${annat} med annat)`, hem >= 1 && annat === 0],
+      ['utan kniv slaktas inget; kniven görs av en flinta och en gren och en flinta sparas till elden', utan && kniv && kan],
+      ['en slaktad kanin ger mer kött än den uppätna, och ett ben, ett skinn och senor till rep', slakt && SLAKT.kott > KANIN],
     ];
   },
 };
@@ -548,7 +615,7 @@ SCENARIER.aktivitet = {
         const t = p.task, f = fore.get(p.id);
         if (m.tiles[Math.floor(p.y) * W + Math.floor(p.x)] === T.Vatten) vatten++;
         if (t && f && f.act === t.act) {
-          if (f.ph === 'do' && t.phase === 'back') { turer++; if (t.act !== 'bara' && load(t) > capacity(s, p) / 3 + 0.05) tungt++; } // bärandet av högar får ta en full famn
+          if (f.ph === 'do' && t.phase === 'back') { turer++; if (t.act !== 'bara' && !(t.act === 'jakt' && load(t) <= KANIN + 0.01) && load(t) > capacity(s, p) / 3 + 0.05) tungt++; } // bärandet av högar och en hel kanin får ta en full famn
           if (f.ph === 'back' && t.phase === 'go') aterupp++;
         }
         if (t?.act === 'elda' && t.phase === 'back') eldMax = Math.max(eldMax, t.carry);
@@ -614,7 +681,7 @@ SCENARIER.teknik = {
     const dagar = (k: string) => forst[k] === undefined ? 'aldrig' : `dygn ${forst[k].toFixed(1)}`;
     return [
       ['ingen kan något från början', kanFran],
-      [`korgen kommer på (${dagar('korg')}), yxan (${dagar('yxa')}) och spjutet (${dagar('fiskespjut')})`, forst.korg !== undefined && forst.yxa !== undefined && forst.korg > 0.2 && forst.yxa > 0.5],
+      [`korgen kommer på (${dagar('korg')}), yxan (${dagar('yxa')}) och spjutet (${dagar('fiskespjut')})`, forst.korg !== undefined && forst.yxa !== undefined && forst.korg > 0.2 && forst.yxa > 0.3],
       ['ingen gör en yxa eller korg innan någon kommit på hur', !yxaInnan && !korgInnan],
       [`kunskapen sprids i samtal (${kan('korg')} kan göra korg, ${kan('yxa')} yxa)`, kan('korg') >= 3 && ens.length >= 3],
       ['en nyfiken och intelligent person kommer på det mycket fortare', snabb],

@@ -5,7 +5,7 @@ import { TS, app, cam, layout, view, world } from './ui/scen';
 import { drawNight, drawTerrain } from './ui/terrang';
 import { drawStructures } from './ui/foremal';
 import { drawFilter } from './ui/filter';
-import { drawPlants } from './ui/vaxter';
+import { drawAnimals, drawPlants } from './ui/vaxter';
 import { addTalks, drawPeople } from './ui/manniskor';
 import { renderPanel } from './ui/panel';
 import { renderPorts, stopFollow } from './ui/portratt';
@@ -83,7 +83,7 @@ function tick() {
     if (p && alive(p)) { cam.x = p.x * TS + TS / 2; cam.y = p.y * TS + TS / 2; layout(); } else stopFollow();
   }
   drawTerrain();
-  drawPlants();
+  drawPlants(); drawAnimals();
   drawStructures(now);
   drawPeople(now);
   drawNight(s.now);

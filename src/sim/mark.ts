@@ -98,11 +98,13 @@ export function growGround(s: State, hours: number, season: number) {
 export const WEAR = 0.028; // slitage när någon går över en ruta
 export const tileOf = (x: number, y: number) => Math.max(0, Math.min(H - 1, Math.floor(y))) * W + Math.max(0, Math.min(W - 1, Math.floor(x)));
 // vid ikappräkning går ingen på riktigt: slitaget läggs längs bästa vägen mellan elden och målet.
-// Vägarna räknas om var fjärde timme (stigarna ändras långsamt) och när något byggs
+// Vägarna räknas om var fjärde timme (stigarna ändras långsamt) och när något byggs. I levande läget går folk
+// lite olika vägar och nöter fler rutor, så snabbläget nöter lite mer per tur för att få lika många stigar (npm run likhet)
+const SNABB_TRAMP = 1.3;
 const paths = new WeakMap<State, { key: string; came: Int32Array }>();
 export function tread(s: State, tx: number, ty: number, trips: number) {
   const m = getMap(s.seed), g = groundOf(s), key = `${Math.floor(s.now / (4 * HOUR))},${s.byggV ?? 0}`;
   let t = paths.get(s);
   if (t?.key !== key) paths.set(s, t = { key, came: pathTree(g, m.fire.x, m.fire.y) });
-  for (let i = tileOf(tx, ty), n = 0; i >= 0 && n < 200; i = t.came[i], n++) wear(g, i, WEAR * trips);
+  for (let i = tileOf(tx, ty), n = 0; i >= 0 && n < 200; i = t.came[i], n++) wear(g, i, WEAR * trips * SNABB_TRAMP);
 }

@@ -20,6 +20,9 @@ const PAL: Record<string, Record<string, string>> = {
   flintspjut: { h: '#8a6a40', g: '#8f9396', G: '#c9cdd0', r: '#c8b07a' },
   rep: { y: '#c8b07a', Y: '#e8d4a0', d: '#8a7448' },
   ben: { w: '#e8e2d0', W: '#fffaf0', d: '#b8ae98' },
+  vilt: { b: '#9a7650', B: '#c8a478', w: '#f2ece0', k: '#1a1a1a', r: '#9c3328' },
+  kniv: { h: '#7a5a36', H: '#9c7848', g: '#8f9396', G: '#c9cdd0' },
+  skinn: { b: '#8a6440', B: '#b48a5e', d: '#5e4026' },
   metspo: { h: '#8a6a40', y: '#c8b07a', w: '#e8e2d0' },
   korg: { t: '#6e4e2e', o: '#9a6a3e', O: '#c99a62', d: '#5e3c20' },
   risvagg: { p: '#5a3c22', b: '#8a6a40', B: '#b08a58' },
@@ -267,6 +270,39 @@ const PIX: Record<string, string[]> = {
     'Ww......',
     'wd......',
     '........',
+  ],
+  // ett fällt djur som ligger på sidan
+  vilt: [
+    '........',
+    '........',
+    'b.......',
+    'bb.bBBb.',
+    'kbBBBBBb',
+    '.bBBBBbw',
+    '..b.bb.r',
+    '........',
+  ],
+  // en flintkniv med skaft
+  kniv: [
+    '......Gg',
+    '.....GGg',
+    '....GGg.',
+    '...GGg..',
+    '..hg....',
+    '.Hh.....',
+    'Hh......',
+    'h.......',
+  ],
+  // ett utbrett skinn
+  skinn: [
+    'b......b',
+    '.bBBBBb.',
+    '.BBdBBB.',
+    'bBBBBdBb',
+    '.BdBBBB.',
+    '.BBBBdB.',
+    '.bBBBBb.',
+    'b......b',
   ],
   // ett spö med rev och krok av ben
   metspo: [

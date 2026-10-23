@@ -32,7 +32,7 @@ export interface ActDef {
 
 const DEF = {
   samla: { namn: 'Samlar bär och rötter', mark: 'korg', verktyg: { korg: 'Samlar bär och rötter med korg' }, ikon: 'bar', arbete: 'samla', bas: 0.65, sasong: [0.4, 1.0, 1.25, 1.4], egenskap: 'uthallighet', ger: 'bar', resurs: 'samla', fynd: [3, 5], levande: 1.08, vandra: { r: 2, h0: 3, h1: 10, v: 0.6 }, tungt: true, dygn: true, plats: 'ang' },
-  jakt: { namn: 'Jagar', verktyg: { fiskespjut: 'Jagar med spjut', flintspjut: 'Jagar med spjut' }, mark: 'kott', ikon: 'kott', arbete: 'jakt', bas: 0.62, sasong: [0.7, 0.9, 1.0, 1.15], egenskap: 'mod', ger: 'kott', resurs: 'jakt', fara: { risk: 0.0008, text: 'under en jakt' }, fynd: [3, 5], levande: 1.15, vandra: { r: 3, h0: 3, h1: 10, v: 0.7 }, tungt: true, dygn: true, plats: 'ang' },
+  jakt: { namn: 'Jagar', verktyg: { fiskespjut: 'Jagar med spjut', flintspjut: 'Jagar med spjut' }, mark: 'kanin', ikon: 'kanin', arbete: 'jakt', bas: 0.62, sasong: [0.7, 0.9, 1.0, 1.15], egenskap: 'mod', ger: 'vilt', resurs: 'jakt', fara: { risk: 0.0008, text: 'under en jakt' }, levande: 1.15, vandra: { r: 3, h0: 3, h1: 10, v: 0.7 }, tungt: true, dygn: true, plats: 'ang' },
   fiske: { namn: 'Fiskar med händerna', mark: 'fisk', verktyg: { fiskespjut: 'Fiskar med spjut', flintspjut: 'Fiskar med spjut', metspo: 'Metar' }, ikon: 'fisk', arbete: 'fiske', bas: 0.72, sasong: [0.45, 1.0, 1.1, 1.0], egenskap: 'uthallighet', ger: 'fisk', takt: 0, resurs: 'fiske', tungt: true, dygn: true, plats: 'strand' },
   ved: { namn: 'Samlar grenar', mark: 'korg', ikon: 'grenar', arbete: 'ved', bas: 1.3, sasong: [0.9, 1, 1, 1], egenskap: 'styrka', ger: 'grenar', takt: 2, fynd: [3, 5], levande: 0.99, vandra: { r: 2, h0: 3, h1: 10, v: 0.6 }, tungt: true, dygn: true, plats: 'skog' },
   leka: { namn: 'Leker', vandra: { r: 2, h0: 2, h1: 6, v: 1.3 }, social: true, dygn: true, plats: 'lek' },
@@ -52,6 +52,8 @@ const DEF = {
   yxa: { namn: 'Gör en yxa av en pinne och flinta', mark: 'flinta', hantverk: true, plats: 'elden' },
   spjut: { namn: 'Täljer ett spjut', verktyg: { flintspjut: 'Gör ett flintspjut' }, mark: 'fiskespjut', hantverk: true, plats: 'elden' },
   metspo: { namn: 'Gör ett metspö', mark: 'metspo', hantverk: true, plats: 'elden' },
+  kniv: { namn: 'Gör en flintkniv', mark: 'kniv', hantverk: true, plats: 'elden' },
+  slakta: { namn: 'Slaktar vilt med kniven', mark: 'kniv', ikon: 'kniv', hantverk: true, social: true, stilla: true, plats: 'elden' },
   promenad: { namn: 'Tar en promenad', vandra: { r: 4, h0: 1, h1: 4, v: 0.8 }, dygn: true },
   bada: { namn: 'Badar i sjön', dygn: true },
   bara: { namn: 'Bär in saker till lagret' },

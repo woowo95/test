@@ -5,7 +5,7 @@ import { canLight, emberOn, heatAt, fireWant, needStones, needTinder, woodDays }
 import { ageOf, living, stat } from './folk';
 import { HAND_FISH, Kind, SPEAR_FISH, flintSpot, shoreOf, wantsFlint } from './fynd';
 import { coldOf, temperature } from './vader';
-import { freeBaskets, freeRod, freeSpear, freeSpears, sharpTool, spearKind, wantsBasket, wantsRod, wantsRope, wantsSpear } from './redskap';
+import { KANIN, SLAKT_TIMME, canSlaughter, freeBaskets, freeRod, freeSpear, freeSpears, sharpTool, spearKind, vilt, wantsBasket, wantsKnife, wantsRod, wantsRope, wantsSpear } from './redskap';
 import { areaOf, flintArea, pickSpot, prospectFor } from './minne';
 import { getMap } from './karta';
 import { fetchSpot, haulJob } from './lager';
@@ -171,6 +171,7 @@ function day(s: State, p: Person, v: Val, a: number, lazy: number, live: boolean
   let gt: ReturnType<typeof haulJob>;
   if (a < 8) { set(v, 'leka', 'Är barn och leker'); return; }
   if (s.stackar?.length && rnd(s) < 0.25 && (gt = haulJob(s))) { set(v, 'bara', gt.why); v.spot = gt; v.dur = 3 * HOUR; return; }
+  if (a >= 14 && canSlaughter(s, p) && rnd(s) < 0.5) { slaughterTask(s, v, 'Det finns vilt att slakta innan det blir dåligt'); return; }
   const fd = foodDays(s), wd = woodDays(s), ai = ageIndex(s), tot = habitTotal(p);
   let { best, bs, burg } = bestWork(s, p, fd, wd, ai, tot);
   // bygget: väger mer ju fler som saknar sovplats under tak, inför och under istiden, när en vägg behöver lagas och när huset inte är klart
@@ -277,8 +278,16 @@ function makeSpearTask(s: State, p: Person, v: Val, what: string) {
   if (spearKind(s, p) === 'flintspjut') { set(v, 'spjut', `${what}. Gör ett flintspjut med flinta och rep.`); v.tool = 'flintspjut'; v.dur = 60 * MIN; }
   else { set(v, 'spjut', `${what}. Täljer ett träspjut med ${sharpTool(s) === 'yxa' ? 'yxan' : 'en flintsten'}.`); v.dur = 40 * MIN; }
 }
-// handarbete vid elden: den som kan tvinna rep gör det när byn behöver rep
+// slakta det fällda viltet vid elden, så länge det tar
+function slaughterTask(s: State, v: Val, why: string) {
+  set(v, 'slakta', why);
+  v.dur = Math.min(2 * HOUR, (vilt(s) / KANIN / SLAKT_TIMME) * HOUR + 5 * MIN);
+}
+// handarbete vid elden: den som kan göra en kniv gör det när byn saknar en, den som har kniv slaktar viltet, och den
+// som kan tvinna rep gör det när byn behöver rep
 function craft(s: State, p: Person, v: Val, why: string) {
+  if (wantsKnife(s, p)) { set(v, 'kniv', `${why}. Gör en flintkniv.`); v.dur = 40 * MIN; return; }
+  if (canSlaughter(s, p)) { slaughterTask(s, v, `${why}. Slaktar viltet med kniven.`); return; }
   set(v, 'hantverk', why);
   if (wantsRope(s, p)) { v.tool = 'rep'; v.why = `${why}. Tvinnar rep av hö.`; }
 }
