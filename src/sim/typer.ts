@@ -89,6 +89,7 @@ export interface State {
   mat?: Record<string, number>; // maten per slag (bär, kött, fisk, svamp); s.food är summan
   marken?: { x: number; y: number; k: string; n: number }[]; // gamla sparfiler: saker på marken (nu i stackar)
   lagren?: { x: number; y: number; w: number; h: number; namn?: string; slag?: 'mat' | 'material'; prio?: number }[]; // lagerplatserna
+  agare?: Record<string, number[]>; // redskapens ägare: ett person-id per helt redskap av varje slag, 0 = byn (agande.ts)
   stackar?: { k: string; n: number; c: number; x: number; y: number }[]; // alla stackar med plats och skick (c: 1 = nytt)
   stubbar?: { x: number; y: number; t: number }[]; // stubbar efter fällda träd, t = när trädet fälldes
   nextStock?: number; fallda?: number;

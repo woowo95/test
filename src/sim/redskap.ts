@@ -3,6 +3,7 @@ import { knows } from './teknik';
 import { State, Person } from './typer';
 import { item } from './saker';
 import { addFood } from './lager';
+import { broke, made } from './agande';
 
 // ---------- redskap: spjut ----------
 // Ett träspjut är en pinne som täljs spetsig med något vasst, en flintsten eller en yxa. Det vassa används bara som verktyg
@@ -31,7 +32,7 @@ export const spearKind = (s: State, p: Person) => canFlintSpear(s, p) ? 'flintsp
 export function makeSpear(s: State, p: Person) {
   if (spearKind(s, p) === 'flintspjut') {
     s.items.flinta--; s.items.rep--; s.items.grenar--;
-    s.items.flintspjut = item(s, 'flintspjut') + 1;
+    s.items.flintspjut = item(s, 'flintspjut') + 1; made(s, 'flintspjut', p);
     count(s, 'flintspjutGjorda');
     if (s.stat!.flintspjutGjorda === 1) log(s, `${p.name} gjorde byns första flintspjut: en flintspets surrad med rep vid en pinne. Det håller mycket längre än ett träspjut.`, 'world', [p.id]);
     return;
@@ -39,7 +40,7 @@ export function makeSpear(s: State, p: Person) {
   const tool = sharpTool(s);
   if (!tool || !canMakeSpear(s)) return;
   s.items.grenar--;
-  s.items.fiskespjut = item(s, 'fiskespjut') + 1;
+  s.items.fiskespjut = item(s, 'fiskespjut') + 1; made(s, 'fiskespjut', p);
   count(s, 'spjutGjorda');
   if (s.stat!.spjutGjorda === 1) log(s, `${p.name} täljde byns första träspjut med ${tool === 'yxa' ? 'en yxa' : 'en flintsten'}. Nu går fisket lättare.`, 'world', [p.id]);
 }
@@ -50,7 +51,7 @@ export function wearSpear(s: State, p: Person, n = 1) {
   const before = count1(s, k);
   s.items[k] = Math.max(0, item(s, k) - n / (SPJUT_FORSOK * LIV[k]));
   if (count1(s, k) < before) {
-    count(s, 'spjutTrasiga');
+    count(s, 'spjutTrasiga'); broke(s, k, p);
     if (p.task) p.task.tool = undefined;
     if (s.stat!.spjutTrasiga === 1) log(s, `${p.name}s ${k === 'flintspjut' ? 'flintspjut' : 'träspjut'} gick sönder.${k === 'fiskespjut' ? ' Träspjuten håller inte länge.' : ''}`, 'world', [p.id]);
   }
@@ -82,14 +83,14 @@ export const wantsRod = (s: State, p: Person) => canMakeRod(s, p) && rods(s) < s
 export function makeRod(s: State, p: Person) {
   if (!canMakeRod(s, p)) return;
   s.items.rep--; s.items.ben--; s.items.grenar--;
-  s.items.metspo = item(s, 'metspo') + 1;
+  s.items.metspo = item(s, 'metspo') + 1; made(s, 'metspo', p);
   count(s, 'metspoGjorda');
   if (s.stat!.metspoGjorda === 1) log(s, `${p.name} gjorde byns första metspö, med en krok av ben.`, 'world', [p.id]);
 }
 export function wearRod(s: State, p: Person) {
   const before = rods(s);
   s.items.metspo = Math.max(0, item(s, 'metspo') - 1 / METSPO_FORSOK);
-  if (rods(s) < before) { count(s, 'metspoTrasiga'); if (p.task) p.task.tool = undefined; }
+  if (rods(s) < before) { count(s, 'metspoTrasiga'); broke(s, 'metspo', p); if (p.task) p.task.tool = undefined; }
 }
 
 // ---------- redskap: korg ----------
@@ -104,7 +105,7 @@ export const wantsBasket = (s: State, p: Person) => knows(p, 'korg') && item(s, 
 export function makeBasket(s: State, p: Person) {
   if (item(s, 'torrgras') < KORG_GRAS) return;
   s.items.torrgras -= KORG_GRAS;
-  s.items.korg = item(s, 'korg') + 1;
+  s.items.korg = item(s, 'korg') + 1; made(s, 'korg', p);
   count(s, 'korgarGjorda');
   if (s.stat!.korgarGjorda === 1) log(s, `${p.name} flätade byns första korg av hö.`, 'world', [p.id]);
 }
@@ -112,7 +113,7 @@ export function wearBasket(s: State, p: Person, hours: number) {
   const before = baskets(s);
   s.items.korg = Math.max(0, item(s, 'korg') - hours / KORG_TIMMAR);
   if (baskets(s) < before) {
-    count(s, 'korgarTrasiga');
+    count(s, 'korgarTrasiga'); broke(s, 'korg', p);
     if (p.task) p.task.tool = undefined;
     if (s.stat!.korgarTrasiga === 1) log(s, `${p.name}s korg gick sönder.`, 'world', [p.id]);
   }
@@ -131,7 +132,7 @@ export const wantsKnife = (s: State, p: Person) => knows(p, 'kniv') && knives(s)
 export function makeKnife(s: State, p: Person) {
   if (item(s, 'flinta') < 2 || item(s, 'grenar') < 1) return;
   s.items.flinta--; s.items.grenar--;
-  s.items.kniv = item(s, 'kniv') + 1;
+  s.items.kniv = item(s, 'kniv') + 1; made(s, 'kniv', p);
   count(s, 'knivarGjorda');
   if (s.stat!.knivarGjorda === 1) log(s, `${p.name} gjorde byns första flintkniv. Nu kan viltet slaktas.`, 'world', [p.id]);
 }
@@ -143,7 +144,9 @@ export function slaughter(s: State, p: Person, hours: number) {
   addFood(s, 'vilt', -n * KANIN); addFood(s, 'kott', n * SLAKT.kott);
   s.items.ben = item(s, 'ben') + n * SLAKT.ben; s.items.skinn = item(s, 'skinn') + n * SLAKT.skinn;
   if (knows(p, 'rep') && item(s, 'rep') < REP_VILL) s.items.rep = item(s, 'rep') + n * SLAKT.rep;
+  const kn = knives(s);
   s.items.kniv = Math.max(0, item(s, 'kniv') - n * 0.004); // kniven håller för ungefär 250 kaniner
+  if (knives(s) < kn) broke(s, 'kniv', p);
   const first = !(s.stat?.slaktat);
   count(s, 'slaktat', n);
   if (first) log(s, `${p.name} slaktade byns första vilt med en flintkniv. Det gav mer kött, ett ben och ett skinn.`, 'world', [p.id]);

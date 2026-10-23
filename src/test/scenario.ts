@@ -1,7 +1,7 @@
 // Scenariotester: ställ en by i ett visst läge, kör den en stund och kontrollera att det som ska hända händer.
 // npm run scenario            kör alla
 // npm run scenario -- glanta  kör bara ett
-import { Person, createState, twineRope, makeRod, wearSpear, isSpear, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, WEEK, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, zonesOf, allows, ageOf, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, fuelStock, DAY, HOUR, W, State, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, campCenter, TEKNIK, knows, thinkWhileWorking, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, beds, isWall, Bit, wearBuild, FYND, FYND_IDS, GRUPPER, angOf, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, LAGER_R, observe, hoped, Lager, skyggOf, SKYGG_R, share, treeOn, djurOf, KANIN, SLAKT, canSlaughter, makeKnife, slaughter } from '../sim';
+import { Person, createState, ownedBy, syncOwners, BYN, twineRope, makeRod, wearSpear, isSpear, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, WEEK, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, zonesOf, allows, ageOf, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, fuelStock, DAY, HOUR, W, State, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, campCenter, TEKNIK, knows, thinkWhileWorking, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, beds, isWall, Bit, wearBuild, FYND, FYND_IDS, GRUPPER, angOf, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, LAGER_R, observe, hoped, Lager, skyggOf, SKYGG_R, share, treeOn, djurOf, KANIN, SLAKT, canSlaughter, makeKnife, slaughter } from '../sim';
 import { findPath } from '../sim/vag';
 import { FOREST, HIGH, isSoil } from '../sim/vag';
 import { START } from './kor';
@@ -324,6 +324,42 @@ SCENARIER.redskap = {
       ['ett metspö görs av gren, rep och ben', spo],
       [`jakt med spjut fångar kaniner, och spjutet slits (${medSpjut} av 36 steg med spjut)`, jakt && medSpjut > 30],
       [`metspöet används och ger mest fisk per försök (${met.toFixed(2)} mot spjutets ${spjut.toFixed(2)}, ${st.metForsok ?? 0} försök med metspö, ${st.spjutForsok ?? 0} med spjut)`, (st.metForsok ?? 0) > 20 && (met > spjut || (st.spjutForsok ?? 0) < 30)],
+    ];
+  },
+};
+
+SCENARIER.agande = {
+  text: 'Den som gör ett redskap äger det. Det som fanns före ägandet och det som en död lämnar efter sig är byns. Går ett redskap sönder i händerna på någon är det hens eget som går sönder',
+  kor: () => {
+    const s = createState(4, START);
+    s.items = { grenar: 20, flinta: 2, yxa: 1 };
+    Object.assign(s.fire, { lit: true, fuel: 4, ring: true });
+    for (const q of s.people) q.tek = { fiskespjut: 1 };
+    const [a, b] = living(s);
+    syncOwners(s);
+    const yxaByns = s.agare?.yxa?.[0] === BYN;
+    makeSpear(s, a); makeSpear(s, a); makeSpear(s, b);
+    const ag = () => ownedBy(s, a).fiskespjut ?? 0, bg = () => ownedBy(s, b).fiskespjut ?? 0;
+    const gjorda = ag() === 2 && bg() === 1 && spears(s) === 3;
+    b.task = { ...(b.task ?? { act: 'fiska', x: b.x, y: b.y, tx: b.x, ty: b.y, until: s.now, carry: 0 }), tool: 'fiskespjut' } as Person['task'];
+    wearSpear(s, b, 100); // b:s spjut går sönder i hens händer
+    const sonder = bg() === 0 && ag() === 2 && spears(s) === 2;
+    a.died = s.now; a.cause = 'av ålder';
+    syncOwners(s);
+    const arv = (s.agare?.fiskespjut ?? []).every(id => id === BYN) && ownedBy(s, a).fiskespjut === undefined;
+    const c = createState(5, START);
+    for (const q of c.people) q.tek = { fiskespjut: 1, korg: 1 };
+    c.items = { grenar: 20, flinta: 2, torrgras: 30 }; c.stat = { ...(c.stat ?? {}), fiskeForsok: 1 };
+    kor(c, 3 * 24);
+    const egna = Object.values(c.agare ?? {}).flat().filter(id => id !== BYN).length;
+    const total = Object.values(c.agare ?? {}).flat().length, hela = Object.keys(c.agare ?? {}).reduce((n, k) => n + Math.ceil((c.items[k] ?? 0) - 1e-9), 0);
+    return [
+      ['yxan som fanns före ägandet är byns', yxaByns],
+      ['den som gör spjuten äger dem', gjorda],
+      ['spjutet som gick sönder var hens eget', sonder],
+      ['en dödsfalls redskap blir byns', arv],
+      [`i en vanlig by äger folk det de gjort (${egna} av ${total} redskap har en ägare)`, egna > 0],
+      [`ägarlistan stämmer med förrådet (${total} ägare, ${hela} redskap)`, total === hela],
     ];
   },
 };

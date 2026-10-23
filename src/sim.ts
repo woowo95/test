@@ -23,6 +23,7 @@ export * from './sim/kunskap';
 export * from './sim/minne';
 export * from './sim/vader';
 export * from './sim/redskap';
+export * from './sim/agande';
 export * from './sim/lager';
 export * from './sim/plats';
 export * from './sim/byggnad';

@@ -1,3 +1,4 @@
+import { syncOwners } from './agande';
 import { rotStumps } from './skog';
 import { addFood, addTo, capacity, dropSpot, fetchSpot, homeKind, load, pickUp, storeLoad, takeFood, tidyStore, wearStore } from './lager';
 import { KANIN, KORG_SKORD, MASK_PER_GRAV, isSpear, makeBasket, makeKnife, makeRod, makeSpear, slaughter, twineRope, wearBasket, wearRod, wearSpear } from './redskap';
@@ -125,6 +126,7 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
   if (living(s).length === 0) log(s, 'Byn är tom. Ingen finns kvar vid elden.', 'world');
   regulate(s, dtSec);
   for (const k in s.items) if (s.items[k] < 1e-6) delete s.items[k];
+  syncOwners(s);
 }
 
 

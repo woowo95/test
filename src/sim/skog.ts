@@ -1,3 +1,4 @@
+import { made } from './agande';
 import { campCenter, campDist } from './plats';
 import { ageOf, living, log, think } from './folk';
 import { groundOf, isForest } from './mark';
@@ -79,7 +80,7 @@ export function makeAxe(s: State, p: Person) {
   if (!canMakeAxe(s)) return;
   s.items.flinta--;
   s.items.grenar--;
-  s.items.yxa = item(s, 'yxa') + 1;
+  s.items.yxa = item(s, 'yxa') + 1; made(s, 'yxa', p);
   if (s.items.yxa === 1 && !s.log.some(l => l.text.includes('byns första yxa'))) {
     log(s, `${p.name} gjorde byns första yxa av en pinne och en flintsten. Nu kan byn fälla träd.`, 'world', [p.id]);
     p.fame.push('Gjorde byns första yxa');

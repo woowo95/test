@@ -34,7 +34,7 @@ Björn programmerar inte; Claude skriver all kod. Svara på svenska.
 - `npm test`: tre byar i 90 dygn utan grafik, en rad per by, jämfört med `test/facit.json`. Visar bara det som ändrats, alltid om en by dött ut och återgrundats, och vakter som larmar om något omöjligt händer (NaN, negativa förråd, folk i vattnet).
 - `npm run facit`: spara nytt facit (och ny samma-koll) när en ändring i spelet är avsiktlig.
 - `npm run balans -- [antal] [dygn]`: många byar parallellt, median/sämst/bäst. Använd vid balansering.
-- `npm run scenario -- [namn]`: scenariotester (glanta, ingen-yxa, yxa, vinter-slocknad, knapphet, svamp, flinta, kunskap, temperatur, befolkning, fiskespjut, bostad, fritid, lager, slitage, lagerplatser, rotter, aktivitet, teknik, bygg, varmekarta, djur) som kontrollerar att det som ska hända händer. Lägg till ett scenario när ett nytt system byggs.
+- `npm run scenario -- [namn]`: scenariotester (glanta, ingen-yxa, yxa, vinter-slocknad, knapphet, svamp, flinta, kunskap, temperatur, befolkning, fiskespjut, bostad, fritid, lager, slitage, lagerplatser, rotter, aktivitet, teknik, bygg, varmekarta, djur, agande) som kontrollerar att det som ska hända händer. Lägg till ett scenario när ett nytt system byggs.
 - `npm run takt -- [by] live|snabb [timmar]`: hur mycket en arbetstimme ger i levande läge och snabbläget, antal turer hem och hur mycket mark som nötts. Använd när arbete, bördor eller gång ändras.
 - `npm run teknik -- [antal]`: när varje teknik upptäcks och hur många som kan den.
 - `npm run likhet -- [timmar] [byar]`: samma byar i levande läge och snabbläget, sida vid sida (tar ett par minuter).
