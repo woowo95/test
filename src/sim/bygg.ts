@@ -6,7 +6,7 @@ import { campCenter } from './plats';
 import { sedEvent } from './seder';
 import { rnd } from './slump';
 import { knows } from './teknik';
-import { addTo, amountOf, zonesOf } from './lager';
+import { amountOf, use, zonesOf } from './lager';
 import { freeTools } from './agande';
 import { FOREST } from './vag';
 import { H, HOUR, Person, State, T, W } from './typer';
@@ -164,10 +164,10 @@ export function toWalls(s: State, x: number, y: number, n: number, hus?: number)
   return used;
 }
 // ta material ur förrådet till bygget (snabbläget, där ingen bär)
-export function takeFor(s: State, j: Job) {
+export function takeFor(s: State, j: Job, p: Person) {
   if (!j.item || j.need <= 0) return true;
   if (avail(s, j.item) < j.need) return false;
-  addTo(s, j.item, -j.need); deliver(j.bit, j.need, j.repair);
+  use(s, p, j.item, j.need, true); deliver(j.bit, j.need, j.repair);
   return true;
 }
 // en stunds arbete på en ruta. Ger true när rutan är klar

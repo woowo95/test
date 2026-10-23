@@ -1,12 +1,13 @@
 import { syncTools } from './agande';
 import { rotStumps } from './skog';
-import { addFood, addTo, capacity, dropSpot, fetchSpot, homeKind, load, pickUp, storeLoad, takeFood, tidyStore, wearStore } from './lager';
+import { syncEgna } from './egendom';
+import { gain, use, capacity, dropSpot, fetchSpot, homeKind, load, pickUp, storeLoad, takeFood, tidyStore, wearStore } from './lager';
 import { KANIN, KORG_SKORD, MASK_PER_GRAV, isSpear, makeBasket, makeKnife, makeRod, makeSpear, slaughter, twineRope, wearBasket, wearRod, wearSpear } from './redskap';
 import { thinkWhileWorking } from './teknik';
 import { foodDays, workRate } from './ekonomi';
 import { TRY_SEC, eatPoison, growFynd, handFish, packFynd, pickMushrooms, richness, takeFrom } from './fynd';
 import { coldOf, temperature } from './vader';
-import { addFuel, addItems, canLight, fireWant, forageItems, fuelStock, hearthOf, heatAt, igniterOf, stepFire, takeCoal, takeFuel, tryLight } from './eld';
+import { addFuel, canLight, fireWant, forageItems, fuelStock, hearthOf, heatAt, igniterOf, stepFire, takeCoal, takeFuel, tryLight } from './eld';
 import { ageOf, alive, count, living, log, stat, think } from './folk';
 import { getMap } from './karta';
 import { birth, birthWish, die, regulate } from './liv';
@@ -84,6 +85,7 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
   gridOf(s); // väggarna och rummen, så att vägsökningen vet var väggarna står
   // förråd: ruttning och ved
   wearStore(s, dtSec, ai); // slitage per slag, fortare utanför lagret
+  syncEgna(s); // vems det är: det som ruttnat eller slitits minskar allas delar
   stepFire(s, dtSec, live, ppl);
   const fh = hearthOf(s.fire), coldRate = coldOf(temperature(s));
   const learn = 1 + 0.1 * s.seder.v.nyfikenhet; // en nyfiken by lär sig snabbare
@@ -159,7 +161,7 @@ function needsStep(s: State, p: Person, a: number, dtSec: number, coldRate: numb
 // en hel portion, eller det som finns kvar. Maten under halva skicket mättar sämre, under en fjärdedel kan man bli sjuk
 function eat(s: State, p: Person, a: number) {
   const now = s.now, full = a < 10 ? 0.6 : 1, portion = Math.min(full, s.food);
-  const q = takeFood(s, portion);
+  const q = takeFood(s, portion, p);
   p.hunger = clamp(p.hunger + 0.55 * portion / full * (q >= 0.5 ? 1 : 0.5 + q), 0, 1); eatPoison(s, p);
   if (q < 0.5) think(p, 'Maten var dålig', -0.05, now, 6 * HOUR);
   if (q < 0.25 && rnd(s) < (0.25 - q) / 0.25 * 0.35) {
@@ -212,7 +214,7 @@ function taskStep(s: State, p: Person, a: number, dtSec: number, live: boolean, 
     else chooseTask(s, p, live);
   }
   const tk = p.task!;
-  if (!live && tk.act === 'bara' && tk.phase === 'do' && tk.until > now) { pickUp(s, p, tk); storeLoad(s, tk); tk.until = now; }
+  if (!live && tk.act === 'bara' && tk.phase === 'do' && tk.until > now) { pickUp(s, p, tk); storeLoad(s, tk, undefined, undefined, p.id); tk.until = now; }
   if (live) moveLive(s, p, tk, dtSec, a, light);
   // vana: tiden räknas mot yrkestaggar
   const hf = Math.exp(-dtSec * SEC / HABIT_FADE);
@@ -295,15 +297,15 @@ function arrive(s: State, p: Person, tk: Task, light: boolean) {
       // vid förrådet: ta en famn ved och gå till elden
       const m = getMap(s.seed), n = s.fire.fuel >= fireWant(s) ? 0 : Math.min(1, fuelStock(s)); // en famn i taget, så att elden matas oftare
       if (n <= 0) p.task = undefined;
-      else { tk.carry = takeFuel(s, n); tk.phase = 'back'; tk.tx = m.fire.x + 0.5 + (rnd(s) - 0.5) * 1.2; tk.ty = m.fire.y + 1.2; }
+      else { tk.ag = { ved: {} }; tk.carry = takeFuel(s, n, p, tk.ag.ved); tk.phase = 'back'; tk.tx = m.fire.x + 0.5 + (rnd(s) - 0.5) * 1.2; tk.ty = m.fire.y + 1.2; }
     } else { addFuel(s, p, tk.carry); tk.carry = 0; p.task = undefined; }
   } else if (tk.act === 'bygga' && tk.phase === 'go' && tk.site) {
     // vid lagret: ta materialet och gå till bygget
     const b = bitById(s, tk.ref), k = b && MATERIAL[b.m].item, n = b ? needOf(b) : 0;
     if (!b || !k || avail(s, k) < n) p.task = undefined;
-    else { addTo(s, k, -n); tk.items = { [k]: n }; tk.tx = tk.site.x; tk.ty = tk.site.y; tk.site = undefined; }
+    else { tk.ag = { [k]: use(s, p, k, n, true) }; tk.items = { [k]: n }; tk.tx = tk.site.x; tk.ty = tk.site.y; tk.site = undefined; }
   } else if (tk.phase === 'back') {
-    storeLoad(s, tk, p.x, p.y);
+    storeLoad(s, tk, p.x, p.y, p.id);
     // ett arbetspass är klart: gå tillbaka och fortsätt om arbetet inte är slut och dagen inte vänt
     const r = tk.res;
     if (r && r.until > now + 2 * 60 * SEC && tk.dark === !light) { tk.phase = 'go'; tk.tx = r.x; tk.ty = r.y; tk.until = r.until; tk.res = undefined; tk.wx = tk.wy = tk.hold = undefined; }
@@ -345,7 +347,7 @@ function workStep(s: State, p: Person, tk: Task, dtSec: number, live: boolean, a
       else if (gear === 'spjut') wearSpear(s, p);
     }
     // snabbläget: fångsten läggs direkt i förrådet och fiskaren fortsätter, som i levande läget där hen går tillbaka
-    if (fish) { if (live) tk.carry += fish; else addFood(s, 'fisk', fish); }
+    if (fish) { if (live) tk.carry += fish; else gain(s, p, 'fisk', fish); }
   }
   if (tk.act === 'hugga') {
     const k = stocks(s).find(q => q.id === tk.ref), got = chopStock(s, tk.ref, y);
@@ -353,14 +355,14 @@ function workStep(s: State, p: Person, tk: Task, dtSec: number, live: boolean, a
     else {
       if (k) got.ved -= toWalls(s, Math.floor(k.x), Math.floor(k.y), got.ved); // står stammen där ett hus byggs blir träet väggar
       if (live) { tk.carry += got.ved; tk.items ??= {}; tk.items.grenar = (tk.items.grenar ?? 0) + got.grenar; }
-      else { s.wood += got.ved; addItems(s, { grenar: got.grenar }); }
+      else { gain(s, p, 'ved', got.ved); gain(s, p, 'grenar', got.grenar); }
       if (got.done) tk.until = now;
     }
   } else if (y > 0 && tk.act === 'samla') {
     const r = rich > 0 ? y * Math.min(1, richness(s, 'rotter', tk.tx, tk.ty) / rich) : 0; // rötterna efter hur mycket av platsen som är rötter
     if (live) { tk.carry += y - r; tk.items ??= {}; tk.items.rotter = (tk.items.rotter ?? 0) + r; }
-    else { addFood(s, 'bar', y - r); addFood(s, 'rotter', r); }
-  } else if (y > 0 && tk.act !== 'jakt') { if (live) tk.carry += y; else addTo(s, d.ger!, y); } // snabbläget: rakt in i förrådet
+    else { gain(s, p, 'bar', y - r); gain(s, p, 'rotter', r); }
+  } else if (y > 0 && tk.act !== 'jakt') { if (live) tk.carry += y; else gain(s, p, d.ger!, y); } // snabbläget: rakt in i förrådet
   if (tk.act === 'jakt') {
     if (spjut) wearSpear(s, p, dtSec * lf / TRY_SEC); // spjutet slits lika mycket per fem minuter som vid ett fiskeförsök
     // man fångar hela djur, än så länge bara kaniner. Chansen är sådan att man i snitt får lika mycket som platsen ger.
@@ -368,14 +370,14 @@ function workStep(s: State, p: Person, tk: Task, dtSec: number, live: boolean, a
     if (y > 0 && rnd(s) < y / KANIN) {
       count(s, 'kaniner');
       if (s.stat!.kaniner === 1) log(s, `${p.name} fångade byns första kanin och bar hem den hel.`, 'world', [p.id]);
-      if (live) tk.carry += KANIN; else addFood(s, 'vilt', KANIN);
+      if (live) tk.carry += KANIN; else gain(s, p, 'vilt', KANIN);
     }
   }
   if (tk.act === 'samla') {
     const got = forageItems(s, p, dtSec * lf) ?? {};
     const svamp = pickMushrooms(s, p, tk.tx, tk.ty, dtSec * lf, got);
-    if (svamp) { if (live) { tk.items ??= {}; tk.items.svamp = (tk.items.svamp ?? 0) + svamp; } else addFood(s, 'svamp', svamp); }
-    if (Object.keys(got).length) { if (live) { tk.items ??= {}; for (const k in got) tk.items[k] = (tk.items[k] ?? 0) + got[k]; } else addItems(s, got); }
+    if (svamp) { if (live) { tk.items ??= {}; tk.items.svamp = (tk.items.svamp ?? 0) + svamp; } else gain(s, p, 'svamp', svamp); }
+    if (Object.keys(got).length) { if (live) { tk.items ??= {}; for (const k in got) tk.items[k] = (tk.items[k] ?? 0) + got[k]; } else for (const k in got) gain(s, p, k, got[k]); }
   }
   const sk = d.arbete!;
   const before = p.skill[sk];
@@ -416,7 +418,7 @@ function startBuild(s: State, p: Person, tk: Task, j: Job, live: boolean) {
     if (j.need > 0) { const f = fetchSpot(s, j.item!); tk.tx = f.x; tk.ty = f.y; tk.site = site; } else { tk.tx = site.x; tk.ty = site.y; }
     return true;
   }
-  if (!takeFor(s, j)) return false;
+  if (!takeFor(s, j, p)) return false;
   p.x = site.x; p.y = site.y; tk.tx = site.x; tk.ty = site.y;
   return true;
 }

@@ -38,7 +38,7 @@ export const GREN = 0.4; // en gren ger lika mycket bränsle som 0,4 ved: grenar
 
 export interface Thought { text: string; v: number; until: number }
 // why = varför personen valde uppgiften, dark = påbörjad under mörk tid
-export interface Task { act: Act; phase: 'go' | 'do' | 'back'; tx: number; ty: number; until: number; carry: number; items?: Record<string, number>; cond?: Record<string, number>; why?: string; dark?: boolean; path?: number[]; pk?: string; ref?: number; prog?: number; tool?: string; stint?: number; fynd?: number; lim?: number; res?: { x: number; y: number; until: number }; wx?: number; wy?: number; hold?: number; site?: { x: number; y: number }; mask?: number } // mask = maskar på kroken till metspöet // tool = redskap som används, t.ex. fiskespjut. stint = när arbetspasset slutar och bördan bärs hem, res = var och till när arbetet fortsätter efteråt, wx/wy/hold = vart man går härnäst på platsen och hur länge man står still, site = bygget man går till efter att ha hämtat material
+export interface Task { act: Act; phase: 'go' | 'do' | 'back'; tx: number; ty: number; until: number; carry: number; items?: Record<string, number>; cond?: Record<string, number>; why?: string; dark?: boolean; path?: number[]; pk?: string; ref?: number; prog?: number; tool?: string; stint?: number; fynd?: number; lim?: number; res?: { x: number; y: number; until: number }; wx?: number; wy?: number; hold?: number; site?: { x: number; y: number }; mask?: number; ag?: Record<string, Record<string, number>> } // ag = vems det som bärs är, per slag (egendom.ts) // mask = maskar på kroken till metspöet // tool = redskap som används, t.ex. fiskespjut. stint = när arbetspasset slutar och bördan bärs hem, res = var och till när arbetet fortsätter efteråt, wx/wy/hold = vart man går härnäst på platsen och hur länge man står still, site = bygget man går till efter att ha hämtat material
 
 export interface Person {
   id: number; name: string; sex: 'm' | 'k';
@@ -92,7 +92,8 @@ export interface State {
   ting?: { id: number; k: string; c: number; agare: number; hos?: number }[]; nextTing?: number; // varje redskap för sig: skick, ägare (0 = byn) och vem som har det i handen (agande.ts)
   tingVag?: { id: number; k: string; c: number; agare: number; hos?: number }[]; // redskap som bärs mellan lagerplatser
   agare?: Record<string, number[]>; // sparfiler från v30: redskapens ägare (blir s.ting)
-  stackar?: { k: string; n: number; c: number; x: number; y: number }[]; // alla stackar med plats och skick (c: 1 = nytt)
+  stackar?: { k: string; n: number; c: number; x: number; y: number; ag?: Record<string, number> }[]; // alla stackar med plats och skick (c: 1 = nytt). ag = vems en stack på marken är
+  egna?: Record<string, Record<string, number>>; egnaT?: Record<string, number>; // hur mycket av varje slag i förrådet varje person äger; resten är byns (egendom.ts)
   stubbar?: { x: number; y: number; t: number }[]; // stubbar efter fällda träd, t = när trädet fälldes
   nextStock?: number; fallda?: number;
   fynd?: string; // hur mycket som tagits ur varje plats (bär, vilt, fisk), packat

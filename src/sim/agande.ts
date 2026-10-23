@@ -13,7 +13,7 @@ import { clamp, rnd } from './slump';
 // Man tar sitt eget redskap först, sedan byns, och lånar annars av någon som inte använder sitt (släkt, eller någon som
 // inte är osams med en; den unga byn är generös).
 // s.items[k] för ett redskap är alltid summan av tingens skick, så att lagret och listorna fungerar som förut.
-export const BYN = 0;
+import { BYN } from './egendom';
 export interface Ting { id: number; k: string; c: number; agare: number; hos?: number }
 export const tingOf = (s: State) => (s.ting ??= []);
 export const toolsOf = (s: State, k: string) => tingOf(s).filter(t => t.k === k);

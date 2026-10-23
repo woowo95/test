@@ -8,6 +8,7 @@ import { knows } from './teknik';
 import { rnd } from './slump';
 import { Act, DAY, H, HOUR, Person, State, Stock, W } from './typer';
 import { item } from './saker';
+import { use } from './lager';
 
 // ---------- skog: fälla träd, hugga ved, flinta och yxa ----------
 // Utan yxa kan invånarna bara samla grenar på marken. Med en flintyxa kan de fälla träd.
@@ -78,8 +79,7 @@ export const axesWanted = (adults: number) => Math.max(1, Math.min(3, Math.floor
 export const canMakeAxe = (s: State) => item(s, 'flinta') >= 2 && item(s, 'grenar') >= 1;
 export function makeAxe(s: State, p: Person) {
   if (!canMakeAxe(s)) return;
-  s.items.flinta--;
-  s.items.grenar--;
+  use(s, p, 'flinta', 1); use(s, p, 'grenar', 1);
   addTool(s, 'yxa', p);
   if (axes(s) === 1 && !s.log.some(l => l.text.includes('byns första yxa'))) {
     log(s, `${p.name} gjorde byns första yxa av en pinne och en flintsten. Nu kan byn fälla träd.`, 'world', [p.id]);

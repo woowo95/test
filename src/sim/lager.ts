@@ -5,6 +5,7 @@ import { getMap } from './karta';
 import { Act, H, Person, State, T, Task, W } from './typer';
 import { bitAt, roofed } from './byggnad';
 import { ACTS } from './handlingar';
+import { BYN, Del, addDel, ownAdd, ownStore, ownTake, ownTakeProp } from './egendom';
 import { FOOD, RUTA, SAKER, SAK_LIST, STACK, STACK_ORDER, isFood, isTool, sakNamn } from './saker';
 const NO_STACK = SAK_LIST.filter(k => !STACK[k]);
 
@@ -17,7 +18,7 @@ const NO_STACK = SAK_LIST.filter(k => !STACK[k]);
 // Lagerplatserna (zoner) görs större, mindre och nya av invånarna själva. Två eller fler sorteras: maten för sig och
 // material för sig, och den viktigaste ligger närmast elden. Vilka saker som finns, och hur stora stackarna är, står i saker.ts.
 export interface Zone { x: number; y: number; w: number; h: number; namn?: string; slag?: 'mat' | 'material'; prio?: number }
-export interface Stack { k: string; n: number; c: number; x: number; y: number }
+export interface Stack { k: string; n: number; c: number; x: number; y: number; ag?: Del } // ag: vems en stack på marken är (egendom.ts)
 // en stack som den visas: out = utanför lagerplatserna, stored = hör till byns förråd (i lagret eller precis bredvid)
 export interface Pile extends Stack { max: number; out: boolean; stored: boolean; zone: number }
 const MAX_W = 6, MAX_H = 5, MAX_ZONES = 4;
@@ -62,6 +63,10 @@ export function syncFood(s: State) {
 export function addFood(s: State, k: string, n: number) { const m = syncFood(s); m[k] = (m[k] ?? 0) + n; s.food += n; }
 export const amountOf = (s: State, k: string) => isFood(k) ? syncFood(s)[k] ?? 0 : k === 'ved' ? s.wood : s.items[k] ?? 0;
 export function addTo(s: State, k: string, n: number) { if (isFood(k)) addFood(s, k, n); else if (k === 'ved') s.wood += n; else s.items[k] = (s.items[k] ?? 0) + n; }
+// p skaffade n av slaget k och lade det rakt i förrådet: det är hens (egendom.ts)
+export function gain(s: State, p: Person, k: string, n: number) { if (n <= 0) return; addTo(s, k, n); ownAdd(s, p.id, k, n); }
+// p tar n av slaget k ur förrådet; common = till byns eld eller hus. Ger vems det var
+export function use(s: State, p: Person, k: string, n: number, common = false) { addTo(s, k, -n); return ownTake(s, p, k, n, common); }
 
 // ---------- platser ----------
 function usable(s: State, x: number, y: number) {
@@ -178,7 +183,7 @@ function wearToTools(s: State) {
   }
 }
 // ät: det som förstörs fortast först, och av det det sämsta. Ger skicket på maten som åts
-export function takeFood(s: State, n: number) {
+export function takeFood(s: State, n: number, p?: Person) {
   const m = syncFood(s);
   let got = 0, cw = 0;
   for (const k of FOOD) {
@@ -186,6 +191,7 @@ export function takeFood(s: State, n: number) {
     if (v <= 0) continue;
     cw += v * takeStacks(s, k, v); got += v;
     m[k] -= v; s.food -= v; n -= v;
+    ownTake(s, p, k, v);
     if (n <= 1e-12) break;
   }
   s.food = Math.max(0, s.food);
@@ -301,24 +307,27 @@ export function load(t: Task) {
   return l;
 }
 const loadOf = (t: Task) => { const all: Record<string, number> = { ...(t.items ?? {}) }; if (t.carry) all[carryKind(t.act)] = (all[carryKind(t.act)] ?? 0) + t.carry; return all; };
-// lägg det som bärs i förrådet, helst där man står
-export function storeLoad(s: State, t: Task, x?: number, y?: number) {
+// lägg det som bärs i förrådet, helst där man står. Det är ägarnas i t.ag, resten är dens som skaffade det (owner);
+// det som bärs mellan lagerplatser har alltid sina ägare med sig
+export function storeLoad(s: State, t: Task, x?: number, y?: number, owner = BYN) {
   const all = loadOf(t), at = x !== undefined ? { x: Math.floor(x), y: Math.floor(y!) } : undefined;
-  for (const k in all) if (all[k] > 1e-9) place(s, k, all[k], t.cond?.[k] ?? 1, true, at);
-  t.carry = 0; t.items = undefined; t.cond = undefined;
+  for (const k in all) if (all[k] > 1e-9) { place(s, k, all[k], t.cond?.[k] ?? 1, true, at); ownStore(s, t.act === 'bara' ? BYN : owner, k, all[k], t.ag?.[k]); }
+  t.carry = 0; t.items = undefined; t.cond = undefined; t.ag = undefined;
 }
 // den som kallas bort lägger ner bördan där hen står; ligger den långt från lagret får någon bära in den senare
-export function dropLoad(s: State, t: Task, x: number, y: number) {
+export function dropLoad(s: State, t: Task, x: number, y: number, owner = BYN) {
   const tx = Math.floor(x), ty = Math.floor(y);
-  if (isStored(s, tx, ty)) { storeLoad(s, t, x, y); return; }
-  const all = loadOf(t), st = stacksOf(s);
+  if (isStored(s, tx, ty)) { storeLoad(s, t, x, y, owner); return; }
+  const all = loadOf(t), st = stacksOf(s), who = t.act === 'bara' ? BYN : owner;
   for (const k in all) {
     if (all[k] < 1e-6) continue;
-    if (!STACK[k]) { addTo(s, k, all[k]); continue; } // utan egen stack: bara i summorna
+    if (!STACK[k]) { addTo(s, k, all[k]); ownStore(s, who, k, all[k], t.ag?.[k]); continue; } // utan egen stack: bara i summorna
     const c = t.cond?.[k] ?? 1, g = st.find(q => q.x === tx && q.y === ty && q.k === k);
-    if (g) { g.c = (g.c * g.n + c * all[k]) / (g.n + all[k]); g.n += all[k]; } else st.push({ x: tx, y: ty, k, n: all[k], c });
+    const ag: Del = addDel({}, t.ag?.[k] ?? {}), rest = all[k] - Object.values(ag).reduce((a, b) => a + b, 0);
+    if (rest > 1e-9) ag[who] = (ag[who] ?? 0) + rest;
+    if (g) { g.c = (g.c * g.n + c * all[k]) / (g.n + all[k]); g.n += all[k]; g.ag = addDel(g.ag ?? { [BYN]: g.n - all[k] }, ag); } else st.push({ x: tx, y: ty, k, n: all[k], c, ag });
   }
-  t.carry = 0; t.items = undefined; t.cond = undefined;
+  t.carry = 0; t.items = undefined; t.cond = undefined; t.ag = undefined;
 }
 // stackar som någon borde bära: saker på marken långt bort, saker bredvid lagret när det finns plats i det, saker i
 // fel lagerplats och saker som kan flyttas till en viktigare lagerplats. near = bara inom så många rutor från elden
@@ -350,8 +359,11 @@ export function pickUp(s: State, p: Person, t: Task) {
     const had = t.items?.[g.k] ?? 0;
     (t.items ??= {})[g.k] = had + v;
     (t.cond ??= {})[g.k] = ((t.cond[g.k] ?? 1) * had + g.c * v) / (had + v);
+    const ag = (t.ag ??= {})[g.k] ??= {};
+    if (stored) { addTo(s, g.k, -v); if (!isTool(g.k)) addDel(ag, ownTakeProp(s, g.k, v)); }
+    else if (g.ag) { const w = Object.values(g.ag).reduce((a, b) => a + b, 0), f = v / g.n; for (const o in g.ag) { ag[o] = (ag[o] ?? 0) + (w > 0 ? g.ag[o] / w * v : 0); g.ag[o] -= g.ag[o] * f; } }
+    else ag[BYN] = (ag[BYN] ?? 0) + v;
     g.n -= v; room -= v / st;
-    if (stored) addTo(s, g.k, -v);
   }
   s.stackar = stacksOf(s).filter(a => a.n > 1e-6);
 }

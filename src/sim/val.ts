@@ -200,7 +200,7 @@ function day(s: State, p: Person, v: Val, a: number, lazy: number, live: boolean
     if (rnd(s) < 0.45 + 0.2 * sd.barn) set(v, 'leka', 'Är barn och leker');
     else set(v, best, `Hjälper till. ${what}.`);
   } else if ((works = rnd(s) < (1 - lazy) * (0.88 + 0.12 * u) + lazy * sat * (0.6 + 0.4 * u)) && build && !job!.missing) {
-    building(s, v, job!, ppl.length, live);
+    building(s, p, v, job!, ppl.length, live);
   } else if (works) {
     set(v, best, what + (lazy < 0.2 ? '. Plikttrogen.' : habitShare(p, [best], tot) > 0.25 ? '. Brukar göra det.' : p.skill[best as Skill] > 10 ? '. Skicklig på det.' : '.'));
     v.dur = (60 + rnd(s) * 120) * MIN;
@@ -232,7 +232,7 @@ function bestWork(s: State, p: Person, fd: number, wd: number, ai: number, tot: 
 }
 
 // att bygga eller laga en del av ett hus. Saknas material hämtar man det först (i snabbläget tas det direkt)
-function building(s: State, v: Val, job: NonNullable<ReturnType<typeof buildJob>>, pop: number, live: boolean) {
+function building(s: State, p: Person, v: Val, job: NonNullable<ReturnType<typeof buildJob>>, pop: number, live: boolean) {
   const b = job.bit, hus = s.hus?.find(h => h.id === b.hus)?.namn.toLowerCase() ?? 'huset';
   if (job.fell) { // först fälls träden där huset ska stå
     set(v, 'falla', `Fäller ett träd där ${hus} ska stå.`);
@@ -244,7 +244,7 @@ function building(s: State, v: Val, job: NonNullable<ReturnType<typeof buildJob>
   v.tool = job.repair ? 'laga' : b.k === 'golv' ? 'golv' : 'vagg'; v.ref = b.id;
   v.dur = (60 + rnd(s) * 90) * MIN;
   if (live) { const site = siteOf(s, b); v.spot = job.need > 0 ? fetchSpot(s, job.item!) : site; if (job.need > 0) v.site = site; }
-  else if (takeFor(s, job)) v.spot = siteOf(s, b);
+  else if (takeFor(s, job, p)) v.spot = siteOf(s, b);
   else set(v, 'vila', 'Det saknas material till bygget');
 }
 

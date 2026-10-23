@@ -1,4 +1,4 @@
-import { Act, Lardom, Person, KUNSKAP_NAMES, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, TEKNIK, BYN, Ting, ageOf, alive, byId, heldBy, ownedBy, sakNamn, describe, duty, habitShare, habitTotal, moodOf, relKey, stat, taskName, timeLabel } from '../../sim';
+import { Act, Lardom, Person, KUNSKAP_NAMES, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, TEKNIK, BYN, Ting, ageOf, alive, byId, heldBy, ownedBy, ownedStock, sakNamn, STACK, describe, duty, habitShare, habitTotal, moodOf, relKey, stat, taskName, timeLabel } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { bar, cap, carryTxt, durTxt, esc, hex, moodWord, pLink, relWord, sickNow, trend } from '../hjalp';
 import { s, ui } from '../lage';
@@ -52,7 +52,15 @@ function gearHtml(p: Person) {
   const ting = (t: Ting, title: string, cls = 'kan') => `<span class="tnod liten ${cls}" tabindex="0" title="${esc(title)}" aria-label="${esc(title)}">${iconImg(t.k, 16)}<svg class="ring" viewBox="0 0 36 36"><circle cx="18" cy="18" r="16" pathLength="100" stroke-dasharray="${Math.round(t.c * 100)} 100"/></svg></span>`;
   const slot = hand ? ting(hand, `I handen: ${sakNamn(hand.k).toLowerCase()}, ${whose(hand)}, ${Math.round(hand.c * 100)} %`, 'kan hand')
     : `<span class="tnod liten hand tom" tabindex="0" title="Handen är tom" aria-label="Handen är tom">✋</span>`;
-  return `<h3>Utrustning</h3><div class="tekrad">${slot}${own.map(t => ting(t, `Äger: ${sakNamn(t.k).toLowerCase()}, ${Math.round(t.c * 100)} %, ${where(t)}`, 'pa')).join('')}</div>`;
+  return `<h3>Utrustning</h3><div class="tekrad">${slot}${own.map(t => ting(t, `Äger: ${sakNamn(t.k).toLowerCase()}, ${Math.round(t.c * 100)} %, ${where(t)}`, 'pa')).join('')}</div>${stockHtml(p)}`;
+}
+// det hen äger i byns förråd (egendom.ts): symbolen och hur mycket, namnet när man håller över. Saker utan egen stack
+// (giftig svamp bland den ätliga) syns inte, som i förrådet
+function stockHtml(p: Person) {
+  const own = Object.entries(ownedStock(s, p)).filter(([k, n]) => n >= 0.5 && STACK[k]).sort((a, b) => b[1] - a[1]);
+  if (!own.length) return '';
+  const txt = (n: number) => n >= 10 ? String(Math.round(n)) : n.toFixed(1).replace('.', ',').replace(',0', '');
+  return `<div class="tekrad">${own.map(([k, n]) => { const title = `Äger i förrådet: ${txt(n)} ${sakNamn(k).toLowerCase()}`; return `<span class="tnod liten pa" tabindex="0" title="${esc(title)}" aria-label="${esc(title)}">${iconImg(k, 16)}<span class="antal">${txt(n)}</span></span>`; }).join('')}</div>`;
 }
 // kunskap (alltid rätt) och lärdomar (det personen tror, kan vara fel). Spelaren ser vad som inte stämmer.
 function knowledgeHtml(p: Person) {

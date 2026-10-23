@@ -1,4 +1,4 @@
-import { FOLDERS, STACK, amountOf, sakNamn } from '../sim';
+import { FOLDERS, STACK, amountOf, ownedSum, sakNamn } from '../sim';
 import { iconImg } from '../ikoner';
 import { eld } from './flikar/eld';
 import { folk, logg } from './flikar/folk';
@@ -51,15 +51,20 @@ document.addEventListener('click', e => {
   if (tb) visa(tb.dataset.tab as FlikId);
 });
 
-// listan till vänster över allt byn äger, i mappar som kan fällas ihop: symboler med antalet bredvid, namnet när musen är över
+// listan till vänster över allt i förrådet, i mappar som kan fällas ihop: symboler med antalet bredvid, namnet när musen är över
 const closed = new Set<string>();
 let ownedKey = '';
+// namnet, och hur mycket som är byns och invånarnas egna (egendom.ts)
+function tipOf(k: string, n: number) {
+  const eg = Math.min(n, ownedSum(s, k)), r = (v: number) => Math.round(v);
+  return eg >= 0.5 ? `${sakNamn(k)}: byns ${r(n - eg)}, invånarnas egna ${r(eg)}` : sakNamn(k);
+}
 function renderOwned() {
   const rows = FOLDERS.map(f => ({ f, ks: f.k.map(k => ({ k, n: amountOf(s, k) })).filter(r => r.n >= (STACK[r.k] === 1 ? 1e-6 : 0.5)) })).filter(r => r.ks.length);
   const ute = piles().filter(p => !p.stored);
-  const html = `<h4>Byn äger</h4>${rows.map(({ f, ks }) => {
+  const html = `<h4>Förrådet</h4>${rows.map(({ f, ks }) => {
     const sum = f.namn === 'Mat' || f.namn === 'Bränsle' ? ` <span class="n">${Math.round(ks.reduce((a, r) => a + r.n, 0))}</span>` : '';
-    return `<button type="button" class="fold" data-f="${f.namn}" aria-expanded="${!closed.has(f.namn)}">${closed.has(f.namn) ? '▸' : '▾'} ${f.namn}${sum}</button>${closed.has(f.namn) ? '' : `<ul>${ks.map(r => `<li title="${sakNamn(r.k)}">${iconImg(r.k)}<span class="n">${STACK[r.k] === 1 ? Math.ceil(r.n - 1e-9) : Math.max(1, Math.round(r.n))}</span></li>`).join('')}</ul>`}`;
+    return `<button type="button" class="fold" data-f="${f.namn}" aria-expanded="${!closed.has(f.namn)}">${closed.has(f.namn) ? '▸' : '▾'} ${f.namn}${sum}</button>${closed.has(f.namn) ? '' : `<ul>${ks.map(r => `<li title="${tipOf(r.k, r.n)}">${iconImg(r.k)}<span class="n">${STACK[r.k] === 1 ? Math.ceil(r.n - 1e-9) : Math.max(1, Math.round(r.n))}</span></li>`).join('')}</ul>`}`;
   }).join('') || '<p>Inget ännu</p>'}${ute.length ? `<p class="ute">${ute.length} ${ute.length === 1 ? 'hög' : 'högar'} på marken</p>` : ''}`;
   if (html === ownedKey) return;
   ownedKey = html; $('owned').innerHTML = html;

@@ -1,7 +1,7 @@
 // Scenariotester: ställ en by i ett visst läge, kör den en stund och kontrollera att det som ska hända händer.
 // npm run scenario            kör alla
 // npm run scenario -- glanta  kör bara ett
-import { Person, Act, createState, ownedBy, syncTools, toolsOf, heldBy, take, usesTool, wearTool, freeSpear, getRel, isTool, BYN, twineRope, makeRod, wearSpear, isSpear, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, WEEK, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, zonesOf, allows, ageOf, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, fuelStock, DAY, HOUR, W, State, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, campCenter, TEKNIK, knows, thinkWhileWorking, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, beds, isWall, Bit, wearBuild, FYND, FYND_IDS, GRUPPER, angOf, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, LAGER_R, observe, hoped, Lager, skyggOf, SKYGG_R, share, treeOn, djurOf, KANIN, SLAKT, canSlaughter, makeKnife, slaughter, askForTool } from '../sim';
+import { Person, Act, createState, ownedBy, syncTools, toolsOf, heldBy, take, usesTool, wearTool, freeSpear, getRel, isTool, BYN, twineRope, makeRod, wearSpear, isSpear, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, WEEK, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, zonesOf, allows, ageOf, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, fuelStock, DAY, HOUR, W, State, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, campCenter, TEKNIK, knows, thinkWhileWorking, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, beds, isWall, Bit, wearBuild, FYND, FYND_IDS, GRUPPER, angOf, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, LAGER_R, observe, hoped, Lager, skyggOf, SKYGG_R, share, treeOn, djurOf, KANIN, SLAKT, canSlaughter, makeKnife, slaughter, askForTool, gain, takeFood, takeFuel, ownsAmount, ownedStock, syncEgna, addTo } from '../sim';
 import { findPath } from '../sim/vag';
 import { FOREST, HIGH, isSoil } from '../sim/vag';
 import { START } from './kor';
@@ -427,6 +427,46 @@ SCENARIER.gava = {
       [`en vän ger det hen har över (efter ${forsok} samtal)`, van],
       ['två som har något över som den andra saknar byter', bytt],
       [`i vanliga byar ges och byts redskap (${gavor} gåvor och ${byten} byten i 4 byar på 20 dygn)`, gavor + byten > 0],
+    ];
+  },
+};
+
+SCENARIER.egendom = {
+  text: 'Det någon samlar, hugger, jagar och gör är hens, också i byns förråd. Det som redan var byns förblir byns. Till sig själv tar man sitt eget först, till elden byns. Det som ruttnar minskar allas delar, slaktat kött är dens som ägde viltet, och den som dör lämnar sin del till byn.',
+  kor: () => {
+    const s = createState(6, START);
+    const fore = Object.keys(s.egna ?? {}).length;
+    s.items = { grenar: 20 }; s.wood = 2; s.food = 20; s.mat = { bar: 20 };
+    const [a, b, c] = living(s);
+    for (const q of [a, b, c]) q.mother = q.father = q.partner = undefined;
+    gain(s, a, 'bar', 5);
+    const fick = ownsAmount(s, a, 'bar');
+    takeFood(s, 2, a); const atEget = ownsAmount(s, a, 'bar');
+    takeFood(s, 2, b); const annanAt = ownsAmount(s, a, 'bar');
+    gain(s, a, 'ved', 4); takeFuel(s, 3, a); const elden = ownsAmount(s, a, 'ved');
+    addTo(s, 'bar', -s.food / 2); syncEgna(s); const rutten = ownsAmount(s, a, 'bar');
+    // slakt: a äger två kaniner, c slaktar dem med en kniv
+    gain(s, a, 'vilt', KANIN * 2); s.items.kniv = 1; syncTools(s); c.tek = { ...(c.tek ?? {}), kniv: 1 };
+    slaughter(s, c, 1);
+    const kott = ownsAmount(s, a, 'kott'), slaktarens = ownsAmount(s, c, 'kott');
+    die(s, a, 'test'); syncEgna(s); const arv = Object.keys(ownedStock(s, a)).length;
+    // vanliga byar: delarna går aldrig över det som finns i förrådet
+    let fel = 0, agt = 0;
+    for (const [seed, h, live] of [[41, 10 * 24, false], [3, 6, true]] as const) {
+      const v = createState(seed, START);
+      for (let i = 0; i < h * 3600 / (live ? 0.5 : 300); i++) { step(v, live ? 0.5 : 300, live); if (i % 200 === 0) for (const k in v.egna ?? {}) if (Object.values(v.egna![k]).reduce((x, y) => x + y, 0) > amountOf(v, k) + 1e-6) fel++; }
+      agt += living(v).filter(p => Object.keys(ownedStock(v, p)).length).length;
+    }
+    return [
+      ['det som fanns från början är byns', fore === 0],
+      [`det man samlar är ens eget (${fick})`, Math.abs(fick - 5) < 1e-9],
+      [`man äter sitt eget först (${atEget} kvar av 5 efter 2)`, Math.abs(atEget - 3) < 1e-9],
+      ['en annan äter byns mat före ens egen', Math.abs(annanAt - 3) < 1e-9],
+      [`till elden tas byns ved först (${elden} av 4 kvar)`, Math.abs(elden - 3) < 1e-9],
+      [`det som ruttnar minskar allas delar (${rutten.toFixed(2)})`, Math.abs(rutten - 1.5) < 0.01],
+      [`slaktat kött är dens som ägde viltet (${kott.toFixed(1)}), inte slaktarens`, kott > 0 && slaktarens === 0],
+      ['den som dör lämnar sin del till byn', arv === 0],
+      [`i vanliga byar äger folk det de skaffat (${agt} personer), och delarna går aldrig över förrådet`, agt > 0 && fel === 0],
     ];
   },
 };

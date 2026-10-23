@@ -1,4 +1,5 @@
 import { dropLoad, fetchSpot, storeLoad } from './lager';
+import { Del, addDel, ownTake } from './egendom';
 import { coldOf, temperature } from './vader';
 import { ageOf, count, log, stat, think } from './folk';
 import { flintFactor, stoneDist, takeFrom } from './fynd';
@@ -18,11 +19,13 @@ export const igniterOf = (s: State) => IGNITERS.find(i => (s.items[i.id] ?? 0) >
 // bränsle i förrådet räknat i ved: ved och grenar
 export const fuelStock = (s: State) => s.wood + item(s, 'grenar') * GREN;
 // ta bränsle ur förrådet, ved först och sedan grenar; ger hur mycket som togs
-export function takeFuel(s: State, n: number) {
+// p = den som tar det; byns ved tas först (egendom.ts). ag får vems bränslet var, räknat i ved
+export function takeFuel(s: State, n: number, p?: Person, ag?: Del) {
   const v = Math.min(n, s.wood);
-  s.wood -= v;
+  s.wood -= v; const w = ownTake(s, p, 'ved', v, true);
   const g = Math.min(item(s, 'grenar'), (n - v) / GREN);
-  if (g > 0) s.items.grenar = item(s, 'grenar') - g;
+  if (g > 0) { s.items.grenar = item(s, 'grenar') - g; if (ag) addDel(ag, ownTake(s, p, 'grenar', g, true), GREN); else ownTake(s, p, 'grenar', g, true); }
+  if (ag) addDel(ag, w);
   return v + g * GREN;
 }
 // bränsle som inte fick plats går tillbaka till förrådet som grenar
@@ -69,10 +72,10 @@ export function needTinder(s: State) {
 }
 function durText(sec: number) { const h = sec / 3600; return h >= 24 ? `${(h / 24).toFixed(1).replace('.', ',')} dygn` : h >= 1 ? `${Math.round(h)} timmar` : `${Math.round(sec / 60)} minuter`; }
 function lightFire(s: State, p: Person) {
-  const f = s.fire, start = takeFuel(s, 2), onCoal = (f.ash ?? 0) >= 1;
+  const f = s.fire, start = takeFuel(s, 2, p), onCoal = (f.ash ?? 0) >= 1;
   Object.assign(f, { lit: true, fuel: start, litAt: s.now, litBy: p.id, burned: 0, emberUntil: undefined, tryProg: 0 });
   f.lightings++;
-  if (!f.ring) { s.items.sten = item(s, 'sten') - RING; f.ring = true; log(s, `${p.name} lade en ring av stenar runt eldplatsen.`, 'world', [p.id]); }
+  if (!f.ring) { s.items.sten = item(s, 'sten') - RING; ownTake(s, p, 'sten', RING, true); f.ring = true; log(s, `${p.name} lade en ring av stenar runt eldplatsen.`, 'world', [p.id]); }
   if (onCoal) { f.ash = 0; f.ashUntil = undefined; } // kolet i den gamla högen tar fyr och blir en del av den nya elden
   fireLog(s, { k: 'tänd', id: p.id, n: f.tries });
   log(s, `${p.name} lyckades tända elden${onCoal ? ' på den gamla kolhögen' : ''}${f.tries > 1 ? ` efter ${f.tries} försök` : ''}.`, 'world', [p.id]);
@@ -83,16 +86,16 @@ function lightFire(s: State, p: Person) {
 // ett försök att tända med det bästa tänddonet i förrådet
 export function tryLight(s: State, p: Person) {
   const ig = igniterOf(s)!, f = s.fire;
-  s.items.torrgras = item(s, 'torrgras') - ig.grass;
-  if (item(s, 'grenar') >= ig.sticks) addItems(s, { grenar: -ig.sticks });
-  else s.items.kol = item(s, 'kol') - 1; // lite kol kan ersätta grenarna
+  s.items.torrgras = item(s, 'torrgras') - ig.grass; ownTake(s, p, 'torrgras', ig.grass, true);
+  if (item(s, 'grenar') >= ig.sticks) { addItems(s, { grenar: -ig.sticks }); ownTake(s, p, 'grenar', ig.sticks, true); }
+  else { s.items.kol = item(s, 'kol') - 1; ownTake(s, p, 'kol', 1, true); } // lite kol kan ersätta grenarna
 
   f.tries++; f.tryTotal++;
   p.skill.elda = clamp(p.skill.elda + 0.08 * (0.5 + p.pot.intelligens / 20) * (1 - p.skill.elda / 21), 0, 20);
   const c = ig.chance * (0.5 + p.skill.elda / 20 + stat(p, 'intelligens', s.now) / 40) * (ageIndex(s) === 0 ? 0.6 : 1) * ((f.ash ?? 0) >= 1 ? 1.5 : 1); // en gammal kolhög tar lättare fyr
   if (rnd(s) < c) { lightFire(s, p); return true; }
   if (ig.id === 'flinta' && rnd(s) < 0.004) {
-    s.items.flinta--; fireLog(s, { k: 'sprack', id: p.id });
+    s.items.flinta--; ownTake(s, p, 'flinta', 1, true); fireLog(s, { k: 'sprack', id: p.id });
     log(s, `Flintan som ${p.name} slog med sprack.`, 'world', [p.id]);
   }
   return false;
@@ -120,7 +123,7 @@ export function addFuel(s: State, p: Person, n: number) {
 }
 function assign(s: State, p: Person, act: Act, tx: number, ty: number, dur: number, live: boolean, why: string) {
   if (!live) { p.x = tx; p.y = ty; tread(s, tx, ty, 1); }
-  if (p.task && (p.task.carry > 0 || p.task.items)) { if (live) dropLoad(s, p.task, p.x, p.y); else storeLoad(s, p.task); } // bördan läggs ner där hen står, den försvinner inte
+  if (p.task && (p.task.carry > 0 || p.task.items)) { if (live) dropLoad(s, p.task, p.x, p.y, p.id); else storeLoad(s, p.task, undefined, undefined, p.id); } // bördan läggs ner där hen står, den försvinner inte
   p.task = { act, phase: live ? 'go' : 'do', tx, ty, until: s.now + dur, carry: 0, why, dark: !isLight(s.now) };
 }
 const awake = (s: State, p: Person, minAge: number) => {
@@ -171,7 +174,7 @@ export function stepFire(s: State, dtSec: number, live: boolean, ppl: Person[]) 
     if (best) {
       const p = best.p, n = Math.min(3, Math.max(1, best.w.v - f.fuel), fuelStock(s));
       if (live) { const at = fetchSpot(s, s.wood >= 1 ? 'ved' : 'grenar'); assign(s, p, 'elda', at.x, at.y, HOUR, true, best.w.why); }
-      else addFuel(s, p, takeFuel(s, n));
+      else addFuel(s, p, takeFuel(s, n, p));
     }
   }
   // tändning: när elden är släckt och någon vill ha eld försöker en person i taget
