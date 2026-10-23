@@ -32,13 +32,16 @@ function uttag(s: State, k: Kind, min: number, max: number) {
 
 const SCENARIER: Record<string, { text: string; kor: () => Koll[] }> = {
   glanta: {
-    text: 'Ny by: gläntan finns, skog och ängar med högt gräs står runt omkring och marken nöts till stigar',
+    text: 'Ny by: fem personer utan eld i en liten glänta på en större karta, skog och ängar med högt gräs står runt omkring och marken nöts till stigar',
     kor: () => {
       const s = createState(11, START), a = angOf(s.seed), g0 = groundOf(s);
       let jord = 0, angar = 0; for (let i = 0; i < a.length; i++) if (isSoil(g0.tiles[i])) { jord++; angar += a[i]; }
       const ang = angar / jord;
       const forst: Koll[] = [
-        ['gläntan är tom på träd', skogsandel(s, 0, 4) === 0],
+        [`en liten koloni: ${s.people.length} personer, ingen eld`, s.people.length === 5 && !s.fire.lit],
+        [`större karta (${s.W}×${s.H})`, s.W === 80 && s.H === 50],
+        ['gläntan är tom på träd', skogsandel(s, 0, 3) === 0],
+        ['gläntan är liten: skog sex rutor från elden', skogsandel(s, 6, 9) > 0.8],
         ['skog på nästan all jord utanför gläntan och ängarna', skogsandel(s, 9, 99) > 0.95],
         [`ängar med högt gräs på ${(ang * 100).toFixed(0)} % av jorden`, ang > 0.2 && ang < 0.55 && skogsandel(s, 9, 99, 1) === 0],
         ['ingen ved, bara grenar i förrådet', s.wood === 0 && (s.items.grenar ?? 0) > 0],
@@ -565,7 +568,7 @@ SCENARIER.bygg = {
     const q = createState(6, START);
     kan(q);
     let inne = 0, sov = 0, iTrad = 0, trad = -1; // räknas när huset är klart, så att det inte beror på hur fort det råkar bli klart
-    kor(q, 3 * 24, q => {
+    kor(q, 5 * 24, q => { // fyra vuxna i den nya kolonin: huset tar några dygn
       const bs = bitsOf(q);
       if (bs.length && trad < 0) trad = bs.filter(b => treeOn(q, b)).length;
       iTrad += bs.filter(b => b.k === 'vagg' && b.b > 0 && b.b < 1 && treeOn(q, b)).length; // en vägg som byggs där ett träd står
@@ -586,6 +589,7 @@ SCENARIER.bygg = {
     // nötning: väggarna slits och lagas
     for (const b of bitsOf(q)) if (b.k === 'vagg') b.c = 0.3;
     q.wood += 100;
+    q.mat = { ...(q.mat ?? {}), rotter: (q.mat?.rotter ?? 0) + 150 }; q.food += 150; // mat i förrådet, så att de fyra vuxna inte måste skaffa mat först
     kor(q, 24);
     const lagat = (q.stat?.lagat ?? 0) > 0;
     // samma by i levande läge bygger också

@@ -6,16 +6,14 @@ import { DAY, Fire, NEW_H, NEW_W, Person, SEC, SKILLS, State, useMap } from './t
 
 // ---------- skapa värld ----------
 export function createState(seed: number, now: number): State {
-  const s: State = { v: 1, seed, rng: seed, founded: now, now, people: [], rels: {}, nextId: 1, food: 60, wood: 0, log: [], lastAgeIdx: 1, lastGuardDay: -1, items: { grenar: 40 }, fire: newFire(), seder: newSeder(), W: NEW_W, H: NEW_H };
+  // en liten koloni: två par och ett barn, utan eld och med lite mat och grenar
+  const s: State = { v: 1, seed, rng: seed, founded: now, now, people: [], rels: {}, nextId: 1, food: 30, wood: 0, log: [], lastAgeIdx: 1, lastGuardDay: -1, items: { grenar: 20 }, fire: newFire(), seder: newSeder(), W: NEW_W, H: NEW_H };
   useMap(s);
-  const adults: [string, number][] = [['m', 38], ['k', 35], ['m', 27], ['k', 25], ['m', 22], ['k', 21], ['m', 44], ['k', 19]];
+  const adults: [string, number][] = [['m', 30], ['k', 27], ['m', 23], ['k', 21]];
   for (const [sex, age] of adults) s.people.push(newPerson(s, sex as 'm' | 'k', now - (age + rnd(s)) * DAY));
   const [a, b, c, d] = s.people;
   pair(s, a, b, true); pair(s, c, d, true);
-  for (const [mo, fa, age] of [[b, a, 9], [b, a, 4], [d, c, 1]] as [Person, Person, number][]) {
-    const ch = newPerson(s, rnd(s) < 0.5 ? 'm' : 'k', now - (age + rnd(s) * 0.5) * DAY, mo, fa);
-    s.people.push(ch);
-  }
+  s.people.push(newPerson(s, rnd(s) < 0.5 ? 'm' : 'k', now - (4 + rnd(s) * 0.5) * DAY, b, a));
   // startfärdigheter efter ålder
   for (const p of s.people) {
     const a = ageOf(p, now);

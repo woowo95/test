@@ -35,14 +35,14 @@ export function angOf(seed: number) {
 }
 const ANG_SPREAD = 0.1; // skogen sprider sig in på en äng tio gånger långsammare
 
-// skog på jorden utom på ängarna och i en glänta runt byplatsen (lite ojämn kant)
+// skog på jorden utom på ängarna och i en liten glänta runt byplatsen (lite ojämn kant)
 export function startForest(seed: number) {
   const m = getMap(seed), ang = angOf(seed), trees = new Float32Array(W * H);
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     const i = y * W + x;
     if (!isSoil(m.tiles[i]) || ang[i]) continue;
     const d = Math.hypot(x - m.fire.x, (y - m.fire.y) * 1.1);
-    const edge = 5.5 + hash(seed + 31, x, y) * 1.6;
+    const edge = 3.5 + hash(seed + 31, x, y) * 1.2;
     trees[i] = d < edge ? 0 : d < edge + 1 ? 0.6 : 1;
   }
   return trees;
