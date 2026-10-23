@@ -389,7 +389,7 @@ SCENARIER.agande = {
   },
 };
 SCENARIER.gava = {
-  text: 'Den som saknar ett redskap hen arbetar med frågar efter det i samtal. Den som har ett över ger det: en förälder nästan alltid till sitt barn, släkt och vänner ofta, ovänner inte. Har båda något över som den andra saknar blir det ett byte. Den som fått en gåva står i skuld och ger hellre tillbaka',
+  text: 'Den som saknar ett redskap hen arbetar med frågar efter det i samtal. Den som har ett över ger det: en förälder nästan alltid till sitt barn, släkt och vänner ofta, ovänner inte. Har båda något över som den andra saknar blir det ett byte.',
   kor: () => {
     const s = createState(6, START);
     s.items = { grenar: 20 };
@@ -401,23 +401,19 @@ SCENARIER.gava = {
     // förälder och barn: a har två spjut, b (barnet) inget
     ge(a, 'fiskespjut', 2); b.mother = a.id;
     let barn = 0;
-    for (let i = 0; i < 20; i++) { if (askForTool(s, a, b) === 'gåva') barn++; if (har(b, 'fiskespjut')) { ownedBy(s, b).forEach(t => { if (t.k === 'fiskespjut') t.agare = a.id; }); delete b.skuld; } }
+    for (let i = 0; i < 20; i++) { if (askForTool(s, a, b) === 'gåva') barn++; if (har(b, 'fiskespjut')) ownedBy(s, b).forEach(t => { if (t.k === 'fiskespjut') t.agare = a.id; }); }
     // ovän: c och a är osams
     b.mother = undefined; getRel(s, a, c).op = -40;
     let ovan = 0; for (let i = 0; i < 20; i++) if (askForTool(s, a, c)) ovan++;
-    // skuld: d får av en vän och står i skuld
+    // en vän ger
     getRel(s, a, d).op = 40;
     let forsok = 0; while (!har(d, 'fiskespjut') && forsok++ < 200) askForTool(s, a, d);
-    const skuld = (d.skuld?.[a.id] ?? 0) === 1 && har(a, 'fiskespjut') === 1;
-    // d ger tillbaka: d har två korgar, a ingen
-    ge(d, 'korg', 2); a.habit = { samla: 10 };
-    forsok = 0; while (!har(a, 'korg') && forsok++ < 200) askForTool(s, d, a);
-    const tillbaka = har(a, 'korg') === 1 && !d.skuld?.[a.id];
+    const van = har(d, 'fiskespjut') === 1 && har(a, 'fiskespjut') === 1;
     // byte: c har två korgar och saknar kniv, b har två knivar och saknar korg
     getRel(s, b, c).op = 30;
     ge(c, 'korg', 2); ge(b, 'kniv', 2); b.habit = { samla: 10 }; c.habit = { slakta: 10 };
     let byte: string | undefined; forsok = 0; while (!byte && forsok++ < 200) byte = askForTool(s, b, c);
-    const bytt = byte === 'byte' && har(b, 'korg') === 1 && har(c, 'kniv') === 1 && !b.skuld && !c.skuld;
+    const bytt = byte === 'byte' && har(b, 'korg') === 1 && har(c, 'kniv') === 1;
     // en vanlig by
     let gavor = 0, byten = 0;
     for (let i = 0; i < 4; i++) {
@@ -428,8 +424,7 @@ SCENARIER.gava = {
     return [
       [`en förälder ger sitt barn det hen har över (${barn} av 20)`, barn >= 17],
       ['en ovän ger inget', ovan === 0],
-      [`en vän ger, och mottagaren står i skuld (efter ${forsok} samtal)`, skuld],
-      ['den som står i skuld ger tillbaka och skulden försvinner', tillbaka],
+      [`en vän ger det hen har över (efter ${forsok} samtal)`, van],
       ['två som har något över som den andra saknar byter', bytt],
       [`i vanliga byar ges och byts redskap (${gavor} gåvor och ${byten} byten i 4 byar på 20 dygn)`, gavor + byten > 0],
     ];

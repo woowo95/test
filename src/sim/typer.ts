@@ -54,7 +54,6 @@ export interface Person {
   tek?: Record<string, number>; // teknik: hur nära personen är att komma på något, 1 = kan det
   kunskap?: Record<string, { v: number; t: number }>; // det personen kan (alltid rätt), 0–1, och när det senast användes
   lardomar?: Lardom[]; // det personen tror om platser (kan vara fel, överdrivet eller inaktuellt)
-  skuld?: Record<number, number>; // gåvor personen fått och inte gett tillbaka, per givare
   thoughts: Thought[];
   x: number; y: number; task?: Task;
   fame: string[];

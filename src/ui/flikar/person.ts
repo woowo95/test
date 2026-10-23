@@ -44,7 +44,7 @@ function groups(ls: Lardom[]) {
   return [...m.values()];
 }
 // utrustningen: handplatsen och det hen äger, som symboler. Ringen runt symbolen visar skicket; namnet, skicket och
-// var tinget är syns när man håller över eller trycker på symbolen. Handslaget visar vem hen står i skuld till för en gåva
+// var tinget är syns när man håller över eller trycker på symbolen
 function gearHtml(p: Person) {
   const hand = heldBy(s, p), own = ownedBy(s, p).filter(t => t !== hand);
   const whose = (t: Ting) => t.agare === p.id ? 'eget' : t.agare === BYN ? 'byns' : `lånat av ${byId(s, t.agare)?.name ?? 'någon'}`;
@@ -52,11 +52,7 @@ function gearHtml(p: Person) {
   const ting = (t: Ting, title: string, cls = 'kan') => `<span class="tnod liten ${cls}" tabindex="0" title="${esc(title)}" aria-label="${esc(title)}">${iconImg(t.k, 16)}<svg class="ring" viewBox="0 0 36 36"><circle cx="18" cy="18" r="16" pathLength="100" stroke-dasharray="${Math.round(t.c * 100)} 100"/></svg></span>`;
   const slot = hand ? ting(hand, `I handen: ${sakNamn(hand.k).toLowerCase()}, ${whose(hand)}, ${Math.round(hand.c * 100)} %`, 'kan hand')
     : `<span class="tnod liten hand tom" tabindex="0" title="Handen är tom" aria-label="Handen är tom">✋</span>`;
-  const skuld = Object.entries(p.skuld ?? {}).map(([id, n]) => {
-    const title = `Står i skuld till ${byId(s, +id)?.name ?? 'någon'} för ${n === 1 ? 'en gåva' : `${n} gåvor`}`;
-    return `<span class="tnod liten" tabindex="0" title="${esc(title)}" aria-label="${esc(title)}">🤝</span>`;
-  }).join('');
-  return `<h3>Utrustning</h3><div class="tekrad">${slot}${own.map(t => ting(t, `Äger: ${sakNamn(t.k).toLowerCase()}, ${Math.round(t.c * 100)} %, ${where(t)}`, 'pa')).join('')}${skuld}</div>`;
+  return `<h3>Utrustning</h3><div class="tekrad">${slot}${own.map(t => ting(t, `Äger: ${sakNamn(t.k).toLowerCase()}, ${Math.round(t.c * 100)} %, ${where(t)}`, 'pa')).join('')}</div>`;
 }
 // kunskap (alltid rätt) och lärdomar (det personen tror, kan vara fel). Spelaren ser vad som inte stämmer.
 function knowledgeHtml(p: Person) {
