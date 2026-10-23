@@ -3,6 +3,7 @@ import { clamp, rnd } from './slump';
 import { DAY, HOUR, Person, State } from './typer';
 import { pair } from './varld';
 import { share } from './minne';
+import { askForTool } from './agande';
 
 // ---------- samtal ----------
 export interface TalkEvent { a: number; b: number; kind: string; good: boolean; t: number }
@@ -51,6 +52,7 @@ export function converse(s: State, a: Person, others: Person[], events?: TalkEve
       r.rom = clamp(r.rom + (out + att) * 4, 0, 100);
     }
     share(s, a, b, r, kind); // man berättar vad man vet och lär ut vad man kan
+    if (kind !== 'flirt' && out + like > -0.5) askForTool(s, a, b); // den som saknar ett redskap frågar efter det
   }
   r.op = clamp(r.op, -100, 100);
   r.talks++;

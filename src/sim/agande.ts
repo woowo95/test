@@ -1,6 +1,7 @@
 import { State, Person, Task } from './typer';
 import { SAKER, isTool } from './saker';
-import { alive, byId, getRel, isKin } from './folk';
+import { alive, byId, getRel, isKin, log, stat, think } from './folk';
+import { clamp, rnd } from './slump';
 
 // ---------- ägande och handplatsen ----------
 // Varje redskap är ett eget ting (s.ting) med skick (c, 1 = nytt), ägare och, om någon har det i handen, vem (hos).
@@ -118,6 +119,8 @@ export function syncTools(s: State) {
     if (!q || !alive(q)) t.hos = undefined;
     else if (usesTool(q.task) !== t.k && t.agare !== q.id) t.hos = undefined;
   }
+  // skulden till den som dött eller flyttat glöms
+  for (const p of s.people) if (p.skuld) for (const id in p.skuld) { const g = byId(s, +id); if (!g || !alive(g)) delete p.skuld[id]; }
 }
 // gamla sparfiler: redskapen räknades bara som summor (och i v30 ägarlistor). Varje helt redskap blir ett ting
 function migrate(s: State) {
@@ -132,3 +135,70 @@ function migrate(s: State) {
 }
 // vad p äger
 export const ownedBy = (s: State, p: Person) => tingOf(s).filter(t => t.agare === p.id);
+
+// ---------- gåvor och byten i samtal ----------
+// Den som saknar ett redskap hen behöver i sitt arbete tar upp det i samtalet. Den andra ger ett redskap hen har över
+// (har två av slaget, eller arbetar inte med det). Har den som frågar själv något över som den andra saknar blir det ett
+// byte, annars en gåva. Hur gärna man ger beror på relationen och empatin: en förälder ger nästan alltid till sitt barn,
+// partner och släkt ger lätt, vänner ibland och ovänner inte. Den som fått en gåva står i skuld till givaren och ger
+// hellre tillbaka; skulden minskar när man ger något tillbaka. Inga lån med ränta.
+const actsOf = (k: string) => Object.keys(TOOL_ACTS).filter(a => TOOL_ACTS[a].includes(k));
+// hur stor del av sin tid p arbetar med redskapet
+function useShare(p: Person, k: string) {
+  let tot = 0, n = 0;
+  for (const a in p.habit) tot += p.habit[a];
+  for (const a of actsOf(k)) n += p.habit[a] ?? 0;
+  return tot > 0 ? n / tot : 0;
+}
+const ownsKind = (s: State, p: Person, k: string) => tingOf(s).some(t => t.agare === p.id && t.k === k);
+const needs = (s: State, p: Person, k: string) => !ownsKind(s, p, k) && useShare(p, k) > 0.1;
+// ett redskap p har över: hen har fler av slaget, eller arbetar knappt med det. Inte det hen arbetar med just nu
+function spare(s: State, p: Person, k: string) {
+  const own = tingOf(s).filter(t => t.agare === p.id && t.k === k);
+  if (own.length < 2 && useShare(p, k) >= 0.03) return;
+  return own.filter(t => !(t.hos === p.id && usesTool(p.task) === k)).sort((a, b) => b.c - a.c)[0];
+}
+// hur gärna giver ger till mottagaren, 0–1
+function willing(s: State, g: Person, m: Person) {
+  if (m.mother === g.id || m.father === g.id) return 0.95;
+  const r = getRel(s, g, m);
+  if (r.op < -10) return 0;
+  const emp = stat(g, 'empati', s.now) / 20;
+  const base = g.partner === m.id ? 0.8 : isKin(g, m) ? 0.6 : clamp(r.op / 80, 0, 0.6);
+  return clamp(base * (0.5 + emp) + (g.skuld?.[m.id] ?? 0) * 0.3, 0, 1);
+}
+function give(t: Ting, g: Person, m: Person) {
+  t.agare = m.id;
+  if (t.hos === g.id) t.hos = undefined;
+  const sk = g.skuld?.[m.id];
+  if (sk) { if (sk > 1) g.skuld![m.id] = sk - 1; else delete g.skuld![m.id]; }
+}
+// a talar med b. Saknar någon av dem ett redskap som den andra har över? Returnerar vad som hände
+export function askForTool(s: State, a: Person, b: Person): 'gåva' | 'byte' | undefined {
+  for (const [m, g] of [[a, b], [b, a]]) {
+    for (const k of KINDS()) {
+      if (!needs(s, m, k)) continue;
+      const t = spare(s, g, k);
+      if (!t || rnd(s) >= willing(s, g, m)) continue;
+      // byte: mottagaren har något över som givaren saknar
+      let back: Ting | undefined;
+      for (const j of KINDS()) if (j !== k && needs(s, g, j)) { back = spare(s, m, j); if (back) break; }
+      give(t, g, m);
+      const namn = (SAKER[k]?.namn ?? k).toLowerCase(), r = getRel(s, a, b);
+      if (back) {
+        give(back, m, g);
+        r.op = clamp(r.op + 2, -100, 100);
+        think(m, `Bytte till sig en ${namn} av ${g.name}`, 0.06, s.now, 6 * 3600);
+        think(g, `Bytte till sig en ${(SAKER[back.k]?.namn ?? back.k).toLowerCase()} av ${m.name}`, 0.06, s.now, 6 * 3600);
+        log(s, `${m.name} och ${g.name} bytte: en ${namn} mot en ${(SAKER[back.k]?.namn ?? back.k).toLowerCase()}.`, 'rel', [m.id, g.id]);
+        return 'byte';
+      }
+      (m.skuld ??= {})[g.id] = (m.skuld[g.id] ?? 0) + 1;
+      r.op = clamp(r.op + 4, -100, 100);
+      think(m, `Fick en ${namn} av ${g.name}`, 0.1, s.now, 12 * 3600);
+      think(g, `Gav en ${namn} till ${m.name}`, 0.05, s.now, 6 * 3600);
+      log(s, `${g.name} gav en ${namn} till ${m.name}.`, 'rel', [g.id, m.id]);
+      return 'gåva';
+    }
+  }
+}
