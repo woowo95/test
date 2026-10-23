@@ -1,10 +1,10 @@
-import { FyndId, Grupp, Pile, State, pilesOf } from '../sim';
+import { FyndId, Grupp, Pile, State, pilesOf, useMap } from '../sim';
 import type { FlikId } from './panel';
 
 // det hela gränssnittet delar: byn som visas och vad spelaren har valt.
 // Byn byts med setByn (ny by, testläget, inläst sparning); alla moduler ser då den nya
 export let s: State;
-export function setByn(n: State) { s = n; nyBild(); }
+export function setByn(n: State) { s = n; useMap(n); nyBild(); }
 export const ui = {
   tab: 'folk' as FlikId,
   selected: undefined as number | undefined, // personen som visas i panelen

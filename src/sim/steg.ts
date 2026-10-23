@@ -17,7 +17,7 @@ import { chance, clamp, rnd } from './slump';
 import { ageIndex, isLight } from './tid';
 import { chopStock, fellTree, makeAxe, stocks } from './skog';
 import { ACTS } from './handlingar';
-import { Act, DAY, HOUR, Person, SEC, SKILL_NAMES, State, Task, W, H } from './typer';
+import { Act, DAY, HOUR, Person, SEC, SKILL_NAMES, State, Task, W, H, useMap } from './typer';
 import { findPath, speedAt, wear } from './vag';
 import { chooseTask } from './val';
 import { Job, avail, bitById, buildJob, deliver as deliverBit, lacks, needOf, planBuild, siteOf, takeFor, toWalls, wearBuild, workOn } from './bygg';
@@ -59,6 +59,7 @@ const KLAR: Partial<Record<Act, Krok>> = {
 // ---------- huvudsteg ----------
 // dt i sekunder. live=true: personer går och bär; live=false: grovt steg (ikappräkning/snabbspolning)
 export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[]) {
+  useMap(s);
   s.now += dtSec * SEC;
   const now = s.now;
   const ai = ageIndex(s);
@@ -127,10 +128,10 @@ function needsStep(s: State, p: Person, a: number, dtSec: number, coldRate: numb
   p.rest = clamp(p.rest + dtSec / 3600 * (resting ? 0.09 : working ? -0.06 : -0.03), 0, 1);
   const heat = heatAt(s, p.x, p.y), rum = roomAt(s, p.x, p.y), shelter = rum ? shelterOf(s, rum, inRum.get(rum.id) ?? 1) : 0;
   p.warm = clamp(p.warm + dtSec / 3600 * (heat * 2 - coldRate * (1 - shelter) + (coldRate === 0 ? 0.5 : 0)), 0, 1);
-  if (rum && resting && p.task!.phase === 'do' && pd.plats === 'sang') { // man vilar bättre under tak, och mjukast på ett gräsgolv
-    const soft = gridOf(s).at.get(Math.floor(p.y) * W + Math.floor(p.x))?.m === 'ho';
+  if (rum && resting && p.task!.phase === 'do' && pd.plats === 'sang') { // man vilar bättre under tak, och bäst på ett golv
+    const m0 = gridOf(s).at.get(Math.floor(p.y) * W + Math.floor(p.x))?.m, soft = m0 === 'ho' || m0 === 'tra';
     p.rest = clamp(p.rest + dtSec / 3600 * (soft ? 0.03 : 0.02), 0, 1);
-    if (p.task!.act === 'sova') think(p, soft ? 'Sov mjukt på gräsgolvet i huset' : 'Sov under tak', soft ? 0.07 : 0.05, now, 8 * HOUR);
+    if (p.task!.act === 'sova') think(p, soft ? 'Sov gott på golvet i huset' : 'Sov under tak', soft ? 0.07 : 0.05, now, 8 * HOUR);
   }
   if (heat > 0.15) {
     think(p, 'Värms av elden', fh.comfort, now, HOUR);

@@ -2,11 +2,12 @@ import { migrateTek } from './teknik';
 import { ageOf, getRel, log, newPerson, think } from './folk';
 import { newSeder, sederTarget } from './seder';
 import { clamp, gauss, rnd } from './slump';
-import { DAY, Fire, Person, SEC, SKILLS, State } from './typer';
+import { DAY, Fire, NEW_H, NEW_W, Person, SEC, SKILLS, State, useMap } from './typer';
 
 // ---------- skapa värld ----------
 export function createState(seed: number, now: number): State {
-  const s: State = { v: 1, seed, rng: seed, founded: now, now, people: [], rels: {}, nextId: 1, food: 60, wood: 0, log: [], lastAgeIdx: 1, lastGuardDay: -1, items: { grenar: 40 }, fire: newFire(), seder: newSeder() };
+  const s: State = { v: 1, seed, rng: seed, founded: now, now, people: [], rels: {}, nextId: 1, food: 60, wood: 0, log: [], lastAgeIdx: 1, lastGuardDay: -1, items: { grenar: 40 }, fire: newFire(), seder: newSeder(), W: NEW_W, H: NEW_H };
+  useMap(s);
   const adults: [string, number][] = [['m', 38], ['k', 35], ['m', 27], ['k', 25], ['m', 22], ['k', 21], ['m', 44], ['k', 19]];
   for (const [sex, age] of adults) s.people.push(newPerson(s, sex as 'm' | 'k', now - (age + rnd(s)) * DAY));
   const [a, b, c, d] = s.people;
@@ -31,6 +32,7 @@ function newFire(): Fire {
 
 // äldre sparfiler: byn har redan en brinnande lägereld och lite tändmaterial
 export function migrate(s: State) {
+  useMap(s);
   for (const p of s.people) {
     if (p.skill.elda === undefined) p.skill.elda = clamp((ageOf(p, s.now) - 10) * 0.15, 0, 6);
     if (p.warm === undefined) p.warm = 1;

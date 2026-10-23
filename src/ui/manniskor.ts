@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { ACTS, Person, TalkEvent, ageOf, alive, byId, living, relKey, sak } from '../sim';
+import { ACTS, Person, TalkEvent, ageOf, alive, byId, homeKind, living, load, relKey } from '../sim';
 import { hsl } from './hjalp';
 import { s, ui } from './lage';
 import { Ikoner, TS, bubbleG, labels, markLayer, peopleG } from './scen';
@@ -13,7 +13,7 @@ export function addTalks(events: TalkEvent[], now: number) {
   for (const e of events.splice(0)) { bubbles.push({ id: e.a, kind: e.kind, good: e.good, until: now + 2600 }); talkWith.set(e.a, e.b); talkWith.set(e.b, e.a); }
 }
 // symbolen över huvudet för det man gör på platsen (mark i handlingar.ts); vissa redskap och material syns i stället
-const MARK_TOOL: Record<string, string> = { fiskespjut: 'fiskespjut', golv: 'hogolv' };
+const MARK_TOOL: Record<string, string> = { fiskespjut: 'fiskespjut', golv: 'tragolv' };
 function markOf(p: Person): string | undefined {
   const t = p.task; if (!t || t.phase !== 'do') return;
   return (t.tool && MARK_TOOL[t.tool]) || ACTS[t.act].mark;
@@ -41,6 +41,7 @@ const nameTags = [0, 1].map(() => { const tx = new PIXI.Text('', nameStyle); tx.
 export function drawPeople(t: number) {
   peopleG.clear(); bubbleG.clear();
   const ppl = living(s);
+  markIcons.start();
   for (const p of ppl) {
     const a = ageOf(p, s.now);
     const r = a < 3 ? 2.8 : a < 14 ? 3.8 : 5;
@@ -54,10 +55,9 @@ export function drawPeople(t: number) {
     peopleG.lineStyle(0);
     if (p.sickUntil && p.sickUntil > s.now) peopleG.beginFill(0x8fc46a).drawCircle(x + r * 0.7, y - r * 0.7, 1.8).endFill();
     if (p.pregnantSince !== undefined) peopleG.beginFill(0xf2c4d0).drawCircle(x - r * 0.7, y - r * 0.7, 1.6).endFill();
-    if (p.task?.carry && p.task.carry > 0.05) peopleG.beginFill(sak(ACTS[p.task.act].ger ?? '')?.mapp === 'Bränsle' ? 0x6f4a2a : 0xc58b3e).drawRect(x + r - 1, y - 1, 4, 4).endFill();
+    if (p.task && load(p.task) > 0.02) markIcons.add(homeKind(p.task), x + r - 2.5, y - 1, 0.6); // det man bär syns på figuren
   }
   // pågående samtal och symboler
-  markIcons.start();
   const flash = new Map<number, string>();
   for (let i = bubbles.length - 1; i >= 0; i--) { const b = bubbles[i]; if (b.until < t) bubbles.splice(i, 1); else flash.set(b.id, b.kind); }
   for (const p of ppl) {

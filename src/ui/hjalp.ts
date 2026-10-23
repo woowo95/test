@@ -5,7 +5,7 @@ import { s } from './lage';
 export const $ = (id: string) => document.getElementById(id)!;
 export const esc = (t: string) => t.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
 export const num = (v: number, d = 1) => v.toFixed(d).replace('.', ',');
-export const fmtN = (n: number) => n >= 10 || Number.isInteger(n) ? String(Math.round(n)) : n.toFixed(1).replace('.', ',');
+export const fmtN = (n: number) => String(n > 0 && n < 1 ? 1 : Math.round(n)); // förråd och stackar: alltid hela tal
 export const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
 export const times = (n: number) => `${n} ${n === 1 ? 'gång' : 'gånger'}`;
 export function durTxt(ms: number) {

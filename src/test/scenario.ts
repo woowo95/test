@@ -71,6 +71,7 @@ const SCENARIER: Record<string, { text: string; kor: () => Koll[] }> = {
     kor: () => {
       const s = createState(13, START);
       s.items.yxa = 1;
+      s.byggSok = Infinity; // inget hus: träden på en husplats fälls för bygget, inte för ved
       const fallda = new Set<number>();
       let ved = 0;
       kor(s, 10 * 24, s => { ved = Math.max(ved, s.wood); for (const k of s.stockar ?? []) fallda.add(Math.floor(k.y) * W + Math.floor(k.x)); });
@@ -602,7 +603,7 @@ SCENARIER.bygg = {
       [`folk sover inne när huset är klart (${inne} av ${sov})`, sov > 0 && inne > sov * 0.5],
       [`en kall natt utan eld är de som är inne varmare (${(varmInne / (ni || 1)).toFixed(2)} mot ${(varmUte / (nu || 1)).toFixed(2)})`, ni > 0 && nu > 0 && varmInne / ni > varmUte / nu],
       [`ingen står i en vägg (${iVagg})`, iVagg === 0],
-      [`träden där huset ska stå fälls innan väggarna byggs där (${trad} träd på platsen, ${iTrad} väggar byggda på ett träd)`, trad >= 0 && iTrad === 0 && !!h && bitsOf(q).every(b => !treeOn(q, b))],
+      [`träden där huset ska stå fälls innan väggarna byggs där (${trad} träd på platsen, ${iTrad} väggar byggda på ett träd)`, trad >= 0 && iTrad === 0 && !!h && bitsOf(q).every(b => b.hus !== h.id || !treeOn(q, b))],
       [`huset står en bit från elden (${avst.toFixed(1)} rutor)`, avst >= 4],
       ['slitna väggar lagas', lagat],
       [`byn bygger i levande läge (${hL?.klar ? `klart efter ${((hL.klar - L.founded) / HOUR).toFixed(0)} h` : 'inte klart'})`, !!hL?.klar],

@@ -17,9 +17,10 @@ import { FOREST } from './vag';
 // Båda sprids i samtal, och den som berättar stärker sitt eget minne. Egenskapen Minne avgör hur fort det glöms.
 
 // ---------- områden ----------
-export const AREA = 8, AW = Math.ceil(W / AREA), AH = Math.ceil(H / AREA);
-export const areaOf = (x: number, y: number) => Math.floor(clamp(y, 0, H - 1) / AREA) * AW + Math.floor(clamp(x, 0, W - 1) / AREA);
-export const areaCenter = (a: number) => ({ x: Math.min(W, (a % AW) * AREA + AREA / 2), y: Math.min(H, Math.floor(a / AW) * AREA + AREA / 2) });
+export const AREA = 8;
+const aw = () => Math.ceil(W / AREA), ah = () => Math.ceil(H / AREA);
+export const areaOf = (x: number, y: number) => Math.floor(clamp(y, 0, H - 1) / AREA) * aw() + Math.floor(clamp(x, 0, W - 1) / AREA);
+export const areaCenter = (a: number) => ({ x: Math.min(W, (a % aw()) * AREA + AREA / 2), y: Math.min(H, Math.floor(a / aw()) * AREA + AREA / 2) });
 // byns närområde, som man i stort sett känner till från elden
 export const SIGHT = 8;
 
@@ -33,11 +34,11 @@ const areaCache = new WeakMap<State, { hr: number; v: Float64Array }>();
 export function areaValue(s: State, k: LKind, a: number, mode: Mode = 'nu') {
   const hr = Math.floor(s.now / HOUR);
   let c = areaCache.get(s);
-  if (!c || c.hr !== hr) { c = { hr, v: new Float64Array(LKINDS.length * AW * AH * 3).fill(NaN) }; areaCache.set(s, c); }
-  const key = (LKINDS.indexOf(k) * AW * AH + a) * 3 + MODES.indexOf(mode);
+  if (!c || c.hr !== hr) { c = { hr, v: new Float64Array(LKINDS.length * aw() * ah() * 3).fill(NaN) }; areaCache.set(s, c); }
+  const key = (LKINDS.indexOf(k) * aw() * ah() + a) * 3 + MODES.indexOf(mode);
   let v = c.v[key];
   if (Number.isNaN(v)) {
-    const x0 = (a % AW) * AREA, y0 = Math.floor(a / AW) * AREA, top: number[] = [];
+    const x0 = (a % aw()) * AREA, y0 = Math.floor(a / aw()) * AREA, top: number[] = [];
     if (k === 'flinta') { const sd = stoneDist(s.seed); v = 0; for (let y = y0; y < Math.min(H, y0 + AREA); y++) for (let x = x0; x < Math.min(W, x0 + AREA); x++) if (sd[y * W + x] <= 2) v = 1; }
     else if (k === 'fara') v = 0;
     else {
@@ -119,7 +120,7 @@ export function bestKnown(s: State, p: Person, k: Kind) {
   const f = campCenter(s), u = trustUnknown(s, p);
   let best = 0;
   // det som syns från lägret räknas redan i prospect; här bara platser längre bort, oavsett var personen står just nu
-  for (let a = 0; a < AW * AH; a++) {
+  for (let a = 0; a < aw() * ah(); a++) {
     const c = areaCenter(a), d = campDist(s, c.x, c.y);
     if (d <= SIGHT || Math.abs(c.x - f.x) > 17 || Math.abs(c.y - f.y) > 13) continue;
     best = Math.max(best, believed(s, findL(p, k, a), areaValue(s, k, a, 'syns'), u) - d * 0.03 - fear(s, p, a));
@@ -253,7 +254,7 @@ export function forget(s: State, hours: number) {
 const DIRS = ['öster', 'sydost', 'söder', 'sydväst', 'väster', 'nordväst', 'norr', 'nordost'];
 export function placeName(s: State, a: number) {
   const m = getMap(s.seed), g = groundOf(s), f = campCenter(s);
-  const x0 = (a % AW) * AREA, y0 = Math.floor(a / AW) * AREA;
+  const x0 = (a % aw()) * AREA, y0 = Math.floor(a / aw()) * AREA;
   let n = 0, wat = 0, sten = 0, skog = 0, sand = 0;
   for (let y = y0; y < Math.min(H, y0 + AREA); y++) for (let x = x0; x < Math.min(W, x0 + AREA); x++) {
     const i = y * W + x, t = m.tiles[i]; n++;

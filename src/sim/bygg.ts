@@ -36,9 +36,9 @@ const tileOk = (s: State, x: number, y: number) => {
   return true;
 };
 // en plats för ett hus med yttermåtten w×h inom byområdet, helst en bit från elden och inte på lekplatsen. Träden där
-// huset ska stå fälls först, så de tas det ingen hänsyn till
+// huset ska stå fälls först, men en plats med färre träd går fortare
 function siteFor(s: State, w: number, h: number, okAt: Uint8Array) {
-  const f = getMap(s.seed).fire, mid = campCenter(s), R = 9 + living(s).length * 0.25;
+  const f = getMap(s.seed).fire, mid = campCenter(s), R = 9 + living(s).length * 0.25, g = groundOf(s);
   let best: { x: number; y: number } | undefined, bs = Infinity;
   for (let y = 1; y + h < H; y++) for (let x = 1; x + w < W; x++) {
     const cx = x + w / 2, cy = y + h / 2;
@@ -51,7 +51,9 @@ function siteFor(s: State, w: number, h: number, okAt: Uint8Array) {
     if (!ok) continue;
     const dx = Math.max(x - f.x, 0, f.x - (x + w - 1)), dy = Math.max(y - f.y, 0, f.y - (y + h - 1)), near = Math.hypot(dx, dy);
     const lek = x <= f.x + 4 && x + w > f.x - 4 && y <= f.y + 6 && y + h > f.y + 3 ? 3 : 0;
-    const sc = Math.abs(near - HUS_AVST) + 0.2 * Math.hypot(cx - mid.x, cy - mid.y) + lek;
+    let trad = 0; // helst en plats med få träd: varje träd ska fällas först
+    for (let yy = y; yy < y + h; yy++) for (let xx = x; xx < x + w; xx++) if (g.trees[yy * W + xx] >= FOREST) trad++;
+    const sc = Math.abs(near - HUS_AVST) + 0.2 * Math.hypot(cx - mid.x, cy - mid.y) + lek + 0.15 * trad;
     if (sc < bs) { bs = sc; best = { x, y }; }
   }
   return best;
@@ -83,7 +85,7 @@ export function planBuild(s: State) {
     const big = w * h >= 8, base = big ? 'Långhuset' : 'Hyddan', same = hs.filter(q => q.namn.startsWith(big ? 'Långhus' : 'Hydda')).length;
     const hus: Hus = { id: (s.nextBit ??= 1), namn: same ? `${big ? 'Långhus' : 'Hydda'} ${same + 1}` : base, x: at.x, y: at.y, w: w + 2, h: h + 2, t: s.now, by: by.id };
     s.nextBit++;
-    const golv = knows(by, 'hogolv') ? 'ho' : 'jord';
+    const golv = 'tra';
     for (let y = at.y; y < at.y + h + 2; y++) for (let x = at.x; x < at.x + w + 2; x++) {
       const edge = x === at.x || y === at.y || x === at.x + w + 1 || y === at.y + h + 1, open = x === ox && y === oy;
       const m = open ? 'oppning' : edge ? 'timmer' : golv;
@@ -101,7 +103,7 @@ export function planBuild(s: State) {
 export interface Job { bit: Bit; repair: boolean; item?: string; need: number; missing: boolean; fell?: boolean }
 export const avail = (s: State, k: string) => amountOf(s, k) - (RESERVE[k] ?? 0);
 export const treeOn = (s: State, b: Bit) => groundOf(s).trees[b.y * W + b.x] >= FOREST;
-// det p kan bygga härnäst: lagning av slitna väggar först, sedan golv, sedan väggar. Det andra redan bygger tas inte
+// det p kan bygga härnäst: lagning av slitna väggar först, sedan jordgolv, väggar och sist trägolv. Det andra redan bygger tas inte
 export function buildJob(s: State, p: Person): Job | undefined {
   if (ageOf(p, s.now) < 12) return;
   const others = living(s).filter(q => q !== p);
@@ -126,7 +128,7 @@ export function buildJob(s: State, p: Person): Job | undefined {
     if (repair && b.c >= LAGA) continue;
     if (M.tek && !knows(p, M.tek)) continue;
     const need = needOf(b);
-    const sc = (repair ? 0 : b.k === 'golv' ? 100 : 200) + Math.hypot(b.x - p.x, b.y - p.y);
+    const sc = (repair ? 0 : b.k === 'golv' ? (M.item ? 300 : 100) : 200) + Math.hypot(b.x - p.x, b.y - p.y);
     if (sc < bs) { bs = sc; best = { bit: b, repair, item: M.item, need, missing: need > 0 && avail(s, M.item!) < need }; }
   }
   return best;
@@ -157,7 +159,7 @@ export function toWalls(s: State, x: number, y: number, n: number, hus?: number)
   const h = housesOf(s).find(q => !q.klar && (hus ? q.id === hus : x >= q.x && y >= q.y && x < q.x + q.w && y < q.y + q.h));
   if (!h || n <= 0) return 0;
   let used = 0;
-  const walls = bitsOf(s).filter(b => b.hus === h.id && b.b < 1 && MATERIAL[b.m].item === 'ved' && lacks(b)).sort((a, b) => Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y));
+  const walls = bitsOf(s).filter(b => b.hus === h.id && b.k === 'vagg' && b.b < 1 && MATERIAL[b.m].item === 'ved' && lacks(b)).sort((a, b) => Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y));
   for (const b of walls) { const d = Math.min(needOf(b), n - used); deliver(b, d, false); used += d; if (used >= n - 1e-9) break; }
   return used;
 }
@@ -186,6 +188,7 @@ export function workOn(s: State, p: Person, b: Bit, dtSec: number) {
   b.c = 1; count(s, 'byggt_' + b.m); touch(s);
   if (b.k === 'vagg') clearTile(s, b);
   const h = housesOf(s).find(q => q.id === b.hus);
+  // huset är färdigt när väggarna står: trägolvet läggs efter hand och gör det bara skönare att sova där
   if (h && !h.klar && bitsOf(s).every(q => q.hus !== h.id || q.b >= 1)) {
     h.klar = s.now;
     const n = gridOf(s).rooms.filter(r => r.hus === h.id).reduce((a, r) => a + r.tiles.length, 0);
@@ -203,8 +206,8 @@ function clearTile(s: State, b: Bit) {
 }
 
 // ---------- slitage ----------
-// en gång i timmen: väggar och golv av gräs slits, mest i istiden. En helt sliten vägg rasar och måste byggas om;
-// ett utslitet gräsgolv blir jordgolv
+// en gång i timmen: väggar och golv slits, mest i istiden. En helt sliten vägg rasar och måste byggas om;
+// ett utslitet golv blir jordgolv
 export function wearBuild(s: State, hours: number, ai: number) {
   for (const b of bitsOf(s)) {
     const M = MATERIAL[b.m];

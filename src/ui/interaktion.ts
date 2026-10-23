@@ -1,10 +1,10 @@
 import * as PIXI from 'pixi.js';
-import { BAR, FOREST, FYND, FYND_IDS, H, HIGH, MATERIAL, Person, T, W, bitAt, campCenter, condOf, emberOn, fyndAt, getMap, groundOf, housesOf, vaxerAt, insulation, living, roomAt, sakNamn, taskName, zoneAt, zonesOf, Pile } from '../sim';
+import { BAR, FOREST, H, HIGH, MATERIAL, Person, T, W, bitAt, campCenter, condOf, emberOn, getMap, groundOf, housesOf, insulation, living, roomAt, sakNamn, taskName, zoneAt, zonesOf, Pile } from '../sim';
 import { iconImg } from '../ikoner';
 import { $, esc, fmtN } from './hjalp';
 import { outPilesAt, piles, s, ui } from './lage';
-import { selectPerson, visa } from './panel';
-import { stopFollow } from './portratt';
+import { renderPanel, selectPerson, visa } from './panel';
+import { renderPorts, stopFollow } from './portratt';
 import { TS, app, cam, layout, tileAt, toWorld, view, world, zoomAt } from './scen';
 
 // mus och tryck på kartan: välja, dra, zooma, och rutan i hörnet som visar vad som finns under musen
@@ -26,7 +26,7 @@ let drag: { x: number; y: number; cx: number; cy: number; moved: number } | null
 app.stage.on('pointerdown', e => { drag = { x: e.global.x, y: e.global.y, cx: cam.x, cy: cam.y, moved: 0 }; });
 app.stage.on('pointerup', () => { setTimeout(() => { drag = null; }, 0); });
 app.stage.on('pointerupoutside', () => { drag = null; });
-// ett tryck väljer det som ligger överst: en person, elden, en lagerplats eller en hög på marken
+// ett tryck väljer det som ligger överst: en person, elden, en lagerplats eller en hög på marken. Tom mark avmarkerar
 app.stage.on('pointertap', e => {
   if (drag && drag.moved > 6) return;
   const gx = e.global.x, gy = e.global.y, p = personAt(gx, gy), zi = storeAt(gx, gy), c = tileAt(gx, gy);
@@ -34,6 +34,11 @@ app.stage.on('pointertap', e => {
   else if (fireAt(gx, gy)) visa('eld');
   else if (zi) { ui.lagerNr = zi - 1; visa('lager'); }
   else if (outPilesAt(c.x, c.y).length) { ui.hogAt = c; visa('hog'); }
+  else if (ui.selected !== undefined || ui.tab === 'person' || ui.tab === 'eld' || ui.tab === 'lager' || ui.tab === 'hog') {
+    ui.selected = undefined; stopFollow();
+    if (ui.tab === 'person' || ui.tab === 'eld' || ui.tab === 'lager' || ui.tab === 'hog') ui.tab = 'folk';
+    renderPanel(true); renderPorts();
+  }
 });
 app.stage.on('pointermove', e => {
   const gx = e.global.x, gy = e.global.y;
@@ -48,14 +53,14 @@ app.stage.on('pointermove', e => {
   const c = tileAt(gx, gy);
   view.style.cursor = ui.hovered || fireAt(gx, gy) || storeAt(gx, gy) || outPilesAt(c.x, c.y).length ? 'pointer' : 'grab';
 });
-view.addEventListener('wheel', e => { e.preventDefault(); const r = view.getBoundingClientRect(); zoomAt(e.deltaY < 0 ? 1.15 : 1 / 1.15, e.clientX - r.left, e.clientY - r.top); }, { passive: false });
+view.addEventListener('wheel', e => { e.preventDefault(); const r = view.getBoundingClientRect(); zoomAt(e.deltaY < 0 ? 1.06 : 1 / 1.06, e.clientX - r.left, e.clientY - r.top); }, { passive: false });
 view.addEventListener('pointerleave', () => { $('hoverBox').hidden = true; });
 $('zIn').addEventListener('click', () => zoomAt(1.4));
 $('zOut').addEventListener('click', () => zoomAt(1 / 1.4));
 $('zHome').addEventListener('click', () => { stopFollow(); cam.zoom = 2.4; const f = campCenter(s); cam.x = f.x * TS; cam.y = f.y * TS; layout(); });
 
 // ---------- rutan i hörnet: vad som finns under musen ----------
-const RICH_WORD = (v: number) => v >= 0.6 ? 'gott om' : v >= 0.3 ? 'en del' : v >= 0.08 ? 'lite' : 'nästan inget';
+// bara underlaget och det som står där; vad som växer och lever på platsen finns i värmekartorna
 const pileTxt = (p: Pile) => `${sakNamn(p.k)} ${p.max === 1 ? '' : `${fmtN(p.n)} st, `}skick ${Math.round(condOf(p) * 100)} %`;
 function showHover(gx: number, gy: number) {
   const box = $('hoverBox'), { x, y } = tileAt(gx, gy);
@@ -64,13 +69,6 @@ function showHover(gx: number, gy: number) {
   const soil = t === T.Gras || t === T.Skog;
   const ground = t === T.Vatten ? 'Vatten' : t === T.Sand ? 'Sand' : t === T.Sten ? 'Sten' : tr >= FOREST ? 'Skogsmark' : c >= HIGH ? 'Högt gräs' : c >= BAR ? 'Kort gräs' : 'Bar jord, stig';
   const rows: string[] = [`<b>${ground}</b>${soil && tr > 0 ? ` · ${tr >= FOREST ? 'skog' : tr >= 0.25 ? 'ungskog' : 'plantor'}` : ''}`];
-  // vad lagren har på rutan (värmekartorna): bär och rötter, svamp, vilt, fisk och flinta
-  const finds: string[] = [];
-  if (!bitAt(s, x, y)) for (const k of FYND_IDS) {
-    const v = fyndAt(s, k, i) / FYND[k].topp, g = vaxerAt(s, k, i) / FYND[k].topp; // finns nu, växer här
-    if (g >= (k === 'flinta' ? 0.3 : 0.04)) finds.push(`${iconImg(FYND[k].ikon, 12)} ${esc(FYND[k].namn)}: ${RICH_WORD(v)}${g > v + 0.25 ? ' (plockat, växer tillbaka)' : ''}`);
-  }
-  if (finds.length) rows.push(finds.join('<br>'));
   if (x === m.fire.x && y === m.fire.y) rows.push(`Elden (${s.fire.lit ? 'brinner' : emberOn(s) ? 'glöder' : 'släckt'})`);
   const zi = zoneAt(s, x, y);
   if (zi >= 0) {
@@ -86,7 +84,7 @@ function showHover(gx: number, gy: number) {
   if (bit) {
     const M = MATERIAL[bit.m], hus = housesOf(s).find(h => h.id === bit.hus);
     const st = bit.b < 1 ? `byggs, ${Math.round(bit.b * 100)} %${M.n ? `, material ${Math.round(bit.mat)} av ${M.n} ${sakNamn(M.item!).toLowerCase()}` : ''}` : M.slit ? `skick ${Math.round(bit.c * 100)} %` : '';
-    rows.push(`${iconImg(bit.k === 'vagg' ? (bit.m === 'ris' ? 'risvagg' : 'timmervagg') : bit.m === 'ho' ? 'hogolv' : '', 12)} <b>${esc(M.namn)}</b>${hus ? ` i ${esc(hus.namn.toLowerCase())}` : ''}${st ? ' · ' + st : ''}`);
+    rows.push(`${iconImg(bit.k === 'vagg' ? (bit.m === 'ris' ? 'risvagg' : 'timmervagg') : bit.m === 'ho' ? 'hogolv' : bit.m === 'tra' ? 'tragolv' : '', 12)} <b>${esc(M.namn)}</b>${hus ? ` i ${esc(hus.namn.toLowerCase())}` : ''}${st ? ' · ' + st : ''}`);
   }
   const rum = roomAt(s, x, y);
   if (rum) { const hus = housesOf(s).find(h => h.id === rum.hus); rows.push(`Under tak${hus ? ` (${esc(hus.namn)})` : ''} · ${rum.tiles.length} sovplatser · håller värmen ${Math.round(insulation(s, rum) * 100)} %`); }

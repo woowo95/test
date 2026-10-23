@@ -119,7 +119,7 @@ export function strandSpot(s: State) {
   return { x: i % W + 0.5, y: Math.floor(i / W) + 0.5 };
 }
 // Faror går före förbättringar. En korg eller ett spjut gör maten lättare att få tag i, men när kylan är en fara väntar
-// sådant: tid och torrt gräs går då först till värmen. Inför och under istiden sparar man gräs till det.
+// sådant: tid och hö går då först till värmen. Inför och under istiden sparar man hö till det.
 export function dangers(s: State) {
   const ppl = living(s), freezing = ppl.filter(q => q.warm < 0.4).length / (ppl.length || 1), ai = ageIndex(s);
   const cold = coldOf(temperature(s)) > 0 || freezing > 0.25;
@@ -187,7 +187,7 @@ function day(s: State, p: Person, v: Val, a: number, lazy: number, live: boolean
   }
   const u = clamp(burg / 3, 0, 1); // hur akut byn behöver arbete
   const sat = Math.min(p.hunger, p.rest, p.social); // hur väl de egna behoven är fyllda
-  const what = build && job!.missing ? `Bygget behöver ${job!.item === 'torrgras' ? 'torrt gräs' : job!.item === 'ved' ? 'trä' : 'grenar'}` : best === 'ved' ? `Byn behöver trä, förrådet räcker ${dygn(wd)}` : best === 'samla' && needTinder(s) ? 'Byn behöver tändmaterial till elden' : `Byn behöver mat, förrådet räcker ${dygn(fd)}`;
+  const what = build && job!.missing ? `Bygget behöver ${job!.item === 'torrgras' ? 'hö' : job!.item === 'ved' ? 'trä' : 'grenar'}` : best === 'ved' ? `Byn behöver trä, förrådet räcker ${dygn(wd)}` : best === 'samla' && needTinder(s) ? 'Byn behöver tändmaterial till elden' : `Byn behöver mat, förrådet räcker ${dygn(fd)}`;
   let works = false;
   if (a >= 12 && (s.fire.ash ?? 0) >= 1 && !s.fire.lit && !emberOn(s) && fireWant(s) < 0.6 && rnd(s) < 0.2 && !ppl.some(q => q.task?.act === 'kol')) {
     set(v, 'kol', 'Det ligger kol kvar i den slocknade elden');
@@ -259,7 +259,7 @@ function withTools(s: State, p: Person, v: Val, best: Act, what: string) {
   const { kyla, gras } = dangers(s);
   if (v.act === 'samla') { // med korg om det finns en ledig, annars flätar den som kan en först
     if (freeBaskets(s, p) > 0) { v.tool = 'korg'; v.why = v.why.replace(/\.$/, '') + '. Tar en korg.'; }
-    else if (!kyla && (s.items.torrgras ?? 0) >= gras && wantsBasket(s, p)) { set(v, 'korg', `${what}. Flätar en korg av torrt gräs.`); v.dur = 40 * MIN; }
+    else if (!kyla && (s.items.torrgras ?? 0) >= gras && wantsBasket(s, p)) { set(v, 'korg', `${what}. Flätar en korg av hö.`); v.dur = 40 * MIN; }
   }
   if (best === 'fiske') { // med spjut om det finns ett ledigt, annars täljer hen ett först
     if (freeSpears(s, p) > 0) { v.tool = 'fiskespjut'; v.why = v.why.replace(/\.$/, '') + '. Tar ett fiskespjut.'; }

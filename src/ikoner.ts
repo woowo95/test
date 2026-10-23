@@ -16,25 +16,27 @@ const PAL: Record<string, Record<string, string>> = {
   flinta: { g: '#8f9396', G: '#c9cdd0', d: '#5f6366' },
   gniststen: { k: '#55595c', K: '#8a8f94', y: '#ffd060' },
   yxa: { h: '#7a5a36', g: '#8f9396', G: '#c9cdd0' },
-  fiskespjut: { h: '#8a6a40', g: '#8f9396', G: '#c9cdd0' },
-  korg: { t: '#6e4e2e', o: '#9a6a3e', O: '#c99a62', r: '#8a4ad8' },
+  fiskespjut: { h: '#8a6a40', H: '#b08a58', w: '#e8d0a0' },
+  stenspjut: { h: '#8a6a40', g: '#8f9396', G: '#c9cdd0' },
+  korg: { t: '#6e4e2e', o: '#9a6a3e', O: '#c99a62', d: '#5e3c20' },
   risvagg: { p: '#5a3c22', b: '#8a6a40', B: '#b08a58' },
   timmervagg: { d: '#4a3018', b: '#8a5e34', B: '#b8885a', e: '#d8b480' },
   hogolv: { y: '#d8c070', Y: '#f0dc94', d: '#7a5a3a' },
+  tragolv: { b: '#a07446', B: '#c09060', d: '#5a3c22' },
   bygga: { b: '#8a6a40', B: '#b08a58', d: '#3a2a1a', y: '#d8c070' },
 };
 
 const PIX: Record<string, string[]> = {
-  // korgen visas över huvudet på den som plockar bär
+  // korgen visas över huvudet på den som plockar bär: flätad, med handtag
   korg: [
     '..tttt..',
-    '.t.r.rt.',
-    '.trrrrt.',
-    'oOoOoOoO',
-    'OoOoOoOo',
-    '.oOoOoO.',
-    '.OoOoOo.',
-    '..oooo..',
+    '.t....t.',
+    '.t....t.',
+    'dOoOoOod',
+    'doOoOoOd',
+    '.dOoOod.',
+    '.doOoOd.',
+    '..dddd..',
   ],
   bar: [
     '....g...',
@@ -219,7 +221,19 @@ const PIX: Record<string, string[]> = {
     '.Bbddbb.',
     'yyyyyyyy',
   ],
+  // en vass pinne: spetsen täljd ljus
   fiskespjut: [
+    '.......w',
+    '......wH',
+    '.....Hh.',
+    '....Hh..',
+    '...Hh...',
+    '..Hh....',
+    '.Hh.....',
+    'h.......',
+  ],
+  // spjut med stenspets (sparas till stenspjutet)
+  stenspjut: [
     '......Gg',
     '.....hG.',
     '....h...',
@@ -228,6 +242,17 @@ const PIX: Record<string, string[]> = {
     '.h......',
     'h.......',
     '........',
+  ],
+  // golv av plankor
+  tragolv: [
+    'BbbbdBbb',
+    'bbbbdbbb',
+    'dddddddd',
+    'bbdBbbbb',
+    'bbdbbbbb',
+    'dddddddd',
+    'Bbbbbdbb',
+    'bbbbbdbb',
   ],
 };
 

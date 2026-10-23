@@ -1,6 +1,6 @@
 import { getMap, hash, vnoise } from './karta';
 import { campKey } from './plats';
-import { H, HOUR, State, W, inMap } from './typer';
+import { H, HOUR, State, W, inMap, mapKey } from './typer';
 import { FOREST, Ground, HIGH, decodeCover, encodeCover, isSoil, pathTree, wear } from './vag';
 
 // ---------- mark: gräs, stigar och skog ----------
@@ -20,17 +20,17 @@ export const coverOf = (s: State) => groundOf(s).cover;
 export function packGround(s: State) { const g = groundOf(s); s.mark = encodeCover(g.cover); s.skog = encodeCover(g.trees); }
 
 // ängar: fläckar av fuktig mark där det växer högt gräs och träd har svårt att få fäste
-const angCache = new Map<number, Uint8Array>();
+const angCache = new Map<string, Uint8Array>();
 export const ANG = 0.56; // gräns i bruset: över den är det äng
 export function angOf(seed: number) {
-  let a = angCache.get(seed);
+  let a = angCache.get(mapKey(seed));
   if (a) return a;
   a = new Uint8Array(W * H);
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     const v = vnoise(seed + 41, x / 7, y / 7) * 0.7 + vnoise(seed + 43, x / 3, y / 3) * 0.3;
     a[y * W + x] = v > ANG ? 1 : 0;
   }
-  angCache.set(seed, a);
+  angCache.set(mapKey(seed), a);
   return a;
 }
 const ANG_SPREAD = 0.1; // skogen sprider sig in på en äng tio gånger långsammare
@@ -63,7 +63,7 @@ function built(s: State) {
 }
 
 export const GROW = [0.1, 1.2, 1, 0.6]; // grästillväxt per tidsålder
-const REGROW = 0.018; // så mycket gräset växer tillbaka per timme (gånger GROW). Lite trampad mark hinner läka, så bara stigarna blir bara
+const REGROW = 0.011; // så mycket gräset växer tillbaka per timme (gånger GROW). Lite trampad mark hinner läka, så bara stigarna blir bara
 const TREE_SEASON = [0, 1.2, 1, 0.5]; // trädens tillväxt per tidsålder
 const TREE_GROW = 1 / (10 * 24); // en planta blir vuxen skog på ungefär tio dygn
 const SPREAD = 0.0015, FAR = 0.00002; // chans per timme att ett frö gror: per skogsgranne, och långt bort

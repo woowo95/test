@@ -18,7 +18,8 @@ export const MATERIAL: Record<string, Material> = {
   timmer: { namn: 'Timmervägg', k: 'vagg', item: 'ved', n: 2, tim: 0.8, slit: 0.0005, isol: 0.7, tek: 'timmervagg' },
   ris: { namn: 'Risvägg', k: 'vagg', item: 'grenar', n: 5, tim: 0.5, slit: 0.002, isol: 0.55 }, // äldre sparfiler: risväggar byggs inte längre men kan lagas
   jord: { namn: 'Jordgolv', k: 'golv', n: 0, tim: 0.15, slit: 0 },
-  ho: { namn: 'Golv av torrt gräs', k: 'golv', item: 'torrgras', n: 1, tim: 0.15, slit: 0.002, tek: 'hogolv' },
+  tra: { namn: 'Trägolv', k: 'golv', item: 'ved', n: 0.5, tim: 0.3, slit: 0.0002, tek: 'timmervagg' },
+  ho: { namn: 'Golv av hö', k: 'golv', item: 'torrgras', n: 1, tim: 0.15, slit: 0.002 }, // äldre sparfiler: hö-golv läggs inte längre, slits till jordgolv
   oppning: { namn: 'Öppning', k: 'oppning', n: 0, tim: 0, slit: 0 },
 };
 export const OPEN_LEAK = 0.12; // så mycket sämre ett rum håller värmen för varje öppning

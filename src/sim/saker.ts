@@ -5,7 +5,8 @@ import type { State } from './typer';
 // frågar registret. En ny sak läggs till här (och får en ikon i ikoner.ts).
 export interface SakDef {
   namn: string;
-  stack?: number; // hur mycket som ryms i en stack, en full stack är vad en normalstark vuxen bär. Saknas = ingen egen stack
+  stack?: number; // en full börda: vad en normalstark vuxen bär. Saknas = ingen egen stack
+  ruta?: number; // hur mycket som ryms i en stack på en ruta i lagret; saknas = en börda
   mapp?: string; // mappen i listan över allt byn äger
   mat?: number; // mat: i vilken ordning den äts, lägst först (det som förstörs fortast)
   ruttnar?: number; // mat och sådant som ruttnar som mat: hur fort, jämfört med annan mat
@@ -17,14 +18,14 @@ export interface SakDef {
 
 // Ordningen är den stackarna läggs ut i, så den ska inte ändras (nya saker läggs sist)
 const DEF = {
-  bar: { namn: 'Bär', stack: 25, mapp: 'Mat', mat: 4, ruttnar: 0.7 },
-  rotter: { namn: 'Rötter', stack: 25, mapp: 'Mat', mat: 5, ruttnar: 0.35 },
-  kott: { namn: 'Kött', stack: 25, mapp: 'Mat', mat: 2, ruttnar: 1.2 },
-  fisk: { namn: 'Fisk', stack: 25, mapp: 'Mat', mat: 1, ruttnar: 2 },
-  svamp: { namn: 'Svamp', stack: 25, mapp: 'Mat', mat: 3, ruttnar: 1 },
+  bar: { namn: 'Bär', stack: 25, ruta: 75, mapp: 'Mat', mat: 4, ruttnar: 0.7 },
+  rotter: { namn: 'Rötter', stack: 25, ruta: 75, mapp: 'Mat', mat: 5, ruttnar: 0.35 },
+  kott: { namn: 'Kött', stack: 25, ruta: 75, mapp: 'Mat', mat: 2, ruttnar: 0.8 }, // jakt ger lite mindre än fiske men köttet håller längre
+  fisk: { namn: 'Fisk', stack: 25, ruta: 75, mapp: 'Mat', mat: 1, ruttnar: 2 },
+  svamp: { namn: 'Svamp', stack: 25, ruta: 75, mapp: 'Mat', mat: 3, ruttnar: 1 },
   ved: { namn: 'Trä', stack: 25, mapp: 'Bränsle', slits: 0.0004, blir: { k: 'grenar', per: 2 } },
   grenar: { namn: 'Grenar', stack: 50, mapp: 'Bränsle', slits: 0.0006 },
-  torrgras: { namn: 'Torrt gräs', stack: 50, mapp: 'Bränsle', slits: 0.0015 },
+  torrgras: { namn: 'Hö', stack: 50, mapp: 'Bränsle', slits: 0.0015 },
   kol: { namn: 'Kol', stack: 25, mapp: 'Bränsle' },
   flinta: { namn: 'Flinta', stack: 10, mapp: 'Sten' },
   gniststen: { namn: 'Gniststen', stack: 10, mapp: 'Sten' },
@@ -44,6 +45,7 @@ export const item = (s: State, k: string) => s.items[k] ?? 0; // hur mycket av e
 
 export const STACK: Record<string, number> = Object.fromEntries(SAK_LIST.filter(k => SAKER[k]!.stack).map(k => [k, SAKER[k]!.stack!]));
 export const STACK_ORDER = Object.keys(STACK);
+export const RUTA: Record<string, number> = Object.fromEntries(STACK_ORDER.map(k => [k, SAKER[k]!.ruta ?? STACK[k]])); // hur mycket som ryms på en ruta
 export const FOOD = SAK_LIST.filter(k => SAKER[k]!.mat !== undefined).sort((a, b) => SAKER[a]!.mat! - SAKER[b]!.mat!) as string[]; // i den ordning de äts
 export const isFood = (k: string) => SAKER[k]?.mat !== undefined;
 export const isTool = (k: string) => !!SAKER[k]?.redskap;

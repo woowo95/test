@@ -1,4 +1,4 @@
-import { H, T, W } from './typer';
+import { H, T, W, mapKey } from './typer';
 
 // ---------- karta ----------
 export function hash(seed: number, x: number, y: number) {
@@ -18,16 +18,16 @@ function fbm(seed: number, x: number, y: number) {
 
 export interface MapData { tiles: Uint8Array; fire: { x: number; y: number }; stock: { x: number; y: number }; shade: Float32Array }
 
-const mapCache = new Map<number, MapData>();
+const mapCache = new Map<string, MapData>();
 export function getMap(seed: number): MapData {
-  const c = mapCache.get(seed);
+  const c = mapCache.get(mapKey(seed));
   if (c) return c;
   const tiles = new Uint8Array(W * H);
   const shade = new Float32Array(W * H);
   const lx = W * (0.3 + hash(seed, 1, 1) * 0.4), ly = H * (0.25 + hash(seed, 2, 2) * 0.5);
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     const d = Math.hypot((x - lx) / 1.4, y - ly);
-    const lake = Math.max(0, 1 - d / 9);
+    const lake = Math.max(0, 1 - d / (9 * Math.sqrt(W * H / 2560)));
     const h = fbm(seed, x, y) - lake * 0.55;
     const f = fbm(seed + 99, x, y);
     let t: T;
@@ -61,6 +61,6 @@ export function getMap(seed: number): MapData {
   }
   const f = best;
   const m: MapData = { tiles, fire: f, stock: { x: f.x + 4, y: f.y - 1 }, shade };
-  mapCache.set(seed, m);
+  mapCache.set(mapKey(seed), m);
   return m;
 }

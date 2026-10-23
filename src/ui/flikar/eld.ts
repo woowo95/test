@@ -1,5 +1,5 @@
 import { FireLog, HOUR, byId, emberOn, fireHeat, fireWant, hearthOf, heatRadius, igniterOf, living } from '../../sim';
-import { bar, clockTxt, durTxt, esc, num, pLink, times } from '../hjalp';
+import { bar, clockTxt, durTxt, esc, fmtN, num, pLink, times } from '../hjalp';
 import { s } from '../lage';
 import type { Flik } from '../panel';
 
@@ -10,10 +10,10 @@ function spreadWord(v: number) { return v >= 0.8 ? 'Hög' : v >= 0.3 ? 'Måttlig
 function fireEntry(e: FireLog) {
   const who = pLink(byId(s, e.id));
   const txt = e.k === 'tänd' ? (e.id ? `${who} tände elden${e.n && e.n > 1 ? ` efter ${e.n} försök` : ''}.` : 'Byns grundare tände elden.')
-    : e.k === 'fyll' ? `${who} lade på ${num(e.n ?? 0)} trä.`
+    : e.k === 'fyll' ? `${who} lade på ${fmtN(e.n ?? 0)} trä.`
     : e.k === 'glöd' ? `${who} blåste liv i glöden.`
     : e.k === 'sprack' ? `${who}s gniststen sprack.`
-    : `Elden slocknade. Den hade bränt ${num(e.n ?? 0)} trä.`;
+    : `Elden slocknade. Den hade bränt ${fmtN(e.n ?? 0)} trä.`;
   return `<li><span class="when">${clockTxt(e.t)}</span>${txt}</li>`;
 }
 function fireHtml() {
@@ -26,11 +26,11 @@ function fireHtml() {
     <div class="phead"><span class="dot big" style="background:${f.lit ? '#e2702e' : emberOn(s) ? '#b3361e' : '#4b4640'}"></span><div><h2>${esc(h.name)}</h2>
     <p class="muted">${esc(h.desc)}</p><p class="status">${status}</p></div></div>
     <h3>Just nu</h3><dl class="kv">
-      <dt>Trä på elden</dt><dd>${bar(f.fuel / h.maxFuel)}<span>${num(f.fuel)} av ${h.maxFuel}</span></dd>
+      <dt>Trä på elden</dt><dd>${bar(f.fuel / h.maxFuel)}<span>${fmtN(f.fuel)} av ${h.maxFuel}</span></dd>
       <dt>Värme</dt><dd>${bar(fireHeat(s))}<span>${f.lit ? `${num(heatRadius(s))} rutor ut` : '–'}</span></dd>
       <dt>Förbrukning</dt><dd>${num(h.burn)} trä i timmen</dd>
       <dt>Räcker</dt><dd>${f.lit ? `ca ${durTxt(f.fuel / h.burn * HOUR)}` : '–'}</dd>
-      <dt>Önskat</dt><dd>${num(tgt)} trä på elden</dd>
+      <dt>Önskat</dt><dd>${fmtN(tgt)} trä på elden</dd>
       ${f.wantWhy && byId(s, f.wantBy) ? `<dt>Önskas av</dt><dd>${pLink(byId(s, f.wantBy))}: ${esc(f.wantWhy).toLowerCase()}</dd>` : ''}
       ${tender ? `<dt>Hämtar trä</dt><dd>${pLink(tender)}</dd>` : ''}
     </dl>
@@ -38,15 +38,15 @@ function fireHtml() {
       <dt>Brunnit i</dt><dd>${durTxt(now - (f.litAt ?? now))}</dd>
       <dt>Tändes</dt><dd>${f.litAt !== undefined ? clockTxt(f.litAt) : '–'}</dd>
       <dt>Tänd av</dt><dd>${f.litBy !== undefined ? pLink(byId(s, f.litBy)) : 'Byns grundare'}</dd>
-      <dt>Trä använt</dt><dd>${num(f.burned)}</dd></dl>` : ''}
+      <dt>Trä använt</dt><dd>${fmtN(f.burned)}</dd></dl>` : ''}
     <h3>Tändning</h3><dl class="kv fam">
       <dt>Tänddon</dt><dd>${ig ? `${esc(ig.name)} (${Math.floor(s.items[ig.id] ?? 0)} i förrådet)` : 'Inget. Någon måste hitta en gniststen.'}</dd>
-      <dt>Torrt gräs</dt><dd>${Math.floor(s.items.torrgras ?? 0)} i förrådet</dd>
+      <dt>Hö</dt><dd>${Math.floor(s.items.torrgras ?? 0)} i förrådet</dd>
       <dt>Grenar</dt><dd>${Math.floor(s.items.grenar ?? 0)} i förrådet</dd>
       <dt>Bränsle</dt><dd>${Math.floor(s.wood)} trä och ${Math.floor(s.items.grenar ?? 0)} grenar i förrådet (grenar brinner fort)</dd>
       ${(f.ash ?? 0) >= 1 ? `<dt>Kolhög</dt><dd>${f.ash} kol i den gamla elden, ligger kvar ca ${durTxt((f.ashUntil ?? now) - now)}</dd>` : ''}
       ${(s.items.kol ?? 0) >= 1 ? `<dt>Kol</dt><dd>${Math.floor(s.items.kol)} i förrådet</dd>` : ''}
-      ${ig ? `<dt>Per försök</dt><dd>${ig.grass} gräs och ${ig.sticks} grenar (eller 1 kol), ca ${ig.minutes} minuter${(f.ash ?? 0) >= 1 ? '. Kolhögen tar lättare fyr.' : ''}</dd>` : ''}
+      ${ig ? `<dt>Per försök</dt><dd>${ig.grass} hö och ${ig.sticks} grenar (eller 1 kol), ca ${ig.minutes} minuter${(f.ash ?? 0) >= 1 ? '. Kolhögen tar lättare fyr.' : ''}</dd>` : ''}
       ${!f.lit ? `<dt>Försök</dt><dd>${f.tries} sedan elden slocknade${lighter ? `, ${pLink(lighter)} försöker nu` : ''}</dd>` : ''}
     </dl>
     <h3>Totalt</h3><dl class="kv fam">

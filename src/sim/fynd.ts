@@ -6,7 +6,7 @@ import { sedEvent } from './seder';
 import { chance, clamp, rnd } from './slump';
 import { kn, learnK, useK } from './kunskap';
 import { ageIndex } from './tid';
-import { DAY, H, HOUR, Person, State, T, W, inMap } from './typer';
+import { DAY, H, HOUR, Person, State, T, W, inMap, mapKey } from './typer';
 import { BAR, FOREST, HIGH, isSoil } from './vag';
 
 // ---------- fynd: mat och saker finns på olika platser ----------
@@ -215,23 +215,23 @@ export function packFynd(s: State) {
   s.fynd = btoa(bin);
 }
 
-const shoreCache = new Map<number, Uint8Array>();
+const shoreCache = new Map<string, Uint8Array>();
 // strand: land intill vatten, där man kan fiska
 export function shoreOf(seed: number) {
-  let b = shoreCache.get(seed);
+  let b = shoreCache.get(mapKey(seed));
   if (b) return b;
   const t = getMap(seed).tiles; b = new Uint8Array(W * H);
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     if (t[y * W + x] === T.Vatten) continue;
     for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const xx = x + dx, yy = y + dy; if (inMap(xx, yy) && t[yy * W + xx] === T.Vatten) b[y * W + x] = 1; }
   }
-  shoreCache.set(seed, b);
+  shoreCache.set(mapKey(seed), b);
   return b;
 }
-const stoneCache = new Map<number, Uint8Array>();
+const stoneCache = new Map<string, Uint8Array>();
 // avstånd i rutor till närmaste sten (högst 9)
 export function stoneDist(seed: number) {
-  let b = stoneCache.get(seed);
+  let b = stoneCache.get(mapKey(seed));
   if (b) return b;
   const t = getMap(seed).tiles; b = new Uint8Array(W * H).fill(9);
   for (let i = 0; i < W * H; i++) if (t[i] === T.Sten) {
@@ -241,7 +241,7 @@ export function stoneDist(seed: number) {
       if (inMap(x, y)) b[y * W + x] = Math.min(b[y * W + x], Math.round(Math.hypot(dx, dy)));
     }
   }
-  stoneCache.set(seed, b);
+  stoneCache.set(mapKey(seed), b);
   return b;
 }
 
@@ -328,7 +328,7 @@ export function prospect(s: State, k: Kind, r = 99) {
   }
   return c.v[key]!;
 }
-// fiske med händerna ger ungefär så mycket som insamling på en lagom rik plats gånger detta
+// fiske med händerna ger ungefär så mycket som samling på en lagom rik plats gånger detta
 export const HAND_FISH = 0.55;
 
 // ---------- flinta ----------
@@ -357,7 +357,7 @@ export function flintSpot(s: State, area?: (x: number, y: number) => boolean): {
 // Kantarellen är god. Den orangea spindlingen liknar den men är giftig. Den som blir förgiftad lär sig skilja dem åt
 // och kan sedan lära andra (kunskap.ts, minne.ts).
 export const GIFT = 'giftsvamp'; // giftig svamp som av misstag hamnat i förrådet (syns inte för invånarna)
-// svamp som hittas under en stund av insamling i skogen; ger hur mycket ätlig mat som hittades.
+// svamp som hittas under en stund av samling i skogen; ger hur mycket ätlig mat som hittades.
 // Kantarellen och spindlingen har var sitt lager, så de växer på olika ställen.
 export function pickMushrooms(s: State, p: Person, x: number, y: number, dtSec: number, got: Record<string, number>) {
   const kv = richness(s, 'kantarell', x, y), gv = richness(s, 'spindling', x, y);

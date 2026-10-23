@@ -4,7 +4,7 @@ import { getMap } from './karta';
 import { Act, H, Person, State, T, Task, W } from './typer';
 import { bitAt, roofed } from './byggnad';
 import { ACTS } from './handlingar';
-import { FOOD, SAKER, SAK_LIST, STACK, STACK_ORDER, isFood, isTool, sakNamn } from './saker';
+import { FOOD, RUTA, SAKER, SAK_LIST, STACK, STACK_ORDER, isFood, isTool, sakNamn } from './saker';
 const NO_STACK = SAK_LIST.filter(k => !STACK[k]);
 
 // ---------- lager och stackar ----------
@@ -82,7 +82,7 @@ function ringTiles(s: State, z: Zone) {
 }
 const key = (x: number, y: number) => y * W + x;
 const occupancy = (s: State) => { const m = new Map<number, Stack>(); for (const a of stacksOf(s)) if (isStored(s, a.x, a.y)) m.set(key(a.x, a.y), a); return m; };
-const roomIn = (a: Stack | undefined, k: string) => !a || (a.k === k && !isTool(k) && a.n < STACK[k] - 1e-9);
+const roomIn = (a: Stack | undefined, k: string) => !a || (a.k === k && !isTool(k) && a.n < RUTA[k] - 1e-9);
 // bästa plats i en lagerplats för ett slag: lagerplatserna i prioritetsordning, först en stack av samma slag som inte
 // är full, sedan en tom ruta. minPrio: bara lagerplatser med högre prioritet än så
 function zoneSpot(s: State, k: string, minPrio = -Infinity, occ = occupancy(s)) {
@@ -122,7 +122,7 @@ export const fetchSpot = (s: State, k: string) => {
 function place(s: State, k: string, n: number, c: number, totals: boolean, at?: { x: number; y: number }) {
   if (totals) addTo(s, k, n);
   if (!STACK[k]) return; // saker utan egen stack (giftig svamp bland den ätliga) finns bara i summorna
-  const st = stacksOf(s), max = STACK[k] ?? 25;
+  const st = stacksOf(s), max = RUTA[k] ?? 25;
   for (let g = 0; n > 1e-9 && g < 60; g++) {
     const occ = occupancy(s);
     const sp = at && isStored(s, at.x, at.y) && usable(s, at.x, at.y) && roomIn(occ.get(key(at.x, at.y)), k) ? at : zoneSpot(s, k, -Infinity, occ) ?? besideSpot(s, k, occ);
@@ -170,7 +170,7 @@ export function takeFood(s: State, n: number) {
 // alla stackar med plats och skick
 export function pilesOf(s: State): Pile[] {
   reconcile(s);
-  return stacksOf(s).map(a => { const zone = zoneAt(s, a.x, a.y); return { ...a, max: STACK[a.k] ?? 25, zone, out: zone < 0, stored: isStored(s, a.x, a.y) }; });
+  return stacksOf(s).map(a => { const zone = zoneAt(s, a.x, a.y); return { ...a, max: RUTA[a.k] ?? 25, zone, out: zone < 0, stored: isStored(s, a.x, a.y) }; });
 }
 
 // ---------- slitage ----------
@@ -195,7 +195,7 @@ export function wearStore(s: State, dtSec: number, ai: number) {
     if (a.c > 0) continue;
     const into = SAKER[a.k]?.blir; // ved faller sönder till grenar
     if (stored) addTo(s, a.k, -a.n);
-    if (into) { a.n = Math.min(STACK[into.k], a.n * into.per); a.k = into.k; a.c = 0.5; if (stored) addTo(s, into.k, a.n); }
+    if (into) { a.n = Math.min(RUTA[into.k], a.n * into.per); a.k = into.k; a.c = 0.5; if (stored) addTo(s, into.k, a.n); }
     else a.n = 0;
   }
   s.stackar = stacksOf(s).filter(a => a.n > 1e-6);
@@ -255,7 +255,7 @@ function newZone(s: State) {
 }
 
 // ---------- bära ----------
-// det en uppgift ger (handlingar.ts): bär från insamling, kött från jakt, fisk från fiske, grenar från vedplockning, ved från huggning
+// det en uppgift ger (handlingar.ts): bär från samling, kött från jakt, fisk från fiske, grenar från vedplockning, ved från huggning
 export const carryKind = (act: Act) => ACTS[act].ger ?? 'bar';
 // vart bördan ska: till en stack av det man mest bär
 export function homeKind(t: Task) {

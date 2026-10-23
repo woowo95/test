@@ -36,7 +36,7 @@ export function wearSpear(s: State, p: Person) {
 }
 
 // ---------- redskap: korg ----------
-// En korg flätas av torrt gräs av den som kan det. Med korg bär man hem mer från varje tur och spiller mindre bär.
+// En korg flätas av hö av den som kan det. Med korg bär man hem mer från varje tur och spiller mindre bär.
 // Korgen slits när den används och håller ungefär KORG_TIMMAR arbetstimmar.
 export const KORG_GRAS = 3, KORG_TIMMAR = 40, KORG_SKORD = 1.15;
 export const baskets = (s: State) => Math.ceil(item(s, 'korg') - 1e-9);
@@ -49,7 +49,7 @@ export function makeBasket(s: State, p: Person) {
   s.items.torrgras -= KORG_GRAS;
   s.items.korg = item(s, 'korg') + 1;
   count(s, 'korgarGjorda');
-  if (s.stat!.korgarGjorda === 1) log(s, `${p.name} flätade byns första korg av torrt gräs.`, 'world', [p.id]);
+  if (s.stat!.korgarGjorda === 1) log(s, `${p.name} flätade byns första korg av hö.`, 'world', [p.id]);
 }
 export function wearBasket(s: State, p: Person, hours: number) {
   const before = baskets(s);

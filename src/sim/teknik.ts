@@ -17,16 +17,14 @@ export interface Tek {
   tid: number; // arbetstimmar för en person med medelmåttig nyfikenhet och intelligens
 }
 export const TEKNIK: Tek[] = [
-  { id: 'korg', namn: 'Korg', text: 'En korg flätad av torrt gräs.', effekt: 'Man bär hem mer från varje tur och spiller mindre bär.',
+  { id: 'korg', namn: 'Korg', text: 'En korg flätad av hö.', effekt: 'Man bär hem mer från varje tur och spiller mindre bär.',
     omr: ['samla'], krav: [], material: [['torrgras']], tid: 24 },
   { id: 'yxa', namn: 'Flintyxa', text: 'En vass flintsten bunden vid en pinne.', effekt: 'Med yxa kan man fälla träd och hugga trä.',
     omr: ['samla', 'ved', 'hantverk'], krav: [], material: [['flinta'], ['grenar']], tid: 10 },
   { id: 'fiskespjut', namn: 'Fiskespjut', text: 'En pinne som täljts spetsig med en flintsten eller en yxa.', effekt: 'Ger mycket mer fisk än händerna, men slits fort.',
     omr: ['fiske', 'ved'], krav: [], material: [['grenar'], ['flinta', 'yxa']], tid: 20 },
-  { id: 'timmervagg', namn: 'Timmervägg', text: 'Stockar som huggs till och läggs på varandra till en vägg.', effekt: 'Byn kan bygga hus att sova i, med väggar av timmer.',
+  { id: 'timmervagg', namn: 'Timmerhus', text: 'Stockar som huggs till och läggs på varandra till en vägg, och trä som läggs som golv.', effekt: 'Byn kan bygga hus att sova i, med väggar och golv av trä.',
     omr: ['ved', 'falla', 'hugga', 'hantverk'], krav: ['yxa'], material: [['yxa']], tid: 20 },
-  { id: 'hogolv', namn: 'Golv av torrt gräs', text: 'Torrt gräs som breds ut över golvet i huset.', effekt: 'Mjukare och varmare att sova på än jordgolv.',
-    omr: ['samla', 'bygga'], krav: ['timmervagg'], material: [['torrgras']], tid: 16 },
 ];
 export const TEK = Object.fromEntries(TEKNIK.map(t => [t.id, t])) as Record<string, Tek>;
 

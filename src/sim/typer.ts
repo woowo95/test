@@ -9,8 +9,13 @@ export const HOUR = 3600 * SEC;
 export const DAY = 24 * HOUR; // = ett levnadsår
 export const WEEK = 7 * DAY; // = en tidsålder
 
-export const W = 64;
-export const H = 40;
+// kartans storlek: varje by har sin egen (äldre byar 64×40, nya NEW_W×NEW_H). useMap(s) väljer byns karta och
+// anropas när en by skapas, räknas fram eller visas.
+export let W = 64;
+export let H = 40;
+export const NEW_W = 80, NEW_H = 50;
+export function useMap(s: { W?: number; H?: number }) { W = s.W ?? 64; H = s.H ?? 40; }
+export const mapKey = (seed: number) => `${seed}:${W}x${H}`;
 export const inMap = (x: number, y: number) => x >= 0 && y >= 0 && x < W && y < H; // punkten eller rutan ligger på kartan
 
 export enum T { Vatten, Sand, Gras, Skog, Sten }
@@ -24,7 +29,7 @@ export const STAT_NAMES: Record<Stat, string> = {
 export const SKILLS = ['samla', 'jakt', 'fiske', 'ved', 'hantverk', 'berattande', 'elda'] as const;
 export type Skill = typeof SKILLS[number];
 export const SKILL_NAMES: Record<Skill, string> = {
-  samla: 'Insamling', jakt: 'Jakt', fiske: 'Fiske', ved: 'Trähuggning', hantverk: 'Hantverk', berattande: 'Berättande', elda: 'Eldkonst',
+  samla: 'Samling', jakt: 'Jakt', fiske: 'Fiske', ved: 'Trähuggning', hantverk: 'Hantverk', berattande: 'Berättande', elda: 'Eldkonst',
 };
 
 export const AGES = ['Istid', 'Vårtid', 'Sommartid', 'Hösttid'];
@@ -70,10 +75,11 @@ export interface LogEntry { t: number; text: string; kind: 'birth' | 'death' | '
 
 export interface State {
   v: 1; seed: number; rng: number; founded: number; now: number;
+  W?: number; H?: number; // kartans storlek (saknas i äldre byar: 64×40)
   people: Person[]; rels: Record<string, Rel>; nextId: number;
   food: number; wood: number; log: LogEntry[];
   lastAgeIdx: number; lastGuardDay: number;
-  items: Record<string, number>; // föremål i förrådet, t.ex. gniststen, torrt gräs, grenar
+  items: Record<string, number>; // föremål i förrådet, t.ex. gniststen, hö, grenar
   fire: Fire;
   seder: Seder;
   mark?: string; // markens grästäcke per ruta (stigar), packat

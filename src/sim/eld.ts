@@ -179,7 +179,7 @@ export function stepFire(s: State, dtSec: number, live: boolean, ppl: Person[]) 
   }
 }
 // värmeförlust per timme utan eld: [ljus tid, mörk tid] per tidsålder
-// insamling hittar tändmaterial och gniststen när förrådet behöver det
+// samling hittar tändmaterial och gniststen när förrådet behöver det
 const GRASS_SEASON = [0.25, 0.6, 1, 1.3];
 export function forageItems(s: State, p: Person, dtSec: number): Record<string, number> | undefined {
   const ai = ageIndex(s), want = tinderWant(s), hrs = dtSec / 3600;

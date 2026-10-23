@@ -1,5 +1,5 @@
-import { ageOf, living, moodOf, taskName, timeLabel } from '../../sim';
-import { bar, esc, hex, linkify, sickNow, trend } from '../hjalp';
+import { ageOf, living, moodOf, taskName } from '../../sim';
+import { bar, clockTxt, esc, hex, linkify, sickNow, trend } from '../hjalp';
 import { s } from '../lage';
 import type { Flik } from '../panel';
 
@@ -18,5 +18,5 @@ export const folk: Flik = {
 // det som hänt i byn, senast först
 export const logg: Flik = {
   namn: 'Händelser',
-  html: () => `<ol class="logg">${s.log.slice().reverse().slice(0, 150).map(l => `<li class="k-${l.kind}"><span class="when">${timeLabel(s, l.t)}</span>${linkify(l)}</li>`).join('')}</ol>`,
+  html: () => `<ol class="logg">${s.log.slice().reverse().slice(0, 150).map(l => `<li class="k-${l.kind}"><span class="when">${clockTxt(l.t)}</span>${linkify(l)}</li>`).join('')}</ol>`,
 };
