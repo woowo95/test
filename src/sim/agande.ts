@@ -1,49 +1,134 @@
-import { State, Person } from './typer';
-import { SAKER, isTool, item } from './saker';
-import { alive, byId } from './folk';
+import { State, Person, Task } from './typer';
+import { SAKER, isTool } from './saker';
+import { alive, byId, getRel, isKin } from './folk';
 
-// ---------- ägande, steg 1 ----------
-// Den som gör ett redskap äger det. Förrådet, maten och husen är byns. Det som samlas, fiskas och jagas tillhör den som
-// skaffade det, men byn är generös och allt läggs genast i byns förråd, så det blir byns. Steg 1 ändrar inget annat: alla
-// använder fortfarande vilket ledigt redskap som helst. Gåvor, lån, arv och stöld kommer i steg 2.
-// s.agare[k] har ett id per helt redskap av slaget k (0 = byn). Redskap från före ägandet, och redskap vars ägare dött
-// eller lämnat byn, är byns.
+// ---------- ägande och handplatsen ----------
+// Varje redskap är ett eget ting (s.ting) med skick (c, 1 = nytt), ägare och, om någon har det i handen, vem (hos).
+// Den som gör ett redskap äger det. Redskap från före ägandet, och redskap vars ägare dött eller flyttat, är byns (BYN).
+// Förrådet, maten och husen är byns. Det som samlas, fiskas och jagas tillhör den som skaffade det, men byn är generös
+// och allt läggs genast i byns förråd.
+// Handplatsen: var och en har en hand och kan ha ett redskap i den, utöver bördan. Den som arbetar med ett redskap har det
+// i handen. Ett eget redskap behåller man i handen när arbetet är slut; byns och lånade redskap läggs tillbaka i förrådet.
+// Man tar sitt eget redskap först, sedan byns, och lånar annars av någon som inte använder sitt (släkt, eller någon som
+// inte är osams med en; den unga byn är generös).
+// s.items[k] för ett redskap är alltid summan av tingens skick, så att lagret och listorna fungerar som förut.
 export const BYN = 0;
-const whole = (s: State, k: string) => Math.ceil(item(s, k) - 1e-9);
-const listOf = (s: State, k: string) => ((s.agare ??= {})[k] ??= []);
+export interface Ting { id: number; k: string; c: number; agare: number; hos?: number }
+export const tingOf = (s: State) => (s.ting ??= []);
+export const toolsOf = (s: State, k: string) => tingOf(s).filter(t => t.k === k);
+export const nTools = (s: State, k: string) => tingOf(s).reduce((n, t) => n + (t.k === k ? 1 : 0), 0);
+export const heldBy = (s: State, p: Person) => tingOf(s).find(t => t.hos === p.id);
+const KINDS = () => Object.keys(SAKER).filter(isTool);
+const SPJUT = ['flintspjut', 'fiskespjut'];
+const TOOL_ACTS: Record<string, string[]> = { fiske: [...SPJUT, 'metspo'], jakt: SPJUT, samla: ['korg'], slakta: ['kniv'], falla: ['yxa'], hugga: ['yxa'] };
+// redskapet en uppgift använder (task.tool kan också vara t.ex. vagg eller rep, eller det spjut som görs)
+export const usesTool = (t?: Task) => t && t.tool && TOOL_ACTS[t.act]?.includes(t.tool) ? t.tool : undefined;
 
-// p gjorde ett redskap av slaget k (anropas efter att det lagts i förrådet)
-export function made(s: State, k: string, p: Person) {
-  syncOwners(s);
-  const l = listOf(s, k), i = l.lastIndexOf(BYN); // det nya räknades in som byns i syncOwners
-  if (i >= 0) l[i] = p.id; else l.push(p.id);
+function newTing(s: State, k: string, c: number, agare: number): Ting {
+  const t = { id: s.nextTing = (s.nextTing ?? 0) + 1, k, c, agare };
+  tingOf(s).push(t);
+  return t;
 }
-// ett redskap av slaget k gick sönder i händerna på p: hens eget går sönder först, sedan byns
-export function broke(s: State, k: string, p: Person) {
-  const l = listOf(s, k);
-  let i = l.indexOf(p.id);
-  if (i < 0) i = l.lastIndexOf(BYN);
-  if (i < 0) i = l.length - 1;
-  if (i >= 0 && l.length > whole(s, k)) l.splice(i, 1);
-  syncOwners(s);
+// p gjorde ett redskap: det läggs i förrådet och är hens
+export function addTool(s: State, k: string, p: Person) {
+  syncTools(s);
+  newTing(s, k, 1, p.id);
+  s.items[k] = (s.items[k] ?? 0) + 1;
 }
-// håll ägarlistorna i takt med förrådet: nya redskap utan känd ägare är byns, de som slitits ut tas bort (byns först)
-export function syncOwners(s: State) {
-  const ag = s.agare ??= {};
-  for (const k in SAKER) {
-    if (!isTool(k)) continue;
-    const n = whole(s, k), l = ag[k] ??= [];
-    for (let i = 0; i < l.length; i++) if (l[i] !== BYN) { const q = byId(s, l[i]); if (!q || !alive(q)) l[i] = BYN; }
-    while (l.length < n) l.push(BYN);
-    while (l.length > n) { const i = l.lastIndexOf(BYN); l.splice(i >= 0 ? i : l.length - 1, 1); }
-    if (!l.length) delete ag[k];
+
+// lånar ägaren ut till p? Släkt och partner alltid, andra om de inte är osams
+function lends(s: State, owner: number, p: Person) {
+  if (owner === BYN || owner === p.id) return true;
+  const o = byId(s, owner);
+  if (!o || !alive(o)) return true;
+  return o.partner === p.id || isKin(o, p) || getRel(s, o, p).op > -10;
+}
+// kan p ta tinget? Inte om någon annan arbetar med det
+function usable(s: State, p: Person, t: Ting) {
+  if (t.hos !== undefined && t.hos !== p.id) {
+    const q = byId(s, t.hos);
+    if (q && alive(q) && usesTool(q.task) === t.k) return false;
+  }
+  return lends(s, t.agare, p);
+}
+// i vilken ordning p tar: det hen har i handen, sitt eget, byns, och sist lånat. Inom det: bäst skick
+const rank = (p: Person, t: Ting) => t.hos === p.id ? 0 : t.agare === p.id ? 1 : t.agare === BYN ? 2 : t.hos === undefined ? 3 : 4;
+export const freeOf = (s: State, p: Person, k: string) => toolsOf(s, k).filter(t => usable(s, p, t));
+export const freeTools = (s: State, p: Person, k: string) => freeOf(s, p, k).length;
+export const ownsFree = (s: State, p: Person, k: string) => freeOf(s, p, k).some(t => t.agare === p.id);
+// p tar ett redskap av slaget k i handen. Det hen hade i handen läggs i förrådet
+export function take(s: State, p: Person, k: string): Ting | undefined {
+  const c = freeOf(s, p, k).sort((a, b) => rank(p, a) - rank(p, b) || b.c - a.c)[0];
+  if (!c) return;
+  for (const t of tingOf(s)) if (t.hos === p.id && t !== c) t.hos = undefined;
+  c.hos = p.id;
+  return c;
+}
+// slitage på redskapet p arbetar med (i handen, annars hens eget, annars det sämsta). true = det gick sönder
+export function wearTool(s: State, p: Person, k: string, v: number) {
+  const ts = toolsOf(s, k);
+  const t = ts.find(x => x.hos === p.id) ?? ts.find(x => x.agare === p.id) ?? ts.sort((a, b) => a.c - b.c)[0];
+  if (!t) return false;
+  t.c -= v;
+  if (t.c > 1e-9) { s.items[k] = Math.max(0, (s.items[k] ?? 0) - v); return false; }
+  s.ting = tingOf(s).filter(x => x !== t);
+  s.items[k] = ts.reduce((n, x) => n + (x === t ? 0 : x.c), 0);
+  return true;
+}
+// redskap i handen slits sakta även när de inte används, som i lagret
+export function wearCarried(s: State, rate: (k: string) => number) {
+  for (const t of tingOf(s)) if (t.hos !== undefined) { const v = Math.min(t.c, rate(t.k)); t.c -= v; s.items[t.k] = Math.max(0, (s.items[t.k] ?? 0) - v); }
+  s.ting = tingOf(s).filter(t => t.c > 1e-9);
+}
+
+// håll tingen i takt med förrådet och folket. Ändras s.items för ett redskap av något annat än tingen (sparfiler, tester,
+// ett redskap som bärs mellan lagerplatser) läggs skillnaden till eller dras från i förrådet: det som tas bort väntar
+// i s.tingVag och kommer tillbaka med samma ägare när lika mycket läggs tillbaka
+export function syncTools(s: State) {
+  if (!s.ting) migrate(s);
+  const ts = tingOf(s);
+  for (const k of KINDS()) {
+    let sum = 0;
+    for (const t of ts) if (t.k === k) sum += t.c;
+    let d = (s.items[k] ?? 0) - sum;
+    if (d > 1e-6) {
+      const vag = s.tingVag ?? [];
+      for (let i = 0; i < vag.length && d > 1e-6; i++) if (vag[i].k === k) { const t = vag.splice(i--, 1)[0]; t.c = Math.min(t.c, d); ts.push(t); d -= t.c; }
+      while (d > 1e-6) { const c = Math.min(1, d); newTing(s, k, c, BYN); d -= c; }
+      if (s.tingVag && !s.tingVag.length) delete s.tingVag;
+    } else if (d < -1e-6) {
+      const stored = ts.filter(t => t.k === k).sort((a, b) => (a.hos === undefined ? 0 : 1) - (b.hos === undefined ? 0 : 1) || a.c - b.c);
+      for (const t of stored) {
+        if (d >= -1e-6) break;
+        const v = Math.min(t.c, -d);
+        d += v;
+        if (v >= t.c - 1e-9) { ts.splice(ts.indexOf(t), 1); t.hos = undefined; (s.tingVag ??= []).push(t); }
+        else t.c -= v;
+      }
+    }
+    if (s.items[k] !== undefined) s.items[k] = ts.reduce((n, t) => n + (t.k === k ? t.c : 0), 0);
+  }
+  if (s.tingVag && s.tingVag.length > 20) s.tingVag.splice(0, s.tingVag.length - 20);
+  // ägare som dött eller flyttat: tinget blir byns. Den som inte längre arbetar med ett redskap lägger tillbaka det
+  // som inte är hens eget; ett eget redskap behålls i handen
+  for (const t of ts) {
+    if (t.agare !== BYN) { const o = byId(s, t.agare); if (!o || !alive(o)) t.agare = BYN; }
+    if (t.hos === undefined) continue;
+    const q = byId(s, t.hos);
+    if (!q || !alive(q)) t.hos = undefined;
+    else if (usesTool(q.task) !== t.k && t.agare !== q.id) t.hos = undefined;
   }
 }
-// vad p äger: slag och antal
-export function ownedBy(s: State, p: Person) {
-  const out: Record<string, number> = {};
-  for (const k in s.agare ?? {}) for (const id of s.agare![k]) if (id === p.id) out[k] = (out[k] ?? 0) + 1;
-  return out;
+// gamla sparfiler: redskapen räknades bara som summor (och i v30 ägarlistor). Varje helt redskap blir ett ting
+function migrate(s: State) {
+  s.ting = [];
+  for (const k of KINDS()) {
+    let n = s.items[k] ?? 0;
+    const ag = s.agare?.[k] ?? [];
+    for (let i = 0; n > 1e-6; i++) { const c = Math.min(1, n); newTing(s, k, c, ag[i] ?? BYN); n -= c; }
+  }
+  delete s.agare;
+  for (const p of s.people) { const k = usesTool(p.task); if (k && alive(p)) take(s, p, k); }
 }
-// hur många av slaget k byn äger gemensamt
-export const villageOwns = (s: State, k: string) => (s.agare?.[k] ?? []).filter(id => id === BYN).length;
+// vad p äger
+export const ownedBy = (s: State, p: Person) => tingOf(s).filter(t => t.agare === p.id);

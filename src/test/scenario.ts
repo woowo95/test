@@ -1,7 +1,7 @@
 // Scenariotester: ställ en by i ett visst läge, kör den en stund och kontrollera att det som ska hända händer.
 // npm run scenario            kör alla
 // npm run scenario -- glanta  kör bara ett
-import { Person, createState, ownedBy, syncOwners, BYN, twineRope, makeRod, wearSpear, isSpear, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, WEEK, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, zonesOf, allows, ageOf, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, fuelStock, DAY, HOUR, W, State, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, campCenter, TEKNIK, knows, thinkWhileWorking, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, beds, isWall, Bit, wearBuild, FYND, FYND_IDS, GRUPPER, angOf, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, LAGER_R, observe, hoped, Lager, skyggOf, SKYGG_R, share, treeOn, djurOf, KANIN, SLAKT, canSlaughter, makeKnife, slaughter } from '../sim';
+import { Person, Act, createState, ownedBy, syncTools, toolsOf, heldBy, take, usesTool, wearTool, freeSpear, getRel, isTool, BYN, twineRope, makeRod, wearSpear, isSpear, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, WEEK, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, zonesOf, allows, ageOf, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, fuelStock, DAY, HOUR, W, State, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, campCenter, TEKNIK, knows, thinkWhileWorking, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, beds, isWall, Bit, wearBuild, FYND, FYND_IDS, GRUPPER, angOf, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, LAGER_R, observe, hoped, Lager, skyggOf, SKYGG_R, share, treeOn, djurOf, KANIN, SLAKT, canSlaughter, makeKnife, slaughter } from '../sim';
 import { findPath } from '../sim/vag';
 import { FOREST, HIGH, isSoil } from '../sim/vag';
 import { START } from './kor';
@@ -329,37 +329,62 @@ SCENARIER.redskap = {
 };
 
 SCENARIER.agande = {
-  text: 'Den som gör ett redskap äger det. Det som fanns före ägandet och det som en död lämnar efter sig är byns. Går ett redskap sönder i händerna på någon är det hens eget som går sönder',
+  text: 'Varje redskap är ett ting med ägare och skick. Den som gör det äger det, det gamla och det en död lämnar är byns. Man har redskapet man arbetar med i handen, tar sitt eget först, behåller det egna i handen och lägger tillbaka byns. Man lånar av släkt och vänner, inte av ovänner',
   kor: () => {
     const s = createState(4, START);
     s.items = { grenar: 20, flinta: 2, yxa: 1 };
     Object.assign(s.fire, { lit: true, fuel: 4, ring: true });
     for (const q of s.people) q.tek = { fiskespjut: 1 };
-    const [a, b] = living(s);
-    syncOwners(s);
-    const yxaByns = s.agare?.yxa?.[0] === BYN;
-    makeSpear(s, a); makeSpear(s, a); makeSpear(s, b);
-    const ag = () => ownedBy(s, a).fiskespjut ?? 0, bg = () => ownedBy(s, b).fiskespjut ?? 0;
-    const gjorda = ag() === 2 && bg() === 1 && spears(s) === 3;
-    b.task = { ...(b.task ?? { act: 'fiska', x: b.x, y: b.y, tx: b.x, ty: b.y, until: s.now, carry: 0 }), tool: 'fiskespjut' } as Person['task'];
-    wearSpear(s, b, 100); // b:s spjut går sönder i hens händer
-    const sonder = bg() === 0 && ag() === 2 && spears(s) === 2;
-    a.died = s.now; a.cause = 'av ålder';
-    syncOwners(s);
-    const arv = (s.agare?.fiskespjut ?? []).every(id => id === BYN) && ownedBy(s, a).fiskespjut === undefined;
-    const c = createState(5, START);
-    for (const q of c.people) q.tek = { fiskespjut: 1, korg: 1 };
-    c.items = { grenar: 20, flinta: 2, torrgras: 30 }; c.stat = { ...(c.stat ?? {}), fiskeForsok: 1 };
-    kor(c, 3 * 24);
-    const egna = Object.values(c.agare ?? {}).flat().filter(id => id !== BYN).length;
-    const total = Object.values(c.agare ?? {}).flat().length, hela = Object.keys(c.agare ?? {}).reduce((n, k) => n + Math.ceil((c.items[k] ?? 0) - 1e-9), 0);
+    const [a, b, c] = living(s);
+    syncTools(s);
+    const yxaByns = toolsOf(s, 'yxa')[0]?.agare === BYN;
+    s.items.fiskespjut = 1; syncTools(s); // ett spjut som är byns
+    makeSpear(s, a);
+    const gjorda = ownedBy(s, a).length === 1 && spears(s) === 2;
+    const task = (p: Person, act: Act, tool?: string) => { p.task = { act, phase: 'do', tx: p.x, ty: p.y, until: s.now + 3600, carry: 0, tool }; if (usesTool(p.task)) take(s, p, tool!); };
+    task(a, 'fiske', freeSpear(s, a));
+    const egetForst = heldBy(s, a)?.agare === a.id;
+    task(c, 'fiske', freeSpear(s, c));
+    const bynsTill = heldBy(s, c)?.agare === BYN;
+    a.task = undefined; c.task = undefined; syncTools(s);
+    const behaller = heldBy(s, a)?.agare === a.id && !heldBy(s, c);
+    s.items.fiskespjut = 1; syncTools(s); // byns spjut går förlorat; bara a:s finns kvar, i a:s hand
+    getRel(s, a, b).op = 10;
+    const lanar = freeSpear(s, b) === 'fiskespjut';
+    task(b, 'fiske', 'fiskespjut');
+    const lant = heldBy(s, b)?.agare === a.id && !heldBy(s, a);
+    b.task = undefined; syncTools(s);
+    const tillbaka = !heldBy(s, b);
+    getRel(s, a, c).op = -40; for (const q of [a, c]) { q.mother = q.father = undefined; } a.partner = c.partner = undefined;
+    const ovan = !freeSpear(s, c);
+    task(b, 'fiske', 'fiskespjut');
+    const sonder = wearTool(s, b, 'fiskespjut', 2) && spears(s) === 0 && !heldBy(s, b);
+    makeSpear(s, a); task(a, 'fiske', 'fiskespjut');
+    a.died = s.now; a.cause = 'av ålder'; syncTools(s);
+    const arv = toolsOf(s, 'fiskespjut').every(t => t.agare === BYN && t.hos === undefined);
+    const v = createState(5, START);
+    for (const q of v.people) q.tek = { fiskespjut: 1, korg: 1 };
+    v.items = { grenar: 20, flinta: 2, torrgras: 30 }; v.stat = { ...(v.stat ?? {}), fiskeForsok: 1 };
+    let ihand = 0;
+    kor(v, 3 * 24, q => { if (living(q).some(p => heldBy(q, p) && !usesTool(p.task))) ihand++; });
+    const ts = v.ting ?? [], egna = ts.filter(t => t.agare !== BYN).length;
+    const summa = Object.keys(v.items).filter(k => toolsOf(v, k).length).every(k => Math.abs(v.items[k] - toolsOf(v, k).reduce((n, t) => n + t.c, 0)) < 1e-6);
+    const stackar = pilesOf(v).filter(p => isTool(p.k) && p.stored).length, iforradet = ts.filter(t => t.hos === undefined).length;
     return [
       ['yxan som fanns före ägandet är byns', yxaByns],
-      ['den som gör spjuten äger dem', gjorda],
-      ['spjutet som gick sönder var hens eget', sonder],
-      ['en dödsfalls redskap blir byns', arv],
-      [`i en vanlig by äger folk det de gjort (${egna} av ${total} redskap har en ägare)`, egna > 0],
-      [`ägarlistan stämmer med förrådet (${total} ägare, ${hela} redskap)`, total === hela],
+      ['den som gör spjutet äger det', gjorda],
+      ['man tar sitt eget redskap först', egetForst],
+      ['den som inte har något eget tar byns', bynsTill],
+      ['det egna behålls i handen, byns läggs tillbaka', behaller],
+      ['man lånar av en vän som inte använder sitt', lanar && lant],
+      ['det lånade läggs i förrådet efteråt', tillbaka],
+      ['en ovän lånar inte ut', ovan],
+      ['det som går sönder är det man har i handen', sonder],
+      ['en dödsfalls redskap blir byns och läggs i förrådet', arv],
+      [`i en vanlig by äger folk det de gjort (${egna} av ${ts.length} redskap har en ägare)`, egna > 0],
+      [`folk bär sina egna redskap mellan arbetena (${ihand} av ${3 * 24 * 12} steg)`, ihand > 0],
+      ['förrådet är summan av tingens skick', summa],
+      [`en stack i förrådet för varje redskap där (${stackar} stackar, ${iforradet} redskap)`, stackar === iforradet],
     ];
   },
 };
@@ -779,7 +804,7 @@ SCENARIER.bygg = {
     const L = createState(6, START);
     kan(L);
     Object.assign(L.fire, { lit: true, fuel: 4 }); // elden brinner redan: annars hänger testet på hur fort den råkar tändas (ett försök lyckas ungefär var femtionde gång)
-    for (let i = 0; i < 2 * 24 * 3600 / 0.5 && !housesOf(L)[0]?.klar; i++) step(L, 0.5, true);
+    for (let i = 0; i < 3 * 24 * 3600 / 0.5 && !housesOf(L)[0]?.klar; i++) step(L, 0.5, true); // trägolvet kan få vänta på trä utöver reserven
     const hL = housesOf(L)[0];
     return [
       ['ett slutet rum med väggar räknas som under tak', !!rum && rum.tiles.length === 4],

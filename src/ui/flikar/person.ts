@@ -1,4 +1,4 @@
-import { Act, Lardom, Person, KUNSKAP_NAMES, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, TEKNIK, ageOf, alive, byId, ownedBy, sakNamn, describe, duty, habitShare, habitTotal, moodOf, relKey, stat, taskName, timeLabel } from '../../sim';
+import { Act, Lardom, Person, KUNSKAP_NAMES, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, TEKNIK, BYN, Ting, ageOf, alive, byId, heldBy, ownedBy, sakNamn, describe, duty, habitShare, habitTotal, moodOf, relKey, stat, taskName, timeLabel } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { bar, cap, carryTxt, durTxt, esc, hex, moodWord, pLink, relWord, sickNow, trend } from '../hjalp';
 import { s, ui } from '../lage';
@@ -25,7 +25,7 @@ export const person: Flik = {
         <dt>Värme</dt><dd>${bar(p.warm, p.warm < 0.4 ? 'low' : '', trend(p, 'warm', p.warm))}</dd><dt>Toa</dt><dd>${bar(p.toa, p.toa < 0.25 ? 'low' : '', trend(p, 'toa', p.toa))}</dd></dl>
         ${p.fiske ? `<h3>Fiske med händerna</h3><p class="muted">${p.fiske.f} försök, ${p.fiske.n} napp, ${p.fiske.k} ${p.fiske.k === 1 ? 'fisk' : 'fiskar'}</p>` : ''}
         ${a >= 8 ? willHtml(p) : ''}
-        ${ownHtml(p)}
+        ${gearHtml(p)}
         ${p.thoughts.length ? `<ul class="thoughts">${p.thoughts.map(t => `<li class="${t.v < 0 ? 'neg' : 'pos'}">${esc(t.text)} <span>${t.v > 0 ? '+' : ''}${Math.round(t.v * 100)}</span></li>`).join('')}</ul>` : ''}` : ''}
       <h3>Egenskaper</h3><dl class="kv">${STATS.map(k => `<dt>${STAT_NAMES[k]}</dt><dd>${bar(stat(p, k, now) / 20)}<span>${stat(p, k, now).toFixed(1).replace('.', ',')}</span></dd>`).join('')}</dl>
       <h3>Färdigheter</h3><dl class="kv">${SKILLS.map(k => `<dt>${SKILL_NAMES[k]}</dt><dd>${bar(p.skill[k] / 20, 'skill')}<span>${p.skill[k].toFixed(1).replace('.', ',')}</span></dd>`).join('')}</dl>
@@ -43,11 +43,16 @@ function groups(ls: Lardom[]) {
   for (const l of ls) { const key = (l.k === 'fara' ? 'f' : 'p') + l.a; (m.get(key) ?? m.set(key, []).get(key)!).push(l); }
   return [...m.values()];
 }
-// det hen äger, som symboler; namnet syns när man håller över eller trycker på symbolen
-function ownHtml(p: Person) {
-  const own = Object.entries(ownedBy(s, p));
-  if (!own.length) return '';
-  return `<h3>Äger</h3><div class="tekrad">${own.map(([k, n]) => { const t = `${sakNamn(k)}${n > 1 ? `, ${n} st` : ''}. Gjorde det själv.`; return `<span class="tnod liten kan" tabindex="0" title="${esc(t)}" aria-label="${esc(t)}">${iconImg(k, 16)}${n > 1 ? `<small>${n}</small>` : ''}</span>`; }).join('')}</div>`;
+// utrustningen: handplatsen och det hen äger, som symboler. Ringen runt symbolen visar skicket; namnet, skicket och
+// var tinget är syns när man håller över eller trycker på symbolen
+function gearHtml(p: Person) {
+  const hand = heldBy(s, p), own = ownedBy(s, p).filter(t => t !== hand);
+  const whose = (t: Ting) => t.agare === p.id ? 'eget' : t.agare === BYN ? 'byns' : `lånat av ${byId(s, t.agare)?.name ?? 'någon'}`;
+  const where = (t: Ting) => t.hos === undefined ? 'i förrådet' : `${byId(s, t.hos)?.name ?? 'någon'} har det i handen`;
+  const ting = (t: Ting, title: string, cls = 'kan') => `<span class="tnod liten ${cls}" tabindex="0" title="${esc(title)}" aria-label="${esc(title)}">${iconImg(t.k, 16)}<svg class="ring" viewBox="0 0 36 36"><circle cx="18" cy="18" r="16" pathLength="100" stroke-dasharray="${Math.round(t.c * 100)} 100"/></svg></span>`;
+  const slot = hand ? ting(hand, `I handen: ${sakNamn(hand.k).toLowerCase()}, ${whose(hand)}, ${Math.round(hand.c * 100)} %`, 'kan hand')
+    : `<span class="tnod liten hand tom" tabindex="0" title="Handen är tom" aria-label="Handen är tom">✋</span>`;
+  return `<h3>Utrustning</h3><div class="tekrad">${slot}${own.map(t => ting(t, `Äger: ${sakNamn(t.k).toLowerCase()}, ${Math.round(t.c * 100)} %, ${where(t)}`, 'pa')).join('')}</div>`;
 }
 // kunskap (alltid rätt) och lärdomar (det personen tror, kan vara fel). Spelaren ser vad som inte stämmer.
 function knowledgeHtml(p: Person) {

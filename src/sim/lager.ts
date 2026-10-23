@@ -1,4 +1,5 @@
 import { campDist } from './plats';
+import { syncTools, tingOf, toolsOf, wearCarried } from './agande';
 import { stat, ageOf, log } from './folk';
 import { getMap } from './karta';
 import { Act, H, Person, State, T, Task, W } from './typer';
@@ -143,14 +144,38 @@ function takeStacks(s: State, k: string, n: number): number {
 // håll stackarna i takt med summorna
 export function reconcile(s: State) {
   syncFood(s);
+  syncTools(s);
   const sum: Record<string, number> = {};
   for (const a of stacksOf(s)) if (isStored(s, a.x, a.y)) sum[a.k] = (sum[a.k] ?? 0) + a.n;
   for (const k of STACK_ORDER) {
+    if (isTool(k)) { toolStacks(s, k); continue; }
     const d = amountOf(s, k) - (sum[k] ?? 0);
     if (d > 1e-6) place(s, k, d, 1, false);
     else if (d < -1e-6) takeStacks(s, k, -d);
   }
   s.stackar = stacksOf(s).filter(a => a.n > 1e-6);
+}
+// redskapen: en stack för varje redskap i förrådet (inte de som någon har i handen), med tingets skick
+function toolStacks(s: State, k: string) {
+  const ts = toolsOf(s, k).filter(t => t.hos === undefined).sort((a, b) => a.c - b.c);
+  let st = stacksOf(s).filter(a => a.k === k && isStored(s, a.x, a.y));
+  for (const a of st.sort((a, b) => a.n - b.n).slice(0, Math.max(0, st.length - ts.length))) a.n = 0;
+  st = st.filter(a => a.n > 0);
+  for (let i = st.length; i < ts.length; i++) place(s, k, ts[i].c, 1, false);
+  st = stacksOf(s).filter(a => a.k === k && a.n > 0 && isStored(s, a.x, a.y)).sort((a, b) => a.n - b.n);
+  for (let i = 0; i < Math.min(st.length, ts.length); i++) st[i].n = ts[i].c;
+}
+// stackarnas slitage i förrådet förs över till tingen (båda i skicksordning)
+function wearToTools(s: State) {
+  for (const k of STACK_ORDER) {
+    if (!isTool(k)) continue;
+    const ts = toolsOf(s, k).filter(t => t.hos === undefined).sort((a, b) => a.c - b.c);
+    const st = stacksOf(s).filter(a => a.k === k && isStored(s, a.x, a.y)).sort((a, b) => a.n - b.n);
+    if (st.length !== ts.length) continue;
+    for (let i = 0; i < ts.length; i++) ts[i].c = st[i].n;
+    s.ting = tingOf(s).filter(t => t.c > 1e-6);
+    s.items[k] = toolsOf(s, k).reduce((n, t) => n + t.c, 0);
+  }
 }
 // ät: det som förstörs fortast först, och av det det sämsta. Ger skicket på maten som åts
 export function takeFood(s: State, n: number) {
@@ -198,6 +223,8 @@ export function wearStore(s: State, dtSec: number, ai: number) {
     if (into) { a.n = Math.min(RUTA[into.k], a.n * into.per); a.k = into.k; a.c = 0.5; if (stored) addTo(s, into.k, a.n); }
     else a.n = 0;
   }
+  wearToTools(s);
+  wearCarried(s, k => wearRate(s, k, ai) * h);
   s.stackar = stacksOf(s).filter(a => a.n > 1e-6);
   for (const k of NO_STACK) if (s.items[k]) s.items[k] *= Math.exp(-wearRate(s, k, ai) * h); // saker utan egen stack slits i summan
   s.food = Math.max(0, s.food);

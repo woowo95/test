@@ -7,7 +7,7 @@ import { sedEvent } from './seder';
 import { rnd } from './slump';
 import { knows } from './teknik';
 import { addTo, amountOf, zonesOf } from './lager';
-import { axes } from './skog';
+import { freeTools } from './agande';
 import { FOREST } from './vag';
 import { H, HOUR, Person, State, T, W } from './typer';
 
@@ -110,7 +110,7 @@ export function buildJob(s: State, p: Person): Job | undefined {
   const taken = new Set(others.filter(q => q.task?.act === 'bygga').map(q => q.task!.ref));
   // först fälls träden där huset ska stå, även inne i huset, av den som har en ledig yxa
   const fallers = others.filter(q => q.task?.act === 'falla' || q.task?.act === 'hugga');
-  if (axes(s) > fallers.length) {
+  if (freeTools(s, p, 'yxa') > 0) {
     const felling = new Set(fallers.filter(q => q.task!.act === 'falla').map(q => Math.floor(q.task!.ty) * W + Math.floor(q.task!.tx)));
     let fb: Bit | undefined, fs = Infinity;
     for (const b of bitsOf(s)) {

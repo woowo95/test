@@ -1,3 +1,4 @@
+import { take, usesTool } from './agande';
 import { campCenter, campDist, campKey } from './plats';
 import { foodDays } from './ekonomi';
 import { ACTS, WORK, isWork } from './handlingar';
@@ -142,6 +143,8 @@ export function chooseTask(s: State, p: Person, live: boolean) {
   const sp0 = v.spot ?? spotFor(s, v.act, p), sp = freeNear(s, sp0.x, sp0.y); // aldrig i en husvägg
   if (!live) { p.x = sp.x; p.y = sp.y; tread(s, sp.x, sp.y, isWork(v.act) ? 2 : 1); }
   p.task = { act: v.act, phase: live ? 'go' : 'do', tx: sp.x, ty: sp.y, until: s.now + v.dur, carry: 0, why: v.why, dark: !light, ref: v.ref, tool: v.tool, site: v.site };
+  const k = usesTool(p.task);
+  if (k && !take(s, p, k)) p.task.tool = undefined; // redskapet tas i handen: det egna först (agande.ts)
 }
 
 // 1–2. nöd (sjuk, svag, fryser farligt, måste på toa genast) och grundbehov (toa, värme, vila).
@@ -234,6 +237,7 @@ function building(s: State, v: Val, job: NonNullable<ReturnType<typeof buildJob>
   if (job.fell) { // först fälls träden där huset ska stå
     set(v, 'falla', `Fäller ett träd där ${hus} ska stå.`);
     v.dur = FALL_TID * Math.max(0.5, groundOf(s).trees[b.y * W + b.x]); v.spot = { x: b.x + 0.5, y: b.y + 0.5 }; // ett litet träd fälls fortare
+    v.tool = 'yxa';
     return;
   }
   set(v, 'bygga', job.repair ? `En vägg i ${hus} är sliten och behöver lagas.` : `${b.k === 'golv' ? 'Lägger golv i' : 'Bygger på'} ${hus}. ${beds(s).length < pop ? 'Alla har inte en sovplats under tak.' : ''}`.trim());
@@ -255,7 +259,7 @@ function withTools(s: State, p: Person, v: Val, best: Act, what: string) {
   if (ax) {
     set(v, ax.act, `${what}. ${ax.why}.`);
     if (ax.dur) v.dur = ax.dur;
-    if (ax.act !== 'yxa') v.spot = { x: ax.x, y: ax.y };
+    if (ax.act !== 'yxa') { v.spot = { x: ax.x, y: ax.y }; v.tool = 'yxa'; }
     v.ref = ax.ref;
   }
   const { kyla, gras } = dangers(s);
@@ -280,7 +284,7 @@ function makeSpearTask(s: State, p: Person, v: Val, what: string) {
 }
 // slakta det fällda viltet vid elden, så länge det tar
 function slaughterTask(s: State, v: Val, why: string) {
-  set(v, 'slakta', why);
+  set(v, 'slakta', why); v.tool = 'kniv';
   v.dur = Math.min(2 * HOUR, (vilt(s) / KANIN / SLAKT_TIMME) * HOUR + 5 * MIN);
 }
 // handarbete vid elden: den som kan göra en kniv gör det när byn saknar en, den som har kniv slaktar viltet, och den

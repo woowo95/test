@@ -1,4 +1,4 @@
-import { made } from './agande';
+import { addTool, freeTools, nTools } from './agande';
 import { campCenter, campDist } from './plats';
 import { ageOf, living, log, think } from './folk';
 import { groundOf, isForest } from './mark';
@@ -13,7 +13,7 @@ import { item } from './saker';
 // Utan yxa kan invånarna bara samla grenar på marken. Med en flintyxa kan de fälla träd.
 // Ett fällt träd blir en liggande stam som sedan huggs till ved, och då blir det grenar också.
 const STAM = { ved: 8, grenar: 5 }; // vad ett vuxet träd ger
-export const axes = (s: State) => Math.ceil(item(s, 'yxa') - 1e-9); // en sliten yxa är fortfarande en yxa
+export const axes = (s: State) => nTools(s, 'yxa'); // en sliten yxa är fortfarande en yxa
 export const stocks = (s: State) => (s.stockar ??= []);
 export const FALL_TID = 1.2 * HOUR; // så lång tid det tar att fälla ett träd
 
@@ -80,8 +80,8 @@ export function makeAxe(s: State, p: Person) {
   if (!canMakeAxe(s)) return;
   s.items.flinta--;
   s.items.grenar--;
-  s.items.yxa = item(s, 'yxa') + 1; made(s, 'yxa', p);
-  if (s.items.yxa === 1 && !s.log.some(l => l.text.includes('byns första yxa'))) {
+  addTool(s, 'yxa', p);
+  if (axes(s) === 1 && !s.log.some(l => l.text.includes('byns första yxa'))) {
     log(s, `${p.name} gjorde byns första yxa av en pinne och en flintsten. Nu kan byn fälla träd.`, 'world', [p.id]);
     p.fame.push('Gjorde byns första yxa');
     sedEvent(s, 'nyfikenhet', 0.08, 'Flintyxan har gjort byn nyfiken på vad mer som går att tillverka.');
@@ -92,7 +92,7 @@ export function makeAxe(s: State, p: Person) {
 export function axeTask(s: State, p: Person): { act: Act; x: number; y: number; ref?: number; dur?: number; why: string } | undefined {
   const ppl = living(s), others = ppl.filter(q => q !== p);
   const busy = others.filter(q => q.task?.act === 'falla' || q.task?.act === 'hugga');
-  if (axes(s) > busy.length) {
+  if (freeTools(s, p, 'yxa') > 0) { // en yxa som ingen annan fäller eller hugger med
     const k = nearestStock(s);
     if (k) return { act: 'hugga', x: k.x + 0.3, y: k.y + 0.2, ref: k.id, why: 'Hugger trä av en fälld stam' };
     const taken = new Set(busy.filter(q => q.task!.act === 'falla').map(q => Math.floor(q.task!.ty) * W + Math.floor(q.task!.tx)));
