@@ -57,6 +57,7 @@ export interface Person {
   thoughts: Thought[];
   x: number; y: number; task?: Task;
   fame: string[];
+  kallad?: string[]; // yrkestaggar personen redan fått, så att det bara står i loggen första gången
   hue: number;
   tag?: string; // yrkestagg efter vad personen ägnar mest tid åt
 }

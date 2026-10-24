@@ -9,7 +9,11 @@ import { Utfall, korSkript, pool } from './pool';
 
 type Koll = [string, boolean];
 const kor = (s: State, timmar: number, varje?: (s: State) => void) => { for (let i = 0; i < timmar * 12; i++) { step(s, 300, false); varje?.(s); } };
-const logg = (s: State, t: string) => s.log.some(l => l.text.includes(t));
+// letar efter en text i loggen. Loggen rymmer bara de senaste 400 raderna: har den nått taket kan det som söks ha fallit bort, och då varnar testet
+const logg = (s: State, t: string) => {
+  if (s.log.length >= 400) console.log(`VARNING: scenariot läser en logg som nått taket (400 rader) och söker "${t}". Räkna i byns statistik i stället.`);
+  return s.log.some(l => l.text.includes(t));
+};
 // andel jordrutor med skog, inom eller utanför ett avstånd från elden. Ängarna räknas inte (äng = 1 räknar bara dem)
 function skogsandel(s: State, min: number, max: number, ang = 0) {
   const g = groundOf(s), a = angOf(s.seed);
@@ -422,7 +426,7 @@ SCENARIER.gava = {
     for (let i = 0; i < 4; i++) {
       const v = createState(40 + i, START);
       for (let h = 0; h < 20 * 24 * 12; h++) step(v, 300, false);
-      gavor += v.log.filter(e => / gav en /.test(e.text)).length; byten += v.log.filter(e => / bytte: /.test(e.text)).length;
+      gavor += v.stat?.gavor ?? 0; byten += v.stat?.byten ?? 0;
     }
     return [
       [`en förälder ger sitt barn det hen har över (${barn} av 20)`, barn >= 17],

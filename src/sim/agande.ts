@@ -1,6 +1,6 @@
 import { State, Person, Task } from './typer';
 import { SAKER, isTool } from './saker';
-import { alive, byId, getRel, isKin, log, stat, think } from './folk';
+import { alive, byId, count, getRel, isKin, log, stat, think } from './folk';
 import { clamp, rnd } from './slump';
 
 // ---------- ägande och handplatsen ----------
@@ -185,12 +185,14 @@ export function askForTool(s: State, a: Person, b: Person): 'gåva' | 'byte' | u
         r.op = clamp(r.op + 2, -100, 100);
         think(m, `Bytte till sig en ${namn} av ${g.name}`, 0.06, s.now, 6 * 3600);
         think(g, `Bytte till sig en ${(SAKER[back.k]?.namn ?? back.k).toLowerCase()} av ${m.name}`, 0.06, s.now, 6 * 3600);
+        count(s, 'byten');
         log(s, `${m.name} och ${g.name} bytte: en ${namn} mot en ${(SAKER[back.k]?.namn ?? back.k).toLowerCase()}.`, 'rel', [m.id, g.id]);
         return 'byte';
       }
       r.op = clamp(r.op + 4, -100, 100);
       think(m, `Fick en ${namn} av ${g.name}`, 0.1, s.now, 12 * 3600);
       think(g, `Gav en ${namn} till ${m.name}`, 0.05, s.now, 6 * 3600);
+      count(s, 'gavor');
       log(s, `${g.name} gav en ${namn} till ${m.name}.`, 'rel', [g.id, m.id]);
       return 'gåva';
     }

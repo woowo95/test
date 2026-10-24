@@ -66,7 +66,8 @@ Simuleringen importerar aldrig från `ui/`. Gränssnittet importerar bara från 
 3. **Byn sparas som JSON.** Nya fält i `State` eller `Person` är valfria (`?`), eller så får de ett värde i `migrate()` i `varld.ts`, så att äldre sparfiler fungerar.
 4. **Cacher hör till byn.** Testläget har två byar samtidigt, så det som sparas mellan steg ligger i en `WeakMap<State, …>` med en nyckel som säger när det måste räknas om (`campKey(s)`, `s.byggV`, tiden). Det får aldrig ligga i en enda variabel för hela modulen.
 5. **Register i stället för listor.** Vad handlingar, saker, tekniker och flikar är finns på ett enda ställe. Resten av koden frågar registret (`ACTS[a].vila`, `SAKER[k].stack`) i stället för att räkna upp namn.
-6. **Gränssnittet visar symboler först.** Förklaringen syns när man håller musen över något (`title`) eller trycker på det.
+6. **Räkna aldrig ur händelseloggen.** `s.log` rymmer bara de senaste 400 raderna och är till för att läsa. Det som ska räknas (födslar, dödsfall, gåvor, första gången något görs) räknas när det händer med `count(s, 'namn')` i `s.stat` (folk.ts). Det som bara får hända en gång per person sparas på personen (t.ex. `p.kallad` för yrkestaggarna).
+7. **Gränssnittet visar symboler först.** Förklaringen syns när man håller musen över något (`title`) eller trycker på det.
 
 ## Recept
 

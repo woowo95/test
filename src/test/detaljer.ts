@@ -21,18 +21,17 @@ for (const seed of valda.length ? valda : [1, 42, 777]) {
       console.log(`seed ${seed} dag ${d + 1} ${AGES[ageIndex(s)]}: pop ${ppl.length}, mat ${s.food.toFixed(0)}, ved ${s.wood.toFixed(0)}, snittålder ${(ppl.reduce((a, p) => a + ageOf(p, s.now), 0) / (ppl.length || 1)).toFixed(1)}, eld ${s.fire.lit ? 'brinner' : 'släckt'}`);
     }
   }
-  const kinds: Record<string, number> = {};
-  for (const l of s.log) kinds[l.kind] = (kinds[l.kind] || 0) + 1;
-  const deaths = s.log.filter(l => l.kind === 'death').map(l => l.text.replace(/^\S+ dog /, '')).map(t => t.split(',')[0]);
-  const dc: Record<string, number> = {}; for (const d of deaths) dc[d] = (dc[d] || 0) + 1;
+  const st = s.stat ?? {};
+  const kinds = { födda: st.fodda ?? 0, döda: st.doda ?? 0, gåvor: st.gavor ?? 0, byten: st.byten ?? 0 };
+  const dc = Object.fromEntries(Object.entries(st).filter(([k]) => k.startsWith('dog ')).map(([k, v]) => [k.slice(4), v]));
   const f = s.fire;
-  console.log('logg', kinds, 'dödsorsaker', dc, 'minFood', minFood.toFixed(0), 'tid', (performance.now() - t0).toFixed(0) + 'ms', 'storlek', (serialize(s).length / 1024).toFixed(0) + 'KB');
+  console.log('statistik', kinds, 'dödsorsaker', dc, 'minFood', minFood.toFixed(0), 'tid', (performance.now() - t0).toFixed(0) + 'ms', 'storlek', (serialize(s).length / 1024).toFixed(0) + 'KB');
   console.log(`eld: första efter ${firstFire.toFixed(1)} h, brann ${(litSteps / steps * 100).toFixed(0)} % av tiden, tänd ${f.lightings} ggr, slocknade ${f.outs} ggr, försök totalt ${f.tryTotal}, ved bränd ${f.totalBurned.toFixed(0)}, förråd ${JSON.stringify(roundItems(s))}`);
   console.log(s.log.filter(l => /eld|glöd|flint|sten/i.test(l.text)).slice(0, 6).map(l => l.text).join('\n'));
   const ta = Object.values(acts).reduce((a, b) => a + b, 0);
   console.log('vuxnas tid:', Object.entries(acts).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${(v / ta * 100).toFixed(0)}%`).join(', '));
   console.log('seder:', SEDER.map(k => `${k} ${s.seder.v[k].toFixed(2)}`).join(', '), '| olyckor på toa', accidents);
-  console.log('taggar:', living(s).filter(p => p.tag).map(p => `${p.name}: ${p.tag}`).join(', '), '| tagg-loggar', s.log.filter(l => l.text.includes('kallas nu')).length);
+  console.log('taggar:', living(s).filter(p => p.tag).map(p => `${p.name}: ${p.tag}`).join(', '), '| fått en tagg', living(s).filter(p => p.kallad?.length).length);
   console.log(s.seder.log.map(l => l.text).join('\n'));
   const g = groundOf(s);
   let skog = 0, planta = 0, hogt = 0, kort = 0, bar = 0;

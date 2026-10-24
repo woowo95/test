@@ -94,7 +94,7 @@ export function updateTags(s: State) {
       if (best) holders.set(best, (holders.get(best) ?? 0) + 1);
       p.tag = best;
       const txt = `${p.name} kallas nu för ${best?.toLowerCase()}.`;
-      if (best && best !== 'Dagdrivare' && !s.log.some(l => l.text === txt)) log(s, txt, 'skill', [p.id]);
+      if (best && best !== 'Dagdrivare' && !p.kallad?.includes(best)) { (p.kallad ??= []).push(best); log(s, txt, 'skill', [p.id]); }
     }
   }
 }

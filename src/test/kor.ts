@@ -48,16 +48,16 @@ export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => voi
     if (forraAlder === 0 && ai === 1) { vintermat = Math.min(vintermat, s.food); vinterved = Math.min(vinterved, fuelStock(s)); }
     forraAlder = ai;
   }
-  const dod = s.people.filter(p => p.died !== undefined);
+  const st = s.stat ?? {};
   const n: Nyckeltal = {
     pop: living(s).length,
     atergrundad: s.stat?.atergrundad ?? 0,
     invandrade: s.stat?.invandrade ?? 0,
     utvandrade: s.stat?.utvandrade ?? 0,
-    fodda: s.log.filter(l => l.kind === 'birth').length,
-    doda: dod.length,
-    svalt: dod.filter(p => p.cause === 'av svält').length,
-    kyla: dod.filter(p => p.cause === 'av kyla').length,
+    fodda: st.fodda ?? 0,
+    doda: st.doda ?? 0,
+    svalt: st['dog av svält'] ?? 0,
+    kyla: st['dog av kyla'] ?? 0,
     hunger,
     humor: humorN ? +(humor / humorN).toFixed(3) : 0,
     vintermat: Number.isFinite(vintermat) ? Math.round(vintermat) : -1,

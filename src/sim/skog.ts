@@ -1,6 +1,6 @@
 import { addTool, freeTools, nTools } from './agande';
 import { campCenter, campDist } from './plats';
-import { ageOf, living, log, think } from './folk';
+import { ageOf, count, living, log, think } from './folk';
 import { groundOf, isForest } from './mark';
 import { FOREST } from './vag';
 import { sedEvent } from './seder';
@@ -81,7 +81,8 @@ export function makeAxe(s: State, p: Person) {
   if (!canMakeAxe(s)) return;
   use(s, p, 'flinta', 1); use(s, p, 'grenar', 1);
   addTool(s, 'yxa', p);
-  if (axes(s) === 1 && !s.log.some(l => l.text.includes('byns första yxa'))) {
+  if (axes(s) === 1 && !s.stat?.yxa1) {
+    count(s, 'yxa1');
     log(s, `${p.name} gjorde byns första yxa av en pinne och en flintsten. Nu kan byn fälla träd.`, 'world', [p.id]);
     p.fame.push('Gjorde byns första yxa');
     sedEvent(s, 'nyfikenhet', 0.08, 'Flintyxan har gjort byn nyfiken på vad mer som går att tillverka.');

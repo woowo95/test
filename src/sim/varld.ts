@@ -1,6 +1,6 @@
 import { migrateTek } from './teknik';
 import { ageOf, getRel, log, newPerson, think } from './folk';
-import { newSeder, sederTarget } from './seder';
+import { newSeder, sederTarget, TAGS } from './seder';
 import { clamp, gauss, rnd } from './slump';
 import { DAY, Fire, NEW_H, NEW_W, Person, SEC, SKILLS, State, useMap } from './typer';
 
@@ -45,6 +45,9 @@ export function migrate(s: State) {
     if (s.kunskap?.svamp && p.died === undefined && !p.kunskap?.svamp) p.kunskap = { ...p.kunskap, svamp: { v: s.kunskap.svamp, t: s.now } };
   }
   delete s.kunskap;
+  // äldre sparfiler: det som räknades ur loggen räknas nu i statistiken
+  if (s.log.some(l => l.text.includes('byns första yxa'))) (s.stat ??= {}).yxa1 ??= 1;
+  for (const l of s.log) if (l.kind === 'skill') { const m = l.text.match(/ kallas nu för (.+)\.$/), p = s.people.find(q => q.id === l.ids?.[0]); const tag = m && p && TAGS.find(t => t.tag.toLowerCase() === m[1])?.tag; if (tag && !p.kallad?.includes(tag)) (p.kallad ??= []).push(tag); }
   migrateTek(s);
   if (!s.items) s.items = { flinta: 1, torrgras: 8, grenar: 8 };
   // gniststenen finns inte längre: elden tänds med flinta
