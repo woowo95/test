@@ -1,5 +1,5 @@
 // Kör en by utan grafik och samlar nyckeltal. Vakterna larmar om något blir omöjligt (NaN, negativa förråd, folk i vattnet).
-import { createState, step, living, DAY, ageIndex, moodOf, serialize, serializeParts, getMap, fuelStock, ACT_NAMES, T, W, H, State, isWall } from '../sim';
+import { createState, step, living, DAY, ageIndex, moodOf, serialize, serializeParts, getMap, fuelStock, ACT_NAMES, T, W, H, State, isWall, foodOf, amountOf, sumOf } from '../sim';
 
 export const START = Date.parse('2026-10-20T08:00:00+02:00');
 
@@ -29,8 +29,9 @@ export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => voi
     step(s, 300, false);
     varjeSteg?.(s);
     steg++; if (s.fire.lit) lit++;
-    if (!(s.food >= 0) || !(s.wood >= 0)) larm('förråd', () => `mat ${s.food}, ved ${s.wood}`);
+    if (!(foodOf(s) >= 0) || !(amountOf(s, 'ved') >= 0)) larm('förråd', () => `mat ${foodOf(s)}, ved ${amountOf(s, 'ved')}`);
     for (const k in s.items) if (!(s.items[k] >= 0)) larm('föremål', () => `${k} = ${s.items[k]}`);
+    for (const a of s.stackar ?? []) if (!(a.n >= 0) || !(sumOf(a.ag) <= a.n + 1e-6) || Object.values(a.ag ?? {}).some(v => !(v >= 0))) larm('stack', () => `${a.k} ${a.n} ägs ${JSON.stringify(a.ag)}`);
     for (const k of s.stockar ?? []) if (!(k.ved >= 0) || !(k.grenar >= 0)) larm('stam', () => `stam ${k.id} ved ${k.ved}, grenar ${k.grenar}`);
     const folk = living(s);
     for (const p of folk) {
@@ -45,7 +46,7 @@ export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => voi
       for (const p of folk) { humor += moodOf(p, s.now); humorN++; }
     }
     const ai = ageIndex(s);
-    if (forraAlder === 0 && ai === 1) { vintermat = Math.min(vintermat, s.food); vinterved = Math.min(vinterved, fuelStock(s)); }
+    if (forraAlder === 0 && ai === 1) { vintermat = Math.min(vintermat, foodOf(s)); vinterved = Math.min(vinterved, fuelStock(s)); }
     forraAlder = ai;
   }
   const st = s.stat ?? {};

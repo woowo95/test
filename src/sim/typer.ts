@@ -81,23 +81,24 @@ export interface State {
   rngs?: Record<string, number>; // var i sin slumpföljd varje system är (slump.ts)
   W?: number; H?: number; // kartans storlek (saknas i äldre byar: 64×40)
   people: Person[]; rels: Record<string, Rel>; nextId: number;
-  food: number; wood: number; log: LogEntry[];
+  food?: number; wood?: number; // äldre sparfiler (före v40): maten och veden i förrådet, nu räknade ur stackarna
+  log: LogEntry[];
   lastAgeIdx: number; lastGuardDay: number;
-  items: Record<string, number>; // föremål i förrådet, t.ex. flinta, hö, grenar
+  items: Record<string, number>; // redskapen i förrådet (äldre sparfiler före v40: också andra saker)
   fire: Fire;
   seder: Seder;
   mark?: string; // markens grästäcke per ruta (stigar), packat
   skog?: string; // trädens tillväxt per ruta, packat
   stockar?: Stock[]; // fällda träd som ligger och väntar på att huggas
   lager?: { x: number; y: number; w: number; h: number }; // lagerplatsen, rutor
-  mat?: Record<string, number>; // maten per slag (bär, kött, fisk, svamp); s.food är summan
+  mat?: Record<string, number>; // äldre sparfiler (före v40): maten per slag
   marken?: { x: number; y: number; k: string; n: number }[]; // gamla sparfiler: saker på marken (nu i stackar)
   lagren?: { x: number; y: number; w: number; h: number; namn?: string; slag?: 'mat' | 'material'; prio?: number }[]; // lagerplatserna
   ting?: { id: number; k: string; c: number; agare: number; hos?: number }[]; nextTing?: number; // varje redskap för sig: skick, ägare (0 = byn) och vem som har det i handen (agande.ts)
   tingVag?: { id: number; k: string; c: number; agare: number; hos?: number }[]; // redskap som bärs mellan lagerplatser
   agare?: Record<string, number[]>; // sparfiler från v30: redskapens ägare (blir s.ting)
-  stackar?: { k: string; n: number; c: number; x: number; y: number; ag?: Record<string, number> }[]; // alla stackar med plats och skick (c: 1 = nytt). ag = vems en stack på marken är
-  egna?: Record<string, Record<string, number>>; egnaT?: Record<string, number>; // hur mycket av varje slag i förrådet varje person äger; resten är byns (egendom.ts)
+  stackar?: { k: string; n: number; c: number; x: number; y: number; ag?: Record<string, number>; dold?: number }[]; // alla stackar med plats och skick (c: 1 = nytt), det enda som sparas om förrådet. ag = vems stacken är (lager.ts)
+  egna?: Record<string, Record<string, number>>; egnaT?: Record<string, number>; // äldre sparfiler (före v40): vems sakerna i förrådet var
   stubbar?: { x: number; y: number; t: number }[]; // stubbar efter fällda träd, t = när trädet fälldes
   nextStock?: number; fallda?: number;
   fynd?: string; // hur mycket som tagits ur varje plats (bär, vilt, fisk), packat

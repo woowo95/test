@@ -2,9 +2,8 @@ import { ageOf, count, living, log } from './folk';
 import { knows } from './teknik';
 import { rnd } from './slump';
 import { State, Person } from './typer';
-import { item } from './saker';
-import { addFood, gain, use } from './lager';
-import { ownAdd } from './egendom';
+import { amountOf, gain, item, put, use } from './lager';
+import { addDel } from './egendom';
 import { addTool, freeTools, nTools, ownsFree, wearTool } from './agande';
 
 // ---------- redskap: spjut ----------
@@ -127,7 +126,7 @@ export const KANIN = DJUR.kanin.mat; // så mycket mat en kanin är, uppäten so
 export const SLAKT = DJUR.kanin.slakt; // det en kanin ger slaktad
 export const SLAKT_TIMME = 3; // kaniner per timme
 export const knives = (s: State) => nTools(s, 'kniv');
-export const vilt = (s: State) => s.mat?.vilt ?? 0;
+export const vilt = (s: State) => amountOf(s, 'vilt');
 export const wantsKnife = (s: State, p: Person) => knows(p, 'kniv') && knives(s) < 1 && item(s, 'flinta') >= 2 && item(s, 'grenar') >= 1 && !living(s).some(q => q !== p && q.task?.act === 'kniv');
 export function makeKnife(s: State, p: Person) {
   if (item(s, 'flinta') < 2 || item(s, 'grenar') < 1) return;
@@ -143,17 +142,11 @@ export function slaughter(s: State, p: Person, hours: number) {
   if (n <= 0 || knives(s) < 1) { if (p.task) p.task.until = s.now; return; }
   // köttet, benet, skinnet och senorna är deras som ägde viltet, inte slaktarens
   const vems = use(s, p, 'vilt', n * KANIN), art = DJUR.kanin;
-  addFood(s, 'kott', n * SLAKT.kott);
-  s.items.ben = item(s, 'ben') + n * SLAKT.ben; s.items.skinn = item(s, 'skinn') + n * SLAKT.skinn;
-  for (const o in vems) {
-    const f = vems[o] / KANIN;
-    ownAdd(s, +o, 'kott', f * SLAKT.kott); ownAdd(s, +o, 'ben', f * SLAKT.ben); ownAdd(s, +o, 'skinn', f * SLAKT.skinn);
-  }
+  for (const k of ['kott', 'ben', 'skinn'] as const) put(s, k, n * SLAKT[k], addDel({}, vems, SLAKT[k] / KANIN));
   // senorna blir med liten chans ett helt rep, som tillhör den som ägde mest av viltet
   if (art.rep > 0 && knows(p, 'rep') && item(s, 'rep') < REP_VILL && rnd(s, 'arbete', p) < n * art.rep) {
-    s.items.rep = item(s, 'rep') + 1;
     const agare = Object.keys(vems).sort((a, b) => vems[b] - vems[a])[0];
-    if (agare !== undefined) ownAdd(s, +agare, 'rep', 1);
+    put(s, 'rep', 1, agare !== undefined ? { [agare]: 1 } : undefined);
     count(s, 'repAvSenor');
   }
   if (wearTool(s, p, 'kniv', n * 0.004) && p.task) p.task.tool = undefined; // kniven håller för ungefär 250 kaniner

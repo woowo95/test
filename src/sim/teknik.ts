@@ -1,7 +1,7 @@
 import { ageOf, count, log, stat, think } from './folk';
 import { sedEvent } from './seder';
 import { rnd } from './slump';
-import { item } from './saker';
+import { item } from './lager';
 import { Act, HOUR, Person, State } from './typer';
 
 // ---------- teknik ----------

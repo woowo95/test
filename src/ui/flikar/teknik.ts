@@ -1,4 +1,4 @@
-import { ACTS, ACT_LIST, ACT_NAMES, Act, Person, TEK, TEKNIK, hasMaterial, knows, living, sakNamn } from '../../sim';
+import { ACTS, ACT_LIST, ACT_NAMES, Act, Person, TEK, TEKNIK, hasMaterial, item, knows, living, sakNamn } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { bar, esc, pLink } from '../hjalp';
 import { s, ui } from '../lage';
@@ -66,7 +66,7 @@ function tekInfo(ppl: Person[]) {
   if (!t) return '';
   const kan = ppl.filter(p => knows(p, t.id));
   const pa = ppl.filter(p => !knows(p, t.id) && (p.tek?.[t.id] ?? 0) > 0.01).sort((a, b) => b.tek![t.id] - a.tek![t.id]).slice(0, 5);
-  const mat = t.material.map(g => g.map(k => `<span class="${(s.items[k] ?? 0) >= 1 ? '' : 'saknas'}" title="${esc(sakNamn(k))}">${iconImg(k, 16) || esc(sakNamn(k))}</span>`).join('<i>/</i>')).join('<i>+</i>');
+  const mat = t.material.map(g => g.map(k => `<span class="${item(s, k) >= 1 ? '' : 'saknas'}" title="${esc(sakNamn(k))}">${iconImg(k, 16) || esc(sakNamn(k))}</span>`).join('<i>/</i>')).join('<i>+</i>');
   return `<div class="tinfo"><div class="tektop">${iconImg(t.id, 24)}<b>${esc(t.namn)}</b><span class="tmat">${mat}</span></div>
     <p class="small">${esc(t.text)} ${esc(t.effekt)}</p>
     ${kan.length ? `<p class="kan">${kan.map(pLink).join(', ')}</p>` : '<p class="muted small">Ingen kan det.</p>'}

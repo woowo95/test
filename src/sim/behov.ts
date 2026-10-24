@@ -2,9 +2,8 @@ import { State, Person, HOUR, DAY } from './typer';
 import { FOOD } from './saker';
 import { ageOf, alive, count, getRel, isKin, living, log, stat, think } from './folk';
 import { chance, clamp, rnd } from './slump';
-import { mayTake, ownMove, ownsAmount } from './egendom';
 import { willing } from './agande';
-import { takeFood } from './lager';
+import { mayTake, ownMove, ownsAmount, takeFood } from './lager';
 import { eatPoison } from './fynd';
 
 // ---------- behovsstegen ----------
@@ -36,8 +35,8 @@ export const FRAGA_TAKT = 1 / (30 * 60); // så ofta (per sekund) den som saknar
 export const portionOf = (p: Person, now: number) => ageOf(p, now) < 10 ? 0.6 : 1;
 // en hel portion, eller det som finns kvar. Maten under halva skicket mättar sämre, under en fjärdedel kan man bli sjuk
 function eat(s: State, p: Person, fran?: Person) {
-  const now = s.now, full = portionOf(p, now), food0 = s.food;
-  const q = takeFood(s, full, p, fran), portion = food0 - s.food;
+  const now = s.now, full = portionOf(p, now);
+  const { n: portion, c: q } = takeFood(s, full, p, fran);
   p.hunger = clamp(p.hunger + 0.55 * portion / full * (q >= 0.5 ? 1 : 0.5 + q), 0, 1); eatPoison(s, p);
   if (q < 0.5) think(p, 'Maten var dålig', -0.05, now, 6 * HOUR);
   if (q < 0.25 && rnd(s, 'halsa', p) < (0.25 - q) / 0.25 * 0.35) {

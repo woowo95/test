@@ -7,8 +7,7 @@ import { sedEvent } from './seder';
 import { knows } from './teknik';
 import { rnd } from './slump';
 import { Act, DAY, H, HOUR, Person, State, Stock, W } from './typer';
-import { item } from './saker';
-import { use } from './lager';
+import { item, use } from './lager';
 
 // ---------- skog: fälla träd, hugga ved, flinta och yxa ----------
 // Utan yxa kan invånarna bara samla grenar på marken. Med en flintyxa kan de fälla träd.

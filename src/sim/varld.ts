@@ -1,4 +1,6 @@
 import { migrateTek } from './teknik';
+import { setStock, storeFromSums } from './lager';
+import { isTool } from './saker';
 import { inFas, nyKalender } from './tid';
 import { ageOf, getRel, log, newPerson, think } from './folk';
 import { newSeder, sederTarget, TAGS } from './seder';
@@ -8,8 +10,9 @@ import { DAY, Fire, NEW_H, NEW_W, Person, SEC, SKILLS, State, useMap } from './t
 // ---------- skapa värld ----------
 export function createState(seed: number, now: number): State {
   // en liten koloni: två par och ett barn, utan eld och med lite mat och grenar
-  const s: State = { v: 1, seed, founded: now, now, people: [], rels: {}, nextId: 1, food: 30, wood: 0, log: [], lastAgeIdx: 1, lastGuardDay: -1, items: { grenar: 20 }, fire: newFire(), seder: newSeder(), W: NEW_W, H: NEW_H, kal: nyKalender(now) };
+  const s: State = { v: 1, seed, founded: now, now, people: [], rels: {}, nextId: 1, log: [], lastAgeIdx: 1, lastGuardDay: -1, items: {}, fire: newFire(), seder: newSeder(), W: NEW_W, H: NEW_H, kal: nyKalender(now) };
   useMap(s);
+  setStock(s, { bar: 30, grenar: 20 });
   const adults: [string, number][] = [['m', 30], ['k', 27], ['m', 23], ['k', 21]];
   for (const [sex, age] of adults) s.people.push(newPerson(s, sex as 'm' | 'k', now - (age + rnd(s, 'folk')) * DAY));
   const [a, b, c, d] = s.people;
@@ -58,6 +61,7 @@ export function migrate(s: State) {
   // små pinnar finns inte längre: de räknas som grenar
   if (s.items.pinnar) { s.items.grenar = (s.items.grenar ?? 0) + s.items.pinnar; delete s.items.pinnar; }
   for (const a of s.stackar ?? []) if (a.k === 'pinnar') a.k = 'grenar';
+  if ('food' in s || s.mat || s.egna || Object.keys(s.items).some(k => !isTool(k))) storeFromSums(s); // äldre sparfiler (före v40): summorna blir stackar
   for (const p of s.people) { const t = p.task; if (t?.items?.pinnar) { t.items.grenar = (t.items.grenar ?? 0) + t.items.pinnar; delete t.items.pinnar; if (t.cond?.pinnar !== undefined) { t.cond.grenar ??= t.cond.pinnar; delete t.cond.pinnar; } } }
   if (!s.fire) {
     s.fire = newFire();

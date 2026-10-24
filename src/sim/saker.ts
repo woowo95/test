@@ -1,5 +1,3 @@
-import type { State } from './typer';
-
 // ---------- saker ----------
 // Allt byn kan äga står här: mat, bränsle, sten och redskap. Lager, slitage, listorna i panelen och det som bärs hem
 // frågar registret. En ny sak läggs till här (och får en ikon i ikoner.ts).
@@ -14,6 +12,7 @@ export interface SakDef {
   blir?: { k: string; per: number }; // det den faller sönder till när skicket är slut, och hur många av den per styck
   redskap?: true; // räknas styckvis; skicket är hur mycket som finns kvar av redskapet
   dold?: true; // syns inte för invånarna
+  i?: string; // ligger gömd i stackarna av det slaget (stack.dold) och har ingen egen stack
 }
 
 // Ordningen är den stackarna läggs ut i, så den ska inte ändras (nya saker läggs sist)
@@ -32,7 +31,7 @@ const DEF = {
   fiskespjut: { namn: 'Träspjut', stack: 1, mapp: 'Redskap', slits: 0.001, redskap: true },
   korg: { namn: 'Korg', stack: 1, mapp: 'Redskap', slits: 0.001, redskap: true },
   // giftig svamp som av misstag hamnat i förrådet bland den ätliga (fynd.ts). Den ligger i svampstacken och syns inte
-  giftsvamp: { namn: 'Giftig svamp', ruttnar: 1, dold: true },
+  giftsvamp: { namn: 'Giftig svamp', ruttnar: 1, dold: true, i: 'svamp' },
   sten: { namn: 'Sten', stack: 10, mapp: 'Sten' },
   rep: { namn: 'Rep', stack: 20, mapp: 'Material', slits: 0.0003 },
   ben: { namn: 'Ben', stack: 20, mapp: 'Material' },
@@ -49,7 +48,6 @@ export const SAKER: Record<string, SakDef | undefined> = DEF;
 export const SAK_LIST = Object.keys(DEF) as Sak[];
 export const sak = (k: string) => SAKER[k];
 export const sakNamn = (k: string) => SAKER[k]?.namn ?? k;
-export const item = (s: State, k: string) => s.items[k] ?? 0; // hur mycket av en sak (inte mat eller ved) byn har
 
 export const STACK: Record<string, number> = Object.fromEntries(SAK_LIST.filter(k => SAKER[k]!.stack).map(k => [k, SAKER[k]!.stack!]));
 export const STACK_ORDER = Object.keys(STACK);

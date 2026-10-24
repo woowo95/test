@@ -6,7 +6,7 @@ import { campCenter } from './plats';
 import { sedEvent } from './seder';
 import { rnd } from './slump';
 import { knows } from './teknik';
-import { amountOf, use, zonesOf } from './lager';
+import { amountOf, changed, use, zonesOf } from './lager';
 import { freeTools } from './agande';
 import { FOREST } from './vag';
 import { H, HOUR, Person, State, T, W } from './typer';
@@ -203,6 +203,7 @@ function clearTile(s: State, b: Bit) {
   if (!free) return;
   for (const p of living(s)) if (Math.floor(p.x) === b.x && Math.floor(p.y) === b.y) { p.x = free.x + 0.5; p.y = free.y + 0.5; if (p.task) p.task.pk = undefined; }
   for (const a of s.stackar ?? []) if (a.x === b.x && a.y === b.y) { a.x = free.x; a.y = free.y; }
+  changed(s); // summorna i förrådet räknas om (lager.ts)
 }
 
 // ---------- slitage ----------

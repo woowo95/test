@@ -1,4 +1,4 @@
-import { createState, step, living, AGES, ageIndex, ageOf, serialize, State, SEDER, groundOf } from '../sim';
+import { createState, step, living, AGES, ageIndex, ageOf, serialize, State, SEDER, groundOf, foodOf, amountOf, STACK_ORDER } from '../sim';
 import { BAR, FOREST, HIGH, isSoil } from '../sim/vag';
 
 const start = Date.parse('2026-10-20T08:00:00+02:00');
@@ -11,14 +11,14 @@ for (const seed of valda.length ? valda : [1, 42, 777]) {
   const acts: Record<string, number> = {};
   for (let d = 0; d < days; d++) {
     for (let i = 0; i < 288; i++) {
-      step(s, 300, false); minFood = Math.min(minFood, s.food);
+      step(s, 300, false); minFood = Math.min(minFood, foodOf(s));
       steps++; if (s.fire.lit) litSteps++;
       for (const p of living(s)) { if (p.thoughts.some(t => t.text === 'Kissade på sig' && t.until - s.now > 4 * 3600000 - 300001)) accidents++; if (ageOf(p, s.now) >= 14 && p.task) acts[p.task.act] = (acts[p.task.act] || 0) + 1; }
       if (firstFire < 0 && s.fire.lit) firstFire = (s.now - start) / 3600000;
     }
     if (d % 7 === 6 || d === days - 1) {
       const ppl = living(s);
-      console.log(`seed ${seed} dag ${d + 1} ${AGES[ageIndex(s)]}: pop ${ppl.length}, mat ${s.food.toFixed(0)}, ved ${s.wood.toFixed(0)}, snittålder ${(ppl.reduce((a, p) => a + ageOf(p, s.now), 0) / (ppl.length || 1)).toFixed(1)}, eld ${s.fire.lit ? 'brinner' : 'släckt'}`);
+      console.log(`seed ${seed} dag ${d + 1} ${AGES[ageIndex(s)]}: pop ${ppl.length}, mat ${foodOf(s).toFixed(0)}, ved ${amountOf(s, 'ved').toFixed(0)}, snittålder ${(ppl.reduce((a, p) => a + ageOf(p, s.now), 0) / (ppl.length || 1)).toFixed(1)}, eld ${s.fire.lit ? 'brinner' : 'släckt'}`);
     }
   }
   const st = s.stat ?? {};
@@ -39,6 +39,6 @@ for (const seed of valda.length ? valda : [1, 42, 777]) {
     if (g.trees[i] >= FOREST) skog++; else if (g.trees[i] > 0) planta++;
     else if (g.cover[i] >= HIGH) hogt++; else if (g.cover[i] >= BAR) kort++; else bar++;
   }
-  console.log(`mark: ${skog} skog, ${planta} plantor, ${hogt} högt gräs, ${kort} kort gräs, ${bar} bar jord/stig | fällda träd ${s.fallda ?? 0}, stammar ${(s.stockar ?? []).length} | kol i förrådet ${Math.round(s.items.kol ?? 0)}, kolhög ${s.fire.ash ?? 0}`);
+  console.log(`mark: ${skog} skog, ${planta} plantor, ${hogt} högt gräs, ${kort} kort gräs, ${bar} bar jord/stig | fällda träd ${s.fallda ?? 0}, stammar ${(s.stockar ?? []).length} | kol i förrådet ${Math.round(amountOf(s, 'kol'))}, kolhög ${s.fire.ash ?? 0}`);
 }
-function roundItems(s: State) { const o: Record<string, number> = {}; for (const k in s.items) o[k] = Math.round(s.items[k]); return o; }
+function roundItems(s: State) { const o: Record<string, number> = {}; for (const k of STACK_ORDER) { const n = Math.round(amountOf(s, k)); if (n) o[k] = n; } return o; }

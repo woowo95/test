@@ -1,6 +1,5 @@
 import { syncTools } from './agande';
 import { rotStumps } from './skog';
-import { syncEgna } from './egendom';
 import { needLadder } from './behov';
 import { gain, use, capacity, dropSpot, fetchSpot, homeKind, load, pickUp, storeLoad, tidyStore, wearStore } from './lager';
 import { KANIN, KORG_SKORD, MASK_PER_GRAV, isSpear, makeBasket, makeKnife, makeRod, makeSpear, slaughter, twineRope, wearBasket, wearRod, wearSpear } from './redskap';
@@ -87,7 +86,6 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
   djurSteg(s); // kaningrupperna väljer plats när deras tid börjar
   // förråd: ruttning och ved
   wearStore(s, dtSec, ai); // slitage per slag, fortare utanför lagret
-  syncEgna(s); // vems det är: det som ruttnat eller slitits minskar allas delar
   stepFire(s, dtSec, live, ppl);
   const fh = hearthOf(s.fire), coldRate = coldOf(temperature(s));
   const learn = 1 + 0.1 * s.seder.v.nyfikenhet; // en nyfiken by lär sig snabbare

@@ -4,10 +4,12 @@ import { pair } from './varld';
 import { moodOf } from './samtal';
 import { chance, clamp, pick, rnd } from './slump';
 import { DAY, Person, SKILLS, State } from './typer';
+import { releaseOwner } from './lager';
 
 // ---------- död, födsel, flytt ----------
 export function die(s: State, p: Person, cause: string) {
   p.died = s.now; p.cause = cause; p.task = undefined;
+  releaseOwner(s, p.id); // det hen ägde blir byns
   const a = Math.floor(ageOf(p, s.now));
   log(s, `${p.name} dog ${cause}, ${a} år gammal.`, 'death', [p.id]);
   count(s, 'doda'); count(s, 'dog ' + cause);
@@ -89,14 +91,14 @@ export function emigrate(s: State) {
   if (!cands.length) { // inget ungt par: en ensam vuxen ger sig av
     const one = living(s).filter(p => p.partner === undefined && ageOf(p, now) >= 16 && ageOf(p, now) < 40);
     if (!one.length) return;
-    const p = pick(s, one, 'flytt'); p.left = now; p.task = undefined;
+    const p = pick(s, one, 'flytt'); p.left = now; p.task = undefined; releaseOwner(s, p.id);
     log(s, `${p.name} lämnade byn för att söka lyckan på annat håll.`, 'move', [p.id]);
     count(s, 'utvandrade');
     return;
   }
   const a = pick(s, cands, 'flytt'), b = byId(s, a.partner)!;
   const group = [a, b, ...living(s).filter(c => (c.mother === a.id || c.father === a.id || c.mother === b.id || c.father === b.id) && ageOf(c, now) < 14)];
-  for (const g of group) { g.left = now; g.task = undefined; }
+  for (const g of group) { g.left = now; g.task = undefined; releaseOwner(s, g.id); }
   const n = group.length - 2;
   count(s, 'utvandrade', group.length);
   log(s, `Byn blev trång. ${a.name} och ${b.name} lämnade byn${n ? ` med ${n} barn` : ''} för att grunda en egen boplats.`, 'move', group.map(g => g.id));

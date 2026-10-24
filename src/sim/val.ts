@@ -9,7 +9,7 @@ import { coldOf, temperature } from './vader';
 import { KANIN, SLAKT_TIMME, canSlaughter, freeBaskets, freeRod, freeSpear, freeSpears, sharpTool, spearKind, vilt, wantsBasket, wantsKnife, wantsRod, wantsRope, wantsSpear } from './redskap';
 import { areaOf, flintArea, pickSpot, prospectFor } from './minne';
 import { getMap } from './karta';
-import { fetchSpot, haulJob } from './lager';
+import { fetchSpot, haulJob, item } from './lager';
 import { bedFor, buildJob, siteOf, takeFor } from './bygg';
 import { beds, bitAt, blocked, freeNear, roomAt, shelterOf } from './byggnad';
 import { groundOf, isForest, tread } from './mark';
@@ -265,7 +265,7 @@ function withTools(s: State, p: Person, v: Val, best: Act, what: string) {
   const { kyla, gras } = dangers(s);
   if (v.act === 'samla') { // med korg om det finns en ledig, annars flätar den som kan en först
     if (freeBaskets(s, p) > 0) { v.tool = 'korg'; v.why = v.why.replace(/\.$/, '') + '. Tar en korg.'; }
-    else if (!kyla && (s.items.torrgras ?? 0) >= gras && wantsBasket(s, p)) { set(v, 'korg', `${what}. Flätar en korg av hö.`); v.dur = 40 * MIN; }
+    else if (!kyla && item(s, 'torrgras') >= gras && wantsBasket(s, p)) { set(v, 'korg', `${what}. Flätar en korg av hö.`); v.dur = 40 * MIN; }
   }
   const sp = v.act === 'fiske' || v.act === 'jakt' ? freeSpear(s, p) : undefined;
   if (v.act === 'fiske') { // med metspö eller spjut om det finns ett ledigt, annars gör hen ett först

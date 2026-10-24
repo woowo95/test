@@ -6,6 +6,7 @@ import { sedEvent } from './seder';
 import { chance, clamp, rnd } from './slump';
 import { kn, learnK, useK } from './kunskap';
 import { ageIndex } from './tid';
+import { addTo, amountOf, foodOf } from './lager';
 import { DAY, H, HOUR, Person, State, T, W, inMap, mapKey } from './typer';
 import { BAR, FOREST, HIGH, isSoil } from './vag';
 
@@ -345,7 +346,7 @@ export const HAND_FISH = 0.55;
 // hur lätt det är att hitta flinta på platsen just nu: platser där man hittat flinta har mindre kvar ett tag
 export const flintFactor = (s: State, x: number, y: number) => richness(s, 'flinta', x, y);
 // byn behöver flinta att tända eld med och till en yxa
-export const wantsFlint = (s: State) => (s.items.flinta ?? 0) < 1 || (s.items.flinta ?? 0) + (s.items.yxa ?? 0) < 2;
+export const wantsFlint = (s: State) => amountOf(s, 'flinta') < 1 || amountOf(s, 'flinta') + amountOf(s, 'yxa') < 2;
 // en plats att samla på nära stenarna, där flinta är vanlig
 export function flintSpot(s: State, area?: (x: number, y: number) => boolean): { x: number; y: number } | undefined {
   const m = getMap(s.seed), sd = stoneDist(s.seed), c: { x: number; y: number; d: number }[] = [];
@@ -389,9 +390,9 @@ export function pickMushrooms(s: State, p: Person, x: number, y: number, dtSec: 
 }
 // när någon äter: finns giftig svamp i förrådet kan hen få i sig den
 export function eatPoison(s: State, p: Person) {
-  const gift = s.items[GIFT] ?? 0;
-  if (gift < 1 || rnd(s, 'halsa', p) >= Math.min(0.6, gift / Math.max(1, s.food) * 4)) return;
-  s.items[GIFT] = gift - 1;
+  const gift = amountOf(s, GIFT);
+  if (gift < 1 || rnd(s, 'halsa', p) >= Math.min(0.6, gift / Math.max(1, foodOf(s)) * 4)) return;
+  addTo(s, GIFT, -1);
   count(s, 'forgiftad');
   p.sickUntil = Math.max(p.sickUntil ?? 0, s.now + (6 + rnd(s, 'halsa', p) * 10) * HOUR);
   p.poisonUntil = p.sickUntil; p.sickWhy = 'Förgiftad av svamp';
@@ -405,7 +406,7 @@ export function eatPoison(s: State, p: Person) {
   }
   if (before < 0.75 && v >= 0.75) log(s, `${p.name} har lärt sig skilja kantarellen från den giftiga orangea spindlingen.`, 'skill', [p.id]);
   // det hen nu vet: den giftiga svampen sorteras bort ur förrådet
-  s.items[GIFT] = (s.items[GIFT] ?? 0) * (1 - v);
+  addTo(s, GIFT, -amountOf(s, GIFT) * v);
 }
 
 // ---------- fiske med händerna ----------
