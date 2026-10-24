@@ -29,6 +29,7 @@ Sök i dokumentet i stället för att läsa allt; det är långt.
 
 ## Principer
 
+- Register och ett ställe per sak: allt det kan finnas fler av (handlingar, saker, tekniker, djurarter, behov, flikar) är rader i ett register som koden frågar, och allt om ett system samlas i en fil i koden och ett avsnitt i designdokumentet. Ett nytt system börjar med sitt register.
 - Gränssnittet: symboler först. Förklarande text göms och kommer fram när man trycker på något eller håller musen över det.
 - Snabbläget (ikappräkning, snabbspolning) ska ge samma utveckling som det levande läget. Kontrollera med `npm run likhet` när något i arbete, gång, samtal eller lärande ändras.
 - Tid i svar och dokument: skriv alltid ut vad ett tidsspann betyder. Spelet följer den verkliga klockan: ett dygn = ett år i spelet, en vecka = en tidsålder (årstid). Skriv t.ex. "28 dygn (28 år i spelet, fyra veckor i verkligheten)". Testernas körtid ("40 s") är datorns tid och har inget med spelet att göra; säg det om den nämns.
