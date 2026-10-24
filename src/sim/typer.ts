@@ -44,6 +44,7 @@ export interface Person {
   id: number; name: string; sex: 'm' | 'k';
   born: number; died?: number; cause?: string; left?: number;
   mother?: number; father?: number; partner?: number;
+  rngs?: Record<string, number>; // var i sina egna slumpföljder personen är (slump.ts)
   pot: Record<Stat, number>; skill: Record<Skill, number>;
   hunger: number; rest: number; social: number; health: number;
   warm: number; // kroppsvärme 0–1
@@ -75,7 +76,9 @@ export interface Rel { chem: number; op: number; rom: number; talks: number; fla
 export interface LogEntry { t: number; text: string; kind: 'birth' | 'death' | 'rel' | 'skill' | 'world' | 'move'; ids: number[] }
 
 export interface State {
-  v: 1; seed: number; rng: number; founded: number; now: number;
+  v: 1; seed: number; founded: number; now: number;
+  rng?: number; // den gemensamma slumpen före steg 1.1.1 (bara i äldre byar, används inte)
+  rngs?: Record<string, number>; // var i sin slumpföljd varje system är (slump.ts)
   W?: number; H?: number; // kartans storlek (saknas i äldre byar: 64×40)
   people: Person[]; rels: Record<string, Rel>; nextId: number;
   food: number; wood: number; log: LogEntry[];

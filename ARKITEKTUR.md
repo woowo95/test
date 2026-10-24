@@ -38,7 +38,7 @@ Simuleringen importerar aldrig från `ui/`. Gränssnittet importerar bara från 
 | `folk.ts`, `liv.ts` | Personer (ålder, egenskaper, tankar, logg) och liv och död: födsel, död, flytt, befolkningens reglering |
 | `samtal.ts`, `seder.ts` | Samtal och relationer, och byns seder, plikt, vanor och yrkestaggar |
 | `plats.ts` | Byns läger (elden och lagerplatserna): mitten, avstånd till byn och `campKey` för cacher |
-| `tid.ts`, `vader.ts`, `ekonomi.ts`, `slump.ts` | Kalendern (`kalender()`: tidsålder måndag–söndag, dag och år, det enda ställe som räknar dem), ljus, temperatur och kyla, hur länge förråden räcker, och slumpen |
+| `tid.ts`, `vader.ts`, `ekonomi.ts`, `slump.ts` | Kalendern (`kalender()`: tidsålder måndag–söndag, dag och år, det enda ställe som räknar dem), ljus, temperatur och kyla, hur länge förråden räcker, och slumpen (`STROMMAR`: en följd per system och per person) |
 
 ## Gränssnittet, fil för fil
 
@@ -61,7 +61,7 @@ Simuleringen importerar aldrig från `ui/`. Gränssnittet importerar bara från 
 
 ## Regler som håller ihop allt
 
-1. **Slumpen kommer bara från `rnd(s)`** (och `chance`, `gauss`, `pick`) i `slump.ts`. Den sparas i byn, så att samma by alltid utvecklas likadant. Använd aldrig `Math.random()` i `sim/`. Ändrar man ordningen som slumpen dras i ändras utvecklingen, även om koden gör samma sak.
+1. **Slumpen kommer bara från `rnd(s, följd, person?)`** (och `chance`, `gauss`, `pick`) i `slump.ts`. Följderna står i registret `STROMMAR`: en per system (val, arbete, hälsa, folk, flytt, samtal, minne, kunskap, dela, eld), och med en person en egen följd per person och system. Var varje följd är sparas i byn (`s.rngs`) och hos personen (`p.rngs`), så att samma by alltid utvecklas likadant. Ett slumptal mer eller mindre i ett system ändrar bara den följden, inte resten av byn. Det som bara finns i det levande läget (hur man går och rör sig på platsen, `moveLive` och `arrive` i steg.ts) drar ur `levande`, som snabbläget aldrig använder. Använd aldrig `Math.random()` i `sim/`. Ett nytt system får en ny rad i `STROMMAR`.
 2. **Snabbläget och det levande läget ska ge samma by.** `step(s, dt, live)` körs med 0,5 sekunders steg när man tittar (`live`) och 300 sekunders steg vid ikappräkning. Allt som beror på gång och bärande har en motsvarighet i snabbläget: en uppgift slutar i det steg som ligger närmast sluttiden, avkastningen jämkas för gångtiden (`levande` i handlingar.ts, `FAST` i steg.ts; jägare och fiskare är på platsen nästan hela tiden och har `levande` = `FAST`), och stigarna nöts längs bästa vägen från elden (`tread`, `SNABB_TRAMP` i mark.ts). Kontrollera med `npm run likhet` (räknar tid och antal val per handling, stigar och trampad mark). Byarna skiljer sig mycket åt av slump (elden, vem som kommer på spjutet), så jämför med många byar (`npm run likhet -- 96 24`) och titta helst på avkastning per arbetstimme (`prod_x / t_x`), som inte beror på slumpen. `n_toa`, `n_bara` och `n_elda` räknas olika i lägena och ska inte vara lika.
 3. **Byn sparas som JSON.** Nya fält i `State` eller `Person` är valfria (`?`), eller så får de ett värde i `migrate()` i `varld.ts`, så att äldre sparfiler fungerar.
 4. **Cacher hör till byn.** Testläget har två byar samtidigt, så det som sparas mellan steg ligger i en `WeakMap<State, …>` med en nyckel som säger när det måste räknas om (`campKey(s)`, `s.byggV`, tiden). Det får aldrig ligga i en enda variabel för hela modulen.

@@ -8,17 +8,17 @@ import { DAY, Fire, NEW_H, NEW_W, Person, SEC, SKILLS, State, useMap } from './t
 // ---------- skapa värld ----------
 export function createState(seed: number, now: number): State {
   // en liten koloni: två par och ett barn, utan eld och med lite mat och grenar
-  const s: State = { v: 1, seed, rng: seed, founded: now, now, people: [], rels: {}, nextId: 1, food: 30, wood: 0, log: [], lastAgeIdx: 1, lastGuardDay: -1, items: { grenar: 20 }, fire: newFire(), seder: newSeder(), W: NEW_W, H: NEW_H, kal: nyKalender(now) };
+  const s: State = { v: 1, seed, founded: now, now, people: [], rels: {}, nextId: 1, food: 30, wood: 0, log: [], lastAgeIdx: 1, lastGuardDay: -1, items: { grenar: 20 }, fire: newFire(), seder: newSeder(), W: NEW_W, H: NEW_H, kal: nyKalender(now) };
   useMap(s);
   const adults: [string, number][] = [['m', 30], ['k', 27], ['m', 23], ['k', 21]];
-  for (const [sex, age] of adults) s.people.push(newPerson(s, sex as 'm' | 'k', now - (age + rnd(s)) * DAY));
+  for (const [sex, age] of adults) s.people.push(newPerson(s, sex as 'm' | 'k', now - (age + rnd(s, 'folk')) * DAY));
   const [a, b, c, d] = s.people;
   pair(s, a, b, true); pair(s, c, d, true);
-  s.people.push(newPerson(s, rnd(s) < 0.5 ? 'm' : 'k', now - (4 + rnd(s) * 0.5) * DAY, b, a));
+  s.people.push(newPerson(s, rnd(s, 'folk') < 0.5 ? 'm' : 'k', now - (4 + rnd(s, 'folk') * 0.5) * DAY, b, a));
   // startfärdigheter efter ålder
   for (const p of s.people) {
     const a = ageOf(p, now);
-    for (const k of SKILLS) p.skill[k] = clamp((a - 8) * 0.25 * (0.4 + rnd(s)) * (p.pot.intelligens / 12), 0, 12);
+    for (const k of SKILLS) p.skill[k] = clamp((a - 8) * 0.25 * (0.4 + rnd(s, 'folk')) * (p.pot.intelligens / 12), 0, 12);
   }
   s.seder.v = sederTarget(s);
   log(s, `${s.people.length} människor slog sig ner vid sjön. De har ingen eld ännu.`, 'world');
@@ -37,7 +37,7 @@ export function migrate(s: State) {
     if (p.warm === undefined) p.warm = 1;
     if (p.toa === undefined) p.toa = 1;
     if (!p.habit) p.habit = {};
-    if (p.pot.minne === undefined) p.pot.minne = clamp(10 + gauss(s) * 7, 1, 20);
+    if (p.pot.minne === undefined) p.pot.minne = clamp(10 + gauss(s, 'folk') * 7, 1, 20);
     // äldre sparfiler: fälten hette _by och _guard
     const o = p as Person & { _by?: number; _guard?: number };
     if (o._by !== undefined) { p.pregnantBy ??= o._by; delete o._by; }

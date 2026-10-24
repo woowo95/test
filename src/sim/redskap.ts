@@ -150,7 +150,7 @@ export function slaughter(s: State, p: Person, hours: number) {
     ownAdd(s, +o, 'kott', f * SLAKT.kott); ownAdd(s, +o, 'ben', f * SLAKT.ben); ownAdd(s, +o, 'skinn', f * SLAKT.skinn);
   }
   // senorna blir med liten chans ett helt rep, som tillhör den som ägde mest av viltet
-  if (art.rep > 0 && knows(p, 'rep') && item(s, 'rep') < REP_VILL && rnd(s) < n * art.rep) {
+  if (art.rep > 0 && knows(p, 'rep') && item(s, 'rep') < REP_VILL && rnd(s, 'arbete', p) < n * art.rep) {
     s.items.rep = item(s, 'rep') + 1;
     const agare = Object.keys(vems).sort((a, b) => vems[b] - vems[a])[0];
     if (agare !== undefined) ownAdd(s, +agare, 'rep', 1);

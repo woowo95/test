@@ -93,8 +93,8 @@ export function tryLight(s: State, p: Person) {
   f.tries++; f.tryTotal++;
   p.skill.elda = clamp(p.skill.elda + 0.08 * (0.5 + p.pot.intelligens / 20) * (1 - p.skill.elda / 21), 0, 20);
   const c = ig.chance * (0.5 + p.skill.elda / 20 + stat(p, 'intelligens', s.now) / 40) * (ageIndex(s) === 0 ? 0.6 : 1) * ((f.ash ?? 0) >= 1 ? 1.5 : 1); // en gammal kolhög tar lättare fyr
-  if (rnd(s) < c) { lightFire(s, p); return true; }
-  if (ig.id === 'flinta' && rnd(s) < 0.004) {
+  if (rnd(s, 'eld', p) < c) { lightFire(s, p); return true; }
+  if (ig.id === 'flinta' && rnd(s, 'eld', p) < 0.004) {
     s.items.flinta--; ownTake(s, p, 'flinta', 1, true); fireLog(s, { k: 'sprack', id: p.id });
     log(s, `Flintan som ${p.name} slog med sprack.`, 'world', [p.id]);
   }
@@ -146,7 +146,7 @@ export function stepFire(s: State, dtSec: number, live: boolean, ppl: Person[]) 
     // glöden dog: kvar blir en svart hög med lite kol, som ligger några dygn
     f.emberUntil = undefined;
     // kolet blir alltid ett litet, slumpat antal; hämtar ingen det förtvinar det efter några dygn
-    const coal = 1 + Math.floor(rnd(s) * 4);
+    const coal = 1 + Math.floor(rnd(s, 'eld') * 4);
     f.ash = (f.ash ?? 0) + coal; f.ashUntil = now + 3 * DAY;
     log(s, `Elden har brunnit ut. Kvar ligger en svart hög med ${coal} kol.`, 'world');
   }
@@ -168,7 +168,7 @@ export function stepFire(s: State, dtSec: number, live: boolean, ppl: Person[]) 
     let best: { p: Person; w: Wish } | undefined, bs = -1e9;
     for (const c of cands) {
       if (c.w.v < f.fuel * 2 + 0.2) continue;
-      const sc = (c.w.v - f.fuel) / h.maxFuel * (0.4 + duty(s, c.p)) - Math.hypot(c.p.x - fx, c.p.y - fy) / 25 + (c.p.task?.act === 'vakt' ? 0.3 : 0) + rnd(s) * 0.1;
+      const sc = (c.w.v - f.fuel) / h.maxFuel * (0.4 + duty(s, c.p)) - Math.hypot(c.p.x - fx, c.p.y - fy) / 25 + (c.p.task?.act === 'vakt' ? 0.3 : 0) + rnd(s, 'eld') * 0.1;
       if (sc > bs) { bs = sc; best = c; }
     }
     if (best) {
@@ -180,9 +180,9 @@ export function stepFire(s: State, dtSec: number, live: boolean, ppl: Person[]) 
   // tändning: när elden är släckt och någon vill ha eld försöker en person i taget
   if (!f.lit && !emberOn(s) && canLight(s) && f.want >= h.maxFuel * 0.1 && !ppl.some(p => p.task?.act === 'tanda')) {
     const ok = cands.filter(c => ageOf(c.p, now) >= 12 && c.w.v >= h.maxFuel * 0.05)
-      .sort((a, b) => (b.p.skill.elda + stat(b.p, 'flit', now) / 2 + rnd(s) * 3) - (a.p.skill.elda + stat(a.p, 'flit', now) / 2 + rnd(s) * 3));
+      .sort((a, b) => (b.p.skill.elda + stat(b.p, 'flit', now) / 2 + rnd(s, 'eld') * 3) - (a.p.skill.elda + stat(a.p, 'flit', now) / 2 + rnd(s, 'eld') * 3));
     const c = ok[0];
-    if (c) assign(s, c.p, 'tanda', m.fire.x + 0.5 + (rnd(s) - 0.5) * 1.2, m.fire.y + 1.3, 3 * HOUR, live, `Vill ha eld. ${c.w.why}`);
+    if (c) assign(s, c.p, 'tanda', m.fire.x + 0.5 + (rnd(s, 'eld') - 0.5) * 1.2, m.fire.y + 1.3, 3 * HOUR, live, `Vill ha eld. ${c.w.why}`);
   }
 }
 // värmeförlust per timme utan eld: [ljus tid, mörk tid] per tidsålder
@@ -201,7 +201,7 @@ export function forageItems(s: State, p: Person, dtSec: number): Record<string, 
   }
   // flinta är ovanlig och hittas oftast vid stenarna. Den slås mot en sten för att tända eld, och med en pinne blir den en yxa
   const ff = p.task ? flintFactor(s, p.task.tx, p.task.ty) : 0.4;
-  if (item(s, 'flinta') + item(s, 'yxa') < 4 && chance(s, 0.04 * ff * sk / 3600, dtSec)) {
+  if (item(s, 'flinta') + item(s, 'yxa') < 4 && chance(s, 0.04 * ff * sk / 3600, dtSec, 'arbete', p)) {
     got.flinta = 1; count(s, ff > 2 ? 'flintaSten' : 'flintaAnnan');
     if (p.task) takeFrom(s, 'flinta', p.task.tx, p.task.ty, 1);
     if (ff > 2 && p.task) observe(s, p, 'flinta', p.task.tx, p.task.ty);

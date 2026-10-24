@@ -26,11 +26,11 @@ function spotFor(s: State, act: Act, p: Person): { x: number; y: number } {
   const f = m.fire, d = ACTS[act], plats = d.plats ?? 'skog';
   if (plats === 'elden') {
     for (let k = 0; ; k++) { // runt elden, men inte i en husvägg
-      const ang = rnd(s) * Math.PI * 2, r = d.radie ?? 1.3 + rnd(s) * 0.9, x = f.x + 0.5 + Math.cos(ang) * r, y = f.y + 0.5 + Math.sin(ang) * r;
+      const ang = rnd(s, 'val', p) * Math.PI * 2, r = d.radie ?? 1.3 + rnd(s, 'val', p) * 0.9, x = f.x + 0.5 + Math.cos(ang) * r, y = f.y + 0.5 + Math.sin(ang) * r;
       if (k >= 11 || !blocked(s, x, y)) return k >= 11 ? freeNear(s, f.x + 0.5, f.y + 1.5) : { x, y };
     }
   }
-  if (plats === 'kol') return { x: f.x + 0.5 + (rnd(s) - 0.5) * 0.6, y: f.y + 1.1 };
+  if (plats === 'kol') return { x: f.x + 0.5 + (rnd(s, 'val', p) - 0.5) * 0.6, y: f.y + 1.1 };
   if (plats === 'sang') { // i huset om det finns plats under tak, annars på marken en bit från elden
     // i huset om det är varmare där än vid elden
     const bed = bedFor(s, p), c = coldOf(temperature(s)), rum = bed && roomAt(s, bed.x, bed.y);
@@ -40,14 +40,14 @@ function spotFor(s: State, act: Act, p: Person): { x: number; y: number } {
       if (c === 0 || inne >= Math.min(0, ute) - 0.02) return bed; // när det inte är kallt räcker värmen överallt
     }
     for (let k = 0; k < 12; k++) {
-      const ang = (p.id * 2.399 + rnd(s) * 0.5) % (Math.PI * 2), r = 1.8 + rnd(s) * 1.2, x = f.x + 0.5 + Math.cos(ang) * r, y = f.y + 0.5 + Math.sin(ang) * r;
+      const ang = (p.id * 2.399 + rnd(s, 'val', p) * 0.5) % (Math.PI * 2), r = 1.8 + rnd(s, 'val', p) * 1.2, x = f.x + 0.5 + Math.cos(ang) * r, y = f.y + 0.5 + Math.sin(ang) * r;
       if (inMap(x, y) && !blocked(s, x, y)) return { x, y };
     }
     return freeNear(s, f.x + 0.5, f.y + 2);
   }
   if (plats === 'lek') { // lekplatsen ligger söder om elden, men aldrig i vattnet
     for (let k = 0; k < 12; k++) {
-      const x = f.x + (rnd(s) - 0.5) * 8, y = f.y + 3 + rnd(s) * 3;
+      const x = f.x + (rnd(s, 'val', p) - 0.5) * 8, y = f.y + 3 + rnd(s, 'val', p) * 3;
       if (inMap(x, y) && !blocked(s, x, y)) return { x, y };
     }
     return freeNear(s, f.x + 0.5, f.y + 1.5);
@@ -64,7 +64,7 @@ function spotFor(s: State, act: Act, p: Person): { x: number; y: number } {
   const cands: { x: number; y: number; d: number }[] = [], mid = campCenter(s);
   const min = plats === 'ang' || plats === 'avsides' ? 5 : 4, max = plats === 'avsides' ? 9 : Infinity;
   for (let i = 0; i < 260; i++) {
-    const x = Math.floor(mid.x + (rnd(s) - 0.5) * 34), y = Math.floor(mid.y + (rnd(s) - 0.5) * 26);
+    const x = Math.floor(mid.x + (rnd(s, 'val', p) - 0.5) * 34), y = Math.floor(mid.y + (rnd(s, 'val', p) - 0.5) * 26);
     if (x < 0 || y < 0 || x >= W || y >= H) continue;
     const d = campDist(s, x, y);
     if (d < min || d > max) continue;
@@ -72,7 +72,7 @@ function spotFor(s: State, act: Act, p: Person): { x: number; y: number } {
   }
   cands.sort((a, b) => a.d - b.d);
   // mat: gå dit det finns mest att hämta, inte för långt bort; annars en av de närmaste platserna
-  const c = (d.resurs ? pickSpot(s, p, d.resurs, cands) : cands[Math.floor(rnd(s) * Math.min(6, cands.length))]) ?? nearestWanted(s, want) ?? { x: mid.x, y: mid.y };
+  const c = (d.resurs ? pickSpot(s, p, d.resurs, cands) : cands[Math.floor(rnd(s, 'val', p) * Math.min(6, cands.length))]) ?? nearestWanted(s, want) ?? { x: mid.x, y: mid.y };
   return { x: c.x + 0.5, y: c.y + 0.5 };
 }
 
@@ -92,7 +92,7 @@ function nearestWanted(s: State, want: (t: number, x: number, y: number) => bool
 function walkSpot(s: State, far: number) {
   const f = campCenter(s);
   for (let k = 0; k < 20; k++) {
-    const ang = rnd(s) * Math.PI * 2, r = far * (0.7 + rnd(s) * 0.3);
+    const ang = rnd(s, 'val') * Math.PI * 2, r = far * (0.7 + rnd(s, 'val') * 0.3);
     const x = clamp(f.x + 0.5 + Math.cos(ang) * r, 0.5, W - 0.5), y = clamp(f.y + 0.5 + Math.sin(ang) * r, 0.5, H - 0.5);
     if (!blocked(s, x, y)) return { x, y };
   }
@@ -116,7 +116,7 @@ export function strandSpot(s: State) {
   const sh = shoreOf(s.seed), ok: number[] = [];
   for (let i = 0; i < W * H; i++) if (sh[i] && campDist(s, i % W, Math.floor(i / W)) < 15 && !bitAt(s, i % W, Math.floor(i / W))) ok.push(i);
   if (!ok.length) return bathSpot(s);
-  const i = ok[Math.floor(rnd(s) * ok.length)];
+  const i = ok[Math.floor(rnd(s, 'val') * ok.length)];
   return { x: i % W + 0.5, y: Math.floor(i / W) + 0.5 };
 }
 // Faror går före förbättringar. En korg eller ett spjut gör maten lättare att få tag i, men när kylan är en fara väntar
@@ -137,9 +137,9 @@ const MIN = 60 * SEC;
 // Slumpen dras i samma ordning varje gång, så att levande läget och snabbläget blir lika
 export function chooseTask(s: State, p: Person, live: boolean) {
   const a = ageOf(p, s.now), light = isLight(s.now), lazy = 1 - duty(s, p);
-  const v: Val = { act: 'vila', why: '', dur: (20 + rnd(s) * 40) * MIN }; // 20–60 min
+  const v: Val = { act: 'vila', why: '', dur: (20 + rnd(s, 'val', p) * 40) * MIN }; // 20–60 min
   if (!needs(s, p, v, a, lazy, light)) { if (light) day(s, p, v, a, lazy, live); else night(s, p, v, a); }
-  if (v.act === 'toa') v.dur = (4 + rnd(s) * 4) * MIN;
+  if (v.act === 'toa') v.dur = (4 + rnd(s, 'val', p) * 4) * MIN;
   const sp0 = v.spot ?? spotFor(s, v.act, p), sp = freeNear(s, sp0.x, sp0.y); // aldrig i en husvägg
   if (!live) { p.x = sp.x; p.y = sp.y; tread(s, sp.x, sp.y, isWork(v.act) ? 2 : 1); }
   p.task = { act: v.act, phase: live ? 'go' : 'do', tx: sp.x, ty: sp.y, until: s.now + v.dur, carry: 0, why: v.why, dark: !light, ref: v.ref, tool: v.tool, site: v.site };
@@ -160,7 +160,7 @@ function needs(s: State, p: Person, v: Val, a: number, lazy: number, light: bool
   // Kylan är faran och elden det enda som hjälper mot den (några räcker; de andra går in och väntar)
   if (p.warm < 0.4 + 0.15 * lazy && a >= 14 && tinderNeeded(s)) return set(v, 'samla', 'Fryser, men utan tändmaterial blir det ingen eld');
   if (p.warm < 0.25 && beds(s).length) return set(v, 'vila', 'Fryser farligt och går in i huset');
-  if (!light && a > 68 && rnd(s) < 0.6) return set(v, 'sova', 'Är gammal och sover på natten');
+  if (!light && a > 68 && rnd(s, 'val', p) < 0.6) return set(v, 'sova', 'Är gammal och sover på natten');
   if (p.toa < 0.25 + 0.1 * lazy) return set(v, 'toa', 'Behöver gå på toa');
   if (p.warm < 0.4 + 0.15 * lazy && lit) return set(v, 'varma', 'Fryser');
   if (p.warm < 0.4 + 0.15 * lazy && beds(s).length) return set(v, 'vila', 'Fryser och går in i huset');
@@ -173,8 +173,8 @@ function day(s: State, p: Person, v: Val, a: number, lazy: number, live: boolean
   const now = s.now, sd = s.seder.v;
   let gt: ReturnType<typeof haulJob>;
   if (a < 8) { set(v, 'leka', 'Är barn och leker'); return; }
-  if (s.stackar?.length && rnd(s) < 0.25 && (gt = haulJob(s))) { set(v, 'bara', gt.why); v.spot = gt; v.dur = 3 * HOUR; return; }
-  if (a >= 14 && canSlaughter(s, p) && rnd(s) < 0.5) { slaughterTask(s, v, 'Det finns vilt att slakta innan det blir dåligt'); return; }
+  if (s.stackar?.length && rnd(s, 'val', p) < 0.25 && (gt = haulJob(s))) { set(v, 'bara', gt.why); v.spot = gt; v.dur = 3 * HOUR; return; }
+  if (a >= 14 && canSlaughter(s, p) && rnd(s, 'val', p) < 0.5) { slaughterTask(s, v, 'Det finns vilt att slakta innan det blir dåligt'); return; }
   const fd = foodDays(s), wd = woodDays(s), ai = ageIndex(s), tot = habitTotal(p);
   let { best, bs, burg } = bestWork(s, p, fd, wd, ai, tot);
   // bygget: väger mer ju fler som saknar sovplats under tak, inför och under istiden, när en vägg behöver lagas och när huset inte är klart
@@ -185,7 +185,7 @@ function day(s: State, p: Person, v: Val, a: number, lazy: number, live: boolean
     const halvt = !job.repair && !s.hus?.find(h => h.id === job.bit.hus)?.klar; // ett påbörjat hus vill man göra klart, även när det sista är ett hörn
     const col = ((job.repair ? 1.2 : halvt ? 2 : 0.5) + 2.4 * homeless) * (ai === 3 || ai === 0 ? 1.4 : 1);
     const like = (4 + p.skill.hantverk + stat(p, 'flit', now) / 3) * (1 + 2 * habitShare(p, ['bygga'], tot));
-    const sc = col * like * (0.6 + rnd(s) * 0.8);
+    const sc = col * like * (0.6 + rnd(s, 'val', p) * 0.8);
     burg = Math.max(burg, col);
     if (sc > bs) { build = true; if (job.missing) best = job.item === 'torrgras' ? 'samla' : 'ved'; }
   }
@@ -193,17 +193,17 @@ function day(s: State, p: Person, v: Val, a: number, lazy: number, live: boolean
   const sat = Math.min(p.hunger, p.rest, p.social); // hur väl de egna behoven är fyllda
   const what = build && job!.missing ? `Bygget behöver ${job!.item === 'torrgras' ? 'hö' : job!.item === 'ved' ? 'trä' : 'grenar'}` : best === 'ved' ? `Byn behöver trä, förrådet räcker ${dygn(wd)}` : best === 'samla' && needTinder(s) ? 'Byn behöver tändmaterial till elden' : `Byn behöver mat, förrådet räcker ${dygn(fd)}`;
   let works = false;
-  if (a >= 12 && (s.fire.ash ?? 0) >= 1 && !s.fire.lit && !emberOn(s) && fireWant(s) < 0.6 && rnd(s) < 0.2 && !ppl.some(q => q.task?.act === 'kol')) {
+  if (a >= 12 && (s.fire.ash ?? 0) >= 1 && !s.fire.lit && !emberOn(s) && fireWant(s) < 0.6 && rnd(s, 'val', p) < 0.2 && !ppl.some(q => q.task?.act === 'kol')) {
     set(v, 'kol', 'Det ligger kol kvar i den slocknade elden');
     v.dur = 10 * MIN;
   } else if (a < 14) {
-    if (rnd(s) < 0.45 + 0.2 * sd.barn) set(v, 'leka', 'Är barn och leker');
+    if (rnd(s, 'val', p) < 0.45 + 0.2 * sd.barn) set(v, 'leka', 'Är barn och leker');
     else set(v, best, `Hjälper till. ${what}.`);
-  } else if ((works = rnd(s) < (1 - lazy) * (0.88 + 0.12 * u) + lazy * sat * (0.6 + 0.4 * u)) && build && !job!.missing) {
+  } else if ((works = rnd(s, 'val', p) < (1 - lazy) * (0.88 + 0.12 * u) + lazy * sat * (0.6 + 0.4 * u)) && build && !job!.missing) {
     building(s, p, v, job!, ppl.length, live);
   } else if (works) {
     set(v, best, what + (lazy < 0.2 ? '. Plikttrogen.' : habitShare(p, [best], tot) > 0.25 ? '. Brukar göra det.' : p.skill[best as Skill] > 10 ? '. Skicklig på det.' : '.'));
-    v.dur = (60 + rnd(s) * 120) * MIN;
+    v.dur = (60 + rnd(s, 'val', p) * 120) * MIN;
     withTools(s, p, v, best, what);
     if (build && job!.missing && job!.item === 'ved' && v.act === 'falla') { v.ref = job!.bit.hus; v.why = `${v.why} Stocken ska bli en vägg.`; } // trädet fälls för bygget
   } else leisure(s, p, v, u, lazy, ai);
@@ -224,7 +224,7 @@ function bestWork(s: State, p: Person, fd: number, wd: number, ai: number, tot: 
     const season = ACTS[w].sasong![ai];
     const col = need * (w === 'ved' ? 1 : tinder ? Math.max(0.8, season) * 3 : season * yieldF);
     const like = (4 + p.skill[w as Skill] + stat(p, ACTS[w].egenskap!, s.now) / 3) * (1 + 2 * habitShare(p, [w], tot)); // egen lust och vana
-    const sc = col * like * (0.6 + rnd(s) * 0.8);
+    const sc = col * like * (0.6 + rnd(s, 'val', p) * 0.8);
     burg = Math.max(burg, col);
     if (sc > bs) { bs = sc; best = w; }
   }
@@ -242,7 +242,7 @@ function building(s: State, p: Person, v: Val, job: NonNullable<ReturnType<typeo
   }
   set(v, 'bygga', job.repair ? `En vägg i ${hus} är sliten och behöver lagas.` : `${b.k === 'golv' ? 'Lägger golv i' : 'Bygger på'} ${hus}. ${beds(s).length < pop ? 'Alla har inte en sovplats under tak.' : ''}`.trim());
   v.tool = job.repair ? 'laga' : b.k === 'golv' ? 'golv' : 'vagg'; v.ref = b.id;
-  v.dur = (60 + rnd(s) * 90) * MIN;
+  v.dur = (60 + rnd(s, 'val', p) * 90) * MIN;
   if (live) { const site = siteOf(s, b); v.spot = job.need > 0 ? fetchSpot(s, job.item!) : site; if (job.need > 0) v.site = site; }
   else if (takeFor(s, job, p)) v.spot = siteOf(s, b);
   else set(v, 'vila', 'Det saknas material till bygget');
@@ -251,7 +251,7 @@ function building(s: State, p: Person, v: Val, job: NonNullable<ReturnType<typeo
 // arbetet med redskap: flinta letas vid stenarna, yxan fäller träd, korgen och spjutet görs först om de saknas
 function withTools(s: State, p: Person, v: Val, best: Act, what: string) {
   const stones = needStones(s);
-  if (best === 'samla' && (wantsFlint(s) || stones) && rnd(s) < 0.5) { // byn saknar flinta eller stenar till eldringen
+  if (best === 'samla' && (wantsFlint(s) || stones) && rnd(s, 'val', p) < 0.5) { // byn saknar flinta eller stenar till eldringen
     const fa = flintArea(p), fl = (fa !== undefined && flintSpot(s, (x, y) => areaOf(x, y) === fa)) || flintSpot(s);
     if (fl) { v.spot = fl; v.why = `${v.why} Letar efter ${stones ? 'stenar till en eldring' : 'flinta'} vid stenarna${fa !== undefined ? ' där hen vet att det finns flinta' : ''}.`; }
   }
@@ -308,7 +308,7 @@ function leisure(s: State, p: Person, v: Val, u: number, lazy: number, ai: numbe
   const wb = temp >= 15 && shore ? clamp((temp - 14) / 8, 0, 1.2) * calm : 0;
   // sitta vid stranden och se ut över vattnet: lugnt, året om, mest för den som inte är så sällskaplig
   const ws = shore ? (0.2 + (20 - stat(p, 'empati', now)) / 60) * calm : 0;
-  const r = rnd(s) * (wv + wh + wsoc + wp + wb + ws);
+  const r = rnd(s, 'val', p) * (wv + wh + wsoc + wp + wb + ws);
   if (r < wv) set(v, 'vila', lazy > 0.5 ? 'Har det bra och tar det lugnt' : 'Tar en paus');
   else if (r < wv + wh) craft(s, p, v, u < 0.25 ? 'Byn har det gott ställt, det finns tid för hantverk' : 'Tycker om att göra handarbete');
   else if (r < wv + wh + wsoc) set(v, 'samtal', 'Vill umgås');
@@ -316,9 +316,9 @@ function leisure(s: State, p: Person, v: Val, u: number, lazy: number, ai: numbe
     // nyfikna och modiga går längre bort
     const far = 4 + (stat(p, 'nyfikenhet', now) + stat(p, 'mod', now)) / 40 * 14;
     set(v, 'promenad', far > 12 ? 'Är nyfiken och vill se vad som finns längre bort' : 'Vill sträcka på benen');
-    v.spot = walkSpot(s, far); v.dur = (60 + rnd(s) * 90) * MIN;
-  } else if (r < wv + wh + wsoc + wp + wb) { set(v, 'bada', `Det är varmt (${Math.round(temp)} grader) och skönt att bada`); v.spot = shore; v.dur = (30 + rnd(s) * 30) * MIN; }
-  else { set(v, 'strand', ai === 0 ? 'Vill se ut över isen en stund' : 'Vill sitta vid vattnet och se ut över sjön'); v.spot = strandSpot(s); v.dur = (30 + rnd(s) * 60) * MIN; }
+    v.spot = walkSpot(s, far); v.dur = (60 + rnd(s, 'val', p) * 90) * MIN;
+  } else if (r < wv + wh + wsoc + wp + wb) { set(v, 'bada', `Det är varmt (${Math.round(temp)} grader) och skönt att bada`); v.spot = shore; v.dur = (30 + rnd(s, 'val', p) * 30) * MIN; }
+  else { set(v, 'strand', ai === 0 ? 'Vill se ut över isen en stund' : 'Vill sitta vid vattnet och se ut över sjön'); v.spot = strandSpot(s); v.dur = (30 + rnd(s, 'val', p) * 60) * MIN; }
 }
 
 // på natten: en vakt, och de andra håller sig vid elden och berättar, gör handarbete, umgås eller sover
@@ -329,11 +329,11 @@ function night(s: State, p: Person, v: Val, a: number) {
   if (guardDay !== s.lastGuardDay && adults.length) {
     // välj nattens vakt (modigast med lite slump), byts varje natt
     s.lastGuardDay = guardDay;
-    const g = adults.sort((x, y) => (y.pot.mod + rnd(s) * 8) - (x.pot.mod + rnd(s) * 8))[0];
+    const g = adults.sort((x, y) => (y.pot.mod + rnd(s, 'val') * 8) - (x.pot.mod + rnd(s, 'val') * 8))[0];
     g.task = undefined; g.guardDay = guardDay;
   }
   if (p.guardDay === guardDay && a >= 16) { set(v, 'vakt', 'Håller vakt i natt'); return; }
-  const r = rnd(s);
+  const r = rnd(s, 'val', p);
   const story = (p.skill.berattande + (a > 50 ? 6 : 0)) / 40;
   const craftW = (p.skill.hantverk + stat(p, 'flit', now)) / 70;
   // på natten håller man sig vid lägret; de modiga går lite längre ut i mörkret för att bära in saker

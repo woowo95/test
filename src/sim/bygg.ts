@@ -21,7 +21,7 @@ export function bedFor(s: State, p: Person) {
   const b = beds(s);
   if (!b.length) return undefined;
   const ppl = living(s).sort((a, c) => a.id - c.id), i = b[Math.max(0, ppl.indexOf(p)) % b.length];
-  return { x: i % W + 0.3 + rnd(s) * 0.4, y: Math.floor(i / W) + 0.3 + rnd(s) * 0.4 };
+  return { x: i % W + 0.3 + rnd(s, 'val', p) * 0.4, y: Math.floor(i / W) + 0.3 + rnd(s, 'val', p) * 0.4 };
 }
 
 // ---------- planering: byn bestämmer vad som byggs ----------

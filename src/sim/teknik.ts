@@ -70,7 +70,7 @@ export function teach(s: State, a: Person, b: Person, kind: string) {
   if (!a.tek || ageOf(b, s.now) < 8) return;
   for (const t of TEKNIK) {
     if (!knows(a, t.id) || knows(b, t.id) || !t.krav.every(k => knows(b, k))) continue;
-    if (rnd(s) > (kind === 'berättelse' || kind === 'djupt samtal' ? 0.5 : 0.2)) continue;
+    if (rnd(s, 'kunskap', a) > (kind === 'berättelse' || kind === 'djupt samtal' ? 0.5 : 0.2)) continue;
     b.tek ??= {};
     const d = Math.min(1 - (b.tek[t.id] ?? 0), 0.2 * (0.5 + stat(b, 'intelligens', s.now) / 20));
     b.tek[t.id] = (b.tek[t.id] ?? 0) + d; count(s, 'tekLart', d);

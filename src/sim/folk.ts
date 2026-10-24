@@ -10,11 +10,11 @@ const NK = ['a', 'e', 'ja', 'ra', 'dis', 'run', 'hild', 'frid', 'ny', 'vi', 'ka'
 const NM = ['e', 'o', 'ar', 'ik', 'ulf', 'mund', 'björn', 'vid', 'stig', 'ger', 'an'];
 function makeName(s: State, sex: 'm' | 'k') {
   for (let i = 0; i < 20; i++) {
-    const n = pick(s, N1) + (rnd(s) < 0.7 ? pick(s, N2) : '') + pick(s, sex === 'k' ? NK : NM);
+    const n = pick(s, N1, 'folk') + (rnd(s, 'folk') < 0.7 ? pick(s, N2, 'folk') : '') + pick(s, sex === 'k' ? NK : NM, 'folk');
     const nn = n.charAt(0).toUpperCase() + n.slice(1).toLowerCase();
     if (nn.length >= 3 && nn.length <= 9 && !s.people.some(p => p.name === nn && alive(p))) return nn;
   }
-  return pick(s, N1) + pick(s, sex === 'k' ? NK : NM);
+  return pick(s, N1, 'folk') + pick(s, sex === 'k' ? NK : NM, 'folk');
 }
 
 // ---------- personer ----------
@@ -39,16 +39,16 @@ export function newPerson(s: State, sex: 'm' | 'k', born: number, mother?: Perso
   for (const k of STATS) {
     const base = mother && father ? (mother.pot[k] + father.pot[k]) / 2 : 10;
     const spread = mother && father ? 3 : 4.5;
-    pot[k] = clamp(base + gauss(s) * spread * 1.6, 1, 20);
+    pot[k] = clamp(base + gauss(s, 'folk') * spread * 1.6, 1, 20);
   }
   const skill = {} as Record<Skill, number>;
   for (const k of SKILLS) skill[k] = 0;
   const m = getMap(s.seed);
   const p: Person = {
     id: s.nextId++, name: '', sex, born, mother: mother?.id, father: father?.id,
-    pot, skill, hunger: 0.8, rest: 0.9, social: 0.7, health: 1, warm: 1, toa: 0.6 + rnd(s) * 0.4, habit: {}, thoughts: [],
-    x: m.fire.x + (rnd(s) - 0.5) * 3, y: m.fire.y + (rnd(s) - 0.5) * 3, fame: [],
-    hue: Math.floor(rnd(s) * 360),
+    pot, skill, hunger: 0.8, rest: 0.9, social: 0.7, health: 1, warm: 1, toa: 0.6 + rnd(s, 'folk') * 0.4, habit: {}, thoughts: [],
+    x: m.fire.x + (rnd(s, 'folk') - 0.5) * 3, y: m.fire.y + (rnd(s, 'folk') - 0.5) * 3, fame: [],
+    hue: Math.floor(rnd(s, 'folk') * 360),
   };
   p.name = makeName(s, sex);
   const at = freeNear(s, p.x, p.y); p.x = at.x; p.y = at.y; // inte i en husvägg
@@ -60,7 +60,7 @@ export function getRel(s: State, a: Person, b: Person): Rel {
   const k = relKey(a.id, b.id);
   let r = s.rels[k];
   if (!r) {
-    r = { chem: clamp(gauss(s) * 0.6, -1, 1), op: 0, rom: 0, talks: 0, flags: 0 };
+    r = { chem: clamp(gauss(s, 'samtal') * 0.6, -1, 1), op: 0, rom: 0, talks: 0, flags: 0 };
     if (isKin(a, b)) r.op = 25;
     s.rels[k] = r;
   }

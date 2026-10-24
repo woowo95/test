@@ -356,7 +356,7 @@ export function flintSpot(s: State, area?: (x: number, y: number) => boolean): {
   }
   if (!c.length) return undefined;
   c.sort((a, b) => a.d - b.d);
-  const p = c[Math.floor(rnd(s) * Math.min(8, c.length))];
+  const p = c[Math.floor(rnd(s, 'val') * Math.min(8, c.length))];
   return { x: p.x + 0.5, y: p.y + 0.5 };
 }
 
@@ -372,8 +372,8 @@ export function pickMushrooms(s: State, p: Person, x: number, y: number, dtSec: 
   const kv = richness(s, 'kantarell', x, y), gv = richness(s, 'spindling', x, y);
   if (kv + gv <= 0) return 0;
   const rate = 0.5 * (0.6 + p.skill.samla / 25) * (kv + gv);
-  if (!chance(s, rate / 3600, dtSec)) return 0;
-  if (rnd(s) < kv / (kv + gv)) {
+  if (!chance(s, rate / 3600, dtSec, 'arbete', p)) return 0;
+  if (rnd(s, 'arbete', p) < kv / (kv + gv)) {
     takeFrom(s, 'kantarell', x, y, 0.5);
     count(s, 'svamp');
     if (!s.stat!.svamp1) { s.stat!.svamp1 = 1; log(s, `${p.name} hittade kantareller i skogen.`, 'world', [p.id]); }
@@ -381,7 +381,7 @@ export function pickMushrooms(s: State, p: Person, x: number, y: number, dtSec: 
   }
   // den giftiga: känner man igen den låter man den stå
   const sure = clamp(kn(p, 'svamp') + p.skill.samla / 40 + stat(p, 'intelligens', s.now) / 100, 0, 0.98);
-  if (rnd(s) < sure) { count(s, 'giftsvampKand'); useK(p, 'svamp', s.now); return 0; }
+  if (rnd(s, 'arbete', p) < sure) { count(s, 'giftsvampKand'); useK(p, 'svamp', s.now); return 0; }
   takeFrom(s, 'spindling', x, y, 0.5);
   count(s, GIFT);
   got[GIFT] = (got[GIFT] ?? 0) + 1;
@@ -390,10 +390,10 @@ export function pickMushrooms(s: State, p: Person, x: number, y: number, dtSec: 
 // när någon äter: finns giftig svamp i förrådet kan hen få i sig den
 export function eatPoison(s: State, p: Person) {
   const gift = s.items[GIFT] ?? 0;
-  if (gift < 1 || rnd(s) >= Math.min(0.6, gift / Math.max(1, s.food) * 4)) return;
+  if (gift < 1 || rnd(s, 'halsa', p) >= Math.min(0.6, gift / Math.max(1, s.food) * 4)) return;
   s.items[GIFT] = gift - 1;
   count(s, 'forgiftad');
-  p.sickUntil = Math.max(p.sickUntil ?? 0, s.now + (6 + rnd(s) * 10) * HOUR);
+  p.sickUntil = Math.max(p.sickUntil ?? 0, s.now + (6 + rnd(s, 'halsa', p) * 10) * HOUR);
   p.poisonUntil = p.sickUntil; p.sickWhy = 'Förgiftad av svamp';
   p.health = clamp(p.health - 0.25, 0, 1);
   think(p, 'Blev förgiftad av en svamp', -0.3, s.now, DAY / 2);
@@ -421,10 +421,10 @@ export function handFish(s: State, p: Person, x: number, y: number, ageF: number
   const st = (p.fiske ??= { f: 0, n: 0, k: 0 }), spear = gear === 'spjut';
   st.f++; count(s, 'fiskeForsok'); if (spear) count(s, 'spjutForsok'); if (gear === 'metspo') count(s, 'metForsok');
   const ai = ageIndex(s), season = [0.45, 1, 1.1, 1][ai];
-  if (rnd(s) >= NAPP[gear] * season * Math.min(1.3, richness(s, 'fiske', x, y)) * ageF) return 0;
+  if (rnd(s, 'arbete', p) >= NAPP[gear] * season * Math.min(1.3, richness(s, 'fiske', x, y)) * ageF) return 0;
   st.n++; count(s, 'fiskeNapp');
   const hold = HALL[gear] + p.skill.fiske / 40 + stat(p, 'uthallighet', s.now) / 100;
-  if (rnd(s) >= hold) return 0;
+  if (rnd(s, 'arbete', p) >= hold) return 0;
   st.k++; count(s, 'fisk'); if (spear) count(s, 'spjutFisk'); if (gear === 'metspo') count(s, 'metFisk');
   takeFrom(s, 'fiske', x, y, 1);
   if (s.stat!.fisk === 1) log(s, `${p.name} fångade byns första fisk ${spear ? 'med spjut' : gear === 'metspo' ? 'med metspö' : 'med händerna'}, efter ${s.stat!.fiskeForsok} försök.`, 'world', [p.id]);

@@ -33,7 +33,7 @@ export function treeSpot(s: State, taken: Set<number>): { x: number; y: number }
   }
   if (!c.length) return undefined;
   c.sort((a, b) => a.d - b.d);
-  const i = c[Math.floor(rnd(s) * Math.min(5, c.length))].i;
+  const i = c[Math.floor(rnd(s, 'val') * Math.min(5, c.length))].i;
   return { x: (i % W) + 0.5, y: Math.floor(i / W) + 0.5 };
 }
 export const nearestStock = (s: State) => {

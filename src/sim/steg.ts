@@ -114,7 +114,7 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
     for (const p of social) {
       if (!alive(p)) continue;
       const expect = dtSec / 240 * (0.6 + stat(p, 'empati', now) / 25);
-      let n = Math.floor(expect); if (rnd(s) < expect - n) n++;
+      let n = Math.floor(expect); if (rnd(s, 'samtal', p) < expect - n) n++;
       // bara med dem som är nära; i snabbläget står var och en på sin plats för uppgiften, så det blir samma grupper
       const others = social.filter(q => q !== p && alive(q) && Math.hypot(q.x - p.x, q.y - p.y) < 4);
       for (let i = 0; i < n; i++) converse(s, p, others, live ? events : undefined);
@@ -122,7 +122,7 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
     }
   }
   // relationer bleknar långsamt utan umgänge
-  if (rnd(s) < dtSec / 600) {
+  if (rnd(s, 'samtal') < dtSec / 600) {
     const k = Math.exp(-0.04 * (600 / 86400));
     for (const key in s.rels) { const r = s.rels[key]; r.op *= k; r.rom *= k; }
   }
@@ -163,19 +163,19 @@ function needsStep(s: State, p: Person, a: number, dtSec: number, coldRate: numb
 // hälsa, sjukdom och död: svält, kyla, sjukdom, ålderdom och olyckor. true = personen dog
 function healthStep(s: State, p: Person, a: number, ai: number, dtSec: number) {
   const now = s.now;
-  if (p.hunger <= 0) { p.health -= dtSec / (5 * 3600); if (rnd(s) < dtSec / 7200) think(p, 'Svälter', -0.25, now, 3 * HOUR); }
+  if (p.hunger <= 0) { p.health -= dtSec / (5 * 3600); if (rnd(s, 'halsa', p) < dtSec / 7200) think(p, 'Svälter', -0.25, now, 3 * HOUR); }
   else if (p.warm < 0.12) p.health -= dtSec / (20 * 3600);
   else if (p.hunger > 0.3 && !(p.sickUntil && p.sickUntil > now)) p.health = clamp(p.health + dtSec / (10 * 3600), 0, 1);
   if (p.sickUntil && p.sickUntil > now) p.health -= dtSec / (40 * 3600);
   if (!p.sickUntil || p.sickUntil < now) {
-    if (chance(s, (ai === 0 ? 0.12 : 0.05) / 86400, dtSec)) { const dur = (3 + rnd(s) * 8) * HOUR; p.sickUntil = now + dur; p.sickWhy = 'Sjuk'; if (dur > 8 * HOUR) log(s, `${p.name} blev svårt sjuk.`, 'world', [p.id]); }
+    if (chance(s, (ai === 0 ? 0.12 : 0.05) / 86400, dtSec, 'halsa', p)) { const dur = (3 + rnd(s, 'halsa', p) * 8) * HOUR; p.sickUntil = now + dur; p.sickWhy = 'Sjuk'; if (dur > 8 * HOUR) log(s, `${p.name} blev svårt sjuk.`, 'world', [p.id]); }
   }
   if (p.health <= 0) { die(s, p, p.hunger <= 0 ? 'av svält' : p.warm < 0.12 ? 'av kyla' : (p.poisonUntil ?? 0) > now ? 'av svampförgiftning' : 'av sjukdom'); return true; }
   // ålderdom och olyckor (Gompertz, per år = per dygn)
   const q = 0.0015 + 0.00004 * Math.exp(0.105 * a) + (a < 5 ? 0.02 : 0);
-  if (chance(s, q / 86400, dtSec)) { die(s, p, a > 55 ? 'av ålderdom' : a < 5 ? 'av en barnsjukdom' : 'i en olycka'); if (a >= 5 && a <= 55) fearPlace(s, p, 'i en olycka'); return true; }
+  if (chance(s, q / 86400, dtSec, 'halsa', p)) { die(s, p, a > 55 ? 'av ålderdom' : a < 5 ? 'av en barnsjukdom' : 'i en olycka'); if (a >= 5 && a <= 55) fearPlace(s, p, 'i en olycka'); return true; }
   const pd = p.task && ACTS[p.task.act], fara = pd && pd.fara; // farligt arbete, som jakt
-  if (fara && p.task!.phase === 'do' && chance(s, fara.risk * (1 - (pd.arbete ? p.skill[pd.arbete] : 0) / 25) / 3600, dtSec)) { die(s, p, fara.text); fearPlace(s, p, fara.text); return true; }
+  if (fara && p.task!.phase === 'do' && chance(s, fara.risk * (1 - (pd.arbete ? p.skill[pd.arbete] : 0) / 25) / 3600, dtSec, 'halsa', p)) { die(s, p, fara.text); fearPlace(s, p, fara.text); return true; }
   return false;
 }
 
@@ -185,7 +185,7 @@ function pregnancy(s: State, p: Person, a: number, pop: number, dtSec: number) {
   if (p.pregnantSince !== undefined) { if (now - p.pregnantSince > 0.75 * DAY) birth(s, p); }
   else if (p.sex === 'k' && p.partner !== undefined && a >= 17 && a <= 43 && (!p.lastBirth || now - p.lastBirth > 1.6 * DAY)) {
     const f = birthWish(pop) * clamp(foodDays(s) / 4, 0.15, 1) * (1 + 0.2 * s.seder.v.barn);
-    if (chance(s, 0.3 * f / 86400, dtSec)) { p.pregnantSince = now; p.pregnantBy = p.partner; }
+    if (chance(s, 0.3 * f / 86400, dtSec, 'halsa', p)) { p.pregnantSince = now; p.pregnantBy = p.partner; }
   }
 }
 
@@ -199,7 +199,7 @@ function taskStep(s: State, p: Person, a: number, dtSec: number, live: boolean, 
   const lightDone = t?.act === 'tanda' && (s.fire.lit || !canLight(s));
   const mustGo = t && p.toa < 0.08 && t.act !== 'toa' && a >= 3; // nöden avbryter det man håller på med
   if (!t || (t.until < end && t.phase !== 'back') || ((phaseFlip || mustGo) && t.phase !== 'back') || lightDone) {
-    if (t && (t.carry > 0 || t.items) && t.act !== 'elda' && live) { t.phase = 'back'; const d = dropSpot(s, homeKind(t)); t.tx = d.x + (rnd(s) - 0.5) * 0.4; t.ty = d.y + (rnd(s) - 0.5) * 0.4; }
+    if (t && (t.carry > 0 || t.items) && t.act !== 'elda' && live) { t.phase = 'back'; const d = dropSpot(s, homeKind(t)); t.tx = d.x + (rnd(s, 'levande', p) - 0.5) * 0.4; t.ty = d.y + (rnd(s, 'levande', p) - 0.5) * 0.4; }
     else chooseTask(s, p, live);
   }
   const tk = p.task!;
@@ -252,10 +252,10 @@ function moveLive(s: State, p: Person, tk: Task, dtSec: number, a: number, light
     // på platsen: stå still en stund, gå några steg, stå still igen (från buske till buske, spana efter vilt). Varje
     // gång man stannar på ett nytt ställe räknas som ett fynd
     const w = d0.vandra;
-    if (tk.hold === undefined) tk.hold = now + (w.h0 + rnd(s) * (w.h1 - w.h0)) * SEC;
+    if (tk.hold === undefined) tk.hold = now + (w.h0 + rnd(s, 'levande', p) * (w.h1 - w.h0)) * SEC;
     if (tk.wx === undefined && now > tk.hold) {
       for (let k = 0; k < 6; k++) {
-        const ang = rnd(s) * Math.PI * 2, r = w.r * Math.sqrt(rnd(s)), nx = tk.tx + Math.cos(ang) * r, ny = tk.ty + Math.sin(ang) * r;
+        const ang = rnd(s, 'levande', p) * Math.PI * 2, r = w.r * Math.sqrt(rnd(s, 'levande', p)), nx = tk.tx + Math.cos(ang) * r, ny = tk.ty + Math.sin(ang) * r;
         if (nx > 0 && ny > 0 && nx < W && ny < H && !blocked(s, nx, ny)) { tk.wx = nx; tk.wy = ny; break; }
       }
       // jägaren smyger mot den närmaste kaninen
@@ -270,12 +270,12 @@ function moveLive(s: State, p: Person, tk: Task, dtSec: number, a: number, light
       if (blocked(s, nx, ny)) { tk.wx = tk.wy = undefined; tk.hold = now + w.h0 * SEC; }
       else {
         wear(g, ci, WEAR * LIVE_WEAR * 0.15 * mv); p.x = nx; p.y = ny;
-        if (d <= sp) { tk.fynd = (tk.fynd ?? 0) + 1; tk.wx = tk.wy = undefined; tk.hold = now + (w.h0 + rnd(s) * (w.h1 - w.h0)) * SEC; }
+        if (d <= sp) { tk.fynd = (tk.fynd ?? 0) + 1; tk.wx = tk.wy = undefined; tk.hold = now + (w.h0 + rnd(s, 'levande', p) * (w.h1 - w.h0)) * SEC; }
       }
     }
   } else if (!d0.stilla) {
     // småjustering så att de rör sig lite
-    if (rnd(s) < dtSec * 0.08) { const nx = p.x + (rnd(s) - 0.5) * 0.4, ny = p.y + (rnd(s) - 0.5) * 0.4; if (!blocked(s, nx, ny)) { p.x = nx; p.y = ny; } }
+    if (rnd(s, 'levande', p) < dtSec * 0.08) { const nx = p.x + (rnd(s, 'levande', p) - 0.5) * 0.4, ny = p.y + (rnd(s, 'levande', p) - 0.5) * 0.4; if (!blocked(s, nx, ny)) { p.x = nx; p.y = ny; } }
   }
 }
 // framme vid målet: vid förrådet, vid bygget, hemma med bördan eller på platsen där arbetet görs
@@ -286,7 +286,7 @@ function arrive(s: State, p: Person, tk: Task, light: boolean) {
       // vid förrådet: ta en famn ved och gå till elden
       const m = getMap(s.seed), n = s.fire.fuel >= fireWant(s) ? 0 : Math.min(1, fuelStock(s)); // en famn i taget, så att elden matas oftare
       if (n <= 0) p.task = undefined;
-      else { tk.ag = { ved: {} }; tk.carry = takeFuel(s, n, p, tk.ag.ved); tk.phase = 'back'; tk.tx = m.fire.x + 0.5 + (rnd(s) - 0.5) * 1.2; tk.ty = m.fire.y + 1.2; }
+      else { tk.ag = { ved: {} }; tk.carry = takeFuel(s, n, p, tk.ag.ved); tk.phase = 'back'; tk.tx = m.fire.x + 0.5 + (rnd(s, 'levande', p) - 0.5) * 1.2; tk.ty = m.fire.y + 1.2; }
     } else { addFuel(s, p, tk.carry); tk.carry = 0; p.task = undefined; }
   } else if (tk.act === 'bygga' && tk.phase === 'go' && tk.site) {
     // vid lagret: ta materialet och gå till bygget
@@ -302,7 +302,7 @@ function arrive(s: State, p: Person, tk: Task, light: boolean) {
   } else {
     tk.phase = 'do'; if (tk.act === 'bara') { pickUp(s, p, tk); tk.until = now; }
     const f = ACTS[tk.act].fynd;
-    tk.fynd = 0; tk.lim = f ? Math.round((f[0] + rnd(s) * (f[1] - f[0])) * (tk.tool === 'korg' ? KORG_FYND : 1)) : undefined;
+    tk.fynd = 0; tk.lim = f ? Math.round((f[0] + rnd(s, 'levande', p) * (f[1] - f[0])) * (tk.tool === 'korg' ? KORG_FYND : 1)) : undefined;
   }
 }
 
@@ -319,7 +319,7 @@ function workStep(s: State, p: Person, tk: Task, dtSec: number, live: boolean, a
   if (y > 0) count(s, 'prod_' + tk.act, y);
   if (res && d.takt === undefined) { takeFrom(s, res, tk.tx, tk.ty, y); if (rich < 0.08) tk.until = now; } // tomt här: gå hem eller vidare
   // den som arbetar ser hur mycket som finns i området och minns det
-  if (res && (rich < 0.08 || chance(s, 1 / 1800, dtSec))) lookAround(s, p, tk.tx, tk.ty);
+  if (res && (rich < 0.08 || chance(s, 1 / 1800, dtSec, 'minne', p))) lookAround(s, p, tk.tx, tk.ty);
   if (tk.act === 'fiske') {
     // fiske med händerna eller spjut: ett försök i taget. Fiskaren och jägaren går hem med varje fångst i levande läge,
     // men vägen är kort och de är på platsen nästan hela tiden, så de jämkas inte för gångtiden (levande = FAST)
@@ -356,7 +356,7 @@ function workStep(s: State, p: Person, tk: Task, dtSec: number, live: boolean, a
     if (spjut) wearSpear(s, p, dtSec * lf / TRY_SEC); // spjutet slits lika mycket per fem minuter som vid ett fiskeförsök
     // man fångar hela djur, än så länge bara kaniner. Chansen är sådan att man i snitt får lika mycket som platsen ger.
     // Kaninen fyller famnen och bärs hem hel
-    if (y > 0 && rnd(s) < y / KANIN) {
+    if (y > 0 && rnd(s, 'arbete', p) < y / KANIN) {
       count(s, 'kaniner');
       if (s.stat!.kaniner === 1) log(s, `${p.name} fångade byns första kanin och bar hem den hel.`, 'world', [p.id]);
       if (live) tk.carry += KANIN; else gain(s, p, 'vilt', KANIN);

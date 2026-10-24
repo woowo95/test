@@ -40,8 +40,8 @@ function eat(s: State, p: Person, fran?: Person) {
   const q = takeFood(s, full, p, fran), portion = food0 - s.food;
   p.hunger = clamp(p.hunger + 0.55 * portion / full * (q >= 0.5 ? 1 : 0.5 + q), 0, 1); eatPoison(s, p);
   if (q < 0.5) think(p, 'Maten var dålig', -0.05, now, 6 * HOUR);
-  if (q < 0.25 && rnd(s) < (0.25 - q) / 0.25 * 0.35) {
-    p.sickUntil = Math.max(p.sickUntil ?? 0, now + (4 + rnd(s) * 8) * HOUR); p.sickWhy = 'Magsjuk av skämd mat';
+  if (q < 0.25 && rnd(s, 'halsa', p) < (0.25 - q) / 0.25 * 0.35) {
+    p.sickUntil = Math.max(p.sickUntil ?? 0, now + (4 + rnd(s, 'halsa', p) * 8) * HOUR); p.sickWhy = 'Magsjuk av skämd mat';
     think(p, 'Åt skämd mat och blev magsjuk', -0.2, now, DAY / 2); count(s, 'skamdMat');
     log(s, `${p.name} blev magsjuk av skämd mat.`, 'world', [p.id]);
   }
@@ -67,7 +67,7 @@ export const lacksFor = (s: State, p: Person, b: Behov) => b.behover(s, p) && ha
 export function needLadder(s: State, p: Person, dtSec: number) {
   for (const b of BEHOV) {
     if (!b.behover(s, p)) continue;
-    if (hasFor(s, p, b) < b.minst && chance(s, FRAGA_TAKT, dtSec)) askAround(s, p, b);
+    if (hasFor(s, p, b) < b.minst && chance(s, FRAGA_TAKT, dtSec, 'dela', p)) askAround(s, p, b);
     if (hasFor(s, p, b) >= b.minst) { b.anvand(s, p); noticeTheft(s, p, b); continue; }
     const v = victimOf(s, p, b);
     if (v) stole(s, p, v, b, b.anvand(s, p, v));
@@ -92,7 +92,7 @@ function askAround(s: State, m: Person, b: Behov) {
 // m ber g om det m saknar. Ger g? (Hur gärna man ger: agande.ts)
 function gift(s: State, m: Person, g: Person, n: Behov) {
   const over = overOf(s, g, n, m);
-  if (over < n.minst || rnd(s) >= willing(s, g, m)) return false;
+  if (over < n.minst || rnd(s, 'dela', g) >= willing(s, g, m)) return false;
   let rest = Math.min(over, n.mangd(m, s.now));
   const want = rest;
   for (const k of n.slag) { if (rest <= 1e-9) break; rest -= ownMove(s, k, rest, g.id, m.id); }
@@ -121,7 +121,7 @@ export function victimOf(s: State, p: Person, b: Behov) {
     tot += w; return { q, w };
   }).filter(c => c.w > 0);
   if (!tot) return;
-  let x = rnd(s) * tot;
+  let x = rnd(s, 'dela', p) * tot;
   for (const c of cands) { x -= c.w; if (x <= 0) return c.q; }
   return cands[cands.length - 1].q;
 }

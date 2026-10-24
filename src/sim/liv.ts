@@ -26,7 +26,7 @@ export function die(s: State, p: Person, cause: string) {
 export function birth(s: State, mother: Person) {
   const father = byId(s, mother.partner) ?? byId(s, mother.pregnantBy);
   mother.pregnantSince = undefined; mother.lastBirth = s.now;
-  const ch = newPerson(s, rnd(s) < 0.5 ? 'm' : 'k', s.now, mother, father);
+  const ch = newPerson(s, rnd(s, 'folk') < 0.5 ? 'm' : 'k', s.now, mother, father);
   ch.x = mother.x; ch.y = mother.y;
   s.people.push(ch);
   log(s, `${ch.name} föddes, ${ch.sex === 'k' ? 'dotter' : 'son'} till ${mother.name}${father ? ' och ' + father.name : ''}.`, 'birth', [ch.id, mother.id, ...(father ? [father.id] : [])]);
@@ -35,7 +35,7 @@ export function birth(s: State, mother: Person) {
   if (father && alive(father)) think(father, `Fick barnet ${ch.name}`, 0.18, s.now, DAY);
   const kids = s.people.filter(q => q.mother === mother.id).length;
   if (kids === 6) mother.fame.push('Mor till många barn');
-  if (rnd(s) < 0.025) die(s, mother, 'i barnsäng');
+  if (rnd(s, 'halsa', mother) < 0.025) die(s, mother, 'i barnsäng');
 }
 
 // ---------- befolkningen regleras ----------
@@ -53,22 +53,22 @@ export const immigrationRate = (pop: number) => pop < 10 ? 0.3 * (10 - pop) / 10
 export function regulate(s: State, dtSec: number) {
   const pop = living(s).length;
   if (pop === 0) { refound(s); return; }
-  if (rnd(s) < dtSec / 3600) { // humöret räknas om ungefär en gång i timmen
+  if (rnd(s, 'flytt') < dtSec / 3600) { // humöret räknas om ungefär en gång i timmen
     const rate = emigrationRate(pop, avgMood(s));
-    if (chance(s, rate / 86400, 3600)) emigrate(s);
+    if (chance(s, rate / 86400, 3600, 'flytt')) emigrate(s);
   }
-  if (chance(s, immigrationRate(pop) / 86400, dtSec)) immigrate(s, false);
+  if (chance(s, immigrationRate(pop) / 86400, dtSec, 'flytt')) immigrate(s, false);
 }
 // en nybyggare (ibland ett par) kommer vandrande och slår sig ner
 export function immigrate(s: State, alone: boolean) {
   const mk = (sex: 'm' | 'k') => {
-    const age = 17 + rnd(s) * 18, p = newPerson(s, sex, s.now - age * DAY);
-    for (const k of SKILLS) p.skill[k] = clamp((age - 8) * 0.25 * (0.4 + rnd(s)) * (p.pot.intelligens / 12), 0, 12);
+    const age = 17 + rnd(s, 'folk') * 18, p = newPerson(s, sex, s.now - age * DAY);
+    for (const k of SKILLS) p.skill[k] = clamp((age - 8) * 0.25 * (0.4 + rnd(s, 'folk')) * (p.pot.intelligens / 12), 0, 12);
     s.people.push(p);
     return p;
   };
-  const a = mk(rnd(s) < 0.5 ? 'm' : 'k');
-  if (!alone && rnd(s) < 0.35) {
+  const a = mk(rnd(s, 'folk') < 0.5 ? 'm' : 'k');
+  if (!alone && rnd(s, 'flytt') < 0.35) {
     const b = mk(a.sex === 'm' ? 'k' : 'm');
     pair(s, a, b, true);
     log(s, `${a.name} och ${b.name} kom vandrande och slog sig ner i byn.`, 'move', [a.id, b.id]);
@@ -89,12 +89,12 @@ export function emigrate(s: State) {
   if (!cands.length) { // inget ungt par: en ensam vuxen ger sig av
     const one = living(s).filter(p => p.partner === undefined && ageOf(p, now) >= 16 && ageOf(p, now) < 40);
     if (!one.length) return;
-    const p = pick(s, one); p.left = now; p.task = undefined;
+    const p = pick(s, one, 'flytt'); p.left = now; p.task = undefined;
     log(s, `${p.name} lämnade byn för att söka lyckan på annat håll.`, 'move', [p.id]);
     count(s, 'utvandrade');
     return;
   }
-  const a = pick(s, cands), b = byId(s, a.partner)!;
+  const a = pick(s, cands, 'flytt'), b = byId(s, a.partner)!;
   const group = [a, b, ...living(s).filter(c => (c.mother === a.id || c.father === a.id || c.mother === b.id || c.father === b.id) && ageOf(c, now) < 14)];
   for (const g of group) { g.left = now; g.task = undefined; }
   const n = group.length - 2;

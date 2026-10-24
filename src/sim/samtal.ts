@@ -14,7 +14,7 @@ export function converse(s: State, a: Person, others: Person[], events?: TalkEve
   // välj samtalspartner viktad efter relation
   let tot = 0;
   const w = others.map(b => { const r = getRel(s, a, b); const v = Math.max(0.1, 1 + r.op / 40 + r.chem * 0.5 + (b.partner === a.id ? 1.5 : 0)); tot += v; return v; });
-  let x = rnd(s) * tot, b = others[0];
+  let x = rnd(s, 'samtal', a) * tot, b = others[0];
   for (let i = 0; i < others.length; i++) { x -= w[i]; if (x <= 0) { b = others[i]; break; } }
   const r = getRel(s, a, b);
   const aa = ageOf(a, now), ba = ageOf(b, now);
@@ -22,24 +22,24 @@ export function converse(s: State, a: Person, others: Person[], events?: TalkEve
   let kind: string;
   const canFlirt = aa >= 16 && ba >= 16 && a.sex !== b.sex && !isKin(a, b) && Math.abs(aa - ba) < 18 &&
     ((a.partner === undefined && b.partner === undefined) || a.partner === b.id);
-  if ((mood < 0.3 && rnd(s) < 0.35) || (r.op < -25 && rnd(s) < 0.5)) kind = 'gräl';
+  if ((mood < 0.3 && rnd(s, 'samtal', a) < 0.35) || (r.op < -25 && rnd(s, 'samtal', a) < 0.5)) kind = 'gräl';
   else if (a.task?.act === 'beratta') kind = 'berättelse';
-  else if (canFlirt && rnd(s) < 0.12 + r.rom / 250 + (r.chem > 0.3 ? 0.08 : 0)) kind = 'flirt';
-  else if (moodOf(b, now) < 0.35 && rnd(s) < stat(a, 'empati', now) / 25) kind = 'tröst';
-  else if (r.op > 30 && rnd(s) < 0.3) kind = 'djupt samtal';
-  else if (rnd(s) < 0.25) kind = 'skämt';
+  else if (canFlirt && rnd(s, 'samtal', a) < 0.12 + r.rom / 250 + (r.chem > 0.3 ? 0.08 : 0)) kind = 'flirt';
+  else if (moodOf(b, now) < 0.35 && rnd(s, 'samtal', a) < stat(a, 'empati', now) / 25) kind = 'tröst';
+  else if (r.op > 30 && rnd(s, 'samtal', a) < 0.3) kind = 'djupt samtal';
+  else if (rnd(s, 'samtal', a) < 0.25) kind = 'skämt';
   else kind = 'småprat';
 
   // hur samtalet går: kemi, likhet och empati, och hur charmig och vacker den andra är. Den med låg karisma och
   // skönhet blir lättare illa omtyckt.
   const charm = (stat(b, 'karisma', now) + stat(b, 'skonhet', now)) / 2;
-  let out = r.chem * 1.1 + similarity(a, b) * 0.7 + (stat(a, 'empati', now) + stat(b, 'empati', now)) / 40 - 0.55 + (rnd(s) - 0.5) * 1.4;
+  let out = r.chem * 1.1 + similarity(a, b) * 0.7 + (stat(a, 'empati', now) + stat(b, 'empati', now)) / 40 - 0.55 + (rnd(s, 'samtal', a) - 0.5) * 1.4;
   // charmen påverkar vänskapen, inte förälskelsen (den har egen dragning), och inte mellan par och släkt
   const like = a.partner === b.id || isKin(a, b) ? 0 : (charm - 8) / 15;
   if (isKin(a, b)) out += 0.35;
   const mult: Record<string, number> = { 'småprat': 1, 'skämt': 1.6, 'djupt samtal': 2.6, 'tröst': 2.2, 'berättelse': 1.2, 'flirt': 1, 'gräl': 0 };
   if (kind === 'gräl') {
-    r.op -= 3 + rnd(s) * 3;
+    r.op -= 3 + rnd(s, 'samtal', a) * 3;
     think(a, `Grälade med ${b.name}`, -0.08, now, 6 * HOUR);
     think(b, `Grälade med ${a.name}`, -0.1, now, 6 * HOUR);
   } else {

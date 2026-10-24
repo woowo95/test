@@ -133,7 +133,7 @@ export function pickSpot(s: State, p: Person, k: Kind, cands: { x: number; y: nu
   let best: { x: number; y: number; d: number } | undefined, bs = -1e9;
   const sight = sightOf(s, p);
   for (const c of cands) {
-    const sc = perceive(s, p, k, c.x, c.y, sight) - c.d * 0.03 + rnd(s) * 0.15;
+    const sc = perceive(s, p, k, c.x, c.y, sight) - c.d * 0.03 + rnd(s, 'val', p) * 0.15;
     if (sc > bs) { bs = sc; best = c; }
   }
   if (!best || sees(s, p, best.x, best.y, sight)) return best;
@@ -179,18 +179,18 @@ export function share(s: State, a: Person, b: Person, r: Rel, kind: string) {
   const now = s.now;
   teach(s, a, b, kind);
   const talk = 0.03 + (stat(a, 'karisma', now) + stat(a, 'empati', now)) / 200 + (kind === 'berättelse' ? 0.35 : kind === 'djupt samtal' ? 0.12 : 0);
-  if (a.lardomar?.length && rnd(s) < talk) {
+  if (a.lardomar?.length && rnd(s, 'minne', a) < talk) {
     // man berättar helst om rädslor, rika platser och platser som visat sig sämre än man trott
     let tot = 0;
     const w = a.lardomar.map(l => { const v = (l.k === 'fara' ? 1.5 : l.k === 'flinta' ? 1 : nyhet(s, l) ? Math.max(1, l.v) : l.v) * l.c; tot += v; return v; });
-    let x = rnd(s) * tot, l = a.lardomar[0];
+    let x = rnd(s, 'minne', a) * tot, l = a.lardomar[0];
     for (let i = 0; i < w.length; i++) { x -= w[i]; if (x <= 0) { l = a.lardomar[i]; break; } }
     tell(s, a, b, l, r);
   }
   // kunskap: den som kan något bättre lär ut lite
   if (a.kunskap) for (const k in a.kunskap) {
     const e = a.kunskap[k], d = e.v - kn(b, k);
-    if (d > 0.1 && rnd(s) < 0.15) {
+    if (d > 0.1 && rnd(s, 'minne', a) < 0.15) {
       const before = kn(b, k), v = learnK(b, k, d * 0.2 * (0.5 + stat(b, 'intelligens', now) / 20), now);
       e.t = now; // att lära ut håller kunskapen vid liv
       if (k === 'svamp' && before < 0.6 && v >= 0.6) log(s, `${b.name} har lärt sig av ${a.name} att skilja kantarellen från den giftiga spindlingen.`, 'skill', [b.id, a.id]);
@@ -206,7 +206,7 @@ function tell(s: State, a: Person, b: Person, l: Lardom, r: Rel) {
   const trust = clamp(0.45 + r.op / 160, 0.15, 0.95);
   const c = l.c * trust * 0.85;
   // man överdriver gärna, särskilt det som är farligt
-  const v = clamp(l.v * (l.k === 'fara' ? 1 + (rnd(s) - 0.25) * 0.5 : 1 + (rnd(s) - 0.4) * 0.35), 0, l.k === 'fara' ? 1.6 : 3);
+  const v = clamp(l.v * (l.k === 'fara' ? 1 + (rnd(s, 'minne', a) - 0.25) * 0.5 : 1 + (rnd(s, 'minne', a) - 0.4) * 0.35), 0, l.k === 'fara' ? 1.6 : 3);
   const e = findL(b, l.k, l.a);
   if (e) {
     if (e.src === undefined && e.led === 0 && e.c >= c && !nyhet(s, l)) return; // egen upplevelse väger tyngre, utom mot en nyhet

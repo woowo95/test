@@ -174,7 +174,7 @@ export function askForTool(s: State, a: Person, b: Person): 'gåva' | 'byte' | u
     for (const k of KINDS()) {
       if (!needs(s, m, k)) continue;
       const t = spare(s, g, k);
-      if (!t || rnd(s) >= willing(s, g, m)) continue;
+      if (!t || rnd(s, 'dela', g) >= willing(s, g, m)) continue;
       // byte: mottagaren har något över som givaren saknar
       let back: Ting | undefined;
       for (const j of KINDS()) if (j !== k && needs(s, g, j)) { back = spare(s, m, j); if (back) break; }
