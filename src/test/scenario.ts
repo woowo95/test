@@ -1,7 +1,7 @@
 // Scenariotester: ställ en by i ett visst läge, kör den en stund och kontrollera att det som ska hända händer.
 // npm run scenario            kör alla
 // npm run scenario -- glanta  kör bara ett
-import { Person, Act, createState, ownedBy, syncTools, toolsOf, heldBy, take, usesTool, wearTool, freeSpear, getRel, isTool, BYN, twineRope, makeRod, wearSpear, isSpear, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, WEEK, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, zonesOf, allows, ageOf, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, fuelStock, DAY, HOUR, W, State, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, campCenter, TEKNIK, knows, thinkWhileWorking, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, beds, isWall, Bit, wearBuild, FYND, FYND_IDS, GRUPPER, angOf, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, LAGER_R, observe, hoped, Lager, skyggOf, SKYGG_R, share, treeOn, djurOf, KANIN, SLAKT, canSlaughter, makeKnife, slaughter, askForTool, gain, takeFood, takeFuel, ownsAmount, ownedStock, syncEgna, addTo, needLadder, MAT, ownFor } from '../sim';
+import { Person, Act, createState, ownedBy, syncTools, toolsOf, heldBy, take, usesTool, wearTool, freeSpear, getRel, isTool, BYN, twineRope, makeRod, wearSpear, isSpear, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, ageStart, nyKalender, kalender, yearNo, AGES, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, zonesOf, allows, ageOf, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, fuelStock, DAY, HOUR, W, State, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, campCenter, TEKNIK, knows, thinkWhileWorking, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, beds, isWall, Bit, wearBuild, FYND, FYND_IDS, GRUPPER, angOf, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, LAGER_R, observe, hoped, Lager, skyggOf, SKYGG_R, share, treeOn, djurOf, KANIN, SLAKT, canSlaughter, makeKnife, slaughter, askForTool, gain, takeFood, takeFuel, ownsAmount, ownedStock, syncEgna, addTo, needLadder, MAT, ownFor } from '../sim';
 import { findPath } from '../sim/vag';
 import { FOREST, HIGH, isSoil } from '../sim/vag';
 import { START } from './kor';
@@ -100,7 +100,7 @@ const SCENARIER: Record<string, { text: string; kor: () => Koll[] }> = {
       // flintan lyckas bara ibland (några procent per försök), så provet körs i fem byar och minst två ska få fyr
       const byar = [16, 17, 18, 19, 20].map(seed => {
         const s = createState(seed, START);
-        kor(s, 20 * 24 + 23); // till istidens början
+        kor(s, Math.round((ageStart(s, 0) - s.now) / HOUR) - 1); // till istidens början
         Object.assign(s.fire, { lit: false, fuel: 0, emberUntil: undefined, ash: 3, ashUntil: s.now + 3 * DAY });
         s.wood = 0; s.items.grenar = 30; s.items.kol = 2; s.items.torrgras = 150; // ett känt förråd, så att provet inte beror på vad byn råkade ha
         const t0 = s.now;
@@ -160,7 +160,7 @@ const SCENARIER: Record<string, { text: string; kor: () => Koll[] }> = {
 SCENARIER.kunskap = {
   text: 'Var och en minns var det finns mat och flinta, berättar det för andra (ibland överdrivet), glömmer med tiden och blir rädd för platser där någon dött',
   kor: () => {
-    const s = createState(31, START);
+    const s = createState(32, START); // by 31 svälter ihjäl under den långa första vårtiden sedan kalendern kom (1.5.2)
     const ute = living(s).filter(p => (p.lardomar?.length ?? 0) > 0).length;
     // en olycka långt från byn: de som såg den och de närmaste blir rädda
     const f = getMap(s.seed).fire, offer = living(s)[0], vittne = living(s)[2];
@@ -205,8 +205,8 @@ SCENARIER.temperatur = {
   kor: () => {
     const s = createState(5, START);
     const snitt = (fran: number, timmar: number[]) => { let v = 0, n = 0; for (let d = 0; d < 7; d++) for (const h of timmar) { v += temperature(s, fran + d * DAY + h * HOUR); n++; } return v / n; };
-    const t0 = new Date(s.founded).setHours(0, 0, 0, 0) + DAY; // midnatt efter grundandet
-    const var_ = t0, istid = t0 + 3 * WEEK, sommar = t0 + WEEK;
+    const var_ = new Date(s.founded).setHours(0, 0, 0, 0) + DAY; // midnatt efter grundandet
+    const istid = ageStart(s, 0), sommar = ageStart(s, 2);
     const dag = snitt(sommar, [13, 14, 15, 16]), natt = snitt(sommar, [2, 3, 4, 5]);
     const ist = snitt(istid, [0, 6, 12, 18]), som = snitt(sommar, [0, 6, 12, 18]), vr = snitt(var_, [0, 6, 12, 18]);
     // slumpen: samma klockslag olika dagar ger olika temperatur
@@ -216,6 +216,35 @@ SCENARIER.temperatur = {
       [`dagen är varmare än natten (${dag.toFixed(0)}° mot ${natt.toFixed(0)}°)`, dag > natt + 4],
       [`vädret varierar (${Math.min(...kl12).toFixed(0)}° till ${Math.max(...kl12).toFixed(0)}° kl. 12)`, Math.max(...kl12) - Math.min(...kl12) > 2],
       ['kylan växer när det blir kallare och försvinner när det är varmt', coldOf(-15) > coldOf(0) && coldOf(0) > 0 && coldOf(15) === 0],
+    ];
+  },
+};
+
+SCENARIER.kalender = {
+  text: 'Tidsåldrarna följer kalendern: de börjar en måndag kl. 00, en ny by får en längre första vårtid och en gammal by kommer i fas',
+  kor: () => {
+    const s = createState(5, START), k0 = kalender(s);
+    const mandag = (t: number) => { const d = new Date(t); return d.getDay() === 1 && d.getHours() === 0 && d.getMinutes() === 0; };
+    const starter = [k0.slut, ...[2, 3, 0].map(ai => ageStart(s, ai))];
+    // en vecka framåt: dag och år följer midnatt
+    const k1 = kalender(s, k0.slut + 12 * HOUR);
+    // vintertid: 25 oktober 2026 ställs klockan om, men åldern börjar ändå en måndag kl. 00
+    const v = createState(5, new Date('2026-10-14T10:00:00+02:00').getTime()), vs = [2, 3, 0].map(ai => ageStart(v, ai));
+    // gammal by (grundad 10–17 dygn sedan, före kalendern): tidsåldern slutar den måndag närmast det vanliga slutet som inte varit
+    let maxFlytt = 0, allaMandag = true, ingenBakat = true, narmast = true;
+    for (let h = 0; h < 7 * 24; h += 7) {
+      const g = createState(5, START); g.founded = g.now - 10 * DAY - h * HOUR; delete g.kal;
+      const v0 = Math.floor((g.now - g.founded) / (7 * DAY)), gammalSlut = g.founded + (v0 + 1) * 7 * DAY, k = kalender(g);
+      maxFlytt = Math.max(maxFlytt, Math.abs(k.slut - gammalSlut));
+      allaMandag &&= mandag(k.slut); if (Math.abs(k.slut - gammalSlut) > 3.6 * DAY) narmast &&= k.slut - 7 * DAY <= g.now; // närmare måndag hade redan varit
+      ingenBakat &&= k.slut > g.now && k.ai === (1 + v0) % 4;
+    }
+    return [
+      [`första vårtiden är ${k0.av} dagar (7–13)`, k0.ai === 1 && k0.dag === 1 && k0.av >= 7 && k0.av <= 13],
+      ['varje tidsålder börjar en måndag kl. 00', starter.every(mandag) && vs.every(mandag)],
+      [`efter vårtiden kommer sommar, dag 1 av 7 (${AGES[k1.ai]}, dag ${k1.dag} av ${k1.av})`, k1.ai === 2 && k1.dag === 1 && k1.av === 7],
+      [`ett år går vid midnatt (år ${yearNo(s, k0.slut - HOUR)} → ${yearNo(s, k0.slut + HOUR)})`, yearNo(s, k0.slut + HOUR) === yearNo(s, k0.slut - HOUR) + 1],
+      [`en gammal by kommer i fas: slutar närmaste måndag som inte varit (flyttas högst ${(maxFlytt / DAY).toFixed(1)} dygn)`, allaMandag && ingenBakat && narmast && maxFlytt < 7 * DAY],
     ];
   },
 };
@@ -636,7 +665,7 @@ SCENARIER.fritid = {
     let prom = 0, bad = 0, badVarmt = true, n = 0, strand = 0, strandLand = true;
     for (const seed of [5, 6, 7]) { // tre byar, så att slumpen inte avgör
     const s = createState(seed, START), gang = new Map<number, number>();
-    s.founded = s.now - WEEK; // sommar
+    s.kal = nyKalender(s.now, 2); // sommar
     s.food = 40; s.wood = 40; // gott ställt, tid över
     kor(s, 4 * 24, s => {
       for (const p of living(s)) {
@@ -671,7 +700,7 @@ SCENARIER.rotter = {
   kor: () => {
     const andel = (vecka: number) => {
       const s = createState(7, START);
-      s.founded = s.now - vecka * WEEK;
+      s.kal = nyKalender(s.now, (vecka + 1) % 4);
       s.mat = { kott: 300 }; s.food = 300; // kött äts före bär och rötter, så det man samlar blir kvar
       kor(s, 48);
       const b = amountOf(s, 'bar'), r = amountOf(s, 'rotter');
@@ -937,7 +966,7 @@ SCENARIER.bygg = {
     const fq = getMap(q.seed).fire, hq = housesOf(q)[0];
     const avst = hq ? Math.hypot(Math.max(hq.x - fq.x, 0, fq.x - (hq.x + hq.w - 1)), Math.max(hq.y - fq.y, 0, fq.y - (hq.y + hq.h - 1))) : 0;
     // en kall natt utan eld: den som är inne kyls långsammare än den som är ute
-    const k = structuredClone(q); k.now = k.founded + 3 * WEEK + 3 * HOUR; k.fire.lit = false; k.fire.fuel = 0;
+    const k = structuredClone(q); k.now = ageStart(k, 0) + 3 * HOUR; k.fire.lit = false; k.fire.fuel = 0;
     let varmInne = 0, varmUte = 0, ni = 0, nu = 0;
     const b2 = beds(k);
     living(k).forEach((p, i) => { p.warm = 0.8; if (i < 3 && b2[i] !== undefined) { p.x = b2[i] % W + 0.5; p.y = Math.floor(b2[i] / W) + 0.5; } });
@@ -979,7 +1008,7 @@ SCENARIER.varmekarta = {
   text: 'Värmekartorna: bär i små snår som står kvar, svamp i skogen, rötter glest överallt även på vintern, kaniner helst i gräs och borta från folk, fisk i vattnet och flinta vid stenarna. Inget växer i lägret, mönstren kryper med tiden, uttag tömmer platsen som växer tillbaka, och den som ser en plockad plats vet att den växer tillbaka',
   kor: () => {
     const s = createState(21, START), g = groundOf(s), m = getMap(s.seed);
-    const vid = (ai: number) => { s.now = s.founded + ((ai + 3) % 4) * WEEK + HOUR; };
+    const vid = (ai: number) => { s.now = ageStart(s, ai) + HOUR; };
     const summa = (k: Lager) => { let v = 0; for (let i = 0; i < W * H; i++) v += fyndAt(s, k, i); return v; };
     const land = (i: number) => isSoil(g.tiles[i]), skog = (i: number) => land(i) && g.trees[i] >= FOREST;
     vid(0); const kIstid = summa('kantarell');
@@ -1016,12 +1045,13 @@ SCENARIER.varmekarta = {
     for (let i = 0; i < W * H; i++) if (campDist(s, i % W, Math.floor(i / W)) < LAGER_R) for (const k of FYND_IDS) if (k !== 'fiske' && fyndAt(s, k, i) > 0) iLagret++;
     // mönstren kryper: bärsnåren står nästan kvar ett speldygnsvarv (4 veckor = samma årstid igen), kaninerna har flyttat mer
     const kvar = (k: Lager, dygn: number, grans: number) => {
-      const t0 = s.now, fore: boolean[] = [];
+      const nu = s.now, t0 = ageStart(s, 2) + 3 * DAY, fore: boolean[] = []; // mitt i sommaren, så att 28 dygn senare är sommar igen
+      s.now = t0;
       for (let i = 0; i < W * H; i++) fore.push(vaxerAt(s, k, i) > grans);
       s.now = t0 + dygn * DAY;
       let same = 0, n = 0;
       for (let i = 0; i < W * H; i++) if (fore[i]) { n++; if (vaxerAt(s, k, i) > grans) same++; }
-      s.now = t0;
+      s.now = nu;
       return n ? same / n : 0;
     };
     const barKvar = kvar('bar', 28, 1), kaninKvar = kvar('jakt', 28, 0.6), barSenare = kvar('bar', 280, 1);

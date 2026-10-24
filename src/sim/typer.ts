@@ -100,6 +100,7 @@ export interface State {
   fynd?: string; // hur mycket som tagits ur varje plats (bär, vilt, fisk), packat
   byggen?: import('./byggnad').Bit[]; hus?: import('./byggnad').Hus[]; byggV?: number; nextBit?: number; byggSok?: number; // väggar, golv och öppningar, husen byn planerat, ändringsräknare
   kunskap?: Record<string, number>; // äldre sparfiler: byns gemensamma kunskap, flyttas till varje person
+  kal?: { t0: number; a0: number; b0: number }; // kalendern: tidsåldern a0 började t0 och slutar måndagen b0 (dagens nummer), se tid.ts
   stat?: Record<string, number>; // räknare: svamp, fiskeförsök, napp, fångst med mera
 }
 // ett fällt träd: ved och grenar som finns kvar att hugga ut

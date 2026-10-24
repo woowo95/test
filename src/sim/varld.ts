@@ -1,4 +1,5 @@
 import { migrateTek } from './teknik';
+import { inFas, nyKalender } from './tid';
 import { ageOf, getRel, log, newPerson, think } from './folk';
 import { newSeder, sederTarget, TAGS } from './seder';
 import { clamp, gauss, rnd } from './slump';
@@ -7,7 +8,7 @@ import { DAY, Fire, NEW_H, NEW_W, Person, SEC, SKILLS, State, useMap } from './t
 // ---------- skapa värld ----------
 export function createState(seed: number, now: number): State {
   // en liten koloni: två par och ett barn, utan eld och med lite mat och grenar
-  const s: State = { v: 1, seed, rng: seed, founded: now, now, people: [], rels: {}, nextId: 1, food: 30, wood: 0, log: [], lastAgeIdx: 1, lastGuardDay: -1, items: { grenar: 20 }, fire: newFire(), seder: newSeder(), W: NEW_W, H: NEW_H };
+  const s: State = { v: 1, seed, rng: seed, founded: now, now, people: [], rels: {}, nextId: 1, food: 30, wood: 0, log: [], lastAgeIdx: 1, lastGuardDay: -1, items: { grenar: 20 }, fire: newFire(), seder: newSeder(), W: NEW_W, H: NEW_H, kal: nyKalender(now) };
   useMap(s);
   const adults: [string, number][] = [['m', 30], ['k', 27], ['m', 23], ['k', 21]];
   for (const [sex, age] of adults) s.people.push(newPerson(s, sex as 'm' | 'k', now - (age + rnd(s)) * DAY));
@@ -45,6 +46,7 @@ export function migrate(s: State) {
     if (s.kunskap?.svamp && p.died === undefined && !p.kunskap?.svamp) p.kunskap = { ...p.kunskap, svamp: { v: s.kunskap.svamp, t: s.now } };
   }
   delete s.kunskap;
+  s.kal ??= inFas(s); // byar från före kalendern kommer i fas med veckan
   // äldre sparfiler: det som räknades ur loggen räknas nu i statistiken
   if (s.log.some(l => l.text.includes('byns första yxa'))) (s.stat ??= {}).yxa1 ??= 1;
   for (const l of s.log) if (l.kind === 'skill') { const m = l.text.match(/ kallas nu för (.+)\.$/), p = s.people.find(q => q.id === l.ids?.[0]); const tag = m && p && TAGS.find(t => t.tag.toLowerCase() === m[1])?.tag; if (tag && !p.kallad?.includes(tag)) (p.kallad ??= []).push(tag); }

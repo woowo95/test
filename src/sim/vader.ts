@@ -1,12 +1,13 @@
 import { clamp } from './slump';
-import { HOUR, State, WEEK } from './typer';
+import { HOUR, State } from './typer';
+import { yearPos } from './tid';
 
 // ---------- väder: temperatur ----------
 // Temperaturen följer årstiden mjukt (varje tidsålder glider över i nästa), solen över dygnet
 // och ett långsamt slumpmässigt väder. Den räknas fram ur tiden, så den behöver inte sparas.
 const SEASON_C = [-10, 6, 16, 6]; // medeltemperatur mitt i istid, vår, sommar, höst
 export function temperature(s: State, t = s.now) {
-  const c = (((t - s.founded) / WEEK + 1) % 4 + 4) % 4; // var i året: 0 = istidens början
+  const c = yearPos(s, t); // var i året: 0 = istidens början
   const i = Math.floor(c), q = c - i;
   // under slutet av varje tidsålder glider temperaturen mot nästa
   const a = SEASON_C[i], b = SEASON_C[(i + 1) % 4], f = clamp((q - 0.6) / 0.4, 0, 1);

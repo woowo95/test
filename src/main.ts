@@ -1,4 +1,4 @@
-import { AGES, DAY, HOUR, TalkEvent, ageDay, ageIndex, alive, byId, coverOf, createState, getMap, groundOf, isLight, living, serialize, step, temperature, yearNo, State } from './sim';
+import { AGES, DAY, HOUR, TalkEvent, kalender, alive, byId, coverOf, createState, getMap, groundOf, isLight, living, serialize, step, temperature, yearNo, State } from './sim';
 import { $ } from './ui/hjalp';
 import { s, setByn, ui, nyBild } from './ui/lage';
 import { TS, app, cam, layout, view, world } from './ui/scen';
@@ -18,7 +18,7 @@ function renderClock() {
   const d = new Date(t);
   const hh = String(d.getHours()).padStart(2, '0'), mm = String(d.getMinutes()).padStart(2, '0');
   $('calYear').textContent = `År ${yearNo(s)}`;
-  $('calAge').textContent = `${AGES[ageIndex(s)]}, dag ${ageDay(s)} av 7`;
+  { const k = kalender(s); $('calAge').textContent = `${AGES[k.ai]}, dag ${k.dag} av ${k.av}`; }
   { const c = Math.round(temperature(s, t)); $('calTemp').textContent = `🌡 ${c > 0 ? '+' : c < 0 ? '−' : ''}${Math.abs(c)} °C`; }
   $('calTime').textContent = `${isLight(t) ? 'Ljus tid' : 'Mörk tid'} · ${hh}:${mm}${ui.testMode ? ' (test)' : ''}`;
 }

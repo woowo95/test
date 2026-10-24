@@ -38,7 +38,7 @@ Simuleringen importerar aldrig från `ui/`. Gränssnittet importerar bara från 
 | `folk.ts`, `liv.ts` | Personer (ålder, egenskaper, tankar, logg) och liv och död: födsel, död, flytt, befolkningens reglering |
 | `samtal.ts`, `seder.ts` | Samtal och relationer, och byns seder, plikt, vanor och yrkestaggar |
 | `plats.ts` | Byns läger (elden och lagerplatserna): mitten, avstånd till byn och `campKey` för cacher |
-| `tid.ts`, `vader.ts`, `ekonomi.ts`, `slump.ts` | Tidsåldrar och ljus, temperatur och kyla, hur länge förråden räcker, och slumpen |
+| `tid.ts`, `vader.ts`, `ekonomi.ts`, `slump.ts` | Kalendern (`kalender()`: tidsålder måndag–söndag, dag och år, det enda ställe som räknar dem), ljus, temperatur och kyla, hur länge förråden räcker, och slumpen |
 
 ## Gränssnittet, fil för fil
 
