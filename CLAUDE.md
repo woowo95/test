@@ -2,6 +2,18 @@
 
 Björn programmerar inte; Claude skriver all kod. Svara på svenska.
 
+## Innan du programmerar (varje prompt)
+
+Björn förklarar inte i prompten var fakta finns. Gör därför alltid så här innan du skriver kod:
+
+1. Läs "Läget just nu" i designdokumentet: vad som är byggt, nästa steg och kända brister.
+2. Hitta steget i Färdplanen (sök på numret, t.ex. mönstret `^1\.5\.`). Nämner Björn inget nummer: hitta systemet som berörs och se om det redan finns ett steg.
+3. Läs avsnitten som systemets "Läs:" pekar på, och sök i dokumentet på orden prompten handlar om (saker, handlingar, system). "Beslut" är bestämt; "förslag" är inte bestämt.
+4. Fråga först om steget säger "Björn avgör", om dokumentet säger emot sig självt eller prompten, eller om det saknas det som behövs. Säg i så fall vad som saknas.
+5. Läs `ARKITEKTUR.md` och sedan bara de filer som berörs.
+
+Sök i dokumentet i stället för att läsa allt; det är långt.
+
 ## Nya system som Björn beskriver
 
 - Bygg bara in det som det redan finns system för och som programmet är moget för nu.
@@ -46,4 +58,5 @@ Björn programmerar inte; Claude skriver all kod. Svara på svenska.
 - `npm run teknik -- [antal]`: när varje teknik upptäcks och hur många som kan den.
 - `npm run likhet -- [timmar] [byar]`: samma byar i levande läge och snabbläget, sida vid sida (tar ett par minuter).
 - `npm run detaljer -- [by]`: den långa utskriften, bara när något behöver undersökas.
+- Händelseloggen (`s.log`) rymmer bara de senaste 400 raderna. Räkna aldrig ur den i tester eller spelet; räkna i byns statistik när det händer (steg 1.5.1).
 - Ta skärmbilder bara när utseendet ändrats; kontrollera annars text på sidan.
