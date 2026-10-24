@@ -1,6 +1,7 @@
 import { migrateTek } from './teknik';
 import { setStock, storeFromSums } from './lager';
 import { isTool } from './saker';
+import { migrateTools } from './agande';
 import { inFas, nyKalender } from './tid';
 import { ageOf, getRel, log, newPerson, think } from './folk';
 import { newSeder, sederTarget, TAGS } from './seder';
@@ -10,7 +11,7 @@ import { DAY, Fire, NEW_H, NEW_W, Person, SEC, SKILLS, State, useMap } from './t
 // ---------- skapa värld ----------
 export function createState(seed: number, now: number): State {
   // en liten koloni: två par och ett barn, utan eld och med lite mat och grenar
-  const s: State = { v: 1, seed, founded: now, now, people: [], rels: {}, nextId: 1, log: [], lastAgeIdx: 1, lastGuardDay: -1, items: {}, fire: newFire(), seder: newSeder(), W: NEW_W, H: NEW_H, kal: nyKalender(now) };
+  const s: State = { v: 1, seed, founded: now, now, people: [], rels: {}, nextId: 1, log: [], lastAgeIdx: 1, lastGuardDay: -1, fire: newFire(), seder: newSeder(), W: NEW_W, H: NEW_H, kal: nyKalender(now) };
   useMap(s);
   setStock(s, { bar: 30, grenar: 20 });
   const adults: [string, number][] = [['m', 30], ['k', 27], ['m', 23], ['k', 21]];
@@ -54,7 +55,8 @@ export function migrate(s: State) {
   if (s.log.some(l => l.text.includes('byns första yxa'))) (s.stat ??= {}).yxa1 ??= 1;
   for (const l of s.log) if (l.kind === 'skill') { const m = l.text.match(/ kallas nu för (.+)\.$/), p = s.people.find(q => q.id === l.ids?.[0]); const tag = m && p && TAGS.find(t => t.tag.toLowerCase() === m[1])?.tag; if (tag && !p.kallad?.includes(tag)) (p.kallad ??= []).push(tag); }
   migrateTek(s);
-  if (!s.items) s.items = { flinta: 1, torrgras: 8, grenar: 8 };
+  if (!s.items && !s.stackar && !s.marken) s.items = { flinta: 1, torrgras: 8, grenar: 8 }; // de allra första sparfilerna
+  s.items ??= {};
   // gniststenen finns inte längre: elden tänds med flinta
   if (s.items.gniststen) { s.items.flinta = (s.items.flinta ?? 0) + s.items.gniststen; delete s.items.gniststen; }
   for (const a of s.stackar ?? []) if (a.k === 'gniststen') a.k = 'flinta';
@@ -62,6 +64,8 @@ export function migrate(s: State) {
   if (s.items.pinnar) { s.items.grenar = (s.items.grenar ?? 0) + s.items.pinnar; delete s.items.pinnar; }
   for (const a of s.stackar ?? []) if (a.k === 'pinnar') a.k = 'grenar';
   if ('food' in s || s.mat || s.egna || Object.keys(s.items).some(k => !isTool(k))) storeFromSums(s); // äldre sparfiler (före v40): summorna blir stackar
+  migrateTools(s); // och redskapen bara ting
+  if (s.stackar) s.stackar = s.stackar.filter(a => !isTool(a.k));
   for (const p of s.people) { const t = p.task; if (t?.items?.pinnar) { t.items.grenar = (t.items.grenar ?? 0) + t.items.pinnar; delete t.items.pinnar; if (t.cond?.pinnar !== undefined) { t.cond.grenar ??= t.cond.pinnar; delete t.cond.pinnar; } } }
   if (!s.fire) {
     s.fire = newFire();

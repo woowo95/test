@@ -30,7 +30,7 @@ export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => voi
     varjeSteg?.(s);
     steg++; if (s.fire.lit) lit++;
     if (!(foodOf(s) >= 0) || !(amountOf(s, 'ved') >= 0)) larm('förråd', () => `mat ${foodOf(s)}, ved ${amountOf(s, 'ved')}`);
-    for (const k in s.items) if (!(s.items[k] >= 0)) larm('föremål', () => `${k} = ${s.items[k]}`);
+    for (const t of s.ting ?? []) if (!(t.c > 0 && t.c <= 1 + 1e-9) || [t.hos, t.lass, t.x].filter(v => v !== undefined).length > 1) larm('redskap', () => JSON.stringify(t));
     for (const a of s.stackar ?? []) if (!(a.n >= 0) || !(sumOf(a.ag) <= a.n + 1e-6) || Object.values(a.ag ?? {}).some(v => !(v >= 0))) larm('stack', () => `${a.k} ${a.n} ägs ${JSON.stringify(a.ag)}`);
     for (const k of s.stockar ?? []) if (!(k.ved >= 0) || !(k.grenar >= 0)) larm('stam', () => `stam ${k.id} ved ${k.ved}, grenar ${k.grenar}`);
     const folk = living(s);

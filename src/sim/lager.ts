@@ -1,5 +1,5 @@
 import { campDist } from './plats';
-import { syncTools, tingOf, toolsOf, wearCarried } from './agande';
+import { Ting, newTing, tingOf } from './agande';
 import { alive, byId, stat, ageOf, log } from './folk';
 import { getMap } from './karta';
 import { Act, H, Person, State, T, Task, W } from './typer';
@@ -160,7 +160,20 @@ function ringTiles(s: State, z: Zone) {
   return out;
 }
 const key = (x: number, y: number) => y * W + x;
-const occupancy = (s: State) => { const m = new Map<number, Stack>(); for (const a of stacksOf(s)) if (isStored(s, a.x, a.y)) m.set(key(a.x, a.y), a); return m; };
+const occupancy = (s: State) => { const m = new Map<number, Stack>(); for (const a of things(s)) if (isStored(s, a.x, a.y)) m.set(key(a.x, a.y), a); return m; };
+// redskapen som ligger på en ruta (inte i någons hand eller börda)
+const lying = (s: State) => tingOf(s).filter(t => t.x !== undefined && t.hos === undefined && t.lass === undefined);
+const asStack = (t: Ting): Stack => ({ k: t.k, n: t.c, c: t.c, x: t.x!, y: t.y!, ag: t.agare !== BYN ? { [t.agare]: t.c } : undefined });
+// allt som ligger på marken och i förrådet: stackarna och redskapen
+const things = (s: State): Stack[] => [...stacksOf(s), ...lying(s).map(asStack)];
+// redskap som ingen har och som inte har någon ruta (nygjorda, tillbakalagda) läggs i förrådet, ett på varje ruta
+function placeTools(s: State) {
+  for (const t of tingOf(s)) {
+    if (t.hos !== undefined || t.lass !== undefined || t.x !== undefined) continue;
+    const occ = occupancy(s), sp = zoneSpot(s, t.k, -Infinity, occ) ?? besideSpot(s, t.k, occ);
+    t.x = sp.x; t.y = sp.y;
+  }
+}
 const roomIn = (a: Stack | undefined, k: string) => !a || (a.k === k && !isTool(k) && a.n < RUTA[k] - 1e-9);
 // bästa plats i en lagerplats för ett slag: lagerplatserna i prioritetsordning, först en stack av samma slag som inte
 // är full, sedan en tom ruta. minPrio: bara lagerplatser med högre prioritet än så
@@ -193,7 +206,8 @@ function besideSpot(s: State, k: string, occ: Map<number, Stack>) {
   return { x: zs[0].x, y: zs[0].y };
 }
 export const fetchSpot = (s: State, k: string) => {
-  const a = stacksOf(s).find(q => q.k === k && zoneAt(s, q.x, q.y) >= 0) ?? stacksOf(s).find(q => q.k === k && isStored(s, q.x, q.y));
+  if (isTool(k)) placeTools(s);
+  const all = things(s), a = all.find(q => q.k === k && zoneAt(s, q.x, q.y) >= 0) ?? all.find(q => q.k === k && isStored(s, q.x, q.y));
   return a ? { x: a.x + 0.5, y: a.y + 0.5 } : dropSpot(s, k);
 };
 // stackarna av ett slag i förrådet, sämst skick först
@@ -282,9 +296,20 @@ export function gain(s: State, p: Person, k: string, n: number) { if (n > 0) pla
 export function use(s: State, p: Person | undefined, k: string, n: number, common = false) { return takeOwn(s, k, n, p, common).ag; }
 // för nya byar och tester: förrådet av slaget k blir n, och det som läggs till är byns
 export function setAmount(s: State, k: string, n: number) {
-  if (isTool(k)) { s.items[k] = n; syncTools(s); return; }
+  if (isTool(k)) { setTools(s, k, n); return; }
   const d = n - amountOf(s, k);
   if (d > 1e-12) place(s, k, d, 1); else if (d < -1e-12) takeProp(s, k, -d);
+}
+// redskapen: nya är byns och hela; det som tas bort tas först av det som ligger i förrådet, sämsta skicket först
+function setTools(s: State, k: string, n: number) {
+  let d = n - amountOf(s, k);
+  while (d > 1e-6) { const c = Math.min(1, d); newTing(s, k, c, BYN); d -= c; }
+  const ts = tingOf(s).filter(t => t.k === k).sort((a, b) => (a.hos === undefined ? 0 : 1) - (b.hos === undefined ? 0 : 1) || a.c - b.c);
+  for (const t of ts) {
+    if (d >= -1e-6) break;
+    const v = Math.min(t.c, -d); t.c -= v; d += v;
+  }
+  s.ting = tingOf(s).filter(t => t.c > 1e-6);
 }
 export function setStock(s: State, m: Record<string, number>) { for (const k in m) setAmount(s, k, m[k]); }
 // p tar n mat ur förrådet: sitt eget och byns, eller (fran, stöld) den personens. Maten som förstörs fortast äts
@@ -309,50 +334,21 @@ export function storeFromSums(s: State) {
   if (food > sum + 1e-9) m.bar = (m.bar ?? 0) + food - sum;
   else if (food < sum - 1e-9) { const f = sum > 0 ? Math.max(0, food) / sum : 0; for (const k of FOOD) if (m[k]) m[k] *= f; }
   const want: Record<string, number> = { ...m, ved: s.wood ?? 0 };
-  for (const k in s.items ?? {}) if (!isTool(k) && !isFood(k) && k !== 'ved') want[k] = s.items[k];
+  for (const k in s.items ?? {}) if (!isTool(k) && !isFood(k) && k !== 'ved') want[k] = s.items![k];
   for (const k of [...STACK_ORDER, ...DOLD]) if (!isTool(k)) setAmount(s, k, Math.max(0, want[k] ?? 0));
   for (const k in s.egna ?? {}) {
     const list = stored(s, k), tot = list.reduce((n, a) => n + a.n, 0);
     if (tot > 0) for (const a of list) { a.ag = addDel(a.ag ?? {}, s.egna![k], a.n / tot); cleanDel(s, a); }
   }
-  for (const k in s.items ?? {}) if (!isTool(k)) delete s.items[k];
+  for (const k in s.items ?? {}) if (!isTool(k)) delete s.items![k];
   delete s.food; delete s.wood; delete s.mat; delete s.egna; delete s.egnaT;
   changed(s);
 }
 
-// redskapen: en stack för varje redskap i förrådet (inte de som någon har i handen), med tingets skick.
-// Stackarna följer tingen (steg 1.1.3 gör tingen till det enda)
-export function syncToolStacks(s: State) {
-  syncTools(s);
-  for (const k of STACK_ORDER) if (isTool(k)) toolStacks(s, k);
-  tidy(s);
-}
-function toolStacks(s: State, k: string) {
-  const ts = toolsOf(s, k).filter(t => t.hos === undefined).sort((a, b) => a.c - b.c);
-  let st = stacksOf(s).filter(a => a.k === k && isStored(s, a.x, a.y));
-  for (const a of st.sort((a, b) => a.n - b.n).slice(0, Math.max(0, st.length - ts.length))) a.n = 0;
-  st = st.filter(a => a.n > 0);
-  for (let i = st.length; i < ts.length; i++) place(s, k, ts[i].c, 1);
-  st = stacksOf(s).filter(a => a.k === k && a.n > 0 && isStored(s, a.x, a.y)).sort((a, b) => a.n - b.n);
-  for (let i = 0; i < Math.min(st.length, ts.length); i++) st[i].n = ts[i].c;
-}
-// stackarnas slitage i förrådet förs över till tingen (båda i skicksordning)
-function wearToTools(s: State) {
-  for (const k of STACK_ORDER) {
-    if (!isTool(k)) continue;
-    const ts = toolsOf(s, k).filter(t => t.hos === undefined).sort((a, b) => a.c - b.c);
-    const st = stacksOf(s).filter(a => a.k === k && isStored(s, a.x, a.y)).sort((a, b) => a.n - b.n);
-    if (st.length !== ts.length) continue;
-    for (let i = 0; i < ts.length; i++) ts[i].c = st[i].n;
-    s.ting = tingOf(s).filter(t => t.c > 1e-6);
-    s.items[k] = toolsOf(s, k).reduce((n, t) => n + t.c, 0);
-  }
-}
-
 // alla stackar med plats och skick
 export function pilesOf(s: State): Pile[] {
-  syncToolStacks(s);
-  return stacksOf(s).map(a => { const zone = zoneAt(s, a.x, a.y); return { ...a, max: RUTA[a.k] ?? 25, zone, out: zone < 0, stored: isStored(s, a.x, a.y) }; });
+  placeTools(s);
+  return things(s).map(a => { const zone = zoneAt(s, a.x, a.y); return { ...a, max: RUTA[a.k] ?? 25, zone, out: zone < 0, stored: isStored(s, a.x, a.y) }; });
 }
 
 // ---------- slitage ----------
@@ -366,13 +362,11 @@ export function wearRate(s: State, k: string, ai: number, food = foodOf(s)) {
 }
 export const wearMult = (s: State, x: number, y: number) => roofed(s, x, y) ? INDOOR_WEAR : zoneAt(s, x, y) >= 0 ? 1 : OUT_WEAR;
 export function wearStore(s: State, dtSec: number, ai: number) {
-  syncToolStacks(s);
   const h = dtSec / 3600, food = foodOf(s);
   for (const a of stacksOf(s)) {
     const r = wearRate(s, a.k, ai, food) * wearMult(s, a.x, a.y) * h;
     if (a.dold) a.dold *= Math.exp(-wearRate(s, DOLD_I[a.k], ai, food) * wearMult(s, a.x, a.y) * h);
     if (r <= 0) continue;
-    if (isTool(a.k)) { a.n -= Math.min(a.n, r); continue; }
     a.c -= r;
     if (a.c > 0) continue;
     const into = SAKER[a.k]?.blir; // ved faller sönder till grenar, och ägarna äger grenarna
@@ -383,17 +377,21 @@ export function wearStore(s: State, dtSec: number, ai: number) {
       a.n = m; a.k = into.k; a.c = 0.5;
     } else a.n = 0;
   }
-  wearToTools(s);
-  wearCarried(s, k => wearRate(s, k, ai, food) * h);
+  // redskapen: i handen och i bördan som i lagret, på marken efter var de ligger
+  for (const t of tingOf(s)) {
+    const free = t.x !== undefined && t.hos === undefined && t.lass === undefined;
+    t.c -= Math.min(t.c, wearRate(s, t.k, ai, food) * (free ? wearMult(s, t.x!, t.y!) : 1) * h);
+  }
+  s.ting = tingOf(s).filter(t => t.c > 1e-6);
   tidy(s);
 }
 
 // ---------- lagerplatserna ----------
 // en gång i timmen: större när något inte får plats, en ny lagerplats när de inte kan växa mer, mindre när de står tomma
 export function tidyStore(s: State) {
-  syncToolStacks(s);
+  placeTools(s);
   const zs = zonesOf(s);
-  const over = () => stacksOf(s).filter(a => zoneAt(s, a.x, a.y) < 0 && isStored(s, a.x, a.y));
+  const over = () => things(s).filter(a => zoneAt(s, a.x, a.y) < 0 && isStored(s, a.x, a.y));
   let grew = -1;
   for (let rep = 0; rep < 4 && over().length; rep++) {
     const o = over(), i = zs.findIndex((z, j) => o.some(a => allows(z, a.k)) && growOf(s, j));
@@ -404,10 +402,10 @@ export function tidyStore(s: State) {
   else if (over().length && zs.length < MAX_ZONES) newZone(s);
   // mindre: ta bort en kant när mer än hälften står tom och det som ligger där får plats i resten
   for (let i = 0; i < zs.length; i++) {
-    const z = zs[i], have = z.w * z.h, n = stacksOf(s).filter(a => inZone(z, a.x, a.y)).length;
+    const z = zs[i], all = things(s), have = z.w * z.h, n = all.filter(a => inZone(z, a.x, a.y)).length;
     if (have <= 4 || have - n <= have / 2) continue;
     const opts: Zone[] = [{ ...z, w: z.w - 1 }, { ...z, h: z.h - 1 }, { ...z, x: z.x + 1, w: z.w - 1 }, { ...z, y: z.y + 1, h: z.h - 1 }].filter(c => c.w >= 2 && c.h >= 2);
-    const cost = (c: Zone) => stacksOf(s).filter(a => inZone(z, a.x, a.y) && !inZone(c, a.x, a.y)).length;
+    const cost = (c: Zone) => all.filter(a => inZone(z, a.x, a.y) && !inZone(c, a.x, a.y)).length;
     const best = opts.sort((a, b) => cost(a) - cost(b))[0];
     if (best && n + 1 <= best.w * best.h) zs[i] = best; // det som hamnar utanför bärs in igen
   }
@@ -457,7 +455,18 @@ export function capacity(s: State, p: Person) {
 export function load(t: Task) {
   let l = t.carry / STACK[carryKind(t.act)];
   for (const k in t.items ?? {}) l += t.items![k] / (STACK[k] ?? 25);
-  return l;
+  return l + (t.ting?.length ?? 0); // ett redskap är en full börda
+}
+// redskapen i bördan: de läggs på rutan at om den är ledig i förrådet, annars på bästa lediga plats
+function storeTings(s: State, t: Task, at?: { x: number; y: number }) {
+  for (const id of t.ting ?? []) {
+    const g = tingOf(s).find(q => q.id === id);
+    if (!g) continue;
+    g.lass = undefined;
+    const occ = occupancy(s), sp = at && isStored(s, at.x, at.y) && usable(s, at.x, at.y) && !occ.has(key(at.x, at.y)) ? at : zoneSpot(s, g.k, -Infinity, occ) ?? besideSpot(s, g.k, occ);
+    g.x = sp.x; g.y = sp.y; at = undefined;
+  }
+  t.ting = undefined;
 }
 const loadOf = (t: Task) => { const all: Record<string, number> = { ...(t.items ?? {}) }; if (t.carry) all[carryKind(t.act)] = (all[carryKind(t.act)] ?? 0) + t.carry; return all; };
 // lägg det som bärs i förrådet, helst där man står. Det är ägarnas i t.ag, resten är dens som skaffade det (owner);
@@ -465,6 +474,7 @@ const loadOf = (t: Task) => { const all: Record<string, number> = { ...(t.items 
 export function storeLoad(s: State, t: Task, x?: number, y?: number, owner = BYN) {
   const all = loadOf(t), at = x !== undefined ? { x: Math.floor(x), y: Math.floor(y!) } : undefined;
   for (const k in all) if (all[k] > 1e-9) place(s, k, all[k], t.cond?.[k] ?? 1, shareOf(t.ag?.[k], all[k], t.act === 'bara' ? BYN : owner), at);
+  storeTings(s, t, at);
   t.carry = 0; t.items = undefined; t.cond = undefined; t.ag = undefined;
 }
 // den som kallas bort lägger ner bördan där hen står; ligger den långt från lagret får någon bära in den senare
@@ -480,16 +490,19 @@ export function dropLoad(s: State, t: Task, x: number, y: number, owner = BYN) {
     if (!g) st.push(g = { x: tx, y: ty, k, n: 0, c });
     g.c = (g.c * g.n + c * all[k]) / (g.n + all[k]); g.n += all[k]; g.ag = addDel(g.ag ?? {}, ag); cleanDel(s, g);
   }
+  for (const id of t.ting ?? []) { const g = tingOf(s).find(q => q.id === id); if (g) { g.lass = undefined; g.x = tx; g.y = ty; } }
+  t.ting = undefined;
   t.carry = 0; t.items = undefined; t.cond = undefined; t.ag = undefined;
   changed(s);
 }
 // stackar som någon borde bära: saker på marken långt bort, saker bredvid lagret när det finns plats i det, saker i
 // fel lagerplats och saker som kan flyttas till en viktigare lagerplats. near = bara inom så många rutor från elden
 export function haulJob(s: State, near?: number) {
+  placeTools(s);
   const zs = zonesOf(s), occ = occupancy(s);
   const taken = new Set(s.people.filter(p => p.task?.act === 'bara' && p.task.phase === 'go').map(p => key(Math.floor(p.task!.tx), Math.floor(p.task!.ty))));
   let best: { x: number; y: number; why: string } | undefined, bs = Infinity;
-  for (const a of stacksOf(s)) {
+  for (const a of things(s)) {
     if (taken.has(key(a.x, a.y))) continue;
     const d = campDist(s, a.x, a.y); // nära lägret: elden eller någon lagerplats
     if (near !== undefined && d > near) continue;
@@ -509,7 +522,7 @@ export function pickUp(s: State, p: Person, t: Task) {
   let room = capacity(s, p) - load(t);
   for (const g of stacksOf(s)) {
     if (g.x !== x || g.y !== y || room <= 1e-9) continue;
-    const st = STACK[g.k] ?? 25, v = Math.min(g.n, isTool(g.k) ? g.n : room * st), f = g.n > 0 ? v / g.n : 1;
+    const st = STACK[g.k] ?? 25, v = Math.min(g.n, room * st), f = g.n > 0 ? v / g.n : 1;
     const had = t.items?.[g.k] ?? 0;
     if (v > 0) {
       (t.items ??= {})[g.k] = had + v;
@@ -520,5 +533,7 @@ export function pickUp(s: State, p: Person, t: Task) {
     g.n -= v; room -= v / st;
     cleanDel(s, g);
   }
+  // redskapen på rutan tas med, hur full bördan än är
+  for (const g of lying(s)) if (g.x === x && g.y === y) { g.x = g.y = undefined; g.lass = p.id; (t.ting ??= []).push(g.id); }
   tidy(s);
 }

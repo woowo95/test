@@ -38,7 +38,7 @@ export const GREN = 0.4; // en gren ger lika mycket bränsle som 0,4 ved: grenar
 
 export interface Thought { text: string; v: number; until: number }
 // why = varför personen valde uppgiften, dark = påbörjad under mörk tid
-export interface Task { act: Act; phase: 'go' | 'do' | 'back'; tx: number; ty: number; until: number; carry: number; items?: Record<string, number>; cond?: Record<string, number>; why?: string; dark?: boolean; path?: number[]; pk?: string; ref?: number; prog?: number; tool?: string; stint?: number; fynd?: number; lim?: number; res?: { x: number; y: number; until: number }; wx?: number; wy?: number; hold?: number; site?: { x: number; y: number }; mask?: number; ag?: Record<string, Record<string, number>> } // ag = vems det som bärs är, per slag (egendom.ts) // mask = maskar på kroken till metspöet // tool = redskap som används, t.ex. fiskespjut. stint = när arbetspasset slutar och bördan bärs hem, res = var och till när arbetet fortsätter efteråt, wx/wy/hold = vart man går härnäst på platsen och hur länge man står still, site = bygget man går till efter att ha hämtat material
+export interface Task { act: Act; phase: 'go' | 'do' | 'back'; tx: number; ty: number; until: number; carry: number; items?: Record<string, number>; cond?: Record<string, number>; why?: string; dark?: boolean; path?: number[]; pk?: string; ref?: number; prog?: number; tool?: string; stint?: number; fynd?: number; lim?: number; res?: { x: number; y: number; until: number }; wx?: number; wy?: number; hold?: number; site?: { x: number; y: number }; mask?: number; ag?: Record<string, Record<string, number>>; ting?: number[] } // ting = redskapen i bördan (agande.ts) // ag = vems det som bärs är, per slag (egendom.ts) // mask = maskar på kroken till metspöet // tool = redskap som används, t.ex. fiskespjut. stint = när arbetspasset slutar och bördan bärs hem, res = var och till när arbetet fortsätter efteråt, wx/wy/hold = vart man går härnäst på platsen och hur länge man står still, site = bygget man går till efter att ha hämtat material
 
 export interface Person {
   id: number; name: string; sex: 'm' | 'k';
@@ -84,7 +84,7 @@ export interface State {
   food?: number; wood?: number; // äldre sparfiler (före v40): maten och veden i förrådet, nu räknade ur stackarna
   log: LogEntry[];
   lastAgeIdx: number; lastGuardDay: number;
-  items: Record<string, number>; // redskapen i förrådet (äldre sparfiler före v40: också andra saker)
+  items?: Record<string, number>; // äldre sparfiler (före v40): sakerna och redskapen i förrådet som summor
   fire: Fire;
   seder: Seder;
   mark?: string; // markens grästäcke per ruta (stigar), packat
@@ -94,8 +94,8 @@ export interface State {
   mat?: Record<string, number>; // äldre sparfiler (före v40): maten per slag
   marken?: { x: number; y: number; k: string; n: number }[]; // gamla sparfiler: saker på marken (nu i stackar)
   lagren?: { x: number; y: number; w: number; h: number; namn?: string; slag?: 'mat' | 'material'; prio?: number }[]; // lagerplatserna
-  ting?: { id: number; k: string; c: number; agare: number; hos?: number }[]; nextTing?: number; // varje redskap för sig: skick, ägare (0 = byn) och vem som har det i handen (agande.ts)
-  tingVag?: { id: number; k: string; c: number; agare: number; hos?: number }[]; // redskap som bärs mellan lagerplatser
+  ting?: { id: number; k: string; c: number; agare: number; hos?: number; lass?: number; x?: number; y?: number }[]; nextTing?: number; // varje redskap för sig, det enda som sparas om redskapen: skick, ägare (0 = byn), vem som har det i handen eller bördan, och rutan det ligger på (agande.ts)
+  tingVag?: { id: number; k: string; c: number; agare: number; hos?: number }[]; // äldre sparfiler (före v40): redskap som bars mellan lagerplatser
   agare?: Record<string, number[]>; // sparfiler från v30: redskapens ägare (blir s.ting)
   stackar?: { k: string; n: number; c: number; x: number; y: number; ag?: Record<string, number>; dold?: number }[]; // alla stackar med plats och skick (c: 1 = nytt), det enda som sparas om förrådet. ag = vems stacken är (lager.ts)
   egna?: Record<string, Record<string, number>>; egnaT?: Record<string, number>; // äldre sparfiler (före v40): vems sakerna i förrådet var

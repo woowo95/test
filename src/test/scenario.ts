@@ -2,12 +2,11 @@
 // npm run scenario            kör alla
 // npm run scenario -- glanta  kör bara ett
 import { isDeepStrictEqual } from 'node:util';
-import { Person, Act, createState, ownedBy, syncTools, toolsOf, heldBy, take, usesTool, wearTool, freeSpear, getRel, isTool, BYN, twineRope, makeRod, wearSpear, isSpear, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, serializeParts, joinParts, serialize, ageStart, nyKalender, kalender, yearNo, AGES, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, zonesOf, allows, ageOf, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, fuelStock, DAY, HOUR, W, State, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, campCenter, TEKNIK, knows, thinkWhileWorking, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, beds, isWall, Bit, wearBuild, FYND, FYND_IDS, GRUPPER, angOf, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, LAGER_R, observe, hoped, Lager, skyggOf, SKYGG_R, SKYGG_IN, grupperOf, GRUPPER_MAX, STORLEK, share, treeOn, djurOf, KANIN, SLAKT, DJUR, JAKT_F, canSlaughter, makeKnife, slaughter, askForTool, gain, takeFood, takeFuel, ownsAmount, ownedStock, ownedSum, sumOf, addTo, setAmount, setStock, foodOf, isFood, STACK_ORDER, needLadder, MAT, ownFor, rnd, STROMMAR, Strom } from '../sim';
+import { Person, Act, createState, ownedBy, tidyTools, addTool, toolsOf, heldBy, take, usesTool, wearTool, freeSpear, getRel, isTool, BYN, twineRope, makeRod, wearSpear, isSpear, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, serializeParts, joinParts, serialize, ageStart, nyKalender, kalender, yearNo, AGES, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, zonesOf, allows, ageOf, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, fuelStock, DAY, HOUR, W, State, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, campCenter, TEKNIK, knows, thinkWhileWorking, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, beds, isWall, Bit, wearBuild, FYND, FYND_IDS, GRUPPER, angOf, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, LAGER_R, observe, hoped, Lager, skyggOf, SKYGG_R, SKYGG_IN, grupperOf, GRUPPER_MAX, STORLEK, share, treeOn, djurOf, KANIN, SLAKT, DJUR, JAKT_F, canSlaughter, makeKnife, slaughter, askForTool, gain, takeFood, takeFuel, ownsAmount, ownedStock, ownedSum, sumOf, addTo, setAmount, setStock, foodOf, isFood, STACK_ORDER, needLadder, MAT, ownFor, rnd, STROMMAR, Strom } from '../sim';
 // förrådet i proven: stackarna är det enda som sparas (steg 1.1.2), så proven ställer in förrådet genom lagret
 const setItems = (s: State, m: Record<string, number>) => {
   for (const k of STACK_ORDER) if (!isFood(k) && k !== 'ved' && !isTool(k)) setAmount(s, k, m[k] ?? 0);
-  s.items = {}; for (const k in m) if (isTool(k)) s.items[k] = m[k];
-  syncTools(s);
+  for (const k of STACK_ORDER) if (isTool(k)) setAmount(s, k, m[k] ?? 0);
 };
 const setMat = (s: State, m: Record<string, number>) => { for (const k of FOOD) setAmount(s, k, m[k] ?? 0); };
 // all mat blir n, i samma förhållande mellan slagen som förut (bär om det inte fanns någon)
@@ -337,9 +336,9 @@ SCENARIER.stenring = {
     return [
       [`stenar samlas och elden tänds (efter ${h} timmar)`, tand && logg(s, 'ring av stenar')],
       [`stenarna blir en ring runt elden (${kvar.toFixed(1)} stenar kvar i förrådet)`, ring && kvar < 1],
-      ['elden tänds med flinta, gniststen finns inte', s.fire.log.some(e => e.k === 'tänd') && !('gniststen' in s.items) && !logg(s, 'gniststen')],
+      ['elden tänds med flinta, gniststen finns inte', s.fire.log.some(e => e.k === 'tänd') && !(s.stackar ?? []).some(a => a.k === 'gniststen') && !logg(s, 'gniststen')],
       ['ringen ligger kvar när elden slocknat', !!s.fire.ring],
-      ['äldre sparfil: gniststenen blir flinta och ringen finns', amountOf(g, 'flinta') === 1 && !('gniststen' in g.items) && g.stackar!.every(a => a.k !== 'gniststen') && !!g.fire.ring],
+      ['äldre sparfil: gniststenen blir flinta och ringen finns', amountOf(g, 'flinta') === 1 && !('items' in g) && g.stackar!.every(a => a.k !== 'gniststen') && !!g.fire.ring],
     ];
   },
 };
@@ -421,9 +420,9 @@ SCENARIER.agande = {
     Object.assign(s.fire, { lit: true, fuel: 4, ring: true });
     for (const q of s.people) q.tek = { fiskespjut: 1 };
     const [a, b, c] = living(s);
-    syncTools(s);
+    tidyTools(s);
     const yxaByns = toolsOf(s, 'yxa')[0]?.agare === BYN;
-    setAmount(s, 'fiskespjut', 1); syncTools(s); // ett spjut som är byns
+    setAmount(s, 'fiskespjut', 1); tidyTools(s); // ett spjut som är byns
     makeSpear(s, a);
     const gjorda = ownedBy(s, a).length === 1 && spears(s) === 2;
     const task = (p: Person, act: Act, tool?: string) => { p.task = { act, phase: 'do', tx: p.x, ty: p.y, until: s.now + 3600, carry: 0, tool }; if (usesTool(p.task)) take(s, p, tool!); };
@@ -431,21 +430,21 @@ SCENARIER.agande = {
     const egetForst = heldBy(s, a)?.agare === a.id;
     task(c, 'fiske', freeSpear(s, c));
     const bynsTill = heldBy(s, c)?.agare === BYN;
-    a.task = undefined; c.task = undefined; syncTools(s);
+    a.task = undefined; c.task = undefined; tidyTools(s);
     const behaller = heldBy(s, a)?.agare === a.id && !heldBy(s, c);
-    setAmount(s, 'fiskespjut', 1); syncTools(s); // byns spjut går förlorat; bara a:s finns kvar, i a:s hand
+    setAmount(s, 'fiskespjut', 1); tidyTools(s); // byns spjut går förlorat; bara a:s finns kvar, i a:s hand
     getRel(s, a, b).op = 10;
     const lanar = freeSpear(s, b) === 'fiskespjut';
     task(b, 'fiske', 'fiskespjut');
     const lant = heldBy(s, b)?.agare === a.id && !heldBy(s, a);
-    b.task = undefined; syncTools(s);
+    b.task = undefined; tidyTools(s);
     const tillbaka = !heldBy(s, b);
     getRel(s, a, c).op = -40; for (const q of [a, c]) { q.mother = q.father = undefined; } a.partner = c.partner = undefined;
     const ovan = !freeSpear(s, c);
     task(b, 'fiske', 'fiskespjut');
     const sonder = wearTool(s, b, 'fiskespjut', 2) && spears(s) === 0 && !heldBy(s, b);
     makeSpear(s, a); task(a, 'fiske', 'fiskespjut');
-    a.died = s.now; a.cause = 'av ålder'; syncTools(s);
+    a.died = s.now; a.cause = 'av ålder'; tidyTools(s);
     const arv = toolsOf(s, 'fiskespjut').every(t => t.agare === BYN && t.hos === undefined);
     const v = createState(5, START);
     for (const q of v.people) q.tek = { fiskespjut: 1, korg: 1 };
@@ -453,8 +452,8 @@ SCENARIER.agande = {
     let ihand = 0;
     kor(v, 3 * 24, q => { if (living(q).some(p => heldBy(q, p) && !usesTool(p.task))) ihand++; });
     const ts = v.ting ?? [], egna = ts.filter(t => t.agare !== BYN).length;
-    const summa = Object.keys(v.items).filter(k => toolsOf(v, k).length).every(k => Math.abs(v.items[k] - toolsOf(v, k).reduce((n, t) => n + t.c, 0)) < 1e-6);
-    const stackar = pilesOf(v).filter(p => isTool(p.k) && p.stored).length, iforradet = ts.filter(t => t.hos === undefined).length;
+    const summa = (v.ting ?? []).every(t => [t.hos, t.lass, t.x].filter(q => q !== undefined).length <= 1) && !('items' in v) && !(v.stackar ?? []).some(a => isTool(a.k));
+    const stackar = pilesOf(v).filter(p => isTool(p.k) && p.stored).length, iforradet = ts.filter(t => t.hos === undefined && t.lass === undefined && (t.x === undefined || isStored(v, t.x, t.y!))).length;
     return [
       ['yxan som fanns före ägandet är byns', yxaByns],
       ['den som gör spjutet äger det', gjorda],
@@ -468,8 +467,8 @@ SCENARIER.agande = {
       ['en dödsfalls redskap blir byns och läggs i förrådet', arv],
       [`i en vanlig by äger folk det de gjort (${egna} av ${ts.length} redskap har en ägare)`, egna > 0],
       [`folk bär sina egna redskap mellan arbetena (${ihand} av ${3 * 24 * 12} steg)`, ihand > 0],
-      ['förrådet är summan av tingens skick', summa],
-      [`en stack i förrådet för varje redskap där (${stackar} stackar, ${iforradet} redskap)`, stackar === iforradet],
+      ['redskapen finns bara som ting, och varje ting på ett ställe (i handen, i en börda eller på en ruta)', summa],
+      [`en ruta i förrådet för varje redskap där (${stackar} rutor, ${iforradet} redskap)`, stackar === iforradet],
     ];
   },
 };
@@ -480,8 +479,8 @@ SCENARIER.gava = {
     setItems(s, { grenar: 20 });
     const [a, b, c, d] = living(s);
     for (const q of [a, b, c, d]) { q.mother = q.father = q.partner = undefined; q.habit = { fiske: 10, samla: 10 }; }
-    syncTools(s);
-    const ge = (g: Person, k: string, n: number) => { for (let i = 0; i < n; i++) { s.items[k] = (s.items[k] ?? 0) + 1; syncTools(s); toolsOf(s, k).find(t => t.agare === BYN)!.agare = g.id; } };
+    tidyTools(s);
+    const ge = (g: Person, k: string, n: number) => { for (let i = 0; i < n; i++) { addTool(s, k, g); } };
     const har = (p: Person, k: string) => ownedBy(s, p).filter(t => t.k === k).length;
     // förälder och barn: a har två spjut, b (barnet) inget
     ge(a, 'fiskespjut', 2); b.mother = a.id;
@@ -531,7 +530,7 @@ SCENARIER.egendom = {
     gain(s, a, 'ved', 4); takeFuel(s, 3, a); const elden = ownsAmount(s, a, 'ved');
     addTo(s, 'bar', -foodOf(s) / 2); const rutten = ownsAmount(s, a, 'bar');
     // slakt: a äger två kaniner, c slaktar dem med en kniv
-    gain(s, a, 'vilt', KANIN * 2); setAmount(s, 'kniv', 1); syncTools(s); c.tek = { ...(c.tek ?? {}), kniv: 1 };
+    gain(s, a, 'vilt', KANIN * 2); setAmount(s, 'kniv', 1); tidyTools(s); c.tek = { ...(c.tek ?? {}), kniv: 1 };
     slaughter(s, c, 1);
     const kott = ownsAmount(s, a, 'kott'), slaktarens = ownsAmount(s, c, 'kott');
     die(s, a, 'test'); const arv = Object.keys(ownedStock(s, a)).length;
@@ -546,7 +545,7 @@ SCENARIER.egendom = {
     const g = createState(6, START), ga = living(g)[0];
     g.stackar = []; Object.assign(g, { food: 50, mat: { bar: 30, fisk: 20 }, wood: 5, egna: { bar: { [ga.id]: 10 } } }); g.items = { grenar: 7 };
     migrate(g);
-    const gammal = Math.abs(foodOf(g) - 50) < 1e-9 && Math.abs(amountOf(g, 'fisk') - 20) < 1e-9 && Math.abs(amountOf(g, 'ved') - 5) < 1e-9 && Math.abs(amountOf(g, 'grenar') - 7) < 1e-9 && Math.abs(ownsAmount(g, ga, 'bar') - 10) < 1e-9 && !('food' in g) && !('egna' in g) && !('grenar' in g.items);
+    const gammal = Math.abs(foodOf(g) - 50) < 1e-9 && Math.abs(amountOf(g, 'fisk') - 20) < 1e-9 && Math.abs(amountOf(g, 'ved') - 5) < 1e-9 && Math.abs(amountOf(g, 'grenar') - 7) < 1e-9 && Math.abs(ownsAmount(g, ga, 'bar') - 10) < 1e-9 && !('food' in g) && !('egna' in g) && !('items' in g);
     return [
       ['äldre sparfil: summorna och ägarnas delar blir stackar', gammal],
       ['det som fanns från början är byns', fore === 0],

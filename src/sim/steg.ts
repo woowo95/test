@@ -1,4 +1,4 @@
-import { syncTools } from './agande';
+import { tidyTools } from './agande';
 import { rotStumps } from './skog';
 import { needLadder } from './behov';
 import { gain, use, capacity, dropSpot, fetchSpot, homeKind, load, pickUp, storeLoad, tidyStore, wearStore } from './lager';
@@ -126,8 +126,7 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
   }
   if (living(s).length === 0) log(s, 'Byn är tom. Ingen finns kvar vid elden.', 'world');
   regulate(s, dtSec);
-  for (const k in s.items) if (s.items[k] < 1e-6) delete s.items[k];
-  syncTools(s);
+  tidyTools(s);
 }
 
 
