@@ -9,6 +9,7 @@ import { knows } from './teknik';
 import { amountOf, changed, zonesOf } from './lager';
 import { freeTools } from './agande';
 import { FOREST } from './vag';
+import { kronika } from './historik';
 import { H, HOUR, Person, State, T, W } from './typer';
 
 // ---------- att bygga ----------
@@ -185,7 +186,7 @@ export function workOn(s: State, p: Person, b: Bit, dtSec: number) {
   if (h && !h.klar && bitsOf(s).every(q => q.hus !== h.id || q.b >= 1)) {
     h.klar = s.now;
     const n = gridOf(s).rooms.filter(r => r.hus === h.id).reduce((a, r) => a + r.tiles.length, 0);
-    log(s, `${h.namn} är färdigt. Nu kan ${n} sova under tak.`, 'world', [p.id]);
+    log(s, `${h.namn} är färdigt. Nu kan ${n} sova under tak.`, 'world', [p.id]); kronika(s, `${h.namn} blev färdigt.`);
     sedEvent(s, 'gemenskap', 0.03);
   }
   return true;

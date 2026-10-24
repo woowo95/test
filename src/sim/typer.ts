@@ -80,6 +80,7 @@ export interface State {
   seed: number; founded: number; now: number;
   rng?: number; // den gemensamma slumpen före steg 1.1.1 (bara i äldre byar, används inte)
   rngs?: Record<string, number>; // var i sin slumpföljd varje system är (slump.ts)
+  hist?: Historik; // byns historik: nyckeltal och krönika (historik.ts)
   W?: number; H?: number; // kartans storlek (saknas i äldre byar: 64×40)
   people: Person[]; rels: Record<string, Rel>; nextId: number;
   food?: number; wood?: number; // äldre sparfiler (före v40): maten och veden i förrådet, nu räknade ur stackarna
@@ -145,6 +146,8 @@ export const IGNITERS: Igniter[] = [
   { id: 'tandstickor', name: 'Tändstickor', desc: 'Tänds med ett drag.', chance: 0.9, grass: 0.5, sticks: 0.5, minutes: 1, requires: 'Kemi' },
 ];
 
+// nyckeltalen i tal-ordning: [tid, värde, värde, …] per timme och per dygn, och krönikans rader [tid, text]
+export interface Historik { tal: string[]; tim: number[][]; dygn: number[][]; kronika: [number, string][] }
 export interface FireLog { t: number; k: 'tänd' | 'fyll' | 'slocknade' | 'glöd' | 'sprack'; id?: number; n?: number }
 export interface Fire {
   hearth: string; fuel: number; lit: boolean; emberUntil?: number; ring?: boolean; // ringen av stenar runt eldplatsen

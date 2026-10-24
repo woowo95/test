@@ -14,9 +14,13 @@ export function saveLocal() {
 // I databasen: varje del av byn (serializeParts) i ett eller flera dokument om högst BIT tecken (ett dokument rymmer 256 KB),
 // och sist dokumentet "byn" som säger vilken uppsättning (a eller b) som är hel. En sparning som avbryts halvvägs lämnar
 // alltså den förra uppsättningen orörd. Gamla sparningar låg i ett enda dokument, "save", som bara läses.
+// Historiken (en del per vecka, historik.ts) ligger utanför uppsättningarna och skrivs bara när veckans del ändrats,
+// så att de gamla veckorna inte skrivs om varje gång.
 const BIT = 80000;
 let slot = 'a', sparar = false;
-const delDoc = (sl: string, d: string, i: number) => db.doc(`data/users/${uid}/del-${sl}-${d}-${i}`);
+const skrivet = new Map<string, string>(); // historikdelarna som de ser ut i databasen
+const isHist = (d: string) => d.startsWith('historik-');
+const delDoc = (sl: string, d: string, i: number) => db.doc(isHist(d) ? `data/users/${uid}/${d}-${i}` : `data/users/${uid}/del-${sl}-${d}-${i}`);
 export async function saveDb() {
   if (ui.testMode || !s || !db || !uid || sparar) return;
   sparar = true;
@@ -25,8 +29,10 @@ export async function saveDb() {
     const ny = slot === 'a' ? 'b' : 'a', delar: Record<string, number> = {};
     for (const [d, txt] of Object.entries(serializeParts(s))) {
       const n = Math.max(1, Math.ceil(txt.length / BIT));
-      for (let i = 0; i < n; i++) await delDoc(ny, d, i).set({ t: txt.slice(i * BIT, (i + 1) * BIT) });
       delar[d] = n;
+      if (isHist(d) && skrivet.get(d) === txt) continue;
+      for (let i = 0; i < n; i++) await delDoc(ny, d, i).set({ t: txt.slice(i * BIT, (i + 1) * BIT) });
+      if (isHist(d)) skrivet.set(d, txt);
     }
     await db.doc(`data/users/${uid}/byn`).set({ slot: ny, delar, now: s.now, savedAt: Date.now() });
     slot = ny; ui.sparFel = false;
@@ -43,6 +49,7 @@ async function loadDb(d: any): Promise<State | null> {
       let txt = '';
       for (let i = 0; i < n; i++) { const b = await delDoc(sl, del, i).get(); if (!b.exists) return null; txt += String(b.data()?.t ?? ''); }
       texter.push(txt);
+      if (isHist(del)) skrivet.set(del, txt);
     }
     return parse(joinParts(texter));
   }

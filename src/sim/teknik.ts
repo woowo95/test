@@ -1,6 +1,7 @@
 import { ageOf, count, log, stat, think } from './folk';
 import { sedEvent } from './seder';
 import { rnd } from './slump';
+import { kronika } from './historik';
 import { item } from './lager';
 import { Act, HOUR, Person, State } from './typer';
 
@@ -46,6 +47,7 @@ function learn(s: State, p: Person, t: Tek, from?: Person) {
   if (from) { log(s, `${p.name} har lärt sig av ${from.name} att göra ${t.namn.toLowerCase()}.`, 'skill', [p.id, from.id]); return; }
   const first = !s.people.some(q => q !== p && knows(q, t.id)) && !(s.stat?.['tek_' + t.id]);
   count(s, 'tek_' + t.id);
+  if (first) kronika(s, `${p.name} kom på ${t.namn.toLowerCase()}.`);
   log(s, `${p.name} kom på hur man gör ${t.namn.toLowerCase()}. ${t.effekt}`, 'skill', [p.id]);
   think(p, `Kom på hur man gör ${t.namn.toLowerCase()}`, 0.15, s.now, 12 * HOUR);
   if (first) { p.fame.push(`Kom på ${t.namn.toLowerCase()}`); sedEvent(s, 'nyfikenhet', 0.04); }

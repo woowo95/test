@@ -19,12 +19,13 @@ import { chance, clamp, rnd } from './slump';
 import { ageIndex, isLight } from './tid';
 import { chopStock, fellTree, makeAxe, stocks } from './skog';
 import { ACTS, toolRow } from './handlingar';
-import { Act, DAY, HOUR, Person, SEC, SKILL_NAMES, State, Task, W, H, useMap } from './typer';
+import { Act, DAY, HOUR, Person, SEC, SKILL_NAMES, State, Task, W, H, useMap, Historik } from './typer';
 import { findPath, speedAt, wear } from './vag';
 import { chooseTask } from './val';
 import { djurSteg } from './djur';
 import { avail, bitById, buildJob, deliver as deliverBit, lacks, needOf, planBuild, siteOf, toWalls, wearBuild, workOn } from './bygg';
 import { MATERIAL, gridOf, roomAt, shelterOf } from './byggnad';
+import { histParts, historikSteg, joinHist } from './historik';
 
 // Simuleringen går i slag om fem minuter (BEAT), i spelet och vid ikappräkning likadant. Inom ett slag går tiden åt
 // till det som händer i tur och ordning (taskStep). Arbetet görs i bitar om högst BIT sekunder, och man bär aldrig mer
@@ -93,6 +94,7 @@ export function step(s: State, dtSec: number, events?: TalkEvent[]) {
     stepSeder(s); updateTags(s);
     growGround(s, 1, ai); growFynd(s, 1, ai); forget(s, 1); rotStumps(s); tidyStore(s);
     wearBuild(s, 1, ai); planBuild(s);
+    historikSteg(s); // nyckeltalen till byns historik (läses inte av simuleringen)
   }
 
   const social: Person[] = [];
@@ -407,9 +409,15 @@ export function serializeParts(s: State): Record<string, string> {
     for (const k of keys) if (k in byn) { del[k] = byn[k]; delete byn[k]; }
     ut[d] = JSON.stringify(del);
   }
+  if (byn.hist) { for (const [d, h] of Object.entries(histParts(s, byn.hist))) ut[d] = JSON.stringify({ hist: h }); delete byn.hist; }
   return { byn: JSON.stringify(byn), ...ut };
 }
-export const joinParts = (delar: string[]) => JSON.stringify(Object.assign({}, ...delar.map(d => JSON.parse(d))));
+export const joinParts = (delar: string[]) => {
+  const ut: Record<string, unknown> = {}, hist: Historik[] = [];
+  for (const d of delar) { const o = JSON.parse(d); if (o.hist) { hist.push(o.hist); delete o.hist; } Object.assign(ut, o); }
+  if (hist.length) ut.hist = joinHist(hist); // historiken ligger i en del per vecka
+  return JSON.stringify(ut);
+};
 
 // rensa gammal historik så att sparfilen hålls liten
 export function compact(s: State) {

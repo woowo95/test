@@ -10,6 +10,7 @@ import { moodOf } from './samtal';
 import { duty, sedEvent } from './seder';
 import { chance, clamp, rnd } from './slump';
 import { ageIndex, isLight } from './tid';
+import { kronika } from './historik';
 import { Act, DAY, Fire, FireLog, GREN, HEARTHS, HOUR, IGNITERS, Person, SEC, State } from './typer';
 
 // ---------- eld ----------
@@ -79,7 +80,7 @@ function lightFire(s: State, p: Person) {
   fireLog(s, { k: 'tänd', id: p.id, n: f.tries });
   log(s, `${p.name} lyckades tända elden${onCoal ? ' på den gamla kolhögen' : ''}${f.tries > 1 ? ` efter ${f.tries} försök` : ''}.`, 'world', [p.id]);
   think(p, 'Tände elden', 0.15, s.now, DAY / 2);
-  if (f.lightings === 1) { p.fame.push('Tände byns första eld'); sedEvent(s, 'nyfikenhet', 0.1, 'Elden har gjort byn nyfiken på vad mer som går att lära sig.'); }
+  if (f.lightings === 1) { p.fame.push('Tände byns första eld'); kronika(s, `${p.name} tände byns första eld.`); sedEvent(s, 'nyfikenhet', 0.1, 'Elden har gjort byn nyfiken på vad mer som går att lära sig.'); }
   f.tries = 0;
 }
 // ett försök att tända med det bästa tänddonet i förrådet

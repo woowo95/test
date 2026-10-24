@@ -5,6 +5,7 @@ import { moodOf } from './samtal';
 import { chance, clamp, pick, rnd } from './slump';
 import { DAY, Person, SKILLS, State } from './typer';
 import { releaseOwner } from './lager';
+import { kronika } from './historik';
 
 // ---------- död, födsel, flytt ----------
 export function die(s: State, p: Person, cause: string) {
@@ -12,7 +13,7 @@ export function die(s: State, p: Person, cause: string) {
   releaseOwner(s, p.id); // det hen ägde blir byns
   const a = Math.floor(ageOf(p, s.now));
   log(s, `${p.name} dog ${cause}, ${a} år gammal.`, 'death', [p.id]);
-  count(s, 'doda'); count(s, 'dog ' + cause);
+  count(s, 'doda'); count(s, 'dog ' + cause); kronika(s, `${p.name} dog ${cause}, ${a} år gammal.`);
   if (cause === 'av svält') sedEvent(s, 'forsiktighet', 0.15, `${p.name} svalt ihjäl. Byn har blivit mer försiktig.`);
   else if (cause === 'av kyla') sedEvent(s, 'forsiktighet', 0.1, `${p.name} frös ihjäl. Byn har blivit mer försiktig.`);
   else if (cause === 'under en jakt') sedEvent(s, 'forsiktighet', 0.04, `${p.name} dog under en jakt. Byn blev lite försiktigare.`);
@@ -32,7 +33,7 @@ export function birth(s: State, mother: Person) {
   ch.x = mother.x; ch.y = mother.y;
   s.people.push(ch);
   log(s, `${ch.name} föddes, ${ch.sex === 'k' ? 'dotter' : 'son'} till ${mother.name}${father ? ' och ' + father.name : ''}.`, 'birth', [ch.id, mother.id, ...(father ? [father.id] : [])]);
-  count(s, 'fodda');
+  count(s, 'fodda'); kronika(s, `${ch.name} föddes.`);
   think(mother, `Fick barnet ${ch.name}`, 0.2, s.now, DAY);
   if (father && alive(father)) think(father, `Fick barnet ${ch.name}`, 0.18, s.now, DAY);
   const kids = s.people.filter(q => q.mother === mother.id).length;
@@ -81,7 +82,7 @@ export function immigrate(s: State, alone: boolean) {
 // alla är borta: en vandrare hittar den övergivna boplatsen och grundar byn på nytt
 export function refound(s: State) {
   const p = immigrate(s, true);
-  count(s, 'atergrundad');
+  count(s, 'atergrundad'); kronika(s, `${p.name} grundade byn på nytt.`);
   log(s, `${p.name} hittade den övergivna boplatsen och grundade byn på nytt.`, 'world', [p.id]);
 }
 

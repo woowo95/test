@@ -259,6 +259,34 @@ SCENARIER.kalender = {
   },
 };
 
+SCENARIER.historik = {
+  text: 'Byns historik: nyckeltalen varje timme den senaste veckan, sedan ett värde per dygn, och viktiga händelser i krönikan. Den sparas i en del per vecka och ändrar inget i byn',
+  kor: () => {
+    const s = createState(3, START), t = createState(3, START);
+    for (let i = 0; i < 12 * 24 * 10; i++) { step(s, BEAT); step(t, BEAT); t.hist = undefined; } // t: utan historik
+    const h = s.hist!, i = (id: string) => h.tal.indexOf(id) + 1;
+    const timOk = h.tim.length >= 7 * 24 && h.tim.length <= 8 * 24 && h.tim[0][0] >= s.now - 8 * DAY;
+    const dagar = h.dygn.map(r => Math.floor(r[0] / DAY)), ettPerDygn = dagar.every((d, k) => k === 0 || d === dagar[k - 1] + 1);
+    const fortsatt = h.dygn.length > 0 && Math.floor(h.tim[0][0] / DAY) === dagar[dagar.length - 1] + 1;
+    const folkOk = [...h.tim, ...h.dygn].every(r => r[i('folk')] >= 0 && r[i('folk')] <= 40 && r[i('humor')] >= 0 && r[i('humor')] <= 1 && r[i('skog')] > 0 && r[i('skog')] < 1);
+    const sist = h.tim[h.tim.length - 1], fodda = h.kronika.filter(k => k[1].endsWith('föddes.')).length;
+    const delar = serializeParts(s), hd = Object.keys(delar).filter(d => d.startsWith('historik-'));
+    const storst = Math.max(...hd.map(d => delar[d].length));
+    const ater = JSON.parse(joinParts(Object.values(delar))).hist;
+    const utan = JSON.parse(serialize(s)); delete utan.hist;
+    return [
+      [`en rad i timmen den senaste veckan (${h.tim.length} timmar)`, timOk],
+      [`äldre timmar är ett värde per dygn, utan luckor och fram till timmarna (${h.dygn.length} dygn)`, h.dygn.length >= 2 && ettPerDygn && fortsatt],
+      ['nyckeltalen är rimliga (invånare, humör 0–1, skog som andel)', folkOk],
+      [`födda och döda räknas upp som i byns statistik (${sist[i('fodda')]} födda, ${sist[i('doda')]} döda)`, sist[i('fodda')] === (s.stat?.fodda ?? 0) && sist[i('doda')] === (s.stat?.doda ?? 0)],
+      [`krönikan har byns födslar och första eld (${h.kronika.length} rader)`, fodda === (s.stat?.fodda ?? 0) && h.kronika.some(k => k[1].includes('första eld')) === s.fire.lightings > 0],
+      [`historiken sparas i en del per vecka (${hd.join(', ')}; största ${Math.round(storst / 1024)} KB av högst 256)`, hd.length === 2 && storst < 256 * 1024 && !delar.byn.includes('"hist"')],
+      ['delarna blir samma historik igen', isDeepStrictEqual(ater, JSON.parse(serialize(s)).hist)],
+      ['historiken ändrar inget i byn', JSON.stringify(utan) === serialize(t)],
+    ];
+  },
+};
+
 SCENARIER.sparning = {
   text: 'Byn sparas i delar som var och en ryms i ett dokument i molnet, och delarna blir samma by igen',
   kor: () => {
@@ -274,7 +302,7 @@ SCENARIER.sparning = {
     const uppgr = gammal.v === SPARVERSION && !['fynd', 'wx', 'wy', 'hold', 'stint'].some(k => k in gp.task) && !('levande' in gp.rngs);
     const igen = JSON.stringify(gammal); migrate(gammal);
     return [
-      [`byn delas i ${Object.keys(delar).join(', ')} (${Object.entries(kb).map(([d, n]) => `${d} ${n} KB`).join(', ')})`, Object.keys(delar).length === 4 && delar.folket.includes('"people"') && !delar.byn.includes('"people"')],
+      [`byn delas i ${Object.keys(delar).join(', ')} (${Object.entries(kb).map(([d, n]) => `${d} ${n} KB`).join(', ')})`, ['byn', 'folket', 'kartor', 'loggen'].every(d => d in delar) && delar.folket.includes('"people"') && !delar.byn.includes('"people"')],
       ['delarna blir samma by igen', isDeepStrictEqual(ater, JSON.parse(hel)) && ny.people.length === s.people.length && ny.now === s.now],
       [`en gammal by uppgraderas till sparversion ${SPARVERSION} och gamla fält försvinner`, uppgr],
       ['en uppgraderad by ändras inte av att uppgraderas igen', JSON.stringify(gammal) === igen],
