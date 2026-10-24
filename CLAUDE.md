@@ -47,6 +47,12 @@ Sök i dokumentet i stället för att läsa allt; det är långt.
 - Publicera alltid till samma artefakt-URL så att Björns sparade by och länk finns kvar: `file_path` = `samhallssimulatorn.html`, `url` = spelets URL och `files` = innehållet i `publicera/filer.json`. Då kommer källkoden med under `kalla/`.
 - Uppdatera "Läget just nu" i designdokumentet när något nytt är byggt, och bocka av steget i Färdplanen.
 
+## Enklare modeller (spara tokens)
+
+- Lämna enklare uppgifter till en enklare och billigare Claude-modell när det passar: köra långa tester och sammanfatta resultatet, söka fakta i dokumentet eller koden, och mekaniska ändringar som följer ett tydligt mönster (en ny rad i ett register, ett scenario efter en mall).
+- Det som kräver helheten görs av huvudmodellen: simuleringen, likheten mellan spelet och ikappräkningen, balansen och designbeslut.
+- En hjälpare börjar utan att veta något om projektet och måste få allt den behöver i uppdraget. Små uppgifter går därför fortare att göra direkt.
+
 ## Tester (spara tokens)
 
 - `npm run koll`: kör efter varje ändring (ca 40 s). Det kör typkontrollen, `npm test`, alla scenarier och samma-kollen samtidigt och skriver bara ut det som behövs.
