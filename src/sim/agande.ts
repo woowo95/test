@@ -1,5 +1,6 @@
-import { State, Person, Task } from './typer';
+import { State, Person } from './typer';
 import { SAKER, isTool } from './saker';
+import { actsOf, usesTool } from './handlingar';
 import { alive, byId, count, getRel, isKin, log, stat, think } from './folk';
 import { clamp, rnd } from './slump';
 
@@ -22,10 +23,6 @@ export const toolsOf = (s: State, k: string) => tingOf(s).filter(t => t.k === k)
 export const nTools = (s: State, k: string) => tingOf(s).reduce((n, t) => n + (t.k === k ? 1 : 0), 0);
 export const heldBy = (s: State, p: Person) => tingOf(s).find(t => t.hos === p.id);
 const KINDS = () => Object.keys(SAKER).filter(isTool);
-const SPJUT = ['flintspjut', 'fiskespjut'];
-const TOOL_ACTS: Record<string, string[]> = { fiske: [...SPJUT, 'metspo'], jakt: SPJUT, samla: ['korg'], slakta: ['kniv'], falla: ['yxa'], hugga: ['yxa'] };
-// redskapet en uppgift använder (task.tool kan också vara t.ex. vagg eller rep, eller det spjut som görs)
-export const usesTool = (t?: Task) => t && t.tool && TOOL_ACTS[t.act]?.includes(t.tool) ? t.tool : undefined;
 
 export function newTing(s: State, k: string, c: number, agare: number): Ting {
   const t = { id: s.nextTing = (s.nextTing ?? 0) + 1, k, c, agare };
@@ -125,7 +122,6 @@ export const ownedBy = (s: State, p: Person) => tingOf(s).filter(t => t.agare ==
 // (har två av slaget, eller arbetar inte med det). Har den som frågar själv något över som den andra saknar blir det ett
 // byte, annars en gåva. Hur gärna man ger beror på relationen och empatin: en förälder ger nästan alltid till sitt barn,
 // partner och släkt ger lätt, vänner ibland och ovänner inte. Gåvan gör dem närmare.
-const actsOf = (k: string) => Object.keys(TOOL_ACTS).filter(a => TOOL_ACTS[a].includes(k));
 // hur stor del av sin tid p arbetar med redskapet
 function useShare(p: Person, k: string) {
   let tot = 0, n = 0;

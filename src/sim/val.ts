@@ -1,15 +1,15 @@
-import { take, usesTool } from './agande';
+import { take } from './agande';
 import { campCenter, campDist, campKey } from './plats';
 import { foodDays } from './ekonomi';
-import { ACTS, WORK, isWork } from './handlingar';
+import { ACTS, WORK, isWork, usesTool } from './handlingar';
 import { canLight, emberOn, heatAt, fireWant, needStones, needTinder, woodDays } from './eld';
 import { ageOf, living, stat } from './folk';
-import { HAND_FISH, Kind, SPEAR_FISH, flintSpot, shoreOf, wantsFlint } from './fynd';
+import { HAND_FISH, Kind, flintSpot, shoreOf, wantsFlint } from './fynd';
 import { coldOf, temperature } from './vader';
-import { KANIN, SLAKT_TIMME, canSlaughter, freeBaskets, freeRod, freeSpear, freeSpears, sharpTool, spearKind, vilt, wantsBasket, wantsKnife, wantsRod, wantsRope, wantsSpear } from './redskap';
+import { KANIN, SLAKT_TIMME, TILLVERKA, canSlaughter, freeOfKinds, toolGroups, vilt, wantsKnife, wantsRope } from './redskap';
 import { areaOf, flintArea, pickSpot, prospectFor } from './minne';
 import { getMap } from './karta';
-import { fetchSpot, haulJob, item } from './lager';
+import { fetchSpot, haulJob } from './lager';
 import { bedFor, buildJob, siteOf, takeFor } from './bygg';
 import { beds, bitAt, blocked, freeNear, roomAt, shelterOf } from './byggnad';
 import { groundOf, isForest, tread } from './mark';
@@ -214,13 +214,12 @@ function bestWork(s: State, p: Person, fd: number, wd: number, ai: number, tot: 
   const fs = 1 + 0.25 * s.seder.v.forsiktighet; // en försiktig by vill ha större förråd
   const wFood = clamp(3.2 - fd / (2.5 * fs), 0.4, 3.5);
   const wWood = clamp(3.2 - wd / (2 * fs), 0.15, 3.5) * (ai === 3 || ai === 0 ? 1.3 : 1); // inför och under istiden väger veden tyngre
-  const spearReady = freeSpears(s, p) > 0 || freeRod(s, p) || wantsSpear(s, p) || wantsRod(s, p); // spjut eller metspö finns eller kan göras
   let best: Act = 'samla', bs = -1, burg = 0;
   for (const w of WORK) {
     const need = w === 'ved' ? wWood : wFood;
     const tinder = w === 'samla' && needTinder(s);
     // nytta för byn; maten väger också in hur mycket platserna ger just nu och att fiske med händerna ger lite
-    const yieldF = w === 'ved' || tinder ? 1 : clamp(prospectFor(s, p, w as Kind), 0.05, 1.3) * (w === 'fiske' ? HAND_FISH * (spearReady ? SPEAR_FISH : 1) : 1);
+    const yieldF = w === 'ved' || tinder ? 1 : clamp(prospectFor(s, p, w as Kind), 0.05, 1.3) * (w === 'fiske' ? HAND_FISH : 1) * toolGain(s, p, w);
     const season = ACTS[w].sasong![ai];
     const col = need * (w === 'ved' ? 1 : tinder ? Math.max(0.8, season) * 3 : season * yieldF);
     const like = (4 + p.skill[w as Skill] + stat(p, ACTS[w].egenskap!, s.now) / 3) * (1 + 2 * habitShare(p, [w], tot)); // egen lust och vana
@@ -262,25 +261,22 @@ function withTools(s: State, p: Person, v: Val, best: Act, what: string) {
     if (ax.act !== 'yxa') { v.spot = { x: ax.x, y: ax.y }; v.tool = 'yxa'; }
     v.ref = ax.ref;
   }
-  const { kyla, gras } = dangers(s);
-  if (v.act === 'samla') { // med korg om det finns en ledig, annars flätar den som kan en först
-    if (freeBaskets(s, p) > 0) { v.tool = 'korg'; v.why = v.why.replace(/\.$/, '') + '. Tar en korg.'; }
-    else if (!kyla && item(s, 'torrgras') >= gras && wantsBasket(s, p)) { set(v, 'korg', `${what}. Flätar en korg av hö.`); v.dur = 40 * MIN; }
-  }
-  const sp = v.act === 'fiske' || v.act === 'jakt' ? freeSpear(s, p) : undefined;
-  if (v.act === 'fiske') { // med metspö eller spjut om det finns ett ledigt, annars gör hen ett först
-    if (freeRod(s, p)) { v.tool = 'metspo'; v.why = v.why.replace(/\.$/, '') + '. Tar ett metspö och gräver fram mask.'; }
-    else if (!kyla && wantsRod(s, p)) { set(v, 'metspo', `${what}. Gör ett metspö med en krok av ben.`); v.dur = 60 * MIN; }
-    else if (sp) { v.tool = sp; v.why = v.why.replace(/\.$/, '') + `. Tar ett ${sp === 'flintspjut' ? 'flintspjut' : 'träspjut'}.`; }
-    else if (!kyla && wantsSpear(s, p)) makeSpearTask(s, p, v, what);
-  } else if (v.act === 'jakt') { // jakten går bättre med spjut
-    if (sp) { v.tool = sp; v.why = v.why.replace(/\.$/, '') + `. Tar ett ${sp === 'flintspjut' ? 'flintspjut' : 'träspjut'}.`; }
-    else if (!kyla && wantsSpear(s, p)) makeSpearTask(s, p, v, what);
+  // med det bästa redskapet som är ledigt; finns inget gör den som kan ett först (inte när kylan är en fara)
+  const { kyla, gras } = dangers(s), rader = ACTS[v.act].redskap;
+  if (rader) for (const [g, ks] of Object.entries(toolGroups(v.act))) {
+    if (!rader[ks[0]].tar) continue; // yxan väljs med arbetet (axeTask)
+    const k = freeOfKinds(s, p, ks);
+    if (k) { v.tool = k; v.why = v.why.replace(/\.$/, '') + '. ' + rader[k].tar; return; }
+    const t = TILLVERKA[g];
+    if (t && !kyla && t.vill(s, p, gras)) { const m = t.gor(s, p); set(v, m.act, `${what}. ${m.text}`); v.dur = m.min * MIN; if (m.tool) v.tool = m.tool; return; }
   }
 }
-function makeSpearTask(s: State, p: Person, v: Val, what: string) {
-  if (spearKind(s, p) === 'flintspjut') { set(v, 'spjut', `${what}. Gör ett flintspjut med flinta och rep.`); v.tool = 'flintspjut'; v.dur = 60 * MIN; }
-  else { set(v, 'spjut', `${what}. Täljer ett träspjut med ${sharpTool(s) === 'yxa' ? 'yxan' : 'en flintsten'}.`); v.dur = 40 * MIN; }
+// hur mycket mer arbetet ger med det redskap som finns ledigt eller kan göras (det bästa först)
+function toolGain(s: State, p: Person, act: Act) {
+  for (const [g, ks] of Object.entries(toolGroups(act))) {
+    if (freeOfKinds(s, p, ks) || TILLVERKA[g]?.vill(s, p, 0)) return ACTS[act].redskap![ks[0]].ger ?? 1;
+  }
+  return 1;
 }
 // slakta det fällda viltet vid elden, så länge det tar
 function slaughterTask(s: State, v: Val, why: string) {

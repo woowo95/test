@@ -414,7 +414,6 @@ export function eatPoison(s: State, p: Person) {
 // får tag i en fisk, men oftast slinker den ur händerna. Skickliga fiskare håller fast oftare.
 export const TRY_SEC = 300;
 // Med fiskespjut träffar man fisken oftare och den sitter kvar på spjutet.
-export const SPEAR_FISH = 2.4; // ungefär så mycket mer ett spjut ger än händerna
 // med metspö nappar fisken oftare och sitter kvar bättre på kroken (masken grävs fram i steg.ts)
 export type Fiskedon = 'hand' | 'spjut' | 'metspo';
 const NAPP: Record<Fiskedon, number> = { hand: 0.08, spjut: 0.13, metspo: 0.17 }, HALL: Record<Fiskedon, number> = { hand: 0.2, spjut: 0.5, metspo: 0.65 };

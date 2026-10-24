@@ -2,7 +2,7 @@ import { tidyTools } from './agande';
 import { rotStumps } from './skog';
 import { needLadder } from './behov';
 import { gain, use, capacity, dropSpot, fetchSpot, homeKind, load, pickUp, storeLoad, tidyStore, wearStore } from './lager';
-import { KANIN, KORG_SKORD, MASK_PER_GRAV, isSpear, makeBasket, makeKnife, makeRod, makeSpear, slaughter, twineRope, wearBasket, wearRod, wearSpear } from './redskap';
+import { KANIN, MASK_PER_GRAV, makeBasket, makeKnife, makeRod, makeSpear, slaughter, twineRope, wearUsed } from './redskap';
 import { thinkWhileWorking } from './teknik';
 import { foodDays, workRate } from './ekonomi';
 import { TRY_SEC, growFynd, handFish, packFynd, pickMushrooms, richness, takeFrom } from './fynd';
@@ -18,7 +18,7 @@ import { fearPlace, forget, lookAround } from './minne';
 import { chance, clamp, rnd } from './slump';
 import { ageIndex, isLight } from './tid';
 import { chopStock, fellTree, makeAxe, stocks } from './skog';
-import { ACTS } from './handlingar';
+import { ACTS, toolRow } from './handlingar';
 import { Act, DAY, HOUR, Person, SEC, SKILL_NAMES, State, Task, W, H, useMap } from './typer';
 import { findPath, speedAt, wear } from './vag';
 import { chooseTask } from './val';
@@ -30,12 +30,11 @@ import { MATERIAL, blocked, gridOf, roomAt, shelterOf } from './byggnad';
 // sedan tillbaka. Man bär aldrig mer än en tredjedel av vad man orkar från arbetet. Fler turer ger fler fotsteg, så
 // slitaget per steg sänks för att stigarna ska växa som förut, och det man får per fynd höjs (levande i handlingar.ts)
 // så att en arbetstimme räknat med gångtiden ger lika mycket som i snabbläget
-const WORK_LOAD = 1 / 3, LIVE_WEAR = 0.03, KORG_FYND = 2.5;
+const WORK_LOAD = 1 / 3, LIVE_WEAR = 0.03;
 // i levande läge arbetar man bara en del av tiden på platsen (resten går åt till att bära hem). Det som räknas per
 // arbetssekund (fynd av flinta och svamp, inlärning, slitage) jämkas lika mycket som avkastningen
 const FAST = 0.8;
 const liveF = (act: Act, live: boolean) => live ? (ACTS[act].levande ?? 1) / FAST : 1;
-const JAKT_SPJUT = 1.4; // jakt med spjut ger så mycket mer
 
 type Krok = (s: State, p: Person, t: Task, dtSec: number, live: boolean) => void;
 // det som händer medan man gör något (efter att ha kommit fram). Arbete för byn sköts av workStep
@@ -299,7 +298,7 @@ function arrive(s: State, p: Person, tk: Task, light: boolean) {
   } else {
     tk.phase = 'do'; if (tk.act === 'bara') { pickUp(s, p, tk); tk.until = now; }
     const f = ACTS[tk.act].fynd;
-    tk.fynd = 0; tk.lim = f ? Math.round((f[0] + rnd(s, 'levande', p) * (f[1] - f[0])) * (tk.tool === 'korg' ? KORG_FYND : 1)) : undefined;
+    tk.fynd = 0; tk.lim = f ? Math.round((f[0] + rnd(s, 'levande', p) * (f[1] - f[0])) * (toolRow(tk)?.fynd ?? 1)) : undefined;
   }
 }
 
@@ -307,12 +306,12 @@ function arrive(s: State, p: Person, tk: Task, light: boolean) {
 function workStep(s: State, p: Person, tk: Task, dtSec: number, live: boolean, a: number, learn: number) {
   const now = s.now, d = ACTS[tk.act];
   const lf = liveF(tk.act, live);
-  if (tk.tool === 'korg') wearBasket(s, p, dtSec * lf / 3600);
+  const rd = toolRow(tk); // redskapet i handen: vad det ger och hur det slits står i handlingens rad
+  if (rd && d.slits) wearUsed(s, p, dtSec * lf / d.slits);
   // utan yxa samlas grenar på marken (två grenar på den tid det tar att hugga en ved); med yxa huggs ved ur en fälld stam
   // bär, rötter och vilt: platsen ger mindre ju mer som redan tagits där
   const res = d.resurs, rich = res && d.takt === undefined ? richness(s, res, tk.tx, tk.ty) : 1;
-  const spjut = isSpear(tk.tool);
-  const y = workRate(s, p, tk.act) * dtSec * (live ? d.levande ?? 1 : FAST) * (tk.tool === 'korg' ? KORG_SKORD : 1) * (tk.act === 'jakt' && spjut ? JAKT_SPJUT : 1) * (d.takt ?? rich);
+  const y = workRate(s, p, tk.act) * dtSec * (live ? d.levande ?? 1 : FAST) * (toolRow(tk)?.ger ?? 1) * (d.takt ?? rich);
   if (y > 0) count(s, 'prod_' + tk.act, y);
   if (res && d.takt === undefined) { takeFrom(s, res, tk.tx, tk.ty, y); if (rich < 0.08) tk.until = now; } // tomt här: gå hem eller vidare
   // den som arbetar ser hur mycket som finns i området och minns det
@@ -325,12 +324,12 @@ function workStep(s: State, p: Person, tk: Task, dtSec: number, live: boolean, a
     let fish = 0;
     while (tk.prog >= TRY_SEC) {
       tk.prog -= TRY_SEC;
-      const gear = tk.tool === 'metspo' ? 'metspo' : isSpear(tk.tool) ? 'spjut' : 'hand';
-      if (gear === 'metspo' && (tk.mask ?? 0) < 1) { tk.mask = (tk.mask ?? 0) + MASK_PER_GRAV; continue; } // gräver fram mask först
+      const r = toolRow(tk);
+      if (r?.bete && (tk.mask ?? 0) < 1) { tk.mask = (tk.mask ?? 0) + MASK_PER_GRAV; continue; } // gräver fram mask först
       const napp = p.fiske?.n ?? 0;
-      fish += handFish(s, p, tk.tx, tk.ty, ageF, gear);
-      if (gear === 'metspo') { if ((p.fiske?.n ?? 0) > napp) tk.mask!--; wearRod(s, p); } // varje napp tar en mask
-      else if (gear === 'spjut') wearSpear(s, p);
+      fish += handFish(s, p, tk.tx, tk.ty, ageF, r?.don ?? 'hand');
+      if (r?.bete && (p.fiske?.n ?? 0) > napp) tk.mask!--; // varje napp tar en mask
+      if (r) wearUsed(s, p, 1);
     }
     // snabbläget: fångsten läggs direkt i förrådet och fiskaren fortsätter, som i levande läget där hen går tillbaka
     if (fish) { if (live) tk.carry += fish; else gain(s, p, 'fisk', fish); }
@@ -350,7 +349,6 @@ function workStep(s: State, p: Person, tk: Task, dtSec: number, live: boolean, a
     else { gain(s, p, 'bar', y - r); gain(s, p, 'rotter', r); }
   } else if (y > 0 && tk.act !== 'jakt') { if (live) tk.carry += y; else gain(s, p, d.ger!, y); } // snabbläget: rakt in i förrådet
   if (tk.act === 'jakt') {
-    if (spjut) wearSpear(s, p, dtSec * lf / TRY_SEC); // spjutet slits lika mycket per fem minuter som vid ett fiskeförsök
     // man fångar hela djur, än så länge bara kaniner. Chansen är sådan att man i snitt får lika mycket som platsen ger.
     // Kaninen fyller famnen och bärs hem hel
     if (y > 0 && rnd(s, 'arbete', p) < y / KANIN) {

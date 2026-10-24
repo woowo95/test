@@ -11,6 +11,8 @@ export interface SakDef {
   slits?: number; // det som försvinner av skicket per timme
   blir?: { k: string; per: number }; // det den faller sönder till när skicket är slut, och hur många av den per styck
   redskap?: true; // räknas styckvis; skicket är hur mycket som finns kvar av redskapet
+  grupp?: string; // redskap av samma slag som kan ersätta varandra (alla spjut), och görs på samma sätt (redskap.ts)
+  trasig?: { stat: string; text?: string }; // när redskapet går sönder i arbetet: det som räknas, och texten första gången ({namn} = den som arbetade)
   dold?: true; // syns inte för invånarna
   i?: string; // ligger gömd i stackarna av det slaget (stack.dold) och har ingen egen stack
 }
@@ -28,15 +30,15 @@ const DEF = {
   kol: { namn: 'Kol', stack: 25, mapp: 'Bränsle' },
   flinta: { namn: 'Flinta', stack: 10, mapp: 'Sten' },
   yxa: { namn: 'Flintyxa', stack: 1, mapp: 'Redskap', slits: 0.0004, redskap: true },
-  fiskespjut: { namn: 'Träspjut', stack: 1, mapp: 'Redskap', slits: 0.001, redskap: true },
-  korg: { namn: 'Korg', stack: 1, mapp: 'Redskap', slits: 0.001, redskap: true },
+  fiskespjut: { namn: 'Träspjut', stack: 1, mapp: 'Redskap', slits: 0.001, redskap: true, grupp: 'spjut', trasig: { stat: 'spjutTrasiga', text: '{namn}s träspjut gick sönder. Träspjuten håller inte länge.' } },
+  korg: { namn: 'Korg', stack: 1, mapp: 'Redskap', slits: 0.001, redskap: true, trasig: { stat: 'korgarTrasiga', text: '{namn}s korg gick sönder.' } },
   // giftig svamp som av misstag hamnat i förrådet bland den ätliga (fynd.ts). Den ligger i svampstacken och syns inte
   giftsvamp: { namn: 'Giftig svamp', ruttnar: 1, dold: true, i: 'svamp' },
   sten: { namn: 'Sten', stack: 10, mapp: 'Sten' },
   rep: { namn: 'Rep', stack: 20, mapp: 'Material', slits: 0.0003 },
   ben: { namn: 'Ben', stack: 20, mapp: 'Material' },
-  flintspjut: { namn: 'Flintspjut', stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true },
-  metspo: { namn: 'Metspö', stack: 1, mapp: 'Redskap', slits: 0.0005, redskap: true },
+  flintspjut: { namn: 'Flintspjut', stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true, grupp: 'spjut', trasig: { stat: 'spjutTrasiga', text: '{namn}s flintspjut gick sönder.' } },
+  metspo: { namn: 'Metspö', stack: 1, mapp: 'Redskap', slits: 0.0005, redskap: true, trasig: { stat: 'metspoTrasiga' } },
   // ett fällt djur, helt som det är (vilket djur det än är). En kanin fyller famnen, så stacken är en kanin
   vilt: { namn: 'Fällt vilt', stack: 1.6, ruta: 16, mapp: 'Mat', mat: 1.5, ruttnar: 1.1 },
   kniv: { namn: 'Flintkniv', stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true },
@@ -55,6 +57,7 @@ export const RUTA: Record<string, number> = Object.fromEntries(STACK_ORDER.map(k
 export const FOOD = SAK_LIST.filter(k => SAKER[k]!.mat !== undefined).sort((a, b) => SAKER[a]!.mat! - SAKER[b]!.mat!) as string[]; // i den ordning de äts
 export const isFood = (k: string) => SAKER[k]?.mat !== undefined;
 export const isTool = (k: string) => !!SAKER[k]?.redskap;
+export const gruppOf = (k: string) => SAKER[k]?.grupp ?? k;
 // mappar i listan över allt byn äger; maten med det som håller längst först
 export const FOLDERS: { namn: string; k: string[] }[] = [...new Set(SAK_LIST.map(k => SAKER[k]!.mapp).filter(m => m))].map(namn => ({
   namn: namn!, k: SAK_LIST.filter(k => SAKER[k]!.mapp === namn).sort((a, b) => (SAKER[b]!.mat ?? 0) - (SAKER[a]!.mat ?? 0)),
