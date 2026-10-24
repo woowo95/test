@@ -5,8 +5,15 @@ Björn programmerar inte; Claude skriver all kod. Svara på svenska.
 ## Nya system som Björn beskriver
 
 - Bygg bara in det som det redan finns system för och som programmet är moget för nu.
-- Allt annat skrivs in i designdokumentet för att göras senare: under rätt fas i Färdplanen, eller i rätt avsnitt. Bygg det inte i förväg.
+- Allt annat skrivs in i designdokumentet för att göras senare: som ett steg under rätt system i Färdplanen (nästa lediga nummer, med en "Läs:"-hänvisning om systemet är nytt), och förklaringen i rätt avsnitt. Bygg det inte i förväg.
 - Säg i svaret vad som byggdes nu och vad som lades i designdokumentet.
+
+## Färdplanen
+
+- Färdplanen i designdokumentet är numrerad: fas, system, steg. Ett steg med tre siffror (t.ex. 2.5.1) är en prompt.
+- Björn säger t.ex. "gör 2.5.1", "gör 2.5" eller "gör till och med 2.6.2". Bygg de steg som nämns och stanna efter det sista.
+- Läs avsnitten som systemets "Läs:" pekar på innan du bygger. Står det "Björn avgör" i steget, fråga först.
+- Bocka av ett byggt steg och skriv versionen efter, t.ex. "(v36)". Byggda steg byter aldrig nummer.
 
 ## Principer
 
@@ -25,7 +32,7 @@ Björn programmerar inte; Claude skriver all kod. Svara på svenska.
 
 - `npm install`, sedan `npm run build`. Det ger `samhallssimulatorn.html`, och i `publicera/` källkoden som .txt och fillistan `filer.json`.
 - Publicera alltid till samma artefakt-URL så att Björns sparade by och länk finns kvar: `file_path` = `samhallssimulatorn.html`, `url` = spelets URL och `files` = innehållet i `publicera/filer.json`. Då kommer källkoden med under `kalla/`.
-- Uppdatera "Läget just nu" i designdokumentet när något nytt är byggt.
+- Uppdatera "Läget just nu" i designdokumentet när något nytt är byggt, och bocka av steget i Färdplanen.
 
 ## Tester (spara tokens)
 
