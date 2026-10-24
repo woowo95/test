@@ -9,7 +9,7 @@ export interface RedskapDef {
   namn?: string; // det som står att personen gör med redskapet
   tar?: string; // det som läggs till i skälet när redskapet tas
   ger?: number; // så mycket mer arbetet ger med redskapet (det man bedömer i valet av arbete, och i fisket bara där)
-  fynd?: number; // levande läge: så många fler fynd innan bördan bärs hem
+  tur?: number; // så många gånger längre man arbetar innan bördan bärs hem (korgen rymmer mer)
   don?: 'spjut' | 'metspo'; // fiske: hur fisken fångas (fynd.ts)
   bete?: true; // fiske: mask grävs fram och sätts på kroken
   haller?: number; // hur länge redskapet håller: så många enheter av arbetet (slits, och för fiske försök)
@@ -28,25 +28,24 @@ export interface ActDef {
   takt?: number; // hur mycket arbetet ger jämfört med grundtakten; saknas = det platsen har kvar (resurs)
   resurs?: 'samla' | 'jakt' | 'fiske'; // platsen har ett förråd som tar slut och som man minns (fynd.ts, minne.ts)
   fara?: { risk: number; text: string }; // chans per timme att dö i en olycka (mindre för den skicklige)
-  fynd?: [number, number]; // levande läge: så många fynd innan bördan bärs hem
-  levande?: number; // levande läge: avkastningen jämkad för gångtiden (npm run likhet)
-  vandra?: { r: number; h0: number; h1: number; v: number }; // rörelse på platsen: radie, stilla h0–h1 sekunder, fart
+  tur?: number; // så många sekunders arbete innan bördan bärs hem (annars när den är full)
+  vandra?: { r: number; h0: number; h1: number; v: number }; // rörelse på platsen (bara det som visas, och lite slitage): radie, stilla h0–h1 sekunder, fart
   tungt?: true; // tröttar mer än att bara vara vaken
   vila?: true; // man återhämtar sig
   hantverk?: true; // övar hantverk
   social?: true; // man samtalar med dem som är nära
   dygn?: true; // avbryts när dag blir natt eller natt blir dag
-  stilla?: true; // står still på platsen (ingen småjustering)
+  stilla?: true; // står still på platsen (ingen småjustering i bilden)
   // var den görs (val.ts): runt elden, vid kolhögen, sovplats, lekplatsen eller ute på marken (skog är förvalt)
   plats?: 'elden' | 'kol' | 'sang' | 'lek' | 'ang' | 'strand' | 'avsides' | 'skog';
   radie?: number; // avstånd från elden, för plats 'elden'
 }
 
 const DEF = {
-  samla: { namn: 'Samlar bär och rötter', mark: 'korg', redskap: { korg: { namn: 'Samlar bär och rötter med korg', tar: 'Tar en korg.', ger: 1.15, fynd: 2.5, haller: 40 } }, slits: 3600, ikon: 'bar', arbete: 'samla', bas: 0.65, sasong: [0.4, 1.0, 1.25, 1.4], egenskap: 'uthallighet', ger: 'bar', resurs: 'samla', fynd: [3, 5], levande: 1.08, vandra: { r: 2, h0: 3, h1: 10, v: 0.6 }, tungt: true, dygn: true, plats: 'ang' },
-  jakt: { namn: 'Jagar', redskap: { flintspjut: { namn: 'Jagar med spjut', tar: 'Tar ett flintspjut.', ger: 1.4, haller: 240 }, fiskespjut: { namn: 'Jagar med spjut', tar: 'Tar ett träspjut.', ger: 1.4, haller: 60 } }, slits: 300, mark: 'kanin', ikon: 'kanin', arbete: 'jakt', bas: 0.62, sasong: [0.7, 0.9, 1.0, 1.15], egenskap: 'mod', ger: 'vilt', resurs: 'jakt', fara: { risk: 0.0008, text: 'under en jakt' }, levande: 0.8, vandra: { r: 3, h0: 3, h1: 10, v: 0.7 }, tungt: true, dygn: true, plats: 'ang' },
-  fiske: { namn: 'Fiskar med händerna', mark: 'fisk', redskap: { metspo: { namn: 'Metar', tar: 'Tar ett metspö och gräver fram mask.', ger: 2.4, don: 'metspo', bete: true, haller: 200 }, flintspjut: { namn: 'Fiskar med spjut', tar: 'Tar ett flintspjut.', ger: 2.4, don: 'spjut', haller: 240 }, fiskespjut: { namn: 'Fiskar med spjut', tar: 'Tar ett träspjut.', ger: 2.4, don: 'spjut', haller: 60 } }, ikon: 'fisk', arbete: 'fiske', bas: 0.72, sasong: [0.45, 1.0, 1.1, 1.0], egenskap: 'uthallighet', ger: 'fisk', takt: 0, resurs: 'fiske', levande: 0.8, tungt: true, dygn: true, plats: 'strand' },
-  ved: { namn: 'Samlar grenar', mark: 'korg', ikon: 'grenar', arbete: 'ved', bas: 1.3, sasong: [0.9, 1, 1, 1], egenskap: 'styrka', ger: 'grenar', takt: 2, fynd: [3, 5], levande: 0.99, vandra: { r: 2, h0: 3, h1: 10, v: 0.6 }, tungt: true, dygn: true, plats: 'skog' },
+  samla: { namn: 'Samlar bär och rötter', mark: 'korg', redskap: { korg: { namn: 'Samlar bär och rötter med korg', tar: 'Tar en korg.', ger: 1.15, tur: 2.5, haller: 40 } }, slits: 3600, ikon: 'bar', arbete: 'samla', bas: 0.65, sasong: [0.4, 1.0, 1.25, 1.4], egenskap: 'uthallighet', ger: 'bar', resurs: 'samla', tur: 40, vandra: { r: 2, h0: 3, h1: 10, v: 0.6 }, tungt: true, dygn: true, plats: 'ang' },
+  jakt: { namn: 'Jagar', redskap: { flintspjut: { namn: 'Jagar med spjut', tar: 'Tar ett flintspjut.', ger: 1.4, haller: 240 }, fiskespjut: { namn: 'Jagar med spjut', tar: 'Tar ett träspjut.', ger: 1.4, haller: 60 } }, slits: 300, mark: 'kanin', ikon: 'kanin', arbete: 'jakt', bas: 0.62, sasong: [0.7, 0.9, 1.0, 1.15], egenskap: 'mod', ger: 'vilt', resurs: 'jakt', fara: { risk: 0.0008, text: 'under en jakt' }, vandra: { r: 3, h0: 3, h1: 10, v: 0.7 }, tungt: true, dygn: true, plats: 'ang' },
+  fiske: { namn: 'Fiskar med händerna', mark: 'fisk', redskap: { metspo: { namn: 'Metar', tar: 'Tar ett metspö och gräver fram mask.', ger: 2.4, don: 'metspo', bete: true, haller: 200 }, flintspjut: { namn: 'Fiskar med spjut', tar: 'Tar ett flintspjut.', ger: 2.4, don: 'spjut', haller: 240 }, fiskespjut: { namn: 'Fiskar med spjut', tar: 'Tar ett träspjut.', ger: 2.4, don: 'spjut', haller: 60 } }, ikon: 'fisk', arbete: 'fiske', bas: 0.72, sasong: [0.45, 1.0, 1.1, 1.0], egenskap: 'uthallighet', ger: 'fisk', takt: 0, resurs: 'fiske', tungt: true, dygn: true, plats: 'strand' },
+  ved: { namn: 'Samlar grenar', mark: 'korg', ikon: 'grenar', arbete: 'ved', bas: 1.3, sasong: [0.9, 1, 1, 1], egenskap: 'styrka', ger: 'grenar', takt: 2, tur: 40, vandra: { r: 2, h0: 3, h1: 10, v: 0.6 }, tungt: true, dygn: true, plats: 'skog' },
   leka: { namn: 'Leker', vandra: { r: 2, h0: 2, h1: 6, v: 1.3 }, social: true, dygn: true, plats: 'lek' },
   vila: { namn: 'Vilar', mark: 'zzz', vila: true, dygn: true, plats: 'sang' },
   samtal: { namn: 'Samtalar vid elden', vila: true, social: true, dygn: true, plats: 'elden' },
@@ -60,7 +59,7 @@ const DEF = {
   toa: { namn: 'Går avsides på toa', plats: 'avsides' },
   kol: { namn: 'Hämtar kol ur den slocknade elden', plats: 'kol' },
   falla: { namn: 'Fäller ett träd med yxa', mark: 'yxa', redskap: { yxa: {} }, arbete: 'ved', takt: 0, tungt: true },
-  hugga: { namn: 'Hugger trä av ett fällt träd', mark: 'yxa', redskap: { yxa: {} }, arbete: 'ved', ger: 'ved', takt: 1.5, levande: 0.77, tungt: true },
+  hugga: { namn: 'Hugger trä av ett fällt träd', mark: 'yxa', redskap: { yxa: {} }, arbete: 'ved', ger: 'ved', takt: 1.5, tungt: true },
   yxa: { namn: 'Gör en yxa av en pinne och flinta', mark: 'flinta', hantverk: true, plats: 'elden' },
   spjut: { namn: 'Täljer ett spjut', verktyg: { flintspjut: 'Gör ett flintspjut' }, mark: 'fiskespjut', hantverk: true, plats: 'elden' },
   metspo: { namn: 'Gör ett metspö', mark: 'metspo', hantverk: true, plats: 'elden' },

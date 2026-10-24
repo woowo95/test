@@ -5,7 +5,7 @@ const seeds = process.argv.slice(2).map(Number);
 for (const seed of seeds.length ? seeds : [1, 2, 3, 4, 5, 6]) {
   const s = createState(seed, START), forst: Record<string, number> = {};
   for (let i = 0; i < 90 * 24 * 12; i++) {
-    step(s, 300, false);
+    step(s, 300);
     if (i % 12 === 0) for (const t of TEKNIK) if (forst[t.id] === undefined && living(s).some(p => knows(p, t.id))) forst[t.id] = Math.round((s.now - s.founded) / DAY * 10) / 10;
   }
   const kan = Object.fromEntries(TEKNIK.map(t => [t.id, living(s).filter(p => knows(p, t.id)).length]));

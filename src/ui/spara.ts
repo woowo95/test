@@ -1,4 +1,4 @@
-import { DAY, KUNSKAP_NAMES, LogEntry, State, compact, describe, joinParts, living, migrate, serialize, serializeParts, step, timeLabel } from '../sim';
+import { BEAT, DAY, KUNSKAP_NAMES, LogEntry, State, compact, describe, joinParts, living, migrate, serialize, serializeParts, step, timeLabel } from '../sim';
 import { $, esc } from './hjalp';
 import { s, ui } from './lage';
 import { drawTerrain } from './terrang';
@@ -51,7 +51,7 @@ async function loadDb(d: any): Promise<State | null> {
 }
 function parse(txt: string | null | undefined): State | null {
   if (!txt) return null;
-  try { const o = JSON.parse(txt); return o && o.v === 1 && Array.isArray(o.people) ? migrate(o) : null; } catch { return null; }
+  try { const o = JSON.parse(txt); return o && typeof o.v === 'number' && Array.isArray(o.people) ? migrate(o) : null; } catch { return null; }
 }
 export async function loadSaves(): Promise<State | null> {
   let local: State | null = null;
@@ -75,7 +75,7 @@ export async function loadSaves(): Promise<State | null> {
   return local ?? remote;
 }
 
-// ---------- ikappräkning: byn lever vidare i snabbläget medan spelaren var borta ----------
+// ---------- ikappräkning: byn lever vidare i samma takt som i spelet medan spelaren var borta ----------
 export async function catchUp(target: number, showOverlay: boolean) {
   const span = target - s.now;
   if (span <= 0) return;
@@ -88,18 +88,17 @@ export async function catchUp(target: number, showOverlay: boolean) {
   await new Promise<void>(resolve => {
     const chunk = () => {
       const t0 = performance.now();
-      while (s.now < target && performance.now() - t0 < 30) step(s, Math.min(300, (target - s.now) / 1000), false);
+      while (s.now < target && performance.now() - t0 < 30) step(s, BEAT);
       if (showOverlay) {
         const f = Math.min(1, (s.now - from) / span);
         const bar = document.getElementById('progBar'); if (bar) bar.style.width = (f * 100).toFixed(1) + '%';
         const pt = document.getElementById('progTxt'); if (pt) pt.textContent = `${timeLabel(s, s.now)} · ${Math.round(f * 100)} %`;
       }
-      if (s.now < target - 500) setTimeout(chunk, 0); else resolve();
+      if (s.now < target) setTimeout(chunk, 0); else resolve();
     };
     chunk();
   });
-  ui.busy = false;
-  for (const p of living(s)) p.task = undefined;
+  ui.busy = false; ui.nu = target;
   if (showOverlay) showSummary(from, logStart, before, stat0);
   saveLocal(); saveDb();
   drawTerrain(true); drawPlants(true);

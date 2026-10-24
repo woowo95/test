@@ -1,13 +1,10 @@
-cd "$(dirname "$0")/../.."; T=${1:-96}; N=${2:-8}; (for sd in $(seq 3 2 $((1 + 2 * N))); do npx tsx src/test/likhet.ts $sd live $T & npx tsx src/test/likhet.ts $sd snabb $T & done; wait) 2>&1 | grep seed | python3 -c "
+cd "$(dirname "$0")/../.."; T=${1:-96}; N=${2:-4}; (for sd in $(seq 3 2 $((1 + 2 * N))); do npx tsx src/test/likhet.ts $sd $T & done; wait) 2>&1 | python3 -c "
 import sys,json
-a={True:{},False:{}}; n={True:0,False:0}
+ok=0; n=0
 for l in sys.stdin:
-  d=json.loads(l); n[d['live']]+=1
-  for k,v in d['ut'].items(): a[d['live']].setdefault(k,[]).append(v)
-keys=sorted(set(a[True])|set(a[False]))
-print(f\"{'mått':18}{'levande':>10}{'snabb':>10}{'kvot':>7}\")
-for k in keys:
-  l=sum(a[True].get(k,[]))/max(1,n[True]); s=sum(a[False].get(k,[]))/max(1,n[False])
-  if max(l,s)<0.5: continue
-  print(f'{k:18}{l:10.1f}{s:10.1f}{(s/l if l else 0):7.2f}')
+  if not l.startswith('{'): print(l.rstrip()); continue
+  d=json.loads(l); n+=1
+  if d['olik']<0: ok+=1; print(f\"by {d['seed']:>3}: exakt lika i $T timmar ({d['spel']['folk']} invånare)\")
+  else: print(f\"by {d['seed']:>3}: OLIKA efter {d['olik']} timmar · spelet {d['spel']} · ikapp {d['ikapp']}\")
+print(f'{ok} av {n} byar exakt lika i spelet och ikappräkningen')
 "

@@ -8,7 +8,7 @@ import { H, HOUR, SEC, State, W, mapKey } from './typer';
 // som dyker upp där kartan är hög, håller ihop och rör sig mot en bättre plats i närheten. En grupp lever en tid (LIV) och
 // dyker sedan upp på en ny plats. Den krymper när den jagas (där lagret är tömt), och en grupp som jagats slut kommer
 // tillbaka först när dess tid är slut, på en ny plats. Allt räknas fram ur kartan och klockan, så att kaninerna är
-// desamma i snabbläget och det levande läget och inget behöver sparas.
+// desamma i spelet och vid ikappräkning och inget behöver sparas.
 // Fångsten beror på hur nära en grupp jaktplatsen är (narvaro, som fynd.ts väger in i richness).
 // En kanin sitter still en stund och skuttar sedan en bit. Den som kommer nära får den att hoppa undan en bit och sitta
 // still där. Jägaren går mot den närmaste kaninen (steg.ts). Fler arter (rådjur, fågel) blir egna lager och grupper senare.

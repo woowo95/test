@@ -11,7 +11,7 @@ for (const seed of valda.length ? valda : [1, 42, 777]) {
   const acts: Record<string, number> = {};
   for (let d = 0; d < days; d++) {
     for (let i = 0; i < 288; i++) {
-      step(s, 300, false); minFood = Math.min(minFood, foodOf(s));
+      step(s, 300); minFood = Math.min(minFood, foodOf(s));
       steps++; if (s.fire.lit) litSteps++;
       for (const p of living(s)) { if (p.thoughts.some(t => t.text === 'Kissade på sig' && t.until - s.now > 4 * 3600000 - 300001)) accidents++; if (ageOf(p, s.now) >= 14 && p.task) acts[p.task.act] = (acts[p.task.act] || 0) + 1; }
       if (firstFire < 0 && s.fire.lit) firstFire = (s.now - start) / 3600000;

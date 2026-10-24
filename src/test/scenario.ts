@@ -2,7 +2,7 @@
 // npm run scenario            kör alla
 // npm run scenario -- glanta  kör bara ett
 import { isDeepStrictEqual } from 'node:util';
-import { Person, Act, createState, ownedBy, tidyTools, addTool, toolsOf, heldBy, take, usesTool, wearTool, freeSpear, getRel, isTool, BYN, twineRope, makeRod, wearUsed, isSpear, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, serializeParts, joinParts, serialize, ageStart, nyKalender, kalender, yearNo, AGES, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, zonesOf, allows, ageOf, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, fuelStock, DAY, HOUR, W, State, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, campCenter, TEKNIK, knows, thinkWhileWorking, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, beds, isWall, Bit, wearBuild, FYND, FYND_IDS, GRUPPER, angOf, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, LAGER_R, observe, hoped, Lager, skyggOf, SKYGG_R, SKYGG_IN, grupperOf, GRUPPER_MAX, STORLEK, share, treeOn, djurOf, KANIN, SLAKT, DJUR, JAKT_F, canSlaughter, makeKnife, slaughter, askForTool, gain, takeFood, takeFuel, ownsAmount, ownedStock, ownedSum, sumOf, addTo, setAmount, setStock, foodOf, isFood, STACK_ORDER, needLadder, MAT, ownFor, rnd, STROMMAR, Strom } from '../sim';
+import { Person, Act, createState, ownedBy, tidyTools, addTool, toolsOf, heldBy, take, usesTool, wearTool, freeSpear, getRel, isTool, BYN, twineRope, makeRod, wearUsed, isSpear, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, serializeParts, joinParts, serialize, ageStart, nyKalender, kalender, yearNo, AGES, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, zonesOf, allows, ageOf, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, fuelStock, DAY, HOUR, W, State, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, campCenter, TEKNIK, knows, thinkWhileWorking, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, beds, isWall, Bit, wearBuild, FYND, FYND_IDS, GRUPPER, angOf, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, LAGER_R, observe, hoped, Lager, skyggOf, SKYGG_R, SKYGG_IN, grupperOf, GRUPPER_MAX, STORLEK, share, treeOn, djurOf, KANIN, SLAKT, DJUR, JAKT_F, canSlaughter, makeKnife, slaughter, askForTool, gain, takeFood, takeFuel, ownsAmount, ownedStock, ownedSum, sumOf, addTo, setAmount, setStock, foodOf, isFood, STACK_ORDER, needLadder, MAT, ownFor, rnd, STROMMAR, Strom, BEAT, spar, isWork, SPARVERSION } from '../sim';
 // förrådet i proven: stackarna är det enda som sparas (steg 1.1.2), så proven ställer in förrådet genom lagret
 const setItems = (s: State, m: Record<string, number>) => {
   for (const k of STACK_ORDER) if (!isFood(k) && k !== 'ved' && !isTool(k)) setAmount(s, k, m[k] ?? 0);
@@ -17,7 +17,7 @@ import { START } from './kor';
 import { Utfall, korSkript, pool } from './pool';
 
 type Koll = [string, boolean];
-const kor = (s: State, timmar: number, varje?: (s: State) => void) => { for (let i = 0; i < timmar * 12; i++) { step(s, 300, false); varje?.(s); } };
+const kor = (s: State, timmar: number, varje?: (s: State) => void) => { for (let i = 0; i < timmar * 12; i++) { step(s, 300); varje?.(s); } };
 // letar efter en text i loggen. Loggen rymmer bara de senaste 400 raderna: har den nått taket kan det som söks ha fallit bort, och då varnar testet
 const logg = (s: State, t: string) => {
   if (s.log.length >= 400) console.log(`VARNING: scenariot läser en logg som nått taket (400 rader) och söker "${t}". Räkna i byns statistik i stället.`);
@@ -88,6 +88,7 @@ const SCENARIER: Record<string, { text: string; kor: () => Koll[] }> = {
     kor: () => {
       const s = createState(13, START);
       setAmount(s, 'yxa', 1);
+      Object.assign(s.fire, { lit: true, fuel: 4, ring: true }); // elden brinner: annars hänger provet på när flintan råkar lyckas (ungefär vart femtionde försök)
       s.byggSok = Infinity; // inget hus: träden på en husplats fälls för bygget, inte för ved
       const fallda = new Set<number>();
       let ved = 0;
@@ -195,7 +196,7 @@ SCENARIER.kunskap = {
     const c1 = m1.lardomar?.[0]?.c ?? 0, c2 = m2.lardomar?.[0]?.c ?? 0;
     // gammal sparfil: byns svampkunskap flyttas till var och en, och alla får egenskapen Minne
     const g = createState(32, START); g.kunskap = { svamp: 0.8 }; for (const p of g.people) delete (p.pot as Record<string, number>).minne;
-    migrate(g);
+    g.v = 1; migrate(g); // som en sparfil från före v40
     return [
       [`ingen minns några platser från början (${ute} personer gör det)`, ute === 0],
       [`lärdomar sprids i samtal (upp till ${hort} hörda, ${led2} i andra hand eller längre)`, hort > 10 && led2 > 0],
@@ -266,33 +267,41 @@ SCENARIER.sparning = {
     const delar = serializeParts(s), hel = serialize(s);
     const ater = JSON.parse(joinParts(Object.values(delar))), ny = migrate(JSON.parse(joinParts(Object.values(delar))));
     const kb = Object.fromEntries(Object.entries(delar).map(([d, t]) => [d, Math.round(t.length / 1024)]));
+    // en by från före v40 (sparversion 1) med gamla fält från gången i levande läget uppgraderas en gång, i nummerordning
+    const gammal = JSON.parse(hel), gp = gammal.people.find((p: Person) => p.task);
+    gammal.v = 1; Object.assign(gp.task, { fynd: 2, wx: 1, wy: 1, hold: 5, stint: 3 }); (gp.rngs ??= {}).levande = 7;
+    migrate(gammal);
+    const uppgr = gammal.v === SPARVERSION && !['fynd', 'wx', 'wy', 'hold', 'stint'].some(k => k in gp.task) && !('levande' in gp.rngs);
+    const igen = JSON.stringify(gammal); migrate(gammal);
     return [
       [`byn delas i ${Object.keys(delar).join(', ')} (${Object.entries(kb).map(([d, n]) => `${d} ${n} KB`).join(', ')})`, Object.keys(delar).length === 4 && delar.folket.includes('"people"') && !delar.byn.includes('"people"')],
       ['delarna blir samma by igen', isDeepStrictEqual(ater, JSON.parse(hel)) && ny.people.length === s.people.length && ny.now === s.now],
+      [`en gammal by uppgraderas till sparversion ${SPARVERSION} och gamla fält försvinner`, uppgr],
+      ['en uppgraderad by ändras inte av att uppgraderas igen', JSON.stringify(gammal) === igen],
+      [`en ny by har den senaste sparversionen (${s.v})`, s.v === SPARVERSION],
     ];
   },
 };
 
 SCENARIER.slump = {
-  text: 'Varje system och varje person har en egen slumpföljd, och det levande läget rör aldrig de andra följderna',
+  text: 'Varje system och varje person har en egen slumpföljd, och det som bara syns i spelet rör aldrig byns följder',
   kor: () => {
     const serie = (s: State, k: Strom, p?: Person) => Array.from({ length: 5 }, () => rnd(s, k, p));
     const a = createState(5, START), b = createState(5, START), pa = living(a)[0], pb = living(b)[0];
     for (let i = 0; i < 100; i++) rnd(b, 'eld'); // ett system drar fler tal i den ena byn
     const lika = isDeepStrictEqual(serie(a, 'val'), serie(b, 'val')) && isDeepStrictEqual(serie(a, 'arbete', pa), serie(b, 'arbete', pb));
     const c = createState(5, START), olika = new Set([...Object.keys(STROMMAR).map(k => serie(c, k as Strom)[0]), ...living(c).map(p => serie(c, 'val', p)[0])]);
-    // snabbläget drar aldrig ur det levande lägets följd
-    const d = createState(9, START);
-    kor(d, 2 * 24);
-    const levande = d.rngs?.levande !== undefined || d.people.some(p => p.rngs?.levande !== undefined);
-    // det levande läget drar ur sin egen följd när folk rör sig
-    const e = createState(9, START);
-    for (let i = 0; i < 600; i++) step(e, 0.5, true);
+    // spelet spelar in vägen folk går för att rita den (spar), och det får inte ändra något i byn
+    const d = createState(9, START), e = createState(9, START);
+    spar.pa = true; spar.v = new WeakMap();
+    for (let i = 0; i < 12 * 24; i++) step(d, BEAT);
+    spar.pa = false;
+    for (let i = 0; i < 12 * 24; i++) step(e, BEAT);
+    const inspelning = serialize(d) === serialize(e);
     return [
       ['fler slumptal i ett system ändrar inte slumpen i de andra', lika],
       [`varje system och varje person får egna tal (${olika.size} olika av ${Object.keys(STROMMAR).length + living(c).length})`, olika.size === Object.keys(STROMMAR).length + living(c).length],
-      ['snabbläget drar aldrig ur det levande lägets följd', !levande],
-      ['det levande läget har en egen följd för det som bara finns där', e.people.some(p => p.rngs?.levande !== undefined)],
+      ['spelets inspelning av gångvägarna ändrar inget i byn (ett dygn)', inspelning],
     ];
   },
 };
@@ -332,7 +341,7 @@ SCENARIER.stenring = {
     const g = createState(2, START);
     g.items = { gniststen: 1 }; g.stackar = [{ k: 'gniststen', n: 1, x: 1, y: 1, c: 1 }]; g.fire.lightings = 3;
     delete (g.fire as { ring?: boolean }).ring;
-    migrate(g);
+    g.v = 1; migrate(g); // som en sparfil från före v40
     return [
       [`stenar samlas och elden tänds (efter ${h} timmar)`, tand && logg(s, 'ring av stenar')],
       [`stenarna blir en ring runt elden (${kvar.toFixed(1)} stenar kvar i förrådet)`, ring && kvar < 1],
@@ -392,7 +401,7 @@ SCENARIER.redskap = {
     let medSpjut = 0;
     for (let i = 0; i < 12 * 3; i++) {
       p.task = { act: 'jakt', phase: 'do', tx: bx, ty: by, until: s.now + HOUR, carry: 0, tool: 'flintspjut', why: 'prov', dark: !isLight(s.now) };
-      p.x = bx; p.y = by; step(s, 300, false);
+      p.x = bx; p.y = by; step(s, 300);
       if (p.task?.act === 'jakt' && isSpear(p.task.tool)) medSpjut++;
     }
     const jakt = (amountOf(s, 'vilt')) > vilt0 && amountOf(s, 'flintspjut') < sp0;
@@ -502,7 +511,7 @@ SCENARIER.gava = {
     let gavor = 0, byten = 0;
     for (let i = 0; i < 4; i++) {
       const v = createState(40 + i, START);
-      for (let h = 0; h < 20 * 24 * 12; h++) step(v, 300, false);
+      for (let h = 0; h < 20 * 24 * 12; h++) step(v, 300);
       gavor += v.stat?.gavor ?? 0; byten += v.stat?.byten ?? 0;
     }
     return [
@@ -538,13 +547,13 @@ SCENARIER.egendom = {
     let fel = 0, agt = 0;
     for (const [seed, h, live] of [[41, 10 * 24, false], [3, 6, true]] as const) {
       const v = createState(seed, START);
-      for (let i = 0; i < h * 3600 / (live ? 0.5 : 300); i++) { step(v, live ? 0.5 : 300, live); if (i % 200 === 0) for (const a of v.stackar ?? []) if (sumOf(a.ag) > a.n + 1e-6) fel++; }
+      for (let i = 0; i < h * 3600 / (live ? 0.5 : 300); i++) { step(v, live ? 0.5 : 300); if (i % 200 === 0) for (const a of v.stackar ?? []) if (sumOf(a.ag) > a.n + 1e-6) fel++; }
       agt += living(v).filter(p => Object.keys(ownedStock(v, p)).length).length;
     }
     // äldre sparfil (före v40): summorna och delarna sparades bredvid stackarna och blir nu stackar
     const g = createState(6, START), ga = living(g)[0];
     g.stackar = []; Object.assign(g, { food: 50, mat: { bar: 30, fisk: 20 }, wood: 5, egna: { bar: { [ga.id]: 10 } } }); g.items = { grenar: 7 };
-    migrate(g);
+    g.v = 1; migrate(g); // som en sparfil från före v40
     const gammal = Math.abs(foodOf(g) - 50) < 1e-9 && Math.abs(amountOf(g, 'fisk') - 20) < 1e-9 && Math.abs(amountOf(g, 'ved') - 5) < 1e-9 && Math.abs(amountOf(g, 'grenar') - 7) < 1e-9 && Math.abs(ownsAmount(g, ga, 'bar') - 10) < 1e-9 && !('food' in g) && !('egna' in g) && !('items' in g);
     return [
       ['äldre sparfil: summorna och ägarnas delar blir stackar', gammal],
@@ -609,7 +618,7 @@ SCENARIER.behov = {
     }
     // vanliga byar: gåvor ges och ingen svälter ihjäl i de tre testbyarna
     let gavor = 0;
-    for (const seed of [1, 42]) { const v = createState(seed, START); for (let i = 0; i < 10 * 288; i++) step(v, 300, false); gavor += v.stat?.gava_mat ?? 0; }
+    for (const seed of [1, 42]) { const v = createState(seed, START); for (let i = 0; i < 10 * 288; i++) step(v, 300); gavor += v.stat?.gava_mat ?? 0; }
     return [
       ['den hungrige tar inte en oväns mat innan nöden är stor', tarInte],
       ['byns mat går före andras', byns],
@@ -654,18 +663,18 @@ SCENARIER.djur = {
       p.task = { act: 'jakt', phase: 'do', tx: bx, ty: by, until: s.now + HOUR, carry: 0, why: 'prov', dark: !isLight(s.now) };
       p.x = bx; p.y = by;
       const v0 = amountOf(s, 'vilt');
-      step(s, 300, false);
+      step(s, 300);
       const d = (amountOf(s, 'vilt')) - v0;
       if (d > 0.05 && Math.abs(d - KANIN) > 0.05) hela = false; // det som kommer in är hela kaniner (lite kan ätas samtidigt)
     }
     const kaniner = s.stat?.kaniner ?? 0;
-    // levande läge: den som fångat en kanin bär hem den hel
+    // den som fångat en kanin bär hem den hel (små steg, så att vägen hem syns)
     const q = createState(6, START); q.now = new Date(q.now).setHours(9, 0, 0, 0);
     const j = living(q).find(r => ageOf(r, q.now) >= 18)!;
     let hem = 0, annat = 0;
     for (let i = 0; i < 6 * 3600 * 2 && !hem; i++) {
       if (j.task?.act !== 'jakt') j.task = { act: 'jakt', phase: 'go', tx: bx, ty: by, until: q.now + 3 * HOUR, carry: 0, why: 'prov', dark: false };
-      step(q, 0.5, true);
+      step(q, 0.5);
       if (j.task?.act === 'jakt' && j.task.phase === 'back') { if (Math.abs(j.task.carry - KANIN) < 1e-9 && !j.task.items) hem++; else if (j.task.carry > 0) annat++; }
     }
     // utan kniv ingen slakt; med kniv blir en kanin kött, ben, skinn och senor
@@ -687,7 +696,7 @@ SCENARIER.djur = {
       [`kaninerna skuttar omkring (${flyttat} av ${dj.length} flyttade sig på en minut)`, flyttat > dj.length * 0.3],
       [`en kanin hoppar undan den som kommer nära (${avst.toFixed(1)} rutor bort)`, avst > 2],
       [`jakt utan redskap fångar hela kaniner (${kaniner} på ett dygn)`, kaniner >= 1 && hela],
-      [`i levande läge bärs kaninen hem hel, en i taget (${hem} gång, ${annat} med annat)`, hem >= 1 && annat === 0],
+      [`kaninen bärs hem hel, en i taget (${hem} gång, ${annat} med annat)`, hem >= 1 && annat === 0],
       ['utan kniv slaktas inget; kniven görs av en flinta och en gren och en flinta sparas till elden', utan && kniv && kan],
       ['en slaktad kanin ger mer kött än den uppätna, och ett ben och ett skinn', slakt && SLAKT.kott > KANIN],
       [`senorna blir ibland ett rep för den som kan Rep (${medRep} rep av 200 kaniner), aldrig annars (${utanRep})`, medRep >= 200 * DJUR.kanin.rep * 0.5 && medRep <= 200 * DJUR.kanin.rep * 1.5 && utanRep === 0],
@@ -770,17 +779,17 @@ SCENARIER.fritid = {
     const folk: { d: number; v: number }[] = [];
     let prom = 0, bad = 0, badVarmt = true, n = 0, strand = 0, strandLand = true;
     for (const seed of [5, 6, 7]) { // tre byar, så att slumpen inte avgör
-    const s = createState(seed, START), gang = new Map<number, number>();
+    const s = createState(seed, START), gang = new Map<number, number>(), sett = new WeakSet<object>();
     s.kal = nyKalender(s.now, 2); // sommar
     setFood(s, 40); setAmount(s, 'ved', 40); // gott ställt, tid över
     kor(s, 4 * 24, s => {
       for (const p of living(s)) {
         const t = p.task;
         if (t?.phase !== 'do') continue;
-        const c = campCenter(s);
-        if (t.act === 'promenad') { prom++; gang.set(p.id, Math.max(gang.get(p.id) ?? 0, Math.hypot(t.tx - c.x - 0.5, t.ty - c.y - 0.5))); }
-        if (t.act === 'bada') { bad++; if (temperature(s) < 14) badVarmt = false; }
-        if (t.act === 'strand') { strand++; if (getMap(s.seed).tiles[Math.floor(p.y) * W + Math.floor(p.x)] === T.Vatten) strandLand = false; }
+        const c = campCenter(s), ny = !sett.has(t); sett.add(t); // varje promenad, bad och stund vid stranden räknas en gång
+        if (t.act === 'promenad') { if (ny) prom++; gang.set(p.id, Math.max(gang.get(p.id) ?? 0, Math.hypot(t.tx - c.x - 0.5, t.ty - c.y - 0.5))); }
+        if (t.act === 'bada') { if (ny) bad++; if (temperature(s) < 14) badVarmt = false; }
+        if (t.act === 'strand') { if (ny) strand++; if (getMap(s.seed).tiles[Math.floor(p.y) * W + Math.floor(p.x)] === T.Vatten) strandLand = false; }
       }
     });
     // längst bort: de mest nyfikna och modiga mot de minst
@@ -791,11 +800,11 @@ SCENARIER.fritid = {
     const h = Math.floor(folk.length / 2), snitt = (l: { d: number }[]) => l.length ? l.reduce((x, y) => x + y.d, 0) / l.length : 0;
     const lag = snitt(folk.slice(0, h)), hog = snitt(folk.slice(folk.length - h));
     return [
-      [`folk tar promenader (${prom} femminuters-steg, upp till ${n} personer i en by)`, prom > 20 && n >= 3],
+      [`folk tar promenader (${prom} promenader, upp till ${n} personer i en by)`, prom > 5 && n >= 3],
       [`nyfikna och modiga går längre (${hog.toFixed(1)} mot ${lag.toFixed(1)} rutor)`, hog > lag],
-      [`folk badar på sommaren (${bad} femminuters-steg)`, bad > 10],
+      [`folk badar på sommaren (${bad} bad)`, bad >= 2],
       ['man badar bara när det är varmt', badVarmt],
-      [`folk sitter vid stranden (${strand} femminuters-steg)`, strand > 5],
+      [`folk sitter vid stranden (${strand} gånger)`, strand >= 2],
       ['den som sitter vid stranden sitter på land', strandLand],
     ];
   },
@@ -836,7 +845,7 @@ SCENARIER.lager = {
     Object.assign(b.fire, { lit: true, fuel: 4 }); // elden brinner, annars avbryts allt för att tända den
     let hem = 0, maxKvot = 0, fullt = 0;
     for (let i = 0; i < 8 * 3600 / 2; i++) {
-      step(b, 2, true);
+      step(b, 2);
       // en kanin bärs hem hel, en i taget, hur stark man än är
       for (const p of living(b)) if (p.task?.phase === 'back' && p.task.act !== 'elda') {
         const kv = p.task.act === 'jakt' ? load(p.task) / KANIN : load(p.task) / capacity(b, p); hem++; maxKvot = Math.max(maxKvot, kv); if (kv >= 0.95) fullt++;
@@ -846,7 +855,7 @@ SCENARIER.lager = {
     const v = living(b).find(p => ageOf(p, b.now) >= 18)!;
     v.task = { act: 'samla', phase: 'do', tx: v.x, ty: v.y, until: b.now + 3 * HOUR, carry: capacity(b, v) * STACK.bar, why: 'test', dark: false };
     const mat0 = foodOf(b);
-    step(b, 2, true); step(b, 2, true);
+    step(b, 2); step(b, 2);
     const gickHem = v.task?.phase === 'back' || foodOf(b) > mat0 + 10;
     const stark = living(b).slice().sort((x, y) => stat(y, 'styrka', b.now) - stat(x, 'styrka', b.now));
     // tomt lager krymper
@@ -896,10 +905,10 @@ SCENARIER.slitage = {
     dropLoad(n, { ...t0 }, nara!.x + 0.5, nara!.y + 0.5); dropLoad(n, { ...t0, act: 'ved' as const }, langt!.x + 0.5, langt!.y + 0.5);
     const ute = () => pilesOf(n).filter(p => !p.stored);
     const lagd = ute().length;
-    for (let i = 0; i < 3 * 3600 / 2 && !isLight(n.now); i++) step(n, 2, true);
+    for (let i = 0; i < 3 * 3600 / 2 && !isLight(n.now); i++) step(n, 2);
     const kvarNara = ute().some(g => g.x === nara!.x && g.y === nara!.y), kvarLangt = ute().some(g => g.x === langt!.x && g.y === langt!.y);
     n.now = new Date(n.now).setHours(9, 0, 0, 0);
-    for (let i = 0; i < 6 * 3600 / 2 && ute().length; i++) step(n, 2, true);
+    for (let i = 0; i < 6 * 3600 / 2 && ute().length; i++) step(n, 2);
     return [
       [`fisk ruttnar fortare än bär (skick efter ett dygn: fisk ${(fisk * 100).toFixed(0)} %, bär ${(bar * 100).toFixed(0)} %)`, fisk < bar && fisk < 1],
       [`grenar utanför lagret slits fortare (slitage på ett dygn: i lagret ${(grenIn * 100).toFixed(1)} %, bredvid ${(grenUt * 100).toFixed(1)} %)`, grenUt > 2 * grenIn && grenIn > 0],
@@ -932,27 +941,27 @@ SCENARIER.lagerplatser = {
 };
 
 SCENARIER.aktivitet = {
-  text: 'I levande läge bär man hem efter några fynd och går tillbaka; vid bärplockning och jakt står man still en stund och går några steg, på promenad går man hela tiden. Det ger lika mycket som förut',
+  text: 'Man bär hem efter en stunds arbete och går tillbaka till samma plats, bär aldrig för tungt, håller sig nära platsen och går aldrig i vattnet. Bärplockning ger lika mycket som förut',
   kor: () => {
     const s = createState(5, START);
     s.now = new Date(s.now).setHours(10, 0, 0, 0); // mitt på dagen, så att ingen går hem för att det blir mörkt
     setAmount(s, 'ved', 20); Object.assign(s.fire, { lit: true, fuel: 0.5, ring: true }); // tänd eld och ved i förrådet, så att någon matar elden
     const m = getMap(s.seed);
     const rad: Record<string, number> = { samla: 2, jakt: 3, promenad: 4 };
-    const gick: Record<string, number> = {}, stod: Record<string, number> = {};
-    let utanfor = 0, vatten = 0, tungt = 0, turer = 0, aterupp = 0, eldMax = 0;
-    const fore = new Map<number, { x: number; y: number; ph: string; act: string }>();
+    let utanfor = 0, vatten = 0, tungt = 0, eldMax = 0, arbete = 0;
     let prov: Person[] = [];
-    for (let i = 0; i < 10 * 3600 * 2; i++) {
-      step(s, 0.5, true);
-      // en jägare, en som promenerar och en bärplockare, så att alla syns i provet. Den som avbryts på vägen (t.ex. för ett samtal) får uppgiften igen
-      if (i === 3600) prov = living(s).filter(p => ageOf(p, s.now) >= 16).slice(0, 3);
-      if (i >= 3600 && i < 3600 * 7 && i % 600 === 0) {
+    spar.pa = true; spar.v = new WeakMap(); // vägen folk går spelas in som i spelet, så att hela vägen kan kontrolleras
+    const vatt = (x: number, y: number) => m.tiles[Math.floor(y) * W + Math.floor(x)] === T.Vatten;
+    for (let i = 0; i < 10 * 3600 / BEAT; i++) {
+      step(s, BEAT);
+      // en jägare, en som promenerar och en bärplockare, så att alla syns i provet. Den som avbryts (t.ex. för ett samtal) får uppgiften igen
+      if (i === 12) prov = living(s).filter(p => ageOf(p, s.now) >= 16).slice(0, 3);
+      if (i >= 12 && i < 12 * 7) {
         const c = campCenter(s), akt = ['jakt', 'promenad', 'samla'] as const;
         prov.forEach((p, j) => {
           if (p.task?.act === akt[j] || p.died !== undefined) return;
           let x = 0, y = 0;
-          for (let r = 7; r < 30; r++) { x = c.x + 0.5 + (j === 1 ? -r : r); y = c.y + 0.5 + (j === 2 ? -r : r) * 0.3; if (m.tiles[Math.floor(y) * W + Math.floor(x)] !== T.Vatten) break; }
+          for (let r = 7; r < 30; r++) { x = c.x + 0.5 + (j === 1 ? -r : r); y = c.y + 0.5 + (j === 2 ? -r : r) * 0.3; if (!vatt(x, y)) break; }
           if (j === 0) { // jägaren går dit det finns mest vilt
             let bast = 0;
             for (let yy = 1; yy < H - 1; yy++) for (let xx = 1; xx < W - 1; xx++) { const v = richness(s, 'jakt', xx + 0.5, yy + 0.5); if (v > bast && m.tiles[yy * W + xx] !== T.Vatten && Math.hypot(xx - c.x, yy - c.y) < 20) { bast = v; x = xx + 0.5; y = yy + 0.5; } }
@@ -960,41 +969,29 @@ SCENARIER.aktivitet = {
           p.task = { act: akt[j], phase: 'go', tx: x, ty: y, until: s.now + 3 * HOUR, carry: 0, why: 'prov', dark: !isLight(s.now) };
         });
       }
+      for (const e of s.fire.log) if (e.k === 'fyll' && e.t > s.now - BEAT * 1000) eldMax = Math.max(eldMax, e.n ?? 0); // varje påfyllning i takten
       for (const p of living(s)) {
-        const t = p.task, f = fore.get(p.id);
-        if (m.tiles[Math.floor(p.y) * W + Math.floor(p.x)] === T.Vatten) vatten++;
-        if (t && f && f.act === t.act) {
-          if (f.ph === 'do' && t.phase === 'back') { turer++; if (t.act !== 'bara' && !(t.act === 'jakt' && load(t) <= KANIN + 0.01) && load(t) > capacity(s, p) / 3 + 0.05) tungt++; } // bärandet av högar och en hel kanin får ta en full famn
-          if (f.ph === 'back' && t.phase === 'go') aterupp++;
-        }
-        if (t?.act === 'elda' && t.phase === 'back') eldMax = Math.max(eldMax, t.carry);
-        if (t && t.phase === 'do' && rad[t.act] && f?.ph === 'do' && f.act === t.act) {
-          const rorde = Math.hypot(p.x - f.x, p.y - f.y) > 1e-6;
-          (rorde ? gick : stod)[t.act] = ((rorde ? gick : stod)[t.act] ?? 0) + 1;
-          if (Math.hypot(p.x - t.tx, p.y - t.ty) > rad[t.act] + 0.6) utanfor++;
-        }
-        fore.set(p.id, { x: p.x, y: p.y, ph: t?.phase ?? '', act: t?.act ?? '' });
+        const t = p.task, v = spar.v.get(p) ?? [];
+        for (let k = 0; k < v.length; k += 3) if (vatt(v[k + 1], v[k + 2])) vatten++;
+        if (t?.phase === 'back' && t.act !== 'bara' && !(t.act === 'jakt' && load(t) <= KANIN + 0.01) && load(t) > capacity(s, p) / 3 + 0.05) tungt++; // bärandet av högar och en hel kanin får ta en full famn
+        if (t?.phase === 'do' && rad[t.act] && Math.hypot(p.x - t.tx, p.y - t.ty) > rad[t.act] + 0.6) utanfor++;
+        if (t?.phase === 'do' && isWork(t.act)) arbete += BEAT / 3600;
       }
     }
-    const andel = (k: string) => (gick[k] ?? 0) / Math.max(1, (gick[k] ?? 0) + (stod[k] ?? 0));
-    // snabbläget: samma by räknad i stora steg ska ge ungefär lika mycket per arbetstimme som i levande läge
-    const prod = (live: boolean) => {
-      const q = createState(5, START); let tim = 0; const dt = live ? 0.5 : 60;
-      for (let i = 0; i < 24 * 3600 / dt; i++) { step(q, dt, live); for (const p of living(q)) if (p.task?.act === 'samla') tim += dt / 3600; }
-      return ((q.stat?.prod_samla as number) ?? 0) / Math.max(1, tim);
-    };
-    const pl = prod(true), ps = prod(false);
+    spar.pa = false;
+    const turer = (s.stat?.turer as number) ?? 0;
+    // bärplockning: vad en timme ger med gångtiden till platsen och hem
+    const q = createState(5, START); let tim = 0;
+    for (let i = 0; i < 24 * 3600 / BEAT; i++) { step(q, BEAT); for (const p of living(q)) if (p.task?.act === 'samla') tim += BEAT / 3600; }
+    const pl = ((q.stat?.prod_samla as number) ?? 0) / Math.max(1, tim);
     return [
-      [`många korta turer hem (${turer} turer på tio timmar, ${aterupp} gånger tillbaka till samma plats)`, turer > 40 && aterupp > 10],
+      [`man bär hem efter en stunds arbete och går tillbaka (${turer} turer på ${Math.round(arbete)} arbetstimmar)`, turer > 20],
       [`ingen bär mer än en tredjedel av vad hen orkar från arbetet (${tungt} för tunga)`, tungt === 0],
-      [`bärplockare står mest still men går ibland (går ${Math.round(andel('samla') * 100)} % av tiden)`, andel('samla') > 0.02 && andel('samla') < 0.5],
-      [`jägare står mest still men går ibland (går ${Math.round(andel('jakt') * 100)} % av tiden)`, !!stod.jakt && (andel('jakt') > 0.02 && andel('jakt') < 0.5)],
-      [`den som promenerar går nästan hela tiden (${Math.round(andel('promenad') * 100)} %)`, !!gick.promenad && andel('promenad') > 0.5],
       [`man håller sig nära platsen (${utanfor} gånger utanför)`, utanfor === 0],
-      ['ingen går ut i vattnet', vatten === 0],
+      [`ingen går ut i vattnet, längs hela vägen (${vatten} punkter i vattnet)`, vatten === 0],
       [`elden matas med en famn i taget (högst ${eldMax.toFixed(1)})`, eldMax > 0 && eldMax <= 1 + 1e-9],
-      // med bärsnåren (v24) ger en timmes bärplockning med gångtiden runt 0,3 i båda lägena
-      [`bärplockning ger ungefär lika mycket per timme i båda lägena (${pl.toFixed(2)} i levande läge, ${ps.toFixed(2)} i snabbläget)`, pl > 0.2 && pl < 0.45 && ps > 0.15 && Math.abs(pl - ps) < 0.1],
+      // med bärsnåren (v24) ger en timmes bärplockning med gångtiden runt 0,3
+      [`bärplockning ger ungefär lika mycket per timme som förut (${pl.toFixed(2)})`, pl > 0.15 && pl < 0.45],
     ];
   },
 };
@@ -1078,7 +1075,7 @@ SCENARIER.bygg = {
     const b2 = beds(k);
     living(k).forEach((p, i) => { p.warm = 0.8; if (i < 3 && b2[i] !== undefined) { p.x = b2[i] % W + 0.5; p.y = Math.floor(b2[i] / W) + 0.5; } });
     const fore = new Map(living(k).map(p => [p.id, { inne: !!roomAt(k, p.x, p.y), ute: heatAt(k, p.x, p.y) < 0.05 }]));
-    step(k, 120, false);
+    step(k, 120);
     for (const p of living(k)) { const f = fore.get(p.id); if (!f) continue; if (f.inne) { varmInne += p.warm; ni++; } else if (f.ute) { varmUte += p.warm; nu++; } }
     const h = housesOf(q)[0], folk = living(q).length, b = beds(q).length;
     const iVagg = living(q).filter(p => isWall(q, p.x, p.y)).length;
@@ -1088,25 +1085,18 @@ SCENARIER.bygg = {
     addTo(q, 'rotter', 150); // mat i förrådet, så att de fyra vuxna inte måste skaffa mat först
     kor(q, 24);
     const lagat = (q.stat?.lagat ?? 0) > 0;
-    // samma by i levande läge bygger också
-    const L = createState(6, START);
-    kan(L);
-    Object.assign(L.fire, { lit: true, fuel: 4 }); // elden brinner redan: annars hänger testet på hur fort den råkar tändas (ett försök lyckas ungefär var femtionde gång)
-    for (let i = 0; i < 3 * 24 * 3600 / 0.5 && !housesOf(L)[0]?.klar; i++) step(L, 0.5, true); // trägolvet kan få vänta på trä utöver reserven
-    const hL = housesOf(L)[0];
     return [
       ['ett slutet rum med väggar räknas som under tak', !!rum && rum.tiles.length === 4],
       [`vägen går runt väggarna (${path.length} steg)`, path.length > 0 && !genomVagg],
       [`rummet håller värmen men öppningen läcker (${iso.toFixed(2)})`, iso > 0.2 && iso < 0.55],
       ['en helt sliten vägg rasar och rummet är inte längre under tak', rasat],
-      [`byn bygger ${h?.namn ?? 'inget hus'} i snabbläget (${h ? `${h.w}×${h.h}` : '-'}, ${b} sovplatser för ${folk})`, !!h?.klar && b > 0],
+      [`byn bygger ${h?.namn ?? 'inget hus'} (${h ? `${h.w}×${h.h}` : '-'}, ${b} sovplatser för ${folk})`, !!h?.klar && b > 0],
       [`folk sover inne när huset är klart (${inne} av ${sov})`, sov > 0 && inne > sov * 0.5],
       [`en kall natt utan eld är de som är inne varmare (${(varmInne / (ni || 1)).toFixed(2)} mot ${(varmUte / (nu || 1)).toFixed(2)})`, ni > 0 && nu > 0 && varmInne / ni > varmUte / nu],
       [`ingen står i en vägg (${iVagg})`, iVagg === 0],
       [`träden där huset ska stå fälls innan väggarna byggs där (${trad} träd på platsen, ${iTrad} väggar byggda på ett träd)`, trad >= 0 && iTrad === 0 && !!h && bitsOf(q).every(b => b.hus !== h.id || !treeOn(q, b))],
       [`huset står en bit från elden (${avst.toFixed(1)} rutor)`, avst >= 4],
       ['slitna väggar lagas', lagat],
-      [`byn bygger i levande läge (${hL?.klar ? `klart efter ${((hL.klar - L.founded) / HOUR).toFixed(0)} h` : 'inte klart'})`, !!hL?.klar],
     ];
   },
 };

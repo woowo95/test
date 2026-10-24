@@ -1,7 +1,7 @@
 import { take } from './agande';
 import { campCenter, campDist, campKey } from './plats';
 import { foodDays } from './ekonomi';
-import { ACTS, WORK, isWork, usesTool } from './handlingar';
+import { ACTS, WORK, usesTool } from './handlingar';
 import { canLight, emberOn, heatAt, fireWant, needStones, needTinder, woodDays } from './eld';
 import { ageOf, living, stat } from './folk';
 import { HAND_FISH, Kind, flintSpot, shoreOf, wantsFlint } from './fynd';
@@ -10,9 +10,9 @@ import { KANIN, SLAKT_TIMME, TILLVERKA, canSlaughter, freeOfKinds, toolGroups, v
 import { areaOf, flintArea, pickSpot, prospectFor } from './minne';
 import { getMap } from './karta';
 import { fetchSpot, haulJob } from './lager';
-import { bedFor, buildJob, siteOf, takeFor } from './bygg';
+import { bedFor, buildJob, siteOf } from './bygg';
 import { beds, bitAt, blocked, freeNear, roomAt, shelterOf } from './byggnad';
-import { groundOf, isForest, tread } from './mark';
+import { groundOf, isForest } from './mark';
 import { FALL_TID, axeTask } from './skog';
 import { duty, dygn, habitShare, habitTotal } from './seder';
 import { clamp, rnd } from './slump';
@@ -134,15 +134,14 @@ const set = (v: Val, act: Act, why: string) => { v.act = act; v.why = why; retur
 const MIN = 60 * SEC;
 
 // Viljan i tre steg: 1. nöd, 2. grundbehov, 3. byns behov mot egen lust (på dagen) eller kvällen vid elden (på natten).
-// Slumpen dras i samma ordning varje gång, så att levande läget och snabbläget blir lika
-export function chooseTask(s: State, p: Person, live: boolean) {
+// Man går sedan dit (steg.ts)
+export function chooseTask(s: State, p: Person) {
   const a = ageOf(p, s.now), light = isLight(s.now), lazy = 1 - duty(s, p);
   const v: Val = { act: 'vila', why: '', dur: (20 + rnd(s, 'val', p) * 40) * MIN }; // 20–60 min
-  if (!needs(s, p, v, a, lazy, light)) { if (light) day(s, p, v, a, lazy, live); else night(s, p, v, a); }
+  if (!needs(s, p, v, a, lazy, light)) { if (light) day(s, p, v, a, lazy); else night(s, p, v, a); }
   if (v.act === 'toa') v.dur = (4 + rnd(s, 'val', p) * 4) * MIN;
   const sp0 = v.spot ?? spotFor(s, v.act, p), sp = freeNear(s, sp0.x, sp0.y); // aldrig i en husvägg
-  if (!live) { p.x = sp.x; p.y = sp.y; tread(s, sp.x, sp.y, isWork(v.act) ? 2 : 1); }
-  p.task = { act: v.act, phase: live ? 'go' : 'do', tx: sp.x, ty: sp.y, until: s.now + v.dur, carry: 0, why: v.why, dark: !light, ref: v.ref, tool: v.tool, site: v.site };
+  p.task = { act: v.act, phase: 'go', tx: sp.x, ty: sp.y, until: s.now + v.dur, carry: 0, why: v.why, dark: !light, ref: v.ref, tool: v.tool, site: v.site };
   const k = usesTool(p.task);
   if (k && !take(s, p, k)) p.task.tool = undefined; // redskapet tas i handen: det egna först (agande.ts)
 }
@@ -169,7 +168,7 @@ function needs(s: State, p: Person, v: Val, a: number, lazy: number, light: bool
 }
 
 // 3. på dagen: byns behov mot egen lust, vägda med pliktkänslan
-function day(s: State, p: Person, v: Val, a: number, lazy: number, live: boolean) {
+function day(s: State, p: Person, v: Val, a: number, lazy: number) {
   const now = s.now, sd = s.seder.v;
   let gt: ReturnType<typeof haulJob>;
   if (a < 8) { set(v, 'leka', 'Är barn och leker'); return; }
@@ -200,7 +199,7 @@ function day(s: State, p: Person, v: Val, a: number, lazy: number, live: boolean
     if (rnd(s, 'val', p) < 0.45 + 0.2 * sd.barn) set(v, 'leka', 'Är barn och leker');
     else set(v, best, `Hjälper till. ${what}.`);
   } else if ((works = rnd(s, 'val', p) < (1 - lazy) * (0.88 + 0.12 * u) + lazy * sat * (0.6 + 0.4 * u)) && build && !job!.missing) {
-    building(s, p, v, job!, ppl.length, live);
+    building(s, p, v, job!, ppl.length);
   } else if (works) {
     set(v, best, what + (lazy < 0.2 ? '. Plikttrogen.' : habitShare(p, [best], tot) > 0.25 ? '. Brukar göra det.' : p.skill[best as Skill] > 10 ? '. Skicklig på det.' : '.'));
     v.dur = (60 + rnd(s, 'val', p) * 120) * MIN;
@@ -230,8 +229,8 @@ function bestWork(s: State, p: Person, fd: number, wd: number, ai: number, tot: 
   return { best, bs, burg };
 }
 
-// att bygga eller laga en del av ett hus. Saknas material hämtar man det först (i snabbläget tas det direkt)
-function building(s: State, p: Person, v: Val, job: NonNullable<ReturnType<typeof buildJob>>, pop: number, live: boolean) {
+// att bygga eller laga en del av ett hus. Saknas material hämtar man det först
+function building(s: State, p: Person, v: Val, job: NonNullable<ReturnType<typeof buildJob>>, pop: number) {
   const b = job.bit, hus = s.hus?.find(h => h.id === b.hus)?.namn.toLowerCase() ?? 'huset';
   if (job.fell) { // först fälls träden där huset ska stå
     set(v, 'falla', `Fäller ett träd där ${hus} ska stå.`);
@@ -242,9 +241,7 @@ function building(s: State, p: Person, v: Val, job: NonNullable<ReturnType<typeo
   set(v, 'bygga', job.repair ? `En vägg i ${hus} är sliten och behöver lagas.` : `${b.k === 'golv' ? 'Lägger golv i' : 'Bygger på'} ${hus}. ${beds(s).length < pop ? 'Alla har inte en sovplats under tak.' : ''}`.trim());
   v.tool = job.repair ? 'laga' : b.k === 'golv' ? 'golv' : 'vagg'; v.ref = b.id;
   v.dur = (60 + rnd(s, 'val', p) * 90) * MIN;
-  if (live) { const site = siteOf(s, b); v.spot = job.need > 0 ? fetchSpot(s, job.item!) : site; if (job.need > 0) v.site = site; }
-  else if (takeFor(s, job, p)) v.spot = siteOf(s, b);
-  else set(v, 'vila', 'Det saknas material till bygget');
+  const site = siteOf(s, b); v.spot = job.need > 0 ? fetchSpot(s, job.item!) : site; if (job.need > 0) v.site = site;
 }
 
 // arbetet med redskap: flinta letas vid stenarna, yxan fäller träd, korgen och spjutet görs först om de saknas

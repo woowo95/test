@@ -6,7 +6,7 @@ import { campCenter } from './plats';
 import { sedEvent } from './seder';
 import { rnd } from './slump';
 import { knows } from './teknik';
-import { amountOf, changed, use, zonesOf } from './lager';
+import { amountOf, changed, zonesOf } from './lager';
 import { freeTools } from './agande';
 import { FOREST } from './vag';
 import { H, HOUR, Person, State, T, W } from './typer';
@@ -162,13 +162,6 @@ export function toWalls(s: State, x: number, y: number, n: number, hus?: number)
   const walls = bitsOf(s).filter(b => b.hus === h.id && b.k === 'vagg' && b.b < 1 && MATERIAL[b.m].item === 'ved' && lacks(b)).sort((a, b) => Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y));
   for (const b of walls) { const d = Math.min(needOf(b), n - used); deliver(b, d, false); used += d; if (used >= n - 1e-9) break; }
   return used;
-}
-// ta material ur förrådet till bygget (snabbläget, där ingen bär)
-export function takeFor(s: State, j: Job, p: Person) {
-  if (!j.item || j.need <= 0) return true;
-  if (avail(s, j.item) < j.need) return false;
-  use(s, p, j.item, j.need, true); deliver(j.bit, j.need, j.repair);
-  return true;
 }
 // en stunds arbete på en ruta. Ger true när rutan är klar
 export function workOn(s: State, p: Person, b: Bit, dtSec: number) {

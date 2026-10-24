@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { ACTS, Person, TalkEvent, ageOf, alive, byId, homeKind, living, load, relKey } from '../sim';
+import { ACTS, Person, SEC, TalkEvent, ageOf, alive, byId, homeKind, living, load, relKey, spar } from '../sim';
 import { hsl } from './hjalp';
 import { s, ui } from './lage';
 import { Ikoner, TS, bubbleG, labels, markLayer, peopleG } from './scen';
@@ -8,9 +8,36 @@ import { Ikoner, TS, bubbleG, labels, markLayer, peopleG } from './scen';
 const bubbles: { id: number; kind: string; good: boolean; until: number }[] = [];
 // vem var och en senast pratade med: bubblan står kvar så länge båda är kvar i samtalet
 const talkWith = new Map<number, number>();
-// samtal som startat sedan förra bildrutan: en bubbla i samtalets färg en stund
-export function addTalks(events: TalkEvent[], now: number) {
-  for (const e of events.splice(0)) { bubbles.push({ id: e.a, kind: e.kind, good: e.good, until: now + 2600 }); talkWith.set(e.a, e.b); talkWith.set(e.b, e.a); }
+// samtal som startat sedan förra bildrutan (vid tiden som visas, nu): en bubbla i samtalets färg en stund. Samtal som
+// hunnit bli gamla, när tiden spolas fram, visas inte
+export function addTalks(events: TalkEvent[], now: number, nu: number) {
+  let n = 0;
+  for (const e of events) {
+    if (e.t > nu) break;
+    n++;
+    if (nu - e.t < 20 * SEC) { bubbles.push({ id: e.a, kind: e.kind, good: e.good, until: now + 2600 }); talkWith.set(e.a, e.b); talkWith.set(e.b, e.a); }
+  }
+  events.splice(0, n);
+}
+// var personen syns vid tiden som visas: längs vägen hen gick under slaget (spar i steg.ts). På platsen rör man sig lite
+// för att det ska se levande ut, bara i bilden: från buske till buske, eller några steg hit och dit
+export function posOf(p: Person) {
+  const v = spar.v.get(p), t = ui.nu;
+  let x = p.x, y = p.y, still = true;
+  if (v && v.length >= 6 && t < v[v.length - 3]) {
+    let i = 0;
+    while (i + 3 < v.length - 3 && v[i + 3] <= t) i += 3;
+    const t0 = v[i], t1 = v[i + 3], f = t1 > t0 ? Math.max(0, Math.min(1, (t - t0) / (t1 - t0))) : 1;
+    x = v[i + 1] + (v[i + 4] - v[i + 1]) * f; y = v[i + 2] + (v[i + 5] - v[i + 2]) * f;
+    still = v[i + 1] === v[i + 4] && v[i + 2] === v[i + 5];
+  }
+  const tk = p.task, d = tk && ACTS[tk.act];
+  if (still && tk?.phase === 'do' && d && !d.stilla) {
+    const w = d.vandra, k = t / SEC, r = w ? w.r * 0.6 : 0.12, f = w ? w.v / (w.r * 6) : 0.05;
+    x += Math.sin(k * f + p.id * 1.7) * r * Math.sin(k * f * 0.37 + p.id);
+    y += Math.cos(k * f * 0.83 + p.id * 2.3) * r * Math.sin(k * f * 0.29 + p.id * 0.5);
+  }
+  return { x, y };
 }
 // symbolen över huvudet för det man gör på platsen (mark i handlingar.ts); vissa redskap och material syns i stället
 const MARK_TOOL: Record<string, string> = { fiskespjut: 'fiskespjut', flintspjut: 'flintspjut', metspo: 'metspo', rep: 'rep', golv: 'tragolv' };
@@ -40,12 +67,13 @@ const nameStyle = new PIXI.TextStyle({ fontFamily: 'Alegreya Sans, system-ui, sa
 const nameTags = [0, 1].map(() => { const tx = new PIXI.Text('', nameStyle); tx.scale.set(0.5); tx.anchor.set(0.5, 1); tx.visible = false; labels.addChild(tx); return tx; });
 export function drawPeople(t: number) {
   peopleG.clear(); bubbleG.clear();
-  const ppl = living(s);
+  const ppl = living(s), pos = new Map<number, { x: number; y: number }>();
   markIcons.start();
   for (const p of ppl) {
     const a = ageOf(p, s.now);
     const r = a < 3 ? 2.8 : a < 14 ? 3.8 : 5;
-    const x = p.x * TS, y = p.y * TS;
+    const q = posOf(p), x = q.x * TS, y = q.y * TS;
+    pos.set(p.id, q);
     const sleeping = p.task?.act === 'sova';
     const col = hsl(p.hue, sleeping ? 0.15 : 0.5, sleeping ? 0.5 : 0.58);
     peopleG.beginFill(0x000000, 0.25).drawEllipse(x, y + r * 0.9, r * 0.9, r * 0.35).endFill();
@@ -61,7 +89,7 @@ export function drawPeople(t: number) {
   const flash = new Map<number, string>();
   for (let i = bubbles.length - 1; i >= 0; i--) { const b = bubbles[i]; if (b.until < t) bubbles.splice(i, 1); else flash.set(b.id, b.kind); }
   for (const p of ppl) {
-    const x = p.x * TS, y = p.y * TS, a = ageOf(p, s.now), top = y - (a < 3 ? 9 : a < 14 ? 11 : 13);
+    const pp = pos.get(p.id)!, x = pp.x * TS, y = pp.y * TS, a = ageOf(p, s.now), top = y - (a < 3 ? 9 : a < 14 ? 11 : 13);
     const o = talkWith.get(p.id), q = o !== undefined ? byId(s, o) : undefined;
     const talking = q && alive(q) && p.task?.phase === 'do' && ACTS[p.task.act].social && q.task?.phase === 'do' && ACTS[q.task.act].social && Math.hypot(q.x - p.x, q.y - p.y) < 4;
     if (!talking && o !== undefined && !flash.has(p.id)) talkWith.delete(p.id);
@@ -89,7 +117,7 @@ export function drawPeople(t: number) {
     if (!p || !alive(p)) continue;
     const tx = nameTags[n++];
     if (tx.text !== p.name) tx.text = p.name;
-    tx.position.set(p.x * TS, p.y * TS - 8); tx.visible = true;
+    const q = posOf(p); tx.position.set(q.x * TS, q.y * TS - 8); tx.visible = true;
   }
   for (; n < nameTags.length; n++) nameTags[n].visible = false;
 }

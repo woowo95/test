@@ -26,7 +26,7 @@ export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => voi
   const ok01 = (v: number) => Number.isFinite(v) && v >= -1e-6 && v <= 1 + 1e-6;
   const dag = () => ((s.now - START) / DAY).toFixed(1);
   for (let i = 0; i < dagar * 288; i++) {
-    step(s, 300, false);
+    step(s, 300);
     varjeSteg?.(s);
     steg++; if (s.fire.lit) lit++;
     if (!(foodOf(s) >= 0) || !(amountOf(s, 'ved') >= 0)) larm('förråd', () => `mat ${foodOf(s)}, ved ${amountOf(s, 'ved')}`);

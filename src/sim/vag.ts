@@ -57,31 +57,6 @@ export function findPath(g: Ground, x0: number, y0: number, x1: number, y1: numb
   return out.reverse();
 }
 
-// kortaste vägar från en punkt till alla rutor (används vid ikappräkning, då ingen går på riktigt)
-export function pathTree(g: Ground, x0: number, y0: number): Int32Array {
-  const N = W * H, src = clampI(y0, H) * W + clampI(x0, W);
-  const gs = new Float64Array(N).fill(Infinity), came = new Int32Array(N).fill(-1), closed = new Uint8Array(N);
-  const heap = new Heap();
-  gs[src] = 0; heap.push(src, 0);
-  while (heap.size) {
-    const i = heap.pop();
-    if (closed[i]) continue;
-    closed[i] = 1;
-    const x = i % W, y = (i - x) / W;
-    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
-      if (!dx && !dy) continue;
-      const nx = x + dx, ny = y + dy;
-      if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
-      const ni = ny * W + nx;
-      if (closed[ni] || stop(g, ni)) continue;
-      if (dx && dy && (stop(g, y * W + nx) || stop(g, ny * W + x))) continue;
-      const ng = gs[i] + (dx && dy ? SQ2 : 1) * stepCost(g, ni);
-      if (ng < gs[ni]) { gs[ni] = ng; came[ni] = i; heap.push(ni, ng); }
-    }
-  }
-  return came;
-}
-
 // en person går över rutan: högt gräs trampas ner direkt till kort gräs, sedan nöts det långsamt till bar jord.
 // Små plantor trampas ihjäl.
 export function wear(g: Ground, i: number, amount: number) {

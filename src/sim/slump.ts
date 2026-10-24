@@ -5,8 +5,8 @@ import { Person, State } from './typer';
 // ändrar en ändring i ett system (ett slumptal mer eller mindre) inte slumpen i allt annat, och testerna visar verkliga
 // effekter i stället för brus. Varje följd börjar ur byns frö och följdens namn, och var den är sparas i byn
 // (s.rngs) eller hos personen (p.rngs).
-// 'levande' är det som bara finns i det levande läget (hur man går och rör sig på platsen). Snabbläget drar aldrig ur
-// den, så att de andra följderna drar samma tal i båda lägena.
+// Det levande läget och snabbläget räknar likadant (steg.ts), så ingen följd hör till bara det ena. Det som bara syns
+// i bilden (hur man rör sig på platsen) tar sin slump i gränssnittet och rör aldrig byns följder.
 export const STROMMAR = {
   val: 'vad man väljer att göra och var',
   arbete: 'vad arbetet ger: fynd, fångst, fiske, svamp, rep',
@@ -18,7 +18,6 @@ export const STROMMAR = {
   kunskap: 'tekniker som lärs ut',
   dela: 'gåvor, byten och mat ur andras förråd',
   eld: 'eld, tändning och kol',
-  levande: 'det som bara finns i det levande läget och inte i snabbläget',
 } as const;
 export type Strom = keyof typeof STROMMAR;
 

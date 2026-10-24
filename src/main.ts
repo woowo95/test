@@ -1,4 +1,4 @@
-import { AGES, DAY, HOUR, TalkEvent, kalender, alive, byId, coverOf, createState, getMap, groundOf, isLight, living, serialize, step, temperature, yearNo, State } from './sim';
+import { AGES, BEAT, DAY, HOUR, SEC, TalkEvent, kalender, alive, byId, coverOf, createState, getMap, groundOf, isLight, serialize, spar, step, temperature, yearNo, State } from './sim';
 import { $ } from './ui/hjalp';
 import { s, setByn, ui, nyBild } from './ui/lage';
 import { TS, app, cam, layout, view, world } from './ui/scen';
@@ -6,7 +6,7 @@ import { drawNight, drawTerrain } from './ui/terrang';
 import { drawStructures } from './ui/foremal';
 import { drawFilter } from './ui/filter';
 import { drawAnimals, drawPlants } from './ui/vaxter';
-import { addTalks, drawPeople } from './ui/manniskor';
+import { addTalks, drawPeople, posOf } from './ui/manniskor';
 import { renderPanel } from './ui/panel';
 import { renderPorts, stopFollow } from './ui/portratt';
 import { catchUp, loadSaves, saveDb, saveLocal } from './ui/spara';
@@ -14,7 +14,7 @@ import './ui/interaktion';
 
 // startpunkten: klockan, kontrollerna, huvudloopen och uppstarten. Allt annat i gränssnittet ligger i ui/
 function renderClock() {
-  const t = s.now;
+  const t = ui.nu;
   const d = new Date(t);
   const hh = String(d.getHours()).padStart(2, '0'), mm = String(d.getMinutes()).padStart(2, '0');
   $('calYear').textContent = `År ${yearNo(s)}`;
@@ -38,11 +38,11 @@ $('testToggle').addEventListener('change', async e => {
     saveLocal(); await saveDb();
     realState = s;
     setByn(JSON.parse(serialize(s)));
+    spar.v = new WeakMap();
     ui.testMode = true; $('speeds').hidden = false; document.body.classList.add('testing'); setSpeed(3600);
   } else {
     leaveTest();
     if (realState) { setByn(realState); realState = null; }
-    for (const p of living(s)) p.task = undefined;
     drawTerrain(true); drawPlants(true);
     await catchUp(Date.now(), Date.now() - s.now > 10 * 60 * 1000);
   }
@@ -60,34 +60,33 @@ $('okNew').addEventListener('click', () => {
 });
 
 // ---------- huvudloop ----------
+// Byn räknas i slag om fem minuter (BEAT), alltid ett slag före klockan som visas (ui.nu). Under slaget ritas folk där
+// de är enligt det som räknades (manniskor.ts), så spelet visar samma sak som räknades
 const events: TalkEvent[] = [];
 let lastUi = 0, lastLocal = 0, lastDb = 0;
 function tick() {
   if (!s || ui.busy) return;
   const realDt = Math.min(0.25, app.ticker.deltaMS / 1000);
-  if (ui.testMode) {
-    let dt = realDt * speed;
-    if (speed > 60) { while (dt > 0) { const d = Math.min(300, dt); step(s, d, false); dt -= d; } for (const p of living(s)) if (p.task) { p.x = p.task.tx; p.y = p.task.ty; } }
-    else { while (dt > 0) { const d = Math.min(0.5, dt); step(s, d, true, events); dt -= d; } }
-  } else {
-    const lag = (Date.now() - s.now) / 1000;
-    if (lag > 120) { catchUp(Date.now(), lag > 600); return; }
-    let dt = lag;
-    if (dt <= 0.01) step(s, 0, true, events);
-    while (dt > 0.01) { const d = Math.min(0.5, dt); step(s, d, true, events); dt -= d; }
+  let vt: number;
+  if (ui.testMode) vt = Math.max(ui.nu, s.now - BEAT * SEC) + realDt * speed * SEC;
+  else {
+    vt = Date.now();
+    if (vt - s.now > 120 * SEC) { catchUp(vt, vt - s.now > 600 * SEC); return; }
   }
+  for (let n = 0; s.now < vt && n < 300; n++) step(s, BEAT, events);
+  ui.nu = Math.min(vt, s.now);
   nyBild();
   const now = performance.now();
-  addTalks(events, now);
+  addTalks(events, now, ui.nu);
   if (ui.follow !== undefined) {
     const p = byId(s, ui.follow);
-    if (p && alive(p)) { cam.x = p.x * TS + TS / 2; cam.y = p.y * TS + TS / 2; layout(); } else stopFollow();
+    if (p && alive(p)) { const q = posOf(p); cam.x = q.x * TS + TS / 2; cam.y = q.y * TS + TS / 2; layout(); } else stopFollow();
   }
   drawTerrain();
   drawPlants(); drawAnimals();
   drawStructures(now);
   drawPeople(now);
-  drawNight(s.now);
+  drawNight(ui.nu);
   drawFilter();
   if (now - lastUi > 600) { lastUi = now; renderClock(); renderPanel(); renderPorts(); }
   if (!ui.testMode && now - lastLocal > 20000) { lastLocal = now; saveLocal(); }
@@ -98,13 +97,13 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) { sav
 window.addEventListener('pagehide', () => { saveLocal(); });
 
 async function boot() {
+  spar.pa = true; // vägen var och en går under slaget sparas för att ritas
   $('map').appendChild(view);
   layout();
   new ResizeObserver(layout).observe($('map'));
   const loaded = await loadSaves();
   if (loaded) {
     setByn(loaded);
-    for (const p of living(s)) p.task = undefined;
     cam.x = -1; layout();
     drawTerrain(true); drawPlants(true);
     renderClock(); renderPanel(true);

@@ -1,11 +1,11 @@
-import { addTo, dropLoad, fetchSpot, item, storeLoad, use } from './lager';
+import { addTo, dropLoad, fetchSpot, item, use } from './lager';
 import { Del, addDel } from './egendom';
 import { coldOf, temperature } from './vader';
 import { ageOf, count, log, stat, think } from './folk';
 import { flintFactor, stoneDist, takeFrom } from './fynd';
 import { observe } from './minne';
 import { getMap } from './karta';
-import { tileOf, tread } from './mark';
+import { tileOf } from './mark';
 import { moodOf } from './samtal';
 import { duty, sedEvent } from './seder';
 import { chance, clamp, rnd } from './slump';
@@ -120,17 +120,16 @@ export function addFuel(s: State, p: Person, n: number) {
   fireLog(s, { k: 'fyll', id: p.id, n: put });
   p.skill.elda = clamp(p.skill.elda + 0.01 * (1 - p.skill.elda / 21), 0, 20);
 }
-function assign(s: State, p: Person, act: Act, tx: number, ty: number, dur: number, live: boolean, why: string) {
-  if (!live) { p.x = tx; p.y = ty; tread(s, tx, ty, 1); }
-  if (p.task && (p.task.carry > 0 || p.task.items)) { if (live) dropLoad(s, p.task, p.x, p.y, p.id); else storeLoad(s, p.task, undefined, undefined, p.id); } // bördan läggs ner där hen står, den försvinner inte
-  p.task = { act, phase: live ? 'go' : 'do', tx, ty, until: s.now + dur, carry: 0, why, dark: !isLight(s.now) };
+function assign(s: State, p: Person, act: Act, tx: number, ty: number, dur: number, why: string) {
+  if (p.task && (p.task.carry > 0 || p.task.items)) dropLoad(s, p.task, p.x, p.y, p.id); // bördan läggs ner där hen står, den försvinner inte
+  p.task = { act, phase: 'go', tx, ty, until: s.now + dur, carry: 0, why, dark: !isLight(s.now) };
 }
 const awake = (s: State, p: Person, minAge: number) => {
   const t = p.task;
   return ageOf(p, s.now) >= minAge && !(p.sickUntil && p.sickUntil > s.now) && p.health >= 0.4 &&
     (!t || (t.act !== 'sova' && !(t.phase === 'back' && t.carry > 0) && !t.items));
 };
-export function stepFire(s: State, dtSec: number, live: boolean, ppl: Person[]) {
+export function stepFire(s: State, dtSec: number, ppl: Person[]) {
   const f = s.fire, h = hearthOf(f), m = getMap(s.seed), now = s.now;
   if (f.lit) {
     const b = Math.min(f.fuel, h.burn / 3600 * dtSec);
@@ -171,9 +170,8 @@ export function stepFire(s: State, dtSec: number, live: boolean, ppl: Person[]) 
       if (sc > bs) { bs = sc; best = c; }
     }
     if (best) {
-      const p = best.p, n = Math.min(3, Math.max(1, best.w.v - f.fuel), fuelStock(s));
-      if (live) { const at = fetchSpot(s, item(s, 'ved') >= 1 ? 'ved' : 'grenar'); assign(s, p, 'elda', at.x, at.y, HOUR, true, best.w.why); }
-      else addFuel(s, p, takeFuel(s, n, p));
+      const at = fetchSpot(s, item(s, 'ved') >= 1 ? 'ved' : 'grenar'); // till förrådet efter en famn, och sedan till elden (steg.ts)
+      assign(s, best.p, 'elda', at.x, at.y, HOUR, best.w.why);
     }
   }
   // tändning: när elden är släckt och någon vill ha eld försöker en person i taget
@@ -181,7 +179,7 @@ export function stepFire(s: State, dtSec: number, live: boolean, ppl: Person[]) 
     const ok = cands.filter(c => ageOf(c.p, now) >= 12 && c.w.v >= h.maxFuel * 0.05)
       .sort((a, b) => (b.p.skill.elda + stat(b.p, 'flit', now) / 2 + rnd(s, 'eld') * 3) - (a.p.skill.elda + stat(a.p, 'flit', now) / 2 + rnd(s, 'eld') * 3));
     const c = ok[0];
-    if (c) assign(s, c.p, 'tanda', m.fire.x + 0.5 + (rnd(s, 'eld') - 0.5) * 1.2, m.fire.y + 1.3, 3 * HOUR, live, `Vill ha eld. ${c.w.why}`);
+    if (c) assign(s, c.p, 'tanda', m.fire.x + 0.5 + (rnd(s, 'eld') - 0.5) * 1.2, m.fire.y + 1.3, 3 * HOUR, `Vill ha eld. ${c.w.why}`);
   }
 }
 // värmeförlust per timme utan eld: [ljus tid, mörk tid] per tidsålder

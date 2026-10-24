@@ -136,7 +136,7 @@ const summa = (k: Lager, fn: (j: FyndId) => number) => { let v = 0; for (const j
 export const toppOf = (k: Lager) => summa(k, j => FYND[j].topp);
 export const regrowOf = (k: Lager, ai: number) => Math.max(...lagren(k).map(j => FYND[j].uttag?.regrow[ai] ?? 0));
 
-// mönstret räknas om en gång per dygn (det kryper långsamt) och är detsamma i levande läge och snabbläget
+// mönstret räknas om en gång per dygn (det kryper långsamt) och är detsamma i spelet och vid ikappräkning
 const monstren = new WeakMap<State, { dag: number; v: Partial<Record<FyndId, { m: Float32Array; snitt: number }>> }>();
 function monsterOf(s: State, k: FyndId) {
   const dag = Math.floor(s.now / DAY);

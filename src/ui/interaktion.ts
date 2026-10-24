@@ -3,6 +3,7 @@ import { BAR, FOREST, H, HIGH, MATERIAL, Person, T, W, bitAt, campCenter, condOf
 import { iconImg } from '../ikoner';
 import { $, esc, fmtN } from './hjalp';
 import { outPilesAt, piles, s, ui } from './lage';
+import { posOf } from './manniskor';
 import { renderPanel, selectPerson, visa } from './panel';
 import { renderPorts, stopFollow } from './portratt';
 import { TS, app, cam, layout, tileAt, toWorld, view, world, zoomAt } from './scen';
@@ -11,7 +12,7 @@ import { TS, app, cam, layout, tileAt, toWorld, view, world, zoomAt } from './sc
 function personAt(gx: number, gy: number) {
   const p = toWorld(gx, gy);
   let best: Person | undefined, bd = 12;
-  for (const q of living(s)) { const d = Math.hypot(q.x * TS - p.x, q.y * TS - p.y); if (d < bd) { bd = d; best = q; } }
+  for (const q of living(s)) { const o = posOf(q), d = Math.hypot(o.x * TS - p.x, o.y * TS - p.y); if (d < bd) { bd = d; best = q; } }
   return best;
 }
 function fireAt(gx: number, gy: number) {
@@ -88,7 +89,7 @@ function showHover(gx: number, gy: number) {
   }
   const rum = roomAt(s, x, y);
   if (rum) { const hus = housesOf(s).find(h => h.id === rum.hus); rows.push(`Under tak${hus ? ` (${esc(hus.namn)})` : ''} · ${rum.tiles.length} sovplatser · håller värmen ${Math.round(insulation(s, rum) * 100)} %`); }
-  const here = living(s).filter(p => Math.floor(p.x) === x && Math.floor(p.y) === y);
+  const here = living(s).filter(p => { const o = posOf(p); return Math.floor(o.x) === x && Math.floor(o.y) === y; });
   if (here.length) rows.push(here.map(p => `${esc(p.name)} (${p.task ? taskName(p.task).toLowerCase() : 'vilar'})`).join(', '));
   box.innerHTML = rows.map(r => `<p>${r}</p>`).join('');
   box.hidden = false;

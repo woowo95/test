@@ -38,7 +38,7 @@ export const GREN = 0.4; // en gren ger lika mycket bränsle som 0,4 ved: grenar
 
 export interface Thought { text: string; v: number; until: number }
 // why = varför personen valde uppgiften, dark = påbörjad under mörk tid
-export interface Task { act: Act; phase: 'go' | 'do' | 'back'; tx: number; ty: number; until: number; carry: number; items?: Record<string, number>; cond?: Record<string, number>; why?: string; dark?: boolean; path?: number[]; pk?: string; ref?: number; prog?: number; tool?: string; stint?: number; fynd?: number; lim?: number; res?: { x: number; y: number; until: number }; wx?: number; wy?: number; hold?: number; site?: { x: number; y: number }; mask?: number; ag?: Record<string, Record<string, number>>; ting?: number[] } // ting = redskapen i bördan (agande.ts) // ag = vems det som bärs är, per slag (egendom.ts) // mask = maskar på kroken till metspöet // tool = redskap som används, t.ex. fiskespjut. stint = när arbetspasset slutar och bördan bärs hem, res = var och till när arbetet fortsätter efteråt, wx/wy/hold = vart man går härnäst på platsen och hur länge man står still, site = bygget man går till efter att ha hämtat material
+export interface Task { act: Act; phase: 'go' | 'do' | 'back'; tx: number; ty: number; until: number; carry: number; items?: Record<string, number>; cond?: Record<string, number>; why?: string; dark?: boolean; path?: number[]; pk?: string; ref?: number; prog?: number; tool?: string; tur?: number; lim?: number; res?: { x: number; y: number; until: number }; site?: { x: number; y: number }; mask?: number; ag?: Record<string, Record<string, number>>; ting?: number[] } // ting = redskapen i bördan (agande.ts) // ag = vems det som bärs är, per slag (egendom.ts) // mask = maskar på kroken till metspöet // tool = redskap som används, t.ex. fiskespjut. tur = sekunder arbete sedan bördan bars hem och lim hur länge turen varar, res = var och till när arbetet fortsätter efteråt, site = bygget man går till efter att ha hämtat material
 
 export interface Person {
   id: number; name: string; sex: 'm' | 'k';
@@ -76,7 +76,8 @@ export interface Rel { chem: number; op: number; rom: number; talks: number; fla
 export interface LogEntry { t: number; text: string; kind: 'birth' | 'death' | 'rel' | 'skill' | 'world' | 'move'; ids: number[] }
 
 export interface State {
-  v: 1; seed: number; founded: number; now: number;
+  v: number; // numret på den senaste uppgraderingen av sparfilen (UPPGRADERINGAR i varld.ts)
+  seed: number; founded: number; now: number;
   rng?: number; // den gemensamma slumpen före steg 1.1.1 (bara i äldre byar, används inte)
   rngs?: Record<string, number>; // var i sin slumpföljd varje system är (slump.ts)
   W?: number; H?: number; // kartans storlek (saknas i äldre byar: 64×40)
