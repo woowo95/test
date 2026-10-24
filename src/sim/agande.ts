@@ -156,7 +156,7 @@ function spare(s: State, p: Person, k: string) {
   return own.filter(t => !(t.hos === p.id && usesTool(p.task) === k)).sort((a, b) => b.c - a.c)[0];
 }
 // hur gärna giver ger till mottagaren, 0–1
-function willing(s: State, g: Person, m: Person) {
+export function willing(s: State, g: Person, m: Person) {
   if (m.mother === g.id || m.father === g.id) return 0.95;
   const r = getRel(s, g, m);
   if (r.op < -10) return 0;

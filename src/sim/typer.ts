@@ -20,11 +20,11 @@ export const inMap = (x: number, y: number) => x >= 0 && y >= 0 && x < W && y < 
 
 export enum T { Vatten, Sand, Gras, Skog, Sten }
 
-export const STATS = ['styrka', 'uthallighet', 'intelligens', 'nyfikenhet', 'vanlighet', 'karisma', 'skonhet', 'flit', 'empati', 'mod', 'minne'] as const;
+export const STATS = ['styrka', 'uthallighet', 'intelligens', 'nyfikenhet', 'karisma', 'skonhet', 'flit', 'empati', 'mod', 'minne'] as const;
 export type Stat = typeof STATS[number];
 export const STAT_NAMES: Record<Stat, string> = {
   styrka: 'Styrka', uthallighet: 'Uthållighet', intelligens: 'Intelligens', nyfikenhet: 'Nyfikenhet',
-  vanlighet: 'Vänlighet', karisma: 'Karisma', skonhet: 'Skönhet', flit: 'Flit', empati: 'Empati', mod: 'Mod', minne: 'Minne',
+  karisma: 'Karisma', skonhet: 'Skönhet', flit: 'Flit', empati: 'Empati', mod: 'Mod', minne: 'Minne',
 };
 export const SKILLS = ['samla', 'jakt', 'fiske', 'ved', 'hantverk', 'berattande', 'elda'] as const;
 export type Skill = typeof SKILLS[number];
@@ -49,7 +49,7 @@ export interface Person {
   warm: number; // kroppsvärme 0–1
   toa: number; // 1 = inget behov, 0 = olycka
   habit: Record<string, number>; // timmar per aktivitet, bleknar med tiden (ger yrkestaggar)
-  sickUntil?: number; sickWhy?: string; poisonUntil?: number; pregnantSince?: number; pregnantBy?: number; lastBirth?: number; guardDay?: number; // pregnantBy: barnets far; guardDay: dygnet hen valdes till nattens vakt
+  sickUntil?: number; sickWhy?: string; poisonUntil?: number; stulet?: { av: number; k: string; n: number }[]; pregnantSince?: number; pregnantBy?: number; lastBirth?: number; guardDay?: number; // pregnantBy: barnets far; guardDay: dygnet hen valdes till nattens vakt
   fiske?: { f: number; n: number; k: number }; // fiske med händerna: försök, napp och fångade fiskar
   tek?: Record<string, number>; // teknik: hur nära personen är att komma på något, 1 = kan det
   kunskap?: Record<string, { v: number; t: number }>; // det personen kan (alltid rätt), 0–1, och när det senast användes

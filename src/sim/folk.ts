@@ -72,8 +72,8 @@ export function isKin(a: Person, b: Person) {
 }
 export function similarity(a: Person, b: Person) {
   let d = 0;
-  for (const k of ['nyfikenhet', 'vanlighet', 'flit', 'empati', 'mod'] as Stat[]) d += Math.abs(a.pot[k] - b.pot[k]);
-  return 1 - d / 50; // ~ -0.5..1
+  for (const k of ['nyfikenhet', 'flit', 'empati', 'mod'] as Stat[]) d += Math.abs(a.pot[k] - b.pot[k]);
+  return 1 - d / 40; // ~ -0.5..1
 }
 
 export function log(s: State, text: string, kind: LogEntry['kind'], ids: number[] = []) {

@@ -7,11 +7,12 @@ import { alive, byId, isKin } from './folk';
 // byns förblir byns. Förrådet är fortfarande ett och samma: s.egna[k][id] är hur mycket av slaget k varje person äger,
 // och resten av förrådet är byns. Redskapen har sina ägare på tingen (agande.ts).
 // När något tas ur förrådet räknas det av från ägarna. Till sig själv (äta, tillverka) tar man sitt eget först, sedan
-// familjens, byns och sist andras. Till byns eld och hus tas byns först, sedan sitt eget, familjens och andras.
+// byns. Familjen har inget gemensamt förråd. Maten tar man bara av sitt eget och byns (andras mat får man som gåva eller
+// stjäl, behov.ts). Till byns eld och hus tas byns först, sedan sitt eget, familjens och andras.
 // Det som försvinner av sig självt (ruttnar, multnar, slits) minskar allas delar lika mycket. Det som kommer till utan
 // att någon skaffat det är byns. När någon dör eller flyttar blir delen byns.
 // Det som bärs har ägarna med sig (task.ag), också när bördan läggs ner på marken (stackens ag).
-// Bokföringen ändrar inget i vad folk gör; den visar bara vems det är.
+// Utom för maten ändrar bokföringen ännu inget i vad folk gör; den visar bara vems det är.
 export const BYN = 0;
 export type Del = Record<string, number>; // ägare (id, 0 = byn) → mängd
 const totalOf = (s: State, k: string) => isFood(k) ? s.mat?.[k] ?? 0 : k === 'ved' ? s.wood : s.items[k] ?? 0;
@@ -19,6 +20,20 @@ const sumOf = (d: Del) => { let n = 0; for (const o in d) n += d[o]; return n; }
 export const ownsAmount = (s: State, p: Person, k: string) => s.egna?.[k]?.[p.id] ?? 0;
 // hur mycket av slaget k invånarna äger tillsammans (resten är byns)
 export const ownedSum = (s: State, k: string) => sumOf(s.egna?.[k] ?? {});
+// det av slaget k som är byns
+export const villageAmount = (s: State, k: string) => Math.max(0, totalOf(s, k) - ownedSum(s, k));
+// det av slaget k som p får ta: sitt eget och byns
+export const mayTake = (s: State, p: Person, k: string) => ownsAmount(s, p, k) + villageAmount(s, k);
+// n av slaget k byter ägare (gåva), utan att flyttas
+export function ownMove(s: State, k: string, n: number, from: number, to: number) {
+  const d = s.egna?.[k];
+  if (!d || from === BYN) return 0;
+  const v = Math.min(n, d[from] ?? 0);
+  if (v <= 1e-12) return 0;
+  d[from] -= v;
+  if (to !== BYN) d[to] = (d[to] ?? 0) + v;
+  return v;
+}
 // allt p äger i förrådet, per slag
 export function ownedStock(s: State, p: Person) {
   const out: Record<string, number> = {};
@@ -34,8 +49,9 @@ export function ownAdd(s: State, owner: number, k: string, n: number) {
   T[k] = (T[k] ?? totalOf(s, k) - n) + n;
   d[owner] = (d[owner] ?? 0) + n;
 }
-// n av slaget k har tagits ur förrådet av p. common = till byns eld eller hus. Ger vems det var
-export function ownTake(s: State, p: Person | undefined, k: string, n: number, common = false): Del {
+// n av slaget k har tagits ur förrådet av p. common = till byns eld eller hus. fran = det togs av den personens (stöld).
+// Ger vems det var
+export function ownTake(s: State, p: Person | undefined, k: string, n: number, common = false, fran?: number): Del {
   const d = s.egna?.[k], got: Del = {};
   if (n <= 1e-12) return got;
   if (!d) { got[BYN] = n; return got; }
@@ -45,8 +61,9 @@ export function ownTake(s: State, p: Person | undefined, k: string, n: number, c
   const rank = (o: number) => {
     const q = o === BYN ? undefined : byId(s, o);
     const kin = !!p && !!q && (q.partner === p.id || isKin(q, p));
+    if (o === fran) return -1;
     const r = o === BYN ? 0 : p && o === p.id ? 1 : kin ? 2 : 3;
-    return common || r === 3 ? r : r === 0 ? 2.5 : r - 1; // till sig själv: eget, familjens, byns, andras
+    return common || r >= 2 ? r : 1 - r; // till sig själv: eget, byns, familjens, andras
   };
   const order = Object.keys(shares).map(Number).sort((a, b) => rank(a) - rank(b) || a - b);
   for (const o of order) {

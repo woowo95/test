@@ -1,11 +1,12 @@
 import { syncTools } from './agande';
 import { rotStumps } from './skog';
 import { syncEgna } from './egendom';
-import { gain, use, capacity, dropSpot, fetchSpot, homeKind, load, pickUp, storeLoad, takeFood, tidyStore, wearStore } from './lager';
+import { needLadder } from './behov';
+import { gain, use, capacity, dropSpot, fetchSpot, homeKind, load, pickUp, storeLoad, tidyStore, wearStore } from './lager';
 import { KANIN, KORG_SKORD, MASK_PER_GRAV, isSpear, makeBasket, makeKnife, makeRod, makeSpear, slaughter, twineRope, wearBasket, wearRod, wearSpear } from './redskap';
 import { thinkWhileWorking } from './teknik';
 import { foodDays, workRate } from './ekonomi';
-import { TRY_SEC, eatPoison, growFynd, handFish, packFynd, pickMushrooms, richness, takeFrom } from './fynd';
+import { TRY_SEC, growFynd, handFish, packFynd, pickMushrooms, richness, takeFrom } from './fynd';
 import { coldOf, temperature } from './vader';
 import { addFuel, canLight, fireWant, forageItems, fuelStock, hearthOf, heatAt, igniterOf, stepFire, takeCoal, takeFuel, tryLight } from './eld';
 import { ageOf, alive, count, living, log, stat, think } from './folk';
@@ -101,7 +102,7 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
   for (const p of ppl) {
     const a = ageOf(p, now);
     needsStep(s, p, a, dtSec, coldRate, fh, inRum);
-    if (p.hunger < 0.45 && s.food >= 0.3) eat(s, p, a);
+    needLadder(s, p, dtSec); // äta: sitt eget, byns, och i yttersta nöd andras (behov.ts)
     if (healthStep(s, p, a, ai, dtSec)) continue; // dog
     pregnancy(s, p, a, ppl.length, dtSec);
     taskStep(s, p, a, dtSec, live, light, learn, social);
@@ -111,7 +112,7 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
   if (social.length > 1) {
     for (const p of social) {
       if (!alive(p)) continue;
-      const expect = dtSec / 240 * (0.6 + stat(p, 'vanlighet', now) / 25);
+      const expect = dtSec / 240 * (0.6 + stat(p, 'empati', now) / 25);
       let n = Math.floor(expect); if (rnd(s) < expect - n) n++;
       // bara med dem som är nära; i snabbläget står var och en på sin plats för uppgiften, så det blir samma grupper
       const others = social.filter(q => q !== p && alive(q) && Math.hypot(q.x - p.x, q.y - p.y) < 4);
@@ -156,19 +157,6 @@ function needsStep(s: State, p: Person, a: number, dtSec: number, coldRate: numb
   // toa: behovet växer på ungefär sju timmar, långsammare i sömnen
   p.toa = clamp(p.toa - dtSec / (7 * 3600) * (p.task?.act === 'sova' ? 0.5 : 1), 0, 1);
   if (p.toa <= 0) { p.toa = 1; if (a >= 3) think(p, 'Kissade på sig', -0.12, now, 4 * HOUR); }
-}
-
-// en hel portion, eller det som finns kvar. Maten under halva skicket mättar sämre, under en fjärdedel kan man bli sjuk
-function eat(s: State, p: Person, a: number) {
-  const now = s.now, full = a < 10 ? 0.6 : 1, portion = Math.min(full, s.food);
-  const q = takeFood(s, portion, p);
-  p.hunger = clamp(p.hunger + 0.55 * portion / full * (q >= 0.5 ? 1 : 0.5 + q), 0, 1); eatPoison(s, p);
-  if (q < 0.5) think(p, 'Maten var dålig', -0.05, now, 6 * HOUR);
-  if (q < 0.25 && rnd(s) < (0.25 - q) / 0.25 * 0.35) {
-    p.sickUntil = Math.max(p.sickUntil ?? 0, now + (4 + rnd(s) * 8) * HOUR); p.sickWhy = 'Magsjuk av skämd mat';
-    think(p, 'Åt skämd mat och blev magsjuk', -0.2, now, DAY / 2); count(s, 'skamdMat');
-    log(s, `${p.name} blev magsjuk av skämd mat.`, 'world', [p.id]);
-  }
 }
 
 // hälsa, sjukdom och död: svält, kyla, sjukdom, ålderdom och olyckor. true = personen dog

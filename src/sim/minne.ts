@@ -178,7 +178,7 @@ export function fearPlace(s: State, victim: Person, cause: string) {
 export function share(s: State, a: Person, b: Person, r: Rel, kind: string) {
   const now = s.now;
   teach(s, a, b, kind);
-  const talk = 0.03 + (stat(a, 'karisma', now) + stat(a, 'vanlighet', now)) / 200 + (kind === 'berättelse' ? 0.35 : kind === 'djupt samtal' ? 0.12 : 0);
+  const talk = 0.03 + (stat(a, 'karisma', now) + stat(a, 'empati', now)) / 200 + (kind === 'berättelse' ? 0.35 : kind === 'djupt samtal' ? 0.12 : 0);
   if (a.lardomar?.length && rnd(s) < talk) {
     // man berättar helst om rädslor, rika platser och platser som visat sig sämre än man trott
     let tot = 0;

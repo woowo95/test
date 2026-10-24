@@ -4,6 +4,7 @@ import { DAY, HOUR, Person, State } from './typer';
 import { pair } from './varld';
 import { share } from './minne';
 import { askForTool } from './agande';
+import { askForGift } from './behov';
 
 // ---------- samtal ----------
 export interface TalkEvent { a: number; b: number; kind: string; good: boolean; t: number }
@@ -29,10 +30,10 @@ export function converse(s: State, a: Person, others: Person[], events?: TalkEve
   else if (rnd(s) < 0.25) kind = 'skämt';
   else kind = 'småprat';
 
-  // hur samtalet går: kemi, likhet och vänlighet, och hur charmig och vacker den andra är. Den med låg karisma och
+  // hur samtalet går: kemi, likhet och empati, och hur charmig och vacker den andra är. Den med låg karisma och
   // skönhet blir lättare illa omtyckt.
   const charm = (stat(b, 'karisma', now) + stat(b, 'skonhet', now)) / 2;
-  let out = r.chem * 1.1 + similarity(a, b) * 0.7 + (stat(a, 'vanlighet', now) + stat(b, 'vanlighet', now)) / 40 - 0.55 + (rnd(s) - 0.5) * 1.4;
+  let out = r.chem * 1.1 + similarity(a, b) * 0.7 + (stat(a, 'empati', now) + stat(b, 'empati', now)) / 40 - 0.55 + (rnd(s) - 0.5) * 1.4;
   // charmen påverkar vänskapen, inte förälskelsen (den har egen dragning), och inte mellan par och släkt
   const like = a.partner === b.id || isKin(a, b) ? 0 : (charm - 8) / 15;
   if (isKin(a, b)) out += 0.35;
@@ -52,7 +53,7 @@ export function converse(s: State, a: Person, others: Person[], events?: TalkEve
       r.rom = clamp(r.rom + (out + att) * 4, 0, 100);
     }
     share(s, a, b, r, kind); // man berättar vad man vet och lär ut vad man kan
-    if (kind !== 'flirt' && out + like > -0.5) askForTool(s, a, b); // den som saknar ett redskap frågar efter det
+    if (kind !== 'flirt' && out + like > -0.5) { askForGift(s, a, b); askForTool(s, a, b); } // den som saknar något frågar efter det
   }
   r.op = clamp(r.op, -100, 100);
   r.talks++;

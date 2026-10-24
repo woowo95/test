@@ -14,8 +14,8 @@ export function personSeder(s: State, p: Person): Record<Sed, number> {
   const q = p.pot, kids = s.people.some(c => c.mother === p.id || c.father === p.id);
   return {
     arbete: dev(q.flit),
-    gemenskap: dev((q.empati + q.vanlighet) / 2),
-    barn: dev(q.empati) * 0.5 + dev(q.vanlighet) * 0.3 + (kids ? 0.1 : 0),
+    gemenskap: dev(q.empati),
+    barn: dev(q.empati) * 0.8 + (kids ? 0.1 : 0),
     nyfikenhet: dev((q.nyfikenhet + q.intelligens) / 2),
     forsiktighet: -dev(q.mod) * 0.7 + dev(q.intelligens) * 0.3,
   };

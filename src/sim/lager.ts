@@ -5,7 +5,7 @@ import { getMap } from './karta';
 import { Act, H, Person, State, T, Task, W } from './typer';
 import { bitAt, roofed } from './byggnad';
 import { ACTS } from './handlingar';
-import { BYN, Del, addDel, ownAdd, ownStore, ownTake, ownTakeProp } from './egendom';
+import { BYN, Del, addDel, mayTake, ownAdd, ownStore, ownTake, ownTakeProp, ownsAmount } from './egendom';
 import { FOOD, RUTA, SAKER, SAK_LIST, STACK, STACK_ORDER, isFood, isTool, sakNamn } from './saker';
 const NO_STACK = SAK_LIST.filter(k => !STACK[k]);
 
@@ -183,15 +183,16 @@ function wearToTools(s: State) {
   }
 }
 // ät: det som förstörs fortast först, och av det det sämsta. Ger skicket på maten som åts
-export function takeFood(s: State, n: number, p?: Person) {
+// p tar n mat ur förrådet: sitt eget och byns, eller (fran, stöld) den personens. Ger matens skick
+export function takeFood(s: State, n: number, p?: Person, fran?: Person) {
   const m = syncFood(s);
   let got = 0, cw = 0;
   for (const k of FOOD) {
-    const v = Math.min(n, m[k] ?? 0);
-    if (v <= 0) continue;
+    const v = Math.min(n, m[k] ?? 0, fran ? ownsAmount(s, fran, k) : p ? mayTake(s, p, k) : Infinity);
+    if (v <= 1e-12) continue;
     cw += v * takeStacks(s, k, v); got += v;
     m[k] -= v; s.food -= v; n -= v;
-    ownTake(s, p, k, v);
+    ownTake(s, p, k, v, false, fran?.id);
     if (n <= 1e-12) break;
   }
   s.food = Math.max(0, s.food);

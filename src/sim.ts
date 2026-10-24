@@ -25,6 +25,7 @@ export * from './sim/vader';
 export * from './sim/redskap';
 export * from './sim/agande';
 export * from './sim/egendom';
+export * from './sim/behov';
 export * from './sim/lager';
 export * from './sim/plats';
 export * from './sim/byggnad';

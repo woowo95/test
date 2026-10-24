@@ -307,7 +307,7 @@ function leisure(s: State, p: Person, v: Val, u: number, lazy: number, ai: numbe
   const wp = (0.3 + stat(p, 'nyfikenhet', now) / 15) * calm;
   const wb = temp >= 15 && shore ? clamp((temp - 14) / 8, 0, 1.2) * calm : 0;
   // sitta vid stranden och se ut över vattnet: lugnt, året om, mest för den som inte är så sällskaplig
-  const ws = shore ? (0.2 + (20 - stat(p, 'vanlighet', now)) / 60) * calm : 0;
+  const ws = shore ? (0.2 + (20 - stat(p, 'empati', now)) / 60) * calm : 0;
   const r = rnd(s) * (wv + wh + wsoc + wp + wb + ws);
   if (r < wv) set(v, 'vila', lazy > 0.5 ? 'Har det bra och tar det lugnt' : 'Tar en paus');
   else if (r < wv + wh) craft(s, p, v, u < 0.25 ? 'Byn har det gott ställt, det finns tid för hantverk' : 'Tycker om att göra handarbete');

@@ -1,7 +1,7 @@
 // Scenariotester: ställ en by i ett visst läge, kör den en stund och kontrollera att det som ska hända händer.
 // npm run scenario            kör alla
 // npm run scenario -- glanta  kör bara ett
-import { Person, Act, createState, ownedBy, syncTools, toolsOf, heldBy, take, usesTool, wearTool, freeSpear, getRel, isTool, BYN, twineRope, makeRod, wearSpear, isSpear, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, WEEK, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, zonesOf, allows, ageOf, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, fuelStock, DAY, HOUR, W, State, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, campCenter, TEKNIK, knows, thinkWhileWorking, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, beds, isWall, Bit, wearBuild, FYND, FYND_IDS, GRUPPER, angOf, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, LAGER_R, observe, hoped, Lager, skyggOf, SKYGG_R, share, treeOn, djurOf, KANIN, SLAKT, canSlaughter, makeKnife, slaughter, askForTool, gain, takeFood, takeFuel, ownsAmount, ownedStock, syncEgna, addTo } from '../sim';
+import { Person, Act, createState, ownedBy, syncTools, toolsOf, heldBy, take, usesTool, wearTool, freeSpear, getRel, isTool, BYN, twineRope, makeRod, wearSpear, isSpear, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, WEEK, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, zonesOf, allows, ageOf, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, fuelStock, DAY, HOUR, W, State, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, campCenter, TEKNIK, knows, thinkWhileWorking, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, beds, isWall, Bit, wearBuild, FYND, FYND_IDS, GRUPPER, angOf, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, LAGER_R, observe, hoped, Lager, skyggOf, SKYGG_R, share, treeOn, djurOf, KANIN, SLAKT, canSlaughter, makeKnife, slaughter, askForTool, gain, takeFood, takeFuel, ownsAmount, ownedStock, syncEgna, addTo, needLadder, MAT, ownFor } from '../sim';
 import { findPath } from '../sim/vag';
 import { FOREST, HIGH, isSoil } from '../sim/vag';
 import { START } from './kor';
@@ -166,11 +166,14 @@ SCENARIER.kunskap = {
     const a = areaOf(offer.x, offer.y), radd0 = living(s).filter(p => findL(p, 'fara', a)).length;
     // ingen förgiftning: svampkunskapen sprids genom samtal från en som kan
     const larare = living(s)[3]; larare.kunskap = { svamp: { v: 1, t: s.now } };
-    let led2 = 0; // lärdomar i andra hand eller längre, räknat under hela tiden eftersom de också glöms
-    kor(s, 8 * 24, s => { led2 = Math.max(led2, living(s).flatMap(p => p.lardomar ?? []).filter(l => (l.led ?? 0) >= 2).length); });
-    const L = living(s), alla = L.flatMap(p => p.lardomar ?? []);
-    const hort = alla.filter(l => l.src !== undefined);
-    const radd = L.filter(p => findL(p, 'fara', a)).length, kan = L.filter(p => p !== larare && kn(p, 'svamp') > 0.1).length;
+    let led2 = 0, hort = 0, radd = 0; // hörda lärdomar och rädsla räknas under hela tiden eftersom de också glöms
+    kor(s, 8 * 24, s => {
+      const l = living(s).flatMap(p => p.lardomar ?? []);
+      led2 = Math.max(led2, l.filter(l => (l.led ?? 0) >= 2).length); hort = Math.max(hort, l.filter(l => l.src !== undefined).length);
+      radd = Math.max(radd, living(s).filter(p => findL(p, 'fara', a)).length);
+    });
+    const L = living(s);
+    const kan = L.filter(p => p !== larare && kn(p, 'svamp') > 0.1).length;
     const fel = L.flatMap(p => (p.lardomar ?? []).map(l => describe(s, l).wrong)).filter(Boolean).length;
     // minnet: den med bra minne glömmer långsammare
     const [m1, m2] = L.slice().sort((x, y) => stat(y, 'minne', s.now) - stat(x, 'minne', s.now)).filter((_, i, A) => i === 0 || i === A.length - 1);
@@ -182,10 +185,10 @@ SCENARIER.kunskap = {
     migrate(g);
     return [
       [`ingen minns några platser från början (${ute} personer gör det)`, ute === 0],
-      [`lärdomar sprids i samtal (${hort.length} hörda, ${led2} i andra hand eller längre)`, hort.length > 10 && led2 > 0],
+      [`lärdomar sprids i samtal (upp till ${hort} hörda, ${led2} i andra hand eller längre)`, hort > 10 && led2 > 0],
       [`glömska (${s.stat?.glomt ?? 0} lärdomar glömda)`, (s.stat?.glomt ?? 0) > 0],
       [`bra minne glömmer långsammare (säkerhet efter tre dygn ${c1.toFixed(2)} mot ${c2.toFixed(2)})`, c1 > c2 && c2 < 0.9],
-      [`rädsla efter olyckan: ${radd0} genast, ${radd} efter åtta dygn`, radd0 >= 1 && radd > radd0],
+      [`rädsla efter olyckan: ${radd0} genast, upp till ${radd} under åtta dygn`, radd0 >= 1 && radd > radd0],
       [`svampkunskap sprids utan förgiftning (${kan} har lärt sig)`, kan >= 2],
       [`spelaren ser lärdomar som inte stämmer (${fel})`, fel > 0],
       ['gammal sparfil flyttas', g.kunskap === undefined && g.people.every(p => p.pot.minne > 0 && kn(p, 'svamp') === 0.8)],
@@ -471,6 +474,69 @@ SCENARIER.egendom = {
   },
 };
 
+SCENARIER.behov = {
+  text: 'Behovsstegen: den som behöver något tar sitt eget, sedan byns, ber sedan någon i närheten om det, och stjäl först när hen håller på att dö. Hög empati stjäl aldrig, man stjäl helst av den man inte tycker om, och den bestulne märker det.',
+  kor: () => {
+    const ny = () => {
+      const s = createState(6, START);
+      s.food = 0; s.mat = {};
+      const [a, b, c] = living(s);
+      for (const q of [a, b, c]) { q.mother = q.father = q.partner = undefined; q.x = 30; q.y = 30; q.task = undefined; q.hunger = 0.3; q.health = 1; }
+      s.people = [a, b, c];
+      return { s, a, b, c };
+    };
+    // a är hungrig, b har mat men är ingen släkt och ovän: a tar inte b:s mat förrän nöden är stor
+    let { s, a, b, c } = ny();
+    getRel(s, a, b).op = -30; getRel(s, a, c).op = -30; c.x = 90;
+    gain(s, b, 'bar', 5);
+    needLadder(s, a, 1e6); const tarInte = ownFor(s, b, MAT) === 5 && a.hunger === 0.3;
+    // byns mat går före gåvor och stöld
+    addTo(s, 'bar', 2); syncEgna(s);
+    needLadder(s, a, 1); const byns = a.hunger > 0.3 && ownFor(s, b, MAT) === 5;
+    // ett barn ber sin förälder, som delar också det sista
+    ({ s, a, b, c } = ny());
+    a.mother = b.id; gain(s, b, 'bar', 1); b.task = { act: 'sova' } as any;
+    needLadder(s, a, 1e6); const foralder = a.hunger > 0.3 && ownFor(s, b, MAT) < 0.5;
+    // en vän ger det hen har över
+    ({ s, a, b, c } = ny());
+    getRel(s, a, b).op = 70; b.pot.empati = 20; gain(s, b, 'bar', 6);
+    let van = false; for (let i = 0; i < 20 && !van; i++) { a.hunger = 0.3; needLadder(s, a, 1e6); van = a.hunger > 0.3; }
+    // stöld i yttersta nöd: mycket hög empati stjäl aldrig, låg empati stjäl när den svälter
+    ({ s, a, b, c } = ny());
+    getRel(s, a, b).op = -30; gain(s, b, 'bar', 5);
+    a.pot.empati = 20; a.hunger = 0; a.health = 0.02;
+    needLadder(s, a, 1); const aldrig = ownFor(s, b, MAT) === 5;
+    a.pot.empati = 1; a.health = 0.9;
+    needLadder(s, a, 1); const stal = ownFor(s, b, MAT) < 5 && a.hunger > 0;
+    // den bestulne märker det när hen äter av sitt eget
+    const fore = getRel(s, a, b).op; b.hunger = 0.3; needLadder(s, b, 1);
+    const marker = getRel(s, a, b).op < fore && !b.stulet;
+    // man stjäl helst av den man inte tycker om
+    let ovan = 0;
+    for (let i = 0; i < 40; i++) {
+      ({ s, a, b, c } = ny());
+      gain(s, b, 'bar', 5); gain(s, c, 'bar', 5);
+      getRel(s, a, b).op = -60; getRel(s, a, c).op = 60; a.pot.empati = 1; a.hunger = 0; a.health = 0.5;
+      s.rng = i * 7919 + 1;
+      needLadder(s, a, 1); if (ownFor(s, b, MAT) < 5) ovan++;
+    }
+    // vanliga byar: gåvor ges och ingen svälter ihjäl i de tre testbyarna
+    let gavor = 0;
+    for (const seed of [1, 42]) { const v = createState(seed, START); for (let i = 0; i < 10 * 288; i++) step(v, 300, false); gavor += v.stat?.gava_mat ?? 0; }
+    return [
+      ['den hungrige tar inte en oväns mat innan nöden är stor', tarInte],
+      ['byns mat går före andras', byns],
+      ['ett barn får mat av sin förälder, som delar också det sista (och kan väckas)', foralder],
+      ['en vän ger av det hen har över', van],
+      ['den med mycket hög empati stjäl aldrig, inte ens döende', aldrig],
+      ['den med låg empati stjäl när den svälter', stal],
+      ['den bestulne märker det och relationen blir sämre', marker],
+      [`man stjäl helst av den man inte tycker om (${ovan} av 40)`, ovan >= 28],
+      [`i vanliga byar ges mat (${gavor.toFixed(0)} portioner i 2 byar på 10 dygn)`, gavor > 0],
+    ];
+  },
+};
+
 SCENARIER.djur = {
   text: 'Kaniner syns där det finns vilt, skuttar omkring och hoppar undan folk. Jakt fångar hela kaniner som bärs hem hela och äts som de är; med flintkniv slaktas de till mer kött, ben, skinn och senor',
   kor: () => {
@@ -564,7 +630,7 @@ SCENARIER.fritid = {
   kor: () => {
     const folk: { d: number; v: number }[] = [];
     let prom = 0, bad = 0, badVarmt = true, n = 0, strand = 0, strandLand = true;
-    for (const seed of [5, 6]) { // två byar, så att slumpen inte avgör
+    for (const seed of [5, 6, 7]) { // tre byar, så att slumpen inte avgör
     const s = createState(seed, START), gang = new Map<number, number>();
     s.founded = s.now - WEEK; // sommar
     s.food = 40; s.wood = 40; // gott ställt, tid över
