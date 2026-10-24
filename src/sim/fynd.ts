@@ -57,6 +57,8 @@ interface FyndDef {
 const SVAMP_SEASON = [0, 0.15, 0.8, 1.5];
 const SVAMP_UTTAG: Uttag = { full: 2.5, reach: 1, regrow: [1 / 400, 1 / 150, 1 / 40, 1 / 40] };
 const land = (s: State, i: number) => isSoil(groundOf(s).tiles[i]);
+// kaninerna håller sig långt från byn (SKYGG_IN), så en jakttur är lång; i gengäld ger platserna mer än förr
+export const JAKT_F = 2.1;
 // Ordningen bland lagren med uttag är ordningen i sparfilen: nya lager med uttag läggs sist.
 const DEF = {
   // bärbuskar i små täta snår i skog och högt gräs; de flyttar sig mycket långsamt. Inga bär i istiden
@@ -72,12 +74,12 @@ const DEF = {
   },
   // kaniner trivs bäst i gräs, högt eller lågt, men finns också i skogen. Glest över stora områden som vandrar
   jakt: {
-    namn: 'Kaniner', grupp: 'djur', ikon: 'kanin', farg: 0xc89a60, topp: 1.4,
+    namn: 'Kaniner', grupp: 'djur', ikon: 'kanin', farg: 0xc89a60, topp: 1.4 * JAKT_F,
     monster: { salt: 73, skala: 7, period: 7, troskel: 0.25 },
     bas(s, i, m) {
       if (!land(s, i)) return 0;
       const g = groundOf(s), tr = g.trees[i];
-      return (tr >= FOREST ? 0.85 : tr >= 0.15 ? 0.9 : g.cover[i] >= BAR ? 1 : 0.3) * (0.15 + 1.3 * m) * skyggOf(s)[i];
+      return (tr >= FOREST ? 0.85 : tr >= 0.15 ? 0.9 : g.cover[i] >= BAR ? 1 : 0.3) * (0.15 + 1.3 * m) * JAKT_F * skyggOf(s)[i];
     },
     uttag: { full: 6, reach: 3, regrow: [1 / 400, 1 / 240, 1 / 240, 1 / 300] },
   },
@@ -162,7 +164,8 @@ export const LAGER_R = 3;
 const iLagret = (s: State, i: number) => campDist(s, i % W, Math.floor(i / W)) < LAGER_R && getMap(s.seed).tiles[i] !== T.Vatten;
 // vilt skyr människor: ett stort område runt lägret, och marken där många går (stigar och nött mark).
 // Räknas om en gång per dygn.
-export const SKYGG_R = 7; // rutor utanför lägret innan vilt vågar sig fram helt
+export const SKYGG_IN = 8; // rutor från lägret där inget vilt finns
+export const SKYGG_R = 8; // rutor till innan vilt vågar sig fram helt (helt fram 16 rutor från lägret)
 const skygghet = new WeakMap<State, { dag: number; v: Float32Array }>();
 export function skyggOf(s: State) {
   const dag = Math.floor(s.now / DAY);
@@ -171,7 +174,7 @@ export function skyggOf(s: State) {
   const g = groundOf(s), v = new Float32Array(W * H), nott = new Uint8Array(W * H);
   for (let i = 0; i < W * H; i++) nott[i] = isSoil(g.tiles[i]) && g.trees[i] < 0.15 && g.cover[i] < BAR ? 1 : 0;
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-    const d = clamp((campDist(s, x, y) - LAGER_R) / SKYGG_R, 0, 1);
+    const d = clamp((campDist(s, x, y) - SKYGG_IN) / SKYGG_R, 0, 1);
     let n = 0;
     for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) if (inMap(x + dx, y + dy)) n += nott[(y + dy) * W + x + dx];
     v[y * W + x] = d * d * (3 - 2 * d) * (1 - Math.min(0.8, n / 10));
@@ -267,8 +270,14 @@ export function standAt(s: State, k: Lager, x: number, y: number, fn: (i: number
   vattenRunt(s, lagren(k)[0], cx, cy, (j, w) => { sum += fn(j) * w; n += w; });
   return n ? sum / n : 0;
 }
-// vad platsen ger den som står där just nu, 0 = inget
-export const richness = (s: State, k: Lager, x: number, y: number) => standAt(s, k, x, y, i => fyndAt(s, k, i));
+// vad platsen ger den som står där just nu, 0 = inget. För ett lager med djur (kaniner) beror det också på var djuren
+// faktiskt är: kartan säger var de trivs, och djur.ts säger hur nära en grupp platsen är (setNarvaro)
+const narvaro: Partial<Record<Lager, (s: State, i: number) => number>> = {};
+export function setNarvaro(k: Lager, fn: (s: State, i: number) => number) { narvaro[k] = fn; }
+export function richness(s: State, k: Lager, x: number, y: number) {
+  const n = narvaro[k];
+  return standAt(s, k, x, y, n ? i => fyndAt(s, k, i) * n(s, i) : i => fyndAt(s, k, i));
+}
 // ta ur en plats: mest ur rutan, lite ur grannarna. Fisk tas ur vattnet framför stranden.
 // Tar man ur flera lager (bär och rötter) delas uttaget efter hur mycket av vart och ett som finns där.
 export function takeFrom(s: State, k: Lager, x: number, y: number, amount: number) {

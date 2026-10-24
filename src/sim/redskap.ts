@@ -1,5 +1,6 @@
 import { ageOf, count, living, log } from './folk';
 import { knows } from './teknik';
+import { rnd } from './slump';
 import { State, Person } from './typer';
 import { item } from './saker';
 import { addFood, gain, use } from './lager';
@@ -114,10 +115,16 @@ export function wearBasket(s: State, p: Person, hours: number) {
 
 // ---------- redskap: kniv och slakt ----------
 // En flintkniv är en vass flintskärva med ett skaft. Utan kniv äter byn direkt av det fällda djuret. Med kniv slaktas det
-// vid elden till mer kött, ett ben, ett skinn och senor, som blir rep för den som kan det. Kött, ben och skinn är samma
-// vilket djur det än kommer från. Kniven kräver en flinta utöver den som sparas att tända eld med.
-export const KANIN = 1.6; // så mycket mat en kanin är, uppäten som den är (en stack fällt vilt)
-export const SLAKT = { kott: 2.1, ben: 1, skinn: 1, rep: 0.4 }; // det en kanin ger slaktad
+// vid elden till mer kött, ett ben och ett skinn. Ett djur med senor ger dessutom ibland ett rep, men bara om den som
+// slaktar kan tekniken Rep (fisk har inga senor). Kött, ben och skinn är samma vilket djur det än kommer från.
+// Kniven kräver en flinta utöver den som sparas att tända eld med.
+// DJUR: vad varje art är värd, uppäten hel och slaktad. En ny art blir en rad här.
+export interface Djurart { mat: number; slakt: { kott: number; ben: number; skinn: number }; rep: number }
+export const DJUR: Record<'kanin', Djurart> = {
+  kanin: { mat: 1.6, slakt: { kott: 2.1, ben: 1, skinn: 1 }, rep: 0.15 }, // rep: chansen per kanin att senorna blir ett rep
+};
+export const KANIN = DJUR.kanin.mat; // så mycket mat en kanin är, uppäten som den är (en stack fällt vilt)
+export const SLAKT = DJUR.kanin.slakt; // det en kanin ger slaktad
 export const SLAKT_TIMME = 3; // kaniner per timme
 export const knives = (s: State) => nTools(s, 'kniv');
 export const vilt = (s: State) => s.mat?.vilt ?? 0;
@@ -135,14 +142,19 @@ export function slaughter(s: State, p: Person, hours: number) {
   const n = Math.min(hours * SLAKT_TIMME, vilt(s) / KANIN); // kaniner
   if (n <= 0 || knives(s) < 1) { if (p.task) p.task.until = s.now; return; }
   // köttet, benet, skinnet och senorna är deras som ägde viltet, inte slaktarens
-  const vems = use(s, p, 'vilt', n * KANIN), rep = knows(p, 'rep') && item(s, 'rep') < REP_VILL;
+  const vems = use(s, p, 'vilt', n * KANIN), art = DJUR.kanin;
   addFood(s, 'kott', n * SLAKT.kott);
   s.items.ben = item(s, 'ben') + n * SLAKT.ben; s.items.skinn = item(s, 'skinn') + n * SLAKT.skinn;
-  if (rep) s.items.rep = item(s, 'rep') + n * SLAKT.rep;
   for (const o in vems) {
     const f = vems[o] / KANIN;
     ownAdd(s, +o, 'kott', f * SLAKT.kott); ownAdd(s, +o, 'ben', f * SLAKT.ben); ownAdd(s, +o, 'skinn', f * SLAKT.skinn);
-    if (rep) ownAdd(s, +o, 'rep', f * SLAKT.rep);
+  }
+  // senorna blir med liten chans ett helt rep, som tillhör den som ägde mest av viltet
+  if (art.rep > 0 && knows(p, 'rep') && item(s, 'rep') < REP_VILL && rnd(s) < n * art.rep) {
+    s.items.rep = item(s, 'rep') + 1;
+    const agare = Object.keys(vems).sort((a, b) => vems[b] - vems[a])[0];
+    if (agare !== undefined) ownAdd(s, +agare, 'rep', 1);
+    count(s, 'repAvSenor');
   }
   if (wearTool(s, p, 'kniv', n * 0.004) && p.task) p.task.tool = undefined; // kniven håller för ungefär 250 kaniner
   const first = !(s.stat?.slaktat);

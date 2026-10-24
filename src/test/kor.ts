@@ -1,5 +1,5 @@
 // Kör en by utan grafik och samlar nyckeltal. Vakterna larmar om något blir omöjligt (NaN, negativa förråd, folk i vattnet).
-import { createState, step, living, DAY, ageIndex, moodOf, serialize, getMap, fuelStock, ACT_NAMES, T, W, H, State, isWall } from '../sim';
+import { createState, step, living, DAY, ageIndex, moodOf, serialize, serializeParts, getMap, fuelStock, ACT_NAMES, T, W, H, State, isWall } from '../sim';
 
 export const START = Date.parse('2026-10-20T08:00:00+02:00');
 
@@ -10,7 +10,7 @@ export interface Nyckeltal {
   humor: number; // snitthumör, mätt varje timme
   vintermat: number; vinterved: number; // lägsta förråd när en istid tar slut
   eld: number; // procent av tiden elden brann
-  ms: number; kb: number;
+  ms: number; kb: number; delKb: number; // delKb: den största delen av sparfilen (ett dokument i molnet rymmer 256 KB)
 }
 
 export interface Resultat { seed: number; dagar: number; n: Nyckeltal; vakter: string[]; s: State }
@@ -65,6 +65,7 @@ export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => voi
     eld: Math.round(lit / steg * 100),
     ms: Math.round(performance.now() - t0),
     kb: Math.round(serialize(s).length / 1024),
+    delKb: Math.round(Math.max(...Object.values(serializeParts(s)).map(d => new TextEncoder().encode(d).length)) / 1024),
   };
   const vakter = [...fel].map(([typ, f]) => `${typ} (${f.n} ggr), första: ${f.forsta}`);
   return { seed, dagar, n, vakter, s };
@@ -72,5 +73,5 @@ export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => voi
 
 export function rad(r: Pick<Resultat, 'seed' | 'n'>) {
   const n = r.n;
-  return `by ${String(r.seed).padEnd(5)} pop ${n.pop}${n.atergrundad ? ` ÅTERGRUNDAD ${n.atergrundad} GGR` : ''}, in ${n.invandrade}, ut ${n.utvandrade}, födda ${n.fodda}, döda ${n.doda} (svält ${n.svalt}, kyla ${n.kyla}), hunger ${n.hunger} h, humör ${n.humor.toFixed(2)}, vintermat ${n.vintermat}, vinterved ${n.vinterved}, eld ${n.eld} % | ${(n.ms / 1000).toFixed(1)} s, ${n.kb} KB`;
+  return `by ${String(r.seed).padEnd(5)} pop ${n.pop}${n.atergrundad ? ` ÅTERGRUNDAD ${n.atergrundad} GGR` : ''}, in ${n.invandrade}, ut ${n.utvandrade}, födda ${n.fodda}, döda ${n.doda} (svält ${n.svalt}, kyla ${n.kyla}), hunger ${n.hunger} h, humör ${n.humor.toFixed(2)}, vintermat ${n.vintermat}, vinterved ${n.vinterved}, eld ${n.eld} % | ${(n.ms / 1000).toFixed(1)} s, ${n.kb} KB (största delen ${n.delKb} KB)`;
 }

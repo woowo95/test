@@ -20,6 +20,7 @@ function renderClock() {
   $('calYear').textContent = `År ${yearNo(s)}`;
   { const k = kalender(s); $('calAge').textContent = `${AGES[k.ai]}, dag ${k.dag} av ${k.av}`; }
   { const c = Math.round(temperature(s, t)); $('calTemp').textContent = `🌡 ${c > 0 ? '+' : c < 0 ? '−' : ''}${Math.abs(c)} °C`; }
+  $('sparFel').hidden = !ui.sparFel;
   $('calTime').textContent = `${isLight(t) ? 'Ljus tid' : 'Mörk tid'} · ${hh}:${mm}${ui.testMode ? ' (test)' : ''}`;
 }
 

@@ -1,7 +1,8 @@
 // Scenariotester: ställ en by i ett visst läge, kör den en stund och kontrollera att det som ska hända händer.
 // npm run scenario            kör alla
 // npm run scenario -- glanta  kör bara ett
-import { Person, Act, createState, ownedBy, syncTools, toolsOf, heldBy, take, usesTool, wearTool, freeSpear, getRel, isTool, BYN, twineRope, makeRod, wearSpear, isSpear, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, ageStart, nyKalender, kalender, yearNo, AGES, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, zonesOf, allows, ageOf, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, fuelStock, DAY, HOUR, W, State, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, campCenter, TEKNIK, knows, thinkWhileWorking, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, beds, isWall, Bit, wearBuild, FYND, FYND_IDS, GRUPPER, angOf, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, LAGER_R, observe, hoped, Lager, skyggOf, SKYGG_R, share, treeOn, djurOf, KANIN, SLAKT, canSlaughter, makeKnife, slaughter, askForTool, gain, takeFood, takeFuel, ownsAmount, ownedStock, syncEgna, addTo, needLadder, MAT, ownFor } from '../sim';
+import { isDeepStrictEqual } from 'node:util';
+import { Person, Act, createState, ownedBy, syncTools, toolsOf, heldBy, take, usesTool, wearTool, freeSpear, getRel, isTool, BYN, twineRope, makeRod, wearSpear, isSpear, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, serializeParts, joinParts, serialize, ageStart, nyKalender, kalender, yearNo, AGES, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, zonesOf, allows, ageOf, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, fuelStock, DAY, HOUR, W, State, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, campCenter, TEKNIK, knows, thinkWhileWorking, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, beds, isWall, Bit, wearBuild, FYND, FYND_IDS, GRUPPER, angOf, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, LAGER_R, observe, hoped, Lager, skyggOf, SKYGG_R, SKYGG_IN, grupperOf, GRUPPER_MAX, STORLEK, share, treeOn, djurOf, KANIN, SLAKT, DJUR, JAKT_F, canSlaughter, makeKnife, slaughter, askForTool, gain, takeFood, takeFuel, ownsAmount, ownedStock, syncEgna, addTo, needLadder, MAT, ownFor } from '../sim';
 import { findPath } from '../sim/vag';
 import { FOREST, HIGH, isSoil } from '../sim/vag';
 import { START } from './kor';
@@ -63,7 +64,7 @@ const SCENARIER: Record<string, { text: string; kor: () => Koll[] }> = {
   'ingen-yxa': {
     text: 'Byn har bara en flinta, som behövs till elden: ingen yxa görs, inga träd fälls och elden hålls vid liv med grenar',
     kor: () => {
-      const s = createState(12, START);
+      const s = createState(13, START); // by 12 dör ut tidigt av svält sedan kaninerna håller sig längre från byn (1.5.5), och saknar sedan torrt gräs att tända med
       s.items.flinta = 1;
       kor(s, 30 * 24, s => { if (s.items.flinta > 1) s.items.flinta = 1; });
       return [
@@ -249,6 +250,21 @@ SCENARIER.kalender = {
   },
 };
 
+SCENARIER.sparning = {
+  text: 'Byn sparas i delar som var och en ryms i ett dokument i molnet, och delarna blir samma by igen',
+  kor: () => {
+    const s = createState(7, START);
+    kor(s, 3 * 24);
+    const delar = serializeParts(s), hel = serialize(s);
+    const ater = JSON.parse(joinParts(Object.values(delar))), ny = migrate(JSON.parse(joinParts(Object.values(delar))));
+    const kb = Object.fromEntries(Object.entries(delar).map(([d, t]) => [d, Math.round(t.length / 1024)]));
+    return [
+      [`byn delas i ${Object.keys(delar).join(', ')} (${Object.entries(kb).map(([d, n]) => `${d} ${n} KB`).join(', ')})`, Object.keys(delar).length === 4 && delar.folket.includes('"people"') && !delar.byn.includes('"people"')],
+      ['delarna blir samma by igen', isDeepStrictEqual(ater, JSON.parse(hel)) && ny.people.length === s.people.length && ny.now === s.now],
+    ];
+  },
+};
+
 SCENARIER.befolkning = {
   text: 'En stor by blir trång och folk flyttar, en liten by får nybyggare, och en tom by grundas på nytt',
   kor: () => {
@@ -339,7 +355,7 @@ SCENARIER.redskap = {
     // jakt med flintspjutet: fångar kaniner, och spjutet slits
     const c = campCenter(s), m = getMap(s.seed);
     let bx = c.x, by = c.y, bast = 0;
-    for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) { const v = richness(s, 'jakt', x + 0.5, y + 0.5); if (v > bast && m.tiles[y * W + x] !== T.Vatten && Math.hypot(x - c.x, y - c.y) < 20) { bast = v; bx = x + 0.5; by = y + 0.5; } }
+    for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) { const v = richness(s, 'jakt', x + 0.5, y + 0.5); if (v > bast && m.tiles[y * W + x] !== T.Vatten && Math.hypot(x - c.x, y - c.y) < 30) { bast = v; bx = x + 0.5; by = y + 0.5; } }
     const vilt0 = s.mat?.vilt ?? 0, sp0 = s.items.flintspjut;
     let medSpjut = 0;
     for (let i = 0; i < 12 * 3; i++) {
@@ -594,7 +610,7 @@ SCENARIER.djur = {
     // jakt utan redskap i snabbläget: hela kaniner i förrådet
     const m = getMap(s.seed);
     let bx = c.x, by = c.y, bast = 0;
-    for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) { const v = richness(s, 'jakt', x + 0.5, y + 0.5); if (v > bast && m.tiles[y * W + x] !== T.Vatten && Math.hypot(x - c.x, y - c.y) < 20) { bast = v; bx = x + 0.5; by = y + 0.5; } }
+    for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) { const v = richness(s, 'jakt', x + 0.5, y + 0.5); if (v > bast && m.tiles[y * W + x] !== T.Vatten && Math.hypot(x - c.x, y - c.y) < 30) { bast = v; bx = x + 0.5; by = y + 0.5; } }
     let hela = true;
     for (let i = 0; i < 24 * 12; i++) {
       p.task = { act: 'jakt', phase: 'do', tx: bx, ty: by, until: s.now + HOUR, carry: 0, why: 'prov', dark: !isLight(s.now) };
@@ -623,7 +639,10 @@ SCENARIER.djur = {
     s.mat = { vilt: 3 * KANIN }; s.food = 3 * KANIN; s.items.ben = 0; s.items.skinn = 0; s.items.rep = 0;
     const kan = canSlaughter(s, p);
     slaughter(s, p, 1);
-    const slakt = Math.abs((s.mat.kott ?? 0) - 3 * SLAKT.kott) < 1e-9 && (s.mat.vilt ?? 0) < 1e-9 && s.items.ben === 3 && s.items.skinn === 3 && (s.items.rep ?? 0) > 0;
+    const slakt = Math.abs((s.mat.kott ?? 0) - 3 * SLAKT.kott) < 1e-9 && (s.mat.vilt ?? 0) < 1e-9 && s.items.ben === 3 && s.items.skinn === 3;
+    // senorna blir ibland ett rep, men bara för den som kan tekniken Rep
+    const repAv = (kan: boolean) => { let r = 0; for (let i = 0; i < 200; i++) { s.mat = { vilt: KANIN }; s.items.rep = 0; p.tek = { ...p.tek, rep: kan ? 1 : 0 }; slaughter(s, p, 1); r += s.items.rep ?? 0; } return r; };
+    const medRep = repAv(true), utanRep = repAv(false);
     return [
       [`kaniner syns där det finns vilt (${dj.length} st), inga i lägret (${iLagret})`, dj.length > 10 && iLagret === 0],
       [`fler kaniner där det finns mycket vilt (${(tat(rik, nr) * 100).toFixed(1)} % av de rika rutorna, ${(tat(fattig, nf) * 100).toFixed(1)} % av de fattiga)`, tat(rik, nr) > tat(fattig, nf) * 2],
@@ -632,7 +651,56 @@ SCENARIER.djur = {
       [`jakt utan redskap fångar hela kaniner (${kaniner} på ett dygn)`, kaniner >= 1 && hela],
       [`i levande läge bärs kaninen hem hel, en i taget (${hem} gång, ${annat} med annat)`, hem >= 1 && annat === 0],
       ['utan kniv slaktas inget; kniven görs av en flinta och en gren och en flinta sparas till elden', utan && kniv && kan],
-      ['en slaktad kanin ger mer kött än den uppätna, och ett ben, ett skinn och senor till rep', slakt && SLAKT.kott > KANIN],
+      ['en slaktad kanin ger mer kött än den uppätna, och ett ben och ett skinn', slakt && SLAKT.kott > KANIN],
+      [`senorna blir ibland ett rep för den som kan Rep (${medRep} rep av 200 kaniner), aldrig annars (${utanRep})`, medRep >= 200 * DJUR.kanin.rep * 0.5 && medRep <= 200 * DJUR.kanin.rep * 1.5 && utanRep === 0],
+    ];
+  },
+};
+
+SCENARIER.kaniner = {
+  text: 'Kaninerna finns i några få små grupper som håller ihop, där kartan är hög och långt från byn. En jagad grupp krymper och kommer tillbaka på en ny plats, och jakten ger bara något nära en grupp',
+  kor: () => {
+    const s = createState(6, START);
+    s.now = new Date(s.now).setHours(10, 0, 0, 0);
+    // några dygn, en gång i timmen: hur många grupper, hur stora, hur nära byn och hur nära varandra i gruppen
+    let flest = 0, minst = 99, storst = 0, naraByn = 0, spridda = 0, kaniner = 0, battre = 0, samre = 0;
+    const forst = new Map<number, number>(), fore = s.now;
+    for (let h = 0; h < 72; h++) {
+      const gs = grupperOf(s), dj = djurOf(s);
+      flest = Math.max(flest, gs.length);
+      for (const g of gs) {
+        minst = Math.min(minst, g.n); storst = Math.max(storst, g.n);
+        const v = vaxerAt(s, 'jakt', Math.floor(g.y) * W + Math.floor(g.x));
+        if (!forst.has(g.id)) forst.set(g.id, v); else if (v >= forst.get(g.id)! - 1e-9) battre++; else samre++;
+      }
+      for (const d of dj) {
+        kaniner++;
+        if (campDist(s, Math.floor(d.x), Math.floor(d.y)) < SKYGG_IN) naraByn++;
+        if (Math.min(...gs.map(g => Math.hypot(g.x - d.x, g.y - d.y))) > 3) spridda++;
+      }
+      s.now += HOUR;
+    }
+    s.now = fore;
+    // jakten ger bara något nära en grupp: en rik plats på kartan långt från grupperna ger inget
+    const gs = grupperOf(s);
+    let tom = -1;
+    for (let i = 0; i < W * H; i++) { const x = i % W + 0.5, y = Math.floor(i / W) + 0.5; if (vaxerAt(s, 'jakt', i) > FYND.jakt.topp * 0.5 && gs.every(g => Math.hypot(g.x - x, g.y - y) > 8)) { tom = i; break; } }
+    const g0 = gs[0], vidGrupp = richness(s, 'jakt', g0.x, g0.y), langtBort = tom < 0 ? 0 : richness(s, 'jakt', tom % W + 0.5, Math.floor(tom / W) + 0.5);
+    // en grupp som jagas krymper och tar slut, och kommer tillbaka på en ny plats när dess tid är slut
+    const k = g0.id % GRUPPER_MAX, n0 = g0.n;
+    for (let i = 0; i < 200 && grupperOf(s).find(g => g.id === g0.id)!.n > 0; i++) takeFrom(s, 'jakt', g0.x + (i % 5) - 2, g0.y + Math.floor(i / 5) % 5 - 2, 0.5); // jägare runt om gruppen
+    const efter = grupperOf(s).find(g => g.id === g0.id)!.n;
+    let ny: { id: number; x: number; y: number; n: number } | undefined;
+    for (let h = 0; h < 24 && !ny; h++) { s.now += HOUR; ny = grupperOf(s).find(g => g.id % GRUPPER_MAX === k && g.id !== g0.id); }
+    const flyttad = ny ? Math.hypot(ny.x - g0.x, ny.y - g0.y) : 0;
+    return [
+      [`högst ${GRUPPER_MAX} grupper (som mest ${flest}), med ${STORLEK[0]}–${STORLEK[1]} kaniner i varje (${minst}–${storst})`, flest <= GRUPPER_MAX && flest >= 3 && minst >= STORLEK[0] && storst <= STORLEK[1]],
+      [`ingen kanin närmare byn än ${SKYGG_IN} rutor (${naraByn} av ${kaniner})`, kaniner > 0 && naraByn === 0],
+      [`kaninerna håller ihop i sin grupp (${spridda} av ${kaniner} mer än 3 rutor från gruppen)`, spridda <= kaniner * 0.02],
+      [`grupperna rör sig mot bättre platser på kartan (${battre} timmar lika bra eller bättre, ${samre} sämre)`, battre > samre * 3],
+      [`jakten ger mycket mer nära en grupp (${vidGrupp.toFixed(2)}) än på en rik plats långt från grupperna (${langtBort.toFixed(2)})`, tom >= 0 && vidGrupp > langtBort * 3],
+      [`en jagad grupp krymper (${n0} → ${efter} kaniner)`, efter === 0 && n0 > 0],
+      [`och kommer tillbaka på en ny plats (${flyttad.toFixed(0)} rutor bort, ${ny?.n ?? 0} kaniner)`, !!ny && flyttad > 5 && ny.n >= STORLEK[0]],
     ];
   },
 };
@@ -731,8 +799,9 @@ SCENARIER.lager = {
     let hem = 0, maxKvot = 0, fullt = 0;
     for (let i = 0; i < 8 * 3600 / 2; i++) {
       step(b, 2, true);
+      // en kanin bärs hem hel, en i taget, hur stark man än är
       for (const p of living(b)) if (p.task?.phase === 'back' && p.task.act !== 'elda') {
-        const kv = load(p.task) / capacity(b, p); hem++; maxKvot = Math.max(maxKvot, kv); if (kv >= 0.95) fullt++;
+        const kv = p.task.act === 'jakt' ? load(p.task) / KANIN : load(p.task) / capacity(b, p); hem++; maxKvot = Math.max(maxKvot, kv); if (kv >= 0.95) fullt++;
       }
     }
     // den som har fullt går hem med en gång, även om uppgiften inte är klar
@@ -1030,7 +1099,7 @@ SCENARIER.varmekarta = {
     // kaninerna håller sig borta från lägret och från platser där folk trampat
     const sk0 = skyggOf(s);
     let nara = 0, naraN = 0, langt = 0, langtN = 0;
-    for (let i = 0; i < W * H; i++) if (land(i)) { const d = campDist(s, i % W, Math.floor(i / W)); if (d >= LAGER_R && d < LAGER_R + 3) { nara += sk0[i]; naraN++; } else if (d > LAGER_R + SKYGG_R) { langt += sk0[i]; langtN++; } }
+    for (let i = 0; i < W * H; i++) if (land(i)) { const d = campDist(s, i % W, Math.floor(i / W)); if (d >= LAGER_R && d < SKYGG_IN) { nara += sk0[i]; naraN++; } else if (d > SKYGG_IN + SKYGG_R) { langt += sk0[i]; langtN++; } }
     // kaniner trivs bäst i gräs (räknat utan skyggheten)
     let gr = 0, grN = 0, sk = 0, skN = 0;
     for (let i = 0; i < W * H; i++) if (land(i) && sk0[i] > 0.02) { const v = vaxerAt(s, 'jakt', i) / sk0[i]; if (g.trees[i] >= FOREST) { sk += v; skN++; } else { gr += v; grN++; } }
@@ -1054,7 +1123,7 @@ SCENARIER.varmekarta = {
       s.now = nu;
       return n ? same / n : 0;
     };
-    const barKvar = kvar('bar', 28, 1), kaninKvar = kvar('jakt', 28, 0.6), barSenare = kvar('bar', 280, 1);
+    const barKvar = kvar('bar', 28, 1), kaninKvar = kvar('jakt', 28, 0.6 * JAKT_F), barSenare = kvar('bar', 280, 1);
     // ta ur en rik ruta och låt den växa tillbaka
     let bast = 0; for (let i = 0; i < W * H; i++) if (fyndAt(s, 'kantarell', i) > fyndAt(s, 'kantarell', bast)) bast = i;
     const x = bast % W + 0.5, y = Math.floor(bast / W) + 0.5, fore = fyndAt(s, 'kantarell', bast);

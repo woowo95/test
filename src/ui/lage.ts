@@ -11,6 +11,7 @@ export const ui = {
   hovered: undefined as number | undefined, // personen under musen
   follow: undefined as number | undefined, // personen kameran följer
   busy: false, // ikappräkning pågår
+  sparFel: false, // senaste sparningen i artefaktens databas misslyckades
   testMode: false, // testläget: en kopia av byn som kan spolas fram
   lastPointer: 0, // när spelaren senast tryckte: panelen byts inte ut mitt i ett tryck
   hogAt: { x: 0, y: 0 }, // rutan med högar utanför lagret som visas i panelen

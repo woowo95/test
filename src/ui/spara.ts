@@ -1,4 +1,4 @@
-import { DAY, KUNSKAP_NAMES, LogEntry, State, compact, describe, living, migrate, serialize, step, timeLabel } from '../sim';
+import { DAY, KUNSKAP_NAMES, LogEntry, State, compact, describe, joinParts, living, migrate, serialize, serializeParts, step, timeLabel } from '../sim';
 import { $, esc } from './hjalp';
 import { s, ui } from './lage';
 import { drawTerrain } from './terrang';
@@ -11,9 +11,43 @@ export function saveLocal() {
   if (ui.testMode || !s) return;
   try { compact(s); localStorage.setItem(SAVE_KEY, serialize(s)); } catch { /* ignoreras */ }
 }
+// I databasen: varje del av byn (serializeParts) i ett eller flera dokument om högst BIT tecken (ett dokument rymmer 256 KB),
+// och sist dokumentet "byn" som säger vilken uppsättning (a eller b) som är hel. En sparning som avbryts halvvägs lämnar
+// alltså den förra uppsättningen orörd. Gamla sparningar låg i ett enda dokument, "save", som bara läses.
+const BIT = 80000;
+let slot = 'a', sparar = false;
+const delDoc = (sl: string, d: string, i: number) => db.doc(`data/users/${uid}/del-${sl}-${d}-${i}`);
 export async function saveDb() {
-  if (ui.testMode || !s || !db || !uid) return;
-  try { compact(s); await db.doc(`data/users/${uid}/save`).set({ state: serialize(s), savedAt: Date.now() }); } catch { /* ignoreras */ }
+  if (ui.testMode || !s || !db || !uid || sparar) return;
+  sparar = true;
+  try {
+    compact(s);
+    const ny = slot === 'a' ? 'b' : 'a', delar: Record<string, number> = {};
+    for (const [d, txt] of Object.entries(serializeParts(s))) {
+      const n = Math.max(1, Math.ceil(txt.length / BIT));
+      for (let i = 0; i < n; i++) await delDoc(ny, d, i).set({ t: txt.slice(i * BIT, (i + 1) * BIT) });
+      delar[d] = n;
+    }
+    await db.doc(`data/users/${uid}/byn`).set({ slot: ny, delar, now: s.now, savedAt: Date.now() });
+    slot = ny; ui.sparFel = false;
+  } catch { ui.sparFel = true; }
+  sparar = false;
+}
+async function loadDb(d: any): Promise<State | null> {
+  const m = await d.doc(`data/users/${uid}/byn`).get();
+  if (m.exists) {
+    const { slot: sl, delar } = m.data() as { slot: string; delar: Record<string, number> };
+    slot = sl;
+    const texter: string[] = [];
+    for (const [del, n] of Object.entries(delar)) {
+      let txt = '';
+      for (let i = 0; i < n; i++) { const b = await delDoc(sl, del, i).get(); if (!b.exists) return null; txt += String(b.data()?.t ?? ''); }
+      texter.push(txt);
+    }
+    return parse(joinParts(texter));
+  }
+  const snap = await d.doc(`data/users/${uid}/save`).get();
+  return snap.exists ? parse(String(snap.data()?.state ?? '')) : null;
 }
 function parse(txt: string | null | undefined): State | null {
   if (!txt) return null;
@@ -32,8 +66,7 @@ export async function loadSaves(): Promise<State | null> {
         if (!d || !u) return null;
         const id = await u.id(); if (!id) return null;
         db = d; uid = id;
-        const snap = await d.doc(`data/users/${id}/save`).get();
-        return snap.exists ? parse(String(snap.data()?.state ?? '')) : null;
+        return await loadDb(d);
       })(), timeout]);
       remote = got;
     }
@@ -49,7 +82,7 @@ export async function catchUp(target: number, showOverlay: boolean) {
   ui.busy = true;
   const logStart = s.log.length ? s.log[s.log.length - 1].t : 0;
   const from = s.now;
-  const before = knowSnapshot();
+  const before = knowSnapshot(), stat0 = { ...s.stat };
   const ov = $('overlay');
   if (showOverlay) { ov.hidden = false; $('ovBody').innerHTML = `<p class="ovLead">Byn har levt vidare medan du var borta.</p><div class="prog"><div id="progBar"></div></div><p class="muted" id="progTxt"></p>`; }
   await new Promise<void>(resolve => {
@@ -67,7 +100,7 @@ export async function catchUp(target: number, showOverlay: boolean) {
   });
   ui.busy = false;
   for (const p of living(s)) p.task = undefined;
-  if (showOverlay) showSummary(from, logStart, before);
+  if (showOverlay) showSummary(from, logStart, before, stat0);
   saveLocal(); saveDb();
   drawTerrain(true); drawPlants(true);
 }
@@ -99,10 +132,10 @@ function knowHtml(before: ReturnType<typeof knowSnapshot>) {
     ${nyL ? `<li>${nyL} nya lärdomar: ${delar}</li>${ex.map(x => `<li class="muted">${x}</li>`).join('')}` : ''}</ul>`;
 }
 // sammanställningen efter ikappräkningen: det viktigaste som hänt
-function showSummary(from: number, logStart: number, before = knowSnapshot()) {
+function showSummary(from: number, logStart: number, before = knowSnapshot(), stat0: Record<string, number> = {}) {
   const ev = s.log.filter(l => l.t > logStart && l.t > from);
   const years = (s.now - from) / DAY;
-  const births = ev.filter(e => e.kind === 'birth').length, deaths = ev.filter(e => e.kind === 'death').length;
+  const births = (s.stat?.fodda ?? 0) - (stat0.fodda ?? 0), deaths = (s.stat?.doda ?? 0) - (stat0.doda ?? 0);
   const prio = (e: LogEntry) => e.kind === 'death' ? 5 : e.kind === 'birth' || e.kind === 'move' ? 4 : e.kind === 'skill' || /par\.|skilda|tända elden|slocknade/.test(e.text) ? 3 : e.kind === 'world' && /tiden|Byn|flinta|stenar/.test(e.text) ? 2 : e.kind === 'rel' ? 1 : 0;
   const key = ev.map((e, i) => ({ e, i, p: prio(e) })).filter(x => x.p > 0).sort((a, b) => b.p - a.p || b.i - a.i).slice(0, 10).sort((a, b) => b.i - a.i).map(x => x.e);
   const yrs = years >= 1 ? `${years.toFixed(1).replace('.', ',')} år` : `${Math.round(years * 12)} månader`;

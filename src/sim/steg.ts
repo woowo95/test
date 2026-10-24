@@ -23,7 +23,7 @@ import { ACTS } from './handlingar';
 import { Act, DAY, HOUR, Person, SEC, SKILL_NAMES, State, Task, W, H, useMap } from './typer';
 import { findPath, speedAt, wear } from './vag';
 import { chooseTask } from './val';
-import { nearestDjur } from './djur';
+import { djurSteg, nearestDjur } from './djur';
 import { Job, avail, bitById, buildJob, deliver as deliverBit, lacks, needOf, planBuild, siteOf, takeFor, toWalls, wearBuild, workOn } from './bygg';
 import { MATERIAL, blocked, gridOf, roomAt, shelterOf } from './byggnad';
 
@@ -84,6 +84,7 @@ export function step(s: State, dtSec: number, live: boolean, events?: TalkEvent[
   const ppl = living(s);
   const light = isLight(now);
   gridOf(s); // väggarna och rummen, så att vägsökningen vet var väggarna står
+  djurSteg(s); // kaningrupperna väljer plats när deras tid börjar
   // förråd: ruttning och ved
   wearStore(s, dtSec, ai); // slitage per slag, fortare utanför lagret
   syncEgna(s); // vems det är: det som ruttnat eller slitits minskar allas delar
@@ -415,6 +416,19 @@ export function serialize(s: State) {
   packGround(s); packFynd(s);
   return JSON.stringify(s, (_k, v) => (typeof v === 'number' && !Number.isInteger(v) ? Math.round(v * 1000) / 1000 : v));
 }
+
+// sparfilen i delar, så att varje del ryms i ett dokument i artefaktens databas (högst 256 KB). Det som inte står här är byn
+export const DELAR: Record<string, string[]> = { folket: ['people', 'rels'], kartor: ['fynd', 'mark', 'skog', 'stubbar'], loggen: ['log'] };
+export function serializeParts(s: State): Record<string, string> {
+  const byn = JSON.parse(serialize(s)), ut: Record<string, string> = {};
+  for (const [d, keys] of Object.entries(DELAR)) {
+    const del: Record<string, unknown> = {};
+    for (const k of keys) if (k in byn) { del[k] = byn[k]; delete byn[k]; }
+    ut[d] = JSON.stringify(del);
+  }
+  return { byn: JSON.stringify(byn), ...ut };
+}
+export const joinParts = (delar: string[]) => JSON.stringify(Object.assign({}, ...delar.map(d => JSON.parse(d))));
 
 // rensa gammal historik så att sparfilen hålls liten
 export function compact(s: State) {
