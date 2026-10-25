@@ -52,7 +52,7 @@ document.addEventListener('click', e => {
   if (tb) visa(tb.dataset.tab as FlikId);
 });
 
-// listan till vänster över allt i förrådet, i mappar som kan fällas ihop: symboler med antalet bredvid, namnet när musen är över
+// listan till vänster över allt i förrådet, i mappar som kan fällas ihop: en sak per rad, symbolen och antalet, namnet när musen är över
 const closed = new Set<string>();
 let ownedKey = '';
 // namnet, hur mycket som är byns och invånarnas egna (egendom.ts), och värdet (varde.ts)
