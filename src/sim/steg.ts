@@ -1,13 +1,13 @@
 import { tidyTools } from './agande';
 import { rotStumps } from './skog';
-import { needLadder } from './behov';
-import { use, capacity, dropSpot, fetchSpot, homeKind, load, pickUp, storeLoad, tidyStore, wearStore } from './lager';
+import { VED, needLadder, noticeTheft, stole, takeMaterial } from './behov';
+import { capacity, dropSpot, fetchSpot, homeKind, load, pickUp, storeLoad, tidyStore, wearStore } from './lager';
 import { KANIN, MASK_PER_GRAV, makeBasket, makeKnife, makeRod, makeSpear, slaughter, twineRope, wearUsed } from './redskap';
 import { thinkWhileWorking } from './teknik';
 import { foodDays, workRate } from './ekonomi';
 import { TRY_SEC, growFynd, handFish, packFynd, pickMushrooms, richness, takeFrom } from './fynd';
 import { coldOf, temperature } from './vader';
-import { addFuel, canLight, fireWant, forageItems, fuelStock, hearthOf, heatAt, igniterOf, stepFire, takeCoal, takeFuel, tryLight } from './eld';
+import { addFuel, canLight, fireWant, forageItems, fuelFor, hearthOf, heatAt, igniterOf, stepFire, takeCoal, takeFuel, tryLight } from './eld';
 import { ageOf, alive, count, living, log, stat, think } from './folk';
 import { getMap } from './karta';
 import { birth, birthWish, die, regulate } from './liv';
@@ -47,10 +47,10 @@ const MEDAN: Partial<Record<Act, Krok>> = {
   hantverk: (s, p, t, dtSec) => { if (t.tool === 'rep') twineRope(s, p, dtSec / 3600); },
   slakta: (s, p, _t, dtSec) => slaughter(s, p, dtSec / 3600),
   tanda: (s, p, _t, dtSec) => {
-    if (!canLight(s)) return;
+    if (!canLight(s, p)) return;
     s.fire.tryProg += dtSec;
     const per = igniterOf(s)!.minutes * 60;
-    while (s.fire.tryProg >= per && canLight(s) && !s.fire.lit) { s.fire.tryProg -= per; if (tryLight(s, p)) { p.task = undefined; break; } }
+    while (s.fire.tryProg >= per && canLight(s, p) && !s.fire.lit) { s.fire.tryProg -= per; if (tryLight(s, p)) { p.task = undefined; break; } }
   },
 };
 // det som händer när en handling är klar
@@ -202,7 +202,7 @@ function taskStep(s: State, p: Person, a: number, t1: number, dtSec: number, lea
     const now = s.now, light = isLight(now), t = p.task;
     const phaseFlip = t && t.dark !== !light && ACTS[t.act].dygn; // dag blev natt eller tvärtom
     if (t && t.phase === 'do' && t.until <= now) KLAR[t.act]?.(s, p, t, 0); // ett träd som fällts färdigt, en yxa som gjorts klar
-    const lightDone = t?.act === 'tanda' && (s.fire.lit || !canLight(s));
+    const lightDone = t?.act === 'tanda' && (s.fire.lit || !canLight(s, p));
     const mustGo = t && p.toa < 0.08 && t.act !== 'toa' && a >= 3; // nöden avbryter det man håller på med
     if (!t || (t.until <= now && t.phase !== 'back') || ((phaseFlip || mustGo) && t.phase !== 'back') || lightDone) {
       if (t && (t.carry > 0 || t.items) && t.act !== 'elda') { t.phase = 'back'; const d = dropSpot(s, homeKind(t)); t.tx = d.x + sida(p, 0.2); t.ty = d.y + sida(p, -0.2); }
@@ -284,16 +284,20 @@ function arrive(s: State, p: Person, tk: Task, light: boolean) {
   const now = s.now;
   if (tk.act === 'elda') {
     if (tk.phase === 'go') {
-      // vid förrådet: ta en famn ved och gå till elden
-      const m = getMap(s.seed), n = s.fire.fuel >= fireWant(s) ? 0 : Math.min(1, fuelStock(s)); // en famn i taget, så att elden matas oftare
+      // vid förrådet: ta en famn ved och gå till elden. Byns och sin egen, eller den andras (stöld i yttersta nöd, behov.ts)
+      const fran = tk.fran !== undefined ? s.people.find(q => q.id === tk.fran) : undefined;
+      const m = getMap(s.seed), n = s.fire.fuel >= fireWant(s) ? 0 : Math.min(1, fuelFor(s, p, fran)); // en famn i taget, så att elden matas oftare
       if (n <= 0) p.task = undefined;
-      else { tk.ag = { ved: {} }; tk.carry = takeFuel(s, n, p, tk.ag.ved); tk.phase = 'back'; tk.tx = m.fire.x + 0.5 + sida(p, 0.6); tk.ty = m.fire.y + 1.2; }
+      else {
+        tk.ag = { ved: {} }; tk.carry = takeFuel(s, n, p, tk.ag.ved, fran); tk.phase = 'back'; tk.tx = m.fire.x + 0.5 + sida(p, 0.6); tk.ty = m.fire.y + 1.2;
+        if (fran) stole(s, p, fran, VED.id, tk.carry); else if ((tk.ag.ved[p.id] ?? 0) > 1e-9) noticeTheft(s, p, VED.id);
+      }
     } else { addFuel(s, p, tk.carry); tk.carry = 0; p.task = undefined; }
   } else if (tk.act === 'bygga' && tk.phase === 'go' && tk.site) {
     // vid lagret: ta materialet och gå till bygget
     const b = bitById(s, tk.ref), k = b && MATERIAL[b.m].item, n = b ? needOf(b) : 0;
-    if (!b || !k || avail(s, k) < n) p.task = undefined;
-    else { tk.ag = { [k]: use(s, p, k, n, true) }; tk.items = { [k]: n }; tk.tx = tk.site.x; tk.ty = tk.site.y; tk.site = undefined; }
+    if (!b || !k || avail(s, k, p) < n) p.task = undefined;
+    else { tk.ag = { [k]: takeMaterial(s, p, k, n, true) }; tk.items = { [k]: n }; tk.tx = tk.site.x; tk.ty = tk.site.y; tk.site = undefined; }
   } else if (tk.phase === 'back') {
     storeLoad(s, tk, p.x, p.y, p.id);
     // ett arbetspass är klart: gå tillbaka och fortsätt om arbetet inte är slut och dagen inte vänt

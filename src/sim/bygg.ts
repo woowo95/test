@@ -8,6 +8,7 @@ import { rnd } from './slump';
 import { knows } from './teknik';
 import { amountOf, changed, zonesOf } from './lager';
 import { freeTools } from './agande';
+import { getable } from './behov';
 import { FOREST } from './vag';
 import { kronika } from './historik';
 import { H, HOUR, Person, State, T, W } from './typer';
@@ -102,7 +103,8 @@ export function planBuild(s: State) {
 // ---------- arbete ----------
 // fell = ett träd står där biten ska byggas och måste fällas först
 export interface Job { bit: Bit; repair: boolean; item?: string; need: number; missing: boolean; fell?: boolean }
-export const avail = (s: State, k: string) => amountOf(s, k) - (RESERVE[k] ?? 0);
+// det som finns att bygga med (av p: det p kan få, behov.ts), utom det som sparas
+export const avail = (s: State, k: string, p?: Person) => (p ? getable(s, p, k) : amountOf(s, k)) - (RESERVE[k] ?? 0);
 export const treeOn = (s: State, b: Bit) => groundOf(s).trees[b.y * W + b.x] >= FOREST;
 // det p kan bygga härnäst: lagning av slitna väggar först, sedan jordgolv, väggar och sist trägolv. Det andra redan bygger tas inte
 export function buildJob(s: State, p: Person): Job | undefined {
@@ -130,7 +132,7 @@ export function buildJob(s: State, p: Person): Job | undefined {
     if (M.tek && !knows(p, M.tek)) continue;
     const need = needOf(b);
     const sc = (repair ? 0 : b.k === 'golv' ? (M.item ? 300 : 100) : 200) + Math.hypot(b.x - p.x, b.y - p.y);
-    if (sc < bs) { bs = sc; best = { bit: b, repair, item: M.item, need, missing: need > 0 && avail(s, M.item!) < need }; }
+    if (sc < bs) { bs = sc; best = { bit: b, repair, item: M.item, need, missing: need > 0 && avail(s, M.item!, p) < need }; }
   }
   return best;
 }

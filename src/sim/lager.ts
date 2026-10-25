@@ -292,8 +292,8 @@ export function addTo(s: State, k: string, n: number) { if (n > 0) place(s, k, n
 export function put(s: State, k: string, n: number, ag?: Del, c = 1) { place(s, k, n, c, ag && shareOf(ag, n)); }
 // p skaffade n av slaget k och lade det rakt i förrådet: det är hens (egendom.ts)
 export function gain(s: State, p: Person, k: string, n: number) { if (n > 0) place(s, k, n, 1, { [p.id]: n }); }
-// p tar n av slaget k ur förrådet; common = till byns eld eller hus. Ger vems det var
-export function use(s: State, p: Person | undefined, k: string, n: number, common = false) { return takeOwn(s, k, n, p, common).ag; }
+// p tar n av slaget k ur förrådet; common = till byns eld eller hus, fran = av den personens först (stöld). Ger vems det var
+export function use(s: State, p: Person | undefined, k: string, n: number, common = false, fran?: number) { return takeOwn(s, k, n, p, common, fran).ag; }
 // för nya byar och tester: förrådet av slaget k blir n, och det som läggs till är byns
 export function setAmount(s: State, k: string, n: number) {
   if (isTool(k)) { setTools(s, k, n); return; }
