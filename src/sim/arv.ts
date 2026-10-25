@@ -30,7 +30,7 @@ const lista = (d: string[]) => d.length > 1 ? `${d.slice(0, -1).join(', ')} och 
 
 // p har dött: arvingarna får det hen ägde. Anropas innan delarna blir byns (releaseOwner)
 export function inherit(s: State, p: Person) {
-  const heirs = process.env.PROV === 'arv' ? [] : heirsOf(s, p);
+  const heirs = heirsOf(s, p);
   if (!heirs.length) return;
   const val = heirs.map(() => 0), fick: string[][] = heirs.map(() => []);
   const tools = tingOf(s).filter(t => t.agare === p.id).sort((a, b) => vardeOf(b.k) * b.c - vardeOf(a.k) * a.c || a.id - b.id);
@@ -61,7 +61,7 @@ export function inherit(s: State, p: Person) {
 // p flyttar: hen tar med sig det mest värda för vikten av sitt eget, så mycket hen orkar bära (ett redskap är en full
 // börda, lager.ts: load). Anropas innan resten blir byns (releaseOwner)
 export function packUp(s: State, p: Person) {
-  let kvar = process.env.PROV === 'arv' ? 0 : capacity(s, p);
+  let kvar = capacity(s, p);
   const eget = ownedAll(s, p.id);
   const saker = [
     ...tingOf(s).filter(t => t.agare === p.id).map(t => ({ k: t.k, ting: t.id, n: 1, per: vardeOf(t.k) * t.c, bord: 1 })),
