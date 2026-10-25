@@ -68,7 +68,7 @@ const DEF = {
   toa: { namn: 'Går avsides på toa', plats: 'avsides' },
   kol: { namn: 'Hämtar kol ur den slocknade elden', plats: 'kol' },
   falla: { namn: 'Fäller ett träd med yxa', slag: 'tra', redskap: { yxa: {} }, arbete: 'ved', takt: 0, tungt: true },
-  hugga: { namn: 'Hugger trä av ett fällt träd', slag: 'tra', redskap: { yxa: {} }, arbete: 'ved', ger: 'ved', takt: 1.5, tungt: true },
+  hugga: { namn: 'Hugger trä av ett fällt träd', slag: 'tra', redskap: { yxa: {} }, arbete: 'ved', ger: 'ved', takt: 1.5, tur: 1200, tungt: true },
   yxa: { namn: 'Gör en yxa av en pinne och flinta', slag: 'hantverk', hantverk: true, plats: 'elden' },
   spjut: { namn: 'Täljer ett spjut', verktyg: { flintspjut: 'Gör ett flintspjut' }, slag: 'hantverk', hantverk: true, plats: 'elden' },
   metspo: { namn: 'Gör ett metspö', slag: 'hantverk', hantverk: true, plats: 'elden' },

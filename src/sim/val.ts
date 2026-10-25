@@ -203,7 +203,7 @@ function day(s: State, p: Person, v: Val, a: number, lazy: number) {
     building(s, p, v, job!, ppl.length);
   } else if (works) {
     set(v, best, what + (lazy < 0.2 ? '. Plikttrogen.' : habitShare(p, [best], tot) > 0.25 ? '. Brukar göra det.' : p.skill[best as Skill] > 10 ? '. Skicklig på det.' : '.'));
-    v.dur = (60 + rnd(s, 'val', p) * 120) * MIN;
+    v.dur = (30 + rnd(s, 'val', p) * 60) * MIN; // korta pass: man väljer om oftare och syns gå mellan platserna
     withTools(s, p, v, best, what);
     if (build && job!.missing && job!.item === 'ved' && v.act === 'falla') { v.ref = job!.bit.hus; v.why = `${v.why} Stocken ska bli en vägg.`; } // trädet fälls för bygget
   } else leisure(s, p, v, u, lazy, ai);
@@ -241,7 +241,7 @@ function building(s: State, p: Person, v: Val, job: NonNullable<ReturnType<typeo
   }
   set(v, 'bygga', job.repair ? `En vägg i ${hus} är sliten och behöver lagas.` : `${b.k === 'golv' ? 'Lägger golv i' : 'Bygger på'} ${hus}. ${beds(s).length < pop ? 'Alla har inte en sovplats under tak.' : ''}`.trim());
   v.tool = job.repair ? 'laga' : b.k === 'golv' ? 'golv' : 'vagg'; v.ref = b.id;
-  v.dur = (60 + rnd(s, 'val', p) * 90) * MIN;
+  v.dur = (30 + rnd(s, 'val', p) * 45) * MIN;
   const site = siteOf(s, b); v.spot = job.need > 0 ? fetchSpot(s, job.item!) : site; if (job.need > 0) v.site = site;
 }
 
