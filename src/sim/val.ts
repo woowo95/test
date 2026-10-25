@@ -132,6 +132,9 @@ const tinderNeeded = (s: State) => !s.fire.lit && !emberOn(s) && !canLight(s) &&
 interface Val { act: Act; why: string; dur: number; spot?: { x: number; y: number }; ref?: number; tool?: string; site?: { x: number; y: number } }
 const set = (v: Val, act: Act, why: string) => { v.act = act; v.why = why; return true; };
 const MIN = 60 * SEC;
+// dagens pass är hälften så långa som förr (steg 1.5.11), arbete och fritid lika, så att tiden fördelas som förut men
+// folk väljer om oftare och syns gå mellan platserna
+const PASS = 0.5;
 
 // Viljan i tre steg: 1. nöd, 2. grundbehov, 3. byns behov mot egen lust (på dagen) eller kvällen vid elden (på natten).
 // Man går sedan dit (steg.ts)
@@ -171,6 +174,7 @@ function needs(s: State, p: Person, v: Val, a: number, lazy: number, light: bool
 function day(s: State, p: Person, v: Val, a: number, lazy: number) {
   const now = s.now, sd = s.seder.v;
   let gt: ReturnType<typeof haulJob>;
+  v.dur *= PASS;
   if (a < 8) { set(v, 'leka', 'Är barn och leker'); return; }
   if (s.stackar?.length && rnd(s, 'val', p) < 0.25 && (gt = haulJob(s))) { set(v, 'bara', gt.why); v.spot = gt; v.dur = 3 * HOUR; return; }
   if (a >= 14 && canSlaughter(s, p) && rnd(s, 'val', p) < 0.5) { slaughterTask(s, v, 'Det finns vilt att slakta innan det blir dåligt'); return; }
@@ -203,7 +207,7 @@ function day(s: State, p: Person, v: Val, a: number, lazy: number) {
     building(s, p, v, job!, ppl.length);
   } else if (works) {
     set(v, best, what + (lazy < 0.2 ? '. Plikttrogen.' : habitShare(p, [best], tot) > 0.25 ? '. Brukar göra det.' : p.skill[best as Skill] > 10 ? '. Skicklig på det.' : '.'));
-    v.dur = (30 + rnd(s, 'val', p) * 60) * MIN; // korta pass: man väljer om oftare och syns gå mellan platserna
+    v.dur = (60 + rnd(s, 'val', p) * 120) * MIN * PASS;
     withTools(s, p, v, best, what);
     if (build && job!.missing && job!.item === 'ved' && v.act === 'falla') { v.ref = job!.bit.hus; v.why = `${v.why} Stocken ska bli en vägg.`; } // trädet fälls för bygget
   } else leisure(s, p, v, u, lazy, ai);
@@ -241,7 +245,7 @@ function building(s: State, p: Person, v: Val, job: NonNullable<ReturnType<typeo
   }
   set(v, 'bygga', job.repair ? `En vägg i ${hus} är sliten och behöver lagas.` : `${b.k === 'golv' ? 'Lägger golv i' : 'Bygger på'} ${hus}. ${beds(s).length < pop ? 'Alla har inte en sovplats under tak.' : ''}`.trim());
   v.tool = job.repair ? 'laga' : b.k === 'golv' ? 'golv' : 'vagg'; v.ref = b.id;
-  v.dur = (30 + rnd(s, 'val', p) * 45) * MIN;
+  v.dur = (60 + rnd(s, 'val', p) * 90) * MIN * PASS;
   const site = siteOf(s, b); v.spot = job.need > 0 ? fetchSpot(s, job.item!) : site; if (job.need > 0) v.site = site;
 }
 
@@ -316,9 +320,9 @@ function leisure(s: State, p: Person, v: Val, u: number, lazy: number, ai: numbe
     // nyfikna och modiga går längre bort
     const far = 4 + (stat(p, 'nyfikenhet', now) + stat(p, 'mod', now)) / 40 * 14;
     set(v, 'promenad', far > 12 ? 'Är nyfiken och vill se vad som finns längre bort' : 'Vill sträcka på benen');
-    v.spot = walkSpot(s, far); v.dur = (60 + rnd(s, 'val', p) * 90) * MIN;
-  } else if (r < wv + wh + wsoc + wp + wb) { set(v, 'bada', `Det är varmt (${Math.round(temp)} grader) och skönt att bada`); v.spot = shore; v.dur = (30 + rnd(s, 'val', p) * 30) * MIN; }
-  else { set(v, 'strand', ai === 0 ? 'Vill se ut över isen en stund' : 'Vill sitta vid vattnet och se ut över sjön'); v.spot = strandSpot(s); v.dur = (30 + rnd(s, 'val', p) * 60) * MIN; }
+    v.spot = walkSpot(s, far); v.dur = (60 + rnd(s, 'val', p) * 90) * MIN * PASS;
+  } else if (r < wv + wh + wsoc + wp + wb) { set(v, 'bada', `Det är varmt (${Math.round(temp)} grader) och skönt att bada`); v.spot = shore; v.dur = (30 + rnd(s, 'val', p) * 30) * MIN * PASS; }
+  else { set(v, 'strand', ai === 0 ? 'Vill se ut över isen en stund' : 'Vill sitta vid vattnet och se ut över sjön'); v.spot = strandSpot(s); v.dur = (30 + rnd(s, 'val', p) * 60) * MIN * PASS; }
 }
 
 // på natten: en vakt, och de andra håller sig vid elden och berättar, gör handarbete, umgås eller sover

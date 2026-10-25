@@ -252,13 +252,19 @@ function pathFor(s: State, g: ReturnType<typeof groundOf>, x0: number, y0: numbe
   const k = tileOf(x0, y0) * W * H + tileOf(x1, y1);
   let v = c.m.get(k);
   if (v === undefined) c.m.set(k, v = findPath(g, x0, y0, x1, y1));
-  return v ? v.slice() : [];
+  return v ? v.slice() : null; // null = ingen väg dit
 }
 // att gå mot målet ruta för ruta runt vatten, gärna längs stigar. Ger tiden det tog och om man kom fram
 function walk(s: State, p: Person, tk: Task, left: number, a: number) {
   const g = groundOf(s);
   const key = `${tk.tx.toFixed(2)},${tk.ty.toFixed(2)},${s.byggV ?? 0}`; // en ny vägg kan stänga vägen
-  if (tk.pk !== key) { tk.pk = key; tk.path = pathFor(s, g, p.x, p.y, tk.tx, tk.ty); }
+  if (tk.pk !== key) {
+    tk.pk = key;
+    const v = pathFor(s, g, p.x, p.y, tk.tx, tk.ty), f = getMap(s.seed).fire;
+    // målet går inte att nå (en ö): man väljer något annat. Bara den som själv är avskuren från lägret går rakt över
+    if (!v && tk.phase === 'go' && pathFor(s, g, p.x, p.y, f.x + 0.5, f.y + 0.5)) { p.task = undefined; return { used: Math.min(left, BIT), framme: false }; }
+    tk.path = v ?? [];
+  }
   const off = sida(p, 0.18), fart = a < 6 ? 0.9 : a > 65 ? 1 : 1.6, t0 = s.now;
   let budget = fart * left;
   const klocka = () => t0 + (fart * left - budget) / fart * SEC;
