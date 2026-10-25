@@ -130,10 +130,12 @@ const SCENARIER: Record<string, { text: string; kor: () => Koll[] }> = {
     text: 'Bär, rötter och vilt tar slut nära byn för en tid, så invånarna går längre bort; fiske med händerna ger få fiskar per försök',
     kor: () => {
       const s = createState(15, START);
-      kor(s, 12 * 24);
-      const nara = uttag(s, 'samla', 0, 8), langt = uttag(s, 'samla', 16, 30), st = s.stat ?? {};
+      // mät varje dygn: buskarna växer tillbaka, så ett enda mått i slutet beror på slumpen
+      let nara = 0, langt = 0;
+      for (let d = 0; d < 12; d++) { kor(s, 24); const n = uttag(s, 'samla', 0, 8); if (n > nara) { nara = n; langt = uttag(s, 'samla', 16, 30); } }
+      const st = s.stat ?? {};
       return [
-        [`mer plockat nära byn än långt bort (${nara.toFixed(2)} mot ${langt.toFixed(2)})`, nara > 0.005 && nara > langt * 3],
+        [`mer plockat nära byn än långt bort (${nara.toFixed(3)} mot ${langt.toFixed(3)})`, nara > 0.005 && nara > langt * 3],
         [`vilt jagat (${uttag(s, 'jakt', 0, 12).toFixed(2)})`, uttag(s, 'jakt', 0, 12) > 0],
         // fiske väljs inte i alla byar; fisket testas utförligt i fiskespjut-scenariot
         [`fiske: ${st.fiskeForsok ?? 0} försök, ${st.fiskeNapp ?? 0} napp, ${st.fisk ?? 0} fiskar`, !st.fiskeForsok || ((st.fiskeForsok ?? 0) > (st.fiskeNapp ?? 0) && (st.fiskeNapp ?? 0) >= (st.fisk ?? 0))],
