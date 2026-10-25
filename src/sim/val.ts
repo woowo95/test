@@ -195,7 +195,8 @@ function day(s: State, p: Person, v: Val, a: number, lazy: number) {
   if (job) {
     const utan = homeless(s) / (ppl.length || 1);
     const halvt = !job.repair && !s.hus?.find(h => h.id === job.bit.hus)?.klar; // ett påbörjat hus vill man göra klart, även när det sista är ett hörn
-    const col = ((job.repair ? 1.2 : halvt ? 3 : 0.8) + 3 * utan) * (ai === 3 || ai === 0 ? 1.4 : 1);
+    // hungern är en fara och går före: räcker maten mindre än två och ett halvt dygn väger bygget mindre
+    const col = ((job.repair ? 1.2 : halvt ? 3 : 0.8) + 3 * utan) * (ai === 3 || ai === 0 ? 1.4 : 1) * clamp((fd - 0.5) / 2, 0.1, 1);
     const like = (4 + p.skill.hantverk + stat(p, 'flit', now) / 3) * (1 + 2 * habitShare(p, ['bygga'], tot));
     const sc = col * like * (0.6 + rnd(s, 'val', p) * 0.8);
     burg = Math.max(burg, col);
