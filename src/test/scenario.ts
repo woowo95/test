@@ -43,7 +43,8 @@ function uttag(s: State, k: Kind, min: number, max: number) {
   return n ? v / n : 0;
 }
 
-const SCENARIER: Record<string, { text: string; kor: () => Koll[] }> = {
+// lang: tar 13 s eller mer (datorns tid). Den snabba kollen (npm run snabbkoll) hoppar över dem om de inte nämns
+const SCENARIER: Record<string, { text: string; lang?: boolean; kor: () => Koll[] }> = {
   glanta: {
     text: 'Ny by: fem personer utan eld i en liten glänta på en större karta, skog och ängar med högt gräs står runt omkring och marken nöts till stigar',
     kor: () => {
@@ -70,6 +71,7 @@ const SCENARIER: Record<string, { text: string; kor: () => Koll[] }> = {
     },
   },
   'ingen-yxa': {
+    lang: true,
     text: 'Byn har bara en flinta, som behövs till elden: ingen yxa görs, inga träd fälls och elden hålls vid liv med grenar',
     kor: () => {
       const s = createState(13, START); // by 12 dör ut tidigt av svält sedan kaninerna håller sig längre från byn (1.5.5), och saknar sedan torrt gräs att tända med
@@ -105,6 +107,7 @@ const SCENARIER: Record<string, { text: string; kor: () => Koll[] }> = {
     },
   },
   'vinter-slocknad': {
+    lang: true,
     text: 'Istiden börjar med slocknad eld, kolhög och lite grenar: byn tänder igen på kolhögen',
     kor: () => {
       // flintan lyckas bara ibland (några procent per försök), så provet körs i fem byar och minst två ska få fyr
@@ -143,6 +146,7 @@ const SCENARIER: Record<string, { text: string; kor: () => Koll[] }> = {
     },
   },
   svamp: {
+    lang: true,
     text: 'På hösten plockas kantareller, men ibland följer en giftig orange spindling med; den som förgiftas lär sig skilja dem åt och lär andra',
     kor: () => {
       const s = createState(16, START);
@@ -156,6 +160,7 @@ const SCENARIER: Record<string, { text: string; kor: () => Koll[] }> = {
     },
   },
   flinta: {
+    lang: true,
     text: 'Flinta hittas mest vid stenarna',
     kor: () => {
       let sten = 0, annan = 0;
@@ -262,6 +267,7 @@ SCENARIER.kalender = {
 };
 
 SCENARIER.historik = {
+  lang: true,
   text: 'Byns historik: nyckeltalen varje timme den senaste veckan, sedan ett värde per dygn, och viktiga händelser i krönikan. Den sparas i en del per vecka och ändrar inget i byn',
   kor: () => {
     const s = createState(3, START), t = createState(3, START);
@@ -337,6 +343,7 @@ SCENARIER.slump = {
 };
 
 SCENARIER.befolkning = {
+  lang: true,
   text: 'En stor by blir trång och folk flyttar, en liten by får nybyggare, och en tom by grundas på nytt',
   kor: () => {
     const s = createState(9, START);
@@ -512,6 +519,7 @@ SCENARIER.agande = {
   },
 };
 SCENARIER.gava = {
+  lang: true,
   text: 'Den som saknar ett redskap hen arbetar med frågar efter det i samtal. Den som har ett över ger det: en förälder nästan alltid till sitt barn, släkt och vänner ofta, ovänner inte. Har båda något över som den andra saknar blir det ett byte.',
   kor: () => {
     const s = createState(6, START);
@@ -667,6 +675,7 @@ SCENARIER.behov = {
 };
 
 SCENARIER.ved = {
+  lang: true,
   text: 'Ved, material och redskap i behovsstegen: elden ägs av byn men man eldar bara med byns ved och sin egen. Den som fryser ber om ved, och stjäl den först när kylan håller på att döda. Material till ett arbete tas av sitt eget och byns, som gåva, och sist av andras (en lindrig stöld). Redskap lånas, ges och byts i samma steg.',
   kor: () => {
     const ny = () => {
@@ -1089,6 +1098,7 @@ SCENARIER.aktivitet = {
 };
 
 SCENARIER.teknik = {
+  lang: true,
   text: 'Ingen kan göra yxa, spjut eller korg från början: den som arbetar kommer på det (nyfikna och intelligenta fortare), lär ut det i samtal, och kunskapen dör med den sista som kan den',
   kor: () => {
     const s = createState(3, START);
@@ -1416,7 +1426,8 @@ SCENARIER.varde = {
 };
 
 // Utan namn körs alla scenarier samtidigt, vart och ett i en egen process. Med ett namn körs bara det, här.
-const val = process.argv[2];
+// Med --snabb körs bara de som inte är långa, och dessutom de som nämns efter: --snabb delning arv
+const arg = process.argv.slice(2), snabb = arg[0] === '--snabb', val = snabb ? undefined : arg[0];
 if (val) {
   const sc = SCENARIER[val];
   if (!sc) { console.log(`Okänt scenario: ${val}. Finns: ${Object.keys(SCENARIER).join(', ')}`); process.exit(1); }
@@ -1425,9 +1436,11 @@ if (val) {
   for (const [t, b] of k) if (!ok || !b || process.env.ALLA) console.log(`     ${b ? '✓' : '✗'} ${t}`);
   if (!ok) process.exitCode = 1;
 } else {
-  // de långsammaste startas först, så att alla blir klara ungefär samtidigt; utskriften kommer ändå i vanlig ordning
-  const LANGSAMMA = ['vinter-slocknad', 'aktivitet', 'flinta', 'ingen-yxa', 'bygg', 'svamp', 'teknik'];
-  const namn = Object.keys(SCENARIER), ordning = [...LANGSAMMA.filter(n => SCENARIER[n]), ...namn.filter(n => !LANGSAMMA.includes(n))];
+  const okanda = arg.slice(1).filter(n => !SCENARIER[n]);
+  if (okanda.length) { console.log(`Okänt scenario: ${okanda.join(', ')}. Finns: ${Object.keys(SCENARIER).join(', ')}`); process.exit(1); }
+  const namn = Object.keys(SCENARIER).filter(n => !snabb || !SCENARIER[n]!.lang || arg.includes(n));
+  // de långa startas först, så att alla blir klara ungefär samtidigt; utskriften kommer ändå i vanlig ordning
+  const ordning = [...namn.filter(n => SCENARIER[n]!.lang), ...namn.filter(n => !SCENARIER[n]!.lang)];
   const svar: Record<string, Utfall> = {};
   await pool(ordning.map(n => async () => { svar[n] = await korSkript('scenario.ts', [n]); }));
   let fel = 0;
@@ -1436,5 +1449,7 @@ if (val) {
     if (u.code) fel++;
     process.stdout.write(u.out || `FEL  ${n}: kraschade\n${u.err.slice(-1500)}\n`);
   }
+  const hoppade = Object.keys(SCENARIER).filter(n => !namn.includes(n));
+  if (hoppade.length) console.log(`(hoppade över de långa: ${hoppade.join(', ')})`);
   if (fel) { console.log(`${fel} scenario misslyckades.`); process.exitCode = 1; }
 }

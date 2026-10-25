@@ -84,7 +84,7 @@ Simuleringen importerar aldrig från `ui/`. Gränssnittet importerar bara från 
 
 **En ny teknik.** Lägg en rad i `TEKNIK` i `teknik.ts`: arbetet där man kommer på den (`omr`), krav, material och tid. Den syns i teknikträdet direkt. Vad tekniken gör (till exempel att en handling bara får väljas av den som `knows(p, 'id')`) skrivs där det används, oftast i `val.ts`.
 
-**Ett nytt system.** Skapa en ny fil i `sim/`, exportera den i `src/sim.ts` och anropa den från `step()`. Det som ändras långsamt anropas i timblocket, och det som gäller varje person anropas i personslingan. Tillståndet läggs i `State` eller `Person` i `typer.ts` (regel 3). Lägg till ett scenario i `src/test/scenario.ts`.
+**Ett nytt system.** Skapa en ny fil i `sim/`, exportera den i `src/sim.ts` och anropa den från `step()`. Det som ändras långsamt anropas i timblocket, och det som gäller varje person anropas i personslingan. Tillståndet läggs i `State` eller `Person` i `typer.ts` (regel 3). Lägg till ett scenario i `src/test/scenario.ts` (med `lang: true` om det tar 13 s eller mer, så att `npm run snabbkoll` hoppar över det).
 
 **Ett nytt lager i värmekartan** (en art eller en tillgång på marken). Lägg en rad i `DEF` i `fynd.ts`: namn, grupp, ikon, färg, `topp` (värdet som räknas som mycket), `bas(s, i, m)` för var den kan finnas (`m` är mönstret, 0–1), `monster` om den växer fläckvis och kryper (`skala` = fläckarnas storlek i rutor, `period` = dygn mellan två lägen, 0 = står still, `troskel` = hur stor del som är tom, `gles` = glest inom fläcken), `arstid` om den växlar med årstiden, `uttag` om den kan tömmas och `vatten` (räckvidd) om den lever i vattnet och nås från stranden. Lägg rader med `uttag` sist, eftersom ordningen styr hur de sparas. Inget växer i lägret (`iLagret`, `LAGER_R` rutor från elden och lagerplatserna), så zonen växer med byn. Tre värden per ruta: `vaxerAt` (vad som växer där nu, årstiden inräknad), `fyndAt` (vad som finns kvar efter uttag) och `synsOf` (vad man kan gissa från marken, utan mönstret). `standAt`/`richness` räknar värdet där man står (för vattenlager: vattnet runt omkring). Lärdomar sparar `g` (vad som växer) och `hoped` uppskattar återväxten. Filtret, teckenförklaringen och rutan under musen följer med. Den som skördar arten använder `richness`, `fyndAt` och `takeFrom`. Alla dessa tar ett `Lager`: ett lager eller en aktivitet (`Kind`); en aktivitet summerar sina lager via `LAGREN`, och `takeFrom` delar uttaget efter hur rikt varje lager är. Ska en ny aktivitet hämta ur flera lager, lägg den i `LAGREN`.
 
@@ -96,12 +96,13 @@ Simuleringen importerar aldrig från `ui/`. Gränssnittet importerar bara från 
 
 | Kommando | Tid | När |
 |---|---|---|
-| `npm run koll` | ca 3 min | **Efter varje ändring.** Typkontroll, testbyarna mot facit, alla scenarier och samma-kollen, med kort utskrift |
+| `npm run snabbkoll -- [scenarier]` | ca 40 s | **Efter varje steg.** Typkontroll, scenarierna utom de långa (`lang`) och de som nämns, vakterna i fyra byar i 12 dygn |
+| `npm run koll` | ca 3 min | **Det stora testet**, efter sista steget i ett system (se CLAUDE.md). Typkontroll, testbyarna mot facit, alla scenarier och samma-kollen, med kort utskrift |
 | `npm run samma` | ca 5 s | Vid ombyggnad som inte ska ändra något i spelet. Säger om byarna utvecklas exakt som förut |
 | `npm run facit` | ca 30 s | När en ändring i spelet är avsiktlig. Sparar nytt facit och ny samma-koll |
 | `npm run scenario -- namn` | några s | Ett enda scenario |
 | `npm run likhet` | ca 5 s | När arbete, gång, samtal eller lärande ändras: är byarna exakt lika i spelet och vid ikappräkning? |
-| `npm run jamfor` | ca 3–7 min | Efter ändringar i det byarna gör: samma byar med koden nu och med main, by för by, tills skillnaden är avgjord (se CLAUDE.md) |
+| `npm run jamfor -- 35 64 --mot vNN` | ca 3–7 min | I det stora testet: samma byar med koden nu och med versionen före systemet (en git-tagg), by för by, tills skillnaden är avgjord (se CLAUDE.md) |
 | `npm run balans`, `takt`, `teknik`, `detaljer` | | Balansering och undersökning (se CLAUDE.md) |
 
 ## Bygga och publicera
