@@ -1,4 +1,4 @@
-import { FOLDERS, STACK, amountOf, ownedSum, sakNamn } from '../sim';
+import { FOLDERS, STACK, amountOf, grundvarde, isTool, ownedSum, sakNamn, tingOf, wornOf } from '../sim';
 import { iconImg } from '../ikoner';
 import { eld } from './flikar/eld';
 import { folk, logg } from './flikar/folk';
@@ -55,10 +55,12 @@ document.addEventListener('click', e => {
 // listan till vänster över allt i förrådet, i mappar som kan fällas ihop: symboler med antalet bredvid, namnet när musen är över
 const closed = new Set<string>();
 let ownedKey = '';
-// namnet, och hur mycket som är byns och invånarnas egna (egendom.ts)
+// namnet, hur mycket som är byns och invånarnas egna (egendom.ts), och värdet (varde.ts)
+const tal = (v: number) => v >= 10 ? String(Math.round(v)) : v.toFixed(1).replace('.', ',');
 function tipOf(k: string, n: number) {
-  const eg = Math.min(n, ownedSum(s, k)), r = (v: number) => Math.round(v);
-  return eg >= 0.5 ? `${sakNamn(k)}: byns ${r(n - eg)}, invånarnas egna ${r(eg)}` : sakNamn(k);
+  const eg = Math.min(n, ownedSum(s, k)), r = (v: number) => Math.round(v), v = grundvarde(k);
+  const namn = eg >= 0.5 ? `${sakNamn(k)}: byns ${r(n - eg)}, invånarnas egna ${r(eg)}` : sakNamn(k);
+  return v ? `${namn}&#10;⚖ ${tal(v)} styck, ${tal((isTool(k) ? tingOf(s).filter(t => t.k === k).reduce((a, t) => a + t.c, 0) : wornOf(s, k)) * v)} allt efter skicket` : namn;
 }
 function renderOwned() {
   const rows = FOLDERS.map(f => ({ f, ks: f.k.map(k => ({ k, n: amountOf(s, k) })).filter(r => r.n >= (STACK[r.k] === 1 ? 1e-6 : 0.5)) })).filter(r => r.ks.length);

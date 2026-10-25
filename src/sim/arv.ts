@@ -11,10 +11,11 @@ import { tingOf } from './agande';
 import { count, isKin, living, log } from './folk';
 import { kronika } from './historik';
 import { capacity, carryOff, ownedAll, passOn } from './lager';
-import { SAKER, STACK, sakNamn } from './saker';
+import { STACK, sakNamn } from './saker';
+import { grundvarde } from './varde';
 import { Person, State } from './typer';
 
-const vardeOf = (k: string) => SAKER[k]?.varde ?? 0;
+const vardeOf = grundvarde;
 
 // arvingarna, i tur och ordning: partnern, barnen, föräldrarna, syskonen
 export function heirsOf(s: State, p: Person): Person[] {

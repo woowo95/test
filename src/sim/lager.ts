@@ -60,19 +60,19 @@ const tidy = (s: State) => { s.stackar = stacksOf(s).filter(a => a.n > 1e-6 || (
 // Summorna räknas om när en stack ändrats. Allt som ändrar en stack anropar changed (bygg.ts när ett hus flyttar en stack)
 const ver = new WeakMap<State, number>();
 export const changed = (s: State) => { ver.set(s, (ver.get(s) ?? 0) + 1); };
-interface Summa { st: Stack[]; v: number; n: Record<string, number>; ag: Record<string, Del> }
+interface Summa { st: Stack[]; v: number; n: Record<string, number>; w: Record<string, number>; ag: Record<string, Del> }
 const summor = new WeakMap<State, Summa>();
 function summa(s: State) {
   const st = stacksOf(s), v = ver.get(s) ?? 0, c = summor.get(s);
   if (c && c.st === st && c.v === v) return c;
-  const n: Record<string, number> = {}, ag: Record<string, Del> = {};
+  const n: Record<string, number> = {}, w: Record<string, number> = {}, ag: Record<string, Del> = {};
   for (const a of st) {
     if (!isStored(s, a.x, a.y)) continue;
-    n[a.k] = (n[a.k] ?? 0) + a.n;
+    n[a.k] = (n[a.k] ?? 0) + a.n; w[a.k] = (w[a.k] ?? 0) + a.n * a.c;
     if (a.dold) { const d = DOLD_I[a.k]; n[d] = (n[d] ?? 0) + a.dold; }
     if (a.ag) addDel(ag[a.k] ??= {}, a.ag);
   }
-  const ny = { st, v, n, ag };
+  const ny = { st, v, n, w, ag };
   summor.set(s, ny);
   return ny;
 }
@@ -82,6 +82,8 @@ export function amountOf(s: State, k: string) {
   return summa(s).n[k] ?? 0;
 }
 export const item = amountOf;
+// mängden gånger skicket (för värdet, varde.ts)
+export const wornOf = (s: State, k: string) => isTool(k) ? amountOf(s, k) : summa(s).w[k] ?? 0;
 export function foodOf(s: State) { const n = summa(s).n; let f = 0; for (const k of FOOD) f += n[k] ?? 0; return f; }
 // maten per slag
 export function foodKinds(s: State) { const n = summa(s).n, m: Record<string, number> = {}; for (const k of FOOD) if (n[k]) m[k] = n[k]; return m; }
