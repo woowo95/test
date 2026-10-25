@@ -96,7 +96,7 @@ export interface State {
   lager?: { x: number; y: number; w: number; h: number }; // lagerplatsen, rutor
   mat?: Record<string, number>; // äldre sparfiler (före v40): maten per slag
   marken?: { x: number; y: number; k: string; n: number }[]; // gamla sparfiler: saker på marken (nu i stackar)
-  lagren?: { x: number; y: number; w: number; h: number; namn?: string; slag?: 'mat' | 'material'; prio?: number }[]; // lagerplatserna
+  lagren?: import('./lager').Zone[]; // lagerplatserna
   ting?: { id: number; k: string; c: number; agare: number; hos?: number; lass?: number; x?: number; y?: number }[]; nextTing?: number; // varje redskap för sig, det enda som sparas om redskapen: skick, ägare (0 = byn), vem som har det i handen eller bördan, och rutan det ligger på (agande.ts)
   tingVag?: { id: number; k: string; c: number; agare: number; hos?: number }[]; // äldre sparfiler (före v40): redskap som bars mellan lagerplatser
   agare?: Record<string, number[]>; // sparfiler från v30: redskapens ägare (blir s.ting)
@@ -108,6 +108,7 @@ export interface State {
   byggen?: import('./byggnad').Bit[]; hus?: import('./byggnad').Hus[]; byggV?: number; nextBit?: number; byggSok?: number; // väggar, golv och öppningar, husen byn planerat, ändringsräknare
   kunskap?: Record<string, number>; // äldre sparfiler: byns gemensamma kunskap, flyttas till varje person
   kal?: { t0: number; a0: number; b0: number }; // kalendern: tidsåldern a0 började t0 och slutar måndagen b0 (dagens nummer), se tid.ts
+  ruttet?: number; // mat som ruttnat bort på sistone (glöms med tiden, byggnader.ts)
   stat?: Record<string, number>; // räknare: svamp, fiskeförsök, napp, fångst med mera
 }
 // ett fällt träd: ved och grenar som finns kvar att hugga ut
