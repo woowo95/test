@@ -120,6 +120,35 @@ export function releaseOwner(s: State, id: number) {
   for (const a of stacksOf(s)) if (a.ag?.[id] !== undefined) { delete a.ag[id]; cleanDel(s, a); }
   changed(s);
 }
+// allt id äger i alla stackar, också de utanför förrådet, per slag (arv.ts)
+export function ownedAll(s: State, id: number) {
+  const o: Record<string, number> = {};
+  for (const a of stacksOf(s)) { const v = a.ag?.[id]; if (v) o[a.k] = (o[a.k] ?? 0) + v; }
+  return o;
+}
+// id:s delar går över till andra (arv): f säger hur stor del av varje stack var och en får (summan 1)
+export function passOn(s: State, id: number, f: Record<number, number>) {
+  for (const a of stacksOf(s)) {
+    const v = a.ag?.[id];
+    if (v === undefined) continue;
+    delete a.ag![id];
+    for (const o in f) if (f[o] > 0) a.ag![o] = (a.ag![o] ?? 0) + v * f[o];
+    cleanDel(s, a);
+  }
+  changed(s);
+}
+// id bär bort n av slaget k av sitt eget (den som flyttar): det försvinner ur stackarna
+export function carryOff(s: State, id: number, k: string, n: number) {
+  for (const a of stacksOf(s)) {
+    if (a.k !== k) continue;
+    const m = Math.min(n, a.ag?.[id] ?? 0, a.n);
+    if (m <= 1e-12) continue;
+    a.n -= m; a.ag![id] -= m; n -= m;
+    cleanDel(s, a);
+    if (n <= 1e-12) break;
+  }
+  tidy(s);
+}
 // stackens ägare: bara levande personer med något kvar, och aldrig mer än stacken
 function cleanDel(s: State, a: Stack) {
   const d = a.ag;

@@ -102,7 +102,7 @@ function askAround(s: State, m: Person, b: Behov) {
   let best: Person | undefined, bw = 0;
   for (const g of living(s)) {
     if (g === m || (g.task?.act === 'sova' && !isFamily(g, m)) || Math.hypot(g.x - m.x, g.y - m.y) > FRAGA_R || overOf(s, g, b, m) < b.minst) continue;
-    const w = willing(s, g, m);
+    const w = willing(s, g, m, ownFor(s, g, b) / b.kvar);
     if (w > bw) { bw = w; best = g; }
   }
   if (best) gift(s, m, best, b);
@@ -110,7 +110,7 @@ function askAround(s: State, m: Person, b: Behov) {
 // m ber g om det m saknar. Ger g? (Hur gärna man ger: agande.ts)
 function gift(s: State, m: Person, g: Person, n: Behov) {
   const over = overOf(s, g, n, m);
-  if (over < n.minst || rnd(s, 'dela', g) >= willing(s, g, m)) return false;
+  if (over < n.minst || rnd(s, 'dela', g) >= willing(s, g, m, ownFor(s, g, n) / n.kvar)) return false;
   let rest = Math.min(over, n.mangd(m, s.now));
   const want = rest;
   for (const k of n.slag) { if (rest <= 1e-9) break; rest -= ownMove(s, k, rest / perOf(n, k), g.id, m.id) * perOf(n, k); }
@@ -175,23 +175,27 @@ export function noticeTheft(s: State, p: Person, key: string) {
 const aldrigStjal = (s: State, p: Person) => stat(p, 'empati', s.now) >= STJAL_ALDRIG;
 // så mycket av slaget k som p kan få till ett arbete
 export const getable = (s: State, p: Person, k: string) => aldrigStjal(s, p) ? mayTake(s, p, k) : amountOf(s, k);
-// p tar n av slaget k till ett arbete; common = till byns eld eller hus (byns först). Ger vems det var
-export function takeMaterial(s: State, p: Person, k: string, n: number, common = false): Del {
+// p tar n av slaget k till ett arbete; common = till byns eld eller hus (byns först). Ger vems det var. kom = var det
+// kom ifrån, nycklar som `kom` i bygg.ts skriver dem (eget, byn, familj, gava, stold)
+export function takeMaterial(s: State, p: Person, k: string, n: number, common = false, kom?: Record<string, number>): Del {
   const ag: Del = {};
   if (n <= 1e-12) return ag;
+  const not = (hur: string, d: Del) => { if (kom) for (const o in d) if (d[o] > 1e-9) { const h = +o === BYN ? 'byn' : +o === p.id ? 'eget' : hur; const key = `${h}:${h === 'byn' ? BYN : o}:${k}`; kom[key] = (kom[key] ?? 0) + d[o]; } };
   const egen = Math.min(n, mayTake(s, p, k));
-  addDel(ag, use(s, p, k, egen, common));
+  const forst = use(s, p, k, egen, common);
+  addDel(ag, forst); not('familj', forst);
   if ((ag[p.id] ?? 0) > 1e-9) noticeTheft(s, p, k);
   let rest = n - egen;
   // be den i närheten som har och helst ger (familjen kan man väcka)
   if (rest > 1e-9) {
     const ask = living(s).filter(g => g !== p && ownsAmount(s, g, k) > 1e-9 && (g.task?.act !== 'sova' || isFamily(g, p)) && Math.hypot(g.x - p.x, g.y - p.y) <= FRAGA_R)
-      .sort((a, b) => willing(s, b, p) - willing(s, a, p) || a.id - b.id);
+      .sort((a, b) => willing(s, b, p, ownsAmount(s, b, k) / rest) - willing(s, a, p, ownsAmount(s, a, k) / rest) || a.id - b.id);
     for (const g of ask) {
       if (rest <= 1e-9) break;
-      if (rnd(s, 'dela', g) >= willing(s, g, p)) continue;
+      if (rnd(s, 'dela', g) >= willing(s, g, p, ownsAmount(s, g, k) / rest)) continue;
       const v = ownMove(s, k, Math.min(rest, ownsAmount(s, g, k)), g.id, p.id);
-      addDel(ag, use(s, p, k, v, common)); rest -= v;
+      const d = use(s, p, k, v, common); addDel(ag, d); rest -= v;
+      if (kom) { const key = `gava:${g.id}:${k}`; kom[key] = (kom[key] ?? 0) + v; }
       const r = getRel(s, p, g); r.op = clamp(r.op + 1, -100, 100);
       count(s, 'gava_material', v);
     }
@@ -200,7 +204,7 @@ export function takeMaterial(s: State, p: Person, k: string, n: number, common =
   if (rest > 1e-9 && !aldrigStjal(s, p)) {
     const d = use(s, p, k, Math.min(rest, amountOf(s, k)), common);
     for (const o in d) { const q = +o === BYN || +o === p.id ? undefined : byId(s, +o); if (q) stole(s, p, q, k, d[o], true); }
-    addDel(ag, d);
+    addDel(ag, d); not('stold', d);
   }
   return ag;
 }
@@ -209,14 +213,22 @@ export function takeMaterial(s: State, p: Person, k: string, n: number, common =
 // Redskapen är ting (agande.ts) och går samma steg: sitt eget, byns, låna av någon som inte arbetar med sitt, och få
 // eller byta till sig ett i samtal. Att låna är gåvan av något som kommer tillbaka: släkt och partner lånar alltid ut, och
 // den unga byn lånar ut till alla den inte är osams med. Stjäl gör man inte: att sakna ett redskap dödar ingen.
-// hur gärna giver ger till mottagaren, 0–1 (samma för mat, ved, material och redskap)
-export function willing(s: State, g: Person, m: Person) {
-  if (m.mother === g.id || m.father === g.id) return 0.95;
+// hur gärna giver ger till mottagaren, 0–1 (samma för mat, ved, material och redskap). Empati och relationen avgör
+// mest. Den som har mycket över ger lättare (overflod = vad hen har delat med vad hen själv behöver: 1 ger 0,7 gånger,
+// 2 ger 1 och 3 eller mer 1,3 gånger), seden Gemenskap gör alla givmildare och Var och en för sig snålare, och ju
+// rikare byn är desto mindre ger man (delning.ts). Till sina barn och sin partner ger man lika gärna i en rik by
+export const OVERFLOD = { min: 0.7, max: 1.3 };
+export const GEMENSKAP_GE = 0.25; // så mycket givmildare (eller snålare) seden gör folk, vid Gemenskap fullt ut
+export const RIK_GE = 0.7; // så mycket av viljan att ge till andra än barn och partner som finns kvar i en rik by
+export function willing(s: State, g: Person, m: Person, overflod = 1) {
+  const over = clamp(0.4 + 0.3 * overflod, OVERFLOD.min, OVERFLOD.max), sed = 1 + GEMENSKAP_GE * s.seder.v.gemenskap;
+  if (m.mother === g.id || m.father === g.id) return clamp(0.95 * Math.max(1, over) * sed, 0, 1); // till sitt barn ger man också det sista
   const r = getRel(s, g, m);
   if (r.op < -10) return 0;
-  const emp = stat(g, 'empati', s.now) / 20;
-  const base = g.partner === m.id ? 0.8 : isKin(g, m) ? 0.6 : clamp(r.op / 80, 0, 0.6);
-  return clamp(base * (0.5 + emp), 0, 1);
+  const emp = stat(g, 'empati', s.now) / 20, nara = g.partner === m.id;
+  const base = nara ? 0.8 : isKin(g, m) ? 0.6 : clamp(r.op / 80, 0, 0.6);
+  const rik = nara ? 1 : RIK_GE + (1 - RIK_GE) * (s.delning?.andel ?? 1);
+  return clamp(base * (0.5 + emp) * over * sed * rik, 0, 1);
 }
 // lånar ägaren ut till p?
 export function lends(s: State, owner: number, p: Person) {
@@ -254,7 +266,7 @@ export function askForTool(s: State, a: Person, b: Person): 'gåva' | 'byte' | u
     for (const k of KINDS()) {
       if (!needsTool(s, m, k)) continue;
       const t = spare(s, g, k);
-      if (!t || rnd(s, 'dela', g) >= willing(s, g, m)) continue;
+      if (!t || rnd(s, 'dela', g) >= willing(s, g, m, tingOf(s).filter(x => x.agare === g.id && x.k === k).length)) continue;
       // byte: mottagaren har något över som givaren saknar
       let back: Ting | undefined;
       for (const j of KINDS()) if (j !== k && needsTool(s, g, j)) { back = spare(s, m, j); if (back) break; }

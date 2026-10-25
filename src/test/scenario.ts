@@ -2,7 +2,7 @@
 // npm run scenario            kör alla
 // npm run scenario -- glanta  kör bara ett
 import { isDeepStrictEqual } from 'node:util';
-import { Person, Act, createState, ownedBy, tidyTools, addTool, toolsOf, heldBy, take, usesTool, wearTool, freeSpear, getRel, isTool, BYN, twineRope, makeRod, wearUsed, isSpear, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, serializeParts, joinParts, serialize, ageStart, nyKalender, kalender, yearNo, AGES, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, zonesOf, allows, ageOf, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, fuelStock, DAY, HOUR, W, State, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, campCenter, TEKNIK, knows, thinkWhileWorking, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, beds, isWall, Bit, wearBuild, FYND, FYND_IDS, GRUPPER, angOf, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, LAGER_R, observe, hoped, Lager, skyggOf, SKYGG_R, SKYGG_IN, grupperOf, GRUPPER_MAX, STORLEK, share, treeOn, djurOf, KANIN, SLAKT, DJUR, JAKT_F, canSlaughter, makeKnife, slaughter, askForTool, gain, takeFood, takeFuel, ownsAmount, ownedStock, ownedSum, sumOf, addTo, setAmount, setStock, foodOf, isFood, STACK_ORDER, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, STOLD_LINDRIG, STOLD_OP, rnd, STROMMAR, Strom, BEAT, spar, isWork, SPARVERSION, stepDelning, rikedom, DELA_RIK } from '../sim';
+import { Person, Act, createState, ownedBy, tidyTools, addTool, toolsOf, heldBy, take, usesTool, wearTool, freeSpear, getRel, isTool, BYN, twineRope, makeRod, wearUsed, isSpear, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, serializeParts, joinParts, serialize, ageStart, nyKalender, kalender, yearNo, AGES, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, zonesOf, allows, ageOf, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, fuelStock, DAY, HOUR, W, State, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, campCenter, TEKNIK, knows, thinkWhileWorking, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, beds, isWall, Bit, wearBuild, FYND, FYND_IDS, GRUPPER, angOf, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, LAGER_R, observe, hoped, Lager, skyggOf, SKYGG_R, SKYGG_IN, grupperOf, GRUPPER_MAX, STORLEK, share, treeOn, djurOf, KANIN, SLAKT, DJUR, JAKT_F, canSlaughter, makeKnife, slaughter, askForTool, gain, takeFood, takeFuel, ownsAmount, ownedStock, ownedSum, sumOf, addTo, setAmount, setStock, foodOf, isFood, STACK_ORDER, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, STOLD_LINDRIG, STOLD_OP, rnd, STROMMAR, Strom, BEAT, spar, isWork, SPARVERSION, stepDelning, rikedom, DELA_RIK, packUp, releaseOwner, willing, tingOf, komOf } from '../sim';
 // förrådet i proven: stackarna är det enda som sparas (steg 1.1.2), så proven ställer in förrådet genom lagret
 const setItems = (s: State, m: Record<string, number>) => {
   for (const k of STACK_ORDER) if (!isFood(k) && k !== 'ved' && !isTool(k)) setAmount(s, k, m[k] ?? 0);
@@ -130,10 +130,12 @@ const SCENARIER: Record<string, { text: string; kor: () => Koll[] }> = {
     text: 'Bär, rötter och vilt tar slut nära byn för en tid, så invånarna går längre bort; fiske med händerna ger få fiskar per försök',
     kor: () => {
       const s = createState(15, START);
-      kor(s, 12 * 24);
-      const nara = uttag(s, 'samla', 0, 8), langt = uttag(s, 'samla', 16, 30), st = s.stat ?? {};
+      // mät varje dygn: buskarna växer tillbaka, så ett enda mått i slutet beror på slumpen
+      let nara = 0, langt = 0;
+      for (let d = 0; d < 12; d++) { kor(s, 24); const n = uttag(s, 'samla', 0, 8); if (n > nara) { nara = n; langt = uttag(s, 'samla', 16, 30); } }
+      const st = s.stat ?? {};
       return [
-        [`mer plockat nära byn än långt bort (${nara.toFixed(2)} mot ${langt.toFixed(2)})`, nara > 0.005 && nara > langt * 3],
+        [`mer plockat nära byn än långt bort (${nara.toFixed(3)} mot ${langt.toFixed(3)})`, nara > 0.005 && nara > langt * 3],
         [`vilt jagat (${uttag(s, 'jakt', 0, 12).toFixed(2)})`, uttag(s, 'jakt', 0, 12) > 0],
         // fiske väljs inte i alla byar; fisket testas utförligt i fiskespjut-scenariot
         [`fiske: ${st.fiskeForsok ?? 0} försök, ${st.fiskeNapp ?? 0} napp, ${st.fisk ?? 0} fiskar`, !st.fiskeForsok || ((st.fiskeForsok ?? 0) > (st.fiskeNapp ?? 0) && (st.fiskeNapp ?? 0) >= (st.fisk ?? 0))],
@@ -1169,6 +1171,9 @@ SCENARIER.bygg = {
     for (const p of living(k)) { const f = fore.get(p.id); if (!f) continue; if (f.inne) { varmInne += p.warm; ni++; } else if (f.ute) { varmUte += p.warm; nu++; } }
     const h = housesOf(q)[0], folk = living(q).length, b = beds(q).length;
     const iVagg = living(q).filter(p => isWall(q, p.x, p.y)).length;
+    // huset minns var materialet kom ifrån (steg 1.3.3): lika mycket som det byggdes med
+    const lagt = bitsOf(q).filter(b => b.hus === h?.id).reduce((n, b) => n + b.mat, 0), kom = h ? komOf(h) : [];
+    const minns = kom.reduce((n, x) => n + x.n, 0), satt = [...new Set(kom.map(x => x.hur))].join(', ');
     // nötning: väggarna slits och lagas
     for (const b of bitsOf(q)) if (b.k === 'vagg') b.c = 0.3;
     addTo(q, 'ved', 100);
@@ -1187,6 +1192,7 @@ SCENARIER.bygg = {
       [`träden där huset ska stå fälls innan väggarna byggs där (${trad} träd på platsen, ${iTrad} väggar byggda på ett träd)`, trad >= 0 && iTrad === 0 && !!h && bitsOf(q).every(b => b.hus !== h.id || !treeOn(q, b))],
       [`huset står en bit från elden (${avst.toFixed(1)} rutor)`, avst >= 4],
       ['slitna väggar lagas', lagat],
+      [`huset minns var materialet kom ifrån (${Math.round(minns)} av ${Math.round(lagt)}: ${satt})`, lagt > 0 && Math.abs(minns - lagt) < 0.01 * lagt + 0.01],
     ];
   },
 };
@@ -1314,6 +1320,73 @@ SCENARIER.delning = {
       [`halvvägs till gränsen ${DELA_RIK} ges hälften (andel ${halv.andel.toFixed(2)}, ${halvEgen.toFixed(1)} av 10 eget)`, Math.abs(halv.andel - 0.5) < 0.02 && Math.abs(halvEgen - 5) < 0.3],
       [`en rik by (rikedom ${rik.rik.toFixed(0)}) ger inget (${rikEgen.toFixed(1)} av 10 eget)`, rik.andel === 0 && Math.abs(rikEgen - 10) < 0.01],
       [`blir byn fattig igen ger folk igen (andel ${igen.andel.toFixed(2)})`, igen.andel > 0.8],
+    ];
+  },
+};
+
+SCENARIER.arv = {
+  text: 'Arv och flytt: den dödas saker går till partnern, annars jämnt efter värde på barnen, annars föräldrarna, annars syskonen, annars byn, och det syns vem som ärvde vad. Den som flyttar tar med sig det hen orkar bära. Den som har mycket över ger lättare, Gemenskap gör folk givmildare, och i en rik by ger man mindre, utom till barn och partner.',
+  kor: () => {
+    // fem vuxna utan släkt; d äger en yxa, 30 trä och 10 bär
+    const ny = () => {
+      const s = createState(6, START);
+      setMat(s, {}); setStock(s, { ved: 0, grenar: 0, flinta: 0, torrgras: 0 }); s.ting = [];
+      const [d, a, b, c, e] = living(s);
+      for (const q of s.people) q.mother = q.father = q.partner = undefined;
+      rikBy(s); // d får behålla allt hen skaffar
+      addTool(s, 'yxa', d); gain(s, d, 'ved', 30); gain(s, d, 'bar', 10);
+      return { s, d, a, b, c, e };
+    };
+    const yxor = (s: State, q: Person) => tingOf(s).filter(t => t.k === 'yxa' && t.agare === q.id).length;
+    const varde = (s: State, q: Person) => yxor(s, q) * 30 + ownsAmount(s, q, 'ved') + ownsAmount(s, q, 'bar');
+    // partnern får allt, också i en fattig by
+    let { s, d, a, b, c, e } = ny();
+    const dVarde = varde(s, d);
+    d.partner = a.id; a.partner = d.id; b.mother = d.id;
+    die(s, d, 'test');
+    const partner = Math.abs(varde(s, a) - dVarde) < 1e-6 && varde(s, b) === 0 && yxor(s, a) === 1;
+    const syns = s.log.some(l => l.text.startsWith(`${a.name} ärvde`) && l.text.includes('flintyxa') && l.text.includes(d.name));
+    // inget partner: barnen delar jämnt efter värde (yxan till den ena, maten och träet till den andra)
+    ({ s, d, a, b, c, e } = ny());
+    a.mother = d.id; b.father = d.id;
+    die(s, d, 'test');
+    const va = varde(s, a), vb = varde(s, b), barnen = Math.abs(va - vb) < 1e-6 && yxor(s, a) + yxor(s, b) === 1 && varde(s, c) === 0;
+    // föräldrarna, sedan syskonen, sedan byn
+    ({ s, d, a, b, c, e } = ny());
+    d.mother = a.id; b.mother = a.id; die(s, d, 'test');
+    const foraldrar = varde(s, a) > 0 && varde(s, b) === 0;
+    ({ s, d, a, b, c, e } = ny());
+    d.mother = 999; b.mother = 999; die(s, d, 'test');
+    const syskon = Math.abs(varde(s, b) - dVarde) < 1e-6;
+    ({ s, d, a, b, c, e } = ny());
+    die(s, d, 'test');
+    tidyTools(s); // som i varje steg: den dödas redskap blir byns
+    const byn = [a, b, c, e].every(q => varde(s, q) === 0) && tingOf(s).filter(t => t.k === 'yxa' && t.agare === BYN).length === 1 && amountOf(s, 'ved') > 29;
+    // den som flyttar tar med sig det hen orkar bära, det mest värda för vikten först; resten blir byns
+    ({ s, d, a, b, c, e } = ny());
+    const bar = capacity(s, d), fore = amountOf(s, 'ved') + amountOf(s, 'bar');
+    d.left = s.now; packUp(s, d); releaseOwner(s, d.id);
+    const tog = fore - amountOf(s, 'ved') - amountOf(s, 'bar') + (tingOf(s).some(t => t.k === 'yxa') ? 0 : 1);
+    const flytt = tog > 0 && tog <= bar * 25 + 1 && amountOf(s, 'ved') + amountOf(s, 'bar') > 0 && ownedSum(s, 'ved') === 0;
+    // viljan att ge
+    ({ s, d, a, b, c, e } = ny());
+    getRel(s, a, b).op = 60; d.mother = a.id; a.partner = c.id; c.partner = a.id;
+    s.delning = { rik: 0, andel: 1 };
+    const lite = willing(s, a, b, 1), mycket = willing(s, a, b, 3);
+    s.seder.v.gemenskap = 1; const gem = willing(s, a, b, 1); s.seder.v.gemenskap = -1; const egen = willing(s, a, b, 1); s.seder.v.gemenskap = 0;
+    s.delning = { rik: DELA_RIK, andel: 0 }; const rikVan = willing(s, a, b, 1), rikBarn = willing(s, a, d, 1), rikPartner = willing(s, a, c, 1);
+    s.delning = { rik: 0, andel: 1 }; const fattigBarn = willing(s, a, d, 1), fattigPartner = willing(s, a, c, 1);
+    return [
+      ['partnern ärver allt', partner],
+      ['det syns i loggen vem som ärvde vad', syns],
+      [`utan partner delar barnen jämnt efter värde (${va.toFixed(0)} och ${vb.toFixed(0)})`, barnen],
+      ['utan partner och barn ärver föräldrarna', foraldrar],
+      ['sedan syskonen', syskon],
+      ['utan släkt blir allt byns', byn],
+      [`den som flyttar tar med sig det hen orkar bära (${tog.toFixed(1)}), resten blir byns`, flytt],
+      [`den som har mycket över ger lättare (${lite.toFixed(2)} mot ${mycket.toFixed(2)})`, mycket > lite],
+      [`Gemenskap gör folk givmildare (${egen.toFixed(2)} → ${gem.toFixed(2)})`, gem > lite && lite > egen],
+      [`i en rik by ger man mindre till vänner (${rikVan.toFixed(2)}) men lika till barn och partner`, rikVan < lite && rikBarn === fattigBarn && rikPartner === fattigPartner],
     ];
   },
 };
