@@ -3,6 +3,7 @@ import { iconImg } from '../ikoner';
 import { eld } from './flikar/eld';
 import { folk, logg } from './flikar/folk';
 import { hog, lager } from './flikar/lager';
+import { hus } from './flikar/hus';
 import { person } from './flikar/person';
 import { seder } from './flikar/seder';
 import { teknik } from './flikar/teknik';
@@ -18,7 +19,7 @@ export interface Flik {
   html(): string; // innehållet; byggs om ett par gånger i sekunden
   klick?(el: HTMLElement): boolean; // tryck i sidan som fliken tar hand om, även när den inte är öppen; true = klart
 }
-const FLIKAR = { folk, logg, person, eld, lager, hog, seder, teknik } satisfies Record<string, Flik>;
+const FLIKAR = { folk, logg, person, eld, lager, hog, hus, seder, teknik } satisfies Record<string, Flik>;
 export type FlikId = keyof typeof FLIKAR;
 const ALLA: Record<FlikId, Flik> = FLIKAR;
 const IDS = Object.keys(FLIKAR) as FlikId[];

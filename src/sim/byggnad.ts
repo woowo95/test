@@ -11,7 +11,7 @@ export type BitK = 'vagg' | 'golv' | 'oppning';
 // en byggd eller planerad ruta. b = hur långt bygget kommit (1 = klart), mat = material som lagts på bygget,
 // c = skick (1 = nytt), lp/lm = lagning: hur långt den kommit och material som lagts på den
 export interface Bit { id: number; x: number; y: number; k: BitK; m: string; b: number; mat: number; c: number; hus?: number; lp?: number; lm?: number }
-export interface Hus { id: number; namn: string; x: number; y: number; w: number; h: number; t: number; by?: number; klar?: number }
+export interface Hus { id: number; namn: string; x: number; y: number; w: number; h: number; t: number; by?: number; klar?: number; kom?: Record<string, number> } // kom = var materialet kom ifrån (bygg.ts)
 // per material: vad som går åt per ruta, timmar för en ovan byggare, slitage per timme, hur bra väggen håller värmen
 export interface Material { namn: string; k: BitK; item?: string; n: number; tim: number; slit: number; isol?: number; tek?: string }
 export const MATERIAL: Record<string, Material> = {
@@ -82,8 +82,9 @@ export const isWall = (s: State, x: number, y: number) => inMap(x, y) && gridOf(
 // man kan inte stå här: vatten eller en vägg
 export const blocked = (s: State, x: number, y: number) => getMap(s.seed).tiles[Math.floor(y) * W + Math.floor(x)] === T.Vatten || isWall(s, x, y);
 // närmaste plats som inte är vatten eller vägg
-export function freeNear(s: State, x: number, y: number) {
-  if (!blocked(s, x, y)) return { x, y };
+// inte = rutan själv räknas inte (där en vägg ska byggas)
+export function freeNear(s: State, x: number, y: number, inte = false) {
+  if (!inte && !blocked(s, x, y)) return { x, y };
   for (let r = 1; r < 6; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
     if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
     const nx = x + dx, ny = y + dy;

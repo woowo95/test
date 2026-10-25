@@ -150,20 +150,35 @@ export function siteOf(s: State, b: Bit) {
   const hus = housesOf(s).find(h => h.id === b.hus);
   const opts = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([dx, dy]) => ({ x: b.x + dx, y: b.y + dy })).filter(o => o.x >= 0 && o.y >= 0 && o.x < W && o.y < H && !blocked(s, o.x, o.y))
     .sort((a, c) => inHus(hus, c) - inHus(hus, a));
-  const o = opts[0] ?? freeNear(s, b.x, b.y);
+  const o = opts[0] ?? freeNear(s, b.x, b.y, true); // aldrig på väggen själv: då står man i den när den är klar
   return { x: o.x + 0.5, y: o.y + 0.5 };
 }
 const inHus = (h: Hus | undefined, o: { x: number; y: number }) => h && o.x > h.x && o.y > h.y && o.x < h.x + h.w - 1 && o.y < h.y + h.h - 1 ? 1 : 0;
 // lägg material på bygget
 export function deliver(b: Bit, n: number, repair: boolean) { if (repair) b.lm = (b.lm ?? 0) + n; else b.mat += n; }
+// ---------- var materialet kom ifrån ----------
+// Varje hus minns var materialet till det kom ifrån, så att det kan visas när man trycker på huset. Nycklarna är
+// `hur:vem:slag`: byn (byns förråd), eget (byggarens), familj (familjens, som man får ta), gava (skänkt av vem),
+// stold (taget utan lov av vem), fallt (stockar från träd som vem fällde eller högg för bygget). Ändrar inget i spelet
+export const KOM = ['byn', 'eget', 'familj', 'gava', 'fallt', 'stold'] as const;
+export function noteKom(s: State, husId: number | undefined, kom: Record<string, number>) {
+  const h = housesOf(s).find(q => q.id === husId);
+  if (!h) return;
+  const m = (h.kom ??= {});
+  for (const key in kom) m[key] = (m[key] ?? 0) + kom[key];
+}
+export function komOf(h: Hus) {
+  return Object.entries(h.kom ?? {}).map(([key, n]) => { const [hur, vem, k] = key.split(':'); return { hur: hur as typeof KOM[number], vem: +vem, k, n }; });
+}
 // stockar till ett hus som byggs läggs direkt i väggarna: från träd som stod där huset ska stå, eller som fälldes
 // för bygget (hus = husets id). Ger hur mycket som gick åt
-export function toWalls(s: State, x: number, y: number, n: number, hus?: number) {
+export function toWalls(s: State, x: number, y: number, n: number, hus?: number, by?: Person) {
   const h = housesOf(s).find(q => !q.klar && (hus ? q.id === hus : x >= q.x && y >= q.y && x < q.x + q.w && y < q.y + q.h));
   if (!h || n <= 0) return 0;
   let used = 0;
   const walls = bitsOf(s).filter(b => b.hus === h.id && b.k === 'vagg' && b.b < 1 && MATERIAL[b.m].item === 'ved' && lacks(b)).sort((a, b) => Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y));
   for (const b of walls) { const d = Math.min(needOf(b), n - used); deliver(b, d, false); used += d; if (used >= n - 1e-9) break; }
+  if (by && used > 1e-9) noteKom(s, h.id, { [`fallt:${by.id}:ved`]: used });
   return used;
 }
 // en stunds arbete på en ruta. Ger true när rutan är klar
@@ -195,9 +210,10 @@ export function workOn(s: State, p: Person, b: Bit, dtSec: number) {
 }
 // en vägg som just blivit klar: den som står där kliver åt sidan, och det som ligger där flyttas
 function clearTile(s: State, b: Bit) {
-  const free = [[0, 1], [1, 0], [0, -1], [-1, 0], [1, 1], [-1, -1], [1, -1], [-1, 1]].map(([dx, dy]) => ({ x: b.x + dx, y: b.y + dy })).find(o => o.x >= 0 && o.y >= 0 && o.x < W && o.y < H && !blocked(s, o.x, o.y));
-  if (!free) return;
+  const free = [[0, 1], [1, 0], [0, -1], [-1, 0], [1, 1], [-1, -1], [1, -1], [-1, 1]].map(([dx, dy]) => ({ x: b.x + dx, y: b.y + dy })).find(o => o.x >= 0 && o.y >= 0 && o.x < W && o.y < H && !blocked(s, o.x, o.y)) ?? freeNear(s, b.x, b.y, true);
   for (const p of living(s)) if (Math.floor(p.x) === b.x && Math.floor(p.y) === b.y) { p.x = free.x + 0.5; p.y = free.y + 0.5; if (p.task) p.task.pk = undefined; }
+  // den som var på väg dit, eller arbetar där med något annat, ställer sig bredvid i stället
+  for (const p of living(s)) if (p.task && Math.floor(p.task.tx) === b.x && Math.floor(p.task.ty) === b.y) { p.task.tx = free.x + 0.5; p.task.ty = free.y + 0.5; p.task.pk = undefined; }
   for (const a of s.stackar ?? []) if (a.x === b.x && a.y === b.y) { a.x = free.x; a.y = free.y; }
   changed(s); // summorna i förrådet räknas om (lager.ts)
 }
