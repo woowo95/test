@@ -1,6 +1,8 @@
 // ikoner för föremål: små pixelbilder (8×8) som används både på kartan och i listorna
 // varje tecken är en pixel, '.' är genomskinlig
 
+// slagen av arbete ritas ljust i en färg (vattnet blått)
+const AKT = { w: '#f4efe0', a: '#9fc6e8' };
 const PAL: Record<string, Record<string, string>> = {
   bar: { r: '#8a4ad8', R: '#b88aff', d: '#4e2280', g: '#4f8a3a' },
   rotter: { o: '#9a6a3e', O: '#c99a62', d: '#5e3c20', g: '#5f9a44' },
@@ -30,6 +32,16 @@ const PAL: Record<string, Record<string, string>> = {
   hogolv: { y: '#d8c070', Y: '#f0dc94', d: '#7a5a3a' },
   tragolv: { b: '#a07446', B: '#c09060', d: '#5a3c22' },
   bygga: { b: '#8a6a40', B: '#b08a58', d: '#3a2a1a', y: '#d8c070' },
+  a_samla: AKT,
+  a_jaga: AKT,
+  a_fiska: AKT,
+  a_tra: AKT,
+  a_bygga: AKT,
+  a_hantverk: AKT,
+  a_bara: AKT,
+  a_elda: AKT,
+  a_prata: AKT,
+  a_leka: AKT,
 };
 
 const PIX: Record<string, string[]> = {
@@ -325,6 +337,117 @@ const PIX: Record<string, string[]> = {
     'dddddddd',
     'Bbbbbdbb',
     'bbbbbdbb',
+  ],
+  // slagen av arbete (SLAG i handlingar.ts): enfärgade bilder över huvudet, olika alla sakers symboler
+  // en hand som plockar
+  a_samla: [
+    '.w.w.w..',
+    '.w.w.w..',
+    '.wwwww.w',
+    '.wwwwwww',
+    '.wwwwww.',
+    '..wwww..',
+    '..wwww..',
+    '........',
+  ],
+  // ett sikte
+  a_jaga: [
+    '...w....',
+    '.wwwww..',
+    '.w.w.w..',
+    'www.www.',
+    '.w.w.w..',
+    '.wwwww..',
+    '...w....',
+    '........',
+  ],
+  // en krok över vågor
+  a_fiska: [
+    '....w...',
+    '....w...',
+    '....w...',
+    '.w..w...',
+    '.w..w...',
+    '..ww....',
+    'a.a.a.a.',
+    '.a.a.a.a',
+  ],
+  // ett träd
+  a_tra: [
+    '...w....',
+    '..www...',
+    '.wwwww..',
+    '..www...',
+    '.wwwww..',
+    'wwwwwww.',
+    '...w....',
+    '...w....',
+  ],
+  // ett hus
+  a_bygga: [
+    '...w....',
+    '..w.w...',
+    '.w...w..',
+    'wwwwwww.',
+    '.w...w..',
+    '.w.w.w..',
+    '.w.w.w..',
+    '.wwwww..',
+  ],
+  // en klubba
+  a_hantverk: [
+    '.wwwww..',
+    '.wwwww..',
+    '...w....',
+    '...w....',
+    '...w....',
+    '...w....',
+    '...w....',
+    '........',
+  ],
+  // en pil ner i en låda
+  a_bara: [
+    '...w....',
+    '...w....',
+    '.w.w.w..',
+    '..www...',
+    'w..w..w.',
+    'w.....w.',
+    'wwwwwww.',
+    '........',
+  ],
+  // en låga
+  a_elda: [
+    '...w....',
+    '..ww....',
+    '..www.w.',
+    '.wwwwww.',
+    '.ww.www.',
+    '.w...ww.',
+    '..www...',
+    '........',
+  ],
+  // en pratbubbla
+  a_prata: [
+    '.wwwww..',
+    'w.....w.',
+    'w.w.w.w.',
+    'w.....w.',
+    '.wwwww..',
+    '..w.....',
+    '.w......',
+    '........',
+  ],
+  // en boll
+  a_leka: [
+    '..www...',
+    '.w.www..',
+    'w.wwwww.',
+    'wwwwwww.',
+    'wwwwwww.',
+    '.wwwww..',
+    '..www...',
+    '........',
   ],
 };
 

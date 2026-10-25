@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { ACTS, Person, SEC, TalkEvent, ageOf, alive, byId, homeKind, living, load, relKey, spar } from '../sim';
+import { ACTS, Person, slagIkon, SEC, TalkEvent, ageOf, alive, byId, homeKind, living, load, relKey, spar } from '../sim';
 import { hsl } from './hjalp';
 import { s, ui } from './lage';
 import { Ikoner, TS, bubbleG, labels, markLayer, peopleG } from './scen';
@@ -39,11 +39,10 @@ export function posOf(p: Person) {
   }
   return { x, y };
 }
-// symbolen över huvudet för det man gör på platsen (mark i handlingar.ts); vissa redskap och material syns i stället
-const MARK_TOOL: Record<string, string> = { fiskespjut: 'fiskespjut', flintspjut: 'flintspjut', metspo: 'metspo', rep: 'rep', golv: 'tragolv' };
+// symbolen över huvudet: slaget av arbete man gör på platsen (SLAG i handlingar.ts)
 function markOf(p: Person): string | undefined {
-  const t = p.task; if (!t || t.phase !== 'do') return;
-  return (t.tool && MARK_TOOL[t.tool]) || ACTS[t.act].mark;
+  const t = p.task, k = t?.phase === 'do' ? ACTS[t.act].slag : undefined;
+  return k && slagIkon(k);
 }
 // pratbubblan: utseendet följer relationen, ett nytt samtal syns en stund i sin egen färg
 function drawBubble(x: number, y: number, kind: string | undefined, rel: 'karlek' | 'van' | 'ovan' | 'neutral', t: number, seed: number) {
