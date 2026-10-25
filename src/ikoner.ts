@@ -249,16 +249,16 @@ const PIX: Record<string, string[]> = {
     'h.......',
     '........',
   ],
-  // en rulle rep
+  // en bukt rep med tvinnade varv och en lös ände
   rep: [
-    '........',
-    '..yYYy..',
-    '.yd..dy.',
-    '.Y.yy.Y.',
-    '.Y.yy.Y.',
-    '.yd..dy.',
-    '..yYYy..',
-    '........',
+    '..dYyd..',
+    '.dYydYy.',
+    'dYy..ydY',
+    'Yy....Yy',
+    'yd....yd',
+    'dYy..ydY',
+    '.ydYydY.',
+    '..YydY.d',
   ],
   // ett ben
   ben: [
@@ -293,27 +293,27 @@ const PIX: Record<string, string[]> = {
     'Hh......',
     'h.......',
   ],
-  // ett utbrett skinn
+  // ett utbrett djurskinn med huvud, ben och svans
   skinn: [
-    'b......b',
-    '.bBBBBb.',
-    '.BBdBBB.',
-    'bBBBBdBb',
-    '.BdBBBB.',
-    '.BBBBdB.',
-    '.bBBBBb.',
-    'b......b',
+    '...dd...',
+    'b..BB..b',
+    'bbBBBBbb',
+    '..BBdB..',
+    '..BdBB..',
+    '..BBBB..',
+    'bbBBBBbb',
+    'b..bb..b',
   ],
-  // ett spö med rev och krok av ben
+  // ett böjt spö med lina och en krok av ben
   metspo: [
-    'h.......',
-    '.hyy....',
-    '..h.y...',
-    '...h.y..',
-    '....h.y.',
-    '.....h.y',
-    '......hy',
-    '......ww',
+    '.....hh.',
+    '...hh..h',
+    '..h....y',
+    '.h.....y',
+    '.h.....y',
+    'h......y',
+    'h....w.y',
+    'h.....w.',
   ],
   // golv av plankor
   tragolv: [
