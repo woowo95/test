@@ -1,4 +1,4 @@
-// npm run jamfor -- [dygn = 35] [högst antal byar = 64] [--mot gren = main]
+// npm run jamfor -- [dygn = 35] [högst antal byar = 64] [--mot main | en version som v43 | en commit]
 // Jämför koden som den är nu (med det som inte är committat) med en tidigare version, by för by på samma byar.
 // Varje by körs i båda versionerna, och skillnaden räknas per by. Det tar bort det mesta av bruset mellan byar
 // (en by på en dålig karta är dålig i båda). Byarna körs åtta åt gången tills varje nyckeltal är avgjort:
@@ -42,7 +42,9 @@ const MATT: { k: keyof Nyckeltal; namn: string; bra: 1 | -1; lika: number; tal?:
 ];
 
 // den tidigare versionen: en egen utcheckning per commit, med samma node_modules
-const bas = git('rev-parse', mot), kort = bas.slice(0, 7);
+// en version (v43) är den senaste commit vars meddelande säger "(v43)", som när den publicerades
+const version = /^v\d+$/.test(mot) ? git('log', '-1', '--format=%H', '--fixed-strings', `--grep=(${mot})`, 'main') : '';
+const bas = version || git('rev-parse', mot), kort = bas.slice(0, 7);
 const andrat = git('status', '--porcelain', '--untracked-files=no', '--', 'src') !== '';
 if (git('rev-parse', 'HEAD') === bas && !andrat) { console.log(`Inget att jämföra: koden är samma som ${mot} (${kort}).`); process.exit(0); }
 const trad = join(tmpdir(), 'samhalle-jamfor', bas);

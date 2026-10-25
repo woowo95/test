@@ -46,7 +46,7 @@ Sök i dokumentet i stället för att läsa allt; det är långt.
 - `npm install`, sedan `npm run build`. Det ger `samhallssimulatorn.html`, och i `publicera/` källkoden som .txt och fillistan `filer.json`.
 - Publicera alltid till samma artefakt-URL så att Björns sparade by och länk finns kvar: `file_path` = `samhallssimulatorn.html`, `url` = spelets URL och `files` = innehållet i `publicera/filer.json`. Då kommer källkoden med under `kalla/`.
 - Uppdatera "Läget just nu" i designdokumentet när något nytt är byggt, och bocka av steget i Färdplanen.
-- Sätt en git-tagg med versionen på den commit som publicerades (`git tag v44`, `git push origin v44`), så att det stora testet kan jämföra mot den (`jamfor --mot v44`).
+- Commiten som publiceras säger versionen inom parentes, t.ex. "(v44)". Då hittar det stora testet den med `jamfor --mot v44` (git-taggar går inte att pusha härifrån).
 
 ## Enklare modeller (spara tokens)
 

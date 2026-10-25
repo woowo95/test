@@ -102,7 +102,7 @@ Simuleringen importerar aldrig från `ui/`. Gränssnittet importerar bara från 
 | `npm run facit` | ca 30 s | När en ändring i spelet är avsiktlig. Sparar nytt facit och ny samma-koll |
 | `npm run scenario -- namn` | några s | Ett enda scenario |
 | `npm run likhet` | ca 5 s | När arbete, gång, samtal eller lärande ändras: är byarna exakt lika i spelet och vid ikappräkning? |
-| `npm run jamfor -- 35 64 --mot vNN` | ca 3–7 min | I det stora testet: samma byar med koden nu och med versionen före systemet (en git-tagg), by för by, tills skillnaden är avgjord (se CLAUDE.md) |
+| `npm run jamfor -- 35 64 --mot vNN` | ca 3–7 min | I det stora testet: samma byar med koden nu och med versionen före systemet (den senaste commit som säger "(vNN)"), by för by, tills skillnaden är avgjord (se CLAUDE.md) |
 | `npm run balans`, `takt`, `teknik`, `detaljer` | | Balansering och undersökning (se CLAUDE.md) |
 
 ## Bygga och publicera
