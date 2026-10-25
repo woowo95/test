@@ -23,6 +23,7 @@ import { Act, DAY, HOUR, Person, SEC, SKILL_NAMES, State, Task, W, H, useMap, Hi
 import { findPath, speedAt, wear } from './vag';
 import { chooseTask } from './val';
 import { djurSteg } from './djur';
+import { stepByggnader } from './byggnader';
 import { avail, bitById, buildJob, deliver as deliverBit, lacks, needOf, noteKom, planBuild, siteOf, toWalls, wearBuild, workOn } from './bygg';
 import { MATERIAL, gridOf, roomAt, shelterOf } from './byggnad';
 import { histParts, historikSteg, joinHist } from './historik';
@@ -95,7 +96,7 @@ export function step(s: State, dtSec: number, events?: TalkEvent[]) {
   if (Math.floor(now / HOUR) !== Math.floor((now - dtSec * SEC) / HOUR)) {
     stepSeder(s); updateTags(s); stepDelning(s);
     growGround(s, 1, ai); growFynd(s, 1, ai); forget(s, 1); rotStumps(s); tidyStore(s);
-    wearBuild(s, 1, ai); planBuild(s);
+    wearBuild(s, 1, ai); stepByggnader(s); planBuild(s);
     historikSteg(s); // nyckeltalen till byns historik (läses inte av simuleringen)
   }
 

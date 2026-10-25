@@ -11,7 +11,7 @@ import { freeTools } from './agande';
 import { getable } from './behov';
 import { FOREST } from './vag';
 import { kronika } from './historik';
-import { BYGGNADER, Byggnad, Fn, bedTile, mostUrgent } from './byggnader';
+import { BYGGNADER, Byggnad, Fn, bedTile, fnOf, husKlar, mostUrgent } from './byggnader';
 import { H, HOUR, Person, State, T, W } from './typer';
 
 // ---------- att bygga ----------
@@ -87,7 +87,7 @@ export function planBuild(s: State) {
     const ox = side === 'v' ? at.x : side === 'o' ? at.x + w + 1 : at.x + 1 + Math.floor(w / 2);
     const oy = side === 'n' ? at.y : side === 's' ? at.y + h + 1 : at.y + 1 + Math.floor(h / 2);
     const big = w * h >= 8, same = u.fn === 'sovsal' ? hs.filter(q => q.namn.startsWith(big ? 'Långhus' : 'Hydda')).length : hs.filter(q => (q.fn ?? 'sovsal') === u.fn).length;
-    const hus: Hus = { id: (s.nextBit ??= 1), namn: row.namnFor!(s, w, h, same), x: at.x, y: at.y, w: w + 2, h: h + 2, t: s.now, by: by.id, fn: u.fn };
+    const hus: Hus = { id: (s.nextBit ??= 1), namn: row.namnFor!(s, w, h, same), x: at.x, y: at.y, w: w + 2, h: h + 2, t: s.now, by: by.id, fn: u.fn, slag: u.a.slag };
     s.nextBit++;
     const golv = 'tra';
     for (let y = at.y; y < at.y + h + 2; y++) for (let x = at.x; x < at.x + w + 2; x++) {
@@ -209,7 +209,8 @@ export function workOn(s: State, p: Person, b: Bit, dtSec: number) {
   if (h && !h.klar && bitsOf(s).every(q => q.hus !== h.id || q.b >= 1)) {
     h.klar = s.now;
     const n = gridOf(s).rooms.filter(r => r.hus === h.id).reduce((a, r) => a + r.tiles.length, 0);
-    log(s, `${h.namn} är färdigt. Nu kan ${n} sova under tak.`, 'world', [p.id]); kronika(s, `${h.namn} blev färdigt.`);
+    if (fnOf(h).sover) log(s, `${h.namn} är färdigt. Nu kan ${n} sova under tak.`, 'world', [p.id]);
+    kronika(s, `${h.namn} blev färdigt.`); husKlar(s, h);
     sedEvent(s, 'gemenskap', 0.03);
   }
   return true;

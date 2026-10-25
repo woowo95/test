@@ -17,7 +17,8 @@ import { FOOD, RUTA, SAKER, SAK_LIST, STACK, STACK_ORDER, isFood, isTool, sakNam
 // ligger längre bort räknas inte förrän någon burit in det.
 // Lagerplatserna (zoner) görs större, mindre och nya av invånarna själva. Två eller fler sorteras: maten för sig och
 // material för sig, och den viktigaste ligger närmast elden. Vilka saker som finns, och hur stora stackarna är, står i saker.ts.
-export interface Zone { x: number; y: number; w: number; h: number; namn?: string; slag?: 'mat' | 'material'; prio?: number }
+// hus = lagerplatsen är golvet i ett förrådshus (byggnader.ts): den växer och krymper inte och räknas inte bland de vanliga
+export interface Zone { x: number; y: number; w: number; h: number; namn?: string; slag?: 'mat' | 'material'; prio?: number; hus?: number }
 // dold: det som ligger gömt i stacken (giftig svamp bland svampen, saker.ts: i)
 export interface Stack { k: string; n: number; c: number; x: number; y: number; ag?: Del; dold?: number }
 // en stack som den visas: out = utanför lagerplatserna, stored = hör till byns förråd (i lagret eller precis bredvid)
@@ -231,7 +232,7 @@ export function dropSpot(s: State, k: string) {
   return { x: sp.x + 0.5, y: sp.y + 0.5 };
 }
 function besideSpot(s: State, k: string, occ: Map<number, Stack>) {
-  const zs = zonesOf(s), base = zs.filter(z => allows(z, k));
+  const zs = zonesOf(s).filter(z => z.hus === undefined), base = zs.filter(z => allows(z, k)); // inte bredvid förrådshuset: där står väggarna
   for (const z of base.length ? base : zs) for (const r of ringTiles(s, z)) {
     if (zoneAt(s, r.x, r.y) >= 0) continue;
     if (roomIn(occ.get(key(r.x, r.y)), k)) return r;
@@ -408,7 +409,10 @@ export function wearStore(s: State, dtSec: number, ai: number) {
       const m = Math.min(RUTA[into.k], a.n * into.per);
       if (a.ag) for (const o in a.ag) a.ag[o] *= m / a.n;
       a.n = m; a.k = into.k; a.c = 0.5;
-    } else a.n = 0;
+    } else {
+      if (isFood(a.k) && a.n > 1e-9) { (s.stat ??= {}).ruttnat = (s.stat.ruttnat ?? 0) + a.n; s.ruttet = (s.ruttet ?? 0) + a.n; } // förrådshuset (byggnader.ts)
+      a.n = 0;
+    }
   }
   // redskapen: i handen och i bördan som i lagret, på marken efter var de ligger
   for (const t of tingOf(s)) {
@@ -421,22 +425,27 @@ export function wearStore(s: State, dtSec: number, ai: number) {
 
 // ---------- lagerplatserna ----------
 // en gång i timmen: större när något inte får plats, en ny lagerplats när de inte kan växa mer, mindre när de står tomma
+// det i förrådet som inte fått plats i en lagerplats utan ligger bredvid
+export const overflow = (s: State) => things(s).filter(a => zoneAt(s, a.x, a.y) < 0 && isStored(s, a.x, a.y));
+const vanliga = (s: State) => zonesOf(s).filter(z => z.hus === undefined).length;
+// förrådet är fullt: lagerplatserna kan inte bli fler och det ligger saker bredvid dem (förrådshuset, byggnader.ts)
+export const storeFull = (s: State) => vanliga(s) >= MAX_ZONES && overflow(s).length >= 3;
 export function tidyStore(s: State) {
   placeTools(s);
   const zs = zonesOf(s);
-  const over = () => things(s).filter(a => zoneAt(s, a.x, a.y) < 0 && isStored(s, a.x, a.y));
+  const over = () => overflow(s);
   let grew = -1;
   for (let rep = 0; rep < 4 && over().length; rep++) {
-    const o = over(), i = zs.findIndex((z, j) => o.some(a => allows(z, a.k)) && growOf(s, j));
+    const o = over(), i = zs.findIndex((z, j) => z.hus === undefined && o.some(a => allows(z, a.k)) && growOf(s, j));
     if (i < 0) break;
     zs[i] = growOf(s, i)!; grew = i;
   }
   if (grew >= 0) log(s, `${zs[grew].namn ?? 'Lagret'} blev för litet, så byn gjorde det större.`, 'world');
-  else if (over().length && zs.length < MAX_ZONES) newZone(s);
+  else if (over().length && vanliga(s) < MAX_ZONES) newZone(s);
   // mindre: ta bort en kant när mer än hälften står tom och det som ligger där får plats i resten
   for (let i = 0; i < zs.length; i++) {
     const z = zs[i], all = things(s), have = z.w * z.h, n = all.filter(a => inZone(z, a.x, a.y)).length;
-    if (have <= 4 || have - n <= have / 2) continue;
+    if (z.hus !== undefined || have <= 4 || have - n <= have / 2) continue;
     const opts: Zone[] = [{ ...z, w: z.w - 1 }, { ...z, h: z.h - 1 }, { ...z, x: z.x + 1, w: z.w - 1 }, { ...z, y: z.y + 1, h: z.h - 1 }].filter(c => c.w >= 2 && c.h >= 2);
     const cost = (c: Zone) => all.filter(a => inZone(z, a.x, a.y) && !inZone(c, a.x, a.y)).length;
     const best = opts.sort((a, b) => cost(a) - cost(b))[0];
@@ -461,12 +470,12 @@ function newZone(s: State) {
     if (d < bd) { bd = d; best = c; }
   }
   if (!best) return;
-  if (zs.length === 1) {
+  if (vanliga(s) === 1) {
     Object.assign(z0, { namn: 'Matförrådet', slag: 'mat', prio: 2 });
     zs.push({ ...best, namn: 'Materiallagret', slag: 'material', prio: 1 });
     log(s, 'Lagret räckte inte till, så byn gjorde en ny lagerplats för material. Maten ligger kvar i det gamla lagret närmast elden.', 'world');
   } else {
-    zs.push({ ...best, namn: `Lagerplats ${zs.length + 1}`, prio: 0 });
+    zs.push({ ...best, namn: `Lagerplats ${vanliga(s) + 1}`, prio: 0 });
     log(s, 'Lagren räckte inte till, så byn gjorde en ny lagerplats.', 'world');
   }
 }
