@@ -261,6 +261,8 @@ function clearTile(s: State, b: Bit) {
   for (const p of living(s)) if (Math.floor(p.x) === b.x && Math.floor(p.y) === b.y) { p.x = free.x + 0.5; p.y = free.y + 0.5; if (p.task) p.task.pk = undefined; }
   // den som var på väg dit, eller arbetar där med något annat, ställer sig bredvid i stället
   for (const p of living(s)) if (p.task && Math.floor(p.task.tx) === b.x && Math.floor(p.task.ty) === b.y) { p.task.tx = free.x + 0.5; p.task.ty = free.y + 0.5; p.task.pk = undefined; }
+  // den som bär hem en börda och ska fortsätta där fortsätter bredvid
+  for (const p of living(s)) { const r = p.task?.res; if (r && Math.floor(r.x) === b.x && Math.floor(r.y) === b.y) { r.x = free.x + 0.5; r.y = free.y + 0.5; } }
   for (const a of s.stackar ?? []) if (a.x === b.x && a.y === b.y) { a.x = free.x; a.y = free.y; }
   changed(s); // summorna i förrådet räknas om (lager.ts)
 }

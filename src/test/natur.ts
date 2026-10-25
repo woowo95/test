@@ -6,7 +6,7 @@ import { korSkript, pool, sistaJson } from './pool';
 
 const [antal = 16, dagar = 35] = process.argv.slice(2).map(Number);
 const seeds = Array.from({ length: antal }, (_, i) => 1001 + i * 7919);
-type Ut = { seed: number; pop: number; svalt: number; utvandrade: number; fodda: number; hunger: number; vintermat: number; doda: number; larm: string[]; kvar: number; gang: number; skog0: number; skog: number; stig: number; matdagar: number; fallda: number; hus: number; vakter: number };
+type Ut = { seed: number; pop: number; svalt: number; utvandrade: number; fodda: number; hunger: number; vintermat: number; doda: number; larm: string[]; kvar: number; gang: number; skog0: number; skog: number; stig: number; matdagar: number; fallda: number; hus: number; husDag: number; vakter: number };
 const t0 = Date.now();
 const kor = (utan: boolean) => seeds.map(seed => async () => {
   const u = await korSkript('natur-en.ts', [String(seed), String(dagar), utan ? 'utan' : 'med']);
@@ -35,5 +35,6 @@ rad('skog nära byn efter %', r => r.skog * 100);
 rad('stigar och bar jord', r => r.stig);
 rad('fällda träd', r => r.fallda);
 rad('färdiga hus', r => r.hus);
+rad('första huset klart, dygn', r => r.husDag, 1);
 const v = alla.reduce((a, r) => a + r.vakter, 0);
 console.log(v ? 'VAKTER LARMAR:\n  ' + alla.flatMap((r, i) => r.larm.map(l => `by ${r.seed} ${i < antal ? 'med' : 'utan'}: ${l}`)).join('\n  ') : 'Vakter: inga fel.');

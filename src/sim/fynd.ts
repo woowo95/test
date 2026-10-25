@@ -348,13 +348,13 @@ export const HAND_FISH = 0.55;
 export const flintFactor = (s: State, x: number, y: number) => richness(s, 'flinta', x, y);
 // byn behöver flinta att tända eld med och till en yxa
 export const wantsFlint = (s: State) => amountOf(s, 'flinta') < 1 || amountOf(s, 'flinta') + amountOf(s, 'yxa') < 2;
-// en plats att samla på nära stenarna, där flinta är vanlig
+// en plats att samla på nära stenarna, där flinta är vanlig. I lägret och där flintan redan plockats finns ingen
 export function flintSpot(s: State, area?: (x: number, y: number) => boolean): { x: number; y: number } | undefined {
   const m = getMap(s.seed), sd = stoneDist(s.seed), c: { x: number; y: number; d: number }[] = [];
   for (let i = 0; i < W * H; i++) {
     if (sd[i] < 1 || sd[i] > 2 || m.tiles[i] === T.Vatten || m.tiles[i] === T.Sten) continue;
     const x = i % W, y = Math.floor(i / W), d = campDist(s, x, y);
-    if (d < 30 && (!area || area(x, y))) c.push({ x, y, d });
+    if (d < 30 && (!area || area(x, y)) && flintFactor(s, x, y) > 1) c.push({ x, y, d });
   }
   if (!c.length) return undefined;
   c.sort((a, b) => a.d - b.d);

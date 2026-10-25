@@ -330,7 +330,7 @@ function workStep(s: State, p: Person, tk: Task, dtSec: number, a: number, learn
   const res = d.resurs, rich = res && d.takt === undefined ? richness(s, res, tk.tx, tk.ty) : 1;
   const y = workRate(s, p, tk.act) * dtSec * (rd?.ger ?? 1) * (d.takt ?? rich);
   if (y > 0) count(s, 'prod_' + tk.act, y);
-  if (res && d.takt === undefined) { takeFrom(s, res, tk.tx, tk.ty, y); if (rich < 0.08) tk.until = now; } // tomt här: gå hem eller vidare
+  if (res && d.takt === undefined) { takeFrom(s, res, tk.tx, tk.ty, y); if (rich < 0.08 && !tk.sok) tk.until = now; } // tomt här: gå hem eller vidare (den som letar flinta eller stenar fortsätter)
   // den som arbetar ser hur mycket som finns i området och minns det
   if (res && (rich < 0.08 || chance(s, 1 / 1800, dtSec, 'minne', p))) lookAround(s, p, tk.tx, tk.ty);
   const bar = (k: string, n: number) => { if (n > 0) { tk.items ??= {}; tk.items[k] = (tk.items[k] ?? 0) + n; } };

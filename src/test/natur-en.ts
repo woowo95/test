@@ -2,7 +2,7 @@
 // utan = inga korgar, spjut, metspön eller knivar (de tas bort så fort de görs)
 import { korBy } from './kor';
 import { FOREST, isSoil } from '../sim/vag';
-import { campDist, fyndAt, groundOf, vaxerAt, living, tingOf, ageIndex, housesOf, H, W, State } from '../sim';
+import { campDist, fyndAt, groundOf, vaxerAt, living, tingOf, ageIndex, housesOf, DAY, H, W, State } from '../sim';
 import { foodDays } from '../sim/ekonomi';
 import { SPJUT } from '../sim/redskap';
 
@@ -10,7 +10,7 @@ const [seed, dagar] = process.argv.slice(2).map(Number), utan = process.argv[4] 
 const BORT = new Set<string>(['korg', 'metspo', 'kniv', ...SPJUT]);
 const NARA = 12, SKOG_R = 15; // rutor från lägret
 const VAXT = ['bar', 'kantarell', 'rotter'] as const;
-let mdSum = 0, mdN = 0, kvarSum = 0, kvarN = 0, gangSum = 0, gangN = 0, steg = 0, skog0 = -1;
+let husDag = -1, mdSum = 0, mdN = 0, kvarSum = 0, kvarN = 0, gangSum = 0, gangN = 0, steg = 0, skog0 = -1;
 const skogNara = (s: State) => {
   const g = groundOf(s); let n = 0, f = 0;
   for (let i = 0; i < W * H; i++) if (isSoil(g.tiles[i]) && campDist(s, i % W, Math.floor(i / W)) < SKOG_R) { n++; if (g.trees[i] >= FOREST) f++; }
@@ -19,6 +19,7 @@ const skogNara = (s: State) => {
 const r = korBy(seed, dagar, s => {
   if (utan && tingOf(s).some(t => BORT.has(t.k))) s.ting = tingOf(s).filter(t => !BORT.has(t.k));
   if (skog0 < 0) skog0 = skogNara(s);
+  if (husDag < 0 && housesOf(s).some(h => h.klar)) husDag = (s.now - s.founded) / DAY;
   if (++steg % 12) return; // en gång i timmen
   if (steg > 288 * 5) { const fd = foodDays(s); mdSum += fd; mdN++; }
   for (const p of living(s)) if (p.task?.phase === 'do' && ['samla', 'jakt', 'fiske'].includes(p.task.act)) { gangSum += campDist(s, p.x, p.y); gangN++; }
@@ -34,4 +35,4 @@ const s = r.s, g = groundOf(s);
 let stig = 0;
 for (let i = 0; i < W * H; i++) if (isSoil(g.tiles[i]) && g.cover[i] < 0.3 && g.trees[i] < FOREST) stig++;
 console.log(JSON.stringify({ seed, pop: r.n.pop, svalt: r.n.svalt, utvandrade: r.n.utvandrade, fodda: r.n.fodda, hunger: r.n.hunger, vintermat: r.n.vintermat, doda: r.n.doda,
-  kvar: kvarN ? kvarSum / kvarN : 1, gang: gangN ? gangSum / gangN : 0, skog0, skog: skogNara(s), stig, fallda: s.fallda ?? 0, hus: housesOf(s).filter(h => h.klar).length, matdagar: mdN ? mdSum / mdN : 0, vakter: r.vakter.length, larm: r.vakter }));
+  kvar: kvarN ? kvarSum / kvarN : 1, gang: gangN ? gangSum / gangN : 0, skog0, skog: skogNara(s), stig, fallda: s.fallda ?? 0, hus: housesOf(s).filter(h => h.klar).length, husDag: husDag < 0 ? dagar : husDag, matdagar: mdN ? mdSum / mdN : 0, vakter: r.vakter.length, larm: r.vakter }));
