@@ -4,8 +4,8 @@
 // - det man gör: värdet av det den görs av plus arbetstiden (`av` och `min` i saker.ts),
 // - ett påslag per teknisk nivå (tekniken som behövs och de tekniker den bygger på, teknik.ts), och för sällsynta råvaror.
 // En sak från en senare teknik är alltid värd mer än de enkla råvarorna av samma slag (mappen i saker.ts), även när
-// råvaran tar längre tid att samla: kött är värt mer än bär. Grundvärdet är fast; utbud och efterfrågan flyttar priset
-// kring det vid byten (steg 1.4.2). Ett ting och en stack är värda grundvärdet gånger sitt skick; kvaliteten räknas in
+// råvaran tar längre tid att samla: kött är värt mer än bär. Grundvärdet är fast; i ett byte värderar var och en saken
+// som grundvärdet gånger sitt eget behov av den (behovAv i behov.ts). Ett ting och en stack är värda grundvärdet gånger sitt skick; kvaliteten räknas in
 // när den finns (steg 2.2.2).
 // Byns rikedom är förrådet, redskapen och husen (husets material och arbete). Delningen (delning.ts) läser den.
 import { ACTS } from './handlingar';

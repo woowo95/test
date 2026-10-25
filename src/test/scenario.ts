@@ -102,7 +102,7 @@ const SCENARIER: Record<string, { text: string; lang?: boolean; kor: () => Koll[
       return [
         ['träd har fällts', (s.fallda ?? 0) >= 3],
         ['ved har huggits', ved > 0],
-        [`gräs där träden stod utanför lägret (${gras} av ${ute.length})`, ute.length >= 3 && gras > ute.length / 2],
+        [`gräs där träden stod utanför lägret, minst hälften (${gras} av ${ute.length})`, ute.length >= 3 && gras >= ute.length / 2],
         ['stammarna huggs upp (högst 2 liggande)', (s.stockar ?? []).length <= 2]];
     },
   },
@@ -520,7 +520,7 @@ SCENARIER.agande = {
 };
 SCENARIER.gava = {
   lang: true,
-  text: 'Den som saknar ett redskap hen arbetar med frågar efter det i samtal. Den som har ett över ger det: en förälder nästan alltid till sitt barn, släkt och vänner ofta, ovänner inte. Har båda något över som den andra saknar blir det ett byte.',
+  text: 'Den som saknar ett redskap hen arbetar med frågar efter det i samtal. Den som har ett över ger det: en förälder nästan alltid till sitt barn, släkt och vänner ofta, ovänner inte. Har den som frågar något över som är värt nog blir det ett byte.',
   kor: () => {
     const s = createState(6, START);
     setItems(s, { grenar: 20 });
@@ -540,11 +540,11 @@ SCENARIER.gava = {
     getRel(s, a, d).op = 40;
     let forsok = 0; while (!har(d, 'fiskespjut') && forsok++ < 200) askForTool(s, a, d);
     const van = har(d, 'fiskespjut') === 1 && har(a, 'fiskespjut') === 1;
-    // byte: c har två korgar och saknar kniv, b har två knivar och saknar korg
+    // byte: c har två yxor och saknar kniv, b har två knivar och saknar yxa (ungefär lika mycket värda)
     getRel(s, b, c).op = 30;
-    ge(c, 'korg', 2); ge(b, 'kniv', 2); b.habit = { samla: 10 }; c.habit = { slakta: 10 };
+    ge(c, 'yxa', 2); ge(b, 'kniv', 2); b.habit = { hugga: 10 }; c.habit = { slakta: 10 };
     let byte: string | undefined; forsok = 0; while (!byte && forsok++ < 200) byte = askForTool(s, b, c);
-    const bytt = byte === 'byte' && har(b, 'korg') === 1 && har(c, 'kniv') === 1;
+    const bytt = byte === 'byte' && har(b, 'yxa') === 1 && har(c, 'kniv') === 1;
     // en vanlig by
     let gavor = 0, byten = 0;
     for (let i = 0; i < 4; i++) {
@@ -556,8 +556,72 @@ SCENARIER.gava = {
       [`en förälder ger sitt barn det hen har över (${barn} av 20)`, barn >= 17],
       ['en ovän ger inget', ovan === 0],
       [`en vän ger det hen har över (efter ${forsok} samtal)`, van],
-      ['två som har något över som den andra saknar byter', bytt],
+      [`två som har något över som den andra saknar byter (${byte})`, bytt],
       [`i vanliga byar ges och byts redskap (${gavor} gåvor och ${byten} byten i 4 byar på 20 dygn)`, gavor + byten > 0],
+    ];
+  },
+};
+
+SCENARIER.byte = {
+  text: 'Byten i behovsstegen, mellan sitt eget och byns förråd: den som saknar något byter till sig det mot något hen har över, när båda tjänar på det (grundvärdet gånger var och ens behov). Ojämna byten går när skillnaden är liten, när den ena håller på att dö eller när de står varandra nära. Mat, material och redskap kan bytas.',
+  kor: () => {
+    const ny = () => {
+      const s = createState(6, START);
+      rikBy(s); setMat(s, {}); setStock(s, { ved: 0, grenar: 0, flinta: 0, torrgras: 0 }); s.ting = [];
+      const [a, b, c] = living(s);
+      for (const q of [a, b, c]) { q.mother = q.father = q.partner = undefined; q.x = 30; q.y = 30; q.task = undefined; q.hunger = 1; q.health = 1; q.warm = 1; q.pot.empati = 10; q.habit = {}; }
+      for (const q of [a, b, c]) for (const r of [a, b, c]) if (q !== r) getRel(s, q, r).op = 0; // inga vänner
+      s.people = [a, b, c]; c.x = 90;
+      return { s, a, b, c };
+    };
+    const byns = (s: State, k: string) => amountOf(s, k) - living(s).reduce((n, q) => n + ownsAmount(s, q, k), 0);
+    const nara = (x: number, y: number) => Math.abs(x - y) < 1e-6;
+    // a är hungrig och har trä över, b har mat över: a byter till sig mat före byns. b värderar sin mat över till hälften
+    // (1,52 × 0,5) och trä hen inte har fullt (0,66), så en portion kostar 1,15 trä
+    let { s, a, b } = ny();
+    a.hunger = 0.3; addTo(s, 'bar', 5); gain(s, b, 'bar', 6); gain(s, a, 'ved', 6);
+    needLadder(s, a, 1);
+    const fore = a.hunger > 0.3 && nara(byns(s, 'bar'), 5) && nara(ownsAmount(s, b, 'bar'), 5), pris = ownsAmount(s, b, 'ved');
+    // a har nästan inget över (0,2 trä utöver det hen behöver): ingen byter med hen en portion, utom en nära vän
+    ({ s, a, b } = ny());
+    a.hunger = 0.3; addTo(s, 'bar', 5); gain(s, b, 'bar', 6); gain(s, a, 'ved', 3.2);
+    needLadder(s, a, 1); const okand = nara(ownsAmount(s, b, 'bar'), 6) && a.hunger > 0.3;
+    ({ s, a, b } = ny());
+    a.hunger = 0.3; addTo(s, 'bar', 5); gain(s, b, 'bar', 6); gain(s, a, 'ved', 3.2); getRel(s, b, a).op = 70; getRel(s, a, b).op = 70; b.pot.empati = 20;
+    needLadder(s, a, 1); const van = nara(ownsAmount(s, b, 'bar'), 5) && ownsAmount(s, b, 'ved') < 0.3;
+    // ... eller när hen håller på att dö av svält
+    ({ s, a, b } = ny());
+    a.hunger = 0; a.health = 0.5; addTo(s, 'bar', 5); gain(s, b, 'bar', 6); gain(s, a, 'ved', 3.2);
+    needLadder(s, a, 1); const dor = nara(ownsAmount(s, b, 'bar'), 5);
+    // en ovän byter inte
+    ({ s, a, b } = ny());
+    a.hunger = 0.3; addTo(s, 'bar', 5); gain(s, b, 'bar', 6); gain(s, a, 'ved', 6); getRel(s, b, a).op = -40;
+    needLadder(s, a, 1); const ovan = nara(ownsAmount(s, b, 'bar'), 6) && nara(byns(s, 'bar'), 4);
+    // material till ett eget arbete: a saknar flinta och betalar med mat hen har över; byns flinta tas inte
+    ({ s, a, b } = ny());
+    addTo(s, 'flinta', 3); gain(s, b, 'flinta', 2); gain(s, a, 'bar', 20);
+    takeMaterial(s, a, 'flinta', 1);
+    const material = nara(byns(s, 'flinta'), 3) && nara(ownsAmount(s, b, 'flinta'), 1) && ownsAmount(s, b, 'bar') > 3;
+    // ett redskap mot mat: a samlar och saknar korg, b har två
+    ({ s, a, b } = ny());
+    a.habit = { samla: 10 }; addTool(s, 'korg', b); addTool(s, 'korg', b); gain(s, a, 'bar', 20);
+    const korg = askForTool(s, a, b) === 'byte' && ownedBy(s, a).some(t => t.k === 'korg') && ownsAmount(s, b, 'bar') > 0;
+    // vanliga byar
+    let byten = 0, mat = 0, mtrl = 0;
+    for (const seed of [1, 42]) {
+      const v = createState(seed, START);
+      for (let i = 0; i < 8 * 288; i++) step(v, 300);
+      byten += v.stat?.byten ?? 0; mat += v.stat?.byte_mat ?? 0; mtrl += v.stat?.byte_material ?? 0;
+    }
+    return [
+      [`den hungrige byter till sig mat mot trä hen har över, före byns mat (en portion för ${pris.toFixed(2)} trä)`, fore && Math.abs(pris - 1.52 * 0.5 / 0.66) < 0.01],
+      ['den som har för lite att ge får inget byte av någon hen inte står nära', okand],
+      ['en nära vän går med på ett ojämnt byte', van],
+      ['den som håller på att dö får ett ojämnt byte', dor],
+      ['en ovän byter inte', ovan],
+      ['material till ett eget arbete byts till sig före byns', material],
+      ['ett redskap byts mot mat', korg],
+      [`i vanliga byar byter folk (${byten} byten på 8 dygn i 2 byar: ${mat.toFixed(1)} portioner mat, ${mtrl.toFixed(1)} material)`, byten > 0],
     ];
   },
 };
