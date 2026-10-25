@@ -55,12 +55,14 @@ Sök i dokumentet i stället för att läsa allt; det är långt.
 
 ## Tester (spara tokens)
 
-- `npm run koll`: kör efter varje ändring (ca 40 s). Det kör typkontrollen, `npm test`, alla scenarier och samma-kollen samtidigt och skriver bara ut det som behövs.
+- `npm run koll`: kör efter varje ändring (ca 3 min datortid). Det kör typkontrollen, `npm test`, alla scenarier och samma-kollen samtidigt och skriver bara ut det som behövs.
 - `npm run samma`: utvecklas byarna exakt som förut (ca 5 s)? Används vid ombyggnad som inte ska ändra något i spelet.
 - `npm test`: tre byar i 90 dygn utan grafik, en rad per by, jämfört med `test/facit.json`. Visar bara det som ändrats, alltid om en by dött ut och återgrundats, och vakter som larmar om något omöjligt händer (NaN, negativa förråd, folk i vattnet).
 - `npm run facit`: spara nytt facit (och ny samma-koll) när en ändring i spelet är avsiktlig.
-- `npm run balans -- [antal] [dygn]`: många byar parallellt, median/sämst/bäst. Använd vid balansering.
-- `npm run scenario -- [namn]`: scenariotester (glanta, ingen-yxa, yxa, vinter-slocknad, knapphet, svamp, flinta, kunskap, temperatur, befolkning, fiskespjut, bostad, fritid, lager, slitage, lagerplatser, rotter, aktivitet, teknik, bygg, varmekarta, djur, agande, gava, egendom, behov, kalender, sparning, kaniner, slump, historik, ved, delning, arv) som kontrollerar att det som ska hända händer. Lägg till ett scenario när ett nytt system byggs.
+- `npm run jamfor -- [dygn] [byar] [--mot gren]`: blev spelet bättre eller sämre? Kör samma byar med koden nu och med main (eller `--mot`) i 35 dygn (35 år i spelet, fem veckor i verkligheten: grundandet och första vintern), åtta byar åt gången tills varje nyckeltal är avgjort: bättre, sämre, lika eller ingen stor skillnad. Kör det efter ändringar i det byarna gör (arbete, behov, mat, delning, balans), i stället för att jämföra två balanskörningar. Mains resultat sparas, så bara den nya koden körs (ca 3–7 min datortid).
+- Brus: små byar står på gränsen till svält, och minsta ändring kan avgöra om en enskild by klarar sig, åt båda hållen. En eller ett par byar som blivit mycket sämre är därför inget bevis; det är bara när de flesta går åt samma håll, eller när `jamfor` säger "sämre", som något är fel. Skillnader på några hungertimmar går inte att mäta snabbt.
+- `npm run balans -- [antal] [dygn]`: många byar parallellt, median/sämst/bäst. En översikt över hur byarna mår, inte en jämförelse: två körningar skiljer sig av sig själva.
+- `npm run scenario -- [namn]`: scenariotester (glanta, ingen-yxa, yxa, vinter-slocknad, knapphet, svamp, flinta, kunskap, temperatur, befolkning, fiskespjut, bostad, fritid, lager, slitage, lagerplatser, rotter, aktivitet, teknik, bygg, varmekarta, djur, agande, gava, egendom, behov, kalender, sparning, kaniner, slump, historik, ved, delning, arv, varde) som kontrollerar att det som ska hända händer. Lägg till ett scenario när ett nytt system byggs.
 - `npm run takt -- [by] live|snabb [timmar]`: hur mycket en arbetstimme ger i levande läge och snabbläget, antal turer hem och hur mycket mark som nötts. Använd när arbete, bördor eller gång ändras.
 - `npm run teknik -- [antal]`: när varje teknik upptäcks och hur många som kan den.
 - `npm run likhet -- [timmar] [byar]`: samma byar i levande läge och snabbläget, sida vid sida (tar ett par minuter).

@@ -14,7 +14,8 @@
     "teknik": "tsx src/test/teknik.ts",
     "likhet": "bash src/test/likhet.sh",
     "koll": "tsx src/test/koll.ts",
-    "samma": "tsx src/test/samma.ts"
+    "samma": "tsx src/test/samma.ts",
+    "jamfor": "tsx src/test/jamfor.ts"
   },
   "repository": {
     "type": "git",

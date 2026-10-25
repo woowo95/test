@@ -1,4 +1,4 @@
-import { AGES, BEAT, DAY, HOUR, SEC, TalkEvent, kalender, alive, byId, coverOf, createState, getMap, groundOf, isLight, serialize, spar, step, temperature, yearNo, State } from './sim';
+import { AGES, BEAT, DAY, HOUR, SEC, TalkEvent, kalender, alive, byId, coverOf, createState, getMap, groundOf, isLight, rikedomDelar, serialize, spar, step, temperature, yearNo, State } from './sim';
 import { $ } from './ui/hjalp';
 import { s, setByn, ui, nyBild } from './ui/lage';
 import { TS, app, cam, layout, view, world } from './ui/scen';
@@ -20,6 +20,11 @@ function renderClock() {
   $('calYear').textContent = `År ${yearNo(s)}`;
   { const k = kalender(s); $('calAge').textContent = `${AGES[k.ai]}, dag ${k.dag} av ${k.av}`; }
   { const c = Math.round(temperature(s, t)); $('calTemp').textContent = `🌡 ${c > 0 ? '+' : c < 0 ? '−' : ''}${Math.abs(c)} °C`; }
+  { // byns rikedom (varde.ts): talet, och vad den består av när musen är över
+    const r = rikedomDelar(s), sum = r.forrad + r.redskap + r.hus, el = $('calRik'), a = s.delning?.andel ?? 0;
+    el.textContent = `⚖ ${Math.round(sum)}`;
+    el.title = `Byns rikedom: ${Math.round(sum)} (ungefär arbetstimmar)\nFörrådet ${Math.round(r.forrad)} · redskapen ${Math.round(r.redskap)} · husen ${Math.round(r.hus)}\n${a > 0 ? `${Math.round(a * 100)} % av det folk skaffar går till byn` : 'Byn är så rik att folk behåller det de skaffar'}`;
+  }
   $('sparFel').hidden = !ui.sparFel;
   $('calTime').textContent = `${isLight(t) ? 'Ljus tid' : 'Mörk tid'} · ${hh}:${mm}${ui.testMode ? ' (test)' : ''}`;
 }
