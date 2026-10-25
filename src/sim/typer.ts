@@ -89,7 +89,7 @@ export interface State {
   items?: Record<string, number>; // äldre sparfiler (före v40): sakerna och redskapen i förrådet som summor
   fire: Fire;
   seder: Seder;
-  delning?: import('./delning').Delning; // delningen i nöd (delning.ts)
+  delning?: import('./delning').Delning; // byns rikedom och hur mycket av det nya som ges till byn (delning.ts)
   mark?: string; // markens grästäcke per ruta (stigar), packat
   skog?: string; // trädens tillväxt per ruta, packat
   stockar?: Stock[]; // fällda träd som ligger och väntar på att huggas

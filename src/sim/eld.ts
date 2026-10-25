@@ -89,6 +89,9 @@ function lightFire(s: State, p: Person) {
   if (f.lightings === 1) { p.fame.push('Tände byns första eld'); kronika(s, `${p.name} tände byns första eld.`); sedEvent(s, 'nyfikenhet', 0.1, 'Elden har gjort byn nyfiken på vad mer som går att lära sig.'); }
   f.tries = 0;
 }
+// Varje misslyckat försök sedan elden senast brann gör nästa lättare: man får kläm på det och tändmaterialet blir
+// varmt och torrt. Efter FORSOK_LARA försök är chansen dubbelt så stor, så att otur inte kan hålla elden släckt i dygn
+export const FORSOK_LARA = 10;
 // ett försök att tända med det bästa tänddonet i förrådet
 export function tryLight(s: State, p: Person) {
   const ig = igniterOf(s)!, f = s.fire;
@@ -98,7 +101,8 @@ export function tryLight(s: State, p: Person) {
 
   f.tries++; f.tryTotal++;
   p.skill.elda = clamp(p.skill.elda + 0.08 * (0.5 + p.pot.intelligens / 20) * (1 - p.skill.elda / 21), 0, 20);
-  const c = ig.chance * (0.5 + p.skill.elda / 20 + stat(p, 'intelligens', s.now) / 40) * (ageIndex(s) === 0 ? 0.6 : 1) * ((f.ash ?? 0) >= 1 ? 1.5 : 1); // en gammal kolhög tar lättare fyr
+  const c = ig.chance * (0.5 + p.skill.elda / 20 + stat(p, 'intelligens', s.now) / 40) * (ageIndex(s) === 0 ? 0.6 : 1) * ((f.ash ?? 0) >= 1 ? 1.5 : 1) // en gammal kolhög tar lättare fyr
+    * (1 + (f.tries - 1) / FORSOK_LARA); // varje misslyckat försök sedan elden brann gör nästa lättare
   if (rnd(s, 'eld', p) < c) { lightFire(s, p); return true; }
   if (ig.id === 'flinta' && rnd(s, 'eld', p) < 0.004) {
     use(s, p, 'flinta', 1, true); fireLog(s, { k: 'sprack', id: p.id });
