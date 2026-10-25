@@ -217,13 +217,13 @@ export const OVERFLOD = { min: 0.7, max: 1.3 };
 export const GEMENSKAP_GE = 0.25; // så mycket givmildare (eller snålare) seden gör folk, vid Gemenskap fullt ut
 export const RIK_GE = 0.4; // så mycket av viljan att ge till andra än barn och partner som finns kvar i en rik by
 export function willing(s: State, g: Person, m: Person, overflod = 1) {
-  const over = process.env.PROV === 'over' ? 1 : process.env.PROV === 'golv' ? clamp(0.4 + 0.3 * overflod, 1, OVERFLOD.max) : clamp(0.4 + 0.3 * overflod, OVERFLOD.min, OVERFLOD.max), sed = 1 + GEMENSKAP_GE * s.seder.v.gemenskap;
+  const over = process.env.PROV === 'over' || process.env.PROV === 'overrik' ? 1 : process.env.PROV === 'golv' ? clamp(0.4 + 0.3 * overflod, 1, OVERFLOD.max) : clamp(0.4 + 0.3 * overflod, OVERFLOD.min, OVERFLOD.max), sed = 1 + GEMENSKAP_GE * s.seder.v.gemenskap;
   if (m.mother === g.id || m.father === g.id) return clamp(0.95 * Math.max(1, over) * sed, 0, 1); // till sitt barn ger man också det sista
   const r = getRel(s, g, m);
   if (r.op < -10) return 0;
   const emp = stat(g, 'empati', s.now) / 20, nara = g.partner === m.id;
   const base = nara ? 0.8 : isKin(g, m) ? 0.6 : clamp(r.op / 80, 0, 0.6);
-  const rik = nara || process.env.PROV === 'rik' ? 1 : RIK_GE + (1 - RIK_GE) * (s.delning?.andel ?? 1);
+  const rik = nara || process.env.PROV === 'rik' || process.env.PROV === 'overrik' ? 1 : RIK_GE + (1 - RIK_GE) * (s.delning?.andel ?? 1);
   return clamp(base * (0.5 + emp) * over * sed * rik, 0, 1);
 }
 // lånar ägaren ut till p?
