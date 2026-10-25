@@ -2,7 +2,7 @@
 // npm run scenario            kör alla
 // npm run scenario -- glanta  kör bara ett
 import { isDeepStrictEqual } from 'node:util';
-import { Person, Act, createState, clean, canClean, ownedBy, tidyTools, addTool, toolsOf, heldBy, take, usesTool, wearTool, freeSpear, getRel, isTool, BYN, twineRope, makeRod, wearUsed, isSpear, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, serializeParts, joinParts, serialize, ageStart, nyKalender, kalender, yearNo, AGES, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, zonesOf, allows, ageOf, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, fuelStock, DAY, HOUR, W, State, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, campCenter, TEKNIK, knows, thinkWhileWorking, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, beds, isWall, Bit, wearBuild, FYND, FYND_IDS, GRUPPER, angOf, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, LAGER_R, observe, hoped, Lager, skyggOf, SKYGG_R, SKYGG_IN, grupperOf, GRUPPER_MAX, STORLEK, share, treeOn, djurOf, KANIN, SLAKT, DJUR, JAKT_F, canSlaughter, makeKnife, slaughter, askForTool, askForGift, gain, takeFood, takeFuel, ownsAmount, ownedStock, ownedSum, sumOf, addTo, setAmount, setStock, foodOf, isFood, STACK_ORDER, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, STOLD_LINDRIG, STOLD_OP, rnd, STROMMAR, Strom, BEAT, spar, isWork, SPARVERSION, stepDelning, rikedom, rikedomDelar, grundvarde, nivaOf, DELA_RIK, packUp, releaseOwner, willing, tingOf, komOf, BYGGNADER, FN, mostUrgent, fnOf, planBuild, workOn, wearMult, INDOOR_WEAR, homeless, sleepBeds, inZone, startWork, workHalf, finishHalf, stepPaborjat, halvOf, tingVarde, HALV_TID, fallTid, treeSpot, SEC, Task, familjOf, bedTile, takeForHouse, put, stepByggnader, husNamn } from '../sim';
+import { Person, Act, createState, clean, canClean, ownedBy, tidyTools, addTool, toolsOf, heldBy, take, usesTool, wearTool, freeSpear, getRel, isTool, BYN, twineRope, makeRod, wearUsed, isSpear, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, serializeParts, joinParts, serialize, ageStart, nyKalender, kalender, yearNo, AGES, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, zonesOf, allows, ageOf, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, fuelStock, DAY, HOUR, W, State, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, campCenter, TEKNIK, knows, thinkWhileWorking, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, beds, isWall, Bit, wearBuild, FYND, FYND_IDS, GRUPPER, angOf, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, LAGER_R, observe, hoped, Lager, skyggOf, SKYGG_R, SKYGG_IN, grupperOf, GRUPPER_MAX, STORLEK, share, treeOn, djurOf, KANIN, SLAKT, DJUR, JAKT_F, canSlaughter, makeKnife, slaughter, askForTool, askForGift, gain, takeFood, takeFuel, ownsAmount, ownedStock, ownedSum, sumOf, addTo, setAmount, setStock, foodOf, isFood, STACK_ORDER, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, STOLD_LINDRIG, STOLD_OP, rnd, STROMMAR, Strom, BEAT, spar, isWork, SPARVERSION, stepDelning, rikedom, rikedomDelar, grundvarde, nivaOf, DELA_RIK, packUp, releaseOwner, willing, tingOf, komOf, BYGGNADER, FN, mostUrgent, fnOf, planBuild, workOn, wearMult, INDOOR_WEAR, homeless, sleepBeds, inZone, startWork, workHalf, finishHalf, stepPaborjat, halvOf, tingVarde, HALV_TID, fallTid, treeSpot, SEC, Task, familjOf, bedTile, takeForHouse, put, stepByggnader, husNamn, spotFor, roofed } from '../sim';
 // förrådet i proven: stackarna är det enda som sparas (steg 1.1.2), så proven ställer in förrådet genom lagret
 const setItems = (s: State, m: Record<string, number>) => {
   for (const k of STACK_ORDER) if (!isFood(k) && k !== 'ved' && !isTool(k)) setAmount(s, k, m[k] ?? 0);
@@ -1038,6 +1038,52 @@ SCENARIER.familjehus = {
       ['huset ärvs av partnern och får hens namn', arv],
       ['när ägaren flyttat blir huset byns', byns],
       [`i en vanlig by planeras ett familjehus (dygn ${planerat ? dygn - 1 : '–'}, lika många år i spelet)`, planerat > 0],
+    ];
+  },
+};
+
+SCENARIER.funktion = {
+  text: 'Funktionen följer behovet: en sovsal som ingen sover i blir förrådshus eller samlingshus eller rivs, ett samlingshus blir sovsal när sovplatserna inte räcker, och ett familjehus utan ägare blir sovsal. När det är kallt umgås man i samlingshuset',
+  kor: () => {
+    const s = createState(6, START);
+    s.now = new Date(s.now).setHours(10, 0, 0, 0);
+    byggare(s);
+    planBuild(s); const A = byggKlart(s)!;
+    // fler i byn, så att det behövs en sovsal till; sedan går de igen och den nya står tom
+    const gaster = Array.from({ length: 8 }, (_, i) => ({ ...structuredClone(living(s)[0]), id: 1000 + i, name: `Gäst${i}`, partner: undefined, task: undefined }));
+    const kom = () => { for (const g of gaster) g.left = undefined; }, gar = () => { for (const g of gaster) g.left = s.now; };
+    s.people.push(...gaster);
+    const nyttHus = () => { s.byggSok = undefined; planBuild(s); return byggKlart(s)!; };
+    const B = nyttHus();
+    gar(); s.ruttet = undefined;
+    stepByggnader(s); const vantar = (B.fn ?? 'sovsal') === 'sovsal';
+    s.now += DAY + HOUR; stepByggnader(s);
+    const samling = B.fn === 'samling' && B.namn === 'Samlingshuset', bNamn = B.namn;
+    // en sovsal till som ingen behöver rivs, eftersom byn redan har ett samlingshus
+    kom(); const C = nyttHus(); gar();
+    const ved0 = amountOf(s, 'ved');
+    stepByggnader(s); s.now += DAY + HOUR; stepByggnader(s);
+    const rivet = !housesOf(s).includes(C) && (s.stat?.rivet ?? 0) === 1 && amountOf(s, 'ved') > ved0 && !bitsOf(s).some(b => b.hus === C.id);
+    // när det är kallt och elden är slocknad umgås man i samlingshuset
+    s.now = new Date(s.now).setMonth(0, 15); s.fire.lit = false; s.fire.fuel = 0;
+    const sp = spotFor(s, 'samtal', living(s)[1]), inne = sp.x >= B.x && sp.x < B.x + B.w && sp.y >= B.y && sp.y < B.y + B.h && roofed(s, sp.x, sp.y);
+    // sovplatserna räcker inte: samlingshuset blir en sovsal igen
+    kom(); stepByggnader(s);
+    const tillbaka = (B.fn ?? 'sovsal') === 'sovsal';
+    // ingen sover där igen, och maten ruttnar: det blir ett förrådshus
+    gar(); s.ruttet = 50; stepByggnader(s); s.now += DAY + HOUR; stepByggnader(s);
+    const forrad = B.fn === 'forrad' && zonesOf(s).some(z => z.hus === B.id);
+    // ett familjehus som ingen äger blir en sovsal
+    A.fn = 'familjehus'; A.ag = undefined; stepByggnader(s);
+    const fam = (A.fn ?? 'sovsal') === 'sovsal';
+    return [
+      ['en sovsal som just blivit tom får vara kvar ett tag', vantar],
+      [`efter ett dygn (ett år i spelet) blir den ett samlingshus (${bNamn})`, samling],
+      ['när det är kallt samtalar man i samlingshuset i stället för vid den slocknade elden', inne],
+      ['finns redan ett samlingshus rivs nästa tomma sovsal, och en del av timret kommer tillbaka', rivet],
+      ['saknas sovplatser blir samlingshuset en sovsal igen', tillbaka],
+      ['en tom sovsal blir förrådshus när maten ruttnar', forrad],
+      ['ett familjehus utan ägare blir en sovsal', fam],
     ];
   },
 };

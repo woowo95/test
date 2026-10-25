@@ -1,6 +1,8 @@
-import { alive, byId, living, log } from './folk';
-import { Hus, MATERIAL, gridOf, housesOf } from './byggnad';
-import { changed, ownedAll, storeFull, zonesOf } from './lager';
+import { alive, byId, count, living, log } from './folk';
+import { Hus, MATERIAL, Rum, bitsOf, gridOf, housesOf, touch } from './byggnad';
+import { changed, ownedAll, put, storeFull, zonesOf } from './lager';
+import { kronika } from './historik';
+import { DAY } from './typer';
 import { tingOf } from './agande';
 import { ARBETE, grundvarde, tingVarde } from './varde';
 import { Person, State } from './typer';
@@ -51,6 +53,12 @@ export const BYGGNADER = {
       return f ? { v: 0.5, plats: f.folk.length + 1, ag: f.ag } : { v: 0, plats: 0 };
     },
     namnFor: (s, _w, _h, _same, a) => husNamn(byId(s, a.ag)?.name ?? 'Familjens'),
+  },
+  samling: {
+    namn: 'Samlingshus', ikon: '🪑', behov: 'En plats att umgås under tak när det är kallt', fara: false, vikt: 1, agare: 'byn',
+    // byggs inte nytt: en sovsal som ingen sover i blir ett samlingshus (steg 1.6.4). När det är kallt samtalar och
+    // berättar man där i stället för vid elden, om det är varmare där (val.ts)
+    namnFor: (_s, _w, _h, same) => same ? `Samlingshus ${same + 1}` : 'Samlingshuset',
   },
 } satisfies Record<string, Byggnad>;
 const RUTT_MIN = 10; // så mycket mat som ruttnat bort på sistone innan byn bygger ett förrådshus
@@ -123,7 +131,9 @@ function boende(s: State): Boende {
   if (b && b.key === key) return b;
   const hs = housesOf(s), husOf = (id?: number) => hs.find(h => h.id === id), egna = new Map<number, { tiles: number[]; folk: Person[] }>(), gemensamt: number[] = [];
   const egnaTiles = new Map<number, number[]>();
-  for (const r of gridOf(s).rooms) {
+  // de äldsta husen fylls först, så att det är ett nytt hus som står tomt när det blir för många sovplatser
+  const ordning = (r: Rum) => { const i = hs.findIndex(h => h.id === r.hus); return i < 0 ? hs.length : i; };
+  for (const r of [...gridOf(s).rooms].sort((a, c) => ordning(a) - ordning(c))) {
     const h = husOf(r.hus);
     if (h && !fnOf(h).sover) continue;
     if (h?.ag !== undefined) egnaTiles.set(h.id, [...(egnaTiles.get(h.id) ?? []), ...r.tiles]);
@@ -161,7 +171,63 @@ export function stepByggnader(s: State) {
     if (o && alive(o)) continue;
     h.ag = undefined; log(s, `${h.namn} har ingen ägare längre och blir byns.`, 'world');
   }
+  funktionsbyte(s);
 }
+
+// ---------- funktionen följer behovet (steg 1.6.4) ----------
+// En sovsal som ingen har sovit i på ett dygn (ett år i spelet) får en ny funktion: ett förrådshus om byn behöver ett,
+// annars ett samlingshus om byn inte har något, och annars rivs den och hälften av timret kommer tillbaka till byn.
+// Saknas sovplatser blir ett samlingshus en sovsal igen, före ett nytt hus. Ett familjehus som ingen äger blir en sovsal.
+const TOM_TID = DAY;
+const RIV_TILLBAKA = 0.5; // så mycket av materialet som kommer tillbaka när ett hus rivs
+// ett nytt namn efter funktionen
+function nyttNamn(s: State, h: Hus, fn: Fn, a: Akut) {
+  const r: Byggnad = BYGGNADER[fn], w = h.w - 2, hh = h.h - 2, big = w * hh >= 8, hs = housesOf(s).filter(q => q !== h);
+  const same = fn === 'sovsal' ? hs.filter(q => q.namn.startsWith(big ? 'Långhus' : 'Hydda')).length : hs.filter(q => (q.fn ?? 'sovsal') === fn).length;
+  return r.namnFor ? r.namnFor(s, w, hh, same, a) : r.namn;
+}
+export function bytFn(s: State, h: Hus, fn: Fn, slag?: 'mat' | 'material') {
+  const fore = h.namn;
+  if (fnOf(h).lager && !(BYGGNADER[fn] as Byggnad).lager) { s.lagren = zonesOf(s).filter(z => z.hus !== h.id); changed(s); }
+  h.fn = fn; h.slag = slag; h.tom = undefined;
+  h.namn = nyttNamn(s, h, fn, { v: 0, plats: 0, slag, ag: h.ag });
+  touch(s); count(s, 'bytt_' + fn);
+  log(s, `${fore} blir ${h.namn.toLowerCase()}.`, 'world'); kronika(s, `${fore} blev ${h.namn.toLowerCase()}.`);
+  husKlar(s, h);
+}
+export function riv(s: State, h: Hus) {
+  const ved = bitsOf(s).filter(b => b.hus === h.id).reduce((a, b) => a + (MATERIAL[b.m].item === 'ved' ? b.mat : 0), 0) * RIV_TILLBAKA;
+  s.byggen = bitsOf(s).filter(b => b.hus !== h.id); s.hus = housesOf(s).filter(q => q !== h);
+  if (ved > 1e-9) put(s, 'ved', ved);
+  touch(s); changed(s); count(s, 'rivet');
+  log(s, `${h.namn} behövdes inte längre och revs. ${Math.round(ved)} trä kom tillbaka till byn.`, 'world'); kronika(s, `${h.namn} revs.`);
+}
+function funktionsbyte(s: State) {
+  const hs = housesOf(s), arbete = new Set(living(s).filter(p => p.task?.act === 'bygga').map(p => bitsOf(s).find(b => b.id === p.task!.ref)?.hus));
+  const fri = (h: Hus) => !!h.klar && !arbete.has(h.id);
+  for (const h of hs) if (h.fn === 'familjehus' && h.ag === undefined && fri(h)) bytFn(s, h, 'sovsal');
+  // saknas sovplatser blir ett samlingshus en sovsal igen
+  if (homeless(s) > 0) { const h = hs.find(q => q.fn === 'samling' && fri(q)); if (h) bytFn(s, h, 'sovsal'); }
+  // sovsalar som ingen sover i
+  const b = boende(s), anvand = new Set(b.gemensamt.slice(0, b.ovriga.length));
+  for (const h of [...hs]) {
+    if ((h.fn ?? 'sovsal') !== 'sovsal' || h.ag !== undefined || !fri(h)) continue;
+    const tiles = gridOf(s).rooms.filter(r => r.hus === h.id).flatMap(r => r.tiles);
+    if (!tiles.length || tiles.some(i => anvand.has(i))) { h.tom = undefined; continue; }
+    h.tom ??= s.now;
+    if (s.now - h.tom < TOM_TID) continue;
+    const f = BYGGNADER.forrad.akut(s);
+    if (f.v > 1e-9) bytFn(s, h, 'forrad', f.slag);
+    else if (!hs.some(q => q.fn === 'samling')) bytFn(s, h, 'samling');
+    else riv(s, h);
+    return; // ett hus i taget
+  }
+}
+// samlingshusets rum, där man umgås när det är kallt (val.ts)
+export const samlingRum = (s: State): Rum | undefined => {
+  const ids = new Set(housesOf(s).filter(h => h.fn === 'samling' && h.klar).map(h => h.id));
+  return ids.size ? gridOf(s).rooms.find(r => r.hus !== undefined && ids.has(r.hus) && r.tiles.length) : undefined;
+};
 
 // ---------- ett hus blir färdigt ----------
 // ett förrådshus: golvet blir en lagerplats under tak, viktigast av alla, så att det som ligger ute bärs in dit
