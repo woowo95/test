@@ -252,9 +252,9 @@ function building(s: State, p: Person, v: Val, job: NonNullable<ReturnType<typeo
 // arbetet med redskap: flinta letas vid stenarna, yxan fäller träd, korgen och spjutet görs först om de saknas
 function withTools(s: State, p: Person, v: Val, best: Act, what: string) {
   const stones = needStones(s);
-  if (best === 'samla' && (wantsFlint(s) || stones) && rnd(s, 'val', p) < 0.5) { // byn saknar flinta eller stenar till eldringen
+  if (best === 'samla' && (wantsFlint(s) || stones) && rnd(s, 'val', p) < 0.5) { // byn saknar flinta eller stenar till eldringen. Stenarna ligger långt bort, så där letar man ett helt pass
     const fa = flintArea(p), fl = (fa !== undefined && flintSpot(s, (x, y) => areaOf(x, y) === fa)) || flintSpot(s);
-    if (fl) { v.spot = fl; v.why = `${v.why} Letar efter ${stones ? 'stenar till en eldring' : 'flinta'} vid stenarna${fa !== undefined ? ' där hen vet att det finns flinta' : ''}.`; }
+    if (fl) { v.spot = fl; v.dur /= PASS; v.why = `${v.why} Letar efter ${stones ? 'stenar till en eldring' : 'flinta'} vid stenarna${fa !== undefined ? ' där hen vet att det finns flinta' : ''}.`; }
   }
   const ax = best === 'ved' ? axeTask(s, p) : undefined; // med yxa fälls träd och huggs ved
   if (ax) {

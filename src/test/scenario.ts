@@ -149,11 +149,11 @@ const SCENARIER: Record<string, { text: string; lang?: boolean; kor: () => Koll[
     lang: true,
     text: 'På hösten plockas kantareller, men ibland följer en giftig orange spindling med; den som förgiftas lär sig skilja dem åt och lär andra',
     kor: () => {
-      const s = createState(16, START);
-      kor(s, 21 * 24); // vår, sommar och höst
-      const st = s.stat ?? {}, bast = Math.max(0, ...living(s).map(p => kn(p, 'svamp')));
+      const s = createState(16, START), s2 = createState(17, START);
+      kor(s, 21 * 24); kor(s2, 21 * 24); // vår, sommar och höst. Kantarellerna räknas i två byar: i en by är det mycket slump
+      const st = s.stat ?? {}, bast = Math.max(0, ...living(s).map(p => kn(p, 'svamp'))), svamp = (st.svamp ?? 0) + (s2.stat?.svamp ?? 0);
       return [
-        [`kantareller plockade (${st.svamp ?? 0})`, (st.svamp ?? 0) > 10],
+        [`kantareller plockade i två byar (${svamp})`, svamp > 20],
         [`giftsvamp med i korgen (${st.giftsvamp ?? 0}) eller känd och lämnad (${st.giftsvampKand ?? 0})`, (st.giftsvamp ?? 0) + (st.giftsvampKand ?? 0) > 0],
         [`förgiftningar (${st.forgiftad ?? 0}) ger kunskap (bäst ${bast.toFixed(2)})`, !(st.forgiftad ?? 0) || bast > 0],
         ['byn lever', living(s).length > 0]];
