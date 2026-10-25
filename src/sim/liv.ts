@@ -4,7 +4,7 @@ import { pair } from './varld';
 import { moodOf } from './samtal';
 import { chance, clamp, pick, rnd } from './slump';
 import { DAY, Person, SKILLS, State } from './typer';
-import { releaseOwner } from './lager';
+import { put, releaseOwner } from './lager';
 import { kronika } from './historik';
 import { inherit, packUp } from './arv';
 
@@ -64,12 +64,14 @@ export function regulate(s: State, dtSec: number) {
   }
   if (chance(s, immigrationRate(pop) / 86400, dtSec, 'flytt')) immigrate(s, false);
 }
-// en nybyggare (ibland ett par) kommer vandrande och slår sig ner
+// en nybyggare (ibland ett par) kommer vandrande och slår sig ner, med lite rötter (ungefär ett dygns mat, ett år i spelet)
+const MEDHAVD = 2;
 export function immigrate(s: State, alone: boolean) {
   const mk = (sex: 'm' | 'k') => {
     const age = 17 + rnd(s, 'folk') * 18, p = newPerson(s, sex, s.now - age * DAY);
     for (const k of SKILLS) p.skill[k] = clamp((age - 8) * 0.25 * (0.4 + rnd(s, 'folk')) * (p.pot.intelligens / 12), 0, 12);
     s.people.push(p);
+    put(s, 'rotter', MEDHAVD, { [p.id]: MEDHAVD }); // lite mat från vandringen, så att man hinner samla innan man svälter
     return p;
   };
   const a = mk(rnd(s, 'folk') < 0.5 ? 'm' : 'k');
