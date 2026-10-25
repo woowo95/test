@@ -96,11 +96,12 @@ Simuleringen importerar aldrig från `ui/`. Gränssnittet importerar bara från 
 
 | Kommando | Tid | När |
 |---|---|---|
-| `npm run koll` | ca 40 s | **Efter varje ändring.** Typkontroll, testbyarna mot facit, alla scenarier och samma-kollen, med kort utskrift |
+| `npm run koll` | ca 3 min | **Efter varje ändring.** Typkontroll, testbyarna mot facit, alla scenarier och samma-kollen, med kort utskrift |
 | `npm run samma` | ca 5 s | Vid ombyggnad som inte ska ändra något i spelet. Säger om byarna utvecklas exakt som förut |
 | `npm run facit` | ca 30 s | När en ändring i spelet är avsiktlig. Sparar nytt facit och ny samma-koll |
 | `npm run scenario -- namn` | några s | Ett enda scenario |
 | `npm run likhet` | ca 5 s | När arbete, gång, samtal eller lärande ändras: är byarna exakt lika i spelet och vid ikappräkning? |
+| `npm run jamfor` | ca 3–7 min | Efter ändringar i det byarna gör: samma byar med koden nu och med main, by för by, tills skillnaden är avgjord (se CLAUDE.md) |
 | `npm run balans`, `takt`, `teknik`, `detaljer` | | Balansering och undersökning (se CLAUDE.md) |
 
 ## Bygga och publicera
