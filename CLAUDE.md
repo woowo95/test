@@ -41,6 +41,8 @@ Sök i dokumentet i stället för att läsa allt; det är långt.
 - Designdokument (Claude Docs): https://claude.ai/artifact/McP5446XiGQaJ3hbs9YXrc. Läs avsnittet "Läget just nu" först.
 - Koden: läs `ARKITEKTUR.md` först. Den säger vilken fil som gör vad, vilka regler som håller ihop koden och hur man lägger till en handling, en sak, en teknik, en flik eller ett nytt system. Öppna sedan bara de filer som berörs.
 
+- Kodgranskning: när Björn ber om en grundlig genomgång av koden, följ `GRANSKNING.md`.
+
 ## Bygga och publicera
 
 - `npm install`, sedan `npm run build`. Det ger `samhallssimulatorn.html`, och i `publicera/` källkoden som .txt och fillistan `filer.json`.
