@@ -57,7 +57,7 @@ interface FyndDef {
   vatten?: number; // lagret finns i vattnet; man står på stranden och når så många rutor ut
 }
 const SVAMP_SEASON = [0, 0.15, 0.8, 1.5];
-const SVAMP_UTTAG: Uttag = { full: 2.5, reach: 1, regrow: [1 / 400, 1 / 150, 1 / 40, 1 / 40] };
+const SVAMP_UTTAG: Uttag = { full: 2.5, reach: 1, regrow: [1 / 1200, 1 / 450, 1 / 120, 1 / 120] };
 const land = (s: State, i: number) => isSoil(groundOf(s).tiles[i]);
 // kaninerna håller sig långt från byn (SKYGG_IN), så en jakttur är lång; i gengäld ger platserna mer än förr
 export const JAKT_F = 2.1;
@@ -72,7 +72,7 @@ const DEF = {
       const g = groundOf(s), tr = g.trees[i];
       return (tr >= FOREST ? 0.8 : tr >= 0.15 || g.cover[i] >= HIGH ? 1 : 0) * 4 * m;
     },
-    uttag: { full: 1.2, reach: 1, regrow: [0, 1 / 70, 1 / 24, 1 / 32] },
+    uttag: { full: 0.45, reach: 1, regrow: [0, 1 / 200, 1 / 72, 1 / 96] },
   },
   // kaniner trivs bäst i gräs, högt eller lågt, men finns också i skogen. Glest över stora områden som vandrar
   jakt: {
@@ -83,7 +83,7 @@ const DEF = {
       const g = groundOf(s), tr = g.trees[i];
       return (tr >= FOREST ? 0.85 : tr >= 0.15 ? 0.9 : g.cover[i] >= BAR ? 1 : 0.3) * (0.15 + 1.3 * m) * JAKT_F * skyggOf(s)[i];
     },
-    uttag: { full: 6, reach: 3, regrow: [1 / 400, 1 / 240, 1 / 240, 1 / 300] },
+    uttag: { full: 6, reach: 3, regrow: [1 / 800, 1 / 480, 1 / 480, 1 / 600] },
   },
   // fisken har sina favoritplatser i vattnet. Man fiskar från stranden och når ett par rutor ut
   fiske: {
@@ -121,7 +121,7 @@ const DEF = {
       const g = groundOf(s), c = g.cover[i];
       return (g.trees[i] >= 0.15 || c >= HIGH ? 0.5 : c >= BAR ? 0.4 : 0.1) * m;
     },
-    uttag: { full: 0.6, reach: 1, regrow: [1 / 200, 1 / 60, 1 / 60, 1 / 80] },
+    uttag: { full: 0.35, reach: 1, regrow: [1 / 600, 1 / 180, 1 / 180, 1 / 240] },
   },
 } satisfies Record<string, FyndDef>;
 export type FyndId = keyof typeof DEF;
@@ -417,7 +417,7 @@ export const TRY_SEC = 300 / SNABBARE;
 // Med fiskespjut träffar man fisken oftare och den sitter kvar på spjutet.
 // med metspö nappar fisken oftare och sitter kvar bättre på kroken (masken grävs fram i steg.ts)
 export type Fiskedon = 'hand' | 'spjut' | 'metspo';
-const NAPP: Record<Fiskedon, number> = { hand: 0.08, spjut: 0.13, metspo: 0.17 }, HALL: Record<Fiskedon, number> = { hand: 0.2, spjut: 0.5, metspo: 0.65 };
+const NAPP: Record<Fiskedon, number> = { hand: 0.06, spjut: 0.13, metspo: 0.17 }, HALL: Record<Fiskedon, number> = { hand: 0.15, spjut: 0.5, metspo: 0.65 };
 export function handFish(s: State, p: Person, x: number, y: number, ageF: number, gear: Fiskedon = 'hand') {
   const st = (p.fiske ??= { f: 0, n: 0, k: 0 }), spear = gear === 'spjut';
   st.f++; count(s, 'fiskeForsok'); if (spear) count(s, 'spjutForsok'); if (gear === 'metspo') count(s, 'metForsok');

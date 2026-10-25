@@ -65,7 +65,7 @@ function built(s: State) {
 export const GROW = [0.1, 1.2, 1, 0.6]; // grästillväxt per tidsålder
 const REGROW = 0.011; // så mycket gräset växer tillbaka per timme (gånger GROW). Lite trampad mark hinner läka, så bara stigarna blir bara
 const TREE_SEASON = [0, 1.2, 1, 0.5]; // trädens tillväxt per tidsålder
-const TREE_GROW = 1 / (10 * 24); // en planta blir vuxen skog på ungefär tio dygn
+const TREE_GROW = 1 / (30 * 24); // en planta blir vuxen skog på ungefär 30 dygn (30 år i spelet), så att gläntor efter fällda träd står kvar länge
 const SPREAD = 0.0015, FAR = 0.00002; // chans per timme att ett frö gror: per skogsgranne, och långt bort
 // en timme: gräset växer tillbaka från grannrutorna, skogen sprider sig som en våg och plantor växer
 export function growGround(s: State, hours: number, season: number) {
@@ -95,5 +95,5 @@ export function growGround(s: State, hours: number, season: number) {
   }
 }
 
-export const WEAR = 0.028; // slitage när någon går över en ruta
+export const WEAR = 0.045; // slitage när någon går över en ruta
 export const tileOf = (x: number, y: number) => Math.max(0, Math.min(H - 1, Math.floor(y))) * W + Math.max(0, Math.min(W - 1, Math.floor(x)));

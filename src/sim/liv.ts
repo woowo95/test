@@ -3,7 +3,8 @@ import { sedEvent } from './seder';
 import { pair } from './varld';
 import { moodOf } from './samtal';
 import { chance, clamp, pick, rnd } from './slump';
-import { DAY, Person, SKILLS, State } from './typer';
+import { DAY, Person, SEC, SKILLS, State } from './typer';
+import { foodDays } from './ekonomi';
 import { put, releaseOwner } from './lager';
 import { kronika } from './historik';
 import { inherit, packUp } from './arv';
@@ -55,14 +56,24 @@ export function emigrationRate(pop: number, mood: number) { // flyttar per dygn
   return crowd(pop) ** 2 * (0.3 + 2.5 * unhappy * w) + 0.12 * unhappy * w;
 }
 export const immigrationRate = (pop: number) => pop < 10 ? 0.3 * (10 - pop) / 10 : 0; // nybyggare per dygn
+// Hur gott om mat byn har haft (steg 1.7.2): maten i förrådet räknad i dygn för alla, som ett glidande snitt över ungefär
+// ett dygn (ett år i spelet) så att årstiderna jämnas ut. 0 vid 3 dygns mat i snitt, 1 vid 9 eller mer. Är maten knapp
+// föds färre barn (barnMat), fler flyttar (hungerFlytt) och färre nybyggare stannar: så når byn det tak som marken och redskapen kan föda, utan
+// att folk svälter ihjäl. En by på sju eller färre flyttar inte för maten
+const MAT_SNITT = DAY;
+export const matGott = (s: State) => clamp(((s.matSnitt ?? 9) - 3) / 6, 0, 1);
+export const barnMat = (s: State, pop: number) => 1 - 0.6 * (1 - matGott(s)) * clamp((pop - 6) / 4, 0, 1); // färre barn: från sju invånare
+export const hungerFlytt = (s: State, pop: number) => 0.6 * (1 - matGott(s)) * clamp((pop - 7) / 4, 0, 1); // flyttar per dygn
 export function regulate(s: State, dtSec: number) {
   const pop = living(s).length;
   if (pop === 0) { refound(s); return; }
+  const fd = foodDays(s);
+  s.matSnitt = s.matSnitt === undefined ? fd : s.matSnitt + (fd - s.matSnitt) * Math.min(1, dtSec * SEC / MAT_SNITT);
   if (rnd(s, 'flytt') < dtSec / 3600) { // humöret räknas om ungefär en gång i timmen
-    const rate = emigrationRate(pop, avgMood(s));
+    const rate = emigrationRate(pop, avgMood(s)) + hungerFlytt(s, pop);
     if (chance(s, rate / 86400, 3600, 'flytt')) emigrate(s);
   }
-  if (chance(s, immigrationRate(pop) / 86400, dtSec, 'flytt')) immigrate(s, false);
+  if (chance(s, immigrationRate(pop) * (0.3 + 0.7 * matGott(s)) / 86400, dtSec, 'flytt')) immigrate(s, false);
 }
 // en nybyggare (ibland ett par) kommer vandrande och slår sig ner, med lite rötter (ungefär ett dygns mat, ett år i spelet)
 const MEDHAVD = 2;

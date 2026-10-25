@@ -3,6 +3,8 @@ import { sedEvent } from './seder';
 import { rnd } from './slump';
 import { kronika } from './historik';
 import { item } from './lager';
+import { isTool } from './saker';
+import { tingOf } from './agande';
 import { Act, HOUR, Person, State } from './typer';
 
 // ---------- teknik ----------
@@ -19,7 +21,7 @@ export interface Tek {
 }
 export const TEKNIK: Tek[] = [
   { id: 'korg', namn: 'Korg', text: 'En korg flätad av hö.', effekt: 'Man bär hem mer från varje tur och spiller mindre bär.',
-    omr: ['samla'], krav: [], material: [['torrgras']], tid: 24 },
+    omr: ['samla', 'hantverk'], krav: [], material: [['torrgras']], tid: 24 },
   { id: 'yxa', namn: 'Flintyxa', text: 'En vass flintsten bunden vid en pinne.', effekt: 'Med yxa kan man fälla träd och hugga trä.',
     omr: ['samla', 'ved', 'hantverk'], krav: [], material: [['flinta'], ['grenar']], tid: 10 },
   { id: 'fiskespjut', namn: 'Träspjut', text: 'En pinne som täljts spetsig med en flintsten eller en yxa.', effekt: 'Ger mycket mer fisk än händerna och hjälper på jakten, men slits fort.',
@@ -38,7 +40,8 @@ export const TEKNIK: Tek[] = [
 export const TEK = Object.fromEntries(TEKNIK.map(t => [t.id, t])) as Record<string, Tek>;
 
 export const knows = (p: Person, id: string) => (p.tek?.[id] ?? 0) >= 1;
-export const hasMaterial = (s: State, t: Tek) => t.material.every(g => g.some(k => item(s, k) >= 1));
+// ett redskap räknas om det finns, hur slitet det än är; annat räknas i mängd
+export const hasMaterial = (s: State, t: Tek) => t.material.every(g => g.some(k => isTool(k) ? tingOf(s).some(q => q.k === k) : item(s, k) >= 1));
 const canThink = (p: Person, t: Tek) => !knows(p, t.id) && t.krav.every(k => knows(p, k));
 
 // den som kommer på eller lär sig något

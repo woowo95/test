@@ -11,7 +11,7 @@ import { coldOf, temperature } from './vader';
 import { addFuel, canLight, fireWant, forageItems, fuelFor, hearthOf, heatAt, igniterOf, stepFire, takeCoal, takeFuel, tryLight } from './eld';
 import { ageOf, alive, count, living, log, stat, think } from './folk';
 import { getMap } from './karta';
-import { birth, birthWish, die, regulate } from './liv';
+import { barnMat, birth, birthWish, die, regulate } from './liv';
 import { WEAR, groundOf, growGround, packGround, tileOf } from './mark';
 import { TalkEvent, converse } from './samtal';
 import { HABIT_FADE, sedEvent, stepSeder, updateTags } from './seder';
@@ -189,7 +189,7 @@ function pregnancy(s: State, p: Person, a: number, pop: number, dtSec: number) {
   const now = s.now;
   if (p.pregnantSince !== undefined) { if (now - p.pregnantSince > 0.75 * DAY) birth(s, p); }
   else if (p.sex === 'k' && p.partner !== undefined && a >= 17 && a <= 43 && (!p.lastBirth || now - p.lastBirth > 1.6 * DAY)) {
-    const f = birthWish(pop) * clamp(foodDays(s) / 4, 0.15, 1) * (1 + 0.2 * s.seder.v.barn);
+    const f = birthWish(pop) * clamp(foodDays(s) / 4, 0.15, 1) * barnMat(s, pop) * (1 + 0.2 * s.seder.v.barn);
     if (chance(s, 0.3 * f / 86400, dtSec, 'halsa', p)) { p.pregnantSince = now; p.pregnantBy = p.partner; }
   }
 }

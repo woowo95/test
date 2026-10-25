@@ -104,6 +104,7 @@ export interface State {
   egna?: Record<string, Record<string, number>>; egnaT?: Record<string, number>; // äldre sparfiler (före v40): vems sakerna i förrådet var
   stubbar?: { x: number; y: number; t: number }[]; // stubbar efter fällda träd, t = när trädet fälldes
   nextStock?: number; fallda?: number;
+  matSnitt?: number; // maten i förrådet i dygn för alla, glidande snitt över ungefär ett år (liv.ts)
   halvfallt?: Record<number, number>; // träd som någon har börjat fälla: ruta -> hur länge (ms) man har arbetat med det (paborjat.ts)
   fynd?: string; // hur mycket som tagits ur varje plats (bär, vilt, fisk), packat
   byggen?: import('./byggnad').Bit[]; hus?: import('./byggnad').Hus[]; byggV?: number; nextBit?: number; byggSok?: number; // väggar, golv och öppningar, husen byn planerat, ändringsräknare

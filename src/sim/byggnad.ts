@@ -16,7 +16,7 @@ export interface Hus { id: number; namn: string; x: number; y: number; w: number
 // per material: vad som går åt per ruta, timmar för en ovan byggare, slitage per timme, hur bra väggen håller värmen
 export interface Material { namn: string; k: BitK; item?: string; n: number; tim: number; slit: number; isol?: number; tek?: string }
 export const MATERIAL: Record<string, Material> = {
-  timmer: { namn: 'Timmervägg', k: 'vagg', item: 'ved', n: 2, tim: 0.8, slit: 0.0005, isol: 0.7, tek: 'timmervagg' },
+  timmer: { namn: 'Timmervägg', k: 'vagg', item: 'ved', n: 5, tim: 0.8, slit: 0.0005, isol: 0.7, tek: 'timmervagg' },
   ris: { namn: 'Risvägg', k: 'vagg', item: 'grenar', n: 5, tim: 0.5, slit: 0.002, isol: 0.55 }, // äldre sparfiler: risväggar byggs inte längre men kan lagas
   jord: { namn: 'Jordgolv', k: 'golv', n: 0, tim: 0.15, slit: 0 },
   tra: { namn: 'Trägolv', k: 'golv', item: 'ved', n: 0.5, tim: 0.3, slit: 0.0002, tek: 'timmervagg' },

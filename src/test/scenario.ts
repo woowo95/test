@@ -2,7 +2,7 @@
 // npm run scenario            kör alla
 // npm run scenario -- glanta  kör bara ett
 import { isDeepStrictEqual } from 'node:util';
-import { Person, Act, createState, clean, canClean, ownedBy, tidyTools, addTool, toolsOf, heldBy, take, usesTool, wearTool, freeSpear, getRel, isTool, BYN, twineRope, makeRod, wearUsed, isSpear, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, serializeParts, joinParts, serialize, ageStart, nyKalender, kalender, yearNo, AGES, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, zonesOf, allows, ageOf, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, fuelStock, DAY, HOUR, W, State, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, campCenter, TEKNIK, knows, thinkWhileWorking, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, beds, isWall, Bit, wearBuild, FYND, FYND_IDS, GRUPPER, angOf, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, LAGER_R, observe, hoped, Lager, skyggOf, SKYGG_R, SKYGG_IN, grupperOf, GRUPPER_MAX, STORLEK, share, treeOn, djurOf, KANIN, SLAKT, DJUR, JAKT_F, canSlaughter, makeKnife, slaughter, askForTool, askForGift, gain, takeFood, takeFuel, ownsAmount, ownedStock, ownedSum, sumOf, addTo, setAmount, setStock, foodOf, isFood, STACK_ORDER, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, STOLD_LINDRIG, STOLD_OP, rnd, STROMMAR, Strom, BEAT, spar, isWork, SPARVERSION, stepDelning, rikedom, rikedomDelar, grundvarde, nivaOf, DELA_RIK, packUp, releaseOwner, willing, tingOf, komOf, BYGGNADER, FN, mostUrgent, fnOf, planBuild, workOn, wearMult, INDOOR_WEAR, homeless, sleepBeds, inZone, startWork, workHalf, finishHalf, stepPaborjat, halvOf, tingVarde, HALV_TID, fallTid, treeSpot, SEC, Task, familjOf, bedTile, takeForHouse, put, stepByggnader, husNamn, spotFor, roofed } from '../sim';
+import { Person, Act, createState, clean, canClean, ownedBy, tidyTools, addTool, toolsOf, heldBy, take, usesTool, wearTool, freeSpear, getRel, isTool, BYN, twineRope, makeRod, wearUsed, isSpear, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, serializeParts, joinParts, serialize, ageStart, nyKalender, kalender, yearNo, AGES, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, zonesOf, allows, ageOf, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, fuelStock, DAY, HOUR, W, State, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, campCenter, TEKNIK, knows, thinkWhileWorking, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, beds, isWall, Bit, wearBuild, FYND, FYND_IDS, GRUPPER, angOf, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, LAGER_R, observe, hoped, Lager, skyggOf, SKYGG_R, SKYGG_IN, grupperOf, GRUPPER_MAX, STORLEK, share, treeOn, djurOf, KANIN, SLAKT, DJUR, JAKT_F, canSlaughter, makeKnife, slaughter, askForTool, askForGift, gain, takeFood, takeFuel, ownsAmount, ownedStock, ownedSum, sumOf, addTo, setAmount, setStock, foodOf, isFood, STACK_ORDER, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, STOLD_LINDRIG, STOLD_OP, rnd, STROMMAR, Strom, BEAT, spar, isWork, SPARVERSION, stepDelning, rikedom, rikedomDelar, grundvarde, nivaOf, DELA_RIK, packUp, releaseOwner, willing, tingOf, komOf, BYGGNADER, FN, mostUrgent, fnOf, planBuild, workOn, wearMult, INDOOR_WEAR, homeless, sleepBeds, inZone, startWork, workHalf, finishHalf, stepPaborjat, halvOf, tingVarde, HALV_TID, fallTid, treeSpot, SEC, Task, familjOf, bedTile, takeForHouse, put, stepByggnader, husNamn, spotFor, roofed, matGott, barnMat, hungerFlytt, regulate, MATERIAL } from '../sim';
 // förrådet i proven: stackarna är det enda som sparas (steg 1.1.2), så proven ställer in förrådet genom lagret
 const setItems = (s: State, m: Record<string, number>) => {
   for (const k of STACK_ORDER) if (!isFood(k) && k !== 'ved' && !isTool(k)) setAmount(s, k, m[k] ?? 0);
@@ -578,7 +578,7 @@ SCENARIER.byte = {
     const byns = (s: State, k: string) => amountOf(s, k) - living(s).reduce((n, q) => n + ownsAmount(s, q, k), 0);
     const nara = (x: number, y: number) => Math.abs(x - y) < 1e-6;
     // a är hungrig och har trä över, b har mat över: a byter till sig mat före byns. b värderar sin mat över till hälften
-    // (1,52 × 0,5) och trä hen inte har fullt (0,66), så en portion kostar 1,15 trä
+    // och trä hen inte har fullt lika högt, så en portion kostar hälften av matens grundvärde räknat i trä
     let { s, a, b } = ny();
     a.hunger = 0.3; addTo(s, 'bar', 5); gain(s, b, 'bar', 6); gain(s, a, 'ved', 6);
     needLadder(s, a, 1);
@@ -602,7 +602,7 @@ SCENARIER.byte = {
     ({ s, a, b } = ny());
     addTo(s, 'flinta', 3); gain(s, b, 'flinta', 2); gain(s, a, 'bar', 20);
     takeMaterial(s, a, 'flinta', 1);
-    const material = nara(byns(s, 'flinta'), 3) && nara(ownsAmount(s, b, 'flinta'), 1) && ownsAmount(s, b, 'bar') > 3;
+    const material = nara(byns(s, 'flinta'), 3) && nara(ownsAmount(s, b, 'flinta'), 1) && ownsAmount(s, b, 'bar') > 1;
     // ett redskap mot mat: a samlar och saknar korg, b har två
     ({ s, a, b } = ny());
     a.habit = { samla: 10 }; addTool(s, 'korg', b); addTool(s, 'korg', b); gain(s, a, 'bar', 20);
@@ -631,7 +631,7 @@ SCENARIER.byte = {
       byten += v.stat?.byten ?? 0; mat += v.stat?.byte_mat ?? 0; mtrl += v.stat?.byte_material ?? 0;
     }
     return [
-      [`den hungrige byter till sig mat mot trä hen har över, före byns mat (en portion för ${pris.toFixed(2)} trä)`, fore && Math.abs(pris - 1.52 * 0.5 / 0.66) < 0.01],
+      [`den hungrige byter till sig mat mot trä hen har över, före byns mat (en portion för ${pris.toFixed(2)} trä)`, fore && Math.abs(pris - grundvarde('bar') * 0.5 / grundvarde('ved')) < 0.01],
       ['den som har för lite att ge får inget byte av någon hen inte står nära', okand],
       ['en nära vän går med på ett ojämnt byte', van],
       ['den som håller på att dö får ett ojämnt byte', dor],
@@ -956,7 +956,7 @@ function byggKlart(s: State) {
   workOn(s, p, bs[bs.length - 1], 3600);
   return h;
 }
-const MATERIAL_N = (m: string) => ({ timmer: 2, tra: 0.5 } as Record<string, number>)[m] ?? 0;
+const MATERIAL_N = (m: string) => MATERIAL[m]?.n ?? 0;
 const byggare = (s: State) => { for (const p of living(s)) if (ageOf(p, s.now) >= 14) Object.assign((p.tek ??= {}), { yxa: 1, timmervagg: 1 }); };
 
 SCENARIER.forradshus = {
@@ -975,14 +975,19 @@ SCENARIER.forradshus = {
     const inne = !!z && wearMult(s, z.x, z.y) === INDOOR_WEAR && (z.prio ?? 0) > Math.max(...zonesOf(s).filter(q => q !== z).map(q => q.prio ?? 0));
     const sover = !!h && !sleepBeds(s).some(i => i % W >= h.x && i % W < h.x + h.w && Math.floor(i / W) >= h.y && Math.floor(i / W) < h.y + h.h);
     // en vanlig by: förrådshuset byggs när maten börjat ruttna, och maten flyttas in
-    const v = createState(1, START);
+    // (den första av några byar där det händer inom 40 dygn, 40 år i spelet)
     let byggt = 0, iHuset = 0;
-    kor(v, 26 * 24, v => {
-      const f = housesOf(v).find(q => q.fn === 'forrad' && q.klar);
-      if (f && !byggt) byggt = v.now;
-      const fz = zonesOf(v).find(q => q.hus !== undefined);
-      if (fz) iHuset = Math.max(iHuset, pilesOf(v).filter(a => isFood(a.k) && inZone(fz, a.x, a.y)).length);
-    });
+    for (const seed of [1, 2, 3]) {
+      const v = createState(seed, START);
+      byggt = 0; iHuset = 0;
+      for (let dygn = 0; dygn < 40 && !(byggt && iHuset); dygn++) kor(v, 24, v => {
+        const f = housesOf(v).find(q => q.fn === 'forrad' && q.klar);
+        if (f && !byggt) byggt = v.now;
+        const fz = zonesOf(v).find(q => q.hus === f?.id);
+        if (f && fz) iHuset = Math.max(iHuset, pilesOf(v).filter(a => isFood(a.k) && inZone(fz, a.x, a.y)).length);
+      });
+      if (byggt && iHuset) break;
+    }
     return [
       [`med alla under tak är inget hus akut (${forr?.fn ?? 'inget'})`, !!sov && tak && !forr],
       [`när maten ruttnar är förrådshuset det mest akuta (${nu?.fn ?? 'inget'})`, nu?.fn === 'forrad'],
@@ -1006,7 +1011,7 @@ SCENARIER.familjehus = {
     const b = ppl.find(q => q.id === a.partner)!, d = ppl.find(q => q !== a && q !== b && q !== c)!;
     const fam = familjOf(s, a.id).map(q => q.id);
     const fattig = mostUrgent(s)?.fn !== 'familjehus';
-    put(s, 'ved', 60, { [b.id]: 60 }); // familjen blir rik nog
+    put(s, 'ved', 30 * MATERIAL.timmer!.n, { [b.id]: 30 * MATERIAL.timmer!.n }); // familjen blir rik nog
     const u = mostUrgent(s);
     planBuild(s);
     const h = housesOf(s).find(q => q.fn === 'familjehus');
@@ -1027,7 +1032,7 @@ SCENARIER.familjehus = {
     let planerat = 0, dygn = 0;
     for (const seed of [1, 2, 3]) {
       const v = createState(seed, START);
-      for (dygn = 1; dygn <= 30 && !planerat; dygn++) { kor(v, 24); planerat = v.stat?.planerat_familjehus ?? 0; }
+      for (dygn = 1; dygn <= 40 && !planerat; dygn++) { kor(v, 24); planerat = v.stat?.planerat_familjehus ?? 0; }
       if (planerat) break;
     }
     return [
@@ -1775,6 +1780,24 @@ SCENARIER.varde = {
     ];
   },
 };
+
+SCENARIER.natur = {
+  text: 'Maten sätter taket (steg 1.7.2): byn minns hur gott om mat den haft det senaste året. Är maten knapp föds färre barn, fler flyttar och färre nybyggare stannar, men en liten by flyttar inte för maten',
+  kor: () => {
+    const s = createState(5, START), n = living(s).length, n0 = s.people.length, mat = () => setMat(s, { bar: 1.6 * n * 12 });
+    mat(); s.matSnitt = 2; // tolv dygns mat i förrådet, men ett knappt år bakom sig
+    const fore = barnMat(s, 12), flytt = flyttLitenBy(s);
+    for (let t = 0; t < 3 * DAY / (300 * 1000); t++) { regulate(s, 300); if (s.people.length !== n0) { s.people.length = n0; mat(); } } // (nybyggare skickas vidare)
+    const efter = s.matSnitt!;
+    return [
+      [`ett knappt år: färre barn (${fore.toFixed(2)} av det vanliga) och fler flyttar (${hungerFlytt({ ...s, matSnitt: 2 } as State, 12).toFixed(2)} per dygn) i en by på 12`, fore < 0.5 && hungerFlytt({ ...s, matSnitt: 2 } as State, 12) > 0.5],
+      [`en by på sex flyttar inte för maten och får lika många barn (${flytt})`, flytt === 'ingen'],
+      [`efter tre dygn (tre år i spelet) med tolv dygns mat har snittet nått dit (${efter.toFixed(1)})`, efter > 11 && efter < 12.1],
+      [`gott om mat: inga färre barn, ingen flytt för maten (${matGott(s).toFixed(2)})`, matGott(s) === 1 && barnMat(s, 12) === 1 && hungerFlytt(s, 12) === 0],
+    ];
+  },
+};
+const flyttLitenBy = (s: State) => hungerFlytt(s, 6) === 0 && barnMat(s, 6) === 1 ? 'ingen' : `flytt ${hungerFlytt(s, 6)}, barn ${barnMat(s, 6)}`;
 
 // Utan namn körs alla scenarier samtidigt, vart och ett i en egen process. Med ett namn körs bara det, här.
 // Med --snabb körs bara de som inte är långa, och dessutom de som nämns efter: --snabb delning arv

@@ -10,10 +10,10 @@ import { amountOf, changed, ownMove, ownsAmount, use, zonesOf } from './lager';
 import { freeTools } from './agande';
 import { getable, takeMaterial } from './behov';
 import { Del } from './egendom';
-import { FOREST } from './vag';
+import { FOREST, findPath } from './vag';
 import { kronika } from './historik';
 import { BYGGNADER, Byggnad, Fn, bedTile, familjOf, fnOf, husKlar, mostUrgent } from './byggnader';
-import { H, HOUR, Person, State, T, W } from './typer';
+import { H, HOUR, Person, State, T, W, inMap } from './typer';
 
 // ---------- att bygga ----------
 const RESERVE: Record<string, number> = { grenar: 15, torrgras: 6, ved: 6 }; // det som lämnas kvar i förrådet till elden
@@ -61,6 +61,13 @@ function siteFor(s: State, w: number, h: number, okAt: Uint8Array) {
   }
   return best;
 }
+// kan man gå från rutan (ux, uy) utanför dörren till elden, med huset på platsen at (yttermåtten w×h) i vägen?
+function kanGaUt(s: State, at: { x: number; y: number }, w: number, h: number, ux: number, uy: number) {
+  if (!inMap(ux, uy) || getMap(s.seed).tiles[uy * W + ux] === T.Vatten || gridOf(s).at.has(uy * W + ux)) return false;
+  const g = groundOf(s), solid = g.solid ? g.solid.slice() : new Uint8Array(W * H), f = getMap(s.seed).fire;
+  for (let y = at.y; y < at.y + h; y++) for (let x = at.x; x < at.x + w; x++) solid[y * W + x] = 1;
+  return findPath({ ...g, solid }, ux + 0.5, uy + 0.5, f.x + 0.5, f.y + 0.5) !== null;
+}
 const HUS_AVST = 5.5; // så långt från elden man helst bygger (rutor till husets närmaste vägg)
 const canBuildWalls = (p: Person, s: State) => ageOf(p, s.now) >= 14 && knows(p, 'timmervagg');
 // en gång i timmen: planera ett nytt hus för det mest akuta behovet (BYGGNADER i byggnader.ts) om någon kan bygga väggar
@@ -85,10 +92,18 @@ export function planBuild(s: State) {
     const at = siteFor(s, w + 2, h + 2, okAt);
     if (!at) continue;
     const f = getMap(s.seed).fire, cx = at.x + (w + 1) / 2, cy = at.y + (h + 1) / 2;
-    // öppningen mitt på den sida som vetter mot elden
-    const side = Math.abs(f.x + 0.5 - cx) > Math.abs(f.y + 0.5 - cy) ? (f.x < cx ? 'v' : 'o') : (f.y < cy ? 'n' : 's');
-    const ox = side === 'v' ? at.x : side === 'o' ? at.x + w + 1 : at.x + 1 + Math.floor(w / 2);
-    const oy = side === 'n' ? at.y : side === 's' ? at.y + h + 1 : at.y + 1 + Math.floor(h / 2);
+    // öppningen mitt på den sida som vetter mot elden, om man kan gå därifrån till elden när huset står där (inte ut
+    // i vattnet eller en ficka mellan vattnet och väggarna); annars den sida närmast elden där det går
+    const mot = Math.abs(f.x + 0.5 - cx) > Math.abs(f.y + 0.5 - cy) ? (f.x < cx ? 'v' : 'o') : (f.y < cy ? 'n' : 's');
+    const sidor = (['v', 'o', 'n', 's'] as const).map(side => {
+      const ox = side === 'v' ? at.x : side === 'o' ? at.x + w + 1 : at.x + 1 + Math.floor(w / 2);
+      const oy = side === 'n' ? at.y : side === 's' ? at.y + h + 1 : at.y + 1 + Math.floor(h / 2);
+      const ux = ox + (side === 'v' ? -1 : side === 'o' ? 1 : 0), uy = oy + (side === 'n' ? -1 : side === 's' ? 1 : 0);
+      return { side, ox, oy, ux, uy, d: Math.hypot(ux - f.x, uy - f.y) };
+    }).sort((a, b) => (a.side === mot ? -1 : 0) - (b.side === mot ? -1 : 0) || a.d - b.d);
+    const dorr = sidor.find(o => kanGaUt(s, at, w + 2, h + 2, o.ux, o.uy));
+    if (!dorr) continue;
+    const { ox, oy } = dorr;
     const big = w * h >= 8, same = u.fn === 'sovsal' ? hs.filter(q => q.namn.startsWith(big ? 'Långhus' : 'Hydda')).length : hs.filter(q => (q.fn ?? 'sovsal') === u.fn).length;
     const hus: Hus = { id: (s.nextBit ??= 1), namn: row.namnFor!(s, w, h, same, u.a), x: at.x, y: at.y, w: w + 2, h: h + 2, t: s.now, by: by.id, fn: u.fn, slag: u.a.slag, ag: u.a.ag };
     s.nextBit++;
