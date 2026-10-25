@@ -35,9 +35,10 @@ app.stage.on('pointertap', e => {
   else if (fireAt(gx, gy)) visa('eld');
   else if (zi) { ui.lagerNr = zi - 1; visa('lager'); }
   else if (outPilesAt(c.x, c.y).length) { ui.hogAt = c; visa('hog'); }
-  else if (ui.selected !== undefined || ui.tab === 'person' || ui.tab === 'eld' || ui.tab === 'lager' || ui.tab === 'hog') {
+  else if (husAt(c.x, c.y) !== undefined) { ui.husId = husAt(c.x, c.y)!; visa('hus'); }
+  else if (ui.selected !== undefined || ui.tab === 'person' || ui.tab === 'eld' || ui.tab === 'lager' || ui.tab === 'hog' || ui.tab === 'hus') {
     ui.selected = undefined; stopFollow();
-    if (ui.tab === 'person' || ui.tab === 'eld' || ui.tab === 'lager' || ui.tab === 'hog') ui.tab = 'folk';
+    if (ui.tab === 'person' || ui.tab === 'eld' || ui.tab === 'lager' || ui.tab === 'hog' || ui.tab === 'hus') ui.tab = 'folk';
     renderPanel(true); renderPorts();
   }
 });
@@ -52,7 +53,7 @@ app.stage.on('pointermove', e => {
   showHover(gx, gy);
   ui.hovered = personAt(gx, gy)?.id;
   const c = tileAt(gx, gy);
-  view.style.cursor = ui.hovered || fireAt(gx, gy) || storeAt(gx, gy) || outPilesAt(c.x, c.y).length ? 'pointer' : 'grab';
+  view.style.cursor = ui.hovered || fireAt(gx, gy) || storeAt(gx, gy) || outPilesAt(c.x, c.y).length || husAt(c.x, c.y) !== undefined ? 'pointer' : 'grab';
 });
 view.addEventListener('wheel', e => { e.preventDefault(); const r = view.getBoundingClientRect(); zoomAt(e.deltaY < 0 ? 1.06 : 1 / 1.06, e.clientX - r.left, e.clientY - r.top); }, { passive: false });
 view.addEventListener('pointerleave', () => { $('hoverBox').hidden = true; });
@@ -63,6 +64,8 @@ $('zHome').addEventListener('click', () => { stopFollow(); cam.zoom = 2.4; const
 // ---------- rutan i hörnet: vad som finns under musen ----------
 // bara underlaget och det som står där; vad som växer och lever på platsen finns i värmekartorna
 const pileTxt = (p: Pile) => `${sakNamn(p.k)} ${p.max === 1 ? '' : `${fmtN(p.n)} st, `}skick ${Math.round(condOf(p) * 100)} %`;
+// huset på rutan: en vägg eller ett golv i det, eller rummet under dess tak
+const husAt = (x: number, y: number) => bitAt(s, x, y)?.hus ?? roomAt(s, x, y)?.hus;
 function showHover(gx: number, gy: number) {
   const box = $('hoverBox'), { x, y } = tileAt(gx, gy);
   if (x < 0 || y < 0 || x >= W || y >= H) { box.hidden = true; return; }

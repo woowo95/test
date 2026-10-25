@@ -175,12 +175,15 @@ export function noticeTheft(s: State, p: Person, key: string) {
 const aldrigStjal = (s: State, p: Person) => stat(p, 'empati', s.now) >= STJAL_ALDRIG;
 // så mycket av slaget k som p kan få till ett arbete
 export const getable = (s: State, p: Person, k: string) => aldrigStjal(s, p) ? mayTake(s, p, k) : amountOf(s, k);
-// p tar n av slaget k till ett arbete; common = till byns eld eller hus (byns först). Ger vems det var
-export function takeMaterial(s: State, p: Person, k: string, n: number, common = false): Del {
+// p tar n av slaget k till ett arbete; common = till byns eld eller hus (byns först). Ger vems det var. kom = var det
+// kom ifrån, nycklar som `kom` i bygg.ts skriver dem (eget, byn, familj, gava, stold)
+export function takeMaterial(s: State, p: Person, k: string, n: number, common = false, kom?: Record<string, number>): Del {
   const ag: Del = {};
   if (n <= 1e-12) return ag;
+  const not = (hur: string, d: Del) => { if (kom) for (const o in d) if (d[o] > 1e-9) { const h = +o === BYN ? 'byn' : +o === p.id ? 'eget' : hur; const key = `${h}:${h === 'byn' ? BYN : o}:${k}`; kom[key] = (kom[key] ?? 0) + d[o]; } };
   const egen = Math.min(n, mayTake(s, p, k));
-  addDel(ag, use(s, p, k, egen, common));
+  const forst = use(s, p, k, egen, common);
+  addDel(ag, forst); not('familj', forst);
   if ((ag[p.id] ?? 0) > 1e-9) noticeTheft(s, p, k);
   let rest = n - egen;
   // be den i närheten som har och helst ger (familjen kan man väcka)
@@ -191,7 +194,8 @@ export function takeMaterial(s: State, p: Person, k: string, n: number, common =
       if (rest <= 1e-9) break;
       if (rnd(s, 'dela', g) >= willing(s, g, p, ownsAmount(s, g, k) / rest)) continue;
       const v = ownMove(s, k, Math.min(rest, ownsAmount(s, g, k)), g.id, p.id);
-      addDel(ag, use(s, p, k, v, common)); rest -= v;
+      const d = use(s, p, k, v, common); addDel(ag, d); rest -= v;
+      if (kom) { const key = `gava:${g.id}:${k}`; kom[key] = (kom[key] ?? 0) + v; }
       const r = getRel(s, p, g); r.op = clamp(r.op + 1, -100, 100);
       count(s, 'gava_material', v);
     }
@@ -200,7 +204,7 @@ export function takeMaterial(s: State, p: Person, k: string, n: number, common =
   if (rest > 1e-9 && !aldrigStjal(s, p)) {
     const d = use(s, p, k, Math.min(rest, amountOf(s, k)), common);
     for (const o in d) { const q = +o === BYN || +o === p.id ? undefined : byId(s, +o); if (q) stole(s, p, q, k, d[o], true); }
-    addDel(ag, d);
+    addDel(ag, d); not('stold', d);
   }
   return ag;
 }

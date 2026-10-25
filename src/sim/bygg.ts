@@ -156,14 +156,29 @@ export function siteOf(s: State, b: Bit) {
 const inHus = (h: Hus | undefined, o: { x: number; y: number }) => h && o.x > h.x && o.y > h.y && o.x < h.x + h.w - 1 && o.y < h.y + h.h - 1 ? 1 : 0;
 // lägg material på bygget
 export function deliver(b: Bit, n: number, repair: boolean) { if (repair) b.lm = (b.lm ?? 0) + n; else b.mat += n; }
+// ---------- var materialet kom ifrån ----------
+// Varje hus minns var materialet till det kom ifrån, så att det kan visas när man trycker på huset. Nycklarna är
+// `hur:vem:slag`: byn (byns förråd), eget (byggarens), familj (familjens, som man får ta), gava (skänkt av vem),
+// stold (taget utan lov av vem), fallt (stockar från träd som vem fällde eller högg för bygget). Ändrar inget i spelet
+export const KOM = ['byn', 'eget', 'familj', 'gava', 'fallt', 'stold'] as const;
+export function noteKom(s: State, husId: number | undefined, kom: Record<string, number>) {
+  const h = housesOf(s).find(q => q.id === husId);
+  if (!h) return;
+  const m = (h.kom ??= {});
+  for (const key in kom) m[key] = (m[key] ?? 0) + kom[key];
+}
+export function komOf(h: Hus) {
+  return Object.entries(h.kom ?? {}).map(([key, n]) => { const [hur, vem, k] = key.split(':'); return { hur: hur as typeof KOM[number], vem: +vem, k, n }; });
+}
 // stockar till ett hus som byggs läggs direkt i väggarna: från träd som stod där huset ska stå, eller som fälldes
 // för bygget (hus = husets id). Ger hur mycket som gick åt
-export function toWalls(s: State, x: number, y: number, n: number, hus?: number) {
+export function toWalls(s: State, x: number, y: number, n: number, hus?: number, by?: Person) {
   const h = housesOf(s).find(q => !q.klar && (hus ? q.id === hus : x >= q.x && y >= q.y && x < q.x + q.w && y < q.y + q.h));
   if (!h || n <= 0) return 0;
   let used = 0;
   const walls = bitsOf(s).filter(b => b.hus === h.id && b.k === 'vagg' && b.b < 1 && MATERIAL[b.m].item === 'ved' && lacks(b)).sort((a, b) => Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y));
   for (const b of walls) { const d = Math.min(needOf(b), n - used); deliver(b, d, false); used += d; if (used >= n - 1e-9) break; }
+  if (by && used > 1e-9) noteKom(s, h.id, { [`fallt:${by.id}:ved`]: used });
   return used;
 }
 // en stunds arbete på en ruta. Ger true när rutan är klar
