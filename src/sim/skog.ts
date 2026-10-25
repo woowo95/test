@@ -8,6 +8,8 @@ import { knows } from './teknik';
 import { rnd } from './slump';
 import { Act, DAY, H, HOUR, Person, State, Stock, W } from './typer';
 import { takeMaterial, getable } from './behov';
+import { SNABBARE } from './handlingar';
+import { SAKER } from './saker';
 
 // ---------- skog: fälla träd, hugga ved, flinta och yxa ----------
 // Utan yxa kan invånarna bara samla grenar på marken. Med en flintyxa kan de fälla träd.
@@ -15,7 +17,7 @@ import { takeMaterial, getable } from './behov';
 const STAM = { ved: 8, grenar: 5 }; // vad ett vuxet träd ger
 export const axes = (s: State) => nTools(s, 'yxa'); // en sliten yxa är fortfarande en yxa
 export const stocks = (s: State) => (s.stockar ??= []);
-export const FALL_TID = 1.2 * HOUR; // så lång tid det tar att fälla ett träd
+export const FALL_TID = 1.2 * HOUR / SNABBARE; // så lång tid det tar att fälla ett träd (48 minuter sedan steg 1.5.13)
 
 // närmaste vuxna träd att fälla, helst i skogskanten nära byn
 export function treeSpot(s: State, taken: Set<number>): { x: number; y: number } | undefined {
@@ -101,7 +103,7 @@ export function axeTask(s: State, p: Person): { act: Act; x: number; y: number; 
   }
   const adults = ppl.filter(q => ageOf(q, s.now) >= 16).length;
   if (knows(p, 'yxa') && canMakeAxe(s, p) && axes(s) < axesWanted(adults) + (s.hus?.some(h => !h.klar) ? 1 : 0) && !others.some(q => q.task?.act === 'yxa')) {
-    return { act: 'yxa', x: 0, y: 0, dur: 2 * HOUR, why: 'Har flinta och vill göra en yxa för att kunna fälla träd' };
+    return { act: 'yxa', x: 0, y: 0, dur: SAKER.yxa!.skaffa!.min! * 60 * 1000, why: 'Har flinta och vill göra en yxa för att kunna fälla träd' };
   }
   return undefined;
 }

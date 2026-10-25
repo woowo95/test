@@ -8,7 +8,7 @@
 // som grundvärdet gånger sitt eget behov av den (behovAv i behov.ts). Ett ting och en stack är värda grundvärdet gånger sitt skick; kvaliteten räknas in
 // när den finns (steg 2.2.2).
 // Byns rikedom är förrådet, redskapen och husen (husets material och arbete). Delningen (delning.ts) läser den.
-import { ACTS } from './handlingar';
+import { ACTS, SNABBARE } from './handlingar';
 import { SAKER, SAK_LIST } from './saker';
 import { TEK } from './teknik';
 import { wornOf } from './lager';
@@ -44,7 +44,7 @@ function actTid(act: string) {
   const a = ACTS[act as keyof typeof ACTS], d = a?.arbete ? ACTS[a.arbete as keyof typeof ACTS] : a;
   if (!a || !d?.bas) return 0;
   const sas = d.sasong ? d.sasong.reduce((x, y) => x + y, 0) / d.sasong.length : 1;
-  return 1 / (d.bas * sas * (a.takt || 1));
+  return 1 / (d.bas * SNABBARE * sas * (a.takt || 1));
 }
 // värdet innan golvet för nivån
 const raVarde = new Map<string, number>();
@@ -54,7 +54,7 @@ function rakna(k: string): number {
   const f = SAKER[k]?.skaffa;
   if (!f) v = 0;
   else {
-    let x = (f.tid ?? 0) + (f.act ? actTid(f.act) : 0) + (f.min ?? 0) / 60 * ARBETE;
+    let x = (f.tid ?? 0) / SNABBARE + (f.act ? actTid(f.act) : 0) + (f.min ?? 0) / 60 * ARBETE;
     for (const j in f.av ?? {}) x += f.av![j] * grundvarde(j);
     v = x * (1 + NIVA_PASLAG * nivaOf(k)) * (f.sallsynt ? SALLSYNT : 1);
   }

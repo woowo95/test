@@ -67,7 +67,7 @@ export function makeSpear(s: State, p: Person) {
 // ---------- rep ----------
 // Rep tvinnas av växtfibrer (hö) vid elden på kvällen av den som kan det, eller tas från senor när vilt slaktas. Det är samma rep
 // oavsett material. Rep behövs till flintspjut och metspö.
-export const REP_GRAS = 2, REP_TIMME = 1, REP_VILL = 4;
+export const REP_GRAS = 2, REP_TIMME = 60 / SAKER.rep!.skaffa!.min!, REP_VILL = 4; // rep per timme
 export const wantsRope = (s: State, p: Person) => knows(p, 'rep') && item(s, 'rep') < REP_VILL && getable(s, p, 'torrgras') >= REP_GRAS + 6; // lite hö sparas till elden
 export function twineRope(s: State, p: Person, hours: number) {
   const n = Math.min(hours * REP_TIMME, (getable(s, p, 'torrgras') - 6) / REP_GRAS, REP_VILL - item(s, 'rep'));
@@ -176,13 +176,15 @@ export function clean(s: State, p: Person, hours: number) {
 // ---------- att göra ett redskap som saknas ----------
 // För varje grupp av redskap (handlingarnas redskap, saker.ts): när någon vill göra ett, och vad hen gör då. spar = hö
 // som ska sparas till elden
+// så många minuter det tar att göra en (saker.ts)
+export const minOf = (k: string) => SAKER[k]!.skaffa!.min!;
 export interface Tillverka { vill: (s: State, p: Person, spar: number) => boolean; gor: (s: State, p: Person) => { act: Act; text: string; min: number; tool?: string } }
 export const TILLVERKA: Record<string, Tillverka> = {
-  korg: { vill: (s, p, spar) => item(s, 'torrgras') >= spar && wantsBasket(s, p), gor: () => ({ act: 'korg', text: 'Flätar en korg av hö.', min: 40 }) },
-  metspo: { vill: (s, p) => wantsRod(s, p), gor: () => ({ act: 'metspo', text: 'Gör ett metspö med en krok av ben.', min: 60 }) },
+  korg: { vill: (s, p, spar) => item(s, 'torrgras') >= spar && wantsBasket(s, p), gor: () => ({ act: 'korg', text: 'Flätar en korg av hö.', min: minOf('korg') }) },
+  metspo: { vill: (s, p) => wantsRod(s, p), gor: () => ({ act: 'metspo', text: 'Gör ett metspö med en krok av ben.', min: minOf('metspo') }) },
   spjut: {
     vill: (s, p) => wantsSpear(s, p),
-    gor: (s, p) => spearKind(s, p) === 'flintspjut' ? { act: 'spjut', text: 'Gör ett flintspjut med flinta och rep.', min: 60, tool: 'flintspjut' }
-      : { act: 'spjut', text: `Täljer ett träspjut med ${sharpTool(s) === 'yxa' ? 'yxan' : 'en flintsten'}.`, min: 40 },
+    gor: (s, p) => spearKind(s, p) === 'flintspjut' ? { act: 'spjut', text: 'Gör ett flintspjut med flinta och rep.', min: minOf('flintspjut'), tool: 'flintspjut' }
+      : { act: 'spjut', text: `Täljer ett träspjut med ${sharpTool(s) === 'yxa' ? 'yxan' : 'en flintsten'}.`, min: minOf('fiskespjut') },
   },
 };

@@ -12,6 +12,7 @@ import { duty, sedEvent } from './seder';
 import { chance, clamp, rnd } from './slump';
 import { ageIndex, isLight } from './tid';
 import { kronika } from './historik';
+import { SNABBARE } from './handlingar';
 import { Act, DAY, Fire, FireLog, GREN, HEARTHS, HOUR, IGNITERS, Person, SEC, State } from './typer';
 
 // ---------- eld ----------
@@ -201,7 +202,7 @@ export function stepFire(s: State, dtSec: number, ppl: Person[]) {
 // samling hittar tändmaterial, sten och flinta när förrådet behöver det
 const GRASS_SEASON = [0.25, 0.6, 1, 1.3];
 export function forageItems(s: State, p: Person, dtSec: number): Record<string, number> | undefined {
-  const ai = ageIndex(s), want = tinderWant(s), hrs = dtSec / 3600;
+  const ai = ageIndex(s), want = tinderWant(s), hrs = dtSec / 3600 * SNABBARE; // allt man skaffar går fortare sedan steg 1.5.13
   const sk = 0.6 + p.skill.samla / 25;
   const got: Record<string, number> = {};
   if (item(s, 'torrgras') < want) got.torrgras = 3 * GRASS_SEASON[ai] * sk * hrs;
@@ -213,7 +214,7 @@ export function forageItems(s: State, p: Person, dtSec: number): Record<string, 
   }
   // flinta är ovanlig och hittas oftast vid stenarna. Den slås mot en sten för att tända eld, och med en pinne blir den en yxa
   const ff = p.task ? flintFactor(s, p.task.tx, p.task.ty) : 0.4;
-  if (item(s, 'flinta') + item(s, 'yxa') < 4 && chance(s, 0.04 * ff * sk / 3600, dtSec, 'arbete', p)) {
+  if (item(s, 'flinta') + item(s, 'yxa') < 4 && chance(s, 0.04 * ff * sk * SNABBARE / 3600, dtSec, 'arbete', p)) {
     got.flinta = 1; count(s, ff > 2 ? 'flintaSten' : 'flintaAnnan');
     if (p.task) takeFrom(s, 'flinta', p.task.tx, p.task.ty, 1);
     if (ff > 2 && p.task) observe(s, p, 'flinta', p.task.tx, p.task.ty);

@@ -9,6 +9,7 @@ import { ageIndex } from './tid';
 import { addTo, amountOf, foodOf } from './lager';
 import { DAY, H, HOUR, Person, State, T, W, inMap, mapKey } from './typer';
 import { BAR, FOREST, HIGH, isSoil } from './vag';
+import { SNABBARE } from './handlingar';
 
 // ---------- fynd: mat och saker finns på olika platser ----------
 // Varje ruta har en egen rikedom av bär, rötter, vilt och fisk. Den som samlar, jagar eller fiskar tar ur platsen,
@@ -372,7 +373,7 @@ export const GIFT = 'giftsvamp'; // giftig svamp som av misstag hamnat i förrå
 export function pickMushrooms(s: State, p: Person, x: number, y: number, dtSec: number, got: Record<string, number>) {
   const kv = richness(s, 'kantarell', x, y), gv = richness(s, 'spindling', x, y);
   if (kv + gv <= 0) return 0;
-  const rate = 0.5 * (0.6 + p.skill.samla / 25) * (kv + gv);
+  const rate = 0.5 * SNABBARE * (0.6 + p.skill.samla / 25) * (kv + gv);
   if (!chance(s, rate / 3600, dtSec, 'arbete', p)) return 0;
   if (rnd(s, 'arbete', p) < kv / (kv + gv)) {
     takeFrom(s, 'kantarell', x, y, 0.5);
@@ -410,9 +411,9 @@ export function eatPoison(s: State, p: Person) {
 }
 
 // ---------- fiske med händerna ----------
-// Man står i strandkanten och försöker gripa fisken. Ett försök tar fem minuter. Ibland nappar det, alltså att man
+// Man står i strandkanten och försöker gripa fisken. Ett försök tar fem minuter, sedan steg 1.5.13 en tredjedel kortare (SNABBARE). Ibland nappar det, alltså att man
 // får tag i en fisk, men oftast slinker den ur händerna. Skickliga fiskare håller fast oftare.
-export const TRY_SEC = 300;
+export const TRY_SEC = 300 / SNABBARE;
 // Med fiskespjut träffar man fisken oftare och den sitter kvar på spjutet.
 // med metspö nappar fisken oftare och sitter kvar bättre på kroken (masken grävs fram i steg.ts)
 export type Fiskedon = 'hand' | 'spjut' | 'metspo';

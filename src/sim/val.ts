@@ -6,7 +6,7 @@ import { canLight, emberOn, heatAt, fireWant, needStones, needTinder, woodDays }
 import { ageOf, living, stat } from './folk';
 import { HAND_FISH, Kind, flintSpot, shoreOf, wantsFlint } from './fynd';
 import { coldOf, temperature } from './vader';
-import { DJUR, KANIN, SLAKT_TIMME, TILLVERKA, abborrar, canClean, canSlaughter, freeOfKinds, toolGroups, vilt, wantsKnife, wantsRope } from './redskap';
+import { DJUR, KANIN, SLAKT_TIMME, TILLVERKA, minOf, abborrar, canClean, canSlaughter, freeOfKinds, toolGroups, vilt, wantsKnife, wantsRope } from './redskap';
 import { areaOf, flintArea, pickSpot, prospectFor } from './minne';
 import { getMap } from './karta';
 import { fetchSpot, haulJob } from './lager';
@@ -293,7 +293,7 @@ function cleanTask(s: State, v: Val, why: string) {
 // handarbete vid elden: den som kan göra en kniv gör det när byn saknar en, den som har kniv slaktar viltet, och den
 // som kan tvinna rep gör det när byn behöver rep
 function craft(s: State, p: Person, v: Val, why: string) {
-  if (wantsKnife(s, p)) { set(v, 'kniv', `${why}. Gör en flintkniv.`); v.dur = 40 * MIN; return; }
+  if (wantsKnife(s, p)) { set(v, 'kniv', `${why}. Gör en flintkniv.`); v.dur = minOf('kniv') * MIN; return; }
   if (canSlaughter(s, p)) { slaughterTask(s, v, `${why}. Slaktar viltet med kniven.`); return; }
   if (canClean(s, p)) { cleanTask(s, v, `${why}. Rensar fisken.`); return; }
   set(v, 'hantverk', why);

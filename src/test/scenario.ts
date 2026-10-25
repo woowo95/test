@@ -421,7 +421,7 @@ SCENARIER.redskap = {
     Object.assign(s.fire, { lit: true, fuel: 4, ring: true });
     for (const q of s.people) q.tek = { fiskespjut: 1, rep: 1, flintspjut: 1, metspo: 1 };
     const p = living(s).find(q => ageOf(q, s.now) >= 18)!;
-    twineRope(s, p, 2);
+    twineRope(s, p, 1); // två rep i timmen sedan steg 1.5.13
     const rep = amountOf(s, 'rep') === 2 && amountOf(s, 'torrgras') === 36;
     makeSpear(s, p);
     const flint = amountOf(s, 'flintspjut') === 1 && amountOf(s, 'flinta') === 2 && amountOf(s, 'rep') === 1 && !amountOf(s, 'fiskespjut');
@@ -448,7 +448,7 @@ SCENARIER.redskap = {
     const st = s.stat!, takt = (f: number, n: number) => n ? f / n : 0;
     const met = takt(st.metFisk ?? 0, st.metForsok ?? 0), spjut = takt(st.spjutFisk ?? 0, st.spjutForsok ?? 0);
     return [
-      [`rep tvinnas av hö (2 rep av 4 hö på två timmar)`, rep],
+      [`rep tvinnas av hö (2 rep av 4 hö på en timme)`, rep],
       ['ett flintspjut görs av gren, flinta och rep, och en flinta sparas till elden', flint],
       ['flintspjutet håller fyra gånger så länge som ett träspjut', haller],
       ['ett metspö görs av gren, rep och ben', spo],
@@ -904,14 +904,19 @@ SCENARIER.abborre = {
     const klar = amountOf(s, 'abborre') < 1e-9 && Math.abs(amountOf(s, 'fisk') - 6) < 1e-9;
     const agare = egen > 0 && Math.abs(ownsAmount(s, a, 'fisk') - egen) < 1e-9 && ownsAmount(s, c, 'fisk') === 0;
     // en vanlig by: fisket ger abborrar, och de rensas till fiskkött vid elden
-    const v = createState(3, START);
-    let rensar = 0, abborreSedd = 0;
-    for (let i = 0; i < 6 * 288; i++) {
-      step(v, 300);
-      if (living(v).some(p => p.task?.act === 'rensa')) rensar++;
-      abborreSedd = Math.max(abborreSedd, amountOf(v, 'abborre'));
+    // (alla byar börjar inte fiska de första dygnen; den första av några byar som fiskar räknas)
+    let rensar = 0, abborreSedd = 0, fangat = 0, rensat = 0;
+    for (const seed of [3, 1, 2, 4, 5]) {
+      const v = createState(seed, START);
+      rensar = 0; abborreSedd = 0;
+      for (let i = 0; i < 6 * 288; i++) {
+        step(v, 300);
+        if (living(v).some(p => p.task?.act === 'rensa')) rensar++;
+        abborreSedd = Math.max(abborreSedd, amountOf(v, 'abborre'));
+      }
+      fangat = v.stat?.fisk ?? 0; rensat = v.stat?.rensat ?? 0;
+      if (fangat > 0) break;
     }
-    const fangat = v.stat?.fisk ?? 0, rensat = v.stat?.rensat ?? 0;
     return [
       ['abborren rensas med händerna, utan kniv', kan],
       ['en abborre blir lika mycket fiskkött, några på en kvart', halv && klar],

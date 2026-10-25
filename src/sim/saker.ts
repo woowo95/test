@@ -18,7 +18,8 @@ export interface SakDef {
   skaffa?: Skaffa; // hur en skaffas; grundvärdet räknas ur det (varde.ts). Saknas = inget värde
 }
 // hur en sak skaffas: samlas i ett arbete (act, takten i handlingar.ts) eller på annat sätt (tid = arbetstimmar för en),
-// eller görs av andra saker (av = så många av varje, min = minuters arbete). tek = tekniken som behövs, sallsynt = svår att hitta
+// eller görs av andra saker (av = så många av varje, min = minuters arbete; det är också så lång tid det tar att göra ett redskap
+// eller ett rep, hälften så lång tid som före steg 1.5.13). tek = tekniken som behövs, sallsynt = svår att hitta
 export interface Skaffa { act?: string; tid?: number; av?: Record<string, number>; min?: number; tek?: string; sallsynt?: true }
 
 // Ordningen är den stackarna läggs ut i, så den ska inte ändras (nya saker läggs sist)
@@ -33,19 +34,19 @@ const DEF = {
   torrgras: { namn: 'Hö', skaffa: { tid: 0.4 }, stack: 50, mapp: 'Bränsle', slits: 0.0015 },
   kol: { namn: 'Kol', skaffa: { tid: 0.3 }, stack: 25, mapp: 'Bränsle' },
   flinta: { namn: 'Flinta', skaffa: { tid: 8, sallsynt: true }, stack: 10, mapp: 'Sten' },
-  yxa: { namn: 'Flintyxa', skaffa: { av: { flinta: 1, grenar: 1 }, min: 120, tek: 'yxa' }, stack: 1, mapp: 'Redskap', slits: 0.0004, redskap: true },
-  fiskespjut: { namn: 'Träspjut', skaffa: { av: { grenar: 1 }, min: 40, tek: 'fiskespjut' }, stack: 1, mapp: 'Redskap', slits: 0.001, redskap: true, grupp: 'spjut', trasig: { stat: 'spjutTrasiga', text: '{namn}s träspjut gick sönder. Träspjuten håller inte länge.' } },
-  korg: { namn: 'Korg', skaffa: { av: { torrgras: 3 }, min: 40, tek: 'korg' }, stack: 1, mapp: 'Redskap', slits: 0.001, redskap: true, trasig: { stat: 'korgarTrasiga', text: '{namn}s korg gick sönder.' } },
+  yxa: { namn: 'Flintyxa', skaffa: { av: { flinta: 1, grenar: 1 }, min: 60, tek: 'yxa' }, stack: 1, mapp: 'Redskap', slits: 0.0004, redskap: true },
+  fiskespjut: { namn: 'Träspjut', skaffa: { av: { grenar: 1 }, min: 20, tek: 'fiskespjut' }, stack: 1, mapp: 'Redskap', slits: 0.001, redskap: true, grupp: 'spjut', trasig: { stat: 'spjutTrasiga', text: '{namn}s träspjut gick sönder. Träspjuten håller inte länge.' } },
+  korg: { namn: 'Korg', skaffa: { av: { torrgras: 3 }, min: 20, tek: 'korg' }, stack: 1, mapp: 'Redskap', slits: 0.001, redskap: true, trasig: { stat: 'korgarTrasiga', text: '{namn}s korg gick sönder.' } },
   // giftig svamp som av misstag hamnat i förrådet bland den ätliga (fynd.ts). Den ligger i svampstacken och syns inte
   giftsvamp: { namn: 'Giftig svamp', ruttnar: 1, dold: true, i: 'svamp' },
   sten: { namn: 'Sten', skaffa: { tid: 0.8 }, stack: 10, mapp: 'Sten' },
-  rep: { namn: 'Rep', skaffa: { av: { torrgras: 2 }, min: 60, tek: 'rep' }, stack: 20, mapp: 'Material', slits: 0.0003 },
+  rep: { namn: 'Rep', skaffa: { av: { torrgras: 2 }, min: 30, tek: 'rep' }, stack: 20, mapp: 'Material', slits: 0.0003 },
   ben: { namn: 'Ben', skaffa: { av: { vilt: 0.15 }, min: 3, tek: 'kniv' }, stack: 20, mapp: 'Material' },
-  flintspjut: { namn: 'Flintspjut', skaffa: { av: { flinta: 1, rep: 1, grenar: 1 }, min: 60, tek: 'flintspjut' }, stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true, grupp: 'spjut', trasig: { stat: 'spjutTrasiga', text: '{namn}s flintspjut gick sönder.' } },
-  metspo: { namn: 'Metspö', skaffa: { av: { rep: 1, ben: 1, grenar: 1 }, min: 60, tek: 'metspo' }, stack: 1, mapp: 'Redskap', slits: 0.0005, redskap: true, trasig: { stat: 'metspoTrasiga' } },
+  flintspjut: { namn: 'Flintspjut', skaffa: { av: { flinta: 1, rep: 1, grenar: 1 }, min: 30, tek: 'flintspjut' }, stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true, grupp: 'spjut', trasig: { stat: 'spjutTrasiga', text: '{namn}s flintspjut gick sönder.' } },
+  metspo: { namn: 'Metspö', skaffa: { av: { rep: 1, ben: 1, grenar: 1 }, min: 30, tek: 'metspo' }, stack: 1, mapp: 'Redskap', slits: 0.0005, redskap: true, trasig: { stat: 'metspoTrasiga' } },
   // ett fällt djur, helt som det är (vilket djur det än är). En kanin fyller famnen, så stacken är en kanin
   vilt: { namn: 'Fällt vilt', skaffa: { act: 'jakt' }, stack: 1.6, ruta: 16, mapp: 'Mat', mat: 1.5, ruttnar: 1.1 },
-  kniv: { namn: 'Flintkniv', skaffa: { av: { flinta: 1, grenar: 1 }, min: 40, tek: 'kniv' }, stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true },
+  kniv: { namn: 'Flintkniv', skaffa: { av: { flinta: 1, grenar: 1 }, min: 20, tek: 'kniv' }, stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true },
   skinn: { namn: 'Skinn', skaffa: { av: { vilt: 0.3 }, min: 5, tek: 'kniv' }, stack: 10, mapp: 'Material', slits: 0.0006 },
   // en hel fisk som den fångats (DJUR i redskap.ts). Den rensas vid elden till fiskkött (fisk), som är det man äter;
   // bara när inget annat finns äts den som den är
