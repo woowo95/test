@@ -150,7 +150,7 @@ export function siteOf(s: State, b: Bit) {
   const hus = housesOf(s).find(h => h.id === b.hus);
   const opts = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([dx, dy]) => ({ x: b.x + dx, y: b.y + dy })).filter(o => o.x >= 0 && o.y >= 0 && o.x < W && o.y < H && !blocked(s, o.x, o.y))
     .sort((a, c) => inHus(hus, c) - inHus(hus, a));
-  const o = opts[0] ?? freeNear(s, b.x, b.y);
+  const o = opts[0] ?? freeNear(s, b.x, b.y, true); // aldrig på väggen själv: då står man i den när den är klar
   return { x: o.x + 0.5, y: o.y + 0.5 };
 }
 const inHus = (h: Hus | undefined, o: { x: number; y: number }) => h && o.x > h.x && o.y > h.y && o.x < h.x + h.w - 1 && o.y < h.y + h.h - 1 ? 1 : 0;
@@ -210,9 +210,10 @@ export function workOn(s: State, p: Person, b: Bit, dtSec: number) {
 }
 // en vägg som just blivit klar: den som står där kliver åt sidan, och det som ligger där flyttas
 function clearTile(s: State, b: Bit) {
-  const free = [[0, 1], [1, 0], [0, -1], [-1, 0], [1, 1], [-1, -1], [1, -1], [-1, 1]].map(([dx, dy]) => ({ x: b.x + dx, y: b.y + dy })).find(o => o.x >= 0 && o.y >= 0 && o.x < W && o.y < H && !blocked(s, o.x, o.y));
-  if (!free) return;
+  const free = [[0, 1], [1, 0], [0, -1], [-1, 0], [1, 1], [-1, -1], [1, -1], [-1, 1]].map(([dx, dy]) => ({ x: b.x + dx, y: b.y + dy })).find(o => o.x >= 0 && o.y >= 0 && o.x < W && o.y < H && !blocked(s, o.x, o.y)) ?? freeNear(s, b.x, b.y, true);
   for (const p of living(s)) if (Math.floor(p.x) === b.x && Math.floor(p.y) === b.y) { p.x = free.x + 0.5; p.y = free.y + 0.5; if (p.task) p.task.pk = undefined; }
+  // den som var på väg dit, eller arbetar där med något annat, ställer sig bredvid i stället
+  for (const p of living(s)) if (p.task && Math.floor(p.task.tx) === b.x && Math.floor(p.task.ty) === b.y) { p.task.tx = free.x + 0.5; p.task.ty = free.y + 0.5; p.task.pk = undefined; }
   for (const a of s.stackar ?? []) if (a.x === b.x && a.y === b.y) { a.x = free.x; a.y = free.y; }
   changed(s); // summorna i förrådet räknas om (lager.ts)
 }

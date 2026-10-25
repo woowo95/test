@@ -82,8 +82,9 @@ export const isWall = (s: State, x: number, y: number) => inMap(x, y) && gridOf(
 // man kan inte stå här: vatten eller en vägg
 export const blocked = (s: State, x: number, y: number) => getMap(s.seed).tiles[Math.floor(y) * W + Math.floor(x)] === T.Vatten || isWall(s, x, y);
 // närmaste plats som inte är vatten eller vägg
-export function freeNear(s: State, x: number, y: number) {
-  if (!blocked(s, x, y)) return { x, y };
+// inte = rutan själv räknas inte (där en vägg ska byggas)
+export function freeNear(s: State, x: number, y: number, inte = false) {
+  if (!inte && !blocked(s, x, y)) return { x, y };
   for (let r = 1; r < 6; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
     if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
     const nx = x + dx, ny = y + dy;
