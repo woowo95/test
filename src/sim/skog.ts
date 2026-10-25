@@ -7,7 +7,7 @@ import { sedEvent } from './seder';
 import { knows } from './teknik';
 import { rnd } from './slump';
 import { Act, DAY, H, HOUR, Person, State, Stock, W } from './typer';
-import { item, use } from './lager';
+import { takeMaterial, getable } from './behov';
 
 // ---------- skog: fälla träd, hugga ved, flinta och yxa ----------
 // Utan yxa kan invånarna bara samla grenar på marken. Med en flintyxa kan de fälla träd.
@@ -75,10 +75,10 @@ export function chopStock(s: State, ref: number | undefined, amount: number) {
 // hur många yxor byn vill ha (en till medan ett hus byggs, för träden där det ska stå)
 export const axesWanted = (adults: number) => Math.max(1, Math.min(3, Math.floor(adults / 4)));
 // en flinta sparas att tända eld med
-export const canMakeAxe = (s: State) => item(s, 'flinta') >= 2 && item(s, 'grenar') >= 1;
+export const canMakeAxe = (s: State, p: Person) => getable(s, p, 'flinta') >= 2 && getable(s, p, 'grenar') >= 1; // materialet i behovsstegen (behov.ts)
 export function makeAxe(s: State, p: Person) {
-  if (!canMakeAxe(s)) return;
-  use(s, p, 'flinta', 1); use(s, p, 'grenar', 1);
+  if (!canMakeAxe(s, p)) return;
+  takeMaterial(s, p, 'flinta', 1); takeMaterial(s, p, 'grenar', 1);
   addTool(s, 'yxa', p);
   if (axes(s) === 1 && !s.stat?.yxa1) {
     count(s, 'yxa1');
@@ -100,7 +100,7 @@ export function axeTask(s: State, p: Person): { act: Act; x: number; y: number; 
     if (t) return { act: 'falla', x: t.x, y: t.y, dur: FALL_TID, why: 'Har en yxa och fäller ett träd till trä' };
   }
   const adults = ppl.filter(q => ageOf(q, s.now) >= 16).length;
-  if (knows(p, 'yxa') && canMakeAxe(s) && axes(s) < axesWanted(adults) + (s.hus?.some(h => !h.klar) ? 1 : 0) && !others.some(q => q.task?.act === 'yxa')) {
+  if (knows(p, 'yxa') && canMakeAxe(s, p) && axes(s) < axesWanted(adults) + (s.hus?.some(h => !h.klar) ? 1 : 0) && !others.some(q => q.task?.act === 'yxa')) {
     return { act: 'yxa', x: 0, y: 0, dur: 2 * HOUR, why: 'Har flinta och vill göra en yxa för att kunna fälla träd' };
   }
   return undefined;

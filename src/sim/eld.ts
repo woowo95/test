@@ -1,4 +1,5 @@
-import { addTo, dropLoad, fetchSpot, item, use } from './lager';
+import { addTo, dropLoad, fetchSpot, item, mayTake, ownsAmount, use } from './lager';
+import { getable, takeMaterial } from './behov';
 import { Del, addDel } from './egendom';
 import { coldOf, temperature } from './vader';
 import { ageOf, count, log, stat, think } from './folk';
@@ -18,13 +19,17 @@ export const hearthOf = (f: Fire) => HEARTHS.find(h => h.id === f.hearth) ?? HEA
 export const igniterOf = (s: State) => IGNITERS.find(i => item(s, i.id) >= 1);
 // bränsle i förrådet räknat i ved: ved och grenar
 export const fuelStock = (s: State) => item(s, 'ved') + item(s, 'grenar') * GREN;
+// Elden ägs av hela byn, men veden följer ägandet: man eldar med byns och sin egen. fran = den man stjäl av (behov.ts)
+const fuelLim = (s: State, k: string, p?: Person, fran?: Person) => fran ? ownsAmount(s, fran, k) : p ? mayTake(s, p, k) : item(s, k);
+// bränslet p får elda med, räknat i ved
+export const fuelFor = (s: State, p: Person, fran?: Person) => fuelLim(s, 'ved', p, fran) + fuelLim(s, 'grenar', p, fran) * GREN;
 // ta bränsle ur förrådet, ved först och sedan grenar; ger hur mycket som togs
-// p = den som tar det; byns ved tas först (egendom.ts). ag får vems bränslet var, räknat i ved
-export function takeFuel(s: State, n: number, p?: Person, ag?: Del) {
-  const v = Math.min(n, item(s, 'ved'));
-  const w = use(s, p, 'ved', v, true);
-  const g = Math.min(item(s, 'grenar'), (n - v) / GREN);
-  if (g > 0) { const d = use(s, p, 'grenar', g, true); if (ag) addDel(ag, d, GREN); }
+// p = den som tar det: byns ved först, sedan sin egen (egendom.ts). ag får vems bränslet var, räknat i ved
+export function takeFuel(s: State, n: number, p?: Person, ag?: Del, fran?: Person) {
+  const v = Math.min(n, fuelLim(s, 'ved', p, fran));
+  const w = use(s, p, 'ved', v, true, fran?.id);
+  const g = Math.min(fuelLim(s, 'grenar', p, fran), (n - v) / GREN);
+  if (g > 0) { const d = use(s, p, 'grenar', g, true, fran?.id); if (ag) addDel(ag, d, GREN); }
   if (ag) addDel(ag, w);
   return v + g * GREN;
 }
@@ -63,9 +68,10 @@ const tinderWant = (s: State) => (s.fire.lit ? 12 : 36);
 // den första elden läggs i en ring av stenar; ringen ligger kvar när elden slocknat
 export const RING = 6;
 export const needStones = (s: State) => !s.fire.ring && item(s, 'sten') < RING;
-export function canLight(s: State) {
-  const ig = igniterOf(s);
-  return !!ig && !needStones(s) && item(s, 'torrgras') >= ig.grass && (item(s, 'grenar') >= ig.sticks || item(s, 'kol') >= 1) && fuelStock(s) >= 1;
+// kan elden tändas (av p: med det p kan få, behov.ts)
+export function canLight(s: State, p?: Person) {
+  const ig = igniterOf(s), has = (k: string) => p ? getable(s, p, k) : item(s, k);
+  return !!ig && (!!s.fire.ring || has('sten') >= RING) && has('torrgras') >= ig.grass && (has('grenar') >= ig.sticks || has('kol') >= 1) && (p ? fuelFor(s, p) : fuelStock(s)) >= 1;
 }
 export function needTinder(s: State) {
   return !s.fire.lit && !emberOn(s) && (item(s, 'flinta') < 1 || needStones(s) || item(s, 'torrgras') < 12 || item(s, 'grenar') < 12);
@@ -75,7 +81,7 @@ function lightFire(s: State, p: Person) {
   const f = s.fire, start = takeFuel(s, 2, p), onCoal = (f.ash ?? 0) >= 1;
   Object.assign(f, { lit: true, fuel: start, litAt: s.now, litBy: p.id, burned: 0, emberUntil: undefined, tryProg: 0 });
   f.lightings++;
-  if (!f.ring) { use(s, p, 'sten', RING, true); f.ring = true; log(s, `${p.name} lade en ring av stenar runt eldplatsen.`, 'world', [p.id]); }
+  if (!f.ring) { takeMaterial(s, p, 'sten', RING, true); f.ring = true; log(s, `${p.name} lade en ring av stenar runt eldplatsen.`, 'world', [p.id]); }
   if (onCoal) { f.ash = 0; f.ashUntil = undefined; } // kolet i den gamla högen tar fyr och blir en del av den nya elden
   fireLog(s, { k: 'tänd', id: p.id, n: f.tries });
   log(s, `${p.name} lyckades tända elden${onCoal ? ' på den gamla kolhögen' : ''}${f.tries > 1 ? ` efter ${f.tries} försök` : ''}.`, 'world', [p.id]);
@@ -83,16 +89,20 @@ function lightFire(s: State, p: Person) {
   if (f.lightings === 1) { p.fame.push('Tände byns första eld'); kronika(s, `${p.name} tände byns första eld.`); sedEvent(s, 'nyfikenhet', 0.1, 'Elden har gjort byn nyfiken på vad mer som går att lära sig.'); }
   f.tries = 0;
 }
+// Varje misslyckat försök sedan elden senast brann gör nästa lättare: man får kläm på det och tändmaterialet blir
+// varmt och torrt. Efter FORSOK_LARA försök är chansen dubbelt så stor, så att otur inte kan hålla elden släckt i dygn
+export const FORSOK_LARA = 10;
 // ett försök att tända med det bästa tänddonet i förrådet
 export function tryLight(s: State, p: Person) {
   const ig = igniterOf(s)!, f = s.fire;
-  use(s, p, 'torrgras', ig.grass, true);
-  if (item(s, 'grenar') >= ig.sticks) use(s, p, 'grenar', ig.sticks, true);
-  else use(s, p, 'kol', 1, true); // lite kol kan ersätta grenarna
+  takeMaterial(s, p, 'torrgras', ig.grass, true);
+  if (getable(s, p, 'grenar') >= ig.sticks) takeMaterial(s, p, 'grenar', ig.sticks, true);
+  else takeMaterial(s, p, 'kol', 1, true); // lite kol kan ersätta grenarna
 
   f.tries++; f.tryTotal++;
   p.skill.elda = clamp(p.skill.elda + 0.08 * (0.5 + p.pot.intelligens / 20) * (1 - p.skill.elda / 21), 0, 20);
-  const c = ig.chance * (0.5 + p.skill.elda / 20 + stat(p, 'intelligens', s.now) / 40) * (ageIndex(s) === 0 ? 0.6 : 1) * ((f.ash ?? 0) >= 1 ? 1.5 : 1); // en gammal kolhög tar lättare fyr
+  const c = ig.chance * (0.5 + p.skill.elda / 20 + stat(p, 'intelligens', s.now) / 40) * (ageIndex(s) === 0 ? 0.6 : 1) * ((f.ash ?? 0) >= 1 ? 1.5 : 1) // en gammal kolhög tar lättare fyr
+    * (1 + (f.tries - 1) / FORSOK_LARA); // varje misslyckat försök sedan elden brann gör nästa lättare
   if (rnd(s, 'eld', p) < c) { lightFire(s, p); return true; }
   if (ig.id === 'flinta' && rnd(s, 'eld', p) < 0.004) {
     use(s, p, 'flinta', 1, true); fireLog(s, { k: 'sprack', id: p.id });
@@ -124,6 +134,13 @@ export function addFuel(s: State, p: Person, n: number) {
 function assign(s: State, p: Person, act: Act, tx: number, ty: number, dur: number, why: string) {
   if (p.task && (p.task.carry > 0 || p.task.items)) dropLoad(s, p.task, p.x, p.y, p.id); // bördan läggs ner där hen står, den försvinner inte
   p.task = { act, phase: 'go', tx, ty, until: s.now + dur, carry: 0, why, dark: !isLight(s.now) };
+}
+// p går till förrådet efter en famn ved och sedan till elden (steg.ts). fran = den andras ved (stöld, behov.ts)
+export function fetchFuel(s: State, p: Person, why: string, fran?: Person) {
+  if (s.people.some(q => q.task?.act === 'elda')) return; // en i taget
+  const at = fetchSpot(s, (fran ? ownsAmount(s, fran, 'ved') : mayTake(s, p, 'ved')) >= 1 ? 'ved' : 'grenar');
+  assign(s, p, 'elda', at.x, at.y, HOUR, why);
+  if (fran) p.task!.fran = fran.id;
 }
 const awake = (s: State, p: Person, minAge: number) => {
   const t = p.task;
@@ -166,18 +183,15 @@ export function stepFire(s: State, dtSec: number, ppl: Person[]) {
     const fx = m.fire.x + 0.5, fy = m.fire.y + 0.5;
     let best: { p: Person; w: Wish } | undefined, bs = -1e9;
     for (const c of cands) {
-      if (c.w.v < f.fuel * 2 + 0.2) continue;
+      if (c.w.v < f.fuel * 2 + 0.2 || fuelFor(s, c.p) < 0.5) continue; // bara den som har ved att ta (byns eller sin egen)
       const sc = (c.w.v - f.fuel) / h.maxFuel * (0.4 + duty(s, c.p)) - Math.hypot(c.p.x - fx, c.p.y - fy) / 25 + (c.p.task?.act === 'vakt' ? 0.3 : 0) + rnd(s, 'eld') * 0.1;
       if (sc > bs) { bs = sc; best = c; }
     }
-    if (best) {
-      const at = fetchSpot(s, item(s, 'ved') >= 1 ? 'ved' : 'grenar'); // till förrådet efter en famn, och sedan till elden (steg.ts)
-      assign(s, best.p, 'elda', at.x, at.y, HOUR, best.w.why);
-    }
+    if (best) fetchFuel(s, best.p, best.w.why);
   }
   // tändning: när elden är släckt och någon vill ha eld försöker en person i taget
   if (!f.lit && !emberOn(s) && canLight(s) && f.want >= h.maxFuel * 0.1 && !ppl.some(p => p.task?.act === 'tanda')) {
-    const ok = cands.filter(c => ageOf(c.p, now) >= 12 && c.w.v >= h.maxFuel * 0.05)
+    const ok = cands.filter(c => ageOf(c.p, now) >= 12 && c.w.v >= h.maxFuel * 0.05 && canLight(s, c.p))
       .sort((a, b) => (b.p.skill.elda + stat(b.p, 'flit', now) / 2 + rnd(s, 'eld') * 3) - (a.p.skill.elda + stat(a.p, 'flit', now) / 2 + rnd(s, 'eld') * 3));
     const c = ok[0];
     if (c) assign(s, c.p, 'tanda', m.fire.x + 0.5 + (rnd(s, 'eld') - 0.5) * 1.2, m.fire.y + 1.3, 3 * HOUR, `Vill ha eld. ${c.w.why}`);

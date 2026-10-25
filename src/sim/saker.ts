@@ -15,34 +15,35 @@ export interface SakDef {
   trasig?: { stat: string; text?: string }; // när redskapet går sönder i arbetet: det som räknas, och texten första gången ({namn} = den som arbetade)
   dold?: true; // syns inte för invånarna
   i?: string; // ligger gömd i stackarna av det slaget (stack.dold) och har ingen egen stack
+  varde?: number; // vad en (ett styck, en portion) är värd, ungefär i arbete; byns rikedom är summan (delning.ts). Saknas = 0
 }
 
 // Ordningen är den stackarna läggs ut i, så den ska inte ändras (nya saker läggs sist)
 const DEF = {
-  bar: { namn: 'Bär', stack: 25, ruta: 75, mapp: 'Mat', mat: 4, ruttnar: 0.7 },
-  rotter: { namn: 'Rötter', stack: 25, ruta: 75, mapp: 'Mat', mat: 5, ruttnar: 0.35 },
-  kott: { namn: 'Kött', stack: 25, ruta: 75, mapp: 'Mat', mat: 2, ruttnar: 0.8 }, // slaktat vilt; köttet håller längre än fisk
-  fisk: { namn: 'Fisk', stack: 25, ruta: 75, mapp: 'Mat', mat: 1, ruttnar: 2 },
-  svamp: { namn: 'Svamp', stack: 25, ruta: 75, mapp: 'Mat', mat: 3, ruttnar: 1 },
-  ved: { namn: 'Trä', stack: 25, mapp: 'Bränsle', slits: 0.0004, blir: { k: 'grenar', per: 2 } },
-  grenar: { namn: 'Grenar', stack: 50, mapp: 'Bränsle', slits: 0.0006 },
-  torrgras: { namn: 'Hö', stack: 50, mapp: 'Bränsle', slits: 0.0015 },
-  kol: { namn: 'Kol', stack: 25, mapp: 'Bränsle' },
-  flinta: { namn: 'Flinta', stack: 10, mapp: 'Sten' },
-  yxa: { namn: 'Flintyxa', stack: 1, mapp: 'Redskap', slits: 0.0004, redskap: true },
-  fiskespjut: { namn: 'Träspjut', stack: 1, mapp: 'Redskap', slits: 0.001, redskap: true, grupp: 'spjut', trasig: { stat: 'spjutTrasiga', text: '{namn}s träspjut gick sönder. Träspjuten håller inte länge.' } },
-  korg: { namn: 'Korg', stack: 1, mapp: 'Redskap', slits: 0.001, redskap: true, trasig: { stat: 'korgarTrasiga', text: '{namn}s korg gick sönder.' } },
+  bar: { namn: 'Bär', varde: 1, stack: 25, ruta: 75, mapp: 'Mat', mat: 4, ruttnar: 0.7 },
+  rotter: { namn: 'Rötter', varde: 1, stack: 25, ruta: 75, mapp: 'Mat', mat: 5, ruttnar: 0.35 },
+  kott: { namn: 'Kött', varde: 1.5, stack: 25, ruta: 75, mapp: 'Mat', mat: 2, ruttnar: 0.8 }, // slaktat vilt; köttet håller längre än fisk
+  fisk: { namn: 'Fisk', varde: 1, stack: 25, ruta: 75, mapp: 'Mat', mat: 1, ruttnar: 2 },
+  svamp: { namn: 'Svamp', varde: 1, stack: 25, ruta: 75, mapp: 'Mat', mat: 3, ruttnar: 1 },
+  ved: { namn: 'Trä', varde: 1, stack: 25, mapp: 'Bränsle', slits: 0.0004, blir: { k: 'grenar', per: 2 } },
+  grenar: { namn: 'Grenar', varde: 0.5, stack: 50, mapp: 'Bränsle', slits: 0.0006 },
+  torrgras: { namn: 'Hö', varde: 0.3, stack: 50, mapp: 'Bränsle', slits: 0.0015 },
+  kol: { namn: 'Kol', varde: 2, stack: 25, mapp: 'Bränsle' },
+  flinta: { namn: 'Flinta', varde: 3, stack: 10, mapp: 'Sten' },
+  yxa: { namn: 'Flintyxa', varde: 30, stack: 1, mapp: 'Redskap', slits: 0.0004, redskap: true },
+  fiskespjut: { namn: 'Träspjut', varde: 10, stack: 1, mapp: 'Redskap', slits: 0.001, redskap: true, grupp: 'spjut', trasig: { stat: 'spjutTrasiga', text: '{namn}s träspjut gick sönder. Träspjuten håller inte länge.' } },
+  korg: { namn: 'Korg', varde: 15, stack: 1, mapp: 'Redskap', slits: 0.001, redskap: true, trasig: { stat: 'korgarTrasiga', text: '{namn}s korg gick sönder.' } },
   // giftig svamp som av misstag hamnat i förrådet bland den ätliga (fynd.ts). Den ligger i svampstacken och syns inte
   giftsvamp: { namn: 'Giftig svamp', ruttnar: 1, dold: true, i: 'svamp' },
-  sten: { namn: 'Sten', stack: 10, mapp: 'Sten' },
-  rep: { namn: 'Rep', stack: 20, mapp: 'Material', slits: 0.0003 },
-  ben: { namn: 'Ben', stack: 20, mapp: 'Material' },
-  flintspjut: { namn: 'Flintspjut', stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true, grupp: 'spjut', trasig: { stat: 'spjutTrasiga', text: '{namn}s flintspjut gick sönder.' } },
-  metspo: { namn: 'Metspö', stack: 1, mapp: 'Redskap', slits: 0.0005, redskap: true, trasig: { stat: 'metspoTrasiga' } },
+  sten: { namn: 'Sten', varde: 1, stack: 10, mapp: 'Sten' },
+  rep: { namn: 'Rep', varde: 3, stack: 20, mapp: 'Material', slits: 0.0003 },
+  ben: { namn: 'Ben', varde: 1, stack: 20, mapp: 'Material' },
+  flintspjut: { namn: 'Flintspjut', varde: 25, stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true, grupp: 'spjut', trasig: { stat: 'spjutTrasiga', text: '{namn}s flintspjut gick sönder.' } },
+  metspo: { namn: 'Metspö', varde: 15, stack: 1, mapp: 'Redskap', slits: 0.0005, redskap: true, trasig: { stat: 'metspoTrasiga' } },
   // ett fällt djur, helt som det är (vilket djur det än är). En kanin fyller famnen, så stacken är en kanin
-  vilt: { namn: 'Fällt vilt', stack: 1.6, ruta: 16, mapp: 'Mat', mat: 1.5, ruttnar: 1.1 },
-  kniv: { namn: 'Flintkniv', stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true },
-  skinn: { namn: 'Skinn', stack: 10, mapp: 'Material', slits: 0.0006 },
+  vilt: { namn: 'Fällt vilt', varde: 15, stack: 1.6, ruta: 16, mapp: 'Mat', mat: 1.5, ruttnar: 1.1 },
+  kniv: { namn: 'Flintkniv', varde: 20, stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true },
+  skinn: { namn: 'Skinn', varde: 5, stack: 10, mapp: 'Material', slits: 0.0006 },
 } satisfies Record<string, SakDef>;
 
 export type Sak = keyof typeof DEF;

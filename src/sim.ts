@@ -31,4 +31,5 @@ export * from './sim/lager';
 export * from './sim/plats';
 export * from './sim/byggnad';
 export * from './sim/bygg';
+export * from './sim/delning';
 export * from './sim/djur';

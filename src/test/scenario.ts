@@ -2,7 +2,7 @@
 // npm run scenario            kör alla
 // npm run scenario -- glanta  kör bara ett
 import { isDeepStrictEqual } from 'node:util';
-import { Person, Act, createState, ownedBy, tidyTools, addTool, toolsOf, heldBy, take, usesTool, wearTool, freeSpear, getRel, isTool, BYN, twineRope, makeRod, wearUsed, isSpear, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, serializeParts, joinParts, serialize, ageStart, nyKalender, kalender, yearNo, AGES, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, zonesOf, allows, ageOf, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, fuelStock, DAY, HOUR, W, State, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, campCenter, TEKNIK, knows, thinkWhileWorking, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, beds, isWall, Bit, wearBuild, FYND, FYND_IDS, GRUPPER, angOf, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, LAGER_R, observe, hoped, Lager, skyggOf, SKYGG_R, SKYGG_IN, grupperOf, GRUPPER_MAX, STORLEK, share, treeOn, djurOf, KANIN, SLAKT, DJUR, JAKT_F, canSlaughter, makeKnife, slaughter, askForTool, gain, takeFood, takeFuel, ownsAmount, ownedStock, ownedSum, sumOf, addTo, setAmount, setStock, foodOf, isFood, STACK_ORDER, needLadder, MAT, ownFor, rnd, STROMMAR, Strom, BEAT, spar, isWork, SPARVERSION } from '../sim';
+import { Person, Act, createState, ownedBy, tidyTools, addTool, toolsOf, heldBy, take, usesTool, wearTool, freeSpear, getRel, isTool, BYN, twineRope, makeRod, wearUsed, isSpear, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, serializeParts, joinParts, serialize, ageStart, nyKalender, kalender, yearNo, AGES, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, zonesOf, allows, ageOf, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, fuelStock, DAY, HOUR, W, State, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, campCenter, TEKNIK, knows, thinkWhileWorking, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, beds, isWall, Bit, wearBuild, FYND, FYND_IDS, GRUPPER, angOf, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, LAGER_R, observe, hoped, Lager, skyggOf, SKYGG_R, SKYGG_IN, grupperOf, GRUPPER_MAX, STORLEK, share, treeOn, djurOf, KANIN, SLAKT, DJUR, JAKT_F, canSlaughter, makeKnife, slaughter, askForTool, gain, takeFood, takeFuel, ownsAmount, ownedStock, ownedSum, sumOf, addTo, setAmount, setStock, foodOf, isFood, STACK_ORDER, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, STOLD_LINDRIG, STOLD_OP, rnd, STROMMAR, Strom, BEAT, spar, isWork, SPARVERSION, stepDelning, rikedom, DELA_RIK } from '../sim';
 // förrådet i proven: stackarna är det enda som sparas (steg 1.1.2), så proven ställer in förrådet genom lagret
 const setItems = (s: State, m: Record<string, number>) => {
   for (const k of STACK_ORDER) if (!isFood(k) && k !== 'ved' && !isTool(k)) setAmount(s, k, m[k] ?? 0);
@@ -552,12 +552,15 @@ SCENARIER.gava = {
   },
 };
 
+// en by så rik att folk behåller allt de skaffar (delning.ts), så att ägandet kan provas
+const rikBy = (s: State) => { s.delning = { rik: DELA_RIK, andel: 0 }; };
+
 SCENARIER.egendom = {
   text: 'Det någon samlar, hugger, jagar och gör är hens, också i byns förråd. Det som redan var byns förblir byns. Till sig själv tar man sitt eget först, till elden byns. Det som ruttnar minskar allas delar, slaktat kött är dens som ägde viltet, och den som dör lämnar sin del till byn.',
   kor: () => {
     const s = createState(6, START);
     const fore = STACK_ORDER.reduce((n, k) => n + ownedSum(s, k), 0);
-    setItems(s, { grenar: 20 }); setAmount(s, 'ved', 2); setMat(s, { bar: 20 });
+    rikBy(s); setItems(s, { grenar: 20 }); setAmount(s, 'ved', 2); setMat(s, { bar: 20 });
     const [a, b, c] = living(s);
     for (const q of [a, b, c]) q.mother = q.father = q.partner = undefined;
     gain(s, a, 'bar', 5);
@@ -603,7 +606,7 @@ SCENARIER.behov = {
   kor: () => {
     const ny = () => {
       const s = createState(6, START);
-      setMat(s, {});
+      rikBy(s); setMat(s, {});
       const [a, b, c] = living(s);
       for (const q of [a, b, c]) { q.mother = q.father = q.partner = undefined; q.x = 30; q.y = 30; q.task = undefined; q.hunger = 0.3; q.health = 1; }
       s.people = [a, b, c];
@@ -644,9 +647,9 @@ SCENARIER.behov = {
       s.rngs = { dela: i * 7919 + 1 }; a.rngs = { dela: i * 7919 + 1 };
       needLadder(s, a, 1); if (ownFor(s, b, MAT) < 5) ovan++;
     }
-    // vanliga byar: gåvor ges och ingen svälter ihjäl i de tre testbyarna
-    let gavor = 0;
-    for (const seed of [1, 42]) { const v = createState(seed, START); for (let i = 0; i < 10 * 288; i++) step(v, 300); gavor += v.stat?.gava_mat ?? 0; }
+    // vanliga byar är fattiga de första dygnen, så det mesta av maten är byns och delas utan gåvor (delning.ts)
+    let egen = 0, allt = 0;
+    for (const seed of [1, 42]) { const v = createState(seed, START); for (let i = 0; i < 2 * 288; i++) step(v, 300); for (const k of FOOD) { egen += ownedSum(v, k); allt += amountOf(v, k); } }
     return [
       ['den hungrige tar inte en oväns mat innan nöden är stor', tarInte],
       ['byns mat går före andras', byns],
@@ -656,7 +659,66 @@ SCENARIER.behov = {
       ['den med låg empati stjäl när den svälter', stal],
       ['den bestulne märker det och relationen blir sämre', marker],
       [`man stjäl helst av den man inte tycker om (${ovan} av 40)`, ovan >= 28],
-      [`i vanliga byar ges mat (${gavor.toFixed(0)} portioner i 2 byar på 10 dygn)`, gavor > 0],
+      [`i nya byar är det mesta av maten byns efter 2 dygn (2 år i spelet): ${(100 * egen / Math.max(1, allt)).toFixed(0)} % är någons eget`, allt > 0 && egen < allt / 2],
+    ];
+  },
+};
+
+SCENARIER.ved = {
+  text: 'Ved, material och redskap i behovsstegen: elden ägs av byn men man eldar bara med byns ved och sin egen. Den som fryser ber om ved, och stjäl den först när kylan håller på att döda. Material till ett arbete tas av sitt eget och byns, som gåva, och sist av andras (en lindrig stöld). Redskap lånas, ges och byts i samma steg.',
+  kor: () => {
+    const ny = () => {
+      const s = createState(6, START);
+      rikBy(s); setMat(s, {}); setStock(s, { ved: 0, grenar: 0, flinta: 0, torrgras: 0 });
+      const [a, b, c] = living(s);
+      for (const q of [a, b, c]) { q.mother = q.father = q.partner = undefined; q.x = 30; q.y = 30; q.task = undefined; q.hunger = 1; q.health = 1; q.warm = 1; q.pot.empati = 10; }
+      s.people = [a, b, c];
+      Object.assign(s.fire, { lit: true, fuel: 0.5, want: 5 });
+      return { s, a, b, c };
+    };
+    // elden: byns ved och sin egen, inte andras
+    let { s, a, b, c } = ny();
+    getRel(s, a, b).op = 0; gain(s, b, 'ved', 4); gain(s, a, 'grenar', 5); addTo(s, 'ved', 1);
+    const fv = fuelFor(s, a), far = Math.abs(fv - 3) < 1e-9; // 1 ved av byns + 5 grenar à 0,4
+    takeFuel(s, 3, a);
+    const intedras = ownsAmount(s, b, 'ved') === 4 && ownsAmount(s, a, 'grenar') < 1e-9;
+    // den som fryser och inte har någon ved får den av en vän
+    ({ s, a, b, c } = ny());
+    getRel(s, b, a).op = 70; b.pot.empati = 20; gain(s, b, 'ved', 8);
+    let fick = false; for (let i = 0; i < 20 && !fick; i++) { a.warm = 0.2; needLadder(s, a, 1e6); fick = ownsAmount(s, a, 'ved') > 0; }
+    // i yttersta nöd hämtar den frysande någon annans ved till elden; hög empati gör det aldrig
+    ({ s, a, b, c } = ny());
+    getRel(s, a, b).op = -30; getRel(s, b, a).op = -30; gain(s, b, 'ved', 4);
+    a.warm = 0.05; a.health = 0.02; a.pot.empati = 20; needLadder(s, a, 1);
+    const aldrig = a.task?.act !== 'elda';
+    a.pot.empati = 1; a.health = 0.5; needLadder(s, a, 1);
+    const stjal = a.task?.act === 'elda' && a.task.fran === b.id;
+    // material: sitt eget och byns först, sedan andras som en lindrig stöld som märks
+    ({ s, a, b, c } = ny());
+    getRel(s, a, b).op = -30; getRel(s, b, a).op = -30; c.x = 90;
+    gain(s, a, 'flinta', 1); addTo(s, 'flinta', 1); gain(s, b, 'flinta', 3);
+    takeMaterial(s, a, 'flinta', 2);
+    const egetForst = ownsAmount(s, b, 'flinta') === 3 && ownsAmount(s, a, 'flinta') < 1e-9;
+    takeMaterial(s, a, 'flinta', 1);
+    const lindrig = ownsAmount(s, b, 'flinta') === 2 && !!b.stulet?.some(x => x.k === 'flinta' && x.l);
+    const fore = getRel(s, b, a).op; takeMaterial(s, b, 'flinta', 1);
+    const marker = Math.abs(getRel(s, b, a).op - (fore - STOLD_LINDRIG)) < 1e-9 && !b.stulet;
+    a.pot.empati = 20;
+    const hogEmp = getable(s, a, 'flinta') === 0;
+    // vanliga byar: elden brinner och ingen fryser ihjäl
+    let kyla = 0, eld = 0;
+    for (const seed of [1, 42]) { const v = createState(seed, START); for (let i = 0; i < 10 * 288; i++) step(v, 300); kyla += v.people.filter(q => q.cause === 'av kyla').length; eld += v.fire.lit ? 1 : 0; }
+    return [
+      [`man eldar med byns ved och sin egen (${fv.toFixed(1)} ved, inte grannens 4)`, far],
+      ['elden tar inte någon annans ved', intedras],
+      ['den som fryser och inte har ved får den av en vän', fick],
+      ['den med mycket hög empati tar aldrig någon annans ved, inte ens döende', aldrig],
+      ['den som håller på att frysa ihjäl hämtar någon annans ved till elden', stjal],
+      ['material tas av sitt eget och byns före andras', egetForst],
+      ['andras material tas sist, som en lindrig stöld', lindrig],
+      [`den bestulne märker det, och relationen blir ${STOLD_LINDRIG} sämre (inte ${STOLD_OP})`, marker],
+      ['den med mycket hög empati tar inte andras material', hogEmp],
+      [`ingen fryser ihjäl i två vanliga byar på 10 dygn (10 år i spelet) (${kyla})`, kyla === 0],
     ];
   },
 };
@@ -806,7 +868,7 @@ SCENARIER.fritid = {
   kor: () => {
     const folk: { d: number; v: number }[] = [];
     let prom = 0, bad = 0, badVarmt = true, n = 0, strand = 0, strandLand = true;
-    for (const seed of [5, 6, 7]) { // tre byar, så att slumpen inte avgör
+    for (const seed of [5, 6, 7, 8]) { // fyra byar, så att slumpen inte avgör
     const s = createState(seed, START), gang = new Map<number, number>(), sett = new WeakSet<object>();
     s.kal = nyKalender(s.now, 2); // sommar
     setFood(s, 40); setAmount(s, 'ved', 40); // gott ställt, tid över
@@ -1228,6 +1290,30 @@ SCENARIER.varmekarta = {
       [`platsen växer tillbaka på hösten (${vuxit.toFixed(2)})`, vuxit > efter + 0.1],
       [`en plockad plats: "${text}", tros växa tillbaka (${nyss.toFixed(2)} → ${sen.toFixed(2)} efter tre dygn)`, text.includes('växer tillbaka') && sen > nyss + 0.2],
       [`flinta vid stenarna tar slut och kommer tillbaka (${flFore} → ${flEfter.toFixed(1)} → ${flSen.toFixed(1)})`, flFore >= 4 && flEfter < flFore - 0.5 && flSen > flEfter + 0.3],
+    ];
+  },
+};
+
+SCENARIER.delning = {
+  text: 'Delning: ju fattigare byn är, desto mer av det folk skaffar ger de till byn. Byns rikedom avgör ensamt hur mycket',
+  kor: () => {
+    const s = createState(5, START), p = living(s)[0];
+    const egetAv = (n: number) => { const f = ownsAmount(s, p, 'bar'); gain(s, p, 'bar', n); return ownsAmount(s, p, 'bar') - f; };
+    const ny = s.delning!, nyEgen = egetAv(10);
+    // halvrik: hälften av gränsen
+    setAmount(s, 'ved', 0); setAmount(s, 'ved', DELA_RIK / 2 - rikedom(s)); stepDelning(s);
+    const halv = s.delning!, halvEgen = egetAv(10);
+    // rik
+    setAmount(s, 'ved', amountOf(s, 'ved') + DELA_RIK); stepDelning(s);
+    const rik = s.delning!, rikEgen = egetAv(10);
+    // fattig igen
+    setAmount(s, 'ved', 0); setFood(s, 0); stepDelning(s);
+    const igen = s.delning!;
+    return [
+      [`en ny by är fattig (rikedom ${ny.rik.toFixed(0)}) och ger nästan allt till byn (${nyEgen.toFixed(1)} av 10 eget)`, ny.andel > 0.9 && nyEgen < 1.01],
+      [`halvvägs till gränsen ${DELA_RIK} ges hälften (andel ${halv.andel.toFixed(2)}, ${halvEgen.toFixed(1)} av 10 eget)`, Math.abs(halv.andel - 0.5) < 0.02 && Math.abs(halvEgen - 5) < 0.3],
+      [`en rik by (rikedom ${rik.rik.toFixed(0)}) ger inget (${rikEgen.toFixed(1)} av 10 eget)`, rik.andel === 0 && Math.abs(rikEgen - 10) < 0.01],
+      [`blir byn fattig igen ger folk igen (andel ${igen.andel.toFixed(2)})`, igen.andel > 0.8],
     ];
   },
 };

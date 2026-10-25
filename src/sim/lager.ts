@@ -132,11 +132,13 @@ function cleanDel(s: State, a: Stack) {
   if (sum > a.n) for (const o in d) d[o] *= a.n / sum;
   if (!Object.keys(d).length) delete a.ag;
 }
-// vems n av något är, när ag säger vems det var (jämkat om det minskat) och resten är owner
-export function shareOf(ag: Del | undefined, n: number, owner = BYN): Del {
+// vems n av något är, när ag säger vems det var (jämkat om det minskat) och resten är owner. Med s ger owner byns
+// andel av resten till byn: mer ju fattigare byn är (delning.ts)
+export function shareOf(ag: Del | undefined, n: number, owner = BYN, s?: State): Del {
   const sum = sumOf(ag), f = sum > n ? n / sum : 1, d: Del = {};
   addDel(d, ag, f);
-  if (owner !== BYN && n - sum * f > 1e-12) d[owner] = (d[owner] ?? 0) + n - sum * f;
+  const egen = (n - sum * f) * (1 - (s?.delning?.andel ?? 0));
+  if (owner !== BYN && egen > 1e-12) d[owner] = (d[owner] ?? 0) + egen;
   delete d[BYN];
   return d;
 }
@@ -290,10 +292,10 @@ function takeHidden(s: State, k: string, n: number) {
 export function addTo(s: State, k: string, n: number) { if (n > 0) place(s, k, n, 1); else if (n < 0) takeProp(s, k, -n); }
 // lägg n av slaget k i förrådet; ag = vems det är (jämkat till n), resten är byns
 export function put(s: State, k: string, n: number, ag?: Del, c = 1) { place(s, k, n, c, ag && shareOf(ag, n)); }
-// p skaffade n av slaget k och lade det rakt i förrådet: det är hens (egendom.ts)
-export function gain(s: State, p: Person, k: string, n: number) { if (n > 0) place(s, k, n, 1, { [p.id]: n }); }
-// p tar n av slaget k ur förrådet; common = till byns eld eller hus. Ger vems det var
-export function use(s: State, p: Person | undefined, k: string, n: number, common = false) { return takeOwn(s, k, n, p, common).ag; }
+// p skaffade n av slaget k och lade det rakt i förrådet: det är hens (egendom.ts), utom det hen ger byn (delning.ts)
+export function gain(s: State, p: Person, k: string, n: number) { if (n > 0) place(s, k, n, 1, shareOf(undefined, n, p.id, s)); }
+// p tar n av slaget k ur förrådet; common = till byns eld eller hus, fran = av den personens först (stöld). Ger vems det var
+export function use(s: State, p: Person | undefined, k: string, n: number, common = false, fran?: number) { return takeOwn(s, k, n, p, common, fran).ag; }
 // för nya byar och tester: förrådet av slaget k blir n, och det som läggs till är byns
 export function setAmount(s: State, k: string, n: number) {
   if (isTool(k)) { setTools(s, k, n); return; }
@@ -473,7 +475,7 @@ const loadOf = (t: Task) => { const all: Record<string, number> = { ...(t.items 
 // det som bärs mellan lagerplatser har alltid sina ägare med sig
 export function storeLoad(s: State, t: Task, x?: number, y?: number, owner = BYN) {
   const all = loadOf(t), at = x !== undefined ? { x: Math.floor(x), y: Math.floor(y!) } : undefined;
-  for (const k in all) if (all[k] > 1e-9) place(s, k, all[k], t.cond?.[k] ?? 1, shareOf(t.ag?.[k], all[k], t.act === 'bara' ? BYN : owner), at);
+  for (const k in all) if (all[k] > 1e-9) place(s, k, all[k], t.cond?.[k] ?? 1, shareOf(t.ag?.[k], all[k], t.act === 'bara' ? BYN : owner, s), at);
   storeTings(s, t, at);
   t.carry = 0; t.items = undefined; t.cond = undefined; t.ag = undefined;
 }
@@ -485,7 +487,7 @@ export function dropLoad(s: State, t: Task, x: number, y: number, owner = BYN) {
   for (const k in all) {
     if (all[k] < 1e-6) continue;
     if (SAKER[k]?.i) { hide(s, SAKER[k]!.i!, all[k], { x: tx, y: ty }); continue; }
-    const c = t.cond?.[k] ?? 1, ag = shareOf(t.ag?.[k], all[k], who);
+    const c = t.cond?.[k] ?? 1, ag = shareOf(t.ag?.[k], all[k], who, s);
     let g = st.find(q => q.x === tx && q.y === ty && q.k === k);
     if (!g) st.push(g = { x: tx, y: ty, k, n: 0, c });
     g.c = (g.c * g.n + c * all[k]) / (g.n + all[k]); g.n += all[k]; g.ag = addDel(g.ag ?? {}, ag); cleanDel(s, g);

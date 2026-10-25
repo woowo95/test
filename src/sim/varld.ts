@@ -1,4 +1,5 @@
 import { migrateTek } from './teknik';
+import { stepDelning } from './delning';
 import { setStock, storeFromSums } from './lager';
 import { isTool } from './saker';
 import { migrateTools } from './agande';
@@ -25,6 +26,7 @@ export function createState(seed: number, now: number): State {
     for (const k of SKILLS) p.skill[k] = clamp((a - 8) * 0.25 * (0.4 + rnd(s, 'folk')) * (p.pot.intelligens / 12), 0, 12);
   }
   s.seder.v = sederTarget(s);
+  stepDelning(s); // en ny by är fattig och delar nästan allt
   log(s, `${s.people.length} människor slog sig ner vid sjön. De har ingen eld ännu.`, 'world');
   return s;
 }
