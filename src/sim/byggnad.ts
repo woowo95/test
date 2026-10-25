@@ -6,12 +6,13 @@ import { H, State, T, W, inMap } from './typer';
 // Varje ruta kan ha en vägg, ett golv eller en öppning. Väggar stänger vägen; en öppning är en lucka i väggen som man går
 // igenom. Golv som är helt omgivet av väggar och öppningar är ett rum under tak (inget tak ritas).
 // Vilka väggar och golv man kan bygga är teknik. Vilket hus man bygger bestämmer byn själv efter behov: när någon kan
-// bygga väggar och alla inte har en sovplats under tak planerar den skickligaste byggaren ett hus åt alla.
+// bygga väggar planerar den skickligaste byggaren ett hus för det mest akuta behovet (byggnader.ts).
 export type BitK = 'vagg' | 'golv' | 'oppning';
 // en byggd eller planerad ruta. b = hur långt bygget kommit (1 = klart), mat = material som lagts på bygget,
 // c = skick (1 = nytt), lp/lm = lagning: hur långt den kommit och material som lagts på den
 export interface Bit { id: number; x: number; y: number; k: BitK; m: string; b: number; mat: number; c: number; hus?: number; lp?: number; lm?: number }
-export interface Hus { id: number; namn: string; x: number; y: number; w: number; h: number; t: number; by?: number; klar?: number; kom?: Record<string, number> } // kom = var materialet kom ifrån (bygg.ts)
+// kom = var materialet kom ifrån (bygg.ts), fn = husets funktion (en rad i BYGGNADER, byggnader.ts; saknas = sovsal), ag = ägaren (ett familjehus)
+export interface Hus { id: number; namn: string; x: number; y: number; w: number; h: number; t: number; by?: number; klar?: number; kom?: Record<string, number>; fn?: string; ag?: number }
 // per material: vad som går åt per ruta, timmar för en ovan byggare, slitage per timme, hur bra väggen håller värmen
 export interface Material { namn: string; k: BitK; item?: string; n: number; tim: number; slit: number; isol?: number; tek?: string }
 export const MATERIAL: Record<string, Material> = {
@@ -108,5 +109,5 @@ export function insulation(s: State, r: Rum) {
 // den som är inne i ett rum kyls långsammare, och ju fler som är där, desto varmare håller de varandra
 export const BODY = 0.04;
 export const shelterOf = (s: State, r: Rum, folk: number) => Math.min(0.9, insulation(s, r) + BODY * folk);
-// alla sovplatser under tak: en per golvruta
+// alla golvrutor under tak (var man sover står i byggnader.ts)
 export const beds = (s: State) => gridOf(s).rooms.flatMap(r => r.tiles);

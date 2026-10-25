@@ -1,5 +1,5 @@
 import { ageOf, count, living, log, stat } from './folk';
-import { Bit, Hus, MATERIAL, beds, bitsOf, blocked, freeNear, gridOf, housesOf, touch } from './byggnad';
+import { Bit, Hus, MATERIAL, bitsOf, blocked, freeNear, gridOf, housesOf, touch } from './byggnad';
 import { getMap } from './karta';
 import { groundOf } from './mark';
 import { campCenter } from './plats';
@@ -11,6 +11,7 @@ import { freeTools } from './agande';
 import { getable } from './behov';
 import { FOREST } from './vag';
 import { kronika } from './historik';
+import { BYGGNADER, Byggnad, Fn, bedTile, mostUrgent } from './byggnader';
 import { H, HOUR, Person, State, T, W } from './typer';
 
 // ---------- att bygga ----------
@@ -18,11 +19,10 @@ const RESERVE: Record<string, number> = { grenar: 15, torrgras: 6, ved: 6 }; // 
 const MAX_INNE = 24; // största hus: så många sovplatser
 const LAGA = 0.5; // väggar under det skicket lagas
 
-// var p sover: en egen ruta under tak om det finns, annars ingenstans
+// var p sover: en egen ruta under tak om det finns, annars ingenstans (byggnader.ts)
 export function bedFor(s: State, p: Person) {
-  const b = beds(s);
-  if (!b.length) return undefined;
-  const ppl = living(s).sort((a, c) => a.id - c.id), i = b[Math.max(0, ppl.indexOf(p)) % b.length];
+  const i = bedTile(s, p);
+  if (i === undefined) return undefined;
   return { x: i % W + 0.3 + rnd(s, 'val', p) * 0.4, y: Math.floor(i / W) + 0.3 + rnd(s, 'val', p) * 0.4 };
 }
 
@@ -62,17 +62,19 @@ function siteFor(s: State, w: number, h: number, okAt: Uint8Array) {
 }
 const HUS_AVST = 5.5; // så långt från elden man helst bygger (rutor till husets närmaste vägg)
 const canBuildWalls = (p: Person, s: State) => ageOf(p, s.now) >= 14 && knows(p, 'timmervagg');
-// en gång i timmen: planera ett nytt hus om någon kan bygga väggar och alla inte har en sovplats under tak
+// en gång i timmen: planera ett nytt hus för det mest akuta behovet (BYGGNADER i byggnader.ts) om någon kan bygga väggar
 export function planBuild(s: State) {
   const ppl = living(s), hs = housesOf(s);
   if (!ppl.length || hs.some(h => !h.klar)) return;
   const by = ppl.filter(p => canBuildWalls(p, s)).sort((a, b) => (b.skill.hantverk + stat(b, 'intelligens', s.now) / 4) - (a.skill.hantverk + stat(a, 'intelligens', s.now) / 4))[0];
-  const need = ppl.length - beds(s).length;
-  if (!by || need <= 0 || s.now < (s.byggSok ?? 0)) return;
-  // storleken efter hur många som behöver en sovplats och lite till för barn som kommer; så nära kvadratiskt som möjligt
+  if (!by || s.now < (s.byggSok ?? 0)) return;
+  const u = mostUrgent(s);
+  if (!u) return;
+  const row: Byggnad = BYGGNADER[u.fn];
+  // storleken efter behovet; så nära kvadratiskt som möjligt
   const sizes: { w: number; h: number }[] = [];
   for (let h = 2; h <= 4; h++) for (let w = h; w <= 2 * h; w++) sizes.push({ w, h });
-  const want = Math.min(MAX_INNE, need + 2);
+  const want = Math.min(MAX_INNE, u.a.plats);
   sizes.sort((a, b) => (a.w * a.h < want ? 1000 - a.w * a.h : 0) - (b.w * b.h < want ? 1000 - b.w * b.h : 0) || a.w * a.h - b.w * b.h || (a.w - a.h) - (b.w - b.h));
   const okAt = new Uint8Array(W * H);
   for (let i = 0; i < W * H; i++) okAt[i] = tileOk(s, i % W, Math.floor(i / W)) ? 1 : 0;
@@ -84,8 +86,8 @@ export function planBuild(s: State) {
     const side = Math.abs(f.x + 0.5 - cx) > Math.abs(f.y + 0.5 - cy) ? (f.x < cx ? 'v' : 'o') : (f.y < cy ? 'n' : 's');
     const ox = side === 'v' ? at.x : side === 'o' ? at.x + w + 1 : at.x + 1 + Math.floor(w / 2);
     const oy = side === 'n' ? at.y : side === 's' ? at.y + h + 1 : at.y + 1 + Math.floor(h / 2);
-    const big = w * h >= 8, base = big ? 'Långhuset' : 'Hyddan', same = hs.filter(q => q.namn.startsWith(big ? 'Långhus' : 'Hydda')).length;
-    const hus: Hus = { id: (s.nextBit ??= 1), namn: same ? `${big ? 'Långhus' : 'Hydda'} ${same + 1}` : base, x: at.x, y: at.y, w: w + 2, h: h + 2, t: s.now, by: by.id };
+    const big = w * h >= 8, same = u.fn === 'sovsal' ? hs.filter(q => q.namn.startsWith(big ? 'Långhus' : 'Hydda')).length : hs.filter(q => (q.fn ?? 'sovsal') === u.fn).length;
+    const hus: Hus = { id: (s.nextBit ??= 1), namn: row.namnFor!(s, w, h, same), x: at.x, y: at.y, w: w + 2, h: h + 2, t: s.now, by: by.id, fn: u.fn };
     s.nextBit++;
     const golv = 'tra';
     for (let y = at.y; y < at.y + h + 2; y++) for (let x = at.x; x < at.x + w + 2; x++) {
@@ -94,10 +96,14 @@ export function planBuild(s: State) {
       bitsOf(s).push({ id: s.nextBit++, x, y, k: MATERIAL[m].k, m, b: open ? 1 : 0, mat: 0, c: 1, hus: hus.id });
     }
     hs.push(hus); touch(s);
-    log(s, `${by.name} planerar ${big ? 'ett långhus' : 'en hydda'}${same ? ' till' : ''} med plats för ${w * h} att sova under tak.`, 'world', [by.id]);
+    log(s, planText(by, u.fn, hus, w * h, same), 'world', [by.id]); count(s, 'planerat_' + u.fn);
     return;
   }
   s.byggSok = s.now + 12 * HOUR; // ingen plats nu: försök igen om ett tag
+}
+function planText(by: Person, fn: Fn, h: Hus, n: number, same: number) {
+  if (fn === 'sovsal') return `${by.name} planerar ${n >= 8 ? 'ett långhus' : 'en hydda'}${same ? ' till' : ''} med plats för ${n} att sova under tak.`;
+  return `${by.name} planerar ${h.namn.toLowerCase()}.`;
 }
 
 // ---------- arbete ----------

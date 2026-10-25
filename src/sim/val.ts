@@ -11,7 +11,8 @@ import { areaOf, flintArea, pickSpot, prospectFor } from './minne';
 import { getMap } from './karta';
 import { fetchSpot, haulJob } from './lager';
 import { bedFor, buildJob, siteOf } from './bygg';
-import { beds, bitAt, blocked, freeNear, roomAt, shelterOf } from './byggnad';
+import { bitAt, blocked, freeNear, roomAt, shelterOf } from './byggnad';
+import { bedTile, homeless } from './byggnader';
 import { groundOf, isForest } from './mark';
 import { FALL_TID, axeTask } from './skog';
 import { duty, dygn, habitShare, habitTotal } from './seder';
@@ -161,11 +162,11 @@ function needs(s: State, p: Person, v: Val, a: number, lazy: number, light: bool
   // elden går inte att tända för att tändmaterial saknas: den som fryser men orkar hämtar det i stället för att gå in.
   // Kylan är faran och elden det enda som hjälper mot den (några räcker; de andra går in och väntar)
   if (p.warm < 0.4 + 0.15 * lazy && a >= 14 && tinderNeeded(s)) return set(v, 'samla', 'Fryser, men utan tändmaterial blir det ingen eld');
-  if (p.warm < 0.25 && beds(s).length) return set(v, 'vila', 'Fryser farligt och går in i huset');
+  if (p.warm < 0.25 && bedTile(s, p) !== undefined) return set(v, 'vila', 'Fryser farligt och går in i huset');
   if (!light && a > 68 && rnd(s, 'val', p) < 0.6) return set(v, 'sova', 'Är gammal och sover på natten');
   if (p.toa < 0.25 + 0.1 * lazy) return set(v, 'toa', 'Behöver gå på toa');
   if (p.warm < 0.4 + 0.15 * lazy && lit) return set(v, 'varma', 'Fryser');
-  if (p.warm < 0.4 + 0.15 * lazy && beds(s).length) return set(v, 'vila', 'Fryser och går in i huset');
+  if (p.warm < 0.4 + 0.15 * lazy && bedTile(s, p) !== undefined) return set(v, 'vila', 'Fryser och går in i huset');
   if (p.rest < (light ? 0.15 : 0.12) + 0.2 * lazy) return set(v, 'vila', 'Är trött');
   return false;
 }
@@ -185,9 +186,9 @@ function day(s: State, p: Person, v: Val, a: number, lazy: number) {
   const job = buildJob(s, p), ppl = living(s);
   let build = false;
   if (job) {
-    const homeless = Math.max(0, ppl.length - beds(s).length) / (ppl.length || 1);
+    const utan = homeless(s) / (ppl.length || 1);
     const halvt = !job.repair && !s.hus?.find(h => h.id === job.bit.hus)?.klar; // ett påbörjat hus vill man göra klart, även när det sista är ett hörn
-    const col = ((job.repair ? 1.2 : halvt ? 2 : 0.5) + 2.4 * homeless) * (ai === 3 || ai === 0 ? 1.4 : 1);
+    const col = ((job.repair ? 1.2 : halvt ? 2 : 0.5) + 2.4 * utan) * (ai === 3 || ai === 0 ? 1.4 : 1);
     const like = (4 + p.skill.hantverk + stat(p, 'flit', now) / 3) * (1 + 2 * habitShare(p, ['bygga'], tot));
     const sc = col * like * (0.6 + rnd(s, 'val', p) * 0.8);
     burg = Math.max(burg, col);
@@ -204,7 +205,7 @@ function day(s: State, p: Person, v: Val, a: number, lazy: number) {
     if (rnd(s, 'val', p) < 0.45 + 0.2 * sd.barn) set(v, 'leka', 'Är barn och leker');
     else set(v, best, `Hjälper till. ${what}.`);
   } else if ((works = rnd(s, 'val', p) < (1 - lazy) * (0.88 + 0.12 * u) + lazy * sat * (0.6 + 0.4 * u)) && build && !job!.missing) {
-    building(s, p, v, job!, ppl.length);
+    building(s, p, v, job!);
   } else if (works) {
     set(v, best, what + (lazy < 0.2 ? '. Plikttrogen.' : habitShare(p, [best], tot) > 0.25 ? '. Brukar göra det.' : p.skill[best as Skill] > 10 ? '. Skicklig på det.' : '.'));
     v.dur = (60 + rnd(s, 'val', p) * 120) * MIN * PASS;
@@ -235,7 +236,7 @@ function bestWork(s: State, p: Person, fd: number, wd: number, ai: number, tot: 
 }
 
 // att bygga eller laga en del av ett hus. Saknas material hämtar man det först
-function building(s: State, p: Person, v: Val, job: NonNullable<ReturnType<typeof buildJob>>, pop: number) {
+function building(s: State, p: Person, v: Val, job: NonNullable<ReturnType<typeof buildJob>>) {
   const b = job.bit, hus = s.hus?.find(h => h.id === b.hus)?.namn.toLowerCase() ?? 'huset';
   if (job.fell) { // först fälls träden där huset ska stå
     set(v, 'falla', `Fäller ett träd där ${hus} ska stå.`);
@@ -243,7 +244,7 @@ function building(s: State, p: Person, v: Val, job: NonNullable<ReturnType<typeo
     v.tool = 'yxa';
     return;
   }
-  set(v, 'bygga', job.repair ? `En vägg i ${hus} är sliten och behöver lagas.` : `${b.k === 'golv' ? 'Lägger golv i' : 'Bygger på'} ${hus}. ${beds(s).length < pop ? 'Alla har inte en sovplats under tak.' : ''}`.trim());
+  set(v, 'bygga', job.repair ? `En vägg i ${hus} är sliten och behöver lagas.` : `${b.k === 'golv' ? 'Lägger golv i' : 'Bygger på'} ${hus}. ${homeless(s) > 0 ? 'Alla har inte en sovplats under tak.' : ''}`.trim());
   v.tool = job.repair ? 'laga' : b.k === 'golv' ? 'golv' : 'vagg'; v.ref = b.id;
   v.dur = (60 + rnd(s, 'val', p) * 90) * MIN * PASS;
   const site = siteOf(s, b); v.spot = job.need > 0 ? fetchSpot(s, job.item!) : site; if (job.need > 0) v.site = site;
