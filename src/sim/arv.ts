@@ -4,7 +4,8 @@
 // utan hänsyn till vad arvingarna behöver: redskapen, som inte går att dela, ges ett i taget (det mest värda först) till
 // den som hittills fått minst, och resten (mat, ved, material) delas så att alla får lika mycket i värde. Ett arv är
 // inget man skaffat, så delningen efter byns rikedom (delning.ts) gäller inte. Arvet syns i loggen och krönikan men ger
-// inga känslor. Hur arvet delas blir en sed i steg 1.3.4.
+// inga känslor. Ingen sed styr arvet; längre fram kan religionen ge kyrkan en del (steg 10.1.3) och skattelagar staten
+// en del (steg 9.5.3).
 // Den som flyttar tar med sig så mycket av sitt eget som hen orkar bära, det mest värda för vikten först; resten blir byns.
 import { tingOf } from './agande';
 import { count, isKin, living, log } from './folk';
