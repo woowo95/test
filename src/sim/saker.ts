@@ -51,6 +51,8 @@ const DEF = {
   // en hel fisk som den fångats (DJUR i redskap.ts). Den rensas vid elden till fiskkött (fisk), som är det man äter;
   // bara när inget annat finns äts den som den är
   abborre: { namn: 'Abborre', skaffa: { act: 'fiske' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 6, ruttnar: 2 },
+  // ett redskap som någon har börjat göra men inte gjort klart (paborjat.ts). Det slits och värderas där, inte här
+  paborjat: { namn: 'Påbörjat', stack: 1, mapp: 'Redskap', redskap: true },
 } satisfies Record<string, SakDef>;
 
 export type Sak = keyof typeof DEF;
@@ -58,6 +60,8 @@ export const SAKER: Record<string, SakDef | undefined> = DEF;
 export const SAK_LIST = Object.keys(DEF) as Sak[];
 export const sak = (k: string) => SAKER[k];
 export const sakNamn = (k: string) => SAKER[k]?.namn ?? k;
+// namnet på ett ting: ett påbörjat redskap (paborjat.ts) heter som det ska bli
+export const tingNamn = (t: { k: string; halv?: { gor: string } }) => t.halv ? `${sakNamn(t.halv.gor)} (inte klar)` : sakNamn(t.k);
 
 export const STACK: Record<string, number> = Object.fromEntries(SAK_LIST.filter(k => SAKER[k]!.stack).map(k => [k, SAKER[k]!.stack!]));
 export const STACK_ORDER = Object.keys(STACK);

@@ -11,8 +11,8 @@ import { tingOf } from './agande';
 import { count, isKin, living, log } from './folk';
 import { kronika } from './historik';
 import { capacity, carryOff, ownedAll, passOn } from './lager';
-import { STACK, sakNamn } from './saker';
-import { grundvarde } from './varde';
+import { STACK, sakNamn, tingNamn } from './saker';
+import { grundvarde, tingVarde } from './varde';
 import { Person, State } from './typer';
 
 const vardeOf = grundvarde;
@@ -34,11 +34,11 @@ export function inherit(s: State, p: Person) {
   const heirs = heirsOf(s, p);
   if (!heirs.length) return;
   const val = heirs.map(() => 0), fick: string[][] = heirs.map(() => []);
-  const tools = tingOf(s).filter(t => t.agare === p.id).sort((a, b) => vardeOf(b.k) * b.c - vardeOf(a.k) * a.c || a.id - b.id);
+  const tools = tingOf(s).filter(t => t.agare === p.id).sort((a, b) => tingVarde(b) - tingVarde(a) || a.id - b.id);
   for (const t of tools) {
     const i = val.indexOf(Math.min(...val));
-    t.agare = heirs[i].id; val[i] += vardeOf(t.k) * t.c;
-    fick[i].push(sakNamn(t.k).toLowerCase());
+    t.agare = heirs[i].id; val[i] += tingVarde(t);
+    fick[i].push(tingNamn(t).toLowerCase());
   }
   const eget = ownedAll(s, p.id);
   let rest = 0;
@@ -65,7 +65,7 @@ export function packUp(s: State, p: Person) {
   let kvar = capacity(s, p);
   const eget = ownedAll(s, p.id);
   const saker = [
-    ...tingOf(s).filter(t => t.agare === p.id).map(t => ({ k: t.k, ting: t.id, n: 1, per: vardeOf(t.k) * t.c, bord: 1 })),
+    ...tingOf(s).filter(t => t.agare === p.id).map(t => ({ k: t.k, ting: t.id, n: 1, per: tingVarde(t), bord: 1 })),
     ...Object.keys(eget).map(k => ({ k, ting: undefined, n: eget[k], per: vardeOf(k) * (STACK[k] ?? 25), bord: 1 / (STACK[k] ?? 25) })),
   ].sort((a, b) => b.per - a.per || a.k.localeCompare(b.k));
   for (const x of saker) {

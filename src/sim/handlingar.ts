@@ -19,13 +19,13 @@ export interface RedskapDef {
   haller?: number; // hur länge redskapet håller: så många enheter av arbetet (slits, och för fiske försök)
 }
 // slagen av arbete: symbolen över huvudet visar vad man håller på med, aldrig samma symbol som en sak eller ett redskap
-// (ikoner.ts har dem som 'a_' + slaget; vila ritas som z som stiger)
+// (ikoner.ts har dem som 'a_' + slaget; vila ritas som z som stiger). Samtal har ingen: det syns som pratbubblor
 export const SLAG = {
   samla: 'Samlar', jaga: 'Jagar', fiska: 'Fiskar', tra: 'Hämtar trä', bygga: 'Bygger', hantverk: 'Gör hantverk',
   bara: 'Bär', elda: 'Sköter elden', vila: 'Vilar', prata: 'Pratar', leka: 'Leker',
 } as const;
 export type Slag = keyof typeof SLAG;
-export const slagIkon = (k: Slag) => k === 'vila' ? 'zzz' : 'a_' + k;
+export const slagIkon = (k: Slag) => k === 'vila' ? 'zzz' : k === 'prata' ? undefined : 'a_' + k;
 
 export interface ActDef {
   namn: string; // det som står att personen gör

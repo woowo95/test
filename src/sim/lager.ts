@@ -20,7 +20,7 @@ import { FOOD, RUTA, SAKER, SAK_LIST, STACK, STACK_ORDER, isFood, isTool, sakNam
 // hus = lagerplatsen är golvet i ett förrådshus (byggnader.ts): den växer och krymper inte och räknas inte bland de vanliga
 export interface Zone { x: number; y: number; w: number; h: number; namn?: string; slag?: 'mat' | 'material'; prio?: number; hus?: number }
 // dold: det som ligger gömt i stacken (giftig svamp bland svampen, saker.ts: i)
-export interface Stack { k: string; n: number; c: number; x: number; y: number; ag?: Del; dold?: number }
+export interface Stack { k: string; n: number; c: number; x: number; y: number; ag?: Del; dold?: number; gor?: string } // gor = vad ett påbörjat redskap ska bli (paborjat.ts)
 // en stack som den visas: out = utanför lagerplatserna, stored = hör till byns förråd (i lagret eller precis bredvid)
 export interface Pile extends Stack { max: number; out: boolean; stored: boolean; zone: number }
 const MAX_W = 6, MAX_H = 5, MAX_ZONES = 4;
@@ -197,7 +197,7 @@ const key = (x: number, y: number) => y * W + x;
 const occupancy = (s: State) => { const m = new Map<number, Stack>(); for (const a of things(s)) if (isStored(s, a.x, a.y)) m.set(key(a.x, a.y), a); return m; };
 // redskapen som ligger på en ruta (inte i någons hand eller börda)
 const lying = (s: State) => tingOf(s).filter(t => t.x !== undefined && t.hos === undefined && t.lass === undefined);
-const asStack = (t: Ting): Stack => ({ k: t.k, n: t.c, c: t.c, x: t.x!, y: t.y!, ag: t.agare !== BYN ? { [t.agare]: t.c } : undefined });
+const asStack = (t: Ting): Stack => ({ k: t.k, n: t.c, c: t.c, x: t.x!, y: t.y!, ag: t.agare !== BYN ? { [t.agare]: t.c } : undefined, gor: t.halv?.gor });
 // allt som ligger på marken och i förrådet: stackarna och redskapen
 const things = (s: State): Stack[] => [...stacksOf(s), ...lying(s).map(asStack)];
 // redskap som ingen har och som inte har någon ruta (nygjorda, tillbakalagda) läggs i förrådet, ett på varje ruta

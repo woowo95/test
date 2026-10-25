@@ -1,3 +1,4 @@
+import { iconImg } from '../ikoner';
 import { HOUR, LogEntry, Person, byId, capacity, carryKind, load, sak, sakNamn, timeLabel } from '../sim';
 import { s } from './lage';
 
@@ -48,6 +49,8 @@ export function relWord(p: Person, q: Person, op: number) {
 }
 export const sickNow = (p: Person) => !!p.sickUntil && p.sickUntil > s.now;
 // vad en person bär och hur mycket hen orkar
+// en stack i en lista: symbolen och namnet. Ett påbörjat redskap har det det ska bli med timglaset bredvid
+export const pileTxt = (p: { k: string; n: number; max: number; gor?: string }) => p.gor ? `${iconImg(p.gor)}${iconImg('paborjat', 10)}${sakNamn(p.gor)} (inte klar)` : `${iconImg(p.k)}${sakNamn(p.k)}${p.max === 1 ? '' : ` ${fmtN(p.n)} st`}`;
 export function carryTxt(p: Person) {
   const t = p.task, cap = capacity(s, p), parts: string[] = [];
   if (t && t.carry > 0.05) parts.push(`${fmtN(t.carry)} ${sakNamn(carryKind(t.act)).toLowerCase()}`);

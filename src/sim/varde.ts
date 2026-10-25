@@ -12,7 +12,7 @@ import { ACTS, SNABBARE } from './handlingar';
 import { SAKER, SAK_LIST } from './saker';
 import { TEK } from './teknik';
 import { wornOf } from './lager';
-import { tingOf } from './agande';
+import { Ting, tingOf } from './agande';
 import { MATERIAL, bitsOf } from './byggnad';
 import { State } from './typer';
 
@@ -78,10 +78,12 @@ export function grundvarde(k: string): number {
 
 // ---------- byns rikedom ----------
 export interface Rikedom { forrad: number; redskap: number; hus: number }
+// vad ett ting är värt: ett påbörjat redskap (paborjat.ts) är värt sitt material, ett redskap grundvärdet gånger skicket
+export const tingVarde = (t: Ting) => t.halv ? Object.entries(t.halv.av).reduce((a, [k, n]) => a + n * grundvarde(k), 0) : grundvarde(t.k) * t.c;
 export function rikedomDelar(s: State): Rikedom {
   let forrad = 0, redskap = 0, hus = 0;
   for (const k of SAK_LIST) if (!SAKER[k]!.redskap) forrad += wornOf(s, k) * grundvarde(k);
-  for (const t of tingOf(s)) redskap += t.c * grundvarde(t.k);
+  for (const t of tingOf(s)) redskap += tingVarde(t);
   // husen: materialet som lagts i väggar och golv och arbetet med dem, gånger skicket
   for (const b of bitsOf(s)) {
     const M = MATERIAL[b.m];

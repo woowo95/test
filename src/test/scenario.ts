@@ -2,7 +2,7 @@
 // npm run scenario            kör alla
 // npm run scenario -- glanta  kör bara ett
 import { isDeepStrictEqual } from 'node:util';
-import { Person, Act, createState, clean, canClean, ownedBy, tidyTools, addTool, toolsOf, heldBy, take, usesTool, wearTool, freeSpear, getRel, isTool, BYN, twineRope, makeRod, wearUsed, isSpear, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, serializeParts, joinParts, serialize, ageStart, nyKalender, kalender, yearNo, AGES, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, zonesOf, allows, ageOf, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, fuelStock, DAY, HOUR, W, State, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, campCenter, TEKNIK, knows, thinkWhileWorking, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, beds, isWall, Bit, wearBuild, FYND, FYND_IDS, GRUPPER, angOf, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, LAGER_R, observe, hoped, Lager, skyggOf, SKYGG_R, SKYGG_IN, grupperOf, GRUPPER_MAX, STORLEK, share, treeOn, djurOf, KANIN, SLAKT, DJUR, JAKT_F, canSlaughter, makeKnife, slaughter, askForTool, askForGift, gain, takeFood, takeFuel, ownsAmount, ownedStock, ownedSum, sumOf, addTo, setAmount, setStock, foodOf, isFood, STACK_ORDER, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, STOLD_LINDRIG, STOLD_OP, rnd, STROMMAR, Strom, BEAT, spar, isWork, SPARVERSION, stepDelning, rikedom, rikedomDelar, grundvarde, nivaOf, DELA_RIK, packUp, releaseOwner, willing, tingOf, komOf, BYGGNADER, FN, mostUrgent, fnOf, planBuild, workOn, wearMult, INDOOR_WEAR, homeless, sleepBeds, inZone } from '../sim';
+import { Person, Act, createState, clean, canClean, ownedBy, tidyTools, addTool, toolsOf, heldBy, take, usesTool, wearTool, freeSpear, getRel, isTool, BYN, twineRope, makeRod, wearUsed, isSpear, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, serializeParts, joinParts, serialize, ageStart, nyKalender, kalender, yearNo, AGES, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, zonesOf, allows, ageOf, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, fuelStock, DAY, HOUR, W, State, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, campCenter, TEKNIK, knows, thinkWhileWorking, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, beds, isWall, Bit, wearBuild, FYND, FYND_IDS, GRUPPER, angOf, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, LAGER_R, observe, hoped, Lager, skyggOf, SKYGG_R, SKYGG_IN, grupperOf, GRUPPER_MAX, STORLEK, share, treeOn, djurOf, KANIN, SLAKT, DJUR, JAKT_F, canSlaughter, makeKnife, slaughter, askForTool, askForGift, gain, takeFood, takeFuel, ownsAmount, ownedStock, ownedSum, sumOf, addTo, setAmount, setStock, foodOf, isFood, STACK_ORDER, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, STOLD_LINDRIG, STOLD_OP, rnd, STROMMAR, Strom, BEAT, spar, isWork, SPARVERSION, stepDelning, rikedom, rikedomDelar, grundvarde, nivaOf, DELA_RIK, packUp, releaseOwner, willing, tingOf, komOf, BYGGNADER, FN, mostUrgent, fnOf, planBuild, workOn, wearMult, INDOOR_WEAR, homeless, sleepBeds, inZone, startWork, workHalf, finishHalf, stepPaborjat, halvOf, tingVarde, HALV_TID, fallTid, treeSpot, SEC, Task } from '../sim';
 // förrådet i proven: stackarna är det enda som sparas (steg 1.1.2), så proven ställer in förrådet genom lagret
 const setItems = (s: State, m: Record<string, number>) => {
   for (const k of STACK_ORDER) if (!isFood(k) && k !== 'ved' && !isTool(k)) setAmount(s, k, m[k] ?? 0);
@@ -988,6 +988,73 @@ SCENARIER.forradshus = {
       ['förrådshusets golv blir byns viktigaste lagerplats, under tak', h?.fn === 'forrad' && inne],
       ['ingen sover i förrådshuset', sover],
       [`i en vanlig by byggs ett förrådshus (dygn ${byggt ? ((byggt - START) / DAY).toFixed(0) : '–'}, lika många år i spelet) och maten bärs in (${iHuset} stackar)`, byggt > 0 && iHuset > 0],
+    ];
+  },
+  lang: true,
+};
+
+SCENARIER.paborjat = {
+  text: 'Ett redskap som inte blir klart blir en sak: materialet tas när arbetet börjar, bara den som började arbetar vidare, det ägs och ärvs och är värt sitt material, och utan arbete slits det och blir sitt material igen. Ett träd som någon börjat fälla står kvar halvfällt',
+  kor: () => {
+    const s = createState(6, START);
+    s.now = new Date(s.now).setHours(10, 0, 0, 0);
+    setItems(s, { flinta: 4, grenar: 6 });
+    const [p, q] = living(s).filter(r => ageOf(r, s.now) >= 18);
+    for (const r of living(s)) r.tek = { ...r.tek, yxa: 1 };
+    const uppgift = (r: Person, act: Act): Task => (r.task = { act, phase: 'do', tx: r.x, ty: r.y, until: s.now, carry: 0 });
+    // p börjar på en yxa: materialet tas, och arbetet räknas från att hen kom fram
+    const t1 = uppgift(p, 'yxa'); startWork(s, p, t1);
+    const h = halvOf(s, p, ['yxa']), lang = t1.until - s.now, MIN = 60 * SEC, nara = (a: number, b: number) => Math.abs(a - b) < 1e-6;
+    const tagit = !!h && nara(amountOf(s, 'flinta'), 3) && nara(amountOf(s, 'grenar'), 5) && lang === 60 * MIN;
+    workHalf(s, p, t1, 600); p.task = undefined; // tio minuter, sedan avbryts arbetet
+    for (let i = 0; i < 10; i++) stepPaborjat(s); // tio timmar utan arbete
+    const slits = !!h && Math.abs(h.c - (1 - 10 * 3600 * SEC / HALV_TID)) < 1e-9 && h.halv!.kvar === 50 * MIN;
+    // bara den som började arbetar vidare: q börjar på en egen
+    const t2 = uppgift(q, 'yxa'); startWork(s, q, t2);
+    const egen = t2.ref !== h?.id && nara(amountOf(s, 'flinta'), 2); q.task = undefined;
+    const t3 = uppgift(p, 'yxa'); startWork(s, p, t3);
+    const vidare = t3.ref === h?.id && t3.until - s.now === 50 * MIN && nara(amountOf(s, 'flinta'), 2);
+    // värt sitt material, och går i arv
+    const varde = !!h && Math.abs(tingVarde(h) - (grundvarde('flinta') + grundvarde('grenar'))) < 1e-9;
+    workHalf(s, p, t3, 50 * 60); s.now = t3.until; finishHalf(s, p, t3); p.task = undefined;
+    const klar = !halvOf(s, p, ['yxa']) && toolsOf(s, 'yxa').some(t => t.agare === p.id);
+    // q:s yxa blir inte klar: den slits ut och blir flinta och grenar igen hos q, eller hos den som ärvt den
+    const hq = halvOf(s, q, ['yxa'])!, fore = ownsAmount(s, q, 'flinta');
+    for (let i = 0; i < 49; i++) stepPaborjat(s);
+    const upplost = !tingOf(s).some(t => t === hq) && Math.abs(ownsAmount(s, q, 'flinta') - fore - 1) < 1e-9 && (s.stat?.upplost ?? 0) === 1;
+    const t4 = uppgift(q, 'yxa'); startWork(s, q, t4); q.task = undefined;
+    const arving = living(s).find(r => r !== q && r.id === q.partner) ?? living(s).find(r => r !== q && r !== p)!;
+    q.partner = arving.id; arving.partner = q.id;
+    die(s, q, 'test');
+    const arv = tingOf(s).find(t => t.id === t4.ref)?.agare === arving.id;
+    // ett träd: den som börjar fälla det lämnar det halvfällt, och nästa fäller det färdigt
+    addTool(s, 'yxa', p);
+    const g = groundOf(s), c = campCenter(s);
+    let ti = -1;
+    for (let d = 1; d < 30 && ti < 0; d++) for (let y = c.y - d; y <= c.y + d && ti < 0; y++) for (let x = c.x - d; x <= c.x + d; x++) if (g.trees[y * W + x] >= 0.95) { ti = y * W + x; break; }
+    const ft = uppgift(p, 'falla'); ft.tx = (ti % W) + 0.5; ft.ty = Math.floor(ti / W) + 0.5; startWork(s, p, ft);
+    const heltid = ft.until - s.now === fallTid(s, ti);
+    workHalf(s, p, ft, 600); p.task = undefined;
+    const sp = treeSpot(s, new Set());
+    const valjs = !!sp && Math.floor(sp.y) * W + Math.floor(sp.x) === ti;
+    const r = living(s).find(x => x !== p)!, rt = uppgift(r, 'falla'); rt.tx = ft.tx; rt.ty = ft.ty; startWork(s, r, rt);
+    const kvar = rt.until - s.now === fallTid(s, ti) - 600 * SEC;
+    // i en vanlig by avbryts arbete och tas upp igen
+    const v = createState(1, START);
+    kor(v, 30 * 24);
+    const st = v.stat ?? {};
+    return [
+      ['materialet tas när arbetet börjar, och tiden räknas därifrån', tagit],
+      ['det påbörjade slits medan ingen arbetar med det, och arbetet som gjorts finns kvar', slits],
+      ['någon annan börjar på ett eget i stället för att ta över', egen],
+      ['den som började arbetar vidare där hen slutade, utan att ta nytt material', vidare],
+      ['det påbörjade är värt sitt material', varde],
+      ['när arbetet är klart blir det ett redskap', klar],
+      ['ett utslitet påbörjat redskap blir sitt material igen hos ägaren', upplost],
+      ['det påbörjade går i arv', arv],
+      ['ett halvfällt träd står kvar och väljs först', heltid && valjs],
+      ['den som fäller det färdigt gör bara det som är kvar', kvar],
+      [`i en vanlig by tas avbrutet arbete upp igen (${st.fortsatt ?? 0} gånger på 30 dygn, 30 år i spelet; ${st.upplost ?? 0} upplösta)`, (st.fortsatt ?? 0) > 0],
     ];
   },
   lang: true,

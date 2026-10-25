@@ -2,7 +2,8 @@ import { tidyTools } from './agande';
 import { rotStumps } from './skog';
 import { VED, needLadder, noticeTheft, stole, takeMaterial } from './behov';
 import { capacity, dropSpot, fetchSpot, homeKind, load, pickUp, storeLoad, tidyStore, wearStore } from './lager';
-import { KANIN, MASK_PER_GRAV, clean, makeBasket, makeKnife, makeRod, makeSpear, slaughter, twineRope, wearUsed } from './redskap';
+import { KANIN, MASK_PER_GRAV, clean, slaughter, twineRope, wearUsed } from './redskap';
+import { GOR_ACTS, finishHalf, startWork, stepPaborjat, workHalf } from './paborjat';
 import { thinkWhileWorking } from './teknik';
 import { foodDays, workRate } from './ekonomi';
 import { TRY_SEC, growFynd, handFish, packFynd, pickMushrooms, richness, takeFrom } from './fynd';
@@ -17,7 +18,7 @@ import { HABIT_FADE, sedEvent, stepSeder, updateTags } from './seder';
 import { fearPlace, forget, lookAround } from './minne';
 import { chance, clamp, rnd } from './slump';
 import { ageIndex, isLight } from './tid';
-import { chopStock, fellTree, makeAxe, stocks } from './skog';
+import { chopStock, fellTree, stocks } from './skog';
 import { ACTS, toolRow } from './handlingar';
 import { Act, DAY, HOUR, Person, SEC, SKILL_NAMES, State, Task, W, H, useMap, Historik } from './typer';
 import { findPath, speedAt, wear } from './vag';
@@ -62,15 +63,13 @@ const KLAR: Partial<Record<Act, Krok>> = {
     const k = fellTree(s, p, t.tx, t.ty);
     if (k) { k.ved -= toWalls(s, Math.floor(k.x), Math.floor(k.y), k.ved, t.ref, p); if (k.ved <= 1e-6) s.stockar = stocks(s).filter(q => q !== k); }
   },
-  yxa: (s, p) => makeAxe(s, p),
-  spjut: (s, p) => makeSpear(s, p),
-  metspo: (s, p) => makeRod(s, p),
-  kniv: (s, p) => makeKnife(s, p),
-  korg: (s, p) => makeBasket(s, p),
   promenad: (s, p, t) => { lookAround(s, p, t.tx, t.ty); think(p, 'Tog en skön promenad', 0.06, s.now, 6 * HOUR); },
   bada: (s, p) => { p.warm = Math.max(0.4, p.warm - 0.1); think(p, 'Badade i sjön', 0.08, s.now, 6 * HOUR); },
   strand: (s, p) => { p.rest = Math.min(1, p.rest + 0.05); think(p, 'Satt vid vattnet och fick ro', 0.06, s.now, 6 * HOUR); },
 };
+// redskap som görs och träd som fälls: arbetet sparas om det avbryts (paborjat.ts)
+for (const a of GOR_ACTS) { MEDAN[a] = workHalf; KLAR[a] = (s, p, t) => finishHalf(s, p, t); }
+MEDAN.falla = workHalf;
 
 // ---------- huvudsteg ----------
 // ett slag om dtSec sekunder (BEAT i spelet och ikappräkningen; testerna kan ta andra). events = samtalen, för att visa dem
@@ -96,7 +95,7 @@ export function step(s: State, dtSec: number, events?: TalkEvent[]) {
   if (Math.floor(now / HOUR) !== Math.floor((now - dtSec * SEC) / HOUR)) {
     stepSeder(s); updateTags(s); stepDelning(s);
     growGround(s, 1, ai); growFynd(s, 1, ai); forget(s, 1); rotStumps(s); tidyStore(s);
-    wearBuild(s, 1, ai); stepByggnader(s); planBuild(s);
+    wearBuild(s, 1, ai); stepByggnader(s); planBuild(s); stepPaborjat(s);
     historikSteg(s); // nyckeltalen till byns historik (läses inte av simuleringen)
   }
 
@@ -315,6 +314,7 @@ function arrive(s: State, p: Person, tk: Task, light: boolean) {
     else p.task = undefined;
   } else {
     tk.phase = 'do'; if (tk.act === 'bara') { pickUp(s, p, tk); tk.until = now; }
+    startWork(s, p, tk); // ett redskap eller ett träd: arbetet räknas härifrån, och det påbörjade fortsätter
     const tur = ACTS[tk.act].tur;
     tk.tur = 0; tk.lim = tur ? tur * (toolRow(tk)?.tur ?? 1) : undefined;
   }

@@ -13,8 +13,9 @@ import { fetchSpot, haulJob } from './lager';
 import { bedFor, buildJob, siteOf } from './bygg';
 import { bitAt, blocked, freeNear, roomAt, shelterOf } from './byggnad';
 import { bedTile, homeless } from './byggnader';
-import { groundOf, isForest } from './mark';
-import { FALL_TID, axeTask } from './skog';
+import { isForest } from './mark';
+import { axeTask, fallTid } from './skog';
+import { GA_TID, startsOnArrival } from './paborjat';
 import { duty, dygn, habitShare, habitTotal } from './seder';
 import { clamp, rnd } from './slump';
 import { ageIndex, isLight } from './tid';
@@ -145,7 +146,7 @@ export function chooseTask(s: State, p: Person) {
   if (!needs(s, p, v, a, lazy, light)) { if (light) day(s, p, v, a, lazy); else night(s, p, v, a); }
   if (v.act === 'toa') v.dur = (4 + rnd(s, 'val', p) * 4) * MIN;
   const sp0 = v.spot ?? spotFor(s, v.act, p), sp = freeNear(s, sp0.x, sp0.y); // aldrig i en husvägg
-  p.task = { act: v.act, phase: 'go', tx: sp.x, ty: sp.y, until: s.now + v.dur, carry: 0, why: v.why, dark: !light, ref: v.ref, tool: v.tool, site: v.site };
+  p.task = { act: v.act, phase: 'go', tx: sp.x, ty: sp.y, until: s.now + v.dur + (startsOnArrival(v.act) ? GA_TID : 0), carry: 0, why: v.why, dark: !light, ref: v.ref, tool: v.tool, site: v.site };
   const k = usesTool(p.task);
   if (k && !take(s, p, k)) p.task.tool = undefined; // redskapet tas i handen: det egna först (agande.ts)
 }
@@ -240,7 +241,7 @@ function building(s: State, p: Person, v: Val, job: NonNullable<ReturnType<typeo
   const b = job.bit, hus = s.hus?.find(h => h.id === b.hus)?.namn.toLowerCase() ?? 'huset';
   if (job.fell) { // först fälls träden där huset ska stå
     set(v, 'falla', `Fäller ett träd där ${hus} ska stå.`);
-    v.dur = FALL_TID * Math.max(0.5, groundOf(s).trees[b.y * W + b.x]); v.spot = { x: b.x + 0.5, y: b.y + 0.5 }; // ett litet träd fälls fortare
+    v.dur = fallTid(s, b.y * W + b.x); v.spot = { x: b.x + 0.5, y: b.y + 0.5 }; // ett litet träd fälls fortare
     v.tool = 'yxa';
     return;
   }

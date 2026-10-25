@@ -17,10 +17,14 @@ import { lends } from './behov';
 // i någons hand (hos), i någons börda (lass, när det bärs mellan lagerplatser) eller ligger på en ruta (x, y). Det som
 // ännu inte har någon ruta (nygjort, tillbakalagt) får en plats i förrådet av lager.ts.
 import { BYN } from './egendom';
-export interface Ting { id: number; k: string; c: number; agare: number; hos?: number; lass?: number; x?: number; y?: number }
+// halv = ett påbörjat redskap (paborjat.ts): vad det ska bli, materialet som tagits till det, hur länge arbetet har kvar och vem som började
+export interface Halv { gor: string; av: Record<string, number>; kvar: number; ag: number }
+export interface Ting { id: number; k: string; c: number; agare: number; hos?: number; lass?: number; x?: number; y?: number; halv?: Halv }
 export const tingOf = (s: State) => (s.ting ??= []);
 export const toolsOf = (s: State, k: string) => tingOf(s).filter(t => t.k === k);
 export const nTools = (s: State, k: string) => tingOf(s).reduce((n, t) => n + (t.k === k ? 1 : 0), 0);
+// det redskap av slagen ks som p har påbörjat (paborjat.ts)
+export const halvOf = (s: State, p: Person, ks: readonly string[]) => tingOf(s).find(t => t.halv?.ag === p.id && ks.includes(t.halv.gor));
 export const heldBy = (s: State, p: Person) => tingOf(s).find(t => t.hos === p.id);
 const KINDS = () => Object.keys(SAKER).filter(isTool);
 

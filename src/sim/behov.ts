@@ -219,6 +219,12 @@ const aldrigStjal = (s: State, p: Person) => stat(p, 'empati', s.now) >= STJAL_A
 export const getable = (s: State, p: Person, k: string) => aldrigStjal(s, p) ? mayTake(s, p, k) : amountOf(s, k);
 // p tar n av slaget k till ett arbete; common = till byns eld eller hus (byns först). Ger vems det var. kom = var det
 // kom ifrån, nycklar som `kom` i bygg.ts skriver dem (eget, byn, familj, gava, stold)
+// materialet till ett redskap efter receptet (saker.ts: skaffa.av), till ens eget arbete: hur mycket av varje som togs
+export function takeRecipe(s: State, p: Person, k: string) {
+  const av: Record<string, number> = {};
+  for (const [m, n] of Object.entries(SAKER[k]?.skaffa?.av ?? {})) av[m] = Object.values(takeMaterial(s, p, m, n)).reduce((a, b) => a + b, 0);
+  return av;
+}
 export function takeMaterial(s: State, p: Person, k: string, n: number, common = false, kom?: Record<string, number>): Del {
   const ag: Del = {};
   if (n <= 1e-12) return ag;

@@ -34,6 +34,7 @@ const PAL: Record<string, Record<string, string>> = {
   tragolv: { b: '#a07446', B: '#c09060', d: '#5a3c22' },
   bygga: { b: '#8a6a40', B: '#b08a58', d: '#3a2a1a', y: '#d8c070' },
   handarbete: { y: '#c8b07a', Y: '#e8d4a0', d: '#8a7448', w: '#f2ece0' },
+  paborjat: { w: '#f2ece0', d: '#4a3a28', y: '#e0b050' },
   a_samla: AKT,
   a_jaga: AKT,
   a_fiska: AKT,
@@ -42,7 +43,6 @@ const PAL: Record<string, Record<string, string>> = {
   a_hantverk: AKT,
   a_bara: AKT,
   a_elda: AKT,
-  a_prata: AKT,
   a_leka: AKT,
 };
 
@@ -363,6 +363,17 @@ const PIX: Record<string, string[]> = {
     '.yddy...',
     '..yy....',
   ],
+  // inte klart (paborjat.ts): ett timglas, som ritas ovanpå det som ska bli
+  paborjat: [
+    'wwwwwwww',
+    '.dyyyyd.',
+    '..dyyd..',
+    '...dd...',
+    '...dd...',
+    '..dy.d..',
+    '.dyyyyd.',
+    'wwwwwwww',
+  ],
   // slagen av arbete (SLAG i handlingar.ts): enfärgade bilder över huvudet, olika alla sakers symboler
   // en hand som plockar
   a_samla: [
@@ -450,17 +461,6 @@ const PIX: Record<string, string[]> = {
     '.ww.www.',
     '.w...ww.',
     '..www...',
-    '........',
-  ],
-  // en pratbubbla
-  a_prata: [
-    '.wwwww..',
-    'w.....w.',
-    'w.w.w.w.',
-    'w.....w.',
-    '.wwwww..',
-    '..w.....',
-    '.w......',
     '........',
   ],
   // en boll

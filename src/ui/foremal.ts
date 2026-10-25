@@ -14,6 +14,7 @@ function drawPile(pl: Pile) {
   // liten stapel för skicket längst ner i rutan
   g.beginFill(0x161210, 0.7).drawRect(x0 + 2, y0 + 13.5, 12, 2).endFill().beginFill(condCol(c)).drawRect(x0 + 2, y0 + 13.5, 12 * Math.max(0, Math.min(1, c)), 2).endFill();
   // ikoner: ju fullare stacken är desto fler, redskap som en större bild
+  if (pl.gor) { pileIcons.add(pl.gor, x0 + 2, y0, 1.5); pileIcons.add('paborjat', x0 + 9, y0 - 1, 0.8); return; } // påbörjat: timglaset ovanpå
   if (pl.max === 1) { pileIcons.add(pl.k, x0 + 2, y0, 1.5); return; }
   const n = Math.max(1, Math.min(4, Math.ceil(f * 4)));
   for (const [dx, dy] of PILE_LAYOUT[n - 1]) pileIcons.add(pl.k, x0 + dx, y0 + dy, 1);
