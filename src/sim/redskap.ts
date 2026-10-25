@@ -114,15 +114,18 @@ export function makeBasket(s: State, p: Person) {
 // En flintkniv är en vass flintskärva med ett skaft. Utan kniv äter byn direkt av det fällda djuret. Med kniv slaktas det
 // vid elden till mer kött, ett ben och ett skinn. Ett djur med senor ger dessutom ibland ett rep, men bara om den som
 // slaktar kan tekniken Rep (fisk har inga senor). Kött, ben och skinn är samma vilket djur det än kommer från.
-// Kniven kräver en flinta utöver den som sparas att tända eld med.
-// DJUR: vad varje art är värd, uppäten hel och slaktad. En ny art blir en rad här.
-export interface Djurart { mat: number; slakt: { kott: number; ben: number; skinn: number }; rep: number }
-export const DJUR: Record<'kanin', Djurart> = {
-  kanin: { mat: 1.6, slakt: { kott: 2.1, ben: 1, skinn: 1 }, rep: 0.15 }, // rep: chansen per kanin att senorna blir ett rep
-};
+// Kniven kräver en flinta utöver den som sparas att tända eld med. Fisken rensas med händerna vid elden till fiskkött.
+// DJUR: varje art som fångas. sak = saken den ligger i förrådet som, mat = hur mycket av saken ett djur är (uppätet som
+// det är), slakt = det ett djur ger slaktat eller rensat, rep = chansen per djur att senorna blir ett rep, kniv = slaktas
+// bara med kniv, timme = djur per timme. En ny art blir en rad här (fler fiskar: steg 7.4.3).
+export interface Djurart { sak: string; mat: number; slakt: Record<string, number>; rep: number; kniv?: true; timme: number }
+export const DJUR = {
+  kanin: { sak: 'vilt', mat: 1.6, slakt: { kott: 2.1, ben: 1, skinn: 1 }, rep: 0.15, kniv: true, timme: 3 },
+  abborre: { sak: 'abborre', mat: 1, slakt: { fisk: 1 }, rep: 0, timme: 30 },
+} satisfies Record<string, Djurart>;
 export const KANIN = DJUR.kanin.mat; // så mycket mat en kanin är, uppäten som den är (en stack fällt vilt)
 export const SLAKT = DJUR.kanin.slakt; // det en kanin ger slaktad
-export const SLAKT_TIMME = 3; // kaniner per timme
+export const SLAKT_TIMME = DJUR.kanin.timme; // kaniner per timme
 export const knives = (s: State) => nTools(s, 'kniv');
 export const vilt = (s: State) => amountOf(s, 'vilt');
 export const wantsKnife = (s: State, p: Person) => knows(p, 'kniv') && knives(s) < 1 && getable(s, p, 'flinta') >= 2 && getable(s, p, 'grenar') >= 1 && !living(s).some(q => q !== p && q.task?.act === 'kniv');
@@ -139,8 +142,7 @@ export function slaughter(s: State, p: Person, hours: number) {
   const n = Math.min(hours * SLAKT_TIMME, vilt(s) / KANIN); // kaniner
   if (n <= 0 || knives(s) < 1) { if (p.task) p.task.until = s.now; return; }
   // köttet, benet, skinnet och senorna är deras som ägde viltet, inte slaktarens
-  const vems = use(s, p, 'vilt', n * KANIN), art = DJUR.kanin;
-  for (const k of ['kott', 'ben', 'skinn'] as const) put(s, k, n * SLAKT[k], addDel({}, vems, SLAKT[k] / KANIN));
+  const art: Djurart = DJUR.kanin, vems = stycka(s, p, art, n);
   // senorna blir med liten chans ett helt rep, som tillhör den som ägde mest av viltet
   if (art.rep > 0 && knows(p, 'rep') && item(s, 'rep') < REP_VILL && rnd(s, 'arbete', p) < n * art.rep) {
     const agare = Object.keys(vems).sort((a, b) => vems[b] - vems[a])[0];
@@ -151,6 +153,24 @@ export function slaughter(s: State, p: Person, hours: number) {
   const first = !(s.stat?.slaktat);
   count(s, 'slaktat', n);
   if (first) log(s, `${p.name} slaktade byns första vilt med en flintkniv. Det gav mer kött, ett ben och ett skinn.`, 'world', [p.id]);
+}
+
+// det som fångats delas upp: köttet och resten är deras som ägde fångsten, inte den som slaktar eller rensar
+function stycka(s: State, p: Person, art: Djurart, n: number) {
+  const vems = use(s, p, art.sak, n * art.mat);
+  for (const [k, m] of Object.entries(art.slakt)) put(s, k, n * m, addDel({}, vems, m / art.mat));
+  return vems;
+}
+// fisken rensas vid elden av den som är där, med händerna; en i taget rensar
+export const abborrar = (s: State) => amountOf(s, DJUR.abborre.sak);
+export const canClean = (s: State, p: Person) => abborrar(s) >= 1 && !living(s).some(q => q !== p && q.task?.act === 'rensa');
+export function clean(s: State, p: Person, hours: number) {
+  const art: Djurart = DJUR.abborre, n = Math.min(hours * art.timme, abborrar(s) / art.mat);
+  if (n <= 0) { if (p.task) p.task.until = s.now; return; }
+  stycka(s, p, art, n);
+  const first = !(s.stat?.rensat);
+  count(s, 'rensat', n);
+  if (first) log(s, `${p.name} rensade byns första abborre vid elden. Den blev fiskkött.`, 'world', [p.id]);
 }
 
 // ---------- att göra ett redskap som saknas ----------

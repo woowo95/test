@@ -2,7 +2,7 @@ import { tidyTools } from './agande';
 import { rotStumps } from './skog';
 import { VED, needLadder, noticeTheft, stole, takeMaterial } from './behov';
 import { capacity, dropSpot, fetchSpot, homeKind, load, pickUp, storeLoad, tidyStore, wearStore } from './lager';
-import { KANIN, MASK_PER_GRAV, makeBasket, makeKnife, makeRod, makeSpear, slaughter, twineRope, wearUsed } from './redskap';
+import { KANIN, MASK_PER_GRAV, clean, makeBasket, makeKnife, makeRod, makeSpear, slaughter, twineRope, wearUsed } from './redskap';
 import { thinkWhileWorking } from './teknik';
 import { foodDays, workRate } from './ekonomi';
 import { TRY_SEC, growFynd, handFish, packFynd, pickMushrooms, richness, takeFrom } from './fynd';
@@ -47,6 +47,7 @@ const MEDAN: Partial<Record<Act, Krok>> = {
   bygga: (s, p, t, dtSec) => buildStep(s, p, t, dtSec),
   hantverk: (s, p, t, dtSec) => { if (t.tool === 'rep') twineRope(s, p, dtSec / 3600); },
   slakta: (s, p, _t, dtSec) => slaughter(s, p, dtSec / 3600),
+  rensa: (s, p, _t, dtSec) => clean(s, p, dtSec / 3600),
   tanda: (s, p, _t, dtSec) => {
     if (!canLight(s, p)) return;
     s.fire.tryProg += dtSec;

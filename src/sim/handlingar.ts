@@ -53,7 +53,7 @@ export interface ActDef {
 const DEF = {
   samla: { namn: 'Samlar bär och rötter', slag: 'samla', redskap: { korg: { namn: 'Samlar bär och rötter med korg', tar: 'Tar en korg.', ger: 1.15, tur: 2.5, haller: 40 } }, slits: 3600, ikon: 'bar', arbete: 'samla', bas: 0.65, sasong: [0.4, 1.0, 1.25, 1.4], egenskap: 'uthallighet', ger: 'bar', resurs: 'samla', tur: 40, vandra: { r: 2, h0: 3, h1: 10, v: 0.6 }, tungt: true, dygn: true, plats: 'ang' },
   jakt: { namn: 'Jagar', redskap: { flintspjut: { namn: 'Jagar med spjut', tar: 'Tar ett flintspjut.', ger: 1.4, haller: 240 }, fiskespjut: { namn: 'Jagar med spjut', tar: 'Tar ett träspjut.', ger: 1.4, haller: 60 } }, slits: 300, slag: 'jaga', ikon: 'kanin', arbete: 'jakt', bas: 0.62, sasong: [0.7, 0.9, 1.0, 1.15], egenskap: 'mod', ger: 'vilt', resurs: 'jakt', fara: { risk: 0.0008, text: 'under en jakt' }, vandra: { r: 3, h0: 3, h1: 10, v: 0.7 }, tungt: true, dygn: true, plats: 'ang' },
-  fiske: { namn: 'Fiskar med händerna', slag: 'fiska', redskap: { metspo: { namn: 'Metar', tar: 'Tar ett metspö och gräver fram mask.', ger: 2.4, don: 'metspo', bete: true, haller: 200 }, flintspjut: { namn: 'Fiskar med spjut', tar: 'Tar ett flintspjut.', ger: 2.4, don: 'spjut', haller: 240 }, fiskespjut: { namn: 'Fiskar med spjut', tar: 'Tar ett träspjut.', ger: 2.4, don: 'spjut', haller: 60 } }, ikon: 'fisk', arbete: 'fiske', bas: 0.72, sasong: [0.45, 1.0, 1.1, 1.0], egenskap: 'uthallighet', ger: 'fisk', takt: 0, resurs: 'fiske', tungt: true, dygn: true, plats: 'strand' },
+  fiske: { namn: 'Fiskar med händerna', slag: 'fiska', redskap: { metspo: { namn: 'Metar', tar: 'Tar ett metspö och gräver fram mask.', ger: 2.4, don: 'metspo', bete: true, haller: 200 }, flintspjut: { namn: 'Fiskar med spjut', tar: 'Tar ett flintspjut.', ger: 2.4, don: 'spjut', haller: 240 }, fiskespjut: { namn: 'Fiskar med spjut', tar: 'Tar ett träspjut.', ger: 2.4, don: 'spjut', haller: 60 } }, ikon: 'fisk', arbete: 'fiske', bas: 0.72, sasong: [0.45, 1.0, 1.1, 1.0], egenskap: 'uthallighet', ger: 'abborre', takt: 0, resurs: 'fiske', tungt: true, dygn: true, plats: 'strand' },
   ved: { namn: 'Samlar grenar', slag: 'tra', ikon: 'grenar', arbete: 'ved', bas: 1.3, sasong: [0.9, 1, 1, 1], egenskap: 'styrka', ger: 'grenar', takt: 2, tur: 40, vandra: { r: 2, h0: 3, h1: 10, v: 0.6 }, tungt: true, dygn: true, plats: 'skog' },
   leka: { namn: 'Leker', slag: 'leka', vandra: { r: 2, h0: 2, h1: 6, v: 1.3 }, social: true, dygn: true, plats: 'lek' },
   vila: { namn: 'Vilar', slag: 'vila', vila: true, dygn: true, plats: 'sang' },
@@ -79,6 +79,7 @@ const DEF = {
   bara: { namn: 'Bär in saker till lagret', slag: 'bara' },
   strand: { namn: 'Sitter vid stranden och ser ut över vattnet', dygn: true },
   korg: { namn: 'Flätar en korg av hö', slag: 'hantverk', hantverk: true, plats: 'elden' },
+  rensa: { namn: 'Rensar fisk vid elden', slag: 'hantverk', hantverk: true, social: true, stilla: true, plats: 'elden' },
   bygga: { namn: 'Bygger', slag: 'bygga', verktyg: { laga: 'Lagar en vägg', golv: 'Lägger golv', vagg: 'Bygger en vägg' }, ikon: 'bygga', hantverk: true, tungt: true, stilla: true },
 } satisfies Record<string, ActDef>;
 

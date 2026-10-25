@@ -26,7 +26,7 @@ const DEF = {
   bar: { namn: 'Bär', skaffa: { act: 'samla' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 4, ruttnar: 0.7 },
   rotter: { namn: 'Rötter', skaffa: { act: 'samla' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 5, ruttnar: 0.35 },
   kott: { namn: 'Kött', skaffa: { av: { vilt: 0.6 }, min: 3, tek: 'kniv' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 2, ruttnar: 0.8 }, // slaktat vilt (en kanin, 1,6 fällt vilt, ger 2,1 kött, ett ben och ett skinn); köttet håller längre än fisk
-  fisk: { namn: 'Fisk', skaffa: { act: 'fiske' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 1, ruttnar: 2 },
+  fisk: { namn: 'Fiskkött', skaffa: { av: { abborre: 1 }, min: 2 }, stack: 25, ruta: 75, mapp: 'Mat', mat: 1, ruttnar: 2 },
   svamp: { namn: 'Svamp', skaffa: { act: 'samla' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 3, ruttnar: 1 },
   ved: { namn: 'Trä', skaffa: { act: 'hugga', tek: 'yxa' }, stack: 25, mapp: 'Bränsle', slits: 0.0004, blir: { k: 'grenar', per: 2 } },
   grenar: { namn: 'Grenar', skaffa: { act: 'ved' }, stack: 50, mapp: 'Bränsle', slits: 0.0006 },
@@ -47,6 +47,9 @@ const DEF = {
   vilt: { namn: 'Fällt vilt', skaffa: { act: 'jakt' }, stack: 1.6, ruta: 16, mapp: 'Mat', mat: 1.5, ruttnar: 1.1 },
   kniv: { namn: 'Flintkniv', skaffa: { av: { flinta: 1, grenar: 1 }, min: 40, tek: 'kniv' }, stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true },
   skinn: { namn: 'Skinn', skaffa: { av: { vilt: 0.3 }, min: 5, tek: 'kniv' }, stack: 10, mapp: 'Material', slits: 0.0006 },
+  // en hel fisk som den fångats (DJUR i redskap.ts). Den rensas vid elden till fiskkött (fisk), som är det man äter;
+  // bara när inget annat finns äts den som den är
+  abborre: { namn: 'Abborre', skaffa: { act: 'fiske' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 6, ruttnar: 2 },
 } satisfies Record<string, SakDef>;
 
 export type Sak = keyof typeof DEF;

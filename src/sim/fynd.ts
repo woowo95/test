@@ -86,7 +86,7 @@ const DEF = {
   },
   // fisken har sina favoritplatser i vattnet. Man fiskar från stranden och når ett par rutor ut
   fiske: {
-    namn: 'Fisk', grupp: 'djur', ikon: 'fisk', farg: 0x2f7fd0, topp: 1.6, vatten: 2,
+    namn: 'Abborre', grupp: 'djur', ikon: 'abborre', farg: 0x2f7fd0, topp: 1.6, vatten: 2,
     monster: { salt: 79, skala: 3, period: 14, troskel: 0.3 },
     bas: (s, i, m) => getMap(s.seed).tiles[i] === T.Vatten ? 0.5 + 1.4 * m : 0,
     uttag: { full: 3, reach: 1, regrow: [1 / 300, 1 / 100, 1 / 100, 1 / 140] },
@@ -427,6 +427,6 @@ export function handFish(s: State, p: Person, x: number, y: number, ageF: number
   if (rnd(s, 'arbete', p) >= hold) return 0;
   st.k++; count(s, 'fisk'); if (spear) count(s, 'spjutFisk'); if (gear === 'metspo') count(s, 'metFisk');
   takeFrom(s, 'fiske', x, y, 1);
-  if (s.stat!.fisk === 1) log(s, `${p.name} fångade byns första fisk ${spear ? 'med spjut' : gear === 'metspo' ? 'med metspö' : 'med händerna'}, efter ${s.stat!.fiskeForsok} försök.`, 'world', [p.id]);
+  if (s.stat!.fisk === 1) log(s, `${p.name} fångade byns första abborre ${spear ? 'med spjut' : gear === 'metspo' ? 'med metspö' : 'med händerna'}, efter ${s.stat!.fiskeForsok} försök.`, 'world', [p.id]);
   return 1;
 }

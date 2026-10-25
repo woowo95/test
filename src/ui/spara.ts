@@ -116,7 +116,7 @@ function knowSnapshot() {
   for (const p of living(s)) m.set(p.id, { k: Object.fromEntries(Object.entries(p.kunskap ?? {}).map(([k, e]) => [k, e.v])), l: new Set((p.lardomar ?? []).map(l => l.k + ':' + l.a)) });
   return m;
 }
-const LKIND_NAMES: Record<string, string> = { samla: 'bär och rötter', jakt: 'vilt', fiske: 'fisk', flinta: 'flinta', fara: 'farliga platser' };
+const LKIND_NAMES: Record<string, string> = { samla: 'bär och rötter', jakt: 'vilt', fiske: 'abborre', flinta: 'flinta', fara: 'farliga platser' };
 function knowHtml(before: ReturnType<typeof knowSnapshot>) {
   const nyK: string[] = [], per: Record<string, number> = {}, ex: string[] = [];
   let nyL = 0;
