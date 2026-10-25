@@ -17,7 +17,7 @@ export interface RedskapDef {
 // slagen av arbete: symbolen över huvudet visar vad man håller på med, aldrig samma symbol som en sak eller ett redskap
 // (ikoner.ts har dem som 'a_' + slaget; vila ritas som z som stiger)
 export const SLAG = {
-  samla: 'Samlar', jaga: 'Jagar', fiska: 'Fiskar', tra: 'Hämtar trä', bygga: 'Bygger', hantverk: 'Hantverk',
+  samla: 'Samlar', jaga: 'Jagar', fiska: 'Fiskar', tra: 'Hämtar trä', bygga: 'Bygger', hantverk: 'Gör hantverk',
   bara: 'Bär', elda: 'Sköter elden', vila: 'Vilar', prata: 'Pratar', leka: 'Leker',
 } as const;
 export type Slag = keyof typeof SLAG;
