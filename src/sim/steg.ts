@@ -26,6 +26,7 @@ import { djurSteg } from './djur';
 import { avail, bitById, buildJob, deliver as deliverBit, lacks, needOf, planBuild, siteOf, toWalls, wearBuild, workOn } from './bygg';
 import { MATERIAL, gridOf, roomAt, shelterOf } from './byggnad';
 import { histParts, historikSteg, joinHist } from './historik';
+import { stepDelning } from './delning';
 
 // Simuleringen går i slag om fem minuter (BEAT), i spelet och vid ikappräkning likadant. Inom ett slag går tiden åt
 // till det som händer i tur och ordning (taskStep). Arbetet görs i bitar om högst BIT sekunder, och man bär aldrig mer
@@ -91,7 +92,7 @@ export function step(s: State, dtSec: number, events?: TalkEvent[]) {
   const fh = hearthOf(s.fire), coldRate = coldOf(temperature(s));
   const learn = 1 + 0.1 * s.seder.v.nyfikenhet; // en nyfiken by lär sig snabbare
   if (Math.floor(now / HOUR) !== Math.floor((now - dtSec * SEC) / HOUR)) {
-    stepSeder(s); updateTags(s);
+    stepSeder(s); updateTags(s); stepDelning(s);
     growGround(s, 1, ai); growFynd(s, 1, ai); forget(s, 1); rotStumps(s); tidyStore(s);
     wearBuild(s, 1, ai); planBuild(s);
     historikSteg(s); // nyckeltalen till byns historik (läses inte av simuleringen)

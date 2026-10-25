@@ -15,6 +15,7 @@ export interface SakDef {
   trasig?: { stat: string; text?: string }; // när redskapet går sönder i arbetet: det som räknas, och texten första gången ({namn} = den som arbetade)
   dold?: true; // syns inte för invånarna
   i?: string; // ligger gömd i stackarna av det slaget (stack.dold) och har ingen egen stack
+  nod?: number; // det byn behöver av det på ett dygn: delningen i nöd (delning.ts) räknar hur länge förrådet räcker
 }
 
 // Ordningen är den stackarna läggs ut i, så den ska inte ändras (nya saker läggs sist)
@@ -26,23 +27,23 @@ const DEF = {
   svamp: { namn: 'Svamp', stack: 25, ruta: 75, mapp: 'Mat', mat: 3, ruttnar: 1 },
   ved: { namn: 'Trä', stack: 25, mapp: 'Bränsle', slits: 0.0004, blir: { k: 'grenar', per: 2 } },
   grenar: { namn: 'Grenar', stack: 50, mapp: 'Bränsle', slits: 0.0006 },
-  torrgras: { namn: 'Hö', stack: 50, mapp: 'Bränsle', slits: 0.0015 },
+  torrgras: { namn: 'Hö', stack: 50, mapp: 'Bränsle', slits: 0.0015, nod: 12 },
   kol: { namn: 'Kol', stack: 25, mapp: 'Bränsle' },
-  flinta: { namn: 'Flinta', stack: 10, mapp: 'Sten' },
+  flinta: { namn: 'Flinta', stack: 10, mapp: 'Sten', nod: 1 },
   yxa: { namn: 'Flintyxa', stack: 1, mapp: 'Redskap', slits: 0.0004, redskap: true },
   fiskespjut: { namn: 'Träspjut', stack: 1, mapp: 'Redskap', slits: 0.001, redskap: true, grupp: 'spjut', trasig: { stat: 'spjutTrasiga', text: '{namn}s träspjut gick sönder. Träspjuten håller inte länge.' } },
   korg: { namn: 'Korg', stack: 1, mapp: 'Redskap', slits: 0.001, redskap: true, trasig: { stat: 'korgarTrasiga', text: '{namn}s korg gick sönder.' } },
   // giftig svamp som av misstag hamnat i förrådet bland den ätliga (fynd.ts). Den ligger i svampstacken och syns inte
   giftsvamp: { namn: 'Giftig svamp', ruttnar: 1, dold: true, i: 'svamp' },
-  sten: { namn: 'Sten', stack: 10, mapp: 'Sten' },
-  rep: { namn: 'Rep', stack: 20, mapp: 'Material', slits: 0.0003 },
-  ben: { namn: 'Ben', stack: 20, mapp: 'Material' },
+  sten: { namn: 'Sten', stack: 10, mapp: 'Sten', nod: 3 },
+  rep: { namn: 'Rep', stack: 20, mapp: 'Material', slits: 0.0003, nod: 1 },
+  ben: { namn: 'Ben', stack: 20, mapp: 'Material', nod: 1 },
   flintspjut: { namn: 'Flintspjut', stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true, grupp: 'spjut', trasig: { stat: 'spjutTrasiga', text: '{namn}s flintspjut gick sönder.' } },
   metspo: { namn: 'Metspö', stack: 1, mapp: 'Redskap', slits: 0.0005, redskap: true, trasig: { stat: 'metspoTrasiga' } },
   // ett fällt djur, helt som det är (vilket djur det än är). En kanin fyller famnen, så stacken är en kanin
   vilt: { namn: 'Fällt vilt', stack: 1.6, ruta: 16, mapp: 'Mat', mat: 1.5, ruttnar: 1.1 },
   kniv: { namn: 'Flintkniv', stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true },
-  skinn: { namn: 'Skinn', stack: 10, mapp: 'Material', slits: 0.0006 },
+  skinn: { namn: 'Skinn', stack: 10, mapp: 'Material', slits: 0.0006, nod: 1 },
 } satisfies Record<string, SakDef>;
 
 export type Sak = keyof typeof DEF;

@@ -2,7 +2,7 @@
 // npm run scenario            kör alla
 // npm run scenario -- glanta  kör bara ett
 import { isDeepStrictEqual } from 'node:util';
-import { Person, Act, createState, ownedBy, tidyTools, addTool, toolsOf, heldBy, take, usesTool, wearTool, freeSpear, getRel, isTool, BYN, twineRope, makeRod, wearUsed, isSpear, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, serializeParts, joinParts, serialize, ageStart, nyKalender, kalender, yearNo, AGES, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, zonesOf, allows, ageOf, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, fuelStock, DAY, HOUR, W, State, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, campCenter, TEKNIK, knows, thinkWhileWorking, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, beds, isWall, Bit, wearBuild, FYND, FYND_IDS, GRUPPER, angOf, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, LAGER_R, observe, hoped, Lager, skyggOf, SKYGG_R, SKYGG_IN, grupperOf, GRUPPER_MAX, STORLEK, share, treeOn, djurOf, KANIN, SLAKT, DJUR, JAKT_F, canSlaughter, makeKnife, slaughter, askForTool, gain, takeFood, takeFuel, ownsAmount, ownedStock, ownedSum, sumOf, addTo, setAmount, setStock, foodOf, isFood, STACK_ORDER, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, STOLD_LINDRIG, STOLD_OP, rnd, STROMMAR, Strom, BEAT, spar, isWork, SPARVERSION } from '../sim';
+import { Person, Act, createState, ownedBy, tidyTools, addTool, toolsOf, heldBy, take, usesTool, wearTool, freeSpear, getRel, isTool, BYN, twineRope, makeRod, wearUsed, isSpear, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, serializeParts, joinParts, serialize, ageStart, nyKalender, kalender, yearNo, AGES, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, zonesOf, allows, ageOf, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, fuelStock, DAY, HOUR, W, State, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, campCenter, TEKNIK, knows, thinkWhileWorking, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, beds, isWall, Bit, wearBuild, FYND, FYND_IDS, GRUPPER, angOf, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, LAGER_R, observe, hoped, Lager, skyggOf, SKYGG_R, SKYGG_IN, grupperOf, GRUPPER_MAX, STORLEK, share, treeOn, djurOf, KANIN, SLAKT, DJUR, JAKT_F, canSlaughter, makeKnife, slaughter, askForTool, gain, takeFood, takeFuel, ownsAmount, ownedStock, ownedSum, sumOf, addTo, setAmount, setStock, foodOf, isFood, STACK_ORDER, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, STOLD_LINDRIG, STOLD_OP, rnd, STROMMAR, Strom, BEAT, spar, isWork, SPARVERSION, stepDelning, delningOf, DELA_STOR } from '../sim';
 // förrådet i proven: stackarna är det enda som sparas (steg 1.1.2), så proven ställer in förrådet genom lagret
 const setItems = (s: State, m: Record<string, number>) => {
   for (const k of STACK_ORDER) if (!isFood(k) && k !== 'ved' && !isTool(k)) setAmount(s, k, m[k] ?? 0);
@@ -1287,6 +1287,42 @@ SCENARIER.varmekarta = {
       [`platsen växer tillbaka på hösten (${vuxit.toFixed(2)})`, vuxit > efter + 0.1],
       [`en plockad plats: "${text}", tros växa tillbaka (${nyss.toFixed(2)} → ${sen.toFixed(2)} efter tre dygn)`, text.includes('växer tillbaka') && sen > nyss + 0.2],
       [`flinta vid stenarna tar slut och kommer tillbaka (${flFore} → ${flEfter.toFixed(1)} → ${flSen.toFixed(1)})`, flFore >= 4 && flEfter < flFore - 0.5 && flSen > flEfter + 0.3],
+    ];
+  },
+};
+
+SCENARIER.delning = {
+  text: 'Delning i nöd: i en ny och fattig by blir det nya byns, i en rik by ens eget, och i en katastrof delar byn igen',
+  kor: () => {
+    const s = createState(5, START), p = living(s)[0], d = delningOf(s);
+    const ny = d.pa && d.andel.bar === 1 && d.andel.yxa === undefined;
+    const f0 = ownsAmount(s, p, 'bar'); gain(s, p, 'bar', 10); const nyEgen = ownsAmount(s, p, 'bar') - f0;
+    // mat som räcker sex dygn: hälften av det nya blir byns
+    setFood(s, living(s).length * 1.6 * 6); setAmount(s, 'grenar', 0); stepDelning(s);
+    const halv = d.andel.bar;
+    const f1 = ownsAmount(s, p, 'bar'); gain(s, p, 'bar', 10); const halvEgen = ownsAmount(s, p, 'bar') - f1;
+    // rik: mat och ved för mer än åtta dygn
+    setFood(s, living(s).length * 1.6 * 10); setAmount(s, 'ved', 300); stepDelning(s);
+    const rik = !d.pa;
+    const f2 = ownsAmount(s, p, 'bar'); gain(s, p, 'bar', 10); const rikEgen = ownsAmount(s, p, 'bar') - f2;
+    // fattig igen men inte i nöd: delningen förblir av
+    setFood(s, 0); setAmount(s, 'ved', 0); stepDelning(s);
+    const forblir = !d.pa;
+    // katastrof: de flesta dör
+    for (const q of living(s).slice(1)) die(s, q, 'prov');
+    stepDelning(s);
+    const nod = d.pa && d.andel.bar === 1;
+    // en stor by delar inte, hur fattig den än är
+    const t = createState(6, START); while (living(t).length < DELA_STOR) t.people.push({ ...living(t)[0], id: t.nextId++ });
+    stepDelning(t);
+    return [
+      [`en ny by delar allt nytt (andel ${d.andel.bar}), utom redskap`, ny],
+      [`det en invånare skaffar i en ny by blir byns (${nyEgen.toFixed(1)} av 10 ens eget)`, nyEgen < 0.01],
+      [`mat för sex dygn: hälften blir byns (andel ${halv?.toFixed(2)}, ${halvEgen.toFixed(1)} av 10 eget)`, Math.abs(halv - 0.5) < 0.01 && Math.abs(halvEgen - 5) < 0.1],
+      [`en rik by delar inte (${rikEgen.toFixed(1)} av 10 eget)`, rik && Math.abs(rikEgen - 10) < 0.01],
+      ['delningen slås inte på igen bara för att förrådet tar slut', forblir],
+      ['när byn nästan dött ut delar den allt igen', nod],
+      [`en by med ${DELA_STOR} invånare delar inte`, !delningOf(t).pa],
     ];
   },
 };
