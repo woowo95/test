@@ -5,14 +5,16 @@
 // den som hittills fått minst, och resten (mat, ved, material) delas så att alla får lika mycket i värde. Ett arv är
 // inget man skaffat, så delningen efter byns rikedom (delning.ts) gäller inte. Arvet syns i loggen och krönikan men ger
 // inga känslor. Ingen sed styr arvet; längre fram kan religionen ge kyrkan en del (steg 10.1.3) och skattelagar staten
-// en del (steg 9.5.3).
+// en del (steg 9.5.3). Ett familjehus (byggnader.ts) ärvs som ett redskap, efter sitt värde, och får den nya ägarens namn.
 // Den som flyttar tar med sig så mycket av sitt eget som hen orkar bära, det mest värda för vikten först; resten blir byns.
 import { tingOf } from './agande';
 import { count, isKin, living, log } from './folk';
 import { kronika } from './historik';
 import { capacity, carryOff, ownedAll, passOn } from './lager';
 import { STACK, sakNamn, tingNamn } from './saker';
-import { grundvarde, tingVarde } from './varde';
+import { grundvarde, husVarde, tingVarde } from './varde';
+import { housesOf } from './byggnad';
+import { husNamn } from './byggnader';
 import { Person, State } from './typer';
 
 const vardeOf = grundvarde;
@@ -39,6 +41,11 @@ export function inherit(s: State, p: Person) {
     const i = val.indexOf(Math.min(...val));
     t.agare = heirs[i].id; val[i] += tingVarde(t);
     fick[i].push(tingNamn(t).toLowerCase());
+  }
+  for (const h of housesOf(s).filter(q => q.ag === p.id).sort((a, b) => husVarde(s, b) - husVarde(s, a) || a.id - b.id)) {
+    const i = val.indexOf(Math.min(...val));
+    fick[i].push(h.namn); h.ag = heirs[i].id; val[i] += husVarde(s, h);
+    if (h.namn === husNamn(p.name)) h.namn = husNamn(heirs[i].name);
   }
   const eget = ownedAll(s, p.id);
   let rest = 0;

@@ -13,7 +13,7 @@ import { SAKER, SAK_LIST } from './saker';
 import { TEK } from './teknik';
 import { wornOf } from './lager';
 import { Ting, tingOf } from './agande';
-import { MATERIAL, bitsOf } from './byggnad';
+import { Bit, Hus, MATERIAL, bitsOf } from './byggnad';
 import { State } from './typer';
 
 export const ARBETE = 1; // värdet av en arbetstimme
@@ -84,12 +84,10 @@ export function rikedomDelar(s: State): Rikedom {
   let forrad = 0, redskap = 0, hus = 0;
   for (const k of SAK_LIST) if (!SAKER[k]!.redskap) forrad += wornOf(s, k) * grundvarde(k);
   for (const t of tingOf(s)) redskap += tingVarde(t);
-  // husen: materialet som lagts i väggar och golv och arbetet med dem, gånger skicket
-  for (const b of bitsOf(s)) {
-    const M = MATERIAL[b.m];
-    if (!M || b.hus === undefined) continue;
-    hus += ((M.item ? b.mat * grundvarde(M.item) : 0) + M.tim * Math.min(1, b.b) * ARBETE) * b.c;
-  }
+  for (const b of bitsOf(s)) if (b.hus !== undefined) hus += bitVarde(b);
   return { forrad, redskap, hus };
 }
+// husen: materialet som lagts i väggar och golv och arbetet med dem, gånger skicket
+const bitVarde = (b: Bit) => { const M = MATERIAL[b.m]; return M ? ((M.item ? b.mat * grundvarde(M.item) : 0) + M.tim * Math.min(1, b.b) * ARBETE) * b.c : 0; };
+export const husVarde = (s: State, h: Hus) => bitsOf(s).reduce((a, b) => a + (b.hus === h.id ? bitVarde(b) : 0), 0);
 export function rikedom(s: State) { const r = rikedomDelar(s); return r.forrad + r.redskap + r.hus; }

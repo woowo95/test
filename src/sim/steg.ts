@@ -1,6 +1,6 @@
 import { tidyTools } from './agande';
 import { rotStumps } from './skog';
-import { VED, needLadder, noticeTheft, stole, takeMaterial } from './behov';
+import { VED, needLadder, noticeTheft, stole } from './behov';
 import { capacity, dropSpot, fetchSpot, homeKind, load, pickUp, storeLoad, tidyStore, wearStore } from './lager';
 import { KANIN, MASK_PER_GRAV, clean, slaughter, twineRope, wearUsed } from './redskap';
 import { GOR_ACTS, finishHalf, startWork, stepPaborjat, workHalf } from './paborjat';
@@ -25,7 +25,7 @@ import { findPath, speedAt, wear } from './vag';
 import { chooseTask } from './val';
 import { djurSteg } from './djur';
 import { stepByggnader } from './byggnader';
-import { avail, bitById, buildJob, deliver as deliverBit, lacks, needOf, noteKom, planBuild, siteOf, toWalls, wearBuild, workOn } from './bygg';
+import { avail, bitById, takeForHouse, buildJob, deliver as deliverBit, lacks, needOf, noteKom, planBuild, siteOf, toWalls, wearBuild, workOn } from './bygg';
 import { MATERIAL, gridOf, roomAt, shelterOf } from './byggnad';
 import { histParts, historikSteg, joinHist } from './historik';
 import { stepDelning } from './delning';
@@ -304,8 +304,8 @@ function arrive(s: State, p: Person, tk: Task, light: boolean) {
   } else if (tk.act === 'bygga' && tk.phase === 'go' && tk.site) {
     // vid lagret: ta materialet och gå till bygget
     const b = bitById(s, tk.ref), k = b && MATERIAL[b.m].item, n = b ? needOf(b) : 0;
-    if (!b || !k || avail(s, k, p) < n) p.task = undefined;
-    else { tk.kom = {}; tk.ag = { [k]: takeMaterial(s, p, k, n, true, tk.kom) }; tk.items = { [k]: n }; tk.tx = tk.site.x; tk.ty = tk.site.y; tk.site = undefined; }
+    if (!b || !k || avail(s, k, p, b.hus) < n) p.task = undefined;
+    else { tk.kom = {}; tk.ag = { [k]: takeForHouse(s, p, b.hus, k, n, tk.kom) }; tk.items = { [k]: n }; tk.tx = tk.site.x; tk.ty = tk.site.y; tk.site = undefined; }
   } else if (tk.phase === 'back') {
     storeLoad(s, tk, p.x, p.y, p.id);
     // ett arbetspass är klart: gå tillbaka och fortsätt om arbetet inte är slut och dagen inte vänt

@@ -6,12 +6,13 @@ import { campCenter } from './plats';
 import { sedEvent } from './seder';
 import { rnd } from './slump';
 import { knows } from './teknik';
-import { amountOf, changed, zonesOf } from './lager';
+import { amountOf, changed, ownMove, ownsAmount, use, zonesOf } from './lager';
 import { freeTools } from './agande';
-import { getable } from './behov';
+import { getable, takeMaterial } from './behov';
+import { Del } from './egendom';
 import { FOREST } from './vag';
 import { kronika } from './historik';
-import { BYGGNADER, Byggnad, Fn, bedTile, fnOf, husKlar, mostUrgent } from './byggnader';
+import { BYGGNADER, Byggnad, Fn, bedTile, familjOf, fnOf, husKlar, mostUrgent } from './byggnader';
 import { H, HOUR, Person, State, T, W } from './typer';
 
 // ---------- att bygga ----------
@@ -66,10 +67,12 @@ const canBuildWalls = (p: Person, s: State) => ageOf(p, s.now) >= 14 && knows(p,
 export function planBuild(s: State) {
   const ppl = living(s), hs = housesOf(s);
   if (!ppl.length || hs.some(h => !h.klar)) return;
-  const by = ppl.filter(p => canBuildWalls(p, s)).sort((a, b) => (b.skill.hantverk + stat(b, 'intelligens', s.now) / 4) - (a.skill.hantverk + stat(a, 'intelligens', s.now) / 4))[0];
-  if (!by || s.now < (s.byggSok ?? 0)) return;
+  const byggare = ppl.filter(p => canBuildWalls(p, s)).sort((a, b) => (b.skill.hantverk + stat(b, 'intelligens', s.now) / 4) - (a.skill.hantverk + stat(a, 'intelligens', s.now) / 4));
+  if (!byggare.length || s.now < (s.byggSok ?? 0)) return;
   const u = mostUrgent(s);
   if (!u) return;
+  // ett familjehus planerar familjen själv; kan ingen i familjen bygga väggar planerar byns byggare åt den
+  const fam = u.a.ag !== undefined ? familjOf(s, u.a.ag) : [], by = byggare.find(p => fam.includes(p)) ?? (fam.find(p => p.id === u.a.ag) ?? byggare[0]);
   const row: Byggnad = BYGGNADER[u.fn];
   // storleken efter behovet; så nära kvadratiskt som möjligt
   const sizes: { w: number; h: number }[] = [];
@@ -87,7 +90,7 @@ export function planBuild(s: State) {
     const ox = side === 'v' ? at.x : side === 'o' ? at.x + w + 1 : at.x + 1 + Math.floor(w / 2);
     const oy = side === 'n' ? at.y : side === 's' ? at.y + h + 1 : at.y + 1 + Math.floor(h / 2);
     const big = w * h >= 8, same = u.fn === 'sovsal' ? hs.filter(q => q.namn.startsWith(big ? 'Långhus' : 'Hydda')).length : hs.filter(q => (q.fn ?? 'sovsal') === u.fn).length;
-    const hus: Hus = { id: (s.nextBit ??= 1), namn: row.namnFor!(s, w, h, same), x: at.x, y: at.y, w: w + 2, h: h + 2, t: s.now, by: by.id, fn: u.fn, slag: u.a.slag };
+    const hus: Hus = { id: (s.nextBit ??= 1), namn: row.namnFor!(s, w, h, same, u.a), x: at.x, y: at.y, w: w + 2, h: h + 2, t: s.now, by: by.id, fn: u.fn, slag: u.a.slag, ag: u.a.ag };
     s.nextBit++;
     const golv = 'tra';
     for (let y = at.y; y < at.y + h + 2; y++) for (let x = at.x; x < at.x + w + 2; x++) {
@@ -103,14 +106,36 @@ export function planBuild(s: State) {
 }
 function planText(by: Person, fn: Fn, h: Hus, n: number, same: number) {
   if (fn === 'sovsal') return `${by.name} planerar ${n >= 8 ? 'ett långhus' : 'en hydda'}${same ? ' till' : ''} med plats för ${n} att sova under tak.`;
+  if (fn === 'familjehus') return `${by.name} och familjen bestämmer sig för att bygga ett eget hus, ${h.namn.toLowerCase()}.`;
   return `${by.name} planerar ${h.namn.toLowerCase()}.`;
 }
 
 // ---------- arbete ----------
 // fell = ett träd står där biten ska byggas och måste fällas först
 export interface Job { bit: Bit; repair: boolean; item?: string; need: number; missing: boolean; fell?: boolean }
-// det som finns att bygga med (av p: det p kan få, behov.ts), utom det som sparas
-export const avail = (s: State, k: string, p?: Person) => (p ? getable(s, p, k) : amountOf(s, k)) - (RESERVE[k] ?? 0);
+// det som finns att bygga med (av p: det p kan få, behov.ts, och till ett familjehus också familjens), utom det som sparas
+export const avail = (s: State, k: string, p?: Person, hus?: number) => (p ? getable(s, p, k) + famOwn(s, p, k, hus) : amountOf(s, k)) - (RESERVE[k] ?? 0);
+const famHus = (s: State, hus?: number) => { const h = housesOf(s).find(q => q.id === hus); return h?.ag !== undefined ? h : undefined; };
+const famOwn = (s: State, p: Person, k: string, hus?: number) => { const h = famHus(s, hus); return h ? familjOf(s, h.ag).filter(q => q !== p).reduce((a, q) => a + ownsAmount(s, q, k), 0) : 0; };
+// p tar n av slaget k till ett hus. Till byns hus tas byns först; till ett familjehus familjens eget först (ägaren, partnern,
+// barnen), sedan efter behovsstegen som till ett eget arbete. Ger vems det var
+export function takeForHouse(s: State, p: Person, hus: number | undefined, k: string, n: number, kom: Record<string, number>): Del {
+  const h = famHus(s, hus);
+  if (!h) return takeMaterial(s, p, k, n, true, kom);
+  const ag: Del = {};
+  let rest = n;
+  for (const q of familjOf(s, h.ag).sort((a, b) => (b.id === h.ag ? 1 : 0) - (a.id === h.ag ? 1 : 0) || a.id - b.id)) {
+    if (rest <= 1e-9) break;
+    const v = Math.min(rest, ownsAmount(s, q, k));
+    if (v <= 1e-9) continue;
+    if (q !== p) ownMove(s, k, v, q.id, p.id);
+    use(s, p, k, v);
+    ag[q.id] = (ag[q.id] ?? 0) + v; rest -= v;
+    const key = `${q === p ? 'eget' : 'familj'}:${q.id}:${k}`; kom[key] = (kom[key] ?? 0) + v;
+  }
+  if (rest > 1e-9) for (const [o, v] of Object.entries(takeMaterial(s, p, k, rest, false, kom))) ag[+o] = (ag[+o] ?? 0) + v;
+  return ag;
+}
 export const treeOn = (s: State, b: Bit) => groundOf(s).trees[b.y * W + b.x] >= FOREST;
 // det p kan bygga härnäst: lagning av slitna väggar först, sedan jordgolv, väggar och sist trägolv. Det andra redan bygger tas inte
 export function buildJob(s: State, p: Person): Job | undefined {
@@ -138,7 +163,7 @@ export function buildJob(s: State, p: Person): Job | undefined {
     if (M.tek && !knows(p, M.tek)) continue;
     const need = needOf(b);
     const sc = (repair ? 0 : b.k === 'golv' ? (M.item ? 300 : 100) : 200) + Math.hypot(b.x - p.x, b.y - p.y);
-    if (sc < bs) { bs = sc; best = { bit: b, repair, item: M.item, need, missing: need > 0 && avail(s, M.item!, p) < need }; }
+    if (sc < bs) { bs = sc; best = { bit: b, repair, item: M.item, need, missing: need > 0 && avail(s, M.item!, p, b.hus) < need }; }
   }
   return best;
 }

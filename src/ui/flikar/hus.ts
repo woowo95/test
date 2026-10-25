@@ -24,7 +24,7 @@ export const hus: Flik = {
     const bits = bitsOf(s).filter(b => b.hus === h.id), klar = bits.filter(b => b.b >= 1).length;
     const rum = gridOf(s).rooms.filter(r => r.hus === h.id), sov = rum.reduce((n, r) => n + r.tiles.length, 0);
     const status = klar < bits.length ? `Byggs: ${klar} av ${bits.length} delar klara.` : `${sov} sovplatser${rum.length ? `, håller värmen ${Math.round(Math.max(...rum.map(r => insulation(s, r))) * 100)} %` : ''}.`;
-    const kom = komOf(h), fn = fnOf(h);
+    const kom = komOf(h), fn = fnOf(h), agare = h.ag !== undefined ? byId(s, h.ag) : undefined;
     const rader = KOM.map(hur => {
       const xs = kom.filter(q => q.hur === hur);
       if (!xs.length) return '';
@@ -36,7 +36,7 @@ export const hus: Flik = {
       return `<dt title="${esc(title)}" aria-label="${esc(title)}">${HUR[hur].ikon}</dt><dd>${Object.entries(per).map(([k, n]) => `${iconImg(k)}${fmtN(n)}`).join(' ')}${vem.length ? ` <span class="muted">${vem.map(p => pLink(p)).join(', ')}</span>` : ''}</dd>`;
     }).join('');
     return `
-    <div class="phead"><div><h2><span title="${esc(`${fn.namn}: ${fn.behov}`)}" aria-label="${esc(fn.namn)}">${fn.ikon}</span> ${esc(h.namn)}</h2><p class="muted">${status}</p></div></div>
+    <div class="phead"><div><h2><span title="${esc(`${fn.namn}: ${fn.behov}`)}" aria-label="${esc(fn.namn)}">${fn.ikon}</span> ${esc(h.namn)}</h2><p class="muted">${status}</p>${agare ? `<p class="muted">Ägs av ${pLink(agare)} och familjen.</p>` : ''}</div></div>
     <h3>Materialet kom från</h3>${rader ? `<dl class="kv">${rader}</dl>` : '<p class="muted">Huset byggdes innan byn började minnas var materialet kom ifrån.</p>'}`;
   },
 };
