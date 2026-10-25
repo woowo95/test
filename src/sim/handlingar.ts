@@ -63,7 +63,7 @@ const DEF = {
   vila: { namn: 'Vilar', slag: 'vila', vila: true, dygn: true, plats: 'sang' },
   samtal: { namn: 'Samtalar vid elden', slag: 'prata', vila: true, social: true, dygn: true, plats: 'elden' },
   beratta: { namn: 'Berättar vid elden', slag: 'prata', social: true, dygn: true, plats: 'elden' },
-  hantverk: { namn: 'Gör handarbete', slag: 'hantverk', verktyg: { rep: 'Tvinnar rep' }, ikon: 'korg', vila: true, hantverk: true, social: true, dygn: true, stilla: true, plats: 'elden' },
+  hantverk: { namn: 'Gör handarbete', slag: 'hantverk', verktyg: { rep: 'Tvinnar rep' }, ikon: 'handarbete', vila: true, hantverk: true, social: true, dygn: true, stilla: true, plats: 'elden' },
   vakt: { namn: 'Håller vakt', social: true, dygn: true, stilla: true, plats: 'elden', radie: 2.6 },
   sova: { namn: 'Sover', slag: 'vila', vila: true, stilla: true, plats: 'sang' },
   elda: { namn: 'Lägger trä på elden', slag: 'elda', ger: 'ved' },
