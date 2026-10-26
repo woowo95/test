@@ -27,7 +27,17 @@ export const hex = (p: Person) => '#' + hsl(p.hue, 0.5, 0.58).toString(16).padSt
 
 // staplar
 export function bar(v: number, cls = '', tr = '') { return `<span class="bar ${cls}"><span style="width:${Math.round(clamp(v, 0, 1) * 100)}%"></span></span>${tr}`; }
-export const condBar = (c: number) => bar(c, c < 0.5 ? 'low' : '');
+// när en stapel eller ett porträtt märks som låg (röd). Det är bara bildens gränser; där simuleringen har en egen gräns läser
+// bilden den (KROPP.kallt, KROPP.svag, KROPP.toaBehov). Gränserna skiljer sig med avsikt: porträttraden varnar vid sämre värden än rutan
+export const LAG = {
+  humor: 0.35, // stapeln för humör (porträttets ruta och invånarlistan)
+  olycklig: 0.25, // humöret är så lågt att personen kallas olycklig (moodWord), och porträttet i raden märks
+  hunger: 0.25, // mättnad (porträttets ruta, och porträttet i raden)
+  halsa: 0.5, // hälsa (porträttets ruta och personfliken)
+  varmeRad: 0.3, // porträttet i raden märks när värmen är under detta (stapeln märks vid KROPP.kallt)
+  skick: 0.5, // skicket på ett redskap eller en vägg (condBar)
+} as const;
+export const condBar = (c: number) => bar(c, c < LAG.skick ? 'low' : '');
 // pil vid en stapel som ändras märkbart just nu: jämför med värdet för en stund sedan (speltid)
 const trendHist = new Map<string, { v: number; t: number; d: number }>();
 export function trend(p: Person, key: string, v: number) {
@@ -39,7 +49,7 @@ export function trend(p: Person, key: string, v: number) {
 
 // personer
 export function pLink(p?: Person) { return p ? `<button class="plink" data-id="${p.id}" type="button">${esc(p.name)}</button>` : '–'; }
-export function moodWord(m: number) { return m > 0.75 ? 'Lycklig' : m > 0.55 ? 'Nöjd' : m > 0.4 ? 'Okej' : m > 0.25 ? 'Nedstämd' : 'Olycklig'; }
+export function moodWord(m: number) { return m > 0.75 ? 'Lycklig' : m > 0.55 ? 'Nöjd' : m > 0.4 ? 'Okej' : m > LAG.olycklig ? 'Nedstämd' : 'Olycklig'; }
 export function relWord(p: Person, q: Person, op: number) {
   if (p.partner === q.id) return 'Partner';
   if (isParent(p, q)) return 'Barn';

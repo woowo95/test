@@ -52,7 +52,7 @@ Simuleringen importerar aldrig från `ui/`. Gränssnittet importerar bara från 
 | Fil | Innehåll |
 |---|---|
 | `ui/lage.ts` | Det som alla delar: byn som visas (`s`, byts med `setByn`) och spelarens val (`ui`: flik, vald person, följ …) |
-| `ui/hjalp.ts` | Små hjälpare för text, tal, färger och staplar |
+| `ui/hjalp.ts` | Små hjälpare för text, tal, färger och staplar. `LAG` är bildens gränser för när en stapel eller ett porträtt märks som låg (röd); där simuleringen har en egen gräns läser bilden den (`KROPP.kallt`, `KROPP.svag`) |
 | `ui/scen.ts` | PixiJS-scenen, lagren som ritas ovanpå varandra, kameran och `Ikoner` (återanvända ikon-sprites) |
 | `ui/terrang.ts` | Marken och natten |
 | `ui/vaxter.ts` | Små bärbuskar och svampar i vanliga vyn där det finns något just nu (inte var det kan växa, inte rötter eller vilt) |
