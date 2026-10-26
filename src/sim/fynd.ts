@@ -464,8 +464,9 @@ export function pickMushrooms(s: State, p: Person, x: number, y: number, dtSec: 
 // när någon äter: finns giftig svamp i förrådet kan hen få i sig den
 export function eatPoison(s: State, p: Person) {
   const gift = amountOf(s, GIFT);
-  if (gift < 1 || rnd(s, 'halsa', p) >= Math.min(FANGST.giftMax, gift / Math.max(1, foodOf(s)) * FANGST.giftAndel)) return;
-  addTo(s, GIFT, -1);
+  // en ensam giftsvamp förfaller lite redan första slaget, så gränsen är nära noll och inte 1
+  if (gift < 1e-3 || rnd(s, 'halsa', p) >= Math.min(FANGST.giftMax, gift / Math.max(1, foodOf(s)) * FANGST.giftAndel)) return;
+  addTo(s, GIFT, -Math.min(1, gift));
   count(s, 'forgiftad');
   p.sickUntil = Math.max(p.sickUntil ?? 0, s.now + (FANGST.giftSjukMin + rnd(s, 'halsa', p) * FANGST.giftSjukSpann) * HOUR);
   p.poisonUntil = p.sickUntil; p.sickWhy = 'Förgiftad av svamp';
@@ -478,8 +479,9 @@ export function eatPoison(s: State, p: Person) {
     sedEvent(s, 'forsiktighet', FANGST.giftSed, 'Någon blev förgiftad av svamp. Byn har blivit försiktigare med vad den äter.');
   }
   if (before < FANGST.giftKand && v >= FANGST.giftKand) log(s, `${p.name} har lärt sig skilja kantarellen från den giftiga orangea spindlingen.`, 'skill', [p.id]);
-  // det hen nu vet: den giftiga svampen sorteras bort ur förrådet
-  addTo(s, GIFT, -amountOf(s, GIFT) * v);
+  // det hen nu vet: den giftiga svampen sorteras bort ur förrådet, och då är den inte längre svamp att äta
+  const bort = amountOf(s, GIFT) * v;
+  addTo(s, GIFT, -bort); addTo(s, 'svamp', -Math.min(amountOf(s, 'svamp'), bort));
 }
 
 // ---------- fiske med händerna ----------
