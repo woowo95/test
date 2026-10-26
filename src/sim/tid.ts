@@ -1,4 +1,28 @@
 import { AGES, DAY, State, WEEK } from './typer';
+import { balans } from './balans';
+
+// ---------- tidsåldrarna ----------
+// Tidsåldrarna numreras som AGES i typer.ts. Istiden är kall och mager, och hösten är inför den: då sparar och bygger byn
+// mer. Skriv aldrig ai === 0 eller ai === 3; fråga iIstiden, foreIstiden eller kallTid
+export const ISTID = 0, VAR = 1, SOMMAR = 2, HOST = 3;
+export const iIstiden = (ai: number) => ai === ISTID; // under istiden
+export const foreIstiden = (ai: number) => ai === HOST; // hösten, inför istiden
+export const kallTid = (ai: number) => foreIstiden(ai) || iIstiden(ai); // inför och under istiden
+// Balanstalen (regel 8): hur tidsåldern påverkar byn. Faktorerna gäller i tiden som metoden i namnet säger, annars 1
+export const ARSTID = balans('arstid', {
+  // vad byn väljer (val.ts)
+  byggKall: 1.4, // bygget väger så mycket mer inför och under istiden
+  vedKall: 1.3, // veden väger så mycket mer inför och under istiden
+  // att skaffa och förvara
+  hoPerTid: [0.25, 0.6, 1, 1.3], // hur mycket hö det finns att samla, per tidsålder (istid, vår, sommar, höst)
+  grenarIstid: 0.6, // grenar går att samla så här mycket i istiden (eld.ts)
+  tandIstid: 0.6, // chansen att tända elden är så här mycket av den vanliga i istiden (eld.ts)
+  ruttIstid: 0.5, // maten ruttnar så här mycket fortare i istiden (lager.ts)
+  slitIstid: 1.5, // husen slits så här mycket fortare i istiden (bygg.ts)
+  // hälsan: chansen per dygn att bli sjuk (steg.ts)
+  sjukIstid: 0.12, // i istiden
+  sjuk: 0.05, // annars
+});
 
 // ---------- kalendern ----------
 // Ett år i spelet är ett dygn och byter vid midnatt. En tidsålder är en vecka, måndag 00.00 till söndag 24.00 (lokal tid).
@@ -10,7 +34,7 @@ const dagNr = (t: number) => { const d = new Date(t); return Math.round(Date.UTC
 const midnatt = (n: number) => { const d = new Date(n * DAY); return new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()).getTime(); };
 const mandag = (n: number) => n + (7 - (n + 3) % 7) % 7; // första måndagen från dag n (dag 0, 1 januari 1970, var en torsdag)
 // en ny koloni: tidsåldern a0 från t0 till måndagen minst en vecka bort
-export function nyKalender(t0: number, a0 = 1) {
+export function nyKalender(t0: number, a0 = VAR) {
   const n = dagNr(t0);
   return { t0, a0, b0: mandag(midnatt(n) === t0 ? n + 7 : n + 8) };
 }
@@ -19,7 +43,7 @@ export function inFas(s: State) {
   const k = Math.floor((s.now - s.founded) / WEEK), slut = s.founded + (k + 1) * WEEK;
   const fore = mandag(dagNr(slut) - 6), efter = fore + 7;
   const b0 = midnatt(fore) > s.now && slut - midnatt(fore) <= midnatt(efter) - slut ? fore : efter;
-  return { t0: s.founded + k * WEEK, a0: (((1 + k) % 4) + 4) % 4, b0 };
+  return { t0: s.founded + k * WEEK, a0: (((VAR + k) % 4) + 4) % 4, b0 };
 }
 // Kalendern frågas många gånger varje steg, så det senaste svaret sparas per by. Svaret beror bara på dagen och
 // på om tiden är före t0, så det gäller från fran till till (dagen, eller den del av den som ligger på samma sida

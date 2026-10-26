@@ -17,7 +17,7 @@ import { SAMTAL_R, TalkEvent, converse, isSocial } from './samtal';
 import { HABIT_FADE, addHabit, sedEvent, stepSeder, updateTags } from './seder';
 import { fearPlace, forget, lookAround } from './minne';
 import { chance, clamp, rnd } from './slump';
-import { ageIndex, isLight } from './tid';
+import { ARSTID, ageIndex, iIstiden, isLight } from './tid';
 import { ACTS, toolRow } from './handlingar';
 import { Act, DAY, HOUR, HOUR_S, MIN, Person, SEC, SKILL_NAMES, State, Task, W, H, useMap, Historik } from './typer';
 import { findPath, speedAt, wear } from './vag';
@@ -172,7 +172,7 @@ function healthStep(s: State, p: Person, a: number, ai: number, dtSec: number) {
   else if (p.hunger > 0.3 && !isSick(p, now)) p.health = clamp(p.health + dtSec / (10 * HOUR_S), 0, 1);
   if (isSick(p, now)) p.health -= dtSec / (40 * HOUR_S);
   if (!p.sickUntil || p.sickUntil < now) {
-    if (chance(s, (ai === 0 ? 0.12 : 0.05) / 86400, dtSec, 'halsa', p)) { const dur = (3 + rnd(s, 'halsa', p) * 8) * HOUR; p.sickUntil = now + dur; p.sickWhy = 'Sjuk'; if (dur > 8 * HOUR) log(s, `${p.name} blev svårt sjuk.`, 'world', [p.id]); }
+    if (chance(s, (iIstiden(ai) ? ARSTID.sjukIstid : ARSTID.sjuk) / 86400, dtSec, 'halsa', p)) { const dur = (3 + rnd(s, 'halsa', p) * 8) * HOUR; p.sickUntil = now + dur; p.sickWhy = 'Sjuk'; if (dur > 8 * HOUR) log(s, `${p.name} blev svårt sjuk.`, 'world', [p.id]); }
   }
   if (p.health <= 0) { die(s, p, p.hunger <= 0 ? 'av svält' : p.warm < 0.12 ? 'av kyla' : (p.poisonUntil ?? 0) > now ? 'av svampförgiftning' : 'av sjukdom'); return true; }
   // ålderdom och olyckor (Gompertz, per år = per dygn)

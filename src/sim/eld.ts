@@ -11,7 +11,7 @@ import { moodOf } from './samtal';
 import { duty, sedEvent } from './seder';
 import { RESERV, kunnighet } from './ekonomi';
 import { chance, clamp, rnd } from './slump';
-import { ageIndex, isLight } from './tid';
+import { ARSTID, ageIndex, iIstiden, isLight } from './tid';
 import { kronika } from './historik';
 import { SNABBARE } from './handlingar';
 import { Act, DAY, Fire, FireLog, GREN, HEARTHS, HOUR, HOUR_S, IGNITERS, Person, SEC, State } from './typer';
@@ -102,7 +102,7 @@ export function tryLight(s: State, p: Person) {
 
   f.tries++; f.tryTotal++;
   ovning(p, 'elda', 0.08 * (0.5 + p.pot.intelligens / 20));
-  const c = ig.chance * (0.5 + p.skill.elda / 20 + stat(p, 'intelligens', s.now) / 40) * (ageIndex(s) === 0 ? 0.6 : 1) * ((f.ash ?? 0) >= 1 ? 1.5 : 1) // en gammal kolhög tar lättare fyr
+  const c = ig.chance * (0.5 + p.skill.elda / 20 + stat(p, 'intelligens', s.now) / 40) * (iIstiden(ageIndex(s)) ? ARSTID.tandIstid : 1) * ((f.ash ?? 0) >= 1 ? 1.5 : 1) // en gammal kolhög tar lättare fyr
     * (1 + (f.tries - 1) / FORSOK_LARA); // varje misslyckat försök sedan elden brann gör nästa lättare
   if (rnd(s, 'eld', p) < c) { lightFire(s, p); return true; }
   if (ig.id === 'flinta' && rnd(s, 'eld', p) < 0.004) {
@@ -198,15 +198,13 @@ export function stepFire(s: State, dtSec: number, ppl: Person[]) {
     if (c) assign(s, c.p, 'tanda', m.fire.x + 0.5 + (rnd(s, 'eld') - 0.5) * 1.2, m.fire.y + 1.3, 3 * HOUR, `Vill ha eld. ${c.w.why}`);
   }
 }
-// hur mycket torrgräs det finns att samla per tidsålder (Istid, Vårtid, Sommartid, Hösttid)
-const GRASS_SEASON = [0.25, 0.6, 1, 1.3];
 // samling hittar tändmaterial, sten och flinta när förrådet behöver det
 export function forageItems(s: State, p: Person, dtSec: number): Record<string, number> | undefined {
   const ai = ageIndex(s), want = tinderWant(s), hrs = dtSec / HOUR_S * SNABBARE; // allt man skaffar går fortare sedan steg 1.5.13
   const sk = kunnighet(p.skill.samla);
   const got: Record<string, number> = {};
-  if (amountOf(s, 'torrgras') < want) got.torrgras = 3 * GRASS_SEASON[ai] * sk * hrs;
-  if (amountOf(s, 'grenar') < want) got.grenar = 3 * (ai === 0 ? 0.6 : 1) * sk * hrs;
+  if (amountOf(s, 'torrgras') < want) got.torrgras = 3 * ARSTID.hoPerTid[ai] * sk * hrs;
+  if (amountOf(s, 'grenar') < want) got.grenar = 3 * (iIstiden(ai) ? ARSTID.grenarIstid : 1) * sk * hrs;
   // stenar till eldringen: många vid stenarna, några i sanden, få annars
   if (needStones(s)) {
     const d = p.task ? stoneDist(s.seed)[tileOf(p.task.tx, p.task.ty)] : 9;

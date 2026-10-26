@@ -18,7 +18,7 @@ import { axeTask, fallTid } from './skog';
 import { GA_TID, startsOnArrival } from './paborjat';
 import { duty, dygn, habitShare, habitTotal } from './seder';
 import { clamp, pick, pickNarmaste, rnd } from './slump';
-import { ageIndex, isLight } from './tid';
+import { ARSTID, ageIndex, iIstiden, isLight, kallTid } from './tid';
 import { Act, DAY, H, HOUR, MIN, Person, Skill, Stat, State, T, W, inMap } from './typer';
 
 // ---------- val av aktivitet ----------
@@ -134,7 +134,7 @@ function strandSpot(s: State) {
 function dangers(s: State) {
   const ppl = living(s), freezing = ppl.filter(q => q.warm < 0.4).length / (ppl.length || 1), ai = ageIndex(s);
   const cold = coldOf(temperature(s)) > 0 || freezing > 0.25;
-  return { kyla: cold && !s.fire.lit && !emberOn(s), gras: ai === 0 || ai === 3 || cold ? RESERV.torrgrasKyla : 0 };
+  return { kyla: cold && !s.fire.lit && !emberOn(s), gras: kallTid(ai) || cold ? RESERV.torrgrasKyla : 0 };
 }
 // elden är släckt och kan inte tändas för att det saknas tändmaterial, och för få hämtar det
 const tinderNeeded = (s: State) => !s.fire.lit && !emberOn(s) && !canLight(s) && needTinder(s) && living(s).filter(q => q.task?.act === 'samla').length < 3;
@@ -197,14 +197,14 @@ function day(s: State, p: Person, v: Val, a: number, lazy: number) {
     const utan = homeless(s) / (ppl.length || 1);
     const halvt = !job.repair && !s.hus?.find(h => h.id === job.bit.hus)?.klar; // ett påbörjat hus vill man göra klart, även när det sista är ett hörn
     // hungern är en fara och går före: räcker maten mindre än två och ett halvt dygn väger bygget mindre
-    const col = ((job.repair ? 1.2 : halvt ? 3 : 0.8) + 3 * utan) * (ai === 3 || ai === 0 ? 1.4 : 1) * clamp((fd - 0.5) / 2, 0.1, 1);
+    const col = ((job.repair ? 1.2 : halvt ? 3 : 0.8) + 3 * utan) * (kallTid(ai) ? ARSTID.byggKall : 1) * clamp((fd - 0.5) / 2, 0.1, 1);
     const sc = poang(s, p, col, lust(s, p, 'hantverk', 'flit', ['bygga'], tot));
     burg = Math.max(burg, col);
     if (sc > bs) { build = true; if (job.missing) best = job.item === 'torrgras' ? 'samla' : 'ved'; }
   }
   // har byn flinta till elden (en sprucken räknas) men inte till en yxa går någon och letar vid stenarna, också när plockning inte är det mest behövda.
   // Yxan är en förbättring: bara när maten räcker och inte inför eller under istiden. En i taget
-  const leta = !build && a >= 14 && amountOf(s, 'flinta') > 0.1 && !needStones(s) && wantsFlint(s) && fd >= 1.5 && ai !== 3 && ai !== 0 && !ppl.some(q => q !== p && q.task?.why?.includes('vid stenarna')) && rnd(s, 'val', p) < 0.3;
+  const leta = !build && a >= 14 && amountOf(s, 'flinta') > 0.1 && !needStones(s) && wantsFlint(s) && fd >= 1.5 && !kallTid(ai) && !ppl.some(q => q !== p && q.task?.why?.includes('vid stenarna')) && rnd(s, 'val', p) < 0.3;
   if (leta) best = 'samla';
   const u = clamp(burg / 3, 0, 1); // hur akut byn behöver arbete
   const sat = Math.min(p.hunger, p.rest, p.social); // hur väl de egna behoven är fyllda
@@ -235,7 +235,7 @@ const poang = (s: State, p: Person, col: number, like: number) => col * like * (
 function bestWork(s: State, p: Person, fd: number, wd: number, ai: number, tot: number) {
   const fs = 1 + 0.25 * s.seder.v.forsiktighet; // en försiktig by vill ha större förråd
   const wFood = clamp(3.2 - fd / (2.5 * fs), 0.4, 3.5);
-  const wWood = clamp(3.2 - wd / (2 * fs), 0.15, 3.5) * (ai === 3 || ai === 0 ? 1.3 : 1); // inför och under istiden väger veden tyngre
+  const wWood = clamp(3.2 - wd / (2 * fs), 0.15, 3.5) * (kallTid(ai) ? ARSTID.vedKall : 1); // inför och under istiden väger veden tyngre
   let best: Act = 'samla', bs = -1, burg = 0;
   for (const w of WORK) {
     const need = w === 'ved' ? wWood : wFood;
@@ -339,7 +339,7 @@ function leisure(s: State, p: Person, v: Val, u: number, lazy: number, ai: numbe
     set(v, 'promenad', far > 12 ? 'Är nyfiken och vill se vad som finns längre bort' : 'Vill sträcka på benen');
     v.spot = walkSpot(s, far); v.dur = (60 + rnd(s, 'val', p) * 90) * MIN * PASS;
   } else if (r < wv + wh + wsoc + wp + wb) { set(v, 'bada', `Det är varmt (${Math.round(temp)} grader) och skönt att bada`); v.spot = shore; v.dur = (30 + rnd(s, 'val', p) * 30) * MIN * PASS; }
-  else { set(v, 'strand', ai === 0 ? 'Vill se ut över isen en stund' : 'Vill sitta vid vattnet och se ut över sjön'); v.spot = strandSpot(s); v.dur = (30 + rnd(s, 'val', p) * 60) * MIN * PASS; }
+  else { set(v, 'strand', iIstiden(ai) ? 'Vill se ut över isen en stund' : 'Vill sitta vid vattnet och se ut över sjön'); v.spot = strandSpot(s); v.dur = (30 + rnd(s, 'val', p) * 60) * MIN * PASS; }
 }
 
 // på natten: en vakt, och de andra håller sig vid elden och berättar, gör handarbete, umgås eller sover

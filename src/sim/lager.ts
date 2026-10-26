@@ -5,6 +5,7 @@ import { getMap } from './karta';
 import { Act, H, HOUR_S, Person, State, T, Task, W, inMap } from './typer';
 import { bitAt, roofed } from './byggnad';
 import { ACTS } from './handlingar';
+import { ARSTID, iIstiden } from './tid';
 import { BYN, Del, addDel, sumOf, takeOrder } from './egendom';
 import { FOOD, RUTA, SAKER, SAK_LIST, STACK, STACK_ORDER, isFood, isTool, rutaOf, sakNamn, stackOf } from './saker';
 
@@ -431,7 +432,7 @@ export function pilesOf(s: State): Pile[] {
 // Utanför lagret slits allt fortare, under tak långsammare. Hur fort varje sak slits står i saker.ts.
 function wearRate(s: State, k: string, ai: number, food = foodOf(s)) {
   const d = SAKER[k];
-  if (d?.ruttnar !== undefined) return 0.003 * (1 + food / 250) * (ai === 0 ? 0.5 : 1) * d.ruttnar;
+  if (d?.ruttnar !== undefined) return 0.003 * (1 + food / 250) * (iIstiden(ai) ? ARSTID.ruttIstid : 1) * d.ruttnar;
   return d?.slits ?? 0;
 }
 export const wearMult = (s: State, x: number, y: number) => roofed(s, x, y) ? INDOOR_WEAR : zoneAt(s, x, y) >= 0 ? 1 : OUT_WEAR;

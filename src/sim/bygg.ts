@@ -5,6 +5,7 @@ import { groundOf, punktIRuta } from './mark';
 import { campCenter, rektAvstand } from './plats';
 import { sedEvent } from './seder';
 import { RESERV, kunnighet } from './ekonomi';
+import { ARSTID, iIstiden } from './tid';
 import { knows } from './teknik';
 import { amountOf, changed, nearZone, ownMove, ownsAmount, use, usable, zonesOf } from './lager';
 import { freeTools } from './agande';
@@ -271,7 +272,7 @@ export function wearBuild(s: State, hours: number, ai: number) {
   for (const b of bitsOf(s)) {
     const M = MATERIAL[b.m];
     if (b.b < 1 || !M.slit) continue;
-    b.c -= M.slit * hours * (ai === 0 ? 1.5 : 1);
+    b.c -= M.slit * hours * (iIstiden(ai) ? ARSTID.slitIstid : 1);
     if (b.c > 0) continue;
     const h = husById(s, b.hus);
     if (b.k === 'vagg') {
