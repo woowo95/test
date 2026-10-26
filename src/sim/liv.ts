@@ -97,7 +97,7 @@ export function die(s: State, p: Person, orsak: Dodsorsak) {
 }
 
 export function birth(s: State, mother: Person) {
-  const father = byId(s, mother.partner) ?? byId(s, mother.pregnantBy);
+  const father = byId(s, mother.pregnantBy ?? mother.partner); // den hon blev gravid med; partnern bara i sparfiler där det saknas
   mother.pregnantSince = undefined; mother.lastBirth = s.now;
   const ch = newPerson(s, rnd(s, 'folk') < 0.5 ? 'm' : 'k', s.now, mother, father);
   ch.x = mother.x; ch.y = mother.y;
