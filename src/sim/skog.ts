@@ -115,7 +115,8 @@ export function axeDone(s: State, p: Person) {
 }
 
 // en vuxen som ska skaffa ved: hugga en fälld stam, fälla ett träd, göra en yxa eller (annars) samla grenar
-export function axeTask(s: State, p: Person): { act: Act; x: number; y: number; ref?: number; dur?: number; why: string } | undefined {
+// kyla: kylan är en fara (dangers i val.ts). Då görs ingen ny yxa, för ett nytt redskap är en förbättring
+export function axeTask(s: State, p: Person, kyla = false): { act: Act; x: number; y: number; ref?: number; dur?: number; why: string } | undefined {
   const ppl = living(s), others = ppl.filter(q => q !== p);
   if (freeTools(s, p, 'yxa') > 0) { // en yxa som ingen annan fäller eller hugger med
     const k = nearestStock(s);
@@ -124,7 +125,7 @@ export function axeTask(s: State, p: Person): { act: Act; x: number; y: number; 
     if (t) return { act: 'falla', x: t.x, y: t.y, dur: fallTid(s, tileOf(t.x, t.y)), why: 'Har en yxa och fäller ett träd till trä' };
   }
   const adults = ppl.filter(q => ageOf(q, s.now) >= REDSKAP.yxaFran).length;
-  if ((halvOf(s, p, ['yxa']) || knows(p, 'yxa') && canMakeAxe(s, p)) && axes(s) < axesWanted(adults) + (s.hus?.some(h => !h.klar) ? REDSKAP.yxaBygge : 0) && !others.some(q => q.task?.act === 'yxa')) {
+  if (!kyla && (halvOf(s, p, ['yxa']) || knows(p, 'yxa') && canMakeAxe(s, p)) && axes(s) < axesWanted(adults) + (s.hus?.some(h => !h.klar) ? REDSKAP.yxaBygge : 0) && !others.some(q => q.task?.act === 'yxa')) {
     return { act: 'yxa', x: 0, y: 0, dur: minOf('yxa') * MIN, why: 'Har flinta och vill göra en yxa för att kunna fälla träd' };
   }
   return undefined;

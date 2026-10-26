@@ -353,7 +353,7 @@ function withTools(s: State, p: Person, v: Val, best: Act, what: string, fd: num
     const fa = flintArea(p), fl = (fa !== undefined && flintSpot(s, p, (x, y) => areaOf(x, y) === fa)) || flintSpot(s, p);
     if (fl) { v.spot = fl; v.dur /= VAL.pass; v.sok = true; v.why = `${v.why} Letar efter ${stones ? 'stenar till en eldring' : 'flinta'} vid stenarna${fa !== undefined ? ' där hen vet att det finns flinta' : ''}.`; }
   }
-  const ax = best === 'ved' ? axeTask(s, p) : undefined; // med yxa fälls träd och huggs ved
+  const ax = best === 'ved' ? axeTask(s, p, fara.kyla) : undefined; // med yxa fälls träd och huggs ved
   if (ax) {
     set(v, ax.act, `${what}. ${ax.why}.`);
     if (ax.dur) v.dur = ax.dur;
