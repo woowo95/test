@@ -2322,11 +2322,10 @@ SCENARIER.faror = {
     };
     const k0 = kall(false), kyla = { ljust: isLight(k0.now), kallt: coldOf(temperature(k0)) > 0, ...valjer(k0) };
     const kylaSvalt = valjer(kall(false, true)), varmt = valjer(kall(true, true, 200));
-    // korgen, spjutet, metspöet och yxan (axeTask i skog.ts) görs i withTools (val.ts), som frågar dangers(s). Kniven (craft i val.ts) gör det inte: den ger en VARNING
-    const SKYDDADE = REDSKAPSARBETE.filter(k => k !== 'kniv');
+    // korgen, spjutet, metspöet och yxan (axeTask i skog.ts) görs i withTools (val.ts) och kniven i craft: alla frågar dangers(s)
+    const SKYDDADE = REDSKAPSARBETE;
     const tillv = (v: typeof rik, ks = SKYDDADE) => ks.filter(k => v.n[k]).map(k => `${k} ${v.n[k]}`).join(', ') || 'inga';
     const tillvAndel = (v: typeof rik) => v.andel(SKYDDADE);
-    if (kyla.n.kniv) console.log(`VARNING: faror: i kylan med elden släckt valdes en flintkniv ${kyla.n.kniv} av ${kyla.tot} gånger. Handarbetet på fritiden (craft i val.ts) frågar inte dangers(s), som korgen, spjutet och metspöet gör (withTools)`);
     if (svalt.sok) console.log(`VARNING: faror: i den svältande byn (mat för ${SIM.dygn(svFd)}) skickades ${svalt.sok} av ${svalt.tot} att leta flinta ett helt pass. withTools i val.ts skickar samlare till stenarna utan day():s villkor om mat (fel.txt motor-8)`);
     if (kyla.n.bygga) console.log(`VARNING: faror: i kylan med elden släckt valdes bygget ${kyla.n.bygga} av ${kyla.tot} gånger. Bygget vägs mot maten men inte mot veden (samhalle-145, Björn avgör om bygget är ett skydd mot kylan)`);
     return [
@@ -2334,7 +2333,7 @@ SCENARIER.faror = {
       [`svältande by (mat för ${SIM.dygn(svFd)}): bygge, hantverk och fritid ${pct(svalt.andel(FORBATTRING))}, klart lägre än i den rika byn (${svalt.topp})`, svFd < 1 && svalt.andel(FORBATTRING) < rik.andel(FORBATTRING) / 3],
       [`svältande by: matarbete och redskap till maten ${pct(svalt.andel(MATMEDREDSKAP))} av valen (i den rika byn ${pct(rik.andel(MATMEDREDSKAP))})`, svalt.andel(MATMEDREDSKAP) > 0.5 && svalt.andel(MATMEDREDSKAP) > 2 * rik.andel(MATMEDREDSKAP)],
       [`istiden med elden släckt (${kyla.ljust ? 'ljust' : 'mörkt'}, ${kyla.kallt ? 'kallt' : 'inte kallt'}): trä ${pct(kyla.andel(TRAARBETE))}, bygge ${pct(kyla.andel(['bygga']))} (${kyla.topp})`, kyla.ljust && kyla.kallt && kyla.andel(TRAARBETE) > 0.4 && kyla.andel(TRAARBETE) > kyla.andel(['bygga'])],
-      [`istiden med elden släckt: inga korgar, spjut, metspön eller yxor görs, inte heller när maten tryter (${tillv(kyla)}; hungrig ${tillv(kylaSvalt)}, där ${pct(kylaSvalt.andel(MATARBETE))} matarbete)`, tillvAndel(kyla) === 0 && tillvAndel(kylaSvalt) === 0 && kylaSvalt.andel(MATARBETE) > 0],
+      [`istiden med elden släckt: inga korgar, spjut, metspön, yxor eller knivar görs, inte heller när maten tryter (${tillv(kyla)}; hungrig ${tillv(kylaSvalt)}, där ${pct(kylaSvalt.andel(MATARBETE))} matarbete)`, tillvAndel(kyla) === 0 && tillvAndel(kylaSvalt) === 0 && kylaSvalt.andel(MATARBETE) > 0],
       [`kontroll: samma hungriga by med elden tänd gör redskap (${tillv(varmt)}), så provet ser dem när de väljs`, tillvAndel(varmt) > 0],
     ];
   },

@@ -391,10 +391,10 @@ function cleanTask(s: State, v: Val, why: string) {
   set(v, 'rensa', why);
   v.dur = Math.min(VAL.rensaMaxTim * HOUR, (abborrar(s) / DJUR.abborre.timme) * HOUR + VAL.extraMin * MIN);
 }
-// handarbete vid elden: den som kan göra en kniv gör det när byn saknar en, den som har kniv slaktar viltet, och den
-// som kan tvinna rep gör det när byn behöver rep
+// handarbete vid elden: den som kan göra en kniv gör det när byn saknar en (inte när kylan är en fara, som de andra
+// redskapen i withTools), den som har kniv slaktar viltet, och den som kan tvinna rep gör det när byn behöver rep
 function craft(s: State, p: Person, v: Val, why: string) {
-  if (wantsKnife(s, p)) { set(v, 'kniv', `${why}. Gör en flintkniv.`); v.dur = minOf('kniv') * MIN; return; }
+  if (wantsKnife(s, p) && !dangers(s).kyla) { set(v, 'kniv', `${why}. Gör en flintkniv.`); v.dur = minOf('kniv') * MIN; return; }
   if (canSlaughter(s, p)) { slaughterTask(s, v, `${why}. Slaktar viltet med kniven.`); return; }
   if (canClean(s, p)) { cleanTask(s, v, `${why}. Rensar fisken.`); return; }
   set(v, 'hantverk', why);
