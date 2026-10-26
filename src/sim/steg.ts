@@ -6,7 +6,7 @@ import { KANIN, REDSKAP, clean, slaughter, twineRope, wearUsed } from './redskap
 import { GOR_ACTS, finishHalf, startWork, stepPaborjat, workHalf } from './paborjat';
 import { thinkWhileWorking } from './teknik';
 import { arbetsformaga, foodDays, workRate } from './ekonomi';
-import { TRY_SEC, growFynd, handFish, packFynd, pickMushrooms, richness, richnessDelar, takeFrom } from './fynd';
+import { TRY_SEC, growFynd, handFish, lagren, packFynd, pickMushrooms, richness, richnessDelar, takeFrom } from './fynd';
 import { coldOf, temperature } from './vader';
 import { addFuel, canLight, fireWant, forageItems, fuelFor, hearthOf, heatAt, igniterOf, stepFire, takeCoal, takeFuel, tryLight } from './eld';
 import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, isSick, living, log, ovning, stat, think } from './folk';
@@ -337,7 +337,8 @@ function arrive(s: State, p: Person, tk: Task, light: boolean) {
 
 // det ett arbete för byn ger, per handling. y = det platsen gav den här biten (takten gånger platsens värde rich), rd = redskapet
 // i handen, a = åldern, bar = lägg något bredvid bördan (grenar, rötter, svamp). Svarar raden true har den själv lagt det i bördan
-interface Arbetsbit { y: number; rich: number; rd: ReturnType<typeof toolRow>; dtSec: number; a: number; bar: (k: string, n: number) => void }
+// delar = platsens värde per lager före uttaget (richnessDelar), när arbetet tar ur flera lager
+interface Arbetsbit { y: number; rich: number; delar?: number[]; rd: ReturnType<typeof toolRow>; dtSec: number; a: number; bar: (k: string, n: number) => void }
 const UTFALL: Partial<Record<Act, (s: State, p: Person, tk: Task, b: Arbetsbit) => boolean | void>> = {
   // fiske med händerna, spjut eller metspö: ett försök i taget, och fiskaren går hem med varje fångst
   fiske: (s, p, tk, { rd, dtSec, a }) => {
@@ -362,9 +363,11 @@ const UTFALL: Partial<Record<Act, (s: State, p: Person, tk: Task, b: Arbetsbit) 
     }
     return true;
   },
-  samla: (s, p, tk, { y, rich, dtSec, bar }) => {
+  samla: (s, p, tk, { y, rich, delar, dtSec, bar }) => {
     if (y > 0) {
-      const r = rich > 0 ? y * Math.min(1, richness(s, 'rotter', tk.tx, tk.ty) / rich) : 0; // rötterna efter hur mycket av platsen som är rötter
+      // rötterna efter hur mycket av platsen som var rötter före uttaget
+      const rot = delar?.[lagren('samla').indexOf('rotter')] ?? richness(s, 'rotter', tk.tx, tk.ty);
+      const r = rich > 0 ? y * Math.min(1, rot / rich) : 0;
       tk.carry += y - r; bar('rotter', r);
     }
     const got = forageItems(s, p, dtSec) ?? {};
@@ -400,7 +403,7 @@ function workStep(s: State, p: Person, tk: Task, dtSec: number, a: number, learn
   const bar = (k: string, n: number) => { if (n > 0) { tk.items ??= {}; tk.items[k] = (tk.items[k] ?? 0) + n; } };
   // det arbetet ger (UTFALL ovan); utan egen rad, eller om raden inte tagit hand om det, läggs det platsen gav i bördan
   const u = UTFALL[tk.act];
-  if (!(u && u(s, p, tk, { y, rich, rd, dtSec, a, bar })) && y > 0) tk.carry += y;
+  if (!(u && u(s, p, tk, { y, rich, delar: del?.r, rd, dtSec, a, bar })) && y > 0) tk.carry += y;
   const sk = d.arbete!;
   const before = p.skill[sk];
   ovning(p, sk, dtSec / HOUR_S * 0.12 * learn * (0.4 + stat(p, 'intelligens', now) / 20));

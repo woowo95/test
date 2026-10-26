@@ -1398,6 +1398,8 @@ SCENARIER.rotter = {
     return [
       [`både bär och rötter samlas (sommar ${sommar.b.toFixed(0)} bär, ${sommar.r.toFixed(0)} rötter)`, sommar.b > 0 && sommar.r > 0],
       [`i istiden mest rötter (${istid.r.toFixed(0)} rötter mot ${istid.b.toFixed(0)} bär)`, istid.r > istid.b],
+      // rötternas andel räknas på platsen före uttaget (motor-9): annars blir en del av rötterna bär
+      [`i istiden växer inga bär, så allt som samlas är rötter (${istid.b.toFixed(4)} bär)`, istid.r > 0 && istid.b < 1e-9],
       [`på sommaren mest bär`, sommar.b > sommar.r],
       [`bär och rötter i egna stackar, och ingen bärstack rymmer mer än ${STACK.bar}`, sommar.skild && istid.skild],
     ];
@@ -1565,18 +1567,22 @@ SCENARIER.aktivitet = {
     spar.pa = false;
     const turer = (s.stat?.turer as number) ?? 0;
     // bärplockning: vad en timme ger med gångtiden till platsen och hem
-    const q = createState(5, START); let tim = 0;
-    for (let i = 0; i < 24 * 3600 / BEAT; i++) { step(q, BEAT); for (const p of living(q)) if (p.task?.act === 'samla') tim += BEAT / 3600; }
-    const pl = ((q.stat?.prod_samla as number) ?? 0) / Math.max(1, tim);
+    // medel av åtta byar: i en enda by beror talet mycket på slumpen (0,05–0,24 för byarna 1–8 i v47)
+    let pl = 0;
+    for (let seed = 1; seed <= 8; seed++) {
+      const q = createState(seed, START); let tim = 0;
+      for (let i = 0; i < 24 * 3600 / BEAT; i++) { step(q, BEAT); for (const p of living(q)) if (p.task?.act === 'samla') tim += BEAT / 3600; }
+      pl += ((q.stat?.prod_samla as number) ?? 0) / Math.max(1, tim) / 8;
+    }
     return [
       [`man bär hem efter en stunds arbete och går tillbaka (${turer} turer på ${Math.round(arbete)} arbetstimmar)`, turer > 20],
       [`ingen bär mer än en tredjedel av vad hen orkar från arbetet (${tungt} för tunga)`, tungt === 0],
       [`man håller sig nära platsen (${utanfor} gånger utanför)`, utanfor === 0],
       [`ingen går ut i vattnet, längs hela vägen (${vatten} punkter i vattnet)`, vatten === 0],
       [`elden matas med en famn i taget (högst ${eldMax.toFixed(1)})`, eldMax > 0 && eldMax <= 1 + 1e-9],
-      // en timmes bärplockning med gångtiden ger ca 0,2 (uppmätt i v47, efter 1.5.13). Bandet är brett: talet beror på årstiden
-      // och slumpen i en enda by, och det ändras när balansen ses över. Provet ska bara fånga en stor ändring
-      [`bärplockning ger ungefär lika mycket per timme som förut (${pl.toFixed(2)})`, pl > 0.15 && pl < 0.45],
+      // en timmes bärplockning med gångtiden ger ca 0,17 i medel för byarna 1–8 (uppmätt i v47, efter 1.5.13). Bandet är brett:
+      // talet beror på årstiden och slumpen, och det ändras när balansen ses över. Provet ska bara fånga en stor ändring
+      [`bärplockning ger ungefär lika mycket per timme som förut (${pl.toFixed(2)}, medel av åtta byar)`, pl > 0.1 && pl < 0.45],
     ];
   },
 };
@@ -2250,12 +2256,16 @@ SCENARIER.utflyttning = {
 SCENARIER.vakt = {
   text: 'Nattvakten: varje natt håller en vuxen mellan 16 och 60 år vakt, den modigaste med lite slump, och den som utses lägger ner det hen bär',
   kor: () => {
-    const s = createState(2, START), natter = new Map<number, Set<number>>(), aldrar: number[] = [];
+    const s = createState(2, START), natter = new Map<number, Set<number>>(), aldrar: number[] = [], sjuka = new Map<number, string>();
     kor(s, 3 * 24, q => {
       for (const p of living(q)) if (p.task?.act === 'vakt') {
         const n = natter.get(p.guardDay ?? -1) ?? new Set<number>(); n.add(p.id); natter.set(p.guardDay ?? -1, n); aldrar.push(ageOf(p, q.now));
       }
+      // nätter där den utsedda vakten är sjuk och sover: ingen annan tar vakten (val.ts night)
+      const g = q.lastGuardDay >= 0 && !isLight(q.now) ? living(q).find(p => p.guardDay === q.lastGuardDay) : undefined;
+      if (g && isSick(g, q.now) && g.task?.act !== 'vakt') sjuka.set(q.lastGuardDay, g.name);
     });
+    for (const [d, namn] of sjuka) if (!natter.has(d)) console.log(`VARNING: vakt: natt ${d + 1} var ${namn} utsedd till vakt men sjuk, och ingen annan höll vakt. night() i val.ts väljer vakten bland alla vuxna, också de sjuka, och väljer ingen ny`);
     // i natt: den modigaste bär två grenar när en annan väljer och nattens vakt utses
     const q = structuredClone(s); klockan(q, 22); q.lastGuardDay = -1;
     const vuxna = living(q).filter(p => ageOf(p, q.now) >= SIM.ALDER.vaktFran && ageOf(p, q.now) < SIM.ALDER.vaktTill);
@@ -2268,7 +2278,7 @@ SCENARIER.vakt = {
     if (Math.abs(grenarUte(q) - grenar0 - 2) > 1e-6) console.log(`VARNING: vakt: ${g!.name} bar två grenar när hen blev nattens vakt, och de försvann. night() i val.ts sätter g.task = undefined utan att lägga ner bördan (motor-6, samhalle-66)`);
     g!.task = undefined; SIM.chooseTask(q, g!);
     return [
-      [`${natter.size} nätter under tre dygn (tre år i spelet) hade en vakt, och aldrig mer än en (${[...natter.values()].map(n => n.size).join(', ')})`, natter.size >= 3 && [...natter.values()].every(n => n.size === 1)],
+      [`${natter.size} nätter under tre dygn (tre år i spelet) hade en vakt, och aldrig mer än en (${[...natter.values()].map(n => n.size).join(', ')}${sjuka.size ? `; ${[...sjuka.keys()].filter(d => !natter.has(d)).length} natt med en sjuk vakt` : ''})`, natter.size + [...sjuka.keys()].filter(d => !natter.has(d)).length >= 3 && [...natter.values()].every(n => n.size === 1)],
       [`vakterna var mellan ${Math.min(...aldrar).toFixed(0)} och ${Math.max(...aldrar).toFixed(0)} år`, aldrar.length > 0 && aldrar.every(a => a >= SIM.ALDER.vaktFran && a < SIM.ALDER.vaktTill)],
       [`i natt (${isLight(q.now) ? 'ljust' : 'mörkt'}) utsågs den modigaste, ${g!.name}, när ${p!.name} valde (${akt(p!)}), och hen slutade med det hen gjorde`, !isLight(q.now) && utsedd && bordan === undefined && akt(p!) !== 'vakt'],
       [`${g!.name} väljer sedan att hålla vakt (${akt(g!)})`, akt(g!) === 'vakt'],
