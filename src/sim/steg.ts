@@ -437,7 +437,7 @@ function buildStep(s: State, p: Person, tk: Task, dtSec: number) {
   if (!j || j.missing || j.fell) { tk.until = s.now; return; } // ett träd i vägen: välj på nytt
   // nästa bit av bygget: man går först till lagret om det behövs material
   const site = siteOf(s, j.bit);
-  tk.ref = j.bit.id; tk.tool = j.repair ? 'laga' : j.bit.k === 'golv' ? 'golv' : 'vagg';
+  tk.ref = j.bit.id; tk.tool = j.repair ? (j.bit.k === 'golv' ? 'lagaGolv' : 'laga') : j.bit.k === 'golv' ? 'golv' : 'vagg';
   tk.phase = 'go';
   if (j.need > 0) { const f = fetchSpot(s, j.item!); tk.tx = f.x; tk.ty = f.y; tk.site = site; } else { tk.tx = site.x; tk.ty = site.y; }
 }

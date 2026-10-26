@@ -86,7 +86,7 @@ const DEF = {
   strand: { namn: 'Sitter vid stranden och ser ut över vattnet', dygn: true },
   korg: { namn: 'Flätar en korg av hö', slag: 'hantverk', hantverk: true, plats: 'elden' },
   rensa: { namn: 'Rensar fisk vid elden', slag: 'hantverk', hantverk: true, social: true, stilla: true, plats: 'elden' },
-  bygga: { namn: 'Bygger', slag: 'bygga', verktyg: { laga: 'Lagar en vägg', golv: 'Lägger golv', vagg: 'Bygger en vägg' }, hantverk: true, tungt: true, stilla: true },
+  bygga: { namn: 'Bygger', slag: 'bygga', verktyg: { laga: 'Lagar en vägg', lagaGolv: 'Lagar golvet', golv: 'Lägger golv', vagg: 'Bygger en vägg' }, hantverk: true, tungt: true, stilla: true },
 } satisfies Record<string, ActDef>;
 
 export type Act = keyof typeof DEF;

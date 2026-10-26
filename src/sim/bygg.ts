@@ -207,11 +207,13 @@ export function buildJob(s: State, p: Person): Job | undefined {
   }
   return best;
 }
+// materialet en lagning kräver: en del av det nya (inte avrundat, så att ett trägolv på 0,5 inte kostar 1 att laga)
+const lagKostnad = (M: { n: number }) => M.n / BYGG.lagMatDiv;
 // material som fattas på bygget eller lagningen
 export function needOf(b: Bit) {
   const M = MATERIAL[b.m];
   if (!M.item) return 0;
-  return Math.max(0, b.b >= 1 ? Math.ceil(M.n / BYGG.lagMatDiv) - (b.lm ?? 0) : M.n - b.mat);
+  return Math.max(0, b.b >= 1 ? lagKostnad(M) - (b.lm ?? 0) : M.n - b.mat);
 }
 export const lacks = (b: Bit) => needOf(b) > 1e-9;
 // var man står när man bygger: på golvet, eller bredvid väggen (helst inne i huset)
@@ -256,11 +258,11 @@ export function workOn(s: State, p: Person, b: Bit, dtSec: number) {
   const M = MATERIAL[b.m], repair = b.b >= 1;
   const rate = dtSec / HOUR_S / (M.tim || 0.01) * kunnighet(p.skill.hantverk) * (ageOf(p, s.now) < ALDER.byggFullt ? BYGG.ungFart : 1);
   if (repair) {
-    if (M.item && (b.lm ?? 0) < Math.ceil(M.n / BYGG.lagMatDiv) - 1e-9) return false;
+    if (M.item && (b.lm ?? 0) < lagKostnad(M) - 1e-9) return false;
     b.lp = (b.lp ?? 0) + rate * BYGG.lagFart;
     if (b.lp < 1) return false;
     b.c = 1; b.lp = b.lm = undefined;
-    if (forstaGang(s, 'lagat')) log(s, `${p.name} lagade en sliten vägg för första gången.`, 'world', [p.id]);
+    if (forstaGang(s, 'lagat')) log(s, `${p.name} lagade ${b.k === 'golv' ? 'ett slitet golv' : 'en sliten vägg'} för första gången.`, 'world', [p.id]);
     return true;
   }
   if (M.item && b.mat < M.n - 1e-9) return false;
