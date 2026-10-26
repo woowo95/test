@@ -1,4 +1,4 @@
-import { FireLog, HOUR, RING, amountOf, byId, emberOn, fireHeat, fireWant, hearthOf, heatRadius, igniterOf, living } from '../../sim';
+import { ELD, FireLog, HOUR, amountOf, byId, emberOn, fireHeat, fireWant, hearthOf, heatRadius, igniterOf, living } from '../../sim';
 import { bar, clockTxt, durTxt, esc, fmtN, num, pLink, times } from '../hjalp';
 import { s } from '../lage';
 import type { Flik } from '../panel';
@@ -41,7 +41,7 @@ function fireHtml() {
       <dt>Trä använt</dt><dd>${fmtN(f.burned)}</dd></dl>` : ''}
     <h3>Tändning</h3><dl class="kv fam">
       <dt>Tänddon</dt><dd>${ig ? `${esc(ig.name)} (${Math.floor(amountOf(s, ig.id))} i förrådet)` : 'Inget. Någon måste hitta en flinta.'}</dd>
-      <dt>Stenring</dt><dd>${f.ring ? 'Ligger runt eldplatsen' : `Behövs till den första elden: ${Math.floor(amountOf(s, 'sten'))} av ${RING} stenar`}</dd>
+      <dt>Stenring</dt><dd>${f.ring ? 'Ligger runt eldplatsen' : `Behövs till den första elden: ${Math.floor(amountOf(s, 'sten'))} av ${ELD.ring} stenar`}</dd>
       <dt>Hö</dt><dd>${Math.floor(amountOf(s, 'torrgras'))} i förrådet</dd>
       <dt>Grenar</dt><dd>${Math.floor(amountOf(s, 'grenar'))} i förrådet</dd>
       <dt>Bränsle</dt><dd>${Math.floor(amountOf(s, 'ved'))} trä och ${Math.floor(amountOf(s, 'grenar'))} grenar i förrådet (grenar brinner fort)</dd>

@@ -15,6 +15,58 @@ import { ARSTID, ageIndex, iIstiden, isLight } from './tid';
 import { kronika } from './historik';
 import { SNABBARE } from './handlingar';
 import { Act, DAY, Fire, FireLog, GREN, HEARTHS, HOUR, HOUR_S, IGNITERS, Person, SEC, State } from './typer';
+import { balans } from './balans';
+
+// ---------- balanstal (regel 8) ----------
+// Elden: hur stark den är, vad var och en vill ha på den, hur den tänds och fylls på, och hur tändmaterial, stenar och flinta
+// samlas. Mängder är i förrådets enheter (ved), tider i timmar och dygn (år i spelet). Hur mycket hö och grenar byn vill ha
+// i förrådet står i RESERV (ekonomi.ts), eldstädernas bränsle och tänddonens chans i HEARTHS och IGNITERS (typer.ts)
+export const ELD = balans('eld', {
+  // styrkan och värmen
+  styrkaFaktor: 1.4, styrkaMin: 0.15, // styrkan är bränslet delat med eldstadens max gånger Faktor, minst Min (1 = full eld)
+  radieMin: 0.5, radieStyrka: 0.5, // värmen når Min + Styrka gånger styrkan av eldstadens radie
+  glodTim: 1, // glöden lever så här länge efter att elden slocknat (timmar)
+  kolMin: 1, kolSpann: 4, // glöden lämnar efter sig Min till Min + Spann - 1 kol ...
+  kolDygn: 3, // ... som ligger så här länge (dygn)
+  // vad var och en vill ha på elden (fireWish): det högsta av
+  onskaFryser: 1.2, onskaKyla: 2.4, // egen köld: (1 - värmen) gånger Fryser plus kylan ute gånger Kyla
+  onskaEmpati: 10, onskaGemBas: 0.6, onskaGem: 0.4, // att andra fryser: byns frysande gånger empatin delad med Empati gånger (Bas + Gemenskap gånger seden)
+  trivsDag: 0.12, trivsNatt: 0.55, trivsMood: 1.5, trivsMin: 0.4, // en trivsam eld, mest i mörkret och för den som mår dåligt
+  slocknaFran: 11, slocknaSpann: 9, slocknaForsBas: 0.6, slocknaFors: 0.4, slocknaVikt: 0.14, // att elden inte ska slockna: den kloka, när den är svår att tända, och den försiktiga byn
+  forstaEld: 0.3, forstaBas: 0.6, forstaNyfiken: 25, // byn har aldrig haft eld: den nyfikna vill ha en
+  byFryser: 0.6, // en invånare vars värme är under detta räknas som frysande när byns köld räknas
+  // fylla på
+  hamtaMin: 0.5, // minst så mycket ved måste finnas (i byn och hos den som hämtar) för att någon ska hämta
+  hamtaTim: 1, // den som hämtar ved har en timme på sig
+  fyllMarg: 2, fyllPlus: 0.2, // någon hämtar ved när hens önskan är över bränslet gånger Marg plus Plus
+  valjPlikt: 0.4, valjAvstand: 25, valjVakt: 0.3, valjBrus: 0.1, // vem som hämtar: önskan gånger (Plikt + pliktkänslan), minus avståndet delat med Avstand, plus Vakt för en vakt, plus slump
+  ovFyll: 0.01, // övning i att elda av att fylla på
+  // tända
+  ring: 6, // stenar i ringen runt eldplatsen
+  tandBransle: 2, // bränsle som läggs i när elden tänds
+  tandVedMin: 1, // minst så mycket bränsle krävs för att tända
+  tandVill: 0.1, tandKandidat: 0.05, // någon tänder när byns önskan är över Vill gånger eldstadens max; den som tänder har själv över Kandidat
+  tandFlit: 2, tandBrus: 3, // vem som tänder: färdigheten plus flit delad med Flit plus slump gånger Brus
+  tandTim: 3, // den som ska tända har tre timmar på sig
+  tandBas: 0.5, tandSkill: 20, tandInt: 40, // chansen att lyckas: tänddonets gånger (Bas + färdigheten / Skill + intelligensen / Int) ...
+  tandKol: 1.5, // ... gånger Kol på en gammal kolhög, gånger tidsåldern, och gånger 1 plus (misslyckade försök - 1) / ForsokLara
+  forsokLara: 10, // efter så här många misslyckade försök sedan elden brann är chansen dubbelt så stor
+  flintSprack: 0.004, // chansen att flintan spricker vid ett misslyckat försök
+  ovTand: 0.08, ovBas: 0.5, ovInt: 20, // övning i att elda av att försöka tända: Tand gånger (Bas + intelligensen / Int)
+  tandGlad: 0.15, tandGladDygn: 0.5, // glädjen över att tända elden och hur länge den varar (dygn)
+  sedNyfiken: 0.1, // den första elden gör byn nyfiken
+  // samla tändmaterial, stenar och flinta (forageItems): per arbetstimme gånger kunnigheten
+  hoTakt: 3, // hö (gånger tidsålderns ARSTID.hoPerTid)
+  grenarTakt: 3, // grenar (gånger ARSTID.grenarIstid i istiden)
+  stenTakt: 0.8, // stenar till eldringen ...
+  stenNara: 1, stenNaraDel: 3, // ... gånger Nara dit stenarna ligger inom så många rutor ...
+  stenMedel: 3, stenMedelDel: 1.5, // ... Del inom så många ...
+  stenAnnars: 0.4, // ... och annars
+  flintaMax: 4, // byn letar inte flinta när den har så här många flintor och yxor
+  flintaTakt: 0.04, // flinta: chans per arbetstimme gånger hur lätt den är att hitta på platsen (flintFactor)
+  flintaOkand: 0.4, // hur lätt den är att hitta när platsen inte är känd
+  flintaStenar: 2, flintaSand: 1, // över Stenar är det vid stenarna (och platsen läggs på minnet), över Sand i sanden vid stranden
+});
 
 // ---------- eld ----------
 export const hearthOf = (f: Fire) => HEARTHS.find(h => h.id === f.hearth) ?? HEARTHS[0];
@@ -39,8 +91,8 @@ const giveBack = (s: State, n: number) => { if (n > 0) addTo(s, 'grenar', n / GR
 function fireLog(s: State, e: Omit<FireLog, 't'>) { s.fire.log.push({ t: s.now, ...e }); if (s.fire.log.length > 80) s.fire.log.splice(0, s.fire.log.length - 80); }
 export const emberOn = (s: State) => !s.fire.lit && s.fire.emberUntil !== undefined && s.fire.emberUntil > s.now;
 // eldens styrka 0–1 efter hur mycket ved som brinner
-export function fireHeat(s: State) { const f = s.fire; return f.lit ? clamp(f.fuel / hearthOf(f).maxFuel * 1.4, 0.15, 1) : 0; }
-export function heatRadius(s: State) { return hearthOf(s.fire).radius * (0.5 + 0.5 * fireHeat(s)); }
+export function fireHeat(s: State) { const f = s.fire; return f.lit ? clamp(f.fuel / hearthOf(f).maxFuel * ELD.styrkaFaktor, ELD.styrkaMin, 1) : 0; }
+export function heatRadius(s: State) { return hearthOf(s.fire).radius * (ELD.radieMin + ELD.radieStyrka * fireHeat(s)); }
 export function heatAt(s: State, x: number, y: number) {
   const I = fireHeat(s); if (!I) return 0;
   const m = getMap(s.seed), r = heatRadius(s);
@@ -55,44 +107,42 @@ const relightHard = (s: State) => 1 - (igniterOf(s) ?? IGNITERS[0]).chance;
 function fireWish(s: State, p: Person, vc: number): Wish {
   const light = isLight(s.now), cold = coldOf(temperature(s)), sd = s.seder.v;
   const opts: Wish[] = [
-    { v: clamp((1 - p.warm) * 1.2 + cold * 2.4, 0, 1), why: p.warm < 0.5 ? 'Fryser och vill ha mer värme' : 'Det är kallt och hen vill hålla värmen' },
-    { v: clamp(vc * (p.pot.empati / 10) * (0.6 + 0.4 * sd.gemenskap), 0, 1), why: 'Andra i byn fryser' },
-    { v: (light ? 0.12 : 0.55) * clamp(1.5 - moodOf(p, s.now), 0.4, 1), why: light ? 'Vill ha en trivsam eld' : 'Vill ha en trivsam eld att samlas kring i mörkret' },
-    { v: clamp((p.pot.intelligens - 11) / 9, 0, 1) * relightHard(s) * (0.6 + 0.4 * sd.forsiktighet) * 0.14, why: 'Vill inte att elden slocknar, den är svår att tända igen' },
+    { v: clamp((1 - p.warm) * ELD.onskaFryser + cold * ELD.onskaKyla, 0, 1), why: p.warm < 0.5 ? 'Fryser och vill ha mer värme' : 'Det är kallt och hen vill hålla värmen' },
+    { v: clamp(vc * (p.pot.empati / ELD.onskaEmpati) * (ELD.onskaGemBas + ELD.onskaGem * sd.gemenskap), 0, 1), why: 'Andra i byn fryser' },
+    { v: (light ? ELD.trivsDag : ELD.trivsNatt) * clamp(ELD.trivsMood - moodOf(p, s.now), ELD.trivsMin, 1), why: light ? 'Vill ha en trivsam eld' : 'Vill ha en trivsam eld att samlas kring i mörkret' },
+    { v: clamp((p.pot.intelligens - ELD.slocknaFran) / ELD.slocknaSpann, 0, 1) * relightHard(s) * (ELD.slocknaForsBas + ELD.slocknaFors * sd.forsiktighet) * ELD.slocknaVikt, why: 'Vill inte att elden slocknar, den är svår att tända igen' },
   ];
-  if (!s.fire.lightings) opts.push({ v: 0.3 * (0.6 + p.pot.nyfikenhet / 25), why: 'Byn har aldrig haft eld' });
+  if (!s.fire.lightings) opts.push({ v: ELD.forstaEld * (ELD.forstaBas + p.pot.nyfikenhet / ELD.forstaNyfiken), why: 'Byn har aldrig haft eld' });
   const b = opts.reduce((a, o) => (o.v > a.v ? o : a));
   return { v: b.v * hearthOf(s.fire).maxFuel, why: b.why };
 }
 // tändmaterial som invånarna vill ha i förrådet
 const tinderWant = (s: State) => (s.fire.lit ? RESERV.tandVill : RESERV.tandVillSlocknad);
 // den första elden läggs i en ring av stenar; ringen ligger kvar när elden slocknat
-export const RING = 6;
-export const needStones = (s: State) => !s.fire.ring && amountOf(s, 'sten') < RING;
+export const needStones = (s: State) => !s.fire.ring && amountOf(s, 'sten') < ELD.ring;
 // kan elden tändas (av p: med det p kan få, behov.ts)
 export function canLight(s: State, p?: Person) {
   const ig = igniterOf(s), has = (k: string) => p ? getable(s, p, k) : amountOf(s, k);
-  return !!ig && (!!s.fire.ring || has('sten') >= RING) && has('torrgras') >= ig.grass && (has('grenar') >= ig.sticks || has('kol') >= 1) && (p ? fuelFor(s, p) : fuelStock(s)) >= 1;
+  return !!ig && (!!s.fire.ring || has('sten') >= ELD.ring) && has('torrgras') >= ig.grass && (has('grenar') >= ig.sticks || has('kol') >= 1) && (p ? fuelFor(s, p) : fuelStock(s)) >= ELD.tandVedMin;
 }
 export function needTinder(s: State) {
   return !s.fire.lit && !emberOn(s) && (amountOf(s, 'flinta') < 1 || needStones(s) || amountOf(s, 'torrgras') < RESERV.tandBrist || amountOf(s, 'grenar') < RESERV.tandBrist);
 }
 function durText(sec: number) { const h = sec / HOUR_S; return h >= 24 ? `${(h / 24).toFixed(1).replace('.', ',')} dygn` : h >= 1 ? `${Math.round(h)} timmar` : `${Math.round(sec / 60)} minuter`; }
 function lightFire(s: State, p: Person) {
-  const f = s.fire, start = takeFuel(s, 2, p), onCoal = (f.ash ?? 0) >= 1;
+  const f = s.fire, start = takeFuel(s, ELD.tandBransle, p), onCoal = (f.ash ?? 0) >= 1;
   Object.assign(f, { lit: true, fuel: start, litAt: s.now, litBy: p.id, burned: 0, emberUntil: undefined, tryProg: 0 });
   f.lightings++;
-  if (!f.ring) { takeMaterial(s, p, 'sten', RING, true); f.ring = true; log(s, `${p.name} lade en ring av stenar runt eldplatsen.`, 'world', [p.id]); }
+  if (!f.ring) { takeMaterial(s, p, 'sten', ELD.ring, true); f.ring = true; log(s, `${p.name} lade en ring av stenar runt eldplatsen.`, 'world', [p.id]); }
   if (onCoal) { f.ash = 0; f.ashUntil = undefined; } // kolet i den gamla högen tar fyr och blir en del av den nya elden
   fireLog(s, { k: 'tänd', id: p.id, n: f.tries });
   log(s, `${p.name} lyckades tända elden${onCoal ? ' på den gamla kolhögen' : ''}${f.tries > 1 ? ` efter ${f.tries} försök` : ''}.`, 'world', [p.id]);
-  think(p, 'Tände elden', 0.15, s.now, DAY / 2);
-  if (f.lightings === 1) { p.fame.push('Tände byns första eld'); kronika(s, `${p.name} tände byns första eld.`); sedEvent(s, 'nyfikenhet', 0.1, 'Elden har gjort byn nyfiken på vad mer som går att lära sig.'); }
+  think(p, 'Tände elden', ELD.tandGlad, s.now, ELD.tandGladDygn * DAY);
+  if (f.lightings === 1) { p.fame.push('Tände byns första eld'); kronika(s, `${p.name} tände byns första eld.`); sedEvent(s, 'nyfikenhet', ELD.sedNyfiken, 'Elden har gjort byn nyfiken på vad mer som går att lära sig.'); }
   f.tries = 0;
 }
 // Varje misslyckat försök sedan elden senast brann gör nästa lättare: man får kläm på det och tändmaterialet blir
-// varmt och torrt. Efter FORSOK_LARA försök är chansen dubbelt så stor, så att otur inte kan hålla elden släckt i dygn
-const FORSOK_LARA = 10;
+// varmt och torrt. Efter ELD.forsokLara försök är chansen dubbelt så stor, så att otur inte kan hålla elden släckt i dygn
 // ett försök att tända med det bästa tänddonet i förrådet
 export function tryLight(s: State, p: Person) {
   const ig = igniterOf(s)!, f = s.fire;
@@ -101,11 +151,11 @@ export function tryLight(s: State, p: Person) {
   else takeMaterial(s, p, 'kol', 1, true); // lite kol kan ersätta grenarna
 
   f.tries++; f.tryTotal++;
-  ovning(p, 'elda', 0.08 * (0.5 + p.pot.intelligens / 20));
-  const c = ig.chance * (0.5 + p.skill.elda / 20 + stat(p, 'intelligens', s.now) / 40) * (iIstiden(ageIndex(s)) ? ARSTID.tandIstid : 1) * ((f.ash ?? 0) >= 1 ? 1.5 : 1) // en gammal kolhög tar lättare fyr
-    * (1 + (f.tries - 1) / FORSOK_LARA); // varje misslyckat försök sedan elden brann gör nästa lättare
+  ovning(p, 'elda', ELD.ovTand * (ELD.ovBas + p.pot.intelligens / ELD.ovInt));
+  const c = ig.chance * (ELD.tandBas + p.skill.elda / ELD.tandSkill + stat(p, 'intelligens', s.now) / ELD.tandInt) * (iIstiden(ageIndex(s)) ? ARSTID.tandIstid : 1) * ((f.ash ?? 0) >= 1 ? ELD.tandKol : 1) // en gammal kolhög tar lättare fyr
+    * (1 + (f.tries - 1) / ELD.forsokLara); // varje misslyckat försök sedan elden brann gör nästa lättare
   if (rnd(s, 'eld', p) < c) { lightFire(s, p); return true; }
-  if (ig.id === 'flinta' && rnd(s, 'eld', p) < 0.004) {
+  if (ig.id === 'flinta' && rnd(s, 'eld', p) < ELD.flintSprack) {
     use(s, p, 'flinta', 1, true); fireLog(s, { k: 'sprack', id: p.id });
     log(s, `Flintan som ${p.name} slog med sprack.`, 'world', [p.id]);
   }
@@ -130,7 +180,7 @@ export function addFuel(s: State, p: Person, n: number) {
   f.fuel += put; giveBack(s, n - put);
   f.fills[p.id] = (f.fills[p.id] ?? 0) + 1;
   fireLog(s, { k: 'fyll', id: p.id, n: put });
-  ovning(p, 'elda', 0.01);
+  ovning(p, 'elda', ELD.ovFyll);
 }
 function assign(s: State, p: Person, act: Act, tx: number, ty: number, dur: number, why: string) {
   if (p.task && isCarrying(p.task)) dropLoad(s, p.task, p.x, p.y, p.id); // bördan läggs ner där hen står, den försvinner inte
@@ -140,7 +190,7 @@ function assign(s: State, p: Person, act: Act, tx: number, ty: number, dur: numb
 export function fetchFuel(s: State, p: Person, why: string, fran?: Person) {
   if (s.people.some(q => q.task?.act === 'elda')) return; // en i taget
   const at = fetchSpot(s, takeLimit(s, 'ved', p, fran) >= 1 ? 'ved' : 'grenar');
-  assign(s, p, 'elda', at.x, at.y, HOUR, why);
+  assign(s, p, 'elda', at.x, at.y, ELD.hamtaTim * HOUR, why);
   if (fran) p.task!.fran = fran.id;
 }
 const awake = (s: State, p: Person, minAge: number) => {
@@ -154,7 +204,7 @@ export function stepFire(s: State, dtSec: number, ppl: Person[]) {
     const b = Math.min(f.fuel, h.burn / HOUR_S * dtSec);
     f.fuel -= b; f.burned += b; f.totalBurned += b; f.litSec += dtSec;
     if (f.fuel <= 1e-6) {
-      f.fuel = 0; f.lit = false; f.emberUntil = now + HOUR; f.outs++;
+      f.fuel = 0; f.lit = false; f.emberUntil = now + ELD.glodTim * HOUR; f.outs++;
       fireLog(s, { k: 'slocknade', n: f.burned });
       log(s, `Elden slocknade efter att ha brunnit i ${durText((now - (f.litAt ?? now)) / SEC)}. Glöden lever en stund till.`, 'world');
     }
@@ -163,13 +213,13 @@ export function stepFire(s: State, dtSec: number, ppl: Person[]) {
     // glöden dog: kvar blir en svart hög med lite kol, som ligger några dygn
     f.emberUntil = undefined;
     // kolet blir alltid ett litet, slumpat antal; hämtar ingen det förtvinar det efter några dygn
-    const coal = 1 + Math.floor(rnd(s, 'eld') * 4);
-    f.ash = (f.ash ?? 0) + coal; f.ashUntil = now + 3 * DAY;
+    const coal = ELD.kolMin + Math.floor(rnd(s, 'eld') * ELD.kolSpann);
+    f.ash = (f.ash ?? 0) + coal; f.ashUntil = now + ELD.kolDygn * DAY;
     log(s, `Elden har brunnit ut. Kvar ligger en svart hög med ${coal} kol.`, 'world');
   }
   if (f.ash && (f.ashUntil ?? 0) <= now) { f.ash = 0; f.ashUntil = undefined; }
   // vilja: varje vaken invånare vill ha olika mycket ved på elden
-  const vc = ppl.reduce((a, p) => a + clamp(0.6 - p.warm, 0, 0.6) / 0.6, 0) / (ppl.length || 1);
+  const vc = ppl.reduce((a, p) => a + clamp(ELD.byFryser - p.warm, 0, ELD.byFryser) / ELD.byFryser, 0) / (ppl.length || 1);
   const cands: { p: Person; w: Wish }[] = [];
   let top: { p: Person; w: Wish } | undefined;
   for (const p of ppl) {
@@ -180,22 +230,22 @@ export function stepFire(s: State, dtSec: number, ppl: Person[]) {
   }
   f.want = top?.w.v ?? 0; f.wantBy = top?.p.id; f.wantWhy = top?.w.why;
   // påfyllning: den som vill ha klart mer ved än det som ligger på hämtar, plikttrogna och nära först
-  if ((f.lit || emberOn(s)) && fuelStock(s) >= 0.5 && !ppl.some(p => p.task?.act === 'elda')) {
+  if ((f.lit || emberOn(s)) && fuelStock(s) >= ELD.hamtaMin && !ppl.some(p => p.task?.act === 'elda')) {
     const fx = m.fire.x + 0.5, fy = m.fire.y + 0.5;
     let best: { p: Person; w: Wish } | undefined, bs = -1e9;
     for (const c of cands) {
-      if (c.w.v < f.fuel * 2 + 0.2 || fuelFor(s, c.p) < 0.5) continue; // bara den som har ved att ta (byns eller sin egen)
-      const sc = (c.w.v - f.fuel) / h.maxFuel * (0.4 + duty(s, c.p)) - Math.hypot(c.p.x - fx, c.p.y - fy) / 25 + (c.p.task?.act === 'vakt' ? 0.3 : 0) + rnd(s, 'eld') * 0.1;
+      if (c.w.v < f.fuel * ELD.fyllMarg + ELD.fyllPlus || fuelFor(s, c.p) < ELD.hamtaMin) continue; // bara den som har ved att ta (byns eller sin egen)
+      const sc = (c.w.v - f.fuel) / h.maxFuel * (ELD.valjPlikt + duty(s, c.p)) - Math.hypot(c.p.x - fx, c.p.y - fy) / ELD.valjAvstand + (c.p.task?.act === 'vakt' ? ELD.valjVakt : 0) + rnd(s, 'eld') * ELD.valjBrus;
       if (sc > bs) { bs = sc; best = c; }
     }
     if (best) fetchFuel(s, best.p, best.w.why);
   }
   // tändning: när elden är släckt och någon vill ha eld försöker en person i taget
-  if (!f.lit && !emberOn(s) && canLight(s) && f.want >= h.maxFuel * 0.1 && !ppl.some(p => p.task?.act === 'tanda')) {
-    const ok = cands.filter(c => ageOf(c.p, now) >= ALDER.ansvar && c.w.v >= h.maxFuel * 0.05 && canLight(s, c.p))
-      .sort((a, b) => (b.p.skill.elda + stat(b.p, 'flit', now) / 2 + rnd(s, 'eld') * 3) - (a.p.skill.elda + stat(a.p, 'flit', now) / 2 + rnd(s, 'eld') * 3));
+  if (!f.lit && !emberOn(s) && canLight(s) && f.want >= h.maxFuel * ELD.tandVill && !ppl.some(p => p.task?.act === 'tanda')) {
+    const ok = cands.filter(c => ageOf(c.p, now) >= ALDER.ansvar && c.w.v >= h.maxFuel * ELD.tandKandidat && canLight(s, c.p))
+      .sort((a, b) => (b.p.skill.elda + stat(b.p, 'flit', now) / ELD.tandFlit + rnd(s, 'eld') * ELD.tandBrus) - (a.p.skill.elda + stat(a.p, 'flit', now) / ELD.tandFlit + rnd(s, 'eld') * ELD.tandBrus));
     const c = ok[0];
-    if (c) assign(s, c.p, 'tanda', m.fire.x + 0.5 + (rnd(s, 'eld') - 0.5) * 1.2, m.fire.y + 1.3, 3 * HOUR, `Vill ha eld. ${c.w.why}`);
+    if (c) assign(s, c.p, 'tanda', m.fire.x + 0.5 + (rnd(s, 'eld') - 0.5) * 1.2, m.fire.y + 1.3, ELD.tandTim * HOUR, `Vill ha eld. ${c.w.why}`);
   }
 }
 // samling hittar tändmaterial, sten och flinta när förrådet behöver det
@@ -203,20 +253,20 @@ export function forageItems(s: State, p: Person, dtSec: number): Record<string, 
   const ai = ageIndex(s), want = tinderWant(s), hrs = dtSec / HOUR_S * SNABBARE; // allt man skaffar går fortare sedan steg 1.5.13
   const sk = kunnighet(p.skill.samla);
   const got: Record<string, number> = {};
-  if (amountOf(s, 'torrgras') < want) got.torrgras = 3 * ARSTID.hoPerTid[ai] * sk * hrs;
-  if (amountOf(s, 'grenar') < want) got.grenar = 3 * (iIstiden(ai) ? ARSTID.grenarIstid : 1) * sk * hrs;
+  if (amountOf(s, 'torrgras') < want) got.torrgras = ELD.hoTakt * ARSTID.hoPerTid[ai] * sk * hrs;
+  if (amountOf(s, 'grenar') < want) got.grenar = ELD.grenarTakt * (iIstiden(ai) ? ARSTID.grenarIstid : 1) * sk * hrs;
   // stenar till eldringen: många vid stenarna, några i sanden, få annars
   if (needStones(s)) {
     const d = p.task ? stoneDist(s.seed)[tileOf(p.task.tx, p.task.ty)] : 9;
-    got.sten = 0.8 * (d <= 1 ? 3 : d <= 3 ? 1.5 : 0.4) * sk * hrs;
+    got.sten = ELD.stenTakt * (d <= ELD.stenNara ? ELD.stenNaraDel : d <= ELD.stenMedel ? ELD.stenMedelDel : ELD.stenAnnars) * sk * hrs;
   }
   // flinta är ovanlig och hittas oftast vid stenarna. Den slås mot en sten för att tända eld, och med en pinne blir den en yxa
-  const ff = p.task ? flintFactor(s, p.task.tx, p.task.ty) : 0.4;
-  if (amountOf(s, 'flinta') + amountOf(s, 'yxa') < 4 && chance(s, 0.04 * ff * sk * SNABBARE / HOUR_S, dtSec, 'arbete', p)) {
-    got.flinta = 1; count(s, ff > 2 ? 'flintaSten' : 'flintaAnnan');
+  const ff = p.task ? flintFactor(s, p.task.tx, p.task.ty) : ELD.flintaOkand;
+  if (amountOf(s, 'flinta') + amountOf(s, 'yxa') < ELD.flintaMax && chance(s, ELD.flintaTakt * ff * sk * SNABBARE / HOUR_S, dtSec, 'arbete', p)) {
+    got.flinta = 1; count(s, ff > ELD.flintaStenar ? 'flintaSten' : 'flintaAnnan');
     if (p.task) takeFrom(s, 'flinta', p.task.tx, p.task.ty, 1);
-    if (ff > 2 && p.task) observe(s, p, 'flinta', p.task.tx, p.task.ty);
-    log(s, `${p.name} hittade en flintsten${ff > 2 ? ' vid stenarna' : ff > 1 ? ' i sanden vid stranden' : ''}.`, 'world', [p.id]);
+    if (ff > ELD.flintaStenar && p.task) observe(s, p, 'flinta', p.task.tx, p.task.ty);
+    log(s, `${p.name} hittade en flintsten${ff > ELD.flintaStenar ? ' vid stenarna' : ff > ELD.flintaSand ? ' i sanden vid stranden' : ''}.`, 'world', [p.id]);
   }
   return Object.keys(got).length ? got : undefined;
 }
