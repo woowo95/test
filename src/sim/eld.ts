@@ -123,10 +123,12 @@ const tinderWant = (s: State) => (s.fire.lit ? RESERV.tandVill : RESERV.tandVill
 export const tinderShort = (s: State, tk?: Task) => amountOf(s, 'torrgras') + (tk?.items?.torrgras ?? 0) < tinderWant(s) || amountOf(s, 'grenar') + (tk?.items?.grenar ?? 0) < tinderWant(s);
 // den första elden läggs i en ring av stenar; ringen ligger kvar när elden slocknat
 export const needStones = (s: State) => !s.fire.ring && amountOf(s, 'sten') < ELD.ring;
-// kan elden tändas (av p: med det p kan få, behov.ts)
+// kan elden tändas (av p: med det p kan få, behov.ts)? Bränslet räknas efter att grenarna till tändningen tagits (tryLight)
 export function canLight(s: State, p?: Person) {
   const ig = igniterOf(s), has = (k: string) => p ? getable(s, p, k) : amountOf(s, k);
-  return !!ig && (!!s.fire.ring || has('sten') >= ELD.ring) && has('torrgras') >= ig.grass && (has('grenar') >= ig.sticks || has('kol') >= 1) && (p ? fuelFor(s, p) : fuelStock(s)) >= ELD.tandVedMin;
+  if (!ig) return false;
+  const pinnar = has('grenar') >= ig.sticks; // annars ersätter kol grenarna
+  return (!!s.fire.ring || has('sten') >= ELD.ring) && has('torrgras') >= ig.grass && (pinnar || has('kol') >= 1) && (p ? fuelFor(s, p) : fuelStock(s)) - (pinnar ? ig.sticks * GREN : 0) >= ELD.tandVedMin;
 }
 export function needTinder(s: State) {
   return !s.fire.lit && !emberOn(s) && (amountOf(s, 'flinta') < 1 || needStones(s) || amountOf(s, 'torrgras') < RESERV.tandBrist || amountOf(s, 'grenar') < RESERV.tandBrist);
