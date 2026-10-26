@@ -33,7 +33,7 @@ const LIV = balans('liv', {
   nybyggareMatMin: 0.3, nybyggareMat: 0.7, // knapp mat jagar bort dem: gånger Min + Mat gånger hur gott om mat byn haft
   nybyggareAlder: 17, nybyggareAlderSpann: 18, // en nybyggare är mellan Alder och Alder + Spann år
   parChans: 0.35, // chansen att en nybyggare kommer med en partner
-  medhavd: 2, // rötter nybyggaren har med sig från vandringen
+  medhavd: 2, // rötter nybyggaren har med sig från vandringen (MEDHAVT nedan)
   // hur gott om mat byn haft (matGott): 0 vid matGottFran dygns mat i snitt, 1 vid Fran + Spann eller mer
   matGottFran: 3, matGottSpann: 6, matStart: 9, // en by som ännu saknar snitt räknas som om den hade Start dygns mat
   matSnittDygn: 1, // snittet glider över så många dygn (ett år i spelet)
@@ -54,6 +54,9 @@ const LIV = balans('liv', {
   saknarFlytt: -0.08, saknarFlyttDygn: 0.5, // den som tyckte om någon som flyttar
   fodMor: 0.2, fodFar: 0.18, fodDygn: 1, // glädjen över ett nytt barn
 });
+
+// det en nybyggare har med sig från vandringen: sak och hur mycket (hen äger det)
+const MEDHAVT: Record<string, number> = { rotter: LIV.medhavd };
 
 // ---------- dödsorsakerna (registret) ----------
 // text = det som står efter namnet ("dog av svält"), i loggen, krönikan och byns räknare ('dog av svält', som testerna läser).
@@ -142,7 +145,7 @@ function immigrate(s: State, alone: boolean) {
     const age = LIV.nybyggareAlder + rnd(s, 'folk') * LIV.nybyggareAlderSpann, p = newPerson(s, sex, s.now - age * DAY);
     startSkills(s, p, age);
     s.people.push(p);
-    put(s, 'rotter', LIV.medhavd, { [p.id]: LIV.medhavd }); // lite mat från vandringen, så att man hinner samla innan man svälter
+    for (const k in MEDHAVT) put(s, k, MEDHAVT[k], { [p.id]: MEDHAVT[k] }); // lite mat från vandringen, så att man hinner samla innan man svälter
     return p;
   };
   const a = mk(rnd(s, 'folk') < 0.5 ? 'm' : 'k');

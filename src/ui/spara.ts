@@ -1,4 +1,4 @@
-import { BEAT, DAY, KUNSKAP_NAMES, LARDOM, LKind, LogEntry, MIN, State, byId, compact, describe, joinParts, living, migrate, serialize, serializeParts, step, timeLabel } from '../sim';
+import { BEAT, DAY, KUNSKAPER, LARDOMAR, LKind, LogEntry, MIN, State, byId, compact, describe, joinParts, living, migrate, serialize, serializeParts, step, timeLabel } from '../sim';
 import { $, durTxt, esc, num } from './hjalp';
 import { s, ui } from './lage';
 import { drawTerrain } from './terrang';
@@ -174,7 +174,7 @@ function knowHtml(before: ReturnType<typeof knowSnapshot>) {
     const b = before.get(p.id);
     for (const [k, e] of Object.entries(p.kunskap ?? {})) {
       const v0 = b?.k[k] ?? 0;
-      if (e.v - v0 >= 0.2) nyK.push(`${esc(p.name)} har lärt sig ${esc((KUNSKAP_NAMES[k] ?? k).toLowerCase())} (${Math.round(v0 * 100)} → ${Math.round(e.v * 100)} %)`);
+      if (e.v - v0 >= 0.2) nyK.push(`${esc(p.name)} har lärt sig ${esc((KUNSKAPER[k]?.namn ?? k).toLowerCase())} (${Math.round(v0 * 100)} → ${Math.round(e.v * 100)} %)`);
     }
     for (const l of p.lardomar ?? []) {
       if (b?.l.has(l.k + ':' + l.a)) continue;
@@ -183,7 +183,7 @@ function knowHtml(before: ReturnType<typeof knowSnapshot>) {
     }
   }
   if (!nyK.length && !nyL) return '';
-  const delar = Object.entries(per).sort((a, b) => b[1] - a[1]).map(([k, n]) => `${n} om ${LARDOM[k as LKind]?.namn ?? k}`).join(', ');
+  const delar = Object.entries(per).sort((a, b) => b[1] - a[1]).map(([k, n]) => `${n} om ${LARDOMAR[k as LKind]?.namn ?? k}`).join(', ');
   return `<h3>Ny kunskap och nya lärdomar</h3><ul class="sumList">${nyK.slice(0, 6).map(x => `<li>${x}</li>`).join('')}${nyK.length > 6 ? `<li class="muted">och ${nyK.length - 6} till</li>` : ''}
     ${nyL ? `<li>${nyL} nya lärdomar: ${delar}</li>${ex.map(x => `<li class="muted">${x}</li>`).join('')}` : ''}</ul>`;
 }

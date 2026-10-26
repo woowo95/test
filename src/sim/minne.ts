@@ -4,10 +4,10 @@ import { teach } from './teknik';
 import { FANGST, Kind, prospect, regrowOf, richness, shoreOf, standAt, stoneDist, synsOf, toppOf, vaxerAt } from './fynd';
 import { getMap } from './karta';
 import { groundOf, tileOf } from './mark';
-import { kn, learnK } from './kunskap';
+import { KUNSKAPER, kn, learnK } from './kunskap';
 import { clamp, pickViktat, rnd } from './slump';
 import { ageIndex, lightLevel } from './tid';
-import { DAY, H, HOUR, LKind, Lardom, Person, Rel, State, T, W, egen, tvaDelar, visning } from './typer';
+import { DAY, H, HOUR, Lardom, Person, Rel, State, T, W, egen, tvaDelar, visning } from './typer';
 import { FOREST } from './vag';
 import { balans } from './balans';
 import type { SamtalDef } from './samtal';
@@ -89,16 +89,22 @@ const areaCenter = (a: number) => ({ x: Math.min(W, (a % aw()) * AREA + AREA / 2
 // hur mycket ett område ger, så som man ser det när man går runt där: snittet av de fem bästa rutorna.
 // 'nu' är det som finns kvar, 'vaxer' var det växer (buskar och spår syns även när det är plockat) och 'syns'
 // vad marken ser ut att kunna ge för den som inte varit där. Sparas en timme i taget (av gränssnittet i en egen del, typer.ts).
-// lärdomarnas slag: vad = ordet i lärdomens text (describe), namn = ordet i listor (sammanställningen efter ikappräkningen).
-// Ordningen är den i cachen nedan
-export const LARDOM: Record<LKind, { vad: string; namn: string }> = {
-  samla: { vad: 'bär och rötter', namn: 'bär och rötter' },
-  jakt: { vad: 'kaniner', namn: 'vilt' },
-  fiske: { vad: 'fisk i vattnet', namn: 'abborre' },
+// lärdomarnas slag (registret): vad = ordet i lärdomens text (describe), inga = texten när inget växer där längre, namn = ordet
+// i listor (sammanställningen efter ikappräkningen). fynd = ett fynd som växer och plockas (Kind i fynd.ts): det ses runt den som
+// arbetar (serOmFinns: bara där det finns något), växer tillbaka i minnet och kan visa sig sämre än man trott.
+// Flinta och rädslor (fara) har egna regler nedan. Ordningen är den i cachen nedan
+interface LardomDef { vad: string; namn: string; inga?: string; fynd?: true; serOmFinns?: true }
+const LDEF = {
+  samla: { vad: 'bär och rötter', namn: 'bär och rötter', inga: 'Inga bär och rötter', fynd: true },
+  jakt: { vad: 'kaniner', namn: 'vilt', inga: 'Inga kaniner', fynd: true },
+  fiske: { vad: 'fisk i vattnet', namn: 'abborre', inga: 'Ingen fisk', fynd: true, serOmFinns: true },
   flinta: { vad: 'flinta', namn: 'flinta' },
   fara: { vad: '', namn: 'farliga platser' },
-};
-const LKINDS = Object.keys(LARDOM) as LKind[];
+} satisfies Record<string, LardomDef>;
+export type LKind = keyof typeof LDEF;
+export const LARDOMAR: Record<LKind, LardomDef> = LDEF;
+const LKINDS = Object.keys(LDEF) as LKind[];
+const arFynd = (k: LKind): k is Kind => !!LARDOMAR[k].fynd;
 const MODES = ['nu', 'vaxer', 'syns'] as const;
 type Mode = typeof MODES[number];
 const LK_I = Object.fromEntries(LKINDS.map((k, i) => [k, i])) as Record<LKind, number>;
@@ -145,15 +151,15 @@ function trim(s: State, p: Person) {
   L.length = MINNE.max;
 }
 // hur mycket ett värde är jämfört med en rik plats av samma slag (1 ≈ gott om)
-const relOf = (k: LKind, v: number) => k === 'fara' || k === 'flinta' ? v : v / (toppOf(k) * MINNE.rik);
+const relOf = (k: LKind, v: number) => arFynd(k) ? v / (toppOf(k) * MINNE.rik) : v;
 // egen upplevelse: personen ser hur mycket som finns i området
 // Man ser också om det växer där (buskar, svampmark, spår), så att man vet om platsen är plockad eller död.
 // Var platsen mycket sämre än man trott rättas lärdomen, och det blir en nyhet som gärna berättas vidare.
 export function observe(s: State, p: Person, k: LKind, x: number, y: number, c = 1) {
-  const a = areaOf(x, y), v = areaValue(s, k, a), g = k === 'flinta' ? undefined : areaValue(s, k, a, 'vaxer');
+  const a = areaOf(x, y), v = areaValue(s, k, a), g = arFynd(k) ? areaValue(s, k, a, 'vaxer') : undefined;
   const l = findL(p, k, a);
   if (l) {
-    const fel = k !== 'flinta' && k !== 'fara' && relOf(k, Math.min(MINNE.vMax, hoped(s, l))) - relOf(k, v) > MINNE.felGrans;
+    const fel = arFynd(k) && relOf(k, Math.min(MINNE.vMax, hoped(s, l))) - relOf(k, v) > MINNE.felGrans;
     if (fel) count(s, 'rattat');
     l.v = v; l.g = g; l.c = Math.max(c, l.src === undefined ? l.c : 0); l.t = s.now; l.src = undefined; l.led = 0;
     if (fel) l.ny = s.now; else delete l.ny;
@@ -163,9 +169,9 @@ export function observe(s: State, p: Person, k: LKind, x: number, y: number, c =
   trim(s, p);
 }
 // den som arbetar i ett område ser också vad mer som finns där: bär, spår av vilt och fisk i vattnet
-const SER_RUNT: Kind[] = ['samla', 'jakt', 'fiske'];
+const SER_RUNT = LKINDS.filter(arFynd);
 export function lookAround(s: State, p: Person, x: number, y: number) {
-  for (const k of SER_RUNT) if (k === 'fiske' ? areaValue(s, k, areaOf(x, y)) > 0 : true) observe(s, p, k, x, y);
+  for (const k of SER_RUNT) if (LARDOMAR[k].serOmFinns ? areaValue(s, k, areaOf(x, y)) > 0 : true) observe(s, p, k, x, y);
 }
 // vad personen tror att man hittar på en ruta. I närområdet ser man det. Längre bort syns marken (skog, äng, strand)
 // men inte hur mycket andra redan tagit där: då gäller minnet, och utan minne en gissning efter hur marken ser ut.
@@ -173,7 +179,7 @@ export function lookAround(s: State, p: Person, x: number, y: number) {
 const trustUnknown = (s: State, p: Person) => MINNE.okantBas + stat(p, 'nyfikenhet', s.now) / MINNE.okantNyfiken;
 // En plats man minns som plockad tror man har vuxit tillbaka efter en tid; en plats där inget växer längre blir inte bättre.
 export function hoped(s: State, l: Lardom) {
-  if (l.g === undefined || l.g <= l.v || l.k === 'flinta' || l.k === 'fara') return l.v;
+  if (l.g === undefined || l.g <= l.v || !arFynd(l.k)) return l.v;
   const r = regrowOf(l.k, ageIndex(s));
   return l.g - (l.g - l.v) * Math.exp(-r * (s.now - l.t) / HOUR);
 }
@@ -289,7 +295,8 @@ export function share(s: State, a: Person, b: Person, r: Rel, slag: SamtalDef) {
     if (d > MINNE.larMin && rnd(s, 'minne', a) < MINNE.larChans) {
       const before = kn(b, k), v = learnK(b, k, d * MINNE.larDel * (MINNE.larBas + stat(b, 'intelligens', now) / 20), now);
       e.t = now; // att lära ut håller kunskapen vid liv
-      if (k === 'svamp' && before < MINNE.larKant && v >= MINNE.larKant) log(s, `${b.name} har lärt sig av ${a.name} att skilja kantarellen från den giftiga spindlingen.`, 'skill', [b.id, a.id]);
+      const larAv = KUNSKAPER[k]?.larAv;
+      if (larAv && before < MINNE.larKant && v >= MINNE.larKant) log(s, `${b.name} har lärt sig av ${a.name} att ${larAv}.`, 'skill', [b.id, a.id]);
     }
   }
 }
@@ -368,8 +375,8 @@ export function describe(s: State, l: Lardom) {
   const place = placeName(s, l.a);
   const rel = (v: number) => relOf(l.k, v);
   const what0 = l.k === 'fara' ? `Farligt${l.om ? `: ${l.om}` : ''}` : l.k === 'flinta' ? 'Flinta finns'
-    : l.g !== undefined && rel(l.g) < 0.1 ? `${l.k === 'fiske' ? 'Ingen fisk' : `Inga ${LARDOM[l.k].vad}`} längre`
-    : l.g !== undefined && rel(l.g) > rel(l.v) + 0.35 ? `${amount(rel(l.v))} ${LARDOM[l.k].vad}, växer tillbaka` : `${amount(rel(l.v))} ${LARDOM[l.k].vad}`;
+    : l.g !== undefined && rel(l.g) < 0.1 ? `${LARDOMAR[l.k].inga} längre`
+    : l.g !== undefined && rel(l.g) > rel(l.v) + 0.35 ? `${amount(rel(l.v))} ${LARDOMAR[l.k].vad}, växer tillbaka` : `${amount(rel(l.v))} ${LARDOMAR[l.k].vad}`;
   const what = what0 + (nyhet(s, l) ? ', sämre än man trott' : '');
   const text = l.k === 'fara' ? `Rädd för platsen ${place}${l.om ? ` (${l.om})` : ''}` : `${what} ${place}`;
   const src = l.src === undefined ? (l.led ? 'fick höra om det' : 'egen erfarenhet') : `hört av ${byId(s, l.src)?.name ?? 'någon'}${(l.led ?? 1) > 1 ? `, ${l.led} led från den som var där` : ''}`;
