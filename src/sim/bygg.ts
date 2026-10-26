@@ -1,19 +1,18 @@
 import { ageOf, count, living, log, stat } from './folk';
-import { Bit, Hus, MATERIAL, bitsOf, blocked, freeNear, gridOf, housesOf, touch } from './byggnad';
+import { Bit, Hus, MATERIAL, bitsOf, blocked, freeNear, gridOf, housesOf, husById, touch } from './byggnad';
 import { getMap } from './karta';
-import { groundOf } from './mark';
-import { campCenter } from './plats';
+import { groundOf, punktIRuta } from './mark';
+import { campCenter, rektAvstand } from './plats';
 import { sedEvent } from './seder';
-import { rnd } from './slump';
 import { knows } from './teknik';
-import { amountOf, changed, ownMove, ownsAmount, use, zonesOf } from './lager';
+import { amountOf, changed, nearZone, ownMove, ownsAmount, use, usable, zonesOf } from './lager';
 import { freeTools } from './agande';
 import { getable, takeMaterial } from './behov';
 import { Del } from './egendom';
 import { fellingTiles } from './skog';
 import { FOREST, findPath } from './vag';
 import { kronika } from './historik';
-import { BYGGNADER, Byggnad, Fn, bedTile, familjOf, fnOf, husKlar, mostUrgent } from './byggnader';
+import { BYGGNADER, Byggnad, Fn, LANGHUS_PLATSER, antalLika, bedTile, familjOf, fnOf, husKlar, mostUrgent } from './byggnader';
 import { H, HOUR, Person, State, T, W, inMap } from './typer';
 
 // ---------- att bygga ----------
@@ -25,17 +24,14 @@ const LAGA = 0.5; // väggar under det skicket lagas
 export function bedFor(s: State, p: Person) {
   const i = bedTile(s, p);
   if (i === undefined) return undefined;
-  return { x: i % W + 0.3 + rnd(s, 'val', p) * 0.4, y: Math.floor(i / W) + 0.3 + rnd(s, 'val', p) * 0.4 };
+  return punktIRuta(s, i, p);
 }
 
 // ---------- planering: byn bestämmer vad som byggs ----------
 const tileOk = (s: State, x: number, y: number) => {
   if (x < 1 || y < 1 || x >= W - 1 || y >= H - 1) return false;
-  const m = getMap(s.seed), i = y * W + x, t = m.tiles[i], f = m.fire;
-  if (t === T.Vatten || t === T.Sten) return false; // träden spelar ingen roll: de fälls innan bygget börjar
-  if (Math.max(Math.abs(x - f.x), Math.abs(y - f.y)) < 2) return false; // inte inpå elden
-  if (gridOf(s).at.has(i)) return false;
-  if (zonesOf(s).some(z => x >= z.x - 1 && x < z.x + z.w + 1 && y >= z.y - 1 && y < z.y + z.h + 1)) return false;
+  if (!usable(s, x, y)) return false; // inte vatten, sten, inpå elden eller på ett annat bygge (träden spelar ingen roll: de fälls innan bygget börjar)
+  if (zonesOf(s).some(z => nearZone(z, x, y, 1))) return false;
   if ((s.stackar ?? []).some(a => a.x === x && a.y === y) || (s.stockar ?? []).some(k => Math.floor(k.x) === x && Math.floor(k.y) === y) || (s.stubbar ?? []).some(k => k.x === x && k.y === y)) return false;
   return true;
 };
@@ -53,7 +49,7 @@ function siteFor(s: State, w: number, h: number, okAt: Uint8Array) {
       if (inside ? !okAt[yy * W + xx] : gridOf(s).at.has(yy * W + xx)) ok = false; // en ruta fritt runt andra hus
     }
     if (!ok) continue;
-    const dx = Math.max(x - f.x, 0, f.x - (x + w - 1)), dy = Math.max(y - f.y, 0, f.y - (y + h - 1)), near = Math.hypot(dx, dy);
+    const near = rektAvstand(f.x, f.y, x, y, w, h);
     const lek = x <= f.x + 4 && x + w > f.x - 4 && y <= f.y + 6 && y + h > f.y + 3 ? 3 : 0;
     let trad = 0; // helst en plats med få träd: varje träd ska fällas först
     for (let yy = y; yy < y + h; yy++) for (let xx = x; xx < x + w; xx++) if (g.trees[yy * W + xx] >= FOREST) trad++;
@@ -105,7 +101,7 @@ export function planBuild(s: State) {
     const dorr = sidor.find(o => kanGaUt(s, at, w + 2, h + 2, o.ux, o.uy));
     if (!dorr) continue;
     const { ox, oy } = dorr;
-    const big = w * h >= 8, same = u.fn === 'sovsal' ? hs.filter(q => q.namn.startsWith(big ? 'Långhus' : 'Hydda')).length : hs.filter(q => (q.fn ?? 'sovsal') === u.fn).length;
+    const same = antalLika(s, u.fn, w, h);
     const hus: Hus = { id: (s.nextBit ??= 1), namn: row.namnFor!(s, w, h, same, u.a), x: at.x, y: at.y, w: w + 2, h: h + 2, t: s.now, by: by.id, fn: u.fn, slag: u.a.slag, ag: u.a.ag };
     s.nextBit++;
     const golv = 'tra';
@@ -121,7 +117,7 @@ export function planBuild(s: State) {
   s.byggSok = s.now + 12 * HOUR; // ingen plats nu: försök igen om ett tag
 }
 function planText(by: Person, fn: Fn, h: Hus, n: number, same: number) {
-  if (fn === 'sovsal') return `${by.name} planerar ${n >= 8 ? 'ett långhus' : 'en hydda'}${same ? ' till' : ''} med plats för ${n} att sova under tak.`;
+  if (fn === 'sovsal') return `${by.name} planerar ${n >= LANGHUS_PLATSER ? 'ett långhus' : 'en hydda'}${same ? ' till' : ''} med plats för ${n} att sova under tak.`;
   if (fn === 'familjehus') return `${by.name} och familjen bestämmer sig för att bygga ett eget hus, ${h.namn.toLowerCase()}.`;
   return `${by.name} planerar ${h.namn.toLowerCase()}.`;
 }
@@ -131,7 +127,7 @@ function planText(by: Person, fn: Fn, h: Hus, n: number, same: number) {
 interface Job { bit: Bit; repair: boolean; item?: string; need: number; missing: boolean; fell?: boolean }
 // det som finns att bygga med (av p: det p kan få, behov.ts, och till ett familjehus också familjens), utom det som sparas
 export const avail = (s: State, k: string, p?: Person, hus?: number) => (p ? getable(s, p, k) + famOwn(s, p, k, hus) : amountOf(s, k)) - (RESERVE[k] ?? 0);
-const famHus = (s: State, hus?: number) => { const h = housesOf(s).find(q => q.id === hus); return h?.ag !== undefined ? h : undefined; };
+const famHus = (s: State, hus?: number) => { const h = husById(s, hus); return h?.ag !== undefined ? h : undefined; };
 const famOwn = (s: State, p: Person, k: string, hus?: number) => { const h = famHus(s, hus); return h ? familjOf(s, h.ag).filter(q => q !== p).reduce((a, q) => a + ownsAmount(s, q, k), 0) : 0; };
 // p tar n av slaget k till ett hus. Till byns hus tas byns först; till ett familjehus familjens eget först (ägaren, partnern,
 // barnen), sedan efter behovsstegen som till ett eget arbete. Ger vems det var
@@ -182,7 +178,6 @@ export function buildJob(s: State, p: Person): Job | undefined {
   }
   return best;
 }
-export const bitById = (s: State, id?: number) => bitsOf(s).find(b => b.id === id);
 // material som fattas på bygget eller lagningen
 export function needOf(b: Bit) {
   const M = MATERIAL[b.m];
@@ -193,7 +188,7 @@ export const lacks = (b: Bit) => needOf(b) > 1e-9;
 // var man står när man bygger: på golvet, eller bredvid väggen (helst inne i huset)
 export function siteOf(s: State, b: Bit) {
   if (b.k !== 'vagg') return { x: b.x + 0.5, y: b.y + 0.5 };
-  const hus = housesOf(s).find(h => h.id === b.hus);
+  const hus = husById(s, b.hus);
   const opts = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([dx, dy]) => ({ x: b.x + dx, y: b.y + dy })).filter(o => inMap(o.x, o.y) && !blocked(s, o.x, o.y))
     .sort((a, c) => inHus(hus, c) - inHus(hus, a));
   const o = opts[0] ?? freeNear(s, b.x, b.y, true); // aldrig på väggen själv: då står man i den när den är klar
@@ -208,7 +203,7 @@ export function deliver(b: Bit, n: number, repair: boolean) { if (repair) b.lm =
 // stold (taget utan lov av vem), fallt (stockar från träd som vem fällde eller högg för bygget). Ändrar inget i spelet
 export const KOM = ['byn', 'eget', 'familj', 'gava', 'fallt', 'stold'] as const;
 export function noteKom(s: State, husId: number | undefined, kom: Record<string, number>) {
-  const h = housesOf(s).find(q => q.id === husId);
+  const h = husById(s, husId);
   if (!h) return;
   const m = (h.kom ??= {});
   for (const key in kom) m[key] = (m[key] ?? 0) + kom[key];
@@ -244,7 +239,7 @@ export function workOn(s: State, p: Person, b: Bit, dtSec: number) {
   if (b.b < 1) return false;
   b.c = 1; count(s, 'byggt_' + b.m); touch(s);
   if (b.k === 'vagg') clearTile(s, b);
-  const h = housesOf(s).find(q => q.id === b.hus);
+  const h = husById(s, b.hus);
   // huset är färdigt när väggarna står: trägolvet läggs efter hand och gör det bara skönare att sova där
   if (h && !h.klar && bitsOf(s).every(q => q.hus !== h.id || q.b >= 1)) {
     h.klar = s.now;
@@ -276,7 +271,7 @@ export function wearBuild(s: State, hours: number, ai: number) {
     if (b.b < 1 || !M.slit) continue;
     b.c -= M.slit * hours * (ai === 0 ? 1.5 : 1);
     if (b.c > 0) continue;
-    const h = housesOf(s).find(q => q.id === b.hus);
+    const h = husById(s, b.hus);
     if (b.k === 'vagg') {
       b.b = 0; b.mat = 0; b.c = 1; b.lp = b.lm = undefined; count(s, 'rasat');
       if (h) h.klar = undefined;

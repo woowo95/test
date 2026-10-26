@@ -1,7 +1,7 @@
 import { getMap, hash, vnoise } from './karta';
 import { campKey } from './plats';
-import { clampI } from './slump';
-import { H, HOUR, State, W, inMap, mapKey } from './typer';
+import { clampI, rnd } from './slump';
+import { H, HOUR, Person, State, W, inMap, mapKey } from './typer';
 import { FOREST, Ground, HIGH, decodeCover, encodeCover, isSoil } from './vag';
 
 // ---------- mark: gräs, stigar och skog ----------
@@ -98,3 +98,5 @@ export function growGround(s: State, hours: number, season: number) {
 
 export const WEAR = 0.045; // slitage när någon går över en ruta
 export const tileOf = (x: number, y: number) => clampI(y, H) * W + clampI(x, W); // rutans index, närmaste ruta på kartan om punkten ligger utanför
+// en slumpad punkt nära mitten av rutan med index i (p:s följd 'val')
+export const punktIRuta = (s: State, i: number, p: Person) => ({ x: i % W + 0.3 + rnd(s, 'val', p) * 0.4, y: Math.floor(i / W) + 0.3 + rnd(s, 'val', p) * 0.4 });

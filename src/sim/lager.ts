@@ -32,7 +32,7 @@ const DOLD_I: Record<string, string> = Object.fromEntries(DOLD.map(k => [SAKER[k
 // skick (ett redskap som ligger på en ruta är en stack med n lika med c, `asStack`)
 export const condOf = (a: Stack) => a.c;
 export const inZone = (z: Zone, x: number, y: number) => x >= z.x && x < z.x + z.w && y >= z.y && y < z.y + z.h;
-const near = (z: Zone, x: number, y: number, d: number) => x >= z.x - d && x < z.x + z.w + d && y >= z.y - d && y < z.y + z.h + d;
+export const nearZone = (z: Zone, x: number, y: number, d: number) => x >= z.x - d && x < z.x + z.w + d && y >= z.y - d && y < z.y + z.h + d;
 export const allows = (z: Zone, k: string) => !z.slag || (z.slag === 'mat') === isFood(k);
 
 export function zonesOf(s: State): Zone[] {
@@ -46,7 +46,7 @@ export function zonesOf(s: State): Zone[] {
 }
 export const zoneOf = (s: State) => zonesOf(s)[0];
 export const zoneAt = (s: State, x: number, y: number) => zonesOf(s).findIndex(z => inZone(z, x, y));
-export const isStored = (s: State, x: number, y: number) => zonesOf(s).some(z => near(z, x, y, 2));
+export const isStored = (s: State, x: number, y: number) => zonesOf(s).some(z => nearZone(z, x, y, 2));
 function stacksOf(s: State): Stack[] {
   if (!s.stackar) {
     s.stackar = [];
@@ -174,7 +174,7 @@ function shareOf(ag: Del | undefined, n: number, owner = BYN, s?: State): Del {
 }
 
 // ---------- platser ----------
-function usable(s: State, x: number, y: number) {
+export function usable(s: State, x: number, y: number) {
   const m = getMap(s.seed), f = m.fire;
   if (!inMap(x, y)) return false;
   const t = m.tiles[y * W + x];

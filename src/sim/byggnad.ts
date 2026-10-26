@@ -27,6 +27,8 @@ const OPEN_LEAK = 0.12; // så mycket sämre ett rum håller värmen för varje 
 
 export const bitsOf = (s: State) => (s.byggen ??= []);
 export const housesOf = (s: State) => (s.hus ??= []);
+export const husById = (s: State, id?: number) => housesOf(s).find(h => h.id === id);
+export const bitById = (s: State, id?: number) => bitsOf(s).find(b => b.id === id);
 export const touch = (s: State) => { s.byggV = (s.byggV ?? 0) + 1; };
 
 // ---------- rutnätet: vad som står var, och vilka rum det blir ----------

@@ -1,4 +1,4 @@
-import { KOM, bitsOf, byId, fnOf, gridOf, housesOf, insulation, komOf, sakNamn } from '../../sim';
+import { KOM, bitsOf, byId, fnOf, gridOf, husById, insulation, komOf, sakNamn } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { esc, fmtN, pLink } from '../hjalp';
 import { s, ui } from '../lage';
@@ -19,7 +19,7 @@ export const hus: Flik = {
   namn: 'Huset',
   knapp: 'person',
   html() {
-    const h = housesOf(s).find(q => q.id === ui.husId);
+    const h = husById(s, ui.husId);
     if (!h) return '<p class="muted">Huset finns inte längre.</p>';
     const bits = bitsOf(s).filter(b => b.hus === h.id), klar = bits.filter(b => b.b >= 1).length;
     const rum = gridOf(s).rooms.filter(r => r.hus === h.id), sov = rum.reduce((n, r) => n + r.tiles.length, 0);

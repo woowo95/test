@@ -24,8 +24,8 @@ import { findPath, speedAt, wear } from './vag';
 import { chooseTask } from './val';
 import { djurSteg } from './djur';
 import { stepByggnader } from './byggnader';
-import { avail, bitById, takeForHouse, buildJob, deliver as deliverBit, lacks, needOf, noteKom, planBuild, siteOf, toWalls, wearBuild, workOn } from './bygg';
-import { MATERIAL, gridOf, roomAt, shelterOf } from './byggnad';
+import { avail, takeForHouse, buildJob, deliver as deliverBit, lacks, needOf, noteKom, planBuild, siteOf, toWalls, wearBuild, workOn } from './bygg';
+import { MATERIAL, bitById, gridOf, roomAt, shelterOf } from './byggnad';
 import { histParts, historikSteg, joinHist } from './historik';
 import { stepDelning } from './delning';
 

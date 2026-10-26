@@ -29,12 +29,12 @@ function distGrid(s: State) {
 function distTo(s: State, x: number, y: number) {
   const f = getMap(s.seed).fire;
   let d = Math.hypot(x - f.x, y - f.y);
-  for (const z of zonesIn(s)) {
-    const dx = Math.max(z.x - x, 0, x - (z.x + z.w - 1)), dy = Math.max(z.y - y, 0, y - (z.y + z.h - 1));
-    d = Math.min(d, Math.hypot(dx, dy));
-  }
+  for (const z of zonesIn(s)) d = Math.min(d, rektAvstand(x, y, z.x, z.y, z.w, z.h));
   return d;
 }
+// avståndet från en ruta (px, py) till närmaste ruta i rektangeln med hörnet (rx, ry) och måtten rw×rh (0 inne i den)
+export const rektAvstand = (px: number, py: number, rx: number, ry: number, rw: number, rh: number) =>
+  Math.hypot(Math.max(rx - px, 0, px - (rx + rw - 1)), Math.max(ry - py, 0, py - (ry + rh - 1)));
 // lägrets form som text: för det som räknas en gång och sparas tills lägret ändras
 export const campKey = (s: State) => `${s.seed}:${zonesIn(s).map(z => `${z.x},${z.y},${z.w},${z.h}`).join(';')}`;
 // byns mitt: elden väger lika mycket som alla lagerplatser tillsammans

@@ -1,5 +1,7 @@
 import { alive, byId, count, isParent, living, log } from './folk';
-import { Hus, MATERIAL, Rum, bitsOf, gridOf, housesOf, touch } from './byggnad';
+import { Hus, MATERIAL, Rum, bitById, bitsOf, gridOf, housesOf, husById, shelterOf, touch } from './byggnad';
+import { heatAt } from './eld';
+import { getMap } from './karta';
 import { changed, ownedAll, put, storeFull, zonesOf } from './lager';
 import { kronika } from './historik';
 import { DAY } from './typer';
@@ -32,7 +34,7 @@ export const BYGGNADER = {
     namn: 'Sovsal', ikon: '🛏️', behov: 'Sovplatser under tak åt alla, mot kylan', fara: true, vikt: 3, agare: 'byn', sover: true,
     // så många som saknar en sovplats, och lite till för barn som kommer
     akut: s => { const n = living(s).length, u = homeless(s); return { v: n ? u / n : 0, plats: u + 2 }; },
-    namnFor: (_s, w, h, same) => { const big = w * h >= 8; return same ? `${big ? 'Långhus' : 'Hydda'} ${same + 1}` : big ? 'Långhuset' : 'Hyddan'; },
+    namnFor: (_s, w, h, same) => { const big = w * h >= LANGHUS_PLATSER; return same ? `${big ? 'Långhus' : 'Hydda'} ${same + 1}` : big ? 'Långhuset' : 'Hyddan'; },
   },
   forrad: {
     namn: 'Förrådshus', ikon: '📦', behov: 'Maten ruttnar eller förrådet är fullt: under tak ruttnar och slits det mindre', fara: false, vikt: 2, agare: 'byn', lager: true,
@@ -65,7 +67,14 @@ const RUTT_MIN = 10; // så mycket mat som ruttnat bort på sistone innan byn by
 const RUTT_GLOM = 0.97; // så mycket av det som ruttnat som byn minns efter en timme (hälften efter ett dygn)
 export type Fn = keyof typeof BYGGNADER;
 export const FN = Object.keys(BYGGNADER) as Fn[];
-export const fnOf = (h: Hus): Byggnad => BYGGNADER[(h.fn ?? 'sovsal') as Fn] ?? BYGGNADER.sovsal;
+export const fnId = (h: Hus): Fn => (h.fn ?? 'sovsal') as Fn; // husets funktion; hus från äldre sparfiler är sovsalar
+export const fnOf = (h: Hus): Byggnad => BYGGNADER[fnId(h)] ?? BYGGNADER.sovsal;
+export const LANGHUS_PLATSER = 8; // en sovsal med så många sovplatser (rutor) eller fler är ett långhus, annars en hydda
+// så många andra hus (utom `utom`) har samma sorts namn som ett nytt hus för funktionen fn med yta w×h inuti väggarna
+export function antalLika(s: State, fn: Fn, w: number, h: number, utom?: Hus) {
+  const big = w * h >= LANGHUS_PLATSER, hs = housesOf(s).filter(q => q !== utom);
+  return fn === 'sovsal' ? hs.filter(q => q.namn.startsWith(big ? 'Långhus' : 'Hydda')).length : hs.filter(q => fnId(q) === fn).length;
+}
 
 // det mest akuta behovet just nu: faror först, sedan vikten gånger hur akut det är
 export function mostUrgent(s: State) {
@@ -129,12 +138,12 @@ function boende(s: State): Boende {
   const ppl = living(s), key = `${s.byggV ?? 0}:${s.now}:${ppl.length}`;
   let b = boenden.get(s);
   if (b && b.key === key) return b;
-  const hs = housesOf(s), husOf = (id?: number) => hs.find(h => h.id === id), egna = new Map<number, { tiles: number[]; folk: Person[] }>(), gemensamt: number[] = [];
+  const hs = housesOf(s), egna = new Map<number, { tiles: number[]; folk: Person[] }>(), gemensamt: number[] = [];
   const egnaTiles = new Map<number, number[]>();
   // de äldsta husen fylls först, så att det är ett nytt hus som står tomt när det blir för många sovplatser
   const ordning = (r: Rum) => { const i = hs.findIndex(h => h.id === r.hus); return i < 0 ? hs.length : i; };
   for (const r of [...gridOf(s).rooms].sort((a, c) => ordning(a) - ordning(c))) {
-    const h = husOf(r.hus);
+    const h = husById(s, r.hus);
     if (h && !fnOf(h).sover) continue;
     if (h?.ag !== undefined) egnaTiles.set(h.id, [...(egnaTiles.get(h.id) ?? []), ...r.tiles]);
     else gemensamt.push(...r.tiles);
@@ -182,8 +191,7 @@ const TOM_TID = DAY;
 const RIV_TILLBAKA = 0.5; // så mycket av materialet som kommer tillbaka när ett hus rivs
 // ett nytt namn efter funktionen
 function nyttNamn(s: State, h: Hus, fn: Fn, a: Akut) {
-  const r: Byggnad = BYGGNADER[fn], w = h.w - 2, hh = h.h - 2, big = w * hh >= 8, hs = housesOf(s).filter(q => q !== h);
-  const same = fn === 'sovsal' ? hs.filter(q => q.namn.startsWith(big ? 'Långhus' : 'Hydda')).length : hs.filter(q => (q.fn ?? 'sovsal') === fn).length;
+  const r: Byggnad = BYGGNADER[fn], w = h.w - 2, hh = h.h - 2, same = antalLika(s, fn, w, hh, h);
   return r.namnFor ? r.namnFor(s, w, hh, same, a) : r.namn;
 }
 function bytFn(s: State, h: Hus, fn: Fn, slag?: 'mat' | 'material') {
@@ -203,7 +211,7 @@ function riv(s: State, h: Hus) {
   log(s, `${h.namn} behövdes inte längre och revs. ${Math.round(ved)} trä kom tillbaka till byn.`, 'world'); kronika(s, `${h.namn} revs.`);
 }
 function funktionsbyte(s: State) {
-  const hs = housesOf(s), arbete = new Set(living(s).filter(p => p.task?.act === 'bygga').map(p => bitsOf(s).find(b => b.id === p.task!.ref)?.hus));
+  const hs = housesOf(s), arbete = new Set(living(s).filter(p => p.task?.act === 'bygga').map(p => bitById(s, p.task!.ref)?.hus));
   const fri = (h: Hus) => !!h.klar && !arbete.has(h.id);
   for (const h of hs) if (h.fn === 'familjehus' && h.ag === undefined && fri(h)) bytFn(s, h, 'sovsal');
   // saknas sovplatser blir ett samlingshus en sovsal igen
@@ -211,7 +219,7 @@ function funktionsbyte(s: State) {
   // sovsalar som ingen sover i
   const b = boende(s), anvand = new Set(b.gemensamt.slice(0, b.ovriga.length));
   for (const h of [...hs]) {
-    if ((h.fn ?? 'sovsal') !== 'sovsal' || h.ag !== undefined || !fri(h)) continue;
+    if (fnId(h) !== 'sovsal' || h.ag !== undefined || !fri(h)) continue;
     const tiles = gridOf(s).rooms.filter(r => r.hus === h.id).flatMap(r => r.tiles);
     if (!tiles.length || tiles.some(i => anvand.has(i))) { h.tom = undefined; continue; }
     h.tom ??= s.now;
@@ -222,6 +230,11 @@ function funktionsbyte(s: State) {
     else riv(s, h);
     return; // ett hus i taget
   }
+}
+// är det varmare inne i rummet än vid elden? c = kylan (coldOf): hur kallt det är ute
+export function varmareInne(s: State, rum: Rum, c: number) {
+  const f = getMap(s.seed).fire, inne = -c * (1 - shelterOf(s, rum, Math.min(living(s).length, rum.tiles.length))), ute = heatAt(s, f.x + 0.5, f.y + 2.9) * 2 - c;
+  return inne >= Math.min(0, ute) - 0.02;
 }
 // samlingshusets rum, där man umgås när det är kallt (val.ts)
 export const samlingRum = (s: State): Rum | undefined => {

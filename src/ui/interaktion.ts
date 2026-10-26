@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { BAR, FOREST, HIGH, MATERIAL, Person, T, W, bitAt, campCenter, condOf, emberOn, getMap, groundOf, housesOf, inMap, insulation, living, roomAt, sakNamn, taskName, zoneAt, zonesOf, Pile } from '../sim';
+import { BAR, FOREST, HIGH, MATERIAL, Person, T, W, bitAt, campCenter, condOf, emberOn, getMap, groundOf, husById, inMap, insulation, living, roomAt, sakNamn, taskName, zoneAt, zonesOf, Pile } from '../sim';
 import { iconImg } from '../ikoner';
 import { $, esc, fmtN } from './hjalp';
 import { outPilesAt, piles, s, ui } from './lage';
@@ -86,12 +86,12 @@ function showHover(gx: number, gy: number) {
   if ((s.stubbar ?? []).some(k => k.x === x && k.y === y)) rows.push('Stubbe efter ett fällt träd');
   const bit = bitAt(s, x, y);
   if (bit) {
-    const M = MATERIAL[bit.m], hus = housesOf(s).find(h => h.id === bit.hus);
+    const M = MATERIAL[bit.m], hus = husById(s, bit.hus);
     const st = bit.b < 1 ? `byggs, ${Math.round(bit.b * 100)} %${M.n ? `, material ${Math.round(bit.mat)} av ${M.n} ${sakNamn(M.item!).toLowerCase()}` : ''}` : M.slit ? `skick ${Math.round(bit.c * 100)} %` : '';
     rows.push(`${iconImg(bit.k === 'vagg' ? (bit.m === 'ris' ? 'risvagg' : 'timmervagg') : bit.m === 'ho' ? 'hogolv' : bit.m === 'tra' ? 'tragolv' : '', 12)} <b>${esc(M.namn)}</b>${hus ? ` i ${esc(hus.namn.toLowerCase())}` : ''}${st ? ' · ' + st : ''}`);
   }
   const rum = roomAt(s, x, y);
-  if (rum) { const hus = housesOf(s).find(h => h.id === rum.hus); rows.push(`Under tak${hus ? ` (${esc(hus.namn)})` : ''} · ${rum.tiles.length} sovplatser · håller värmen ${Math.round(insulation(s, rum) * 100)} %`); }
+  if (rum) { const hus = husById(s, rum.hus); rows.push(`Under tak${hus ? ` (${esc(hus.namn)})` : ''} · ${rum.tiles.length} sovplatser · håller värmen ${Math.round(insulation(s, rum) * 100)} %`); }
   const here = living(s).filter(p => { const o = posOf(p); return Math.floor(o.x) === x && Math.floor(o.y) === y; });
   if (here.length) rows.push(here.map(p => `${esc(p.name)} (${p.task ? taskName(p.task).toLowerCase() : 'vilar'})`).join(', '));
   box.innerHTML = rows.map(r => `<p>${r}</p>`).join('');

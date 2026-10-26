@@ -2,7 +2,7 @@ import { take } from './agande';
 import { campCenter, campDist, campKey } from './plats';
 import { foodDays } from './ekonomi';
 import { ACTS, WORK, usesTool } from './handlingar';
-import { canLight, emberOn, heatAt, fireWant, needStones, needTinder, woodDays } from './eld';
+import { canLight, emberOn, fireWant, needStones, needTinder, woodDays } from './eld';
 import { ageOf, isSick, living, stat } from './folk';
 import { HAND_FISH, Kind, flintSpot, shoreOf, wantsFlint } from './fynd';
 import { coldOf, temperature } from './vader';
@@ -11,13 +11,13 @@ import { areaOf, flintArea, pickSpot, prospectFor } from './minne';
 import { getMap } from './karta';
 import { amountOf, fetchSpot, haulJob } from './lager';
 import { bedFor, buildJob, siteOf } from './bygg';
-import { bitAt, blocked, freeNear, roomAt, shelterOf } from './byggnad';
-import { bedTile, homeless, samlingRum } from './byggnader';
-import { isForest } from './mark';
+import { bitAt, blocked, freeNear, roomAt } from './byggnad';
+import { bedTile, homeless, samlingRum, varmareInne } from './byggnader';
+import { isForest, punktIRuta } from './mark';
 import { axeTask, fallTid } from './skog';
 import { GA_TID, startsOnArrival } from './paborjat';
 import { duty, dygn, habitShare, habitTotal } from './seder';
-import { clamp, rnd } from './slump';
+import { clamp, pick, rnd } from './slump';
 import { ageIndex, isLight } from './tid';
 import { Act, DAY, H, HOUR, Person, SEC, Skill, State, T, W, inMap } from './typer';
 
@@ -29,10 +29,7 @@ export function spotFor(s: State, act: Act, p: Person): { x: number; y: number }
   if (plats === 'elden') {
     // när det är kallt samtalar och berättar man i samlingshuset, om det är varmare där än vid elden (byggnader.ts)
     const sal = d.social ? samlingRum(s) : undefined, c = sal ? coldOf(temperature(s)) : 0;
-    if (sal && c > 0) {
-      const inne = -c * (1 - shelterOf(s, sal, Math.min(living(s).length, sal.tiles.length))), ute = heatAt(s, f.x + 0.5, f.y + 2.9) * 2 - c;
-      if (inne >= Math.min(0, ute) - 0.02) { const i = sal.tiles[Math.floor(rnd(s, 'val', p) * sal.tiles.length)]; return { x: i % W + 0.3 + rnd(s, 'val', p) * 0.4, y: Math.floor(i / W) + 0.3 + rnd(s, 'val', p) * 0.4 }; }
-    }
+    if (sal && c > 0 && varmareInne(s, sal, c)) return punktIRuta(s, pick(s, sal.tiles, 'val', p), p);
     for (let k = 0; ; k++) { // runt elden, men inte i en husvägg
       const ang = rnd(s, 'val', p) * Math.PI * 2, r = d.radie ?? 1.3 + rnd(s, 'val', p) * 0.9, x = f.x + 0.5 + Math.cos(ang) * r, y = f.y + 0.5 + Math.sin(ang) * r;
       if (k >= 11 || !blocked(s, x, y)) return k >= 11 ? freeNear(s, f.x + 0.5, f.y + 1.5) : { x, y };
@@ -42,11 +39,7 @@ export function spotFor(s: State, act: Act, p: Person): { x: number; y: number }
   if (plats === 'sang') { // i huset om det finns plats under tak, annars på marken en bit från elden
     // i huset om det är varmare där än vid elden
     const bed = bedFor(s, p), c = coldOf(temperature(s)), rum = bed && roomAt(s, bed.x, bed.y);
-    if (bed && rum) {
-      const inne = -c * (1 - shelterOf(s, rum, Math.min(living(s).length, rum.tiles.length)));
-      const ute = heatAt(s, f.x + 0.5, f.y + 2.9) * 2 - c;
-      if (c === 0 || inne >= Math.min(0, ute) - 0.02) return bed; // när det inte är kallt räcker värmen överallt
-    }
+    if (bed && rum && (varmareInne(s, rum, c) || c === 0)) return bed; // när det inte är kallt räcker värmen överallt
     for (let k = 0; k < 12; k++) {
       const ang = (p.id * 2.399 + rnd(s, 'val', p) * 0.5) % (Math.PI * 2), r = 1.8 + rnd(s, 'val', p) * 1.2, x = f.x + 0.5 + Math.cos(ang) * r, y = f.y + 0.5 + Math.sin(ang) * r;
       if (inMap(x, y) && !blocked(s, x, y)) return { x, y };
@@ -124,7 +117,7 @@ function strandSpot(s: State) {
   const sh = shoreOf(s.seed), ok: number[] = [];
   for (let i = 0; i < W * H; i++) if (sh[i] && campDist(s, i % W, Math.floor(i / W)) < 15 && !bitAt(s, i % W, Math.floor(i / W))) ok.push(i);
   if (!ok.length) return bathSpot(s);
-  const i = ok[Math.floor(rnd(s, 'val') * ok.length)];
+  const i = pick(s, ok, 'val');
   return { x: i % W + 0.5, y: Math.floor(i / W) + 0.5 };
 }
 // Faror går före förbättringar. En korg eller ett spjut gör maten lättare att få tag i, men när kylan är en fara väntar
