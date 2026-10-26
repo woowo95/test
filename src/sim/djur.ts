@@ -1,4 +1,4 @@
-import { FYND, fyndAt, setNarvaro, vaxerAt, vaxerKarta } from './fynd';
+import { FYND, fyndAt, setNarvaro, vaxerAt, viltStart } from './fynd';
 import { hash } from './karta';
 import { clamp } from './slump';
 import { living } from './folk';
@@ -47,19 +47,20 @@ const starter = tvaDelar<Map<string, Start | null>>(); // gränssnittet räknar 
 const tidAv = (k: number) => (k * LIVSTID) / KANINER.grupper; // grupperna byter plats en i taget
 const epokOf = (k: number, t: number) => Math.floor((t - tidAv(k)) / LIVSTID);
 // var grupp k dyker upp under sin tid e: en ruta där kartan är hög (slumpad med vikt efter kartan), en bit från de andra
-// grupperna (där de är vid tiden t), och den bästa platsen i närheten som den rör sig mot
-function start(s: State, k: number, e: number, t: number): Start | null {
+// grupperna (där de är när tiden börjar), och den bästa platsen i närheten som den rör sig mot. Bara ur kartan och tiden
+// (viltStart i fynd.ts), så att platsen blir densamma när cachen töms och efter inläsning
+function start(s: State, k: number, e: number): Start | null {
   const key = `${mapKey(s.seed)},${k},${e}`, f = starter.sim.get(s);
   if (f?.has(key)) return f.get(key)!;
   const d = egen(starter);
   let m = d.get(s);
   if (!m) d.set(s, m = new Map());
   if (m.has(key)) return m.get(key)!;
-  const topp = FYND.jakt.topp, salt = s.seed * 31 + k * 977 + e * 7919;
+  const topp = FYND.jakt.topp, salt = s.seed * 31 + k * 977 + e * 7919, t0 = tidAv(k) + e * LIVSTID;
   const andra: { x: number; y: number }[] = [];
-  for (let j = 0; j < k; j++) { const g = mitt(s, j, t); if (g) andra.push(g); }
+  for (let j = 0; j < k; j++) { const g = mitt(s, j, t0); if (g) andra.push(g); }
   let bi = -1, bs = -Infinity;
-  const vax = vaxerKarta(s, 'jakt');
+  const vax = viltStart(s, t0);
   for (let i = 0; i < W * H; i++) {
     const v = vax[i] / topp;
     if (v < KANINER.startMin) continue;
@@ -86,7 +87,7 @@ function start(s: State, k: number, e: number, t: number): Start | null {
 }
 // gruppens mitt vid tiden t: den glider mot den bättre platsen under första delen av sin tid
 function mitt(s: State, k: number, t = s.now) {
-  const e = epokOf(k, t), st = start(s, k, e, t);
+  const e = epokOf(k, t), st = start(s, k, e);
   if (!st) return undefined;
   const f = Math.min(1, ((t - tidAv(k)) / LIVSTID - e) * KANINER.glid), g = f * f * (3 - 2 * f);
   return { x: st.x0 + (st.x1 - st.x0) * g, y: st.y0 + (st.y1 - st.y0) * g, e, st };

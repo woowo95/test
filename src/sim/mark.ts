@@ -67,6 +67,8 @@ function startForest(seed: number) {
   }
   return trees;
 }
+// marken som den var när byn grundades (bara ur kartan): för det som ska vara detsamma efter inläsning (djur.ts)
+export const startGround = perKarta((seed): Ground => ({ tiles: getMap(seed).tiles, cover: new Float32Array(W * H).fill(1), trees: startForest(seed) }));
 export const isForest = (s: State, i: number) => groundOf(s).trees[i] >= FOREST;
 // vad jordrutan i är: skog, ungskog, högt gräs, kort gräs eller bar jord (en stig)
 export type Markslag = 'skog' | 'ung' | 'hog' | 'kort' | 'bar';

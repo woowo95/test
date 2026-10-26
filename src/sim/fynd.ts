@@ -1,16 +1,16 @@
-import { PLATS, campCenter, campDist, campGrid } from './plats';
+import { PLATS, campCenter, campDist, campGrid, rektAvstand } from './plats';
 import { count, forstaGang, stat, log, think } from './folk';
 import { getMap, hash, perKarta, vnoise } from './karta';
-import { Markslag, groundOf, markslag, tileOf } from './mark';
+import { Markslag, groundOf, markslag, startGround, tileOf } from './mark';
 import { sedEvent } from './seder';
 import { chance, clamp, clampI, pickNarmaste, rnd } from './slump';
 import { kn, learnK, useK } from './kunskap';
 import { ageIndex } from './tid';
 import { kunnighet } from './ekonomi';
-import { addTo, amountOf, foodOf } from './lager';
+import { LAGER, addTo, amountOf, foodOf } from './lager';
 import { nTools } from './agande';
 import { DAY, H, HOUR, HOUR_S, Person, State, T, W, egen, inMap, tvaDelar, visning } from './typer';
-import { FOREST, isSoil } from './vag';
+import { FOREST, Ground, isSoil } from './vag';
 import { ACTS, RedskapDef, SNABBARE } from './handlingar';
 import { balans } from './balans';
 
@@ -100,6 +100,8 @@ const land = (s: State, i: number) => isSoil(groundOf(s).tiles[i]);
 // hur väl varje slags mark passar lagret (gånger resten av värdet)
 const BAR_PASSAR: Record<Markslag, number> = { skog: 0.8, ung: 1, hog: 1, kort: 0, bar: 0 };
 const JAKT_PASSAR: Record<Markslag, number> = { skog: 0.85, ung: 0.9, hog: 1, kort: 1, bar: 0.3 };
+// kaninernas värde på rutan i: marken g, skygghet sky (0 nära folk, 1 långt bort) och mönstret m
+const jaktBas = (g: Ground, sky: ArrayLike<number>, i: number, m: number) => isSoil(g.tiles[i]) ? JAKT_PASSAR[markslag(g, i)] * (0.15 + 1.3 * m) * FANGST.jaktFaktor * sky[i] : 0;
 const ROTTER_PASSAR: Record<Markslag, number> = { skog: 0.5, ung: 0.5, hog: 0.5, kort: 0.4, bar: 0.1 };
 // Ordningen bland lagren med uttag är ordningen i sparfilen: nya lager med uttag läggs sist.
 const DEF = {
@@ -117,10 +119,7 @@ const DEF = {
   jakt: {
     namn: 'Kaniner', grupp: 'djur', ikon: 'kanin', farg: 0xc89a60, topp: 1.4 * FANGST.jaktFaktor,
     monster: { salt: 73, skala: 7, period: 7, troskel: 0.25 },
-    bas(s, i, m) {
-      if (!land(s, i)) return 0;
-      return JAKT_PASSAR[markslag(groundOf(s), i)] * (0.15 + 1.3 * m) * FANGST.jaktFaktor * skyggOf(s)[i];
-    },
+    bas(s, i, m) { return jaktBas(groundOf(s), skyggOf(s), i, m); },
     uttag: { full: 6, reach: 3, regrow: [1 / 800, 1 / 480, 1 / 480, 1 / 600] },
   },
   // fisken har sina favoritplatser i vattnet. Man fiskar från stranden och når ett par rutor ut
@@ -181,23 +180,23 @@ function monsterOf(s: State, k: FyndId) {
   const dag = Math.floor(s.now / DAY);
   let c = monstren.get(s);
   if (!c || c.dag !== dag) { c = { dag, v: {} }; monstren.set(s, c); }
-  let e = c.v[k];
-  if (!e) {
-    const mo = FYND[k].monster!, m = new Float32Array(W * H), seed = s.seed + mo.salt * 101;
-    const t = mo.period ? dag / mo.period : 0, t0 = Math.floor(t), ft = t - t0, st = ft * ft * (3 - 2 * ft);
-    let sum = 0;
-    for (let i = 0; i < W * H; i++) {
-      // två mönster tonas över i varandra medan de glider lite åt var sitt håll
-      const x = (i % W) / mo.skala, y = Math.floor(i / W) / mo.skala;
-      const a = vnoise(seed + t0 * 7919, x + ft * 0.6, y), b = vnoise(seed + (t0 + 1) * 7919, x - (1 - ft) * 0.6, y);
-      let v = Math.max(0, (a + (b - a) * st - mo.troskel) / (1 - mo.troskel));
-      if (mo.gles !== undefined && hash(seed + 3, i % W, Math.floor(i / W)) > mo.gles) v *= 0.15;
-      m[i] = Math.min(1, v * 1.6);
-      sum += m[i];
-    }
-    e = c.v[k] = { m, snitt: sum / (W * H) };
+  return c.v[k] ??= monsterDag(s.seed, k, dag);
+}
+// mönstret dygnet dag: bara ur fröet och dagen
+function monsterDag(fro: number, k: FyndId, dag: number) {
+  const mo = FYND[k].monster!, m = new Float32Array(W * H), seed = fro + mo.salt * 101;
+  const t = mo.period ? dag / mo.period : 0, t0 = Math.floor(t), ft = t - t0, st = ft * ft * (3 - 2 * ft);
+  let sum = 0;
+  for (let i = 0; i < W * H; i++) {
+    // två mönster tonas över i varandra medan de glider lite åt var sitt håll
+    const x = (i % W) / mo.skala, y = Math.floor(i / W) / mo.skala;
+    const a = vnoise(seed + t0 * 7919, x + ft * 0.6, y), b = vnoise(seed + (t0 + 1) * 7919, x - (1 - ft) * 0.6, y);
+    let v = Math.max(0, (a + (b - a) * st - mo.troskel) / (1 - mo.troskel));
+    if (mo.gles !== undefined && hash(seed + 3, i % W, Math.floor(i / W)) > mo.gles) v *= 0.15;
+    m[i] = Math.min(1, v * 1.6);
+    sum += m[i];
   }
-  return e;
+  return { m, snitt: sum / (W * H) };
 }
 // i byns läger växer inget (FANGST.lagerR)
 const iLagret = (s: State, i: number) => iLagretI(campGrid(s), getMap(s.seed).tiles, i);
@@ -241,11 +240,22 @@ export function vaxerAt(s: State, k: Lager, i: number) {
   for (const j of lagren(k)) v += capOf(s, j, i) * sasong(s, j);
   return v;
 }
-// vaxerAt för alla rutor på en gång (samma tal), för den som går igenom hela kartan
-export function vaxerKarta(s: State, k: FyndId) {
-  const f = FYND[k], m = f.monster ? monsterOf(s, k).m : undefined, sa = sasong(s, k);
-  const lager = campGrid(s), tiles = getMap(s.seed).tiles, v = new Float64Array(W * H);
-  for (let i = 0; i < W * H; i++) if (!iLagretI(lager, tiles, i)) v[i] += f.bas(s, i, m ? m[i] : 1) * sa;
+// Viltkartan som kaningrupperna väljer plats efter (djur.ts): bara ur kartan och tiden t, så att den är densamma efter
+// inläsning och när en cache töms. Marken som när byn grundades, mönstret och årstiden vid t, och viltet skyr elden och
+// den första lagerplatsen (som skyggOf, men utan stigarna och utan det lägret vuxit sedan)
+const skyggStart = perKarta(seed => {
+  const m = getMap(seed), v = new Float32Array(W * H);
+  for (let i = 0; i < W * H; i++) {
+    const x = i % W, y = Math.floor(i / W);
+    const d = clamp((Math.min(Math.hypot(x - m.fire.x, y - m.fire.y), rektAvstand(x, y, m.stock.x, m.stock.y, LAGER.startBredd, LAGER.startHojd)) - FANGST.skyggIn) / FANGST.skyggR, 0, 1);
+    v[i] = d * d * (3 - 2 * d);
+  }
+  return v;
+});
+export function viltStart(s: State, t: number) {
+  const g = startGround(s.seed), sky = skyggStart(s.seed), m = monsterDag(s.seed, 'jakt', Math.floor(t / DAY)).m;
+  const sa = FYND.jakt.arstid?.[ageIndex(s, t)] ?? 1, v = new Float64Array(W * H);
+  for (let i = 0; i < W * H; i++) v[i] = jaktBas(g, sky, i, m[i]) * sa;
   return v;
 }
 const store = new WeakMap<State, Partial<Record<FyndId, Float32Array>>>();
