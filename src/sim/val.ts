@@ -272,9 +272,8 @@ function day(s: State, p: Person, v: Val, a: number, lazy: number) {
     burg = Math.max(burg, col);
     if (sc > bs) { build = true; if (job.missing) best = job.item === 'torrgras' ? 'samla' : 'ved'; }
   }
-  // har byn flinta till elden (en sprucken räknas) men inte till en yxa går någon och letar vid stenarna, också när plockning inte är det mest behövda.
-  // Yxan är en förbättring: bara när maten räcker och inte inför eller under istiden. En i taget
-  const leta = !build && a >= ALDER.vuxen && amountOf(s, 'flinta') > VAL.letaFlinta && !needStones(s) && wantsFlint(s) && fd >= VAL.letaMat && !kallTid(ai) && !ppl.some(q => q !== p && q.task?.why?.includes('vid stenarna')) && rnd(s, 'val', p) < VAL.letaChans;
+  // har byn flinta till elden (en sprucken räknas) men inte till en yxa går någon och letar vid stenarna, också när plockning inte är det mest behövda
+  const leta = !build && a >= ALDER.vuxen && flintaTillYxa(s, p, fd, ai) && rnd(s, 'val', p) < VAL.letaChans;
   if (leta) best = 'samla';
   const u = clamp(burg / VAL.akut, 0, 1); // hur akut byn behöver arbete
   const sat = Math.min(p.hunger, p.rest, p.social); // hur väl de egna behoven är fyllda
@@ -291,7 +290,7 @@ function day(s: State, p: Person, v: Val, a: number, lazy: number) {
   } else if (works) {
     set(v, best, what + (lazy < 0.2 ? '. Plikttrogen.' : habitShare(p, [best], tot) > 0.25 ? '. Brukar göra det.' : p.skill[best as Skill] > 10 ? '. Skicklig på det.' : '.'));
     v.dur = (VAL.arbeteMin + rnd(s, 'val', p) * VAL.arbeteSpann) * MIN * VAL.pass;
-    withTools(s, p, v, best, what, leta);
+    withTools(s, p, v, best, what, fd, ai, leta);
     if (build && job!.missing && job!.item === 'ved' && v.act === 'falla') { v.ref = job!.bit.hus; v.why = `${v.why} Stocken ska bli en vägg.`; } // trädet fälls för bygget
   } else leisure(s, p, v, u, lazy, ai);
 }
@@ -335,10 +334,16 @@ function building(s: State, p: Person, v: Val, job: NonNullable<ReturnType<typeo
   const site = siteOf(s, b); v.spot = job.need > 0 ? fetchSpot(s, job.item!) : site; if (job.need > 0) v.site = site;
 }
 
-// arbetet med redskap: flinta letas vid stenarna, yxan fäller träd, korgen och spjutet görs först om de saknas
-function withTools(s: State, p: Person, v: Val, best: Act, what: string, leta = false) {
+// Flinta till en yxa är en förbättring: bara när maten räcker och inte inför eller under istiden, och en i taget
+// (byn har flinta till elden, en sprucken räknas, och stenar till eldringen)
+const flintaTillYxa = (s: State, p: Person, fd: number, ai: number) => amountOf(s, 'flinta') > VAL.letaFlinta && !needStones(s) && wantsFlint(s) && fd >= VAL.letaMat && !kallTid(ai) && !living(s).some(q => q !== p && q.task?.why?.includes('vid stenarna'));
+// Flinta och stenar till elden letas när byn saknar dem, också när maten är knapp (elden före maten: Björn avgör)
+const flintaTillElden = (s: State) => amountOf(s, 'flinta') < FANGST.flintaMinsta || needStones(s);
+// arbetet med redskap: flinta letas vid stenarna, yxan fäller träd, korgen och spjutet görs först om de saknas.
+// fd: hur många dygn maten räcker, ai: tidsåldern
+function withTools(s: State, p: Person, v: Val, best: Act, what: string, fd: number, ai: number, leta = false) {
   const stones = needStones(s);
-  if (best === 'samla' && (wantsFlint(s) || stones) && (leta || rnd(s, 'val', p) < VAL.stenarChans)) { // byn saknar flinta eller stenar till eldringen. Stenarna ligger långt bort, så där letar man ett helt pass
+  if (best === 'samla' && (leta || (flintaTillElden(s) || flintaTillYxa(s, p, fd, ai)) && rnd(s, 'val', p) < VAL.stenarChans)) { // byn saknar flinta eller stenar till eldringen. Stenarna ligger långt bort, så där letar man ett helt pass
     const fa = flintArea(p), fl = (fa !== undefined && flintSpot(s, (x, y) => areaOf(x, y) === fa)) || flintSpot(s);
     if (fl) { v.spot = fl; v.dur /= VAL.pass; v.sok = true; v.why = `${v.why} Letar efter ${stones ? 'stenar till en eldring' : 'flinta'} vid stenarna${fa !== undefined ? ' där hen vet att det finns flinta' : ''}.`; }
   }

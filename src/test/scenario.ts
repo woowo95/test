@@ -469,7 +469,21 @@ SCENARIER.stenring = {
     g.items = { gniststen: 1 }; g.stackar = [{ k: 'gniststen', n: 1, x: 1, y: 1, c: 1 }]; g.fire.lightings = 3;
     delete (g.fire as { ring?: boolean }).ring;
     g.v = 1; migrate(g); // som en sparfil från före v40
+    // flinta till en yxa är en förbättring: när maten inte räcker letar ingen efter den. Flinta till elden letas ändå
+    const f = createState(4, START);
+    f.now = new Date(f.now).setHours(10, 0, 0, 0); Object.assign(f.fire, { lit: true, fuel: 3, ring: true });
+    const letar = (flinta: number, mat: number) => {
+      setItems(f, { flinta, torrgras: 20, grenar: 20 }); setFood(f, mat); let n = 0, samla = 0;
+      for (let i = 0; i < 300; i++) {
+        const p = living(f).filter(q => ageOf(q, f.now) >= ALDER.vuxen)[i % 4];
+        Object.assign(p, { toa: 1, warm: 1, rest: 1, health: 1, hunger: 1, social: 1, task: undefined });
+        chooseTask(f, p); if (p.task?.sok) n++; if (p.task?.act === 'samla') samla++;
+      }
+      return `${n} av ${samla}`;
+    };
+    const yxaSvalt = letar(1, 2), eldSvalt = letar(0, 2), yxaMat = letar(1, 200);
     return [
+      [`flinta till en yxa letas inte när maten är knapp (${yxaSvalt} som samlar letar), men när den räcker (${yxaMat}); flinta till elden letas ändå (${eldSvalt})`, yxaSvalt.startsWith('0 ') && !yxaMat.startsWith('0 ') && !eldSvalt.startsWith('0 ')],
       [`stenar samlas och elden tänds (efter ${h} timmar)`, tand && logg(s, 'ring av stenar')],
       [`stenarna blir en ring runt elden (${kvar.toFixed(1)} stenar kvar i förrådet)`, ring && kvar < 1],
       ['elden tänds med flinta, gniststen finns inte', s.fire.log.some(e => e.k === 'tänd') && !(s.stackar ?? []).some(a => a.k === 'gniststen') && !logg(s, 'gniststen')],
