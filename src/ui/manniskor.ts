@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { ACTS, Person, slagIkon, SEC, TalkEvent, ageOf, SAMTAL_R, alive, byId, clamp, homeKind, isSick, isSocial, living, load, REL, relKey, spar } from '../sim';
+import { ACTS, ALDER, Person, slagIkon, SEC, TalkEvent, ageOf, SAMTAL_R, alive, byId, clamp, homeKind, isSick, isSocial, living, load, REL, relKey, spar } from '../sim';
 import { hsl } from './hjalp';
 import { s, ui } from './lage';
 import { Ikoner, TS, bubbleG, labels, markLayer, peopleG } from './scen';
@@ -70,7 +70,7 @@ export function drawPeople(t: number) {
   markIcons.start();
   for (const p of ppl) {
     const a = ageOf(p, s.now);
-    const r = a < 3 ? 2.8 : a < 14 ? 3.8 : 5;
+    const r = a < ALDER.smabarn ? 2.8 : a < ALDER.vuxen ? 3.8 : 5;
     const q = posOf(p), x = q.x * TS, y = q.y * TS;
     pos.set(p.id, q);
     const sleeping = p.task?.act === 'sova';
@@ -88,7 +88,7 @@ export function drawPeople(t: number) {
   const flash = new Map<number, string>();
   for (let i = bubbles.length - 1; i >= 0; i--) { const b = bubbles[i]; if (b.until < t) bubbles.splice(i, 1); else flash.set(b.id, b.kind); }
   for (const p of ppl) {
-    const pp = pos.get(p.id)!, x = pp.x * TS, y = pp.y * TS, a = ageOf(p, s.now), top = y - (a < 3 ? 9 : a < 14 ? 11 : 13);
+    const pp = pos.get(p.id)!, x = pp.x * TS, y = pp.y * TS, a = ageOf(p, s.now), top = y - (a < ALDER.smabarn ? 9 : a < ALDER.vuxen ? 11 : 13);
     const o = talkWith.get(p.id), q = o !== undefined ? byId(s, o) : undefined;
     const talking = q && alive(q) && isSocial(p) && isSocial(q) && Math.hypot(q.x - p.x, q.y - p.y) < SAMTAL_R;
     if (!talking && o !== undefined && !flash.has(p.id)) talkWith.delete(p.id);

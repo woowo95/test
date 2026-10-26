@@ -1,4 +1,4 @@
-import { ageOf, count, forstaGang, living, log, stat } from './folk';
+import { ALDER, ageOf, count, forstaGang, living, log, stat } from './folk';
 import { Bit, Hus, MATERIAL, bitsOf, blocked, freeNear, gridOf, housesOf, husById, touch } from './byggnad';
 import { getMap } from './karta';
 import { groundOf, punktIRuta } from './mark';
@@ -92,7 +92,7 @@ function kanGaUt(s: State, at: { x: number; y: number }, w: number, h: number, u
   for (let y = at.y; y < at.y + h; y++) for (let x = at.x; x < at.x + w; x++) solid[y * W + x] = 1;
   return findPath({ ...g, solid }, ux + 0.5, uy + 0.5, f.x + 0.5, f.y + 0.5) !== null;
 }
-const canBuildWalls = (p: Person, s: State) => ageOf(p, s.now) >= 14 && knows(p, 'timmervagg');
+const canBuildWalls = (p: Person, s: State) => ageOf(p, s.now) >= ALDER.vuxen && knows(p, 'timmervagg');
 // en gång i timmen: planera ett nytt hus för det mest akuta behovet (BYGGNADER i byggnader.ts) om någon kan bygga väggar
 export function planBuild(s: State) {
   const ppl = living(s), hs = housesOf(s);
@@ -177,7 +177,7 @@ export function takeForHouse(s: State, p: Person, hus: number | undefined, k: st
 export const treeOn = (s: State, b: Bit) => groundOf(s).trees[b.y * W + b.x] >= FOREST;
 // det p kan bygga härnäst: lagning av slitna väggar först, sedan jordgolv, väggar och sist trägolv. Det andra redan bygger tas inte
 export function buildJob(s: State, p: Person): Job | undefined {
-  if (ageOf(p, s.now) < 12) return;
+  if (ageOf(p, s.now) < ALDER.bygger) return;
   const others = living(s).filter(q => q !== p);
   const taken = new Set(others.filter(q => q.task?.act === 'bygga').map(q => q.task!.ref));
   // först fälls träden där huset ska stå, även inne i huset, av den som har en ledig yxa
@@ -251,7 +251,7 @@ export function toWalls(s: State, x: number, y: number, n: number, hus?: number,
 // en stunds arbete på en ruta. Ger true när rutan är klar
 export function workOn(s: State, p: Person, b: Bit, dtSec: number) {
   const M = MATERIAL[b.m], repair = b.b >= 1;
-  const rate = dtSec / HOUR_S / (M.tim || 0.01) * kunnighet(p.skill.hantverk) * (ageOf(p, s.now) < 16 ? BYGG.ungFart : 1);
+  const rate = dtSec / HOUR_S / (M.tim || 0.01) * kunnighet(p.skill.hantverk) * (ageOf(p, s.now) < ALDER.byggFullt ? BYGG.ungFart : 1);
   if (repair) {
     if (M.item && (b.lm ?? 0) < Math.ceil(M.n / BYGG.lagMatDiv) - 1e-9) return false;
     b.lp = (b.lp ?? 0) + rate * BYGG.lagFart;

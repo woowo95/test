@@ -67,7 +67,7 @@ export function die(s: State, p: Person, cause: string) {
   else if (cause === 'av kyla') sedEvent(s, 'forsiktighet', LIV.sedKyla, `${p.name} frös ihjäl. Byn har blivit mer försiktig.`);
   else if (cause === 'under en jakt') sedEvent(s, 'forsiktighet', LIV.sedJakt, `${p.name} dog under en jakt. Byn blev lite försiktigare.`);
   if (a < LIV.barnDod) sedEvent(s, 'barn', LIV.sedBarn, `Byn sörjer barnet ${p.name} och värnar mer om sina barn.`);
-  if (a >= 70) p.fame.push(`Blev ${a} år gammal`);
+  if (a >= ALDER.hogAlder) p.fame.push(`Blev ${a} år gammal`);
   for (const q of living(s)) {
     if (q.partner === p.id) { q.partner = undefined; think(q, `Sörjer ${p.name}`, LIV.sorjPartner, s.now, LIV.sorjPartnerDygn * DAY); }
     else if (isParent(p, q) || isParent(q, p)) think(q, `Sörjer ${p.name}`, LIV.sorjNara, s.now, LIV.sorjNaraDygn * DAY);

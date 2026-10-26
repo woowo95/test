@@ -1,4 +1,4 @@
-import { REL, ageOf, getRel, isKin, living, log, similarity, stat, think } from './folk';
+import { ALDER, REL, ageOf, getRel, isKin, living, log, similarity, stat, think } from './folk';
 import { clamp, pickViktat, rnd } from './slump';
 import { DAY, HOUR, Person, State } from './typer';
 import { pair } from './varld';
@@ -21,7 +21,7 @@ export function converse(s: State, a: Person, others: Person[], events?: TalkEve
   const aa = ageOf(a, now), ba = ageOf(b, now);
   const mood = moodOf(a, now);
   let kind: string;
-  const canFlirt = aa >= 16 && ba >= 16 && a.sex !== b.sex && !isKin(a, b) && Math.abs(aa - ba) < 18 &&
+  const canFlirt = aa >= ALDER.flirtFran && ba >= ALDER.flirtFran && a.sex !== b.sex && !isKin(a, b) && Math.abs(aa - ba) < ALDER.flirtSkillnad &&
     ((a.partner === undefined && b.partner === undefined) || a.partner === b.id);
   if ((mood < 0.3 && rnd(s, 'samtal', a) < 0.35) || (r.op < REL.gral && rnd(s, 'samtal', a) < 0.5)) kind = 'gräl';
   else if (a.task?.act === 'beratta') kind = 'berättelse';

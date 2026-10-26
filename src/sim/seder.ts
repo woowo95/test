@@ -1,5 +1,5 @@
 import { foodDays } from './ekonomi';
-import { ageOf, isParent, living, log } from './folk';
+import { ALDER, ageOf, isParent, living, log } from './folk';
 import { clamp } from './slump';
 import { Act, DAY, HOUR, Person, SEDER, Sed, Seder, State } from './typer';
 
@@ -23,7 +23,7 @@ function personSeder(s: State, p: Person): Record<Sed, number> {
 // inflytande över sederna: vuxna och äldre väger mest, karismatiska hörs mer
 export function influence(s: State, p: Person) {
   const a = ageOf(p, s.now);
-  return (a < 14 ? 0 : a < 20 ? 0.5 : a > 50 ? 1.5 : 1) * (0.5 + p.pot.karisma / 20);
+  return (a < ALDER.vuxen ? 0 : a < ALDER.ungdom ? 0.5 : a > ALDER.aldre ? 1.5 : 1) * (0.5 + p.pot.karisma / 20);
 }
 export function sederTarget(s: State): Record<Sed, number> {
   const t = { arbete: 0, gemenskap: 0, barn: 0, nyfikenhet: 0, forsiktighet: 0 };
@@ -101,7 +101,7 @@ export const TAGS: { tag: string; acts: Act[]; min: number }[] = [
 ];
 // taggen går till den som gör något klart mer än andra i byn; den som redan har en tagg behåller den lättare
 export function updateTags(s: State) {
-  const ppl = living(s).filter(p => ageOf(p, s.now) >= 14);
+  const ppl = living(s).filter(p => ageOf(p, s.now) >= ALDER.vuxen);
   const tot = new Map(ppl.map(p => [p, habitTotal(p)]));
   const avg = TAGS.map(t => ppl.reduce((a, p) => a + habitShare(p, t.acts, tot.get(p)), 0) / (ppl.length || 1));
   // ju fler som redan har ett yrke, desto svårare att få samma (bara namnet, det påverkar inte vad man gör)

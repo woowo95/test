@@ -1,4 +1,4 @@
-import { ageOf, count, log, stat, think } from './folk';
+import { ALDER, ageOf, count, log, stat, think } from './folk';
 import { sedEvent } from './seder';
 import { rnd } from './slump';
 import { kronika } from './historik';
@@ -59,7 +59,7 @@ function learn(s: State, p: Person, t: Tek, from?: Person) {
 // arbete för tankarna framåt mot det som hör till arbetet (omr). Andra handlingar ger inga idéer
 const OMR = new Set(TEKNIK.flatMap(t => t.omr));
 export function thinkWhileWorking(s: State, p: Person, act: Act, dtSec: number) {
-  if (!OMR.has(act) || ageOf(p, s.now) < 12) return;
+  if (!OMR.has(act) || ageOf(p, s.now) < ALDER.uppfinner) return;
   const nyf = stat(p, 'nyfikenhet', s.now) / 10, intel = stat(p, 'intelligens', s.now) / 10;
   for (const t of TEKNIK) {
     if (!t.omr.includes(act) || !canThink(p, t) || !hasMaterial(s, t)) continue;
@@ -72,7 +72,7 @@ export function thinkWhileWorking(s: State, p: Person, act: Act, dtSec: number) 
 
 // i samtal lär den som kan något ut det, och den som lyssnar lär sig fortare ju intelligentare hen är
 export function teach(s: State, a: Person, b: Person, kind: string) {
-  if (!a.tek || ageOf(b, s.now) < 8) return;
+  if (!a.tek || ageOf(b, s.now) < ALDER.lar) return;
   for (const t of TEKNIK) {
     if (!knows(a, t.id) || knows(b, t.id) || !t.krav.every(k => knows(b, k))) continue;
     if (rnd(s, 'kunskap', a) > (kind === 'berättelse' || kind === 'djupt samtal' ? 0.5 : 0.2)) continue;

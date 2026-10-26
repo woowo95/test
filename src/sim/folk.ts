@@ -59,23 +59,46 @@ export const KROPP = balans('kropp', {
   dodTakt: 0.105,
   dodBarn: 0.02,
 });
-// Åldrar (år i spelet, alltså dygn) som styr vad man får och orkar göra
+// Åldrar (år i spelet, alltså dygn) som styr vad man får och orkar göra. Gränserna skiljer sig med avsikt mellan handlingar
+// (barn blir vuxna för olika saker vid olika år), så varje handling har sitt eget namn även när siffran är densamma. Jämförelserna
+// (< eller <=) står kvar i koden som de var
 export const ALDER = balans('alder', {
+  // små barn och barn
   smabarn: 3, // under detta är man ett litet barn: sover under dagen och går inte själv på toa
   barnsjuk: 5, // under detta dör man lättare, och döden räknas som en barnsjukdom
   gangBarn: 6, // under detta går man långsammare
-  hjalper: 8, // från detta hjälper man till (hämtar ved åt elden); yngre leker
+  hjalper: 8, // från detta hjälper man till (hämtar ved åt elden), och personfliken visar vad hen vill; yngre leker
+  lar: 8, // från detta lär man sig tekniker av andra
+  skickFran: 8, // en nykomlings färdigheter räknas från detta (de växer med åren över det)
   matBarn: 10, // under detta äter man mindre och blir hungrig långsammare
   rensar: 10, // från detta rensar man fisk
+  // ungdom
   ansvar: 12, // från detta tänder man elden, hämtar kol och bär in saker i mörkret
-  vuxen: 14, // från detta arbetar man för byn; yngre hjälper bara till eller leker
+  bygger: 12, // från detta hjälper man till att bygga (golv, lagning och att fälla träd); väggar byggs först som vuxen
+  uppfinner: 12, // från detta kommer man på tekniker medan man arbetar
+  vuxen: 14, // från detta arbetar man för byn; yngre hjälper bara till eller leker. Också de som bygger väggar, har yrke och har en röst i sederna
   vaktFran: 16, // från detta kan man hålla vakt ...
   vaktTill: 60, // ... och under detta
+  byggFullt: 16, // under detta bygger man långsammare (BYGG.ungFart)
+  flirtFran: 16, // från detta flirtar man och kan bli ett par
   gravFran: 17, // en kvinna kan bli gravid från detta ...
   gravTill: 43, // ... och till detta
+  potVaxt: 18, // en människas egenskaper växer med så här många år till full styrka: potentialen gånger (potFodd + år / potVaxt), högst 1
+  ungdom: 20, // under detta väger ens röst i sederna bara hälften
+  // vuxna och gamla
+  flirtSkillnad: 18, // två som flirtar är mindre än så här många år från varandra
+  aldre: 50, // över detta väger ens röst i sederna mest
   alderdom: 55, // över detta räknas döden som ålderdom, annars som olycka
+  gammal: 60, // över detta orkar man mindre i arbetet (EKONOMI.gammalArbete)
   gangGammal: 65, // över detta går man långsammare
   sovGammal: 68, // över detta sover man ofta på natten
+  hogAlder: 70, // den som dör så här gammal eller äldre minns man för det (eftermälet)
+  // åldrandet: egenskapen backar från Fran år, och tappar hela sin kraft på Spann år till, men aldrig under Golv
+  potFodd: 0.06, // en nyfödd har så här stor del av sin potential
+  styrkaFran: 45, styrkaSpann: 45, styrkaGolv: 0.25, // styrka och uthållighet
+  minneFran: 50, minneSpann: 40, minneGolv: 0.3, // minne
+  skonhetFran: 40, skonhetSpann: 70, skonhetGolv: 0.5, // skönhet
+  sinneFran: 60, sinneSpann: 60, sinneGolv: 0.5, // intelligens, nyfikenhet, flit och mod
 });
 // Relationerna: hur mycket två tycker om varandra (op, från -100 till 100) avgör vad de gör för varandra. Gränserna läses av
 // samtal.ts, behov.ts, liv.ts och gränssnittet (orden Ovän, Ogillar, Bekant, Vän och Nära vän). Jämförelserna (< eller >)
@@ -121,18 +144,18 @@ export function doingAct(s: State, act: Act, utom?: Person) {
 
 export function stat(p: Person, k: Stat, now: number) {
   const a = ageOf(p, now);
-  let g = clamp(0.06 + a / 18, 0.06, 1);
+  let g = clamp(ALDER.potFodd + a / ALDER.potVaxt, ALDER.potFodd, 1);
   // åldrande: minne, styrka och uthållighet backar först och fortast, det mesta annat långsamt efter 60
-  if ((k === 'styrka' || k === 'uthallighet') && a > 45) g *= clamp(1 - (a - 45) / 45, 0.25, 1);
-  else if (k === 'minne' && a > 50) g *= clamp(1 - (a - 50) / 40, 0.3, 1);
-  else if (k === 'skonhet' && a > 40) g *= clamp(1 - (a - 40) / 70, 0.5, 1);
-  else if ((k === 'intelligens' || k === 'nyfikenhet' || k === 'flit' || k === 'mod') && a > 60) g *= clamp(1 - (a - 60) / 60, 0.5, 1);
+  if ((k === 'styrka' || k === 'uthallighet') && a > ALDER.styrkaFran) g *= clamp(1 - (a - ALDER.styrkaFran) / ALDER.styrkaSpann, ALDER.styrkaGolv, 1);
+  else if (k === 'minne' && a > ALDER.minneFran) g *= clamp(1 - (a - ALDER.minneFran) / ALDER.minneSpann, ALDER.minneGolv, 1);
+  else if (k === 'skonhet' && a > ALDER.skonhetFran) g *= clamp(1 - (a - ALDER.skonhetFran) / ALDER.skonhetSpann, ALDER.skonhetGolv, 1);
+  else if ((k === 'intelligens' || k === 'nyfikenhet' || k === 'flit' || k === 'mod') && a > ALDER.sinneFran) g *= clamp(1 - (a - ALDER.sinneFran) / ALDER.sinneSpann, ALDER.sinneGolv, 1);
   return p.pot[k] * g;
 }
 
 // färdigheterna en nykomling har efter sin ålder (en dragning ur 'folk' per färdighet, i SKILLS ordning)
 export function startSkills(s: State, p: Person, age: number) {
-  for (const k of SKILLS) p.skill[k] = clamp((age - 8) * 0.25 * (0.4 + rnd(s, 'folk')) * (p.pot.intelligens / 12), 0, 12);
+  for (const k of SKILLS) p.skill[k] = clamp((age - ALDER.skickFran) * 0.25 * (0.4 + rnd(s, 'folk')) * (p.pot.intelligens / 12), 0, 12);
 }
 
 // övning: färdigheten k ökar med vinst gånger det som återstår till den mjuka gränsen (21), högst taket (20)
