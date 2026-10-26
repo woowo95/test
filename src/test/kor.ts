@@ -1,5 +1,5 @@
 // Kör en by utan grafik och samlar nyckeltal. Vakterna larmar om något blir omöjligt (NaN, negativa förråd, folk i vattnet).
-import { createState, step, living, DAY, ageIndex, moodOf, serialize, serializeParts, getMap, fuelStock, ACT_NAMES, T, State, inMap, isWall, tileOf, foodOf, amountOf, sumOf, okandaBalans } from '../sim';
+import { createState, step, living, DAY, ageIndex, moodOf, serialize, serializeParts, getMap, fuelStock, ACT_NAMES, T, State, inMap, isWall, tileOf, foodOf, amountOf, sumOf, okandaBalans, alive, isCarrying } from '../sim';
 
 export const START = Date.parse('2026-10-20T08:00:00+02:00');
 
@@ -43,6 +43,7 @@ export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => voi
       else if (isWall(s, p.x, p.y)) larm('i en vägg', () => `${p.name} står i en vägg (${p.task?.act})`);
       if (p.task && !(p.task.act in ACT_NAMES)) larm('jobb', () => `${p.name} har okänt jobb ${p.task?.act}`);
     }
+    vakta(s, larm, i % 12 === 0);
     if (i % 12 === 0) { // en gång i timmen
       if (folk.some(p => p.hunger < 0.15)) hunger++;
       for (const p of folk) { humor += moodOf(p, s.now); humorN++; }
@@ -72,6 +73,16 @@ export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => voi
   };
   const vakter = [...fel].map(([typ, f]) => `${typ} (${f.n} ggr), första: ${f.forsta}`);
   return { seed, n, vakter, s };
+}
+
+// fler vakter efter varje steg: det som bara får finnas hos levande och sådant som håller ihop byn. De tunga körs en gång
+// i timmen (timme), och texten görs bara när ett larm går
+type Larm = (typ: string, text: () => string) => void;
+function vakta(s: State, larm: Larm, _timme: boolean) {
+  for (const p of s.people) {
+    if (alive(p)) continue;
+    if (p.task) larm('död med uppgift', () => `${p.name} (${p.died !== undefined ? 'död' : 'flyttad'}) har uppgiften ${p.task!.act}${isCarrying(p.task!) ? ' och bär något' : ''}`);
+  }
 }
 
 export function rad(r: Pick<Resultat, 'seed' | 'n'>) {

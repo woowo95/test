@@ -128,6 +128,7 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
     needLadder(s, p, dtSec); // äta: sitt eget, byns, och i yttersta nöd andras (behov.ts)
     if (healthStep(s, p, a, ai, dtSec)) continue; // dog
     pregnancy(s, p, a, ppl.length, dtSec);
+    if (!alive(p)) continue; // dog i barnsäng
     if (spar.pa) spar.v.set(p, [t0, p.x, p.y]);
     taskStep(s, p, a, now, dtSec, learn, social);
     if (p.thoughts.some(x => x.until <= now)) p.thoughts = p.thoughts.filter(x => x.until > now);
