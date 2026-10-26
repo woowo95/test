@@ -181,8 +181,6 @@ function boende(s: State): Boende {
   boenden.set(s, b);
   return b;
 }
-// sovplatserna p kan sova på: familjens hus, annars byns (utan p: byns)
-export const sleepBeds = (s: State, p?: Person) => (p && boende(s).egna.get(p.id)?.tiles) || boende(s).gemensamt;
 // sovplatserna i ett rum: en per golvruta under tak, och inga i ett hus där man inte sover (som i boende)
 export const sovplatser = (s: State, r: Rum) => { const h = husById(s, r.hus); return h && !fnOf(h).sover ? 0 : r.tiles.length; };
 // så många som saknar en egen sovplats under tak

@@ -118,5 +118,3 @@ export function insulation(s: State, r: Rum) {
 }
 // den som är inne i ett rum kyls långsammare, och ju fler som är där, desto varmare håller de varandra
 export const shelterOf = (s: State, r: Rum, folk: number) => Math.min(BYGGNAD.skyddMax, insulation(s, r) + BYGGNAD.kroppsvarme * folk);
-// alla golvrutor under tak (var man sover står i byggnader.ts)
-export const beds = (s: State) => gridOf(s).rooms.flatMap(r => r.tiles);
