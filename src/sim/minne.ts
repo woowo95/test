@@ -53,11 +53,11 @@ export const MINNE = balans('minne', {
   larBas: 0.5,
   larKant: 0.6, // en kunskap över detta räknas som lärd (loggas)
   berattaStark: 0.05, // att berätta stärker det egna minnet så här stor del av det som fattas
-  trostBas: 0.45, // hur mycket den som lyssnar tror på den som berättar: trostBas + relationen / trostDiv, mellan trostMin och trostMax ...
-  trostDiv: 160,
-  trostMin: 0.15,
-  trostMax: 0.95,
-  trostDel: 0.85, // ... och det som berättas får så här stor del av säkerheten
+  troBas: 0.45, // hur mycket den som lyssnar tror på den som berättar: troBas + relationen / troDiv, mellan troMin och troMax ...
+  troDiv: 160,
+  troMin: 0.15,
+  troMax: 0.95,
+  troDel: 0.85, // ... och det som berättas får så här stor del av säkerheten
   overFara: 0.25, // man överdriver det som berättas: en rädsla med 1 + (slump - overFara) * overFaraSpann ...
   overFaraSpann: 0.5,
   over: 0.4, // ... annat med 1 + (slump - over) * overSpann
@@ -288,8 +288,8 @@ function tell(s: State, a: Person, b: Person, l: Lardom, r: Rel) {
   const now = s.now;
   // att berätta stärker det egna minnet
   l.c = Math.min(1, l.c + MINNE.berattaStark * (1 - l.c)); l.t = now;
-  const trust = clamp(MINNE.trostBas + r.op / MINNE.trostDiv, MINNE.trostMin, MINNE.trostMax);
-  const c = l.c * trust * MINNE.trostDel;
+  const trust = clamp(MINNE.troBas + r.op / MINNE.troDiv, MINNE.troMin, MINNE.troMax);
+  const c = l.c * trust * MINNE.troDel;
   // man överdriver gärna, särskilt det som är farligt
   const v = clamp(l.v * (l.k === 'fara' ? 1 + (rnd(s, 'minne', a) - MINNE.overFara) * MINNE.overFaraSpann : 1 + (rnd(s, 'minne', a) - MINNE.over) * MINNE.overSpann), 0, l.k === 'fara' ? MINNE.vMaxFara : MINNE.vMax);
   const e = findL(b, l.k, l.a);

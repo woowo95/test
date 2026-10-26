@@ -84,7 +84,7 @@ export const ALDER = balans('alder', {
   gravFran: 17, // en kvinna kan bli gravid från detta ...
   gravTill: 43, // ... och till detta
   potVaxt: 18, // en människas egenskaper växer med så här många år till full styrka: potentialen gånger (potFodd + år / potVaxt), högst 1
-  ungdom: 20, // under detta väger ens röst i sederna bara hälften
+  fullvuxen: 20, // under detta väger ens röst i sederna bara hälften
   // vuxna och gamla
   flirtSkillnad: 18, // två som flirtar är mindre än så här många år från varandra
   aldre: 50, // över detta väger ens röst i sederna mest

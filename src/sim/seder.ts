@@ -16,11 +16,11 @@ export const SED = balans('seder', {
   forsMod: 0.7, // försiktighet: modet (omvänt) gånger så här mycket ...
   forsInt: 0.3, // ... och intelligensen gånger så här mycket
   // inflytandet: hur mycket varje persons röst väger (efter ålder, ALDER), gånger 0,5 + karisma / rostKarisma
-  rostUng: 0.5, // under ALDER.ungdom
+  rostUng: 0.5, // under ALDER.fullvuxen
   rostAldre: 1.5, // över ALDER.aldre
   rostBas: 0.5,
   rostKarisma: 20,
-  mal: 1.8, // målet för en sed är byns snitt gånger så här mycket plus händelserna, från -1 till 1
+  snittVikt: 1.8, // målet för en sed är byns snitt gånger så här mycket plus händelserna, från -1 till 1
   evMax: 0.4, // händelserna formar en sed högst så här mycket åt vardera hållet ...
   evDygn: 6, // ... och effekten bleknar med en tidskonstant på så här många dygn
   rorDygn: 2, // sederna rör sig mot målet med en tidskonstant på så här många dygn
@@ -64,7 +64,7 @@ function personSeder(s: State, p: Person): Record<Sed, number> {
 // inflytande över sederna: vuxna och äldre väger mest, karismatiska hörs mer
 export function influence(s: State, p: Person) {
   const a = ageOf(p, s.now);
-  return (a < ALDER.vuxen ? 0 : a < ALDER.ungdom ? SED.rostUng : a > ALDER.aldre ? SED.rostAldre : 1) * (SED.rostBas + p.pot.karisma / SED.rostKarisma);
+  return (a < ALDER.vuxen ? 0 : a < ALDER.fullvuxen ? SED.rostUng : a > ALDER.aldre ? SED.rostAldre : 1) * (SED.rostBas + p.pot.karisma / SED.rostKarisma);
 }
 export function sederTarget(s: State): Record<Sed, number> {
   const t = { arbete: 0, gemenskap: 0, barn: 0, nyfikenhet: 0, forsiktighet: 0 };
@@ -74,7 +74,7 @@ export function sederTarget(s: State): Record<Sed, number> {
     tw += w; const ps = personSeder(s, p);
     for (const k of SEDER) t[k] += ps[k] * w;
   }
-  for (const k of SEDER) t[k] = clamp((tw ? t[k] / tw : 0) * SED.mal + s.seder.ev[k], -1, 1);
+  for (const k of SEDER) t[k] = clamp((tw ? t[k] / tw : 0) * SED.snittVikt + s.seder.ev[k], -1, 1);
   return t;
 }
 // händelser som formar sederna; effekten bleknar under några veckor

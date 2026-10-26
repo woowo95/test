@@ -16,17 +16,17 @@ export const MARK = balans('mark', {
   gladaKant: 1, // utanför kanten är det så här många rutor ung skog ...
   gladaKantTrad: 0.6, // ... med så här stora träd (0 till 1)
   nott: 0.045, // slitage när någon går över en ruta (gånger STEG.markNot och så långt man går)
-  ater: 0.011, // så mycket gräset växer tillbaka per timme (gånger vaxt per tidsålder). Lite trampad mark hinner läka, så bara stigarna blir bara
-  vaxt: [0.1, 1.2, 1, 0.6], // grästillväxt per tidsålder
-  aterBas: 0.25, // och växer tillbaka aterBas + aterGrann * grannrutornas täcke ...
-  aterGrann: 0.75,
-  aterIngen: 0.5, // ... (så här mycket täcke räknas om en ruta inte har någon granne med jord)
+  grasAter: 0.011, // så mycket gräset växer tillbaka per timme (gånger grasVaxt per tidsålder). Lite trampad mark hinner läka, så bara stigarna blir bara
+  grasVaxt: [0.1, 1.2, 1, 0.6], // grästillväxt per tidsålder
+  grasBas: 0.25, // ... och växer tillbaka grasBas + grasGrann * grannrutornas täcke ...
+  grasGrann: 0.75,
+  grasIngen: 0.5, // ... (så här mycket täcke räknas grannarna ha om en ruta inte har någon granne med jord)
   lagerTak: 0.5, // vid elden, i lagret och i husen blir gräset aldrig högre än så här (inget växer där)
-  tradTid: [0, 1.2, 1, 0.5], // trädens tillväxt per tidsålder
+  tradVaxt: [0, 1.2, 1, 0.5], // trädens tillväxt per tidsålder
   tradDygn: 30, // en planta blir vuxen skog på ungefär så här många dygn (år i spelet), så att gläntor efter fällda träd står kvar länge
   fro: 0.0015, // chans per timme att ett frö gror: per skogsgranne ...
   froLangt: 0.00002, // ... och långt bort från skogen
-  planta: 0.05, // en ny planta är så här stor (0 till 1)
+  nyPlanta: 0.05, // en ny planta är så här stor (0 till 1)
 });
 
 // ---------- mark: gräs, stigar och skog ----------
@@ -106,7 +106,7 @@ const TREE_GROW = 1 / (MARK.tradDygn * 24); // plantans tillväxt per timme
 // en timme: gräset växer tillbaka från grannrutorna, skogen sprider sig som en våg och plantor växer
 export function growGround(s: State, hours: number, season: number) {
   const g = groundOf(s), b = built(s), ang = angOf(s.seed), { tiles, cover, trees } = g;
-  const old = cover.slice(), hr = Math.floor(s.now / HOUR), ts = MARK.tradTid[season];
+  const old = cover.slice(), hr = Math.floor(s.now / HOUR), ts = MARK.tradVaxt[season];
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     const i = y * W + x;
     if (!isSoil(tiles[i])) continue;
@@ -117,8 +117,8 @@ export function growGround(s: State, hours: number, season: number) {
       if (x < W - 1 && isSoil(tiles[i + 1])) { n += old[i + 1]; c++; }
       if (y > 0 && isSoil(tiles[i - W])) { n += old[i - W]; c++; }
       if (y < H - 1 && isSoil(tiles[i + W])) { n += old[i + W]; c++; }
-      const nb = c ? n / c : MARK.aterIngen;
-      cover[i] = Math.min(1, old[i] + hours * MARK.ater * MARK.vaxt[season] * (MARK.aterBas + MARK.aterGrann * nb));
+      const nb = c ? n / c : MARK.grasIngen;
+      cover[i] = Math.min(1, old[i] + hours * MARK.grasAter * MARK.grasVaxt[season] * (MARK.grasBas + MARK.grasGrann * nb));
     }
     if (!ts || old[i] < HIGH) continue; // stigar och kort gräs stoppar ny skog
     if (trees[i] > 0) { if (trees[i] < 1) trees[i] = Math.min(1, trees[i] + hours * TREE_GROW * ts); continue; }
@@ -127,7 +127,7 @@ export function growGround(s: State, hours: number, season: number) {
       const xx = x + dx, yy = y + dy;
       if ((dx || dy) && inMap(xx, yy) && trees[yy * W + xx] >= FOREST) n++;
     }
-    if (hash(s.seed + hr, x, y) < hours * (MARK.fro * n + MARK.froLangt) * ts * (ang[i] ? MARK.angSpridning : 1)) trees[i] = MARK.planta;
+    if (hash(s.seed + hr, x, y) < hours * (MARK.fro * n + MARK.froLangt) * ts * (ang[i] ? MARK.angSpridning : 1)) trees[i] = MARK.nyPlanta;
   }
 }
 
