@@ -424,8 +424,9 @@ export const flintFactor = (s: State, x: number, y: number) => richness(s, 'flin
 export const flintorOchYxor = (s: State) => amountOf(s, 'flinta') + nTools(s, 'yxa');
 // byn behöver flinta att tända eld med och till en yxa
 export const wantsFlint = (s: State) => amountOf(s, 'flinta') < FANGST.flintaMinsta || flintorOchYxor(s) < FANGST.flintaBehov;
-// en plats att samla på nära stenarna, där flinta är vanlig. I lägret och där flintan redan plockats finns ingen
-export function flintSpot(s: State, area?: (x: number, y: number) => boolean): { x: number; y: number } | undefined {
+// en plats att samla på nära stenarna, där flinta är vanlig. I lägret och där flintan redan plockats finns ingen.
+// q väljer med sin egen slumpföljd
+export function flintSpot(s: State, q: Person, area?: (x: number, y: number) => boolean): { x: number; y: number } | undefined {
   const m = getMap(s.seed), sd = stoneDist(s.seed), c: { x: number; y: number; d: number }[] = [];
   for (let i = 0; i < W * H; i++) {
     if (sd[i] < 1 || sd[i] > FANGST.stenNara || m.tiles[i] === T.Vatten || m.tiles[i] === T.Sten) continue;
@@ -434,7 +435,7 @@ export function flintSpot(s: State, area?: (x: number, y: number) => boolean): {
   }
   if (!c.length) return undefined;
   c.sort((a, b) => a.d - b.d);
-  const p = pickNarmaste(s, c, FANGST.flintaUrval, 'val');
+  const p = pickNarmaste(s, c, FANGST.flintaUrval, 'val', q);
   return { x: p.x + 0.5, y: p.y + 0.5 };
 }
 

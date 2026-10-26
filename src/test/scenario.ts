@@ -422,7 +422,25 @@ SCENARIER.slump = {
     const tandare = living(g).filter(q => ageOf(q, g.now) >= ALDER.ansvar).length;
     const ed = drag(g, 'eld', () => stepFire(g, 1, living(g)));
     const tande = living(g).some(q => q.task?.act === 'tanda');
+    // var en person går (promenad, strand, flinta, trädet som fälls) väljs med personens egen följd, inte byns
+    const h = createState(5, START), hv = () => living(h).filter(q => ageOf(q, h.now) >= ALDER.vuxen);
+    h.now = new Date(h.now).setHours(10, 0, 0, 0); Object.assign(h.fire, { lit: true, fuel: 4, ring: true });
+    for (const q of h.people) q.tek = { ...q.tek, yxa: 1 };
+    const sett = new Set<string>();
+    const hd = drag(h, 'val', () => {
+      for (const [mat, flinta, ved] of [[200, 1, 50], [2, 0, 50], [200, 1, 0]]) {
+        setFood(h, mat); setItems(h, { flinta, torrgras: 20, grenar: 20 }); setAmount(h, 'ved', ved);
+        for (const q of hv()) addTool(h, 'yxa', q);
+        for (let i = 0; i < 200; i++) {
+          const p = hv()[i % hv().length];
+          Object.assign(p, { toa: 1, warm: 1, rest: 1, health: 1, hunger: 1, social: 1, task: undefined });
+          chooseTask(h, p); if (p.task) sett.add(p.task.sok ? 'flinta' : p.task.act); p.task = undefined;
+        }
+      }
+    });
+    const valen = ['promenad', 'strand', 'flinta', 'falla'];
     return [
+      [`var en person går väljs med personens egen slumpföljd (${hd} tal ur byns, för ${valen.filter(a => sett.has(a)).join(', ')})`, hd === 0 && valen.every(a => sett.has(a))],
       [`nattens vakt väljs med ett slumptal per vuxen (${vd} tal för ${vuxna().length} vuxna)`, vd === vuxna().length && living(g).some(q => q.guardDay !== undefined && q.guardDay === g.lastGuardDay)],
       [`den som tänder elden väljs med ett slumptal per kandidat (${ed} tal för ${tandare} och platsen)`, tande && ed === tandare + 1],
       ['fler slumptal i ett system ändrar inte slumpen i de andra', lika],
@@ -1068,13 +1086,13 @@ SCENARIER.abborre = {
     const agare = egen > 0 && Math.abs(ownsAmount(s, a, 'fisk') - egen) < 1e-9 && ownsAmount(s, c, 'fisk') === 0;
     // en vanlig by: fisket ger abborrar, och de rensas till fiskkött vid elden
     // (alla byar börjar inte fiska de första dygnen; den första av några byar som fiskar räknas)
-    let rensar = 0, abborreSedd = 0, fangat = 0, rensat = 0;
+    // (rensat räknas i clean(); en abborre rensas på ett par minuter och syns sällan som uppgift var femte minut)
+    let abborreSedd = 0, fangat = 0, rensat = 0;
     for (const seed of [3, 1, 2, 4, 5]) {
       const v = createState(seed, START);
-      rensar = 0; abborreSedd = 0;
+      abborreSedd = 0;
       for (let i = 0; i < 6 * 288; i++) {
         step(v, 300);
-        if (living(v).some(p => p.task?.act === 'rensa')) rensar++;
         abborreSedd = Math.max(abborreSedd, amountOf(v, 'abborre'));
       }
       fangat = v.stat?.fisk ?? 0; rensat = v.stat?.rensat ?? 0;
@@ -1084,7 +1102,7 @@ SCENARIER.abborre = {
       ['abborren rensas med händerna, utan kniv', kan],
       ['en abborre blir lika mycket fiskkött, några på en kvart', halv && klar],
       ['fiskköttet är dens som ägde abborren, inte dens som rensade', agare],
-      [`i en by kommer abborrar hem (högst ${abborreSedd.toFixed(0)} på en gång) och rensas vid elden (${rensat.toFixed(0)} av ${fangat} fångade på sex dygn, sex år i spelet)`, fangat > 0 && abborreSedd > 0 && rensat >= fangat * 0.5 && rensar > 0],
+      [`i en by kommer abborrar hem (högst ${abborreSedd.toFixed(0)} på en gång) och rensas vid elden (${rensat.toFixed(0)} av ${fangat} fångade på sex dygn, sex år i spelet)`, fangat > 0 && abborreSedd > 0 && rensat > 0 && rensat >= fangat * 0.5],
     ];
   },
 };
@@ -1307,7 +1325,7 @@ SCENARIER.paborjat = {
     const ft = uppgift(p, 'falla'); ft.tx = (ti % W) + 0.5; ft.ty = Math.floor(ti / W) + 0.5; startWork(s, p, ft);
     const heltid = ft.until - s.now === fallTid(s, ti);
     workHalf(s, p, ft, 600); p.task = undefined;
-    const sp = treeSpot(s, new Set());
+    const sp = treeSpot(s, new Set(), living(s)[0]);
     const valjs = !!sp && tileOf(sp.x, sp.y) === ti;
     const r = living(s).find(x => x !== p)!, rt = uppgift(r, 'falla'); rt.tx = ft.tx; rt.ty = ft.ty; startWork(s, r, rt);
     const kvar = rt.until - s.now === fallTid(s, ti) - 600 * SEC;

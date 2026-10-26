@@ -39,8 +39,8 @@ export const fallTid = (s: State, i: number) => FALL_TID * Math.max(SKOG.fallMin
 
 // rutorna där någon annan än utom håller på att fälla ett träd
 export const fellingTiles = (s: State, utom: Person) => new Set(living(s).filter(q => q !== utom && q.task?.act === 'falla').map(q => tileOf(q.task!.tx, q.task!.ty)));
-// närmaste vuxna träd att fälla, helst i skogskanten nära byn
-export function treeSpot(s: State, taken: Set<number>): { x: number; y: number } | undefined {
+// närmaste vuxna träd att fälla, helst i skogskanten nära byn (p väljer med sin egen slumpföljd)
+export function treeSpot(s: State, taken: Set<number>, p: Person): { x: number; y: number } | undefined {
   const g = groundOf(s), f = campCenter(s);
   // först träden där ett hus ska stå: de måste bort ändå, och stockarna blir husets väggar
   let site = -1, sd = Infinity;
@@ -58,7 +58,7 @@ export function treeSpot(s: State, taken: Set<number>): { x: number; y: number }
   }
   if (!c.length) return undefined;
   c.sort((a, b) => a.d - b.d);
-  const i = pickNarmaste(s, c, SKOG.urval, 'val').i;
+  const i = pickNarmaste(s, c, SKOG.urval, 'val', p).i;
   return { x: (i % W) + 0.5, y: Math.floor(i / W) + 0.5 };
 }
 const nearestStock = (s: State) => {
@@ -120,7 +120,7 @@ export function axeTask(s: State, p: Person): { act: Act; x: number; y: number; 
   if (freeTools(s, p, 'yxa') > 0) { // en yxa som ingen annan fäller eller hugger med
     const k = nearestStock(s);
     if (k) return { act: 'hugga', x: k.x + 0.3, y: k.y + 0.2, ref: k.id, why: 'Hugger trä av en fälld stam' };
-    const t = treeSpot(s, fellingTiles(s, p));
+    const t = treeSpot(s, fellingTiles(s, p), p);
     if (t) return { act: 'falla', x: t.x, y: t.y, dur: fallTid(s, tileOf(t.x, t.y)), why: 'Har en yxa och fäller ett träd till trä' };
   }
   const adults = ppl.filter(q => ageOf(q, s.now) >= REDSKAP.yxaFran).length;

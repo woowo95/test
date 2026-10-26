@@ -162,11 +162,11 @@ function nearestWanted(s: State, want: (t: number, x: number, y: number) => bool
   }
   return best;
 }
-// en plats på land en bit bort åt ett slumpat håll
-function walkSpot(s: State, far: number) {
+// en plats på land en bit bort åt ett slumpat håll (p:s egen slumpföljd)
+function walkSpot(s: State, p: Person, far: number) {
   const f = campCenter(s);
   for (let k = 0; k < 20; k++) {
-    const ang = rnd(s, 'val') * Math.PI * 2, r = far * (VAL.gangMin + rnd(s, 'val') * VAL.gangSpann);
+    const ang = rnd(s, 'val', p) * Math.PI * 2, r = far * (VAL.gangMin + rnd(s, 'val', p) * VAL.gangSpann);
     const x = clamp(f.x + 0.5 + Math.cos(ang) * r, 0.5, W - 0.5), y = clamp(f.y + 0.5 + Math.sin(ang) * r, 0.5, H - 0.5);
     if (!blocked(s, x, y)) return { x, y };
   }
@@ -194,11 +194,11 @@ function strandOf(s: State) {
   return c;
 }
 const bathSpot = (s: State) => strandOf(s).bad;
-// en plats på land vid vattnet, inte för långt från byns läger
-function strandSpot(s: State) {
+// en plats på land vid vattnet, inte för långt från byns läger (p:s egen slumpföljd)
+function strandSpot(s: State, p: Person) {
   const { ok, bad } = strandOf(s);
   if (!ok.length) return bad;
-  const i = pick(s, ok, 'val');
+  const i = pick(s, ok, 'val', p);
   return { x: i % W + 0.5, y: Math.floor(i / W) + 0.5 };
 }
 // Faror går före förbättringar. En korg eller ett spjut gör maten lättare att få tag i, men när kylan är en fara väntar
@@ -350,7 +350,7 @@ const flintaTillElden = (s: State) => amountOf(s, 'flinta') < FANGST.flintaMinst
 function withTools(s: State, p: Person, v: Val, best: Act, what: string, fd: number, ai: number, fara: Faror, leta = false) {
   const stones = needStones(s);
   if (best === 'samla' && (leta || (flintaTillElden(s) || flintaTillYxa(s, p, fd, ai)) && rnd(s, 'val', p) < VAL.stenarChans)) { // byn saknar flinta eller stenar till eldringen. Stenarna ligger långt bort, så där letar man ett helt pass
-    const fa = flintArea(p), fl = (fa !== undefined && flintSpot(s, (x, y) => areaOf(x, y) === fa)) || flintSpot(s);
+    const fa = flintArea(p), fl = (fa !== undefined && flintSpot(s, p, (x, y) => areaOf(x, y) === fa)) || flintSpot(s, p);
     if (fl) { v.spot = fl; v.dur /= VAL.pass; v.sok = true; v.why = `${v.why} Letar efter ${stones ? 'stenar till en eldring' : 'flinta'} vid stenarna${fa !== undefined ? ' där hen vet att det finns flinta' : ''}.`; }
   }
   const ax = best === 'ved' ? axeTask(s, p) : undefined; // med yxa fälls träd och huggs ved
@@ -421,9 +421,9 @@ function leisure(s: State, p: Person, v: Val, u: number, lazy: number, ai: numbe
     // nyfikna och modiga går längre bort
     const far = VAL.promNar + (stat(p, 'nyfikenhet', now) + stat(p, 'mod', now)) / 40 * VAL.promBort;
     set(v, 'promenad', far > 12 ? 'Är nyfiken och vill se vad som finns längre bort' : 'Vill sträcka på benen');
-    v.spot = walkSpot(s, far); v.dur = (VAL.promMin + rnd(s, 'val', p) * VAL.promSpann) * MIN * VAL.pass;
+    v.spot = walkSpot(s, p, far); v.dur = (VAL.promMin + rnd(s, 'val', p) * VAL.promSpann) * MIN * VAL.pass;
   } else if (r < wv + wh + wsoc + wp + wb) { set(v, 'bada', `Det är varmt (${Math.round(temp)} grader) och skönt att bada`); v.spot = shore; v.dur = (VAL.badPassMin + rnd(s, 'val', p) * VAL.badPassSpann) * MIN * VAL.pass; }
-  else { set(v, 'strand', iIstiden(ai) ? 'Vill se ut över isen en stund' : 'Vill sitta vid vattnet och se ut över sjön'); v.spot = strandSpot(s); v.dur = (VAL.strandMin + rnd(s, 'val', p) * VAL.strandSpann) * MIN * VAL.pass; }
+  else { set(v, 'strand', iIstiden(ai) ? 'Vill se ut över isen en stund' : 'Vill sitta vid vattnet och se ut över sjön'); v.spot = strandSpot(s, p); v.dur = (VAL.strandMin + rnd(s, 'val', p) * VAL.strandSpann) * MIN * VAL.pass; }
 }
 
 // på natten: en vakt, och de andra håller sig vid elden och berättar, gör handarbete, umgås eller sover
