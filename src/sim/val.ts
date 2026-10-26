@@ -41,6 +41,7 @@ const VAL = balans('val', {
   strandNara: 15, // stranden som räknas ligger närmare lägret än så här många rutor
   // faror
   fryserAndel: 0.25, // kylan är en fara när fler än så här stor andel fryser (kallt)
+  svaltDygn: 0.5, // hungern är en fara när maten räcker mindre än så här många dygn
   gammalSover: 0.6, // chansen att den som är över sovGammal sover på natten
   // dagen: byns behov mot egen lust
   baraChans: 0.25, baraTim: 3, // chansen att bära in det som ligger ute, och hur länge (timmar)
@@ -201,11 +202,12 @@ function strandSpot(s: State) {
   return { x: i % W + 0.5, y: Math.floor(i / W) + 0.5 };
 }
 // Faror går före förbättringar. En korg eller ett spjut gör maten lättare att få tag i, men när kylan är en fara väntar
-// sådant: tid och hö går då först till värmen. Inför och under istiden sparar man hö till det.
+// sådant: tid och hö går då först till värmen. Inför och under istiden sparar man hö till det. När byn svälter eller
+// fryser bär ingen in det som ligger ute (day())
 export function dangers(s: State) {
   const ppl = living(s), freezing = ppl.filter(q => q.warm < KROPP.kallt).length / (ppl.length || 1), ai = ageIndex(s);
   const cold = coldOf(temperature(s)) > 0 || freezing > VAL.fryserAndel;
-  return { kyla: cold && !s.fire.lit && !emberOn(s), gras: kallTid(ai) || cold ? RESERV.torrgrasKyla : 0 };
+  return { kyla: cold && !s.fire.lit && !emberOn(s), svalt: foodDays(s) < VAL.svaltDygn, gras: kallTid(ai) || cold ? RESERV.torrgrasKyla : 0 };
 }
 type Faror = ReturnType<typeof dangers>;
 // elden är släckt och kan inte tändas för att det saknas tändmaterial, och för få hämtar det
@@ -256,10 +258,11 @@ function day(s: State, p: Person, v: Val, a: number, lazy: number) {
   let gt: ReturnType<typeof haulJob>;
   v.dur *= VAL.pass;
   if (a < ALDER.hjalper) { set(v, 'leka', 'Är barn och leker'); return; }
-  if (s.stackar?.length && rnd(s, 'val', p) < VAL.baraChans && (gt = haulJob(s))) { set(v, 'bara', gt.why); v.spot = gt; v.dur = VAL.baraTim * HOUR; return; }
+  const fd = foodDays(s), wd = woodDays(s), ai = ageIndex(s), tot = habitTotal(p), fara = dangers(s); // farorna räknas en gång och gäller hela valet
+  // att bära in är en förbättring: inte när byn svälter eller fryser (talet dras ändå, så att personens följd är som förut)
+  if (s.stackar?.length && rnd(s, 'val', p) < VAL.baraChans && !fara.svalt && !fara.kyla && (gt = haulJob(s))) { set(v, 'bara', gt.why); v.spot = gt; v.dur = VAL.baraTim * HOUR; return; }
   if (a >= ALDER.vuxen && canSlaughter(s, p) && rnd(s, 'val', p) < VAL.slaktChans) { slaughterTask(s, v, 'Det finns vilt att slakta innan det blir dåligt'); return; }
   if (a >= ALDER.rensar && canClean(s, p) && rnd(s, 'val', p) < VAL.rensaChans) { cleanTask(s, v, 'Det finns fisk att rensa innan den blir dålig'); return; }
-  const fd = foodDays(s), wd = woodDays(s), ai = ageIndex(s), tot = habitTotal(p), fara = dangers(s); // farorna räknas en gång och gäller hela valet
   let { best, bs, burg } = bestWork(s, p, fd, wd, ai, tot, fara);
   // bygget: väger mer ju fler som saknar sovplats under tak, inför och under istiden, när en vägg behöver lagas och när huset inte är klart
   const job = buildJob(s, p), ppl = living(s);

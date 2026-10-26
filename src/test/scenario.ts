@@ -581,7 +581,7 @@ SCENARIER.redskap = {
     setItems(k, { torrgras: 40 }); Object.assign(k.fire, { lit: false, fuel: 0, emberUntil: undefined });
     for (const q of k.people) { q.tek = { korg: 1 }; q.warm = KROPP.kallt - 0.1; }
     const kp = living(k).find(q => ageOf(q, k.now) >= 18)!, kf = dangers(k);
-    const korgVarm = toolGain(k, kp, 'samla', { kyla: false, gras: 0 }), korgKall = toolGain(k, kp, 'samla', kf);
+    const korgVarm = toolGain(k, kp, 'samla', { kyla: false, svalt: false, gras: 0 }), korgKall = toolGain(k, kp, 'samla', kf);
     return [
       [`en korg som kan göras räknas inte när kylan är en fara (${korgKall} i kylan, ${korgVarm} annars)`, kf.kyla && korgVarm > 1 && korgKall === 1],
       [`rep tvinnas av hö (2 rep av 4 hö på en timme)`, rep],
@@ -1470,7 +1470,20 @@ SCENARIER.lager = {
     dod.task = { act: 'elda', phase: 'go', tx: f.x, ty: f.y, until: dd.now + HOUR, carry: 0 }; lev.task = undefined;
     fetchFuel(dd, lev, 'test');
     const eldFri = (lev.task as Task | undefined)?.act === 'elda';
+    // att bära in är en förbättring: inte när byn svälter eller kylan är en fara (elden släckt och många fryser)
+    const barare = (mat: number, kall: boolean) => {
+      const t = createState(3, START);
+      t.now = new Date(t.now).setHours(10, 0, 0, 0); setFood(t, mat); Object.assign(t.fire, { lit: !kall, fuel: kall ? 0 : 4, ring: true, emberUntil: undefined });
+      dropLoad(t, { act: 'samla', phase: 'do', tx: 0, ty: 0, until: t.now, carry: 0, items: { grenar: 3 } }, mark!.x + 0.5, mark!.y + 0.5);
+      const [p, ...andra] = living(t).filter(q => ageOf(q, t.now) >= ALDER.vuxen);
+      for (const q of andra) q.warm = kall ? KROPP.kallt - 0.1 : 1;
+      let n = 0;
+      for (let i = 0; i < 200; i++) { Object.assign(p, { toa: 1, warm: 1, rest: 1, health: 1, hunger: 1, social: 1, task: undefined }); chooseTask(t, p); if (p.task?.act === 'bara') n++; }
+      return n;
+    };
+    const barMat = barare(200, false), barSvalt = barare(0, false), barKall = barare(200, true);
     return [
+      [`ingen bär in när byn svälter eller fryser (${barSvalt} när maten är slut, ${barKall} i kylan, ${barMat} av 200 annars)`, barMat > 0 && barSvalt === 0 && barKall === 0],
       ['en död med en uppgift kvar låser inte en stack som ska bäras in (haulJob)', stackFri],
       ['... och inte elden (fetchFuel)', eldFri],
       [`lagerplatsen växer när den blir full (${start} → ${stor} rutor, ${zonesOf(s).length} lagerplatser, ${ps.filter(p => p.out).length} av ${ps.length} stackar utanför)`, stor > start && ps.every(p => !p.out)],
