@@ -3,7 +3,7 @@
 // snitt över dygnen utom istiden), hur långt från lägret man samlar, jagar och fiskar, andelen skog inom 15 rutor
 // före och efter, hur många rutor som är stigar och bar jord, och hur stor byn blir med och utan redskap för maten.
 import { korJson, pool, seedAv, sek } from './pool';
-import { matt, median, Nyckel } from './nyckeltal';
+import { matt, median, Nyckel, vardeAv } from './nyckeltal';
 
 const [antal = 16, dagar = 35] = process.argv.slice(2).map(Number);
 const seeds = Array.from({ length: antal }, (_, i) => seedAv(i));
@@ -12,12 +12,13 @@ const t0 = Date.now();
 const kor = (utan: boolean) => seeds.map(seed => () => korJson<Ut>('natur-en.ts', [String(seed), String(dagar), utan ? 'utan' : 'med'], `by ${seed}`));
 const alla = await pool([...kor(false), ...kor(true)]);
 const med = alla.slice(0, antal), utan = alla.slice(antal);
-const f = (rs: Ut[], fn: (r: Ut) => number, d = 0) => median(rs.map(fn)).toFixed(d);
+// medianen av det som mättes ('–' om inget mättes, t.ex. maten efter vintern i en körning kortare än första vintern)
+const f = (rs: Ut[], fn: (r: Ut) => number | undefined, d = 0) => { const v = rs.map(fn).filter((x): x is number => x !== undefined); return v.length ? median(v).toFixed(d) : '–'; };
 console.log(`${antal} byar, ${dagar} dygn (${dagar} år i spelet), median (${sek(t0)} s, datorns tid)`);
 console.log('                          med redskap   utan redskap');
-const rad = (namn: string, fn: (r: Ut) => number, d = 0) => console.log(namn.padEnd(26) + f(med, fn, d).padStart(11) + f(utan, fn, d).padStart(15));
+const rad = (namn: string, fn: (r: Ut) => number | undefined, d = 0) => console.log(namn.padEnd(26) + f(med, fn, d).padStart(11) + f(utan, fn, d).padStart(15));
 // ett av byns nyckeltal, med etiketten ur registret (nyckeltal.ts)
-const nyckel = (k: Nyckel & keyof Ut) => rad(matt(k).namn, r => r[k]);
+const nyckel = (k: Nyckel & keyof Ut) => rad(matt(k).namn, r => vardeAv(matt(k), r as unknown as Record<string, number>));
 for (const k of ['pop', 'fodda', 'utvandrade', 'svalt', 'doda', 'hunger'] as const) nyckel(k);
 rad('mat i förrådet, dygn', r => r.matdagar, 1);
 nyckel('vintermat');

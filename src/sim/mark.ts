@@ -83,13 +83,6 @@ export function skogAndel(s: State, villkor?: (i: number) => boolean) {
   for (let i = 0; i < g.tiles.length; i++) if (isSoil(g.tiles[i]) && (!villkor || villkor(i))) { n++; if (g.trees[i] >= FOREST) sk++; }
   return n ? sk / n : 0;
 }
-// antalet jordrutor där marktäcket är nött till bar jord, med eller utan träd
-export function antalBarJord(s: State) {
-  const g = groundOf(s);
-  let n = 0;
-  for (let i = 0; i < g.cover.length; i++) if (isSoil(g.tiles[i]) && g.cover[i] < BAR) n++;
-  return n;
-}
 
 // rutor där inget får växa: runt elden och på lagerplatserna (husen står i g.built). Räknas om när lägret ändras
 const builtCache = new WeakMap<State, { key: string; b: Uint8Array }>();
