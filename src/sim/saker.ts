@@ -22,7 +22,9 @@ interface SakDef {
 // eller ett rep, hälften så lång tid som före steg 1.5.13). tek = tekniken som behövs, sallsynt = svår att hitta
 interface Skaffa { act?: string; tid?: number; av?: Record<string, number>; min?: number; tek?: string; sallsynt?: true }
 
-// Ordningen är den stackarna läggs ut i, så den ska inte ändras (nya saker läggs sist)
+// Nya saker läggs sist, och ordningen ska inte ändras. Den styr i vilken ordning saker betalas i ett byte (payable i behov.ts),
+// hur gamla sparfiler läggs ut (storeFromSums i lager.ts, STACK_ORDER), i vilken ordning mapparna visas (FOLDERS) och vilket av två
+// matslag med samma `mat` som äts först (FOOD). Var en ny stack hamnar i förrådet avgörs inte av ordningen (zoneSpot i lager.ts)
 const DEF = {
   bar: { namn: 'Bär', skaffa: { act: 'samla' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 4, ruttnar: 0.7 },
   rotter: { namn: 'Rötter', skaffa: { act: 'samla' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 5, ruttnar: 0.35 },

@@ -385,7 +385,8 @@ function workStep(s: State, p: Person, tk: Task, dtSec: number, a: number, learn
   const now = s.now, d = ACTS[tk.act];
   const rd = toolRow(tk); // redskapet i handen: vad det ger och hur det slits står i handlingens rad
   if (rd && d.slits) wearUsed(s, p, dtSec / d.slits);
-  // utan yxa samlas grenar på marken (två grenar på den tid det tar att hugga en ved); med yxa huggs ved ur en fälld stam
+  // utan yxa samlas grenar på marken (ved, takt 2); med yxa huggs trä ur en fälld stam (hugga, takt 1,5). Båda har arbetet ved
+  // som bas (handlingar.ts). På den tid det tar att hugga en ved samlas alltså 1,33 grenar, värda 0,53 ved som bränsle (GREN)
   // bär, rötter och vilt: platsen ger mindre ju mer som redan tagits där
   // (platsens värde räknas en gång, och takeFrom delar uttaget mellan bär och rötter efter samma tal)
   const res = d.resurs, del = res && d.takt === undefined ? richnessDelar(s, res, tk.tx, tk.ty) : undefined, rich = del ? del.rich : 1;

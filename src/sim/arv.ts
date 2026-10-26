@@ -1,6 +1,6 @@
 // ---------- arv och flytt ----------
 // När någon dör går allt hen ägde till partnern. Finns ingen partner delas det på barnen, annars på föräldrarna, annars
-// på syskonen, och finns ingen av dem blir det byns. Delningen är så jämn som möjligt efter värdet (`varde` i saker.ts),
+// på syskonen, och finns ingen av dem blir det byns. Delningen är så jämn som möjligt efter värdet (`grundvarde` i varde.ts),
 // utan hänsyn till vad arvingarna behöver: redskapen, som inte går att dela, ges ett i taget (det mest värda först) till
 // den som hittills fått minst, och resten (mat, ved, material) delas så att alla får lika mycket i värde. Ett arv är
 // inget man skaffat, så delningen efter byns rikedom (delning.ts) gäller inte. Arvet syns i loggen och krönikan men ger

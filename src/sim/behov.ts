@@ -17,8 +17,9 @@ import { tiondel } from './format';
 // När någon behöver något går hen stegen i ordning: först sitt eget, sedan ett byte med någon i närheten (byten nedan),
 // sedan byns förråd, sedan ber hen om det som gåva i samtal (den som har över ger, familjen ger lättast: willing nedan).
 // Stjäl gör man först när man håller på att dö av bristen. Hur nära döden man måste vara beror på empatin; den med mycket
-// hög empati stjäl aldrig. Man stjäl helst av den man inte tycker om. Den bestulne märker det nästa gång hen själv tar av
-// sitt eget för samma behov, och relationen blir sämre.
+// hög empati stjäl aldrig. Man stjäl helst av den man inte tycker om. Den bestulne märker det nästa gång hen äter (maten:
+// needLadder anropar noticeTheft varje gång hen ätit, också när bara byns mat ätits), lägger sin egen ved på elden (steg.ts)
+// eller tar av sitt eget till ett arbete (takeMaterial), och relationen blir sämre.
 // Varje behov är en post i BEHOV (mat, ved till elden). Material till ett arbete och redskap går samma steg, längre ner.
 interface Behov {
   id: string;

@@ -101,7 +101,9 @@ export function planBuild(s: State) {
   if (!byggare.length || s.now < (s.byggSok ?? 0)) return;
   const u = mostUrgent(s);
   if (!u) return;
-  // ett familjehus planerar familjen själv; kan ingen i familjen bygga väggar planerar byns byggare åt den
+  // vem som planerar (by, namnet i loggen): ett familjehus planeras av den skickligaste byggaren i familjen, annars av familjens
+  // ägare (finns hen inte kvar: byns skickligaste byggare); andra hus av byns skickligaste byggare. Det måste finnas en byggare i
+  // byn, men planeraren behöver inte själv kunna bygga väggar. Vem som sedan bygger väljs i val.ts (buildJob)
   const fam = u.a.ag !== undefined ? familjOf(s, u.a.ag) : [], by = byggare.find(p => fam.includes(p)) ?? (fam.find(p => p.id === u.a.ag) ?? byggare[0]);
   const row: Byggnad = BYGGNADER[u.fn];
   // storleken efter behovet; så nära kvadratiskt som möjligt
@@ -266,7 +268,8 @@ export function workOn(s: State, p: Person, b: Bit, dtSec: number) {
   b.c = 1; count(s, 'byggt_' + b.m); touch(s);
   if (b.k === 'vagg') clearTile(s, b);
   const h = husById(s, b.hus);
-  // huset är färdigt när väggarna står: trägolvet läggs efter hand och gör det bara skönare att sova där
+  // huset är färdigt först när alla dess bitar är byggda: väggarna, öppningen och golvet (inte bara väggarna). Då loggas det
+  // och skrivs i krönikan, och husKlar körs
   if (h && !h.klar && bitsOf(s).every(q => q.hus !== h.id || q.b >= 1)) {
     h.klar = s.now;
     const n = gridOf(s).rooms.filter(r => r.hus === h.id).reduce((a, r) => a + r.tiles.length, 0);

@@ -110,7 +110,7 @@ export function growGround(s: State, hours: number, season: number) {
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     const i = y * W + x;
     if (!isSoil(tiles[i])) continue;
-    if (b[i] || g.built?.[i]) { cover[i] = Math.min(cover[i], MARK.lagerTak); if (b[i] || trees[i] < FOREST) trees[i] = 0; continue; } // inget växer vid elden, i lagret eller i husen (vuxna träd står kvar tills de fälls)
+    if (b[i] || g.built?.[i]) { cover[i] = Math.min(cover[i], MARK.lagerTak); if (b[i] || trees[i] < FOREST) trees[i] = 0; continue; } // inget växer vid elden, i lagret eller i husen: gräset kapas och plantor och ungskog tas bort. Ett vuxet träd står kvar på en husplats tills det fälls, men i lägret (b: elden och lagerplatserna) tas det bort utan att fällas
     if (old[i] < 1) {
       let n = 0, c = 0;
       if (x > 0 && isSoil(tiles[i - 1])) { n += old[i - 1]; c++; }

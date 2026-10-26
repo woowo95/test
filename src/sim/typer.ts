@@ -53,8 +53,33 @@ export const AGES = ['Istid', 'Vårtid', 'Sommartid', 'Hösttid'];
 export const GREN = 0.4; // en gren ger lika mycket bränsle som 0,4 ved: grenar brinner fort
 
 export interface Thought { text: string; v: number; until: number }
-// why = varför personen valde uppgiften, dark = påbörjad under mörk tid
-export interface Task { act: Act; phase: 'go' | 'do' | 'back'; tx: number; ty: number; until: number; carry: number; items?: Record<string, number>; cond?: Record<string, number>; why?: string; dark?: boolean; path?: number[]; pk?: string; ref?: number; prog?: number; tool?: string; tur?: number; lim?: number; res?: { x: number; y: number; until: number }; site?: { x: number; y: number }; mask?: number; ag?: Record<string, Record<string, number>>; ting?: number[]; fran?: number; kom?: Record<string, number>; sok?: true } // sok = letar flinta eller stenar: platsen behöver inte ha bär // kom = var materialet till bygget kom ifrån (bygg.ts) // fran = den man tar ved av till elden (stöld, behov.ts) // ting = redskapen i bördan (agande.ts) // ag = vems det som bärs är, per slag (egendom.ts) // mask = maskar på kroken till metspöet // tool = redskap som används, t.ex. fiskespjut. tur = sekunder arbete sedan bördan bars hem och lim hur länge turen varar, res = var och till när arbetet fortsätter efteråt, site = bygget man går till efter att ha hämtat material
+// Det en person håller på med (p.task, sparas med personen). Fälten utan frågetecken finns alltid
+export interface Task {
+  act: Act; // handlingen (handlingar.ts)
+  phase: 'go' | 'do' | 'back'; // på väg dit, arbetar där, på väg hem med det som bärs
+  tx: number; ty: number; // platsen man går till och arbetar på
+  until: number; // tiden då uppgiften är slut (ms)
+  carry: number; // det som bärs, i enheten som handlingens `ger` anger
+  items?: Record<string, number>; // saker som bärs bredvid bördan, per slag (rötter, svamp, grenar, materialet till ett bygge)
+  cond?: Record<string, number>; // skicket på det som bärs, per slag (lager.ts)
+  ag?: Record<string, Record<string, number>>; // vems det som bärs är, per slag (egendom.ts)
+  ting?: number[]; // redskapen i bördan (agande.ts)
+  why?: string; // varför personen valde uppgiften
+  dark?: boolean; // påbörjad under mörk tid
+  path?: number[]; // rutorna kvar att gå längs vägen (steg.ts, walk)
+  pk?: string; // nyckeln som vägen gäller för: målet och byggversionen. Ändras den räknas vägen om
+  ref?: number; // det arbetet gäller: stammen som huggs, biten som byggs eller huset som ett träd fälls för
+  prog?: number; // fiske: sekunder arbete mot nästa försök
+  tool?: string; // redskapet som används, t.ex. fiskespjut, eller slaget av bygge eller hantverk (vagg, golv, laga, rep)
+  tur?: number; // sekunder arbete sedan bördan bars hem sist
+  lim?: number; // hur länge en tur varar (sekunder), innan bördan bärs hem
+  res?: { x: number; y: number; until: number }; // var och till när arbetet fortsätter efter att bördan bärts hem
+  site?: { x: number; y: number }; // bygget man går till efter att ha hämtat material
+  mask?: number; // fiske: maskar på kroken till metspöet
+  fran?: number; // den man tar ved av till elden (stöld, behov.ts)
+  kom?: Record<string, number>; // var materialet till bygget kom ifrån (bygg.ts)
+  sok?: true; // letar flinta eller stenar vid stenarna: blir platsen tom fortsätter man ändå i stället för att gå hem (steg.ts, workStep)
+}
 
 export interface Person {
   id: number; name: string; sex: 'm' | 'k';

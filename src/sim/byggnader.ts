@@ -153,7 +153,9 @@ function familjUtanHus(s: State) {
 
 // ---------- var man sover ----------
 // Den som hör till en familj med ett eget hus sover där; alla andra sover i byns hus där man sover (sovsalarna), en per
-// golvruta under tak. Räknas om när husen eller folket ändras (en gång per steg)
+// golvruta under tak. Cachen gäller så länge husen (s.byggV), tiden (s.now) och antalet levande är desamma. s.now flyttas inom
+// ett slag av varje persons egen tid (taskStep i steg.ts), så den räknas om flera gånger per slag (ungefär 0,5 % av körtiden);
+// s.now står kvar i nyckeln eftersom familjerna kan ändras inom ett slag
 interface Boende { key: string; egna: Map<number, { tiles: number[]; folk: Person[] }>; gemensamt: number[]; ovriga: Person[] }
 const boenden = new WeakMap<State, Boende>();
 function boende(s: State): Boende {
