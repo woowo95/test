@@ -27,6 +27,7 @@ export * from './sim/minne';
 export * from './sim/vader';
 export * from './sim/redskap';
 export * from './sim/paborjat';
+export * from './sim/stationer';
 export * from './sim/agande';
 export * from './sim/egendom';
 export * from './sim/behov';

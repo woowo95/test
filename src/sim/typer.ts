@@ -162,7 +162,7 @@ export interface State {
   mat?: Record<string, number>; // äldre sparfiler (före v40): maten per slag
   marken?: { x: number; y: number; k: string; n: number }[]; // gamla sparfiler: saker på marken (nu i stackar)
   lagren?: import('./lager').Zone[]; // lagerplatserna
-  ting?: { id: number; k: string; c: number; agare: number; hos?: number; lass?: number; x?: number; y?: number; halv?: { gor: string; av: Record<string, number>; kvar: number; ag: number } }[]; nextTing?: number; // varje redskap för sig, det enda som sparas om redskapen: skick, ägare (0 = byn), vem som har det i handen eller bördan, och rutan det ligger på (agande.ts)
+  ting?: { id: number; k: string; c: number; agare: number; hos?: number; lass?: number; x?: number; y?: number; halv?: { gor: string; av: Record<string, number>; kvar: number; ag: number }; vid?: number }[]; nextTing?: number; // varje redskap för sig, det enda som sparas om redskapen: skick, ägare (0 = byn), vem som har det i handen eller bördan, rutan det ligger på och stationen det hör till (agande.ts)
   tingVag?: { id: number; k: string; c: number; agare: number; hos?: number }[]; // äldre sparfiler (före v40): redskap som bars mellan lagerplatser
   agare?: Record<string, number[]>; // sparfiler från v30: redskapens ägare (blir s.ting)
   stackar?: { k: string; n: number; c: number; x: number; y: number; ag?: Record<string, number>; dold?: number }[]; // alla stackar med plats och skick (c: 1 = nytt), det enda som sparas om förrådet. ag = vems stacken är (lager.ts)
@@ -178,6 +178,7 @@ export interface State {
   ruttet?: number; // mat som ruttnat bort på sistone (glöms med tiden, byggnader.ts)
   stat?: Record<string, number>; // räknare: svamp, fiskeförsök, napp, fångst med mera
   sjoar?: Record<number, import('./sjo').SjoStat>; // fiske och bad per sjö (sjo.ts)
+  stationer?: import('./stationer').Station[]; nextStation?: number; // arbetsstationerna, som slaktbänken (stationer.ts)
 }
 // ett fällt träd: ved och grenar som finns kvar att hugga ut
 export interface Stock { id: number; x: number; y: number; ved: number; grenar: number }

@@ -1,5 +1,6 @@
 import { campDist } from './plats';
 import { Ting, newTing, tingOf } from './agande';
+import { stationAt, tillbakaVid } from './stationer';
 import { alive, byId, count, living, stat, ageOf, log } from './folk';
 import { getMap } from './karta';
 import { Act, H, HOUR_S, Person, State, T, Task, W, inMap } from './typer';
@@ -232,11 +233,12 @@ function shareOf(ag: Del | undefined, n: number, owner = BYN, s?: State): Del {
 }
 
 // ---------- platser ----------
+// kan något ligga eller byggas på rutan? Inte på vatten, sten, inpå elden, i ett hus eller där en station står (stationer.ts)
 export function usable(s: State, x: number, y: number) {
   const m = getMap(s.seed), f = m.fire;
   if (!inMap(x, y)) return false;
   const t = m.tiles[y * W + x];
-  return t !== T.Vatten && t !== T.Sten && Math.max(Math.abs(x - f.x), Math.abs(y - f.y)) > 1 && !bitAt(s, x, y);
+  return t !== T.Vatten && t !== T.Sten && Math.max(Math.abs(x - f.x), Math.abs(y - f.y)) > 1 && !bitAt(s, x, y) && !stationAt(s, x, y);
 }
 const allUsable = (s: State, z: Zone) => { for (let y = z.y; y < z.y + z.h; y++) for (let x = z.x; x < z.x + z.w; x++) if (!usable(s, x, y)) return false; return true; };
 const overlaps = (a: Zone, b: Zone, gap: number) => a.x < b.x + b.w + gap && b.x < a.x + a.w + gap && a.y < b.y + b.h + gap && b.y < a.y + a.h + gap;
@@ -250,8 +252,9 @@ function ringTiles(s: State, z: Zone, fran = 1, till = LAGER.bredvid) {
   return out;
 }
 const key = (x: number, y: number) => y * W + x;
-// redskapen som ligger på en ruta (inte i någons hand eller börda)
-const ligger = (t: Ting) => t.x !== undefined && t.hos === undefined && t.lass === undefined;
+// redskapen som ligger på en ruta (inte i någons hand eller börda). En kniv vid slaktbänken (vid, stationer.ts) ligger kvar
+// där och räknas inte till det som ligger i förrådet eller på marken
+const ligger = (t: Ting) => t.x !== undefined && t.hos === undefined && t.lass === undefined && t.vid === undefined;
 const lying = (s: State) => tingOf(s).filter(ligger);
 // det som ligger i förrådet, per ruta: stackarna och sedan redskapen ts (det sista på en ruta gäller, som i things)
 function occupancy(s: State, ts = tingOf(s)) {
@@ -267,7 +270,7 @@ const things = (s: State): Stack[] => [...stacksOf(s), ...lying(s).map(asStack)]
 const utanRuta = (t: Ting) => t.hos === undefined && t.lass === undefined && t.x === undefined;
 function placeOn(s: State, ts: Ting[]) {
   for (const t of ts) {
-    if (!utanRuta(t)) continue;
+    if (!utanRuta(t) || tillbakaVid(s, t)) continue; // stationens kniv läggs tillbaka vid stationen
     const occ = occupancy(s, ts), sp = zoneSpot(s, t.k, -Infinity, occ) ?? besideSpot(s, t.k, occ);
     t.x = sp.x; t.y = sp.y;
   }

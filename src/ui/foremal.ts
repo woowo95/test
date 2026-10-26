@@ -1,8 +1,8 @@
-import { MATERIAL, Pile, STUBBE_LIV, bitsOf, clamp, condOf, emberOn, fireHeat, getMap, heatRadius, zonesOf } from '../sim';
+import { MATERIAL, Pile, STUBBE_LIV, bitsOf, clamp, condOf, emberOn, fireHeat, getMap, heatRadius, isKlar, stationDef, stationerOf, tingOf, zonesOf } from '../sim';
 import { outPilesAt, piles, s, ui } from './lage';
 import { Ikoner, TS, pileLayer, structG } from './scen';
 
-// det som står på marken: lagerplatserna och stackarna, husen, stubbar, fällda träd och elden
+// det som står på marken: lagerplatserna och stackarna, stationerna, husen, stubbar, fällda träd och elden
 const pileIcons = new Ikoner(pileLayer);
 // skicket som färg: grönt, gult, rött
 const condCol = (c: number) => c >= 0.5 ? 0x6fbf5a : c >= 0.25 ? 0xe0b040 : 0xd2553f;
@@ -30,6 +30,13 @@ export function drawStructures(t: number) {
   drawBuild();
   pileIcons.start();
   for (const pl of piles()) drawPile(pl);
+  // stationerna (stationer.ts): den halvbyggda blek med timglaset, och kniven som ligger kvar vid bänken
+  for (const st of stationerOf(s)) {
+    const x0 = st.x * TS, y0 = st.y * TS, klar = isKlar(st);
+    pileIcons.add(stationDef(st.k)?.ikon ?? 'slaktbank', x0, y0 + 1, klar ? 2 : 1.6);
+    if (!klar) pileIcons.add('paborjat', x0 + 9, y0 - 1, 0.8);
+    else if (tingOf(s).some(k => k.vid === st.id && k.hos === undefined && k.lass === undefined)) pileIcons.add('kniv', x0 + 5, y0 + 1, 0.9);
+  }
   pileIcons.end();
   // markerad hög utanför lagret: vit kant runt rutan, som lagerplatsen får
   const h = ui.hogAt;

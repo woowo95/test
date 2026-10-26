@@ -11,6 +11,7 @@ import { RESERV } from './ekonomi';
 import { addTool, freeTools, halvOf, nTools, ownsFree, wearTool } from './agande';
 import { balans } from './balans';
 import { sedEvent } from './seder';
+import { nyKniv, tommaKnivplatser } from './stationer';
 
 // ---------- balanstal (regel 8) ----------
 // Hur många redskap byn vill ha och vad den sparar när den gör dem. Hur mycket ett redskap kräver står i receptet (skaffa.av
@@ -21,10 +22,11 @@ export const REDSKAP = balans('redskap', {
   spjutPerVuxna: 3, spjutMin: 1, spjutMax: 4, // byn vill ha ett spjut (och ett metspö) per så här många vuxna, minst Min och högst Max
   korgPerVuxna: 3, korgMin: 1, korgMax: 5, // ... en korg
   yxaPerVuxna: 4, yxaMin: 1, yxaMax: 3, yxaFran: 16, yxaBygge: 1, // ... en yxa, räknat på dem som är över Fran år, och Bygge till medan ett hus byggs (träden där det ska stå)
-  knivar: 1, // ... så många knivar
+  knivar: 1, // ... så många knivar, och en till för varje tom knivplats vid en station (stationer.ts)
   repVill: 4, // ... så många rep (tvinnat eller från senor)
   maskPerGrav: 4, // en grävning ger så här många maskar
   slaktMinDel: 2, // vilt slaktas när det finns minst 1 / Del kanin
+  kottMin: 0.8, kottMax: 1.2, kottFull: 20, // slakten ger så stor del av köttet (slakt.kott i DJUR) utan jaktfärdighet, och så stor del med färdigheten Full eller mer
   nyfiken: 0.08, // ett redskap med nyfiken i saker.ts (yxan) gör sedernas nyfikenhet så här mycket större första gången
 });
 // vad ett slag kräver, ur receptet (skaffa.av i saker.ts)
@@ -90,19 +92,22 @@ const basketsWanted = (s: State) => clamp(Math.floor(living(s).filter(p => ageOf
 
 // ---------- redskap: kniv och slakt ----------
 // En flintkniv är en vass flintskärva med ett skaft. Utan kniv äter byn direkt av det fällda djuret. Med kniv slaktas det
-// vid elden till mer kött, ett ben och ett skinn. Ett djur med senor ger dessutom ibland ett rep, men bara om den som
+// till mer kött, ett ben och ett skinn. Ett djur med senor ger dessutom ibland ett rep, men bara om den som
 // slaktar kan tekniken Rep (fisk har inga senor). Kött, ben och skinn är samma vilket djur det än kommer från.
-// Kniven kräver en flinta utöver den som sparas att tända eld med. Fisken rensas med händerna vid elden till fiskkött.
+// Jaktfärdigheten avgör hur mycket kött man får ut av djuret (kottFaktor, steg 2.2.3).
+// Kniven kräver en flinta utöver den som sparas att tända eld med. Fisken rensas med händerna till fiskkött.
+// Slakten och rensningen görs vid slaktbänken när byn har en, annars vid elden (stationer.ts, spotFor i val.ts). Den som
+// slaktar måste ha en kniv: bänkens, som ligger kvar där, eller sin egen.
 // DJUR: varje art som fångas. sak = saken den ligger i förrådet som, mat = hur mycket av saken ett djur är (uppätet som
 // det är), slakt = det ett djur ger slaktat eller rensat, rep = chansen per djur att senorna blir ett rep, timme = djur per
-// timme, maxTim = arbetet varar högst så här många timmar, act = arbetet vid elden där det görs, kniv = det kräver en kniv (och att man kan tekniken), minDel = det görs när
+// timme, maxTim = arbetet varar högst så här många timmar, act = arbetet där det görs (vid slaktbänken eller elden), kniv = det kräver en kniv (och att man kan tekniken), minDel = det görs när
 // det finns minst 1 / minDel djur, stat = räknas (i djur), forsta = loggen första gången. En ny art blir en rad här (fler
 // fiskar: steg 7.4.3). Receptet för det ett djur ger står också i saker.ts (skaffa.av, för värdet); scenariot "djur"
 // kontrollerar att de stämmer med raden här.
 export interface Djurart { sak: string; mat: number; slakt: Record<string, number>; rep: number; timme: number; maxTim: number; act: Act; kniv?: true; minDel: number; stat: string; forsta: string }
 export const DJUR = {
   kanin: { sak: 'vilt', mat: SAKER.vilt!.stack!, slakt: { kott: 2.1, ben: 1, skinn: 1 }, rep: 0.15, timme: 3, maxTim: 2, act: 'slakta', kniv: true, minDel: REDSKAP.slaktMinDel, stat: 'slaktat', forsta: '{namn} slaktade byns första vilt med en flintkniv. Det gav mer kött, ett ben och ett skinn.' },
-  abborre: { sak: 'abborre', mat: 1, slakt: { fisk: 1 }, rep: 0, timme: 30, maxTim: 1, act: 'rensa', minDel: 1, stat: 'rensat', forsta: '{namn} rensade byns första abborre vid elden. Den blev fiskkött.' },
+  abborre: { sak: 'abborre', mat: 1, slakt: { fisk: 1 }, rep: 0, timme: 30, maxTim: 1, act: 'rensa', minDel: 1, stat: 'rensat', forsta: '{namn} rensade byns första abborre. Den blev fiskkött.' },
 } satisfies Record<string, Djurart>;
 export const DJURARTER: readonly Djurart[] = Object.values(DJUR);
 export const KANIN = DJUR.kanin.mat; // så mycket mat en kanin är, uppäten som den är: en stack fällt vilt (saker.ts)
@@ -129,10 +134,12 @@ export function bearbeta(s: State, p: Person, art: Djurart, hours: number) {
   count(s, art.stat, n);
   if (first) log(s, art.forsta.replace('{namn}', p.name), 'world', [p.id]);
 }
+// så stor del av köttet p får ut av djuret: mer ju bättre hen är på jakt
+export const kottFaktor = (p: Person) => REDSKAP.kottMin + (REDSKAP.kottMax - REDSKAP.kottMin) * clamp(p.skill.jakt / REDSKAP.kottFull, 0, 1);
 // det som fångats delas upp: köttet och resten är deras som ägde fångsten
 function stycka(s: State, p: Person, art: Djurart, n: number) {
-  const vems = use(s, p, art.sak, n * art.mat);
-  for (const [k, m] of Object.entries(art.slakt)) put(s, k, n * m, addDel({}, vems, m / art.mat));
+  const vems = use(s, p, art.sak, n * art.mat), kf = kottFaktor(p);
+  for (const [k, m0] of Object.entries(art.slakt)) { const m = k === 'kott' ? m0 * kf : m0; put(s, k, n * m, addDel({}, vems, m / art.mat)); }
   return vems;
 }
 
@@ -154,7 +161,7 @@ const VILL: Record<string, (s: State) => number> = {
   spjut: spearsWanted,
   metspo: spearsWanted, // ett metspö per spjut
   korg: basketsWanted,
-  kniv: () => REDSKAP.knivar,
+  kniv: s => REDSKAP.knivar + tommaKnivplatser(s), // och en till för en tom knivplats vid slaktbänken
   // en yxa per fyra över yxaFran år, och en till medan ett hus byggs (för träden där det ska stå)
   yxa: s => clamp(Math.floor(living(s).filter(q => ageOf(q, s.now) >= REDSKAP.yxaFran).length / REDSKAP.yxaPerVuxna), REDSKAP.yxaMin, REDSKAP.yxaMax) + (s.hus?.some(h => !h.klar) ? REDSKAP.yxaBygge : 0),
 };
@@ -183,9 +190,10 @@ export function makeTask(s: State, p: Person, g: string) {
   const k = kindFor(s, p, g);
   return { act: g as Act, text: SAKER[k]!.gors!.text.replace('{verktyg}', ordFor(s, k)), min: minOf(k), tool: GORS[g].length > 1 ? k : undefined };
 }
-// redskapet k är klart (materialet togs när arbetet började, paborjat.ts). Första gången står det i loggen
+// redskapet k är klart (materialet togs när arbetet började, paborjat.ts). Första gången står det i loggen. En kniv läggs
+// vid slaktbänken om knivplatsen där står tom, och blir byns (stationer.ts)
 export function toolDone(s: State, p: Person, k: string) {
-  addTool(s, k, p);
+  nyKniv(s, addTool(s, k, p));
   const g = SAKER[k]!.gors!, text = (t: string) => t.replace('{namn}', p.name).replace('{verktyg}', ordFor(s, k));
   if (forstaGang(s, g.stat)) {
     log(s, text(g.forsta), 'world', [p.id]);

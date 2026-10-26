@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { BAR, FOREST, HIGH, MATERIAL, Person, T, W, bitAt, campCenter, condOf, emberOn, getMap, groundOf, husById, inMap, insulation, living, roomAt, sakNamn, sjoarna, sovplatser, taskName, zoneAt, zonesOf, Pile } from '../sim';
+import { BAR, FOREST, HIGH, MATERIAL, MIN, Person, T, W, bitAt, campCenter, condOf, emberOn, getMap, groundOf, husById, inMap, insulation, isKlar, living, stationAt, stationDef, tingOf, roomAt, sakNamn, sjoarna, sovplatser, taskName, zoneAt, zonesOf, Pile } from '../sim';
 import { iconImg } from '../ikoner';
 import { $, esc, fmtN, prickar } from './hjalp';
 import { outPilesAt, piles, s, ui } from './lage';
@@ -86,6 +86,12 @@ function showHover(gx: number, gy: number) {
   const log = (s.stockar ?? []).find(k => Math.floor(k.x) === x && Math.floor(k.y) === y);
   if (log) rows.push(`Fällt träd, ca ${Math.ceil(log.ved)} trä kvar`);
   if ((s.stubbar ?? []).some(k => k.x === x && k.y === y)) rows.push('Stubbe efter ett fällt träd');
+  const st = stationAt(s, x, y), sd = st && stationDef(st.k);
+  if (st && sd) {
+    const kniv = tingOf(s).filter(k => k.vid === st.id), ligger = kniv.filter(k => k.hos === undefined && k.lass === undefined).length;
+    const om = isKlar(st) ? (sd.kniv ? `${ligger} av ${sd.kniv} ${sd.kniv === 1 ? 'kniv' : 'knivar'} ligger här${kniv.length > ligger ? ', en används' : ''}` : '') : `byggs, ${Math.round(100 - st.kvar / (sd.min * MIN) * 100)} %`;
+    rows.push(`${iconImg(sd.ikon, 12)} <b>${esc(sd.namn)}</b>${om ? ' · ' + om : ''}`);
+  }
   const bit = bitAt(s, x, y);
   if (bit) {
     const M = MATERIAL[bit.m], hus = husById(s, bit.hus);

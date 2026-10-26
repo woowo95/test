@@ -56,8 +56,9 @@ interface ActDef {
   varmer?: true; // görs för att bli varm: ett rum väljs bara om det är minst lika varmt som vid elden (varmareInne)
   dygn?: true; // avbryts när dag blir natt eller natt blir dag
   stilla?: true; // står still på platsen (ingen småjustering i bilden)
-  // var den görs (val.ts): runt elden, vid kolhögen, sovplats, lekplatsen eller ute på marken (skog är förvalt)
-  plats?: 'elden' | 'kol' | 'sang' | 'lek' | 'ang' | 'strand' | 'avsides' | 'skog';
+  // var den görs (val.ts): runt elden, vid kolhögen, sovplats, lekplatsen, ute på marken (skog är förvalt) eller vid
+  // stationen där handlingen görs (stationer.ts; runt elden så länge byn inte har någon)
+  plats?: 'elden' | 'kol' | 'sang' | 'lek' | 'ang' | 'strand' | 'avsides' | 'skog' | 'station';
   radie?: number; // avstånd från elden, för plats 'elden'
 }
 
@@ -84,14 +85,15 @@ const DEF = {
   spjut: { namn: 'Täljer ett spjut', verktyg: { flintspjut: 'Gör ett flintspjut' }, slag: 'hantverk', hantverk: true, plats: 'elden' },
   metspo: { namn: 'Gör ett metspö', slag: 'hantverk', hantverk: true, plats: 'elden' },
   kniv: { namn: 'Gör en flintkniv', slag: 'hantverk', hantverk: true, plats: 'elden' },
-  slakta: { namn: 'Slaktar vilt med kniven', slag: 'hantverk', redskap: { kniv: { haller: 250 } }, hantverk: true, social: true, stilla: true, plats: 'elden' },
+  slakta: { namn: 'Slaktar vilt med kniven', slag: 'hantverk', redskap: { kniv: { haller: 250 } }, hantverk: true, social: true, stilla: true, plats: 'station' },
   promenad: { namn: 'Tar en promenad', tecken: '🚶', vandra: { r: 4, h0: 1, h1: 4, v: 0.8 }, dygn: true },
   bada: { namn: 'Badar i sjön', tecken: '🏊', dygn: true },
   bara: { namn: 'Bär in saker till lagret', slag: 'bara' },
   strand: { namn: 'Sitter vid stranden och ser ut över vattnet', tecken: '🌊', dygn: true },
   korg: { namn: 'Flätar en korg av hö', slag: 'hantverk', hantverk: true, plats: 'elden' },
-  rensa: { namn: 'Rensar fisk vid elden', slag: 'hantverk', hantverk: true, social: true, stilla: true, plats: 'elden' },
+  rensa: { namn: 'Rensar fisk', slag: 'hantverk', hantverk: true, social: true, stilla: true, plats: 'station' },
   bygga: { namn: 'Bygger', yrke: 'Byggare', slag: 'bygga', verktyg: { laga: 'Lagar en vägg', lagaGolv: 'Lagar golvet', golv: 'Lägger golv', vagg: 'Bygger en vägg' }, hantverk: true, tungt: true, stilla: true },
+  station: { namn: 'Bygger en station', slag: 'bygga', verktyg: { slaktbank: 'Bygger en slaktbänk' }, hantverk: true, stilla: true, plats: 'station' }, // stationer.ts; task.tool = slaget
 } satisfies Record<string, ActDef>;
 
 export type Act = keyof typeof DEF;

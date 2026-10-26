@@ -18,7 +18,8 @@ import { alive, byId } from './folk';
 import { BYN, lends } from './egendom';
 // halv = ett påbörjat redskap (paborjat.ts): vad det ska bli, materialet som tagits till det, hur länge arbetet har kvar och vem som började
 interface Halv { gor: string; av: Record<string, number>; kvar: number; ag: number }
-export interface Ting { id: number; k: string; c: number; agare: number; hos?: number; lass?: number; x?: number; y?: number; halv?: Halv }
+// vid = stationen tinget hör till och ligger vid när ingen använder det (kniven vid slaktbänken, stationer.ts)
+export interface Ting { id: number; k: string; c: number; agare: number; hos?: number; lass?: number; x?: number; y?: number; halv?: Halv; vid?: number }
 export const tingOf = (s: State) => (s.ting ??= []);
 export const toolsOf = (s: State, k: string) => tingOf(s).filter(t => t.k === k);
 export const nTools = (s: State, k: string) => tingOf(s).reduce((n, t) => n + (t.k === k ? 1 : 0), 0);
@@ -32,7 +33,7 @@ export function newTing(s: State, k: string, c: number, agare: number): Ting {
   return t;
 }
 // p gjorde ett redskap: det läggs i förrådet och är hens
-export function addTool(s: State, k: string, p: Person) { newTing(s, k, 1, p.id); }
+export function addTool(s: State, k: string, p: Person) { return newTing(s, k, 1, p.id); }
 
 // kan p ta tinget? Inte om någon annan arbetar med det
 function usable(s: State, p: Person, t: Ting) {

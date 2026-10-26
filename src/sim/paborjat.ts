@@ -7,6 +7,7 @@ import { put } from './lager';
 import { isForest, tileOf } from './mark';
 import { GORS, borjaTool, minOf, toolDone } from './redskap';
 import { fallTid } from './skog';
+import { startStation } from './stationer';
 
 // ---------- påbörjat arbete (steg 1.5.14) ----------
 // Ett redskap görs i ett enda arbete, men arbetet kan avbrytas (natten, toan, kylan). Det som inte blev klart blir en sak,
@@ -21,11 +22,12 @@ export const HALV_TID = 2 * DAY; // så länge ett påbörjat redskap håller n�
 export const GA_TID = HOUR; // så länge man högst går till arbetet innan man väljer något annat
 export const GOR_ACTS = Object.keys(GORS) as Act[];
 // handlingar där arbetstiden räknas från att man kommit fram
-export const startsOnArrival = (act: Act) => !!GORS[act] || act === 'falla';
+export const startsOnArrival = (act: Act) => !!GORS[act] || act === 'falla' || act === 'station';
 const halvById = (s: State, id?: number) => id === undefined ? undefined : tingOf(s).find(t => t.id === id && t.halv);
 
 // framme: arbeta vidare på det man har påbörjat, eller ta materialet och börja. Saknas materialet blir det inget
 export function startWork(s: State, p: Person, tk: Task) {
+  if (tk.act === 'station') { startStation(s, p, tk); return; } // en station byggs vidare där den står (stationer.ts)
   if (tk.act === 'falla') { const i = tileOf(tk.tx, tk.ty); tk.until = s.now + Math.max(0, fallTid(s, i) - (s.halvfallt?.[i] ?? 0)); return; }
   const ger = GORS[tk.act];
   if (!ger) return;

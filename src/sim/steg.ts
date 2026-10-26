@@ -33,6 +33,7 @@ import { migrate } from './varld';
 import { stepDelning } from './delning';
 import { balans } from './balans';
 import { sjoRakna } from './sjo';
+import { finishStation, stepStationer, workStation } from './stationer';
 
 // Simuleringen går i slag om fem minuter (BEAT), i spelet och vid ikappräkning likadant. Inom ett slag går tiden åt
 // till det som händer i tur och ordning (taskStep). Arbetet görs i bitar om högst BIT sekunder, och man bär aldrig mer
@@ -91,6 +92,7 @@ for (const art of DJURARTER) MEDAN[art.act] = (s, p, _t, dtSec) => bearbeta(s, p
 // redskap som görs och träd som fälls: arbetet sparas om det avbryts (paborjat.ts)
 for (const a of GOR_ACTS) { MEDAN[a] = workHalf; KLAR[a] = (s, p, t) => finishHalf(s, p, t); }
 MEDAN.falla = workHalf;
+MEDAN.station = workStation; KLAR.station = finishStation; // en station som byggs (stationer.ts)
 
 // ---------- huvudsteg ----------
 // ett slag om dtSec sekunder (BEAT i spelet och ikappräkningen; testerna kan ta andra). events = samtalen, för att visa dem
@@ -117,7 +119,7 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
   if (Math.floor(now / HOUR) !== Math.floor((now - dtSec * SEC) / HOUR)) {
     stepSeder(s); updateTags(s); stepDelning(s);
     growGround(s, 1, ai); growFynd(s, 1, ai); forget(s, 1); rotStumps(s); tidyStore(s);
-    wearBuild(s, 1, ai); stepByggnader(s); planBuild(s); stepPaborjat(s);
+    wearBuild(s, 1, ai); stepByggnader(s); planBuild(s); stepPaborjat(s); stepStationer(s);
     historikSteg(s); // nyckeltalen till byns historik (läses inte av simuleringen)
     compact(s); // här och inte i sparningen, så att alla lägen städar vid samma tid
   }
