@@ -26,6 +26,7 @@ Sök i dokumentet i stället för att läsa allt; det är långt.
 - Björn säger t.ex. "gör 2.5.1", "gör 2.5" eller "gör till och med 2.6.2". Bygg de steg som nämns och stanna efter det sista.
 - Läs avsnitten som systemets "Läs:" pekar på innan du bygger. Står det "Björn avgör" i steget, fråga först.
 - Bocka av ett byggt steg och skriv versionen efter, t.ex. "(v36)". Byggda steg byter aldrig nummer.
+- Nya steg läggs alltid framför där vi är, i ett system som inte är byggt än, aldrig i ett system som redan är passerat. Säger Björn hur långt fram (t.ex. "tidigast efter 2.3.4"), läggs de där eller senare. Passar inget system, läggs stegen sist i det närmaste systemet efter den platsen, så att de obyggda systemen behåller sina nummer. Säg i svaret vilka nummer stegen fick.
 
 ## Principer
 
