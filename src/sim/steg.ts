@@ -2,7 +2,7 @@ import { tidyTools } from './agande';
 import { chopStock, fellTree, rotStumps, stocks } from './skog';
 import { VED, needLadder, noticeTheft, stole } from './behov';
 import { avbryt, capacity, dropSpot, fetchSpot, homeKind, isCarrying, load, pickUp, storeLoad, tidyStore, wearStore } from './lager';
-import { KANIN, REDSKAP, clean, slaughter, twineRope, wearUsed } from './redskap';
+import { DJURARTER, KANIN, REDSKAP, bearbeta, twineRope, wearUsed } from './redskap';
 import { GOR_ACTS, finishHalf, startWork, stepPaborjat, workHalf } from './paborjat';
 import { thinkWhileWorking } from './teknik';
 import { arbetsformaga, foodDays, workRate } from './ekonomi';
@@ -69,8 +69,6 @@ const MEDAN: Partial<Record<Act, Krok>> = {
   kol: (s, p) => takeCoal(s, p, 'hämtade'),
   bygga: (s, p, t, dtSec) => buildStep(s, p, t, dtSec),
   hantverk: (s, p, t, dtSec) => { if (t.tool === 'rep') twineRope(s, p, dtSec / HOUR_S); },
-  slakta: (s, p, _t, dtSec) => slaughter(s, p, dtSec / HOUR_S),
-  rensa: (s, p, _t, dtSec) => clean(s, p, dtSec / HOUR_S),
   tanda: (s, p, _t, dtSec) => {
     if (!canLight(s, p)) return;
     s.fire.tryProg += dtSec;
@@ -88,6 +86,7 @@ const KLAR: Partial<Record<Act, Krok>> = {
   bada: (s, p, t) => { sjoRakna(s, t.tx, t.ty, 'bad', p); p.warm = Math.max(KROPP.badMin, p.warm - KROPP.badKyla); think(p, 'Badade i sjön', 0.08, s.now, 6 * HOUR); },
   strand: (s, p) => { p.rest = Math.min(1, p.rest + KROPP.strandVila); think(p, 'Satt vid vattnet och fick ro', 0.06, s.now, 6 * HOUR); },
 };
+for (const art of DJURARTER) MEDAN[art.act] = (s, p, _t, dtSec) => bearbeta(s, p, art, dtSec / HOUR_S); // slakt och rensning
 // redskap som görs och träd som fälls: arbetet sparas om det avbryts (paborjat.ts)
 for (const a of GOR_ACTS) { MEDAN[a] = workHalf; KLAR[a] = (s, p, t) => finishHalf(s, p, t); }
 MEDAN.falla = workHalf;

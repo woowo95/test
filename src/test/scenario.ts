@@ -2,7 +2,7 @@
 // npm run scenario            kör alla
 // npm run scenario -- glanta  kör bara ett
 import { isDeepStrictEqual } from 'node:util';
-import { FANGST, MIN, Person, Act, createState, clean, canClean, ownedBy, tidyTools, addTool, toolsOf, heldBy, take, usesTool, wearTool, freeSpear, getRel, isTool, BYN, twineRope, makeTool, wearUsed, isSpear, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, serializeParts, joinParts, serialize, cloneState, ageStart, nyKalender, kalender, yearNo, AGES, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, zonesOf, allows, ageOf, spears, SPJUT_FORSOK, groundOf, getMap, DAY, HOUR, W, State, tileOf, rektAvstand, skogAndel, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, campCenter, TEKNIK, knows, thinkWhileWorking, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, isWall, Bit, wearBuild, FYND, FYND_IDS, GRUPPER, angOf, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, observe, hoped, Lager, skyggOf, grupperOf, KANINER, share, treeOn, djurOf, KANIN, SLAKT, DJUR, canSlaughter, slaughter, askForTool, askForGift, gain, takeFood, takeFuel, ownsAmount, ownedStock, ownedSum, sumOf, addTo, setAmount, setStock, foodOf, isFood, STACK_ORDER, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, STOLD_LINDRIG, STOLD_OP, rnd, STROMMAR, Strom, BEAT, spar, isWork, SPARVERSION, stepDelning, rikedom, rikedomDelar, grundvarde, nivaOf, DELNING, packUp, releaseOwner, willing, tingOf, komOf, BYGGNADER, FN, mostUrgent, fnId, fnOf, planBuild, workOn, wearMult, LAGER, homeless, sovplatser, inZone, startWork, workHalf, finishHalf, stepPaborjat, halvOf, tingVarde, HALV_TID, fallTid, treeSpot, SEC, Task, familjOf, bedTile, takeForHouse, put, stepByggnader, husNamn, spotFor, roofed, matGott, barnMat, hungerFlytt, regulate, MATERIAL, EKONOMI, SAMTALSSLAG, SAK_LIST, eatPoison, wantsTool, makeTask, wantsFlint, usable, dropSpot, HOST } from '../sim';
+import { FANGST, MIN, Person, Act, createState, bearbeta, canProcess, ownedBy, tidyTools, addTool, toolsOf, heldBy, take, usesTool, wearTool, freeSpear, getRel, isTool, BYN, twineRope, makeTool, wearUsed, isSpear, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, serializeParts, joinParts, serialize, cloneState, ageStart, nyKalender, kalender, yearNo, AGES, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, zonesOf, allows, ageOf, spears, SPJUT_FORSOK, groundOf, getMap, DAY, HOUR, W, State, tileOf, rektAvstand, skogAndel, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, campCenter, TEKNIK, knows, thinkWhileWorking, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, isWall, Bit, wearBuild, FYND, FYND_IDS, GRUPPER, angOf, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, observe, hoped, Lager, skyggOf, grupperOf, KANINER, share, treeOn, djurOf, KANIN, SLAKT, DJUR, DJURARTER, askForTool, askForGift, gain, takeFood, takeFuel, ownsAmount, ownedStock, ownedSum, sumOf, addTo, setAmount, setStock, foodOf, isFood, STACK_ORDER, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, STOLD_LINDRIG, STOLD_OP, rnd, STROMMAR, Strom, BEAT, spar, isWork, SPARVERSION, stepDelning, rikedom, rikedomDelar, grundvarde, nivaOf, DELNING, packUp, releaseOwner, willing, tingOf, komOf, BYGGNADER, FN, mostUrgent, fnId, fnOf, planBuild, workOn, wearMult, LAGER, homeless, sovplatser, inZone, startWork, workHalf, finishHalf, stepPaborjat, halvOf, tingVarde, HALV_TID, fallTid, treeSpot, SEC, Task, familjOf, bedTile, takeForHouse, put, stepByggnader, husNamn, spotFor, roofed, matGott, barnMat, hungerFlytt, regulate, MATERIAL, EKONOMI, SAMTALSSLAG, SAK_LIST, eatPoison, wantsTool, makeTask, wantsFlint, usable, dropSpot, HOST } from '../sim';
 // förrådet i proven: stackarna är det enda som sparas (steg 1.1.2), så proven ställer in förrådet genom lagret
 const setItems = (s: State, m: Record<string, number>) => {
   for (const k of STACK_ORDER) if (!isFood(k) && k !== 'ved' && !isTool(k)) setAmount(s, k, m[k] ?? 0);
@@ -952,7 +952,7 @@ SCENARIER.egendom = {
     addTo(s, 'bar', -foodOf(s) / 2); const rutten = ownsAmount(s, a, 'bar');
     // slakt: a äger två kaniner, c slaktar dem med en kniv
     gain(s, a, 'vilt', KANIN * 2); setAmount(s, 'kniv', 1); tidyTools(s); c.tek = { ...(c.tek ?? {}), kniv: 1 };
-    slaughter(s, c, 1);
+    bearbeta(s, c, DJUR.kanin, 1);
     const kott = ownsAmount(s, a, 'kott'), slaktarens = ownsAmount(s, c, 'kott');
     const andra = living(s).filter(q => q !== a), deras = andra.map(q => ownedStock(s, q));
     die(s, a, 'sjukdom'); const arv = !Object.keys(ownedStock(s, a)).length && andra.every((q, i) => isDeepStrictEqual(ownedStock(s, q), deras[i]));
@@ -1149,17 +1149,21 @@ SCENARIER.djur = {
     }
     // utan kniv ingen slakt; med kniv blir en kanin kött, ben, skinn och senor
     setAmount(s, 'flinta', 2); setAmount(s, 'grenar', 2);
-    const utan = !canSlaughter(s, p);
+    const utan = !canProcess(s, p, DJUR.kanin);
     for (const r of s.people) r.tek = { ...r.tek, kniv: 1, rep: 1 };
     makeTool(s, p, 'kniv');
     const kniv = amountOf(s, 'kniv') === 1 && amountOf(s, 'flinta') === 1;
     setMat(s, { vilt: 3 * KANIN }); setAmount(s, 'ben', 0); setAmount(s, 'skinn', 0); setAmount(s, 'rep', 0);
-    const kan = canSlaughter(s, p);
-    slaughter(s, p, 1);
+    const kan = canProcess(s, p, DJUR.kanin);
+    bearbeta(s, p, DJUR.kanin, 1);
     const slakt = Math.abs(amountOf(s, 'kott') - 3 * SLAKT.kott) < 1e-9 && amountOf(s, 'vilt') < 1e-9 && Math.abs(amountOf(s, 'ben') - 3) < 1e-9 && Math.abs(amountOf(s, 'skinn') - 3) < 1e-9;
     // senorna blir ibland ett rep, men bara för den som kan tekniken Rep
-    const repAv = (kan: boolean) => { let r = 0; for (let i = 0; i < 200; i++) { setMat(s, { vilt: KANIN }); setAmount(s, 'rep', 0); p.tek = { ...p.tek, rep: kan ? 1 : 0 }; slaughter(s, p, 1); r += amountOf(s, 'rep'); } return r; };
+    const repAv = (kan: boolean) => { let r = 0; for (let i = 0; i < 200; i++) { setMat(s, { vilt: KANIN }); setAmount(s, 'rep', 0); p.tek = { ...p.tek, rep: kan ? 1 : 0 }; bearbeta(s, p, DJUR.kanin, 1); r += amountOf(s, 'rep'); } return r; };
     const medRep = repAv(true), utanRep = repAv(false);
+    // receptet i saker.ts (för värdet) och DJUR (det som händer) säger samma sak: inom 10 %
+    const fran = (art: (typeof DJURARTER)[number]) => Object.entries(art.slakt).reduce((x, [k, n]) => x + (SAKER[k]?.skaffa?.av?.[art.sak] ?? NaN) * n, 0) / art.mat;
+    const recept = DJURARTER.map(art => `${art.sak} ${fran(art).toFixed(2)}`).join(', ');
+    const receptOk = DJURARTER.every(art => Math.abs(fran(art) - 1) <= 0.1);
     return [
       [`kaniner syns där det finns vilt (${dj.length} st), inga i lägret (${iLagret})`, dj.length > 10 && iLagret === 0],
       [`fler kaniner där det finns mycket vilt (${(tat(rik, nr) * 100).toFixed(1)} % av de rika rutorna, ${(tat(fattig, nf) * 100).toFixed(1)} % av de fattiga)`, tat(rik, nr) > tat(fattig, nf) * 2],
@@ -1169,6 +1173,7 @@ SCENARIER.djur = {
       [`kaninen bärs hem hel, en i taget (${hem} gång, ${annat} med annat)`, hem >= 1 && annat === 0],
       ['utan kniv slaktas inget; kniven görs av en flinta och en gren och en flinta sparas till elden', utan && kniv && kan],
       ['en slaktad kanin ger mer kött än den uppätna, och ett ben och ett skinn', slakt && SLAKT.kott > KANIN],
+      [`det ett djur ger har ett recept av djuret i saker.ts, som ungefär stämmer med DJUR (${recept})`, receptOk],
       [`senorna blir ibland ett rep för den som kan Rep (${medRep} rep av 200 kaniner), aldrig annars (${utanRep})`, medRep >= 200 * DJUR.kanin.rep * 0.5 && medRep <= 200 * DJUR.kanin.rep * 1.5 && utanRep === 0],
     ];
   },
@@ -1182,15 +1187,15 @@ SCENARIER.abborre = {
     const [a, c] = living(s);
     setMat(s, {}); gain(s, a, 'abborre', 6);
     const egen = ownsAmount(s, a, 'abborre'); // det som inte delats med byn
-    const kan = canClean(s, c);
-    clean(s, c, 0.1); // tre abborrar på sex minuter
+    const kan = canProcess(s, c, DJUR.abborre);
+    bearbeta(s, c, DJUR.abborre, 0.1); // tre abborrar på sex minuter
     const halv = Math.abs(amountOf(s, 'abborre') - 3) < 1e-9 && Math.abs(amountOf(s, 'fisk') - 3) < 1e-9;
-    clean(s, c, 1);
+    bearbeta(s, c, DJUR.abborre, 1);
     const klar = amountOf(s, 'abborre') < 1e-9 && Math.abs(amountOf(s, 'fisk') - 6) < 1e-9;
     const agare = egen > 0 && Math.abs(ownsAmount(s, a, 'fisk') - egen) < 1e-9 && ownsAmount(s, c, 'fisk') === 0;
     // en vanlig by: fisket ger abborrar, och de rensas till fiskkött vid elden
     // (alla byar börjar inte fiska de första dygnen; den första av några byar som fiskar räknas)
-    // (rensat räknas i clean(); en abborre rensas på ett par minuter och syns sällan som uppgift var femte minut)
+    // (rensat räknas i bearbeta(); en abborre rensas på ett par minuter och syns sällan som uppgift var femte minut)
     let abborreSedd = 0, fangat = 0, rensat = 0;
     for (const seed of [3, 1, 2, 4, 5]) {
       const v = createState(seed, START);

@@ -6,7 +6,7 @@ import { canLight, emberOn, fireWant, needStones, needTinder, woodDays } from '.
 import { ALDER, KROPP, ageOf, isSick, living, stat } from './folk';
 import { FANGST, Kind, flintSpot, shoreOf, wantsFlint } from './fynd';
 import { coldOf, temperature } from './vader';
-import { DJUR, GORS, KANIN, SLAKT_TIMME, abborrar, canClean, canSlaughter, freeOfKinds, makeTask, toolGroups, vilt, wantsRope, wantsTool } from './redskap';
+import { DJUR, Djurart, GORS, canProcess, djurKvar, freeOfKinds, makeTask, toolGroups, wantsRope, wantsTool } from './redskap';
 import { areaOf, flintArea, pickSpot, prospectFor } from './minne';
 import { getMap } from './karta';
 import { amountOf, avbryt, fetchSpot, haulJob } from './lager';
@@ -47,7 +47,7 @@ const VAL = balans('val', {
   baraChans: 0.25, baraTim: 3, // chansen att bära in det som ligger ute, och hur länge (timmar)
   slaktChans: 0.5, // chansen att slakta vilt som finns
   rensaChans: 0.5, // ... och att rensa fisk som finns
-  slaktMaxTim: 2, rensaMaxTim: 1, extraMin: 5, // slakt och rensning varar högst så här många timmar och 5 minuter över vad det tar
+  extraMin: 5, // slakt och rensning varar 5 minuter över vad det tar (och högst maxTim i DJUR, redskap.ts)
   byggLaga: 1.2, byggHalvt: 3, byggNytt: 0.8, // hur mycket bygget väger: en vägg som lagas, ett hus som är påbörjat, ett nytt
   byggUtan: 3, // ... plus så mycket gånger andelen som saknar sovplats under tak
   byggMatFran: 0.5, byggMatSpann: 2, byggMatMin: 0.1, // maten dämpar bygget: (matdygn - Fran) / Spann, aldrig under Min
@@ -261,8 +261,8 @@ function day(s: State, p: Person, v: Val, a: number, lazy: number) {
   const fd = foodDays(s), wd = woodDays(s), ai = ageIndex(s), tot = habitTotal(p), fara = dangers(s); // farorna räknas en gång och gäller hela valet
   // att bära in är en förbättring: inte när byn svälter eller fryser (talet dras ändå, så att personens följd är som förut)
   if (s.stackar?.length && rnd(s, 'val', p) < VAL.baraChans && !fara.svalt && !fara.kyla && (gt = haulJob(s))) { set(v, 'bara', gt.why); v.spot = gt; v.dur = VAL.baraTim * HOUR; return; }
-  if (a >= ALDER.vuxen && canSlaughter(s, p) && rnd(s, 'val', p) < VAL.slaktChans) { slaughterTask(s, v, 'Det finns vilt att slakta innan det blir dåligt'); return; }
-  if (a >= ALDER.rensar && canClean(s, p) && rnd(s, 'val', p) < VAL.rensaChans) { cleanTask(s, v, 'Det finns fisk att rensa innan den blir dålig'); return; }
+  if (a >= ALDER.vuxen && canProcess(s, p, DJUR.kanin) && rnd(s, 'val', p) < VAL.slaktChans) { processTask(s, v, DJUR.kanin, 'Det finns vilt att slakta innan det blir dåligt'); return; }
+  if (a >= ALDER.rensar && canProcess(s, p, DJUR.abborre) && rnd(s, 'val', p) < VAL.rensaChans) { processTask(s, v, DJUR.abborre, 'Det finns fisk att rensa innan den blir dålig'); return; }
   let { best, bs, burg } = bestWork(s, p, fd, wd, ai, tot, fara);
   // bygget: väger mer ju fler som saknar sovplats under tak, inför och under istiden, när en vägg behöver lagas och när huset inte är klart
   const job = buildJob(s, p), ppl = living(s);
@@ -379,22 +379,17 @@ export function toolGain(s: State, p: Person, act: Act, fara: Faror) {
   }
   return 1;
 }
-// slakta det fällda viltet vid elden, så länge det tar
-function slaughterTask(s: State, v: Val, why: string) {
-  set(v, 'slakta', why); v.tool = 'kniv';
-  v.dur = Math.min(VAL.slaktMaxTim * HOUR, (vilt(s) / KANIN / SLAKT_TIMME) * HOUR + VAL.extraMin * MIN);
-}
-// rensa fisken vid elden, så länge det tar
-function cleanTask(s: State, v: Val, why: string) {
-  set(v, 'rensa', why);
-  v.dur = Math.min(VAL.rensaMaxTim * HOUR, (abborrar(s) / DJUR.abborre.timme) * HOUR + VAL.extraMin * MIN);
+// slakta det fällda viltet eller rensa fisken vid elden (DJUR i redskap.ts), så länge det tar, med kniven om det behövs
+function processTask(s: State, v: Val, art: Djurart, why: string) {
+  set(v, art.act, why); if (art.kniv) v.tool = 'kniv';
+  v.dur = Math.min(art.maxTim * HOUR, (djurKvar(s, art) / art.timme) * HOUR + VAL.extraMin * MIN);
 }
 // handarbete vid elden: den som kan göra en kniv gör det när byn saknar en (inte när kylan är en fara, som de andra
 // redskapen i withTools), den som har kniv slaktar viltet, och den som kan tvinna rep gör det när byn behöver rep
 function craft(s: State, p: Person, v: Val, why: string) {
   if (wantsTool(s, p, 'kniv') && !dangers(s).kyla) { const m = makeTask(s, p, 'kniv'); set(v, m.act, `${why}. ${m.text}`); v.dur = m.min * MIN; return; }
-  if (canSlaughter(s, p)) { slaughterTask(s, v, `${why}. Slaktar viltet med kniven.`); return; }
-  if (canClean(s, p)) { cleanTask(s, v, `${why}. Rensar fisken.`); return; }
+  if (canProcess(s, p, DJUR.kanin)) { processTask(s, v, DJUR.kanin, `${why}. Slaktar viltet med kniven.`); return; }
+  if (canProcess(s, p, DJUR.abborre)) { processTask(s, v, DJUR.abborre, `${why}. Rensar fisken.`); return; }
   set(v, 'hantverk', why);
   if (wantsRope(s, p)) { v.tool = 'rep'; v.why = `${why}. Tvinnar rep av hö.`; }
 }

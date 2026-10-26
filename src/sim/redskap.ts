@@ -94,54 +94,46 @@ const basketsWanted = (s: State) => clamp(Math.floor(living(s).filter(p => ageOf
 // Kniven kräver en flinta utöver den som sparas att tända eld med. Fisken rensas med händerna vid elden till fiskkött.
 // DJUR: varje art som fångas. sak = saken den ligger i förrådet som, mat = hur mycket av saken ett djur är (uppätet som
 // det är), slakt = det ett djur ger slaktat eller rensat, rep = chansen per djur att senorna blir ett rep, timme = djur per
-// timme. En ny art blir en rad här (fler fiskar: steg 7.4.3).
-interface Djurart { sak: string; mat: number; slakt: Record<string, number>; rep: number; timme: number }
+// timme, maxTim = arbetet varar högst så här många timmar, act = arbetet vid elden där det görs, kniv = det kräver en kniv (och att man kan tekniken), minDel = det görs när
+// det finns minst 1 / minDel djur, stat = räknas (i djur), forsta = loggen första gången. En ny art blir en rad här (fler
+// fiskar: steg 7.4.3). Receptet för det ett djur ger står också i saker.ts (skaffa.av, för värdet); scenariot "djur"
+// kontrollerar att de stämmer med raden här.
+export interface Djurart { sak: string; mat: number; slakt: Record<string, number>; rep: number; timme: number; maxTim: number; act: Act; kniv?: true; minDel: number; stat: string; forsta: string }
 export const DJUR = {
-  kanin: { sak: 'vilt', mat: SAKER.vilt!.stack!, slakt: { kott: 2.1, ben: 1, skinn: 1 }, rep: 0.15, timme: 3 },
-  abborre: { sak: 'abborre', mat: 1, slakt: { fisk: 1 }, rep: 0, timme: 30 },
+  kanin: { sak: 'vilt', mat: SAKER.vilt!.stack!, slakt: { kott: 2.1, ben: 1, skinn: 1 }, rep: 0.15, timme: 3, maxTim: 2, act: 'slakta', kniv: true, minDel: REDSKAP.slaktMinDel, stat: 'slaktat', forsta: '{namn} slaktade byns första vilt med en flintkniv. Det gav mer kött, ett ben och ett skinn.' },
+  abborre: { sak: 'abborre', mat: 1, slakt: { fisk: 1 }, rep: 0, timme: 30, maxTim: 1, act: 'rensa', minDel: 1, stat: 'rensat', forsta: '{namn} rensade byns första abborre vid elden. Den blev fiskkött.' },
 } satisfies Record<string, Djurart>;
+export const DJURARTER: readonly Djurart[] = Object.values(DJUR);
 export const KANIN = DJUR.kanin.mat; // så mycket mat en kanin är, uppäten som den är: en stack fällt vilt (saker.ts)
 export const SLAKT = DJUR.kanin.slakt; // det en kanin ger slaktad
-export const SLAKT_TIMME = DJUR.kanin.timme; // kaniner per timme
 const knives = (s: State) => nTools(s, 'kniv');
-export const vilt = (s: State) => amountOf(s, 'vilt');
-// det finns vilt att slakta (minst en halv kanin) och en kniv som ingen annan slaktar med
-export const canSlaughter = (s: State, p: Person) => knows(p, 'kniv') && freeTools(s, p, 'kniv') >= 1 && vilt(s) >= KANIN / REDSKAP.slaktMinDel && !doingAct(s, 'slakta', p);
-export function slaughter(s: State, p: Person, hours: number) {
-  const n = Math.min(hours * SLAKT_TIMME, vilt(s) / KANIN); // kaniner
-  if (n <= 0 || knives(s) < 1) { if (p.task) p.task.until = s.now; return; }
-  // köttet, benet, skinnet och senorna är deras som ägde viltet, inte slaktarens
-  const art: Djurart = DJUR.kanin, vems = stycka(s, p, art, n);
-  // senorna blir med liten chans ett helt rep, som tillhör den som ägde mest av viltet
+// så många djur av arten som finns i förrådet
+export const djurKvar = (s: State, art: Djurart) => amountOf(s, art.sak) / art.mat;
+// p kan slakta eller rensa arten: det finns tillräckligt, en kniv som ingen annan slaktar med (om det behövs), och ingen
+// annan gör det redan
+export const canProcess = (s: State, p: Person, art: Djurart) => (!art.kniv || knows(p, 'kniv') && freeTools(s, p, 'kniv') >= 1) && djurKvar(s, art) >= 1 / art.minDel && !doingAct(s, art.act, p);
+// slakta eller rensa i hours timmar. Köttet, benet, skinnet och senorna är deras som ägde djuren, inte den som gör det
+export function bearbeta(s: State, p: Person, art: Djurart, hours: number) {
+  const n = Math.min(hours * art.timme, djurKvar(s, art));
+  if (n <= 0 || art.kniv && knives(s) < 1) { if (p.task) p.task.until = s.now; return; }
+  const vems = stycka(s, p, art, n);
+  // senorna blir med liten chans ett helt rep, som tillhör den som ägde mest av djuren
   if (art.rep > 0 && knows(p, 'rep') && amountOf(s, 'rep') < REDSKAP.repVill && rnd(s, 'arbete', p) < n * art.rep) {
     const agare = Object.keys(vems).sort((a, b) => vems[b] - vems[a])[0];
     put(s, 'rep', 1, agare !== undefined ? { [agare]: 1 } : undefined);
     count(s, 'repAvSenor');
   }
-  wearUsed(s, p, n); // kniven håller för ungefär 250 kaniner
-  const first = !(s.stat?.slaktat);
-  count(s, 'slaktat', n);
-  if (first) log(s, `${p.name} slaktade byns första vilt med en flintkniv. Det gav mer kött, ett ben och ett skinn.`, 'world', [p.id]);
+  if (art.kniv) wearUsed(s, p, n); // kniven håller för ungefär 250 kaniner
+  const first = !(s.stat?.[art.stat]);
+  count(s, art.stat, n);
+  if (first) log(s, art.forsta.replace('{namn}', p.name), 'world', [p.id]);
 }
-
-// det som fångats delas upp: köttet och resten är deras som ägde fångsten, inte den som slaktar eller rensar
+// det som fångats delas upp: köttet och resten är deras som ägde fångsten
 function stycka(s: State, p: Person, art: Djurart, n: number) {
   const vems = use(s, p, art.sak, n * art.mat);
   for (const [k, m] of Object.entries(art.slakt)) put(s, k, n * m, addDel({}, vems, m / art.mat));
   return vems;
 }
-// fisken rensas vid elden av den som är där, med händerna; en i taget rensar
-export const abborrar = (s: State) => amountOf(s, DJUR.abborre.sak);
-export const canClean = (s: State, p: Person) => abborrar(s) >= 1 && !doingAct(s, 'rensa', p);
-export function clean(s: State, p: Person, hours: number) {
-  const art: Djurart = DJUR.abborre, n = Math.min(hours * art.timme, abborrar(s) / art.mat);
-  if (n <= 0) { if (p.task) p.task.until = s.now; return; }
-  stycka(s, p, art, n);
-  const first = !(s.stat?.rensat);
-  count(s, 'rensat', n);
-  if (first) log(s, `${p.name} rensade byns första abborre vid elden. Den blev fiskkött.`, 'world', [p.id]);
-}
-
 
 // ---------- att göra ett redskap som saknas ----------
 // Varje redskap med gors i saker.ts görs i ett eget arbete vid elden, som heter som redskapets grupp (yxa, spjut, metspo,
