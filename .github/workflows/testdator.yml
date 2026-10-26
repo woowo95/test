@@ -1,0 +1,57 @@
+# Testdatorn: kör ett långt test på GitHubs dator, så att ingen behöver vänta på det.
+# Startas för hand (Actions → Testdatorn → Run workflow) eller av Claude. Resultatet står i körningens
+# sammanfattning och logg, och som filen resultat.txt under Artifacts.
+name: Testdatorn
+on:
+  workflow_dispatch:
+    inputs:
+      kommando:
+        description: 'Testkommandot efter "npm run", t.ex. jamfor -- 35 64 --mot v48'
+        required: true
+        default: 'koll'
+      beskrivning:
+        description: 'Vad körningen gäller (syns i listan över körningar)'
+        required: false
+        default: ''
+run-name: ${{ inputs.beskrivning || inputs.kommando }}
+permissions:
+  contents: read
+jobs:
+  kor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # jamfor --mot behöver hela historiken
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # jamfor sparar byarna den redan kört här, så att en äldre version inte körs om
+      - uses: actions/cache@v4
+        with:
+          path: node_modules/.cache/jamfor
+          key: jamfor-${{ github.run_id }}
+          restore-keys: jamfor-
+      - name: Kör testet
+        env:
+          KOMMANDO: ${{ inputs.kommando }}
+        run: |
+          read -r -a delar <<< "$KOMMANDO"
+          case "${delar[0]}" in
+            koll|test|samma|jamfor|balans|scenario|likhet|teknik|natur|detaljer|takt|talen|snabbkoll) ;;
+            *) echo "Okänt testkommando: ${delar[0]}"; exit 1 ;;
+          esac
+          set -o pipefail
+          npm run "${delar[@]}" 2>&1 | tee resultat.txt
+      - name: Sammanfattning
+        if: always()
+        run: |
+          { echo '```'; tail -c 60000 resultat.txt 2>/dev/null || echo 'Inget resultat.'; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: resultat
+          path: resultat.txt
