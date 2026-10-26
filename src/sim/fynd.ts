@@ -341,6 +341,9 @@ export function richness(s: State, k: Lager, x: number, y: number) {
   if (FYND[lagren(k)[0]].vatten) return standAt(s, k, x, y, i => nuAt(s, k, i));
   return nuAt(s, k, tileOf(x, y)); // på land: bara rutan man står på
 }
+// hur många gånger byn tagit ur kartan: gränssnittet ritar om den när det ändrats (simuleringen läser det aldrig)
+const plock = new WeakMap<State, number>();
+export const plockOf = (s: State) => plock.get(s) ?? 0;
 // ta ur en plats: mest ur rutan, lite ur grannarna. Fisk tas ur vattnet framför stranden.
 // Tar man ur flera lager (bär och rötter) delas uttaget efter hur mycket av vart och ett som finns där.
 export function takeFrom(s: State, k: Lager, x: number, y: number, amount: number) {
@@ -353,6 +356,7 @@ export function takeFrom(s: State, k: Lager, x: number, y: number, amount: numbe
   k = ls[0];
   const d = takenOf(s)[k], u = FYND[k].uttag;
   if (!d || !u) return;
+  plock.set(s, plockOf(s) + 1);
   const cx = Math.floor(x), cy = Math.floor(y), rv = FYND[k].vatten;
   if (rv) {
     const tiles = getMap(s.seed).tiles, kv = karna(rv).v;

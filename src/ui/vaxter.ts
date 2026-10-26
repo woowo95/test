@@ -1,15 +1,15 @@
-import { FYND, H, HOUR, W, ageIndex, djurOf, fyndAt, getMap } from '../sim';
+import { FYND, H, HOUR, W, ageIndex, djurOf, fyndAt, getMap, plockOf } from '../sim';
 import { s, ui } from './lage';
 import { Ikoner, TS, djurLayer, plantG } from './scen';
 
 // det som växer just nu, diskret i vanliga vyn: små bärbuskar och svampar där det finns något att hämta.
-// Var det kan växa syns inte, inte heller rötterna under jorden. Ritas om en gång i timmen. Kaninerna ritas varje
+// Var det kan växa syns inte, inte heller rötterna under jorden. Ritas om varje timme och när någon tagit något. Kaninerna ritas varje
 // bildruta vid tiden som visas (ui.nu), som folket, eftersom de skuttar omkring (djur.ts).
 let ritad = '';
 // en fast plats i rutan för varje sak, så att buskarna inte hoppar runt när kartan ritas om
 const plats = (i: number, j: number) => { const h = Math.sin(i * 12.9898 + j * 78.233) * 43758.5453; return h - Math.floor(h); };
 export function drawPlants(force = false) {
-  const key = `${s.seed},${Math.floor(s.now / HOUR)},${ageIndex(s)}`;
+  const key = `${s.seed},${Math.floor(s.now / HOUR)},${ageIndex(s)},${plockOf(s)}`;
   if (!force && key === ritad) return;
   ritad = key;
   plantG.clear();
