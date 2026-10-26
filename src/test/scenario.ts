@@ -11,7 +11,8 @@ const setItems = (s: State, m: Record<string, number>) => {
 const setMat = (s: State, m: Record<string, number>) => { for (const k of FOOD) setAmount(s, k, m[k] ?? 0); };
 // all mat blir n, i samma förhållande mellan slagen som förut (bär om det inte fanns någon)
 const setFood = (s: State, n: number) => { const f = foodOf(s); if (f > 0) { const m: Record<string, number> = {}; for (const k of FOOD) m[k] = amountOf(s, k) * n / f; setStock(s, m); } else setAmount(s, 'bar', n); };
-import { FOLDERS, STATS, ACTS, coverOf, lightLevel, timeLabel, hearthOf, igniterOf, fireWant, fireHeat, heatRadius, emberOn, zoneAt, bitAt, husById, isSick, isSocial, moodOf, duty, habitTotal, habitShare, childrenOf, homeKind, taskName, carryKind, influence, hasMaterial, wornOf, relKey, sakNamn, tingNamn, visning } from '../sim';
+import { FOLDERS, STATS, ACTS, coverOf, lightLevel, timeLabel, hearthOf, igniterOf, fireWant, fireHeat, heatRadius, emberOn, zoneAt, bitAt, husById, isSick, isSocial, moodOf, duty, habitTotal, habitShare, childrenOf, homeKind, taskName, carryKind, influence, hasMaterial, wornOf, relKey, sakNamn, tingNamn, visning, SAKER, slagIkon } from '../sim';
+import { hasIcon } from '../ikoner';
 import { findPath } from '../sim/vag';
 import { FOREST, HIGH, isSoil } from '../sim/vag';
 import { START } from './kor';
@@ -1860,6 +1861,23 @@ SCENARIER['ui-ren'] = {
       [`läsningarna skrev inget i byn (${andrat} av ${n} gånger ändrades sparfilen)`, andrat === 0],
       [sa === sb ? 'sparfilerna är lika tecken för tecken' : `sparfilerna skiljer sig${lika > 0 ? ` redan efter ${lika} dygn` : ''}, första skillnaden: …${sa.slice(Math.max(0, d - 60), d + 40)}… mot …${sb.slice(Math.max(0, d - 60), d + 40)}…`, sa === sb],
     ];
+  },
+};
+SCENARIER.ikoner = {
+  text: 'Allt som gränssnittet visar med en symbol har en pixelbild i ikoner.ts: saker, tekniker, djur, grupperna i filtret, lagren, byggmaterial och slagen av arbete',
+  kor: () => {
+    const saknas = (ks: (string | undefined)[]) => ks.filter((k): k is string => !!k && !hasIcon(k));
+    const del: [string, string[]][] = [
+      ['saker', saknas(Object.keys(SAKER).filter(k => !SAKER[k]!.dold))], // det dolda syns aldrig (giftig svamp bland svampen)
+      ['tekniker', saknas(TEKNIK.map(t => t.id))],
+      ['djur', saknas(Object.keys(DJUR))],
+      ['grupper i filtret', saknas(Object.values(GRUPPER).map(g => g.ikon))],
+      ['lager', saknas(FYND_IDS.map(k => FYND[k].ikon))],
+      ['byggmaterial', saknas(Object.values(MATERIAL).map(m => m.ikon))],
+      ['slag av arbete', saknas(Object.values(ACTS).map(a => a.slag && slagIkon(a.slag)).filter(k => k !== 'zzz'))], // vila ritas som z
+      ['påbörjat redskap', saknas(['paborjat'])],
+    ];
+    return del.map(([namn, m]) => [m.length ? `${namn} utan symbol: ${m.join(', ')}` : `alla ${namn} har en symbol`, !m.length] as Koll);
   },
 };
 const flyttLitenBy = (s: State) => hungerFlytt(s, 6) === 0 && barnMat(s, 6) === 1 ? 'ingen' : `flytt ${hungerFlytt(s, 6)}, barn ${barnMat(s, 6)}`;

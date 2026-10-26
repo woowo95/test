@@ -46,13 +46,14 @@ Simuleringen importerar aldrig från `ui/`. Gränssnittet importerar bara från 
 | `plats.ts` | Byns läger (elden och lagerplatserna): mitten, avstånd till byn (`rektAvstand`: från en ruta till en rektangel; `campGrid(s)` för varje ruta på kartan) och `campKey` för cacher. Blocket `PLATS`: halv dags gång från lägret (`dagX` × `dagY` rutor), avståndspriset och urvalsstorlekarna |
 | `balans.ts` | Balanstalen (regel 8): `balans('system', { … })` ger ett namngivet block per system; `balansTal()` listar alla och miljövariabeln `BALANS` ändrar dem i testerna. Blocken: `EKONOMI` och `RESERV` (ekonomi.ts), `ARSTID` (tid.ts), `PLATS` (plats.ts; också lekplatsens läge), `BYGGNAD` (byggnad.ts: skyddet mot kyla), `BYGG` (bygg.ts), `HUS` (byggnader.ts), `SAMTAL` (samtal.ts), `SED` (seder.ts), `DELNING` (delning.ts), `VADER` (vader.ts), `SKOG` (skog.ts), `MARK` (mark.ts), `VAG` (vag.ts), `KANINER` (djur.ts), `MINNE` (minne.ts), `TEKTAL` (teknik.ts), `KROPP`, `ALDER` och `REL` (folk.ts), `STEG` (steg.ts), `VAL` (val.ts), `LIV` (liv.ts), `LAGER` (lager.ts), `ELD` (eld.ts), `FANGST` (fynd.ts), `REDSKAP` (redskap.ts) |
 | `tid.ts`, `vader.ts`, `ekonomi.ts`, `slump.ts` | Kalendern (`kalender()`: tidsålder måndag–söndag, dag och år, det enda ställe som räknar dem; `hourOf(t)` är klockslaget; tidsåldrarna heter `ISTID`, `VAR`, `SOMMAR` och `HOST`, och man frågar `iIstiden(ai)`, `foreIstiden(ai)` eller `kallTid(ai)` (inför och under istiden) i stället för att skriva `ai === 0`; blocket `ARSTID` har faktorerna per tidsålder), ljus, temperatur och kyla (blocket `VADER` i vader.ts: medeltemperaturen per tidsålder, solen, vädrets vågor och när man kyls), hur länge förråden räcker (`EKONOMI.matPerDygn`; `RESERV` är det som sparas till elden), och slumpen (`STROMMAR`: en följd per system och per person; `clamp(v, a, b)` och `clampI(v, n)` finns också där; slumpad ur en lista: `pick`, `pickNarmaste` (bland de n första) och `pickViktat` (efter vikter), som drar exakt ett tal) |
+| `format.ts` | Tal i text, för spelet och bilden: `num` (decimalkomma), `kortTal` (hela tal från 10) och `tiondel`. Text i loggen skrivs med dem, så ändra dem inte utan att räkna med att loggen ändras |
 
 ## Gränssnittet, fil för fil
 
 | Fil | Innehåll |
 |---|---|
 | `ui/lage.ts` | Det som alla delar: byn som visas (`s`, byts med `setByn`) och spelarens val (`ui`: flik, vald person, följ …) |
-| `ui/hjalp.ts` | Små hjälpare för text, tal, färger och staplar. `LAG` är bildens gränser för när en stapel eller ett porträtt märks som låg (röd); där simuleringen har en egen gräns läser bilden den (`KROPP.kallt`, `KROPP.svag`) |
+| `ui/hjalp.ts` | Små hjälpare för text, tal, färger och staplar. `LAG` är bildens gränser för när en stapel eller ett porträtt märks som låg (röd); där simuleringen har en egen gräns läser bilden den (`KROPP.kallt`, `KROPP.svag`). `hjalpKnapp`/`hjalpText`: förklarande text bakom en ?-knapp (symboler först). `PRICKAR`: prickarna på figuren (sjuk, väntar barn), samma i listorna |
 | `ui/scen.ts` | PixiJS-scenen, lagren som ritas ovanpå varandra, kameran och `Ikoner` (återanvända ikon-sprites) |
 | `ui/terrang.ts` | Marken och natten |
 | `ui/vaxter.ts` | Små bärbuskar och svampar i vanliga vyn där det finns något just nu (inte var det kan växa, inte rötter eller vilt) |
@@ -64,7 +65,7 @@ Simuleringen importerar aldrig från `ui/`. Gränssnittet importerar bara från 
 | `ui/panel.ts` | **Flikregistret** (FLIKAR) och listan över allt byn äger |
 | `ui/flikar/*.ts` | En fil per flik: folk (Invånare, Händelser), person, eld, lager (Lagret, Högen), hus (Huset: tryck på ett hus på kartan), seder, teknik |
 | `ui/spara.ts` | Sparning (webbläsaren och artefaktens databas), ikappräkning och sammanställningen efteråt. I molnet delas byn i flera dokument (`serializeParts`/`DELAR` i steg.ts, stora delar i bitar om `BIT` tecken) i två omväxlande platser, och sist ett manifest som pekar ut den hela; misslyckas det visas ☁✗. Byn sparas i molnet först när den lästs därifrån eller visat sig inte finnas; gick den inte att läsa (en del saknas, inget svar) visas ☁? och spelet försöker igen, och är byn i molnet nyare tar den över. Misslyckas sparningen i webbläsaren visas ⚠. Historikens veckodelar ligger utanför de två platserna och skrivs bara när de ändrats |
-| `ikoner.ts` | Pixelbilderna (8×8) för saker och handlingar |
+| `ikoner.ts` | Pixelbilderna (8×8) för saker och handlingar. Scenariot `ikoner` kontrollerar att allt i registren som visas med en symbol har en bild |
 
 ## Regler som håller ihop allt
 
