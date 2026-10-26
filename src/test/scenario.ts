@@ -11,7 +11,7 @@ const setItems = (s: State, m: Record<string, number>) => {
 const setMat = (s: State, m: Record<string, number>) => { for (const k of FOOD) setAmount(s, k, m[k] ?? 0); };
 // all mat blir n, i samma förhållande mellan slagen som förut (bär om det inte fanns någon)
 const setFood = (s: State, n: number) => { const f = foodOf(s); if (f > 0) { const m: Record<string, number> = {}; for (const k of FOOD) m[k] = amountOf(s, k) * n / f; setStock(s, m); } else setAmount(s, 'bar', n); };
-import { ALDER, stepFire, FOLDERS, STATS, ACTS, haulJob, fetchFuel, ownedAll, leave, chooseTask, stackOf, birth, coverOf, lightLevel, timeLabel, hearthOf, igniterOf, fireWant, fireHeat, heatRadius, emberOn, zoneAt, bitAt, husById, isSick, isSocial, moodOf, duty, habitTotal, habitShare, childrenOf, homeKind, taskName, carryKind, influence, hasMaterial, wornOf, relKey, sakNamn, tingNamn, visning, SAKER, slagIkon } from '../sim';
+import { ALDER, KROPP, inMap, stepFire, FOLDERS, STATS, ACTS, haulJob, fetchFuel, ownedAll, leave, chooseTask, stackOf, birth, coverOf, lightLevel, timeLabel, hearthOf, igniterOf, fireWant, fireHeat, heatRadius, emberOn, zoneAt, bitAt, husById, isSick, isSocial, moodOf, duty, habitTotal, habitShare, childrenOf, homeKind, taskName, carryKind, influence, hasMaterial, wornOf, relKey, sakNamn, tingNamn, visning, SAKER, slagIkon } from '../sim';
 import { hasIcon } from '../ikoner';
 import { findPath } from '../sim/vag';
 import { FOREST, HIGH, isSoil } from '../sim/vag';
@@ -482,7 +482,22 @@ SCENARIER.stenring = {
       return `${n} av ${samla}`;
     };
     const yxaSvalt = letar(1, 2), eldSvalt = letar(0, 2), yxaMat = letar(1, 200);
+    // den som hämtar tändmaterial åt en släckt eld fortsätter på en plats utan bär, och slutar när tändmaterialet räcker
+    const r = createState(4, START), rm = getMap(r.seed);
+    r.now = new Date(r.now).setHours(10, 0, 0, 0); Object.assign(r.fire, { lit: false, fuel: 0, emberUntil: undefined, ring: true });
+    setItems(r, { flinta: 1 }); setFood(r, 100);
+    const th = living(r).find(q => ageOf(q, r.now) >= ALDER.vuxen)!;
+    Object.assign(th, { toa: 1, warm: KROPP.kallt - 0.05, rest: 1, health: 1, hunger: 1, social: 1, task: undefined });
+    chooseTask(r, th);
+    const tom = (() => { const c = campCenter(r); for (let d = 4; d < 30; d++) for (let k = 0; k < 16; k++) { const x = Math.floor(c.x + Math.cos(k / 16 * 6.283) * d), y = Math.floor(c.y + Math.sin(k / 16 * 6.283) * d); if (inMap(x, y) && rm.tiles[y * W + x] !== T.Vatten && !isWall(r, x + 0.5, y + 0.5) && richness(r, 'samla', x + 0.5, y + 0.5) < 0.01) return { x: x + 0.5, y: y + 0.5 }; } })()!;
+    const valt = th.task?.act === 'samla' && !!th.task.tandmat;
+    Object.assign(th.task!, { tx: tom.x, ty: tom.y, phase: 'do', until: r.now + 3 * HOUR }); th.x = tom.x; th.y = tom.y;
+    kor(r, 0.5);
+    const fortsatt = th.task?.act === 'samla' && th.task.phase === 'do' && th.task.tx === tom.x && th.task.ty === tom.y && (th.task.items?.torrgras ?? 0) > 0;
+    setItems(r, { flinta: 1, torrgras: 50, grenar: 50 }); kor(r, 0.25);
+    const slutat = !(th.task?.act === 'samla' && th.task.phase === 'do' && th.task.tx === tom.x && th.task.ty === tom.y);
     return [
+      [`den som hämtar tändmaterial (${valt ? 'vald' : 'inte vald'}) fortsätter på en plats utan bär (${fortsatt ? 'ja' : 'nej'}) och slutar när det räcker (${slutat ? 'ja' : 'nej'})`, valt && fortsatt && slutat],
       [`flinta till en yxa letas inte när maten är knapp (${yxaSvalt} som samlar letar), men när den räcker (${yxaMat}); flinta till elden letas ändå (${eldSvalt})`, yxaSvalt.startsWith('0 ') && !yxaMat.startsWith('0 ') && !eldSvalt.startsWith('0 ')],
       [`stenar samlas och elden tänds (efter ${h} timmar)`, tand && logg(s, 'ring av stenar')],
       [`stenarna blir en ring runt elden (${kvar.toFixed(1)} stenar kvar i förrådet)`, ring && kvar < 1],

@@ -79,6 +79,7 @@ export interface Task {
   fran?: number; // den man tar ved av till elden (stöld, behov.ts)
   kom?: Record<string, number>; // var materialet till bygget kom ifrån (bygg.ts)
   sok?: true; // letar flinta eller stenar vid stenarna: blir platsen tom fortsätter man ändå i stället för att gå hem (steg.ts, workStep)
+  tandmat?: true; // samlar tändmaterial åt en släckt eld: blir platsen tom på bär fortsätter man tills tändmaterialet räcker (steg.ts, workStep)
 }
 
 export interface Person {

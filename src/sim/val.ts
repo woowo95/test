@@ -210,7 +210,7 @@ function dangers(s: State) {
 // elden är släckt och kan inte tändas för att det saknas tändmaterial, och för få hämtar det
 const tinderNeeded = (s: State) => !s.fire.lit && !emberOn(s) && !canLight(s) && needTinder(s) && living(s).filter(q => q.task?.act === 'samla').length < VAL.tandHamtare;
 // det som väljs: handlingen, varför, hur länge, och var om det inte följer av handlingen
-interface Val { act: Act; why: string; dur: number; spot?: { x: number; y: number }; ref?: number; tool?: string; site?: { x: number; y: number }; sok?: true }
+interface Val { act: Act; why: string; dur: number; spot?: { x: number; y: number }; ref?: number; tool?: string; site?: { x: number; y: number }; sok?: true; tandmat?: true }
 const set = (v: Val, act: Act, why: string) => { v.act = act; v.why = why; return true; };
 // dagens pass är hälften så långa som förr (steg 1.5.11, VAL.pass), arbete och fritid lika, så att tiden fördelas som förut men
 // folk väljer om oftare och syns gå mellan platserna
@@ -223,7 +223,7 @@ export function chooseTask(s: State, p: Person) {
   if (!needs(s, p, v, a, lazy, light)) { if (light) day(s, p, v, a, lazy); else night(s, p, v, a); }
   if (v.act === 'toa') v.dur = (VAL.toaMin + rnd(s, 'val', p) * VAL.toaSpann) * MIN;
   const sp0 = v.spot ?? spotFor(s, v.act, p), sp = freeNear(s, sp0.x, sp0.y); // aldrig i en husvägg
-  p.task = { act: v.act, phase: 'go', tx: sp.x, ty: sp.y, until: s.now + v.dur + (startsOnArrival(v.act) ? GA_TID : 0), carry: 0, why: v.why, dark: !light, ref: v.ref, tool: v.tool, site: v.site, sok: v.sok };
+  p.task = { act: v.act, phase: 'go', tx: sp.x, ty: sp.y, until: s.now + v.dur + (startsOnArrival(v.act) ? GA_TID : 0), carry: 0, why: v.why, dark: !light, ref: v.ref, tool: v.tool, site: v.site, sok: v.sok, tandmat: v.tandmat };
   const k = usesTool(p.task);
   if (k && !take(s, p, k)) p.task.tool = undefined; // redskapet tas i handen: det egna först (agande.ts)
 }
@@ -239,7 +239,7 @@ function needs(s: State, p: Person, v: Val, a: number, lazy: number, light: bool
   if (p.warm < KROPP.farligt && lit) return set(v, 'varma', 'Fryser farligt');
   // elden går inte att tända för att tändmaterial saknas: den som fryser men orkar hämtar det i stället för att gå in.
   // Kylan är faran och elden det enda som hjälper mot den (några räcker; de andra går in och väntar)
-  if (p.warm < KROPP.kallt + KROPP.latVarme * lazy && a >= ALDER.vuxen && tinderNeeded(s)) return set(v, 'samla', 'Fryser, men utan tändmaterial blir det ingen eld');
+  if (p.warm < KROPP.kallt + KROPP.latVarme * lazy && a >= ALDER.vuxen && tinderNeeded(s)) { v.tandmat = true; return set(v, 'samla', 'Fryser, men utan tändmaterial blir det ingen eld'); }
   if (p.warm < KROPP.farligt && bedTile(s, p) !== undefined) return set(v, 'vila', 'Fryser farligt och går in i huset');
   if (!light && a > ALDER.sovGammal && rnd(s, 'val', p) < VAL.gammalSover) return set(v, 'sova', 'Är gammal och sover på natten');
   if (p.toa < KROPP.toaBehov + KROPP.latToa * lazy) return set(v, 'toa', 'Behöver gå på toa');
@@ -277,19 +277,21 @@ function day(s: State, p: Person, v: Val, a: number, lazy: number) {
   if (leta) best = 'samla';
   const u = clamp(burg / VAL.akut, 0, 1); // hur akut byn behöver arbete
   const sat = Math.min(p.hunger, p.rest, p.social); // hur väl de egna behoven är fyllda
-  const what = leta ? `Byn behöver ${needStones(s) ? 'stenar' : 'flinta'}` : build && job!.missing ? `Bygget behöver ${job!.item === 'torrgras' ? 'hö' : job!.item === 'ved' ? 'trä' : 'grenar'}` : best === 'ved' ? `Byn behöver trä, förrådet räcker ${dygn(wd)}` : best === 'samla' && needTinder(s) ? 'Byn behöver tändmaterial till elden' : `Byn behöver mat, förrådet räcker ${dygn(fd)}`;
+  const tandmat = !leta && !(build && job!.missing) && best === 'samla' && needTinder(s); // samlar tändmaterial åt en släckt eld
+  const what = leta ? `Byn behöver ${needStones(s) ? 'stenar' : 'flinta'}` : build && job!.missing ? `Bygget behöver ${job!.item === 'torrgras' ? 'hö' : job!.item === 'ved' ? 'trä' : 'grenar'}` : best === 'ved' ? `Byn behöver trä, förrådet räcker ${dygn(wd)}` : tandmat ? 'Byn behöver tändmaterial till elden' : `Byn behöver mat, förrådet räcker ${dygn(fd)}`;
   let works = false;
   if (a >= ALDER.ansvar && (s.fire.ash ?? 0) >= 1 && !s.fire.lit && !emberOn(s) && fireWant(s) < VAL.kolEld && rnd(s, 'val', p) < VAL.kolChans && !ppl.some(q => q.task?.act === 'kol')) {
     set(v, 'kol', 'Det ligger kol kvar i den slocknade elden');
     v.dur = VAL.kolMin * MIN;
   } else if (a < ALDER.vuxen) {
     if (rnd(s, 'val', p) < VAL.lekBas + VAL.lekSed * sd.barn) set(v, 'leka', 'Är barn och leker');
-    else set(v, best, `Hjälper till. ${what}.`);
+    else { set(v, best, `Hjälper till. ${what}.`); if (tandmat) v.tandmat = true; }
   } else if ((works = rnd(s, 'val', p) < (1 - lazy) * (VAL.flitigBas + VAL.flitigAkut * u) + lazy * sat * (VAL.latBas + VAL.latAkut * u)) && build && !job!.missing) {
     building(s, p, v, job!);
   } else if (works) {
     set(v, best, what + (lazy < 0.2 ? '. Plikttrogen.' : habitShare(p, [best], tot) > 0.25 ? '. Brukar göra det.' : p.skill[best as Skill] > 10 ? '. Skicklig på det.' : '.'));
     v.dur = (VAL.arbeteMin + rnd(s, 'val', p) * VAL.arbeteSpann) * MIN * VAL.pass;
+    if (tandmat) v.tandmat = true;
     withTools(s, p, v, best, what, fd, ai, leta);
     if (build && job!.missing && job!.item === 'ved' && v.act === 'falla') { v.ref = job!.bit.hus; v.why = `${v.why} Stocken ska bli en vägg.`; } // trädet fälls för bygget
   } else leisure(s, p, v, u, lazy, ai);

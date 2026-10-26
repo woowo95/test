@@ -14,7 +14,7 @@ import { chance, clamp, rnd } from './slump';
 import { ARSTID, ageIndex, iIstiden, isLight } from './tid';
 import { kronika } from './historik';
 import { SNABBARE } from './handlingar';
-import { Act, DAY, Fire, FireLog, GREN, HEARTHS, HOUR, HOUR_S, IGNITERS, Person, SEC, State } from './typer';
+import { Act, DAY, Fire, FireLog, GREN, HEARTHS, HOUR, HOUR_S, IGNITERS, Person, SEC, State, Task } from './typer';
 import { balans } from './balans';
 import { num } from './format';
 
@@ -119,6 +119,8 @@ function fireWish(s: State, p: Person, vc: number): Wish {
 }
 // tändmaterial som invånarna vill ha i förrådet
 const tinderWant = (s: State) => (s.fire.lit ? RESERV.tandVill : RESERV.tandVillSlocknad);
+// hö eller grenar räcker inte till det byn vill ha, med det den som samlar redan bär (tk)
+export const tinderShort = (s: State, tk?: Task) => amountOf(s, 'torrgras') + (tk?.items?.torrgras ?? 0) < tinderWant(s) || amountOf(s, 'grenar') + (tk?.items?.grenar ?? 0) < tinderWant(s);
 // den första elden läggs i en ring av stenar; ringen ligger kvar när elden slocknat
 export const needStones = (s: State) => !s.fire.ring && amountOf(s, 'sten') < ELD.ring;
 // kan elden tändas (av p: med det p kan få, behov.ts)

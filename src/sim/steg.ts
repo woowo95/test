@@ -8,7 +8,7 @@ import { thinkWhileWorking } from './teknik';
 import { arbetsformaga, foodDays, workRate } from './ekonomi';
 import { TRY_SEC, growFynd, handFish, packFynd, pickMushrooms, richness, richnessDelar, takeFrom } from './fynd';
 import { coldOf, temperature } from './vader';
-import { addFuel, canLight, fireWant, forageItems, fuelFor, hearthOf, heatAt, igniterOf, stepFire, takeCoal, takeFuel, tryLight } from './eld';
+import { addFuel, canLight, fireWant, forageItems, fuelFor, hearthOf, heatAt, igniterOf, stepFire, takeCoal, takeFuel, tinderShort, tryLight } from './eld';
 import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, isSick, living, log, ovning, stat, think } from './folk';
 import { getMap } from './karta';
 import { DODSORSAKER, barnMat, birth, birthWish, die, regulate } from './liv';
@@ -394,7 +394,8 @@ function workStep(s: State, p: Person, tk: Task, dtSec: number, a: number, learn
   const res = d.resurs, del = res && d.takt === undefined ? richnessDelar(s, res, tk.tx, tk.ty) : undefined, rich = del ? del.rich : 1;
   const y = workRate(s, p, tk.act) * dtSec * (rd?.ger ?? 1) * (d.takt ?? rich);
   if (y > 0) count(s, 'prod_' + tk.act, y);
-  if (res && del) { takeFrom(s, res, tk.tx, tk.ty, y, del.r); if (rich < PLATS.tomtGrans && !tk.sok) tk.until = now; } // tomt här: gå hem eller vidare (den som letar flinta eller stenar fortsätter)
+  // tomt här: gå hem eller vidare. Den som letar flinta eller stenar fortsätter, och den som samlar tändmaterial tills det räcker
+  if (res && del) { takeFrom(s, res, tk.tx, tk.ty, y, del.r); if (rich < PLATS.tomtGrans && !tk.sok && !(tk.tandmat && tinderShort(s, tk))) tk.until = now; }
   // den som arbetar ser hur mycket som finns i området och minns det
   if (res && (rich < PLATS.tomtGrans || chance(s, 1 / 1800, dtSec, 'minne', p))) lookAround(s, p, tk.tx, tk.ty);
   const bar = (k: string, n: number) => { if (n > 0) { tk.items ??= {}; tk.items[k] = (tk.items[k] ?? 0) + n; } };
