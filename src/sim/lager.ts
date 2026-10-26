@@ -253,24 +253,26 @@ const key = (x: number, y: number) => y * W + x;
 // redskapen som ligger på en ruta (inte i någons hand eller börda)
 const ligger = (t: Ting) => t.x !== undefined && t.hos === undefined && t.lass === undefined;
 const lying = (s: State) => tingOf(s).filter(ligger);
-// det som ligger i förrådet, per ruta: stackarna och sedan redskapen (det sista på en ruta gäller, som i things)
-function occupancy(s: State) {
+// det som ligger i förrådet, per ruta: stackarna och sedan redskapen ts (det sista på en ruta gäller, som i things)
+function occupancy(s: State, ts = tingOf(s)) {
   const m = new Map<number, Stack>();
   for (const a of stacksOf(s)) if (isStored(s, a.x, a.y)) m.set(key(a.x, a.y), a);
-  for (const t of tingOf(s)) if (ligger(t) && isStored(s, t.x!, t.y!)) m.set(key(t.x!, t.y!), asStack(t));
+  for (const t of ts) if (ligger(t) && isStored(s, t.x!, t.y!)) m.set(key(t.x!, t.y!), asStack(t));
   return m;
 }
 const asStack = (t: Ting): Stack => ({ k: t.k, n: t.c, c: t.c, x: t.x!, y: t.y!, ag: t.agare !== BYN ? { [t.agare]: t.c } : undefined, gor: t.halv?.gor });
 // allt som ligger på marken och i förrådet: stackarna och redskapen
 const things = (s: State): Stack[] => [...stacksOf(s), ...lying(s).map(asStack)];
 // redskap som ingen har och som inte har någon ruta (nygjorda, tillbakalagda) läggs i förrådet, ett på varje ruta
-function placeTools(s: State) {
-  for (const t of tingOf(s)) {
-    if (t.hos !== undefined || t.lass !== undefined || t.x !== undefined) continue;
-    const occ = occupancy(s), sp = zoneSpot(s, t.k, -Infinity, occ) ?? besideSpot(s, t.k, occ);
+const utanRuta = (t: Ting) => t.hos === undefined && t.lass === undefined && t.x === undefined;
+function placeOn(s: State, ts: Ting[]) {
+  for (const t of ts) {
+    if (!utanRuta(t)) continue;
+    const occ = occupancy(s, ts), sp = zoneSpot(s, t.k, -Infinity, occ) ?? besideSpot(s, t.k, occ);
     t.x = sp.x; t.y = sp.y;
   }
 }
+const placeTools = (s: State) => placeOn(s, tingOf(s));
 const roomIn = (a: Stack | undefined, k: string) => !a || (a.k === k && !isTool(k) && a.n < RUTA[k] - 1e-9);
 // bästa plats i en lagerplats för ett slag: lagerplatserna i prioritetsordning, först en stack av samma slag som inte
 // är full, sedan en tom ruta. minPrio: bara lagerplatser med högre prioritet än så
@@ -451,10 +453,12 @@ export function storeFromSums(s: State) {
   changed(s);
 }
 
-// alla stackar med plats och skick
+// alla stackar med plats och skick. Gränssnittet frågar, så byn ändras inte: ett redskap utan ruta visas där det skulle
+// läggas, men det är en kopia som får rutan (simuleringen lägger det själv när det behövs, placeTools)
 export function pilesOf(s: State): Pile[] {
-  placeTools(s);
-  return things(s).map(a => { const zone = zoneAt(s, a.x, a.y); return { ...a, max: rutaOf(a.k), zone, out: zone < 0, stored: isStored(s, a.x, a.y) }; });
+  const ts = tingOf(s).map(t => utanRuta(t) ? { ...t } : t);
+  placeOn(s, ts);
+  return [...stacksOf(s), ...ts.filter(ligger).map(asStack)].map(a => { const zone = zoneAt(s, a.x, a.y); return { ...a, max: rutaOf(a.k), zone, out: zone < 0, stored: isStored(s, a.x, a.y) }; });
 }
 
 // ---------- slitage ----------

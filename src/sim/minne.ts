@@ -7,7 +7,7 @@ import { groundOf, tileOf } from './mark';
 import { kn, learnK } from './kunskap';
 import { clamp, pickViktat, rnd } from './slump';
 import { ageIndex, lightLevel } from './tid';
-import { DAY, H, HOUR, LKind, Lardom, Person, Rel, State, T, W } from './typer';
+import { DAY, H, HOUR, LKind, Lardom, Person, Rel, State, T, W, egen, tvaDelar, visning } from './typer';
 import { FOREST } from './vag';
 import { balans } from './balans';
 
@@ -87,18 +87,19 @@ const areaCenter = (a: number) => ({ x: Math.min(W, (a % aw()) * AREA + AREA / 2
 
 // hur mycket ett område ger, så som man ser det när man går runt där: snittet av de fem bästa rutorna.
 // 'nu' är det som finns kvar, 'vaxer' var det växer (buskar och spår syns även när det är plockat) och 'syns'
-// vad marken ser ut att kunna ge för den som inte varit där. Sparas en timme i taget.
+// vad marken ser ut att kunna ge för den som inte varit där. Sparas en timme i taget (av gränssnittet i en egen del, typer.ts).
 const LKINDS: LKind[] = ['samla', 'jakt', 'fiske', 'flinta', 'fara'];
 const MODES = ['nu', 'vaxer', 'syns'] as const;
 type Mode = typeof MODES[number];
 const LK_I = Object.fromEntries(LKINDS.map((k, i) => [k, i])) as Record<LKind, number>;
 const MODE_I = Object.fromEntries(MODES.map((m, i) => [m, i])) as Record<Mode, number>;
-const areaCache = new WeakMap<State, { hr: number; v: Float64Array }>();
+const areaCache = tvaDelar<{ hr: number; v: Float64Array }>();
 function areaValue(s: State, k: LKind, a: number, mode: Mode = 'nu') {
-  const hr = Math.floor(s.now / HOUR), n = aw() * ah();
-  let c = areaCache.get(s);
-  if (!c || c.hr !== hr) { c = { hr, v: new Float64Array(LKINDS.length * n * 3).fill(NaN) }; areaCache.set(s, c); }
-  const key = (LK_I[k] * n + a) * 3 + MODE_I[mode];
+  const hr = Math.floor(s.now / HOUR), n = aw() * ah(), key = (LK_I[k] * n + a) * 3 + MODE_I[mode];
+  if (visning.pa) { const f = areaCache.sim.get(s); if (f?.hr === hr && !Number.isNaN(f.v[key])) return f.v[key]; }
+  const m = egen(areaCache);
+  let c = m.get(s);
+  if (!c || c.hr !== hr) { c = { hr, v: new Float64Array(LKINDS.length * n * 3).fill(NaN) }; m.set(s, c); }
   let v = c.v[key];
   if (Number.isNaN(v)) c.v[key] = v = areaCalc(s, k, a, mode);
   return v;

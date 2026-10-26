@@ -7,10 +7,11 @@ import { VAR, inFas, nyKalender } from './tid';
 import { ageOf, byId, getRel, log, newPerson, startSkills, think } from './folk';
 import { newSeder, sederTarget, TAGS } from './seder';
 import { clamp, gauss, rnd } from './slump';
-import { DAY, Fire, NEW_H, NEW_W, Person, SEC, State, useMap } from './typer';
+import { DAY, Fire, NEW_H, NEW_W, Person, SEC, State, simulera, useMap } from './typer';
 
 // ---------- skapa värld ----------
-export function createState(seed: number, now: number): State {
+export function createState(seed: number, now: number): State { return simulera(() => skapaBy(seed, now)); } // som simuleringen (typer.ts)
+function skapaBy(seed: number, now: number): State {
   // en liten koloni: två par och ett barn, utan eld och med lite mat och grenar
   const s: State = { v: SPARVERSION, seed, founded: now, now, people: [], rels: {}, nextId: 1, log: [], lastAgeIdx: VAR, lastGuardDay: -1, fire: newFire(), seder: newSeder(), W: NEW_W, H: NEW_H, kal: nyKalender(now) };
   useMap(s);
@@ -86,7 +87,8 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
   }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];
-export function migrate(s: State) {
+export function migrate(s: State) { return simulera(() => uppgradera(s)); }
+function uppgradera(s: State) {
   useMap(s);
   for (const [n, , gor] of UPPGRADERINGAR) if ((s.v ?? 1) < n) { gor(s); s.v = n; }
   return s;

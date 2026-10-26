@@ -20,6 +20,20 @@ export function useMap(s: { W?: number; H?: number }) { W = s.W ?? 64; H = s.H ?
 export const mapKey = (seed: number) => `${seed}:${W}x${H}`;
 export const inMap = (x: number, y: number) => x >= 0 && y >= 0 && x < W && y < H; // punkten eller rutan ligger på kartan
 
+// Gränssnittet läser byn mellan stegen, och då är visning.pa sann (i webbläsaren, utom i step, createState och migrate, som
+// räknar som simuleringen: `simulera`). En cache vars svar beror på när det räknas och inte bara på nyckeln har två delar
+// (`tvaDelar`): sim fylls bara av simuleringen, och gränssnittet läser den när nyckeln stämmer men räknar annars i bild.
+// Så utvecklas byn likadant vad gränssnittet än läser (regel 4 i ARKITEKTUR.md, scenariot ui-ren)
+export const visning = { pa: false };
+export interface TvaDelar<V> { sim: WeakMap<State, V>; bild: WeakMap<State, V> }
+export const tvaDelar = <V>(): TvaDelar<V> => ({ sim: new WeakMap(), bild: new WeakMap() });
+export const egen = <V>(c: TvaDelar<V>) => (visning.pa ? c.bild : c.sim); // delen som den som räknar nu fyller
+export function simulera<T>(fn: () => T): T {
+  const v = visning.pa;
+  visning.pa = false;
+  try { return fn(); } finally { visning.pa = v; }
+}
+
 export enum T { Vatten, Sand, Gras, Skog, Sten }
 
 export const STATS = ['styrka', 'uthallighet', 'intelligens', 'nyfikenhet', 'karisma', 'skonhet', 'flit', 'empati', 'mod', 'minne'] as const;

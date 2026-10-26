@@ -2,7 +2,7 @@ import { FYND, fyndAt, setNarvaro, vaxerAt, vaxerKarta } from './fynd';
 import { hash } from './karta';
 import { clamp } from './slump';
 import { living } from './folk';
-import { H, HOUR, SEC, State, W, inMap, mapKey } from './typer';
+import { H, HOUR, SEC, State, W, egen, inMap, mapKey, tvaDelar, visning } from './typer';
 import { balans } from './balans';
 
 // ---------- djur: kaniner i grupper ----------
@@ -43,19 +43,21 @@ const LIVSTID = KANINER.livTim * HOUR; // så länge en grupp håller till i sam
 const SKUTT = KANINER.skuttSek * SEC; // så ofta en kanin skuttar, ungefär
 
 interface Start { x0: number; y0: number; x1: number; y1: number; n0: number }
-const starter = new WeakMap<State, Map<string, Start | null>>();
+const starter = tvaDelar<Map<string, Start | null>>(); // gränssnittet räknar i en egen del (typer.ts)
 const tidAv = (k: number) => (k * LIVSTID) / KANINER.grupper; // grupperna byter plats en i taget
-const epokOf = (s: State, k: number) => Math.floor((s.now - tidAv(k)) / LIVSTID);
+const epokOf = (k: number, t: number) => Math.floor((t - tidAv(k)) / LIVSTID);
 // var grupp k dyker upp under sin tid e: en ruta där kartan är hög (slumpad med vikt efter kartan), en bit från de andra
-// grupperna, och den bästa platsen i närheten som den rör sig mot
-function start(s: State, k: number, e: number): Start | null {
-  let m = starter.get(s);
-  if (!m) starter.set(s, m = new Map());
-  const key = `${mapKey(s.seed)},${k},${e}`;
+// grupperna (där de är vid tiden t), och den bästa platsen i närheten som den rör sig mot
+function start(s: State, k: number, e: number, t: number): Start | null {
+  const key = `${mapKey(s.seed)},${k},${e}`, f = starter.sim.get(s);
+  if (f?.has(key)) return f.get(key)!;
+  const d = egen(starter);
+  let m = d.get(s);
+  if (!m) d.set(s, m = new Map());
   if (m.has(key)) return m.get(key)!;
   const topp = FYND.jakt.topp, salt = s.seed * 31 + k * 977 + e * 7919;
   const andra: { x: number; y: number }[] = [];
-  for (let j = 0; j < k; j++) { const g = mitt(s, j); if (g) andra.push(g); }
+  for (let j = 0; j < k; j++) { const g = mitt(s, j, t); if (g) andra.push(g); }
   let bi = -1, bs = -Infinity;
   const vax = vaxerKarta(s, 'jakt');
   for (let i = 0; i < W * H; i++) {
@@ -82,20 +84,21 @@ function start(s: State, k: number, e: number): Start | null {
   m.set(key, st);
   return st;
 }
-// gruppens mitt just nu: den glider mot den bättre platsen under första delen av sin tid
-function mitt(s: State, k: number) {
-  const e = epokOf(s, k), st = start(s, k, e);
+// gruppens mitt vid tiden t: den glider mot den bättre platsen under första delen av sin tid
+function mitt(s: State, k: number, t = s.now) {
+  const e = epokOf(k, t), st = start(s, k, e, t);
   if (!st) return undefined;
-  const f = Math.min(1, ((s.now - tidAv(k)) / LIVSTID - e) * KANINER.glid), g = f * f * (3 - 2 * f);
+  const f = Math.min(1, ((t - tidAv(k)) / LIVSTID - e) * KANINER.glid), g = f * f * (3 - 2 * f);
   return { x: st.x0 + (st.x1 - st.x0) * g, y: st.y0 + (st.y1 - st.y0) * g, e, st };
 }
 // varje steg: en grupp som får en ny tid väljer sin plats direkt, så att platsen blir densamma i båda lägena
 export function djurSteg(s: State) { for (let k = 0; k < KANINER.grupper; k++) mitt(s, k); }
-// grupperna just nu. En grupp krymper där lagret är tömt (där man jagat), och är tom när det jagats slut
-export function grupperOf(s: State): Kaningrupp[] {
+// grupperna vid tiden t (just nu om inget annat sägs). En grupp krymper där lagret är tömt (där man jagat), och är tom
+// när det jagats slut
+export function grupperOf(s: State, t = s.now): Kaningrupp[] {
   const ut: Kaningrupp[] = [];
   for (let k = 0; k < KANINER.grupper; k++) {
-    const c = mitt(s, k);
+    const c = mitt(s, k, t);
     if (!c) continue;
     let har = 0, kan = 0;
     const cx = Math.floor(c.x), cy = Math.floor(c.y);
@@ -110,11 +113,12 @@ export function grupperOf(s: State): Kaningrupp[] {
   return ut;
 }
 // hur mycket jakten ger på rutan, mot kartan: narvBas långt från alla grupper, narvBas + narvK mitt i en full grupp.
-// Räknas om varje timme
-const narv = new WeakMap<State, { key: string; v: Float32Array }>();
+// Räknas om varje timme (av gränssnittet i en egen del, typer.ts)
+const narv = tvaDelar<{ key: string; v: Float32Array }>();
 function narvaroAt(s: State, i: number) {
   const key = `${mapKey(s.seed)},${Math.floor(s.now / HOUR)}`;
-  let c = narv.get(s);
+  let c = narv.sim.get(s);
+  if (visning.pa && c?.key !== key) c = narv.bild.get(s);
   if (!c || c.key !== key) {
     const v = new Float32Array(W * H).fill(KANINER.narvBas);
     for (const g of grupperOf(s)) {
@@ -126,18 +130,19 @@ function narvaroAt(s: State, i: number) {
           if (d < KANINER.narvR) v[y * W + x] += w * (1 - d / KANINER.narvR);
         }
     }
-    narv.set(s, c = { key, v });
+    egen(narv).set(s, c = { key, v });
   }
   return c.v[i];
 }
 setNarvaro('jakt', narvaroAt);
-// var kaninerna är just nu: nära gruppens mitt, ett skutt i taget, och undan från folk som kommer nära
-export function djurOf(s: State): Djur[] {
+// var kaninerna är vid tiden t (gränssnittet ger tiden som visas): nära gruppens mitt, ett skutt i taget, och undan
+// från folk som kommer nära
+export function djurOf(s: State, t = s.now): Djur[] {
   const ppl = living(s), out: Djur[] = [];
-  for (const g of grupperOf(s)) for (let j = 0; j < g.n; j++) {
+  for (const g of grupperOf(s, t)) for (let j = 0; j < g.n; j++) {
     const id = g.id * 8 + j, ang = hash(id, 4, 11) * Math.PI * 2, r = KANINER.spridd * Math.sqrt(hash(id, 5, 13));
     const hx = g.x + Math.cos(ang) * r, hy = g.y + Math.sin(ang) * r;
-    const t = s.now / SKUTT + hash(id, 3, 5) * 10, k = Math.floor(t), f = t - k;
+    const u = t / SKUTT + hash(id, 3, 5) * 10, k = Math.floor(u), f = u - k;
     const at = (n: number) => ({ x: hx + (hash(id, n, 1) - 0.5) * 1.2, y: hy + (hash(id, n, 2) - 0.5) * 1.2 });
     const a = at(k), b = at(k + 1), hop = f > 0.85 ? (f - 0.85) / 0.15 : 0; // sitter still, sedan ett snabbt skutt
     let x = a.x + (b.x - a.x) * hop, y = a.y + (b.y - a.y) * hop;

@@ -1,4 +1,4 @@
-import { AGES, BEAT, DAY, HOUR, MIN, SEC, TalkEvent, kalender, alive, byId, coverOf, createState, getMap, groundOf, isLight, rikedomDelar, serialize, spar, step, temperature, yearNo, State } from './sim';
+import { AGES, BEAT, DAY, HOUR, MIN, SEC, TalkEvent, kalender, alive, byId, coverOf, createState, getMap, groundOf, isLight, rikedomDelar, serialize, spar, step, temperature, visning, yearNo, State } from './sim';
 import { $ } from './ui/hjalp';
 import { s, setByn, ui, nyBild } from './ui/lage';
 import { TS, app, cam, layout, view, world } from './ui/scen';
@@ -103,6 +103,7 @@ window.addEventListener('pagehide', () => { saveLocal(); });
 
 async function boot() {
   spar.pa = true; // vägen var och en går under slaget sparas för att ritas
+  visning.pa = true; // gränssnittet läser byn utan att ändra den (typer.ts); step räknar ändå som simuleringen
   $('map').appendChild(view);
   layout();
   new ResizeObserver(layout).observe($('map'));

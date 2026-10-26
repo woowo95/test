@@ -20,7 +20,7 @@ import { PLATS } from './plats';
 import { chance, clamp, rnd } from './slump';
 import { ARSTID, ageIndex, iIstiden, isLight } from './tid';
 import { ACTS, toolRow } from './handlingar';
-import { Act, DAY, HOUR, HOUR_S, MIN, Person, SEC, SKILL_NAMES, State, Task, W, H, useMap, Historik } from './typer';
+import { Act, DAY, HOUR, HOUR_S, MIN, Person, SEC, SKILL_NAMES, State, Task, W, H, useMap, Historik, simulera } from './typer';
 import { findPath, speedAt, wear } from './vag';
 import { chooseTask } from './val';
 import { djurSteg } from './djur';
@@ -91,7 +91,8 @@ MEDAN.falla = workHalf;
 
 // ---------- huvudsteg ----------
 // ett slag om dtSec sekunder (BEAT i spelet och ikappräkningen; testerna kan ta andra). events = samtalen, för att visa dem
-export function step(s: State, dtSec: number, events?: TalkEvent[]) {
+export function step(s: State, dtSec: number, events?: TalkEvent[]) { simulera(() => slag(s, dtSec, events)); } // också när gränssnittet räknar (typer.ts)
+function slag(s: State, dtSec: number, events?: TalkEvent[]) {
   useMap(s);
   const t0 = s.now;
   s.now += dtSec * SEC;

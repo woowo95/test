@@ -11,6 +11,7 @@ const setItems = (s: State, m: Record<string, number>) => {
 const setMat = (s: State, m: Record<string, number>) => { for (const k of FOOD) setAmount(s, k, m[k] ?? 0); };
 // all mat blir n, i samma förhållande mellan slagen som förut (bär om det inte fanns någon)
 const setFood = (s: State, n: number) => { const f = foodOf(s); if (f > 0) { const m: Record<string, number> = {}; for (const k of FOOD) m[k] = amountOf(s, k) * n / f; setStock(s, m); } else setAmount(s, 'bar', n); };
+import { FOLDERS, STATS, ACTS, coverOf, lightLevel, timeLabel, hearthOf, igniterOf, fireWant, fireHeat, heatRadius, emberOn, zoneAt, bitAt, husById, isSick, isSocial, moodOf, duty, habitTotal, habitShare, childrenOf, homeKind, taskName, carryKind, influence, hasMaterial, wornOf, relKey, sakNamn, tingNamn, visning } from '../sim';
 import { findPath } from '../sim/vag';
 import { FOREST, HIGH, isSoil } from '../sim/vag';
 import { START } from './kor';
@@ -38,6 +39,46 @@ function uttag(s: State, k: Kind, min: number, max: number) {
   let n = 0, v = 0;
   for (let i = 0; i < t.length; i++) { const d = campDist(s, i % W, Math.floor(i / W)); if (d >= min && d < max) { n++; v += t[i]; } }
   return n ? v / n : 0;
+}
+
+// det gränssnittet läser ur byn (ui/ och main.ts), med de argument det ger: kartan, förrådet, varje person och varje flik.
+// t är tiden som visas (ui.nu), lite före byns tid. Det som bara går med en skärm (pixi, sidan) är inte med. Som i
+// webbläsaren läser gränssnittet i visningsläget (visning i typer.ts)
+function uiLas(s: State, t: number) {
+  visning.pa = true;
+  try { uiLasNu(s, t); } finally { visning.pa = false; }
+}
+function uiLasNu(s: State, t: number) {
+  kalender(s, t); yearNo(s, t); temperature(s, t); isLight(t); lightLevel(t); timeLabel(s, t); ageIndex(s); rikedomDelar(s);
+  // kartan: filtret, växterna, djuren, marken och elden
+  for (const k of FYND_IDS) for (let i = 0; i < W * H; i++) { vaxerAt(s, k, i); fyndAt(s, k, i); }
+  djurOf(s, t);
+  groundOf(s); coverOf(s); campCenter(s); getMap(s.seed);
+  hearthOf(s.fire); igniterOf(s); fireWant(s); fireHeat(s); heatRadius(s); emberOn(s);
+  // förrådet, lagerplatserna och högarna
+  for (const pl of pilesOf(s)) { condOf(pl); sakNamn(pl.k); }
+  for (const f of FOLDERS) for (const k of f.k) { amountOf(s, k); ownedSum(s, k); grundvarde(k); wornOf(s, k); }
+  for (const tg of tingOf(s)) tingNamn(tg);
+  // rutorna under musen: lagerplats, hus och rum
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { zoneAt(s, x, y); const b = bitAt(s, x, y); if (b) husById(s, b.hus); const r = roomAt(s, x, y); if (r) { insulation(s, r); husById(s, r.hus); } }
+  for (const z of zonesOf(s)) void z.namn;
+  // husfliken
+  for (const h of housesOf(s)) { husById(s, h.id); komOf(h); fnOf(h); for (const r of gridOf(s).rooms) if (r.hus === h.id) insulation(s, r); }
+  for (const b of bitsOf(s)) void b.hus;
+  // teknik och seder
+  for (const tk of TEKNIK) { hasMaterial(s, tk); for (const p of living(s)) knows(p, tk.id); }
+  for (const p of living(s)) influence(s, p);
+  // varje person: porträtten, invånarlistan, personfliken och figuren på kartan
+  const slag = Object.keys(ACTS) as Act[];
+  for (const p of s.people) {
+    ageOf(p, s.now); isSick(p, s.now); isSocial(p); moodOf(p, s.now); duty(s, p); childrenOf(s, p);
+    for (const k of STATS) stat(p, k, s.now);
+    const tot = habitTotal(p); for (const a of slag) habitShare(p, [a], tot);
+    heldBy(s, p); ownedBy(s, p); ownedStock(s, p); capacity(s, p);
+    if (p.task) { load(p.task); homeKind(p.task); taskName(p.task); carryKind(p.task.act); }
+    for (const l of p.lardomar ?? []) describe(s, l);
+    for (const q of s.people) void s.rels[relKey(p.id, q.id)];
+  }
 }
 
 // lang: tar 13 s eller mer (datorns tid). Den snabba kollen (npm run snabbkoll) hoppar över dem om de inte nämns
@@ -1791,6 +1832,33 @@ SCENARIER.natur = {
       [`en by på sex flyttar inte för maten och får lika många barn (${flytt})`, flytt === 'ingen'],
       [`efter tre dygn (tre år i spelet) med tolv dygns mat har snittet nått dit (${efter.toFixed(1)})`, efter > 11 && efter < 12.1],
       [`gott om mat: inga färre barn, ingen flytt för maten (${matGott(s).toFixed(2)})`, matGott(s) === 1 && barnMat(s, 12) === 1 && hungerFlytt(s, 12) === 0],
+    ];
+  },
+};
+SCENARIER['ui-ren'] = {
+  text: 'Gränssnittet ändrar inte byn: två likadana byar i takt, den ena läser som gränssnittet varannan halvtimme, och sparfilerna blir lika',
+  kor: () => {
+    const a = createState(21, START), b = createState(21, START), DYGN = 3;
+    let lika = -1, n = 0, andrat = 0;
+    for (let i = 0; i < DYGN * 24 * 12; i++) {
+      step(a, BEAT); step(b, BEAT);
+      // sparfilen före och efter läsningarna visar om gränssnittet skrev något i byn. Båda sparas lika ofta: sparningen
+      // skriver kartorna i sparfilen (s.mark, s.skog, s.fynd), och då ändras ordningen i texten. compact (som städar bort
+      // de döda) är inte med
+      if (i % 6 === 5) {
+        const fore = serialize(a);
+        uiLas(a, a.now - 200 * SEC); n++;
+        if (serialize(a) !== fore) andrat++;
+        serializeParts(a); serializeParts(b);
+      }
+      if (i % (24 * 12) === 24 * 12 - 1 && lika < 0 && serialize(a) !== serialize(b)) lika = (i + 1) / (24 * 12);
+    }
+    const sa = serialize(a), sb = serialize(b);
+    let d = 0; while (d < sa.length && sa[d] === sb[d]) d++;
+    return [
+      [`gränssnittet läste ${n} gånger under ${DYGN} dygn (${DYGN} år i spelet), med ${living(a).length} invånare`, n > 100],
+      [`läsningarna skrev inget i byn (${andrat} av ${n} gånger ändrades sparfilen)`, andrat === 0],
+      [sa === sb ? 'sparfilerna är lika tecken för tecken' : `sparfilerna skiljer sig${lika > 0 ? ` redan efter ${lika} dygn` : ''}, första skillnaden: …${sa.slice(Math.max(0, d - 60), d + 40)}… mot …${sb.slice(Math.max(0, d - 60), d + 40)}…`, sa === sb],
     ];
   },
 };

@@ -8,7 +8,7 @@ import { kn, learnK, useK } from './kunskap';
 import { ageIndex } from './tid';
 import { kunnighet } from './ekonomi';
 import { addTo, amountOf, foodOf } from './lager';
-import { DAY, H, HOUR, HOUR_S, Person, State, T, W, inMap } from './typer';
+import { DAY, H, HOUR, HOUR_S, Person, State, T, W, egen, inMap, tvaDelar, visning } from './typer';
 import { FOREST, isSoil } from './vag';
 import { ACTS, RedskapDef, SNABBARE } from './handlingar';
 import { balans } from './balans';
@@ -202,12 +202,13 @@ function monsterOf(s: State, k: FyndId) {
 const iLagret = (s: State, i: number) => iLagretI(campGrid(s), getMap(s.seed).tiles, i);
 const iLagretI = (lager: Float64Array, tiles: Uint8Array, i: number) => lager[i] < FANGST.lagerR && tiles[i] !== T.Vatten;
 // vilt skyr människor: ett stort område runt lägret, och marken där många går (stigar och nött mark).
-// Räknas om en gång per dygn.
-const skygghet = new WeakMap<State, { dag: number; v: Float32Array }>();
+// Räknas om en gång per dygn (av gränssnittet i en egen del, typer.ts).
+const skygghet = tvaDelar<{ dag: number; v: Float32Array }>();
 export function skyggOf(s: State) {
   const dag = Math.floor(s.now / DAY);
-  let c = skygghet.get(s);
+  let c = skygghet.sim.get(s);
   if (c?.dag === dag) return c.v;
+  if (visning.pa) { c = skygghet.bild.get(s); if (c?.dag === dag) return c.v; }
   const g = groundOf(s), v = new Float32Array(W * H), nott = new Uint8Array(W * H);
   for (let i = 0; i < W * H; i++) nott[i] = isSoil(g.tiles[i]) && markslag(g, i) === 'bar' ? 1 : 0;
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
@@ -216,7 +217,7 @@ export function skyggOf(s: State) {
     for (let dy = -FANGST.nottR; dy <= FANGST.nottR; dy++) for (let dx = -FANGST.nottR; dx <= FANGST.nottR; dx++) if (inMap(x + dx, y + dy)) n += nott[(y + dy) * W + x + dx];
     v[y * W + x] = d * d * (3 - 2 * d) * (1 - Math.min(FANGST.nottMax, n / FANGST.nottDiv));
   }
-  skygghet.set(s, c = { dag, v });
+  egen(skygghet).set(s, { dag, v });
   return v;
 }
 // vad en orörd ruta ger nu (utan årstid och uttag)
