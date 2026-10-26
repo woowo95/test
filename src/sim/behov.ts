@@ -329,8 +329,8 @@ export function askForTool(s: State, a: Person, b: Person): 'gåva' | 'byte' | u
       give(t, g, m);
       const namn = (SAKER[k]?.namn ?? k).toLowerCase(), r = getRel(s, a, b);
       r.op = clamp(r.op + 4, -100, 100);
-      think(m, `Fick en ${namn} av ${g.name}`, 0.1, s.now, 12 * 3600);
-      think(g, `Gav en ${namn} till ${m.name}`, 0.05, s.now, 6 * 3600);
+      think(m, `Fick en ${namn} av ${g.name}`, 0.1, s.now, 12 * HOUR);
+      think(g, `Gav en ${namn} till ${m.name}`, 0.05, s.now, 6 * HOUR);
       count(s, 'gavor');
       log(s, `${g.name} gav en ${namn} till ${m.name}.`, 'rel', [g.id, m.id]);
       return 'gåva';

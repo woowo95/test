@@ -573,6 +573,9 @@ SCENARIER.gava = {
     ge(a, 'fiskespjut', 2); b.mother = a.id;
     let barn = 0;
     for (let i = 0; i < 20; i++) { if (askForTool(s, a, b) === 'gåva') barn++; if (har(b, 'fiskespjut')) ownedBy(s, b).forEach(t => { if (t.k === 'fiskespjut') t.agare = a.id; }); }
+    // tankarna efter gåvan finns kvar efter en timme (12 och 6 timmar)
+    const tanke = (p: Person, t: string) => p.thoughts.some(q => q.text.startsWith(t) && q.until > s.now + HOUR);
+    const tankar = barn > 0 && tanke(b, 'Fick en ') && tanke(a, 'Gav en ');
     // ovän: c och a är osams
     b.mother = undefined; getRel(s, a, c).op = -40;
     let ovan = 0; for (let i = 0; i < 20; i++) if (askForTool(s, a, c)) ovan++;
@@ -594,6 +597,7 @@ SCENARIER.gava = {
     }
     return [
       [`en förälder ger sitt barn det hen har över (${barn} av 20)`, barn >= 17],
+      ['den som fick och den som gav tänker på gåvan i mer än en timme', tankar],
       ['en ovän ger inget', ovan === 0],
       [`en vän ger det hen har över (efter ${forsok} samtal)`, van],
       [`två som har något över som den andra saknar byter (${byte})`, bytt],
