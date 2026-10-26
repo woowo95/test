@@ -100,24 +100,32 @@ function walkSpot(s: State, far: number) {
   }
   return freeNear(s, f.x + 0.5, f.y + 3);
 }
-// badplatsen: stranden närmast byns läger. Sparas tills lägret ändras
-const bathCache = new WeakMap<State, { key: string; v?: { x: number; y: number } }>();
-function bathSpot(s: State) {
-  const key = `${campKey(s)},${s.byggV ?? 0}`; // ett nytt hus kan stå på stranden
-  let c = bathCache.get(s);
+// stranden nära byns läger: rutorna på land vid vattnet, närmare lägret än 15 och utan hus (ok), och badplatsen, den
+// närmaste av dem. Sparas tills lägret ändras eller något byggs (ett nytt hus kan stå på stranden)
+const strandCache = new WeakMap<State, { key: string; ok: number[]; bad?: { x: number; y: number } }>();
+function strandOf(s: State) {
+  const key = `${campKey(s)},${s.byggV ?? 0}`;
+  let c = strandCache.get(s);
   if (c?.key !== key) {
-    const sh = shoreOf(s.seed);
-    let best: { x: number; y: number } | undefined, bd = 15;
-    for (let i = 0; i < W * H; i++) if (sh[i] && !bitAt(s, i % W, Math.floor(i / W))) { const x = i % W, y = Math.floor(i / W), d = campDist(s, x, y); if (d < bd) { bd = d; best = { x: x + 0.5, y: y + 0.5 }; } }
-    bathCache.set(s, c = { key, v: best });
+    const sh = shoreOf(s.seed), ok: number[] = [];
+    let bad: { x: number; y: number } | undefined, bd = 15;
+    for (let i = 0; i < W * H; i++) {
+      if (!sh[i]) continue;
+      const x = i % W, y = Math.floor(i / W);
+      if (bitAt(s, x, y)) continue;
+      const d = campDist(s, x, y);
+      if (d < 15) ok.push(i);
+      if (d < bd) { bd = d; bad = { x: x + 0.5, y: y + 0.5 }; }
+    }
+    strandCache.set(s, c = { key, ok, bad });
   }
-  return c.v;
+  return c;
 }
+const bathSpot = (s: State) => strandOf(s).bad;
 // en plats på land vid vattnet, inte för långt från byns läger
 function strandSpot(s: State) {
-  const sh = shoreOf(s.seed), ok: number[] = [];
-  for (let i = 0; i < W * H; i++) if (sh[i] && campDist(s, i % W, Math.floor(i / W)) < 15 && !bitAt(s, i % W, Math.floor(i / W))) ok.push(i);
-  if (!ok.length) return bathSpot(s);
+  const { ok, bad } = strandOf(s);
+  if (!ok.length) return bad;
   const i = pick(s, ok, 'val');
   return { x: i % W + 0.5, y: Math.floor(i / W) + 0.5 };
 }
@@ -338,12 +346,14 @@ function leisure(s: State, p: Person, v: Val, u: number, lazy: number, ai: numbe
 function night(s: State, p: Person, v: Val, a: number) {
   const now = s.now;
   const guardDay = Math.floor((now - s.founded - 7 * HOUR) / DAY);
-  const adults = living(s).filter(q => ageOf(q, now) >= 16 && ageOf(q, now) < 60);
-  if (guardDay !== s.lastGuardDay && adults.length) {
-    // välj nattens vakt (modigast med lite slump), byts varje natt
-    s.lastGuardDay = guardDay;
-    const g = adults.sort((x, y) => (y.pot.mod + rnd(s, 'val') * 8) - (x.pot.mod + rnd(s, 'val') * 8))[0];
-    g.task = undefined; g.guardDay = guardDay;
+  if (guardDay !== s.lastGuardDay) {
+    // välj nattens vakt (modigast med lite slump) bland de vuxna, byts varje natt
+    const adults = living(s).filter(q => ageOf(q, now) >= 16 && ageOf(q, now) < 60);
+    if (adults.length) {
+      s.lastGuardDay = guardDay;
+      const g = adults.sort((x, y) => (y.pot.mod + rnd(s, 'val') * 8) - (x.pot.mod + rnd(s, 'val') * 8))[0];
+      g.task = undefined; g.guardDay = guardDay;
+    }
   }
   if (p.guardDay === guardDay && a >= 16) { set(v, 'vakt', 'Håller vakt i natt'); return; }
   const r = rnd(s, 'val', p);
