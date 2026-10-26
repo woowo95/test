@@ -1,4 +1,4 @@
-import { ageOf, count, doingAct, forstaGang, living, log } from './folk';
+import { ALDER, ageOf, count, doingAct, forstaGang, living, log } from './folk';
 import { knows } from './teknik';
 import { clamp, rnd } from './slump';
 import { Act, State, Person } from './typer';
@@ -9,6 +9,25 @@ import { getable, takeMaterial, takeRecipe } from './behov';
 import { addDel } from './egendom';
 import { RESERV } from './ekonomi';
 import { addTool, freeTools, halvOf, nTools, ownsFree, wearTool } from './agande';
+import { balans } from './balans';
+
+// ---------- balanstal (regel 8) ----------
+// Hur många redskap byn vill ha och vad den sparar när den gör dem. Hur mycket ett redskap kräver står i receptet (skaffa.av
+// i saker.ts) och läses därifrån (RECEPT); hur länge det håller och vad det ger står i handlingens rad (handlingar.ts).
+// Ett redskap räknas per vuxen från ALDER.vuxen (yxan från yxaFran, skog.ts)
+export const REDSKAP = balans('redskap', {
+  flintaSparas: 1, // flintor som sparas att tända eld med: ett redskap av flinta görs bara av det som är över (receptet plus detta)
+  spjutPerVuxna: 3, spjutMin: 1, spjutMax: 4, // byn vill ha ett spjut (och ett metspö) per så här många vuxna, minst Min och högst Max
+  korgPerVuxna: 3, korgMin: 1, korgMax: 5, // ... en korg
+  yxaPerVuxna: 4, yxaMin: 1, yxaMax: 3, yxaFran: 16, // ... en yxa, räknat på dem som är över Fran år
+  knivar: 1, // ... så många knivar
+  repVill: 4, // ... så många rep (tvinnat eller från senor)
+  maskPerGrav: 4, // en grävning ger så här många maskar
+  slaktMinDel: 2, // vilt slaktas när det finns minst 1 / Del kanin
+});
+// vad ett slag kräver, ur receptet (skaffa.av i saker.ts)
+const av = (k: string) => SAKER[k]!.skaffa!.av!;
+export const RECEPT = { rep: av('rep'), flintspjut: av('flintspjut'), fiskespjut: av('fiskespjut'), metspo: av('metspo'), korg: av('korg'), kniv: av('kniv'), yxa: av('yxa') };
 
 // ---------- redskap: spjut ----------
 // Ett träspjut är en pinne som täljs spetsig med något vasst, en flintsten eller en yxa. Det vassa används bara som verktyg
@@ -42,10 +61,10 @@ export function wearUsed(s: State, p: Person, n: number) {
 const sharpTool = (s: State) => amountOf(s, 'yxa') >= 1 ? 'yxa' : amountOf(s, 'flinta') >= 1 ? 'flinta' : undefined;
 // ett flintspjut kräver en flinta utöver den som sparas att tända eld med, rep och en gren
 // Materialet tas i behovsstegen (behov.ts): sitt eget, byns, en gåva, och annars av andras (en lindrig stöld)
-const canFlintSpear = (s: State, p: Person) => knows(p, 'flintspjut') && getable(s, p, 'flinta') >= 2 && getable(s, p, 'rep') >= 1 && getable(s, p, 'grenar') >= 1;
-const canMakeSpear = (s: State, p: Person) => !!sharpTool(s) && getable(s, p, 'grenar') >= 1;
+const canFlintSpear = (s: State, p: Person) => knows(p, 'flintspjut') && getable(s, p, 'flinta') >= RECEPT.flintspjut.flinta + REDSKAP.flintaSparas && getable(s, p, 'rep') >= RECEPT.flintspjut.rep && getable(s, p, 'grenar') >= RECEPT.flintspjut.grenar;
+const canMakeSpear = (s: State, p: Person) => !!sharpTool(s) && getable(s, p, 'grenar') >= RECEPT.fiskespjut.grenar;
 // byn vill ha ungefär ett spjut per tre vuxna, när någon väl har börjat fiska eller jaga
-const spearsWanted = (s: State) => (s.stat?.fiskeForsok ?? 0) > 0 || (s.stat?.prod_jakt ?? 0) > 0 ? clamp(Math.floor(living(s).filter(p => ageOf(p, s.now) >= 14).length / 3), 1, 4) : 0;
+const spearsWanted = (s: State) => (s.stat?.fiskeForsok ?? 0) > 0 || (s.stat?.prod_jakt ?? 0) > 0 ? clamp(Math.floor(living(s).filter(p => ageOf(p, s.now) >= ALDER.vuxen).length / REDSKAP.spjutPerVuxna), REDSKAP.spjutMin, REDSKAP.spjutMax) : 0;
 const wantsSpear = (s: State, p: Person) => (!!halvOf(s, p, SPJUT) || knows(p, 'fiskespjut') && canMakeSpear(s, p) || canFlintSpear(s, p)) && spears(s) < spearsWanted(s) && !doingAct(s, 'spjut', p);
 // det spjut hen gör: det hen redan har påbörjat, annars ett flintspjut om hen kan och det finns material, annars ett träspjut
 export const spearKind = (s: State, p: Person) => halvOf(s, p, SPJUT)?.halv!.gor ?? (canFlintSpear(s, p) ? 'flintspjut' : 'fiskespjut');
@@ -69,12 +88,12 @@ export function makeSpear(s: State, p: Person) {
 // ---------- rep ----------
 // Rep tvinnas av växtfibrer (hö) vid elden på kvällen av den som kan det, eller tas från senor när vilt slaktas. Det är samma rep
 // oavsett material. Rep behövs till flintspjut och metspö.
-const REP_GRAS = 2, REP_TIMME = 60 / SAKER.rep!.skaffa!.min!, REP_VILL = 4; // rep per timme
-export const wantsRope = (s: State, p: Person) => knows(p, 'rep') && amountOf(s, 'rep') < REP_VILL && getable(s, p, 'torrgras') >= REP_GRAS + RESERV.torrgras; // lite hö sparas till elden
+const REP_TIMME = 60 / SAKER.rep!.skaffa!.min!; // rep per timme
+export const wantsRope = (s: State, p: Person) => knows(p, 'rep') && amountOf(s, 'rep') < REDSKAP.repVill && getable(s, p, 'torrgras') >= RECEPT.rep.torrgras + RESERV.torrgras; // lite hö sparas till elden
 export function twineRope(s: State, p: Person, hours: number) {
-  const n = Math.min(hours * REP_TIMME, (getable(s, p, 'torrgras') - RESERV.torrgras) / REP_GRAS, REP_VILL - amountOf(s, 'rep'));
+  const n = Math.min(hours * REP_TIMME, (getable(s, p, 'torrgras') - RESERV.torrgras) / RECEPT.rep.torrgras, REDSKAP.repVill - amountOf(s, 'rep'));
   if (n <= 0) return;
-  takeMaterial(s, p, 'torrgras', n * REP_GRAS);
+  takeMaterial(s, p, 'torrgras', n * RECEPT.rep.torrgras);
   gain(s, p, 'rep', n);
   const first = !(s.stat?.rep);
   count(s, 'rep', n);
@@ -84,8 +103,7 @@ export function twineRope(s: State, p: Person, hours: number) {
 // ---------- redskap: metspö ----------
 // Ett metspö görs av en gren, ett rep och en krok av ben. Mask grävs fram före fisket och sätts på kroken; varje napp
 // tar en mask. Med metspö nappar fisken oftare och sitter kvar bättre än på spjutet.
-export const MASK_PER_GRAV = 4;
-export const canMakeRod = (s: State, p: Person) => knows(p, 'metspo') && getable(s, p, 'rep') >= 1 && getable(s, p, 'ben') >= 1 && getable(s, p, 'grenar') >= 1;
+export const canMakeRod = (s: State, p: Person) => knows(p, 'metspo') && getable(s, p, 'rep') >= RECEPT.metspo.rep && getable(s, p, 'ben') >= RECEPT.metspo.ben && getable(s, p, 'grenar') >= RECEPT.metspo.grenar;
 const rods = (s: State) => nTools(s, 'metspo');
 const wantsRod = (s: State, p: Person) => (!!halvOf(s, p, ['metspo']) || canMakeRod(s, p)) && rods(s) < spearsWanted(s) && !doingAct(s, 'metspo', p);
 export function makeRod(s: State, p: Person) { if (canMakeRod(s, p)) { takeRecipe(s, p, 'metspo'); rodDone(s, p); } }
@@ -97,11 +115,10 @@ export function rodDone(s: State, p: Person) {
 // ---------- redskap: korg ----------
 // En korg flätas av hö av den som kan det. Med korg bär man hem mer från varje tur och spiller mindre bär.
 // Korgen slits när den används och håller ungefär 40 arbetstimmar.
-const KORG_GRAS = 3;
 const baskets = (s: State) => nTools(s, 'korg');
 // ungefär en korg per tre vuxna
-const basketsWanted = (s: State) => clamp(Math.floor(living(s).filter(p => ageOf(p, s.now) >= 14).length / 3), 1, 5);
-export const canMakeBasket = (s: State, p: Person) => getable(s, p, 'torrgras') >= KORG_GRAS;
+const basketsWanted = (s: State) => clamp(Math.floor(living(s).filter(p => ageOf(p, s.now) >= ALDER.vuxen).length / REDSKAP.korgPerVuxna), REDSKAP.korgMin, REDSKAP.korgMax);
+export const canMakeBasket = (s: State, p: Person) => getable(s, p, 'torrgras') >= RECEPT.korg.torrgras;
 const wantsBasket = (s: State, p: Person) => (!!halvOf(s, p, ['korg']) || knows(p, 'korg') && canMakeBasket(s, p)) && baskets(s) < basketsWanted(s) && !doingAct(s, 'korg', p);
 export function basketDone(s: State, p: Person) {
   addTool(s, 'korg', p);
@@ -126,22 +143,22 @@ export const SLAKT = DJUR.kanin.slakt; // det en kanin ger slaktad
 export const SLAKT_TIMME = DJUR.kanin.timme; // kaniner per timme
 const knives = (s: State) => nTools(s, 'kniv');
 export const vilt = (s: State) => amountOf(s, 'vilt');
-export const canMakeKnife = (s: State, p: Person) => getable(s, p, 'flinta') >= 2 && getable(s, p, 'grenar') >= 1;
-export const wantsKnife = (s: State, p: Person) => (!!halvOf(s, p, ['kniv']) || knows(p, 'kniv') && canMakeKnife(s, p)) && knives(s) < 1 && !doingAct(s, 'kniv', p);
+export const canMakeKnife = (s: State, p: Person) => getable(s, p, 'flinta') >= RECEPT.kniv.flinta + REDSKAP.flintaSparas && getable(s, p, 'grenar') >= RECEPT.kniv.grenar;
+export const wantsKnife = (s: State, p: Person) => (!!halvOf(s, p, ['kniv']) || knows(p, 'kniv') && canMakeKnife(s, p)) && knives(s) < REDSKAP.knivar && !doingAct(s, 'kniv', p);
 export function makeKnife(s: State, p: Person) { if (canMakeKnife(s, p)) { takeRecipe(s, p, 'kniv'); knifeDone(s, p); } }
 export function knifeDone(s: State, p: Person) {
   addTool(s, 'kniv', p);
   if (forstaGang(s, 'knivarGjorda')) log(s, `${p.name} gjorde byns första flintkniv. Nu kan viltet slaktas.`, 'world', [p.id]);
 }
 // det finns vilt att slakta (minst en halv kanin) och en kniv som ingen annan slaktar med
-export const canSlaughter = (s: State, p: Person) => knows(p, 'kniv') && freeTools(s, p, 'kniv') >= 1 && vilt(s) >= KANIN / 2 && !doingAct(s, 'slakta', p);
+export const canSlaughter = (s: State, p: Person) => knows(p, 'kniv') && freeTools(s, p, 'kniv') >= 1 && vilt(s) >= KANIN / REDSKAP.slaktMinDel && !doingAct(s, 'slakta', p);
 export function slaughter(s: State, p: Person, hours: number) {
   const n = Math.min(hours * SLAKT_TIMME, vilt(s) / KANIN); // kaniner
   if (n <= 0 || knives(s) < 1) { if (p.task) p.task.until = s.now; return; }
   // köttet, benet, skinnet och senorna är deras som ägde viltet, inte slaktarens
   const art: Djurart = DJUR.kanin, vems = stycka(s, p, art, n);
   // senorna blir med liten chans ett helt rep, som tillhör den som ägde mest av viltet
-  if (art.rep > 0 && knows(p, 'rep') && amountOf(s, 'rep') < REP_VILL && rnd(s, 'arbete', p) < n * art.rep) {
+  if (art.rep > 0 && knows(p, 'rep') && amountOf(s, 'rep') < REDSKAP.repVill && rnd(s, 'arbete', p) < n * art.rep) {
     const agare = Object.keys(vems).sort((a, b) => vems[b] - vems[a])[0];
     put(s, 'rep', 1, agare !== undefined ? { [agare]: 1 } : undefined);
     count(s, 'repAvSenor');

@@ -9,7 +9,7 @@ import { clamp, pickNarmaste } from './slump';
 import { Act, DAY, H, HOUR, MIN, Person, State, Stock, W } from './typer';
 import { getable } from './behov';
 import { SNABBARE } from './handlingar';
-import { minOf } from './redskap';
+import { RECEPT, REDSKAP, minOf } from './redskap';
 
 // ---------- skog: fälla träd, hugga ved, flinta och yxa ----------
 // Utan yxa kan invånarna bara samla grenar på marken. Med en flintyxa kan de fälla träd.
@@ -84,9 +84,9 @@ export function chopStock(s: State, ref: number | undefined, amount: number) {
 }
 
 // hur många yxor byn vill ha (en till medan ett hus byggs, för träden där det ska stå)
-const axesWanted = (adults: number) => clamp(Math.floor(adults / 4), 1, 3);
+const axesWanted = (adults: number) => clamp(Math.floor(adults / REDSKAP.yxaPerVuxna), REDSKAP.yxaMin, REDSKAP.yxaMax);
 // en flinta sparas att tända eld med
-export const canMakeAxe = (s: State, p: Person) => getable(s, p, 'flinta') >= 2 && getable(s, p, 'grenar') >= 1; // materialet i behovsstegen (behov.ts)
+export const canMakeAxe = (s: State, p: Person) => getable(s, p, 'flinta') >= RECEPT.yxa.flinta + REDSKAP.flintaSparas && getable(s, p, 'grenar') >= RECEPT.yxa.grenar; // materialet i behovsstegen (behov.ts)
 // yxan är klar (materialet togs när arbetet började, paborjat.ts)
 export function axeDone(s: State, p: Person) {
   addTool(s, 'yxa', p);
@@ -107,7 +107,7 @@ export function axeTask(s: State, p: Person): { act: Act; x: number; y: number; 
     const t = treeSpot(s, fellingTiles(s, p));
     if (t) return { act: 'falla', x: t.x, y: t.y, dur: fallTid(s, tileOf(t.x, t.y)), why: 'Har en yxa och fäller ett träd till trä' };
   }
-  const adults = ppl.filter(q => ageOf(q, s.now) >= 16).length;
+  const adults = ppl.filter(q => ageOf(q, s.now) >= REDSKAP.yxaFran).length;
   if ((halvOf(s, p, ['yxa']) || knows(p, 'yxa') && canMakeAxe(s, p)) && axes(s) < axesWanted(adults) + (s.hus?.some(h => !h.klar) ? 1 : 0) && !others.some(q => q.task?.act === 'yxa')) {
     return { act: 'yxa', x: 0, y: 0, dur: minOf('yxa') * MIN, why: 'Har flinta och vill göra en yxa för att kunna fälla träd' };
   }

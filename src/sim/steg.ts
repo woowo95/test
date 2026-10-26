@@ -2,7 +2,7 @@ import { tidyTools } from './agande';
 import { chopStock, fellTree, rotStumps, stocks } from './skog';
 import { VED, needLadder, noticeTheft, stole } from './behov';
 import { capacity, dropSpot, fetchSpot, homeKind, isCarrying, load, pickUp, storeLoad, tidyStore, wearStore } from './lager';
-import { KANIN, MASK_PER_GRAV, clean, slaughter, twineRope, wearUsed } from './redskap';
+import { KANIN, REDSKAP, clean, slaughter, twineRope, wearUsed } from './redskap';
 import { GOR_ACTS, finishHalf, startWork, stepPaborjat, workHalf } from './paborjat';
 import { thinkWhileWorking } from './teknik';
 import { arbetsformaga, foodDays, workRate } from './ekonomi';
@@ -355,7 +355,7 @@ function workStep(s: State, p: Person, tk: Task, dtSec: number, a: number, learn
     const ageF = arbetsformaga(p, a, now);
     while (tk.prog >= TRY_SEC) {
       tk.prog -= TRY_SEC;
-      if (rd?.bete && (tk.mask ?? 0) < 1) { tk.mask = (tk.mask ?? 0) + MASK_PER_GRAV; continue; } // gräver fram mask först
+      if (rd?.bete && (tk.mask ?? 0) < 1) { tk.mask = (tk.mask ?? 0) + REDSKAP.maskPerGrav; continue; } // gräver fram mask först
       const napp = p.fiske?.n ?? 0;
       tk.carry += handFish(s, p, tk.tx, tk.ty, ageF, rd);
       if (rd?.bete && (p.fiske?.n ?? 0) > napp) tk.mask!--; // varje napp tar en mask
