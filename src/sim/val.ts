@@ -6,7 +6,7 @@ import { canLight, emberOn, fireWant, needStones, needTinder, woodDays } from '.
 import { ALDER, KROPP, ageOf, isSick, living, stat } from './folk';
 import { FANGST, Kind, flintSpot, shoreOf, wantsFlint } from './fynd';
 import { coldOf, temperature } from './vader';
-import { DJUR, KANIN, SLAKT_TIMME, TILLVERKA, minOf, abborrar, canClean, canSlaughter, freeOfKinds, toolGroups, vilt, wantsKnife, wantsRope } from './redskap';
+import { DJUR, GORS, KANIN, SLAKT_TIMME, abborrar, canClean, canSlaughter, freeOfKinds, makeTask, toolGroups, vilt, wantsRope, wantsTool } from './redskap';
 import { areaOf, flintArea, pickSpot, prospectFor } from './minne';
 import { getMap } from './karta';
 import { amountOf, avbryt, fetchSpot, haulJob } from './lager';
@@ -366,9 +366,8 @@ function withTools(s: State, p: Person, v: Val, best: Act, what: string, fd: num
     if (!rader[ks[0]].tar) continue; // yxan väljs med arbetet (axeTask)
     const k = freeOfKinds(s, p, ks);
     if (k) { v.tool = k; v.why = v.why.replace(/\.$/, '') + '. ' + rader[k].tar; return; }
-    const t = TILLVERKA[g];
-    if (t && !kyla && t.vill(s, p, gras)) { // redskapet görs vid sin egen plats: inget ärvs från flintletandet eller tändmaterialet
-      const m = t.gor(s, p); v.spot = undefined; v.sok = undefined; v.tandmat = undefined; set(v, m.act, `${what}. ${m.text}`); v.dur = m.min * MIN; if (m.tool) v.tool = m.tool; return;
+    if (GORS[g] && !kyla && wantsTool(s, p, g, gras)) { // redskapet görs vid sin egen plats: inget ärvs från flintletandet eller tändmaterialet
+      const m = makeTask(s, p, g); v.spot = undefined; v.sok = undefined; v.tandmat = undefined; set(v, m.act, `${what}. ${m.text}`); v.dur = m.min * MIN; if (m.tool) v.tool = m.tool; return;
     }
   }
 }
@@ -376,8 +375,7 @@ function withTools(s: State, p: Person, v: Val, best: Act, what: string, fd: num
 // möjligt att göra bara när withTools skulle göra det: inte när kylan är en fara, och med höet som sparas till värmen
 export function toolGain(s: State, p: Person, act: Act, fara: Faror) {
   for (const [g, ks] of Object.entries(toolGroups(act))) {
-    const t = TILLVERKA[g];
-    if (freeOfKinds(s, p, ks) || t && !fara.kyla && t.vill(s, p, fara.gras)) return ACTS[act].redskap![ks[0]].ger ?? 1;
+    if (freeOfKinds(s, p, ks) || GORS[g] && !fara.kyla && wantsTool(s, p, g, fara.gras)) return ACTS[act].redskap![ks[0]].ger ?? 1;
   }
   return 1;
 }
@@ -394,7 +392,7 @@ function cleanTask(s: State, v: Val, why: string) {
 // handarbete vid elden: den som kan göra en kniv gör det när byn saknar en (inte när kylan är en fara, som de andra
 // redskapen i withTools), den som har kniv slaktar viltet, och den som kan tvinna rep gör det när byn behöver rep
 function craft(s: State, p: Person, v: Val, why: string) {
-  if (wantsKnife(s, p) && !dangers(s).kyla) { set(v, 'kniv', `${why}. Gör en flintkniv.`); v.dur = minOf('kniv') * MIN; return; }
+  if (wantsTool(s, p, 'kniv') && !dangers(s).kyla) { const m = makeTask(s, p, 'kniv'); set(v, m.act, `${why}. ${m.text}`); v.dur = m.min * MIN; return; }
   if (canSlaughter(s, p)) { slaughterTask(s, v, `${why}. Slaktar viltet med kniven.`); return; }
   if (canClean(s, p)) { cleanTask(s, v, `${why}. Rensar fisken.`); return; }
   set(v, 'hantverk', why);

@@ -2,19 +2,20 @@ import { ALDER, ageOf, count, doingAct, forstaGang, living, log } from './folk';
 import { knows } from './teknik';
 import { clamp, rnd } from './slump';
 import { Act, State, Person } from './typer';
-import { ACTS, toolRow } from './handlingar';
-import { SAKER, gruppOf } from './saker';
+import { ACTS, ACT_LIST, toolRow } from './handlingar';
+import { SAKER, SAK_LIST, gruppOf, isTool } from './saker';
 import { amountOf, gain, put, use } from './lager';
 import { getable, takeMaterial, takeRecipe } from './behov';
 import { addDel } from './egendom';
 import { RESERV } from './ekonomi';
 import { addTool, freeTools, halvOf, nTools, ownsFree, wearTool } from './agande';
 import { balans } from './balans';
+import { sedEvent } from './seder';
 
 // ---------- balanstal (regel 8) ----------
 // Hur många redskap byn vill ha och vad den sparar när den gör dem. Hur mycket ett redskap kräver står i receptet (skaffa.av
 // i saker.ts) och läses därifrån (RECEPT); hur länge det håller och vad det ger står i handlingens rad (handlingar.ts).
-// Ett redskap räknas per vuxen från ALDER.vuxen (yxan från yxaFran, skog.ts)
+// Ett redskap räknas per vuxen från ALDER.vuxen (yxan från yxaFran)
 export const REDSKAP = balans('redskap', {
   flintaSparas: 1, // flintor som sparas att tända eld med: ett redskap av flinta görs bara av det som är över (receptet plus detta)
   spjutPerVuxna: 3, spjutMin: 1, spjutMax: 4, // byn vill ha ett spjut (och ett metspö) per så här många vuxna, minst Min och högst Max
@@ -24,10 +25,11 @@ export const REDSKAP = balans('redskap', {
   repVill: 4, // ... så många rep (tvinnat eller från senor)
   maskPerGrav: 4, // en grävning ger så här många maskar
   slaktMinDel: 2, // vilt slaktas när det finns minst 1 / Del kanin
+  nyfiken: 0.08, // ett redskap med nyfiken i saker.ts (yxan) gör sedernas nyfikenhet så här mycket större första gången
 });
 // vad ett slag kräver, ur receptet (skaffa.av i saker.ts)
 const av = (k: string) => SAKER[k]!.skaffa!.av!;
-export const RECEPT = { rep: av('rep'), flintspjut: av('flintspjut'), fiskespjut: av('fiskespjut'), metspo: av('metspo'), korg: av('korg'), kniv: av('kniv'), yxa: av('yxa') };
+const REP = av('rep');
 
 // ---------- redskap: spjut ----------
 // Ett träspjut är en pinne som täljs spetsig med något vasst, en flintsten eller en yxa. Det vassa används bara som verktyg
@@ -58,43 +60,17 @@ export function wearUsed(s: State, p: Person, n: number) {
   if (p.task) p.task.tool = undefined;
   if (tr?.text && forsta) log(s, tr.text.replace('{namn}', p.name), 'world', [p.id]);
 }
-// yxorna räknas i styck: en sliten yxa är fortfarande en yxa (amountOf av ett redskap är summan av skicket)
-const sharpTool = (s: State) => nTools(s, 'yxa') >= 1 ? 'yxa' : amountOf(s, 'flinta') >= 1 ? 'flinta' : undefined;
-// ett flintspjut kräver en flinta utöver den som sparas att tända eld med, rep och en gren
-// Materialet tas i behovsstegen (behov.ts): sitt eget, byns, en gåva, och annars av andras (en lindrig stöld)
-const canFlintSpear = (s: State, p: Person) => knows(p, 'flintspjut') && getable(s, p, 'flinta') >= RECEPT.flintspjut.flinta + REDSKAP.flintaSparas && getable(s, p, 'rep') >= RECEPT.flintspjut.rep && getable(s, p, 'grenar') >= RECEPT.flintspjut.grenar;
-const canMakeSpear = (s: State, p: Person) => !!sharpTool(s) && getable(s, p, 'grenar') >= RECEPT.fiskespjut.grenar;
 // byn vill ha ungefär ett spjut per tre vuxna, när någon väl har börjat fiska eller jaga
 const spearsWanted = (s: State) => (s.stat?.fiskeForsok ?? 0) > 0 || (s.stat?.prod_jakt ?? 0) > 0 ? clamp(Math.floor(living(s).filter(p => ageOf(p, s.now) >= ALDER.vuxen).length / REDSKAP.spjutPerVuxna), REDSKAP.spjutMin, REDSKAP.spjutMax) : 0;
-const wantsSpear = (s: State, p: Person) => (!!halvOf(s, p, SPJUT) || knows(p, 'fiskespjut') && canMakeSpear(s, p) || canFlintSpear(s, p)) && spears(s) < spearsWanted(s) && !doingAct(s, 'spjut', p);
-// det spjut hen gör: det hen redan har påbörjat, annars ett flintspjut om hen kan och det finns material, annars ett träspjut
-export const spearKind = (s: State, p: Person) => halvOf(s, p, SPJUT)?.halv!.gor ?? (canFlintSpear(s, p) ? 'flintspjut' : 'fiskespjut');
-// kan p börja göra ett spjut av slaget k (materialet tas när arbetet börjar, paborjat.ts)
-export const canStartSpear = (s: State, p: Person, k: string) => k === 'flintspjut' ? canFlintSpear(s, p) : canMakeSpear(s, p);
-// spjutet är klart (materialet togs när arbetet började)
-export function spearDone(s: State, p: Person, k: string) {
-  addTool(s, k, p);
-  if (k === 'flintspjut') {
-    if (forstaGang(s, 'flintspjutGjorda')) log(s, `${p.name} gjorde byns första flintspjut: en flintspets surrad med rep vid en pinne. Det håller mycket längre än ett träspjut.`, 'world', [p.id]);
-    return;
-  }
-  if (forstaGang(s, 'spjutGjorda')) log(s, `${p.name} täljde byns första träspjut med ${sharpTool(s) === 'yxa' ? 'en yxa' : 'en flintsten'}. Nu går fisket lättare.`, 'world', [p.id]);
-}
-// ett spjut görs på en gång (i testerna)
-export function makeSpear(s: State, p: Person) {
-  const k = spearKind(s, p);
-  if (!canStartSpear(s, p, k)) return;
-  takeRecipe(s, p, k); spearDone(s, p, k);
-}
 // ---------- rep ----------
 // Rep tvinnas av växtfibrer (hö) vid elden på kvällen av den som kan det, eller tas från senor när vilt slaktas. Det är samma rep
 // oavsett material. Rep behövs till flintspjut och metspö.
 const REP_TIMME = 60 / SAKER.rep!.skaffa!.min!; // rep per timme
-export const wantsRope = (s: State, p: Person) => knows(p, 'rep') && amountOf(s, 'rep') < REDSKAP.repVill && getable(s, p, 'torrgras') >= RECEPT.rep.torrgras + RESERV.torrgras; // lite hö sparas till elden
+export const wantsRope = (s: State, p: Person) => knows(p, 'rep') && amountOf(s, 'rep') < REDSKAP.repVill && getable(s, p, 'torrgras') >= REP.torrgras + RESERV.torrgras; // lite hö sparas till elden
 export function twineRope(s: State, p: Person, hours: number) {
-  const n = Math.min(hours * REP_TIMME, (getable(s, p, 'torrgras') - RESERV.torrgras) / RECEPT.rep.torrgras, REDSKAP.repVill - amountOf(s, 'rep'));
+  const n = Math.min(hours * REP_TIMME, (getable(s, p, 'torrgras') - RESERV.torrgras) / REP.torrgras, REDSKAP.repVill - amountOf(s, 'rep'));
   if (n <= 0) return;
-  takeMaterial(s, p, 'torrgras', n * RECEPT.rep.torrgras);
+  takeMaterial(s, p, 'torrgras', n * REP.torrgras);
   gain(s, p, 'rep', n);
   const first = !(s.stat?.rep);
   count(s, 'rep', n);
@@ -104,27 +80,12 @@ export function twineRope(s: State, p: Person, hours: number) {
 // ---------- redskap: metspö ----------
 // Ett metspö görs av en gren, ett rep och en krok av ben. Mask grävs fram före fisket och sätts på kroken; varje napp
 // tar en mask. Med metspö nappar fisken oftare och sitter kvar bättre än på spjutet.
-export const canMakeRod = (s: State, p: Person) => knows(p, 'metspo') && getable(s, p, 'rep') >= RECEPT.metspo.rep && getable(s, p, 'ben') >= RECEPT.metspo.ben && getable(s, p, 'grenar') >= RECEPT.metspo.grenar;
-const rods = (s: State) => nTools(s, 'metspo');
-const wantsRod = (s: State, p: Person) => (!!halvOf(s, p, ['metspo']) || canMakeRod(s, p)) && rods(s) < spearsWanted(s) && !doingAct(s, 'metspo', p);
-export function makeRod(s: State, p: Person) { if (canMakeRod(s, p)) { takeRecipe(s, p, 'metspo'); rodDone(s, p); } }
-export function rodDone(s: State, p: Person) {
-  addTool(s, 'metspo', p);
-  if (forstaGang(s, 'metspoGjorda')) log(s, `${p.name} gjorde byns första metspö, med en krok av ben.`, 'world', [p.id]);
-}
 
 // ---------- redskap: korg ----------
 // En korg flätas av hö av den som kan det. Med korg bär man hem mer från varje tur och spiller mindre bär.
 // Korgen slits när den används och håller ungefär 40 arbetstimmar.
-const baskets = (s: State) => nTools(s, 'korg');
 // ungefär en korg per tre vuxna
 const basketsWanted = (s: State) => clamp(Math.floor(living(s).filter(p => ageOf(p, s.now) >= ALDER.vuxen).length / REDSKAP.korgPerVuxna), REDSKAP.korgMin, REDSKAP.korgMax);
-export const canMakeBasket = (s: State, p: Person) => getable(s, p, 'torrgras') >= RECEPT.korg.torrgras;
-const wantsBasket = (s: State, p: Person) => (!!halvOf(s, p, ['korg']) || knows(p, 'korg') && canMakeBasket(s, p)) && baskets(s) < basketsWanted(s) && !doingAct(s, 'korg', p);
-export function basketDone(s: State, p: Person) {
-  addTool(s, 'korg', p);
-  if (forstaGang(s, 'korgarGjorda')) log(s, `${p.name} flätade byns första korg av hö.`, 'world', [p.id]);
-}
 
 // ---------- redskap: kniv och slakt ----------
 // En flintkniv är en vass flintskärva med ett skaft. Utan kniv äter byn direkt av det fällda djuret. Med kniv slaktas det
@@ -144,13 +105,6 @@ export const SLAKT = DJUR.kanin.slakt; // det en kanin ger slaktad
 export const SLAKT_TIMME = DJUR.kanin.timme; // kaniner per timme
 const knives = (s: State) => nTools(s, 'kniv');
 export const vilt = (s: State) => amountOf(s, 'vilt');
-export const canMakeKnife = (s: State, p: Person) => getable(s, p, 'flinta') >= RECEPT.kniv.flinta + REDSKAP.flintaSparas && getable(s, p, 'grenar') >= RECEPT.kniv.grenar;
-export const wantsKnife = (s: State, p: Person) => (!!halvOf(s, p, ['kniv']) || knows(p, 'kniv') && canMakeKnife(s, p)) && knives(s) < REDSKAP.knivar && !doingAct(s, 'kniv', p);
-export function makeKnife(s: State, p: Person) { if (canMakeKnife(s, p)) { takeRecipe(s, p, 'kniv'); knifeDone(s, p); } }
-export function knifeDone(s: State, p: Person) {
-  addTool(s, 'kniv', p);
-  if (forstaGang(s, 'knivarGjorda')) log(s, `${p.name} gjorde byns första flintkniv. Nu kan viltet slaktas.`, 'world', [p.id]);
-}
 // det finns vilt att slakta (minst en halv kanin) och en kniv som ingen annan slaktar med
 export const canSlaughter = (s: State, p: Person) => knows(p, 'kniv') && freeTools(s, p, 'kniv') >= 1 && vilt(s) >= KANIN / REDSKAP.slaktMinDel && !doingAct(s, 'slakta', p);
 export function slaughter(s: State, p: Person, hours: number) {
@@ -188,18 +142,66 @@ export function clean(s: State, p: Person, hours: number) {
   if (first) log(s, `${p.name} rensade byns första abborre vid elden. Den blev fiskkött.`, 'world', [p.id]);
 }
 
+
 // ---------- att göra ett redskap som saknas ----------
-// För varje grupp av redskap (handlingarnas redskap, saker.ts): när någon vill göra ett, och vad hen gör då. spar = hö
-// som ska sparas till elden
+// Varje redskap med gors i saker.ts görs i ett eget arbete vid elden, som heter som redskapets grupp (yxa, spjut, metspo,
+// kniv, korg). Receptet (skaffa.av), tekniken (skaffa.tek), verktyget (skaffa.verktyg), tiden (skaffa.min) och texterna
+// (gors) står i sakens rad. Här står hur många byn vill ha av varje grupp. Ett nytt redskap blir en rad i saker.ts, och
+// en ny grupp också en rad i VILL och en handling (handlingar.ts).
 // så många minuter det tar att göra en (saker.ts)
 export const minOf = (k: string) => SAKER[k]!.skaffa!.min!;
-interface Tillverka { vill: (s: State, p: Person, spar: number) => boolean; gor: (s: State, p: Person) => { act: Act; text: string; min: number; tool?: string } }
-export const TILLVERKA: Record<string, Tillverka> = {
-  korg: { vill: (s, p, spar) => (!!halvOf(s, p, ['korg']) || amountOf(s, 'torrgras') >= spar) && wantsBasket(s, p), gor: () => ({ act: 'korg', text: 'Flätar en korg av hö.', min: minOf('korg') }) },
-  metspo: { vill: (s, p) => wantsRod(s, p), gor: () => ({ act: 'metspo', text: 'Gör ett metspö med en krok av ben.', min: minOf('metspo') }) },
-  spjut: {
-    vill: (s, p) => wantsSpear(s, p),
-    gor: (s, p) => spearKind(s, p) === 'flintspjut' ? { act: 'spjut', text: 'Gör ett flintspjut med flinta och rep.', min: minOf('flintspjut'), tool: 'flintspjut' }
-      : { act: 'spjut', text: `Täljer ett träspjut med ${sharpTool(s) === 'yxa' ? 'yxan' : 'en flintsten'}.`, min: minOf('fiskespjut') },
-  },
+// redskapen som görs, i grupper av sådana som kan ersätta varandra, det bästa först (i den ordning handlingarna tar dem)
+const ORDNING = ACT_LIST.flatMap(a => Object.keys(ACTS[a].redskap ?? {}));
+const plats = (k: string) => { const i = ORDNING.indexOf(k); return i < 0 ? ORDNING.length : i; };
+export const GORS: Record<string, string[]> = {};
+for (const k of SAK_LIST) if (SAKER[k]!.gors) (GORS[gruppOf(k)] ??= []).push(k);
+for (const ks of Object.values(GORS)) ks.sort((a, b) => plats(a) - plats(b));
+// hur många byn vill ha av varje grupp
+const VILL: Record<string, (s: State) => number> = {
+  spjut: spearsWanted,
+  metspo: spearsWanted, // ett metspö per spjut
+  korg: basketsWanted,
+  kniv: () => REDSKAP.knivar,
+  // en yxa per fyra över yxaFran år, och en till medan ett hus byggs (för träden där det ska stå)
+  yxa: s => clamp(Math.floor(living(s).filter(q => ageOf(q, s.now) >= REDSKAP.yxaFran).length / REDSKAP.yxaPerVuxna), REDSKAP.yxaMin, REDSKAP.yxaMax) + (s.hus?.some(h => !h.klar) ? REDSKAP.yxaBygge : 0),
 };
+// verktyget som används till k (det första som finns i byn), eller undefined. En sliten yxa är fortfarande en yxa
+const verktygFor = (s: State, k: string) => Object.keys(SAKER[k]!.skaffa!.verktyg ?? {}).find(m => isTool(m) ? nTools(s, m) >= 1 : amountOf(s, m) >= 1);
+const ordFor = (s: State, k: string) => { const m = verktygFor(s, k); return m ? SAKER[k]!.skaffa!.verktyg![m] : ''; };
+// p kan få tag i det som behövs till k: verktyget och materialet, och en flinta över att tända eld med.
+// Materialet tas i behovsstegen (behov.ts): sitt eget, byns, en gåva, och annars av andras (en lindrig stöld)
+const hasRecipe = (s: State, p: Person, k: string) => (!SAKER[k]!.skaffa!.verktyg || !!verktygFor(s, k))
+  && Object.entries(av(k)).every(([m, n]) => getable(s, p, m) >= n + (m === 'flinta' ? REDSKAP.flintaSparas : 0));
+// p kan tekniken och kan få tag i det som behövs
+export const canMake = (s: State, p: Person, k: string) => { const tek = SAKER[k]!.skaffa!.tek; return (!tek || knows(p, tek)) && hasRecipe(s, p, k); };
+// det slag i gruppen g som p gör: det hen redan har påbörjat, annars det bästa hen kan göra, annars det enklaste
+export const kindFor = (s: State, p: Person, g: string) => { const ks = GORS[g]; return halvOf(s, p, ks)?.halv!.gor ?? ks.find(k => canMake(s, p, k)) ?? ks[ks.length - 1]; };
+// det slag p börjar göra när hen kommer fram, om hen kan (paborjat.ts)
+export const borjaTool = (s: State, p: Person, g: string) => { const k = kindFor(s, p, g); return canMake(s, p, k) ? k : undefined; };
+// p vill göra ett redskap i gruppen g: hen har påbörjat ett eller kan göra ett, byn har färre än den vill, och ingen
+// annan gör ett. spar = hö som ska sparas till värmen (ett recept med hö görs bara när byn har så mycket)
+export const wantsTool = (s: State, p: Person, g: string, spar = 0) => {
+  const ks = GORS[g];
+  return (!!halvOf(s, p, ks) || ks.some(k => canMake(s, p, k) && (!av(k).torrgras || amountOf(s, 'torrgras') >= spar)))
+    && ks.reduce((a, k) => a + nTools(s, k), 0) < VILL[g](s) && !doingAct(s, g as Act, p);
+};
+// arbetet att göra ett redskap i gruppen g. tool = slaget som görs när gruppen har flera (namnet på arbetet, handlingar.ts)
+export function makeTask(s: State, p: Person, g: string) {
+  const k = kindFor(s, p, g);
+  return { act: g as Act, text: SAKER[k]!.gors!.text.replace('{verktyg}', ordFor(s, k)), min: minOf(k), tool: GORS[g].length > 1 ? k : undefined };
+}
+// redskapet k är klart (materialet togs när arbetet började, paborjat.ts). Första gången står det i loggen
+export function toolDone(s: State, p: Person, k: string) {
+  addTool(s, k, p);
+  const g = SAKER[k]!.gors!, text = (t: string) => t.replace('{namn}', p.name).replace('{verktyg}', ordFor(s, k));
+  if (forstaGang(s, g.stat)) {
+    log(s, text(g.forsta), 'world', [p.id]);
+    if (g.fame) p.fame.push(g.fame);
+    if (g.nyfiken) sedEvent(s, 'nyfikenhet', REDSKAP.nyfiken, g.nyfiken);
+  } else if (g.igen) log(s, text(g.igen), 'world', [p.id]);
+}
+// ett redskap görs på en gång (i testerna)
+export function makeTool(s: State, p: Person, g: string) {
+  const k = kindFor(s, p, g);
+  if (hasRecipe(s, p, k)) { takeRecipe(s, p, k); toolDone(s, p, k); }
+}

@@ -1,15 +1,12 @@
-import { addTool, freeTools, halvOf, nTools } from './agande';
+import { freeTools } from './agande';
 import { campCenter, campDist } from './plats';
-import { ageOf, count, living, log, think } from './folk';
+import { living, log, think } from './folk';
 import { groundOf, isForest, tileOf } from './mark';
 import { FOREST } from './vag';
-import { sedEvent } from './seder';
-import { knows } from './teknik';
-import { clamp, pickNarmaste } from './slump';
+import { pickNarmaste } from './slump';
 import { Act, DAY, H, HOUR, MIN, Person, State, Stock, W } from './typer';
-import { getable } from './behov';
 import { SNABBARE } from './handlingar';
-import { RECEPT, REDSKAP, minOf } from './redskap';
+import { minOf, wantsTool } from './redskap';
 import { balans } from './balans';
 
 // ---------- skog: fälla träd, hugga ved, flinta och yxa ----------
@@ -29,9 +26,7 @@ const SKOG = balans('skog', {
   urval: 5, // man väljer slumpat bland de så här många närmaste träden
   forstaTanke: 0.1, // den som fäller byns första träd mår så här mycket bättre i forstaTankeTim timmar
   forstaTankeTim: 12,
-  yxaNyfiken: 0.08, // byns första yxa gör sedernas nyfikenhet så här mycket större
 });
-const axes = (s: State) => nTools(s, 'yxa'); // en sliten yxa är fortfarande en yxa
 export const stocks = (s: State) => (s.stockar ??= []);
 const FALL_TID = SKOG.fallTim * HOUR / SNABBARE; // så lång tid det tar att fälla ett träd
 // hur lång tid det tar att fälla trädet på ruta i: ett litet träd fälls fortare
@@ -99,33 +94,16 @@ export function chopStock(s: State, ref: number | undefined, amount: number) {
   return { ved, grenar: gr, done: k.ved <= 1e-6 };
 }
 
-// hur många yxor byn vill ha (en till medan ett hus byggs, för träden där det ska stå)
-const axesWanted = (adults: number) => clamp(Math.floor(adults / REDSKAP.yxaPerVuxna), REDSKAP.yxaMin, REDSKAP.yxaMax);
-// en flinta sparas att tända eld med
-export const canMakeAxe = (s: State, p: Person) => getable(s, p, 'flinta') >= RECEPT.yxa.flinta + REDSKAP.flintaSparas && getable(s, p, 'grenar') >= RECEPT.yxa.grenar; // materialet i behovsstegen (behov.ts)
-// yxan är klar (materialet togs när arbetet började, paborjat.ts)
-export function axeDone(s: State, p: Person) {
-  addTool(s, 'yxa', p);
-  if (axes(s) === 1 && !s.stat?.yxa1) {
-    count(s, 'yxa1');
-    log(s, `${p.name} gjorde byns första yxa av en pinne och en flintsten. Nu kan byn fälla träd.`, 'world', [p.id]);
-    p.fame.push('Gjorde byns första yxa');
-    sedEvent(s, 'nyfikenhet', SKOG.yxaNyfiken, 'Flintyxan har gjort byn nyfiken på vad mer som går att tillverka.');
-  } else log(s, `${p.name} gjorde en flintyxa.`, 'world', [p.id]);
-}
-
 // en vuxen som ska skaffa ved: hugga en fälld stam, fälla ett träd, göra en yxa eller (annars) samla grenar
 // kyla: kylan är en fara (dangers i val.ts). Då görs ingen ny yxa, för ett nytt redskap är en förbättring
 export function axeTask(s: State, p: Person, kyla = false): { act: Act; x: number; y: number; ref?: number; dur?: number; why: string } | undefined {
-  const ppl = living(s), others = ppl.filter(q => q !== p);
   if (freeTools(s, p, 'yxa') > 0) { // en yxa som ingen annan fäller eller hugger med
     const k = nearestStock(s);
     if (k) return { act: 'hugga', x: k.x + 0.3, y: k.y + 0.2, ref: k.id, why: 'Hugger trä av en fälld stam' };
     const t = treeSpot(s, fellingTiles(s, p), p);
     if (t) return { act: 'falla', x: t.x, y: t.y, dur: fallTid(s, tileOf(t.x, t.y)), why: 'Har en yxa och fäller ett träd till trä' };
   }
-  const adults = ppl.filter(q => ageOf(q, s.now) >= REDSKAP.yxaFran).length;
-  if (!kyla && (halvOf(s, p, ['yxa']) || knows(p, 'yxa') && canMakeAxe(s, p)) && axes(s) < axesWanted(adults) + (s.hus?.some(h => !h.klar) ? REDSKAP.yxaBygge : 0) && !others.some(q => q.task?.act === 'yxa')) {
+  if (!kyla && wantsTool(s, p, 'yxa')) { // receptet och hur många byn vill ha: saker.ts och redskap.ts
     return { act: 'yxa', x: 0, y: 0, dur: minOf('yxa') * MIN, why: 'Har flinta och vill göra en yxa för att kunna fälla träd' };
   }
   return undefined;

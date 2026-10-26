@@ -94,7 +94,7 @@ const DEF = {
 
 export type Act = keyof typeof DEF;
 export const ACTS: Record<Act, ActDef> = DEF;
-const ACT_LIST = Object.keys(DEF) as Act[];
+export const ACT_LIST = Object.keys(DEF) as Act[];
 export const ACT_NAMES = Object.fromEntries(ACT_LIST.map(a => [a, ACTS[a].namn])) as Record<Act, string>;
 export const isWork = (a: Act) => ACTS[a].arbete !== undefined;
 // arbetena som väljs efter byns behov (de andra är sätt att göra dem, t.ex. att fälla och hugga är vedarbete med yxa)

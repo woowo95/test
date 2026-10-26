@@ -2,7 +2,7 @@
 // npm run scenario            kör alla
 // npm run scenario -- glanta  kör bara ett
 import { isDeepStrictEqual } from 'node:util';
-import { FANGST, MIN, Person, Act, createState, clean, canClean, ownedBy, tidyTools, addTool, toolsOf, heldBy, take, usesTool, wearTool, freeSpear, getRel, isTool, BYN, twineRope, makeRod, wearUsed, isSpear, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, serializeParts, joinParts, serialize, cloneState, ageStart, nyKalender, kalender, yearNo, AGES, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, zonesOf, allows, ageOf, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, DAY, HOUR, W, State, tileOf, rektAvstand, skogAndel, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, campCenter, TEKNIK, knows, thinkWhileWorking, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, isWall, Bit, wearBuild, FYND, FYND_IDS, GRUPPER, angOf, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, observe, hoped, Lager, skyggOf, grupperOf, KANINER, share, treeOn, djurOf, KANIN, SLAKT, DJUR, canSlaughter, makeKnife, slaughter, askForTool, askForGift, gain, takeFood, takeFuel, ownsAmount, ownedStock, ownedSum, sumOf, addTo, setAmount, setStock, foodOf, isFood, STACK_ORDER, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, STOLD_LINDRIG, STOLD_OP, rnd, STROMMAR, Strom, BEAT, spar, isWork, SPARVERSION, stepDelning, rikedom, rikedomDelar, grundvarde, nivaOf, DELNING, packUp, releaseOwner, willing, tingOf, komOf, BYGGNADER, FN, mostUrgent, fnId, fnOf, planBuild, workOn, wearMult, LAGER, homeless, sovplatser, inZone, startWork, workHalf, finishHalf, stepPaborjat, halvOf, tingVarde, HALV_TID, fallTid, treeSpot, SEC, Task, familjOf, bedTile, takeForHouse, put, stepByggnader, husNamn, spotFor, roofed, matGott, barnMat, hungerFlytt, regulate, MATERIAL, EKONOMI, SAMTALSSLAG, SAK_LIST, eatPoison, TILLVERKA, wantsFlint, usable, dropSpot, HOST } from '../sim';
+import { FANGST, MIN, Person, Act, createState, clean, canClean, ownedBy, tidyTools, addTool, toolsOf, heldBy, take, usesTool, wearTool, freeSpear, getRel, isTool, BYN, twineRope, makeTool, wearUsed, isSpear, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, serializeParts, joinParts, serialize, cloneState, ageStart, nyKalender, kalender, yearNo, AGES, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, zonesOf, allows, ageOf, spears, SPJUT_FORSOK, groundOf, getMap, DAY, HOUR, W, State, tileOf, rektAvstand, skogAndel, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, campCenter, TEKNIK, knows, thinkWhileWorking, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, isWall, Bit, wearBuild, FYND, FYND_IDS, GRUPPER, angOf, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, observe, hoped, Lager, skyggOf, grupperOf, KANINER, share, treeOn, djurOf, KANIN, SLAKT, DJUR, canSlaughter, slaughter, askForTool, askForGift, gain, takeFood, takeFuel, ownsAmount, ownedStock, ownedSum, sumOf, addTo, setAmount, setStock, foodOf, isFood, STACK_ORDER, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, STOLD_LINDRIG, STOLD_OP, rnd, STROMMAR, Strom, BEAT, spar, isWork, SPARVERSION, stepDelning, rikedom, rikedomDelar, grundvarde, nivaOf, DELNING, packUp, releaseOwner, willing, tingOf, komOf, BYGGNADER, FN, mostUrgent, fnId, fnOf, planBuild, workOn, wearMult, LAGER, homeless, sovplatser, inZone, startWork, workHalf, finishHalf, stepPaborjat, halvOf, tingVarde, HALV_TID, fallTid, treeSpot, SEC, Task, familjOf, bedTile, takeForHouse, put, stepByggnader, husNamn, spotFor, roofed, matGott, barnMat, hungerFlytt, regulate, MATERIAL, EKONOMI, SAMTALSSLAG, SAK_LIST, eatPoison, wantsTool, makeTask, wantsFlint, usable, dropSpot, HOST } from '../sim';
 // förrådet i proven: stackarna är det enda som sparas (steg 1.1.2), så proven ställer in förrådet genom lagret
 const setItems = (s: State, m: Record<string, number>) => {
   for (const k of STACK_ORDER) if (!isFood(k) && k !== 'ved' && !isTool(k)) setAmount(s, k, m[k] ?? 0);
@@ -641,7 +641,7 @@ SCENARIER.fiskespjut = {
     tandEld(s); // elden brinner, så att ingen behöver leta stenar och flinta
     for (const q of s.people) q.tek = { fiskespjut: 1 }; // alla kan tälja spjut från början
     const p = living(s)[0]!;
-    makeSpear(s, p);
+    makeTool(s, p, 'spjut');
     const gjort = spears(s) === 1 && amountOf(s, 'flinta') === 1; // flintan finns kvar
     // en sliten yxa är en yxa (natur-25): med en yxa i halvt skick och ingen flinta kan man tälja ett spjut, och byn vill
     // inte leta flinta till yxor när den har en flinta och en yxa
@@ -650,7 +650,7 @@ SCENARIER.fiskespjut = {
     setItems(y, { grenar: 10, flinta: 0 }); y.ting = []; addTool(y, 'yxa', yp); tingOf(y)[0].c = 0.5;
     for (const q of y.people) q.tek = { fiskespjut: 1 };
     y.stat = { ...(y.stat ?? {}), fiskeForsok: 1 };
-    const sliten = TILLVERKA.spjut.vill(y, yp, 0) && TILLVERKA.spjut.gor(y, yp).text.includes('yxan');
+    const sliten = wantsTool(y, yp, 'spjut') && makeTask(y, yp, 'spjut').text.includes('yxan');
     setAmount(y, 'flinta', 1);
     const ingenFlinta = !wantsFlint(y);
     s.stat = { ...(s.stat ?? {}), fiskeForsok: 1 };
@@ -679,12 +679,12 @@ SCENARIER.redskap = {
     const p = living(s).find(q => ageOf(q, s.now) >= 18)!;
     twineRope(s, p, 1); // två rep i timmen sedan steg 1.5.13
     const rep = amountOf(s, 'rep') === 2 && amountOf(s, 'torrgras') === 36;
-    makeSpear(s, p);
+    makeTool(s, p, 'spjut');
     const flint = amountOf(s, 'flintspjut') === 1 && amountOf(s, 'flinta') === 2 && amountOf(s, 'rep') === 1 && !amountOf(s, 'fiskespjut');
     p.task = { act: 'fiske', phase: 'do', tx: p.x, ty: p.y, until: s.now + HOUR, carry: 0, tool: 'flintspjut' };
     for (let i = 0; i < 60; i++) wearUsed(s, p, 1);
     const haller = spears(s) === 1 && Math.abs(amountOf(s, 'flintspjut') - 0.75) < 1e-9; // 60 försök tar en fjärdedel
-    makeRod(s, p);
+    makeTool(s, p, 'metspo');
     const spo = amountOf(s, 'metspo') === 1 && amountOf(s, 'ben') === 1 && amountOf(s, 'rep') === 0;
     // jakt med flintspjutet: fångar kaniner, och spjutet slits
     const { x: bx, y: by } = bastaJaktruta(s, 30) ?? campCenter(s);
@@ -745,7 +745,7 @@ SCENARIER.agande = {
     tidyTools(s);
     const yxaByns = toolsOf(s, 'yxa')[0]?.agare === BYN;
     setAmount(s, 'fiskespjut', 1); tidyTools(s); // ett spjut som är byns
-    makeSpear(s, a);
+    makeTool(s, a, 'spjut');
     const gjorda = ownedBy(s, a).length === 1 && spears(s) === 2;
     const task = (p: Person, act: Act, tool?: string) => { p.task = { act, phase: 'do', tx: p.x, ty: p.y, until: s.now + HOUR, carry: 0, tool }; if (usesTool(p.task)) take(s, p, tool!); };
     task(a, 'fiske', freeSpear(s, a));
@@ -765,7 +765,7 @@ SCENARIER.agande = {
     const ovan = !freeSpear(s, c);
     task(b, 'fiske', 'fiskespjut');
     const sonder = wearTool(s, b, 'fiskespjut', 2) && spears(s) === 0 && !heldBy(s, b);
-    makeSpear(s, a); task(a, 'fiske', 'fiskespjut');
+    makeTool(s, a, 'spjut'); task(a, 'fiske', 'fiskespjut');
     a.died = s.now; a.cause = 'av ålder'; tidyTools(s);
     const arv = toolsOf(s, 'fiskespjut').every(t => t.agare === BYN && t.hos === undefined);
     const v = createState(5, START);
@@ -1151,7 +1151,7 @@ SCENARIER.djur = {
     setAmount(s, 'flinta', 2); setAmount(s, 'grenar', 2);
     const utan = !canSlaughter(s, p);
     for (const r of s.people) r.tek = { ...r.tek, kniv: 1, rep: 1 };
-    makeKnife(s, p);
+    makeTool(s, p, 'kniv');
     const kniv = amountOf(s, 'kniv') === 1 && amountOf(s, 'flinta') === 1;
     setMat(s, { vilt: 3 * KANIN }); setAmount(s, 'ben', 0); setAmount(s, 'skinn', 0); setAmount(s, 'rep', 0);
     const kan = canSlaughter(s, p);
