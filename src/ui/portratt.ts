@@ -14,7 +14,7 @@ vidNyBy.push(stopFollow);
 const portEls = new Map<number, HTMLButtonElement>();
 const shortAct = (p: Person) => p.task ? taskName(p.task) : '–';
 export function renderPorts() {
-  const row = $('ports'), ppl = living(s).slice().sort((a, b) => a.born - b.born);
+  const row = $('ports'), ppl = living(s).sort((a, b) => a.born - b.born);
   const ids = new Set(ppl.map(p => p.id));
   for (const [id, el] of portEls) if (!ids.has(id)) { el.remove(); portEls.delete(id); }
   ppl.forEach((p, k) => {

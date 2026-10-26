@@ -1,5 +1,5 @@
-import { BEAT, DAY, KUNSKAP_NAMES, LogEntry, MIN, State, compact, describe, joinParts, living, migrate, serialize, serializeParts, step, timeLabel } from '../sim';
-import { $, esc } from './hjalp';
+import { BEAT, DAY, KUNSKAP_NAMES, LARDOM, LKind, LogEntry, MIN, State, byId, compact, describe, joinParts, living, migrate, serialize, serializeParts, step, timeLabel } from '../sim';
+import { $, durTxt, esc, num } from './hjalp';
 import { s, ui } from './lage';
 import { drawTerrain } from './terrang';
 import { drawPlants } from './vaxter';
@@ -167,7 +167,6 @@ function knowSnapshot() {
   for (const p of living(s)) m.set(p.id, { k: Object.fromEntries(Object.entries(p.kunskap ?? {}).map(([k, e]) => [k, e.v])), l: new Set((p.lardomar ?? []).map(l => l.k + ':' + l.a)) });
   return m;
 }
-const LKIND_NAMES: Record<string, string> = { samla: 'bär och rötter', jakt: 'vilt', fiske: 'abborre', flinta: 'flinta', fara: 'farliga platser' };
 function knowHtml(before: ReturnType<typeof knowSnapshot>) {
   const nyK: string[] = [], per: Record<string, number> = {}, ex: string[] = [];
   let nyL = 0;
@@ -184,7 +183,7 @@ function knowHtml(before: ReturnType<typeof knowSnapshot>) {
     }
   }
   if (!nyK.length && !nyL) return '';
-  const delar = Object.entries(per).sort((a, b) => b[1] - a[1]).map(([k, n]) => `${n} om ${LKIND_NAMES[k] ?? k}`).join(', ');
+  const delar = Object.entries(per).sort((a, b) => b[1] - a[1]).map(([k, n]) => `${n} om ${LARDOM[k as LKind]?.namn ?? k}`).join(', ');
   return `<h3>Ny kunskap och nya lärdomar</h3><ul class="sumList">${nyK.slice(0, 6).map(x => `<li>${x}</li>`).join('')}${nyK.length > 6 ? `<li class="muted">och ${nyK.length - 6} till</li>` : ''}
     ${nyL ? `<li>${nyL} nya lärdomar: ${delar}</li>${ex.map(x => `<li class="muted">${x}</li>`).join('')}` : ''}</ul>`;
 }
@@ -193,13 +192,19 @@ function showSummary(from: number, before: ReturnType<typeof knowSnapshot>, stat
   const ev = s.log.filter(l => l.t > from);
   const years = (s.now - from) / DAY;
   const births = (s.stat?.fodda ?? 0) - (stat0.fodda ?? 0), deaths = (s.stat?.doda ?? 0) - (stat0.doda ?? 0);
-  const prio = (e: LogEntry) => e.kind === 'death' ? 5 : e.kind === 'birth' || e.kind === 'move' ? 4 : e.kind === 'skill' || /par\.|skilda|tända elden|slocknade/.test(e.text) ? 3 : e.kind === 'world' && /tiden|Byn|flinta|stenar/.test(e.text) ? 2 : e.kind === 'rel' ? 1 : 0;
+  // det viktigaste först, efter slaget (inte texten): döda, födda och flyttar, det man lärt sig och nya par, det som hänt byn, relationer
+  const par = (e: LogEntry) => e.ids.length === 2 && byId(s, e.ids[0])?.partner === e.ids[1];
+  const prio = (e: LogEntry) => e.kind === 'death' ? 5 : e.kind === 'birth' || e.kind === 'move' ? 4 : e.kind === 'skill' || (e.kind === 'rel' && par(e)) ? 3 : e.kind === 'world' ? 2 : e.kind === 'rel' ? 1 : 0;
   const key = ev.map((e, i) => ({ e, i, p: prio(e) })).filter(x => x.p > 0).sort((a, b) => b.p - a.p || b.i - a.i).slice(0, 10).sort((a, b) => b.i - a.i).map(x => x.e);
-  const yrs = years >= 1 ? `${years.toFixed(1).replace('.', ',')} år` : `${Math.round(years * 12)} månader`;
+  // den verkliga tiden och tiden i spelet (ett dygn är ett år), minst en månad
+  const man = Math.max(1, Math.round(years * 12));
+  const yrs = years >= 1 ? `${num(years)} år` : `${man} ${man === 1 ? 'månad' : 'månader'}`;
+  // loggen rymmer bara de senaste raderna: har den börjat efter att du gick är det bara de senaste som syns
+  const kort = s.log.length >= 400 && s.log[0].t > from;
   $('ovBody').innerHTML = `
-    <p class="ovLead">Medan du var borta gick ${yrs}.</p>
+    <p class="ovLead">Medan du var borta gick ${durTxt(s.now - from)} (${yrs} i spelet).</p>
     <p class="muted">${births} födda · ${deaths} döda · ${living(s).length} lever nu i byn</p>
-    <ol class="sumList">${key.map(e => `<li><span class="when">${timeLabel(s, e.t)}</span>${esc(e.text)}</li>`).join('') || '<li>Inget särskilt hände.</li>'}</ol>
+    ${kort ? '<p class="muted small">Det viktigaste av de senaste händelserna:</p>' : ''}<ol class="sumList">${key.map(e => `<li><span class="when">${timeLabel(s, e.t)}</span>${esc(e.text)}</li>`).join('') || '<li>Inget särskilt hände.</li>'}</ol>
     ${knowHtml(before)}
     <button id="ovClose" class="primary" type="button">Till byn</button>`;
   $('ovClose').onclick = () => { $('overlay').hidden = true; };

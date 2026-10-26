@@ -1,12 +1,12 @@
-import { ACTS, MATERIAL, SLAG, Person, SAKER, TEK, TEKNIK, Tek, amountOf, hasMaterial, knows, living, sakNamn } from '../../sim';
+import { ACTS, MATERIAL, SLAG, Person, SAKER, TEK, TEKNIK, Tek, amountOf, harSak, hasMaterial, knows, living, sakNamn, tiondel } from '../../sim';
 import { iconImg } from '../../ikoner';
-import { bar, esc, pLink } from '../hjalp';
+import { bar, esc, hjalpKnapp, hjalpText, pLink } from '../hjalp';
 import { s, ui } from '../lage';
 import type { Flik } from '../panel';
 
 // teknikträdet som symboler: det som inte kräver något till vänster, sträck till det som är låst bakom det.
 // Ett tryck på en symbol visar mer om den.
-let tekSel: string | undefined, tekHelp = false;
+let tekSel: string | undefined;
 export const teknik: Flik = {
   namn: 'Teknik',
   html: tekHtml,
@@ -15,7 +15,6 @@ export const teknik: Flik = {
     if (tn) { tekSel = tekSel === tn.dataset.tek ? undefined : tn.dataset.tek; return true; }
     const tg = el.closest<HTMLElement>('[data-tekgo]'); // en teknik i personfliken: öppna den i trädet
     if (tg) { ui.tab = 'teknik'; tekSel = tg.dataset.tekgo; return true; }
-    if (el.closest('[data-tekhelp]')) { tekHelp = !tekHelp; return true; }
     return false;
   },
 };
@@ -46,14 +45,14 @@ function tekHtml() {
     return `<button type="button" class="tnod ${kan ? 'kan' : best > 0.01 ? 'pa' : 'ok'}${tekSel === t.id ? ' sel' : ''}" data-tek="${t.id}" style="left:${pos[t.id].x}%;top:${pos[t.id].y}%" title="${esc(title)}" aria-label="${esc(title)}">${iconImg(t.id, 24)}${ring}${kan ? `<span class="antal">${kan}</span>` : ''}${brist}</button>`;
   });
   const h = Math.max(150, Math.max(...Array.from({ length: cols }, (_, c) => TEKNIK.filter(t => depth[t.id] === c).length)) * 64);
-  return `<div class="tekhead"><button type="button" class="hjalp" data-tekhelp aria-expanded="${tekHelp}" title="Hur fungerar teknik?">?</button></div>
-    ${tekHelp ? `<p class="muted small">Den som arbetar med något kommer så småningom på hur det kan göras bättre. Nyfikenheten avgör hur ofta hen funderar och intelligensen hur fort det går. Det man kan lärs ut i samtal. Dör alla som kan något försvinner kunskapen. Ett sträck betyder att tekniken till höger kräver den till vänster. Siffran är hur många som kan tekniken och ringen hur långt den som funderat mest har kommit. Tryck på en teknik för att se vad den kräver och hur man kommer på den.</p>` : ''}
+  return `<div class="tekhead">${hjalpKnapp('teknik', 'Hur fungerar teknik?')}</div>
+    ${hjalpText('teknik', `<p class="muted small">Den som arbetar med något kommer så småningom på hur det kan göras bättre. Nyfikenheten avgör hur ofta hen funderar och intelligensen hur fort det går. Det man kan lärs ut i samtal. Dör alla som kan något försvinner kunskapen. Ett sträck betyder att tekniken till höger kräver den till vänster. Siffran är hur många som kan tekniken och ringen hur långt den som funderat mest har kommit. Tryck på en teknik för att se vad den kräver och hur man kommer på den.</p>`)}
     <div class="ttrad" style="height:${h}px"><svg class="tlinjer" viewBox="0 0 100 100" preserveAspectRatio="none">${lines.join('')}</svg>${nodes.join('')}</div>
     ${tekInfo(ppl)}`;
 }
 const lista = (xs: string[], och = 'och') => xs.length > 1 ? xs.slice(0, -1).join(', ') + ` ${och} ` + xs[xs.length - 1] : xs[0] ?? '';
 // det som saknas i byn för att någon ska kunna komma på tekniken
-const saknas = (t: Tek) => lista(t.material.filter(g => !g.some(k => amountOf(s, k) >= 1)).map(g => lista(g.map(k => sakNamn(k).toLowerCase()), 'eller')));
+const saknas = (t: Tek) => lista(t.material.filter(g => !g.some(k => harSak(s, k))).map(g => lista(g.map(k => sakNamn(k).toLowerCase()), 'eller')));
 // receptet: det som går åt för att göra en sak av tekniken (saker.ts), eller för en ruta av ett bygge (byggnad.ts)
 function recept(t: Tek): { k: string; n: number; per?: string }[] {
   const av = SAKER[t.id]?.skaffa?.av;
@@ -66,10 +65,9 @@ function tekInfo(ppl: Person[]) {
   if (!t) return '';
   const kan = ppl.filter(p => knows(p, t.id));
   const pa = ppl.filter(p => !knows(p, t.id) && (p.tek?.[t.id] ?? 0) > 0.01).sort((a, b) => b.tek![t.id] - a.tek![t.id]).slice(0, 5);
-  const tal = (n: number) => String(Math.round(n * 10) / 10).replace('.', ',');
   const r = recept(t);
-  const rtext = 'Det som går åt: ' + lista(r.map(x => `${sakNamn(x.k).toLowerCase()} ×${tal(x.n)}${x.per ? ` per ${x.per}` : ''}`));
-  const mat = r.map(x => `<span class="${amountOf(s, x.k) >= x.n ? '' : 'saknas'}">${iconImg(x.k, 16) || esc(sakNamn(x.k))}<small>${tal(x.n)}</small></span>`).join('<i>+</i>');
+  const rtext = 'Det som går åt: ' + lista(r.map(x => `${sakNamn(x.k).toLowerCase()} ×${tiondel(x.n)}${x.per ? ` per ${x.per}` : ''}`));
+  const mat = r.map(x => `<span class="${amountOf(s, x.k) >= x.n ? '' : 'saknas'}">${iconImg(x.k, 16) || esc(sakNamn(x.k))}<small>${tiondel(x.n)}</small></span>`).join('<i>+</i>');
   // hur den upptäcks: arbetet där man kommer på den, tekniken man måste kunna först och det som måste finnas i byn
   const arb = lista([...new Set(t.omr.map(a => SLAG[ACTS[a].slag ?? 'hantverk'].toLowerCase()))], 'eller');
   const krav = t.krav.length ? ` om hen kan ${lista(t.krav.map(k => TEK[k].namn.toLowerCase()))}` : '';

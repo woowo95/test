@@ -1,5 +1,5 @@
 import { SEDER, SED_INFO, Sed, ageOf, influence, living, timeLabel } from '../../sim';
-import { esc, pLink } from '../hjalp';
+import { esc, hjalpKnapp, hjalpText, pLink } from '../hjalp';
 import { s } from '../lage';
 import type { Flik } from '../panel';
 
@@ -9,10 +9,11 @@ export const seder: Flik = {
   html() {
     const sd = s.seder;
     const voices = living(s).map(p => ({ p, w: influence(s, p) })).filter(x => x.w > 0).sort((a, b) => b.w - a.w).slice(0, 5);
-    return `<p class="muted">Byns seder är vad invånarna tillsammans tycker är viktigt. De växer fram ur deras egenskaper och ur det som händer byn. Äldre och karismatiska röster väger tyngst. Sederna påverkar vad var och en väljer att göra.</p>
-    <ul class="seder">${SEDER.map(k => `<li><div class="sedtop"><span>${SED_INFO[k].neg}</span><span>${SED_INFO[k].pos}</span></div>${sedBar(sd.v[k])}
-      <p class="sedw">${sedWord(k, sd.v[k])}</p><p class="muted small">${SED_INFO[k].effect}</p></li>`).join('')}</ul>
-    <h3>Tyngst röster</h3>${voices.length ? `<ul class="rels">${voices.map(x => `<li>${pLink(x.p)}<span></span><span class="muted">${Math.floor(ageOf(x.p, s.now))} år${x.p.tag ? `, ${esc(x.p.tag.toLowerCase())}` : ''}</span></li>`).join('')}</ul>` : '<p class="muted">–</p>'}
+    return `<div class="tekhead">${hjalpKnapp('seder', 'Vad är seder?')}</div>
+    ${hjalpText('seder', '<p class="muted">Byns seder är vad invånarna tillsammans tycker är viktigt. De växer fram ur deras egenskaper och ur det som händer byn. Äldre och karismatiska röster väger tyngst. Sederna påverkar vad var och en väljer att göra.</p>')}
+    <ul class="seder">${SEDER.map(k => `<li title="${esc(SED_INFO[k].effect)}"><div class="sedtop"><span>${SED_INFO[k].neg}</span><span>${SED_INFO[k].pos}</span></div>${sedBar(sd.v[k])}
+      <p class="sedw">${sedWord(k, sd.v[k])}</p>${hjalpText('seder', `<p class="muted small">${SED_INFO[k].effect}</p>`)}</li>`).join('')}</ul>
+    <h3>Tyngsta röster</h3>${voices.length ? `<ul class="rels">${voices.map(x => `<li>${pLink(x.p)}<span></span><span class="muted">${Math.floor(ageOf(x.p, s.now))} år${x.p.tag ? `, ${esc(x.p.tag.toLowerCase())}` : ''}</span></li>`).join('')}</ul>` : '<p class="muted">–</p>'}
     <h3>Det som format sederna</h3>${sd.log.length ? `<ol class="logg">${sd.log.slice().reverse().map(l => `<li><span class="when">${timeLabel(s, l.t)}</span>${esc(l.text)}</li>`).join('')}</ol>` : '<p class="muted">Inget särskilt har hänt ännu.</p>'}`;
   },
 };

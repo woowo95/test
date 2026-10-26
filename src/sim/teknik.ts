@@ -54,8 +54,9 @@ const TEKTAL = balans('teknik', {
 });
 
 export const knows = (p: Person, id: string) => (p.tek?.[id] ?? 0) >= 1;
-// ett redskap räknas om det finns, hur slitet det än är; annat räknas i mängd
-export const hasMaterial = (s: State, t: Tek) => t.material.every(g => g.some(k => isTool(k) ? tingOf(s).some(q => q.k === k) : amountOf(s, k) >= TEKTAL.materialMin));
+// finns saken i byn: ett redskap räknas om det finns, hur slitet det än är; annat räknas i mängd
+export const harSak = (s: State, k: string) => isTool(k) ? tingOf(s).some(q => q.k === k) : amountOf(s, k) >= TEKTAL.materialMin;
+export const hasMaterial = (s: State, t: Tek) => t.material.every(g => g.some(k => harSak(s, k)));
 const canThink = (p: Person, t: Tek) => !knows(p, t.id) && t.krav.every(k => knows(p, k));
 
 // den som kommer på eller lär sig något

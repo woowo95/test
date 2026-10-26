@@ -1,5 +1,6 @@
 // Samhällssimulatorn – simuleringskärna (ingen grafik). Varje system ligger i en egen fil under sim/.
 export * from './sim/typer';
+export * from './sim/format';
 export * from './sim/handlingar';
 export * from './sim/saker';
 export * from './sim/slump';

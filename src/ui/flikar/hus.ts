@@ -1,6 +1,6 @@
-import { KOM, bitsOf, byId, fnOf, gridOf, husById, insulation, komOf, sakNamn } from '../../sim';
+import { KOM, bitsOf, byId, fnOf, gridOf, husById, insulation, komOf, sakNamn, sovplatser } from '../../sim';
 import { iconImg } from '../../ikoner';
-import { esc, fmtN, pLink } from '../hjalp';
+import { cap, esc, fmtN, pLink } from '../hjalp';
 import { s, ui } from '../lage';
 import type { Flik } from '../panel';
 
@@ -22,8 +22,9 @@ export const hus: Flik = {
     const h = husById(s, ui.husId);
     if (!h) return '<p class="muted">Huset finns inte längre.</p>';
     const bits = bitsOf(s).filter(b => b.hus === h.id), klar = bits.filter(b => b.b >= 1).length;
-    const rum = gridOf(s).rooms.filter(r => r.hus === h.id), sov = rum.reduce((n, r) => n + r.tiles.length, 0);
-    const status = klar < bits.length ? `Byggs: ${klar} av ${bits.length} delar klara.` : `${sov} sovplatser${rum.length ? `, håller värmen ${Math.round(Math.max(...rum.map(r => insulation(s, r))) * 100)} %` : ''}.`;
+    const rum = gridOf(s).rooms.filter(r => r.hus === h.id), sov = rum.reduce((n, r) => n + sovplatser(s, r), 0);
+    const bra = [sov ? `${sov} sovplatser` : '', rum.length ? `håller värmen ${Math.round(Math.max(...rum.map(r => insulation(s, r))) * 100)} %` : ''].filter(x => x).join(', ');
+    const status = klar < bits.length ? `Byggs: ${klar} av ${bits.length} delar klara.` : bra ? `${cap(bra)}.` : '';
     const kom = komOf(h), fn = fnOf(h), agare = h.ag !== undefined ? byId(s, h.ag) : undefined;
     const rader = KOM.map(hur => {
       const xs = kom.filter(q => q.hur === hur);

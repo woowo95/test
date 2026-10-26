@@ -74,7 +74,8 @@ export const isFood = (k: string) => SAKER[k]?.mat !== undefined;
 export const isTool = (k: string) => !!SAKER[k]?.redskap;
 export const REDSKAP_SLAG = SAK_LIST.filter(isTool); // alla redskapsslag, i registrets ordning
 export const gruppOf = (k: string) => SAKER[k]?.grupp ?? k;
-// mappar i listan över allt byn äger; maten med det som håller längst först
-export const FOLDERS: { namn: string; k: string[] }[] = [...new Set(SAK_LIST.map(k => SAKER[k]!.mapp).filter(m => m))].map(namn => ({
-  namn: namn!, k: SAK_LIST.filter(k => SAKER[k]!.mapp === namn).sort((a, b) => (SAKER[b]!.mat ?? 0) - (SAKER[a]!.mat ?? 0)),
+// mappar i listan över allt byn äger; maten med det som håller längst först. summa = antalen läggs ihop på mappens rad
+const MAPP_SUMMA = new Set(['Mat', 'Bränsle']);
+export const FOLDERS: { namn: string; k: string[]; summa: boolean }[] = [...new Set(SAK_LIST.map(k => SAKER[k]!.mapp).filter(m => m))].map(namn => ({
+  namn: namn!, k: SAK_LIST.filter(k => SAKER[k]!.mapp === namn).sort((a, b) => (SAKER[b]!.mat ?? 0) - (SAKER[a]!.mat ?? 0)), summa: MAPP_SUMMA.has(namn!),
 }));

@@ -88,7 +88,16 @@ const areaCenter = (a: number) => ({ x: Math.min(W, (a % aw()) * AREA + AREA / 2
 // hur mycket ett område ger, så som man ser det när man går runt där: snittet av de fem bästa rutorna.
 // 'nu' är det som finns kvar, 'vaxer' var det växer (buskar och spår syns även när det är plockat) och 'syns'
 // vad marken ser ut att kunna ge för den som inte varit där. Sparas en timme i taget (av gränssnittet i en egen del, typer.ts).
-const LKINDS: LKind[] = ['samla', 'jakt', 'fiske', 'flinta', 'fara'];
+// lärdomarnas slag: vad = ordet i lärdomens text (describe), namn = ordet i listor (sammanställningen efter ikappräkningen).
+// Ordningen är den i cachen nedan
+export const LARDOM: Record<LKind, { vad: string; namn: string }> = {
+  samla: { vad: 'bär och rötter', namn: 'bär och rötter' },
+  jakt: { vad: 'kaniner', namn: 'vilt' },
+  fiske: { vad: 'fisk i vattnet', namn: 'abborre' },
+  flinta: { vad: 'flinta', namn: 'flinta' },
+  fara: { vad: '', namn: 'farliga platser' },
+};
+const LKINDS = Object.keys(LARDOM) as LKind[];
 const MODES = ['nu', 'vaxer', 'syns'] as const;
 type Mode = typeof MODES[number];
 const LK_I = Object.fromEntries(LKINDS.map((k, i) => [k, i])) as Record<LKind, number>;
@@ -352,15 +361,14 @@ function placeName(s: State, a: number) {
   const dir = DIRS[(Math.round(Math.atan2(dy, dx) / (Math.PI / 4)) + 8) % 8];
   return `${terr} ${dir} om byn`;
 }
-const WHAT: Record<LKind, string> = { samla: 'bär och rötter', jakt: 'kaniner', fiske: 'fisk i vattnet', flinta: 'flinta', fara: '' };
 const amount = (v: number) => v >= 0.7 ? 'Gott om' : v >= 0.35 ? 'En del' : v >= 0.1 ? 'Lite' : 'Nästan inga';
 // en lärdom i ord, med hur säker personen är, varifrån den kommer och om den stämmer. what är texten utan platsen.
 export function describe(s: State, l: Lardom) {
   const place = placeName(s, l.a);
   const rel = (v: number) => relOf(l.k, v);
   const what0 = l.k === 'fara' ? `Farligt${l.om ? `: ${l.om}` : ''}` : l.k === 'flinta' ? 'Flinta finns'
-    : l.g !== undefined && rel(l.g) < 0.1 ? `${l.k === 'fiske' ? 'Ingen fisk' : `Inga ${WHAT[l.k]}`} längre`
-    : l.g !== undefined && rel(l.g) > rel(l.v) + 0.35 ? `${amount(rel(l.v))} ${WHAT[l.k]}, växer tillbaka` : `${amount(rel(l.v))} ${WHAT[l.k]}`;
+    : l.g !== undefined && rel(l.g) < 0.1 ? `${l.k === 'fiske' ? 'Ingen fisk' : `Inga ${LARDOM[l.k].vad}`} längre`
+    : l.g !== undefined && rel(l.g) > rel(l.v) + 0.35 ? `${amount(rel(l.v))} ${LARDOM[l.k].vad}, växer tillbaka` : `${amount(rel(l.v))} ${LARDOM[l.k].vad}`;
   const what = what0 + (nyhet(s, l) ? ', sämre än man trott' : '');
   const text = l.k === 'fara' ? `Rädd för platsen ${place}${l.om ? ` (${l.om})` : ''}` : `${what} ${place}`;
   const src = l.src === undefined ? (l.led ? 'fick höra om det' : 'egen erfarenhet') : `hört av ${byId(s, l.src)?.name ?? 'någon'}${(l.led ?? 1) > 1 ? `, ${l.led} led från den som var där` : ''}`;

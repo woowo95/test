@@ -3,6 +3,7 @@ import { ALDER, ageOf, isParent, living, log } from './folk';
 import { clamp } from './slump';
 import { Act, DAY, HOUR, Person, SEDER, Sed, Seder, State } from './typer';
 import { balans } from './balans';
+import { kortTal } from './format';
 
 // ---------- balanstal (regel 8) ----------
 // Sederna (arbete, gemenskap, barn, nyfikenhet, försiktighet, från -1 till 1) rör sig långsamt mot det invånarna drar åt och
@@ -164,4 +165,4 @@ export function updateTags(s: State) {
     }
   }
 }
-export const dygn = (v: number) => `${v >= 10 ? Math.round(v) : v.toFixed(1).replace('.', ',')} dygn`;
+export const dygn = (v: number) => `${kortTal(v)} dygn`;

@@ -105,6 +105,7 @@ function tick() {
     vt = Date.now();
     if (vt - s.now > IKAPP_EFTER) { catchUp(vt); return; }
   }
+  // spar.pa är på också här: varje slag börjar om vägen (steg.ts), så bara det sista slaget sparas och ritas
   for (let n = 0; s.now < vt && n < MAX_SLAG; n++) step(s, BEAT, events);
   ui.nu = Math.min(vt, s.now);
   nyBild();

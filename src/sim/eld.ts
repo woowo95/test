@@ -16,6 +16,7 @@ import { kronika } from './historik';
 import { SNABBARE } from './handlingar';
 import { Act, DAY, Fire, FireLog, GREN, HEARTHS, HOUR, HOUR_S, IGNITERS, Person, SEC, State } from './typer';
 import { balans } from './balans';
+import { num } from './format';
 
 // ---------- balanstal (regel 8) ----------
 // Elden: hur stark den är, vad var och en vill ha på den, hur den tänds och fylls på, och hur tändmaterial, stenar och flinta
@@ -128,7 +129,7 @@ export function canLight(s: State, p?: Person) {
 export function needTinder(s: State) {
   return !s.fire.lit && !emberOn(s) && (amountOf(s, 'flinta') < 1 || needStones(s) || amountOf(s, 'torrgras') < RESERV.tandBrist || amountOf(s, 'grenar') < RESERV.tandBrist);
 }
-function durText(sec: number) { const h = sec / HOUR_S; return h >= 24 ? `${(h / 24).toFixed(1).replace('.', ',')} dygn` : h >= 1 ? `${Math.round(h)} timmar` : `${Math.round(sec / 60)} minuter`; }
+function durText(sec: number) { const h = sec / HOUR_S; return h >= 24 ? `${num(h / 24)} dygn` : h >= 1 ? `${Math.round(h)} timmar` : `${Math.round(sec / 60)} minuter`; }
 function lightFire(s: State, p: Person) {
   const f = s.fire, start = takeFuel(s, ELD.tandBransle, p), onCoal = (f.ash ?? 0) >= 1;
   Object.assign(f, { lit: true, fuel: start, litAt: s.now, litBy: p.id, burned: 0, emberUntil: undefined, tryProg: 0 });
