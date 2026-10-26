@@ -101,7 +101,7 @@ export function spotFor(s: State, act: Act, p: Person): { x: number; y: number }
   if (plats === 'elden') {
     // när det är kallt samtalar och berättar man i samlingshuset, om det är varmare där än vid elden (byggnader.ts)
     const sal = d.social ? samlingRum(s) : undefined, c = sal ? coldOf(temperature(s)) : 0;
-    if (sal && c > 0 && varmareInne(s, sal, c)) return punktIRuta(s, pick(s, sal.tiles, 'val', p), p);
+    if (sal && c > 0 && varmareInne(s, sal, c, d.varmer)) return punktIRuta(s, pick(s, sal.tiles, 'val', p), p);
     for (let k = 0; ; k++) { // runt elden, men inte i en husvägg
       const ang = rnd(s, 'val', p) * Math.PI * 2, r = d.radie ?? 1.3 + rnd(s, 'val', p) * 0.9, x = f.x + 0.5 + Math.cos(ang) * r, y = f.y + 0.5 + Math.sin(ang) * r;
       if (k >= 11 || !blocked(s, x, y)) return k >= 11 ? freeNear(s, f.x + 0.5, f.y + 1.5) : { x, y };

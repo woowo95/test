@@ -48,6 +48,7 @@ interface ActDef {
   vila?: true; // man återhämtar sig
   hantverk?: true; // övar hantverk
   social?: true; // man samtalar med dem som är nära
+  varmer?: true; // görs för att bli varm: ett rum väljs bara om det är minst lika varmt som vid elden (varmareInne)
   dygn?: true; // avbryts när dag blir natt eller natt blir dag
   stilla?: true; // står still på platsen (ingen småjustering i bilden)
   // var den görs (val.ts): runt elden, vid kolhögen, sovplats, lekplatsen eller ute på marken (skog är förvalt)
@@ -69,7 +70,7 @@ const DEF = {
   sova: { namn: 'Sover', slag: 'vila', vila: true, stilla: true, plats: 'sang' },
   elda: { namn: 'Lägger trä på elden', slag: 'elda', ger: 'ved' },
   tanda: { namn: 'Försöker tända elden', slag: 'elda' },
-  varma: { namn: 'Värmer sig vid elden', vila: true, social: true, plats: 'elden' },
+  varma: { namn: 'Värmer sig vid elden', vila: true, social: true, varmer: true, plats: 'elden' },
   toa: { namn: 'Går avsides på toa', plats: 'avsides' },
   kol: { namn: 'Hämtar kol ur den slocknade elden', plats: 'kol' },
   falla: { namn: 'Fäller ett träd med yxa', slag: 'tra', redskap: { yxa: {} }, arbete: 'ved', takt: 0, tungt: true },

@@ -11,7 +11,7 @@ const setItems = (s: State, m: Record<string, number>) => {
 const setMat = (s: State, m: Record<string, number>) => { for (const k of FOOD) setAmount(s, k, m[k] ?? 0); };
 // all mat blir n, i samma förhållande mellan slagen som förut (bär om det inte fanns någon)
 const setFood = (s: State, n: number) => { const f = foodOf(s); if (f > 0) { const m: Record<string, number> = {}; for (const k of FOOD) m[k] = amountOf(s, k) * n / f; setStock(s, m); } else setAmount(s, 'bar', n); };
-import { ALDER, KROPP, inMap, stepFire, dangers, toolGain, FOLDERS, STATS, ACTS, haulJob, fetchFuel, ownedAll, leave, chooseTask, stackOf, birth, coverOf, lightLevel, timeLabel, hearthOf, igniterOf, fireWant, fireHeat, heatRadius, emberOn, zoneAt, bitAt, husById, isSick, isSocial, moodOf, duty, habitTotal, habitShare, childrenOf, homeKind, taskName, carryKind, influence, hasMaterial, wornOf, relKey, sakNamn, tingNamn, visning, SAKER, slagIkon } from '../sim';
+import { ALDER, KROPP, inMap, stepFire, dangers, toolGain, samlingRum, varmareInne, FOLDERS, STATS, ACTS, haulJob, fetchFuel, ownedAll, leave, chooseTask, stackOf, birth, coverOf, lightLevel, timeLabel, hearthOf, igniterOf, fireWant, fireHeat, heatRadius, emberOn, zoneAt, bitAt, husById, isSick, isSocial, moodOf, duty, habitTotal, habitShare, childrenOf, homeKind, taskName, carryKind, influence, hasMaterial, wornOf, relKey, sakNamn, tingNamn, visning, SAKER, slagIkon } from '../sim';
 import { hasIcon } from '../ikoner';
 import { findPath } from '../sim/vag';
 import { FOREST, HIGH, isSoil } from '../sim/vag';
@@ -1213,7 +1213,13 @@ SCENARIER.funktion = {
     const rivet = !housesOf(s).includes(C) && (s.stat?.rivet ?? 0) === 1 && amountOf(s, 'ved') > ved0 && !bitsOf(s).some(b => b.hus === C.id);
     // när det är kallt och elden är slocknad umgås man i samlingshuset
     s.now = new Date(s.now).setMonth(0, 15); s.fire.lit = false; s.fire.fuel = 0;
-    const sp = spotFor(s, 'samtal', living(s)[1]), inne = sp.x >= B.x && sp.x < B.x + B.w && sp.y >= B.y && sp.y < B.y + B.h && roofed(s, sp.x, sp.y);
+    const iB = (sp: { x: number; y: number }) => sp.x >= B.x && sp.x < B.x + B.w && sp.y >= B.y && sp.y < B.y + B.h && roofed(s, sp.x, sp.y);
+    const inne = iB(spotFor(s, 'samtal', living(s)[1]));
+    // brinner elden går den som ska värma sig till elden, om det inte är minst lika varmt i samlingshuset (lätt kyla:
+    // huset förlorar lite värme, elden ger mer). Samtalet får vara inne då
+    Object.assign(s.fire, { lit: true, fuel: 4 });
+    const sal = samlingRum(s)!, varmInne = varmareInne(s, sal, 0.02, true), samtalInne = varmareInne(s, sal, 0.02);
+    s.fire.lit = false; s.fire.fuel = 0;
     // sovplatserna räcker inte: samlingshuset blir en sovsal igen
     kom(); stepByggnader(s);
     const tillbaka = fnId(B) === 'sovsal';
@@ -1227,6 +1233,7 @@ SCENARIER.funktion = {
       ['en sovsal som just blivit tom får vara kvar ett tag', vantar],
       [`efter ett dygn (ett år i spelet) blir den ett samlingshus (${bNamn})`, samling],
       ['när det är kallt samtalar man i samlingshuset i stället för vid den slocknade elden', inne],
+      [`den som ska värma sig går till elden som brinner, inte till ett samlingshus som är kallare (samtalet ${samtalInne ? 'inne' : 'ute'})`, !varmInne && samtalInne],
       ['finns redan ett samlingshus rivs nästa tomma sovsal, och en del av timret kommer tillbaka', rivet],
       ['saknas sovplatser blir samlingshuset en sovsal igen', tillbaka],
       ['en tom sovsal blir förrådshus när maten ruttnar', forrad],
