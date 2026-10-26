@@ -240,10 +240,10 @@ export function usable(s: State, x: number, y: number) {
 }
 const allUsable = (s: State, z: Zone) => { for (let y = z.y; y < z.y + z.h; y++) for (let x = z.x; x < z.x + z.w; x++) if (!usable(s, x, y)) return false; return true; };
 const overlaps = (a: Zone, b: Zone, gap: number) => a.x < b.x + b.w + gap && b.x < a.x + a.w + gap && a.y < b.y + b.h + gap && b.y < a.y + a.h + gap;
-// rutorna runt en lagerplats, närmast först
-function ringTiles(s: State, z: Zone) {
+// rutorna runt en lagerplats, närmast först (från fran till och med till rutor ut)
+function ringTiles(s: State, z: Zone, fran = 1, till = LAGER.bredvid) {
   const out: { x: number; y: number }[] = [];
-  for (let d = 1; d <= LAGER.bredvid; d++) for (let y = z.y - d; y < z.y + z.h + d; y++) for (let x = z.x - d; x < z.x + z.w + d; x++) {
+  for (let d = fran; d <= till; d++) for (let y = z.y - d; y < z.y + z.h + d; y++) for (let x = z.x - d; x < z.x + z.w + d; x++) {
     const e = Math.max(z.x - x, x - (z.x + z.w - 1), z.y - y, y - (z.y + z.h - 1));
     if (e === d && usable(s, x, y)) out.push({ x, y });
   }
@@ -302,7 +302,12 @@ function besideSpot(s: State, k: string, occ: Map<number, Stack>) {
     if (zoneAt(s, r.x, r.y) >= 0) continue;
     if (roomIn(occ.get(key(r.x, r.y)), k)) return r;
   }
-  return { x: zs[0].x, y: zs[0].y };
+  // nödlösning när också ringen är full: längre ut, på en ruta där inget annat ligger (aldrig ovanpå en annan sak)
+  const upptagen = new Set<number>();
+  for (const a of things(s)) if (!roomIn(a, k)) upptagen.add(key(a.x, a.y));
+  const z0 = (base.length ? base : zs)[0];
+  for (const r of ringTiles(s, z0, LAGER.bredvid + 1, W + H)) if (zoneAt(s, r.x, r.y) < 0 && !upptagen.has(key(r.x, r.y))) return r;
+  return { x: zs[0].x, y: zs[0].y }; // hela kartan är full
 }
 export const fetchSpot = (s: State, k: string) => {
   if (isTool(k)) placeTools(s);
