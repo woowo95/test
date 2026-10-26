@@ -1,5 +1,5 @@
 import { ALDER, ageOf, count, forstaGang, living, log, stat } from './folk';
-import { Bit, Hus, MATERIAL, bitsOf, blocked, freeNear, gridOf, housesOf, husById, touch } from './byggnad';
+import { Bit, Hus, MATERIAL, bitById, bitsOf, blocked, freeNear, gridOf, housesOf, husById, touch } from './byggnad';
 import { getMap } from './karta';
 import { groundOf, punktIRuta } from './mark';
 import { PLATS, campCenter, rektAvstand } from './plats';
@@ -8,7 +8,7 @@ import { RESERV, kunnighet } from './ekonomi';
 import { ARSTID, iIstiden } from './tid';
 import { knows } from './teknik';
 import { amountOf, changed, nearZone, ownMove, ownsAmount, use, usable, zonesOf } from './lager';
-import { freeTools } from './agande';
+import { freeTools, tingOf } from './agande';
 import { getable, takeMaterial } from './behov';
 import { Del } from './egendom';
 import { fellingTiles } from './skog';
@@ -59,7 +59,7 @@ const tileOk = (s: State, x: number, y: number) => {
   if (x < 1 || y < 1 || x >= W - 1 || y >= H - 1) return false;
   if (!usable(s, x, y)) return false; // inte vatten, sten, inpå elden eller på ett annat bygge (träden spelar ingen roll: de fälls innan bygget börjar)
   if (zonesOf(s).some(z => nearZone(z, x, y, BYGG.lagerMarg))) return false;
-  if ((s.stackar ?? []).some(a => a.x === x && a.y === y) || (s.stockar ?? []).some(k => Math.floor(k.x) === x && Math.floor(k.y) === y) || (s.stubbar ?? []).some(k => k.x === x && k.y === y)) return false;
+  if ((s.stackar ?? []).some(a => a.x === x && a.y === y) || tingOf(s).some(k => k.x === x && k.y === y && k.hos === undefined && k.lass === undefined) || (s.stockar ?? []).some(k => Math.floor(k.x) === x && Math.floor(k.y) === y) || (s.stubbar ?? []).some(k => k.x === x && k.y === y)) return false;
   return true;
 };
 // en plats för ett hus med yttermåtten w×h inom byområdet, helst en bit från elden och inte på lekplatsen. Träden där
@@ -279,7 +279,7 @@ export function workOn(s: State, p: Person, b: Bit, dtSec: number) {
   }
   return true;
 }
-// en vägg som just blivit klar: den som står där kliver åt sidan, och det som ligger där flyttas
+// en vägg som just blivit klar: den som står där kliver åt sidan, och det som ligger där (stackar och redskap) flyttas
 function clearTile(s: State, b: Bit) {
   const free = [[0, 1], [1, 0], [0, -1], [-1, 0], [1, 1], [-1, -1], [1, -1], [-1, 1]].map(([dx, dy]) => ({ x: b.x + dx, y: b.y + dy })).find(o => inMap(o.x, o.y) && !blocked(s, o.x, o.y)) ?? freeNear(s, b.x, b.y, true);
   for (const p of living(s)) if (Math.floor(p.x) === b.x && Math.floor(p.y) === b.y) { p.x = free.x + 0.5; p.y = free.y + 0.5; if (p.task) p.task.pk = undefined; }
@@ -287,7 +287,11 @@ function clearTile(s: State, b: Bit) {
   for (const p of living(s)) if (p.task && Math.floor(p.task.tx) === b.x && Math.floor(p.task.ty) === b.y) { p.task.tx = free.x + 0.5; p.task.ty = free.y + 0.5; p.task.pk = undefined; }
   // den som bär hem en börda och ska fortsätta där fortsätter bredvid
   for (const p of living(s)) { const r = p.task?.res; if (r && Math.floor(r.x) === b.x && Math.floor(r.y) === b.y) { r.x = free.x + 0.5; r.y = free.y + 0.5; } }
+  // den som hämtar material och ska bygga härifrån får en ny byggplats bredvid sin bit (siteOf drar inga slumptal)
+  for (const p of living(s)) { const st = p.task?.site; if (st && Math.floor(st.x) === b.x && Math.floor(st.y) === b.y) { const tb = bitById(s, p.task!.ref); p.task!.site = tb ? siteOf(s, tb) : { x: free.x + 0.5, y: free.y + 0.5 }; } }
   for (const a of s.stackar ?? []) if (a.x === b.x && a.y === b.y) { a.x = free.x; a.y = free.y; }
+  // ett redskap som ligger på rutan (inte i handen eller en börda) läggs bredvid
+  for (const t of tingOf(s)) if (t.x === b.x && t.y === b.y && t.hos === undefined && t.lass === undefined) { t.x = free.x; t.y = free.y; }
   changed(s); // summorna i förrådet räknas om (lager.ts)
 }
 
