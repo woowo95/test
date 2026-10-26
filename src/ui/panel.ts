@@ -1,4 +1,4 @@
-import { FOLDERS, STACK, amountOf, grundvarde, isTool, ownedSum, sakNamn, tingOf, wornOf } from '../sim';
+import { FOLDERS, amountOf, grundvarde, isTool, kortTal, ownedSum, sakNamn, wornOf } from '../sim';
 import { iconImg } from '../ikoner';
 import { eld } from './flikar/eld';
 import { folk, logg } from './flikar/folk';
@@ -7,7 +7,7 @@ import { hus } from './flikar/hus';
 import { person } from './flikar/person';
 import { seder } from './flikar/seder';
 import { teknik } from './flikar/teknik';
-import { $ } from './hjalp';
+import { $, hjalpKlick } from './hjalp';
 import { piles, s, ui } from './lage';
 import { renderPorts } from './portratt';
 
@@ -29,8 +29,12 @@ const nav = document.querySelector<HTMLElement>('.tabs')!;
 nav.innerHTML = IDS.filter(id => !ALLA[id].knapp).map(id => `<button type="button" role="tab" data-tab="${id}" aria-selected="false">${ALLA[id].namn}</button>`).join('');
 
 export function visa(id: FlikId) { ui.tab = id; renderPanel(true); }
+// flikarna som visas under personknappen (personen, elden, lagret, högen, huset): ett tryck på tom mark stänger dem
+export const ärPersonflik = (id: FlikId) => (ALLA[id].knapp ?? id) === 'person';
 export function selectPerson(id: number) { ui.selected = id; ui.tab = 'person'; renderPanel(true); renderPorts(); }
 
+// det som senast skrevs i panelen: är det samma skrivs det inte om (markering, musen över och fokus står kvar)
+let panelHtml = '';
 export function renderPanel(force = false) {
   const cur = ALLA[ui.tab], under = cur.knapp ?? ui.tab;
   for (const b of nav.querySelectorAll<HTMLButtonElement>('button')) {
@@ -40,13 +44,16 @@ export function renderPanel(force = false) {
   }
   renderOwned();
   if (!force && (ui.busy || performance.now() - ui.lastPointer < 800)) return;
-  $('panelBody').innerHTML = cur.html();
+  const html = cur.html();
+  if (!force && html === panelHtml) return;
+  panelHtml = html; $('panelBody').innerHTML = html;
 }
 document.addEventListener('pointerdown', () => { ui.lastPointer = performance.now(); }, true);
 document.addEventListener('click', e => {
   const el = e.target as HTMLElement;
   const b = el.closest<HTMLElement>('[data-id]');
   if (b) { selectPerson(Number(b.dataset.id)); return; }
+  if (hjalpKlick(el)) { renderPanel(true); return; }
   for (const id of IDS) if (ALLA[id].klick?.(el)) { renderPanel(true); return; }
   const tb = el.closest<HTMLElement>('.tabs button');
   if (tb) visa(tb.dataset.tab as FlikId);
@@ -56,18 +63,17 @@ document.addEventListener('click', e => {
 const closed = new Set<string>();
 let ownedKey = '';
 // namnet, hur mycket som är byns och invånarnas egna (egendom.ts), och värdet (varde.ts)
-const tal = (v: number) => v >= 10 ? String(Math.round(v)) : v.toFixed(1).replace('.', ',');
 function tipOf(k: string, n: number) {
   const eg = Math.min(n, ownedSum(s, k)), r = (v: number) => Math.round(v), v = grundvarde(k);
   const namn = eg >= 0.5 ? `${sakNamn(k)}: byns ${r(n - eg)}, invånarnas egna ${r(eg)}` : sakNamn(k);
-  return v ? `${namn}&#10;⚖ ${tal(v)} styck, ${tal((isTool(k) ? tingOf(s).filter(t => t.k === k).reduce((a, t) => a + t.c, 0) : wornOf(s, k)) * v)} allt efter skicket` : namn;
+  return v ? `${namn}&#10;⚖ ${kortTal(v)} styck, ${kortTal(wornOf(s, k) * v)} allt efter skicket` : namn;
 }
 function renderOwned() {
-  const rows = FOLDERS.map(f => ({ f, ks: f.k.map(k => ({ k, n: amountOf(s, k) })).filter(r => r.n >= (STACK[r.k] === 1 ? 1e-6 : 0.5)) })).filter(r => r.ks.length);
+  const rows = FOLDERS.map(f => ({ f, ks: f.k.map(k => ({ k, n: amountOf(s, k) })).filter(r => r.n >= (isTool(r.k) ? 1e-6 : 0.5)) })).filter(r => r.ks.length);
   const ute = piles().filter(p => !p.stored);
   const html = `<h4>Förrådet</h4>${rows.map(({ f, ks }) => {
-    const sum = f.namn === 'Mat' || f.namn === 'Bränsle' ? ` <span class="n">${Math.round(ks.reduce((a, r) => a + r.n, 0))}</span>` : '';
-    return `<button type="button" class="fold" data-f="${f.namn}" aria-expanded="${!closed.has(f.namn)}">${closed.has(f.namn) ? '▸' : '▾'} ${f.namn}${sum}</button>${closed.has(f.namn) ? '' : `<ul>${ks.map(r => `<li title="${tipOf(r.k, r.n)}">${iconImg(r.k)}<span class="n">${STACK[r.k] === 1 ? Math.ceil(r.n - 1e-9) : Math.max(1, Math.round(r.n))}</span></li>`).join('')}</ul>`}`;
+    const sum = f.summa ? ` <span class="n">${Math.round(ks.reduce((a, r) => a + r.n, 0))}</span>` : '';
+    return `<button type="button" class="fold" data-f="${f.namn}" aria-expanded="${!closed.has(f.namn)}">${closed.has(f.namn) ? '▸' : '▾'} ${f.namn}${sum}</button>${closed.has(f.namn) ? '' : `<ul>${ks.map(r => `<li title="${tipOf(r.k, r.n)}">${iconImg(r.k)}<span class="n">${isTool(r.k) ? Math.ceil(r.n - 1e-9) : Math.max(1, Math.round(r.n))}</span></li>`).join('')}</ul>`}`;
   }).join('') || '<p>Inget ännu</p>'}${ute.length ? `<p class="ute">${ute.length} ${ute.length === 1 ? 'hög' : 'högar'} på marken</p>` : ''}`;
   if (html === ownedKey) return;
   ownedKey = html; $('owned').innerHTML = html;

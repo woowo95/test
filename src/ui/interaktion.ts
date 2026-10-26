@@ -1,10 +1,10 @@
 import * as PIXI from 'pixi.js';
-import { BAR, FOREST, HIGH, MATERIAL, Person, T, W, bitAt, campCenter, condOf, emberOn, getMap, groundOf, husById, inMap, insulation, living, roomAt, sakNamn, taskName, zoneAt, zonesOf, Pile } from '../sim';
+import { BAR, FOREST, HIGH, MATERIAL, Person, T, W, bitAt, campCenter, condOf, emberOn, getMap, groundOf, husById, inMap, insulation, living, roomAt, sakNamn, sovplatser, taskName, zoneAt, zonesOf, Pile } from '../sim';
 import { iconImg } from '../ikoner';
-import { $, esc, fmtN } from './hjalp';
+import { $, esc, fmtN, prickar } from './hjalp';
 import { outPilesAt, piles, s, ui } from './lage';
 import { posOf } from './manniskor';
-import { renderPanel, selectPerson, visa } from './panel';
+import { renderPanel, selectPerson, visa, ärPersonflik } from './panel';
 import { renderPorts, stopFollow } from './portratt';
 import { TS, app, cam, layout, tileAt, toWorld, view, world, zoomAt } from './scen';
 
@@ -36,9 +36,9 @@ app.stage.on('pointertap', e => {
   else if (zi) { ui.lagerNr = zi - 1; visa('lager'); }
   else if (outPilesAt(c.x, c.y).length) { ui.hogAt = c; visa('hog'); }
   else if (husAt(c.x, c.y) !== undefined) { ui.husId = husAt(c.x, c.y)!; visa('hus'); }
-  else if (ui.selected !== undefined || ui.tab === 'person' || ui.tab === 'eld' || ui.tab === 'lager' || ui.tab === 'hog' || ui.tab === 'hus') {
+  else if (ui.selected !== undefined || ärPersonflik(ui.tab)) {
     ui.selected = undefined; stopFollow();
-    if (ui.tab === 'person' || ui.tab === 'eld' || ui.tab === 'lager' || ui.tab === 'hog' || ui.tab === 'hus') ui.tab = 'folk';
+    if (ärPersonflik(ui.tab)) ui.tab = 'folk';
     renderPanel(true); renderPorts();
   }
 });
@@ -56,14 +56,14 @@ app.stage.on('pointermove', e => {
   view.style.cursor = ui.hovered || fireAt(gx, gy) || storeAt(gx, gy) || outPilesAt(c.x, c.y).length || husAt(c.x, c.y) !== undefined ? 'pointer' : 'grab';
 });
 view.addEventListener('wheel', e => { e.preventDefault(); const r = view.getBoundingClientRect(); zoomAt(e.deltaY < 0 ? 1.06 : 1 / 1.06, e.clientX - r.left, e.clientY - r.top); }, { passive: false });
-view.addEventListener('pointerleave', () => { $('hoverBox').hidden = true; });
+view.addEventListener('pointerleave', () => { $('hoverBox').hidden = true; ui.hovered = undefined; });
 $('zIn').addEventListener('click', () => zoomAt(1.4));
 $('zOut').addEventListener('click', () => zoomAt(1 / 1.4));
 $('zHome').addEventListener('click', () => { stopFollow(); cam.zoom = 2.4; const f = campCenter(s); cam.x = f.x * TS; cam.y = f.y * TS; layout(); });
 
 // ---------- rutan i hörnet: vad som finns under musen ----------
 // bara underlaget och det som står där; vad som växer och lever på platsen finns i värmekartorna
-const pileTxt = (p: Pile) => `${sakNamn(p.k)} ${p.max === 1 ? '' : `${fmtN(p.n)} st, `}skick ${Math.round(condOf(p) * 100)} %`;
+const stackTxt = (p: Pile) => `${sakNamn(p.k)} ${p.max === 1 ? '' : `${fmtN(p.n)} st, `}skick ${Math.round(condOf(p) * 100)} %`;
 // huset på rutan: en vägg eller ett golv i det, eller rummet under dess tak
 const husAt = (x: number, y: number) => bitAt(s, x, y)?.hus ?? roomAt(s, x, y)?.hus;
 function showHover(gx: number, gy: number) {
@@ -77,10 +77,10 @@ function showHover(gx: number, gy: number) {
   const zi = zoneAt(s, x, y);
   if (zi >= 0) {
     const pl = piles().find(q => q.x === x && q.y === y);
-    rows.push(`<b>${esc(zonesOf(s)[zi].namn ?? 'Lagret')}</b> · ${pl ? pileTxt(pl) : 'tom ruta'}`);
+    rows.push(`<b>${esc(zonesOf(s)[zi].namn ?? 'Lagret')}</b> · ${pl ? stackTxt(pl) : 'tom ruta'}`);
   }
   const ute = outPilesAt(x, y);
-  if (ute.length) rows.push(`<b>${ute.some(q => !q.stored) ? 'På marken' : 'Bredvid lagret'}</b> · ${ute.map(pileTxt).join(', ')}`);
+  if (ute.length) rows.push(`<b>${ute.some(q => !q.stored) ? 'På marken' : 'Bredvid lagret'}</b> · ${ute.map(stackTxt).join(', ')}`);
   const log = (s.stockar ?? []).find(k => Math.floor(k.x) === x && Math.floor(k.y) === y);
   if (log) rows.push(`Fällt träd, ca ${Math.ceil(log.ved)} trä kvar`);
   if ((s.stubbar ?? []).some(k => k.x === x && k.y === y)) rows.push('Stubbe efter ett fällt träd');
@@ -88,12 +88,12 @@ function showHover(gx: number, gy: number) {
   if (bit) {
     const M = MATERIAL[bit.m], hus = husById(s, bit.hus);
     const st = bit.b < 1 ? `byggs, ${Math.round(bit.b * 100)} %${M.n ? `, material ${Math.round(bit.mat)} av ${M.n} ${sakNamn(M.item!).toLowerCase()}` : ''}` : M.slit ? `skick ${Math.round(bit.c * 100)} %` : '';
-    rows.push(`${iconImg(bit.k === 'vagg' ? (bit.m === 'ris' ? 'risvagg' : 'timmervagg') : bit.m === 'ho' ? 'hogolv' : bit.m === 'tra' ? 'tragolv' : '', 12)} <b>${esc(M.namn)}</b>${hus ? ` i ${esc(hus.namn.toLowerCase())}` : ''}${st ? ' · ' + st : ''}`);
+    rows.push(`${iconImg(M.ikon ?? '', 12)} <b>${esc(M.namn)}</b>${hus ? ` i ${esc(hus.namn.toLowerCase())}` : ''}${st ? ' · ' + st : ''}`);
   }
   const rum = roomAt(s, x, y);
-  if (rum) { const hus = husById(s, rum.hus); rows.push(`Under tak${hus ? ` (${esc(hus.namn)})` : ''} · ${rum.tiles.length} sovplatser · håller värmen ${Math.round(insulation(s, rum) * 100)} %`); }
+  if (rum) { const hus = husById(s, rum.hus), n = sovplatser(s, rum); rows.push(`Under tak${hus ? ` (${esc(hus.namn)})` : ''} · ${n ? `${n} sovplatser · ` : ''}håller värmen ${Math.round(insulation(s, rum) * 100)} %`); }
   const here = living(s).filter(p => { const o = posOf(p); return Math.floor(o.x) === x && Math.floor(o.y) === y; });
-  if (here.length) rows.push(here.map(p => `${esc(p.name)} (${p.task ? taskName(p.task).toLowerCase() : 'vilar'})`).join(', '));
+  if (here.length) rows.push(here.map(p => `${esc(p.name)}${prickar(p, true)} (${p.task ? taskName(p.task).toLowerCase() : 'vilar'})`).join(', '));
   box.innerHTML = rows.map(r => `<p>${r}</p>`).join('');
   box.hidden = false;
 }

@@ -1,4 +1,4 @@
-import { Pile, STUBBE_LIV, bitsOf, clamp, condOf, emberOn, fireHeat, getMap, heatRadius, zonesOf } from '../sim';
+import { MATERIAL, Pile, STUBBE_LIV, bitsOf, clamp, condOf, emberOn, fireHeat, getMap, heatRadius, zonesOf } from '../sim';
 import { outPilesAt, piles, s, ui } from './lage';
 import { Ikoner, TS, pileLayer, structG } from './scen';
 
@@ -77,7 +77,7 @@ function drawBuild() {
   for (const b of bitsOf(s)) {
     const x = b.x * TS, y = b.y * TS;
     if (b.k === 'golv') {
-      const col = b.m === 'ho' ? 0xd2b866 : b.m === 'tra' ? 0xa07446 : 0x7a5a3a, a = b.b >= 1 ? (b.m === 'jord' ? 0.55 : 0.85) : 0.12 + 0.3 * b.b;
+      const col = MATERIAL[b.m]?.farg ?? MATERIAL.jord.farg, a = b.b >= 1 ? (b.m === 'jord' ? 0.55 : 0.85) : 0.12 + 0.3 * b.b;
       structG.beginFill(col, a).drawRect(x, y, TS, TS).endFill();
       if (b.m === 'tra' && b.b >= 1) for (let k = 1; k < 3; k++) structG.lineStyle(0.6, 0x5a3c22, 0.7).moveTo(x, y + TS * k / 3).lineTo(x + TS, y + TS * k / 3).lineStyle(0); // plankorna
     } else if (b.k === 'vagg') {
@@ -87,20 +87,20 @@ function drawBuild() {
         // stockarna läggs en i taget nerifrån: fler ju längre bygget kommit. De täcker hela rutan så att väggarna sitter ihop
         const n = b.b >= 1 ? 4 : Math.ceil(4 * b.b), h = TS / 4;
         if (!n) { structG.lineStyle(1, 0x5a3c22, 0.45).drawRect(x + 1.5, y + 1.5, TS - 3, TS - 3).lineStyle(0); continue; }
-        structG.beginFill(0x8a5e34, a).drawRect(x, y + TS - n * h, TS, n * h).endFill();
+        structG.beginFill(MATERIAL.timmer.farg, a).drawRect(x, y + TS - n * h, TS, n * h).endFill();
         for (let k = 0; k < n; k++) {
           const yy = y + TS - (k + 1) * h;
           structG.lineStyle(0.8, 0x4a3018, a).moveTo(x, yy + h - 0.4).lineTo(x + TS, yy + h - 0.4).lineStyle(0);
         }
         continue;
       }
-      structG.beginFill(0x6b4a2a, a).drawRect(x + 1, y + 1, TS - 2, TS - 2).endFill();
+      structG.beginFill(MATERIAL.ris.farg, a).drawRect(x + 1, y + 1, TS - 2, TS - 2).endFill();
       // flätningen: vågiga streck, färre ju mer slitet
       const n = b.b >= 1 ? Math.max(1, Math.round(3 * b.c)) : Math.ceil(3 * b.b);
       for (let k = 0; k < n; k++) { const yy = y + TS * (0.28 + 0.22 * k); structG.lineStyle(1, 0xb08a58, a).moveTo(x + 2, yy).lineTo(x + TS / 2, yy + 1.5).lineTo(x + TS - 2, yy).lineStyle(0); }
       for (let k = 1; k < 3; k++) structG.lineStyle(1, 0x3a2614, a).moveTo(x + TS * k / 3, y + 1).lineTo(x + TS * k / 3, y + TS - 1).lineStyle(0);
     } else {
-      structG.beginFill(0x7a5a3a, 0.35).drawRect(x + 1, y + 1, TS - 2, TS - 2).endFill(); // öppningen: trampad jord
+      structG.beginFill(MATERIAL.oppning.farg, 0.35).drawRect(x + 1, y + 1, TS - 2, TS - 2).endFill(); // öppningen: trampad jord
     }
   }
 }

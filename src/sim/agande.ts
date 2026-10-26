@@ -2,7 +2,6 @@ import { State, Person } from './typer';
 import { REDSKAP_SLAG, isTool } from './saker';
 import { usesTool } from './handlingar';
 import { alive, byId } from './folk';
-import { lends } from './behov';
 
 // ---------- ägande och handplatsen ----------
 // Varje redskap är ett eget ting (s.ting) med skick (c, 1 = nytt), ägare och, om någon har det i handen, vem (hos).
@@ -16,7 +15,7 @@ import { lends } from './behov';
 // Tinget är det enda som finns om ett redskap: hur många byn har räknas på tingen (lager.ts: amountOf). Ett redskap är
 // i någons hand (hos), i någons börda (lass, när det bärs mellan lagerplatser) eller ligger på en ruta (x, y). Det som
 // ännu inte har någon ruta (nygjort, tillbakalagt) får en plats i förrådet av lager.ts.
-import { BYN } from './egendom';
+import { BYN, lends } from './egendom';
 // halv = ett påbörjat redskap (paborjat.ts): vad det ska bli, materialet som tagits till det, hur länge arbetet har kvar och vem som började
 interface Halv { gor: string; av: Record<string, number>; kvar: number; ag: number }
 export interface Ting { id: number; k: string; c: number; agare: number; hos?: number; lass?: number; x?: number; y?: number; halv?: Halv }
@@ -82,7 +81,7 @@ export function tidyTools(s: State) {
 // äldre sparfiler: redskapen räknades bara som summor (s.items, och i v30 ägarlistor). Varje helt redskap blir ett ting.
 // Före v40 fanns redskapen också som summor och stackar bredvid tingen, och de som bars låg i s.tingVag
 export function migrateTools(s: State) {
-  if (!s.ting) migrate(s);
+  if (!s.ting) toolsFromItems(s);
   const vag = s.tingVag ?? [];
   for (const p of s.people) {
     const tk = p.task;
@@ -99,7 +98,8 @@ export function migrateTools(s: State) {
   }
   delete s.tingVag; delete s.items;
 }
-function migrate(s: State) {
+// varje helt redskap i s.items (och ägarlistorna i v30) blir ett ting. s.items lämnas, eftersom storeFromSums läser det
+export function toolsFromItems(s: State) {
   s.ting = [];
   for (const k of REDSKAP_SLAG) {
     let n = s.items?.[k] ?? 0;

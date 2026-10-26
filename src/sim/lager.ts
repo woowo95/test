@@ -1,6 +1,6 @@
 import { campDist } from './plats';
 import { Ting, newTing, tingOf } from './agande';
-import { alive, byId, count, stat, ageOf, log } from './folk';
+import { alive, byId, count, living, stat, ageOf, log } from './folk';
 import { getMap } from './karta';
 import { Act, H, HOUR_S, Person, State, T, Task, W, inMap } from './typer';
 import { bitAt, roofed } from './byggnad';
@@ -253,24 +253,26 @@ const key = (x: number, y: number) => y * W + x;
 // redskapen som ligger på en ruta (inte i någons hand eller börda)
 const ligger = (t: Ting) => t.x !== undefined && t.hos === undefined && t.lass === undefined;
 const lying = (s: State) => tingOf(s).filter(ligger);
-// det som ligger i förrådet, per ruta: stackarna och sedan redskapen (det sista på en ruta gäller, som i things)
-function occupancy(s: State) {
+// det som ligger i förrådet, per ruta: stackarna och sedan redskapen ts (det sista på en ruta gäller, som i things)
+function occupancy(s: State, ts = tingOf(s)) {
   const m = new Map<number, Stack>();
   for (const a of stacksOf(s)) if (isStored(s, a.x, a.y)) m.set(key(a.x, a.y), a);
-  for (const t of tingOf(s)) if (ligger(t) && isStored(s, t.x!, t.y!)) m.set(key(t.x!, t.y!), asStack(t));
+  for (const t of ts) if (ligger(t) && isStored(s, t.x!, t.y!)) m.set(key(t.x!, t.y!), asStack(t));
   return m;
 }
 const asStack = (t: Ting): Stack => ({ k: t.k, n: t.c, c: t.c, x: t.x!, y: t.y!, ag: t.agare !== BYN ? { [t.agare]: t.c } : undefined, gor: t.halv?.gor });
 // allt som ligger på marken och i förrådet: stackarna och redskapen
 const things = (s: State): Stack[] => [...stacksOf(s), ...lying(s).map(asStack)];
 // redskap som ingen har och som inte har någon ruta (nygjorda, tillbakalagda) läggs i förrådet, ett på varje ruta
-function placeTools(s: State) {
-  for (const t of tingOf(s)) {
-    if (t.hos !== undefined || t.lass !== undefined || t.x !== undefined) continue;
-    const occ = occupancy(s), sp = zoneSpot(s, t.k, -Infinity, occ) ?? besideSpot(s, t.k, occ);
+const utanRuta = (t: Ting) => t.hos === undefined && t.lass === undefined && t.x === undefined;
+function placeOn(s: State, ts: Ting[]) {
+  for (const t of ts) {
+    if (!utanRuta(t)) continue;
+    const occ = occupancy(s, ts), sp = zoneSpot(s, t.k, -Infinity, occ) ?? besideSpot(s, t.k, occ);
     t.x = sp.x; t.y = sp.y;
   }
 }
+const placeTools = (s: State) => placeOn(s, tingOf(s));
 const roomIn = (a: Stack | undefined, k: string) => !a || (a.k === k && !isTool(k) && a.n < RUTA[k] - 1e-9);
 // bästa plats i en lagerplats för ett slag: lagerplatserna i prioritetsordning, först en stack av samma slag som inte
 // är full, sedan en tom ruta. minPrio: bara lagerplatser med högre prioritet än så
@@ -451,10 +453,12 @@ export function storeFromSums(s: State) {
   changed(s);
 }
 
-// alla stackar med plats och skick
+// alla stackar med plats och skick. Gränssnittet frågar, så byn ändras inte: ett redskap utan ruta visas där det skulle
+// läggas, men det är en kopia som får rutan (simuleringen lägger det själv när det behövs, placeTools)
 export function pilesOf(s: State): Pile[] {
-  placeTools(s);
-  return things(s).map(a => { const zone = zoneAt(s, a.x, a.y); return { ...a, max: rutaOf(a.k), zone, out: zone < 0, stored: isStored(s, a.x, a.y) }; });
+  const ts = tingOf(s).map(t => utanRuta(t) ? { ...t } : t);
+  placeOn(s, ts);
+  return [...stacksOf(s), ...ts.filter(ligger).map(asStack)].map(a => { const zone = zoneAt(s, a.x, a.y); return { ...a, max: rutaOf(a.k), zone, out: zone < 0, stored: isStored(s, a.x, a.y) }; });
 }
 
 // ---------- slitage ----------
@@ -611,12 +615,20 @@ export function dropLoad(s: State, t: Task, x: number, y: number, owner = BYN) {
   t.carry = 0; t.items = undefined; t.cond = undefined; t.ag = undefined;
   changed(s);
 }
+// p slutar med det hen gör (blir vakt, dör, flyttar, når inte målet): bördan och redskapen i den läggs ner där hen står,
+// med sina ägare, och sedan har hen ingen uppgift. Den som dör eller flyttar lägger ner bördan medan hen ännu räknas som
+// levande, så att hens del ärvs eller packas (arv.ts)
+export function avbryt(s: State, p: Person) {
+  const t = p.task;
+  if (t && (isCarrying(t) || t.ting?.length)) dropLoad(s, t, p.x, p.y, p.id);
+  p.task = undefined;
+}
 // stackar som någon borde bära: saker på marken långt bort, saker bredvid lagret när det finns plats i det, saker i
 // fel lagerplats och saker som kan flyttas till en viktigare lagerplats. near = bara inom så många rutor från elden
 export function haulJob(s: State, near?: number) {
   placeTools(s);
   const zs = zonesOf(s), occ = occupancy(s);
-  const taken = new Set(s.people.filter(p => p.task?.act === 'bara' && p.task.phase === 'go').map(p => key(Math.floor(p.task!.tx), Math.floor(p.task!.ty))));
+  const taken = new Set(living(s).filter(p => p.task?.act === 'bara' && p.task.phase === 'go').map(p => key(Math.floor(p.task!.tx), Math.floor(p.task!.ty))));
   let best: { x: number; y: number; why: string } | undefined, bs = Infinity;
   for (const a of things(s)) {
     if (taken.has(key(a.x, a.y))) continue;

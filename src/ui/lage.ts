@@ -2,9 +2,15 @@ import { FyndId, Grupp, Pile, State, pilesOf, useMap } from '../sim';
 import type { FlikId } from './panel';
 
 // det hela gränssnittet delar: byn som visas och vad spelaren har valt.
-// Byn byts med setByn (ny by, testläget, inläst sparning); alla moduler ser då den nya
+// Byn byts med setByn (ny by, testläget, inläst sparning); alla moduler ser då den nya. Det som hör till den förra byn
+// (pratbubblor, trender, vem som följs) nollställs, och moduler med eget sådant lägger en rad i vidNyBy
 export let s: State;
-export function setByn(n: State) { s = n; ui.nu = n.now; useMap(n); nyBild(); }
+export const vidNyBy: (() => void)[] = [];
+export function setByn(n: State) {
+  s = n; ui.nu = n.now; useMap(n); nyBild();
+  ui.hovered = undefined; ui.husId = -1; ui.hogAt = { x: 0, y: 0 };
+  for (const f of vidNyBy) f();
+}
 export const ui = {
   tab: 'folk' as FlikId,
   selected: undefined as number | undefined, // personen som visas i panelen
@@ -13,6 +19,8 @@ export const ui = {
   busy: false, // ikappräkning pågår
   nu: 0, // tiden som visas (byn är räknad ett slag längre, main.ts)
   sparFel: false, // senaste sparningen i artefaktens databas misslyckades
+  molnFel: false, // byn i artefaktens databas gick inte att läsa, och sparas därför inte där (spara.ts)
+  lokalFel: false, // senaste sparningen i webbläsaren misslyckades
   testMode: false, // testläget: en kopia av byn som kan spolas fram
   lastPointer: 0, // när spelaren senast tryckte: panelen byts inte ut mitt i ett tryck
   husId: -1, // huset som visas i panelen

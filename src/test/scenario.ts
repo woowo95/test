@@ -2,7 +2,7 @@
 // npm run scenario            kör alla
 // npm run scenario -- glanta  kör bara ett
 import { isDeepStrictEqual } from 'node:util';
-import { FANGST, MIN, Person, Act, createState, clean, canClean, ownedBy, tidyTools, addTool, toolsOf, heldBy, take, usesTool, wearTool, freeSpear, getRel, isTool, BYN, twineRope, makeRod, wearUsed, isSpear, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, serializeParts, joinParts, serialize, ageStart, nyKalender, kalender, yearNo, AGES, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, zonesOf, allows, ageOf, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, DAY, HOUR, W, State, tileOf, rektAvstand, skogAndel, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, campCenter, TEKNIK, knows, thinkWhileWorking, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, beds, isWall, Bit, wearBuild, FYND, FYND_IDS, GRUPPER, angOf, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, observe, hoped, Lager, skyggOf, grupperOf, KANINER, share, treeOn, djurOf, KANIN, SLAKT, DJUR, canSlaughter, makeKnife, slaughter, askForTool, askForGift, gain, takeFood, takeFuel, ownsAmount, ownedStock, ownedSum, sumOf, addTo, setAmount, setStock, foodOf, isFood, STACK_ORDER, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, STOLD_LINDRIG, STOLD_OP, rnd, STROMMAR, Strom, BEAT, spar, isWork, SPARVERSION, stepDelning, rikedom, rikedomDelar, grundvarde, nivaOf, DELNING, packUp, releaseOwner, willing, tingOf, komOf, BYGGNADER, FN, mostUrgent, fnId, fnOf, planBuild, workOn, wearMult, LAGER, homeless, sleepBeds, inZone, startWork, workHalf, finishHalf, stepPaborjat, halvOf, tingVarde, HALV_TID, fallTid, treeSpot, SEC, Task, familjOf, bedTile, takeForHouse, put, stepByggnader, husNamn, spotFor, roofed, matGott, barnMat, hungerFlytt, regulate, MATERIAL, EKONOMI, ACTS, SAK_LIST, SAKER, eatPoison } from '../sim';
+import { FANGST, MIN, Person, Act, createState, clean, canClean, ownedBy, tidyTools, addTool, toolsOf, heldBy, take, usesTool, wearTool, freeSpear, getRel, isTool, BYN, twineRope, makeRod, wearUsed, isSpear, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, serializeParts, joinParts, serialize, cloneState, ageStart, nyKalender, kalender, yearNo, AGES, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, zonesOf, allows, ageOf, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, DAY, HOUR, W, State, tileOf, rektAvstand, skogAndel, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, campCenter, TEKNIK, knows, thinkWhileWorking, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, isWall, Bit, wearBuild, FYND, FYND_IDS, GRUPPER, angOf, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, observe, hoped, Lager, skyggOf, grupperOf, KANINER, share, treeOn, djurOf, KANIN, SLAKT, DJUR, canSlaughter, makeKnife, slaughter, askForTool, askForGift, gain, takeFood, takeFuel, ownsAmount, ownedStock, ownedSum, sumOf, addTo, setAmount, setStock, foodOf, isFood, STACK_ORDER, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, STOLD_LINDRIG, STOLD_OP, rnd, STROMMAR, Strom, BEAT, spar, isWork, SPARVERSION, stepDelning, rikedom, rikedomDelar, grundvarde, nivaOf, DELNING, packUp, releaseOwner, willing, tingOf, komOf, BYGGNADER, FN, mostUrgent, fnId, fnOf, planBuild, workOn, wearMult, LAGER, homeless, sovplatser, inZone, startWork, workHalf, finishHalf, stepPaborjat, halvOf, tingVarde, HALV_TID, fallTid, treeSpot, SEC, Task, familjOf, bedTile, takeForHouse, put, stepByggnader, husNamn, spotFor, roofed, matGott, barnMat, hungerFlytt, regulate, MATERIAL, EKONOMI, SAMTALSSLAG, SAK_LIST, eatPoison } from '../sim';
 // förrådet i proven: stackarna är det enda som sparas (steg 1.1.2), så proven ställer in förrådet genom lagret
 const setItems = (s: State, m: Record<string, number>) => {
   for (const k of STACK_ORDER) if (!isFood(k) && k !== 'ved' && !isTool(k)) setAmount(s, k, m[k] ?? 0);
@@ -11,6 +11,8 @@ const setItems = (s: State, m: Record<string, number>) => {
 const setMat = (s: State, m: Record<string, number>) => { for (const k of FOOD) setAmount(s, k, m[k] ?? 0); };
 // all mat blir n, i samma förhållande mellan slagen som förut (bär om det inte fanns någon)
 const setFood = (s: State, n: number) => { const f = foodOf(s); if (f > 0) { const m: Record<string, number> = {}; for (const k of FOOD) m[k] = amountOf(s, k) * n / f; setStock(s, m); } else setAmount(s, 'bar', n); };
+import { FOLDERS, STATS, ACTS, haulJob, fetchFuel, ownedAll, leave, chooseTask, stackOf, birth, coverOf, lightLevel, timeLabel, hearthOf, igniterOf, fireWant, fireHeat, heatRadius, emberOn, zoneAt, bitAt, husById, isSick, isSocial, moodOf, duty, habitTotal, habitShare, childrenOf, homeKind, taskName, carryKind, influence, hasMaterial, wornOf, relKey, sakNamn, tingNamn, visning, SAKER, slagIkon } from '../sim';
+import { hasIcon } from '../ikoner';
 import { findPath, FOREST, HIGH, isSoil } from '../sim/vag';
 import { DOK_KB, START, STEG_DYGN, STEG_TIM } from './kor';
 import { Utfall, korSkript, pool } from './pool';
@@ -59,6 +61,46 @@ function uttag(s: State, k: Kind, min: number, max: number) {
   let n = 0, v = 0;
   for (let i = 0; i < t.length; i++) { const d = campDist(s, i % W, Math.floor(i / W)); if (d >= min && d < max) { n++; v += t[i]; } }
   return n ? v / n : 0;
+}
+
+// det gränssnittet läser ur byn (ui/ och main.ts), med de argument det ger: kartan, förrådet, varje person och varje flik.
+// t är tiden som visas (ui.nu), lite före byns tid. Det som bara går med en skärm (pixi, sidan) är inte med. Som i
+// webbläsaren läser gränssnittet i visningsläget (visning i typer.ts)
+function uiLas(s: State, t: number) {
+  visning.pa = true;
+  try { uiLasNu(s, t); } finally { visning.pa = false; }
+}
+function uiLasNu(s: State, t: number) {
+  kalender(s, t); yearNo(s, t); temperature(s, t); isLight(t); lightLevel(t); timeLabel(s, t); ageIndex(s); rikedomDelar(s);
+  // kartan: filtret, växterna, djuren, marken och elden
+  for (const k of FYND_IDS) for (let i = 0; i < W * H; i++) { vaxerAt(s, k, i); fyndAt(s, k, i); }
+  djurOf(s, t);
+  groundOf(s); coverOf(s); campCenter(s); getMap(s.seed);
+  hearthOf(s.fire); igniterOf(s); fireWant(s); fireHeat(s); heatRadius(s); emberOn(s);
+  // förrådet, lagerplatserna och högarna
+  for (const pl of pilesOf(s)) { condOf(pl); sakNamn(pl.k); }
+  for (const f of FOLDERS) for (const k of f.k) { amountOf(s, k); ownedSum(s, k); grundvarde(k); wornOf(s, k); }
+  for (const tg of tingOf(s)) tingNamn(tg);
+  // rutorna under musen: lagerplats, hus och rum
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { zoneAt(s, x, y); const b = bitAt(s, x, y); if (b) husById(s, b.hus); const r = roomAt(s, x, y); if (r) { insulation(s, r); husById(s, r.hus); } }
+  for (const z of zonesOf(s)) void z.namn;
+  // husfliken
+  for (const h of housesOf(s)) { husById(s, h.id); komOf(h); fnOf(h); for (const r of gridOf(s).rooms) if (r.hus === h.id) insulation(s, r); }
+  for (const b of bitsOf(s)) void b.hus;
+  // teknik och seder
+  for (const tk of TEKNIK) { hasMaterial(s, tk); for (const p of living(s)) knows(p, tk.id); }
+  for (const p of living(s)) influence(s, p);
+  // varje person: porträtten, invånarlistan, personfliken och figuren på kartan
+  const slag = Object.keys(ACTS) as Act[];
+  for (const p of s.people) {
+    ageOf(p, s.now); isSick(p, s.now); isSocial(p); moodOf(p, s.now); duty(s, p); childrenOf(s, p);
+    for (const k of STATS) stat(p, k, s.now);
+    const tot = habitTotal(p); for (const a of slag) habitShare(p, [a], tot);
+    heldBy(s, p); ownedBy(s, p); ownedStock(s, p); capacity(s, p);
+    if (p.task) { load(p.task); homeKind(p.task); taskName(p.task); carryKind(p.task.act); }
+    for (const l of p.lardomar ?? []) describe(s, l);
+    for (const q of s.people) void s.rels[relKey(p.id, q.id)];
+  }
 }
 
 // lang: tar LANG_S sekunder eller mer (processorns tid, som scenariot skriver ut). Den snabba kollen (npm run snabbkoll) hoppar
@@ -339,10 +381,25 @@ SCENARIER.sparning = {
     migrate(gammal);
     const uppgr = gammal.v === SPARVERSION && !['fynd', 'wx', 'wy', 'hold', 'stint'].some(k => k in gp.task) && !('levande' in gp.rngs);
     const igen = JSON.stringify(gammal); migrate(gammal);
+    // en sparfil från före v40 där redskapen bara fanns som summor i s.items, bredvid annat: varje helt redskap blir ett ting
+    const forr = JSON.parse(hel); delete forr.ting; delete forr.stackar; forr.items = { yxa: 2, grenar: 7 }; forr.v = 1;
+    for (const p of forr.people) p.task = undefined;
+    const fm = migrate(forr), yxor = tingOf(fm).filter(t => t.k === 'yxa').length, gamlaGrenar = amountOf(fm, 'grenar');
+    // sparningen bara läser: en by som sparas varje timme som gränssnittet gör (serialize och serializeParts) blir samma
+    // by som en som aldrig sparas. Två döda med en relation: den städas bort i timblocket (compact, steg.ts) i båda
+    const sparaSomUI = (v: State) => { serialize(v); serializeParts(v); };
+    const a = createState(8, START), b = createState(8, START);
+    for (const v of [a, b]) { const [x, y] = living(v); getRel(v, x, y).op = 30; die(v, x, 'olycka'); die(v, y, 'olycka'); }
+    const relDoda = Object.keys(a.rels).length;
+    for (let h = 0; h < 3 * 24; h++) { kor(a, 1); kor(b, 1); sparaSomUI(b); }
+    const sparLika = serialize(a) === serialize(b), dodaStadat = Object.keys(a.rels).every(k => k.split('-').map(Number).some(id => living(a).some(q => q.id === id)));
     const forst: Koll[] = [
+      [`en by som sparas varje timme blir samma by som en som inte sparas (tre dygn)`, sparLika],
+      [`relationer mellan två döda städas bort i simuleringen (${relDoda} relationer före)`, dodaStadat],
       [`byn delas i ${Object.keys(delar).join(', ')} (${Object.entries(kb).map(([d, n]) => `${d} ${n} KB`).join(', ')})`, ['byn', 'folket', 'kartor', 'loggen'].every(d => d in delar) && delar.folket.includes('"people"') && !delar.byn.includes('"people"')],
       ['delarna blir samma by igen', isDeepStrictEqual(ater, JSON.parse(hel)) && ny.people.length === s.people.length && ny.now === s.now],
       [`en gammal by uppgraderas till sparversion ${SPARVERSION} och gamla fält försvinner`, uppgr],
+      [`redskapen i en sparfil från före v40 blir ting (${yxor} yxor av 2, ${gamlaGrenar} grenar av 7)`, yxor === 2 && Math.abs(gamlaGrenar - 7) < 1e-6],
       ['en uppgraderad by ändras inte av att uppgraderas igen', JSON.stringify(gammal) === igen],
       [`en ny by har den senaste sparversionen (${s.v})`, s.v === SPARVERSION],
     ];
@@ -579,6 +636,9 @@ SCENARIER.gava = {
     ge(a, 'fiskespjut', 2); b.mother = a.id;
     let barn = 0;
     for (let i = 0; i < 20; i++) { if (askForTool(s, a, b) === 'gåva') barn++; if (har(b, 'fiskespjut')) ownedBy(s, b).forEach(t => { if (t.k === 'fiskespjut') t.agare = a.id; }); }
+    // tankarna efter gåvan finns kvar efter en timme (12 och 6 timmar)
+    const tanke = (p: Person, t: string) => p.thoughts.some(q => q.text.startsWith(t) && q.until > s.now + HOUR);
+    const tankar = barn > 0 && tanke(b, 'Fick en ') && tanke(a, 'Gav en ');
     // ovän: c och a är osams
     b.mother = undefined; getRel(s, a, c).op = -40;
     let ovan = 0; for (let i = 0; i < 20; i++) if (askForTool(s, a, c)) ovan++;
@@ -603,6 +663,7 @@ SCENARIER.gava = {
     }
     return [
       [`en förälder ger sitt barn det hen har över (${barn} av 20)`, barn >= 17],
+      ['den som fick och den som gav tänker på gåvan i mer än en timme', tankar],
       ['en ovän ger inget', ovan === 0],
       [`en vän ger det hen har över (efter ${forsok} samtal)`, van],
       [`två som har något över som den andra saknar byter (${byte} efter ${bytesForsok} samtal)`, bytt],
@@ -716,7 +777,7 @@ SCENARIER.egendom = {
     slaughter(s, c, 1);
     const kott = ownsAmount(s, a, 'kott'), slaktarens = ownsAmount(s, c, 'kott');
     const andra = living(s).filter(q => q !== a), deras = andra.map(q => ownedStock(s, q));
-    die(s, a, 'test'); const arv = !Object.keys(ownedStock(s, a)).length && andra.every((q, i) => isDeepStrictEqual(ownedStock(s, q), deras[i]));
+    die(s, a, 'sjukdom'); const arv = !Object.keys(ownedStock(s, a)).length && andra.every((q, i) => isDeepStrictEqual(ownedStock(s, q), deras[i]));
     // vanliga byar: delarna går aldrig över det som finns i förrådet
     let fel = 0, agt = 0;
     for (const [seed, h, live] of [[41, 10 * 24, false], [3, 6, true]] as const) {
@@ -1015,7 +1076,9 @@ SCENARIER.forradshus = {
     planBuild(s); const h = byggKlart(s);
     const z = zonesOf(s).find(q => q.hus === h?.id);
     const inne = !!z && wearMult(s, z.x, z.y) === LAGER.inne && (z.prio ?? 0) > Math.max(...zonesOf(s).filter(q => q !== z).map(q => q.prio ?? 0));
-    const sover = !!h && !sleepBeds(s).some(i => i % W >= h.x && i % W < h.x + h.w && Math.floor(i / W) >= h.y && Math.floor(i / W) < h.y + h.h);
+    // som spelet frågar: inga sovplatser i husets rum, och ingen har sin sovplats där
+    const iH = (i: number | undefined) => !!h && i !== undefined && i % W >= h.x && i % W < h.x + h.w && Math.floor(i / W) >= h.y && Math.floor(i / W) < h.y + h.h;
+    const sover = !!h && gridOf(s).rooms.every(r => r.hus !== h.id || !sovplatser(s, r)) && !living(s).some(p => iH(bedTile(s, p)));
     // en vanlig by: förrådshuset byggs när maten börjat ruttna, och maten flyttas in
     // (den första av några byar där det händer inom 40 dygn, 40 år i spelet)
     let byggt = 0, iHuset = 0;
@@ -1168,7 +1231,7 @@ SCENARIER.paborjat = {
     const t4 = uppgift(q, 'yxa'); startWork(s, q, t4); q.task = undefined;
     const arving = living(s).find(r => r !== q && r.id === q.partner) ?? living(s).find(r => r !== q && r !== p)!;
     q.partner = arving.id; arving.partner = q.id;
-    die(s, q, 'test');
+    die(s, q, 'sjukdom');
     const arv = tingOf(s).find(t => t.id === t4.ref)?.agare === arving.id;
     // ett träd: den som börjar fälla det lämnar det halvfällt, och nästa fäller det färdigt
     addTool(s, 'yxa', p);
@@ -1361,7 +1424,20 @@ SCENARIER.lager = {
     // tomt lager krymper
     setFood(s, 5); setAmount(s, 'ved', 0); setItems(s, { flinta: 1 });
     kor(s, 12);
+    // en död med en uppgift kvar låser varken en stack som ska bäras in eller elden (bara de levande räknas)
+    const dd = createState(3, START), [dod, lev] = living(dd), f = getMap(3).fire;
+    let mark: { x: number; y: number } | undefined;
+    for (let r = 4; r < 12 && !mark; r++) for (let dx = -r; dx <= r && !mark; dx++) { const x = f.x + dx, y = f.y + r; if (getMap(3).tiles[tileOf(x, y)] !== T.Vatten && !isStored(dd, x, y)) mark = { x, y }; }
+    dropLoad(dd, { act: 'samla', phase: 'do', tx: 0, ty: 0, until: dd.now, carry: 0, items: { grenar: 3 } }, mark!.x + 0.5, mark!.y + 0.5);
+    const utan = haulJob(dd);
+    dod.died = dd.now; dod.task = { act: 'bara', phase: 'go', tx: utan?.x ?? 0, ty: utan?.y ?? 0, until: dd.now + HOUR, carry: 0 };
+    const stackFri = !!utan && isDeepStrictEqual(haulJob(dd), utan);
+    dod.task = { act: 'elda', phase: 'go', tx: f.x, ty: f.y, until: dd.now + HOUR, carry: 0 }; lev.task = undefined;
+    fetchFuel(dd, lev, 'test');
+    const eldFri = (lev.task as Task | undefined)?.act === 'elda';
     return [
+      ['en död med en uppgift kvar låser inte en stack som ska bäras in (haulJob)', stackFri],
+      ['... och inte elden (fetchFuel)', eldFri],
       [`lagerplatsen växer när den blir full (${start} → ${stor} rutor, ${zonesOf(s).length} lagerplatser, ${ps.filter(p => p.out).length} av ${ps.length} stackar utanför)`, stor > start && ps.every(p => !p.out)],
       ['ingen stack är större än sin storlek, och stackarna innehåller allt i förrådet', ps.every(p => p.n <= p.max + 1e-9) && summaOk],
       [`folk bär hem saker, aldrig mer än de orkar (${hem} steg på väg hem, ${fullt} med full börda, högst ${(maxKvot * 100).toFixed(0)} % av förmågan)`, hem > 50 && maxKvot <= 1.15],
@@ -1521,7 +1597,7 @@ SCENARIER.teknik = {
     // den sista som kan yxa dör
     const ens = living(s).filter(p => knows(p, 'yxa'));
     ens.slice(1).forEach(p => { p.tek!.yxa = 0; });
-    if (ens[0]) die(s, ens[0], 'i en olycka');
+    if (ens[0]) die(s, ens[0], 'olycka');
     const dott = kan('yxa') === 0;
     const dagar = (k: string) => forst[k] === undefined ? 'aldrig' : `dygn ${forst[k].toFixed(1)}`;
     return [
@@ -1569,14 +1645,14 @@ SCENARIER.bygg = {
     const fq = getMap(q.seed).fire, hq = housesOf(q)[0];
     const avst = hq ? rektAvstand(fq.x, fq.y, hq.x, hq.y, hq.w, hq.h) : 0;
     // en kall natt utan eld: den som är inne kyls långsammare än den som är ute
-    const k = structuredClone(q); k.now = ageStart(k, 0) + 3 * HOUR; k.fire.lit = false; k.fire.fuel = 0;
+    const k = cloneState(q); k.now = ageStart(k, 0) + 3 * HOUR; k.fire.lit = false; k.fire.fuel = 0;
     let varmInne = 0, varmUte = 0, ni = 0, nu = 0;
-    const b2 = beds(k);
+    const b2 = gridOf(k).rooms.flatMap(r => r.tiles); // golvrutor under tak
     living(k).forEach((p, i) => { p.warm = 0.8; if (i < 3 && b2[i] !== undefined) { p.x = b2[i] % W + 0.5; p.y = Math.floor(b2[i] / W) + 0.5; } });
     const fore = new Map(living(k).map(p => [p.id, { inne: !!roomAt(k, p.x, p.y), ute: heatAt(k, p.x, p.y) < 0.05 }]));
     step(k, 120);
     for (const p of living(k)) { const f = fore.get(p.id); if (!f) continue; if (f.inne) { varmInne += p.warm; ni++; } else if (f.ute) { varmUte += p.warm; nu++; } }
-    const h = housesOf(q)[0], folk = living(q).length, b = beds(q).length;
+    const h = housesOf(q)[0], folk = living(q).length, b = gridOf(q).rooms.reduce((n, r) => n + sovplatser(q, r), 0);
     const iVagg = living(q).filter(p => isWall(q, p.x, p.y)).length;
     // huset minns var materialet kom ifrån (steg 1.3.3): lika mycket som det byggdes med
     const lagt = bitsOf(q).filter(b => b.hus === h?.id).reduce((n, b) => n + b.mat, 0), kom = h ? komOf(h) : [];
@@ -1674,8 +1750,15 @@ SCENARIER.varmekarta = {
     s.now += HOUR; observe(s, p, 'samla', bx, by);
     const fore2 = s.stat?.rattat ?? 0; observe(s, q, 'samla', bx, by);
     const ql = findL(q, 'samla', aa)!, rattad = (s.stat?.rattat ?? 0) > fore2 && ql.ny !== undefined, qText = describe(s, ql).what;
-    for (let n = 0; n < 200 && findL(r2, 'samla', aa)!.v > 2; n++) share(s, q, r2, { op: 60 } as never, 'berättelse');
+    for (let n = 0; n < 200 && findL(r2, 'samla', aa)!.v > 2; n++) share(s, q, r2, { op: 60 } as never, SAMTALSSLAG['berättelse']);
     const spridd = findL(r2, 'samla', aa)!.v;
+    // att berätta om en plats ändrar inte när den sågs, och den som hör det får samma tid (återväxten räknas därifrån)
+    const [t1, t2, t3] = living(s).slice(2, 5), sedd = s.now - 5 * DAY;
+    t1.lardomar = [{ k: 'samla', a: aa, v: 0.2, g: 3, c: 0.9, t: sedd, led: 0 }]; t2.lardomar = [];
+    t3.lardomar = [{ k: 'samla', a: aa, v: 1, g: 3, c: 0.05, t: s.now - DAY, src: p.id, led: 2 }];
+    for (let n = 0; n < 200 && !findL(t2, 'samla', aa); n++) share(s, t1, t2, { op: 60 } as never, SAMTALSSLAG['berättelse']);
+    for (let n = 0; n < 200 && findL(t3, 'samla', aa)!.led !== 1; n++) share(s, t1, t3, { op: 60 } as never, SAMTALSSLAG['berättelse']);
+    const tidKvar = t1.lardomar[0].t === sedd && findL(t2, 'samla', aa)?.t === sedd && findL(t3, 'samla', aa)!.t === sedd;
     const l = findL(p, 'samla', areaOf(bx, by))!, nyss = hoped(s, l), text = describe(s, l).what;
     s.now += 3 * DAY; const sen = hoped(s, l);
     growFynd(s, 48, 3);
@@ -1694,6 +1777,7 @@ SCENARIER.varmekarta = {
       [`rötter glest men nästan överallt (${Math.round(rotLand / jord * 100)} % av marken, ${Math.round(rotRik / jord * 100)} % rik), kvar på vintern (${rotVinter.toFixed(0)}) när bären är borta (${barVinter.toFixed(0)})`, rotLand / jord > 0.8 && rotRik / jord < 0.3 && rotVinter > 20 && barVinter < 1],
       [`kaninerna skyr lägret (${(nara / naraN).toFixed(2)} nära mot ${(langt / langtN).toFixed(2)} långt bort)`, nara / naraN < 0.4 && langt / langtN > 0.7],
       [`den som kommer till en tömd plats rättar sig ("${qText}") och berättar det (${spridd.toFixed(2)} hos den som hörde det)`, rattad && qText.includes('sämre än man trott') && spridd < 2],
+      ['att berätta om en plats ändrar inte när den sågs, och den som hör det får samma tid', tidKvar],
       [`kaniner trivs bättre i öppen mark (${(gr / grN).toFixed(2)}) än i skog (${(sk / skN).toFixed(2)})`, gr / grN > sk / skN],
       [`fisk bara i vattnet (${fiskLand} rutor på land), och man når den från stranden (${fiskFore.toFixed(2)} → ${fiskEfter.toFixed(2)} efter fiske)`, fiskLand === 0 && fiskFore > 0.3 && fiskEfter < fiskFore * 0.7],
       [`inget växer i lägret (${iLagret})`, iLagret === 0],
@@ -1750,23 +1834,23 @@ SCENARIER.arv = {
     let { s, d, a, b, c, e } = ny();
     const dVarde = varde(s, d);
     d.partner = a.id; a.partner = d.id; b.mother = d.id;
-    die(s, d, 'test');
+    die(s, d, 'sjukdom');
     const partner = Math.abs(varde(s, a) - dVarde) < 1e-6 && varde(s, b) === 0 && yxor(s, a) === 1;
     const syns = s.log.some(l => l.text.startsWith(`${a.name} ärvde`) && l.text.includes('flintyxa') && l.text.includes(d.name));
     // inget partner: barnen delar jämnt efter värde (yxan till den ena, maten och träet till den andra)
     ({ s, d, a, b, c, e } = ny());
     a.mother = d.id; b.father = d.id;
-    die(s, d, 'test');
+    die(s, d, 'sjukdom');
     const va = varde(s, a), vb = varde(s, b), barnen = Math.abs(va - vb) < 1e-6 && yxor(s, a) + yxor(s, b) === 1 && varde(s, c) === 0;
     // föräldrarna, sedan syskonen, sedan byn
     ({ s, d, a, b, c, e } = ny());
-    d.mother = a.id; b.mother = a.id; die(s, d, 'test');
+    d.mother = a.id; b.mother = a.id; die(s, d, 'sjukdom');
     const foraldrar = varde(s, a) > 0 && varde(s, b) === 0;
     ({ s, d, a, b, c, e } = ny());
-    d.mother = 999; b.mother = 999; die(s, d, 'test');
+    d.mother = 999; b.mother = 999; die(s, d, 'sjukdom');
     const syskon = Math.abs(varde(s, b) - dVarde) < 1e-6;
     ({ s, d, a, b, c, e } = ny());
-    die(s, d, 'test');
+    die(s, d, 'sjukdom');
     tidyTools(s); // som i varje steg: den dödas redskap blir byns
     const byn = [a, b, c, e].every(q => varde(s, q) === 0) && tingOf(s).filter(t => t.k === 'yxa' && t.agare === BYN).length === 1 && amountOf(s, 'ved') > 29;
     // den som flyttar tar med sig det hen orkar bära, det mest värda för vikten först; resten blir byns
@@ -1775,6 +1859,27 @@ SCENARIER.arv = {
     d.left = s.now; packUp(s, d); releaseOwner(s, d.id);
     const tog = fore - amountOf(s, 'ved') - amountOf(s, 'bar') + (tingOf(s).some(t => t.k === 'yxa') ? 0 : 1);
     const flytt = tog > 0 && tog <= bar * 25 + 1 && amountOf(s, 'ved') + amountOf(s, 'bar') > 0 && ownedSum(s, 'ved') === 0;
+    // den som dör, flyttar eller blir nattens vakt lägger ner det hen bär där hen står: det finns kvar i byn (och ärvs)
+    const allt = (s: State, k: string) => (s.stackar ?? []).reduce((n, x) => n + (x.k === k ? x.n : 0), 0);
+    const bordan = (s: State, q: Person, k: string, n: number) => { q.task = { act: 'samla', phase: 'do', tx: q.x, ty: q.y, until: s.now + HOUR, carry: 0, items: { [k]: n } }; };
+    ({ s, d, a, b, c, e } = ny()); setAmount(s, 'skinn', 0);
+    d.partner = a.id; a.partner = d.id; bordan(s, d, 'skinn', 4); die(s, d, 'sjukdom');
+    const dogBar = Math.abs(allt(s, 'skinn') - 4) < 1e-6 && Math.abs((ownedAll(s, a.id).skinn ?? 0) - 4) < 1e-6;
+    ({ s, d, a, b, c, e } = ny()); setAmount(s, 'sten', 0);
+    const orkar = capacity(s, d) * stackOf('sten');
+    bordan(s, d, 'sten', 30); leave(s, d, s.now);
+    const flyttBar = allt(s, 'sten') > 0 && allt(s, 'sten') >= 30 - orkar - 1e-6 && !ownedAll(s, d.id).sten;
+    ({ s, d, a, b, c, e } = ny()); setAmount(s, 'skinn', 0);
+    s.now = new Date(s.now).setHours(23, 0, 0, 0); s.lastGuardDay = -5; Object.assign(s.fire, { lit: true, fuel: 5 });
+    for (const q of living(s)) Object.assign(q, { hunger: 1, rest: 1, warm: 1, toa: 1, health: 1, sickUntil: undefined });
+    d.pot.mod = 100; bordan(s, d, 'skinn', 4); a.task = undefined;
+    chooseTask(s, a);
+    const vaktBar = d.guardDay !== undefined && !d.task && Math.abs(allt(s, 'skinn') - 4) < 1e-6;
+    // barnets far är den hon blev gravid med, också om hon fått en ny partner sedan
+    ({ s, d, a, b, c, e } = ny());
+    c.pregnantSince = s.now; c.pregnantBy = d.id; c.partner = b.id; b.partner = c.id;
+    birth(s, c);
+    const far = s.people[s.people.length - 1].father === d.id;
     // viljan att ge
     ({ s, d, a, b, c, e } = ny());
     getRel(s, a, b).op = 60; d.mother = a.id; a.partner = c.id; c.partner = a.id;
@@ -1791,6 +1896,10 @@ SCENARIER.arv = {
       ['sedan syskonen', syskon],
       ['utan släkt blir allt byns', byn],
       [`den som flyttar tar med sig det hen orkar bära (${tog.toFixed(1)}), resten blir byns`, flytt],
+      ['den som dör lägger ner det hen bär, och arvingen får det', dogBar],
+      ['den som flyttar packar ur bördan det hen orkar bära, resten blir kvar i byn', flyttBar],
+      ['den som blir nattens vakt lägger ner det hen bär', vaktBar],
+      ['barnets far är den hon blev gravid med, inte en ny partner', far],
       [`den som har mycket över ger lättare (${lite.toFixed(2)} mot ${mycket.toFixed(2)})`, mycket > lite],
       [`Gemenskap gör folk givmildare (${egen.toFixed(2)} → ${gem.toFixed(2)})`, gem > lite && lite > egen],
       [`i en rik by ger man mindre till vänner (${rikVan.toFixed(2)}) men lika till barn och partner`, rikVan < lite && rikBarn === fattigBarn && rikPartner === fattigPartner],
@@ -1838,6 +1947,49 @@ SCENARIER.natur = {
       [`efter tre dygn (tre år i spelet) med tolv dygns mat har snittet nått dit (${efter.toFixed(1)})`, efter > 11 && efter < 12.1],
       [`gott om mat: inga färre barn, ingen flytt för maten (${matGott(s).toFixed(2)})`, matGott(s) === 1 && barnMat(s, 12) === 1 && hungerFlytt(s, 12) === 0],
     ];
+  },
+};
+SCENARIER['ui-ren'] = {
+  text: 'Gränssnittet ändrar inte byn: två likadana byar i takt, den ena läser som gränssnittet varannan halvtimme, och sparfilerna blir lika',
+  kor: () => {
+    const a = createState(21, START), b = createState(21, START), DYGN = 3;
+    let lika = -1, n = 0, andrat = 0;
+    for (let i = 0; i < DYGN * 24 * 12; i++) {
+      step(a, BEAT); step(b, BEAT);
+      // sparfilen före och efter läsningarna visar om gränssnittet skrev något i byn. Båda sparas lika ofta: sparningen
+      // skriver kartorna i sparfilen (s.mark, s.skog, s.fynd), och då ändras ordningen i texten
+      if (i % 6 === 5) {
+        const fore = serialize(a);
+        uiLas(a, a.now - 200 * SEC); n++;
+        if (serialize(a) !== fore) andrat++;
+        serializeParts(a); serializeParts(b);
+      }
+      if (i % (24 * 12) === 24 * 12 - 1 && lika < 0 && serialize(a) !== serialize(b)) lika = (i + 1) / (24 * 12);
+    }
+    const sa = serialize(a), sb = serialize(b);
+    let d = 0; while (d < sa.length && sa[d] === sb[d]) d++;
+    return [
+      [`gränssnittet läste ${n} gånger under ${DYGN} dygn (${DYGN} år i spelet), med ${living(a).length} invånare`, n > 100],
+      [`läsningarna skrev inget i byn (${andrat} av ${n} gånger ändrades sparfilen)`, andrat === 0],
+      [sa === sb ? 'sparfilerna är lika tecken för tecken' : `sparfilerna skiljer sig${lika > 0 ? ` redan efter ${lika} dygn` : ''}, första skillnaden: …${sa.slice(Math.max(0, d - 60), d + 40)}… mot …${sb.slice(Math.max(0, d - 60), d + 40)}…`, sa === sb],
+    ];
+  },
+};
+SCENARIER.ikoner = {
+  text: 'Allt som gränssnittet visar med en symbol har en pixelbild i ikoner.ts: saker, tekniker, djur, grupperna i filtret, lagren, byggmaterial och slagen av arbete',
+  kor: () => {
+    const saknas = (ks: (string | undefined)[]) => ks.filter((k): k is string => !!k && !hasIcon(k));
+    const del: [string, string[]][] = [
+      ['saker', saknas(Object.keys(SAKER).filter(k => !SAKER[k]!.dold))], // det dolda syns aldrig (giftig svamp bland svampen)
+      ['tekniker', saknas(TEKNIK.map(t => t.id))],
+      ['djur', saknas(Object.keys(DJUR))],
+      ['grupper i filtret', saknas(Object.values(GRUPPER).map(g => g.ikon))],
+      ['lager', saknas(FYND_IDS.map(k => FYND[k].ikon))],
+      ['byggmaterial', saknas(Object.values(MATERIAL).map(m => m.ikon))],
+      ['slag av arbete', saknas(Object.values(ACTS).map(a => a.slag && slagIkon(a.slag)).filter(k => k !== 'zzz'))], // vila ritas som z
+      ['påbörjat redskap', saknas(['paborjat'])],
+    ];
+    return del.map(([namn, m]) => [m.length ? `${namn} utan symbol: ${m.join(', ')}` : `alla ${namn} har en symbol`, !m.length] as Koll);
   },
 };
 const flyttLitenBy = (s: State) => hungerFlytt(s, 6) === 0 && barnMat(s, 6) === 1 ? 'ingen' : `flytt ${hungerFlytt(s, 6)}, barn ${barnMat(s, 6)}`;

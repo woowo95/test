@@ -2,15 +2,16 @@ import { migrateTek } from './teknik';
 import { stepDelning } from './delning';
 import { setStock, storeFromSums } from './lager';
 import { isTool } from './saker';
-import { migrateTools } from './agande';
+import { migrateTools, toolsFromItems } from './agande';
 import { VAR, inFas, nyKalender } from './tid';
 import { ageOf, byId, getRel, log, newPerson, startSkills, think } from './folk';
 import { newSeder, sederTarget, TAGS } from './seder';
 import { clamp, gauss, rnd } from './slump';
-import { DAY, Fire, NEW_H, NEW_W, Person, SEC, State, useMap } from './typer';
+import { DAY, Fire, NEW_H, NEW_W, Person, SEC, State, simulera, useMap } from './typer';
 
 // ---------- skapa värld ----------
-export function createState(seed: number, now: number): State {
+export function createState(seed: number, now: number): State { return simulera(() => skapaBy(seed, now)); } // som simuleringen (typer.ts)
+function skapaBy(seed: number, now: number): State {
   // en liten koloni: två par och ett barn, utan eld och med lite mat och grenar
   const s: State = { v: SPARVERSION, seed, founded: now, now, people: [], rels: {}, nextId: 1, log: [], lastAgeIdx: VAR, lastGuardDay: -1, fire: newFire(), seder: newSeder(), W: NEW_W, H: NEW_H, kal: nyKalender(now) };
   useMap(s);
@@ -64,6 +65,7 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
     // små pinnar finns inte längre: de räknas som grenar
     if (s.items.pinnar) { s.items.grenar = (s.items.grenar ?? 0) + s.items.pinnar; delete s.items.pinnar; }
     for (const a of s.stackar ?? []) if (a.k === 'pinnar') a.k = 'grenar';
+    if (!s.ting) toolsFromItems(s); // först, eftersom stackarna skapar en tom lista med ting
     if ('food' in s || s.mat || s.egna || Object.keys(s.items).some(k => !isTool(k))) storeFromSums(s); // äldre sparfiler (före v40): summorna blir stackar
     migrateTools(s); // och redskapen bara ting
     if (s.stackar) s.stackar = s.stackar.filter(a => !isTool(a.k));
@@ -86,7 +88,8 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
   }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];
-export function migrate(s: State) {
+export function migrate(s: State) { return simulera(() => uppgradera(s)); }
+function uppgradera(s: State) {
   useMap(s);
   for (const [n, , gor] of UPPGRADERINGAR) if ((s.v ?? 1) < n) { gor(s); s.v = n; }
   return s;

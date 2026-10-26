@@ -1,6 +1,6 @@
-import { FYND, FYND_IDS, FyndId, GRUPPER, Grupp, H, HOUR, W, ageIndex, fyndAt, vaxerAt } from '../sim';
+import { FYND, FYND_IDS, FyndId, GRUPPER, Grupp, H, HOUR, W, ageIndex, fyndAt, plockOf, vaxerAt } from '../sim';
 import { iconImg } from '../ikoner';
-import { $, esc } from './hjalp';
+import { $, cssFarg, esc } from './hjalp';
 import { s, ui } from './lage';
 import { TS, filterG } from './scen';
 
@@ -27,17 +27,16 @@ forklaring.addEventListener('click', e => {
   visaForklaring();
   drawFilter(true);
 });
-const hex = (c: number) => '#' + c.toString(16).padStart(6, '0');
 function visaForklaring() {
   forklaring.hidden = !ui.filter;
   if (!ui.filter) return;
-  forklaring.innerHTML = FYND_IDS.filter(k => FYND[k].grupp === ui.filter).map(k => `<button type="button" data-k="${k}" aria-pressed="${ui.filterArt === k}" title="${esc(FYND[k].namn)}" aria-label="${esc(FYND[k].namn)}"><i style="background:${hex(FYND[k].farg)}"></i>${iconImg(FYND[k].ikon, 14)}</button>`).join('');
+  forklaring.innerHTML = FYND_IDS.filter(k => FYND[k].grupp === ui.filter).map(k => `<button type="button" data-k="${k}" aria-pressed="${ui.filterArt === k}" title="${esc(FYND[k].namn)}" aria-label="${esc(FYND[k].namn)}"><i style="background:${cssFarg(FYND[k].farg)}"></i>${iconImg(FYND[k].ikon, 14)}</button>`).join('');
 }
 
-// lagren ändras som mest en gång i timmen, så kartan ritas om när timmen eller filtret byts
+// lagren växer en gång i timmen och töms när någon tar ur dem (plockOf), så kartan ritas om när timmen, uttagen eller filtret ändras
 let ritad = '';
 export function drawFilter(force = false) {
-  const key = `${ui.filter},${ui.filterArt},${s.seed},${Math.floor(s.now / HOUR)},${ageIndex(s)}`;
+  const key = `${ui.filter},${ui.filterArt},${s.seed},${Math.floor(s.now / HOUR)},${ageIndex(s)},${plockOf(s)}`;
   if (!force && key === ritad) return;
   ritad = key;
   filterG.clear();

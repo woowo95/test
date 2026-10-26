@@ -11,13 +11,15 @@ import { eatPoison } from './fynd';
 import { habitShare, habitTotal } from './seder';
 import { grundvarde } from './varde';
 import { EKONOMI } from './ekonomi';
+import { tiondel } from './format';
 
 // ---------- behovsstegen ----------
 // När någon behöver något går hen stegen i ordning: först sitt eget, sedan ett byte med någon i närheten (byten nedan),
 // sedan byns förråd, sedan ber hen om det som gåva i samtal (den som har över ger, familjen ger lättast: willing nedan).
 // Stjäl gör man först när man håller på att dö av bristen. Hur nära döden man måste vara beror på empatin; den med mycket
-// hög empati stjäl aldrig. Man stjäl helst av den man inte tycker om. Den bestulne märker det nästa gång hen själv tar av
-// sitt eget för samma behov, och relationen blir sämre.
+// hög empati stjäl aldrig. Man stjäl helst av den man inte tycker om. Den bestulne märker det nästa gång hen äter (maten:
+// needLadder anropar noticeTheft varje gång hen ätit, också när bara byns mat ätits), lägger sin egen ved på elden (steg.ts)
+// eller tar av sitt eget till ett arbete (takeMaterial), och relationen blir sämre.
 // Varje behov är en post i BEHOV (mat, ved till elden). Material till ett arbete och redskap går samma steg, längre ner.
 interface Behov {
   id: string;
@@ -56,7 +58,9 @@ function eat(s: State, p: Person, fran?: Person) {
 }
 export const MAT: Behov = {
   id: 'mat', namn: 'mat', slag: FOOD, minst: 0.3, mangd: portionOf,
-  get kvar() { return EKONOMI.matPerDygn; }, // det man själv äter på ett dygn (läses först när det behövs: ekonomi.ts och behov.ts importerar varandra via lager.ts)
+  // det man själv äter på ett dygn. En getter, så att talet läses först när det behövs: förr importerade ekonomi.ts och behov.ts
+  // varandra via lager.ts; i dag ingår ekonomi.ts inte i någon cirkulär import
+  get kvar() { return EKONOMI.matPerDygn; },
   behover: (_s, p) => p.hunger < KROPP.hungrig, genast: true,
   fara: (_s, p) => p.hunger <= 0 ? 1 - p.health : 0, // man svälter när hungern är slut, och hälsan sjunker
   anvand: eat,
@@ -287,13 +291,6 @@ export function willing(s: State, g: Person, m: Person, overflod = 1) {
   const rik = nara ? 1 : RIK_GE + (1 - RIK_GE) * (s.delning?.andel ?? 1);
   return clamp(base * (0.5 + emp) * over * sed * rik, 0, 1);
 }
-// lånar ägaren ut till p?
-export function lends(s: State, owner: number, p: Person) {
-  if (owner === BYN || owner === p.id) return true;
-  const o = byId(s, owner);
-  if (!o || !alive(o)) return true;
-  return o.partner === p.id || isKin(o, p) || getRel(s, o, p).op > REL.osams;
-}
 // Byten och gåvor i samtal: den som saknar ett redskap hen behöver i sitt arbete tar upp det. Den andra har ett redskap
 // över (har två av slaget, eller arbetar inte med det). Har den som frågar något över som är värt nog blir det ett byte
 // (byten nedan), annars kanske en gåva. Viljan är willing. Gåvan gör dem närmare.
@@ -332,8 +329,8 @@ export function askForTool(s: State, a: Person, b: Person): 'gåva' | 'byte' | u
       give(t, g, m);
       const namn = (SAKER[k]?.namn ?? k).toLowerCase(), r = getRel(s, a, b);
       r.op = clamp(r.op + 4, -100, 100);
-      think(m, `Fick en ${namn} av ${g.name}`, 0.1, s.now, 12 * 3600);
-      think(g, `Gav en ${namn} till ${m.name}`, 0.05, s.now, 6 * 3600);
+      think(m, `Fick en ${namn} av ${g.name}`, 0.1, s.now, 12 * HOUR);
+      think(g, `Gav en ${namn} till ${m.name}`, 0.05, s.now, 6 * HOUR);
       count(s, 'gavor');
       log(s, `${g.name} gav en ${namn} till ${m.name}.`, 'rel', [g.id, m.id]);
       return 'gåva';
@@ -382,7 +379,7 @@ function payable(s: State, p: Person, utom: readonly string[]): Vara[] {
   }
   return ut;
 }
-const tal = (n: number) => n >= 0.95 ? String(Math.round(n * 10) / 10).replace('.', ',') : 'lite';
+const tal = (n: number) => n >= 0.95 ? tiondel(n) : 'lite';
 const varorText = (v: Vara[]) => v.map(x => `${x.t ? 'en' : tal(x.n)} ${(SAKER[x.k]?.namn ?? x.k).toLowerCase()}`).join(' och ');
 interface Villkor { behov: number; minst: number; fara: number; typ: string; utom: readonly string[]; delad?: true }
 // m byter till sig vill (det g har över) av g, och betalar med det m har över som är värt mest för g och minst för m.

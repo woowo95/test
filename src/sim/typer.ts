@@ -20,6 +20,20 @@ export function useMap(s: { W?: number; H?: number }) { W = s.W ?? 64; H = s.H ?
 export const mapKey = (seed: number) => `${seed}:${W}x${H}`;
 export const inMap = (x: number, y: number) => x >= 0 && y >= 0 && x < W && y < H; // punkten eller rutan ligger på kartan
 
+// Gränssnittet läser byn mellan stegen, och då är visning.pa sann (i webbläsaren, utom i step, createState och migrate, som
+// räknar som simuleringen: `simulera`). En cache vars svar beror på när det räknas och inte bara på nyckeln har två delar
+// (`tvaDelar`): sim fylls bara av simuleringen, och gränssnittet läser den när nyckeln stämmer men räknar annars i bild.
+// Så utvecklas byn likadant vad gränssnittet än läser (regel 4 i ARKITEKTUR.md, scenariot ui-ren)
+export const visning = { pa: false };
+export interface TvaDelar<V> { sim: WeakMap<State, V>; bild: WeakMap<State, V> }
+export const tvaDelar = <V>(): TvaDelar<V> => ({ sim: new WeakMap(), bild: new WeakMap() });
+export const egen = <V>(c: TvaDelar<V>) => (visning.pa ? c.bild : c.sim); // delen som den som räknar nu fyller
+export function simulera<T>(fn: () => T): T {
+  const v = visning.pa;
+  visning.pa = false;
+  try { return fn(); } finally { visning.pa = v; }
+}
+
 export enum T { Vatten, Sand, Gras, Skog, Sten }
 
 export const STATS = ['styrka', 'uthallighet', 'intelligens', 'nyfikenhet', 'karisma', 'skonhet', 'flit', 'empati', 'mod', 'minne'] as const;
@@ -39,8 +53,33 @@ export const AGES = ['Istid', 'Vårtid', 'Sommartid', 'Hösttid'];
 export const GREN = 0.4; // en gren ger lika mycket bränsle som 0,4 ved: grenar brinner fort
 
 export interface Thought { text: string; v: number; until: number }
-// why = varför personen valde uppgiften, dark = påbörjad under mörk tid
-export interface Task { act: Act; phase: 'go' | 'do' | 'back'; tx: number; ty: number; until: number; carry: number; items?: Record<string, number>; cond?: Record<string, number>; why?: string; dark?: boolean; path?: number[]; pk?: string; ref?: number; prog?: number; tool?: string; tur?: number; lim?: number; res?: { x: number; y: number; until: number }; site?: { x: number; y: number }; mask?: number; ag?: Record<string, Record<string, number>>; ting?: number[]; fran?: number; kom?: Record<string, number>; sok?: true } // sok = letar flinta eller stenar: platsen behöver inte ha bär // kom = var materialet till bygget kom ifrån (bygg.ts) // fran = den man tar ved av till elden (stöld, behov.ts) // ting = redskapen i bördan (agande.ts) // ag = vems det som bärs är, per slag (egendom.ts) // mask = maskar på kroken till metspöet // tool = redskap som används, t.ex. fiskespjut. tur = sekunder arbete sedan bördan bars hem och lim hur länge turen varar, res = var och till när arbetet fortsätter efteråt, site = bygget man går till efter att ha hämtat material
+// Det en person håller på med (p.task, sparas med personen). Fälten utan frågetecken finns alltid
+export interface Task {
+  act: Act; // handlingen (handlingar.ts)
+  phase: 'go' | 'do' | 'back'; // på väg dit, arbetar där, på väg hem med det som bärs
+  tx: number; ty: number; // platsen man går till och arbetar på
+  until: number; // tiden då uppgiften är slut (ms)
+  carry: number; // det som bärs, i enheten som handlingens `ger` anger
+  items?: Record<string, number>; // saker som bärs bredvid bördan, per slag (rötter, svamp, grenar, materialet till ett bygge)
+  cond?: Record<string, number>; // skicket på det som bärs, per slag (lager.ts)
+  ag?: Record<string, Record<string, number>>; // vems det som bärs är, per slag (egendom.ts)
+  ting?: number[]; // redskapen i bördan (agande.ts)
+  why?: string; // varför personen valde uppgiften
+  dark?: boolean; // påbörjad under mörk tid
+  path?: number[]; // rutorna kvar att gå längs vägen (steg.ts, walk)
+  pk?: string; // nyckeln som vägen gäller för: målet och byggversionen. Ändras den räknas vägen om
+  ref?: number; // det arbetet gäller: stammen som huggs, biten som byggs eller huset som ett träd fälls för
+  prog?: number; // fiske: sekunder arbete mot nästa försök
+  tool?: string; // redskapet som används, t.ex. fiskespjut, eller slaget av bygge eller hantverk (vagg, golv, laga, rep)
+  tur?: number; // sekunder arbete sedan bördan bars hem sist
+  lim?: number; // hur länge en tur varar (sekunder), innan bördan bärs hem
+  res?: { x: number; y: number; until: number }; // var och till när arbetet fortsätter efter att bördan bärts hem
+  site?: { x: number; y: number }; // bygget man går till efter att ha hämtat material
+  mask?: number; // fiske: maskar på kroken till metspöet
+  fran?: number; // den man tar ved av till elden (stöld, behov.ts)
+  kom?: Record<string, number>; // var materialet till bygget kom ifrån (bygg.ts)
+  sok?: true; // letar flinta eller stenar vid stenarna: blir platsen tom fortsätter man ändå i stället för att gå hem (steg.ts, workStep)
+}
 
 export interface Person {
   id: number; name: string; sex: 'm' | 'k';
@@ -66,11 +105,11 @@ export interface Person {
 }
 
 // En lärdom om en plats: k = vad, a = område (8×8 rutor), v = hur mycket (eller hur rädd), c = hur säker (0–1),
-// t = senast stärkt, src = vem den hördes av (saknas = egen upplevelse), led = hur många led från den som var där, om = vad som hände
-export type LKind = 'samla' | 'jakt' | 'fiske' | 'flinta' | 'fara';
+// t = när platsen sågs (den som hör det får samma tid; återväxten räknas därifrån), src = vem den hördes av (saknas = egen upplevelse), led = hur många led från den som var där, om = vad som hände.
+// Slagen står i registret LARDOMAR i minne.ts
 // ny: när någon kom dit och såg att platsen var sämre än man trott (växterna har flyttat eller den är tömd).
 // Det är en nyhet som gärna berättas vidare i ett par dygn.
-export interface Lardom { k: LKind; a: number; v: number; g?: number; c: number; t: number; src?: number; led?: number; om?: string; ny?: number }
+export interface Lardom { k: import('./minne').LKind; a: number; v: number; g?: number; c: number; t: number; src?: number; led?: number; om?: string; ny?: number }
 
 export interface Rel { chem: number; op: number; rom: number; talks: number; flags: number }
 // flags: 1 = nära vänner loggat, 2 = ovänner loggat
@@ -118,18 +157,9 @@ export interface State {
 export interface Stock { id: number; x: number; y: number; ved: number; grenar: number }
 
 // ---------- seder ----------
-// Byns gemensamma värderingar, -1..1. Växer fram ur invånarnas personlighet och det byn varit med om.
-export const SEDER = ['arbete', 'gemenskap', 'barn', 'nyfikenhet', 'forsiktighet'] as const;
-export type Sed = typeof SEDER[number];
-export const SED_INFO: Record<Sed, { pos: string; neg: string; effect: string }> = {
-  arbete: { pos: 'Arbete', neg: 'Lugn', effect: 'Pliktkänsla: hur mycket man jobbar för byn och hur mycket man vilar.' },
-  gemenskap: { pos: 'Gemenskap', neg: 'Var och en för sig', effect: 'Hur mycket man bryr sig om att andra fryser och hjälper dem med elden.' },
-  barn: { pos: 'Barnkär', neg: 'Barnsnål', effect: 'Hur gärna par skaffar barn, och om barnen får leka eller måste hjälpa till.' },
-  nyfikenhet: { pos: 'Nyfikenhet', neg: 'Tradition', effect: 'Hur snabbt invånarna lär sig nya färdigheter.' },
-  forsiktighet: { pos: 'Försiktighet', neg: 'Leva i nuet', effect: 'Hur stora förråd byn vill ha innan man slappnar av, och om elden hålls vid liv.' },
-};
+// Byns gemensamma värderingar, -1..1. Registret (SEDER) står i seder.ts.
 // v = sederna nu, ev = tillskott från händelser (bleknar), at = senaste omräkning
-export interface Seder { v: Record<Sed, number>; ev: Record<Sed, number>; log: { t: number; text: string }[]; at?: number }
+export interface Seder { v: Record<import('./seder').Sed, number>; ev: Record<import('./seder').Sed, number>; log: { t: number; text: string }[]; at?: number }
 
 // ---------- eldstäder och tänddon ----------
 // Bara lägerelden går att ha i dag. De andra är förberedda och byggs när bygg- och teknikträdet finns.

@@ -9,7 +9,7 @@ import { coldOf, temperature } from './vader';
 import { DJUR, KANIN, SLAKT_TIMME, TILLVERKA, minOf, abborrar, canClean, canSlaughter, freeOfKinds, toolGroups, vilt, wantsKnife, wantsRope } from './redskap';
 import { areaOf, flintArea, pickSpot, prospectFor } from './minne';
 import { getMap } from './karta';
-import { amountOf, fetchSpot, haulJob } from './lager';
+import { amountOf, avbryt, fetchSpot, haulJob } from './lager';
 import { bedFor, buildJob, siteOf } from './bygg';
 import { bitAt, blocked, freeNear, roomAt } from './byggnad';
 import { bedTile, homeless, samlingRum, varmareInne } from './byggnader';
@@ -421,7 +421,7 @@ function night(s: State, p: Person, v: Val, a: number) {
     if (adults.length) {
       s.lastGuardDay = guardDay;
       const g = adults.sort((x, y) => (y.pot.mod + rnd(s, 'val') * VAL.vaktSlump) - (x.pot.mod + rnd(s, 'val') * VAL.vaktSlump))[0];
-      g.task = undefined; g.guardDay = guardDay;
+      avbryt(s, g); g.guardDay = guardDay; // det vakten bar läggs ner där hen står
     }
   }
   if (p.guardDay === guardDay && a >= ALDER.vaktFran) { set(v, 'vakt', 'Håller vakt i natt'); return; }

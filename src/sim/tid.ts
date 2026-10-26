@@ -47,7 +47,9 @@ export function inFas(s: State) {
 }
 // Kalendern frågas många gånger varje steg, så det senaste svaret sparas per by. Svaret beror bara på dagen och
 // på om tiden är före t0, så det gäller från fran till till (dagen, eller den del av den som ligger på samma sida
-// om t0) så länge byns kalender och grundande är desamma.
+// om t0) så länge byns kalender och grundande är desamma. Byts tidszonen medan spelet går (en resa, datorns inställning)
+// gäller det sparade svaret den gamla zonens dag till dess midnatt, och sedan den nya zonens. Det godtas: kalendern följer
+// ändå den lokala tiden, och att fråga efter zonen vid varje anrop skulle kosta det som sparandet sparar.
 const memo = new WeakMap<State, { fran: number; till: number; kal: State['kal']; founded: number; k: Kal }>();
 export function kalender(s: State, t = s.now): Kal {
   const m = memo.get(s);

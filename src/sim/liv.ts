@@ -1,11 +1,11 @@
 import { ALDER, REL, ageOf, alive, byId, count, isParent, living, log, newPerson, relKey, startSkills, think } from './folk';
-import { sedEvent } from './seder';
+import { Sed, sedEvent } from './seder';
 import { pair } from './varld';
 import { avgMood } from './samtal';
 import { chance, clamp, pick, rnd } from './slump';
 import { DAY, HOUR_S, Person, SEC, State } from './typer';
 import { foodDays } from './ekonomi';
-import { put, releaseOwner } from './lager';
+import { avbryt, put, releaseOwner } from './lager';
 import { kronika } from './historik';
 import { inherit, packUp } from './arv';
 import { balans } from './balans';
@@ -33,7 +33,7 @@ const LIV = balans('liv', {
   nybyggareMatMin: 0.3, nybyggareMat: 0.7, // knapp mat jagar bort dem: gånger Min + Mat gånger hur gott om mat byn haft
   nybyggareAlder: 17, nybyggareAlderSpann: 18, // en nybyggare är mellan Alder och Alder + Spann år
   parChans: 0.35, // chansen att en nybyggare kommer med en partner
-  medhavd: 2, // rötter nybyggaren har med sig från vandringen
+  medhavd: 2, // rötter nybyggaren har med sig från vandringen (MEDHAVT nedan)
   // hur gott om mat byn haft (matGott): 0 vid matGottFran dygns mat i snitt, 1 vid Fran + Spann eller mer
   matGottFran: 3, matGottSpann: 6, matStart: 9, // en by som ännu saknar snitt räknas som om den hade Start dygns mat
   matSnittDygn: 1, // snittet glider över så många dygn (ett år i spelet)
@@ -55,17 +55,38 @@ const LIV = balans('liv', {
   fodMor: 0.2, fodFar: 0.18, fodDygn: 1, // glädjen över ett nytt barn
 });
 
+// det en nybyggare har med sig från vandringen: sak och hur mycket (hen äger det)
+const MEDHAVT: Record<string, number> = { rotter: LIV.medhavd };
+
+// ---------- dödsorsakerna (registret) ----------
+// text = det som står efter namnet ("dog av svält"), i loggen, krönikan och byns räknare ('dog av svält', som testerna läser).
+// sed = seden som ändras, hur mycket, och texten efter namnet i sedernas logg. Ett farligt arbete (fara i handlingar.ts) pekar hit
+interface DodDef { text: string; sed?: { k: Sed; d: number; text: string } }
+const DOD = {
+  svalt: { text: 'av svält', sed: { k: 'forsiktighet', d: LIV.sedSvalt, text: 'svalt ihjäl. Byn har blivit mer försiktig.' } },
+  kyla: { text: 'av kyla', sed: { k: 'forsiktighet', d: LIV.sedKyla, text: 'frös ihjäl. Byn har blivit mer försiktig.' } },
+  jakt: { text: 'under en jakt', sed: { k: 'forsiktighet', d: LIV.sedJakt, text: 'dog under en jakt. Byn blev lite försiktigare.' } },
+  svamp: { text: 'av svampförgiftning' },
+  sjukdom: { text: 'av sjukdom' },
+  alderdom: { text: 'av ålderdom' },
+  barnsjukdom: { text: 'av en barnsjukdom' },
+  olycka: { text: 'i en olycka' },
+  barnsang: { text: 'i barnsäng' },
+} satisfies Record<string, DodDef>;
+export type Dodsorsak = keyof typeof DOD;
+export const DODSORSAKER: Record<Dodsorsak, DodDef> = DOD;
+
 // ---------- död, födsel, flytt ----------
-export function die(s: State, p: Person, cause: string) {
-  p.died = s.now; p.cause = cause; p.task = undefined;
+export function die(s: State, p: Person, orsak: Dodsorsak) {
+  const { text: cause, sed } = DODSORSAKER[orsak];
+  avbryt(s, p); // bördan läggs ner medan hen ännu lever, så att den ärvs
+  p.died = s.now; p.cause = cause;
   inherit(s, p); // arvingarna får det hen ägde (arv.ts)
   releaseOwner(s, p.id); // det som blev kvar blir byns
   const a = Math.floor(ageOf(p, s.now));
   log(s, `${p.name} dog ${cause}, ${a} år gammal.`, 'death', [p.id]);
   count(s, 'doda'); count(s, 'dog ' + cause); kronika(s, `${p.name} dog ${cause}, ${a} år gammal.`);
-  if (cause === 'av svält') sedEvent(s, 'forsiktighet', LIV.sedSvalt, `${p.name} svalt ihjäl. Byn har blivit mer försiktig.`);
-  else if (cause === 'av kyla') sedEvent(s, 'forsiktighet', LIV.sedKyla, `${p.name} frös ihjäl. Byn har blivit mer försiktig.`);
-  else if (cause === 'under en jakt') sedEvent(s, 'forsiktighet', LIV.sedJakt, `${p.name} dog under en jakt. Byn blev lite försiktigare.`);
+  if (sed) sedEvent(s, sed.k, sed.d, `${p.name} ${sed.text}`);
   if (a < LIV.barnDod) sedEvent(s, 'barn', LIV.sedBarn, `Byn sörjer barnet ${p.name} och värnar mer om sina barn.`);
   if (a >= ALDER.hogAlder) p.fame.push(`Blev ${a} år gammal`);
   for (const q of living(s)) {
@@ -76,7 +97,7 @@ export function die(s: State, p: Person, cause: string) {
 }
 
 export function birth(s: State, mother: Person) {
-  const father = byId(s, mother.partner) ?? byId(s, mother.pregnantBy);
+  const father = byId(s, mother.pregnantBy ?? mother.partner); // den hon blev gravid med; partnern bara i sparfiler där det saknas
   mother.pregnantSince = undefined; mother.lastBirth = s.now;
   const ch = newPerson(s, rnd(s, 'folk') < 0.5 ? 'm' : 'k', s.now, mother, father);
   ch.x = mother.x; ch.y = mother.y;
@@ -87,7 +108,7 @@ export function birth(s: State, mother: Person) {
   if (father && alive(father)) think(father, `Fick barnet ${ch.name}`, LIV.fodFar, s.now, LIV.fodDygn * DAY);
   const kids = s.people.filter(q => q.mother === mother.id).length;
   if (kids === 6) mother.fame.push('Mor till många barn');
-  if (rnd(s, 'halsa', mother) < LIV.barnsang) die(s, mother, 'i barnsäng');
+  if (rnd(s, 'halsa', mother) < LIV.barnsang) die(s, mother, 'barnsang');
 }
 
 // ---------- befolkningen regleras ----------
@@ -125,7 +146,7 @@ function immigrate(s: State, alone: boolean) {
     const age = LIV.nybyggareAlder + rnd(s, 'folk') * LIV.nybyggareAlderSpann, p = newPerson(s, sex, s.now - age * DAY);
     startSkills(s, p, age);
     s.people.push(p);
-    put(s, 'rotter', LIV.medhavd, { [p.id]: LIV.medhavd }); // lite mat från vandringen, så att man hinner samla innan man svälter
+    for (const k in MEDHAVT) put(s, k, MEDHAVT[k], { [p.id]: MEDHAVT[k] }); // lite mat från vandringen, så att man hinner samla innan man svälter
     return p;
   };
   const a = mk(rnd(s, 'folk') < 0.5 ? 'm' : 'k');
@@ -145,7 +166,8 @@ function refound(s: State) {
 }
 
 // p lämnar byn och tar med sig det hen orkar bära (arv.ts); resten blir byns
-function leave(s: State, p: Person, now: number) { p.left = now; p.task = undefined; packUp(s, p); releaseOwner(s, p.id); }
+// bördan läggs ner först, sedan packar hen det hen orkar bära av allt hen äger (arv.ts) och resten blir byns
+export function leave(s: State, p: Person, now: number) { avbryt(s, p); p.left = now; packUp(s, p); releaseOwner(s, p.id); }
 
 function emigrate(s: State) {
   const now = s.now;

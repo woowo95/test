@@ -7,6 +7,7 @@ import { isTool } from './saker';
 import { tingOf } from './agande';
 import { Act, HOUR, HOUR_S, Person, State } from './typer';
 import { balans } from './balans';
+import type { SamtalDef } from './samtal';
 
 // ---------- teknik ----------
 // Ingen föds med kunskapen om hur man gör en yxa. Den som arbetar med något kommer så småningom på hur det kan göras
@@ -17,7 +18,10 @@ export interface Tek {
   id: string; namn: string; text: string; effekt: string;
   omr: Act[]; // arbete där man kommer på den
   krav: string[]; // teknik man måste kunna först
-  material: string[][]; // det som måste finnas i byn: en av sakerna i varje grupp
+  // det som måste finnas i byn för att man ska komma på tekniken: en av sakerna i varje grupp. Det är inte receptet
+  // (skaffa.av i saker.ts): grenarna saknas i flera, eftersom de nästan alltid finns, och ett redskap kan ersätta en sak
+  // (spjutet täljs med flinta eller yxa). Att räkna fram det ur receptet skulle ändra när teknikerna kommer på
+  material: string[][];
   tid: number; // arbetstimmar för en person med medelmåttig nyfikenhet och intelligens
 }
 export const TEKNIK: Tek[] = [
@@ -47,15 +51,16 @@ const TEKTAL = balans('teknik', {
   kommaPa: 0.15, // den som kommer på något mår så här mycket bättre ...
   kommaPaTim: 12, // ... i så här många timmar
   forstaNyfiken: 0.04, // byns första som kommer på något gör sedernas nyfikenhet så här mycket större
-  larChansBra: 0.5, // chansen att den som kan något lär ut det i ett samtal: i en berättelse eller ett djupt samtal ...
+  larChansBra: 0.5, // chansen att den som kan något lär ut det i ett samtal: i en berättelse eller ett djupt samtal (lar i SAMTALSSLAG, samtal.ts) ...
   larChans: 0.2, // ... och i andra samtal
   larFramsteg: 0.2, // den som lyssnar kommer så här långt (av 1) mot tekniken i ett samtal, gånger larBas + intelligens / 20
   larBas: 0.5,
 });
 
 export const knows = (p: Person, id: string) => (p.tek?.[id] ?? 0) >= 1;
-// ett redskap räknas om det finns, hur slitet det än är; annat räknas i mängd
-export const hasMaterial = (s: State, t: Tek) => t.material.every(g => g.some(k => isTool(k) ? tingOf(s).some(q => q.k === k) : amountOf(s, k) >= TEKTAL.materialMin));
+// finns saken i byn: ett redskap räknas om det finns, hur slitet det än är; annat räknas i mängd
+export const harSak = (s: State, k: string) => isTool(k) ? tingOf(s).some(q => q.k === k) : amountOf(s, k) >= TEKTAL.materialMin;
+export const hasMaterial = (s: State, t: Tek) => t.material.every(g => g.some(k => harSak(s, k)));
 const canThink = (p: Person, t: Tek) => !knows(p, t.id) && t.krav.every(k => knows(p, k));
 
 // den som kommer på eller lär sig något
@@ -85,11 +90,11 @@ export function thinkWhileWorking(s: State, p: Person, act: Act, dtSec: number) 
 }
 
 // i samtal lär den som kan något ut det, och den som lyssnar lär sig fortare ju intelligentare hen är
-export function teach(s: State, a: Person, b: Person, kind: string) {
+export function teach(s: State, a: Person, b: Person, slag: SamtalDef) {
   if (!a.tek || ageOf(b, s.now) < ALDER.lar) return;
   for (const t of TEKNIK) {
     if (!knows(a, t.id) || knows(b, t.id) || !t.krav.every(k => knows(b, k))) continue;
-    if (rnd(s, 'kunskap', a) > (kind === 'berättelse' || kind === 'djupt samtal' ? TEKTAL.larChansBra : TEKTAL.larChans)) continue;
+    if (rnd(s, 'kunskap', a) > TEKTAL[slag.lar ?? 'larChans']) continue;
     b.tek ??= {};
     const d = Math.min(1 - (b.tek[t.id] ?? 0), TEKTAL.larFramsteg * (TEKTAL.larBas + stat(b, 'intelligens', s.now) / 20));
     b.tek[t.id] = (b.tek[t.id] ?? 0) + d; count(s, 'tekLart', d);

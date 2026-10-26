@@ -1,8 +1,8 @@
-import { addTo, amountOf, dropLoad, fetchSpot, isCarrying, takeLimit, use } from './lager';
+import { addTo, amountOf, avbryt, fetchSpot, takeLimit, use } from './lager';
 import { getable, takeMaterial } from './behov';
 import { Del, addDel } from './egendom';
 import { coldOf, temperature } from './vader';
-import { ALDER, KROPP, ageOf, count, isSick, log, ovning, stat, think } from './folk';
+import { ALDER, KROPP, ageOf, count, doingAct, isSick, log, ovning, stat, think } from './folk';
 import { flintFactor, stoneDist, takeFrom } from './fynd';
 import { observe } from './minne';
 import { getMap } from './karta';
@@ -16,6 +16,7 @@ import { kronika } from './historik';
 import { SNABBARE } from './handlingar';
 import { Act, DAY, Fire, FireLog, GREN, HEARTHS, HOUR, HOUR_S, IGNITERS, Person, SEC, State } from './typer';
 import { balans } from './balans';
+import { num } from './format';
 
 // ---------- balanstal (regel 8) ----------
 // Elden: hur stark den är, vad var och en vill ha på den, hur den tänds och fylls på, och hur tändmaterial, stenar och flinta
@@ -128,7 +129,7 @@ export function canLight(s: State, p?: Person) {
 export function needTinder(s: State) {
   return !s.fire.lit && !emberOn(s) && (amountOf(s, 'flinta') < 1 || needStones(s) || amountOf(s, 'torrgras') < RESERV.tandBrist || amountOf(s, 'grenar') < RESERV.tandBrist);
 }
-function durText(sec: number) { const h = sec / HOUR_S; return h >= 24 ? `${(h / 24).toFixed(1).replace('.', ',')} dygn` : h >= 1 ? `${Math.round(h)} timmar` : `${Math.round(sec / 60)} minuter`; }
+function durText(sec: number) { const h = sec / HOUR_S; return h >= 24 ? `${num(h / 24)} dygn` : h >= 1 ? `${Math.round(h)} timmar` : `${Math.round(sec / 60)} minuter`; }
 function lightFire(s: State, p: Person) {
   const f = s.fire, start = takeFuel(s, ELD.tandBransle, p), onCoal = (f.ash ?? 0) >= 1;
   Object.assign(f, { lit: true, fuel: start, litAt: s.now, litBy: p.id, burned: 0, emberUntil: undefined, tryProg: 0 });
@@ -183,12 +184,12 @@ export function addFuel(s: State, p: Person, n: number) {
   ovning(p, 'elda', ELD.ovFyll);
 }
 function assign(s: State, p: Person, act: Act, tx: number, ty: number, dur: number, why: string) {
-  if (p.task && isCarrying(p.task)) dropLoad(s, p.task, p.x, p.y, p.id); // bördan läggs ner där hen står, den försvinner inte
+  avbryt(s, p); // bördan läggs ner där hen står, den försvinner inte
   p.task = { act, phase: 'go', tx, ty, until: s.now + dur, carry: 0, why, dark: !isLight(s.now) };
 }
 // p går till förrådet efter en famn ved och sedan till elden (steg.ts). fran = den andras ved (stöld, behov.ts)
 export function fetchFuel(s: State, p: Person, why: string, fran?: Person) {
-  if (s.people.some(q => q.task?.act === 'elda')) return; // en i taget
+  if (doingAct(s, 'elda')) return; // en i taget (bland de levande)
   const at = fetchSpot(s, takeLimit(s, 'ved', p, fran) >= 1 ? 'ved' : 'grenar');
   assign(s, p, 'elda', at.x, at.y, ELD.hamtaTim * HOUR, why);
   if (fran) p.task!.fran = fran.id;

@@ -1,13 +1,14 @@
 import * as PIXI from 'pixi.js';
-import { ACTS, ALDER, Person, slagIkon, SEC, TalkEvent, ageOf, SAMTAL, alive, byId, clamp, homeKind, isSick, isSocial, living, load, REL, relKey, spar } from '../sim';
-import { hsl } from './hjalp';
-import { s, ui } from './lage';
+import { ACTS, ALDER, Person, slagIkon, SEC, TalkEvent, ageOf, SAMTAL, alive, byId, clamp, homeKind, isSocial, living, load, REL, relKey, spar } from '../sim';
+import { PRICKAR, personFarg } from './hjalp';
+import { s, ui, vidNyBy } from './lage';
 import { Ikoner, TS, bubbleG, labels, markLayer, peopleG } from './scen';
 
 // människorna på kartan: kroppen, det de bär, pratbubblor, symbolen för vad de gör och namnet
 const bubbles: { id: number; kind: string; good: boolean; until: number }[] = [];
 // vem var och en senast pratade med: bubblan står kvar så länge båda är kvar i samtalet
 const talkWith = new Map<number, number>();
+vidNyBy.push(() => { bubbles.length = 0; talkWith.clear(); });
 // samtal som startat sedan förra bildrutan (vid tiden som visas, nu): en bubbla i samtalets färg en stund. Samtal som
 // hunnit bli gamla, när tiden spolas fram, visas inte
 export function addTalks(events: TalkEvent[], now: number, nu: number) {
@@ -74,14 +75,14 @@ export function drawPeople(t: number) {
     const q = posOf(p), x = q.x * TS, y = q.y * TS;
     pos.set(p.id, q);
     const sleeping = p.task?.act === 'sova';
-    const col = hsl(p.hue, sleeping ? 0.15 : 0.5, sleeping ? 0.5 : 0.58);
+    const col = personFarg(p, sleeping);
     peopleG.beginFill(0x000000, 0.25).drawEllipse(x, y + r * 0.9, r * 0.9, r * 0.35).endFill();
     if (p.id === ui.selected) peopleG.lineStyle(2.5, 0xffffff, 1);
     else peopleG.lineStyle(1.2, 0x1a1a1a, 0.8);
     peopleG.beginFill(col).drawCircle(x, y, r).endFill();
     peopleG.lineStyle(0);
-    if (isSick(p, s.now)) peopleG.beginFill(0x8fc46a).drawCircle(x + r * 0.7, y - r * 0.7, 1.8).endFill();
-    if (p.pregnantSince !== undefined) peopleG.beginFill(0xf2c4d0).drawCircle(x - r * 0.7, y - r * 0.7, 1.6).endFill();
+    if (PRICKAR.sjuk.har(p)) peopleG.beginFill(PRICKAR.sjuk.farg).drawCircle(x + r * 0.7, y - r * 0.7, 1.8).endFill();
+    if (PRICKAR.gravid.har(p)) peopleG.beginFill(PRICKAR.gravid.farg).drawCircle(x - r * 0.7, y - r * 0.7, 1.6).endFill();
     if (p.task && load(p.task) > 0.02) markIcons.add(homeKind(p.task), x + r - 2.5, y - 1, 0.6); // det man bär syns på figuren
   }
   // pågående samtal och symboler

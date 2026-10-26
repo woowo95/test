@@ -115,7 +115,8 @@ export function mostUrgent(s: State) {
 // ---------- familjehus (steg 1.6.3) ----------
 // En familj är ägaren, partnern och de barn till dem som inte har egen partner. När ett par med barn inte har något eget
 // hus och äger så mycket (förrådet och redskapen, efter värdet) att det räcker till huset, bestämmer familjen sig för att
-// bygga ett. Huset ägs av den av dem som planerade det, går i arv som föremål (arv.ts) och blir byns när ingen äger det.
+// bygga ett. Huset ägs av den i paret som har lägst id (hus.ag); den som planerar det kan vara en annan i familjen (planBuild i
+// bygg.ts). Det går i arv som föremål (arv.ts) och blir byns när ingen äger det.
 // Materialet tas av familjens eget först, sedan efter behovsstegen (bygg.ts: takeForHouse). Familjen sover där.
 const barnTill = (q: Person, o?: Person) => !!o && isParent(o, q);
 export function familjOf(s: State, ag?: number): Person[] {
@@ -153,7 +154,9 @@ function familjUtanHus(s: State) {
 
 // ---------- var man sover ----------
 // Den som hör till en familj med ett eget hus sover där; alla andra sover i byns hus där man sover (sovsalarna), en per
-// golvruta under tak. Räknas om när husen eller folket ändras (en gång per steg)
+// golvruta under tak. Cachen gäller så länge husen (s.byggV), tiden (s.now) och antalet levande är desamma. s.now flyttas inom
+// ett slag av varje persons egen tid (taskStep i steg.ts), så den räknas om flera gånger per slag (ungefär 0,5 % av körtiden);
+// s.now står kvar i nyckeln eftersom familjerna kan ändras inom ett slag
 interface Boende { key: string; egna: Map<number, { tiles: number[]; folk: Person[] }>; gemensamt: number[]; ovriga: Person[] }
 const boenden = new WeakMap<State, Boende>();
 function boende(s: State): Boende {
@@ -181,8 +184,8 @@ function boende(s: State): Boende {
   boenden.set(s, b);
   return b;
 }
-// sovplatserna p kan sova på: familjens hus, annars byns (utan p: byns)
-export const sleepBeds = (s: State, p?: Person) => (p && boende(s).egna.get(p.id)?.tiles) || boende(s).gemensamt;
+// sovplatserna i ett rum: en per golvruta under tak, och inga i ett hus där man inte sover (som i boende)
+export const sovplatser = (s: State, r: Rum) => { const h = husById(s, r.hus); return h && !fnOf(h).sover ? 0 : r.tiles.length; };
 // så många som saknar en egen sovplats under tak
 export const homeless = (s: State) => { const b = boende(s); return Math.max(0, b.ovriga.length - b.gemensamt.length); };
 // var p sover: en egen ruta under tak om det finns, annars ingenstans. Finns färre platser än folk delar man

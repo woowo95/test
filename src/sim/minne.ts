@@ -4,12 +4,13 @@ import { teach } from './teknik';
 import { FANGST, Kind, prospect, regrowOf, richness, shoreOf, standAt, stoneDist, synsOf, toppOf, vaxerAt } from './fynd';
 import { getMap } from './karta';
 import { groundOf, tileOf } from './mark';
-import { kn, learnK } from './kunskap';
+import { KUNSKAPER, kn, learnK } from './kunskap';
 import { clamp, pickViktat, rnd } from './slump';
 import { ageIndex, lightLevel } from './tid';
-import { DAY, H, HOUR, LKind, Lardom, Person, Rel, State, T, W } from './typer';
+import { DAY, H, HOUR, Lardom, Person, Rel, State, T, W, egen, tvaDelar, visning } from './typer';
 import { FOREST } from './vag';
 import { balans } from './balans';
+import type { SamtalDef } from './samtal';
 
 // ---------- balanstal (regel 8) ----------
 // Lärdomar: hur många man minns, hur mycket man tror på dem, hur de sprids och hur fort de glöms. Värdet (v) mäts i det en
@@ -42,7 +43,7 @@ export const MINNE = balans('minne', {
   radslaSettSaker: 1,
   radslaHort: 0.6, // ... de närmaste som hörde om den så här rädda, och säkra på det med radslaHortSaker
   radslaHortSaker: 0.7,
-  delaBas: 0.03, // chansen att den som talar berättar något: delaBas + (karisma + empati) / delaDiv, och mer i en berättelse eller ett djupt samtal
+  delaBas: 0.03, // chansen att den som talar berättar något: delaBas + (karisma + empati) / delaDiv, och mer i en berättelse eller ett djupt samtal (dela i SAMTALSSLAG, samtal.ts)
   delaDiv: 200,
   delaBerattelse: 0.35,
   delaDjupt: 0.12,
@@ -87,18 +88,34 @@ const areaCenter = (a: number) => ({ x: Math.min(W, (a % aw()) * AREA + AREA / 2
 
 // hur mycket ett område ger, så som man ser det när man går runt där: snittet av de fem bästa rutorna.
 // 'nu' är det som finns kvar, 'vaxer' var det växer (buskar och spår syns även när det är plockat) och 'syns'
-// vad marken ser ut att kunna ge för den som inte varit där. Sparas en timme i taget.
-const LKINDS: LKind[] = ['samla', 'jakt', 'fiske', 'flinta', 'fara'];
+// vad marken ser ut att kunna ge för den som inte varit där. Sparas en timme i taget (av gränssnittet i en egen del, typer.ts).
+// lärdomarnas slag (registret): vad = ordet i lärdomens text (describe), inga = texten när inget växer där längre, namn = ordet
+// i listor (sammanställningen efter ikappräkningen). fynd = ett fynd som växer och plockas (Kind i fynd.ts): det ses runt den som
+// arbetar (serOmFinns: bara där det finns något), växer tillbaka i minnet och kan visa sig sämre än man trott.
+// Flinta och rädslor (fara) har egna regler nedan. Ordningen är den i cachen nedan
+interface LardomDef { vad: string; namn: string; inga?: string; fynd?: true; serOmFinns?: true }
+const LDEF = {
+  samla: { vad: 'bär och rötter', namn: 'bär och rötter', inga: 'Inga bär och rötter', fynd: true },
+  jakt: { vad: 'kaniner', namn: 'vilt', inga: 'Inga kaniner', fynd: true },
+  fiske: { vad: 'fisk i vattnet', namn: 'abborre', inga: 'Ingen fisk', fynd: true, serOmFinns: true },
+  flinta: { vad: 'flinta', namn: 'flinta' },
+  fara: { vad: '', namn: 'farliga platser' },
+} satisfies Record<string, LardomDef>;
+export type LKind = keyof typeof LDEF;
+export const LARDOMAR: Record<LKind, LardomDef> = LDEF;
+const LKINDS = Object.keys(LDEF) as LKind[];
+const arFynd = (k: LKind): k is Kind => !!LARDOMAR[k].fynd;
 const MODES = ['nu', 'vaxer', 'syns'] as const;
 type Mode = typeof MODES[number];
 const LK_I = Object.fromEntries(LKINDS.map((k, i) => [k, i])) as Record<LKind, number>;
 const MODE_I = Object.fromEntries(MODES.map((m, i) => [m, i])) as Record<Mode, number>;
-const areaCache = new WeakMap<State, { hr: number; v: Float64Array }>();
+const areaCache = tvaDelar<{ hr: number; v: Float64Array }>();
 function areaValue(s: State, k: LKind, a: number, mode: Mode = 'nu') {
-  const hr = Math.floor(s.now / HOUR), n = aw() * ah();
-  let c = areaCache.get(s);
-  if (!c || c.hr !== hr) { c = { hr, v: new Float64Array(LKINDS.length * n * 3).fill(NaN) }; areaCache.set(s, c); }
-  const key = (LK_I[k] * n + a) * 3 + MODE_I[mode];
+  const hr = Math.floor(s.now / HOUR), n = aw() * ah(), key = (LK_I[k] * n + a) * 3 + MODE_I[mode];
+  if (visning.pa) { const f = areaCache.sim.get(s); if (f?.hr === hr && !Number.isNaN(f.v[key])) return f.v[key]; }
+  const m = egen(areaCache);
+  let c = m.get(s);
+  if (!c || c.hr !== hr) { c = { hr, v: new Float64Array(LKINDS.length * n * 3).fill(NaN) }; m.set(s, c); }
   let v = c.v[key];
   if (Number.isNaN(v)) c.v[key] = v = areaCalc(s, k, a, mode);
   return v;
@@ -134,15 +151,15 @@ function trim(s: State, p: Person) {
   L.length = MINNE.max;
 }
 // hur mycket ett värde är jämfört med en rik plats av samma slag (1 ≈ gott om)
-const relOf = (k: LKind, v: number) => k === 'fara' || k === 'flinta' ? v : v / (toppOf(k) * MINNE.rik);
+const relOf = (k: LKind, v: number) => arFynd(k) ? v / (toppOf(k) * MINNE.rik) : v;
 // egen upplevelse: personen ser hur mycket som finns i området
 // Man ser också om det växer där (buskar, svampmark, spår), så att man vet om platsen är plockad eller död.
 // Var platsen mycket sämre än man trott rättas lärdomen, och det blir en nyhet som gärna berättas vidare.
 export function observe(s: State, p: Person, k: LKind, x: number, y: number, c = 1) {
-  const a = areaOf(x, y), v = areaValue(s, k, a), g = k === 'flinta' ? undefined : areaValue(s, k, a, 'vaxer');
+  const a = areaOf(x, y), v = areaValue(s, k, a), g = arFynd(k) ? areaValue(s, k, a, 'vaxer') : undefined;
   const l = findL(p, k, a);
   if (l) {
-    const fel = k !== 'flinta' && k !== 'fara' && relOf(k, Math.min(MINNE.vMax, hoped(s, l))) - relOf(k, v) > MINNE.felGrans;
+    const fel = arFynd(k) && relOf(k, Math.min(MINNE.vMax, hoped(s, l))) - relOf(k, v) > MINNE.felGrans;
     if (fel) count(s, 'rattat');
     l.v = v; l.g = g; l.c = Math.max(c, l.src === undefined ? l.c : 0); l.t = s.now; l.src = undefined; l.led = 0;
     if (fel) l.ny = s.now; else delete l.ny;
@@ -152,9 +169,9 @@ export function observe(s: State, p: Person, k: LKind, x: number, y: number, c =
   trim(s, p);
 }
 // den som arbetar i ett område ser också vad mer som finns där: bär, spår av vilt och fisk i vattnet
-const SER_RUNT: Kind[] = ['samla', 'jakt', 'fiske'];
+const SER_RUNT = LKINDS.filter(arFynd);
 export function lookAround(s: State, p: Person, x: number, y: number) {
-  for (const k of SER_RUNT) if (k === 'fiske' ? areaValue(s, k, areaOf(x, y)) > 0 : true) observe(s, p, k, x, y);
+  for (const k of SER_RUNT) if (LARDOMAR[k].serOmFinns ? areaValue(s, k, areaOf(x, y)) > 0 : true) observe(s, p, k, x, y);
 }
 // vad personen tror att man hittar på en ruta. I närområdet ser man det. Längre bort syns marken (skog, äng, strand)
 // men inte hur mycket andra redan tagit där: då gäller minnet, och utan minne en gissning efter hur marken ser ut.
@@ -162,7 +179,7 @@ export function lookAround(s: State, p: Person, x: number, y: number) {
 const trustUnknown = (s: State, p: Person) => MINNE.okantBas + stat(p, 'nyfikenhet', s.now) / MINNE.okantNyfiken;
 // En plats man minns som plockad tror man har vuxit tillbaka efter en tid; en plats där inget växer längre blir inte bättre.
 export function hoped(s: State, l: Lardom) {
-  if (l.g === undefined || l.g <= l.v || l.k === 'flinta' || l.k === 'fara') return l.v;
+  if (l.g === undefined || l.g <= l.v || !arFynd(l.k)) return l.v;
   const r = regrowOf(l.k, ageIndex(s));
   return l.g - (l.g - l.v) * Math.exp(-r * (s.now - l.t) / HOUR);
 }
@@ -263,10 +280,10 @@ export function fearPlace(s: State, victim: Person, cause: string) {
 
 // ---------- samtal ----------
 // den som talar berättar ibland vad hen vet; sociala personer och berättare delar mer
-export function share(s: State, a: Person, b: Person, r: Rel, kind: string) {
+export function share(s: State, a: Person, b: Person, r: Rel, slag: SamtalDef) {
   const now = s.now;
-  teach(s, a, b, kind);
-  const talk = MINNE.delaBas + (stat(a, 'karisma', now) + stat(a, 'empati', now)) / MINNE.delaDiv + (kind === 'berättelse' ? MINNE.delaBerattelse : kind === 'djupt samtal' ? MINNE.delaDjupt : 0);
+  teach(s, a, b, slag);
+  const talk = MINNE.delaBas + (stat(a, 'karisma', now) + stat(a, 'empati', now)) / MINNE.delaDiv + (slag.dela ? MINNE[slag.dela] : 0);
   if (a.lardomar?.length && rnd(s, 'minne', a) < talk) {
     // man berättar helst om rädslor, rika platser och platser som visat sig sämre än man trott
     const w = a.lardomar.map(l => (l.k === 'fara' ? MINNE.delaFara : l.k === 'flinta' ? 1 : nyhet(s, l) ? Math.max(1, l.v) : l.v) * l.c);
@@ -278,16 +295,16 @@ export function share(s: State, a: Person, b: Person, r: Rel, kind: string) {
     if (d > MINNE.larMin && rnd(s, 'minne', a) < MINNE.larChans) {
       const before = kn(b, k), v = learnK(b, k, d * MINNE.larDel * (MINNE.larBas + stat(b, 'intelligens', now) / 20), now);
       e.t = now; // att lära ut håller kunskapen vid liv
-      if (k === 'svamp' && before < MINNE.larKant && v >= MINNE.larKant) log(s, `${b.name} har lärt sig av ${a.name} att skilja kantarellen från den giftiga spindlingen.`, 'skill', [b.id, a.id]);
+      const larAv = KUNSKAPER[k]?.larAv;
+      if (larAv && before < MINNE.larKant && v >= MINNE.larKant) log(s, `${b.name} har lärt sig av ${a.name} att ${larAv}.`, 'skill', [b.id, a.id]);
     }
   }
 }
 // en rättelse är en nyhet i två dygn
 const nyhet = (s: State, l: Lardom) => l.ny !== undefined && s.now - l.ny < MINNE.nyhetDygn * DAY;
 function tell(s: State, a: Person, b: Person, l: Lardom, r: Rel) {
-  const now = s.now;
-  // att berätta stärker det egna minnet
-  l.c = Math.min(1, l.c + MINNE.berattaStark * (1 - l.c)); l.t = now;
+  // att berätta stärker det egna minnet, men platsen sågs inte nu (t, återväxten räknas därifrån)
+  l.c = Math.min(1, l.c + MINNE.berattaStark * (1 - l.c));
   const trust = clamp(MINNE.troBas + r.op / MINNE.troDiv, MINNE.troMin, MINNE.troMax);
   const c = l.c * trust * MINNE.troDel;
   // man överdriver gärna, särskilt det som är farligt
@@ -296,13 +313,13 @@ function tell(s: State, a: Person, b: Person, l: Lardom, r: Rel) {
   if (e) {
     if (e.src === undefined && e.led === 0 && e.c >= c && !nyhet(s, l)) return; // egen upplevelse väger tyngre, utom mot en nyhet
     // en nyhet om att platsen blivit sämre ersätter det man trodde; annars vägs det ihop
-    e.v = nyhet(s, l) ? v : (e.v * e.c + v * c) / (e.c + c); if (l.g !== undefined) e.g = l.g; e.c = Math.max(e.c, c); e.t = now;
+    e.v = nyhet(s, l) ? v : (e.v * e.c + v * c) / (e.c + c); if (l.g !== undefined) e.g = l.g; e.c = Math.max(e.c, c); e.t = l.t;
     if (nyhet(s, l)) e.ny = l.ny;
     if ((e.src !== undefined || e.led) && (l.led ?? 0) + 1 < (e.led ?? 1)) { e.src = a.id; e.led = (l.led ?? 0) + 1; } // kortare väg till källan
     if (l.om && !e.om) e.om = l.om;
     return;
   }
-  (b.lardomar ??= []).push({ k: l.k, a: l.a, v, ...(l.g !== undefined ? { g: l.g } : {}), c, t: now, src: a.id, led: (l.led ?? 0) + 1, ...(l.om ? { om: l.om } : {}), ...(nyhet(s, l) ? { ny: l.ny } : {}) });
+  (b.lardomar ??= []).push({ k: l.k, a: l.a, v, ...(l.g !== undefined ? { g: l.g } : {}), c, t: l.t, src: a.id, led: (l.led ?? 0) + 1, ...(l.om ? { om: l.om } : {}), ...(nyhet(s, l) ? { ny: l.ny } : {}) });
   trim(s, b);
   count(s, 'berattat');
   if (l.k === 'fara' && l.om) {
@@ -351,15 +368,14 @@ function placeName(s: State, a: number) {
   const dir = DIRS[(Math.round(Math.atan2(dy, dx) / (Math.PI / 4)) + 8) % 8];
   return `${terr} ${dir} om byn`;
 }
-const WHAT: Record<LKind, string> = { samla: 'bär och rötter', jakt: 'kaniner', fiske: 'fisk i vattnet', flinta: 'flinta', fara: '' };
 const amount = (v: number) => v >= 0.7 ? 'Gott om' : v >= 0.35 ? 'En del' : v >= 0.1 ? 'Lite' : 'Nästan inga';
 // en lärdom i ord, med hur säker personen är, varifrån den kommer och om den stämmer. what är texten utan platsen.
 export function describe(s: State, l: Lardom) {
   const place = placeName(s, l.a);
   const rel = (v: number) => relOf(l.k, v);
   const what0 = l.k === 'fara' ? `Farligt${l.om ? `: ${l.om}` : ''}` : l.k === 'flinta' ? 'Flinta finns'
-    : l.g !== undefined && rel(l.g) < 0.1 ? `${l.k === 'fiske' ? 'Ingen fisk' : `Inga ${WHAT[l.k]}`} längre`
-    : l.g !== undefined && rel(l.g) > rel(l.v) + 0.35 ? `${amount(rel(l.v))} ${WHAT[l.k]}, växer tillbaka` : `${amount(rel(l.v))} ${WHAT[l.k]}`;
+    : l.g !== undefined && rel(l.g) < 0.1 ? `${LARDOMAR[l.k].inga} längre`
+    : l.g !== undefined && rel(l.g) > rel(l.v) + 0.35 ? `${amount(rel(l.v))} ${LARDOMAR[l.k].vad}, växer tillbaka` : `${amount(rel(l.v))} ${LARDOMAR[l.k].vad}`;
   const what = what0 + (nyhet(s, l) ? ', sämre än man trott' : '');
   const text = l.k === 'fara' ? `Rädd för platsen ${place}${l.om ? ` (${l.om})` : ''}` : `${what} ${place}`;
   const src = l.src === undefined ? (l.led ? 'fick höra om det' : 'egen erfarenhet') : `hört av ${byId(s, l.src)?.name ?? 'någon'}${(l.led ?? 1) > 1 ? `, ${l.led} led från den som var där` : ''}`;
