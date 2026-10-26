@@ -1909,6 +1909,11 @@ SCENARIER.arv = {
     d.left = s.now; packUp(s, d); releaseOwner(s, d.id);
     const tog = fore - amountOf(s, 'ved') - amountOf(s, 'bar') + (tingOf(s).some(t => t.k === 'yxa') ? 0 : 1);
     const flytt = tog > 0 && tog <= bar * 25 + 1 && amountOf(s, 'ved') + amountOf(s, 'bar') > 0 && ownedSum(s, 'ved') === 0;
+    // ordningen när två saker är lika mycket värda beror inte på webbläsarens språk (samhalle-141): två lika yxor
+    ({ s, d, a, b, c, e } = ny()); addTool(s, 'yxa', d);
+    const lc = String.prototype.localeCompare; let sprak = 0;
+    String.prototype.localeCompare = function (this: string, ...x: Parameters<typeof lc>) { sprak++; return lc.apply(this, x); };
+    try { packUp(s, d); } finally { String.prototype.localeCompare = lc; }
     // den som dör, flyttar eller blir nattens vakt lägger ner det hen bär där hen står: det finns kvar i byn (och ärvs)
     const allt = (s: State, k: string) => (s.stackar ?? []).reduce((n, x) => n + (x.k === k ? x.n : 0), 0);
     const bordan = (s: State, q: Person, k: string, n: number) => { q.task = { act: 'samla', phase: 'do', tx: q.x, ty: q.y, until: s.now + HOUR, carry: 0, items: { [k]: n } }; };
@@ -1947,6 +1952,7 @@ SCENARIER.arv = {
       ['sedan syskonen', syskon],
       ['utan släkt blir allt byns', byn],
       [`den som flyttar tar med sig det hen orkar bära (${tog.toFixed(1)}), resten blir byns`, flytt],
+      [`packningen jämför inte namnen efter språket (${sprak} gånger)`, sprak === 0],
       ['den som dör lägger ner det hen bär, och arvingen får det', dogBar],
       ['den som flyttar packar ur bördan det hen orkar bära, resten blir kvar i byn', flyttBar],
       ['den som blir nattens vakt lägger ner det hen bär', vaktBar],

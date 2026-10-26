@@ -72,7 +72,7 @@ export function packUp(s: State, p: Person) {
   const saker = [
     ...tingOf(s).filter(t => t.agare === p.id).map(t => ({ k: t.k, ting: t.id, n: 1, per: tingVarde(t), bord: 1 })),
     ...Object.keys(eget).map(k => ({ k, ting: undefined, n: eget[k], per: grundvarde(k) * stackOf(k), bord: 1 / stackOf(k) })),
-  ].sort((a, b) => b.per - a.per || a.k.localeCompare(b.k));
+  ].sort((a, b) => b.per - a.per || (a.k < b.k ? -1 : a.k > b.k ? 1 : 0)); // inte localeCompare: ordningen får inte bero på språket
   for (const x of saker) {
     if (kvar <= 1e-9) break;
     if (x.ting !== undefined) {
