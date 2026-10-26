@@ -20,7 +20,7 @@ type BitK = 'vagg' | 'golv' | 'oppning';
 // c = skick (1 = nytt), lp/lm = lagning: hur långt den kommit och material som lagts på den
 export interface Bit { id: number; x: number; y: number; k: BitK; m: string; b: number; mat: number; c: number; hus?: number; lp?: number; lm?: number }
 // kom = var materialet kom ifrån (bygg.ts), fn = husets funktion (en rad i BYGGNADER, byggnader.ts; saknas = sovsal), ag = ägaren (ett familjehus), slag = vad ett förrådshus rymmer
-export interface Hus { id: number; namn: string; x: number; y: number; w: number; h: number; t: number; by?: number; klar?: number; kom?: Record<string, number>; fn?: string; ag?: number; slag?: 'mat' | 'material'; tom?: number } // tom = sedan när ingen sover i sovsalen
+export interface Hus { id: number; namn: string; x: number; y: number; w: number; h: number; t: number; by?: number; klar?: number; varKlar?: number; kom?: Record<string, number>; fn?: string; ag?: number; slag?: 'mat' | 'material'; tom?: number } // tom = sedan när ingen sover i sovsalen; varKlar = när huset först blev färdigt, sparat när en vägg rasar (klar nollas då)
 // per material: vad som går åt per ruta, timmar för en ovan byggare, slitage per timme, hur bra väggen håller värmen.
 // farg och ikon är bara bilden: färgen på kartan och symbolen i rutan under musen (simuleringen läser dem aldrig)
 export interface Material { namn: string; k: BitK; item?: string; n: number; tim: number; slit: number; isol?: number; tek?: string; farg: number; ikon?: string }

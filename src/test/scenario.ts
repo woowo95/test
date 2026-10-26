@@ -1885,6 +1885,17 @@ SCENARIER.bygg = {
     addTo(q, 'rotter', 150); // mat i förrådet, så att de fyra vuxna inte måste skaffa mat först
     kor(q, 24);
     const lagat = (q.stat?.lagat ?? 0) > 0;
+    // en vägg rasar och byggs om: huset är klart igen, men blir inte färdigt en gång till (krönikan, Gemenskap; samhalle-55)
+    let omKlar = false, kronikaFore = 0, kronikaEfter = 0, gemFore = 0, gemEfter = 0;
+    if (h?.klar) {
+      const fardigt = () => (q.hist?.kronika ?? []).filter(([, txt]) => txt === `${h.namn} blev färdigt.`).length;
+      const vg = bitsOf(q).find(b => b.hus === h.id && b.k === 'vagg')!, by = living(q)[0];
+      kronikaFore = fardigt(); gemFore = q.seder.ev.gemenskap;
+      vg.c = 1e-6; wearBuild(q, 1, ageIndex(q));
+      vg.mat = MATERIAL[vg.m].n;
+      for (let n = 0; n < 100 && vg.b < 1; n++) workOn(q, by, vg, 600);
+      omKlar = !!h.klar; kronikaEfter = fardigt(); gemEfter = q.seder.ev.gemenskap;
+    }
     return [
       ['ett slutet rum med väggar räknas som under tak', !!rum && rum.tiles.length === 4],
       [`vägen går runt väggarna (${path.length} steg)`, path.length > 0 && !genomVagg],
@@ -1898,6 +1909,7 @@ SCENARIER.bygg = {
       [`träden där huset ska stå fälls innan väggarna byggs där (${trad} träd på platsen, ${iTrad} väggar byggda på ett träd)`, trad >= 0 && iTrad === 0 && !!h && bitsOf(q).every(b => b.hus !== h.id || !treeOn(q, b))],
       [`huset står en bit från elden (${avst.toFixed(1)} rutor)`, avst >= 4],
       ['slitna väggar lagas', lagat],
+      [`en rasad vägg som byggts om gör huset klart igen men inte färdigt en gång till (krönikan ${kronikaFore} → ${kronikaEfter}, Gemenskap ${gemFore.toFixed(3)} → ${gemEfter.toFixed(3)})`, omKlar && kronikaFore === 1 && kronikaEfter === 1 && gemEfter === gemFore],
       [`huset minns var materialet kom ifrån (${Math.round(minns)} av ${Math.round(lagt)}: ${satt})`, lagt > 0 && Math.abs(minns - lagt) < 0.01 * lagt + 0.01],
     ];
   },

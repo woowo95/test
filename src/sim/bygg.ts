@@ -268,10 +268,11 @@ export function workOn(s: State, p: Person, b: Bit, dtSec: number) {
   b.c = 1; count(s, 'byggt_' + b.m); touch(s);
   if (b.k === 'vagg') clearTile(s, b);
   const h = husById(s, b.hus);
-  // huset är färdigt först när alla dess bitar är byggda: väggarna, öppningen och golvet (inte bara väggarna). Då loggas det
-  // och skrivs i krönikan, och husKlar körs
+  // huset är färdigt först när alla dess bitar är byggda: väggarna, öppningen och golvet (inte bara väggarna). Första gången
+  // loggas det och skrivs i krönikan, och husKlar körs; efter en rasad vägg (varKlar) blir det bara klart igen
   if (h && !h.klar && bitsOf(s).every(q => q.hus !== h.id || q.b >= 1)) {
     h.klar = s.now;
+    if (h.varKlar !== undefined) return true;
     const n = gridOf(s).rooms.filter(r => r.hus === h.id).reduce((a, r) => a + r.tiles.length, 0);
     if (fnOf(h).sover) log(s, `${h.namn} är färdigt. Nu kan ${n} sova under tak.`, 'world', [p.id]);
     kronika(s, `${h.namn} blev färdigt.`); husKlar(s, h);
@@ -307,7 +308,7 @@ export function wearBuild(s: State, hours: number, ai: number) {
     const h = husById(s, b.hus);
     if (b.k === 'vagg') {
       b.b = 0; b.mat = 0; b.c = 1; b.lp = b.lm = undefined; count(s, 'rasat');
-      if (h) h.klar = undefined;
+      if (h) { h.varKlar ??= h.klar; h.klar = undefined; }
       log(s, `En vägg i ${h ? h.namn.toLowerCase() : 'ett hus'} var så sliten att den rasade.`, 'world');
     } else { b.m = 'jord'; b.c = 1; }
     touch(s);
