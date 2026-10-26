@@ -1,4 +1,4 @@
-import { ACTS, MATERIAL, SLAG, Person, SAKER, TEK, TEKNIK, Tek, amountOf, harSak, hasMaterial, knows, living, sakNamn, tiondel } from '../../sim';
+import { ACTS, MATERIAL, SLAG, Person, SAKER, TEK, TEKNIK, Tek, amountOf, harSak, hasMaterial, knows, living, sakNamn, stationDef, tiondel } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { bar, esc, hjalpKnapp, hjalpText, pLink } from '../hjalp';
 import { s, ui } from '../lage';
@@ -53,9 +53,9 @@ function tekHtml() {
 const lista = (xs: string[], och = 'och') => xs.length > 1 ? xs.slice(0, -1).join(', ') + ` ${och} ` + xs[xs.length - 1] : xs[0] ?? '';
 // det som saknas i byn för att någon ska kunna komma på tekniken
 const saknas = (t: Tek) => lista(t.material.filter(g => !g.some(k => harSak(s, k))).map(g => lista(g.map(k => sakNamn(k).toLowerCase()), 'eller')));
-// receptet: det som går åt för att göra en sak av tekniken (saker.ts), eller för en ruta av ett bygge (byggnad.ts)
+// receptet: det som går åt för att göra en sak av tekniken (saker.ts), en station (stationer.ts) eller en ruta av ett bygge (byggnad.ts)
 function recept(t: Tek): { k: string; n: number; per?: string }[] {
-  const av = SAKER[t.id]?.skaffa?.av;
+  const av = SAKER[t.id]?.skaffa?.av ?? stationDef(t.id)?.av;
   if (av) return Object.entries(av).map(([k, n]) => ({ k, n }));
   return Object.values(MATERIAL).filter(m => m.tek === t.id && m.item).map(m => ({ k: m.item!, n: m.n, per: m.namn.toLowerCase() }));
 }

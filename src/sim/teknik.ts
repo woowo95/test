@@ -27,7 +27,7 @@ export interface Tek {
 }
 export const TEKNIK: Tek[] = [
   { id: 'korg', namn: 'Korg', text: 'En korg flätad av hö.', effekt: 'Man bär hem mer från varje tur och spiller mindre bär.',
-    omr: ['samla', 'hantverk'], krav: [], material: [['torrgras']], tid: 24 },
+    omr: ['samla', 'hantverk'], krav: ['flatarbank'], material: [['torrgras']], tid: 24 }, // korgen flätas bara vid flätarbänken
   { id: 'yxa', namn: 'Flintyxa', text: 'En vass flintsten bunden vid en pinne.', effekt: 'Med yxa kan man fälla träd och hugga trä.',
     omr: ['samla', 'ved', 'hantverk'], krav: [], material: [['flinta'], ['grenar']], tid: 10 },
   { id: 'fiskespjut', namn: 'Träspjut', text: 'En pinne som täljts spetsig med en flintsten eller en yxa.', effekt: 'Ger mycket mer fisk än händerna och hjälper på jakten, men slits fort.',
@@ -42,6 +42,12 @@ export const TEKNIK: Tek[] = [
     omr: ['jakt', 'hantverk'], krav: [], material: [['flinta']], tid: 14 },
   { id: 'timmervagg', namn: 'Timmerhus', text: 'Stockar som huggs till och läggs på varandra till en vägg, och trä som läggs som golv.', effekt: 'Byn kan bygga hus att sova i, med väggar och golv av trä.',
     omr: ['ved', 'falla', 'hugga', 'hantverk'], krav: ['yxa'], material: [['yxa']], tid: 5 },
+  // stationerna och möblerna är tekniker som byn måste komma på innan de kan byggas (steg 2.2.11); tekniken har samma id
+  // som stationen i STATIONER (stationer.ts) och receptet är stationens material
+  { id: 'slaktbank', namn: 'Slaktbänk', text: 'En kluven stock på ben, där viltet slaktas och fisken rensas.', effekt: 'Viltet slaktas och fisken rensas bara vid slaktbänken, och en kniv ligger kvar vid den.',
+    omr: ['jakt', 'hantverk'], krav: ['kniv'], material: [['kniv'], ['ved']], tid: 12 },
+  { id: 'flatarbank', namn: 'Flätarbänk', text: 'Två plankor på ben, med två stolpar och ett rep spänt emellan.', effekt: 'Vid bänken tvinnas rep dubbelt så fort, och korgar flätas bara där.',
+    omr: ['hantverk'], krav: ['rep'], material: [['ved'], ['grenar']], tid: 12 },
 ];
 export const TEK = Object.fromEntries(TEKNIK.map(t => [t.id, t])) as Record<string, Tek>;
 

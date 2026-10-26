@@ -262,16 +262,16 @@ SCENARIER.slitage = {
 
 SCENARIER.teknik = {
   lang: true,
-  text: 'Ingen kan göra yxa, spjut eller korg från början: den som arbetar kommer på det (nyfikna och intelligenta fortare), lär ut det i samtal, och kunskapen dör med den sista som kan den',
+  text: 'Ingen kan göra yxa, spjut eller rep från början: den som arbetar kommer på det (nyfikna och intelligenta fortare), lär ut det i samtal, och kunskapen dör med den sista som kan den',
   kor: () => {
     const s = createState(3, START);
     const forst: Record<string, number> = {};
-    let yxaInnan = false, korgInnan = false;
+    let yxaInnan = false, repInnan = false;
     const kanFran = TEKNIK.every(t => !s.people.some(p => knows(p, t.id)));
     kor(s, 20 * 24, s => {
       for (const t of TEKNIK) if (forst[t.id] === undefined && living(s).some(p => knows(p, t.id))) forst[t.id] = (s.now - s.founded) / DAY;
       if ((amountOf(s, 'yxa')) > 0 && forst.yxa === undefined) yxaInnan = true;
-      if ((amountOf(s, 'korg')) > 0 && forst.korg === undefined) korgInnan = true;
+      if ((amountOf(s, 'rep')) > 0 && forst.rep === undefined) repInnan = true;
     });
     const kan = (id: string) => living(s).filter(p => knows(p, id)).length;
     // nyfikna och intelligenta kommer på det fortare
@@ -279,7 +279,7 @@ SCENARIER.teknik = {
     a.pot.nyfikenhet = a.pot.intelligens = 16; b.pot.nyfikenhet = b.pot.intelligens = 6; a.tek = {}; b.tek = {};
     setAmount(q, 'torrgras', 10);
     thinkWhileWorking(q, a, 'samla', 3600); thinkWhileWorking(q, b, 'samla', 3600);
-    const snabb = (a.tek.korg ?? 0) > (b.tek.korg ?? 0) * 3;
+    const snabb = (a.tek.rep ?? 0) > (b.tek.rep ?? 0) * 3;
     // utan material kommer man inte på något
     const c = living(q).filter(p => ageOf(p, q.now) >= 20)[2]; c.tek = {}; setAmount(q, 'flinta', 0); setAmount(q, 'yxa', 0);
     thinkWhileWorking(q, c, 'ved', 10 * 3600);
@@ -292,9 +292,9 @@ SCENARIER.teknik = {
     const dagar = (k: string) => forst[k] === undefined ? 'aldrig' : `dygn ${forst[k].toFixed(1)}`;
     return [
       ['ingen kan något från början', kanFran],
-      [`korgen kommer på (${dagar('korg')}), yxan (${dagar('yxa')}) och spjutet (${dagar('fiskespjut')})`, forst.korg !== undefined && forst.yxa !== undefined && forst.korg > 0.2 && forst.yxa > 0.3],
-      ['ingen gör en yxa eller korg innan någon kommit på hur', !yxaInnan && !korgInnan],
-      [`kunskapen sprids i samtal (${kan('korg')} kan göra korg, ${kan('yxa')} yxa)`, kan('korg') >= 3 && ens.length >= 3],
+      [`repet kommer på (${dagar('rep')}), yxan (${dagar('yxa')}) och spjutet (${dagar('fiskespjut')}); korgen, som kräver flätarbänken, ${dagar('korg')}`, forst.rep !== undefined && forst.yxa !== undefined && forst.rep > 0.2 && forst.yxa > 0.3],
+      ['ingen gör en yxa eller ett rep innan någon kommit på hur', !yxaInnan && !repInnan],
+      [`kunskapen sprids i samtal (${kan('rep')} kan göra rep, ${kan('yxa')} yxa)`, kan('rep') >= 3 && ens.length >= 3],
       ['en nyfiken och intelligent person kommer på det mycket fortare', snabb],
       ['utan flinta kommer ingen på yxan', utanMaterial],
       ['när den sista som kan yxa dör finns kunskapen inte kvar', dott],
