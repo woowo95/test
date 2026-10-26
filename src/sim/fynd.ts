@@ -1,14 +1,14 @@
 import { campCenter, campDist } from './plats';
 import { count, stat, log, think } from './folk';
 import { getMap, hash, vnoise } from './karta';
-import { groundOf } from './mark';
+import { Markslag, groundOf, markslag } from './mark';
 import { sedEvent } from './seder';
 import { chance, clamp, clampI, rnd } from './slump';
 import { kn, learnK, useK } from './kunskap';
 import { ageIndex } from './tid';
 import { addTo, amountOf, foodOf } from './lager';
 import { DAY, H, HOUR, Person, State, T, W, inMap, mapKey } from './typer';
-import { BAR, FOREST, HIGH, isSoil } from './vag';
+import { FOREST, isSoil } from './vag';
 import { SNABBARE } from './handlingar';
 
 // ---------- fynd: mat och saker finns på olika platser ----------
@@ -58,6 +58,11 @@ interface FyndDef {
 const SVAMP_SEASON = [0, 0.15, 0.8, 1.5];
 const SVAMP_UTTAG: Uttag = { full: 2.5, reach: 1, regrow: [1 / 1200, 1 / 450, 1 / 120, 1 / 120] };
 const land = (s: State, i: number) => isSoil(groundOf(s).tiles[i]);
+// hur väl varje slags mark passar lagret (gånger resten av värdet)
+const BAR_PASSAR: Record<Markslag, number> = { skog: 0.8, ung: 1, hog: 1, kort: 0, bar: 0 };
+const JAKT_PASSAR: Record<Markslag, number> = { skog: 0.85, ung: 0.9, hog: 1, kort: 1, bar: 0.3 };
+const ROTTER_PASSAR: Record<Markslag, number> = { skog: 0.5, ung: 0.5, hog: 0.5, kort: 0.4, bar: 0.1 };
+export const STEN_NARA = 2; // så nära en sten (rutor) finns flintan oftast
 // kaninerna håller sig långt från byn (SKYGG_IN), så en jakttur är lång; i gengäld ger platserna mer än förr
 export const JAKT_F = 2.1;
 // Ordningen bland lagren med uttag är ordningen i sparfilen: nya lager med uttag läggs sist.
@@ -68,8 +73,7 @@ const DEF = {
     monster: { salt: 71, skala: 2.5, period: 56, troskel: 0.68 },
     bas(s, i, m) {
       if (!land(s, i)) return 0;
-      const g = groundOf(s), tr = g.trees[i];
-      return (tr >= FOREST ? 0.8 : tr >= 0.15 || g.cover[i] >= HIGH ? 1 : 0) * 4 * m;
+      return BAR_PASSAR[markslag(groundOf(s), i)] * 4 * m;
     },
     uttag: { full: 0.45, reach: 1, regrow: [0, 1 / 200, 1 / 72, 1 / 96] },
   },
@@ -79,8 +83,7 @@ const DEF = {
     monster: { salt: 73, skala: 7, period: 7, troskel: 0.25 },
     bas(s, i, m) {
       if (!land(s, i)) return 0;
-      const g = groundOf(s), tr = g.trees[i];
-      return (tr >= FOREST ? 0.85 : tr >= 0.15 ? 0.9 : g.cover[i] >= BAR ? 1 : 0.3) * (0.15 + 1.3 * m) * JAKT_F * skyggOf(s)[i];
+      return JAKT_PASSAR[markslag(groundOf(s), i)] * (0.15 + 1.3 * m) * JAKT_F * skyggOf(s)[i];
     },
     uttag: { full: 6, reach: 3, regrow: [1 / 800, 1 / 480, 1 / 480, 1 / 600] },
   },
@@ -108,7 +111,7 @@ const DEF = {
   // flinta vid stenarna, ibland i sanden vid stranden och sällan annars. Den växer sakta tillbaka och flyttar sig aldrig
   flinta: {
     namn: 'Flinta', grupp: 'sten', ikon: 'flinta', farg: 0xe8eef2, topp: 4,
-    bas: (s, i) => getMap(s.seed).tiles[i] === T.Vatten ? 0 : stoneDist(s.seed)[i] <= 2 ? 4 : getMap(s.seed).tiles[i] === T.Sand ? 1.5 : 0.4,
+    bas: (s, i) => getMap(s.seed).tiles[i] === T.Vatten ? 0 : stoneDist(s.seed)[i] <= STEN_NARA ? 4 : getMap(s.seed).tiles[i] === T.Sand ? 1.5 : 0.4,
     uttag: { full: 2, reach: 1, regrow: [1 / 500, 1 / 300, 1 / 300, 1 / 300] },
   },
   // rötter finns mycket glest men nästan överallt på jorden. De ger minst, men finns kvar i istiden när bär och svamp är borta
@@ -117,8 +120,7 @@ const DEF = {
     monster: { salt: 97, skala: 3, period: 84, troskel: 0, gles: 0.25 },
     bas(s, i, m) {
       if (!land(s, i)) return 0;
-      const g = groundOf(s), c = g.cover[i];
-      return (g.trees[i] >= 0.15 || c >= HIGH ? 0.5 : c >= BAR ? 0.4 : 0.1) * m;
+      return ROTTER_PASSAR[markslag(groundOf(s), i)] * m;
     },
     uttag: { full: 0.35, reach: 1, regrow: [1 / 600, 1 / 180, 1 / 180, 1 / 240] },
   },
@@ -173,7 +175,7 @@ export function skyggOf(s: State) {
   let c = skygghet.get(s);
   if (c?.dag === dag) return c.v;
   const g = groundOf(s), v = new Float32Array(W * H), nott = new Uint8Array(W * H);
-  for (let i = 0; i < W * H; i++) nott[i] = isSoil(g.tiles[i]) && g.trees[i] < 0.15 && g.cover[i] < BAR ? 1 : 0;
+  for (let i = 0; i < W * H; i++) nott[i] = isSoil(g.tiles[i]) && markslag(g, i) === 'bar' ? 1 : 0;
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     const d = clamp((campDist(s, x, y) - SKYGG_IN) / SKYGG_R, 0, 1);
     let n = 0;
@@ -352,7 +354,7 @@ export const wantsFlint = (s: State) => amountOf(s, 'flinta') < 1 || amountOf(s,
 export function flintSpot(s: State, area?: (x: number, y: number) => boolean): { x: number; y: number } | undefined {
   const m = getMap(s.seed), sd = stoneDist(s.seed), c: { x: number; y: number; d: number }[] = [];
   for (let i = 0; i < W * H; i++) {
-    if (sd[i] < 1 || sd[i] > 2 || m.tiles[i] === T.Vatten || m.tiles[i] === T.Sten) continue;
+    if (sd[i] < 1 || sd[i] > STEN_NARA || m.tiles[i] === T.Vatten || m.tiles[i] === T.Sten) continue;
     const x = i % W, y = Math.floor(i / W), d = campDist(s, x, y);
     if (d < 30 && (!area || area(x, y)) && flintFactor(s, x, y) > 1) c.push({ x, y, d });
   }

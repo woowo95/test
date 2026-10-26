@@ -1,7 +1,7 @@
 import { campCenter, campDist } from './plats';
 import { byId, count, isParent, living, log, stat } from './folk';
 import { teach } from './teknik';
-import { Kind, SIGHT, prospect, regrowOf, richness, shoreOf, standAt, stoneDist, synsOf, toppOf, vaxerAt } from './fynd';
+import { Kind, SIGHT, STEN_NARA, prospect, regrowOf, richness, shoreOf, standAt, stoneDist, synsOf, toppOf, vaxerAt } from './fynd';
 import { getMap } from './karta';
 import { groundOf, tileOf } from './mark';
 import { kn, learnK } from './kunskap';
@@ -37,7 +37,7 @@ function areaValue(s: State, k: LKind, a: number, mode: Mode = 'nu') {
   let v = c.v[key];
   if (Number.isNaN(v)) {
     const x0 = (a % aw()) * AREA, y0 = Math.floor(a / aw()) * AREA, top: number[] = [];
-    if (k === 'flinta') { const sd = stoneDist(s.seed); v = 0; for (let y = y0; y < Math.min(H, y0 + AREA); y++) for (let x = x0; x < Math.min(W, x0 + AREA); x++) if (sd[y * W + x] <= 2) v = 1; }
+    if (k === 'flinta') { const sd = stoneDist(s.seed); v = 0; for (let y = y0; y < Math.min(H, y0 + AREA); y++) for (let x = x0; x < Math.min(W, x0 + AREA); x++) if (sd[y * W + x] <= STEN_NARA) v = 1; }
     else if (k === 'fara') v = 0;
     else {
       const fn = mode === 'nu' ? undefined : mode === 'vaxer' ? (i: number) => vaxerAt(s, k, i) : (i: number) => synsOf(s, k, i);

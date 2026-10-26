@@ -1,8 +1,7 @@
 import { living } from './folk';
 import { amountOf, foodOf } from './lager';
-import { groundOf } from './mark';
+import { skogAndel } from './mark';
 import { avgMood } from './samtal';
-import { FOREST, isSoil } from './vag';
 import { DAY, Historik, State, WEEK } from './typer';
 
 // ---------- byns historik ----------
@@ -17,17 +16,11 @@ const HISTORIK_TAL: { id: string; namn: string; hur: 'snitt' | 'sist'; varde: (s
   { id: 'tra', namn: 'Trä i förrådet', hur: 'snitt', varde: s => amountOf(s, 'ved') },
   { id: 'humor', namn: 'Humör', hur: 'snitt', varde: s => avgMood(s, 0) },
   { id: 'hunger', namn: 'Mycket hungriga', hur: 'snitt', varde: s => living(s).filter(p => p.hunger < 0.15).length },
-  { id: 'skog', namn: 'Skog, andel av marken', hur: 'snitt', varde: skog },
+  { id: 'skog', namn: 'Skog, andel av marken', hur: 'snitt', varde: s => skogAndel(s) },
   { id: 'fodda', namn: 'Födda sedan byns början', hur: 'sist', varde: s => (s.stat?.fodda as number) ?? 0 },
   { id: 'doda', namn: 'Döda sedan byns början', hur: 'sist', varde: s => (s.stat?.doda as number) ?? 0 },
 ];
 
-function skog(s: State) {
-  const g = groundOf(s);
-  let n = 0, sk = 0;
-  for (let i = 0; i < g.tiles.length; i++) if (isSoil(g.tiles[i])) { n++; if (g.trees[i] >= FOREST) sk++; }
-  return n ? sk / n : 0;
-}
 const ny = (): Historik => ({ tal: HISTORIK_TAL.map(t => t.id), tim: [], dygn: [], kronika: [] });
 const histOf = (s: State) => (s.hist ??= ny());
 

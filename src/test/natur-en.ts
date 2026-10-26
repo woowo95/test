@@ -2,7 +2,7 @@
 // utan = inga korgar, spjut, metspön eller knivar (de tas bort så fort de görs)
 import { korBy } from './kor';
 import { FOREST, isSoil } from '../sim/vag';
-import { campDist, fyndAt, groundOf, vaxerAt, living, tingOf, ageIndex, housesOf, DAY, H, W, State } from '../sim';
+import { campDist, fyndAt, groundOf, skogAndel, vaxerAt, living, tingOf, ageIndex, housesOf, DAY, H, W, State } from '../sim';
 import { foodDays } from '../sim/ekonomi';
 import { SPJUT } from '../sim/redskap';
 
@@ -11,11 +11,7 @@ const BORT = new Set<string>(['korg', 'metspo', 'kniv', ...SPJUT]);
 const NARA = 12, SKOG_R = 15; // rutor från lägret
 const VAXT = ['bar', 'kantarell', 'rotter'] as const;
 let husDag = -1, mdSum = 0, mdN = 0, kvarSum = 0, kvarN = 0, gangSum = 0, gangN = 0, steg = 0, skog0 = -1;
-const skogNara = (s: State) => {
-  const g = groundOf(s); let n = 0, f = 0;
-  for (let i = 0; i < W * H; i++) if (isSoil(g.tiles[i]) && campDist(s, i % W, Math.floor(i / W)) < SKOG_R) { n++; if (g.trees[i] >= FOREST) f++; }
-  return n ? f / n : 0;
-};
+const skogNara = (s: State) => skogAndel(s, i => campDist(s, i % W, Math.floor(i / W)) < SKOG_R);
 const r = korBy(seed, dagar, s => {
   if (utan && tingOf(s).some(t => BORT.has(t.k))) s.ting = tingOf(s).filter(t => !BORT.has(t.k));
   if (skog0 < 0) skog0 = skogNara(s);

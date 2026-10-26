@@ -2,7 +2,7 @@ import { getMap, hash, vnoise } from './karta';
 import { campKey } from './plats';
 import { clampI, rnd } from './slump';
 import { H, HOUR, Person, State, W, inMap, mapKey } from './typer';
-import { FOREST, Ground, HIGH, decodeCover, encodeCover, isSoil } from './vag';
+import { BAR, FOREST, Ground, HIGH, decodeCover, encodeCover, isSoil } from './vag';
 
 // ---------- mark: gräs, stigar och skog ----------
 // Förr fanns skog överallt där det är jord. Byn börjar i en liten glänta; resten är skog.
@@ -49,6 +49,27 @@ function startForest(seed: number) {
   return trees;
 }
 export const isForest = (s: State, i: number) => groundOf(s).trees[i] >= FOREST;
+export const UNG = 0.15; // träd från detta värde är en ungskog (under det är det plantor som ännu inte räknas)
+// vad jordrutan i är: skog, ungskog, högt gräs, kort gräs eller bar jord (en stig)
+export type Markslag = 'skog' | 'ung' | 'hog' | 'kort' | 'bar';
+export function markslag(g: Ground, i: number): Markslag {
+  const tr = g.trees[i], c = g.cover[i];
+  return tr >= FOREST ? 'skog' : tr >= UNG ? 'ung' : c >= HIGH ? 'hog' : c >= BAR ? 'kort' : 'bar';
+}
+// andelen av jordrutorna som är skog (0 om det inte finns någon jord); villkor = räkna bara de rutor (index) där den är sann
+export function skogAndel(s: State, villkor?: (i: number) => boolean) {
+  const g = groundOf(s);
+  let n = 0, sk = 0;
+  for (let i = 0; i < g.tiles.length; i++) if (isSoil(g.tiles[i]) && (!villkor || villkor(i))) { n++; if (g.trees[i] >= FOREST) sk++; }
+  return n ? sk / n : 0;
+}
+// antalet jordrutor där marktäcket är nött till bar jord, med eller utan träd
+export function antalBarJord(s: State) {
+  const g = groundOf(s);
+  let n = 0;
+  for (let i = 0; i < g.cover.length; i++) if (isSoil(g.tiles[i]) && g.cover[i] < BAR) n++;
+  return n;
+}
 
 // rutor där inget får växa: runt elden och på lagerplatserna (husen står i g.built). Räknas om när lägret ändras
 const builtCache = new WeakMap<State, { key: string; b: Uint8Array }>();

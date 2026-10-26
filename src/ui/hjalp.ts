@@ -19,7 +19,7 @@ export function clockTxt(t: number) { const d = new Date(t); return `${timeLabel
 // färger
 export function hsl(h: number, sat: number, l: number) {
   const k = (n: number) => (n + h / 30) % 12, a = sat * Math.min(l, 1 - l);
-  const f = (n: number) => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+  const f = (n: number) => l - a * clamp(Math.min(k(n) - 3, 9 - k(n)), -1, 1);
   return (Math.round(f(0) * 255) << 16) | (Math.round(f(8) * 255) << 8) | Math.round(f(4) * 255);
 }
 // personens egen färg som css
