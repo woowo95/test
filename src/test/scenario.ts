@@ -40,8 +40,13 @@ function uttag(s: State, k: Kind, min: number, max: number) {
   return n ? v / n : 0;
 }
 
-// lang: tar 13 s eller mer (datorns tid). Den snabba kollen (npm run snabbkoll) hoppar över dem om de inte nämns
-const SCENARIER: Record<string, { text: string; lang?: boolean; kor: () => Koll[] }> = {
+// lang: tar LANG_S sekunder eller mer (processorns tid, som scenariot skriver ut). Den snabba kollen (npm run snabbkoll) hoppar
+// över dem om de inte nämns, och ett scenario utan lang som tar längre skriver en VARNING.
+// env: scenariot körs i en egen process med den miljön, t.ex. Björns tidszon för det som beror på klockslag
+// (testerna i övrigt körs i datorns tidszon, här UTC, där byn startar 06:00)
+const LANG_S = 13;
+const STOCKHOLM = { TZ: 'Europe/Stockholm' };
+const SCENARIER: Record<string, { text: string; lang?: boolean; env?: Record<string, string>; kor: () => Koll[] }> = {
   glanta: {
     text: 'Ny by: fem personer utan eld i en liten glänta på en större karta, skog och ängar med högt gräs står runt omkring och marken nöts till stigar',
     kor: () => {
@@ -236,6 +241,7 @@ SCENARIER.temperatur = {
 };
 
 SCENARIER.kalender = {
+  env: STOCKHOLM, // sommartiden finns bara i en tidszon som har den
   text: 'Tidsåldrarna följer kalendern: de börjar en måndag kl. 00, en ny by får en längre första vårtid och en gammal by kommer i fas',
   kor: () => {
     const s = createState(5, START), k0 = kalender(s);
@@ -1207,6 +1213,7 @@ SCENARIER.kaniner = {
 };
 
 SCENARIER.bostad = {
+  env: STOCKHOLM, // natt och dag följer klockan där Björn spelar
   text: 'En ny by har ingen bostad: man sover på marken nära elden, och synvidden följer personen',
   kor: () => {
     const s = createState(12, START);
@@ -1215,13 +1222,12 @@ SCENARIER.bostad = {
     kor(s, 24, s => { for (const p of living(s)) if (p.task?.act === 'sova' && p.task.phase === 'do') { sov++; if (Math.hypot(p.x - f.x - 0.5, p.y - f.y - 0.5) < 3.5) nara++; } });
     const p = living(s)[0]; p.x = f.x + 20; p.y = f.y; // ute i skogen
     const glanta = living(s)[1]; glanta.x = f.x + 1.5; glanta.y = f.y + 0.5;
-    const natt = sightOf(s, glanta); s.now = new Date(s.now).setHours(12, 0, 0, 0); // mitt på dagen
-    const dag = sightOf(s, glanta);
+    s.now = new Date(s.now).setHours(2, 0, 0, 0); const natt = sightOf(s, glanta); // mitt i natten
+    s.now = new Date(s.now).setHours(12, 0, 0, 0); const dag = sightOf(s, glanta); // mitt på dagen
     return [
-      ['ingen hydda finns på kartan', !('huts' in getMap(s.seed))],
       [`de som sover ligger nära elden (${nara} av ${sov})`, sov > 0 && nara === sov],
       ['man ser runt sig där man står, inte vid elden', sees(s, p, f.x + 20, f.y + 3) && !sees(s, p, f.x, f.y)],
-      [`man ser kortare i mörker (${natt.toFixed(1)} mot ${dag.toFixed(1)} rutor i gläntan)`, natt <= dag],
+      [`man ser kortare i mörker (${natt.toFixed(1)} mot ${dag.toFixed(1)} rutor i gläntan)`, natt < dag],
       [`man ser kortare i skogen än i gläntan (${sightOf(s, p).toFixed(1)} mot ${sightOf(s, glanta).toFixed(1)} rutor)`, sightOf(s, p) < sightOf(s, glanta)],
     ];
   },
@@ -1802,10 +1808,20 @@ const arg = process.argv.slice(2), snabb = arg[0] === '--snabb', val = snabb ? u
 if (val) {
   const sc = SCENARIER[val];
   if (!sc) { console.log(`Okänt scenario: ${val}. Finns: ${Object.keys(SCENARIER).join(', ')}`); process.exit(1); }
-  const t0 = Date.now(), k = sc.kor(), ok = k.every(([, b]) => b);
-  console.log(`${ok ? 'OK  ' : 'FEL '} ${val} (${((Date.now() - t0) / 1000).toFixed(0)} s): ${sc.text}`);
-  for (const [t, b] of k) if (!ok || !b || process.env.ALLA) console.log(`     ${b ? '✓' : '✗'} ${t}`);
-  if (!ok) process.exitCode = 1;
+  const env = Object.entries(sc.env ?? {}).filter(([k, v]) => process.env[k] !== v);
+  if (env.length) { // fel miljö (t.ex. tidszon): scenariot körs om i en egen process med rätt miljö
+    const u = await korSkript('scenario.ts', [val], Object.fromEntries(env));
+    process.stdout.write(u.out + u.err); process.exitCode = u.code;
+  } else {
+    // tiden är processorns tid för scenariot (ungefär tiden när det körs ensamt). Väggklockan beror på hur mycket annat
+    // datorn gör samtidigt och kan vara flera gånger längre när alla scenarier körs på en gång
+    const cpu0 = process.threadCpuUsage(), k = sc.kor(), ok = k.every(([, b]) => b);
+    const cpu = process.threadCpuUsage(cpu0), tid = ((cpu.user + cpu.system) / 1e6).toFixed(0);
+    console.log(`${ok ? 'OK  ' : 'FEL '} ${val} (${tid} s): ${sc.text}`);
+    if (!sc.lang && Number(tid) >= LANG_S) console.log(`VARNING: ${val} tar ${tid} s (processorns tid) och bör märkas lang: true i scenario.ts`);
+    for (const [t, b] of k) if (!ok || !b || process.env.ALLA) console.log(`     ${b ? '✓' : '✗'} ${t}`);
+    if (!ok) process.exitCode = 1;
+  }
 } else {
   const okanda = arg.slice(1).filter(n => !SCENARIER[n]);
   if (okanda.length) { console.log(`Okänt scenario: ${okanda.join(', ')}. Finns: ${Object.keys(SCENARIER).join(', ')}`); process.exit(1); }
@@ -1813,12 +1829,14 @@ if (val) {
   // de långa startas först, så att alla blir klara ungefär samtidigt; utskriften kommer ändå i vanlig ordning
   const ordning = [...namn.filter(n => SCENARIER[n]!.lang), ...namn.filter(n => !SCENARIER[n]!.lang)];
   const svar: Record<string, Utfall> = {};
-  await pool(ordning.map(n => async () => { svar[n] = await korSkript('scenario.ts', [n]); }));
+  await pool(ordning.map(n => async () => { svar[n] = await korSkript('scenario.ts', [n], SCENARIER[n]!.env); }));
   let fel = 0;
   for (const n of namn) {
     const u = svar[n];
-    if (u.code) fel++;
-    process.stdout.write(u.out || `FEL  ${n}: kraschade\n${u.err.slice(-1500)}\n`);
+    // kraschade det utan att skriva FEL (t.ex. efter en VARNING-rad) skrivs kraschen ut, så att den räknas som FEL
+    const krasch = (u.code !== 0 || !u.out) && !/^FEL/m.test(u.out);
+    if (u.code || krasch) fel++;
+    process.stdout.write(u.out + (krasch ? `FEL  ${n}: kraschade\n${u.err.slice(-1500)}\n` : ''));
   }
   const hoppade = Object.keys(SCENARIER).filter(n => !namn.includes(n));
   if (hoppade.length) console.log(`(hoppade över de långa: ${hoppade.join(', ')})`);

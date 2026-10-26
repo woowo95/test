@@ -2,6 +2,8 @@
 import { createState, step, living, DAY, ageIndex, moodOf, serialize, serializeParts, getMap, fuelStock, ACT_NAMES, T, State, inMap, isWall, tileOf, foodOf, amountOf, sumOf, okandaBalans } from '../sim';
 
 export const START = Date.parse('2026-10-20T08:00:00+02:00');
+// ett dokument i artefaktens databas rymmer högst så här många KB (sparfilens delar, DELAR i steg.ts)
+export const DOK_KB = 256;
 
 export interface Nyckeltal {
   pop: number; atergrundad: number; // gånger alla dog eller flyttade och en vandrare grundade byn på nytt
@@ -10,7 +12,7 @@ export interface Nyckeltal {
   humor: number; // snitthumör, mätt varje timme
   vintermat: number; vinterved: number; // lägsta förråd när en istid tar slut
   eld: number; // procent av tiden elden brann
-  ms: number; kb: number; delKb: number; // delKb: den största delen av sparfilen (ett dokument i molnet rymmer 256 KB)
+  ms: number; kb: number; delKb: number; // delKb: den största delen av sparfilen (ett dokument i molnet rymmer DOK_KB)
 }
 
 export interface Resultat { seed: number; n: Nyckeltal; vakter: string[]; s: State }
