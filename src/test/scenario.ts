@@ -1642,7 +1642,12 @@ SCENARIER.lager = {
       return n;
     };
     const barMat = barare(200, false), barSvalt = barare(0, false), barKall = barare(200, true);
+    // en stack där bara den gömda giftsvampen finns kvar visas inte som "svamp 0 st" (pilesOf)
+    const gs = createState(3, START), gz = zoneOf(gs);
+    (gs.stackar ??= []).push({ k: 'svamp', n: 0, c: 1, x: gz.x, y: gz.y, dold: 0.5 });
+    const doldSyns = pilesOf(gs).some(p => p.k === 'svamp' && p.n <= 1e-6);
     return [
+      ['en stack med bara gömd giftsvamp visas inte som "svamp 0 st"', !doldSyns],
       [`i ett fullt lager läggs det nya på en egen ruta (${fx},${fy}${paAnnan ? ', på sten' : ''})`, !paAnnan && usable(fu, fx, fy)],
       [`ingen bär in när byn svälter eller fryser (${barSvalt} när maten är slut, ${barKall} i kylan, ${barMat} av 200 annars)`, barMat > 0 && barSvalt === 0 && barKall === 0],
       ['en död med en uppgift kvar låser inte en stack som ska bäras in (haulJob)', stackFri],

@@ -463,7 +463,8 @@ export function storeFromSums(s: State) {
 export function pilesOf(s: State): Pile[] {
   const ts = tingOf(s).map(t => utanRuta(t) ? { ...t } : t);
   placeOn(s, ts);
-  return [...stacksOf(s), ...ts.filter(ligger).map(asStack)].map(a => { const zone = zoneAt(s, a.x, a.y); return { ...a, max: rutaOf(a.k), zone, out: zone < 0, stored: isStored(s, a.x, a.y) }; });
+  // en stack där bara det gömda (giftsvampen) finns kvar visas inte: den skulle avslöja det gömda som "0 st"
+  return [...stacksOf(s).filter(a => a.n > 1e-6 || a.gor), ...ts.filter(ligger).map(asStack)].map(a => { const zone = zoneAt(s, a.x, a.y); return { ...a, max: rutaOf(a.k), zone, out: zone < 0, stored: isStored(s, a.x, a.y) }; });
 }
 
 // ---------- slitage ----------
