@@ -18,8 +18,8 @@ import { axeTask, fallTid } from './skog';
 import { GA_TID, startsOnArrival } from './paborjat';
 import { duty, dygn, habitShare, habitTotal } from './seder';
 import { clamp, pick, pickNarmaste, rnd } from './slump';
-import { ARSTID, ageIndex, iIstiden, isLight, kallTid } from './tid';
-import { Act, DAY, H, HOUR, MIN, Person, Skill, Stat, State, T, W, inMap } from './typer';
+import { ARSTID, ageIndex, iIstiden, isLight, kallTid, yearNo } from './tid';
+import { Act, H, HOUR, MIN, Person, Skill, Stat, State, T, W, inMap } from './typer';
 import { balans } from './balans';
 
 // ---------- val av aktivitet ----------
@@ -414,7 +414,7 @@ function leisure(s: State, p: Person, v: Val, u: number, lazy: number, ai: numbe
 // på natten: en vakt, och de andra håller sig vid elden och berättar, gör handarbete, umgås eller sover
 function night(s: State, p: Person, v: Val, a: number) {
   const now = s.now;
-  const guardDay = Math.floor((now - s.founded - VAL.vaktByte * HOUR) / DAY);
+  const guardDay = yearNo(s, now - VAL.vaktByte * HOUR); // vaktdygnet är kalenderns dygn, förskjutet så att det byts kl. 7
   if (guardDay !== s.lastGuardDay) {
     // välj nattens vakt (modigast med lite slump) bland de vuxna, byts varje natt
     const adults = living(s).filter(q => ageOf(q, now) >= ALDER.vaktFran && ageOf(q, now) < ALDER.vaktTill);

@@ -13,7 +13,7 @@ import { DAY, Fire, NEW_H, NEW_W, Person, SEC, State, simulera, useMap } from '.
 export function createState(seed: number, now: number): State { return simulera(() => skapaBy(seed, now)); } // som simuleringen (typer.ts)
 function skapaBy(seed: number, now: number): State {
   // en liten koloni: två par och ett barn, utan eld och med lite mat och grenar
-  const s: State = { v: SPARVERSION, seed, founded: now, now, people: [], rels: {}, nextId: 1, log: [], lastAgeIdx: VAR, lastGuardDay: -1, fire: newFire(), seder: newSeder(), W: NEW_W, H: NEW_H, kal: nyKalender(now) };
+  const s: State = { v: SPARVERSION, seed, founded: now, now, people: [], rels: {}, nextId: 1, log: [], lastAgeIdx: VAR, fire: newFire(), seder: newSeder(), W: NEW_W, H: NEW_H, kal: nyKalender(now) };
   useMap(s);
   setStock(s, { bar: 30, grenar: 20 });
   const adults: [string, number][] = [['m', 30], ['k', 27], ['m', 23], ['k', 21]];
@@ -85,6 +85,10 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
       if (p.rngs) delete (p.rngs as Record<string, unknown>).levande; // följden för det levande läget finns inte längre
     }
     if (s.rngs) delete (s.rngs as Record<string, unknown>).levande;
+  }],
+  [4, 'v48: vaktdygnet räknas efter kalendern (byts kl. 7), inte från grundandet. De gamla vaktdygnen glöms och en ny vakt väljs', s => {
+    delete s.lastGuardDay;
+    for (const p of s.people) delete p.guardDay;
   }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];

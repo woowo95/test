@@ -296,7 +296,18 @@ SCENARIER.kalender = {
       allaMandag &&= mandag(k.slut); if (Math.abs(k.slut - gammalSlut) > 3.6 * DAY) narmast &&= k.slut - 7 * DAY <= g.now; // närmare måndag hade redan varit
       ingenBakat &&= k.slut > g.now && k.ai === (1 + v0) % 4;
     }
+    // nattens vakt byts kl. 7 enligt kalendern, också i en by som grundats på kvällen: en ny vakt väljs på kvällen, aldrig
+    // två samtidigt, och den första natten har en vakt
+    const n = createState(5, new Date(2026, 9, 20, 21).getTime()), byten: number[] = [];
+    let vakter = 0, forsta = false, forraVakt = n.lastGuardDay;
+    for (let i = 0; i < 3 * 24 * 12; i++) {
+      step(n, BEAT);
+      if (n.lastGuardDay !== forraVakt) { byten.push(new Date(n.now).getHours()); forraVakt = n.lastGuardDay; }
+      const nu = living(n).filter(q => q.task?.act === 'vakt').length;
+      vakter = Math.max(vakter, nu); if (nu && n.now < n.founded + 10 * HOUR) forsta = true;
+    }
     return [
+      [`nattens vakt byts på kvällen efter kl. 7 (byten kl. ${byten.join(', ')}), aldrig två samtidigt (högst ${vakter}), och första natten har en vakt`, byten.length >= 3 && byten.every(h => h >= 12) && vakter === 1 && forsta],
       [`första vårtiden är ${k0.av} dagar (7–13)`, k0.ai === 1 && k0.dag === 1 && k0.av >= 7 && k0.av <= 13],
       ['varje tidsålder börjar en måndag kl. 00', starter.every(mandag) && vs.every(mandag)],
       [`efter vårtiden kommer sommar, dag 1 av 7 (${AGES[k1.ai]}, dag ${k1.dag} av ${k1.av})`, k1.ai === 2 && k1.dag === 1 && k1.av === 7],
