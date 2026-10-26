@@ -13,7 +13,7 @@ import { fellingTiles } from './skog';
 import { FOREST, findPath } from './vag';
 import { kronika } from './historik';
 import { BYGGNADER, Byggnad, Fn, LANGHUS_PLATSER, antalLika, bedTile, familjOf, fnOf, husKlar, mostUrgent } from './byggnader';
-import { H, HOUR, Person, State, T, W, inMap } from './typer';
+import { H, HOUR, HOUR_S, Person, State, T, W, inMap } from './typer';
 
 // ---------- att bygga ----------
 const RESERVE: Record<string, number> = { grenar: 15, torrgras: 6, ved: 6 }; // det som lämnas kvar i förrådet till elden
@@ -225,7 +225,7 @@ export function toWalls(s: State, x: number, y: number, n: number, hus?: number,
 // en stunds arbete på en ruta. Ger true när rutan är klar
 export function workOn(s: State, p: Person, b: Bit, dtSec: number) {
   const M = MATERIAL[b.m], repair = b.b >= 1;
-  const rate = dtSec / 3600 / (M.tim || 0.01) * (0.6 + p.skill.hantverk / 25) * (ageOf(p, s.now) < 16 ? 0.6 : 1);
+  const rate = dtSec / HOUR_S / (M.tim || 0.01) * (0.6 + p.skill.hantverk / 25) * (ageOf(p, s.now) < 16 ? 0.6 : 1);
   if (repair) {
     if (M.item && (b.lm ?? 0) < Math.ceil(M.n / 2) - 1e-9) return false;
     b.lp = (b.lp ?? 0) + rate * 2;

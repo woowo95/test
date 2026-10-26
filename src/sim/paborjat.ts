@@ -1,4 +1,4 @@
-import { Act, DAY, HOUR, Person, SEC, State, Task } from './typer';
+import { Act, DAY, HOUR, MIN, Person, SEC, State, Task } from './typer';
 import { halvOf, newTing, tingOf } from './agande';
 import { takeRecipe } from './behov';
 import { BYN } from './egendom';
@@ -42,7 +42,7 @@ export function startWork(s: State, p: Person, tk: Task) {
     const k = g.borja(s, p);
     if (!k) { tk.ref = undefined; tk.until = s.now; return; }
     t = newTing(s, 'paborjat', 1, p.id);
-    t.halv = { gor: k, av: takeRecipe(s, p, k), kvar: minOf(k) * 60 * SEC, ag: p.id };
+    t.halv = { gor: k, av: takeRecipe(s, p, k), kvar: minOf(k) * MIN, ag: p.id };
   } else count(s, 'fortsatt'); // byns statistik: arbete som avbröts och togs upp igen
   tk.ref = t.id; tk.until = s.now + t.halv!.kvar;
 }
@@ -55,7 +55,7 @@ export function workHalf(s: State, _p: Person, tk: Task, dtSec: number) {
 // arbetet är klart: det påbörjade blir ett redskap
 export function finishHalf(s: State, p: Person, tk: Task) {
   const t = halvById(s, tk.ref), g = GOR[tk.act];
-  if (!t || !g || t.halv!.kvar > 60 * SEC) return; // (arbetet är klart när tiden är slut; annars ligger det kvar)
+  if (!t || !g || t.halv!.kvar > MIN) return; // (arbetet är klart när tiden är slut; annars ligger det kvar)
   s.ting = tingOf(s).filter(q => q !== t);
   g.klar(s, p, t.halv!.gor);
 }

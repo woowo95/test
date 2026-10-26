@@ -1,5 +1,5 @@
 import { iconImg } from '../ikoner';
-import { HOUR, LogEntry, Person, byId, capacity, carryKind, clamp, isParent, isSick, load, sak, sakNamn, timeLabel } from '../sim';
+import { HOUR, LogEntry, MIN, Person, byId, capacity, carryKind, clamp, isParent, isSick, load, sak, sakNamn, timeLabel } from '../sim';
 import { s } from './lage';
 
 // små hjälpare för text, tal, färger och staplar som alla delar av gränssnittet använder
@@ -11,7 +11,7 @@ export const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
 export const times = (n: number) => `${n} ${n === 1 ? 'gång' : 'gånger'}`;
 export function durTxt(ms: number) {
   const h = ms / HOUR;
-  const min = Math.max(1, Math.round(ms / 60000));
+  const min = Math.max(1, Math.round(ms / MIN));
   return h >= 24 ? `${num(h / 24)} dygn` : h >= 1 ? `${num(h)} timmar` : `${min} ${min === 1 ? 'minut' : 'minuter'}`;
 }
 export function clockTxt(t: number) { const d = new Date(t); return `${timeLabel(s, t)}, kl. ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; }
@@ -33,7 +33,7 @@ const trendHist = new Map<string, { v: number; t: number; d: number }>();
 export function trend(p: Person, key: string, v: number) {
   const id = p.id + ':' + key, h = trendHist.get(id), now = s.now;
   if (!h || now < h.t) { trendHist.set(id, { v, t: now, d: 0 }); return ''; }
-  if (now - h.t >= 10 * 60 * 1000) { h.d = (v - h.v) / ((now - h.t) / HOUR); h.v = v; h.t = now; }
+  if (now - h.t >= 10 * MIN) { h.d = (v - h.v) / ((now - h.t) / HOUR); h.v = v; h.t = now; }
   return h.d > 0.08 ? '<span class="trend up" title="Stiger">▲</span>' : h.d < -0.08 ? '<span class="trend down" title="Sjunker">▼</span>' : '';
 }
 

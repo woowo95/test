@@ -47,7 +47,7 @@ export function ageStart(s: State, ai: number) {
 }
 // klockslaget i timmar (lokal tid). Det frågas efter samma tidpunkt många gånger i varje steg, så det sparas
 let memoT = NaN, memoH = 0;
-function hourOf(t: number) {
+export function hourOf(t: number) {
   if (t !== memoT) { const d = new Date(t); memoT = t; memoH = d.getHours() + d.getMinutes() / 60; }
   return memoH;
 }

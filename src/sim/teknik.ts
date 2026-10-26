@@ -5,7 +5,7 @@ import { kronika } from './historik';
 import { amountOf } from './lager';
 import { isTool } from './saker';
 import { tingOf } from './agande';
-import { Act, HOUR, Person, State } from './typer';
+import { Act, HOUR, HOUR_S, Person, State } from './typer';
 
 // ---------- teknik ----------
 // Ingen föds med kunskapen om hur man gör en yxa. Den som arbetar med något kommer så småningom på hur det kan göras
@@ -64,7 +64,7 @@ export function thinkWhileWorking(s: State, p: Person, act: Act, dtSec: number) 
   for (const t of TEKNIK) {
     if (!t.omr.includes(act) || !canThink(p, t) || !hasMaterial(s, t)) continue;
     p.tek ??= {};
-    const d = Math.min(1 - (p.tek[t.id] ?? 0), dtSec / 3600 / t.tid * nyf * intel);
+    const d = Math.min(1 - (p.tek[t.id] ?? 0), dtSec / HOUR_S / t.tid * nyf * intel);
     p.tek[t.id] = (p.tek[t.id] ?? 0) + d; count(s, 'tekTankt', d);
     if (p.tek[t.id] >= 1) learn(s, p, t);
   }

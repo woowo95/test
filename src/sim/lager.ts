@@ -1,8 +1,8 @@
 import { campDist } from './plats';
 import { Ting, newTing, tingOf } from './agande';
-import { alive, byId, stat, ageOf, log } from './folk';
+import { alive, byId, count, stat, ageOf, log } from './folk';
 import { getMap } from './karta';
-import { Act, H, Person, State, T, Task, W, inMap } from './typer';
+import { Act, H, HOUR_S, Person, State, T, Task, W, inMap } from './typer';
 import { bitAt, roofed } from './byggnad';
 import { ACTS } from './handlingar';
 import { BYN, Del, addDel, sumOf, takeOrder } from './egendom';
@@ -94,6 +94,8 @@ export const ownedSum = (s: State, k: string) => sumOf(summa(s).ag[k]);
 const villageAmount = (s: State, k: string) => Math.max(0, amountOf(s, k) - ownedSum(s, k));
 // det av slaget k som p får ta: sitt eget och byns
 export const mayTake = (s: State, p: Person, k: string) => ownsAmount(s, p, k) + villageAmount(s, k);
+// det av slaget k som får tas: den personens (fran, stöld), annars p:s eget och byns, annars allt
+export const takeLimit = (s: State, k: string, p?: Person, fran?: Person) => fran ? ownsAmount(s, fran, k) : p ? mayTake(s, p, k) : amountOf(s, k);
 // allt p äger i förrådet, per slag
 export function ownedStock(s: State, p: Person) {
   const out: Record<string, number> = {}, ag = summa(s).ag;
@@ -354,7 +356,7 @@ export function takeFood(s: State, n: number, p?: Person, fran?: Person) {
   let got = 0, cw = 0;
   for (const k of FOOD) {
     if (n - got <= 1e-12) break;
-    const v = Math.min(n - got, amountOf(s, k), fran ? ownsAmount(s, fran, k) : p ? mayTake(s, p, k) : Infinity);
+    const v = Math.min(n - got, amountOf(s, k), takeLimit(s, k, p, fran));
     if (v <= 1e-12) continue;
     const r = takeOwn(s, k, v, p, false, fran?.id);
     got += r.n; cw += r.n * r.c;
@@ -398,7 +400,7 @@ function wearRate(s: State, k: string, ai: number, food = foodOf(s)) {
 }
 export const wearMult = (s: State, x: number, y: number) => roofed(s, x, y) ? INDOOR_WEAR : zoneAt(s, x, y) >= 0 ? 1 : OUT_WEAR;
 export function wearStore(s: State, dtSec: number, ai: number) {
-  const h = dtSec / 3600, food = foodOf(s);
+  const h = dtSec / HOUR_S, food = foodOf(s);
   for (const a of stacksOf(s)) {
     const r = wearRate(s, a.k, ai, food) * wearMult(s, a.x, a.y) * h;
     if (a.dold) a.dold *= Math.exp(-wearRate(s, DOLD_I[a.k], ai, food) * wearMult(s, a.x, a.y) * h);
@@ -412,7 +414,7 @@ export function wearStore(s: State, dtSec: number, ai: number) {
       if (a.ag) for (const o in a.ag) a.ag[o] *= m / a.n;
       a.n = m; a.k = into.k; a.c = 0.5;
     } else {
-      if (isFood(a.k) && a.n > 1e-9) { (s.stat ??= {}).ruttnat = (s.stat.ruttnat ?? 0) + a.n; s.ruttet = (s.ruttet ?? 0) + a.n; } // förrådshuset (byggnader.ts)
+      if (isFood(a.k) && a.n > 1e-9) { count(s, 'ruttnat', a.n); s.ruttet = (s.ruttet ?? 0) + a.n; } // förrådshuset (byggnader.ts)
       a.n = 0;
     }
   }
@@ -485,6 +487,8 @@ function newZone(s: State) {
 // ---------- bära ----------
 // det en uppgift ger (handlingar.ts): bär från samling, kött från jakt, fisk från fiske, grenar från vedplockning, ved från huggning
 export const carryKind = (act: Act) => ACTS[act].ger ?? 'bar';
+// bär uppgiften något (en börda eller saker)? Redskapen i bördan (t.ting) räknas inte
+export const isCarrying = (t: Task) => t.carry > 0 || !!t.items;
 // vart bördan ska: till en stack av det man mest bär
 export function homeKind(t: Task) {
   if (t.carry > 0 || !t.items) return carryKind(t.act);

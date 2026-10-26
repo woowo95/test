@@ -6,10 +6,10 @@ import { FOREST } from './vag';
 import { sedEvent } from './seder';
 import { knows } from './teknik';
 import { clamp, rnd } from './slump';
-import { Act, DAY, H, HOUR, Person, State, Stock, W } from './typer';
+import { Act, DAY, H, HOUR, MIN, Person, State, Stock, W } from './typer';
 import { getable } from './behov';
 import { SNABBARE } from './handlingar';
-import { SAKER } from './saker';
+import { minOf } from './redskap';
 
 // ---------- skog: fälla träd, hugga ved, flinta och yxa ----------
 // Utan yxa kan invånarna bara samla grenar på marken. Med en flintyxa kan de fälla träd.
@@ -64,7 +64,7 @@ export function fellTree(s: State, p: Person, x: number, y: number) {
   if (s.fallda === 1) {
     log(s, `${p.name} fällde byns första träd med flintyxan.`, 'world', [p.id]);
     p.fame.push('Fällde byns första träd');
-    think(p, 'Fällde ett träd', 0.1, s.now, 12 * 3600 * 1000);
+    think(p, 'Fällde ett träd', 0.1, s.now, 12 * HOUR);
   }
   return k;
 }
@@ -109,7 +109,7 @@ export function axeTask(s: State, p: Person): { act: Act; x: number; y: number; 
   }
   const adults = ppl.filter(q => ageOf(q, s.now) >= 16).length;
   if ((halvOf(s, p, ['yxa']) || knows(p, 'yxa') && canMakeAxe(s, p)) && axes(s) < axesWanted(adults) + (s.hus?.some(h => !h.klar) ? 1 : 0) && !others.some(q => q.task?.act === 'yxa')) {
-    return { act: 'yxa', x: 0, y: 0, dur: SAKER.yxa!.skaffa!.min! * 60 * 1000, why: 'Har flinta och vill göra en yxa för att kunna fälla träd' };
+    return { act: 'yxa', x: 0, y: 0, dur: minOf('yxa') * MIN, why: 'Har flinta och vill göra en yxa för att kunna fälla träd' };
   }
   return undefined;
 }

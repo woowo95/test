@@ -1,7 +1,7 @@
 import { tidyTools } from './agande';
 import { chopStock, fellTree, rotStumps, stocks } from './skog';
 import { VED, needLadder, noticeTheft, stole } from './behov';
-import { capacity, dropSpot, fetchSpot, homeKind, load, pickUp, storeLoad, tidyStore, wearStore } from './lager';
+import { capacity, dropSpot, fetchSpot, homeKind, isCarrying, load, pickUp, storeLoad, tidyStore, wearStore } from './lager';
 import { KANIN, MASK_PER_GRAV, clean, slaughter, twineRope, wearUsed } from './redskap';
 import { GOR_ACTS, finishHalf, startWork, stepPaborjat, workHalf } from './paborjat';
 import { thinkWhileWorking } from './teknik';
@@ -19,7 +19,7 @@ import { fearPlace, forget, lookAround } from './minne';
 import { chance, clamp, rnd } from './slump';
 import { ageIndex, isLight } from './tid';
 import { ACTS, toolRow } from './handlingar';
-import { Act, DAY, HOUR, Person, SEC, SKILL_NAMES, State, Task, W, H, useMap, Historik } from './typer';
+import { Act, DAY, HOUR, HOUR_S, MIN, Person, SEC, SKILL_NAMES, State, Task, W, H, useMap, Historik } from './typer';
 import { findPath, speedAt, wear } from './vag';
 import { chooseTask } from './val';
 import { djurSteg } from './djur';
@@ -46,9 +46,9 @@ const MEDAN: Partial<Record<Act, Krok>> = {
   toa: (_s, p) => { p.toa = 1; },
   kol: (s, p) => takeCoal(s, p, 'hämtade'),
   bygga: (s, p, t, dtSec) => buildStep(s, p, t, dtSec),
-  hantverk: (s, p, t, dtSec) => { if (t.tool === 'rep') twineRope(s, p, dtSec / 3600); },
-  slakta: (s, p, _t, dtSec) => slaughter(s, p, dtSec / 3600),
-  rensa: (s, p, _t, dtSec) => clean(s, p, dtSec / 3600),
+  hantverk: (s, p, t, dtSec) => { if (t.tool === 'rep') twineRope(s, p, dtSec / HOUR_S); },
+  slakta: (s, p, _t, dtSec) => slaughter(s, p, dtSec / HOUR_S),
+  rensa: (s, p, _t, dtSec) => clean(s, p, dtSec / HOUR_S),
   tanda: (s, p, _t, dtSec) => {
     if (!canLight(s, p)) return;
     s.fire.tryProg += dtSec;
@@ -141,36 +141,36 @@ export function step(s: State, dtSec: number, events?: TalkEvent[]) {
 // (sämre ju fler öppningar)
 function needsStep(s: State, p: Person, a: number, dtSec: number, coldRate: number, fh: ReturnType<typeof hearthOf>, inRum: Map<number, number>) {
   const now = s.now;
-  p.hunger = clamp(p.hunger - dtSec / (16 * 3600) * (a < 10 ? 0.7 : 1), 0, 1);
+  p.hunger = clamp(p.hunger - dtSec / (16 * HOUR_S) * (a < 10 ? 0.7 : 1), 0, 1);
   const pd = p.task && ACTS[p.task.act];
   const working = pd && pd.tungt && p.task!.phase === 'do';
   const resting = pd && pd.vila;
-  p.rest = clamp(p.rest + dtSec / 3600 * (resting ? 0.09 : working ? -0.06 : -0.03), 0, 1);
+  p.rest = clamp(p.rest + dtSec / HOUR_S * (resting ? 0.09 : working ? -0.06 : -0.03), 0, 1);
   const heat = heatAt(s, p.x, p.y), rum = roomAt(s, p.x, p.y), shelter = rum ? shelterOf(s, rum, inRum.get(rum.id) ?? 1) : 0;
-  p.warm = clamp(p.warm + dtSec / 3600 * (heat * 2 - coldRate * (1 - shelter) + (coldRate === 0 ? 0.5 : 0)), 0, 1);
+  p.warm = clamp(p.warm + dtSec / HOUR_S * (heat * 2 - coldRate * (1 - shelter) + (coldRate === 0 ? 0.5 : 0)), 0, 1);
   if (rum && resting && p.task!.phase === 'do' && pd.plats === 'sang') { // man vilar bättre under tak, och bäst på ett golv
     const m0 = gridOf(s).at.get(tileOf(p.x, p.y))?.m, soft = m0 === 'ho' || m0 === 'tra';
-    p.rest = clamp(p.rest + dtSec / 3600 * (soft ? 0.03 : 0.02), 0, 1);
+    p.rest = clamp(p.rest + dtSec / HOUR_S * (soft ? 0.03 : 0.02), 0, 1);
     if (p.task!.act === 'sova') think(p, soft ? 'Sov gott på golvet i huset' : 'Sov under tak', soft ? 0.07 : 0.05, now, 8 * HOUR);
   }
   if (heat > 0.15) {
     think(p, 'Värms av elden', fh.comfort, now, HOUR);
-    p.rest = clamp(p.rest + dtSec / 3600 * fh.comfort * heat, 0, 1); // avslappning vid elden
+    p.rest = clamp(p.rest + dtSec / HOUR_S * fh.comfort * heat, 0, 1); // avslappning vid elden
   }
   if (p.warm < 0.35) think(p, 'Fryser', -0.12, now, HOUR);
-  p.social = clamp(p.social - dtSec / (18 * 3600), 0, 1);
+  p.social = clamp(p.social - dtSec / (18 * HOUR_S), 0, 1);
   // toa: behovet växer på ungefär sju timmar, långsammare i sömnen
-  p.toa = clamp(p.toa - dtSec / (7 * 3600) * (p.task?.act === 'sova' ? 0.5 : 1), 0, 1);
+  p.toa = clamp(p.toa - dtSec / (7 * HOUR_S) * (p.task?.act === 'sova' ? 0.5 : 1), 0, 1);
   if (p.toa <= 0) { p.toa = 1; if (a >= 3) think(p, 'Kissade på sig', -0.12, now, 4 * HOUR); }
 }
 
 // hälsa, sjukdom och död: svält, kyla, sjukdom, ålderdom och olyckor. true = personen dog
 function healthStep(s: State, p: Person, a: number, ai: number, dtSec: number) {
   const now = s.now;
-  if (p.hunger <= 0) { p.health -= dtSec / (5 * 3600); if (rnd(s, 'halsa', p) < dtSec / 7200) think(p, 'Svälter', -0.25, now, 3 * HOUR); }
-  else if (p.warm < 0.12) p.health -= dtSec / (20 * 3600);
-  else if (p.hunger > 0.3 && !isSick(p, now)) p.health = clamp(p.health + dtSec / (10 * 3600), 0, 1);
-  if (isSick(p, now)) p.health -= dtSec / (40 * 3600);
+  if (p.hunger <= 0) { p.health -= dtSec / (5 * HOUR_S); if (rnd(s, 'halsa', p) < dtSec / 7200) think(p, 'Svälter', -0.25, now, 3 * HOUR); }
+  else if (p.warm < 0.12) p.health -= dtSec / (20 * HOUR_S);
+  else if (p.hunger > 0.3 && !isSick(p, now)) p.health = clamp(p.health + dtSec / (10 * HOUR_S), 0, 1);
+  if (isSick(p, now)) p.health -= dtSec / (40 * HOUR_S);
   if (!p.sickUntil || p.sickUntil < now) {
     if (chance(s, (ai === 0 ? 0.12 : 0.05) / 86400, dtSec, 'halsa', p)) { const dur = (3 + rnd(s, 'halsa', p) * 8) * HOUR; p.sickUntil = now + dur; p.sickWhy = 'Sjuk'; if (dur > 8 * HOUR) log(s, `${p.name} blev svårt sjuk.`, 'world', [p.id]); }
   }
@@ -179,7 +179,7 @@ function healthStep(s: State, p: Person, a: number, ai: number, dtSec: number) {
   const q = 0.0015 + 0.00004 * Math.exp(0.105 * a) + (a < 5 ? 0.02 : 0);
   if (chance(s, q / 86400, dtSec, 'halsa', p)) { die(s, p, a > 55 ? 'av ålderdom' : a < 5 ? 'av en barnsjukdom' : 'i en olycka'); if (a >= 5 && a <= 55) fearPlace(s, p, 'i en olycka'); return true; }
   const pd = p.task && ACTS[p.task.act], fara = pd && pd.fara; // farligt arbete, som jakt
-  if (fara && p.task!.phase === 'do' && chance(s, fara.risk * (1 - (pd.arbete ? p.skill[pd.arbete] : 0) / 25) / 3600, dtSec, 'halsa', p)) { die(s, p, fara.text); fearPlace(s, p, fara.text); return true; }
+  if (fara && p.task!.phase === 'do' && chance(s, fara.risk * (1 - (pd.arbete ? p.skill[pd.arbete] : 0) / 25) / HOUR_S, dtSec, 'halsa', p)) { die(s, p, fara.text); fearPlace(s, p, fara.text); return true; }
   return false;
 }
 
@@ -206,7 +206,7 @@ function taskStep(s: State, p: Person, a: number, t1: number, dtSec: number, lea
     const lightDone = t?.act === 'tanda' && (s.fire.lit || !canLight(s, p));
     const mustGo = t && p.toa < 0.08 && t.act !== 'toa' && a >= 3; // nöden avbryter det man håller på med
     if (!t || (t.until <= now && t.phase !== 'back') || ((phaseFlip || mustGo) && t.phase !== 'back') || lightDone) {
-      if (t && (t.carry > 0 || t.items) && t.act !== 'elda') { t.phase = 'back'; const d = dropSpot(s, homeKind(t)); t.tx = d.x + sida(p, 0.2); t.ty = d.y + sida(p, -0.2); }
+      if (t && isCarrying(t) && t.act !== 'elda') { t.phase = 'back'; const d = dropSpot(s, homeKind(t)); t.tx = d.x + sida(p, 0.2); t.ty = d.y + sida(p, -0.2); }
       else chooseTask(s, p);
     }
     const tk = p.task!, d = ACTS[tk.act];
@@ -223,13 +223,13 @@ function taskStep(s: State, p: Person, a: number, t1: number, dtSec: number, lea
       MEDAN[tk.act]?.(s, p, tk, used);
       if (d.arbete && p.task === tk && tk.phase === 'do') workStep(s, p, tk, used, a, learn);
       // (bygget kan just ha skickat iväg personen efter mer material)
-      if (tk.phase === 'do' && d.hantverk) p.skill.hantverk = clamp(p.skill.hantverk + used / 3600 * 0.1 * learn * (1 - p.skill.hantverk / 21), 0, 20);
+      if (tk.phase === 'do' && d.hantverk) p.skill.hantverk = clamp(p.skill.hantverk + used / HOUR_S * 0.1 * learn * (1 - p.skill.hantverk / 21), 0, 20);
       if (d.vandra) wear(groundOf(s), tileOf(tk.tx, tk.ty), WEAR * GANG * 0.08 * d.vandra.v * used); // man rör sig på platsen
     }
     // vana: tiden räknas mot yrkestaggar
     const hf = Math.exp(-used * SEC / HABIT_FADE);
     for (const k in p.habit) p.habit[k] *= hf;
-    p.habit[tk.act] = (p.habit[tk.act] ?? 0) + used / 3600;
+    p.habit[tk.act] = (p.habit[tk.act] ?? 0) + used / HOUR_S;
     // den som arbetar kommer så småningom på hur det kan göras bättre; man funderar också på vägen dit och hem
     thinkWhileWorking(s, p, tk.act, used);
     left -= used;
@@ -308,7 +308,7 @@ function arrive(s: State, p: Person, tk: Task, light: boolean) {
     storeLoad(s, tk, p.x, p.y, p.id);
     // ett arbetspass är klart: gå tillbaka och fortsätt om arbetet inte är slut och dagen inte vänt
     const r = tk.res;
-    if (r && r.until > now + 2 * 60 * SEC && tk.dark === !light) { tk.phase = 'go'; tk.tx = r.x; tk.ty = r.y; tk.until = r.until; tk.res = undefined; }
+    if (r && r.until > now + 2 * MIN && tk.dark === !light) { tk.phase = 'go'; tk.tx = r.x; tk.ty = r.y; tk.until = r.until; tk.res = undefined; }
     else p.task = undefined;
   } else {
     tk.phase = 'do'; if (tk.act === 'bara') { pickUp(s, p, tk); tk.until = now; }
@@ -373,7 +373,7 @@ function workStep(s: State, p: Person, tk: Task, dtSec: number, a: number, learn
   }
   const sk = d.arbete!;
   const before = p.skill[sk];
-  p.skill[sk] = clamp(p.skill[sk] + dtSec / 3600 * 0.12 * learn * (0.4 + stat(p, 'intelligens', now) / 20) * (1 - p.skill[sk] / 21), 0, 20);
+  p.skill[sk] = clamp(p.skill[sk] + dtSec / HOUR_S * 0.12 * learn * (0.4 + stat(p, 'intelligens', now) / 20) * (1 - p.skill[sk] / 21), 0, 20);
   if (before < 16 && p.skill[sk] >= 16) {
     const title = `Mästare i ${SKILL_NAMES[sk].toLowerCase()}`, first = !s.people.some(q => q.fame.includes(title));
     p.fame.push(title); log(s, `${p.name} har blivit en mästare i ${SKILL_NAMES[sk].toLowerCase()}.`, 'skill', [p.id]);
@@ -381,9 +381,9 @@ function workStep(s: State, p: Person, tk: Task, dtSec: number, a: number, learn
   }
   // arbetet sker i turer: efter en stunds arbete (tur), en fångst eller när bördan är full bärs det hem, sedan fortsätter man
   tk.tur = (tk.tur ?? 0) + dtSec;
-  const full = load(tk) >= capacity(s, p) * WORK_LOAD, has = tk.carry > 0 || !!tk.items;
+  const full = load(tk) >= capacity(s, p) * WORK_LOAD, has = isCarrying(tk);
   if (full || (tk.lim !== undefined && tk.tur >= tk.lim) || (tk.act === 'fiske' && tk.carry > 0)) {
-    if (has && tk.until > now + 2 * 60 * SEC) { tk.res = { x: tk.tx, y: tk.ty, until: tk.until }; tk.until = now; count(s, 'turer'); }
+    if (has && tk.until > now + 2 * MIN) { tk.res = { x: tk.tx, y: tk.ty, until: tk.until }; tk.until = now; count(s, 'turer'); }
     else if (has && full) { tk.until = now; count(s, 'turer'); }
     else tk.tur = 0;
   }

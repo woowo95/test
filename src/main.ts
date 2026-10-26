@@ -1,4 +1,4 @@
-import { AGES, BEAT, DAY, HOUR, SEC, TalkEvent, kalender, alive, byId, coverOf, createState, getMap, groundOf, isLight, rikedomDelar, serialize, spar, step, temperature, yearNo, State } from './sim';
+import { AGES, BEAT, DAY, HOUR, MIN, SEC, TalkEvent, kalender, alive, byId, coverOf, createState, getMap, groundOf, isLight, rikedomDelar, serialize, spar, step, temperature, yearNo, State } from './sim';
 import { $ } from './ui/hjalp';
 import { s, setByn, ui, nyBild } from './ui/lage';
 import { TS, app, cam, layout, view, world } from './ui/scen';
@@ -95,7 +95,7 @@ function tick() {
   drawFilter();
   if (now - lastUi > 600) { lastUi = now; renderClock(); renderPanel(); renderPorts(); }
   if (!ui.testMode && now - lastLocal > 20000) { lastLocal = now; saveLocal(); }
-  if (!ui.testMode && now - lastDb > 60000) { lastDb = now; saveDb(); }
+  if (!ui.testMode && now - lastDb > MIN) { lastDb = now; saveDb(); }
 }
 
 document.addEventListener('visibilitychange', () => { if (document.hidden) { saveLocal(); saveDb(); } });

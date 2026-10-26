@@ -7,9 +7,9 @@ import { chance, clamp, clampI, rnd } from './slump';
 import { kn, learnK, useK } from './kunskap';
 import { ageIndex } from './tid';
 import { addTo, amountOf, foodOf } from './lager';
-import { DAY, H, HOUR, Person, State, T, W, inMap, mapKey } from './typer';
+import { DAY, H, HOUR, HOUR_S, Person, State, T, W, inMap, mapKey } from './typer';
 import { FOREST, isSoil } from './vag';
-import { SNABBARE } from './handlingar';
+import { ACTS, SNABBARE } from './handlingar';
 
 // ---------- fynd: mat och saker finns på olika platser ----------
 // Varje ruta har en egen rikedom av bär, rötter, vilt och fisk. Den som samlar, jagar eller fiskar tar ur platsen,
@@ -374,7 +374,7 @@ export function pickMushrooms(s: State, p: Person, x: number, y: number, dtSec: 
   const kv = richness(s, 'kantarell', x, y), gv = richness(s, 'spindling', x, y);
   if (kv + gv <= 0) return 0;
   const rate = 0.5 * SNABBARE * (0.6 + p.skill.samla / 25) * (kv + gv);
-  if (!chance(s, rate / 3600, dtSec, 'arbete', p)) return 0;
+  if (!chance(s, rate / HOUR_S, dtSec, 'arbete', p)) return 0;
   if (rnd(s, 'arbete', p) < kv / (kv + gv)) {
     takeFrom(s, 'kantarell', x, y, 0.5);
     count(s, 'svamp');
@@ -421,7 +421,7 @@ const NAPP: Record<Fiskedon, number> = { hand: 0.06, spjut: 0.13, metspo: 0.17 }
 export function handFish(s: State, p: Person, x: number, y: number, ageF: number, gear: Fiskedon = 'hand') {
   const st = (p.fiske ??= { f: 0, n: 0, k: 0 }), spear = gear === 'spjut';
   st.f++; count(s, 'fiskeForsok'); if (spear) count(s, 'spjutForsok'); if (gear === 'metspo') count(s, 'metForsok');
-  const ai = ageIndex(s), season = [0.45, 1, 1.1, 1][ai];
+  const season = ACTS.fiske.sasong![ageIndex(s)];
   if (rnd(s, 'arbete', p) >= NAPP[gear] * season * Math.min(1.3, richness(s, 'fiske', x, y)) * ageF) return 0;
   st.n++; count(s, 'fiskeNapp');
   const hold = HALL[gear] + p.skill.fiske / 40 + stat(p, 'uthallighet', s.now) / 100;

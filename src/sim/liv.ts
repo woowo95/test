@@ -3,7 +3,7 @@ import { sedEvent } from './seder';
 import { pair } from './varld';
 import { avgMood } from './samtal';
 import { chance, clamp, pick, rnd } from './slump';
-import { DAY, Person, SEC, State } from './typer';
+import { DAY, HOUR_S, Person, SEC, State } from './typer';
 import { foodDays } from './ekonomi';
 import { put, releaseOwner } from './lager';
 import { kronika } from './historik';
@@ -68,9 +68,9 @@ export function regulate(s: State, dtSec: number) {
   if (pop === 0) { refound(s); return; }
   const fd = foodDays(s);
   s.matSnitt = s.matSnitt === undefined ? fd : s.matSnitt + (fd - s.matSnitt) * Math.min(1, dtSec * SEC / MAT_SNITT);
-  if (rnd(s, 'flytt') < dtSec / 3600) { // humöret räknas om ungefär en gång i timmen
+  if (rnd(s, 'flytt') < dtSec / HOUR_S) { // humöret räknas om ungefär en gång i timmen
     const rate = emigrationRate(pop, avgMood(s, 0.6)) + hungerFlytt(s, pop);
-    if (chance(s, rate / 86400, 3600, 'flytt')) emigrate(s);
+    if (chance(s, rate / 86400, HOUR_S, 'flytt')) emigrate(s);
   }
   if (chance(s, immigrationRate(pop) * (0.3 + 0.7 * matGott(s)) / 86400, dtSec, 'flytt')) immigrate(s, false);
 }

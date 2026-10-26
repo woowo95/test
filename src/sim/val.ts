@@ -19,7 +19,7 @@ import { GA_TID, startsOnArrival } from './paborjat';
 import { duty, dygn, habitShare, habitTotal } from './seder';
 import { clamp, pick, rnd } from './slump';
 import { ageIndex, isLight } from './tid';
-import { Act, DAY, H, HOUR, Person, SEC, Skill, State, T, W, inMap } from './typer';
+import { Act, DAY, H, HOUR, MIN, Person, Skill, State, T, W, inMap } from './typer';
 
 // ---------- val av aktivitet ----------
 // var en handling görs, efter platsen i handlingar.ts
@@ -132,7 +132,6 @@ const tinderNeeded = (s: State) => !s.fire.lit && !emberOn(s) && !canLight(s) &&
 // det som väljs: handlingen, varför, hur länge, och var om det inte följer av handlingen
 interface Val { act: Act; why: string; dur: number; spot?: { x: number; y: number }; ref?: number; tool?: string; site?: { x: number; y: number }; sok?: true }
 const set = (v: Val, act: Act, why: string) => { v.act = act; v.why = why; return true; };
-const MIN = 60 * SEC;
 // dagens pass är hälften så långa som förr (steg 1.5.11), arbete och fritid lika, så att tiden fördelas som förut men
 // folk väljer om oftare och syns gå mellan platserna
 const PASS = 0.5;

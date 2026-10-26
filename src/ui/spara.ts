@@ -1,4 +1,4 @@
-import { BEAT, DAY, KUNSKAP_NAMES, LogEntry, SEC, State, compact, describe, joinParts, living, migrate, serialize, serializeParts, step, timeLabel } from '../sim';
+import { BEAT, DAY, KUNSKAP_NAMES, LogEntry, MIN, State, compact, describe, joinParts, living, migrate, serialize, serializeParts, step, timeLabel } from '../sim';
 import { $, esc } from './hjalp';
 import { s, ui } from './lage';
 import { drawTerrain } from './terrang';
@@ -86,7 +86,7 @@ export async function loadSaves(): Promise<State | null> {
 export async function catchUp(target: number) {
   const span = target - s.now;
   if (span <= 0) return;
-  const showOverlay = span > 600 * SEC; // efter mer än tio minuter visas en sammanställning
+  const showOverlay = span > 10 * MIN; // efter mer än tio minuter visas en sammanställning
   ui.busy = true;
   const from = s.now;
   const before = knowSnapshot(), stat0 = { ...s.stat };

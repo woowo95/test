@@ -4,8 +4,10 @@ export type { Act } from './handlingar';
 // Samhällssimulatorn – simuleringskärna (ingen grafik här)
 // Tidsmodell: 1 verkligt dygn = 1 levnadsår. En tidsålder = 1 vecka. Ljus tid 07–19 lokal tid.
 
-export const SEC = 1000;
+export const SEC = 1000; // millisekunder på en sekund: tider i spelet är i ms
+export const MIN = 60 * SEC;
 export const HOUR = 3600 * SEC;
+export const HOUR_S = 3600; // en timme i sekunder (dtSec / HOUR_S = timmar)
 export const DAY = 24 * HOUR; // = ett levnadsår
 export const WEEK = 7 * DAY; // = en tidsålder
 
