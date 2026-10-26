@@ -339,12 +339,30 @@ SCENARIER.sparning = {
     migrate(gammal);
     const uppgr = gammal.v === SPARVERSION && !['fynd', 'wx', 'wy', 'hold', 'stint'].some(k => k in gp.task) && !('levande' in gp.rngs);
     const igen = JSON.stringify(gammal); migrate(gammal);
-    return [
+    const forst: Koll[] = [
       [`byn delas i ${Object.keys(delar).join(', ')} (${Object.entries(kb).map(([d, n]) => `${d} ${n} KB`).join(', ')})`, ['byn', 'folket', 'kartor', 'loggen'].every(d => d in delar) && delar.folket.includes('"people"') && !delar.byn.includes('"people"')],
       ['delarna blir samma by igen', isDeepStrictEqual(ater, JSON.parse(hel)) && ny.people.length === s.people.length && ny.now === s.now],
       [`en gammal by uppgraderas till sparversion ${SPARVERSION} och gamla fält försvinner`, uppgr],
       ['en uppgraderad by ändras inte av att uppgraderas igen', JSON.stringify(gammal) === igen],
       [`en ny by har den senaste sparversionen (${s.v})`, s.v === SPARVERSION],
+    ];
+    // En sparad och inläst by (städad med compact, sparad och läst in) fortsätter giltig med samma folk, förråd, hus och
+    // redskap. Den fortsätter inte exakt som den som aldrig sparades: sparfilen avrundar talen till tre decimaler, och det
+    // som räknas fram på nytt efter inläsningen kan skilja lite. Därför prövas bara att båda är giltiga och ligger nära
+    (SIM as unknown as { compact?: (s: State) => void }).compact?.(s); // i grenen main städar step själv varje timme
+    const txt = serialize(s), inl = migrate(JSON.parse(txt));
+    const folk = (q: State) => living(q).map(p => `${p.id} ${p.name}`).join();
+    const saker = (q: State) => JSON.stringify([housesOf(q).map(h => [h.id, h.klar, fnId(h)]), tingOf(q).map(g => [g.k, g.agare]).sort()]);
+    const forrad = STACK_ORDER.every(k => Math.abs(amountOf(s, k) - amountOf(inl, k)) < 0.01);
+    const sammaFil = kanonisk(serialize(inl)) === kanonisk(txt), sammaBy = folk(s) === folk(inl) && forrad && saker(s) === saker(inl), n0 = living(inl).length;
+    const fs = korBy(s.seed, 2, undefined, s), fi = korBy(s.seed, 2, undefined, inl);
+    const nara = `${living(s).length} och ${living(inl).length} invånare, mat ${foodOf(s).toFixed(0)} och ${foodOf(inl).toFixed(0)}, trä ${amountOf(s, 'ved').toFixed(0)} och ${amountOf(inl, 'ved').toFixed(0)}`;
+    return [
+      ...forst,
+      ['en sparad och inläst by blir samma sparfil igen', sammaFil],
+      [`den inlästa byn har samma folk (${n0}), förråd, hus och redskap`, sammaBy],
+      [`båda fortsätter två dygn (två år i spelet) utan vaktlarm${[...fs.vakter, ...fi.vakter].length ? `: ${[...fs.vakter, ...fi.vakter].join('; ')}` : ''}`, !fs.vakter.length && !fi.vakter.length],
+      [`och ligger nära varandra: ${nara}`, Math.abs(living(s).length - living(inl).length) <= 2],
     ];
   },
 };
@@ -1823,6 +1841,321 @@ SCENARIER.natur = {
   },
 };
 const flyttLitenBy = (s: State) => hungerFlytt(s, 6) === 0 && barnMat(s, 6) === 1 ? 'ingen' : `flytt ${hungerFlytt(s, 6)}, barn ${barnMat(s, 6)}`;
+
+// ---------- system som saknade prov: faror, seder, samtal, liv, utflyttning, vakt och det i registren som aldrig händer ----------
+// Simuleringen nås här genom namnrymden SIM: flera av namnen importeras på andra rader i andra grenar, och samma namn två gånger
+// går inte att importera
+import * as SIM from '../sim';
+import { korBy } from './kor';
+import { kanonisk, seedAv } from './pool';
+
+const pct = (v: number) => `${Math.round(100 * v)} %`;
+const grenarUte = (s: State) => (s.stackar ?? []).reduce((a, g) => a + (g.k === 'grenar' ? g.n : 0), 0); // på marken och i förrådet
+// en börda att bära in: två grenar i famnen, på väg till förrådet
+const barGrenar = (s: State, p: Person) => { p.task = { act: 'bara', phase: 'go', tx: p.x, ty: p.y, until: s.now + HOUR, carry: 0, items: { grenar: 2 } } as Task; };
+// en ny invånare utan släkt, alder år gammal, vid den förstas plats och med behoven fyllda
+function nyInvanare(s: State, sex: 'm' | 'k', alder: number) {
+  const p = SIM.newPerson(s, sex, s.now - alder * DAY), f = living(s)[0]!;
+  s.people.push(p);
+  Object.assign(p, { x: f.x, y: f.y, hunger: 0.9, rest: 0.9, social: 0.9, toa: 0.9, warm: 0.9, health: 1, task: undefined });
+  return p;
+}
+
+// Hur ofta de vuxna väljer varje handling i byns läge: alla väljer om, varv efter varv, med de egna behoven fyllda (mätta,
+// utvilade, varma), så att det är byns läge (maten, veden, elden, kylan) som avgör. Tiden står still
+function valjer(s: State, varv = 40) {
+  const n: Record<string, number> = {}, vuxna = living(s).filter(p => ageOf(p, s.now) >= SIM.ALDER.vuxen);
+  let tot = 0, sok = 0;
+  for (let i = 0; i < varv; i++) {
+    for (const p of vuxna) { Object.assign(p, { hunger: 0.9, rest: 0.9, social: 0.9, toa: 0.9, warm: 0.9, health: 1, sickUntil: undefined }); p.task = undefined; }
+    tidyTools(s); // redskapen som togs i handen förra varvet blir lediga igen
+    for (const p of vuxna) { SIM.chooseTask(s, p); const t = p.task!; n[t.act] = (n[t.act] ?? 0) + 1; tot++; if (t.sok) sok++; }
+  }
+  const andel = (acts: readonly string[]) => acts.reduce((a, k) => a + (n[k] ?? 0), 0) / (tot || 1);
+  const topp = Object.entries(n).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([k, v]) => `${k} ${pct(v / tot)}`).join(', ');
+  return { n, tot, sok, andel, topp };
+}
+// faror och förbättringar, som handlingar (fritid: det man gör när man inte arbetar)
+const MATARBETE = ['samla', 'jakt', 'fiske', 'slakta', 'rensa'], TRAARBETE = ['ved', 'falla', 'hugga'];
+const REDSKAPSARBETE = ['korg', 'spjut', 'metspo', 'yxa', 'kniv'];
+// bygge, hantverk och fritid (kniven görs i handarbetet på fritiden, craft i val.ts). Korgen, spjutet och metspöet görs i
+// stället för maten när de saknas (withTools), så de räknas till matarbetet
+const FORBATTRING = ['bygga', 'hantverk', 'kniv', 'promenad', 'bada', 'strand', 'samtal', 'vila', 'beratta'];
+const MATMEDREDSKAP = [...MATARBETE, 'korg', 'spjut', 'metspo'];
+
+SCENARIER.faror = {
+  text: 'Faror går före förbättringar: när maten tryter väljer de vuxna mat i stället för bygge, hantverk och fritid, och när kylan är en fara (istiden, elden släckt) går tiden till trä i stället för till nya redskap',
+  kor: () => {
+    // en by som kan bygga och göra korgar, spjut, metspön och knivar, med en planerad stuga. ai = tidsåldern (0 = istiden)
+    const by = (ai?: number) => {
+      const s = createState(6, START);
+      if (ai !== undefined) s.now = ageStart(s, ai) + 30 * HOUR;
+      klockan(s, 11); byggare(s); tandEld(s);
+      for (const p of living(s)) Object.assign((p.tek ??= {}), { korg: 1, fiskespjut: 1, metspo: 1, kniv: 1 });
+      setStock(s, { ved: 200, grenar: 20, torrgras: 40, flinta: 3, ben: 2, rep: 2 }); setAmount(s, 'yxa', 1); setFood(s, 200);
+      planBuild(s);
+      return s;
+    };
+    const rik = valjer(by());
+    const sv = by(); setFood(sv, 0.3);
+    const svFd = SIM.foodDays(sv), svalt = valjer(sv);
+    // istiden: elden släckt utan glöd och nästan inget trä. Med lite mat samlar några också, och då är det korgen som
+    // inte får göras. Samma hungriga by med elden tänd är kontrollen: där får man göra redskap
+    const kall = (lit: boolean, hungrig = false, ved = 1) => {
+      const s = by(0);
+      if (!lit) Object.assign(s.fire, { lit: false, fuel: 0, emberUntil: undefined });
+      setAmount(s, 'ved', ved);
+      if (hungrig) { setFood(s, 0.3); (s.stat ??= {}).fiskeForsok = 1; } // har byn fiskat vill den ha spjut (spearsWanted i redskap.ts)
+      return s;
+    };
+    const k0 = kall(false), kyla = { ljust: isLight(k0.now), kallt: coldOf(temperature(k0)) > 0, ...valjer(k0) };
+    const kylaSvalt = valjer(kall(false, true)), varmt = valjer(kall(true, true, 200));
+    // korgen, spjutet och metspöet görs i withTools (val.ts), som frågar dangers(s). Yxan (axeTask i skog.ts) och kniven (craft i val.ts) gör det inte: de ger en VARNING
+    const SKYDDADE = REDSKAPSARBETE.filter(k => k !== 'kniv' && k !== 'yxa');
+    const tillv = (v: typeof rik, ks = SKYDDADE) => ks.filter(k => v.n[k]).map(k => `${k} ${v.n[k]}`).join(', ') || 'inga';
+    const tillvAndel = (v: typeof rik) => v.andel(SKYDDADE);
+    if (kyla.n.yxa) console.log(`VARNING: faror: i kylan med elden släckt valdes att göra en yxa ${kyla.n.yxa} av ${kyla.tot} gånger (redan en yxa finns). axeTask i skog.ts (anropas från withTools i val.ts) frågar inte dangers(s).kyla, som tillverkningen av korg, spjut och metspö gör`);
+    if (kyla.n.kniv) console.log(`VARNING: faror: i kylan med elden släckt valdes en flintkniv ${kyla.n.kniv} av ${kyla.tot} gånger. Handarbetet på fritiden (craft i val.ts) frågar inte dangers(s), som korgen, spjutet och metspöet gör (withTools)`);
+    if (svalt.sok) console.log(`VARNING: faror: i den svältande byn (mat för ${SIM.dygn(svFd)}) skickades ${svalt.sok} av ${svalt.tot} att leta flinta ett helt pass. withTools i val.ts skickar samlare till stenarna utan day():s villkor om mat (fel.txt motor-8)`);
+    if (kyla.n.bygga) console.log(`VARNING: faror: i kylan med elden släckt valdes bygget ${kyla.n.bygga} av ${kyla.tot} gånger. Bygget vägs mot maten men inte mot veden (samhalle-145, Björn avgör om bygget är ett skydd mot kylan)`);
+    return [
+      [`rik by: bygge, hantverk och fritid ${pct(rik.andel(FORBATTRING))} av valen (${rik.topp})`, rik.andel(FORBATTRING) > 0.3],
+      [`svältande by (mat för ${SIM.dygn(svFd)}): bygge, hantverk och fritid ${pct(svalt.andel(FORBATTRING))}, klart lägre än i den rika byn (${svalt.topp})`, svFd < 1 && svalt.andel(FORBATTRING) < rik.andel(FORBATTRING) / 3],
+      [`svältande by: matarbete och redskap till maten ${pct(svalt.andel(MATMEDREDSKAP))} av valen (i den rika byn ${pct(rik.andel(MATMEDREDSKAP))})`, svalt.andel(MATMEDREDSKAP) > 0.5 && svalt.andel(MATMEDREDSKAP) > 2 * rik.andel(MATMEDREDSKAP)],
+      [`istiden med elden släckt (${kyla.ljust ? 'ljust' : 'mörkt'}, ${kyla.kallt ? 'kallt' : 'inte kallt'}): trä ${pct(kyla.andel(TRAARBETE))}, bygge ${pct(kyla.andel(['bygga']))} (${kyla.topp})`, kyla.ljust && kyla.kallt && kyla.andel(TRAARBETE) > 0.4 && kyla.andel(TRAARBETE) > kyla.andel(['bygga'])],
+      [`istiden med elden släckt: inga korgar, spjut eller metspön görs, inte heller när maten tryter (${tillv(kyla)}; hungrig ${tillv(kylaSvalt)}, där ${pct(kylaSvalt.andel(MATARBETE))} matarbete)`, tillvAndel(kyla) === 0 && tillvAndel(kylaSvalt) === 0 && kylaSvalt.andel(MATARBETE) > 0],
+      [`kontroll: samma hungriga by med elden tänd gör redskap (${tillv(varmt)}), så provet ser dem när de väljs`, tillvAndel(varmt) > 0],
+    ];
+  },
+};
+
+SCENARIER.seder = {
+  text: 'Sederna håller sig mellan -1 och 1 och rör sig mot det invånarna drar åt: en flitig by drar Arbete uppåt och får högre pliktkänsla än en lat. Yrket kommer av vanan',
+  kor: () => {
+    const s = createState(4, START);
+    kor(s, 3 * 24);
+    const inom = (q: State) => [...Object.values(q.seder.v), ...Object.values(q.seder.ev)].every(v => v >= -1 && v <= 1);
+    const vuxna = (q: State) => living(q).filter(p => ageOf(p, q.now) >= SIM.ALDER.vuxen);
+    // två kopior av byn där alla är flitiga (flit 20) eller lata (1). Sederna rör sig i två dygn (två år i spelet)
+    const med = (flit: number) => { const q = structuredClone(s); for (const p of living(q)) p.pot.flit = flit; return q; };
+    const fl = med(20), la = med(1), mal = (q: State) => SIM.sederTarget(q).arbete;
+    const fore = [fl, la].map(q => ({ v: q.seder.v.arbete, mal: mal(q) }));
+    for (const q of [fl, la]) { SIM.stepSeder(q); q.now += 2 * DAY; SIM.stepSeder(q); }
+    const narmare = [fl, la].every((q, i) => Math.abs(mal(q) - q.seder.v.arbete) < Math.abs(fore[i].mal - fore[i].v) - 0.05);
+    const lang = structuredClone(fl); lang.now += 40 * DAY; SIM.stepSeder(lang); // länge i ett svep: aldrig över 1
+    // pliktkänslan: samma person i båda byarna, och samma by med seden Arbete på 1 och -1
+    const p = vuxna(fl)[0]!, q = vuxna(la).find(x => x.id === p.id)!, pf = SIM.duty(fl, p), pl = SIM.duty(la, q);
+    const sed = (v: number) => { const t = structuredClone(s); t.seder.v.arbete = v; return SIM.duty(t, vuxna(t)[0]!); };
+    // yrket kommer av vanan: 20 timmars jakt ger Jägare, och att fälla och hugga ger Trähuggare
+    const t = structuredClone(s), [j, h, ...ovriga] = vuxna(t);
+    for (const x of vuxna(t)) { x.tag = undefined; x.kallad = undefined; x.habit = { samla: 6, ved: 4, vila: 2 }; }
+    j.habit = { jakt: 20, samla: 2 }; h.habit = { hugga: 12, falla: 8, samla: 2 };
+    SIM.updateTags(t);
+    const okanda = SIM.TAGS.flatMap(g => g.acts).filter(a => !(a in ACTS));
+    return [
+      [`sederna ligger mellan -1 och 1 efter tre dygn (tre år i spelet) och efter 40 dygn i ett svep`, inom(s) && inom(fl) && inom(la) && inom(lang)],
+      [`en flitig by drar Arbete mot ${fore[0].mal.toFixed(2)} och en lat mot ${fore[1].mal.toFixed(2)}`, fore[0].mal > 0.5 && fore[1].mal < -0.5],
+      [`efter två dygn har Arbete rört sig mot målet: flitig ${fore[0].v.toFixed(2)} → ${fl.seder.v.arbete.toFixed(2)}, lat ${fore[1].v.toFixed(2)} → ${la.seder.v.arbete.toFixed(2)}`, narmare && fl.seder.v.arbete > la.seder.v.arbete + 0.5],
+      [`pliktkänslan är högre i den flitiga byn (${pf.toFixed(2)} mot ${pl.toFixed(2)}) och högre med seden Arbete (${sed(1).toFixed(2)} mot ${sed(-1).toFixed(2)}), alltid mellan ${SIM.SED.pliktMin} och ${SIM.SED.pliktMax}`,
+        pf > pl && sed(1) > sed(-1) && [pf, pl, sed(1), sed(-1)].every(v => v >= SIM.SED.pliktMin && v <= SIM.SED.pliktMax)],
+      [`vanan ger yrket: ${j.name} (jakt 20 timmar) kallas ${j.tag ?? 'inget'}, ${h.name} (fälla och hugga) ${h.tag ?? 'inget'}${ovriga.length ? `, de andra ${ovriga.map(x => x.tag ?? 'inget').join(', ')}` : ''}`,
+        j.tag === 'Jägare' && !!j.kallad?.includes('Jägare') && h.tag === 'Trähuggare' && !ovriga.some(x => x.tag === 'Jägare' || x.tag === 'Trähuggare')],
+      [`yrkena räknar bara handlingar som finns${okanda.length ? ` (okända: ${okanda.join(', ')})` : ''}`, !okanda.length],
+    ];
+  },
+};
+
+SCENARIER.samtal = {
+  text: 'Samtalen ändrar relationerna: varje samtal räknas och fyller på umgänget, osams grälar, ett par som blivit ovänner går isär, två förälskade blir ett par, och en lärdom sprids utan att platsen räknas som nyss sedd',
+  kor: () => {
+    const s = createState(3, START); klockan(s, 12);
+    const ny = (sex: 'm' | 'k', alder: number) => nyInvanare(s, sex, alder);
+    const prata = (a: Person, b: Person, n: number) => { const ev: SIM.TalkEvent[] = []; for (let i = 0; i < n; i++) SIM.converse(s, a, [b], ev); return ev; };
+    // två bekanta män pratar tio gånger
+    const [a, b] = [ny('m', 25), ny('m', 30)], r1 = getRel(s, a, b);
+    r1.op = 10; a.social = b.social = 0.3;
+    const ev1 = prata(a, b, 10);
+    // två som är osams grälar
+    const [c, d] = [ny('k', 27), ny('k', 33)], r2 = getRel(s, c, d);
+    r2.op = -60;
+    const gral = prata(c, d, 20).filter(e => e.kind === 'gräl').length;
+    // ett par som blivit ovänner går isär
+    const [e, f] = [ny('m', 28), ny('k', 26)], r3 = getRel(s, e, f);
+    e.partner = f.id; f.partner = e.id; r3.op = -60;
+    prata(e, f, 1);
+    // två förälskade goda vänner utan partner blir ett par
+    const [g, h] = [ny('m', 24), ny('k', 23)], r4 = getRel(s, g, h);
+    r4.op = 80; r4.rom = 99;
+    prata(g, h, 1);
+    // en lärdom om en plockad plats (sedd för tio timmar sedan, hoppas växa tillbaka) berättas tills den andra kan den
+    const [i, j] = [ny('k', 40), ny('m', 35)], area = areaOf(i.x, i.y), t0 = s.now - 10 * HOUR;
+    i.lardomar = [{ k: 'samla', a: area, v: 0.2, g: 3, c: 1, t: t0, led: 0 }]; j.lardomar = [];
+    getRel(s, i, j).op = 50;
+    const l = i.lardomar[0]!, hopp0 = hoped(s, l);
+    let samtal = 0;
+    while (!findL(j, 'samla', area) && samtal < 300) { prata(i, j, 1); samtal++; }
+    const fick = findL(j, 'samla', area);
+    if (fick && (l.t !== t0 || fick.t !== t0)) console.log(`VARNING: samtal: att berätta om platsen gjorde den nyss sedd: berättarens tid flyttades ${((l.t - t0) / HOUR).toFixed(0)} timmar och hoppet om återväxt föll från ${hopp0.toFixed(2)} till ${hoped(s, l).toFixed(2)}, och den som lyssnade fick ${fick.t === t0 ? 'samma tid' : 'tiden nu'}. tell i minne.ts sätter l.t = now (samhalle-49)`);
+    return [
+      [`tio samtal räknas (${r1.talks}), umgänget fylls på (${a.social.toFixed(2)}) och vänskapen ändras (10 → ${r1.op.toFixed(1)}, ${ev1.filter(x => x.good).length} av 10 gick bra)`, r1.talks === 10 && ev1.length === 10 && a.social > 0.8 && b.social > 0.8 && r1.op !== 10],
+      [`två som är osams grälar (${gral} av 20 samtal) och blir mer osams (-60 → ${r2.op.toFixed(1)})`, gral >= 5 && r2.op < -60],
+      [`ett par som blivit ovänner går isär${e.partner === undefined && f.partner === undefined ? '' : ' (de är kvar som par)'}`, e.partner === undefined && f.partner === undefined && r3.rom === SIM.SAMTAL.skiltRom],
+      [`två förälskade goda vänner blir ett par${g.partner === h.id && h.partner === g.id ? '' : ' (de blev det inte)'}`, g.partner === h.id && h.partner === g.id],
+      [`en lärdom sprids i ett samtal: ${j.name} kan platsen efter ${samtal} samtal${fick ? ` (${fick.led} led från källan)` : ''}`, !!fick && fick.src === i.id],
+    ];
+  },
+};
+
+SCENARIER.liv = {
+  text: 'Födsel och åldrande: ett par får ett barn med rätt mor och far, barnets far är den hon blev gravid med, en mor som dör i barnsäng gör inget mer, och styrkan växer upp i åren och avtar på äldre dagar (att trängsel leder till flytt prövas i utflyttning)',
+  // varje mor dör i barnsäng (annars 2,5 %), och paret blir gravida inom någon timme i stället för inom ett par dygn
+  env: { BALANS: 'liv.barnsang=1,steg.chans=30' },
+  kor: () => {
+    const s = createState(9, START);
+    for (const p of living(s)) p.partner = undefined; // inga andra par
+    const m = nyInvanare(s, 'm', 26), w = nyInvanare(s, 'k', 24);
+    m.partner = w.id; w.partner = m.id;
+    let gravidMed: number | undefined, efter: string | undefined, steg = 0;
+    for (; steg < 3 * STEG_DYGN && w.died === undefined; steg++) {
+      step(s, BEAT);
+      if (gravidMed === undefined && w.pregnantSince !== undefined) gravidMed = w.pregnantBy;
+      if (w.died !== undefined) efter = w.task ? `${w.task.act} (${w.task.why ?? ''})` : '';
+    }
+    const barn = s.people.find(c => c.mother === w.id);
+    if (efter) console.log(`VARNING: liv: ${w.name} dog i barnsäng men fick en ny uppgift i samma steg: ${efter}. Personslingan i steg.ts går vidare till taskStep efter pregnancy() utan att fråga alive (motor-2)`);
+    // hon blev gravid med en, och har en annan partner när barnet föds
+    const w2 = nyInvanare(s, 'k', 25), m1 = nyInvanare(s, 'm', 27), m2 = nyInvanare(s, 'm', 29);
+    w2.partner = m2.id; m2.partner = w2.id; w2.pregnantSince = s.now - DAY; w2.pregnantBy = m1.id;
+    SIM.birth(s, w2);
+    const barn2 = s.people.find(c => c.mother === w2.id);
+    if (barn2 && barn2.father !== m1.id) console.log(`VARNING: liv: barnets far blev ${barn2.father === m2.id ? 'moderns partner när barnet föddes' : `nr ${barn2.father}`} och inte den hon blev gravid med. birth i liv.ts tar partnern före pregnantBy (samhalle-54)`);
+    // styrkan efter åldern: ett barn, en vuxen och en gammal (samma person)
+    const st = (alder: number) => stat(m, 'styrka', m.born + alder * DAY);
+    return [
+      [`${w.name} blev gravid med sin partner ${m.name}`, gravidMed === m.id],
+      [`ett barn föddes efter ${(steg / STEG_DYGN).toFixed(1)} dygn (år i spelet)${barn ? `: ${barn.name}, med rätt mor och far` : ''}, och byn räknade det (${s.stat?.fodda ?? 0})`, !!barn && barn.father === m.id && (s.stat?.fodda ?? 0) >= 1],
+      [`modern dog i barnsäng (${w.cause ?? 'lever'}) och är inte längre bland de levande`, w.cause === 'i barnsäng' && !living(s).includes(w)],
+      [`ett barn som föds medan modern har en ny partner får en mor${barn2 ? ` (${barn2.father === m1.id ? 'och den far hon blev gravid med' : 'men fel far, se VARNING'})` : ''}`, !!barn2 && barn2.mother === w2.id],
+      [`styrkan växer upp i åren och avtar på äldre dagar: ${st(5).toFixed(1)} vid 5 år, ${st(30).toFixed(1)} vid 30 och ${st(75).toFixed(1)} vid 75`, st(5) < st(30) && st(75) < st(30)],
+      [`åldern följer tiden: ${m.name} är ${ageOf(m, s.now).toFixed(1)} år efter ${(steg / STEG_DYGN).toFixed(1)} dygn`, Math.abs(ageOf(m, s.now) - 26 - (s.now - m.born - 26 * DAY) / DAY) < 1e-9 && ageOf(m, s.now) > 26],
+    ];
+  },
+};
+
+SCENARIER.utflyttning = {
+  text: 'Utflyttning: ur en trång och missnöjd by flyttar ett ungt par med sina barn under 14 år. De tar med sig det de orkar bära av sitt, resten blir byns, och det de bar på läggs ner. Finns inget ungt par ger sig en ensam ung vuxen av',
+  kor: () => {
+    // kolonisterna och 22 till är 50–56 år och för gamla för att flytta, ett par på 45 och 46 också. Det unga paret a och b har
+    // barnen litet (5 år), mellan (8,5) och stor (15,5, vuxen). Alla tänker att det är trångt, och maten räcker länge
+    const ny = () => {
+      const s = createState(6, START); rikBy(s); setFood(s, 300); s.ting = [];
+      for (const q of living(s)) { q.mother = q.father = q.partner = undefined; q.born = s.now - 52 * DAY; }
+      for (let i = 0; i < 22; i++) nyInvanare(s, i % 2 ? 'm' : 'k', 50 + (i % 7));
+      const c = nyInvanare(s, 'm', 46), d = nyInvanare(s, 'k', 45); c.partner = d.id; d.partner = c.id;
+      const a = nyInvanare(s, 'm', 26), b = nyInvanare(s, 'k', 25); a.partner = b.id; b.partner = a.id;
+      const barnet = (alder: number) => { const x = nyInvanare(s, alder > 10 ? 'm' : 'k', alder); x.mother = b.id; x.father = a.id; return x; };
+      const litet = barnet(5), mellan = barnet(8.5), stor = barnet(15.5);
+      for (const q of living(s)) SIM.think(q, 'Trångt', -0.6, s.now, 30 * DAY);
+      gain(s, a, 'kott', 20); gain(s, b, 'kott', 20); gain(s, litet, 'bar', 10); addTool(s, 'kniv', a);
+      barGrenar(s, a);
+      return { s, a, b, c, d, litet, mellan, stor };
+    };
+    // regulate (befolkning.ts) som en gång i timmen i step, och tidyTools som i slutet av varje steg: det gör ett redskap som en utflyttad ägde till byns
+    const flytta = (s: State) => { for (let i = 0; i < 500 && !s.stat?.utvandrade; i++) { regulate(s, 3600); tidyTools(s); s.now += HOUR; } };
+    const { s, a, b, c, d, litet, mellan, stor } = ny();
+    const kott0 = amountOf(s, 'kott'), grenar0 = grenarUte(s), pop0 = living(s).length;
+    flytta(s);
+    const grupp = [a, b, litet, mellan], kvar = living(s);
+    const tog = kott0 - amountOf(s, 'kott');
+    const agt = grupp.filter(q => Object.values(SIM.ownedAll(s, q.id)).some(v => v > 1e-9) || tingOf(s).some(t => t.agare === q.id)).map(q => q.name);
+    if (Math.abs(grenarUte(s) - grenar0 - 2) > 1e-6) console.log(`VARNING: utflyttning: ${a.name} bar två grenar när familjen flyttade, och de försvann (${(grenarUte(s) - grenar0).toFixed(2)} grenar till på marken och i förrådet). leave i liv.ts sätter p.task = undefined utan att lägga ner bördan (samhalle-48, fynd 37)`);
+    // inget ungt par: en ensam ung vuxen ger sig av
+    const e = ny();
+    e.a.partner = e.b.partner = undefined;
+    flytta(e.s);
+    const gick = e.s.people.filter(q => q.left !== undefined);
+    return [
+      [`byn är trång (${pop0} invånare) och missnöjd, och efter ${((s.now - START) / HOUR).toFixed(0)} timmar flyttade ${s.stat?.utvandrade ?? 0}`, (s.stat?.utvandrade ?? 0) > 0],
+      [`det unga paret flyttade med sina två barn under 14 år (${grupp.filter(q => q.left !== undefined).length} av 4), och barnet på 15,5 år och det äldre paret blev kvar`, grupp.every(q => q.left !== undefined && !kvar.includes(q)) && s.stat?.utvandrade === 4 && kvar.includes(stor) && kvar.includes(c) && kvar.includes(d) && kvar.length === pop0 - 4],
+      [`de som flyttade har ingen uppgift kvar`, grupp.every(q => q.task === undefined)],
+      [`de tog med sig ${tog.toFixed(1)} av sitt eget kött (de ägde 40), resten blev byns${agt.length ? ` (äger fortfarande: ${agt.join(', ')})` : ''}`, tog > 0 && tog <= 40 + 1e-6 && !agt.length && ownedSum(s, 'kott') < 1e-9 && ownedSum(s, 'bar') < 1e-9],
+      [`utan ungt par gav sig en ensam ung vuxen av (${gick.map(q => `${q.name}, ${ageOf(q, q.left!).toFixed(1)} år`).join('; ') || 'ingen'})`, gick.length === 1 && gick[0]!.partner === undefined && ageOf(gick[0]!, gick[0]!.left!) >= 16 && ageOf(gick[0]!, gick[0]!.left!) < 40],
+    ];
+  },
+};
+
+SCENARIER.vakt = {
+  text: 'Nattvakten: varje natt håller en vuxen mellan 16 och 60 år vakt, den modigaste med lite slump, och den som utses lägger ner det hen bär',
+  kor: () => {
+    const s = createState(2, START), natter = new Map<number, Set<number>>(), aldrar: number[] = [];
+    kor(s, 3 * 24, q => {
+      for (const p of living(q)) if (p.task?.act === 'vakt') {
+        const n = natter.get(p.guardDay ?? -1) ?? new Set<number>(); n.add(p.id); natter.set(p.guardDay ?? -1, n); aldrar.push(ageOf(p, q.now));
+      }
+    });
+    // i natt: den modigaste bär två grenar när en annan väljer och nattens vakt utses
+    const q = structuredClone(s); klockan(q, 22); q.lastGuardDay = -1;
+    const vuxna = living(q).filter(p => ageOf(p, q.now) >= SIM.ALDER.vaktFran && ageOf(p, q.now) < SIM.ALDER.vaktTill);
+    for (const p of vuxna) { p.pot.mod = 1; Object.assign(p, { hunger: 0.9, rest: 0.9, social: 0.9, toa: 0.9, warm: 0.9, health: 1, sickUntil: undefined }); }
+    const [g, p] = vuxna; g!.pot.mod = 20;
+    barGrenar(q, g!); p!.task = undefined;
+    const grenar0 = grenarUte(q), akt = (x: Person) => x.task?.act; // (en funktion, så att typkontrollen inte tror att uppgiften är tom)
+    SIM.chooseTask(q, p!);
+    const utsedd = g!.guardDay === q.lastGuardDay && q.lastGuardDay !== -1, bordan = g!.task;
+    if (Math.abs(grenarUte(q) - grenar0 - 2) > 1e-6) console.log(`VARNING: vakt: ${g!.name} bar två grenar när hen blev nattens vakt, och de försvann. night() i val.ts sätter g.task = undefined utan att lägga ner bördan (motor-6, samhalle-66)`);
+    g!.task = undefined; SIM.chooseTask(q, g!);
+    return [
+      [`${natter.size} nätter under tre dygn (tre år i spelet) hade en vakt, och aldrig mer än en (${[...natter.values()].map(n => n.size).join(', ')})`, natter.size >= 3 && [...natter.values()].every(n => n.size === 1)],
+      [`vakterna var mellan ${Math.min(...aldrar).toFixed(0)} och ${Math.max(...aldrar).toFixed(0)} år`, aldrar.length > 0 && aldrar.every(a => a >= SIM.ALDER.vaktFran && a < SIM.ALDER.vaktTill)],
+      [`i natt (${isLight(q.now) ? 'ljust' : 'mörkt'}) utsågs den modigaste, ${g!.name}, när ${p!.name} valde (${akt(p!)}), och hen slutade med det hen gjorde`, !isLight(q.now) && utsedd && bordan === undefined && akt(p!) !== 'vakt'],
+      [`${g!.name} väljer sedan att hålla vakt (${akt(g!)})`, akt(g!) === 'vakt'],
+    ];
+  },
+};
+
+// Det i registren som bara händer i vissa byar: namnet och varför. Allt annat ska hända i minst en av byarna
+const SALLSYNT: Record<string, string> = { kol: 'kol blir det bara när elden brunnit ut helt' };
+SCENARIER.aldrig = {
+  text: 'Allt i registren används: varje handling, sak, husfunktion, djurart och teknik förekommer i minst en av fyra byar under 35 dygn (35 år i spelet, fem veckor i verkligheten)',
+  lang: true,
+  kor: () => {
+    const DYGN = 35, BYAR = 4;
+    const reg: Record<string, string[]> = {
+      handlingar: Object.keys(ACTS), saker: Object.keys(SAKER), husfunktioner: [...FN], djurarter: Object.keys(DJUR), tekniker: TEKNIK.map(t => t.id),
+    };
+    const dold = Object.fromEntries(Object.keys(SAKER).filter(k => SAKER[k]!.dold && SAKER[k]!.i).map(k => [SAKER[k]!.i!, k])); // giftsvampen göms i svampen
+    const sett = Object.fromEntries(Object.keys(reg).map(k => [k, new Map<string, number>()]));
+    const vakter: string[] = [];
+    for (let i = 0; i < BYAR; i++) {
+      const by = Object.fromEntries(Object.keys(reg).map(k => [k, new Set<string>()]));
+      let steg = 0;
+      const r = korBy(seedAv(i), DYGN, s => {
+        for (const p of living(s)) if (p.task) { by.handlingar!.add(p.task.act); for (const k in p.task.items ?? {}) by.saker!.add(k); }
+        for (const a of s.stackar ?? []) { by.saker!.add(a.k); if (a.dold && dold[a.k]) by.saker!.add(dold[a.k]!); }
+        for (const t of tingOf(s)) by.saker!.add(t.k);
+        if (steg++ % STEG_TIM === 0) for (const h of housesOf(s)) by.husfunktioner!.add(fnId(h));
+      });
+      vakter.push(...r.vakter.map(v => `by ${r.seed}: ${v}`));
+      // vanorna har varje handling som någon gjort, också de döda och utflyttade
+      for (const p of r.s.people) { for (const k in p.habit) by.handlingar!.add(k); for (const t of reg.tekniker!) if (knows(p, t)) by.tekniker!.add(t); }
+      for (const k of reg.djurarter!) if (by.saker!.has(DJUR[k as keyof typeof DJUR].sak)) by.djurarter!.add(k);
+      for (const [kat, set] of Object.entries(by)) for (const k of set) sett[kat]!.set(k, (sett[kat]!.get(k) ?? 0) + 1);
+    }
+    const ut: Koll[] = Object.entries(reg).map(([kat, ks]) => {
+      const aldrig = ks.filter(k => !sett[kat]!.has(k)), sallan = ks.filter(k => sett[kat]!.has(k) && sett[kat]!.get(k)! < BYAR);
+      const txt = `${kat}: ${ks.length - aldrig.length} av ${ks.length} används` +
+        (aldrig.length ? `, aldrig: ${aldrig.map(k => SALLSYNT[k] ? `${k} (sällsynt: ${SALLSYNT[k]})` : k).join(', ')}` : '') +
+        (sallan.length ? `; bara i några av byarna: ${sallan.map(k => `${k} ${sett[kat]!.get(k)} av ${BYAR}`).join(', ')}` : '');
+      return [txt, aldrig.every(k => SALLSYNT[k])] as Koll;
+    });
+    const okanda = Object.keys(SALLSYNT).filter(k => !Object.values(reg).some(ks => ks.includes(k)));
+    return [
+      ...ut,
+      [`listan över det sällsynta har bara sådant som finns i registren${okanda.length ? ` (inte: ${okanda.join(', ')})` : ''}`, !okanda.length],
+      [`inga vaktlarm i byarna${vakter.length ? `: ${vakter.slice(0, 3).join('; ')}` : ''}`, !vakter.length],
+    ];
+  },
+};
 
 // Utan namn körs alla scenarier samtidigt, vart och ett i en egen process. Med ett namn körs bara det, här.
 // Med --snabb körs bara de som inte är långa, och dessutom de som nämns efter: --snabb delning arv

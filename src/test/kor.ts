@@ -12,10 +12,11 @@ export const DOK_KB = 256;
 
 export interface Resultat { seed: number; n: Nyckeltal; vakter: string[]; s: State }
 
-export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => void): Resultat {
+// fran: kör vidare en by som redan finns (t.ex. en inläst sparfil, scenariot sparning) i stället för en ny by med seed
+export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => void, fran?: State): Resultat {
   const okanda = okandaBalans();
   if (okanda.length) throw new Error(`BALANS: inget balanstal heter ${okanda.join(', ')} (se npm run talen)`);
-  const s = createState(seed, START);
+  const s = fran ?? createState(seed, START);
   const t0 = performance.now();
   const tiles = getMap(seed).tiles;
   const fel = new Map<string, { n: number; forsta: string }>();
