@@ -153,8 +153,9 @@ SCENARIER.redskap = {
       if (p.task?.act === 'jakt' && isSpear(p.task.tool)) medSpjut++;
     }
     const jakt = (amountOf(s, 'vilt')) > vilt0 && amountOf(s, 'flintspjut') < sp0;
-    // byn fiskar själv åtta dygn: metspö, spjut och händer. Spjutet används först när metspöet inte räcker, så det
-    // tar sex sju dygn innan det har prövats 100 gånger (v47: 44 försök efter fyra dygn, 126 efter åtta)
+    // byn fiskar själv åtta dygn: metspö, spjut och händer. Spjutet används först när metspöet inte räcker, och hur
+    // ofta beror mycket på byn: i v51 prövades det 77–765 gånger på åtta dygn i byarna 4–11 (43–816 före v51), så
+    // kontrollen kräver bara att det används alls
     setFood(s, 3);
     kor(s, 8 * 24, q => { if ((amountOf(q, 'ben')) < 1) setAmount(q, 'ben', 1); if ((amountOf(q, 'flinta')) < 3) setAmount(q, 'flinta', 3); });
     const st = s.stat!, takt = (f: number, n: number) => n ? f / n : 0;
@@ -185,7 +186,7 @@ SCENARIER.redskap = {
       ['flintspjutet håller fyra gånger så länge som ett träspjut', haller],
       ['ett metspö görs av gren, rep och ben', spo],
       [`jakt med spjut fångar kaniner, och spjutet slits (${medSpjut} av 36 steg med spjut)`, jakt && medSpjut > 30],
-      [`metspöet och spjutet används (${st.metForsok ?? 0} försök med metspö, ${(met * 100).toFixed(0)} % fångst; ${st.spjutForsok ?? 0} med spjut, ${(spjut * 100).toFixed(0)} %)`, (st.metForsok ?? 0) > 20 && (st.spjutForsok ?? 0) >= 100],
+      [`metspöet och spjutet används (${st.metForsok ?? 0} försök med metspö, ${(met * 100).toFixed(0)} % fångst; ${st.spjutForsok ?? 0} med spjut, ${(spjut * 100).toFixed(0)} %)`, (st.metForsok ?? 0) > 20 && (st.spjutForsok ?? 0) > 20],
       [`metspöet ger mest fisk per försök på samma plats (${(metLika * 100).toFixed(0)} % mot spjutets ${(spjutLika * 100).toFixed(0)} %, 2000 försök var)`, metLika > spjutLika && spjutLika > 0],
     ];
   },

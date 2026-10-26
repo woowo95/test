@@ -272,7 +272,9 @@ function placeOn(s: State, ts: Ting[]) {
     t.x = sp.x; t.y = sp.y;
   }
 }
-const placeTools = (s: State) => placeOn(s, tingOf(s));
+// ett redskap som ingen har i handen eller bär, och som inte ligger någonstans (den som höll det släppte det eller dog),
+// läggs i förrådet. Görs sist i varje steg (steg.ts), så att alla redskap har en plats när gränssnittet ritar
+export const placeTools = (s: State) => placeOn(s, tingOf(s));
 const roomIn = (a: Stack | undefined, k: string) => !a || (a.k === k && !isTool(k) && a.n < RUTA[k] - 1e-9);
 // bästa plats i en lagerplats för ett slag: lagerplatserna i prioritetsordning, först en stack av samma slag som inte
 // är full, sedan en tom ruta. minPrio: bara lagerplatser med högre prioritet än så
@@ -458,11 +460,10 @@ export function storeFromSums(s: State) {
   changed(s);
 }
 
-// alla stackar med plats och skick. Gränssnittet frågar, så byn ändras inte: ett redskap utan ruta visas där det skulle
-// läggas, men det är en kopia som får rutan (simuleringen lägger det själv när det behövs, placeTools)
+// alla stackar med plats och skick. Gränssnittet frågar, så byn ändras inte. Redskapen har alltid en ruta efter ett steg
+// (placeTools); bara en äldre sparfil som just lästs in kan ha ett redskap utan ruta, och det visas efter första steget
 export function pilesOf(s: State): Pile[] {
-  const ts = tingOf(s).map(t => utanRuta(t) ? { ...t } : t);
-  placeOn(s, ts);
+  const ts = tingOf(s);
   // en stack där bara det gömda (giftsvampen) finns kvar visas inte: den skulle avslöja det gömda som "0 st"
   return [...stacksOf(s).filter(a => a.n > 1e-6 || a.gor), ...ts.filter(ligger).map(asStack)].map(a => { const zone = zoneAt(s, a.x, a.y); return { ...a, max: rutaOf(a.k), zone, out: zone < 0, stored: isStored(s, a.x, a.y) }; });
 }
@@ -513,7 +514,6 @@ const vanliga = (s: State) => zonesOf(s).filter(z => z.hus === undefined).length
 // förrådet är fullt: lagerplatserna kan inte bli fler och det ligger saker bredvid dem (förrådshuset, byggnader.ts)
 export const storeFull = (s: State) => vanliga(s) >= LAGER.zoner && overflow(s).length >= LAGER.fullt;
 export function tidyStore(s: State) {
-  placeTools(s);
   const zs = zonesOf(s);
   const over = () => overflow(s);
   let grew = -1;

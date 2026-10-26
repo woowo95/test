@@ -1,7 +1,7 @@
 import { tidyTools } from './agande';
 import { chopStock, fellTree, rotStumps, stocks } from './skog';
 import { needLadder, noticeTheft, stole } from './behov';
-import { avbryt, capacity, dropSpot, fetchSpot, homeKind, isCarrying, load, pickUp, storeLoad, tidyStore, wearStore } from './lager';
+import { avbryt, capacity, dropSpot, fetchSpot, homeKind, isCarrying, load, pickUp, placeTools, storeLoad, tidyStore, wearStore } from './lager';
 import { DJURARTER, KANIN, REDSKAP, bearbeta, twineRope, wearUsed } from './redskap';
 import { GOR_ACTS, finishHalf, startWork, stepPaborjat, workHalf } from './paborjat';
 import { thinkWhileWorking } from './teknik';
@@ -158,6 +158,7 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
   if (living(s).length === 0) log(s, 'Byn är tom. Ingen finns kvar vid elden.', 'world');
   regulate(s, dtSec);
   tidyTools(s);
+  placeTools(s); // redskapen som släpptes läggs i förrådet
 }
 
 
