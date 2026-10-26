@@ -1,8 +1,10 @@
 // Balanstalen: talen som avgör hur spelet går (gränser, vikter, takter, reserver), med namn och samlade per system.
-// Varje system lägger sina tal i ett block överst i sin fil: const T = balans('val', { fryser: 0.35, … }), och läser T.fryser.
-// Testerna kan pröva ett annat värde utan att ändra koden: miljövariabeln BALANS="val.fryser=0.3,liv.barn=2"
-// (en lista: "lager.prio=1/2/3") gäller i varje testprocess, och `npm run jamfor -- --satt val.fryser=0.3` jämför
-// med och utan. I spelet finns ingen BALANS, så talen är alltid de som står i koden. `npm run talen` skriver ut alla.
+// Varje system lägger sina tal i ett block överst i sin fil: const KROPP = balans('kropp', { fryser: 0.35, … }), och läser KROPP.fryser.
+// Testerna kan pröva ett annat värde utan att ändra koden: miljövariabeln BALANS="kropp.fryser=0.3,liv.barnMin=0.2"
+// (en lista: "djur.storlek=2/5") gäller i varje testprocess. `npm run jamfor -- --satt kropp.fryser=0.3` kör samma byar
+// utan och med och säger om det blev bättre eller sämre, och `npm run jamfor -- --svep kropp.fryser=0.25/0.3/0.4` (eller
+// 0.2:0.5:0.05) visar nyckeltalen för varje värde bredvid värdet i koden. I spelet finns ingen BALANS, så talen är alltid
+// de som står i koden. `npm run talen` skriver ut alla, och `npm run talen -- kropp` eller `-- fryser` bara de som matchar.
 type Tal = number | readonly number[];
 const ALLA: Record<string, Readonly<Record<string, Tal>>> = {};
 

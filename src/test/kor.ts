@@ -1,5 +1,7 @@
-// Kör en by utan grafik och samlar nyckeltal. Vakterna larmar om något blir omöjligt (NaN, negativa förråd, folk i vattnet).
+// Kör en by utan grafik och samlar nyckeltalen (registret NYCKELTAL i nyckeltal.ts säger vad de heter och betyder).
+// Vakterna larmar om något blir omöjligt (NaN, negativa förråd, folk i vattnet).
 import { BEAT, createState, step, living, DAY, groundOf, isSoil, markslag, Markslag, ageIndex, moodOf, serialize, serializeParts, getMap, fuelStock, ACT_NAMES, T, State, inMap, isWall, tileOf, foodOf, amountOf, sumOf, okandaBalans } from '../sim';
+import { NYCKELTAL, Nyckeltal, tal } from './nyckeltal';
 
 // testbyarna grundas 08:00 svensk tid. Testerna körs i datorns tidszon (här UTC), så där är klockan 06:00 när byn grundas
 export const START = Date.parse('2026-10-20T08:00:00+02:00');
@@ -7,16 +9,6 @@ export const START = Date.parse('2026-10-20T08:00:00+02:00');
 export const STEG_TIM = 3600 / BEAT, STEG_DYGN = 86400 / BEAT;
 // ett dokument i artefaktens databas rymmer högst så här många KB (sparfilens delar, DELAR i steg.ts)
 export const DOK_KB = 256;
-
-export interface Nyckeltal {
-  pop: number; atergrundad: number; // gånger alla dog eller flyttade och en vandrare grundade byn på nytt
-  invandrade: number; utvandrade: number; fodda: number; doda: number; svalt: number; kyla: number;
-  hunger: number; // timmar då någon i byn var mycket hungrig
-  humor: number; // snitthumör, mätt varje timme
-  vintermat: number; vinterved: number; // lägsta förråd när en istid tar slut
-  eld: number; // procent av tiden elden brann
-  ms: number; kb: number; delKb: number; // delKb: den största delen av sparfilen (ett dokument i molnet rymmer DOK_KB)
-}
 
 export interface Resultat { seed: number; n: Nyckeltal; vakter: string[]; s: State }
 
@@ -79,9 +71,10 @@ export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => voi
   return { seed, n, vakter, s };
 }
 
+// en rad per by (npm test): hur byn mår, och efter | datorns mått
 export function rad(r: Pick<Resultat, 'seed' | 'n'>) {
-  const n = r.n;
-  return `by ${String(r.seed).padEnd(5)} pop ${n.pop}${n.atergrundad ? ` ÅTERGRUNDAD ${n.atergrundad} GGR` : ''}, in ${n.invandrade}, ut ${n.utvandrade}, födda ${n.fodda}, döda ${n.doda} (svält ${n.svalt}, kyla ${n.kyla}), hunger ${n.hunger} h, humör ${n.humor.toFixed(2)}, vintermat ${n.vintermat}, vinterved ${n.vinterved}, eld ${n.eld} % | ${(n.ms / 1000).toFixed(1)} s, ${n.kb} KB (största delen ${n.delKb} KB)`;
+  const del = (dator: boolean) => NYCKELTAL.filter(m => !!m.dator === dator).map(m => `${m.kort} ${tal(m, r.n[m.k])}`).join(', ');
+  return `by ${String(r.seed).padEnd(5)} ${del(false)} | ${del(true)}`;
 }
 
 // jordrutorna per markslag, delade som simuleringen delar dem (markslag i mark.ts): skog, ungskog, högt gräs, kort gräs och

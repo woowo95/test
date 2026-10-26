@@ -1,30 +1,34 @@
 // npm run balans -- [antal byar = 20] [dygn = 90]
-// Kör många slumpade byar parallellt och visar median, sämsta och bästa värde för varje nyckeltal.
-import { korSkript, pool, sistaJson } from './pool';
-import type { Nyckeltal } from './kor';
+// Kör många slumpade byar parallellt och visar median, sämsta och bästa värde för varje nyckeltal. Vad som är bättre
+// står i registret NYCKELTAL (nyckeltal.ts); tal som bara är information visas med lägsta och högsta värde.
+import { korJson, pool, seedAv, sek } from './pool';
+import { NYCKELTAL, Matt, Nyckeltal, median, snittTal, vardeAv } from './nyckeltal';
 
 const [antal = 20, dagar = 90] = process.argv.slice(2).map(Number);
-const seeds = Array.from({ length: antal }, (_, i) => 1001 + i * 7919);
+const seeds = Array.from({ length: antal }, (_, i) => seedAv(i));
 type Ut = { seed: number; n: Nyckeltal; vakter: string[] };
 
 const t0 = Date.now();
-const res = await pool(seeds.map(seed => async () => {
-  const u = await korSkript('en.ts', [String(seed), String(dagar)]);
-  if (u.code) throw new Error(`by ${seed}: ${u.err.slice(-500)}`);
-  return sistaJson<Ut>(u);
-}));
+const res = await pool(seeds.map(seed => () => korJson<Ut>('en.ts', [String(seed), String(dagar)], `by ${seed}`)));
 
-const NAMN: [keyof Nyckeltal, string][] = [['pop', 'invånare'], ['invandrade', 'invandrade'], ['utvandrade', 'utvandrade'], ['fodda', 'födda'], ['doda', 'döda'], ['svalt', 'svalt ihjäl'], ['kyla', 'frös ihjäl'],
-  ['hunger', 'hungertimmar'], ['humor', 'humör'], ['vintermat', 'mat efter vintern'], ['vinterved', 'ved efter vintern'], ['eld', 'eld brann %'], ['ms', 'körtid ms']];
-console.log(`${antal} byar, ${dagar} dygn (${((Date.now() - t0) / 1000).toFixed(0)} s)`);
-console.log('                     median   sämst    bäst');
-for (const [k, namn] of NAMN) {
-  const v = res.map(r => r.n[k]).sort((a, b) => a - b);
-  const med = v[Math.floor(v.length / 2)];
-  const hogBra = !['doda', 'svalt', 'kyla', 'hunger', 'ms'].includes(k);
-  const f = (x: number) => (k === 'humor' ? x.toFixed(2) : String(Math.round(x))).padStart(8);
-  console.log(namn.padEnd(20) + f(med) + f(hogBra ? v[0] : v[v.length - 1]) + f(hogBra ? v[v.length - 1] : v[0]));
-}
+console.log(`${antal} byar, ${dagar} dygn (${dagar} år i spelet) (${sek(t0)} s, datorns tid)`);
+// en by med andel (byar som dog ut) står på raden under tabellen i stället
+const visas = NYCKELTAL.filter(m => !m.andel);
+const rad = (m: Matt, a: string, b: string, c: string) => console.log(m.namn.padEnd(20) + a.padStart(8) + b.padStart(8) + c.padStart(8));
+const tabell = (rader: Matt[]) => {
+  for (const m of rader) {
+    const v = res.map(r => vardeAv(m, r.n)).filter((x): x is number => x !== undefined).sort((a, b) => a - b);
+    if (!v.length) { rad(m, '–', '–', '–'); continue; } // mättes inte i någon by
+    const f = (x: number) => snittTal(m, x, 0);
+    // högre är bättre (eller bara information): sämst är det lägsta. Lägre är bättre: sämst är det högsta
+    const [samst, bast] = m.bra < 0 ? [v[v.length - 1], v[0]] : [v[0], v[v.length - 1]];
+    rad(m, f(median(v)), f(samst), f(bast));
+  }
+};
+console.log('                      median   sämst    bäst');
+tabell(visas.filter(m => m.bra !== 0));
+console.log('bara information:     median   lägst   högst');
+tabell(visas.filter(m => m.bra === 0));
 const utdoda = res.filter(r => r.n.atergrundad > 0).map(r => `${r.seed}: ${r.n.atergrundad} ggr`);
 console.log(`utdöda och återgrundade byar: ${utdoda.length}${utdoda.length ? ' (' + utdoda.join(', ') + ')' : ''}, under 6 invånare: ${res.filter(r => r.n.pop < 6).length}`);
 const vakter = res.flatMap(r => r.vakter.map(v => `by ${r.seed}: ${v}`));

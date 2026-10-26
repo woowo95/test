@@ -104,7 +104,8 @@ Allt i `src/test/` körs med tsx i Node och ingår inte i spelet. Filer som hete
 
 | Fil | Vad den gör |
 |---|---|
-| `kor.ts` | `korBy(seed, dygn)` kör en by utan grafik och ger nyckeltalen (`Nyckeltal`). Här finns **vakterna**: varje steg larmar `larm(…)` om något är omöjligt (NaN eller behov utanför 0–1, negativa förråd, stackar och stammar, redskap med fel skick eller på två ställen, folk utanför kartan, i vattnet eller i en vägg, okända jobb). Här finns också det som testerna delar: `START` (testbyarna grundas 08:00 svensk tid, 06:00 i UTC där testerna körs), `STEG_TIM` och `STEG_DYGN` (slag per timme och dygn), `DOK_KB` (vad ett dokument i molnet rymmer) och `markStat` (marken räknad med `markslag` som i simuleringen) |
+| `nyckeltal.ts` | **Registret NYCKELTAL**: en rad per nyckeltal med namn, etikett, enhet, riktning (högre är bättre, lägre är bättre eller bara information, som elden), vad som är en stor skillnad i jamfor (`lika`; stor = `STOR` gånger det) och hur mycket det får skilja mot facit. Typen `Nyckeltal`, raden per by i `npm test`, facit, balans, jamfor och natur läser det. Ett nytt nyckeltal är en rad här och en rad i `korBy` som räknar fram det (spara sedan nytt facit). Importerar inget från simuleringen |
+| `kor.ts` | `korBy(seed, dygn)` kör en by utan grafik och ger nyckeltalen (`Nyckeltal`, se nyckeltal.ts). Här finns **vakterna**: varje steg larmar `larm(…)` om något är omöjligt (NaN eller behov utanför 0–1, negativa förråd, stackar och stammar, redskap med fel skick eller på två ställen, folk utanför kartan, i vattnet eller i en vägg, okända jobb). Här finns också det som testerna delar: `START` (testbyarna grundas 08:00 svensk tid, 06:00 i UTC där testerna körs), `STEG_TIM` och `STEG_DYGN` (slag per timme och dygn), `DOK_KB` (vad ett dokument i molnet rymmer) och `markStat` (marken räknad med `markslag` som i simuleringen) |
 | `pool.ts` | Kör testskript i egna processer, flera samtidigt (`korSkript`, `korJson`, `pool`; en process som inte är klar efter 20 min stoppas). Det som flera skript delar: typkontrollen, scenariernas sammanfattning, testbyarnas frön (`seedAv`) och `kanonisk` (JSON med sorterade nycklar). Importerar inget från simuleringen |
 | `en.ts` | En by med `korBy`: nyckeltal och vakter som JSON (för test, balans, jamfor och snabbkoll) |
 | `test.ts` | `npm test` och `npm run facit`: tre byar i 90 dygn mot `test/facit.json`. Facit sparas inte om vakterna larmar |
@@ -112,10 +113,10 @@ Allt i `src/test/` körs med tsx i Node och ingår inte i spelet. Filer som hete
 | `scenario.ts` | Alla scenarier (`SCENARIER`, ett per system) och körningen av dem. Hjälparna överst (`kor`, `klockan`, `tandEld`, `tomtForrad`, `treVuxna`, `byggare`, `bastaJaktruta`) gör det som många scenarier behöver. Utan namn körs alla samtidigt, vart och ett i en egen process. Ett scenario med `env` (kalender och bostad: svensk tid) får den miljön också när det körs ensamt |
 | `koll.ts`, `snabbkoll.ts` | Det stora testet och den snabba kollen: kör de andra skripten samtidigt och skriver bara det som behövs |
 | `likhet.ts` | `npm run likhet`: varje by körs i en egen process i levande läge och i snabbläget och jämförs varje timme. `likhet.sh` startar bara likhet.ts |
-| `jamfor.ts` | `npm run jamfor`: by för by mot en äldre version (i en egen git-worktree) |
-| `balans.ts` | `npm run balans`: många byar, median, sämsta och bästa |
+| `jamfor.ts` | `npm run jamfor`: by för by mot en äldre version (i en egen git-worktree), med och utan balanstal (`--satt`) eller för flera värden på ett balanstal (`--svep`). Cachen (node_modules/.cache/jamfor) har en fil per kod och balanstal: en äldre version per commit, koden nu per innehållet i en.ts och allt den importerar (följt import för import, plus tsconfig.json och node-versionen), så att en ändring i scenarierna eller gränssnittet inte kör om något |
+| `balans.ts` | `npm run balans`: många byar, median, sämsta och bästa (riktningen ur NYCKELTAL; det som bara är information med lägsta och högsta) |
 | `natur.ts`, `natur-en.ts` | `npm run natur` (steg 1.7.2); natur-en.ts kör en by med eller utan redskap |
-| `takt.ts`, `teknik.ts`, `detaljer.ts`, `talen.ts` | Undersökning: vad en arbetstimme ger, när teknikerna kommer, den långa utskriften och balanstalen (se CLAUDE.md) |
+| `takt.ts`, `teknik.ts`, `detaljer.ts`, `talen.ts` | Undersökning: vad en arbetstimme ger, när teknikerna kommer, den långa utskriften och balanstalen, alla eller de som matchar ett filter (se CLAUDE.md) |
 
 ## Tester: vilket när
 
@@ -129,7 +130,9 @@ Allt i `src/test/` körs med tsx i Node och ingår inte i spelet. Filer som hete
 | `npm run likhet` | ca 1 min | När arbete, gång, samtal eller lärande ändras: är byarna exakt lika i spelet och vid ikappräkning? Fyra byar i 30 dygn |
 | `npm run jamfor -- 35 64 --mot vNN` | ca 3–7 min | I det stora testet: samma byar med koden nu och med versionen före systemet (den senaste commit som säger "(vNN)"), by för by, tills skillnaden är avgjord (se CLAUDE.md) |
 | `npm run natur -- 16 35` | ca 3 min | Avtrycket på naturen: samma byar med och utan redskap (steg 1.7.2) |
-| `npm run talen -- [system]` | ca 1 s | Alla balanstal med namn och värde (regel 8) |
+| `npm run jamfor -- 35 64 --satt system.namn=tal` | ca 2–6 min | Vad gör ett annat balanstal? Samma byar med koden nu, utan och med talet, by för by, tills skillnaden är avgjord |
+| `npm run jamfor -- 35 16 --svep system.namn=a/b/c` | ca 4–6 min för tre värden | Vilket värde är bäst? En kolumn per värde (och värdet i koden), medianen per by; det som skiljer sig mest från koden markeras |
+| `npm run talen -- [filter]` | ca 1 s | Alla balanstal med namn och värde (regel 8), eller bara ett system eller de namn som innehåller filtret |
 | `npm run balans`, `takt`, `teknik`, `detaljer` | | Balansering och undersökning (se CLAUDE.md) |
 
 ## Bygga och publicera
