@@ -58,7 +58,9 @@ function eat(s: State, p: Person, fran?: Person) {
 }
 export const MAT: Behov = {
   id: 'mat', namn: 'mat', slag: FOOD, minst: 0.3, mangd: portionOf,
-  get kvar() { return EKONOMI.matPerDygn; }, // det man själv äter på ett dygn (läses först när det behövs: ekonomi.ts och behov.ts importerar varandra via lager.ts)
+  // det man själv äter på ett dygn. En getter, så att talet läses först när det behövs: förr importerade ekonomi.ts och behov.ts
+  // varandra via lager.ts; i dag ingår ekonomi.ts inte i någon cirkulär import
+  get kvar() { return EKONOMI.matPerDygn; },
   behover: (_s, p) => p.hunger < KROPP.hungrig, genast: true,
   fara: (_s, p) => p.hunger <= 0 ? 1 - p.health : 0, // man svälter när hungern är slut, och hälsan sjunker
   anvand: eat,

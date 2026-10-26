@@ -115,7 +115,8 @@ export function mostUrgent(s: State) {
 // ---------- familjehus (steg 1.6.3) ----------
 // En familj är ägaren, partnern och de barn till dem som inte har egen partner. När ett par med barn inte har något eget
 // hus och äger så mycket (förrådet och redskapen, efter värdet) att det räcker till huset, bestämmer familjen sig för att
-// bygga ett. Huset ägs av den av dem som planerade det, går i arv som föremål (arv.ts) och blir byns när ingen äger det.
+// bygga ett. Huset ägs av den i paret som har lägst id (hus.ag); den som planerar det kan vara en annan i familjen (planBuild i
+// bygg.ts). Det går i arv som föremål (arv.ts) och blir byns när ingen äger det.
 // Materialet tas av familjens eget först, sedan efter behovsstegen (bygg.ts: takeForHouse). Familjen sover där.
 const barnTill = (q: Person, o?: Person) => !!o && isParent(o, q);
 export function familjOf(s: State, ag?: number): Person[] {
