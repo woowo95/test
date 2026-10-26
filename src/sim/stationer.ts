@@ -67,6 +67,8 @@ const NONE: Station[] = [];
 export const stationerOf = (s: State) => s.stationer ?? NONE;
 export const stationById = (s: State, id?: number) => id === undefined ? undefined : stationerOf(s).find(t => t.id === id);
 export const isKlar = (t: Station) => t.kvar <= 0;
+// hur stor del av bygget som är gjort (0 till 1), för framstegscirkeln på kartan
+export const stationKlar = (t: Station) => Math.min(1, Math.max(0, 1 - t.kvar / ((stationDef(t.k)?.min ?? 1) * MIN)));
 // rutorna stationen tar (bredd och djup i registret; en okänd sort tar en ruta)
 export const storlek = (k: string) => { const d = stationDef(k); return { w: d?.w ?? 1, h: d?.h ?? 1 }; };
 // står det en station (klar eller halvbyggd) på rutan?

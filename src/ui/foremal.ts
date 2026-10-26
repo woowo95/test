@@ -1,6 +1,8 @@
-import { MATERIAL, Pile, STUBBE_LIV, bitsOf, clamp, condOf, emberOn, fireHeat, getMap, heatRadius, isKlar, stationDef, stationerOf, storlek, tingOf, zonesOf } from '../sim';
+import { Act, DJUR, GORS, MATERIAL, Pile, STATION, STUBBE_LIV, Station, bitsOf, clamp, condOf, emberOn, fireHeat, getMap, heatRadius, isKlar, living, stationDef, stationKlar, stationerOf, storlek, tingOf, vidStation, zonesOf } from '../sim';
+import { iconCanvas } from '../ikoner';
+import { ritaHus } from './husbild';
 import { outPilesAt, piles, s, ui } from './lage';
-import { Ikoner, TS, pileLayer, structG } from './scen';
+import { Ikoner, TS, overG, pileLayer, structG } from './scen';
 
 // det som står på marken: lagerplatserna och stackarna, stationerna, husen, stubbar, fällda träd och elden
 const pileIcons = new Ikoner(pileLayer);
@@ -14,14 +16,35 @@ function drawPile(pl: Pile) {
   // liten stapel för skicket längst ner i rutan
   g.beginFill(0x161210, 0.7).drawRect(x0 + 2, y0 + 13.5, 12, 2).endFill().beginFill(condCol(c)).drawRect(x0 + 2, y0 + 13.5, 12 * clamp(c, 0, 1), 2).endFill();
   // ikoner: ju fullare stacken är desto fler, redskap som en större bild
-  if (pl.gor) { pileIcons.add(pl.gor, x0 + 2, y0, 1.5); pileIcons.add('paborjat', x0 + 9, y0 - 1, 0.8); return; } // påbörjat: timglaset ovanpå
+  if (pl.gor) { pileIcons.add(pl.gor, x0 + 2, y0, 1.5); framsteg(x0 + 12.5, y0 + 1.5, pl.klar ?? 0); return; } // påbörjat: framstegscirkeln i hörnet
   if (pl.max === 1) { pileIcons.add(pl.k, x0 + 2, y0, 1.5); return; }
   const n = clamp(Math.ceil(f * 4), 1, 4);
   for (const [dx, dy] of PILE_LAYOUT[n - 1]) pileIcons.add(pl.k, x0 + dx, y0 + dy, 1);
 }
+// framstegscirkeln för det som inte är klart (Björn valde A2 efter v55): en mörk bricka med vit kant som fylls med gult,
+// medsols från klockan tolv, ju längre arbetet kommit (p från 0 till 1). Samma som framstegSvg i panelerna (ikoner.ts)
+function framsteg(cx: number, cy: number, p: number) {
+  const r = 3.6, f = clamp(p, 0, 1);
+  overG.beginFill(0x1c1814, 0.88).drawCircle(cx, cy, r).endFill();
+  if (f > 0) overG.beginFill(0xe0b050).moveTo(cx, cy).arc(cx, cy, r - 0.7, -Math.PI / 2, -Math.PI / 2 + f * 2 * Math.PI).lineTo(cx, cy).endFill();
+  overG.lineStyle(0.5, 0xf2ece0).drawCircle(cx, cy, r).lineStyle(0);
+}
+// stationens yta i bilden (världspixlar från bildens övre vänstra hörn): där saken som görs ligger, och kniven
+const YTA: Record<string, { x: number; y: number; kniv?: { x: number; y: number } }> = {
+  slaktbank: { x: 16, y: 0, kniv: { x: 30, y: -1 } },
+  flatarbank: { x: 4, y: 10 },
+};
+// det som görs vid en station syns på den (steg 2.2.12): sakens egen symbol medan någon arbetar där. Viltet och fisken ur
+// djurregistret (DJUR), redskapen ur GORS, och repet när någon tvinnar. Bara utseende: spelet räknar likadant
+const PA_BANKEN: Partial<Record<Act, string>> = { ...Object.fromEntries(Object.values(DJUR).map(d => [d.act, d.sak])), ...Object.fromEntries(Object.keys(GORS).map(g => [g, GORS[g][0]])), tvinna: 'rep' };
+function paBanken(st: Station) {
+  const d = stationDef(st.k), at = vidStation(st);
+  const p = d && living(s).find(q => q.task && d.gor.includes(q.task.act) && Math.hypot(q.x - at.x, q.y - at.y) < STATION.vidBank);
+  return p?.task ? PA_BANKEN[p.task.act] : undefined;
+}
 export function drawStructures(t: number) {
   const m = getMap(s.seed), tab = ui.tab;
-  structG.clear();
+  structG.clear(); overG.clear();
   // lagerplatsen: en ram runt rutorna, och en stack per ruta
   zonesOf(s).forEach((z, i) => {
     const on = tab === 'lager' && ui.lagerNr === i;
@@ -30,13 +53,17 @@ export function drawStructures(t: number) {
   drawBuild();
   pileIcons.start();
   for (const pl of piles()) drawPile(pl);
-  // stationerna (stationer.ts) uppifrån över alla rutorna de tar: den halvbyggda med timglaset, och kniven som ligger kvar
-  // vid bänken längst till höger
+  // stationerna (stationer.ts) i blandperspektiv över alla rutorna de tar: de som är högre än rutan sticker upp över rutan
+  // ovanför. Den halvbyggda har framstegscirkeln överst i mitten; vid den färdiga ligger kniven och det som görs där
   for (const st of stationerOf(s)) {
-    const x0 = st.x * TS, y0 = st.y * TS, klar = isKlar(st), ik = stationDef(st.k)?.ikon ?? 'slaktbank', w = storlek(st.k).w * TS;
-    pileIcons.add(ik + '_karta', x0, y0, 2);
-    if (!klar) pileIcons.add('paborjat', x0 + w / 2 - 3, y0 + 2, 0.8);
-    else if (tingOf(s).some(k => k.vid === st.id && k.hos === undefined && k.lass === undefined)) pileIcons.add('kniv', x0 + w - 13, y0 + 3, 1.1);
+    const ik = (stationDef(st.k)?.ikon ?? 'slaktbank') + '_karta', { w: bw, h: bh } = storlek(st.k), w = bw * TS;
+    const x0 = st.x * TS, y0 = st.y * TS - (iconCanvas(ik).height - 8 * bh) * 2; // y0 = bildens överkant
+    pileIcons.add(ik, x0, y0, 2);
+    if (!isKlar(st)) { framsteg(x0 + w / 2, y0 + 3, stationKlar(st)); continue; }
+    const yta = YTA[st.k] ?? { x: 2, y: 2 };
+    const sak = paBanken(st);
+    if (sak) pileIcons.add(sak, x0 + yta.x, y0 + yta.y, 1);
+    if (yta.kniv && tingOf(s).some(k => k.vid === st.id && k.hos === undefined && k.lass === undefined)) pileIcons.add('kniv', x0 + yta.kniv.x, y0 + yta.kniv.y, 1);
   }
   pileIcons.end();
   // markerad hög utanför lagret: vit kant runt rutan, som lagerplatsen får
@@ -82,7 +109,9 @@ export function drawStructures(t: number) {
 }
 // husen: golv, väggar av timmer (eller flätat ris i äldre byar) och öppningar. Det som är planerat syns som en svag kontur, det som byggs fylls i
 function drawBuild() {
+  const klara = ritaHus(s, bitsOf(s)); // timmerväggarna och trägolven (husbild.ts)
   for (const b of bitsOf(s)) {
+    if (klara.has(b.id)) continue;
     const x = b.x * TS, y = b.y * TS;
     if (b.k === 'golv') {
       const col = MATERIAL[b.m]?.farg ?? MATERIAL.jord.farg, a = b.b >= 1 ? (b.m === 'jord' ? 0.55 : 0.85) : 0.12 + 0.3 * b.b;

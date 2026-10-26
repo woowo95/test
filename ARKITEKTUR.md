@@ -60,7 +60,8 @@ Simuleringen importerar aldrig från `ui/`. Gränssnittet importerar bara från 
 | `ui/scen.ts` | PixiJS-scenen, lagren som ritas ovanpå varandra, kameran och `Ikoner` (återanvända ikon-sprites) |
 | `ui/terrang.ts` | Marken och natten |
 | `ui/vaxter.ts` | Små bärbuskar och svampar i vanliga vyn där det finns något just nu (inte var det kan växa, inte rötter eller vilt) |
-| `ui/foremal.ts` | Det som står på marken: lagerplatser, stackar, stationer (med kniven som ligger kvar), hus, stubbar, stockar och elden |
+| `ui/foremal.ts` | Det som står på marken: lagerplatser, stackar, stationer (med kniven som ligger kvar och det som görs på bänken, `YTA` och `PA_BANKEN`), hus, stubbar, stockar och elden. Det som inte är klart (en station eller ett påbörjat redskap) får framstegscirkeln (`framsteg`, i lagret `overG`; i panelerna `framstegSvg` i ikoner.ts). En station ritas med sin `_karta`-bild och sticker upp över rutorna ovanför |
+| `ui/husbild.ts` | Timmerväggar och trägolv som pixelbilder, 8×8 punkter per ruta beroende på grannarna (steg 2.2.13), i lagret `husLayer`. `ritaHus` säger vilka rutor den ritat; resten (ris, jord, det som inte är påbörjat) ritas i foremal.ts |
 | `ui/manniskor.ts` | Människorna, det de bär, pratbubblor, symbolen över huvudet och namnet |
 | `ui/filter.ts` | Filterknapparna (en per grupp i `GRUPPER`), teckenförklaringen (tryck på en art för att bara se den) och värmekartorna: prick = finns nu, ring = växer här men är plockat |
 | `ui/interaktion.ts` | Mus och tryck på kartan (välja, dra, zooma) och rutan som visar vad som finns under musen Tryck på vatten öppnar sjön (`ui.sjoNr`) |

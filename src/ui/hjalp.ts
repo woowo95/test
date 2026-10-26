@@ -1,4 +1,4 @@
-import { iconImg } from '../ikoner';
+import { framstegSvg, iconImg } from '../ikoner';
 import { HOUR, KROPP, LogEntry, MIN, Person, REL, byId, capacity, carryKind, clamp, isParent, isSick, load, num, sak, sakNamn, timeLabel } from '../sim';
 import { s, vidNyBy } from './lage';
 
@@ -90,7 +90,7 @@ export const PRICKAR = {
 export const prickar = (p: Person, ord = false) => Object.values(PRICKAR).filter(q => q.har(p))
   .map(q => ` <span class="prick" style="background:${cssFarg(q.farg)}" title="${q.namn}" aria-label="${q.namn}"></span>${ord ? ' ' + q.namn.toLowerCase() : ''}`).join('');
 // en stack i en lista: symbolen och namnet. Ett påbörjat redskap har det det ska bli med timglaset bredvid
-export const pileTxt = (p: { k: string; n: number; max: number; gor?: string }) => p.gor ? `${iconImg(p.gor)}${iconImg('paborjat', 10)}${sakNamn(p.gor)} (inte klar)` : `${iconImg(p.k)}${sakNamn(p.k)}${p.max === 1 ? '' : ` ${fmtN(p.n)} st`}`;
+export const pileTxt = (p: { k: string; n: number; max: number; gor?: string; klar?: number }) => p.gor ? `${iconImg(p.gor)}${framstegSvg(p.klar ?? 0, 10)}${sakNamn(p.gor)} (inte klar, ${Math.round((p.klar ?? 0) * 100)} %)` : `${iconImg(p.k)}${sakNamn(p.k)}${p.max === 1 ? '' : ` ${fmtN(p.n)} st`}`;
 // vad en person bär och hur mycket hen orkar
 export function carryTxt(p: Person) {
   const t = p.task, orkar = capacity(s, p), parts: string[] = [];

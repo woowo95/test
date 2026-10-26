@@ -1,5 +1,5 @@
-import { State, Person } from './typer';
-import { REDSKAP_SLAG, isTool } from './saker';
+import { MIN, State, Person } from './typer';
+import { REDSKAP_SLAG, SAKER, isTool } from './saker';
 import { usesTool } from './handlingar';
 import { alive, byId } from './folk';
 
@@ -21,6 +21,8 @@ interface Halv { gor: string; av: Record<string, number>; kvar: number; ag: numb
 // vid = stationen tinget hör till och ligger vid när ingen använder det (kniven vid slaktbänken, stationer.ts)
 export interface Ting { id: number; k: string; c: number; agare: number; hos?: number; lass?: number; x?: number; y?: number; halv?: Halv; vid?: number }
 export const tingOf = (s: State) => (s.ting ??= []);
+// hur stor del av arbetet med ett påbörjat redskap som är gjort (0 till 1), för framstegscirkeln på kartan och i panelerna
+export const halvKlar = (h: Halv) => Math.min(1, Math.max(0, 1 - h.kvar / ((SAKER[h.gor]?.skaffa?.min ?? 1) * MIN)));
 export const toolsOf = (s: State, k: string) => tingOf(s).filter(t => t.k === k);
 export const nTools = (s: State, k: string) => tingOf(s).reduce((n, t) => n + (t.k === k ? 1 : 0), 0);
 // det redskap av slagen ks som p har påbörjat (paborjat.ts)

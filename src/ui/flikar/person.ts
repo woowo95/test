@@ -1,5 +1,5 @@
-import { ACTS, ALDER, Act, DAY, Lardom, SAMTAL, SKILL_GOR, STAT_GOR, Skill, Stat, coldOf, halsaLage, hearthOf, living, roomAt, temperature, varmeDelar, viloSlag, viloTak, SLAG, SLAG_TECKEN, Person, KUNSKAPER, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, SEDER, SED_LIST, TEKNIK, BYN, Ting, ageOf, alive, byId, childrenOf, drar, heldBy, ownedBy, ownedStock, sakNamn, slagIkon, tingNamn, STACK, describe, duty, habitShare, habitTotal, KROPP, kortTal, moodOf, num, REL, relKey, stat, taskName, timeLabel } from '../../sim';
-import { hasIcon, iconImg } from '../../ikoner';
+import { ACTS, ALDER, Act, DAY, Lardom, SAMTAL, SKILL_GOR, STAT_GOR, Skill, Stat, coldOf, halsaLage, hearthOf, living, roomAt, temperature, varmeDelar, viloSlag, viloTak, SLAG, SLAG_TECKEN, Person, KUNSKAPER, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, SEDER, SED_LIST, TEKNIK, BYN, Ting, halvKlar, ageOf, alive, byId, childrenOf, drar, heldBy, ownedBy, ownedStock, sakNamn, slagIkon, tingNamn, STACK, describe, duty, habitShare, habitTotal, KROPP, kortTal, moodOf, num, REL, relKey, stat, taskName, timeLabel } from '../../sim';
+import { framstegSvg, hasIcon, iconImg } from '../../ikoner';
 import { LAG, bar, cap, carryTxt, cssFarg, durTxt, esc, hex, hsl, hjalpText, moodWord, pLink, prickar, relWord, sickNow, tempBar, tempOrd, trend, trendD } from '../hjalp';
 import { s, ui } from '../lage';
 import type { Flik } from '../panel';
@@ -140,7 +140,7 @@ function gearHtml(p: Person) {
   const hand = heldBy(s, p), own = ownedBy(s, p).filter(t => t !== hand);
   const whose = (t: Ting) => t.agare === p.id ? 'eget' : t.agare === BYN ? 'byns' : `lånat av ${byId(s, t.agare)?.name ?? 'någon'}`;
   const where = (t: Ting) => t.hos === undefined ? 'i förrådet' : `${byId(s, t.hos)?.name ?? 'någon'} har det i handen`;
-  const ting = (t: Ting, title: string, cls = 'kan') => `<span class="tnod liten ${cls}" tabindex="0" title="${esc(title)}" aria-label="${esc(title)}">${iconImg(t.halv?.gor ?? t.k, 16)}${t.halv ? `<span class="halvmark">${iconImg('paborjat', 9)}</span>` : ''}<svg class="ring" viewBox="0 0 36 36"><circle cx="18" cy="18" r="16" pathLength="100" stroke-dasharray="${Math.round(t.c * 100)} 100"/></svg></span>`;
+  const ting = (t: Ting, title: string, cls = 'kan') => `<span class="tnod liten ${cls}" tabindex="0" title="${esc(title)}" aria-label="${esc(title)}">${iconImg(t.halv?.gor ?? t.k, 16)}${t.halv ? `<span class="halvmark">${framstegSvg(halvKlar(t.halv), 9)}</span>` : ''}<svg class="ring" viewBox="0 0 36 36"><circle cx="18" cy="18" r="16" pathLength="100" stroke-dasharray="${Math.round(t.c * 100)} 100"/></svg></span>`;
   const slot = hand ? ting(hand, `I handen: ${sakNamn(hand.k).toLowerCase()}, ${whose(hand)}, ${Math.round(hand.c * 100)} %`, 'kan hand')
     : `<span class="tnod liten hand tom" tabindex="0" title="Handen är tom" aria-label="Handen är tom">✋</span>`;
   return `<h3>Utrustning</h3><div class="tekrad">${slot}${own.map(t => ting(t, `Äger: ${tingNamn(t).toLowerCase()}, ${Math.round(t.c * 100)} %, ${where(t)}`, 'pa')).join('')}</div>${stockHtml(p)}`;

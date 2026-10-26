@@ -1,5 +1,5 @@
 import { campDist } from './plats';
-import { Ting, newTing, tingOf } from './agande';
+import { Ting, halvKlar, newTing, tingOf } from './agande';
 import { stationAt, tillbakaVid } from './stationer';
 import { alive, byId, count, living, stat, ageOf, log } from './folk';
 import { getMap } from './karta';
@@ -56,7 +56,7 @@ export const LAGER = balans('lager', {
 // hus = lagerplatsen är golvet i ett förrådshus (byggnader.ts): den växer och krymper inte och räknas inte bland de vanliga
 export interface Zone { x: number; y: number; w: number; h: number; namn?: string; slag?: 'mat' | 'material'; prio?: number; hus?: number }
 // dold: det som ligger gömt i stacken (giftig svamp bland svampen, saker.ts: i)
-interface Stack { k: string; n: number; c: number; x: number; y: number; ag?: Del; dold?: number; gor?: string } // gor = vad ett påbörjat redskap ska bli (paborjat.ts)
+interface Stack { k: string; n: number; c: number; x: number; y: number; ag?: Del; dold?: number; gor?: string; klar?: number } // gor = vad ett påbörjat redskap ska bli (paborjat.ts), klar = hur mycket av det som är gjort
 // en stack som den visas: out = utanför lagerplatserna, stored = hör till byns förråd (i lagret eller precis bredvid)
 export interface Pile extends Stack { max: number; out: boolean; stored: boolean; zone: number }
 const DOLD = SAK_LIST.filter(k => SAKER[k]!.i); // slag som ligger gömda i andra stackar
@@ -263,7 +263,7 @@ function occupancy(s: State, ts = tingOf(s)) {
   for (const t of ts) if (ligger(t) && isStored(s, t.x!, t.y!)) m.set(key(t.x!, t.y!), asStack(t));
   return m;
 }
-const asStack = (t: Ting): Stack => ({ k: t.k, n: t.c, c: t.c, x: t.x!, y: t.y!, ag: t.agare !== BYN ? { [t.agare]: t.c } : undefined, gor: t.halv?.gor });
+const asStack = (t: Ting): Stack => ({ k: t.k, n: t.c, c: t.c, x: t.x!, y: t.y!, ag: t.agare !== BYN ? { [t.agare]: t.c } : undefined, gor: t.halv?.gor, klar: t.halv && halvKlar(t.halv) });
 // allt som ligger på marken och i förrådet: stackarna och redskapen
 const things = (s: State): Stack[] => [...stacksOf(s), ...lying(s).map(asStack)];
 // redskap som ingen har och som inte har någon ruta (nygjorda, tillbakalagda) läggs i förrådet, ett på varje ruta

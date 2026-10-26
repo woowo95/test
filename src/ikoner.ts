@@ -27,9 +27,10 @@ const PAL: Record<string, Record<string, string>> = {
   kniv: { h: '#7a5a36', H: '#9c7848', g: '#8f9396', G: '#c9cdd0' },
   slaktbank: { b: '#7a5a36', B: '#a8824e', d: '#4e3420', r: '#9c3328' },
   flatarbank: { b: '#7a5a36', B: '#a8824e', d: '#4e3420', y: '#c8ac5c', Y: '#ecd890', o: '#9a7444', O: '#d0aa70' },
-  // stationerna på kartan, uppifrån: lika breda som rutorna de tar (8 punkter per ruta, stationer.ts)
-  slaktbank_karta: { d: '#3e2a18', b: '#7a5a36', B: '#a8824e', g: '#5a4028', r: '#9c3328', R: '#6e1e18', s: 'rgba(0,0,0,0.35)' },
-  flatarbank_karta: { d: '#3e2a18', b: '#7a5a36', B: '#a8824e', g: '#5a4028', y: '#c8ac5c', Y: '#ecd890', o: '#9a7444', O: '#d0aa70', s: 'rgba(0,0,0,0.35)' },
+  // stationerna på kartan i blandperspektiv (ovansidan och framsidan): lika breda som rutorna de tar (8 punkter per ruta,
+  // stationer.ts); de som är högre än rutan sticker upp över rutan ovanför (foremal.ts)
+  slaktbank_karta: { b: '#4a3320', B: '#33231a', w: '#5a3a1e', W: '#8b5a2b', L: '#b07a45', H: '#d0a26a', r: '#9a1f1f', R: '#5e1010', Y: '#c02a2a', x: 'rgba(0,0,0,0.30)' },
+  flatarbank_karta: { D: '#2a1c12', d: '#4a3320', w: '#5a3a1e', W: '#8b5a2b', L: '#b07a45', H: '#d0a26a', o: '#9a7444', O: '#d0aa70', q: '#5e4226', x: 'rgba(0,0,0,0.30)' },
   skinn: { b: '#8a6440', B: '#b48a5e', d: '#5e4026' },
   metspo: { h: '#8a6a40', y: '#c8b07a', w: '#e8e2d0' },
   korg: { t: '#6e4e2e', o: '#9a6a3e', O: '#c99a62', d: '#5e3c20' },
@@ -37,7 +38,7 @@ const PAL: Record<string, Record<string, string>> = {
   timmervagg: { d: '#4a3018', b: '#8a5e34', B: '#b8885a', e: '#d8b480' },
   hogolv: { y: '#d8c070', Y: '#f0dc94', d: '#7a5a3a' },
   tragolv: { b: '#a07446', B: '#c09060', d: '#5a3c22' },
-  paborjat: { w: '#f2ece0', d: '#4a3a28', y: '#e0b050' },
+  paborjat: { w: '#f2ece0', d: '#2a241e', y: '#e0b050' },
   a_samla: AKT,
   a_jaga: AKT,
   a_fiska: AKT,
@@ -311,27 +312,40 @@ const PIX: Record<string, string[]> = {
     '.d....d.',
     '.d....d.',
   ],
-  // slaktbänken uppifrån, tre rutor bred: plankor med fogar, blod till vänster och plats för kniven till höger
+  // slaktbänken, tre rutor bred (Björn valde efter v55): en kluven stock med barken framtill, på raka ben av runda grenar,
+  // och blod som rinner över kanten ner i en pöl. Den är 11 punkter hög och sticker upp över rutan ovanför
   slaktbank_karta: [
-    '........................',
-    'dddddddddddddddddddddddd',
-    'dBBBBBBBgBBBBBBBgBBBBBBd',
-    'dbbrrbbbgbbbbbbbgbbbbbbd',
-    'dBrRRrBBgBBBBBBBgBBBBBBd',
-    'dbbrbbbbgbbbbbbbgbbbbbbd',
-    'dddddddddddddddddddddddd',
-    '.ss..................ss.',
+    '.bbbbbbbbbbbbbbbbbbbbbb.',
+    'bHHHHHHHHHHHHHHHHHHHHHHb',
+    'bLWWYYYYLLLLrLLLLLWWWWLb',
+    'bLLrrRRRRrrWWWWWWLLLLLLb',
+    'bbbbbbbbbbbbbbbbbbbbbbbb',
+    'BbbbbRbrbRbbbbbbbbbbbbbB',
+    '.BBBBRBBBBBBBBBBBBBBBBB.',
+    '..BBB.R............BBB..',
+    '..wwb.R............wwb..',
+    '..wwRRRRRR....R....wwb..',
+    '.xxrrrrrrrrRrxxxxxxxxxxx',
   ],
-  // flätarbänken uppifrån, två rutor bred: en tuss hö och ett nystan rep på plankorna
+  // flätarbänken (slöjdbänken), två rutor bred (Björn valde nr 4a efter v55): två plankor på raka ben, två stolpar med ett
+  // rep spänt emellan och en skåra framtill där bensylen ska ligga (den finns inte än, 2.3.2). 16 punkter hög
   flatarbank_karta: [
-    '................',
+    '.D............D.',
+    '.wOooOooOooOoow.',
+    '.wq..........qw.',
+    '.w............w.',
+    '.w............w.',
+    '.wddddddddddddw.',
+    'dHHHHHHHWHHHHHHd',
+    'dLLLLLLLWLDDDDDd',
+    'dLLLLLLLWLLLLLLd',
     'dddddddddddddddd',
-    'dBBYyYBBgBoOOoBd',
-    'dbYyYyYbgbOddObd',
-    'dBBYyYBBgBoOOoBd',
-    'dbbbbbbbgbbbbbbd',
-    'dddddddddddddddd',
-    '.ss..........ss.',
+    'wWWWWWWWWWWWWWWw',
+    '.wwwwwwwwwwwwww.',
+    '.DD..........DD.',
+    '.wd..........wd.',
+    '.wd..........wd.',
+    '.xxxxxxxxxxxxxxx',
   ],
   // en bänk med en tuss hö och ett nystan rep
   flatarbank: [
@@ -344,16 +358,16 @@ const PIX: Record<string, string[]> = {
     '.d....d.',
     '.d....d.',
   ],
-  // en flintkniv med skaft
+  // en kort flintkniv med smalt blad och ett skaft på snedden (Björn valde K4 efter v55)
   kniv: [
-    '......Gg',
-    '.....GGg',
-    '....GGg.',
-    '...GGg..',
-    '..hg....',
-    '.Hh.....',
-    'Hh......',
-    'h.......',
+    '........',
+    '........',
+    '........',
+    '.....Gg.',
+    '....Gg..',
+    '...hg...',
+    '..Hh....',
+    '.H......',
   ],
   // ett utbrett djurskinn med huvud, ben och svans
   skinn: [
@@ -388,16 +402,17 @@ const PIX: Record<string, string[]> = {
     'Bbbbbdbb',
     'bbbbbdbb',
   ],
-  // inte klart (paborjat.ts): ett timglas, som ritas ovanpå det som ska bli
+  // inte klart (paborjat.ts): framstegscirkeln (Björn valde A2 efter v55), här halvfylld. På kartan och i panelerna ritas
+  // den med hur långt arbetet kommit (foremal.ts, framstegSvg nedan)
   paborjat: [
-    'wwwwwwww',
-    '.dyyyyd.',
-    '..dyyd..',
-    '...dd...',
-    '...dd...',
-    '..dy.d..',
-    '.dyyyyd.',
-    'wwwwwwww',
+    '..wwww..',
+    '.wddyyw.',
+    'wdddyyyw',
+    'wdddyyyw',
+    'wddddddw',
+    'wddddddw',
+    '.wddddw.',
+    '..wwww..',
   ],
   // slagen av arbete (SLAG i handlingar.ts): enfärgade bilder över huvudet, olika alla sakers symboler
   // en hand som plockar
@@ -513,6 +528,13 @@ export function iconCanvas(k: string) {
   return (canvases[k] = c);
 }
 export const hasIcon = (k: string) => !!PIX[k];
+// framstegscirkeln för det som inte är klart (Björn valde A2 efter v55): en mörk bricka med vit kant som fylls med gult,
+// medsols från klockan tolv, ju längre arbetet kommit (p från 0 till 1)
+export function framstegSvg(p: number, size = 10) {
+  const f = Math.min(1, Math.max(0, p)), a = f * 2 * Math.PI, x = 8 + 5.6 * Math.sin(a), y = 8 - 5.6 * Math.cos(a);
+  const kil = f >= 0.999 ? '<circle cx="8" cy="8" r="5.6" fill="#e0b050"/>' : f > 0 ? `<path d="M8 8V2.4A5.6 5.6 0 ${a > Math.PI ? 1 : 0} 1 ${x.toFixed(2)} ${y.toFixed(2)}Z" fill="#e0b050"/>` : '';
+  return `<svg class="ikon" width="${size}" height="${size}" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="rgba(28,24,20,0.88)" stroke="#f2ece0" stroke-width="1.4"/>${kil}</svg>`;
+}
 // ikonen som <img> för listorna
 export function iconImg(k: string, size = 16) {
   if (!hasIcon(k)) return '';
