@@ -1430,8 +1430,8 @@ SCENARIER.paborjat = {
     const valjs = !!sp && tileOf(sp.x, sp.y) === ti;
     const r = living(s).find(x => x !== p)!, rt = uppgift(r, 'falla'); rt.tx = ft.tx; rt.ty = ft.ty; startWork(s, r, rt);
     const kvar = rt.until - s.now === fallTid(s, ti) - 600 * SEC;
-    // i en vanlig by avbryts arbete och tas upp igen
-    const v = createState(1, START);
+    // i en vanlig by avbryts arbete och tas upp igen (by 6: i by 1 råkar inget tas upp igen på 30 dygn, i by 4–6 händer det 1–4 gånger)
+    const v = createState(6, START);
     kor(v, 30 * 24);
     const st = v.stat ?? {};
     return [
