@@ -8,7 +8,7 @@ Hitta fel, döda eller verkningslösa mekanismer, brott mot reglerna i `ARKITEKT
 
 ## Arbetsgång
 
-1. **Läs först.** Läs "Läget just nu" i designdokumentet (kända brister), `ARKITEKTUR.md` (filerna och de sju reglerna) och `CLAUDE.md`. Kör `npm run snabbkoll` så att du vet att allt är grönt innan du börjar.
+1. **Läs först.** Läs "Läget just nu" i designdokumentet (kända brister), `ARKITEKTUR.md` (filerna och de åtta reglerna) och `CLAUDE.md`. Kör `npm run snabbkoll` så att du vet att allt är grönt innan du börjar.
 2. **Granska fil för fil**, i den ordning kodkartan räknar upp dem: först `src/sim/`, sedan `src/ui/` och `src/main.ts`, sist `src/test/`. Låt gärna hjälpare (en enklare modell) söka igenom en grupp filer var efter listan nedan. Ge dem listan och reglerna i uppdraget och be dem rapportera fil, rad och ett konkret exempel. Själva bedömningen och alla ändringar i simuleringen gör huvudmodellen.
 3. **Bekräfta varje fynd** innan något ändras: hitta en verklig väg dit, från en by eller ett scenario, med ett litet mätskript i `src/test/tmp-*.ts` (tas bort före commit). Ett fynd som inte går att visa är ett förslag, inte ett fel.
 4. **Rätta i små commits**, en sak i taget, efter reglerna under "Rätta" nedan.
@@ -28,6 +28,7 @@ Hitta fel, döda eller verkningslösa mekanismer, brott mot reglerna i `ARKITEKT
 - **Cacher.** Variabler för hela modulen i stället för en `WeakMap<State, …>`, och nycklar som inte säger när cachen måste räknas om (regel 4).
 - **Register.** Namn på handlingar, saker, tekniker, djur eller behov som räknas upp i koden i stället för att frågas från registret, och samma sak definierad på två ställen (regel 5).
 - **Räkning ur loggen.** Allt som läser `s.log` för att räkna (regel 6).
+- **Balanstal utan namn.** Gränser, vikter och takter som står som lösa tal i koden i stället för i systemets `balans()`-block (regel 8), och samma tal på flera ställen.
 - **Tal och enheter.** Blandade enheter (ms, s, timmar, dygn), division med noll, NaN, negativa förråd, avrundning som gör att 0,99 räknas som "ingen", och bråkdelar av saker (en sprucken flinta) som villkoren inte räknar med.
 - **Prestanda.** Loopar över hela kartan (`W * H`) eller alla personer inne i loopar som körs varje steg, och samma sak som räknas om flera gånger i samma steg.
 

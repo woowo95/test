@@ -37,3 +37,4 @@ export * from './sim/delning';
 export * from './sim/varde';
 export * from './sim/arv';
 export * from './sim/djur';
+export * from './sim/balans';

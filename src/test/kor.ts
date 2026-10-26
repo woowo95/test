@@ -1,5 +1,5 @@
 // Kör en by utan grafik och samlar nyckeltal. Vakterna larmar om något blir omöjligt (NaN, negativa förråd, folk i vattnet).
-import { createState, step, living, DAY, ageIndex, moodOf, serialize, serializeParts, getMap, fuelStock, ACT_NAMES, T, State, inMap, isWall, tileOf, foodOf, amountOf, sumOf } from '../sim';
+import { createState, step, living, DAY, ageIndex, moodOf, serialize, serializeParts, getMap, fuelStock, ACT_NAMES, T, State, inMap, isWall, tileOf, foodOf, amountOf, sumOf, okandaBalans } from '../sim';
 
 export const START = Date.parse('2026-10-20T08:00:00+02:00');
 
@@ -16,6 +16,8 @@ export interface Nyckeltal {
 export interface Resultat { seed: number; n: Nyckeltal; vakter: string[]; s: State }
 
 export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => void): Resultat {
+  const okanda = okandaBalans();
+  if (okanda.length) throw new Error(`BALANS: inget balanstal heter ${okanda.join(', ')} (se npm run talen)`);
   const s = createState(seed, START);
   const t0 = performance.now();
   const tiles = getMap(seed).tiles;

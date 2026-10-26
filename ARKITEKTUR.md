@@ -44,6 +44,7 @@ Simuleringen importerar aldrig från `ui/`. Gränssnittet importerar bara från 
 | `folk.ts`, `liv.ts` | Personer (ålder, egenskaper, tankar, logg) och liv och död: födsel, död, flytt, befolkningens reglering. Frågor om personer skrivs inte för hand utan finns som hjälpare i folk.ts: `isSick(p, now)`, `isParent(förälder, barn)`, `childrenOf`, `isKin`, `byId`, `doingAct(s, act, utom?)` (gör någon annan redan handlingen?) och `startSkills` (nykomlingens färdigheter), `ovning(p, färdighet, vinst)` (övning ökar en färdighet mot den mjuka gränsen 21, taket är 20). Snitthumör (`avgMood`) och `isSocial` ligger i samtal.ts, arbetsförmågan (`ageFactor`, `sickFactor`, `arbetsformaga`) och `kunnighet(färdighet)` (0,6 + färdighet/25) i ekonomi.ts. Naturen sätter taket för byns storlek (steg 1.7.2): `matSnitt` är maten i förrådet i dygn som glidande snitt över ungefär ett år; `matGott` (0 vid 3 dygn, 1 vid 9) ger färre barn (`barnMat`, från sju invånare), fler som flyttar (`hungerFlytt`, från åtta) och färre nybyggare som stannar. Taket nås så, inte genom svält |
 | `samtal.ts`, `seder.ts` | Samtal och relationer, och byns seder, plikt, vanor och yrkestaggar |
 | `plats.ts` | Byns läger (elden och lagerplatserna): mitten, avstånd till byn (`rektAvstand`: från en ruta till en rektangel) och `campKey` för cacher |
+| `balans.ts` | Balanstalen (regel 8): `balans('system', { … })` ger ett namngivet block per system; `balansTal()` listar alla och miljövariabeln `BALANS` ändrar dem i testerna |
 | `tid.ts`, `vader.ts`, `ekonomi.ts`, `slump.ts` | Kalendern (`kalender()`: tidsålder måndag–söndag, dag och år, det enda ställe som räknar dem; `hourOf(t)` är klockslaget), ljus, temperatur och kyla, hur länge förråden räcker, och slumpen (`STROMMAR`: en följd per system och per person; `clamp(v, a, b)` och `clampI(v, n)` finns också där; slumpad ur en lista: `pick`, `pickNarmaste` (bland de n första) och `pickViktat` (efter vikter), som drar exakt ett tal) |
 
 ## Gränssnittet, fil för fil
@@ -74,6 +75,7 @@ Simuleringen importerar aldrig från `ui/`. Gränssnittet importerar bara från 
 5. **Register i stället för listor.** Vad handlingar, saker, tekniker och flikar är finns på ett enda ställe. Resten av koden frågar registret (`ACTS[a].vila`, `SAKER[k].stack`) i stället för att räkna upp namn.
 6. **Räkna aldrig ur händelseloggen.** `s.log` rymmer bara de senaste 400 raderna och är till för att läsa. Det som ska räknas (födslar, dödsfall, gåvor, första gången något görs) räknas när det händer med `count(s, 'namn')` i `s.stat` (folk.ts; `forstaGang(s, 'namn')` räknar och säger om det var första gången, för raderna om 'byns första …'). Det som bara får hända en gång per person sparas på personen (t.ex. `p.kallad` för yrkestaggarna).
 7. **Gränssnittet visar symboler först.** Förklaringen syns när man håller musen över något (`title`) eller trycker på det.
+8. **Balanstalen har namn och står överst i systemets fil.** Ett tal som avgör hur spelet går (en gräns, en vikt, en takt, en reserv) står i ett block `const X = balans('system', { namn: tal, … })` (`balans.ts`) med en kort förklaring per tal, och koden läser `X.namn`. Då syns alla tal med `npm run talen`, och ett annat värde kan prövas utan att koden ändras: `npm run jamfor -- --satt system.namn=tal`. Talen för ett system ligger på ett ställe; skriv aldrig samma tal på två ställen.
 
 ## Recept
 
@@ -108,6 +110,7 @@ Simuleringen importerar aldrig från `ui/`. Gränssnittet importerar bara från 
 | `npm run likhet` | ca 5 s | När arbete, gång, samtal eller lärande ändras: är byarna exakt lika i spelet och vid ikappräkning? |
 | `npm run jamfor -- 35 64 --mot vNN` | ca 3–7 min | I det stora testet: samma byar med koden nu och med versionen före systemet (den senaste commit som säger "(vNN)"), by för by, tills skillnaden är avgjord (se CLAUDE.md) |
 | `npm run natur -- 16 35` | ca 3 min | Avtrycket på naturen: samma byar med och utan redskap (steg 1.7.2) |
+| `npm run talen -- [system]` | ca 2 s | Alla balanstal med namn och värde (regel 8) |
 | `npm run balans`, `takt`, `teknik`, `detaljer` | | Balansering och undersökning (se CLAUDE.md) |
 
 ## Bygga och publicera

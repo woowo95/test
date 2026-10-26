@@ -17,7 +17,8 @@
     "snabbkoll": "tsx src/test/snabbkoll.ts",
     "samma": "tsx src/test/samma.ts",
     "jamfor": "tsx src/test/jamfor.ts",
-    "natur": "tsx src/test/natur.ts"
+    "natur": "tsx src/test/natur.ts",
+    "talen": "tsx src/test/talen.ts"
   },
   "repository": {
     "type": "git",
