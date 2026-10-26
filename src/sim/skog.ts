@@ -5,7 +5,7 @@ import { groundOf, isForest, tileOf } from './mark';
 import { FOREST } from './vag';
 import { sedEvent } from './seder';
 import { knows } from './teknik';
-import { clamp, rnd } from './slump';
+import { clamp, pickNarmaste } from './slump';
 import { Act, DAY, H, HOUR, MIN, Person, State, Stock, W } from './typer';
 import { getable } from './behov';
 import { SNABBARE } from './handlingar';
@@ -42,7 +42,7 @@ export function treeSpot(s: State, taken: Set<number>): { x: number; y: number }
   }
   if (!c.length) return undefined;
   c.sort((a, b) => a.d - b.d);
-  const i = c[Math.floor(rnd(s, 'val') * Math.min(5, c.length))].i;
+  const i = pickNarmaste(s, c, 5, 'val').i;
   return { x: (i % W) + 0.5, y: Math.floor(i / W) + 0.5 };
 }
 const nearestStock = (s: State) => {

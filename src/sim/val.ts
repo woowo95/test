@@ -17,9 +17,9 @@ import { isForest, punktIRuta } from './mark';
 import { axeTask, fallTid } from './skog';
 import { GA_TID, startsOnArrival } from './paborjat';
 import { duty, dygn, habitShare, habitTotal } from './seder';
-import { clamp, pick, rnd } from './slump';
+import { clamp, pick, pickNarmaste, rnd } from './slump';
 import { ageIndex, isLight } from './tid';
-import { Act, DAY, H, HOUR, MIN, Person, Skill, State, T, W, inMap } from './typer';
+import { Act, DAY, H, HOUR, MIN, Person, Skill, Stat, State, T, W, inMap } from './typer';
 
 // ---------- val av aktivitet ----------
 // var en handling görs, efter platsen i handlingar.ts
@@ -73,7 +73,7 @@ export function spotFor(s: State, act: Act, p: Person): { x: number; y: number }
   }
   cands.sort((a, b) => a.d - b.d);
   // mat: gå dit det finns mest att hämta, inte för långt bort; annars en av de närmaste platserna
-  const c = (d.resurs ? pickSpot(s, p, d.resurs, cands) : cands[Math.floor(rnd(s, 'val', p) * Math.min(6, cands.length))]) ?? nearestWanted(s, want) ?? { x: mid.x, y: mid.y };
+  const c = (d.resurs ? pickSpot(s, p, d.resurs, cands) : pickNarmaste(s, cands, 6, 'val', p)) ?? nearestWanted(s, want) ?? { x: mid.x, y: mid.y };
   return { x: c.x + 0.5, y: c.y + 0.5 };
 }
 
@@ -172,7 +172,7 @@ function needs(s: State, p: Person, v: Val, a: number, lazy: number, light: bool
 
 // 3. på dagen: byns behov mot egen lust, vägda med pliktkänslan
 function day(s: State, p: Person, v: Val, a: number, lazy: number) {
-  const now = s.now, sd = s.seder.v;
+  const sd = s.seder.v;
   let gt: ReturnType<typeof haulJob>;
   v.dur *= PASS;
   if (a < 8) { set(v, 'leka', 'Är barn och leker'); return; }
@@ -189,8 +189,7 @@ function day(s: State, p: Person, v: Val, a: number, lazy: number) {
     const halvt = !job.repair && !s.hus?.find(h => h.id === job.bit.hus)?.klar; // ett påbörjat hus vill man göra klart, även när det sista är ett hörn
     // hungern är en fara och går före: räcker maten mindre än två och ett halvt dygn väger bygget mindre
     const col = ((job.repair ? 1.2 : halvt ? 3 : 0.8) + 3 * utan) * (ai === 3 || ai === 0 ? 1.4 : 1) * clamp((fd - 0.5) / 2, 0.1, 1);
-    const like = (4 + p.skill.hantverk + stat(p, 'flit', now) / 3) * (1 + 2 * habitShare(p, ['bygga'], tot));
-    const sc = col * like * (0.6 + rnd(s, 'val', p) * 0.8);
+    const sc = poang(s, p, col, lust(s, p, 'hantverk', 'flit', ['bygga'], tot));
     burg = Math.max(burg, col);
     if (sc > bs) { build = true; if (job.missing) best = job.item === 'torrgras' ? 'samla' : 'ved'; }
   }
@@ -218,6 +217,11 @@ function day(s: State, p: Person, v: Val, a: number, lazy: number) {
   } else leisure(s, p, v, u, lazy, ai);
 }
 
+// egen lust att arbeta med färdigheten skill: färdigheten och egenskapen som hjälper, gånger vanan (acts: handlingarna som räknas)
+const lust = (s: State, p: Person, skill: Skill, egenskap: Stat, acts: Act[], tot: number) => (4 + p.skill[skill] + stat(p, egenskap, s.now) / 3) * (1 + 2 * habitShare(p, acts, tot));
+// byns behov (col) gånger lusten, med ett slumpbrus mellan BRUS_MIN och BRUS_MIN + BRUS_SPANN (drar ett tal ur 'val')
+const BRUS_MIN = 0.6, BRUS_SPANN = 0.8;
+const poang = (s: State, p: Person, col: number, like: number) => col * like * (BRUS_MIN + rnd(s, 'val', p) * BRUS_SPANN);
 // det arbete byn behöver mest just nu, vägt mot egen lust och vana. burg = hur mycket det mest behövda behövs
 function bestWork(s: State, p: Person, fd: number, wd: number, ai: number, tot: number) {
   const fs = 1 + 0.25 * s.seder.v.forsiktighet; // en försiktig by vill ha större förråd
@@ -231,8 +235,7 @@ function bestWork(s: State, p: Person, fd: number, wd: number, ai: number, tot: 
     const yieldF = w === 'ved' || tinder ? 1 : clamp(prospectFor(s, p, w as Kind), 0.05, 1.3) * (w === 'fiske' ? HAND_FISH : 1) * toolGain(s, p, w);
     const season = ACTS[w].sasong![ai];
     const col = need * (w === 'ved' ? 1 : tinder ? Math.max(0.8, season) * 3 : season * yieldF);
-    const like = (4 + p.skill[w as Skill] + stat(p, ACTS[w].egenskap!, s.now) / 3) * (1 + 2 * habitShare(p, [w], tot)); // egen lust och vana
-    const sc = col * like * (0.6 + rnd(s, 'val', p) * 0.8);
+    const sc = poang(s, p, col, lust(s, p, w as Skill, ACTS[w].egenskap!, [w], tot)); // egen lust och vana
     burg = Math.max(burg, col);
     if (sc > bs) { bs = sc; best = w; }
   }

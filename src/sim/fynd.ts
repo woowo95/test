@@ -1,11 +1,12 @@
 import { campCenter, campDist } from './plats';
-import { count, stat, log, think } from './folk';
+import { count, forstaGang, stat, log, think } from './folk';
 import { getMap, hash, vnoise } from './karta';
 import { Markslag, groundOf, markslag } from './mark';
 import { sedEvent } from './seder';
-import { chance, clamp, clampI, rnd } from './slump';
+import { chance, clamp, clampI, pickNarmaste, rnd } from './slump';
 import { kn, learnK, useK } from './kunskap';
 import { ageIndex } from './tid';
+import { kunnighet } from './ekonomi';
 import { addTo, amountOf, foodOf } from './lager';
 import { DAY, H, HOUR, HOUR_S, Person, State, T, W, inMap, mapKey } from './typer';
 import { FOREST, isSoil } from './vag';
@@ -360,7 +361,7 @@ export function flintSpot(s: State, area?: (x: number, y: number) => boolean): {
   }
   if (!c.length) return undefined;
   c.sort((a, b) => a.d - b.d);
-  const p = c[Math.floor(rnd(s, 'val') * Math.min(8, c.length))];
+  const p = pickNarmaste(s, c, 8, 'val');
   return { x: p.x + 0.5, y: p.y + 0.5 };
 }
 
@@ -373,7 +374,7 @@ const GIFT = 'giftsvamp'; // giftig svamp som av misstag hamnat i förrådet (sy
 export function pickMushrooms(s: State, p: Person, x: number, y: number, dtSec: number, got: Record<string, number>) {
   const kv = richness(s, 'kantarell', x, y), gv = richness(s, 'spindling', x, y);
   if (kv + gv <= 0) return 0;
-  const rate = 0.5 * SNABBARE * (0.6 + p.skill.samla / 25) * (kv + gv);
+  const rate = 0.5 * SNABBARE * kunnighet(p.skill.samla) * (kv + gv);
   if (!chance(s, rate / HOUR_S, dtSec, 'arbete', p)) return 0;
   if (rnd(s, 'arbete', p) < kv / (kv + gv)) {
     takeFrom(s, 'kantarell', x, y, 0.5);
@@ -426,8 +427,8 @@ export function handFish(s: State, p: Person, x: number, y: number, ageF: number
   st.n++; count(s, 'fiskeNapp');
   const hold = HALL[gear] + p.skill.fiske / 40 + stat(p, 'uthallighet', s.now) / 100;
   if (rnd(s, 'arbete', p) >= hold) return 0;
-  st.k++; count(s, 'fisk'); if (spear) count(s, 'spjutFisk'); if (gear === 'metspo') count(s, 'metFisk');
+  st.k++; const forsta = forstaGang(s, 'fisk'); if (spear) count(s, 'spjutFisk'); if (gear === 'metspo') count(s, 'metFisk');
   takeFrom(s, 'fiske', x, y, 1);
-  if (s.stat!.fisk === 1) log(s, `${p.name} fångade byns första abborre ${spear ? 'med spjut' : gear === 'metspo' ? 'med metspö' : 'med händerna'}, efter ${s.stat!.fiskeForsok} försök.`, 'world', [p.id]);
+  if (forsta) log(s, `${p.name} fångade byns första abborre ${spear ? 'med spjut' : gear === 'metspo' ? 'med metspö' : 'med händerna'}, efter ${s.stat!.fiskeForsok} försök.`, 'world', [p.id]);
   return 1;
 }

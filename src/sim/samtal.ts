@@ -1,5 +1,5 @@
 import { ageOf, getRel, isKin, living, log, similarity, stat, think } from './folk';
-import { clamp, rnd } from './slump';
+import { clamp, pickViktat, rnd } from './slump';
 import { DAY, HOUR, Person, State } from './typer';
 import { pair } from './varld';
 import { share } from './minne';
@@ -15,10 +15,8 @@ export function converse(s: State, a: Person, others: Person[], events?: TalkEve
   const now = s.now;
   if (!others.length) return;
   // välj samtalspartner viktad efter relation
-  let tot = 0;
-  const w = others.map(b => { const r = getRel(s, a, b); const v = Math.max(0.1, 1 + r.op / 40 + r.chem * 0.5 + (b.partner === a.id ? 1.5 : 0)); tot += v; return v; });
-  let x = rnd(s, 'samtal', a) * tot, b = others[0];
-  for (let i = 0; i < others.length; i++) { x -= w[i]; if (x <= 0) { b = others[i]; break; } }
+  const w = others.map(b => { const r = getRel(s, a, b); return Math.max(0.1, 1 + r.op / 40 + r.chem * 0.5 + (b.partner === a.id ? 1.5 : 0)); });
+  const b = pickViktat(s, others, w, 'samtal', a);
   const r = getRel(s, a, b);
   const aa = ageOf(a, now), ba = ageOf(b, now);
   const mood = moodOf(a, now);

@@ -11,6 +11,8 @@ import { foodOf } from './lager';
 // sist i sin kedja; (kedja * a) * b är inte alltid samma flyttal som kedja * (a * b)
 export const ageFactor = (a: number) => a < 14 ? 0.3 : a > 60 ? 0.6 : 1;
 export const sickFactor = (p: Person, now: number) => isSick(p, now) ? 0.3 : 1;
+// hur mycket en färdighet (0–20) hjälper i arbetet: 0,6 utan färdighet, 1,4 med högsta
+export const kunnighet = (skill: number) => 0.6 + skill / 25;
 export const arbetsformaga = (p: Person, a: number, now: number) => ageFactor(a) * sickFactor(p, now);
 export function workRate(s: State, p: Person, act: Act) {
   const a = ageOf(p, s.now);

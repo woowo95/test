@@ -1,4 +1,4 @@
-import { ageOf, count, doingAct, living, log } from './folk';
+import { ageOf, count, doingAct, forstaGang, living, log } from './folk';
 import { knows } from './teknik';
 import { clamp, rnd } from './slump';
 import { Act, State, Person } from './typer';
@@ -34,10 +34,9 @@ export function wearUsed(s: State, p: Person, n: number) {
   const r = toolRow(p.task), k = p.task?.tool;
   if (!r?.haller || !k) return;
   if (!wearTool(s, p, k, n / r.haller)) return;
-  const tr = SAKER[k]?.trasig;
-  if (tr) count(s, tr.stat);
+  const tr = SAKER[k]?.trasig, forsta = tr ? forstaGang(s, tr.stat) : false;
   if (p.task) p.task.tool = undefined;
-  if (tr?.text && s.stat![tr.stat] === 1) log(s, tr.text.replace('{namn}', p.name), 'world', [p.id]);
+  if (tr?.text && forsta) log(s, tr.text.replace('{namn}', p.name), 'world', [p.id]);
 }
 const sharpTool = (s: State) => amountOf(s, 'yxa') >= 1 ? 'yxa' : amountOf(s, 'flinta') >= 1 ? 'flinta' : undefined;
 // ett flintspjut kräver en flinta utöver den som sparas att tända eld med, rep och en gren
@@ -55,12 +54,10 @@ export const canStartSpear = (s: State, p: Person, k: string) => k === 'flintspj
 export function spearDone(s: State, p: Person, k: string) {
   addTool(s, k, p);
   if (k === 'flintspjut') {
-    count(s, 'flintspjutGjorda');
-    if (s.stat!.flintspjutGjorda === 1) log(s, `${p.name} gjorde byns första flintspjut: en flintspets surrad med rep vid en pinne. Det håller mycket längre än ett träspjut.`, 'world', [p.id]);
+    if (forstaGang(s, 'flintspjutGjorda')) log(s, `${p.name} gjorde byns första flintspjut: en flintspets surrad med rep vid en pinne. Det håller mycket längre än ett träspjut.`, 'world', [p.id]);
     return;
   }
-  count(s, 'spjutGjorda');
-  if (s.stat!.spjutGjorda === 1) log(s, `${p.name} täljde byns första träspjut med ${sharpTool(s) === 'yxa' ? 'en yxa' : 'en flintsten'}. Nu går fisket lättare.`, 'world', [p.id]);
+  if (forstaGang(s, 'spjutGjorda')) log(s, `${p.name} täljde byns första träspjut med ${sharpTool(s) === 'yxa' ? 'en yxa' : 'en flintsten'}. Nu går fisket lättare.`, 'world', [p.id]);
 }
 // ett spjut görs på en gång (i testerna)
 export function makeSpear(s: State, p: Person) {
@@ -93,8 +90,7 @@ const wantsRod = (s: State, p: Person) => (!!halvOf(s, p, ['metspo']) || canMake
 export function makeRod(s: State, p: Person) { if (canMakeRod(s, p)) { takeRecipe(s, p, 'metspo'); rodDone(s, p); } }
 export function rodDone(s: State, p: Person) {
   addTool(s, 'metspo', p);
-  count(s, 'metspoGjorda');
-  if (s.stat!.metspoGjorda === 1) log(s, `${p.name} gjorde byns första metspö, med en krok av ben.`, 'world', [p.id]);
+  if (forstaGang(s, 'metspoGjorda')) log(s, `${p.name} gjorde byns första metspö, med en krok av ben.`, 'world', [p.id]);
 }
 
 // ---------- redskap: korg ----------
@@ -108,8 +104,7 @@ export const canMakeBasket = (s: State, p: Person) => getable(s, p, 'torrgras') 
 const wantsBasket = (s: State, p: Person) => (!!halvOf(s, p, ['korg']) || knows(p, 'korg') && canMakeBasket(s, p)) && baskets(s) < basketsWanted(s) && !doingAct(s, 'korg', p);
 export function basketDone(s: State, p: Person) {
   addTool(s, 'korg', p);
-  count(s, 'korgarGjorda');
-  if (s.stat!.korgarGjorda === 1) log(s, `${p.name} flätade byns första korg av hö.`, 'world', [p.id]);
+  if (forstaGang(s, 'korgarGjorda')) log(s, `${p.name} flätade byns första korg av hö.`, 'world', [p.id]);
 }
 
 // ---------- redskap: kniv och slakt ----------
@@ -135,8 +130,7 @@ export const wantsKnife = (s: State, p: Person) => (!!halvOf(s, p, ['kniv']) || 
 export function makeKnife(s: State, p: Person) { if (canMakeKnife(s, p)) { takeRecipe(s, p, 'kniv'); knifeDone(s, p); } }
 export function knifeDone(s: State, p: Person) {
   addTool(s, 'kniv', p);
-  count(s, 'knivarGjorda');
-  if (s.stat!.knivarGjorda === 1) log(s, `${p.name} gjorde byns första flintkniv. Nu kan viltet slaktas.`, 'world', [p.id]);
+  if (forstaGang(s, 'knivarGjorda')) log(s, `${p.name} gjorde byns första flintkniv. Nu kan viltet slaktas.`, 'world', [p.id]);
 }
 // det finns vilt att slakta (minst en halv kanin) och en kniv som ingen annan slaktar med
 export const canSlaughter = (s: State, p: Person) => knows(p, 'kniv') && freeTools(s, p, 'kniv') >= 1 && vilt(s) >= KANIN / 2 && !doingAct(s, 'slakta', p);

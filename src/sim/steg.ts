@@ -9,7 +9,7 @@ import { arbetsformaga, foodDays, workRate } from './ekonomi';
 import { TRY_SEC, growFynd, handFish, packFynd, pickMushrooms, richness, takeFrom } from './fynd';
 import { coldOf, temperature } from './vader';
 import { addFuel, canLight, fireWant, forageItems, fuelFor, hearthOf, heatAt, igniterOf, stepFire, takeCoal, takeFuel, tryLight } from './eld';
-import { ageOf, alive, byId, count, isSick, living, log, stat, think } from './folk';
+import { ageOf, alive, byId, count, forstaGang, isSick, living, log, ovning, stat, think } from './folk';
 import { getMap } from './karta';
 import { barnMat, birth, birthWish, die, regulate } from './liv';
 import { WEAR, groundOf, growGround, packGround, tileOf } from './mark';
@@ -223,7 +223,7 @@ function taskStep(s: State, p: Person, a: number, t1: number, dtSec: number, lea
       MEDAN[tk.act]?.(s, p, tk, used);
       if (d.arbete && p.task === tk && tk.phase === 'do') workStep(s, p, tk, used, a, learn);
       // (bygget kan just ha skickat iväg personen efter mer material)
-      if (tk.phase === 'do' && d.hantverk) p.skill.hantverk = clamp(p.skill.hantverk + used / HOUR_S * 0.1 * learn * (1 - p.skill.hantverk / 21), 0, 20);
+      if (tk.phase === 'do' && d.hantverk) ovning(p, 'hantverk', used / HOUR_S * 0.1 * learn);
       if (d.vandra) wear(groundOf(s), tileOf(tk.tx, tk.ty), WEAR * GANG * 0.08 * d.vandra.v * used); // man rör sig på platsen
     }
     // vana: tiden räknas mot yrkestaggar
@@ -361,8 +361,7 @@ function workStep(s: State, p: Person, tk: Task, dtSec: number, a: number, learn
     // man fångar hela djur, än så länge bara kaniner. Chansen är sådan att man i snitt får lika mycket som platsen ger.
     // Kaninen fyller famnen och bärs hem hel
     if (y > 0 && rnd(s, 'arbete', p) < y / KANIN) {
-      count(s, 'kaniner');
-      if (s.stat!.kaniner === 1) log(s, `${p.name} fångade byns första kanin och bar hem den hel.`, 'world', [p.id]);
+      if (forstaGang(s, 'kaniner')) log(s, `${p.name} fångade byns första kanin och bar hem den hel.`, 'world', [p.id]);
       tk.carry += KANIN;
     }
   }
@@ -373,7 +372,7 @@ function workStep(s: State, p: Person, tk: Task, dtSec: number, a: number, learn
   }
   const sk = d.arbete!;
   const before = p.skill[sk];
-  p.skill[sk] = clamp(p.skill[sk] + dtSec / HOUR_S * 0.12 * learn * (0.4 + stat(p, 'intelligens', now) / 20) * (1 - p.skill[sk] / 21), 0, 20);
+  ovning(p, sk, dtSec / HOUR_S * 0.12 * learn * (0.4 + stat(p, 'intelligens', now) / 20));
   if (before < 16 && p.skill[sk] >= 16) {
     const title = `Mästare i ${SKILL_NAMES[sk].toLowerCase()}`, first = !s.people.some(q => q.fame.includes(title));
     p.fame.push(title); log(s, `${p.name} har blivit en mästare i ${SKILL_NAMES[sk].toLowerCase()}.`, 'skill', [p.id]);

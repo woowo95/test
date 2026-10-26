@@ -2,12 +2,13 @@ import { State, Person, HOUR, DAY, GREN } from './typer';
 import { FOOD, REDSKAP_SLAG, SAKER, SAK_LIST, isTool } from './saker';
 import { actsOf, usesTool } from './handlingar';
 import { ageOf, alive, byId, count, getRel, isKin, isParent, living, log, stat, think } from './folk';
-import { chance, clamp, rnd } from './slump';
+import { chance, clamp, pickViktat, rnd } from './slump';
 import { Ting, tingOf } from './agande';
-import { BYN, Del, addDel } from './egendom';
+import { BYN, Del, addDel, sumOf } from './egendom';
 import { amountOf, mayTake, ownMove, ownsAmount, takeFood, use } from './lager';
 import { emberOn, fetchFuel, fireWant } from './eld';
 import { eatPoison } from './fynd';
+import { habitShare } from './seder';
 import { grundvarde } from './varde';
 
 // ---------- behovsstegen ----------
@@ -96,6 +97,8 @@ export function needLadder(s: State, p: Person, dtSec: number) {
   }
 }
 const isFamily = (g: Person, m: Person) => isParent(g, m) || g.partner === m.id || isKin(g, m);
+// g är vaken (familjen kan man väcka) och så nära m att m kan be g om något
+const narvarande = (g: Person, m: Person) => (g.task?.act !== 'sova' || isFamily(g, m)) && Math.hypot(g.x - m.x, g.y - m.y) <= FRAGA_R;
 // det g har över att ge m. En förälder delar med sitt barn också det sista, partner och släkt behåller en portion
 // åt sig själva, andra så mycket de själva behöver (b.kvar)
 const overOf = (s: State, g: Person, b: Behov, m: Person) =>
@@ -104,7 +107,7 @@ const overOf = (s: State, g: Person, b: Behov, m: Person) =>
 // ger bara den som vill ge (w > 0), ett byte gör man med alla man inte är osams med
 const osams = (s: State, g: Person, m: Person) => getRel(s, g, m).op < -10;
 function kretsen(s: State, m: Person, har: (g: Person) => boolean, w: (g: Person) => number, byte = false) {
-  return living(s).filter(g => g !== m && (g.task?.act !== 'sova' || isFamily(g, m)) && Math.hypot(g.x - m.x, g.y - m.y) <= FRAGA_R && har(g) && !osams(s, g, m))
+  return living(s).filter(g => g !== m && narvarande(g, m) && har(g) && !osams(s, g, m))
     .map(g => ({ g, w: w(g) })).filter(x => byte || x.w > 0).sort((a, b) => b.w - a.w || a.g.id - b.g.id).map(x => x.g);
 }
 const vilja = (s: State, m: Person, b: Behov) => (g: Person) => willing(s, g, m, ownFor(s, g, b) / b.kvar);
@@ -120,15 +123,19 @@ function tradeAround(s: State, m: Person, b: Behov) {
 }
 // m byter till sig en portion (b.mangd) av det g har över för behovet
 function tradeFor(s: State, m: Person, g: Person, b: Behov) {
-  let rest = Math.min(overOf(s, g, b, m), b.mangd(m, s.now));
+  const rest = Math.min(overOf(s, g, b, m), b.mangd(m, s.now));
   if (rest < b.minst) return false;
+  return byte(s, m, g, delAv(s, g, b, rest), { behov: behovAv(s, m, b.slag[0]), minst: b.minst, fara: b.fara(s, m), typ: b.id, utom: b.slag }) > 0;
+}
+// delar upp en portion (rest, i behovets enheter) mellan slagen som g äger: det m byter till sig av g
+function delAv(s: State, g: Person, b: Behov, rest: number) {
   const vill: Vara[] = [];
   for (const k of b.slag) {
     if (rest <= 1e-9) break;
     const n = Math.min(ownsAmount(s, g, k), rest / perOf(b, k));
     if (n > 1e-9) { vill.push({ k, n }); rest -= n * perOf(b, k); }
   }
-  return byte(s, m, g, vill, { behov: behovAv(s, m, b.slag[0]), minst: b.minst, fara: b.fara(s, m), typ: b.id, utom: b.slag }) > 0;
+  return vill;
 }
 // m ber g om det m saknar. Ger g? (Hur gärna man ger: agande.ts)
 function gift(s: State, m: Person, g: Person, n: Behov) {
@@ -156,15 +163,9 @@ export function askForGift(s: State, a: Person, b: Person) {
 // elden på kvällar och nätter (val.ts), så det är då de flesta sådana byten blir av
 function eveningTrade(s: State, a: Person, b: Person) {
   for (const n of BEHOV) for (const [m, g] of [[a, b], [b, a]]) {
-    let rest = Math.min(n.kvar - ownFor(s, m, n), ownFor(s, g, n) - n.kvar);
+    const rest = Math.min(n.kvar - ownFor(s, m, n), ownFor(s, g, n) - n.kvar);
     if (rest < n.minst) continue;
-    const vill: Vara[] = [];
-    for (const k of n.slag) {
-      if (rest <= 1e-9) break;
-      const x = Math.min(ownsAmount(s, g, k), rest / perOf(n, k));
-      if (x > 1e-9) { vill.push({ k, n: x }); rest -= x * perOf(n, k); }
-    }
-    if (byte(s, m, g, vill, { behov: behovAv(s, m, n.slag[0]), minst: n.minst, fara: 0, typ: n.id, utom: n.slag, delad: true })) return true;
+    if (byte(s, m, g, delAv(s, g, n, rest), { behov: behovAv(s, m, n.slag[0]), minst: n.minst, fara: 0, typ: n.id, utom: n.slag, delad: true })) return true;
   }
   return false;
 }
@@ -173,16 +174,13 @@ function eveningTrade(s: State, a: Person, b: Person) {
 function victimOf(s: State, p: Person, b: Behov) {
   const emp = stat(p, 'empati', s.now);
   if (emp >= STJAL_ALDRIG || b.fara(s, p) <= emp / STJAL_ALDRIG) return;
-  let tot = 0;
   const cands = living(s).filter(q => q !== p).map(q => {
     const own = ownFor(s, q, b);
     const w = own >= b.minst ? own * clamp(1 - getRel(s, p, q).op / 50, 0.2, 3) : 0; // helst av den man inte tycker om
-    tot += w; return { q, w };
+    return { q, w };
   }).filter(c => c.w > 0);
-  if (!tot) return;
-  let x = rnd(s, 'dela', p) * tot;
-  for (const c of cands) { x -= c.w; if (x <= 0) return c.q; }
-  return cands[cands.length - 1].q;
+  if (!cands.length) return;
+  return pickViktat(s, cands.map(c => c.q), cands.map(c => c.w), 'dela', p, true);
 }
 // key = behovet (mat, ved) eller slaget (material). lindrig = material till ett arbete
 export function stole(s: State, tjuv: Person, offer: Person, key: string, n: number, lindrig = false) {
@@ -221,7 +219,7 @@ export const getable = (s: State, p: Person, k: string) => aldrigStjal(s, p) ? m
 // materialet till ett redskap efter receptet (saker.ts: skaffa.av), till ens eget arbete: hur mycket av varje som togs
 export function takeRecipe(s: State, p: Person, k: string) {
   const av: Record<string, number> = {};
-  for (const [m, n] of Object.entries(SAKER[k]?.skaffa?.av ?? {})) av[m] = Object.values(takeMaterial(s, p, m, n)).reduce((a, b) => a + b, 0);
+  for (const [m, n] of Object.entries(SAKER[k]?.skaffa?.av ?? {})) av[m] = sumOf(takeMaterial(s, p, m, n));
   return av;
 }
 export function takeMaterial(s: State, p: Person, k: string, n: number, common = false, kom?: Record<string, number>): Del {
@@ -237,7 +235,7 @@ export function takeMaterial(s: State, p: Person, k: string, n: number, common =
   let rest = n - egen;
   // be den i närheten som har och helst ger (familjen kan man väcka)
   if (rest > 1e-9) {
-    const ask = living(s).filter(g => g !== p && ownsAmount(s, g, k) > 1e-9 && (g.task?.act !== 'sova' || isFamily(g, p)) && Math.hypot(g.x - p.x, g.y - p.y) <= FRAGA_R)
+    const ask = living(s).filter(g => g !== p && ownsAmount(s, g, k) > 1e-9 && narvarande(g, p))
       .sort((a, b) => willing(s, b, p, ownsAmount(s, b, k) / rest) - willing(s, a, p, ownsAmount(s, a, k) / rest) || a.id - b.id);
     for (const g of ask) {
       if (rest <= 1e-9) break;
@@ -298,19 +296,12 @@ export function lends(s: State, owner: number, p: Person) {
 // Byten och gåvor i samtal: den som saknar ett redskap hen behöver i sitt arbete tar upp det. Den andra har ett redskap
 // över (har två av slaget, eller arbetar inte med det). Har den som frågar något över som är värt nog blir det ett byte
 // (byten nedan), annars kanske en gåva. Viljan är willing. Gåvan gör dem närmare.
-// hur stor del av sin tid p arbetar med redskapet
-function useShare(p: Person, k: string) {
-  let tot = 0, n = 0;
-  for (const a in p.habit) tot += p.habit[a];
-  for (const a of actsOf(k)) n += p.habit[a] ?? 0;
-  return tot > 0 ? n / tot : 0;
-}
 const ownsKind = (s: State, p: Person, k: string) => tingOf(s).some(t => t.agare === p.id && t.k === k);
-const needsTool = (s: State, p: Person, k: string) => !ownsKind(s, p, k) && useShare(p, k) > 0.1;
+const needsTool = (s: State, p: Person, k: string) => !ownsKind(s, p, k) && habitShare(p, actsOf(k)) > 0.1;
 // ett redskap p har över: hen har fler av slaget, eller arbetar knappt med det. Inte det hen arbetar med just nu
 function spare(s: State, p: Person, k: string) {
   const own = tingOf(s).filter(t => t.agare === p.id && t.k === k);
-  if (own.length < 2 && useShare(p, k) >= 0.03) return;
+  if (own.length < 2 && habitShare(p, actsOf(k)) >= 0.03) return;
   return own.filter(t => !(t.hos === p.id && usesTool(p.task) === k)).sort((a, b) => b.c - a.c)[0];
 }
 function give(t: Ting, g: Person, m: Person) {

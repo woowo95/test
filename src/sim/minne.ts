@@ -5,7 +5,7 @@ import { Kind, SIGHT, STEN_NARA, prospect, regrowOf, richness, shoreOf, standAt,
 import { getMap } from './karta';
 import { groundOf, tileOf } from './mark';
 import { kn, learnK } from './kunskap';
-import { clamp, rnd } from './slump';
+import { clamp, pickViktat, rnd } from './slump';
 import { ageIndex, lightLevel } from './tid';
 import { DAY, H, HOUR, LKind, Lardom, Person, Rel, State, T, W } from './typer';
 import { FOREST } from './vag';
@@ -178,11 +178,8 @@ export function share(s: State, a: Person, b: Person, r: Rel, kind: string) {
   const talk = 0.03 + (stat(a, 'karisma', now) + stat(a, 'empati', now)) / 200 + (kind === 'berättelse' ? 0.35 : kind === 'djupt samtal' ? 0.12 : 0);
   if (a.lardomar?.length && rnd(s, 'minne', a) < talk) {
     // man berättar helst om rädslor, rika platser och platser som visat sig sämre än man trott
-    let tot = 0;
-    const w = a.lardomar.map(l => { const v = (l.k === 'fara' ? 1.5 : l.k === 'flinta' ? 1 : nyhet(s, l) ? Math.max(1, l.v) : l.v) * l.c; tot += v; return v; });
-    let x = rnd(s, 'minne', a) * tot, l = a.lardomar[0];
-    for (let i = 0; i < w.length; i++) { x -= w[i]; if (x <= 0) { l = a.lardomar[i]; break; } }
-    tell(s, a, b, l, r);
+    const w = a.lardomar.map(l => (l.k === 'fara' ? 1.5 : l.k === 'flinta' ? 1 : nyhet(s, l) ? Math.max(1, l.v) : l.v) * l.c);
+    tell(s, a, b, pickViktat(s, a.lardomar, w, 'minne', a), r);
   }
   // kunskap: den som kan något bättre lär ut lite
   if (a.kunskap) for (const k in a.kunskap) {

@@ -2,13 +2,14 @@ import { addTo, amountOf, dropLoad, fetchSpot, isCarrying, takeLimit, use } from
 import { getable, takeMaterial } from './behov';
 import { Del, addDel } from './egendom';
 import { coldOf, temperature } from './vader';
-import { ageOf, count, isSick, log, stat, think } from './folk';
+import { ageOf, count, isSick, log, ovning, stat, think } from './folk';
 import { flintFactor, stoneDist, takeFrom } from './fynd';
 import { observe } from './minne';
 import { getMap } from './karta';
 import { tileOf } from './mark';
 import { moodOf } from './samtal';
 import { duty, sedEvent } from './seder';
+import { kunnighet } from './ekonomi';
 import { chance, clamp, rnd } from './slump';
 import { ageIndex, isLight } from './tid';
 import { kronika } from './historik';
@@ -100,7 +101,7 @@ export function tryLight(s: State, p: Person) {
   else takeMaterial(s, p, 'kol', 1, true); // lite kol kan ersätta grenarna
 
   f.tries++; f.tryTotal++;
-  p.skill.elda = clamp(p.skill.elda + 0.08 * (0.5 + p.pot.intelligens / 20) * (1 - p.skill.elda / 21), 0, 20);
+  ovning(p, 'elda', 0.08 * (0.5 + p.pot.intelligens / 20));
   const c = ig.chance * (0.5 + p.skill.elda / 20 + stat(p, 'intelligens', s.now) / 40) * (ageIndex(s) === 0 ? 0.6 : 1) * ((f.ash ?? 0) >= 1 ? 1.5 : 1) // en gammal kolhög tar lättare fyr
     * (1 + (f.tries - 1) / FORSOK_LARA); // varje misslyckat försök sedan elden brann gör nästa lättare
   if (rnd(s, 'eld', p) < c) { lightFire(s, p); return true; }
@@ -129,7 +130,7 @@ export function addFuel(s: State, p: Person, n: number) {
   f.fuel += put; giveBack(s, n - put);
   f.fills[p.id] = (f.fills[p.id] ?? 0) + 1;
   fireLog(s, { k: 'fyll', id: p.id, n: put });
-  p.skill.elda = clamp(p.skill.elda + 0.01 * (1 - p.skill.elda / 21), 0, 20);
+  ovning(p, 'elda', 0.01);
 }
 function assign(s: State, p: Person, act: Act, tx: number, ty: number, dur: number, why: string) {
   if (p.task && isCarrying(p.task)) dropLoad(s, p.task, p.x, p.y, p.id); // bördan läggs ner där hen står, den försvinner inte
@@ -202,7 +203,7 @@ const GRASS_SEASON = [0.25, 0.6, 1, 1.3];
 // samling hittar tändmaterial, sten och flinta när förrådet behöver det
 export function forageItems(s: State, p: Person, dtSec: number): Record<string, number> | undefined {
   const ai = ageIndex(s), want = tinderWant(s), hrs = dtSec / HOUR_S * SNABBARE; // allt man skaffar går fortare sedan steg 1.5.13
-  const sk = 0.6 + p.skill.samla / 25;
+  const sk = kunnighet(p.skill.samla);
   const got: Record<string, number> = {};
   if (amountOf(s, 'torrgras') < want) got.torrgras = 3 * GRASS_SEASON[ai] * sk * hrs;
   if (amountOf(s, 'grenar') < want) got.grenar = 3 * (ai === 0 ? 0.6 : 1) * sk * hrs;

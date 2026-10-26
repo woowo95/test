@@ -38,4 +38,15 @@ export const clamp = (v: number, a: number, b: number) => (v < a ? a : v > b ? b
 export const clampI = (v: number, n: number) => clamp(Math.floor(v), 0, n - 1); // rutan (0 till n - 1) som punkten v ligger i, närmaste ruta utanför kartan
 export function gauss(s: State, k: Strom, p?: Person) { return (rnd(s, k, p) + rnd(s, k, p) + rnd(s, k, p) - 1.5) / 1.5; }
 export function pick<X>(s: State, arr: X[], k: Strom, p?: Person): X { return arr[Math.floor(rnd(s, k, p) * arr.length)]; }
+// slumpar ett av de n första i arr, som ska vara sorterad med det bästa först (en dragning, också när listan är tom)
+export function pickNarmaste<X>(s: State, arr: X[], n: number, k: Strom, p?: Person): X { return arr[Math.floor(rnd(s, k, p) * Math.min(n, arr.length))]; }
+// slumpar ett av items med chans efter vikterna (en dragning). Ger avrundningen något över efter sista elementet tas det
+// första, eller det sista med sista = true
+export function pickViktat<X>(s: State, items: X[], vikter: number[], k: Strom, p?: Person, sista = false): X {
+  let tot = 0;
+  for (const v of vikter) tot += v;
+  let x = rnd(s, k, p) * tot;
+  for (let i = 0; i < items.length; i++) { x -= vikter[i]; if (x <= 0) return items[i]; }
+  return items[sista ? items.length - 1 : 0];
+}
 export function chance(s: State, ratePerSec: number, dtSec: number, k: Strom, p?: Person) { return rnd(s, k, p) < 1 - Math.exp(-ratePerSec * dtSec); }

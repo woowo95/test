@@ -46,6 +46,10 @@ export function startSkills(s: State, p: Person, age: number) {
   for (const k of SKILLS) p.skill[k] = clamp((age - 8) * 0.25 * (0.4 + rnd(s, 'folk')) * (p.pot.intelligens / 12), 0, 12);
 }
 
+// övning: färdigheten k ökar med vinst gånger det som återstår till den mjuka gränsen (21), högst taket (20)
+const SKILL_SOFT = 21, SKILL_MAX = 20;
+export function ovning(p: Person, k: Skill, vinst: number) { p.skill[k] = clamp(p.skill[k] + vinst * (1 - p.skill[k] / SKILL_SOFT), 0, SKILL_MAX); }
+
 export function newPerson(s: State, sex: 'm' | 'k', born: number, mother?: Person, father?: Person): Person {
   const pot = {} as Record<Stat, number>;
   for (const k of STATS) {
@@ -97,6 +101,8 @@ export function log(s: State, text: string, kind: LogEntry['kind'], ids: number[
 }
 // räknar det som händer i byn (statistiken i s.stat)
 export const count = (s: State, k: string, n = 1) => { (s.stat ??= {})[k] = (s.stat[k] ?? 0) + n; };
+// räknar k och ger true första gången det händer i byn (för raderna om 'byns första …' i loggen)
+export const forstaGang = (s: State, k: string) => { count(s, k); return s.stat![k] === 1; };
 export function think(p: Person, text: string, v: number, now: number, dur: number) {
   p.thoughts = p.thoughts.filter(t => t.text !== text);
   p.thoughts.push({ text, v, until: now + dur });

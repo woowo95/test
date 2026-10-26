@@ -1,9 +1,10 @@
-import { ageOf, count, living, log, stat } from './folk';
+import { ageOf, count, forstaGang, living, log, stat } from './folk';
 import { Bit, Hus, MATERIAL, bitsOf, blocked, freeNear, gridOf, housesOf, husById, touch } from './byggnad';
 import { getMap } from './karta';
 import { groundOf, punktIRuta } from './mark';
 import { campCenter, rektAvstand } from './plats';
 import { sedEvent } from './seder';
+import { kunnighet } from './ekonomi';
 import { knows } from './teknik';
 import { amountOf, changed, nearZone, ownMove, ownsAmount, use, usable, zonesOf } from './lager';
 import { freeTools } from './agande';
@@ -225,13 +226,13 @@ export function toWalls(s: State, x: number, y: number, n: number, hus?: number,
 // en stunds arbete på en ruta. Ger true när rutan är klar
 export function workOn(s: State, p: Person, b: Bit, dtSec: number) {
   const M = MATERIAL[b.m], repair = b.b >= 1;
-  const rate = dtSec / HOUR_S / (M.tim || 0.01) * (0.6 + p.skill.hantverk / 25) * (ageOf(p, s.now) < 16 ? 0.6 : 1);
+  const rate = dtSec / HOUR_S / (M.tim || 0.01) * kunnighet(p.skill.hantverk) * (ageOf(p, s.now) < 16 ? 0.6 : 1);
   if (repair) {
     if (M.item && (b.lm ?? 0) < Math.ceil(M.n / 2) - 1e-9) return false;
     b.lp = (b.lp ?? 0) + rate * 2;
     if (b.lp < 1) return false;
-    b.c = 1; b.lp = b.lm = undefined; count(s, 'lagat');
-    if (s.stat!.lagat === 1) log(s, `${p.name} lagade en sliten vägg för första gången.`, 'world', [p.id]);
+    b.c = 1; b.lp = b.lm = undefined;
+    if (forstaGang(s, 'lagat')) log(s, `${p.name} lagade en sliten vägg för första gången.`, 'world', [p.id]);
     return true;
   }
   if (M.item && b.mat < M.n - 1e-9) return false;
