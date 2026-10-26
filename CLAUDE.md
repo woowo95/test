@@ -60,7 +60,7 @@ Sök i dokumentet i stället för att läsa allt; det är långt.
 
 ### Testa i grupper
 
-- Efter varje steg: `npm run snabbkoll -- [scenarier]` (ca 40 s datortid). Typkontrollen, alla scenarier utom de långa (`lang` i scenario.ts; nämn det nya systemets scenario om det är långt) och vakterna i fyra byar under de första 12 dygnen (12 år i spelet, knappt två veckor i verkligheten). Den hittar fel medan de är färska. Committa varje steg för sig.
+- Efter varje steg: `npm run snabbkoll -- [scenarier]` (ca 40 s datortid). Typkontrollen, alla scenarier utom de långa (`lang` i scenariots fil i src/test/scenarier/; nämn det nya systemets scenario om det är långt) och vakterna i fyra byar under de första 12 dygnen (12 år i spelet, knappt två veckor i verkligheten). Den hittar fel medan de är färska. Committa varje steg för sig.
 - Efter det sista steget i ett system i Färdplanen (t.ex. 1.4.3 om 1.4 slutar där): det stora testet. `npm run koll`, `npm run jamfor -- 35 64 --mot vNN` mot versionen före systemet, och `npm run likhet` om arbete, gång, samtal eller lärande ändrats. Skriv resultatet från jamfor i systemets sista steg i Färdplanen, också när det godtas. Visar det stora testet "sämre" går det att hitta steget med `jamfor --mot` stegets commit.
 - Det stora testet direkt efter ett steg som ändrar grunden (slump, förråd, tid, stegens ordning).
 - Hög tolerans för balansen medan systemen byggs. Rätta direkt: vaktlarm, scenarier som inte går igenom, ett nytt system som aldrig används, och när jamfor säger "sämre" om byar som dog ut, svalt ihjäl eller frös ihjäl. Annat (hunger, humör, mat och ved efter vintern, elden) godtas och skrivs in i steget; det balanseras i det sista systemet i fasen (Balans).
