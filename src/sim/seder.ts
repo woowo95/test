@@ -10,7 +10,7 @@ export function newSeder(): Seder {
 }
 const dev = (v: number) => (v - 10) / 6;
 // åt vilket håll personen drar sederna, efter sin personlighet
-export function personSeder(s: State, p: Person): Record<Sed, number> {
+function personSeder(s: State, p: Person): Record<Sed, number> {
   const q = p.pot, kids = s.people.some(c => c.mother === p.id || c.father === p.id);
   return {
     arbete: dev(q.flit),

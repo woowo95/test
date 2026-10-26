@@ -12,7 +12,7 @@ export interface Delning { rik: number; andel: number }
 export const DELA_RIK = 250; // så rik är byn när ingen längre ger något av det de skaffar till byn (ungefär arbetstimmar, varde.ts)
 
 // hur stor del av det nya som går till byn: allt i en by utan något, inget i en rik by, och jämnt mindre däremellan
-export const andelOf = (rik: number) => Math.min(1, Math.max(0, 1 - rik / DELA_RIK));
+const andelOf = (rik: number) => Math.min(1, Math.max(0, 1 - rik / DELA_RIK));
 
 // varje timme (steg.ts) och när en by skapas
 export function stepDelning(s: State) { const rik = rikedom(s); s.delning = { rik, andel: andelOf(rik) }; }

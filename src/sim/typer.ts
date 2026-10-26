@@ -78,7 +78,6 @@ export interface LogEntry { t: number; text: string; kind: 'birth' | 'death' | '
 export interface State {
   v: number; // numret på den senaste uppgraderingen av sparfilen (UPPGRADERINGAR i varld.ts)
   seed: number; founded: number; now: number;
-  rng?: number; // den gemensamma slumpen före steg 1.1.1 (bara i äldre byar, används inte)
   rngs?: Record<string, number>; // var i sin slumpföljd varje system är (slump.ts)
   hist?: Historik; // byns historik: nyckeltal och krönika (historik.ts)
   W?: number; H?: number; // kartans storlek (saknas i äldre byar: 64×40)

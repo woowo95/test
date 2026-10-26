@@ -21,7 +21,7 @@ export function packGround(s: State) { const g = groundOf(s); s.mark = encodeCov
 
 // ängar: fläckar av fuktig mark där det växer högt gräs och träd har svårt att få fäste
 const angCache = new Map<string, Uint8Array>();
-export const ANG = 0.56; // gräns i bruset: över den är det äng
+const ANG = 0.56; // gräns i bruset: över den är det äng
 export function angOf(seed: number) {
   let a = angCache.get(mapKey(seed));
   if (a) return a;
@@ -36,7 +36,7 @@ export function angOf(seed: number) {
 const ANG_SPREAD = 0.1; // skogen sprider sig in på en äng tio gånger långsammare
 
 // skog på jorden utom på ängarna och i en liten glänta runt byplatsen (lite ojämn kant)
-export function startForest(seed: number) {
+function startForest(seed: number) {
   const m = getMap(seed), ang = angOf(seed), trees = new Float32Array(W * H);
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     const i = y * W + x;
@@ -62,7 +62,7 @@ function built(s: State) {
   return b;
 }
 
-export const GROW = [0.1, 1.2, 1, 0.6]; // grästillväxt per tidsålder
+const GROW = [0.1, 1.2, 1, 0.6]; // grästillväxt per tidsålder
 const REGROW = 0.011; // så mycket gräset växer tillbaka per timme (gånger GROW). Lite trampad mark hinner läka, så bara stigarna blir bara
 const TREE_SEASON = [0, 1.2, 1, 0.5]; // trädens tillväxt per tidsålder
 const TREE_GROW = 1 / (30 * 24); // en planta blir vuxen skog på ungefär 30 dygn (30 år i spelet), så att gläntor efter fällda träd står kvar länge

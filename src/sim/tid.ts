@@ -5,7 +5,7 @@ import { AGES, DAY, State, WEEK } from './typer';
 // Bytet räknas efter kalendern, så sommartid flyttar det inte. Byns kalender (s.kal): tidsåldern a0 började t0 och slutar
 // måndagen b0 (dagens nummer). En ny koloni börjar med vårtid fram till den måndag som ligger minst en vecka bort (7–13 dygn),
 // och en äldre by kommer i fas när den läses in (inFas). Allt som frågar om tidsålder, dag eller år frågar kalender().
-export interface Kal { ai: number; dag: number; av: number; ar: number; start: number; slut: number } // dag av av i tidsåldern
+interface Kal { ai: number; dag: number; av: number; ar: number; start: number; slut: number } // dag av av i tidsåldern
 const dagNr = (t: number) => { const d = new Date(t); return Math.round(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / DAY); };
 const midnatt = (n: number) => { const d = new Date(n * DAY); return new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()).getTime(); };
 const mandag = (n: number) => n + (7 - (n + 3) % 7) % 7; // första måndagen från dag n (dag 0, 1 januari 1970, var en torsdag)
@@ -37,7 +37,6 @@ export function kalender(s: State, t = s.now): Kal {
   return k;
 }
 export const ageIndex = (s: State, t = s.now) => kalender(s, t).ai;
-export const ageDay = (s: State, t = s.now) => kalender(s, t).dag;
 export const yearNo = (s: State, t = s.now) => kalender(s, t).ar;
 // var i året: 0 = istidens början, 1 = vårtidens början … (med bråkdelen av tidsåldern som gått)
 export function yearPos(s: State, t = s.now) { const k = kalender(s, t); return k.ai + (t - k.start) / (k.slut - k.start); }
@@ -48,7 +47,7 @@ export function ageStart(s: State, ai: number) {
 }
 // klockslaget i timmar (lokal tid). Det frågas efter samma tidpunkt många gånger i varje steg, så det sparas
 let memoT = NaN, memoH = 0;
-export function hourOf(t: number) {
+function hourOf(t: number) {
   if (t !== memoT) { const d = new Date(t); memoT = t; memoH = d.getHours() + d.getMinutes() / 60; }
   return memoH;
 }

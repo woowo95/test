@@ -11,9 +11,10 @@ import { H, HOUR, SEC, State, W, mapKey } from './typer';
 // desamma i spelet och vid ikappräkning och inget behöver sparas.
 // Fångsten beror på hur nära en grupp jaktplatsen är (narvaro, som fynd.ts väger in i richness).
 // En kanin sitter still en stund och skuttar sedan en bit. Den som kommer nära får den att hoppa undan en bit och sitta
-// still där. Jägaren går mot den närmaste kaninen (steg.ts). Fler arter (rådjur, fågel) blir egna lager och grupper senare.
+// still där. De enskilda kaninerna ritas bara; jakten ger mest nära en grupp (`narvaroAt`, via richness). Fler arter
+// (rådjur, fågel) blir egna lager och grupper senare.
 export interface Djur { id: number; art: 'kanin'; x: number; y: number }
-export interface Kaningrupp { id: number; x: number; y: number; n: number } // n: så många kaniner gruppen har just nu
+interface Kaningrupp { id: number; x: number; y: number; n: number } // n: så många kaniner gruppen har just nu
 export const GRUPPER_MAX = 4; // högst så många grupper på kartan samtidigt
 export const STORLEK = [2, 6]; // kaniner i en grupp som inte jagats
 const LIV = 12 * HOUR; // så länge en grupp håller till i samma trakt innan den dyker upp någon annanstans
@@ -135,10 +136,4 @@ export function djurOf(s: State): Djur[] {
     out.push({ id, art: 'kanin', x: Math.max(0.2, Math.min(W - 0.2, x)), y: Math.max(0.2, Math.min(H - 0.2, y)) });
   }
   return out;
-}
-// den närmaste kaninen inom r rutor
-export function nearestDjur(s: State, x: number, y: number, r: number) {
-  let best: Djur | undefined, bd = r;
-  for (const d of djurOf(s)) { const e = Math.hypot(d.x - x, d.y - y); if (e < bd) { bd = e; best = d; } }
-  return best;
 }

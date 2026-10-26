@@ -18,7 +18,7 @@ import { lends } from './behov';
 // ännu inte har någon ruta (nygjort, tillbakalagt) får en plats i förrådet av lager.ts.
 import { BYN } from './egendom';
 // halv = ett påbörjat redskap (paborjat.ts): vad det ska bli, materialet som tagits till det, hur länge arbetet har kvar och vem som började
-export interface Halv { gor: string; av: Record<string, number>; kvar: number; ag: number }
+interface Halv { gor: string; av: Record<string, number>; kvar: number; ag: number }
 export interface Ting { id: number; k: string; c: number; agare: number; hos?: number; lass?: number; x?: number; y?: number; halv?: Halv }
 export const tingOf = (s: State) => (s.ting ??= []);
 export const toolsOf = (s: State, k: string) => tingOf(s).filter(t => t.k === k);
@@ -46,7 +46,7 @@ function usable(s: State, p: Person, t: Ting) {
 }
 // i vilken ordning p tar: det hen har i handen, sitt eget, byns, och sist lånat. Inom det: bäst skick
 const rank = (p: Person, t: Ting) => t.hos === p.id ? 0 : t.agare === p.id ? 1 : t.agare === BYN ? 2 : t.hos === undefined ? 3 : 4;
-export const freeOf = (s: State, p: Person, k: string) => toolsOf(s, k).filter(t => usable(s, p, t));
+const freeOf = (s: State, p: Person, k: string) => toolsOf(s, k).filter(t => usable(s, p, t));
 export const freeTools = (s: State, p: Person, k: string) => freeOf(s, p, k).length;
 export const ownsFree = (s: State, p: Person, k: string) => freeOf(s, p, k).some(t => t.agare === p.id);
 // p tar ett redskap av slaget k i handen. Det hen hade i handen läggs i förrådet
@@ -71,7 +71,6 @@ export function wearTool(s: State, p: Person, k: string, v: number) {
 // lägger tillbaka det som inte är hens eget; ett eget redskap behålls i handen. En börda som inte bärs längre (den som bar
 // den dog eller fick annat att göra) hamnar i förrådet
 export function tidyTools(s: State) {
-  if (!s.ting) migrate(s);
   for (const t of tingOf(s)) {
     if (t.agare !== BYN) { const o = byId(s, t.agare); if (!o || !alive(o)) t.agare = BYN; }
     if (t.lass !== undefined) { const q = byId(s, t.lass); if (!q || !alive(q) || !q.task?.ting?.includes(t.id)) t.lass = undefined; }

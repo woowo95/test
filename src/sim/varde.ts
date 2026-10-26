@@ -17,12 +17,12 @@ import { Bit, Hus, MATERIAL, bitsOf } from './byggnad';
 import { State } from './typer';
 
 export const ARBETE = 1; // värdet av en arbetstimme
-export const NIVA_PASLAG = 0.25; // så mycket mer en sak är värd för varje teknisk nivå
-export const SALLSYNT = 1.5; // så mycket mer en sällsynt råvara är värd
+const NIVA_PASLAG = 0.25; // så mycket mer en sak är värd för varje teknisk nivå
+const SALLSYNT = 1.5; // så mycket mer en sällsynt råvara är värd
 
 // den tekniska nivån: en teknik utan krav är nivå 1, och varje teknik den bygger på lägger till en
 const tekNiva = new Map<string, number>();
-export function nivaOfTek(id: string): number {
+function nivaOfTek(id: string): number {
   let n = tekNiva.get(id);
   if (n === undefined) { const t = TEK[id]; n = 1 + Math.max(0, ...(t?.krav ?? []).map(nivaOfTek)); tekNiva.set(id, n); }
   return n;
@@ -77,7 +77,7 @@ export function grundvarde(k: string): number {
 }
 
 // ---------- byns rikedom ----------
-export interface Rikedom { forrad: number; redskap: number; hus: number }
+interface Rikedom { forrad: number; redskap: number; hus: number }
 // vad ett ting är värt: ett påbörjat redskap (paborjat.ts) är värt sitt material, ett redskap grundvärdet gånger skicket
 export const tingVarde = (t: Ting) => t.halv ? Object.entries(t.halv.av).reduce((a, [k, n]) => a + n * grundvarde(k), 0) : grundvarde(t.k) * t.c;
 export function rikedomDelar(s: State): Rikedom {

@@ -108,7 +108,7 @@ function walkSpot(s: State, far: number) {
 }
 // badplatsen: stranden närmast byns läger. Sparas tills lägret ändras
 const bathCache = new WeakMap<State, { key: string; v?: { x: number; y: number } }>();
-export function bathSpot(s: State) {
+function bathSpot(s: State) {
   const key = `${campKey(s)},${s.byggV ?? 0}`; // ett nytt hus kan stå på stranden
   let c = bathCache.get(s);
   if (c?.key !== key) {
@@ -120,7 +120,7 @@ export function bathSpot(s: State) {
   return c.v;
 }
 // en plats på land vid vattnet, inte för långt från byns läger
-export function strandSpot(s: State) {
+function strandSpot(s: State) {
   const sh = shoreOf(s.seed), ok: number[] = [];
   for (let i = 0; i < W * H; i++) if (sh[i] && campDist(s, i % W, Math.floor(i / W)) < 15 && !bitAt(s, i % W, Math.floor(i / W))) ok.push(i);
   if (!ok.length) return bathSpot(s);
@@ -129,10 +129,10 @@ export function strandSpot(s: State) {
 }
 // Faror går före förbättringar. En korg eller ett spjut gör maten lättare att få tag i, men när kylan är en fara väntar
 // sådant: tid och hö går då först till värmen. Inför och under istiden sparar man hö till det.
-export function dangers(s: State) {
+function dangers(s: State) {
   const ppl = living(s), freezing = ppl.filter(q => q.warm < 0.4).length / (ppl.length || 1), ai = ageIndex(s);
   const cold = coldOf(temperature(s)) > 0 || freezing > 0.25;
-  return { kyla: cold && !s.fire.lit && !emberOn(s), gras: ai === 0 || ai === 3 || cold ? 12 : 0, svalt: foodDays(s) < 1 };
+  return { kyla: cold && !s.fire.lit && !emberOn(s), gras: ai === 0 || ai === 3 || cold ? 12 : 0 };
 }
 // elden är släckt och kan inte tändas för att det saknas tändmaterial, och för få hämtar det
 const tinderNeeded = (s: State) => !s.fire.lit && !emberOn(s) && !canLight(s) && needTinder(s) && living(s).filter(q => q.task?.act === 'samla').length < 3;

@@ -127,7 +127,7 @@ function planText(by: Person, fn: Fn, h: Hus, n: number, same: number) {
 
 // ---------- arbete ----------
 // fell = ett träd står där biten ska byggas och måste fällas först
-export interface Job { bit: Bit; repair: boolean; item?: string; need: number; missing: boolean; fell?: boolean }
+interface Job { bit: Bit; repair: boolean; item?: string; need: number; missing: boolean; fell?: boolean }
 // det som finns att bygga med (av p: det p kan få, behov.ts, och till ett familjehus också familjens), utom det som sparas
 export const avail = (s: State, k: string, p?: Person, hus?: number) => (p ? getable(s, p, k) + famOwn(s, p, k, hus) : amountOf(s, k)) - (RESERVE[k] ?? 0);
 const famHus = (s: State, hus?: number) => { const h = housesOf(s).find(q => q.id === hus); return h?.ag !== undefined ? h : undefined; };
@@ -158,9 +158,8 @@ export function buildJob(s: State, p: Person): Job | undefined {
   const others = living(s).filter(q => q !== p);
   const taken = new Set(others.filter(q => q.task?.act === 'bygga').map(q => q.task!.ref));
   // först fälls träden där huset ska stå, även inne i huset, av den som har en ledig yxa
-  const fallers = others.filter(q => q.task?.act === 'falla' || q.task?.act === 'hugga');
   if (freeTools(s, p, 'yxa') > 0) {
-    const felling = new Set(fallers.filter(q => q.task!.act === 'falla').map(q => Math.floor(q.task!.ty) * W + Math.floor(q.task!.tx)));
+    const felling = new Set(others.filter(q => q.task?.act === 'falla').map(q => Math.floor(q.task!.ty) * W + Math.floor(q.task!.tx)));
     let fb: Bit | undefined, fs = Infinity;
     for (const b of bitsOf(s)) {
       if ((b.b >= 1 && b.k !== 'oppning') || !treeOn(s, b) || felling.has(b.y * W + b.x)) continue;

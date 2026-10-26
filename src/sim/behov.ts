@@ -17,7 +17,7 @@ import { grundvarde } from './varde';
 // hög empati stjäl aldrig. Man stjäl helst av den man inte tycker om. Den bestulne märker det nästa gång hen själv tar av
 // sitt eget för samma behov, och relationen blir sämre.
 // Varje behov är en post i BEHOV (mat, ved till elden). Material till ett arbete och redskap går samma steg, längre ner.
-export interface Behov {
+interface Behov {
   id: string;
   namn: string; // i loggen: "gav mat till", "stal mat av"
   slag: readonly string[]; // vilka saker i förrådet som fyller behovet
@@ -31,14 +31,14 @@ export interface Behov {
   genast?: true; // p tar det själv på en gång (äter), så ett byte prövas varje gång före byns förråd; annars när p frågar runt
 }
 
-export const STJAL_ALDRIG = 17; // empati från vilken man aldrig stjäl
+const STJAL_ALDRIG = 17; // empati från vilken man aldrig stjäl
 export const STOLD_OP = 15; // så mycket sämre blir relationen när stölden upptäcks
 export const STOLD_LINDRIG = 5; // ... när det var material till ett arbete (en lindrig stöld)
-export const FRAGA_R = 8; // så nära (rutor) måste man vara för att be någon om något
-export const FRAGA_TAKT = 1 / (30 * 60); // så ofta (per sekund) den som saknar något ber någon i närheten
+const FRAGA_R = 8; // så nära (rutor) måste man vara för att be någon om något
+const FRAGA_TAKT = 1 / (30 * 60); // så ofta (per sekund) den som saknar något ber någon i närheten
 
 // ---------- mat ----------
-export const portionOf = (p: Person, now: number) => ageOf(p, now) < 10 ? 0.6 : 1;
+const portionOf = (p: Person, now: number) => ageOf(p, now) < 10 ? 0.6 : 1;
 // en hel portion, eller det som finns kvar. Maten under halva skicket mättar sämre, under en fjärdedel kan man bli sjuk
 function eat(s: State, p: Person, fran?: Person) {
   const now = s.now, full = portionOf(p, now);
@@ -73,14 +73,14 @@ export const VED: Behov = {
   // stölden: p hämtar den andras ved till elden (steg.ts räknar den när den tas). Annars hämtar den som eld.ts väljer
   anvand: (s, p, fran) => { if (fran && ageOf(p, s.now) >= 8 && p.task?.act !== 'sova') fetchFuel(s, p, 'Fryser och tar någon annans ved till elden', fran); return 0; },
 };
-export const BEHOV: Behov[] = [MAT, VED];
+const BEHOV: Behov[] = [MAT, VED];
 
 // det p själv har och får ta av byns
 const perOf = (b: Behov, k: string) => b.per?.[k] ?? 1;
-export function hasFor(s: State, p: Person, b: Behov) { let n = 0; for (const k of b.slag) n += mayTake(s, p, k) * perOf(b, k); return n; }
+function hasFor(s: State, p: Person, b: Behov) { let n = 0; for (const k of b.slag) n += mayTake(s, p, k) * perOf(b, k); return n; }
 export function ownFor(s: State, p: Person, b: Behov) { let n = 0; for (const k of b.slag) n += ownsAmount(s, p, k) * perOf(b, k); return n; }
 // p behöver det och har inget eget eller av byns att ta
-export const lacksFor = (s: State, p: Person, b: Behov) => b.behover(s, p) && hasFor(s, p, b) < b.minst;
+const lacksFor = (s: State, p: Person, b: Behov) => b.behover(s, p) && hasFor(s, p, b) < b.minst;
 
 // varje steg: den som behöver något tar av sitt eget och byns. Finns inget ber hen någon i närheten om det, och i
 // yttersta nöd stjäl hen
@@ -171,7 +171,7 @@ function eveningTrade(s: State, a: Person, b: Person) {
 }
 
 // är nöden så stor att p stjäl, och av vem? Ju högre empati, desto närmare döden innan man stjäl
-export function victimOf(s: State, p: Person, b: Behov) {
+function victimOf(s: State, p: Person, b: Behov) {
   const emp = stat(p, 'empati', s.now);
   if (emp >= STJAL_ALDRIG || b.fara(s, p) <= emp / STJAL_ALDRIG) return;
   let tot = 0;
@@ -276,9 +276,9 @@ function tradeMaterial(s: State, p: Person, k: string, n: number) {
 // mest. Den som har mycket över ger lättare (overflod = vad hen har delat med vad hen själv behöver: 1 ger 0,7 gånger,
 // 2 ger 1 och 3 eller mer 1,3 gånger), seden Gemenskap gör alla givmildare och Var och en för sig snålare, och ju
 // rikare byn är desto mindre ger man (delning.ts). Till sina barn och sin partner ger man lika gärna i en rik by
-export const OVERFLOD = { min: 0.7, max: 1.3 };
-export const GEMENSKAP_GE = 0.25; // så mycket givmildare (eller snålare) seden gör folk, vid Gemenskap fullt ut
-export const RIK_GE = 0.7; // så mycket av viljan att ge till andra än barn och partner som finns kvar i en rik by
+const OVERFLOD = { min: 0.7, max: 1.3 };
+const GEMENSKAP_GE = 0.25; // så mycket givmildare (eller snålare) seden gör folk, vid Gemenskap fullt ut
+const RIK_GE = 0.7; // så mycket av viljan att ge till andra än barn och partner som finns kvar i en rik by
 export function willing(s: State, g: Person, m: Person, overflod = 1) {
   const over = clamp(0.4 + 0.3 * overflod, OVERFLOD.min, OVERFLOD.max), sed = 1 + GEMENSKAP_GE * s.seder.v.gemenskap;
   if (m.mother === g.id || m.father === g.id) return clamp(0.95 * Math.max(1, over) * sed, 0, 1); // till sitt barn ger man också det sista
@@ -347,10 +347,10 @@ export function askForTool(s: State, a: Person, b: Person): 'gåva' | 'byte' | u
 // på det. Ojämna byten går när den ena får högst en femtedel mindre än hen ger (OJAMN), när den som frågar håller på att
 // dö av bristen (fara i BEHOV) eller när de står varandra nära (willing minst NARA). Mat, ved, material och redskap
 // byts här: i behovsstegen, när material tas till ett eget arbete, och när ett redskap saknas (i samtal).
-export const BEHOV_SAKNAR = 2; // det man saknar och behöver nu är värt så många gånger grundvärdet (dubbelt så mycket nära döden)
-export const BEHOV_OVER = 0.5; // ... det man har över: mer mat och ved än man själv behöver, material, redskap man inte arbetar med
-export const OJAMN = 0.2; // så mycket mindre än man ger går man med på att få, med vem som helst
-export const BYTE_MINST = 0.3; // ett byte om mindre än så (grundvärde, ungefär arbetstimmar) är inte värt att tala om
+const BEHOV_SAKNAR = 2; // det man saknar och behöver nu är värt så många gånger grundvärdet (dubbelt så mycket nära döden)
+const BEHOV_OVER = 0.5; // ... det man har över: mer mat och ved än man själv behöver, material, redskap man inte arbetar med
+const OJAMN = 0.2; // så mycket mindre än man ger går man med på att få, med vem som helst
+const BYTE_MINST = 0.3; // ett byte om mindre än så (grundvärde, ungefär arbetstimmar) är inte värt att tala om
 export const NARA = 0.3; // så stor vilja att ge (willing) har man till den man står nära: familjen och goda vänner
 interface Vara { k: string; n: number; t?: Ting }
 const behovMed = (k: string) => BEHOV.find(b => b.slag.includes(k));

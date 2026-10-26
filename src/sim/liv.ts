@@ -48,9 +48,9 @@ export function birth(s: State, mother: Person) {
 // En stor by blir trång: fler flyttar ut och färre vill ha barn. En liten by lockar nybyggare och barn blir viktigare.
 // Att hålla nere befolkningen är starkare än att höja den. Nöjda invånare stannar, så en välfungerande by kan bli stor.
 // När byn är liten spelar humöret mindre roll för om folk flyttar.
-export const crowd = (pop: number) => clamp((pop - 14) / 16, 0, 3); // 0 upp till 14 invånare, 1 vid 30
+const crowd = (pop: number) => clamp((pop - 14) / 16, 0, 3); // 0 upp till 14 invånare, 1 vid 30
 export function birthWish(pop: number) { return pop <= 10 ? 1 + 0.03 * (10 - pop) : clamp(1 - (pop - 16) * 0.035, 0.15, 1); }
-export function avgMood(s: State) { const l = living(s); return l.length ? l.reduce((a, p) => a + moodOf(p, s.now), 0) / l.length : 0.6; }
+function avgMood(s: State) { const l = living(s); return l.length ? l.reduce((a, p) => a + moodOf(p, s.now), 0) / l.length : 0.6; }
 export function emigrationRate(pop: number, mood: number) { // flyttar per dygn
   const unhappy = clamp((0.6 - mood) * 4, 0, 1.5), w = clamp((pop - 6) / 20, 0.1, 1);
   return crowd(pop) ** 2 * (0.3 + 2.5 * unhappy * w) + 0.12 * unhappy * w;
@@ -77,7 +77,7 @@ export function regulate(s: State, dtSec: number) {
 }
 // en nybyggare (ibland ett par) kommer vandrande och slår sig ner, med lite rötter (ungefär ett dygns mat, ett år i spelet)
 const MEDHAVD = 2;
-export function immigrate(s: State, alone: boolean) {
+function immigrate(s: State, alone: boolean) {
   const mk = (sex: 'm' | 'k') => {
     const age = 17 + rnd(s, 'folk') * 18, p = newPerson(s, sex, s.now - age * DAY);
     for (const k of SKILLS) p.skill[k] = clamp((age - 8) * 0.25 * (0.4 + rnd(s, 'folk')) * (p.pot.intelligens / 12), 0, 12);
@@ -95,13 +95,13 @@ export function immigrate(s: State, alone: boolean) {
   return a;
 }
 // alla är borta: en vandrare hittar den övergivna boplatsen och grundar byn på nytt
-export function refound(s: State) {
+function refound(s: State) {
   const p = immigrate(s, true);
   count(s, 'atergrundad'); kronika(s, `${p.name} grundade byn på nytt.`);
   log(s, `${p.name} hittade den övergivna boplatsen och grundade byn på nytt.`, 'world', [p.id]);
 }
 
-export function emigrate(s: State) {
+function emigrate(s: State) {
   const now = s.now;
   const cands = living(s).filter(p => p.partner !== undefined && ageOf(p, now) > 18 && ageOf(p, now) < 38);
   if (!cands.length) { // inget ungt par: en ensam vuxen ger sig av

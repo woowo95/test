@@ -15,7 +15,6 @@ import { SNABBARE } from './handlingar';
 // Varje ruta har en egen rikedom av bär, rötter, vilt och fisk. Den som samlar, jagar eller fiskar tar ur platsen,
 // och den växer långsamt tillbaka. Därför går invånarna vidare till nya platser när det tar slut nära byn.
 export type Kind = 'samla' | 'jakt' | 'fiske';
-export const KINDS: Kind[] = ['samla', 'jakt', 'fiske'];
 
 // ---------- värmekartor: ett lager per sorts resurs ----------
 // Varje lager har ett värde per ruta: hur mycket som finns där just nu. Det är sanningen; vad invånarna tror står i
@@ -185,7 +184,7 @@ export function skyggOf(s: State) {
   return v;
 }
 // vad en orörd ruta ger nu (utan årstid och uttag)
-export function capOf(s: State, k: FyndId, i: number) {
+function capOf(s: State, k: FyndId, i: number) {
   if (iLagret(s, i)) return 0;
   const f = FYND[k];
   return f.bas(s, i, f.monster ? monsterOf(s, k).m[i] : 1);
@@ -318,26 +317,27 @@ export function growFynd(s: State, hours: number, season: number) {
     if (f < 1) for (let i = 0; i < a.length; i++) if (a[i] > 0) a[i] = a[i] * f < 0.004 ? 0 : a[i] * f;
   }
 }
+// byns närområde, som man i stort sett känner till från elden
+export const SIGHT = 8;
 // hur mycket de bästa platserna inom räckhåll ger just nu (snitt av de tio bästa), räknas om en gång i timmen
 const prospects = new WeakMap<State, { hr: number; v: Partial<Record<string, number>> }>();
-export function prospect(s: State, k: Kind, r = 99) {
+export function prospect(s: State, k: Kind) {
   const hr = Math.floor(s.now / HOUR);
   let c = prospects.get(s);
   if (!c || c.hr !== hr) { c = { hr, v: {} }; prospects.set(s, c); }
-  const key = k + r;
-  if (c.v[key] === undefined) {
+  if (c.v[k] === undefined) {
     const f = campCenter(s), top: number[] = [];
     for (let y = Math.max(0, f.y - 13); y < Math.min(H, f.y + 14); y++) for (let x = Math.max(0, f.x - 17); x < Math.min(W, f.x + 18); x++) {
       const d = campDist(s, x, y);
-      if (d > r) continue;
+      if (d > SIGHT) continue;
       const v = richness(s, k, x + 0.5, y + 0.5) - d * 0.03;
       if (v > 0) top.push(v);
     }
     top.sort((a, b) => b - a);
     const n = Math.min(10, top.length);
-    c.v[key] = n ? top.slice(0, n).reduce((a, b) => a + b, 0) / n : 0;
+    c.v[k] = n ? top.slice(0, n).reduce((a, b) => a + b, 0) / n : 0;
   }
-  return c.v[key]!;
+  return c.v[k]!;
 }
 // fiske med händerna ger ungefär så mycket som samling på en lagom rik plats gånger detta
 export const HAND_FISH = 0.55;
@@ -362,12 +362,10 @@ export function flintSpot(s: State, area?: (x: number, y: number) => boolean): {
   return { x: p.x + 0.5, y: p.y + 0.5 };
 }
 
-// ---------- räknare ----------
-
 // ---------- svamp ----------
 // Kantarellen är god. Den orangea spindlingen liknar den men är giftig. Den som blir förgiftad lär sig skilja dem åt
 // och kan sedan lära andra (kunskap.ts, minne.ts).
-export const GIFT = 'giftsvamp'; // giftig svamp som av misstag hamnat i förrådet (syns inte för invånarna)
+const GIFT = 'giftsvamp'; // giftig svamp som av misstag hamnat i förrådet (syns inte för invånarna)
 // svamp som hittas under en stund av samling i skogen; ger hur mycket ätlig mat som hittades.
 // Kantarellen och spindlingen har var sitt lager, så de växer på olika ställen.
 export function pickMushrooms(s: State, p: Person, x: number, y: number, dtSec: number, got: Record<string, number>) {
@@ -416,7 +414,7 @@ export function eatPoison(s: State, p: Person) {
 export const TRY_SEC = 300 / SNABBARE;
 // Med fiskespjut träffar man fisken oftare och den sitter kvar på spjutet.
 // med metspö nappar fisken oftare och sitter kvar bättre på kroken (masken grävs fram i steg.ts)
-export type Fiskedon = 'hand' | 'spjut' | 'metspo';
+type Fiskedon = 'hand' | 'spjut' | 'metspo';
 const NAPP: Record<Fiskedon, number> = { hand: 0.06, spjut: 0.13, metspo: 0.17 }, HALL: Record<Fiskedon, number> = { hand: 0.15, spjut: 0.5, metspo: 0.65 };
 export function handFish(s: State, p: Person, x: number, y: number, ageF: number, gear: Fiskedon = 'hand') {
   const st = (p.fiske ??= { f: 0, n: 0, k: 0 }), spear = gear === 'spjut';

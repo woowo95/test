@@ -20,7 +20,7 @@ import { FOOD, RUTA, SAKER, SAK_LIST, STACK, STACK_ORDER, isFood, isTool, sakNam
 // hus = lagerplatsen är golvet i ett förrådshus (byggnader.ts): den växer och krymper inte och räknas inte bland de vanliga
 export interface Zone { x: number; y: number; w: number; h: number; namn?: string; slag?: 'mat' | 'material'; prio?: number; hus?: number }
 // dold: det som ligger gömt i stacken (giftig svamp bland svampen, saker.ts: i)
-export interface Stack { k: string; n: number; c: number; x: number; y: number; ag?: Del; dold?: number; gor?: string } // gor = vad ett påbörjat redskap ska bli (paborjat.ts)
+interface Stack { k: string; n: number; c: number; x: number; y: number; ag?: Del; dold?: number; gor?: string } // gor = vad ett påbörjat redskap ska bli (paborjat.ts)
 // en stack som den visas: out = utanför lagerplatserna, stored = hör till byns förråd (i lagret eller precis bredvid)
 export interface Pile extends Stack { max: number; out: boolean; stored: boolean; zone: number }
 const MAX_W = 6, MAX_H = 5, MAX_ZONES = 4;
@@ -29,8 +29,8 @@ export const INDOOR_WEAR = 0.4; // under tak slits saker mindre
 const DOLD = SAK_LIST.filter(k => SAKER[k]!.i); // slag som ligger gömda i andra stackar
 const DOLD_I: Record<string, string> = Object.fromEntries(DOLD.map(k => [SAKER[k]!.i!, k])); // värdslaget → det gömda
 
-// skick: för redskap är det hur mycket som finns kvar av redskapet
-export const condOf = (a: Stack) => isTool(a.k) ? a.n : a.c;
+// skick (ett redskap som ligger på en ruta är en stack med n lika med c, `asStack`)
+export const condOf = (a: Stack) => a.c;
 export const inZone = (z: Zone, x: number, y: number) => x >= z.x && x < z.x + z.w && y >= z.y && y < z.y + z.h;
 const near = (z: Zone, x: number, y: number, d: number) => x >= z.x - d && x < z.x + z.w + d && y >= z.y - d && y < z.y + z.h + d;
 export const allows = (z: Zone, k: string) => !z.slag || (z.slag === 'mat') === isFood(k);
@@ -86,15 +86,13 @@ export const item = amountOf;
 // mängden gånger skicket (för värdet, varde.ts)
 export const wornOf = (s: State, k: string) => isTool(k) ? amountOf(s, k) : summa(s).w[k] ?? 0;
 export function foodOf(s: State) { const n = summa(s).n; let f = 0; for (const k of FOOD) f += n[k] ?? 0; return f; }
-// maten per slag
-export function foodKinds(s: State) { const n = summa(s).n, m: Record<string, number> = {}; for (const k of FOOD) if (n[k]) m[k] = n[k]; return m; }
 
 // ---------- vems det är (egendom.ts) ----------
 export const ownsAmount = (s: State, p: Person, k: string) => summa(s).ag[k]?.[p.id] ?? 0;
 // hur mycket av slaget k invånarna äger tillsammans (resten är byns)
 export const ownedSum = (s: State, k: string) => sumOf(summa(s).ag[k]);
 // det av slaget k som är byns
-export const villageAmount = (s: State, k: string) => Math.max(0, amountOf(s, k) - ownedSum(s, k));
+const villageAmount = (s: State, k: string) => Math.max(0, amountOf(s, k) - ownedSum(s, k));
 // det av slaget k som p får ta: sitt eget och byns
 export const mayTake = (s: State, p: Person, k: string) => ownsAmount(s, p, k) + villageAmount(s, k);
 // allt p äger i förrådet, per slag
@@ -166,7 +164,7 @@ function cleanDel(s: State, a: Stack) {
 }
 // vems n av något är, när ag säger vems det var (jämkat om det minskat) och resten är owner. Med s ger owner byns
 // andel av resten till byn: mer ju fattigare byn är (delning.ts)
-export function shareOf(ag: Del | undefined, n: number, owner = BYN, s?: State): Del {
+function shareOf(ag: Del | undefined, n: number, owner = BYN, s?: State): Del {
   const sum = sumOf(ag), f = sum > n ? n / sum : 1, d: Del = {};
   addDel(d, ag, f);
   const egen = (n - sum * f) * (1 - (s?.delning?.andel ?? 0));
@@ -389,7 +387,7 @@ export function pilesOf(s: State): Pile[] {
 // Skicket sjunker varje timme. Mat ruttnar (fisk fortast). Ved faller till sist sönder till grenar,
 // grenar och gräs multnar bort, redskap slits sakta även när de ligger still. Sten slits inte.
 // Utanför lagret slits allt fortare, under tak långsammare. Hur fort varje sak slits står i saker.ts.
-export function wearRate(s: State, k: string, ai: number, food = foodOf(s)) {
+function wearRate(s: State, k: string, ai: number, food = foodOf(s)) {
   const d = SAKER[k];
   if (d?.ruttnar !== undefined) return 0.003 * (1 + food / 250) * (ai === 0 ? 0.5 : 1) * d.ruttnar;
   return d?.slits ?? 0;

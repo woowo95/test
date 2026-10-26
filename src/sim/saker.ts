@@ -1,7 +1,7 @@
 // ---------- saker ----------
 // Allt byn kan äga står här: mat, bränsle, sten och redskap. Lager, slitage, listorna i panelen och det som bärs hem
 // frågar registret. En ny sak läggs till här (och får en ikon i ikoner.ts).
-export interface SakDef {
+interface SakDef {
   namn: string;
   stack?: number; // en full börda: vad en normalstark vuxen bär. Saknas = ingen egen stack
   ruta?: number; // hur mycket som ryms i en stack på en ruta i lagret; saknas = en börda
@@ -20,7 +20,7 @@ export interface SakDef {
 // hur en sak skaffas: samlas i ett arbete (act, takten i handlingar.ts) eller på annat sätt (tid = arbetstimmar för en),
 // eller görs av andra saker (av = så många av varje, min = minuters arbete; det är också så lång tid det tar att göra ett redskap
 // eller ett rep, hälften så lång tid som före steg 1.5.13). tek = tekniken som behövs, sallsynt = svår att hitta
-export interface Skaffa { act?: string; tid?: number; av?: Record<string, number>; min?: number; tek?: string; sallsynt?: true }
+interface Skaffa { act?: string; tid?: number; av?: Record<string, number>; min?: number; tek?: string; sallsynt?: true }
 
 // Ordningen är den stackarna läggs ut i, så den ska inte ändras (nya saker läggs sist)
 const DEF = {
@@ -55,7 +55,7 @@ const DEF = {
   paborjat: { namn: 'Påbörjat', stack: 1, mapp: 'Redskap', redskap: true },
 } satisfies Record<string, SakDef>;
 
-export type Sak = keyof typeof DEF;
+type Sak = keyof typeof DEF;
 export const SAKER: Record<string, SakDef | undefined> = DEF;
 export const SAK_LIST = Object.keys(DEF) as Sak[];
 export const sak = (k: string) => SAKER[k];

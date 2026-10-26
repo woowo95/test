@@ -49,10 +49,10 @@ export function heatAt(s: State, x: number, y: number) {
 }
 // hur mycket ved som önskas på elden just nu (den som vill ha mest)
 export const fireWant = (s: State) => s.fire.want ?? 0;
-export interface Wish { v: number; why: string }
+interface Wish { v: number; why: string }
 const relightHard = (s: State) => 1 - (igniterOf(s) ?? IGNITERS[0]).chance;
 // varje invånares egen önskan om ved på elden; vc = hur mycket byn fryser 0–1
-export function fireWish(s: State, p: Person, vc: number): Wish {
+function fireWish(s: State, p: Person, vc: number): Wish {
   const light = isLight(s.now), cold = coldOf(temperature(s)), sd = s.seder.v;
   const opts: Wish[] = [
     { v: clamp((1 - p.warm) * 1.2 + cold * 2.4, 0, 1), why: p.warm < 0.5 ? 'Fryser och vill ha mer värme' : 'Det är kallt och hen vill hålla värmen' },
@@ -92,7 +92,7 @@ function lightFire(s: State, p: Person) {
 }
 // Varje misslyckat försök sedan elden senast brann gör nästa lättare: man får kläm på det och tändmaterialet blir
 // varmt och torrt. Efter FORSOK_LARA försök är chansen dubbelt så stor, så att otur inte kan hålla elden släckt i dygn
-export const FORSOK_LARA = 10;
+const FORSOK_LARA = 10;
 // ett försök att tända med det bästa tänddonet i förrådet
 export function tryLight(s: State, p: Person) {
   const ig = igniterOf(s)!, f = s.fire;
@@ -114,7 +114,7 @@ export function tryLight(s: State, p: Person) {
 export function takeCoal(s: State, p: Person, verb: string) {
   const n = s.fire.ash ?? 0;
   if (n < 1) return;
-  addItems(s, { kol: n });
+  addTo(s, 'kol', n);
   s.fire.ash = 0; s.fire.ashUntil = undefined;
   log(s, `${p.name} ${verb} ${n} kol ur den gamla elden och lade dem i förrådet.`, 'world', [p.id]);
 }
@@ -198,9 +198,9 @@ export function stepFire(s: State, dtSec: number, ppl: Person[]) {
     if (c) assign(s, c.p, 'tanda', m.fire.x + 0.5 + (rnd(s, 'eld') - 0.5) * 1.2, m.fire.y + 1.3, 3 * HOUR, `Vill ha eld. ${c.w.why}`);
   }
 }
-// värmeförlust per timme utan eld: [ljus tid, mörk tid] per tidsålder
-// samling hittar tändmaterial, sten och flinta när förrådet behöver det
+// hur mycket torrgräs det finns att samla per tidsålder (Istid, Vårtid, Sommartid, Hösttid)
 const GRASS_SEASON = [0.25, 0.6, 1, 1.3];
+// samling hittar tändmaterial, sten och flinta när förrådet behöver det
 export function forageItems(s: State, p: Person, dtSec: number): Record<string, number> | undefined {
   const ai = ageIndex(s), want = tinderWant(s), hrs = dtSec / 3600 * SNABBARE; // allt man skaffar går fortare sedan steg 1.5.13
   const sk = 0.6 + p.skill.samla / 25;
@@ -222,6 +222,5 @@ export function forageItems(s: State, p: Person, dtSec: number): Record<string, 
   }
   return Object.keys(got).length ? got : undefined;
 }
-export function addItems(s: State, got: Record<string, number>) { for (const k in got) addTo(s, k, got[k]); }
 // så många dygn bränslet i förrådet räcker
 export function woodDays(s: State) { return fuelStock(s) / (hearthOf(s.fire).burn * 24); }

@@ -20,7 +20,7 @@ import { axeDone, canMakeAxe, fallTid } from './skog';
 export const HALV_TID = 2 * DAY; // så länge ett påbörjat redskap håller när ingen arbetar med det (två år i spelet)
 export const GA_TID = HOUR; // så länge man högst går till arbetet innan man väljer något annat
 interface Gor { ger: readonly string[]; borja: (s: State, p: Person) => string | undefined; klar: (s: State, p: Person, k: string) => void }
-export const GOR: Partial<Record<Act, Gor>> = {
+const GOR: Partial<Record<Act, Gor>> = {
   yxa: { ger: ['yxa'], borja: (s, p) => canMakeAxe(s, p) ? 'yxa' : undefined, klar: (s, p) => axeDone(s, p) },
   spjut: { ger: SPJUT, borja: (s, p) => { const k = spearKind(s, p); return canStartSpear(s, p, k) ? k : undefined; }, klar: (s, p, k) => spearDone(s, p, k) },
   metspo: { ger: ['metspo'], borja: (s, p) => canMakeRod(s, p) ? 'metspo' : undefined, klar: (s, p) => rodDone(s, p) },

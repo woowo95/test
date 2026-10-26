@@ -3,7 +3,7 @@ import { amountOf, foodOf } from './lager';
 import { groundOf } from './mark';
 import { moodOf } from './samtal';
 import { FOREST, isSoil } from './vag';
-import { DAY, Historik, State } from './typer';
+import { DAY, Historik, State, WEEK } from './typer';
 
 // ---------- byns historik ----------
 // Några nyckeltal sparas en gång i timmen (en timme är ca 15 dagar i spelet). Efter en vecka (en tidsålder) slås
@@ -11,7 +11,7 @@ import { DAY, Historik, State } from './typer';
 // mycket. Viktiga händelser sparas för alltid i krönikan. Historiken sparas i egna delar, en per vecka (serializeParts
 // i steg.ts), och läses inte av simuleringen: graferna (steg 5.3.1) läser den.
 // hur: 'snitt' = medelvärdet över dygnet när timmarna slås ihop, 'sist' = det sista värdet (det som räknas upp)
-export const HISTORIK_TAL: { id: string; namn: string; hur: 'snitt' | 'sist'; varde: (s: State) => number }[] = [
+const HISTORIK_TAL: { id: string; namn: string; hur: 'snitt' | 'sist'; varde: (s: State) => number }[] = [
   { id: 'folk', namn: 'Invånare', hur: 'snitt', varde: s => living(s).length },
   { id: 'mat', namn: 'Mat i förrådet', hur: 'snitt', varde: s => foodOf(s) },
   { id: 'tra', namn: 'Trä i förrådet', hur: 'snitt', varde: s => amountOf(s, 'ved') },
@@ -21,7 +21,6 @@ export const HISTORIK_TAL: { id: string; namn: string; hur: 'snitt' | 'sist'; va
   { id: 'fodda', namn: 'Födda sedan byns början', hur: 'sist', varde: s => (s.stat?.fodda as number) ?? 0 },
   { id: 'doda', namn: 'Döda sedan byns början', hur: 'sist', varde: s => (s.stat?.doda as number) ?? 0 },
 ];
-export const VECKA = 7 * DAY; // en tidsålder: så länge timmarna sparas, och en del i sparningen per vecka
 
 function skog(s: State) {
   const g = groundOf(s);
@@ -30,7 +29,7 @@ function skog(s: State) {
   return n ? sk / n : 0;
 }
 const ny = (): Historik => ({ tal: HISTORIK_TAL.map(t => t.id), tim: [], dygn: [], kronika: [] });
-export const histOf = (s: State) => (s.hist ??= ny());
+const histOf = (s: State) => (s.hist ??= ny());
 
 // en viktig händelse i krönikan: en kort rad som sparas för alltid
 export function kronika(s: State, text: string) { histOf(s).kronika.push([Math.round(s.now), text]); }
@@ -40,7 +39,7 @@ export function historikSteg(s: State) {
   const h = histOf(s);
   if (h.tal.join() !== HISTORIK_TAL.map(t => t.id).join()) omordna(h); // registret har ändrats sedan byn sparades
   h.tim.push([s.now, ...HISTORIK_TAL.map(t => Math.round(t.varde(s) * 1000) / 1000)]);
-  const grans = Math.floor((s.now - VECKA) / DAY) * DAY; // hela dygn som är äldre än en vecka
+  const grans = Math.floor((s.now - WEEK) / DAY) * DAY; // hela dygn som är äldre än en vecka
   while (h.tim.length && h.tim[0][0] < grans) {
     const d = Math.floor(h.tim[0][0] / DAY), rader: number[][] = [];
     while (h.tim.length && Math.floor(h.tim[0][0] / DAY) === d) rader.push(h.tim.shift()!);
@@ -57,7 +56,7 @@ function omordna(h: Historik) {
 // sparningen: historiken delas i en del per vecka sedan byns början, så att varje del ryms i ett dokument
 // (högst 256 KB) och de gamla delarna inte ändras
 export function histParts(s: State, h: Historik): Record<string, Historik> {
-  const ut: Record<string, Historik> = {}, del = (t: number) => (ut['historik-' + Math.max(0, Math.floor((t - s.founded) / VECKA))] ??= { tal: h.tal, tim: [], dygn: [], kronika: [] });
+  const ut: Record<string, Historik> = {}, del = (t: number) => (ut['historik-' + Math.max(0, Math.floor((t - s.founded) / WEEK))] ??= { tal: h.tal, tim: [], dygn: [], kronika: [] });
   for (const r of h.dygn) del(r[0]).dygn.push(r);
   for (const r of h.tim) del(r[0]).tim.push(r);
   for (const k of h.kronika) del(k[0]).kronika.push(k);

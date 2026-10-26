@@ -1,5 +1,5 @@
 import { tidyTools } from './agande';
-import { rotStumps } from './skog';
+import { chopStock, fellTree, rotStumps, stocks } from './skog';
 import { VED, needLadder, noticeTheft, stole } from './behov';
 import { capacity, dropSpot, fetchSpot, homeKind, load, pickUp, storeLoad, tidyStore, wearStore } from './lager';
 import { KANIN, MASK_PER_GRAV, clean, slaughter, twineRope, wearUsed } from './redskap';
@@ -18,7 +18,6 @@ import { HABIT_FADE, sedEvent, stepSeder, updateTags } from './seder';
 import { fearPlace, forget, lookAround } from './minne';
 import { chance, clamp, rnd } from './slump';
 import { ageIndex, isLight } from './tid';
-import { chopStock, fellTree, stocks } from './skog';
 import { ACTS, toolRow } from './handlingar';
 import { Act, DAY, HOUR, Person, SEC, SKILL_NAMES, State, Task, W, H, useMap, Historik } from './typer';
 import { findPath, speedAt, wear } from './vag';

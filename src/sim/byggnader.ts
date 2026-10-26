@@ -15,7 +15,7 @@ import { Person, State } from './typer';
 // En ny sorts byggnad blir en rad.
 // v = hur akut (0 = behövs inte, 1 = mycket), plats = rutor under tak som behövs, slag = vad ett förrådshus ska rymma,
 // ag = vem som ska äga huset (ett familjehus)
-export interface Akut { v: number; plats: number; slag?: 'mat' | 'material'; ag?: number }
+interface Akut { v: number; plats: number; slag?: 'mat' | 'material'; ag?: number }
 export interface Byggnad {
   namn: string; ikon: string;
   behov: string; // vilket behov den fyller (förklaringen i gränssnittet)
@@ -95,7 +95,7 @@ export function familjOf(s: State, ag?: number): Person[] {
 }
 export const husNamn = (namn: string) => /[sxz]$/i.test(namn) ? `${namn} hus` : `${namn}s hus`;
 // vad familjen äger, i grundvärde: det i förrådet och redskapen
-export function formogenhet(s: State, folk: Person[]) {
+function formogenhet(s: State, folk: Person[]) {
   const ids = new Set(folk.map(q => q.id));
   let v = 0;
   for (const q of folk) { const o = ownedAll(s, q.id); for (const k in o) v += o[k] * grundvarde(k); }
@@ -103,7 +103,7 @@ export function formogenhet(s: State, folk: Person[]) {
   return v;
 }
 // vad ett hus med plats för n kostar: timret och trägolvet och arbetet med dem
-export function husKostnad(n: number) {
+function husKostnad(n: number) {
   const w = Math.max(2, Math.ceil(Math.sqrt(n))), h = Math.max(2, Math.ceil(n / w)), vagg = 2 * (w + 2) + 2 * h - 1, V = MATERIAL.timmer, G = MATERIAL.tra;
   return vagg * (V.n * grundvarde(V.item!) + V.tim * ARBETE) + w * h * (G.n * grundvarde(G.item!) + G.tim * ARBETE);
 }
@@ -186,7 +186,7 @@ function nyttNamn(s: State, h: Hus, fn: Fn, a: Akut) {
   const same = fn === 'sovsal' ? hs.filter(q => q.namn.startsWith(big ? 'Långhus' : 'Hydda')).length : hs.filter(q => (q.fn ?? 'sovsal') === fn).length;
   return r.namnFor ? r.namnFor(s, w, hh, same, a) : r.namn;
 }
-export function bytFn(s: State, h: Hus, fn: Fn, slag?: 'mat' | 'material') {
+function bytFn(s: State, h: Hus, fn: Fn, slag?: 'mat' | 'material') {
   const fore = h.namn;
   if (fnOf(h).lager && !(BYGGNADER[fn] as Byggnad).lager) { s.lagren = zonesOf(s).filter(z => z.hus !== h.id); changed(s); }
   h.fn = fn; h.slag = slag; h.tom = undefined;
@@ -195,7 +195,7 @@ export function bytFn(s: State, h: Hus, fn: Fn, slag?: 'mat' | 'material') {
   log(s, `${fore} blir ${h.namn.toLowerCase()}.`, 'world'); kronika(s, `${fore} blev ${h.namn.toLowerCase()}.`);
   husKlar(s, h);
 }
-export function riv(s: State, h: Hus) {
+function riv(s: State, h: Hus) {
   const ved = bitsOf(s).filter(b => b.hus === h.id).reduce((a, b) => a + (MATERIAL[b.m].item === 'ved' ? b.mat : 0), 0) * RIV_TILLBAKA;
   s.byggen = bitsOf(s).filter(b => b.hus !== h.id); s.hus = housesOf(s).filter(q => q !== h);
   if (ved > 1e-9) put(s, 'ved', ved);

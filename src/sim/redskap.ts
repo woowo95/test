@@ -39,14 +39,14 @@ export function wearUsed(s: State, p: Person, n: number) {
   if (p.task) p.task.tool = undefined;
   if (tr?.text && s.stat![tr.stat] === 1) log(s, tr.text.replace('{namn}', p.name), 'world', [p.id]);
 }
-export const sharpTool = (s: State) => item(s, 'yxa') >= 1 ? 'yxa' : item(s, 'flinta') >= 1 ? 'flinta' : undefined;
+const sharpTool = (s: State) => item(s, 'yxa') >= 1 ? 'yxa' : item(s, 'flinta') >= 1 ? 'flinta' : undefined;
 // ett flintspjut kräver en flinta utöver den som sparas att tända eld med, rep och en gren
 // Materialet tas i behovsstegen (behov.ts): sitt eget, byns, en gåva, och annars av andras (en lindrig stöld)
 const canFlintSpear = (s: State, p: Person) => knows(p, 'flintspjut') && getable(s, p, 'flinta') >= 2 && getable(s, p, 'rep') >= 1 && getable(s, p, 'grenar') >= 1;
-export const canMakeSpear = (s: State, p: Person) => !!sharpTool(s) && getable(s, p, 'grenar') >= 1;
+const canMakeSpear = (s: State, p: Person) => !!sharpTool(s) && getable(s, p, 'grenar') >= 1;
 // byn vill ha ungefär ett spjut per tre vuxna, när någon väl har börjat fiska eller jaga
-export const spearsWanted = (s: State) => (s.stat?.fiskeForsok ?? 0) > 0 || (s.stat?.prod_jakt ?? 0) > 0 ? Math.max(1, Math.min(4, Math.floor(living(s).filter(p => ageOf(p, s.now) >= 14).length / 3))) : 0;
-export const wantsSpear = (s: State, p: Person) => (!!halvOf(s, p, SPJUT) || knows(p, 'fiskespjut') && canMakeSpear(s, p) || canFlintSpear(s, p)) && spears(s) < spearsWanted(s) && !living(s).some(q => q !== p && q.task?.act === 'spjut');
+const spearsWanted = (s: State) => (s.stat?.fiskeForsok ?? 0) > 0 || (s.stat?.prod_jakt ?? 0) > 0 ? Math.max(1, Math.min(4, Math.floor(living(s).filter(p => ageOf(p, s.now) >= 14).length / 3))) : 0;
+const wantsSpear = (s: State, p: Person) => (!!halvOf(s, p, SPJUT) || knows(p, 'fiskespjut') && canMakeSpear(s, p) || canFlintSpear(s, p)) && spears(s) < spearsWanted(s) && !living(s).some(q => q !== p && q.task?.act === 'spjut');
 // det spjut hen gör: det hen redan har påbörjat, annars ett flintspjut om hen kan och det finns material, annars ett träspjut
 export const spearKind = (s: State, p: Person) => halvOf(s, p, SPJUT)?.halv!.gor ?? (canFlintSpear(s, p) ? 'flintspjut' : 'fiskespjut');
 // kan p börja göra ett spjut av slaget k (materialet tas när arbetet börjar, paborjat.ts)
@@ -71,7 +71,7 @@ export function makeSpear(s: State, p: Person) {
 // ---------- rep ----------
 // Rep tvinnas av växtfibrer (hö) vid elden på kvällen av den som kan det, eller tas från senor när vilt slaktas. Det är samma rep
 // oavsett material. Rep behövs till flintspjut och metspö.
-export const REP_GRAS = 2, REP_TIMME = 60 / SAKER.rep!.skaffa!.min!, REP_VILL = 4; // rep per timme
+const REP_GRAS = 2, REP_TIMME = 60 / SAKER.rep!.skaffa!.min!, REP_VILL = 4; // rep per timme
 export const wantsRope = (s: State, p: Person) => knows(p, 'rep') && item(s, 'rep') < REP_VILL && getable(s, p, 'torrgras') >= REP_GRAS + 6; // lite hö sparas till elden
 export function twineRope(s: State, p: Person, hours: number) {
   const n = Math.min(hours * REP_TIMME, (getable(s, p, 'torrgras') - 6) / REP_GRAS, REP_VILL - item(s, 'rep'));
@@ -88,8 +88,8 @@ export function twineRope(s: State, p: Person, hours: number) {
 // tar en mask. Med metspö nappar fisken oftare och sitter kvar bättre än på spjutet.
 export const MASK_PER_GRAV = 4;
 export const canMakeRod = (s: State, p: Person) => knows(p, 'metspo') && getable(s, p, 'rep') >= 1 && getable(s, p, 'ben') >= 1 && getable(s, p, 'grenar') >= 1;
-export const rods = (s: State) => nTools(s, 'metspo');
-export const wantsRod = (s: State, p: Person) => (!!halvOf(s, p, ['metspo']) || canMakeRod(s, p)) && rods(s) < spearsWanted(s) && !living(s).some(q => q !== p && q.task?.act === 'metspo');
+const rods = (s: State) => nTools(s, 'metspo');
+const wantsRod = (s: State, p: Person) => (!!halvOf(s, p, ['metspo']) || canMakeRod(s, p)) && rods(s) < spearsWanted(s) && !living(s).some(q => q !== p && q.task?.act === 'metspo');
 export function makeRod(s: State, p: Person) { if (canMakeRod(s, p)) { takeRecipe(s, p, 'metspo'); rodDone(s, p); } }
 export function rodDone(s: State, p: Person) {
   addTool(s, 'metspo', p);
@@ -100,13 +100,12 @@ export function rodDone(s: State, p: Person) {
 // ---------- redskap: korg ----------
 // En korg flätas av hö av den som kan det. Med korg bär man hem mer från varje tur och spiller mindre bär.
 // Korgen slits när den används och håller ungefär 40 arbetstimmar.
-export const KORG_GRAS = 3;
-export const baskets = (s: State) => nTools(s, 'korg');
+const KORG_GRAS = 3;
+const baskets = (s: State) => nTools(s, 'korg');
 // ungefär en korg per tre vuxna
-export const basketsWanted = (s: State) => Math.max(1, Math.min(5, Math.floor(living(s).filter(p => ageOf(p, s.now) >= 14).length / 3)));
+const basketsWanted = (s: State) => Math.max(1, Math.min(5, Math.floor(living(s).filter(p => ageOf(p, s.now) >= 14).length / 3)));
 export const canMakeBasket = (s: State, p: Person) => getable(s, p, 'torrgras') >= KORG_GRAS;
-export const wantsBasket = (s: State, p: Person) => (!!halvOf(s, p, ['korg']) || knows(p, 'korg') && canMakeBasket(s, p)) && baskets(s) < basketsWanted(s) && !living(s).some(q => q !== p && q.task?.act === 'korg');
-export function makeBasket(s: State, p: Person) { if (canMakeBasket(s, p)) { takeRecipe(s, p, 'korg'); basketDone(s, p); } }
+const wantsBasket = (s: State, p: Person) => (!!halvOf(s, p, ['korg']) || knows(p, 'korg') && canMakeBasket(s, p)) && baskets(s) < basketsWanted(s) && !living(s).some(q => q !== p && q.task?.act === 'korg');
 export function basketDone(s: State, p: Person) {
   addTool(s, 'korg', p);
   count(s, 'korgarGjorda');
@@ -119,17 +118,17 @@ export function basketDone(s: State, p: Person) {
 // slaktar kan tekniken Rep (fisk har inga senor). Kött, ben och skinn är samma vilket djur det än kommer från.
 // Kniven kräver en flinta utöver den som sparas att tända eld med. Fisken rensas med händerna vid elden till fiskkött.
 // DJUR: varje art som fångas. sak = saken den ligger i förrådet som, mat = hur mycket av saken ett djur är (uppätet som
-// det är), slakt = det ett djur ger slaktat eller rensat, rep = chansen per djur att senorna blir ett rep, kniv = slaktas
-// bara med kniv, timme = djur per timme. En ny art blir en rad här (fler fiskar: steg 7.4.3).
-export interface Djurart { sak: string; mat: number; slakt: Record<string, number>; rep: number; kniv?: true; timme: number }
+// det är), slakt = det ett djur ger slaktat eller rensat, rep = chansen per djur att senorna blir ett rep, timme = djur per
+// timme. En ny art blir en rad här (fler fiskar: steg 7.4.3).
+interface Djurart { sak: string; mat: number; slakt: Record<string, number>; rep: number; timme: number }
 export const DJUR = {
-  kanin: { sak: 'vilt', mat: 1.6, slakt: { kott: 2.1, ben: 1, skinn: 1 }, rep: 0.15, kniv: true, timme: 3 },
+  kanin: { sak: 'vilt', mat: 1.6, slakt: { kott: 2.1, ben: 1, skinn: 1 }, rep: 0.15, timme: 3 },
   abborre: { sak: 'abborre', mat: 1, slakt: { fisk: 1 }, rep: 0, timme: 30 },
 } satisfies Record<string, Djurart>;
 export const KANIN = DJUR.kanin.mat; // så mycket mat en kanin är, uppäten som den är (en stack fällt vilt)
 export const SLAKT = DJUR.kanin.slakt; // det en kanin ger slaktad
 export const SLAKT_TIMME = DJUR.kanin.timme; // kaniner per timme
-export const knives = (s: State) => nTools(s, 'kniv');
+const knives = (s: State) => nTools(s, 'kniv');
 export const vilt = (s: State) => amountOf(s, 'vilt');
 export const canMakeKnife = (s: State, p: Person) => getable(s, p, 'flinta') >= 2 && getable(s, p, 'grenar') >= 1;
 export const wantsKnife = (s: State, p: Person) => (!!halvOf(s, p, ['kniv']) || knows(p, 'kniv') && canMakeKnife(s, p)) && knives(s) < 1 && !living(s).some(q => q !== p && q.task?.act === 'kniv');
@@ -181,7 +180,7 @@ export function clean(s: State, p: Person, hours: number) {
 // som ska sparas till elden
 // så många minuter det tar att göra en (saker.ts)
 export const minOf = (k: string) => SAKER[k]!.skaffa!.min!;
-export interface Tillverka { vill: (s: State, p: Person, spar: number) => boolean; gor: (s: State, p: Person) => { act: Act; text: string; min: number; tool?: string } }
+interface Tillverka { vill: (s: State, p: Person, spar: number) => boolean; gor: (s: State, p: Person) => { act: Act; text: string; min: number; tool?: string } }
 export const TILLVERKA: Record<string, Tillverka> = {
   korg: { vill: (s, p, spar) => (!!halvOf(s, p, ['korg']) || item(s, 'torrgras') >= spar) && wantsBasket(s, p), gor: () => ({ act: 'korg', text: 'Flätar en korg av hö.', min: minOf('korg') }) },
   metspo: { vill: (s, p) => wantsRod(s, p), gor: () => ({ act: 'metspo', text: 'Gör ett metspö med en krok av ben.', min: minOf('metspo') }) },

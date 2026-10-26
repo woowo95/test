@@ -10,14 +10,14 @@ const BYAR = [1, 42, 777], DAGAR = 90;
 const TOL: Partial<Record<keyof Nyckeltal, (a: number, b: number) => boolean>> = {
   ms: () => true, // körtiden beror på hur mycket annat datorn gör samtidigt, så den visas men jämförs inte
   kb: (a, b) => Math.abs(a - b) <= Math.max(2, b * 0.1),
-  delKb: (a, b) => b === undefined || Math.abs(a - b) <= Math.max(2, b * 0.1),
+  delKb: (a, b) => Math.abs(a - b) <= Math.max(2, b * 0.1),
 };
 
-type Ut = Pick<Resultat, 'seed' | 'dagar' | 'n' | 'vakter'>;
+type Ut = Pick<Resultat, 'seed' | 'n' | 'vakter'>;
 const res = await pool(BYAR.map(seed => async () => {
   const u = await korSkript('en.ts', [String(seed), String(DAGAR)]);
   if (u.code) { console.log(`by ${seed} kraschade:\n${u.err.slice(-1500)}`); process.exit(1); }
-  return { ...sistaJson<Ut>(u), dagar: DAGAR };
+  return sistaJson<Ut>(u);
 }));
 for (const r of res) console.log(rad(r));
 // återgrundning skrivs alltid ut, så att det syns om en by dött ut och börjat om

@@ -20,7 +20,7 @@ import { Person, State } from './typer';
 const vardeOf = grundvarde;
 
 // arvingarna, i tur och ordning: partnern, barnen, föräldrarna, syskonen
-export function heirsOf(s: State, p: Person): Person[] {
+function heirsOf(s: State, p: Person): Person[] {
   const lev = living(s).filter(q => q !== p);
   const partner = lev.find(q => q.id === p.partner);
   if (partner) return [partner];

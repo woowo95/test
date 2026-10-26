@@ -32,8 +32,6 @@ const PAL: Record<string, Record<string, string>> = {
   timmervagg: { d: '#4a3018', b: '#8a5e34', B: '#b8885a', e: '#d8b480' },
   hogolv: { y: '#d8c070', Y: '#f0dc94', d: '#7a5a3a' },
   tragolv: { b: '#a07446', B: '#c09060', d: '#5a3c22' },
-  bygga: { b: '#8a6a40', B: '#b08a58', d: '#3a2a1a', y: '#d8c070' },
-  handarbete: { y: '#c8b07a', Y: '#e8d4a0', d: '#8a7448', w: '#f2ece0' },
   paborjat: { w: '#f2ece0', d: '#4a3a28', y: '#e0b050' },
   a_samla: AKT,
   a_jaga: AKT,
@@ -242,17 +240,6 @@ const PIX: Record<string, string[]> = {
     'dddddddd',
     '........',
   ],
-  // ett litet hus: den som bygger har det över huvudet
-  bygga: [
-    '...bb...',
-    '..bBBb..',
-    '.bBbbBb.',
-    'bBbbbbBb',
-    '.BbddbB.',
-    '.bBddBb.',
-    '.Bbddbb.',
-    'yyyyyyyy',
-  ],
   // en vass pinne: spetsen täljd ljus
   fiskespjut: [
     '.......w',
@@ -351,17 +338,6 @@ const PIX: Record<string, string[]> = {
     'dddddddd',
     'Bbbbbdbb',
     'bbbbbdbb',
-  ],
-  // handarbete vid elden: ett nystan tråd och en nål av ben
-  handarbete: [
-    '.....dw.',
-    '....d.w.',
-    '.yyyd.w.',
-    'yYYyy.w.',
-    'yYyyd.w.',
-    'yyydy.w.',
-    '.yddy...',
-    '..yy....',
   ],
   // inte klart (paborjat.ts): ett timglas, som ritas ovanpå det som ska bli
   paborjat: [

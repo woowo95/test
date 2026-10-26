@@ -13,7 +13,7 @@ export interface Nyckeltal {
   ms: number; kb: number; delKb: number; // delKb: den största delen av sparfilen (ett dokument i molnet rymmer 256 KB)
 }
 
-export interface Resultat { seed: number; dagar: number; n: Nyckeltal; vakter: string[]; s: State }
+export interface Resultat { seed: number; n: Nyckeltal; vakter: string[]; s: State }
 
 export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => void): Resultat {
   const s = createState(seed, START);
@@ -69,7 +69,7 @@ export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => voi
     delKb: Math.round(Math.max(...Object.values(serializeParts(s)).map(d => new TextEncoder().encode(d).length)) / 1024),
   };
   const vakter = [...fel].map(([typ, f]) => `${typ} (${f.n} ggr), första: ${f.forsta}`);
-  return { seed, dagar, n, vakter, s };
+  return { seed, n, vakter, s };
 }
 
 export function rad(r: Pick<Resultat, 'seed' | 'n'>) {

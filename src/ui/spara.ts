@@ -1,4 +1,4 @@
-import { BEAT, DAY, KUNSKAP_NAMES, LogEntry, State, compact, describe, joinParts, living, migrate, serialize, serializeParts, step, timeLabel } from '../sim';
+import { BEAT, DAY, KUNSKAP_NAMES, LogEntry, SEC, State, compact, describe, joinParts, living, migrate, serialize, serializeParts, step, timeLabel } from '../sim';
 import { $, esc } from './hjalp';
 import { s, ui } from './lage';
 import { drawTerrain } from './terrang';
@@ -83,11 +83,11 @@ export async function loadSaves(): Promise<State | null> {
 }
 
 // ---------- ikappräkning: byn lever vidare i samma takt som i spelet medan spelaren var borta ----------
-export async function catchUp(target: number, showOverlay: boolean) {
+export async function catchUp(target: number) {
   const span = target - s.now;
   if (span <= 0) return;
+  const showOverlay = span > 600 * SEC; // efter mer än tio minuter visas en sammanställning
   ui.busy = true;
-  const logStart = s.log.length ? s.log[s.log.length - 1].t : 0;
   const from = s.now;
   const before = knowSnapshot(), stat0 = { ...s.stat };
   const ov = $('overlay');
@@ -106,7 +106,7 @@ export async function catchUp(target: number, showOverlay: boolean) {
     chunk();
   });
   ui.busy = false; ui.nu = target;
-  if (showOverlay) showSummary(from, logStart, before, stat0);
+  if (showOverlay) showSummary(from, before, stat0);
   saveLocal(); saveDb();
   drawTerrain(true); drawPlants(true);
 }
@@ -138,8 +138,8 @@ function knowHtml(before: ReturnType<typeof knowSnapshot>) {
     ${nyL ? `<li>${nyL} nya lärdomar: ${delar}</li>${ex.map(x => `<li class="muted">${x}</li>`).join('')}` : ''}</ul>`;
 }
 // sammanställningen efter ikappräkningen: det viktigaste som hänt
-function showSummary(from: number, logStart: number, before = knowSnapshot(), stat0: Record<string, number> = {}) {
-  const ev = s.log.filter(l => l.t > logStart && l.t > from);
+function showSummary(from: number, before: ReturnType<typeof knowSnapshot>, stat0: Record<string, number>) {
+  const ev = s.log.filter(l => l.t > from);
   const years = (s.now - from) / DAY;
   const births = (s.stat?.fodda ?? 0) - (stat0.fodda ?? 0), deaths = (s.stat?.doda ?? 0) - (stat0.doda ?? 0);
   const prio = (e: LogEntry) => e.kind === 'death' ? 5 : e.kind === 'birth' || e.kind === 'move' ? 4 : e.kind === 'skill' || /par\.|skilda|tända elden|slocknade/.test(e.text) ? 3 : e.kind === 'world' && /tiden|Byn|flinta|stenar/.test(e.text) ? 2 : e.kind === 'rel' ? 1 : 0;

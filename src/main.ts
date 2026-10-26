@@ -49,7 +49,7 @@ $('testToggle').addEventListener('change', async e => {
     leaveTest();
     if (realState) { setByn(realState); realState = null; }
     drawTerrain(true); drawPlants(true);
-    await catchUp(Date.now(), Date.now() - s.now > 10 * 60 * 1000);
+    await catchUp(Date.now());
   }
   renderClock(); renderPanel(true);
 });
@@ -76,7 +76,7 @@ function tick() {
   if (ui.testMode) vt = Math.max(ui.nu, s.now - BEAT * SEC) + realDt * speed * SEC;
   else {
     vt = Date.now();
-    if (vt - s.now > 120 * SEC) { catchUp(vt, vt - s.now > 600 * SEC); return; }
+    if (vt - s.now > 120 * SEC) { catchUp(vt); return; }
   }
   for (let n = 0; s.now < vt && n < 300; n++) step(s, BEAT, events);
   ui.nu = Math.min(vt, s.now);
@@ -112,7 +112,7 @@ async function boot() {
     cam.x = -1; layout();
     drawTerrain(true); drawPlants(true);
     renderClock(); renderPanel(true);
-    await catchUp(Date.now(), Date.now() - s.now > 10 * 60 * 1000);
+    await catchUp(Date.now());
   } else {
     setByn(createState(Math.floor(Math.random() * 2 ** 31), Date.now()));
     cam.x = -1; layout();

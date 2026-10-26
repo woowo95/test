@@ -7,7 +7,7 @@ import { H, State, T, W, inMap } from './typer';
 // igenom. Golv som är helt omgivet av väggar och öppningar är ett rum under tak (inget tak ritas).
 // Vilka väggar och golv man kan bygga är teknik. Vilket hus man bygger bestämmer byn själv efter behov: när någon kan
 // bygga väggar planerar den skickligaste byggaren ett hus för det mest akuta behovet (byggnader.ts).
-export type BitK = 'vagg' | 'golv' | 'oppning';
+type BitK = 'vagg' | 'golv' | 'oppning';
 // en byggd eller planerad ruta. b = hur långt bygget kommit (1 = klart), mat = material som lagts på bygget,
 // c = skick (1 = nytt), lp/lm = lagning: hur långt den kommit och material som lagts på den
 export interface Bit { id: number; x: number; y: number; k: BitK; m: string; b: number; mat: number; c: number; hus?: number; lp?: number; lm?: number }
@@ -23,7 +23,7 @@ export const MATERIAL: Record<string, Material> = {
   ho: { namn: 'Golv av hö', k: 'golv', item: 'torrgras', n: 1, tim: 0.15, slit: 0.002 }, // äldre sparfiler: hö-golv läggs inte längre, slits till jordgolv
   oppning: { namn: 'Öppning', k: 'oppning', n: 0, tim: 0, slit: 0 },
 };
-export const OPEN_LEAK = 0.12; // så mycket sämre ett rum håller värmen för varje öppning
+const OPEN_LEAK = 0.12; // så mycket sämre ett rum håller värmen för varje öppning
 
 export const bitsOf = (s: State) => (s.byggen ??= []);
 export const housesOf = (s: State) => (s.hus ??= []);
@@ -107,7 +107,7 @@ export function insulation(s: State, r: Rum) {
   return Math.max(0, (n ? sum / n : 0) - OPEN_LEAK * r.open);
 }
 // den som är inne i ett rum kyls långsammare, och ju fler som är där, desto varmare håller de varandra
-export const BODY = 0.04;
+const BODY = 0.04;
 export const shelterOf = (s: State, r: Rum, folk: number) => Math.min(0.9, insulation(s, r) + BODY * folk);
 // alla golvrutor under tak (var man sover står i byggnader.ts)
 export const beds = (s: State) => gridOf(s).rooms.flatMap(r => r.tiles);

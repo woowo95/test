@@ -7,7 +7,7 @@ import { sedEvent } from './seder';
 import { knows } from './teknik';
 import { rnd } from './slump';
 import { Act, DAY, H, HOUR, Person, State, Stock, W } from './typer';
-import { takeRecipe, getable } from './behov';
+import { getable } from './behov';
 import { SNABBARE } from './handlingar';
 import { SAKER } from './saker';
 
@@ -15,9 +15,9 @@ import { SAKER } from './saker';
 // Utan yxa kan invånarna bara samla grenar på marken. Med en flintyxa kan de fälla träd.
 // Ett fällt träd blir en liggande stam som sedan huggs till ved, och då blir det grenar också.
 const STAM = { ved: 8, grenar: 5 }; // vad ett vuxet träd ger
-export const axes = (s: State) => nTools(s, 'yxa'); // en sliten yxa är fortfarande en yxa
+const axes = (s: State) => nTools(s, 'yxa'); // en sliten yxa är fortfarande en yxa
 export const stocks = (s: State) => (s.stockar ??= []);
-export const FALL_TID = 1.2 * HOUR / SNABBARE; // så lång tid det tar att fälla ett träd (48 minuter sedan steg 1.5.13)
+const FALL_TID = 1.2 * HOUR / SNABBARE; // så lång tid det tar att fälla ett träd (48 minuter sedan steg 1.5.13)
 // hur lång tid det tar att fälla trädet på ruta i: ett litet träd fälls fortare
 export const fallTid = (s: State, i: number) => FALL_TID * Math.max(0.5, groundOf(s).trees[i]);
 
@@ -43,7 +43,7 @@ export function treeSpot(s: State, taken: Set<number>): { x: number; y: number }
   const i = c[Math.floor(rnd(s, 'val') * Math.min(5, c.length))].i;
   return { x: (i % W) + 0.5, y: Math.floor(i / W) + 0.5 };
 }
-export const nearestStock = (s: State) => {
+const nearestStock = (s: State) => {
   const b = groundOf(s).built, onSite = (k: Stock) => b?.[Math.floor(k.y) * W + Math.floor(k.x)] ? 0 : 1; // stammarna där huset ska stå först
   return stocks(s).filter(k => k.ved > 0).sort((a, c) => onSite(a) - onSite(c) || campDist(s, a.x, a.y) - campDist(s, c.x, c.y))[0];
 };
@@ -82,10 +82,9 @@ export function chopStock(s: State, ref: number | undefined, amount: number) {
 }
 
 // hur många yxor byn vill ha (en till medan ett hus byggs, för träden där det ska stå)
-export const axesWanted = (adults: number) => Math.max(1, Math.min(3, Math.floor(adults / 4)));
+const axesWanted = (adults: number) => Math.max(1, Math.min(3, Math.floor(adults / 4)));
 // en flinta sparas att tända eld med
 export const canMakeAxe = (s: State, p: Person) => getable(s, p, 'flinta') >= 2 && getable(s, p, 'grenar') >= 1; // materialet i behovsstegen (behov.ts)
-export function makeAxe(s: State, p: Person) { if (canMakeAxe(s, p)) { takeRecipe(s, p, 'yxa'); axeDone(s, p); } }
 // yxan är klar (materialet togs när arbetet började, paborjat.ts)
 export function axeDone(s: State, p: Person) {
   addTool(s, 'yxa', p);
