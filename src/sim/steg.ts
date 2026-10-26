@@ -9,11 +9,11 @@ import { arbetsformaga, foodDays, workRate } from './ekonomi';
 import { TRY_SEC, growFynd, handFish, packFynd, pickMushrooms, richness, takeFrom } from './fynd';
 import { coldOf, temperature } from './vader';
 import { addFuel, canLight, fireWant, forageItems, fuelFor, hearthOf, heatAt, igniterOf, stepFire, takeCoal, takeFuel, tryLight } from './eld';
-import { ageOf, alive, count, isSick, living, log, stat, think } from './folk';
+import { ageOf, alive, byId, count, isSick, living, log, stat, think } from './folk';
 import { getMap } from './karta';
 import { barnMat, birth, birthWish, die, regulate } from './liv';
 import { WEAR, groundOf, growGround, packGround, tileOf } from './mark';
-import { TalkEvent, converse } from './samtal';
+import { SAMTAL_R, TalkEvent, converse, isSocial } from './samtal';
 import { HABIT_FADE, sedEvent, stepSeder, updateTags } from './seder';
 import { fearPlace, forget, lookAround } from './minne';
 import { chance, clamp, rnd } from './slump';
@@ -119,7 +119,7 @@ export function step(s: State, dtSec: number, events?: TalkEvent[]) {
       const expect = dtSec / 240 * (0.6 + stat(p, 'empati', now) / 25);
       let n = Math.floor(expect); if (rnd(s, 'samtal', p) < expect - n) n++;
       // bara med dem som är nära när slaget slutar
-      const others = social.filter(q => q !== p && alive(q) && Math.hypot(q.x - p.x, q.y - p.y) < 4);
+      const others = social.filter(q => q !== p && alive(q) && Math.hypot(q.x - p.x, q.y - p.y) < SAMTAL_R);
       for (let i = 0; i < n; i++) converse(s, p, others, events);
       if (n && others.length) count(s, 'samtal', n);
     }
@@ -236,8 +236,7 @@ function taskStep(s: State, p: Person, a: number, t1: number, dtSec: number, lea
   }
   s.now = t1;
   spara(s, p);
-  const tk = p.task;
-  if (tk && tk.phase === 'do' && ACTS[tk.act].social) social.push(p);
+  if (isSocial(p)) social.push(p);
 }
 
 // var och en går lite vid sidan av, så att de inte täcker varandra
@@ -292,7 +291,7 @@ function arrive(s: State, p: Person, tk: Task, light: boolean) {
   if (tk.act === 'elda') {
     if (tk.phase === 'go') {
       // vid förrådet: ta en famn ved och gå till elden. Byns och sin egen, eller den andras (stöld i yttersta nöd, behov.ts)
-      const fran = tk.fran !== undefined ? s.people.find(q => q.id === tk.fran) : undefined;
+      const fran = byId(s, tk.fran);
       const m = getMap(s.seed), n = s.fire.fuel >= fireWant(s) ? 0 : Math.min(1, fuelFor(s, p, fran)); // en famn i taget, så att elden matas oftare
       if (n <= 0) p.task = undefined;
       else {

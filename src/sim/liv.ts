@@ -1,9 +1,9 @@
-import { ageOf, alive, byId, count, living, log, newPerson, relKey, think } from './folk';
+import { ageOf, alive, byId, count, isParent, living, log, newPerson, relKey, startSkills, think } from './folk';
 import { sedEvent } from './seder';
 import { pair } from './varld';
-import { moodOf } from './samtal';
+import { avgMood } from './samtal';
 import { chance, clamp, pick, rnd } from './slump';
-import { DAY, Person, SEC, SKILLS, State } from './typer';
+import { DAY, Person, SEC, State } from './typer';
 import { foodDays } from './ekonomi';
 import { put, releaseOwner } from './lager';
 import { kronika } from './historik';
@@ -24,7 +24,7 @@ export function die(s: State, p: Person, cause: string) {
   if (a >= 70) p.fame.push(`Blev ${a} år gammal`);
   for (const q of living(s)) {
     if (q.partner === p.id) { q.partner = undefined; think(q, `Sörjer ${p.name}`, -0.3, s.now, 1.2 * DAY); }
-    else if (q.mother === p.id || q.father === p.id || p.mother === q.id || p.father === q.id) think(q, `Sörjer ${p.name}`, -0.25, s.now, DAY);
+    else if (isParent(p, q) || isParent(q, p)) think(q, `Sörjer ${p.name}`, -0.25, s.now, DAY);
     else { const r = s.rels[relKey(p.id, q.id)]; if (r && r.op > 40) think(q, `Saknar ${p.name}`, -0.12, s.now, 0.6 * DAY); }
   }
 }
@@ -50,7 +50,6 @@ export function birth(s: State, mother: Person) {
 // När byn är liten spelar humöret mindre roll för om folk flyttar.
 const crowd = (pop: number) => clamp((pop - 14) / 16, 0, 3); // 0 upp till 14 invånare, 1 vid 30
 export function birthWish(pop: number) { return pop <= 10 ? 1 + 0.03 * (10 - pop) : clamp(1 - (pop - 16) * 0.035, 0.15, 1); }
-function avgMood(s: State) { const l = living(s); return l.length ? l.reduce((a, p) => a + moodOf(p, s.now), 0) / l.length : 0.6; }
 export function emigrationRate(pop: number, mood: number) { // flyttar per dygn
   const unhappy = clamp((0.6 - mood) * 4, 0, 1.5), w = clamp((pop - 6) / 20, 0.1, 1);
   return crowd(pop) ** 2 * (0.3 + 2.5 * unhappy * w) + 0.12 * unhappy * w;
@@ -70,7 +69,7 @@ export function regulate(s: State, dtSec: number) {
   const fd = foodDays(s);
   s.matSnitt = s.matSnitt === undefined ? fd : s.matSnitt + (fd - s.matSnitt) * Math.min(1, dtSec * SEC / MAT_SNITT);
   if (rnd(s, 'flytt') < dtSec / 3600) { // humöret räknas om ungefär en gång i timmen
-    const rate = emigrationRate(pop, avgMood(s)) + hungerFlytt(s, pop);
+    const rate = emigrationRate(pop, avgMood(s, 0.6)) + hungerFlytt(s, pop);
     if (chance(s, rate / 86400, 3600, 'flytt')) emigrate(s);
   }
   if (chance(s, immigrationRate(pop) * (0.3 + 0.7 * matGott(s)) / 86400, dtSec, 'flytt')) immigrate(s, false);
@@ -80,7 +79,7 @@ const MEDHAVD = 2;
 function immigrate(s: State, alone: boolean) {
   const mk = (sex: 'm' | 'k') => {
     const age = 17 + rnd(s, 'folk') * 18, p = newPerson(s, sex, s.now - age * DAY);
-    for (const k of SKILLS) p.skill[k] = clamp((age - 8) * 0.25 * (0.4 + rnd(s, 'folk')) * (p.pot.intelligens / 12), 0, 12);
+    startSkills(s, p, age);
     s.people.push(p);
     put(s, 'rotter', MEDHAVD, { [p.id]: MEDHAVD }); // lite mat från vandringen, så att man hinner samla innan man svälter
     return p;
@@ -101,20 +100,23 @@ function refound(s: State) {
   log(s, `${p.name} hittade den övergivna boplatsen och grundade byn på nytt.`, 'world', [p.id]);
 }
 
+// p lämnar byn och tar med sig det hen orkar bära (arv.ts); resten blir byns
+function leave(s: State, p: Person, now: number) { p.left = now; p.task = undefined; packUp(s, p); releaseOwner(s, p.id); }
+
 function emigrate(s: State) {
   const now = s.now;
   const cands = living(s).filter(p => p.partner !== undefined && ageOf(p, now) > 18 && ageOf(p, now) < 38);
   if (!cands.length) { // inget ungt par: en ensam vuxen ger sig av
     const one = living(s).filter(p => p.partner === undefined && ageOf(p, now) >= 16 && ageOf(p, now) < 40);
     if (!one.length) return;
-    const p = pick(s, one, 'flytt'); p.left = now; p.task = undefined; packUp(s, p); releaseOwner(s, p.id);
+    const p = pick(s, one, 'flytt'); leave(s, p, now);
     log(s, `${p.name} lämnade byn för att söka lyckan på annat håll.`, 'move', [p.id]);
     count(s, 'utvandrade');
     return;
   }
   const a = pick(s, cands, 'flytt'), b = byId(s, a.partner)!;
-  const group = [a, b, ...living(s).filter(c => (c.mother === a.id || c.father === a.id || c.mother === b.id || c.father === b.id) && ageOf(c, now) < 14)];
-  for (const g of group) { g.left = now; g.task = undefined; packUp(s, g); releaseOwner(s, g.id); } // var och en tar med sig det hen orkar bära (arv.ts)
+  const group = [a, b, ...living(s).filter(c => (isParent(a, c) || isParent(b, c)) && ageOf(c, now) < 14)];
+  for (const g of group) leave(s, g, now);
   const n = group.length - 2;
   count(s, 'utvandrade', group.length);
   log(s, `Byn blev trång. ${a.name} och ${b.name} lämnade byn${n ? ` med ${n} barn` : ''} för att grunda en egen boplats.`, 'move', group.map(g => g.id));

@@ -1,7 +1,7 @@
 import { living } from './folk';
 import { amountOf, foodOf } from './lager';
 import { groundOf } from './mark';
-import { moodOf } from './samtal';
+import { avgMood } from './samtal';
 import { FOREST, isSoil } from './vag';
 import { DAY, Historik, State, WEEK } from './typer';
 
@@ -15,7 +15,7 @@ const HISTORIK_TAL: { id: string; namn: string; hur: 'snitt' | 'sist'; varde: (s
   { id: 'folk', namn: 'Invånare', hur: 'snitt', varde: s => living(s).length },
   { id: 'mat', namn: 'Mat i förrådet', hur: 'snitt', varde: s => foodOf(s) },
   { id: 'tra', namn: 'Trä i förrådet', hur: 'snitt', varde: s => amountOf(s, 'ved') },
-  { id: 'humor', namn: 'Humör', hur: 'snitt', varde: s => { const f = living(s); return f.length ? f.reduce((a, p) => a + moodOf(p, s.now), 0) / f.length : 0; } },
+  { id: 'humor', namn: 'Humör', hur: 'snitt', varde: s => avgMood(s, 0) },
   { id: 'hunger', namn: 'Mycket hungriga', hur: 'snitt', varde: s => living(s).filter(p => p.hunger < 0.15).length },
   { id: 'skog', namn: 'Skog, andel av marken', hur: 'snitt', varde: skog },
   { id: 'fodda', namn: 'Födda sedan byns början', hur: 'sist', varde: s => (s.stat?.fodda as number) ?? 0 },

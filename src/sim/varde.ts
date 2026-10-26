@@ -76,6 +76,9 @@ export function grundvarde(k: string): number {
   return v;
 }
 
+// grundvärdet av en uppsättning saker (id till mängd), lagt till `start` (summeras i uppsättningens ordning)
+export function varuVarde(o: Record<string, number>, start = 0) { let v = start; for (const k in o) v += o[k] * grundvarde(k); return v; }
+
 // ---------- byns rikedom ----------
 interface Rikedom { forrad: number; redskap: number; hus: number }
 // vad ett ting är värt: ett påbörjat redskap (paborjat.ts) är värt sitt material, ett redskap grundvärdet gånger skicket

@@ -4,10 +4,10 @@ import { setStock, storeFromSums } from './lager';
 import { isTool } from './saker';
 import { migrateTools } from './agande';
 import { inFas, nyKalender } from './tid';
-import { ageOf, getRel, log, newPerson, think } from './folk';
+import { ageOf, byId, getRel, log, newPerson, startSkills, think } from './folk';
 import { newSeder, sederTarget, TAGS } from './seder';
 import { clamp, gauss, rnd } from './slump';
-import { DAY, Fire, NEW_H, NEW_W, Person, SEC, SKILLS, State, useMap } from './typer';
+import { DAY, Fire, NEW_H, NEW_W, Person, SEC, State, useMap } from './typer';
 
 // ---------- skapa värld ----------
 export function createState(seed: number, now: number): State {
@@ -21,10 +21,7 @@ export function createState(seed: number, now: number): State {
   pair(s, a, b, true); pair(s, c, d, true);
   s.people.push(newPerson(s, rnd(s, 'folk') < 0.5 ? 'm' : 'k', now - (4 + rnd(s, 'folk') * 0.5) * DAY, b, a));
   // startfärdigheter efter ålder
-  for (const p of s.people) {
-    const a = ageOf(p, now);
-    for (const k of SKILLS) p.skill[k] = clamp((a - 8) * 0.25 * (0.4 + rnd(s, 'folk')) * (p.pot.intelligens / 12), 0, 12);
-  }
+  for (const p of s.people) startSkills(s, p, ageOf(p, now));
   s.seder.v = sederTarget(s);
   stepDelning(s); // en ny by är fattig och delar nästan allt
   log(s, `${s.people.length} människor slog sig ner vid sjön. De har ingen eld ännu.`, 'world');
@@ -57,7 +54,7 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
     s.kal ??= inFas(s); // byar från före kalendern kommer i fas med veckan
     // äldre sparfiler: det som räknades ur loggen räknas nu i statistiken
     if (s.log.some(l => l.text.includes('byns första yxa'))) (s.stat ??= {}).yxa1 ??= 1;
-    for (const l of s.log) if (l.kind === 'skill') { const m = l.text.match(/ kallas nu för (.+)\.$/), p = s.people.find(q => q.id === l.ids?.[0]); const tag = m && p && TAGS.find(t => t.tag.toLowerCase() === m[1])?.tag; if (tag && !p.kallad?.includes(tag)) (p.kallad ??= []).push(tag); }
+    for (const l of s.log) if (l.kind === 'skill') { const m = l.text.match(/ kallas nu för (.+)\.$/), p = byId(s, l.ids?.[0]); const tag = m && p && TAGS.find(t => t.tag.toLowerCase() === m[1])?.tag; if (tag && !p.kallad?.includes(tag)) (p.kallad ??= []).push(tag); }
     migrateTek(s);
     if (!s.items && !s.stackar && !s.marken) s.items = { flinta: 1, torrgras: 8, grenar: 8 }; // de allra första sparfilerna
     s.items ??= {};

@@ -1,11 +1,15 @@
-import { ageOf, getRel, isKin, log, similarity, stat, think } from './folk';
+import { ageOf, getRel, isKin, living, log, similarity, stat, think } from './folk';
 import { clamp, rnd } from './slump';
 import { DAY, HOUR, Person, State } from './typer';
 import { pair } from './varld';
 import { share } from './minne';
 import { askForGift } from './behov';
+import { ACTS } from './handlingar';
 
 // ---------- samtal ----------
+// hur nära (rutor) man ska vara för att prata, och om p håller på med något socialt just nu (vid elden, i samtal)
+export const SAMTAL_R = 4;
+export const isSocial = (p: Person) => !!p.task && p.task.phase === 'do' && !!ACTS[p.task.act].social;
 export interface TalkEvent { a: number; b: number; kind: string; good: boolean; t: number }
 export function converse(s: State, a: Person, others: Person[], events?: TalkEvent[]) {
   const now = s.now;
@@ -69,6 +73,8 @@ export function converse(s: State, a: Person, others: Person[], events?: TalkEve
   }
 }
 
+// snitthumöret i byn; `tom` är värdet när ingen lever
+export function avgMood(s: State, tom: number) { const l = living(s); return l.length ? l.reduce((a, p) => a + moodOf(p, s.now), 0) / l.length : tom; }
 export function moodOf(p: Person, now: number) {
   let m = 0.55;
   if (p.hunger < 0.2) m -= 0.2; else if (p.hunger > 0.6) m += 0.05;

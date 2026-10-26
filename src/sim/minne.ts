@@ -1,5 +1,5 @@
 import { campCenter, campDist } from './plats';
-import { byId, count, living, log, stat } from './folk';
+import { byId, count, isParent, living, log, stat } from './folk';
 import { teach } from './teknik';
 import { Kind, SIGHT, prospect, regrowOf, richness, shoreOf, standAt, stoneDist, synsOf, toppOf, vaxerAt } from './fynd';
 import { getMap } from './karta';
@@ -162,7 +162,7 @@ export function fearPlace(s: State, victim: Person, cause: string) {
   const a = areaOf(victim.x, victim.y), om = `${victim.name} dog ${cause} där`;
   for (const q of living(s)) {
     const saw = Math.hypot(q.x - victim.x, q.y - victim.y) < 10;
-    const close = q.partner === victim.id || q.mother === victim.id || q.father === victim.id || victim.mother === q.id || victim.father === q.id;
+    const close = q.partner === victim.id || isParent(victim, q) || isParent(q, victim);
     if (!saw && !close) continue;
     const l = findL(q, 'fara', a);
     const v = saw ? 0.8 : 0.6, c = saw ? 1 : 0.7;

@@ -1,10 +1,10 @@
-import { alive, byId, count, living, log } from './folk';
+import { alive, byId, count, isParent, living, log } from './folk';
 import { Hus, MATERIAL, Rum, bitsOf, gridOf, housesOf, touch } from './byggnad';
 import { changed, ownedAll, put, storeFull, zonesOf } from './lager';
 import { kronika } from './historik';
 import { DAY } from './typer';
 import { tingOf } from './agande';
-import { ARBETE, grundvarde, tingVarde } from './varde';
+import { ARBETE, grundvarde, tingVarde, varuVarde } from './varde';
 import { Person, State } from './typer';
 
 // ---------- byggnaderna: vad ett hus är till för ----------
@@ -86,7 +86,7 @@ export function mostUrgent(s: State) {
 // hus och äger så mycket (förrådet och redskapen, efter värdet) att det räcker till huset, bestämmer familjen sig för att
 // bygga ett. Huset ägs av den av dem som planerade det, går i arv som föremål (arv.ts) och blir byns när ingen äger det.
 // Materialet tas av familjens eget först, sedan efter behovsstegen (bygg.ts: takeForHouse). Familjen sover där.
-const barnTill = (q: Person, o?: Person) => !!o && (q.mother === o.id || q.father === o.id);
+const barnTill = (q: Person, o?: Person) => !!o && isParent(o, q);
 export function familjOf(s: State, ag?: number): Person[] {
   const o = byId(s, ag);
   if (!o || !alive(o)) return [];
@@ -98,7 +98,7 @@ export const husNamn = (namn: string) => /[sxz]$/i.test(namn) ? `${namn} hus` : 
 function formogenhet(s: State, folk: Person[]) {
   const ids = new Set(folk.map(q => q.id));
   let v = 0;
-  for (const q of folk) { const o = ownedAll(s, q.id); for (const k in o) v += o[k] * grundvarde(k); }
+  for (const q of folk) v = varuVarde(ownedAll(s, q.id), v);
   for (const t of tingOf(s)) if (ids.has(t.agare)) v += tingVarde(t);
   return v;
 }

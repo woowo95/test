@@ -1,7 +1,7 @@
 import { getMap } from './karta';
 import { freeNear } from './byggnad';
 import { clamp, gauss, pick, rnd } from './slump';
-import { DAY, LogEntry, Person, Rel, SKILLS, STATS, Skill, Stat, State } from './typer';
+import { Act, DAY, LogEntry, Person, Rel, SKILLS, STATS, Skill, Stat, State } from './typer';
 
 // ---------- namn ----------
 const N1 = ['A', 'Bo', 'Da', 'E', 'Fa', 'Gu', 'Ha', 'I', 'Ka', 'Lo', 'Ma', 'Ny', 'O', 'Ra', 'Si', 'Tu', 'U', 'Ve', 'Y', 'Å', 'Ste', 'Tor', 'Al', 'Ger'];
@@ -24,6 +24,11 @@ export function living(s: State) { return s.people.filter(alive); }
 // sjuk just nu (sickUntil är aldrig 0 eller NaN i spelet; då ger uttrycket ändå samma svar som !!sickUntil &&)
 export const isSick = (p: Person, now: number) => p.sickUntil !== undefined && p.sickUntil > now;
 export function byId(s: State, id?: number) { return id === undefined ? undefined : s.people.find(p => p.id === id); }
+// gör någon levande (utom `utom`) handlingen act just nu? (drar ingen slump)
+export function doingAct(s: State, act: Act, utom?: Person) {
+  for (const q of s.people) if (q !== utom && alive(q) && q.task?.act === act) return true;
+  return false;
+}
 
 export function stat(p: Person, k: Stat, now: number) {
   const a = ageOf(p, now);
@@ -34,6 +39,11 @@ export function stat(p: Person, k: Stat, now: number) {
   else if (k === 'skonhet' && a > 40) g *= clamp(1 - (a - 40) / 70, 0.5, 1);
   else if ((k === 'intelligens' || k === 'nyfikenhet' || k === 'flit' || k === 'mod') && a > 60) g *= clamp(1 - (a - 60) / 60, 0.5, 1);
   return p.pot[k] * g;
+}
+
+// färdigheterna en nykomling har efter sin ålder (en dragning ur 'folk' per färdighet, i SKILLS ordning)
+export function startSkills(s: State, p: Person, age: number) {
+  for (const k of SKILLS) p.skill[k] = clamp((age - 8) * 0.25 * (0.4 + rnd(s, 'folk')) * (p.pot.intelligens / 12), 0, 12);
 }
 
 export function newPerson(s: State, sex: 'm' | 'k', born: number, mother?: Person, father?: Person): Person {
@@ -68,8 +78,11 @@ export function getRel(s: State, a: Person, b: Person): Rel {
   }
   return r;
 }
+// p är förälder till c, och p:s barn bland alla i byn (också döda och bortflyttade)
+export const isParent = (p: Person, c: Person) => c.mother === p.id || c.father === p.id;
+export const childrenOf = (s: State, p: Person) => s.people.filter(c => isParent(p, c));
 export function isKin(a: Person, b: Person) {
-  return a.mother === b.id || a.father === b.id || b.mother === a.id || b.father === a.id ||
+  return isParent(b, a) || isParent(a, b) ||
     (a.mother !== undefined && a.mother === b.mother) || (a.father !== undefined && a.father === b.father);
 }
 export function similarity(a: Person, b: Person) {

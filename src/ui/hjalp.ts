@@ -1,5 +1,5 @@
 import { iconImg } from '../ikoner';
-import { HOUR, LogEntry, Person, byId, capacity, carryKind, isSick, load, sak, sakNamn, timeLabel } from '../sim';
+import { HOUR, LogEntry, Person, byId, capacity, carryKind, isParent, isSick, load, sak, sakNamn, timeLabel } from '../sim';
 import { s } from './lage';
 
 // små hjälpare för text, tal, färger och staplar som alla delar av gränssnittet använder
@@ -42,8 +42,8 @@ export function pLink(p?: Person) { return p ? `<button class="plink" data-id="$
 export function moodWord(m: number) { return m > 0.75 ? 'Lycklig' : m > 0.55 ? 'Nöjd' : m > 0.4 ? 'Okej' : m > 0.25 ? 'Nedstämd' : 'Olycklig'; }
 export function relWord(p: Person, q: Person, op: number) {
   if (p.partner === q.id) return 'Partner';
-  if (q.mother === p.id || q.father === p.id) return 'Barn';
-  if (p.mother === q.id || p.father === q.id) return 'Förälder';
+  if (isParent(p, q)) return 'Barn';
+  if (isParent(q, p)) return 'Förälder';
   if (p.mother !== undefined && (p.mother === q.mother || p.father === q.father)) return 'Syskon';
   return op > 60 ? 'Nära vän' : op > 25 ? 'Vän' : op > -10 ? 'Bekant' : op > -45 ? 'Ogillar' : 'Ovän';
 }

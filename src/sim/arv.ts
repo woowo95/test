@@ -8,23 +8,21 @@
 // en del (steg 9.5.3). Ett familjehus (byggnader.ts) ärvs som ett redskap, efter sitt värde, och får den nya ägarens namn.
 // Den som flyttar tar med sig så mycket av sitt eget som hen orkar bära, det mest värda för vikten först; resten blir byns.
 import { tingOf } from './agande';
-import { count, isKin, living, log } from './folk';
+import { count, isKin, isParent, living, log } from './folk';
 import { kronika } from './historik';
 import { capacity, carryOff, ownedAll, passOn } from './lager';
 import { STACK, sakNamn, tingNamn } from './saker';
-import { grundvarde, husVarde, tingVarde } from './varde';
+import { grundvarde, husVarde, tingVarde, varuVarde } from './varde';
 import { housesOf } from './byggnad';
 import { husNamn } from './byggnader';
 import { Person, State } from './typer';
-
-const vardeOf = grundvarde;
 
 // arvingarna, i tur och ordning: partnern, barnen, föräldrarna, syskonen
 function heirsOf(s: State, p: Person): Person[] {
   const lev = living(s).filter(q => q !== p);
   const partner = lev.find(q => q.id === p.partner);
   if (partner) return [partner];
-  const led = [(q: Person) => q.mother === p.id || q.father === p.id, (q: Person) => p.mother === q.id || p.father === q.id, (q: Person) => isKin(p, q)];
+  const led = [(q: Person) => isParent(p, q), (q: Person) => isParent(q, p), (q: Person) => isKin(p, q)];
   for (const f of led) { const h = lev.filter(f); if (h.length) return h; }
   return [];
 }
@@ -48,8 +46,7 @@ export function inherit(s: State, p: Person) {
     if (h.namn === husNamn(p.name)) h.namn = husNamn(heirs[i].name);
   }
   const eget = ownedAll(s, p.id);
-  let rest = 0;
-  for (const k in eget) rest += eget[k] * vardeOf(k);
+  const rest = varuVarde(eget);
   if (Object.keys(eget).length) {
     // resten delas så att alla kommer så nära samma värde som det går
     const mal = (val.reduce((a, b) => a + b, 0) + rest) / heirs.length, d = val.map(v => Math.max(0, mal - v)), sd = d.reduce((a, b) => a + b, 0);
@@ -73,7 +70,7 @@ export function packUp(s: State, p: Person) {
   const eget = ownedAll(s, p.id);
   const saker = [
     ...tingOf(s).filter(t => t.agare === p.id).map(t => ({ k: t.k, ting: t.id, n: 1, per: tingVarde(t), bord: 1 })),
-    ...Object.keys(eget).map(k => ({ k, ting: undefined, n: eget[k], per: vardeOf(k) * (STACK[k] ?? 25), bord: 1 / (STACK[k] ?? 25) })),
+    ...Object.keys(eget).map(k => ({ k, ting: undefined, n: eget[k], per: grundvarde(k) * (STACK[k] ?? 25), bord: 1 / (STACK[k] ?? 25) })),
   ].sort((a, b) => b.per - a.per || a.k.localeCompare(b.k));
   for (const x of saker) {
     if (kvar <= 1e-9) break;

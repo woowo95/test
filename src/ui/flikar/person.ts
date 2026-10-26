@@ -1,4 +1,4 @@
-import { Act, Lardom, Person, KUNSKAP_NAMES, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, TEKNIK, BYN, Ting, ageOf, alive, byId, heldBy, ownedBy, ownedStock, sakNamn, tingNamn, STACK, describe, duty, habitShare, habitTotal, moodOf, relKey, stat, taskName, timeLabel } from '../../sim';
+import { Act, Lardom, Person, KUNSKAP_NAMES, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, TEKNIK, BYN, Ting, ageOf, alive, byId, childrenOf, heldBy, ownedBy, ownedStock, sakNamn, tingNamn, STACK, describe, duty, habitShare, habitTotal, moodOf, relKey, stat, taskName, timeLabel } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { bar, cap, carryTxt, durTxt, esc, hex, moodWord, pLink, relWord, sickNow, trend } from '../hjalp';
 import { s, ui } from '../lage';
@@ -11,7 +11,7 @@ export const person: Flik = {
     const p = byId(s, ui.selected);
     if (!p) return `<p class="muted">Klicka på en person på kartan eller i listan för att se allt om hen.</p>`;
     const a = ageOf(p, s.now), now = s.now;
-    const kids = s.people.filter(q => q.mother === p.id || q.father === p.id);
+    const kids = childrenOf(s, p);
     const rels = s.people.filter(q => q.id !== p.id && s.rels[relKey(p.id, q.id)] && alive(q)).map(q => ({ q, r: s.rels[relKey(p.id, q.id)] }))
       .sort((x, y) => Math.abs(y.r.op) - Math.abs(x.r.op)).slice(0, 8);
     const status = alive(p) ? (p.task ? taskName(p.task) : '–') : p.died !== undefined ? `Dog ${p.cause} (${timeLabel(s, p.died)})` : `Flyttade från byn (${timeLabel(s, p.left!)})`;

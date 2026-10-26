@@ -1,7 +1,7 @@
 import { State, Person, HOUR, DAY, GREN } from './typer';
 import { FOOD, SAKER, SAK_LIST, isTool } from './saker';
 import { actsOf, usesTool } from './handlingar';
-import { ageOf, alive, byId, count, getRel, isKin, living, log, stat, think } from './folk';
+import { ageOf, alive, byId, count, getRel, isKin, isParent, living, log, stat, think } from './folk';
 import { chance, clamp, rnd } from './slump';
 import { Ting, tingOf } from './agande';
 import { BYN, Del, addDel } from './egendom';
@@ -95,7 +95,6 @@ export function needLadder(s: State, p: Person, dtSec: number) {
     if (v) stole(s, p, v, b.id, b.anvand(s, p, v));
   }
 }
-const isParent = (g: Person, m: Person) => m.mother === g.id || m.father === g.id;
 const isFamily = (g: Person, m: Person) => isParent(g, m) || g.partner === m.id || isKin(g, m);
 // det g har över att ge m. En förälder delar med sitt barn också det sista, partner och släkt behåller en portion
 // åt sig själva, andra så mycket de själva behöver (b.kvar)
@@ -197,7 +196,7 @@ const namnOf = (key: string) => BEHOV.find(b => b.id === key)?.namn ?? (SAKER[ke
 export function noticeTheft(s: State, p: Person, key: string) {
   if (!p.stulet?.some(x => x.k === key)) return;
   for (const { av, l } of p.stulet.filter(x => x.k === key)) {
-    const t = s.people.find(q => q.id === av);
+    const t = byId(s, av);
     if (!t) continue;
     const r = getRel(s, p, t);
     r.op = clamp(r.op - (l ? STOLD_LINDRIG : STOLD_OP), -100, 100);
@@ -281,7 +280,7 @@ const GEMENSKAP_GE = 0.25; // så mycket givmildare (eller snålare) seden gör 
 const RIK_GE = 0.7; // så mycket av viljan att ge till andra än barn och partner som finns kvar i en rik by
 export function willing(s: State, g: Person, m: Person, overflod = 1) {
   const over = clamp(0.4 + 0.3 * overflod, OVERFLOD.min, OVERFLOD.max), sed = 1 + GEMENSKAP_GE * s.seder.v.gemenskap;
-  if (m.mother === g.id || m.father === g.id) return clamp(0.95 * Math.max(1, over) * sed, 0, 1); // till sitt barn ger man också det sista
+  if (isParent(g, m)) return clamp(0.95 * Math.max(1, over) * sed, 0, 1); // till sitt barn ger man också det sista
   const r = getRel(s, g, m);
   if (r.op < -10) return 0;
   const emp = stat(g, 'empati', s.now) / 20, nara = g.partner === m.id;

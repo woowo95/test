@@ -1,5 +1,5 @@
 import { foodDays } from './ekonomi';
-import { ageOf, living, log } from './folk';
+import { ageOf, isParent, living, log } from './folk';
 import { clamp } from './slump';
 import { Act, DAY, HOUR, Person, SEDER, Sed, Seder, State } from './typer';
 
@@ -11,7 +11,7 @@ export function newSeder(): Seder {
 const dev = (v: number) => (v - 10) / 6;
 // åt vilket håll personen drar sederna, efter sin personlighet
 function personSeder(s: State, p: Person): Record<Sed, number> {
-  const q = p.pot, kids = s.people.some(c => c.mother === p.id || c.father === p.id);
+  const q = p.pot, kids = s.people.some(c => isParent(p, c));
   return {
     arbete: dev(q.flit),
     gemenskap: dev(q.empati),
