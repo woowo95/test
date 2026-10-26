@@ -28,6 +28,7 @@ import { stepByggnader } from './byggnader';
 import { avail, takeForHouse, buildJob, deliver as deliverBit, lacks, needOf, noteKom, planBuild, siteOf, toWalls, wearBuild, workOn } from './bygg';
 import { MATERIAL, bitById, gridOf, roomAt, shelterOf } from './byggnad';
 import { histParts, historikSteg, joinHist } from './historik';
+import { migrate } from './varld';
 import { stepDelning } from './delning';
 import { balans } from './balans';
 
@@ -430,6 +431,8 @@ export function serialize(s: State) {
   packGround(s); packFynd(s);
   return JSON.stringify(s, avrunda);
 }
+// en kopia av byn, som en sparad och inläst by (cacherna i WeakMap följer inte med, regel 4)
+export const cloneState = (s: State) => migrate(JSON.parse(serialize(s)));
 
 // sparfilen i delar, så att varje del ryms i ett dokument i artefaktens databas (högst 256 KB). Det som inte står här är byn.
 // Varje del skrivs direkt med samma avrundning, så texten blir densamma som om hela byn skrivits och delats upp efteråt

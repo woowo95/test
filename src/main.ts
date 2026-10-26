@@ -1,4 +1,4 @@
-import { AGES, BEAT, DAY, HOUR, MIN, SEC, TalkEvent, kalender, alive, byId, coverOf, createState, getMap, groundOf, isLight, rikedomDelar, serialize, spar, step, temperature, visning, yearNo, State } from './sim';
+import { AGES, BEAT, DAY, HOUR, MIN, SEC, TalkEvent, kalender, alive, byId, cloneState, coverOf, createState, getMap, groundOf, isLight, rikedomDelar, spar, step, temperature, visning, yearNo, State } from './sim';
 import { $ } from './ui/hjalp';
 import { s, setByn, ui, nyBild } from './ui/lage';
 import { TS, app, cam, layout, view, world } from './ui/scen';
@@ -42,7 +42,7 @@ $('testToggle').addEventListener('change', async e => {
   if (on) {
     saveLocal(); await saveDb();
     realState = s;
-    setByn(JSON.parse(serialize(s)));
+    setByn(cloneState(s));
     spar.v = new WeakMap();
     ui.testMode = true; $('speeds').hidden = false; document.body.classList.add('testing'); setSpeed(3600);
   } else {
