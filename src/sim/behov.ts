@@ -288,13 +288,6 @@ export function willing(s: State, g: Person, m: Person, overflod = 1) {
   const rik = nara ? 1 : RIK_GE + (1 - RIK_GE) * (s.delning?.andel ?? 1);
   return clamp(base * (0.5 + emp) * over * sed * rik, 0, 1);
 }
-// lånar ägaren ut till p?
-export function lends(s: State, owner: number, p: Person) {
-  if (owner === BYN || owner === p.id) return true;
-  const o = byId(s, owner);
-  if (!o || !alive(o)) return true;
-  return o.partner === p.id || isKin(o, p) || getRel(s, o, p).op > REL.osams;
-}
 // Byten och gåvor i samtal: den som saknar ett redskap hen behöver i sitt arbete tar upp det. Den andra har ett redskap
 // över (har två av slaget, eller arbetar inte med det). Har den som frågar något över som är värt nog blir det ett byte
 // (byten nedan), annars kanske en gåva. Viljan är willing. Gåvan gör dem närmare.

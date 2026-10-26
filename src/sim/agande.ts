@@ -2,7 +2,6 @@ import { State, Person } from './typer';
 import { REDSKAP_SLAG, isTool } from './saker';
 import { usesTool } from './handlingar';
 import { alive, byId } from './folk';
-import { lends } from './behov';
 
 // ---------- ägande och handplatsen ----------
 // Varje redskap är ett eget ting (s.ting) med skick (c, 1 = nytt), ägare och, om någon har det i handen, vem (hos).
@@ -16,7 +15,7 @@ import { lends } from './behov';
 // Tinget är det enda som finns om ett redskap: hur många byn har räknas på tingen (lager.ts: amountOf). Ett redskap är
 // i någons hand (hos), i någons börda (lass, när det bärs mellan lagerplatser) eller ligger på en ruta (x, y). Det som
 // ännu inte har någon ruta (nygjort, tillbakalagt) får en plats i förrådet av lager.ts.
-import { BYN } from './egendom';
+import { BYN, lends } from './egendom';
 // halv = ett påbörjat redskap (paborjat.ts): vad det ska bli, materialet som tagits till det, hur länge arbetet har kvar och vem som började
 interface Halv { gor: string; av: Record<string, number>; kvar: number; ag: number }
 export interface Ting { id: number; k: string; c: number; agare: number; hos?: number; lass?: number; x?: number; y?: number; halv?: Halv }

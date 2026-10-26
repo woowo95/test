@@ -1,5 +1,5 @@
 import { State, Person } from './typer';
-import { byId, isKin } from './folk';
+import { REL, alive, byId, getRel, isKin } from './folk';
 
 // ---------- ägande av det man samlar och gör ----------
 // Det någon samlar, fiskar, jagar, hugger och tillverkar är hens, också när det ligger i byns förråd. Det som redan var
@@ -17,6 +17,13 @@ export const BYN = 0;
 export type Del = Record<string, number>; // ägare (id) → mängd. Byn står aldrig med: det som inte är någons är byns
 export function sumOf(d?: Del) { let n = 0; if (d) for (const o in d) n += d[o]; return n; }
 export function addDel(a: Del, b: Del | undefined, f = 1) { if (b) for (const o in b) a[o] = (a[o] ?? 0) + b[o] * f; return a; }
+// lånar ägaren ut ett redskap till p? (agande.ts; här så att agande inte beror på behov.ts)
+export function lends(s: State, owner: number, p: Person) {
+  if (owner === BYN || owner === p.id) return true;
+  const o = byId(s, owner);
+  if (!o || !alive(o)) return true;
+  return o.partner === p.id || isKin(o, p) || getRel(s, o, p).op > REL.osams;
+}
 
 // n av ett slag ska tas av p ur andelarna shares (byns del under BYN). common = till byns eld eller hus.
 // fran = det tas av den personens (stöld). Ger hur mycket som tas av varje ägare, i den ordning man tar
