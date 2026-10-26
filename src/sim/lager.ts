@@ -71,21 +71,32 @@ const tidy = (s: State) => { s.stackar = stacksOf(s).filter(a => a.n > 1e-6 || (
 // Summorna räknas om när en stack ändrats. Allt som ändrar en stack anropar changed (bygg.ts när ett hus flyttar en stack),
 // som glömmer summorna
 export const changed = (s: State) => { summor.delete(s); };
-interface Summa { st: Stack[]; n: Record<string, number>; w: Record<string, number>; ag: Record<string, Del> }
+// ag: ägarnas delar per slag, räknade först när någon frågar efter slaget (undefined = ingen stack med ägare)
+interface Summa { st: Stack[]; n: Record<string, number>; w: Record<string, number>; ag: Map<string, Del | undefined> }
 const summor = new WeakMap<State, Summa>();
 function summa(s: State) {
   const st = stacksOf(s), c = summor.get(s);
   if (c && c.st === st) return c;
-  const n: Record<string, number> = {}, w: Record<string, number> = {}, ag: Record<string, Del> = {};
+  const n: Record<string, number> = {}, w: Record<string, number> = {};
   for (const a of st) {
     if (!isStored(s, a.x, a.y)) continue;
     n[a.k] = (n[a.k] ?? 0) + a.n; w[a.k] = (w[a.k] ?? 0) + a.n * a.c;
     if (a.dold) { const d = DOLD_I[a.k]; n[d] = (n[d] ?? 0) + a.dold; }
-    if (a.ag) addDel(ag[a.k] ??= {}, a.ag);
   }
-  const ny = { st, n, w, ag };
+  const ny: Summa = { st, n, w, ag: new Map() };
   summor.set(s, ny);
   return ny;
+}
+// ägarnas delar av slaget k i förrådet: stackarna i sin ordning, så att talen blir desamma som när alla slag räknades
+// på en gång. Allt som ändrar en stack anropar changed innan någon frågar igen, så delarna hinner inte bli gamla
+function agOf(s: State, k: string) {
+  const c = summa(s);
+  let d = c.ag.get(k);
+  if (d === undefined && !c.ag.has(k)) {
+    for (const a of c.st) if (a.k === k && a.ag && isStored(s, a.x, a.y)) addDel(d ??= {}, a.ag);
+    c.ag.set(k, d);
+  }
+  return d;
 }
 // hur mycket byn har av ett slag. Redskapen räknas på tingen (agande.ts)
 export function amountOf(s: State, k: string) {
@@ -97,19 +108,23 @@ export const wornOf = (s: State, k: string) => isTool(k) ? amountOf(s, k) : summ
 export function foodOf(s: State) { const n = summa(s).n; let f = 0; for (const k of FOOD) f += n[k] ?? 0; return f; }
 
 // ---------- vems det är (egendom.ts) ----------
-export const ownsAmount = (s: State, p: Person, k: string) => summa(s).ag[k]?.[p.id] ?? 0;
+export const ownsAmount = (s: State, p: Person, k: string) => agOf(s, k)?.[p.id] ?? 0;
 // hur mycket av slaget k invånarna äger tillsammans (resten är byns)
-export const ownedSum = (s: State, k: string) => sumOf(summa(s).ag[k]);
+export const ownedSum = (s: State, k: string) => sumOf(agOf(s, k));
 // det av slaget k som är byns
 const villageAmount = (s: State, k: string) => Math.max(0, amountOf(s, k) - ownedSum(s, k));
 // det av slaget k som p får ta: sitt eget och byns
 export const mayTake = (s: State, p: Person, k: string) => ownsAmount(s, p, k) + villageAmount(s, k);
 // det av slaget k som får tas: den personens (fran, stöld), annars p:s eget och byns, annars allt
 export const takeLimit = (s: State, k: string, p?: Person, fran?: Person) => fran ? ownsAmount(s, fran, k) : p ? mayTake(s, p, k) : amountOf(s, k);
-// allt p äger i förrådet, per slag
+// allt p äger i förrådet, per slag (i den ordning slagen först har ägare bland stackarna, som förut)
 export function ownedStock(s: State, p: Person) {
-  const out: Record<string, number> = {}, ag = summa(s).ag;
-  for (const k in ag) { const v = ag[k][p.id]; if (v > 0) out[k] = v; }
+  const out: Record<string, number> = {}, sett = new Set<string>();
+  for (const a of summa(s).st) {
+    if (!a.ag || sett.has(a.k) || !isStored(s, a.x, a.y)) continue;
+    sett.add(a.k);
+    const v = agOf(s, a.k)![p.id]; if (v > 0) out[a.k] = v;
+  }
   return out;
 }
 // n av slaget k byter ägare (gåva), utan att flyttas. Ger hur mycket som bytte ägare
