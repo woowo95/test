@@ -73,5 +73,19 @@ export const getMap = perKarta((seed): MapData => {
     if (sc > bs) { bs = sc; best = { x, y }; }
   }
   const f = best;
-  return { tiles, fire: f, stock: { x: f.x + 4, y: f.y - 1 }, shade };
+  // första lagerplatsen (2×2, som LAGER.startBredd × startHojd i lager.ts) helst fire + (4, −1), annars närmaste
+  // plats därifrån där inget är vatten eller sten och inget ligger inpå elden (som usable i lager.ts)
+  const fri = (x: number, y: number) => {
+    for (let dy = 0; dy < 2; dy++) for (let dx = 0; dx < 2; dx++) {
+      const xx = x + dx, yy = y + dy;
+      if (!inMap(xx, yy) || tiles[yy * W + xx] === T.Vatten || tiles[yy * W + xx] === T.Sten || Math.max(Math.abs(xx - f.x), Math.abs(yy - f.y)) <= 1) return false;
+    }
+    return true;
+  };
+  let stock = { x: f.x + 4, y: f.y - 1 }, sd = Infinity;
+  for (let dy = -8; dy <= 8; dy++) for (let dx = -8; dx <= 8; dx++) {
+    const x = f.x + 4 + dx, y = f.y - 1 + dy, d = Math.hypot(dx, dy);
+    if (d < sd && fri(x, y)) { sd = d; stock = { x, y }; }
+  }
+  return { tiles, fire: f, stock, shade };
 });
