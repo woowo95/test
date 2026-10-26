@@ -2,7 +2,7 @@
 // npm run scenario            kör alla
 // npm run scenario -- glanta  kör bara ett
 import { isDeepStrictEqual } from 'node:util';
-import { MIN, Person, Act, createState, clean, canClean, ownedBy, tidyTools, addTool, toolsOf, heldBy, take, usesTool, wearTool, freeSpear, getRel, isTool, BYN, twineRope, makeRod, wearUsed, isSpear, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, serializeParts, joinParts, serialize, ageStart, nyKalender, kalender, yearNo, AGES, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, zonesOf, allows, ageOf, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, fuelStock, DAY, HOUR, W, State, tileOf, rektAvstand, skogAndel, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, campCenter, TEKNIK, knows, thinkWhileWorking, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, beds, isWall, Bit, wearBuild, FYND, FYND_IDS, GRUPPER, angOf, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, LAGER_R, observe, hoped, Lager, skyggOf, SKYGG_R, SKYGG_IN, grupperOf, GRUPPER_MAX, STORLEK, share, treeOn, djurOf, KANIN, SLAKT, DJUR, JAKT_F, canSlaughter, makeKnife, slaughter, askForTool, askForGift, gain, takeFood, takeFuel, ownsAmount, ownedStock, ownedSum, sumOf, addTo, setAmount, setStock, foodOf, isFood, STACK_ORDER, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, STOLD_LINDRIG, STOLD_OP, rnd, STROMMAR, Strom, BEAT, spar, isWork, SPARVERSION, stepDelning, rikedom, rikedomDelar, grundvarde, nivaOf, DELA_RIK, packUp, releaseOwner, willing, tingOf, komOf, BYGGNADER, FN, mostUrgent, fnId, fnOf, planBuild, workOn, wearMult, INDOOR_WEAR, homeless, sleepBeds, inZone, startWork, workHalf, finishHalf, stepPaborjat, halvOf, tingVarde, HALV_TID, fallTid, treeSpot, SEC, Task, familjOf, bedTile, takeForHouse, put, stepByggnader, husNamn, spotFor, roofed, matGott, barnMat, hungerFlytt, regulate, MATERIAL } from '../sim';
+import { MIN, Person, Act, createState, clean, canClean, ownedBy, tidyTools, addTool, toolsOf, heldBy, take, usesTool, wearTool, freeSpear, getRel, isTool, BYN, twineRope, makeRod, wearUsed, isSpear, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, serializeParts, joinParts, serialize, ageStart, nyKalender, kalender, yearNo, AGES, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, zonesOf, allows, ageOf, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, fuelStock, DAY, HOUR, W, State, tileOf, rektAvstand, skogAndel, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, campCenter, TEKNIK, knows, thinkWhileWorking, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, beds, isWall, Bit, wearBuild, FYND, FYND_IDS, GRUPPER, angOf, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, LAGER_R, observe, hoped, Lager, skyggOf, SKYGG_R, SKYGG_IN, grupperOf, GRUPPER_MAX, STORLEK, share, treeOn, djurOf, KANIN, SLAKT, DJUR, JAKT_F, canSlaughter, makeKnife, slaughter, askForTool, askForGift, gain, takeFood, takeFuel, ownsAmount, ownedStock, ownedSum, sumOf, addTo, setAmount, setStock, foodOf, isFood, STACK_ORDER, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, STOLD_LINDRIG, STOLD_OP, rnd, STROMMAR, Strom, BEAT, spar, isWork, SPARVERSION, stepDelning, rikedom, rikedomDelar, grundvarde, nivaOf, DELA_RIK, packUp, releaseOwner, willing, tingOf, komOf, BYGGNADER, FN, mostUrgent, fnId, fnOf, planBuild, workOn, wearMult, INDOOR_WEAR, homeless, sleepBeds, inZone, startWork, workHalf, finishHalf, stepPaborjat, halvOf, tingVarde, HALV_TID, fallTid, treeSpot, SEC, Task, familjOf, bedTile, takeForHouse, put, stepByggnader, husNamn, spotFor, roofed, matGott, barnMat, hungerFlytt, regulate, MATERIAL, EKONOMI } from '../sim';
 // förrådet i proven: stackarna är det enda som sparas (steg 1.1.2), så proven ställer in förrådet genom lagret
 const setItems = (s: State, m: Record<string, number>) => {
   for (const k of STACK_ORDER) if (!isFood(k) && k !== 'ved' && !isTool(k)) setAmount(s, k, m[k] ?? 0);
@@ -604,14 +604,14 @@ SCENARIER.byte = {
     ({ s, a, b } = ny());
     a.habit = { samla: 10 }; addTool(s, 'korg', b); addTool(s, 'korg', b); gain(s, a, 'bar', 20);
     const korg = askForTool(s, a, b) === 'byte' && ownedBy(s, a).some(t => t.k === 'korg') && ownsAmount(s, b, 'bar') > 0;
-    // kvällens byten (1.4.3): a har mat men mindre än hen vill ha kvar (1,6) och trä över, b tvärtom. Ingen saknar något
+    // kvällens byten (1.4.3): a har mat men mindre än hen vill ha kvar (matPerDygn) och trä över, b tvärtom. Ingen saknar något
     ({ s, a, b } = ny());
     gain(s, a, 'bar', 0.5); gain(s, a, 'ved', 6); gain(s, b, 'bar', 6); gain(s, b, 'ved', 1);
     askForGift(s, a, b);
-    const kvall = nara(ownsAmount(s, a, 'bar'), 1.6) && ownsAmount(s, a, 'ved') >= 3 - 1e-9 && ownsAmount(s, b, 'ved') > 1 + 0.84 / 0.66 && s.stat?.kvallsbyten === 1;
+    const kvall = nara(ownsAmount(s, a, 'bar'), EKONOMI.matPerDygn) && ownsAmount(s, a, 'ved') >= 3 - 1e-9 && ownsAmount(s, b, 'ved') > 1 + 0.84 / 0.66 && s.stat?.kvallsbyten === 1;
     // har båda det de vill ha kvar byter de inte, och inte heller med en ovän
     ({ s, a, b } = ny());
-    gain(s, a, 'bar', 1.6); gain(s, a, 'ved', 6); gain(s, b, 'bar', 6); gain(s, b, 'ved', 3);
+    gain(s, a, 'bar', EKONOMI.matPerDygn); gain(s, a, 'ved', 6); gain(s, b, 'bar', 6); gain(s, b, 'ved', 3);
     askForGift(s, a, b); const nog = !s.stat?.byten && nara(ownsAmount(s, a, 'ved'), 6);
     ({ s, a, b } = ny());
     gain(s, a, 'bar', 0.5); gain(s, a, 'ved', 6); gain(s, b, 'bar', 6); gain(s, b, 'ved', 1); getRel(s, b, a).op = -40;
@@ -1781,7 +1781,7 @@ SCENARIER.varde = {
 SCENARIER.natur = {
   text: 'Maten sätter taket (steg 1.7.2): byn minns hur gott om mat den haft det senaste året. Är maten knapp föds färre barn, fler flyttar och färre nybyggare stannar, men en liten by flyttar inte för maten',
   kor: () => {
-    const s = createState(5, START), n = living(s).length, n0 = s.people.length, mat = () => setMat(s, { bar: 1.6 * n * 12 });
+    const s = createState(5, START), n = living(s).length, n0 = s.people.length, mat = () => setMat(s, { bar: EKONOMI.matPerDygn * n * 12 });
     mat(); s.matSnitt = 2; // tolv dygns mat i förrådet, men ett knappt år bakom sig
     const fore = barnMat(s, 12), flytt = flyttLitenBy(s);
     for (let t = 0; t < 3 * DAY / (300 * 1000); t++) { regulate(s, 300); if (s.people.length !== n0) { s.people.length = n0; mat(); } } // (nybyggare skickas vidare)

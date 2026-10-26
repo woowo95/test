@@ -9,7 +9,7 @@ import { getMap } from './karta';
 import { tileOf } from './mark';
 import { moodOf } from './samtal';
 import { duty, sedEvent } from './seder';
-import { kunnighet } from './ekonomi';
+import { RESERV, kunnighet } from './ekonomi';
 import { chance, clamp, rnd } from './slump';
 import { ageIndex, isLight } from './tid';
 import { kronika } from './historik';
@@ -65,7 +65,7 @@ function fireWish(s: State, p: Person, vc: number): Wish {
   return { v: b.v * hearthOf(s.fire).maxFuel, why: b.why };
 }
 // tändmaterial som invånarna vill ha i förrådet
-const tinderWant = (s: State) => (s.fire.lit ? 12 : 36);
+const tinderWant = (s: State) => (s.fire.lit ? RESERV.tandVill : RESERV.tandVillSlocknad);
 // den första elden läggs i en ring av stenar; ringen ligger kvar när elden slocknat
 export const RING = 6;
 export const needStones = (s: State) => !s.fire.ring && amountOf(s, 'sten') < RING;
@@ -75,7 +75,7 @@ export function canLight(s: State, p?: Person) {
   return !!ig && (!!s.fire.ring || has('sten') >= RING) && has('torrgras') >= ig.grass && (has('grenar') >= ig.sticks || has('kol') >= 1) && (p ? fuelFor(s, p) : fuelStock(s)) >= 1;
 }
 export function needTinder(s: State) {
-  return !s.fire.lit && !emberOn(s) && (amountOf(s, 'flinta') < 1 || needStones(s) || amountOf(s, 'torrgras') < 12 || amountOf(s, 'grenar') < 12);
+  return !s.fire.lit && !emberOn(s) && (amountOf(s, 'flinta') < 1 || needStones(s) || amountOf(s, 'torrgras') < RESERV.tandBrist || amountOf(s, 'grenar') < RESERV.tandBrist);
 }
 function durText(sec: number) { const h = sec / HOUR_S; return h >= 24 ? `${(h / 24).toFixed(1).replace('.', ',')} dygn` : h >= 1 ? `${Math.round(h)} timmar` : `${Math.round(sec / 60)} minuter`; }
 function lightFire(s: State, p: Person) {

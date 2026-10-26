@@ -7,6 +7,7 @@ import { SAKER, gruppOf } from './saker';
 import { amountOf, gain, put, use } from './lager';
 import { getable, takeMaterial, takeRecipe } from './behov';
 import { addDel } from './egendom';
+import { RESERV } from './ekonomi';
 import { addTool, freeTools, halvOf, nTools, ownsFree, wearTool } from './agande';
 
 // ---------- redskap: spjut ----------
@@ -69,9 +70,9 @@ export function makeSpear(s: State, p: Person) {
 // Rep tvinnas av växtfibrer (hö) vid elden på kvällen av den som kan det, eller tas från senor när vilt slaktas. Det är samma rep
 // oavsett material. Rep behövs till flintspjut och metspö.
 const REP_GRAS = 2, REP_TIMME = 60 / SAKER.rep!.skaffa!.min!, REP_VILL = 4; // rep per timme
-export const wantsRope = (s: State, p: Person) => knows(p, 'rep') && amountOf(s, 'rep') < REP_VILL && getable(s, p, 'torrgras') >= REP_GRAS + 6; // lite hö sparas till elden
+export const wantsRope = (s: State, p: Person) => knows(p, 'rep') && amountOf(s, 'rep') < REP_VILL && getable(s, p, 'torrgras') >= REP_GRAS + RESERV.torrgras; // lite hö sparas till elden
 export function twineRope(s: State, p: Person, hours: number) {
-  const n = Math.min(hours * REP_TIMME, (getable(s, p, 'torrgras') - 6) / REP_GRAS, REP_VILL - amountOf(s, 'rep'));
+  const n = Math.min(hours * REP_TIMME, (getable(s, p, 'torrgras') - RESERV.torrgras) / REP_GRAS, REP_VILL - amountOf(s, 'rep'));
   if (n <= 0) return;
   takeMaterial(s, p, 'torrgras', n * REP_GRAS);
   gain(s, p, 'rep', n);

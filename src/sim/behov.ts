@@ -10,6 +10,7 @@ import { emberOn, fetchFuel, fireWant } from './eld';
 import { eatPoison } from './fynd';
 import { habitShare, habitTotal } from './seder';
 import { grundvarde } from './varde';
+import { EKONOMI } from './ekonomi';
 
 // ---------- behovsstegen ----------
 // När någon behöver något går hen stegen i ordning: först sitt eget, sedan ett byte med någon i närheten (byten nedan),
@@ -55,7 +56,7 @@ function eat(s: State, p: Person, fran?: Person) {
 }
 export const MAT: Behov = {
   id: 'mat', namn: 'mat', slag: FOOD, minst: 0.3, mangd: portionOf,
-  kvar: 1.6, // det man själv äter på ett dygn
+  get kvar() { return EKONOMI.matPerDygn; }, // det man själv äter på ett dygn (läses först när det behövs: ekonomi.ts och behov.ts importerar varandra via lager.ts)
   behover: (_s, p) => p.hunger < 0.45, genast: true,
   fara: (_s, p) => p.hunger <= 0 ? 1 - p.health : 0, // man svälter när hungern är slut, och hälsan sjunker
   anvand: eat,

@@ -1,6 +1,6 @@
 import { take } from './agande';
 import { campCenter, campDist, campKey } from './plats';
-import { foodDays } from './ekonomi';
+import { RESERV, foodDays } from './ekonomi';
 import { ACTS, WORK, usesTool } from './handlingar';
 import { canLight, emberOn, fireWant, needStones, needTinder, woodDays } from './eld';
 import { ageOf, isSick, living, stat } from './folk';
@@ -134,7 +134,7 @@ function strandSpot(s: State) {
 function dangers(s: State) {
   const ppl = living(s), freezing = ppl.filter(q => q.warm < 0.4).length / (ppl.length || 1), ai = ageIndex(s);
   const cold = coldOf(temperature(s)) > 0 || freezing > 0.25;
-  return { kyla: cold && !s.fire.lit && !emberOn(s), gras: ai === 0 || ai === 3 || cold ? 12 : 0 };
+  return { kyla: cold && !s.fire.lit && !emberOn(s), gras: ai === 0 || ai === 3 || cold ? RESERV.torrgrasKyla : 0 };
 }
 // elden är släckt och kan inte tändas för att det saknas tändmaterial, och för få hämtar det
 const tinderNeeded = (s: State) => !s.fire.lit && !emberOn(s) && !canLight(s) && needTinder(s) && living(s).filter(q => q.task?.act === 'samla').length < 3;
