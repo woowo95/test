@@ -303,9 +303,8 @@ export function share(s: State, a: Person, b: Person, r: Rel, slag: SamtalDef) {
 // en rättelse är en nyhet i två dygn
 const nyhet = (s: State, l: Lardom) => l.ny !== undefined && s.now - l.ny < MINNE.nyhetDygn * DAY;
 function tell(s: State, a: Person, b: Person, l: Lardom, r: Rel) {
-  const now = s.now;
-  // att berätta stärker det egna minnet
-  l.c = Math.min(1, l.c + MINNE.berattaStark * (1 - l.c)); l.t = now;
+  // att berätta stärker det egna minnet, men platsen sågs inte nu (t, återväxten räknas därifrån)
+  l.c = Math.min(1, l.c + MINNE.berattaStark * (1 - l.c));
   const trust = clamp(MINNE.troBas + r.op / MINNE.troDiv, MINNE.troMin, MINNE.troMax);
   const c = l.c * trust * MINNE.troDel;
   // man överdriver gärna, särskilt det som är farligt
@@ -314,13 +313,13 @@ function tell(s: State, a: Person, b: Person, l: Lardom, r: Rel) {
   if (e) {
     if (e.src === undefined && e.led === 0 && e.c >= c && !nyhet(s, l)) return; // egen upplevelse väger tyngre, utom mot en nyhet
     // en nyhet om att platsen blivit sämre ersätter det man trodde; annars vägs det ihop
-    e.v = nyhet(s, l) ? v : (e.v * e.c + v * c) / (e.c + c); if (l.g !== undefined) e.g = l.g; e.c = Math.max(e.c, c); e.t = now;
+    e.v = nyhet(s, l) ? v : (e.v * e.c + v * c) / (e.c + c); if (l.g !== undefined) e.g = l.g; e.c = Math.max(e.c, c); e.t = l.t;
     if (nyhet(s, l)) e.ny = l.ny;
     if ((e.src !== undefined || e.led) && (l.led ?? 0) + 1 < (e.led ?? 1)) { e.src = a.id; e.led = (l.led ?? 0) + 1; } // kortare väg till källan
     if (l.om && !e.om) e.om = l.om;
     return;
   }
-  (b.lardomar ??= []).push({ k: l.k, a: l.a, v, ...(l.g !== undefined ? { g: l.g } : {}), c, t: now, src: a.id, led: (l.led ?? 0) + 1, ...(l.om ? { om: l.om } : {}), ...(nyhet(s, l) ? { ny: l.ny } : {}) });
+  (b.lardomar ??= []).push({ k: l.k, a: l.a, v, ...(l.g !== undefined ? { g: l.g } : {}), c, t: l.t, src: a.id, led: (l.led ?? 0) + 1, ...(l.om ? { om: l.om } : {}), ...(nyhet(s, l) ? { ny: l.ny } : {}) });
   trim(s, b);
   count(s, 'berattat');
   if (l.k === 'fara' && l.om) {

@@ -105,7 +105,7 @@ export interface Person {
 }
 
 // En lärdom om en plats: k = vad, a = område (8×8 rutor), v = hur mycket (eller hur rädd), c = hur säker (0–1),
-// t = senast stärkt, src = vem den hördes av (saknas = egen upplevelse), led = hur många led från den som var där, om = vad som hände.
+// t = när platsen sågs (den som hör det får samma tid; återväxten räknas därifrån), src = vem den hördes av (saknas = egen upplevelse), led = hur många led från den som var där, om = vad som hände.
 // Slagen står i registret LARDOMAR i minne.ts
 // ny: när någon kom dit och såg att platsen var sämre än man trott (växterna har flyttat eller den är tömd).
 // Det är en nyhet som gärna berättas vidare i ett par dygn.
