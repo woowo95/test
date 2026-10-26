@@ -8,7 +8,7 @@ import { BYN, Del, addDel, sumOf } from './egendom';
 import { amountOf, mayTake, ownMove, ownsAmount, takeFood, use } from './lager';
 import { emberOn, fetchFuel, fireWant } from './eld';
 import { eatPoison } from './fynd';
-import { habitShare } from './seder';
+import { habitShare, habitTotal } from './seder';
 import { grundvarde } from './varde';
 
 // ---------- behovsstegen ----------
@@ -296,13 +296,22 @@ export function lends(s: State, owner: number, p: Person) {
 // Byten och gåvor i samtal: den som saknar ett redskap hen behöver i sitt arbete tar upp det. Den andra har ett redskap
 // över (har två av slaget, eller arbetar inte med det). Har den som frågar något över som är värt nog blir det ett byte
 // (byten nedan), annars kanske en gåva. Viljan är willing. Gåvan gör dem närmare.
-const ownsKind = (s: State, p: Person, k: string) => tingOf(s).some(t => t.agare === p.id && t.k === k);
-const needsTool = (s: State, p: Person, k: string) => !ownsKind(s, p, k) && habitShare(p, actsOf(k)) > 0.1;
-// ett redskap p har över: hen har fler av slaget, eller arbetar knappt med det. Inte det hen arbetar med just nu
-function spare(s: State, p: Person, k: string) {
-  const own = tingOf(s).filter(t => t.agare === p.id && t.k === k);
-  if (own.length < 2 && habitShare(p, actsOf(k)) >= 0.03) return;
-  return own.filter(t => !(t.hos === p.id && usesTool(p.task) === k)).sort((a, b) => b.c - a.c)[0];
+// hur många redskap av slaget k p äger
+function ownedKind(s: State, p: Person, k: string) {
+  let n = 0;
+  for (const t of tingOf(s)) if (t.agare === p.id && t.k === k) n++;
+  return n;
+}
+// tot = habitTotal(p), som räknas en gång när samma person frågas om flera slag
+const needsTool = (s: State, p: Person, k: string, tot = habitTotal(p)) => habitShare(p, actsOf(k), tot) > 0.1 && ownedKind(s, p, k) === 0;
+// ett redskap p har över: hen har fler av slaget, eller arbetar knappt med det. Inte det hen arbetar med just nu.
+// Det i bäst skick, och av dem det första bland tingen
+function spare(s: State, p: Person, k: string, tot = habitTotal(p)) {
+  if (habitShare(p, actsOf(k), tot) >= 0.03 && ownedKind(s, p, k) < 2) return;
+  const iHanden = usesTool(p.task) === k;
+  let best: Ting | undefined;
+  for (const t of tingOf(s)) if (t.agare === p.id && t.k === k && !(t.hos === p.id && iHanden) && (!best || t.c > best.c)) best = t;
+  return best;
 }
 function give(t: Ting, g: Person, m: Person) {
   t.agare = m.id;
@@ -311,12 +320,13 @@ function give(t: Ting, g: Person, m: Person) {
 // a talar med b. Saknar någon av dem ett redskap som den andra har över? Returnerar vad som hände
 export function askForTool(s: State, a: Person, b: Person): 'gåva' | 'byte' | undefined {
   for (const [m, g] of [[a, b], [b, a]]) {
+    const totM = habitTotal(m), totG = habitTotal(g);
     for (const k of REDSKAP_SLAG) {
-      if (!needsTool(s, m, k)) continue;
-      const t = spare(s, g, k);
+      if (!needsTool(s, m, k, totM)) continue;
+      const t = spare(s, g, k, totG);
       if (!t) continue;
       if (!osams(s, g, m) && byte(s, m, g, [{ k, n: 1, t }], { behov: BEHOV_SAKNAR, minst: 1, fara: 0, typ: 'redskap', utom: [k] })) return 'byte';
-      if (rnd(s, 'dela', g) >= willing(s, g, m, tingOf(s).filter(x => x.agare === g.id && x.k === k).length)) continue;
+      if (rnd(s, 'dela', g) >= willing(s, g, m, ownedKind(s, g, k))) continue;
       give(t, g, m);
       const namn = (SAKER[k]?.namn ?? k).toLowerCase(), r = getRel(s, a, b);
       r.op = clamp(r.op + 4, -100, 100);
@@ -349,7 +359,7 @@ const vardeOf = (v: Vara) => grundvarde(v.k) * (v.t ? v.t.c : 1);
 // arbete, 1 för det p behöver behålla (mat och ved upp till b.kvar, redskapet hen arbetar med) och BEHOV_OVER för resten.
 // Material som p saknar till ett arbete räknas där det tas (tradeMaterial)
 export function behovAv(s: State, p: Person, k: string) {
-  if (isTool(k)) return needsTool(s, p, k) ? BEHOV_SAKNAR : ownsKind(s, p, k) && !spare(s, p, k) ? 1 : BEHOV_OVER;
+  if (isTool(k)) return needsTool(s, p, k) ? BEHOV_SAKNAR : ownedKind(s, p, k) > 0 && !spare(s, p, k) ? 1 : BEHOV_OVER;
   const b = behovMed(k);
   if (!b) return BEHOV_OVER;
   const own = ownFor(s, p, b);

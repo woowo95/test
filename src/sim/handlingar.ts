@@ -97,5 +97,8 @@ export const taskName = (t: Task) => (t.tool && (ACTS[t.act].redskap?.[t.tool]?.
 // redskapet en uppgift använder (task.tool kan också vara t.ex. vagg eller rep, eller det spjut som görs) och dess rad
 export const toolRow = (t?: Task) => t?.tool ? ACTS[t.act].redskap?.[t.tool] : undefined;
 export const usesTool = (t?: Task) => toolRow(t) ? t!.tool : undefined;
-// handlingarna där redskapet används
-export const actsOf = (k: string) => ACT_LIST.filter(a => ACTS[a].redskap?.[k]);
+// handlingarna där redskapet används, i registrets ordning (tabellen byggs en gång)
+const ACTS_AV: Record<string, Act[]> = {};
+for (const a of ACT_LIST) for (const k in ACTS[a].redskap ?? {}) (ACTS_AV[k] ??= []).push(a);
+const INGA: readonly Act[] = [];
+export const actsOf = (k: string): readonly Act[] => ACTS_AV[k] ?? INGA;

@@ -60,8 +60,13 @@ export function duty(s: State, p: Person) {
 }
 // tid räknas mot yrkestaggar och bleknar, så att de senaste åren väger mest
 export const HABIT_FADE = 4 * DAY;
-export const habitTotal = (p: Person) => { let t = 0; for (const k in p.habit) t += p.habit[k]; return t; };
-export const habitShare = (p: Person, acts: Act[], tot = habitTotal(p)) => tot > 0 ? acts.reduce((a, k) => a + (p.habit[k] ?? 0), 0) / tot : 0;
+export function habitTotal(p: Person) { let t = 0; for (const k in p.habit) t += p.habit[k]; return t; }
+export function habitShare(p: Person, acts: readonly Act[], tot = habitTotal(p)) {
+  if (!(tot > 0)) return 0;
+  let a = 0;
+  for (const k of acts) a += p.habit[k] ?? 0;
+  return a / tot;
+}
 export const TAGS: { tag: string; acts: Act[]; min: number }[] = [
   { tag: 'Jägare', acts: ['jakt'], min: 0.2 },
   { tag: 'Fiskare', acts: ['fiske'], min: 0.2 },
