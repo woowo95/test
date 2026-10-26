@@ -25,63 +25,11 @@ const stepCost = (g: Ground, i: number) => (isSoil(g.tiles[i]) ? 0.45 + 0.55 * g
 
 // vatten och väggar går man inte genom
 const stop = (g: Ground, i: number) => g.tiles[i] === T.Vatten || g.solid?.[i] === 1;
-// A* med 8 riktningar. Inte över vatten eller väggar och inte snett förbi en hörna. Start och mål får vara vatten.
-// Ger rutorna mellan start och mål (utan båda), eller null om det inte finns någon väg.
-export function findPath(g: Ground, x0: number, y0: number, x1: number, y1: number): number[] | null {
-  const sx = clampI(x0, W), sy = clampI(y0, H), gx = clampI(x1, W), gy = clampI(y1, H);
-  const start = sy * W + sx, goal = gy * W + gx;
-  if (start === goal) return [];
-  const N = W * H, tiles = g.tiles, solid = g.solid;
-  const gs = new Float64Array(N).fill(Infinity), came = new Int32Array(N).fill(-1), closed = new Uint8Array(N);
-  const heap = new Heap();
-  gs[start] = 0; heap.push(start, 0);
-  while (heap.size) {
-    const i = heap.pop();
-    if (i === goal) break;
-    if (closed[i]) continue;
-    closed[i] = 1;
-    const x = i % W, y = (i - x) / W;
-    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
-      if (!dx && !dy) continue;
-      const nx = x + dx, ny = y + dy;
-      if (!inMap(nx, ny)) continue;
-      const ni = ny * W + nx;
-      if (closed[ni] || ((tiles[ni] === T.Vatten || solid?.[ni]) && ni !== goal)) continue;
-      if (dx && dy && (stop(g, y * W + nx) || stop(g, ny * W + x))) continue;
-      const ng = gs[i] + (dx && dy ? SQ2 : 1) * (tiles[ni] === T.Vatten ? 1 : stepCost(g, ni));
-      if (ng < gs[ni]) { gs[ni] = ng; came[ni] = i; heap.push(ni, ng + Math.hypot(nx - gx, ny - gy) * 0.52); }
-    }
-  }
-  if (came[goal] < 0) return null;
-  const out: number[] = [];
-  for (let i = came[goal]; i !== start && i >= 0; i = came[i]) out.push(i);
-  return out.reverse();
-}
-
-// en person går över rutan: högt gräs trampas ner direkt till kort gräs, sedan nöts det långsamt till bar jord.
-// Små plantor trampas ihjäl.
-export function wear(g: Ground, i: number, amount: number) {
-  if (i < 0 || i >= g.cover.length || !isSoil(g.tiles[i])) return;
-  const c = g.cover;
-  c[i] = c[i] > 0.75 ? 0.75 : Math.max(0, c[i] - amount);
-  if (g.trees[i] > 0 && g.trees[i] < FOREST) g.trees[i] = Math.max(0, g.trees[i] - amount * 4);
-}
-
-export function encodeCover(cover: Float32Array) {
-  let bin = '';
-  for (let i = 0; i < cover.length; i++) bin += String.fromCharCode(Math.round(cover[i] * 255));
-  return btoa(bin);
-}
-export function decodeCover(txt: string | undefined, fill = 1): Float32Array {
-  const c = new Float32Array(W * H).fill(fill);
-  if (!txt) return c;
-  try { const bin = atob(txt); for (let i = 0; i < Math.min(bin.length, c.length); i++) c[i] = bin.charCodeAt(i) / 255; } catch { /* ny mark */ }
-  return c;
-}
 
 class Heap {
   private ids: number[] = []; private keys: number[] = [];
   get size() { return this.ids.length; }
+  clear() { this.ids.length = 0; this.keys.length = 0; }
   push(id: number, k: number) {
     const a = this.ids, b = this.keys;
     let i = a.length; a.push(id); b.push(k);
@@ -109,4 +57,78 @@ class Heap {
     }
     return top;
   }
+}
+
+// Vägsökningens arbetsminne återanvänds mellan sökningarna (findPath anropar aldrig sig själv). Varje sökning har
+// ett eget nummer (gen): en ruta har ett värde (vägen hit, varifrån, stängd, stegkostnaden) bara om numret i den
+// är sökningens, så inget behöver nollställas. Nytt minne när kartans storlek ändras (testerna kör byar med olika
+// storlek i samma process). avst[dy, dx] = avståndet Math.hypot(dx, dy) till målet, för alla dx och dy på kartan
+let gen = 0, aw = 0, ah = 0;
+let sedd = new Uint32Array(0), stangd = new Uint32Array(0), kostad = new Uint32Array(0);
+let gs = new Float64Array(0), kost = new Float64Array(0), came = new Int32Array(0), avst = new Float64Array(0);
+const heap = new Heap();
+function nySokning() {
+  if (aw !== W || ah !== H) {
+    const N = W * H;
+    sedd = new Uint32Array(N); stangd = new Uint32Array(N); kostad = new Uint32Array(N);
+    gs = new Float64Array(N); kost = new Float64Array(N); came = new Int32Array(N);
+    avst = new Float64Array((2 * W + 1) * (2 * H + 1));
+    for (let dy = -H; dy <= H; dy++) for (let dx = -W; dx <= W; dx++) avst[(dy + H) * (2 * W + 1) + dx + W] = Math.hypot(dx, dy);
+    aw = W; ah = H; gen = 0;
+  }
+  if (++gen === 0xffffffff) { sedd.fill(0); stangd.fill(0); kostad.fill(0); gen = 1; }
+  heap.clear();
+}
+// A* med 8 riktningar. Inte över vatten eller väggar och inte snett förbi en hörna. Start och mål får vara vatten.
+// Ger rutorna mellan start och mål (utan båda), eller null om det inte finns någon väg.
+export function findPath(g: Ground, x0: number, y0: number, x1: number, y1: number): number[] | null {
+  const sx = clampI(x0, W), sy = clampI(y0, H), gx = clampI(x1, W), gy = clampI(y1, H);
+  const start = sy * W + sx, goal = gy * W + gx;
+  if (start === goal) return [];
+  const tiles = g.tiles, solid = g.solid, aW = 2 * W + 1;
+  nySokning();
+  sedd[start] = gen; gs[start] = 0; came[start] = -1; heap.push(start, 0);
+  while (heap.size) {
+    const i = heap.pop();
+    if (i === goal) break;
+    if (stangd[i] === gen) continue;
+    stangd[i] = gen;
+    const x = i % W, y = (i - x) / W;
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+      if (!dx && !dy) continue;
+      const nx = x + dx, ny = y + dy;
+      if (!inMap(nx, ny)) continue;
+      const ni = ny * W + nx;
+      if (stangd[ni] === gen || ((tiles[ni] === T.Vatten || solid?.[ni]) && ni !== goal)) continue;
+      if (dx && dy && (stop(g, y * W + nx) || stop(g, ny * W + x))) continue;
+      if (kostad[ni] !== gen) { kostad[ni] = gen; kost[ni] = tiles[ni] === T.Vatten ? 1 : stepCost(g, ni); }
+      const ng = gs[i] + (dx && dy ? SQ2 : 1) * kost[ni];
+      if (ng < (sedd[ni] === gen ? gs[ni] : Infinity)) { sedd[ni] = gen; gs[ni] = ng; came[ni] = i; heap.push(ni, ng + avst[(ny - gy + H) * aW + nx - gx + W] * 0.52); }
+    }
+  }
+  if (sedd[goal] !== gen) return null;
+  const out: number[] = [];
+  for (let i = came[goal]; i !== start && i >= 0; i = came[i]) out.push(i);
+  return out.reverse();
+}
+
+// en person går över rutan: högt gräs trampas ner direkt till kort gräs, sedan nöts det långsamt till bar jord.
+// Små plantor trampas ihjäl.
+export function wear(g: Ground, i: number, amount: number) {
+  if (i < 0 || i >= g.cover.length || !isSoil(g.tiles[i])) return;
+  const c = g.cover;
+  c[i] = c[i] > 0.75 ? 0.75 : Math.max(0, c[i] - amount);
+  if (g.trees[i] > 0 && g.trees[i] < FOREST) g.trees[i] = Math.max(0, g.trees[i] - amount * 4);
+}
+
+export function encodeCover(cover: Float32Array) {
+  let bin = '';
+  for (let i = 0; i < cover.length; i++) bin += String.fromCharCode(Math.round(cover[i] * 255));
+  return btoa(bin);
+}
+export function decodeCover(txt: string | undefined, fill = 1): Float32Array {
+  const c = new Float32Array(W * H).fill(fill);
+  if (!txt) return c;
+  try { const bin = atob(txt); for (let i = 0; i < Math.min(bin.length, c.length); i++) c[i] = bin.charCodeAt(i) / 255; } catch { /* ny mark */ }
+  return c;
 }
