@@ -4,6 +4,7 @@ import { clamp } from './slump';
 import { Act, DAY, HOUR, Person, Seder, State } from './typer';
 import { balans } from './balans';
 import { kortTal } from './format';
+import { ACTS, ACT_LIST } from './handlingar';
 
 // ---------- balanstal (regel 8) ----------
 // Sederna (arbete, gemenskap, barn, nyfikenhet, försiktighet, från -1 till 1) rör sig långsamt mot det invånarna drar åt och
@@ -138,18 +139,12 @@ export function habitShare(p: Person, acts: readonly Act[], tot = habitTotal(p))
   for (const k of acts) a += p.habit[k] ?? 0;
   return a / tot;
 }
-export const TAGS: { tag: string; acts: Act[]; min: number }[] = [
-  { tag: 'Jägare', acts: ['jakt'], min: 0.2 },
-  { tag: 'Fiskare', acts: ['fiske'], min: 0.2 },
-  { tag: 'Samlare', acts: ['samla'], min: 0.2 },
-  { tag: 'Trähuggare', acts: ['ved', 'falla', 'hugga'], min: 0.15 },
-  { tag: 'Hantverkare', acts: ['hantverk'], min: 0.15 },
-  { tag: 'Byggare', acts: ['bygga'], min: 0.12 },
-  { tag: 'Berättare', acts: ['beratta'], min: 0.06 },
-  { tag: 'Eldvaktare', acts: ['elda', 'tanda'], min: 0.02 },
-  { tag: 'Väktare', acts: ['vakt'], min: 0.08 },
-  { tag: 'Dagdrivare', acts: ['vila'], min: 0.3 },
-];
+// yrkestaggarna, i den ordning de prövas, med den minsta andel av tiden som ger taggen. Vilka handlingar som räknas till ett
+// yrke står i handlingens rad (yrke i handlingar.ts). Ett nytt yrke blir en rad här och ett yrke på handlingarna
+const YRKEN: Record<string, number> = {
+  Jägare: 0.2, Fiskare: 0.2, Samlare: 0.2, Trähuggare: 0.15, Hantverkare: 0.15, Byggare: 0.12, Berättare: 0.06, Eldvaktare: 0.02, Väktare: 0.08, Dagdrivare: 0.3,
+};
+export const TAGS = Object.entries(YRKEN).map(([tag, min]) => ({ tag, min, acts: ACT_LIST.filter(a => ACTS[a].yrke === tag) }));
 // taggen går till den som gör något klart mer än andra i byn; den som redan har en tagg behåller den lättare
 export function updateTags(s: State) {
   const ppl = living(s).filter(p => ageOf(p, s.now) >= ALDER.vuxen);

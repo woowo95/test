@@ -35,6 +35,7 @@ interface ActDef {
   verktyg?: Record<string, string>; // namnet när ett visst slag av bygge eller hantverk görs (task.tool)
   redskap?: Record<string, RedskapDef>; // redskapen som används i arbetet (sakerna i saker.ts), det bästa först
   slits?: number; // så många sekunders arbete som är en enhet slitage på redskapet (saknas = per försök eller djur)
+  yrke?: string; // den som gör detta klart mer än andra kallas så (yrkestaggarna, YRKEN i seder.ts)
   slag?: Slag; // slaget av arbete, som syns som en symbol över huvudet medan den görs (SLAG)
   tecken?: string; // symbolen för en handling utan slag (personrutans tårtdiagram över tiden)
   // arbete för byn: färdigheten som övas. Är den samma som handlingen väljs arbetet i val.ts efter byns behov
@@ -60,24 +61,24 @@ interface ActDef {
 }
 
 const DEF = {
-  samla: { namn: 'Samlar bär och rötter', slag: 'samla', redskap: { korg: { namn: 'Samlar bär och rötter med korg', tar: 'Tar en korg.', ger: 1.9, tur: 2.5, haller: 40 } }, slits: 3600, arbete: 'samla', bas: 0.4, sasong: [0.4, 1.0, 1.25, 1.4], egenskap: 'uthallighet', ger: 'bar', resurs: 'samla', tur: 40, vandra: { r: 2, h0: 3, h1: 10, v: 0.6 }, tungt: true, dygn: true, plats: 'ang' },
-  jakt: { namn: 'Jagar', redskap: { flintspjut: { namn: 'Jagar med spjut', tar: 'Tar ett flintspjut.', ger: 2.5, haller: 240 }, fiskespjut: { namn: 'Jagar med spjut', tar: 'Tar ett träspjut.', ger: 2.5, haller: 60 } }, slits: 300, slag: 'jaga', arbete: 'jakt', bas: 0.35, sasong: [0.7, 0.9, 1.0, 1.15], egenskap: 'mod', ger: 'vilt', resurs: 'jakt', fara: { risk: 0.0008, dod: 'jakt' }, vandra: { r: 3, h0: 3, h1: 10, v: 0.7 }, tungt: true, dygn: true, plats: 'ang' },
-  fiske: { namn: 'Fiskar med händerna', slag: 'fiska', hand: { napp: 0.06, hall: 0.15 }, redskap: { metspo: { namn: 'Metar', tar: 'Tar ett metspö och gräver fram mask.', ger: 4.3, don: 'metspo', bete: true, napp: 0.17, hall: 0.65, haller: 200 }, flintspjut: { namn: 'Fiskar med spjut', tar: 'Tar ett flintspjut.', ger: 4.3, don: 'spjut', napp: 0.13, hall: 0.5, haller: 240 }, fiskespjut: { namn: 'Fiskar med spjut', tar: 'Tar ett träspjut.', ger: 4.3, don: 'spjut', napp: 0.13, hall: 0.5, haller: 60 } }, arbete: 'fiske', bas: 0.4, sasong: [0.45, 1.0, 1.1, 1.0], egenskap: 'uthallighet', ger: 'abborre', takt: 0, resurs: 'fiske', tungt: true, dygn: true, plats: 'strand' },
-  ved: { namn: 'Samlar grenar', slag: 'tra', arbete: 'ved', bas: 1.3, sasong: [0.9, 1, 1, 1], egenskap: 'styrka', ger: 'grenar', takt: 2, tur: 40, vandra: { r: 2, h0: 3, h1: 10, v: 0.6 }, tungt: true, dygn: true, plats: 'skog' },
+  samla: { namn: 'Samlar bär och rötter', yrke: 'Samlare', slag: 'samla', redskap: { korg: { namn: 'Samlar bär och rötter med korg', tar: 'Tar en korg.', ger: 1.9, tur: 2.5, haller: 40 } }, slits: 3600, arbete: 'samla', bas: 0.4, sasong: [0.4, 1.0, 1.25, 1.4], egenskap: 'uthallighet', ger: 'bar', resurs: 'samla', tur: 40, vandra: { r: 2, h0: 3, h1: 10, v: 0.6 }, tungt: true, dygn: true, plats: 'ang' },
+  jakt: { namn: 'Jagar', yrke: 'Jägare', redskap: { flintspjut: { namn: 'Jagar med spjut', tar: 'Tar ett flintspjut.', ger: 2.5, haller: 240 }, fiskespjut: { namn: 'Jagar med spjut', tar: 'Tar ett träspjut.', ger: 2.5, haller: 60 } }, slits: 300, slag: 'jaga', arbete: 'jakt', bas: 0.35, sasong: [0.7, 0.9, 1.0, 1.15], egenskap: 'mod', ger: 'vilt', resurs: 'jakt', fara: { risk: 0.0008, dod: 'jakt' }, vandra: { r: 3, h0: 3, h1: 10, v: 0.7 }, tungt: true, dygn: true, plats: 'ang' },
+  fiske: { namn: 'Fiskar med händerna', yrke: 'Fiskare', slag: 'fiska', hand: { napp: 0.06, hall: 0.15 }, redskap: { metspo: { namn: 'Metar', tar: 'Tar ett metspö och gräver fram mask.', ger: 4.3, don: 'metspo', bete: true, napp: 0.17, hall: 0.65, haller: 200 }, flintspjut: { namn: 'Fiskar med spjut', tar: 'Tar ett flintspjut.', ger: 4.3, don: 'spjut', napp: 0.13, hall: 0.5, haller: 240 }, fiskespjut: { namn: 'Fiskar med spjut', tar: 'Tar ett träspjut.', ger: 4.3, don: 'spjut', napp: 0.13, hall: 0.5, haller: 60 } }, arbete: 'fiske', bas: 0.4, sasong: [0.45, 1.0, 1.1, 1.0], egenskap: 'uthallighet', ger: 'abborre', takt: 0, resurs: 'fiske', tungt: true, dygn: true, plats: 'strand' },
+  ved: { namn: 'Samlar grenar', yrke: 'Trähuggare', slag: 'tra', arbete: 'ved', bas: 1.3, sasong: [0.9, 1, 1, 1], egenskap: 'styrka', ger: 'grenar', takt: 2, tur: 40, vandra: { r: 2, h0: 3, h1: 10, v: 0.6 }, tungt: true, dygn: true, plats: 'skog' },
   leka: { namn: 'Leker', slag: 'leka', vandra: { r: 2, h0: 2, h1: 6, v: 1.3 }, social: true, dygn: true, plats: 'lek' },
-  vila: { namn: 'Vilar', slag: 'vila', vila: true, dygn: true, plats: 'sang' },
+  vila: { namn: 'Vilar', yrke: 'Dagdrivare', slag: 'vila', vila: true, dygn: true, plats: 'sang' },
   samtal: { namn: 'Samtalar vid elden', slag: 'prata', vila: true, social: true, dygn: true, plats: 'elden' },
-  beratta: { namn: 'Berättar vid elden', slag: 'prata', social: true, dygn: true, plats: 'elden' },
-  hantverk: { namn: 'Gör handarbete', slag: 'hantverk', verktyg: { rep: 'Tvinnar rep' }, vila: true, hantverk: true, social: true, dygn: true, stilla: true, plats: 'elden' },
-  vakt: { namn: 'Håller vakt', tecken: '👁️', social: true, dygn: true, stilla: true, plats: 'elden', radie: 2.6 },
+  beratta: { namn: 'Berättar vid elden', yrke: 'Berättare', slag: 'prata', social: true, dygn: true, plats: 'elden' },
+  hantverk: { namn: 'Gör handarbete', yrke: 'Hantverkare', slag: 'hantverk', verktyg: { rep: 'Tvinnar rep' }, vila: true, hantverk: true, social: true, dygn: true, stilla: true, plats: 'elden' },
+  vakt: { namn: 'Håller vakt', yrke: 'Väktare', tecken: '👁️', social: true, dygn: true, stilla: true, plats: 'elden', radie: 2.6 },
   sova: { namn: 'Sover', slag: 'vila', vila: true, stilla: true, plats: 'sang' },
-  elda: { namn: 'Lägger trä på elden', slag: 'elda', ger: 'ved' },
-  tanda: { namn: 'Försöker tända elden', slag: 'elda' },
+  elda: { namn: 'Lägger trä på elden', yrke: 'Eldvaktare', slag: 'elda', ger: 'ved' },
+  tanda: { namn: 'Försöker tända elden', yrke: 'Eldvaktare', slag: 'elda' },
   varma: { namn: 'Värmer sig vid elden', tecken: '♨️', vila: true, social: true, varmer: true, plats: 'elden' },
   toa: { namn: 'Går avsides på toa', tecken: '💧', plats: 'avsides' },
   kol: { namn: 'Hämtar kol ur den slocknade elden', tecken: '⚫', plats: 'kol' },
-  falla: { namn: 'Fäller ett träd med yxa', slag: 'tra', redskap: { yxa: {} }, arbete: 'ved', takt: 0, tungt: true },
-  hugga: { namn: 'Hugger trä av ett fällt träd', slag: 'tra', redskap: { yxa: {} }, arbete: 'ved', ger: 'ved', takt: 1.5, tur: 1200, tungt: true },
+  falla: { namn: 'Fäller ett träd med yxa', yrke: 'Trähuggare', slag: 'tra', redskap: { yxa: {} }, arbete: 'ved', takt: 0, tungt: true },
+  hugga: { namn: 'Hugger trä av ett fällt träd', yrke: 'Trähuggare', slag: 'tra', redskap: { yxa: {} }, arbete: 'ved', ger: 'ved', takt: 1.5, tur: 1200, tungt: true },
   yxa: { namn: 'Gör en yxa av en pinne och flinta', slag: 'hantverk', hantverk: true, plats: 'elden' },
   spjut: { namn: 'Täljer ett spjut', verktyg: { flintspjut: 'Gör ett flintspjut' }, slag: 'hantverk', hantverk: true, plats: 'elden' },
   metspo: { namn: 'Gör ett metspö', slag: 'hantverk', hantverk: true, plats: 'elden' },
@@ -89,7 +90,7 @@ const DEF = {
   strand: { namn: 'Sitter vid stranden och ser ut över vattnet', tecken: '🌊', dygn: true },
   korg: { namn: 'Flätar en korg av hö', slag: 'hantverk', hantverk: true, plats: 'elden' },
   rensa: { namn: 'Rensar fisk vid elden', slag: 'hantverk', hantverk: true, social: true, stilla: true, plats: 'elden' },
-  bygga: { namn: 'Bygger', slag: 'bygga', verktyg: { laga: 'Lagar en vägg', lagaGolv: 'Lagar golvet', golv: 'Lägger golv', vagg: 'Bygger en vägg' }, hantverk: true, tungt: true, stilla: true },
+  bygga: { namn: 'Bygger', yrke: 'Byggare', slag: 'bygga', verktyg: { laga: 'Lagar en vägg', lagaGolv: 'Lagar golvet', golv: 'Lägger golv', vagg: 'Bygger en vägg' }, hantverk: true, tungt: true, stilla: true },
 } satisfies Record<string, ActDef>;
 
 export type Act = keyof typeof DEF;
