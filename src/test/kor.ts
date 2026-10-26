@@ -1,5 +1,5 @@
 // Kör en by utan grafik och samlar nyckeltal. Vakterna larmar om något blir omöjligt (NaN, negativa förråd, folk i vattnet).
-import { BEAT, createState, step, living, DAY, ageIndex, moodOf, serialize, serializeParts, getMap, fuelStock, ACT_NAMES, T, State, inMap, isWall, tileOf, foodOf, amountOf, sumOf, okandaBalans } from '../sim';
+import { BEAT, createState, step, living, DAY, groundOf, isSoil, markslag, Markslag, ageIndex, moodOf, serialize, serializeParts, getMap, fuelStock, ACT_NAMES, T, State, inMap, isWall, tileOf, foodOf, amountOf, sumOf, okandaBalans } from '../sim';
 
 // testbyarna grundas 08:00 svensk tid. Testerna körs i datorns tidszon (här UTC), så där är klockan 06:00 när byn grundas
 export const START = Date.parse('2026-10-20T08:00:00+02:00');
@@ -82,4 +82,12 @@ export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => voi
 export function rad(r: Pick<Resultat, 'seed' | 'n'>) {
   const n = r.n;
   return `by ${String(r.seed).padEnd(5)} pop ${n.pop}${n.atergrundad ? ` ÅTERGRUNDAD ${n.atergrundad} GGR` : ''}, in ${n.invandrade}, ut ${n.utvandrade}, födda ${n.fodda}, döda ${n.doda} (svält ${n.svalt}, kyla ${n.kyla}), hunger ${n.hunger} h, humör ${n.humor.toFixed(2)}, vintermat ${n.vintermat}, vinterved ${n.vinterved}, eld ${n.eld} % | ${(n.ms / 1000).toFixed(1)} s, ${n.kb} KB (största delen ${n.delKb} KB)`;
+}
+
+// jordrutorna per markslag, delade som simuleringen delar dem (markslag i mark.ts): skog, ungskog, högt gräs, kort gräs och
+// bar jord. Bar jord är nött marktäcke utan ungskog, alltså stigarna
+export function markStat(s: State): Record<Markslag, number> {
+  const g = groundOf(s), n: Record<Markslag, number> = { skog: 0, ung: 0, hog: 0, kort: 0, bar: 0 };
+  for (let i = 0; i < g.tiles.length; i++) if (isSoil(g.tiles[i])) n[markslag(g, i)]++;
+  return n;
 }

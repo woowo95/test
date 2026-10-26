@@ -1,7 +1,7 @@
-import { createState, step, living, AGES, ageIndex, ageOf, serialize, State, SEDER, groundOf, foodOf, amountOf, STACK_ORDER } from '../sim';
-import { BAR, FOREST, HIGH, isSoil } from '../sim/vag';
+// npm run detaljer -- [by …]: den långa utskriften för en eller flera byar i 90 dygn (90 år i spelet), när något behöver undersökas
+import { BEAT, HOUR, createState, step, living, AGES, ageIndex, ageOf, serialize, State, SEDER, foodOf, amountOf, STACK_ORDER } from '../sim';
+import { START as start, STEG_DYGN, markStat } from './kor';
 
-const start = Date.parse('2026-10-20T08:00:00+02:00');
 const valda = process.argv.slice(2).map(Number);
 for (const seed of valda.length ? valda : [1, 42, 777]) {
   const s = createState(seed, start);
@@ -10,11 +10,12 @@ for (const seed of valda.length ? valda : [1, 42, 777]) {
   let minFood = 1e9, firstFire = -1, litSteps = 0, steps = 0, accidents = 0;
   const acts: Record<string, number> = {};
   for (let d = 0; d < days; d++) {
-    for (let i = 0; i < 288; i++) {
-      step(s, 300); minFood = Math.min(minFood, foodOf(s));
+    for (let i = 0; i < STEG_DYGN; i++) {
+      step(s, BEAT); minFood = Math.min(minFood, foodOf(s));
       steps++; if (s.fire.lit) litSteps++;
-      for (const p of living(s)) { if (p.thoughts.some(t => t.text === 'Kissade på sig' && t.until - s.now > 4 * 3600000 - 300001)) accidents++; if (ageOf(p, s.now) >= 14 && p.task) acts[p.task.act] = (acts[p.task.act] || 0) + 1; }
-      if (firstFire < 0 && s.fire.lit) firstFire = (s.now - start) / 3600000;
+      // en olycka på toa: tanken är just tänkt, så den har hela sina 4 h kvar (den räknas bara det steget)
+      for (const p of living(s)) { if (p.thoughts.some(t => t.text === 'Kissade på sig' && t.until - s.now === 4 * HOUR)) accidents++; if (ageOf(p, s.now) >= 14 && p.task) acts[p.task.act] = (acts[p.task.act] || 0) + 1; }
+      if (firstFire < 0 && s.fire.lit) firstFire = (s.now - start) / HOUR;
     }
     if (d % 7 === 6 || d === days - 1) {
       const ppl = living(s);
@@ -33,12 +34,7 @@ for (const seed of valda.length ? valda : [1, 42, 777]) {
   console.log('seder:', SEDER.map(k => `${k} ${s.seder.v[k].toFixed(2)}`).join(', '), '| olyckor på toa', accidents);
   console.log('taggar:', living(s).filter(p => p.tag).map(p => `${p.name}: ${p.tag}`).join(', '), '| fått en tagg', living(s).filter(p => p.kallad?.length).length);
   console.log(s.seder.log.map(l => l.text).join('\n'));
-  const g = groundOf(s);
-  let skog = 0, planta = 0, hogt = 0, kort = 0, bar = 0;
-  for (let i = 0; i < g.cover.length; i++) if (isSoil(g.tiles[i])) {
-    if (g.trees[i] >= FOREST) skog++; else if (g.trees[i] > 0) planta++;
-    else if (g.cover[i] >= HIGH) hogt++; else if (g.cover[i] >= BAR) kort++; else bar++;
-  }
-  console.log(`mark: ${skog} skog, ${planta} plantor, ${hogt} högt gräs, ${kort} kort gräs, ${bar} bar jord/stig | fällda träd ${s.fallda ?? 0}, stammar ${(s.stockar ?? []).length} | kol i förrådet ${Math.round(amountOf(s, 'kol'))}, kolhög ${s.fire.ash ?? 0}`);
+  const m = markStat(s);
+  console.log(`mark: ${m.skog} skog, ${m.ung} ungskog, ${m.hog} högt gräs, ${m.kort} kort gräs, ${m.bar} bar jord/stig | fällda träd ${s.fallda ?? 0}, stammar ${(s.stockar ?? []).length} | kol i förrådet ${Math.round(amountOf(s, 'kol'))}, kolhög ${s.fire.ash ?? 0}`);
 }
 function roundItems(s: State) { const o: Record<string, number> = {}; for (const k of STACK_ORDER) { const n = Math.round(amountOf(s, k)); if (n) o[k] = n; } return o; }
