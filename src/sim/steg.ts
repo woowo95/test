@@ -1,6 +1,6 @@
 import { tidyTools } from './agande';
 import { chopStock, fellTree, rotStumps, stocks } from './skog';
-import { VED, needLadder, noticeTheft, stole } from './behov';
+import { needLadder, noticeTheft, stole } from './behov';
 import { avbryt, capacity, dropSpot, fetchSpot, homeKind, isCarrying, load, pickUp, storeLoad, tidyStore, wearStore } from './lager';
 import { DJURARTER, KANIN, REDSKAP, bearbeta, twineRope, wearUsed } from './redskap';
 import { GOR_ACTS, finishHalf, startWork, stepPaborjat, workHalf } from './paborjat';
@@ -8,7 +8,7 @@ import { thinkWhileWorking } from './teknik';
 import { arbetsformaga, foodDays, workRate } from './ekonomi';
 import { TRY_SEC, growFynd, handFish, lagren, packFynd, pickMushrooms, richness, richnessDelar, takeFrom } from './fynd';
 import { coldOf, temperature } from './vader';
-import { addFuel, canLight, fireWant, forageItems, fuelFor, hearthOf, heatAt, igniterOf, stepFire, takeCoal, takeFuel, tinderShort, tryLight } from './eld';
+import { VED, addFuel, canLight, fireWant, forageItems, fuelFor, hearthOf, heatAt, igniterOf, stepFire, takeCoal, takeFuel, tinderShort, tryLight } from './eld';
 import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, isSick, living, log, ovning, stat, think } from './folk';
 import { getMap } from './karta';
 import { DODSORSAKER, barnMat, birth, birthWish, die, regulate } from './liv';

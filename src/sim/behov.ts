@@ -1,4 +1,4 @@
-import { State, Person, HOUR, DAY, GREN } from './typer';
+import { State, Person, HOUR, DAY } from './typer';
 import { FOOD, REDSKAP_SLAG, SAKER, SAK_LIST, isTool } from './saker';
 import { actsOf, usesTool } from './handlingar';
 import { ALDER, KROPP, REL, ageOf, alive, byId, count, getRel, isKin, isParent, living, log, stat, think } from './folk';
@@ -6,7 +6,6 @@ import { chance, clamp, pickViktat, rnd } from './slump';
 import { Ting, tingOf } from './agande';
 import { BYN, Del, addDel, sumOf } from './egendom';
 import { amountOf, mayTake, ownMove, ownsAmount, takeFood, use } from './lager';
-import { emberOn, fetchFuel, fireWant } from './eld';
 import { eatPoison } from './fynd';
 import { habitShare, habitTotal } from './seder';
 import { grundvarde } from './varde';
@@ -20,8 +19,8 @@ import { tiondel } from './format';
 // hög empati stjäl aldrig. Man stjäl helst av den man inte tycker om. Den bestulne märker det nästa gång hen äter (maten:
 // needLadder anropar noticeTheft varje gång hen ätit, också när bara byns mat ätits), lägger sin egen ved på elden (steg.ts)
 // eller tar av sitt eget till ett arbete (takeMaterial), och relationen blir sämre.
-// Varje behov är en post i BEHOV (mat, ved till elden). Material till ett arbete och redskap går samma steg, längre ner.
-interface Behov {
+// Varje behov är en post i BEHOV (mat, och ved till elden från eld.ts). Material till ett arbete och redskap går samma steg, längre ner.
+export interface Behov {
   id: string;
   namn: string; // i loggen: "gav mat till", "stal mat av"
   slag: readonly string[]; // vilka saker i förrådet som fyller behovet
@@ -66,20 +65,9 @@ export const MAT: Behov = {
   anvand: eat,
 };
 
-// ---------- ved till elden ----------
-// Den enkla eldstaden ägs av hela byn, men veden följer det vanliga ägandet: man eldar med byns ved och sin egen
-// (eld.ts väljer vem som hämtar, bland dem som har ved att ta). Den som fryser när elden behöver mer ved och inte har
-// någon ber om den som gåva, och stjäl först när kylan håller på att döda hen: hen hämtar då den andras ved till elden.
-export const VED: Behov = {
-  id: 'ved', namn: 'ved', slag: ['ved', 'grenar'], per: { grenar: GREN }, minst: 0.5,
-  mangd: () => 1, // en famn
-  kvar: 3, // så mycket ved som brinner på sex timmar
-  behover: (s, p) => p.warm < KROPP.fryser && (s.fire.lit || emberOn(s)) && s.fire.fuel < fireWant(s),
-  fara: (_s, p) => p.warm < KROPP.frysdod ? 1 - p.health : 0, // man fryser ihjäl när kroppsvärmen är nästan slut, och hälsan sjunker
-  // stölden: p hämtar den andras ved till elden (steg.ts räknar den när den tas). Annars hämtar den som eld.ts väljer
-  anvand: (s, p, fran) => { if (fran && ageOf(p, s.now) >= ALDER.hjalper && p.task?.act !== 'sova') fetchFuel(s, p, 'Fryser och tar någon annans ved till elden', fran); return 0; },
-};
-const BEHOV: Behov[] = [MAT, VED];
+// Behoven, i den ordning de prövas. Ett behov som hör till ett annat system läggs in av det systemet (ved till elden: eld.ts)
+const BEHOV: Behov[] = [MAT];
+export const addBehov = (b: Behov) => { BEHOV.push(b); };
 
 // det p själv har och får ta av byns
 const perOf = (b: Behov, k: string) => b.per?.[k] ?? 1;

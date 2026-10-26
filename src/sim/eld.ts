@@ -1,5 +1,5 @@
 import { addTo, amountOf, avbryt, fetchSpot, takeLimit, use } from './lager';
-import { getable, takeMaterial } from './behov';
+import { Behov, addBehov, getable, takeMaterial } from './behov';
 import { Del, addDel } from './egendom';
 import { coldOf, temperature } from './vader';
 import { ALDER, KROPP, ageOf, count, doingAct, isSick, log, ovning, stat, think } from './folk';
@@ -281,3 +281,18 @@ export function forageItems(s: State, p: Person, dtSec: number): Record<string, 
 }
 // så många dygn bränslet i förrådet räcker
 export function woodDays(s: State) { return fuelStock(s) / (hearthOf(s.fire).burn * 24); }
+
+// ---------- ved till elden ----------
+// Den enkla eldstaden ägs av hela byn, men veden följer det vanliga ägandet: man eldar med byns ved och sin egen
+// (vem som hämtar väljs längre upp i filen, bland dem som har ved att ta). Den som fryser när elden behöver mer ved och inte har
+// någon ber om den som gåva, och stjäl först när kylan håller på att döda hen: hen hämtar då den andras ved till elden.
+export const VED: Behov = {
+  id: 'ved', namn: 'ved', slag: ['ved', 'grenar'], per: { grenar: GREN }, minst: 0.5,
+  mangd: () => 1, // en famn
+  kvar: 3, // så mycket ved som brinner på sex timmar
+  behover: (s, p) => p.warm < KROPP.fryser && (s.fire.lit || emberOn(s)) && s.fire.fuel < fireWant(s),
+  fara: (_s, p) => p.warm < KROPP.frysdod ? 1 - p.health : 0, // man fryser ihjäl när kroppsvärmen är nästan slut, och hälsan sjunker
+  // stölden: p hämtar den andras ved till elden (steg.ts räknar den när den tas). Annars hämtar den som väljs längre upp
+  anvand: (s, p, fran) => { if (fran && ageOf(p, s.now) >= ALDER.hjalper && p.task?.act !== 'sova') fetchFuel(s, p, 'Fryser och tar någon annans ved till elden', fran); return 0; },
+};
+addBehov(VED);
