@@ -1,7 +1,7 @@
-import { getMap, hash, vnoise } from './karta';
+import { getMap, hash, perKarta, vnoise } from './karta';
 import { campKey } from './plats';
 import { clampI, rnd } from './slump';
-import { H, HOUR, Person, State, W, inMap, mapKey } from './typer';
+import { H, HOUR, Person, State, W, inMap } from './typer';
 import { BAR, FOREST, Ground, HIGH, decodeCover, encodeCover, isSoil } from './vag';
 
 // ---------- mark: gräs, stigar och skog ----------
@@ -21,19 +21,15 @@ export const coverOf = (s: State) => groundOf(s).cover;
 export function packGround(s: State) { const g = groundOf(s); s.mark = encodeCover(g.cover); s.skog = encodeCover(g.trees); }
 
 // ängar: fläckar av fuktig mark där det växer högt gräs och träd har svårt att få fäste
-const angCache = new Map<string, Uint8Array>();
 const ANG = 0.56; // gräns i bruset: över den är det äng
-export function angOf(seed: number) {
-  let a = angCache.get(mapKey(seed));
-  if (a) return a;
-  a = new Uint8Array(W * H);
+export const angOf = perKarta(seed => {
+  const a = new Uint8Array(W * H);
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     const v = vnoise(seed + 41, x / 7, y / 7) * 0.7 + vnoise(seed + 43, x / 3, y / 3) * 0.3;
     a[y * W + x] = v > ANG ? 1 : 0;
   }
-  angCache.set(mapKey(seed), a);
   return a;
-}
+});
 const ANG_SPREAD = 0.1; // skogen sprider sig in på en äng tio gånger långsammare
 
 // skog på jorden utom på ängarna och i en liten glänta runt byplatsen (lite ojämn kant)

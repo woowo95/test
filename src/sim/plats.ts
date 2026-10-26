@@ -9,22 +9,33 @@ const zonesIn = (s: State) => s.lagren ?? NONE;
 
 // avståndet från en ruta till närmaste del av lägret (0 inne i en lagerplats)
 export function campDist(s: State, x: number, y: number) {
-  if (Number.isInteger(x) && Number.isInteger(y) && inMap(x, y)) return distGrid(s)[y * W + x];
+  if (Number.isInteger(x) && Number.isInteger(y) && inMap(x, y)) return campGrid(s)[y * W + x];
   return distTo(s, x, y);
 }
 // Avståndet frågas efter tusentals gånger i varje steg, så det räknas för alla rutor på en gång och sparas
-// tills lägret ändras (en lagerplats blir större, mindre eller ny).
-const grids = new WeakMap<State, { seed: number; geo: number[]; d: Float64Array }>();
-function distGrid(s: State) {
+// tills lägret ändras (en lagerplats blir större, mindre eller ny). En kartslinga kan läsa rutnätet direkt
+// (campGrid(s)[i] för rutan med index i).
+type Grid = { seed: number; geo: number[]; d: Float64Array };
+const grids = new WeakMap<State, Grid>();
+export function campGrid(s: State) {
   const zs = zonesIn(s);
   let c = grids.get(s);
-  if (!c || c.seed !== s.seed || c.geo.length !== zs.length * 4 || zs.some((z, i) => c!.geo[i * 4] !== z.x || c!.geo[i * 4 + 1] !== z.y || c!.geo[i * 4 + 2] !== z.w || c!.geo[i * 4 + 3] !== z.h)) {
+  if (!c || !sammaForm(c, s.seed, zs)) {
     const d = new Float64Array(W * H);
     for (let i = 0; i < W * H; i++) d[i] = distTo(s, i % W, Math.floor(i / W));
     c = { seed: s.seed, geo: zs.flatMap(z => [z.x, z.y, z.w, z.h]), d };
     grids.set(s, c);
   }
   return c.d;
+}
+// har lägret samma form som när rutnätet räknades?
+function sammaForm(c: Grid, seed: number, zs: NonNullable<State['lagren']>) {
+  if (c.seed !== seed || c.geo.length !== zs.length * 4) return false;
+  for (let i = 0; i < zs.length; i++) {
+    const z = zs[i], g = c.geo;
+    if (g[i * 4] !== z.x || g[i * 4 + 1] !== z.y || g[i * 4 + 2] !== z.w || g[i * 4 + 3] !== z.h) return false;
+  }
+  return true;
 }
 function distTo(s: State, x: number, y: number) {
   const f = getMap(s.seed).fire;

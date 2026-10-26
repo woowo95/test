@@ -1,14 +1,14 @@
-import { campCenter, campDist } from './plats';
+import { campCenter, campDist, campGrid } from './plats';
 import { count, forstaGang, stat, log, think } from './folk';
-import { getMap, hash, vnoise } from './karta';
-import { Markslag, groundOf, markslag } from './mark';
+import { getMap, hash, perKarta, vnoise } from './karta';
+import { Markslag, groundOf, markslag, tileOf } from './mark';
 import { sedEvent } from './seder';
 import { chance, clamp, clampI, pickNarmaste, rnd } from './slump';
 import { kn, learnK, useK } from './kunskap';
 import { ageIndex } from './tid';
 import { kunnighet } from './ekonomi';
 import { addTo, amountOf, foodOf } from './lager';
-import { DAY, H, HOUR, HOUR_S, Person, State, T, W, inMap, mapKey } from './typer';
+import { DAY, H, HOUR, HOUR_S, Person, State, T, W, inMap } from './typer';
 import { FOREST, isSoil } from './vag';
 import { ACTS, SNABBARE } from './handlingar';
 
@@ -130,10 +130,11 @@ export type FyndId = keyof typeof DEF;
 export const FYND: Record<FyndId, FyndDef> = DEF;
 export const FYND_IDS = Object.keys(FYND) as FyndId[];
 const UTTAG_IDS = FYND_IDS.filter(k => FYND[k].uttag);
-// en handling kan ta ur flera lager: den som samlar tar både bär och rötter
+// en handling kan ta ur flera lager: den som samlar tar både bär och rötter. Tabellen byggs en gång,
+// eftersom lagren frågas efter för varje ruta
 export type Lager = FyndId | Kind;
-const LAGREN: Partial<Record<Lager, FyndId[]>> = { samla: ['bar', 'rotter'] };
-export const lagren = (k: Lager): FyndId[] => LAGREN[k] ?? [k as FyndId];
+const LAGREN: Record<Lager, readonly FyndId[]> = { ...Object.fromEntries(FYND_IDS.map(k => [k, [k]])) as Record<FyndId, FyndId[]>, samla: ['bar', 'rotter'] };
+export const lagren = (k: Lager) => LAGREN[k];
 const summa = (k: Lager, fn: (j: FyndId) => number) => { let v = 0; for (const j of lagren(k)) v += fn(j); return v; };
 // ungefär vad en mycket rik ruta har, och hur fort platsen växer tillbaka (det snabbaste lagret)
 export const toppOf = (k: Lager) => summa(k, j => FYND[j].topp);
@@ -165,7 +166,7 @@ function monsterOf(s: State, k: FyndId) {
 }
 // i byns läger växer inget: allt är redan hämtat och marken nött. Lägret växer när byn får fler lagerplatser
 export const LAGER_R = 3;
-const iLagret = (s: State, i: number) => campDist(s, i % W, Math.floor(i / W)) < LAGER_R && getMap(s.seed).tiles[i] !== T.Vatten;
+const iLagret = (s: State, i: number) => campGrid(s)[i] < LAGER_R && getMap(s.seed).tiles[i] !== T.Vatten;
 // vilt skyr människor: ett stort område runt lägret, och marken där många går (stigar och nött mark).
 // Räknas om en gång per dygn.
 export const SKYGG_IN = 8; // rutor från lägret där inget vilt finns
@@ -195,11 +196,17 @@ function capOf(s: State, k: FyndId, i: number) {
 // vad rutan ser ut att kunna ge på håll: marken syns, men inte var fläckarna är
 export function synsOf(s: State, k: Lager, i: number): number {
   if (iLagret(s, i)) return 0;
-  return summa(k, j => { const f = FYND[j]; return f.bas(s, i, f.monster ? monsterOf(s, j).snitt : 1) * sasong(s, j); });
+  let v = 0;
+  for (const j of lagren(k)) { const f = FYND[j]; v += f.bas(s, i, f.monster ? monsterOf(s, j).snitt : 1) * sasong(s, j); }
+  return v;
 }
 const sasong = (s: State, k: FyndId) => FYND[k].arstid?.[ageIndex(s)] ?? 1;
 // var det växer just nu, med årstiden men utan uttaget: det man ser av buskar och spår även när det är plockat
-export const vaxerAt = (s: State, k: Lager, i: number) => summa(k, j => capOf(s, j, i) * sasong(s, j));
+export function vaxerAt(s: State, k: Lager, i: number) {
+  let v = 0;
+  for (const j of lagren(k)) v += capOf(s, j, i) * sasong(s, j);
+  return v;
+}
 const store = new WeakMap<State, Partial<Record<FyndId, Float32Array>>>();
 // uttag per ruta: 0 = orörd, 1 = tom
 export function takenOf(s: State) {
@@ -222,25 +229,18 @@ export function packFynd(s: State) {
   s.fynd = btoa(bin);
 }
 
-const shoreCache = new Map<string, Uint8Array>();
 // strand: land intill vatten, där man kan fiska
-export function shoreOf(seed: number) {
-  let b = shoreCache.get(mapKey(seed));
-  if (b) return b;
-  const t = getMap(seed).tiles; b = new Uint8Array(W * H);
+export const shoreOf = perKarta(seed => {
+  const t = getMap(seed).tiles, b = new Uint8Array(W * H);
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     if (t[y * W + x] === T.Vatten) continue;
     for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const xx = x + dx, yy = y + dy; if (inMap(xx, yy) && t[yy * W + xx] === T.Vatten) b[y * W + x] = 1; }
   }
-  shoreCache.set(mapKey(seed), b);
   return b;
-}
-const stoneCache = new Map<string, Uint8Array>();
+});
 // avstånd i rutor till närmaste sten (högst 9)
-export function stoneDist(seed: number) {
-  let b = stoneCache.get(mapKey(seed));
-  if (b) return b;
-  const t = getMap(seed).tiles; b = new Uint8Array(W * H).fill(9);
+export const stoneDist = perKarta(seed => {
+  const t = getMap(seed).tiles, b = new Uint8Array(W * H).fill(9);
   for (let i = 0; i < W * H; i++) if (t[i] === T.Sten) {
     const x0 = i % W, y0 = Math.floor(i / W);
     for (let dy = -8; dy <= 8; dy++) for (let dx = -8; dx <= 8; dx++) {
@@ -248,39 +248,58 @@ export function stoneDist(seed: number) {
       if (inMap(x, y)) b[y * W + x] = Math.min(b[y * W + x], Math.round(Math.hypot(dx, dy)));
     }
   }
-  stoneCache.set(mapKey(seed), b);
   return b;
-}
+});
 
 // vad lagret har på rutan just nu: det filtret visar
 export function fyndAt(s: State, k: Lager, i: number) {
   const d = takenOf(s);
-  return summa(k, j => { const t = d[j]; return vaxerAt(s, j, i) * (t ? 1 - t[i] : 1); });
+  let v = 0;
+  for (const j of lagren(k)) { const t = d[j]; v += vaxerAt(s, j, i) * (t ? 1 - t[i] : 1); }
+  return v;
 }
-// rutorna i vattnet som man når från stranden, med vikt efter avståndet
-function vattenRunt(s: State, k: FyndId, cx: number, cy: number, fn: (i: number, w: number) => void) {
-  const r = FYND[k].vatten!, tiles = getMap(s.seed).tiles;
-  for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
-    const x = cx + dx, y = cy + dy, w = 1 - Math.hypot(dx, dy) / (r + 1);
-    if (w > 0 && inMap(x, y) && tiles[y * W + x] === T.Vatten) fn(y * W + x, w);
+// rutorna runt en ruta ut till r rutor och deras vikt efter avståndet (0 längst ut), i ordningen dy yttre, dx inre,
+// och summan av vikterna. Det beror bara på r och räknas en gång
+interface Karna { v: { dx: number; dy: number; w: number }[]; sum: number }
+const karnor: Karna[] = [];
+function karna(r: number) {
+  let k = karnor[r];
+  if (!k) {
+    k = karnor[r] = { v: [], sum: 0 };
+    for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+      const w = Math.max(0, 1 - Math.hypot(dx, dy) / (r + 1));
+      k.v.push({ dx, dy, w }); k.sum += w;
+    }
   }
+  return k;
 }
-// vad den som står på rutan når av ett mått per ruta (fn). För fisk: snittet ute i vattnet framför stranden
+// rutan i vattnet (cx + dx, cy + dy) som man når från stranden med vikten w, annars -1
+const iVattnet = (tiles: Uint8Array, cx: number, cy: number, dx: number, dy: number, w: number) => {
+  const x = cx + dx, y = cy + dy;
+  return w > 0 && inMap(x, y) && tiles[y * W + x] === T.Vatten ? y * W + x : -1;
+};
+// vad den som står på rutan når av ett mått per ruta (fn). För fisk: snittet ute i vattnet framför stranden,
+// med vikt efter avståndet
 export function standAt(s: State, k: Lager, x: number, y: number, fn: (i: number) => number) {
-  const cx = clampI(x, W), cy = clampI(y, H), i = cy * W + cx;
-  if (!FYND[lagren(k)[0]].vatten) return fn(i);
-  if (getMap(s.seed).tiles[i] === T.Vatten) return 0;
+  const cx = clampI(x, W), cy = clampI(y, H), i = cy * W + cx, r = FYND[lagren(k)[0]].vatten;
+  if (!r) return fn(i);
+  const tiles = getMap(s.seed).tiles;
+  if (tiles[i] === T.Vatten) return 0;
   let sum = 0, n = 0;
-  vattenRunt(s, lagren(k)[0], cx, cy, (j, w) => { sum += fn(j) * w; n += w; });
+  for (const { dx, dy, w } of karna(r).v) {
+    const j = iVattnet(tiles, cx, cy, dx, dy, w);
+    if (j >= 0) { sum += fn(j) * w; n += w; }
+  }
   return n ? sum / n : 0;
 }
 // vad platsen ger den som står där just nu, 0 = inget. För ett lager med djur (kaniner) beror det också på var djuren
 // faktiskt är: kartan säger var de trivs, och djur.ts säger hur nära en grupp platsen är (setNarvaro)
 const narvaro: Partial<Record<Lager, (s: State, i: number) => number>> = {};
 export function setNarvaro(k: Lager, fn: (s: State, i: number) => number) { narvaro[k] = fn; }
+const nuAt = (s: State, k: Lager, i: number) => { const n = narvaro[k]; return n ? fyndAt(s, k, i) * n(s, i) : fyndAt(s, k, i); };
 export function richness(s: State, k: Lager, x: number, y: number) {
-  const n = narvaro[k];
-  return standAt(s, k, x, y, n ? i => fyndAt(s, k, i) * n(s, i) : i => fyndAt(s, k, i));
+  if (FYND[lagren(k)[0]].vatten) return standAt(s, k, x, y, i => nuAt(s, k, i));
+  return nuAt(s, k, tileOf(x, y)); // på land: bara rutan man står på
 }
 // ta ur en plats: mest ur rutan, lite ur grannarna. Fisk tas ur vattnet framför stranden.
 // Tar man ur flera lager (bär och rötter) delas uttaget efter hur mycket av vart och ett som finns där.
@@ -294,22 +313,23 @@ export function takeFrom(s: State, k: Lager, x: number, y: number, amount: numbe
   k = ls[0];
   const d = takenOf(s)[k], u = FYND[k].uttag;
   if (!d || !u) return;
-  const cx = Math.floor(x), cy = Math.floor(y);
-  if (FYND[k].vatten) {
+  const cx = Math.floor(x), cy = Math.floor(y), rv = FYND[k].vatten;
+  if (rv) {
+    const tiles = getMap(s.seed).tiles, kv = karna(rv).v;
     let n = 0;
-    vattenRunt(s, k, cx, cy, (_, w) => { n += w; });
-    if (n) vattenRunt(s, k, cx, cy, (j, w) => { d[j] = Math.min(1, d[j] + amount * w / n / u.full); });
+    for (const { dx, dy, w } of kv) if (iVattnet(tiles, cx, cy, dx, dy, w) >= 0) n += w;
+    if (n) for (const { dx, dy, w } of kv) {
+      const j = iVattnet(tiles, cx, cy, dx, dy, w);
+      if (j >= 0) d[j] = Math.min(1, d[j] + amount * w / n / u.full);
+    }
     return;
   }
-  const r = u.reach;
-  let sum = 0;
-  const w = (dx: number, dy: number) => Math.max(0, 1 - Math.hypot(dx, dy) / (r + 1));
-  for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) sum += w(dx, dy);
-  for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+  const r = u.reach, { v, sum } = karna(r);
+  for (const { dx, dy, w } of v) {
     const xx = cx + dx, yy = cy + dy;
     if (!inMap(xx, yy)) continue;
     const i = yy * W + xx;
-    d[i] = Math.min(1, d[i] + amount * w(dx, dy) / sum * (r + 1) / u.full);
+    d[i] = Math.min(1, d[i] + amount * w / sum * (r + 1) / u.full);
   }
 }
 // en timme: platserna växer tillbaka

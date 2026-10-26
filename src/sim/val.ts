@@ -54,9 +54,10 @@ export function spotFor(s: State, act: Act, p: Person): { x: number; y: number }
     return freeNear(s, f.x + 0.5, f.y + 1.5);
   }
   // ute på marken: vid stranden, på ängen och i skogen, eller avsides (toa)
+  const strand = plats === 'strand' ? shoreOf(s.seed) : undefined;
   const want = (t: number, x: number, y: number) => {
     if (bitAt(s, x, y)) return false; // inte i husen
-    if (plats === 'strand') return shoreOf(s.seed)[y * W + x] === 1;
+    if (strand) return strand[y * W + x] === 1;
     if (plats === 'ang') return t === T.Gras || t === T.Skog;
     if (plats === 'avsides') return t === T.Gras || t === T.Skog || t === T.Sand;
     return isForest(s, y * W + x); // grenar och vilt finns i skogen

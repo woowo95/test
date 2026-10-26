@@ -16,12 +16,25 @@ function fbm(seed: number, x: number, y: number) {
   return vnoise(seed, x / 12, y / 12) * 0.55 + vnoise(seed + 7, x / 6, y / 6) * 0.3 + vnoise(seed + 13, x / 3, y / 3) * 0.15;
 }
 
+// Det som bara beror på kartan (fröet och storleken W×H) räknas en gång per karta och sparas med nyckeln mapKey.
+// Den senaste kartan svarar direkt, utan att nyckeln byggs. Storleken hör till nyckeln, eftersom testerna kör
+// äldre byar (64×40) och nya i samma process.
+export function perKarta<V>(gor: (seed: number) => V): (seed: number) => V {
+  const cache = new Map<string, V>();
+  let seed0 = NaN, w0 = 0, h0 = 0, v0!: V;
+  return seed => {
+    if (seed === seed0 && W === w0 && H === h0) return v0;
+    const key = mapKey(seed);
+    let v = cache.get(key);
+    if (v === undefined) { v = gor(seed); cache.set(key, v); }
+    seed0 = seed; w0 = W; h0 = H; v0 = v;
+    return v;
+  };
+}
+
 interface MapData { tiles: Uint8Array; fire: { x: number; y: number }; stock: { x: number; y: number }; shade: Float32Array }
 
-const mapCache = new Map<string, MapData>();
-export function getMap(seed: number): MapData {
-  const c = mapCache.get(mapKey(seed));
-  if (c) return c;
+export const getMap = perKarta((seed): MapData => {
   const tiles = new Uint8Array(W * H);
   const shade = new Float32Array(W * H);
   const lx = W * (0.3 + hash(seed, 1, 1) * 0.4), ly = H * (0.25 + hash(seed, 2, 2) * 0.5);
@@ -60,7 +73,5 @@ export function getMap(seed: number): MapData {
     if (sc > bs) { bs = sc; best = { x, y }; }
   }
   const f = best;
-  const m: MapData = { tiles, fire: f, stock: { x: f.x + 4, y: f.y - 1 }, shade };
-  mapCache.set(mapKey(seed), m);
-  return m;
-}
+  return { tiles, fire: f, stock: { x: f.x + 4, y: f.y - 1 }, shade };
+});
