@@ -381,7 +381,7 @@ export function toolGain(s: State, p: Person, act: Act, fara: Faror) {
   }
   return 1;
 }
-// slakta det fällda viltet eller rensa fisken vid slaktbänken eller elden (DJUR i redskap.ts), så länge det tar, med kniven om det behövs
+// slakta det fällda viltet vid slaktbänken eller rensa fisken vid bänken eller elden (DJUR i redskap.ts), så länge det tar, med kniven om det behövs
 function processTask(s: State, v: Val, art: Djurart, why: string) {
   set(v, art.act, why); if (art.kniv) v.tool = 'kniv';
   v.dur = Math.min(art.maxTim * HOUR, (djurKvar(s, art) / art.timme) * HOUR + VAL.extraMin * MIN);

@@ -27,13 +27,14 @@ let drag: { x: number; y: number; cx: number; cy: number; moved: number } | null
 app.stage.on('pointerdown', e => { drag = { x: e.global.x, y: e.global.y, cx: cam.x, cy: cam.y, moved: 0 }; });
 app.stage.on('pointerup', () => { setTimeout(() => { drag = null; }, 0); });
 app.stage.on('pointerupoutside', () => { drag = null; });
-// ett tryck väljer det som ligger överst: en person, elden, en lagerplats, en hög på marken, ett hus eller en sjö. Tom mark avmarkerar
+// ett tryck väljer det som ligger överst: en person, elden, en lagerplats, en hög på marken, ett hus, en station eller en sjö. Tom mark avmarkerar
 app.stage.on('pointertap', e => {
   if (drag && drag.moved > 6) return;
   const gx = e.global.x, gy = e.global.y, p = personAt(gx, gy), zi = storeAt(gx, gy), c = tileAt(gx, gy);
   if (p) selectPerson(p.id);
   else if (fireAt(gx, gy)) visa('eld');
   else if (zi) { ui.lagerNr = zi - 1; visa('lager'); }
+  else if (stationAt(s, c.x, c.y)) { ui.stationId = stationAt(s, c.x, c.y)!.id; visa('station'); }
   else if (outPilesAt(c.x, c.y).length) { ui.hogAt = c; visa('hog'); }
   else if (husAt(c.x, c.y) !== undefined) { ui.husId = husAt(c.x, c.y)!; visa('hus'); }
   else if (sjoAt(c.x, c.y) >= 0) { ui.sjoNr = sjoAt(c.x, c.y); visa('sjo'); }
@@ -54,7 +55,7 @@ app.stage.on('pointermove', e => {
   showHover(gx, gy);
   ui.hovered = personAt(gx, gy)?.id;
   const c = tileAt(gx, gy);
-  view.style.cursor = ui.hovered || fireAt(gx, gy) || storeAt(gx, gy) || outPilesAt(c.x, c.y).length || husAt(c.x, c.y) !== undefined ? 'pointer' : 'grab';
+  view.style.cursor = ui.hovered || fireAt(gx, gy) || storeAt(gx, gy) || outPilesAt(c.x, c.y).length || husAt(c.x, c.y) !== undefined || stationAt(s, c.x, c.y) ? 'pointer' : 'grab';
 });
 view.addEventListener('wheel', e => { e.preventDefault(); const r = view.getBoundingClientRect(); zoomAt(e.deltaY < 0 ? 1.06 : 1 / 1.06, e.clientX - r.left, e.clientY - r.top); }, { passive: false });
 view.addEventListener('pointerleave', () => { $('hoverBox').hidden = true; ui.hovered = undefined; });

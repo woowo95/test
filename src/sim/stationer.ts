@@ -15,7 +15,8 @@ import { balans } from './balans';
 // station är en rad i registret STATIONER: vad den kräver (tekniken och materialet), hur länge den tar att bygga, vilka
 // handlingar som görs där och hur många knivar som ligger kvar vid den. En ny station blir en rad här (flätarbänken 2.2.4,
 // grillställningen 2.8.1). Det enklaste görs med händerna var som helst; så länge byn inte har stationen görs arbetet vid
-// elden som förut (spotFor i val.ts).
+// elden som förut (spotFor i val.ts). Det som står under bara görs inte alls utan stationen: viltet slaktas bara vid
+// slaktbänken, och innan byn har en äts det fällda djuret som det är, med mindre kött och inget ben eller skinn.
 // Byggs gör den av den som kan tekniken och har tid för handarbete (craft i val.ts), med materialet ur förrådet efter
 // behovsstegen (behov.ts). Arbetet kan avbrytas: stationen står kvar halvbyggd och vem som helst som kan tekniken bygger
 // klart den. Den står utomhus nära elden, på en ruta där inget annat får ligga eller byggas (usable i lager.ts).
@@ -32,12 +33,12 @@ export const STATION = balans('station', {
 });
 
 // namn och ikon (ikoner.ts), tek = tekniken som behövs för att bygga den, av = materialet, min = minuters arbete,
-// gor = handlingarna som görs vid den, kniv = knivar som hör till den, bygger = texten för den som bygger,
+// gor = handlingarna som görs vid den, bara = de av dem som inte görs alls utan stationen, kniv = knivar som hör till den, bygger = texten för den som bygger,
 // forsta = loggen när byn fått sin första
-export interface StationDef { namn: string; ikon: string; tek: string; av: Record<string, number>; min: number; gor: Act[]; kniv?: number; bygger: string; forsta: string }
+export interface StationDef { namn: string; ikon: string; tek: string; av: Record<string, number>; min: number; gor: Act[]; bara?: Act[]; kniv?: number; bygger: string; forsta: string }
 export const STATIONER = {
   slaktbank: {
-    namn: 'Slaktbänk', ikon: 'slaktbank', tek: 'kniv', av: { ved: STATION.slaktbankTra }, min: STATION.slaktbankMin, gor: ['slakta', 'rensa'], kniv: STATION.knivplatser,
+    namn: 'Slaktbänk', ikon: 'slaktbank', tek: 'kniv', av: { ved: STATION.slaktbankTra }, min: STATION.slaktbankMin, gor: ['slakta', 'rensa'], bara: ['slakta'], kniv: STATION.knivplatser,
     bygger: 'Bygger en slaktbänk av trä.',
     forsta: '{namn} byggde byns första slaktbänk av trä. Där slaktas viltet och rensas fisken, och en kniv ligger kvar vid bänken.',
   },
@@ -46,8 +47,9 @@ export type StationSlag = keyof typeof STATIONER;
 export const STATION_LIST = Object.keys(STATIONER) as StationSlag[];
 export const stationDef = (k: string): StationDef | undefined => (STATIONER as Record<string, StationDef>)[k];
 
-// en station i byn: rutan den står på, och hur länge (ms) arbetet med att bygga den har kvar (0 = klar)
-export interface Station { id: number; k: string; x: number; y: number; kvar: number }
+// en station i byn: rutan den står på, hur länge (ms) arbetet med att bygga den har kvar (0 = klar), vilka som byggt på
+// den och när den blev klar (det visas när man trycker på den, flikar/station.ts)
+export interface Station { id: number; k: string; x: number; y: number; kvar: number; vem?: number[]; klar?: number }
 const NONE: Station[] = [];
 export const stationerOf = (s: State) => s.stationer ?? NONE;
 export const stationById = (s: State, id?: number) => id === undefined ? undefined : stationerOf(s).find(t => t.id === id);
@@ -61,6 +63,10 @@ export function stationAt(s: State, x: number, y: number) {
 }
 // den färdiga station där handlingen görs, om byn har en
 export const stationFor = (s: State, act: Act) => stationerOf(s).find(t => isKlar(t) && stationDef(t.k)?.gor.includes(act));
+// handlingen görs bara vid en station (bara i registret)
+const BARA = new Set<Act>(STATION_LIST.flatMap(k => (STATIONER[k] as StationDef).bara ?? []));
+// handlingen kan göras: den kräver ingen station, eller byn har en färdig
+export const kanGoras = (s: State, act: Act) => !BARA.has(act) || !!stationFor(s, act);
 // platsen där man står och arbetar vid stationen: på rutan söder om den, mot elden
 export const vidStation = (t: Station) => ({ x: t.x + 0.5, y: t.y + 1.1 });
 
@@ -115,6 +121,7 @@ export function startStation(s: State, p: Person, tk: Task) {
     }
   } else if (t) count(s, 'fortsatt');
   if (!t) { tk.ref = undefined; tk.until = s.now; return; }
+  if (!t.vem?.includes(p.id)) (t.vem ??= []).push(p.id);
   tk.ref = t.id; tk.until = s.now + t.kvar;
 }
 // medan man bygger
@@ -126,7 +133,7 @@ export function workStation(s: State, _p: Person, tk: Task, dtSec: number) {
 export function finishStation(s: State, p: Person, tk: Task) {
   const t = stationById(s, tk.ref);
   if (!t || t.kvar > MIN) return;
-  t.kvar = 0;
+  t.kvar = 0; t.klar = s.now;
   const d = stationDef(t.k)!;
   if (forstaGang(s, 'station_' + t.k)) { log(s, d.forsta.replace('{namn}', p.name), 'world', [p.id]); p.fame.push(`Byggde byns första ${d.namn.toLowerCase()}`); }
   fyllKnivplatser(s);

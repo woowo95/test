@@ -46,6 +46,7 @@ SCENARIER.ikoner = {
       ['byggmaterial', saknas(Object.values(MATERIAL).map(m => m.ikon))],
       ['slag av arbete', saknas(Object.values(ACTS).map(a => a.slag && slagIkon(a.slag)).filter(k => k !== 'zzz'))], // vila ritas som z
       ['påbörjat redskap', saknas(['paborjat'])],
+      ['stationer', saknas(SIM.STATION_LIST.map(k => SIM.STATIONER[k].ikon))],
     ];
     // tårtdiagrammet i personrutan: varje handling (utom sömnen) har slagets pixelbild, slagets tecken eller ett eget tecken
     const utan = (Object.keys(ACTS) as SIM.Act[]).filter(a => {

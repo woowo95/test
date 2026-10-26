@@ -3,7 +3,7 @@ import { FANGST, createState, bearbeta, canProcess, makeTool, step, living, clon
 import * as SIM from '../../sim';
 import { FOREST, isSoil } from '../../sim/vag';
 import { START, STEG_DYGN, STEG_TIM } from '../kor';
-import { setMat, kor, klockan, bastaJaktruta, SCENARIER, flyttLitenBy, tandEld } from './hjalp';
+import { setMat, kor, klockan, bastaJaktruta, SCENARIER, flyttLitenBy, tandEld, medBank } from './hjalp';
 
 SCENARIER.djur = {
   text: 'Kaniner syns där det finns vilt, skuttar omkring och hoppar undan folk. Jakt fångar hela kaniner som bärs hem hela och äts som de är; med flintkniv slaktas de till mer kött, ben, skinn och senor',
@@ -47,8 +47,8 @@ SCENARIER.djur = {
       step(q, 0.5);
       if (j.task?.act === 'jakt' && j.task.phase === 'back') { if (Math.abs(j.task.carry - KANIN) < 1e-9 && !j.task.items) hem++; else if (j.task.carry > 0) annat++; }
     }
-    // utan kniv ingen slakt; med kniv blir en kanin kött, ben, skinn och senor
-    setAmount(s, 'flinta', 2); setAmount(s, 'grenar', 2);
+    // utan kniv ingen slakt; med kniv blir en kanin kött, ben, skinn och senor (vid slaktbänken)
+    setAmount(s, 'flinta', 2); setAmount(s, 'grenar', 2); medBank(s);
     const utan = !canProcess(s, p, DJUR.kanin);
     for (const r of s.people) r.tek = { ...r.tek, kniv: 1, rep: 1 };
     makeTool(s, p, 'kniv');
@@ -346,7 +346,7 @@ SCENARIER.natur = {
 };
 
 SCENARIER.slaktbank = {
-  text: 'Slaktbänken (steg 2.2.3) byggs av trä av den som kan göra en kniv. Vid den slaktas viltet och rensas fisken, och en kniv hör till bänken och ligger kvar där. Utan bänk görs det vid elden. Jaktfärdigheten avgör hur mycket kött en kanin ger',
+  text: 'Slaktbänken (steg 2.2.3) byggs av trä av den som kan göra en kniv. Vid den slaktas viltet och rensas fisken, och en kniv hör till bänken och ligger kvar där. Viltet slaktas bara vid bänken; innan den finns äts det som det är. Fisken rensas vid elden så länge byn saknar bänk. Jaktfärdigheten avgör hur mycket kött en kanin ger',
   kor: () => {
     const { STATION, STATIONER, stationerOf, stationFor, isKlar, vidStation, tommaKnivplatser, stepStationer, kottFaktor, addTool, take, tidyTools, placeTools, usable, spotFor, tingOf, BYN, REDSKAP } = SIM;
     // en by där alla kan göra en kniv, med gott om mat och trä: bänken byggs
@@ -374,11 +374,17 @@ SCENARIER.slaktbank = {
     const tog = take(s, p, 'kniv') === bankKniv;
     p.task = undefined; tidyTools(s); placeTools(s);
     const tillbaka = !!bankKniv && bankKniv.hos === undefined && bankKniv.x === st?.x && bankKniv.y === st?.y;
-    // slakten och rensningen görs vid bänken, och utan bänk vid elden
+    // slakten och rensningen görs vid bänken. Utan bänk slaktas inget (viltet ligger kvar och äts som det är), och fisken
+    // rensas vid elden
     const vid = st ? vidStation(st) : { x: 0, y: 0 }, f = getMap(s.seed).fire;
     const vidBank = (['slakta', 'rensa'] as const).every(a => { const o = spotFor(s, a, p); return stationFor(s, a) === st && Math.hypot(o.x - vid.x, o.y - vid.y) < 0.5; });
-    const u = createState(1, START);
-    const vidElden = (['slakta', 'rensa'] as const).every(a => { const o = spotFor(u, a, living(u)[0]); return Math.hypot(o.x - f.x - 0.5, o.y - f.y - 0.5) < 2.5; });
+    const u = createState(1, START), uq = living(u).find(r => ageOf(r, u.now) >= 18)!;
+    for (const r of u.people) r.tek = { ...r.tek, kniv: 1 };
+    setAmount(u, 'kniv', 1); tidyTools(u); setMat(u, { vilt: 3 * KANIN, abborre: 3 });
+    const ingenSlakt = !canProcess(u, uq, DJUR.kanin) && SIM.canProcess(u, uq, DJUR.abborre);
+    bearbeta(u, uq, DJUR.kanin, 1);
+    const kvar = Math.abs(amountOf(u, 'vilt') - 3 * KANIN) < 1e-9 && amountOf(u, 'kott') < 1e-9;
+    const o = spotFor(u, 'rensa', uq), rensElden = Math.hypot(o.x - f.x - 0.5, o.y - f.y - 0.5) < 2.5;
     // jaktfärdigheten: mer kött för den som jagat mycket
     const kott = (jakt: number) => { p.skill.jakt = jakt; setMat(s, { vilt: 3 * KANIN }); bearbeta(s, p, DJUR.kanin, 1); return amountOf(s, 'kott'); };
     const ny = kott(0), van = kott(REDSKAP.kottFull);
@@ -390,7 +396,7 @@ SCENARIER.slaktbank = {
       [`en kniv hör till bänken, är byns och ligger kvar där (${tomma ? 'en ny kniv lades där' : 'en kniv ur förrådet flyttades dit när bänken blev klar'})`, ligger],
       ['den som slaktar utan egen kniv tar bänkens, och den läggs tillbaka vid bänken', tog && tillbaka],
       ['viltet slaktas och fisken rensas vid bänken', vidBank],
-      ['utan bänk slaktas och rensas det vid elden', vidElden],
+      ['utan bänk slaktas inget, viltet ligger kvar att ätas som det är, och fisken rensas vid elden', ingenSlakt && kvar && rensElden],
       [`jaktfärdigheten avgör köttet: ${ny.toFixed(2)} kött av tre kaniner för den ovane, ${van.toFixed(2)} för den vane`, kottOk && van > ny],
     ];
   },

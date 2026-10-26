@@ -8,7 +8,7 @@ export let s: State;
 export const vidNyBy: (() => void)[] = [];
 export function setByn(n: State) {
   s = n; ui.nu = n.now; useMap(n); nyBild();
-  ui.hovered = undefined; ui.husId = -1; ui.hogAt = { x: 0, y: 0 };
+  ui.hovered = undefined; ui.husId = -1; ui.stationId = -1; ui.hogAt = { x: 0, y: 0 };
   for (const f of vidNyBy) f();
 }
 export const ui = {
@@ -25,6 +25,7 @@ export const ui = {
   testMode: false, // testläget: en kopia av byn som kan spolas fram
   lastPointer: 0, // när spelaren senast tryckte: panelen byts inte ut mitt i ett tryck
   husId: -1, // huset som visas i panelen
+  stationId: -1, // stationen som visas i panelen
   sjoNr: 0, // sjön som visas i panelen
   hogAt: { x: 0, y: 0 }, // rutan med högar utanför lagret som visas i panelen
   lagerNr: 0, // vilken lagerplats som visas i panelen

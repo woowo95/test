@@ -11,7 +11,7 @@ import { RESERV } from './ekonomi';
 import { addTool, freeTools, halvOf, nTools, ownsFree, wearTool } from './agande';
 import { balans } from './balans';
 import { sedEvent } from './seder';
-import { nyKniv, tommaKnivplatser } from './stationer';
+import { kanGoras, nyKniv, tommaKnivplatser } from './stationer';
 
 // ---------- balanstal (regel 8) ----------
 // Hur många redskap byn vill ha och vad den sparar när den gör dem. Hur mycket ett redskap kräver står i receptet (skaffa.av
@@ -91,13 +91,13 @@ export function twineRope(s: State, p: Person, hours: number) {
 const basketsWanted = (s: State) => clamp(Math.floor(living(s).filter(p => ageOf(p, s.now) >= ALDER.vuxen).length / REDSKAP.korgPerVuxna), REDSKAP.korgMin, REDSKAP.korgMax);
 
 // ---------- redskap: kniv och slakt ----------
-// En flintkniv är en vass flintskärva med ett skaft. Utan kniv äter byn direkt av det fällda djuret. Med kniv slaktas det
-// till mer kött, ett ben och ett skinn. Ett djur med senor ger dessutom ibland ett rep, men bara om den som
+// En flintkniv är en vass flintskärva med ett skaft. Utan kniv och slaktbänk äter byn direkt av det fällda djuret. Med kniv
+// slaktas det vid slaktbänken till mer kött, ett ben och ett skinn. Ett djur med senor ger dessutom ibland ett rep, men bara om den som
 // slaktar kan tekniken Rep (fisk har inga senor). Kött, ben och skinn är samma vilket djur det än kommer från.
 // Jaktfärdigheten avgör hur mycket kött man får ut av djuret (kottFaktor, steg 2.2.3).
 // Kniven kräver en flinta utöver den som sparas att tända eld med. Fisken rensas med händerna till fiskkött.
-// Slakten och rensningen görs vid slaktbänken när byn har en, annars vid elden (stationer.ts, spotFor i val.ts). Den som
-// slaktar måste ha en kniv: bänkens, som ligger kvar där, eller sin egen.
+// Viltet slaktas bara vid slaktbänken (bara i STATIONER, stationer.ts). Fisken rensas vid bänken när byn har en, annars vid
+// elden (spotFor i val.ts). Den som slaktar måste ha en kniv: bänkens, som ligger kvar där, eller sin egen.
 // DJUR: varje art som fångas. sak = saken den ligger i förrådet som, mat = hur mycket av saken ett djur är (uppätet som
 // det är), slakt = det ett djur ger slaktat eller rensat, rep = chansen per djur att senorna blir ett rep, timme = djur per
 // timme, maxTim = arbetet varar högst så här många timmar, act = arbetet där det görs (vid slaktbänken eller elden), kniv = det kräver en kniv (och att man kan tekniken), minDel = det görs när
@@ -115,13 +115,14 @@ export const SLAKT = DJUR.kanin.slakt; // det en kanin ger slaktad
 const knives = (s: State) => nTools(s, 'kniv');
 // så många djur av arten som finns i förrådet
 export const djurKvar = (s: State, art: Djurart) => amountOf(s, art.sak) / art.mat;
-// p kan slakta eller rensa arten: det finns tillräckligt, en kniv som ingen annan slaktar med (om det behövs), och ingen
+// p kan slakta eller rensa arten: byn har stationen om det bara görs där (viltet slaktas bara vid slaktbänken), det finns
+// tillräckligt, en kniv som ingen annan slaktar med (om det behövs), och ingen
 // annan gör det redan
-export const canProcess = (s: State, p: Person, art: Djurart) => (!art.kniv || knows(p, 'kniv') && freeTools(s, p, 'kniv') >= 1) && djurKvar(s, art) >= 1 / art.minDel && !doingAct(s, art.act, p);
+export const canProcess = (s: State, p: Person, art: Djurart) => kanGoras(s, art.act) && (!art.kniv || knows(p, 'kniv') && freeTools(s, p, 'kniv') >= 1) && djurKvar(s, art) >= 1 / art.minDel && !doingAct(s, art.act, p);
 // slakta eller rensa i hours timmar. Köttet, benet, skinnet och senorna är deras som ägde djuren, inte den som gör det
 export function bearbeta(s: State, p: Person, art: Djurart, hours: number) {
   const n = Math.min(hours * art.timme, djurKvar(s, art));
-  if (n <= 0 || art.kniv && knives(s) < 1) { if (p.task) p.task.until = s.now; return; }
+  if (n <= 0 || art.kniv && knives(s) < 1 || !kanGoras(s, art.act)) { if (p.task) p.task.until = s.now; return; }
   const vems = stycka(s, p, art, n);
   // senorna blir med liten chans ett helt rep, som tillhör den som ägde mest av djuren
   if (art.rep > 0 && knows(p, 'rep') && amountOf(s, 'rep') < REDSKAP.repVill && rnd(s, 'arbete', p) < n * art.rep) {
