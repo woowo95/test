@@ -1,4 +1,4 @@
-import { addTo, dropLoad, fetchSpot, item, mayTake, ownsAmount, use } from './lager';
+import { addTo, amountOf, dropLoad, fetchSpot, mayTake, ownsAmount, use } from './lager';
 import { getable, takeMaterial } from './behov';
 import { Del, addDel } from './egendom';
 import { coldOf, temperature } from './vader';
@@ -17,11 +17,11 @@ import { Act, DAY, Fire, FireLog, GREN, HEARTHS, HOUR, IGNITERS, Person, SEC, St
 
 // ---------- eld ----------
 export const hearthOf = (f: Fire) => HEARTHS.find(h => h.id === f.hearth) ?? HEARTHS[0];
-export const igniterOf = (s: State) => IGNITERS.find(i => item(s, i.id) >= 1);
+export const igniterOf = (s: State) => IGNITERS.find(i => amountOf(s, i.id) >= 1);
 // bränsle i förrådet räknat i ved: ved och grenar
-export const fuelStock = (s: State) => item(s, 'ved') + item(s, 'grenar') * GREN;
+export const fuelStock = (s: State) => amountOf(s, 'ved') + amountOf(s, 'grenar') * GREN;
 // Elden ägs av hela byn, men veden följer ägandet: man eldar med byns och sin egen. fran = den man stjäl av (behov.ts)
-const fuelLim = (s: State, k: string, p?: Person, fran?: Person) => fran ? ownsAmount(s, fran, k) : p ? mayTake(s, p, k) : item(s, k);
+const fuelLim = (s: State, k: string, p?: Person, fran?: Person) => fran ? ownsAmount(s, fran, k) : p ? mayTake(s, p, k) : amountOf(s, k);
 // bränslet p får elda med, räknat i ved
 export const fuelFor = (s: State, p: Person, fran?: Person) => fuelLim(s, 'ved', p, fran) + fuelLim(s, 'grenar', p, fran) * GREN;
 // ta bränsle ur förrådet, ved först och sedan grenar; ger hur mycket som togs
@@ -68,14 +68,14 @@ function fireWish(s: State, p: Person, vc: number): Wish {
 const tinderWant = (s: State) => (s.fire.lit ? 12 : 36);
 // den första elden läggs i en ring av stenar; ringen ligger kvar när elden slocknat
 export const RING = 6;
-export const needStones = (s: State) => !s.fire.ring && item(s, 'sten') < RING;
+export const needStones = (s: State) => !s.fire.ring && amountOf(s, 'sten') < RING;
 // kan elden tändas (av p: med det p kan få, behov.ts)
 export function canLight(s: State, p?: Person) {
-  const ig = igniterOf(s), has = (k: string) => p ? getable(s, p, k) : item(s, k);
+  const ig = igniterOf(s), has = (k: string) => p ? getable(s, p, k) : amountOf(s, k);
   return !!ig && (!!s.fire.ring || has('sten') >= RING) && has('torrgras') >= ig.grass && (has('grenar') >= ig.sticks || has('kol') >= 1) && (p ? fuelFor(s, p) : fuelStock(s)) >= 1;
 }
 export function needTinder(s: State) {
-  return !s.fire.lit && !emberOn(s) && (item(s, 'flinta') < 1 || needStones(s) || item(s, 'torrgras') < 12 || item(s, 'grenar') < 12);
+  return !s.fire.lit && !emberOn(s) && (amountOf(s, 'flinta') < 1 || needStones(s) || amountOf(s, 'torrgras') < 12 || amountOf(s, 'grenar') < 12);
 }
 function durText(sec: number) { const h = sec / 3600; return h >= 24 ? `${(h / 24).toFixed(1).replace('.', ',')} dygn` : h >= 1 ? `${Math.round(h)} timmar` : `${Math.round(sec / 60)} minuter`; }
 function lightFire(s: State, p: Person) {
@@ -205,8 +205,8 @@ export function forageItems(s: State, p: Person, dtSec: number): Record<string, 
   const ai = ageIndex(s), want = tinderWant(s), hrs = dtSec / 3600 * SNABBARE; // allt man skaffar går fortare sedan steg 1.5.13
   const sk = 0.6 + p.skill.samla / 25;
   const got: Record<string, number> = {};
-  if (item(s, 'torrgras') < want) got.torrgras = 3 * GRASS_SEASON[ai] * sk * hrs;
-  if (item(s, 'grenar') < want) got.grenar = 3 * (ai === 0 ? 0.6 : 1) * sk * hrs;
+  if (amountOf(s, 'torrgras') < want) got.torrgras = 3 * GRASS_SEASON[ai] * sk * hrs;
+  if (amountOf(s, 'grenar') < want) got.grenar = 3 * (ai === 0 ? 0.6 : 1) * sk * hrs;
   // stenar till eldringen: många vid stenarna, några i sanden, få annars
   if (needStones(s)) {
     const d = p.task ? stoneDist(s.seed)[tileOf(p.task.tx, p.task.ty)] : 9;
@@ -214,7 +214,7 @@ export function forageItems(s: State, p: Person, dtSec: number): Record<string, 
   }
   // flinta är ovanlig och hittas oftast vid stenarna. Den slås mot en sten för att tända eld, och med en pinne blir den en yxa
   const ff = p.task ? flintFactor(s, p.task.tx, p.task.ty) : 0.4;
-  if (item(s, 'flinta') + item(s, 'yxa') < 4 && chance(s, 0.04 * ff * sk * SNABBARE / 3600, dtSec, 'arbete', p)) {
+  if (amountOf(s, 'flinta') + amountOf(s, 'yxa') < 4 && chance(s, 0.04 * ff * sk * SNABBARE / 3600, dtSec, 'arbete', p)) {
     got.flinta = 1; count(s, ff > 2 ? 'flintaSten' : 'flintaAnnan');
     if (p.task) takeFrom(s, 'flinta', p.task.tx, p.task.ty, 1);
     if (ff > 2 && p.task) observe(s, p, 'flinta', p.task.tx, p.task.ty);

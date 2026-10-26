@@ -2,7 +2,7 @@ import { ageOf, count, log, stat, think } from './folk';
 import { sedEvent } from './seder';
 import { rnd } from './slump';
 import { kronika } from './historik';
-import { item } from './lager';
+import { amountOf } from './lager';
 import { isTool } from './saker';
 import { tingOf } from './agande';
 import { Act, HOUR, Person, State } from './typer';
@@ -41,7 +41,7 @@ export const TEK = Object.fromEntries(TEKNIK.map(t => [t.id, t])) as Record<stri
 
 export const knows = (p: Person, id: string) => (p.tek?.[id] ?? 0) >= 1;
 // ett redskap räknas om det finns, hur slitet det än är; annat räknas i mängd
-export const hasMaterial = (s: State, t: Tek) => t.material.every(g => g.some(k => isTool(k) ? tingOf(s).some(q => q.k === k) : item(s, k) >= 1));
+export const hasMaterial = (s: State, t: Tek) => t.material.every(g => g.some(k => isTool(k) ? tingOf(s).some(q => q.k === k) : amountOf(s, k) >= 1));
 const canThink = (p: Person, t: Tek) => !knows(p, t.id) && t.krav.every(k => knows(p, k));
 
 // den som kommer på eller lär sig något

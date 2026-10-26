@@ -66,9 +66,13 @@ export const tingNamn = (t: { k: string; halv?: { gor: string } }) => t.halv ? `
 export const STACK: Record<string, number> = Object.fromEntries(SAK_LIST.filter(k => SAKER[k]!.stack).map(k => [k, SAKER[k]!.stack!]));
 export const STACK_ORDER = Object.keys(STACK);
 export const RUTA: Record<string, number> = Object.fromEntries(STACK_ORDER.map(k => [k, SAKER[k]!.ruta ?? STACK[k]])); // hur mycket som ryms på en ruta
+const STACK_STD = 25; // stackens och rutans storlek för ett slag som saknar egen (gamla sparfiler, prov)
+export const stackOf = (k: string) => STACK[k] ?? STACK_STD;
+export const rutaOf = (k: string) => RUTA[k] ?? STACK_STD;
 export const FOOD = SAK_LIST.filter(k => SAKER[k]!.mat !== undefined).sort((a, b) => SAKER[a]!.mat! - SAKER[b]!.mat!) as string[]; // i den ordning de äts
 export const isFood = (k: string) => SAKER[k]?.mat !== undefined;
 export const isTool = (k: string) => !!SAKER[k]?.redskap;
+export const REDSKAP_SLAG = SAK_LIST.filter(isTool); // alla redskapsslag, i registrets ordning
 export const gruppOf = (k: string) => SAKER[k]?.grupp ?? k;
 // mappar i listan över allt byn äger; maten med det som håller längst först
 export const FOLDERS: { namn: string; k: string[] }[] = [...new Set(SAK_LIST.map(k => SAKER[k]!.mapp).filter(m => m))].map(namn => ({

@@ -1,5 +1,5 @@
 import { State, Person } from './typer';
-import { SAKER, isTool } from './saker';
+import { REDSKAP_SLAG, isTool } from './saker';
 import { usesTool } from './handlingar';
 import { alive, byId } from './folk';
 import { lends } from './behov';
@@ -26,7 +26,6 @@ export const nTools = (s: State, k: string) => tingOf(s).reduce((n, t) => n + (t
 // det redskap av slagen ks som p har påbörjat (paborjat.ts)
 export const halvOf = (s: State, p: Person, ks: readonly string[]) => tingOf(s).find(t => t.halv?.ag === p.id && ks.includes(t.halv.gor));
 export const heldBy = (s: State, p: Person) => tingOf(s).find(t => t.hos === p.id);
-const KINDS = () => Object.keys(SAKER).filter(isTool);
 
 export function newTing(s: State, k: string, c: number, agare: number): Ting {
   const t = { id: s.nextTing = (s.nextTing ?? 0) + 1, k, c, agare };
@@ -102,7 +101,7 @@ export function migrateTools(s: State) {
 }
 function migrate(s: State) {
   s.ting = [];
-  for (const k of KINDS()) {
+  for (const k of REDSKAP_SLAG) {
     let n = s.items?.[k] ?? 0;
     const ag = s.agare?.[k] ?? [];
     for (let i = 0; n > 1e-6; i++) { const c = Math.min(1, n); newTing(s, k, c, ag[i] ?? BYN); n -= c; }

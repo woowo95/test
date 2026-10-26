@@ -4,7 +4,7 @@ import { clamp, rnd } from './slump';
 import { Act, State, Person } from './typer';
 import { ACTS, toolRow } from './handlingar';
 import { SAKER, gruppOf } from './saker';
-import { amountOf, gain, item, put, use } from './lager';
+import { amountOf, gain, put, use } from './lager';
 import { getable, takeMaterial, takeRecipe } from './behov';
 import { addDel } from './egendom';
 import { addTool, freeTools, halvOf, nTools, ownsFree, wearTool } from './agande';
@@ -39,7 +39,7 @@ export function wearUsed(s: State, p: Person, n: number) {
   if (p.task) p.task.tool = undefined;
   if (tr?.text && s.stat![tr.stat] === 1) log(s, tr.text.replace('{namn}', p.name), 'world', [p.id]);
 }
-const sharpTool = (s: State) => item(s, 'yxa') >= 1 ? 'yxa' : item(s, 'flinta') >= 1 ? 'flinta' : undefined;
+const sharpTool = (s: State) => amountOf(s, 'yxa') >= 1 ? 'yxa' : amountOf(s, 'flinta') >= 1 ? 'flinta' : undefined;
 // ett flintspjut kräver en flinta utöver den som sparas att tända eld med, rep och en gren
 // Materialet tas i behovsstegen (behov.ts): sitt eget, byns, en gåva, och annars av andras (en lindrig stöld)
 const canFlintSpear = (s: State, p: Person) => knows(p, 'flintspjut') && getable(s, p, 'flinta') >= 2 && getable(s, p, 'rep') >= 1 && getable(s, p, 'grenar') >= 1;
@@ -72,9 +72,9 @@ export function makeSpear(s: State, p: Person) {
 // Rep tvinnas av växtfibrer (hö) vid elden på kvällen av den som kan det, eller tas från senor när vilt slaktas. Det är samma rep
 // oavsett material. Rep behövs till flintspjut och metspö.
 const REP_GRAS = 2, REP_TIMME = 60 / SAKER.rep!.skaffa!.min!, REP_VILL = 4; // rep per timme
-export const wantsRope = (s: State, p: Person) => knows(p, 'rep') && item(s, 'rep') < REP_VILL && getable(s, p, 'torrgras') >= REP_GRAS + 6; // lite hö sparas till elden
+export const wantsRope = (s: State, p: Person) => knows(p, 'rep') && amountOf(s, 'rep') < REP_VILL && getable(s, p, 'torrgras') >= REP_GRAS + 6; // lite hö sparas till elden
 export function twineRope(s: State, p: Person, hours: number) {
-  const n = Math.min(hours * REP_TIMME, (getable(s, p, 'torrgras') - 6) / REP_GRAS, REP_VILL - item(s, 'rep'));
+  const n = Math.min(hours * REP_TIMME, (getable(s, p, 'torrgras') - 6) / REP_GRAS, REP_VILL - amountOf(s, 'rep'));
   if (n <= 0) return;
   takeMaterial(s, p, 'torrgras', n * REP_GRAS);
   gain(s, p, 'rep', n);
@@ -122,10 +122,10 @@ export function basketDone(s: State, p: Person) {
 // timme. En ny art blir en rad här (fler fiskar: steg 7.4.3).
 interface Djurart { sak: string; mat: number; slakt: Record<string, number>; rep: number; timme: number }
 export const DJUR = {
-  kanin: { sak: 'vilt', mat: 1.6, slakt: { kott: 2.1, ben: 1, skinn: 1 }, rep: 0.15, timme: 3 },
+  kanin: { sak: 'vilt', mat: SAKER.vilt!.stack!, slakt: { kott: 2.1, ben: 1, skinn: 1 }, rep: 0.15, timme: 3 },
   abborre: { sak: 'abborre', mat: 1, slakt: { fisk: 1 }, rep: 0, timme: 30 },
 } satisfies Record<string, Djurart>;
-export const KANIN = DJUR.kanin.mat; // så mycket mat en kanin är, uppäten som den är (en stack fällt vilt)
+export const KANIN = DJUR.kanin.mat; // så mycket mat en kanin är, uppäten som den är: en stack fällt vilt (saker.ts)
 export const SLAKT = DJUR.kanin.slakt; // det en kanin ger slaktad
 export const SLAKT_TIMME = DJUR.kanin.timme; // kaniner per timme
 const knives = (s: State) => nTools(s, 'kniv');
@@ -146,7 +146,7 @@ export function slaughter(s: State, p: Person, hours: number) {
   // köttet, benet, skinnet och senorna är deras som ägde viltet, inte slaktarens
   const art: Djurart = DJUR.kanin, vems = stycka(s, p, art, n);
   // senorna blir med liten chans ett helt rep, som tillhör den som ägde mest av viltet
-  if (art.rep > 0 && knows(p, 'rep') && item(s, 'rep') < REP_VILL && rnd(s, 'arbete', p) < n * art.rep) {
+  if (art.rep > 0 && knows(p, 'rep') && amountOf(s, 'rep') < REP_VILL && rnd(s, 'arbete', p) < n * art.rep) {
     const agare = Object.keys(vems).sort((a, b) => vems[b] - vems[a])[0];
     put(s, 'rep', 1, agare !== undefined ? { [agare]: 1 } : undefined);
     count(s, 'repAvSenor');
@@ -182,7 +182,7 @@ export function clean(s: State, p: Person, hours: number) {
 export const minOf = (k: string) => SAKER[k]!.skaffa!.min!;
 interface Tillverka { vill: (s: State, p: Person, spar: number) => boolean; gor: (s: State, p: Person) => { act: Act; text: string; min: number; tool?: string } }
 export const TILLVERKA: Record<string, Tillverka> = {
-  korg: { vill: (s, p, spar) => (!!halvOf(s, p, ['korg']) || item(s, 'torrgras') >= spar) && wantsBasket(s, p), gor: () => ({ act: 'korg', text: 'Flätar en korg av hö.', min: minOf('korg') }) },
+  korg: { vill: (s, p, spar) => (!!halvOf(s, p, ['korg']) || amountOf(s, 'torrgras') >= spar) && wantsBasket(s, p), gor: () => ({ act: 'korg', text: 'Flätar en korg av hö.', min: minOf('korg') }) },
   metspo: { vill: (s, p) => wantsRod(s, p), gor: () => ({ act: 'metspo', text: 'Gör ett metspö med en krok av ben.', min: minOf('metspo') }) },
   spjut: {
     vill: (s, p) => wantsSpear(s, p),

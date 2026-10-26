@@ -1,5 +1,5 @@
 import { State, Person, HOUR, DAY, GREN } from './typer';
-import { FOOD, SAKER, SAK_LIST, isTool } from './saker';
+import { FOOD, REDSKAP_SLAG, SAKER, SAK_LIST, isTool } from './saker';
 import { actsOf, usesTool } from './handlingar';
 import { ageOf, alive, byId, count, getRel, isKin, isParent, living, log, stat, think } from './folk';
 import { chance, clamp, rnd } from './slump';
@@ -298,7 +298,6 @@ export function lends(s: State, owner: number, p: Person) {
 // Byten och gåvor i samtal: den som saknar ett redskap hen behöver i sitt arbete tar upp det. Den andra har ett redskap
 // över (har två av slaget, eller arbetar inte med det). Har den som frågar något över som är värt nog blir det ett byte
 // (byten nedan), annars kanske en gåva. Viljan är willing. Gåvan gör dem närmare.
-const KINDS = () => Object.keys(SAKER).filter(isTool);
 // hur stor del av sin tid p arbetar med redskapet
 function useShare(p: Person, k: string) {
   let tot = 0, n = 0;
@@ -321,7 +320,7 @@ function give(t: Ting, g: Person, m: Person) {
 // a talar med b. Saknar någon av dem ett redskap som den andra har över? Returnerar vad som hände
 export function askForTool(s: State, a: Person, b: Person): 'gåva' | 'byte' | undefined {
   for (const [m, g] of [[a, b], [b, a]]) {
-    for (const k of KINDS()) {
+    for (const k of REDSKAP_SLAG) {
       if (!needsTool(s, m, k)) continue;
       const t = spare(s, g, k);
       if (!t) continue;

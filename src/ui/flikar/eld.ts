@@ -1,4 +1,4 @@
-import { FireLog, HOUR, RING, byId, emberOn, fireHeat, fireWant, hearthOf, heatRadius, igniterOf, item, living } from '../../sim';
+import { FireLog, HOUR, RING, amountOf, byId, emberOn, fireHeat, fireWant, hearthOf, heatRadius, igniterOf, living } from '../../sim';
 import { bar, clockTxt, durTxt, esc, fmtN, num, pLink, times } from '../hjalp';
 import { s } from '../lage';
 import type { Flik } from '../panel';
@@ -40,13 +40,13 @@ function fireHtml() {
       <dt>Tänd av</dt><dd>${f.litBy !== undefined ? pLink(byId(s, f.litBy)) : 'Byns grundare'}</dd>
       <dt>Trä använt</dt><dd>${fmtN(f.burned)}</dd></dl>` : ''}
     <h3>Tändning</h3><dl class="kv fam">
-      <dt>Tänddon</dt><dd>${ig ? `${esc(ig.name)} (${Math.floor(item(s, ig.id))} i förrådet)` : 'Inget. Någon måste hitta en flinta.'}</dd>
-      <dt>Stenring</dt><dd>${f.ring ? 'Ligger runt eldplatsen' : `Behövs till den första elden: ${Math.floor(item(s, 'sten'))} av ${RING} stenar`}</dd>
-      <dt>Hö</dt><dd>${Math.floor(item(s, 'torrgras'))} i förrådet</dd>
-      <dt>Grenar</dt><dd>${Math.floor(item(s, 'grenar'))} i förrådet</dd>
-      <dt>Bränsle</dt><dd>${Math.floor(item(s, 'ved'))} trä och ${Math.floor(item(s, 'grenar'))} grenar i förrådet (grenar brinner fort)</dd>
+      <dt>Tänddon</dt><dd>${ig ? `${esc(ig.name)} (${Math.floor(amountOf(s, ig.id))} i förrådet)` : 'Inget. Någon måste hitta en flinta.'}</dd>
+      <dt>Stenring</dt><dd>${f.ring ? 'Ligger runt eldplatsen' : `Behövs till den första elden: ${Math.floor(amountOf(s, 'sten'))} av ${RING} stenar`}</dd>
+      <dt>Hö</dt><dd>${Math.floor(amountOf(s, 'torrgras'))} i förrådet</dd>
+      <dt>Grenar</dt><dd>${Math.floor(amountOf(s, 'grenar'))} i förrådet</dd>
+      <dt>Bränsle</dt><dd>${Math.floor(amountOf(s, 'ved'))} trä och ${Math.floor(amountOf(s, 'grenar'))} grenar i förrådet (grenar brinner fort)</dd>
       ${(f.ash ?? 0) >= 1 ? `<dt>Kolhög</dt><dd>${f.ash} kol i den gamla elden, ligger kvar ca ${durTxt((f.ashUntil ?? now) - now)}</dd>` : ''}
-      ${item(s, 'kol') >= 1 ? `<dt>Kol</dt><dd>${Math.floor(item(s, 'kol'))} i förrådet</dd>` : ''}
+      ${amountOf(s, 'kol') >= 1 ? `<dt>Kol</dt><dd>${Math.floor(amountOf(s, 'kol'))} i förrådet</dd>` : ''}
       ${ig ? `<dt>Per försök</dt><dd>${ig.grass} hö och ${ig.sticks} grenar (eller 1 kol), ca ${ig.minutes} minuter${(f.ash ?? 0) >= 1 ? '. Kolhögen tar lättare fyr.' : ''}</dd>` : ''}
       ${!f.lit ? `<dt>Försök</dt><dd>${f.tries} sedan elden slocknade${lighter ? `, ${pLink(lighter)} försöker nu` : ''}</dd>` : ''}
     </dl>

@@ -6,7 +6,7 @@ import { Act, H, Person, State, T, Task, W, inMap } from './typer';
 import { bitAt, roofed } from './byggnad';
 import { ACTS } from './handlingar';
 import { BYN, Del, addDel, sumOf, takeOrder } from './egendom';
-import { FOOD, RUTA, SAKER, SAK_LIST, STACK, STACK_ORDER, isFood, isTool, sakNamn } from './saker';
+import { FOOD, RUTA, SAKER, SAK_LIST, STACK, STACK_ORDER, isFood, isTool, rutaOf, sakNamn, stackOf } from './saker';
 
 // ---------- lager och stackar ----------
 // Byns saker ligger i stackar. En ruta rymmer en stack av ett slag. Tunga och skrymmande saker har mindre stackar.
@@ -82,7 +82,6 @@ export function amountOf(s: State, k: string) {
   if (isTool(k)) { let n = 0; for (const t of tingOf(s)) if (t.k === k) n += t.c; return n; }
   return summa(s).n[k] ?? 0;
 }
-export const item = amountOf;
 // mängden gånger skicket (för värdet, varde.ts)
 export const wornOf = (s: State, k: string) => isTool(k) ? amountOf(s, k) : summa(s).w[k] ?? 0;
 export function foodOf(s: State) { const n = summa(s).n; let f = 0; for (const k of FOOD) f += n[k] ?? 0; return f; }
@@ -252,8 +251,8 @@ function place(s: State, k: string, n: number, c: number, ag?: Del, at?: { x: nu
   if (n <= 1e-12) return;
   const host = SAKER[k]?.i;
   if (host) { hide(s, host, n, at); return; }
-  const st = stacksOf(s), max = RUTA[k] ?? 25, tot = n;
-  const add = (a: Stack, v: number) => { a.c = (a.c * a.n + c * v) / (a.n + v); a.n += v; if (ag) { a.ag = addDel(a.ag ?? {}, ag, v / tot); cleanDel(s, a); } };
+  const st = stacksOf(s), max = rutaOf(k), tot = n;
+  const add = (a: Stack, v: number) => addToStack(s, a, v, c, ag, v / tot);
   for (let g = 0; n > 1e-9 && g < 60; g++) {
     const occ = occupancy(s);
     const sp = at && isStored(s, at.x, at.y) && usable(s, at.x, at.y) && roomIn(occ.get(key(at.x, at.y)), k) ? at : zoneSpot(s, k, -Infinity, occ) ?? besideSpot(s, k, occ);
@@ -270,6 +269,11 @@ function place(s: State, k: string, n: number, c: number, ag?: Del, at?: { x: nu
     else { const z = zonesOf(s)[0], ny: Stack = { k, n: 0, c, x: z.x, y: z.y }; st.push(ny); add(ny, n); }
   }
   changed(s);
+}
+// lägg v med skicket c på stacken a (skicket blir ett viktat snitt). ag = vems det är, f gånger så mycket av varje del
+function addToStack(s: State, a: Stack, v: number, c: number, ag?: Del, f = 1) {
+  a.c = (a.c * a.n + c * v) / (a.n + v); a.n += v;
+  if (ag) { a.ag = addDel(a.ag ?? {}, ag, f); cleanDel(s, a); }
 }
 // det gömda slaget läggs i en stack av värdslaget (i förrådet, eller på rutan at om den ligger utanför)
 function hide(s: State, host: string, n: number, at?: { x: number; y: number }) {
@@ -380,7 +384,7 @@ export function storeFromSums(s: State) {
 // alla stackar med plats och skick
 export function pilesOf(s: State): Pile[] {
   placeTools(s);
-  return things(s).map(a => { const zone = zoneAt(s, a.x, a.y); return { ...a, max: RUTA[a.k] ?? 25, zone, out: zone < 0, stored: isStored(s, a.x, a.y) }; });
+  return things(s).map(a => { const zone = zoneAt(s, a.x, a.y); return { ...a, max: rutaOf(a.k), zone, out: zone < 0, stored: isStored(s, a.x, a.y) }; });
 }
 
 // ---------- slitage ----------
@@ -494,7 +498,7 @@ export function capacity(s: State, p: Person) {
 // hur full bördan är, i stackar
 export function load(t: Task) {
   let l = t.carry / STACK[carryKind(t.act)];
-  for (const k in t.items ?? {}) l += t.items![k] / (STACK[k] ?? 25);
+  for (const k in t.items ?? {}) l += t.items![k] / stackOf(k);
   return l + (t.ting?.length ?? 0); // ett redskap är en full börda
 }
 // redskapen i bördan: de läggs på rutan at om den är ledig i förrådet, annars på bästa lediga plats
@@ -528,7 +532,7 @@ export function dropLoad(s: State, t: Task, x: number, y: number, owner = BYN) {
     const c = t.cond?.[k] ?? 1, ag = shareOf(t.ag?.[k], all[k], who, s);
     let g = st.find(q => q.x === tx && q.y === ty && q.k === k);
     if (!g) st.push(g = { x: tx, y: ty, k, n: 0, c });
-    g.c = (g.c * g.n + c * all[k]) / (g.n + all[k]); g.n += all[k]; g.ag = addDel(g.ag ?? {}, ag); cleanDel(s, g);
+    addToStack(s, g, all[k], c, ag);
   }
   for (const id of t.ting ?? []) { const g = tingOf(s).find(q => q.id === id); if (g) { g.lass = undefined; g.x = tx; g.y = ty; } }
   t.ting = undefined;
@@ -562,7 +566,7 @@ export function pickUp(s: State, p: Person, t: Task) {
   let room = capacity(s, p) - load(t);
   for (const g of stacksOf(s)) {
     if (g.x !== x || g.y !== y || room <= 1e-9) continue;
-    const st = STACK[g.k] ?? 25, v = Math.min(g.n, room * st), f = g.n > 0 ? v / g.n : 1;
+    const st = stackOf(g.k), v = Math.min(g.n, room * st), f = g.n > 0 ? v / g.n : 1;
     const had = t.items?.[g.k] ?? 0;
     if (v > 0) {
       (t.items ??= {})[g.k] = had + v;
