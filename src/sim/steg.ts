@@ -1,7 +1,7 @@
 import { tidyTools } from './agande';
 import { chopStock, fellTree, rotStumps, stocks } from './skog';
 import { VED, needLadder, noticeTheft, stole } from './behov';
-import { capacity, dropSpot, fetchSpot, homeKind, isCarrying, load, pickUp, storeLoad, tidyStore, wearStore } from './lager';
+import { avbryt, capacity, dropSpot, fetchSpot, homeKind, isCarrying, load, pickUp, storeLoad, tidyStore, wearStore } from './lager';
 import { KANIN, REDSKAP, clean, slaughter, twineRope, wearUsed } from './redskap';
 import { GOR_ACTS, finishHalf, startWork, stepPaborjat, workHalf } from './paborjat';
 import { thinkWhileWorking } from './teknik';
@@ -279,8 +279,8 @@ function walk(s: State, p: Person, tk: Task, left: number, a: number) {
   if (tk.pk !== key) {
     tk.pk = key;
     const v = pathFor(s, g, p.x, p.y, tk.tx, tk.ty), f = getMap(s.seed).fire;
-    // målet går inte att nå (en ö): man väljer något annat. Bara den som själv är avskuren från lägret går rakt över
-    if (!v && tk.phase === 'go' && pathFor(s, g, p.x, p.y, f.x + 0.5, f.y + 0.5)) { p.task = undefined; return { used: Math.min(left, BIT), framme: false }; }
+    // målet går inte att nå (en ö): man lägger ner det man bär och väljer något annat. Bara den som själv är avskuren från lägret går rakt över
+    if (!v && tk.phase === 'go' && pathFor(s, g, p.x, p.y, f.x + 0.5, f.y + 0.5)) { avbryt(s, p); return { used: Math.min(left, BIT), framme: false }; }
     tk.path = v ?? [];
   }
   const off = sida(p, 0.18), fart = a < ALDER.gangBarn ? STEG.fartBarn : a > ALDER.gangGammal ? STEG.fartGammal : STEG.fart, t0 = s.now;

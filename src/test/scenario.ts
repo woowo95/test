@@ -11,7 +11,7 @@ const setItems = (s: State, m: Record<string, number>) => {
 const setMat = (s: State, m: Record<string, number>) => { for (const k of FOOD) setAmount(s, k, m[k] ?? 0); };
 // all mat blir n, i samma förhållande mellan slagen som förut (bär om det inte fanns någon)
 const setFood = (s: State, n: number) => { const f = foodOf(s); if (f > 0) { const m: Record<string, number> = {}; for (const k of FOOD) m[k] = amountOf(s, k) * n / f; setStock(s, m); } else setAmount(s, 'bar', n); };
-import { FOLDERS, STATS, ACTS, haulJob, fetchFuel, coverOf, lightLevel, timeLabel, hearthOf, igniterOf, fireWant, fireHeat, heatRadius, emberOn, zoneAt, bitAt, husById, isSick, isSocial, moodOf, duty, habitTotal, habitShare, childrenOf, homeKind, taskName, carryKind, influence, hasMaterial, wornOf, relKey, sakNamn, tingNamn, visning, SAKER, slagIkon } from '../sim';
+import { FOLDERS, STATS, ACTS, haulJob, fetchFuel, ownedAll, leave, chooseTask, stackOf, coverOf, lightLevel, timeLabel, hearthOf, igniterOf, fireWant, fireHeat, heatRadius, emberOn, zoneAt, bitAt, husById, isSick, isSocial, moodOf, duty, habitTotal, habitShare, childrenOf, homeKind, taskName, carryKind, influence, hasMaterial, wornOf, relKey, sakNamn, tingNamn, visning, SAKER, slagIkon } from '../sim';
 import { hasIcon } from '../ikoner';
 import { findPath } from '../sim/vag';
 import { FOREST, HIGH, isSoil } from '../sim/vag';
@@ -1788,6 +1788,22 @@ SCENARIER.arv = {
     d.left = s.now; packUp(s, d); releaseOwner(s, d.id);
     const tog = fore - amountOf(s, 'ved') - amountOf(s, 'bar') + (tingOf(s).some(t => t.k === 'yxa') ? 0 : 1);
     const flytt = tog > 0 && tog <= bar * 25 + 1 && amountOf(s, 'ved') + amountOf(s, 'bar') > 0 && ownedSum(s, 'ved') === 0;
+    // den som dör, flyttar eller blir nattens vakt lägger ner det hen bär där hen står: det finns kvar i byn (och ärvs)
+    const allt = (s: State, k: string) => (s.stackar ?? []).reduce((n, x) => n + (x.k === k ? x.n : 0), 0);
+    const bordan = (s: State, q: Person, k: string, n: number) => { q.task = { act: 'samla', phase: 'do', tx: q.x, ty: q.y, until: s.now + HOUR, carry: 0, items: { [k]: n } }; };
+    ({ s, d, a, b, c, e } = ny()); setAmount(s, 'skinn', 0);
+    d.partner = a.id; a.partner = d.id; bordan(s, d, 'skinn', 4); die(s, d, 'sjukdom');
+    const dogBar = Math.abs(allt(s, 'skinn') - 4) < 1e-6 && Math.abs((ownedAll(s, a.id).skinn ?? 0) - 4) < 1e-6;
+    ({ s, d, a, b, c, e } = ny()); setAmount(s, 'sten', 0);
+    const orkar = capacity(s, d) * stackOf('sten');
+    bordan(s, d, 'sten', 30); leave(s, d, s.now);
+    const flyttBar = allt(s, 'sten') > 0 && allt(s, 'sten') >= 30 - orkar - 1e-6 && !ownedAll(s, d.id).sten;
+    ({ s, d, a, b, c, e } = ny()); setAmount(s, 'skinn', 0);
+    s.now = new Date(s.now).setHours(23, 0, 0, 0); s.lastGuardDay = -5; Object.assign(s.fire, { lit: true, fuel: 5 });
+    for (const q of living(s)) Object.assign(q, { hunger: 1, rest: 1, warm: 1, toa: 1, health: 1, sickUntil: undefined });
+    d.pot.mod = 100; bordan(s, d, 'skinn', 4); a.task = undefined;
+    chooseTask(s, a);
+    const vaktBar = d.guardDay !== undefined && !d.task && Math.abs(allt(s, 'skinn') - 4) < 1e-6;
     // viljan att ge
     ({ s, d, a, b, c, e } = ny());
     getRel(s, a, b).op = 60; d.mother = a.id; a.partner = c.id; c.partner = a.id;
@@ -1804,6 +1820,9 @@ SCENARIER.arv = {
       ['sedan syskonen', syskon],
       ['utan släkt blir allt byns', byn],
       [`den som flyttar tar med sig det hen orkar bära (${tog.toFixed(1)}), resten blir byns`, flytt],
+      ['den som dör lägger ner det hen bär, och arvingen får det', dogBar],
+      ['den som flyttar packar ur bördan det hen orkar bära, resten blir kvar i byn', flyttBar],
+      ['den som blir nattens vakt lägger ner det hen bär', vaktBar],
       [`den som har mycket över ger lättare (${lite.toFixed(2)} mot ${mycket.toFixed(2)})`, mycket > lite],
       [`Gemenskap gör folk givmildare (${egen.toFixed(2)} → ${gem.toFixed(2)})`, gem > lite && lite > egen],
       [`i en rik by ger man mindre till vänner (${rikVan.toFixed(2)}) men lika till barn och partner`, rikVan < lite && rikBarn === fattigBarn && rikPartner === fattigPartner],

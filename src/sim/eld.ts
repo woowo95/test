@@ -1,4 +1,4 @@
-import { addTo, amountOf, dropLoad, fetchSpot, isCarrying, takeLimit, use } from './lager';
+import { addTo, amountOf, avbryt, fetchSpot, takeLimit, use } from './lager';
 import { getable, takeMaterial } from './behov';
 import { Del, addDel } from './egendom';
 import { coldOf, temperature } from './vader';
@@ -184,7 +184,7 @@ export function addFuel(s: State, p: Person, n: number) {
   ovning(p, 'elda', ELD.ovFyll);
 }
 function assign(s: State, p: Person, act: Act, tx: number, ty: number, dur: number, why: string) {
-  if (p.task && isCarrying(p.task)) dropLoad(s, p.task, p.x, p.y, p.id); // bördan läggs ner där hen står, den försvinner inte
+  avbryt(s, p); // bördan läggs ner där hen står, den försvinner inte
   p.task = { act, phase: 'go', tx, ty, until: s.now + dur, carry: 0, why, dark: !isLight(s.now) };
 }
 // p går till förrådet efter en famn ved och sedan till elden (steg.ts). fran = den andras ved (stöld, behov.ts)

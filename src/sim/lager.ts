@@ -615,6 +615,14 @@ export function dropLoad(s: State, t: Task, x: number, y: number, owner = BYN) {
   t.carry = 0; t.items = undefined; t.cond = undefined; t.ag = undefined;
   changed(s);
 }
+// p slutar med det hen gör (blir vakt, dör, flyttar, når inte målet): bördan och redskapen i den läggs ner där hen står,
+// med sina ägare, och sedan har hen ingen uppgift. Den som dör eller flyttar lägger ner bördan medan hen ännu räknas som
+// levande, så att hens del ärvs eller packas (arv.ts)
+export function avbryt(s: State, p: Person) {
+  const t = p.task;
+  if (t && (isCarrying(t) || t.ting?.length)) dropLoad(s, t, p.x, p.y, p.id);
+  p.task = undefined;
+}
 // stackar som någon borde bära: saker på marken långt bort, saker bredvid lagret när det finns plats i det, saker i
 // fel lagerplats och saker som kan flyttas till en viktigare lagerplats. near = bara inom så många rutor från elden
 export function haulJob(s: State, near?: number) {

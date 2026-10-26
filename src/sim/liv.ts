@@ -5,7 +5,7 @@ import { avgMood } from './samtal';
 import { chance, clamp, pick, rnd } from './slump';
 import { DAY, HOUR_S, Person, SEC, State } from './typer';
 import { foodDays } from './ekonomi';
-import { put, releaseOwner } from './lager';
+import { avbryt, put, releaseOwner } from './lager';
 import { kronika } from './historik';
 import { inherit, packUp } from './arv';
 import { balans } from './balans';
@@ -79,7 +79,8 @@ export const DODSORSAKER: Record<Dodsorsak, DodDef> = DOD;
 // ---------- död, födsel, flytt ----------
 export function die(s: State, p: Person, orsak: Dodsorsak) {
   const { text: cause, sed } = DODSORSAKER[orsak];
-  p.died = s.now; p.cause = cause; p.task = undefined;
+  avbryt(s, p); // bördan läggs ner medan hen ännu lever, så att den ärvs
+  p.died = s.now; p.cause = cause;
   inherit(s, p); // arvingarna får det hen ägde (arv.ts)
   releaseOwner(s, p.id); // det som blev kvar blir byns
   const a = Math.floor(ageOf(p, s.now));
@@ -165,7 +166,8 @@ function refound(s: State) {
 }
 
 // p lämnar byn och tar med sig det hen orkar bära (arv.ts); resten blir byns
-function leave(s: State, p: Person, now: number) { p.left = now; p.task = undefined; packUp(s, p); releaseOwner(s, p.id); }
+// bördan läggs ner först, sedan packar hen det hen orkar bära av allt hen äger (arv.ts) och resten blir byns
+export function leave(s: State, p: Person, now: number) { avbryt(s, p); p.left = now; packUp(s, p); releaseOwner(s, p.id); }
 
 function emigrate(s: State) {
   const now = s.now;
