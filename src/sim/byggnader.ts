@@ -25,7 +25,7 @@ export interface Byggnad {
   vikt: number; // hur viktigt behovet är bland dem som är lika farliga
   agare: 'byn' | 'familj';
   sover?: boolean; // man sover här
-  lager?: boolean; // golvet är en lagerplats under tak: det som ligger där ruttnar och slits mindre (INDOOR_WEAR i lager.ts)
+  lager?: boolean; // golvet är en lagerplats under tak: det som ligger där ruttnar och slits mindre (LAGER.inne i lager.ts)
   akut?: (s: State) => Akut; // saknas: byn planerar inga nya hus för det
   namnFor?: (s: State, w: number, h: number, same: number, a: Akut) => string; // det nya husets namn
 }

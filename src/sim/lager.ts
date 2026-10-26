@@ -8,6 +8,40 @@ import { ACTS } from './handlingar';
 import { ARSTID, iIstiden } from './tid';
 import { BYN, Del, addDel, sumOf, takeOrder } from './egendom';
 import { FOOD, RUTA, SAKER, SAK_LIST, STACK, STACK_ORDER, isFood, isTool, rutaOf, sakNamn, stackOf } from './saker';
+import { balans } from './balans';
+
+// ---------- balanstal (regel 8) ----------
+// Förrådet: hur lagerplatserna växer, hur fort saker slits och ruttnar, hur mycket en person bär och vad som bärs in först.
+// Avstånd är i rutor, om inget annat sägs. Hur fort varje sak slits står i saker.ts, och tidsålderns faktor för ruttning
+// (ARSTID.ruttIstid) i tid.ts
+export const LAGER = balans('lager', {
+  // lagerplatserna (zoner)
+  startBredd: 2, startHojd: 2, // byns första lagerplats, vid kartans lagerplats
+  zonBredd: 6, zonHojd: 5, // en lagerplats växer till högst så här många rutor på bredden och på höjden
+  zoner: 4, // högst så här många vanliga lagerplatser (förrådshusets golv räknas inte)
+  fullt: 3, // förrådet är fullt när lagerplatserna inte kan bli fler och så här många saker ligger bredvid dem
+  vaxSteg: 4, // högst så här många förstoringar av lagerplatserna per timme
+  mellan: 1, // lagerplatser ligger minst så här långt ifrån varandra
+  bredvid: 2, // det som ligger så här nära en lagerplats räknas till förrådet, och läggs ut i ringen runt den
+  nyBredd: 3, nyHojd: 2, // en ny lagerplats
+  nyEldMin: 3, nyLagerMax: 8, // ... ligger minst så här långt från elden och högst så här långt från lägret
+  krympMin: 4, // en lagerplats på så här många rutor eller färre krymper inte ...
+  krympDel: 2, // ... annars när mer än 1 / Del av rutorna står tomma (2 = hälften) ...
+  minSida: 2, // ... till en lagerplats vars sidor är minst så här långa
+  // slitage och ruttning (per timme)
+  ute: 3, // saker utanför lagret slits så här många gånger fortare ...
+  inne: 0.4, // ... och under tak så här många
+  ruttBas: 0.003, ruttMat: 250, // maten ruttnar BasPerTimme gånger (1 + maten i förrådet / Mat), fort när det finns mycket
+  blirSkick: 0.5, // skicket på grenarna som veden faller sönder till
+  // bära
+  barBas: 0.5, barStyrka: 20, // en person bär (Bas + styrkan / Styrka) stackar
+  barBarn: 10, barBarnDel: 0.35, // ... en under Barn år bär så här stor del av det ...
+  barUng: 15, barUngDel: 0.65, // ... en under Ung år så här stor del
+  // vad som bärs in först (haulJob): poängen är avståndet från lägret, plus detta för det som inte ligger på marken; lägst poäng först
+  barBredvid: 50, // saker bredvid lagret när det nu finns plats i det
+  barSortera: 100, // saker i fel lagerplats (maten bland materialet)
+  barNarmare: 150, // saker som kan flyttas till en lagerplats närmare elden
+});
 
 // ---------- lager och stackar ----------
 // Byns saker ligger i stackar. En ruta rymmer en stack av ett slag. Tunga och skrymmande saker har mindre stackar.
@@ -24,9 +58,6 @@ export interface Zone { x: number; y: number; w: number; h: number; namn?: strin
 interface Stack { k: string; n: number; c: number; x: number; y: number; ag?: Del; dold?: number; gor?: string } // gor = vad ett påbörjat redskap ska bli (paborjat.ts)
 // en stack som den visas: out = utanför lagerplatserna, stored = hör till byns förråd (i lagret eller precis bredvid)
 export interface Pile extends Stack { max: number; out: boolean; stored: boolean; zone: number }
-const MAX_W = 6, MAX_H = 5, MAX_ZONES = 4;
-export const OUT_WEAR = 3; // saker utanför lagret slits tre gånger fortare
-export const INDOOR_WEAR = 0.4; // under tak slits saker mindre
 const DOLD = SAK_LIST.filter(k => SAKER[k]!.i); // slag som ligger gömda i andra stackar
 const DOLD_I: Record<string, string> = Object.fromEntries(DOLD.map(k => [SAKER[k]!.i!, k])); // värdslaget → det gömda
 
@@ -38,7 +69,7 @@ export const allows = (z: Zone, k: string) => !z.slag || (z.slag === 'mat') === 
 
 export function zonesOf(s: State): Zone[] {
   if (!s.lagren) {
-    const st = s.lager ?? { ...getMap(s.seed).stock, w: 2, h: 2 };
+    const st = s.lager ?? { ...getMap(s.seed).stock, w: LAGER.startBredd, h: LAGER.startHojd };
     s.lagren = [{ x: st.x, y: st.y, w: st.w, h: st.h, namn: 'Lagret', prio: 1 }];
     delete s.lager;
     changed(s);
@@ -55,7 +86,7 @@ export function zoneAt(s: State, x: number, y: number) {
 }
 export function isStored(s: State, x: number, y: number) {
   const zs = zonesOf(s);
-  for (let i = 0; i < zs.length; i++) if (nearZone(zs[i], x, y, 2)) return true;
+  for (let i = 0; i < zs.length; i++) if (nearZone(zs[i], x, y, LAGER.bredvid)) return true;
   return false;
 }
 function stacksOf(s: State): Stack[] {
@@ -212,7 +243,7 @@ const overlaps = (a: Zone, b: Zone, gap: number) => a.x < b.x + b.w + gap && b.x
 // rutorna runt en lagerplats, närmast först
 function ringTiles(s: State, z: Zone) {
   const out: { x: number; y: number }[] = [];
-  for (let d = 1; d <= 2; d++) for (let y = z.y - d; y < z.y + z.h + d; y++) for (let x = z.x - d; x < z.x + z.w + d; x++) {
+  for (let d = 1; d <= LAGER.bredvid; d++) for (let y = z.y - d; y < z.y + z.h + d; y++) for (let x = z.x - d; x < z.x + z.w + d; x++) {
     const e = Math.max(z.x - x, x - (z.x + z.w - 1), z.y - y, y - (z.y + z.h - 1));
     if (e === d && usable(s, x, y)) out.push({ x, y });
   }
@@ -432,10 +463,10 @@ export function pilesOf(s: State): Pile[] {
 // Utanför lagret slits allt fortare, under tak långsammare. Hur fort varje sak slits står i saker.ts.
 function wearRate(s: State, k: string, ai: number, food = foodOf(s)) {
   const d = SAKER[k];
-  if (d?.ruttnar !== undefined) return 0.003 * (1 + food / 250) * (iIstiden(ai) ? ARSTID.ruttIstid : 1) * d.ruttnar;
+  if (d?.ruttnar !== undefined) return LAGER.ruttBas * (1 + food / LAGER.ruttMat) * (iIstiden(ai) ? ARSTID.ruttIstid : 1) * d.ruttnar;
   return d?.slits ?? 0;
 }
-export const wearMult = (s: State, x: number, y: number) => roofed(s, x, y) ? INDOOR_WEAR : zoneAt(s, x, y) >= 0 ? 1 : OUT_WEAR;
+export const wearMult = (s: State, x: number, y: number) => roofed(s, x, y) ? LAGER.inne : zoneAt(s, x, y) >= 0 ? 1 : LAGER.ute;
 export function wearStore(s: State, dtSec: number, ai: number) {
   const h = dtSec / HOUR_S, food = foodOf(s);
   for (const a of stacksOf(s)) {
@@ -449,7 +480,7 @@ export function wearStore(s: State, dtSec: number, ai: number) {
     if (into && a.n > 0) {
       const m = Math.min(RUTA[into.k], a.n * into.per);
       if (a.ag) for (const o in a.ag) a.ag[o] *= m / a.n;
-      a.n = m; a.k = into.k; a.c = 0.5;
+      a.n = m; a.k = into.k; a.c = LAGER.blirSkick;
     } else {
       if (isFood(a.k) && a.n > 1e-9) { count(s, 'ruttnat', a.n); s.ruttet = (s.ruttet ?? 0) + a.n; } // förrådshuset (byggnader.ts)
       a.n = 0;
@@ -470,24 +501,24 @@ export function wearStore(s: State, dtSec: number, ai: number) {
 export const overflow = (s: State) => things(s).filter(a => zoneAt(s, a.x, a.y) < 0 && isStored(s, a.x, a.y));
 const vanliga = (s: State) => zonesOf(s).filter(z => z.hus === undefined).length;
 // förrådet är fullt: lagerplatserna kan inte bli fler och det ligger saker bredvid dem (förrådshuset, byggnader.ts)
-export const storeFull = (s: State) => vanliga(s) >= MAX_ZONES && overflow(s).length >= 3;
+export const storeFull = (s: State) => vanliga(s) >= LAGER.zoner && overflow(s).length >= LAGER.fullt;
 export function tidyStore(s: State) {
   placeTools(s);
   const zs = zonesOf(s);
   const over = () => overflow(s);
   let grew = -1;
-  for (let rep = 0; rep < 4 && over().length; rep++) {
+  for (let rep = 0; rep < LAGER.vaxSteg && over().length; rep++) {
     const o = over(), i = zs.findIndex((z, j) => z.hus === undefined && o.some(a => allows(z, a.k)) && growOf(s, j));
     if (i < 0) break;
     zs[i] = growOf(s, i)!; grew = i;
   }
   if (grew >= 0) log(s, `${zs[grew].namn ?? 'Lagret'} blev för litet, så byn gjorde det större.`, 'world');
-  else if (over().length && vanliga(s) < MAX_ZONES) newZone(s);
+  else if (over().length && vanliga(s) < LAGER.zoner) newZone(s);
   // mindre: ta bort en kant när mer än hälften står tom och det som ligger där får plats i resten
   for (let i = 0; i < zs.length; i++) {
     const z = zs[i], all = things(s), have = z.w * z.h, n = all.filter(a => inZone(z, a.x, a.y)).length;
-    if (z.hus !== undefined || have <= 4 || have - n <= have / 2) continue;
-    const opts: Zone[] = [{ ...z, w: z.w - 1 }, { ...z, h: z.h - 1 }, { ...z, x: z.x + 1, w: z.w - 1 }, { ...z, y: z.y + 1, h: z.h - 1 }].filter(c => c.w >= 2 && c.h >= 2);
+    if (z.hus !== undefined || have <= LAGER.krympMin || have - n <= have / LAGER.krympDel) continue;
+    const opts: Zone[] = [{ ...z, w: z.w - 1 }, { ...z, h: z.h - 1 }, { ...z, x: z.x + 1, w: z.w - 1 }, { ...z, y: z.y + 1, h: z.h - 1 }].filter(c => c.w >= LAGER.minSida && c.h >= LAGER.minSida);
     const cost = (c: Zone) => all.filter(a => inZone(z, a.x, a.y) && !inZone(c, a.x, a.y)).length;
     const best = opts.sort((a, b) => cost(a) - cost(b))[0];
     if (best && n + 1 <= best.w * best.h) zs[i] = best; // det som hamnar utanför bärs in igen
@@ -497,7 +528,7 @@ export function tidyStore(s: State) {
 function growOf(s: State, i: number): Zone | undefined {
   const zs = zonesOf(s), z = zs[i];
   return [{ ...z, w: z.w + 1 }, { ...z, h: z.h + 1 }, { ...z, x: z.x - 1, w: z.w + 1 }, { ...z, y: z.y - 1, h: z.h + 1 }]
-    .filter(n => n.w <= MAX_W && n.h <= MAX_H && allUsable(s, n) && !zs.some((o, j) => j !== i && overlaps(n, o, 1)))
+    .filter(n => n.w <= LAGER.zonBredd && n.h <= LAGER.zonHojd && allUsable(s, n) && !zs.some((o, j) => j !== i && overlaps(n, o, LAGER.mellan)))
     .sort((a, b) => Math.abs(a.w - a.h) - Math.abs(b.w - b.h))[0];
 }
 // en ny lagerplats nära byns läger (eld och andra lagerplatser), men inte inpå elden. Den första uppdelningen sorterar: maten får den gamla platsen, materialet den nya
@@ -505,8 +536,8 @@ function newZone(s: State) {
   const zs = zonesOf(s), f = getMap(s.seed).fire, z0 = zs[0];
   let best: Zone | undefined, bd = Infinity;
   for (let y = 0; y < H - 2; y++) for (let x = 0; x < W - 2; x++) {
-    const c: Zone = { x, y, w: 3, h: 2 }, df = Math.hypot(x + 1.5 - f.x, y + 1 - f.y);
-    if (df < 3 || campDist(s, x + 1, y + 0.5) > 8 || !allUsable(s, c) || zs.some(o => overlaps(c, o, 1))) continue;
+    const c: Zone = { x, y, w: LAGER.nyBredd, h: LAGER.nyHojd }, df = Math.hypot(x + c.w / 2 - f.x, y + c.h / 2 - f.y);
+    if (df < LAGER.nyEldMin || campDist(s, x + (c.w - 1) / 2, y + (c.h - 1) / 2) > LAGER.nyLagerMax || !allUsable(s, c) || zs.some(o => overlaps(c, o, LAGER.mellan))) continue;
     const d = Math.hypot(x - z0.x, y - z0.y);
     if (d < bd) { bd = d; best = c; }
   }
@@ -534,7 +565,7 @@ export function homeKind(t: Task) {
 // hur mycket en person orkar bära, i fulla stackar: en normalstark vuxen bär en stack, starka mer, barn och gamla mindre
 export function capacity(s: State, p: Person) {
   const a = ageOf(p, s.now);
-  return (0.5 + stat(p, 'styrka', s.now) / 20) * (a < 10 ? 0.35 : a < 15 ? 0.65 : 1);
+  return (LAGER.barBas + stat(p, 'styrka', s.now) / LAGER.barStyrka) * (a < LAGER.barBarn ? LAGER.barBarnDel : a < LAGER.barUng ? LAGER.barUngDel : 1);
 }
 // hur full bördan är, i stackar
 export function load(t: Task) {
@@ -594,9 +625,9 @@ export function haulJob(s: State, near?: number) {
     const zi = zoneAt(s, a.x, a.y);
     let why: string | undefined, sc = d;
     if (!isStored(s, a.x, a.y)) why = 'Det ligger saker på marken som ska in i lagret';
-    else if (zi < 0) { if (zoneSpot(s, a.k, -Infinity, occ)) { why = 'Det ligger saker bredvid lagret och nu finns det plats'; sc += 50; } }
-    else if (!allows(zs[zi], a.k)) { if (zoneSpot(s, a.k, -Infinity, occ)) { why = `Sorterar: flyttar ${sakNamn(a.k).toLowerCase()} till ${zs.find(z => allows(z, a.k))?.namn?.toLowerCase() ?? 'rätt lager'}`; sc += 100; } }
-    else if (zoneSpot(s, a.k, zs[zi].prio ?? 0, occ)) { why = 'Flyttar saker till ett lager närmare elden'; sc += 150; }
+    else if (zi < 0) { if (zoneSpot(s, a.k, -Infinity, occ)) { why = 'Det ligger saker bredvid lagret och nu finns det plats'; sc += LAGER.barBredvid; } }
+    else if (!allows(zs[zi], a.k)) { if (zoneSpot(s, a.k, -Infinity, occ)) { why = `Sorterar: flyttar ${sakNamn(a.k).toLowerCase()} till ${zs.find(z => allows(z, a.k))?.namn?.toLowerCase() ?? 'rätt lager'}`; sc += LAGER.barSortera; } }
+    else if (zoneSpot(s, a.k, zs[zi].prio ?? 0, occ)) { why = 'Flyttar saker till ett lager närmare elden'; sc += LAGER.barNarmare; }
     if (why && sc < bs) { bs = sc; best = { x: a.x + 0.5, y: a.y + 0.5, why }; }
   }
   return best;

@@ -1,4 +1,4 @@
-import { OUT_WEAR, condOf, living, sakNamn, zonesOf } from '../../sim';
+import { LAGER, condOf, living, sakNamn, zonesOf } from '../../sim';
 import { carryTxt, condBar, esc, pLink, pileTxt } from '../hjalp';
 import { outPilesAt, piles, s, ui } from '../lage';
 import type { Flik } from '../panel';
@@ -28,7 +28,7 @@ export const hog: Flik = {
     if (!ps.length) return '<p class="muted">Här ligger inget längre.</p>';
     const who = living(s).filter(p => p.task?.act === 'bara' && Math.floor(p.task.tx) === at.x && Math.floor(p.task.ty) === at.y);
     return `
-    <div class="phead"><div><h2>${mark ? 'På marken' : 'Bredvid lagret'}</h2><p class="muted">${mark ? 'Lades ner av någon som kallades bort till något annat.' : 'Fick inte plats i lagret.'} Slits ${OUT_WEAR} gånger fortare än i lagret.</p></div></div>
+    <div class="phead"><div><h2>${mark ? 'På marken' : 'Bredvid lagret'}</h2><p class="muted">${mark ? 'Lades ner av någon som kallades bort till något annat.' : 'Fick inte plats i lagret.'} Slits ${LAGER.ute} gånger fortare än i lagret.</p></div></div>
     <dl class="kv">${ps.map(p => `<dt>${pileTxt(p)}</dt><dd>${condBar(condOf(p))}<span>${Math.round(condOf(p) * 100)} %</span></dd>`).join('')}</dl>
     ${who.length ? `<p class="muted">${who.map(p => pLink(p)).join(', ')} är på väg för att bära in det.</p>` : ''}`;
   },
