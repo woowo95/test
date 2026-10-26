@@ -60,7 +60,27 @@ export function duty(s: State, p: Person) {
 }
 // tid räknas mot yrkestaggar och bleknar, så att de senaste åren väger mest
 export const HABIT_FADE = 4 * DAY;
-export function habitTotal(p: Person) { let t = 0; for (const k in p.habit) t += p.habit[k]; return t; }
+// Vanornas slag i den ordning de lades till, som for-in ger dem. Med fler än ett tiotal slag blir vanobjektet ett
+// uppslagsverk i V8, och då är for-in långsamt, så listan sparas per vanobjekt. Bara addHabit lägger till slag
+const vanSlag = new WeakMap<Record<string, number>, string[]>();
+function habitKeys(h: Record<string, number>) {
+  let ks = vanSlag.get(h);
+  if (!ks) vanSlag.set(h, ks = Object.keys(h));
+  return ks;
+}
+export function habitTotal(p: Person) {
+  const h = p.habit;
+  let t = 0;
+  for (const k of habitKeys(h)) t += h[k];
+  return t;
+}
+// alla vanor bleknar med faktorn hf, och tim timmar läggs till act
+export function addHabit(p: Person, act: Act, hf: number, tim: number) {
+  const h = p.habit, ks = habitKeys(h);
+  for (const k of ks) h[k] *= hf;
+  if (!(act in h)) ks.push(act);
+  h[act] = (h[act] ?? 0) + tim;
+}
 export function habitShare(p: Person, acts: readonly Act[], tot = habitTotal(p)) {
   if (!(tot > 0)) return 0;
   let a = 0;

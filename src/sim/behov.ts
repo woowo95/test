@@ -320,10 +320,11 @@ function give(t: Ting, g: Person, m: Person) {
 // a talar med b. Saknar någon av dem ett redskap som den andra har över? Returnerar vad som hände
 export function askForTool(s: State, a: Person, b: Person): 'gåva' | 'byte' | undefined {
   for (const [m, g] of [[a, b], [b, a]]) {
-    const totM = habitTotal(m), totG = habitTotal(g);
+    const totM = habitTotal(m);
+    let totG: number | undefined; // räknas först när m saknar något
     for (const k of REDSKAP_SLAG) {
       if (!needsTool(s, m, k, totM)) continue;
-      const t = spare(s, g, k, totG);
+      const t = spare(s, g, k, totG ??= habitTotal(g));
       if (!t) continue;
       if (!osams(s, g, m) && byte(s, m, g, [{ k, n: 1, t }], { behov: BEHOV_SAKNAR, minst: 1, fara: 0, typ: 'redskap', utom: [k] })) return 'byte';
       if (rnd(s, 'dela', g) >= willing(s, g, m, ownedKind(s, g, k))) continue;

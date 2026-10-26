@@ -14,7 +14,7 @@ import { getMap } from './karta';
 import { barnMat, birth, birthWish, die, regulate } from './liv';
 import { WEAR, groundOf, growGround, packGround, tileOf } from './mark';
 import { SAMTAL_R, TalkEvent, converse, isSocial } from './samtal';
-import { HABIT_FADE, sedEvent, stepSeder, updateTags } from './seder';
+import { HABIT_FADE, addHabit, sedEvent, stepSeder, updateTags } from './seder';
 import { fearPlace, forget, lookAround } from './minne';
 import { chance, clamp, rnd } from './slump';
 import { ageIndex, isLight } from './tid';
@@ -227,9 +227,7 @@ function taskStep(s: State, p: Person, a: number, t1: number, dtSec: number, lea
       if (d.vandra) wear(groundOf(s), tileOf(tk.tx, tk.ty), WEAR * GANG * 0.08 * d.vandra.v * used); // man rör sig på platsen
     }
     // vana: tiden räknas mot yrkestaggar
-    const hf = Math.exp(-used * SEC / HABIT_FADE);
-    for (const k in p.habit) p.habit[k] *= hf;
-    p.habit[tk.act] = (p.habit[tk.act] ?? 0) + used / HOUR_S;
+    addHabit(p, tk.act, Math.exp(-used * SEC / HABIT_FADE), used / HOUR_S);
     // den som arbetar kommer så småningom på hur det kan göras bättre; man funderar också på vägen dit och hem
     thinkWhileWorking(s, p, tk.act, used);
     left -= used;
