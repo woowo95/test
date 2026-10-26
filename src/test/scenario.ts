@@ -1880,6 +1880,13 @@ SCENARIER.arv = {
     die(s, d, 'sjukdom');
     const partner = Math.abs(varde(s, a) - dVarde) < 1e-6 && varde(s, b) === 0 && yxor(s, a) === 1;
     const syns = s.log.some(l => l.text.startsWith(`${a.name} ärvde`) && l.text.includes('flintyxa') && l.text.includes(d.name));
+    const arv1 = s.stat?.arv ?? 0;
+    // den som inte äger något lämnar inget arv, också när hen har en partner (samhalle-123)
+    ({ s, d, a, b, c, e } = ny());
+    c.partner = e.id; e.partner = c.id;
+    const cTom = !Object.keys(ownedAll(s, c.id)).length && !tingOf(s).some(t => t.agare === c.id);
+    die(s, c, 'sjukdom');
+    const arv0 = s.stat?.arv ?? 0;
     // inget partner: barnen delar jämnt efter värde (yxan till den ena, maten och träet till den andra)
     ({ s, d, a, b, c, e } = ny());
     a.mother = d.id; b.father = d.id;
@@ -1934,6 +1941,7 @@ SCENARIER.arv = {
     return [
       ['partnern ärver allt', partner],
       ['det syns i loggen vem som ärvde vad', syns],
+      [`ett arv räknas när något ärvs (${arv1}), inte när den döda inte ägde något (${arv0})`, arv1 === 1 && cTom && arv0 === 0],
       [`utan partner delar barnen jämnt efter värde (${va.toFixed(0)} och ${vb.toFixed(0)})`, barnen],
       ['utan partner och barn ärver föräldrarna', foraldrar],
       ['sedan syskonen', syskon],

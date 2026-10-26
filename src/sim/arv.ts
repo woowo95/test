@@ -40,7 +40,8 @@ export function inherit(s: State, p: Person) {
     t.agare = heirs[i].id; val[i] += tingVarde(t);
     fick[i].push(tingNamn(t).toLowerCase());
   }
-  for (const h of housesOf(s).filter(q => q.ag === p.id).sort((a, b) => husVarde(s, b) - husVarde(s, a) || a.id - b.id)) {
+  const hus = housesOf(s).filter(q => q.ag === p.id).sort((a, b) => husVarde(s, b) - husVarde(s, a) || a.id - b.id);
+  for (const h of hus) {
     const i = val.indexOf(Math.min(...val));
     fick[i].push(h.namn); h.ag = heirs[i].id; val[i] += husVarde(s, h);
     if (h.namn === husNamn(p.name)) h.namn = husNamn(heirs[i].name);
@@ -60,7 +61,7 @@ export function inherit(s: State, p: Person) {
     const text = `${h.name} ärvde ${lista(fick[i])} efter ${p.name}.`;
     log(s, text, 'death', [h.id, p.id]); kronika(s, text);
   });
-  count(s, 'arv');
+  if (tools.length || hus.length || Object.keys(eget).length) count(s, 'arv'); // bara när något gick till en arvinge
 }
 
 // p flyttar: hen tar med sig det mest värda för vikten av sitt eget, så mycket hen orkar bära (ett redskap är en full
