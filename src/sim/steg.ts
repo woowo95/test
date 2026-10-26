@@ -13,7 +13,7 @@ import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, isSick, living, lo
 import { getMap } from './karta';
 import { barnMat, birth, birthWish, die, regulate } from './liv';
 import { WEAR, groundOf, growGround, packGround, tileOf } from './mark';
-import { SAMTAL_R, TalkEvent, converse, isSocial } from './samtal';
+import { SAMTAL, TalkEvent, converse, isSocial } from './samtal';
 import { HABIT_FADE, addHabit, sedEvent, stepSeder, updateTags } from './seder';
 import { fearPlace, forget, lookAround } from './minne';
 import { PLATS } from './plats';
@@ -138,7 +138,7 @@ export function step(s: State, dtSec: number, events?: TalkEvent[]) {
       const expect = dtSec / 240 * (0.6 + stat(p, 'empati', now) / 25);
       let n = Math.floor(expect); if (rnd(s, 'samtal', p) < expect - n) n++;
       // bara med dem som är nära när slaget slutar
-      const others = social.filter(q => q !== p && alive(q) && Math.hypot(q.x - p.x, q.y - p.y) < SAMTAL_R);
+      const others = social.filter(q => q !== p && alive(q) && Math.hypot(q.x - p.x, q.y - p.y) < SAMTAL.radie);
       for (let i = 0; i < n; i++) converse(s, p, others, events);
       if (n && others.length) count(s, 'samtal', n);
     }

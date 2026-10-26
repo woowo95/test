@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { ACTS, ALDER, Person, slagIkon, SEC, TalkEvent, ageOf, SAMTAL_R, alive, byId, clamp, homeKind, isSick, isSocial, living, load, REL, relKey, spar } from '../sim';
+import { ACTS, ALDER, Person, slagIkon, SEC, TalkEvent, ageOf, SAMTAL, alive, byId, clamp, homeKind, isSick, isSocial, living, load, REL, relKey, spar } from '../sim';
 import { hsl } from './hjalp';
 import { s, ui } from './lage';
 import { Ikoner, TS, bubbleG, labels, markLayer, peopleG } from './scen';
@@ -90,7 +90,7 @@ export function drawPeople(t: number) {
   for (const p of ppl) {
     const pp = pos.get(p.id)!, x = pp.x * TS, y = pp.y * TS, a = ageOf(p, s.now), top = y - (a < ALDER.smabarn ? 9 : a < ALDER.vuxen ? 11 : 13);
     const o = talkWith.get(p.id), q = o !== undefined ? byId(s, o) : undefined;
-    const talking = q && alive(q) && isSocial(p) && isSocial(q) && Math.hypot(q.x - p.x, q.y - p.y) < SAMTAL_R;
+    const talking = q && alive(q) && isSocial(p) && isSocial(q) && Math.hypot(q.x - p.x, q.y - p.y) < SAMTAL.radie;
     if (!talking && o !== undefined && !flash.has(p.id)) talkWith.delete(p.id);
     if (talking || flash.has(p.id)) {
       const r = q ? s.rels[relKey(p.id, q.id)] : undefined;
