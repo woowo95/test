@@ -2,7 +2,7 @@
 // npm run scenario            kör alla
 // npm run scenario -- glanta  kör bara ett
 import { isDeepStrictEqual } from 'node:util';
-import { FANGST, MIN, Person, Act, createState, clean, canClean, ownedBy, tidyTools, addTool, toolsOf, heldBy, take, usesTool, wearTool, freeSpear, getRel, isTool, BYN, twineRope, makeRod, wearUsed, isSpear, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, serializeParts, joinParts, serialize, cloneState, ageStart, nyKalender, kalender, yearNo, AGES, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, zonesOf, allows, ageOf, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, fuelStock, DAY, HOUR, W, State, tileOf, rektAvstand, skogAndel, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, campCenter, TEKNIK, knows, thinkWhileWorking, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, beds, isWall, Bit, wearBuild, FYND, FYND_IDS, GRUPPER, angOf, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, observe, hoped, Lager, skyggOf, grupperOf, KANINER, share, treeOn, djurOf, KANIN, SLAKT, DJUR, canSlaughter, makeKnife, slaughter, askForTool, askForGift, gain, takeFood, takeFuel, ownsAmount, ownedStock, ownedSum, sumOf, addTo, setAmount, setStock, foodOf, isFood, STACK_ORDER, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, STOLD_LINDRIG, STOLD_OP, rnd, STROMMAR, Strom, BEAT, spar, isWork, SPARVERSION, stepDelning, rikedom, rikedomDelar, grundvarde, nivaOf, DELNING, packUp, releaseOwner, willing, tingOf, komOf, BYGGNADER, FN, mostUrgent, fnId, fnOf, planBuild, workOn, wearMult, LAGER, homeless, sleepBeds, inZone, startWork, workHalf, finishHalf, stepPaborjat, halvOf, tingVarde, HALV_TID, fallTid, treeSpot, SEC, Task, familjOf, bedTile, takeForHouse, put, stepByggnader, husNamn, spotFor, roofed, matGott, barnMat, hungerFlytt, regulate, MATERIAL, EKONOMI } from '../sim';
+import { FANGST, MIN, Person, Act, createState, clean, canClean, ownedBy, tidyTools, addTool, toolsOf, heldBy, take, usesTool, wearTool, freeSpear, getRel, isTool, BYN, twineRope, makeRod, wearUsed, isSpear, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, sees, ageIndex, serializeParts, joinParts, serialize, cloneState, ageStart, nyKalender, kalender, yearNo, AGES, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, zonesOf, allows, ageOf, makeSpear, spears, SPJUT_FORSOK, groundOf, getMap, fuelStock, DAY, HOUR, W, State, tileOf, rektAvstand, skogAndel, takenOf, Kind, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, campCenter, TEKNIK, knows, thinkWhileWorking, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, beds, isWall, Bit, wearBuild, FYND, FYND_IDS, GRUPPER, angOf, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, observe, hoped, Lager, skyggOf, grupperOf, KANINER, share, treeOn, djurOf, KANIN, SLAKT, DJUR, canSlaughter, makeKnife, slaughter, askForTool, askForGift, gain, takeFood, takeFuel, ownsAmount, ownedStock, ownedSum, sumOf, addTo, setAmount, setStock, foodOf, isFood, STACK_ORDER, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, STOLD_LINDRIG, STOLD_OP, rnd, STROMMAR, Strom, BEAT, spar, isWork, SPARVERSION, stepDelning, rikedom, rikedomDelar, grundvarde, nivaOf, DELNING, packUp, releaseOwner, willing, tingOf, komOf, BYGGNADER, FN, mostUrgent, fnId, fnOf, planBuild, workOn, wearMult, LAGER, homeless, sleepBeds, inZone, startWork, workHalf, finishHalf, stepPaborjat, halvOf, tingVarde, HALV_TID, fallTid, treeSpot, SEC, Task, familjOf, bedTile, takeForHouse, put, stepByggnader, husNamn, spotFor, roofed, matGott, barnMat, hungerFlytt, regulate, MATERIAL, EKONOMI, SAMTALSSLAG } from '../sim';
 // förrådet i proven: stackarna är det enda som sparas (steg 1.1.2), så proven ställer in förrådet genom lagret
 const setItems = (s: State, m: Record<string, number>) => {
   for (const k of STACK_ORDER) if (!isFood(k) && k !== 'ved' && !isTool(k)) setAmount(s, k, m[k] ?? 0);
@@ -707,7 +707,7 @@ SCENARIER.egendom = {
     gain(s, a, 'vilt', KANIN * 2); setAmount(s, 'kniv', 1); tidyTools(s); c.tek = { ...(c.tek ?? {}), kniv: 1 };
     slaughter(s, c, 1);
     const kott = ownsAmount(s, a, 'kott'), slaktarens = ownsAmount(s, c, 'kott');
-    die(s, a, 'test'); const arv = Object.keys(ownedStock(s, a)).length;
+    die(s, a, 'sjukdom'); const arv = Object.keys(ownedStock(s, a)).length;
     // vanliga byar: delarna går aldrig över det som finns i förrådet
     let fel = 0, agt = 0;
     for (const [seed, h, live] of [[41, 10 * 24, false], [3, 6, true]] as const) {
@@ -1165,7 +1165,7 @@ SCENARIER.paborjat = {
     const t4 = uppgift(q, 'yxa'); startWork(s, q, t4); q.task = undefined;
     const arving = living(s).find(r => r !== q && r.id === q.partner) ?? living(s).find(r => r !== q && r !== p)!;
     q.partner = arving.id; arving.partner = q.id;
-    die(s, q, 'test');
+    die(s, q, 'sjukdom');
     const arv = tingOf(s).find(t => t.id === t4.ref)?.agare === arving.id;
     // ett träd: den som börjar fälla det lämnar det halvfällt, och nästa fäller det färdigt
     addTool(s, 'yxa', p);
@@ -1519,7 +1519,7 @@ SCENARIER.teknik = {
     // den sista som kan yxa dör
     const ens = living(s).filter(p => knows(p, 'yxa'));
     ens.slice(1).forEach(p => { p.tek!.yxa = 0; });
-    if (ens[0]) die(s, ens[0], 'i en olycka');
+    if (ens[0]) die(s, ens[0], 'olycka');
     const dott = kan('yxa') === 0;
     const dagar = (k: string) => forst[k] === undefined ? 'aldrig' : `dygn ${forst[k].toFixed(1)}`;
     return [
@@ -1672,7 +1672,7 @@ SCENARIER.varmekarta = {
     s.now += HOUR; observe(s, p, 'samla', bx, by);
     const fore2 = s.stat?.rattat ?? 0; observe(s, q, 'samla', bx, by);
     const ql = findL(q, 'samla', aa)!, rattad = (s.stat?.rattat ?? 0) > fore2 && ql.ny !== undefined, qText = describe(s, ql).what;
-    for (let n = 0; n < 200 && findL(r2, 'samla', aa)!.v > 2; n++) share(s, q, r2, { op: 60 } as never, 'berättelse');
+    for (let n = 0; n < 200 && findL(r2, 'samla', aa)!.v > 2; n++) share(s, q, r2, { op: 60 } as never, SAMTALSSLAG['berättelse']);
     const spridd = findL(r2, 'samla', aa)!.v;
     const l = findL(p, 'samla', areaOf(bx, by))!, nyss = hoped(s, l), text = describe(s, l).what;
     s.now += 3 * DAY; const sen = hoped(s, l);
@@ -1748,23 +1748,23 @@ SCENARIER.arv = {
     let { s, d, a, b, c, e } = ny();
     const dVarde = varde(s, d);
     d.partner = a.id; a.partner = d.id; b.mother = d.id;
-    die(s, d, 'test');
+    die(s, d, 'sjukdom');
     const partner = Math.abs(varde(s, a) - dVarde) < 1e-6 && varde(s, b) === 0 && yxor(s, a) === 1;
     const syns = s.log.some(l => l.text.startsWith(`${a.name} ärvde`) && l.text.includes('flintyxa') && l.text.includes(d.name));
     // inget partner: barnen delar jämnt efter värde (yxan till den ena, maten och träet till den andra)
     ({ s, d, a, b, c, e } = ny());
     a.mother = d.id; b.father = d.id;
-    die(s, d, 'test');
+    die(s, d, 'sjukdom');
     const va = varde(s, a), vb = varde(s, b), barnen = Math.abs(va - vb) < 1e-6 && yxor(s, a) + yxor(s, b) === 1 && varde(s, c) === 0;
     // föräldrarna, sedan syskonen, sedan byn
     ({ s, d, a, b, c, e } = ny());
-    d.mother = a.id; b.mother = a.id; die(s, d, 'test');
+    d.mother = a.id; b.mother = a.id; die(s, d, 'sjukdom');
     const foraldrar = varde(s, a) > 0 && varde(s, b) === 0;
     ({ s, d, a, b, c, e } = ny());
-    d.mother = 999; b.mother = 999; die(s, d, 'test');
+    d.mother = 999; b.mother = 999; die(s, d, 'sjukdom');
     const syskon = Math.abs(varde(s, b) - dVarde) < 1e-6;
     ({ s, d, a, b, c, e } = ny());
-    die(s, d, 'test');
+    die(s, d, 'sjukdom');
     tidyTools(s); // som i varje steg: den dödas redskap blir byns
     const byn = [a, b, c, e].every(q => varde(s, q) === 0) && tingOf(s).filter(t => t.k === 'yxa' && t.agare === BYN).length === 1 && amountOf(s, 'ved') > 29;
     // den som flyttar tar med sig det hen orkar bära, det mest värda för vikten först; resten blir byns

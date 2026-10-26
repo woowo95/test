@@ -1,7 +1,7 @@
 import { foodDays } from './ekonomi';
 import { ALDER, ageOf, isParent, living, log } from './folk';
 import { clamp } from './slump';
-import { Act, DAY, HOUR, Person, SEDER, Sed, Seder, State } from './typer';
+import { Act, DAY, HOUR, Person, Seder, State } from './typer';
 import { balans } from './balans';
 import { kortTal } from './format';
 
@@ -46,21 +46,24 @@ export const SED = balans('seder', {
 });
 
 // ---------- seder ----------
-export function newSeder(): Seder {
-  const z = () => ({ arbete: 0, gemenskap: 0, barn: 0, nyfikenhet: 0, forsiktighet: 0 });
-  return { v: z(), ev: z(), log: [] };
-}
 const dev = (v: number) => (v - SED.mitt) / SED.spann;
-// åt vilket håll personen drar sederna, efter sin personlighet
-function personSeder(s: State, p: Person): Record<Sed, number> {
-  const q = p.pot, kids = s.people.some(c => isParent(p, c));
-  return {
-    arbete: dev(q.flit),
-    gemenskap: dev(q.empati),
-    barn: dev(q.empati) * SED.barnEmpati + (kids ? SED.barnForalder : 0),
-    nyfikenhet: dev((q.nyfikenhet + q.intelligens) / 2),
-    forsiktighet: -dev(q.mod) * SED.forsMod + dev(q.intelligens) * SED.forsInt,
-  };
+// En sed per rad: namnen åt båda hållen och vad den gör (fliken Seder), och åt vilket håll en person drar seden efter
+// sin personlighet (q = egenskaperna, barn = personen är förälder). Alla börjar på 0. Ordningen sparas, så nya seder läggs sist
+interface SedDef { pos: string; neg: string; effect: string; dra: (q: Person['pot'], barn: boolean) => number }
+const DEF = {
+  arbete: { pos: 'Arbete', neg: 'Lugn', effect: 'Pliktkänsla: hur mycket man jobbar för byn och hur mycket man vilar.', dra: q => dev(q.flit) },
+  gemenskap: { pos: 'Gemenskap', neg: 'Var och en för sig', effect: 'Hur mycket man bryr sig om att andra fryser och hjälper dem med elden.', dra: q => dev(q.empati) },
+  barn: { pos: 'Barnkär', neg: 'Barnsnål', effect: 'Hur gärna par skaffar barn, och om barnen får leka eller måste hjälpa till.', dra: (q, barn) => dev(q.empati) * SED.barnEmpati + (barn ? SED.barnForalder : 0) },
+  nyfikenhet: { pos: 'Nyfikenhet', neg: 'Tradition', effect: 'Hur snabbt invånarna lär sig nya färdigheter.', dra: q => dev((q.nyfikenhet + q.intelligens) / 2) },
+  forsiktighet: { pos: 'Försiktighet', neg: 'Leva i nuet', effect: 'Hur stora förråd byn vill ha innan man slappnar av, och om elden hålls vid liv.', dra: q => -dev(q.mod) * SED.forsMod + dev(q.intelligens) * SED.forsInt },
+} satisfies Record<string, SedDef>;
+export type Sed = keyof typeof DEF;
+export const SEDER: Record<Sed, SedDef> = DEF;
+export const SED_LIST = Object.keys(DEF) as Sed[];
+const nollor = () => Object.fromEntries(SED_LIST.map(k => [k, 0])) as Record<Sed, number>;
+
+export function newSeder(): Seder {
+  return { v: nollor(), ev: nollor(), log: [] };
 }
 // inflytande över sederna: vuxna och äldre väger mest, karismatiska hörs mer
 export function influence(s: State, p: Person) {
@@ -68,14 +71,14 @@ export function influence(s: State, p: Person) {
   return (a < ALDER.vuxen ? 0 : a < ALDER.fullvuxen ? SED.rostUng : a > ALDER.aldre ? SED.rostAldre : 1) * (SED.rostBas + p.pot.karisma / SED.rostKarisma);
 }
 export function sederTarget(s: State): Record<Sed, number> {
-  const t = { arbete: 0, gemenskap: 0, barn: 0, nyfikenhet: 0, forsiktighet: 0 };
+  const t = nollor();
   let tw = 0;
   for (const p of living(s)) {
     const w = influence(s, p); if (!w) continue;
-    tw += w; const ps = personSeder(s, p);
-    for (const k of SEDER) t[k] += ps[k] * w;
+    tw += w; const barn = s.people.some(c => isParent(p, c));
+    for (const k of SED_LIST) t[k] += SEDER[k].dra(p.pot, barn) * w;
   }
-  for (const k of SEDER) t[k] = clamp((tw ? t[k] / tw : 0) * SED.snittVikt + s.seder.ev[k], -1, 1);
+  for (const k of SED_LIST) t[k] = clamp((tw ? t[k] / tw : 0) * SED.snittVikt + s.seder.ev[k], -1, 1);
   return t;
 }
 // händelser som formar sederna; effekten bleknar under några veckor
@@ -89,10 +92,10 @@ export function stepSeder(s: State) {
   sd.at = s.now;
   if (dt <= 0) return;
   const kd = Math.exp(-dt / (SED.evDygn * DAY));
-  for (const k of SEDER) sd.ev[k] *= kd;
+  for (const k of SED_LIST) sd.ev[k] *= kd;
   if (foodDays(s) > SED.overflodDygn) sedEvent(s, 'arbete', -SED.overflod * dt / HOUR); // långt överflöd gör byn lugnare
   const t = sederTarget(s), f = 1 - Math.exp(-dt / (SED.rorDygn * DAY));
-  for (const k of SEDER) sd.v[k] += (t[k] - sd.v[k]) * f;
+  for (const k of SED_LIST) sd.v[k] += (t[k] - sd.v[k]) * f;
 }
 
 // ---------- vilja ----------

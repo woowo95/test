@@ -37,7 +37,7 @@ export const SAMTAL = balans('samtal', {
   utBrus: 1.4,
   slaktUt: 0.35, // släkt går det så här mycket bättre för
   charmDiv: 15, // charmen hos den andra (karisma och skönhet, 0 till 20) ger (charm - 8) / charmDiv till vänskapen (like)
-  // vad ett samtal ger: relationen ändras med vikten gånger (ut + like), där like är charmen. Vikten per slag:
+  // vad ett samtal ger: relationen ändras med vikten gånger (ut + like), där like är charmen. Vikten per slag (SAMTALSSLAG nedan):
   vSmaprat: 1,
   vSkamt: 1.6,
   vDjupt: 2.6,
@@ -73,10 +73,27 @@ export const SAMTAL = balans('samtal', {
   humorHalsaLag: 0.6, humorHalsaMinus: 0.12,
 });
 
+// ---------- samtalens slag (registret) ----------
+// Vilket slag det blir väljs i converse, i den ordning som står i SAMTAL. v = vikten: relationen ändras med v gånger (ut + like).
+// dela = talet i MINNE (minne.ts) som gör att man berättar mer om platser. lar = talet i TEKTAL (teknik.ts) som är chansen att
+// lära ut en teknik; saknas det gäller larChans. Pratbubblans färg står i ui/manniskor.ts
+export interface SamtalDef { v: number; dela?: 'delaBerattelse' | 'delaDjupt'; lar?: 'larChansBra' }
+const SLAG = {
+  'småprat': { v: SAMTAL.vSmaprat },
+  'skämt': { v: SAMTAL.vSkamt },
+  'djupt samtal': { v: SAMTAL.vDjupt, dela: 'delaDjupt', lar: 'larChansBra' },
+  'tröst': { v: SAMTAL.vTrost },
+  'berättelse': { v: SAMTAL.vBerattelse, dela: 'delaBerattelse', lar: 'larChansBra' },
+  'flirt': { v: SAMTAL.vFlirt },
+  'gräl': { v: 0 },
+} satisfies Record<string, SamtalDef>;
+export type Samtalsslag = keyof typeof SLAG;
+export const SAMTALSSLAG: Record<Samtalsslag, SamtalDef> = SLAG;
+
 // ---------- samtal ----------
 // om p håller på med något socialt just nu (vid elden, i samtal); hur nära man ska vara för att prata står i SAMTAL.radie
 export const isSocial = (p: Person) => !!p.task && p.task.phase === 'do' && !!ACTS[p.task.act].social;
-export interface TalkEvent { a: number; b: number; kind: string; good: boolean; t: number }
+export interface TalkEvent { a: number; b: number; kind: Samtalsslag; good: boolean; t: number }
 export function converse(s: State, a: Person, others: Person[], events?: TalkEvent[]) {
   const now = s.now;
   if (!others.length) return;
@@ -86,7 +103,7 @@ export function converse(s: State, a: Person, others: Person[], events?: TalkEve
   const r = getRel(s, a, b);
   const aa = ageOf(a, now), ba = ageOf(b, now);
   const mood = moodOf(a, now);
-  let kind: string;
+  let kind: Samtalsslag;
   const canFlirt = aa >= ALDER.flirtFran && ba >= ALDER.flirtFran && a.sex !== b.sex && !isKin(a, b) && Math.abs(aa - ba) < ALDER.flirtSkillnad &&
     ((a.partner === undefined && b.partner === undefined) || a.partner === b.id);
   if ((mood < SAMTAL.gralHumor && rnd(s, 'samtal', a) < SAMTAL.gralHumorChans) || (r.op < REL.gral && rnd(s, 'samtal', a) < SAMTAL.gralOsamsChans)) kind = 'gräl';
@@ -104,14 +121,13 @@ export function converse(s: State, a: Person, others: Person[], events?: TalkEve
   // charmen påverkar vänskapen, inte förälskelsen (den har egen dragning), och inte mellan par och släkt
   const like = a.partner === b.id || isKin(a, b) ? 0 : (charm - 8) / SAMTAL.charmDiv;
   if (isKin(a, b)) out += SAMTAL.slaktUt;
-  const mult: Record<string, number> = { 'småprat': SAMTAL.vSmaprat, 'skämt': SAMTAL.vSkamt, 'djupt samtal': SAMTAL.vDjupt, 'tröst': SAMTAL.vTrost, 'berättelse': SAMTAL.vBerattelse, 'flirt': SAMTAL.vFlirt, 'gräl': 0 };
   if (kind === 'gräl') {
     r.op -= SAMTAL.gralOp + rnd(s, 'samtal', a) * SAMTAL.gralSpann;
     think(a, `Grälade med ${b.name}`, -SAMTAL.gralTankeEgen, now, SAMTAL.gralTim * HOUR);
     think(b, `Grälade med ${a.name}`, -SAMTAL.gralTankeAndra, now, SAMTAL.gralTim * HOUR);
   } else {
     // vänskap växer allt långsammare ju närmare man redan är; ovänskap fördjupas lättare
-    const d = mult[kind] * (out + like) * (kind === 'skämt' && out < 0 ? SAMTAL.skamtOvan : 1);
+    const d = SAMTALSSLAG[kind].v * (out + like) * (kind === 'skämt' && out < 0 ? SAMTAL.skamtOvan : 1);
     r.op += d;
     if (kind === 'tröst' && out + like > SAMTAL.trostMin) think(b, `Tröstades av ${a.name}`, SAMTAL.trostTanke, now, SAMTAL.trostTim * HOUR);
     if (kind === 'berättelse') { a.skill.berattande = clamp(a.skill.berattande + SAMTAL.berattaLar * (SAMTAL.berattaInt + a.pot.intelligens / SAMTAL.berattaDiv), 0, 20); }
@@ -119,7 +135,7 @@ export function converse(s: State, a: Person, others: Person[], events?: TalkEve
       const att = (stat(b, 'skonhet', now) + stat(b, 'karisma', now)) / SAMTAL.flirtAtt;
       r.rom = clamp(r.rom + (out + att) * SAMTAL.flirtRomOk, 0, 100);
     }
-    share(s, a, b, r, kind); // man berättar vad man vet och lär ut vad man kan
+    share(s, a, b, r, SAMTALSSLAG[kind]); // man berättar vad man vet och lär ut vad man kan
     if (kind !== 'flirt' && out + like > SAMTAL.gavaMin) askForGift(s, a, b); // den som saknar något frågar efter det (mat, ved, redskap: behov.ts)
   }
   r.op = clamp(r.op, -100, 100);

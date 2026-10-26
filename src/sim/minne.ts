@@ -10,6 +10,7 @@ import { ageIndex, lightLevel } from './tid';
 import { DAY, H, HOUR, LKind, Lardom, Person, Rel, State, T, W, egen, tvaDelar, visning } from './typer';
 import { FOREST } from './vag';
 import { balans } from './balans';
+import type { SamtalDef } from './samtal';
 
 // ---------- balanstal (regel 8) ----------
 // Lärdomar: hur många man minns, hur mycket man tror på dem, hur de sprids och hur fort de glöms. Värdet (v) mäts i det en
@@ -42,7 +43,7 @@ export const MINNE = balans('minne', {
   radslaSettSaker: 1,
   radslaHort: 0.6, // ... de närmaste som hörde om den så här rädda, och säkra på det med radslaHortSaker
   radslaHortSaker: 0.7,
-  delaBas: 0.03, // chansen att den som talar berättar något: delaBas + (karisma + empati) / delaDiv, och mer i en berättelse eller ett djupt samtal
+  delaBas: 0.03, // chansen att den som talar berättar något: delaBas + (karisma + empati) / delaDiv, och mer i en berättelse eller ett djupt samtal (dela i SAMTALSSLAG, samtal.ts)
   delaDiv: 200,
   delaBerattelse: 0.35,
   delaDjupt: 0.12,
@@ -273,10 +274,10 @@ export function fearPlace(s: State, victim: Person, cause: string) {
 
 // ---------- samtal ----------
 // den som talar berättar ibland vad hen vet; sociala personer och berättare delar mer
-export function share(s: State, a: Person, b: Person, r: Rel, kind: string) {
+export function share(s: State, a: Person, b: Person, r: Rel, slag: SamtalDef) {
   const now = s.now;
-  teach(s, a, b, kind);
-  const talk = MINNE.delaBas + (stat(a, 'karisma', now) + stat(a, 'empati', now)) / MINNE.delaDiv + (kind === 'berättelse' ? MINNE.delaBerattelse : kind === 'djupt samtal' ? MINNE.delaDjupt : 0);
+  teach(s, a, b, slag);
+  const talk = MINNE.delaBas + (stat(a, 'karisma', now) + stat(a, 'empati', now)) / MINNE.delaDiv + (slag.dela ? MINNE[slag.dela] : 0);
   if (a.lardomar?.length && rnd(s, 'minne', a) < talk) {
     // man berättar helst om rädslor, rika platser och platser som visat sig sämre än man trott
     const w = a.lardomar.map(l => (l.k === 'fara' ? MINNE.delaFara : l.k === 'flinta' ? 1 : nyhet(s, l) ? Math.max(1, l.v) : l.v) * l.c);

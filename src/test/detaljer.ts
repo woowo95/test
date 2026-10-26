@@ -1,4 +1,4 @@
-import { createState, step, living, AGES, ageIndex, ageOf, serialize, State, SEDER, groundOf, foodOf, amountOf, STACK_ORDER } from '../sim';
+import { createState, step, living, AGES, ageIndex, ageOf, serialize, State, SED_LIST, groundOf, foodOf, amountOf, STACK_ORDER } from '../sim';
 import { BAR, FOREST, HIGH, isSoil } from '../sim/vag';
 
 const start = Date.parse('2026-10-20T08:00:00+02:00');
@@ -30,7 +30,7 @@ for (const seed of valda.length ? valda : [1, 42, 777]) {
   console.log(s.log.filter(l => /eld|glöd|flint|sten/i.test(l.text)).slice(0, 6).map(l => l.text).join('\n'));
   const ta = Object.values(acts).reduce((a, b) => a + b, 0);
   console.log('vuxnas tid:', Object.entries(acts).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${(v / ta * 100).toFixed(0)}%`).join(', '));
-  console.log('seder:', SEDER.map(k => `${k} ${s.seder.v[k].toFixed(2)}`).join(', '), '| olyckor på toa', accidents);
+  console.log('seder:', SED_LIST.map(k => `${k} ${s.seder.v[k].toFixed(2)}`).join(', '), '| olyckor på toa', accidents);
   console.log('taggar:', living(s).filter(p => p.tag).map(p => `${p.name}: ${p.tag}`).join(', '), '| fått en tagg', living(s).filter(p => p.kallad?.length).length);
   console.log(s.seder.log.map(l => l.text).join('\n'));
   const g = groundOf(s);

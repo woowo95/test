@@ -11,7 +11,7 @@ import { coldOf, temperature } from './vader';
 import { addFuel, canLight, fireWant, forageItems, fuelFor, hearthOf, heatAt, igniterOf, stepFire, takeCoal, takeFuel, tryLight } from './eld';
 import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, isSick, living, log, ovning, stat, think } from './folk';
 import { getMap } from './karta';
-import { barnMat, birth, birthWish, die, regulate } from './liv';
+import { DODSORSAKER, barnMat, birth, birthWish, die, regulate } from './liv';
 import { MARK, groundOf, growGround, packGround, tileOf } from './mark';
 import { SAMTAL, TalkEvent, converse, isSocial } from './samtal';
 import { HABIT_FADE, addHabit, sedEvent, stepSeder, updateTags } from './seder';
@@ -195,12 +195,12 @@ function healthStep(s: State, p: Person, a: number, ai: number, dtSec: number) {
   if (!p.sickUntil || p.sickUntil < now) {
     if (chance(s, (iIstiden(ai) ? ARSTID.sjukIstid : ARSTID.sjuk) / 86400, dtSec, 'halsa', p)) { const dur = (KROPP.sjukMin + rnd(s, 'halsa', p) * KROPP.sjukSpann) * HOUR; p.sickUntil = now + dur; p.sickWhy = 'Sjuk'; if (dur > KROPP.svartSjuk * HOUR) log(s, `${p.name} blev svårt sjuk.`, 'world', [p.id]); }
   }
-  if (p.health <= 0) { die(s, p, p.hunger <= 0 ? 'av svält' : p.warm < KROPP.frysdod ? 'av kyla' : (p.poisonUntil ?? 0) > now ? 'av svampförgiftning' : 'av sjukdom'); return true; }
+  if (p.health <= 0) { die(s, p, p.hunger <= 0 ? 'svalt' : p.warm < KROPP.frysdod ? 'kyla' : (p.poisonUntil ?? 0) > now ? 'svamp' : 'sjukdom'); return true; }
   // ålderdom och olyckor (Gompertz, per år = per dygn)
   const q = KROPP.dodBas + KROPP.dodAlder * Math.exp(KROPP.dodTakt * a) + (a < ALDER.barnsjuk ? KROPP.dodBarn : 0);
-  if (chance(s, q / 86400, dtSec, 'halsa', p)) { die(s, p, a > ALDER.alderdom ? 'av ålderdom' : a < ALDER.barnsjuk ? 'av en barnsjukdom' : 'i en olycka'); if (a >= ALDER.barnsjuk && a <= ALDER.alderdom) fearPlace(s, p, 'i en olycka'); return true; }
+  if (chance(s, q / 86400, dtSec, 'halsa', p)) { die(s, p, a > ALDER.alderdom ? 'alderdom' : a < ALDER.barnsjuk ? 'barnsjukdom' : 'olycka'); if (a >= ALDER.barnsjuk && a <= ALDER.alderdom) fearPlace(s, p, DODSORSAKER.olycka.text); return true; }
   const pd = p.task && ACTS[p.task.act], fara = pd && pd.fara; // farligt arbete, som jakt
-  if (fara && p.task!.phase === 'do' && chance(s, fara.risk * (1 - (pd.arbete ? p.skill[pd.arbete] : 0) / 25) / HOUR_S, dtSec, 'halsa', p)) { die(s, p, fara.text); fearPlace(s, p, fara.text); return true; }
+  if (fara && p.task!.phase === 'do' && chance(s, fara.risk * (1 - (pd.arbete ? p.skill[pd.arbete] : 0) / 25) / HOUR_S, dtSec, 'halsa', p)) { die(s, p, fara.dod); fearPlace(s, p, DODSORSAKER[fara.dod].text); return true; }
   return false;
 }
 

@@ -1,5 +1,5 @@
 import { ALDER, REL, ageOf, alive, byId, count, isParent, living, log, newPerson, relKey, startSkills, think } from './folk';
-import { sedEvent } from './seder';
+import { Sed, sedEvent } from './seder';
 import { pair } from './varld';
 import { avgMood } from './samtal';
 import { chance, clamp, pick, rnd } from './slump';
@@ -55,17 +55,34 @@ const LIV = balans('liv', {
   fodMor: 0.2, fodFar: 0.18, fodDygn: 1, // glädjen över ett nytt barn
 });
 
+// ---------- dödsorsakerna (registret) ----------
+// text = det som står efter namnet ("dog av svält"), i loggen, krönikan och byns räknare ('dog av svält', som testerna läser).
+// sed = seden som ändras, hur mycket, och texten efter namnet i sedernas logg. Ett farligt arbete (fara i handlingar.ts) pekar hit
+interface DodDef { text: string; sed?: { k: Sed; d: number; text: string } }
+const DOD = {
+  svalt: { text: 'av svält', sed: { k: 'forsiktighet', d: LIV.sedSvalt, text: 'svalt ihjäl. Byn har blivit mer försiktig.' } },
+  kyla: { text: 'av kyla', sed: { k: 'forsiktighet', d: LIV.sedKyla, text: 'frös ihjäl. Byn har blivit mer försiktig.' } },
+  jakt: { text: 'under en jakt', sed: { k: 'forsiktighet', d: LIV.sedJakt, text: 'dog under en jakt. Byn blev lite försiktigare.' } },
+  svamp: { text: 'av svampförgiftning' },
+  sjukdom: { text: 'av sjukdom' },
+  alderdom: { text: 'av ålderdom' },
+  barnsjukdom: { text: 'av en barnsjukdom' },
+  olycka: { text: 'i en olycka' },
+  barnsang: { text: 'i barnsäng' },
+} satisfies Record<string, DodDef>;
+export type Dodsorsak = keyof typeof DOD;
+export const DODSORSAKER: Record<Dodsorsak, DodDef> = DOD;
+
 // ---------- död, födsel, flytt ----------
-export function die(s: State, p: Person, cause: string) {
+export function die(s: State, p: Person, orsak: Dodsorsak) {
+  const { text: cause, sed } = DODSORSAKER[orsak];
   p.died = s.now; p.cause = cause; p.task = undefined;
   inherit(s, p); // arvingarna får det hen ägde (arv.ts)
   releaseOwner(s, p.id); // det som blev kvar blir byns
   const a = Math.floor(ageOf(p, s.now));
   log(s, `${p.name} dog ${cause}, ${a} år gammal.`, 'death', [p.id]);
   count(s, 'doda'); count(s, 'dog ' + cause); kronika(s, `${p.name} dog ${cause}, ${a} år gammal.`);
-  if (cause === 'av svält') sedEvent(s, 'forsiktighet', LIV.sedSvalt, `${p.name} svalt ihjäl. Byn har blivit mer försiktig.`);
-  else if (cause === 'av kyla') sedEvent(s, 'forsiktighet', LIV.sedKyla, `${p.name} frös ihjäl. Byn har blivit mer försiktig.`);
-  else if (cause === 'under en jakt') sedEvent(s, 'forsiktighet', LIV.sedJakt, `${p.name} dog under en jakt. Byn blev lite försiktigare.`);
+  if (sed) sedEvent(s, sed.k, sed.d, `${p.name} ${sed.text}`);
   if (a < LIV.barnDod) sedEvent(s, 'barn', LIV.sedBarn, `Byn sörjer barnet ${p.name} och värnar mer om sina barn.`);
   if (a >= ALDER.hogAlder) p.fame.push(`Blev ${a} år gammal`);
   for (const q of living(s)) {
@@ -87,7 +104,7 @@ export function birth(s: State, mother: Person) {
   if (father && alive(father)) think(father, `Fick barnet ${ch.name}`, LIV.fodFar, s.now, LIV.fodDygn * DAY);
   const kids = s.people.filter(q => q.mother === mother.id).length;
   if (kids === 6) mother.fame.push('Mor till många barn');
-  if (rnd(s, 'halsa', mother) < LIV.barnsang) die(s, mother, 'i barnsäng');
+  if (rnd(s, 'halsa', mother) < LIV.barnsang) die(s, mother, 'barnsang');
 }
 
 // ---------- befolkningen regleras ----------
