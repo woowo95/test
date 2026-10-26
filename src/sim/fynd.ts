@@ -10,7 +10,44 @@ import { kunnighet } from './ekonomi';
 import { addTo, amountOf, foodOf } from './lager';
 import { DAY, H, HOUR, HOUR_S, Person, State, T, W, inMap } from './typer';
 import { FOREST, isSoil } from './vag';
-import { ACTS, SNABBARE } from './handlingar';
+import { ACTS, RedskapDef, SNABBARE } from './handlingar';
+import { balans } from './balans';
+
+// ---------- balanstal (regel 8) ----------
+// Fångst och insamling: var viltet håller sig borta, hur fort platserna tömmas och växer tillbaka, fiske, flinta och svamp.
+// Det som varje lager (bär, kaniner, abborre, svamp, flinta, rötter) ger står i raderna i FYND, platsernas storlek i PLATS
+// (plats.ts) och fiskeredskapens träffsäkerhet i raderna för fiske i handlingar.ts. Avstånd är i rutor, om inget annat sägs
+export const FANGST = balans('fangst', {
+  // var det finns
+  stenNara: 2, // så nära en sten finns flintan oftast
+  jaktFaktor: 2.1, // kaninerna håller sig långt från byn (skyggIn), så en jakttur är lång; i gengäld ger platserna så mycket mer än förr
+  lagerR: 3, // i byns läger växer inget: allt är redan hämtat och marken nött. Lägret växer när byn får fler lagerplatser
+  skyggIn: 8, // vilt skyr människor: inget vilt närmare lägret än så här ...
+  skyggR: 8, // ... och helt fram först så här mycket längre bort
+  nottR: 2, nottMax: 0.8, nottDiv: 10, // nött mark skrämmer också: rutorna inom NottR runt en ruta räknas, och viltet minskar med antalet delat med Div, högst Max
+  syn: 8, // byns närområde, som man i stort sett känner till från elden
+  aterTom: 0.004, // ett uttag under detta räknas som orört när platsen växer tillbaka
+  // fiske
+  handFiske: 0.55, // fiske med händerna ger ungefär så mycket som samling på en lagom rik plats gånger detta
+  forsokSek: 300, // ett fiskeförsök tar så här många sekunder (delat med SNABBARE)
+  fiskRikMax: 1.3, // en plats räknas inte som rikare än så här vid napp
+  hallSkill: 40, hallUthall: 100, // fisken sitter kvar: redskapets hall plus färdigheten delad med Skill plus uthålligheten delad med Uthall
+  // flinta
+  flintaMinsta: 1, flintaBehov: 2, // byn vill ha minst en flinta, och så här många flintor och yxor tillsammans
+  flintaAvstand: 30, // en flintplats ligger närmare lägret än så här ...
+  flintaRik: 1, // ... och har mer än så här stor chans att hitta flinta (flintFactor)
+  flintaUrval: 8, // den väljs bland så här många av de närmaste
+  // svamp
+  svampTakt: 0.5, // chans att hitta svamp per arbetstimme gånger kunnigheten och hur rik platsen är
+  svampUttag: 0.5, // varje svamp som hittas tar så här mycket ur platsen
+  kandSkill: 40, kandInt: 100, kandMax: 0.98, // chansen att känna igen den giftiga: kunskapen plus färdigheten delad med Skill plus intelligensen delad med Int, högst Max
+  giftAndel: 4, giftMax: 0.6, // att äta giftig svamp ur förrådet: chansen är andelen gift av maten gånger Andel, högst Max
+  giftSjukMin: 6, giftSjukSpann: 10, // förgiftningen varar Min till Min + Spann timmar
+  giftHalsa: 0.25, // ... och tar så här mycket hälsa
+  giftTanke: -0.3, giftTankeDygn: 0.5, // tanken efter förgiftningen och hur länge den varar (dygn)
+  giftLar: 0.4, giftKand: 0.75, // hur mycket den förgiftade lär sig om svamp, och kunskapen över vilken hen kan skilja kantarellen från spindlingen
+  giftSed: 0.05, // den första förgiftningen gör byn försiktigare
+});
 
 // ---------- fynd: mat och saker finns på olika platser ----------
 // Varje ruta har en egen rikedom av bär, rötter, vilt och fisk. Den som samlar, jagar eller fiskar tar ur platsen,
@@ -63,9 +100,6 @@ const land = (s: State, i: number) => isSoil(groundOf(s).tiles[i]);
 const BAR_PASSAR: Record<Markslag, number> = { skog: 0.8, ung: 1, hog: 1, kort: 0, bar: 0 };
 const JAKT_PASSAR: Record<Markslag, number> = { skog: 0.85, ung: 0.9, hog: 1, kort: 1, bar: 0.3 };
 const ROTTER_PASSAR: Record<Markslag, number> = { skog: 0.5, ung: 0.5, hog: 0.5, kort: 0.4, bar: 0.1 };
-export const STEN_NARA = 2; // så nära en sten (rutor) finns flintan oftast
-// kaninerna håller sig långt från byn (SKYGG_IN), så en jakttur är lång; i gengäld ger platserna mer än förr
-export const JAKT_F = 2.1;
 // Ordningen bland lagren med uttag är ordningen i sparfilen: nya lager med uttag läggs sist.
 const DEF = {
   // bärbuskar i små täta snår i skog och högt gräs; de flyttar sig mycket långsamt. Inga bär i istiden
@@ -80,11 +114,11 @@ const DEF = {
   },
   // kaniner trivs bäst i gräs, högt eller lågt, men finns också i skogen. Glest över stora områden som vandrar
   jakt: {
-    namn: 'Kaniner', grupp: 'djur', ikon: 'kanin', farg: 0xc89a60, topp: 1.4 * JAKT_F,
+    namn: 'Kaniner', grupp: 'djur', ikon: 'kanin', farg: 0xc89a60, topp: 1.4 * FANGST.jaktFaktor,
     monster: { salt: 73, skala: 7, period: 7, troskel: 0.25 },
     bas(s, i, m) {
       if (!land(s, i)) return 0;
-      return JAKT_PASSAR[markslag(groundOf(s), i)] * (0.15 + 1.3 * m) * JAKT_F * skyggOf(s)[i];
+      return JAKT_PASSAR[markslag(groundOf(s), i)] * (0.15 + 1.3 * m) * FANGST.jaktFaktor * skyggOf(s)[i];
     },
     uttag: { full: 6, reach: 3, regrow: [1 / 800, 1 / 480, 1 / 480, 1 / 600] },
   },
@@ -112,7 +146,7 @@ const DEF = {
   // flinta vid stenarna, ibland i sanden vid stranden och sällan annars. Den växer sakta tillbaka och flyttar sig aldrig
   flinta: {
     namn: 'Flinta', grupp: 'sten', ikon: 'flinta', farg: 0xe8eef2, topp: 4,
-    bas: (s, i) => getMap(s.seed).tiles[i] === T.Vatten ? 0 : stoneDist(s.seed)[i] <= STEN_NARA ? 4 : getMap(s.seed).tiles[i] === T.Sand ? 1.5 : 0.4,
+    bas: (s, i) => getMap(s.seed).tiles[i] === T.Vatten ? 0 : stoneDist(s.seed)[i] <= FANGST.stenNara ? 4 : getMap(s.seed).tiles[i] === T.Sand ? 1.5 : 0.4,
     uttag: { full: 2, reach: 1, regrow: [1 / 500, 1 / 300, 1 / 300, 1 / 300] },
   },
   // rötter finns mycket glest men nästan överallt på jorden. De ger minst, men finns kvar i istiden när bär och svamp är borta
@@ -164,14 +198,11 @@ function monsterOf(s: State, k: FyndId) {
   }
   return e;
 }
-// i byns läger växer inget: allt är redan hämtat och marken nött. Lägret växer när byn får fler lagerplatser
-export const LAGER_R = 3;
+// i byns läger växer inget (FANGST.lagerR)
 const iLagret = (s: State, i: number) => iLagretI(campGrid(s), getMap(s.seed).tiles, i);
-const iLagretI = (lager: Float64Array, tiles: Uint8Array, i: number) => lager[i] < LAGER_R && tiles[i] !== T.Vatten;
+const iLagretI = (lager: Float64Array, tiles: Uint8Array, i: number) => lager[i] < FANGST.lagerR && tiles[i] !== T.Vatten;
 // vilt skyr människor: ett stort område runt lägret, och marken där många går (stigar och nött mark).
 // Räknas om en gång per dygn.
-export const SKYGG_IN = 8; // rutor från lägret där inget vilt finns
-export const SKYGG_R = 8; // rutor till innan vilt vågar sig fram helt (helt fram 16 rutor från lägret)
 const skygghet = new WeakMap<State, { dag: number; v: Float32Array }>();
 export function skyggOf(s: State) {
   const dag = Math.floor(s.now / DAY);
@@ -180,10 +211,10 @@ export function skyggOf(s: State) {
   const g = groundOf(s), v = new Float32Array(W * H), nott = new Uint8Array(W * H);
   for (let i = 0; i < W * H; i++) nott[i] = isSoil(g.tiles[i]) && markslag(g, i) === 'bar' ? 1 : 0;
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-    const d = clamp((campDist(s, x, y) - SKYGG_IN) / SKYGG_R, 0, 1);
+    const d = clamp((campDist(s, x, y) - FANGST.skyggIn) / FANGST.skyggR, 0, 1);
     let n = 0;
-    for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) if (inMap(x + dx, y + dy)) n += nott[(y + dy) * W + x + dx];
-    v[y * W + x] = d * d * (3 - 2 * d) * (1 - Math.min(0.8, n / 10));
+    for (let dy = -FANGST.nottR; dy <= FANGST.nottR; dy++) for (let dx = -FANGST.nottR; dx <= FANGST.nottR; dx++) if (inMap(x + dx, y + dy)) n += nott[(y + dy) * W + x + dx];
+    v[y * W + x] = d * d * (3 - 2 * d) * (1 - Math.min(FANGST.nottMax, n / FANGST.nottDiv));
   }
   skygghet.set(s, c = { dag, v });
   return v;
@@ -345,11 +376,9 @@ export function growFynd(s: State, hours: number, season: number) {
   const d = takenOf(s);
   for (const k of UTTAG_IDS) {
     const f = Math.exp(-FYND[k].uttag!.regrow[season] * hours), a = d[k]!;
-    if (f < 1) for (let i = 0; i < a.length; i++) if (a[i] > 0) a[i] = a[i] * f < 0.004 ? 0 : a[i] * f;
+    if (f < 1) for (let i = 0; i < a.length; i++) if (a[i] > 0) a[i] = a[i] * f < FANGST.aterTom ? 0 : a[i] * f;
   }
 }
-// byns närområde, som man i stort sett känner till från elden
-export const SIGHT = 8;
 // hur mycket de bästa platserna inom räckhåll ger just nu (snitt av de tio bästa), räknas om en gång i timmen
 const prospects = new WeakMap<State, { hr: number; v: Partial<Record<string, number>> }>();
 export function prospect(s: State, k: Kind) {
@@ -360,7 +389,7 @@ export function prospect(s: State, k: Kind) {
     const f = campCenter(s), top: number[] = [];
     for (let y = Math.max(0, f.y - PLATS.dagY); y < Math.min(H, f.y + PLATS.dagY + 1); y++) for (let x = Math.max(0, f.x - PLATS.dagX); x < Math.min(W, f.x + PLATS.dagX + 1); x++) {
       const d = campDist(s, x, y);
-      if (d > SIGHT) continue;
+      if (d > FANGST.syn) continue;
       const v = richness(s, k, x + 0.5, y + 0.5) - d * PLATS.avstandPris;
       if (v > 0) top.push(v);
     }
@@ -370,26 +399,24 @@ export function prospect(s: State, k: Kind) {
   }
   return c.v[k]!;
 }
-// fiske med händerna ger ungefär så mycket som samling på en lagom rik plats gånger detta
-export const HAND_FISH = 0.55;
 
 // ---------- flinta ----------
 // flinta hittas oftast vid stenarna, ibland i sanden vid stranden och sällan annars
 // hur lätt det är att hitta flinta på platsen just nu: platser där man hittat flinta har mindre kvar ett tag
 export const flintFactor = (s: State, x: number, y: number) => richness(s, 'flinta', x, y);
 // byn behöver flinta att tända eld med och till en yxa
-export const wantsFlint = (s: State) => amountOf(s, 'flinta') < 1 || amountOf(s, 'flinta') + amountOf(s, 'yxa') < 2;
+export const wantsFlint = (s: State) => amountOf(s, 'flinta') < FANGST.flintaMinsta || amountOf(s, 'flinta') + amountOf(s, 'yxa') < FANGST.flintaBehov;
 // en plats att samla på nära stenarna, där flinta är vanlig. I lägret och där flintan redan plockats finns ingen
 export function flintSpot(s: State, area?: (x: number, y: number) => boolean): { x: number; y: number } | undefined {
   const m = getMap(s.seed), sd = stoneDist(s.seed), c: { x: number; y: number; d: number }[] = [];
   for (let i = 0; i < W * H; i++) {
-    if (sd[i] < 1 || sd[i] > STEN_NARA || m.tiles[i] === T.Vatten || m.tiles[i] === T.Sten) continue;
+    if (sd[i] < 1 || sd[i] > FANGST.stenNara || m.tiles[i] === T.Vatten || m.tiles[i] === T.Sten) continue;
     const x = i % W, y = Math.floor(i / W), d = campDist(s, x, y);
-    if (d < 30 && (!area || area(x, y)) && flintFactor(s, x, y) > 1) c.push({ x, y, d });
+    if (d < FANGST.flintaAvstand && (!area || area(x, y)) && flintFactor(s, x, y) > FANGST.flintaRik) c.push({ x, y, d });
   }
   if (!c.length) return undefined;
   c.sort((a, b) => a.d - b.d);
-  const p = pickNarmaste(s, c, 8, 'val');
+  const p = pickNarmaste(s, c, FANGST.flintaUrval, 'val');
   return { x: p.x + 0.5, y: p.y + 0.5 };
 }
 
@@ -402,18 +429,18 @@ const GIFT = 'giftsvamp'; // giftig svamp som av misstag hamnat i förrådet (sy
 export function pickMushrooms(s: State, p: Person, x: number, y: number, dtSec: number, got: Record<string, number>) {
   const kv = richness(s, 'kantarell', x, y), gv = richness(s, 'spindling', x, y);
   if (kv + gv <= 0) return 0;
-  const rate = 0.5 * SNABBARE * kunnighet(p.skill.samla) * (kv + gv);
+  const rate = FANGST.svampTakt * SNABBARE * kunnighet(p.skill.samla) * (kv + gv);
   if (!chance(s, rate / HOUR_S, dtSec, 'arbete', p)) return 0;
   if (rnd(s, 'arbete', p) < kv / (kv + gv)) {
-    takeFrom(s, 'kantarell', x, y, 0.5);
+    takeFrom(s, 'kantarell', x, y, FANGST.svampUttag);
     count(s, 'svamp');
     if (!s.stat!.svamp1) { s.stat!.svamp1 = 1; log(s, `${p.name} hittade kantareller i skogen.`, 'world', [p.id]); }
     return 1;
   }
   // den giftiga: känner man igen den låter man den stå
-  const sure = clamp(kn(p, 'svamp') + p.skill.samla / 40 + stat(p, 'intelligens', s.now) / 100, 0, 0.98);
+  const sure = clamp(kn(p, 'svamp') + p.skill.samla / FANGST.kandSkill + stat(p, 'intelligens', s.now) / FANGST.kandInt, 0, FANGST.kandMax);
   if (rnd(s, 'arbete', p) < sure) { count(s, 'giftsvampKand'); useK(p, 'svamp', s.now); return 0; }
-  takeFrom(s, 'spindling', x, y, 0.5);
+  takeFrom(s, 'spindling', x, y, FANGST.svampUttag);
   count(s, GIFT);
   got[GIFT] = (got[GIFT] ?? 0) + 1;
   return 1; // den ser ut som mat och läggs i förrådet
@@ -421,20 +448,20 @@ export function pickMushrooms(s: State, p: Person, x: number, y: number, dtSec: 
 // när någon äter: finns giftig svamp i förrådet kan hen få i sig den
 export function eatPoison(s: State, p: Person) {
   const gift = amountOf(s, GIFT);
-  if (gift < 1 || rnd(s, 'halsa', p) >= Math.min(0.6, gift / Math.max(1, foodOf(s)) * 4)) return;
+  if (gift < 1 || rnd(s, 'halsa', p) >= Math.min(FANGST.giftMax, gift / Math.max(1, foodOf(s)) * FANGST.giftAndel)) return;
   addTo(s, GIFT, -1);
   count(s, 'forgiftad');
-  p.sickUntil = Math.max(p.sickUntil ?? 0, s.now + (6 + rnd(s, 'halsa', p) * 10) * HOUR);
+  p.sickUntil = Math.max(p.sickUntil ?? 0, s.now + (FANGST.giftSjukMin + rnd(s, 'halsa', p) * FANGST.giftSjukSpann) * HOUR);
   p.poisonUntil = p.sickUntil; p.sickWhy = 'Förgiftad av svamp';
-  p.health = clamp(p.health - 0.25, 0, 1);
-  think(p, 'Blev förgiftad av en svamp', -0.3, s.now, DAY / 2);
-  const before = kn(p, 'svamp'), v = learnK(p, 'svamp', 0.4, s.now);
+  p.health = clamp(p.health - FANGST.giftHalsa, 0, 1);
+  think(p, 'Blev förgiftad av en svamp', FANGST.giftTanke, s.now, FANGST.giftTankeDygn * DAY);
+  const before = kn(p, 'svamp'), v = learnK(p, 'svamp', FANGST.giftLar, s.now);
   log(s, `${p.name} blev förgiftad av svamp ur förrådet.`, 'world', [p.id]);
   if ((s.stat!.forgiftad ?? 0) <= 1) {
     log(s, 'Byn misstänker att en av svamparna är giftig.', 'world');
-    sedEvent(s, 'forsiktighet', 0.05, 'Någon blev förgiftad av svamp. Byn har blivit försiktigare med vad den äter.');
+    sedEvent(s, 'forsiktighet', FANGST.giftSed, 'Någon blev förgiftad av svamp. Byn har blivit försiktigare med vad den äter.');
   }
-  if (before < 0.75 && v >= 0.75) log(s, `${p.name} har lärt sig skilja kantarellen från den giftiga orangea spindlingen.`, 'skill', [p.id]);
+  if (before < FANGST.giftKand && v >= FANGST.giftKand) log(s, `${p.name} har lärt sig skilja kantarellen från den giftiga orangea spindlingen.`, 'skill', [p.id]);
   // det hen nu vet: den giftiga svampen sorteras bort ur förrådet
   addTo(s, GIFT, -amountOf(s, GIFT) * v);
 }
@@ -442,18 +469,19 @@ export function eatPoison(s: State, p: Person) {
 // ---------- fiske med händerna ----------
 // Man står i strandkanten och försöker gripa fisken. Ett försök tar fem minuter, sedan steg 1.5.13 en tredjedel kortare (SNABBARE). Ibland nappar det, alltså att man
 // får tag i en fisk, men oftast slinker den ur händerna. Skickliga fiskare håller fast oftare.
-export const TRY_SEC = 300 / SNABBARE;
+export const TRY_SEC = FANGST.forsokSek / SNABBARE;
 // Med fiskespjut träffar man fisken oftare och den sitter kvar på spjutet.
 // med metspö nappar fisken oftare och sitter kvar bättre på kroken (masken grävs fram i steg.ts)
 type Fiskedon = 'hand' | 'spjut' | 'metspo';
-const NAPP: Record<Fiskedon, number> = { hand: 0.06, spjut: 0.13, metspo: 0.17 }, HALL: Record<Fiskedon, number> = { hand: 0.15, spjut: 0.5, metspo: 0.65 };
-export function handFish(s: State, p: Person, x: number, y: number, ageF: number, gear: Fiskedon = 'hand') {
+// napp och hall står i raderna för fiske i handlingar.ts: redskapets egna, annars handens
+export function handFish(s: State, p: Person, x: number, y: number, ageF: number, rd?: RedskapDef) {
+  const gear: Fiskedon = rd?.don ?? 'hand', hand = ACTS.fiske.hand!, napp = rd?.napp ?? hand.napp, hall = rd?.hall ?? hand.hall;
   const st = (p.fiske ??= { f: 0, n: 0, k: 0 }), spear = gear === 'spjut';
   st.f++; count(s, 'fiskeForsok'); if (spear) count(s, 'spjutForsok'); if (gear === 'metspo') count(s, 'metForsok');
   const season = ACTS.fiske.sasong![ageIndex(s)];
-  if (rnd(s, 'arbete', p) >= NAPP[gear] * season * Math.min(1.3, richness(s, 'fiske', x, y)) * ageF) return 0;
+  if (rnd(s, 'arbete', p) >= napp * season * Math.min(FANGST.fiskRikMax, richness(s, 'fiske', x, y)) * ageF) return 0;
   st.n++; count(s, 'fiskeNapp');
-  const hold = HALL[gear] + p.skill.fiske / 40 + stat(p, 'uthallighet', s.now) / 100;
+  const hold = hall + p.skill.fiske / FANGST.hallSkill + stat(p, 'uthallighet', s.now) / FANGST.hallUthall;
   if (rnd(s, 'arbete', p) >= hold) return 0;
   st.k++; const forsta = forstaGang(s, 'fisk'); if (spear) count(s, 'spjutFisk'); if (gear === 'metspo') count(s, 'metFisk');
   takeFrom(s, 'fiske', x, y, 1);

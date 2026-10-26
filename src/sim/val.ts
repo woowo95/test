@@ -4,7 +4,7 @@ import { RESERV, foodDays } from './ekonomi';
 import { ACTS, WORK, usesTool } from './handlingar';
 import { canLight, emberOn, fireWant, needStones, needTinder, woodDays } from './eld';
 import { ALDER, KROPP, ageOf, isSick, living, stat } from './folk';
-import { HAND_FISH, Kind, flintSpot, shoreOf, wantsFlint } from './fynd';
+import { FANGST, Kind, flintSpot, shoreOf, wantsFlint } from './fynd';
 import { coldOf, temperature } from './vader';
 import { DJUR, KANIN, SLAKT_TIMME, TILLVERKA, minOf, abborrar, canClean, canSlaughter, freeOfKinds, toolGroups, vilt, wantsKnife, wantsRope } from './redskap';
 import { areaOf, flintArea, pickSpot, prospectFor } from './minne';
@@ -310,7 +310,7 @@ function bestWork(s: State, p: Person, fd: number, wd: number, ai: number, tot: 
     const need = w === 'ved' ? wWood : wFood;
     const tinder = w === 'samla' && needTinder(s);
     // nytta för byn; maten väger också in hur mycket platserna ger just nu och att fiske med händerna ger lite
-    const yieldF = w === 'ved' || tinder ? 1 : clamp(prospectFor(s, p, w as Kind), VAL.prospektMin, VAL.prospektMax) * (w === 'fiske' ? HAND_FISH : 1) * toolGain(s, p, w);
+    const yieldF = w === 'ved' || tinder ? 1 : clamp(prospectFor(s, p, w as Kind), VAL.prospektMin, VAL.prospektMax) * (w === 'fiske' ? FANGST.handFiske : 1) * toolGain(s, p, w);
     const season = ACTS[w].sasong![ai];
     const col = need * (w === 'ved' ? 1 : tinder ? Math.max(VAL.tandMin, season) * VAL.tandVikt : season * yieldF);
     const sc = poang(s, p, col, lust(s, p, w as Skill, ACTS[w].egenskap!, [w], tot)); // egen lust och vana

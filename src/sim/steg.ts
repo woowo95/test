@@ -357,7 +357,7 @@ function workStep(s: State, p: Person, tk: Task, dtSec: number, a: number, learn
       tk.prog -= TRY_SEC;
       if (rd?.bete && (tk.mask ?? 0) < 1) { tk.mask = (tk.mask ?? 0) + MASK_PER_GRAV; continue; } // gräver fram mask först
       const napp = p.fiske?.n ?? 0;
-      tk.carry += handFish(s, p, tk.tx, tk.ty, ageF, rd?.don ?? 'hand');
+      tk.carry += handFish(s, p, tk.tx, tk.ty, ageF, rd);
       if (rd?.bete && (p.fiske?.n ?? 0) > napp) tk.mask!--; // varje napp tar en mask
       if (rd) wearUsed(s, p, 1);
     }

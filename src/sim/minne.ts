@@ -1,7 +1,7 @@
 import { PLATS, campCenter, campDist, campKey } from './plats';
 import { byId, count, isParent, living, log, stat } from './folk';
 import { teach } from './teknik';
-import { Kind, SIGHT, STEN_NARA, prospect, regrowOf, richness, shoreOf, standAt, stoneDist, synsOf, toppOf, vaxerAt } from './fynd';
+import { FANGST, Kind, prospect, regrowOf, richness, shoreOf, standAt, stoneDist, synsOf, toppOf, vaxerAt } from './fynd';
 import { getMap } from './karta';
 import { groundOf, tileOf } from './mark';
 import { kn, learnK } from './kunskap';
@@ -51,7 +51,7 @@ function iTopp(v: number) {
 }
 function areaCalc(s: State, k: LKind, a: number, mode: Mode) {
   const x0 = (a % aw()) * AREA, y0 = Math.floor(a / aw()) * AREA, x1 = Math.min(W, x0 + AREA), y1 = Math.min(H, y0 + AREA);
-  if (k === 'flinta') { const sd = stoneDist(s.seed); let v = 0; for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) if (sd[y * W + x] <= STEN_NARA) v = 1; return v; }
+  if (k === 'flinta') { const sd = stoneDist(s.seed); let v = 0; for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) if (sd[y * W + x] <= FANGST.stenNara) v = 1; return v; }
   if (k === 'fara') return 0;
   const fn = mode === 'nu' ? undefined : mode === 'vaxer' ? (i: number) => vaxerAt(s, k, i) : (i: number) => synsOf(s, k, i);
   nTopp = 0;
@@ -145,7 +145,7 @@ function fjarran(s: State) {
     const f = campCenter(s), a: number[] = [], d: number[] = [];
     for (let i = 0; i < aw() * ah(); i++) {
       const m = areaCenter(i), di = campDist(s, m.x, m.y);
-      if (di <= SIGHT || Math.abs(m.x - f.x) > PLATS.dagX || Math.abs(m.y - f.y) > PLATS.dagY) continue;
+      if (di <= FANGST.syn || Math.abs(m.x - f.x) > PLATS.dagX || Math.abs(m.y - f.y) > PLATS.dagY) continue;
       a.push(i); d.push(di);
     }
     c = { key, a, d };
