@@ -69,7 +69,7 @@ Simuleringen importerar aldrig från `ui/`. Gränssnittet importerar bara från 
 ## Regler som håller ihop allt
 
 1. **Slumpen kommer bara från `rnd(s, följd, person?)`** (och `chance`, `gauss`, `pick`) i `slump.ts`. Följderna står i registret `STROMMAR`: en per system (val, arbete, hälsa, folk, flytt, samtal, minne, kunskap, dela, eld), och med en person en egen följd per person och system. Var varje följd är sparas i byn (`s.rngs`) och hos personen (`p.rngs`), så att samma by alltid utvecklas likadant. Ett slumptal mer eller mindre i ett system ändrar bara den följden, inte resten av byn. Det som bara syns i bilden (hur man rör sig på platsen) tar sin slump i gränssnittet och rör aldrig byns följder. Använd aldrig `Math.random()` i `sim/`. Ett nytt system får en ny rad i `STROMMAR`.
-2. **Spelet och ikappräkningen ger exakt samma by.** Simuleringen går alltid i slag om fem minuter: `step(s, BEAT)`. Inom ett slag räknar `taskStep` i steg.ts fram var och ens tid: gångtiden kommer ur vägen (`findPath`, sparad per fyra timmar i `pathFor`), arbetet sker i bitar om högst en minut, och ett val görs när det förra är klart eller vid nästa slag. Spelet (main.ts) räknar slag tills byns klocka hunnit förbi visningstiden `ui.nu`, och ritar folk efter den inspelade vägen (`spar` i steg.ts, `posOf` i ui/manniskor.ts). Att röra sig på platsen (vandra) finns bara i bilden. Simuleringen läser aldrig `spar` och tar aldrig emot något från gränssnittet. Kontrollera med `npm run likhet`, som kör samma byar på båda sätten och säger om de är exakt lika.
+2. **Spelet och ikappräkningen ger exakt samma by.** Simuleringen går alltid i slag om fem minuter: `step(s, BEAT)`. Inom ett slag räknar `taskStep` i steg.ts fram var och ens tid: gångtiden kommer ur vägen (`findPath`, sparad per fyra timmar i `pathFor`), arbetet sker i bitar om högst en minut, och ett val görs när det förra är klart eller vid nästa slag. Spelet (main.ts) räknar slag tills byns klocka hunnit förbi visningstiden `ui.nu`, och ritar folk efter den inspelade vägen (`spar` i steg.ts, `posOf` i ui/manniskor.ts). Att röra sig på platsen (vandra) finns bara i bilden. Simuleringen läser aldrig `spar` och tar aldrig emot något från gränssnittet. Kontrollera med `npm run likhet`, som kör samma byar på båda sätten och säger om de är exakt lika. Testbyarna (`korBy` i test/kor.ts) och de flesta scenarier går också i slag om `BEAT`. Några scenarier (djur, egendom, lager, slitage, bygg) kör kortare eller längre steg (0,5, 2 eller 120 s) för att se ett fasbyte mitt i ett slag. Så kör aldrig spelet, så de prövar inte att spelet och ikappräkningen är lika.
 3. **Byn sparas som JSON, och varje sak sparas på ett ställe.** Nya fält i `State` eller `Person` är valfria (`?`), eller så får de ett värde i `migrate()` i `varld.ts` (en ny rad sist i `UPPGRADERINGAR`), så att äldre sparfiler fungerar. Det som kan räknas fram (förrådets summor, vems något är) sparas inte en gång till.
 4. **Cacher hör till byn.** Testläget har två byar samtidigt, så det som sparas mellan steg ligger i en `WeakMap<State, …>` med en nyckel som säger när det måste räknas om (`campKey(s)`, `s.byggV`, tiden). Det får aldrig ligga i en enda variabel för hela modulen.
 5. **Register i stället för listor.** Vad handlingar, saker, tekniker och flikar är finns på ett enda ställe. Resten av koden frågar registret (`ACTS[a].vila`, `SAKER[k].stack`) i stället för att räkna upp namn.
@@ -90,7 +90,7 @@ Simuleringen importerar aldrig från `ui/`. Gränssnittet importerar bara från 
 
 **En ny teknik.** Lägg en rad i `TEKNIK` i `teknik.ts`: arbetet där man kommer på den (`omr`), krav, material och tid. Den syns i teknikträdet direkt: sträck från det den kräver (`krav`), och i inforutan receptet (det som går åt: `skaffa.av` i `saker.ts`, eller materialet för en ruta i `byggnad.ts`) och hur den upptäcks. Vad tekniken gör (till exempel att en handling bara får väljas av den som `knows(p, 'id')`) skrivs där det används, oftast i `val.ts`.
 
-**Ett nytt system.** Skapa en ny fil i `sim/`, exportera den i `src/sim.ts` och anropa den från `step()`. Det som ändras långsamt anropas i timblocket, och det som gäller varje person anropas i personslingan. Tillståndet läggs i `State` eller `Person` i `typer.ts` (regel 3). Lägg till ett scenario i `src/test/scenario.ts` (med `lang: true` om det tar 13 s eller mer, så att `npm run snabbkoll` hoppar över det).
+**Ett nytt system.** Skapa en ny fil i `sim/`, exportera den i `src/sim.ts` och anropa den från `step()`. Det som ändras långsamt anropas i timblocket, och det som gäller varje person anropas i personslingan. Tillståndet läggs i `State` eller `Person` i `typer.ts` (regel 3). Lägg till ett scenario i `SCENARIER` i `src/test/scenario.ts` (med `lang: true` om det tar 13 s eller mer, processorns tid, så att `npm run snabbkoll` hoppar över det; annars skrivs en VARNING). Kan något i systemet bli omöjligt (ett negativt förråd, NaN, någon på fel ställe), lägg en vakt i `korBy` i `src/test/kor.ts`: en rad `larm('namn', () => text)` i stegslingan. Se "Testerna, fil för fil".
 
 **Ett nytt lager i värmekartan** (en art eller en tillgång på marken). Lägg en rad i `DEF` i `fynd.ts`: namn, grupp, ikon, färg, `topp` (värdet som räknas som mycket), `bas(s, i, m)` för var den kan finnas (`m` är mönstret, 0–1), `monster` om den växer fläckvis och kryper (`skala` = fläckarnas storlek i rutor, `period` = dygn mellan två lägen, 0 = står still, `troskel` = hur stor del som är tom, `gles` = glest inom fläcken), `arstid` om den växlar med årstiden, `uttag` om den kan tömmas och `vatten` (räckvidd) om den lever i vattnet och nås från stranden. Lägg rader med `uttag` sist, eftersom ordningen styr hur de sparas. Inget växer i lägret (`iLagret`, `FANGST.lagerR` rutor från elden och lagerplatserna), så zonen växer med byn. Tre värden per ruta: `vaxerAt` (vad som växer där nu, årstiden inräknad), `fyndAt` (vad som finns kvar efter uttag) och `synsOf` (vad man kan gissa från marken, utan mönstret). `standAt`/`richness` räknar värdet där man står (för vattenlager: vattnet runt omkring). Lärdomar sparar `g` (vad som växer) och `hoped` uppskattar återväxten. Filtret, teckenförklaringen och rutan under musen följer med. Den som skördar arten använder `richness`, `fyndAt` och `takeFrom`. Alla dessa tar ett `Lager`: ett lager eller en aktivitet (`Kind`); en aktivitet summerar sina lager via `LAGREN`, och `takeFrom` delar uttaget efter hur rikt varje lager är. Ska en ny aktivitet hämta ur flera lager, lägg den i `LAGREN`.
 
@@ -98,19 +98,38 @@ Simuleringen importerar aldrig från `ui/`. Gränssnittet importerar bara från 
 
 **Något nytt på kartan.** Det som står på marken ritas i `ui/foremal.ts`, människorna i `ui/manniskor.ts` och vad musen visar i `ui/interaktion.ts`.
 
+## Testerna, fil för fil
+
+Allt i `src/test/` körs med tsx i Node och ingår inte i spelet. Filer som heter `tmp-*` är tillfälliga verktyg som inte committas.
+
+| Fil | Vad den gör |
+|---|---|
+| `kor.ts` | `korBy(seed, dygn)` kör en by utan grafik och ger nyckeltalen (`Nyckeltal`). Här finns **vakterna**: varje steg larmar `larm(…)` om något är omöjligt (NaN eller behov utanför 0–1, negativa förråd, stackar och stammar, redskap med fel skick eller på två ställen, folk utanför kartan, i vattnet eller i en vägg, okända jobb). Här finns också det som testerna delar: `START` (testbyarna grundas 08:00 svensk tid, 06:00 i UTC där testerna körs), `STEG_TIM` och `STEG_DYGN` (slag per timme och dygn), `DOK_KB` (vad ett dokument i molnet rymmer) och `markStat` (marken räknad med `markslag` som i simuleringen) |
+| `pool.ts` | Kör testskript i egna processer, flera samtidigt (`korSkript`, `korJson`, `pool`; en process som inte är klar efter 20 min stoppas). Det som flera skript delar: typkontrollen, scenariernas sammanfattning, testbyarnas frön (`seedAv`) och `kanonisk` (JSON med sorterade nycklar). Importerar inget från simuleringen |
+| `en.ts` | En by med `korBy`: nyckeltal och vakter som JSON (för test, balans, jamfor och snabbkoll) |
+| `test.ts` | `npm test` och `npm run facit`: tre byar i 90 dygn mot `test/facit.json`. Facit sparas inte om vakterna larmar |
+| `samma.ts` | `npm run samma`: hela tillståndet för tre byar som hash mot `test/samma.json`. En krasch sparas inte |
+| `scenario.ts` | Alla scenarier (`SCENARIER`, ett per system) och körningen av dem. Hjälparna överst (`kor`, `klockan`, `tandEld`, `tomtForrad`, `treVuxna`, `byggare`, `bastaJaktruta`) gör det som många scenarier behöver. Utan namn körs alla samtidigt, vart och ett i en egen process. Ett scenario med `env` (kalender och bostad: svensk tid) får den miljön också när det körs ensamt |
+| `koll.ts`, `snabbkoll.ts` | Det stora testet och den snabba kollen: kör de andra skripten samtidigt och skriver bara det som behövs |
+| `likhet.ts` | `npm run likhet`: varje by körs i en egen process i levande läge och i snabbläget och jämförs varje timme. `likhet.sh` startar bara likhet.ts |
+| `jamfor.ts` | `npm run jamfor`: by för by mot en äldre version (i en egen git-worktree) |
+| `balans.ts` | `npm run balans`: många byar, median, sämsta och bästa |
+| `natur.ts`, `natur-en.ts` | `npm run natur` (steg 1.7.2); natur-en.ts kör en by med eller utan redskap |
+| `takt.ts`, `teknik.ts`, `detaljer.ts`, `talen.ts` | Undersökning: vad en arbetstimme ger, när teknikerna kommer, den långa utskriften och balanstalen (se CLAUDE.md) |
+
 ## Tester: vilket när
 
 | Kommando | Tid | När |
 |---|---|---|
 | `npm run snabbkoll -- [scenarier]` | ca 40 s | **Efter varje steg.** Typkontroll, scenarierna utom de långa (`lang`) och de som nämns, vakterna i fyra byar i 12 dygn |
 | `npm run koll` | ca 3 min | **Det stora testet**, efter sista steget i ett system (se CLAUDE.md). Typkontroll, testbyarna mot facit, alla scenarier och samma-kollen, med kort utskrift |
-| `npm run samma` | ca 5 s | Vid ombyggnad som inte ska ändra något i spelet. Säger om byarna utvecklas exakt som förut |
+| `npm run samma` | ca 20 s | Vid ombyggnad som inte ska ändra något i spelet. Säger om byarna utvecklas exakt som förut |
 | `npm run facit` | ca 30 s | När en ändring i spelet är avsiktlig. Sparar nytt facit och ny samma-koll |
 | `npm run scenario -- namn` | några s | Ett enda scenario |
-| `npm run likhet` | ca 5 s | När arbete, gång, samtal eller lärande ändras: är byarna exakt lika i spelet och vid ikappräkning? |
+| `npm run likhet` | ca 1 min | När arbete, gång, samtal eller lärande ändras: är byarna exakt lika i spelet och vid ikappräkning? Fyra byar i 30 dygn |
 | `npm run jamfor -- 35 64 --mot vNN` | ca 3–7 min | I det stora testet: samma byar med koden nu och med versionen före systemet (den senaste commit som säger "(vNN)"), by för by, tills skillnaden är avgjord (se CLAUDE.md) |
 | `npm run natur -- 16 35` | ca 3 min | Avtrycket på naturen: samma byar med och utan redskap (steg 1.7.2) |
-| `npm run talen -- [system]` | ca 2 s | Alla balanstal med namn och värde (regel 8) |
+| `npm run talen -- [system]` | ca 1 s | Alla balanstal med namn och värde (regel 8) |
 | `npm run balans`, `takt`, `teknik`, `detaljer` | | Balansering och undersökning (se CLAUDE.md) |
 
 ## Bygga och publicera

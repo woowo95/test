@@ -1,5 +1,6 @@
 // npm run talen [-- system]: alla balanstal (balans() i src/sim/balans.ts), per system, med värdet som gäller nu.
-// Ett annat värde prövas med BALANS="system.namn=tal" eller `npm run jamfor -- --satt system.namn=tal`.
+// Ett annat värde prövas med miljövariabeln BALANS före ett testkommando, t.ex. BALANS="val.fryser=0.3" npm run balans.
+// jamfor har ännu inget --satt: där gäller BALANS båda versionerna, så den jämför inte med och utan.
 import { balansTal, okandaBalans } from '../sim';
 
 const bara = process.argv[2];
