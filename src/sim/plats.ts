@@ -1,5 +1,16 @@
 import { getMap } from './karta';
 import { H, State, W, inMap } from './typer';
+import { balans } from './balans';
+
+// Balanstalen (regel 8): hur långt folk går från lägret, vad avståndet kostar och när en plats är tömd
+export const PLATS = balans('plats', {
+  dagX: 17, // en halv dags gång från lägret: så många rutor åt sidorna (arbetsplatser, det byn känner till bortom närområdet och det den ser från lägret)
+  dagY: 13, // ... och så många uppåt och nedåt
+  avstandPris: 0.03, // en plats är så mycket mindre värd (i värdet av en rik plats) för varje ruta från lägret
+  toppProspekt: 10, // byns närområde räknas som snittet av så många av de bästa platserna (fynd.ts)
+  toppArea: 5, // ett område räknas som snittet av så många av de bästa rutorna (minne.ts)
+  tomtGrans: 0.08, // en plats som ger mindre än så (rikedom, richness) är tömd: man går därifrån (steg.ts)
+});
 
 // Byns läger är inte bara elden: det är elden och lagerplatserna, och senare fler eldar och byggnader.
 // "Nära byn" mäts till den närmaste av dem, och byns mitt är medelpunkten av dem.

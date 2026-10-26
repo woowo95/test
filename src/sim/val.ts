@@ -1,5 +1,5 @@
 import { take } from './agande';
-import { campCenter, campDist, campKey } from './plats';
+import { PLATS, campCenter, campDist, campKey } from './plats';
 import { RESERV, foodDays } from './ekonomi';
 import { ACTS, WORK, usesTool } from './handlingar';
 import { canLight, emberOn, fireWant, needStones, needTinder, woodDays } from './eld';
@@ -66,7 +66,7 @@ export function spotFor(s: State, act: Act, p: Person): { x: number; y: number }
   const cands: { x: number; y: number; d: number }[] = [], mid = campCenter(s);
   const min = plats === 'ang' || plats === 'avsides' ? 5 : 4, max = plats === 'avsides' ? 9 : Infinity;
   for (let i = 0; i < 260; i++) {
-    const x = Math.floor(mid.x + (rnd(s, 'val', p) - 0.5) * 34), y = Math.floor(mid.y + (rnd(s, 'val', p) - 0.5) * 26);
+    const x = Math.floor(mid.x + (rnd(s, 'val', p) - 0.5) * (2 * PLATS.dagX)), y = Math.floor(mid.y + (rnd(s, 'val', p) - 0.5) * (2 * PLATS.dagY));
     if (!inMap(x, y)) continue;
     const d = campDist(s, x, y);
     if (d < min || d > max) continue;

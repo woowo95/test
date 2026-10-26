@@ -1,4 +1,4 @@
-import { campCenter, campDist, campKey } from './plats';
+import { PLATS, campCenter, campDist, campKey } from './plats';
 import { byId, count, isParent, living, log, stat } from './folk';
 import { teach } from './teknik';
 import { Kind, SIGHT, STEN_NARA, prospect, regrowOf, richness, shoreOf, standAt, stoneDist, synsOf, toppOf, vaxerAt } from './fynd';
@@ -41,7 +41,7 @@ function areaValue(s: State, k: LKind, a: number, mode: Mode = 'nu') {
   return v;
 }
 // de fem största värdena i ett område, störst först (en arbetsbuffert, tom mellan anropen)
-const TOPP = 5, topp = new Float64Array(TOPP);
+const TOPP = PLATS.toppArea, topp = new Float64Array(TOPP);
 let nTopp = 0;
 function iTopp(v: number) {
   let j = nTopp;
@@ -58,7 +58,7 @@ function areaCalc(s: State, k: LKind, a: number, mode: Mode) {
   for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) iTopp(fn ? standAt(s, k, x, y, fn) : richness(s, k, x + 0.5, y + 0.5));
   let sum = 0;
   for (let j = 0; j < nTopp; j++) sum += topp[j];
-  return sum / 5;
+  return sum / TOPP;
 }
 
 // ---------- lärdomar ----------
@@ -131,7 +131,7 @@ function bestKnown(s: State, p: Person, k: Kind) {
   let best = 0;
   for (let j = 0; j < o.a.length; j++) {
     const a = o.a[j];
-    best = Math.max(best, believed(s, findL(p, k, a), areaValue(s, k, a, 'syns'), u) - o.d[j] * 0.03 - fear(s, p, a));
+    best = Math.max(best, believed(s, findL(p, k, a), areaValue(s, k, a, 'syns'), u) - o.d[j] * PLATS.avstandPris - fear(s, p, a));
   }
   return best;
 }
@@ -145,7 +145,7 @@ function fjarran(s: State) {
     const f = campCenter(s), a: number[] = [], d: number[] = [];
     for (let i = 0; i < aw() * ah(); i++) {
       const m = areaCenter(i), di = campDist(s, m.x, m.y);
-      if (di <= SIGHT || Math.abs(m.x - f.x) > 17 || Math.abs(m.y - f.y) > 13) continue;
+      if (di <= SIGHT || Math.abs(m.x - f.x) > PLATS.dagX || Math.abs(m.y - f.y) > PLATS.dagY) continue;
       a.push(i); d.push(di);
     }
     c = { key, a, d };
@@ -159,7 +159,7 @@ export function pickSpot(s: State, p: Person, k: Kind, cands: { x: number; y: nu
   let best: { x: number; y: number; d: number } | undefined, bs = -1e9;
   const sight = sightOf(s, p), u = trustUnknown(s, p), syns = (i: number) => synsOf(s, k, i);
   for (const c of cands) {
-    const sc = perceive(s, p, k, c.x, c.y, sight, u, syns) - c.d * 0.03 + rnd(s, 'val', p) * 0.15;
+    const sc = perceive(s, p, k, c.x, c.y, sight, u, syns) - c.d * PLATS.avstandPris + rnd(s, 'val', p) * 0.15;
     if (sc > bs) { bs = sc; best = c; }
   }
   if (!best || sees(s, p, best.x, best.y, sight)) return best;

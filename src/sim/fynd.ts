@@ -1,4 +1,4 @@
-import { campCenter, campDist, campGrid } from './plats';
+import { PLATS, campCenter, campDist, campGrid } from './plats';
 import { count, forstaGang, stat, log, think } from './folk';
 import { getMap, hash, perKarta, vnoise } from './karta';
 import { Markslag, groundOf, markslag, tileOf } from './mark';
@@ -358,14 +358,14 @@ export function prospect(s: State, k: Kind) {
   if (!c || c.hr !== hr) { c = { hr, v: {} }; prospects.set(s, c); }
   if (c.v[k] === undefined) {
     const f = campCenter(s), top: number[] = [];
-    for (let y = Math.max(0, f.y - 13); y < Math.min(H, f.y + 14); y++) for (let x = Math.max(0, f.x - 17); x < Math.min(W, f.x + 18); x++) {
+    for (let y = Math.max(0, f.y - PLATS.dagY); y < Math.min(H, f.y + PLATS.dagY + 1); y++) for (let x = Math.max(0, f.x - PLATS.dagX); x < Math.min(W, f.x + PLATS.dagX + 1); x++) {
       const d = campDist(s, x, y);
       if (d > SIGHT) continue;
-      const v = richness(s, k, x + 0.5, y + 0.5) - d * 0.03;
+      const v = richness(s, k, x + 0.5, y + 0.5) - d * PLATS.avstandPris;
       if (v > 0) top.push(v);
     }
     top.sort((a, b) => b - a);
-    const n = Math.min(10, top.length);
+    const n = Math.min(PLATS.toppProspekt, top.length);
     c.v[k] = n ? top.slice(0, n).reduce((a, b) => a + b, 0) / n : 0;
   }
   return c.v[k]!;
