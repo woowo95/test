@@ -341,15 +341,25 @@ export function richness(s: State, k: Lager, x: number, y: number) {
   if (FYND[lagren(k)[0]].vatten) return standAt(s, k, x, y, i => nuAt(s, k, i));
   return nuAt(s, k, tileOf(x, y)); // på land: bara rutan man står på
 }
+// richness för en handling som tar ur flera lager (bär och rötter), och lagrens egna värden (r, samma ordning som lagren),
+// så att takeFrom kan dela uttaget utan att räkna om dem. Summan är exakt den richness ger när inget lager har djur
+// eller vatten; annars räknas den som vanligt och r saknas
+export function richnessDelar(s: State, k: Lager, x: number, y: number): { rich: number; r?: number[] } {
+  const ls = lagren(k);
+  if (ls.length < 2 || narvaro[k] || ls.some(j => narvaro[j] || FYND[j].vatten)) return { rich: richness(s, k, x, y) };
+  const r = ls.map(j => richness(s, j, x, y));
+  return { rich: r.reduce((a, b) => a + b, 0), r };
+}
 // hur många gånger byn tagit ur kartan: gränssnittet ritar om den när det ändrats (simuleringen läser det aldrig)
 const plock = new WeakMap<State, number>();
 export const plockOf = (s: State) => plock.get(s) ?? 0;
 // ta ur en plats: mest ur rutan, lite ur grannarna. Fisk tas ur vattnet framför stranden.
-// Tar man ur flera lager (bär och rötter) delas uttaget efter hur mycket av vart och ett som finns där.
-export function takeFrom(s: State, k: Lager, x: number, y: number, amount: number) {
+// Tar man ur flera lager (bär och rötter) delas uttaget efter hur mycket av vart och ett som finns där (fore = de värdena,
+// från richnessDelar, om de redan är räknade)
+export function takeFrom(s: State, k: Lager, x: number, y: number, amount: number, fore?: number[]) {
   const ls = lagren(k);
   if (ls.length > 1) {
-    const r = ls.map(j => richness(s, j, x, y)), sum = r.reduce((a, b) => a + b, 0);
+    const r = fore ?? ls.map(j => richness(s, j, x, y)), sum = r.reduce((a, b) => a + b, 0);
     if (sum > 0) ls.forEach((j, n) => { if (r[n] > 0) takeFrom(s, j, x, y, amount * r[n] / sum); });
     return;
   }

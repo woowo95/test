@@ -18,7 +18,10 @@ export interface Tek {
   id: string; namn: string; text: string; effekt: string;
   omr: Act[]; // arbete där man kommer på den
   krav: string[]; // teknik man måste kunna först
-  material: string[][]; // det som måste finnas i byn: en av sakerna i varje grupp
+  // det som måste finnas i byn för att man ska komma på tekniken: en av sakerna i varje grupp. Det är inte receptet
+  // (skaffa.av i saker.ts): grenarna saknas i flera, eftersom de nästan alltid finns, och ett redskap kan ersätta en sak
+  // (spjutet täljs med flinta eller yxa). Att räkna fram det ur receptet skulle ändra när teknikerna kommer på
+  material: string[][];
   tid: number; // arbetstimmar för en person med medelmåttig nyfikenhet och intelligens
 }
 export const TEKNIK: Tek[] = [

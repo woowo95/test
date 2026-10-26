@@ -6,7 +6,7 @@ import { KANIN, REDSKAP, clean, slaughter, twineRope, wearUsed } from './redskap
 import { GOR_ACTS, finishHalf, startWork, stepPaborjat, workHalf } from './paborjat';
 import { thinkWhileWorking } from './teknik';
 import { arbetsformaga, foodDays, workRate } from './ekonomi';
-import { TRY_SEC, growFynd, handFish, packFynd, pickMushrooms, richness, takeFrom } from './fynd';
+import { TRY_SEC, growFynd, handFish, packFynd, pickMushrooms, richness, richnessDelar, takeFrom } from './fynd';
 import { coldOf, temperature } from './vader';
 import { addFuel, canLight, fireWant, forageItems, fuelFor, hearthOf, heatAt, igniterOf, stepFire, takeCoal, takeFuel, tryLight } from './eld';
 import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, isSick, living, log, ovning, stat, think } from './folk';
@@ -285,24 +285,20 @@ function walk(s: State, p: Person, tk: Task, left: number, a: number) {
   const off = sida(p, 0.18), fart = a < ALDER.gangBarn ? STEG.fartBarn : a > ALDER.gangGammal ? STEG.fartGammal : STEG.fart, t0 = s.now;
   let budget = fart * left;
   const klocka = () => t0 + (fart * left - budget) / fart * SEC;
-  while (tk.path && tk.path.length && budget > 0) {
-    const i = tk.path[0], wx = (i % W) + 0.5 + off, wy = Math.floor(i / W) + 0.5 - off;
+  if (budget <= 0) return { used: left, framme: false };
+  // punkt för punkt längs vägen (var och en lite vid sidan av) och sist till målet. Marken nöts där man går
+  for (;;) {
+    const sist = !tk.path?.length, i = sist ? 0 : tk.path![0];
+    const wx = sist ? tk.tx : (i % W) + 0.5 + off, wy = sist ? tk.ty : Math.floor(i / W) + 0.5 - off;
     const ci = tileOf(p.x, p.y), sp = speedAt(g, ci) || 1;
     const dx = wx - p.x, dy = wy - p.y, d = Math.hypot(dx, dy), can = budget * sp;
     wear(g, ci, MARK.nott * STEG.markNot * Math.min(d, can));
-    if (d <= can) { p.x = wx; p.y = wy; tk.path.shift(); budget -= d / sp; spara(s, p, klocka()); }
-    else { p.x += dx / d * can; p.y += dy / d * can; budget = 0; }
+    if (d > can) { p.x += dx / d * can; p.y += dy / d * can; return { used: left, framme: false }; } // tiden räckte inte hela vägen
+    p.x = wx; p.y = wy; budget -= d / sp;
+    if (sist) { tk.path = undefined; tk.pk = undefined; spara(s, p, klocka()); return { used: left - budget / fart, framme: true }; }
+    tk.path!.shift(); spara(s, p, klocka());
+    if (budget <= 0) return { used: left, framme: false };
   }
-  if (budget <= 0) return { used: left, framme: false };
-  const ci = tileOf(p.x, p.y), spd = speedAt(g, ci) || 1;
-  const dx = tk.tx - p.x, dy = tk.ty - p.y, d = Math.hypot(dx, dy), sp = budget * spd;
-  wear(g, ci, MARK.nott * STEG.markNot * Math.min(d, sp));
-  if (d > sp) { p.x += dx / d * sp; p.y += dy / d * sp; return { used: left, framme: false }; }
-  budget -= d / spd;
-  tk.path = undefined; tk.pk = undefined;
-  p.x = tk.tx; p.y = tk.ty;
-  spara(s, p, klocka());
-  return { used: left - budget / fart, framme: true };
 }
 // framme vid målet: vid förrådet, vid bygget, hemma med bördan eller på platsen där arbetet görs
 function arrive(s: State, p: Person, tk: Task, light: boolean) {
@@ -337,24 +333,14 @@ function arrive(s: State, p: Person, tk: Task, light: boolean) {
   }
 }
 
-// arbete för byn (handlingar med arbete): det man får och bär, det platsen har kvar, redskapen som slits och det man lär sig
-function workStep(s: State, p: Person, tk: Task, dtSec: number, a: number, learn: number) {
-  const now = s.now, d = ACTS[tk.act];
-  const rd = toolRow(tk); // redskapet i handen: vad det ger och hur det slits står i handlingens rad
-  if (rd && d.slits) wearUsed(s, p, dtSec / d.slits);
-  // utan yxa samlas grenar på marken (två grenar på den tid det tar att hugga en ved); med yxa huggs ved ur en fälld stam
-  // bär, rötter och vilt: platsen ger mindre ju mer som redan tagits där
-  const res = d.resurs, rich = res && d.takt === undefined ? richness(s, res, tk.tx, tk.ty) : 1;
-  const y = workRate(s, p, tk.act) * dtSec * (rd?.ger ?? 1) * (d.takt ?? rich);
-  if (y > 0) count(s, 'prod_' + tk.act, y);
-  if (res && d.takt === undefined) { takeFrom(s, res, tk.tx, tk.ty, y); if (rich < PLATS.tomtGrans && !tk.sok) tk.until = now; } // tomt här: gå hem eller vidare (den som letar flinta eller stenar fortsätter)
-  // den som arbetar ser hur mycket som finns i området och minns det
-  if (res && (rich < PLATS.tomtGrans || chance(s, 1 / 1800, dtSec, 'minne', p))) lookAround(s, p, tk.tx, tk.ty);
-  const bar = (k: string, n: number) => { if (n > 0) { tk.items ??= {}; tk.items[k] = (tk.items[k] ?? 0) + n; } };
-  if (tk.act === 'fiske') {
-    // fiske med händerna, spjut eller metspö: ett försök i taget, och fiskaren går hem med varje fångst
+// det ett arbete för byn ger, per handling. y = det platsen gav den här biten (takten gånger platsens värde rich), rd = redskapet
+// i handen, a = åldern, bar = lägg något bredvid bördan (grenar, rötter, svamp). Svarar raden true har den själv lagt det i bördan
+interface Arbetsbit { y: number; rich: number; rd: ReturnType<typeof toolRow>; dtSec: number; a: number; bar: (k: string, n: number) => void }
+const UTFALL: Partial<Record<Act, (s: State, p: Person, tk: Task, b: Arbetsbit) => boolean | void>> = {
+  // fiske med händerna, spjut eller metspö: ett försök i taget, och fiskaren går hem med varje fångst
+  fiske: (s, p, tk, { rd, dtSec, a }) => {
     tk.prog = (tk.prog ?? 0) + dtSec;
-    const ageF = arbetsformaga(p, a, now);
+    const ageF = arbetsformaga(p, a, s.now);
     while (tk.prog >= TRY_SEC) {
       tk.prog -= TRY_SEC;
       if (rd?.bete && (tk.mask ?? 0) < 1) { tk.mask = (tk.mask ?? 0) + REDSKAP.maskPerGrav; continue; } // gräver fram mask först
@@ -363,32 +349,55 @@ function workStep(s: State, p: Person, tk: Task, dtSec: number, a: number, learn
       if (rd?.bete && (p.fiske?.n ?? 0) > napp) tk.mask!--; // varje napp tar en mask
       if (rd) wearUsed(s, p, 1);
     }
-  }
-  if (tk.act === 'hugga') {
+  },
+  hugga: (s, p, tk, { y, bar }) => {
     const k = stocks(s).find(q => q.id === tk.ref), got = chopStock(s, tk.ref, y);
-    if (!got) tk.until = now; // stammen är slut
+    if (!got) tk.until = s.now; // stammen är slut
     else {
       if (k) got.ved -= toWalls(s, Math.floor(k.x), Math.floor(k.y), got.ved, undefined, p); // står stammen där ett hus byggs blir träet väggar
       tk.carry += got.ved; bar('grenar', got.grenar);
-      if (got.done) tk.until = now;
+      if (got.done) tk.until = s.now;
     }
-  } else if (y > 0 && tk.act === 'samla') {
-    const r = rich > 0 ? y * Math.min(1, richness(s, 'rotter', tk.tx, tk.ty) / rich) : 0; // rötterna efter hur mycket av platsen som är rötter
-    tk.carry += y - r; bar('rotter', r);
-  } else if (y > 0 && tk.act !== 'jakt') tk.carry += y;
-  if (tk.act === 'jakt') {
-    // man fångar hela djur, än så länge bara kaniner. Chansen är sådan att man i snitt får lika mycket som platsen ger.
-    // Kaninen fyller famnen och bärs hem hel
+    return true;
+  },
+  samla: (s, p, tk, { y, rich, dtSec, bar }) => {
+    if (y > 0) {
+      const r = rich > 0 ? y * Math.min(1, richness(s, 'rotter', tk.tx, tk.ty) / rich) : 0; // rötterna efter hur mycket av platsen som är rötter
+      tk.carry += y - r; bar('rotter', r);
+    }
+    const got = forageItems(s, p, dtSec) ?? {};
+    bar('svamp', pickMushrooms(s, p, tk.tx, tk.ty, dtSec, got));
+    for (const k in got) bar(k, got[k]);
+    return true;
+  },
+  // man fångar hela djur, än så länge bara kaniner. Chansen är sådan att man i snitt får lika mycket som platsen ger.
+  // Kaninen fyller famnen och bärs hem hel
+  jakt: (s, p, tk, { y }) => {
     if (y > 0 && rnd(s, 'arbete', p) < y / KANIN) {
       if (forstaGang(s, 'kaniner')) log(s, `${p.name} fångade byns första kanin och bar hem den hel.`, 'world', [p.id]);
       tk.carry += KANIN;
     }
-  }
-  if (tk.act === 'samla') {
-    const got = forageItems(s, p, dtSec) ?? {};
-    bar('svamp', pickMushrooms(s, p, tk.tx, tk.ty, dtSec, got));
-    for (const k in got) bar(k, got[k]);
-  }
+    return true;
+  },
+};
+// arbete för byn (handlingar med arbete): det man får och bär, det platsen har kvar, redskapen som slits och det man lär sig
+function workStep(s: State, p: Person, tk: Task, dtSec: number, a: number, learn: number) {
+  const now = s.now, d = ACTS[tk.act];
+  const rd = toolRow(tk); // redskapet i handen: vad det ger och hur det slits står i handlingens rad
+  if (rd && d.slits) wearUsed(s, p, dtSec / d.slits);
+  // utan yxa samlas grenar på marken (två grenar på den tid det tar att hugga en ved); med yxa huggs ved ur en fälld stam
+  // bär, rötter och vilt: platsen ger mindre ju mer som redan tagits där
+  // (platsens värde räknas en gång, och takeFrom delar uttaget mellan bär och rötter efter samma tal)
+  const res = d.resurs, del = res && d.takt === undefined ? richnessDelar(s, res, tk.tx, tk.ty) : undefined, rich = del ? del.rich : 1;
+  const y = workRate(s, p, tk.act) * dtSec * (rd?.ger ?? 1) * (d.takt ?? rich);
+  if (y > 0) count(s, 'prod_' + tk.act, y);
+  if (res && del) { takeFrom(s, res, tk.tx, tk.ty, y, del.r); if (rich < PLATS.tomtGrans && !tk.sok) tk.until = now; } // tomt här: gå hem eller vidare (den som letar flinta eller stenar fortsätter)
+  // den som arbetar ser hur mycket som finns i området och minns det
+  if (res && (rich < PLATS.tomtGrans || chance(s, 1 / 1800, dtSec, 'minne', p))) lookAround(s, p, tk.tx, tk.ty);
+  const bar = (k: string, n: number) => { if (n > 0) { tk.items ??= {}; tk.items[k] = (tk.items[k] ?? 0) + n; } };
+  // det arbetet ger (UTFALL ovan); utan egen rad, eller om raden inte tagit hand om det, läggs det platsen gav i bördan
+  const u = UTFALL[tk.act];
+  if (!(u && u(s, p, tk, { y, rich, rd, dtSec, a, bar })) && y > 0) tk.carry += y;
   const sk = d.arbete!;
   const before = p.skill[sk];
   ovning(p, sk, dtSec / HOUR_S * 0.12 * learn * (0.4 + stat(p, 'intelligens', now) / 20));

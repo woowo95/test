@@ -81,7 +81,7 @@ Simuleringen importerar aldrig från `ui/`. Gränssnittet importerar bara från 
 ## Recept
 
 **En ny handling.** Lägg en rad i `DEF` i `handlingar.ts` med de egenskaper som passar. Typen `Act` och listorna följer med av sig själva. Sedan:
-- Det som händer **medan** den görs läggs i `MEDAN` i `steg.ts`, och det som händer när den är **klar** i `KLAR`.
+- Det som händer **medan** den görs läggs i `MEDAN` i `steg.ts`, och det som händer när den är **klar** i `KLAR`. Vad ett arbete för byn **ger** (utöver det platsen ger, som läggs i bördan) läggs i `UTFALL` i samma fil.
 - **När** den väljs läggs i `val.ts`: i `needs()` om den är ett behov, i `leisure()` om den är fritid, i `night()` om den görs på natten. Ett arbete för byn har `arbete` lika med sitt eget namn och anger `sasong` och `egenskap`. Det vägs då in i `bestWork()` mot byns behov. Där räknas i dag allt utom ved som mat, så ett arbete som ger något annat behöver en egen rad för hur mycket byn behöver det.
 - Ange `slag`, slaget av arbete (`SLAG` i samma fil), som syns som en symbol över huvudet. Ett nytt slag får en enfärgad pixelbild `a_` + slaget i `ikoner.ts`, aldrig samma bild som en sak.
 
