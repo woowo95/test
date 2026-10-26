@@ -338,7 +338,7 @@ function building(s: State, p: Person, v: Val, job: NonNullable<ReturnType<typeo
 
 // Flinta till en yxa är en förbättring: bara när maten räcker och inte inför eller under istiden, och en i taget
 // (byn har flinta till elden, en sprucken räknas, och stenar till eldringen)
-const flintaTillYxa = (s: State, p: Person, fd: number, ai: number) => amountOf(s, 'flinta') > VAL.letaFlinta && !needStones(s) && wantsFlint(s) && fd >= VAL.letaMat && !kallTid(ai) && !living(s).some(q => q !== p && q.task?.why?.includes('vid stenarna'));
+const flintaTillYxa = (s: State, p: Person, fd: number, ai: number) => amountOf(s, 'flinta') > VAL.letaFlinta && !needStones(s) && wantsFlint(s) && fd >= VAL.letaMat && !kallTid(ai) && !living(s).some(q => q !== p && q.task?.sok);
 // Flinta och stenar till elden letas när byn saknar dem, också när maten är knapp (elden före maten: Björn avgör)
 const flintaTillElden = (s: State) => amountOf(s, 'flinta') < FANGST.flintaMinsta || needStones(s);
 // arbetet med redskap: flinta letas vid stenarna, yxan fäller träd, korgen och spjutet görs först om de saknas.

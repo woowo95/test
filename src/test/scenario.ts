@@ -482,6 +482,15 @@ SCENARIER.stenring = {
       return `${n} av ${samla}`;
     };
     const yxaSvalt = letar(1, 2), eldSvalt = letar(0, 2), yxaMat = letar(1, 200);
+    // en i taget: letar någon redan (flaggan sok, vad skälet än säger) letar ingen annan flinta till en yxa
+    const [l0, ...andra] = living(f).filter(q => ageOf(q, f.now) >= ALDER.vuxen);
+    let fler = 0;
+    for (let i = 0; i < 100; i++) {
+      const p = andra[i % andra.length];
+      l0.task = { act: 'samla', phase: 'do', tx: l0.x, ty: l0.y, until: f.now + HOUR, carry: 0, why: 'Samlar.', dark: false, sok: true };
+      Object.assign(p, { toa: 1, warm: 1, rest: 1, health: 1, hunger: 1, social: 1, task: undefined });
+      chooseTask(f, p); if (p.task?.sok) fler++; p.task = undefined;
+    }
     // den som hämtar tändmaterial åt en släckt eld fortsätter på en plats utan bär, och slutar när tändmaterialet räcker
     const r = createState(4, START), rm = getMap(r.seed);
     r.now = new Date(r.now).setHours(10, 0, 0, 0); Object.assign(r.fire, { lit: false, fuel: 0, emberUntil: undefined, ring: true });
@@ -497,6 +506,7 @@ SCENARIER.stenring = {
     setItems(r, { flinta: 1, torrgras: 50, grenar: 50 }); kor(r, 0.25);
     const slutat = !(th.task?.act === 'samla' && th.task.phase === 'do' && th.task.tx === tom.x && th.task.ty === tom.y);
     return [
+      [`en i taget letar flinta till en yxa (${fler} till av 100 när någon redan letar)`, fler === 0],
       [`den som hämtar tändmaterial (${valt ? 'vald' : 'inte vald'}) fortsätter på en plats utan bär (${fortsatt ? 'ja' : 'nej'}) och slutar när det räcker (${slutat ? 'ja' : 'nej'})`, valt && fortsatt && slutat],
       [`flinta till en yxa letas inte när maten är knapp (${yxaSvalt} som samlar letar), men när den räcker (${yxaMat}); flinta till elden letas ändå (${eldSvalt})`, yxaSvalt.startsWith('0 ') && !yxaMat.startsWith('0 ') && !eldSvalt.startsWith('0 ')],
       [`stenar samlas och elden tänds (efter ${h} timmar)`, tand && logg(s, 'ring av stenar')],
