@@ -255,9 +255,9 @@ function funktionsbyte(s: State) {
   }
 }
 // är det varmare inne i rummet än vid elden? c = kylan (coldOf): hur kallt det är ute
-export function varmareInne(s: State, rum: Rum, c: number) {
+export function varmareInne(s: State, rum: Rum, c: number, varmer = false) {
   const f = getMap(s.seed).fire, inne = -c * (1 - shelterOf(s, rum, Math.min(living(s).length, rum.tiles.length))), ute = heatAt(s, f.x + 0.5, f.y + HUS.varmeY) * KROPP.eldVarme - c;
-  return inne >= Math.min(0, ute) - HUS.varmeMarg;
+  return varmer ? inne >= ute : inne >= Math.min(0, ute) - HUS.varmeMarg; // den som ska värma sig går bara in om det är minst lika varmt som vid elden
 }
 // samlingshusets rum, där man umgås när det är kallt (val.ts)
 export const samlingRum = (s: State): Rum | undefined => {

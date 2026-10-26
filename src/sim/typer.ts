@@ -79,6 +79,7 @@ export interface Task {
   fran?: number; // den man tar ved av till elden (stöld, behov.ts)
   kom?: Record<string, number>; // var materialet till bygget kom ifrån (bygg.ts)
   sok?: true; // letar flinta eller stenar vid stenarna: blir platsen tom fortsätter man ändå i stället för att gå hem (steg.ts, workStep)
+  tandmat?: true; // samlar tändmaterial åt en släckt eld: blir platsen tom på bär fortsätter man tills tändmaterialet räcker (steg.ts, workStep)
 }
 
 export interface Person {
@@ -125,7 +126,7 @@ export interface State {
   people: Person[]; rels: Record<string, Rel>; nextId: number;
   food?: number; wood?: number; // äldre sparfiler (före v40): maten och veden i förrådet, nu räknade ur stackarna
   log: LogEntry[];
-  lastAgeIdx: number; lastGuardDay: number;
+  lastAgeIdx: number; lastGuardDay?: number; // lastGuardDay: kalenderns dygn då nattens vakt senast valdes (val.ts)
   items?: Record<string, number>; // äldre sparfiler (före v40): sakerna och redskapen i förrådet som summor
   fire: Fire;
   seder: Seder;
