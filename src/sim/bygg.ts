@@ -19,7 +19,7 @@ import { H, HOUR, HOUR_S, Person, State, T, W, inMap } from './typer';
 
 // ---------- att bygga ----------
 // det som lämnas kvar i förrådet till elden av slaget k (RESERV i ekonomi.ts)
-const sparas = (k: string): number => k === 'ved' || k === 'grenar' || k === 'torrgras' ? RESERV[k] : 0;
+const sparas = (k: string) => k === 'ved' ? RESERV.ved : k === 'grenar' ? RESERV.grenar : k === 'torrgras' ? RESERV.torrgras : 0;
 const MAX_INNE = 24; // största hus: så många sovplatser
 const LAGA = 0.5; // väggar under det skicket lagas
 
