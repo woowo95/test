@@ -11,7 +11,7 @@ import { RESERV } from './ekonomi';
 import { addTool, freeTools, halvOf, nTools, ownsFree, wearTool } from './agande';
 import { balans } from './balans';
 import { sedEvent } from './seder';
-import { kanGoras, nyKniv, tommaKnivplatser } from './stationer';
+import { STATION, kanGoras, nyKniv, stationFor, tommaKnivplatser, vidStation } from './stationer';
 
 // ---------- balanstal (regel 8) ----------
 // Hur många redskap byn vill ha och vad den sparar när den gör dem. Hur mycket ett redskap kräver står i receptet (skaffa.av
@@ -66,18 +66,21 @@ export function wearUsed(s: State, p: Person, n: number) {
 // byn vill ha ungefär ett spjut per tre vuxna, när någon väl har börjat fiska eller jaga
 const spearsWanted = (s: State) => (s.stat?.fiskeForsok ?? 0) > 0 || (s.stat?.prod_jakt ?? 0) > 0 ? clamp(Math.floor(living(s).filter(p => ageOf(p, s.now) >= ALDER.vuxen).length / REDSKAP.spjutPerVuxna), REDSKAP.spjutMin, REDSKAP.spjutMax) : 0;
 // ---------- rep ----------
-// Rep tvinnas av växtfibrer (hö) vid elden på kvällen av den som kan det, eller tas från senor när vilt slaktas. Det är samma rep
+// Rep tvinnas av växtfibrer (hö) av den som kan det, vid flätarbänken (stationer.ts) och fortare där, annars för hand vid
+// elden, eller tas från senor när vilt slaktas. Det är samma rep
 // oavsett material. Rep behövs till flintspjut och metspö.
 const REP_TIMME = 60 / SAKER.rep!.skaffa!.min!; // rep per timme
 export const wantsRope = (s: State, p: Person) => knows(p, 'rep') && amountOf(s, 'rep') < REDSKAP.repVill && getable(s, p, 'torrgras') >= REP.torrgras + RESERV.torrgras; // lite hö sparas till elden
 export function twineRope(s: State, p: Person, hours: number) {
-  const n = Math.min(hours * REP_TIMME, (getable(s, p, 'torrgras') - RESERV.torrgras) / REP.torrgras, REDSKAP.repVill - amountOf(s, 'rep'));
+  const st = stationFor(s, 'tvinna'), at = st && vidStation(st), bank = !!at && Math.hypot(p.x - at.x, p.y - at.y) < STATION.vidBank;
+  const n = Math.min(hours * REP_TIMME * (bank ? STATION.repFart : 1), (getable(s, p, 'torrgras') - RESERV.torrgras) / REP.torrgras, REDSKAP.repVill - amountOf(s, 'rep'));
   if (n <= 0) return;
   takeMaterial(s, p, 'torrgras', n * REP.torrgras);
   gain(s, p, 'rep', n);
   const first = !(s.stat?.rep);
   count(s, 'rep', n);
-  if (first) log(s, `${p.name} började tvinna rep av hö vid elden.`, 'world', [p.id]);
+  if (first) log(s, `${p.name} började tvinna rep av hö ${bank ? 'vid flätarbänken' : 'vid elden'}.`, 'world', [p.id]);
+  if (bank) count(s, 'repBank', n);
 }
 
 // ---------- redskap: metspö ----------
@@ -96,11 +99,11 @@ const basketsWanted = (s: State) => clamp(Math.floor(living(s).filter(p => ageOf
 // slaktar kan tekniken Rep (fisk har inga senor). Kött, ben och skinn är samma vilket djur det än kommer från.
 // Jaktfärdigheten avgör hur mycket kött man får ut av djuret (kottFaktor, steg 2.2.3).
 // Kniven kräver en flinta utöver den som sparas att tända eld med. Fisken rensas med händerna till fiskkött.
-// Viltet slaktas bara vid slaktbänken (bara i STATIONER, stationer.ts). Fisken rensas vid bänken när byn har en, annars vid
-// elden (spotFor i val.ts). Den som slaktar måste ha en kniv: bänkens, som ligger kvar där, eller sin egen.
+// Viltet slaktas och fisken rensas bara vid slaktbänken (bara i STATIONER, stationer.ts; Björn, steg 2.2.6 och 2.2.8); innan
+// byn har en äts de som de är. Den som slaktar måste ha en kniv: bänkens, som ligger kvar där, eller sin egen.
 // DJUR: varje art som fångas. sak = saken den ligger i förrådet som, mat = hur mycket av saken ett djur är (uppätet som
 // det är), slakt = det ett djur ger slaktat eller rensat, rep = chansen per djur att senorna blir ett rep, timme = djur per
-// timme, maxTim = arbetet varar högst så här många timmar, act = arbetet där det görs (vid slaktbänken eller elden), kniv = det kräver en kniv (och att man kan tekniken), minDel = det görs när
+// timme, maxTim = arbetet varar högst så här många timmar, act = arbetet där det görs (vid slaktbänken), kniv = det kräver en kniv (och att man kan tekniken), minDel = det görs när
 // det finns minst 1 / minDel djur, stat = räknas (i djur), forsta = loggen första gången. En ny art blir en rad här (fler
 // fiskar: steg 7.4.3). Receptet för det ett djur ger står också i saker.ts (skaffa.av, för värdet); scenariot "djur"
 // kontrollerar att de stämmer med raden här.
@@ -115,7 +118,7 @@ export const SLAKT = DJUR.kanin.slakt; // det en kanin ger slaktad
 const knives = (s: State) => nTools(s, 'kniv');
 // så många djur av arten som finns i förrådet
 export const djurKvar = (s: State, art: Djurart) => amountOf(s, art.sak) / art.mat;
-// p kan slakta eller rensa arten: byn har stationen om det bara görs där (viltet slaktas bara vid slaktbänken), det finns
+// p kan slakta eller rensa arten: byn har stationen om det bara görs där (viltet och fisken vid slaktbänken), det finns
 // tillräckligt, en kniv som ingen annan slaktar med (om det behövs), och ingen
 // annan gör det redan
 export const canProcess = (s: State, p: Person, art: Djurart) => kanGoras(s, art.act) && (!art.kniv || knows(p, 'kniv') && freeTools(s, p, 'kniv') >= 1) && djurKvar(s, art) >= 1 / art.minDel && !doingAct(s, art.act, p);
@@ -145,7 +148,7 @@ function stycka(s: State, p: Person, art: Djurart, n: number) {
 }
 
 // ---------- att göra ett redskap som saknas ----------
-// Varje redskap med gors i saker.ts görs i ett eget arbete vid elden, som heter som redskapets grupp (yxa, spjut, metspo,
+// Varje redskap med gors i saker.ts görs i ett eget arbete vid elden (korgen vid flätarbänken), som heter som redskapets grupp (yxa, spjut, metspo,
 // kniv, korg). Receptet (skaffa.av), tekniken (skaffa.tek), verktyget (skaffa.verktyg), tiden (skaffa.min) och texterna
 // (gors) står i sakens rad. Här står hur många byn vill ha av varje grupp. Ett nytt redskap blir en rad i saker.ts, och
 // en ny grupp också en rad i VILL och en handling (handlingar.ts).
@@ -180,10 +183,11 @@ export const kindFor = (s: State, p: Person, g: string) => { const ks = GORS[g];
 // det slag p börjar göra när hen kommer fram, om hen kan (paborjat.ts)
 export const borjaTool = (s: State, p: Person, g: string) => { const k = kindFor(s, p, g); return canMake(s, p, k) ? k : undefined; };
 // p vill göra ett redskap i gruppen g: hen har påbörjat ett eller kan göra ett, byn har färre än den vill, och ingen
-// annan gör ett. spar = hö som ska sparas till värmen (ett recept med hö görs bara när byn har så mycket)
+// annan gör ett. spar = hö som ska sparas till värmen (ett recept med hö görs bara när byn har så mycket). Det som bara
+// görs vid en station (korgen vid flätarbänken, stationer.ts) görs inte förrän byn har den
 export const wantsTool = (s: State, p: Person, g: string, spar = 0) => {
   const ks = GORS[g];
-  return (!!halvOf(s, p, ks) || ks.some(k => canMake(s, p, k) && (!av(k).torrgras || amountOf(s, 'torrgras') >= spar)))
+  return kanGoras(s, g as Act) && (!!halvOf(s, p, ks) || ks.some(k => canMake(s, p, k) && (!av(k).torrgras || amountOf(s, 'torrgras') >= spar)))
     && ks.reduce((a, k) => a + nTools(s, k), 0) < VILL[g](s) && !doingAct(s, g as Act, p);
 };
 // arbetet att göra ett redskap i gruppen g. tool = slaget som görs när gruppen har flera (namnet på arbetet, handlingar.ts)

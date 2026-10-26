@@ -69,7 +69,8 @@ const MEDAN: Partial<Record<Act, Krok>> = {
   toa: (_s, p) => { p.toa = 1; },
   kol: (s, p) => takeCoal(s, p, 'hämtade'),
   bygga: (s, p, t, dtSec) => buildStep(s, p, t, dtSec),
-  hantverk: (s, p, t, dtSec) => { if (t.tool === 'rep') twineRope(s, p, dtSec / HOUR_S); },
+  tvinna: (s, p, _t, dtSec) => twineRope(s, p, dtSec / HOUR_S),
+  hantverk: (s, p, t, dtSec) => { if (t.tool === 'rep') twineRope(s, p, dtSec / HOUR_S); }, // äldre sparfiler: rep tvinnades i handarbetet
   tanda: (s, p, _t, dtSec) => {
     if (!canLight(s, p)) return;
     s.fire.tryProg += dtSec;

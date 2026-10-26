@@ -34,6 +34,6 @@ export const station: Flik = {
     <div class="phead"><div><h2>${iconImg(d.ikon, 20)} ${esc(d.namn)}</h2><p class="muted">${status}</p>${vem.length ? `<p class="muted">Byggd av ${vem.map(p => pLink(p)).join(', ')}.</p>` : ''}</div></div>
     <h3>Här görs</h3><dl class="kv">${d.gor.map(a => gorRad(a, !!d.bara?.includes(a))).join('')}</dl>
     ${platser ? `<h3>Knivplatsen</h3><dl class="kv">${platser}</dl>` : ''}
-    <h3>Material</h3><p ${tip(`${d.min} minuters arbete. Kräver tekniken ${TEKNIK.find(q => q.id === d.tek)?.namn ?? d.tek}`)}>${av} <span class="muted">· ${d.min} min</span></p>`;
+    <h3>Material</h3><p ${tip(`${d.min} minuters arbete. Kräver ${d.tek.length > 1 ? 'någon av teknikerna' : 'tekniken'} ${d.tek.map(k => TEKNIK.find(q => q.id === k)?.namn ?? k).join(' eller ')}`)}>${av} <span class="muted">· ${d.min} min</span></p>`;
   },
 };

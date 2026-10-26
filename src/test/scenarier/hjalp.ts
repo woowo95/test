@@ -20,8 +20,9 @@ export const klockan = (s: State, h = 10) => { s.now = new Date(s.now).setHours(
 // elden brinner (med en stenring), så att ingen behöver leta stenar och flinta för att tända den
 export const tandEld = (s: State, fuel = 4, ring = true) => { Object.assign(s.fire, ring ? { lit: true, fuel, ring: true } : { lit: true, fuel }); };
 // tomt förråd: ingen mat, inget trä, inga grenar, ingen flinta och inget hö
-// en färdig slaktbänk vid elden (stationer.ts): viltet slaktas bara där
-export const medBank = (s: State) => { const at = SIM.stationSite(s)!; (s.stationer ??= []).push({ id: s.nextStation = (s.nextStation ?? 0) + 1, k: 'slaktbank', x: at.x, y: at.y, kvar: 0 }); };
+// en färdig station vid elden (stationer.ts), slaktbänken om inget annat sägs: viltet slaktas och fisken rensas bara där,
+// korgen flätas bara vid flätarbänken
+export const medBank = (s: State, k = 'slaktbank') => { const at = SIM.stationSite(s, k)!; (s.stationer ??= []).push({ id: s.nextStation = (s.nextStation ?? 0) + 1, k, x: at.x, y: at.y, kvar: 0 }); };
 export const tomtForrad = (s: State) => { setMat(s, {}); setStock(s, { ved: 0, grenar: 0, flinta: 0, torrgras: 0 }); };
 // byns tre första blir tre vuxna utan släkt på samma ruta, friska, utan uppgift och med hungern hunger (byte, behov och ved).
 // Resten (s.people, vänskap) ställer varje scenario in själv, i sin ordning

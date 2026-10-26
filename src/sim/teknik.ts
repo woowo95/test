@@ -7,6 +7,7 @@ import { isTool } from './saker';
 import { tingOf } from './agande';
 import { Act, HOUR, HOUR_S, Person, State } from './typer';
 import { balans } from './balans';
+import { ACTS, ACT_LIST } from './handlingar';
 import type { SamtalDef } from './samtal';
 
 // ---------- teknik ----------
@@ -75,9 +76,13 @@ function learn(s: State, p: Person, t: Tek, from?: Person) {
   if (first) { p.fame.push(`Kom på ${t.namn.toLowerCase()}`); sedEvent(s, 'nyfikenhet', TEKTAL.forstaNyfiken); }
 }
 
-// arbete för tankarna framåt mot det som hör till arbetet (omr). Andra handlingar ger inga idéer
+// arbete för tankarna framåt mot det som hör till arbetet (omr). Allt hantverk (slag hantverk i handlingar.ts: att tvinna
+// rep, fläta en korg, göra ett redskap, slakta) räknas som hantverk. Andra handlingar ger inga idéer
 const OMR = new Set(TEKNIK.flatMap(t => t.omr));
-export function thinkWhileWorking(s: State, p: Person, act: Act, dtSec: number) {
+const HANTVERK = new Set(ACT_LIST.filter(a => ACTS[a].slag === 'hantverk'));
+const omrAv = (act: Act): Act => HANTVERK.has(act) ? 'hantverk' : act;
+export function thinkWhileWorking(s: State, p: Person, act0: Act, dtSec: number) {
+  const act = OMR.has(act0) ? act0 : omrAv(act0);
   if (!OMR.has(act) || ageOf(p, s.now) < ALDER.uppfinner) return;
   const nyf = stat(p, 'nyfikenhet', s.now) / 10, intel = stat(p, 'intelligens', s.now) / 10;
   for (const t of TEKNIK) {

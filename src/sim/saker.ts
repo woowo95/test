@@ -64,7 +64,7 @@ const DEF = {
   skinn: { namn: 'Skinn', skaffa: { av: { vilt: 0.3 }, min: 5, tek: 'kniv' }, stack: 10, mapp: 'Material', slits: 0.0006 },
   // en hel fisk som den fångats (DJUR i redskap.ts). Den rensas vid elden till fiskkött (fisk), som är det man äter;
   // bara när inget annat finns äts den som den är
-  abborre: { namn: 'Abborre', skaffa: { act: 'fiske' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 6, ruttnar: 2 },
+  abborre: { namn: 'Abborre', skaffa: { act: 'fiske' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 1.2, ruttnar: 2 }, // den hela fisken äts strax efter fiskköttet: innan byn har en slaktbänk rensas den inte (steg 2.2.8)
   // ett redskap som någon har börjat göra men inte gjort klart (paborjat.ts). Det slits och värderas där, inte här
   paborjat: { namn: 'Påbörjat', stack: 1, mapp: 'Redskap', redskap: true },
 } satisfies Record<string, SakDef>;

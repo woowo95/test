@@ -2,7 +2,7 @@
 import { createState, addTool, twineRope, makeTool, wearUsed, isSpear, step, living, cloneState, pilesOf, zoneOf, amountOf, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, ageOf, spears, SPJUT_FORSOK, getMap, DAY, HOUR, W, State, takenOf, migrate, campCenter, TEKNIK, knows, thinkWhileWorking, die, isWall, H, richness, setAmount, BEAT, tingOf, wantsTool, makeTask, wantsFlint, ALDER, KROPP, inMap, canLight, dangers, toolGain, chooseTask } from '../../sim';
 import * as SIM from '../../sim';
 import { START } from '../kor';
-import { setItems, setMat, setFood, kor, klockan, tandEld, bastaJaktruta, SCENARIER } from './hjalp';
+import { setItems, setMat, setFood, kor, klockan, tandEld, bastaJaktruta, SCENARIER, medBank } from './hjalp';
 
 SCENARIER.stenring = {
   text: 'Den första elden läggs i en ring av stenar som samlas in, och tänds med flinta. Ringen ligger kvar när elden slocknat',
@@ -35,7 +35,7 @@ SCENARIER.stenring = {
     let korgar = 0, korgFel = 0;
     const fm = getMap(f.seed).fire;
     for (const q of f.people) q.tek = { ...q.tek, korg: 1 };
-    setItems(f, { flinta: 0, torrgras: 20, grenar: 20 }); setFood(f, 2);
+    setItems(f, { flinta: 0, torrgras: 20, grenar: 20 }); setFood(f, 2); medBank(f, 'flatarbank');
     for (let i = 0; i < 300; i++) {
       const p = living(f).filter(q => ageOf(q, f.now) >= ALDER.vuxen)[i % 4];
       Object.assign(p, { toa: 1, warm: 1, rest: 1, health: 1, hunger: 1, social: 1, task: undefined });
@@ -77,7 +77,7 @@ SCENARIER.stenring = {
     return [
       [`en sliten yxa räknas som en yxa när byn vill ha flinta (${slitenYxa ? 'vill ha mer' : 'räcker'})`, !slitenYxa],
       [`elden tänds bara med bränsle kvar efter tändgrenarna (5 grenar: ${tand5 ? 'ja' : 'nej'}, 6 grenar: ${tand6 ? 'ja' : 'nej'})`, !tand5 && tand6],
-      [`en korg flätas vid elden, inte där flintan skulle letas (${korgFel} av ${korgar} korgar fel)`, korgar > 0 && korgFel === 0],
+      [`en korg flätas vid flätarbänken nära elden, inte där flintan skulle letas (${korgFel} av ${korgar} korgar fel)`, korgar > 0 && korgFel === 0],
       [`en i taget letar flinta till en yxa (${fler} till av 100 när någon redan letar)`, fler === 0],
       [`den som hämtar tändmaterial (${valt ? 'vald' : 'inte vald'}) fortsätter på en plats utan bär (${fortsatt ? 'ja' : 'nej'}) och slutar när det räcker (${slutat ? 'ja' : 'nej'})`, valt && fortsatt && slutat],
       [`flinta till en yxa letas inte när maten är knapp (${yxaSvalt} som samlar letar), men när den räcker (${yxaMat}); flinta till elden letas ändå (${eldSvalt})`, yxaSvalt.startsWith('0 ') && !yxaMat.startsWith('0 ') && !eldSvalt.startsWith('0 ')],
@@ -175,7 +175,7 @@ SCENARIER.redskap = {
     const metLika = prova('metspo'), spjutLika = prova('flintspjut');
     // en korg som kan göras räknas i valet av arbete bara när den görs: inte när kylan är en fara (elden släckt och alla fryser)
     const k = createState(4, START);
-    setItems(k, { torrgras: 40 }); Object.assign(k.fire, { lit: false, fuel: 0, emberUntil: undefined });
+    setItems(k, { torrgras: 40 }); medBank(k, 'flatarbank'); Object.assign(k.fire, { lit: false, fuel: 0, emberUntil: undefined });
     for (const q of k.people) { q.tek = { korg: 1 }; q.warm = KROPP.kallt - 0.1; }
     const kp = living(k).find(q => ageOf(q, k.now) >= 18)!, kf = dangers(k);
     const korgVarm = toolGain(k, kp, 'samla', { kyla: false, svalt: false, gras: 0 }), korgKall = toolGain(k, kp, 'samla', kf);

@@ -80,12 +80,12 @@ SCENARIER.djur = {
 };
 
 SCENARIER.abborre = {
-  text: 'Det som fångas är en hel abborre. Den rensas med händerna (vid slaktbänken, annars vid elden) till fiskkött, som är det man äter; köttet är dens som ägde fisken',
+  text: 'Det som fångas är en hel abborre. Den rensas med händerna vid slaktbänken till fiskkött, som är det man äter; köttet är dens som ägde fisken. Innan byn har en bänk äts abborren som den är',
   kor: () => {
     const s = createState(1, START);
     klockan(s);
     const [a, c] = living(s);
-    setMat(s, {}); gain(s, a, 'abborre', 6);
+    setMat(s, {}); gain(s, a, 'abborre', 6); medBank(s);
     const egen = ownsAmount(s, a, 'abborre'); // det som inte delats med byn
     const kan = canProcess(s, c, DJUR.abborre);
     bearbeta(s, c, DJUR.abborre, 0.1); // tre abborrar på sex minuter
@@ -98,7 +98,7 @@ SCENARIER.abborre = {
     // (rensat räknas i bearbeta(); en abborre rensas på ett par minuter och syns sällan som uppgift var femte minut)
     let abborreSedd = 0, fangat = 0, rensat = 0;
     for (const seed of [3, 1, 2, 4, 5]) {
-      const v = createState(seed, START);
+      const v = createState(seed, START); medBank(v);
       abborreSedd = 0;
       for (let i = 0; i < 6 * STEG_DYGN; i++) {
         step(v, BEAT);
@@ -346,7 +346,7 @@ SCENARIER.natur = {
 };
 
 SCENARIER.slaktbank = {
-  text: 'Slaktbänken (steg 2.2.3) byggs av trä av den som kan göra en kniv. Vid den slaktas viltet och rensas fisken, och en kniv hör till bänken och ligger kvar där. Viltet slaktas bara vid bänken; innan den finns äts det som det är. Fisken rensas vid elden så länge byn saknar bänk. Jaktfärdigheten avgör hur mycket kött en kanin ger',
+  text: 'Slaktbänken (steg 2.2.3) byggs av trä av den som kan göra en kniv. Vid den slaktas viltet och rensas fisken, och en kniv hör till bänken och ligger kvar där. Viltet slaktas bara vid bänken; innan den finns äts det som det är. Också fisken rensas bara vid bänken (steg 2.2.8). Jaktfärdigheten avgör hur mycket kött en kanin ger',
   kor: () => {
     const { STATION, STATIONER, stationerOf, stationFor, isKlar, vidStation, tommaKnivplatser, stepStationer, kottFaktor, addTool, take, tidyTools, placeTools, usable, spotFor, tingOf, BYN, REDSKAP } = SIM;
     // en by där alla kan göra en kniv, med gott om mat och trä: bänken byggs
@@ -359,7 +359,7 @@ SCENARIER.slaktbank = {
     const st = stationerOf(s)[0], klar = !!st && isKlar(st);
     const logg = s.log.some(l => l.text.includes('första slaktbänk'));
     const avElden = st ? Math.hypot(st.x - getMap(s.seed).fire.x, st.y - getMap(s.seed).fire.y) : 0;
-    const ingenAnnan = st ? !usable(s, st.x, st.y) : false;
+    const bredd = STATIONER.slaktbank.w, ingenAnnan = !!st && Array.from({ length: bredd }, (_, i) => !usable(s, st.x + i, st.y) && SIM.stationAt(s, st.x + i, st.y) === st).every(Boolean) && !SIM.stationAt(s, st.x + bredd, st.y);
     const enda = stationerOf(s).length === 1;
     // en kniv blir bänkens: den är byns och ligger vid bänken
     const p = living(s).find(r => ageOf(r, s.now) >= 18)!;
@@ -374,17 +374,16 @@ SCENARIER.slaktbank = {
     const tog = take(s, p, 'kniv') === bankKniv;
     p.task = undefined; tidyTools(s); placeTools(s);
     const tillbaka = !!bankKniv && bankKniv.hos === undefined && bankKniv.x === st?.x && bankKniv.y === st?.y;
-    // slakten och rensningen görs vid bänken. Utan bänk slaktas inget (viltet ligger kvar och äts som det är), och fisken
-    // rensas vid elden
-    const vid = st ? vidStation(st) : { x: 0, y: 0 }, f = getMap(s.seed).fire;
+    // slakten och rensningen görs vid bänken. Utan bänk slaktas och rensas inget (viltet och abborren ligger kvar och äts som de är)
+    const vid = st ? vidStation(st) : { x: 0, y: 0 };
     const vidBank = (['slakta', 'rensa'] as const).every(a => { const o = spotFor(s, a, p); return stationFor(s, a) === st && Math.hypot(o.x - vid.x, o.y - vid.y) < 0.5; });
     const u = createState(1, START), uq = living(u).find(r => ageOf(r, u.now) >= 18)!;
     for (const r of u.people) r.tek = { ...r.tek, kniv: 1 };
     setAmount(u, 'kniv', 1); tidyTools(u); setMat(u, { vilt: 3 * KANIN, abborre: 3 });
-    const ingenSlakt = !canProcess(u, uq, DJUR.kanin) && SIM.canProcess(u, uq, DJUR.abborre);
+    const ingenSlakt = !canProcess(u, uq, DJUR.kanin) && !canProcess(u, uq, DJUR.abborre);
     bearbeta(u, uq, DJUR.kanin, 1);
-    const kvar = Math.abs(amountOf(u, 'vilt') - 3 * KANIN) < 1e-9 && amountOf(u, 'kott') < 1e-9;
-    const o = spotFor(u, 'rensa', uq), rensElden = Math.hypot(o.x - f.x - 0.5, o.y - f.y - 0.5) < 2.5;
+    bearbeta(u, uq, DJUR.abborre, 1);
+    const kvar = Math.abs(amountOf(u, 'vilt') - 3 * KANIN) < 1e-9 && amountOf(u, 'kott') < 1e-9 && Math.abs(amountOf(u, 'abborre') - 3) < 1e-9 && amountOf(u, 'fisk') < 1e-9;
     // jaktfärdigheten: mer kött för den som jagat mycket
     const kott = (jakt: number) => { p.skill.jakt = jakt; setMat(s, { vilt: 3 * KANIN }); bearbeta(s, p, DJUR.kanin, 1); return amountOf(s, 'kott'); };
     const ny = kott(0), van = kott(REDSKAP.kottFull);
@@ -392,12 +391,66 @@ SCENARIER.slaktbank = {
     return [
       [`slaktbänken byggs av ${STATION.slaktbankTra} trä på ${h} timmar av den som kan göra en kniv (${byggare})`, klar && enda && ved0 - amountOf(s, 'ved') >= STATION.slaktbankTra - 1e-9 && byggare.includes(STATIONER.slaktbank.bygger)],
       ['den första slaktbänken står i loggen', logg],
-      [`bänken står nära elden (${avElden.toFixed(1)} rutor), och där får inget annat ligga`, avElden >= 1.5 && avElden <= 4 && ingenAnnan],
+      [`bänken står nära elden (${avElden.toFixed(1)} rutor) och tar ${bredd} rutor, där inget annat får ligga`, avElden >= 1.5 && avElden <= 5 && ingenAnnan],
       [`en kniv hör till bänken, är byns och ligger kvar där (${tomma ? 'en ny kniv lades där' : 'en kniv ur förrådet flyttades dit när bänken blev klar'})`, ligger],
       ['den som slaktar utan egen kniv tar bänkens, och den läggs tillbaka vid bänken', tog && tillbaka],
       ['viltet slaktas och fisken rensas vid bänken', vidBank],
-      ['utan bänk slaktas inget, viltet ligger kvar att ätas som det är, och fisken rensas vid elden', ingenSlakt && kvar && rensElden],
+      ['utan bänk slaktas och rensas inget: viltet och abborren ligger kvar att ätas som de är', ingenSlakt && kvar],
       [`jaktfärdigheten avgör köttet: ${ny.toFixed(2)} kött av tre kaniner för den ovane, ${van.toFixed(2)} för den vane`, kottOk && van > ny],
+    ];
+  },
+};
+
+SCENARIER.flatarbank = {
+  text: 'Flätarbänken (steg 2.2.4) byggs av trä och grenar av den som kan fläta en korg eller tvinna rep. Vid den tvinnas rep fortare än för hand vid elden, och korgen flätas bara där. Handarbetet är alltid något bestämt som tar material och ger en sak',
+  kor: () => {
+    const { STATION, STATIONER, stationerOf, stationFor, isKlar, vidStation, spotFor, twineRope, wantsTool, thinkWhileWorking } = SIM;
+    // en by där alla kan tvinna rep men ingen kan göra en kniv, med gott om mat, trä, grenar och hö: flätarbänken byggs
+    const s = createState(1, START); klockan(s); tandEld(s);
+    for (const r of s.people) r.tek = { rep: 1 };
+    setMat(s, { bar: 200 }); setAmount(s, 'ved', 60); setAmount(s, 'grenar', 30); setAmount(s, 'torrgras', 40); setAmount(s, 'flinta', 3);
+    const ved0 = amountOf(s, 'ved');
+    let h = 0, byggare = '', hantverk = 0, tvinnar = 0;
+    while (!stationerOf(s).some(isKlar) && h < 72) { kor(s, 1, v => { for (const r of living(v)) if (r.task?.act === 'station') byggare = r.task.why ?? ''; }); h++; }
+    const st = stationerOf(s).find(isKlar), klar = !!st && st.k === 'flatarbank';
+    const logg = s.log.some(l => l.text.includes('första flätarbänk'));
+    const tog = ved0 - amountOf(s, 'ved') >= STATION.flatarbankTra - 1e-9; // (grenarna plockas samtidigt, så de räknas inte här)
+    // korgen: utan bänk vill ingen fläta en, med bänken görs den där
+    const u = createState(1, START), uq = living(u).find(r => ageOf(r, u.now) >= 18)!;
+    for (const r of u.people) r.tek = { korg: 1 };
+    setAmount(u, 'torrgras', 40);
+    const utanBank = !wantsTool(u, uq, 'korg');
+    const at = SIM.stationSite(u, 'flatarbank')!;
+    (u.stationer ??= []).push({ id: u.nextStation = (u.nextStation ?? 0) + 1, k: 'flatarbank', x: at.x, y: at.y, kvar: 0 });
+    const bank = stationFor(u, 'korg')!, vid = vidStation(bank), o = spotFor(u, 'korg', uq);
+    const medBank_ = wantsTool(u, uq, 'korg') && Math.hypot(o.x - vid.x, o.y - vid.y) < 0.5;
+    // rep: dubbelt så fort vid bänken som för hand vid elden
+    const rep = (vidBanken: boolean) => {
+      const w = createState(1, START), q = living(w).find(r => ageOf(r, w.now) >= 18)!;
+      q.tek = { rep: 1 }; setAmount(w, 'torrgras', 40); setAmount(w, 'rep', 0);
+      const a = SIM.stationSite(w, 'flatarbank')!;
+      (w.stationer ??= []).push({ id: 1, k: 'flatarbank', x: a.x, y: a.y, kvar: 0 });
+      const p0 = vidBanken ? vidStation(w.stationer[0]) : getMap(w.seed).fire;
+      q.x = p0.x; q.y = p0.y + (vidBanken ? 0 : 1);
+      twineRope(w, q, 0.5);
+      return amountOf(w, 'rep');
+    };
+    const hand = rep(false), vidB = rep(true);
+    // en vanlig by i fyra dygn (fyra år i spelet): inget handarbete utan sak, och rep tvinnas som en egen handling
+    const v = createState(2, START);
+    kor(v, 4 * 24, w => { for (const r of living(w)) { if (r.task?.act === 'hantverk') hantverk++; if (r.task?.act === 'tvinna') tvinnar++; } });
+    // att tvinna rep är hantverk: den som gör det kommer på det som hör till hantverket (kniven)
+    const t = createState(1, START), tq = living(t).find(r => ageOf(r, t.now) >= 18)!;
+    tq.tek = { rep: 1 }; setAmount(t, 'flinta', 3);
+    thinkWhileWorking(t, tq, 'tvinna', 3600);
+    const tankt = (tq.tek.kniv ?? 0) > 0;
+    return [
+      [`flätarbänken byggs av ${STATION.flatarbankTra} trä och ${STATION.flatarbankGrenar} grenar på ${h} timmar av den som kan tvinna rep (${byggare})`, klar && tog && byggare.includes(STATIONER.flatarbank.bygger)],
+      ['den första flätarbänken står i loggen', logg],
+      ['utan flätarbänk flätas ingen korg; med den flätas korgen vid bänken', utanBank && medBank_],
+      [`rep tvinnas fortare vid bänken (${vidB.toFixed(2)} på en halvtimme) än för hand vid elden (${hand.toFixed(2)})`, Math.abs(vidB - hand * STATION.repFart) < 1e-9 && hand > 0],
+      [`inget handarbete utan sak på fyra dygn (${hantverk} gånger), och rep tvinnas (${tvinnar} gånger)`, hantverk === 0 && tvinnar > 0],
+      ['att tvinna rep ger tankar om det som hör till hantverket', tankt],
     ];
   },
 };

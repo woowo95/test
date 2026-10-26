@@ -26,6 +26,10 @@ const PAL: Record<string, Record<string, string>> = {
   vilt: { b: '#9a7650', B: '#c8a478', w: '#f2ece0', k: '#1a1a1a', r: '#9c3328' },
   kniv: { h: '#7a5a36', H: '#9c7848', g: '#8f9396', G: '#c9cdd0' },
   slaktbank: { b: '#7a5a36', B: '#a8824e', d: '#4e3420', r: '#9c3328' },
+  flatarbank: { b: '#7a5a36', B: '#a8824e', d: '#4e3420', y: '#c8ac5c', Y: '#ecd890', o: '#9a7444', O: '#d0aa70' },
+  // stationerna på kartan, uppifrån: lika breda som rutorna de tar (8 punkter per ruta, stationer.ts)
+  slaktbank_karta: { d: '#3e2a18', b: '#7a5a36', B: '#a8824e', g: '#5a4028', r: '#9c3328', R: '#6e1e18', s: 'rgba(0,0,0,0.35)' },
+  flatarbank_karta: { d: '#3e2a18', b: '#7a5a36', B: '#a8824e', g: '#5a4028', y: '#c8ac5c', Y: '#ecd890', o: '#9a7444', O: '#d0aa70', s: 'rgba(0,0,0,0.35)' },
   skinn: { b: '#8a6440', B: '#b48a5e', d: '#5e4026' },
   metspo: { h: '#8a6a40', y: '#c8b07a', w: '#e8e2d0' },
   korg: { t: '#6e4e2e', o: '#9a6a3e', O: '#c99a62', d: '#5e3c20' },
@@ -307,6 +311,39 @@ const PIX: Record<string, string[]> = {
     '.d....d.',
     '.d....d.',
   ],
+  // slaktbänken uppifrån, tre rutor bred: plankor med fogar, blod till vänster och plats för kniven till höger
+  slaktbank_karta: [
+    '........................',
+    'dddddddddddddddddddddddd',
+    'dBBBBBBBgBBBBBBBgBBBBBBd',
+    'dbbrrbbbgbbbbbbbgbbbbbbd',
+    'dBrRRrBBgBBBBBBBgBBBBBBd',
+    'dbbrbbbbgbbbbbbbgbbbbbbd',
+    'dddddddddddddddddddddddd',
+    '.ss..................ss.',
+  ],
+  // flätarbänken uppifrån, två rutor bred: en tuss hö och ett nystan rep på plankorna
+  flatarbank_karta: [
+    '................',
+    'dddddddddddddddd',
+    'dBBYyYBBgBoOOoBd',
+    'dbYyYyYbgbOddObd',
+    'dBBYyYBBgBoOOoBd',
+    'dbbbbbbbgbbbbbbd',
+    'dddddddddddddddd',
+    '.ss..........ss.',
+  ],
+  // en bänk med en tuss hö och ett nystan rep
+  flatarbank: [
+    '........',
+    '.yY..oO.',
+    'yYYy.OoO',
+    'BBBBBBBB',
+    'bbbbbbbb',
+    '.d....d.',
+    '.d....d.',
+    '.d....d.',
+  ],
   // en flintkniv med skaft
   kniv: [
     '......Gg',
@@ -470,8 +507,8 @@ const urls: Record<string, string> = {};
 // pixelbilden som canvas, 8×8
 export function iconCanvas(k: string) {
   if (canvases[k]) return canvases[k];
-  const c = document.createElement('canvas'); c.width = 8; c.height = 8;
-  const g = c.getContext('2d')!, rows = PIX[k], pal = PAL[k];
+  const rows = PIX[k], pal = PAL[k], c = document.createElement('canvas'); c.width = rows?.[0]?.length ?? 8; c.height = rows?.length ?? 8; // 8×8, utom stationernas kartbilder
+  const g = c.getContext('2d')!;
   if (rows) rows.forEach((row, y) => [...row].forEach((ch, x) => { if (ch !== '.' && pal[ch]) { g.fillStyle = pal[ch]; g.fillRect(x, y, 1, 1); } }));
   return (canvases[k] = c);
 }

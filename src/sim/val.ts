@@ -21,7 +21,7 @@ import { clamp, pick, pickNarmaste, rnd } from './slump';
 import { ARSTID, ageIndex, iIstiden, isLight, kallTid, yearNo } from './tid';
 import { Act, H, HOUR, MIN, Person, Skill, Stat, State, T, W, inMap } from './typer';
 import { balans } from './balans';
-import { STATIONER, stationAttBygga, stationFor, stationSpot, vidStation } from './stationer';
+import { STATIONER, stationAttBygga, stationFor, stationSpot, storlek, vidStation } from './stationer';
 
 // ---------- val av aktivitet ----------
 // Balanstalen (regel 8): vikter, chanser, avstånd och hur länge ett pass varar. Kroppens gränser (KROPP) och åldrarna (ALDER)
@@ -99,7 +99,7 @@ const VAL = balans('val', {
 export function spotFor(s: State, act: Act, p: Person): { x: number; y: number } {
   const m = getMap(s.seed);
   const f = m.fire, d = ACTS[act], plats = d.plats ?? 'skog';
-  if (plats === 'station') { const st = stationFor(s, act); if (st) { const at = vidStation(st); return { x: at.x + (rnd(s, 'val', p) - 0.5) * 0.6, y: at.y }; } } // vid stationen, annars vid elden
+  if (plats === 'station') { const st = stationFor(s, act); if (st) { const at = vidStation(st); return { x: at.x + (rnd(s, 'val', p) - 0.5) * 0.6 * storlek(st.k).w, y: at.y }; } } // vid stationen, längs hela dess bredd, annars vid elden
   if (plats === 'elden' || plats === 'station') {
     // när det är kallt samtalar och berättar man i samlingshuset, om det är varmare där än vid elden (byggnader.ts)
     const sal = d.social ? samlingRum(s) : undefined, c = sal ? coldOf(temperature(s)) : 0;
@@ -381,22 +381,27 @@ export function toolGain(s: State, p: Person, act: Act, fara: Faror) {
   }
   return 1;
 }
-// slakta det fällda viltet vid slaktbänken eller rensa fisken vid bänken eller elden (DJUR i redskap.ts), så länge det tar, med kniven om det behövs
+// slakta det fällda viltet eller rensa fisken vid slaktbänken (DJUR i redskap.ts), så länge det tar, med kniven om det behövs
 function processTask(s: State, v: Val, art: Djurart, why: string) {
   set(v, art.act, why); if (art.kniv) v.tool = 'kniv';
   v.dur = Math.min(art.maxTim * HOUR, (djurKvar(s, art) / art.timme) * HOUR + VAL.extraMin * MIN);
 }
-// handarbete: den som kan göra en kniv gör det när byn saknar en (inte när kylan är en fara, som de andra redskapen i
-// withTools), den som kan bygger en station som byn saknar (slaktbänken, stationer.ts), den som har kniv slaktar viltet,
-// och den som kan tvinna rep gör det när byn behöver rep
+// handarbete är alltid något bestämt som tar material och ger en sak (steg 2.2.4): den som kan göra en kniv gör det när
+// byn saknar en (inte när kylan är en fara, som de andra redskapen i withTools), den som kan bygger en station som byn
+// saknar (slaktbänken, flätarbänken, stationer.ts), den som har kniv slaktar viltet och rensar fisken, den som kan gör ett
+// redskap som byn saknar (korgen vid flätarbänken), och den som kan tvinna rep gör det när byn behöver rep. Finns inget
+// att göra sitter man med de andra vid elden
 function craft(s: State, p: Person, v: Val, why: string) {
-  if (wantsTool(s, p, 'kniv') && !dangers(s).kyla) { const m = makeTask(s, p, 'kniv'); set(v, m.act, `${why}. ${m.text}`); v.dur = m.min * MIN; return; }
-  const sk = stationAttBygga(s, p), sp = sk && !dangers(s).kyla ? stationSpot(s, sk) : undefined;
+  const { kyla, gras } = dangers(s);
+  if (wantsTool(s, p, 'kniv') && !kyla) { const m = makeTask(s, p, 'kniv'); set(v, m.act, `${why}. ${m.text}`); v.dur = m.min * MIN; return; }
+  const sk = stationAttBygga(s, p), sp = sk && !kyla ? stationSpot(s, sk) : undefined;
   if (sk && sp) { set(v, 'station', `${why}. ${STATIONER[sk].bygger}`); v.tool = sk; v.spot = sp; v.dur = STATIONER[sk].min * MIN; return; }
   if (canProcess(s, p, DJUR.kanin)) { processTask(s, v, DJUR.kanin, `${why}. Slaktar viltet med kniven.`); return; }
   if (canProcess(s, p, DJUR.abborre)) { processTask(s, v, DJUR.abborre, `${why}. Rensar fisken.`); return; }
-  set(v, 'hantverk', why);
-  if (wantsRope(s, p)) { v.tool = 'rep'; v.why = `${why}. Tvinnar rep av hö.`; }
+  const g = kyla ? undefined : Object.keys(GORS).find(g => wantsTool(s, p, g, gras));
+  if (g) { const m = makeTask(s, p, g); set(v, m.act, `${why}. ${m.text}`); v.dur = m.min * MIN; if (m.tool) v.tool = m.tool; return; }
+  if (wantsRope(s, p)) { set(v, 'tvinna', `${why}. Tvinnar rep av hö.`); return; }
+  set(v, 'samtal', 'Har inget handarbete att göra och sitter med de andra vid elden');
 }
 
 // egen lust: vila, hantverk, umgänge, promenad, bad eller att sitta vid stranden. u = hur akut byn behöver arbete
