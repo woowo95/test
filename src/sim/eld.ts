@@ -243,9 +243,13 @@ export function stepFire(s: State, dtSec: number, ppl: Person[]) {
   }
   // tändning: när elden är släckt och någon vill ha eld försöker en person i taget
   if (!f.lit && !emberOn(s) && canLight(s) && f.want >= h.maxFuel * ELD.tandVill && !ppl.some(p => p.task?.act === 'tanda')) {
-    const ok = cands.filter(c => ageOf(c.p, now) >= ALDER.ansvar && c.w.v >= h.maxFuel * ELD.tandKandidat && canLight(s, c.p))
-      .sort((a, b) => (b.p.skill.elda + stat(b.p, 'flit', now) / ELD.tandFlit + rnd(s, 'eld') * ELD.tandBrus) - (a.p.skill.elda + stat(a.p, 'flit', now) / ELD.tandFlit + rnd(s, 'eld') * ELD.tandBrus));
-    const c = ok[0];
+    // ett slumptal per kandidat i ordning, sedan den bästa (inte i sorteringens jämförelser: deras antal beror på webbläsaren)
+    let c: { p: Person; w: Wish } | undefined, ck = -Infinity;
+    for (const o of cands) {
+      if (ageOf(o.p, now) < ALDER.ansvar || o.w.v < h.maxFuel * ELD.tandKandidat || !canLight(s, o.p)) continue;
+      const k = o.p.skill.elda + stat(o.p, 'flit', now) / ELD.tandFlit + rnd(s, 'eld') * ELD.tandBrus;
+      if (k > ck) { ck = k; c = o; }
+    }
     if (c) assign(s, c.p, 'tanda', m.fire.x + 0.5 + (rnd(s, 'eld') - 0.5) * 1.2, m.fire.y + 1.3, ELD.tandTim * HOUR, `Vill ha eld. ${c.w.why}`);
   }
 }

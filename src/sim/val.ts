@@ -420,7 +420,9 @@ function night(s: State, p: Person, v: Val, a: number) {
     const adults = living(s).filter(q => ageOf(q, now) >= ALDER.vaktFran && ageOf(q, now) < ALDER.vaktTill);
     if (adults.length) {
       s.lastGuardDay = guardDay;
-      const g = adults.sort((x, y) => (y.pot.mod + rnd(s, 'val') * VAL.vaktSlump) - (x.pot.mod + rnd(s, 'val') * VAL.vaktSlump))[0];
+      // ett slumptal per vuxen i byns ordning, sedan den högsta (inte i sorteringens jämförelser: deras antal beror på webbläsaren)
+      let g = adults[0], gk = -Infinity;
+      for (const q of adults) { const k = q.pot.mod + rnd(s, 'val') * VAL.vaktSlump; if (k > gk) { gk = k; g = q; } }
       avbryt(s, g); g.guardDay = guardDay; // det vakten bar läggs ner där hen står
     }
   }

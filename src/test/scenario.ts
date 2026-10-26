@@ -11,7 +11,7 @@ const setItems = (s: State, m: Record<string, number>) => {
 const setMat = (s: State, m: Record<string, number>) => { for (const k of FOOD) setAmount(s, k, m[k] ?? 0); };
 // all mat blir n, i samma förhållande mellan slagen som förut (bär om det inte fanns någon)
 const setFood = (s: State, n: number) => { const f = foodOf(s); if (f > 0) { const m: Record<string, number> = {}; for (const k of FOOD) m[k] = amountOf(s, k) * n / f; setStock(s, m); } else setAmount(s, 'bar', n); };
-import { FOLDERS, STATS, ACTS, haulJob, fetchFuel, ownedAll, leave, chooseTask, stackOf, birth, coverOf, lightLevel, timeLabel, hearthOf, igniterOf, fireWant, fireHeat, heatRadius, emberOn, zoneAt, bitAt, husById, isSick, isSocial, moodOf, duty, habitTotal, habitShare, childrenOf, homeKind, taskName, carryKind, influence, hasMaterial, wornOf, relKey, sakNamn, tingNamn, visning, SAKER, slagIkon } from '../sim';
+import { ALDER, stepFire, FOLDERS, STATS, ACTS, haulJob, fetchFuel, ownedAll, leave, chooseTask, stackOf, birth, coverOf, lightLevel, timeLabel, hearthOf, igniterOf, fireWant, fireHeat, heatRadius, emberOn, zoneAt, bitAt, husById, isSick, isSocial, moodOf, duty, habitTotal, habitShare, childrenOf, homeKind, taskName, carryKind, influence, hasMaterial, wornOf, relKey, sakNamn, tingNamn, visning, SAKER, slagIkon } from '../sim';
 import { hasIcon } from '../ikoner';
 import { findPath } from '../sim/vag';
 import { FOREST, HIGH, isSoil } from '../sim/vag';
@@ -374,6 +374,14 @@ SCENARIER.sparning = {
   },
 };
 
+// hur många slumptal f drar ur byns följd k (varje tal flyttar följden lika långt, slump.ts)
+function drag(s: State, k: Strom, f: () => void) {
+  rnd(s, k); // följden finns
+  const fore = s.rngs![k]!; f();
+  let x = fore, n = 0;
+  while (x !== s.rngs![k] && n < 1e5) { x = (x + 0x6d2b79f5) | 0; n++; }
+  return n;
+}
 SCENARIER.slump = {
   text: 'Varje system och varje person har en egen slumpföljd, och det som bara syns i spelet rör aldrig byns följder',
   kor: () => {
@@ -389,7 +397,23 @@ SCENARIER.slump = {
     spar.pa = false;
     for (let i = 0; i < 12 * 24; i++) step(e, BEAT);
     const inspelning = serialize(d) === serialize(e);
+    // nattens vakt och den som tänder elden väljs med ett slumptal per kandidat, inte i sorteringens jämförelser (då beror
+    // antalet slumptal på webbläsarens sorteringsalgoritm)
+    const g = createState(5, START), vuxna = () => living(g).filter(q => ageOf(q, g.now) >= ALDER.vaktFran && ageOf(q, g.now) < ALDER.vaktTill);
+    while (vuxna().length < 4) g.people.push({ ...structuredClone(vuxna()[0]), id: g.nextId++, task: undefined, rngs: undefined });
+    g.now = new Date(g.now).setHours(23, 0, 0, 0);
+    for (const q of living(g)) Object.assign(q, { toa: 1, warm: 1, rest: 1, health: 1, hunger: 1, task: undefined });
+    g.lastGuardDay = -999;
+    const vd = drag(g, 'val', () => chooseTask(g, vuxna()[0]));
+    Object.assign(g.fire, { lit: false, fuel: 0, emberUntil: undefined, ring: true });
+    setItems(g, { torrgras: 10, grenar: 10, flinta: 2 }); setAmount(g, 'ved', 10);
+    for (const q of living(g)) q.task = undefined;
+    const tandare = living(g).filter(q => ageOf(q, g.now) >= ALDER.ansvar).length;
+    const ed = drag(g, 'eld', () => stepFire(g, 1, living(g)));
+    const tande = living(g).some(q => q.task?.act === 'tanda');
     return [
+      [`nattens vakt väljs med ett slumptal per vuxen (${vd} tal för ${vuxna().length} vuxna)`, vd === vuxna().length && living(g).some(q => q.guardDay !== undefined && q.guardDay === g.lastGuardDay)],
+      [`den som tänder elden väljs med ett slumptal per kandidat (${ed} tal för ${tandare} och platsen)`, tande && ed === tandare + 1],
       ['fler slumptal i ett system ändrar inte slumpen i de andra', lika],
       [`varje system och varje person får egna tal (${olika.size} olika av ${Object.keys(STROMMAR).length + living(c).length})`, olika.size === Object.keys(STROMMAR).length + living(c).length],
       ['spelets inspelning av gångvägarna ändrar inget i byn (ett dygn)', inspelning],
