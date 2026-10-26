@@ -3,7 +3,7 @@ import { getable, takeMaterial } from './behov';
 import { Del, addDel } from './egendom';
 import { coldOf, temperature } from './vader';
 import { ALDER, KROPP, ageOf, count, doingAct, isSick, log, ovning, stat, think } from './folk';
-import { flintFactor, stoneDist, takeFrom } from './fynd';
+import { flintFactor, flintorOchYxor, stoneDist, takeFrom } from './fynd';
 import { observe } from './minne';
 import { getMap } from './karta';
 import { tileOf } from './mark';
@@ -271,7 +271,7 @@ export function forageItems(s: State, p: Person, dtSec: number): Record<string, 
   }
   // flinta är ovanlig och hittas oftast vid stenarna. Den slås mot en sten för att tända eld, och med en pinne blir den en yxa
   const ff = p.task ? flintFactor(s, p.task.tx, p.task.ty) : ELD.flintaOkand;
-  if (amountOf(s, 'flinta') + amountOf(s, 'yxa') < ELD.flintaMax && chance(s, ELD.flintaTakt * ff * sk * SNABBARE / HOUR_S, dtSec, 'arbete', p)) {
+  if (flintorOchYxor(s) < ELD.flintaMax && chance(s, ELD.flintaTakt * ff * sk * SNABBARE / HOUR_S, dtSec, 'arbete', p)) {
     got.flinta = 1; count(s, ff > ELD.flintaStenar ? 'flintaSten' : 'flintaAnnan');
     if (p.task) takeFrom(s, 'flinta', p.task.tx, p.task.ty, 1);
     if (ff > ELD.flintaStenar && p.task) observe(s, p, 'flinta', p.task.tx, p.task.ty);

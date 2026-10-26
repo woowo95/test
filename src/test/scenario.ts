@@ -11,7 +11,7 @@ const setItems = (s: State, m: Record<string, number>) => {
 const setMat = (s: State, m: Record<string, number>) => { for (const k of FOOD) setAmount(s, k, m[k] ?? 0); };
 // all mat blir n, i samma förhållande mellan slagen som förut (bär om det inte fanns någon)
 const setFood = (s: State, n: number) => { const f = foodOf(s); if (f > 0) { const m: Record<string, number> = {}; for (const k of FOOD) m[k] = amountOf(s, k) * n / f; setStock(s, m); } else setAmount(s, 'bar', n); };
-import { ALDER, KROPP, inMap, stepFire, canLight, dangers, toolGain, samlingRum, varmareInne, FOLDERS, STATS, ACTS, haulJob, fetchFuel, ownedAll, leave, chooseTask, stackOf, birth, coverOf, lightLevel, timeLabel, hearthOf, igniterOf, fireWant, fireHeat, heatRadius, emberOn, zoneAt, bitAt, husById, isSick, isSocial, moodOf, duty, habitTotal, habitShare, childrenOf, homeKind, taskName, carryKind, influence, hasMaterial, wornOf, relKey, sakNamn, tingNamn, visning, SAKER, slagIkon } from '../sim';
+import { ALDER, KROPP, inMap, stepFire, wantsFlint, canLight, dangers, toolGain, samlingRum, varmareInne, FOLDERS, STATS, ACTS, haulJob, fetchFuel, ownedAll, leave, chooseTask, stackOf, birth, coverOf, lightLevel, timeLabel, hearthOf, igniterOf, fireWant, fireHeat, heatRadius, emberOn, zoneAt, bitAt, husById, isSick, isSocial, moodOf, duty, habitTotal, habitShare, childrenOf, homeKind, taskName, carryKind, influence, hasMaterial, wornOf, relKey, sakNamn, tingNamn, visning, SAKER, slagIkon } from '../sim';
 import { hasIcon } from '../ikoner';
 import { findPath } from '../sim/vag';
 import { FOREST, HIGH, isSoil } from '../sim/vag';
@@ -522,7 +522,11 @@ SCENARIER.stenring = {
     // elden tänds bara om det finns bränsle kvar sedan grenarna till tändningen tagits (flintan tar 3 grenar)
     const bransle = (grenar: number) => { const b = createState(2, START); setItems(b, { flinta: 1, torrgras: 6, grenar }); setAmount(b, 'ved', 0); b.fire.ring = true; return canLight(b); };
     const tand5 = bransle(5), tand6 = bransle(6);
+    // redskap räknas i styck, som yxorna i skog.ts: en flinta och en sliten yxa räcker, och ingen letar mer
+    const sl = createState(2, START); setItems(sl, { flinta: 1 }); addTool(sl, 'yxa', living(sl)[0]); for (const x of tingOf(sl)) if (x.k === 'yxa') x.c = 0.5;
+    const slitenYxa = wantsFlint(sl);
     return [
+      [`en sliten yxa räknas som en yxa när byn vill ha flinta (${slitenYxa ? 'vill ha mer' : 'räcker'})`, !slitenYxa],
       [`elden tänds bara med bränsle kvar efter tändgrenarna (5 grenar: ${tand5 ? 'ja' : 'nej'}, 6 grenar: ${tand6 ? 'ja' : 'nej'})`, !tand5 && tand6],
       [`en korg flätas vid elden, inte där flintan skulle letas (${korgFel} av ${korgar} korgar fel)`, korgar > 0 && korgFel === 0],
       [`en i taget letar flinta till en yxa (${fler} till av 100 när någon redan letar)`, fler === 0],
