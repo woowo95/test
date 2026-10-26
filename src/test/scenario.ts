@@ -11,7 +11,7 @@ const setItems = (s: State, m: Record<string, number>) => {
 const setMat = (s: State, m: Record<string, number>) => { for (const k of FOOD) setAmount(s, k, m[k] ?? 0); };
 // all mat blir n, i samma förhållande mellan slagen som förut (bär om det inte fanns någon)
 const setFood = (s: State, n: number) => { const f = foodOf(s); if (f > 0) { const m: Record<string, number> = {}; for (const k of FOOD) m[k] = amountOf(s, k) * n / f; setStock(s, m); } else setAmount(s, 'bar', n); };
-import { ALDER, KROPP, inMap, stepFire, FOLDERS, STATS, ACTS, haulJob, fetchFuel, ownedAll, leave, chooseTask, stackOf, birth, coverOf, lightLevel, timeLabel, hearthOf, igniterOf, fireWant, fireHeat, heatRadius, emberOn, zoneAt, bitAt, husById, isSick, isSocial, moodOf, duty, habitTotal, habitShare, childrenOf, homeKind, taskName, carryKind, influence, hasMaterial, wornOf, relKey, sakNamn, tingNamn, visning, SAKER, slagIkon } from '../sim';
+import { ALDER, KROPP, inMap, stepFire, dangers, toolGain, FOLDERS, STATS, ACTS, haulJob, fetchFuel, ownedAll, leave, chooseTask, stackOf, birth, coverOf, lightLevel, timeLabel, hearthOf, igniterOf, fireWant, fireHeat, heatRadius, emberOn, zoneAt, bitAt, husById, isSick, isSocial, moodOf, duty, habitTotal, habitShare, childrenOf, homeKind, taskName, carryKind, influence, hasMaterial, wornOf, relKey, sakNamn, tingNamn, visning, SAKER, slagIkon } from '../sim';
 import { hasIcon } from '../ikoner';
 import { findPath } from '../sim/vag';
 import { FOREST, HIGH, isSoil } from '../sim/vag';
@@ -576,7 +576,14 @@ SCENARIER.redskap = {
     kor(s, 4 * 24, q => { if ((amountOf(q, 'ben')) < 1) setAmount(q, 'ben', 1); if ((amountOf(q, 'flinta')) < 3) setAmount(q, 'flinta', 3); });
     const st = s.stat!, takt = (f: number, n: number) => n ? f / n : 0;
     const met = takt(st.metFisk ?? 0, st.metForsok ?? 0), spjut = takt(st.spjutFisk ?? 0, st.spjutForsok ?? 0);
+    // en korg som kan göras räknas i valet av arbete bara när den görs: inte när kylan är en fara (elden släckt och alla fryser)
+    const k = createState(4, START);
+    setItems(k, { torrgras: 40 }); Object.assign(k.fire, { lit: false, fuel: 0, emberUntil: undefined });
+    for (const q of k.people) { q.tek = { korg: 1 }; q.warm = KROPP.kallt - 0.1; }
+    const kp = living(k).find(q => ageOf(q, k.now) >= 18)!, kf = dangers(k);
+    const korgVarm = toolGain(k, kp, 'samla', { kyla: false, gras: 0 }), korgKall = toolGain(k, kp, 'samla', kf);
     return [
+      [`en korg som kan göras räknas inte när kylan är en fara (${korgKall} i kylan, ${korgVarm} annars)`, kf.kyla && korgVarm > 1 && korgKall === 1],
       [`rep tvinnas av hö (2 rep av 4 hö på en timme)`, rep],
       ['ett flintspjut görs av gren, flinta och rep, och en flinta sparas till elden', flint],
       ['flintspjutet håller fyra gånger så länge som ett träspjut', haller],

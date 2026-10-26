@@ -202,11 +202,12 @@ function strandSpot(s: State) {
 }
 // Faror går före förbättringar. En korg eller ett spjut gör maten lättare att få tag i, men när kylan är en fara väntar
 // sådant: tid och hö går då först till värmen. Inför och under istiden sparar man hö till det.
-function dangers(s: State) {
+export function dangers(s: State) {
   const ppl = living(s), freezing = ppl.filter(q => q.warm < KROPP.kallt).length / (ppl.length || 1), ai = ageIndex(s);
   const cold = coldOf(temperature(s)) > 0 || freezing > VAL.fryserAndel;
   return { kyla: cold && !s.fire.lit && !emberOn(s), gras: kallTid(ai) || cold ? RESERV.torrgrasKyla : 0 };
 }
+type Faror = ReturnType<typeof dangers>;
 // elden är släckt och kan inte tändas för att det saknas tändmaterial, och för få hämtar det
 const tinderNeeded = (s: State) => !s.fire.lit && !emberOn(s) && !canLight(s) && needTinder(s) && living(s).filter(q => q.task?.act === 'samla').length < VAL.tandHamtare;
 // det som väljs: handlingen, varför, hur länge, och var om det inte följer av handlingen
@@ -258,8 +259,8 @@ function day(s: State, p: Person, v: Val, a: number, lazy: number) {
   if (s.stackar?.length && rnd(s, 'val', p) < VAL.baraChans && (gt = haulJob(s))) { set(v, 'bara', gt.why); v.spot = gt; v.dur = VAL.baraTim * HOUR; return; }
   if (a >= ALDER.vuxen && canSlaughter(s, p) && rnd(s, 'val', p) < VAL.slaktChans) { slaughterTask(s, v, 'Det finns vilt att slakta innan det blir dåligt'); return; }
   if (a >= ALDER.rensar && canClean(s, p) && rnd(s, 'val', p) < VAL.rensaChans) { cleanTask(s, v, 'Det finns fisk att rensa innan den blir dålig'); return; }
-  const fd = foodDays(s), wd = woodDays(s), ai = ageIndex(s), tot = habitTotal(p);
-  let { best, bs, burg } = bestWork(s, p, fd, wd, ai, tot);
+  const fd = foodDays(s), wd = woodDays(s), ai = ageIndex(s), tot = habitTotal(p), fara = dangers(s); // farorna räknas en gång och gäller hela valet
+  let { best, bs, burg } = bestWork(s, p, fd, wd, ai, tot, fara);
   // bygget: väger mer ju fler som saknar sovplats under tak, inför och under istiden, när en vägg behöver lagas och när huset inte är klart
   const job = buildJob(s, p), ppl = living(s);
   let build = false;
@@ -292,7 +293,7 @@ function day(s: State, p: Person, v: Val, a: number, lazy: number) {
     set(v, best, what + (lazy < 0.2 ? '. Plikttrogen.' : habitShare(p, [best], tot) > 0.25 ? '. Brukar göra det.' : p.skill[best as Skill] > 10 ? '. Skicklig på det.' : '.'));
     v.dur = (VAL.arbeteMin + rnd(s, 'val', p) * VAL.arbeteSpann) * MIN * VAL.pass;
     if (tandmat) v.tandmat = true;
-    withTools(s, p, v, best, what, fd, ai, leta);
+    withTools(s, p, v, best, what, fd, ai, fara, leta);
     if (build && job!.missing && job!.item === 'ved' && v.act === 'falla') { v.ref = job!.bit.hus; v.why = `${v.why} Stocken ska bli en vägg.`; } // trädet fälls för bygget
   } else leisure(s, p, v, u, lazy, ai);
 }
@@ -302,7 +303,7 @@ const lust = (s: State, p: Person, skill: Skill, egenskap: Stat, acts: Act[], to
 // byns behov (col) gånger lusten, med ett slumpbrus mellan brusMin och brusMin + brusSpann (drar ett tal ur 'val')
 const poang = (s: State, p: Person, col: number, like: number) => col * like * (VAL.brusMin + rnd(s, 'val', p) * VAL.brusSpann);
 // det arbete byn behöver mest just nu, vägt mot egen lust och vana. burg = hur mycket det mest behövda behövs
-function bestWork(s: State, p: Person, fd: number, wd: number, ai: number, tot: number) {
+function bestWork(s: State, p: Person, fd: number, wd: number, ai: number, tot: number, fara: Faror) {
   const fs = 1 + VAL.forsiktig * s.seder.v.forsiktighet; // en försiktig by vill ha större förråd
   const wFood = clamp(VAL.behovTomt - fd / (VAL.matDygn * fs), VAL.matMin, VAL.behovMax);
   const wWood = clamp(VAL.behovTomt - wd / (VAL.vedDygn * fs), VAL.vedMin, VAL.behovMax) * (kallTid(ai) ? ARSTID.vedKall : 1); // inför och under istiden väger veden tyngre
@@ -311,7 +312,7 @@ function bestWork(s: State, p: Person, fd: number, wd: number, ai: number, tot: 
     const need = w === 'ved' ? wWood : wFood;
     const tinder = w === 'samla' && needTinder(s);
     // nytta för byn; maten väger också in hur mycket platserna ger just nu och att fiske med händerna ger lite
-    const yieldF = w === 'ved' || tinder ? 1 : clamp(prospectFor(s, p, w as Kind), VAL.prospektMin, VAL.prospektMax) * (w === 'fiske' ? FANGST.handFiske : 1) * toolGain(s, p, w);
+    const yieldF = w === 'ved' || tinder ? 1 : clamp(prospectFor(s, p, w as Kind), VAL.prospektMin, VAL.prospektMax) * (w === 'fiske' ? FANGST.handFiske : 1) * toolGain(s, p, w, fara);
     const season = ACTS[w].sasong![ai];
     const col = need * (w === 'ved' ? 1 : tinder ? Math.max(VAL.tandMin, season) * VAL.tandVikt : season * yieldF);
     const sc = poang(s, p, col, lust(s, p, w as Skill, ACTS[w].egenskap!, [w], tot)); // egen lust och vana
@@ -342,8 +343,8 @@ const flintaTillYxa = (s: State, p: Person, fd: number, ai: number) => amountOf(
 // Flinta och stenar till elden letas när byn saknar dem, också när maten är knapp (elden före maten: Björn avgör)
 const flintaTillElden = (s: State) => amountOf(s, 'flinta') < FANGST.flintaMinsta || needStones(s);
 // arbetet med redskap: flinta letas vid stenarna, yxan fäller träd, korgen och spjutet görs först om de saknas.
-// fd: hur många dygn maten räcker, ai: tidsåldern
-function withTools(s: State, p: Person, v: Val, best: Act, what: string, fd: number, ai: number, leta = false) {
+// fd: hur många dygn maten räcker, ai: tidsåldern, fara: farorna från day()
+function withTools(s: State, p: Person, v: Val, best: Act, what: string, fd: number, ai: number, fara: Faror, leta = false) {
   const stones = needStones(s);
   if (best === 'samla' && (leta || (flintaTillElden(s) || flintaTillYxa(s, p, fd, ai)) && rnd(s, 'val', p) < VAL.stenarChans)) { // byn saknar flinta eller stenar till eldringen. Stenarna ligger långt bort, så där letar man ett helt pass
     const fa = flintArea(p), fl = (fa !== undefined && flintSpot(s, (x, y) => areaOf(x, y) === fa)) || flintSpot(s);
@@ -357,7 +358,7 @@ function withTools(s: State, p: Person, v: Val, best: Act, what: string, fd: num
     v.ref = ax.ref;
   }
   // med det bästa redskapet som är ledigt; finns inget gör den som kan ett först (inte när kylan är en fara)
-  const { kyla, gras } = dangers(s), rader = ACTS[v.act].redskap;
+  const { kyla, gras } = fara, rader = ACTS[v.act].redskap;
   if (rader) for (const [g, ks] of Object.entries(toolGroups(v.act))) {
     if (!rader[ks[0]].tar) continue; // yxan väljs med arbetet (axeTask)
     const k = freeOfKinds(s, p, ks);
@@ -366,10 +367,12 @@ function withTools(s: State, p: Person, v: Val, best: Act, what: string, fd: num
     if (t && !kyla && t.vill(s, p, gras)) { const m = t.gor(s, p); set(v, m.act, `${what}. ${m.text}`); v.dur = m.min * MIN; if (m.tool) v.tool = m.tool; return; }
   }
 }
-// hur mycket mer arbetet ger med det redskap som finns ledigt eller kan göras (det bästa först)
-function toolGain(s: State, p: Person, act: Act) {
+// hur mycket mer arbetet ger med det redskap som finns ledigt eller kan göras (det bästa först). Ett redskap räknas som
+// möjligt att göra bara när withTools skulle göra det: inte när kylan är en fara, och med höet som sparas till värmen
+export function toolGain(s: State, p: Person, act: Act, fara: Faror) {
   for (const [g, ks] of Object.entries(toolGroups(act))) {
-    if (freeOfKinds(s, p, ks) || TILLVERKA[g]?.vill(s, p, 0)) return ACTS[act].redskap![ks[0]].ger ?? 1;
+    const t = TILLVERKA[g];
+    if (freeOfKinds(s, p, ks) || t && !fara.kyla && t.vill(s, p, fara.gras)) return ACTS[act].redskap![ks[0]].ger ?? 1;
   }
   return 1;
 }
