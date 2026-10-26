@@ -1,6 +1,6 @@
 import { campDist } from './plats';
 import { Ting, newTing, tingOf } from './agande';
-import { alive, byId, count, stat, ageOf, log } from './folk';
+import { alive, byId, count, living, stat, ageOf, log } from './folk';
 import { getMap } from './karta';
 import { Act, H, HOUR_S, Person, State, T, Task, W, inMap } from './typer';
 import { bitAt, roofed } from './byggnad';
@@ -620,7 +620,7 @@ export function dropLoad(s: State, t: Task, x: number, y: number, owner = BYN) {
 export function haulJob(s: State, near?: number) {
   placeTools(s);
   const zs = zonesOf(s), occ = occupancy(s);
-  const taken = new Set(s.people.filter(p => p.task?.act === 'bara' && p.task.phase === 'go').map(p => key(Math.floor(p.task!.tx), Math.floor(p.task!.ty))));
+  const taken = new Set(living(s).filter(p => p.task?.act === 'bara' && p.task.phase === 'go').map(p => key(Math.floor(p.task!.tx), Math.floor(p.task!.ty))));
   let best: { x: number; y: number; why: string } | undefined, bs = Infinity;
   for (const a of things(s)) {
     if (taken.has(key(a.x, a.y))) continue;

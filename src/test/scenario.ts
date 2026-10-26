@@ -11,7 +11,7 @@ const setItems = (s: State, m: Record<string, number>) => {
 const setMat = (s: State, m: Record<string, number>) => { for (const k of FOOD) setAmount(s, k, m[k] ?? 0); };
 // all mat blir n, i samma förhållande mellan slagen som förut (bär om det inte fanns någon)
 const setFood = (s: State, n: number) => { const f = foodOf(s); if (f > 0) { const m: Record<string, number> = {}; for (const k of FOOD) m[k] = amountOf(s, k) * n / f; setStock(s, m); } else setAmount(s, 'bar', n); };
-import { FOLDERS, STATS, ACTS, coverOf, lightLevel, timeLabel, hearthOf, igniterOf, fireWant, fireHeat, heatRadius, emberOn, zoneAt, bitAt, husById, isSick, isSocial, moodOf, duty, habitTotal, habitShare, childrenOf, homeKind, taskName, carryKind, influence, hasMaterial, wornOf, relKey, sakNamn, tingNamn, visning, SAKER, slagIkon } from '../sim';
+import { FOLDERS, STATS, ACTS, haulJob, fetchFuel, coverOf, lightLevel, timeLabel, hearthOf, igniterOf, fireWant, fireHeat, heatRadius, emberOn, zoneAt, bitAt, husById, isSick, isSocial, moodOf, duty, habitTotal, habitShare, childrenOf, homeKind, taskName, carryKind, influence, hasMaterial, wornOf, relKey, sakNamn, tingNamn, visning, SAKER, slagIkon } from '../sim';
 import { hasIcon } from '../ikoner';
 import { findPath } from '../sim/vag';
 import { FOREST, HIGH, isSoil } from '../sim/vag';
@@ -1359,7 +1359,20 @@ SCENARIER.lager = {
     // tomt lager krymper
     setFood(s, 5); setAmount(s, 'ved', 0); setItems(s, { flinta: 1 });
     kor(s, 12);
+    // en död med en uppgift kvar låser varken en stack som ska bäras in eller elden (bara de levande räknas)
+    const dd = createState(3, START), [dod, lev] = living(dd), f = getMap(3).fire;
+    let mark: { x: number; y: number } | undefined;
+    for (let r = 4; r < 12 && !mark; r++) for (let dx = -r; dx <= r && !mark; dx++) { const x = f.x + dx, y = f.y + r; if (getMap(3).tiles[tileOf(x, y)] !== T.Vatten && !isStored(dd, x, y)) mark = { x, y }; }
+    dropLoad(dd, { act: 'samla', phase: 'do', tx: 0, ty: 0, until: dd.now, carry: 0, items: { grenar: 3 } }, mark!.x + 0.5, mark!.y + 0.5);
+    const utan = haulJob(dd);
+    dod.died = dd.now; dod.task = { act: 'bara', phase: 'go', tx: utan?.x ?? 0, ty: utan?.y ?? 0, until: dd.now + HOUR, carry: 0 };
+    const stackFri = !!utan && isDeepStrictEqual(haulJob(dd), utan);
+    dod.task = { act: 'elda', phase: 'go', tx: f.x, ty: f.y, until: dd.now + HOUR, carry: 0 }; lev.task = undefined;
+    fetchFuel(dd, lev, 'test');
+    const eldFri = (lev.task as Task | undefined)?.act === 'elda';
     return [
+      ['en död med en uppgift kvar låser inte en stack som ska bäras in (haulJob)', stackFri],
+      ['... och inte elden (fetchFuel)', eldFri],
       [`lagerplatsen växer när den blir full (${start} → ${stor} rutor, ${zonesOf(s).length} lagerplatser, ${ps.filter(p => p.out).length} av ${ps.length} stackar utanför)`, stor > start && ps.every(p => !p.out)],
       ['ingen stack är större än sin storlek, och stackarna innehåller allt i förrådet', ps.every(p => p.n <= p.max + 1e-9) && summaOk],
       [`folk bär hem saker, aldrig mer än de orkar (${hem} steg på väg hem, ${fullt} med full börda, högst ${(maxKvot * 100).toFixed(0)} % av förmågan)`, hem > 50 && maxKvot <= 1.15],

@@ -2,7 +2,7 @@ import { addTo, amountOf, dropLoad, fetchSpot, isCarrying, takeLimit, use } from
 import { getable, takeMaterial } from './behov';
 import { Del, addDel } from './egendom';
 import { coldOf, temperature } from './vader';
-import { ALDER, KROPP, ageOf, count, isSick, log, ovning, stat, think } from './folk';
+import { ALDER, KROPP, ageOf, count, doingAct, isSick, log, ovning, stat, think } from './folk';
 import { flintFactor, stoneDist, takeFrom } from './fynd';
 import { observe } from './minne';
 import { getMap } from './karta';
@@ -189,7 +189,7 @@ function assign(s: State, p: Person, act: Act, tx: number, ty: number, dur: numb
 }
 // p går till förrådet efter en famn ved och sedan till elden (steg.ts). fran = den andras ved (stöld, behov.ts)
 export function fetchFuel(s: State, p: Person, why: string, fran?: Person) {
-  if (s.people.some(q => q.task?.act === 'elda')) return; // en i taget
+  if (doingAct(s, 'elda')) return; // en i taget (bland de levande)
   const at = fetchSpot(s, takeLimit(s, 'ved', p, fran) >= 1 ? 'ved' : 'grenar');
   assign(s, p, 'elda', at.x, at.y, ELD.hamtaTim * HOUR, why);
   if (fran) p.task!.fran = fran.id;
