@@ -4,6 +4,7 @@
 import './scenarier/grund';
 import './scenarier/sparning';
 import './scenarier/redskap';
+import './scenarier/projekt';
 import './scenarier/agande';
 import './scenarier/behov';
 import './scenarier/natur';

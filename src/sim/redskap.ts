@@ -169,6 +169,9 @@ const VILL: Record<string, (s: State) => number> = {
   // en yxa per fyra över yxaFran år, och en till medan ett hus byggs (för träden där det ska stå)
   yxa: s => clamp(Math.floor(living(s).filter(q => ageOf(q, s.now) >= REDSKAP.yxaFran).length / REDSKAP.yxaPerVuxna), REDSKAP.yxaMin, REDSKAP.yxaMax) + (s.hus?.some(h => !h.klar) ? REDSKAP.yxaBygge : 0),
 };
+// hur många byn vill ha av gruppen g, och hur många den har (projekt.ts)
+export const villAv = (s: State, g: string) => VILL[g](s);
+export const harAv = (s: State, g: string) => GORS[g].reduce((a, k) => a + nTools(s, k), 0);
 // verktyget som används till k (det första som finns i byn), eller undefined. En sliten yxa är fortfarande en yxa
 const verktygFor = (s: State, k: string) => Object.keys(SAKER[k]!.skaffa!.verktyg ?? {}).find(m => isTool(m) ? nTools(s, m) >= 1 : amountOf(s, m) >= 1);
 const ordFor = (s: State, k: string) => { const m = verktygFor(s, k); return m ? SAKER[k]!.skaffa!.verktyg![m] : ''; };
@@ -188,7 +191,7 @@ export const borjaTool = (s: State, p: Person, g: string) => { const k = kindFor
 export const wantsTool = (s: State, p: Person, g: string, spar = 0) => {
   const ks = GORS[g];
   return kanGoras(s, g as Act) && (!!halvOf(s, p, ks) || ks.some(k => canMake(s, p, k) && (!av(k).torrgras || amountOf(s, 'torrgras') >= spar)))
-    && ks.reduce((a, k) => a + nTools(s, k), 0) < VILL[g](s) && !doingAct(s, g as Act, p);
+    && harAv(s, g) < VILL[g](s) && !doingAct(s, g as Act, p);
 };
 // arbetet att göra ett redskap i gruppen g. tool = slaget som görs när gruppen har flera (namnet på arbetet, handlingar.ts)
 export function makeTask(s: State, p: Person, g: string) {

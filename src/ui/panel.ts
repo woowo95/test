@@ -9,6 +9,7 @@ import { station } from './flikar/station';
 import { person } from './flikar/person';
 import { seder } from './flikar/seder';
 import { teknik } from './flikar/teknik';
+import { projekt } from './flikar/projekt';
 import { $, hjalpKlick } from './hjalp';
 import { piles, s, ui } from './lage';
 import { renderPorts } from './portratt';
@@ -21,7 +22,7 @@ export interface Flik {
   html(): string; // innehållet; byggs om ett par gånger i sekunden
   klick?(el: HTMLElement): boolean; // tryck i sidan som fliken tar hand om, även när den inte är öppen; true = klart
 }
-const FLIKAR = { folk, logg, person, eld, lager, hog, hus, station, sjo, seder, teknik } satisfies Record<string, Flik>;
+const FLIKAR = { folk, logg, person, eld, lager, hog, hus, station, sjo, seder, teknik, projekt } satisfies Record<string, Flik>;
 export type FlikId = keyof typeof FLIKAR;
 const ALLA: Record<FlikId, Flik> = FLIKAR;
 const IDS = Object.keys(FLIKAR) as FlikId[];

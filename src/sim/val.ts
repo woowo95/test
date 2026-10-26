@@ -6,7 +6,8 @@ import { canLight, emberOn, fireWant, needStones, needTinder, woodDays } from '.
 import { ALDER, KROPP, ageOf, isSick, living, stat } from './folk';
 import { FANGST, Kind, flintSpot, shoreOf, wantsFlint } from './fynd';
 import { coldOf, temperature } from './vader';
-import { DJUR, Djurart, GORS, canProcess, djurKvar, freeOfKinds, makeTask, toolGroups, wantsRope, wantsTool } from './redskap';
+import { DJUR, Djurart, GORS, canProcess, djurKvar, freeOfKinds, makeTask, toolGroups, wantsTool } from './redskap';
+import { PROJEKT, Uppgift, bastaProjekt } from './projekt';
 import { areaOf, flintArea, pickSpot, prospectFor } from './minne';
 import { getMap } from './karta';
 import { amountOf, avbryt, fetchSpot, haulJob } from './lager';
@@ -21,7 +22,7 @@ import { clamp, pick, pickNarmaste, rnd } from './slump';
 import { ARSTID, ageIndex, iIstiden, isLight, kallTid, yearNo } from './tid';
 import { Act, H, HOUR, MIN, Person, Skill, Stat, State, T, W, inMap } from './typer';
 import { balans } from './balans';
-import { STATIONER, stationAttBygga, stationFor, stationSpot, storlek, vidStation } from './stationer';
+import { stationFor, storlek, vidStation } from './stationer';
 
 // ---------- val av aktivitet ----------
 // Balanstalen (regel 8): vikter, chanser, avstånd och hur länge ett pass varar. Kroppens gränser (KROPP) och åldrarna (ALDER)
@@ -57,6 +58,7 @@ const VAL = balans('val', {
   letaChans: 0.3, // ... och med denna chans
   stenarChans: 0.5, // chansen att den som samlar letar flinta eller stenar vid stenarna när byn saknar det (och ett helt pass)
   tandHamtare: 3, // så många hämtar tändmaterial åt en släckt eld som mest
+  projektVikt: 1.5, // det mest värda projektet (projekt.ts) väger som arbete så här mycket gånger sitt värde
   akut: 3, // arbetet är helt akut när det mest behövda väger så här mycket
   kolEld: 0.6, kolChans: 0.2, kolMin: 10, // kol hämtas ur den släckta elden när elden vill ha mindre än så här, med denna chans, i så många minuter
   lekBas: 0.45, lekSed: 0.2, // en yngre än vuxen leker med denna chans (plus seden Barn gånger Sed)
@@ -268,7 +270,7 @@ function day(s: State, p: Person, v: Val, a: number, lazy: number) {
   let { best, bs, burg } = bestWork(s, p, fd, wd, ai, tot, fara);
   // bygget: väger mer ju fler som saknar sovplats under tak, inför och under istiden, när en vägg behöver lagas och när huset inte är klart
   const job = buildJob(s, p), ppl = living(s);
-  let build = false;
+  let build = false, bsBygg = -1;
   if (job) {
     const utan = homeless(s) / (ppl.length || 1);
     const halvt = !job.repair && !s.hus?.find(h => h.id === job.bit.hus)?.klar; // ett påbörjat hus vill man göra klart, även när det sista är ett hörn
@@ -276,10 +278,14 @@ function day(s: State, p: Person, v: Val, a: number, lazy: number) {
     const col = ((job.repair ? VAL.byggLaga : halvt ? VAL.byggHalvt : VAL.byggNytt) + VAL.byggUtan * utan) * (kallTid(ai) ? ARSTID.byggKall : 1) * clamp((fd - VAL.byggMatFran) / VAL.byggMatSpann, VAL.byggMatMin, 1);
     const sc = poang(s, p, col, lust(s, p, 'hantverk', 'flit', ['bygga'], tot));
     burg = Math.max(burg, col);
-    if (sc > bs) { build = true; if (job.missing) best = job.item === 'torrgras' ? 'samla' : 'ved'; }
+    if (sc > bs) { build = true; bsBygg = sc; if (job.missing) best = job.item === 'torrgras' ? 'samla' : 'ved'; }
   }
+  // det mest värda projekt (projekt.ts) tävlar med arbetet och bygget, när ingen fara går före
+  const pr = a >= ALDER.vuxen && !fara.kyla && !fara.svalt ? bastaProjekt(s, p, fara) : undefined;
+  let proj = false;
+  if (pr && poang(s, p, pr.varde * VAL.projektVikt, lust(s, p, 'hantverk', 'flit', [pr.u.act], tot)) > Math.max(bs, bsBygg)) { proj = true; build = false; }
   // har byn flinta till elden (en sprucken räknas) men inte till en yxa går någon och letar vid stenarna, också när plockning inte är det mest behövda
-  const leta = !build && a >= ALDER.vuxen && flintaTillYxa(s, p, fd, ai) && rnd(s, 'val', p) < VAL.letaChans;
+  const leta = !build && !proj && a >= ALDER.vuxen && flintaTillYxa(s, p, fd, ai) && rnd(s, 'val', p) < VAL.letaChans;
   if (leta) best = 'samla';
   const u = clamp(burg / VAL.akut, 0, 1); // hur akut byn behöver arbete
   const sat = Math.min(p.hunger, p.rest, p.social); // hur väl de egna behoven är fyllda
@@ -294,6 +300,8 @@ function day(s: State, p: Person, v: Val, a: number, lazy: number) {
     else { set(v, best, `Hjälper till. ${what}.`); if (tandmat) v.tandmat = true; }
   } else if ((works = rnd(s, 'val', p) < (1 - lazy) * (VAL.flitigBas + VAL.flitigAkut * u) + lazy * sat * (VAL.latBas + VAL.latAkut * u)) && build && !job!.missing) {
     building(s, p, v, job!);
+  } else if (works && proj) {
+    projektVal(v, pr!.u, `Byn saknar ${PROJEKT[pr!.k].namn.toLowerCase()}`);
   } else if (works) {
     set(v, best, what + (lazy < 0.2 ? '. Plikttrogen.' : habitShare(p, [best], tot) > 0.25 ? '. Brukar göra det.' : p.skill[best as Skill] > 10 ? '. Skicklig på det.' : '.'));
     v.dur = (VAL.arbeteMin + rnd(s, 'val', p) * VAL.arbeteSpann) * MIN * VAL.pass;
@@ -386,22 +394,22 @@ function processTask(s: State, v: Val, art: Djurart, why: string) {
   set(v, art.act, why); if (art.kniv) v.tool = 'kniv';
   v.dur = Math.min(art.maxTim * HOUR, (djurKvar(s, art) / art.timme) * HOUR + VAL.extraMin * MIN);
 }
-// handarbete är alltid något bestämt som tar material och ger en sak (steg 2.2.4): den som kan göra en kniv gör det när
-// byn saknar en (inte när kylan är en fara, som de andra redskapen i withTools), den som kan bygger en station som byn
-// saknar (slaktbänken, flätarbänken, stationer.ts), den som har kniv slaktar viltet och rensar fisken, den som kan gör ett
-// redskap som byn saknar (korgen vid flätarbänken), och den som kan tvinna rep gör det när byn behöver rep. Finns inget
-// att göra sitter man med de andra vid elden
+// handarbete är alltid något bestämt som tar material och ger en sak (steg 2.2.4): den som har kniv slaktar viltet och
+// rensar fisken, annars gör man det mest värda projekt byn saknar och man kan göra (redskap, stationer och rep, projekt.ts;
+// redskap och stationer inte när kylan är en fara). Finns inget att göra sitter man med de andra vid elden
 function craft(s: State, p: Person, v: Val, why: string) {
-  const { kyla, gras } = dangers(s);
-  if (wantsTool(s, p, 'kniv') && !kyla) { const m = makeTask(s, p, 'kniv'); set(v, m.act, `${why}. ${m.text}`); v.dur = m.min * MIN; return; }
-  const sk = stationAttBygga(s, p), sp = sk && !kyla ? stationSpot(s, sk) : undefined;
-  if (sk && sp) { set(v, 'station', `${why}. ${STATIONER[sk].bygger}`); v.tool = sk; v.spot = sp; v.dur = STATIONER[sk].min * MIN; return; }
   if (canProcess(s, p, DJUR.kanin)) { processTask(s, v, DJUR.kanin, `${why}. Slaktar viltet med kniven.`); return; }
   if (canProcess(s, p, DJUR.abborre)) { processTask(s, v, DJUR.abborre, `${why}. Rensar fisken.`); return; }
-  const g = kyla ? undefined : Object.keys(GORS).find(g => wantsTool(s, p, g, gras));
-  if (g) { const m = makeTask(s, p, g); set(v, m.act, `${why}. ${m.text}`); v.dur = m.min * MIN; if (m.tool) v.tool = m.tool; return; }
-  if (wantsRope(s, p)) { set(v, 'tvinna', `${why}. Tvinnar rep av hö.`); return; }
+  const pr = bastaProjekt(s, p, dangers(s));
+  if (pr) { projektVal(v, pr.u, why); return; }
   set(v, 'samtal', 'Har inget handarbete att göra och sitter med de andra vid elden');
+}
+// projektets uppgift blir valet (projekt.ts)
+function projektVal(v: Val, u: Uppgift, why: string) {
+  set(v, u.act, `${why}. ${u.text}`);
+  if (u.min) v.dur = u.min * MIN;
+  if (u.tool) v.tool = u.tool;
+  if (u.spot) v.spot = u.spot;
 }
 
 // egen lust: vila, hantverk, umgänge, promenad, bad eller att sitta vid stranden. u = hur akut byn behöver arbete

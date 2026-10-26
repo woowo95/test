@@ -114,15 +114,15 @@ const sparas = (k: string) => k === 'ved' ? RESERV.ved : k === 'grenar' ? RESERV
 const halvbyggd = (s: State, k: string) => stationerOf(s).find(t => t.k === k && !isKlar(t));
 // den station p vill bygga: p kan någon av teknikerna, byn har ingen färdig av slaget, ingen annan bygger en, och den är påbörjad
 // eller p kan få tag i materialet utan att ta det som sparas till elden
-export function stationAttBygga(s: State, p: Person): StationSlag | undefined {
-  if (doingAct(s, 'station', p)) return undefined;
-  for (const k of STATION_LIST) {
-    const d: StationDef = STATIONER[k];
-    if (!d.tek.some(k => knows(p, k)) || stationerOf(s).some(t => t.k === k && isKlar(t))) continue;
-    if (halvbyggd(s, k) || Object.entries(d.av).every(([m, n]) => getable(s, p, m) >= n + sparas(m)) && stationSite(s, k)) return k;
-  }
-  return undefined;
+export const stationAttBygga = (s: State, p: Person): StationSlag | undefined => STATION_LIST.find(k => kanBygga(s, p, k));
+// p kan bygga (eller bygga vidare på) en station av sorten k som byn saknar
+export function kanBygga(s: State, p: Person, k: StationSlag) {
+  const d: StationDef = STATIONER[k];
+  if (doingAct(s, 'station', p) || !d.tek.some(k => knows(p, k)) || harStation(s, k)) return false;
+  return !!halvbyggd(s, k) || Object.entries(d.av).every(([m, n]) => getable(s, p, m) >= n + sparas(m)) && !!stationSite(s, k);
 }
+// byn har en färdig station av sorten k
+export const harStation = (s: State, k: string) => stationerOf(s).some(t => t.k === k && isKlar(t));
 // platsen dit den som ska bygga går: den halvbyggda stationen, annars rutan där den ska stå
 export function stationSpot(s: State, k: string) {
   const t = halvbyggd(s, k), at = t ?? stationSite(s, k);
