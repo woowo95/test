@@ -21,11 +21,13 @@ export function inFas(s: State) {
   const b0 = midnatt(fore) > s.now && slut - midnatt(fore) <= midnatt(efter) - slut ? fore : efter;
   return { t0: s.founded + k * WEEK, a0: (((1 + k) % 4) + 4) % 4, b0 };
 }
-// kalendern frågas många gånger med samma tid, så det senaste svaret sparas per by
-const memo = new WeakMap<State, { t: number; k: Kal }>();
+// Kalendern frågas många gånger varje steg, så det senaste svaret sparas per by. Svaret beror bara på dagen och
+// på om tiden är före t0, så det gäller från fran till till (dagen, eller den del av den som ligger på samma sida
+// om t0) så länge byns kalender och grundande är desamma.
+const memo = new WeakMap<State, { fran: number; till: number; kal: State['kal']; founded: number; k: Kal }>();
 export function kalender(s: State, t = s.now): Kal {
   const m = memo.get(s);
-  if (m && m.t === t) return m.k;
+  if (m && t >= m.fran && t < m.till && m.kal === s.kal && m.founded === s.founded) return m.k;
   const c = s.kal ??= inFas(s), d = dagNr(t), ar = d - dagNr(s.founded) + 1;
   let k: Kal;
   if (d < c.b0 && t >= c.t0) k = { ai: c.a0, dag: d - dagNr(c.t0) + 1, av: c.b0 - dagNr(c.t0), ar, start: c.t0, slut: midnatt(c.b0) };
@@ -33,7 +35,9 @@ export function kalender(s: State, t = s.now): Kal {
     const w = Math.floor((d - c.b0) / 7), n = c.b0 + 7 * w;
     k = { ai: ((c.a0 + 1 + w) % 4 + 4) % 4, dag: d - n + 1, av: 7, ar, start: midnatt(n), slut: midnatt(n + 7) };
   }
-  memo.set(s, { t, k });
+  let fran = midnatt(d), till = midnatt(d + 1);
+  if (c.t0 > fran && c.t0 < till) { if (t < c.t0) till = c.t0; else fran = c.t0; }
+  memo.set(s, { fran, till, kal: c, founded: s.founded, k });
   return k;
 }
 export const ageIndex = (s: State, t = s.now) => kalender(s, t).ai;
