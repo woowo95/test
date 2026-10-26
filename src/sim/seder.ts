@@ -70,13 +70,19 @@ export function influence(s: State, p: Person) {
   const a = ageOf(p, s.now);
   return (a < ALDER.vuxen ? 0 : a < ALDER.fullvuxen ? SED.rostUng : a > ALDER.aldre ? SED.rostAldre : 1) * (SED.rostBas + p.pot.karisma / SED.rostKarisma);
 }
+// åt vilket håll personen drar varje sed efter sin personlighet: byns mål och personens övertygelser i personrutan
+export function drar(s: State, p: Person) {
+  const barn = s.people.some(c => isParent(p, c)), d = nollor();
+  for (const k of SED_LIST) d[k] = SEDER[k].dra(p.pot, barn);
+  return d;
+}
 export function sederTarget(s: State): Record<Sed, number> {
   const t = nollor();
   let tw = 0;
   for (const p of living(s)) {
     const w = influence(s, p); if (!w) continue;
-    tw += w; const barn = s.people.some(c => isParent(p, c));
-    for (const k of SED_LIST) t[k] += SEDER[k].dra(p.pot, barn) * w;
+    tw += w; const d = drar(s, p);
+    for (const k of SED_LIST) t[k] += d[k] * w;
   }
   for (const k of SED_LIST) t[k] = clamp((tw ? t[k] / tw : 0) * SED.snittVikt + s.seder.ev[k], -1, 1);
   return t;

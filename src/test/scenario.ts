@@ -93,7 +93,7 @@ function uiLasNu(s: State, t: number) {
   // varje person: porträtten, invånarlistan, personfliken och figuren på kartan
   const slag = Object.keys(ACTS) as Act[];
   for (const p of s.people) {
-    ageOf(p, s.now); isSick(p, s.now); isSocial(p); moodOf(p, s.now); duty(s, p); childrenOf(s, p);
+    ageOf(p, s.now); isSick(p, s.now); isSocial(p); moodOf(p, s.now); duty(s, p); SIM.drar(s, p); childrenOf(s, p);
     for (const k of STATS) stat(p, k, s.now);
     const tot = habitTotal(p); for (const a of slag) habitShare(p, [a], tot);
     heldBy(s, p); ownedBy(s, p); ownedStock(s, p); capacity(s, p);
@@ -2254,6 +2254,12 @@ SCENARIER.ikoner = {
       ['slag av arbete', saknas(Object.values(ACTS).map(a => a.slag && slagIkon(a.slag)).filter(k => k !== 'zzz'))], // vila ritas som z
       ['påbörjat redskap', saknas(['paborjat'])],
     ];
+    // tårtdiagrammet i personrutan: varje handling (utom sömnen) har slagets pixelbild, slagets tecken eller ett eget tecken
+    const utan = (Object.keys(ACTS) as SIM.Act[]).filter(a => {
+      const sl = ACTS[a].slag, px = sl && slagIkon(sl);
+      return a !== 'sova' && !(px && hasIcon(px)) && !(sl ? SIM.SLAG_TECKEN[sl] : ACTS[a].tecken);
+    });
+    del.push(['handlingar i personens tid', utan]);
     return del.map(([namn, m]) => [m.length ? `${namn} utan symbol: ${m.join(', ')}` : `alla ${namn} har en symbol`, !m.length] as Koll);
   },
 };

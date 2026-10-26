@@ -175,6 +175,17 @@ h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: 
 .lard li { padding: 4px 0; } .lard li > span { display: block; padding-left: 10px; } .lard small { display: block; font-size: 11px; }
 .lard .fel { color: var(--bad); } .lard .fel::before { content: "⚠ "; } .lard li.fara { color: var(--warn, #e0a050); }
 .fame li::before { content: "◆ "; color: var(--accent); }
+.pdelar { display: flex; gap: 4px; margin: 10px 0 0; border-bottom: 1px solid var(--line); }
+.pdelar button { flex: 1; min-width: 0; background: none; border: 0; border-bottom: 2px solid transparent; font-size: 18px; padding: 6px 0 4px; cursor: pointer; opacity: 0.55; }
+.pdelar button[aria-selected="true"] { border-bottom-color: var(--accent); opacity: 1; }
+.tro { display: inline-block; border: 1px solid var(--line); border-radius: 10px; padding: 0 7px; margin: 0 3px 3px 0; font-size: 13px; cursor: help; }
+.tid { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+.tart { width: 120px; height: 120px; flex: none; }
+.tart path, .tart circle { stroke: var(--panel); stroke-width: 0.015; }
+.tidlista { display: grid; grid-template-columns: repeat(2, max-content); gap: 4px 14px; font-variant-numeric: tabular-nums; }
+.tidlista li { display: flex; align-items: center; gap: 5px; cursor: help; }
+.tidlista .fg { width: 10px; height: 10px; border-radius: 2px; flex: none; }
+.tidlista .tecken { width: 16px; text-align: center; font-size: 13px; line-height: 16px; }
 .controls { border-top: 1px solid var(--line); padding: 10px 14px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
 .switch { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
 #speeds { display: flex; gap: 4px; flex-wrap: wrap; }

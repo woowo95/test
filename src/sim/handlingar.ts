@@ -27,6 +27,8 @@ export const SLAG = {
 } as const;
 type Slag = keyof typeof SLAG;
 export const slagIkon = (k: Slag) => k === 'vila' ? 'zzz' : k === 'prata' ? undefined : 'a_' + k;
+// tecknet för ett slag som inte har en pixelbild (personrutans tårtdiagram); handlingar utan slag har sitt eget (tecken)
+export const SLAG_TECKEN: Partial<Record<Slag, string>> = { vila: '💤', prata: '💬' };
 
 interface ActDef {
   namn: string; // det som står att personen gör
@@ -34,6 +36,7 @@ interface ActDef {
   redskap?: Record<string, RedskapDef>; // redskapen som används i arbetet (sakerna i saker.ts), det bästa först
   slits?: number; // så många sekunders arbete som är en enhet slitage på redskapet (saknas = per försök eller djur)
   slag?: Slag; // slaget av arbete, som syns som en symbol över huvudet medan den görs (SLAG)
+  tecken?: string; // symbolen för en handling utan slag (personrutans tårtdiagram över tiden)
   // arbete för byn: färdigheten som övas. Är den samma som handlingen väljs arbetet i val.ts efter byns behov
   arbete?: Skill;
   bas?: number; sasong?: number[]; egenskap?: Stat; // hur mycket en arbetstimme ger, per tidsålder, och egenskapen som hjälper
@@ -66,13 +69,13 @@ const DEF = {
   samtal: { namn: 'Samtalar vid elden', slag: 'prata', vila: true, social: true, dygn: true, plats: 'elden' },
   beratta: { namn: 'Berättar vid elden', slag: 'prata', social: true, dygn: true, plats: 'elden' },
   hantverk: { namn: 'Gör handarbete', slag: 'hantverk', verktyg: { rep: 'Tvinnar rep' }, vila: true, hantverk: true, social: true, dygn: true, stilla: true, plats: 'elden' },
-  vakt: { namn: 'Håller vakt', social: true, dygn: true, stilla: true, plats: 'elden', radie: 2.6 },
+  vakt: { namn: 'Håller vakt', tecken: '👁️', social: true, dygn: true, stilla: true, plats: 'elden', radie: 2.6 },
   sova: { namn: 'Sover', slag: 'vila', vila: true, stilla: true, plats: 'sang' },
   elda: { namn: 'Lägger trä på elden', slag: 'elda', ger: 'ved' },
   tanda: { namn: 'Försöker tända elden', slag: 'elda' },
-  varma: { namn: 'Värmer sig vid elden', vila: true, social: true, varmer: true, plats: 'elden' },
-  toa: { namn: 'Går avsides på toa', plats: 'avsides' },
-  kol: { namn: 'Hämtar kol ur den slocknade elden', plats: 'kol' },
+  varma: { namn: 'Värmer sig vid elden', tecken: '♨️', vila: true, social: true, varmer: true, plats: 'elden' },
+  toa: { namn: 'Går avsides på toa', tecken: '💧', plats: 'avsides' },
+  kol: { namn: 'Hämtar kol ur den slocknade elden', tecken: '⚫', plats: 'kol' },
   falla: { namn: 'Fäller ett träd med yxa', slag: 'tra', redskap: { yxa: {} }, arbete: 'ved', takt: 0, tungt: true },
   hugga: { namn: 'Hugger trä av ett fällt träd', slag: 'tra', redskap: { yxa: {} }, arbete: 'ved', ger: 'ved', takt: 1.5, tur: 1200, tungt: true },
   yxa: { namn: 'Gör en yxa av en pinne och flinta', slag: 'hantverk', hantverk: true, plats: 'elden' },
@@ -80,10 +83,10 @@ const DEF = {
   metspo: { namn: 'Gör ett metspö', slag: 'hantverk', hantverk: true, plats: 'elden' },
   kniv: { namn: 'Gör en flintkniv', slag: 'hantverk', hantverk: true, plats: 'elden' },
   slakta: { namn: 'Slaktar vilt med kniven', slag: 'hantverk', redskap: { kniv: { haller: 250 } }, hantverk: true, social: true, stilla: true, plats: 'elden' },
-  promenad: { namn: 'Tar en promenad', vandra: { r: 4, h0: 1, h1: 4, v: 0.8 }, dygn: true },
-  bada: { namn: 'Badar i sjön', dygn: true },
+  promenad: { namn: 'Tar en promenad', tecken: '🚶', vandra: { r: 4, h0: 1, h1: 4, v: 0.8 }, dygn: true },
+  bada: { namn: 'Badar i sjön', tecken: '🏊', dygn: true },
   bara: { namn: 'Bär in saker till lagret', slag: 'bara' },
-  strand: { namn: 'Sitter vid stranden och ser ut över vattnet', dygn: true },
+  strand: { namn: 'Sitter vid stranden och ser ut över vattnet', tecken: '🌊', dygn: true },
   korg: { namn: 'Flätar en korg av hö', slag: 'hantverk', hantverk: true, plats: 'elden' },
   rensa: { namn: 'Rensar fisk vid elden', slag: 'hantverk', hantverk: true, social: true, stilla: true, plats: 'elden' },
   bygga: { namn: 'Bygger', slag: 'bygga', verktyg: { laga: 'Lagar en vägg', lagaGolv: 'Lagar golvet', golv: 'Lägger golv', vagg: 'Bygger en vägg' }, hantverk: true, tungt: true, stilla: true },

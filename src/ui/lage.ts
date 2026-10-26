@@ -14,6 +14,7 @@ export function setByn(n: State) {
 export const ui = {
   tab: 'folk' as FlikId,
   selected: undefined as number | undefined, // personen som visas i panelen
+  personDel: 'pres', // underfliken i personrutan (DELAR i flikar/person.ts)
   hovered: undefined as number | undefined, // personen under musen
   follow: undefined as number | undefined, // personen kameran följer
   busy: false, // ikappräkning pågår
