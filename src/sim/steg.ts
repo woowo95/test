@@ -79,6 +79,7 @@ const MEDAN: Partial<Record<Act, Krok>> = {
 // det som händer när en handling är klar
 const KLAR: Partial<Record<Act, Krok>> = {
   falla: (s, p, t) => { // ett träd där ett hus ska stå, eller som fälldes för bygget, blir stockar i husets väggar direkt; resten huggs till trä
+    if (!t.tool) return; // yxan gick sönder (wearUsed): trädet står kvar halvfällt, och nästa fällare gör resten
     const k = fellTree(s, p, t.tx, t.ty);
     if (k) { k.ved -= toWalls(s, Math.floor(k.x), Math.floor(k.y), k.ved, t.ref, p); if (k.ved <= 1e-6) s.stockar = stocks(s).filter(q => q !== k); }
   },

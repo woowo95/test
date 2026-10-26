@@ -18,6 +18,7 @@ export interface RedskapDef {
   bete?: true; // fiske: mask grävs fram och sätts på kroken
   napp?: number; hall?: number; // fiske: chansen att det nappar per försök, och att fisken sitter kvar när den nappat (fynd.ts, handFish)
   haller?: number; // hur länge redskapet håller: så många enheter av arbetet (slits, och för fiske försök)
+  kravs?: true; // arbetet går inte utan redskapet: går det sönder slutar man (ett träd står kvar halvfällt)
 }
 // slagen av arbete: symbolen över huvudet visar vad man håller på med, aldrig samma symbol som en sak eller ett redskap
 // (ikoner.ts har dem som 'a_' + slaget; vila ritas som z som stiger). Samtal har ingen: det syns som pratbubblor
@@ -77,8 +78,8 @@ const DEF = {
   varma: { namn: 'Värmer sig vid elden', tecken: '♨️', vila: true, social: true, varmer: true, plats: 'elden' },
   toa: { namn: 'Går avsides på toa', tecken: '💧', plats: 'avsides' },
   kol: { namn: 'Hämtar kol ur den slocknade elden', tecken: '⚫', plats: 'kol' },
-  falla: { namn: 'Fäller ett träd med yxa', yrke: 'Trähuggare', slag: 'tra', redskap: { yxa: {} }, arbete: 'ved', takt: 0, tungt: true },
-  hugga: { namn: 'Hugger trä av ett fällt träd', yrke: 'Trähuggare', slag: 'tra', redskap: { yxa: {} }, arbete: 'ved', ger: 'ved', takt: 1.5, tur: 1200, tungt: true },
+  falla: { namn: 'Fäller ett träd med yxa', yrke: 'Trähuggare', slag: 'tra', redskap: { yxa: { haller: 100, kravs: true } }, slits: 3600, arbete: 'ved', takt: 0, tungt: true },
+  hugga: { namn: 'Hugger trä av ett fällt träd', yrke: 'Trähuggare', slag: 'tra', redskap: { yxa: { haller: 100, kravs: true } }, slits: 3600, arbete: 'ved', ger: 'ved', takt: 1.5, tur: 1200, tungt: true },
   yxa: { namn: 'Gör en yxa av en pinne och flinta', slag: 'hantverk', hantverk: true, plats: 'elden' },
   spjut: { namn: 'Täljer ett spjut', verktyg: { flintspjut: 'Gör ett flintspjut' }, slag: 'hantverk', hantverk: true, plats: 'elden' },
   metspo: { namn: 'Gör ett metspö', slag: 'hantverk', hantverk: true, plats: 'elden' },

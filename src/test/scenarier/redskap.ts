@@ -193,7 +193,7 @@ SCENARIER.redskap = {
 };
 
 SCENARIER.slitage = {
-  text: 'Varje stack har ett skick: fisk ruttnar fortast, utanför lagret slits allt fortare, redskap slits i lagret, skämd mat gör folk sjuka och högar på marken bärs in (på natten bara nära lägret)',
+  text: 'Varje stack har ett skick: fisk ruttnar fortast, utanför lagret slits allt fortare, redskap slits i lagret och när de används, skämd mat gör folk sjuka och högar på marken bärs in (på natten bara nära lägret)',
   kor: () => {
     const setup = (b: State) => { setMat(b, { fisk: 20, bar: 20 }); setAmount(b, 'ved', 25); setItems(b, { grenar: 50, yxa: 1 }); };
     const a = createState(4, START); setup(a);
@@ -229,7 +229,25 @@ SCENARIER.slitage = {
     const kvarNara = ute().some(g => g.x === nara!.x && g.y === nara!.y), kvarLangt = ute().some(g => g.x === langt!.x && g.y === langt!.y);
     klockan(n, 9);
     for (let i = 0; i < 6 * 3600 / 2 && ute().length; i++) step(n, 2);
+    // yxan slits när man hugger och fäller (steg 2.2.1). Går den sönder slutar man, och trädet står kvar halvfällt
+    const y = createState(4, START), yp = living(y).find(q => ageOf(q, y.now) >= 18)!;
+    addTool(y, 'yxa', yp);
+    yp.task = { act: 'hugga', phase: 'do', tx: yp.x, ty: yp.y, until: y.now + HOUR, carry: 0, tool: 'yxa' };
+    for (let i = 0; i < 50; i++) wearUsed(y, yp, 1);
+    const halvYxa = Math.abs(amountOf(y, 'yxa') - 0.5) < 1e-9; // 50 av 100 arbetstimmar
+    const g = SIM.groundOf(y), c = campCenter(y);
+    let ti = -1;
+    for (let d = 1; d < 30 && ti < 0; d++) for (let yy = c.y - d; yy <= c.y + d && ti < 0; yy++) for (let x = c.x - d; x <= c.x + d; x++) if (g.trees[yy * W + x] >= 0.95) { ti = yy * W + x; break; }
+    const ft: SIM.Task = { act: 'falla', phase: 'do', tx: (ti % W) + 0.5, ty: Math.floor(ti / W) + 0.5, until: 0, carry: 0, tool: 'yxa' };
+    yp.task = ft; SIM.startWork(y, yp, ft); SIM.workHalf(y, yp, ft, 600);
+    for (let i = 0; i < 50 && amountOf(y, 'yxa') > 0; i++) wearUsed(y, yp, 1);
+    const slutar = amountOf(y, 'yxa') === 0 && ft.until === y.now && !ft.tool && y.stat?.yxorTrasiga === 1;
+    step(y, 2);
+    const kvarTrad = g.trees[ti] >= 0.95 && (y.halvfallt?.[ti] ?? 0) > 0;
     return [
+      ['yxan slits när man hugger trä', halvYxa],
+      ['när yxan går sönder slutar man fälla', slutar],
+      ['trädet står kvar halvfällt', kvarTrad],
       [`fisk ruttnar fortare än bär (skick efter ett dygn: fisk ${(fisk * 100).toFixed(0)} %, bär ${(bar * 100).toFixed(0)} %)`, fisk < bar && fisk < 1],
       [`grenar utanför lagret slits fortare (slitage på ett dygn: i lagret ${(grenIn * 100).toFixed(1)} %, bredvid ${(grenUt * 100).toFixed(1)} %)`, grenUt > 2 * grenIn && grenIn > 0],
       [`en yxa i lagret slits också (${yxa.toFixed(3)} kvar)`, yxa < 1 && yxa > 0.9],

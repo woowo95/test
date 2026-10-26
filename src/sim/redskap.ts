@@ -51,13 +51,14 @@ export const spears = (s: State) => SPJUT.reduce((a, k) => a + nTools(s, k), 0);
 export const freeOfKinds = (s: State, p: Person, ks: string[]) => ks.find(k => ownsFree(s, p, k)) ?? ks.find(k => freeTools(s, p, k) > 0);
 export const freeSpear = (s: State, p: Person) => freeOfKinds(s, p, SPJUT);
 // slitage på redskapet i handen under arbetet: n enheter av arbetet (handlingens slits, eller försök). Går det sönder
-// räknas det, och första gången står det i loggen
+// räknas det, och första gången står det i loggen. Alla redskap slits så (steg 2.2.1): yxan när man fäller och hugger,
+// korgen, spjuten, metspöet och kniven; dessutom slits allt sakta där det ligger eller bärs (wearStore i lager.ts)
 export function wearUsed(s: State, p: Person, n: number) {
   const r = toolRow(p.task), k = p.task?.tool;
   if (!r?.haller || !k) return;
   if (!wearTool(s, p, k, n / r.haller)) return;
   const tr = SAKER[k]?.trasig, forsta = tr ? forstaGang(s, tr.stat) : false;
-  if (p.task) p.task.tool = undefined;
+  if (p.task) { p.task.tool = undefined; if (r.kravs) p.task.until = s.now; } // utan yxan slutar man fälla och hugga
   if (tr?.text && forsta) log(s, tr.text.replace('{namn}', p.name), 'world', [p.id]);
 }
 // byn vill ha ungefär ett spjut per tre vuxna, när någon väl har börjat fiska eller jaga
