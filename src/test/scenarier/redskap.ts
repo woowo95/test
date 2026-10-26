@@ -31,16 +31,16 @@ SCENARIER.stenring = {
       return `${n} av ${samla}`;
     };
     const yxaSvalt = letar(1, 2), eldSvalt = letar(0, 2), yxaMat = letar(1, 200);
-    // den som skulle leta flinta men i stället flätar en korg gör det vid elden, inte vid stenarna
+    // den som skulle leta flinta men i stället flätar en korg gör det vid slöjdbänken (inne i huset, steg 2.2.5), inte vid stenarna
     let korgar = 0, korgFel = 0;
-    const fm = getMap(f.seed).fire;
     for (const q of f.people) q.tek = { ...q.tek, korg: 1 };
-    setItems(f, { flinta: 0, torrgras: 20, grenar: 20 }); setFood(f, 2); medBank(f, 'flatarbank');
+    setItems(f, { flinta: 0, torrgras: 20, grenar: 20 }); setFood(f, 2);
+    const fm = SIM.vidStation(medBank(f, 'flatarbank'));
     for (let i = 0; i < 300; i++) {
       const p = living(f).filter(q => ageOf(q, f.now) >= ALDER.vuxen)[i % 4];
       Object.assign(p, { toa: 1, warm: 1, rest: 1, health: 1, hunger: 1, social: 1, task: undefined });
       chooseTask(f, p);
-      if (p.task?.act === 'korg') { korgar++; if (p.task.sok || p.task.tandmat || Math.hypot(p.task.tx - fm.x - 0.5, p.task.ty - fm.y - 0.5) > 4) korgFel++; }
+      if (p.task?.act === 'korg') { korgar++; if (p.task.sok || p.task.tandmat || Math.hypot(p.task.tx - fm.x, p.task.ty - fm.y) > 1.5) korgFel++; }
       p.task = undefined;
     }
     for (const q of f.people) if (q.tek) delete q.tek.korg;
@@ -77,7 +77,7 @@ SCENARIER.stenring = {
     return [
       [`en sliten yxa räknas som en yxa när byn vill ha flinta (${slitenYxa ? 'vill ha mer' : 'räcker'})`, !slitenYxa],
       [`elden tänds bara med bränsle kvar efter tändgrenarna (5 grenar: ${tand5 ? 'ja' : 'nej'}, 6 grenar: ${tand6 ? 'ja' : 'nej'})`, !tand5 && tand6],
-      [`en korg flätas vid flätarbänken nära elden, inte där flintan skulle letas (${korgFel} av ${korgar} korgar fel)`, korgar > 0 && korgFel === 0],
+      [`en korg flätas vid slöjdbänken, inte där flintan skulle letas (${korgFel} av ${korgar} korgar fel)`, korgar > 0 && korgFel === 0],
       [`en i taget letar flinta till en yxa (${fler} till av 100 när någon redan letar)`, fler === 0],
       [`den som hämtar tändmaterial (${valt ? 'vald' : 'inte vald'}) fortsätter på en plats utan bär (${fortsatt ? 'ja' : 'nej'}) och slutar när det räcker (${slutat ? 'ja' : 'nej'})`, valt && fortsatt && slutat],
       [`flinta till en yxa letas inte när maten är knapp (${yxaSvalt} som samlar letar), men när den räcker (${yxaMat}); flinta till elden letas ändå (${eldSvalt})`, yxaSvalt.startsWith('0 ') && !yxaMat.startsWith('0 ') && !eldSvalt.startsWith('0 ')],
@@ -292,7 +292,7 @@ SCENARIER.teknik = {
     const dagar = (k: string) => forst[k] === undefined ? 'aldrig' : `dygn ${forst[k].toFixed(1)}`;
     return [
       ['ingen kan något från början', kanFran],
-      [`repet kommer på (${dagar('rep')}), yxan (${dagar('yxa')}) och spjutet (${dagar('fiskespjut')}); korgen, som kräver flätarbänken, ${dagar('korg')}`, forst.rep !== undefined && forst.yxa !== undefined && forst.rep > 0.2 && forst.yxa > 0.3],
+      [`repet kommer på (${dagar('rep')}), yxan (${dagar('yxa')}) och spjutet (${dagar('fiskespjut')}); korgen, som kräver slöjdbänken, ${dagar('korg')}`, forst.rep !== undefined && forst.yxa !== undefined && forst.rep > 0.2 && forst.yxa > 0.3],
       ['ingen gör en yxa eller ett rep innan någon kommit på hur', !yxaInnan && !repInnan],
       [`kunskapen sprids i samtal (${kan('rep')} kan göra rep, ${kan('yxa')} yxa)`, kan('rep') >= 3 && ens.length >= 3],
       ['en nyfiken och intelligent person kommer på det mycket fortare', snabb],

@@ -31,6 +31,10 @@ const PAL: Record<string, Record<string, string>> = {
   // stationer.ts); de som är högre än rutan sticker upp över rutan ovanför (foremal.ts)
   slaktbank_karta: { b: '#4a3320', B: '#33231a', w: '#5a3a1e', W: '#8b5a2b', L: '#b07a45', H: '#d0a26a', r: '#9a1f1f', R: '#5e1010', Y: '#c02a2a', x: 'rgba(0,0,0,0.30)' },
   flatarbank_karta: { D: '#2a1c12', d: '#4a3320', w: '#5a3a1e', W: '#8b5a2b', L: '#b07a45', H: '#d0a26a', o: '#9a7444', O: '#d0aa70', q: '#5e4226', x: 'rgba(0,0,0,0.30)' },
+  // halmbädden och sittplatsen vid slöjdbänken (steg 2.2.5): platshållare tills Björn valt
+  halmbadd: { y: '#d8c070', Y: '#f0dc94', t: '#8a6a3a', b: '#6a4a2a' },
+  halmbadd_karta: { y: '#c8ac5c', Y: '#ecd890', t: '#8a6a3a', b: '#5a3c22', B: '#7a5a36', x: 'rgba(0,0,0,0.30)' },
+  sittplats: { b: '#6a4a2a', B: '#9c7848', d: '#4a3018', x: 'rgba(0,0,0,0.30)' },
   skinn: { b: '#8a6440', B: '#b48a5e', d: '#5e4026' },
   metspo: { h: '#8a6a40', y: '#c8b07a', w: '#e8e2d0' },
   korg: { t: '#6e4e2e', o: '#9a6a3e', O: '#c99a62', d: '#5e3c20' },
@@ -346,6 +350,39 @@ const PIX: Record<string, string[]> = {
     '.wd..........wd.',
     '.wd..........wd.',
     '.xxxxxxxxxxxxxxx',
+  ],
+  // halmbädden i listorna: en ram av grenar med hö på
+  halmbadd: [
+    '........',
+    '........',
+    '..yYyY..',
+    '.yYYyYy.',
+    'tyYyYyYt',
+    'bbbbbbbb',
+    '.b....b.',
+    '........',
+  ],
+  // halmbädden på kartan uppifrån, två rutor lång: en ram av grenar och hö, huvudänden till vänster (platshållare)
+  halmbadd_karta: [
+    'bBBBBBBBBBBBBBBb',
+    'BYYyyYyYyyYyYytB',
+    'BYYYyYyyYyYyyYyB',
+    'ByYyYyYYyYyyYytB',
+    'ByyYyYyYyYYyYyyB',
+    'BYyYyyYyYyyYyYtB',
+    'BtyYtYytYyYtyYyB',
+    'bBBBBBBBBBBBBBBb',
+  ],
+  // en stubbe att sitta på framför slöjdbänken (platshållare)
+  sittplats: [
+    '........',
+    '........',
+    '..BBBB..',
+    '.BddddB.',
+    '.bBBBBb.',
+    '.bbbbbb.',
+    '.bbbbbb.',
+    '.xxxxxx.',
   ],
   // en bänk med en tuss hö och ett nystan rep
   flatarbank: [

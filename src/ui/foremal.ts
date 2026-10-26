@@ -1,4 +1,4 @@
-import { Act, DJUR, GORS, MATERIAL, Pile, STATION, STUBBE_LIV, Station, bitsOf, clamp, condOf, emberOn, fireHeat, getMap, heatRadius, isKlar, living, stationDef, stationKlar, stationerOf, storlek, tingOf, vidStation, zonesOf } from '../sim';
+import { Act, DJUR, GORS, MATERIAL, Pile, STATION, STUBBE_LIV, Station, bitsOf, clamp, condOf, emberOn, fireHeat, getMap, heatRadius, isKlar, living, stationDef, stationKlar, stationerOf, storlekAv, tingOf, vidStation, zonesOf } from '../sim';
 import { iconCanvas } from '../ikoner';
 import { ritaHus } from './husbild';
 import { outPilesAt, piles, s, ui } from './lage';
@@ -56,10 +56,13 @@ export function drawStructures(t: number) {
   // stationerna (stationer.ts) i blandperspektiv över alla rutorna de tar: de som är högre än rutan sticker upp över rutan
   // ovanför. Den halvbyggda har framstegscirkeln överst i mitten; vid den färdiga ligger kniven och det som görs där
   for (const st of stationerOf(s)) {
-    const ik = (stationDef(st.k)?.ikon ?? 'slaktbank') + '_karta', { w: bw, h: bh } = storlek(st.k), w = bw * TS;
-    const x0 = st.x * TS, y0 = st.y * TS - (iconCanvas(ik).height - 8 * bh) * 2; // y0 = bildens överkant
-    pileIcons.add(ik, x0, y0, 2);
-    if (!isKlar(st)) { framsteg(x0 + w / 2, y0 + 3, stationKlar(st)); continue; }
+    const d = stationDef(st.k), ik = (d?.ikon ?? 'slaktbank') + '_karta', { w: bw, h: bh } = storlekAv(st), w = bw * TS, upp = (iconCanvas(ik).height - 8 * (st.rot ? bw : bh)) * 2;
+    // den vridna sticker ut åt vänster i stället för uppåt (platshållare tills Björn valt hur den ska se ut)
+    const x0 = st.x * TS - (st.rot ? upp : 0), y0 = st.y * TS - (st.rot ? 0 : upp); // bildens övre vänstra hörn
+    pileIcons.add(ik, x0, y0, 2, !!st.rot);
+    if (!isKlar(st)) { framsteg(st.x * TS + w / 2, y0 + 3, stationKlar(st)); continue; }
+    if (d?.sitt) pileIcons.add('sittplats', st.x * TS + w / 2 - 4, (st.y + bh) * TS + 1, 1); // sittplatsen framför bänken
+    if (st.rot) continue;
     const yta = YTA[st.k] ?? { x: 2, y: 2 };
     const sak = paBanken(st);
     if (sak) pileIcons.add(sak, x0 + yta.x, y0 + yta.y, 1);

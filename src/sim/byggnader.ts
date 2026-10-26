@@ -9,6 +9,7 @@ import { tingOf } from './agande';
 import { ARBETE, grundvarde, tingVarde, varuVarde } from './varde';
 import { Person, State } from './typer';
 import { balans } from './balans';
+import { stationRutor } from './stationer';
 
 // ---------- balanstal (regel 8) ----------
 // Husens storlek, vad de är till för och när de byter funktion eller rivs. Var de står och hur de byggs står i BYGG (bygg.ts)
@@ -154,7 +155,8 @@ function familjUtanHus(s: State) {
 
 // ---------- var man sover ----------
 // Den som hör till en familj med ett eget hus sover där; alla andra sover i byns hus där man sover (sovsalarna), en per
-// golvruta under tak. Cachen gäller så länge husen (s.byggV), tiden (s.now) och antalet levande är desamma. s.now flyttas inom
+// golvruta under tak. Där en station eller möbel står sover ingen, utom i en halmbädd (en sovplats per bädd), och bäddarna
+// tas först (steg 2.2.5). Cachen gäller så länge husen (s.byggV), tiden (s.now) och antalet levande är desamma. s.now flyttas inom
 // ett slag av varje persons egen tid (taskStep i steg.ts), så den räknas om flera gånger per slag (ungefär 0,5 % av körtiden);
 // s.now står kvar i nyckeln eftersom familjerna kan ändras inom ett slag
 interface Boende { key: string; egna: Map<number, { tiles: number[]; folk: Person[] }>; gemensamt: number[]; ovriga: Person[] }
@@ -167,15 +169,20 @@ function boende(s: State): Boende {
   const egnaTiles = new Map<number, number[]>();
   // de äldsta husen fylls först, så att det är ett nytt hus som står tomt när det blir för många sovplatser
   const ordning = (r: Rum) => { const i = hs.findIndex(h => h.id === r.hus); return i < 0 ? hs.length : i; };
+  const baddar: number[] = [];
   for (const r of [...gridOf(s).rooms].sort((a, c) => ordning(a) - ordning(c))) {
     const h = husById(s, r.hus);
     if (h && !fnOf(h).sover) continue;
-    if (h?.ag !== undefined) egnaTiles.set(h.id, [...(egnaTiles.get(h.id) ?? []), ...r.tiles]);
-    else gemensamt.push(...r.tiles);
+    const t = sovRutor(s, r);
+    if (h?.ag !== undefined) egnaTiles.set(h.id, [...(egnaTiles.get(h.id) ?? []), ...t]);
+    else { const st = stationRutor(s).sov; baddar.push(...t.filter(i => st.has(i))); gemensamt.push(...t.filter(i => !st.has(i))); }
   }
+  gemensamt.unshift(...baddar);
   for (const h of hs) {
-    const tiles = egnaTiles.get(h.id);
+    let tiles = egnaTiles.get(h.id);
     if (!tiles?.length) continue;
+    const st = stationRutor(s).sov;
+    tiles = [...tiles.filter(i => st.has(i)), ...tiles.filter(i => !st.has(i))];
     const folk = familjOf(s, h.ag).filter(q => !egna.has(q.id)).sort((a, c) => a.id - c.id);
     for (const q of folk) egna.set(q.id, { tiles, folk });
   }
@@ -184,8 +191,33 @@ function boende(s: State): Boende {
   boenden.set(s, b);
   return b;
 }
-// sovplatserna i ett rum: en per golvruta under tak, och inga i ett hus där man inte sover (som i boende)
-export const sovplatser = (s: State, r: Rum) => { const h = husById(s, r.hus); return h && !fnOf(h).sover ? 0 : r.tiles.length; };
+// golvrutorna i rummet där man kan sova: där ingen station står, och halmbäddarna (rutan uppe till vänster)
+function sovRutor(s: State, r: Rum) {
+  const st = stationRutor(s);
+  return st.at.size ? r.tiles.filter(i => !st.at.has(i) || st.sov.has(i)) : r.tiles;
+}
+// sovplatserna i ett rum: en per golvruta under tak där ingen station står eller en per halmbädd, och inga i ett hus där man
+// inte sover (som i boende)
+export const sovplatser = (s: State, r: Rum) => { const h = husById(s, r.hus); return h && !fnOf(h).sover ? 0 : sovRutor(s, r).length; };
+// så många sovplatser i rummet som ingen behöver: i ett familjehus de som familjen inte behöver, i byns hus de som ingen
+// behöver i något av dem, och alla i ett hus där man inte sover (steg 2.2.5: där får en möbel stå)
+export function sovKvar(s: State, r: Rum) {
+  const h = husById(s, r.hus);
+  if (h && !fnOf(h).sover) return Infinity;
+  const b = boende(s);
+  if (h?.ag !== undefined) {
+    const tiles = gridOf(s).rooms.filter(q => q.hus === h.id).reduce((n, q) => n + sovRutor(s, q).length, 0);
+    return tiles - familjOf(s, h.ag).length;
+  }
+  return b.gemensamt.length - b.ovriga.length;
+}
+// så många som sover under tak men inte i en halmbädd
+export function utanBadd(s: State) {
+  const b = boende(s), st = stationRutor(s).sov;
+  let n = Math.min(b.ovriga.length, b.gemensamt.length) - Math.min(b.ovriga.length, b.gemensamt.filter(i => st.has(i)).length);
+  for (const [h, e] of new Map([...b.egna.values()].map(e => [e.tiles, e]))) n += Math.min(e.folk.length, h.length) - Math.min(e.folk.length, h.filter(i => st.has(i)).length);
+  return n;
+}
 // så många som saknar en egen sovplats under tak
 export const homeless = (s: State) => { const b = boende(s); return Math.max(0, b.ovriga.length - b.gemensamt.length); };
 // var p sover: en egen ruta under tak om det finns, annars ingenstans. Finns färre platser än folk delar man

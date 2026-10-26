@@ -4,7 +4,7 @@ import { MIN, Person, Act, createState, addTool, toolsOf, BYN, step, living, see
 import * as SIM from '../../sim';
 import { findPath } from '../../sim/vag';
 import { START } from '../kor';
-import { setItems, setFood, kor, klockan, tandEld, byggare, STOCKHOLM, SCENARIER } from './hjalp';
+import { setItems, setFood, kor, klockan, tandEld, byggare, byggKlart, STOCKHOLM, SCENARIER } from './hjalp';
 
 SCENARIER.byggnader = {
   text: 'Varje sorts byggnad är en rad i ett register med behov, vikt och ägare. Byn bygger för det mest akuta behovet, faror först: den som saknar tak över huvudet får en sovsal',
@@ -24,16 +24,6 @@ SCENARIER.byggnader = {
   },
 };
 
-// bygger färdigt det hus som är planerat: alla delar utom den sista klara, den sista byggs som vanligt (workOn)
-function byggKlart(s: State) {
-  const h = housesOf(s).find(q => !q.klar);
-  if (!h) return undefined;
-  const bs = bitsOf(s).filter(b => b.hus === h.id), p = living(s)[0];
-  for (const b of bs) { b.mat = MATERIAL[b.m]?.n ?? 0; b.b = b === bs[bs.length - 1] ? 0.999 : 1; }
-  touch(s);
-  workOn(s, p, bs[bs.length - 1], 3600);
-  return h;
-}
 
 SCENARIER.forradshus = {
   text: 'Ruttnar maten eller är förrådet fullt bygger byn ett förrådshus. Golvet blir en lagerplats under tak, där det som ligger ruttnar och slits mindre, och maten bärs in dit',

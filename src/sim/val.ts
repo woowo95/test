@@ -22,7 +22,7 @@ import { clamp, pick, pickNarmaste, rnd } from './slump';
 import { ARSTID, ageIndex, iIstiden, isLight, kallTid, yearNo } from './tid';
 import { Act, H, HOUR, MIN, Person, Skill, Stat, State, T, W, inMap } from './typer';
 import { balans } from './balans';
-import { stationFor, storlek, vidStation } from './stationer';
+import { stationFor, storlekAv, vidStation } from './stationer';
 
 // ---------- val av aktivitet ----------
 // Balanstalen (regel 8): vikter, chanser, avstånd och hur länge ett pass varar. Kroppens gränser (KROPP) och åldrarna (ALDER)
@@ -101,7 +101,7 @@ const VAL = balans('val', {
 export function spotFor(s: State, act: Act, p: Person): { x: number; y: number } {
   const m = getMap(s.seed);
   const f = m.fire, d = ACTS[act], plats = d.plats ?? 'skog';
-  if (plats === 'station') { const st = stationFor(s, act); if (st) { const at = vidStation(st); return { x: at.x + (rnd(s, 'val', p) - 0.5) * 0.6 * storlek(st.k).w, y: at.y }; } } // vid stationen, längs hela dess bredd, annars vid elden
+  if (plats === 'station') { const st = stationFor(s, act); if (st) { const at = vidStation(st); return { x: at.x + (rnd(s, 'val', p) - 0.5) * 0.6 * storlekAv(st).w, y: at.y }; } } // vid stationen, längs hela dess bredd, annars vid elden
   if (plats === 'elden' || plats === 'station') {
     // när det är kallt samtalar och berättar man i samlingshuset, om det är varmare där än vid elden (byggnader.ts)
     const sal = d.social ? samlingRum(s) : undefined, c = sal ? coldOf(temperature(s)) : 0;

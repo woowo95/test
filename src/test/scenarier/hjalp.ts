@@ -21,8 +21,34 @@ export const klockan = (s: State, h = 10) => { s.now = new Date(s.now).setHours(
 export const tandEld = (s: State, fuel = 4, ring = true) => { Object.assign(s.fire, ring ? { lit: true, fuel, ring: true } : { lit: true, fuel }); };
 // tomt förråd: ingen mat, inget trä, inga grenar, ingen flinta och inget hö
 // en färdig station vid elden (stationer.ts), slaktbänken om inget annat sägs: viltet slaktas och fisken rensas bara där,
-// korgen flätas bara vid flätarbänken
-export const medBank = (s: State, k = 'slaktbank') => { const at = SIM.stationSite(s, k)!; (s.stationer ??= []).push({ id: s.nextStation = (s.nextStation ?? 0) + 1, k, x: at.x, y: at.y, kvar: 0 }); };
+// korgen flätas bara vid slöjdbänken
+// en färdig station av sorten k; en som står inne (slöjdbänken, halmbädden) får ett hus om det inte finns något där den får stå
+export const medBank = (s: State, k = 'slaktbank') => {
+  let at = SIM.stationSite(s, k);
+  if (!at && SIM.stationDef(k)?.inne) { medHus(s); at = SIM.stationSite(s, k); }
+  const t: SIM.Station = { id: s.nextStation = (s.nextStation ?? 0) + 1, k, x: at!.x, y: at!.y, kvar: 0 };
+  if (at!.rot) t.rot = 1;
+  if ('inne' in at!) t.inne = 1;
+  (s.stationer ??= []).push(t); SIM.touch(s);
+  return t;
+};
+// bygger färdigt det hus som är planerat: alla delar utom den sista klara, den sista byggs som vanligt (workOn)
+export function byggKlart(s: State) {
+  const h = housesOf(s).find(q => !q.klar);
+  if (!h) return undefined;
+  const bs = bitsOf(s).filter(b => b.hus === h.id), p = living(s)[0];
+  for (const b of bs) { b.mat = SIM.MATERIAL[b.m]?.n ?? 0; b.b = b === bs[bs.length - 1] ? 0.999 : 1; }
+  SIM.touch(s);
+  SIM.workOn(s, p, bs[bs.length - 1], 3600);
+  return h;
+}
+// ett färdigt hus för det mest akuta behovet (oftast en sovsal), utan att någon lär sig bygga
+export function medHus(s: State) {
+  const tek = s.people.map(p => p.tek && { ...p.tek });
+  byggare(s); s.byggSok = undefined; SIM.planBuild(s);
+  s.people.forEach((p, i) => { p.tek = tek[i]; });
+  return byggKlart(s);
+}
 export const tomtForrad = (s: State) => { setMat(s, {}); setStock(s, { ved: 0, grenar: 0, flinta: 0, torrgras: 0 }); };
 // byns tre första blir tre vuxna utan släkt på samma ruta, friska, utan uppgift och med hungern hunger (byte, behov och ved).
 // Resten (s.people, vänskap) ställer varje scenario in själv, i sin ordning

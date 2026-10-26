@@ -33,7 +33,7 @@ import { migrate } from './varld';
 import { stepDelning } from './delning';
 import { balans } from './balans';
 import { sjoRakna } from './sjo';
-import { finishStation, stepStationer, workStation } from './stationer';
+import { finishStation, stationRutor, stepStationer, workStation } from './stationer';
 
 // Simuleringen går i slag om fem minuter (BEAT), i spelet och vid ikappräkning likadant. Inom ett slag går tiden åt
 // till det som händer i tur och ordning (taskStep). Arbetet görs i bitar om högst BIT sekunder, och man bär aldrig mer
@@ -173,10 +173,13 @@ export function viloSlag(p: Person): 'restVila' | 'restArbete' | 'restVaken' {
   const pd = p.task && ACTS[p.task.act];
   return pd && pd.vila ? 'restVila' : pd && pd.tungt && p.task!.phase === 'do' ? 'restArbete' : 'restVaken';
 }
-// den som sover i ett hus vilar bättre, och bäst på ett golv: talets namn i KROPP, eller inget
-export function viloTak(s: State, p: Person, rum: unknown): 'restGolv' | 'restTak' | undefined {
+// tanken efter en natt under tak och hur glad den gör
+const VILOTANKE = { restBadd: ['Sov gott i halmbädden', 0.09], restGolv: ['Sov gott på golvet i huset', 0.07], restTak: ['Sov under tak', 0.05] } as const;
+// den som sover i ett hus vilar bättre, bättre på ett golv och bäst i en halmbädd: talets namn i KROPP, eller inget
+export function viloTak(s: State, p: Person, rum: unknown): 'restBadd' | 'restGolv' | 'restTak' | undefined {
   const pd = p.task && ACTS[p.task.act];
   if (!(rum && pd && pd.vila && p.task!.phase === 'do' && pd.plats === 'sang')) return undefined;
+  if (s.stationer?.length && stationRutor(s).sov.has(tileOf(p.x, p.y))) return 'restBadd';
   const m0 = gridOf(s).at.get(tileOf(p.x, p.y))?.m;
   return m0 === 'ho' || m0 === 'tra' ? 'restGolv' : 'restTak';
 }
@@ -194,7 +197,7 @@ function needsStep(s: State, p: Person, a: number, dtSec: number, coldRate: numb
   const tak = viloTak(s, p, v.rum);
   if (tak) { // man vilar bättre under tak, och bäst på ett golv
     p.rest = clamp(p.rest + dtSec / HOUR_S * KROPP[tak], 0, 1);
-    if (p.task!.act === 'sova') think(p, tak === 'restGolv' ? 'Sov gott på golvet i huset' : 'Sov under tak', tak === 'restGolv' ? 0.07 : 0.05, now, 8 * HOUR);
+    if (p.task!.act === 'sova') think(p, VILOTANKE[tak][0], VILOTANKE[tak][1], now, 8 * HOUR);
   }
   if (heat > KROPP.eldNara) {
     think(p, 'Värms av elden', fh.comfort, now, HOUR);

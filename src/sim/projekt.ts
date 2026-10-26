@@ -6,7 +6,8 @@ import { SAKER } from './saker';
 import { ARBETE, grundvarde, varuVarde } from './varde';
 import { balans } from './balans';
 import { GORS, REDSKAP, harAv, makeTask, villAv, wantsRope, wantsTool } from './redskap';
-import { STATIONER, STATION_LIST, StationSlag, harStation, kanBygga, stationSpot } from './stationer';
+import { STATIONER, STATION_LIST, StationDef, StationSlag, harStation, kanBygga, stationSpot } from './stationer';
+import { utanBadd } from './byggnader';
 
 // ---------- byns projekt: vad den bygger och gör (steg 2.2.7) ----------
 // Allt byn kan bygga eller göra av handarbete är en rad i registret PROJEKT: redskapen (en rad per grupp i GORS,
@@ -22,6 +23,7 @@ import { STATIONER, STATION_LIST, StationSlag, harStation, kanBygga, stationSpot
 export const PROJEKT_TAL = balans('projekt', {
   kniv: 1.2, yxa: 1.2, spjut: 1, metspo: 0.8, korg: 0.8, // hur mycket varje redskap väger när byn saknar alla den vill ha
   slaktbank: 1, flatarbank: 0.6, // ... varje station när byn saknar den
+  halmbadd: 0.6, // ... halmbäddarna när alla som sover under tak saknar en
   rep: 0.5, // ... repet när förrådet är tomt
   minKostnad: 0.25, // kostnaden räknas aldrig under så här många arbetstimmar
 });
@@ -32,6 +34,7 @@ export const PROJEKT_BEHOV = {
   slakt: { namn: 'Mer kött av viltet', ikon: 'kott' },
   tra: { namn: 'Trä', ikon: 'ved' },
   hantverk: { namn: 'Hantverk', ikon: 'a_hantverk' },
+  vila: { namn: 'Bättre sömn', ikon: 'halmbadd' },
 } as const;
 export type ProjektBehov = keyof typeof PROJEKT_BEHOV;
 
@@ -60,12 +63,13 @@ const redskap = (g: string): ProjektDef => {
     uppgift: (s, p) => { const m = makeTask(s, p, g); return { act: m.act, text: m.text, min: m.min, tool: m.tool }; },
   };
 };
-// en station av sorten k: bristen är 1 så länge byn inte har en färdig
+// en station av sorten k: bristen är 1 så länge byn inte har en färdig. Halmbäddarna (det byn kan ha flera av, steg 2.2.5):
+// hur stor del av byn som sover under tak utan en bädd
 const station = (k: StationSlag): ProjektDef => {
-  const d = STATIONER[k];
+  const d: StationDef = STATIONER[k];
   return {
-    namn: d.namn, ikon: d.ikon, behov: k === 'slaktbank' ? 'slakt' : 'hantverk', vikt: (PROJEKT_TAL as Record<string, number>)[k] ?? 1, act: 'station', slag: k,
-    brist: s => harStation(s, k) ? 0 : 1,
+    namn: d.namn, ikon: d.ikon, behov: k === 'slaktbank' ? 'slakt' : d.sover ? 'vila' : 'hantverk', vikt: (PROJEKT_TAL as Record<string, number>)[k] ?? 1, act: 'station', slag: k,
+    brist: s => d.sover ? (living(s).length ? utanBadd(s) / living(s).length : 0) : harStation(s, k) ? 0 : 1,
     kostnad: () => varuVarde(d.av, d.min / 60 * ARBETE),
     kan: (s, p, f) => !f.kyla && kanBygga(s, p, k),
     uppgift: s => { const sp = stationSpot(s, k); return sp ? { act: 'station', text: d.bygger, min: d.min, tool: k, spot: sp } : undefined; },

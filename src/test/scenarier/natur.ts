@@ -3,7 +3,7 @@ import { FANGST, createState, bearbeta, canProcess, makeTool, step, living, clon
 import * as SIM from '../../sim';
 import { FOREST, isSoil } from '../../sim/vag';
 import { START, STEG_DYGN, STEG_TIM } from '../kor';
-import { setMat, kor, klockan, bastaJaktruta, SCENARIER, flyttLitenBy, tandEld, medBank } from './hjalp';
+import { setMat, kor, klockan, bastaJaktruta, SCENARIER, flyttLitenBy, tandEld, medBank, medHus } from './hjalp';
 
 SCENARIER.djur = {
   text: 'Kaniner syns där det finns vilt, skuttar omkring och hoppar undan folk. Jakt fångar hela kaniner som bärs hem hela och äts som de är; med flintkniv slaktas de till mer kött, ben, skinn och senor',
@@ -402,35 +402,33 @@ SCENARIER.slaktbank = {
 };
 
 SCENARIER.flatarbank = {
-  text: 'Flätarbänken (steg 2.2.4) byggs av trä och grenar av den som kommit på den (steg 2.2.11). Vid den tvinnas rep fortare än för hand vid elden, och korgen flätas bara där. Handarbetet är alltid något bestämt som tar material och ger en sak',
+  text: 'Slöjdbänken (steg 2.2.4) byggs av trä och grenar av den som kommit på den (steg 2.2.11). Vid den tvinnas rep fortare än för hand vid elden, och korgen flätas bara där. Handarbetet är alltid något bestämt som tar material och ger en sak',
   kor: () => {
     const { STATION, STATIONER, stationerOf, stationFor, isKlar, vidStation, spotFor, twineRope, wantsTool, thinkWhileWorking } = SIM;
-    // en by där alla kan tvinna rep och flätarbänken men ingen kan göra en kniv, med gott om mat, trä, grenar och hö: flätarbänken byggs
-    const s = createState(1, START); klockan(s); tandEld(s);
+    // en by där alla kan tvinna rep och slöjdbänken men ingen kan göra en kniv, med gott om mat, trä, grenar och hö: slöjdbänken byggs
+    const s = createState(1, START); klockan(s); tandEld(s); medHus(s); // slöjdbänken står inne (steg 2.2.5)
     for (const r of s.people) r.tek = { rep: 1, flatarbank: 1 };
     setMat(s, { bar: 200 }); setAmount(s, 'ved', 60); setAmount(s, 'grenar', 30); setAmount(s, 'torrgras', 40); setAmount(s, 'flinta', 3);
     const ved0 = amountOf(s, 'ved');
     let h = 0, byggare = '', hantverk = 0, tvinnar = 0;
     while (!stationerOf(s).some(isKlar) && h < 72) { kor(s, 1, v => { for (const r of living(v)) if (r.task?.act === 'station') byggare = r.task.why ?? ''; }); h++; }
     const st = stationerOf(s).find(isKlar), klar = !!st && st.k === 'flatarbank';
-    const logg = s.log.some(l => l.text.includes('första flätarbänk'));
+    const logg = s.log.some(l => l.text.includes('första slöjdbänk'));
     const tog = ved0 - amountOf(s, 'ved') >= STATION.flatarbankTra - 1e-9; // (grenarna plockas samtidigt, så de räknas inte här)
     // korgen: utan bänk vill ingen fläta en, med bänken görs den där
     const u = createState(1, START), uq = living(u).find(r => ageOf(r, u.now) >= 18)!;
     for (const r of u.people) r.tek = { korg: 1 };
     setAmount(u, 'torrgras', 40);
     const utanBank = !wantsTool(u, uq, 'korg');
-    const at = SIM.stationSite(u, 'flatarbank')!;
-    (u.stationer ??= []).push({ id: u.nextStation = (u.nextStation ?? 0) + 1, k: 'flatarbank', x: at.x, y: at.y, kvar: 0 });
+    medBank(u, 'flatarbank');
     const bank = stationFor(u, 'korg')!, vid = vidStation(bank), o = spotFor(u, 'korg', uq);
     const medBank_ = wantsTool(u, uq, 'korg') && Math.hypot(o.x - vid.x, o.y - vid.y) < 0.5;
     // rep: dubbelt så fort vid bänken som för hand vid elden
     const rep = (vidBanken: boolean) => {
       const w = createState(1, START), q = living(w).find(r => ageOf(r, w.now) >= 18)!;
       q.tek = { rep: 1 }; setAmount(w, 'torrgras', 40); setAmount(w, 'rep', 0);
-      const a = SIM.stationSite(w, 'flatarbank')!;
-      (w.stationer ??= []).push({ id: 1, k: 'flatarbank', x: a.x, y: a.y, kvar: 0 });
-      const p0 = vidBanken ? vidStation(w.stationer[0]) : getMap(w.seed).fire;
+      medBank(w, 'flatarbank');
+      const p0 = vidBanken ? vidStation(w.stationer![0]) : getMap(w.seed).fire;
       q.x = p0.x; q.y = p0.y + (vidBanken ? 0 : 1);
       twineRope(w, q, 0.5);
       return amountOf(w, 'rep');
@@ -445,9 +443,9 @@ SCENARIER.flatarbank = {
     thinkWhileWorking(t, tq, 'tvinna', 3600);
     const tankt = (tq.tek.kniv ?? 0) > 0;
     return [
-      [`flätarbänken byggs av ${STATION.flatarbankTra} trä och ${STATION.flatarbankGrenar} grenar på ${h} timmar av den som kommit på den (${byggare})`, klar && tog && byggare.includes(STATIONER.flatarbank.bygger)],
-      ['den första flätarbänken står i loggen', logg],
-      ['utan flätarbänk flätas ingen korg; med den flätas korgen vid bänken', utanBank && medBank_],
+      [`slöjdbänken byggs av ${STATION.flatarbankTra} trä och ${STATION.flatarbankGrenar} grenar på ${h} timmar av den som kommit på den (${byggare})`, klar && tog && byggare.includes(STATIONER.flatarbank.bygger)],
+      ['den första slöjdbänken står i loggen', logg],
+      ['utan slöjdbänk flätas ingen korg; med den flätas korgen vid bänken', utanBank && medBank_],
       [`rep tvinnas fortare vid bänken (${vidB.toFixed(2)} på en halvtimme) än för hand vid elden (${hand.toFixed(2)})`, Math.abs(vidB - hand * STATION.repFart) < 1e-9 && hand > 0],
       [`inget handarbete utan sak på fyra dygn (${hantverk} gånger), och rep tvinnas (${tvinnar} gånger)`, hantverk === 0 && tvinnar > 0],
       ['att tvinna rep ger tankar om det som hör till hantverket', tankt],
@@ -456,26 +454,26 @@ SCENARIER.flatarbank = {
 };
 
 SCENARIER.stationsteknik = {
-  text: 'Varje station är en teknik i teknikträdet som byn måste komma på innan den kan byggas (steg 2.2.11): slaktbänken efter kniven, flätarbänken efter repet och korgen efter flätarbänken. En station som redan står i en sparad by kan byggas av dem som kunde det som räckte förut',
+  text: 'Varje station är en teknik i teknikträdet som byn måste komma på innan den kan byggas (steg 2.2.11): slaktbänken efter kniven, slöjdbänken efter repet och korgen efter slöjdbänken. En station som redan står i en sparad by kan byggas av dem som kunde det som räckte förut',
   kor: () => {
     const { STATIONER, STATION_LIST, TEK, kanBygga, thinkWhileWorking, knows, migrate, SPARVERSION } = SIM;
     const register = STATION_LIST.every(k => !!TEK[k] && STATIONER[k].tek.length === 1 && STATIONER[k].tek[0] === k);
     const ordning = TEK.slaktbank.krav.includes('kniv') && TEK.flatarbank.krav.includes('rep') && TEK.korg.krav.includes('flatarbank');
     // den som kan kniven men inte slaktbänken bygger ingen; när hen kommit på den kan hen
-    const s = createState(1, START); klockan(s); tandEld(s);
+    const s = createState(1, START); klockan(s); tandEld(s); medHus(s);
     const p = living(s).find(r => ageOf(r, s.now) >= 18)!;
     setMat(s, { bar: 200 }); setAmount(s, 'ved', 60); setAmount(s, 'grenar', 30); setAmount(s, 'flinta', 3);
     p.tek = { kniv: 1, rep: 1 };
     const utan = !kanBygga(s, p, 'slaktbank') && !kanBygga(s, p, 'flatarbank');
     p.tek = { kniv: 1, rep: 1, slaktbank: 1, flatarbank: 1 };
     const med = kanBygga(s, p, 'slaktbank') && kanBygga(s, p, 'flatarbank');
-    // jägaren med kniv kommer på slaktbänken när det finns en kniv och trä i byn; den som tvinnar rep kommer på flätarbänken
+    // jägaren med kniv kommer på slaktbänken när det finns en kniv och trä i byn; den som tvinnar rep kommer på slöjdbänken
     const q = createState(1, START), j = living(q).find(r => ageOf(r, q.now) >= 18)!;
     j.pot.nyfikenhet = j.pot.intelligens = 16; j.tek = { kniv: 1, rep: 1 };
     setAmount(q, 'ved', 20); setAmount(q, 'grenar', 20); setAmount(q, 'kniv', 1); SIM.tidyTools(q);
     for (let i = 0; i < 400 && !(knows(j, 'slaktbank') && knows(j, 'flatarbank')); i++) { thinkWhileWorking(q, j, 'jakt', 600); thinkWhileWorking(q, j, 'tvinna', 600); }
     const kommer = knows(j, 'slaktbank') && knows(j, 'flatarbank');
-    // korgen kommer man inte på utan flätarbänken
+    // korgen kommer man inte på utan slöjdbänken
     const k = createState(1, START), kq = living(k).find(r => ageOf(r, k.now) >= 18)!;
     kq.pot.nyfikenhet = kq.pot.intelligens = 16; kq.tek = { rep: 1 }; setAmount(k, 'torrgras', 40);
     for (let i = 0; i < 400; i++) thinkWhileWorking(k, kq, 'samla', 600);
@@ -489,11 +487,73 @@ SCENARIER.stationsteknik = {
     const sparad = knows(gp, 'slaktbank') && !knows(gn, 'slaktbank') && g.v === SPARVERSION;
     return [
       ['varje station är en teknik med samma namn, och tekniken är det som krävs för att bygga den', register],
-      ['slaktbänken kommer efter kniven, flätarbänken efter repet och korgen efter flätarbänken', ordning],
+      ['slaktbänken kommer efter kniven, slöjdbänken efter repet och korgen efter slöjdbänken', ordning],
       ['den som kan kniven och repet men inte stationerna bygger ingen; med teknikerna kan hen', utan && med],
-      ['den som jagar med kniv och tvinnar rep kommer på slaktbänken och flätarbänken', kommer],
-      ['korgen kommer man inte på utan flätarbänken', ingenKorg],
+      ['den som jagar med kniv och tvinnar rep kommer på slaktbänken och slöjdbänken', kommer],
+      ['korgen kommer man inte på utan slöjdbänken', ingenKorg],
       ['i en sparad by med en slaktbänk kan de som kan kniven bygga den', sparad],
+    ];
+  },
+};
+
+SCENARIER.mobler = {
+  text: 'Möblerna (steg 2.2.5): halmbädden bäddas av hö och grenar inne i ett hus där man sover, och den som sover i den vilar upp sig fortare. Slöjdbänken står inne, slaktbänken ute, och en station kan stå vriden. Det som står inne tar golvrutor men aldrig en sovplats som någon behöver, och försvinner om huset rivs; en slöjdbänk som byggdes ute förut står kvar',
+  kor: () => {
+    const { STATION, STATIONER, KROPP, stationerOf, stationSite, stationAt, stationRutor, storlek, isKlar, bedTile, homeless, sovplatser, viloTak, stepStationer, roomAt, PROJEKT } = SIM;
+    // en by med en sovsal där alla kan bädda en halmbädd och har hö och grenar: bädden byggs inne i huset
+    const s = createState(1, START); klockan(s); tandEld(s);
+    const hus = medHus(s)!;
+    const rum = () => SIM.gridOf(s).rooms.filter(r => r.hus === hus.id);
+    const platser0 = rum().reduce((n, r) => n + sovplatser(s, r), 0), hemlos0 = homeless(s);
+    const utanBank = !stationSite(createState(1, START), 'flatarbank'); // utan hus finns ingen plats för slöjdbänken
+    for (const r of s.people) r.tek = { ...r.tek, halmbadd: 1 };
+    setMat(s, { bar: 200 }); setAmount(s, 'torrgras', 40); setAmount(s, 'grenar', 30); setAmount(s, 'ved', 30);
+    const brist0 = PROJEKT.halmbadd!.brist(s);
+    let h = 0;
+    while (!stationerOf(s).some(t => t.k === 'halmbadd' && isKlar(t)) && h < 72) { kor(s, 1); h++; }
+    const b = stationerOf(s).find(t => t.k === 'halmbadd' && isKlar(t));
+    const { w, h: bh } = b ? SIM.storlekAv(b) : { w: 0, h: 0 };
+    let inne = !!b && b.inne === 1;
+    for (let j = 0; b && j < bh; j++) for (let i = 0; i < w; i++) inne &&= roomAt(s, b.x + i, b.y + j)?.hus === hus.id;
+    const tog = amountOf(s, 'torrgras') <= 40 - STATION.halmbaddHo + 1e-9;
+    // en sovplats per bädd: rutorna den tar är inga andra sovplatser, och den första som sover i huset får bädden
+    const platser1 = rum().reduce((n, r) => n + sovplatser(s, r), 0);
+    const tar = stationerOf(s).reduce((n, t) => { const z = SIM.storlekAv(t); return n + z.w * z.h - (isKlar(t) ? 1 : 0); }, 0); // en halvbäddad är ingen sovplats än
+    const W_ = SIM.W, head = b ? b.y * W_ + b.x : -1;
+    const sover = living(s).find(q => bedTile(s, q) === head);
+    let vilan: string | undefined;
+    if (sover) {
+      const q = SIM.cloneState(s), p = living(q).find(r => r.id === sover.id)!;
+      p.x = b!.x + 0.5; p.y = b!.y + 0.5; p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: q.now + HOUR, carry: 0 } as SIM.Task;
+      vilan = viloTak(q, p, roomAt(q, p.x, p.y));
+    }
+    // fler bäddar så länge det finns plats: ingen förlorar sin sovplats
+    for (let i = 0; i < 20 && stationSite(s, 'halmbadd'); i++) medBank(s, 'halmbadd');
+    const baddar = stationerOf(s).filter(t => t.k === 'halmbadd').length, hemlos1 = homeless(s);
+    // slöjdbänken: bara inne, med golv framför sig, och inte där en bädd står
+    const bank = stationSite(s, 'flatarbank');
+    const bankInne = !bank || ('inne' in bank && !!roomAt(s, bank.x, bank.y));
+    // vriden: bredd och djup byter plats, och rutorna följer med
+    const v = createState(1, START);
+    const rot = storlek('slaktbank', 1);
+    (v.stationer ??= []).push({ id: 1, k: 'slaktbank', x: 10, y: 10, kvar: 0, rot: 1 }); SIM.touch(v);
+    const vriden = rot.w === STATIONER.slaktbank.h && rot.h === STATIONER.slaktbank.w && stationAt(v, 10, 12)?.id === 1 && !stationAt(v, 11, 10);
+    // rivs huset försvinner det som stod inne; en slöjdbänk ute från förut står kvar
+    const r = SIM.cloneState(s);
+    const ute = stationSite(createState(1, START), 'slaktbank')!;
+    (r.stationer ??= []).push({ id: 99, k: 'flatarbank', x: ute.x, y: ute.y, kvar: 0 });
+    r.byggen = SIM.bitsOf(r).filter(q => q.hus !== hus.id); r.hus = SIM.housesOf(r).filter(q => q.id !== hus.id); SIM.touch(r);
+    stepStationer(r);
+    const rivet = !stationerOf(r).some(t => t.inne) && stationerOf(r).some(t => t.id === 99) && stationRutor(r).sov.size === 0;
+    return [
+      [`halmbädden bäddas av hö och grenar inne i sovsalen på ${h} timmar`, !!b && inne && tog],
+      [`bädden tar ${w * bh} golvrutor men är en sovplats (${platser0} sovplatser före, ${platser1} efter med ${stationerOf(s).length} bäddar, klara och påbörjade)`, !!b && platser1 === platser0 - tar],
+      [`den som sover i bädden vilar fortare (${vilan ?? 'ingen sover där'}: ${KROPP.restBadd} mot ${KROPP.restGolv} på golvet)`, vilan === 'restBadd' && KROPP.restBadd > KROPP.restGolv],
+      [`byn vill ha bäddar när man sover utan (brist ${brist0.toFixed(2)})`, brist0 > 0],
+      [`bäddarna tar aldrig en sovplats som någon behöver (${baddar} bäddar; ${hemlos0} utan sovplats före, ${hemlos1} efter)`, hemlos1 <= hemlos0 && baddar >= 1],
+      ['slöjdbänken står bara inne: utan hus finns ingen plats för den', utanBank && bankInne],
+      ['en station kan stå vriden, och rutorna följer med', vriden],
+      ['rivs huset försvinner det som stod inne, men slöjdbänken ute står kvar', rivet],
     ];
   },
 };

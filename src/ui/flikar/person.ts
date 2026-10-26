@@ -79,7 +79,7 @@ function behovHtml(p: Person) {
     ...v.mild > 0 ? [{ namn: `Milt väder, ${Math.round(temp)} grader`, v: v.mild }] : [],
   ];
   const tak = viloTak(s, p, v.rum);
-  const vila: Orsak[] = [{ namn: VILA[viloSlag(p)], v: KROPP[viloSlag(p)] }, ...tak ? [{ namn: tak === 'restGolv' ? 'Sover på golvet i ett hus' : 'Sover under tak', v: KROPP[tak] }] : [],
+  const vila: Orsak[] = [{ namn: VILA[viloSlag(p)], v: KROPP[viloSlag(p)] }, ...tak ? [{ namn: tak === 'restBadd' ? 'Sover i en halmbädd' : tak === 'restGolv' ? 'Sover på golvet i ett hus' : 'Sover under tak', v: KROPP[tak] }] : [],
     ...v.heat > KROPP.eldNara ? [{ namn: 'Slappnar av vid elden', v: fh.comfort * v.heat }] : []];
   const hl = halsaLage(p, now);
   const halsa: Orsak[] = [...hl === 'svalt' ? [{ namn: 'Svälter', v: -1 / KROPP.svaltTim }] : hl === 'frys' ? [{ namn: 'Fryser farligt', v: -1 / KROPP.frysTim }] : hl === 'laker' ? [{ namn: 'Mätt och frisk: läker', v: 1 / KROPP.lakerTim }] : [],

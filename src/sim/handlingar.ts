@@ -90,11 +90,11 @@ const DEF = {
   bada: { namn: 'Badar i sjön', tecken: '🏊', dygn: true },
   bara: { namn: 'Bär in saker till lagret', slag: 'bara' },
   strand: { namn: 'Sitter vid stranden och ser ut över vattnet', tecken: '🌊', dygn: true },
-  korg: { namn: 'Flätar en korg av hö', slag: 'hantverk', hantverk: true, plats: 'station' }, // bara vid flätarbänken (stationer.ts)
-  tvinna: { namn: 'Tvinnar rep', yrke: 'Hantverkare', slag: 'hantverk', vila: true, hantverk: true, social: true, dygn: true, stilla: true, plats: 'station' }, // vid flätarbänken, annars för hand vid elden
+  korg: { namn: 'Flätar en korg av hö', slag: 'hantverk', hantverk: true, plats: 'station' }, // bara vid slöjdbänken (stationer.ts)
+  tvinna: { namn: 'Tvinnar rep', yrke: 'Hantverkare', slag: 'hantverk', vila: true, hantverk: true, social: true, dygn: true, stilla: true, plats: 'station' }, // vid slöjdbänken, annars för hand vid elden
   rensa: { namn: 'Rensar fisk', slag: 'hantverk', hantverk: true, social: true, stilla: true, plats: 'station' },
   bygga: { namn: 'Bygger', yrke: 'Byggare', slag: 'bygga', verktyg: { laga: 'Lagar en vägg', lagaGolv: 'Lagar golvet', golv: 'Lägger golv', vagg: 'Bygger en vägg' }, hantverk: true, tungt: true, stilla: true },
-  station: { namn: 'Bygger en station', slag: 'bygga', verktyg: { slaktbank: 'Bygger en slaktbänk', flatarbank: 'Bygger en flätarbänk' }, hantverk: true, stilla: true, plats: 'station' }, // stationer.ts; task.tool = slaget
+  station: { namn: 'Bygger en station', slag: 'bygga', verktyg: { slaktbank: 'Bygger en slaktbänk', flatarbank: 'Bygger en slöjdbänk', halmbadd: 'Bäddar en halmbädd' }, hantverk: true, stilla: true, plats: 'station' }, // stationer.ts; task.tool = slaget
 } satisfies Record<string, ActDef>;
 
 export type Act = keyof typeof DEF;

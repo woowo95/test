@@ -66,7 +66,7 @@ export function wearUsed(s: State, p: Person, n: number) {
 // byn vill ha ungefär ett spjut per tre vuxna, när någon väl har börjat fiska eller jaga
 const spearsWanted = (s: State) => (s.stat?.fiskeForsok ?? 0) > 0 || (s.stat?.prod_jakt ?? 0) > 0 ? clamp(Math.floor(living(s).filter(p => ageOf(p, s.now) >= ALDER.vuxen).length / REDSKAP.spjutPerVuxna), REDSKAP.spjutMin, REDSKAP.spjutMax) : 0;
 // ---------- rep ----------
-// Rep tvinnas av växtfibrer (hö) av den som kan det, vid flätarbänken (stationer.ts) och fortare där, annars för hand vid
+// Rep tvinnas av växtfibrer (hö) av den som kan det, vid slöjdbänken (stationer.ts) och fortare där, annars för hand vid
 // elden, eller tas från senor när vilt slaktas. Det är samma rep
 // oavsett material. Rep behövs till flintspjut och metspö.
 const REP_TIMME = 60 / SAKER.rep!.skaffa!.min!; // rep per timme
@@ -79,7 +79,7 @@ export function twineRope(s: State, p: Person, hours: number) {
   gain(s, p, 'rep', n);
   const first = !(s.stat?.rep);
   count(s, 'rep', n);
-  if (first) log(s, `${p.name} började tvinna rep av hö ${bank ? 'vid flätarbänken' : 'vid elden'}.`, 'world', [p.id]);
+  if (first) log(s, `${p.name} började tvinna rep av hö ${bank ? 'vid slöjdbänken' : 'vid elden'}.`, 'world', [p.id]);
   if (bank) count(s, 'repBank', n);
 }
 
@@ -148,7 +148,7 @@ function stycka(s: State, p: Person, art: Djurart, n: number) {
 }
 
 // ---------- att göra ett redskap som saknas ----------
-// Varje redskap med gors i saker.ts görs i ett eget arbete vid elden (korgen vid flätarbänken), som heter som redskapets grupp (yxa, spjut, metspo,
+// Varje redskap med gors i saker.ts görs i ett eget arbete vid elden (korgen vid slöjdbänken), som heter som redskapets grupp (yxa, spjut, metspo,
 // kniv, korg). Receptet (skaffa.av), tekniken (skaffa.tek), verktyget (skaffa.verktyg), tiden (skaffa.min) och texterna
 // (gors) står i sakens rad. Här står hur många byn vill ha av varje grupp. Ett nytt redskap blir en rad i saker.ts, och
 // en ny grupp också en rad i VILL och en handling (handlingar.ts).
@@ -187,7 +187,7 @@ export const kindFor = (s: State, p: Person, g: string) => { const ks = GORS[g];
 export const borjaTool = (s: State, p: Person, g: string) => { const k = kindFor(s, p, g); return canMake(s, p, k) ? k : undefined; };
 // p vill göra ett redskap i gruppen g: hen har påbörjat ett eller kan göra ett, byn har färre än den vill, och ingen
 // annan gör ett. spar = hö som ska sparas till värmen (ett recept med hö görs bara när byn har så mycket). Det som bara
-// görs vid en station (korgen vid flätarbänken, stationer.ts) görs inte förrän byn har den
+// görs vid en station (korgen vid slöjdbänken, stationer.ts) görs inte förrän byn har den
 export const wantsTool = (s: State, p: Person, g: string, spar = 0) => {
   const ks = GORS[g];
   return kanGoras(s, g as Act) && (!!halvOf(s, p, ks) || ks.some(k => canMake(s, p, k) && (!av(k).torrgras || amountOf(s, 'torrgras') >= spar)))

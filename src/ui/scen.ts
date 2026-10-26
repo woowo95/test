@@ -34,12 +34,15 @@ export class Ikoner {
   private n = 0;
   constructor(readonly layer: PIXI.Container) {}
   start() { this.n = 0; }
-  add(k: string, x: number, y: number, sc: number) {
+  // x, y = bildens övre vänstra hörn; vriden = bilden vriden ett kvarts varv medsols (en station som står vriden, stationer.ts)
+  add(k: string, x: number, y: number, sc: number, vriden = false) {
     if (!hasIcon(k)) return;
     textures[k] ??= PIXI.Texture.from(iconCanvas(k), { scaleMode: PIXI.SCALE_MODES.NEAREST });
     let sp = this.layer.children[this.n++] as PIXI.Sprite | undefined;
     if (!sp) { sp = new PIXI.Sprite(); this.layer.addChild(sp); }
-    sp.texture = textures[k]; sp.position.set(x, y); sp.scale.set(sc); sp.visible = true;
+    sp.texture = textures[k]; sp.scale.set(sc); sp.visible = true;
+    sp.rotation = vriden ? Math.PI / 2 : 0;
+    sp.position.set(vriden ? x + iconCanvas(k).height * sc : x, y);
   }
   end() { for (let i = this.n; i < this.layer.children.length; i++) this.layer.children[i].visible = false; }
 }

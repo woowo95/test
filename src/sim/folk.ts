@@ -38,6 +38,7 @@ export const KROPP = balans('kropp', {
   restVaken: -0.03, // ... annars
   restGolv: 0.03, // extra vila per timme när man sover inomhus på golv
   restTak: 0.02, // ... på bar mark under tak
+  restBadd: 0.05, // ... i en halmbädd (steg 2.2.5)
   strandVila: 0.05, // att sitta vid vattnet ger så mycket vila
   // umgänge (social) och toa
   socialTim: 18, // timmar från fullt umgänge till tomt

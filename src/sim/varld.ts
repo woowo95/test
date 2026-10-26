@@ -93,7 +93,7 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
   [5, 'v58: stationerna är tekniker (steg 2.2.11). Står en station i byn kan de som kunde det som räckte förut (kniven, korgen eller repet) bygga den', s => {
     const forut: Record<string, string[]> = { slaktbank: ['kniv'], flatarbank: ['korg', 'rep'] };
     for (const st of s.stationer ?? []) for (const p of s.people) if (forut[st.k]?.some(k => (p.tek?.[k] ?? 0) >= 1)) (p.tek ??= {})[st.k] = 1;
-    // den som kunde korg utan att kunna flätarbänken kan fortfarande korg; tekniken lärs ut bara till den som kan bänken
+    // den som kunde korg utan att kunna slöjdbänken kan fortfarande korg; tekniken lärs ut bara till den som kan bänken
   }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];
