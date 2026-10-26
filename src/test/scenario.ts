@@ -1870,6 +1870,8 @@ SCENARIER.bygg = {
     });
     const fq = getMap(q.seed).fire, hq = housesOf(q)[0];
     const avst = hq ? rektAvstand(fq.x, fq.y, hq.x, hq.y, hq.w, hq.h) : 0;
+    // ett planerat långhus räknas i statistiken (planerat_langhus; samhalle-192)
+    const langhus = housesOf(q).filter(h => h.namn.startsWith('Långhus')).length, langRaknat = q.stat?.planerat_langhus ?? 0;
     // en kall natt utan eld: den som är inne kyls långsammare än den som är ute
     const k = cloneState(q); k.now = ageStart(k, 0) + 3 * HOUR; k.fire.lit = false; k.fire.fuel = 0;
     let varmInne = 0, varmUte = 0, ni = 0, nu = 0;
@@ -1916,6 +1918,7 @@ SCENARIER.bygg = {
       [`träden där huset ska stå fälls innan väggarna byggs där (${trad} träd på platsen, ${iTrad} väggar byggda på ett träd)`, trad >= 0 && iTrad === 0 && !!h && bitsOf(q).every(b => b.hus !== h.id || !treeOn(q, b))],
       [`huset står en bit från elden (${avst.toFixed(1)} rutor)`, avst >= 4],
       ['slitna väggar lagas', lagat],
+      [`ett långhus räknas när det planeras (${langhus} långhus, ${langRaknat} räknade)`, langRaknat === langhus],
       [`en lagning kostar hälften av det nya (trägolv ${golvLag} av ${MATERIAL.tra.n}, timmervägg ${vaggLag} av ${MATERIAL.timmer.n})`, Math.abs(golvLag - MATERIAL.tra.n / 2) < 1e-9 && Math.abs(vaggLag - MATERIAL.timmer.n / 2) < 1e-9],
       [`en rasad vägg som byggts om gör huset klart igen men inte färdigt en gång till (krönikan ${kronikaFore} → ${kronikaEfter}, Gemenskap ${gemFore.toFixed(3)} → ${gemEfter.toFixed(3)})`, omKlar && kronikaFore === 1 && kronikaEfter === 1 && gemEfter === gemFore],
       [`huset minns var materialet kom ifrån (${Math.round(minns)} av ${Math.round(lagt)}: ${satt})`, lagt > 0 && Math.abs(minns - lagt) < 0.01 * lagt + 0.01],

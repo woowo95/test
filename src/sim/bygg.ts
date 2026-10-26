@@ -140,6 +140,7 @@ export function planBuild(s: State) {
     }
     hs.push(hus); touch(s);
     log(s, planText(by, u.fn, hus, w * h, same), 'world', [by.id]); count(s, 'planerat_' + u.fn);
+    if (u.fn === 'sovsal' && w * h >= HUS.langhus) count(s, 'planerat_langhus'); // ett långhus (så ofta det händer, samhalle-192)
     return;
   }
   s.byggSok = s.now + BYGG.omforsok * HOUR; // ingen plats nu: försök igen om ett tag
