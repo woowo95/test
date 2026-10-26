@@ -1,7 +1,10 @@
 // Kör en by utan grafik och samlar nyckeltal. Vakterna larmar om något blir omöjligt (NaN, negativa förråd, folk i vattnet).
-import { createState, step, living, DAY, ageIndex, moodOf, serialize, serializeParts, getMap, fuelStock, ACT_NAMES, T, State, inMap, isWall, tileOf, foodOf, amountOf, sumOf, okandaBalans } from '../sim';
+import { BEAT, createState, step, living, DAY, ageIndex, moodOf, serialize, serializeParts, getMap, fuelStock, ACT_NAMES, T, State, inMap, isWall, tileOf, foodOf, amountOf, sumOf, okandaBalans } from '../sim';
 
+// testbyarna grundas 08:00 svensk tid. Testerna körs i datorns tidszon (här UTC), så där är klockan 06:00 när byn grundas
 export const START = Date.parse('2026-10-20T08:00:00+02:00');
+// steg per timme och per dygn: simuleringen går alltid i steg om BEAT sekunder (300 s, fem minuter)
+export const STEG_TIM = 3600 / BEAT, STEG_DYGN = 86400 / BEAT;
 // ett dokument i artefaktens databas rymmer högst så här många KB (sparfilens delar, DELAR i steg.ts)
 export const DOK_KB = 256;
 
@@ -29,8 +32,8 @@ export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => voi
   let hunger = 0, humor = 0, humorN = 0, lit = 0, steg = 0, vintermat = Infinity, vinterved = Infinity, forraAlder = ageIndex(s);
   const ok01 = (v: number) => Number.isFinite(v) && v >= -1e-6 && v <= 1 + 1e-6;
   const dag = () => ((s.now - START) / DAY).toFixed(1);
-  for (let i = 0; i < dagar * 288; i++) {
-    step(s, 300);
+  for (let i = 0; i < dagar * STEG_DYGN; i++) {
+    step(s, BEAT);
     varjeSteg?.(s);
     steg++; if (s.fire.lit) lit++;
     if (!(foodOf(s) >= 0) || !(amountOf(s, 'ved') >= 0)) larm('förråd', () => `mat ${foodOf(s)}, ved ${amountOf(s, 'ved')}`);
@@ -45,7 +48,7 @@ export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => voi
       else if (isWall(s, p.x, p.y)) larm('i en vägg', () => `${p.name} står i en vägg (${p.task?.act})`);
       if (p.task && !(p.task.act in ACT_NAMES)) larm('jobb', () => `${p.name} har okänt jobb ${p.task?.act}`);
     }
-    if (i % 12 === 0) { // en gång i timmen
+    if (i % STEG_TIM === 0) { // en gång i timmen
       if (folk.some(p => p.hunger < 0.15)) hunger++;
       for (const p of folk) { humor += moodOf(p, s.now); humorN++; }
     }

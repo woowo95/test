@@ -61,3 +61,8 @@ export function scenarioSammanfattning(u: Utfall): string {
   return `Scenarier: ${ok} av ${ok + sr.filter(r => r.startsWith('FEL')).length} OK.${fel.length ? '\n' + fel.join('\n') : ''}`
     + (u.code && !sr.length ? '\nSCENARIERNA KRASCHADE:\n' + u.err.slice(-1500) : '') + (hoppade ? '\n' + hoppade : '');
 }
+
+// JSON med nycklarna i bokstavsordning: en jämförelse gäller då innehållet och inte i vilken ordning fälten skrevs
+// (serialize skriver fälten i den ordning de kom till i byn). Används av likhet; samma.ts hashar ännu texten som den är
+export const kanonisk = (json: string) => JSON.stringify(JSON.parse(json), (_, v) =>
+  v && typeof v === 'object' && !Array.isArray(v) ? Object.fromEntries(Object.entries(v).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0)) : v);
