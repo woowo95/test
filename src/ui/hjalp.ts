@@ -1,5 +1,5 @@
 import { iconImg } from '../ikoner';
-import { HOUR, LogEntry, Person, byId, capacity, carryKind, load, sak, sakNamn, timeLabel } from '../sim';
+import { HOUR, LogEntry, Person, byId, capacity, carryKind, isSick, load, sak, sakNamn, timeLabel } from '../sim';
 import { s } from './lage';
 
 // små hjälpare för text, tal, färger och staplar som alla delar av gränssnittet använder
@@ -47,7 +47,7 @@ export function relWord(p: Person, q: Person, op: number) {
   if (p.mother !== undefined && (p.mother === q.mother || p.father === q.father)) return 'Syskon';
   return op > 60 ? 'Nära vän' : op > 25 ? 'Vän' : op > -10 ? 'Bekant' : op > -45 ? 'Ogillar' : 'Ovän';
 }
-export const sickNow = (p: Person) => !!p.sickUntil && p.sickUntil > s.now;
+export const sickNow = (p: Person) => isSick(p, s.now);
 // vad en person bär och hur mycket hen orkar
 // en stack i en lista: symbolen och namnet. Ett påbörjat redskap har det det ska bli med timglaset bredvid
 export const pileTxt = (p: { k: string; n: number; max: number; gor?: string }) => p.gor ? `${iconImg(p.gor)}${iconImg('paborjat', 10)}${sakNamn(p.gor)} (inte klar)` : `${iconImg(p.k)}${sakNamn(p.k)}${p.max === 1 ? '' : ` ${fmtN(p.n)} st`}`;

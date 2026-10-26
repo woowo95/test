@@ -5,11 +5,11 @@ import { capacity, dropSpot, fetchSpot, homeKind, load, pickUp, storeLoad, tidyS
 import { KANIN, MASK_PER_GRAV, clean, slaughter, twineRope, wearUsed } from './redskap';
 import { GOR_ACTS, finishHalf, startWork, stepPaborjat, workHalf } from './paborjat';
 import { thinkWhileWorking } from './teknik';
-import { foodDays, workRate } from './ekonomi';
+import { arbetsformaga, foodDays, workRate } from './ekonomi';
 import { TRY_SEC, growFynd, handFish, packFynd, pickMushrooms, richness, takeFrom } from './fynd';
 import { coldOf, temperature } from './vader';
 import { addFuel, canLight, fireWant, forageItems, fuelFor, hearthOf, heatAt, igniterOf, stepFire, takeCoal, takeFuel, tryLight } from './eld';
-import { ageOf, alive, count, living, log, stat, think } from './folk';
+import { ageOf, alive, count, isSick, living, log, stat, think } from './folk';
 import { getMap } from './karta';
 import { barnMat, birth, birthWish, die, regulate } from './liv';
 import { WEAR, groundOf, growGround, packGround, tileOf } from './mark';
@@ -169,8 +169,8 @@ function healthStep(s: State, p: Person, a: number, ai: number, dtSec: number) {
   const now = s.now;
   if (p.hunger <= 0) { p.health -= dtSec / (5 * 3600); if (rnd(s, 'halsa', p) < dtSec / 7200) think(p, 'Svälter', -0.25, now, 3 * HOUR); }
   else if (p.warm < 0.12) p.health -= dtSec / (20 * 3600);
-  else if (p.hunger > 0.3 && !(p.sickUntil && p.sickUntil > now)) p.health = clamp(p.health + dtSec / (10 * 3600), 0, 1);
-  if (p.sickUntil && p.sickUntil > now) p.health -= dtSec / (40 * 3600);
+  else if (p.hunger > 0.3 && !isSick(p, now)) p.health = clamp(p.health + dtSec / (10 * 3600), 0, 1);
+  if (isSick(p, now)) p.health -= dtSec / (40 * 3600);
   if (!p.sickUntil || p.sickUntil < now) {
     if (chance(s, (ai === 0 ? 0.12 : 0.05) / 86400, dtSec, 'halsa', p)) { const dur = (3 + rnd(s, 'halsa', p) * 8) * HOUR; p.sickUntil = now + dur; p.sickWhy = 'Sjuk'; if (dur > 8 * HOUR) log(s, `${p.name} blev svårt sjuk.`, 'world', [p.id]); }
   }
@@ -336,7 +336,7 @@ function workStep(s: State, p: Person, tk: Task, dtSec: number, a: number, learn
   if (tk.act === 'fiske') {
     // fiske med händerna, spjut eller metspö: ett försök i taget, och fiskaren går hem med varje fångst
     tk.prog = (tk.prog ?? 0) + dtSec;
-    const ageF = (a < 14 ? 0.3 : a > 60 ? 0.6 : 1) * (p.sickUntil && p.sickUntil > now ? 0.3 : 1);
+    const ageF = arbetsformaga(p, a, now);
     while (tk.prog >= TRY_SEC) {
       tk.prog -= TRY_SEC;
       if (rd?.bete && (tk.mask ?? 0) < 1) { tk.mask = (tk.mask ?? 0) + MASK_PER_GRAV; continue; } // gräver fram mask först

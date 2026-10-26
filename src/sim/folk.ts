@@ -21,6 +21,8 @@ function makeName(s: State, sex: 'm' | 'k') {
 export const alive = (p: Person) => p.died === undefined && p.left === undefined;
 export const ageOf = (p: Person, now: number) => ((p.died ?? p.left ?? now) - p.born) / DAY;
 export function living(s: State) { return s.people.filter(alive); }
+// sjuk just nu (sickUntil är aldrig 0 eller NaN i spelet; då ger uttrycket ändå samma svar som !!sickUntil &&)
+export const isSick = (p: Person, now: number) => p.sickUntil !== undefined && p.sickUntil > now;
 export function byId(s: State, id?: number) { return id === undefined ? undefined : s.people.find(p => p.id === id); }
 
 export function stat(p: Person, k: Stat, now: number) {

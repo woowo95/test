@@ -2,7 +2,7 @@ import { addTo, dropLoad, fetchSpot, item, mayTake, ownsAmount, use } from './la
 import { getable, takeMaterial } from './behov';
 import { Del, addDel } from './egendom';
 import { coldOf, temperature } from './vader';
-import { ageOf, count, log, stat, think } from './folk';
+import { ageOf, count, isSick, log, stat, think } from './folk';
 import { flintFactor, stoneDist, takeFrom } from './fynd';
 import { observe } from './minne';
 import { getMap } from './karta';
@@ -145,7 +145,7 @@ export function fetchFuel(s: State, p: Person, why: string, fran?: Person) {
 }
 const awake = (s: State, p: Person, minAge: number) => {
   const t = p.task;
-  return ageOf(p, s.now) >= minAge && !(p.sickUntil && p.sickUntil > s.now) && p.health >= 0.4 &&
+  return ageOf(p, s.now) >= minAge && !isSick(p, s.now) && p.health >= 0.4 &&
     (!t || (t.act !== 'sova' && !(t.phase === 'back' && t.carry > 0) && !t.items));
 };
 export function stepFire(s: State, dtSec: number, ppl: Person[]) {

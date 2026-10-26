@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { ACTS, Person, slagIkon, SEC, TalkEvent, ageOf, alive, byId, homeKind, living, load, relKey, spar } from '../sim';
+import { ACTS, Person, slagIkon, SEC, TalkEvent, ageOf, alive, byId, homeKind, isSick, living, load, relKey, spar } from '../sim';
 import { hsl } from './hjalp';
 import { s, ui } from './lage';
 import { Ikoner, TS, bubbleG, labels, markLayer, peopleG } from './scen';
@@ -80,7 +80,7 @@ export function drawPeople(t: number) {
     else peopleG.lineStyle(1.2, 0x1a1a1a, 0.8);
     peopleG.beginFill(col).drawCircle(x, y, r).endFill();
     peopleG.lineStyle(0);
-    if (p.sickUntil && p.sickUntil > s.now) peopleG.beginFill(0x8fc46a).drawCircle(x + r * 0.7, y - r * 0.7, 1.8).endFill();
+    if (isSick(p, s.now)) peopleG.beginFill(0x8fc46a).drawCircle(x + r * 0.7, y - r * 0.7, 1.8).endFill();
     if (p.pregnantSince !== undefined) peopleG.beginFill(0xf2c4d0).drawCircle(x - r * 0.7, y - r * 0.7, 1.6).endFill();
     if (p.task && load(p.task) > 0.02) markIcons.add(homeKind(p.task), x + r - 2.5, y - 1, 0.6); // det man bär syns på figuren
   }

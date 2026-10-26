@@ -3,7 +3,7 @@ import { campCenter, campDist, campKey } from './plats';
 import { foodDays } from './ekonomi';
 import { ACTS, WORK, usesTool } from './handlingar';
 import { canLight, emberOn, heatAt, fireWant, needStones, needTinder, woodDays } from './eld';
-import { ageOf, living, stat } from './folk';
+import { ageOf, isSick, living, stat } from './folk';
 import { HAND_FISH, Kind, flintSpot, shoreOf, wantsFlint } from './fynd';
 import { coldOf, temperature } from './vader';
 import { DJUR, KANIN, SLAKT_TIMME, TILLVERKA, minOf, abborrar, canClean, canSlaughter, freeOfKinds, toolGroups, vilt, wantsKnife, wantsRope } from './redskap';
@@ -160,7 +160,7 @@ export function chooseTask(s: State, p: Person) {
 // 1–2. nöd (sjuk, svag, fryser farligt, måste på toa genast) och grundbehov (toa, värme, vila).
 // En lat person tillgodoser grundbehoven tidigare än en flitig. true = något valdes
 function needs(s: State, p: Person, v: Val, a: number, lazy: number, light: boolean) {
-  const lit = s.fire.lit, sick = p.sickUntil !== undefined && p.sickUntil > s.now;
+  const lit = s.fire.lit, sick = isSick(p, s.now);
   if (a < 3) return set(v, 'sova', 'Är ett litet barn');
   if (p.toa < 0.12) return set(v, 'toa', 'Måste gå på toa genast');
   if (sick) return set(v, 'sova', 'Är sjuk');
