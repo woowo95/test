@@ -81,7 +81,7 @@ export function tidyTools(s: State) {
 // äldre sparfiler: redskapen räknades bara som summor (s.items, och i v30 ägarlistor). Varje helt redskap blir ett ting.
 // Före v40 fanns redskapen också som summor och stackar bredvid tingen, och de som bars låg i s.tingVag
 export function migrateTools(s: State) {
-  if (!s.ting) migrate(s);
+  if (!s.ting) toolsFromItems(s);
   const vag = s.tingVag ?? [];
   for (const p of s.people) {
     const tk = p.task;
@@ -98,7 +98,8 @@ export function migrateTools(s: State) {
   }
   delete s.tingVag; delete s.items;
 }
-function migrate(s: State) {
+// varje helt redskap i s.items (och ägarlistorna i v30) blir ett ting. s.items lämnas, eftersom storeFromSums läser det
+export function toolsFromItems(s: State) {
   s.ting = [];
   for (const k of REDSKAP_SLAG) {
     let n = s.items?.[k] ?? 0;

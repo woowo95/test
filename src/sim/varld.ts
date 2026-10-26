@@ -2,7 +2,7 @@ import { migrateTek } from './teknik';
 import { stepDelning } from './delning';
 import { setStock, storeFromSums } from './lager';
 import { isTool } from './saker';
-import { migrateTools } from './agande';
+import { migrateTools, toolsFromItems } from './agande';
 import { VAR, inFas, nyKalender } from './tid';
 import { ageOf, byId, getRel, log, newPerson, startSkills, think } from './folk';
 import { newSeder, sederTarget, TAGS } from './seder';
@@ -65,6 +65,7 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
     // små pinnar finns inte längre: de räknas som grenar
     if (s.items.pinnar) { s.items.grenar = (s.items.grenar ?? 0) + s.items.pinnar; delete s.items.pinnar; }
     for (const a of s.stackar ?? []) if (a.k === 'pinnar') a.k = 'grenar';
+    if (!s.ting) toolsFromItems(s); // först, eftersom stackarna skapar en tom lista med ting
     if ('food' in s || s.mat || s.egna || Object.keys(s.items).some(k => !isTool(k))) storeFromSums(s); // äldre sparfiler (före v40): summorna blir stackar
     migrateTools(s); // och redskapen bara ting
     if (s.stackar) s.stackar = s.stackar.filter(a => !isTool(a.k));
