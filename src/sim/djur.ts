@@ -1,4 +1,4 @@
-import { FYND, fyndAt, setNarvaro, vaxerAt } from './fynd';
+import { FYND, fyndAt, setNarvaro, vaxerAt, vaxerKarta } from './fynd';
 import { hash } from './karta';
 import { clamp } from './slump';
 import { living } from './folk';
@@ -43,8 +43,9 @@ function start(s: State, k: number, e: number): Start | null {
   const andra: { x: number; y: number }[] = [];
   for (let j = 0; j < k; j++) { const g = mitt(s, j); if (g) andra.push(g); }
   let bi = -1, bs = -Infinity;
+  const vax = vaxerKarta(s, 'jakt');
   for (let i = 0; i < W * H; i++) {
-    const v = vaxerAt(s, 'jakt', i) / topp;
+    const v = vax[i] / topp;
     if (v < 0.3) continue;
     const x = (i % W) + 0.5, y = Math.floor(i / W) + 0.5;
     if (andra.some(a => Math.hypot(a.x - x, a.y - y) < 8)) continue;
@@ -58,7 +59,7 @@ function start(s: State, k: number, e: number): Start | null {
     for (let dy = -VANDRA; dy <= VANDRA; dy++) for (let dx = -VANDRA; dx <= VANDRA; dx++) {
       const x = x0 + dx, y = y0 + dy;
       if (!inMap(x, y) || Math.hypot(dx, dy) > VANDRA) continue;
-      const j = y * W + x, v = vaxerAt(s, 'jakt', j) * (0.8 + 0.4 * hash(salt, j, 9));
+      const j = y * W + x, v = vax[j] * (0.8 + 0.4 * hash(salt, j, 9));
       if (v > gs) { gs = v; gi = j; }
     }
     st = { x0: x0 + 0.5, y0: y0 + 0.5, x1: (gi % W) + 0.5, y1: Math.floor(gi / W) + 0.5, n0: STORLEK[0] + Math.floor(hash(salt, 1, 3) * (STORLEK[1] - STORLEK[0] + 1)) };

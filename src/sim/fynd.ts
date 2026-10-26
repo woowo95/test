@@ -166,7 +166,8 @@ function monsterOf(s: State, k: FyndId) {
 }
 // i byns läger växer inget: allt är redan hämtat och marken nött. Lägret växer när byn får fler lagerplatser
 export const LAGER_R = 3;
-const iLagret = (s: State, i: number) => campGrid(s)[i] < LAGER_R && getMap(s.seed).tiles[i] !== T.Vatten;
+const iLagret = (s: State, i: number) => iLagretI(campGrid(s), getMap(s.seed).tiles, i);
+const iLagretI = (lager: Float64Array, tiles: Uint8Array, i: number) => lager[i] < LAGER_R && tiles[i] !== T.Vatten;
 // vilt skyr människor: ett stort område runt lägret, och marken där många går (stigar och nött mark).
 // Räknas om en gång per dygn.
 export const SKYGG_IN = 8; // rutor från lägret där inget vilt finns
@@ -205,6 +206,13 @@ const sasong = (s: State, k: FyndId) => FYND[k].arstid?.[ageIndex(s)] ?? 1;
 export function vaxerAt(s: State, k: Lager, i: number) {
   let v = 0;
   for (const j of lagren(k)) v += capOf(s, j, i) * sasong(s, j);
+  return v;
+}
+// vaxerAt för alla rutor på en gång (samma tal), för den som går igenom hela kartan
+export function vaxerKarta(s: State, k: FyndId) {
+  const f = FYND[k], m = f.monster ? monsterOf(s, k).m : undefined, sa = sasong(s, k);
+  const lager = campGrid(s), tiles = getMap(s.seed).tiles, v = new Float64Array(W * H);
+  for (let i = 0; i < W * H; i++) if (!iLagretI(lager, tiles, i)) v[i] += f.bas(s, i, m ? m[i] : 1) * sa;
   return v;
 }
 const store = new WeakMap<State, Partial<Record<FyndId, Float32Array>>>();
