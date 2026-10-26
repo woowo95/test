@@ -19,7 +19,7 @@ export const REDSKAP = balans('redskap', {
   flintaSparas: 1, // flintor som sparas att tända eld med: ett redskap av flinta görs bara av det som är över (receptet plus detta)
   spjutPerVuxna: 3, spjutMin: 1, spjutMax: 4, // byn vill ha ett spjut (och ett metspö) per så här många vuxna, minst Min och högst Max
   korgPerVuxna: 3, korgMin: 1, korgMax: 5, // ... en korg
-  yxaPerVuxna: 4, yxaMin: 1, yxaMax: 3, yxaFran: 16, // ... en yxa, räknat på dem som är över Fran år
+  yxaPerVuxna: 4, yxaMin: 1, yxaMax: 3, yxaFran: 16, yxaBygge: 1, // ... en yxa, räknat på dem som är över Fran år, och Bygge till medan ett hus byggs (träden där det ska stå)
   knivar: 1, // ... så många knivar
   repVill: 4, // ... så många rep (tvinnat eller från senor)
   maskPerGrav: 4, // en grävning ger så här många maskar

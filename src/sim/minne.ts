@@ -9,6 +9,69 @@ import { clamp, pickViktat, rnd } from './slump';
 import { ageIndex, lightLevel } from './tid';
 import { DAY, H, HOUR, LKind, Lardom, Person, Rel, State, T, W } from './typer';
 import { FOREST } from './vag';
+import { balans } from './balans';
+
+// ---------- balanstal (regel 8) ----------
+// Lärdomar: hur många man minns, hur mycket man tror på dem, hur de sprids och hur fort de glöms. Värdet (v) mäts i det en
+// rik plats ger (toppOf i fynd.ts) och säkerheten (c) går från 0 till 1. Hur nära ett område ligger lägret står i PLATS
+export const MINNE = balans('minne', {
+  max: 20, // så många lärdomar minns man högst; det minst säkra trängs undan
+  faraVikt: 2, // en rädsla räknas så här många gånger så säker när det trängs undan
+  rik: 0.6, // en plats är rik (värde 1, gott om) när den ger så här stor del av det bästa som finns
+  vMax: 3, // en lärdom, och det man tror att en plats ger, är värd högst så här mycket (en rädsla högst vMaxFara)
+  vMaxFara: 1.6,
+  felGrans: 0.4, // är platsen så här mycket sämre än man trott (mätt mot en rik plats) rättas lärdomen och blir en nyhet
+  nyhetDygn: 2, // en rättelse är en nyhet så här många dygn (år i spelet)
+  okantBas: 0.45, // hur mycket den som inte varit på en plats tror på det marken lovar: okantBas + nyfikenhet / okantNyfiken
+  okantNyfiken: 40,
+  synsMax: 1.2, // det marken lovar på en ruta får väga högst så här mycket mer än områdets ...
+  synsMin: 0.05, // ... och områdets värde räknas inte lägre än så här
+  radslaMax: 1.3, // rädsla för ett område väger radslaMax - mod / 20, men minst radslaMin och högst radslaMax
+  radslaMin: 0.2,
+  siktSkog: 5, // man ser så här många rutor i skogen ...
+  siktOppet: 10, // ... och så här många annars, gånger siktMork + siktLjus * ljuset (kortare i mörker)
+  siktMork: 0.4,
+  siktLjus: 0.6,
+  valBrus: 0.15, // slumpen när man väljer plats, mot platsens värde
+  sokR: 5, // väl framme letar man efter den bästa rutan inom så här många rutor ...
+  sokPris: 0.01, // ... och varje ruta bort från den valda platsen kostar så här mycket
+  flintaSaker: 0.25, // man går till ett område efter flinta när lärdomen är säkrare än så här
+  olyckaBy: 6, // en olycka närmare byn än så här många rutor gör ingen rädd
+  olyckaSyn: 10, // de som var närmare än så här många rutor såg olyckan
+  radslaSett: 0.8, // de som såg den blir så här rädda för platsen (värde i lärdomen), och säkra på det med radslaSettSaker ...
+  radslaSettSaker: 1,
+  radslaHort: 0.6, // ... de närmaste som hörde om den så här rädda, och säkra på det med radslaHortSaker
+  radslaHortSaker: 0.7,
+  delaBas: 0.03, // chansen att den som talar berättar något: delaBas + (karisma + empati) / delaDiv, och mer i en berättelse eller ett djupt samtal
+  delaDiv: 200,
+  delaBerattelse: 0.35,
+  delaDjupt: 0.12,
+  delaFara: 1.5, // en rädsla berättas helst (vikten mot andra lärdomar, som väger sitt värde)
+  larMin: 0.1, // den som kan en kunskap bättre lär ut den om skillnaden är över detta ...
+  larChans: 0.15, // ... med så här stor chans per samtal ...
+  larDel: 0.2, // ... och den som lyssnar får så här stor del av skillnaden, gånger larBas + intelligens / 20
+  larBas: 0.5,
+  larKant: 0.6, // en kunskap över detta räknas som lärd (loggas)
+  berattaStark: 0.05, // att berätta stärker det egna minnet så här stor del av det som fattas
+  trostBas: 0.45, // hur mycket den som lyssnar tror på den som berättar: trostBas + relationen / trostDiv, mellan trostMin och trostMax ...
+  trostDiv: 160,
+  trostMin: 0.15,
+  trostMax: 0.95,
+  trostDel: 0.85, // ... och det som berättas får så här stor del av säkerheten
+  overFara: 0.25, // man överdriver det som berättas: en rädsla med 1 + (slump - overFara) * overFaraSpann ...
+  overFaraSpann: 0.5,
+  over: 0.4, // ... annat med 1 + (slump - over) * overSpann
+  overSpann: 0.35,
+  glomBas: 3, // lärdomar bleknar med en tidskonstant på glomBas + minne / glomMinne dygn (3–13) ...
+  glomMinne: 2,
+  glomFara: 3, // ... en rädsla glöms så här många gånger så långsamt
+  glomGrans: 0.08, // en lärdom som blivit mindre säker än så här är glömd
+  kunskapStill: 2, // en kunskap som inte använts på så här många dygn börjar blekna ...
+  kunskapDygn: 30, // ... med en tidskonstant på kunskapDygn * (kunskapBas + minne / kunskapMinne) dygn
+  kunskapBas: 0.5,
+  kunskapMinne: 10,
+  kunskapBort: 0.03, // en kunskap som bleknat under detta är glömd
+});
 
 // Kunskap och lärdomar.
 // Kunskap är det en person kan, till exempel att skilja kantarellen från spindlingen. Den är alltid rätt och glöms
@@ -62,17 +125,16 @@ function areaCalc(s: State, k: LKind, a: number, mode: Mode) {
 }
 
 // ---------- lärdomar ----------
-const MAX = 20;
 export const findL = (p: Person, k: LKind, a: number) => p.lardomar?.find(l => l.k === k && l.a === a);
 function trim(s: State, p: Person) {
   const L = p.lardomar!;
-  if (L.length <= MAX) return;
-  L.sort((x, y) => y.c * (y.k === 'fara' ? 2 : 1) - x.c * (x.k === 'fara' ? 2 : 1));
-  count(s, 'glomt', L.length - MAX); // det minst säkra trängs undan
-  L.length = MAX;
+  if (L.length <= MINNE.max) return;
+  L.sort((x, y) => y.c * (y.k === 'fara' ? MINNE.faraVikt : 1) - x.c * (x.k === 'fara' ? MINNE.faraVikt : 1));
+  count(s, 'glomt', L.length - MINNE.max); // det minst säkra trängs undan
+  L.length = MINNE.max;
 }
 // hur mycket ett värde är jämfört med en rik plats av samma slag (1 ≈ gott om)
-const relOf = (k: LKind, v: number) => k === 'fara' || k === 'flinta' ? v : v / (toppOf(k) * 0.6);
+const relOf = (k: LKind, v: number) => k === 'fara' || k === 'flinta' ? v : v / (toppOf(k) * MINNE.rik);
 // egen upplevelse: personen ser hur mycket som finns i området
 // Man ser också om det växer där (buskar, svampmark, spår), så att man vet om platsen är plockad eller död.
 // Var platsen mycket sämre än man trott rättas lärdomen, och det blir en nyhet som gärna berättas vidare.
@@ -80,7 +142,7 @@ export function observe(s: State, p: Person, k: LKind, x: number, y: number, c =
   const a = areaOf(x, y), v = areaValue(s, k, a), g = k === 'flinta' ? undefined : areaValue(s, k, a, 'vaxer');
   const l = findL(p, k, a);
   if (l) {
-    const fel = k !== 'flinta' && k !== 'fara' && relOf(k, Math.min(3, hoped(s, l))) - relOf(k, v) > 0.4;
+    const fel = k !== 'flinta' && k !== 'fara' && relOf(k, Math.min(MINNE.vMax, hoped(s, l))) - relOf(k, v) > MINNE.felGrans;
     if (fel) count(s, 'rattat');
     l.v = v; l.g = g; l.c = Math.max(c, l.src === undefined ? l.c : 0); l.t = s.now; l.src = undefined; l.led = 0;
     if (fel) l.ny = s.now; else delete l.ny;
@@ -97,7 +159,7 @@ export function lookAround(s: State, p: Person, x: number, y: number) {
 // vad personen tror att man hittar på en ruta. I närområdet ser man det. Längre bort syns marken (skog, äng, strand)
 // men inte hur mycket andra redan tagit där: då gäller minnet, och utan minne en gissning efter hur marken ser ut.
 // Den nyfikne tror mer på det okända.
-const trustUnknown = (s: State, p: Person) => 0.45 + stat(p, 'nyfikenhet', s.now) / 40;
+const trustUnknown = (s: State, p: Person) => MINNE.okantBas + stat(p, 'nyfikenhet', s.now) / MINNE.okantNyfiken;
 // En plats man minns som plockad tror man har vuxit tillbaka efter en tid; en plats där inget växer längre blir inte bättre.
 export function hoped(s: State, l: Lardom) {
   if (l.g === undefined || l.g <= l.v || l.k === 'flinta' || l.k === 'fara') return l.v;
@@ -105,7 +167,7 @@ export function hoped(s: State, l: Lardom) {
   return l.g - (l.g - l.v) * Math.exp(-r * (s.now - l.t) / HOUR);
 }
 // syns: vad rutan ser ut att kunna ge, pot: samma för hela området
-const believed = (s: State, l: Lardom | undefined, syns: number, u: number, pot = syns) => l ? Math.min(3, hoped(s, l)) * l.c * Math.min(1.2, syns / Math.max(0.05, pot)) + syns * u * (1 - l.c) : syns * u;
+const believed = (s: State, l: Lardom | undefined, syns: number, u: number, pot = syns) => l ? Math.min(MINNE.vMax, hoped(s, l)) * l.c * Math.min(MINNE.synsMax, syns / Math.max(MINNE.synsMin, pot)) + syns * u * (1 - l.c) : syns * u;
 // sight, u (trustUnknown) och syns (synsOf för k) räknas en gång när samma person frågas om många rutor
 function perceive(s: State, p: Person, k: Kind, x: number, y: number, sight: number, u: number, syns: (i: number) => number) {
   const a = areaOf(x, y);
@@ -115,13 +177,13 @@ function perceive(s: State, p: Person, k: Kind, x: number, y: number, sight: num
 // rädsla för ett område: den modige bryr sig mindre
 function fear(s: State, p: Person, a: number) {
   const l = findL(p, 'fara', a);
-  return l ? l.v * l.c * clamp(1.3 - stat(p, 'mod', s.now) / 20, 0.2, 1.3) : 0;
+  return l ? l.v * l.c * clamp(MINNE.radslaMax - stat(p, 'mod', s.now) / 20, MINNE.radslaMin, MINNE.radslaMax) : 0;
 }
 // det man ser: rutorna runt där man står just nu.
 // Synvidden beror på var man står: kort i skogen, längre i öppen terräng, och kortare i mörker
 export function sightOf(s: State, p: Person) {
-  const base = groundOf(s).trees[tileOf(p.x, p.y)] >= FOREST ? 5 : 10;
-  return base * (0.4 + 0.6 * lightLevel(s.now));
+  const base = groundOf(s).trees[tileOf(p.x, p.y)] >= FOREST ? MINNE.siktSkog : MINNE.siktOppet;
+  return base * (MINNE.siktMork + MINNE.siktLjus * lightLevel(s.now));
 }
 // sight kan räknas ut i förväg när samma person frågas om många rutor
 export const sees = (s: State, p: Person, x: number, y: number, sight = sightOf(s, p)) => Math.hypot(x + 0.5 - p.x, y + 0.5 - p.y) <= sight;
@@ -159,18 +221,18 @@ export function pickSpot(s: State, p: Person, k: Kind, cands: { x: number; y: nu
   let best: { x: number; y: number; d: number } | undefined, bs = -1e9;
   const sight = sightOf(s, p), u = trustUnknown(s, p), syns = (i: number) => synsOf(s, k, i);
   for (const c of cands) {
-    const sc = perceive(s, p, k, c.x, c.y, sight, u, syns) - c.d * PLATS.avstandPris + rnd(s, 'val', p) * 0.15;
+    const sc = perceive(s, p, k, c.x, c.y, sight, u, syns) - c.d * PLATS.avstandPris + rnd(s, 'val', p) * MINNE.valBrus;
     if (sc > bs) { bs = sc; best = c; }
   }
   if (!best || sees(s, p, best.x, best.y, sight)) return best;
   // väl framme letar hen upp den bästa platsen i området
-  const x0 = Math.max(0, best.x - 5), y0 = Math.max(0, best.y - 5);
+  const x0 = Math.max(0, best.x - MINNE.sokR), y0 = Math.max(0, best.y - MINNE.sokR);
   const tiles = getMap(s.seed).tiles, shore = shoreOf(s.seed);
   let r = best, rs = richness(s, k, best.x + 0.5, best.y + 0.5);
-  for (let y = y0; y < Math.min(H, best.y + 6); y++) for (let x = x0; x < Math.min(W, best.x + 6); x++) {
+  for (let y = y0; y < Math.min(H, best.y + MINNE.sokR + 1); y++) for (let x = x0; x < Math.min(W, best.x + MINNE.sokR + 1); x++) {
     const i = y * W + x; // bara land, och för fiske bara stranden
     if (tiles[i] === T.Vatten || (k === 'fiske' && !shore[i])) continue;
-    const v = richness(s, k, x + 0.5, y + 0.5) - Math.hypot(x - best.x, y - best.y) * 0.01;
+    const v = richness(s, k, x + 0.5, y + 0.5) - Math.hypot(x - best.x, y - best.y) * MINNE.sokPris;
     if (v > rs) { rs = v; r = { x, y, d: campDist(s, x, y) }; }
   }
   return r;
@@ -180,20 +242,20 @@ export const prospectFor = (s: State, p: Person, k: Kind) => Math.max(prospect(s
 // ett område där personen tror att det finns flinta
 export function flintArea(p: Person) {
   let best: Lardom | undefined;
-  for (const l of p.lardomar ?? []) if (l.k === 'flinta' && l.c > 0.25 && (!best || l.c > best.c)) best = l;
+  for (const l of p.lardomar ?? []) if (l.k === 'flinta' && l.c > MINNE.flintaSaker && (!best || l.c > best.c)) best = l;
   return best?.a;
 }
 
 // en olycka: de som såg den, och de närmaste, blir rädda för platsen
 export function fearPlace(s: State, victim: Person, cause: string) {
-  if (campDist(s, victim.x, victim.y) < 6) return; // inte mitt i byn
+  if (campDist(s, victim.x, victim.y) < MINNE.olyckaBy) return; // inte mitt i byn
   const a = areaOf(victim.x, victim.y), om = `${victim.name} dog ${cause} där`;
   for (const q of living(s)) {
-    const saw = Math.hypot(q.x - victim.x, q.y - victim.y) < 10;
+    const saw = Math.hypot(q.x - victim.x, q.y - victim.y) < MINNE.olyckaSyn;
     const close = q.partner === victim.id || isParent(victim, q) || isParent(q, victim);
     if (!saw && !close) continue;
     const l = findL(q, 'fara', a);
-    const v = saw ? 0.8 : 0.6, c = saw ? 1 : 0.7;
+    const v = saw ? MINNE.radslaSett : MINNE.radslaHort, c = saw ? MINNE.radslaSettSaker : MINNE.radslaHortSaker;
     if (l) { l.v = Math.max(l.v, v); l.c = Math.max(l.c, c); l.t = s.now; l.om = om; }
     else { (q.lardomar ??= []).push({ k: 'fara', a, v, c, t: s.now, led: saw ? 0 : 1, om }); trim(s, q); }
   }
@@ -204,32 +266,32 @@ export function fearPlace(s: State, victim: Person, cause: string) {
 export function share(s: State, a: Person, b: Person, r: Rel, kind: string) {
   const now = s.now;
   teach(s, a, b, kind);
-  const talk = 0.03 + (stat(a, 'karisma', now) + stat(a, 'empati', now)) / 200 + (kind === 'berättelse' ? 0.35 : kind === 'djupt samtal' ? 0.12 : 0);
+  const talk = MINNE.delaBas + (stat(a, 'karisma', now) + stat(a, 'empati', now)) / MINNE.delaDiv + (kind === 'berättelse' ? MINNE.delaBerattelse : kind === 'djupt samtal' ? MINNE.delaDjupt : 0);
   if (a.lardomar?.length && rnd(s, 'minne', a) < talk) {
     // man berättar helst om rädslor, rika platser och platser som visat sig sämre än man trott
-    const w = a.lardomar.map(l => (l.k === 'fara' ? 1.5 : l.k === 'flinta' ? 1 : nyhet(s, l) ? Math.max(1, l.v) : l.v) * l.c);
+    const w = a.lardomar.map(l => (l.k === 'fara' ? MINNE.delaFara : l.k === 'flinta' ? 1 : nyhet(s, l) ? Math.max(1, l.v) : l.v) * l.c);
     tell(s, a, b, pickViktat(s, a.lardomar, w, 'minne', a), r);
   }
   // kunskap: den som kan något bättre lär ut lite
   if (a.kunskap) for (const k in a.kunskap) {
     const e = a.kunskap[k], d = e.v - kn(b, k);
-    if (d > 0.1 && rnd(s, 'minne', a) < 0.15) {
-      const before = kn(b, k), v = learnK(b, k, d * 0.2 * (0.5 + stat(b, 'intelligens', now) / 20), now);
+    if (d > MINNE.larMin && rnd(s, 'minne', a) < MINNE.larChans) {
+      const before = kn(b, k), v = learnK(b, k, d * MINNE.larDel * (MINNE.larBas + stat(b, 'intelligens', now) / 20), now);
       e.t = now; // att lära ut håller kunskapen vid liv
-      if (k === 'svamp' && before < 0.6 && v >= 0.6) log(s, `${b.name} har lärt sig av ${a.name} att skilja kantarellen från den giftiga spindlingen.`, 'skill', [b.id, a.id]);
+      if (k === 'svamp' && before < MINNE.larKant && v >= MINNE.larKant) log(s, `${b.name} har lärt sig av ${a.name} att skilja kantarellen från den giftiga spindlingen.`, 'skill', [b.id, a.id]);
     }
   }
 }
 // en rättelse är en nyhet i två dygn
-const nyhet = (s: State, l: Lardom) => l.ny !== undefined && s.now - l.ny < 2 * DAY;
+const nyhet = (s: State, l: Lardom) => l.ny !== undefined && s.now - l.ny < MINNE.nyhetDygn * DAY;
 function tell(s: State, a: Person, b: Person, l: Lardom, r: Rel) {
   const now = s.now;
   // att berätta stärker det egna minnet
-  l.c = Math.min(1, l.c + 0.05 * (1 - l.c)); l.t = now;
-  const trust = clamp(0.45 + r.op / 160, 0.15, 0.95);
-  const c = l.c * trust * 0.85;
+  l.c = Math.min(1, l.c + MINNE.berattaStark * (1 - l.c)); l.t = now;
+  const trust = clamp(MINNE.trostBas + r.op / MINNE.trostDiv, MINNE.trostMin, MINNE.trostMax);
+  const c = l.c * trust * MINNE.trostDel;
   // man överdriver gärna, särskilt det som är farligt
-  const v = clamp(l.v * (l.k === 'fara' ? 1 + (rnd(s, 'minne', a) - 0.25) * 0.5 : 1 + (rnd(s, 'minne', a) - 0.4) * 0.35), 0, l.k === 'fara' ? 1.6 : 3);
+  const v = clamp(l.v * (l.k === 'fara' ? 1 + (rnd(s, 'minne', a) - MINNE.overFara) * MINNE.overFaraSpann : 1 + (rnd(s, 'minne', a) - MINNE.over) * MINNE.overSpann), 0, l.k === 'fara' ? MINNE.vMaxFara : MINNE.vMax);
   const e = findL(b, l.k, l.a);
   if (e) {
     if (e.src === undefined && e.led === 0 && e.c >= c && !nyhet(s, l)) return; // egen upplevelse väger tyngre, utom mot en nyhet
@@ -257,18 +319,18 @@ export function forget(s: State, hours: number) {
     if (p.died !== undefined || p.left !== undefined) { delete p.lardomar; continue; }
     const m = stat(p, 'minne', now);
     if (p.lardomar) {
-      const tau = 24 * (3 + m / 2); // 3–13 dygn
+      const tau = 24 * (MINNE.glomBas + m / MINNE.glomMinne); // 3–13 dygn
       p.lardomar = p.lardomar.filter(l => {
-        l.c *= Math.exp(-hours / (tau * (l.k === 'fara' ? 3 : 1)));
-        if (l.c >= 0.08) return true;
+        l.c *= Math.exp(-hours / (tau * (l.k === 'fara' ? MINNE.glomFara : 1)));
+        if (l.c >= MINNE.glomGrans) return true;
         count(s, 'glomt'); return false;
       });
       if (!p.lardomar.length) delete p.lardomar;
     }
     if (p.kunskap) for (const k in p.kunskap) {
       const e = p.kunskap[k];
-      if (now - e.t > 2 * DAY) e.v *= Math.exp(-hours / (24 * 30 * (0.5 + m / 10)));
-      if (e.v < 0.03) delete p.kunskap[k];
+      if (now - e.t > MINNE.kunskapStill * DAY) e.v *= Math.exp(-hours / (24 * MINNE.kunskapDygn * (MINNE.kunskapBas + m / MINNE.kunskapMinne)));
+      if (e.v < MINNE.kunskapBort) delete p.kunskap[k];
     }
   }
 }

@@ -2,7 +2,32 @@ import { getMap, hash, perKarta, vnoise } from './karta';
 import { campKey } from './plats';
 import { clampI, rnd } from './slump';
 import { H, HOUR, Person, State, W, inMap } from './typer';
-import { BAR, FOREST, Ground, HIGH, decodeCover, encodeCover, isSoil } from './vag';
+import { BAR, FOREST, Ground, HIGH, VAG, decodeCover, encodeCover, isSoil } from './vag';
+import { balans } from './balans';
+
+// Balanstal (regel 8): ängarna, gläntan byn börjar i, hur gräset och skogen växer tillbaka och hur mycket stegen nöter. Hur
+// fort man går på marken och hur marken trampas ner står i VAG (vag.ts)
+export const MARK = balans('mark', {
+  angGrans: 0.56, // i kartans brus är det äng över detta (fuktig mark med högt gräs där skogen har svårt att få fäste)
+  angSpridning: 0.1, // skogen sprider sig in på en äng så här många gånger så fort (tio gånger långsammare)
+  gladaRadie: 3.5, // byn börjar i en glänta: så här många rutor från elden är marken fri ...
+  gladaOjamn: 1.2, // ... plus upp till så mycket mer åt vissa håll (en ojämn kant)
+  gladaHojd: 1.1, // ... och avstånden uppåt och nedåt räknas så här många gånger så stora (gläntan blir lite smalare)
+  gladaKant: 1, // utanför kanten är det så här många rutor ung skog ...
+  gladaKantTrad: 0.6, // ... med så här stora träd (0 till 1)
+  nott: 0.045, // slitage när någon går över en ruta (gånger STEG.markNot och så långt man går)
+  ater: 0.011, // så mycket gräset växer tillbaka per timme (gånger vaxt per tidsålder). Lite trampad mark hinner läka, så bara stigarna blir bara
+  vaxt: [0.1, 1.2, 1, 0.6], // grästillväxt per tidsålder
+  aterBas: 0.25, // och växer tillbaka aterBas + aterGrann * grannrutornas täcke ...
+  aterGrann: 0.75,
+  aterIngen: 0.5, // ... (så här mycket täcke räknas om en ruta inte har någon granne med jord)
+  lagerTak: 0.5, // vid elden, i lagret och i husen blir gräset aldrig högre än så här (inget växer där)
+  tradTid: [0, 1.2, 1, 0.5], // trädens tillväxt per tidsålder
+  tradDygn: 30, // en planta blir vuxen skog på ungefär så här många dygn (år i spelet), så att gläntor efter fällda träd står kvar länge
+  fro: 0.0015, // chans per timme att ett frö gror: per skogsgranne ...
+  froLangt: 0.00002, // ... och långt bort från skogen
+  planta: 0.05, // en ny planta är så här stor (0 till 1)
+});
 
 // ---------- mark: gräs, stigar och skog ----------
 // Förr fanns skog överallt där det är jord. Byn börjar i en liten glänta; resten är skog.
@@ -21,16 +46,14 @@ export const coverOf = (s: State) => groundOf(s).cover;
 export function packGround(s: State) { const g = groundOf(s); s.mark = encodeCover(g.cover); s.skog = encodeCover(g.trees); }
 
 // ängar: fläckar av fuktig mark där det växer högt gräs och träd har svårt att få fäste
-const ANG = 0.56; // gräns i bruset: över den är det äng
 export const angOf = perKarta(seed => {
   const a = new Uint8Array(W * H);
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     const v = vnoise(seed + 41, x / 7, y / 7) * 0.7 + vnoise(seed + 43, x / 3, y / 3) * 0.3;
-    a[y * W + x] = v > ANG ? 1 : 0;
+    a[y * W + x] = v > MARK.angGrans ? 1 : 0;
   }
   return a;
 });
-const ANG_SPREAD = 0.1; // skogen sprider sig in på en äng tio gånger långsammare
 
 // skog på jorden utom på ängarna och i en liten glänta runt byplatsen (lite ojämn kant)
 function startForest(seed: number) {
@@ -38,19 +61,18 @@ function startForest(seed: number) {
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     const i = y * W + x;
     if (!isSoil(m.tiles[i]) || ang[i]) continue;
-    const d = Math.hypot(x - m.fire.x, (y - m.fire.y) * 1.1);
-    const edge = 3.5 + hash(seed + 31, x, y) * 1.2;
-    trees[i] = d < edge ? 0 : d < edge + 1 ? 0.6 : 1;
+    const d = Math.hypot(x - m.fire.x, (y - m.fire.y) * MARK.gladaHojd);
+    const edge = MARK.gladaRadie + hash(seed + 31, x, y) * MARK.gladaOjamn;
+    trees[i] = d < edge ? 0 : d < edge + MARK.gladaKant ? MARK.gladaKantTrad : 1;
   }
   return trees;
 }
 export const isForest = (s: State, i: number) => groundOf(s).trees[i] >= FOREST;
-export const UNG = 0.15; // träd från detta värde är en ungskog (under det är det plantor som ännu inte räknas)
 // vad jordrutan i är: skog, ungskog, högt gräs, kort gräs eller bar jord (en stig)
 export type Markslag = 'skog' | 'ung' | 'hog' | 'kort' | 'bar';
 export function markslag(g: Ground, i: number): Markslag {
   const tr = g.trees[i], c = g.cover[i];
-  return tr >= FOREST ? 'skog' : tr >= UNG ? 'ung' : c >= HIGH ? 'hog' : c >= BAR ? 'kort' : 'bar';
+  return tr >= FOREST ? 'skog' : tr >= VAG.ungskog ? 'ung' : c >= HIGH ? 'hog' : c >= BAR ? 'kort' : 'bar';
 }
 // andelen av jordrutorna som är skog (0 om det inte finns någon jord); villkor = räkna bara de rutor (index) där den är sann
 export function skogAndel(s: State, villkor?: (i: number) => boolean) {
@@ -80,27 +102,23 @@ function built(s: State) {
   return b;
 }
 
-const GROW = [0.1, 1.2, 1, 0.6]; // grästillväxt per tidsålder
-const REGROW = 0.011; // så mycket gräset växer tillbaka per timme (gånger GROW). Lite trampad mark hinner läka, så bara stigarna blir bara
-const TREE_SEASON = [0, 1.2, 1, 0.5]; // trädens tillväxt per tidsålder
-const TREE_GROW = 1 / (30 * 24); // en planta blir vuxen skog på ungefär 30 dygn (30 år i spelet), så att gläntor efter fällda träd står kvar länge
-const SPREAD = 0.0015, FAR = 0.00002; // chans per timme att ett frö gror: per skogsgranne, och långt bort
+const TREE_GROW = 1 / (MARK.tradDygn * 24); // plantans tillväxt per timme
 // en timme: gräset växer tillbaka från grannrutorna, skogen sprider sig som en våg och plantor växer
 export function growGround(s: State, hours: number, season: number) {
   const g = groundOf(s), b = built(s), ang = angOf(s.seed), { tiles, cover, trees } = g;
-  const old = cover.slice(), hr = Math.floor(s.now / HOUR), ts = TREE_SEASON[season];
+  const old = cover.slice(), hr = Math.floor(s.now / HOUR), ts = MARK.tradTid[season];
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     const i = y * W + x;
     if (!isSoil(tiles[i])) continue;
-    if (b[i] || g.built?.[i]) { cover[i] = Math.min(cover[i], 0.5); if (b[i] || trees[i] < FOREST) trees[i] = 0; continue; } // inget växer vid elden, i lagret eller i husen (vuxna träd står kvar tills de fälls)
+    if (b[i] || g.built?.[i]) { cover[i] = Math.min(cover[i], MARK.lagerTak); if (b[i] || trees[i] < FOREST) trees[i] = 0; continue; } // inget växer vid elden, i lagret eller i husen (vuxna träd står kvar tills de fälls)
     if (old[i] < 1) {
       let n = 0, c = 0;
       if (x > 0 && isSoil(tiles[i - 1])) { n += old[i - 1]; c++; }
       if (x < W - 1 && isSoil(tiles[i + 1])) { n += old[i + 1]; c++; }
       if (y > 0 && isSoil(tiles[i - W])) { n += old[i - W]; c++; }
       if (y < H - 1 && isSoil(tiles[i + W])) { n += old[i + W]; c++; }
-      const nb = c ? n / c : 0.5;
-      cover[i] = Math.min(1, old[i] + hours * REGROW * GROW[season] * (0.25 + 0.75 * nb));
+      const nb = c ? n / c : MARK.aterIngen;
+      cover[i] = Math.min(1, old[i] + hours * MARK.ater * MARK.vaxt[season] * (MARK.aterBas + MARK.aterGrann * nb));
     }
     if (!ts || old[i] < HIGH) continue; // stigar och kort gräs stoppar ny skog
     if (trees[i] > 0) { if (trees[i] < 1) trees[i] = Math.min(1, trees[i] + hours * TREE_GROW * ts); continue; }
@@ -109,11 +127,10 @@ export function growGround(s: State, hours: number, season: number) {
       const xx = x + dx, yy = y + dy;
       if ((dx || dy) && inMap(xx, yy) && trees[yy * W + xx] >= FOREST) n++;
     }
-    if (hash(s.seed + hr, x, y) < hours * (SPREAD * n + FAR) * ts * (ang[i] ? ANG_SPREAD : 1)) trees[i] = 0.05;
+    if (hash(s.seed + hr, x, y) < hours * (MARK.fro * n + MARK.froLangt) * ts * (ang[i] ? MARK.angSpridning : 1)) trees[i] = MARK.planta;
   }
 }
 
-export const WEAR = 0.045; // slitage när någon går över en ruta
 export const tileOf = (x: number, y: number) => clampI(y, H) * W + clampI(x, W); // rutans index, närmaste ruta på kartan om punkten ligger utanför
 // en slumpad punkt nära mitten av rutan med index i (p:s följd 'val')
 export const punktIRuta = (s: State, i: number, p: Person) => ({ x: i % W + 0.3 + rnd(s, 'val', p) * 0.4, y: Math.floor(i / W) + 0.3 + rnd(s, 'val', p) * 0.4 });

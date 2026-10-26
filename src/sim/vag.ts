@@ -3,25 +3,39 @@
 // (1 = högt gräs, mitten = kort gräs, under BAR = bar jord; en stig är bar jord i en linje).
 import { clampI } from './slump';
 import { T, W, H, inMap } from './typer';
+import { balans } from './balans';
+
+// Balanstal (regel 8): hur fort man går på olika mark, hur gärna man följer en stig och hur marken nöts. Hur fort marken
+// växer tillbaka och när den är skog står i MARK (mark.ts). Hur snabbt en människa går står i STEG.fart (steg.ts)
+export const VAG = balans('vag', {
+  fartMark: [0, 0.9, 1, 1, 0.8], // fart (gånger gångfarten) på vatten, sand, de två jordslagen och sten
+  fartSkog: 0.6, // ... på en ruta med skog
+  fartUng: 0.75, // ... med ungskog
+  fartHog: 0.8, // ... med högt gräs (kort gräs och stigar går man fortast på: 1)
+  ungskog: 0.15, // träd från detta värde är en ungskog (under det är det plantor som ännu inte räknas)
+  stigBas: 0.45, // kostnaden att gå in på en jordruta är stigBas + stigTacke * marktäcket: orörd mark kostar mer än en stig
+  stigTacke: 0.55,
+  trampHog: 0.75, // högt gräs trampas ner direkt till så här högt ...
+  trampPlanta: 4, // ... och en liten planta (under skog) trampas ihjäl så här många gånger fortare än gräset nöts
+});
 
 export interface Ground { tiles: Uint8Array; cover: Float32Array; trees: Float32Array; solid?: Uint8Array; built?: Uint8Array } // solid = väggar, built = byggda eller planerade rutor
 export const HIGH = 0.9, BAR = 0.3; // högt gräs över HIGH, bar jord under BAR
 export const FOREST = 0.5; // träd från detta värde räknas som skog
 export const isSoil = (t: number) => t === T.Gras || t === T.Skog;
-const BASE_SPEED = [0, 0.9, 1, 1, 0.8]; // Vatten, Sand, jord, jord, Sten
 const SQ2 = Math.SQRT2;
 
 // fart på en ruta: skog långsammast, högt gräs medel, kort gräs och stig snabbast
 export function speedAt(g: Ground, i: number) {
   const t = g.tiles[i];
-  if (!isSoil(t)) return BASE_SPEED[t];
+  if (!isSoil(t)) return VAG.fartMark[t];
   const tr = g.trees[i];
-  if (tr >= FOREST) return 0.6;
-  if (tr >= 0.15) return 0.75;
-  return g.cover[i] >= HIGH ? 0.8 : 1;
+  if (tr >= FOREST) return VAG.fartSkog;
+  if (tr >= VAG.ungskog) return VAG.fartUng;
+  return g.cover[i] >= HIGH ? VAG.fartHog : 1;
 }
 // kostnad att gå in på en ruta: man följer hellre en upptrampad stig än går över orörd mark
-const stepCost = (g: Ground, i: number) => (isSoil(g.tiles[i]) ? 0.45 + 0.55 * g.cover[i] : 1) / speedAt(g, i);
+const stepCost = (g: Ground, i: number) => (isSoil(g.tiles[i]) ? VAG.stigBas + VAG.stigTacke * g.cover[i] : 1) / speedAt(g, i);
 
 // vatten och väggar går man inte genom
 const stop = (g: Ground, i: number) => g.tiles[i] === T.Vatten || g.solid?.[i] === 1;
@@ -117,8 +131,8 @@ export function findPath(g: Ground, x0: number, y0: number, x1: number, y1: numb
 export function wear(g: Ground, i: number, amount: number) {
   if (i < 0 || i >= g.cover.length || !isSoil(g.tiles[i])) return;
   const c = g.cover;
-  c[i] = c[i] > 0.75 ? 0.75 : Math.max(0, c[i] - amount);
-  if (g.trees[i] > 0 && g.trees[i] < FOREST) g.trees[i] = Math.max(0, g.trees[i] - amount * 4);
+  c[i] = c[i] > VAG.trampHog ? VAG.trampHog : Math.max(0, c[i] - amount);
+  if (g.trees[i] > 0 && g.trees[i] < FOREST) g.trees[i] = Math.max(0, g.trees[i] - amount * VAG.trampPlanta);
 }
 
 export function encodeCover(cover: Float32Array) {

@@ -6,6 +6,7 @@ import { amountOf } from './lager';
 import { isTool } from './saker';
 import { tingOf } from './agande';
 import { Act, HOUR, HOUR_S, Person, State } from './typer';
+import { balans } from './balans';
 
 // ---------- teknik ----------
 // Ingen föds med kunskapen om hur man gör en yxa. Den som arbetar med något kommer så småningom på hur det kan göras
@@ -39,9 +40,22 @@ export const TEKNIK: Tek[] = [
 ];
 export const TEK = Object.fromEntries(TEKNIK.map(t => [t.id, t])) as Record<string, Tek>;
 
+// Balanstal (regel 8): hur fort man kommer på något står i raden för tekniken (`tid`, arbetstimmar), och här vad det ger och hur man lär ut
+// det. Åldrarna för att komma på och lära sig tekniker står i ALDER (folk.ts)
+const TEKTAL = balans('teknik', {
+  materialMin: 1, // materialet till en teknik räknas finnas i byn när det är minst så här mycket (ett redskap räknas om det finns)
+  kommaPa: 0.15, // den som kommer på något mår så här mycket bättre ...
+  kommaPaTim: 12, // ... i så här många timmar
+  forstaNyfiken: 0.04, // byns första som kommer på något gör sedernas nyfikenhet så här mycket större
+  larChansBra: 0.5, // chansen att den som kan något lär ut det i ett samtal: i en berättelse eller ett djupt samtal ...
+  larChans: 0.2, // ... och i andra samtal
+  larFramsteg: 0.2, // den som lyssnar kommer så här långt (av 1) mot tekniken i ett samtal, gånger larBas + intelligens / 20
+  larBas: 0.5,
+});
+
 export const knows = (p: Person, id: string) => (p.tek?.[id] ?? 0) >= 1;
 // ett redskap räknas om det finns, hur slitet det än är; annat räknas i mängd
-export const hasMaterial = (s: State, t: Tek) => t.material.every(g => g.some(k => isTool(k) ? tingOf(s).some(q => q.k === k) : amountOf(s, k) >= 1));
+export const hasMaterial = (s: State, t: Tek) => t.material.every(g => g.some(k => isTool(k) ? tingOf(s).some(q => q.k === k) : amountOf(s, k) >= TEKTAL.materialMin));
 const canThink = (p: Person, t: Tek) => !knows(p, t.id) && t.krav.every(k => knows(p, k));
 
 // den som kommer på eller lär sig något
@@ -52,8 +66,8 @@ function learn(s: State, p: Person, t: Tek, from?: Person) {
   count(s, 'tek_' + t.id);
   if (first) kronika(s, `${p.name} kom på ${t.namn.toLowerCase()}.`);
   log(s, `${p.name} kom på hur man gör ${t.namn.toLowerCase()}. ${t.effekt}`, 'skill', [p.id]);
-  think(p, `Kom på hur man gör ${t.namn.toLowerCase()}`, 0.15, s.now, 12 * HOUR);
-  if (first) { p.fame.push(`Kom på ${t.namn.toLowerCase()}`); sedEvent(s, 'nyfikenhet', 0.04); }
+  think(p, `Kom på hur man gör ${t.namn.toLowerCase()}`, TEKTAL.kommaPa, s.now, TEKTAL.kommaPaTim * HOUR);
+  if (first) { p.fame.push(`Kom på ${t.namn.toLowerCase()}`); sedEvent(s, 'nyfikenhet', TEKTAL.forstaNyfiken); }
 }
 
 // arbete för tankarna framåt mot det som hör till arbetet (omr). Andra handlingar ger inga idéer
@@ -75,9 +89,9 @@ export function teach(s: State, a: Person, b: Person, kind: string) {
   if (!a.tek || ageOf(b, s.now) < ALDER.lar) return;
   for (const t of TEKNIK) {
     if (!knows(a, t.id) || knows(b, t.id) || !t.krav.every(k => knows(b, k))) continue;
-    if (rnd(s, 'kunskap', a) > (kind === 'berättelse' || kind === 'djupt samtal' ? 0.5 : 0.2)) continue;
+    if (rnd(s, 'kunskap', a) > (kind === 'berättelse' || kind === 'djupt samtal' ? TEKTAL.larChansBra : TEKTAL.larChans)) continue;
     b.tek ??= {};
-    const d = Math.min(1 - (b.tek[t.id] ?? 0), 0.2 * (0.5 + stat(b, 'intelligens', s.now) / 20));
+    const d = Math.min(1 - (b.tek[t.id] ?? 0), TEKTAL.larFramsteg * (TEKTAL.larBas + stat(b, 'intelligens', s.now) / 20));
     b.tek[t.id] = (b.tek[t.id] ?? 0) + d; count(s, 'tekLart', d);
     if (b.tek[t.id] >= 1) learn(s, b, t, a);
   }

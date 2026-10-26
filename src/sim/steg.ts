@@ -12,7 +12,7 @@ import { addFuel, canLight, fireWant, forageItems, fuelFor, hearthOf, heatAt, ig
 import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, isSick, living, log, ovning, stat, think } from './folk';
 import { getMap } from './karta';
 import { barnMat, birth, birthWish, die, regulate } from './liv';
-import { WEAR, groundOf, growGround, packGround, tileOf } from './mark';
+import { MARK, groundOf, growGround, packGround, tileOf } from './mark';
 import { SAMTAL, TalkEvent, converse, isSocial } from './samtal';
 import { HABIT_FADE, addHabit, sedEvent, stepSeder, updateTags } from './seder';
 import { fearPlace, forget, lookAround } from './minne';
@@ -33,7 +33,7 @@ import { balans } from './balans';
 
 // Simuleringen går i slag om fem minuter (BEAT), i spelet och vid ikappräkning likadant. Inom ett slag går tiden åt
 // till det som händer i tur och ordning (taskStep). Arbetet görs i bitar om högst BIT sekunder, och man bär aldrig mer
-// än en tredjedel av vad man orkar från arbetet (STEG.borda). STEG.markNot = hur mycket ett steg nöter marken (WEAR per ruta)
+// än en tredjedel av vad man orkar från arbetet (STEG.borda). STEG.markNot = hur mycket ett steg nöter marken (MARK.nott per ruta)
 export const BEAT = 300;
 const BIT = 60;
 // Balanstalen (regel 8). Kroppens gränser och takter (KROPP) och åldrarna (ALDER) står i folk.ts, eftersom val.ts och behov.ts läser dem
@@ -42,7 +42,7 @@ const STEG = balans('steg', {
   fart: 1.6, // i vanliga fall
   fartBarn: 0.9, // under ALDER.gangBarn
   fartGammal: 1, // över ALDER.gangGammal
-  markNot: 0.03, // hur mycket ett steg nöter marken (WEAR per ruta)
+  markNot: 0.03, // hur mycket ett steg nöter marken (MARK.nott per ruta)
   vandraNot: 0.08, // ... och när man rör sig på platsen (gånger vandra.v i handlingens rad och tiden)
   borda: 1 / 3, // man bär aldrig mer än så stor del av vad man orkar från arbetet
   // graviditet
@@ -243,7 +243,7 @@ function taskStep(s: State, p: Person, a: number, t1: number, dtSec: number, lea
       if (d.arbete && p.task === tk && tk.phase === 'do') workStep(s, p, tk, used, a, learn);
       // (bygget kan just ha skickat iväg personen efter mer material)
       if (tk.phase === 'do' && d.hantverk) ovning(p, 'hantverk', used / HOUR_S * 0.1 * learn);
-      if (d.vandra) wear(groundOf(s), tileOf(tk.tx, tk.ty), WEAR * STEG.markNot * STEG.vandraNot * d.vandra.v * used); // man rör sig på platsen
+      if (d.vandra) wear(groundOf(s), tileOf(tk.tx, tk.ty), MARK.nott * STEG.markNot * STEG.vandraNot * d.vandra.v * used); // man rör sig på platsen
     }
     // vana: tiden räknas mot yrkestaggar
     addHabit(p, tk.act, Math.exp(-used * SEC / HABIT_FADE), used / HOUR_S);
@@ -287,14 +287,14 @@ function walk(s: State, p: Person, tk: Task, left: number, a: number) {
     const i = tk.path[0], wx = (i % W) + 0.5 + off, wy = Math.floor(i / W) + 0.5 - off;
     const ci = tileOf(p.x, p.y), sp = speedAt(g, ci) || 1;
     const dx = wx - p.x, dy = wy - p.y, d = Math.hypot(dx, dy), can = budget * sp;
-    wear(g, ci, WEAR * STEG.markNot * Math.min(d, can));
+    wear(g, ci, MARK.nott * STEG.markNot * Math.min(d, can));
     if (d <= can) { p.x = wx; p.y = wy; tk.path.shift(); budget -= d / sp; spara(s, p, klocka()); }
     else { p.x += dx / d * can; p.y += dy / d * can; budget = 0; }
   }
   if (budget <= 0) return { used: left, framme: false };
   const ci = tileOf(p.x, p.y), spd = speedAt(g, ci) || 1;
   const dx = tk.tx - p.x, dy = tk.ty - p.y, d = Math.hypot(dx, dy), sp = budget * spd;
-  wear(g, ci, WEAR * STEG.markNot * Math.min(d, sp));
+  wear(g, ci, MARK.nott * STEG.markNot * Math.min(d, sp));
   if (d > sp) { p.x += dx / d * sp; p.y += dy / d * sp; return { used: left, framme: false }; }
   budget -= d / spd;
   tk.path = undefined; tk.pk = undefined;
