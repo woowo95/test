@@ -1,5 +1,5 @@
 // Kör en by utan grafik och samlar nyckeltal. Vakterna larmar om något blir omöjligt (NaN, negativa förråd, folk i vattnet).
-import { createState, step, living, DAY, ageIndex, moodOf, serialize, serializeParts, getMap, fuelStock, ACT_NAMES, T, State, inMap, isWall, tileOf, foodOf, amountOf, sumOf, okandaBalans, alive, isCarrying } from '../sim';
+import { createState, step, living, DAY, HOUR, W, ageIndex, moodOf, serialize, serializeParts, getMap, fuelStock, ACT_NAMES, T, State, inMap, isWall, tileOf, foodOf, amountOf, sumOf, okandaBalans, alive, isCarrying, BYN, isStored, housesOf, bitsOf, Person } from '../sim';
 
 export const START = Date.parse('2026-10-20T08:00:00+02:00');
 
@@ -78,10 +78,53 @@ export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => voi
 // fler vakter efter varje steg: det som bara får finnas hos levande och sådant som håller ihop byn. De tunga körs en gång
 // i timmen (timme), och texten görs bara när ett larm går
 type Larm = (typ: string, text: () => string) => void;
-function vakta(s: State, larm: Larm, _timme: boolean) {
+const fin = (v: number | undefined) => v === undefined || Number.isFinite(v);
+function vakta(s: State, larm: Larm, timme: boolean) {
+  const lever = new Set<number>(), finns = new Map<number, Person>();
+  for (const p of s.people) { finns.set(p.id, p); if (alive(p)) lever.add(p.id); }
   for (const p of s.people) {
-    if (alive(p)) continue;
-    if (p.task) larm('död med uppgift', () => `${p.name} (${p.died !== undefined ? 'död' : 'flyttad'}) har uppgiften ${p.task!.act}${isCarrying(p.task!) ? ' och bär något' : ''}`);
+    if (!alive(p)) {
+      if (p.task) larm('död med uppgift', () => `${p.name} (${p.died !== undefined ? 'död' : 'flyttad'}) har uppgiften ${p.task!.act}${isCarrying(p.task!) ? ' och bär något' : ''}`);
+      continue;
+    }
+    // ett par pekar på varandra, och den andra lever (den som blir kvar släpper den döda eller utflyttade)
+    if (p.partner !== undefined && !(lever.has(p.partner) && finns.get(p.partner)!.partner === p.id)) larm('halvt par', () => { const q = finns.get(p.partner!); return `${p.name} har partnern ${q ? `${q.name} (${alive(q) ? `partner ${q.partner}` : 'borta'})` : `${p.partner} som inte finns`}`; });
+  }
+  const f = s.fire;
+  if (!Number.isFinite(f.fuel) || f.fuel < 0) larm('eldens bränsle', () => `fuel ${f.fuel}`);
+  if (s.delning && (!Number.isFinite(s.delning.rik) || !Number.isFinite(s.delning.andel))) larm('delning', () => JSON.stringify(s.delning));
+  if (!timme) return;
+  // en gång i timmen: ägare, redskap, stackar och hus
+  const ids = new Set<number>();
+  for (const t of s.ting ?? []) {
+    if (ids.has(t.id)) larm('ting-id två gånger', () => `${t.k} ${t.id}`); ids.add(t.id);
+    if (t.agare !== BYN && !lever.has(t.agare)) larm('redskap utan ägare', () => `${t.k} ${t.id} ägs av ${t.agare}`);
+    for (const [vad, id] of [['hos', t.hos], ['lass', t.lass]] as const) if (id !== undefined && !lever.has(id)) larm(`redskap ${vad} ingen`, () => `${t.k} ${t.id} ${vad} ${id}`);
+  }
+  const tiles = getMap(s.seed).tiles, upptagen = new Map<number, string>();
+  const plats = (k: string, x: number, y: number) => {
+    if (tiles[y * W + x] === T.Vatten) larm('sak i vattnet', () => `${k} på ${x},${y}`);
+    else if (isWall(s, x + 0.5, y + 0.5)) larm('sak i en vägg', () => `${k} på ${x},${y}`);
+    if (!isStored(s, x, y)) return;
+    const forr = upptagen.get(y * W + x);
+    if (forr !== undefined) larm('två saker på en ruta i lagret', () => `${forr} och ${k} på ${x},${y}`); else upptagen.set(y * W + x, k);
+  };
+  for (const a of s.stackar ?? []) {
+    plats(a.k, a.x, a.y);
+    for (const id in a.ag ?? {}) if (!lever.has(+id)) larm('andel hos ingen', () => `${a.k} på ${a.x},${a.y}: ${id} äger ${a.ag![id]}`);
+  }
+  for (const t of s.ting ?? []) if (t.x !== undefined && t.hos === undefined && t.lass === undefined) plats(t.k, t.x, t.y!);
+  const hus = new Set<number>();
+  for (const h of housesOf(s)) {
+    hus.add(h.id);
+    // ägaren släpps i timblocket, så den som just dött eller flyttat får vara kvar en timme
+    const o = h.ag === undefined ? undefined : finns.get(h.ag);
+    if (h.ag !== undefined && !(o && (alive(o) || s.now - (o.died ?? o.left ?? 0) <= HOUR))) larm('hus utan ägare', () => `${h.namn} ägs av ${h.ag}`);
+    if (Object.values(h.kom ?? {}).some(n => !Number.isFinite(n))) larm('hus', () => `${h.namn} kom ${JSON.stringify(h.kom)}`);
+  }
+  for (const b of bitsOf(s)) {
+    if (![b.b, b.mat, b.c].every(v => Number.isFinite(v)) || !fin(b.lp) || !fin(b.lm) || b.c < -1e-9 || b.c > 1 + 1e-9 || b.mat < -1e-9) larm('husdel', () => JSON.stringify(b));
+    if (b.hus !== undefined && !hus.has(b.hus)) larm('husdel utan hus', () => `${b.m} ${b.id} på ${b.x},${b.y} hör till hus ${b.hus}`);
   }
 }
 
