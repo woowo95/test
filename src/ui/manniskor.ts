@@ -1,13 +1,14 @@
 import * as PIXI from 'pixi.js';
 import { ACTS, ALDER, Person, slagIkon, SEC, TalkEvent, ageOf, SAMTAL, alive, byId, clamp, homeKind, isSick, isSocial, living, load, REL, relKey, spar } from '../sim';
 import { hsl } from './hjalp';
-import { s, ui } from './lage';
+import { s, ui, vidNyBy } from './lage';
 import { Ikoner, TS, bubbleG, labels, markLayer, peopleG } from './scen';
 
 // människorna på kartan: kroppen, det de bär, pratbubblor, symbolen för vad de gör och namnet
 const bubbles: { id: number; kind: string; good: boolean; until: number }[] = [];
 // vem var och en senast pratade med: bubblan står kvar så länge båda är kvar i samtalet
 const talkWith = new Map<number, number>();
+vidNyBy.push(() => { bubbles.length = 0; talkWith.clear(); });
 // samtal som startat sedan förra bildrutan (vid tiden som visas, nu): en bubbla i samtalets färg en stund. Samtal som
 // hunnit bli gamla, när tiden spolas fram, visas inte
 export function addTalks(events: TalkEvent[], now: number, nu: number) {

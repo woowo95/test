@@ -1,6 +1,6 @@
 import { iconImg } from '../ikoner';
 import { HOUR, LogEntry, MIN, Person, REL, byId, capacity, carryKind, clamp, isParent, isSick, load, sak, sakNamn, timeLabel } from '../sim';
-import { s } from './lage';
+import { s, vidNyBy } from './lage';
 
 // små hjälpare för text, tal, färger och staplar som alla delar av gränssnittet använder
 export const $ = (id: string) => document.getElementById(id)!;
@@ -40,6 +40,7 @@ export const LAG = {
 export const condBar = (c: number) => bar(c, c < LAG.skick ? 'low' : '');
 // pil vid en stapel som ändras märkbart just nu: jämför med värdet för en stund sedan (speltid)
 const trendHist = new Map<string, { v: number; t: number; d: number }>();
+vidNyBy.push(() => trendHist.clear());
 export function trend(p: Person, key: string, v: number) {
   const id = p.id + ':' + key, h = trendHist.get(id), now = s.now;
   if (!h || now < h.t) { trendHist.set(id, { v, t: now, d: 0 }); return ''; }

@@ -63,7 +63,7 @@ Simuleringen importerar aldrig från `ui/`. Gränssnittet importerar bara från 
 | `ui/portratt.ts` | Porträttraden överst och att följa en person med kameran |
 | `ui/panel.ts` | **Flikregistret** (FLIKAR) och listan över allt byn äger |
 | `ui/flikar/*.ts` | En fil per flik: folk (Invånare, Händelser), person, eld, lager (Lagret, Högen), hus (Huset: tryck på ett hus på kartan), seder, teknik |
-| `ui/spara.ts` | Sparning (webbläsaren och artefaktens databas), ikappräkning och sammanställningen efteråt. I molnet delas byn i flera dokument (`serializeParts`/`DELAR` i steg.ts, stora delar i bitar om `BIT` tecken) i två omväxlande platser, och sist ett manifest som pekar ut den hela; misslyckas det visas ☁✗. Historikens veckodelar ligger utanför de två platserna och skrivs bara när de ändrats |
+| `ui/spara.ts` | Sparning (webbläsaren och artefaktens databas), ikappräkning och sammanställningen efteråt. I molnet delas byn i flera dokument (`serializeParts`/`DELAR` i steg.ts, stora delar i bitar om `BIT` tecken) i två omväxlande platser, och sist ett manifest som pekar ut den hela; misslyckas det visas ☁✗. Byn sparas i molnet först när den lästs därifrån eller visat sig inte finnas; gick den inte att läsa (en del saknas, inget svar) visas ☁? och spelet försöker igen, och är byn i molnet nyare tar den över. Misslyckas sparningen i webbläsaren visas ⚠. Historikens veckodelar ligger utanför de två platserna och skrivs bara när de ändrats |
 | `ikoner.ts` | Pixelbilderna (8×8) för saker och handlingar |
 
 ## Regler som håller ihop allt
