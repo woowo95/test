@@ -1,5 +1,5 @@
 import { iconImg } from '../ikoner';
-import { HOUR, LogEntry, MIN, Person, REL, byId, capacity, carryKind, clamp, isParent, isSick, load, num, sak, sakNamn, timeLabel } from '../sim';
+import { HOUR, KROPP, LogEntry, MIN, Person, REL, byId, capacity, carryKind, clamp, isParent, isSick, load, num, sak, sakNamn, timeLabel } from '../sim';
 import { s, vidNyBy } from './lage';
 
 // små hjälpare för text, tal, färger och staplar som alla delar av gränssnittet använder
@@ -53,15 +53,22 @@ export function hjalpKlick(el: HTMLElement) {
 // pil vid en stapel som ändras märkbart just nu: jämför med värdet för en stund sedan (speltid). Gränsen är per stapel och
 // timme, under hur fort stapeln brukar ändras (mättnaden sjunker 1/16 i timmen, vilan högst 0,06)
 const TREND: Record<string, number> = { humor: 0.08, hunger: 0.03, rest: 0.03, social: 0.03, health: 0.03, warm: 0.08, toa: 0.08 };
-const trendHist = new Map<string, { v: number; t: number; d: number }>();
+const trendHist = new Map<string, { v: number; t: number; d: number; m?: boolean }>(); // m = d är uppmätt
 vidNyBy.push(() => trendHist.clear());
 export function trend(p: Person, key: string, v: number) {
   const id = p.id + ':' + key, h = trendHist.get(id), now = s.now;
   if (!h || now < h.t) { trendHist.set(id, { v, t: now, d: 0 }); return ''; }
-  if (now - h.t >= 10 * MIN) { h.d = (v - h.v) / ((now - h.t) / HOUR); h.v = v; h.t = now; }
+  if (now - h.t >= 10 * MIN) { h.d = (v - h.v) / ((now - h.t) / HOUR); h.v = v; h.t = now; h.m = true; }
   const g = TREND[key] ?? 0.08;
   return h.d > g ? '<span class="trend up" title="Stiger">▲</span>' : h.d < -g ? '<span class="trend down" title="Sjunker">▼</span>' : '';
 }
+
+// uppmätt ändring per timme (speltid) för det trend följer, eller undefined innan något är mätt
+export function trendD(p: Person, key: string) { const h = trendHist.get(p.id + ':' + key); return h?.m ? h.d : undefined; }
+// temperaturen: idealet i mitten, kallt åt vänster. Simuleringen har ännu ingen värme över idealet, så nålen går
+// som längst till mitten (p.warm = 1)
+export function tempBar(w: number, tr = '') { return `<span class="bar temp${w < KROPP.kallt ? ' low' : ''}"><span style="left:${Math.round(clamp(w, 0, 1) * 50)}%"></span></span>${tr}`; }
+export function tempOrd(w: number) { return w >= 0.85 ? 'Lagom' : w >= KROPP.kallt ? 'Sval' : w >= KROPP.farligt ? 'Fryser' : 'Farligt kall'; }
 
 // personer
 export function pLink(p?: Person) { return p ? `<button class="plink" data-id="${p.id}" type="button">${esc(p.name)}</button>` : '–'; }

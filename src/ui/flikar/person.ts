@@ -1,6 +1,6 @@
-import { ACTS, ALDER, Act, Lardom, SLAG, SLAG_TECKEN, Person, KUNSKAPER, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, SEDER, SED_LIST, TEKNIK, BYN, Ting, ageOf, alive, byId, childrenOf, drar, heldBy, ownedBy, ownedStock, sakNamn, slagIkon, tingNamn, STACK, describe, duty, habitShare, habitTotal, KROPP, kortTal, moodOf, num, REL, relKey, stat, taskName, timeLabel } from '../../sim';
+import { ACTS, ALDER, Act, DAY, Lardom, SAMTAL, SKILL_GOR, STAT_GOR, Skill, Stat, coldOf, halsaLage, hearthOf, living, roomAt, temperature, varmeDelar, viloSlag, viloTak, SLAG, SLAG_TECKEN, Person, KUNSKAPER, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, SEDER, SED_LIST, TEKNIK, BYN, Ting, ageOf, alive, byId, childrenOf, drar, heldBy, ownedBy, ownedStock, sakNamn, slagIkon, tingNamn, STACK, describe, duty, habitShare, habitTotal, KROPP, kortTal, moodOf, num, REL, relKey, stat, taskName, timeLabel } from '../../sim';
 import { hasIcon, iconImg } from '../../ikoner';
-import { LAG, bar, cap, carryTxt, cssFarg, durTxt, esc, hex, hsl, moodWord, pLink, prickar, relWord, sickNow, trend } from '../hjalp';
+import { LAG, bar, cap, carryTxt, cssFarg, durTxt, esc, hex, hsl, hjalpText, moodWord, pLink, prickar, relWord, sickNow, tempBar, tempOrd, trend, trendD } from '../hjalp';
 import { s, ui } from '../lage';
 import type { Flik } from '../panel';
 
@@ -53,21 +53,73 @@ function presHtml(p: Person) {
       <dt>Övertygelser</dt><dd>${tro.length ? tro.join(' ') : '–'}</dd></dl>
       <h3>Viktiga händelser</h3>${p.fame.length ? `<ul class="fame">${p.fame.map(f => `<li>${esc(f)}</li>`).join('')}</ul>` : '<p class="muted">Inget som minns ännu.</p>'}`;
 }
-function behovHtml(p: Person) {
-  const now = s.now;
-  return `${sickNow(p) ? `<p class="why">${esc(p.sickWhy ?? 'Sjuk')}, ${durTxt(p.sickUntil! - now)} kvar</p>` : ''}<dl class="kv">
-        <dt>Humör</dt><dd>${bar(moodOf(p, now), '', trend(p, 'humor', moodOf(p, now)))}<span>${moodWord(moodOf(p, now))}</span></dd>
-        <dt>Mättnad</dt><dd>${bar(p.hunger, '', trend(p, 'hunger', p.hunger))}</dd><dt>Vila</dt><dd>${bar(p.rest, '', trend(p, 'rest', p.rest))}</dd>
-        <dt>Gemenskap</dt><dd>${bar(p.social, '', trend(p, 'social', p.social))}</dd><dt>Hälsa</dt><dd>${bar(p.health, p.health < LAG.halsa ? 'low' : '', trend(p, 'health', p.health))}</dd>
-        <dt>Värme</dt><dd>${bar(p.warm, p.warm < KROPP.kallt ? 'low' : '', trend(p, 'warm', p.warm))}</dd><dt>Toa</dt><dd>${bar(p.toa, p.toa < KROPP.toaBehov ? 'low' : '', trend(p, 'toa', p.toa))}</dd></dl>
-        ${p.thoughts.length ? `<ul class="thoughts">${p.thoughts.map(t => `<li class="${t.v < 0 ? 'neg' : 'pos'}">${esc(t.text)} <span>${t.v > 0 ? '+' : ''}${Math.round(t.v * 100)}</span></li>`).join('')}</ul>` : ''}`;
+// en rad med stapel som går att trycka på, eller hålla musen över: då syns vad som påverkar den just nu.
+// delar = det som ändrar värdet (per timme, eller i humörpoäng när enhet är tom), mer = det som inte är en jämn takt
+type Orsak = { namn: string; v: number };
+const tal = (v: number) => { const a = Math.abs(v * 100); return (v > 0 ? '+' : v < 0 ? '−' : '') + (a > 0 && a < 1 ? a.toFixed(1).replace('.', ',') : String(Math.round(a))); };
+function rad(p: Person, key: string, namn: string, inner: string, delar: Orsak[], enhet: string, mer = '') {
+  const id = `b-${key}-${p.id}`, d = trendD(p, key);
+  const title = [...delar.map(x => `${x.namn} ${tal(x.v)}${enhet}`), mer].filter(x => x).join(', ');
+  const lista = delar.length ? `<ul class="thoughts">${delar.map(x => `<li class="${x.v < 0 ? 'neg' : 'pos'}">${esc(x.namn)} <span>${tal(x.v)}${enhet}</span></li>`).join('')}</ul>` : '';
+  const matt = d === undefined ? '' : `<p class="muted">Har ändrats ${tal(d)} i timmen den senaste stunden.</p>`;
+  return `<dt class="klick" data-hjalp="${id}" title="${esc(title)}">${namn}</dt><dd class="klick" data-hjalp="${id}" title="${esc(title)}">${inner}</dd>
+    ${hjalpText(id, `<dd class="forkl">${matt}${lista}${mer ? `<p class="muted">${esc(mer)}</p>` : ''}</dd>`)}`;
 }
-// egenskaperna med pliktkänslan (flit, empati och byns arbetsseder), färdigheterna och fisket med händerna
+const VILA: Record<ReturnType<typeof viloSlag>, string> = { restVila: 'Vilar', restArbete: 'Arbetar tungt', restVaken: 'Vaken' };
+function behovHtml(p: Person) {
+  const now = s.now, m = moodOf(p, now), a = ageOf(p, now);
+  const humor: Orsak[] = [{ namn: 'Grundhumör', v: SAMTAL.humorBas }]; moodOf(p, now, humor);
+  // värmen: samma delar som simuleringen räknar (varmeDelar), med hur många som är i varje rum
+  const inRum = new Map<number, number>();
+  for (const q of living(s)) { const r = roomAt(s, q.x, q.y); if (r) inRum.set(r.id, (inRum.get(r.id) ?? 0) + 1); }
+  const temp = temperature(s), v = varmeDelar(s, p, coldOf(temp), inRum), fh = hearthOf(s.fire);
+  const varme: Orsak[] = [
+    ...v.eld > 0 ? [{ namn: 'Elden värmer', v: v.eld }] : [],
+    ...v.kyla > 0 ? [{ namn: `Kylan, ${Math.round(temp)} grader${v.shelter > 0 ? `, huset skyddar ${Math.round(v.shelter * 100)} %` : ''}`, v: -v.kyla }] : [],
+    ...v.mild > 0 ? [{ namn: `Milt väder, ${Math.round(temp)} grader`, v: v.mild }] : [],
+  ];
+  const tak = viloTak(s, p, v.rum);
+  const vila: Orsak[] = [{ namn: VILA[viloSlag(p)], v: KROPP[viloSlag(p)] }, ...tak ? [{ namn: tak === 'restGolv' ? 'Sover på golvet i ett hus' : 'Sover under tak', v: KROPP[tak] }] : [],
+    ...v.heat > KROPP.eldNara ? [{ namn: 'Slappnar av vid elden', v: fh.comfort * v.heat }] : []];
+  const hl = halsaLage(p, now);
+  const halsa: Orsak[] = [...hl === 'svalt' ? [{ namn: 'Svälter', v: -1 / KROPP.svaltTim }] : hl === 'frys' ? [{ namn: 'Fryser farligt', v: -1 / KROPP.frysTim }] : hl === 'laker' ? [{ namn: 'Mätt och frisk: läker', v: 1 / KROPP.lakerTim }] : [],
+    ...sickNow(p) ? [{ namn: p.sickWhy ?? 'Sjuk', v: -1 / KROPP.sjukTim }] : []];
+  return `${sickNow(p) ? `<p class="why">${esc(p.sickWhy ?? 'Sjuk')}, ${durTxt(p.sickUntil! - now)} kvar</p>` : ''}<dl class="kv">
+      ${rad(p, 'humor', 'Humör', `${bar(m, '', trend(p, 'humor', m))}<span>${moodWord(m)}</span>`, humor, '', 'Tankarna försvinner med tiden.')}
+      ${rad(p, 'hunger', 'Mättnad', bar(p.hunger, '', trend(p, 'hunger', p.hunger)), [{ namn: 'Hungern växer', v: -1 / KROPP.hungerTim * (a < ALDER.matBarn ? KROPP.hungerBarn : 1) }], ' i timmen', 'Maten hen äter höjer den.')}
+      ${rad(p, 'rest', 'Vila', bar(p.rest, '', trend(p, 'rest', p.rest)), vila, ' i timmen')}
+      ${rad(p, 'social', 'Gemenskap', bar(p.social, '', trend(p, 'social', p.social)), [{ namn: 'Saknar sällskap', v: -1 / KROPP.socialTim }], ' i timmen', 'Varje samtal höjer den.')}
+      ${rad(p, 'health', 'Hälsa', bar(p.health, p.health < LAG.halsa ? 'low' : '', trend(p, 'health', p.health)), halsa, ' i timmen', halsa.length ? '' : 'Oförändrad just nu.')}
+      ${rad(p, 'warm', 'Temperatur', `${tempBar(p.warm, trend(p, 'warm', p.warm))}<span>${tempOrd(p.warm)}</span>`, varme, ' i timmen', 'Mitten är lagom. Ett bad kyler av.')}
+      ${rad(p, 'toa', 'Toa', bar(p.toa, p.toa < KROPP.toaBehov ? 'low' : '', trend(p, 'toa', p.toa)), [{ namn: p.task?.act === 'sova' ? 'Behovet växer, långsammare i sömnen' : 'Behovet växer', v: -1 / KROPP.toaTim * (p.task?.act === 'sova' ? KROPP.toaSomn : 1) }], ' i timmen', 'Ett toabesök fyller den.')}
+    </dl>`;
+}
+// det en egenskap eller färdighet gör: arbetena som går fortare (ACTS) och raderna i STAT_GOR och SKILL_GOR
+function gorHtml(rader: string[], nu: string) {
+  return `<dd class="forkl"><p class="muted">${esc(nu)}</p>${rader.length ? `<ul class="thoughts">${rader.map(r => `<li>${esc(r)}</li>`).join('')}</ul>` : ''}</dd>`;
+}
+const arbetar = (sk: string[]) => sk.length ? [`Hur mycket hen får ut av arbetet: ${sk.map(k => SKILL_NAMES[k as Skill].toLowerCase()).join(', ')}`] : [];
+function ovarNu(p: Person, k: Skill) {
+  const d = p.task && ACTS[p.task.act];
+  return !!d && p.task!.phase === 'do' && (d.arbete === k || (k === 'hantverk' && !!d.hantverk) || (k === 'elda' && d.slag === 'elda'));
+}
 function egenHtml(p: Person) {
   const now = s.now, d = duty(s, p);
-  return `<dl class="kv">${STATS.map(k => `<dt>${STAT_NAMES[k]}</dt><dd>${bar(stat(p, k, now) / 20)}<span>${num(stat(p, k, now))}</span></dd>`).join('')}
+  const statRad = (k: Stat) => {
+    const v = stat(p, k, now), id = `e-${k}-${p.id}`, per = stat(p, k, now + DAY) - v; // ett dygn = ett år
+    const nu = Math.abs(per) < 0.005 ? 'Ändras inte med åldern just nu.' : `${per > 0 ? 'Växer' : 'Sjunker'} med åldern: ${per > 0 ? '+' : '−'}${num(Math.abs(per))} om året.`;
+    const rader = [...arbetar(SKILLS.filter(sk => ACTS[sk as Act]?.egenskap === k)), ...STAT_GOR[k]];
+    return `<dt class="klick" data-hjalp="${id}" title="${esc(rader.join(', '))}">${STAT_NAMES[k]}</dt><dd class="klick" data-hjalp="${id}" title="${esc(rader.join(', '))}">${bar(v / 20)}<span>${num(v)}</span></dd>${hjalpText(id, gorHtml(rader, nu))}`;
+  };
+  const skillRad = (k: Skill) => {
+    const v = p.skill[k], id = `f-${k}-${p.id}`, tr = trend(p, 'sk_' + k, v), dd = trendD(p, 'sk_' + k);
+    const nu = ovarNu(p, k) ? `Övar just nu${dd ? `: ${dd > 0 ? '+' : ''}${num(dd)} i timmen` : ''}.` : dd ? `Har ändrats ${num(dd)} i timmen den senaste stunden.` : 'Ändras inte just nu. Den växer när hen övar.';
+    const rader = [...arbetar(ACTS[k as Act]?.arbete === k ? [k] : []), ...SKILL_GOR[k]];
+    return `<dt class="klick" data-hjalp="${id}" title="${esc(rader.join(', '))}">${SKILL_NAMES[k]}</dt><dd class="klick" data-hjalp="${id}" title="${esc(rader.join(', '))}">${bar(v / 20, 'skill', tr)}<span>${num(v)}</span></dd>${hjalpText(id, gorHtml(rader, nu))}`;
+  };
+  return `<dl class="kv">${STATS.map(statRad).join('')}
       ${ageOf(p, now) >= ALDER.hjalper ? `<dt>Pliktkänsla</dt><dd>${bar(d, 'skill')}<span>${d > 0.75 ? 'Plikttrogen' : d > 0.5 ? 'Gör sin del' : d > 0.3 ? 'Bekväm' : 'Lat'}</span></dd>` : ''}</dl>
-      <h3>Färdigheter</h3><dl class="kv">${SKILLS.map(k => `<dt>${SKILL_NAMES[k]}</dt><dd>${bar(p.skill[k] / 20, 'skill')}<span>${num(p.skill[k])}</span></dd>`).join('')}</dl>
+      <h3>Färdigheter</h3><dl class="kv">${SKILLS.map(skillRad).join('')}</dl>
       ${p.fiske ? `<h3>Fiske</h3><p class="muted">${p.fiske.f} försök, ${p.fiske.n} napp, ${p.fiske.k} ${p.fiske.k === 1 ? 'abborre' : 'abborrar'}</p>` : ''}`;
 }
 function relHtml(p: Person) {

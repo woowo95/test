@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { BAR, FOREST, HIGH, MATERIAL, Person, T, W, bitAt, campCenter, condOf, emberOn, getMap, groundOf, husById, inMap, insulation, living, roomAt, sakNamn, sovplatser, taskName, zoneAt, zonesOf, Pile } from '../sim';
+import { BAR, FOREST, HIGH, MATERIAL, Person, T, W, bitAt, campCenter, condOf, emberOn, getMap, groundOf, husById, inMap, insulation, living, roomAt, sakNamn, sjoarna, sovplatser, taskName, zoneAt, zonesOf, Pile } from '../sim';
 import { iconImg } from '../ikoner';
 import { $, esc, fmtN, prickar } from './hjalp';
 import { outPilesAt, piles, s, ui } from './lage';
@@ -27,7 +27,7 @@ let drag: { x: number; y: number; cx: number; cy: number; moved: number } | null
 app.stage.on('pointerdown', e => { drag = { x: e.global.x, y: e.global.y, cx: cam.x, cy: cam.y, moved: 0 }; });
 app.stage.on('pointerup', () => { setTimeout(() => { drag = null; }, 0); });
 app.stage.on('pointerupoutside', () => { drag = null; });
-// ett tryck väljer det som ligger överst: en person, elden, en lagerplats eller en hög på marken. Tom mark avmarkerar
+// ett tryck väljer det som ligger överst: en person, elden, en lagerplats, en hög på marken, ett hus eller en sjö. Tom mark avmarkerar
 app.stage.on('pointertap', e => {
   if (drag && drag.moved > 6) return;
   const gx = e.global.x, gy = e.global.y, p = personAt(gx, gy), zi = storeAt(gx, gy), c = tileAt(gx, gy);
@@ -36,6 +36,7 @@ app.stage.on('pointertap', e => {
   else if (zi) { ui.lagerNr = zi - 1; visa('lager'); }
   else if (outPilesAt(c.x, c.y).length) { ui.hogAt = c; visa('hog'); }
   else if (husAt(c.x, c.y) !== undefined) { ui.husId = husAt(c.x, c.y)!; visa('hus'); }
+  else if (sjoAt(c.x, c.y) >= 0) { ui.sjoNr = sjoAt(c.x, c.y); visa('sjo'); }
   else if (ui.selected !== undefined || ärPersonflik(ui.tab)) {
     ui.selected = undefined; stopFollow();
     if (ärPersonflik(ui.tab)) ui.tab = 'folk';
@@ -65,6 +66,7 @@ $('zHome').addEventListener('click', () => { stopFollow(); cam.zoom = 2.4; const
 // bara underlaget och det som står där; vad som växer och lever på platsen finns i värmekartorna
 const stackTxt = (p: Pile) => `${sakNamn(p.k)} ${p.max === 1 ? '' : `${fmtN(p.n)} st, `}skick ${Math.round(condOf(p) * 100)} %`;
 // huset på rutan: en vägg eller ett golv i det, eller rummet under dess tak
+const sjoAt = (x: number, y: number) => inMap(x, y) ? sjoarna(s.seed).id[y * W + x] : -1;
 const husAt = (x: number, y: number) => bitAt(s, x, y)?.hus ?? roomAt(s, x, y)?.hus;
 function showHover(gx: number, gy: number) {
   const box = $('hoverBox'), { x, y } = tileAt(gx, gy);

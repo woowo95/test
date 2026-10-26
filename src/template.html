@@ -170,6 +170,15 @@ h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: 
 .thoughts { margin-top: 8px; display: grid; gap: 3px; }
 .thoughts li { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; }
 .thoughts .pos span { color: var(--good); } .thoughts .neg span { color: var(--bad); }
+.kv .klick { cursor: pointer; }
+.kv dt.klick { text-decoration: underline dotted; text-underline-offset: 3px; }
+.kv dd.forkl { grid-column: 1 / -1; display: block; margin: 0 0 6px; padding: 6px 8px; border-radius: 6px; background: var(--barbg); font-size: 14px; }
+.kv dd.forkl .thoughts { margin-top: 4px; }
+.kv dd.forkl p { margin: 0; }
+.bar.temp, .tip .bar.temp { position: relative; overflow: visible; background: linear-gradient(90deg, #3b7fd4, var(--barbg) 50%, #d4703b); }
+.bar.temp::after { content: ''; position: absolute; left: 50%; top: -3px; height: 12px; width: 1px; background: var(--muted); }
+.bar.temp > span { position: absolute; top: -2px; width: 4px; height: 10px; margin-left: -2px; border-radius: 2px; background: var(--fg); }
+.bar.temp.low > span { background: var(--bad); }
 .rels li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; padding: 3px 0; }
 .rw.pos { color: var(--good); } .rw.neg { color: var(--bad); }
 .lard li { padding: 4px 0; } .lard li > span { display: block; padding-left: 10px; } .lard small { display: block; font-size: 11px; }

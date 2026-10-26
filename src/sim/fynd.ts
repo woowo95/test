@@ -13,6 +13,7 @@ import { DAY, H, HOUR, HOUR_S, Person, State, T, W, egen, inMap, tvaDelar, visni
 import { FOREST, Ground, isSoil } from './vag';
 import { ACTS, RedskapDef, SNABBARE } from './handlingar';
 import { balans } from './balans';
+import { sjoRakna } from './sjo';
 
 // ---------- balanstal (regel 8) ----------
 // Fångst och insamling: var viltet håller sig borta, hur fort platserna tömmas och växer tillbaka, fiske, flinta och svamp.
@@ -508,13 +509,13 @@ type Fiskedon = 'hand' | 'spjut' | 'metspo';
 export function handFish(s: State, p: Person, x: number, y: number, ageF: number, rd?: RedskapDef) {
   const gear: Fiskedon = rd?.don ?? 'hand', hand = ACTS.fiske.hand!, napp = rd?.napp ?? hand.napp, hall = rd?.hall ?? hand.hall;
   const st = (p.fiske ??= { f: 0, n: 0, k: 0 }), spear = gear === 'spjut';
-  st.f++; count(s, 'fiskeForsok'); if (spear) count(s, 'spjutForsok'); if (gear === 'metspo') count(s, 'metForsok');
+  st.f++; count(s, 'fiskeForsok'); sjoRakna(s, x, y, 'forsok', p); if (spear) count(s, 'spjutForsok'); if (gear === 'metspo') count(s, 'metForsok');
   const season = ACTS.fiske.sasong![ageIndex(s)];
   if (rnd(s, 'arbete', p) >= napp * season * Math.min(FANGST.fiskRikMax, richness(s, 'fiske', x, y)) * ageF) return 0;
-  st.n++; count(s, 'fiskeNapp');
+  st.n++; count(s, 'fiskeNapp'); sjoRakna(s, x, y, 'napp', p);
   const hold = hall + p.skill.fiske / FANGST.hallSkill + stat(p, 'uthallighet', s.now) / FANGST.hallUthall;
   if (rnd(s, 'arbete', p) >= hold) return 0;
-  st.k++; const forsta = forstaGang(s, 'fisk'); if (spear) count(s, 'spjutFisk'); if (gear === 'metspo') count(s, 'metFisk');
+  st.k++; sjoRakna(s, x, y, 'fisk', p); const forsta = forstaGang(s, 'fisk'); if (spear) count(s, 'spjutFisk'); if (gear === 'metspo') count(s, 'metFisk');
   takeFrom(s, 'fiske', x, y, 1);
   if (forsta) log(s, `${p.name} fångade byns första abborre ${spear ? 'med spjut' : gear === 'metspo' ? 'med metspö' : 'med händerna'}, efter ${s.stat!.fiskeForsok} försök.`, 'world', [p.id]);
   return 1;

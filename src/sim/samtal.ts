@@ -155,12 +155,14 @@ export function converse(s: State, a: Person, others: Person[], events?: TalkEve
 
 // snitthumöret i byn; `tom` är värdet när ingen lever
 export function avgMood(s: State, tom: number) { const l = living(s); return l.length ? l.reduce((a, p) => a + moodOf(p, s.now), 0) / l.length : tom; }
-export function moodOf(p: Person, now: number) {
+// humöret och, om ut finns med, delarna det består av (personrutan visar dem). Samma räkning i båda fallen
+export function moodOf(p: Person, now: number, ut?: { namn: string; v: number }[]) {
   let m = SAMTAL.humorBas;
-  if (p.hunger < SAMTAL.humorHungerLag) m -= SAMTAL.humorHungerMinus; else if (p.hunger > SAMTAL.humorHungerHog) m += SAMTAL.humorHungerPlus;
-  if (p.rest < SAMTAL.humorViloLag) m -= SAMTAL.humorViloMinus;
-  if (p.social < SAMTAL.humorSocialLag) m -= SAMTAL.humorSocialMinus; else if (p.social > SAMTAL.humorSocialHog) m += SAMTAL.humorSocialPlus;
-  if (p.health < SAMTAL.humorHalsaLag) m -= SAMTAL.humorHalsaMinus;
-  for (const t of p.thoughts) if (t.until > now) m += t.v;
+  const del = (namn: string, v: number) => { m += v; ut?.push({ namn, v }); };
+  if (p.hunger < SAMTAL.humorHungerLag) del('Hungrig', -SAMTAL.humorHungerMinus); else if (p.hunger > SAMTAL.humorHungerHog) del('Mätt', SAMTAL.humorHungerPlus);
+  if (p.rest < SAMTAL.humorViloLag) del('Trött', -SAMTAL.humorViloMinus);
+  if (p.social < SAMTAL.humorSocialLag) del('Ensam', -SAMTAL.humorSocialMinus); else if (p.social > SAMTAL.humorSocialHog) del('Umgåtts mycket', SAMTAL.humorSocialPlus);
+  if (p.health < SAMTAL.humorHalsaLag) del('Mår dåligt', -SAMTAL.humorHalsaMinus);
+  for (const t of p.thoughts) if (t.until > now) del(t.text, t.v);
   return clamp(m, 0, 1);
 }

@@ -1,5 +1,5 @@
 import { KROPP, Person, ageOf, alive, byId, living, moodOf, taskName } from '../sim';
-import { $, LAG, bar, esc, hex, trend } from './hjalp';
+import { $, LAG, bar, esc, hex, tempBar, trend } from './hjalp';
 import { s, ui, vidNyBy } from './lage';
 
 // porträttraden överst på kartan: en knapp per invånare, med mer om personen när musen är över den.
@@ -30,7 +30,7 @@ export function renderPorts() {
     el.setAttribute('aria-pressed', String(ui.selected === p.id));
     (el.children[0] as HTMLElement).style.background = hex(p);
     el.children[1].textContent = p.name;
-    el.children[2].textContent = `${Math.floor(ageOf(p, s.now))} år${p.tag ? ' · ' + p.tag : ''}`;
+    el.children[2].textContent = p.tag ?? '';
     el.children[3].textContent = shortAct(p);
   });
   if (tipId !== undefined) showTip(tipId);
@@ -44,7 +44,7 @@ function showTip(id: number) {
   tip.innerHTML = `<h4>${esc(p.name)}</h4><p class="op">${p.sex === 'k' ? 'Kvinna' : 'Man'}, ${Math.floor(ageOf(p, s.now))} år${p.tag ? ' · ' + esc(p.tag) : ''}</p>
     <p>${shortAct(p)}</p>${p.task?.why ? `<p class="op">${esc(p.task.why)}</p>` : ''}
     <dl><dt>Humör</dt><dd>${bar(m, m < LAG.humor ? 'low' : '', trend(p, 'humor', m))}</dd><dt>Mättnad</dt><dd>${bar(p.hunger, p.hunger < LAG.hunger ? 'low' : '', trend(p, 'hunger', p.hunger))}</dd>
-    <dt>Vila</dt><dd>${bar(p.rest, '', trend(p, 'rest', p.rest))}</dd><dt>Hälsa</dt><dd>${bar(p.health, p.health < LAG.halsa ? 'low' : '', trend(p, 'health', p.health))}</dd><dt>Värme</dt><dd>${bar(p.warm, p.warm < KROPP.kallt ? 'low' : '', trend(p, 'warm', p.warm))}</dd></dl>
+    <dt>Vila</dt><dd>${bar(p.rest, '', trend(p, 'rest', p.rest))}</dd><dt>Hälsa</dt><dd>${bar(p.health, p.health < LAG.halsa ? 'low' : '', trend(p, 'health', p.health))}</dd><dt>Temperatur</dt><dd>${tempBar(p.warm, trend(p, 'warm', p.warm))}</dd></dl>
     <p class="op">Klicka för att välja, dubbelklicka för att följa.</p>`;
   const wrap = $('ports').parentElement!.getBoundingClientRect(), r = el.getBoundingClientRect();
   tip.hidden = false;

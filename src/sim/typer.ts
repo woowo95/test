@@ -42,10 +42,34 @@ export const STAT_NAMES: Record<Stat, string> = {
   styrka: 'Styrka', uthallighet: 'Uthållighet', intelligens: 'Intelligens', nyfikenhet: 'Nyfikenhet',
   karisma: 'Karisma', skonhet: 'Skönhet', flit: 'Flit', empati: 'Empati', mod: 'Mod', minne: 'Minne',
 };
+// vad varje egenskap påverkar utöver arbetena som har den som egenskap (ACTS), med orden personrutan visar.
+// Skriv till en rad när simuleringen börjar fråga efter egenskapen på ett nytt ställe
+export const STAT_GOR: Record<Stat, string[]> = {
+  styrka: ['Hur mycket hen orkar bära'],
+  uthallighet: ['Att fisken sitter kvar när den nappat'],
+  intelligens: ['Hur fort hen lär sig färdigheter, lärdomar och tekniker', 'Att tända elden', 'Att känna igen svamp', 'Att väljas till byggare'],
+  nyfikenhet: ['Att komma på nya tekniker', 'Hur långt bort hen går på promenad', 'Att lita på platser hen inte känner', 'Att tända byns allra första eld'],
+  karisma: ['Att dela med sig av lärdomar i samtal', 'Hur charmig hen är i samtal', 'Hur mycket hens röst väger när byns seder ändras'],
+  skonhet: ['Hur charmig och attraktiv hen är i samtal'],
+  flit: ['Pliktkänslan', 'Lusten att göra hantverk, också på kvällen', 'Att fylla på elden i rätt tid'],
+  empati: ['Att trösta och ge gåvor', 'Att aldrig ta något utan lov, när den är hög', 'Att vilja ha eld när andra fryser', 'Hur ofta hen pratar med andra', 'Pliktkänslan'],
+  mod: ['Att väljas till nattvakt', 'Hur långt bort hen vågar gå', 'Att inte låta rädslor styra'],
+  minne: ['Hur länge hen minns platser och lärdomar'],
+};
 export const SKILLS = ['samla', 'jakt', 'fiske', 'ved', 'hantverk', 'berattande', 'elda'] as const;
 export type Skill = typeof SKILLS[number];
 export const SKILL_NAMES: Record<Skill, string> = {
   samla: 'Samling', jakt: 'Jakt', fiske: 'Fiske', ved: 'Trähuggning', hantverk: 'Hantverk', berattande: 'Berättande', elda: 'Eldkonst',
+};
+// vad varje färdighet påverkar utöver arbetena som övar den (ACTS arbete), och hur den växer
+export const SKILL_GOR: Record<Skill, string[]> = {
+  samla: ['Att känna igen svamp'],
+  jakt: [],
+  fiske: ['Att fisken sitter kvar när den nappat'],
+  ved: [],
+  hantverk: ['Hur fort hen tillverkar och bygger', 'Att väljas till byggare', 'Lusten att göra hantverk'],
+  berattande: ['Lusten att berätta på kvällen'],
+  elda: ['Att tända elden', 'Att fylla på elden i rätt tid'],
 };
 
 export const AGES = ['Istid', 'Vårtid', 'Sommartid', 'Hösttid'];
@@ -153,6 +177,7 @@ export interface State {
   kal?: { t0: number; a0: number; b0: number }; // kalendern: tidsåldern a0 började t0 och slutar måndagen b0 (dagens nummer), se tid.ts
   ruttet?: number; // mat som ruttnat bort på sistone (glöms med tiden, byggnader.ts)
   stat?: Record<string, number>; // räknare: svamp, fiskeförsök, napp, fångst med mera
+  sjoar?: Record<number, import('./sjo').SjoStat>; // fiske och bad per sjö (sjo.ts)
 }
 // ett fällt träd: ved och grenar som finns kvar att hugga ut
 export interface Stock { id: number; x: number; y: number; ved: number; grenar: number }

@@ -76,6 +76,7 @@ function uiLasNu(s: State, t: number) {
   for (const k of FYND_IDS) for (let i = 0; i < W * H; i++) { vaxerAt(s, k, i); fyndAt(s, k, i); }
   djurOf(s, t);
   groundOf(s); coverOf(s); campCenter(s); getMap(s.seed);
+  { const sj = SIM.sjoarna(s.seed); sj.rutor.forEach((_, n) => { SIM.sjoNamn(s, n); void s.sjoar?.[n]; }); }
   hearthOf(s.fire); igniterOf(s); fireWant(s); fireHeat(s); heatRadius(s); emberOn(s);
   // förrådet, lagerplatserna och högarna
   for (const pl of pilesOf(s)) { condOf(pl); sakNamn(pl.k); }
@@ -93,8 +94,12 @@ function uiLasNu(s: State, t: number) {
   // varje person: porträtten, invånarlistan, personfliken och figuren på kartan
   const slag = Object.keys(ACTS) as Act[];
   for (const p of s.people) {
-    ageOf(p, s.now); isSick(p, s.now); isSocial(p); moodOf(p, s.now); duty(s, p); SIM.drar(s, p); childrenOf(s, p);
-    for (const k of STATS) stat(p, k, s.now);
+    ageOf(p, s.now); isSick(p, s.now); isSocial(p); moodOf(p, s.now); moodOf(p, s.now, []); duty(s, p); SIM.drar(s, p); childrenOf(s, p);
+    for (const k of STATS) { stat(p, k, s.now); stat(p, k, s.now + DAY); }
+    // behoven och vad som påverkar dem (personrutan)
+    const inRum = new Map<number, number>(); for (const q of living(s)) { const r = roomAt(s, q.x, q.y); if (r) inRum.set(r.id, (inRum.get(r.id) ?? 0) + 1); }
+    const vd = SIM.varmeDelar(s, p, SIM.coldOf(temperature(s)), inRum); SIM.viloSlag(p); SIM.viloTak(s, p, vd.rum); SIM.halsaLage(p, s.now);
+    if (p.task) SIM.sjoVid(s, p.task.tx, p.task.ty);
     const tot = habitTotal(p); for (const a of slag) habitShare(p, [a], tot);
     heldBy(s, p); ownedBy(s, p); ownedStock(s, p); capacity(s, p);
     if (p.task) { load(p.task); homeKind(p.task); taskName(p.task); carryKind(p.task.act); }
@@ -1202,6 +1207,33 @@ SCENARIER.abborre = {
       ['en abborre blir lika mycket fiskkött, några på en kvart', halv && klar],
       ['fiskköttet är dens som ägde abborren, inte dens som rensade', agare],
       [`i en by kommer abborrar hem (högst ${abborreSedd.toFixed(0)} på en gång) och rensas vid elden (${rensat.toFixed(0)} av ${fangat} fångade på sex dygn, sex år i spelet)`, fangat > 0 && abborreSedd > 0 && rensat > 0 && rensat >= fangat * 0.5],
+    ];
+  },
+};
+
+SCENARIER.sjo = {
+  text: 'Varje sammanhängande vatten är en sjö. Fiskeförsök, napp, fångade fiskar och bad räknas per sjö när de händer (sjöfliken)',
+  kor: () => {
+    const s = createState(3, START), sj = SIM.sjoarna(s.seed), tiles = getMap(s.seed).tiles;
+    let vatten = true; for (let i = 0; i < W * H; i++) if ((tiles[i] === T.Vatten) !== (sj.id[i] >= 0)) vatten = false;
+    const storst = sj.rutor.every((r, n) => n === 0 || r.length <= sj.rutor[n - 1].length);
+    kor(s, 6 * 24);
+    const st = Object.values(s.sjoar ?? {}), sum = (k: 'forsok' | 'napp' | 'fisk' | 'bad') => st.reduce((a, x) => a + x[k], 0);
+    const fangst = s.people.reduce((a, p) => a + (p.fiske?.k ?? 0), 0);
+    const perPers = st.every(x => Object.values(x.fiskare).reduce((a, n) => a + n, 0) === x.fisk && Object.values(x.badare).reduce((a, n) => a + n, 0) === x.bad);
+    // ett bad vid stranden räknas vid sjön intill
+    const b = createState(3, START), bp = living(b)[0], strand = SIM.shoreOf(b.seed).indexOf(1), bx = strand % W, by = Math.floor(strand / W);
+    bp.x = bx + 0.5; bp.y = by + 0.5;
+    bp.task = { act: 'bada', phase: 'do', tx: bx, ty: by, until: b.now, carry: 0, why: 'prov', dark: !isLight(b.now) };
+    step(b, BEAT);
+    const badSjo = b.sjoar?.[SIM.sjoVid(b, bx, by)];
+    return [
+      [`ett bad räknas vid sjön intill stranden (${SIM.sjoNamn(b, SIM.sjoVid(b, bx, by))}) och hos den som badade`, badSjo?.bad === 1 && badSjo.badare[bp.id] === 1 && badSjo.log[0]?.k === 'bad'],
+      [`${sj.rutor.length} sjöar, varje ruta vatten hör till en, den största först (${SIM.sjoNamn(s, 0)})`, vatten && storst && SIM.sjoNamn(s, 0) === 'Sjön'],
+      [`alla fiskeförsök räknas vid en sjö (${sum('forsok')} av ${s.stat?.fiskeForsok ?? 0} på sex dygn, sex år i spelet)`, sum('forsok') > 0 && sum('forsok') === (s.stat?.fiskeForsok ?? 0)],
+      [`napp och fångade fiskar stämmer med byns och personernas räkning (${sum('napp')} napp, ${sum('fisk')} fiskar)`, sum('napp') === (s.stat?.fiskeNapp ?? 0) && sum('fisk') === fangst && fangst > 0],
+      [`fångsterna och baden per person summerar till sjöns (${sum('bad')} bad)`, perPers],
+      ['historiken är högst SJO_LOGG händelser per sjö', st.every(x => x.log.length <= SIM.SJO_LOGG)],
     ];
   },
 };

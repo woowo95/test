@@ -32,6 +32,7 @@ import { histParts, historikSteg, joinHist } from './historik';
 import { migrate } from './varld';
 import { stepDelning } from './delning';
 import { balans } from './balans';
+import { sjoRakna } from './sjo';
 
 // Simuleringen går i slag om fem minuter (BEAT), i spelet och vid ikappräkning likadant. Inom ett slag går tiden åt
 // till det som händer i tur och ordning (taskStep). Arbetet görs i bitar om högst BIT sekunder, och man bär aldrig mer
@@ -84,7 +85,7 @@ const KLAR: Partial<Record<Act, Krok>> = {
     if (k) { k.ved -= toWalls(s, Math.floor(k.x), Math.floor(k.y), k.ved, t.ref, p); if (k.ved <= 1e-6) s.stockar = stocks(s).filter(q => q !== k); }
   },
   promenad: (s, p, t) => { lookAround(s, p, t.tx, t.ty); think(p, 'Tog en skön promenad', 0.06, s.now, 6 * HOUR); },
-  bada: (s, p) => { p.warm = Math.max(KROPP.badMin, p.warm - KROPP.badKyla); think(p, 'Badade i sjön', 0.08, s.now, 6 * HOUR); },
+  bada: (s, p, t) => { sjoRakna(s, t.tx, t.ty, 'bad', p); p.warm = Math.max(KROPP.badMin, p.warm - KROPP.badKyla); think(p, 'Badade i sjön', 0.08, s.now, 6 * HOUR); },
   strand: (s, p) => { p.rest = Math.min(1, p.rest + KROPP.strandVila); think(p, 'Satt vid vattnet och fick ro', 0.06, s.now, 6 * HOUR); },
 };
 // redskap som görs och träd som fälls: arbetet sparas om det avbryts (paborjat.ts)
@@ -162,20 +163,34 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
 
 
 // behoven: hunger, vila, värme, umgänge och toa. Elden värmer i ett område, och inne i ett hus kyls man långsammare
-// (sämre ju fler öppningar)
+// (sämre ju fler öppningar). Delarna nedan räknas här och visas i personrutan, så att den visar det som faktiskt händer
+// vilan per timme före tak och eld: talets namn i KROPP
+export function viloSlag(p: Person): 'restVila' | 'restArbete' | 'restVaken' {
+  const pd = p.task && ACTS[p.task.act];
+  return pd && pd.vila ? 'restVila' : pd && pd.tungt && p.task!.phase === 'do' ? 'restArbete' : 'restVaken';
+}
+// den som sover i ett hus vilar bättre, och bäst på ett golv: talets namn i KROPP, eller inget
+export function viloTak(s: State, p: Person, rum: unknown): 'restGolv' | 'restTak' | undefined {
+  const pd = p.task && ACTS[p.task.act];
+  if (!(rum && pd && pd.vila && p.task!.phase === 'do' && pd.plats === 'sang')) return undefined;
+  const m0 = gridOf(s).at.get(tileOf(p.x, p.y))?.m;
+  return m0 === 'ho' || m0 === 'tra' ? 'restGolv' : 'restTak';
+}
+// värmen per timme: elden, kylan (det huset skyddar är borta) och milt väder. inRum = hur många som är i varje rum
+export function varmeDelar(s: State, p: Person, coldRate: number, inRum: Map<number, number>) {
+  const heat = heatAt(s, p.x, p.y), rum = roomAt(s, p.x, p.y), shelter = rum ? shelterOf(s, rum, inRum.get(rum.id) ?? 1) : 0;
+  return { heat, rum, shelter, eld: heat * KROPP.eldVarme, kyla: coldRate * (1 - shelter), mild: coldRate === 0 ? KROPP.mildVarme : 0 };
+}
 function needsStep(s: State, p: Person, a: number, dtSec: number, coldRate: number, fh: ReturnType<typeof hearthOf>, inRum: Map<number, number>) {
   const now = s.now;
   p.hunger = clamp(p.hunger - dtSec / (KROPP.hungerTim * HOUR_S) * (a < ALDER.matBarn ? KROPP.hungerBarn : 1), 0, 1);
-  const pd = p.task && ACTS[p.task.act];
-  const working = pd && pd.tungt && p.task!.phase === 'do';
-  const resting = pd && pd.vila;
-  p.rest = clamp(p.rest + dtSec / HOUR_S * (resting ? KROPP.restVila : working ? KROPP.restArbete : KROPP.restVaken), 0, 1);
-  const heat = heatAt(s, p.x, p.y), rum = roomAt(s, p.x, p.y), shelter = rum ? shelterOf(s, rum, inRum.get(rum.id) ?? 1) : 0;
-  p.warm = clamp(p.warm + dtSec / HOUR_S * (heat * KROPP.eldVarme - coldRate * (1 - shelter) + (coldRate === 0 ? KROPP.mildVarme : 0)), 0, 1);
-  if (rum && resting && p.task!.phase === 'do' && pd.plats === 'sang') { // man vilar bättre under tak, och bäst på ett golv
-    const m0 = gridOf(s).at.get(tileOf(p.x, p.y))?.m, soft = m0 === 'ho' || m0 === 'tra';
-    p.rest = clamp(p.rest + dtSec / HOUR_S * (soft ? KROPP.restGolv : KROPP.restTak), 0, 1);
-    if (p.task!.act === 'sova') think(p, soft ? 'Sov gott på golvet i huset' : 'Sov under tak', soft ? 0.07 : 0.05, now, 8 * HOUR);
+  p.rest = clamp(p.rest + dtSec / HOUR_S * KROPP[viloSlag(p)], 0, 1);
+  const v = varmeDelar(s, p, coldRate, inRum), heat = v.heat;
+  p.warm = clamp(p.warm + dtSec / HOUR_S * (v.eld - v.kyla + v.mild), 0, 1);
+  const tak = viloTak(s, p, v.rum);
+  if (tak) { // man vilar bättre under tak, och bäst på ett golv
+    p.rest = clamp(p.rest + dtSec / HOUR_S * KROPP[tak], 0, 1);
+    if (p.task!.act === 'sova') think(p, tak === 'restGolv' ? 'Sov gott på golvet i huset' : 'Sov under tak', tak === 'restGolv' ? 0.07 : 0.05, now, 8 * HOUR);
   }
   if (heat > KROPP.eldNara) {
     think(p, 'Värms av elden', fh.comfort, now, HOUR);
@@ -188,12 +203,17 @@ function needsStep(s: State, p: Person, a: number, dtSec: number, coldRate: numb
   if (p.toa <= 0) { p.toa = 1; if (a >= ALDER.smabarn) think(p, 'Kissade på sig', -0.12, now, 4 * HOUR); }
 }
 
+// det som just nu tär på hälsan eller läker den (sjukdomen kommer till utöver detta)
+export function halsaLage(p: Person, now: number): 'svalt' | 'frys' | 'laker' | undefined {
+  return p.hunger <= 0 ? 'svalt' : p.warm < KROPP.frysdod ? 'frys' : p.hunger > KROPP.lakerMat && !isSick(p, now) ? 'laker' : undefined;
+}
 // hälsa, sjukdom och död: svält, kyla, sjukdom, ålderdom och olyckor. true = personen dog
 function healthStep(s: State, p: Person, a: number, ai: number, dtSec: number) {
   const now = s.now;
-  if (p.hunger <= 0) { p.health -= dtSec / (KROPP.svaltTim * HOUR_S); if (rnd(s, 'halsa', p) < dtSec / 7200) think(p, 'Svälter', -0.25, now, 3 * HOUR); }
-  else if (p.warm < KROPP.frysdod) p.health -= dtSec / (KROPP.frysTim * HOUR_S);
-  else if (p.hunger > KROPP.lakerMat && !isSick(p, now)) p.health = clamp(p.health + dtSec / (KROPP.lakerTim * HOUR_S), 0, 1);
+  const hl = halsaLage(p, now);
+  if (hl === 'svalt') { p.health -= dtSec / (KROPP.svaltTim * HOUR_S); if (rnd(s, 'halsa', p) < dtSec / 7200) think(p, 'Svälter', -0.25, now, 3 * HOUR); }
+  else if (hl === 'frys') p.health -= dtSec / (KROPP.frysTim * HOUR_S);
+  else if (hl === 'laker') p.health = clamp(p.health + dtSec / (KROPP.lakerTim * HOUR_S), 0, 1);
   if (isSick(p, now)) p.health -= dtSec / (KROPP.sjukTim * HOUR_S);
   if (!p.sickUntil || p.sickUntil < now) {
     if (chance(s, (iIstiden(ai) ? ARSTID.sjukIstid : ARSTID.sjuk) / 86400, dtSec, 'halsa', p)) { const dur = (KROPP.sjukMin + rnd(s, 'halsa', p) * KROPP.sjukSpann) * HOUR; p.sickUntil = now + dur; p.sickWhy = 'Sjuk'; if (dur > KROPP.svartSjuk * HOUR) log(s, `${p.name} blev svårt sjuk.`, 'world', [p.id]); }
