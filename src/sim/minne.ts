@@ -1,4 +1,4 @@
-import { campCenter, campDist } from './plats';
+import { campCenter, campDist, campKey } from './plats';
 import { byId, count, isParent, living, log, stat } from './folk';
 import { teach } from './teknik';
 import { Kind, SIGHT, STEN_NARA, prospect, regrowOf, richness, shoreOf, standAt, stoneDist, synsOf, toppOf, vaxerAt } from './fynd';
@@ -28,26 +28,37 @@ const areaCenter = (a: number) => ({ x: Math.min(W, (a % aw()) * AREA + AREA / 2
 const LKINDS: LKind[] = ['samla', 'jakt', 'fiske', 'flinta', 'fara'];
 const MODES = ['nu', 'vaxer', 'syns'] as const;
 type Mode = typeof MODES[number];
+const LK_I = Object.fromEntries(LKINDS.map((k, i) => [k, i])) as Record<LKind, number>;
+const MODE_I = Object.fromEntries(MODES.map((m, i) => [m, i])) as Record<Mode, number>;
 const areaCache = new WeakMap<State, { hr: number; v: Float64Array }>();
 function areaValue(s: State, k: LKind, a: number, mode: Mode = 'nu') {
-  const hr = Math.floor(s.now / HOUR);
+  const hr = Math.floor(s.now / HOUR), n = aw() * ah();
   let c = areaCache.get(s);
-  if (!c || c.hr !== hr) { c = { hr, v: new Float64Array(LKINDS.length * aw() * ah() * 3).fill(NaN) }; areaCache.set(s, c); }
-  const key = (LKINDS.indexOf(k) * aw() * ah() + a) * 3 + MODES.indexOf(mode);
+  if (!c || c.hr !== hr) { c = { hr, v: new Float64Array(LKINDS.length * n * 3).fill(NaN) }; areaCache.set(s, c); }
+  const key = (LK_I[k] * n + a) * 3 + MODE_I[mode];
   let v = c.v[key];
-  if (Number.isNaN(v)) {
-    const x0 = (a % aw()) * AREA, y0 = Math.floor(a / aw()) * AREA, top: number[] = [];
-    if (k === 'flinta') { const sd = stoneDist(s.seed); v = 0; for (let y = y0; y < Math.min(H, y0 + AREA); y++) for (let x = x0; x < Math.min(W, x0 + AREA); x++) if (sd[y * W + x] <= STEN_NARA) v = 1; }
-    else if (k === 'fara') v = 0;
-    else {
-      const fn = mode === 'nu' ? undefined : mode === 'vaxer' ? (i: number) => vaxerAt(s, k, i) : (i: number) => synsOf(s, k, i);
-      for (let y = y0; y < Math.min(H, y0 + AREA); y++) for (let x = x0; x < Math.min(W, x0 + AREA); x++) top.push(fn ? standAt(s, k, x, y, fn) : richness(s, k, x + 0.5, y + 0.5));
-      top.sort((p, q) => q - p);
-      v = top.slice(0, 5).reduce((p, q) => p + q, 0) / 5;
-    }
-    c.v[key] = v;
-  }
+  if (Number.isNaN(v)) c.v[key] = v = areaCalc(s, k, a, mode);
   return v;
+}
+// de fem största värdena i ett område, störst först (en arbetsbuffert, tom mellan anropen)
+const TOPP = 5, topp = new Float64Array(TOPP);
+let nTopp = 0;
+function iTopp(v: number) {
+  let j = nTopp;
+  if (j === TOPP) { if (!(v > topp[TOPP - 1])) return; j = TOPP - 1; } else nTopp++;
+  while (j > 0 && topp[j - 1] < v) { topp[j] = topp[j - 1]; j--; }
+  topp[j] = v;
+}
+function areaCalc(s: State, k: LKind, a: number, mode: Mode) {
+  const x0 = (a % aw()) * AREA, y0 = Math.floor(a / aw()) * AREA, x1 = Math.min(W, x0 + AREA), y1 = Math.min(H, y0 + AREA);
+  if (k === 'flinta') { const sd = stoneDist(s.seed); let v = 0; for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) if (sd[y * W + x] <= STEN_NARA) v = 1; return v; }
+  if (k === 'fara') return 0;
+  const fn = mode === 'nu' ? undefined : mode === 'vaxer' ? (i: number) => vaxerAt(s, k, i) : (i: number) => synsOf(s, k, i);
+  nTopp = 0;
+  for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) iTopp(fn ? standAt(s, k, x, y, fn) : richness(s, k, x + 0.5, y + 0.5));
+  let sum = 0;
+  for (let j = 0; j < nTopp; j++) sum += topp[j];
+  return sum / 5;
 }
 
 // ---------- lärdomar ----------
@@ -79,8 +90,9 @@ export function observe(s: State, p: Person, k: LKind, x: number, y: number, c =
   trim(s, p);
 }
 // den som arbetar i ett område ser också vad mer som finns där: bär, spår av vilt och fisk i vattnet
+const SER_RUNT: Kind[] = ['samla', 'jakt', 'fiske'];
 export function lookAround(s: State, p: Person, x: number, y: number) {
-  for (const k of ['samla', 'jakt', 'fiske'] as Kind[]) if (k === 'fiske' ? areaValue(s, k, areaOf(x, y)) > 0 : true) observe(s, p, k, x, y);
+  for (const k of SER_RUNT) if (k === 'fiske' ? areaValue(s, k, areaOf(x, y)) > 0 : true) observe(s, p, k, x, y);
 }
 // vad personen tror att man hittar på en ruta. I närområdet ser man det. Längre bort syns marken (skog, äng, strand)
 // men inte hur mycket andra redan tagit där: då gäller minnet, och utan minne en gissning efter hur marken ser ut.
@@ -94,9 +106,10 @@ export function hoped(s: State, l: Lardom) {
 }
 // syns: vad rutan ser ut att kunna ge, pot: samma för hela området
 const believed = (s: State, l: Lardom | undefined, syns: number, u: number, pot = syns) => l ? Math.min(3, hoped(s, l)) * l.c * Math.min(1.2, syns / Math.max(0.05, pot)) + syns * u * (1 - l.c) : syns * u;
-function perceive(s: State, p: Person, k: Kind, x: number, y: number, sight = sightOf(s, p)) {
+// sight, u (trustUnknown) och syns (synsOf för k) räknas en gång när samma person frågas om många rutor
+function perceive(s: State, p: Person, k: Kind, x: number, y: number, sight: number, u: number, syns: (i: number) => number) {
   const a = areaOf(x, y);
-  const v = sees(s, p, x, y, sight) ? richness(s, k, x + 0.5, y + 0.5) : believed(s, findL(p, k, a), standAt(s, k, x, y, i => synsOf(s, k, i)), trustUnknown(s, p), areaValue(s, k, a, 'syns'));
+  const v = sees(s, p, x, y, sight) ? richness(s, k, x + 0.5, y + 0.5) : believed(s, findL(p, k, a), standAt(s, k, x, y, syns), u, areaValue(s, k, a, 'syns'));
   return v - fear(s, p, a);
 }
 // rädsla för ett område: den modige bryr sig mindre
@@ -114,23 +127,39 @@ export function sightOf(s: State, p: Person) {
 export const sees = (s: State, p: Person, x: number, y: number, sight = sightOf(s, p)) => Math.hypot(x + 0.5 - p.x, y + 0.5 - p.y) <= sight;
 // det bästa personen tror finns utanför närområdet, inom en halv dags gång
 function bestKnown(s: State, p: Person, k: Kind) {
-  const f = campCenter(s), u = trustUnknown(s, p);
+  const o = fjarran(s), u = trustUnknown(s, p);
   let best = 0;
-  // det som syns från lägret räknas redan i prospect; här bara platser längre bort, oavsett var personen står just nu
-  for (let a = 0; a < aw() * ah(); a++) {
-    const c = areaCenter(a), d = campDist(s, c.x, c.y);
-    if (d <= SIGHT || Math.abs(c.x - f.x) > 17 || Math.abs(c.y - f.y) > 13) continue;
-    best = Math.max(best, believed(s, findL(p, k, a), areaValue(s, k, a, 'syns'), u) - d * 0.03 - fear(s, p, a));
+  for (let j = 0; j < o.a.length; j++) {
+    const a = o.a[j];
+    best = Math.max(best, believed(s, findL(p, k, a), areaValue(s, k, a, 'syns'), u) - o.d[j] * 0.03 - fear(s, p, a));
   }
   return best;
+}
+// områdena bestKnown går igenom och deras avstånd till lägret. Det som syns från lägret räknas redan i prospect; här
+// bara platser längre bort, oavsett var personen står just nu. Beror bara på lägret, och räknas om när det ändras
+const fjarr = new WeakMap<State, { key: string; a: number[]; d: number[] }>();
+function fjarran(s: State) {
+  const key = campKey(s);
+  let c = fjarr.get(s);
+  if (!c || c.key !== key) {
+    const f = campCenter(s), a: number[] = [], d: number[] = [];
+    for (let i = 0; i < aw() * ah(); i++) {
+      const m = areaCenter(i), di = campDist(s, m.x, m.y);
+      if (di <= SIGHT || Math.abs(m.x - f.x) > 17 || Math.abs(m.y - f.y) > 13) continue;
+      a.push(i); d.push(di);
+    }
+    c = { key, a, d };
+    fjarr.set(s, c);
+  }
+  return c;
 }
 // den plats personen väljer: det hen tror ger mest och inte är för långt bort. Väl framme ser hen sig omkring
 // och går till den bästa rutan i närheten.
 export function pickSpot(s: State, p: Person, k: Kind, cands: { x: number; y: number; d: number }[]) {
   let best: { x: number; y: number; d: number } | undefined, bs = -1e9;
-  const sight = sightOf(s, p);
+  const sight = sightOf(s, p), u = trustUnknown(s, p), syns = (i: number) => synsOf(s, k, i);
   for (const c of cands) {
-    const sc = perceive(s, p, k, c.x, c.y, sight) - c.d * 0.03 + rnd(s, 'val', p) * 0.15;
+    const sc = perceive(s, p, k, c.x, c.y, sight, u, syns) - c.d * 0.03 + rnd(s, 'val', p) * 0.15;
     if (sc > bs) { bs = sc; best = c; }
   }
   if (!best || sees(s, p, best.x, best.y, sight)) return best;
