@@ -1295,6 +1295,9 @@ SCENARIER.familjehus = {
     planBuild(s);
     const h = housesOf(s).find(q => q.fn === 'familjehus');
     const planerad = u?.fn === 'familjehus' && !!h && h.ag === a.id && h.namn === husNamn(a.name), namn = h?.namn ?? 'inget';
+    // det som finns att bygga med räknar familjens trä en gång, för alla som bygger (samhalle-57, samhalle-63)
+    const allt = SIM.avail(s, 'ved', undefined, h?.id), forMycket = living(s).filter(p => SIM.avail(s, 'ved', p, h?.id) > allt + 1e-9).map(p => p.name);
+    const helper = SIM.avail(s, 'ved', d, h?.id);
     // den som hjälper till tar familjens trä först
     const fore = ownsAmount(s, b, 'ved'), kom: Record<string, number> = {};
     const ag = takeForHouse(s, d, h?.id, 'ved', 2, kom);
@@ -1318,6 +1321,7 @@ SCENARIER.familjehus = {
       [`familjen är ägaren, partnern och barnen (${fam.length})`, fam.length === 3 && fam.includes(c.id)],
       ['en familj som inte har råd bygger inget eget hus', fattig],
       [`med nog i eget planeras ett familjehus som familjen äger (${namn})`, planerad],
+      [`familjens trä räknas en gång i det som finns att bygga med (${allt.toFixed(0)} trä; för mycket hos ${forMycket.join(', ') || 'ingen'}; ${helper.toFixed(0)} för ${d.name})`, forMycket.length === 0 && Math.abs(helper - allt) < 1e-6],
       ['till familjehuset tas familjens eget material först', familjens],
       ['familjen sover i sitt hus, de andra i sovsalen', sover],
       ['huset ärvs av partnern och får hens namn', arv],

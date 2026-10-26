@@ -39,6 +39,8 @@ export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => voi
       if (!Number.isFinite(p.x) || !Number.isFinite(p.y) || !inMap(p.x, p.y)) larm('position', () => `${p.name} på ${p.x},${p.y}`);
       else if (tiles[tileOf(p.x, p.y)] === T.Vatten) larm('i vattnet', () => `${p.name} står i vattnet (${p.task?.act})`);
       else if (isWall(s, p.x, p.y)) larm('i en vägg', () => `${p.name} står i en vägg (${p.task?.act})`);
+      // den som bär material till ett bygge bär inte mer än det som togs ur förrådet
+      if (p.task?.act === 'bygga' && p.task.items) for (const k in p.task.items) if (p.task.items[k] > sumOf(p.task.ag?.[k]) + 1e-6) larm('bygge utan material', () => `${p.name} bär ${p.task!.items![k]} ${k} till bygget men tog ${sumOf(p.task!.ag?.[k])}`);
       const st = p.task?.site; // byggplatsen den som hämtar material går till sedan
       if (st && isWall(s, st.x, st.y)) larm('byggplats i en vägg', () => `${p.name} ska bygga från ${Math.floor(st.x)},${Math.floor(st.y)}, som är en vägg`);
       if (p.task && !(p.task.act in ACT_NAMES)) larm('jobb', () => `${p.name} har okänt jobb ${p.task?.act}`);
