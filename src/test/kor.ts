@@ -94,7 +94,7 @@ function vakta(s: State, larm: Larm, timme: boolean) {
   }
   const f = s.fire;
   if (!Number.isFinite(f.fuel) || f.fuel < 0) larm('eldens bränsle', () => `fuel ${f.fuel}`);
-  if (s.delning && (!Number.isFinite(s.delning.rik) || !Number.isFinite(s.delning.andel))) larm('delning', () => JSON.stringify(s.delning));
+  if (s.delning && !Number.isFinite(s.delning.andel)) larm('delning', () => JSON.stringify(s.delning));
   if (!timme) return;
   // en gång i timmen: ägare, redskap, stackar och hus
   const ids = new Set<number>();

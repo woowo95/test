@@ -130,7 +130,7 @@ export function planBuild(s: State) {
     if (!dorr) continue;
     const { ox, oy } = dorr;
     const same = antalLika(s, u.fn, w, h);
-    const hus: Hus = { id: (s.nextBit ??= 1), namn: row.namnFor!(s, w, h, same, u.a), x: at.x, y: at.y, w: w + 2, h: h + 2, t: s.now, by: by.id, fn: u.fn, slag: u.a.slag, ag: u.a.ag };
+    const hus: Hus = { id: (s.nextBit ??= 1), namn: row.namnFor!(s, w, h, same, u.a), x: at.x, y: at.y, w: w + 2, h: h + 2, fn: u.fn, slag: u.a.slag, ag: u.a.ag };
     s.nextBit++;
     const golv = 'tra';
     for (let y = at.y; y < at.y + h + 2; y++) for (let x = at.x; x < at.x + w + 2; x++) {

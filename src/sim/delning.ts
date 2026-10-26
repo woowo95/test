@@ -9,7 +9,7 @@ import { rikedom } from './varde';
 import { State } from './typer';
 import { balans } from './balans';
 
-export interface Delning { rik: number; andel: number }
+export interface Delning { andel: number }
 
 // Balanstalet (regel 8)
 export const DELNING = balans('delning', {
@@ -20,4 +20,4 @@ export const DELNING = balans('delning', {
 const andelOf = (rik: number) => clamp(1 - rik / DELNING.rik, 0, 1);
 
 // varje timme (steg.ts) och när en by skapas
-export function stepDelning(s: State) { const rik = rikedom(s); s.delning = { rik, andel: andelOf(rik) }; }
+export function stepDelning(s: State) { s.delning = { andel: andelOf(rikedom(s)) }; }
