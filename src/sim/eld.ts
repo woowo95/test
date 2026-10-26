@@ -2,7 +2,7 @@ import { addTo, amountOf, dropLoad, fetchSpot, isCarrying, takeLimit, use } from
 import { getable, takeMaterial } from './behov';
 import { Del, addDel } from './egendom';
 import { coldOf, temperature } from './vader';
-import { ageOf, count, isSick, log, ovning, stat, think } from './folk';
+import { ALDER, KROPP, ageOf, count, isSick, log, ovning, stat, think } from './folk';
 import { flintFactor, stoneDist, takeFrom } from './fynd';
 import { observe } from './minne';
 import { getMap } from './karta';
@@ -145,7 +145,7 @@ export function fetchFuel(s: State, p: Person, why: string, fran?: Person) {
 }
 const awake = (s: State, p: Person, minAge: number) => {
   const t = p.task;
-  return ageOf(p, s.now) >= minAge && !isSick(p, s.now) && p.health >= 0.4 &&
+  return ageOf(p, s.now) >= minAge && !isSick(p, s.now) && p.health >= KROPP.svag &&
     (!t || (t.act !== 'sova' && !(t.phase === 'back' && t.carry > 0) && !t.items));
 };
 export function stepFire(s: State, dtSec: number, ppl: Person[]) {
@@ -173,7 +173,7 @@ export function stepFire(s: State, dtSec: number, ppl: Person[]) {
   const cands: { p: Person; w: Wish }[] = [];
   let top: { p: Person; w: Wish } | undefined;
   for (const p of ppl) {
-    if (!awake(s, p, 8)) continue;
+    if (!awake(s, p, ALDER.hjalper)) continue;
     const c = { p, w: fireWish(s, p, vc) };
     cands.push(c);
     if (!top || c.w.v > top.w.v) top = c;
@@ -192,7 +192,7 @@ export function stepFire(s: State, dtSec: number, ppl: Person[]) {
   }
   // tändning: när elden är släckt och någon vill ha eld försöker en person i taget
   if (!f.lit && !emberOn(s) && canLight(s) && f.want >= h.maxFuel * 0.1 && !ppl.some(p => p.task?.act === 'tanda')) {
-    const ok = cands.filter(c => ageOf(c.p, now) >= 12 && c.w.v >= h.maxFuel * 0.05 && canLight(s, c.p))
+    const ok = cands.filter(c => ageOf(c.p, now) >= ALDER.ansvar && c.w.v >= h.maxFuel * 0.05 && canLight(s, c.p))
       .sort((a, b) => (b.p.skill.elda + stat(b.p, 'flit', now) / 2 + rnd(s, 'eld') * 3) - (a.p.skill.elda + stat(a.p, 'flit', now) / 2 + rnd(s, 'eld') * 3));
     const c = ok[0];
     if (c) assign(s, c.p, 'tanda', m.fire.x + 0.5 + (rnd(s, 'eld') - 0.5) * 1.2, m.fire.y + 1.3, 3 * HOUR, `Vill ha eld. ${c.w.why}`);

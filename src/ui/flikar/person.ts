@@ -1,4 +1,4 @@
-import { Act, Lardom, Person, KUNSKAP_NAMES, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, TEKNIK, BYN, Ting, ageOf, alive, byId, childrenOf, heldBy, ownedBy, ownedStock, sakNamn, tingNamn, STACK, describe, duty, habitShare, habitTotal, moodOf, REL, relKey, stat, taskName, timeLabel } from '../../sim';
+import { Act, Lardom, Person, KUNSKAP_NAMES, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, TEKNIK, BYN, Ting, ageOf, alive, byId, childrenOf, heldBy, ownedBy, ownedStock, sakNamn, tingNamn, STACK, describe, duty, habitShare, habitTotal, KROPP, moodOf, REL, relKey, stat, taskName, timeLabel } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { bar, cap, carryTxt, durTxt, esc, hex, moodWord, pLink, relWord, sickNow, trend } from '../hjalp';
 import { s, ui } from '../lage';
@@ -22,7 +22,7 @@ export const person: Flik = {
         <dt>Humör</dt><dd>${bar(moodOf(p, now), '', trend(p, 'humor', moodOf(p, now)))}<span>${moodWord(moodOf(p, now))}</span></dd>
         <dt>Mättnad</dt><dd>${bar(p.hunger, '', trend(p, 'hunger', p.hunger))}</dd><dt>Vila</dt><dd>${bar(p.rest, '', trend(p, 'rest', p.rest))}</dd>
         <dt>Gemenskap</dt><dd>${bar(p.social, '', trend(p, 'social', p.social))}</dd><dt>Hälsa</dt><dd>${bar(p.health, p.health < 0.5 ? 'low' : '', trend(p, 'health', p.health))}</dd>
-        <dt>Värme</dt><dd>${bar(p.warm, p.warm < 0.4 ? 'low' : '', trend(p, 'warm', p.warm))}</dd><dt>Toa</dt><dd>${bar(p.toa, p.toa < 0.25 ? 'low' : '', trend(p, 'toa', p.toa))}</dd></dl>
+        <dt>Värme</dt><dd>${bar(p.warm, p.warm < KROPP.kallt ? 'low' : '', trend(p, 'warm', p.warm))}</dd><dt>Toa</dt><dd>${bar(p.toa, p.toa < KROPP.toaBehov ? 'low' : '', trend(p, 'toa', p.toa))}</dd></dl>
         ${p.fiske ? `<h3>Fiske med händerna</h3><p class="muted">${p.fiske.f} försök, ${p.fiske.n} napp, ${p.fiske.k} ${p.fiske.k === 1 ? 'abborre' : 'abborrar'}</p>` : ''}
         ${a >= 8 ? willHtml(p) : ''}
         ${gearHtml(p)}

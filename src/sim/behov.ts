@@ -1,7 +1,7 @@
 import { State, Person, HOUR, DAY, GREN } from './typer';
 import { FOOD, REDSKAP_SLAG, SAKER, SAK_LIST, isTool } from './saker';
 import { actsOf, usesTool } from './handlingar';
-import { REL, ageOf, alive, byId, count, getRel, isKin, isParent, living, log, stat, think } from './folk';
+import { ALDER, KROPP, REL, ageOf, alive, byId, count, getRel, isKin, isParent, living, log, stat, think } from './folk';
 import { chance, clamp, pickViktat, rnd } from './slump';
 import { Ting, tingOf } from './agande';
 import { BYN, Del, addDel, sumOf } from './egendom';
@@ -40,7 +40,7 @@ const FRAGA_R = 8; // så nära (rutor) måste man vara för att be någon om n�
 const FRAGA_TAKT = 1 / (30 * 60); // så ofta (per sekund) den som saknar något ber någon i närheten
 
 // ---------- mat ----------
-const portionOf = (p: Person, now: number) => ageOf(p, now) < 10 ? 0.6 : 1;
+const portionOf = (p: Person, now: number) => ageOf(p, now) < ALDER.matBarn ? KROPP.portionBarn : 1;
 // en hel portion, eller det som finns kvar. Maten under halva skicket mättar sämre, under en fjärdedel kan man bli sjuk
 function eat(s: State, p: Person, fran?: Person) {
   const now = s.now, full = portionOf(p, now);
@@ -57,7 +57,7 @@ function eat(s: State, p: Person, fran?: Person) {
 export const MAT: Behov = {
   id: 'mat', namn: 'mat', slag: FOOD, minst: 0.3, mangd: portionOf,
   get kvar() { return EKONOMI.matPerDygn; }, // det man själv äter på ett dygn (läses först när det behövs: ekonomi.ts och behov.ts importerar varandra via lager.ts)
-  behover: (_s, p) => p.hunger < 0.45, genast: true,
+  behover: (_s, p) => p.hunger < KROPP.hungrig, genast: true,
   fara: (_s, p) => p.hunger <= 0 ? 1 - p.health : 0, // man svälter när hungern är slut, och hälsan sjunker
   anvand: eat,
 };
@@ -70,10 +70,10 @@ export const VED: Behov = {
   id: 'ved', namn: 'ved', slag: ['ved', 'grenar'], per: { grenar: GREN }, minst: 0.5,
   mangd: () => 1, // en famn
   kvar: 3, // så mycket ved som brinner på sex timmar
-  behover: (s, p) => p.warm < 0.35 && (s.fire.lit || emberOn(s)) && s.fire.fuel < fireWant(s),
-  fara: (_s, p) => p.warm < 0.12 ? 1 - p.health : 0, // man fryser ihjäl när kroppsvärmen är nästan slut, och hälsan sjunker
+  behover: (s, p) => p.warm < KROPP.fryser && (s.fire.lit || emberOn(s)) && s.fire.fuel < fireWant(s),
+  fara: (_s, p) => p.warm < KROPP.frysdod ? 1 - p.health : 0, // man fryser ihjäl när kroppsvärmen är nästan slut, och hälsan sjunker
   // stölden: p hämtar den andras ved till elden (steg.ts räknar den när den tas). Annars hämtar den som eld.ts väljer
-  anvand: (s, p, fran) => { if (fran && ageOf(p, s.now) >= 8 && p.task?.act !== 'sova') fetchFuel(s, p, 'Fryser och tar någon annans ved till elden', fran); return 0; },
+  anvand: (s, p, fran) => { if (fran && ageOf(p, s.now) >= ALDER.hjalper && p.task?.act !== 'sova') fetchFuel(s, p, 'Fryser och tar någon annans ved till elden', fran); return 0; },
 };
 const BEHOV: Behov[] = [MAT, VED];
 

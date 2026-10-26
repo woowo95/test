@@ -1,4 +1,4 @@
-import { Person, ageOf, alive, byId, living, moodOf, taskName } from '../sim';
+import { KROPP, Person, ageOf, alive, byId, living, moodOf, taskName } from '../sim';
 import { $, bar, esc, hex, trend } from './hjalp';
 import { s, ui } from './lage';
 
@@ -24,7 +24,7 @@ export function renderPorts() {
       portEls.set(p.id, el);
     }
     if (row.children[k] !== el) row.insertBefore(el, row.children[k] ?? null);
-    const low = p.hunger < 0.25 || p.health < 0.4 || p.warm < 0.3 || moodOf(p, s.now) < 0.25;
+    const low = p.hunger < 0.25 || p.health < KROPP.svag || p.warm < 0.3 || moodOf(p, s.now) < 0.25;
     el.classList.toggle('low', low);
     el.setAttribute('aria-pressed', String(ui.selected === p.id));
     (el.children[0] as HTMLElement).style.background = hex(p);
@@ -43,7 +43,7 @@ function showTip(id: number) {
   tip.innerHTML = `<h4>${esc(p.name)}</h4><p class="op">${p.sex === 'k' ? 'Kvinna' : 'Man'}, ${Math.floor(ageOf(p, s.now))} år${p.tag ? ' · ' + esc(p.tag) : ''}</p>
     <p>${shortAct(p)}</p>${p.task?.why ? `<p class="op">${esc(p.task.why)}</p>` : ''}
     <dl><dt>Humör</dt><dd>${bar(m, m < 0.35 ? 'low' : '', trend(p, 'humor', m))}</dd><dt>Mättnad</dt><dd>${bar(p.hunger, p.hunger < 0.25 ? 'low' : '', trend(p, 'hunger', p.hunger))}</dd>
-    <dt>Vila</dt><dd>${bar(p.rest, '', trend(p, 'rest', p.rest))}</dd><dt>Hälsa</dt><dd>${bar(p.health, p.health < 0.5 ? 'low' : '', trend(p, 'health', p.health))}</dd><dt>Värme</dt><dd>${bar(p.warm, p.warm < 0.4 ? 'low' : '', trend(p, 'warm', p.warm))}</dd></dl>
+    <dt>Vila</dt><dd>${bar(p.rest, '', trend(p, 'rest', p.rest))}</dd><dt>Hälsa</dt><dd>${bar(p.health, p.health < 0.5 ? 'low' : '', trend(p, 'health', p.health))}</dd><dt>Värme</dt><dd>${bar(p.warm, p.warm < KROPP.kallt ? 'low' : '', trend(p, 'warm', p.warm))}</dd></dl>
     <p class="op">Klicka för att välja, dubbelklicka för att följa.</p>`;
   const wrap = $('ports').parentElement!.getBoundingClientRect(), r = el.getBoundingClientRect();
   tip.hidden = false;

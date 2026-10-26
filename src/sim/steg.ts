@@ -9,7 +9,7 @@ import { arbetsformaga, foodDays, workRate } from './ekonomi';
 import { TRY_SEC, growFynd, handFish, packFynd, pickMushrooms, richness, takeFrom } from './fynd';
 import { coldOf, temperature } from './vader';
 import { addFuel, canLight, fireWant, forageItems, fuelFor, hearthOf, heatAt, igniterOf, stepFire, takeCoal, takeFuel, tryLight } from './eld';
-import { ageOf, alive, byId, count, forstaGang, isSick, living, log, ovning, stat, think } from './folk';
+import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, isSick, living, log, ovning, stat, think } from './folk';
 import { getMap } from './karta';
 import { barnMat, birth, birthWish, die, regulate } from './liv';
 import { WEAR, groundOf, growGround, packGround, tileOf } from './mark';
@@ -29,12 +29,30 @@ import { avail, takeForHouse, buildJob, deliver as deliverBit, lacks, needOf, no
 import { MATERIAL, bitById, gridOf, roomAt, shelterOf } from './byggnad';
 import { histParts, historikSteg, joinHist } from './historik';
 import { stepDelning } from './delning';
+import { balans } from './balans';
 
 // Simuleringen går i slag om fem minuter (BEAT), i spelet och vid ikappräkning likadant. Inom ett slag går tiden åt
 // till det som händer i tur och ordning (taskStep). Arbetet görs i bitar om högst BIT sekunder, och man bär aldrig mer
-// än en tredjedel av vad man orkar från arbetet (WORK_LOAD). GANG = hur mycket ett steg nöter marken (WEAR per ruta)
+// än en tredjedel av vad man orkar från arbetet (STEG.borda). STEG.markNot = hur mycket ett steg nöter marken (WEAR per ruta)
 export const BEAT = 300;
-const BIT = 60, WORK_LOAD = 1 / 3, GANG = 0.03;
+const BIT = 60;
+// Balanstalen (regel 8). Kroppens gränser och takter (KROPP) och åldrarna (ALDER) står i folk.ts, eftersom val.ts och behov.ts läser dem
+const STEG = balans('steg', {
+  // att gå (rutor per sekund) och nöta marken
+  fart: 1.6, // i vanliga fall
+  fartBarn: 0.9, // under ALDER.gangBarn
+  fartGammal: 1, // över ALDER.gangGammal
+  markNot: 0.03, // hur mycket ett steg nöter marken (WEAR per ruta)
+  vandraNot: 0.08, // ... och när man rör sig på platsen (gånger vandra.v i handlingens rad och tiden)
+  borda: 1 / 3, // man bär aldrig mer än så stor del av vad man orkar från arbetet
+  // graviditet
+  dragtid: 0.75, // dygn som en graviditet varar
+  mellanFodslar: 1.6, // dygn som en kvinna väntar efter en födsel innan hon kan bli gravid igen
+  matDygn: 4, // så många dygns mat i förrådet ger full vilja att skaffa barn (mindre ger mindre) ...
+  matMin: 0.15, // ... men aldrig mindre än denna del
+  sedBarn: 0.2, // så mycket mer (eller mindre) vilja ger seden Barn fullt ut
+  chans: 0.3, // chansen per dygn att bli gravid, gånger viljan
+});
 
 // spelet ritar folk där de är medan slaget visas: var och ens väg under det senaste slaget, som
 // [tid, x, y, tid, x, y, ...]. Bara för att visa; simuleringen läser det aldrig
@@ -64,8 +82,8 @@ const KLAR: Partial<Record<Act, Krok>> = {
     if (k) { k.ved -= toWalls(s, Math.floor(k.x), Math.floor(k.y), k.ved, t.ref, p); if (k.ved <= 1e-6) s.stockar = stocks(s).filter(q => q !== k); }
   },
   promenad: (s, p, t) => { lookAround(s, p, t.tx, t.ty); think(p, 'Tog en skön promenad', 0.06, s.now, 6 * HOUR); },
-  bada: (s, p) => { p.warm = Math.max(0.4, p.warm - 0.1); think(p, 'Badade i sjön', 0.08, s.now, 6 * HOUR); },
-  strand: (s, p) => { p.rest = Math.min(1, p.rest + 0.05); think(p, 'Satt vid vattnet och fick ro', 0.06, s.now, 6 * HOUR); },
+  bada: (s, p) => { p.warm = Math.max(KROPP.badMin, p.warm - KROPP.badKyla); think(p, 'Badade i sjön', 0.08, s.now, 6 * HOUR); },
+  strand: (s, p) => { p.rest = Math.min(1, p.rest + KROPP.strandVila); think(p, 'Satt vid vattnet och fick ro', 0.06, s.now, 6 * HOUR); },
 };
 // redskap som görs och träd som fälls: arbetet sparas om det avbryts (paborjat.ts)
 for (const a of GOR_ACTS) { MEDAN[a] = workHalf; KLAR[a] = (s, p, t) => finishHalf(s, p, t); }
@@ -142,43 +160,43 @@ export function step(s: State, dtSec: number, events?: TalkEvent[]) {
 // (sämre ju fler öppningar)
 function needsStep(s: State, p: Person, a: number, dtSec: number, coldRate: number, fh: ReturnType<typeof hearthOf>, inRum: Map<number, number>) {
   const now = s.now;
-  p.hunger = clamp(p.hunger - dtSec / (16 * HOUR_S) * (a < 10 ? 0.7 : 1), 0, 1);
+  p.hunger = clamp(p.hunger - dtSec / (KROPP.hungerTim * HOUR_S) * (a < ALDER.matBarn ? KROPP.hungerBarn : 1), 0, 1);
   const pd = p.task && ACTS[p.task.act];
   const working = pd && pd.tungt && p.task!.phase === 'do';
   const resting = pd && pd.vila;
-  p.rest = clamp(p.rest + dtSec / HOUR_S * (resting ? 0.09 : working ? -0.06 : -0.03), 0, 1);
+  p.rest = clamp(p.rest + dtSec / HOUR_S * (resting ? KROPP.restVila : working ? KROPP.restArbete : KROPP.restVaken), 0, 1);
   const heat = heatAt(s, p.x, p.y), rum = roomAt(s, p.x, p.y), shelter = rum ? shelterOf(s, rum, inRum.get(rum.id) ?? 1) : 0;
-  p.warm = clamp(p.warm + dtSec / HOUR_S * (heat * 2 - coldRate * (1 - shelter) + (coldRate === 0 ? 0.5 : 0)), 0, 1);
+  p.warm = clamp(p.warm + dtSec / HOUR_S * (heat * KROPP.eldVarme - coldRate * (1 - shelter) + (coldRate === 0 ? KROPP.mildVarme : 0)), 0, 1);
   if (rum && resting && p.task!.phase === 'do' && pd.plats === 'sang') { // man vilar bättre under tak, och bäst på ett golv
     const m0 = gridOf(s).at.get(tileOf(p.x, p.y))?.m, soft = m0 === 'ho' || m0 === 'tra';
-    p.rest = clamp(p.rest + dtSec / HOUR_S * (soft ? 0.03 : 0.02), 0, 1);
+    p.rest = clamp(p.rest + dtSec / HOUR_S * (soft ? KROPP.restGolv : KROPP.restTak), 0, 1);
     if (p.task!.act === 'sova') think(p, soft ? 'Sov gott på golvet i huset' : 'Sov under tak', soft ? 0.07 : 0.05, now, 8 * HOUR);
   }
-  if (heat > 0.15) {
+  if (heat > KROPP.eldNara) {
     think(p, 'Värms av elden', fh.comfort, now, HOUR);
     p.rest = clamp(p.rest + dtSec / HOUR_S * fh.comfort * heat, 0, 1); // avslappning vid elden
   }
-  if (p.warm < 0.35) think(p, 'Fryser', -0.12, now, HOUR);
-  p.social = clamp(p.social - dtSec / (18 * HOUR_S), 0, 1);
+  if (p.warm < KROPP.fryser) think(p, 'Fryser', -0.12, now, HOUR);
+  p.social = clamp(p.social - dtSec / (KROPP.socialTim * HOUR_S), 0, 1);
   // toa: behovet växer på ungefär sju timmar, långsammare i sömnen
-  p.toa = clamp(p.toa - dtSec / (7 * HOUR_S) * (p.task?.act === 'sova' ? 0.5 : 1), 0, 1);
-  if (p.toa <= 0) { p.toa = 1; if (a >= 3) think(p, 'Kissade på sig', -0.12, now, 4 * HOUR); }
+  p.toa = clamp(p.toa - dtSec / (KROPP.toaTim * HOUR_S) * (p.task?.act === 'sova' ? KROPP.toaSomn : 1), 0, 1);
+  if (p.toa <= 0) { p.toa = 1; if (a >= ALDER.smabarn) think(p, 'Kissade på sig', -0.12, now, 4 * HOUR); }
 }
 
 // hälsa, sjukdom och död: svält, kyla, sjukdom, ålderdom och olyckor. true = personen dog
 function healthStep(s: State, p: Person, a: number, ai: number, dtSec: number) {
   const now = s.now;
-  if (p.hunger <= 0) { p.health -= dtSec / (5 * HOUR_S); if (rnd(s, 'halsa', p) < dtSec / 7200) think(p, 'Svälter', -0.25, now, 3 * HOUR); }
-  else if (p.warm < 0.12) p.health -= dtSec / (20 * HOUR_S);
-  else if (p.hunger > 0.3 && !isSick(p, now)) p.health = clamp(p.health + dtSec / (10 * HOUR_S), 0, 1);
-  if (isSick(p, now)) p.health -= dtSec / (40 * HOUR_S);
+  if (p.hunger <= 0) { p.health -= dtSec / (KROPP.svaltTim * HOUR_S); if (rnd(s, 'halsa', p) < dtSec / 7200) think(p, 'Svälter', -0.25, now, 3 * HOUR); }
+  else if (p.warm < KROPP.frysdod) p.health -= dtSec / (KROPP.frysTim * HOUR_S);
+  else if (p.hunger > KROPP.lakerMat && !isSick(p, now)) p.health = clamp(p.health + dtSec / (KROPP.lakerTim * HOUR_S), 0, 1);
+  if (isSick(p, now)) p.health -= dtSec / (KROPP.sjukTim * HOUR_S);
   if (!p.sickUntil || p.sickUntil < now) {
-    if (chance(s, (iIstiden(ai) ? ARSTID.sjukIstid : ARSTID.sjuk) / 86400, dtSec, 'halsa', p)) { const dur = (3 + rnd(s, 'halsa', p) * 8) * HOUR; p.sickUntil = now + dur; p.sickWhy = 'Sjuk'; if (dur > 8 * HOUR) log(s, `${p.name} blev svårt sjuk.`, 'world', [p.id]); }
+    if (chance(s, (iIstiden(ai) ? ARSTID.sjukIstid : ARSTID.sjuk) / 86400, dtSec, 'halsa', p)) { const dur = (KROPP.sjukMin + rnd(s, 'halsa', p) * KROPP.sjukSpann) * HOUR; p.sickUntil = now + dur; p.sickWhy = 'Sjuk'; if (dur > KROPP.svartSjuk * HOUR) log(s, `${p.name} blev svårt sjuk.`, 'world', [p.id]); }
   }
-  if (p.health <= 0) { die(s, p, p.hunger <= 0 ? 'av svält' : p.warm < 0.12 ? 'av kyla' : (p.poisonUntil ?? 0) > now ? 'av svampförgiftning' : 'av sjukdom'); return true; }
+  if (p.health <= 0) { die(s, p, p.hunger <= 0 ? 'av svält' : p.warm < KROPP.frysdod ? 'av kyla' : (p.poisonUntil ?? 0) > now ? 'av svampförgiftning' : 'av sjukdom'); return true; }
   // ålderdom och olyckor (Gompertz, per år = per dygn)
-  const q = 0.0015 + 0.00004 * Math.exp(0.105 * a) + (a < 5 ? 0.02 : 0);
-  if (chance(s, q / 86400, dtSec, 'halsa', p)) { die(s, p, a > 55 ? 'av ålderdom' : a < 5 ? 'av en barnsjukdom' : 'i en olycka'); if (a >= 5 && a <= 55) fearPlace(s, p, 'i en olycka'); return true; }
+  const q = KROPP.dodBas + KROPP.dodAlder * Math.exp(KROPP.dodTakt * a) + (a < ALDER.barnsjuk ? KROPP.dodBarn : 0);
+  if (chance(s, q / 86400, dtSec, 'halsa', p)) { die(s, p, a > ALDER.alderdom ? 'av ålderdom' : a < ALDER.barnsjuk ? 'av en barnsjukdom' : 'i en olycka'); if (a >= ALDER.barnsjuk && a <= ALDER.alderdom) fearPlace(s, p, 'i en olycka'); return true; }
   const pd = p.task && ACTS[p.task.act], fara = pd && pd.fara; // farligt arbete, som jakt
   if (fara && p.task!.phase === 'do' && chance(s, fara.risk * (1 - (pd.arbete ? p.skill[pd.arbete] : 0) / 25) / HOUR_S, dtSec, 'halsa', p)) { die(s, p, fara.text); fearPlace(s, p, fara.text); return true; }
   return false;
@@ -187,10 +205,10 @@ function healthStep(s: State, p: Person, a: number, ai: number, dtSec: number) {
 // graviditet: en kvinna med partner kan bli gravid; viljan styrs av hur många byn är, maten och sederna
 function pregnancy(s: State, p: Person, a: number, pop: number, dtSec: number) {
   const now = s.now;
-  if (p.pregnantSince !== undefined) { if (now - p.pregnantSince > 0.75 * DAY) birth(s, p); }
-  else if (p.sex === 'k' && p.partner !== undefined && a >= 17 && a <= 43 && (!p.lastBirth || now - p.lastBirth > 1.6 * DAY)) {
-    const f = birthWish(pop) * clamp(foodDays(s) / 4, 0.15, 1) * barnMat(s, pop) * (1 + 0.2 * s.seder.v.barn);
-    if (chance(s, 0.3 * f / 86400, dtSec, 'halsa', p)) { p.pregnantSince = now; p.pregnantBy = p.partner; }
+  if (p.pregnantSince !== undefined) { if (now - p.pregnantSince > STEG.dragtid * DAY) birth(s, p); }
+  else if (p.sex === 'k' && p.partner !== undefined && a >= ALDER.gravFran && a <= ALDER.gravTill && (!p.lastBirth || now - p.lastBirth > STEG.mellanFodslar * DAY)) {
+    const f = birthWish(pop) * clamp(foodDays(s) / STEG.matDygn, STEG.matMin, 1) * barnMat(s, pop) * (1 + STEG.sedBarn * s.seder.v.barn);
+    if (chance(s, STEG.chans * f / 86400, dtSec, 'halsa', p)) { p.pregnantSince = now; p.pregnantBy = p.partner; }
   }
 }
 
@@ -205,7 +223,7 @@ function taskStep(s: State, p: Person, a: number, t1: number, dtSec: number, lea
     const phaseFlip = t && t.dark !== !light && ACTS[t.act].dygn; // dag blev natt eller tvärtom
     if (t && t.phase === 'do' && t.until <= now) KLAR[t.act]?.(s, p, t, 0); // ett träd som fällts färdigt, en yxa som gjorts klar
     const lightDone = t?.act === 'tanda' && (s.fire.lit || !canLight(s, p));
-    const mustGo = t && p.toa < 0.08 && t.act !== 'toa' && a >= 3; // nöden avbryter det man håller på med
+    const mustGo = t && p.toa < KROPP.toaAvbryt && t.act !== 'toa' && a >= ALDER.smabarn; // nöden avbryter det man håller på med
     if (!t || (t.until <= now && t.phase !== 'back') || ((phaseFlip || mustGo) && t.phase !== 'back') || lightDone) {
       if (t && isCarrying(t) && t.act !== 'elda') { t.phase = 'back'; const d = dropSpot(s, homeKind(t)); t.tx = d.x + sida(p, 0.2); t.ty = d.y + sida(p, -0.2); }
       else chooseTask(s, p);
@@ -225,7 +243,7 @@ function taskStep(s: State, p: Person, a: number, t1: number, dtSec: number, lea
       if (d.arbete && p.task === tk && tk.phase === 'do') workStep(s, p, tk, used, a, learn);
       // (bygget kan just ha skickat iväg personen efter mer material)
       if (tk.phase === 'do' && d.hantverk) ovning(p, 'hantverk', used / HOUR_S * 0.1 * learn);
-      if (d.vandra) wear(groundOf(s), tileOf(tk.tx, tk.ty), WEAR * GANG * 0.08 * d.vandra.v * used); // man rör sig på platsen
+      if (d.vandra) wear(groundOf(s), tileOf(tk.tx, tk.ty), WEAR * STEG.markNot * STEG.vandraNot * d.vandra.v * used); // man rör sig på platsen
     }
     // vana: tiden räknas mot yrkestaggar
     addHabit(p, tk.act, Math.exp(-used * SEC / HABIT_FADE), used / HOUR_S);
@@ -262,21 +280,21 @@ function walk(s: State, p: Person, tk: Task, left: number, a: number) {
     if (!v && tk.phase === 'go' && pathFor(s, g, p.x, p.y, f.x + 0.5, f.y + 0.5)) { p.task = undefined; return { used: Math.min(left, BIT), framme: false }; }
     tk.path = v ?? [];
   }
-  const off = sida(p, 0.18), fart = a < 6 ? 0.9 : a > 65 ? 1 : 1.6, t0 = s.now;
+  const off = sida(p, 0.18), fart = a < ALDER.gangBarn ? STEG.fartBarn : a > ALDER.gangGammal ? STEG.fartGammal : STEG.fart, t0 = s.now;
   let budget = fart * left;
   const klocka = () => t0 + (fart * left - budget) / fart * SEC;
   while (tk.path && tk.path.length && budget > 0) {
     const i = tk.path[0], wx = (i % W) + 0.5 + off, wy = Math.floor(i / W) + 0.5 - off;
     const ci = tileOf(p.x, p.y), sp = speedAt(g, ci) || 1;
     const dx = wx - p.x, dy = wy - p.y, d = Math.hypot(dx, dy), can = budget * sp;
-    wear(g, ci, WEAR * GANG * Math.min(d, can));
+    wear(g, ci, WEAR * STEG.markNot * Math.min(d, can));
     if (d <= can) { p.x = wx; p.y = wy; tk.path.shift(); budget -= d / sp; spara(s, p, klocka()); }
     else { p.x += dx / d * can; p.y += dy / d * can; budget = 0; }
   }
   if (budget <= 0) return { used: left, framme: false };
   const ci = tileOf(p.x, p.y), spd = speedAt(g, ci) || 1;
   const dx = tk.tx - p.x, dy = tk.ty - p.y, d = Math.hypot(dx, dy), sp = budget * spd;
-  wear(g, ci, WEAR * GANG * Math.min(d, sp));
+  wear(g, ci, WEAR * STEG.markNot * Math.min(d, sp));
   if (d > sp) { p.x += dx / d * sp; p.y += dy / d * sp; return { used: left, framme: false }; }
   budget -= d / spd;
   tk.path = undefined; tk.pk = undefined;
@@ -379,7 +397,7 @@ function workStep(s: State, p: Person, tk: Task, dtSec: number, a: number, learn
   }
   // arbetet sker i turer: efter en stunds arbete (tur), en fångst eller när bördan är full bärs det hem, sedan fortsätter man
   tk.tur = (tk.tur ?? 0) + dtSec;
-  const full = load(tk) >= capacity(s, p) * WORK_LOAD, has = isCarrying(tk);
+  const full = load(tk) >= capacity(s, p) * STEG.borda, has = isCarrying(tk);
   if (full || (tk.lim !== undefined && tk.tur >= tk.lim) || (tk.act === 'fiske' && tk.carry > 0)) {
     if (has && tk.until > now + 2 * MIN) { tk.res = { x: tk.tx, y: tk.ty, until: tk.until }; tk.until = now; count(s, 'turer'); }
     else if (has && full) { tk.until = now; count(s, 'turer'); }

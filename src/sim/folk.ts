@@ -5,6 +5,78 @@ import { Act, DAY, LogEntry, Person, Rel, SKILLS, STATS, Skill, Stat, State } fr
 import { balans } from './balans';
 
 // ---------- balanstal (regel 8) ----------
+// Kroppen: mätarna hunger, rest, warm, social, toa och health går från 0 (slut) till 1 (full). Här står gränserna där folk
+// börjar bry sig om dem (val.ts väljer efter dem, steg.ts och behov.ts räknar med dem, gränssnittet visar dem) och takten
+// de ändras i (per timme om inget annat sägs). Lathet (lazy, 0 till 1, val.ts) höjer gränserna för grundbehoven
+export const KROPP = balans('kropp', {
+  // värme (warm)
+  frysdod: 0.12, // under detta fryser man ihjäl: hälsan sjunker och döden blir av kyla
+  farligt: 0.25, // under detta fryser man farligt och går till elden eller in i huset genast
+  fryser: 0.35, // under detta fryser man (en tanke), och vill ha ved på elden
+  kallt: 0.4, // under detta söker man värme (högre för den lata, latVarme); byn räknar hur många som fryser
+  latVarme: 0.15, // så mycket högre är gränsen kallt för den som är helt lat
+  badMin: 0.4, // ett bad kyler aldrig under detta ...
+  badKyla: 0.1, // ... men kyler så mycket
+  eldVarme: 2, // värme per timme från en full eld (gånger styrkan i närheten)
+  mildVarme: 0.5, // värme per timme när det inte är kallt ute
+  eldNara: 0.15, // värmen från elden över detta: man värms av den och vilar vid den
+  frysTim: 20, // timmar som frysdöden tar från full hälsa
+  // hunger
+  hungrig: 0.45, // under detta är man hungrig och äter
+  hungerTim: 16, // timmar från full mättnad till tom
+  hungerBarn: 0.7, // ett barn (matBarn) blir hungrigt så här mycket långsammare
+  portionBarn: 0.6, // ett barn äter så stor del av en portion
+  svaltTim: 5, // timmar som svälten tar från full hälsa
+  lakerMat: 0.3, // hälsan läker bara när mättnaden är över detta (och man inte är sjuk)
+  lakerTim: 10, // timmar som läkningen tar från ingen hälsa till full
+  // vila (rest)
+  trottDag: 0.15, // under detta är man trött på dagen ...
+  trottNatt: 0.12, // ... och på natten
+  latVila: 0.2, // så mycket högre är gränsen för den som är helt lat
+  restVila: 0.09, // vila per timme när man vilar
+  restArbete: -0.06, // ... när man arbetar hårt
+  restVaken: -0.03, // ... annars
+  restGolv: 0.03, // extra vila per timme när man sover inomhus på golv
+  restTak: 0.02, // ... på bar mark under tak
+  strandVila: 0.05, // att sitta vid vattnet ger så mycket vila
+  // umgänge (social) och toa
+  socialTim: 18, // timmar från fullt umgänge till tomt
+  toaTim: 7, // timmar från tom till full toa-nöd
+  toaSomn: 0.5, // i sömnen går det så här mycket långsammare
+  toaGenast: 0.12, // under detta måste man gå på toa genast
+  toaBehov: 0.25, // under detta behöver man gå på toa (högre för den lata, latToa)
+  latToa: 0.1, // så mycket högre är gränsen för den som är helt lat
+  toaAvbryt: 0.08, // under detta avbryter nöden det man håller på med
+  // hälsa (health)
+  svag: 0.4, // under detta är man för svag för att orka något
+  sjukTim: 40, // timmar som sjukdomen tar från full hälsa
+  sjukMin: 3, // en sjukdom varar minst så många timmar ...
+  sjukSpann: 8, // ... och upp till så många timmar till
+  svartSjuk: 8, // en sjukdom som varar längre än så här loggas som svår
+  // risken per dygn att dö av olycka eller ålder (Gompertz): dodBas + dodAlder * e^(dodTakt * ålder), dodBarn extra för små barn
+  dodBas: 0.0015,
+  dodAlder: 0.00004,
+  dodTakt: 0.105,
+  dodBarn: 0.02,
+});
+// Åldrar (år i spelet, alltså dygn) som styr vad man får och orkar göra
+export const ALDER = balans('alder', {
+  smabarn: 3, // under detta är man ett litet barn: sover under dagen och går inte själv på toa
+  barnsjuk: 5, // under detta dör man lättare, och döden räknas som en barnsjukdom
+  gangBarn: 6, // under detta går man långsammare
+  hjalper: 8, // från detta hjälper man till (hämtar ved åt elden); yngre leker
+  matBarn: 10, // under detta äter man mindre och blir hungrig långsammare
+  rensar: 10, // från detta rensar man fisk
+  ansvar: 12, // från detta tänder man elden, hämtar kol och bär in saker i mörkret
+  vuxen: 14, // från detta arbetar man för byn; yngre hjälper bara till eller leker
+  vaktFran: 16, // från detta kan man hålla vakt ...
+  vaktTill: 60, // ... och under detta
+  gravFran: 17, // en kvinna kan bli gravid från detta ...
+  gravTill: 43, // ... och till detta
+  alderdom: 55, // över detta räknas döden som ålderdom, annars som olycka
+  gangGammal: 65, // över detta går man långsammare
+  sovGammal: 68, // över detta sover man ofta på natten
+});
 // Relationerna: hur mycket två tycker om varandra (op, från -100 till 100) avgör vad de gör för varandra. Gränserna läses av
 // samtal.ts, behov.ts, liv.ts och gränssnittet (orden Ovän, Ogillar, Bekant, Vän och Nära vän). Jämförelserna (< eller >)
 // står kvar i koden som de var: osams är under, lånar ut är över
