@@ -45,8 +45,18 @@ export function zonesOf(s: State): Zone[] {
   return s.lagren;
 }
 export const zoneOf = (s: State) => zonesOf(s)[0];
-export const zoneAt = (s: State, x: number, y: number) => zonesOf(s).findIndex(z => inZone(z, x, y));
-export const isStored = (s: State, x: number, y: number) => zonesOf(s).some(z => nearZone(z, x, y, 2));
+// lagerplatsen rutan ligger i (-1 = ingen), och om den hör till förrådet (i en lagerplats eller precis bredvid).
+// Frågas för varje stack, så slingor utan closure
+export function zoneAt(s: State, x: number, y: number) {
+  const zs = zonesOf(s);
+  for (let i = 0; i < zs.length; i++) if (inZone(zs[i], x, y)) return i;
+  return -1;
+}
+export function isStored(s: State, x: number, y: number) {
+  const zs = zonesOf(s);
+  for (let i = 0; i < zs.length; i++) if (nearZone(zs[i], x, y, 2)) return true;
+  return false;
+}
 function stacksOf(s: State): Stack[] {
   if (!s.stackar) {
     s.stackar = [];
@@ -58,14 +68,14 @@ function stacksOf(s: State): Stack[] {
 const tidy = (s: State) => { s.stackar = stacksOf(s).filter(a => a.n > 1e-6 || (a.dold ?? 0) > 1e-6); changed(s); };
 
 // ---------- summorna ----------
-// Summorna räknas om när en stack ändrats. Allt som ändrar en stack anropar changed (bygg.ts när ett hus flyttar en stack)
-const ver = new WeakMap<State, number>();
-export const changed = (s: State) => { ver.set(s, (ver.get(s) ?? 0) + 1); };
-interface Summa { st: Stack[]; v: number; n: Record<string, number>; w: Record<string, number>; ag: Record<string, Del> }
+// Summorna räknas om när en stack ändrats. Allt som ändrar en stack anropar changed (bygg.ts när ett hus flyttar en stack),
+// som glömmer summorna
+export const changed = (s: State) => { summor.delete(s); };
+interface Summa { st: Stack[]; n: Record<string, number>; w: Record<string, number>; ag: Record<string, Del> }
 const summor = new WeakMap<State, Summa>();
 function summa(s: State) {
-  const st = stacksOf(s), v = ver.get(s) ?? 0, c = summor.get(s);
-  if (c && c.st === st && c.v === v) return c;
+  const st = stacksOf(s), c = summor.get(s);
+  if (c && c.st === st) return c;
   const n: Record<string, number> = {}, w: Record<string, number> = {}, ag: Record<string, Del> = {};
   for (const a of st) {
     if (!isStored(s, a.x, a.y)) continue;
@@ -73,7 +83,7 @@ function summa(s: State) {
     if (a.dold) { const d = DOLD_I[a.k]; n[d] = (n[d] ?? 0) + a.dold; }
     if (a.ag) addDel(ag[a.k] ??= {}, a.ag);
   }
-  const ny = { st, v, n, w, ag };
+  const ny = { st, n, w, ag };
   summor.set(s, ny);
   return ny;
 }
@@ -193,9 +203,16 @@ function ringTiles(s: State, z: Zone) {
   return out;
 }
 const key = (x: number, y: number) => y * W + x;
-const occupancy = (s: State) => { const m = new Map<number, Stack>(); for (const a of things(s)) if (isStored(s, a.x, a.y)) m.set(key(a.x, a.y), a); return m; };
 // redskapen som ligger på en ruta (inte i någons hand eller börda)
-const lying = (s: State) => tingOf(s).filter(t => t.x !== undefined && t.hos === undefined && t.lass === undefined);
+const ligger = (t: Ting) => t.x !== undefined && t.hos === undefined && t.lass === undefined;
+const lying = (s: State) => tingOf(s).filter(ligger);
+// det som ligger i förrådet, per ruta: stackarna och sedan redskapen (det sista på en ruta gäller, som i things)
+function occupancy(s: State) {
+  const m = new Map<number, Stack>();
+  for (const a of stacksOf(s)) if (isStored(s, a.x, a.y)) m.set(key(a.x, a.y), a);
+  for (const t of tingOf(s)) if (ligger(t) && isStored(s, t.x!, t.y!)) m.set(key(t.x!, t.y!), asStack(t));
+  return m;
+}
 const asStack = (t: Ting): Stack => ({ k: t.k, n: t.c, c: t.c, x: t.x!, y: t.y!, ag: t.agare !== BYN ? { [t.agare]: t.c } : undefined, gor: t.halv?.gor });
 // allt som ligger på marken och i förrådet: stackarna och redskapen
 const things = (s: State): Stack[] => [...stacksOf(s), ...lying(s).map(asStack)];
@@ -244,7 +261,11 @@ export const fetchSpot = (s: State, k: string) => {
   return a ? { x: a.x + 0.5, y: a.y + 0.5 } : dropSpot(s, k);
 };
 // stackarna av ett slag i förrådet, sämst skick först
-const stored = (s: State, k: string) => stacksOf(s).filter(a => a.k === k && isStored(s, a.x, a.y)).sort((a, b) => condOf(a) - condOf(b));
+function stored(s: State, k: string) {
+  const ut: Stack[] = [];
+  for (const a of stacksOf(s)) if (a.k === k && isStored(s, a.x, a.y)) ut.push(a);
+  return ut.sort((a, b) => condOf(a) - condOf(b));
+}
 
 // ---------- lägga i och ta ur ----------
 // lägg n av ett slag med skicket c i förrådet: på rutan at om det går, annars på bästa lediga plats. ag = vems det är
@@ -253,22 +274,22 @@ function place(s: State, k: string, n: number, c: number, ag?: Del, at?: { x: nu
   if (n <= 1e-12) return;
   const host = SAKER[k]?.i;
   if (host) { hide(s, host, n, at); return; }
-  const st = stacksOf(s), max = rutaOf(k), tot = n;
-  const add = (a: Stack, v: number) => addToStack(s, a, v, c, ag, v / tot);
+  const st = stacksOf(s), max = rutaOf(k), tot = n; // varje del får v / tot av ägarandelarna ag
+  // det som ligger byggs en gång; en ny stack hamnar alltid på en tom ruta i förrådet och läggs till efter push
+  const occ = occupancy(s);
   for (let g = 0; n > 1e-9 && g < 60; g++) {
-    const occ = occupancy(s);
     const sp = at && isStored(s, at.x, at.y) && usable(s, at.x, at.y) && roomIn(occ.get(key(at.x, at.y)), k) ? at : zoneSpot(s, k, -Infinity, occ) ?? besideSpot(s, k, occ);
     at = undefined;
     const a = occ.get(key(sp.x, sp.y));
     const v = !a ? Math.min(n, max) : roomIn(a, k) ? Math.min(n, max - a.n) : 0;
     if (!v) break;
-    if (!a) { const ny: Stack = { k, n: 0, c, x: sp.x, y: sp.y }; st.push(ny); add(ny, v); } else add(a, v);
+    if (!a) { const ny: Stack = { k, n: 0, c, x: sp.x, y: sp.y }; st.push(ny); occ.set(key(sp.x, sp.y), ny); addToStack(s, ny, v, c, ag, v / tot); } else addToStack(s, a, v, c, ag, v / tot);
     n -= v;
   }
   if (n > 1e-9) { // ingen plats alls
     const a = stored(s, k).sort((a, b) => a.n - b.n)[0];
-    if (a) add(a, n);
-    else { const z = zonesOf(s)[0], ny: Stack = { k, n: 0, c, x: z.x, y: z.y }; st.push(ny); add(ny, n); }
+    if (a) addToStack(s, a, n, c, ag, n / tot);
+    else { const z = zonesOf(s)[0], ny: Stack = { k, n: 0, c, x: z.x, y: z.y }; st.push(ny); addToStack(s, ny, n, c, ag, n / tot); }
   }
   changed(s);
 }

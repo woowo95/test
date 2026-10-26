@@ -15,8 +15,8 @@ import { byId, isKin } from './folk';
 // Utom för maten ändrar ägandet ännu inget i vad folk gör; det visar bara vems det är.
 export const BYN = 0;
 export type Del = Record<string, number>; // ägare (id) → mängd. Byn står aldrig med: det som inte är någons är byns
-export const sumOf = (d?: Del) => { let n = 0; for (const o in d ?? {}) n += d![o]; return n; };
-export function addDel(a: Del, b: Del | undefined, f = 1) { for (const o in b ?? {}) a[o] = (a[o] ?? 0) + b![o] * f; return a; }
+export function sumOf(d?: Del) { let n = 0; if (d) for (const o in d) n += d[o]; return n; }
+export function addDel(a: Del, b: Del | undefined, f = 1) { if (b) for (const o in b) a[o] = (a[o] ?? 0) + b[o] * f; return a; }
 
 // n av ett slag ska tas av p ur andelarna shares (byns del under BYN). common = till byns eld eller hus.
 // fran = det tas av den personens (stöld). Ger hur mycket som tas av varje ägare, i den ordning man tar
