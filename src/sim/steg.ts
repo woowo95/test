@@ -117,6 +117,7 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
     growGround(s, 1, ai); growFynd(s, 1, ai); forget(s, 1); rotStumps(s); tidyStore(s);
     wearBuild(s, 1, ai); stepByggnader(s); planBuild(s); stepPaborjat(s);
     historikSteg(s); // nyckeltalen till byns historik (läses inte av simuleringen)
+    compact(s); // här och inte i sparningen, så att alla lägen städar vid samma tid
   }
 
   const social: Person[] = [];
@@ -468,11 +469,14 @@ export const joinParts = (delar: string[]) => {
   return JSON.stringify(ut);
 };
 
-// rensa gammal historik så att sparfilen hålls liten
-export function compact(s: State) {
-  const gone = s.people.filter(p => !alive(p)).sort((a, b) => (b.died ?? b.left ?? 0) - (a.died ?? a.left ?? 0));
-  if (gone.length > 120) {
-    const drop = new Set(gone.slice(120).map(p => p.id));
+// varje timme (timblocket ovan): de döda och utflyttade utöver de 120 senaste och relationer mellan två som inte lever
+// tas bort, så att byn och sparfilen hålls små. Sparningen bara läser byn
+const MINNS_DODA = 120;
+function compact(s: State) {
+  let n = 0; for (const p of s.people) if (!alive(p)) n++;
+  if (n > MINNS_DODA) {
+    const gone = s.people.filter(p => !alive(p)).sort((a, b) => (b.died ?? b.left ?? 0) - (a.died ?? a.left ?? 0));
+    const drop = new Set(gone.slice(MINNS_DODA).map(p => p.id));
     s.people = s.people.filter(p => !drop.has(p.id));
   }
   const ids = new Set(s.people.filter(alive).map(p => p.id));

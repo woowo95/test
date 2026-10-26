@@ -349,7 +349,17 @@ SCENARIER.sparning = {
     migrate(gammal);
     const uppgr = gammal.v === SPARVERSION && !['fynd', 'wx', 'wy', 'hold', 'stint'].some(k => k in gp.task) && !('levande' in gp.rngs);
     const igen = JSON.stringify(gammal); migrate(gammal);
+    // sparningen bara läser: en by som sparas varje timme som gränssnittet gör (serialize och serializeParts) blir samma
+    // by som en som aldrig sparas. Två döda med en relation: den städas bort i timblocket (compact, steg.ts) i båda
+    const sparaSomUI = (v: State) => { serialize(v); serializeParts(v); };
+    const a = createState(8, START), b = createState(8, START);
+    for (const v of [a, b]) { const [x, y] = living(v); getRel(v, x, y).op = 30; die(v, x, 'olycka'); die(v, y, 'olycka'); }
+    const relDoda = Object.keys(a.rels).length;
+    for (let h = 0; h < 3 * 24; h++) { kor(a, 1); kor(b, 1); sparaSomUI(b); }
+    const sparLika = serialize(a) === serialize(b), dodaStadat = Object.keys(a.rels).every(k => k.split('-').map(Number).some(id => living(a).some(q => q.id === id)));
     return [
+      [`en by som sparas varje timme blir samma by som en som inte sparas (tre dygn)`, sparLika],
+      [`relationer mellan två döda städas bort i simuleringen (${relDoda} relationer före)`, dodaStadat],
       [`byn delas i ${Object.keys(delar).join(', ')} (${Object.entries(kb).map(([d, n]) => `${d} ${n} KB`).join(', ')})`, ['byn', 'folket', 'kartor', 'loggen'].every(d => d in delar) && delar.folket.includes('"people"') && !delar.byn.includes('"people"')],
       ['delarna blir samma by igen', isDeepStrictEqual(ater, JSON.parse(hel)) && ny.people.length === s.people.length && ny.now === s.now],
       [`en gammal by uppgraderas till sparversion ${SPARVERSION} och gamla fält försvinner`, uppgr],
@@ -1896,8 +1906,7 @@ SCENARIER['ui-ren'] = {
     for (let i = 0; i < DYGN * 24 * 12; i++) {
       step(a, BEAT); step(b, BEAT);
       // sparfilen före och efter läsningarna visar om gränssnittet skrev något i byn. Båda sparas lika ofta: sparningen
-      // skriver kartorna i sparfilen (s.mark, s.skog, s.fynd), och då ändras ordningen i texten. compact (som städar bort
-      // de döda) är inte med
+      // skriver kartorna i sparfilen (s.mark, s.skog, s.fynd), och då ändras ordningen i texten
       if (i % 6 === 5) {
         const fore = serialize(a);
         uiLas(a, a.now - 200 * SEC); n++;

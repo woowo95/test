@@ -1,4 +1,4 @@
-import { BEAT, DAY, KUNSKAPER, LARDOMAR, LKind, LogEntry, MIN, State, byId, compact, describe, joinParts, living, migrate, serialize, serializeParts, step, timeLabel } from '../sim';
+import { BEAT, DAY, KUNSKAPER, LARDOMAR, LKind, LogEntry, MIN, State, byId, describe, joinParts, living, migrate, serialize, serializeParts, step, timeLabel } from '../sim';
 import { $, durTxt, esc, num } from './hjalp';
 import { s, ui } from './lage';
 import { drawTerrain } from './terrang';
@@ -9,7 +9,7 @@ const SAVE_KEY = 'samhalle-save-v1';
 let lokalLarm = false; // felet skrivs i konsolen en gång, inte var tjugonde sekund
 export function saveLocal() {
   if (ui.testMode || !s) return;
-  try { compact(s); localStorage.setItem(SAVE_KEY, serialize(s)); ui.lokalFel = lokalLarm = false; }
+  try { localStorage.setItem(SAVE_KEY, serialize(s)); ui.lokalFel = lokalLarm = false; }
   catch (e) { ui.lokalFel = true; if (!lokalLarm) console.error('Byn kunde inte sparas i webbläsaren', e); lokalLarm = true; }
 }
 // I databasen: varje del av byn (serializeParts) i ett eller flera dokument om högst BIT tecken (ett dokument rymmer 256 KB),
@@ -30,7 +30,6 @@ export async function saveDb() {
   if (ui.testMode || !s || !db || !uid || sparar) return;
   sparar = true;
   try {
-    compact(s);
     const ny = slot === 'a' ? 'b' : 'a', delar: Record<string, number> = {};
     for (const [d, txt] of Object.entries(serializeParts(s))) {
       const n = Math.max(1, Math.ceil(txt.length / BIT));
