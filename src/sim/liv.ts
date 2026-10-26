@@ -1,4 +1,4 @@
-import { ageOf, alive, byId, count, isParent, living, log, newPerson, relKey, startSkills, think } from './folk';
+import { REL, ageOf, alive, byId, count, isParent, living, log, newPerson, relKey, startSkills, think } from './folk';
 import { sedEvent } from './seder';
 import { pair } from './varld';
 import { avgMood } from './samtal';
@@ -25,7 +25,7 @@ export function die(s: State, p: Person, cause: string) {
   for (const q of living(s)) {
     if (q.partner === p.id) { q.partner = undefined; think(q, `Sörjer ${p.name}`, -0.3, s.now, 1.2 * DAY); }
     else if (isParent(p, q) || isParent(q, p)) think(q, `Sörjer ${p.name}`, -0.25, s.now, DAY);
-    else { const r = s.rels[relKey(p.id, q.id)]; if (r && r.op > 40) think(q, `Saknar ${p.name}`, -0.12, s.now, 0.6 * DAY); }
+    else { const r = s.rels[relKey(p.id, q.id)]; if (r && r.op > REL.saknar) think(q, `Saknar ${p.name}`, -0.12, s.now, 0.6 * DAY); }
   }
 }
 
@@ -120,5 +120,5 @@ function emigrate(s: State) {
   const n = group.length - 2;
   count(s, 'utvandrade', group.length);
   log(s, `Byn blev trång. ${a.name} och ${b.name} lämnade byn${n ? ` med ${n} barn` : ''} för att grunda en egen boplats.`, 'move', group.map(g => g.id));
-  for (const q of living(s)) for (const g of group) { const r = s.rels[relKey(q.id, g.id)]; if (r && r.op > 40) { think(q, `Saknar ${g.name}`, -0.08, now, 0.5 * DAY); break; } }
+  for (const q of living(s)) for (const g of group) { const r = s.rels[relKey(q.id, g.id)]; if (r && r.op > REL.saknar) { think(q, `Saknar ${g.name}`, -0.08, now, 0.5 * DAY); break; } }
 }

@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { ACTS, Person, slagIkon, SEC, TalkEvent, ageOf, SAMTAL_R, alive, byId, clamp, homeKind, isSick, isSocial, living, load, relKey, spar } from '../sim';
+import { ACTS, Person, slagIkon, SEC, TalkEvent, ageOf, SAMTAL_R, alive, byId, clamp, homeKind, isSick, isSocial, living, load, REL, relKey, spar } from '../sim';
 import { hsl } from './hjalp';
 import { s, ui } from './lage';
 import { Ikoner, TS, bubbleG, labels, markLayer, peopleG } from './scen';
@@ -94,7 +94,7 @@ export function drawPeople(t: number) {
     if (!talking && o !== undefined && !flash.has(p.id)) talkWith.delete(p.id);
     if (talking || flash.has(p.id)) {
       const r = q ? s.rels[relKey(p.id, q.id)] : undefined;
-      const rel = q && (p.partner === q.id || (r?.rom ?? 0) > 40) ? 'karlek' : (r?.op ?? 0) < -20 ? 'ovan' : (r?.op ?? 0) > 30 ? 'van' : 'neutral';
+      const rel = q && (p.partner === q.id || (r?.rom ?? 0) > 40) ? 'karlek' : (r?.op ?? 0) < -20 ? 'ovan' : (r?.op ?? 0) > REL.van ? 'van' : 'neutral';
       drawBubble(x + 4, top, flash.get(p.id), rel, t, p.id);
       continue;
     }

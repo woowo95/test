@@ -1,5 +1,5 @@
 import { iconImg } from '../ikoner';
-import { HOUR, LogEntry, MIN, Person, byId, capacity, carryKind, clamp, isParent, isSick, load, sak, sakNamn, timeLabel } from '../sim';
+import { HOUR, LogEntry, MIN, Person, REL, byId, capacity, carryKind, clamp, isParent, isSick, load, sak, sakNamn, timeLabel } from '../sim';
 import { s } from './lage';
 
 // små hjälpare för text, tal, färger och staplar som alla delar av gränssnittet använder
@@ -45,7 +45,7 @@ export function relWord(p: Person, q: Person, op: number) {
   if (isParent(p, q)) return 'Barn';
   if (isParent(q, p)) return 'Förälder';
   if (p.mother !== undefined && (p.mother === q.mother || p.father === q.father)) return 'Syskon';
-  return op > 60 ? 'Nära vän' : op > 25 ? 'Vän' : op > -10 ? 'Bekant' : op > -45 ? 'Ogillar' : 'Ovän';
+  return op > REL.naraVan ? 'Nära vän' : op > REL.vanOrd ? 'Vän' : op > REL.osams ? 'Bekant' : op > REL.ovan ? 'Ogillar' : 'Ovän';
 }
 export const sickNow = (p: Person) => isSick(p, s.now);
 // vad en person bär och hur mycket hen orkar

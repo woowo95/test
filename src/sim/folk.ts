@@ -2,6 +2,23 @@ import { getMap } from './karta';
 import { freeNear } from './byggnad';
 import { clamp, gauss, pick, rnd } from './slump';
 import { Act, DAY, LogEntry, Person, Rel, SKILLS, STATS, Skill, Stat, State } from './typer';
+import { balans } from './balans';
+
+// ---------- balanstal (regel 8) ----------
+// Relationerna: hur mycket två tycker om varandra (op, från -100 till 100) avgör vad de gör för varandra. Gränserna läses av
+// samtal.ts, behov.ts, liv.ts och gränssnittet (orden Ovän, Ogillar, Bekant, Vän och Nära vän). Jämförelserna (< eller >)
+// står kvar i koden som de var: osams är under, lånar ut är över
+export const REL = balans('rel', {
+  ovan: -45, // under detta är man ovän (loggas en gång)
+  gral: -25, // under detta grälar man ofta, och ett par går isär
+  osams: -10, // under detta är man osams: ger inget, byter inte och lånar inte ut. Över detta är man bekant
+  slakt: 25, // släkt har så mycket op från början
+  vanOrd: 25, // över detta kallas relationen Vän (personfliken)
+  van: 30, // över detta är man goda vänner: djupa samtal, och kan bli ett par
+  saknar: 40, // över detta saknar man den som dör eller flyttar
+  naraVan: 60, // över detta är man nära vänner (loggas en gång)
+  parRom: 70, // en relation med romans (rom) över detta, och goda vänner, blir ett par
+});
 
 // ---------- namn ----------
 const N1 = ['A', 'Bo', 'Da', 'E', 'Fa', 'Gu', 'Ha', 'I', 'Ka', 'Lo', 'Ma', 'Ny', 'O', 'Ra', 'Si', 'Tu', 'U', 'Ve', 'Y', 'Å', 'Ste', 'Tor', 'Al', 'Ger'];
@@ -77,7 +94,7 @@ export function getRel(s: State, a: Person, b: Person): Rel {
   let r = s.rels[k];
   if (!r) {
     r = { chem: clamp(gauss(s, 'samtal') * 0.6, -1, 1), op: 0, rom: 0, talks: 0, flags: 0 };
-    if (isKin(a, b)) r.op = 25;
+    if (isKin(a, b)) r.op = REL.slakt;
     s.rels[k] = r;
   }
   return r;

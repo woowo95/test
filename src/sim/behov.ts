@@ -1,7 +1,7 @@
 import { State, Person, HOUR, DAY, GREN } from './typer';
 import { FOOD, REDSKAP_SLAG, SAKER, SAK_LIST, isTool } from './saker';
 import { actsOf, usesTool } from './handlingar';
-import { ageOf, alive, byId, count, getRel, isKin, isParent, living, log, stat, think } from './folk';
+import { REL, ageOf, alive, byId, count, getRel, isKin, isParent, living, log, stat, think } from './folk';
 import { chance, clamp, pickViktat, rnd } from './slump';
 import { Ting, tingOf } from './agande';
 import { BYN, Del, addDel, sumOf } from './egendom';
@@ -106,7 +106,7 @@ const overOf = (s: State, g: Person, b: Behov, m: Person) =>
   ownFor(s, g, b) - (isParent(g, m) ? 0 : isFamily(g, m) ? b.mangd(g, s.now) : b.kvar);
 // kretsen m frågar: de i närheten som har det m behöver (har), de som helst ger (w) först. Familjen kan man väcka. En gåva
 // ger bara den som vill ge (w > 0), ett byte gör man med alla man inte är osams med
-const osams = (s: State, g: Person, m: Person) => getRel(s, g, m).op < -10;
+const osams = (s: State, g: Person, m: Person) => getRel(s, g, m).op < REL.osams;
 function kretsen(s: State, m: Person, har: (g: Person) => boolean, w: (g: Person) => number, byte = false) {
   return living(s).filter(g => g !== m && narvarande(g, m) && har(g) && !osams(s, g, m))
     .map(g => ({ g, w: w(g) })).filter(x => byte || x.w > 0).sort((a, b) => b.w - a.w || a.g.id - b.g.id).map(x => x.g);
@@ -281,7 +281,7 @@ export function willing(s: State, g: Person, m: Person, overflod = 1) {
   const over = clamp(0.4 + 0.3 * overflod, OVERFLOD.min, OVERFLOD.max), sed = 1 + GEMENSKAP_GE * s.seder.v.gemenskap;
   if (isParent(g, m)) return clamp(0.95 * Math.max(1, over) * sed, 0, 1); // till sitt barn ger man också det sista
   const r = getRel(s, g, m);
-  if (r.op < -10) return 0;
+  if (r.op < REL.osams) return 0;
   const emp = stat(g, 'empati', s.now) / 20, nara = g.partner === m.id;
   const base = nara ? 0.8 : isKin(g, m) ? 0.6 : clamp(r.op / 80, 0, 0.6);
   const rik = nara ? 1 : RIK_GE + (1 - RIK_GE) * (s.delning?.andel ?? 1);
@@ -292,7 +292,7 @@ export function lends(s: State, owner: number, p: Person) {
   if (owner === BYN || owner === p.id) return true;
   const o = byId(s, owner);
   if (!o || !alive(o)) return true;
-  return o.partner === p.id || isKin(o, p) || getRel(s, o, p).op > -10;
+  return o.partner === p.id || isKin(o, p) || getRel(s, o, p).op > REL.osams;
 }
 // Byten och gåvor i samtal: den som saknar ett redskap hen behöver i sitt arbete tar upp det. Den andra har ett redskap
 // över (har två av slaget, eller arbetar inte med det). Har den som frågar något över som är värt nog blir det ett byte

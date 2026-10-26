@@ -1,4 +1,4 @@
-import { ageOf, getRel, isKin, living, log, similarity, stat, think } from './folk';
+import { REL, ageOf, getRel, isKin, living, log, similarity, stat, think } from './folk';
 import { clamp, pickViktat, rnd } from './slump';
 import { DAY, HOUR, Person, State } from './typer';
 import { pair } from './varld';
@@ -23,11 +23,11 @@ export function converse(s: State, a: Person, others: Person[], events?: TalkEve
   let kind: string;
   const canFlirt = aa >= 16 && ba >= 16 && a.sex !== b.sex && !isKin(a, b) && Math.abs(aa - ba) < 18 &&
     ((a.partner === undefined && b.partner === undefined) || a.partner === b.id);
-  if ((mood < 0.3 && rnd(s, 'samtal', a) < 0.35) || (r.op < -25 && rnd(s, 'samtal', a) < 0.5)) kind = 'gräl';
+  if ((mood < 0.3 && rnd(s, 'samtal', a) < 0.35) || (r.op < REL.gral && rnd(s, 'samtal', a) < 0.5)) kind = 'gräl';
   else if (a.task?.act === 'beratta') kind = 'berättelse';
   else if (canFlirt && rnd(s, 'samtal', a) < 0.12 + r.rom / 250 + (r.chem > 0.3 ? 0.08 : 0)) kind = 'flirt';
   else if (moodOf(b, now) < 0.35 && rnd(s, 'samtal', a) < stat(a, 'empati', now) / 25) kind = 'tröst';
-  else if (r.op > 30 && rnd(s, 'samtal', a) < 0.3) kind = 'djupt samtal';
+  else if (r.op > REL.van && rnd(s, 'samtal', a) < 0.3) kind = 'djupt samtal';
   else if (rnd(s, 'samtal', a) < 0.25) kind = 'skämt';
   else kind = 'småprat';
 
@@ -61,10 +61,10 @@ export function converse(s: State, a: Person, others: Person[], events?: TalkEve
   a.social = clamp(a.social + 0.06, 0, 1); b.social = clamp(b.social + 0.06, 0, 1);
   events?.push({ a: a.id, b: b.id, kind, good: kind !== 'gräl' && out > 0, t: now });
 
-  if (r.op > 60 && !(r.flags & 1) && !isKin(a, b) && a.partner !== b.id) { r.flags |= 1; log(s, `${a.name} och ${b.name} har blivit nära vänner.`, 'rel', [a.id, b.id]); }
-  if (r.op < -45 && !(r.flags & 2)) { r.flags |= 2; log(s, `${a.name} och ${b.name} har blivit ovänner.`, 'rel', [a.id, b.id]); }
-  if (r.rom > 70 && r.op > 30 && a.partner === undefined && b.partner === undefined && canFlirt) pair(s, a, b);
-  if (a.partner === b.id && r.op < -25) {
+  if (r.op > REL.naraVan && !(r.flags & 1) && !isKin(a, b) && a.partner !== b.id) { r.flags |= 1; log(s, `${a.name} och ${b.name} har blivit nära vänner.`, 'rel', [a.id, b.id]); }
+  if (r.op < REL.ovan && !(r.flags & 2)) { r.flags |= 2; log(s, `${a.name} och ${b.name} har blivit ovänner.`, 'rel', [a.id, b.id]); }
+  if (r.rom > REL.parRom && r.op > REL.van && a.partner === undefined && b.partner === undefined && canFlirt) pair(s, a, b);
+  if (a.partner === b.id && r.op < REL.gral) {
     a.partner = undefined; b.partner = undefined; r.rom = 10;
     log(s, `${a.name} och ${b.name} gick skilda vägar.`, 'rel', [a.id, b.id]);
     think(a, `Separerade från ${b.name}`, -0.15, now, DAY); think(b, `Separerade från ${a.name}`, -0.15, now, DAY);

@@ -1,4 +1,4 @@
-import { Act, Lardom, Person, KUNSKAP_NAMES, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, TEKNIK, BYN, Ting, ageOf, alive, byId, childrenOf, heldBy, ownedBy, ownedStock, sakNamn, tingNamn, STACK, describe, duty, habitShare, habitTotal, moodOf, relKey, stat, taskName, timeLabel } from '../../sim';
+import { Act, Lardom, Person, KUNSKAP_NAMES, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, TEKNIK, BYN, Ting, ageOf, alive, byId, childrenOf, heldBy, ownedBy, ownedStock, sakNamn, tingNamn, STACK, describe, duty, habitShare, habitTotal, moodOf, REL, relKey, stat, taskName, timeLabel } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { bar, cap, carryTxt, durTxt, esc, hex, moodWord, pLink, relWord, sickNow, trend } from '../hjalp';
 import { s, ui } from '../lage';
@@ -32,7 +32,7 @@ export const person: Flik = {
       ${knowledgeHtml(p)}
       <h3>Familj</h3><dl class="kv fam"><dt>Föräldrar</dt><dd>${p.mother || p.father ? [byId(s, p.mother), byId(s, p.father)].filter(Boolean).map(q => pLink(q)).join(' och ') : 'Bland de första i byn'}</dd>
         <dt>Partner</dt><dd>${pLink(byId(s, p.partner))}</dd><dt>Barn</dt><dd>${kids.length ? kids.map(pLink).join(', ') : '–'}</dd></dl>
-      <h3>Relationer</h3>${rels.length ? `<ul class="rels">${rels.map(({ q, r }) => `<li>${pLink(q)}<span class="rw ${r.op < -10 ? 'neg' : r.op > 25 ? 'pos' : ''}">${relWord(p, q, r.op)}</span><span class="muted">${r.talks} samtal</span></li>`).join('')}</ul>` : '<p class="muted">Inga relationer ännu.</p>'}
+      <h3>Relationer</h3>${rels.length ? `<ul class="rels">${rels.map(({ q, r }) => `<li>${pLink(q)}<span class="rw ${r.op < REL.osams ? 'neg' : r.op > REL.vanOrd ? 'pos' : ''}">${relWord(p, q, r.op)}</span><span class="muted">${r.talks} samtal</span></li>`).join('')}</ul>` : '<p class="muted">Inga relationer ännu.</p>'}
       <h3>Eftermäle</h3>${p.fame.length ? `<ul class="fame">${p.fame.map(f => `<li>${esc(f)}</li>`).join('')}</ul>` : '<p class="muted">Inget som minns ännu.</p>'}`;
   },
 };
