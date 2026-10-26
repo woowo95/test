@@ -404,22 +404,28 @@ function buildStep(s: State, p: Person, tk: Task, dtSec: number) {
   if (j.need > 0) { const f = fetchSpot(s, j.item!); tk.tx = f.x; tk.ty = f.y; tk.site = site; } else { tk.tx = site.x; tk.ty = site.y; }
 }
 
+// talen i sparfilen avrundas till tre decimaler
+const avrunda = (_k: string, v: unknown) => (typeof v === 'number' && !Number.isInteger(v) ? Math.round(v * 1000) / 1000 : v);
 export function serialize(s: State) {
   packGround(s); packFynd(s);
-  return JSON.stringify(s, (_k, v) => (typeof v === 'number' && !Number.isInteger(v) ? Math.round(v * 1000) / 1000 : v));
+  return JSON.stringify(s, avrunda);
 }
 
-// sparfilen i delar, så att varje del ryms i ett dokument i artefaktens databas (högst 256 KB). Det som inte står här är byn
+// sparfilen i delar, så att varje del ryms i ett dokument i artefaktens databas (högst 256 KB). Det som inte står här är byn.
+// Varje del skrivs direkt med samma avrundning, så texten blir densamma som om hela byn skrivits och delats upp efteråt
 export const DELAR: Record<string, string[]> = { folket: ['people', 'rels'], kartor: ['fynd', 'mark', 'skog', 'stubbar'], loggen: ['log'] };
 export function serializeParts(s: State): Record<string, string> {
-  const byn = JSON.parse(serialize(s)), ut: Record<string, string> = {};
+  packGround(s); packFynd(s);
+  const o = s as unknown as Record<string, unknown>, ut: Record<string, string> = {}, bort = new Set<string>();
   for (const [d, keys] of Object.entries(DELAR)) {
     const del: Record<string, unknown> = {};
-    for (const k of keys) if (k in byn) { del[k] = byn[k]; delete byn[k]; }
-    ut[d] = JSON.stringify(del);
+    for (const k of keys) if (o[k] !== undefined) { del[k] = o[k]; bort.add(k); }
+    ut[d] = JSON.stringify(del, avrunda);
   }
-  if (byn.hist) { for (const [d, h] of Object.entries(histParts(s, byn.hist))) ut[d] = JSON.stringify({ hist: h }); delete byn.hist; }
-  return { byn: JSON.stringify(byn), ...ut };
+  // historiken delas efter de avrundade tiderna, som i en inläst sparfil
+  if (s.hist) { for (const [d, h] of Object.entries(histParts(s, JSON.parse(JSON.stringify(s.hist, avrunda))))) ut[d] = JSON.stringify({ hist: h }); bort.add('hist'); }
+  const byn = JSON.stringify(s, function (this: unknown, k: string, v: unknown) { return this === s && bort.has(k) ? undefined : avrunda(k, v); });
+  return { byn, ...ut };
 }
 export const joinParts = (delar: string[]) => {
   const ut: Record<string, unknown> = {}, hist: Historik[] = [];
