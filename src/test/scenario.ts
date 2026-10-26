@@ -412,11 +412,16 @@ SCENARIER.sparning = {
     const saker = (q: State) => JSON.stringify([housesOf(q).map(h => [h.id, h.klar, fnId(h)]), tingOf(q).map(g => [g.k, g.agare]).sort()]);
     const forrad = STACK_ORDER.every(k => Math.abs(amountOf(s, k) - amountOf(inl, k)) < 0.01);
     const sammaFil = kanonisk(serialize(inl)) === kanonisk(txt), sammaBy = folk(s) === folk(inl) && forrad && saker(s) === saker(inl), n0 = living(inl).length;
+    // stacken och ägarnas delar avrundas var för sig: delarna får ändå aldrig bli mer än stacken i den inlästa byn
+    const kop = cloneState(s), st0 = kop.stackar![0], [ag1, ag2] = living(kop);
+    st0.n = 6.2494; st0.ag = { [ag1.id]: 0.5806, [ag2.id]: 5.6688 };
+    const st1 = cloneState(kop).stackar![0], agSum = sumOf(st1.ag);
     const fs = korBy(s.seed, 2, undefined, s), fi = korBy(s.seed, 2, undefined, inl);
     const nara = `${living(s).length} och ${living(inl).length} invånare, mat ${foodOf(s).toFixed(0)} och ${foodOf(inl).toFixed(0)}, trä ${amountOf(s, 'ved').toFixed(0)} och ${amountOf(inl, 'ved').toFixed(0)}`;
     return [
       ...forst,
       ['en sparad och inläst by blir samma sparfil igen', sammaFil],
+      [`ägarnas delar blir inte mer än stacken efter avrundningen (${agSum.toFixed(3)} av ${st1.n})`, agSum <= st1.n + 1e-9],
       [`den inlästa byn har samma folk (${n0}), förråd, hus och redskap`, sammaBy],
       [`båda fortsätter två dygn (två år i spelet) utan vaktlarm${[...fs.vakter, ...fi.vakter].length ? `: ${[...fs.vakter, ...fi.vakter].join('; ')}` : ''}`, !fs.vakter.length && !fi.vakter.length],
       [`och ligger nära varandra: ${nara}`, Math.abs(living(s).length - living(inl).length) <= 2],

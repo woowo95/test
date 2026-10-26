@@ -437,8 +437,18 @@ function buildStep(s: State, p: Person, tk: Task, dtSec: number) {
   if (j.need > 0) { const f = fetchSpot(s, j.item!); tk.tx = f.x; tk.ty = f.y; tk.site = site; } else { tk.tx = site.x; tk.ty = site.y; }
 }
 
-// talen i sparfilen avrundas till tre decimaler
-const avrunda = (_k: string, v: unknown) => (typeof v === 'number' && !Number.isInteger(v) ? Math.round(v * 1000) / 1000 : v);
+// talen i sparfilen avrundas till tre decimaler. En stacks ägardelar avrundas nedåt om de annars blir mer än stacken
+const r3 = (v: number) => Math.round(v * 1000) / 1000;
+function avrunda(this: unknown, k: string, v: unknown) {
+  if (typeof v === 'number') return Number.isInteger(v) ? v : r3(v);
+  const st = this as { n?: unknown } | null;
+  if (k === 'ag' && v && typeof v === 'object' && typeof st?.n === 'number') {
+    const d = v as Record<string, number>;
+    let sum = 0; for (const o in d) sum += r3(d[o]);
+    if (sum > r3(st.n) + 1e-9) { const ner: Record<string, number> = {}; for (const o in d) ner[o] = Math.floor(d[o] * 1000 + 1e-6) / 1000; return ner; }
+  }
+  return v;
+}
 export function serialize(s: State) {
   packGround(s); packFynd(s);
   return JSON.stringify(s, avrunda);
@@ -459,7 +469,7 @@ export function serializeParts(s: State): Record<string, string> {
   }
   // historiken delas efter de avrundade tiderna, som i en inläst sparfil
   if (s.hist) { for (const [d, h] of Object.entries(histParts(s, JSON.parse(JSON.stringify(s.hist, avrunda))))) ut[d] = JSON.stringify({ hist: h }); bort.add('hist'); }
-  const byn = JSON.stringify(s, function (this: unknown, k: string, v: unknown) { return this === s && bort.has(k) ? undefined : avrunda(k, v); });
+  const byn = JSON.stringify(s, function (this: unknown, k: string, v: unknown) { return this === s && bort.has(k) ? undefined : avrunda.call(this, k, v); });
   return { byn, ...ut };
 }
 export const joinParts = (delar: string[]) => {
