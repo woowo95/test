@@ -1,7 +1,8 @@
 // Vägsökning och mark: invånarna går runt vatten och följer gärna stigar.
 // Jordrutor (gräs och skog på kartan) har två lager: träd (0 = inga, 1 = vuxen skog) och marktäcke under dem
 // (1 = högt gräs, mitten = kort gräs, under BAR = bar jord; en stig är bar jord i en linje).
-import { T, W, H } from './typer';
+import { clampI } from './slump';
+import { T, W, H, inMap } from './typer';
 
 export interface Ground { tiles: Uint8Array; cover: Float32Array; trees: Float32Array; solid?: Uint8Array; built?: Uint8Array } // solid = väggar, built = byggda eller planerade rutor
 export const HIGH = 0.9, BAR = 0.3; // högt gräs över HIGH, bar jord under BAR
@@ -43,7 +44,7 @@ export function findPath(g: Ground, x0: number, y0: number, x1: number, y1: numb
     for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
       if (!dx && !dy) continue;
       const nx = x + dx, ny = y + dy;
-      if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+      if (!inMap(nx, ny)) continue;
       const ni = ny * W + nx;
       if (closed[ni] || ((tiles[ni] === T.Vatten || solid?.[ni]) && ni !== goal)) continue;
       if (dx && dy && (stop(g, y * W + nx) || stop(g, ny * W + x))) continue;
@@ -77,8 +78,6 @@ export function decodeCover(txt: string | undefined, fill = 1): Float32Array {
   try { const bin = atob(txt); for (let i = 0; i < Math.min(bin.length, c.length); i++) c[i] = bin.charCodeAt(i) / 255; } catch { /* ny mark */ }
   return c;
 }
-
-const clampI = (v: number, n: number) => Math.max(0, Math.min(n - 1, Math.floor(v)));
 
 class Heap {
   private ids: number[] = []; private keys: number[] = [];

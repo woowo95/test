@@ -3,7 +3,7 @@ import { count, stat, log, think } from './folk';
 import { getMap, hash, vnoise } from './karta';
 import { groundOf } from './mark';
 import { sedEvent } from './seder';
-import { chance, clamp, rnd } from './slump';
+import { chance, clamp, clampI, rnd } from './slump';
 import { kn, learnK, useK } from './kunskap';
 import { ageIndex } from './tid';
 import { addTo, amountOf, foodOf } from './lager';
@@ -264,7 +264,7 @@ function vattenRunt(s: State, k: FyndId, cx: number, cy: number, fn: (i: number,
 }
 // vad den som står på rutan når av ett mått per ruta (fn). För fisk: snittet ute i vattnet framför stranden
 export function standAt(s: State, k: Lager, x: number, y: number, fn: (i: number) => number) {
-  const cx = Math.floor(clamp(x, 0, W - 1)), cy = Math.floor(clamp(y, 0, H - 1)), i = cy * W + cx;
+  const cx = clampI(x, W), cy = clampI(y, H), i = cy * W + cx;
   if (!FYND[lagren(k)[0]].vatten) return fn(i);
   if (getMap(s.seed).tiles[i] === T.Vatten) return 0;
   let sum = 0, n = 0;
@@ -304,7 +304,7 @@ export function takeFrom(s: State, k: Lager, x: number, y: number, amount: numbe
   for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) sum += w(dx, dy);
   for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
     const xx = cx + dx, yy = cy + dy;
-    if (xx < 0 || yy < 0 || xx >= W || yy >= H) continue;
+    if (!inMap(xx, yy)) continue;
     const i = yy * W + xx;
     d[i] = Math.min(1, d[i] + amount * w(dx, dy) / sum * (r + 1) / u.full);
   }

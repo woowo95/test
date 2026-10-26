@@ -1,7 +1,8 @@
 import { FYND, fyndAt, setNarvaro, vaxerAt } from './fynd';
 import { hash } from './karta';
+import { clamp } from './slump';
 import { living } from './folk';
-import { H, HOUR, SEC, State, W, mapKey } from './typer';
+import { H, HOUR, SEC, State, W, inMap, mapKey } from './typer';
 
 // ---------- djur: kaniner i grupper ----------
 // Viltlagret (fynd.ts) är kartan över var förhållandena är bra för kaniner. Själva kaninerna finns i några få små grupper
@@ -56,7 +57,7 @@ function start(s: State, k: number, e: number): Start | null {
     let gi = bi, gs = -1;
     for (let dy = -VANDRA; dy <= VANDRA; dy++) for (let dx = -VANDRA; dx <= VANDRA; dx++) {
       const x = x0 + dx, y = y0 + dy;
-      if (x < 0 || y < 0 || x >= W || y >= H || Math.hypot(dx, dy) > VANDRA) continue;
+      if (!inMap(x, y) || Math.hypot(dx, dy) > VANDRA) continue;
       const j = y * W + x, v = vaxerAt(s, 'jakt', j) * (0.8 + 0.4 * hash(salt, j, 9));
       if (v > gs) { gs = v; gi = j; }
     }
@@ -85,7 +86,7 @@ export function grupperOf(s: State): Kaningrupp[] {
     const cx = Math.floor(c.x), cy = Math.floor(c.y);
     for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
       const x = cx + dx, y = cy + dy;
-      if (x < 0 || y < 0 || x >= W || y >= H) continue;
+      if (!inMap(x, y)) continue;
       const i = y * W + x; har += fyndAt(s, 'jakt', i); kan += vaxerAt(s, 'jakt', i);
     }
     const n = kan > 0 ? Math.round(c.st.n0 * Math.min(1, har / kan)) : 0;
@@ -133,7 +134,7 @@ export function djurOf(s: State): Djur[] {
       const v = Math.round(Math.atan2(y - near.y, x - near.x) / (Math.PI / 4)) * (Math.PI / 4);
       x += Math.cos(v) * HOPP; y += Math.sin(v) * HOPP;
     }
-    out.push({ id, art: 'kanin', x: Math.max(0.2, Math.min(W - 0.2, x)), y: Math.max(0.2, Math.min(H - 0.2, y)) });
+    out.push({ id, art: 'kanin', x: clamp(x, 0.2, W - 0.2), y: clamp(y, 0.2, H - 0.2) });
   }
   return out;
 }

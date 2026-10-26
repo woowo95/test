@@ -1,5 +1,5 @@
 import { getMap } from './karta';
-import { groundOf } from './mark';
+import { groundOf, tileOf } from './mark';
 import { H, State, T, W, inMap } from './typer';
 
 // ---------- byggen ----------
@@ -79,7 +79,7 @@ export function gridOf(s: State): Grid {
   return g;
 }
 export const bitAt = (s: State, x: number, y: number) => gridOf(s).at.get(Math.floor(y) * W + Math.floor(x));
-export const isWall = (s: State, x: number, y: number) => inMap(x, y) && gridOf(s).solid[Math.floor(y) * W + Math.floor(x)] === 1;
+export const isWall = (s: State, x: number, y: number) => inMap(x, y) && gridOf(s).solid[tileOf(x, y)] === 1;
 // man kan inte stå här: vatten eller en vägg
 export const blocked = (s: State, x: number, y: number) => getMap(s.seed).tiles[Math.floor(y) * W + Math.floor(x)] === T.Vatten || isWall(s, x, y);
 // närmaste plats som inte är vatten eller vägg
@@ -94,8 +94,8 @@ export function freeNear(s: State, x: number, y: number, inte = false) {
   return { x, y };
 }
 export function roomAt(s: State, x: number, y: number): Rum | undefined {
-  if (x < 0 || y < 0 || x >= W || y >= H) return;
-  const g = gridOf(s), r = g.tak[Math.floor(y) * W + Math.floor(x)];
+  if (!inMap(x, y)) return;
+  const g = gridOf(s), r = g.tak[tileOf(x, y)];
   return r >= 0 ? g.rooms[r] : undefined;
 }
 export const roofed = (s: State, x: number, y: number) => !!roomAt(s, x, y);

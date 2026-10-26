@@ -1,10 +1,10 @@
-import { Act, DAY, HOUR, Person, SEC, State, Task, W } from './typer';
+import { Act, DAY, HOUR, Person, SEC, State, Task } from './typer';
 import { halvOf, newTing, tingOf } from './agande';
 import { takeRecipe } from './behov';
 import { BYN } from './egendom';
 import { alive, byId, count, living } from './folk';
 import { put } from './lager';
-import { isForest } from './mark';
+import { isForest, tileOf } from './mark';
 import { SPJUT, basketDone, canMakeBasket, canMakeKnife, canMakeRod, canStartSpear, knifeDone, minOf, rodDone, spearDone, spearKind } from './redskap';
 import { axeDone, canMakeAxe, fallTid } from './skog';
 
@@ -30,12 +30,11 @@ const GOR: Partial<Record<Act, Gor>> = {
 export const GOR_ACTS = Object.keys(GOR) as Act[];
 // handlingar där arbetstiden räknas från att man kommit fram
 export const startsOnArrival = (act: Act) => !!GOR[act] || act === 'falla';
-const tileOfTask = (t: Task) => Math.floor(t.ty) * W + Math.floor(t.tx);
 const halvById = (s: State, id?: number) => id === undefined ? undefined : tingOf(s).find(t => t.id === id && t.halv);
 
 // framme: arbeta vidare på det man har påbörjat, eller ta materialet och börja. Saknas materialet blir det inget
 export function startWork(s: State, p: Person, tk: Task) {
-  if (tk.act === 'falla') { const i = tileOfTask(tk); tk.until = s.now + Math.max(0, fallTid(s, i) - (s.halvfallt?.[i] ?? 0)); return; }
+  if (tk.act === 'falla') { const i = tileOf(tk.tx, tk.ty); tk.until = s.now + Math.max(0, fallTid(s, i) - (s.halvfallt?.[i] ?? 0)); return; }
   const g = GOR[tk.act];
   if (!g) return;
   let t = halvOf(s, p, g.ger);
@@ -49,7 +48,7 @@ export function startWork(s: State, p: Person, tk: Task) {
 }
 // medan man arbetar: arbetet går framåt och det påbörjade slits inte
 export function workHalf(s: State, _p: Person, tk: Task, dtSec: number) {
-  if (tk.act === 'falla') { const i = tileOfTask(tk), h = (s.halvfallt ??= {}); h[i] = (h[i] ?? 0) + dtSec * SEC; return; }
+  if (tk.act === 'falla') { const i = tileOf(tk.tx, tk.ty), h = (s.halvfallt ??= {}); h[i] = (h[i] ?? 0) + dtSec * SEC; return; }
   const t = halvById(s, tk.ref);
   if (t) { t.halv!.kvar = Math.max(0, t.halv!.kvar - dtSec * SEC); t.c = 1; }
 }

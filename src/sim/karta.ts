@@ -1,4 +1,4 @@
-import { H, T, W, mapKey } from './typer';
+import { H, T, W, inMap, mapKey } from './typer';
 
 // ---------- karta ----------
 export function hash(seed: number, x: number, y: number) {
@@ -51,7 +51,7 @@ export function getMap(seed: number): MapData {
     if (!okArea) continue;
     for (let dy = -12; dy <= 12; dy++) for (let dx = -12; dx <= 12; dx++) {
       const xx = x + dx, yy = y + dy;
-      if (xx < 0 || yy < 0 || xx >= W || yy >= H) continue;
+      if (!inMap(xx, yy)) continue;
       const t = tiles[yy * W + xx], d = Math.hypot(dx, dy);
       if (t === T.Vatten) water = Math.min(water, d);
       if (t === T.Skog) forest = Math.min(forest, d);

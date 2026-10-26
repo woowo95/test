@@ -149,7 +149,7 @@ function needsStep(s: State, p: Person, a: number, dtSec: number, coldRate: numb
   const heat = heatAt(s, p.x, p.y), rum = roomAt(s, p.x, p.y), shelter = rum ? shelterOf(s, rum, inRum.get(rum.id) ?? 1) : 0;
   p.warm = clamp(p.warm + dtSec / 3600 * (heat * 2 - coldRate * (1 - shelter) + (coldRate === 0 ? 0.5 : 0)), 0, 1);
   if (rum && resting && p.task!.phase === 'do' && pd.plats === 'sang') { // man vilar bättre under tak, och bäst på ett golv
-    const m0 = gridOf(s).at.get(Math.floor(p.y) * W + Math.floor(p.x))?.m, soft = m0 === 'ho' || m0 === 'tra';
+    const m0 = gridOf(s).at.get(tileOf(p.x, p.y))?.m, soft = m0 === 'ho' || m0 === 'tra';
     p.rest = clamp(p.rest + dtSec / 3600 * (soft ? 0.03 : 0.02), 0, 1);
     if (p.task!.act === 'sova') think(p, soft ? 'Sov gott på golvet i huset' : 'Sov under tak', soft ? 0.07 : 0.05, now, 8 * HOUR);
   }

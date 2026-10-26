@@ -1,6 +1,6 @@
 import { ageOf, count, doingAct, living, log } from './folk';
 import { knows } from './teknik';
-import { rnd } from './slump';
+import { clamp, rnd } from './slump';
 import { Act, State, Person } from './typer';
 import { ACTS, toolRow } from './handlingar';
 import { SAKER, gruppOf } from './saker';
@@ -45,7 +45,7 @@ const sharpTool = (s: State) => item(s, 'yxa') >= 1 ? 'yxa' : item(s, 'flinta') 
 const canFlintSpear = (s: State, p: Person) => knows(p, 'flintspjut') && getable(s, p, 'flinta') >= 2 && getable(s, p, 'rep') >= 1 && getable(s, p, 'grenar') >= 1;
 const canMakeSpear = (s: State, p: Person) => !!sharpTool(s) && getable(s, p, 'grenar') >= 1;
 // byn vill ha ungefär ett spjut per tre vuxna, när någon väl har börjat fiska eller jaga
-const spearsWanted = (s: State) => (s.stat?.fiskeForsok ?? 0) > 0 || (s.stat?.prod_jakt ?? 0) > 0 ? Math.max(1, Math.min(4, Math.floor(living(s).filter(p => ageOf(p, s.now) >= 14).length / 3))) : 0;
+const spearsWanted = (s: State) => (s.stat?.fiskeForsok ?? 0) > 0 || (s.stat?.prod_jakt ?? 0) > 0 ? clamp(Math.floor(living(s).filter(p => ageOf(p, s.now) >= 14).length / 3), 1, 4) : 0;
 const wantsSpear = (s: State, p: Person) => (!!halvOf(s, p, SPJUT) || knows(p, 'fiskespjut') && canMakeSpear(s, p) || canFlintSpear(s, p)) && spears(s) < spearsWanted(s) && !doingAct(s, 'spjut', p);
 // det spjut hen gör: det hen redan har påbörjat, annars ett flintspjut om hen kan och det finns material, annars ett träspjut
 export const spearKind = (s: State, p: Person) => halvOf(s, p, SPJUT)?.halv!.gor ?? (canFlintSpear(s, p) ? 'flintspjut' : 'fiskespjut');
@@ -103,7 +103,7 @@ export function rodDone(s: State, p: Person) {
 const KORG_GRAS = 3;
 const baskets = (s: State) => nTools(s, 'korg');
 // ungefär en korg per tre vuxna
-const basketsWanted = (s: State) => Math.max(1, Math.min(5, Math.floor(living(s).filter(p => ageOf(p, s.now) >= 14).length / 3)));
+const basketsWanted = (s: State) => clamp(Math.floor(living(s).filter(p => ageOf(p, s.now) >= 14).length / 3), 1, 5);
 export const canMakeBasket = (s: State, p: Person) => getable(s, p, 'torrgras') >= KORG_GRAS;
 const wantsBasket = (s: State, p: Person) => (!!halvOf(s, p, ['korg']) || knows(p, 'korg') && canMakeBasket(s, p)) && baskets(s) < basketsWanted(s) && !doingAct(s, 'korg', p);
 export function basketDone(s: State, p: Person) {

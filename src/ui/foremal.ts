@@ -1,4 +1,4 @@
-import { Pile, STUBBE_LIV, bitsOf, condOf, emberOn, fireHeat, getMap, heatRadius, zonesOf } from '../sim';
+import { Pile, STUBBE_LIV, bitsOf, clamp, condOf, emberOn, fireHeat, getMap, heatRadius, zonesOf } from '../sim';
 import { outPilesAt, piles, s, ui } from './lage';
 import { Ikoner, TS, pileLayer, structG } from './scen';
 
@@ -12,11 +12,11 @@ const PILE_LAYOUT = [[[4, 5]], [[1, 5], [7, 5]], [[4, 1], [1, 5], [7, 5]], [[2, 
 function drawPile(pl: Pile) {
   const x0 = pl.x * TS, y0 = pl.y * TS, f = Math.min(1, pl.n / pl.max), g = structG, c = condOf(pl);
   // liten stapel för skicket längst ner i rutan
-  g.beginFill(0x161210, 0.7).drawRect(x0 + 2, y0 + 13.5, 12, 2).endFill().beginFill(condCol(c)).drawRect(x0 + 2, y0 + 13.5, 12 * Math.max(0, Math.min(1, c)), 2).endFill();
+  g.beginFill(0x161210, 0.7).drawRect(x0 + 2, y0 + 13.5, 12, 2).endFill().beginFill(condCol(c)).drawRect(x0 + 2, y0 + 13.5, 12 * clamp(c, 0, 1), 2).endFill();
   // ikoner: ju fullare stacken är desto fler, redskap som en större bild
   if (pl.gor) { pileIcons.add(pl.gor, x0 + 2, y0, 1.5); pileIcons.add('paborjat', x0 + 9, y0 - 1, 0.8); return; } // påbörjat: timglaset ovanpå
   if (pl.max === 1) { pileIcons.add(pl.k, x0 + 2, y0, 1.5); return; }
-  const n = Math.max(1, Math.min(4, Math.ceil(f * 4)));
+  const n = clamp(Math.ceil(f * 4), 1, 4);
   for (const [dx, dy] of PILE_LAYOUT[n - 1]) pileIcons.add(pl.k, x0 + dx, y0 + dy, 1);
 }
 export function drawStructures(t: number) {

@@ -1,6 +1,6 @@
 import * as PIXI from 'pixi.js';
 import '@pixi/unsafe-eval';
-import { H, W, getMap } from '../sim';
+import { H, W, clamp, getMap } from '../sim';
 import { hasIcon, iconCanvas } from '../ikoner';
 import { $ } from './hjalp';
 import { s } from './lage';
@@ -49,7 +49,7 @@ export function layout() {
   const w = el.clientWidth, h = el.clientHeight;
   if (app.renderer.width !== w * app.renderer.resolution || app.renderer.height !== h * app.renderer.resolution) app.renderer.resize(w, h);
   const fit = Math.min(w / (W * TS), h / (H * TS));
-  cam.zoom = Math.max(1, Math.min(6, cam.zoom));
+  cam.zoom = clamp(cam.zoom, 1, 6);
   const sc = fit * cam.zoom;
   if (cam.x < 0 && s) { const f = getMap(s.seed).fire; cam.x = f.x * TS; cam.y = f.y * TS; }
   if (cam.x < 0) { cam.x = W * TS / 2; cam.y = H * TS / 2; }

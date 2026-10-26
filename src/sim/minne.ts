@@ -3,7 +3,7 @@ import { byId, count, isParent, living, log, stat } from './folk';
 import { teach } from './teknik';
 import { Kind, SIGHT, prospect, regrowOf, richness, shoreOf, standAt, stoneDist, synsOf, toppOf, vaxerAt } from './fynd';
 import { getMap } from './karta';
-import { groundOf } from './mark';
+import { groundOf, tileOf } from './mark';
 import { kn, learnK } from './kunskap';
 import { clamp, rnd } from './slump';
 import { ageIndex, lightLevel } from './tid';
@@ -107,8 +107,7 @@ function fear(s: State, p: Person, a: number) {
 // det man ser: rutorna runt där man står just nu.
 // Synvidden beror på var man står: kort i skogen, längre i öppen terräng, och kortare i mörker
 export function sightOf(s: State, p: Person) {
-  const i = clamp(Math.floor(p.y), 0, H - 1) * W + clamp(Math.floor(p.x), 0, W - 1);
-  const base = groundOf(s).trees[i] >= FOREST ? 5 : 10;
+  const base = groundOf(s).trees[tileOf(p.x, p.y)] >= FOREST ? 5 : 10;
   return base * (0.4 + 0.6 * lightLevel(s.now));
 }
 // sight kan räknas ut i förväg när samma person frågas om många rutor

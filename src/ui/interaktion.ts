@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { BAR, FOREST, H, HIGH, MATERIAL, Person, T, W, bitAt, campCenter, condOf, emberOn, getMap, groundOf, housesOf, insulation, living, roomAt, sakNamn, taskName, zoneAt, zonesOf, Pile } from '../sim';
+import { BAR, FOREST, HIGH, MATERIAL, Person, T, W, bitAt, campCenter, condOf, emberOn, getMap, groundOf, housesOf, inMap, insulation, living, roomAt, sakNamn, taskName, zoneAt, zonesOf, Pile } from '../sim';
 import { iconImg } from '../ikoner';
 import { $, esc, fmtN } from './hjalp';
 import { outPilesAt, piles, s, ui } from './lage';
@@ -68,7 +68,7 @@ const pileTxt = (p: Pile) => `${sakNamn(p.k)} ${p.max === 1 ? '' : `${fmtN(p.n)}
 const husAt = (x: number, y: number) => bitAt(s, x, y)?.hus ?? roomAt(s, x, y)?.hus;
 function showHover(gx: number, gy: number) {
   const box = $('hoverBox'), { x, y } = tileAt(gx, gy);
-  if (x < 0 || y < 0 || x >= W || y >= H) { box.hidden = true; return; }
+  if (!inMap(x, y)) { box.hidden = true; return; }
   const m = getMap(s.seed), g = groundOf(s), i = y * W + x, t = m.tiles[i], tr = g.trees[i], c = g.cover[i];
   const soil = t === T.Gras || t === T.Skog;
   const ground = t === T.Vatten ? 'Vatten' : t === T.Sand ? 'Sand' : t === T.Sten ? 'Sten' : tr >= FOREST ? 'Skogsmark' : c >= HIGH ? 'Högt gräs' : c >= BAR ? 'Kort gräs' : 'Bar jord, stig';

@@ -1,11 +1,11 @@
 import { addTool, freeTools, halvOf, nTools } from './agande';
 import { campCenter, campDist } from './plats';
 import { ageOf, count, living, log, think } from './folk';
-import { groundOf, isForest } from './mark';
+import { groundOf, isForest, tileOf } from './mark';
 import { FOREST } from './vag';
 import { sedEvent } from './seder';
 import { knows } from './teknik';
-import { rnd } from './slump';
+import { clamp, rnd } from './slump';
 import { Act, DAY, H, HOUR, Person, State, Stock, W } from './typer';
 import { getable } from './behov';
 import { SNABBARE } from './handlingar';
@@ -21,6 +21,8 @@ const FALL_TID = 1.2 * HOUR / SNABBARE; // så lång tid det tar att fälla ett 
 // hur lång tid det tar att fälla trädet på ruta i: ett litet träd fälls fortare
 export const fallTid = (s: State, i: number) => FALL_TID * Math.max(0.5, groundOf(s).trees[i]);
 
+// rutorna där någon annan än utom håller på att fälla ett träd
+export const fellingTiles = (s: State, utom: Person) => new Set(living(s).filter(q => q !== utom && q.task?.act === 'falla').map(q => tileOf(q.task!.tx, q.task!.ty)));
 // närmaste vuxna träd att fälla, helst i skogskanten nära byn
 export function treeSpot(s: State, taken: Set<number>): { x: number; y: number } | undefined {
   const g = groundOf(s), f = campCenter(s);
@@ -44,13 +46,13 @@ export function treeSpot(s: State, taken: Set<number>): { x: number; y: number }
   return { x: (i % W) + 0.5, y: Math.floor(i / W) + 0.5 };
 }
 const nearestStock = (s: State) => {
-  const b = groundOf(s).built, onSite = (k: Stock) => b?.[Math.floor(k.y) * W + Math.floor(k.x)] ? 0 : 1; // stammarna där huset ska stå först
+  const b = groundOf(s).built, onSite = (k: Stock) => b?.[tileOf(k.x, k.y)] ? 0 : 1; // stammarna där huset ska stå först
   return stocks(s).filter(k => k.ved > 0).sort((a, c) => onSite(a) - onSite(c) || campDist(s, a.x, a.y) - campDist(s, c.x, c.y))[0];
 };
 
 // trädet faller: det blir en liggande stam, och där det stod växer högt gräs
 export function fellTree(s: State, p: Person, x: number, y: number) {
-  const g = groundOf(s), i = Math.floor(y) * W + Math.floor(x);
+  const g = groundOf(s), i = tileOf(x, y);
   if (!isForest(s, i)) return;
   const size = g.trees[i];
   g.trees[i] = 0; g.cover[i] = 1;
@@ -82,7 +84,7 @@ export function chopStock(s: State, ref: number | undefined, amount: number) {
 }
 
 // hur många yxor byn vill ha (en till medan ett hus byggs, för träden där det ska stå)
-const axesWanted = (adults: number) => Math.max(1, Math.min(3, Math.floor(adults / 4)));
+const axesWanted = (adults: number) => clamp(Math.floor(adults / 4), 1, 3);
 // en flinta sparas att tända eld med
 export const canMakeAxe = (s: State, p: Person) => getable(s, p, 'flinta') >= 2 && getable(s, p, 'grenar') >= 1; // materialet i behovsstegen (behov.ts)
 // yxan är klar (materialet togs när arbetet började, paborjat.ts)
@@ -99,13 +101,11 @@ export function axeDone(s: State, p: Person) {
 // en vuxen som ska skaffa ved: hugga en fälld stam, fälla ett träd, göra en yxa eller (annars) samla grenar
 export function axeTask(s: State, p: Person): { act: Act; x: number; y: number; ref?: number; dur?: number; why: string } | undefined {
   const ppl = living(s), others = ppl.filter(q => q !== p);
-  const busy = others.filter(q => q.task?.act === 'falla' || q.task?.act === 'hugga');
   if (freeTools(s, p, 'yxa') > 0) { // en yxa som ingen annan fäller eller hugger med
     const k = nearestStock(s);
     if (k) return { act: 'hugga', x: k.x + 0.3, y: k.y + 0.2, ref: k.id, why: 'Hugger trä av en fälld stam' };
-    const taken = new Set(busy.filter(q => q.task!.act === 'falla').map(q => Math.floor(q.task!.ty) * W + Math.floor(q.task!.tx)));
-    const t = treeSpot(s, taken);
-    if (t) return { act: 'falla', x: t.x, y: t.y, dur: fallTid(s, Math.floor(t.y) * W + Math.floor(t.x)), why: 'Har en yxa och fäller ett träd till trä' };
+    const t = treeSpot(s, fellingTiles(s, p));
+    if (t) return { act: 'falla', x: t.x, y: t.y, dur: fallTid(s, tileOf(t.x, t.y)), why: 'Har en yxa och fäller ett träd till trä' };
   }
   const adults = ppl.filter(q => ageOf(q, s.now) >= 16).length;
   if ((halvOf(s, p, ['yxa']) || knows(p, 'yxa') && canMakeAxe(s, p)) && axes(s) < axesWanted(adults) + (s.hus?.some(h => !h.klar) ? 1 : 0) && !others.some(q => q.task?.act === 'yxa')) {

@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { ACTS, Person, slagIkon, SEC, TalkEvent, ageOf, SAMTAL_R, alive, byId, homeKind, isSick, isSocial, living, load, relKey, spar } from '../sim';
+import { ACTS, Person, slagIkon, SEC, TalkEvent, ageOf, SAMTAL_R, alive, byId, clamp, homeKind, isSick, isSocial, living, load, relKey, spar } from '../sim';
 import { hsl } from './hjalp';
 import { s, ui } from './lage';
 import { Ikoner, TS, bubbleG, labels, markLayer, peopleG } from './scen';
@@ -27,7 +27,7 @@ export function posOf(p: Person) {
   if (v && v.length >= 6 && t < v[v.length - 3]) {
     let i = 0;
     while (i + 3 < v.length - 3 && v[i + 3] <= t) i += 3;
-    const t0 = v[i], t1 = v[i + 3], f = t1 > t0 ? Math.max(0, Math.min(1, (t - t0) / (t1 - t0))) : 1;
+    const t0 = v[i], t1 = v[i + 3], f = t1 > t0 ? clamp((t - t0) / (t1 - t0), 0, 1) : 1;
     x = v[i + 1] + (v[i + 4] - v[i + 1]) * f; y = v[i + 2] + (v[i + 5] - v[i + 2]) * f;
     still = v[i + 1] === v[i + 4] && v[i + 2] === v[i + 5];
   }

@@ -1,5 +1,5 @@
 import { iconImg } from '../ikoner';
-import { HOUR, LogEntry, Person, byId, capacity, carryKind, isParent, isSick, load, sak, sakNamn, timeLabel } from '../sim';
+import { HOUR, LogEntry, Person, byId, capacity, carryKind, clamp, isParent, isSick, load, sak, sakNamn, timeLabel } from '../sim';
 import { s } from './lage';
 
 // små hjälpare för text, tal, färger och staplar som alla delar av gränssnittet använder
@@ -26,7 +26,7 @@ export function hsl(h: number, sat: number, l: number) {
 export const hex = (p: Person) => '#' + hsl(p.hue, 0.5, 0.58).toString(16).padStart(6, '0');
 
 // staplar
-export function bar(v: number, cls = '', tr = '') { return `<span class="bar ${cls}"><span style="width:${Math.round(Math.max(0, Math.min(1, v)) * 100)}%"></span></span>${tr}`; }
+export function bar(v: number, cls = '', tr = '') { return `<span class="bar ${cls}"><span style="width:${Math.round(clamp(v, 0, 1) * 100)}%"></span></span>${tr}`; }
 export const condBar = (c: number) => bar(c, c < 0.5 ? 'low' : '');
 // pil vid en stapel som ändras märkbart just nu: jämför med värdet för en stund sedan (speltid)
 const trendHist = new Map<string, { v: number; t: number; d: number }>();

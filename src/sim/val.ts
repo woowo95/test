@@ -73,7 +73,7 @@ export function spotFor(s: State, act: Act, p: Person): { x: number; y: number }
   const min = plats === 'ang' || plats === 'avsides' ? 5 : 4, max = plats === 'avsides' ? 9 : Infinity;
   for (let i = 0; i < 260; i++) {
     const x = Math.floor(mid.x + (rnd(s, 'val', p) - 0.5) * 34), y = Math.floor(mid.y + (rnd(s, 'val', p) - 0.5) * 26);
-    if (x < 0 || y < 0 || x >= W || y >= H) continue;
+    if (!inMap(x, y)) continue;
     const d = campDist(s, x, y);
     if (d < min || d > max) continue;
     if (want(m.tiles[y * W + x], x, y)) cands.push({ x, y, d });

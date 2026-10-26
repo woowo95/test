@@ -10,6 +10,7 @@ import { amountOf, changed, ownMove, ownsAmount, use, zonesOf } from './lager';
 import { freeTools } from './agande';
 import { getable, takeMaterial } from './behov';
 import { Del } from './egendom';
+import { fellingTiles } from './skog';
 import { FOREST, findPath } from './vag';
 import { kronika } from './historik';
 import { BYGGNADER, Byggnad, Fn, bedTile, familjOf, fnOf, husKlar, mostUrgent } from './byggnader';
@@ -159,7 +160,7 @@ export function buildJob(s: State, p: Person): Job | undefined {
   const taken = new Set(others.filter(q => q.task?.act === 'bygga').map(q => q.task!.ref));
   // först fälls träden där huset ska stå, även inne i huset, av den som har en ledig yxa
   if (freeTools(s, p, 'yxa') > 0) {
-    const felling = new Set(others.filter(q => q.task?.act === 'falla').map(q => Math.floor(q.task!.ty) * W + Math.floor(q.task!.tx)));
+    const felling = fellingTiles(s, p);
     let fb: Bit | undefined, fs = Infinity;
     for (const b of bitsOf(s)) {
       if ((b.b >= 1 && b.k !== 'oppning') || !treeOn(s, b) || felling.has(b.y * W + b.x)) continue;
@@ -193,7 +194,7 @@ export const lacks = (b: Bit) => needOf(b) > 1e-9;
 export function siteOf(s: State, b: Bit) {
   if (b.k !== 'vagg') return { x: b.x + 0.5, y: b.y + 0.5 };
   const hus = housesOf(s).find(h => h.id === b.hus);
-  const opts = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([dx, dy]) => ({ x: b.x + dx, y: b.y + dy })).filter(o => o.x >= 0 && o.y >= 0 && o.x < W && o.y < H && !blocked(s, o.x, o.y))
+  const opts = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([dx, dy]) => ({ x: b.x + dx, y: b.y + dy })).filter(o => inMap(o.x, o.y) && !blocked(s, o.x, o.y))
     .sort((a, c) => inHus(hus, c) - inHus(hus, a));
   const o = opts[0] ?? freeNear(s, b.x, b.y, true); // aldrig på väggen själv: då står man i den när den är klar
   return { x: o.x + 0.5, y: o.y + 0.5 };
@@ -256,7 +257,7 @@ export function workOn(s: State, p: Person, b: Bit, dtSec: number) {
 }
 // en vägg som just blivit klar: den som står där kliver åt sidan, och det som ligger där flyttas
 function clearTile(s: State, b: Bit) {
-  const free = [[0, 1], [1, 0], [0, -1], [-1, 0], [1, 1], [-1, -1], [1, -1], [-1, 1]].map(([dx, dy]) => ({ x: b.x + dx, y: b.y + dy })).find(o => o.x >= 0 && o.y >= 0 && o.x < W && o.y < H && !blocked(s, o.x, o.y)) ?? freeNear(s, b.x, b.y, true);
+  const free = [[0, 1], [1, 0], [0, -1], [-1, 0], [1, 1], [-1, -1], [1, -1], [-1, 1]].map(([dx, dy]) => ({ x: b.x + dx, y: b.y + dy })).find(o => inMap(o.x, o.y) && !blocked(s, o.x, o.y)) ?? freeNear(s, b.x, b.y, true);
   for (const p of living(s)) if (Math.floor(p.x) === b.x && Math.floor(p.y) === b.y) { p.x = free.x + 0.5; p.y = free.y + 0.5; if (p.task) p.task.pk = undefined; }
   // den som var på väg dit, eller arbetar där med något annat, ställer sig bredvid i stället
   for (const p of living(s)) if (p.task && Math.floor(p.task.tx) === b.x && Math.floor(p.task.ty) === b.y) { p.task.tx = free.x + 0.5; p.task.ty = free.y + 0.5; p.task.pk = undefined; }

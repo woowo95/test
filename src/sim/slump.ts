@@ -35,6 +35,7 @@ export function rnd(s: State, k: Strom, p?: Person): number {
   return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
 }
 export const clamp = (v: number, a: number, b: number) => (v < a ? a : v > b ? b : v);
+export const clampI = (v: number, n: number) => clamp(Math.floor(v), 0, n - 1); // rutan (0 till n - 1) som punkten v ligger i, närmaste ruta utanför kartan
 export function gauss(s: State, k: Strom, p?: Person) { return (rnd(s, k, p) + rnd(s, k, p) + rnd(s, k, p) - 1.5) / 1.5; }
 export function pick<X>(s: State, arr: X[], k: Strom, p?: Person): X { return arr[Math.floor(rnd(s, k, p) * arr.length)]; }
 export function chance(s: State, ratePerSec: number, dtSec: number, k: Strom, p?: Person) { return rnd(s, k, p) < 1 - Math.exp(-ratePerSec * dtSec); }

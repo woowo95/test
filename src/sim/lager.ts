@@ -2,7 +2,7 @@ import { campDist } from './plats';
 import { Ting, newTing, tingOf } from './agande';
 import { alive, byId, stat, ageOf, log } from './folk';
 import { getMap } from './karta';
-import { Act, H, Person, State, T, Task, W } from './typer';
+import { Act, H, Person, State, T, Task, W, inMap } from './typer';
 import { bitAt, roofed } from './byggnad';
 import { ACTS } from './handlingar';
 import { BYN, Del, addDel, sumOf, takeOrder } from './egendom';
@@ -176,7 +176,7 @@ function shareOf(ag: Del | undefined, n: number, owner = BYN, s?: State): Del {
 // ---------- platser ----------
 function usable(s: State, x: number, y: number) {
   const m = getMap(s.seed), f = m.fire;
-  if (x < 0 || y < 0 || x >= W || y >= H) return false;
+  if (!inMap(x, y)) return false;
   const t = m.tiles[y * W + x];
   return t !== T.Vatten && t !== T.Sten && Math.max(Math.abs(x - f.x), Math.abs(y - f.y)) > 1 && !bitAt(s, x, y);
 }
