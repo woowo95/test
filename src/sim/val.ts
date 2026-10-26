@@ -367,7 +367,9 @@ function withTools(s: State, p: Person, v: Val, best: Act, what: string, fd: num
     const k = freeOfKinds(s, p, ks);
     if (k) { v.tool = k; v.why = v.why.replace(/\.$/, '') + '. ' + rader[k].tar; return; }
     const t = TILLVERKA[g];
-    if (t && !kyla && t.vill(s, p, gras)) { const m = t.gor(s, p); set(v, m.act, `${what}. ${m.text}`); v.dur = m.min * MIN; if (m.tool) v.tool = m.tool; return; }
+    if (t && !kyla && t.vill(s, p, gras)) { // redskapet görs vid sin egen plats: inget ärvs från flintletandet eller tändmaterialet
+      const m = t.gor(s, p); v.spot = undefined; v.sok = undefined; v.tandmat = undefined; set(v, m.act, `${what}. ${m.text}`); v.dur = m.min * MIN; if (m.tool) v.tool = m.tool; return;
+    }
   }
 }
 // hur mycket mer arbetet ger med det redskap som finns ledigt eller kan göras (det bästa först). Ett redskap räknas som

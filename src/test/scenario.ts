@@ -482,6 +482,20 @@ SCENARIER.stenring = {
       return `${n} av ${samla}`;
     };
     const yxaSvalt = letar(1, 2), eldSvalt = letar(0, 2), yxaMat = letar(1, 200);
+    // den som skulle leta flinta men i stället flätar en korg gör det vid elden, inte vid stenarna
+    let korgar = 0, korgFel = 0;
+    const fm = getMap(f.seed).fire;
+    for (const q of f.people) q.tek = { ...q.tek, korg: 1 };
+    setItems(f, { flinta: 0, torrgras: 20, grenar: 20 }); setFood(f, 2);
+    for (let i = 0; i < 300; i++) {
+      const p = living(f).filter(q => ageOf(q, f.now) >= ALDER.vuxen)[i % 4];
+      Object.assign(p, { toa: 1, warm: 1, rest: 1, health: 1, hunger: 1, social: 1, task: undefined });
+      chooseTask(f, p);
+      if (p.task?.act === 'korg') { korgar++; if (p.task.sok || p.task.tandmat || Math.hypot(p.task.tx - fm.x - 0.5, p.task.ty - fm.y - 0.5) > 4) korgFel++; }
+      p.task = undefined;
+    }
+    for (const q of f.people) if (q.tek) delete q.tek.korg;
+    setItems(f, { flinta: 1, torrgras: 20, grenar: 20 }); setFood(f, 200); // som efter letar(1, 200)
     // en i taget: letar någon redan (flaggan sok, vad skälet än säger) letar ingen annan flinta till en yxa
     const [l0, ...andra] = living(f).filter(q => ageOf(q, f.now) >= ALDER.vuxen);
     let fler = 0;
@@ -510,6 +524,7 @@ SCENARIER.stenring = {
     const tand5 = bransle(5), tand6 = bransle(6);
     return [
       [`elden tänds bara med bränsle kvar efter tändgrenarna (5 grenar: ${tand5 ? 'ja' : 'nej'}, 6 grenar: ${tand6 ? 'ja' : 'nej'})`, !tand5 && tand6],
+      [`en korg flätas vid elden, inte där flintan skulle letas (${korgFel} av ${korgar} korgar fel)`, korgar > 0 && korgFel === 0],
       [`en i taget letar flinta till en yxa (${fler} till av 100 när någon redan letar)`, fler === 0],
       [`den som hämtar tändmaterial (${valt ? 'vald' : 'inte vald'}) fortsätter på en plats utan bär (${fortsatt ? 'ja' : 'nej'}) och slutar när det räcker (${slutat ? 'ja' : 'nej'})`, valt && fortsatt && slutat],
       [`flinta till en yxa letas inte när maten är knapp (${yxaSvalt} som samlar letar), men när den räcker (${yxaMat}); flinta till elden letas ändå (${eldSvalt})`, yxaSvalt.startsWith('0 ') && !yxaMat.startsWith('0 ') && !eldSvalt.startsWith('0 ')],
