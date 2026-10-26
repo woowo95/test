@@ -716,6 +716,11 @@ SCENARIER.byte = {
     addTo(s, 'flinta', 3); gain(s, b, 'flinta', 2); gain(s, a, 'bar', 20);
     takeMaterial(s, a, 'flinta', 1);
     const material = nara(byns(s, 'flinta'), 3) && nara(ownsAmount(s, b, 'flinta'), 1) && ownsAmount(s, b, 'bar') > 1;
+    // grenar räknas i styck, inte i vedens behovsenheter: a köper tre grenar av b och inga fler av c (motor-4)
+    let c: Person; ({ s, a, b, c } = ny()); c.x = a.x; c.y = a.y;
+    gain(s, b, 'grenar', 3); gain(s, c, 'grenar', 3); gain(s, a, 'bar', 20);
+    takeMaterial(s, a, 'grenar', 3);
+    const grenar = ownsAmount(s, b, 'grenar') + ownsAmount(s, c, 'grenar'), grenOver = ownsAmount(s, a, 'grenar'), grenByten = s.stat?.byten;
     // ett redskap mot mat: a samlar och saknar korg, b har två
     ({ s, a, b } = ny());
     a.habit = { samla: 10 }; addTool(s, 'korg', b); addTool(s, 'korg', b); gain(s, a, 'bar', 20);
@@ -750,6 +755,7 @@ SCENARIER.byte = {
       ['den som håller på att dö får ett ojämnt byte', dor],
       ['en ovän byter inte', ovan],
       ['material till ett eget arbete byts till sig före byns', material],
+      [`den som saknar tre grenar köper tre i ett byte (grannarna har ${grenar.toFixed(2)} av 6 kvar, ${grenOver.toFixed(2)} över, ${grenByten} byten)`, nara(grenar, 3) && nara(grenOver, 0) && grenByten === 1],
       ['ett redskap byts mot mat', korg],
       ['i samtal byter den som har mindre mat än hen vill ha kvar till sig mat mot trä, och båda tjänar på det', kvall],
       ['har båda det de vill ha kvar blir det inget byte', nog],

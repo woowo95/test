@@ -265,7 +265,10 @@ export function takeMaterial(s: State, p: Person, k: string, n: number, common =
 function tradeMaterial(s: State, p: Person, k: string, n: number) {
   let rest = n;
   for (const g of kretsen(s, p, g => ownsAmount(s, g, k) > 1e-9, g => willing(s, g, p, ownsAmount(s, g, k) / rest), true)) {
-    rest -= byte(s, p, g, [{ k, n: Math.min(rest, ownsAmount(s, g, k)) }], { behov: BEHOV_SAKNAR, minst: 1e-6, fara: 0, typ: 'material', utom: [k] });
+    // rest räknas i styck av k: mät det som kom (byte ger behovets enheter, för grenar 0,4 per gren)
+    const fore = ownsAmount(s, p, k);
+    byte(s, p, g, [{ k, n: Math.min(rest, ownsAmount(s, g, k)) }], { behov: BEHOV_SAKNAR, minst: 1e-6, fara: 0, typ: 'material', utom: [k] });
+    rest -= ownsAmount(s, p, k) - fore;
     if (rest <= 1e-9) break;
   }
 }
