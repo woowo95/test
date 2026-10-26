@@ -119,7 +119,7 @@ export function spotFor(s: State, act: Act, p: Person): { x: number; y: number }
   }
   if (plats === 'lek') { // lekplatsen ligger söder om elden, men aldrig i vattnet
     for (let k = 0; k < 12; k++) {
-      const x = f.x + (rnd(s, 'val', p) - 0.5) * 8, y = f.y + 3 + rnd(s, 'val', p) * 3;
+      const x = f.x + (rnd(s, 'val', p) - 0.5) * PLATS.lekBredd, y = f.y + PLATS.lekFran + rnd(s, 'val', p) * PLATS.lekDjup;
       if (inMap(x, y) && !blocked(s, x, y)) return { x, y };
     }
     return freeNear(s, f.x + 0.5, f.y + 1.5);

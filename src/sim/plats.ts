@@ -10,6 +10,9 @@ export const PLATS = balans('plats', {
   toppProspekt: 10, // byns närområde räknas som snittet av så många av de bästa platserna (fynd.ts)
   toppArea: 5, // ett område räknas som snittet av så många av de bästa rutorna (minne.ts)
   tomtGrans: 0.08, // en plats som ger mindre än så (rikedom, richness) är tömd: man går därifrån (steg.ts)
+  lekBredd: 8, // lekplatsen ligger söder om elden: så många rutor bred (hälften åt varje sida om elden) ...
+  lekFran: 3, // ... börjar så här många rutor söder om elden ...
+  lekDjup: 3, // ... och är så här många rutor djup (barnen leker där i val.ts, och byn bygger helst inte där, bygg.ts)
 });
 
 // Byns läger är inte bara elden: det är elden och lagerplatserna, och senare fler eldar och byggnader.

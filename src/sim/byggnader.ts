@@ -1,4 +1,4 @@
-import { alive, byId, count, isParent, living, log } from './folk';
+import { KROPP, alive, byId, count, isParent, living, log } from './folk';
 import { Hus, MATERIAL, Rum, bitById, bitsOf, gridOf, housesOf, husById, shelterOf, touch } from './byggnad';
 import { heatAt } from './eld';
 import { getMap } from './karta';
@@ -8,6 +8,31 @@ import { DAY } from './typer';
 import { tingOf } from './agande';
 import { ARBETE, grundvarde, tingVarde, varuVarde } from './varde';
 import { Person, State } from './typer';
+import { balans } from './balans';
+
+// ---------- balanstal (regel 8) ----------
+// Husens storlek, vad de är till för och när de byter funktion eller rivs. Var de står och hur de byggs står i BYGG (bygg.ts)
+export const HUS = balans('hus', {
+  minSida: 2, // ett hus är minst så här många rutor på varje sida inuti väggarna ...
+  maxSida: 4, // ... och högst så här många på den kortare sidan ...
+  langSida: 2, // ... med den längre sidan högst så här många gånger den kortare
+  langhus: 8, // en sovsal med så här många sovplatser (rutor) eller fler är ett långhus, annars en hydda
+  sovExtra: 2, // ett nytt sovhus rymmer så här många fler än de som saknar sovplats (barn som kommer)
+  faraBonus: 100, // en fara (kylan) går före all bekvämlighet: så många poäng över vikten gånger hur akut det är
+  ruttMin: 10, // så mycket mat som ruttnat bort på sistone innan byn bygger ett förrådshus
+  ruttFullt: 4, // behovet av förrådshus är som störst när så här många gånger ruttMin ruttnat
+  ruttGlom: 0.97, // så mycket av det som ruttnat som byn minns efter en timme (hälften efter ett dygn)
+  ruttGlomMin: 0.01, // mindre än så här glöms helt
+  forradPlats: 6, // ett nytt förrådshus rymmer så här många rutor
+  forradFullt: 0.5, // hur akut ett fullt förråd är (0 till 1)
+  familjAkut: 0.5, // hur akut det är att en familj får eget hus (0 till 1)
+  familjMin: 3, // en familj med färre än så här många ger inget familjehus
+  familjExtra: 1, // ett familjehus rymmer så här många fler än familjen, och familjen ska ha råd med det
+  tomDygn: 1, // en sovsal som ingen sovit i så här länge (dygn, år i spelet) får en ny funktion eller rivs
+  rivTillbaka: 0.5, // så mycket av materialet kommer tillbaka när ett hus rivs
+  varmeMarg: 0.02, // ett samlingshus räknas som varmare än elden även om det är så här mycket kallare ...
+  varmeY: 2.9, // ... mätt så här många rutor söder om elden
+});
 
 // ---------- byggnaderna: vad ett hus är till för ----------
 // Varje sorts byggnad är en rad i registret BYGGNADER (sedan steg 1.6.1): vilket behov den fyller, hur viktigt behovet är
@@ -33,16 +58,16 @@ export const BYGGNADER = {
   sovsal: {
     namn: 'Sovsal', ikon: '🛏️', behov: 'Sovplatser under tak åt alla, mot kylan', fara: true, vikt: 3, agare: 'byn', sover: true,
     // så många som saknar en sovplats, och lite till för barn som kommer
-    akut: s => { const n = living(s).length, u = homeless(s); return { v: n ? u / n : 0, plats: u + 2 }; },
-    namnFor: (_s, w, h, same) => { const big = w * h >= LANGHUS_PLATSER; return same ? `${big ? 'Långhus' : 'Hydda'} ${same + 1}` : big ? 'Långhuset' : 'Hyddan'; },
+    akut: s => { const n = living(s).length, u = homeless(s); return { v: n ? u / n : 0, plats: u + HUS.sovExtra }; },
+    namnFor: (_s, w, h, same) => { const big = w * h >= HUS.langhus; return same ? `${big ? 'Långhus' : 'Hydda'} ${same + 1}` : big ? 'Långhuset' : 'Hyddan'; },
   },
   forrad: {
     namn: 'Förrådshus', ikon: '📦', behov: 'Maten ruttnar eller förrådet är fullt: under tak ruttnar och slits det mindre', fara: false, vikt: 2, agare: 'byn', lager: true,
     // ett för maten när den ruttnar, ett för materialet när förrådet är fullt
     akut: s => {
       const har = (slag: string) => housesOf(s).some(h => h.fn === 'forrad' && (h.slag ?? 'mat') === slag), rot = s.ruttet ?? 0;
-      if (rot >= RUTT_MIN && !har('mat')) return { v: Math.min(1, rot / (4 * RUTT_MIN)), plats: 6, slag: 'mat' };
-      if (storeFull(s) && !har('material')) return { v: 0.5, plats: 6, slag: 'material' };
+      if (rot >= HUS.ruttMin && !har('mat')) return { v: Math.min(1, rot / (HUS.ruttFullt * HUS.ruttMin)), plats: HUS.forradPlats, slag: 'mat' };
+      if (storeFull(s) && !har('material')) return { v: HUS.forradFullt, plats: HUS.forradPlats, slag: 'material' };
       return { v: 0, plats: 0 };
     },
     namnFor: (_s, _w, _h, same) => same ? `Förrådshus ${same + 1}` : 'Förrådshuset',
@@ -52,7 +77,7 @@ export const BYGGNADER = {
     // en familj (ett par med barn) utan eget hus som äger så mycket att den kan betala huset själv
     akut: s => {
       const f = familjUtanHus(s);
-      return f ? { v: 0.5, plats: f.folk.length + 1, ag: f.ag } : { v: 0, plats: 0 };
+      return f ? { v: HUS.familjAkut, plats: f.folk.length + HUS.familjExtra, ag: f.ag } : { v: 0, plats: 0 };
     },
     namnFor: (s, _w, _h, _same, a) => husNamn(byId(s, a.ag)?.name ?? 'Familjens'),
   },
@@ -63,16 +88,13 @@ export const BYGGNADER = {
     namnFor: (_s, _w, _h, same) => same ? `Samlingshus ${same + 1}` : 'Samlingshuset',
   },
 } satisfies Record<string, Byggnad>;
-const RUTT_MIN = 10; // så mycket mat som ruttnat bort på sistone innan byn bygger ett förrådshus
-const RUTT_GLOM = 0.97; // så mycket av det som ruttnat som byn minns efter en timme (hälften efter ett dygn)
 export type Fn = keyof typeof BYGGNADER;
 export const FN = Object.keys(BYGGNADER) as Fn[];
 export const fnId = (h: Hus): Fn => (h.fn ?? 'sovsal') as Fn; // husets funktion; hus från äldre sparfiler är sovsalar
 export const fnOf = (h: Hus): Byggnad => BYGGNADER[fnId(h)] ?? BYGGNADER.sovsal;
-export const LANGHUS_PLATSER = 8; // en sovsal med så många sovplatser (rutor) eller fler är ett långhus, annars en hydda
 // så många andra hus (utom `utom`) har samma sorts namn som ett nytt hus för funktionen fn med yta w×h inuti väggarna
 export function antalLika(s: State, fn: Fn, w: number, h: number, utom?: Hus) {
-  const big = w * h >= LANGHUS_PLATSER, hs = housesOf(s).filter(q => q !== utom);
+  const big = w * h >= HUS.langhus, hs = housesOf(s).filter(q => q !== utom);
   return fn === 'sovsal' ? hs.filter(q => q.namn.startsWith(big ? 'Långhus' : 'Hydda')).length : hs.filter(q => fnId(q) === fn).length;
 }
 
@@ -84,7 +106,7 @@ export function mostUrgent(s: State) {
     if (!r.akut) continue;
     const a = r.akut(s);
     if (a.v <= 1e-9) continue;
-    const sc = (r.fara ? 100 : 0) + r.vikt * a.v;
+    const sc = (r.fara ? HUS.faraBonus : 0) + r.vikt * a.v;
     if (sc > bs) { bs = sc; best = { fn, a }; }
   }
   return best;
@@ -113,7 +135,7 @@ function formogenhet(s: State, folk: Person[]) {
 }
 // vad ett hus med plats för n kostar: timret och trägolvet och arbetet med dem
 function husKostnad(n: number) {
-  const w = Math.max(2, Math.ceil(Math.sqrt(n))), h = Math.max(2, Math.ceil(n / w)), vagg = 2 * (w + 2) + 2 * h - 1, V = MATERIAL.timmer, G = MATERIAL.tra;
+  const w = Math.max(HUS.minSida, Math.ceil(Math.sqrt(n))), h = Math.max(HUS.minSida, Math.ceil(n / w)), vagg = 2 * (w + 2) + 2 * h - 1, V = MATERIAL.timmer, G = MATERIAL.tra;
   return vagg * (V.n * grundvarde(V.item!) + V.tim * ARBETE) + w * h * (G.n * grundvarde(G.item!) + G.tim * ARBETE);
 }
 // den första familjen (ett par med barn) som inte har något eget hus och har råd med ett
@@ -123,8 +145,8 @@ function familjUtanHus(s: State) {
     const pa = byId(s, o.partner);
     if (!pa || !alive(pa) || pa.id < o.id) continue; // paret räknas en gång, från den med lägst id
     const folk = familjOf(s, o.id);
-    if (folk.length < 3 || hs.some(h => h.ag === o.id || h.ag === pa.id)) continue;
-    if (formogenhet(s, folk) >= husKostnad(folk.length + 1)) return { ag: o.id, folk };
+    if (folk.length < HUS.familjMin || hs.some(h => h.ag === o.id || h.ag === pa.id)) continue;
+    if (formogenhet(s, folk) >= husKostnad(folk.length + HUS.familjExtra)) return { ag: o.id, folk };
   }
   return undefined;
 }
@@ -172,7 +194,7 @@ export function bedTile(s: State, p: Person) {
 
 // ---------- varje timme ----------
 export function stepByggnader(s: State) {
-  if (s.ruttet) s.ruttet = s.ruttet * RUTT_GLOM < 0.01 ? undefined : s.ruttet * RUTT_GLOM;
+  if (s.ruttet) s.ruttet = s.ruttet * HUS.ruttGlom < HUS.ruttGlomMin ? undefined : s.ruttet * HUS.ruttGlom;
   // ett hus vars ägare är borta utan arvingar (eller har flyttat) blir byns
   for (const h of housesOf(s)) {
     if (h.ag === undefined) continue;
@@ -187,8 +209,6 @@ export function stepByggnader(s: State) {
 // En sovsal som ingen har sovit i på ett dygn (ett år i spelet) får en ny funktion: ett förrådshus om byn behöver ett,
 // annars ett samlingshus om byn inte har något, och annars rivs den och hälften av timret kommer tillbaka till byn.
 // Saknas sovplatser blir ett samlingshus en sovsal igen, före ett nytt hus. Ett familjehus som ingen äger blir en sovsal.
-const TOM_TID = DAY;
-const RIV_TILLBAKA = 0.5; // så mycket av materialet som kommer tillbaka när ett hus rivs
 // ett nytt namn efter funktionen
 function nyttNamn(s: State, h: Hus, fn: Fn, a: Akut) {
   const r: Byggnad = BYGGNADER[fn], w = h.w - 2, hh = h.h - 2, same = antalLika(s, fn, w, hh, h);
@@ -204,7 +224,7 @@ function bytFn(s: State, h: Hus, fn: Fn, slag?: 'mat' | 'material') {
   husKlar(s, h);
 }
 function riv(s: State, h: Hus) {
-  const ved = bitsOf(s).filter(b => b.hus === h.id).reduce((a, b) => a + (MATERIAL[b.m].item === 'ved' ? b.mat : 0), 0) * RIV_TILLBAKA;
+  const ved = bitsOf(s).filter(b => b.hus === h.id).reduce((a, b) => a + (MATERIAL[b.m].item === 'ved' ? b.mat : 0), 0) * HUS.rivTillbaka;
   s.byggen = bitsOf(s).filter(b => b.hus !== h.id); s.hus = housesOf(s).filter(q => q !== h);
   if (ved > 1e-9) put(s, 'ved', ved);
   touch(s); changed(s); count(s, 'rivet');
@@ -223,7 +243,7 @@ function funktionsbyte(s: State) {
     const tiles = gridOf(s).rooms.filter(r => r.hus === h.id).flatMap(r => r.tiles);
     if (!tiles.length || tiles.some(i => anvand.has(i))) { h.tom = undefined; continue; }
     h.tom ??= s.now;
-    if (s.now - h.tom < TOM_TID) continue;
+    if (s.now - h.tom < HUS.tomDygn * DAY) continue;
     const f = BYGGNADER.forrad.akut(s);
     if (f.v > 1e-9) bytFn(s, h, 'forrad', f.slag);
     else if (!hs.some(q => q.fn === 'samling')) bytFn(s, h, 'samling');
@@ -233,8 +253,8 @@ function funktionsbyte(s: State) {
 }
 // är det varmare inne i rummet än vid elden? c = kylan (coldOf): hur kallt det är ute
 export function varmareInne(s: State, rum: Rum, c: number) {
-  const f = getMap(s.seed).fire, inne = -c * (1 - shelterOf(s, rum, Math.min(living(s).length, rum.tiles.length))), ute = heatAt(s, f.x + 0.5, f.y + 2.9) * 2 - c;
-  return inne >= Math.min(0, ute) - 0.02;
+  const f = getMap(s.seed).fire, inne = -c * (1 - shelterOf(s, rum, Math.min(living(s).length, rum.tiles.length))), ute = heatAt(s, f.x + 0.5, f.y + HUS.varmeY) * KROPP.eldVarme - c;
+  return inne >= Math.min(0, ute) - HUS.varmeMarg;
 }
 // samlingshusets rum, där man umgås när det är kallt (val.ts)
 export const samlingRum = (s: State): Rum | undefined => {

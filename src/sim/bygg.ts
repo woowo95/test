@@ -2,7 +2,7 @@ import { ageOf, count, forstaGang, living, log, stat } from './folk';
 import { Bit, Hus, MATERIAL, bitsOf, blocked, freeNear, gridOf, housesOf, husById, touch } from './byggnad';
 import { getMap } from './karta';
 import { groundOf, punktIRuta } from './mark';
-import { campCenter, rektAvstand } from './plats';
+import { PLATS, campCenter, rektAvstand } from './plats';
 import { sedEvent } from './seder';
 import { RESERV, kunnighet } from './ekonomi';
 import { ARSTID, iIstiden } from './tid';
@@ -14,14 +14,38 @@ import { Del } from './egendom';
 import { fellingTiles } from './skog';
 import { FOREST, findPath } from './vag';
 import { kronika } from './historik';
-import { BYGGNADER, Byggnad, Fn, LANGHUS_PLATSER, antalLika, bedTile, familjOf, fnOf, husKlar, mostUrgent } from './byggnader';
+import { BYGGNADER, Byggnad, Fn, HUS, antalLika, bedTile, familjOf, fnOf, husKlar, mostUrgent } from './byggnader';
 import { H, HOUR, HOUR_S, Person, State, T, W, inMap } from './typer';
+import { balans } from './balans';
+
+// ---------- balanstal (regel 8) ----------
+// Planeringen (var ett nytt hus står) och arbetet (i vilken ordning och hur fort det byggs och lagas). Husens storlek och
+// funktion står i HUS (byggnader.ts), lekplatsens läge i PLATS (plats.ts)
+const BYGG = balans('bygg', {
+  maxInne: 24, // största hus: så många sovplatser
+  husAvst: 5.5, // så långt från elden man helst bygger (rutor till husets närmaste vägg)
+  radieBas: 9, // ett hus planeras inom så här många rutor från byns mitt ...
+  radiePerPerson: 0.25, // ... plus så många per invånare
+  lagerMarg: 1, // ett hus står minst så här många rutor från en lagerplats
+  mittVikt: 0.2, // en plats får så många poäng (färre är bättre) för varje ruta från byns mitt ...
+  lekStraff: 3, // ... så många om huset står på lekplatsen ...
+  tradVikt: 0.15, // ... och så många för varje träd som måste fällas först
+  byggareInt: 4, // när byn väljer byggare väger intelligensen så här många gånger mindre än hantverket
+  omforsok: 12, // timmar innan byn försöker planera ett hus igen när det inte fanns någon plats
+  samtidiga: 4, // högst så här många rutor byggs på samtidigt
+  laga: 0.5, // väggar under det skicket lagas
+  prioJord: 100, // i vilken ordning man bygger: lagning först, sedan jordgolv, väggar och sist trägolv (plus rutor till platsen)
+  prioVagg: 200,
+  prioTra: 300,
+  lagFart: 2, // lagning går så här många gånger fortare än att bygga ...
+  lagMatDiv: 2, // ... och kräver materialet delat med så mycket
+  ungFart: 0.6, // en ung byggare (yngre än ALDER.byggFullt) bygger med så här stor del av takten
+  klartGemenskap: 0.03, // när ett hus blir färdigt stärks sedernas gemenskap så här mycket
+});
 
 // ---------- att bygga ----------
 // det som lämnas kvar i förrådet till elden av slaget k (RESERV i ekonomi.ts)
 const sparas = (k: string) => k === 'ved' ? RESERV.ved : k === 'grenar' ? RESERV.grenar : k === 'torrgras' ? RESERV.torrgras : 0;
-const MAX_INNE = 24; // största hus: så många sovplatser
-const LAGA = 0.5; // väggar under det skicket lagas
 
 // var p sover: en egen ruta under tak om det finns, annars ingenstans (byggnader.ts)
 export function bedFor(s: State, p: Person) {
@@ -34,14 +58,14 @@ export function bedFor(s: State, p: Person) {
 const tileOk = (s: State, x: number, y: number) => {
   if (x < 1 || y < 1 || x >= W - 1 || y >= H - 1) return false;
   if (!usable(s, x, y)) return false; // inte vatten, sten, inpå elden eller på ett annat bygge (träden spelar ingen roll: de fälls innan bygget börjar)
-  if (zonesOf(s).some(z => nearZone(z, x, y, 1))) return false;
+  if (zonesOf(s).some(z => nearZone(z, x, y, BYGG.lagerMarg))) return false;
   if ((s.stackar ?? []).some(a => a.x === x && a.y === y) || (s.stockar ?? []).some(k => Math.floor(k.x) === x && Math.floor(k.y) === y) || (s.stubbar ?? []).some(k => k.x === x && k.y === y)) return false;
   return true;
 };
 // en plats för ett hus med yttermåtten w×h inom byområdet, helst en bit från elden och inte på lekplatsen. Träden där
 // huset ska stå fälls först, men en plats med färre träd går fortare
 function siteFor(s: State, w: number, h: number, okAt: Uint8Array) {
-  const f = getMap(s.seed).fire, mid = campCenter(s), R = 9 + living(s).length * 0.25, g = groundOf(s);
+  const f = getMap(s.seed).fire, mid = campCenter(s), R = BYGG.radieBas + living(s).length * BYGG.radiePerPerson, g = groundOf(s);
   let best: { x: number; y: number } | undefined, bs = Infinity;
   for (let y = 1; y + h < H; y++) for (let x = 1; x + w < W; x++) {
     const cx = x + w / 2, cy = y + h / 2;
@@ -53,10 +77,10 @@ function siteFor(s: State, w: number, h: number, okAt: Uint8Array) {
     }
     if (!ok) continue;
     const near = rektAvstand(f.x, f.y, x, y, w, h);
-    const lek = x <= f.x + 4 && x + w > f.x - 4 && y <= f.y + 6 && y + h > f.y + 3 ? 3 : 0;
+    const lek = x <= f.x + PLATS.lekBredd / 2 && x + w > f.x - PLATS.lekBredd / 2 && y <= f.y + PLATS.lekFran + PLATS.lekDjup && y + h > f.y + PLATS.lekFran ? BYGG.lekStraff : 0;
     let trad = 0; // helst en plats med få träd: varje träd ska fällas först
     for (let yy = y; yy < y + h; yy++) for (let xx = x; xx < x + w; xx++) if (g.trees[yy * W + xx] >= FOREST) trad++;
-    const sc = Math.abs(near - HUS_AVST) + 0.2 * Math.hypot(cx - mid.x, cy - mid.y) + lek + 0.15 * trad;
+    const sc = Math.abs(near - BYGG.husAvst) + BYGG.mittVikt * Math.hypot(cx - mid.x, cy - mid.y) + lek + BYGG.tradVikt * trad;
     if (sc < bs) { bs = sc; best = { x, y }; }
   }
   return best;
@@ -68,13 +92,12 @@ function kanGaUt(s: State, at: { x: number; y: number }, w: number, h: number, u
   for (let y = at.y; y < at.y + h; y++) for (let x = at.x; x < at.x + w; x++) solid[y * W + x] = 1;
   return findPath({ ...g, solid }, ux + 0.5, uy + 0.5, f.x + 0.5, f.y + 0.5) !== null;
 }
-const HUS_AVST = 5.5; // så långt från elden man helst bygger (rutor till husets närmaste vägg)
 const canBuildWalls = (p: Person, s: State) => ageOf(p, s.now) >= 14 && knows(p, 'timmervagg');
 // en gång i timmen: planera ett nytt hus för det mest akuta behovet (BYGGNADER i byggnader.ts) om någon kan bygga väggar
 export function planBuild(s: State) {
   const ppl = living(s), hs = housesOf(s);
   if (!ppl.length || hs.some(h => !h.klar)) return;
-  const byggare = ppl.filter(p => canBuildWalls(p, s)).sort((a, b) => (b.skill.hantverk + stat(b, 'intelligens', s.now) / 4) - (a.skill.hantverk + stat(a, 'intelligens', s.now) / 4));
+  const byggare = ppl.filter(p => canBuildWalls(p, s)).sort((a, b) => (b.skill.hantverk + stat(b, 'intelligens', s.now) / BYGG.byggareInt) - (a.skill.hantverk + stat(a, 'intelligens', s.now) / BYGG.byggareInt));
   if (!byggare.length || s.now < (s.byggSok ?? 0)) return;
   const u = mostUrgent(s);
   if (!u) return;
@@ -83,8 +106,8 @@ export function planBuild(s: State) {
   const row: Byggnad = BYGGNADER[u.fn];
   // storleken efter behovet; så nära kvadratiskt som möjligt
   const sizes: { w: number; h: number }[] = [];
-  for (let h = 2; h <= 4; h++) for (let w = h; w <= 2 * h; w++) sizes.push({ w, h });
-  const want = Math.min(MAX_INNE, u.a.plats);
+  for (let h = HUS.minSida; h <= HUS.maxSida; h++) for (let w = h; w <= HUS.langSida * h; w++) sizes.push({ w, h });
+  const want = Math.min(BYGG.maxInne, u.a.plats);
   sizes.sort((a, b) => (a.w * a.h < want ? 1000 - a.w * a.h : 0) - (b.w * b.h < want ? 1000 - b.w * b.h : 0) || a.w * a.h - b.w * b.h || (a.w - a.h) - (b.w - b.h));
   const okAt = new Uint8Array(W * H);
   for (let i = 0; i < W * H; i++) okAt[i] = tileOk(s, i % W, Math.floor(i / W)) ? 1 : 0;
@@ -117,10 +140,10 @@ export function planBuild(s: State) {
     log(s, planText(by, u.fn, hus, w * h, same), 'world', [by.id]); count(s, 'planerat_' + u.fn);
     return;
   }
-  s.byggSok = s.now + 12 * HOUR; // ingen plats nu: försök igen om ett tag
+  s.byggSok = s.now + BYGG.omforsok * HOUR; // ingen plats nu: försök igen om ett tag
 }
 function planText(by: Person, fn: Fn, h: Hus, n: number, same: number) {
-  if (fn === 'sovsal') return `${by.name} planerar ${n >= LANGHUS_PLATSER ? 'ett långhus' : 'en hydda'}${same ? ' till' : ''} med plats för ${n} att sova under tak.`;
+  if (fn === 'sovsal') return `${by.name} planerar ${n >= HUS.langhus ? 'ett långhus' : 'en hydda'}${same ? ' till' : ''} med plats för ${n} att sova under tak.`;
   if (fn === 'familjehus') return `${by.name} och familjen bestämmer sig för att bygga ett eget hus, ${h.namn.toLowerCase()}.`;
   return `${by.name} planerar ${h.namn.toLowerCase()}.`;
 }
@@ -168,15 +191,15 @@ export function buildJob(s: State, p: Person): Job | undefined {
     }
     if (fb) return { bit: fb, repair: false, need: 0, missing: false, fell: true };
   }
-  if (taken.size >= 4) return;
+  if (taken.size >= BYGG.samtidiga) return;
   let best: Job | undefined, bs = Infinity;
   for (const b of bitsOf(s)) {
     if (taken.has(b.id) || b.k === 'oppning' || (b.b < 1 && treeOn(s, b))) continue;
     const M = MATERIAL[b.m], repair = b.b >= 1;
-    if (repair && b.c >= LAGA) continue;
+    if (repair && b.c >= BYGG.laga) continue;
     if (M.tek && !knows(p, M.tek)) continue;
     const need = needOf(b);
-    const sc = (repair ? 0 : b.k === 'golv' ? (M.item ? 300 : 100) : 200) + Math.hypot(b.x - p.x, b.y - p.y);
+    const sc = (repair ? 0 : b.k === 'golv' ? (M.item ? BYGG.prioTra : BYGG.prioJord) : BYGG.prioVagg) + Math.hypot(b.x - p.x, b.y - p.y);
     if (sc < bs) { bs = sc; best = { bit: b, repair, item: M.item, need, missing: need > 0 && avail(s, M.item!, p, b.hus) < need }; }
   }
   return best;
@@ -185,7 +208,7 @@ export function buildJob(s: State, p: Person): Job | undefined {
 export function needOf(b: Bit) {
   const M = MATERIAL[b.m];
   if (!M.item) return 0;
-  return Math.max(0, b.b >= 1 ? Math.ceil(M.n / 2) - (b.lm ?? 0) : M.n - b.mat);
+  return Math.max(0, b.b >= 1 ? Math.ceil(M.n / BYGG.lagMatDiv) - (b.lm ?? 0) : M.n - b.mat);
 }
 export const lacks = (b: Bit) => needOf(b) > 1e-9;
 // var man står när man bygger: på golvet, eller bredvid väggen (helst inne i huset)
@@ -228,10 +251,10 @@ export function toWalls(s: State, x: number, y: number, n: number, hus?: number,
 // en stunds arbete på en ruta. Ger true när rutan är klar
 export function workOn(s: State, p: Person, b: Bit, dtSec: number) {
   const M = MATERIAL[b.m], repair = b.b >= 1;
-  const rate = dtSec / HOUR_S / (M.tim || 0.01) * kunnighet(p.skill.hantverk) * (ageOf(p, s.now) < 16 ? 0.6 : 1);
+  const rate = dtSec / HOUR_S / (M.tim || 0.01) * kunnighet(p.skill.hantverk) * (ageOf(p, s.now) < 16 ? BYGG.ungFart : 1);
   if (repair) {
-    if (M.item && (b.lm ?? 0) < Math.ceil(M.n / 2) - 1e-9) return false;
-    b.lp = (b.lp ?? 0) + rate * 2;
+    if (M.item && (b.lm ?? 0) < Math.ceil(M.n / BYGG.lagMatDiv) - 1e-9) return false;
+    b.lp = (b.lp ?? 0) + rate * BYGG.lagFart;
     if (b.lp < 1) return false;
     b.c = 1; b.lp = b.lm = undefined;
     if (forstaGang(s, 'lagat')) log(s, `${p.name} lagade en sliten vägg för första gången.`, 'world', [p.id]);
@@ -249,7 +272,7 @@ export function workOn(s: State, p: Person, b: Bit, dtSec: number) {
     const n = gridOf(s).rooms.filter(r => r.hus === h.id).reduce((a, r) => a + r.tiles.length, 0);
     if (fnOf(h).sover) log(s, `${h.namn} är färdigt. Nu kan ${n} sova under tak.`, 'world', [p.id]);
     kronika(s, `${h.namn} blev färdigt.`); husKlar(s, h);
-    sedEvent(s, 'gemenskap', 0.03);
+    sedEvent(s, 'gemenskap', BYGG.klartGemenskap);
   }
   return true;
 }

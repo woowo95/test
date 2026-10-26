@@ -1,6 +1,14 @@
 import { getMap } from './karta';
 import { groundOf, tileOf } from './mark';
 import { H, State, T, W, inMap } from './typer';
+import { balans } from './balans';
+
+// Balanstal (regel 8): hur väl ett rum skyddar mot kylan
+const BYGGNAD = balans('byggnad', {
+  oppningLacker: 0.12, // så mycket sämre ett rum håller värmen för varje öppning
+  kroppsvarme: 0.04, // varje människa i rummet värmer så här mycket (hur många som är där räknas, shelterOf)
+  skyddMax: 0.9, // mer än så här skyddar inget rum mot kylan
+});
 
 // ---------- byggen ----------
 // Varje ruta kan ha en vägg, ett golv eller en öppning. Väggar stänger vägen; en öppning är en lucka i väggen som man går
@@ -23,7 +31,6 @@ export const MATERIAL: Record<string, Material> = {
   ho: { namn: 'Golv av hö', k: 'golv', item: 'torrgras', n: 1, tim: 0.15, slit: 0.002 }, // äldre sparfiler: hö-golv läggs inte längre, slits till jordgolv
   oppning: { namn: 'Öppning', k: 'oppning', n: 0, tim: 0, slit: 0 },
 };
-const OPEN_LEAK = 0.12; // så mycket sämre ett rum håller värmen för varje öppning
 
 export const bitsOf = (s: State) => (s.byggen ??= []);
 export const housesOf = (s: State) => (s.hus ??= []);
@@ -106,10 +113,9 @@ export function insulation(s: State, r: Rum) {
   const g = gridOf(s);
   let sum = 0, n = 0;
   for (const i of r.walls) { const b = g.at.get(i)!; if (b.k !== 'vagg') continue; sum += (MATERIAL[b.m].isol ?? 0) * (0.5 + 0.5 * b.c); n++; }
-  return Math.max(0, (n ? sum / n : 0) - OPEN_LEAK * r.open);
+  return Math.max(0, (n ? sum / n : 0) - BYGGNAD.oppningLacker * r.open);
 }
 // den som är inne i ett rum kyls långsammare, och ju fler som är där, desto varmare håller de varandra
-const BODY = 0.04;
-export const shelterOf = (s: State, r: Rum, folk: number) => Math.min(0.9, insulation(s, r) + BODY * folk);
+export const shelterOf = (s: State, r: Rum, folk: number) => Math.min(BYGGNAD.skyddMax, insulation(s, r) + BYGGNAD.kroppsvarme * folk);
 // alla golvrutor under tak (var man sover står i byggnader.ts)
 export const beds = (s: State) => gridOf(s).rooms.flatMap(r => r.tiles);
