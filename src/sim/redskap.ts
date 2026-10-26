@@ -58,7 +58,8 @@ export function wearUsed(s: State, p: Person, n: number) {
   if (p.task) p.task.tool = undefined;
   if (tr?.text && forsta) log(s, tr.text.replace('{namn}', p.name), 'world', [p.id]);
 }
-const sharpTool = (s: State) => amountOf(s, 'yxa') >= 1 ? 'yxa' : amountOf(s, 'flinta') >= 1 ? 'flinta' : undefined;
+// yxorna räknas i styck: en sliten yxa är fortfarande en yxa (amountOf av ett redskap är summan av skicket)
+const sharpTool = (s: State) => nTools(s, 'yxa') >= 1 ? 'yxa' : amountOf(s, 'flinta') >= 1 ? 'flinta' : undefined;
 // ett flintspjut kräver en flinta utöver den som sparas att tända eld med, rep och en gren
 // Materialet tas i behovsstegen (behov.ts): sitt eget, byns, en gåva, och annars av andras (en lindrig stöld)
 const canFlintSpear = (s: State, p: Person) => knows(p, 'flintspjut') && getable(s, p, 'flinta') >= RECEPT.flintspjut.flinta + REDSKAP.flintaSparas && getable(s, p, 'rep') >= RECEPT.flintspjut.rep && getable(s, p, 'grenar') >= RECEPT.flintspjut.grenar;

@@ -8,6 +8,7 @@ import { kn, learnK, useK } from './kunskap';
 import { ageIndex } from './tid';
 import { kunnighet } from './ekonomi';
 import { addTo, amountOf, foodOf } from './lager';
+import { nTools } from './agande';
 import { DAY, H, HOUR, HOUR_S, Person, State, T, W, egen, inMap, tvaDelar, visning } from './typer';
 import { FOREST, isSoil } from './vag';
 import { ACTS, RedskapDef, SNABBARE } from './handlingar';
@@ -420,7 +421,7 @@ export function prospect(s: State, k: Kind) {
 // hur lätt det är att hitta flinta på platsen just nu: platser där man hittat flinta har mindre kvar ett tag
 export const flintFactor = (s: State, x: number, y: number) => richness(s, 'flinta', x, y);
 // byn behöver flinta att tända eld med och till en yxa
-export const wantsFlint = (s: State) => amountOf(s, 'flinta') < FANGST.flintaMinsta || amountOf(s, 'flinta') + amountOf(s, 'yxa') < FANGST.flintaBehov;
+export const wantsFlint = (s: State) => amountOf(s, 'flinta') < FANGST.flintaMinsta || amountOf(s, 'flinta') + nTools(s, 'yxa') < FANGST.flintaBehov; // yxorna i styck
 // en plats att samla på nära stenarna, där flinta är vanlig. I lägret och där flintan redan plockats finns ingen
 export function flintSpot(s: State, area?: (x: number, y: number) => boolean): { x: number; y: number } | undefined {
   const m = getMap(s.seed), sd = stoneDist(s.seed), c: { x: number; y: number; d: number }[] = [];
