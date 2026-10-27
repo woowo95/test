@@ -8,7 +8,7 @@ export let s: State;
 export const vidNyBy: (() => void)[] = [];
 export function setByn(n: State) {
   s = n; ui.nu = n.now; useMap(n); nyBild();
-  ui.hovered = undefined; ui.husId = -1; ui.stationId = -1; ui.hogAt = { x: 0, y: 0 };
+  ui.hovered = undefined; ui.husId = -1; ui.stationId = -1; ui.hogAt = { x: 0, y: 0 }; ui.sak = '';
   for (const f of vidNyBy) f();
 }
 export const ui = {
@@ -28,6 +28,7 @@ export const ui = {
   stationId: -1, // stationen som visas i panelen
   sjoNr: 0, // sjön som visas i panelen
   hogAt: { x: 0, y: 0 }, // rutan med högar utanför lagret som visas i panelen
+  sak: '', // saken som visas i panelen: "t:<id>" eller "s:<x>,<y>,<slag>" (flikar/sak.ts)
   lagerNr: 0, // vilken lagerplats som visas i panelen
   filter: undefined as Grupp | undefined, // värmekartan som visas på kartan
   filterArt: undefined as FyndId | undefined, // bara en art i gruppen, vald i teckenförklaringen

@@ -207,7 +207,8 @@ export function makeTask(s: State, p: Person, g: string) {
 // vid slaktbänken om knivplatsen där står tom, och blir byns, och en bensyl likadant vid slöjdbänken (stationer.ts). Ett
 // plagg sys med bänkens bensyl, och den slits för varje (REDSKAP.bensylSlits)
 export function toolDone(s: State, p: Person, k: string) {
-  nyttVid(s, addTool(s, k, p));
+  const t = addTool(s, k, p); t.av = p.id; t.gjord = s.now; // vem som gjorde det och när (inforutan, steg 2.3.5)
+  nyttVid(s, t);
   if (SAKER[k]!.klad) slitVid(s, k as Act, REDSKAP.bensylSlits);
   const g = SAKER[k]!.gors!, text = (t: string) => t.replace('{namn}', p.name).replace('{verktyg}', ordFor(s, k));
   if (forstaGang(s, g.stat)) {

@@ -10,6 +10,7 @@ import { person } from './flikar/person';
 import { seder } from './flikar/seder';
 import { teknik } from './flikar/teknik';
 import { projekt } from './flikar/projekt';
+import { sak } from './flikar/sak';
 import { $, hjalpKlick } from './hjalp';
 import { piles, s, ui } from './lage';
 import { renderPorts } from './portratt';
@@ -22,7 +23,7 @@ export interface Flik {
   html(): string; // innehållet; byggs om ett par gånger i sekunden
   klick?(el: HTMLElement): boolean; // tryck i sidan som fliken tar hand om, även när den inte är öppen; true = klart
 }
-const FLIKAR = { folk, logg, person, eld, lager, hog, hus, station, sjo, seder, teknik, projekt } satisfies Record<string, Flik>;
+const FLIKAR = { folk, logg, person, eld, lager, hog, hus, station, sjo, seder, teknik, projekt, sak } satisfies Record<string, Flik>;
 export type FlikId = keyof typeof FLIKAR;
 const ALLA: Record<FlikId, Flik> = FLIKAR;
 const IDS = Object.keys(FLIKAR) as FlikId[];
@@ -32,7 +33,7 @@ const nav = document.querySelector<HTMLElement>('.tabs')!;
 nav.innerHTML = IDS.filter(id => !ALLA[id].knapp).map(id => `<button type="button" role="tab" data-tab="${id}" aria-selected="false">${ALLA[id].namn}</button>`).join('');
 
 export function visa(id: FlikId) { ui.tab = id; renderPanel(true); }
-// flikarna som visas under personknappen (personen, elden, lagret, högen, huset, stationen, sjön): ett tryck på tom mark stänger dem
+// flikarna som visas under personknappen (personen, elden, lagret, högen, huset, stationen, sjön, saken): ett tryck på tom mark stänger dem
 export const ärPersonflik = (id: FlikId) => (ALLA[id].knapp ?? id) === 'person';
 export function selectPerson(id: number) { ui.selected = id; ui.tab = 'person'; renderPanel(true); renderPorts(); }
 

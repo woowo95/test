@@ -339,3 +339,46 @@ SCENARIER.teknik = {
     ];
   },
 };
+
+SCENARIER.sak = {
+  text: 'Inforutan för en sak (steg 2.3.5): den som gjorde ett redskap och när sparas, och det som sliter på saken just nu är samma tal som slitaget räknar med (i handen, i lagret, ute i vädret, på kroppen, maten som ruttnar)',
+  kor: () => {
+    const y = createState(4, START), yp = living(y).find(q => ageOf(q, y.now) >= 18)!;
+    SIM.toolDone(y, yp, 'yxa');
+    const t = tingOf(y).find(q => q.k === 'yxa')!;
+    const gjord = t.av === yp.id && t.gjord === y.now;
+    // i handen när man fäller: samma som wearUsed tar per timme
+    t.hos = yp.id;
+    yp.task = { act: 'falla', phase: 'do', tx: yp.x, ty: yp.y, until: y.now + HOUR, carry: 0, tool: 'yxa' };
+    const iHand = SIM.slitageNu(y, t, t), c0 = t.c;
+    wearUsed(y, yp, 1);
+    const used = c0 - t.c;
+    // i lagret: samma som wearStore tar på en timme
+    t.hos = undefined; yp.task = undefined;
+    const z = zoneOf(y); t.x = z.x; t.y = z.y;
+    const iLager = SIM.slitageNu(y, t, t), c1 = t.c;
+    wearStore(y, 3600);
+    const store = c1 - t.c;
+    // långt från lagret: ute i vädret
+    const mp = getMap(4);
+    let ute: { x: number; y: number } | undefined;
+    for (let yy = 0; yy < 40 && !ute; yy++) for (let x = 0; x < W; x++) if (mp.tiles[yy * W + x] !== T.Vatten && zoneOf(y) && SIM.zoneAt(y, x, yy) < 0 && !SIM.roofed(y, x, yy)) { ute = { x, y: yy }; break; }
+    const vadret = SIM.slitageNu(y, { k: 'yxa', x: ute!.x, y: ute!.y }).orsak;
+    // ett plagg på kroppen, maten som ruttnar, sten som inte slits
+    const rock = addTool(y, 'skinnrock', yp); rock.bar = yp.id;
+    const pa = SIM.slitageNu(y, rock, rock);
+    setMat(y, { fisk: 5 });
+    const fisk = pilesOf(y).find(q => q.k === 'fisk')!, rutt = SIM.slitageNu(y, fisk).orsak;
+    const sten = SIM.slitageNu(y, { k: 'sten', x: z.x, y: z.y }).orsak;
+    const nara = (a: number, b: number) => Math.abs(a - b) < 1e-9 + 1e-6 * b;
+    return [
+      ['den som gjorde redskapet och när sparas', gjord],
+      [`i handen när man fäller slits yxan som slitaget räknar (${(iHand.per * 100).toFixed(2)} % per timme, slitaget tog ${(used * 100).toFixed(2)} %)`, iHand.orsak === 'anvands' && used > 0 && iHand.per >= used && iHand.per < used * 1.2],
+      [`i lagret slits den som slitaget räknar (${(iLager.per * 100).toFixed(4)} % per timme)`, iLager.orsak === 'lagret' && nara(iLager.per, store)],
+      ['utanför lagret slits den av vädret', vadret === 'vadret'],
+      ['ett plagg på kroppen slits av att bäras', pa.orsak === 'pasig' && nara(pa.per, 1 / (SIM.SAKER.skinnrock!.klad!.dygn * 24))],
+      ['maten ruttnar', rutt === 'ruttnar'],
+      ['sten slits inte', sten === 'inget'],
+    ];
+  },
+};

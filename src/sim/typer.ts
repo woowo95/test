@@ -162,7 +162,7 @@ export interface State {
   mat?: Record<string, number>; // äldre sparfiler (före v40): maten per slag
   marken?: { x: number; y: number; k: string; n: number }[]; // gamla sparfiler: saker på marken (nu i stackar)
   lagren?: import('./lager').Zone[]; // lagerplatserna
-  ting?: { id: number; k: string; c: number; agare: number; hos?: number; lass?: number; x?: number; y?: number; halv?: { gor: string; av: Record<string, number>; kvar: number; ag: number }; vid?: number; bar?: number }[]; nextTing?: number; // varje redskap för sig, det enda som sparas om redskapen: skick, ägare (0 = byn), vem som har det i handen eller bördan, rutan det ligger på och stationen det hör till (agande.ts)
+  ting?: { id: number; k: string; c: number; agare: number; hos?: number; lass?: number; x?: number; y?: number; halv?: { gor: string; av: Record<string, number>; kvar: number; ag: number }; vid?: number; bar?: number; av?: number; gjord?: number }[]; nextTing?: number; // varje redskap för sig, det enda som sparas om redskapen: skick, ägare (0 = byn), vem som har det i handen eller bördan, rutan det ligger på stationen det hör till, vem som gjorde det och när (agande.ts)
   tingVag?: { id: number; k: string; c: number; agare: number; hos?: number }[]; // äldre sparfiler (före v40): redskap som bars mellan lagerplatser
   agare?: Record<string, number[]>; // sparfiler från v30: redskapens ägare (blir s.ting)
   stackar?: { k: string; n: number; c: number; x: number; y: number; ag?: Record<string, number>; dold?: number }[]; // alla stackar med plats och skick (c: 1 = nytt), det enda som sparas om förrådet. ag = vems stacken är (lager.ts)

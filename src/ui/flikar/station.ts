@@ -29,7 +29,7 @@ export const station: Flik = {
         const k = har[i];
         if (!k) return `<dt ${tip(`Tom plats: byn gör en ny ${namn}`)}>${iconImg(slag)}</dt><dd class="muted">tom</dd>`;
         const var_ = k.hos !== undefined ? `används av ${pLink(byId(s, k.hos))}` : k.lass !== undefined ? 'bärs' : 'ligger här';
-        return `<dt ${tip(`Bänkens ${namn}, skick ${Math.round(k.c * 100)} %`)}>${iconImg(slag)}</dt><dd>${condBar(k.c)} ${var_}</dd>`;
+        return `<dt class="tryck" data-sak="t:${k.id}" ${tip(`Bänkens ${namn}, skick ${Math.round(k.c * 100)} %`)}>${iconImg(slag)}</dt><dd>${condBar(k.c)} ${var_}</dd>`;
       }).join('');
     }).join('');
     // tillbehören som hör till den (TILLBEHOR i stationer.ts): det som ligger i den, och det som saknas
