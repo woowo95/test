@@ -573,7 +573,9 @@ SCENARIER.skinnfall = {
     const brist0 = PROJEKT.skinnfall!.brist(s);
     let h = 0;
     while (!b.med?.includes('skinnfall') && h < 72) { kor(s, 1); h++; }
-    const tog = Math.abs(amountOf(s, 'skinn') - (10 - STATION.fallSkinn)) < 0.5; // (skinnet slits lite under tiden)
+    // ibland hinner byn bygga en bädd till och göra en fäll i den också: varje fäll tar sitt skinn och räknas en gång
+    const fallar = SIM.stationerOf(s).filter(t => t.med?.includes('skinnfall')).length;
+    const tog = Math.abs(amountOf(s, 'skinn') - (10 - STATION.fallSkinn * fallar)) < 0.5; // (skinnet slits lite under tiden)
     const brist1 = PROJEKT.skinnfall!.brist(s);
     // kylan för den som sover i bädden, med och utan fällen
     const kyla = (med: boolean) => {
@@ -591,7 +593,7 @@ SCENARIER.skinnfall = {
     return [
       [`byn vill ha en skinnfäll när bädden saknar en (brist ${brist0.toFixed(2)}, ${brist1.toFixed(2)} efter)`, brist0 === 1 && brist1 < brist0],
       [`skinnfällen görs av ${STATION.fallSkinn} skinn och läggs i bädden på ${h} timmar`, !!b.med?.includes('skinnfall') && tog],
-      [`byns statistik räknar fällen en gång (${s.stat?.tillbehor_skinnfall ?? 0})`, s.stat?.tillbehor_skinnfall === 1],
+      [`byns statistik räknar varje fäll en gång (${s.stat?.tillbehor_skinnfall ?? 0} för ${fallar})`, s.stat?.tillbehor_skinnfall === fallar],
       [`den som sover under fällen kyls mindre (${med.toFixed(3)} mot ${utan.toFixed(3)} i timmen)`, utan > 0 && Math.abs(med - utan * (1 - TILLBEHOR.skinnfall.varme)) < 1e-9],
       ['den som är vaken i bädden får ingen värme av fällen', vaken === 0],
       ['skinnfällen är en egen teknik efter halmbädden, och byn måste ha skinn', !!tek && tek.krav.includes('halmbadd') && tek.material.some(g => g.includes('skinn'))],
@@ -713,6 +715,82 @@ SCENARIER.blod = {
       ['bara slaktbänken smutsar ner', andra],
       ['fläckarna följer med när byn sparas', sparad],
       [`i en by där det slaktas blir bänken blodig av sig själv (efter ${h2} timmar)`, flackarOf(u).length > 0],
+    ];
+  },
+};
+
+SCENARIER.latrin = {
+  text: 'Toa-smuts och latriner (steg 2.7.2): den som går på toa utanför en latrin lämnar en fläck som bleknar på två dygn. Den äcklar den som går förbi, man plockar inte där, och nära vattnet smutsar den vattnet. Latrinen är en grop i byns utkant som grävs med benspaden: man går dit, får vara ifred och lämnar ingen fläck, gropen fylls och fylls igen, och byn gräver en ny. Får någon ont i magen av toa-smutsat vatten lär sig byn att lägga latrinen långt från vattnet. Benspaden görs av tre ben, ett rep och en gren och gräver fram rötter fortare',
+  kor: () => {
+    const { flackarOf, toaBesok, akel, toaNara, toaVatten, vattenSmuts, smutsOf, forSmutsigt, magont, latrinFor, latrinBrist, stationSite, STATION, shoreOf, tidyTools, stationerOf, isKlar } = SIM;
+    const s = createState(1, START); klockan(s); tandEld(s);
+    const [p, q] = living(s).filter(r => ageOf(r, s.now) >= 18) as [SIM.Person, SIM.Person];
+    // utan latrin: en fläck där p står, som äcklar den som går förbi
+    const rng0 = JSON.stringify(s.rngs);
+    toaBesok(s, p);
+    const i = tileOf(p.x, p.y), fl = flackarOf(s), flack = fl.length === 1 && fl[0]!.k === 'toa' && fl[0]!.i === i && s.stat?.['toafläckar'] === 1;
+    Object.assign(q, { x: p.x + 1, y: p.y, task: undefined }); q.thoughts = [];
+    akel(s, q);
+    const akelQ = q.thoughts.some(t => t.text === 'Äcklad av smuts');
+    p.thoughts = []; p.task = { act: 'toa' } as SIM.Person['task']; akel(s, p); const sjalv = !p.thoughts.length; p.task = undefined;
+    const plock = forSmutsigt(s, Math.floor(p.x), Math.floor(p.y)) && !forSmutsigt(s, Math.floor(p.x) + 4, Math.floor(p.y));
+    const rngOrord = JSON.stringify(s.rngs) === rng0;
+    // fläcken bleknar bort på två dygn
+    const t0 = s.now; s.now += 49 * HOUR; const bleknat = toaNara(s, i) === 0; s.now = t0;
+    // nära vattnet blir vattnet smutsigare, och den som får ont i magen av det lär byn något om hygien
+    const sh = shoreOf(s.seed); let strand = -1; for (let j = 0; j < W * H; j++) if (sh[j]) { strand = j; break; }
+    const v0 = vattenSmuts(s, strand);
+    Object.assign(p, { x: strand % W + 0.5, y: Math.floor(strand / W) + 0.5 }); toaBesok(s, p);
+    const v1 = vattenSmuts(s, strand), vatten = v1 > v0 && toaVatten(s, strand) > 0 && v0 === smutsOf(s.seed)[strand];
+    magont(s, strand);
+    const hygien = (s.hygien ?? 0) > 0 && s.stat?.['magont av toa-smuts'] === 1;
+    // när byn kan hygien läggs latrinen längre från vattnet
+    const tillVatten = (at?: { x: number; y: number }) => { if (!at) return -1; const m = getMap(s.seed); let d = 99; for (let j = 0; j < W * H; j++) if (m.tiles[j] === T.Vatten) d = Math.min(d, Math.hypot(j % W - at.x, Math.floor(j / W) - at.y)); return d; };
+    const u0 = createState(3, START), u1 = cloneState(u0); u1.hygien = 1;
+    const d0 = tillVatten(stationSite(u0, 'latrin')), d1 = tillVatten(stationSite(u1, 'latrin'));
+    const at = stationSite(u0, 'latrin'), utkant = !!at && campDist(u0, at.x, at.y) >= STATION.latrinFran && campDist(u0, at.x, at.y) <= STATION.latrinTill;
+    // latrinen: man går dit, lämnar ingen fläck, gropen fylls och fylls igen
+    const l = createState(1, START); klockan(l); tandEld(l);
+    const lat = medBank(l, 'latrin'), lp = living(l).find(r => ageOf(r, l.now) >= 18)!;
+    const gar = latrinFor(l, lp)?.id === lat.id && latrinBrist(l) === 0;
+    Object.assign(lp, { x: lat.x + 0.5, y: lat.y + 1.5 }); lp.thoughts = [];
+    toaBesok(l, lp, lat.id);
+    const ifred = !flackarOf(l).length && (lat.fyllt ?? 0) > 0 && lp.thoughts.some(t => t.text === 'Fick vara ifred') && l.stat?.latrinbesok === 1;
+    lat.fyllt = STATION.latrinNy; const brist = latrinBrist(l) === 1;
+    lat.fyllt = 1 - 0.5 / STATION.latrinRymmer; toaBesok(l, lp, lat.id);
+    const igen = !stationerOf(l).some(t => t.id === lat.id) && l.stat?.['latriner fyllda'] === 1 && groundOf(l).cover[lat.y * W + lat.x] === 0 && latrinFor(l, lp) === undefined;
+    const sparad = (() => { const k = createState(1, START), t = medBank(k, 'latrin'); t.fyllt = 0.3; toaBesok(k, k.people[0]!); const c = cloneState(k); return c.stationer?.find(x => x.id === t.id)?.fyllt === 0.3 && JSON.stringify(c.flackar) === JSON.stringify(k.flackar); })();
+    // benspaden: en teknik efter slaktbänken och repet, görs av tre ben, ett rep och en gren, och gräver fram rötter fortare
+    const tb = SIM.TEKNIK.find(t => t.id === 'benspade'), tl = SIM.TEKNIK.find(t => t.id === 'latrin');
+    const tek = !!tb && tb.krav.includes('slaktbank') && tb.krav.includes('rep') && !!tl && tl.krav.includes('benspade');
+    const av = SAKER.benspade?.skaffa?.av, recept = av?.ben === 3 && av?.rep === 1 && av?.grenar === 1;
+    const rotter = (SIM.ACTS.samla.redskap as Record<string, { rotter?: number }>).benspade?.rotter ?? 1;
+    // i en by som lever: med benspaden och tekniken gräver byn en latrin och går dit, och spaden slits
+    const b = createState(1, START); klockan(b); tandEld(b);
+    for (const r of b.people) r.tek = { ...r.tek, benspade: 1, latrin: 1 };
+    setAmount(b, 'benspade', 1); tidyTools(b); setMat(b, { bar: 100 }); setAmount(b, 'ved', 40);
+    let h = 0; while (!stationerOf(b).some(t => t.k === 'latrin' && isKlar(t)) && h < 48) { kor(b, 1); h++; }
+    const byggd = stationerOf(b).some(t => t.k === 'latrin' && isKlar(t));
+    kor(b, 24);
+    const besok = b.stat?.latrinbesok as number ?? 0;
+    return [
+      [`toabesöket utanför en latrin lämnar en fläck där man står`, flack],
+      ['den som står bredvid blir äcklad, men inte den som själv är på toa', akelQ && sjalv],
+      ['man plockar inte på eller bredvid fläcken', plock],
+      ['fläckarna rör inte byns slumpföljder', rngOrord],
+      ['fläcken bleknar bort på två dygn (två år i spelet, två dagar i verkligheten)', bleknat],
+      [`en fläck på stranden gör vattnet smutsigare (${v0.toFixed(2)} → ${v1.toFixed(2)})`, vatten],
+      [`ont i magen av toa-smutsat vatten lär byn hygien (${(s.hygien ?? 0).toFixed(2)})`, hygien],
+      [`latrinen ligger i byns utkant, och längre från vattnet när byn kan hygien (${d0.toFixed(1)} → ${d1.toFixed(1)} rutor)`, utkant && d1 >= d0],
+      ['den som går på toa går till latrinen', gar],
+      ['i latrinen blir det ingen fläck, gropen fylls och man får vara ifred', ifred],
+      ['byn vill ha en ny latrin när den är nästan full', brist],
+      ['en full latrin fylls igen och blir bar jord', igen],
+      ['latrinen och fläckarna följer med när byn sparas', sparad],
+      ['benspaden är en teknik efter slaktbänken och repet, och latrinen en teknik efter benspaden', tek],
+      ['benspaden görs av tre ben, ett rep och en gren', recept],
+      [`med benspaden gräver man fram ${rotter} gånger så mycket rötter`, rotter > 1],
+      [`i en by med benspaden grävs en latrin (efter ${h} timmar), och den används (${besok} besök på ett dygn)`, byggd && besok > 0],
     ];
   },
 };

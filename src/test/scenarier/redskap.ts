@@ -402,11 +402,13 @@ SCENARIER.forvaring = {
     const brist0 = PROJEKT.hylla!.brist(s);
     let h = 0;
     const hyllan = () => stationerOf(s).find(t => t.k === 'hylla' && isKlar(t));
-    while (!hyllan() && h < 96) { kor(s, 1); h++; }
+    // kistan fyller samma behov och är billigare, så under tiden byggs ingen kista (den prövas nedan)
+    const kistTek = SIM.STATIONER.kista.tek; (SIM.STATIONER.kista as SIM.StationDef).tek = [];
+    try { while (!hyllan() && h < 96) { kor(s, 1); h++; } } finally { (SIM.STATIONER.kista as SIM.StationDef).tek = kistTek; }
     const hy = hyllan(), z = hy && zonesOf(s).find(q => inZone(q, hy.x, hy.y));
     const ryms = hy ? rymd(s, hy.x, hy.y, 'grenar') : 0;
     // mer grenar: hyllans ruta fylls mer än en vanlig ruta
-    setAmount(s, 'grenar', SIM.amountOf(s, 'grenar') + SIM.rutaOf('grenar') * 12);
+    setAmount(s, 'grenar', SIM.amountOf(s, 'grenar') + SIM.rutaOf('grenar') * 40); // (nog för att fylla kistorna också)
     const pa = hy ? pilesOf(s).find(a => a.x === hy.x && a.y === hy.y) : undefined;
     // hyllan går inte att gå igenom: vägen förbi den går runt, och alla rutor i lagret nås fortfarande från elden
     const g = groundOf(s), f = getMap(s.seed).fire, i = hy ? hy.y * W + hy.x : -1;
@@ -431,7 +433,7 @@ SCENARIER.forvaring = {
     return [
       [`byn vill ha en hylla när golvet i lagret är fullt av högar (brist ${brist0.toFixed(2)})`, brist0 > 0.5],
       [`hyllan byggs på ${h} timmar, i en lagerplats`, !!hy && !!z],
-      [`på hyllans ruta ryms ${STATION.hyllaRymmer} högar (${ryms} grenar), och där ligger nu ${pa ? Math.round(pa.n) : 0}`, ryms === SIM.rutaOf('grenar') * STATION.hyllaRymmer && !!pa && pa.n > SIM.rutaOf('grenar') + 1e-6],
+      [`på hyllans ruta ryms ${STATION.hyllaRymmer} högar (${ryms} grenar), och där ligger nu ${pa ? Math.round(pa.n) : 0} ${pa ? SIM.sakNamn(pa.k).toLowerCase() : ''} (en vanlig ruta rymmer ${pa ? SIM.rutaOf(pa.k) : 0})`, ryms === SIM.rutaOf('grenar') * STATION.hyllaRymmer && !!pa && pa.n > SIM.rutaOf(pa.k) + 1e-6], // (ibland är det trä som hamnar på hyllan)
       [`hyllan går inte att gå igenom (vägen förbi: ${forbi ? forbi.length + ' rutor' : 'ingen'})`, g.hinder?.[i] === 1 && !!forbi && !forbi.includes(i)],
       [`alla rutor i lagret nås fortfarande (${natt} av ${alla})`, alla > 0 && natt === alla],
       [`över lösa saker på golvet går man med ${VAG.fartSaker} av farten (${med.toFixed(2)} mot ${utan.toFixed(2)})`, j >= 0 && Math.abs(med - utan * VAG.fartSaker) < 1e-9],

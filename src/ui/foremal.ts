@@ -76,6 +76,7 @@ export function drawStructures(t: number) {
     const x0 = st.x * TS - (st.rot ? upp : 0), y0 = st.y * TS - (st.rot ? 0 : upp); // bildens övre vänstra hörn
     pileIcons.add(ik, x0, y0, 2, !!st.rot);
     if (!isKlar(st)) { framsteg(st.x * TS + w / 2, y0 + 3, stationKlar(st)); continue; }
+    if (st.fyllt) overG.beginFill(0x24160a, 0.75 * clamp(st.fyllt, 0, 1)).drawEllipse(st.x * TS + TS / 2, st.y * TS + TS / 2 + 1, 5, 4).endFill(); // latrinen mörknar när den fylls (smuts.ts)
     if (d?.sitt) pileIcons.add('sittplats', st.x * TS + w / 2 - 4, (st.y + bh) * TS + 1, 1); // sittplatsen framför bänken
     for (const q of bordPlatser(st)) pileIcons.add('sittplats', q.x * TS + TS / 2 - 4, q.y * TS + TS / 2 - 4, 1); // stubbarna runt bordet
     for (const k of st.med ?? []) pileIcons.add(tillbehorDef(k)?.ikon + '_karta', x0, y0, 2, !!st.rot); // tillbehören i den (skinnfällen i bädden)

@@ -26,6 +26,7 @@ import { ARSTID, ageIndex, iIstiden, isLight, kallTid, yearNo } from './tid';
 import { Act, H, HOUR, MIN, Person, Skill, Stat, State, T, Task, W, inMap } from './typer';
 import { balans } from './balans';
 import { drickVal, torstig, tortarFarligt } from './torst';
+import { forSmutsigt, latrinFor } from './smuts';
 import { bordenOf, ledigPlats, sittAt, stationFor, storlekAv, vidStation } from './stationer';
 
 // ---------- val av aktivitet ----------
@@ -190,6 +191,8 @@ export function spotFor(s: State, act: Act, p: Person): { x: number; y: number }
     if (want(m.tiles[y * W + x], x, y)) cands.push({ x, y, d });
   }
   cands.sort((a, b) => a.d - b.d);
+  // man plockar inte där det är toa-smuts (steg 2.7.2), så länge det finns rena platser
+  if (d.resurs === 'samla' && s.flackar?.length) { const rena = cands.filter(c => !forSmutsigt(s, c.x, c.y)); if (rena.length) cands.splice(0, cands.length, ...rena); }
   // mat: gå dit det finns mest att hämta, inte för långt bort; annars en av de närmaste platserna
   const c = (d.resurs ? pickSpot(s, p, d.resurs, cands) : pickNarmaste(s, cands, VAL.narmaste, 'val', p)) ?? nearestWanted(s, want) ?? { x: mid.x, y: mid.y };
   return { x: c.x + 0.5, y: c.y + 0.5 };
@@ -269,7 +272,11 @@ export function chooseTask(s: State, p: Person) {
   const a = ageOf(p, s.now), light = isLight(s.now), lazy = 1 - duty(s, p);
   const v: Val = { act: 'vila', why: '', dur: (VAL.vilaMin + rnd(s, 'val', p) * VAL.vilaSpann) * MIN }; // 20–60 min
   if (!needs(s, p, v, a, lazy, light)) { if (light) day(s, p, v, a, lazy); else night(s, p, v, a); }
-  if (v.act === 'toa') v.dur = (VAL.toaMin + rnd(s, 'val', p) * VAL.toaSpann) * MIN;
+  if (v.act === 'toa') {
+    v.dur = (VAL.toaMin + rnd(s, 'val', p) * VAL.toaSpann) * MIN;
+    const l = latrinFor(s, p); // till latrinen om byn har en (steg 2.7.2, smuts.ts)
+    if (l) { v.spot = { x: l.x + 0.5, y: l.y + 0.5 }; v.ref = l.id; v.why += '. Går till latrinen'; }
+  }
   const sp0 = v.spot ?? spotFor(s, v.act, p), sp = freeNear(s, sp0.x, sp0.y); // aldrig i en husvägg
   p.task = { act: v.act, phase: 'go', tx: sp.x, ty: sp.y, until: s.now + v.dur + (startsOnArrival(v.act) ? GA_TID : 0), carry: 0, why: v.why, dark: !light, ref: v.ref, tool: v.tool, site: v.site, sok: v.sok, tandmat: v.tandmat, pass: v.pass !== undefined ? s.now + v.pass : undefined };
   const k = usesTool(p.task);

@@ -31,6 +31,10 @@ const PAL: Record<string, Record<string, string>> = {
   skinnskor: { b: '#8a6440', B: '#b48a5e', d: '#5e4026' },
   balte: { r: '#c9a86a', R: '#e2c792', d: '#8a6e3e' }, // bältet (steg 2.3.3): platshållare
   mossa: { g: '#4f7a36', G: '#7fa850', d: '#2f4a22' }, // mossan (steg 2.5.2): platshållare
+  // latrinen och benspaden (steg 2.7.2, Björn valde P6 och S1c/S1g efter v85)
+  latrin: { o: '#8a6a40', O: '#b08a58', d: '#4a3018', k: '#24160a' },
+  latrin_karta: { o: '#8a6a40', O: '#b08a58', d: '#4a3018', k: '#24160a' },
+  benspade: { h: '#8a6a40', H: '#b08a58', r: '#c8b07a', w: '#e8e2d0', W: '#fffaf0', d: '#b8ae98' },
   skinnklader: { b: '#8a6440', B: '#b48a5e', d: '#5e4026', w: '#d8c8a8' },
   slaktbank: { b: '#7a5a36', B: '#a8824e', d: '#4e3420', r: '#9c3328' },
   flatarbank: { b: '#7a5a36', B: '#a8824e', d: '#4e3420', y: '#c8ac5c', Y: '#ecd890', o: '#9a7444', O: '#d0aa70' },
@@ -609,6 +613,39 @@ const PIX: Record<string, string[]> = {
     '.bbbbbb.',
     '.bbbbbb.',
     '.xxxxxx.',
+  ],
+  // latrinen (Björn valde P6): en rund grop med en kant av uppgrävd jord runt om, ingen jordhög. Den mörknar när den fylls
+  // (foremal.ts)
+  latrin: [
+    '........',
+    '..oOOo..',
+    '.oddddO.',
+    'oddkkddo',
+    'odkkkkdo',
+    '.oddddo.',
+    '..oooo..',
+    '........',
+  ],
+  latrin_karta: [
+    '........',
+    '..oOOo..',
+    '.oddddO.',
+    'oddkkddo',
+    'odkkkkdo',
+    '.oddddo.',
+    '..oooo..',
+    '........',
+  ],
+  // benspaden (Björn valde S1c/S1g): tre ben bredvid varandra som ett rakt avskuret blad, bundna med rep vid ett skaft mitt på
+  benspade: [
+    '...hH...',
+    '...hH...',
+    '...hH...',
+    '..rrrr..',
+    '.WwWwWw.',
+    '.WwWwWw.',
+    '.WwWwWw.',
+    '.dddddd.',
   ],
   // en bänk med en tuss hö och ett nystan rep
   flatarbank: [

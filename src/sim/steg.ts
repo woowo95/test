@@ -34,6 +34,7 @@ import { migrate } from './varld';
 import { stepDelning } from './delning';
 import { balans } from './balans';
 import { sjoRakna } from './sjo';
+import { akel, toaBesok } from './smuts';
 import { DRICKA_ACTS, TORST, drick, torstSteg } from './torst';
 import { HALSA, barMed, burenSteg, gangFart, halsaSteg, lamnaAv, mossaFynd, mossaPaStam, vardKlar, vardMal } from './halsa';
 import { bordPlats, kladVarme, stepKlader } from './utrustning';
@@ -70,7 +71,7 @@ function spara(s: State, p: Person, t = s.now) { if (spar.pa) spar.v.get(p)?.pus
 type Krok = (s: State, p: Person, t: Task, dtSec: number) => void;
 // det som händer medan man gör något (efter att ha kommit fram). Arbete för byn sköts av workStep
 const MEDAN: Partial<Record<Act, Krok>> = {
-  toa: (_s, p) => { p.toa = 1; },
+  toa: (s, p, t) => { p.toa = 1; if (t.prog === undefined) { t.prog = 0; toaBesok(s, p, t.ref); } }, // i latrinen, annars blir det en fläck (smuts.ts)
   kol: (s, p) => takeCoal(s, p, 'hämtade'),
   bygga: (s, p, t, dtSec) => buildStep(s, p, t, dtSec),
   tvinna: (s, p, _t, dtSec) => twineRope(s, p, dtSec / HOUR_S),
@@ -244,7 +245,8 @@ function needsStep(s: State, p: Person, a: number, dtSec: number, coldRate: numb
   p.social = clamp(p.social - dtSec / (KROPP.socialTim * HOUR_S), 0, 1);
   // toa: behovet växer på ungefär sju timmar, långsammare i sömnen
   p.toa = clamp(p.toa - dtSec / (KROPP.toaTim * HOUR_S) * (p.task?.act === 'sova' ? KROPP.toaSomn : 1), 0, 1);
-  if (p.toa <= 0) { p.toa = 1; if (a >= ALDER.smabarn) think(p, 'Kissade på sig', -0.12, now, 4 * HOUR); }
+  if (p.toa <= 0) { p.toa = 1; if (a >= ALDER.smabarn) { toaBesok(s, p); think(p, 'Kissade på sig', -0.12, now, 4 * HOUR); } } // små barn lämnar ingen fläck
+  akel(s, p); // toa-smutsen äcklar den som står i den (steg 2.7.2)
   torstSteg(s, p, a, dtSec); // törsten: fortare för den som är för varm eller arbetar tungt (steg 2.4.1–2.4.2)
 }
 
@@ -434,12 +436,12 @@ const UTFALL: Partial<Record<Act, (s: State, p: Person, tk: Task, b: Arbetsbit) 
     }
     return true;
   },
-  samla: (s, p, tk, { y, rich, delar, dtSec, bar }) => {
+  samla: (s, p, tk, { y, rich, delar, rd, dtSec, bar }) => {
     if (y > 0) {
-      // rötterna efter hur mycket av platsen som var rötter före uttaget
+      // rötterna efter hur mycket av platsen som var rötter före uttaget; med benspaden gräver man fram fler (steg 2.7.2)
       const rot = delar?.[lagren('samla').indexOf('rotter')] ?? richness(s, 'rotter', tk.tx, tk.ty);
       const r = rich > 0 ? y * Math.min(1, rot / rich) : 0;
-      tk.carry += y - r; bar('rotter', r);
+      tk.carry += y - r; bar('rotter', r * (rd?.rotter ?? 1));
     }
     const got = forageItems(s, p, dtSec) ?? {};
     bar('svamp', pickMushrooms(s, p, tk.tx, tk.ty, dtSec, got));

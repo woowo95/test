@@ -89,6 +89,10 @@ const DEF = {
     gors: { text: 'Flätar ett bälte av rep.', stat: 'balten', forsta: '{namn} flätade byns första bälte. Redskapet hänger i det, och båda händerna är fria att bära med.' } },
   // mossan (steg 2.5.2): hittas när man letar i naturen och ibland när ett träd fälls. Ett förband av mossa på ett sår (halsa.ts)
   mossa: { namn: 'Mossa', skaffa: { act: 'samla' }, stack: 50, mapp: 'Material', slits: 0.0006 },
+  // benspaden (steg 2.7.2): tre ben som ett blad, surrade med rep vid en gren, görs vid slöjdbänken. Med den grävs latrinen
+  // (stationer.ts) och rötterna fortare (samla i handlingar.ts)
+  benspade: { namn: 'Benspade', skaffa: { av: { ben: 3, rep: 1, grenar: 1 }, min: 10, tek: 'benspade' }, vikt: 0.8, stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true, trasig: { stat: 'benspadarTrasiga', text: '{namn}s benspade gick sönder.' },
+    gors: { text: 'Surrar ihop en benspade av ben, rep och en gren.', stat: 'benspadarGjorda', forsta: '{namn} gjorde byns första benspade av tre ben. Med den gräver man fram rötter fortare, och gropar.' } },
 } satisfies Record<string, SakDef>;
 
 type Sak = keyof typeof DEF;

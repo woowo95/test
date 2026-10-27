@@ -220,10 +220,15 @@ SCENARIER.paborjat = {
     const valjs = !!sp && tileOf(sp.x, sp.y) === ti;
     const r = living(s).find(x => x !== p)!, rt = uppgift(r, 'falla'); rt.tx = ft.tx; rt.ty = ft.ty; startWork(s, r, rt);
     const kvar = rt.until - s.now === fallTid(s, ti) - 60 * SEC;
-    // i en vanlig by avbryts arbete och tas upp igen (by 6: i by 1 råkar inget tas upp igen på 30 dygn, i by 4–6 händer det 1–4 gånger)
-    const v = createState(6, START);
-    kor(v, 30 * 24);
-    const st = v.stat ?? {};
+    // i en vanlig by avbryts arbete och tas upp igen. Om det händer beror på byn: sedan toa-smutsen kom (steg 2.7.2) råkar
+    // inget tas upp igen i by 6 på 30 dygn, så nästa by prövas (by 4 och 5 har det 2–3 gånger)
+    let st: Record<string, number> = {};
+    for (const by of [6, 4, 5]) {
+      const v = createState(by, START);
+      kor(v, 30 * 24);
+      st = v.stat ?? {};
+      if ((st.fortsatt ?? 0) > 0 && (st.iSammaPass ?? 0) > 0) break;
+    }
     return [
       ['materialet tas när arbetet börjar, och tiden räknas därifrån', tagit],
       ['det påbörjade slits medan ingen arbetar med det, och arbetet som gjorts finns kvar', slits],

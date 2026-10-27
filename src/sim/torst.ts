@@ -6,7 +6,7 @@
 import { ACTS } from './handlingar';
 import { ALDER, count, isSick, think } from './folk';
 import { areaOf, findL, observe } from './minne';
-import { smutsOf } from './sjo';
+import { magont, vattenSmuts } from './smuts';
 import { shoreOf } from './fynd';
 import { getMap, perKarta } from './karta';
 import { bitAt } from './byggnad';
@@ -116,11 +116,12 @@ export function drick(s: State, p: Person, t: Task) {
   if (t.act === 'smalta') { count(s, 'smalt sno'); return; }
   if (t.act === 'fatt') { count(s, 'fick vatten'); return; }
   count(s, 'drack');
-  const x = Math.floor(t.tx), y = Math.floor(t.ty), smuts = inMap(x, y) ? smutsOf(s.seed)[y * W + x] : 0;
+  const x = Math.floor(t.tx), y = Math.floor(t.ty), smuts = inMap(x, y) ? vattenSmuts(s, y * W + x) : 0; // med toa-smutsen i närheten (steg 2.7.2)
   observe(s, p, 'vatten', x, y);
   if (smuts > 0 && !isSick(p, s.now) && rnd(s, 'halsa', p) < smuts * TORST.mag) {
     p.sickUntil = s.now + (TORST.magMin + rnd(s, 'halsa', p) * TORST.magSpann) * HOUR; p.sickWhy = 'Ont i magen av smutsigt vatten';
     think(p, 'Fick ont i magen av vattnet', -0.1, s.now, 6 * HOUR);
     count(s, 'magont av vatten');
+    magont(s, y * W + x); // kom smutsen från toaletten lär sig byn något om hygien (smuts.ts)
   }
 }

@@ -99,7 +99,7 @@ SCENARIER['vinter-slocknad'] = {
 SCENARIER.knapphet = {
   text: 'Bär, rötter och vilt tar slut nära byn för en tid, så invånarna går längre bort; fiske med händerna ger få fiskar per försök',
   kor: () => {
-    const s = createState(15, START);
+    const s = createState(16, START); // by 15 svälter ut sedan toa-smutsen kom (steg 2.7.2); det balanseras i 2.12
     // mät varje dygn: buskarna växer tillbaka, så ett enda mått i slutet beror på slumpen
     let nara = 0, langt = 0;
     for (let d = 0; d < 12; d++) { kor(s, 24); const n = uttag(s, 'samla', 0, 8); if (n > nara) { nara = n; langt = uttag(s, 'samla', 16, 30); } }

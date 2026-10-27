@@ -8,6 +8,7 @@ import { balans } from './balans';
 import { GORS, REDSKAP, harAv, makeTask, villAv, wantsRope, wantsTool } from './redskap';
 import { STATIONER, STATION_LIST, StationDef, StationSlag, TILLBEHOR, TILLBEHOR_LIST, TillbehorDef, TillbehorSlag, bordBrist, forvarBrist, harStation, kanBygga, kanGoraTillbehor, stationSpot, tillbehorSpot, tillbehorStationer, utanTillbehor } from './stationer';
 import { utanBadd } from './byggnader';
+import { latrinBrist } from './smuts';
 import { DORRAR, DORR_LIST, DorrDef, DorrSlag } from './byggnad';
 import { dorrOppningar, dorrSpot, kanHangaDorr, utanDorr } from './bygg';
 
@@ -23,8 +24,9 @@ import { dorrOppningar, dorrSpot, kanHangaDorr, utanDorr } from './bygg';
 
 // ---------- balanstal (regel 8) ----------
 export const PROJEKT_TAL = balans('projekt', {
-  kniv: 1.2, yxa: 1.2, spjut: 1, metspo: 0.8, korg: 0.8, bensyl: 1, skinnrock: 0.8, skinnskor: 0.5, balte: 0.6, // hur mycket varje redskap väger när byn saknar alla den vill ha
+  kniv: 1.2, yxa: 1.2, spjut: 1, metspo: 0.8, korg: 0.8, bensyl: 1, skinnrock: 0.8, skinnskor: 0.5, balte: 0.6, benspade: 0.6, // hur mycket varje redskap väger när byn saknar alla den vill ha
   slaktbank: 1, flatarbank: 0.6, // ... varje station när byn saknar den
+  latrin: 0.8, // ... latrinen när byn inte har en som inte är nästan full (steg 2.7.2)
   halmbadd: 0.6, // ... halmbäddarna när alla som sover under tak saknar en
   skinnfall: 0.5, // ... skinnfällarna när alla halmbäddar saknar en
   bord: 0.5, bord2: 0.5, bord3: 0.5, // ... borden när ingen har en plats vid ett bord (steg 2.2.15)
@@ -46,6 +48,7 @@ export const PROJEKT_BEHOV = {
   forvar: { namn: 'Ordning i lagret', ikon: 'hylla' },
   klader: { namn: 'Kläder mot kylan', ikon: 'skinnrock' },
   borda: { namn: 'Bära mer hem', ikon: 'balte' },
+  halsa: { namn: 'Renlighet', ikon: 'latrin' }, // steg 2.7.2
 } as const;
 export type ProjektBehov = keyof typeof PROJEKT_BEHOV;
 
@@ -62,7 +65,7 @@ export interface ProjektDef {
 }
 
 // ett redskap i gruppen g: bristen är hur stor del av det byn vill ha som saknas
-const VAD: Record<string, ProjektBehov> = { kniv: 'slakt', yxa: 'tra', spjut: 'mat', metspo: 'mat', korg: 'mat', bensyl: 'klader', skinnrock: 'klader', skinnskor: 'klader', balte: 'borda' };
+const VAD: Record<string, ProjektBehov> = { kniv: 'slakt', yxa: 'tra', spjut: 'mat', metspo: 'mat', korg: 'mat', bensyl: 'klader', skinnrock: 'klader', skinnskor: 'klader', balte: 'borda', benspade: 'halsa' };
 const NAMN: Record<string, string> = { kniv: 'Kniv', yxa: 'Yxa', spjut: 'Spjut', metspo: 'Metspö', korg: 'Korg' };
 const redskap = (g: string): ProjektDef => {
   const k = GORS[g][GORS[g].length - 1]; // det enklaste slaget räknas i kostnaden
@@ -80,8 +83,8 @@ const redskap = (g: string): ProjektDef => {
 const station = (k: StationSlag): ProjektDef => {
   const d: StationDef = STATIONER[k];
   return {
-    namn: d.namn, ikon: d.ikon, behov: k === 'slaktbank' ? 'slakt' : d.sover ? 'vila' : d.platser ? 'maltid' : d.forvar ? 'forvar' : 'hantverk', vikt: (PROJEKT_TAL as Record<string, number>)[k] ?? 1, act: 'station', slag: k,
-    brist: s => d.sover ? (living(s).length ? utanBadd(s) / living(s).length : 0) : d.platser ? bordBrist(s, k) : d.forvar ? forvarBrist(s, k) : harStation(s, k) ? 0 : 1,
+    namn: d.namn, ikon: d.ikon, behov: k === 'slaktbank' ? 'slakt' : d.gor.includes('toa') ? 'halsa' : d.sover ? 'vila' : d.platser ? 'maltid' : d.forvar ? 'forvar' : 'hantverk', vikt: (PROJEKT_TAL as Record<string, number>)[k] ?? 1, act: 'station', slag: k,
+    brist: s => d.sover ? (living(s).length ? utanBadd(s) / living(s).length : 0) : d.platser ? bordBrist(s, k) : d.forvar ? forvarBrist(s, k) : d.gor.includes('toa') ? latrinBrist(s) : harStation(s, k) ? 0 : 1,
     kostnad: () => varuVarde(d.av, d.min / 60 * ARBETE),
     kan: (s, p, f) => !f.kyla && kanBygga(s, p, k),
     uppgift: s => { const sp = stationSpot(s, k); return sp ? { act: 'station', text: d.bygger, min: d.min, tool: k, spot: sp } : undefined; },
