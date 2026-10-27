@@ -3,6 +3,7 @@ import { $ } from './ui/hjalp';
 import { s, setByn, ui, nyBild, vidNyBy } from './ui/lage';
 import { TS, app, cam, layout, view, world } from './ui/scen';
 import { drawNight, drawTerrain } from './ui/terrang';
+import { drawVader } from './ui/vaderbild';
 import { drawStructures } from './ui/foremal';
 import { drawFilter } from './ui/filter';
 import { drawAnimals, drawPlants } from './ui/vaxter';
@@ -125,6 +126,7 @@ function tick() {
   drawPeople(now);
   drawNight(ui.nu);
   drawFilter();
+  drawVader(now);
   if (now - lastUi > PANEL_MS) { lastUi = now; renderClock(); renderPanel(); renderPorts(); }
   if (!ui.testMode && now - lastLocal > LOKAL_MS) { lastLocal = now; saveLocal(); }
   if (!ui.testMode && now - lastDb > MOLN_MS) { lastDb = now; saveDb(); }
