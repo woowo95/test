@@ -925,9 +925,9 @@ SCENARIER.grill = {
   },
 };
 SCENARIER.tork = {
-  text: 'Torkställningen och torkningen (steg 2.8.2): ställningen görs av grenar och rep och står ute. Det kött och den fisk som byn inte hinner äta hängs upp och torkar på fem dygn, och det ruttnar inte medan det hänger. Det torkade tas ner till lagret, håller så länge något får hålla där och äts sist. I frost ruttnar maten nästan inte',
+  text: 'Torkställningen och torkningen (steg 2.8.2): ställningen görs av grenar och rep och står ute. Det kött och den fisk som byn inte hinner äta hängs upp och torkar på fem dygn. En ställning rymmer fyra bitar; får det inte plats bygger byn fler (steg 2.10.22), och det ruttnar inte medan det hänger. Det torkade tas ner till lagret, håller så länge något får hålla där och äts sist. I frost ruttnar maten nästan inte',
   kor: () => {
-    const { TORK, kanTorka, torka, torken, ruttTemp, LAGER, FOOD } = SIM;
+    const { TORK, kanTorka, torka, torken, torkarna, torkBrist, ruttTemp, LAGER, FOOD } = SIM;
     const s = createState(1, START); klockan(s); tandEld(s);
     const folk = living(s), p = folk.find(r => ageOf(r, s.now) >= 18)!, spara = TORK.spara * folk.length * EKONOMI.matPerDygn;
     setMat(s, { fisk: 40 });
@@ -936,7 +936,12 @@ SCENARIER.tork = {
     const kan = kanTorka(s, p);
     const f0 = amountOf(s, 'fisk');
     torka(s, p, 1);
-    const hangt = (t.tork ?? []).reduce((a, q) => a + q.n, 0), upp = Math.abs(hangt - TORK.timme) < 1e-6 && Math.abs(f0 - amountOf(s, 'fisk') - hangt) < 1e-6;
+    const hangt = (t.tork ?? []).reduce((a, q) => a + q.n, 0), upp = Math.abs(hangt - Math.min(TORK.timme, TORK.rymd)) < 1e-6 && Math.abs(f0 - amountOf(s, 'fisk') - hangt) < 1e-6;
+    // ställningen är full och det finns mer över: byn vill ha en till, och med två hängs det upp på båda (steg 2.10.22)
+    const full = hangt === TORK.rymd && !kanTorka(s, p), villFler = torkBrist(s) > 0;
+    const t2 = medBank(s, 'tork'); setMat(s, { fisk: 40 }); torka(s, p, 1);
+    const pa2 = (t2.tork ?? []).reduce((a, q) => a + q.n, 0), tva = torkarna(s).length === 2 && Math.abs(pa2 - TORK.rymd) < 1e-6;
+    s.stationer = s.stationer!.filter(x => x !== t2); SIM.touch(s);
     // det som hänger ruttnar inte, och det tas inte ner förrän det har torkat
     s.now += (TORK.dygn - 1) * DAY; SIM.touch(s);
     setMat(s, { fisk: 0 });
@@ -965,7 +970,9 @@ SCENARIER.tork = {
     return [
       ['utan torkställning torkar ingen', utan],
       ['torkställningen står ute, och med fisk över går det att torka', ute && kan],
-      [`på en timme hängs ${TORK.timme} fisk upp från lagret (${hangt.toFixed(1)})`, upp],
+      [`en ställning rymmer ${TORK.rymd} bitar, och de hängs upp från lagret på en timme (${hangt.toFixed(1)})`, upp],
+      ['när ställningen är full och det finns mer över vill byn bygga en till', full && villFler],
+      [`med två ställningar hängs det upp på båda (${pa2.toFixed(1)} på den andra)`, tva],
       [`det som hänger ruttnar inte och tas inte ner förrän efter ${TORK.dygn} dygn`, intefardigt],
       [`efter ${TORK.dygn} dygn tas det ner som torkad fisk (${torrt.toFixed(1)})`, klart && ner],
       [`byn behåller ${spara.toFixed(1)} rått, det den äter innan det ruttnar`, sparar],

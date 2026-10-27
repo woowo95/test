@@ -9,6 +9,7 @@ import { GORS, REDSKAP, harAv, makeTask, villAv, wantsRope, wantsTool } from './
 import { STATIONER, STATION_LIST, StationDef, StationSlag, TILLBEHOR, TILLBEHOR_LIST, TillbehorDef, TillbehorSlag, bordBrist, forvarBrist, harStation, kanBygga, kanGoraTillbehor, stationSpot, tillbehorSpot, tillbehorStationer, utanTillbehor } from './stationer';
 import { utanBadd } from './byggnader';
 import { latrinBrist } from './smuts';
+import { torkBrist } from './matlagning';
 import { brasaBrist, brasaLeta, kanLetaBrasaSten } from './brasor';
 import { DORRAR, DORR_LIST, DorrDef, DorrSlag } from './byggnad';
 import { dorrOppningar, dorrSpot, kanHangaDorr, utanDorr } from './bygg';
@@ -92,7 +93,7 @@ const station = (k: StationSlag): ProjektDef => {
   const d: StationDef = STATIONER[k];
   return {
     namn: d.namn, ikon: d.ikon, behov: d.brasa ? 'eld' : k === 'slaktbank' ? 'slakt' : d.eld || d.gor.includes('torka') ? 'mat' : d.gor.includes('toa') ? 'halsa' : d.sover ? 'vila' : d.platser ? 'maltid' : d.forvar ? 'forvar' : 'hantverk', vikt: (PROJEKT_TAL as Record<string, number>)[k] ?? 1, act: 'station', slag: k,
-    brist: s => d.brasa ? brasaBrist(s) : d.sover ? (living(s).length ? utanBadd(s) / living(s).length : 0) : d.platser ? bordBrist(s, k) : d.forvar ? forvarBrist(s, k) : d.gor.includes('toa') ? latrinBrist(s) : harStation(s, k) ? 0 : 1,
+    brist: s => d.brasa ? brasaBrist(s) : d.sover ? (living(s).length ? utanBadd(s) / living(s).length : 0) : d.platser ? bordBrist(s, k) : d.forvar ? forvarBrist(s, k) : d.gor.includes('toa') ? latrinBrist(s) : d.gor.includes('torka') ? torkBrist(s) : harStation(s, k) ? 0 : 1,
     kostnad: () => varuVarde(d.av, d.min / 60 * ARBETE),
     kan: (s, p, f) => !f.kyla && (kanBygga(s, p, k) || !!d.brasa && kanLetaBrasaSten(s, p)), // brasans stenar letas först (brasor.ts)
     uppgift: (s, p) => { if (d.brasa && !kanBygga(s, p, k)) return brasaLeta(s, p); const sp = stationSpot(s, k); return sp ? { act: 'station', text: d.bygger, min: d.min, tool: k, spot: sp } : undefined; },

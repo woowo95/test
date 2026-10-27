@@ -177,7 +177,7 @@ export const STATIONER = {
   },
   // torkställningen (steg 2.8.2, matlagning.ts): en fiskhäck med A-ramar, två rutor bred, som sticker upp över raden ovanför
   tork: {
-    namn: 'Torkställning', ikon: 'tork', w: 2, h: 1, tek: ['tork'], av: { grenar: STATION.torkGrenar, rep: STATION.torkRep }, min: STATION.torkMin, gor: ['torka'], bara: ['torka'],
+    namn: 'Torkställning', ikon: 'tork', w: 2, h: 1, tek: ['tork'], av: { grenar: STATION.torkGrenar, rep: STATION.torkRep }, min: STATION.torkMin, gor: ['torka'], bara: ['torka'], flera: true,
     bygger: 'Sätter upp en torkställning av grenar och rep.',
     forsta: '{namn} satte upp byns första torkställning. Där torkar köttet och fisken som byn inte hinner äta, och det torkade håller länge.',
   },
