@@ -66,7 +66,7 @@ export function storreKarta(s: State) {
   }
   for (const lista of [s.stackar, s.marken, s.stubbar, s.stockar, s.lagren, s.byggen, s.hus, s.stationer, s.falt, s.blod]) for (const o of lista ?? []) flytta(o);
   for (const t of s.ting ?? []) if (t.x !== undefined && t.y !== undefined) { t.x += ox; t.y += oy; }
-  flytta(s.lager); flytta(s.brasa);
+  flytta(s.lager); flytta(s.brasa); flytta(s.fire.at); flytta(s.fire.flytt); // en flyttad eld och dit den ska (eldflytt.ts)
   for (const f of s.flackar ?? []) f.i = ny(f.i);
   if (s.halvfallt) s.halvfallt = Object.fromEntries(Object.entries(s.halvfallt).map(([i, v]) => [ny(Number(i)), v]));
   s.byggV = (s.byggV ?? 0) + 1; // husen och stationerna räknas om

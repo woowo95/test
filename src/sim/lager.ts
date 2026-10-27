@@ -6,7 +6,7 @@ import { forvarAt, sittAt, stationAt, stationDef, tillbakaVid } from './statione
 import { faltAt } from './odling';
 import { alive, byId, count, living, stat, ageOf, log } from './folk';
 import { matOrdning } from './naring';
-import { getMap } from './karta';
+import { eldPlats, getMap } from './karta';
 import { Act, H, HOUR, HOUR_S, Person, State, T, Task, W, inMap } from './typer';
 import { bitAt, roofed } from './byggnad';
 import { ACTS, toolRow, usesTool } from './handlingar';
@@ -310,14 +310,14 @@ function shareOf(ag: Del | undefined, n: number, owner = BYN, s?: State): Del {
 
 // ---------- platser ----------
 // kan något ligga eller byggas på rutan? Inte på vatten, sten, inpå elden, i ett hus eller där en station står (stationer.ts),
-// utom förvaringen
-export function usable(s: State, x: number, y: number) {
-  const m = getMap(s.seed), f = m.fire;
+// utom förvaringen. utomElden = bortse från elden (ett hus som får byggas där elden står, när elden flyttas, eldflytt.ts)
+export function usable(s: State, x: number, y: number, utomElden = false) {
+  const m = getMap(s.seed), f = eldPlats(s);
   if (!inMap(x, y)) return false;
   const t = m.tiles[y * W + x];
-  if (t === T.Vatten || t === T.Sten || Math.max(Math.abs(x - f.x), Math.abs(y - f.y)) <= 1 || bitAt(s, x, y) || sittAt(s, x, y) || faltAt(s, x, y)) return false; // inte heller på ett fält (odling.ts)
+  if (t === T.Vatten || t === T.Sten || !utomElden && Math.max(Math.abs(x - f.x), Math.abs(y - f.y)) <= 1 || bitAt(s, x, y) || sittAt(s, x, y) || faltAt(s, x, y)) return false; // inte heller på ett fält (odling.ts)
   const st = stationAt(s, x, y);
-  return !st || !!stationDef(st.k)?.forvar; // i en hylla, kista eller ett ställ ligger saker (steg 2.3.6)
+  return !st || !!stationDef(st.k)?.forvar || utomElden && !!stationDef(st.k)?.eld; // i en hylla, kista eller ett ställ ligger saker (steg 2.3.6); grillen flyttas med elden
 }
 const allUsable = (s: State, z: Zone) => { for (let y = z.y; y < z.y + z.h; y++) for (let x = z.x; x < z.x + z.w; x++) if (!usable(s, x, y)) return false; return true; };
 const overlaps = (a: Zone, b: Zone, gap: number) => a.x < b.x + b.w + gap && b.x < a.x + a.w + gap && a.y < b.y + b.h + gap && b.y < a.y + a.h + gap;
@@ -706,7 +706,7 @@ function growOf(s: State, i: number): Zone | undefined {
 }
 // en ny lagerplats nära byns läger (eld och andra lagerplatser), men inte inpå elden. Den första uppdelningen sorterar: maten får den gamla platsen, materialet den nya
 function newZone(s: State) {
-  const zs = zonesOf(s), f = getMap(s.seed).fire, z0 = zs[0];
+  const zs = zonesOf(s), f = eldPlats(s), z0 = zs[0];
   let best: Zone | undefined, bd = Infinity;
   for (let y = 0; y < H - 2; y++) for (let x = 0; x < W - 2; x++) {
     const c: Zone = { x, y, w: LAGER.nyBredd, h: LAGER.nyHojd }, df = Math.hypot(x + c.w / 2 - f.x, y + c.h / 2 - f.y);

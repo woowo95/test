@@ -12,7 +12,8 @@ import { halMin, halVal, islagt, stepIs } from './is';
 import { blotSteg, coldOf, stepVader, temperature, VADER, vaderGrader, vaderNu, vaxtFaktor } from './vader';
 import { VED, addFuel, canLight, fireWant, forageItems, fuelFor, hearthOf, heatAt, igniterOf, stepFire, takeCoal, takeFuel, tinderShort, tryLight } from './eld';
 import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, isSick, living, log, ovning, stat, think } from './folk';
-import { getMap } from './karta';
+import { eldPlats } from './karta';
+import { ELDFLYTT, flyttaElden, stepEldFlytt } from './eldflytt';
 import { DODSORSAKER, barnMat, birth, birthWish, die, regulate } from './liv';
 import { MARK, groundOf, growGround, packGround, tileOf } from './mark';
 import { SAMTAL, TalkEvent, converse, isSocial } from './samtal';
@@ -102,6 +103,7 @@ const KLAR: Partial<Record<Act, Krok>> = {
   strand: (s, p) => { p.rest = Math.min(1, p.rest + KROPP.strandVila); think(p, 'Satt vid vattnet och fick ro', 0.06, s.now, 6 * HOUR); },
   varda: vardKlar, // såren trycks på, förband läggs, infekterade sår rengörs, och den som inte kan gå bärs hem (halsa.ts)
   vatten: vattenFylld, // vattensäcken är fylld och bärs till den som inte kan gå (torst.ts)
+  flyttaeld: (s, p) => flyttaElden(s, p), // elden står på en ny plats (eldflytt.ts)
 };
 MEDAN.buren = burenSteg; // den som bärs hem väntar så länge någon bär hen
 // att dricka (torst.ts): en gång när man kommit fram, och törsten hålls släckt så länge man dricker
@@ -143,7 +145,7 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
   if (Math.floor(now / HOUR) !== Math.floor((now - dtSec * SEC) / HOUR)) {
     stepSeder(s); updateTags(s); stepDelning(s);
     stepVader(s); stepIs(s); growGround(s, 1, ai); growFynd(s, 1, ai, vaxtFaktor(s)); forget(s, 1); rotStumps(s); tidyStore(s);
-    wearBuild(s, 1, ai); stepByggnader(s); planBuild(s); stepPaborjat(s); stepStationer(s); stepBrasor(s); stepKlader(s); stepOdling(s);
+    wearBuild(s, 1, ai); stepByggnader(s); planBuild(s); stepEldFlytt(s); stepPaborjat(s); stepStationer(s); stepBrasor(s); stepKlader(s); stepOdling(s);
     historikSteg(s); // nyckeltalen till byns historik (läses inte av simuleringen)
     compact(s); // här och inte i sparningen, så att alla lägen städar vid samma tid
   }
@@ -369,7 +371,7 @@ function walk(s: State, p: Person, tk: Task, left: number, a: number) {
   const key = `${tk.tx.toFixed(2)},${tk.ty.toFixed(2)},${s.byggV ?? 0}`; // en ny vägg kan stänga vägen
   if (tk.pk !== key) {
     tk.pk = key;
-    const v = pathFor(s, g, p.x, p.y, tk.tx, tk.ty), f = getMap(s.seed).fire;
+    const v = pathFor(s, g, p.x, p.y, tk.tx, tk.ty), f = eldPlats(s);
     // målet går inte att nå (en ö): man lägger ner det man bär och väljer något annat. Bara den som själv är avskuren från lägret går rakt över
     if (!v && tk.phase === 'go' && pathFor(s, g, p.x, p.y, f.x + 0.5, f.y + 0.5)) { avbryt(s, p); return { used: Math.min(left, BIT), framme: false }; }
     tk.path = v ?? [];
@@ -400,10 +402,10 @@ function arrive(s: State, p: Person, tk: Task, light: boolean) {
       // vid förrådet: ta en famn ved och gå till elden. Byns och sin egen, eller den andras (stöld i yttersta nöd, behov.ts)
       // till en brasa (task.ref, brasor.ts) eller lägerelden
       const fran = byId(s, tk.fran), br = brasaFor(s, tk.ref), e = br?.eld;
-      const m = getMap(s.seed), n = tk.ref !== undefined ? (!e || e.lit && e.fuel >= (e.want ?? 0) ? 0 : Math.min(1, fuelFor(s, p, fran))) : s.fire.fuel >= fireWant(s) ? 0 : Math.min(1, fuelFor(s, p, fran)); // en famn i taget, så att elden matas oftare
+      const n = tk.ref !== undefined ? (!e || e.lit && e.fuel >= (e.want ?? 0) ? 0 : Math.min(1, fuelFor(s, p, fran))) : s.fire.fuel >= fireWant(s) ? 0 : Math.min(1, fuelFor(s, p, fran)); // en famn i taget, så att elden matas oftare
       if (n <= 0) p.task = undefined;
       else {
-        const at = br ?? m.fire;
+        const at = br ?? eldPlats(s);
         tk.ag = { ved: {} }; tk.carry = takeFuel(s, n, p, tk.ag.ved, fran); tk.phase = 'back'; tk.tx = at.x + 0.5 + sida(p, 0.6); tk.ty = at.y + 1.2;
         if (fran) stole(s, p, fran, VED.id, tk.carry); else if ((tk.ag.ved[p.id] ?? 0) > 1e-9) noticeTheft(s, p, VED.id);
       }
@@ -423,6 +425,7 @@ function arrive(s: State, p: Person, tk: Task, light: boolean) {
     else p.task = undefined;
   } else {
     tk.phase = 'do'; if (tk.act === 'bara') { pickUp(s, p, tk, bordPlats(s, p)); tk.until = now; }
+    if (tk.act === 'flyttaeld') tk.until = now + ELDFLYTT.tim * HOUR; // vid elden: släcka den och bära stenarna (eldflytt.ts)
     startWork(s, p, tk); // ett redskap eller ett träd: arbetet räknas härifrån, och det påbörjade fortsätter
     const tur = ACTS[tk.act].tur;
     tk.tur = 0; tk.lim = tur ? tur * (toolRow(tk)?.tur ?? 1) : undefined;

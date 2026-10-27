@@ -16,6 +16,7 @@ export * from './sim/brasor';
 export * from './sim/historik';
 export * from './sim/ekonomi';
 export * from './sim/eld';
+export * from './sim/eldflytt';
 export * from './sim/seder';
 export * from './sim/val';
 export * from './sim/samtal';

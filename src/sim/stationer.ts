@@ -1,5 +1,5 @@
 import { Act, H, HOUR, MIN, Person, SEC, State, T, Task, W, inMap } from './typer';
-import { getMap } from './karta';
+import { eldPlats, getMap } from './karta';
 import { knows } from './teknik';
 import { ALDER, ageOf, count, doingAct, forstaGang, living, log } from './folk';
 import { getable, takeMaterial } from './behov';
@@ -291,7 +291,7 @@ export function byInne(s: State) {
     h.x += b.x; h.y += b.y; h.n++; hus.set(b.hus, h);
   }
   for (const h of housesOf(s)) { const c = hus.get(h.id); if (c) pts.push({ x: c.x / c.n, y: c.y / c.n }); }
-  if (!pts.length) { const f = getMap(s.seed).fire; return { x: f.x, y: f.y }; }
+  if (!pts.length) { const f = eldPlats(s); return { x: f.x, y: f.y }; }
   return { x: pts.reduce((a, q) => a + q.x, 0) / pts.length, y: pts.reduce((a, q) => a + q.y, 0) / pts.length };
 }
 export interface Rekt { x: number; y: number; w: number; h: number }
@@ -337,7 +337,7 @@ export const stationSite = (s: State, k: string) => stationDef(k)?.brasa ? siteB
 // i byns utkant (latrinen): en ledig ruta på gräs, sand eller i glesare skog, latrinFran–latrinTill rutor från byns läger, helst
 // latrinAvst, inte på lekplatsen, och när byn lärt sig det (s.hygien) långt från vattnet
 function siteUtkant(s: State, _k: string) {
-  const m = getMap(s.seed), f = m.fire, R = STATION.latrinTill + 4, g = groundOf(s), lekR = lekplats(s);
+  const m = getMap(s.seed), f = eldPlats(s), R = STATION.latrinTill + 4, g = groundOf(s), lekR = lekplats(s);
   let best: { x: number; y: number; rot?: 1 } | undefined, bs = Infinity;
   for (let dy = -R; dy <= R; dy++) for (let dx = -R; dx <= R; dx++) {
     const x = f.x + dx, y = f.y + dy;
@@ -378,14 +378,14 @@ function tillVatten(s: State, x: number, y: number, max: number) {
 }
 // över elden (grillen): rutan till vänster om elden, så att elden står i mitten. Där ligger aldrig något (usable i lager.ts)
 function siteEld(s: State) {
-  const f = getMap(s.seed).fire;
+  const f = eldPlats(s);
   return [-1, 0, 1].some(i => stationAt(s, f.x + i, f.y)) ? undefined : { x: f.x - 1, y: f.y, rot: undefined };
 }
 // rutorna i rektangeln med hörnet (x, y) och måtten w×h
 const rutorAv = (x: number, y: number, w: number, h: number) => Array.from({ length: w * h }, (_, i) => ({ x: x + i % w, y: y + Math.floor(i / w) }));
 // ute: alla rutorna den tar är lediga, ingenting utom ett hus står inpå (friRunt), helst mot en vägg och inte där barnen leker. Avståndet räknas från stationens mitt
 function siteUte(s: State, k: string) {
-  const f = getMap(s.seed).fire, lekR = lekplats(s);
+  const f = eldPlats(s), lekR = lekplats(s);
   let best: { x: number; y: number; rot?: 1 } | undefined, bs = Infinity;
   for (const rot of [0, 1] as const) {
     const { w, h } = storlek(k, rot), R = Math.ceil(STATION.avstand) + 2 + Math.max(w, h);
@@ -484,7 +484,7 @@ function nadda(s: State, extra = -1, utan = -1) {
 }
 function naddaNu(s: State, extra: number, utan: number) {
   gridOf(s); // väggarna som de är nu
-  const g = groundOf(s), hinder = stationRutor(s).hinder, f = getMap(s.seed).fire, sedd = new Uint8Array(W * H), ko: number[] = [];
+  const g = groundOf(s), hinder = stationRutor(s).hinder, f = eldPlats(s), sedd = new Uint8Array(W * H), ko: number[] = [];
   const fri = (i: number) => g.tiles[i] !== T.Vatten && !g.solid?.[i] && (!hinder[i] || i === utan) && i !== extra;
   const lagg = (x: number, y: number) => { const i = y * W + x; if (x >= 0 && y >= 0 && x < W && y < H && !sedd[i] && fri(i)) { sedd[i] = 1; ko.push(i); } };
   lagg(f.x, f.y);

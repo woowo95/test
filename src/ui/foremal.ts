@@ -1,4 +1,4 @@
-import { MASTERVERK, PERFEKT, Act, DJUR, GRODOR, faltById, faltKlar, faltOf, faltRuta, faltRutor, grodaPa, brasaHeat, radieAv, W, bordPlatser, sjoarna, stationById, GORS, MATERIAL, Pile, STATION, STUBBE_LIV, Station, bitAt, bitsOf, clamp, dorrDef, condOf, emberOn, fireHeat, forvarAt, getMap, grillVara, heatRadius, TORK, torrDel, isKlar, living, stationDef, stationKlar, stationerOf, storlekAv, tillbehorDef, tingOf, vidStation, zonesOf } from '../sim';
+import { MASTERVERK, PERFEKT, Act, DJUR, GRODOR, faltById, faltKlar, faltOf, faltRuta, faltRutor, grodaPa, brasaHeat, radieAv, W, bordPlatser, sjoarna, stationById, GORS, MATERIAL, Pile, STATION, STUBBE_LIV, Station, bitAt, bitsOf, clamp, dorrDef, condOf, emberOn, fireHeat, forvarAt, eldPlats, grillVara, heatRadius, TORK, torrDel, isKlar, living, stationDef, stationKlar, stationerOf, storlekAv, tillbehorDef, tingOf, vidStation, zonesOf } from '../sim';
 import { LagereldLage, iconCanvas, lagereldId } from '../ikoner';
 import { ritaHus } from './husbild';
 import { outPilesAt, piles, s, ui } from './lage';
@@ -111,7 +111,7 @@ function kant(rutor: number[]) {
   overG.lineStyle(0);
 }
 export function drawStructures(t: number) {
-  const m = getMap(s.seed), tab = ui.tab;
+  const tab = ui.tab;
   structG.clear(); overG.clear();
   // lagerplatsen: en ram runt rutorna, och en stack per ruta
   zonesOf(s).forEach((z, i) => {
@@ -121,7 +121,7 @@ export function drawStructures(t: number) {
   drawBuild();
   pileIcons.start();
   drawFalt();
-  lagereld(m.fire, t);
+  lagereld(eldPlats(s), t);
   for (const pl of piles()) if (!forvarAt(s, pl.x, pl.y)?.stangd) drawPile(pl, t); // det som ligger i en kista syns bara när man trycker på den
   // stationerna (stationer.ts) i blandperspektiv över alla rutorna de tar: de som är högre än rutan sticker upp över rutan
   // ovanför. Den halvbyggda har framstegscirkeln överst i mitten; vid den färdiga ligger kniven och det som görs där
@@ -172,7 +172,7 @@ export function drawStructures(t: number) {
     structG.beginFill(0xc9a46a).drawCircle(x - len / 2, y + 2, 1.8).endFill();
   }
   // eld
-  const f = m.fire, cx = f.x * TS + TS / 2, cy = f.y * TS + TS / 2;
+  const f = eldPlats(s), cx = f.x * TS + TS / 2, cy = f.y * TS + TS / 2;
   // värmeområdet visas när eldens flik är öppen
   if (tab === 'eld' && s.fire.lit) structG.beginFill(0xff9a4a, 0.1).lineStyle(1, 0xffb070, 0.5).drawCircle(cx, cy, heatRadius(s) * TS).endFill().lineStyle(0);
   if (tab === 'eld') structG.lineStyle(1.5, 0xffffff, 0.9).drawCircle(cx, cy, 15).lineStyle(0);

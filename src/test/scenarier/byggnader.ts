@@ -4,7 +4,7 @@ import { MIN, Person, Act, createState, addTool, toolsOf, BYN, step, living, see
 import * as SIM from '../../sim';
 import { findPath } from '../../sim/vag';
 import { START } from '../kor';
-import { setItems, setFood, kor, klockan, tandEld, byggare, byggKlart, nyInvanare, STOCKHOLM, SCENARIER } from './hjalp';
+import { setItems, setFood, kor, klockan, tandEld, byggare, byggKlart, nyInvanare, medBank, STOCKHOLM, SCENARIER } from './hjalp';
 
 SCENARIER.byggnader = {
   text: 'Varje sorts byggnad är en rad i ett register med behov, vikt och ägare. Byn bygger för det mest akuta behovet, faror först: den som saknar tak över huvudet får en sovsal',
@@ -605,6 +605,77 @@ SCENARIER.heltal = {
       [`arbetet räknas tills det blivit en hel sak (0,6 bär: ${fore} i förrådet, ${arb.toFixed(1)} arbetat; igen: ${efter} och ${arb2.toFixed(1)})`, arbetet],
       [`en halv portion tar ett helt bär och resten blir påbörjad (${n0} → ${n1} bär, ${p1.toFixed(1)} påbörjat), och nästa halva tas av det påbörjade (${n2} bär, ${p2.toFixed(1)} påbörjat)`, halv],
       [`en kanin är ${SIM.KANIN} hela vilt`, hel(SIM.KANIN) && SIM.KANIN >= 1],
+    ];
+  },
+};
+
+// ett hus med yttermåtten w×h och hörnet (x, y), som planBuild gör det: timmerväggar, en öppning mitt på södra sidan och trägolv.
+// klar = färdigbyggt
+function husPa(s: SIM.State, x: number, y: number, w: number, h: number, klar: boolean) {
+  const hus: SIM.Hus = { id: (s.nextBit ??= 1), namn: 'Hydda', x, y, w, h, fn: 'sovsal' };
+  s.nextBit++;
+  for (let yy = y; yy < y + h; yy++) for (let xx = x; xx < x + w; xx++) {
+    const edge = xx === x || yy === y || xx === x + w - 1 || yy === y + h - 1, open = xx === x + Math.floor(w / 2) && yy === y + h - 1;
+    const m = open ? 'oppning' : edge ? 'timmer' : 'tra';
+    SIM.bitsOf(s).push({ id: s.nextBit++, x: xx, y: yy, k: SIM.MATERIAL[m].k, m, b: open || klar ? 1 : 0, mat: klar ? SIM.MATERIAL[m].n : 0, c: 1, hus: hus.id });
+  }
+  if (klar) hus.klar = s.now;
+  SIM.housesOf(s).push(hus); SIM.touch(s);
+  return hus;
+}
+// går det att bygga på alla rutor i rektangeln (och ett varv runt den)?
+const friRekt = (s: SIM.State, x: number, y: number, w: number, h: number) => {
+  for (let yy = y - 1; yy <= y + h; yy++) for (let xx = x - 1; xx <= x + w; xx++) if (!SIM.ledig(s, xx, yy)) return false;
+  return true;
+};
+
+SCENARIER.eldflytt = {
+  text: 'Elden flyttas när byn vuxit ifrån den (husens och lagrets mitt mer än ELDFLYTT.vuxit rutor bort) och när ett hus behöver platsen där elden står: den släcks, stenarna i ringen bärs dit, grillen följer med och elden tänds där igen med flinta',
+  kor: () => {
+    // byn har vuxit: tre färdiga hus 12–20 rutor från elden, alla åt samma håll
+    const s = createState(6, START);
+    klockan(s, 8); tandEld(s); byggare(s);
+    SIM.setAmount(s, 'flinta', 2); SIM.setAmount(s, 'torrgras', 10); SIM.setAmount(s, 'grenar', 10); SIM.setAmount(s, 'ved', 30);
+    const grill = medBank(s, 'grill');
+    const e0 = { ...SIM.eldPlats(s) }, hus: SIM.Hus[] = [];
+    sok: for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      hus.length = 0;
+      for (let d = 12; d <= 30 && hus.length < 3; d++) {
+        const x = e0.x + dx * d + (dy ? (hus.length - 1) * 6 : 0), y = e0.y + dy * d + (dx ? (hus.length - 1) * 6 : 0);
+        if (friRekt(s, x, y, 4, 4)) { hus.push(husPa(s, x, y, 4, 4, true)); d += 5; }
+      }
+      if (hus.length === 3) break sok;
+      for (const h of hus) { s.hus = SIM.housesOf(s).filter(q => q !== h); s.byggen = SIM.bitsOf(s).filter(b => b.hus !== h.id); }
+      SIM.touch(s);
+    }
+    const mid = SIM.byInne(s), langt = Math.hypot(mid.x - e0.x, mid.y - e0.y);
+    let vald: SIM.Person | undefined, flytt = s.fire.flytt;
+    SIM.stepEldFlytt(s);
+    flytt = s.fire.flytt; vald = living(s).find(p => p.task?.act === 'flyttaeld');
+    kor(s, 8);
+    const e1 = SIM.eldPlats(s), narmare = Math.hypot(mid.x - e1.x, mid.y - e1.y);
+    const g1 = SIM.stationerOf(s).find(t => t.id === grill.id);
+    let tand = s.fire.lightings;
+    kor(s, 24, t => { if (t.fire.lit && t.fire.lightings > tand) tand = -1; });
+    // ett hus planeras där elden står: inget byggs inpå elden förrän den flyttats
+    const t = createState(7, START);
+    klockan(t, 8); tandEld(t); byggare(t);
+    SIM.setAmount(t, 'flinta', 2); SIM.setAmount(t, 'torrgras', 10); SIM.setAmount(t, 'grenar', 10); SIM.setAmount(t, 'ved', 30); SIM.setAmount(t, 'yxa', 2);
+    const f0 = { ...SIM.eldPlats(t) }, ph = husPa(t, f0.x - 2, f0.y - 2, 5, 5, false), ny = SIM.nyEldplats(t, f0.x, f0.y, ph);
+    const isar = !!ny && !SIM.vidElden(t, ny.x, ny.y) && !(ny.x + 1 >= ph.x && ny.x - 1 < ph.x + ph.w && ny.y + 1 >= ph.y && ny.y - 1 < ph.y + ph.h);
+    if (ny) t.fire.flytt = { ...ny, varfor: 'plats' };
+    const fore = living(t).map(p => SIM.buildJob(t, p)).filter(j => j && SIM.vidElden(t, j.bit.x, j.bit.y)).length;
+    kor(t, 10);
+    const f1 = SIM.eldPlats(t), flyttad = f1.x !== f0.x || f1.y !== f0.y;
+    const bygg = flyttad && byggKlart(t) === ph;
+    return [
+      [`tre färdiga hus gör att byns mitt ligger ${langt.toFixed(1)} rutor från elden (mer än ${SIM.ELDFLYTT.vuxit})`, hus.length === 3 && langt > SIM.ELDFLYTT.vuxit],
+      [`byn bestämmer sig för att flytta elden mot mitten (${flytt ? `${flytt.x}, ${flytt.y}, ${flytt.varfor}` : 'ingen flytt'}) och ${vald?.name ?? 'ingen'} får göra det`, flytt?.varfor === 'vuxit' && !!vald],
+      [`elden står sedan ${narmare.toFixed(1)} rutor från mitten (förut ${langt.toFixed(1)}), och flytten räknas (${s.stat?.eldflytt ?? 0})`, narmare < langt && narmare <= SIM.ELDFLYTT.sok && s.stat?.eldflytt === 1 && !s.fire.flytt],
+      ['ringen av stenar följer med, och grillen står med elden i mitten', !!s.fire.ring && g1?.x === e1.x - 1 && g1?.y === e1.y],
+      ['elden tänds igen på den nya platsen inom ett dygn', tand === -1],
+      [`ett hus som planeras där elden står får en ny plats för elden (${ny ? `${ny.x}, ${ny.y}` : 'ingen'}) en bit från huset`, isar],
+      [`inget byggs inpå elden innan den flyttats (${fore} jobb där), och sedan flyttas den och huset kan byggas där (${bygg ? 'byggt' : 'inte byggt'})`, fore === 0 && flyttad && bygg],
     ];
   },
 };

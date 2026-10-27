@@ -13,7 +13,7 @@ import { DJUR, Djurart, GORS, canProcess, djurKvar, freeOfKinds, makeTask, toolG
 import { PROJEKT, Uppgift, bastaProjekt } from './projekt';
 import { faltNu, vildFronPlats } from './odling';
 import { areaOf, flintArea, pickSpot, prospectFor } from './minne';
-import { getMap } from './karta';
+import { eldPlats, getMap } from './karta';
 import { amountOf, avbryt, fetchSpot, haulJob } from './lager';
 import { bedFor, buildJob, siteOf } from './bygg';
 import { bitAt, blocked, freeNear, roomAt } from './byggnad';
@@ -156,7 +156,7 @@ function hantverkIByn(s: State, p: Person): { x: number; y: number } {
 // var en handling görs, efter platsen i handlingar.ts
 export function spotFor(s: State, act: Act, p: Person): { x: number; y: number } {
   const m = getMap(s.seed), d = ACTS[act], plats = d.plats ?? 'skog';
-  const f = plats === 'elden' ? egenBrasa(s, p) ?? m.fire : m.fire; // vid elden: vid den brinnande brasa man hör till (steg 2.9.1), annars lägerelden
+  const f = plats === 'elden' ? egenBrasa(s, p) ?? eldPlats(s) : eldPlats(s); // vid elden: vid den brinnande brasa man hör till (steg 2.9.1), annars lägerelden
   // det som görs utan bänk görs inne i byn och inte vid elden (steg 2.10.6); när det är kallt sätter man sig vid elden som förut, för värmens skull
   const iByn = d.slag === 'hantverk' && (plats === 'elden' || plats === 'station' && !stationFor(s, act)) && coldOf(temperature(s)) === 0;
   if (iByn && nederbord(s)) { const sal = samlingRum(s); if (sal) return punktIRuta(s, pick(s, sal.tiles, 'val', p), p); } // i regnet under tak (steg 2.11.1)

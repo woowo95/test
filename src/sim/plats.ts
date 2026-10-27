@@ -1,4 +1,4 @@
-import { getMap } from './karta';
+import { eldPlats } from './karta';
 import { H, State, W, inMap } from './typer';
 import { balans } from './balans';
 
@@ -39,25 +39,26 @@ const grids = new WeakMap<State, Grid>();
 export function campGrid(s: State) {
   const zs = zonesIn(s);
   let c = grids.get(s);
-  if (!c || !sammaForm(c, s.seed, zs)) {
-    const d = new Float64Array(W * H);
+  if (!c || !sammaForm(c, s, zs)) {
+    const d = new Float64Array(W * H), f = eldPlats(s);
     for (let i = 0; i < W * H; i++) d[i] = distTo(s, i % W, Math.floor(i / W));
-    c = { seed: s.seed, geo: zs.flatMap(z => [z.x, z.y, z.w, z.h]), d };
+    c = { seed: s.seed, geo: [f.x, f.y, ...zs.flatMap(z => [z.x, z.y, z.w, z.h])], d };
     grids.set(s, c);
   }
   return c.d;
 }
-// har lägret samma form som när rutnätet räknades?
-function sammaForm(c: Grid, seed: number, zs: NonNullable<State['lagren']>) {
-  if (c.seed !== seed || c.geo.length !== zs.length * 4) return false;
+// har lägret samma form som när rutnätet räknades (elden på samma plats och samma lagerplatser)?
+function sammaForm(c: Grid, s: State, zs: NonNullable<State['lagren']>) {
+  const f = eldPlats(s), g = c.geo;
+  if (c.seed !== s.seed || g.length !== zs.length * 4 + 2 || g[0] !== f.x || g[1] !== f.y) return false;
   for (let i = 0; i < zs.length; i++) {
-    const z = zs[i], g = c.geo;
-    if (g[i * 4] !== z.x || g[i * 4 + 1] !== z.y || g[i * 4 + 2] !== z.w || g[i * 4 + 3] !== z.h) return false;
+    const z = zs[i], j = i * 4 + 2;
+    if (g[j] !== z.x || g[j + 1] !== z.y || g[j + 2] !== z.w || g[j + 3] !== z.h) return false;
   }
   return true;
 }
 function distTo(s: State, x: number, y: number) {
-  const f = getMap(s.seed).fire;
+  const f = eldPlats(s);
   let d = Math.hypot(x - f.x, y - f.y);
   for (const z of zonesIn(s)) d = Math.min(d, rektAvstand(x, y, z.x, z.y, z.w, z.h));
   return d;
@@ -65,11 +66,11 @@ function distTo(s: State, x: number, y: number) {
 // avståndet från en ruta (px, py) till närmaste ruta i rektangeln med hörnet (rx, ry) och måtten rw×rh (0 inne i den)
 export const rektAvstand = (px: number, py: number, rx: number, ry: number, rw: number, rh: number) =>
   Math.hypot(Math.max(rx - px, 0, px - (rx + rw - 1)), Math.max(ry - py, 0, py - (ry + rh - 1)));
-// lägrets form som text: för det som räknas en gång och sparas tills lägret ändras
-export const campKey = (s: State) => `${s.seed}:${zonesIn(s).map(z => `${z.x},${z.y},${z.w},${z.h}`).join(';')}`;
+// lägrets form som text (en flyttad eld och lagerplatserna): för det som räknas en gång och sparas tills lägret ändras
+export const campKey = (s: State) => `${s.seed}:${s.fire.at ? `${s.fire.at.x},${s.fire.at.y}:` : ''}${zonesIn(s).map(z => `${z.x},${z.y},${z.w},${z.h}`).join(';')}`;
 // byns mitt: elden väger lika mycket som alla lagerplatser tillsammans
 export function campCenter(s: State) {
-  const f = getMap(s.seed).fire, zs = zonesIn(s);
+  const f = eldPlats(s), zs = zonesIn(s);
   if (!zs.length) return { x: f.x, y: f.y };
   let x = 0, y = 0;
   for (const z of zs) { x += z.x + (z.w - 1) / 2; y += z.y + (z.h - 1) / 2; }

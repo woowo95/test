@@ -250,4 +250,6 @@ export interface Fire {
   fills: Record<string, number>; log: FireLog[];
   want?: number; wantBy?: number; wantWhy?: string; // största önskan om ved på elden just nu, och vems
   ash?: number; ashUntil?: number; // kolhög efter en utbrunnen eld
+  at?: { x: number; y: number }; // var elden står om den flyttats (steg 2.10.4); annars där kartan lade den (getMap(seed).fire)
+  flytt?: { x: number; y: number; varfor: 'plats' | 'vuxit' }; // elden ska flyttas hit (eldflytt.ts)
 }

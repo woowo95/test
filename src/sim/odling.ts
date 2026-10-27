@@ -6,7 +6,7 @@ import { SNABBARE } from './handlingar';
 import { DAY, H, HOUR, HOUR_S, MIN, Person, SEC, State, T, Task, W, inMap } from './typer';
 import { balans } from './balans';
 import { clamp } from './slump';
-import { getMap } from './karta';
+import { eldPlats, getMap } from './karta';
 import { groundOf } from './mark';
 import { FOREST } from './vag';
 import { knows, tankePa } from './teknik';
@@ -189,7 +189,7 @@ export function faltSite(s: State, w: number, n: number) {
   return at;
 }
 function hittaSite(s: State, w: number, n: number) {
-  const f = getMap(s.seed).fire, R = ODLING.faltTill + 2, g = groundOf(s), lekR = lekplats(s), rader = Math.ceil(n / w), b = Math.min(w, n);
+  const f = eldPlats(s), R = ODLING.faltTill + 2, g = groundOf(s), lekR = lekplats(s), rader = Math.ceil(n / w), b = Math.min(w, n);
   let best: { x: number; y: number } | undefined, bs = Infinity;
   for (let dy = -R; dy <= R; dy++) for (let dx = -R; dx <= R; dx++) {
     const x = f.x + dx, y = f.y + dy, d = campDist(s, x + b / 2, y + 0.5);

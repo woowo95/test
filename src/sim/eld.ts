@@ -7,7 +7,7 @@ import { ALDER, KROPP, ageOf, count, doingAct, isSick, log, ovning, stat, think 
 import { halsa } from './halsa';
 import { flintFactor, flintorOchYxor, stoneDist, takeFrom } from './fynd';
 import { observe } from './minne';
-import { getMap } from './karta';
+import { eldPlats } from './karta';
 import { tileOf } from './mark';
 import { moodOf } from './samtal';
 import { duty, sedEvent } from './seder';
@@ -103,8 +103,8 @@ export function heatRadius(s: State) { return radieAv(s, fireHeat(s)); }
 const varmeFran = (I: number, r: number, fx: number, fy: number, x: number, y: number) => { const d = Math.hypot(x - fx, y - fy); return d >= r ? 0 : I * (1 - d / r); };
 // värmen på platsen: från den eld som värmer mest där, lägerelden eller en brasa (steg 2.9.1)
 export function heatAt(s: State, x: number, y: number) {
-  const I = fireHeat(s), m = getMap(s.seed);
-  let v = I ? varmeFran(I, heatRadius(s), m.fire.x + 0.5, m.fire.y + 0.5, x, y) : 0;
+  const I = fireHeat(s), f = eldPlats(s);
+  let v = I ? varmeFran(I, heatRadius(s), f.x + 0.5, f.y + 0.5, x, y) : 0;
   if (s.stationer?.length) for (const t of s.stationer) if (t.eld?.lit) { const J = brasaHeat(t); v = Math.max(v, varmeFran(J, radieAv(s, J), t.x + 0.5, t.y + 0.5, x, y)); }
   return v;
 }
@@ -212,10 +212,10 @@ const awake = (s: State, p: Person, minAge: number) => {
     (!t || (t.act !== 'sova' && !(t.phase === 'back' && t.carry > 0) && !t.items));
 };
 export function stepFire(s: State, dtSec: number, ppl: Person[]) {
-  const f = s.fire, h = hearthOf(f), m = getMap(s.seed), now = s.now;
+  const f = s.fire, h = hearthOf(f), now = s.now;
   if (f.lit) {
     // i regnet brinner en eld ute fortare (steg 2.11.1); en eld under tak gör det inte
-    const regn = vaderNu(s).sno || roomAt(s, m.fire.x + 0.5, m.fire.y + 0.5) ? 0 : vaderNu(s).nb;
+    const regn = vaderNu(s).sno || roomAt(s, eldPlats(s).x + 0.5, eldPlats(s).y + 0.5) ? 0 : vaderNu(s).nb;
     const b = Math.min(f.fuel, h.burn / HOUR_S * dtSec * (1 + regn * VADER.regnEld));
     f.fuel -= b; f.burned += b; f.totalBurned += b; f.litSec += dtSec;
     if (f.fuel <= 1e-6) {
@@ -246,7 +246,7 @@ export function stepFire(s: State, dtSec: number, ppl: Person[]) {
   f.want = top?.w.v ?? 0; f.wantBy = top?.p.id; f.wantWhy = top?.w.why;
   // påfyllning: den som vill ha klart mer ved än det som ligger på hämtar, plikttrogna och nära först
   if ((f.lit || emberOn(s)) && fuelStock(s) >= ELD.hamtaMin && !ppl.some(p => p.task?.act === 'elda')) {
-    const fx = m.fire.x + 0.5, fy = m.fire.y + 0.5;
+    const fx = eldPlats(s).x + 0.5, fy = eldPlats(s).y + 0.5;
     let best: { p: Person; w: Wish } | undefined, bs = -1e9;
     for (const c of cands) {
       if (c.w.v < f.fuel * ELD.fyllMarg + ELD.fyllPlus || fuelFor(s, c.p) < ELD.hamtaMin) continue; // bara den som har ved att ta (byns eller sin egen)
@@ -264,7 +264,7 @@ export function stepFire(s: State, dtSec: number, ppl: Person[]) {
       const k = o.p.skill.elda + stat(o.p, 'flit', now) / ELD.tandFlit + rnd(s, 'eld') * ELD.tandBrus;
       if (k > ck) { ck = k; c = o; }
     }
-    if (c) assign(s, c.p, 'tanda', m.fire.x + 0.5 + (rnd(s, 'eld') - 0.5) * 1.2, m.fire.y + 1.3, ELD.tandTim * HOUR, `Vill ha eld. ${c.w.why}`);
+    if (c) assign(s, c.p, 'tanda', eldPlats(s).x + 0.5 + (rnd(s, 'eld') - 0.5) * 1.2, eldPlats(s).y + 1.3, ELD.tandTim * HOUR, `Vill ha eld. ${c.w.why}`);
   }
   stepBrasaEld(s, dtSec, cands); // brasorna (steg 2.9.1)
 }

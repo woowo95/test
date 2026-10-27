@@ -20,7 +20,7 @@ import { bedFor } from './bygg';
 import { freeNear, roomAt } from './byggnad';
 import { campDist } from './plats';
 import { isForest, tileOf } from './mark';
-import { getMap } from './karta';
+import { eldPlats } from './karta';
 import { chance, clamp, pick, rnd } from './slump';
 import { Act, HOUR, HOUR_S, Person, Skill, State, Stock, Task } from './typer';
 import { balans } from './balans';
@@ -332,7 +332,7 @@ export function vardKlar(s: State, p: Person, t: Task) {
 // att bära hem den som inte kan gå: till sovplatsen, annars vid elden. Den skadade följer med (barMed)
 function bara(s: State, p: Person, q: Person, t: Task) {
   avbryt(s, q);
-  const f = getMap(s.seed).fire, mal = bedFor(s, q) ?? freeNear(s, f.x + 0.5, f.y + 1.6);
+  const f = eldPlats(s), mal = bedFor(s, q) ?? freeNear(s, f.x + 0.5, f.y + 1.6);
   q.task = { act: 'buren', phase: 'do', tx: q.x, ty: q.y, until: s.now + HALSA.buren * HOUR, carry: 0, ref: p.id, why: `Bärs hem av ${p.name}` };
   t.phase = 'back'; t.bar = q.id; t.tx = mal.x; t.ty = mal.y; t.why = `Bär hem ${q.name}`;
   if (forstaGang(s, 'buren hem')) log(s, `${p.name} bar hem ${q.name}, som inte kunde gå.`, 'world', [p.id, q.id]);

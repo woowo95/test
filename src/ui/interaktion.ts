@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { BAR, FALT_STEG, FOREST, GRODOR, Falt, byId, faltAt, faltIndex, faltKlar, grodaPa, HIGH, MATERIAL, MIN, Person, T, W, bitAt, campCenter, condOf, dorrDef, emberOn, getMap, groundOf, husById, inMap, insulation, isKlar, living, stationAt, stationDef, tingOf, toaAt, roomAt, rumsFunktioner, sakNamn, sjoarna, sovplatser, taskName, zoneAt, zonesOf, Pile } from '../sim';
+import { BAR, FALT_STEG, FOREST, GRODOR, Falt, byId, faltAt, faltIndex, faltKlar, grodaPa, HIGH, MATERIAL, MIN, Person, T, W, bitAt, campCenter, condOf, dorrDef, emberOn, eldPlats, getMap, groundOf, husById, inMap, insulation, isKlar, living, stationAt, stationDef, tingOf, toaAt, roomAt, rumsFunktioner, sakNamn, sjoarna, sovplatser, taskName, zoneAt, zonesOf, Pile } from '../sim';
 import { iconImg, tecknet } from '../ikoner';
 import { $, esc, fmtN, prickar } from './hjalp';
 import { outPilesAt, piles, s, ui } from './lage';
@@ -16,7 +16,7 @@ function personAt(gx: number, gy: number) {
   return best;
 }
 function fireAt(gx: number, gy: number) {
-  const p = toWorld(gx, gy), f = getMap(s.seed).fire;
+  const p = toWorld(gx, gy), f = eldPlats(s);
   return Math.hypot(f.x * TS + TS / 2 - p.x, f.y * TS + TS / 2 - p.y) < 12;
 }
 function storeAt(gx: number, gy: number) { const c = tileAt(gx, gy); return zoneAt(s, c.x, c.y) + 1; } // 0 = ingen lagerplats
@@ -84,7 +84,7 @@ function showHover(gx: number, gy: number) {
   const soil = t === T.Gras || t === T.Skog;
   const ground = t === T.Vatten ? 'Vatten' : t === T.Sand ? 'Sand' : t === T.Sten ? 'Sten' : tr >= FOREST ? 'Skogsmark' : c >= HIGH ? 'Högt gräs' : c >= BAR ? 'Kort gräs' : 'Bar jord, stig';
   const rows: string[] = [`<b>${ground}</b>${soil && tr > 0 ? ` · ${tr >= FOREST ? 'skog' : tr >= 0.25 ? 'ungskog' : 'plantor'}` : ''}`];
-  if (x === m.fire.x && y === m.fire.y) rows.push(`Elden (${s.fire.lit ? 'brinner' : emberOn(s) ? 'glöder' : 'släckt'})`);
+  if (x === eldPlats(s).x && y === eldPlats(s).y) rows.push(`Elden (${s.fire.lit ? 'brinner' : emberOn(s) ? 'glöder' : 'släckt'})`);
   const zi = zoneAt(s, x, y);
   if (zi >= 0) {
     const pl = piles().find(q => q.x === x && q.y === y);

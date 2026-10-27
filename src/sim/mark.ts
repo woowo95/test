@@ -1,4 +1,4 @@
-import { getMap, hash, perKarta, vnoise } from './karta';
+import { eldPlats, getMap, hash, perKarta, vnoise } from './karta';
 import { campKey } from './plats';
 import { clampI, rnd } from './slump';
 import { H, HOUR, OX, OY, Person, State, W, inMap } from './typer';
@@ -92,8 +92,8 @@ function built(s: State) {
   const key = campKey(s);
   let c = builtCache.get(s);
   if (c?.key === key) return c.b;
-  const m = getMap(s.seed), b = new Uint8Array(W * H);
-  for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (inMap(m.fire.x + dx, m.fire.y + dy)) b[(m.fire.y + dy) * W + m.fire.x + dx] = 1;
+  const f = eldPlats(s), b = new Uint8Array(W * H);
+  for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (inMap(f.x + dx, f.y + dy)) b[(f.y + dy) * W + f.x + dx] = 1;
   for (const z of s.lagren ?? []) for (let y = z.y; y < z.y + z.h; y++) for (let x = z.x; x < z.x + z.w; x++) if (inMap(x, y)) b[y * W + x] = 1;
   builtCache.set(s, c = { key, b });
   return b;

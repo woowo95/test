@@ -1,4 +1,4 @@
-import { H, H0, OX, OY, T, W, W0, kartNamn, mapKey } from './typer';
+import { H, H0, OX, OY, State, T, W, W0, kartNamn, mapKey } from './typer';
 
 // ---------- karta ----------
 export function hash(seed: number, x: number, y: number) {
@@ -93,3 +93,5 @@ export const getMap = perKarta((seed): MapData => {
   }
   return { tiles, fire: f, stock, shade };
 });
+// var elden står nu: där kartan lade den, eller dit byn flyttat den (steg 2.10.4, eldflytt.ts)
+export const eldPlats = (s: State) => s.fire.at ?? getMap(s.seed).fire;

@@ -1,6 +1,6 @@
 import { HOUR_S, DAY, Person, State } from './typer';
 import { balans } from './balans';
-import { getMap } from './karta';
+import { eldPlats } from './karta';
 import { ALDER, ageOf, count, doingAct, forstaGang, living, log, ovning } from './folk';
 import { coldOf, temperature } from './vader';
 import { rnd } from './slump';
@@ -78,8 +78,8 @@ export function brasaLeta(s: State, p: Person): Uppgift | undefined {
 export function stepBrasor(s: State) {
   const br = brasorOf(s);
   if (!br.length && !s.brasa && !(coldOf(temperature(s)) > BRASA.kyla && s.fire.lit)) return;
-  const m = getMap(s.seed), L = langt(s);
-  const eldar = [{ x: m.fire.x + 0.5, y: m.fire.y + 0.5 }, ...br.map(t => ({ x: t.x + 0.5, y: t.y + 0.5 }))];
+  const L = langt(s);
+  const eldar = [{ x: eldPlats(s).x + 0.5, y: eldPlats(s).y + 0.5 }, ...br.map(t => ({ x: t.x + 0.5, y: t.y + 0.5 }))];
   for (const t of br) brasaEld(t).folk = [];
   const borta: { x: number; y: number }[] = [];
   for (const p of living(s)) {

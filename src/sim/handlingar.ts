@@ -82,6 +82,7 @@ const DEF = {
   sova: { namn: 'Sover', slag: 'vila', vila: true, stilla: true, plats: 'sang' },
   elda: { namn: 'Lägger trä på elden', yrke: 'Eldvaktare', slag: 'elda', ger: 'ved' },
   tanda: { namn: 'Försöker tända elden', yrke: 'Eldvaktare', slag: 'elda' },
+  flyttaeld: { namn: 'Flyttar elden', yrke: 'Eldvaktare', slag: 'elda', tungt: true }, // steg 2.10.4: släcker elden och bär stenarna till en ny eldplats (eldflytt.ts)
   varma: { namn: 'Värmer sig vid elden', tecken: '♨️', vila: true, social: true, varmer: true, plats: 'elden' },
   svalka: { namn: 'Svalkar sig i skuggan', tecken: '🌳', vila: true, social: true, dygn: true, stilla: true, plats: 'skugga' }, // steg 2.3.13
   toa: { namn: 'Går avsides på toa', tecken: '💧', plats: 'avsides' },

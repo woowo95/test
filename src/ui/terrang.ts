@@ -1,4 +1,4 @@
-import { H, T, W, ageIndex, emberOn, fireHeat, getMap, groundOf, isCm, lightLevel } from '../sim';
+import { H, T, W, ageIndex, emberOn, fireHeat, eldPlats, getMap, groundOf, isCm, lightLevel } from '../sim';
 import { s } from './lage';
 import { TS, glowG, nightG, terrainG } from './scen';
 
@@ -79,7 +79,7 @@ export function drawNight(t: number) {
   nightG.beginFill(0x0a1430, 0.58 * d).drawRect(0, 0, W * TS, H * TS).endFill();
   const I = fireHeat(s);
   if (I > 0 || emberOn(s)) {
-    const m = getMap(s.seed); const cx = m.fire.x * TS + TS / 2, cy = m.fire.y * TS + TS / 2;
+    const f = eldPlats(s), cx = f.x * TS + TS / 2, cy = f.y * TS + TS / 2;
     const fl = 1 + Math.sin(t / 160) * 0.05, k = I > 0 ? 0.45 + 0.55 * I : 0.12;
     for (const [r, a] of [[TS * 6, 0.035], [TS * 4, 0.06], [TS * 2.4, 0.09], [TS * 1.1, 0.13]]) glowG.beginFill(0xff8a3a, a * d * (I > 0 ? 1 : 0.5)).drawCircle(cx, cy, r * fl * k).endFill();
   }

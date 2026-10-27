@@ -1,4 +1,4 @@
-import { getMap } from './karta';
+import { eldPlats } from './karta';
 import { freeNear } from './byggnad';
 import { clamp, gauss, pick, rnd } from './slump';
 import { Act, DAY, LogEntry, Person, Rel, SKILLS, STATS, Skill, Stat, State } from './typer';
@@ -216,11 +216,11 @@ export function newPerson(s: State, sex: 'm' | 'k', born: number, mother?: Perso
   }
   const skill = {} as Record<Skill, number>;
   for (const k of SKILLS) skill[k] = 0;
-  const m = getMap(s.seed);
+  const f = eldPlats(s);
   const p: Person = {
     id: s.nextId++, name: '', sex, born, mother: mother?.id, father: father?.id,
     pot, skill, hunger: 0.8, rest: 0.9, social: 0.7, health: 1, warm: 1, toa: 0.6 + rnd(s, 'folk') * 0.4, torst: 1, blod: 1, habit: {}, thoughts: [],
-    x: m.fire.x + (rnd(s, 'folk') - 0.5) * 3, y: m.fire.y + (rnd(s, 'folk') - 0.5) * 3, fame: [],
+    x: f.x + (rnd(s, 'folk') - 0.5) * 3, y: f.y + (rnd(s, 'folk') - 0.5) * 3, fame: [],
     hue: Math.floor(rnd(s, 'folk') * 360),
   };
   p.name = makeName(s, sex);
