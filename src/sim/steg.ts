@@ -24,6 +24,7 @@ import { Act, DAY, HOUR, HOUR_S, MIN, Person, SEC, SKILL_NAMES, State, Task, W, 
 import { findPath, speedAt, wear } from './vag';
 import { chooseTask, nastaRedskap } from './val';
 import { djurSteg } from './djur';
+import { naringSjunker } from './naring';
 import { stepByggnader } from './byggnader';
 import { sumOf } from './egendom';
 import { avail, takeForHouse, buildJob, deliver as deliverBit, finishDorr, lacks, needOf, noteKom, planBuild, siteOf, toWalls, wearBuild, workOn } from './bygg';
@@ -217,7 +218,7 @@ export function nyVarme(w: number, v: ReturnType<typeof varmeDelar>, dt: number)
 }
 function needsStep(s: State, p: Person, a: number, dtSec: number, coldRate: number, fh: ReturnType<typeof hearthOf>, inRum: Map<number, number>, temp: number) {
   const now = s.now;
-  p.hunger = clamp(p.hunger - dtSec / (KROPP.hungerTim * HOUR_S) * (a < ALDER.matBarn ? KROPP.hungerBarn : 1), 0, 1);
+  naringSjunker(p, dtSec / HOUR_S * (a < ALDER.matBarn ? KROPP.hungerBarn : 1), KROPP.hungerTim); // mättnaden är en sammanfattning av näringen (steg 2.6.1)
   p.rest = clamp(p.rest + dtSec / HOUR_S * KROPP[viloSlag(p)], 0, 1);
   const v = varmeDelar(s, p, coldRate, inRum, temp), heat = v.heat;
   p.warm = nyVarme(p.warm, v, dtSec / HOUR_S);

@@ -7,6 +7,7 @@ import { Ting, tingOf } from './agande';
 import { BYN, Del, addDel, sumOf } from './egendom';
 import { amountOf, mayTake, ownMove, ownsAmount, takeFood, use } from './lager';
 import { eatPoison } from './fynd';
+import { ata } from './naring';
 import { habitShare, habitTotal } from './seder';
 import { grundvarde } from './varde';
 import { EKONOMI } from './ekonomi';
@@ -45,8 +46,10 @@ const portionOf = (p: Person, now: number) => ageOf(p, now) < ALDER.matBarn ? KR
 // en hel portion, eller det som finns kvar. Maten under halva skicket mättar sämre, under en fjärdedel kan man bli sjuk
 function eat(s: State, p: Person, fran?: Person) {
   const now = s.now, full = portionOf(p, now);
-  const { n: portion, c: q } = takeFood(s, full, p, fran);
-  p.hunger = clamp(p.hunger + 0.55 * portion / full * (q >= 0.5 ? 1 : 0.5 + q), 0, 1); eatPoison(s, p);
+  const { n: portion, c: q, per } = takeFood(s, full, p, fran), f = 0.55 / full * (q >= 0.5 ? 1 : 0.5 + q);
+  // maten fyller näringsvärdena, och mättnaden är en sammanfattning av dem (steg 2.6.1, naring.ts)
+  for (const k in per) per[k] *= f;
+  ata(p, per); eatPoison(s, p);
   if (q < 0.5) think(p, 'Maten var dålig', -0.05, now, 6 * HOUR);
   if (portion > 0 && vidBordet(p)) { think(p, 'Åt vid bordet', KROPP.bordGlad, now, KROPP.bordGladTim * HOUR); count(s, 'bordMal'); }
   if (q < 0.25 && rnd(s, 'halsa', p) < (0.25 - q) / 0.25 * 0.35) {

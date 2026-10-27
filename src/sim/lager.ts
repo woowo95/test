@@ -451,17 +451,17 @@ function setTools(s: State, k: string, n: number) {
 }
 export function setStock(s: State, m: Record<string, number>) { for (const k in m) setAmount(s, k, m[k]); }
 // p tar n mat ur förrådet: sitt eget och byns, eller (fran, stöld) den personens. Maten som förstörs fortast äts
-// först, och av den det sämsta. Ger hur mycket som åts och skicket
+// först, och av den det sämsta. Ger hur mycket som åts, skicket och hur mycket av varje slag (näringen, naring.ts)
 export function takeFood(s: State, n: number, p?: Person, fran?: Person) {
-  let got = 0, cw = 0;
+  let got = 0, cw = 0; const per: Record<string, number> = {};
   for (const k of FOOD) {
     if (n - got <= 1e-12) break;
     const v = Math.min(n - got, amountOf(s, k), takeLimit(s, k, p, fran));
     if (v <= 1e-12) continue;
     const r = takeOwn(s, k, v, p, false, fran?.id);
-    got += r.n; cw += r.n * r.c;
+    got += r.n; cw += r.n * r.c; per[k] = (per[k] ?? 0) + r.n;
   }
-  return { n: got, c: got > 0 ? cw / got : 1 };
+  return { n: got, c: got > 0 ? cw / got : 1, per };
 }
 // äldre sparfiler (före v40): summorna och ägarnas delar sparades bredvid stackarna. Stackarna jämkas efter summorna, och
 // delarna läggs i stackarna i förhållande till hur mycket varje stack rymmer

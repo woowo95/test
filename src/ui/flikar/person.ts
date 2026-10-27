@@ -1,4 +1,4 @@
-import { FORMAGOR, Kroppsdel, KROPPSDELAR, TORST, blodning, delSkada, halsa, skadeLista, skadeText, smarta, torstDelar } from '../../sim';
+import { FORMAGOR, Kroppsdel, KROPPSDELAR, NARING, NARINGAR, naringNu, sjunker, TORST, blodning, delSkada, halsa, skadeLista, skadeText, smarta, torstDelar } from '../../sim';
 import { ACTS, ALDER, Act, DAY, Lardom, SAMTAL, SKILL_GOR, STAT_GOR, Skill, Stat, coldOf, halsaLage, hearthOf, living, roomAt, temperature, varmeDelar, viloSlag, viloTak, SLAG, SLAG_TECKEN, Person, KUNSKAPER, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, SEDER, SED_LIST, TEKNIK, BYN, Ting, halvKlar, ageOf, alive, byId, childrenOf, drar, heldBy, ownedBy, PLATSER, PLATS_LIST, handerFor, homeKind, load, utrustning, viktOf, SAKER, ownedStock, sakNamn, slagIkon, tingNamn, STACK, describe, duty, habitShare, habitTotal, KROPP, kortTal, moodOf, num, REL, relKey, stat, taskName, timeLabel } from '../../sim';
 import { framstegSvg, hasIcon, iconImg } from '../../ikoner';
 import { LAG, bar, cap, carryTxt, cssFarg, durTxt, esc, hex, hsl, hjalpText, moodWord, pLink, prickar, relWord, sickNow, tempBar, tempOrd, trend, trendD } from '../hjalp';
@@ -103,7 +103,7 @@ function behovHtml(p: Person) {
   const skador = [...skadeText(p, now), ...(p.blod ?? 1) < 1 ? [`Har förlorat ${Math.round((1 - (p.blod ?? 1)) * 100)} % av blodet`] : [], ...smarta(p) > 0.2 ? ['Har ont'] : []];
   return `${sickNow(p) ? `<p class="why">${esc(p.sickWhy ?? 'Sjuk')}, ${durTxt(p.sickUntil! - now)} kvar</p>` : ''}<dl class="kv">
       ${rad(p, 'humor', 'Humör', `${bar(m, '', trend(p, 'humor', m))}<span>${moodWord(m)}</span>`, humor, '', 'Tankarna försvinner med tiden.')}
-      ${rad(p, 'hunger', 'Mättnad', bar(p.hunger, '', trend(p, 'hunger', p.hunger)), [{ namn: 'Hungern växer', v: -1 / KROPP.hungerTim * (a < ALDER.matBarn ? KROPP.hungerBarn : 1) }], ' i timmen', 'Maten hen äter höjer den.')}
+      ${rad(p, 'hunger', 'Mättnad', bar(p.hunger, '', trend(p, 'hunger', p.hunger)), [{ namn: 'Hungern växer', v: -1 / KROPP.hungerTim * (a < ALDER.matBarn ? KROPP.hungerBarn : 1) }], ' i timmen', 'Maten hen äter höjer den. Mättnaden är en sammanfattning av näringen (fliken Hälsa).')}
       ${rad(p, 'torst', 'Törst', bar(p.torst, p.torst < TORST.torstig ? 'low' : '', trend(p, 'torst', p.torst)), torstRad(p), ' i timmen', 'Att dricka släcker den. Vattnet är olika smutsigt på olika ställen, och i istiden smälter man snö vid elden.')}
       ${rad(p, 'rest', 'Vila', bar(p.rest, '', trend(p, 'rest', p.rest)), vila, ' i timmen')}
       ${rad(p, 'social', 'Gemenskap', bar(p.social, '', trend(p, 'social', p.social)), [{ namn: 'Saknar sällskap', v: -1 / KROPP.socialTim }], ' i timmen', 'Varje samtal höjer den.')}
@@ -142,8 +142,12 @@ function halsaHtml(p: Person) {
     const f = FORMAGOR[k], v = f.varde(p), ont = 'ont' in f;
     return rad(p, 'f_' + k, `${f.tecken} ${f.namn}`, `${bar(v, (ont ? v > 0.5 : v < LAG.halsa) ? 'low' : '')}<span>${Math.round(v * 100)} %</span>`, f.delar(p), '', `Påverkar: ${f.gor}`);
   }).join('');
+  // näringen (steg 2.6.1): mättnaden är en sammanfattning av de fem värdena
+  const n = naringNu(p), barn = ageOf(p, s.now) < ALDER.matBarn ? KROPP.hungerBarn : 1;
+  const naring = NARINGAR.map(k => rad(p, 'n_' + k, `${NARING[k].tecken} ${NARING[k].namn}`, `${bar(n[k], n[k] < LAG.naring ? 'low' : '')}<span>${Math.round(n[k] * 100)} %</span>`,
+    [{ namn: 'Sjunker', v: -sjunker(k, KROPP.hungerTim) * barn }], ' i timmen', `Finns i ${NARING[k].fran}.`)).join('');
   return `<div class="kropp"><svg class="gubbe" viewBox="0 0 16 26" shape-rendering="crispEdges" role="img" aria-label="Kroppen">${gubbe}</svg>${oppen}</div>
-    <h3>Det som är fel</h3>${lista}<h3>Förmågor</h3><dl class="kv">${formagor}</dl>`;
+    <h3>Det som är fel</h3>${lista}<h3>Förmågor</h3><dl class="kv">${formagor}</dl><h3>Näring</h3><dl class="kv">${naring}</dl>`;
 }
 // det en egenskap eller färdighet gör: arbetena som går fortare (ACTS) och raderna i STAT_GOR och SKILL_GOR
 function gorHtml(rader: string[], nu: string) {

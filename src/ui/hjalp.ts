@@ -36,6 +36,7 @@ export const LAG = {
   olycklig: 0.25, // humöret är så lågt att personen kallas olycklig (moodWord), och porträttet i raden märks
   hunger: 0.25, // mättnad (porträttets ruta, och porträttet i raden)
   halsa: 0.5, // hälsa (porträttets ruta och personfliken)
+  naring: 0.25, // ett näringsvärde i fliken Hälsa (steg 2.6.1); vad brist gör kommer i 2.6.2
   varmeRad: 0.3, // porträttet i raden märks när värmen är under detta (stapeln märks vid KROPP.kallt)
   skick: 0.5, // skicket på ett redskap eller en vägg (condBar)
 } as const;

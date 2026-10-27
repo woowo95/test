@@ -32,10 +32,11 @@ SCENARIER.djur = {
     for (let i = 0; i < 24 * STEG_TIM; i++) {
       p.task = { act: 'jakt', phase: 'do', tx: bx, ty: by, until: s.now + HOUR, carry: 0, why: 'prov', dark: !isLight(s.now) };
       p.x = bx; p.y = by;
+      for (const r of living(s)) r.hunger = 1; // ingen äter av viltet under provet (då syns inte om det kom in helt)
       const v0 = amountOf(s, 'vilt');
       step(s, BEAT);
       const d = (amountOf(s, 'vilt')) - v0;
-      if (d > 0.05 && Math.abs(d - KANIN) > 0.05) hela = false; // det som kommer in är hela kaniner (lite kan ätas samtidigt)
+      if (d > 0.05 && Math.abs(d - KANIN) > 0.05) hela = false; // det som kommer in är hela kaniner
     }
     const kaniner = s.stat?.kaniner ?? 0;
     // den som fångat en kanin bär hem den hel (små steg, så att vägen hem syns)

@@ -1,5 +1,5 @@
 // Scenarier. Behov och val: behov, ved, aktivitet och fritid.
-import { Person, createState, getRel, step, living, temperature, nyKalender, amountOf, capacity, load, isLight, T, FOOD, ageOf, getMap, HOUR, W, tileOf, stat, campCenter, KANIN, gain, takeFuel, ownsAmount, ownedSum, addTo, setAmount, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, STOLD_LINDRIG, STOLD_OP, BEAT, spar, isWork, ACTS, groundOf, varmeDelar, nyVarme, addTool, stepKlader, chooseTask, iSkugga, KROPP, spotFor, shoreOf, torstDelar, drickPlats, areaOf, halsaLage, describe, halsaSteg, skada, blodning, halsa, rorlighet, workRate, OLYCKOR, Act, HALSA, kanGa, gangFart, hemma, mossaFynd, chopStock, skadeLista, skadeText, delSkada, FORMAGOR, smarta, handighet } from '../../sim';
+import { Person, createState, getRel, step, living, temperature, nyKalender, amountOf, capacity, load, isLight, T, FOOD, ageOf, getMap, HOUR, W, tileOf, stat, campCenter, KANIN, gain, takeFuel, ownsAmount, ownedSum, addTo, setAmount, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, STOLD_LINDRIG, STOLD_OP, BEAT, spar, isWork, ACTS, groundOf, varmeDelar, nyVarme, addTool, stepKlader, chooseTask, iSkugga, KROPP, spotFor, shoreOf, torstDelar, drickPlats, areaOf, halsaLage, describe, halsaSteg, skada, blodning, halsa, rorlighet, workRate, OLYCKOR, Act, HALSA, kanGa, gangFart, hemma, mossaFynd, chopStock, skadeLista, skadeText, delSkada, FORMAGOR, smarta, handighet, NARINGAR, NARING, naringOf, naringNu, naringSjunker, mattnad, sjunker } from '../../sim';
 import { START, STEG_DYGN, STEG_TIM } from '../kor';
 import { setMat, setFood, kor, klockan, tandEld, tomtForrad, treVuxna, bastaJaktruta, SCENARIER, rikBy } from './hjalp';
 
@@ -514,6 +514,54 @@ SCENARIER.halsoflik = {
       ['ett sår som rengjordes för länge sedan räknas inte som rengjort', !gammal.gjort.includes('rengjort') && !gammal.battre],
       [`kallbranden visas med ${kall.tecken} och blir sämre`, kall.tecken === '☠️' && !kall.battre],
       [`personrutans text läser samma rader (${text.length} rader)`, text.length === 2 && text[0].startsWith('Skärsår i högra handen')],
+    ];
+  },
+};
+
+SCENARIER.naring = {
+  text: 'Steg 2.6.1: fem näringsvärden (energi, protein, fett, vitaminer, mineraler) fylls av maten efter vad den innehåller och sjunker olika fort. Mättnaden är en sammanfattning av dem: den sjunker som förut när inget värde är slut, och en portion höjer den lika mycket som förut när inget värde blir fyllt',
+  kor: () => {
+    const s = createState(5, START);
+    const p = living(s)[0];
+    // den som inte har några värden (en äldre sparning) har alla lika med mättnaden, och gränssnittet ändrar inget
+    Object.assign(p, { hunger: 0.6, naring: undefined });
+    const las = naringNu(p), orort = p.naring === undefined && NARINGAR.every(k => las[k] === 0.6);
+    const n = naringOf(p), start = NARINGAR.every(k => n[k] === 0.6) && Math.abs(mattnad(n) - 0.6) < 1e-12;
+    // på fyra timmar sjunker mättnaden som förut (fyra sextondelar), energin fortast och fettet långsammast
+    naringSjunker(p, 4, KROPP.hungerTim);
+    const sjonk = Math.abs(0.6 - p.hunger - 4 / KROPP.hungerTim) < 1e-9;
+    const fortast = NARINGAR.every(k => n.energi <= n[k]) && NARINGAR.every(k => n.fett >= n[k]) && sjunker('energi', 16) > sjunker('fett', 16);
+    // ett värde som är slut sjunker inte mer, och mättnaden sjunker då långsammare
+    p.naring = { energi: 0, protein: 0.5, fett: 0.5, vitamin: 0.5, mineral: 0.5 }; p.hunger = mattnad(p.naring);
+    const fore = p.hunger; naringSjunker(p, 1, KROPP.hungerTim);
+    const slut = p.naring.energi === 0 && fore - p.hunger < 1 / KROPP.hungerTim;
+    // äta: bär fyller vitaminerna mest, kött proteinet, och en portion höjer mättnaden med 0,55 när inget blir fyllt
+    const at = (m: Record<string, number>, v: number) => {
+      const q = living(s)[1]; Object.assign(q, { hunger: v, naring: undefined }); naringOf(q);
+      rikBy(s); setMat(s, m); const fore = q.hunger; MAT.anvand(s, q);
+      return { n: { ...q.naring! }, okt: q.hunger - fore };
+    };
+    const bar = at({ bar: 10 }, 0), kott = at({ kott: 10 }, 0), lag = at({ rotter: 10 }, 0.02);
+    const barV = bar.n.vitamin > bar.n.protein && bar.n.vitamin > bar.n.energi;
+    const kottP = kott.n.protein > kott.n.vitamin && kott.n.fett > bar.n.fett;
+    const portion = Math.abs(lag.okt - 0.55) < 1e-9; // rötterna fyller inget värde helt när de börjar på 0,02
+    const spill = bar.okt < 0.55 && bar.okt > 0.2; // bären fyller vitaminerna över taket, och det som går över försvinner
+    // i byn: efter två dygn (två år i spelet) har alla värden, de ligger mellan 0 och 1 och mättnaden är deras sammanfattning
+    const by = createState(3, START); kor(by, 48);
+    const iByn = living(by).every(x => x.naring && NARINGAR.every(k => x.naring![k] >= 0 && x.naring![k] <= 1) && Math.abs(mattnad(x.naring) - x.hunger) < 1e-9);
+    const olika = living(by).some(x => NARINGAR.some(k => Math.abs(x.naring![k] - x.hunger) > 0.05));
+    return [
+      ['den som inte har några värden läses som mättnaden, utan att något ändras', orort],
+      ['värdena börjar lika med mättnaden', start],
+      [`på fyra timmar sjunker mättnaden som förut (${(0.6 - p.hunger).toFixed(3)})`, sjonk],
+      [`energin sjunker fortast och fettet långsammast (${NARINGAR.map(k => NARING[k].tecken + n[k].toFixed(2)).join(' ')})`, fortast],
+      ['ett värde som är slut sjunker inte mer, och mättnaden sjunker långsammare', slut],
+      [`bär ger mest vitaminer (${NARINGAR.map(k => NARING[k].tecken + bar.n[k].toFixed(2)).join(' ')})`, barV],
+      [`kött ger mest protein och mer fett än bär (${NARINGAR.map(k => NARING[k].tecken + kott.n[k].toFixed(2)).join(' ')})`, kottP],
+      [`en portion rötter höjer mättnaden med 0,55 (${lag.okt.toFixed(3)})`, portion],
+      [`det som fyller ett värde över taket försvinner (bären höjde mättnaden med ${bar.okt.toFixed(2)})`, spill],
+      ['i byn har alla fem värden mellan 0 och 1, och mättnaden är deras sammanfattning', iByn],
+      ['i byn skiljer sig värdena från mättnaden efter vad man ätit', olika],
     ];
   },
 };
