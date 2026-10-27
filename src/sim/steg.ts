@@ -22,7 +22,7 @@ import { ARSTID, ageIndex, iIstiden, isLight } from './tid';
 import { ACTS, toolRow } from './handlingar';
 import { Act, DAY, HOUR, HOUR_S, MIN, Person, SEC, SKILL_NAMES, State, Task, W, H, useMap, Historik, simulera } from './typer';
 import { findPath, speedAt, wear } from './vag';
-import { chooseTask } from './val';
+import { chooseTask, nastaRedskap } from './val';
 import { djurSteg } from './djur';
 import { stepByggnader } from './byggnader';
 import { sumOf } from './egendom';
@@ -92,7 +92,7 @@ const KLAR: Partial<Record<Act, Krok>> = {
 };
 for (const art of DJURARTER) MEDAN[art.act] = (s, p, _t, dtSec) => bearbeta(s, p, art, dtSec / HOUR_S); // slakt och rensning
 // redskap som görs och träd som fälls: arbetet sparas om det avbryts (paborjat.ts)
-for (const a of GOR_ACTS) { MEDAN[a] = workHalf; KLAR[a] = (s, p, t) => finishHalf(s, p, t); }
+for (const a of GOR_ACTS) { MEDAN[a] = workHalf; KLAR[a] = (s, p, t) => { if (finishHalf(s, p, t)) nastaRedskap(s, p, t); }; } // och ett till i samma pass (val.ts)
 MEDAN.falla = workHalf;
 MEDAN.station = workStation; KLAR.station = finishStation; // en station som byggs (stationer.ts)
 KLAR.tillbehor = finishTillbehor; // ett tillbehör till en möbel (stationer.ts)

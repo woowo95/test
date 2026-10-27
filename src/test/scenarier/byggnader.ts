@@ -1,6 +1,6 @@
 // Scenarier. Byggnader och lager: byggnader, förrådshus, familjehus, funktion, påbörjat, bostad, bygg, lager och lagerplatser.
 import { isDeepStrictEqual } from 'node:util';
-import { MIN, Person, Act, createState, addTool, toolsOf, BYN, step, living, sees, ageIndex, cloneState, ageStart, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, dropLoad, T, isStored, zonesOf, allows, ageOf, groundOf, getMap, DAY, HOUR, W, State, tileOf, rektAvstand, stat, campCenter, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, isWall, Bit, wearBuild, treeOn, KANIN, ownsAmount, addTo, setAmount, foodOf, isFood, grundvarde, tingOf, komOf, BYGGNADER, FN, mostUrgent, fnId, fnOf, planBuild, workOn, wearMult, LAGER, homeless, sovplatser, inZone, startWork, workHalf, finishHalf, stepPaborjat, halvOf, tingVarde, HALV_TID, fallTid, treeSpot, SEC, Task, familjOf, bedTile, takeForHouse, put, stepByggnader, husNamn, spotFor, roofed, MATERIAL, usable, dropSpot, ALDER, KROPP, samlingRum, varmareInne, haulJob, fetchFuel, chooseTask } from '../../sim';
+import { MIN, Person, Act, createState, addTool, toolsOf, BYN, step, living, sees, ageIndex, cloneState, ageStart, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, dropLoad, T, isStored, zonesOf, allows, ageOf, groundOf, getMap, DAY, HOUR, W, State, tileOf, rektAvstand, stat, campCenter, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, isWall, Bit, wearBuild, treeOn, KANIN, ownsAmount, addTo, setAmount, foodOf, isFood, grundvarde, tingOf, komOf, BYGGNADER, FN, mostUrgent, fnId, fnOf, planBuild, workOn, wearMult, LAGER, homeless, sovplatser, inZone, startWork, workHalf, finishHalf, stepPaborjat, halvOf, tingVarde, HALV_TID, fallTid, treeSpot, SEC, Task, familjOf, bedTile, takeForHouse, put, stepByggnader, husNamn, spotFor, roofed, MATERIAL, usable, dropSpot, ALDER, KROPP, samlingRum, varmareInne, haulJob, fetchFuel, chooseTask, minOf } from '../../sim';
 import * as SIM from '../../sim';
 import { findPath } from '../../sim/vag';
 import { START } from '../kor';
@@ -186,18 +186,18 @@ SCENARIER.paborjat = {
     // p börjar på en yxa: materialet tas, och arbetet räknas från att hen kom fram
     const t1 = uppgift(p, 'yxa'); startWork(s, p, t1);
     const h = halvOf(s, p, ['yxa']), lang = t1.until - s.now, nara = (a: number, b: number) => Math.abs(a - b) < 1e-6;
-    const tagit = !!h && nara(amountOf(s, 'flinta'), 3) && nara(amountOf(s, 'grenar'), 5) && lang === 60 * MIN;
-    workHalf(s, p, t1, 600); p.task = undefined; // tio minuter, sedan avbryts arbetet
+    const tagit = !!h && nara(amountOf(s, 'flinta'), 3) && nara(amountOf(s, 'grenar'), 5) && lang === minOf('yxa') * MIN;
+    workHalf(s, p, t1, 180); p.task = undefined; // tre minuter, sedan avbryts arbetet
     for (let i = 0; i < 10; i++) stepPaborjat(s); // tio timmar utan arbete
-    const slits = !!h && Math.abs(h.c - (1 - 10 * 3600 * SEC / HALV_TID)) < 1e-9 && h.halv!.kvar === 50 * MIN;
+    const slits = !!h && Math.abs(h.c - (1 - 10 * 3600 * SEC / HALV_TID)) < 1e-9 && h.halv!.kvar === (minOf('yxa') - 3) * MIN;
     // bara den som började arbetar vidare: q börjar på en egen
     const t2 = uppgift(q, 'yxa'); startWork(s, q, t2);
     const egen = t2.ref !== h?.id && nara(amountOf(s, 'flinta'), 2); q.task = undefined;
     const t3 = uppgift(p, 'yxa'); startWork(s, p, t3);
-    const vidare = t3.ref === h?.id && t3.until - s.now === 50 * MIN && nara(amountOf(s, 'flinta'), 2);
+    const vidare = t3.ref === h?.id && t3.until - s.now === (minOf('yxa') - 3) * MIN && nara(amountOf(s, 'flinta'), 2);
     // värt sitt material, och går i arv
     const varde = !!h && Math.abs(tingVarde(h) - (grundvarde('flinta') + grundvarde('grenar'))) < 1e-9;
-    workHalf(s, p, t3, 50 * 60); s.now = t3.until; finishHalf(s, p, t3); p.task = undefined;
+    workHalf(s, p, t3, (minOf('yxa') - 3) * 60); s.now = t3.until; finishHalf(s, p, t3); p.task = undefined;
     const klar = !halvOf(s, p, ['yxa']) && toolsOf(s, 'yxa').some(t => t.agare === p.id);
     // q:s yxa blir inte klar: den slits ut och blir flinta och grenar igen hos q, eller hos den som ärvt den
     const hq = halvOf(s, q, ['yxa'])!, fore = ownsAmount(s, q, 'flinta');
@@ -215,11 +215,11 @@ SCENARIER.paborjat = {
     for (let d = 1; d < 30 && ti < 0; d++) for (let y = c.y - d; y <= c.y + d && ti < 0; y++) for (let x = c.x - d; x <= c.x + d; x++) if (g.trees[y * W + x] >= 0.95) { ti = y * W + x; break; }
     const ft = uppgift(p, 'falla'); ft.tx = (ti % W) + 0.5; ft.ty = Math.floor(ti / W) + 0.5; startWork(s, p, ft);
     const heltid = ft.until - s.now === fallTid(s, ti);
-    workHalf(s, p, ft, 600); p.task = undefined;
+    workHalf(s, p, ft, 60); p.task = undefined; // en minut
     const sp = treeSpot(s, new Set(), living(s)[0]);
     const valjs = !!sp && tileOf(sp.x, sp.y) === ti;
     const r = living(s).find(x => x !== p)!, rt = uppgift(r, 'falla'); rt.tx = ft.tx; rt.ty = ft.ty; startWork(s, r, rt);
-    const kvar = rt.until - s.now === fallTid(s, ti) - 600 * SEC;
+    const kvar = rt.until - s.now === fallTid(s, ti) - 60 * SEC;
     // i en vanlig by avbryts arbete och tas upp igen (by 6: i by 1 råkar inget tas upp igen på 30 dygn, i by 4–6 händer det 1–4 gånger)
     const v = createState(6, START);
     kor(v, 30 * 24);
@@ -236,6 +236,7 @@ SCENARIER.paborjat = {
       ['ett halvfällt träd står kvar och väljs först', heltid && valjs],
       ['den som fäller det färdigt gör bara det som är kvar', kvar],
       [`i en vanlig by tas avbrutet arbete upp igen (${st.fortsatt ?? 0} gånger på 30 dygn, 30 år i spelet; ${st.upplost ?? 0} upplösta)`, (st.fortsatt ?? 0) > 0],
+      [`ett pass med redskap delas inte upp: när ett är klart görs ett till om byn vill ha fler (${st.iSammaPass ?? 0} gånger på 30 dygn; steg 2.3.8)`, (st.iSammaPass ?? 0) > 0],
     ];
   },
   lang: true,

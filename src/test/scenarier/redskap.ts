@@ -134,7 +134,7 @@ SCENARIER.redskap = {
     tandEld(s);
     for (const q of s.people) q.tek = { fiskespjut: 1, rep: 1, flintspjut: 1, metspo: 1 };
     const p = living(s).find(q => ageOf(q, s.now) >= 18)!;
-    twineRope(s, p, 1); // två rep i timmen sedan steg 1.5.13
+    twineRope(s, p, 2 / 15); // femton rep i timmen sedan steg 2.3.8: två på åtta minuter
     const rep = amountOf(s, 'rep') === 2 && amountOf(s, 'torrgras') === 36;
     makeTool(s, p, 'spjut');
     const flint = amountOf(s, 'flintspjut') === 1 && amountOf(s, 'flinta') === 2 && amountOf(s, 'rep') === 1 && !amountOf(s, 'fiskespjut');
@@ -181,7 +181,7 @@ SCENARIER.redskap = {
     const korgVarm = toolGain(k, kp, 'samla', { kyla: false, svalt: false, gras: 0 }), korgKall = toolGain(k, kp, 'samla', kf);
     return [
       [`en korg som kan göras räknas inte när kylan är en fara (${korgKall} i kylan, ${korgVarm} annars)`, kf.kyla && korgVarm > 1 && korgKall === 1],
-      [`rep tvinnas av hö (2 rep av 4 hö på en timme)`, rep],
+      [`rep tvinnas av hö (2 rep av 4 hö på åtta minuter)`, rep],
       ['ett flintspjut görs av gren, flinta och rep, och en flinta sparas till elden', flint],
       ['flintspjutet håller fyra gånger så länge som ett träspjut', haller],
       ['ett metspö görs av gren, rep och ben', spo],

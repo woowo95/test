@@ -42,13 +42,13 @@ import { groundOf, tileOf } from './mark';
 // ---------- balanstal (regel 8) ----------
 export const STATION = balans('station', {
   slaktbankTra: 3, // en slaktbänk kräver så mycket trä ...
-  slaktbankMin: 90, // ... och så många minuters arbete
+  slaktbankMin: 30, // ... och så många minuters arbete
   avstand: 2.5, // en station står helst så här många rutor från elden
   norr: 0.5, // ... och får så här många poäng (färre är bättre) om den står söder om elden, där barnen leker
   knivplatser: 1, // så många knivar som ligger kvar vid slaktbänken
   flatarbankTra: 2, // en flätarbänk kräver så mycket trä ...
   flatarbankGrenar: 3, // ... och så många grenar ...
-  flatarbankMin: 60, // ... och så många minuters arbete
+  flatarbankMin: 30, // ... och så många minuters arbete
   repFart: 2, // rep tvinnas så här många gånger fortare vid slöjdbänken än för hand ...
   vidBank: 1.5, // ... av den som står så här nära bänken (rutor)
   vriden: 0.5, // en station som står vriden får så här många poäng (färre är bättre), så att den helst står som i registret

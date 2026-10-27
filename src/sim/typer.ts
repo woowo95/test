@@ -103,6 +103,7 @@ export interface Task {
   fran?: number; // den man tar ved av till elden (stöld, behov.ts)
   kom?: Record<string, number>; // var materialet till bygget kom ifrån (bygg.ts)
   sok?: true; // letar flinta eller stenar vid stenarna: blir platsen tom fortsätter man ändå i stället för att gå hem (steg.ts, workStep)
+  pass?: number; // när ett pass med redskap som görs är slut (ms): blir ett klart före det görs ett till om byn vill ha fler (steg 2.3.8)
   tandmat?: true; // samlar tändmaterial åt en släckt eld: blir platsen tom på bär fortsätter man tills tändmaterialet räcker (steg.ts, workStep)
 }
 

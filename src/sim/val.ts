@@ -3,7 +3,7 @@ import { PLATS, campCenter, campDist, campKey } from './plats';
 import { RESERV, foodDays } from './ekonomi';
 import { ACTS, WORK, usesTool } from './handlingar';
 import { canLight, emberOn, fireWant, needStones, needTinder, woodDays } from './eld';
-import { ALDER, KROPP, ageOf, isSick, living, stat } from './folk';
+import { ALDER, KROPP, ageOf, count, isSick, living, stat } from './folk';
 import { harMat } from './behov';
 import { FANGST, Kind, flintSpot, shoreOf, wantsFlint } from './fynd';
 import { coldOf, temperature } from './vader';
@@ -17,11 +17,11 @@ import { bitAt, blocked, freeNear, roomAt } from './byggnad';
 import { bedTile, homeless, samlingRum, varmareInne } from './byggnader';
 import { isForest, punktIRuta } from './mark';
 import { axeTask, fallTid } from './skog';
-import { GA_TID, startsOnArrival } from './paborjat';
+import { GA_TID, startWork, startsOnArrival } from './paborjat';
 import { duty, dygn, habitShare, habitTotal } from './seder';
 import { clamp, pick, pickNarmaste, rnd } from './slump';
 import { ARSTID, ageIndex, iIstiden, isLight, kallTid, yearNo } from './tid';
-import { Act, H, HOUR, MIN, Person, Skill, Stat, State, T, W, inMap } from './typer';
+import { Act, H, HOUR, MIN, Person, Skill, Stat, State, T, Task, W, inMap } from './typer';
 import { balans } from './balans';
 import { bordenOf, ledigPlats, sittAt, stationFor, storlekAv, vidStation } from './stationer';
 
@@ -225,7 +225,7 @@ type Faror = ReturnType<typeof dangers>;
 // elden är släckt och kan inte tändas för att det saknas tändmaterial, och för få hämtar det
 const tinderNeeded = (s: State) => !s.fire.lit && !emberOn(s) && !canLight(s) && needTinder(s) && living(s).filter(q => q.task?.act === 'samla').length < VAL.tandHamtare;
 // det som väljs: handlingen, varför, hur länge, och var om det inte följer av handlingen
-interface Val { act: Act; why: string; dur: number; spot?: { x: number; y: number }; ref?: number; tool?: string; site?: { x: number; y: number }; sok?: true; tandmat?: true }
+interface Val { act: Act; why: string; dur: number; pass?: number; spot?: { x: number; y: number }; ref?: number; tool?: string; site?: { x: number; y: number }; sok?: true; tandmat?: true }
 const set = (v: Val, act: Act, why: string) => { v.act = act; v.why = why; return true; };
 // dagens pass är hälften så långa som förr (steg 1.5.11, VAL.pass), arbete och fritid lika, så att tiden fördelas som förut men
 // folk väljer om oftare och syns gå mellan platserna
@@ -238,7 +238,7 @@ export function chooseTask(s: State, p: Person) {
   if (!needs(s, p, v, a, lazy, light)) { if (light) day(s, p, v, a, lazy); else night(s, p, v, a); }
   if (v.act === 'toa') v.dur = (VAL.toaMin + rnd(s, 'val', p) * VAL.toaSpann) * MIN;
   const sp0 = v.spot ?? spotFor(s, v.act, p), sp = freeNear(s, sp0.x, sp0.y); // aldrig i en husvägg
-  p.task = { act: v.act, phase: 'go', tx: sp.x, ty: sp.y, until: s.now + v.dur + (startsOnArrival(v.act) ? GA_TID : 0), carry: 0, why: v.why, dark: !light, ref: v.ref, tool: v.tool, site: v.site, sok: v.sok, tandmat: v.tandmat };
+  p.task = { act: v.act, phase: 'go', tx: sp.x, ty: sp.y, until: s.now + v.dur + (startsOnArrival(v.act) ? GA_TID : 0), carry: 0, why: v.why, dark: !light, ref: v.ref, tool: v.tool, site: v.site, sok: v.sok, tandmat: v.tandmat, pass: v.pass !== undefined ? s.now + v.pass : undefined };
   const k = usesTool(p.task);
   if (k && !take(s, p, k)) p.task.tool = undefined; // redskapet tas i handen: det egna först (agande.ts)
 }
@@ -377,6 +377,7 @@ function withTools(s: State, p: Person, v: Val, best: Act, what: string, fd: num
   const ax = best === 'ved' ? axeTask(s, p, fara.kyla) : undefined; // med yxa fälls träd och huggs ved
   if (ax) {
     set(v, ax.act, `${what}. ${ax.why}.`);
+    if (ax.act === 'yxa') v.pass = v.dur; // yxan görs i ett helt pass (steg 2.3.8)
     if (ax.dur) v.dur = ax.dur;
     if (ax.act !== 'yxa') { v.spot = { x: ax.x, y: ax.y }; v.tool = 'yxa'; }
     v.ref = ax.ref;
@@ -388,7 +389,7 @@ function withTools(s: State, p: Person, v: Val, best: Act, what: string, fd: num
     const k = freeOfKinds(s, p, ks);
     if (k) { v.tool = k; v.why = v.why.replace(/\.$/, '') + '. ' + rader[k].tar; return; }
     if (GORS[g] && !kyla && wantsTool(s, p, g, gras)) { // redskapet görs vid sin egen plats: inget ärvs från flintletandet eller tändmaterialet
-      const m = makeTask(s, p, g); v.spot = undefined; v.sok = undefined; v.tandmat = undefined; set(v, m.act, `${what}. ${m.text}`); v.dur = m.min * MIN; if (m.tool) v.tool = m.tool; return;
+      const m = makeTask(s, p, g); v.spot = undefined; v.sok = undefined; v.tandmat = undefined; set(v, m.act, `${what}. ${m.text}`); v.pass = v.dur; v.dur = m.min * MIN; if (m.tool) v.tool = m.tool; return;
     }
   }
 }
@@ -415,9 +416,21 @@ function craft(s: State, p: Person, v: Val, why: string) {
   if (pr) { projektVal(v, pr.u, why); return; }
   set(v, 'samtal', 'Har inget handarbete att göra och sitter med de andra vid elden');
 }
+// ett pass med redskap delas inte upp (steg 2.3.8): när ett är klart och passet inte är slut gör man ett till i samma grupp,
+// om byn vill ha fler och ingen fara går före. Annars väljer man något annat (steg.ts)
+export function nastaRedskap(s: State, p: Person, tk: Task) {
+  if (tk.pass === undefined || s.now >= tk.pass) return;
+  const f = dangers(s);
+  if (f.kyla || !wantsTool(s, p, tk.act, f.gras)) return;
+  const m = makeTask(s, p, tk.act);
+  tk.tool = m.tool; tk.ref = undefined;
+  startWork(s, p, tk);
+  if (tk.until > s.now) count(s, 'iSammaPass'); // byns statistik: redskap som gjordes efter ett annat i samma pass
+}
 // projektets uppgift blir valet (projekt.ts)
 function projektVal(v: Val, u: Uppgift, why: string) {
   set(v, u.act, `${why}. ${u.text}`);
+  if (GORS[u.act]) v.pass = v.dur; // ett redskap görs i ett helt pass (steg 2.3.8)
   if (u.min) v.dur = u.min * MIN;
   if (u.tool) v.tool = u.tool;
   if (u.spot) v.spot = u.spot;

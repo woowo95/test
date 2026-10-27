@@ -49,12 +49,13 @@ export function workHalf(s: State, _p: Person, tk: Task, dtSec: number) {
   const t = halvById(s, tk.ref);
   if (t) { t.halv!.kvar = Math.max(0, t.halv!.kvar - dtSec * SEC); t.c = 1; }
 }
-// arbetet är klart: det påbörjade blir ett redskap
+// arbetet är klart: det påbörjade blir ett redskap (true)
 export function finishHalf(s: State, p: Person, tk: Task) {
   const t = halvById(s, tk.ref);
-  if (!t || !GORS[tk.act] || t.halv!.kvar > MIN) return; // (arbetet är klart när tiden är slut; annars ligger det kvar)
+  if (!t || !GORS[tk.act] || t.halv!.kvar > MIN) return false; // (arbetet är klart när tiden är slut; annars ligger det kvar)
   s.ting = tingOf(s).filter(q => q !== t);
   toolDone(s, p, t.halv!.gor);
+  return true;
 }
 // varje timme: det som ingen arbetar med slits, och det som är utslitet blir sitt material igen hos ägaren.
 // Halvfällda träd som inte längre står där glöms

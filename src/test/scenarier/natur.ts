@@ -430,7 +430,7 @@ SCENARIER.flatarbank = {
       medBank(w, 'flatarbank');
       const p0 = vidBanken ? vidStation(w.stationer![0]) : getMap(w.seed).fire;
       q.x = p0.x; q.y = p0.y + (vidBanken ? 0 : 1);
-      twineRope(w, q, 0.5);
+      twineRope(w, q, 0.1); // sex minuter: ett och ett halvt rep för hand sedan steg 2.3.8
       return amountOf(w, 'rep');
     };
     const hand = rep(false), vidB = rep(true);
@@ -446,7 +446,7 @@ SCENARIER.flatarbank = {
       [`slöjdbänken byggs av ${STATION.flatarbankTra} trä och ${STATION.flatarbankGrenar} grenar på ${h} timmar av den som kommit på den (${byggare})`, klar && tog && byggare.includes(STATIONER.flatarbank.bygger)],
       ['den första slöjdbänken står i loggen', logg],
       ['utan slöjdbänk flätas ingen korg; med den flätas korgen vid bänken', utanBank && medBank_],
-      [`rep tvinnas fortare vid bänken (${vidB.toFixed(2)} på en halvtimme) än för hand vid elden (${hand.toFixed(2)})`, Math.abs(vidB - hand * STATION.repFart) < 1e-9 && hand > 0],
+      [`rep tvinnas fortare vid bänken (${vidB.toFixed(2)} på sex minuter) än för hand vid elden (${hand.toFixed(2)})`, Math.abs(vidB - hand * STATION.repFart) < 1e-9 && hand > 0],
       [`inget handarbete utan sak på fyra dygn (${hantverk} gånger), och rep tvinnas (${tvinnar} gånger)`, hantverk === 0 && tvinnar > 0],
       ['att tvinna rep ger tankar om det som hör till hantverket', tankt],
     ];
