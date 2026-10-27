@@ -46,7 +46,7 @@ import { BrasaEld, brasaMal } from './brasor';
 // ---------- balanstal (regel 8) ----------
 export const STATION = balans('station', {
   slaktbankTra: 3, // en slaktbänk kräver så mycket trä ...
-  slaktbankMin: 30, // ... och så många minuters arbete
+  slaktbankMin: 20, // ... och så många minuters arbete
   avstand: 2.5, // en station står helst så här många rutor från elden
   norr: 0.5, // ... och får fyra gånger så här många poäng (färre är bättre) om den står på lekplatsen (plats.ts, steg 2.10.4)
   slaktTill: 9, slaktAvst: 6, // slaktbänken står högst och helst så här många rutor från byn, eftersom den är smutsig (steg 2.10.16)
@@ -54,7 +54,7 @@ export const STATION = balans('station', {
   knivplatser: 1, // så många knivar som ligger kvar vid slaktbänken
   flatarbankTra: 2, // en flätarbänk kräver så mycket trä ...
   flatarbankGrenar: 3, // ... och så många grenar ...
-  flatarbankMin: 30, // ... och så många minuters arbete
+  flatarbankMin: 20, // ... och så många minuters arbete
   repFart: 2, // rep tvinnas så här många gånger fortare vid slöjdbänken än för hand ...
   redskapFart: 1.25, // ... och de enkla redskapen görs så här många gånger fortare där (Björn, efter v90) ...
   vidBank: 1.5, // ... av den som står så här nära bänken (rutor)
@@ -71,15 +71,15 @@ export const STATION = balans('station', {
   fallVarme: 0.5, // den som sover under en skinnfäll kyls så här mycket mindre (av det som når in i huset)
   bordTra: 1, // ett bord kräver så mycket trä för varje ruta det tar ... (steg 2.2.15)
   stubbeTra: 0.5, // ... och så mycket för varje stubbe att sitta på runt det
-  bordMin: 20, bord2Min: 25, bord3Min: 30, // så många minuters arbete för det lilla bordet, bordet och långbordet
+  bordMin: 15, bord2Min: 18, bord3Min: 20, // så många minuters arbete för det lilla bordet, bordet och långbordet
   // förvaringen (steg 2.3.6): hyllan, kistan och redskapsstället
   hyllaTra: 2, hyllaRep: 1, hyllaMin: 20, hyllaRymmer: 3, // en hylla kräver så mycket trä och rep och så många minuter, och rymmer så många högar av ett slag
-  kistaTra: 3, kistaMin: 30, kistaRymmer: 2, // en kista: trä och minuter, och så många högar. Det som ligger i den slits som under tak
+  kistaTra: 3, kistaMin: 20, kistaRymmer: 2, // en kista: trä och minuter, och så många högar. Det som ligger i den slits som under tak
   stallTra: 1, stallRep: 1, stallMin: 15, stallRymmer: 4, // ett ställ för redskap och vapen: trä, rep och minuter, och så många redskap
   forvarFulla: 6, // byn vill ha en hylla eller kista fullt ut när så många fulla högar ligger på golvet i lagren ...
   forvarLosa: 4, // ... och ett ställ när så många redskap ligger på golvet
   // latrinen (steg 2.7.2): en grävd grop i byns utkant
-  latrinMin: 30, // så många minuters arbete att gräva gropen, med benspaden ...
+  latrinMin: 20, // så många minuters arbete att gräva gropen, med benspaden ...
   latrinSpade: 0.1, // ... som slits så här mycket för varje grop (tio gropar per spade)
   latrinRymmer: 150, // så många toabesök ryms i gropen innan den är full och fylls igen
   latrinNy: 0.85, // byn gräver en ny när den den har är så här full

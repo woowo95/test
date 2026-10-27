@@ -1,5 +1,5 @@
 // Scenarier. Grunden: gläntan, yxan, vintern, knapphet, svamp och flinta, kunskap, temperatur och kalender.
-import { createState, growGround, step, living, temperature, coldOf, ageIndex, ageStart, kalender, yearNo, AGES, amountOf, groundOf, getMap, DAY, HOUR, W, tileOf, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, angOf, setAmount, BEAT, tingOf, eatPoison, HOST, vaderNu, VADER, VADERLAGE, VaderId, blotSteg, varmeDelar, stepVader, vaxtFaktor, stepFire, hearthOf, cloneState, wearMult, vaderSlit, NEW_W, NEW_H } from '../../sim';
+import { createState, growGround, step, living, temperature, coldOf, ageIndex, ageStart, kalender, yearNo, AGES, amountOf, groundOf, getMap, DAY, HOUR, W, tileOf, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, angOf, setAmount, BEAT, tingOf, eatPoison, HOST, vaderNu, VADER, VADERLAGE, VaderId, blotSteg, varmeDelar, stepVader, vaxtFaktor, stepFire, hearthOf, cloneState, wearMult, vaderSlit, NEW_W, NEW_H, allaTider, tiderUtanfor } from '../../sim';
 import { BAR, FOREST, HIGH, isSoil } from '../../sim/vag';
 import { START } from '../kor';
 import { setMat, Koll, kor, tandEld, logg, skogsandel, uttag, STOCKHOLM, SCENARIER } from './hjalp';
@@ -116,7 +116,7 @@ SCENARIER['vinter-slocknad'] = {
 SCENARIER.knapphet = {
   text: 'Bär, rötter och vilt tar slut nära byn för en tid, så invånarna går längre bort; fiske med händerna ger få fiskar per försök',
   kor: () => {
-    const s = createState(22, START); // by 15 svälter ut sedan toa-smutsen kom (steg 2.7.2), by 16 och 17 sedan kartan blev 120 × 120 (2.10.9) och by 18 sedan stigarna ligger kvar längre (2.10.15); det balanseras i 2.12
+    const s = createState(23, START); // by 15 svälter ut sedan toa-smutsen kom (steg 2.7.2), by 16 och 17 sedan kartan blev 120 × 120 (2.10.9), by 18 sedan stigarna ligger kvar längre (2.10.15) och by 22 och 26 sedan tiderna följer riktlinjen (2.12.8); det balanseras i 2.12
     // mät varje dygn: buskarna växer tillbaka, så ett enda mått i slutet beror på slumpen
     let nara = 0, langt = 0;
     for (let d = 0; d < 12; d++) { kor(s, 24); const n = uttag(s, 'samla', 0, 8); if (n > nara) { nara = n; langt = uttag(s, 'samla', 16, 30); } }
@@ -331,6 +331,18 @@ SCENARIER.kalender = {
       [`efter vårtiden kommer sommar, dag 1 av 7 (${AGES[k1.ai]}, dag ${k1.dag} av ${k1.av})`, k1.ai === 2 && k1.dag === 1 && k1.av === 7],
       [`ett år går vid midnatt (år ${yearNo(s, k0.slut - HOUR)} → ${yearNo(s, k0.slut + HOUR)})`, yearNo(s, k0.slut + HOUR) === yearNo(s, k0.slut - HOUR) + 1],
       [`en gammal by kommer i fas: slutar närmaste måndag som inte varit (flyttas högst ${(maxFlytt / DAY).toFixed(1)} dygn)`, allaMandag && ingenBakat && narmast && maxFlytt < 7 * DAY],
+    ];
+  },
+};
+
+SCENARIER.tider = {
+  text: 'Arbetstiderna följer riktlinjen (steg 2.12.8): varje tid i registren har ett slag i TIDSLAG (tider.ts) och ligger inom slagets minuter, t.ex. en liten sak 2–4 minuter, en station 10–20 och en vägg 20 minuter per ruta (en minut är ungefär sex timmar i spelet)',
+  kor: () => {
+    const alla = allaTider(), utanfor = tiderUtanfor();
+    const har = (n: string) => alla.some(t => t.namn === n);
+    return [
+      ['registren har tider för saker, stationer, väggar, golv och fältet', ['Flintyxa', 'Slaktbänk', 'Timmervägg', 'Jordgolv', 'Fältruta: röja'].every(har)],
+      [`alla tider ligger inom sitt slag${utanfor.length ? ` (utanför: ${utanfor.map(t => `${t.namn} ${t.min} min`).join(', ')})` : ''}`, !utanfor.length],
     ];
   },
 };

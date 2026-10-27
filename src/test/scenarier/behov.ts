@@ -516,6 +516,7 @@ SCENARIER.vattensack = {
 
 SCENARIER.vard = {
   text: 'Steg 2.5.2: ett öppet sår kan bli infekterat, och utan vård blir det kallbrand och döden. Vården är en egen handling: man trycker på ett sår som blöder, lägger ett förband av mossa (som hittas när man letar i naturen och ibland på ett fällt träd) och rengör ett infekterat sår, på sig själv eller någon annan. Den som inte kan gå kravlar hem eller bärs hem, och man läker fortare när man vilar',
+  lang: true,
   kor: () => {
     const s = createState(5, START);
     klockan(s, 10); rikBy(s);
@@ -556,7 +557,9 @@ SCENARIER.vard = {
     setAmount(s, 'mossa', 0); const fynd = mossaFynd(s, { ...t }, 3600);
     const k = { id: 999, x: 1, y: 1, ved: 5, grenar: 2, mossa: 2 }; (s.stockar ??= []).push(k); const hugg = chopStock(s, 999, 1)?.mossa ?? 0;
     // en by i tolv dygn (tolv år i spelet, knappt två veckor i verkligheten): mossa hittas och såren vårdas
-    const b = createState(4, START); kor(b, 288); // skadorna är få: by 1 fick bara en, som inte blödde (steg 2.12.5)
+    // skadorna är få och slumpen avgör om ett sår behöver vård (by 1 fick bara en som inte blödde), så de första byarna prövas tills en har vårdat
+    let b = createState(4, START); kor(b, 288);
+    for (const n of [2, 3, 5]) { if ((b.stat?.vard ?? 0) > 0) break; b = createState(n, START); kor(b, 288); }
     const st = (n: string) => b.stat?.[n] as number ?? 0;
     return [
       [`ett infekterat sår som inte rengörs blir kallbrand och dödar (${dog ?? 'överlevde'})`, dog === 'kallbrand' && kall],

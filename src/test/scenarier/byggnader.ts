@@ -674,7 +674,7 @@ SCENARIER.eldflytt = {
     const fore = living(t).map(p => SIM.buildJob(t, p)).filter(j => j && SIM.vidElden(t, j.bit.x, j.bit.y)).length;
     kor(t, 10);
     const f1 = SIM.eldPlats(t), flyttad = f1.x !== f0.x || f1.y !== f0.y;
-    const bygg = flyttad && byggKlart(t) === ph;
+    const bygg = flyttad && (!!ph.klar || byggKlart(t) === ph); // med väggarna på 20 minuter (steg 2.12.8) kan huset bli klart under de tio timmarna
     return [
       [`tre färdiga hus gör att byns mitt ligger ${langt.toFixed(1)} rutor från elden (mer än ${SIM.ELDFLYTT.vuxit})`, hus.length === 3 && langt > SIM.ELDFLYTT.vuxit],
       [`byn bestämmer sig för att flytta elden mot mitten (${flytt ? `${flytt.x}, ${flytt.y}, ${flytt.varfor}` : 'ingen flytt'}) och ${vald?.name ?? 'ingen'} får göra det`, flytt?.varfor === 'vuxit' && !!vald],
