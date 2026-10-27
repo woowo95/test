@@ -124,8 +124,8 @@ const VAL = balans('val', {
 });
 // skugga (steg 2.3.13): i ett hus eller under ett träd, där solen inte värmer (varmeDelar i steg.ts)
 export const iSkugga = (s: State, x: number, y: number) => !!roomAt(s, x, y) || groundOf(s).trees[tileOf(x, y)] > KROPP.skugga;
-// för varm och i solen, så att solen värmer mer: då söker man skugga
-const forVarmISol = (s: State, p: Person) => p.warm > KROPP.forVarm && isLight(s.now) && temperature(s) > KROPP.solFran;
+// för varm och i solen, så att solen värmer mer: då vilar man och gör handarbete i skuggan
+const forVarmISol = (s: State, p: Person, over = KROPP.forVarm) => p.warm > over && isLight(s.now) && temperature(s) > KROPP.solFran;
 // en skuggig plats nära (x, y): en av de närmaste rutorna under ett träd eller i ett hus, inte i en vägg eller på en möbel
 export function skuggaNara(s: State, p: Person, x0: number, y0: number): { x: number; y: number } | undefined {
   const R = VAL.skuggaRadie, cx = Math.floor(x0), cy = Math.floor(y0), c: { x: number; y: number; d: number }[] = [];
@@ -337,8 +337,9 @@ function needs(s: State, p: Person, v: Val, a: number, lazy: number, light: bool
   // den som inte kan gå kravlar hem, och den som har mycket ont eller ett infekterat sår vilar (steg 2.5.2)
   if (!kanGa(p) && !hemma(s, p)) return set(v, 'vila', 'Är skadad och kravlar hem');
   if (vilaHellre(p)) return set(v, 'vila', 'Är skadad och vilar');
-  // för varm i solen: man söker skugga under ett träd eller i ett hus, så som den som fryser söker sig till elden (steg 2.3.13)
-  if (forVarmISol(s, p)) {
+  // extremt varm i solen: man söker skugga under ett träd eller i ett hus, så som den som fryser söker sig till elden (steg 2.3.13).
+  // Den som bara är för varm arbetar som vanligt (steg 2.10.20)
+  if (forVarmISol(s, p, KROPP.extremVarm)) {
     const sk = iSkugga(s, p.x, p.y) ? { x: p.x, y: p.y } : skuggaNara(s, p, p.x, p.y);
     if (sk) { v.spot = sk; v.dur = (VAL.svalkaMin + rnd(s, 'val', p) * VAL.svalkaSpann) * MIN; return set(v, 'svalka', 'Är för varm och söker skugga'); }
   }

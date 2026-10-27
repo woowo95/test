@@ -24,14 +24,15 @@ export const KROPP = balans('kropp', {
   // för varm (steg 2.3.4): 1 är idealet och värmen kan gå upp till maxVarm. Över idealet värmer bara solen, kläderna när det
   // inte är kallt och att sitta tätt vid elden (hetta i varmeDelar, steg.ts); elden och det milda vädret fyller bara upp till idealet
   maxVarm: 2,
-  forVarm: 1.3, // över detta är man för varm: en tanke, tröttare, och lockas till bad; kläderna tas av
+  forVarm: 1.3, // över detta är man för varm: en tanke (sämre humör), lockas till bad och tar av sig de varma kläderna ...
+  extremVarm: 1.7, // ... men först över detta blir man tröttare och lägger tid på att svalka sig i skuggan (steg 2.10.20)
   svalnar: 0.15, // över idealet svalnar kroppen så här mycket per timme, aldrig under idealet
   solFran: 14, solDiv: 20, // solen värmer (temperaturen - solFran) / solDiv per timme, inte i ett hus eller under träd
   skugga: 0.5, // under ett träd så här stort (0–1) är det skugga
   kladFran: 8, kladDiv: 8, // kläderna värmer sitt skydd (klad) gånger (temperaturen - kladFran) / kladDiv per timme
   eldTatt: 0.7, // elden värmer över idealet när värmen från den är över detta (tätt vid elden) ...
   eldHetta: 1, // ... med (värmen - eldTatt) gånger detta per timme
-  varmTrott: 0.1, // den som är för varm blir tröttare: vilan sjunker så här mycket per timme gånger värmen över idealet
+  varmTrott: 0.1, // den som är extremt varm blir tröttare: vilan sjunker så här mycket per timme gånger värmen över idealet
   badSvalka: 0.4, // ett bad kyler den som är varmare än idealet så här mycket, ner till idealet
   kladTemp: 12, // kläderna tas på först när det är kallare än så här (grader) och ingen är varmare än idealet
   // hunger

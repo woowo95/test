@@ -258,10 +258,9 @@ function needsStep(s: State, p: Person, a: number, dtSec: number, coldRate: numb
     p.rest = clamp(p.rest + dtSec / HOUR_S * fh.comfort * heat, 0, 1); // avslappning vid elden
   }
   if (p.warm < KROPP.fryser) think(p, 'Fryser', -0.12, now, HOUR);
-  if (p.warm > KROPP.forVarm) { // för varm (steg 2.3.4): en tanke, och tröttare
-    think(p, 'För varm', -0.08, now, HOUR);
-    p.rest = clamp(p.rest - dtSec / HOUR_S * KROPP.varmTrott * (p.warm - 1), 0, 1);
-  }
+  if (p.warm > KROPP.forVarm) think(p, 'För varm', -0.08, now, HOUR); // för varm (steg 2.3.4): en tanke
+  // tröttare bara när man är extremt varm (steg 2.10.20): annars arbetar man som vanligt trots värmen
+  if (p.warm > KROPP.extremVarm) p.rest = clamp(p.rest - dtSec / HOUR_S * KROPP.varmTrott * (p.warm - 1), 0, 1);
   p.social = clamp(p.social - dtSec / (KROPP.socialTim * HOUR_S), 0, 1);
   // toa: behovet växer på ungefär sju timmar, långsammare i sömnen
   p.toa = clamp(p.toa - dtSec / (KROPP.toaTim * HOUR_S) * (p.task?.act === 'sova' ? KROPP.toaSomn : 1), 0, 1);
