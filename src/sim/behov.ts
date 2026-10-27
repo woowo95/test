@@ -5,7 +5,7 @@ import { ALDER, KROPP, REL, ageOf, alive, byId, count, getRel, isKin, isParent, 
 import { chance, clamp, pickViktat, rnd } from './slump';
 import { Ting, tingOf } from './agande';
 import { BYN, Del, addDel, sumOf } from './egendom';
-import { amountOf, mayTake, ownMove, ownsAmount, takeFood, use } from './lager';
+import { amountOf, helt, mayTake, ownMove, ownsAmount, takeFood, use } from './lager';
 import { eatPoison } from './fynd';
 import { ata } from './naring';
 import { ratt } from './matlagning';
@@ -375,7 +375,7 @@ function payable(s: State, p: Person, utom: readonly string[]): Vara[] {
     const own = ownsAmount(s, p, k), b = behovMed(k);
     if (own <= 1e-9) continue;
     if (!b) { ut.push({ k, n: own }); continue; }
-    const kvar = over.get(b) ?? ownFor(s, p, b) - b.kvar, n = Math.min(own, kvar / perOf(b, k));
+    const kvar = over.get(b) ?? ownFor(s, p, b) - b.kvar, n = Math.min(own, helt(kvar / perOf(b, k))); // hela saker (steg 2.10.7)
     if (n > 1e-9) { ut.push({ k, n }); over.set(b, kvar - n * perOf(b, k)); }
   }
   return ut;
@@ -390,24 +390,30 @@ interface Villkor { behov: number; minst: number; fara: number; typ: string; uto
 // mer än det g ger: hälften av det hen själv vinner, så att båda tjänar på bytet. Ger hur mycket m fick, 0 om det inte blev
 // något byte
 function byte(s: State, m: Person, g: Person, vill: Vara[], v: Villkor): number {
+  vill = vill.map(w => w.t ? w : { ...w, n: Math.ceil(w.n - 1e-6) }).filter(w => w.n > 0); // hela saker (steg 2.10.7)
   const ger = vill.reduce((x, w) => x + w.n * vardeOf(w) * behovAv(s, g, w.k), 0); // det g ger, för g
   const far = vill.reduce((x, w) => x + w.n * vardeOf(w), 0) * v.behov; // det m får, för m
   if (ger <= 1e-9 || osams(s, g, m)) return 0;
   const varor = payable(s, m, v.utom).map(w => ({ ...w, ut: vardeOf(w) * behovAv(s, g, w.k), in: Math.max(1e-9, vardeOf(w) * behovAv(s, m, w.k)) }))
     .filter(w => w.ut > 1e-9).sort((a, b) => b.ut / b.in - a.ut / a.in || +!!a.t - +!!b.t);
-  const betal: Vara[] = [];
-  let fick = 0, kost = 0; // det g får, för g, och det m ger, för m
-  for (const w of varor) {
-    if (fick >= ger - 1e-9) break;
-    const n = w.t ? 1 : Math.min(w.n, (ger - fick) / w.ut);
-    betal.push({ k: w.k, n, t: w.t }); fick += n * w.ut; kost += n * w.in;
-  }
+  // det m betalar för att g ska få mal (för g), i hela saker: man betalar hellre lite för mycket (steg 2.10.7)
+  const betala = (mal: number) => {
+    const ut: Vara[] = [];
+    let f = 0, k = 0; // det g får, för g, och det m ger, för m
+    for (const w of varor) {
+      if (f >= mal - 1e-9) break;
+      const n = w.t ? 1 : Math.min(w.n, Math.ceil((mal - f) / w.ut - 1e-6));
+      ut.push({ k: w.k, n, t: w.t }); f += n * w.ut; k += n * w.in;
+    }
+    return { betal: ut, fick: f, kost: k };
+  };
+  let { betal, fick, kost } = betala(ger);
   if (!betal.length) return 0;
   const desperat = v.fara > 0, nara = (a: Person, b: Person) => willing(s, a, b) >= NARA;
   let del = 1; // så stor del av vill som byts
   if (fick < (1 - OJAMN) * ger) {
-    const kan = vill.some(w => w.t) ? 0 : fick / ger;
-    if (kan * enheter(vill) >= v.minst) del = kan;
+    const kan = vill.some(w => w.t) ? 0 : fick / ger, hela = vill.reduce((x, w) => x + helt(w.n * kan) * vardeOf(w) * behovAv(s, g, w.k), 0) / ger;
+    if (hela * enheter(vill) >= v.minst && hela > 0) { del = hela; ({ betal, fick, kost } = betala(ger * del)); } // m får det m kan betala, i hela saker
     else if (!desperat && !nara(g, m)) return 0;
   }
   if (v.delad ? far * del <= kost : far * del < (1 - OJAMN) * kost && !desperat && !nara(m, g)) return 0;
@@ -416,14 +422,14 @@ function byte(s: State, m: Person, g: Person, vill: Vara[], v: Villkor): number 
     for (const w of varor) {
       if (extra <= 1e-9) break;
       const i = betal.findIndex(x => x.k === w.k && x.t === w.t), fore = i >= 0 ? betal[i].n : 0;
-      const n = w.t ? (fore || w.in > extra ? 0 : 1) : Math.min(w.n - fore, extra / w.in);
+      const n = w.t ? (fore || w.in > extra ? 0 : 1) : Math.min(w.n - fore, Math.round(extra / w.in));
       if (n <= 1e-9) continue;
       if (i >= 0) betal[i].n += n; else betal.push({ k: w.k, n, t: w.t });
       extra -= n * w.in;
     }
   }
   if (vill.reduce((x, w) => x + w.n * vardeOf(w), 0) * del < BYTE_MINST) return 0;
-  const fatt = vill.map(w => ({ ...w, n: w.n * del }));
+  const fatt = vill.map(w => ({ ...w, n: w.t ? 1 : helt(w.n * del) })).filter(w => w.n > 0);
   for (const w of fatt) if (w.t) give(w.t, g, m); else ownMove(s, w.k, w.n, g.id, m.id);
   for (const w of betal) if (w.t) give(w.t, m, g); else ownMove(s, w.k, w.n, m.id, g.id);
   const r = getRel(s, m, g);

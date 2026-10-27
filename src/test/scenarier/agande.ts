@@ -135,16 +135,16 @@ SCENARIER.byte = {
     a.hunger = 0.3; addTo(s, 'bar', 5); gain(s, b, 'bar', 6); gain(s, a, 'ved', 6);
     needLadder(s, a, 1);
     const fore = a.hunger > 0.3 && nara(byns(s, 'bar'), 5) && nara(ownsAmount(s, b, 'bar'), 5), pris = ownsAmount(s, b, 'ved');
-    // a har nästan inget över (0,2 trä utöver det hen behöver): ingen byter med hen en portion, utom en nära vän
+    // a har nästan inget över (ett trä utöver det hen behöver): ingen byter med hen en portion, utom en nära vän
     ({ s, a, b } = ny());
-    a.hunger = 0.3; addTo(s, 'bar', 5); gain(s, b, 'bar', 6); gain(s, a, 'ved', 3.2);
+    a.hunger = 0.3; addTo(s, 'bar', 5); gain(s, b, 'bar', 6); gain(s, a, 'ved', 4);
     needLadder(s, a, 1); const okand = nara(ownsAmount(s, b, 'bar'), 6) && a.hunger > 0.3;
     ({ s, a, b } = ny());
-    a.hunger = 0.3; addTo(s, 'bar', 5); gain(s, b, 'bar', 6); gain(s, a, 'ved', 3.2); getRel(s, b, a).op = 70; getRel(s, a, b).op = 70; b.pot.empati = 20;
-    needLadder(s, a, 1); const van = nara(ownsAmount(s, b, 'bar'), 5) && ownsAmount(s, b, 'ved') < 0.3;
+    a.hunger = 0.3; addTo(s, 'bar', 5); gain(s, b, 'bar', 6); gain(s, a, 'ved', 4); getRel(s, b, a).op = 70; getRel(s, a, b).op = 70; b.pot.empati = 20;
+    needLadder(s, a, 1); const van = nara(ownsAmount(s, b, 'bar'), 5) && ownsAmount(s, b, 'ved') <= 1 + 1e-9;
     // ... eller när hen håller på att dö av svält
     ({ s, a, b } = ny());
-    a.hunger = 0; a.health = 0.5; addTo(s, 'bar', 5); gain(s, b, 'bar', 6); gain(s, a, 'ved', 3.2);
+    a.hunger = 0; a.health = 0.5; addTo(s, 'bar', 5); gain(s, b, 'bar', 6); gain(s, a, 'ved', 4);
     needLadder(s, a, 1); const dor = nara(ownsAmount(s, b, 'bar'), 5);
     // en ovän byter inte
     ({ s, a, b } = ny());
@@ -168,10 +168,12 @@ SCENARIER.byte = {
     ({ s, a, b } = ny());
     gain(s, a, 'bar', 0.5); gain(s, a, 'ved', 6); gain(s, b, 'bar', 6); gain(s, b, 'ved', 1);
     askForGift(s, a, b);
-    const kvall = nara(ownsAmount(s, a, 'bar'), EKONOMI.matPerDygn) && ownsAmount(s, a, 'ved') >= 3 - 1e-9 && ownsAmount(s, b, 'ved') > 1 + 0.84 / 0.66 && s.stat?.kvallsbyten === 1;
+    // i hela saker (steg 2.10.7): a har tre trä över och får en hel portion för två av dem
+    const kvall = ownsAmount(s, a, 'bar') >= 1 - 1e-9 && ownsAmount(s, a, 'bar') <= EKONOMI.matPerDygn
+      && ownsAmount(s, a, 'ved') >= 3 - 1e-9 && ownsAmount(s, b, 'ved') > 1 + 1e-9 && s.stat?.kvallsbyten === 1;
     // har båda det de vill ha kvar byter de inte, och inte heller med en ovän
     ({ s, a, b } = ny());
-    gain(s, a, 'bar', EKONOMI.matPerDygn); gain(s, a, 'ved', 6); gain(s, b, 'bar', 6); gain(s, b, 'ved', 3);
+    gain(s, a, 'bar', Math.ceil(EKONOMI.matPerDygn)); gain(s, a, 'ved', 6); gain(s, b, 'bar', 6); gain(s, b, 'ved', 3);
     askForGift(s, a, b); const nog = !s.stat?.byten && nara(ownsAmount(s, a, 'ved'), 6);
     ({ s, a, b } = ny());
     gain(s, a, 'bar', 0.5); gain(s, a, 'ved', 6); gain(s, b, 'bar', 6); gain(s, b, 'ved', 1); getRel(s, b, a).op = -40;
@@ -188,7 +190,7 @@ SCENARIER.byte = {
       byten += v.stat?.byten ?? 0; mat += v.stat?.byte_mat ?? 0; mtrl += v.stat?.byte_material ?? 0;
     }
     return [
-      [`den hungrige byter till sig mat mot trä hen har över, före byns mat (en portion för ${pris.toFixed(2)} trä)`, fore && Math.abs(pris - grundvarde('bar') * 0.5 / grundvarde('ved')) < 0.01],
+      [`den hungrige byter till sig mat mot trä hen har över, före byns mat (en portion för ${pris.toFixed(2)} trä)`, fore && pris === Math.ceil(grundvarde('bar') * 0.5 / grundvarde('ved'))], // i hela trä, avrundat uppåt (steg 2.10.7)
       ['den som har för lite att ge får inget byte av någon hen inte står nära', okand],
       ['en nära vän går med på ett ojämnt byte', van],
       ['den som håller på att dö får ett ojämnt byte', dor],
@@ -247,7 +249,7 @@ SCENARIER.egendom = {
       [`man äter sitt eget först (${atEget} kvar av 5 efter 2)`, Math.abs(atEget - 3) < 1e-9],
       ['en annan äter byns mat före ens egen', Math.abs(annanAt - 3) < 1e-9],
       [`till elden tas byns ved först (${elden} av 4 kvar)`, Math.abs(elden - 3) < 1e-9],
-      [`det som ruttnar minskar allas delar (${rutten.toFixed(2)})`, Math.abs(rutten - 1.5) < 0.01],
+      [`det som ruttnar minskar allas delar (${rutten} av 3 kvar)`, Math.abs(rutten - 1.5) <= 0.5 + 1e-9], // hälften i hela saker: en eller två (steg 2.10.7)
       [`slaktat kött är dens som ägde viltet (${kott.toFixed(1)}), inte slaktarens`, kott > 0 && slaktarens === 0],
       ['den som dör utan släkt lämnar sin del till byn, inte till någon annan', arv],
       [`i vanliga byar äger folk det de skaffat (${agt} personer), och delarna går aldrig över förrådet`, agt > 0 && fel === 0],
@@ -271,7 +273,7 @@ SCENARIER.delning = {
     setAmount(s, 'ved', 0); setFood(s, 0); stepDelning(s);
     const igen = s.delning!;
     return [
-      [`en ny by är fattig (rikedom ${nyRik.toFixed(0)}) och ger det mesta till byn (${nyEgen.toFixed(1)} av 10 eget)`, ny.andel > 0.75 && Math.abs(nyEgen - 10 * (1 - ny.andel)) < 0.01],
+      [`en ny by är fattig (rikedom ${nyRik.toFixed(0)}) och ger det mesta till byn (${nyEgen.toFixed(1)} av 10 eget)`, ny.andel > 0.75 && Math.abs(nyEgen - 10 * (1 - ny.andel)) < 1], // i hela saker (steg 2.10.7)
       [`halvvägs till gränsen ${DELNING.rik} ges hälften (andel ${halv.andel.toFixed(2)}, ${halvEgen.toFixed(1)} av 10 eget)`, Math.abs(halv.andel - 0.5) < 0.02 && Math.abs(halvEgen - 5) < 0.3],
       [`en rik by (rikedom ${rikRik.toFixed(0)}) ger inget (${rikEgen.toFixed(1)} av 10 eget)`, rik.andel === 0 && Math.abs(rikEgen - 10) < 0.01],
       [`blir byn fattig igen ger folk igen (andel ${igen.andel.toFixed(2)})`, igen.andel > 0.8],
@@ -312,7 +314,8 @@ SCENARIER.arv = {
     ({ s, d, a, b, c, e } = ny());
     a.mother = d.id; b.father = d.id;
     die(s, d, 'sjukdom');
-    const va = varde(s, a), vb = varde(s, b), barnen = Math.abs(va - vb) < 1e-6 && yxor(s, a) + yxor(s, b) === 1 && varde(s, c) === 0;
+    const va = varde(s, a), vb = varde(s, b), barnen = Math.abs(va - vb) <= grundvarde('bar') + 1e-6 && // i hela saker (steg 2.10.7): högst en saks värde skiljer
+       yxor(s, a) + yxor(s, b) === 1 && varde(s, c) === 0;
     // föräldrarna, sedan syskonen, sedan byn
     ({ s, d, a, b, c, e } = ny());
     d.mother = a.id; b.mother = a.id; die(s, d, 'sjukdom');

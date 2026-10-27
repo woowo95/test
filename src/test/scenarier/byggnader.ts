@@ -47,7 +47,7 @@ SCENARIER.forradshus = {
     // var tredje by bygger ett förrådshus så tidigt, så byarna är valda bland dem som gjort det med god marginal; med
     // byar som var nära gränsen (dygn 39 av 40) avgjorde minsta ändring någon annanstans om provet gick igenom
     let byggt = 0, iHuset = 0;
-    for (const seed of [6, 8, 12]) { // valda igen i v98 (by 6 bygger det dygn 17; by 8 och 12, som byggde det dygn 15 och 16 i v89, inte inom 30 dygn sedan lekplatsen flyttade i steg 2.10.4)
+    for (const seed of [11, 8, 10]) { // valda igen i steg 2.10.7 (by 11 bygger det dygn 13, by 8 dygn 17 och by 10 dygn 19; by 6 och 12 inte inom 30 dygn)
       const v = createState(seed, START);
       byggt = 0; iHuset = 0;
       for (let dygn = 0; dygn < 30 && !(byggt && iHuset); dygn++) kor(v, 24, v => {
@@ -571,6 +571,38 @@ SCENARIER.ibyn = {
     return [
       [`på sommaren görs handarbetet utan bänk inne i byn, ${varmt.avst.toFixed(0)} rutor från elden (${varmt.iByn} av ${varmt.n} gånger)`, !varmt.kallt && varmt.avst > 8 && varmt.iByn === varmt.n],
       [`när det är kallt sitter man vid elden som förut (${kallt.vidElden} av ${kallt.n} gånger)`, kallt.kallt && kallt.vidElden === kallt.n],
+    ];
+  },
+};
+
+SCENARIER.heltal = {
+  text: 'Hela saker (steg 2.10.7): förrådet har bara hela saker. Arbetet räknas hos den som arbetar tills det blivit en hel sak, och den som tar en del av en sak tar en hel; resten blir påbörjad hos ägaren och tas först nästa gång',
+  kor: () => {
+    const hel = (v: number) => Math.abs(v - Math.round(v)) < 1e-6;
+    // en vanlig by i tre dygn: alla stackar, det gömda i dem och ägarnas delar är hela, och det påbörjade är under en hel sak
+    const s = createState(1, START);
+    kor(s, 72);
+    const stackar = (s.stackar ?? []).every(a => hel(a.n) && hel(a.dold ?? 0) && Object.values(a.ag ?? {}).every(hel));
+    const delar = Object.values(s.delar ?? {}).flatMap(d => Object.values(d));
+    const pab = delar.every(v => v > 0 && v < 1);
+    // 0,6 bär är inget bär än, men två gånger 0,6 blir ett bär och 0,2 mot nästa
+    const t = createState(6, START); SIM.setStock(t, { bar: 0 });
+    const a = living(t).find(q => ageOf(q, t.now) >= 18)!;
+    t.delning = { andel: 0 }; // allt man skaffar är ens eget
+    SIM.gain(t, a, 'bar', 0.6); const fore = amountOf(t, 'bar'), arb = a.delar?.bar ?? 0;
+    SIM.gain(t, a, 'bar', 0.6); const efter = amountOf(t, 'bar'), arb2 = a.delar?.bar ?? 0;
+    const arbetet = fore === 0 && Math.abs(arb - 0.6) < 1e-6 && efter === 1 && Math.abs(arb2 - 0.2) < 1e-6 && SIM.ownsAmount(t, a, 'bar') === 1;
+    // en halv portion: ett helt bär tas ur förrådet och hälften blir påbörjad hos ägaren; nästa halva tas av det påbörjade
+    SIM.gain(t, a, 'bar', 1.8); const n0 = amountOf(t, 'bar'); // 0,2 + 1,8 = två bär till, inget mot nästa
+    SIM.use(t, a, 'bar', 0.5); const n1 = amountOf(t, 'bar'), p1 = t.delar?.[a.id]?.bar ?? 0;
+    SIM.use(t, a, 'bar', 0.5); const n2 = amountOf(t, 'bar'), p2 = t.delar?.[a.id]?.bar ?? 0;
+    const halv = n0 === 3 && !a.delar && n1 === 2 && Math.abs(p1 - 0.5) < 1e-6 && n2 === 2 && p2 === 0;
+    return [
+      [`efter tre dygn är alla stackar och ägarnas delar hela (${(s.stackar ?? []).length} stackar)`, stackar],
+      [`det påbörjade är under en hel sak (${delar.length} påbörjade, ${delar.map(v => v.toFixed(2)).join(' ') || 'inga'})`, pab],
+      [`arbetet räknas tills det blivit en hel sak (0,6 bär: ${fore} i förrådet, ${arb.toFixed(1)} arbetat; igen: ${efter} och ${arb2.toFixed(1)})`, arbetet],
+      [`en halv portion tar ett helt bär och resten blir påbörjad (${n0} → ${n1} bär, ${p1.toFixed(1)} påbörjat), och nästa halva tas av det påbörjade (${n2} bär, ${p2.toFixed(1)} påbörjat)`, halv],
+      [`en kanin är ${SIM.KANIN} hela vilt`, hel(SIM.KANIN) && SIM.KANIN >= 1],
     ];
   },
 };

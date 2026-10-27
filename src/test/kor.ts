@@ -31,6 +31,9 @@ export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => voi
     steg++; if (s.fire.lit) lit++;
     if (!(foodOf(s) >= 0) || !(amountOf(s, 'ved') >= 0)) larm('förråd', () => `mat ${foodOf(s)}, ved ${amountOf(s, 'ved')}`);
     for (const t of s.ting ?? []) if (!(t.c > 0 && t.c <= 1 + 1e-9) || [t.hos, t.lass, t.x].filter(v => v !== undefined).length > 1) larm('redskap', () => JSON.stringify(t));
+    // saker i hela tal (steg 2.10.7): stackarna, det gömda och ägarnas delar, och det påbörjade under 1
+    for (const a of s.stackar ?? []) if (decimal(a.n) || decimal(a.dold ?? 0) || Object.values(a.ag ?? {}).some(decimal)) larm('förråd med decimaler', () => `${a.k} ${a.n}${a.dold ? ` (gömt ${a.dold})` : ''} ägs ${JSON.stringify(a.ag)}`);
+    for (const o in s.delar ?? {}) for (const k in s.delar![o]) if (!(s.delar![o][k] >= 0 && s.delar![o][k] < 1)) larm('påbörjat', () => `${o} ${k} ${s.delar![o][k]}`);
     for (const a of s.stackar ?? []) if (!(a.n >= 0) || !(sumOf(a.ag) <= a.n + 1e-6) || Object.values(a.ag ?? {}).some(v => !(v >= 0))) larm('stack', () => `${a.k} ${a.n} ägs ${JSON.stringify(a.ag)}`);
     for (const k of s.stockar ?? []) if (!(k.ved >= 0) || !(k.grenar >= 0)) larm('stam', () => `stam ${k.id} ved ${k.ved}, grenar ${k.grenar}`);
     const folk = living(s);
@@ -80,6 +83,7 @@ export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => voi
 
 // fler vakter efter varje steg: det som bara får finnas hos levande och sådant som håller ihop byn. De tunga körs en gång
 // i timmen (timme), och texten görs bara när ett larm går
+const decimal = (v: number) => Math.abs(v - Math.round(v)) > 1e-6;
 type Larm = (typ: string, text: () => string) => void;
 const fin = (v: number | undefined) => v === undefined || Number.isFinite(v);
 function vakta(s: State, larm: Larm, timme: boolean) {

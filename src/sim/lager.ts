@@ -168,10 +168,12 @@ export function ownedStock(s: State, p: Person) {
   }
   return out;
 }
-// n av slaget k byter ägare (gåva), utan att flyttas. Ger hur mycket som bytte ägare
+// n av slaget k byter ägare (gåva, byte), utan att flyttas. Bara hela saker: en del av en sak blir en hel (steg 2.10.7).
+// Ger hur mycket som bytte ägare
 export function ownMove(s: State, k: string, n: number, from: number, to: number) {
   if (from === BYN) return 0;
   let v = 0;
+  n = Math.ceil(n - HEL);
   for (const a of stored(s, k)) {
     const m = Math.min(n - v, a.ag?.[from] ?? 0);
     if (m <= 1e-12) continue;
@@ -185,6 +187,8 @@ export function ownMove(s: State, k: string, n: number, from: number, to: number
 }
 // den som dött eller flyttat äger inget längre: delen blir byns
 export function releaseOwner(s: State, id: number) {
+  if (s.delar) delete s.delar[id]; // det påbörjade försvinner med hen
+  if (s.andelRest) delete s.andelRest[id];
   for (const a of stacksOf(s)) if (a.ag?.[id] !== undefined) { delete a.ag[id]; cleanDel(s, a); }
   changed(s);
 }
@@ -195,18 +199,22 @@ export function ownedAll(s: State, id: number) {
   return o;
 }
 // id:s delar går över till andra (arv): f säger hur stor del av varje stack var och en får (summan 1)
+// i hela saker: den med störst rest får det som blir över (steg 2.10.7). Det påbörjade försvinner med den döda
 export function passOn(s: State, id: number, f: Record<number, number>) {
+  const vem = Object.keys(f).map(Number).filter(o => f[o] > 0);
   for (const a of stacksOf(s)) {
     const v = a.ag?.[id];
     if (v === undefined) continue;
     delete a.ag![id];
-    for (const o in f) if (f[o] > 0) a.ag![o] = (a.ag![o] ?? 0) + v * f[o];
+    heltFordelat(vem.map(o => f[o]), v).forEach((m, i) => { if (m > 0) a.ag![vem[i]] = (a.ag![vem[i]] ?? 0) + m; });
     cleanDel(s, a);
   }
+  if (s.delar) delete s.delar[id];
   changed(s);
 }
 // id bär bort n av slaget k av sitt eget (den som flyttar): det försvinner ur stackarna
 export function carryOff(s: State, id: number, k: string, n: number) {
+  n = helt(n); // bara hela saker
   for (const a of stacksOf(s)) {
     if (a.k !== k) continue;
     const m = Math.min(n, a.ag?.[id] ?? 0, a.n);
@@ -226,16 +234,75 @@ function cleanDel(s: State, a: Stack) {
     const q = +o === BYN ? undefined : byId(s, +o);
     if (!q || !alive(q) || !(d[o] > 1e-9)) delete d[o]; else sum += d[o];
   }
-  if (sum > a.n) for (const o in d) d[o] *= a.n / sum;
+  if (sum > a.n + HEL) { const ks = Object.keys(d); heltFordelat(ks.map(o => d[o]), a.n).forEach((m, i) => { d[ks[i]] = m; if (!(m > 0)) delete d[ks[i]]; }); }
   if (!Object.keys(d).length) delete a.ag;
+}
+
+// ---------- hela saker (steg 2.10.7) ----------
+// Stackarna, det gömda i dem och ägarnas delar är alltid hela tal. Det som kommer till i delar (byns andel av en skörd, det
+// som blir av en halv portion när den lagas) räknas hos ägaren i s.delar (ägare → slag → under 1) tills det blivit en hel
+// sak, och när någon tar en del av en sak tas en hel, och resten blir påbörjad hos ägaren. Det påbörjade tas först. Det
+// som försvinner i delar (sorteras bort, gömt som förfaller) räknas i s.forlust tills en hel sak försvunnit. Arbetet räknas
+// hos den som arbetar (p.delar, steg.ts), så att bördan bara får hela saker
+const HEL = 1e-6;
+export const helt = (n: number) => Math.floor(n + HEL);
+// v (helt) fördelat på delar i förhållande till hur stora de är; det som blir över går till den med störst rest, vid lika den
+// första. Ingen får mer än sin del när v inte är större än summan och delarna är hela
+function heltFordelat(delar: number[], v: number): number[] {
+  const sum = delar.reduce((x, y) => x + y, 0);
+  if (!(sum > 0) || v <= 0) return delar.map(() => 0);
+  const x = delar.map(d => d * v / sum), ut = x.map(q => helt(q));
+  let kvar = v - ut.reduce((a, b) => a + b, 0);
+  for (const i of x.map((_, i) => i).sort((a, b) => (x[b] - ut[b]) - (x[a] - ut[a]) || a - b)) { if (kvar <= 0) break; ut[i]++; kvar--; }
+  return ut;
+}
+function pabörjat(s: State, o: number, k: string) { return s.delar?.[o]?.[k] ?? 0; }
+function setPabörjat(s: State, o: number, k: string, v: number) {
+  const d = (s.delar ??= {}), m = (d[o] ??= {});
+  if (v > HEL) m[k] = v; else delete m[k];
+  if (!Object.keys(m).length) delete d[o];
+}
+// n av slaget k kommer till; ag = ägarnas delar (resten är byns). Varje ägares del läggs till hens påbörjade, och det som
+// blivit hela saker ger det som läggs i stacken
+function hela(s: State, k: string, n: number, ag?: Del) {
+  const d: Del = {};
+  let tot = 0, egna = 0;
+  const lagg = (o: number, v: number) => {
+    const t = pabörjat(s, o, k) + v, w = helt(t);
+    setPabörjat(s, o, k, t - w);
+    if (w > 0) { tot += w; if (o !== BYN) d[o] = (d[o] ?? 0) + w; }
+  };
+  for (const o in ag) if (+o !== BYN && ag[o] > HEL) { lagg(+o, ag[o]); egna += ag[o]; }
+  lagg(BYN, Math.max(0, n - egna));
+  return { n: tot, ag: Object.keys(d).length ? d : undefined };
+}
+// n av slaget k försvinner i delar: det som blivit hela saker
+function forlorat(s: State, k: string, n: number) {
+  const f = (s.forlust ??= {}), t = (f[k] ?? 0) + n, w = helt(t);
+  if (t - w > HEL) f[k] = t - w; else delete f[k];
+  return w;
+}
+// ta v hela ur stacken a: av byns del och ägarnas i förhållande till hur stora de är
+function minska(s: State, a: Stack, v: number) {
+  const ks = Object.keys(a.ag ?? {}), m = heltFordelat([a.n - sumOf(a.ag), ...ks.map(o => a.ag![o])], v);
+  ks.forEach((o, i) => { a.ag![o] -= m[i + 1]; });
+  a.n -= v;
+  cleanDel(s, a);
+  return Object.fromEntries(ks.map((o, i) => [o, m[i + 1]]));
 }
 // vems n av något är, när ag säger vems det var (jämkat om det minskat) och resten är owner. Med s ger owner byns
 // andel av resten till byn: mer ju fattigare byn är (delning.ts)
+// I hela saker (steg 2.10.7): det som blir över av ägarens del räknas hos hen (s.andelRest) till nästa gång
 function shareOf(ag: Del | undefined, n: number, owner = BYN, s?: State): Del {
   const sum = sumOf(ag), f = sum > n ? n / sum : 1, d: Del = {};
   addDel(d, ag, f);
-  const egen = (n - sum * f) * (1 - (s?.delning?.andel ?? 0));
-  if (owner !== BYN && egen > 1e-12) d[owner] = (d[owner] ?? 0) + egen;
+  const r = n - sum * f;
+  if (s && owner !== BYN && r > HEL) {
+    const ar = (s.andelRest ??= {}), t = r * (1 - (s.delning?.andel ?? 0)) + (ar[owner] ?? 0), w = Math.min(helt(r), helt(t));
+    if (t - w > HEL) ar[owner] = Math.min(t - w, 1 - HEL); else delete ar[owner];
+    if (w > 0) d[owner] = (d[owner] ?? 0) + w;
+    if (r - helt(r) > HEL) d[owner] = (d[owner] ?? 0) + (r - helt(r)) * (1 - (s.delning?.andel ?? 0)); // en del av en sak: påbörjad hos ägaren (hela)
+  } else if (owner !== BYN && r > 1e-12) d[owner] = (d[owner] ?? 0) + r;
   delete d[BYN];
   return d;
 }
@@ -295,10 +362,11 @@ export const placeTools = (s: State) => placeOn(s, tingOf(s));
 // hur mycket av slaget k som ryms på rutan: en stack, och i en hylla eller kista så många stackar som den rymmer (steg 2.3.6)
 export const rymd = (s: State, x: number, y: number, k: string) => { const f = forvarAt(s, x, y); return rutaOf(k) * (f && !f.redskap && !isTool(k) ? f.rymmer : 1); };
 // ryms mer av slaget k på rutan? En stack av samma slag som inte är full, eller ingenting. I ett ställ bara redskap, så
-// många som det rymmer
+// många som det rymmer. Medan det byggs ryms ett redskap där, annars ligger något annat i stället när det blir klart
 function roomIn(s: State, occ: Occ, x: number, y: number, k: string) {
-  const a = occ.get(key(x, y)), f = forvarAt(s, x, y);
+  const a = occ.get(key(x, y)), f = forvarAt(s, x, y), st = stationAt(s, x, y);
   if (f?.redskap) return isTool(k) && (!a || isTool(a.k)) && (occ.redskap.get(key(x, y)) ?? 0) < f.rymmer;
+  if (st && stationDef(st.k)?.forvar?.redskap) return isTool(k) && !a; // ett ställ som byggs: ett redskap, som på marken
   return !a || (a.k === k && !isTool(k) && a.n < rymd(s, x, y, k) - 1e-9);
 }
 // bästa plats i en lagerplats för ett slag: lagerplatserna i prioritetsordning, först en stack av samma slag som inte
@@ -353,27 +421,39 @@ function stored(s: State, k: string) {
 // (resten är byns). Får det inte plats läggs det på den minsta stacken av samma slag, och lagret växer nästa timme
 function place(s: State, k: string, n: number, c: number, ag?: Del, at?: { x: number; y: number }) {
   if (n <= 1e-12) return;
-  const host = SAKER[k]?.i;
+  const host = SAKER[k]?.i, h = hela(s, k, n, host ? undefined : ag); // bara hela saker (steg 2.10.7)
+  n = h.n; ag = h.ag;
+  if (n <= 0) return;
   if (host) { hide(s, host, n, at); return; }
-  const st = stacksOf(s), tot = n; // varje del får v / tot av ägarandelarna ag
+  const st = stacksOf(s); let tot = n; // ag = ägarnas hela delar av det som är kvar (tot); varje plats får sin del (delAv)
   // det som ligger byggs en gång; en ny stack hamnar alltid på en tom ruta i förrådet och läggs till efter push
   const occ = occupancy(s);
   for (let g = 0; n > 1e-9 && g < 60; g++) {
     const sp = at && isStored(s, at.x, at.y) && usable(s, at.x, at.y) && roomIn(s, occ, at.x, at.y, k) ? at : zoneSpot(s, k, -Infinity, occ) ?? besideSpot(s, k, occ);
     at = undefined;
-    const a = occ.get(key(sp.x, sp.y)), max = rymd(s, sp.x, sp.y, k);
-    const v = !a ? Math.min(n, max) : roomIn(s, occ, sp.x, sp.y, k) ? Math.min(n, max - a.n) : 0;
+    const a = occ.get(key(sp.x, sp.y)), max = helt(rymd(s, sp.x, sp.y, k));
+    const v = !a ? Math.min(n, max) : roomIn(s, occ, sp.x, sp.y, k) ? Math.max(0, Math.min(n, max - a.n)) : 0;
     if (!v) break;
-    if (!a) { const ny: Stack = { k, n: 0, c, x: sp.x, y: sp.y }; st.push(ny); occ.set(key(sp.x, sp.y), ny); addToStack(s, ny, v, c, ag, v / tot); } else addToStack(s, a, v, c, ag, v / tot);
+    const del = delAv(ag, v, tot); ag = minus(ag, del); tot -= v;
+    if (!a) { const ny: Stack = { k, n: 0, c, x: sp.x, y: sp.y }; st.push(ny); occ.set(key(sp.x, sp.y), ny); addToStack(s, ny, v, c, del); } else addToStack(s, a, v, c, del);
     n -= v;
   }
   if (n > 1e-9) { // ingen plats alls
     const a = stored(s, k).sort((a, b) => a.n - b.n)[0];
-    if (a) addToStack(s, a, n, c, ag, n / tot);
-    else { const z = zonesOf(s)[0], ny: Stack = { k, n: 0, c, x: z.x, y: z.y }; st.push(ny); addToStack(s, ny, n, c, ag, n / tot); }
+    if (a) addToStack(s, a, n, c, ag);
+    else { const z = zonesOf(s)[0], ny: Stack = { k, n: 0, c, x: z.x, y: z.y }; st.push(ny); addToStack(s, ny, n, c, ag); }
   }
   changed(s);
 }
+// ägarnas hela delar av v av tot (ag är hela och summan högst tot): i förhållande till delarna, och byns del räknas med
+function delAv(ag: Del | undefined, v: number, tot: number): Del | undefined {
+  if (!ag) return undefined;
+  if (v >= tot) return ag;
+  const ks = Object.keys(ag), m = heltFordelat([tot - sumOf(ag), ...ks.map(o => ag[+o])], v), d: Del = {};
+  ks.forEach((o, i) => { if (m[i + 1] > 0) d[+o] = m[i + 1]; });
+  return Object.keys(d).length ? d : undefined;
+}
+const minus = (ag: Del | undefined, d: Del | undefined) => { if (!ag) return ag; const ut: Del = { ...ag }; for (const o in d) { ut[+o] -= d[+o]; if (!(ut[+o] > 0)) delete ut[+o]; } return Object.keys(ut).length ? ut : undefined; };
 // lägg v med skicket c på stacken a (skicket blir ett viktat snitt). ag = vems det är, f gånger så mycket av varje del
 function addToStack(s: State, a: Stack, v: number, c: number, ag?: Del, f = 1) {
   a.c = (a.c * a.n + c * v) / (a.n + v); a.n += v;
@@ -389,56 +469,63 @@ function hide(s: State, host: string, n: number, at?: { x: number; y: number }) 
 }
 // ta n av slaget k ur förrådet. Vems delar som tas först säger egendom.ts (takeOrder); inom en ägares del tas det
 // sämsta skicket först. Ger vems det var, hur mycket som togs och skicket på det
+// I hela saker (steg 2.10.7): ägarens påbörjade först, sedan hela saker, och det som blir över av den sista blir påbörjat
+// hos ägaren. Skicket är de hela sakernas
 function takeOwn(s: State, k: string, n: number, p?: Person, common = false, fran?: number) {
   const ag: Del = {};
-  let got = 0, cw = 0;
+  let got = 0, cw = 0, hela = 0;
   if (n > 1e-12) {
-    if (SAKER[k]?.i) { got = takeHidden(s, k, n); ag[BYN] = got; return { ag, n: got, c: 1 }; }
-    const list = stored(s, k), shares: Del = { [BYN]: 0 };
-    for (const a of list) { shares[BYN] += a.n - sumOf(a.ag); addDel(shares, a.ag); }
+    const dold = !!SAKER[k]?.i, list = dold ? stored(s, SAKER[k]!.i!).filter(a => a.dold).sort((a, b) => b.dold! - a.dold!) : stored(s, k), shares: Del = { [BYN]: 0 };
+    if (dold) for (const a of list) shares[BYN] += a.dold!; // det gömda är byns
+    else for (const a of list) { shares[BYN] += a.n - sumOf(a.ag); addDel(shares, a.ag); }
+    for (const o in s.delar ?? {}) { const v = pabörjat(s, +o, k); if (v > 0 && (+o === BYN || !dold)) shares[+o] = (shares[+o] ?? 0) + v; }
     for (const [o, want] of takeOrder(s, p, shares, n, common, fran)) {
-      let r = want;
+      const b = pabörjat(s, o, k), u = Math.min(want, b), r = want - u;
+      let w = r > HEL ? Math.ceil(r - HEL) : 0, tog = 0;
       for (const a of list) {
-        if (r <= 1e-12) break;
-        const has = o === BYN ? a.n - sumOf(a.ag) : a.ag?.[o] ?? 0, v = Math.min(r, has);
-        if (v <= 1e-12) continue;
-        a.n -= v; if (o !== BYN) { a.ag![o] -= v; cleanDel(s, a); }
-        r -= v; got += v; cw += v * a.c; ag[o] = (ag[o] ?? 0) + v;
+        if (w <= 0) break;
+        const has = dold ? a.dold! : o === BYN ? a.n - sumOf(a.ag) : a.ag?.[o] ?? 0, v = Math.min(w, has);
+        if (v <= 0) continue;
+        if (dold) a.dold! -= v; else { a.n -= v; if (o !== BYN) { a.ag![o] -= v; cleanDel(s, a); } }
+        w -= v; tog += v; cw += v * a.c;
       }
+      hela += tog;
+      const fick = u + Math.min(tog, r);
+      setPabörjat(s, o, k, b - u + Math.max(0, tog - r));
+      got += fick; if (fick > 0) ag[o] = (ag[o] ?? 0) + fick;
     }
     tidy(s);
   }
-  return { ag, n: got, c: got > 0 ? cw / got : 1 };
+  return { ag, n: got, c: hela > 0 && !SAKER[k]?.i ? cw / hela : 1 };
 }
-// ta n ur förrådet utan att någon tar det (sorteras bort, prov): lika mycket ur varje stack och av allas delar
+// ta n ur förrådet utan att någon tar det (sorteras bort, prov): i hela saker (forlorat), lika mycket ur varje stack och av
+// allas delar
 function takeProp(s: State, k: string, n: number) {
-  if (SAKER[k]?.i) { takeHidden(s, k, n); return; }
-  const list = stored(s, k), all = list.reduce((m, a) => m + a.n, 0), f = all > 0 ? Math.min(1, n / all) : 0;
-  for (const a of list) { if (a.ag) for (const o in a.ag) a.ag[o] *= 1 - f; a.n *= 1 - f; cleanDel(s, a); }
-  tidy(s);
+  const w = forlorat(s, k, n);
+  if (w > 0) taBort(s, k, w);
 }
-// det gömda slaget tas ur värdstackarna, lika mycket ur varje
-function takeHidden(s: State, k: string, n: number) {
-  const list = stored(s, SAKER[k]!.i!).filter(a => a.dold), all = list.reduce((m, a) => m + a.dold!, 0);
-  if (all <= 0 || n <= 0) return 0;
-  const f = Math.min(1, n / all);
-  for (const a of list) a.dold! -= a.dold! * f;
+// v hela av slaget k försvinner ur förrådet: ur varje stack i förhållande till hur stor den är (det gömda ur värdstackarna)
+function taBort(s: State, k: string, v: number) {
+  const host = SAKER[k]?.i, list = host ? stored(s, host).filter(a => a.dold) : stored(s, k);
+  const m = heltFordelat(list.map(a => host ? a.dold! : a.n), v);
+  list.forEach((a, i) => { if (m[i] > 0) { if (host) a.dold! -= m[i]; else minska(s, a, m[i]); } });
   tidy(s);
-  return all * f;
 }
 // det som kommer till utan att någon skaffat det (n > 0) är byns; n < 0 tar bort ur förrådet, allas delar lika mycket
 export function addTo(s: State, k: string, n: number) { if (n > 0) place(s, k, n, 1); else if (n < 0) takeProp(s, k, -n); }
 // lägg n av slaget k i förrådet; ag = vems det är (jämkat till n), resten är byns
 export function put(s: State, k: string, n: number, ag?: Del, c = 1) { place(s, k, n, c, ag && shareOf(ag, n)); }
 // p skaffade n av slaget k och lade det rakt i förrådet: det är hens (egendom.ts), utom det hen ger byn (delning.ts)
-export function gain(s: State, p: Person, k: string, n: number) { if (n > 0) place(s, k, n, 1, shareOf(undefined, n, p.id, s)); }
+// I hela saker (steg 2.10.7): arbetet räknas hos p tills det blivit en hel sak (arbete)
+export function gain(s: State, p: Person, k: string, n: number) { const w = n > 0 ? arbete(p, k, n) : 0; if (w > 0) place(s, k, w, 1, shareOf(undefined, w, p.id, s)); }
 // p tar n av slaget k ur förrådet; common = till byns eld eller hus, fran = av den personens först (stöld). Ger vems det var
 export function use(s: State, p: Person | undefined, k: string, n: number, common = false, fran?: number) { return takeOwn(s, k, n, p, common, fran).ag; }
 // för nya byar och tester: förrådet av slaget k blir n, och det som läggs till är byns
+// (i hela saker, steg 2.10.7)
 export function setAmount(s: State, k: string, n: number) {
   if (isTool(k)) { setTools(s, k, n); return; }
-  const d = n - amountOf(s, k);
-  if (d > 1e-12) place(s, k, d, 1); else if (d < -1e-12) takeProp(s, k, -d);
+  const d = Math.round(n) - amountOf(s, k);
+  if (d > 0) place(s, k, d, 1); else if (d < 0) taBort(s, k, -d);
 }
 // redskapen: nya är byns och hela; det som tas bort tas först av det som ligger i förrådet, sämsta skicket först
 function setTools(s: State, k: string, n: number) {
@@ -533,10 +620,10 @@ export function slitageNu(s: State, a: { k: string; x?: number; y?: number }, t?
   return { orsak: a.x === undefined ? 'lagret' : forvarAt(s, a.x, a.y!)?.tak ? 'kista' : roofed(s, a.x, a.y!) ? 'tak' : zoneAt(s, a.x, a.y!) >= 0 ? 'lagret' : 'vadret', per };
 }
 export function wearStore(s: State, dtSec: number) {
-  const h = dtSec / HOUR_S, temp = temperature(s);
+  const h = dtSec / HOUR_S, temp = temperature(s), bort: Record<string, number> = {};
   for (const a of stacksOf(s)) {
     const m = wearMult(s, a.x, a.y), r = wearAt(a.k, m, true, temp) * h;
-    if (a.dold) a.dold *= Math.exp(-wearAt(DOLD_I[a.k], m, true, temp) * h);
+    if (a.dold) { const d = DOLD_I[a.k]; bort[d] = (bort[d] ?? 0) + a.dold * (1 - Math.exp(-wearAt(d, m, true, temp) * h)); } // i hela saker nedan
     if (r <= 0) continue;
     a.c -= r;
     if (a.c > 0) continue;
@@ -544,8 +631,8 @@ export function wearStore(s: State, dtSec: number) {
     a.dold = undefined;
     if (into && a.n > 0) {
       const m = Math.min(RUTA[into.k], a.n * into.per);
-      if (a.ag) for (const o in a.ag) a.ag[o] *= m / a.n;
-      a.n = m; a.k = into.k; a.c = LAGER.blirSkick;
+      if (a.ag) { const ks = Object.keys(a.ag), d = heltFordelat([a.n - sumOf(a.ag), ...ks.map(o => a.ag![o])], m); ks.forEach((o, i) => { a.ag![o] = d[i + 1]; }); }
+      a.n = m; a.k = into.k; a.c = LAGER.blirSkick; cleanDel(s, a);
     } else {
       if (isFood(a.k) && a.n > 1e-9) { count(s, 'ruttnat', a.n); s.ruttet = (s.ruttet ?? 0) + a.n; } // förrådshuset (byggnader.ts)
       a.n = 0;
@@ -561,6 +648,7 @@ export function wearStore(s: State, dtSec: number) {
   }
   s.ting = tingOf(s).filter(t => t.c > 1e-6);
   tidy(s);
+  for (const k in bort) { const w = forlorat(s, k, bort[k]); if (w > 0) taBort(s, k, w); } // det gömda som förfallit
 }
 
 // ---------- saker på golvet (steg 2.3.6) ----------
@@ -669,6 +757,21 @@ function storeTings(s: State, t: Task, at?: { x: number; y: number }) {
   }
   t.ting = undefined;
 }
+// arbetet räknas hos den som arbetar mot nästa hela sak (steg 2.10.7): det som inte blivit en hel sak än ligger hos hen
+// (p.delar), och bördan får bara hela saker. 0,6 bär är inget bär än; när det blir helt läggs det i korgen
+export function helaIBordan(p: Person, t: Task) {
+  const jamna = (k: string, v: number) => { const hel = helt(v); return hel + arbete(p, k, v - hel); };
+  if (t.carry > 0) t.carry = jamna(carryKind(t.act), t.carry);
+  for (const k in t.items ?? {}) { t.items![k] = jamna(k, t.items![k]); if (!(t.items![k] > 0)) delete t.items![k]; }
+  if (t.items && !Object.keys(t.items).length) t.items = undefined;
+}
+// v av slaget k läggs till p:s arbete mot nästa hela sak; ger hur många hela saker det blev
+function arbete(p: Person, k: string, v: number) {
+  const d = (p.delar ??= {}), t = (d[k] ?? 0) + v, w = helt(t);
+  if (t - w > HEL) d[k] = t - w; else delete d[k];
+  if (!Object.keys(d).length) delete p.delar;
+  return w;
+}
 const loadOf = (t: Task) => { const all: Record<string, number> = { ...(t.items ?? {}) }; if (t.carry) all[carryKind(t.act)] = (all[carryKind(t.act)] ?? 0) + t.carry; return all; };
 // lägg det som bärs i förrådet, helst där man står. Det är ägarnas i t.ag, resten är dens som skaffade det (owner);
 // det som bärs mellan lagerplatser har alltid sina ägare med sig
@@ -685,11 +788,13 @@ export function dropLoad(s: State, t: Task, x: number, y: number, owner = BYN) {
   const all = loadOf(t), st = stacksOf(s), who = t.act === 'bara' ? BYN : owner;
   for (const k in all) {
     if (all[k] < 1e-6) continue;
-    if (SAKER[k]?.i) { hide(s, SAKER[k]!.i!, all[k], { x: tx, y: ty }); continue; }
-    const c = t.cond?.[k] ?? 1, ag = shareOf(t.ag?.[k], all[k], who, s);
+    const h = hela(s, k, all[k], SAKER[k]?.i ? undefined : shareOf(t.ag?.[k], all[k], who, s)); // bara hela saker (steg 2.10.7)
+    if (h.n <= 0) continue;
+    if (SAKER[k]?.i) { hide(s, SAKER[k]!.i!, h.n, { x: tx, y: ty }); continue; }
+    const c = t.cond?.[k] ?? 1;
     let g = st.find(q => q.x === tx && q.y === ty && q.k === k);
     if (!g) st.push(g = { x: tx, y: ty, k, n: 0, c });
-    addToStack(s, g, all[k], c, ag);
+    addToStack(s, g, h.n, c, h.ag);
   }
   for (const id of t.ting ?? []) { const g = tingOf(s).find(q => q.id === id); if (g) { g.lass = undefined; g.x = tx; g.y = ty; } }
   t.ting = undefined;
@@ -732,16 +837,16 @@ export function pickUp(s: State, p: Person, t: Task, plats = capacity(s, p)) {
   let room = plats - load(t, s);
   for (const g of stacksOf(s)) {
     if (g.x !== x || g.y !== y || room <= 1e-9) continue;
-    const st = stackOf(g.k), v = Math.min(g.n, room * st), f = g.n > 0 ? v / g.n : 1;
+    const st = stackOf(g.k), v = Math.min(g.n, helt(room * st)), f = g.n > 0 ? v / g.n : 1; // hela saker (steg 2.10.7)
     const had = t.items?.[g.k] ?? 0;
+    if (g.dold) { const d = DOLD_I[g.k], m = f >= 1 ? g.dold : helt(g.dold * f); if (m > 0) { (t.items ??= {})[d] = (t.items[d] ?? 0) + m; g.dold -= m; } }
     if (v > 0) {
       (t.items ??= {})[g.k] = had + v;
       (t.cond ??= {})[g.k] = ((t.cond[g.k] ?? 1) * had + g.c * v) / (had + v);
-      if (g.ag) { const ag = (t.ag ??= {})[g.k] ??= {}; for (const o in g.ag) { ag[o] = (ag[o] ?? 0) + g.ag[o] * f; g.ag[o] -= g.ag[o] * f; } }
+      const m = minska(s, g, v);
+      if (Object.keys(m).length) { const ag = (t.ag ??= {})[g.k] ??= {}; for (const o in m) if (m[o] > 0) ag[+o] = (ag[+o] ?? 0) + m[o]; }
     }
-    if (g.dold) { const d = DOLD_I[g.k]; (t.items ??= {})[d] = (t.items[d] ?? 0) + g.dold * f; g.dold -= g.dold * f; }
-    g.n -= v; room -= v / st;
-    cleanDel(s, g);
+    room -= v / st;
   }
   // redskapen på rutan tas med, hur full bördan än är
   for (const g of lying(s)) if (g.x === x && g.y === y) { g.x = g.y = undefined; g.lass = p.id; (t.ting ??= []).push(g.id); }

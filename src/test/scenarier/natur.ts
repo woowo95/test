@@ -57,7 +57,7 @@ SCENARIER.djur = {
     setMat(s, { vilt: 3 * KANIN }); setAmount(s, 'ben', 0); setAmount(s, 'skinn', 0); setAmount(s, 'rep', 0);
     const kan = canProcess(s, p, DJUR.kanin);
     bearbeta(s, p, DJUR.kanin, 1);
-    const slakt = Math.abs(amountOf(s, 'kott') - 3 * SLAKT.kott * SIM.kottFaktor(p)) < 1e-9 && amountOf(s, 'vilt') < 1e-9 && Math.abs(amountOf(s, 'ben') - 3) < 1e-9 && Math.abs(amountOf(s, 'skinn') - 3) < 1e-9;
+    const slakt = Math.abs(amountOf(s, 'kott') - 3 * SLAKT.kott * SIM.kottFaktor(p)) < 1 // i hela saker (steg 2.10.7) && amountOf(s, 'vilt') < 1e-9 && Math.abs(amountOf(s, 'ben') - 3) < 1e-9 && Math.abs(amountOf(s, 'skinn') - 3) < 1e-9;
     // senorna blir ibland ett rep, men bara för den som kan tekniken Rep
     const repAv = (kan: boolean) => { let r = 0; for (let i = 0; i < 200; i++) { setMat(s, { vilt: KANIN }); setAmount(s, 'rep', 0); p.tek = { ...p.tek, rep: kan ? 1 : 0 }; bearbeta(s, p, DJUR.kanin, 1); r += amountOf(s, 'rep'); } return r; };
     const medRep = repAv(true), utanRep = repAv(false);
@@ -87,6 +87,7 @@ SCENARIER.abborre = {
     const s = createState(1, START);
     klockan(s);
     const [a, c] = living(s);
+    s.delning = { andel: 0 }; // byn tar ingen andel: annars blir a:s del av sex abborrar mindre än en hel (steg 2.10.7)
     setMat(s, {}); gain(s, a, 'abborre', 6); medBank(s);
     const egen = ownsAmount(s, a, 'abborre'); // det som inte delats med byn
     const kan = canProcess(s, c, DJUR.abborre);
@@ -204,12 +205,14 @@ SCENARIER.rotter = {
       s.kal = nyKalender(s.now, (vecka + 1) % 4);
       setMat(s, { grillkott: 300 }); // grillat kött äts före bär och rötter, så det man samlar blir kvar (och ingen blir sjuk av rått)
       kor(s, 48);
-      const b = amountOf(s, 'bar'), r = amountOf(s, 'rotter');
+      // också det som ännu inte blivit en hel sak räknas: arbetet mot nästa (p.delar) och det påbörjade i förrådet (steg 2.10.7)
+      const delar = (k: string) => living(s).reduce((x, q) => x + (q.delar?.[k] ?? 0), 0) + Object.values(s.delar ?? {}).reduce((x, d) => x + (d[k] ?? 0), 0);
+      const b = amountOf(s, 'bar') + delar('bar'), r = amountOf(s, 'rotter') + delar('rotter');
       return { b, r, skild: !pilesOf(s).some(p => p.k === 'bar' && p.n > STACK.bar + 1e-6) };
     };
     const sommar = andel(1), istid = andel(3);
     return [
-      [`både bär och rötter samlas (sommar ${sommar.b.toFixed(0)} bär, ${sommar.r.toFixed(0)} rötter)`, sommar.b > 0 && sommar.r > 0],
+      [`både bär och rötter samlas (sommar ${sommar.b.toFixed(1)} bär, ${sommar.r.toFixed(1)} rötter)`, sommar.b > 0 && sommar.r > 0],
       [`i istiden mest rötter (${istid.r.toFixed(0)} rötter mot ${istid.b.toFixed(0)} bär)`, istid.r > istid.b],
       // rötternas andel räknas på platsen före uttaget (motor-9): annars blir en del av rötterna bär
       [`i istiden växer inga bär, så allt som samlas är rötter (${istid.b.toFixed(4)} bär)`, istid.r > 0 && istid.b < 1e-9],
@@ -389,7 +392,7 @@ SCENARIER.slaktbank = {
     // jaktfärdigheten: mer kött för den som jagat mycket
     const kott = (jakt: number) => { p.skill.jakt = jakt; setMat(s, { vilt: 3 * KANIN }); bearbeta(s, p, DJUR.kanin, 1); return amountOf(s, 'kott'); };
     const ny = kott(0), van = kott(REDSKAP.kottFull);
-    const kottOk = Math.abs(ny - 3 * SLAKT.kott * REDSKAP.kottMin) < 1e-6 && Math.abs(van - 3 * SLAKT.kott * REDSKAP.kottMax) < 1e-6 && Math.abs(kottFaktor(p) - REDSKAP.kottMax) < 1e-9;
+    const kottOk = Math.abs(ny - 3 * SLAKT.kott * REDSKAP.kottMin) < 1 && Math.abs(van - 3 * SLAKT.kott * REDSKAP.kottMax) < 1 && van > ny && Math.abs(kottFaktor(p) - REDSKAP.kottMax) < 1e-9; // i hela saker (steg 2.10.7)
     return [
       [`slaktbänken byggs av ${STATION.slaktbankTra} trä på ${h} timmar av den som kan göra en kniv (${byggare})`, klar && enda && ved0 - amountOf(s, 'ved') >= STATION.slaktbankTra - 1e-9 && byggare.includes(STATIONER.slaktbank.bygger)],
       ['den första slaktbänken står i loggen', logg],
@@ -433,7 +436,7 @@ SCENARIER.flatarbank = {
       const p0 = vidBanken ? vidStation(w.stationer![0]) : getMap(w.seed).fire;
       q.x = p0.x; q.y = p0.y + (vidBanken ? 0 : 1);
       twineRope(w, q, 0.1); // sex minuter: ett och ett halvt rep för hand sedan steg 2.3.8
-      return amountOf(w, 'rep');
+      return amountOf(w, 'rep') + (q.delar?.rep ?? 0); // och arbetet mot nästa hela rep (steg 2.10.7)
     };
     const hand = rep(false), vidB = rep(true);
     // de enkla redskapen (Björn, efter v90): kniven görs vid bänken om byn har en, och lite fortare där
@@ -855,7 +858,7 @@ SCENARIER.grill = {
     const ovan = amountOf(s, 'grillfisk'), anv = f0 - amountOf(s, 'fisk');
     grilla(s, q, 1);
     const skicklig = amountOf(s, 'grillfisk') - ovan;
-    const brant = Math.abs(anv - MATLAG.timme) < 1e-6 && Math.abs(ovan - anv * (1 - MATLAG.brann)) < 1e-6 && Math.abs(skicklig - MATLAG.timme) < 1e-6;
+    const brant = Math.abs(anv - MATLAG.timme) < 1e-6 && Math.abs(ovan - anv * (1 - MATLAG.brann)) < 1 && ovan < anv && Math.abs(skicklig - MATLAG.timme) < 1; // i hela saker (steg 2.10.7)
     const ovar = p.skill.matlagning > m0 && brannDel(q) === 0;
     s.fire.lit = false; const fore = amountOf(s, 'fisk'); grilla(s, p, 1); const ingenEld = amountOf(s, 'fisk') === fore; s.fire.lit = true;
     const forst = FOOD.indexOf('grillfisk') < FOOD.indexOf('fisk') && FOOD.indexOf('grillkott') < FOOD.indexOf('kott') && SAKER.grillkott!.haller! > SAKER.kott!.haller! && SAKER.grillfisk!.haller! > SAKER.fisk!.haller!;
@@ -1046,7 +1049,7 @@ SCENARIER.odling = {
 SCENARIER.falt = {
   text: 'Steg 2.10.3: den som kan odla och har frön röjer ett fält på jorden nära byn, gräver upp det och sår. Grödan växer när det är varmt, skördas när den är mogen och ger mat och nya frön. Frosten dödar den, den mogna ruttnar om ingen skördar, och ett fält som ingen sköter blir gräs igen',
   kor: () => {
-    const s = createState(7, START);
+    const s = createState(6, START); // by 6: röjer fält med och utan hela saker (by 7 gjorde det inte efter steg 2.10.7, slumpen)
     s.kal = nyKalender(s.now, 1); klockan(s, 7); tandEld(s);
     for (const q of living(s)) q.tek = { ...q.tek, odling: 1 };
     setAmount(s, 'fron', 30);

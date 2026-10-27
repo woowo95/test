@@ -101,6 +101,11 @@ const SALLSYNT: Record<string, string> = {
   fatt: 'bara den som inte kan gå får vatten av de andra; scenariot vard prövar det',
   vatten: 'bara den som inte kan gå får vatten i säcken; scenariot vattensack prövar det',
   vattensack: 'sen teknik efter skinnkläderna (steg 2.10.1), hinner inte alltid komma på 35 dygn; scenariot vattensack prövar säcken',
+  odling: 'sen teknik (steg 2.10.2): byn kommer på den när den samlat mycket av de vilda grödorna, sällan på 35 dygn; scenarierna odling och falt prövar den',
+  odla: 'bara efter odlingen och ett röjt fält (steg 2.10.3), sällan på 35 dygn; scenariot falt prövar det',
+  rovor: 'grödor blir det bara på ett sått fält (steg 2.10.3); scenariot falt prövar det',
+  korn: 'grödor blir det bara på ett sått fält (steg 2.10.3); scenariot falt prövar det',
+  samling: 'blir det bara av en sovsal som ingen längre sover i (steg 1.6.4); scenariot funktion prövar det',
 };
 SCENARIER.aldrig = {
   text: 'Allt i registren används: varje handling, sak, husfunktion, djurart och teknik förekommer i minst en av fyra byar under 35 dygn (35 år i spelet, fem veckor i verkligheten)',
@@ -120,6 +125,7 @@ SCENARIER.aldrig = {
         for (const p of living(s)) if (p.task) { by.handlingar!.add(p.task.act); for (const k in p.task.items ?? {}) by.saker!.add(k); }
         for (const a of s.stackar ?? []) { by.saker!.add(a.k); if (a.dold && dold[a.k]) by.saker!.add(dold[a.k]!); }
         for (const t of tingOf(s)) by.saker!.add(t.k);
+        for (const f of s.flackar ?? []) if (SAKER[f.k]) by.saker!.add(f.k); // toa-högen är en fläck på marken (smuts.ts)
         if (steg++ % STEG_TIM === 0) for (const h of housesOf(s)) by.husfunktioner!.add(fnId(h));
       });
       vakter.push(...r.vakter.map(v => `by ${r.seed}: ${v}`));

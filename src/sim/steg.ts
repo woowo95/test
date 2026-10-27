@@ -1,7 +1,7 @@
 import { tidyTools } from './agande';
 import { chopStock, fellTree, rotStumps, stocks } from './skog';
 import { needLadder, noticeTheft, stole } from './behov';
-import { avbryt, capacity, dropSpot, fetchSpot, homeKind, isCarrying, load, pickUp, placeTools, sakerPaGolvet, storeLoad, tidyStore, wearStore } from './lager';
+import { avbryt, capacity, dropSpot, fetchSpot, helaIBordan, homeKind, isCarrying, load, pickUp, placeTools, sakerPaGolvet, storeLoad, tidyStore, wearStore } from './lager';
 import { DJURARTER, KANIN, REDSKAP, bearbeta, twineRope, wearUsed } from './redskap';
 import { GOR_ACTS, finishHalf, startWork, stepPaborjat, workHalf } from './paborjat';
 import { thinkWhileWorking } from './teknik';
@@ -493,6 +493,7 @@ function workStep(s: State, p: Person, tk: Task, dtSec: number, a: number, learn
   // det arbetet ger (UTFALL ovan); utan egen rad, eller om raden inte tagit hand om det, läggs det platsen gav i bördan
   const u = UTFALL[tk.act];
   if (!(u && u(s, p, tk, { y, rich, delar: del?.r, rd, dtSec, a, bar })) && y > 0) tk.carry += y;
+  helaIBordan(p, tk); // bara hela saker i bördan (steg 2.10.7)
   const sk = d.arbete!;
   const before = p.skill[sk];
   ovning(p, sk, dtSec / HOUR_S * 0.12 * learn * (0.4 + stat(p, 'intelligens', now) / 20));

@@ -116,6 +116,7 @@ export interface Person {
   mother?: number; father?: number; partner?: number;
   rngs?: Record<string, number>; // var i sina egna slumpföljder personen är (slump.ts)
   pot: Record<Stat, number>; skill: Record<Skill, number>;
+  delar?: Record<string, number>; // arbetet mot nästa hela sak, per slag (steg 2.10.7, lager.ts)
   hunger: number; rest: number; social: number; health: number;
   warm: number; // kroppsvärme 0–1
   toa: number; // 1 = inget behov, 0 = olycka
@@ -175,6 +176,7 @@ export interface State {
   tingVag?: { id: number; k: string; c: number; agare: number; hos?: number }[]; // äldre sparfiler (före v40): redskap som bars mellan lagerplatser
   agare?: Record<string, number[]>; // sparfiler från v30: redskapens ägare (blir s.ting)
   stackar?: { k: string; n: number; c: number; x: number; y: number; ag?: Record<string, number>; dold?: number }[]; // alla stackar med plats och skick (c: 1 = nytt), det enda som sparas om förrådet. ag = vems stacken är (lager.ts)
+  delar?: Record<string, Record<string, number>>; forlust?: Record<string, number>; andelRest?: Record<string, number>; // det påbörjade per ägare och slag (under 1), det som försvunnit i delar, tills det blir hela saker, och det som blivit över av var och ens del när byn får en andel (steg 2.10.7, lager.ts)
   egna?: Record<string, Record<string, number>>; egnaT?: Record<string, number>; // äldre sparfiler (före v40): vems sakerna i förrådet var
   stubbar?: { x: number; y: number; t: number }[]; // stubbar efter fällda träd, t = när trädet fälldes
   nextStock?: number; fallda?: number;
