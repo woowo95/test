@@ -4,6 +4,7 @@ import { iconImg, tecknet } from '../ikoner';
 import { $, esc, fmtN, prickar } from './hjalp';
 import { outPilesAt, piles, s, ui } from './lage';
 import { posOf } from './manniskor';
+import { sakKey } from './flikar/sak';
 import { renderPanel, selectPerson, visa, ärPersonflik } from './panel';
 import { renderPorts, stopFollow } from './portratt';
 import { TS, app, cam, layout, tileAt, toWorld, view, world, zoomAt } from './scen';
@@ -33,7 +34,7 @@ app.stage.on('pointertap', e => {
   const gx = e.global.x, gy = e.global.y, p = personAt(gx, gy), zi = storeAt(gx, gy), c = tileAt(gx, gy);
   if (p) selectPerson(p.id);
   else if (fireAt(gx, gy)) visa('eld');
-  else if (zi) { ui.lagerNr = zi - 1; visa('lager'); }
+  else if (zi) valjLager(zi - 1, c);
   else if (stationAt(s, c.x, c.y)) { ui.stationId = stationAt(s, c.x, c.y)!.id; visa('station'); }
   else if (outPilesAt(c.x, c.y).length) { ui.hogAt = c; visa('hog'); }
   else if (toaAt(s, c.x, c.y)) { ui.sak = `f:${c.y * W + c.x}`; visa('sak'); }
@@ -46,6 +47,20 @@ app.stage.on('pointertap', e => {
     renderPanel(true); renderPorts();
   }
 });
+// lagret (steg 2.10.17): första trycket visar lagerplatsen, och varje nytt tryck på samma ruta visar nästa sak på rutan, en
+// i taget (stackarna och redskapen, sedan förvaringen som står där), och efter den sista lagerplatsen igen
+let lagerVal: { x: number; y: number; i: number } | undefined;
+function valjLager(zi: number, c: { x: number; y: number }) {
+  const st = stationAt(s, c.x, c.y);
+  const val: (() => void)[] = [
+    ...piles().filter(q => q.x === c.x && q.y === c.y).map(q => () => { ui.sak = sakKey(q); visa('sak'); }),
+    ...st ? [() => { ui.stationId = st.id; visa('station'); }] : [],
+  ];
+  const v = lagerVal, visas = v && v.x === c.x && v.y === c.y && (v.i < 0 ? ui.tab === 'lager' && ui.lagerNr === zi : ui.tab === 'sak' || ui.tab === 'station');
+  const i = visas && v.i + 1 < val.length ? v.i + 1 : -1;
+  lagerVal = { x: c.x, y: c.y, i };
+  if (i < 0) { ui.lagerNr = zi; visa('lager'); } else val[i]();
+}
 // fältet (steg 2.10.14): ett tryck markerar fältet, och ett tryck till på en gröda i det markerade fältet markerar grödan
 function valjFalt(f: Falt, x: number, y: number) {
   const k = faltIndex(f, x, y);

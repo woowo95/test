@@ -365,8 +365,9 @@ SCENARIER.slaktbank = {
     while (!stationerOf(s).some(isKlar) && h < 48) { kor(s, 1, v => { for (const r of living(v)) if (r.task?.act === 'station') byggare = r.task.why ?? ''; }); h++; }
     const st = stationerOf(s)[0], klar = !!st && isKlar(st);
     const logg = s.log.some(l => l.text.includes('första slaktbänk'));
-    const avElden = st ? Math.hypot(st.x - getMap(s.seed).fire.x, st.y - getMap(s.seed).fire.y) : 0;
-    const bredd = STATIONER.slaktbank.w, ingenAnnan = !!st && Array.from({ length: bredd }, (_, i) => !usable(s, st.x + i, st.y) && SIM.stationAt(s, st.x + i, st.y) === st).every(Boolean) && !SIM.stationAt(s, st.x + bredd, st.y);
+    const sz = st ? SIM.storlekAv(st) : { w: 0, h: 0 }, rutor = Array.from({ length: sz.w * sz.h }, (_, i) => ({ x: st!.x + i % sz.w, y: st!.y + Math.floor(i / sz.w) }));
+    const avElden = st ? Math.min(...rutor.map(r => SIM.byAvstand(s, r.x, r.y))) : 0; // till lägret och husen (steg 2.10.16)
+    const bredd = STATIONER.slaktbank.w, ingenAnnan = !!st && rutor.every(r => !usable(s, r.x, r.y) && SIM.stationAt(s, r.x, r.y) === st) && !SIM.stationAt(s, st.x + sz.w, st.y);
     const enda = stationerOf(s).length === 1;
     // en kniv blir bänkens: den är byns och ligger vid bänken
     const p = living(s).find(r => ageOf(r, s.now) >= 18)!;
@@ -398,7 +399,7 @@ SCENARIER.slaktbank = {
     return [
       [`slaktbänken byggs av ${STATION.slaktbankTra} trä på ${h} timmar av den som kan göra en kniv (${byggare})`, klar && enda && ved0 - amountOf(s, 'ved') >= STATION.slaktbankTra - 1e-9 && byggare.includes(STATIONER.slaktbank.bygger)],
       ['den första slaktbänken står i loggen', logg],
-      [`bänken står nära elden (${avElden.toFixed(1)} rutor) och tar ${bredd} rutor, där inget annat får ligga`, avElden >= 1.5 && avElden <= 5 && ingenAnnan],
+      [`bänken står i byns utkant (${avElden.toFixed(1)} rutor från lägret och husen) och tar ${bredd} rutor, där inget annat får ligga`, avElden >= SIM.STATION.utkantMin && avElden <= SIM.STATION.slaktTill && ingenAnnan],
       [`en kniv hör till bänken, är byns och ligger kvar där (${tomma ? 'en ny kniv lades där' : 'en kniv ur förrådet flyttades dit när bänken blev klar'})`, ligger],
       ['den som slaktar utan egen kniv tar bänkens, och den läggs tillbaka vid bänken', tog && tillbaka],
       ['viltet slaktas och fisken rensas vid bänken', vidBank],
