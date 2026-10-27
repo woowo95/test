@@ -47,7 +47,7 @@ När Björn säger att Claude får programmera över natten:
 - Efter varje färdigt steg: testerna som vanligt (snabbkollen, och det stora testet efter ett systems sista steg), commit med versionen, publicera en ny version och uppdatera designdokumentet.
 - Behöver ett steg Björns svar ("Björn avgör" eller något som saknas): hoppa över det tills vidare, skriv frågan i steget och gå vidare. Stanna bara om något allvarligt gör att inget kan göras utan Björn.
 - Utseenden: platshållare under natten; de tre versionerna per sak läggs i bildstilens valdel till morgonen.
-- Balansera inte under natten (det görs i fasens Balans).
+- Balansera inte under natten (det görs i fasens Balans). Undantag (Björn efter v115): i nattkörningen som gör klart fas 2 får fasens Balans (2.12) byggas och balanseras.
 - När Björn säger stopp: gör klart steget som pågår, publicera det och ge en rapport över allt som gjorts: steg och versioner, det som hoppades över och varför, frågorna, bilderna med förslag och testresultaten.
 
 ## Källor
