@@ -1,9 +1,10 @@
 import { campDist } from './plats';
+import { groundOf } from './mark';
 import { Ting, halvKlar, newTing, tingOf } from './agande';
-import { sittAt, stationAt, tillbakaVid } from './stationer';
+import { forvarAt, sittAt, stationAt, stationDef, tillbakaVid } from './stationer';
 import { alive, byId, count, living, stat, ageOf, log } from './folk';
 import { getMap } from './karta';
-import { Act, H, HOUR_S, Person, State, T, Task, W, inMap } from './typer';
+import { Act, H, HOUR, HOUR_S, Person, State, T, Task, W, inMap } from './typer';
 import { bitAt, roofed } from './byggnad';
 import { ACTS, toolRow, usesTool } from './handlingar';
 import { temperature } from './vader';
@@ -238,12 +239,15 @@ function shareOf(ag: Del | undefined, n: number, owner = BYN, s?: State): Del {
 }
 
 // ---------- platser ----------
-// kan något ligga eller byggas på rutan? Inte på vatten, sten, inpå elden, i ett hus eller där en station står (stationer.ts)
+// kan något ligga eller byggas på rutan? Inte på vatten, sten, inpå elden, i ett hus eller där en station står (stationer.ts),
+// utom förvaringen
 export function usable(s: State, x: number, y: number) {
   const m = getMap(s.seed), f = m.fire;
   if (!inMap(x, y)) return false;
   const t = m.tiles[y * W + x];
-  return t !== T.Vatten && t !== T.Sten && Math.max(Math.abs(x - f.x), Math.abs(y - f.y)) > 1 && !bitAt(s, x, y) && !stationAt(s, x, y) && !sittAt(s, x, y);
+  if (t === T.Vatten || t === T.Sten || Math.max(Math.abs(x - f.x), Math.abs(y - f.y)) <= 1 || bitAt(s, x, y) || sittAt(s, x, y)) return false;
+  const st = stationAt(s, x, y);
+  return !st || !!stationDef(st.k)?.forvar; // i en hylla, kista eller ett ställ ligger saker (steg 2.3.6)
 }
 const allUsable = (s: State, z: Zone) => { for (let y = z.y; y < z.y + z.h; y++) for (let x = z.x; x < z.x + z.w; x++) if (!usable(s, x, y)) return false; return true; };
 const overlaps = (a: Zone, b: Zone, gap: number) => a.x < b.x + b.w + gap && b.x < a.x + a.w + gap && a.y < b.y + b.h + gap && b.y < a.y + a.h + gap;
@@ -261,11 +265,14 @@ const key = (x: number, y: number) => y * W + x;
 // där och räknas inte till det som ligger i förrådet eller på marken
 const ligger = (t: Ting) => t.x !== undefined && t.hos === undefined && t.lass === undefined && t.vid === undefined && t.bar === undefined;
 const lying = (s: State) => tingOf(s).filter(ligger);
-// det som ligger i förrådet, per ruta: stackarna och sedan redskapen ts (det sista på en ruta gäller, som i things)
+// det som ligger i förrådet, per ruta: stackarna och sedan redskapen ts (det sista på en ruta gäller, som i things), och hur
+// många redskap som ligger på varje ruta (i ett ställ står flera, steg 2.3.6)
+type Occ = Map<number, Stack> & { redskap: Map<number, number> };
 function occupancy(s: State, ts = tingOf(s)) {
-  const m = new Map<number, Stack>();
+  const m = new Map<number, Stack>() as Occ;
+  m.redskap = new Map();
   for (const a of stacksOf(s)) if (isStored(s, a.x, a.y)) m.set(key(a.x, a.y), a);
-  for (const t of ts) if (ligger(t) && isStored(s, t.x!, t.y!)) m.set(key(t.x!, t.y!), asStack(t));
+  for (const t of ts) if (ligger(t) && isStored(s, t.x!, t.y!)) { const i = key(t.x!, t.y!); m.set(i, asStack(t)); m.redskap.set(i, (m.redskap.get(i) ?? 0) + 1); }
   return m;
 }
 const asStack = (t: Ting): Stack => ({ k: t.k, n: t.c, c: t.c, x: t.x!, y: t.y!, ag: t.agare !== BYN ? { [t.agare]: t.c } : undefined, gor: t.halv?.gor, klar: t.halv && halvKlar(t.halv), id: t.id });
@@ -283,7 +290,15 @@ function placeOn(s: State, ts: Ting[]) {
 // ett redskap som ingen har i handen eller bär, och som inte ligger någonstans (den som höll det släppte det eller dog),
 // läggs i förrådet. Görs sist i varje steg (steg.ts), så att alla redskap har en plats när gränssnittet ritar
 export const placeTools = (s: State) => placeOn(s, tingOf(s));
-const roomIn = (a: Stack | undefined, k: string) => !a || (a.k === k && !isTool(k) && a.n < RUTA[k] - 1e-9);
+// hur mycket av slaget k som ryms på rutan: en stack, och i en hylla eller kista så många stackar som den rymmer (steg 2.3.6)
+export const rymd = (s: State, x: number, y: number, k: string) => { const f = forvarAt(s, x, y); return rutaOf(k) * (f && !f.redskap && !isTool(k) ? f.rymmer : 1); };
+// ryms mer av slaget k på rutan? En stack av samma slag som inte är full, eller ingenting. I ett ställ bara redskap, så
+// många som det rymmer
+function roomIn(s: State, occ: Occ, x: number, y: number, k: string) {
+  const a = occ.get(key(x, y)), f = forvarAt(s, x, y);
+  if (f?.redskap) return isTool(k) && (!a || isTool(a.k)) && (occ.redskap.get(key(x, y)) ?? 0) < f.rymmer;
+  return !a || (a.k === k && !isTool(k) && a.n < rymd(s, x, y, k) - 1e-9);
+}
 // bästa plats i en lagerplats för ett slag: lagerplatserna i prioritetsordning, först en stack av samma slag som inte
 // är full, sedan en tom ruta. minPrio: bara lagerplatser med högre prioritet än så
 function zoneSpot(s: State, k: string, minPrio = -Infinity, occ = occupancy(s)) {
@@ -291,9 +306,9 @@ function zoneSpot(s: State, k: string, minPrio = -Infinity, occ = occupancy(s)) 
   for (const z of zs) {
     let empty: { x: number; y: number } | undefined;
     for (let y = z.y; y < z.y + z.h; y++) for (let x = z.x; x < z.x + z.w; x++) {
-      const a = occ.get(key(x, y));
-      if (a && roomIn(a, k)) return { x, y };
-      if (!a && !empty) empty = { x, y };
+      const a = occ.get(key(x, y)), rum = roomIn(s, occ, x, y, k);
+      if (a && rum) return { x, y };
+      if (!a && rum && !empty) empty = { x, y };
     }
     if (empty) return empty;
   }
@@ -306,15 +321,15 @@ export function dropSpot(s: State, k: string) {
   const sp = besideSpot(s, k, occ);
   return { x: sp.x + 0.5, y: sp.y + 0.5 };
 }
-function besideSpot(s: State, k: string, occ: Map<number, Stack>) {
+function besideSpot(s: State, k: string, occ: Occ) {
   const zs = zonesOf(s).filter(z => z.hus === undefined), base = zs.filter(z => allows(z, k)); // inte bredvid förrådshuset: där står väggarna
   for (const z of base.length ? base : zs) for (const r of ringTiles(s, z)) {
     if (zoneAt(s, r.x, r.y) >= 0) continue;
-    if (roomIn(occ.get(key(r.x, r.y)), k)) return r;
+    if (roomIn(s, occ, r.x, r.y, k)) return r;
   }
   // nödlösning när också ringen är full: längre ut, på en ruta där inget annat ligger (aldrig ovanpå en annan sak)
   const upptagen = new Set<number>();
-  for (const a of things(s)) if (!roomIn(a, k)) upptagen.add(key(a.x, a.y));
+  for (const a of things(s)) if (!(a.k === k && !isTool(k) && a.n < rymd(s, a.x, a.y, k) - 1e-9)) upptagen.add(key(a.x, a.y));
   const z0 = (base.length ? base : zs)[0];
   for (const r of ringTiles(s, z0, LAGER.bredvid + 1, W + H)) if (zoneAt(s, r.x, r.y) < 0 && !upptagen.has(key(r.x, r.y))) return r;
   return { x: zs[0].x, y: zs[0].y }; // hela kartan är full
@@ -338,14 +353,14 @@ function place(s: State, k: string, n: number, c: number, ag?: Del, at?: { x: nu
   if (n <= 1e-12) return;
   const host = SAKER[k]?.i;
   if (host) { hide(s, host, n, at); return; }
-  const st = stacksOf(s), max = rutaOf(k), tot = n; // varje del får v / tot av ägarandelarna ag
+  const st = stacksOf(s), tot = n; // varje del får v / tot av ägarandelarna ag
   // det som ligger byggs en gång; en ny stack hamnar alltid på en tom ruta i förrådet och läggs till efter push
   const occ = occupancy(s);
   for (let g = 0; n > 1e-9 && g < 60; g++) {
-    const sp = at && isStored(s, at.x, at.y) && usable(s, at.x, at.y) && roomIn(occ.get(key(at.x, at.y)), k) ? at : zoneSpot(s, k, -Infinity, occ) ?? besideSpot(s, k, occ);
+    const sp = at && isStored(s, at.x, at.y) && usable(s, at.x, at.y) && roomIn(s, occ, at.x, at.y, k) ? at : zoneSpot(s, k, -Infinity, occ) ?? besideSpot(s, k, occ);
     at = undefined;
-    const a = occ.get(key(sp.x, sp.y));
-    const v = !a ? Math.min(n, max) : roomIn(a, k) ? Math.min(n, max - a.n) : 0;
+    const a = occ.get(key(sp.x, sp.y)), max = rymd(s, sp.x, sp.y, k);
+    const v = !a ? Math.min(n, max) : roomIn(s, occ, sp.x, sp.y, k) ? Math.min(n, max - a.n) : 0;
     if (!v) break;
     if (!a) { const ny: Stack = { k, n: 0, c, x: sp.x, y: sp.y }; st.push(ny); occ.set(key(sp.x, sp.y), ny); addToStack(s, ny, v, c, ag, v / tot); } else addToStack(s, a, v, c, ag, v / tot);
     n -= v;
@@ -473,7 +488,7 @@ export function storeFromSums(s: State) {
 export function pilesOf(s: State): Pile[] {
   const ts = tingOf(s);
   // en stack där bara det gömda (giftsvampen) finns kvar visas inte: den skulle avslöja det gömda som "0 st"
-  return [...stacksOf(s).filter(a => a.n > 1e-6 || a.gor), ...ts.filter(ligger).map(asStack)].map(a => { const zone = zoneAt(s, a.x, a.y); return { ...a, max: rutaOf(a.k), zone, out: zone < 0, stored: isStored(s, a.x, a.y) }; });
+  return [...stacksOf(s).filter(a => a.n > 1e-6 || a.gor), ...ts.filter(ligger).map(asStack)].map(a => { const zone = zoneAt(s, a.x, a.y); return { ...a, max: rymd(s, a.x, a.y, a.k), zone, out: zone < 0, stored: isStored(s, a.x, a.y) }; });
 }
 
 // ---------- slitage ----------
@@ -495,10 +510,10 @@ function wearAt(k: string, mult: number, ligger: boolean, temp: number) {
   const v = (ligger ? Math.max(r, 1 / (LAGER.maxDygn * 24 * LAGER.inne)) : r) * mult; // under tak som längst maxDygn, utan tak kortare
   return SAKER[k]?.haller !== undefined ? v * ruttTemp(temp) : v;
 }
-export const wearMult = (s: State, x: number, y: number) => roofed(s, x, y) ? LAGER.inne : zoneAt(s, x, y) >= 0 ? 1 : LAGER.ute;
+export const wearMult = (s: State, x: number, y: number) => roofed(s, x, y) || forvarAt(s, x, y)?.tak ? LAGER.inne : zoneAt(s, x, y) >= 0 ? 1 : LAGER.ute; // en kista skyddar som ett tak (steg 2.3.6)
 // vad som sliter på en sak just nu och hur mycket av skicket det tar per timme (inforutan, steg 2.3.5). Samma tal som
 // wearStore och wearUsed (steg.ts) räknar med; användningen bara för arbeten som slits per sekund (ACTS.slits)
-export type Slitage = { orsak: 'ruttnar' | 'vadret' | 'lagret' | 'tak' | 'pasig' | 'anvands' | 'inget'; per: number };
+export type Slitage = { orsak: 'ruttnar' | 'vadret' | 'lagret' | 'tak' | 'kista' | 'pasig' | 'anvands' | 'inget'; per: number };
 export function slitageNu(s: State, a: { k: string; x?: number; y?: number }, t?: Ting): Slitage {
   const temp = temperature(s), kl = t?.bar !== undefined ? SAKER[a.k]?.klad : undefined;
   if (kl) return { orsak: 'pasig', per: 1 / (kl.dygn * 24) };
@@ -512,7 +527,7 @@ export function slitageNu(s: State, a: { k: string; x?: number; y?: number }, t?
   const per = wearAt(a.k, a.x !== undefined ? wearMult(s, a.x, a.y!) : 1, true, temp);
   if (per <= 0) return { orsak: 'inget', per: 0 };
   if (SAKER[a.k]?.haller !== undefined) return { orsak: 'ruttnar', per };
-  return { orsak: a.x === undefined ? 'lagret' : roofed(s, a.x, a.y!) ? 'tak' : zoneAt(s, a.x, a.y!) >= 0 ? 'lagret' : 'vadret', per };
+  return { orsak: a.x === undefined ? 'lagret' : forvarAt(s, a.x, a.y!)?.tak ? 'kista' : roofed(s, a.x, a.y!) ? 'tak' : zoneAt(s, a.x, a.y!) >= 0 ? 'lagret' : 'vadret', per };
 }
 export function wearStore(s: State, dtSec: number) {
   const h = dtSec / HOUR_S, temp = temperature(s);
@@ -545,6 +560,20 @@ export function wearStore(s: State, dtSec: number) {
   tidy(s);
 }
 
+// ---------- saker på golvet (steg 2.3.6) ----------
+// Lösa saker och högar på marken (inte i en hylla, kista eller ett ställ) går att gå över, men långsamt (VAG.fartSaker i
+// vag.ts), så att folk hellre går runt. Rutorna räknas om en gång i timmen, i början av steget (steg.ts), så att alla lägen
+// räknar likadant
+const golvCache = new WeakMap<State, { h: number; g: object }>();
+export function sakerPaGolvet(s: State) {
+  const h = Math.floor(s.now / HOUR), g = groundOf(s), c = golvCache.get(s);
+  if (c && c.h === h && c.g === g && g.lost) return;
+  const lost = new Uint8Array(W * H);
+  for (const a of things(s)) if ((a.n > 1e-6 || a.gor) && inMap(a.x, a.y) && !stationAt(s, a.x, a.y)) lost[a.y * W + a.x] = 1;
+  g.lost = lost;
+  golvCache.set(s, { h, g });
+}
+
 // ---------- lagerplatserna ----------
 // en gång i timmen: större när något inte får plats, en ny lagerplats när de inte kan växa mer, mindre när de står tomma
 // det i förrådet som inte fått plats i en lagerplats utan ligger bredvid
@@ -569,7 +598,8 @@ export function tidyStore(s: State) {
     if (z.hus !== undefined || have <= LAGER.krympMin || have - n <= have / LAGER.krympDel) continue;
     const opts: Zone[] = [{ ...z, w: z.w - 1 }, { ...z, h: z.h - 1 }, { ...z, x: z.x + 1, w: z.w - 1 }, { ...z, y: z.y + 1, h: z.h - 1 }].filter(c => c.w >= LAGER.minSida && c.h >= LAGER.minSida);
     const cost = (c: Zone) => all.filter(a => inZone(z, a.x, a.y) && !inZone(c, a.x, a.y)).length;
-    const best = opts.sort((a, b) => cost(a) - cost(b))[0];
+    const mobel = (c: Zone) => { for (let y = z.y; y < z.y + z.h; y++) for (let x = z.x; x < z.x + z.w; x++) if (!inZone(c, x, y) && stationAt(s, x, y)) return true; return false; }; // hyllorna står kvar i lagret
+    const best = opts.filter(c => !mobel(c)).sort((a, b) => cost(a) - cost(b))[0];
     if (best && n + 1 <= best.w * best.h) zs[i] = best; // det som hamnar utanför bärs in igen
   }
   changed(s);
@@ -631,7 +661,7 @@ function storeTings(s: State, t: Task, at?: { x: number; y: number }) {
     const g = tingOf(s).find(q => q.id === id);
     if (!g) continue;
     g.lass = undefined;
-    const occ = occupancy(s), sp = at && isStored(s, at.x, at.y) && usable(s, at.x, at.y) && !occ.has(key(at.x, at.y)) ? at : zoneSpot(s, g.k, -Infinity, occ) ?? besideSpot(s, g.k, occ);
+    const occ = occupancy(s), sp = at && isStored(s, at.x, at.y) && usable(s, at.x, at.y) && roomIn(s, occ, at.x, at.y, g.k) ? at : zoneSpot(s, g.k, -Infinity, occ) ?? besideSpot(s, g.k, occ);
     g.x = sp.x; g.y = sp.y; at = undefined;
   }
   t.ting = undefined;

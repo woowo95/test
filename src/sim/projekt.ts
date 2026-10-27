@@ -6,7 +6,7 @@ import { SAKER } from './saker';
 import { ARBETE, grundvarde, varuVarde } from './varde';
 import { balans } from './balans';
 import { GORS, REDSKAP, harAv, makeTask, villAv, wantsRope, wantsTool } from './redskap';
-import { STATIONER, STATION_LIST, StationDef, StationSlag, TILLBEHOR, TILLBEHOR_LIST, TillbehorDef, TillbehorSlag, bordBrist, harStation, kanBygga, kanGoraTillbehor, stationSpot, tillbehorSpot, tillbehorStationer, utanTillbehor } from './stationer';
+import { STATIONER, STATION_LIST, StationDef, StationSlag, TILLBEHOR, TILLBEHOR_LIST, TillbehorDef, TillbehorSlag, bordBrist, forvarBrist, harStation, kanBygga, kanGoraTillbehor, stationSpot, tillbehorSpot, tillbehorStationer, utanTillbehor } from './stationer';
 import { utanBadd } from './byggnader';
 import { DORRAR, DORR_LIST, DorrDef, DorrSlag } from './byggnad';
 import { dorrOppningar, dorrSpot, kanHangaDorr, utanDorr } from './bygg';
@@ -28,6 +28,7 @@ export const PROJEKT_TAL = balans('projekt', {
   halmbadd: 0.6, // ... halmbäddarna när alla som sover under tak saknar en
   skinnfall: 0.5, // ... skinnfällarna när alla halmbäddar saknar en
   bord: 0.5, bord2: 0.5, bord3: 0.5, // ... borden när ingen har en plats vid ett bord (steg 2.2.15)
+  hylla: 0.4, kista: 0.3, stall: 0.3, // ... förvaringen när golvet i lagren är fullt av högar och redskap (steg 2.3.6)
   skinndorr: 0.6, // ... skinndörrarna när alla hus där man bor eller umgås har en öppen dörröppning (steg 2.2.16)
   rep: 0.5, // ... repet när förrådet är tomt
   minKostnad: 0.25, // kostnaden räknas aldrig under så här många arbetstimmar
@@ -42,6 +43,7 @@ export const PROJEKT_BEHOV = {
   vila: { namn: 'Bättre sömn', ikon: 'halmbadd' },
   varme: { namn: 'Värme i sömnen', ikon: 'skinnfall' },
   maltid: { namn: 'Måltider vid bordet', ikon: 'bord' },
+  forvar: { namn: 'Ordning i lagret', ikon: 'hylla' },
   klader: { namn: 'Kläder mot kylan', ikon: 'skinnrock' },
   borda: { namn: 'Bära mer hem', ikon: 'balte' },
 } as const;
@@ -78,8 +80,8 @@ const redskap = (g: string): ProjektDef => {
 const station = (k: StationSlag): ProjektDef => {
   const d: StationDef = STATIONER[k];
   return {
-    namn: d.namn, ikon: d.ikon, behov: k === 'slaktbank' ? 'slakt' : d.sover ? 'vila' : d.platser ? 'maltid' : 'hantverk', vikt: (PROJEKT_TAL as Record<string, number>)[k] ?? 1, act: 'station', slag: k,
-    brist: s => d.sover ? (living(s).length ? utanBadd(s) / living(s).length : 0) : d.platser ? bordBrist(s, k) : harStation(s, k) ? 0 : 1,
+    namn: d.namn, ikon: d.ikon, behov: k === 'slaktbank' ? 'slakt' : d.sover ? 'vila' : d.platser ? 'maltid' : d.forvar ? 'forvar' : 'hantverk', vikt: (PROJEKT_TAL as Record<string, number>)[k] ?? 1, act: 'station', slag: k,
+    brist: s => d.sover ? (living(s).length ? utanBadd(s) / living(s).length : 0) : d.platser ? bordBrist(s, k) : d.forvar ? forvarBrist(s, k) : harStation(s, k) ? 0 : 1,
     kostnad: () => varuVarde(d.av, d.min / 60 * ARBETE),
     kan: (s, p, f) => !f.kyla && kanBygga(s, p, k),
     uppgift: s => { const sp = stationSpot(s, k); return sp ? { act: 'station', text: d.bygger, min: d.min, tool: k, spot: sp } : undefined; },

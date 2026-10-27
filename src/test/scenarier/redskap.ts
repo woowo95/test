@@ -382,3 +382,52 @@ SCENARIER.sak = {
     ];
   },
 };
+
+SCENARIER.forvaring = {
+  text: 'Förvaring (steg 2.3.6): hyllan, kistan och redskapsstället står i lagret, så att flera högar och redskap ryms på en ruta. De går inte att gå igenom, och lösa saker på golvet går man långsamt över',
+  kor: () => {
+    const { STATION, PROJEKT, LAGER, VAG, stationerOf, isKlar, rymd, groundOf, findPath, speedAt, wearMult, slitageNu, zonesOf, inZone, placeTools, stationAt, newTing } = SIM;
+    // en by där alla kan bygga förvaring, med lagret fullt av grenar och gott om trä och rep
+    const s = createState(1, START); klockan(s); tandEld(s);
+    for (const r of s.people) r.tek = { ...r.tek, hylla: 1 };
+    setMat(s, { bar: 300 }); setAmount(s, 'ved', 40); setAmount(s, 'rep', 6); setAmount(s, 'grenar', SIM.rutaOf('grenar') * 8);
+    const brist0 = PROJEKT.hylla!.brist(s);
+    let h = 0;
+    const hyllan = () => stationerOf(s).find(t => t.k === 'hylla' && isKlar(t));
+    while (!hyllan() && h < 96) { kor(s, 1); h++; }
+    const hy = hyllan(), z = hy && zonesOf(s).find(q => inZone(q, hy.x, hy.y));
+    const ryms = hy ? rymd(s, hy.x, hy.y, 'grenar') : 0;
+    // mer grenar: hyllans ruta fylls mer än en vanlig ruta
+    setAmount(s, 'grenar', SIM.amountOf(s, 'grenar') + SIM.rutaOf('grenar') * 4);
+    const pa = hy ? pilesOf(s).find(a => a.x === hy.x && a.y === hy.y) : undefined;
+    // hyllan går inte att gå igenom: vägen förbi den går runt, och alla rutor i lagret nås fortfarande från elden
+    const g = groundOf(s), f = getMap(s.seed).fire, i = hy ? hy.y * W + hy.x : -1;
+    const forbi = hy ? findPath(g, hy.x - 0.5, hy.y + 0.5, hy.x + 1.5, hy.y + 0.5) : null;
+    let natt = 0, alla = 0;
+    if (z) for (let y = z.y; y < z.y + z.h; y++) for (let x = z.x; x < z.x + z.w; x++) { alla++; if (findPath(g, f.x + 0.5, f.y + 0.5, x + 0.5, y + 0.5)) natt++; }
+    // lösa saker på golvet: halva farten
+    const los = pilesOf(s).find(a => !stationAt(s, a.x, a.y) && a.n > 0), j = los ? los.y * W + los.x : -1;
+    SIM.sakerPaGolvet(s);
+    const med = j >= 0 ? speedAt(g, j) : 0, lost = g.lost!; g.lost = undefined; const utan = j >= 0 ? speedAt(g, j) : 0; g.lost = lost;
+    // en kista på en full hög: det som ligger i den slits som under tak
+    const ki = medBank(s, 'kista');
+    const kOrsak = slitageNu(s, { k: 'grenar', x: ki.x, y: ki.y }).orsak, kMult = wearMult(s, ki.x, ki.y);
+    // ett ställ på ett redskap: flera redskap står där
+    for (let n = 0; n < 3; n++) { newTing(s, 'yxa', 1, SIM.BYN); }
+    placeTools(s);
+    const st = medBank(s, 'stall');
+    for (let n = 0; n < 3; n++) { newTing(s, 'fiskespjut', 1, SIM.BYN); }
+    placeTools(s);
+    const iStall = tingOf(s).filter(t => t.x === st.x && t.y === st.y && t.hos === undefined && t.lass === undefined).length;
+    return [
+      [`byn vill ha en hylla när golvet i lagret är fullt av högar (brist ${brist0.toFixed(2)})`, brist0 > 0.5],
+      [`hyllan byggs på ${h} timmar, i en lagerplats`, !!hy && !!z],
+      [`på hyllans ruta ryms ${STATION.hyllaRymmer} högar (${ryms} grenar), och där ligger nu ${pa ? Math.round(pa.n) : 0}`, ryms === SIM.rutaOf('grenar') * STATION.hyllaRymmer && !!pa && pa.n > SIM.rutaOf('grenar') + 1e-6],
+      [`hyllan går inte att gå igenom (vägen förbi: ${forbi ? forbi.length + ' rutor' : 'ingen'})`, g.hinder?.[i] === 1 && !!forbi && !forbi.includes(i)],
+      [`alla rutor i lagret nås fortfarande (${natt} av ${alla})`, alla > 0 && natt === alla],
+      [`över lösa saker på golvet går man med ${VAG.fartSaker} av farten (${med.toFixed(2)} mot ${utan.toFixed(2)})`, j >= 0 && Math.abs(med - utan * VAG.fartSaker) < 1e-9],
+      [`i kistan slits det som under tak (${kOrsak}, ${kMult} gånger)`, kOrsak === 'kista' && kMult === LAGER.inne],
+      [`i stället står flera redskap på samma ruta (${iStall} av ${STATION.stallRymmer})`, iStall >= 2 && iStall <= STATION.stallRymmer],
+    ];
+  },
+};

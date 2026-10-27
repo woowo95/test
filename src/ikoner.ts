@@ -48,6 +48,13 @@ const PAL: Record<string, Record<string, string>> = {
   bord_karta: { w: '#5a3a1e', W: '#8b5a2b', L: '#b07a45', H: '#d0a26a', x: 'rgba(0,0,0,0.30)' },
   bord2_karta: { w: '#5a3a1e', W: '#8b5a2b', L: '#b07a45', H: '#d0a26a', x: 'rgba(0,0,0,0.30)' },
   bord3_karta: { w: '#5a3a1e', W: '#8b5a2b', L: '#b07a45', H: '#d0a26a', x: 'rgba(0,0,0,0.30)' },
+  // förvaringen (steg 2.3.6): platshållare tills Björn valt
+  hylla: { w: '#5a3a1e', W: '#8b5a2b', L: '#b07a45', y: '#c8ac5c', g: '#8a8a80', r: '#c9a86a' },
+  hylla_karta: { w: '#4a3018', W: '#8b5a2b', L: '#b07a45', H: '#d0a26a', y: '#c8ac5c', g: '#8a8a80', r: '#c9a86a', x: 'rgba(0,0,0,0.30)' },
+  kista: { w: '#5a3a1e', W: '#8b5a2b', L: '#b07a45', H: '#d0a26a', g: '#6a6a60' },
+  kista_karta: { w: '#4a3018', W: '#8b5a2b', L: '#b07a45', H: '#d0a26a', g: '#6a6a60', x: 'rgba(0,0,0,0.30)' },
+  stall: { w: '#5a3a1e', W: '#8b5a2b', L: '#b07a45', g: '#8a8a80', G: '#b4b4aa' },
+  stall_karta: { w: '#4a3018', W: '#8b5a2b', L: '#b07a45', g: '#8a8a80', G: '#b4b4aa', x: 'rgba(0,0,0,0.30)' },
   // skinnfällen i halmbädden (steg 2.2.14): platshållare tills Björn valt
   skinnfall: { b: '#8a6440', B: '#b48a5e', d: '#5e4026', w: '#d8c8a8' },
   skinnfall_karta: { b: '#8a6440', B: '#b48a5e', d: '#5e4026', w: '#d8c8a8' },
@@ -391,6 +398,78 @@ const PIX: Record<string, string[]> = {
     'BYyYyyYyYyyYyYtB',
     'BtyYtYytYyYtyYyB',
     'bBBBBBBBBBBBBBBb',
+  ],
+  // hyllan i listorna: en ram av trä med två hyllplan och saker på (platshållare)
+  hylla: [
+    'W......W',
+    'WyyrgryW',
+    'WLLLLLLW',
+    'WgyyrygW',
+    'WLLLLLLW',
+    'WryygyrW',
+    'WLLLLLLW',
+    'w......w',
+  ],
+  // hyllan på kartan, en ruta: sticker upp över rutan ovanför, med tre hyllplan (platshållare)
+  hylla_karta: [
+    'WHHHHHHW',
+    'WyrgyryW',
+    'WLLLLLLW',
+    'WgyyrygW',
+    'WLLLLLLW',
+    'WryygyrW',
+    'WLLLLLLW',
+    'WyrgyyrW',
+    'WLLLLLLW',
+    'W......W',
+    'w......w',
+    'xxxxxxxx',
+  ],
+  // kistan i listorna: en låda av trä med lock och beslag (platshållare)
+  kista: [
+    '........',
+    '.HHHHHH.',
+    'LLLLLLLL',
+    'WWWggWWW',
+    'WLLggLLW',
+    'WLLLLLLW',
+    'wwwwwwww',
+    '........',
+  ],
+  // kistan på kartan, en ruta (platshållare)
+  kista_karta: [
+    '.HHHHHH.',
+    'HLLLLLLH',
+    'LLLLLLLL',
+    'WWWggWWW',
+    'WLLggLLW',
+    'WLLLLLLW',
+    'wwwwwwww',
+    'xxxxxxxx',
+  ],
+  // redskapsstället i listorna: en ställning med ett spjut och en yxa (platshållare)
+  stall: [
+    '..G..g..',
+    '.gGg.g..',
+    'WWGWWgWW',
+    '..L..L..',
+    '..L..L..',
+    'WWLWWLWW',
+    '..L..L..',
+    '.w....w.',
+  ],
+  // stället på kartan, en ruta: sticker upp över rutan ovanför (platshållare)
+  stall_karta: [
+    '.G..g.G.',
+    'gGg.g.G.',
+    'WWWWWWWW',
+    '.L.L.L..',
+    '.L.L.L..',
+    '.L.L.L..',
+    'WWWWWWWW',
+    '.L.L.L..',
+    'w......w',
+    'xxxxxxxx',
   ],
   // skinnfällen i listorna: ett hopvikt täcke av skinn med pälskant (platshållare)
   skinnfall: [

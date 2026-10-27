@@ -17,16 +17,20 @@ export const VAG = balans('vag', {
   stigTacke: 0.55,
   trampHog: 0.75, // högt gräs trampas ner direkt till så här högt ...
   trampPlanta: 4, // ... och en liten planta (under skog) trampas ihjäl så här många gånger fortare än gräset nöts
+  fartSaker: 0.5, // fart (gånger farten på marken) över lösa saker och högar på golvet (steg 2.3.6)
 });
 
-export interface Ground { tiles: Uint8Array; cover: Float32Array; trees: Float32Array; solid?: Uint8Array; built?: Uint8Array } // solid = väggar, built = byggda eller planerade rutor
+// solid = väggar, built = byggda eller planerade rutor, hinder = hyllor, kistor och ställ (går inte att gå igenom, stationer.ts),
+// lost = rutor med lösa saker på golvet (långsamma, lager.ts). Steg 2.3.6
+export interface Ground { tiles: Uint8Array; cover: Float32Array; trees: Float32Array; solid?: Uint8Array; built?: Uint8Array; hinder?: Uint8Array; lost?: Uint8Array }
 export const HIGH = 0.9, BAR = 0.3; // högt gräs över HIGH, bar jord under BAR
 export const FOREST = 0.5; // träd från detta värde räknas som skog
 export const isSoil = (t: number) => t === T.Gras || t === T.Skog;
 const SQ2 = Math.SQRT2;
 
-// fart på en ruta: skog långsammast, högt gräs medel, kort gräs och stig snabbast
-export function speedAt(g: Ground, i: number) {
+// fart på en ruta: skog långsammast, högt gräs medel, kort gräs och stig snabbast. Över saker på golvet långsammare
+export const speedAt = (g: Ground, i: number) => markFart(g, i) * (g.lost?.[i] ? VAG.fartSaker : 1);
+function markFart(g: Ground, i: number) {
   const t = g.tiles[i];
   if (!isSoil(t)) return VAG.fartMark[t];
   const tr = g.trees[i];
@@ -37,8 +41,8 @@ export function speedAt(g: Ground, i: number) {
 // kostnad att gå in på en ruta: man följer hellre en upptrampad stig än går över orörd mark
 const stepCost = (g: Ground, i: number) => (isSoil(g.tiles[i]) ? VAG.stigBas + VAG.stigTacke * g.cover[i] : 1) / speedAt(g, i);
 
-// vatten och väggar går man inte genom
-const stop = (g: Ground, i: number) => g.tiles[i] === T.Vatten || g.solid?.[i] === 1;
+// vatten, väggar och hyllor går man inte genom
+const stop = (g: Ground, i: number) => g.tiles[i] === T.Vatten || g.solid?.[i] === 1 || g.hinder?.[i] === 1;
 
 class Heap {
   private ids: number[] = []; private keys: number[] = [];
@@ -93,13 +97,13 @@ function nySokning() {
   if (++gen === 0xffffffff) { sedd.fill(0); stangd.fill(0); kostad.fill(0); gen = 1; }
   heap.clear();
 }
-// A* med 8 riktningar. Inte över vatten eller väggar och inte snett förbi en hörna. Start och mål får vara vatten.
+// A* med 8 riktningar. Inte över vatten, väggar eller hyllor (målet får vara en hylla) och inte snett förbi en hörna. Start och mål får vara vatten.
 // Ger rutorna mellan start och mål (utan båda), eller null om det inte finns någon väg.
 export function findPath(g: Ground, x0: number, y0: number, x1: number, y1: number): number[] | null {
   const sx = clampI(x0, W), sy = clampI(y0, H), gx = clampI(x1, W), gy = clampI(y1, H);
   const start = sy * W + sx, goal = gy * W + gx;
   if (start === goal) return [];
-  const tiles = g.tiles, solid = g.solid, aW = 2 * W + 1;
+  const tiles = g.tiles, solid = g.solid, hinder = g.hinder, aW = 2 * W + 1;
   nySokning();
   sedd[start] = gen; gs[start] = 0; came[start] = -1; heap.push(start, 0);
   while (heap.size) {
@@ -113,7 +117,7 @@ export function findPath(g: Ground, x0: number, y0: number, x1: number, y1: numb
       const nx = x + dx, ny = y + dy;
       if (!inMap(nx, ny)) continue;
       const ni = ny * W + nx;
-      if (stangd[ni] === gen || ((tiles[ni] === T.Vatten || solid?.[ni]) && ni !== goal)) continue;
+      if (stangd[ni] === gen || ((tiles[ni] === T.Vatten || solid?.[ni] || hinder?.[ni]) && ni !== goal)) continue;
       if (dx && dy && (stop(g, y * W + nx) || stop(g, ny * W + x))) continue;
       if (kostad[ni] !== gen) { kostad[ni] = gen; kost[ni] = tiles[ni] === T.Vatten ? 1 : stepCost(g, ni); }
       const ng = gs[i] + (dx && dy ? SQ2 : 1) * kost[ni];

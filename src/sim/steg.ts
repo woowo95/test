@@ -1,7 +1,7 @@
 import { tidyTools } from './agande';
 import { chopStock, fellTree, rotStumps, stocks } from './skog';
 import { needLadder, noticeTheft, stole } from './behov';
-import { avbryt, capacity, dropSpot, fetchSpot, homeKind, isCarrying, load, pickUp, placeTools, storeLoad, tidyStore, wearStore } from './lager';
+import { avbryt, capacity, dropSpot, fetchSpot, homeKind, isCarrying, load, pickUp, placeTools, sakerPaGolvet, storeLoad, tidyStore, wearStore } from './lager';
 import { DJURARTER, KANIN, REDSKAP, bearbeta, twineRope, wearUsed } from './redskap';
 import { GOR_ACTS, finishHalf, startWork, stepPaborjat, workHalf } from './paborjat';
 import { thinkWhileWorking } from './teknik';
@@ -114,6 +114,7 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
   }
   const ppl = living(s);
   gridOf(s); // väggarna och rummen, så att vägsökningen vet var väggarna står
+  stationRutor(s); sakerPaGolvet(s); // ... och var hyllorna står och sakerna ligger på golvet (steg 2.3.6)
   djurSteg(s); // kaningrupperna väljer plats när deras tid börjar
   // förråd: ruttning och ved
   wearStore(s, dtSec); // slitage per slag, fortare utanför lagret
@@ -321,7 +322,7 @@ function pathFor(s: State, g: ReturnType<typeof groundOf>, x0: number, y0: numbe
   if (c?.key !== key) vagar.set(s, c = { key, m: new Map() });
   const k = tileOf(x0, y0) * W * H + tileOf(x1, y1);
   let v = c.m.get(k);
-  if (v === undefined) c.m.set(k, v = findPath(g, x0, y0, x1, y1));
+  if (v === undefined) { stationRutor(s); c.m.set(k, v = findPath(g, x0, y0, x1, y1)); } // en hylla byggd i det här steget räknas med
   return v ? v.slice() : null; // null = ingen väg dit
 }
 // att gå mot målet ruta för ruta runt vatten, gärna längs stigar. Ger tiden det tog och om man kom fram

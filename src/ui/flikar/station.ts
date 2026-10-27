@@ -1,5 +1,6 @@
-import { ACTS, DJURARTER, MIN, bordPlatser, living, TEKNIK, TILLBEHOR_LIST, byId, isKlar, sakNamn, slagIkon, stationById, stationDef, tillbehorDef, tingOf, timeLabel } from '../../sim';
+import { ACTS, DJURARTER, MIN, bordPlatser, pilesOf, living, TEKNIK, TILLBEHOR_LIST, byId, isKlar, sakNamn, slagIkon, stationById, stationDef, tillbehorDef, tingOf, timeLabel, isTool } from '../../sim';
 import { iconImg } from '../../ikoner';
+import { sakAttr } from './sak';
 import { condBar, esc, fmtN, pLink } from '../hjalp';
 import { s, ui } from '../lage';
 import type { Flik } from '../panel';
@@ -40,6 +41,10 @@ export const station: Flik = {
     // platserna runt ett bord (steg 2.2.15): en stubbe per plats, och den som sitter där
     const sitter = (x: number, y: number) => living(s).find(p => p.task?.phase === 'do' && Math.floor(p.task.tx) === x && Math.floor(p.task.ty) === y && Math.floor(p.x) === x && Math.floor(p.y) === y);
     const stubbar = klar ? bordPlatser(st).map(q => { const p = sitter(q.x, q.y); return p ? `<span ${tip(`${p.name}: ${ACTS[p.task!.act].namn.toLowerCase()}`)}>${iconImg('sittplats')}${pLink(p)}</span>` : `<span class="muted" ${tip('Ledig plats')}>${iconImg('sittplats')}</span>`; }).join(' ') : '';
+    // förvaringen (steg 2.3.6): det som ligger i den och hur mycket den rymmer
+    const har = d.forvar ? pilesOf(s).filter(a => a.x === st.x && a.y === st.y) : [];
+    const forvar = d.forvar ? (d.forvar.redskap ? `Rymmer ${d.forvar.rymmer} redskap eller vapen.` : `Rymmer ${d.forvar.rymmer} högar av ett slag${d.forvar.tak ? ', och det som ligger i den slits som under tak' : ''}.`) : '';
+    const inne = har.map(a => `<span class="tryck" ${sakAttr(a)} ${tip(`${sakNamn(a.k)}: ${fmtN(a.n)} av ${fmtN(a.max)}`)}>${iconImg(a.k)}${isTool(a.k) ? '' : fmtN(a.n)}</span>`).join(' ');
     const av = Object.entries(d.av).map(([k, n]) => `<span ${tip(`${fmtN(n)} ${sakNamn(k).toLowerCase()}`)}>${iconImg(k)}${fmtN(n)}</span>`).join(' ');
     return `
     <div class="phead"><div><h2>${iconImg(d.ikon, 20)} ${esc(d.namn)}</h2><p class="muted">${status} ${st.inne ? 'Står inne.' : d.inne ? 'Står ute, men bärs in när ett hus har plats.' : 'Står ute.'}</p>${vem.length ? `<p class="muted">Byggd av ${vem.map(p => pLink(p)).join(', ')}.</p>` : ''}</div></div>
@@ -47,6 +52,7 @@ export const station: Flik = {
     ${d.sover ? `<h3>Sovplats</h3><p class="muted">En sovplats. Den som sover här vilar upp sig fortare.</p>` : ''}
     ${d.platser ? `<h3>Platser</h3><p ${tip('Här äter man tillsammans och blir glad av det, och här samtalar man')}>${stubbar || `<span class="muted">${bordPlatser(st).length} stubbar när bordet är klart</span>`}</p>` : ''}
     ${tb ? `<h3>Tillbehör</h3><dl class="kv">${tb}</dl>` : ''}
+    ${d.forvar ? `<h3>Förvaring</h3><p>${inne || '<span class="muted">tom</span>'}</p><p class="muted">${forvar}</p>` : ''}
     ${platser ? `<h3>Redskap</h3><dl class="kv">${platser}</dl>` : ''}
     <h3>Material</h3><p ${tip(`${d.min} minuters arbete. Kräver ${d.tek.length > 1 ? 'någon av teknikerna' : 'tekniken'} ${d.tek.map(k => TEKNIK.find(q => q.id === k)?.namn ?? k).join(' eller ')}`)}>${av} <span class="muted">· ${d.min} min</span></p>`;
   },

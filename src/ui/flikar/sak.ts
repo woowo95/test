@@ -12,7 +12,8 @@ export const sakKey = (a: { id?: number; x?: number; y?: number; k: string }) =>
 export const sakAttr = (a: { id?: number; x?: number; y?: number; k: string }) => `data-sak="${sakKey(a)}"`;
 
 const ORSAK: Record<Slitage['orsak'], string> = {
-  ruttnar: 'Ruttnar', vadret: 'Ligger ute i vädret', lagret: 'Slits med tiden', tak: 'Ligger under tak', pasig: 'Slits av att bäras på kroppen',
+  ruttnar: 'Ruttnar', vadret: 'Ligger ute i vädret', lagret: 'Slits med tiden', tak: 'Ligger under tak',
+  kista: 'Ligger i en kista', pasig: 'Slits av att bäras på kroppen',
   anvands: 'Slits när den används', inget: 'Slits inte',
 };
 function hitta(): { t?: Ting; p?: Pile } {
