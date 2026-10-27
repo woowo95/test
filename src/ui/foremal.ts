@@ -1,4 +1,4 @@
-import { Act, DJUR, W, bordPlatser, sjoarna, stationById, GORS, MATERIAL, Pile, STATION, STUBBE_LIV, Station, bitAt, bitsOf, clamp, dorrDef, condOf, emberOn, fireHeat, getMap, heatRadius, isKlar, living, stationDef, stationKlar, stationerOf, storlekAv, tillbehorDef, tingOf, vidStation, zonesOf } from '../sim';
+import { Act, DJUR, W, bordPlatser, sjoarna, stationById, GORS, MATERIAL, Pile, STATION, STUBBE_LIV, Station, bitAt, bitsOf, clamp, dorrDef, condOf, emberOn, fireHeat, getMap, grillVara, heatRadius, isKlar, living, stationDef, stationKlar, stationerOf, storlekAv, tillbehorDef, tingOf, vidStation, zonesOf } from '../sim';
 import { iconCanvas } from '../ikoner';
 import { ritaHus } from './husbild';
 import { outPilesAt, piles, s, ui } from './lage';
@@ -34,6 +34,7 @@ function framsteg(cx: number, cy: number, p: number) {
 const YTA: Record<string, { x: number; y: number; vid?: { x: number; y: number } }> = {
   slaktbank: { x: 16, y: 0, vid: { x: 30, y: -1 } },
   flatarbank: { x: 4, y: 10, vid: { x: 22, y: 9 } },
+  grill: { x: 20, y: 0 }, // maten på spettet, till höger om elden
 };
 // det som görs vid en station syns på den (steg 2.2.12): sakens egen symbol medan någon arbetar där. Viltet och fisken ur
 // djurregistret (DJUR), redskapen ur GORS, repet när någon tvinnar och skinnet när någon syr (steg 2.3.2). Bara utseende:
@@ -42,7 +43,7 @@ const PA_BANKEN: Partial<Record<Act, string>> = { ...Object.fromEntries(Object.v
 function paBanken(st: Station) {
   const d = stationDef(st.k), at = vidStation(st);
   const p = d && living(s).find(q => q.task && d.gor.includes(q.task.act) && Math.hypot(q.x - at.x, q.y - at.y) < STATION.vidBank);
-  return p?.task ? PA_BANKEN[p.task.act] : undefined;
+  return p?.task ? p.task.act === 'grilla' ? grillVara(s)?.ra : PA_BANKEN[p.task.act] : undefined; // på spettet: det som grillas
 }
 // en vit kant runt rutorna: där en ruta inte har en granne i mängden
 function kant(rutor: number[]) {

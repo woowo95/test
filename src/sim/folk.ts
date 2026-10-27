@@ -89,6 +89,7 @@ export const ALDER = balans('alder', {
   skickFran: 8, // en nykomlings färdigheter räknas från detta (de växer med åren över det)
   matBarn: 10, // under detta äter man mindre och blir hungrig långsammare
   rensar: 10, // från detta rensar man fisk
+  grillar: 10, // ... och grillar mat (steg 2.8.1)
   // ungdom
   ansvar: 12, // från detta tänder man elden, hämtar kol och bär in saker i mörkret
   bygger: 12, // från detta hjälper man till att bygga (golv, lagning och att fälla träd); väggar byggs först som vuxen
@@ -170,9 +171,11 @@ export function stat(p: Person, k: Stat, now: number) {
   return p.pot[k] * g;
 }
 
-// färdigheterna en nykomling har efter sin ålder (en dragning ur 'folk' per färdighet, i SKILLS ordning)
+// färdigheterna en nykomling har efter sin ålder (en dragning ur 'folk' per färdighet, i SKILLS ordning). Matlagningen
+// (steg 2.8.1) är snittet av samling och eldkonst, utan en egen dragning, så att nykomlingarna blev som förut
 export function startSkills(s: State, p: Person, age: number) {
-  for (const k of SKILLS) p.skill[k] = clamp((age - ALDER.skickFran) * 0.25 * (0.4 + rnd(s, 'folk')) * (p.pot.intelligens / 12), 0, 12);
+  for (const k of SKILLS) if (k !== 'matlagning') p.skill[k] = clamp((age - ALDER.skickFran) * 0.25 * (0.4 + rnd(s, 'folk')) * (p.pot.intelligens / 12), 0, 12);
+  p.skill.matlagning = (p.skill.samla + p.skill.elda) / 2;
 }
 
 // övning: färdigheten k ökar med vinst gånger det som återstår till den mjuka gränsen (21), högst taket (20)

@@ -101,6 +101,9 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
   [7, 'v80: kroppen (steg 2.5.1). Alla har allt sitt blod och inga skador', s => {
     for (const p of s.people) if (p.blod === undefined) p.blod = 1;
   }],
+  [8, 'v87: matlagningen (steg 2.8.1). Färdigheten Matlagning är snittet av samling och eldkonst', s => {
+    for (const p of s.people) if (p.skill.matlagning === undefined) p.skill.matlagning = (p.skill.samla + p.skill.elda) / 2;
+  }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];
 export function migrate(s: State) { return simulera(() => uppgradera(s)); }

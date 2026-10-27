@@ -102,7 +102,7 @@ SCENARIER.familjehus = {
     const byns = !!h && h.ag === undefined;
     // vanliga byar: familjehus byggs när par fått barn och har råd
     let planerat = 0, dygn = 0;
-    for (const seed of [1, 2, 3]) {
+    for (const seed of [6, 4, 2]) {
       const v = createState(seed, START);
       for (dygn = 1; dygn <= 40 && !planerat; dygn++) { kor(v, 24); planerat = v.stat?.planerat_familjehus ?? 0; }
       if (planerat) break;

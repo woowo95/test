@@ -106,7 +106,7 @@ SCENARIER.abborre = {
         abborreSedd = Math.max(abborreSedd, amountOf(v, 'abborre'));
       }
       fangat = v.stat?.fisk ?? 0; rensat = v.stat?.rensat ?? 0;
-      if (fangat > 0) break;
+      if (fangat >= 3) break; // en enstaka fisk säger inget om rensningen
     }
     return [
       ['abborren rensas med händerna, utan kniv', kan],
@@ -201,7 +201,7 @@ SCENARIER.rotter = {
     const andel = (vecka: number) => {
       const s = createState(7, START);
       s.kal = nyKalender(s.now, (vecka + 1) % 4);
-      setMat(s, { kott: 300 }); // kött äts före bär och rötter, så det man samlar blir kvar
+      setMat(s, { grillkott: 300 }); // grillat kött äts före bär och rötter, så det man samlar blir kvar (och ingen blir sjuk av rått)
       kor(s, 48);
       const b = amountOf(s, 'bar'), r = amountOf(s, 'rotter');
       return { b, r, skild: !pilesOf(s).some(p => p.k === 'bar' && p.n > STACK.bar + 1e-6) };
@@ -791,6 +791,62 @@ SCENARIER.latrin = {
       ['benspaden görs av tre ben, ett rep och en gren', recept],
       [`med benspaden gräver man fram ${rotter} gånger så mycket rötter`, rotter > 1],
       [`i en by med benspaden grävs en latrin (efter ${h} timmar), och den används (${besok} besök på ett dygn)`, byggd && besok > 0],
+    ];
+  },
+};
+SCENARIER.grill = {
+  text: 'Grillställningen och matlagningen (steg 2.8.1): grillen sätts upp över elden av grenar och rep och används bara när elden brinner. Där grillas fiskkött, abborre och kött till grillad fisk och grillat kött, som håller längre och äts först. En ovan kock bränner en del, en skicklig ingenting, och färdigheten Matlagning växer vid grillen. Rått kött och rå fisk gör en lite sur och kan ge matförgiftning; rå växtmat gör inget',
+  kor: () => {
+    const { MATLAG, kanGrilla, grilla, grillVara, ratt, brannDel, stationSite, stationRutor, FOOD } = SIM;
+    const s = createState(1, START); klockan(s); tandEld(s);
+    const f = getMap(s.seed).fire, at = stationSite(s, 'grill');
+    const over = !!at && at.x === f.x - 1 && at.y === f.y;
+    const [p, q] = living(s).filter(r => ageOf(r, s.now) >= 18) as [SIM.Person, SIM.Person];
+    setMat(s, { fisk: 20 });
+    const utan = !kanGrilla(s, p);
+    const g = medBank(s, 'grill'), iMitten = stationRutor(s).at.get(f.y * W + f.x)?.id === g.id;
+    const kan = kanGrilla(s, p) && grillVara(s)?.ra === 'fisk';
+    s.fire.lit = false; const slackt = !kanGrilla(s, p); s.fire.lit = true;
+    // en ovan kock bränner en del, en skicklig ingenting
+    p.skill.matlagning = 0; q.skill.matlagning = MATLAG.brannFull;
+    const f0 = amountOf(s, 'fisk'), m0 = p.skill.matlagning;
+    grilla(s, p, 1);
+    const ovan = amountOf(s, 'grillfisk'), anv = f0 - amountOf(s, 'fisk');
+    grilla(s, q, 1);
+    const skicklig = amountOf(s, 'grillfisk') - ovan;
+    const brant = Math.abs(anv - MATLAG.timme) < 1e-6 && Math.abs(ovan - anv * (1 - MATLAG.brann)) < 1e-6 && Math.abs(skicklig - MATLAG.timme) < 1e-6;
+    const ovar = p.skill.matlagning > m0 && brannDel(q) === 0;
+    s.fire.lit = false; const fore = amountOf(s, 'fisk'); grilla(s, p, 1); const ingenEld = amountOf(s, 'fisk') === fore; s.fire.lit = true;
+    const forst = FOOD.indexOf('grillfisk') < FOOD.indexOf('fisk') && FOOD.indexOf('grillkott') < FOOD.indexOf('kott') && SAKER.grillkott!.haller! > SAKER.kott!.haller! && SAKER.grillfisk!.haller! > SAKER.fisk!.haller!;
+    // rått kött och rå fisk: en sur tanke, och ibland matförgiftning. Rå växtmat gör inget
+    const r = createState(2, START), folk = living(r);
+    let sura = 0;
+    for (let i = 0; i < 600; i++) { const x = folk[i % folk.length]!; x.thoughts = []; ratt(r, x, { kott: 1 }, 1); if (x.thoughts.some(t => t.text === 'Åt rått')) sura++; }
+    const sjuka = (r.stat?.matforgiftad as number) ?? 0;
+    const v0 = JSON.stringify(r.rngs); folk[0]!.thoughts = []; ratt(r, folk[0]!, { bar: 1, rotter: 0.5 }, 1);
+    const vaxt = !folk[0]!.thoughts.length && JSON.stringify(r.rngs) === v0;
+    // tekniken: grillen kommer efter repet och görs av grenar och rep
+    const tek = SIM.TEKNIK.find(t => t.id === 'grill'), tekOk = !!tek && tek.krav.includes('rep');
+    // i en by som lever: med tekniken sätts grillen upp och fisken grillas
+    const b = createState(1, START); klockan(b); tandEld(b);
+    for (const x of b.people) x.tek = { ...x.tek, grill: 1 };
+    setMat(b, { bar: 60, fisk: 30 }); setAmount(b, 'ved', 40); setAmount(b, 'grenar', 10); setAmount(b, 'rep', 3);
+    let h = 0; while (!SIM.stationerOf(b).some(t => t.k === 'grill' && SIM.isKlar(t)) && h < 48) { kor(b, 1); b.fire.lit = true; h++; }
+    const byggd = SIM.stationerOf(b).some(t => t.k === 'grill' && SIM.isKlar(t));
+    for (let i = 0; i < 24; i++) { kor(b, 1); b.fire.lit = true; }
+    const grillat = (b.stat?.grillat as number) ?? 0;
+    return [
+      [`grillställningen står över elden, med elden i mitten`, over && iMitten],
+      ['utan grill grillar ingen', utan],
+      ['med grillen och fisk i lagret går det att grilla fisken', kan],
+      ['när elden är släckt grillar ingen, och grillandet slutar', slackt && ingenEld],
+      [`en ovan kock bränner ${(MATLAG.brann * 100).toFixed(0)} % av maten, en skicklig ingenting (${ovan.toFixed(1)} och ${skicklig.toFixed(1)} grillad fisk av ${MATLAG.timme})`, brant],
+      ['färdigheten Matlagning växer vid grillen', ovar],
+      ['den grillade maten håller längre och äts före den råa', forst],
+      [`rått kött gör en sur (${sura} av 600) och ger ibland matförgiftning (${sjuka} av 600)`, sura === 600 && sjuka > 0 && sjuka < 40],
+      ['rå växtmat gör inget och rör inte slumpen', vaxt],
+      ['grillen är en teknik efter repet', tekOk],
+      [`i en by med tekniken sätts grillen upp (efter ${h} timmar) och maten grillas (${grillat.toFixed(0)} på ett dygn)`, byggd && grillat > 0],
     ];
   },
 };

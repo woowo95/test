@@ -56,10 +56,10 @@ export const STAT_GOR: Record<Stat, string[]> = {
   mod: ['Att väljas till nattvakt', 'Hur långt bort hen vågar gå', 'Att inte låta rädslor styra'],
   minne: ['Hur länge hen minns platser och lärdomar'],
 };
-export const SKILLS = ['samla', 'jakt', 'fiske', 'ved', 'hantverk', 'berattande', 'elda'] as const;
+export const SKILLS = ['samla', 'jakt', 'fiske', 'ved', 'hantverk', 'berattande', 'elda', 'matlagning'] as const; // matlagning: steg 2.8.1 (matlagning.ts)
 export type Skill = typeof SKILLS[number];
 export const SKILL_NAMES: Record<Skill, string> = {
-  samla: 'Samling', jakt: 'Jakt', fiske: 'Fiske', ved: 'Trähuggning', hantverk: 'Hantverk', berattande: 'Berättande', elda: 'Eldkonst',
+  samla: 'Samling', jakt: 'Jakt', fiske: 'Fiske', ved: 'Trähuggning', hantverk: 'Hantverk', berattande: 'Berättande', elda: 'Eldkonst', matlagning: 'Matlagning',
 };
 // vad varje färdighet påverkar utöver arbetena som övar den (ACTS arbete), och hur den växer
 export const SKILL_GOR: Record<Skill, string[]> = {
@@ -70,6 +70,7 @@ export const SKILL_GOR: Record<Skill, string[]> = {
   hantverk: ['Hur fort hen tillverkar och bygger', 'Att väljas till byggare', 'Lusten att göra hantverk'],
   berattande: ['Lusten att berätta på kvällen'],
   elda: ['Att tända elden', 'Att fylla på elden i rätt tid'],
+  matlagning: ['Att inte bränna maten vid grillen'],
 };
 
 export const AGES = ['Istid', 'Vårtid', 'Sommartid', 'Hösttid'];

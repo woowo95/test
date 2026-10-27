@@ -26,6 +26,7 @@ import { dorrOppningar, dorrSpot, kanHangaDorr, utanDorr } from './bygg';
 export const PROJEKT_TAL = balans('projekt', {
   kniv: 1.2, yxa: 1.2, spjut: 1, metspo: 0.8, korg: 0.8, bensyl: 1, skinnrock: 0.8, skinnskor: 0.5, balte: 0.6, benspade: 0.6, // hur mycket varje redskap väger när byn saknar alla den vill ha
   slaktbank: 1, flatarbank: 0.6, // ... varje station när byn saknar den
+  grill: 0.8, // ... grillställningen (steg 2.8.1)
   latrin: 0.8, // ... latrinen när byn inte har en som inte är nästan full (steg 2.7.2)
   halmbadd: 0.6, // ... halmbäddarna när alla som sover under tak saknar en
   skinnfall: 0.5, // ... skinnfällarna när alla halmbäddar saknar en
@@ -83,7 +84,7 @@ const redskap = (g: string): ProjektDef => {
 const station = (k: StationSlag): ProjektDef => {
   const d: StationDef = STATIONER[k];
   return {
-    namn: d.namn, ikon: d.ikon, behov: k === 'slaktbank' ? 'slakt' : d.gor.includes('toa') ? 'halsa' : d.sover ? 'vila' : d.platser ? 'maltid' : d.forvar ? 'forvar' : 'hantverk', vikt: (PROJEKT_TAL as Record<string, number>)[k] ?? 1, act: 'station', slag: k,
+    namn: d.namn, ikon: d.ikon, behov: k === 'slaktbank' ? 'slakt' : d.eld ? 'mat' : d.gor.includes('toa') ? 'halsa' : d.sover ? 'vila' : d.platser ? 'maltid' : d.forvar ? 'forvar' : 'hantverk', vikt: (PROJEKT_TAL as Record<string, number>)[k] ?? 1, act: 'station', slag: k,
     brist: s => d.sover ? (living(s).length ? utanBadd(s) / living(s).length : 0) : d.platser ? bordBrist(s, k) : d.forvar ? forvarBrist(s, k) : d.gor.includes('toa') ? latrinBrist(s) : harStation(s, k) ? 0 : 1,
     kostnad: () => varuVarde(d.av, d.min / 60 * ARBETE),
     kan: (s, p, f) => !f.kyla && kanBygga(s, p, k),

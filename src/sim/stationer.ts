@@ -80,6 +80,8 @@ export const STATION = balans('station', {
   latrinAvst: 4, // ... helst så här långt ...
   latrinVatten: 8, // ... och, när byn lärt sig att smutsen når vattnet (s.hygien), helst så här många rutor från vattnet ...
   latrinVattenPoang: 1, // ... med så här många poäng (färre är bättre) för varje ruta för nära, gånger s.hygien
+  // grillställningen (steg 2.8.1, matlagning.ts): grenar och rep över elden
+  grillGrenar: 3, grillRep: 1, grillMin: 15, // så många grenar och rep och så många minuters arbete
 });
 // trä till ett bord som tar w × h rutor, med stubbar på platserna runt det (platserAv nedan)
 const bordTra = (w: number, h: number) => w * h * STATION.bordTra + ((w >= 2 ? 2 * w : 0) + (h >= 2 ? 2 * h : 0)) * STATION.stubbeTra;
@@ -90,10 +92,10 @@ const bordTra = (w: number, h: number) => w * h * STATION.bordTra + ((w >= 2 ? 2
 // forsta = loggen när byn fått sin första, inne = står inne i ett hus, mobel = en möbel, flera = byn kan ha flera, sover = en sovplats
 // (halmbädden), sitt = en sittplats framför den (bara utseende, steg 2.2.5), platser = ett bord med stubbar att sitta på runt
 // det (steg 2.2.15), verktyg = redskapet man bygger den med (benspaden till latrinen, steg 2.7.2), utkant = står i byns utkant
-// (latrinen, siteUtkant nedan), forvar = förvaring som står i en lagerplats (steg 2.3.6): rymmer så många högar av ett slag (gånger en
+// (latrinen, siteUtkant nedan), eld = står över elden, med elden i mitten, och används bara när den brinner (grillen, steg 2.8.1), forvar = förvaring som står i en lagerplats (steg 2.3.6): rymmer så många högar av ett slag (gånger en
 // rutas stack) eller, för redskap, så många redskap; tak = det som ligger där slits som under tak
 export interface Forvar { rymmer: number; redskap?: true; tak?: true }
-export interface StationDef { namn: string; ikon: string; w: number; h: number; tek: string[]; av: Record<string, number>; min: number; gor: Act[]; bara?: Act[]; vid?: Record<string, number>; verktyg?: string; utkant?: true; kraver?: Partial<Record<Act, string>>; smutsar?: Partial<Record<Act, string>>; bygger: string; forsta: string; inne?: true; mobel?: true; flera?: true; sover?: true; sitt?: true; platser?: true; forvar?: Forvar }
+export interface StationDef { namn: string; ikon: string; w: number; h: number; tek: string[]; av: Record<string, number>; min: number; gor: Act[]; bara?: Act[]; vid?: Record<string, number>; verktyg?: string; utkant?: true; eld?: true; kraver?: Partial<Record<Act, string>>; smutsar?: Partial<Record<Act, string>>; bygger: string; forsta: string; inne?: true; mobel?: true; flera?: true; sover?: true; sitt?: true; platser?: true; forvar?: Forvar }
 export const STATIONER = {
   slaktbank: {
     namn: 'Slaktbänk', ikon: 'slaktbank', w: 3, h: 1, tek: ['slaktbank'], av: { ved: STATION.slaktbankTra }, min: STATION.slaktbankMin, gor: ['slakta', 'rensa'], bara: ['slakta', 'rensa'], vid: { kniv: STATION.knivplatser }, smutsar: { slakta: 'blod' }, // blir blodig när det slaktas (FLACKAR i smuts.ts)
@@ -147,6 +149,12 @@ export const STATIONER = {
     namn: 'Latrin', ikon: 'latrin', w: 1, h: 1, tek: ['latrin'], av: {}, min: STATION.latrinMin, gor: ['toa'], verktyg: 'benspade', utkant: true, flera: true,
     bygger: 'Gräver en latrin med benspaden.',
     forsta: '{namn} grävde byns första latrin. Där går man på toa, så att smutsen hamnar på ett ställe.',
+  },
+  // grillställningen (steg 2.8.1, matlagning.ts): två klykor och ett spett med vev, tre rutor bred med elden i mitten
+  grill: {
+    namn: 'Grillställning', ikon: 'grill', w: 3, h: 1, tek: ['grill'], av: { grenar: STATION.grillGrenar, rep: STATION.grillRep }, min: STATION.grillMin, gor: ['grilla'], bara: ['grilla'], eld: true,
+    bygger: 'Sätter upp en grillställning av grenar och rep över elden.',
+    forsta: '{namn} satte upp byns första grillställning över elden. Där grillas köttet och fisken, och den grillade maten håller längre.',
   },
 } satisfies Record<string, StationDef>;
 export type StationSlag = keyof typeof STATIONER;
@@ -217,7 +225,7 @@ function ledig(s: State, x: number, y: number) {
   return !((s.stackar ?? []).some(a => a.x === x && a.y === y) || tingOf(s).some(k => k.x === x && k.y === y) || (s.stockar ?? []).some(k => Math.floor(k.x) === x && Math.floor(k.y) === y) || (s.stubbar ?? []).some(k => k.x === x && k.y === y));
 }
 // platsen för en station av sorten k: inne i ett hus om registret säger det, annars nära elden. Samma plats varje gång (ingen slump)
-export const stationSite = (s: State, k: string) => stationDef(k)?.forvar ? siteForvar(s, k) : stationDef(k)?.utkant ? siteUtkant(s, k) : stationDef(k)?.inne ? siteInne(s, k) : siteUte(s, k);
+export const stationSite = (s: State, k: string) => stationDef(k)?.eld ? siteEld(s) : stationDef(k)?.forvar ? siteForvar(s, k) : stationDef(k)?.utkant ? siteUtkant(s, k) : stationDef(k)?.inne ? siteInne(s, k) : siteUte(s, k);
 // i byns utkant (latrinen): en ledig ruta på gräs, sand eller i glesare skog, latrinFran–latrinTill rutor från byns läger, helst
 // latrinAvst, inte i lekplatsen söder om elden, och när byn lärt sig det (s.hygien) långt från vattnet
 function siteUtkant(s: State, _k: string) {
@@ -244,6 +252,11 @@ function tillVatten(s: State, x: number, y: number, max: number) {
     if (xx >= 0 && yy >= 0 && xx < W && yy < H && tiles[yy * W + xx] === T.Vatten) bd = Math.min(bd, Math.hypot(dx, dy));
   }
   return bd;
+}
+// över elden (grillen): rutan till vänster om elden, så att elden står i mitten. Där ligger aldrig något (usable i lager.ts)
+function siteEld(s: State) {
+  const f = getMap(s.seed).fire;
+  return [-1, 0, 1].some(i => stationAt(s, f.x + i, f.y)) ? undefined : { x: f.x - 1, y: f.y, rot: undefined };
 }
 // ute: alla rutorna den tar är lediga, och den står helst inte där barnen leker. Avståndet räknas från stationens mitt
 function siteUte(s: State, k: string) {

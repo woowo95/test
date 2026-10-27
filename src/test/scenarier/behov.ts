@@ -589,7 +589,7 @@ SCENARIER.brist = {
     const langtar = p.thoughts.some(t => t.text === 'Längtar efter bär');
     // man äter helst det som fyller bristen
     const ord = matOrdning(p), forst = ord[0] === 'bar';
-    satt(p, 'protein'); const kottForst = ['kott', 'fisk', 'abborre', 'vilt'].includes(matOrdning(p)[0]);
+    satt(p, 'protein'); const kottForst = ['kott', 'fisk', 'abborre', 'vilt', 'grillkott', 'grillfisk'].includes(matOrdning(p)[0]);
     satt(p); const vanlig = matOrdning(p) === FOOD;
     rikBy(s); setMat(s, { rotter: 10, bar: 10, kott: 10 }); satt(p, 'vitamin');
     const tar = takeFood(s, 0.3, p).per, tarBar = (tar.bar ?? 0) >= 0.3 - 1e-9;

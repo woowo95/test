@@ -8,6 +8,7 @@ import { BYN, Del, addDel, sumOf } from './egendom';
 import { amountOf, mayTake, ownMove, ownsAmount, takeFood, use } from './lager';
 import { eatPoison } from './fynd';
 import { ata } from './naring';
+import { ratt } from './matlagning';
 import { habitShare, habitTotal } from './seder';
 import { grundvarde } from './varde';
 import { EKONOMI } from './ekonomi';
@@ -48,6 +49,7 @@ function eat(s: State, p: Person, fran?: Person) {
   const now = s.now, full = portionOf(p, now);
   const { n: portion, c: q, per } = takeFood(s, full, p, fran), f = 0.55 / full * (q >= 0.5 ? 1 : 0.5 + q);
   // maten fyller näringsvärdena, och mättnaden är en sammanfattning av dem (steg 2.6.1, naring.ts)
+  ratt(s, p, per, full); // rått kött och rå fisk (matlagning.ts, steg 2.8.1), av det som åts innan det skalas till mättnad
   for (const k in per) per[k] *= f;
   ata(p, per); eatPoison(s, p);
   if (q < 0.5) think(p, 'Maten var dålig', -0.05, now, 6 * HOUR);
