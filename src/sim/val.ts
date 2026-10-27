@@ -4,7 +4,7 @@ import { RESERV, foodDays } from './ekonomi';
 import { ACTS, WORK, usesTool } from './handlingar';
 import { canLight, emberOn, fireWant, needStones, needTinder, woodDays } from './eld';
 import { ALDER, KROPP, ageOf, count, isSick, living, stat } from './folk';
-import { halsa } from './halsa';
+import { halsa, hemma, kanGa, vardVal, vilaHellre } from './halsa';
 import { harMat } from './behov';
 import { FANGST, Kind, flintSpot, shoreOf, wantsFlint } from './fynd';
 import { coldOf, temperature } from './vader';
@@ -282,6 +282,7 @@ function needs(s: State, p: Person, v: Val, a: number, lazy: number, light: bool
   if (a < ALDER.smabarn) return set(v, 'sova', 'Är ett litet barn');
   if (p.toa < KROPP.toaGenast) return set(v, 'toa', 'Måste gå på toa genast');
   if (tortarFarligt(p) && dricka(s, p, v)) return true; // också den som är sjuk eller svag dricker
+  if (varda(s, p, v, true)) return true; // sina egna sår: trycka på, lägga förband och rengöra (steg 2.5.2)
   if (sick) return set(v, 'sova', 'Är sjuk');
   if (halsa(p) < KROPP.svag) return set(v, 'sova', 'Är för svag för att orka något'); // också av blodförlust och smärta (halsa.ts)
   if (p.warm < KROPP.farligt && lit) return set(v, 'varma', 'Fryser farligt');
@@ -289,11 +290,15 @@ function needs(s: State, p: Person, v: Val, a: number, lazy: number, light: bool
   // Kylan är faran och elden det enda som hjälper mot den (några räcker; de andra går in och väntar)
   if (p.warm < KROPP.kallt + KROPP.latVarme * lazy && a >= ALDER.vuxen && tinderNeeded(s)) { v.tandmat = true; return set(v, 'samla', 'Fryser, men utan tändmaterial blir det ingen eld'); }
   if (p.warm < KROPP.farligt && bedTile(s, p) !== undefined) return set(v, 'vila', 'Fryser farligt och går in i huset');
+  if (varda(s, p, v, false)) return true; // en skadad är en fara: vården går före förbättringarna (steg 2.5.2)
   if (!light && a > ALDER.sovGammal && rnd(s, 'val', p) < VAL.gammalSover) return set(v, 'sova', 'Är gammal och sover på natten');
   if (p.toa < KROPP.toaBehov + KROPP.latToa * lazy) return set(v, 'toa', 'Behöver gå på toa');
   if (p.warm < KROPP.kallt + KROPP.latVarme * lazy && lit) return set(v, 'varma', 'Fryser');
   if (p.warm < KROPP.kallt + KROPP.latVarme * lazy && bedTile(s, p) !== undefined) return set(v, 'vila', 'Fryser och går in i huset');
   if (torstig(p, lazy) && dricka(s, p, v)) return true;
+  // den som inte kan gå kravlar hem, och den som har mycket ont eller ett infekterat sår vilar (steg 2.5.2)
+  if (!kanGa(p) && !hemma(s, p)) return set(v, 'vila', 'Är skadad och kravlar hem');
+  if (vilaHellre(p)) return set(v, 'vila', 'Är skadad och vilar');
   // för varm i solen: man söker skugga under ett träd eller i ett hus, så som den som fryser söker sig till elden (steg 2.3.13)
   if (forVarmISol(s, p)) {
     const sk = iSkugga(s, p.x, p.y) ? { x: p.x, y: p.y } : skuggaNara(s, p, p.x, p.y);
@@ -304,6 +309,14 @@ function needs(s: State, p: Person, v: Val, a: number, lazy: number, light: bool
   const bord = p.hunger < KROPP.hungrig + KROPP.bordHunger && harMat(s, p) ? ledigPlats(s, p) : undefined;
   if (bord) { v.spot = bord; v.dur = (VAL.maltidMin + rnd(s, 'val', p) * VAL.maltidSpann) * MIN; return set(v, 'maltid', 'Är hungrig och äter vid bordet'); }
   return false;
+}
+
+// vården (steg 2.5.2, halsa.ts): platsen är den skadade, och tiden räknas från framkomsten (startsOnArrival)
+function varda(s: State, p: Person, v: Val, sjalv: boolean) {
+  const d = vardVal(s, p, sjalv);
+  if (!d) return false;
+  v.spot = d.spot; v.ref = d.ref; v.dur = 0;
+  return set(v, 'varda', d.why);
 }
 
 // törst (steg 2.4.1): vid vattnet, eller snö som smälts vid elden i istiden (torst.ts). false = inget vatten att nå

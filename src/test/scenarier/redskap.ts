@@ -406,7 +406,7 @@ SCENARIER.forvaring = {
     const hy = hyllan(), z = hy && zonesOf(s).find(q => inZone(q, hy.x, hy.y));
     const ryms = hy ? rymd(s, hy.x, hy.y, 'grenar') : 0;
     // mer grenar: hyllans ruta fylls mer än en vanlig ruta
-    setAmount(s, 'grenar', SIM.amountOf(s, 'grenar') + SIM.rutaOf('grenar') * 4);
+    setAmount(s, 'grenar', SIM.amountOf(s, 'grenar') + SIM.rutaOf('grenar') * 12);
     const pa = hy ? pilesOf(s).find(a => a.x === hy.x && a.y === hy.y) : undefined;
     // hyllan går inte att gå igenom: vägen förbi den går runt, och alla rutor i lagret nås fortfarande från elden
     const g = groundOf(s), f = getMap(s.seed).fire, i = hy ? hy.y * W + hy.x : -1;

@@ -1,6 +1,6 @@
 // Scenarier. Behov och val: behov, ved, aktivitet och fritid.
-import { Person, createState, getRel, step, living, temperature, nyKalender, amountOf, capacity, load, isLight, T, FOOD, ageOf, getMap, HOUR, W, tileOf, stat, campCenter, KANIN, gain, takeFuel, ownsAmount, ownedSum, addTo, setAmount, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, STOLD_LINDRIG, STOLD_OP, BEAT, spar, isWork, ACTS, groundOf, varmeDelar, nyVarme, addTool, stepKlader, chooseTask, iSkugga, KROPP, spotFor, shoreOf, torstDelar, drickPlats, areaOf, halsaLage, describe, halsaSteg, skada, blodning, halsa, rorlighet, workRate, OLYCKOR, Act } from '../../sim';
-import { START, STEG_DYGN } from '../kor';
+import { Person, createState, getRel, step, living, temperature, nyKalender, amountOf, capacity, load, isLight, T, FOOD, ageOf, getMap, HOUR, W, tileOf, stat, campCenter, KANIN, gain, takeFuel, ownsAmount, ownedSum, addTo, setAmount, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, STOLD_LINDRIG, STOLD_OP, BEAT, spar, isWork, ACTS, groundOf, varmeDelar, nyVarme, addTool, stepKlader, chooseTask, iSkugga, KROPP, spotFor, shoreOf, torstDelar, drickPlats, areaOf, halsaLage, describe, halsaSteg, skada, blodning, halsa, rorlighet, workRate, OLYCKOR, Act, HALSA, kanGa, gangFart, hemma, mossaFynd, chopStock } from '../../sim';
+import { START, STEG_DYGN, STEG_TIM } from '../kor';
 import { setMat, setFood, kor, klockan, tandEld, tomtForrad, treVuxna, bastaJaktruta, SCENARIER, rikBy } from './hjalp';
 
 SCENARIER.behov = {
@@ -416,6 +416,64 @@ SCENARIER.kropp = {
       [`en svår skada avbryter arbetet, och hälsan blir ${halsa1.toFixed(2)}`, avbrot && halsa1 < KROPP.svag + 0.2],
       [`olyckorna i ${Object.keys(OLYCKOR).join(', ')} ger sina skador i sina delar${fel.length ? ` (fel: ${fel.join(', ')})` : ''}`, !fel.length],
       [`på tio dygn i en by: ${skador} skador, ${blod} förblödde`, skador > 0],
+    ];
+  },
+};
+
+SCENARIER.vard = {
+  text: 'Steg 2.5.2: ett öppet sår kan bli infekterat, och utan vård blir det kallbrand och döden. Vården är en egen handling: man trycker på ett sår som blöder, lägger ett förband av mossa (som hittas när man letar i naturen och ibland på ett fällt träd) och rengör ett infekterat sår, på sig själv eller någon annan. Den som inte kan gå kravlar hem eller bärs hem, och man läker fortare när man vilar',
+  kor: () => {
+    const s = createState(5, START);
+    klockan(s, 10); rikBy(s);
+    const [p, q] = treVuxna(s, 1, x => Object.assign(x, { rest: 1, toa: 1, social: 1, warm: 1, torst: 1, blod: 1, skador: undefined, sickUntil: undefined }));
+    const c = campCenter(s);
+    const fyll = (x: Person) => Object.assign(x, { rest: 1, toa: 1, hunger: 1, social: 1, warm: 1, health: 1, torst: 1, blod: 1, skador: undefined, sickUntil: undefined, task: undefined, x: c.x + 0.5, y: c.y + 2.5 });
+    const timmar = (x: Person, h: number) => { for (let i = 0; i < h * 60; i++) { const d = halsaSteg(s, x, 60); if (d) return d; } return undefined; };
+    // en infektion som inte rengörs blir kallbrand och dödar
+    fyll(p); skada(s, p, 'benV', 'skarsar', 0.3, 'olycka', ''); p.skador![0].b = 0; p.skador![0].inf = 0;
+    const dog = timmar(p, HALSA.infTim + 2), kall = (s.stat?.kallbrand ?? 0) >= 1;
+    // en rengjord infektion går tillbaka, och såret läker sedan
+    fyll(p); skada(s, p, 'benV', 'skarsar', 0.3, 'olycka', ''); p.skador![0].b = 0; p.skador![0].inf = 0.3; p.skador![0].ren = s.now + HALSA.renTim * HOUR;
+    timmar(p, HALSA.renTim); const botad = p.skador?.[0]?.inf === undefined;
+    // den som blöder trycker på sitt sår och lägger mossa på det
+    fyll(p); fyll(q); q.x = c.x + 30; setAmount(s, 'mossa', 3);
+    skada(s, p, 'handV', 'skarsar', 0.5, 'olycka', ''); p.task = undefined;
+    chooseTask(s, p); const tk = () => p.task as Person['task']; const sjalvVal = tk()?.act === 'varda' && tk()?.ref === p.id;
+    for (let i = 0; i < 40 * STEG_TIM && tk()?.act === 'varda'; i++) step(s, BEAT);
+    const w = p.skador?.[0], trycktes = w?.b === 0, forband = w?.f === 1, mossa = amountOf(s, 'mossa');
+    // ett brutet ben: man kan inte gå, utan kravlar
+    fyll(p); skada(s, p, 'benH', 'benbrott', 0.9, 'olycka', ''); const kryp = gangFart(p), kravlar = !kanGa(p) && kryp === HALSA.krypFart;
+    // långt från lägret: en annan vuxen går dit och bär hem hen
+    let lx = 0, ly = 0;
+    for (let r = 14; r < 30 && !lx; r++) for (let a = 0; a < 16 && !lx; a++) {
+      const x = c.x + 0.5 + Math.cos(a / 16 * Math.PI * 2) * r, y = c.y + 0.5 + Math.sin(a / 16 * Math.PI * 2) * r;
+      if (x > 1 && y > 1 && x < W - 1 && y < W - 1 && getMap(s.seed).tiles[tileOf(x, y)] !== T.Vatten) { lx = x; ly = y; }
+    }
+    fyll(q); p.x = lx; p.y = ly; p.task = undefined; q.task = undefined;
+    const langtBort = !hemma(s, p);
+    const buren0 = s.stat?.['buren hem'] as number ?? 0; let hem = false;
+    for (let i = 0; i < 12 * STEG_TIM && !hem; i++) { step(s, BEAT); if (tk()?.act !== 'buren' && hemma(s, p)) hem = true; }
+    const bars = (s.stat?.['buren hem'] as number ?? 0) > buren0;
+    // man läker fortare när man vilar
+    fyll(p); skada(s, p, 'handV', 'krossar', 0.5, 'olycka', ''); p.skador![0].b = 0; timmar(p, 4); const vaken = p.skador![0].g;
+    fyll(p); skada(s, p, 'handV', 'krossar', 0.5, 'olycka', ''); p.skador![0].b = 0; p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: s.now + 100 * HOUR, carry: 0, why: '' }; timmar(p, 4); const sover = p.skador![0].g;
+    // mossa hittas i naturen och på ett fällt träd
+    const t = { act: 'samla', phase: 'do', tx: p.x, ty: p.y, until: 0, carry: 0 } as const;
+    setAmount(s, 'mossa', 0); const fynd = mossaFynd(s, { ...t }, 3600);
+    const k = { id: 999, x: 1, y: 1, ved: 5, grenar: 2, mossa: 2 }; (s.stockar ??= []).push(k); const hugg = chopStock(s, 999, 1)?.mossa ?? 0;
+    // en by i tolv dygn (tolv år i spelet, knappt två veckor i verkligheten): mossa hittas och såren vårdas
+    const b = createState(1, START); kor(b, 288);
+    const st = (n: string) => b.stat?.[n] as number ?? 0;
+    return [
+      [`ett infekterat sår som inte rengörs blir kallbrand och dödar (${dog ?? 'överlevde'})`, dog === 'kallbrand' && kall],
+      ['ett rengjort infekterat sår blir friskt', botad],
+      ['den som blöder väljer att vårda sitt sår', sjalvVal],
+      [`blödningen stannar och ett förband av mossa läggs på (mossa kvar ${mossa})`, trycktes && forband && mossa < 3],
+      [`den som har brutit benet kan inte gå och kravlar (${kryp} av farten)`, kravlar],
+      [`den som inte kan gå långt från lägret bärs hem av en annan (${langtBort ? 'långt bort' : 'inte långt bort'}, bars ${bars}, hemma ${hem})`, langtBort && bars && hem],
+      [`man läker fortare när man sover (${(0.5 - vaken).toFixed(3)} → ${(0.5 - sover).toFixed(3)} på fyra timmar)`, 0.5 - sover > 0.5 - vaken],
+      [`mossa hittas när man letar (${fynd.toFixed(2)} i timmen) och när man hugger en fälld stam med mossa (${hugg})`, fynd > 0 && hugg === 2],
+      [`på tolv dygn i en by: ${b.stat ? amountOf(b, 'mossa').toFixed(1) : 0} mossa, ${st('skador')} skador, ${st('vard')} vårdtillfällen (${st('vard av andra')} av andra), ${st('forband')} förband, ${st('infektioner')} infektioner, ${st('kallbrand')} kallbrand, ${st('buren hem')} burna hem`, st('vard') > 0 && amountOf(b, 'mossa') + st('forband') > 0],
     ];
   },
 };

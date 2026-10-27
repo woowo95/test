@@ -86,6 +86,8 @@ const DEF = {
   // bältet (steg 2.3.3): flätas av rep vid elden. Redskapet hänger i det när man bär hem, så båda händerna är fria
   balte: { namn: 'Bälte', skaffa: { av: { rep: 2 }, min: 5, tek: 'balte' }, vikt: 0.2, stack: 1, mapp: 'Kläder', slits: 0.0003, redskap: true, klad: { plats: 'balte', varme: 0, dygn: 10, krok: true },
     gors: { text: 'Flätar ett bälte av rep.', stat: 'balten', forsta: '{namn} flätade byns första bälte. Redskapet hänger i det, och båda händerna är fria att bära med.' } },
+  // mossan (steg 2.5.2): hittas när man letar i naturen och ibland när ett träd fälls. Ett förband av mossa på ett sår (halsa.ts)
+  mossa: { namn: 'Mossa', skaffa: { act: 'samla' }, stack: 50, mapp: 'Material', slits: 0.0006 },
 } satisfies Record<string, SakDef>;
 
 type Sak = keyof typeof DEF;

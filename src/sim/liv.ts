@@ -68,6 +68,7 @@ const DOD = {
   jakt: { text: 'under en jakt', sed: { k: 'forsiktighet', d: LIV.sedJakt, text: 'dog under en jakt. Byn blev lite försiktigare.' } },
   torst: { text: 'av törst' }, // steg 2.4.1
   blod: { text: 'av blodförlust', sed: { k: 'forsiktighet', d: LIV.sedJakt, text: 'förblödde. Byn blev lite försiktigare.' } }, // steg 2.5.1
+  kallbrand: { text: 'av kallbrand', sed: { k: 'forsiktighet', d: LIV.sedJakt, text: 'dog av kallbrand. Byn blev lite försiktigare.' } }, // steg 2.5.2
   svamp: { text: 'av svampförgiftning' },
   sjukdom: { text: 'av sjukdom' },
   alderdom: { text: 'av ålderdom' },

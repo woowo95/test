@@ -88,10 +88,10 @@ export function rotStumps(s: State) {
 export function chopStock(s: State, ref: number | undefined, amount: number) {
   const k = stocks(s).find(q => q.id === ref);
   if (!k) return undefined;
-  const ved = Math.min(k.ved, amount), gr = Math.min(k.grenar, ved * SKOG.stamGrenar / SKOG.stamVed);
-  k.ved -= ved; k.grenar -= gr;
+  const ved = Math.min(k.ved, amount), gr = Math.min(k.grenar, ved * SKOG.stamGrenar / SKOG.stamVed), mossa = k.mossa ?? 0; // mossan tas med första gången (steg 2.5.2)
+  k.ved -= ved; k.grenar -= gr; if (mossa) k.mossa = undefined;
   if (k.ved <= 1e-6) { k.grenar = 0; s.stockar = stocks(s).filter(q => q !== k); }
-  return { ved, grenar: gr, done: k.ved <= 1e-6 };
+  return { ved, grenar: gr, mossa, done: k.ved <= 1e-6 };
 }
 
 // en vuxen som ska skaffa ved: hugga en fälld stam, fälla ett träd, göra en yxa eller (annars) samla grenar

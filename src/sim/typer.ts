@@ -105,6 +105,7 @@ export interface Task {
   sok?: true; // letar flinta eller stenar vid stenarna: blir platsen tom fortsätter man ändå i stället för att gå hem (steg.ts, workStep)
   pass?: number; // när ett pass med redskap som görs är slut (ms): blir ett klart före det görs ett till om byn vill ha fler (steg 2.3.8)
   tandmat?: true; // samlar tändmaterial åt en släckt eld: blir platsen tom på bär fortsätter man tills tändmaterialet räcker (steg.ts, workStep)
+  bar?: number; // vården: den skadade som bärs hem (halsa.ts, steg 2.5.2)
 }
 
 export interface Person {
@@ -185,7 +186,7 @@ export interface State {
   stationer?: import('./stationer').Station[]; nextStation?: number; // arbetsstationerna, som slaktbänken (stationer.ts)
 }
 // ett fällt träd: ved och grenar som finns kvar att hugga ut
-export interface Stock { id: number; x: number; y: number; ved: number; grenar: number }
+export interface Stock { id: number; x: number; y: number; ved: number; grenar: number; mossa?: number } // mossa på stammen (steg 2.5.2)
 
 // ---------- seder ----------
 // Byns gemensamma värderingar, -1..1. Registret (SEDER) står i seder.ts.

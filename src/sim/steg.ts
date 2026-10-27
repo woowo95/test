@@ -34,7 +34,7 @@ import { stepDelning } from './delning';
 import { balans } from './balans';
 import { sjoRakna } from './sjo';
 import { DRICKA_ACTS, TORST, drick, torstSteg } from './torst';
-import { halsaSteg, rorlighet } from './halsa';
+import { HALSA, barMed, burenSteg, gangFart, halsaSteg, lamnaAv, mossaFynd, mossaPaStam, vardKlar, vardMal } from './halsa';
 import { bordPlats, kladVarme, stepKlader } from './utrustning';
 import { finishStation, finishTillbehor, stationRutor, stepStationer, tillbehorVarme, workStation } from './stationer';
 
@@ -86,13 +86,15 @@ const KLAR: Partial<Record<Act, Krok>> = {
   falla: (s, p, t) => { // ett träd där ett hus ska stå, eller som fälldes för bygget, blir stockar i husets väggar direkt; resten huggs till trä
     if (!t.tool) return; // utan yxa står trädet kvar halvfällt, och nästa fällare gör resten
     const k = fellTree(s, p, t.tx, t.ty);
-    if (k) wearUsed(s, p, 1); // yxan slits för varje träd som faller (steg 2.3.12), också för trä som huggs ur det sedan
+    if (k) { wearUsed(s, p, 1); mossaPaStam(s, p, k); } // yxan slits för varje träd som faller (steg 2.3.12), också för trä som huggs ur det sedan; ibland har stammen mossa (steg 2.5.2)
     if (k) { k.ved -= toWalls(s, Math.floor(k.x), Math.floor(k.y), k.ved, t.ref, p); if (k.ved <= 1e-6) s.stockar = stocks(s).filter(q => q !== k); }
   },
   promenad: (s, p, t) => { lookAround(s, p, t.tx, t.ty); think(p, 'Tog en skön promenad', 0.06, s.now, 6 * HOUR); },
   bada: (s, p, t) => { sjoRakna(s, t.tx, t.ty, 'bad', p); p.warm = p.warm > 1 ? Math.max(1, p.warm - KROPP.badSvalka) : Math.max(KROPP.badMin, p.warm - KROPP.badKyla); think(p, 'Badade i sjön', 0.08, s.now, 6 * HOUR); },
   strand: (s, p) => { p.rest = Math.min(1, p.rest + KROPP.strandVila); think(p, 'Satt vid vattnet och fick ro', 0.06, s.now, 6 * HOUR); },
+  varda: vardKlar, // såren trycks på, förband läggs, infekterade sår rengörs, och den som inte kan gå bärs hem (halsa.ts)
 };
+MEDAN.buren = burenSteg; // den som bärs hem väntar så länge någon bär hen
 // att dricka (torst.ts): en gång när man kommit fram, och törsten hålls släckt så länge man dricker
 for (const act of DRICKA_ACTS) MEDAN[act] = (s, p, t) => { if (t.prog === undefined) { t.prog = 0; drick(s, p, t); } else p.torst = 1; };
 for (const art of DJURARTER) MEDAN[art.act] = (s, p, _t, dtSec) => bearbeta(s, p, art, dtSec / HOUR_S); // slakt och rensning
@@ -286,7 +288,7 @@ function taskStep(s: State, p: Person, a: number, t1: number, dtSec: number, lea
     const phaseFlip = t && t.dark !== !light && ACTS[t.act].dygn; // dag blev natt eller tvärtom
     if (t && t.phase === 'do' && t.until <= now) KLAR[t.act]?.(s, p, t, 0); // ett träd som fällts färdigt, en yxa som gjorts klar
     const lightDone = t?.act === 'tanda' && (s.fire.lit || !canLight(s, p));
-    const mustGo = t && p.toa < KROPP.toaAvbryt && t.act !== 'toa' && a >= ALDER.smabarn; // nöden avbryter det man håller på med
+    const mustGo = t && p.toa < KROPP.toaAvbryt && t.act !== 'toa' && t.act !== 'buren' && a >= ALDER.smabarn; // nöden avbryter det man håller på med (inte den som bärs)
     if (!t || (t.until <= now && t.phase !== 'back') || ((phaseFlip || mustGo) && t.phase !== 'back') || lightDone) {
       if (t && isCarrying(t) && t.act !== 'elda') { t.phase = 'back'; const d = dropSpot(s, homeKind(t)); t.tx = d.x + sida(p, 0.2); t.ty = d.y + sida(p, -0.2); }
       else chooseTask(s, p);
@@ -294,8 +296,10 @@ function taskStep(s: State, p: Person, a: number, t1: number, dtSec: number, lea
     const tk = p.task!, d = ACTS[tk.act];
     let used: number;
     if (tk.phase === 'go' || tk.phase === 'back') {
+      if (tk.act === 'varda' && tk.phase === 'go') vardMal(s, tk); // den skadade kan ha flyttat sig
       const w = walk(s, p, tk, left, a);
       used = w.used;
+      if (tk.bar !== undefined && !barMed(s, p, tk)) { left -= used; continue; } // den som bärs följer med
       if (w.framme) { s.now = t1 - (left - used) * SEC; arrive(s, p, tk, isLight(s.now)); }
     } else {
       // arbetet i bitar: till uppgiftens slut, till dess bördan bärs hem, men aldrig längre än BIT sekunder åt gången
@@ -343,7 +347,7 @@ function walk(s: State, p: Person, tk: Task, left: number, a: number) {
     if (!v && tk.phase === 'go' && pathFor(s, g, p.x, p.y, f.x + 0.5, f.y + 0.5)) { avbryt(s, p); return { used: Math.min(left, BIT), framme: false }; }
     tk.path = v ?? [];
   }
-  const off = sida(p, 0.18), fart = (a < ALDER.gangBarn ? STEG.fartBarn : a > ALDER.gangGammal ? STEG.fartGammal : STEG.fart) * rorlighet(p), t0 = s.now; // skadade ben och fötter går långsammare
+  const off = sida(p, 0.18), fart = (a < ALDER.gangBarn ? STEG.fartBarn : a > ALDER.gangGammal ? STEG.fartGammal : STEG.fart) * gangFart(p) * (tk.bar !== undefined ? HALSA.baraFart : 1), t0 = s.now; // skadade ben och fötter går långsammare, och den som inte kan gå kravlar (halsa.ts)
   let budget = fart * left;
   const klocka = () => t0 + (fart * left - budget) / fart * SEC;
   if (budget <= 0) return { used: left, framme: false };
@@ -380,7 +384,8 @@ function arrive(s: State, p: Person, tk: Task, light: boolean) {
     const b = bitById(s, tk.ref), k = b && MATERIAL[b.m].item, n = b ? needOf(b) : 0;
     if (!b || !k || avail(s, k, p, b.hus) < n) p.task = undefined;
     else { tk.kom = {}; tk.ag = { [k]: takeForHouse(s, p, b.hus, k, n, tk.kom) }; tk.items = { [k]: sumOf(tk.ag[k]) }; tk.tx = tk.site.x; tk.ty = tk.site.y; tk.site = undefined; } // det som togs, inte mer
-  } else if (tk.phase === 'back') {
+  } else if (tk.act === 'varda' && tk.phase === 'back') lamnaAv(s, p, tk); // hemma med den som bars
+  else if (tk.phase === 'back') {
     storeLoad(s, tk, p.x, p.y, p.id);
     // ett arbetspass är klart: gå tillbaka och fortsätt om arbetet inte är slut och dagen inte vänt
     const r = tk.res;
@@ -417,7 +422,7 @@ const UTFALL: Partial<Record<Act, (s: State, p: Person, tk: Task, b: Arbetsbit) 
     if (!got) tk.until = s.now; // stammen är slut
     else {
       if (k) got.ved -= toWalls(s, Math.floor(k.x), Math.floor(k.y), got.ved, undefined, p); // står stammen där ett hus byggs blir träet väggar
-      tk.carry += got.ved; bar('grenar', got.grenar);
+      tk.carry += got.ved; bar('grenar', got.grenar); bar('mossa', got.mossa);
       if (got.done) tk.until = s.now;
     }
     return true;
@@ -431,6 +436,7 @@ const UTFALL: Partial<Record<Act, (s: State, p: Person, tk: Task, b: Arbetsbit) 
     }
     const got = forageItems(s, p, dtSec) ?? {};
     bar('svamp', pickMushrooms(s, p, tk.tx, tk.ty, dtSec, got));
+    bar('mossa', mossaFynd(s, tk, dtSec)); // mossa till förband (steg 2.5.2)
     for (const k in got) bar(k, got[k]);
     return true;
   },

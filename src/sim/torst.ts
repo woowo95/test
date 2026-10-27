@@ -14,6 +14,7 @@ import { clamp, rnd } from './slump';
 import { iIstiden, ageIndex } from './tid';
 import { Act, H, HOUR, HOUR_S, Person, State, T, Task, W, inMap } from './typer';
 import { balans } from './balans';
+import { hemma, kanGa } from './halsa';
 
 // ---------- balanstal (regel 8) ----------
 export const TORST = balans('torst', {
@@ -36,8 +37,10 @@ export const TORST = balans('torst', {
 });
 
 // sätten att dricka (registret): handlingen, platsen den görs på, när den väljs och skälet
-interface DrickaDef { act: Act; why: string; min: () => number; nar: (s: State) => boolean }
+interface DrickaDef { act: Act; why: string; min: () => number; nar: (s: State, p: Person) => boolean }
 export const DRICKA: DrickaDef[] = [
+  // den som inte kan gå och är hemma får vatten av de andra där hen ligger (steg 2.5.2, halsa.ts)
+  { act: 'fatt', why: 'Kan inte gå och får vatten av de andra', min: () => TORST.drickMin, nar: (s, p) => !kanGa(p) && hemma(s, p) },
   // istiden: sjön är frusen, och den som kan smälter snö vid en brinnande eld
   { act: 'smalta', why: 'Är törstig och smälter snö vid elden', min: () => TORST.snoMin, nar: s => iIstiden(ageIndex(s)) && s.fire.lit },
   { act: 'dricka', why: 'Är törstig och går och dricker vid vattnet', min: () => TORST.drickMin, nar: () => true },
@@ -100,8 +103,9 @@ export function drickPlats(s: State, p: Person) {
 }
 // det som väljs när man är törstig (val.ts): handlingen, skälet, hur länge och var. undefined = inget vatten att nå
 export function drickVal(s: State, p: Person) {
-  const d = DRICKA.find(x => x.nar(s))!;
+  const d = DRICKA.find(x => x.nar(s, p))!;
   if (d.act === 'smalta') return { act: d.act, why: d.why, min: d.min() };
+  if (d.act === 'fatt') return { act: d.act, why: d.why, min: d.min(), spot: { x: p.x, y: p.y } };
   const spot = drickPlats(s, p);
   if (!spot) return undefined;
   return { act: d.act, why: iIstiden(ageIndex(s)) ? 'Är törstig och hugger upp isen för att dricka' : d.why, min: d.min(), spot };
@@ -110,6 +114,7 @@ export function drickVal(s: State, p: Person) {
 export function drick(s: State, p: Person, t: Task) {
   p.torst = 1;
   if (t.act === 'smalta') { count(s, 'smalt sno'); return; }
+  if (t.act === 'fatt') { count(s, 'fick vatten'); return; }
   count(s, 'drack');
   const x = Math.floor(t.tx), y = Math.floor(t.ty), smuts = inMap(x, y) ? smutsOf(s.seed)[y * W + x] : 0;
   observe(s, p, 'vatten', x, y);

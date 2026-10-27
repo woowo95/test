@@ -86,6 +86,10 @@ const DEF = {
   toa: { namn: 'Går avsides på toa', tecken: '💧', plats: 'avsides' },
   dricka: { namn: 'Dricker vid vattnet', tecken: '🥤' }, // steg 2.4.1: platsen väljs i torst.ts
   smalta: { namn: 'Smälter snö vid elden och dricker', tecken: '🫗', plats: 'elden' }, // i istiden, när sjön är frusen
+  // vården (steg 2.5.2, halsa.ts): platsen är den skadade, och den som inte kan gå bärs hem eller får vatten där hen ligger
+  varda: { namn: 'Vårdar', tecken: '🩹', stilla: true },
+  buren: { namn: 'Bärs hem', tecken: '🫂', stilla: true },
+  fatt: { namn: 'Får vatten av de andra', tecken: '🥤', stilla: true },
   kol: { namn: 'Hämtar kol ur den slocknade elden', tecken: '⚫', plats: 'kol' },
   falla: { namn: 'Fäller ett träd med yxa', yrke: 'Trähuggare', slag: 'tra', redskap: { yxa: { haller: 85, kravs: true } }, slits: { enhet: 'träd', per: 'gang' }, arbete: 'ved', takt: 0, tungt: true },
   hugga: { namn: 'Hugger trä av ett fällt träd', yrke: 'Trähuggare', slag: 'tra', redskap: { yxa: { haller: 85, kravs: true } }, slits: { enhet: 'träd' }, arbete: 'ved', ger: 'ved', takt: 1.5, tur: 1200, tungt: true },
