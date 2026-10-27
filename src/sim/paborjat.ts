@@ -10,6 +10,7 @@ import { fallTid } from './skog';
 import { fartVid, startStation, tillbehorDef } from './stationer';
 import { dorrDef } from './byggnad';
 import { DRICKA_ACTS, TORST, drickMin } from './torst';
+import { halMin } from './is';
 import { HALSA } from './halsa';
 import { startOdla } from './odling';
 
@@ -34,9 +35,9 @@ export function startWork(s: State, p: Person, tk: Task) {
   if (tk.act === 'station') { startStation(s, p, tk); return; }
   if (tk.act === 'odla') { startOdla(s, p, tk); return; } // på fältet (odling.ts) // en station byggs vidare där den står (stationer.ts)
   if (tk.act === 'dorr') { tk.until = s.now + (dorrDef(tk.tool)?.min ?? 0) * MIN; return; } // en dörr i en öppning (bygg.ts)
-  if (DRICKA_ACTS.has(tk.act)) { tk.until = s.now + drickMin(tk.act) * MIN; return; } // att dricka (torst.ts)
+  if (DRICKA_ACTS.has(tk.act)) { tk.until = s.now + drickMin(s, p, tk.act) * MIN; return; } // att dricka (torst.ts)
   if (tk.act === 'varda') { tk.until = s.now + HALSA.vardMin * MIN; return; } // vården (halsa.ts)
-  if (tk.act === 'vatten') { tk.until = s.now + TORST.fyllMin * MIN; return; } // vattensäcken fylls (torst.ts)
+  if (tk.act === 'vatten') { tk.until = s.now + (TORST.fyllMin + halMin(s, p)) * MIN; return; } // vattensäcken fylls (torst.ts), med hålet i isen (is.ts)
   if (tk.act === 'tillbehor') { tk.until = s.now + (tillbehorDef(tk.tool ?? '')?.min ?? 0) * MIN; return; } // ett tillbehör till en möbel (stationer.ts)
   if (tk.act === 'falla') { const i = tileOf(tk.tx, tk.ty); tk.until = s.now + Math.max(0, fallTid(s, i) - (s.halvfallt?.[i] ?? 0)); return; }
   const ger = GORS[tk.act];

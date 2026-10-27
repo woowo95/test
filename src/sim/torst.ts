@@ -1,7 +1,7 @@
 // Törst (steg 2.4.1 och 2.4.2). Törsten är ett eget behov (p.torst, 1 = släckt, 0 = uttorkad) och slås inte ihop med mättnaden.
 // Man dricker vid vattnet och bär inte hem det. Vattnet är olika smutsigt på olika ställen (smutsOf i sjo.ts); smutsigt vatten
 // ger ont i magen, och var vattnet är rent eller smutsigt blir lärdomar (slaget 'vatten' i minne.ts) som sprids i samtal.
-// När sjön är frusen i istiden smälter man snö vid elden. Den som är för varm (steg 2.3.4) eller arbetar tungt törstar fortare.
+// När isen ligger på sjön smälter man snö vid elden, eller hugger upp ett hål i isen (steg 2.11.3, is.ts). Den som är för varm (steg 2.3.4) eller arbetar tungt törstar fortare.
 // Sätten att dricka står i registret DRICKA; val.ts väljer när, steg.ts räknar törsten och vad som händer när man dricker.
 // Med vattensäcken (steg 2.10.1) hämtar en vuxen vatten åt den som inte kan gå och ligger hemma; utan säck får hen vatten av
 // de andra (fatt), och när törsten blir farlig också om säcken inte kommer
@@ -13,7 +13,7 @@ import { shoreOf } from './fynd';
 import { getMap, perKarta } from './karta';
 import { bitAt } from './byggnad';
 import { clamp, rnd } from './slump';
-import { iIstiden, ageIndex } from './tid';
+import { halMin, halVal, islagt, naVattnet } from './is';
 import { Act, H, HOUR, HOUR_S, Person, State, T, Task, W, inMap } from './typer';
 import { balans } from './balans';
 import { HALSA, hemma, kanGa } from './halsa';
@@ -47,13 +47,13 @@ export const DRICKA: DrickaDef[] = [
   // den som inte kan gå och är hemma får vatten av de andra där hen ligger (steg 2.5.2, halsa.ts)
   // Har byn en vattensäck väntar hen på den som hämtar vatten i den, tills törsten blir farlig (steg 2.10.1)
   { act: 'fatt', why: 'Kan inte gå och får vatten av de andra', min: () => TORST.drickMin, nar: (s, p) => !kanGa(p) && hemma(s, p) && (nTools(s, 'vattensack') < 1 || tortarFarligt(p)) },
-  // istiden: sjön är frusen, och den som kan smälter snö vid en brinnande eld
-  { act: 'smalta', why: 'Är törstig och smälter snö vid elden', min: () => TORST.snoMin, nar: s => iIstiden(ageIndex(s)) && s.fire.lit },
+  // isen ligger på sjön: den som kan smälter snö vid en brinnande eld, annars hugger man upp ett hål i isen
+  { act: 'smalta', why: 'Är törstig och smälter snö vid elden', min: () => TORST.snoMin, nar: s => islagt(s) && s.fire.lit },
   { act: 'dricka', why: 'Är törstig och går och dricker vid vattnet', min: () => TORST.drickMin, nar: () => true },
 ];
 export const DRICKA_ACTS = new Set<Act>(DRICKA.map(d => d.act));
-// så många minuter man dricker när man kommit fram (paborjat.ts: tiden räknas från framkomsten)
-export const drickMin = (act: Act) => DRICKA.find(d => d.act === act)?.min() ?? 0;
+// så många minuter man dricker när man kommit fram (paborjat.ts: tiden räknas från framkomsten), med hålet i isen
+export const drickMin = (s: State, p: Person, act: Act) => (DRICKA.find(d => d.act === act)?.min() ?? 0) + (act === 'dricka' ? halMin(s, p) : 0);
 
 // törsten per timme just nu, och delarna den beror på (personrutan visar dem)
 export function torstDelar(p: Person) {
@@ -113,9 +113,11 @@ export function drickVal(s: State, p: Person) {
   if (d.act !== 'fatt' && !kanGa(p) && hemma(s, p)) return undefined; // väntar på vattensäcken
   if (d.act === 'smalta') return { act: d.act, why: d.why, min: d.min() };
   if (d.act === 'fatt') return { act: d.act, why: d.why, min: d.min(), spot: { x: p.x, y: p.y } };
+  const h = halVal(s, p);
+  if (islagt(s) && !h) return undefined; // isen är för tjock för det man har
   const spot = drickPlats(s, p);
   if (!spot) return undefined;
-  return { act: d.act, why: iIstiden(ageIndex(s)) ? 'Är törstig och hugger upp isen för att dricka' : d.why, min: d.min(), spot };
+  return { act: d.act, why: h ? `Är törstig och hugger upp ett hål i isen med ${h.namn} för att dricka` : d.why, min: d.min(), spot };
 }
 // framme: man dricker. Vid vattnet lär man sig hur smutsigt det är där, och smutsigt vatten kan ge ont i magen
 export function drick(s: State, p: Person, t: Task) {
@@ -152,7 +154,7 @@ export function vattenVal(s: State, p: Person): { spot: { x: number; y: number }
     if (d >= bd || hamtas(s, q)) continue;
     best = q; bd = d;
   }
-  const spot = best && drickPlats(s, p);
+  const spot = best && naVattnet(s, p) && drickPlats(s, p); // genom isen bara med ett hål (is.ts)
   return best && spot ? { spot, ref: best.id, why: `Hämtar vatten i säcken åt ${best.name}` } : undefined;
 }
 // säcken är fylld (KLAR i steg.ts): bär den till den törstige. Utan säck i handen blir det inget

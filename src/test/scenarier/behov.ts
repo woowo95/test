@@ -1,5 +1,6 @@
 // Scenarier. Behov och val: behov, ved, aktivitet och fritid.
 import { Person, createState, getRel, step, living, temperature, nyKalender, amountOf, capacity, load, isLight, T, FOOD, ageOf, getMap, HOUR, W, tileOf, stat, campCenter, KANIN, gain, takeFuel, ownsAmount, ownedSum, addTo, setAmount, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, STOLD_LINDRIG, STOLD_OP, BEAT, spar, isWork, ACTS, groundOf, varmeDelar, nyVarme, addTool, stepKlader, chooseTask, iSkugga, KROPP, spotFor, shoreOf, torstDelar, drickPlats, areaOf, halsaLage, describe, halsaSteg, skada, blodning, halsa, rorlighet, workRate, OLYCKOR, Act, HALSA, kanGa, gangFart, hemma, mossaFynd, chopStock, skadeLista, skadeText, delSkada, FORMAGOR, smarta, handighet, NARINGAR, NARING, naringOf, naringNu, naringSjunker, mattnad, sjunker, bristGrad, bristSteg, berattaBrist, onskan, matOrdning, takeFood, vilaTim, skorbjugg, NARINGBAL, DODSORSAKER, converse, Naring, STATIONER, TEKNIK, tingOf, vaderNu } from '../../sim';
+import { stepIs, stepVader, isCm, vattenGrader, halVal, halMin, drickVal, iIstiden, ageIndex, tidyTools } from '../../sim';
 import { START, STEG_DYGN, STEG_TIM } from '../kor';
 import { setMat, setFood, kor, klockan, tandEld, tomtForrad, treVuxna, bastaJaktruta, SCENARIER, rikBy } from './hjalp';
 
@@ -321,7 +322,7 @@ SCENARIER.skugga = {
 };
 
 SCENARIER.torst = {
-  text: 'Steg 2.4.1–2.4.2: törsten är ett eget behov. Den växer fortare för den som är för varm eller arbetar tungt, och långsammare i sömnen. Den törstige går och dricker vid vattnet (bär inte hem det) och undviker vatten hen tror är smutsigt; i istiden smälter man snö vid elden, och utan eld hugger man upp isen. Smutsigt vatten kan ge ont i magen, man lär sig var vattnet är rent och berättar det för andra. Utan vatten tär törsten på hälsan',
+  text: 'Steg 2.4.1–2.4.2: törsten är ett eget behov. Den växer fortare för den som är för varm eller arbetar tungt, och långsammare i sömnen. Den törstige går och dricker vid vattnet (bär inte hem det) och undviker vatten hen tror är smutsigt; när isen ligger smälter man snö vid elden, och utan eld hugger man upp ett hål i isen. Smutsigt vatten kan ge ont i magen, man lär sig var vattnet är rent och berättar det för andra. Utan vatten tär törsten på hälsan',
   kor: () => {
     const s = createState(5, START);
     s.kal = nyKalender(s.now, 2); klockan(s, 10); // sommar
@@ -344,7 +345,7 @@ SCENARIER.torst = {
     // utan vatten tär törsten på hälsan, och då läker man inte
     fyll(); p.torst = 0; const tar = halsaLage(p, s.now) === 'torst';
     // istiden: snö smälts vid elden, och utan eld hugger man upp isen
-    const is = createState(6, START); is.kal = nyKalender(is.now, 0); klockan(is, 10); tandEld(is);
+    const is = createState(6, START); is.kal = nyKalender(is.now, 0); klockan(is, 10); tandEld(is); is.is = { vatten: 0, cm: 3 }; // tunn is: den går att hugga upp med händerna (steg 2.11.3)
     const q = living(is)[0];
     Object.assign(q, { rest: 1, toa: 1, hunger: 1, social: 1, warm: 1, health: 1, torst: 0.3, task: undefined }); chooseTask(is, q);
     const sno = q.task!.act === 'smalta';
@@ -367,6 +368,58 @@ SCENARIER.torst = {
       ['i istiden smälts snö vid elden', sno],
       ['i istiden utan eld hugger man upp isen och dricker', isen],
       [`på två dygn i tre byar: ${drickor} gånger drack man, ${magont} fick ont i magen, ${hort} lärdomar om vattnet hade man hört av andra, ${dog} törstade ihjäl (som mest ${maxTorstiga} uttorkade samtidigt)`, drickor > 50 && dog === 0 && hort > 0],
+    ];
+  },
+};
+
+SCENARIER.is = {
+  text: 'Steg 2.11.3: sjön har en egen temperatur som följer luftens långsamt. Isen lägger sig när vattnet kyls under noll, växer i kylan och smälter på våren. Den som fiskar eller dricker hugger först upp ett hål: tunn is med händerna, tjockare med en sten, och yxan, spjutet och spaden tar sig genom all is (tills isborren kommer). Fisket genom hålet är pimpling',
+  kor: () => {
+    // ett år i spelet (fem veckor) från våren, timme för timme: isen i varje tidsålder
+    const s = createState(5, START), t0 = s.now;
+    let cmIstid = -1, maxCm = 0, varStart = -1, cmVar = -1, varmSommar = 0, forstIs = -1;
+    for (let h = 0; h < 36 * 24; h++) {
+      s.now = t0 + h * HOUR; stepVader(s); stepIs(s);
+      const ai = ageIndex(s), cm = isCm(s);
+      if (forstIs < 0 && cm > 0) forstIs = ai;
+      if (cmIstid < 0 && iIstiden(ai)) cmIstid = cm;
+      if (iIstiden(ai)) maxCm = Math.max(maxCm, cm);
+      if (ai === 2) varmSommar = Math.max(varmSommar, vattenGrader(s));
+      if (cmIstid >= 0 && !iIstiden(ai) && varStart < 0) varStart = h;
+      if (varStart >= 0 && h === varStart + 24) cmVar = cm; // ett dygn in i våren
+    }
+    // hålet: vad man har avgör hur tjock is man tar sig igenom och hur länge det tar
+    const b = createState(6, START); b.kal = nyKalender(b.now, 0); klockan(b, 10);
+    const p = living(b)[0];
+    setAmount(b, 'sten', 0); for (const k of ['yxa', 'fiskespjut', 'flintspjut', 'benspade']) setAmount(b, k, 0); tidyTools(b);
+    const med = (cm: number) => { b.is = { vatten: 0, cm }; return halVal(b, p)?.id ?? 'inget'; };
+    const tunn = med(3), mellan = med(10), tjock = med(25);
+    Object.assign(p, { rest: 1, toa: 1, hunger: 1, social: 1, warm: 1, health: 1, torst: 0.3, task: undefined });
+    b.fire.lit = false; b.is = { vatten: 0, cm: 25 };
+    const ingetVatten = drickVal(b, p) === undefined;
+    setAmount(b, 'sten', 1); const sten = med(10);
+    setAmount(b, 'yxa', 1); tidyTools(b); const yxa = med(25), minYxa = halMin(b, p);
+    b.is = { vatten: 0, cm: 25 }; const dryck = drickVal(b, p), yxDryck = !!dryck && /hål i isen med yxan/.test(dryck.why);
+    setAmount(b, 'yxa', 0); setAmount(b, 'fiskespjut', 1); tidyTools(b); const spjut = med(40);
+    // två dygn (två år i spelet) i istiden med is på sjön: man pimplar
+    let pimplade = 0, fiskade = 0;
+    for (const seed of [5, 6, 7]) {
+      const v = createState(seed, START); v.kal = nyKalender(v.now, 0); klockan(v, 8); tandEld(v); setFood(v, 10);
+      v.is = { vatten: 0, cm: 15 };
+      for (const q of living(v)) q.tek = { ...(q.tek ?? {}), fiskespjut: 1 };
+      setAmount(v, 'fiskespjut', 2); tidyTools(v);
+      kor(v, 48);
+      pimplade += (v.stat?.pimplade as number ?? 0); fiskade += (v.stat?.fiskade as number ?? 0) + (v.stat?.fisk as number ?? 0);
+    }
+    return [
+      [`isen lägger sig i slutet av hösten (tidsålder ${forstIs}) och är ${cmIstid.toFixed(0)} cm när istiden börjar`, forstIs === 3 && cmIstid > 5 && cmIstid < 25],
+      [`isen blir som tjockast ${maxCm.toFixed(0)} cm`, maxCm > 25 && maxCm < 60],
+      [`isen har gått upp ett dygn in i våren (${cmVar.toFixed(0)} cm kvar), och sjön blir ${varmSommar.toFixed(0)} grader på sommaren`, cmVar === 0 && varmSommar > 8],
+      [`tunn is huggs upp med ${tunn}, 10 cm går inte utan något (${mellan}), men med en sten (${sten})`, tunn === 'hand' && mellan === 'inget' && sten === 'sten'],
+      [`tjock is går inte med händerna (${tjock}), och då får den som är törstig inget vatten utan eld`, tjock === 'inget' && ingetVatten],
+      [`yxan tar sig genom 25 cm (${yxa}, ${minYxa.toFixed(1)} minuter) och den törstige dricker genom hålet`, yxa === 'yxa' && minYxa > 0 && yxDryck],
+      [`spjutet tar sig genom 40 cm (${spjut})`, spjut === 'spjut'],
+      [`på två dygn i istiden i tre byar högg man upp hål i isen och pimplade (${pimplade} gånger)`, pimplade >= 2],
     ];
   },
 };

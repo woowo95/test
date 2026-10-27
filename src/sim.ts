@@ -32,6 +32,7 @@ export * from './sim/fynd';
 export * from './sim/kunskap';
 export * from './sim/minne';
 export * from './sim/vader';
+export * from './sim/is';
 export * from './sim/redskap';
 export * from './sim/paborjat';
 export * from './sim/stationer';

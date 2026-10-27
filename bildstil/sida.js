@@ -977,7 +977,30 @@ const regnKarta = (stil) => ({ w: 64, h: 32, rita: (B, P) => {
     else B.satt(x, y, sn);
   }
 } });
+// isen på sjön (steg 2.11.3): öppet vatten, tunn is och tjock is med ett upphugget hål, en ruta (16 × 16) var
+const isKarta = (stil) => ({ w: 3 * 18 + 2, h: 20, rita: (B, P) => {
+  const ruta = (x0, f) => { for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) B.satt(x0 + x, 2 + y, f(x, y)); };
+  const h = (x, y, s) => hash(x, y, s + stil * 13);
+  ruta(2, (x, y) => (y % 5 === 2 && x % 7 < 3) ? P.i('skiffer', 2) : P.i('skiffer', 1));
+  ruta(20, (x, y) => stil === 1 ? (h(x, y, 1) > 0.85 ? P.i('skiffer', 1) : P.i('skiffer', 2))
+    : stil === 2 ? ((x + y * 2) % 9 === 0 ? P.i('skiffer', 3) : P.i('skiffer', 2))
+    : (h(x >> 1, y >> 1, 2) > 0.7 ? P.i('barr', 2) : P.i('skiffer', 2)));
+  ruta(38, (x, y) => {
+    const dx = x - 8, dy = y - 8, r = dx * dx + dy * dy;
+    if (r <= 5) return P.i(stil === 3 ? 'barr' : 'skiffer', stil === 3 ? 0 : 1); // hålet
+    if (stil >= 2 && r <= 10 && h(x, y, 3) > 0.4) return P.i('ben', 3); // isbitar runt hålet
+    if (stil === 2 && (x === y + 3 || x === 15 - y - 2) && h(x, y, 4) > 0.3) return P.i('ben', 3); // sprickor
+    if (stil === 3 && (x + y) % 11 === 0 && y < 7) return P.i('ben', 3); // glans
+    return h(x, y, 5) > (stil === 1 ? 0.92 : 0.8) ? P.i('ben', 3) : P.i('skiffer', 3); // snö på isen
+  });
+} });
 const VAL = [
+  { id: 'isen', namn: 'Isen på sjön', vad: 'Nytt på kartan (steg 2.11.3), en ruta med 16 × 16 punkter: öppet vatten (till vänster), tunn is (i mitten) och tjock is med ett hål som någon huggit upp för att fiska eller dricka (till höger). I spelet nu: vattnet blir gråblått när isen är tunn och ljust när den är tjock, utan hål.', typ: 'tre',
+    versioner: [
+      { text: 'Slät is: den tunna är mörk med några fläckar, den tjocka ljus med lite snö, och hålet är en mörk prick.', ...isKarta(1) },
+      { text: 'Sprucken is: den tunna har ljusa ränder, den tjocka vita sprickor, och runt hålet ligger isbitar.', ...isKarta(2) },
+      { text: 'Blank is: den tunna visar det mörka vattnet under, den tjocka glänser, och hålet är djupt och svart med isbitar runt.', ...isKarta(3) },
+    ] },
   { id: 'vader', namn: 'Vädrets symboler', vad: 'Nya symboler (steg 2.11.1), 8 × 8 punkter: klart, mulet, regn, snö, blåst och åska, i den ordningen. De står bredvid temperaturen högst upp; håller man musen över dem står vad vädret gör.', typ: 'tre',
     idag: { text: '☀ ☁ 🌧 ❄ 💨 ⛈' },
     versioner: [

@@ -1,4 +1,4 @@
-import { ACTS, FYND, SjoLogg, ageIndex, byId, fyndAt, living, sjoNamn, sjoVid, sjoarna, temperature } from '../../sim';
+import { ACTS, FYND, ISHAL, SjoLogg, ageIndex, byId, fyndAt, isCm, living, sjoNamn, sjoVid, sjoarna, temperature, vattenGrader } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { bar, clockTxt, esc, fmtN, pLink, times } from '../hjalp';
 import { s, ui } from '../lage';
@@ -17,6 +17,13 @@ function topp(r: Record<number, number>) {
   const xs = Object.entries(r).map(([id, n]) => ({ p: byId(s, Number(id)), n })).filter(x => x.p).sort((a, b) => b.n - a.n).slice(0, 6);
   return `<ul class="rels">${xs.map(x => `<li>${pLink(x.p)}<span></span><span class="muted">${fmtN(x.n)}</span></li>`).join('')}</ul>`;
 }
+// isens tjocklek och vad som tar sig igenom den (is.ts)
+function isText() {
+  const cm = isCm(s);
+  if (cm <= 0) return 'Ingen is';
+  const med = ISHAL.filter(h => h.max >= cm).map(h => h.namn);
+  return `<span title="Man hugger upp ett hål för att fiska och dricka. Det går med ${med.join(', ').replace(/, ([^,]*)$/, ' eller $1')}.">${Math.round(cm)} cm</span>`;
+}
 function sjoHtml() {
   const n = ui.sjoNr, sj = sjoarna(s.seed), rutor = sj.rutor[n];
   if (!rutor) return '<p class="muted">Sjön finns inte.</p>';
@@ -33,6 +40,8 @@ function sjoHtml() {
       <dt>${iconImg('abborre', 14)} Fisk</dt><dd>${bar(kvar)}<span>${Math.round(kvar * 100)} %</span></dd>
       <dt>Fisket nu</dt><dd>${sas >= 1 ? 'Bra' : sas >= 0.7 ? 'Måttligt' : 'Dåligt'} efter årstiden</dd>
       <dt>Luften</dt><dd>${Math.round(temp)} grader</dd>
+      <dt>Vattnet</dt><dd>${Math.round(vattenGrader(s))} grader</dd>
+      <dt>Isen</dt><dd>${isText()}</dd>
       ${fiskar.length ? `<dt>Fiskar</dt><dd>${fiskar.map(pLink).join(', ')}</dd>` : ''}
       ${badar.length ? `<dt>Badar</dt><dd>${badar.map(pLink).join(', ')}</dd>` : ''}
     </dl>

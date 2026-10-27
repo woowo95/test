@@ -101,6 +101,7 @@ export interface Task {
   res?: { x: number; y: number; until: number }; // var och till när arbetet fortsätter efter att bördan bärts hem
   site?: { x: number; y: number }; // bygget man går till efter att ha hämtat material
   mask?: number; // fiske: maskar på kroken till metspöet
+  hal?: number; // fiske: sekunder kvar att hugga på hålet i isen (steg 2.11.3, is.ts); 0 = hålet är upphugget
   fran?: number; // den man tar ved av till elden (stöld, behov.ts)
   kom?: Record<string, number>; // var materialet till bygget kom ifrån (bygg.ts)
   sok?: true; // letar flinta eller stenar vid stenarna: blir platsen tom fortsätter man ändå i stället för att gå hem (steg.ts, workStep)
@@ -193,6 +194,7 @@ export interface State {
   stationer?: import('./stationer').Station[]; nextStation?: number; // arbetsstationerna, som slaktbänken (stationer.ts)
   falt?: import('./odling').Falt[]; nextFalt?: number; // fälten (steg 2.10.3, odling.ts)
   vader?: import('./vader').VaderMinne; // fukten och snön på marken (steg 2.11.1, vader.ts)
+  is?: import('./is').IsMinne; // vattnets temperatur och isens tjocklek (steg 2.11.3, is.ts)
   brasa?: { vill: number; x: number; y: number }; // byn vill ha en brasa (0 till 1) nära mitten av sovplatserna x, y (brasor.ts, räknas varje timme)
   flackar?: import('./smuts').Flack[]; // fläckar på marken som bleknar: toa-smutsen (smuts.ts)
   blod?: import('./blod').Blodflack[]; // blodet på marken (bara utseende, blod.ts)

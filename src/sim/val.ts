@@ -23,9 +23,10 @@ import { axeTask, fallTid } from './skog';
 import { GA_TID, startWork, startsOnArrival } from './paborjat';
 import { duty, dygn, habitShare, habitTotal } from './seder';
 import { clamp, pick, pickNarmaste, rnd } from './slump';
-import { ARSTID, ageIndex, iIstiden, isLight, kallTid, yearNo } from './tid';
+import { ARSTID, ageIndex, isLight, kallTid, yearNo } from './tid';
 import { Act, H, HOUR, MIN, Person, Skill, Stat, State, T, Task, W, inMap } from './typer';
 import { balans } from './balans';
+import { islagt, naVattnet } from './is';
 import { drickVal, torstig, tortarFarligt, vattenVal } from './torst';
 import { forSmutsigt, latrinFor } from './smuts';
 import { bordenOf, byInne, ledigPlats, lekplats, sittAt, stationAt, stationFor, storlekAv, vidStation } from './stationer';
@@ -428,8 +429,9 @@ function day(s: State, p: Person, v: Val, a: number, lazy: number) {
     v.dur = (VAL.arbeteMin + rnd(s, 'val', p) * VAL.arbeteSpann) * MIN * VAL.pass;
     if (tandmat) v.tandmat = true;
     withTools(s, p, v, best, what, fd, ai, fara, leta);
+    if (v.act === 'fiske' && islagt(s)) v.why = `${v.why} Hugger upp ett hål i isen och pimplar.`;
     if (build && job!.missing && job!.item === 'ved' && v.act === 'falla') { v.ref = job!.bit.hus; v.why = `${v.why} Stocken ska bli en vägg.`; } // trädet fälls för bygget
-  } else leisure(s, p, v, u, lazy, ai);
+  } else leisure(s, p, v, u, lazy);
 }
 
 // egen lust att arbeta med färdigheten skill: färdigheten och egenskapen som hjälper, gånger vanan (acts: handlingarna som räknas)
@@ -446,7 +448,7 @@ function bestWork(s: State, p: Person, fd: number, wd: number, ai: number, tot: 
     const need = w === 'ved' ? wWood : wFood;
     const tinder = w === 'samla' && needTinder(s);
     // nytta för byn; maten väger också in hur mycket platserna ger just nu och att fiske med händerna ger lite
-    const yieldF = w === 'ved' || tinder ? 1 : clamp(prospectFor(s, p, w as Kind), VAL.prospektMin, VAL.prospektMax) * (w === 'fiske' ? FANGST.handFiske : 1) * toolGain(s, p, w, fara);
+    const yieldF = w === 'ved' || tinder ? 1 : clamp(prospectFor(s, p, w as Kind), VAL.prospektMin, VAL.prospektMax) * (w === 'fiske' ? FANGST.handFiske * (naVattnet(s, p) ? 1 : 0) : 1) * toolGain(s, p, w, fara); // genom isen bara med ett hål (is.ts)
     const season = ACTS[w].sasong![ai];
     // maten som någon längtar efter är mer värd att hämta (steg 2.6.2)
     const col = need * (w === 'ved' ? 1 : tinder ? Math.max(VAL.tandMin, season) * VAL.tandVikt : season * yieldF * onskan(p, w, s.now));
@@ -556,7 +558,7 @@ function projektVal(v: Val, u: Uppgift, why: string) {
 }
 
 // egen lust: vila, hantverk, umgänge, promenad, bad eller att sitta vid stranden. u = hur akut byn behöver arbete
-function leisure(s: State, p: Person, v: Val, u: number, lazy: number, ai: number) {
+function leisure(s: State, p: Person, v: Val, u: number, lazy: number) {
   const now = s.now;
   const wv = (p.rest < VAL.vilaDag ? (1 - p.rest) * VAL.vilaVikt : 0) + lazy * VAL.vilaLat;
   const wh = (p.skill.hantverk / VAL.hantSkill + p.pot.flit / VAL.hantFlit) * (u < VAL.hantLugn ? VAL.hantLugnVikt : VAL.hantAkutVikt);
@@ -578,7 +580,7 @@ function leisure(s: State, p: Person, v: Val, u: number, lazy: number, ai: numbe
     set(v, 'promenad', far > 12 ? 'Är nyfiken och vill se vad som finns längre bort' : 'Vill sträcka på benen');
     v.spot = walkSpot(s, p, far); v.dur = (VAL.promMin + rnd(s, 'val', p) * VAL.promSpann) * MIN * VAL.pass;
   } else if (r < wv + wh + wsoc + wp + wb) { set(v, 'bada', `Det är varmt (${Math.round(temp)} grader) och skönt att bada`); v.spot = shore; v.dur = (VAL.badPassMin + rnd(s, 'val', p) * VAL.badPassSpann) * MIN * VAL.pass; }
-  else { set(v, 'strand', iIstiden(ai) ? 'Vill se ut över isen en stund' : 'Vill sitta vid vattnet och se ut över sjön'); v.spot = strandSpot(s, p); v.dur = (VAL.strandMin + rnd(s, 'val', p) * VAL.strandSpann) * MIN * VAL.pass; }
+  else { set(v, 'strand', islagt(s) ? 'Vill se ut över isen en stund' : 'Vill sitta vid vattnet och se ut över sjön'); v.spot = strandSpot(s, p); v.dur = (VAL.strandMin + rnd(s, 'val', p) * VAL.strandSpann) * MIN * VAL.pass; }
 }
 
 // på natten: en vakt, och de andra håller sig vid elden och berättar, gör handarbete, umgås eller sover

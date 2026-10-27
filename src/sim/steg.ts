@@ -8,6 +8,7 @@ import { GOR_ACTS, finishHalf, startWork, stepPaborjat, workHalf } from './pabor
 import { thinkWhileWorking } from './teknik';
 import { arbetsformaga, foodDays, workRate } from './ekonomi';
 import { TRY_SEC, growFynd, handFish, lagren, packFynd, pickMushrooms, richness, richnessDelar, takeFrom } from './fynd';
+import { halMin, halVal, islagt, stepIs } from './is';
 import { blotSteg, coldOf, stepVader, temperature, VADER, vaderGrader, vaderNu, vaxtFaktor } from './vader';
 import { VED, addFuel, canLight, fireWant, forageItems, fuelFor, hearthOf, heatAt, igniterOf, stepFire, takeCoal, takeFuel, tinderShort, tryLight } from './eld';
 import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, isSick, living, log, ovning, stat, think } from './folk';
@@ -141,7 +142,7 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
   const learn = 1 + 0.1 * s.seder.v.nyfikenhet; // en nyfiken by lär sig snabbare
   if (Math.floor(now / HOUR) !== Math.floor((now - dtSec * SEC) / HOUR)) {
     stepSeder(s); updateTags(s); stepDelning(s);
-    stepVader(s); growGround(s, 1, ai); growFynd(s, 1, ai, vaxtFaktor(s)); forget(s, 1); rotStumps(s); tidyStore(s);
+    stepVader(s); stepIs(s); growGround(s, 1, ai); growFynd(s, 1, ai, vaxtFaktor(s)); forget(s, 1); rotStumps(s); tidyStore(s);
     wearBuild(s, 1, ai); stepByggnader(s); planBuild(s); stepPaborjat(s); stepStationer(s); stepBrasor(s); stepKlader(s); stepOdling(s);
     historikSteg(s); // nyckeltalen till byns historik (läses inte av simuleringen)
     compact(s); // här och inte i sparningen, så att alla lägen städar vid samma tid
@@ -436,6 +437,14 @@ const UTFALL: Partial<Record<Act, (s: State, p: Person, tk: Task, b: Arbetsbit) 
   // fiske med händerna, spjut eller metspö: ett försök i taget, och fiskaren går hem med varje fångst
   fiske: (s, p, tk, { rd, dtSec, a }) => {
     tk.prog = (tk.prog ?? 0) + dtSec;
+    // ligger isen hugger man först upp ett hål (is.ts), och sedan pimplar man genom det. Går det inte slutar man
+    if (tk.hal === undefined && islagt(s)) {
+      const h = halVal(s, p);
+      if (!h) { tk.until = s.now; return; }
+      tk.hal = halMin(s, p) * 60;
+      if (forstaGang(s, 'pimplade')) log(s, `${p.name} högg upp ett hål i isen med ${h.namn} och pimplade, byns första fiske genom isen.`, 'world', [p.id]);
+    }
+    if (tk.hal) { const d = Math.min(tk.hal, tk.prog); tk.hal -= d; tk.prog -= d; if (tk.hal > 0) return; }
     const ageF = arbetsformaga(p, a, s.now);
     while (tk.prog >= TRY_SEC) {
       tk.prog -= TRY_SEC;
