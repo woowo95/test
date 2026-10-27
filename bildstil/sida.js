@@ -931,7 +931,31 @@ const VILDKORN = { s: 'senap0', y: 'senap1', Y: 'senap2', L: 'senap3', o: 'oliv1
 const ARTER = { o: 'kol0', g: 'barr1', G: 'oliv2', L: 'oliv3', y: 'senap2', Y: 'senap3', w: 'ben3', W: 'ben2' };
 const FRON = { k: 'jord0', j: 'jord1', J: 'jord2', B: 'jord3', y: 'senap1', Y: 'senap2', L: 'senap3', g: 'oliv2', G: 'oliv3', o: 'kol0' };
 const ODLING = { k: 'jord0', j: 'jord1', J: 'jord2', B: 'jord3', g: 'oliv1', G: 'oliv2', H: 'oliv3', y: 'senap2', Y: 'senap3' };
+const ROVOR = { o: 'oliv0', g: 'oliv1', G: 'oliv2', L: 'oliv3', r: 'rost1', R: 'rost2', b: 'ben1', B: 'ben2', W: 'ben3', k: 'jord0', j: 'jord1', J: 'jord2' };
+const KORN = { s: 'senap0', y: 'senap1', Y: 'senap2', L: 'senap3', k: 'jord0', j: 'jord1', J: 'jord2' };
+const GRODD = { k: 'jord0', j: 'jord1', J: 'jord2', g: 'oliv1', G: 'oliv2', L: 'oliv3' };
 const VAL = [
+  { id: 'rovor', namn: 'Rovorna', vad: 'Ny sak (steg 2.10.3), 16 × 16 punkter: rovor från fälten. De växer på två dygn och tål lite frost.', typ: 'tre',
+    idag: { w: 20, h: 20, rita: (B, P) => ritaIkon(B, 'rovor', 2, 2) }, idagText: 'Platshållaren i spelet nu.',
+    versioner: [
+      { text: 'En vit rova med lila topp och blasten uppe.', w: 20, h: 20, rita: (B, P) => ritaSprite(B, ['....g......g....', '...gGg....gLg...', '...gGLg..gGLg...', '....gGLggGLg....', '.....gGGGGg.....', '.......gg.......', '.....rRRRRr.....', '....rRRRRRRr....', '...rRRRRRRRRr...', '...bBWWWWWWBb...', '...bBWWWWWWBb...', '...bBBWWWWBBb...', '....bBBWWBBb....', '.....bbBBbb.....', '.......bb.......', '.......b........'], ROVOR, 2, 2) },
+      { text: 'Två rovor bredvid varandra.', w: 20, h: 20, rita: (B, P) => ritaSprite(B, ['................', '................', '..g..g.....g.g..', '..gGgL....gGLg..', '...gGg.....gG...', '...rRr....rRRr..', '..rRRRr..rRRRRr.', '.rRRRRRr.rRRRRr.', '.bWWWWWb.bWWWWb.', '.bWWWWWb.bBWWWb.', '.bBWWWBb..bBWBb.', '..bBWBb...bBBb..', '...bBb.....bb...', '....b......b....', '................', '................'], ROVOR, 2, 2) },
+      { text: 'En rova som sitter halvt i jorden.', w: 20, h: 20, rita: (B, P) => ritaSprite(B, ['.....g...g......', '....gLg.gLg.....', '....gGLgLGg..g..', '.....gGGGg..gLg.', '......gGg..gGg..', '.......g..gg....', '.......ggg......', '.....rRRRRr.....', '....rRRRRRRr....', 'JJJJrRRRRRRrJJJJ', 'jjjbBWWWWWWBbjjj', 'jjjbBWWWWWWBbjjj', 'kkkkbBWWWWBbkkkk', 'jjjjjbBWWBbjjjjj', 'kkkkkkbBBbkkkkkk', 'kkkkkkkbbkkkkkkk'], ROVOR, 2, 2) },
+    ] },
+  { id: 'korn', namn: 'Kornet', vad: 'Ny sak (steg 2.10.3), 16 × 16 punkter: korn från fälten. Det växer på fem dygn och håller länge i lagret.', typ: 'tre',
+    idag: { w: 20, h: 20, rita: (B, P) => ritaIkon(B, 'korn', 2, 2) }, idagText: 'Platshållaren i spelet nu.',
+    versioner: [
+      { text: 'Ett ax över en skål med korn (platshållaren, renare).', w: 20, h: 20, rita: (B, P) => ritaSprite(B, ['................', '.......L........', '......LY........', '.....LYYy.......', '......Yy..L.....', '.....LYy.LY.....', '......Yy.YYy....', '.....LYyLYy.....', '......YyYy......', '.......yy.......', '....jJJJJJJj....', '...jJLYLYLYJj...', '..jJYLYLYLYLJj..', '..jJLYLYLYLYJj..', '...kjjjjjjjjk...', '....kkkkkkkk....'], KORN, 2, 2) },
+      { text: 'En kärve med ett band om.', w: 20, h: 20, rita: (B, P) => ritaSprite(B, ['..L.L..L..L.L...', '.LYLYLLYLLYLYL..', '..YLYLYYLYLYL...', '...YyYyYyYyY....', '....yYyYyYy.....', '.....yYyYy......', '.....jJJJj......', '.....yYyYy......', '.....yyYyy......', '....yyYyYyy.....', '....yYyyyYy.....', '...yyY.y.Yyy....', '...yY..y..Yy....', '..yy...y...yy...', '..s....s....s...', '................'], KORN, 2, 2) },
+      { text: 'En hög med korn.', w: 20, h: 20, rita: (B, P) => ritaSprite(B, ['................', '................', '................', '................', '................', '................', '.......LY.......', '.....LYYyY......', '....LYyLYyYy....', '...LYyYyLYyYy...', '..LYyLYyYyLYyy..', '..YyYyYyLYyYys..', '.LYyLYyYyYyLYys.', '.yYyYyyYyYyYyys.', '..ssyyssyysyss..', '....ssssssss....'], KORN, 2, 2) },
+    ] },
+  { id: 'grodd', namn: 'Fältet', vad: 'Nytt på kartan (steg 2.10.3), en ruta med 16 × 16 punkter: fältet medan grödan växer. Det ritas på varje ruta i fältet (två gånger två rutor); i dag är det brun jord med fåror och en grodd.', typ: 'tre',
+    idag: { w: 20, h: 20, rita: (B, P) => ritaIkon(B, 'grodd', 2, 2) }, idagText: 'Platshållaren i spelet nu.',
+    versioner: [
+      { text: 'Två rader med små groddar i fårorna.', w: 20, h: 20, rita: (B, P) => ritaSprite(B, ['.L...L...L...L..', 'GLg.GLg.GLg.GLg.', '.g...g...g...g..', 'JJgJJJgJJJgJJJgJ', 'jjjjjjjjjjjjjjjj', 'kkkkkkkkkkkkkkkk', '.L...L...L...L..', 'GLg.GLg.GLg.GLg.', '.g...g...g...g..', 'JJgJJJgJJJgJJJgJ', 'jjjjjjjjjjjjjjjj', 'kkkkkkkkkkkkkkkk', 'JJJJJJJJJJJJJJJJ', 'jjjjjjjjjjjjjjjj', 'kkkkkkkkkkkkkkkk', 'jjjjjjjjjjjjjjjj'], GRODD, 2, 2) },
+      { text: 'En större grodd mitt på rutan i mörk jord med fåror.', w: 20, h: 20, rita: (B, P) => ritaSprite(B, ['jjjjjjjjjjjjjjjj', 'kkkkkkkkkkkkkkkk', 'jjjjjjjjjjjjjjjj', 'jjjjjLLjjLLjjjjj', 'kkkkLGGgkGGLkkkk', 'jjjjjgGGjGgjjjjj', 'jjjjjjjgGgjjjjjj', 'kkkkkkkkgkkkkkkk', 'jjjjjjjjgjjjjjjj', 'jjjjjjjjjjjjjjjj', 'kkkkkkkkkkkkkkkk', 'jjjjjjjjjjjjjjjj', 'jjjjjjjjjjjjjjjj', 'kkkkkkkkkkkkkkkk', 'jjjjjjjjjjjjjjjj', 'jjjjjjjjjjjjjjjj'], GRODD, 2, 2) },
+      { text: 'Halvvuxet: gröna rader som täcker jorden.', w: 20, h: 20, rita: (B, P) => ritaSprite(B, ['kkkkkkkkkkkkkkkk', 'gLGgLGgLGgLGgLGg', 'GgGLgGGgLGgGGgLG', 'gGgGgGgGgGgGgGgG', 'jjgjjjgjjjgjjjgj', 'kkkkkkkkkkkkkkkk', 'gLGgLGgLGgLGgLGg', 'GgGLgGGgLGgGGgLG', 'gGgGgGgGgGgGgGgG', 'jjgjjjgjjjgjjjgj', 'kkkkkkkkkkkkkkkk', 'gLGgLGgLGgLGgLGg', 'GgGLgGGgLGgGGgLG', 'gGgGgGgGgGgGgGgG', 'jjgjjjgjjjgjjjgj', 'kkkkkkkkkkkkkkkk'], GRODD, 2, 2) },
+    ] },
   { id: 'vattensack', namn: 'Vattensäcken', vad: 'Ny sak (steg 2.10.1), 16 × 16 punkter: ett skinn som sys ihop till en säck och knyts med rep. Med den bär man vatten till den som inte kan gå.', typ: 'tre',
     idag: { w: 20, h: 20, rita: (B, P) => ritaIkon(B, 'vattensack', 2, 2) }, idagText: 'Platshållaren i spelet nu.',
     versioner: [

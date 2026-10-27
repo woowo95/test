@@ -1038,3 +1038,66 @@ SCENARIER.odling = {
     ];
   },
 };
+
+SCENARIER.falt = {
+  text: 'Steg 2.10.3: den som kan odla och har frön röjer ett fält på jorden nära byn, gräver upp det och sår. Grödan växer när det är varmt, skördas när den är mogen och ger mat och nya frön. Frosten dödar den, den mogna ruttnar om ingen skördar, och ett fält som ingen sköter blir gräs igen',
+  kor: () => {
+    const s = createState(7, START);
+    s.kal = nyKalender(s.now, 1); klockan(s, 7); tandEld(s);
+    for (const q of living(s)) q.tek = { ...q.tek, odling: 1 };
+    setAmount(s, 'fron', 30);
+    const fron0 = amountOf(s, 'fron'), m = getMap(s.seed), g = groundOf(s);
+    kor(s, 48);
+    const fs = SIM.faltOf(s), f = fs[0];
+    // fälten ligger på jord, utan stora träd, inte på varandra och inte på lagret
+    let fel = 0;
+    for (const q of fs) for (const i of SIM.faltRutor(q)) {
+      const t = m.tiles[i];
+      if (t !== T.Gras && t !== T.Skog || g.trees[i] >= FOREST || fs.some(r => r !== q && SIM.faltRutor(r).includes(i)) || pilesOf(s).some(pl => pl.y * W + pl.x === i)) fel++;
+    }
+    const sadd = s.stat?.sadd ?? 0, fronNu = amountOf(s, 'fron');
+    // skörden: den mogna grödan ger mat och frön, och fältet ska grävas upp igen
+    const p = living(s).find(q => q.id === f?.agare) ?? living(s).find(q => ageOf(q, s.now) >= 18)!;
+    let skord = false, korn = 0, fronSkord = 0;
+    if (f) {
+      Object.assign(f, { steg: 'mogen', groda: 'korn', mogen: s.now, kvar: 0 });
+      const k0 = amountOf(s, 'korn'), r0 = amountOf(s, 'fron');
+      SIM.finishOdla(s, p, { act: 'odla', tool: 'mogen', ref: f.id } as unknown as SIM.Task);
+      korn = amountOf(s, 'korn') - k0; fronSkord = amountOf(s, 'fron') - r0;
+      skord = f.steg === 'bereda' && korn > 0 && fronSkord > 0;
+    }
+    // rötan: den mogna grödan som ingen skördar
+    let rutten = false;
+    if (f) {
+      Object.assign(f, { steg: 'mogen', groda: 'rovor', mogen: s.now - (SIM.ODLING.overDygn + SIM.ODLING.ruttDygn + 0.1) * DAY, rord: s.now });
+      SIM.stepOdling(s);
+      rutten = f.steg === 'sa' && (s.stat?.ruttnat ?? 0) === 1;
+    }
+    // frosten: i istiden dör grödan, och ingen sår något nytt
+    let frost = false, ingenSadd = false;
+    if (f) {
+      Object.assign(f, { steg: 'vaxer', groda: 'rovor', vuxit: 0.5, rord: s.now });
+      s.kal = nyKalender(s.now, 0);
+      SIM.stepOdling(s);
+      frost = f.steg === 'sa' && (s.stat?.frostdod ?? 0) >= 1;
+      ingenSadd = SIM.grodaNu(s) === undefined && living(s).every(q => SIM.faltUppgift(s, q)?.tool !== 'sa');
+    }
+    // ett fält som ingen skött på länge blir gräs igen
+    let gras = false;
+    if (f) {
+      f.rord = s.now - (SIM.ODLING.grasDygn + 0.1) * DAY;
+      const n = SIM.faltOf(s).length;
+      SIM.stepOdling(s);
+      gras = SIM.faltOf(s).length === n - 1 && (s.stat?.faltIgen ?? 0) === 1;
+    }
+    return [
+      [`byn röjer ett fält när den kan odla och har frön (${fs.length} fält, ${f ? SIM.FALT_STEG[f.steg].namn.toLowerCase() : '-'})`, fs.length > 0],
+      [`fälten ligger på jord utan stora träd, inte på varandra och inte på lagret (${fel} fel)`, fel === 0],
+      [`fältet grävs upp och sås inom två dygn (två år i spelet), och fröna tas ur förrådet (${sadd} sådda, frön ${fron0.toFixed(0)} → ${fronNu.toFixed(1)})`, sadd > 0 && fronNu < fron0],
+      [`den mogna grödan skördas: korn (${korn.toFixed(1)}) och nya frön (${fronSkord.toFixed(1)}), och fältet ska grävas upp igen`, skord],
+      ['den mogna grödan som ingen skördar ruttnar, och fältet ska sås igen', rutten],
+      ['frosten i istiden dödar grödan, och ingen sår något nytt förrän det hinner mogna', frost && ingenSadd],
+      ['ett fält som ingen skött på länge blir gräs igen', gras],
+    ];
+  },
+};

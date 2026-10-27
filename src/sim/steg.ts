@@ -32,7 +32,7 @@ import { MATERIAL, bitById, gridOf, roomAt, shelterOf } from './byggnad';
 import { histParts, historikSteg, joinHist } from './historik';
 import { migrate } from './varld';
 import { stepDelning } from './delning';
-import { froFynd } from './odling';
+import { finishOdla, froFynd, stepOdling, workOdla } from './odling';
 import { balans } from './balans';
 import { grilla, torka } from './matlagning';
 import { addFuelBrasa, brasaFor, stepBrasor } from './brasor';
@@ -113,6 +113,7 @@ MEDAN.falla = workHalf;
 MEDAN.station = workStation; KLAR.station = finishStation; // en station som byggs (stationer.ts)
 KLAR.tillbehor = finishTillbehor; // ett tillbehör till en möbel (stationer.ts)
 KLAR.dorr = finishDorr; // en dörr i en öppning (bygg.ts)
+MEDAN.odla = workOdla; KLAR.odla = finishOdla; // fälten (odling.ts)
 
 // ---------- huvudsteg ----------
 // ett slag om dtSec sekunder (BEAT i spelet och ikappräkningen; testerna kan ta andra). events = samtalen, för att visa dem
@@ -140,7 +141,7 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
   if (Math.floor(now / HOUR) !== Math.floor((now - dtSec * SEC) / HOUR)) {
     stepSeder(s); updateTags(s); stepDelning(s);
     growGround(s, 1, ai); growFynd(s, 1, ai); forget(s, 1); rotStumps(s); tidyStore(s);
-    wearBuild(s, 1, ai); stepByggnader(s); planBuild(s); stepPaborjat(s); stepStationer(s); stepBrasor(s); stepKlader(s);
+    wearBuild(s, 1, ai); stepByggnader(s); planBuild(s); stepPaborjat(s); stepStationer(s); stepBrasor(s); stepKlader(s); stepOdling(s);
     historikSteg(s); // nyckeltalen till byns historik (läses inte av simuleringen)
     compact(s); // här och inte i sparningen, så att alla lägen städar vid samma tid
   }

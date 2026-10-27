@@ -11,6 +11,7 @@ import { FANGST, Kind, flintSpot, shoreOf, wantsFlint } from './fynd';
 import { coldOf, temperature } from './vader';
 import { DJUR, Djurart, GORS, canProcess, djurKvar, freeOfKinds, makeTask, toolGroups, wantsTool } from './redskap';
 import { PROJEKT, Uppgift, bastaProjekt } from './projekt';
+import { faltNu } from './odling';
 import { areaOf, flintArea, pickSpot, prospectFor } from './minne';
 import { getMap } from './karta';
 import { amountOf, avbryt, fetchSpot, haulJob } from './lager';
@@ -358,6 +359,9 @@ function day(s: State, p: Person, v: Val, a: number, lazy: number) {
   const fd = foodDays(s), wd = woodDays(s), ai = ageIndex(s), tot = habitTotal(p), fara = dangers(s); // farorna räknas en gång och gäller hela valet
   // att bära in är en förbättring: inte när byn svälter eller fryser (talet dras ändå, så att personens följd är som förut)
   if (s.stackar?.length && rnd(s, 'val', p) < VAL.baraChans && !fara.svalt && !fara.kyla && (gt = haulJob(s))) { set(v, 'bara', gt.why); v.spot = gt; v.dur = VAL.baraTim * HOUR; return; }
+  // fältet (steg 2.10.3): den mogna grödan skördas innan den blir övermogen eller fryser, och den som börjat på sitt fält arbetar vidare
+  const sk = a >= ALDER.vuxen ? faltNu(s, p, fara.svalt || fara.kyla) : undefined;
+  if (sk) { projektVal(v, { act: 'odla', text: sk.text, min: sk.min, tool: sk.tool, spot: sk.spot, ref: sk.ref }, sk.tool === 'mogen' ? 'Grödan på fältet är mogen' : 'Arbetar vidare på sitt fält'); return; }
   if (a >= ALDER.vuxen && canProcess(s, p, DJUR.kanin) && rnd(s, 'val', p) < VAL.slaktChans) { processTask(s, v, DJUR.kanin, 'Det finns vilt att slakta innan det blir dåligt'); return; }
   if (a >= ALDER.rensar && canProcess(s, p, DJUR.abborre) && rnd(s, 'val', p) < VAL.rensaChans) { processTask(s, v, DJUR.abborre, 'Det finns fisk att rensa innan den blir dålig'); return; }
   if (a >= ALDER.grillar && kanTorka(s, p) && rnd(s, 'val', p) < VAL.torkaChans) { torkVal(s, v, 'Det finns kött och fisk att torka'); return; }
@@ -526,6 +530,7 @@ function projektVal(v: Val, u: Uppgift, why: string) {
   if (u.tool) v.tool = u.tool;
   if (u.spot) v.spot = u.spot;
   if (u.sok) v.sok = true;
+  if (u.ref !== undefined) v.ref = u.ref;
 }
 
 // egen lust: vila, hantverk, umgänge, promenad, bad eller att sitta vid stranden. u = hur akut byn behöver arbete

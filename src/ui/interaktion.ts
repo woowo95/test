@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { BAR, FOREST, HIGH, MATERIAL, MIN, Person, T, W, bitAt, campCenter, condOf, dorrDef, emberOn, getMap, groundOf, husById, inMap, insulation, isKlar, living, stationAt, stationDef, tingOf, roomAt, rumsFunktioner, sakNamn, sjoarna, sovplatser, taskName, zoneAt, zonesOf, Pile } from '../sim';
+import { BAR, FALT_STEG, FOREST, GRODOR, byId, faltAt, faltKlar, HIGH, MATERIAL, MIN, Person, T, W, bitAt, campCenter, condOf, dorrDef, emberOn, getMap, groundOf, husById, inMap, insulation, isKlar, living, stationAt, stationDef, tingOf, roomAt, rumsFunktioner, sakNamn, sjoarna, sovplatser, taskName, zoneAt, zonesOf, Pile } from '../sim';
 import { iconImg, tecknet } from '../ikoner';
 import { $, esc, fmtN, prickar } from './hjalp';
 import { outPilesAt, piles, s, ui } from './lage';
@@ -87,6 +87,11 @@ function showHover(gx: number, gy: number) {
   const log = (s.stockar ?? []).find(k => Math.floor(k.x) === x && Math.floor(k.y) === y);
   if (log) rows.push(`Fällt träd, ca ${Math.ceil(log.ved)} trä kvar`);
   if ((s.stubbar ?? []).some(k => k.x === x && k.y === y)) rows.push('Stubbe efter ett fällt träd');
+  const falt = faltAt(s, x, y); // fältet (steg 2.10.3): ägaren, grödan och hur långt det kommit
+  if (falt) {
+    const ag = byId(s, falt.agare), groda = falt.groda && (falt.steg === 'vaxer' || falt.steg === 'mogen') ? GRODOR[falt.groda] : undefined;
+    rows.push(`${iconImg(groda?.sak ?? 'odling', 12)} <b>Fält</b>${ag ? ` (${esc(ag.name)})` : ''} · ${groda ? groda.namn.toLowerCase() + ', ' : ''}${FALT_STEG[falt.steg].namn.toLowerCase()}${falt.steg === 'mogen' ? '' : `, ${Math.round(faltKlar(falt) * 100)} %`}`);
+  }
   const st = stationAt(s, x, y), sd = st && stationDef(st.k);
   if (st && sd) {
     const vid = Object.entries(sd.vid ?? {}).map(([slag, n]) => {

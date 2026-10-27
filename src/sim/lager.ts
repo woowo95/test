@@ -2,6 +2,7 @@ import { campDist } from './plats';
 import { groundOf } from './mark';
 import { Ting, halvKlar, newTing, tingOf } from './agande';
 import { forvarAt, sittAt, stationAt, stationDef, tillbakaVid } from './stationer';
+import { faltAt } from './odling';
 import { alive, byId, count, living, stat, ageOf, log } from './folk';
 import { matOrdning } from './naring';
 import { getMap } from './karta';
@@ -246,7 +247,7 @@ export function usable(s: State, x: number, y: number) {
   const m = getMap(s.seed), f = m.fire;
   if (!inMap(x, y)) return false;
   const t = m.tiles[y * W + x];
-  if (t === T.Vatten || t === T.Sten || Math.max(Math.abs(x - f.x), Math.abs(y - f.y)) <= 1 || bitAt(s, x, y) || sittAt(s, x, y)) return false;
+  if (t === T.Vatten || t === T.Sten || Math.max(Math.abs(x - f.x), Math.abs(y - f.y)) <= 1 || bitAt(s, x, y) || sittAt(s, x, y) || faltAt(s, x, y)) return false; // inte heller på ett fält (odling.ts)
   const st = stationAt(s, x, y);
   return !st || !!stationDef(st.k)?.forvar; // i en hylla, kista eller ett ställ ligger saker (steg 2.3.6)
 }

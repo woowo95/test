@@ -1,6 +1,6 @@
 // Kör en by utan grafik och samlar nyckeltalen (registret NYCKELTAL i nyckeltal.ts säger vad de heter och betyder).
 // Vakterna larmar om något blir omöjligt (NaN, negativa förråd, folk i vattnet).
-import { BEAT, createState, step, living, DAY, groundOf, isSoil, markslag, Markslag, ageIndex, moodOf, serialize, serializeParts, getMap, fuelStock, ACT_NAMES, T, State, inMap, isWall, tileOf, foodOf, amountOf, sumOf, okandaBalans, alive, isCarrying, BYN, isStored, housesOf, bitsOf, Person, HOUR, W, KROPP, forvarAt, isTool } from '../sim';
+import { BEAT, createState, step, living, DAY, groundOf, isSoil, markslag, Markslag, ageIndex, moodOf, serialize, serializeParts, getMap, fuelStock, ACT_NAMES, T, State, inMap, isWall, tileOf, foodOf, amountOf, sumOf, okandaBalans, alive, isCarrying, BYN, isStored, housesOf, bitsOf, Person, HOUR, W, KROPP, forvarAt, isTool, faltOf, faltRutor, faltAt } from '../sim';
 import { NYCKELTAL, Nyckeltal, tal } from './nyckeltal';
 
 // testbyarna grundas 08:00 svensk tid. Testerna körs i datorns tidszon (här UTC), så där är klockan 06:00 när byn grundas
@@ -120,6 +120,15 @@ function vakta(s: State, larm: Larm, timme: boolean) {
     for (const id in a.ag ?? {}) if (!lever.has(+id)) larm('andel hos ingen', () => `${a.k} på ${a.x},${a.y}: ${id} äger ${a.ag![id]}`);
   }
   for (const t of s.ting ?? []) if (t.x !== undefined && t.hos === undefined && t.lass === undefined) plats(t.k, t.x, t.y!);
+  // fälten (steg 2.10.3): inte i vattnet eller en vägg, inte på varandra och inget lager på dem
+  const faltRuta = new Set<number>();
+  for (const f of faltOf(s)) for (const i of faltRutor(f)) {
+    const x = i % W, y = (i - x) / W;
+    if (tiles[i] === T.Vatten || isWall(s, x + 0.5, y + 0.5)) larm('fält i vattnet eller en vägg', () => `fält ${f.id} på ${x},${y}`);
+    if (faltRuta.has(i)) larm('två fält på en ruta', () => `fält ${f.id} på ${x},${y}`);
+    faltRuta.add(i);
+  }
+  for (const a of s.stackar ?? []) if (isStored(s, a.x, a.y) && faltAt(s, a.x, a.y)) larm('lager på ett fält', () => `${a.k} på ${a.x},${a.y}`);
   const hus = new Set<number>();
   for (const h of housesOf(s)) {
     hus.add(h.id);

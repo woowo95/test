@@ -12,6 +12,7 @@ import { latrinBrist } from './smuts';
 import { brasaBrist, brasaLeta, kanLetaBrasaSten } from './brasor';
 import { DORRAR, DORR_LIST, DorrDef, DorrSlag } from './byggnad';
 import { dorrOppningar, dorrSpot, kanHangaDorr, utanDorr } from './bygg';
+import { ODLING, faltBrist, faltUppgift } from './odling';
 
 // ---------- byns projekt: vad den bygger och gör (steg 2.2.7) ----------
 // Allt byn kan bygga eller göra av handarbete är en rad i registret PROJEKT: redskapen (en rad per grupp i GORS,
@@ -37,6 +38,7 @@ export const PROJEKT_TAL = balans('projekt', {
   hylla: 0.4, kista: 0.3, stall: 0.3, // ... förvaringen när golvet i lagren är fullt av högar och redskap (steg 2.3.6)
   skinndorr: 0.6, // ... skinndörrarna när alla hus där man bor eller umgås har en öppen dörröppning (steg 2.2.16)
   rep: 0.5, // ... repet när förrådet är tomt
+  falt: 1, // ... arbetet på fälten när ett fält har arbete att göra, eller någon som kan odla har frön men inget fält (steg 2.10.3)
   minKostnad: 0.25, // kostnaden räknas aldrig under så här många arbetstimmar
 });
 
@@ -59,7 +61,7 @@ export const PROJEKT_BEHOV = {
 export type ProjektBehov = keyof typeof PROJEKT_BEHOV;
 
 // det p gör: handlingen, texten, hur många minuter (annars valets vanliga), slaget (task.tool) och platsen
-export interface Uppgift { act: Act; text: string; min?: number; tool?: string; spot?: { x: number; y: number }; sok?: true } // sok: letar vid stenarna
+export interface Uppgift { act: Act; text: string; min?: number; tool?: string; spot?: { x: number; y: number }; sok?: true; ref?: number } // sok: letar vid stenarna, ref: fältet (odling.ts)
 // det som gör att något inte görs just nu: kyla = kylan är en fara, gras = hö som sparas till värmen (dangers i val.ts)
 export interface ProjektFara { kyla: boolean; gras: number }
 export interface ProjektDef {
@@ -129,6 +131,14 @@ export const PROJEKT: Record<string, ProjektDef> = {
     kostnad: () => grundvarde('rep'),
     kan: (s, p) => wantsRope(s, p),
     uppgift: () => ({ act: 'tvinna', text: 'Tvinnar rep av hö.' }),
+  },
+  // fälten (steg 2.10.3, odling.ts): nästa steg på det egna fältet, eller att röja ett nytt
+  falt: {
+    namn: 'Fält', ikon: 'odling', behov: 'mat', vikt: PROJEKT_TAL.falt, act: 'odla',
+    brist: s => faltBrist(s),
+    kostnad: () => varuVarde({ fron: ODLING.froPerRuta * ODLING.faltW * ODLING.faltH }, (ODLING.beredaMin + ODLING.saMin) * ODLING.faltW * ODLING.faltH / 60 * ARBETE),
+    kan: (s, p, f) => !f.kyla && !!faltUppgift(s, p),
+    uppgift: (s, p) => { const u = faltUppgift(s, p); return u && { act: 'odla', text: u.text, min: u.min, tool: u.tool, spot: u.spot, ref: u.ref }; },
   },
 };
 export const PROJEKT_LIST = Object.keys(PROJEKT);

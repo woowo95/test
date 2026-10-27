@@ -1,4 +1,4 @@
-import { Act, DJUR, brasaHeat, radieAv, W, bordPlatser, sjoarna, stationById, GORS, MATERIAL, Pile, STATION, STUBBE_LIV, Station, bitAt, bitsOf, clamp, dorrDef, condOf, emberOn, fireHeat, forvarAt, getMap, grillVara, heatRadius, TORK, torrDel, isKlar, living, stationDef, stationKlar, stationerOf, storlekAv, tillbehorDef, tingOf, vidStation, zonesOf } from '../sim';
+import { Act, DJUR, GRODOR, ODLING, faltKlar, faltOf, brasaHeat, radieAv, W, bordPlatser, sjoarna, stationById, GORS, MATERIAL, Pile, STATION, STUBBE_LIV, Station, bitAt, bitsOf, clamp, dorrDef, condOf, emberOn, fireHeat, forvarAt, getMap, grillVara, heatRadius, TORK, torrDel, isKlar, living, stationDef, stationKlar, stationerOf, storlekAv, tillbehorDef, tingOf, vidStation, zonesOf } from '../sim';
 import { LagereldLage, iconCanvas, lagereldId } from '../ikoner';
 import { ritaHus } from './husbild';
 import { outPilesAt, piles, s, ui } from './lage';
@@ -20,6 +20,20 @@ function drawPile(pl: Pile) {
   if (pl.max === 1) { pileIcons.add(pl.k, x0 + 2, y0, 1.5); return; }
   const n = clamp(Math.ceil(f * 4), 1, 4);
   for (const [dx, dy] of PILE_LAYOUT[n - 1]) pileIcons.add(pl.k, x0 + dx, y0 + dy, 1);
+}
+// fälten (steg 2.10.3, odling.ts): en ram medan de röjs, ljus jord när de är röjda och mörk jord med fåror när de är uppgrävda.
+// Grodden på varje ruta medan grödan växer (liten den första halvan) och grödans symbol när den är mogen. Framstegscirkeln
+// medan någon röjer, gräver eller sår
+function drawFalt() {
+  for (const f of faltOf(s)) {
+    const X = f.x * TS, Y = f.y * TS, w = ODLING.faltW * TS, h = ODLING.faltH * TS, grav = f.steg !== 'roja' && f.steg !== 'bereda';
+    if (f.steg === 'roja') structG.lineStyle(1, 0x5e3c24, 0.7).drawRect(X + 0.5, Y + 0.5, w - 1, h - 1).lineStyle(0);
+    else structG.beginFill(grav ? 0x5e3c24 : 0x7d5b40, 0.9).drawRect(X, Y, w, h).endFill();
+    if (grav) for (let k = 0; k < ODLING.faltH * 4; k++) structG.lineStyle(1, 0x3f2415, 0.8).moveTo(X + 1, Y + 2.5 + k * 4).lineTo(X + w - 1, Y + 2.5 + k * 4).lineStyle(0);
+    const vaxer = f.steg === 'vaxer', bild = f.steg === 'mogen' && f.groda ? GRODOR[f.groda].sak : vaxer ? 'grodd' : undefined, liten = vaxer && (f.vuxit ?? 0) < 0.5;
+    if (bild) for (let j = 0; j < ODLING.faltH; j++) for (let i = 0; i < ODLING.faltW; i++) pileIcons.add(bild, X + i * TS + (liten ? 4 : 0), Y + j * TS + (liten ? 8 : 0), liten ? 0.5 : 1);
+    if (!vaxer && f.steg !== 'mogen') framsteg(X + w / 2, Y + 3, faltKlar(f));
+  }
 }
 // framstegscirkeln för det som inte är klart (Björn valde A2 efter v55): en mörk bricka med vit kant som fylls med gult,
 // medsols från klockan tolv, ju längre arbetet kommit (p från 0 till 1). Samma som framstegSvg i panelerna (ikoner.ts)
@@ -94,6 +108,7 @@ export function drawStructures(t: number) {
   });
   drawBuild();
   pileIcons.start();
+  drawFalt();
   lagereld(m.fire, t);
   for (const pl of piles()) if (!forvarAt(s, pl.x, pl.y)?.stangd) drawPile(pl); // det som ligger i en kista syns bara när man trycker på den
   // stationerna (stationer.ts) i blandperspektiv över alla rutorna de tar: de som är högre än rutan sticker upp över rutan

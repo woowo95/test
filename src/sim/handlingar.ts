@@ -26,7 +26,7 @@ export interface RedskapDef {
 // (ikoner.ts har dem som 'a_' + slaget; vila ritas som z som stiger). Samtal har ingen: det syns som pratbubblor
 export const SLAG = {
   samla: 'Samlar', jaga: 'Jagar', fiska: 'Fiskar', tra: 'Hämtar trä', bygga: 'Bygger', hantverk: 'Gör hantverk',
-  bara: 'Bär', elda: 'Sköter elden', vila: 'Vilar', prata: 'Pratar', leka: 'Leker',
+  bara: 'Bär', elda: 'Sköter elden', odla: 'Odlar', vila: 'Vilar', prata: 'Pratar', leka: 'Leker',
 } as const;
 type Slag = keyof typeof SLAG;
 export const slagIkon = (k: Slag) => k === 'vila' ? 'zzz' : k === 'prata' ? undefined : 'a_' + k;
@@ -118,6 +118,8 @@ const DEF = {
   torka: { namn: 'Hänger upp mat på torkställningen', slag: 'hantverk', hantverk: true, stilla: true, plats: 'station' }, // och tar ner det som torkat (matlagning.ts, steg 2.8.2)
   bygga: { namn: 'Bygger', yrke: 'Byggare', slag: 'bygga', verktyg: { laga: 'Lagar en vägg', lagaGolv: 'Lagar golvet', golv: 'Lägger golv', vagg: 'Bygger en vägg' }, hantverk: true, tungt: true, stilla: true },
   station: { namn: 'Bygger en station', slag: 'bygga', verktyg: { slaktbank: 'Bygger en slaktbänk', flatarbank: 'Bygger en slöjdbänk', halmbadd: 'Bäddar en halmbädd', hylla: 'Bygger en hylla', kista: 'Bygger en kista', stall: 'Bygger ett redskapsställ', latrin: 'Gräver en latrin', grill: 'Sätter upp en grillställning', tork: 'Sätter upp en torkställning' }, hantverk: true, stilla: true, plats: 'station' }, // stationer.ts; task.tool = slaget
+  // fälten (steg 2.10.3, odling.ts): steget på fältet är task.tool, och arbetet sparas i fältet om det avbryts
+  odla: { namn: 'Odlar', slag: 'odla', verktyg: { roja: 'Röjer ett fält', bereda: 'Gräver upp jorden på fältet', sa: 'Sår', mogen: 'Skördar' }, tungt: true, stilla: true },
   dorr: { namn: 'Hänger en dörr', slag: 'bygga', verktyg: { skinndorr: 'Hänger en hud i dörröppningen' }, hantverk: true, stilla: true }, // i en öppning (DORRAR i byggnad.ts, steg 2.2.16); task.tool = sorten
   tillbehor: { namn: 'Gör ett tillbehör', slag: 'hantverk', verktyg: { skinnfall: 'Lägger en skinnfäll i halmbädden' }, hantverk: true, stilla: true }, // till en station eller möbel (TILLBEHOR i stationer.ts); task.tool = sorten
 } satisfies Record<string, ActDef>;

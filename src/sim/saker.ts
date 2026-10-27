@@ -107,6 +107,9 @@ const DEF = {
     gors: { text: 'Syr en vattensäck av skinn.', stat: 'vattensackarGjorda', forsta: '{namn} sydde byns första vattensäck. Med den kan man bära vatten till den som inte kan gå.' } },
   // fröna (steg 2.10.2, odling.ts): tas med från de vilda grödorna när man samlar. De kan inte ätas, och de sås på fälten
   fron: { namn: 'Frön', skaffa: { act: 'samla' }, stack: 50, mapp: 'Material', slits: 0.0002 },
+  // grödorna från fälten (steg 2.10.3, odling.ts). Rovorna håller en vinter i lagret, kornet flera år
+  rovor: { namn: 'Rovor', skaffa: { tid: 0.2, tek: 'odling' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 6, naring: { energi: 1.4, vitamin: 1, mineral: 0.6, protein: 0.2, fett: 0.1 }, haller: 8 },
+  korn: { namn: 'Korn', skaffa: { tid: 0.25, tek: 'odling' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 6.5, naring: { energi: 2, protein: 0.8, mineral: 0.6, vitamin: 0.3, fett: 0.2 }, haller: 20 }, // håller så länge något får hålla (LAGER.maxDygn), men det torkade äts sist
 } satisfies Record<string, SakDef>;
 
 type Sak = keyof typeof DEF;
