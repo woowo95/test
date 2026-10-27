@@ -1,4 +1,4 @@
-import { Act, DJUR, bordPlatser, GORS, MATERIAL, Pile, STATION, STUBBE_LIV, Station, bitAt, bitsOf, clamp, dorrDef, condOf, emberOn, fireHeat, getMap, heatRadius, isKlar, living, stationDef, stationKlar, stationerOf, storlekAv, tillbehorDef, tingOf, vidStation, zonesOf } from '../sim';
+import { Act, DJUR, W, bordPlatser, sjoarna, stationById, GORS, MATERIAL, Pile, STATION, STUBBE_LIV, Station, bitAt, bitsOf, clamp, dorrDef, condOf, emberOn, fireHeat, getMap, heatRadius, isKlar, living, stationDef, stationKlar, stationerOf, storlekAv, tillbehorDef, tingOf, vidStation, zonesOf } from '../sim';
 import { iconCanvas } from '../ikoner';
 import { ritaHus } from './husbild';
 import { outPilesAt, piles, s, ui } from './lage';
@@ -44,6 +44,19 @@ function paBanken(st: Station) {
   const p = d && living(s).find(q => q.task && d.gor.includes(q.task.act) && Math.hypot(q.x - at.x, q.y - at.y) < STATION.vidBank);
   return p?.task ? PA_BANKEN[p.task.act] : undefined;
 }
+// en vit kant runt rutorna: där en ruta inte har en granne i mängden
+function kant(rutor: number[]) {
+  const i = new Set(rutor);
+  overG.lineStyle(1.2, 0xffffff, 0.9);
+  for (const j of i) {
+    const x = j % W, y = (j - x) / W, X = x * TS, Y = y * TS;
+    if (!i.has(j - W)) overG.moveTo(X, Y).lineTo(X + TS, Y);
+    if (!i.has(j + W)) overG.moveTo(X, Y + TS).lineTo(X + TS, Y + TS);
+    if (x === 0 || !i.has(j - 1)) overG.moveTo(X, Y).lineTo(X, Y + TS);
+    if (x === W - 1 || !i.has(j + 1)) overG.moveTo(X + TS, Y).lineTo(X + TS, Y + TS);
+  }
+  overG.lineStyle(0);
+}
 export function drawStructures(t: number) {
   const m = getMap(s.seed), tab = ui.tab;
   structG.clear(); overG.clear();
@@ -79,6 +92,11 @@ export function drawStructures(t: number) {
   // markerad hög utanför lagret: vit kant runt rutan, som lagerplatsen får
   const h = ui.hogAt;
   if (tab === 'hog' && outPilesAt(h.x, h.y).length) structG.lineStyle(1, 0xffffff, 0.9).drawRoundedRect(h.x * TS + 0.5, h.y * TS + 0.5, TS - 1, TS - 1, 3).lineStyle(0);
+  // det som är valt i panelen: vit kant runt huset, sjön eller stationen (steg 2.3.7)
+  if (tab === 'hus') kant(bitsOf(s).filter(b => b.hus === ui.husId).map(b => b.y * W + b.x));
+  if (tab === 'sjo') kant(sjoarna(s.seed).rutor[ui.sjoNr] ?? []);
+  const vald = tab === 'station' ? stationById(s, ui.stationId) : undefined;
+  if (vald) { const { w, h: d } = storlekAv(vald); overG.lineStyle(1, 0xffffff, 0.9).drawRoundedRect(vald.x * TS + 0.5, vald.y * TS + 0.5, w * TS - 1, d * TS - 1, 2).lineStyle(0); }
   // stubbar: bleknar medan de ruttnar bort
   for (const k of s.stubbar ?? []) {
     const a = 1 - (s.now - k.t) / STUBBE_LIV, x = k.x * TS + TS * 0.65, y = k.y * TS + TS * 0.6;

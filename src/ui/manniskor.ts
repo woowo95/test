@@ -93,7 +93,7 @@ export function drawPeople(t: number) {
     const o = talkWith.get(p.id), q = o !== undefined ? byId(s, o) : undefined;
     const talking = q && alive(q) && isSocial(p) && isSocial(q) && Math.hypot(q.x - p.x, q.y - p.y) < SAMTAL.radie;
     if (!talking && o !== undefined && !flash.has(p.id)) talkWith.delete(p.id);
-    if (talking || flash.has(p.id)) {
+    if (talking || flash.has(p.id) && isSocial(p)) { // bara den som gör något socialt just nu, som personrutan säger (steg 2.3.7)
       const r = q ? s.rels[relKey(p.id, q.id)] : undefined;
       const rel = q && (p.partner === q.id || (r?.rom ?? 0) > 40) ? 'karlek' : (r?.op ?? 0) < -20 ? 'ovan' : (r?.op ?? 0) > REL.van ? 'van' : 'neutral';
       drawBubble(x + 4, top, flash.get(p.id), rel, t, p.id);

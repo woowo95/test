@@ -180,7 +180,10 @@ h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: 
 .bar.temp::after { content: ''; position: absolute; left: 50%; top: -3px; height: 12px; width: 1px; background: var(--muted); }
 .bar.temp > span { position: absolute; top: -2px; width: 4px; height: 10px; margin-left: -2px; border-radius: 2px; background: var(--fg); }
 .bar.temp.low > span, .bar.temp.high > span { background: var(--bad); }
-.rels li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; padding: 3px 0; }
+.rels { display: grid; grid-template-columns: minmax(0, max-content) max-content 1fr; gap: 6px 12px; align-items: baseline; }
+.rels li { display: contents; }
+.rels .plink { justify-self: start; text-align: left; }
+.rels li > :last-child { justify-self: end; }
 .rw.pos { color: var(--good); } .rw.neg { color: var(--bad); }
 .lard li { padding: 4px 0; } .lard li > span { display: block; padding-left: 10px; } .lard small { display: block; font-size: 11px; }
 .lard .fel { color: var(--bad); } .lard .fel::before { content: "⚠ "; } .lard li.fara { color: var(--warn, #e0a050); }
@@ -192,9 +195,15 @@ h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: 
 .tid { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
 .tart { width: 120px; height: 120px; flex: none; }
 .tart path, .tart circle { stroke: var(--panel); stroke-width: 0.015; }
-.tidlista { display: grid; grid-template-columns: repeat(2, max-content); gap: 4px 14px; font-variant-numeric: tabular-nums; }
+.tidlista { display: grid; grid-template-columns: max-content; gap: 3px; font-variant-numeric: tabular-nums; }
 .tidlista li { display: flex; align-items: center; gap: 5px; cursor: help; }
 .tidlista .fg { width: 10px; height: 10px; border-radius: 2px; flex: none; }
+.tidlista .pc { margin-left: auto; padding-left: 10px; }
+.tidlista li { border-radius: 3px; padding: 0 3px; }
+.tart path, .tart circle { cursor: help; transition: opacity .1s; }
+.tid:has([data-i]:hover) .tart [data-i] { opacity: 0.45; }
+.tid:has([data-i="0"]:hover) [data-i="0"], .tid:has([data-i="1"]:hover) [data-i="1"], .tid:has([data-i="2"]:hover) [data-i="2"], .tid:has([data-i="3"]:hover) [data-i="3"], .tid:has([data-i="4"]:hover) [data-i="4"], .tid:has([data-i="5"]:hover) [data-i="5"], .tid:has([data-i="6"]:hover) [data-i="6"], .tid:has([data-i="7"]:hover) [data-i="7"], .tid:has([data-i="8"]:hover) [data-i="8"], .tid:has([data-i="9"]:hover) [data-i="9"], .tid:has([data-i="10"]:hover) [data-i="10"], .tid:has([data-i="11"]:hover) [data-i="11"] { opacity: 1; }
+.tid:has([data-i="0"]:hover) li[data-i="0"], .tid:has([data-i="1"]:hover) li[data-i="1"], .tid:has([data-i="2"]:hover) li[data-i="2"], .tid:has([data-i="3"]:hover) li[data-i="3"], .tid:has([data-i="4"]:hover) li[data-i="4"], .tid:has([data-i="5"]:hover) li[data-i="5"], .tid:has([data-i="6"]:hover) li[data-i="6"], .tid:has([data-i="7"]:hover) li[data-i="7"], .tid:has([data-i="8"]:hover) li[data-i="8"], .tid:has([data-i="9"]:hover) li[data-i="9"], .tid:has([data-i="10"]:hover) li[data-i="10"], .tid:has([data-i="11"]:hover) li[data-i="11"] { background: color-mix(in srgb, var(--accent) 18%, transparent); }
 .tidlista .tecken { width: 16px; text-align: center; font-size: 13px; line-height: 16px; }
 .controls { border-top: 1px solid var(--line); padding: 10px 14px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
 .switch { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }

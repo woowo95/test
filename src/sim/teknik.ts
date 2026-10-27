@@ -98,10 +98,10 @@ function learn(s: State, p: Person, t: Tek, from?: Person) {
   if (from) { log(s, `${p.name} har lärt sig av ${from.name} att göra ${t.namn.toLowerCase()}.`, 'skill', [p.id, from.id]); return; }
   const first = !s.people.some(q => q !== p && knows(q, t.id)) && !(s.stat?.['tek_' + t.id]);
   count(s, 'tek_' + t.id);
-  if (first) kronika(s, `${p.name} kom på ${t.namn.toLowerCase()}.`);
+  if (first) kronika(s, `${p.name} uppfann ${t.namn.toLowerCase()}.`);
   log(s, `${p.name} kom på hur man gör ${t.namn.toLowerCase()}. ${t.effekt}`, 'skill', [p.id]);
   think(p, `Kom på hur man gör ${t.namn.toLowerCase()}`, TEKTAL.kommaPa, s.now, TEKTAL.kommaPaTim * HOUR);
-  if (first) { p.fame.push(`Kom på ${t.namn.toLowerCase()}`); sedEvent(s, 'nyfikenhet', TEKTAL.forstaNyfiken); }
+  if (first) { p.fame.push(`Uppfann ${t.namn.toLowerCase()}`); sedEvent(s, 'nyfikenhet', TEKTAL.forstaNyfiken); }
 }
 
 // arbete för tankarna framåt mot det som hör till arbetet (omr). Allt hantverk (slag hantverk i handlingar.ts: att tvinna

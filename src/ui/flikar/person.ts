@@ -51,7 +51,7 @@ function presHtml(p: Person) {
       <dt>Föräldrar</dt><dd>${p.mother || p.father ? [byId(s, p.mother), byId(s, p.father)].filter(Boolean).map(q => pLink(q)).join(' och ') : 'Bland de första i byn'}</dd>
       <dt>Partner</dt><dd>${pLink(byId(s, p.partner))}</dd><dt>Barn</dt><dd>${kids.length ? kids.map(pLink).join(', ') : '–'}</dd>
       <dt>Övertygelser</dt><dd>${tro.length ? tro.join(' ') : '–'}</dd></dl>
-      <h3>Viktiga händelser</h3>${p.fame.length ? `<ul class="fame">${p.fame.map(f => `<li>${esc(f)}</li>`).join('')}</ul>` : '<p class="muted">Inget som minns ännu.</p>'}`;
+      <h3>Viktiga händelser</h3>${p.fame.length ? `<ul class="fame">${p.fame.map(f => `<li>${esc(f.replace(/^Kom på /, 'Uppfann '))}</li>`).join('')}</ul>` : '<p class="muted">Inget som minns ännu.</p>'}`;
 }
 // en rad med stapel som går att trycka på, eller hålla musen över: då syns vad som påverkar den just nu.
 // delar = det som ändrar värdet (per timme, eller i humörpoäng när enhet är tom), mer = det som inte är en jämn takt
@@ -208,13 +208,13 @@ function tidHtml(p: Person) {
   if (annat > 0) bitar.push({ name: 'Annat', ikon: '<span class="tecken">…</span>', farg: 'var(--barbg)', v: annat });
   let vinkel = 0;
   const pt = (v: number) => `${Math.sin(v * 2 * Math.PI).toFixed(4)} ${(-Math.cos(v * 2 * Math.PI)).toFixed(4)}`;
-  const tart = bitar.map(b => {
+  const tart = bitar.map((b, i) => {
     const fran = vinkel; vinkel += b.v;
     const titel = `<title>${esc(b.name)}: ${Math.round(b.v * 100)} %</title>`;
-    return b.v >= 0.9999 ? `<circle r="1" fill="${b.farg}">${titel}</circle>`
-      : `<path d="M0 0L${pt(fran)}A1 1 0 ${b.v > 0.5 ? 1 : 0} 1 ${pt(vinkel)}Z" fill="${b.farg}">${titel}</path>`;
+    return b.v >= 0.9999 ? `<circle r="1" fill="${b.farg}" data-i="${i}">${titel}</circle>`
+      : `<path d="M0 0L${pt(fran)}A1 1 0 ${b.v > 0.5 ? 1 : 0} 1 ${pt(vinkel)}Z" fill="${b.farg}" data-i="${i}">${titel}</path>`;
   }).join('');
   return `<div class="tid"><svg class="tart" viewBox="-1 -1 2 2" role="img" aria-label="Vad hen ägnat sin vakna tid åt">${tart}</svg>
-    <ul class="tidlista">${bitar.map(b => `<li title="${esc(b.name)}" aria-label="${esc(b.name)}"><span class="fg" style="background:${b.farg}"></span>${b.ikon}<span>${Math.round(b.v * 100)} %</span></li>`).join('')}</ul></div>
-    <p class="muted small">Den vakna tiden de senaste dygnen. Håll musen över en del eller en rad för att se vad det är.</p>`;
+    <ul class="tidlista">${bitar.map((b, i) => `<li title="${esc(b.name)}: ${Math.round(b.v * 100)} %" data-i="${i}"><span class="fg" style="background:${b.farg}"></span>${b.ikon}<span class="namn">${esc(b.name)}</span><span class="pc">${Math.round(b.v * 100)} %</span></li>`).join('')}</ul></div>
+    <p class="muted small">Den vakna tiden de senaste dygnen. Håll musen över en del eller en rad, så lyser båda.</p>`;
 }

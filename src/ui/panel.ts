@@ -47,11 +47,16 @@ export function renderPanel(force = false) {
     b.textContent = id === under ? cur.namn : ALLA[id].namn;
   }
   renderOwned();
-  if (!force && (ui.busy || performance.now() - ui.lastPointer < 800)) return;
+  if (!force && (ui.busy || performance.now() - ui.lastPointer < 800 || musOver)) return;
   const html = cur.html();
   if (!force && html === panelHtml) return;
   panelHtml = html; $('panelBody').innerHTML = html;
 }
+// musen står över något i panelen som förklaras när man håller musen över det: då skrivs panelen inte om, så att
+// förklaringen och markeringen står kvar (steg 2.3.7)
+let musOver = false;
+$('panelBody').addEventListener('pointerover', e => { musOver = !!(e.target as Element).closest('[title], [data-i], title'); });
+$('panelBody').addEventListener('pointerleave', () => { musOver = false; });
 document.addEventListener('pointerdown', () => { ui.lastPointer = performance.now(); }, true);
 document.addEventListener('click', e => {
   const el = e.target as HTMLElement;
