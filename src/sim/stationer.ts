@@ -102,9 +102,10 @@ const bordTra = (w: number, h: number) => w * h * STATION.bordTra + ((w >= 2 ? 2
 // (halmbädden), sitt = en sittplats framför den (bara utseende, steg 2.2.5), platser = ett bord med stubbar att sitta på runt
 // det (steg 2.2.15), verktyg = redskapet man bygger den med (benspaden till latrinen, steg 2.7.2), utkant = står i byns utkant
 // (latrinen, siteUtkant nedan), eld = står över elden, med elden i mitten, och används bara när den brinner (grillen, steg 2.8.1), forvar = förvaring som står i en lagerplats (steg 2.3.6): rymmer så många högar av ett slag (gånger en
-// rutas stack) eller, för redskap, så många redskap; tak = det som ligger där slits som under tak
+// rutas stack) eller, för redskap, så många redskap; tak = det som ligger där slits som under tak,
+// stangd = det som ligger där syns inte på kartan, bara när man trycker på möbeln (kistan, Björn efter v92)
 // brasa = en extra eld (steg 2.9.1, brasor.ts): står nära sovplatserna den är till för (siteBrasa), och alla vuxna kan bygga den (tek är tom: den som är gammal nog att ta ansvar, ALDER.ansvar)
-export interface Forvar { rymmer: number; redskap?: true; tak?: true }
+export interface Forvar { rymmer: number; redskap?: true; tak?: true; stangd?: true }
 export interface StationDef { namn: string; ikon: string; w: number; h: number; tek: string[]; av: Record<string, number>; min: number; gor: Act[]; bara?: Act[]; vid?: Record<string, number>; verktyg?: string; utkant?: true; eld?: true; kraver?: Partial<Record<Act, string>>; smutsar?: Partial<Record<Act, string>>; bygger: string; forsta: string; inne?: true; mobel?: true; flera?: true; fart?: Partial<Record<Act, number>>; brasa?: true; sover?: true; sitt?: true; platser?: true; forvar?: Forvar }
 // de enkla redskapen: görs vid slöjdbänken om byn har en, lite fortare där (fart), annars vid elden som förut (Björn, efter v90)
 const ENKLA: Act[] = ['yxa', 'spjut', 'metspo', 'kniv', 'bensyl', 'balte'];
@@ -147,7 +148,7 @@ export const STATIONER = {
     forsta: '{namn} byggde byns första hylla. På den ryms flera högar på samma plats, så att lagret tar mindre plats.',
   },
   kista: {
-    namn: 'Kista', ikon: 'kista', w: 1, h: 1, tek: ['hylla'], av: { ved: STATION.kistaTra }, min: STATION.kistaMin, gor: [], mobel: true, flera: true, forvar: { rymmer: STATION.kistaRymmer, tak: true },
+    namn: 'Kista', ikon: 'kista', w: 1, h: 1, tek: ['hylla'], av: { ved: STATION.kistaTra }, min: STATION.kistaMin, gor: [], mobel: true, flera: true, forvar: { rymmer: STATION.kistaRymmer, tak: true, stangd: true },
     bygger: 'Bygger en kista av trä i lagret.',
     forsta: '{namn} byggde byns första kista. Det som ligger i den ryms på mindre plats och slits som under tak.',
   },

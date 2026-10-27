@@ -1375,6 +1375,80 @@ const PIX: Record<string, string[]> = {
   ],
 };
 
+// ---------- lägerelden (Björn valde efter v92: nr 1, stor stenring med stjärnved, men enklare) ----------
+// Två rutor bred och två och en halv hög: raderna 4–19 är de två rutorna, 0–3 luften ovanför där lågorna sticker upp.
+// Tio stenar i en ring runt en askcirkel, och fyra vedträn som ligger in mot mitten som en stjärna, helt innanför stenarna.
+// Bilderna räknas fram här, en per läge: LAGERELD_LAGEN, med och utan stenringen (den läggs första gången elden tänds)
+export const LAGERELD_LAGEN = ['tom', 'ny', 'lite', 'lite2', 'stort', 'stort2', 'glod', 'kol'] as const;
+export type LagereldLage = typeof LAGERELD_LAGEN[number];
+export const lagereldId = (l: LagereldLage, ring: boolean) => `lagereld_${l}${ring ? '' : '_utan'}_karta`;
+const ELD_PAL = {
+  h: '#b0b5b8', g: '#8a8f94', G: '#5e6266', N: '#6a6e72', a: '#4b4640', A: '#625c55', b: '#2d2620', k: '#1a1714', c: '#3a3530', C: '#55504a',
+  w: '#5a3a1e', W: '#8b5a2b', Y: '#c9a46a', D: '#2a1c12', j: '#7a5a36',
+  f: '#e2702e', F: '#ffd36b', V: '#fff2c0', e: '#b3361e', E: '#e8582a',
+  u: 'rgba(225,225,225,.30)', U: 'rgba(225,225,225,.16)', o: 'rgba(255,170,70,.20)', O: 'rgba(255,190,90,.34)',
+};
+function lagereldRader(l: LagereldLage, ring: boolean) {
+  const G = 16, H = 20, CX = 8, CY = 12, g: string[][] = Array.from({ length: H }, () => Array(G).fill('.'));
+  const hs = (a: number, b: number) => { const h = Math.sin(a * 12.9898 + b * 78.233) * 43758.5453; return h - Math.floor(h); };
+  const set = (x: number, y: number, k: string) => { x = Math.round(x); y = Math.round(y); if (g[y] && x >= 0 && x < G) g[y][x] = k; };
+  const S = (x: number, y: number, rows: string[]) => rows.forEach((r, j) => [...r].forEach((k, i) => { if (k !== '.') set(x + i, y + j, k); }));
+  const ellips = (rx: number, ry: number, yo: number, f: (d: number, x: number, y: number) => string | undefined) => {
+    for (let y = 4; y < H; y++) for (let x = 0; x < G; x++) { const d = ((x + 0.5 - CX) / rx) ** 2 + ((y + 0.5 - CY - yo) / ry) ** 2; const k = d <= 1 ? f(d, x, y) : undefined; if (k) set(x, y, k); }
+  };
+  const brinner = l === 'lite' || l === 'lite2' || l === 'stort' || l === 'stort2', stor = l === 'stort' || l === 'stort2', fro = l.endsWith('2') ? 7 : 3;
+  // skenet på marken runt en eld som brinner
+  if (brinner) ellips(7.8, 7.6, 0, d => stor && d < 0.35 ? 'O' : 'o');
+  // askcirkeln och den mörka mitten
+  ellips(5.2, 4.4, 0, (d, x, y) => d <= 0.62 ? 'b' : hs(x, y) < 0.25 ? 'A' : 'a');
+  // stenarna: de bakom elden först, de framför sist
+  const STEN = [['hhg', 'gGN'], ['.hg', 'gGN'], ['hg.', 'GNN']];
+  const stenar = (bak: boolean) => {
+    if (!ring) return;
+    for (let i = 0; i < 10; i++) {
+      const a = 0.3 + i * 2 * Math.PI / 10, s = STEN[i % 3];
+      if ((Math.sin(a) < 0.05) !== bak) continue;
+      S(Math.round(CX + Math.cos(a) * 5.8 - s[0].length / 2 + 0.5), Math.round(CY + Math.sin(a) * 4.9 - 1), s);
+    }
+  };
+  stenar(true);
+  // veden: fyra vedträn två punkter tjocka, från mitten ut till strax innanför stenarna, med en ljus snittyta i änden.
+  // Den del som brunnit är svart
+  if (l !== 'tom' && l !== 'kol') {
+    const kol = l === 'glod' ? 0.75 : stor ? 0.45 : 0, r1 = l === 'glod' ? 3.2 : 4;
+    for (let i = 0; i < 4; i++) {
+      const a = -Math.PI / 4 + i * Math.PI / 2 + 0.2, x0 = CX - 0.5 + Math.cos(a) * 1.2, y0 = CY - 0.5 + Math.sin(a) * 1.0;
+      const x1 = CX - 0.5 + Math.cos(a) * r1, y1 = CY - 0.5 + Math.sin(a) * r1 * 0.8, ligg = Math.abs(x1 - x0) >= Math.abs(y1 - y0);
+      const n = Math.max(1, Math.round(Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0))));
+      for (let t = 0; t <= n; t++) {
+        const x = x0 + (x1 - x0) * t / n, y = y0 + (y1 - y0) * t / n, brand = t / n < kol;
+        set(x, y, brand ? 'D' : 'W'); set(x + (ligg ? 0 : 1), y + (ligg ? 1 : 0), brand ? 'k' : 'w');
+      }
+      set(x1, y1, 'Y'); set(x1 + (ligg ? 0 : 1), y1 + (ligg ? 1 : 0), 'j');
+    }
+  }
+  // lågan: bred w och hög h med foten på raden by. Två bilder per storlek, som byts så att elden fladdrar
+  const flamma = (by: number, w: number, h: number) => {
+    const hw = w / 2;
+    for (let x = Math.floor(CX - hw); x < Math.ceil(CX + hw); x++) {
+      const dx = (x + 0.5 - CX) / hw; if (Math.abs(dx) > 1) continue;
+      const top = Math.max(1, Math.round(h * (1 - dx * dx * 0.85) * (0.55 + 0.45 * hs(x + fro, fro * 3))));
+      for (let j = 0; j < top; j++) { const r = j / top; set(x, by - j, Math.abs(dx) < 0.25 && r < 0.35 ? 'V' : Math.abs(dx) < 0.5 && r < 0.65 ? 'F' : j === top - 1 && top > 3 ? 'E' : 'f'); }
+    }
+  };
+  if (brinner && !stor) { flamma(CY + 1, 5, 7); set(8, 4 + (fro & 1), 'u'); }
+  if (stor) { flamma(CY + 2, 8, 13); set(5, 1, 'u'); set(10, fro & 1, 'U'); set(11, 2, 'u'); }
+  if (l === 'glod') {
+    ellips(2.2, 2, -0.5, () => 'k');
+    for (let i = 0; i < 9; i++) { const a = i * 2.4, r = 0.4 + (i % 4) * 0.55; set(CX - 0.5 + Math.cos(a) * r * 1.5, CY - 0.5 + Math.sin(a) * r * 1.2, i % 2 ? 'e' : 'E'); }
+    set(CX - 1, CY - 5, 'u'); set(CX, CY - 7, 'U');
+  }
+  if (l === 'kol') { ellips(3.8, 3, 0.3, (d, x, y) => d < 0.7 ? (hs(x, y) < 0.3 ? 'C' : hs(x, y) < 0.6 ? 'c' : 'k') : 'k'); set(CX - 1, CY - 2, 'C'); }
+  stenar(false);
+  return g.map(r => r.join(''));
+}
+for (const l of LAGERELD_LAGEN) for (const ring of [true, false]) { PIX[lagereldId(l, ring)] = lagereldRader(l, ring); PAL[lagereldId(l, ring)] = ELD_PAL; }
+
 const canvases: Record<string, HTMLCanvasElement> = {};
 const urls: Record<string, string> = {};
 
