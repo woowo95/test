@@ -939,7 +939,35 @@ const ROVOR = { o: 'oliv0', g: 'oliv1', G: 'oliv2', L: 'oliv3', r: 'rost1', R: '
 const KORN = { s: 'senap0', y: 'senap1', Y: 'senap2', L: 'senap3', k: 'jord0', j: 'jord1', J: 'jord2' };
 const GRODD = { k: 'jord0', j: 'jord1', J: 'jord2', g: 'oliv1', G: 'oliv2', L: 'oliv3' };
 const TOA = { v: 'senap3', V: 'oliv3', c: 'jord1', C: 'jord2', k: 'jord0' };
+const KV_M = (lista) => ({ w: lista.length * 10 + 2, h: 12, kol: true, rita: (B, P) => lista.forEach(([l, r], i) => ritaSprite(B, r, l, 2 + i * 10, 2)) });
+const KV_G = { a: 'senap1', b: 'senap2', c: 'senap3', w: 'ben3' };
+const KV_MEDALJ = ['..aaaa..', '.abbbba.', 'abbccbba', 'abccccba', 'abccccba', 'abbccbba', '.abbbba.', '..aaaa..'];
 const VAL = [
+  { id: 'kvalitet', namn: 'Kvalitetens symboler', vad: 'Nya symboler (steg 2.2.2), 8 × 8 punkter: usel, slarvig, fin, mästerverk och perfekt mästerverk (★), i den ordningen. Normal har ingen symbol. De syns i hörnet på saken i utrustningen, i förrådslistan och i sakens inforuta. På kartan glänser bara mästerverken.', typ: 'tre',
+    idag: { text: '✕ — • ◆ ★' },
+    versioner: [
+      { text: 'Tecken: ett rostigt kryss, ett grått streck, en guldprick, en guldromb och en guldstjärna med vit mitt.', ...KV_M([
+        [{ R: 'rost2', r: 'rost1' }, ['........', '.R....R.', '..R..R..', '...Rr...', '...rR...', '..R..R..', '.R....R.', '........']],
+        [{ s: 'skiffer1', S: 'skiffer3' }, ['........', '........', '........', '.SSSSSS.', '.ssssss.', '........', '........', '........']],
+        [KV_G, ['........', '........', '...bb...', '..bccb..', '..bcbb..', '...bb...', '........', '........']],
+        [KV_G, ['...bb...', '..bccb..', '.bccccb.', 'bccwwccb', '.bccccb.', '..bccb..', '...bb...', '........']],
+        [KV_G, ['...bb...', '...cc...', 'bbccccbb', '.bcwwcb.', '..cccc..', '.bcbbcb.', '.bb..bb.', '........']],
+      ]) },
+      { text: 'Medaljer: en sprucken rostbrun, en grå, en i brons, en i guld och en i guld med en vit stjärna.', ...KV_M([
+        [{ a: 'rost0', b: 'rost1', c: 'rost2' }, ['..aa.a..', '.ab.bba.', 'abb.cbba', 'abcc.cba', 'ab.cccba', 'abb.cbba', '.abb.ba.', '..aa.a..']],
+        [{ a: 'skiffer1', b: 'skiffer2', c: 'skiffer3' }, KV_MEDALJ],
+        [{ a: 'rost1', b: 'rost2', c: 'rost3' }, KV_MEDALJ],
+        [KV_G, KV_MEDALJ],
+        [KV_G, ['..aaaa..', '.abbbba.', 'abbwwbba', 'abwwwwba', 'abbwwbba', 'abwbbwba', '.abbbba.', '..aaaa..']],
+      ]) },
+      { text: 'Glans: en spricka, en grå fläck, en liten gnista, en stor gnista och en stor gnista med två små, som glansen på kartan.', ...KV_M([
+        [{ R: 'rost2', r: 'rost1' }, ['........', '.r......', '..R.....', '..RR..r.', '...RRR..', '.....R..', '....r...', '........']],
+        [{ s: 'skiffer1', S: 'skiffer2' }, ['........', '........', '........', '..ss.s..', '.sSSss..', '..sss...', '........', '........']],
+        [KV_G, ['........', '...a....', '...b....', '.abcba..', '...b....', '...a....', '........', '........']],
+        [KV_G, ['...a....', '...b....', '..aca...', 'abcwcba.', '..aca...', '...b....', '...a....', '........']],
+        [KV_G, ['...a..w.', '...b.wcw', '..aca.w.', 'abcwcba.', '..aca...', '...b..w.', '...a.wcw', '......w.']],
+      ]) },
+    ] },
   { id: 'rovor', namn: 'Rovorna', vad: 'Ny sak (steg 2.10.3), 16 × 16 punkter: rovor från fälten. De växer på två dygn och tål lite frost.', typ: 'tre',
     idag: { w: 20, h: 20, rita: (B, P) => ritaIkon(B, 'rovor', 2, 2) }, idagText: 'Platshållaren i spelet nu.',
     versioner: [
