@@ -1,5 +1,5 @@
 // Scenarier. Grunden: gläntan, yxan, vintern, knapphet, svamp och flinta, kunskap, temperatur och kalender.
-import { createState, step, living, temperature, coldOf, ageIndex, ageStart, kalender, yearNo, AGES, amountOf, groundOf, getMap, DAY, HOUR, W, tileOf, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, angOf, setAmount, BEAT, tingOf, eatPoison, HOST, vaderNu, VADER, VADERLAGE, VaderId, blotSteg, varmeDelar, stepVader, vaxtFaktor, stepFire, hearthOf, cloneState, wearMult, vaderSlit, NEW_W, NEW_H } from '../../sim';
+import { createState, growGround, step, living, temperature, coldOf, ageIndex, ageStart, kalender, yearNo, AGES, amountOf, groundOf, getMap, DAY, HOUR, W, tileOf, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, angOf, setAmount, BEAT, tingOf, eatPoison, HOST, vaderNu, VADER, VADERLAGE, VaderId, blotSteg, varmeDelar, stepVader, vaxtFaktor, stepFire, hearthOf, cloneState, wearMult, vaderSlit, NEW_W, NEW_H } from '../../sim';
 import { BAR, FOREST, HIGH, isSoil } from '../../sim/vag';
 import { START } from '../kor';
 import { setMat, Koll, kor, tandEld, logg, skogsandel, uttag, STOCKHOLM, SCENARIER } from './hjalp';
@@ -26,9 +26,25 @@ SCENARIER.glanta = {
       ['gräset har trampats ner till kort gräs eller stigar', trampat > 20],
       ['skogen står kvar runt byn efter 10 dygn', skogsandel(s, 9, 99) > 0.85],
       ['ängarna är mest gräs efter 10 dygn', skogsandel(s, 9, 99, 1) < 0.1],
-      ['elden har tänts', s.fire.lightings > 0]];
+      ['elden har tänts', s.fire.lightings > 0],
+      ...stigLigger()];
   },
 };
+
+// en stig långt från byn som ingen går på ligger kvar i flera dygn (steg 2.10.15): bara gräsets återväxt räknas här
+function stigLigger(): Koll[] {
+  const s = createState(11, START), g = groundOf(s), m = getMap(s.seed);
+  let rad = -1;
+  for (let y = 2; y < NEW_H - 2 && rad < 0; y++) for (let x = 2; x < NEW_W - 8; x++) {
+    if (Math.hypot(x - m.fire.x, y - m.fire.y) < 20) continue;
+    let ok = true; for (let dy = -1; dy <= 1; dy++) for (let dx = 0; dx < 6; dx++) if (!isSoil(g.tiles[(y + dy) * W + x + dx])) ok = false;
+    if (ok) { rad = y * W + x; break; }
+  }
+  for (let dx = 0; dx < 6; dx++) { g.cover[rad + dx] = 0; g.trees[rad + dx] = 0; }
+  for (let h = 0; h < 5 * 24; h++) growGround(s, 1, 1); // fem dygn (fem år i spelet) i tidsåldern med mest växt
+  let bar = 0; for (let dx = 0; dx < 6; dx++) if (g.cover[rad + dx] < BAR) bar++;
+  return [[`en stig som ingen går på är bar jord efter fem dygn (${bar} av 6 rutor)`, rad >= 0 && bar === 6]];
+}
 
 SCENARIER['ingen-yxa'] = {
   lang: true,
@@ -100,7 +116,7 @@ SCENARIER['vinter-slocknad'] = {
 SCENARIER.knapphet = {
   text: 'Bär, rötter och vilt tar slut nära byn för en tid, så invånarna går längre bort; fiske med händerna ger få fiskar per försök',
   kor: () => {
-    const s = createState(18, START); // by 15 svälter ut sedan toa-smutsen kom (steg 2.7.2), by 16 och 17 sedan kartan blev 120 × 120 (2.10.9); det balanseras i 2.12
+    const s = createState(22, START); // by 15 svälter ut sedan toa-smutsen kom (steg 2.7.2), by 16 och 17 sedan kartan blev 120 × 120 (2.10.9) och by 18 sedan stigarna ligger kvar längre (2.10.15); det balanseras i 2.12
     // mät varje dygn: buskarna växer tillbaka, så ett enda mått i slutet beror på slumpen
     let nara = 0, langt = 0;
     for (let d = 0; d < 12; d++) { kor(s, 24); const n = uttag(s, 'samla', 0, 8); if (n > nara) { nara = n; langt = uttag(s, 'samla', 16, 30); } }

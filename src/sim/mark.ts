@@ -17,6 +17,7 @@ export const MARK = balans('mark', {
   gladaKantTrad: 0.6, // ... med så här stora träd (0 till 1)
   nott: 0.045, // slitage när någon går över en ruta (gånger STEG.markNot och så långt man går)
   grasAter: 0.011, // så mycket gräset växer tillbaka per timme (gånger grasVaxt per tidsålder). Lite trampad mark hinner läka, så bara stigarna blir bara
+  stigAter: 0.2, // på bar jord (en stig) växer gräset bara så här fort, så att stigarna ligger kvar länge när ingen går där (steg 2.10.15)
   grasVaxt: [0.1, 1.2, 1, 0.6], // grästillväxt per tidsålder
   grasBas: 0.25, // ... och växer tillbaka grasBas + grasGrann * grannrutornas täcke ...
   grasGrann: 0.75,
@@ -114,7 +115,7 @@ export function growGround(s: State, hours: number, season: number) {
       if (y > 0 && isSoil(tiles[i - W])) { n += old[i - W]; c++; }
       if (y < H - 1 && isSoil(tiles[i + W])) { n += old[i + W]; c++; }
       const nb = c ? n / c : MARK.grasIngen;
-      cover[i] = Math.min(1, old[i] + hours * MARK.grasAter * MARK.grasVaxt[season] * (MARK.grasBas + MARK.grasGrann * nb));
+      cover[i] = Math.min(1, old[i] + hours * MARK.grasAter * MARK.grasVaxt[season] * (MARK.grasBas + MARK.grasGrann * nb) * (old[i] < BAR ? MARK.stigAter : 1));
     }
     if (!ts || old[i] < HIGH) continue; // stigar och kort gräs stoppar ny skog
     if (trees[i] > 0) { if (trees[i] < 1) trees[i] = Math.min(1, trees[i] + hours * TREE_GROW * ts); continue; }
