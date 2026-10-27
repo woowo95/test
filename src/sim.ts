@@ -19,6 +19,7 @@ export * from './sim/teknik';
 export * from './sim/liv';
 export * from './sim/steg';
 export * from './sim/sjo';
+export * from './sim/torst';
 export * from './sim/vag';
 export * from './sim/skog';
 export * from './sim/fynd';

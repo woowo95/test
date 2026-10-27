@@ -416,7 +416,7 @@ SCENARIER.lager = {
       const [p, ...andra] = living(t).filter(q => ageOf(q, t.now) >= ALDER.vuxen);
       for (const q of andra) q.warm = kall ? KROPP.kallt - 0.1 : 1;
       let n = 0;
-      for (let i = 0; i < 200; i++) { Object.assign(p, { toa: 1, warm: 1, rest: 1, health: 1, hunger: 1, social: 1, task: undefined }); chooseTask(t, p); if (p.task?.act === 'bara') n++; }
+      for (let i = 0; i < 200; i++) { Object.assign(p, { toa: 1, torst: 1, warm: 1, rest: 1, health: 1, hunger: 1, social: 1, task: undefined }); chooseTask(t, p); if (p.task?.act === 'bara') n++; }
       return n;
     };
     const barMat = barare(200, false), barSvalt = barare(0, false), barKall = barare(200, true);

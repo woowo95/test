@@ -154,7 +154,7 @@ export const barGrenar = (s: State, p: Person) => { p.task = { act: 'bara', phas
 export function nyInvanare(s: State, sex: 'm' | 'k', alder: number) {
   const p = SIM.newPerson(s, sex, s.now - alder * DAY), f = living(s)[0]!;
   s.people.push(p);
-  Object.assign(p, { x: f.x, y: f.y, hunger: 0.9, rest: 0.9, social: 0.9, toa: 0.9, warm: 0.9, health: 1, task: undefined });
+  Object.assign(p, { x: f.x, y: f.y, hunger: 0.9, rest: 0.9, social: 0.9, toa: 0.9, torst: 0.9, warm: 0.9, health: 1, task: undefined });
   return p;
 }
 
@@ -164,7 +164,7 @@ export function valjer(s: State, varv = 40) {
   const n: Record<string, number> = {}, vuxna = living(s).filter(p => ageOf(p, s.now) >= SIM.ALDER.vuxen);
   let tot = 0, sok = 0;
   for (let i = 0; i < varv; i++) {
-    for (const p of vuxna) { Object.assign(p, { hunger: 0.9, rest: 0.9, social: 0.9, toa: 0.9, warm: 0.9, health: 1, sickUntil: undefined }); p.task = undefined; }
+    for (const p of vuxna) { Object.assign(p, { hunger: 0.9, rest: 0.9, social: 0.9, toa: 0.9, torst: 0.9, warm: 0.9, health: 1, sickUntil: undefined }); p.task = undefined; }
     tidyTools(s); // redskapen som togs i handen förra varvet blir lediga igen
     for (const p of vuxna) { SIM.chooseTask(s, p); const t = p.task!; n[t.act] = (n[t.act] ?? 0) + 1; tot++; if (t.sok) sok++; }
   }

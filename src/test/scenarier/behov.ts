@@ -1,5 +1,5 @@
 // Scenarier. Behov och val: behov, ved, aktivitet och fritid.
-import { Person, createState, getRel, step, living, temperature, nyKalender, amountOf, capacity, load, isLight, T, FOOD, ageOf, getMap, HOUR, W, tileOf, stat, campCenter, KANIN, gain, takeFuel, ownsAmount, ownedSum, addTo, setAmount, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, STOLD_LINDRIG, STOLD_OP, BEAT, spar, isWork, ACTS, groundOf, varmeDelar, nyVarme, addTool, stepKlader, chooseTask, iSkugga, KROPP, spotFor } from '../../sim';
+import { Person, createState, getRel, step, living, temperature, nyKalender, amountOf, capacity, load, isLight, T, FOOD, ageOf, getMap, HOUR, W, tileOf, stat, campCenter, KANIN, gain, takeFuel, ownsAmount, ownedSum, addTo, setAmount, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, STOLD_LINDRIG, STOLD_OP, BEAT, spar, isWork, ACTS, groundOf, varmeDelar, nyVarme, addTool, stepKlader, chooseTask, iSkugga, KROPP, spotFor, shoreOf, torstDelar, drickPlats, areaOf, halsaLage, describe } from '../../sim';
 import { START, STEG_DYGN } from '../kor';
 import { setMat, setFood, kor, klockan, tandEld, tomtForrad, treVuxna, bastaJaktruta, SCENARIER, rikBy } from './hjalp';
 
@@ -279,7 +279,7 @@ SCENARIER.skugga = {
     const g = groundOf(s), p = living(s)[0], temp = temperature(s), m = getMap(s.seed);
     const fri = (skog: boolean) => { for (let i = 0; i < g.trees.length; i++) if ((g.trees[i] > KROPP.skugga) === skog && m.tiles[i] !== T.Vatten && (skog || g.trees.some((t, j) => t > KROPP.skugga && Math.hypot(j % W - i % W, Math.floor(j / W) - Math.floor(i / W)) < 6))) return i; return -1; };
     const satt = (i: number) => { p.x = i % W + 0.5; p.y = Math.floor(i / W) + 0.5; };
-    const fyll = () => { p.rest = 1; p.toa = 1; p.hunger = 1; p.social = 1; };
+    const fyll = () => { p.rest = 1; p.toa = 1; p.torst = 1; p.hunger = 1; p.social = 1; };
     // för varm i solen: söker skugga
     satt(fri(false)); fyll(); p.warm = 1.6; chooseTask(s, p);
     const t = p.task!, valde = t.act === 'svalka', iSkuggan = iSkugga(s, t.tx, t.ty), avst = Math.hypot(t.tx - p.x, t.ty - p.y);
@@ -315,6 +315,57 @@ SCENARIER.skugga = {
       ['den som är för varm vilar och gör handarbete i skuggan nära elden', vilaSkugga],
       ['när solen inte värmer söker man ingen skugga', kvall],
       [`folk svalkar sig i skuggan på sommaren (${svalka} gånger, ${iSol} i solen)`, svalka >= 1 && iSol === 0],
+    ];
+  },
+};
+
+SCENARIER.torst = {
+  text: 'Steg 2.4.1–2.4.2: törsten är ett eget behov. Den växer fortare för den som är för varm eller arbetar tungt, och långsammare i sömnen. Den törstige går och dricker vid vattnet (bär inte hem det) och undviker vatten hen tror är smutsigt; i istiden smälter man snö vid elden, och utan eld hugger man upp isen. Smutsigt vatten kan ge ont i magen, man lär sig var vattnet är rent och berättar det för andra. Utan vatten tär törsten på hälsan',
+  kor: () => {
+    const s = createState(5, START);
+    s.kal = nyKalender(s.now, 2); klockan(s, 10); // sommar
+    const p = living(s)[0], sh = shoreOf(s.seed);
+    const fyll = () => Object.assign(p, { rest: 1, toa: 1, hunger: 1, social: 1, warm: 1, health: 1, torst: 1, sickUntil: undefined, task: undefined });
+    // takten: vaken, för varm, tungt arbete och sömn
+    fyll(); const bas = torstDelar(p).takt;
+    p.warm = 1.6; const varm = torstDelar(p).takt; p.warm = 1;
+    p.task = { act: 'ved', phase: 'do', tx: p.x, ty: p.y, until: s.now + HOUR, carry: 0, why: '' }; const tungt = torstDelar(p).takt;
+    p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: s.now + HOUR, carry: 0, why: '' }; const somn = torstDelar(p).takt;
+    // törstig: går till stranden och dricker
+    fyll(); p.torst = 0.3; chooseTask(s, p);
+    const t = p.task!, valde = t.act === 'dricka', vidVatten = sh[tileOf(t.tx, t.ty)] === 1;
+    const fore = drickPlats(s, p)!;
+    kor(s, 1);
+    const torstNu = p.torst, drack = torstNu > 0.7 && (s.stat?.drack ?? 0) >= 1, lard = p.lardomar?.find(l => l.k === 'vatten');
+    // tror hen att vattnet där är smutsigt väljer hen ett annat ställe
+    p.lardomar = [{ k: 'vatten', a: areaOf(fore.x, fore.y), v: 1, c: 1, t: s.now, led: 0 }];
+    const efter = drickPlats(s, p)!, undviker = areaOf(efter.x, efter.y) !== areaOf(fore.x, fore.y);
+    // utan vatten tär törsten på hälsan, och då läker man inte
+    fyll(); p.torst = 0; const tar = halsaLage(p, s.now) === 'torst';
+    // istiden: snö smälts vid elden, och utan eld hugger man upp isen
+    const is = createState(6, START); is.kal = nyKalender(is.now, 0); klockan(is, 10); tandEld(is);
+    const q = living(is)[0];
+    Object.assign(q, { rest: 1, toa: 1, hunger: 1, social: 1, warm: 1, health: 1, torst: 0.3, task: undefined }); chooseTask(is, q);
+    const sno = q.task!.act === 'smalta';
+    is.fire.lit = false; q.task = undefined; q.warm = 1; chooseTask(is, q);
+    const isen = q.task!.act === 'dricka' && /isen/.test(q.task!.why ?? '');
+    // två dygn (två år i spelet) i tre byar: alla dricker, ingen törstar ihjäl, och lärdomarna om vattnet sprids
+    let drickor = 0, magont = 0, dog = 0, hort = 0, maxTorstiga = 0;
+    for (const seed of [5, 6, 7]) {
+      const b = createState(seed, START); setFood(b, 60); setAmount(b, 'ved', 40);
+      kor(b, 48, b => { maxTorstiga = Math.max(maxTorstiga, living(b).filter(x => x.torst <= 0).length); });
+      drickor += (b.stat?.drack as number ?? 0) + (b.stat?.['smalt sno'] as number ?? 0); magont += b.stat?.['magont av vatten'] as number ?? 0; dog += b.stat?.['dog av törst'] as number ?? 0;
+      hort += living(b).flatMap(x => x.lardomar ?? []).filter(l => l.k === 'vatten' && l.src !== undefined).length;
+    }
+    return [
+      [`törsten växer ${bas.toFixed(3)} i timmen, ${varm.toFixed(3)} för den som är för varm, ${tungt.toFixed(3)} i tungt arbete och ${somn.toFixed(3)} i sömnen`, varm > bas && tungt > bas && somn < bas],
+      [`den törstige går och dricker (${t.act}) vid vattnet`, valde && vidVatten],
+      [`framme dricker hen (törsten ${torstNu.toFixed(2)}) och lär sig hur vattnet är där (${lard ? describe(s, lard).what : 'ingen lärdom'})`, drack && !!lard],
+      ['den som tror att vattnet är smutsigt dricker någon annanstans', undviker],
+      ['utan vatten tär törsten på hälsan', tar],
+      ['i istiden smälts snö vid elden', sno],
+      ['i istiden utan eld hugger man upp isen och dricker', isen],
+      [`på två dygn i tre byar: ${drickor} gånger drack man, ${magont} fick ont i magen, ${hort} lärdomar om vattnet hade man hört av andra, ${dog} törstade ihjäl (som mest ${maxTorstiga} uttorkade samtidigt)`, drickor > 50 && dog === 0 && hort > 0],
     ];
   },
 };

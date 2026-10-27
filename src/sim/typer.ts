@@ -116,6 +116,7 @@ export interface Person {
   hunger: number; rest: number; social: number; health: number;
   warm: number; // kroppsvärme 0–1
   toa: number; // 1 = inget behov, 0 = olycka
+  torst: number; // 1 = släckt, 0 = uttorkad (steg 2.4.1, torst.ts)
   habit: Record<string, number>; // timmar per aktivitet, bleknar med tiden (ger yrkestaggar)
   sickUntil?: number; sickWhy?: string; poisonUntil?: number; stulet?: { av: number; k: string; n: number; l?: boolean }[]; pregnantSince?: number; pregnantBy?: number; lastBirth?: number; guardDay?: number; // pregnantBy: barnets far; guardDay: dygnet hen valdes till nattens vakt
   fiske?: { f: number; n: number; k: number }; // fiske med händerna: försök, napp och fångade fiskar

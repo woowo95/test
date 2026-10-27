@@ -23,6 +23,7 @@ import { clamp, pick, pickNarmaste, rnd } from './slump';
 import { ARSTID, ageIndex, iIstiden, isLight, kallTid, yearNo } from './tid';
 import { Act, H, HOUR, MIN, Person, Skill, Stat, State, T, Task, W, inMap } from './typer';
 import { balans } from './balans';
+import { drickVal, torstig, tortarFarligt } from './torst';
 import { bordenOf, ledigPlats, sittAt, stationFor, storlekAv, vidStation } from './stationer';
 
 // ---------- val av aktivitet ----------
@@ -279,6 +280,7 @@ function needs(s: State, p: Person, v: Val, a: number, lazy: number, light: bool
   const lit = s.fire.lit, sick = isSick(p, s.now);
   if (a < ALDER.smabarn) return set(v, 'sova', 'Är ett litet barn');
   if (p.toa < KROPP.toaGenast) return set(v, 'toa', 'Måste gå på toa genast');
+  if (tortarFarligt(p) && dricka(s, p, v)) return true; // också den som är sjuk eller svag dricker
   if (sick) return set(v, 'sova', 'Är sjuk');
   if (p.health < KROPP.svag) return set(v, 'sova', 'Är för svag för att orka något');
   if (p.warm < KROPP.farligt && lit) return set(v, 'varma', 'Fryser farligt');
@@ -290,6 +292,7 @@ function needs(s: State, p: Person, v: Val, a: number, lazy: number, light: bool
   if (p.toa < KROPP.toaBehov + KROPP.latToa * lazy) return set(v, 'toa', 'Behöver gå på toa');
   if (p.warm < KROPP.kallt + KROPP.latVarme * lazy && lit) return set(v, 'varma', 'Fryser');
   if (p.warm < KROPP.kallt + KROPP.latVarme * lazy && bedTile(s, p) !== undefined) return set(v, 'vila', 'Fryser och går in i huset');
+  if (torstig(p, lazy) && dricka(s, p, v)) return true;
   // för varm i solen: man söker skugga under ett träd eller i ett hus, så som den som fryser söker sig till elden (steg 2.3.13)
   if (forVarmISol(s, p)) {
     const sk = iSkugga(s, p.x, p.y) ? { x: p.x, y: p.y } : skuggaNara(s, p, p.x, p.y);
@@ -300,6 +303,15 @@ function needs(s: State, p: Person, v: Val, a: number, lazy: number, light: bool
   const bord = p.hunger < KROPP.hungrig + KROPP.bordHunger && harMat(s, p) ? ledigPlats(s, p) : undefined;
   if (bord) { v.spot = bord; v.dur = (VAL.maltidMin + rnd(s, 'val', p) * VAL.maltidSpann) * MIN; return set(v, 'maltid', 'Är hungrig och äter vid bordet'); }
   return false;
+}
+
+// törst (steg 2.4.1): vid vattnet, eller snö som smälts vid elden i istiden (torst.ts). false = inget vatten att nå
+function dricka(s: State, p: Person, v: Val) {
+  const d = drickVal(s, p);
+  if (!d) return false;
+  if (d.spot) v.spot = d.spot;
+  v.dur = 0; // tiden räknas från framkomsten (startsOnArrival)
+  return set(v, d.act, d.why);
 }
 
 // 3. på dagen: byns behov mot egen lust, vägda med pliktkänslan

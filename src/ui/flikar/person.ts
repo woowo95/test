@@ -1,3 +1,4 @@
+import { TORST, torstDelar } from '../../sim';
 import { ACTS, ALDER, Act, DAY, Lardom, SAMTAL, SKILL_GOR, STAT_GOR, Skill, Stat, coldOf, halsaLage, hearthOf, living, roomAt, temperature, varmeDelar, viloSlag, viloTak, SLAG, SLAG_TECKEN, Person, KUNSKAPER, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, SEDER, SED_LIST, TEKNIK, BYN, Ting, halvKlar, ageOf, alive, byId, childrenOf, drar, heldBy, ownedBy, PLATSER, PLATS_LIST, handerFor, homeKind, load, utrustning, viktOf, SAKER, ownedStock, sakNamn, slagIkon, tingNamn, STACK, describe, duty, habitShare, habitTotal, KROPP, kortTal, moodOf, num, REL, relKey, stat, taskName, timeLabel } from '../../sim';
 import { framstegSvg, hasIcon, iconImg } from '../../ikoner';
 import { LAG, bar, cap, carryTxt, cssFarg, durTxt, esc, hex, hsl, hjalpText, moodWord, pLink, prickar, relWord, sickNow, tempBar, tempOrd, trend, trendD } from '../hjalp';
@@ -65,6 +66,13 @@ function rad(p: Person, key: string, namn: string, inner: string, delar: Orsak[]
   return `<dt class="klick" data-hjalp="${id}" title="${esc(title)}">${namn}</dt><dd class="klick" data-hjalp="${id}" title="${esc(title)}">${inner}</dd>
     ${hjalpText(id, `<dd class="forkl">${matt}${lista}${mer ? `<p class="muted">${esc(mer)}</p>` : ''}</dd>`)}`;
 }
+// törsten per timme och varför (torstDelar i torst.ts, steg 2.4.1–2.4.2)
+function torstRad(p: Person): Orsak[] {
+  const d = torstDelar(p), bas = 1 / TORST.tim;
+  return [{ namn: d.somn ? 'Törsten växer, långsammare i sömnen' : 'Törsten växer', v: -bas * (d.somn ? TORST.somn : 1) },
+    ...d.varm > 0 ? [{ namn: 'För varm', v: -bas * (d.somn ? TORST.somn : 1) * TORST.varm * d.varm * (d.tungt ? TORST.tungt : 1) }] : [],
+    ...d.tungt ? [{ namn: 'Arbetar tungt', v: -bas * (TORST.tungt - 1) }] : []];
+}
 const VILA: Record<ReturnType<typeof viloSlag>, string> = { restVila: 'Vilar', restArbete: 'Arbetar tungt', restVaken: 'Vaken' };
 function behovHtml(p: Person) {
   const now = s.now, m = moodOf(p, now), a = ageOf(p, now);
@@ -87,11 +95,12 @@ function behovHtml(p: Person) {
   const vila: Orsak[] = [{ namn: VILA[viloSlag(p)], v: KROPP[viloSlag(p)] }, ...tak ? [{ namn: tak === 'restBadd' ? 'Sover i en halmbädd' : tak === 'restGolv' ? 'Sover på golvet i ett hus' : 'Sover under tak', v: KROPP[tak] }] : [],
     ...v.heat > KROPP.eldNara ? [{ namn: 'Slappnar av vid elden', v: fh.comfort * v.heat }] : []];
   const hl = halsaLage(p, now);
-  const halsa: Orsak[] = [...hl === 'svalt' ? [{ namn: 'Svälter', v: -1 / KROPP.svaltTim }] : hl === 'frys' ? [{ namn: 'Fryser farligt', v: -1 / KROPP.frysTim }] : hl === 'laker' ? [{ namn: 'Mätt och frisk: läker', v: 1 / KROPP.lakerTim }] : [],
+  const halsa: Orsak[] = [...hl === 'svalt' ? [{ namn: 'Svälter', v: -1 / KROPP.svaltTim }] : hl === 'frys' ? [{ namn: 'Fryser farligt', v: -1 / KROPP.frysTim }] : hl === 'torst' ? [{ namn: 'Törstar ihjäl', v: -1 / TORST.tomTim }] : hl === 'laker' ? [{ namn: 'Mätt, otörstig och frisk: läker', v: 1 / KROPP.lakerTim }] : [],
     ...sickNow(p) ? [{ namn: p.sickWhy ?? 'Sjuk', v: -1 / KROPP.sjukTim }] : []];
   return `${sickNow(p) ? `<p class="why">${esc(p.sickWhy ?? 'Sjuk')}, ${durTxt(p.sickUntil! - now)} kvar</p>` : ''}<dl class="kv">
       ${rad(p, 'humor', 'Humör', `${bar(m, '', trend(p, 'humor', m))}<span>${moodWord(m)}</span>`, humor, '', 'Tankarna försvinner med tiden.')}
       ${rad(p, 'hunger', 'Mättnad', bar(p.hunger, '', trend(p, 'hunger', p.hunger)), [{ namn: 'Hungern växer', v: -1 / KROPP.hungerTim * (a < ALDER.matBarn ? KROPP.hungerBarn : 1) }], ' i timmen', 'Maten hen äter höjer den.')}
+      ${rad(p, 'torst', 'Törst', bar(p.torst, p.torst < TORST.torstig ? 'low' : '', trend(p, 'torst', p.torst)), torstRad(p), ' i timmen', 'Att dricka släcker den. Vattnet är olika smutsigt på olika ställen, och i istiden smälter man snö vid elden.')}
       ${rad(p, 'rest', 'Vila', bar(p.rest, '', trend(p, 'rest', p.rest)), vila, ' i timmen')}
       ${rad(p, 'social', 'Gemenskap', bar(p.social, '', trend(p, 'social', p.social)), [{ namn: 'Saknar sällskap', v: -1 / KROPP.socialTim }], ' i timmen', 'Varje samtal höjer den.')}
       ${rad(p, 'health', 'Hälsa', bar(p.health, p.health < LAG.halsa ? 'low' : '', trend(p, 'health', p.health)), halsa, ' i timmen', halsa.length ? '' : 'Oförändrad just nu.')}

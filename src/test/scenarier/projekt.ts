@@ -18,7 +18,7 @@ function valjer(s: State, n: number) {
   let proj = 0;
   for (let i = 0; i < n; i++) {
     const p = vuxna(s)[i % vuxna(s).length];
-    Object.assign(p, { toa: 1, warm: 1, rest: 1, health: 1, hunger: 1, social: 1, task: undefined });
+    Object.assign(p, { toa: 1, torst: 1, warm: 1, rest: 1, health: 1, hunger: 1, social: 1, task: undefined });
     chooseTask(s, p); if (p.task && acts.has(p.task.act) && p.task.why?.startsWith('Byn saknar')) proj++;
     p.task = undefined;
   }

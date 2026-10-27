@@ -25,7 +25,7 @@ SCENARIER.stenring = {
       setItems(f, { flinta, torrgras: 20, grenar: 20 }); setFood(f, mat); let n = 0, samla = 0;
       for (let i = 0; i < 300; i++) {
         const p = living(f).filter(q => ageOf(q, f.now) >= ALDER.vuxen)[i % 4];
-        Object.assign(p, { toa: 1, warm: 1, rest: 1, health: 1, hunger: 1, social: 1, task: undefined });
+        Object.assign(p, { toa: 1, torst: 1, warm: 1, rest: 1, health: 1, hunger: 1, social: 1, task: undefined });
         chooseTask(f, p); if (p.task?.sok) n++; if (p.task?.act === 'samla') samla++;
       }
       return `${n} av ${samla}`;
@@ -38,7 +38,7 @@ SCENARIER.stenring = {
     const fm = SIM.vidStation(medBank(f, 'flatarbank'));
     for (let i = 0; i < 300; i++) {
       const p = living(f).filter(q => ageOf(q, f.now) >= ALDER.vuxen)[i % 4];
-      Object.assign(p, { toa: 1, warm: 1, rest: 1, health: 1, hunger: 1, social: 1, task: undefined });
+      Object.assign(p, { toa: 1, torst: 1, warm: 1, rest: 1, health: 1, hunger: 1, social: 1, task: undefined });
       chooseTask(f, p);
       if (p.task?.act === 'korg') { korgar++; if (p.task.sok || p.task.tandmat || Math.hypot(p.task.tx - fm.x, p.task.ty - fm.y) > 1.5) korgFel++; }
       p.task = undefined;
@@ -51,7 +51,7 @@ SCENARIER.stenring = {
     for (let i = 0; i < 100; i++) {
       const p = andra[i % andra.length];
       l0.task = { act: 'samla', phase: 'do', tx: l0.x, ty: l0.y, until: f.now + HOUR, carry: 0, why: 'Samlar.', dark: false, sok: true };
-      Object.assign(p, { toa: 1, warm: 1, rest: 1, health: 1, hunger: 1, social: 1, task: undefined });
+      Object.assign(p, { toa: 1, torst: 1, warm: 1, rest: 1, health: 1, hunger: 1, social: 1, task: undefined });
       chooseTask(f, p); if (p.task?.sok) fler++; p.task = undefined;
     }
     // den som hämtar tändmaterial åt en släckt eld fortsätter på en plats utan bär, och slutar när tändmaterialet räcker
@@ -59,7 +59,7 @@ SCENARIER.stenring = {
     r.now = new Date(r.now).setHours(10, 0, 0, 0); Object.assign(r.fire, { lit: false, fuel: 0, emberUntil: undefined, ring: true });
     setItems(r, { flinta: 1 }); setFood(r, 100);
     const th = living(r).find(q => ageOf(q, r.now) >= ALDER.vuxen)!;
-    Object.assign(th, { toa: 1, warm: KROPP.kallt - 0.05, rest: 1, health: 1, hunger: 1, social: 1, task: undefined });
+    Object.assign(th, { toa: 1, torst: 1, warm: KROPP.kallt - 0.05, rest: 1, health: 1, hunger: 1, social: 1, task: undefined });
     chooseTask(r, th);
     const tom = (() => { const c = campCenter(r); for (let d = 4; d < 30; d++) for (let k = 0; k < 16; k++) { const x = Math.floor(c.x + Math.cos(k / 16 * 6.283) * d), y = Math.floor(c.y + Math.sin(k / 16 * 6.283) * d); if (inMap(x, y) && rm.tiles[y * W + x] !== T.Vatten && !isWall(r, x + 0.5, y + 0.5) && richness(r, 'samla', x + 0.5, y + 0.5) < 0.01) return { x: x + 0.5, y: y + 0.5 }; } })()!;
     const valt = th.task?.act === 'samla' && !!th.task.tandmat;

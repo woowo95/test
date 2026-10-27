@@ -1,7 +1,9 @@
 // sjöarna: varje sammanhängande vatten på kartan är en sjö. Byn räknar fiskeförsök, fångster och bad per sjö
 // när de händer, och personrutan visar dem när man trycker på vattnet (ui/flikar/sjo.ts)
-import { getMap, perKarta } from './karta';
+import { getMap, perKarta, vnoise } from './karta';
 import { H, Person, State, T, W, inMap } from './typer';
+import { clamp } from './slump';
+import { balans } from './balans';
 
 export interface SjoLogg { t: number; id: number; k: 'fisk' | 'bad' }
 export interface SjoStat {
@@ -29,6 +31,23 @@ export const sjoarna = perKarta(seed => {
   delar.forEach((d, n) => { for (const j of d) id[j] = n; });
   const mitt = delar.map(d => { let x = 0, y = 0; for (const j of d) { x += j % W; y += Math.floor(j / W); } return { x: x / d.length, y: y / d.length }; });
   return { id, rutor: delar, mitt };
+});
+
+// hur smutsigt vattnet är vid varje ruta på land intill vattnet (steg 2.4.1): 0 = rent, 1 = mycket smutsigt, och 0 på
+// rutor som inte ligger vid vattnet. Ett mjukt mönster över kartan, så att smutsen följer stränder och vikar (törsten i torst.ts)
+export const VATTEN = balans('vatten', {
+  skala: 7, // mönstrets storlek i rutor
+  fran: 0.35, spann: 0.5, // smutsen börjar där bruset (0–1) är fran och är full vid fran + spann
+});
+export const smutsOf = perKarta(seed => {
+  const t = getMap(seed).tiles, v = new Float32Array(W * H);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    if (t[y * W + x] === T.Vatten) continue;
+    let vid = false;
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const xx = x + dx, yy = y + dy; if (inMap(xx, yy) && t[yy * W + xx] === T.Vatten) vid = true; }
+    if (vid) v[y * W + x] = clamp((vnoise(seed ^ 0x5a17, x / VATTEN.skala, y / VATTEN.skala) - VATTEN.fran) / VATTEN.spann, 0, 1);
+  }
+  return v;
 });
 
 // sjön som rutan ligger i, eller närmast den som står på stranden (två rutor ut), -1 om inget vatten är nära

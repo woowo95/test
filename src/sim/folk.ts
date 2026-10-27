@@ -216,7 +216,7 @@ export function newPerson(s: State, sex: 'm' | 'k', born: number, mother?: Perso
   const m = getMap(s.seed);
   const p: Person = {
     id: s.nextId++, name: '', sex, born, mother: mother?.id, father: father?.id,
-    pot, skill, hunger: 0.8, rest: 0.9, social: 0.7, health: 1, warm: 1, toa: 0.6 + rnd(s, 'folk') * 0.4, habit: {}, thoughts: [],
+    pot, skill, hunger: 0.8, rest: 0.9, social: 0.7, health: 1, warm: 1, toa: 0.6 + rnd(s, 'folk') * 0.4, torst: 1, habit: {}, thoughts: [],
     x: m.fire.x + (rnd(s, 'folk') - 0.5) * 3, y: m.fire.y + (rnd(s, 'folk') - 0.5) * 3, fame: [],
     hue: Math.floor(rnd(s, 'folk') * 360),
   };

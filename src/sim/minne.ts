@@ -11,6 +11,7 @@ import { DAY, H, HOUR, Lardom, Person, Rel, State, T, W, egen, tvaDelar, visning
 import { FOREST } from './vag';
 import { balans } from './balans';
 import type { SamtalDef } from './samtal';
+import { smutsOf } from './sjo';
 
 // ---------- balanstal (regel 8) ----------
 // Lärdomar: hur många man minns, hur mycket man tror på dem, hur de sprids och hur fort de glöms. Värdet (v) mäts i det en
@@ -92,7 +93,8 @@ const areaCenter = (a: number) => ({ x: Math.min(W, (a % aw()) * AREA + AREA / 2
 // lärdomarnas slag (registret): vad = ordet i lärdomens text (describe), inga = texten när inget växer där längre, namn = ordet
 // i listor (sammanställningen efter ikappräkningen). fynd = ett fynd som växer och plockas (Kind i fynd.ts): det ses runt den som
 // arbetar (serOmFinns: bara där det finns något), växer tillbaka i minnet och kan visa sig sämre än man trott.
-// Flinta och rädslor (fara) har egna regler nedan. Ordningen är den i cachen nedan
+// Flinta, rädslor (fara) och vattnet har egna regler nedan. Vattnets värde är hur smutsigt det är (0 = rent, 1 = mycket
+// smutsigt, smutsOf i sjo.ts): man lär sig det där man dricker (steg 2.4.1, torst.ts). Ordningen är den i cachen nedan
 interface LardomDef { vad: string; namn: string; inga?: string; fynd?: true; serOmFinns?: true }
 const LDEF = {
   samla: { vad: 'bär och rötter', namn: 'bär och rötter', inga: 'Inga bär och rötter', fynd: true },
@@ -100,6 +102,7 @@ const LDEF = {
   fiske: { vad: 'fisk i vattnet', namn: 'abborre', inga: 'Ingen fisk', fynd: true, serOmFinns: true },
   flinta: { vad: 'flinta', namn: 'flinta' },
   fara: { vad: '', namn: 'farliga platser' },
+  vatten: { vad: 'vatten', namn: 'rent och smutsigt vatten' },
 } satisfies Record<string, LardomDef>;
 export type LKind = keyof typeof LDEF;
 export const LARDOMAR: Record<LKind, LardomDef> = LDEF;
@@ -133,6 +136,7 @@ function areaCalc(s: State, k: LKind, a: number, mode: Mode) {
   const x0 = (a % aw()) * AREA, y0 = Math.floor(a / aw()) * AREA, x1 = Math.min(W, x0 + AREA), y1 = Math.min(H, y0 + AREA);
   if (k === 'flinta') { const sd = stoneDist(s.seed); let v = 0; for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) if (sd[y * W + x] <= FANGST.stenNara) v = 1; return v; }
   if (k === 'fara') return 0;
+  if (k === 'vatten') { const sm = smutsOf(s.seed), sh = shoreOf(s.seed); let v = 0, n = 0; for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) if (sh[y * W + x]) { v += sm[y * W + x]; n++; } return n ? v / n : 0; } // snittet längs stranden
   const fn = mode === 'nu' ? undefined : mode === 'vaxer' ? (i: number) => vaxerAt(s, k, i) : (i: number) => synsOf(s, k, i);
   nTopp = 0;
   for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) iTopp(fn ? standAt(s, k, x, y, fn) : richness(s, k, x + 0.5, y + 0.5));
@@ -286,7 +290,7 @@ export function share(s: State, a: Person, b: Person, r: Rel, slag: SamtalDef) {
   const talk = MINNE.delaBas + (stat(a, 'karisma', now) + stat(a, 'empati', now)) / MINNE.delaDiv + (slag.dela ? MINNE[slag.dela] : 0);
   if (a.lardomar?.length && rnd(s, 'minne', a) < talk) {
     // man berättar helst om rädslor, rika platser och platser som visat sig sämre än man trott
-    const w = a.lardomar.map(l => (l.k === 'fara' ? MINNE.delaFara : l.k === 'flinta' ? 1 : nyhet(s, l) ? Math.max(1, l.v) : l.v) * l.c);
+    const w = a.lardomar.map(l => (l.k === 'fara' ? MINNE.delaFara : l.k === 'flinta' || l.k === 'vatten' ? 1 : nyhet(s, l) ? Math.max(1, l.v) : l.v) * l.c);
     tell(s, a, b, pickViktat(s, a.lardomar, w, 'minne', a), r);
   }
   // kunskap: den som kan något bättre lär ut lite
@@ -308,7 +312,7 @@ function tell(s: State, a: Person, b: Person, l: Lardom, r: Rel) {
   const trust = clamp(MINNE.troBas + r.op / MINNE.troDiv, MINNE.troMin, MINNE.troMax);
   const c = l.c * trust * MINNE.troDel;
   // man överdriver gärna, särskilt det som är farligt
-  const v = clamp(l.v * (l.k === 'fara' ? 1 + (rnd(s, 'minne', a) - MINNE.overFara) * MINNE.overFaraSpann : 1 + (rnd(s, 'minne', a) - MINNE.over) * MINNE.overSpann), 0, l.k === 'fara' ? MINNE.vMaxFara : MINNE.vMax);
+  const v = clamp(l.v * (l.k === 'fara' ? 1 + (rnd(s, 'minne', a) - MINNE.overFara) * MINNE.overFaraSpann : 1 + (rnd(s, 'minne', a) - MINNE.over) * MINNE.overSpann), 0, l.k === 'fara' ? MINNE.vMaxFara : l.k === 'vatten' ? 1 : MINNE.vMax);
   const e = findL(b, l.k, l.a);
   if (e) {
     if (e.src === undefined && e.led === 0 && e.c >= c && !nyhet(s, l)) return; // egen upplevelse väger tyngre, utom mot en nyhet
@@ -368,12 +372,13 @@ function placeName(s: State, a: number) {
   const dir = DIRS[(Math.round(Math.atan2(dy, dx) / (Math.PI / 4)) + 8) % 8];
   return `${terr} ${dir} om byn`;
 }
+const vattenOrd = (v: number) => v < 0.2 ? 'Rent vatten' : v < 0.5 ? 'Lite grumligt vatten' : 'Smutsigt vatten';
 const amount = (v: number) => v >= 0.7 ? 'Gott om' : v >= 0.35 ? 'En del' : v >= 0.1 ? 'Lite' : 'Nästan inga';
 // en lärdom i ord, med hur säker personen är, varifrån den kommer och om den stämmer. what är texten utan platsen.
 export function describe(s: State, l: Lardom) {
   const place = placeName(s, l.a);
   const rel = (v: number) => relOf(l.k, v);
-  const what0 = l.k === 'fara' ? `Farligt${l.om ? `: ${l.om}` : ''}` : l.k === 'flinta' ? 'Flinta finns'
+  const what0 = l.k === 'fara' ? `Farligt${l.om ? `: ${l.om}` : ''}` : l.k === 'flinta' ? 'Flinta finns' : l.k === 'vatten' ? vattenOrd(l.v)
     : l.g !== undefined && rel(l.g) < 0.1 ? `${LARDOMAR[l.k].inga} längre`
     : l.g !== undefined && rel(l.g) > rel(l.v) + 0.35 ? `${amount(rel(l.v))} ${LARDOMAR[l.k].vad}, växer tillbaka` : `${amount(rel(l.v))} ${LARDOMAR[l.k].vad}`;
   const what = what0 + (nyhet(s, l) ? ', sämre än man trott' : '');
@@ -385,6 +390,7 @@ export function describe(s: State, l: Lardom) {
   else {
     const real = areaValue(s, l.k, l.a);
     if (l.k === 'flinta') { if (real < 0.5) wrong = 'fel, där finns ingen flinta'; }
+    else if (l.k === 'vatten') { if (Math.abs(l.v - real) > 0.3) wrong = l.v > real ? 'vattnet är renare än hen tror' : 'vattnet är smutsigare än hen tror'; }
     else if (rel(l.v) > rel(real) + 0.25) wrong = l.src === undefined && !l.led ? 'stämmer inte längre' : 'överdrivet eller inaktuellt';
     else if (rel(real) > rel(l.v) + 0.35) wrong = 'det finns mer än hen tror';
   }

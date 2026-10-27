@@ -95,6 +95,9 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
     for (const st of s.stationer ?? []) for (const p of s.people) if (forut[st.k]?.some(k => (p.tek?.[k] ?? 0) >= 1)) (p.tek ??= {})[st.k] = 1;
     // den som kunde korg utan att kunna slöjdbänken kan fortfarande korg; tekniken lärs ut bara till den som kan bänken
   }],
+  [6, 'v79: törsten (steg 2.4.1). Alla börjar otörstiga', s => {
+    for (const p of s.people) if (p.torst === undefined) p.torst = 1;
+  }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];
 export function migrate(s: State) { return simulera(() => uppgradera(s)); }

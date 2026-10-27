@@ -33,6 +33,7 @@ import { migrate } from './varld';
 import { stepDelning } from './delning';
 import { balans } from './balans';
 import { sjoRakna } from './sjo';
+import { DRICKA_ACTS, TORST, drick, torstSteg } from './torst';
 import { bordPlats, kladVarme, stepKlader } from './utrustning';
 import { finishStation, finishTillbehor, stationRutor, stepStationer, tillbehorVarme, workStation } from './stationer';
 
@@ -91,6 +92,8 @@ const KLAR: Partial<Record<Act, Krok>> = {
   bada: (s, p, t) => { sjoRakna(s, t.tx, t.ty, 'bad', p); p.warm = p.warm > 1 ? Math.max(1, p.warm - KROPP.badSvalka) : Math.max(KROPP.badMin, p.warm - KROPP.badKyla); think(p, 'Badade i sjön', 0.08, s.now, 6 * HOUR); },
   strand: (s, p) => { p.rest = Math.min(1, p.rest + KROPP.strandVila); think(p, 'Satt vid vattnet och fick ro', 0.06, s.now, 6 * HOUR); },
 };
+// att dricka (torst.ts): en gång när man kommit fram, och törsten hålls släckt så länge man dricker
+for (const act of DRICKA_ACTS) MEDAN[act] = (s, p, t) => { if (t.prog === undefined) { t.prog = 0; drick(s, p, t); } else p.torst = 1; };
 for (const art of DJURARTER) MEDAN[art.act] = (s, p, _t, dtSec) => bearbeta(s, p, art, dtSec / HOUR_S); // slakt och rensning
 // redskap som görs och träd som fälls: arbetet sparas om det avbryts (paborjat.ts)
 for (const a of GOR_ACTS) { MEDAN[a] = workHalf; KLAR[a] = (s, p, t) => { if (finishHalf(s, p, t)) nastaRedskap(s, p, t); }; } // och ett till i samma pass (val.ts)
@@ -171,7 +174,7 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
 }
 
 
-// behoven: hunger, vila, värme, umgänge och toa. Elden värmer i ett område, och inne i ett hus kyls man långsammare
+// behoven: hunger, törst, vila, värme, umgänge och toa. Elden värmer i ett område, och inne i ett hus kyls man långsammare
 // (sämre ju fler öppningar). Delarna nedan räknas här och visas i personrutan, så att den visar det som faktiskt händer
 // vilan per timme före tak och eld: talets namn i KROPP
 export function viloSlag(p: Person): 'restVila' | 'restArbete' | 'restVaken' {
@@ -233,11 +236,12 @@ function needsStep(s: State, p: Person, a: number, dtSec: number, coldRate: numb
   // toa: behovet växer på ungefär sju timmar, långsammare i sömnen
   p.toa = clamp(p.toa - dtSec / (KROPP.toaTim * HOUR_S) * (p.task?.act === 'sova' ? KROPP.toaSomn : 1), 0, 1);
   if (p.toa <= 0) { p.toa = 1; if (a >= ALDER.smabarn) think(p, 'Kissade på sig', -0.12, now, 4 * HOUR); }
+  torstSteg(s, p, a, dtSec); // törsten: fortare för den som är för varm eller arbetar tungt (steg 2.4.1–2.4.2)
 }
 
 // det som just nu tär på hälsan eller läker den (sjukdomen kommer till utöver detta)
-export function halsaLage(p: Person, now: number): 'svalt' | 'frys' | 'laker' | undefined {
-  return p.hunger <= 0 ? 'svalt' : p.warm < KROPP.frysdod ? 'frys' : p.hunger > KROPP.lakerMat && !isSick(p, now) ? 'laker' : undefined;
+export function halsaLage(p: Person, now: number): 'svalt' | 'frys' | 'torst' | 'laker' | undefined {
+  return p.hunger <= 0 ? 'svalt' : p.warm < KROPP.frysdod ? 'frys' : p.torst <= 0 ? 'torst' : p.hunger > KROPP.lakerMat && p.torst > TORST.laker && !isSick(p, now) ? 'laker' : undefined;
 }
 // hälsa, sjukdom och död: svält, kyla, sjukdom, ålderdom och olyckor. true = personen dog
 function healthStep(s: State, p: Person, a: number, ai: number, dtSec: number) {
@@ -245,12 +249,13 @@ function healthStep(s: State, p: Person, a: number, ai: number, dtSec: number) {
   const hl = halsaLage(p, now);
   if (hl === 'svalt') { p.health -= dtSec / (KROPP.svaltTim * HOUR_S); if (rnd(s, 'halsa', p) < dtSec / 7200) think(p, 'Svälter', -0.25, now, 3 * HOUR); }
   else if (hl === 'frys') p.health -= dtSec / (KROPP.frysTim * HOUR_S);
+  else if (hl === 'torst') p.health -= dtSec / (TORST.tomTim * HOUR_S);
   else if (hl === 'laker') p.health = clamp(p.health + dtSec / (KROPP.lakerTim * HOUR_S), 0, 1);
   if (isSick(p, now)) p.health -= dtSec / (KROPP.sjukTim * HOUR_S);
   if (!p.sickUntil || p.sickUntil < now) {
     if (chance(s, (iIstiden(ai) ? ARSTID.sjukIstid : ARSTID.sjuk) / 86400, dtSec, 'halsa', p)) { const dur = (KROPP.sjukMin + rnd(s, 'halsa', p) * KROPP.sjukSpann) * HOUR; p.sickUntil = now + dur; p.sickWhy = 'Sjuk'; if (dur > KROPP.svartSjuk * HOUR) log(s, `${p.name} blev svårt sjuk.`, 'world', [p.id]); }
   }
-  if (p.health <= 0) { die(s, p, p.hunger <= 0 ? 'svalt' : p.warm < KROPP.frysdod ? 'kyla' : (p.poisonUntil ?? 0) > now ? 'svamp' : 'sjukdom'); return true; }
+  if (p.health <= 0) { die(s, p, p.hunger <= 0 ? 'svalt' : p.warm < KROPP.frysdod ? 'kyla' : p.torst <= 0 ? 'torst' : (p.poisonUntil ?? 0) > now ? 'svamp' : 'sjukdom'); return true; }
   // ålderdom och olyckor (Gompertz, per år = per dygn)
   const q = KROPP.dodBas + KROPP.dodAlder * Math.exp(KROPP.dodTakt * a) + (a < ALDER.barnsjuk ? KROPP.dodBarn : 0);
   if (chance(s, q / 86400, dtSec, 'halsa', p)) { die(s, p, a > ALDER.alderdom ? 'alderdom' : a < ALDER.barnsjuk ? 'barnsjukdom' : 'olycka'); if (a >= ALDER.barnsjuk && a <= ALDER.alderdom) fearPlace(s, p, DODSORSAKER.olycka.text); return true; }

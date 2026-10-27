@@ -126,7 +126,7 @@ SCENARIER.slump = {
     const g = createState(5, START), vuxna = () => living(g).filter(q => ageOf(q, g.now) >= ALDER.vaktFran && ageOf(q, g.now) < ALDER.vaktTill);
     while (vuxna().length < 4) g.people.push({ ...structuredClone(vuxna()[0]), id: g.nextId++, task: undefined, rngs: undefined });
     g.now = new Date(g.now).setHours(23, 0, 0, 0);
-    for (const q of living(g)) Object.assign(q, { toa: 1, warm: 1, rest: 1, health: 1, hunger: 1, task: undefined });
+    for (const q of living(g)) Object.assign(q, { toa: 1, torst: 1, warm: 1, rest: 1, health: 1, hunger: 1, task: undefined });
     g.lastGuardDay = -999;
     const vd = drag(g, 'val', () => chooseTask(g, vuxna()[0]));
     Object.assign(g.fire, { lit: false, fuel: 0, emberUntil: undefined, ring: true });
@@ -146,7 +146,7 @@ SCENARIER.slump = {
         for (const q of hv()) addTool(h, 'yxa', q);
         for (let i = 0; i < 200; i++) {
           const p = hv()[i % hv().length];
-          Object.assign(p, { toa: 1, warm: 1, rest: 1, health: 1, hunger: 1, social: 1, task: undefined });
+          Object.assign(p, { toa: 1, torst: 1, warm: 1, rest: 1, health: 1, hunger: 1, social: 1, task: undefined });
           chooseTask(h, p); if (p.task) sett.add(p.task.sok ? 'flinta' : p.task.act); p.task = undefined;
         }
       }

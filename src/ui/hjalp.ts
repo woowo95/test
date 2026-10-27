@@ -52,7 +52,7 @@ export function hjalpKlick(el: HTMLElement) {
 }
 // pil vid en stapel som ändras märkbart just nu: jämför med värdet för en stund sedan (speltid). Gränsen är per stapel och
 // timme, under hur fort stapeln brukar ändras (mättnaden sjunker 1/16 i timmen, vilan högst 0,06)
-const TREND: Record<string, number> = { humor: 0.08, hunger: 0.03, rest: 0.03, social: 0.03, health: 0.03, warm: 0.08, toa: 0.08 };
+const TREND: Record<string, number> = { humor: 0.08, hunger: 0.03, rest: 0.03, social: 0.03, health: 0.03, warm: 0.08, toa: 0.08, torst: 0.08 };
 const trendHist = new Map<string, { v: number; t: number; d: number; m?: boolean }>(); // m = d är uppmätt
 vidNyBy.push(() => trendHist.clear());
 export function trend(p: Person, key: string, v: number) {
