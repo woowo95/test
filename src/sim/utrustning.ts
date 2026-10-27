@@ -15,7 +15,8 @@ import { Person, State } from './typer';
 import { KLAD_SLAG, SAKER, bordOf } from './saker';
 import { heldBy, Ting, tingOf } from './agande';
 import { BYN, lends } from './egendom';
-import { living } from './folk';
+import { KROPP, living } from './folk';
+import { temperature } from './vader';
 import { capacity } from './lager';
 import { balans } from './balans';
 
@@ -98,11 +99,15 @@ const rang = (p: Person, t: Ting) => t.agare === p.id ? 0 : t.agare === BYN ? 1 
 // bördan), och som hen får ta
 export function stepKlader(s: State) {
   if (!tingOf(s).some(t => SAKER[t.k]?.klad)) return;
+  const kallt = temperature(s) < KROPP.kladTemp;
   for (const p of living(s)) {
+    // för varm (steg 2.3.4): de varma plaggen tas av, och tas på igen först när det är kallt och kroppen inte är varmare än idealet.
+    // Bältet värmer inte och sitter kvar
+    if (p.warm > KROPP.forVarm) for (const t of paSig(s, p)) if (SAKER[t.k]!.klad!.varme > 0) t.bar = undefined;
     const har = new Set(paSig(s, p).map(t => SAKER[t.k]!.klad!.plats));
     for (const k of KLAD_SLAG) {
       const pl = SAKER[k]!.klad!.plats;
-      if (har.has(pl)) continue;
+      if (har.has(pl) || (SAKER[k]!.klad!.varme > 0 && (!kallt || p.warm > 1))) continue;
       let best: Ting | undefined;
       for (const t of tingOf(s)) {
         if (t.k !== k || t.bar !== undefined || t.hos !== undefined || t.lass !== undefined || t.halv || !lends(s, t.agare, p)) continue;

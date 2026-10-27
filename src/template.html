@@ -178,7 +178,7 @@ h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: 
 .bar.temp, .tip .bar.temp { position: relative; overflow: visible; background: linear-gradient(90deg, #3b7fd4, var(--barbg) 50%, #d4703b); }
 .bar.temp::after { content: ''; position: absolute; left: 50%; top: -3px; height: 12px; width: 1px; background: var(--muted); }
 .bar.temp > span { position: absolute; top: -2px; width: 4px; height: 10px; margin-left: -2px; border-radius: 2px; background: var(--fg); }
-.bar.temp.low > span { background: var(--bad); }
+.bar.temp.low > span, .bar.temp.high > span { background: var(--bad); }
 .rels li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; padding: 3px 0; }
 .rw.pos { color: var(--good); } .rw.neg { color: var(--bad); }
 .lard li { padding: 4px 0; } .lard li > span { display: block; padding-left: 10px; } .lard small { display: block; font-size: 11px; }

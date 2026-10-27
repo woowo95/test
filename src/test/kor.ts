@@ -1,6 +1,6 @@
 // Kör en by utan grafik och samlar nyckeltalen (registret NYCKELTAL i nyckeltal.ts säger vad de heter och betyder).
 // Vakterna larmar om något blir omöjligt (NaN, negativa förråd, folk i vattnet).
-import { BEAT, createState, step, living, DAY, groundOf, isSoil, markslag, Markslag, ageIndex, moodOf, serialize, serializeParts, getMap, fuelStock, ACT_NAMES, T, State, inMap, isWall, tileOf, foodOf, amountOf, sumOf, okandaBalans, alive, isCarrying, BYN, isStored, housesOf, bitsOf, Person, HOUR, W } from '../sim';
+import { BEAT, createState, step, living, DAY, groundOf, isSoil, markslag, Markslag, ageIndex, moodOf, serialize, serializeParts, getMap, fuelStock, ACT_NAMES, T, State, inMap, isWall, tileOf, foodOf, amountOf, sumOf, okandaBalans, alive, isCarrying, BYN, isStored, housesOf, bitsOf, Person, HOUR, W, KROPP } from '../sim';
 import { NYCKELTAL, Nyckeltal, tal } from './nyckeltal';
 
 // testbyarna grundas 08:00 svensk tid. Testerna körs i datorns tidszon (här UTC), så där är klockan 06:00 när byn grundas
@@ -35,7 +35,8 @@ export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => voi
     for (const k of s.stockar ?? []) if (!(k.ved >= 0) || !(k.grenar >= 0)) larm('stam', () => `stam ${k.id} ved ${k.ved}, grenar ${k.grenar}`);
     const folk = living(s);
     for (const p of folk) {
-      for (const k of ['hunger', 'rest', 'social', 'health', 'warm', 'toa'] as const) if (!ok01(p[k])) larm('behov ' + k, () => `${p.name} ${k} = ${p[k]}`);
+      for (const k of ['hunger', 'rest', 'social', 'health', 'toa'] as const) if (!ok01(p[k])) larm('behov ' + k, () => `${p.name} ${k} = ${p[k]}`);
+      if (!ok01(p.warm / KROPP.maxVarm)) larm('behov warm', () => `${p.name} warm = ${p.warm}`); // värmen går till maxVarm (steg 2.3.4)
       if (!Number.isFinite(p.x) || !Number.isFinite(p.y) || !inMap(p.x, p.y)) larm('position', () => `${p.name} på ${p.x},${p.y}`);
       else if (tiles[tileOf(p.x, p.y)] === T.Vatten) larm('i vattnet', () => `${p.name} står i vattnet (${p.task?.act})`);
       else if (isWall(s, p.x, p.y)) larm('i en vägg', () => `${p.name} står i en vägg (${p.task?.act})`);

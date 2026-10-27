@@ -65,10 +65,9 @@ export function trend(p: Person, key: string, v: number) {
 
 // uppmätt ändring per timme (speltid) för det trend följer, eller undefined innan något är mätt
 export function trendD(p: Person, key: string) { const h = trendHist.get(p.id + ':' + key); return h?.m ? h.d : undefined; }
-// temperaturen: idealet i mitten, kallt åt vänster. Simuleringen har ännu ingen värme över idealet, så nålen går
-// som längst till mitten (p.warm = 1)
-export function tempBar(w: number, tr = '') { return `<span class="bar temp${w < KROPP.kallt ? ' low' : ''}"><span style="left:${Math.round(clamp(w, 0, 1) * 50)}%"></span></span>${tr}`; }
-export function tempOrd(w: number) { return w >= 0.85 ? 'Lagom' : w >= KROPP.kallt ? 'Sval' : w >= KROPP.farligt ? 'Fryser' : 'Farligt kall'; }
+// temperaturen: idealet i mitten (p.warm = 1), kallt åt vänster och för varmt åt höger (steg 2.3.4, upp till KROPP.maxVarm)
+export function tempBar(w: number, tr = '') { return `<span class="bar temp${w < KROPP.kallt ? ' low' : w > KROPP.forVarm ? ' high' : ''}"><span style="left:${Math.round(clamp(w / KROPP.maxVarm, 0, 1) * 100)}%"></span></span>${tr}`; }
+export function tempOrd(w: number) { return w > KROPP.forVarm ? 'För varm' : w > 1.1 ? 'Varm' : w >= 0.85 ? 'Lagom' : w >= KROPP.kallt ? 'Sval' : w >= KROPP.farligt ? 'Fryser' : 'Farligt kall'; }
 
 // personer
 export function pLink(p?: Person) { return p ? `<button class="plink" data-id="${p.id}" type="button">${esc(p.name)}</button>` : '–'; }

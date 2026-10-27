@@ -77,6 +77,11 @@ function behovHtml(p: Person) {
     ...v.eld > 0 ? [{ namn: 'Elden värmer', v: v.eld }] : [],
     ...v.kyla > 0 ? [{ namn: `Kylan, ${Math.round(temp)} grader${v.shelter > 0 ? `, huset skyddar ${Math.round(v.shelter * 100)} %` : ''}${v.fall > 0 ? `, skinnfällen ${Math.round(v.fall * 100)} %` : ''}${v.klad > 0 ? `, kläderna ${Math.round(v.klad * 100)} %` : ''}`, v: -v.kyla }] : [],
     ...v.mild > 0 ? [{ namn: `Milt väder, ${Math.round(temp)} grader`, v: v.mild }] : [],
+    // över idealet (steg 2.3.4)
+    ...v.sol > 0 ? [{ namn: `Solen, ${Math.round(temp)} grader`, v: v.sol }] : [],
+    ...v.kladHetta > 0 ? [{ namn: 'Kläderna värmer', v: v.kladHetta }] : [],
+    ...v.eldHetta > 0 ? [{ namn: 'Sitter tätt vid elden', v: v.eldHetta }] : [],
+    ...p.warm > 1 ? [{ namn: 'Svalnar', v: -Math.min(p.warm - 1, KROPP.svalnar) }] : [],
   ];
   const tak = viloTak(s, p, v.rum);
   const vila: Orsak[] = [{ namn: VILA[viloSlag(p)], v: KROPP[viloSlag(p)] }, ...tak ? [{ namn: tak === 'restBadd' ? 'Sover i en halmbädd' : tak === 'restGolv' ? 'Sover på golvet i ett hus' : 'Sover under tak', v: KROPP[tak] }] : [],
@@ -90,7 +95,7 @@ function behovHtml(p: Person) {
       ${rad(p, 'rest', 'Vila', bar(p.rest, '', trend(p, 'rest', p.rest)), vila, ' i timmen')}
       ${rad(p, 'social', 'Gemenskap', bar(p.social, '', trend(p, 'social', p.social)), [{ namn: 'Saknar sällskap', v: -1 / KROPP.socialTim }], ' i timmen', 'Varje samtal höjer den.')}
       ${rad(p, 'health', 'Hälsa', bar(p.health, p.health < LAG.halsa ? 'low' : '', trend(p, 'health', p.health)), halsa, ' i timmen', halsa.length ? '' : 'Oförändrad just nu.')}
-      ${rad(p, 'warm', 'Temperatur', `${tempBar(p.warm, trend(p, 'warm', p.warm))}<span>${tempOrd(p.warm)}</span>`, varme, ' i timmen', 'Mitten är lagom. Ett bad kyler av.')}
+      ${rad(p, 'warm', 'Temperatur', `${tempBar(p.warm, trend(p, 'warm', p.warm))}<span>${tempOrd(p.warm)}</span>`, varme, ' i timmen', 'Mitten är lagom, till höger är för varmt. Ett bad kyler av, och i skugga värmer inte solen.')}
       ${rad(p, 'toa', 'Toa', bar(p.toa, p.toa < KROPP.toaBehov ? 'low' : '', trend(p, 'toa', p.toa)), [{ namn: p.task?.act === 'sova' ? 'Behovet växer, långsammare i sömnen' : 'Behovet växer', v: -1 / KROPP.toaTim * (p.task?.act === 'sova' ? KROPP.toaSomn : 1) }], ' i timmen', 'Ett toabesök fyller den.')}
     </dl>`;
 }

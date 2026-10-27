@@ -84,6 +84,7 @@ const VAL = balans('val', {
   lugn: 0.5, lugnAkut: 0.3, // promenad, bad och strand: vikt gånger 1 när u är under Lugn, annars gånger Akut
   promBas: 0.3, promNyfiken: 15, // promenad: Bas plus nyfikenheten delad med Nyfiken
   badTemp: 15, badNoll: 14, badSpann: 8, badMax: 1.2, // bad: vattnet minst Temp grader, vikten (temp - Noll) / Spann, högst Max
+  badVarm: 3, // den som är för varm (steg 2.3.4) lockas mer till bad: så här mycket gånger värmen över idealet
   strandBas: 0.2, strandDiv: 60, // strand: Bas plus (20 - empatin) / Div
   promNar: 4, promBort: 14, // en promenad går 4 rutor plus upp till 14 för den nyfikna och modiga
   promMin: 60, promSpann: 90, // en promenad
@@ -431,7 +432,8 @@ function leisure(s: State, p: Person, v: Val, u: number, lazy: number, ai: numbe
   // promenad: den nyfikne går gärna ut och ser sig omkring. Bad: när det är varmt i vattnet
   const calm = u < VAL.lugn ? 1 : VAL.lugnAkut, temp = temperature(s), shore = bathSpot(s);
   const wp = (VAL.promBas + stat(p, 'nyfikenhet', now) / VAL.promNyfiken) * calm;
-  const wb = temp >= VAL.badTemp && shore ? clamp((temp - VAL.badNoll) / VAL.badSpann, 0, VAL.badMax) * calm : 0;
+  const varm = p.warm > KROPP.forVarm ? VAL.badVarm * (p.warm - 1) : 0;
+  const wb = temp >= VAL.badTemp && shore ? (clamp((temp - VAL.badNoll) / VAL.badSpann, 0, VAL.badMax) + varm) * calm : 0;
   // sitta vid stranden och se ut över vattnet: lugnt, året om, mest för den som inte är så sällskaplig
   const ws = shore ? (VAL.strandBas + (20 - stat(p, 'empati', now)) / VAL.strandDiv) * calm : 0;
   const r = rnd(s, 'val', p) * (wv + wh + wsoc + wp + wb + ws);

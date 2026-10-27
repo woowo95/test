@@ -87,7 +87,7 @@ const KLAR: Partial<Record<Act, Krok>> = {
     if (k) { k.ved -= toWalls(s, Math.floor(k.x), Math.floor(k.y), k.ved, t.ref, p); if (k.ved <= 1e-6) s.stockar = stocks(s).filter(q => q !== k); }
   },
   promenad: (s, p, t) => { lookAround(s, p, t.tx, t.ty); think(p, 'Tog en skön promenad', 0.06, s.now, 6 * HOUR); },
-  bada: (s, p, t) => { sjoRakna(s, t.tx, t.ty, 'bad', p); p.warm = Math.max(KROPP.badMin, p.warm - KROPP.badKyla); think(p, 'Badade i sjön', 0.08, s.now, 6 * HOUR); },
+  bada: (s, p, t) => { sjoRakna(s, t.tx, t.ty, 'bad', p); p.warm = p.warm > 1 ? Math.max(1, p.warm - KROPP.badSvalka) : Math.max(KROPP.badMin, p.warm - KROPP.badKyla); think(p, 'Badade i sjön', 0.08, s.now, 6 * HOUR); },
   strand: (s, p) => { p.rest = Math.min(1, p.rest + KROPP.strandVila); think(p, 'Satt vid vattnet och fick ro', 0.06, s.now, 6 * HOUR); },
 };
 for (const art of DJURARTER) MEDAN[art.act] = (s, p, _t, dtSec) => bearbeta(s, p, art, dtSec / HOUR_S); // slakt och rensning
@@ -118,7 +118,7 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
   // förråd: ruttning och ved
   wearStore(s, dtSec); // slitage per slag, fortare utanför lagret
   stepFire(s, dtSec, ppl);
-  const fh = hearthOf(s.fire), coldRate = coldOf(temperature(s));
+  const fh = hearthOf(s.fire), temp = temperature(s), coldRate = coldOf(temp);
   const learn = 1 + 0.1 * s.seder.v.nyfikenhet; // en nyfiken by lär sig snabbare
   if (Math.floor(now / HOUR) !== Math.floor((now - dtSec * SEC) / HOUR)) {
     stepSeder(s); updateTags(s); stepDelning(s);
@@ -133,7 +133,7 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
   for (const p of ppl) { const r = roomAt(s, p.x, p.y); if (r) inRum.set(r.id, (inRum.get(r.id) ?? 0) + 1); }
   for (const p of ppl) {
     const a = ageOf(p, now);
-    needsStep(s, p, a, dtSec, coldRate, fh, inRum);
+    needsStep(s, p, a, dtSec, coldRate, fh, inRum, temp);
     needLadder(s, p, dtSec); // äta: sitt eget, byns, och i yttersta nöd andras (behov.ts)
     if (healthStep(s, p, a, ai, dtSec)) continue; // dog
     pregnancy(s, p, a, ppl.length, dtSec);
@@ -186,19 +186,33 @@ export function viloTak(s: State, p: Person, rum: unknown): 'restBadd' | 'restGo
   const m0 = gridOf(s).at.get(tileOf(p.x, p.y))?.m;
   return m0 === 'ho' || m0 === 'tra' ? 'restGolv' : 'restTak';
 }
-// värmen per timme: elden, kylan (det huset, skinnfällen och kläderna skyddar är borta) och milt väder. inRum = hur många som är i varje rum
-export function varmeDelar(s: State, p: Person, coldRate: number, inRum: Map<number, number>) {
+// värmen per timme: elden, kylan (det huset, skinnfällen och kläderna skyddar är borta) och milt väder. inRum = hur många som är i varje rum.
+// Över idealet (steg 2.3.4): solen (inte i skugga: i ett hus eller under ett träd), kläderna när det är milt och elden tätt intill
+export function varmeDelar(s: State, p: Person, coldRate: number, inRum: Map<number, number>, temp = temperature(s)) {
   const heat = heatAt(s, p.x, p.y), rum = roomAt(s, p.x, p.y), shelter = rum ? shelterOf(s, rum, inRum.get(rum.id) ?? 1) : 0;
   const fall = tillbehorVarme(s, p, rum); // skinnfällen i bädden (steg 2.2.14)
   const klad = kladVarme(s, p); // kläderna (steg 2.3.2)
-  return { heat, rum, shelter, fall, klad, eld: heat * KROPP.eldVarme, kyla: coldRate * (1 - shelter) * (1 - fall) * (1 - klad), mild: coldRate === 0 ? KROPP.mildVarme : 0 };
+  const skugga = !!rum || groundOf(s).trees[tileOf(p.x, p.y)] > KROPP.skugga;
+  const sol = skugga ? 0 : Math.max(0, temp - KROPP.solFran) / KROPP.solDiv;
+  const kladHetta = klad * Math.max(0, temp - KROPP.kladFran) / KROPP.kladDiv, eldHetta = Math.max(0, heat - KROPP.eldTatt) * KROPP.eldHetta;
+  return { heat, rum, shelter, fall, klad, eld: heat * KROPP.eldVarme, kyla: coldRate * (1 - shelter) * (1 - fall) * (1 - klad), mild: coldRate === 0 ? KROPP.mildVarme : 0,
+    sol, kladHetta, eldHetta, hetta: sol + kladHetta + eldHetta, skugga };
 }
-function needsStep(s: State, p: Person, a: number, dtSec: number, coldRate: number, fh: ReturnType<typeof hearthOf>, inRum: Map<number, number>) {
+// värmen efter dt timmar: under idealet som förut (elden, kylan, milt väder, aldrig över idealet). Vid och över idealet värmer
+// bara hettan, kylan kyler, och kroppen svalnar mot idealet (KROPP.svalnar) men aldrig under det
+export function nyVarme(w: number, v: ReturnType<typeof varmeDelar>, dt: number) {
+  const under = v.eld - v.kyla + v.mild;
+  if (w < 1) return clamp(w + dt * under, 0, 1);
+  let n = w + dt * (v.hetta + Math.min(0, under));
+  n -= Math.min(Math.max(0, n - 1), dt * KROPP.svalnar);
+  return clamp(n, 0, KROPP.maxVarm);
+}
+function needsStep(s: State, p: Person, a: number, dtSec: number, coldRate: number, fh: ReturnType<typeof hearthOf>, inRum: Map<number, number>, temp: number) {
   const now = s.now;
   p.hunger = clamp(p.hunger - dtSec / (KROPP.hungerTim * HOUR_S) * (a < ALDER.matBarn ? KROPP.hungerBarn : 1), 0, 1);
   p.rest = clamp(p.rest + dtSec / HOUR_S * KROPP[viloSlag(p)], 0, 1);
-  const v = varmeDelar(s, p, coldRate, inRum), heat = v.heat;
-  p.warm = clamp(p.warm + dtSec / HOUR_S * (v.eld - v.kyla + v.mild), 0, 1);
+  const v = varmeDelar(s, p, coldRate, inRum, temp), heat = v.heat;
+  p.warm = nyVarme(p.warm, v, dtSec / HOUR_S);
   const tak = viloTak(s, p, v.rum);
   if (tak) { // man vilar bättre under tak, och bäst på ett golv
     p.rest = clamp(p.rest + dtSec / HOUR_S * KROPP[tak], 0, 1);
@@ -209,6 +223,10 @@ function needsStep(s: State, p: Person, a: number, dtSec: number, coldRate: numb
     p.rest = clamp(p.rest + dtSec / HOUR_S * fh.comfort * heat, 0, 1); // avslappning vid elden
   }
   if (p.warm < KROPP.fryser) think(p, 'Fryser', -0.12, now, HOUR);
+  if (p.warm > KROPP.forVarm) { // för varm (steg 2.3.4): en tanke, och tröttare
+    think(p, 'För varm', -0.08, now, HOUR);
+    p.rest = clamp(p.rest - dtSec / HOUR_S * KROPP.varmTrott * (p.warm - 1), 0, 1);
+  }
   p.social = clamp(p.social - dtSec / (KROPP.socialTim * HOUR_S), 0, 1);
   // toa: behovet växer på ungefär sju timmar, långsammare i sömnen
   p.toa = clamp(p.toa - dtSec / (KROPP.toaTim * HOUR_S) * (p.task?.act === 'sova' ? KROPP.toaSomn : 1), 0, 1);

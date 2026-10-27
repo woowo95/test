@@ -1,5 +1,5 @@
 // Scenarier. Behov och val: behov, ved, aktivitet och fritid.
-import { Person, createState, getRel, step, living, temperature, nyKalender, amountOf, capacity, load, isLight, T, FOOD, ageOf, getMap, HOUR, W, tileOf, stat, campCenter, KANIN, gain, takeFuel, ownsAmount, ownedSum, addTo, setAmount, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, STOLD_LINDRIG, STOLD_OP, BEAT, spar, isWork, ACTS } from '../../sim';
+import { Person, createState, getRel, step, living, temperature, nyKalender, amountOf, capacity, load, isLight, T, FOOD, ageOf, getMap, HOUR, W, tileOf, stat, campCenter, KANIN, gain, takeFuel, ownsAmount, ownedSum, addTo, setAmount, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, STOLD_LINDRIG, STOLD_OP, BEAT, spar, isWork, ACTS, groundOf, varmeDelar, nyVarme, addTool, stepKlader } from '../../sim';
 import { START, STEG_DYGN } from '../kor';
 import { setMat, setFood, kor, klockan, tandEld, tomtForrad, treVuxna, bastaJaktruta, SCENARIER, rikBy } from './hjalp';
 
@@ -215,6 +215,55 @@ SCENARIER.fritid = {
       ['man badar bara när det är varmt', badVarmt],
       [`folk sitter vid stranden (${strand} gånger)`, strand >= 2],
       ['den som sitter vid stranden sitter på land', strandLand],
+    ];
+  },
+};
+
+SCENARIER.varm = {
+  text: 'Steg 2.3.4: kroppen kan bli varmare än idealet: av solen på sommaren (inte i skugga under ett träd eller i ett hus), av kläderna när det är milt och av att sitta tätt vid elden. Under idealet är det som förut. Den som är för varm svalnar, blir tröttare, tar av sig de varma kläderna (bältet sitter kvar), tar inte på sig nya, lockas till bad, och badet kyler',
+  kor: () => {
+    const s = createState(5, START);
+    s.kal = nyKalender(s.now, 2); klockan(s, 14); // sommar, mitt på dagen
+    const g = groundOf(s), p = living(s)[0], temp = temperature(s);
+    // en ruta utan träd och en under träd
+    const fri = (skog: boolean) => { for (let i = 0; i < g.trees.length; i++) if ((g.trees[i] > 0.5) === skog && getMap(s.seed).tiles[i] !== T.Vatten) return i; return -1; };
+    const ute = fri(false), skog = fri(true);
+    const satt = (i: number) => { p.x = i % W + 0.5; p.y = Math.floor(i / W) + 0.5; };
+    satt(ute); const sol = varmeDelar(s, p, 0, new Map(), temp);
+    satt(skog); const skugga = varmeDelar(s, p, 0, new Map(), temp);
+    let w = 1; satt(ute); for (let h = 0; h < 3; h++) w = nyVarme(w, sol, 1);
+    // under idealet som förut: elden, kylan och milt väder, aldrig över idealet
+    const v0 = { ...sol, eld: 0.2, kyla: 0.1, mild: 0 };
+    const under = Math.abs(nyVarme(0.5, v0, 1) - 0.6) < 1e-9 && nyVarme(0.95, { ...v0, eld: 1 }, 1) === 1;
+    // över idealet svalnar man, aldrig under idealet
+    const svalnar = nyVarme(1.5, { ...v0, eld: 0, kyla: 0, hetta: 0 }, 1) < 1.5 && nyVarme(1.05, { ...v0, eld: 0, kyla: 0, hetta: 0 }, 1) === 1;
+    // för varm: kläderna tas av, bältet sitter kvar, och nya tas inte på i värmen
+    const rock = addTool(s, 'skinnrock', p), balte = addTool(s, 'balte', p);
+    rock.bar = p.id; balte.bar = p.id; rock.x = rock.y = balte.x = balte.y = undefined;
+    p.warm = 1.6; stepKlader(s);
+    const avtagen = rock.bar === undefined && balte.bar === p.id;
+    p.warm = 1; stepKlader(s);
+    const ejPa = rock.bar === undefined;
+    // tröttare och en tanke
+    p.warm = 1.6; const vila = p.rest = 1; kor(s, 1);
+    const trott = p.rest < vila, tanke = p.thoughts.some(t => t.text === 'För varm');
+    // badet kyler den som är för varm
+    let badVarm = 0, maxVarm = 0;
+    for (const seed of [5, 6, 7]) {
+      const b = createState(seed, START); b.kal = nyKalender(b.now, 2); klockan(b, 8);
+      setFood(b, 40); setAmount(b, 'ved', 40);
+      const sett = new WeakSet<object>();
+      kor(b, 2 * 24, b => { for (const q of living(b)) { maxVarm = Math.max(maxVarm, q.warm); const t = q.task; if (t?.act === 'bada' && t.phase === 'do' && !sett.has(t)) { sett.add(t); if (q.warm > 1) badVarm++; } } });
+    }
+    return [
+      [`solen värmer på sommaren (${Math.round(temp)} grader, ${sol.sol.toFixed(2)} i timmen, ${w.toFixed(2)} efter tre timmar)`, sol.sol > 0 && w > 1],
+      ['under ett träd värmer inte solen', skugga.sol === 0],
+      ['under idealet är det som förut', under],
+      ['över idealet svalnar man, men aldrig under idealet', svalnar],
+      ['den som är för varm tar av sig rocken men inte bältet', avtagen],
+      ['i värmen tas rocken inte på igen', ejPa],
+      ['den som är för varm blir tröttare och tänker på det', trott && tanke],
+      [`folk blir varmare än idealet på sommaren (som mest ${maxVarm.toFixed(2)}) och badar då (${badVarm} bad)`, maxVarm > 1 && badVarm >= 1],
     ];
   },
 };
