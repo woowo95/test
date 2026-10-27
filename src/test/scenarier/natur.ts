@@ -52,7 +52,7 @@ SCENARIER.djur = {
     const utan = !canProcess(s, p, DJUR.kanin);
     for (const r of s.people) r.tek = { ...r.tek, kniv: 1, rep: 1 };
     makeTool(s, p, 'kniv');
-    const kniv = amountOf(s, 'kniv') === 1 && amountOf(s, 'flinta') === 1;
+    const kniv = amountOf(s, 'kniv') === 1 && Math.abs(amountOf(s, 'flinta') - 1) < 1e-9;
     setMat(s, { vilt: 3 * KANIN }); setAmount(s, 'ben', 0); setAmount(s, 'skinn', 0); setAmount(s, 'rep', 0);
     const kan = canProcess(s, p, DJUR.kanin);
     bearbeta(s, p, DJUR.kanin, 1);
@@ -116,10 +116,10 @@ SCENARIER.abborre = {
   },
 };
 
-SCENARIER.sjo = {
+SCENARIER.sjo = { // by 4: by 3 fiskade knappt efter steg 2.3.11
   text: 'Varje sammanhängande vatten är en sjö. Fiskeförsök, napp, fångade fiskar och bad räknas per sjö när de händer (sjöfliken)',
   kor: () => {
-    const s = createState(3, START), sj = SIM.sjoarna(s.seed), tiles = getMap(s.seed).tiles;
+    const s = createState(4, START), sj = SIM.sjoarna(s.seed), tiles = getMap(s.seed).tiles;
     let vatten = true; for (let i = 0; i < W * H; i++) if ((tiles[i] === T.Vatten) !== (sj.id[i] >= 0)) vatten = false;
     const storst = sj.rutor.every((r, n) => n === 0 || r.length <= sj.rutor[n - 1].length);
     kor(s, 6 * 24);
@@ -376,7 +376,7 @@ SCENARIER.slaktbank = {
     const tillbaka = !!bankKniv && bankKniv.hos === undefined && bankKniv.x === st?.x && bankKniv.y === st?.y;
     // slakten och rensningen görs vid bänken. Utan bänk slaktas och rensas inget (viltet och abborren ligger kvar och äts som de är)
     const vid = st ? vidStation(st) : { x: 0, y: 0 };
-    const vidBank = (['slakta', 'rensa'] as const).every(a => { const o = spotFor(s, a, p); return stationFor(s, a) === st && Math.hypot(o.x - vid.x, o.y - vid.y) < 0.5; });
+    const vidBank = (['slakta', 'rensa'] as const).every(a => { const o = spotFor(s, a, p); return stationFor(s, a) === st && Math.abs(o.y - vid.y) < 1e-9 && Math.abs(o.x - vid.x) <= 0.3 * bredd + 1e-9; }); // längs bänkens bredd
     const u = createState(1, START), uq = living(u).find(r => ageOf(r, u.now) >= 18)!;
     for (const r of u.people) r.tek = { ...r.tek, kniv: 1 };
     setAmount(u, 'kniv', 1); tidyTools(u); setMat(u, { vilt: 3 * KANIN, abborre: 3 });
@@ -662,7 +662,7 @@ SCENARIER.dorr = {
       [`byn vill ha en skinndörr när huset har en öppen dörröppning (brist ${brist0.toFixed(2)}, ${brist1.toFixed(2)} efter)`, brist0 === 1 && brist1 === 0],
       [`skinndörren görs av ${DORRAR.skinndorr.av.skinn} skinn och hängs i öppningen på ${h} timmar`, oppning.dorr === 'skinndorr' && tog],
       [`byns statistik räknar dörren en gång (${s.stat?.dorr_skinndorr ?? 0})`, s.stat?.dorr_skinndorr === 1],
-      [`huset håller värmen bättre med dörren (${Math.round(med * 100)} % mot ${Math.round(utan * 100)} %)`, Math.abs(med - utan - BYGGNAD.oppningLacker * DORRAR.skinndorr.tat) < 1e-9],
+      [`huset håller värmen bättre med dörren (${Math.round(med * 100)} % mot ${Math.round(utan * 100)} %)`, Math.abs(med - utan - BYGGNAD.oppningLacker * DORRAR.skinndorr.tat) < 1e-3], // (kopian avrundar väggarnas skick)
       ['ett förrådshus får ingen dörr', dorrOppningar(f).length === 0],
       ['skinndörren är en egen teknik efter timmerhuset, och byn måste ha skinn', !!tek && tek.krav.includes('timmervagg') && tek.material.some(g => g.includes('skinn'))],
     ];

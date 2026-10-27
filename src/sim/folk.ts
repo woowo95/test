@@ -179,12 +179,37 @@ export function startSkills(s: State, p: Person, age: number) {
 const SKILL_SOFT = 21, SKILL_MAX = 20;
 export function ovning(p: Person, k: Skill, vinst: number) { p.skill[k] = clamp(p.skill[k] + vinst * (1 - p.skill[k] / SKILL_SOFT), 0, SKILL_MAX); }
 
+// Egenskaperna (steg 2.3.11): utpräglade personligheter. En egenskap slumpas med tyngd i ändarna, så att de flesta är
+// tydligt låga eller höga i något och en helt balanserad person är ovanlig. Ett barn får varje egenskap från en av
+// föräldrarna (lite ändrad), och ibland en egen ny, så att fördelningen inte drar mot mitten med släktleden. En del av
+// nykomlingarna är balanserade, med alla egenskaper nära mitten.
+export const EGENSKAP = balans('egenskap', {
+  mitt: 10, // mitten av skalan 1–20
+  vidd: 9, // så långt från mitten den mest utpräglade kommer
+  utprag: 0.5, // avståndet från mitten är slumptalet upphöjt till detta: 1 ger jämn fördelning, mindre ger tyngd i ändarna
+  balanserad: 0.15, // så stor del av nykomlingarna är balanserade: egenskaperna samlas kring mitten som förr
+  balanseradVidd: 7.2, // hur långt (gånger gauss, högst) en balanserad persons egenskaper hamnar från mitten
+  ny: 0.1, // så stor chans att ett barn får en egen ny egenskap i stället för en förälders
+  arvSlump: 1.2, // så mycket (gånger gauss) en ärvd egenskap ändras
+});
+// en ny egenskap: en dragning för hållet och en för avståndet
+const nyEgenskap = (s: State) => {
+  const hall = rnd(s, 'folk') < 0.5 ? -1 : 1;
+  return EGENSKAP.mitt + hall * Math.pow(rnd(s, 'folk'), EGENSKAP.utprag) * EGENSKAP.vidd;
+};
+
 export function newPerson(s: State, sex: 'm' | 'k', born: number, mother?: Person, father?: Person): Person {
   const pot = {} as Record<Stat, number>;
+  const balanserad = !mother || !father ? rnd(s, 'folk') < EGENSKAP.balanserad : false;
   for (const k of STATS) {
-    const base = mother && father ? (mother.pot[k] + father.pot[k]) / 2 : 10;
-    const spread = mother && father ? 3 : 4.5;
-    pot[k] = clamp(base + gauss(s, 'folk') * spread * 1.6, 1, 20);
+    let v: number;
+    if (balanserad) v = EGENSKAP.mitt + gauss(s, 'folk') * EGENSKAP.balanseradVidd;
+    else if (!mother || !father) v = nyEgenskap(s);
+    else {
+      const r = rnd(s, 'folk');
+      v = r < EGENSKAP.ny ? nyEgenskap(s) : (r < (1 + EGENSKAP.ny) / 2 ? mother : father).pot[k] + gauss(s, 'folk') * EGENSKAP.arvSlump;
+    }
+    pot[k] = clamp(v, 1, 20);
   }
   const skill = {} as Record<Skill, number>;
   for (const k of SKILLS) skill[k] = 0;

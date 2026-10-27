@@ -183,7 +183,7 @@ const ordFor = (s: State, k: string) => { const m = verktygFor(s, k); return m ?
 // p kan få tag i det som behövs till k: verktyget och materialet, och en flinta över att tända eld med.
 // Materialet tas i behovsstegen (behov.ts): sitt eget, byns, en gåva, och annars av andras (en lindrig stöld)
 const hasRecipe = (s: State, p: Person, k: string) => (!SAKER[k]!.skaffa!.verktyg || !!verktygFor(s, k))
-  && Object.entries(av(k)).every(([m, n]) => getable(s, p, m) >= n + (m === 'flinta' ? REDSKAP.flintaSparas : 0));
+  && Object.entries(av(k)).every(([m, n]) => getable(s, p, m) >= n + (m === 'flinta' ? REDSKAP.flintaSparas : 0) - 1e-9); // 1e-9: avrundningen i förrådet
 // p kan tekniken och kan få tag i det som behövs
 export const canMake = (s: State, p: Person, k: string) => { const tek = SAKER[k]!.skaffa!.tek; return (!tek || knows(p, tek)) && hasRecipe(s, p, k); };
 // det slag i gruppen g som p gör: det hen redan har påbörjat, annars det bästa hen kan göra, annars det enklaste

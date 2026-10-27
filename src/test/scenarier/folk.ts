@@ -43,8 +43,8 @@ SCENARIER.faror = {
     const rik = valjer(by());
     const sv = by(); setFood(sv, 0.3);
     const svFd = SIM.foodDays(sv), svalt = valjer(sv);
-    // istiden: elden släckt utan glöd och nästan inget trä. Med lite mat samlar några också, och då är det korgen som
-    // inte får göras. Samma hungriga by med elden tänd är kontrollen: där får man göra redskap
+    // istiden: elden släckt utan glöd och nästan inget trä. Den hungriga byn har trä men elden är ändå släckt (kylan är
+    // en fara), så några samlar mat, och då är det korgen som inte får göras. Samma hungriga by med elden tänd är kontrollen: där får man göra redskap
     const kall = (lit: boolean, hungrig = false, ved = 1) => {
       const s = by(0);
       if (!lit) Object.assign(s.fire, { lit: false, fuel: 0, emberUntil: undefined });
@@ -53,7 +53,7 @@ SCENARIER.faror = {
       return s;
     };
     const k0 = kall(false), kyla = { ljust: isLight(k0.now), kallt: coldOf(temperature(k0)) > 0, ...valjer(k0) };
-    const kylaSvalt = valjer(kall(false, true)), varmt = valjer(kall(true, true, 200));
+    const kylaSvalt = valjer(kall(false, true, 200)), varmt = valjer(kall(true, true, 200));
     // korgen, spjutet, metspöet och yxan (axeTask i skog.ts) görs i withTools (val.ts) och kniven i craft: alla frågar dangers(s)
     const SKYDDADE = REDSKAPSARBETE;
     const tillv = (v: typeof rik, ks = SKYDDADE) => ks.filter(k => v.n[k]).map(k => `${k} ${v.n[k]}`).join(', ') || 'inga';
@@ -222,6 +222,32 @@ SCENARIER.utflyttning = {
       [`de som flyttade har ingen uppgift kvar`, grupp.every(q => q.task === undefined)],
       [`de tog med sig ${tog.toFixed(1)} av sitt eget kött (de ägde 40), resten blev byns${agt.length ? ` (äger fortfarande: ${agt.join(', ')})` : ''}`, tog > 0 && tog <= 40 + 1e-6 && !agt.length && ownedSum(s, 'kott') < 1e-9 && ownedSum(s, 'bar') < 1e-9],
       [`utan ungt par gav sig en ensam ung vuxen av (${gick.map(q => `${q.name}, ${ageOf(q, q.left!).toFixed(1)} år`).join('; ') || 'ingen'})`, gick.length === 1 && gick[0]!.partner === undefined && ageOf(gick[0]!, gick[0]!.left!) >= 16 && ageOf(gick[0]!, gick[0]!.left!) < 40],
+    ];
+  },
+};
+
+SCENARIER.personlighet = {
+  text: 'Utpräglade personligheter: de flesta egenskaper är tydligt låga eller höga, balanserade personer är ovanliga, och barnen ärver egenskaperna utan att de drar mot mitten (steg 2.3.11)',
+  kor: () => {
+    const s = createState(1, START);
+    const ps = Array.from({ length: 400 }, () => SIM.newPerson(s, 'm', s.now));
+    const alla = ps.flatMap(p => SIM.STATS.map(k => p.pot[k]));
+    const langtUt = (v: number) => Math.abs(v - 10) > 5;
+    const utprag = alla.filter(langtUt).length / alla.length;
+    const balans = ps.filter(p => SIM.STATS.every(k => Math.abs(p.pot[k] - 10) <= 4)).length / ps.length;
+    // barn i tre släktled: varje par får två barn, som paras med varandras
+    let led = ps.slice(0, 200);
+    for (let g = 0; g < 3; g++) {
+      const nya: Person[] = [];
+      for (let i = 0; i + 1 < led.length; i += 2) for (let b = 0; b < 2; b++) nya.push(SIM.newPerson(s, b ? 'k' : 'm', s.now, led[i], led[i + 1]));
+      led = nya;
+    }
+    const barn = led.flatMap(p => SIM.STATS.map(k => p.pot[k]));
+    const barnUtprag = barn.filter(langtUt).length / barn.length;
+    return [
+      [`${pct(utprag)} av egenskaperna är mer än 5 från mitten (förr ungefär 4 %)`, utprag > 0.45],
+      [`${pct(balans)} är balanserade, med alla egenskaper inom 4 från mitten (förr ungefär en tredjedel)`, balans > 0.02 && balans < 0.15],
+      [`efter tre släktled är ${pct(barnUtprag)} av barnens egenskaper mer än 5 från mitten`, barnUtprag > 0.4],
     ];
   },
 };
