@@ -206,11 +206,18 @@ function groups(ls: Lardom[]) {
 // var sin sida om den påklädda människan (bildens vänstra sida är personens högra, som i fliken Hälsa), med en stapel under
 // som visar hur mycket handen bär av det den orkar. Kroppens platser i en rad under, och sedan det hen äger. Ringen runt
 // ett redskap visar skicket; vad som sitter på platsen och vad det väger syns när man håller över eller trycker på rutan
+// skicket som en linje runt rutan, från toppen medsols: en ring runt en rund ruta, och längs kanten runt en fyrkantig (händerna,
+// med hörnen rundade som rutans, r i bildens 36 punkter; steg 2.10.19)
+function skickRing(c: number, r: number) {
+  const d = `pathLength="100" stroke-dasharray="${Math.round(c * 100)} 100"`, a = (x: number, y: number) => `A${r} ${r} 0 0 1 ${x} ${y}`;
+  if (!r) return `<svg class="ring" viewBox="0 0 36 36"><circle cx="18" cy="18" r="16" ${d}/></svg>`;
+  return `<svg class="ring fyrkant" viewBox="0 0 36 36"><path d="M18 2H${34 - r}${a(34, 2 + r)}V${34 - r}${a(34 - r, 34)}H${2 + r}${a(2, 34 - r)}V${2 + r}${a(2 + r, 2)}Z" ${d}/></svg>`;
+}
 function gearHtml(p: Person) {
   const hand = heldBy(s, p), own = ownedBy(s, p).filter(t => t !== hand && t.bar !== p.id);
   const whose = (t: Ting) => t.agare === p.id ? 'eget' : t.agare === BYN ? 'byns' : `lånat av ${byId(s, t.agare)?.name ?? 'någon'}`;
   const where = (t: Ting) => t.bar !== undefined ? `${byId(s, t.bar)?.name ?? 'någon'} har det på sig` : t.hos === undefined ? 'i förrådet' : `${byId(s, t.hos)?.name ?? 'någon'} har det i handen`;
-  const ting = (t: Ting, title: string, cls = 'kan', px = 16) => `<span class="tnod liten ${cls}" tabindex="0" data-sak="t:${t.id}" title="${esc(title)}" aria-label="${esc(title)}">${iconImg(t.halv?.gor ?? t.k, px)}${kvSvg(t.q, px > 20 ? 14 : 9) && `<span class="kvhorn">${kvSvg(t.q, px > 20 ? 14 : 9)}</span>`}${t.halv ? `<span class="halvmark">${framstegSvg(halvKlar(t.halv), 9)}</span>` : ''}<svg class="ring" viewBox="0 0 36 36"><circle cx="18" cy="18" r="16" pathLength="100" stroke-dasharray="${Math.round(t.c * 100)} 100"/></svg></span>`;
+  const ting = (t: Ting, title: string, cls = 'kan', px = 16) => `<span class="tnod liten ${cls}" tabindex="0" data-sak="t:${t.id}" title="${esc(title)}" aria-label="${esc(title)}">${iconImg(t.halv?.gor ?? t.k, px)}${kvSvg(t.q, px > 20 ? 14 : 9) && `<span class="kvhorn">${kvSvg(t.q, px > 20 ? 14 : 9)}</span>`}${t.halv ? `<span class="halvmark">${framstegSvg(halvKlar(t.halv), 9)}</span>` : ''}${skickRing(t.c, cls.includes('hand') ? (px > 20 ? 9 : 11) : 0)}</span>`;
   const t = p.task, borda = t ? load(t, s) : 0, bar = !!t && borda > 0.02, u = utrustning(s, p, bar), kg = (n: number) => `${kortTal(n)} kg`;
   const bordaTxt = bar ? `bär ${carryTxt(p).replace(/^Bär /, '')}` : '';
   const ruta = (k: Plats, stor = false) => {
