@@ -113,7 +113,7 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
   gridOf(s); // väggarna och rummen, så att vägsökningen vet var väggarna står
   djurSteg(s); // kaningrupperna väljer plats när deras tid börjar
   // förråd: ruttning och ved
-  wearStore(s, dtSec, ai); // slitage per slag, fortare utanför lagret
+  wearStore(s, dtSec); // slitage per slag, fortare utanför lagret
   stepFire(s, dtSec, ppl);
   const fh = hearthOf(s.fire), coldRate = coldOf(temperature(s));
   const learn = 1 + 0.1 * s.seder.v.nyfikenhet; // en nyfiken by lär sig snabbare

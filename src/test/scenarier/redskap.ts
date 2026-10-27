@@ -199,13 +199,13 @@ SCENARIER.slitage = {
     const a = createState(4, START); setup(a);
     const b = createState(4, START); setup(b);
     b.lagren = [{ ...zoneOf(b), w: 1, h: 1 }]; // för litet: det mesta ligger bredvid
-    wearStore(a, 24 * 3600, 2); wearStore(b, 24 * 3600, 2);
+    wearStore(a, 24 * 3600); wearStore(b, 24 * 3600);
     const skick = (s: State, k: string) => { const p = pilesOf(s).filter(q => q.k === k); return p.reduce((x, q) => x + condOf(q) * q.n, 0) / Math.max(1e-9, p.reduce((x, q) => x + q.n, 0)); };
     const fisk = skick(a, 'fisk'), bar = skick(a, 'bar'), grenIn = 1 - skick(a, 'grenar'), grenUt = 1 - skick(b, 'grenar');
     const yxa = amountOf(a, 'yxa');
     // ved som slits ut blir grenar
     const v = pilesOf(a).find(q => q.k === 'ved')!; a.stackar!.find(q => q.x === v.x && q.y === v.y)!.c = 0.0001;
-    wearStore(a, 3600, 2);
+    wearStore(a, 3600);
     // skämd mat: allt i förrådet är nästan förstört
     const m = createState(6, START);
     setFood(m, 200); pilesOf(m); for (const st of m.stackar!) st.c = 0.08;
@@ -250,12 +250,50 @@ SCENARIER.slitage = {
       ['trädet står kvar halvfällt', kvarTrad],
       [`fisk ruttnar fortare än bär (skick efter ett dygn: fisk ${(fisk * 100).toFixed(0)} %, bär ${(bar * 100).toFixed(0)} %)`, fisk < bar && fisk < 1],
       [`grenar utanför lagret slits fortare (slitage på ett dygn: i lagret ${(grenIn * 100).toFixed(1)} %, bredvid ${(grenUt * 100).toFixed(1)} %)`, grenUt > 2 * grenIn && grenIn > 0],
-      [`en yxa i lagret slits också (${yxa.toFixed(3)} kvar)`, yxa < 1 && yxa > 0.9],
+      [`en yxa i lagret slits också (${yxa.toFixed(3)} kvar)`, yxa < 1 && yxa > 0.8],
       ['ved som slits ut blir grenar', pilesOf(a).some(q => q.k === 'grenar' && q.x === v.x && q.y === v.y)],
       [`skämd mat gör folk magsjuka (${sjuka} gånger på ett dygn)`, sjuka > 0 && tagg],
       [`den som kallas bort lägger bördan på marken (${lagd} högar)`, lagd === 2],
       ['på natten bärs högen nära lägret in men inte den långt bort', !kvarNara && kvarLangt],
       ['på dagen bärs även det som ligger långt bort in', !ute().length],
+    ];
+  },
+};
+
+SCENARIER.hallbarhet = {
+  text: 'Steg 2.2.9: maten ruttnar efter temperaturen (fortare när det är varmt, nästan inte i frost), kött håller ett par dygn och fisk ett i rumstemperatur, och det som ligger i lagret håller aldrig längre än 20 dygn, inte ens under tak',
+  kor: () => {
+    const { ruttTemp, temperature, LAGER } = SIM;
+    // ett dygn i lagret utan tak: hur mycket av skicket som gått, delat med det ett dygn i rumstemperatur skulle ta
+    const dygn = (t: number) => {
+      const s = createState(4, START); s.now = t; s.lagren = [{ ...zoneOf(s), w: 3, h: 3 }];
+      setMat(s, { kott: 20, fisk: 20, rotter: 20 }); setAmount(s, 'ved', 20); setItems(s, { yxa: 1 });
+      wearStore(s, 24 * 3600);
+      const gatt = (k: string) => { const p = pilesOf(s).filter(q => q.k === k && q.zone >= 0); return 1 - p.reduce((x, q) => x + condOf(q) * q.n, 0) / Math.max(1e-9, p.reduce((x, q) => x + q.n, 0)); };
+      return { f: ruttTemp(temperature(s)), temp: temperature(s), kott: gatt('kott'), fisk: gatt('fisk'), rotter: gatt('rotter'), ved: gatt('ved'), yxa: 1 - amountOf(s, 'yxa') };
+    };
+    // en timme i en varm sommar och en i frost
+    let varm = START, kall = START;
+    for (let t = START, b = -99, c = 99; t < START + 7 * DAY; t += HOUR) {
+      const s = createState(4, START), v = temperature(s, t);
+      if (v > b) { b = v; varm = t; }
+      if (v < c) { c = v; kall = t; }
+    }
+    const sommar = dygn(varm), vinter = dygn(kall);
+    // den kallaste timmen under fyra tidsåldrar (fyra veckor i verkligheten), i istiden
+    for (let t = START; t < START + 28 * DAY; t += 6 * HOUR) { const s = createState(4, START); if (temperature(s, t) < temperature(s, kall)) kall = t; }
+    const frost = dygn(kall);
+    const ved = 24 / (LAGER.maxDygn * 24 * LAGER.inne); // ett dygn av det som får hållas längst utan tak
+    const nara = (a: number, b: number) => Math.abs(a - b) < 1e-6;
+    return [
+      ['rumstemperaturen ruttnar som saker.ts säger, tio grader kallare hälften så fort, frost nästan inte', nara(ruttTemp(LAGER.rumstemp), 1) && nara(ruttTemp(LAGER.rumstemp - 10), 0.5) && ruttTemp(-3) === LAGER.frost],
+      [`kött håller två dygn i rumstemperatur (på ett dygn vid ${sommar.temp.toFixed(0)} grader gick ${(sommar.kott * 100).toFixed(0)} %)`, nara(sommar.kott, 0.5 * sommar.f)],
+      [`fisk ruttnar dubbelt så fort som kött (${(sommar.fisk * 100).toFixed(0)} %)`, nara(sommar.fisk, 2 * sommar.kott)],
+      [`rötterna håller längre än köttet (${(sommar.rotter * 100).toFixed(0)} %)`, sommar.rotter < sommar.kott && sommar.rotter > 0],
+      [`kallare håller maten längre (${vinter.temp.toFixed(0)} grader: köttet ${(vinter.kott * 100).toFixed(1)} %)`, vinter.temp < sommar.temp && vinter.kott < sommar.kott],
+      [`i frost ruttnar maten nästan inte (${frost.temp.toFixed(0)} grader: köttet ${(frost.kott * 100).toFixed(1)} % på ett dygn)`, frost.temp <= 0 && frost.kott < 0.03],
+      [`trä i lagret håller som längst ${LAGER.maxDygn * LAGER.inne} dygn utan tak (${(sommar.ved * 100).toFixed(1)} % på ett dygn), och under tak ${LAGER.maxDygn}`, nara(sommar.ved, ved)],
+      [`en yxa i lagret slits lika fort (${(sommar.yxa * 100).toFixed(1)} %), men temperaturen gör inget`, nara(sommar.yxa, ved) && nara(frost.yxa, ved)],
     ];
   },
 };

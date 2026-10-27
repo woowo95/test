@@ -17,7 +17,6 @@ export const ARSTID = balans('arstid', {
   hoPerTid: [0.25, 0.6, 1, 1.3], // hur mycket hö det finns att samla, per tidsålder (istid, vår, sommar, höst)
   grenarIstid: 0.6, // grenar går att samla så här mycket i istiden (eld.ts)
   tandIstid: 0.6, // chansen att tända elden är så här mycket av den vanliga i istiden (eld.ts)
-  ruttIstid: 0.5, // maten ruttnar så här mycket fortare i istiden (lager.ts)
   slitIstid: 1.5, // husen slits så här mycket fortare i istiden (bygg.ts)
   // hälsan: chansen per dygn att bli sjuk (steg.ts)
   sjukIstid: 0.12, // i istiden

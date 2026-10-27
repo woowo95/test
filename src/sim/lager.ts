@@ -6,15 +6,15 @@ import { getMap } from './karta';
 import { Act, H, HOUR_S, Person, State, T, Task, W, inMap } from './typer';
 import { bitAt, roofed } from './byggnad';
 import { ACTS } from './handlingar';
-import { ARSTID, iIstiden } from './tid';
+import { temperature } from './vader';
 import { BYN, Del, addDel, sumOf, takeOrder } from './egendom';
 import { FOOD, RUTA, SAKER, SAK_LIST, STACK, STACK_ORDER, isFood, isTool, rutaOf, sakNamn, stackOf } from './saker';
 import { balans } from './balans';
 
 // ---------- balanstal (regel 8) ----------
 // Förrådet: hur lagerplatserna växer, hur fort saker slits och ruttnar, hur mycket en person bär och vad som bärs in först.
-// Avstånd är i rutor, om inget annat sägs. Hur fort varje sak slits står i saker.ts, och tidsålderns faktor för ruttning
-// (ARSTID.ruttIstid) i tid.ts
+// Avstånd är i rutor, om inget annat sägs. Hur fort varje sak slits och hur länge maten håller står i saker.ts, och
+// temperaturen som maten ruttnar efter i vader.ts
 export const LAGER = balans('lager', {
   // lagerplatserna (zoner)
   startBredd: 2, startHojd: 2, // byns första lagerplats, vid kartans lagerplats
@@ -32,7 +32,12 @@ export const LAGER = balans('lager', {
   // slitage och ruttning (per timme)
   ute: 3, // saker utanför lagret slits så här många gånger fortare ...
   inne: 0.4, // ... och under tak så här många
-  ruttBas: 0.003, ruttMat: 250, // maten ruttnar BasPerTimme gånger (1 + maten i förrådet / Mat), fort när det finns mycket
+  // maten håller så många dygn som saker.ts säger (haller) vid rumstemperaturen och utan tak (steg 2.2.9) ...
+  rumstemp: 20,
+  ruttTio: 2, // ... och ruttnar så här många gånger fortare för var tionde grad varmare (hälften så fort tio grader kallare) ...
+  frost: 0.05, // ... och i frost (0 grader och kallare) bara så här mycket av det
+  maxDygn: 20, // det som slits eller ruttnar håller inte längre än så här många dygn när det ligger, inte ens under tak (i rumstemperatur);
+  // utan tak håller det så mycket kortare som ute och inne säger
   blirSkick: 0.5, // skicket på grenarna som veden faller sönder till
   // bära
   barBas: 0.5, barStyrka: 20, // en person bär (Bas + styrkan / Styrka) stackar
@@ -472,20 +477,30 @@ export function pilesOf(s: State): Pile[] {
 }
 
 // ---------- slitage ----------
-// Skicket sjunker varje timme. Mat ruttnar (fisk fortast). Ved faller till sist sönder till grenar,
-// grenar och gräs multnar bort, redskap slits sakta även när de ligger still. Sten slits inte.
-// Utanför lagret slits allt fortare, under tak långsammare. Hur fort varje sak slits står i saker.ts.
-function wearRate(s: State, k: string, ai: number, food = foodOf(s)) {
+// Skicket sjunker varje timme. Mat ruttnar (fisk fortast) efter temperaturen: fortare när det är varmt, nästan inte i frost.
+// Ved faller till sist sönder till grenar, grenar och gräs multnar bort, redskap slits sakta även när de ligger still.
+// Sten, flinta, kol och ben slits inte. Utanför lagret slits allt fortare, under tak långsammare, men det som ligger håller
+// aldrig längre än LAGER.maxDygn (i rumstemperatur). Hur fort varje sak slits står i saker.ts.
+// hur fort maten ruttnar vid den här temperaturen, jämfört med i rumstemperatur
+export const ruttTemp = (temp: number) => temp <= 0 ? LAGER.frost : Math.max(LAGER.frost, Math.pow(LAGER.ruttTio, (temp - LAGER.rumstemp) / 10));
+// det som försvinner av skicket per timme i lagret, utan tak och i rumstemperatur
+function wearRate(k: string) {
   const d = SAKER[k];
-  if (d?.ruttnar !== undefined) return LAGER.ruttBas * (1 + food / LAGER.ruttMat) * (iIstiden(ai) ? ARSTID.ruttIstid : 1) * d.ruttnar;
-  return d?.slits ?? 0;
+  return d?.haller !== undefined ? 1 / (d.haller * 24) : d?.slits ?? 0;
+}
+// ... och för det som ligger på (x, y) eller bärs (mult = 1) när det är så här varmt
+function wearAt(k: string, mult: number, ligger: boolean, temp: number) {
+  const r = wearRate(k);
+  if (r <= 0) return 0;
+  const v = (ligger ? Math.max(r, 1 / (LAGER.maxDygn * 24 * LAGER.inne)) : r) * mult; // under tak som längst maxDygn, utan tak kortare
+  return SAKER[k]?.haller !== undefined ? v * ruttTemp(temp) : v;
 }
 export const wearMult = (s: State, x: number, y: number) => roofed(s, x, y) ? LAGER.inne : zoneAt(s, x, y) >= 0 ? 1 : LAGER.ute;
-export function wearStore(s: State, dtSec: number, ai: number) {
-  const h = dtSec / HOUR_S, food = foodOf(s);
+export function wearStore(s: State, dtSec: number) {
+  const h = dtSec / HOUR_S, temp = temperature(s);
   for (const a of stacksOf(s)) {
-    const r = wearRate(s, a.k, ai, food) * wearMult(s, a.x, a.y) * h;
-    if (a.dold) a.dold *= Math.exp(-wearRate(s, DOLD_I[a.k], ai, food) * wearMult(s, a.x, a.y) * h);
+    const m = wearMult(s, a.x, a.y), r = wearAt(a.k, m, true, temp) * h;
+    if (a.dold) a.dold *= Math.exp(-wearAt(DOLD_I[a.k], m, true, temp) * h);
     if (r <= 0) continue;
     a.c -= r;
     if (a.c > 0) continue;
@@ -502,8 +517,8 @@ export function wearStore(s: State, dtSec: number, ai: number) {
   }
   // redskapen: i handen och i bördan som i lagret, på marken efter var de ligger
   for (const t of tingOf(s)) {
-    const free = t.x !== undefined && t.hos === undefined && t.lass === undefined;
-    t.c -= Math.min(t.c, wearRate(s, t.k, ai, food) * (free ? wearMult(s, t.x!, t.y!) : 1) * h);
+    const ligger = t.hos === undefined && t.lass === undefined; // på marken, vid en station eller i förrådet (utan plats än)
+    t.c -= Math.min(t.c, wearAt(t.k, ligger && t.x !== undefined ? wearMult(s, t.x, t.y!) : 1, ligger, temp) * h);
   }
   s.ting = tingOf(s).filter(t => t.c > 1e-6);
   tidy(s);
