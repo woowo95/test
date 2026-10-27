@@ -480,6 +480,7 @@ const UTFALL: Partial<Record<Act, (s: State, p: Person, tk: Task, b: Arbetsbit) 
       const rot = delar?.[lagren('samla').indexOf('rotter')] ?? richness(s, 'rotter', tk.tx, tk.ty);
       const r = rich > 0 ? y * Math.min(1, rot / rich) : 0;
       tk.carry += y - r; bar('rotter', r * (rd?.rotter ?? 1));
+      count(s, 'samlat_bar', y - r); count(s, 'samlat_rotter', r); // vad som samlats av varje slag (scenariot rotter)
     }
     const got = forageItems(s, p, dtSec) ?? {};
     bar('svamp', pickMushrooms(s, p, tk.tx, tk.ty, dtSec, got));

@@ -211,14 +211,14 @@ SCENARIER.kaniner = {
 SCENARIER.rotter = {
   text: 'Bär och rötter är olika slag i egna stackar; på sommaren samlar man mest bär, i istiden mest rötter',
   kor: () => {
-    const andel = (vecka: number) => {
-      const s = createState(7, START);
+    // det som samlats av varje slag (byns statistik), i fyra byar: det som bärs hem äts snart upp, så förrådet säger lite (steg 2.12.9)
+    const andel = (vecka: number) => [7, 8, 9, 10].map(n => enBy(n, vecka)).reduce((a, x) => ({ b: a.b + x.b, r: a.r + x.r, skild: a.skild && x.skild }));
+    const enBy = (seed: number, vecka: number) => {
+      const s = createState(seed, START);
       s.kal = nyKalender(s.now, (vecka + 1) % 4);
       setMat(s, { grillkott: 300 }); // grillat kött äts före bär och rötter, så det man samlar blir kvar (och ingen blir sjuk av rått)
       kor(s, 48);
-      // också det som ännu inte blivit en hel sak räknas: arbetet mot nästa (p.delar) och det påbörjade i förrådet (steg 2.10.7)
-      const delar = (k: string) => living(s).reduce((x, q) => x + (q.delar?.[k] ?? 0), 0) + Object.values(s.delar ?? {}).reduce((x, d) => x + (d[k] ?? 0), 0);
-      const b = amountOf(s, 'bar') + delar('bar'), r = amountOf(s, 'rotter') + delar('rotter');
+      const b = s.stat?.samlat_bar ?? 0, r = s.stat?.samlat_rotter ?? 0;
       return { b, r, skild: !pilesOf(s).some(p => p.k === 'bar' && p.n > STACK.bar + 1e-6) };
     };
     const sommar = andel(1), istid = andel(3);
@@ -531,6 +531,7 @@ SCENARIER.stationsteknik = {
       ['den som jagar med kniv och tvinnar rep kommer på slaktbänken och slöjdbänken', kommer],
       ['korgen kommer man inte på utan slöjdbänken', ingenKorg],
       ['i en sparad by med en slaktbänk kan de som kan kniven bygga den', sparad],
+      ['varje teknik har en nivå (steg 2.12.9): 1 utan krav, annars ett mer än det högsta den kräver, och det finns ett mål i dygn för varje nivå', SIM.TEKNIK.every(t => t.niva === (t.krav.length ? 1 + Math.max(...t.krav.map(k => TEK[k].niva)) : 1) && t.niva <= SIM.TEKTAL.nivaDygn.length && t.tid > 0)],
       ['trädet på bredden (steg 2.12.7): grillen efter slaktbänken, torkställningen efter grillen, hyllorna efter bordet, metspöet efter träspjutet, skinndörren och skinnfällen efter skinnkläderna', ([['grill', 'slaktbank'], ['tork', 'grill'], ['hylla', 'bord'], ['metspo', 'fiskespjut'], ['skinndorr', 'skinnklader'], ['skinnfall', 'skinnklader']] as const).every(([t, k]) => TEK[t].krav.includes(k))],
     ];
   },
@@ -1089,7 +1090,7 @@ SCENARIER.odling = {
     const tek = SIM.TEK.odling, tank = (stat: number, plocka: boolean) => {
       const t = createState(7, START), q = living(t).find(r => ageOf(r, t.now) >= 18)!;
       q.tek = {}; setAmount(t, 'fron', 5); (t.stat ??= {}).vildgrodor = stat;
-      for (let i = 0; i < 60; i++) plocka ? SIM.tankePa(t, q, 'odling', 60) : SIM.thinkWhileWorking(t, q, 'samla', 60);
+      for (let i = 0; i < 60; i++) plocka ? SIM.tankePa(t, q, 'odling', 1) : SIM.thinkWhileWorking(t, q, 'samla', 1);
       return q.tek.odling ?? 0;
     };
     const samlar = tank(400, false), lite = tank(0, true), mycket = tank(400, true);
