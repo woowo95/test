@@ -25,7 +25,7 @@ import { ARSTID, ageIndex, iIstiden, isLight } from './tid';
 import { ACTS, toolRow } from './handlingar';
 import { Act, DAY, HOUR, HOUR_S, MIN, Person, SEC, SKILL_NAMES, State, Task, W, H, useMap, Historik, simulera } from './typer';
 import { findPath, speedAt, wear } from './vag';
-import { chooseTask, nastaRedskap } from './val';
+import { chooseTask, dangers, nastaRedskap } from './val';
 import { djurSteg } from './djur';
 import { bristSteg, frysFaktor, naringSjunker, skorbjugg, trottFaktor } from './naring';
 import { stepByggnader } from './byggnader';
@@ -542,7 +542,7 @@ function buildStep(s: State, p: Person, tk: Task, dtSec: number) {
   const done = b.b >= 1 && b.lp === undefined && b.c >= 0.5;
   if (!done && !lacks(b) && !workOn(s, p, b, dtSec)) return;
   const j = buildJob(s, p);
-  if (!j || j.missing || j.fell) { tk.until = s.now; return; } // ett träd i vägen: välj på nytt
+  if (!j || j.missing || j.fell || dangers(s).kyla) { tk.until = s.now; return; } // ett träd i vägen, eller kylan är en fara (steg 2.12.3): välj på nytt
   // nästa bit av bygget: man går först till lagret om det behövs material
   const site = siteOf(s, j.bit);
   tk.ref = j.bit.id; tk.tool = j.repair ? (j.bit.k === 'golv' ? 'lagaGolv' : 'laga') : j.bit.k === 'golv' ? 'golv' : 'vagg';

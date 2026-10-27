@@ -18,7 +18,7 @@ SCENARIER.stenring = {
     g.items = { gniststen: 1 }; g.stackar = [{ k: 'gniststen', n: 1, x: 1, y: 1, c: 1 }]; g.fire.lightings = 3;
     delete (g.fire as { ring?: boolean }).ring;
     g.v = 1; migrate(g); // som en sparfil från före v40
-    // flinta till en yxa är en förbättring: när maten inte räcker letar ingen efter den. Flinta till elden letas ändå
+    // flinta till en yxa är en förbättring: när maten inte räcker letar ingen efter den. Flinta till elden letas när byn inte svälter (steg 2.12.3)
     const f = createState(4, START);
     f.now = new Date(f.now).setHours(10, 0, 0, 0); Object.assign(f.fire, { lit: true, fuel: 3, ring: true });
     const letar = (flinta: number, mat: number) => {
@@ -30,7 +30,7 @@ SCENARIER.stenring = {
       }
       return `${n} av ${samla}`;
     };
-    const yxaSvalt = letar(1, 2), eldSvalt = letar(0, 2), yxaMat = letar(1, 200);
+    const yxaSvalt = letar(1, 2), eldSvalt = letar(0, 2), yxaMat = letar(1, 200), eldMat = letar(0, 200);
     // den som skulle leta flinta men i stället flätar en korg gör det vid slöjdbänken (inne i huset, steg 2.2.5), inte vid stenarna
     let korgar = 0, korgFel = 0;
     for (const q of f.people) q.tek = { ...q.tek, korg: 1 };
@@ -80,7 +80,7 @@ SCENARIER.stenring = {
       [`en korg flätas vid slöjdbänken, inte där flintan skulle letas (${korgFel} av ${korgar} korgar fel)`, korgar > 0 && korgFel === 0],
       [`en i taget letar flinta till en yxa (${fler} till av 100 när någon redan letar)`, fler === 0],
       [`den som hämtar tändmaterial (${valt ? 'vald' : 'inte vald'}) fortsätter på en plats utan bär (${fortsatt ? 'ja' : 'nej'}) och slutar när det räcker (${slutat ? 'ja' : 'nej'})`, valt && fortsatt && slutat],
-      [`flinta till en yxa letas inte när maten är knapp (${yxaSvalt} som samlar letar), men när den räcker (${yxaMat}); flinta till elden letas ändå (${eldSvalt})`, yxaSvalt.startsWith('0 ') && !yxaMat.startsWith('0 ') && !eldSvalt.startsWith('0 ')],
+      [`flinta till en yxa letas inte när maten är knapp (${yxaSvalt} som samlar letar), men när den räcker (${yxaMat}); flinta till elden inte heller när byn svälter (${eldSvalt}), men när maten räcker (${eldMat}) (steg 2.12.3)`, yxaSvalt.startsWith('0 ') && !yxaMat.startsWith('0 ') && eldSvalt.startsWith('0 ') && !eldMat.startsWith('0 ')],
       [`stenar samlas och elden tänds (efter ${h} timmar)`, tand],
       [`stenarna blir en ring runt elden (${kvar.toFixed(1)} stenar kvar i förrådet)`, ring && kvar < 1],
       ['elden tänds med flinta, gniststen finns inte', s.fire.log.some(e => e.k === 'tänd') && !(s.stackar ?? []).some(a => a.k === 'gniststen')],

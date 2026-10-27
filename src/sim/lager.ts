@@ -813,14 +813,15 @@ export function avbryt(s: State, p: Person) {
   p.task = undefined;
 }
 // stackar som någon borde bära: saker på marken långt bort, saker bredvid lagret när det finns plats i det, saker i
-// fel lagerplats och saker som kan flyttas till en viktigare lagerplats. near = bara inom så många rutor från elden
-export function haulJob(s: State, near?: number) {
+// fel lagerplats och saker som kan flyttas till en viktigare lagerplats. near = bara inom så många rutor från elden,
+// baraMat = bara maten (när byn svälter, steg 2.12.3)
+export function haulJob(s: State, near?: number, baraMat = false) {
   placeTools(s);
   const zs = zonesOf(s), occ = occupancy(s);
   const taken = new Set(living(s).filter(p => p.task?.act === 'bara' && p.task.phase === 'go').map(p => key(Math.floor(p.task!.tx), Math.floor(p.task!.ty))));
   let best: { x: number; y: number; why: string } | undefined, bs = Infinity;
   for (const a of things(s)) {
-    if (taken.has(key(a.x, a.y))) continue;
+    if (taken.has(key(a.x, a.y)) || baraMat && !isFood(a.k)) continue;
     const d = campDist(s, a.x, a.y); // nära lägret: elden eller någon lagerplats
     if (near !== undefined && d > near) continue;
     const zi = zoneAt(s, a.x, a.y);
