@@ -91,7 +91,7 @@ export const BYGGNADER = {
     namnFor: (_s, _w, _h, same) => same ? `Samlingshus ${same + 1}` : 'Samlingshuset',
   },
   verkstad: {
-    namn: 'Verkstad', ikon: '🪚', behov: 'Plats inne för en station som inte får plats i något annat hus (slöjdbänken)', fara: false, vikt: 1, agare: 'byn',
+    namn: 'Verkstad', ikon: 'verkstad', behov: 'Plats inne för en station som inte får plats i något annat hus (slöjdbänken)', fara: false, vikt: 1, agare: 'byn',
     // steg 2.2.17: byn vill bygga en station som står inne, men inget hus har plats för den (sovsalarna är fulla och i ett
     // förrådshus står inga stationer). Huset rymmer stationen, golvet framför den och lite till. Ingen sover där. Står det en
     // verkstad utan station byggs ingen ny
@@ -327,7 +327,7 @@ export const RUMSFUNKTIONER = {
     namn: 'Sovrum', ikon: '🛏️', om: 'Här sover någon',
     har: (s, h) => { const tiles = new Set(gridOf(s).rooms.filter(r => r.hus === h.id).flatMap(r => r.tiles)); return living(s).some(p => { const t = bedTile(s, p); return t !== undefined && tiles.has(t); }); },
   },
-  verkstad: { namn: 'Verkstad', ikon: '🪚', om: 'Här står en station som man arbetar vid', har: harArbete },
+  verkstad: { namn: 'Verkstad', ikon: 'verkstad', om: 'Här står en station som man arbetar vid', har: harArbete },
   forrad: { namn: 'Förråd', ikon: '📦', om: 'Golvet är en lagerplats under tak', har: (s, h) => zonesOf(s).some(z => z.hus === h.id) },
 } satisfies Record<string, RumsFunktion>;
 export const RUMSFUNKTION_LIST = Object.keys(RUMSFUNKTIONER) as (keyof typeof RUMSFUNKTIONER)[];

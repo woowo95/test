@@ -58,6 +58,8 @@ h1 { font-family: var(--display); font-weight: 700; font-size: 1.7rem; margin: 0
 /* en sak per rad: symbolen och antalet */
 .owned li { display: flex; gap: 5px; align-items: center; cursor: default; }
 .ikon { image-rendering: pixelated; flex: none; filter: drop-shadow(0 1px 1px rgba(0,0,0,0.6)); }
+/* fryst mat i lagret: en vit och ljusblå kant av rimfrost runt symbolen (Björn valde rimfrosten efter v89) */
+.fryst .ikon { filter: drop-shadow(1px 0 0 #fff) drop-shadow(-1px 0 0 #fff) drop-shadow(0 -1px 0 #fff) drop-shadow(0 1px 0 #c4e2f8); }
 .kv.stk dt { display: flex; align-items: center; gap: 6px; }
 .owned .n { font-variant-numeric: tabular-nums; }
 .owned p { margin: 2px 0 0; opacity: 0.8; }

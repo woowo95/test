@@ -10,9 +10,10 @@ import type { Flik } from '../panel';
 // Det som går att trycka på har data-sak: "t:<tingets id>" för ett redskap eller plagg, "s:<x>,<y>,<slag>" för en stack
 export const sakKey = (a: { id?: number; x?: number; y?: number; k: string }) => a.id !== undefined ? `t:${a.id}` : `s:${a.x},${a.y},${a.k}`;
 export const sakAttr = (a: { id?: number; x?: number; y?: number; k: string }) => `data-sak="${sakKey(a)}"`;
-// maten fryser i frost och ruttnar då nästan inte (LAGER.frost, steg 2.8.2): en ❄ efter den i lagret, texten när man håller musen över
+// maten fryser i frost och ruttnar då nästan inte (LAGER.frost, steg 2.8.2): i lagret får symbolen en vit kant av rimfrost
+// (Björn valde rimfrosten efter v89, .fryst i template.html), och texten syns när man håller musen över
 export const fryst = () => temperature(s) <= 0;
-export const frystTxt = (k: string) => SAKER[k]?.haller !== undefined && fryst() ? ' <span title="Fryst: ruttnar nästan inte">❄</span>' : '';
+export const frystAttr = (k: string) => SAKER[k]?.haller !== undefined && fryst() ? ' fryst" title="Fryst: ruttnar nästan inte' : '';
 
 const ORSAK: Record<Slitage['orsak'], string> = {
   ruttnar: 'Ruttnar', vadret: 'Ligger ute i vädret', lagret: 'Slits med tiden', tak: 'Ligger under tak',

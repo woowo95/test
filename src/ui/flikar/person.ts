@@ -1,6 +1,6 @@
 import { FORMAGOR, Kroppsdel, KROPPSDELAR, NARING, NARINGAR, NARINGBAL, bristGrad, bristerNu, frysFaktor, naringNu, sjunker, skorbjugg, vilaTim, TORST, blodning, delSkada, halsa, skadeLista, skadeText, smarta, torstDelar } from '../../sim';
 import { ACTS, ALDER, Act, DAY, Lardom, SAMTAL, SKILL_GOR, STAT_GOR, Skill, Stat, coldOf, halsaLage, hearthOf, living, roomAt, temperature, varmeDelar, viloSlag, viloTak, SLAG, SLAG_TECKEN, Person, KUNSKAPER, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, SEDER, SED_LIST, TEKNIK, BYN, Ting, halvKlar, ageOf, alive, byId, childrenOf, drar, heldBy, ownedBy, PLATSER, PLATS_LIST, handerFor, homeKind, load, utrustning, viktOf, SAKER, ownedStock, sakNamn, slagIkon, tingNamn, STACK, describe, duty, habitShare, habitTotal, KROPP, kortTal, moodOf, num, REL, relKey, stat, taskName, timeLabel } from '../../sim';
-import { framstegSvg, hasIcon, iconImg } from '../../ikoner';
+import { framstegSvg, hasIcon, iconImg, tecknet } from '../../ikoner';
 import { LAG, fmtN, bar, cap, carryTxt, cssFarg, durTxt, esc, hex, hsl, hjalpOppen, hjalpText, moodWord, pLink, prickar, relWord, sickNow, tempBar, tempOrd, trend, trendD } from '../hjalp';
 import { s, ui } from '../lage';
 import { tekInfo } from './teknik';
@@ -143,9 +143,9 @@ function halsaHtml(p: Person) {
   const oppen = delar.map(d => hjalpText(`k-${d}-${p.id}`, `<p class="forkl"><b>${esc(KROPPSDELAR[d].namn)}</b>: ${vad(d).length ? vad(d).map(r => esc(`${r.namn.split(' i ')[0]}, ${r.grad}, ${r.gar}`)).join('; ') : 'hel'}</p>`)).join('');
   const blod = p.blod ?? 1, brister = bristerNu(p);
   // bristerna (steg 2.6.2): symbolen, och vad den gör när man håller musen över den
-  const bristTecken = (k: (typeof brister)[number]) => `<span class="tecken" title="${esc(`${NARING[k].brist.namn}, brist på ${NARING[k].namn.toLowerCase()}: ${NARING[k].brist.gor}`)}">${NARING[k].brist.tecken}</span>`;
+  const bristTecken = (k: (typeof brister)[number]) => `<span class="tecken" title="${esc(`${NARING[k].brist.namn}, brist på ${NARING[k].namn.toLowerCase()}: ${NARING[k].brist.gor}`)}">${tecknet('b_' + k, NARING[k].brist.tecken)}</span>`;
   const brist = brister.map(k => `<li class="neg">${bristTecken(k)}<span>${esc(NARING[k].brist.namn)}<small class="muted">brist på ${esc(NARING[k].namn.toLowerCase())}, ${Math.round(bristGrad(p, k) * 100)} %</small></span><span class="gar">↘ äter helst ${esc(NARING[k].langtar)}</span></li>`).join('');
-  const lista = rader.length || blod < 1 || brister.length ? `<ul class="skador">${rader.map(r => `<li class="${r.battre ? 'pos' : 'neg'}"><span class="tecken">${r.tecken}</span><span>${esc(r.namn)}<small class="muted">${esc([r.grad, ...r.bloder ? ['blöder'] : [], ...r.gjort].join(', '))}</small></span><span class="gar">${r.battre ? '↗' : '↘'} ${esc(r.gar)}</span></li>`).join('')}
+  const lista = rader.length || blod < 1 || brister.length ? `<ul class="skador">${rader.map(r => `<li class="${r.battre ? 'pos' : 'neg'}"><span class="tecken">${tecknet(r.ikon, r.tecken)}</span><span>${esc(r.namn)}${r.vard.map(k => iconImg(k, 12)).join('')}<small class="muted">${esc([r.grad, ...r.bloder ? ['blöder'] : [], ...r.gjort].join(', '))}</small></span><span class="gar">${r.battre ? '↗' : '↘'} ${esc(r.gar)}</span></li>`).join('')}
     ${blod < 1 ? `<li class="${blodning(p) > 0 ? 'neg' : 'pos'}"><span class="tecken">🩸</span><span>Har förlorat ${Math.round((1 - blod) * 100)} % av blodet</span><span class="gar">${blodning(p) > 0 ? '↘ blöder' : '↗ kommer tillbaka'}</span></li>` : ''}${brist}</ul>` : '<p class="muted">Inget är fel.</p>';
   const formagor = (Object.keys(FORMAGOR) as (keyof typeof FORMAGOR)[]).map(k => {
     const f = FORMAGOR[k], v = f.varde(p), ont = 'ont' in f;
@@ -154,7 +154,7 @@ function halsaHtml(p: Person) {
   // näringen (steg 2.6.1): mättnaden är en sammanfattning av de fem värdena
   const n = naringNu(p), barn = ageOf(p, s.now) < ALDER.matBarn ? KROPP.hungerBarn : 1;
   const vs = viloSlag(p), svett = (k: (typeof NARINGAR)[number]) => k === 'mineral' && vs === 'restArbete' && p.warm > KROPP.forVarm ? NARINGBAL.svett : 0;
-  const naring = NARINGAR.map(k => rad(p, 'n_' + k, `${NARING[k].tecken} ${NARING[k].namn}`, `${bar(n[k], bristGrad(p, k) > 0 ? 'low' : '')}<span>${Math.round(n[k] * 100)} %</span>${bristGrad(p, k) > 0 ? bristTecken(k) : ''}`,
+  const naring = NARINGAR.map(k => rad(p, 'n_' + k, `${tecknet('n_' + k, NARING[k].tecken, 14)} ${NARING[k].namn}`, `${bar(n[k], bristGrad(p, k) > 0 ? 'low' : '')}<span>${Math.round(n[k] * 100)} %</span>${bristGrad(p, k) > 0 ? bristTecken(k) : ''}`,
     [{ namn: 'Sjunker', v: -sjunker(k, KROPP.hungerTim) * barn }, ...svett(k) ? [{ namn: 'Tappar salt: arbetar hårt i värmen', v: -sjunker(k, KROPP.hungerTim) * barn * svett(k) }] : []], ' i timmen',
     `Finns i ${NARING[k].fran}. Under ${Math.round(NARINGBAL.brist * 100)} %: ${NARING[k].brist.namn.toLowerCase()} (${NARING[k].brist.gor.charAt(0).toLowerCase() + NARING[k].brist.gor.slice(1)})`)).join('');
   // vätskan står först under näringen (Björn efter v89): samma värde som törsten i simuleringen, fullt = otörstig
@@ -255,7 +255,7 @@ const HABIT_GROUPS = (() => {
   for (const a of Object.keys(ACTS) as Act[]) {
     if (a === 'sova') continue;
     const sl = ACTS[a].slag, name = sl ? SLAG[sl] : ACTS[a].namn, px = sl && slagIkon(sl);
-    const ikon = px && hasIcon(px) ? iconImg(px, 16) : `<span class="tecken">${(sl ? SLAG_TECKEN[sl] : ACTS[a].tecken) ?? '•'}</span>`;
+    const ikon = px && hasIcon(px) ? iconImg(px, 16) : !sl && hasIcon('a_' + a) ? iconImg('a_' + a, 16) : `<span class="tecken">${(sl ? SLAG_TECKEN[sl] : ACTS[a].tecken) ?? '•'}</span>`;
     (m.get(name) ?? m.set(name, { name, ikon, acts: [] }).get(name)!).acts.push(a);
   }
   // en egen färg per grupp, jämnt fördelad runt färghjulet, så att samma slag alltid har samma färg

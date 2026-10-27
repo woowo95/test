@@ -1,5 +1,5 @@
 import { KOM, bitsOf, byId, dorrDef, fnOf, gridOf, husById, insulation, komOf, rumsFunktioner, sakNamn, sovplatser } from '../../sim';
-import { iconImg } from '../../ikoner';
+import { iconImg, tecknet } from '../../ikoner';
 import { cap, esc, fmtN, pLink } from '../hjalp';
 import { s, ui } from '../lage';
 import type { Flik } from '../panel';
@@ -31,7 +31,7 @@ export const hus: Flik = {
       return d ? `<span title="${esc(om)}" aria-label="${esc(om)}">${iconImg(d.ikon)} ${esc(d.namn)}</span>` : `<span class="muted" title="${esc(om)}" aria-label="${esc(om)}">Öppen dörröppning</span>`;
     }).join(', ');
     // vad huset används till efter det som står i det (RUMSFUNKTIONER i byggnader.ts, steg 2.2.17)
-    const anv = klar === bits.length ? rumsFunktioner(s, h).map(f => `<span title="${esc(`${f.namn}: ${f.om}`)}" aria-label="${esc(f.namn)}">${f.ikon} ${esc(f.namn)}</span>`).join(' · ') : '';
+    const anv = klar === bits.length ? rumsFunktioner(s, h).map(f => `<span title="${esc(`${f.namn}: ${f.om}`)}" aria-label="${esc(f.namn)}">${tecknet(f.ikon, f.ikon)} ${esc(f.namn)}</span>`).join(' · ') : '';
     const kom = komOf(h), fn = fnOf(h), agare = h.ag !== undefined ? byId(s, h.ag) : undefined;
     const rader = KOM.map(hur => {
       const xs = kom.filter(q => q.hur === hur);
@@ -44,7 +44,7 @@ export const hus: Flik = {
       return `<dt title="${esc(title)}" aria-label="${esc(title)}">${HUR[hur].ikon}</dt><dd>${Object.entries(per).map(([k, n]) => `${iconImg(k)}${fmtN(n)}`).join(' ')}${vem.length ? ` <span class="muted">${vem.map(p => pLink(p)).join(', ')}</span>` : ''}</dd>`;
     }).join('');
     return `
-    <div class="phead"><div><h2><span title="${esc(`${fn.namn}: ${fn.behov}`)}" aria-label="${esc(fn.namn)}">${fn.ikon}</span> ${esc(h.namn)}</h2><p class="muted">${status}</p>${anv ? `<p>${anv}</p>` : ''}${agare ? `<p class="muted">Ägs av ${pLink(agare)} och familjen.</p>` : ''}${dorrar && klar === bits.length ? `<p>${dorrar}</p>` : ''}</div></div>
+    <div class="phead"><div><h2><span title="${esc(`${fn.namn}: ${fn.behov}`)}" aria-label="${esc(fn.namn)}">${tecknet(fn.ikon, fn.ikon, 20)}</span> ${esc(h.namn)}</h2><p class="muted">${status}</p>${anv ? `<p>${anv}</p>` : ''}${agare ? `<p class="muted">Ägs av ${pLink(agare)} och familjen.</p>` : ''}${dorrar && klar === bits.length ? `<p>${dorrar}</p>` : ''}</div></div>
     <h3>Materialet kom från</h3>${rader ? `<dl class="kv">${rader}</dl>` : '<p class="muted">Huset byggdes innan byn började minnas var materialet kom ifrån.</p>'}`;
   },
 };

@@ -62,13 +62,14 @@ function hangande(st: Station, x0: number, y0: number) {
     }
   }
 }
-// brasan (steg 2.9.1, platshållare): lågor som lägerelden när den brinner, värmen när eldens flik är öppen
-function brasaBild(st: Station, t: number, flik: boolean) {
-  const I = brasaHeat(st), cx = st.x * TS + TS / 2, cy = st.y * TS + TS / 2, fl = 1 + Math.sin(t / 130 + st.id) * 0.12 + Math.sin(t / 47) * 0.08;
-  if (!I) return;
-  if (flik) overG.beginFill(0xff9a4a, 0.1).lineStyle(1, 0xffb070, 0.5).drawCircle(cx, cy, radieAv(s, I) * TS).endFill().lineStyle(0);
-  overG.beginFill(0xe2702e).drawCircle(cx, cy, (1.8 + 2.4 * I) * fl).endFill();
-  overG.beginFill(0xffd36b).drawCircle(cx, cy - 0.5, (0.9 + 1.2 * I) * fl).endFill();
+// brasan (steg 2.9.1; Björn valde härden av hällar efter v89): veden när det finns bränsle, lågorna när den brinner och glöden
+// när den nästan brunnit ut, ovanpå stenarna. Värmen när eldens flik är öppen
+const BRASA_GLOD = 0.25; // under den här styrkan syns bara glöden
+function brasaBild(st: Station, x0: number, y0: number, flik: boolean) {
+  const I = brasaHeat(st);
+  if (I) pileIcons.add(I < BRASA_GLOD ? 'brasa_glod_karta' : 'brasa_eld_karta', x0, y0, 2);
+  else if ((st.eld?.fuel ?? 0) > 0) pileIcons.add('brasa_ved_karta', x0, y0, 2);
+  if (I && flik) overG.beginFill(0xff9a4a, 0.1).lineStyle(1, 0xffb070, 0.5).drawCircle(st.x * TS + TS / 2, st.y * TS + TS / 2, radieAv(s, I) * TS).endFill().lineStyle(0);
 }
 // en vit kant runt rutorna: där en ruta inte har en granne i mängden
 function kant(rutor: number[]) {
@@ -103,9 +104,10 @@ export function drawStructures(t: number) {
     pileIcons.add(ik, x0, y0, 2, !!st.rot);
     if (!isKlar(st)) { framsteg(st.x * TS + w / 2, y0 + 3, stationKlar(st)); continue; }
     if (st.fyllt) overG.beginFill(0x24160a, 0.75 * clamp(st.fyllt, 0, 1)).drawEllipse(st.x * TS + TS / 2, st.y * TS + TS / 2 + 1, 5, 4).endFill(); // latrinen mörknar när den fylls (smuts.ts)
-    if (d?.brasa) brasaBild(st, t, tab === 'eld');
-    if (d?.sitt) pileIcons.add('sittplats', st.x * TS + w / 2 - 4, (st.y + bh) * TS + 1, 1); // sittplatsen framför bänken
-    for (const q of bordPlatser(st)) pileIcons.add('sittplats', q.x * TS + TS / 2 - 4, q.y * TS + TS / 2 - 4, 1); // stubbarna runt bordet
+    if (d?.brasa) brasaBild(st, x0, y0, tab === 'eld');
+    // stubbarna (Björn valde den korta stocken efter v89) är en ruta stora: framför bänken och runt bordet
+    if (d?.sitt) pileIcons.add('sittplats', st.x * TS + w / 2 - TS / 2, (st.y + bh) * TS, 2);
+    for (const q of bordPlatser(st)) pileIcons.add('sittplats', q.x * TS, q.y * TS, 2);
     for (const k of st.med ?? []) pileIcons.add(tillbehorDef(k)?.ikon + '_karta', x0, y0, 2, !!st.rot); // tillbehören i den (skinnfällen i bädden)
     if (st.rot) continue;
     if (st.tork?.length) hangande(st, x0, y0);

@@ -163,16 +163,17 @@ const lakerFullt = (p: Person) => p.hunger > KROPP.lakerMat && p.torst > TORST.l
 // ---------- det som syns (personrutan och fliken Hälsa, steg 2.5.3) ----------
 // varje skada som en rad: symbolen, vad och var, hur svår, om den blöder, vad som är gjort och hur det går. Personrutan och
 // fliken Hälsa läser bara den, så att de aldrig räknar på olika sätt
-export interface SkadeRad { d: Kroppsdel; tecken: string; namn: string; grad: string; bloder: boolean; gjort: string[]; gar: string; battre: boolean }
+// ikon och vard är pixelbildernas nycklar i ikoner.ts (skadan, och förbandet och rengjort)
+export interface SkadeRad { d: Kroppsdel; tecken: string; ikon: string; namn: string; grad: string; bloder: boolean; gjort: string[]; vard: string[]; gar: string; battre: boolean }
 export function skadeLista(p: Person, now: number): SkadeRad[] {
   const lak = lakerFullt(p) ? 1 : HALSA.lakSamre;
   return (p.skador ?? []).map(w => {
     const sk = SKADA[w.k], ren = (w.ren ?? 0) > now, kall = (w.inf ?? 0) >= HALSA.kallbrand;
     const gar = w.inf === undefined ? `läker, ungefär ${Math.ceil(w.g * sk.lakTim / lak)} timmar kvar` : kall ? 'kallbrand, blir sämre' : ren ? 'infekterat men rengjort, blir bättre' : 'infekterat, blir sämre';
     return {
-      d: w.d, tecken: w.inf === undefined ? sk.tecken : kall ? '☠️' : '🦠', namn: `${sk.namn} i ${DEL[w.d].i}`,
+      d: w.d, tecken: w.inf === undefined ? sk.tecken : kall ? '☠️' : '🦠', ikon: 's_' + (w.inf === undefined ? w.k : kall ? 'kall' : 'inf'), namn: `${sk.namn} i ${DEL[w.d].i}`,
       grad: w.g >= HALSA.radd ? 'mycket svårt' : w.g >= HALSA.avbryt ? 'svårt' : 'lätt', bloder: w.b > 0 && oppet(w),
-      gjort: [...w.f ? ['förband av mossa'] : [], ...ren ? ['rengjort'] : []], gar, battre: w.inf === undefined || (ren && !kall),
+      gjort: [...w.f ? ['förband av mossa'] : [], ...ren ? ['rengjort'] : []], vard: [...w.f ? ['s_forb'] : [], ...ren ? ['s_ren'] : []], gar, battre: w.inf === undefined || (ren && !kall),
     };
   });
 }
