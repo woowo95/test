@@ -111,7 +111,7 @@ export interface StationDef { namn: string; ikon: string; w: number; h: number; 
 const ENKLA: Act[] = ['yxa', 'spjut', 'metspo', 'kniv', 'bensyl', 'balte'];
 export const STATIONER = {
   slaktbank: {
-    namn: 'Slaktbänk', ikon: 'slaktbank', w: 3, h: 1, tek: ['slaktbank'], av: { ved: STATION.slaktbankTra }, min: STATION.slaktbankMin, gor: ['slakta', 'rensa'], bara: ['slakta', 'rensa'], vid: { kniv: STATION.knivplatser }, smutsar: { slakta: 'blod' }, // blir blodig när det slaktas (FLACKAR i smuts.ts)
+    namn: 'Slaktbänk', ikon: 'slaktbank', w: 3, h: 1, tek: ['slaktbank'], av: { ved: STATION.slaktbankTra }, min: STATION.slaktbankMin, gor: ['slakta', 'rensa'], bara: ['slakta', 'rensa'], vid: { kniv: STATION.knivplatser }, smutsar: { slakta: 'blod' }, // blir blodig när det slaktas (blod.ts)
     bygger: 'Bygger en slaktbänk av trä.',
     forsta: '{namn} byggde byns första slaktbänk av trä. Där slaktas viltet och rensas fisken, och en kniv ligger kvar vid bänken.',
   },

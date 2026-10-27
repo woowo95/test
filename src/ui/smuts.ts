@@ -1,9 +1,11 @@
-import { FLACKAR, HOUR, W, flackNu, flackarOf } from '../sim';
+import { FLACKAR, HOUR, W, blodOf, flackNu, flackarOf } from '../sim';
+import { ritaBlod } from './blod';
 import { s, ui } from './lage';
 import { TS, flackG } from './scen';
 
 // fläckarna på marken (smuts.ts): några oregelbundna prickar i fläckens färg, svagare ju mer den bleknat (platshållare).
-// Toa-fläcken har en egen bild (TOA). Ritas om varje kvart i spelet och när en fläck tillkommit eller blivit starkare
+// Toa-fläcken har en egen bild (TOA), och blodet ritas av blod.ts. Ritas om varje kvart i spelet och när en fläck tillkommit
+// eller blivit starkare
 let ritad = '';
 const plats = (i: number, j: number) => { const h = Math.sin(i * 39.3467 + j * 11.135) * 24634.6345; return h - Math.floor(h); };
 const DEF: Record<string, { farg: number }> = FLACKAR;
@@ -21,11 +23,12 @@ function toaBild(x: number, y: number, v: number) {
   b.rader.forEach((r, j) => [...r].forEach((k, i) => { const f = b.farg[k]; if (f) flackG.beginFill(f[0], f[1]).drawRect(x + i * P, y + j * P, P, P).endFill(); }));
 }
 export function drawFlackar() {
-  const fl = flackarOf(s), sist = fl.reduce((a, f) => Math.max(a, f.t), 0);
-  const key = `${s.seed},${Math.floor(ui.nu / (HOUR / 4))},${fl.length},${sist}`;
+  const fl = flackarOf(s), bl = blodOf(s), sist = fl.reduce((a, f) => Math.max(a, f.t), 0), blodSist = bl.reduce((a, b) => a + b.t + b.m, 0);
+  const key = `${s.seed},${Math.floor(ui.nu / (HOUR / 4))},${fl.length},${sist},${bl.length},${blodSist}`;
   if (key === ritad) return;
   ritad = key;
   flackG.clear();
+  ritaBlod(flackG);
   for (const f of fl) {
     const v = flackNu(f, ui.nu), d = DEF[f.k];
     if (v <= 0 || !d) continue;

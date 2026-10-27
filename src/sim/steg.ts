@@ -37,6 +37,7 @@ import { grilla, torka } from './matlagning';
 import { addFuelBrasa, brasaFor, stepBrasor } from './brasor';
 import { sjoRakna } from './sjo';
 import { akel, toaBesok } from './smuts';
+import { blodas } from './blod';
 import { DRICKA_ACTS, TORST, drick, torstSteg } from './torst';
 import { HALSA, barMed, burenSteg, gangFart, halsaSteg, lamnaAv, mossaFynd, mossaPaStam, vardKlar, vardMal } from './halsa';
 import { bordPlats, kladVarme, stepKlader } from './utrustning';
@@ -461,6 +462,7 @@ const UTFALL: Partial<Record<Act, (s: State, p: Person, tk: Task, b: Arbetsbit) 
     if (y > 0 && rnd(s, 'arbete', p) < y / KANIN) {
       if (forstaGang(s, 'kaniner')) log(s, `${p.name} fångade byns första kanin och bar hem den hel.`, 'world', [p.id]);
       tk.carry += KANIN;
+      blodas(s, p.x, p.y, 'jakt', 1); // där kaninen fångades
       wearUsed(s, p, 1); // spjutet slits för varje kanin (steg 2.3.12)
     }
     return true;

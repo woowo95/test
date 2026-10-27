@@ -687,48 +687,71 @@ SCENARIER.dorr = {
 };
 
 SCENARIER.blod = {
-  text: 'Slaktbänken blir blodig (steg 2.7.1): stationsregistret säger vilka handlingar som smutsar ner en station och med vad, och fläckarna (registret FLACKAR) bleknar bort på ett par dygn. Bara utseende: fläckarna rör inte slumpen',
+  text: 'Blodet (blod.ts, Björn efter v93): registren BLODFORM (pöl, stänk, droppar, släpspår) och BLOD (slakt, skada, blödning, förblödning, jakt). Slaktbänken blir blodig, nytt blod läggs i fläckarna nära och rinner över när det blir mycket, och fläckarna bleknar bort på ett par dygn. Bara utseende: blodet rör inte slumpen',
   kor: () => {
-    const { FLACKAR, flackarOf, flackNu, smutsa, smutsVid, STATIONER, tidyTools, storlekAv } = SIM;
+    const { MIN, BLODFORM, BLODET, blodOf, blodNu, blodas, blodDroppar, blodVid, smutsa, STATIONER, tidyTools, storlekAv } = SIM;
     const s = createState(1, START); klockan(s); tandEld(s);
     for (const r of s.people) r.tek = { ...r.tek, kniv: 1, slaktbank: 1, rep: 0 };
     const t = medBank(s), p = living(s).find(r => ageOf(r, s.now) >= 18)!;
     setAmount(s, 'kniv', 1); tidyTools(s);
     const { w, h } = storlekAv(t);
-    const nara = (i: number) => { const x = i % W, y = Math.floor(i / W); return x >= t.x - 1 && x <= t.x + w && y >= t.y && y <= t.y + h; };
+    const nara = (b: SIM.Blodflack) => b.x >= t.x - 1.5 && b.x <= t.x + w + 1.5 && b.y >= t.y - 0.5 && b.y <= t.y + h + 1.5;
     // fisken rensas vid samma bänk men blöder inte
     setMat(s, { abborre: 3 }); bearbeta(s, p, DJUR.abborre, 1);
-    const rensaRent = flackarOf(s).length === 0 && amountOf(s, 'fisk') > 0;
-    // slakten gör fläckar på bänken och raden framför
+    const rensaRent = blodOf(s).length === 0 && amountOf(s, 'fisk') > 0;
+    // slakten gör en pöl och stänk vid bänken
     setMat(s, { vilt: 3 * KANIN }); bearbeta(s, p, DJUR.kanin, 1);
-    const fl = flackarOf(s), blod = fl.length > 0 && fl.every(f => f.k === 'blod' && nara(f.i) && f.n > 0 && f.n <= 1);
-    const vid = smutsVid(s, t).blod ?? 0;
+    const fl = blodOf(s), slakt = fl.some(b => b.f === 'pol') && fl.some(b => b.f === 'stank') && fl.every(nara);
+    const vid = blodVid(s, t, w, h);
     // fläckarna bleknar jämnt och är borta efter bleknar timmar
-    const f0 = fl[0]!, b = FLACKAR.blod.bleknar * HOUR;
-    const halv = flackNu(f0, f0.t + b * f0.n / 2), borta = flackNu(f0, f0.t + b * f0.n + 1);
-    const bleknar = Math.abs(halv - f0.n / 2) < 1e-9 && borta === 0;
-    // de bortbleknade tas bort när nya kommer, och slumpen rörs inte
-    s.now += b + HOUR;
-    const rng0 = JSON.stringify(s.rngs), st0 = JSON.stringify(s.stat);
-    smutsa(s, 'slakta', 1);
-    const rensat = flackarOf(s).length === 1 && JSON.stringify(s.rngs) === rng0 && JSON.stringify(s.stat) === st0;
-    // en station utan smutsar gör inga fläckar, och fläckarna följer med när byn sparas
+    const f0 = fl[0]!, b = BLODFORM[f0.f].bleknar * HOUR;
+    const bleknar = Math.abs(blodNu(f0, f0.t + b / 2) - 0.5) < 1e-9 && blodNu(f0, f0.t + b + 1) === 0;
+    // mycket blod på samma ställe: fläckarna växer, och pölar som blir för stora rinner över till nya bredvid
+    const rng0 = JSON.stringify(s.rngs), st0 = JSON.stringify(s.stat), x0 = t.x + 1.5, y0 = t.y + 1.5;
+    const u = createState(2, START); u.now = s.now;
+    blodas(u, x0, y0, 'slakt', 1); const en = blodOf(u).length;
+    for (let k = 0; k < 12; k++) { u.now += 10 * MIN; blodas(u, x0, y0, 'slakt', 1); }
+    const pol = blodOf(u).filter(q => q.f === 'pol'), yta = Math.max(...pol.map(q => Math.hypot(q.x - x0, q.y - y0)));
+    const over = pol.length > 1 && pol.every(q => q.m <= BLODFORM.pol.max + 1e-9) && yta > 0.5 && blodOf(u).length < 13 * en;
+    // nytt blod på en gammal fläck gör den färskare
+    const g = createState(3, START); g.now = s.now;
+    blodas(g, 5, 5, 'forblodning', 1); g.now += 24 * HOUR; const gam = blodNu(blodOf(g)[0]!, g.now);
+    blodas(g, 5, 5, 'forblodning', 1); const farsk = blodNu(blodOf(g)[0]!, g.now) > gam;
+    // skadan, blödningen, förblödningen och jakten lägger blod där personen står
+    const q = createState(4, START); q.now = s.now; const v = living(q)[0]!;
+    v.skador = []; SIM.skada(q, v, 'handH', 'skarsar', 0.4, 'olycka', 'vid testet');
+    const skada = blodOf(q).some(r => r.f === 'stank' && Math.hypot(r.x - v.x, r.y - v.y) < 1);
+    const n0 = blodOf(q).length; q.now += 30 * MIN; blodDroppar(q, v, 0.3, 30 * 60);
+    const droppar = blodOf(q).some(r => r.f === 'droppar') && blodOf(q).length > n0;
+    blodas(q, v.x, v.y, 'jakt', 1, 0); const jakt = blodOf(q).some(r => r.f === 'spar' && r.a === 0);
+    // de bortbleknade tas bort när nya kommer, aldrig fler än max, och slumpen och statistiken rörs inte
+    s.now += 3 * 24 * HOUR; smutsa(s, 'slakta', 1);
+    const rensat = blodOf(s).every(r => blodNu(r, s.now) > 0) && blodOf(s).length <= 3;
+    for (let k = 0; k < BLODET.max + 50; k++) { q.now += MIN; blodas(q, (k * 7) % 60, (k * 3) % 40, 'blodning', 1); }
+    const tak = blodOf(q).length <= BLODET.max;
+    const orort = JSON.stringify(s.rngs) === rng0 && JSON.stringify(s.stat) === st0;
+    // bara slaktbänken smutsar ner med blod, och blodet följer med när byn sparas
     const andra = (Object.keys(STATIONER) as (keyof typeof STATIONER)[]).filter(k => k !== 'slaktbank' && (STATIONER[k] as SIM.StationDef).smutsar).length === 0;
-    const sparad = JSON.stringify(cloneState(s).flackar) === JSON.stringify(s.flackar);
+    const sparad = JSON.stringify(cloneState(u).blod) === JSON.stringify(u.blod);
     // i en by som lever: bänken blir blodig av sig själv när det finns vilt att slakta
-    const u = createState(1, START); klockan(u); tandEld(u);
-    for (const r of u.people) r.tek = { ...r.tek, kniv: 1, slaktbank: 1 };
-    medBank(u); setAmount(u, 'kniv', 2); tidyTools(u); setMat(u, { vilt: 6 * KANIN, bar: 100 }); setAmount(u, 'ved', 40);
-    let h2 = 0; while (!flackarOf(u).length && h2 < 24) { kor(u, 1); h2++; }
+    const l = createState(1, START); klockan(l); tandEld(l);
+    for (const r of l.people) r.tek = { ...r.tek, kniv: 1, slaktbank: 1 };
+    medBank(l); setAmount(l, 'kniv', 2); tidyTools(l); setMat(l, { vilt: 6 * KANIN, bar: 100 }); setAmount(l, 'ved', 40);
+    let h2 = 0; while (!blodOf(l).length && h2 < 24) { kor(l, 1); h2++; }
     return [
-      ['rensningen av fisken gör inga fläckar', rensaRent],
-      [`slakten gör blodfläckar på bänken och raden framför (${fl.length} st)`, blod],
+      ['rensningen av fisken gör inget blod', rensaRent],
+      [`slakten gör en pöl och stänk vid bänken (${fl.length} fläckar)`, slakt],
       [`stationsfliken ser blodet: ${Math.round(vid * 100)} %`, vid > 0],
-      [`fläckarna bleknar jämnt och är borta efter ${FLACKAR.blod.bleknar} timmar i full styrka`, bleknar],
-      ['de bortbleknade tas bort när en ny fläck kommer, och fläckarna rör varken slumpen eller statistiken', rensat],
+      ['fläckarna bleknar jämnt och är borta efter sin tid i BLODFORM', bleknar],
+      [`mycket blod rinner över till nya pölar bredvid (${pol.length} pölar, ${yta.toFixed(1)} rutor ut) men samma ställe ger inte en ny fläck varje gång`, over],
+      ['nytt blod på en gammal fläck gör den färskare', farsk],
+      ['en skada blöder där man står, och den som blöder tappar droppar', skada && droppar],
+      ['jakten lägger ett släpspår åt det håll som sägs', jakt],
+      [`de bortbleknade tas bort, och aldrig fler än ${BLODET.max} fläckar`, rensat && tak],
+      ['blodet rör varken slumpen eller statistiken', orort],
       ['bara slaktbänken smutsar ner', andra],
-      ['fläckarna följer med när byn sparas', sparad],
-      [`i en by där det slaktas blir bänken blodig av sig själv (efter ${h2} timmar)`, flackarOf(u).length > 0],
+      ['blodet följer med när byn sparas', sparad],
+      [`i en by där det slaktas blir bänken blodig av sig själv (efter ${h2} timmar)`, blodOf(l).length > 0],
     ];
   },
 };

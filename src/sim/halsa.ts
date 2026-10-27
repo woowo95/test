@@ -24,6 +24,7 @@ import { getMap } from './karta';
 import { chance, clamp, pick, rnd } from './slump';
 import { Act, HOUR, HOUR_S, Person, Skill, State, Stock, Task } from './typer';
 import { balans } from './balans';
+import { blodDroppar, blodas } from './blod';
 import { lakFaktor, styrkaFaktor, yrselFaktor } from './naring';
 import type { Dodsorsak } from './liv';
 
@@ -207,6 +208,7 @@ export type Formaga = keyof typeof FORMAGOR;
 // en ny skada: loggen, byns räknare, rädsla för platsen och att arbetet avbryts. Returnerar dödsorsaken om den dödar direkt
 export function skada(s: State, p: Person, d: Kroppsdel, k: SkadaTyp, g: number, dod: Dodsorsak, nar: string): Dodsorsak | undefined {
   (p.skador ??= []).push({ d, k, g, b: SKADA[k].blod > 0 ? 1 : 0, t: s.now });
+  if (SKADA[k].blod > 0) blodas(s, p.x, p.y, 'skada', g * SKADA[k].blod);
   count(s, 'skador'); count(s, 'skada ' + SKADA[k].namn.toLowerCase());
   if (DEL[d].livsviktig && g >= HALSA.dodGrad) return dod;
   if (g >= HALSA.logg) log(s, `${p.name} fick ${SKADA[k].ett} i ${DEL[d].i} ${nar}.`, 'world', [p.id]);
@@ -231,6 +233,7 @@ export function halsaSteg(s: State, p: Person, dtSec: number): Dodsorsak | undef
   if (!p.skador?.length) { if ((p.blod ?? 1) < 1 && lakerFullt(p)) p.blod = Math.min(1, p.blod! + dtSec / (HALSA.blodTillbaka * HOUR_S)); return undefined; }
   const h = dtSec / HOUR_S, blod = blodning(p), mat = lakerFullt(p), lak = (mat ? 1 : HALSA.lakSamre) * vilaLak(s, p) * lakFaktor(p);
   p.blod = clamp((p.blod ?? 1) - blod * h, 0, 1);
+  blodDroppar(s, p, blod, dtSec);
   for (const w of p.skador) {
     if (w.b > 0) w.b = Math.max(0, w.b - h / (HALSA.levrar * (0.5 + w.g)));
     infSteg(s, p, w, h, dtSec);
@@ -240,7 +243,7 @@ export function halsaSteg(s: State, p: Person, dtSec: number): Dodsorsak | undef
   p.skador = p.skador.filter(w => w.g > 0);
   if (!p.skador.length) p.skador = undefined;
   else if (blod === 0 && mat) p.blod = Math.min(1, p.blod + h / HALSA.blodTillbaka);
-  if (p.blod < HALSA.blodDod) return 'blod';
+  if (p.blod < HALSA.blodDod) { blodas(s, p.x, p.y, 'forblodning', 1); return 'blod'; }
   const ont = smarta(p);
   if (ont > 0.2) think(p, 'Har ont', -HALSA.smartaHumor * ont, s.now, HOUR);
   return undefined;

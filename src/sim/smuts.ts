@@ -1,7 +1,7 @@
 // Smuts (steg 2.7.1–2.7.2, beslut): fläckar på marken som bleknar bort. Registret FLACKAR säger hur varje slag ser ut och hur
 // fort det bleknar. Stationsregistret säger vilka handlingar som smutsar ner en station och med vad (`smutsar` i STATIONER,
-// stationer.ts): slaktbänken blir blodig när det slaktas där. Blodet är bara utseende: det rör inte byns slumpföljder och ingen
-// bryr sig om det.
+// stationer.ts): slaktbänken blir blodig när det slaktas där. Blodet har ett eget system sedan v94 (blod.ts), som smutsa
+// skickar det till.
 // Toa-fläckarna (steg 2.7.2) är smuts som spelar roll: den som går på toa utanför en latrin, eller kissar på sig, lämnar en
 // fläck där hen står. Den som går förbi blir lite äcklad (sämre humör), ingen plockar bär och rötter på eller bredvid den
 // (spotFor i val.ts), och ligger den nära vattnet blir vattnet smutsigare (vattenSmuts, som törsten och lärdomarna om vattnet
@@ -17,6 +17,7 @@ import { count, forstaGang, log, think } from './folk';
 import { groundOf, tileOf } from './mark';
 import { FOREST } from './vag';
 import { smutsOf } from './sjo';
+import { blodas } from './blod';
 
 // ---------- balanstal (regel 8) ----------
 export const SMUTS = balans('smuts', {
@@ -34,7 +35,6 @@ interface FlackDef { namn: string; farg: number; bleknar: number; per: number }
 // farg = färgen (platshållare), bleknar = timmar tills en fläck i full styrka är borta, per = hur mycket en enhet (ett slaktat
 // djur, ett toabesök) smutsar ner, där 1 är en full fläck
 export const FLACKAR = {
-  blod: { namn: 'Blod', farg: 0x7a1010, bleknar: 48, per: 0.3 },
   toa: { namn: 'Toa', farg: 0x6b4a1f, bleknar: 48, per: 1 }, // steg 2.7.2
 } satisfies Record<string, FlackDef>;
 export type FlackSlag = keyof typeof FLACKAR;
@@ -62,11 +62,13 @@ function smutsaRuta(s: State, k: string, i: number, mangd: number) {
 // Fläcken hamnar på en av stationens rutor eller raden framför, där man står
 export function smutsa(s: State, act: Act, mangd: number) {
   const t = stationFor(s, act), k = t && stationDef(t.k)?.smutsar?.[act];
-  if (!t || !k || !DEF[k] || mangd <= 0) return;
+  if (!t || !k || (!DEF[k] && k !== 'blod') || mangd <= 0) return;
   const { w, h } = storlekAv(t), rutor: number[] = [];
   for (let y = t.y; y <= t.y + h; y++) for (let x = t.x - 1; x <= t.x + w; x++) if (x >= 0 && y >= 0 && x < W && y < H) rutor.push(y * W + x);
   if (!rutor.length) return;
-  smutsaRuta(s, k, rutor[Math.floor(hash(s.now / HOUR, t.id) * rutor.length) % rutor.length]!, mangd);
+  const i = rutor[Math.floor(hash(s.now / HOUR, t.id) * rutor.length) % rutor.length]!;
+  if (k === 'blod') blodas(s, (i % W) + 0.5, Math.floor(i / W) + 0.5, 'slakt', mangd);
+  else smutsaRuta(s, k, i, mangd);
 }
 // hur smutsig stationen t är av varje slag: den starkaste fläcken på dess rutor och raden framför (stationsfliken)
 export function smutsVid(s: State, t: { id: number; k: string; x: number; y: number; rot?: 1 }) {
