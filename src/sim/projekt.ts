@@ -8,6 +8,8 @@ import { balans } from './balans';
 import { GORS, REDSKAP, harAv, makeTask, villAv, wantsRope, wantsTool } from './redskap';
 import { STATIONER, STATION_LIST, StationDef, StationSlag, TILLBEHOR, TILLBEHOR_LIST, TillbehorDef, TillbehorSlag, bordBrist, harStation, kanBygga, kanGoraTillbehor, stationSpot, tillbehorSpot, tillbehorStationer, utanTillbehor } from './stationer';
 import { utanBadd } from './byggnader';
+import { DORRAR, DORR_LIST, DorrDef, DorrSlag } from './byggnad';
+import { dorrOppningar, dorrSpot, kanHangaDorr, utanDorr } from './bygg';
 
 // ---------- byns projekt: vad den bygger och gör (steg 2.2.7) ----------
 // Allt byn kan bygga eller göra av handarbete är en rad i registret PROJEKT: redskapen (en rad per grupp i GORS,
@@ -26,6 +28,7 @@ export const PROJEKT_TAL = balans('projekt', {
   halmbadd: 0.6, // ... halmbäddarna när alla som sover under tak saknar en
   skinnfall: 0.5, // ... skinnfällarna när alla halmbäddar saknar en
   bord: 0.5, bord2: 0.5, bord3: 0.5, // ... borden när ingen har en plats vid ett bord (steg 2.2.15)
+  skinndorr: 0.6, // ... skinndörrarna när alla hus där man bor eller umgås har en öppen dörröppning (steg 2.2.16)
   rep: 0.5, // ... repet när förrådet är tomt
   minKostnad: 0.25, // kostnaden räknas aldrig under så här många arbetstimmar
 });
@@ -91,10 +94,22 @@ const tillbehor = (k: TillbehorSlag): ProjektDef => {
     uppgift: s => { const sp = tillbehorSpot(s, k); return sp ? { act: 'tillbehor', text: d.gor, min: d.min, tool: k, spot: sp } : undefined; },
   };
 };
+// en dörr av sorten k (steg 2.2.16): bristen är hur stor del av öppningarna i husen där man bor eller umgås som saknar den
+const dorr = (k: DorrSlag): ProjektDef => {
+  const d: DorrDef = DORRAR[k];
+  return {
+    namn: d.namn, ikon: d.ikon, behov: 'varme', vikt: (PROJEKT_TAL as Record<string, number>)[k] ?? 1, act: 'dorr', slag: k,
+    brist: s => { const n = dorrOppningar(s).length; return n ? utanDorr(s, k).length / n : 0; },
+    kostnad: () => varuVarde(d.av, d.min / 60 * ARBETE),
+    kan: (s, p, f) => !f.kyla && kanHangaDorr(s, p, k),
+    uppgift: s => { const sp = dorrSpot(s, k); return sp ? { act: 'dorr', text: d.gor, min: d.min, tool: k, spot: sp } : undefined; },
+  };
+};
 export const PROJEKT: Record<string, ProjektDef> = {
   ...Object.fromEntries(Object.keys(GORS).map(g => [g, redskap(g)])),
   ...Object.fromEntries(STATION_LIST.map(k => [k, station(k)])),
   ...Object.fromEntries(TILLBEHOR_LIST.map(k => [k, tillbehor(k)])),
+  ...Object.fromEntries(DORR_LIST.map(k => [k, dorr(k)])),
   rep: {
     namn: SAKER.rep!.namn, ikon: 'rep', behov: 'hantverk', vikt: PROJEKT_TAL.rep, act: 'tvinna',
     brist: s => clamp(1 - amountOf(s, 'rep') / REDSKAP.repVill, 0, 1),

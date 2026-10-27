@@ -56,6 +56,9 @@ export const TEKNIK: Tek[] = [
   // tillbehören till möblerna (TILLBEHOR i stationer.ts, steg 2.2.14) har också samma id som raden där
   { id: 'skinnfall', namn: 'Skinnfäll', text: 'Skinn som sys ihop till ett täcke och läggs i halmbädden.', effekt: 'Den som sover under en skinnfäll fryser mindre.',
     omr: ['hantverk', 'jakt'], krav: ['halmbadd'], material: [['skinn']], tid: 16 },
+  // dörrarna (DORRAR i byggnad.ts, steg 2.2.16) har också samma id som raden där
+  { id: 'skinndorr', namn: 'Skinndörr', text: 'En hud som hängs i dörröppningen.', effekt: 'Huset släpper ut mindre värme genom dörren.',
+    omr: ['bygga', 'hantverk'], krav: ['timmervagg'], material: [['skinn']], tid: 16 },
 ];
 export const TEK = Object.fromEntries(TEKNIK.map(t => [t.id, t])) as Record<string, Tek>;
 

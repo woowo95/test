@@ -1,5 +1,5 @@
-import { ALDER, ageOf, count, forstaGang, living, log, stat } from './folk';
-import { Bit, Hus, MATERIAL, bitById, bitsOf, blocked, freeNear, gridOf, housesOf, husById, touch } from './byggnad';
+import { ALDER, ageOf, count, doingAct, forstaGang, living, log, stat } from './folk';
+import { Bit, DORRAR, DorrDef, DorrSlag, Hus, MATERIAL, bitById, dorrDef, bitsOf, blocked, freeNear, gridOf, housesOf, husById, touch } from './byggnad';
 import { getMap } from './karta';
 import { groundOf, punktIRuta } from './mark';
 import { PLATS, campCenter, rektAvstand } from './plats';
@@ -15,7 +15,7 @@ import { fellingTiles } from './skog';
 import { FOREST, findPath } from './vag';
 import { kronika } from './historik';
 import { BYGGNADER, Byggnad, Fn, HUS, antalLika, bedTile, familjOf, fnOf, husKlar, mostUrgent } from './byggnader';
-import { H, HOUR, HOUR_S, Person, State, T, W, inMap } from './typer';
+import { H, HOUR, HOUR_S, Person, State, T, Task, W, inMap } from './typer';
 import { balans } from './balans';
 
 // ---------- balanstal (regel 8) ----------
@@ -317,4 +317,38 @@ export function wearBuild(s: State, hours: number, ai: number) {
     } else { b.m = 'jord'; b.c = 1; }
     touch(s);
   }
+}
+
+// ---------- dörrarna (steg 2.2.16) ----------
+// En dörr (en rad i DORRAR, byggnad.ts) hängs i öppningen till ett färdigt hus där man bor eller umgås (inte i ett förrådshus),
+// av den som har tid för handarbete när projektet säger att byn har öppningar utan dörr (projekt.ts). Materialet tas när
+// arbetet är klart, så att inget går förlorat om det avbryts. Rivs huset försvinner dörren med öppningen.
+export const dorrOppningar = (s: State) => bitsOf(s).filter(b => {
+  if (b.k !== 'oppning') return false;
+  const h = husById(s, b.hus);
+  return !!h?.klar && !fnOf(h).lager;
+});
+export const utanDorr = (s: State, k: DorrSlag) => dorrOppningar(s).filter(b => b.dorr !== k);
+// p kan hänga dörren: p kan tekniken, det finns fler öppningar utan den än de som redan hänger en, och p kan få tag i materialet
+export function kanHangaDorr(s: State, p: Person, k: DorrSlag) {
+  const d: DorrDef = DORRAR[k];
+  if (!d.tek.some(t => knows(p, t))) return false;
+  const gor = doingAct(s, 'dorr', p) ? 1 : 0, utan = utanDorr(s, k).length;
+  return utan > gor && Object.entries(d.av).every(([m, n]) => getable(s, p, m) >= n + sparas(m));
+}
+// platsen dit den som hänger dörren går: i den första öppningen som saknar den
+export function dorrSpot(s: State, k: DorrSlag) {
+  const b = utanDorr(s, k)[0];
+  return b ? { x: b.x + 0.5, y: b.y + 0.5 } : undefined;
+}
+// klart: materialet tas och dörren hängs i den första öppningen som saknar den (har någon annan hunnit före blir det nästa,
+// och saknar ingen den längre blir det inget). Byns statistik räknar dem (dorr_ + sorten), och den första står i loggen
+export function finishDorr(s: State, p: Person, tk: Task) {
+  const k = tk.tool as DorrSlag, d = dorrDef(k);
+  if (!d) return;
+  const b = utanDorr(s, k)[0];
+  if (!b || !Object.entries(d.av).every(([m, n]) => getable(s, p, m) >= n)) return;
+  for (const [m, n] of Object.entries(d.av)) takeMaterial(s, p, m, n);
+  b.dorr = k; touch(s);
+  if (forstaGang(s, 'dorr_' + k)) { log(s, d.forsta.replace('{namn}', p.name), 'world', [p.id]); p.fame.push(`Hängde byns första ${d.namn.toLowerCase()}`); }
 }

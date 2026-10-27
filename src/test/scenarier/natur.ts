@@ -635,3 +635,35 @@ SCENARIER.bord = {
     ];
   },
 };
+
+SCENARIER.dorr = {
+  text: 'Skinndörren (steg 2.2.16): en hud som hängs i dörröppningen till ett hus där man bor eller umgås. Den är en egen teknik efter timmerhuset, görs av skinn och släpper ut mindre värme än en öppen dörr',
+  kor: () => {
+    const { BYGGNAD, DORRAR, TEK, PROJEKT, dorrOppningar, insulation, roomAt, bitsOf, gridOf } = SIM;
+    // en by med ett färdigt hus där alla kan hänga en skinndörr och har skinn
+    const s = createState(1, START); klockan(s); tandEld(s);
+    const hus = medHus(s)!;
+    for (const r of s.people) r.tek = { ...r.tek, skinndorr: 1 };
+    setMat(s, { bar: 200 }); setAmount(s, 'skinn', 10); setAmount(s, 'ved', 30);
+    const brist0 = PROJEKT.skinndorr!.brist(s), oppning = bitsOf(s).find(b => b.hus === hus.id && b.k === 'oppning')!;
+    let h = 0;
+    while (!oppning.dorr && h < 72) { kor(s, 1); h++; }
+    const tog = Math.abs(amountOf(s, 'skinn') - (10 - DORRAR.skinndorr.av.skinn)) < 0.5; // (skinnet slits lite under tiden)
+    const brist1 = PROJEKT.skinndorr!.brist(s);
+    // huset håller värmen bättre med dörren
+    const rum = gridOf(s).rooms.find(r => r.hus === hus.id && r.tiles.length)!, med = insulation(s, rum);
+    const q = cloneState(s); bitsOf(q).find(b => b.id === oppning.id)!.dorr = undefined; SIM.touch(q);
+    const utan = insulation(q, roomAt(q, rum.tiles[0] % W, Math.floor(rum.tiles[0] / W))!);
+    // ett förrådshus behöver ingen dörr
+    const f = cloneState(s); SIM.housesOf(f).find(r => r.id === hus.id)!.fn = 'forrad';
+    const tek = TEK.skinndorr;
+    return [
+      [`byn vill ha en skinndörr när huset har en öppen dörröppning (brist ${brist0.toFixed(2)}, ${brist1.toFixed(2)} efter)`, brist0 === 1 && brist1 === 0],
+      [`skinndörren görs av ${DORRAR.skinndorr.av.skinn} skinn och hängs i öppningen på ${h} timmar`, oppning.dorr === 'skinndorr' && tog],
+      [`byns statistik räknar dörren en gång (${s.stat?.dorr_skinndorr ?? 0})`, s.stat?.dorr_skinndorr === 1],
+      [`huset håller värmen bättre med dörren (${Math.round(med * 100)} % mot ${Math.round(utan * 100)} %)`, Math.abs(med - utan - BYGGNAD.oppningLacker * DORRAR.skinndorr.tat) < 1e-9],
+      ['ett förrådshus får ingen dörr', dorrOppningar(f).length === 0],
+      ['skinndörren är en egen teknik efter timmerhuset, och byn måste ha skinn', !!tek && tek.krav.includes('timmervagg') && tek.material.some(g => g.includes('skinn'))],
+    ];
+  },
+};

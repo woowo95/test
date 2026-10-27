@@ -1,4 +1,4 @@
-import { Act, DJUR, bordPlatser, GORS, MATERIAL, Pile, STATION, STUBBE_LIV, Station, bitsOf, clamp, condOf, emberOn, fireHeat, getMap, heatRadius, isKlar, living, stationDef, stationKlar, stationerOf, storlekAv, tillbehorDef, tingOf, vidStation, zonesOf } from '../sim';
+import { Act, DJUR, bordPlatser, GORS, MATERIAL, Pile, STATION, STUBBE_LIV, Station, bitAt, bitsOf, clamp, dorrDef, condOf, emberOn, fireHeat, getMap, heatRadius, isKlar, living, stationDef, stationKlar, stationerOf, storlekAv, tillbehorDef, tingOf, vidStation, zonesOf } from '../sim';
 import { iconCanvas } from '../ikoner';
 import { ritaHus } from './husbild';
 import { outPilesAt, piles, s, ui } from './lage';
@@ -70,6 +70,8 @@ export function drawStructures(t: number) {
     if (sak) pileIcons.add(sak, x0 + yta.x, y0 + yta.y, 1);
     if (yta.kniv && tingOf(s).some(k => k.vid === st.id && k.hos === undefined && k.lass === undefined)) pileIcons.add('kniv', x0 + yta.kniv.x, y0 + yta.kniv.y, 1);
   }
+  // dörrarna i öppningarna (DORRAR i byggnad.ts): vriden när väggen går uppåt (en vägg ovanför öppningen)
+  for (const b of bitsOf(s)) if (b.dorr) pileIcons.add(dorrDef(b.dorr)?.ikon + '_karta', b.x * TS, b.y * TS, 2, bitAt(s, b.x, b.y - 1)?.k === 'vagg');
   pileIcons.end();
   // markerad hög utanför lagret: vit kant runt rutan, som lagerplatsen får
   const h = ui.hogAt;

@@ -45,6 +45,9 @@ const PAL: Record<string, Record<string, string>> = {
   // skinnfällen i halmbädden (steg 2.2.14): platshållare tills Björn valt
   skinnfall: { b: '#8a6440', B: '#b48a5e', d: '#5e4026', w: '#d8c8a8' },
   skinnfall_karta: { b: '#8a6440', B: '#b48a5e', d: '#5e4026', w: '#d8c8a8' },
+  // skinndörren i dörröppningen (steg 2.2.16): platshållare tills Björn valt
+  skinndorr: { p: '#4a3018', b: '#8a6440', B: '#b48a5e', d: '#5e4026' },
+  skinndorr_karta: { p: '#4a3018', b: '#8a6440', B: '#b48a5e', d: '#5e4026' },
   skinn: { b: '#8a6440', B: '#b48a5e', d: '#5e4026' },
   metspo: { h: '#8a6a40', y: '#c8b07a', w: '#e8e2d0' },
   korg: { t: '#6e4e2e', o: '#9a6a3e', O: '#c99a62', d: '#5e3c20' },
@@ -486,6 +489,29 @@ const PIX: Record<string, string[]> = {
     '....BbBBbBBbBBd.',
     '....dddddddddd..',
     '................',
+  ],
+  // skinndörren i listorna: en hud som hänger från en stång (platshållare)
+  skinndorr: [
+    'pppppppp',
+    '.bBbBbB.',
+    '.BbBbBb.',
+    '.bBbBbB.',
+    '.BbBbBb.',
+    '.bBbBbB.',
+    '.dBbBbd.',
+    '..d..d..',
+  ],
+  // skinndörren på kartan, ovanifrån: huden hänger tvärs över öppningen i en vägg som går åt sidan; i en vägg som går
+  // uppåt ritas den vriden (platshållare)
+  skinndorr_karta: [
+    '........',
+    '........',
+    'pppppppp',
+    'bBbBbBbB',
+    'BbBbBbBb',
+    'dddddddd',
+    '........',
+    '........',
   ],
   // en stubbe att sitta på framför slöjdbänken (platshållare)
   sittplats: [

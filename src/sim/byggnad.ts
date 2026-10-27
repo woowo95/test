@@ -4,10 +4,13 @@ import { H, State, T, W, inMap } from './typer';
 import { balans } from './balans';
 
 // Balanstal (regel 8): hur väl ett rum skyddar mot kylan
-const BYGGNAD = balans('byggnad', {
+export const BYGGNAD = balans('byggnad', {
   oppningLacker: 0.12, // så mycket sämre ett rum håller värmen för varje öppning
   kroppsvarme: 0.04, // varje människa i rummet värmer så här mycket (hur många som är där räknas, shelterOf)
   skyddMax: 0.9, // mer än så här skyddar inget rum mot kylan
+  skinndorrTat: 0.6, // en skinndörr släpper ut så här mycket mindre värme än en öppen dörröppning (steg 2.2.16) ...
+  skinndorrSkinn: 2, // ... görs av så många skinn ...
+  skinndorrMin: 20, // ... och så många minuters arbete
 });
 
 // ---------- byggen ----------
@@ -17,8 +20,9 @@ const BYGGNAD = balans('byggnad', {
 // bygga väggar planerar den skickligaste byggaren ett hus för det mest akuta behovet (byggnader.ts).
 type BitK = 'vagg' | 'golv' | 'oppning';
 // en byggd eller planerad ruta. b = hur långt bygget kommit (1 = klart), mat = material som lagts på bygget,
-// c = skick (1 = nytt), lp/lm = lagning: hur långt den kommit och material som lagts på den
-export interface Bit { id: number; x: number; y: number; k: BitK; m: string; b: number; mat: number; c: number; hus?: number; lp?: number; lm?: number }
+// c = skick (1 = nytt), lp/lm = lagning: hur långt den kommit och material som lagts på den, dorr = dörren som hänger i en
+// öppning (en rad i DORRAR)
+export interface Bit { id: number; x: number; y: number; k: BitK; m: string; b: number; mat: number; c: number; hus?: number; lp?: number; lm?: number; dorr?: string }
 // kom = var materialet kom ifrån (bygg.ts), fn = husets funktion (en rad i BYGGNADER, byggnader.ts; saknas = sovsal), ag = ägaren (ett familjehus), slag = vad ett förrådshus rymmer
 export interface Hus { id: number; namn: string; x: number; y: number; w: number; h: number; klar?: number; varKlar?: number; kom?: Record<string, number>; fn?: string; ag?: number; slag?: 'mat' | 'material'; tom?: number } // tom = sedan när ingen sover i sovsalen; varKlar = när huset först blev färdigt, sparat när en vägg rasar (klar nollas då)
 // per material: vad som går åt per ruta, timmar för en ovan byggare, slitage per timme, hur bra väggen håller värmen.
@@ -32,6 +36,23 @@ export const MATERIAL: Record<string, Material> = {
   ho: { namn: 'Golv av hö', k: 'golv', item: 'torrgras', n: 1, tim: 0.15, slit: 0.002, farg: 0xd2b866, ikon: 'hogolv' }, // äldre sparfiler: hö-golv läggs inte längre, slits till jordgolv
   oppning: { namn: 'Öppning', k: 'oppning', n: 0, tim: 0, slit: 0, farg: 0x7a5a3a },
 };
+
+// ---------- dörrarna (steg 2.2.16) ----------
+// Dörrarna kommer i nivåer: först en öppning, sedan en hängd hud, sist en riktig dörr (7.2.1). Varje sort är en rad: tekniken
+// (tek, samma id i TEKNIK, teknik.ts), materialet (av), minuterna (min) och hur mycket mindre värme den släpper ut än en
+// öppning (tat). Den hängs i handlingen dorr (task.tool = sorten, bygg.ts) i ett färdigt hus där man bor eller umgås. En ny
+// sorts dörr blir en rad här, en rad i TEKNIK, ett namn i verktyg för handlingen dorr (handlingar.ts) och två bilder i ikoner.ts
+export interface DorrDef { namn: string; ikon: string; tek: string[]; av: Record<string, number>; min: number; tat: number; gor: string; forsta: string }
+export const DORRAR = {
+  skinndorr: {
+    namn: 'Skinndörr', ikon: 'skinndorr', tek: ['skinndorr'], av: { skinn: BYGGNAD.skinndorrSkinn }, min: BYGGNAD.skinndorrMin, tat: BYGGNAD.skinndorrTat,
+    gor: 'Hänger en hud i dörröppningen.',
+    forsta: '{namn} hängde byns första skinndörr i en dörröppning. Huset håller värmen bättre.',
+  },
+} satisfies Record<string, DorrDef>;
+export type DorrSlag = keyof typeof DORRAR;
+export const DORR_LIST = Object.keys(DORRAR) as DorrSlag[];
+export const dorrDef = (k?: string): DorrDef | undefined => k ? (DORRAR as Record<string, DorrDef>)[k] : undefined;
 
 export const bitsOf = (s: State) => (s.byggen ??= []);
 export const housesOf = (s: State) => (s.hus ??= []);
@@ -109,12 +130,17 @@ export function roomAt(s: State, x: number, y: number): Rum | undefined {
   return r >= 0 ? g.rooms[r] : undefined;
 }
 export const roofed = (s: State, x: number, y: number) => !!roomAt(s, x, y);
-// hur väl rummet håller värmen: väggarnas material och skick, sämre för varje öppning
+// hur väl rummet håller värmen: väggarnas material och skick, sämre för varje öppning (mindre när en dörr hänger där)
 export function insulation(s: State, r: Rum) {
   const g = gridOf(s);
-  let sum = 0, n = 0;
-  for (const i of r.walls) { const b = g.at.get(i)!; if (b.k !== 'vagg') continue; sum += (MATERIAL[b.m].isol ?? 0) * (0.5 + 0.5 * b.c); n++; }
-  return Math.max(0, (n ? sum / n : 0) - BYGGNAD.oppningLacker * r.open);
+  let sum = 0, n = 0, open = 0;
+  for (const i of r.walls) {
+    const b = g.at.get(i)!;
+    if (b.k === 'oppning') { open += 1 - (dorrDef(b.dorr)?.tat ?? 0); continue; }
+    if (b.k !== 'vagg') continue;
+    sum += (MATERIAL[b.m].isol ?? 0) * (0.5 + 0.5 * b.c); n++;
+  }
+  return Math.max(0, (n ? sum / n : 0) - BYGGNAD.oppningLacker * open);
 }
 // den som är inne i ett rum kyls långsammare, och ju fler som är där, desto varmare håller de varandra
 export const shelterOf = (s: State, r: Rum, folk: number) => Math.min(BYGGNAD.skyddMax, insulation(s, r) + BYGGNAD.kroppsvarme * folk);
