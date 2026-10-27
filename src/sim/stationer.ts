@@ -26,7 +26,8 @@ import { BrasaEld, brasaMal } from './brasor';
 // 2.8.1). Det enklaste görs med händerna var som helst; så länge byn inte har stationen görs arbetet vid elden som förut
 // (spotFor i val.ts). Det som står under bara görs inte alls utan stationen: viltet slaktas och fisken rensas bara vid
 // slaktbänken (2.2.6, 2.2.8), och innan byn har en äts det fällda djuret och den hela abborren som de är, med mindre kött och
-// inget ben eller skinn; korgen flätas bara vid slöjdbänken. Rep tvinnas fortare vid slöjdbänken än för hand vid elden.
+// inget ben eller skinn; korgen flätas bara vid slöjdbänken. Rep tvinnas fortare vid slöjdbänken än för hand vid elden, och de enkla
+// redskapen görs där lite fortare (fart i registret, fartVid).
 // Byggs gör den av den som kan tekniken och har tid för handarbete (craft i val.ts), med materialet ur förrådet efter
 // behovsstegen (behov.ts). Arbetet kan avbrytas: stationen står kvar halvbyggd och vem som helst som kan tekniken bygger
 // klart den. Den tar en eller flera rutor (bredd och djup i registret), där inget annat får ligga eller byggas (usable i
@@ -52,6 +53,7 @@ export const STATION = balans('station', {
   flatarbankGrenar: 3, // ... och så många grenar ...
   flatarbankMin: 30, // ... och så många minuters arbete
   repFart: 2, // rep tvinnas så här många gånger fortare vid slöjdbänken än för hand ...
+  redskapFart: 1.25, // ... och de enkla redskapen görs så här många gånger fortare där (Björn, efter v90) ...
   vidBank: 1.5, // ... av den som står så här nära bänken (rutor)
   vriden: 0.5, // en station som står vriden får så här många poäng (färre är bättre), så att den helst står som i registret
   badd: 0.1, // inne: så här många poäng mindre för varje sida som står mot en vägg ...
@@ -103,7 +105,9 @@ const bordTra = (w: number, h: number) => w * h * STATION.bordTra + ((w >= 2 ? 2
 // rutas stack) eller, för redskap, så många redskap; tak = det som ligger där slits som under tak
 // brasa = en extra eld (steg 2.9.1, brasor.ts): står nära sovplatserna den är till för (siteBrasa), och alla vuxna kan bygga den (tek är tom: den som är gammal nog att ta ansvar, ALDER.ansvar)
 export interface Forvar { rymmer: number; redskap?: true; tak?: true }
-export interface StationDef { namn: string; ikon: string; w: number; h: number; tek: string[]; av: Record<string, number>; min: number; gor: Act[]; bara?: Act[]; vid?: Record<string, number>; verktyg?: string; utkant?: true; eld?: true; kraver?: Partial<Record<Act, string>>; smutsar?: Partial<Record<Act, string>>; bygger: string; forsta: string; inne?: true; mobel?: true; flera?: true; brasa?: true; sover?: true; sitt?: true; platser?: true; forvar?: Forvar }
+export interface StationDef { namn: string; ikon: string; w: number; h: number; tek: string[]; av: Record<string, number>; min: number; gor: Act[]; bara?: Act[]; vid?: Record<string, number>; verktyg?: string; utkant?: true; eld?: true; kraver?: Partial<Record<Act, string>>; smutsar?: Partial<Record<Act, string>>; bygger: string; forsta: string; inne?: true; mobel?: true; flera?: true; fart?: Partial<Record<Act, number>>; brasa?: true; sover?: true; sitt?: true; platser?: true; forvar?: Forvar }
+// de enkla redskapen: görs vid slöjdbänken om byn har en, lite fortare där (fart), annars vid elden som förut (Björn, efter v90)
+const ENKLA: Act[] = ['yxa', 'spjut', 'metspo', 'kniv', 'bensyl', 'balte'];
 export const STATIONER = {
   slaktbank: {
     namn: 'Slaktbänk', ikon: 'slaktbank', w: 3, h: 1, tek: ['slaktbank'], av: { ved: STATION.slaktbankTra }, min: STATION.slaktbankMin, gor: ['slakta', 'rensa'], bara: ['slakta', 'rensa'], vid: { kniv: STATION.knivplatser }, smutsar: { slakta: 'blod' }, // blir blodig när det slaktas (FLACKAR i smuts.ts)
@@ -111,7 +115,7 @@ export const STATIONER = {
     forsta: '{namn} byggde byns första slaktbänk av trä. Där slaktas viltet och rensas fisken, och en kniv ligger kvar vid bänken.',
   },
   flatarbank: { // slöjdbänken: id:t är kvar från när den hette flätarbänken, så att sparade byar fungerar
-    namn: 'Slöjdbänk', ikon: 'flatarbank', w: 2, h: 1, tek: ['flatarbank'], av: { ved: STATION.flatarbankTra, grenar: STATION.flatarbankGrenar }, min: STATION.flatarbankMin, gor: ['tvinna', 'korg', 'skinnrock', 'skinnskor', 'benspade'], bara: ['korg', 'skinnrock', 'skinnskor', 'benspade'], vid: { bensyl: 1 }, kraver: { skinnrock: 'bensyl', skinnskor: 'bensyl' }, inne: true, sitt: true,
+    namn: 'Slöjdbänk', ikon: 'flatarbank', w: 2, h: 1, tek: ['flatarbank'], av: { ved: STATION.flatarbankTra, grenar: STATION.flatarbankGrenar }, min: STATION.flatarbankMin, gor: ['tvinna', 'korg', 'skinnrock', 'skinnskor', 'benspade', ...ENKLA], fart: { tvinna: STATION.repFart, ...Object.fromEntries(ENKLA.map(a => [a, STATION.redskapFart])) }, bara: ['korg', 'skinnrock', 'skinnskor', 'benspade'], vid: { bensyl: 1 }, kraver: { skinnrock: 'bensyl', skinnskor: 'bensyl' }, inne: true, sitt: true,
     bygger: 'Bygger en slöjdbänk av trä och grenar.',
     forsta: '{namn} byggde byns första slöjdbänk. Där tvinnas rep fortare än för hand och flätas korgar.', // och sys kläder med bensylen (steg 2.3.2)
   },
@@ -239,6 +243,13 @@ export function kanGoras(s: State, act: Act) {
 }
 // platsen där man står och arbetar vid stationen: mitt för den på rutan söder om den
 export const vidStation = (t: Station) => { const { w, h } = storlekAv(t); return { x: t.x + w / 2, y: t.y + h + 0.1 }; };
+// hur många gånger fortare p gör act just där hen står: stationens fart för den som står vid den, annars 1
+export const fartVid = (s: State, p: { x: number; y: number }, act: Act) => {
+  const st = stationFor(s, act), f = st && stationDef(st.k)?.fart?.[act];
+  if (!f) return 1;
+  const at = vidStation(st);
+  return Math.hypot(p.x - at.x, p.y - at.y) < STATION.vidBank ? f : 1;
+};
 
 // ---------- var den står ----------
 // en ruta där inget annat ligger eller står: inte på en lagerplats, ett hus, en stack, ett redskap, en stock eller en stubbe

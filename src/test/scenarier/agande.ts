@@ -207,6 +207,7 @@ SCENARIER.byte = {
 
 
 SCENARIER.egendom = {
+  lang: true,
   text: 'Det någon samlar, hugger, jagar och gör är hens, också i byns förråd. Det som redan var byns förblir byns. Till sig själv tar man sitt eget först, till elden byns. Det som ruttnar minskar allas delar, slaktat kött är dens som ägde viltet, och den som dör lämnar sin del till byn.',
   kor: () => {
     const s = createState(6, START);

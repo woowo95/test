@@ -404,9 +404,9 @@ SCENARIER.slaktbank = {
 };
 
 SCENARIER.flatarbank = {
-  text: 'Slöjdbänken (steg 2.2.4) byggs av trä och grenar av den som kommit på den (steg 2.2.11). Vid den tvinnas rep fortare än för hand vid elden, och korgen flätas bara där. Handarbetet är alltid något bestämt som tar material och ger en sak',
+  text: 'Slöjdbänken (steg 2.2.4) byggs av trä och grenar av den som kommit på den (steg 2.2.11). Vid den tvinnas rep fortare än för hand vid elden, de enkla redskapen görs där lite fortare (Björn, efter v90), och korgen flätas bara där. Handarbetet är alltid något bestämt som tar material och ger en sak',
   kor: () => {
-    const { STATION, STATIONER, stationerOf, stationFor, isKlar, vidStation, spotFor, twineRope, wantsTool, thinkWhileWorking } = SIM;
+    const { STATION, STATIONER, stationerOf, stationFor, isKlar, vidStation, spotFor, twineRope, wantsTool, thinkWhileWorking, startWork, MIN } = SIM;
     // en by där alla kan tvinna rep och slöjdbänken men ingen kan göra en kniv, med gott om mat, trä, grenar och hö: slöjdbänken byggs
     const s = createState(1, START); klockan(s); tandEld(s); medHus(s); // slöjdbänken står inne (steg 2.2.5)
     for (const r of s.people) r.tek = { rep: 1, flatarbank: 1 };
@@ -436,6 +436,18 @@ SCENARIER.flatarbank = {
       return amountOf(w, 'rep');
     };
     const hand = rep(false), vidB = rep(true);
+    // de enkla redskapen (Björn, efter v90): kniven görs vid bänken om byn har en, och lite fortare där
+    const kniv = (bank: boolean) => {
+      const w = createState(1, START), q = living(w).find(r => ageOf(r, w.now) >= 18)!;
+      q.tek = { kniv: 1 }; setAmount(w, 'flinta', 10); setAmount(w, 'grenar', 10);
+      if (bank) medBank(w, 'flatarbank');
+      const o = spotFor(w, 'kniv', q), vid = bank ? vidStation(w.stationer![0]) : undefined;
+      q.x = o.x; q.y = o.y;
+      const tk = { act: 'kniv' as SIM.Act, phase: 'do' as const, tx: o.x, ty: o.y, until: 0, carry: 0 };
+      startWork(w, q, tk);
+      return { tid: (tk.until - w.now) / MIN, vid: !vid || Math.hypot(o.x - vid.x, o.y - vid.y) < 0.5 };
+    };
+    const kElden = kniv(false), kBank = kniv(true);
     // en vanlig by tills någon tvinnar rep, högst tio dygn (tio år i spelet): inget handarbete utan sak, och rep tvinnas som en egen handling
     const v = createState(3, START); // en by som kommer på repet tidigt (by 2 kom inte på det inom tio dygn i v75)
     let dygn = 0;
@@ -450,6 +462,7 @@ SCENARIER.flatarbank = {
       ['den första slöjdbänken står i loggen', logg],
       ['utan slöjdbänk flätas ingen korg; med den flätas korgen vid bänken', utanBank && medBank_],
       [`rep tvinnas fortare vid bänken (${vidB.toFixed(2)} på sex minuter) än för hand vid elden (${hand.toFixed(2)})`, Math.abs(vidB - hand * STATION.repFart) < 1e-9 && hand > 0],
+      [`en kniv görs vid bänken om byn har en, på ${kBank.tid.toFixed(1)} minuter i stället för ${kElden.tid.toFixed(1)} vid elden`, kBank.vid && kElden.tid > 0 && Math.abs(kBank.tid * STATION.redskapFart - kElden.tid) < 1e-6],
       [`inget handarbete utan sak på ${dygn} dygn (${hantverk} gånger), och rep tvinnas (${tvinnar} gånger)`, hantverk === 0 && tvinnar > 0],
       ['att tvinna rep ger tankar om det som hör till hantverket', tankt],
     ];

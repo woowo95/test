@@ -11,7 +11,7 @@ import { RESERV } from './ekonomi';
 import { addTool, freeTools, halvOf, nTools, ownsFree, wearTool } from './agande';
 import { balans } from './balans';
 import { sedEvent } from './seder';
-import { STATION, kanGoras, nyttVid, slitVid, stationFor, tommaKnivplatser, tommaPlatser, vidStation } from './stationer';
+import { fartVid, kanGoras, nyttVid, slitVid, tommaKnivplatser, tommaPlatser } from './stationer';
 import { smutsa } from './smuts';
 
 // ---------- balanstal (regel 8) ----------
@@ -75,8 +75,8 @@ const spearsWanted = (s: State) => (s.stat?.fiskeForsok ?? 0) > 0 || (s.stat?.pr
 const REP_TIMME = 60 / SAKER.rep!.skaffa!.min!; // rep per timme
 export const wantsRope = (s: State, p: Person) => knows(p, 'rep') && amountOf(s, 'rep') < REDSKAP.repVill && getable(s, p, 'torrgras') >= REP.torrgras + RESERV.torrgras; // lite hö sparas till elden
 export function twineRope(s: State, p: Person, hours: number) {
-  const st = stationFor(s, 'tvinna'), at = st && vidStation(st), bank = !!at && Math.hypot(p.x - at.x, p.y - at.y) < STATION.vidBank;
-  const n = Math.min(hours * REP_TIMME * (bank ? STATION.repFart : 1), (getable(s, p, 'torrgras') - RESERV.torrgras) / REP.torrgras, REDSKAP.repVill - amountOf(s, 'rep'));
+  const f = fartVid(s, p, 'tvinna'), bank = f > 1; // vid slöjdbänken
+  const n = Math.min(hours * REP_TIMME * f, (getable(s, p, 'torrgras') - RESERV.torrgras) / REP.torrgras, REDSKAP.repVill - amountOf(s, 'rep'));
   if (n <= 0) return;
   takeMaterial(s, p, 'torrgras', n * REP.torrgras);
   gain(s, p, 'rep', n);

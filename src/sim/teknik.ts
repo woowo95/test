@@ -46,7 +46,7 @@ export const TEKNIK: Tek[] = [
   // som stationen i STATIONER (stationer.ts) och receptet är stationens material
   { id: 'slaktbank', namn: 'Slaktbänk', text: 'En kluven stock på ben, där viltet slaktas och fisken rensas.', effekt: 'Viltet slaktas och fisken rensas bara vid slaktbänken, och en kniv ligger kvar vid den.',
     omr: ['jakt', 'hantverk'], krav: ['kniv'], material: [['kniv'], ['ved']], tid: 12 },
-  { id: 'flatarbank', namn: 'Slöjdbänk', text: 'Två plankor på ben, med två stolpar och ett rep spänt emellan.', effekt: 'Vid bänken tvinnas rep dubbelt så fort, och korgar flätas bara där.',
+  { id: 'flatarbank', namn: 'Slöjdbänk', text: 'Två plankor på ben, med två stolpar och ett rep spänt emellan.', effekt: 'Vid bänken tvinnas rep dubbelt så fort, enkla redskap görs lite fortare, och korgar flätas bara där.',
     omr: ['hantverk'], krav: ['rep'], material: [['ved'], ['grenar']], tid: 12 },
   { id: 'halmbadd', namn: 'Halmbädd', text: 'Hö som bäddas på en ram av grenar på golvet i huset.', effekt: 'Den som sover i en halmbädd vilar upp sig fortare.',
     omr: ['hantverk', 'bygga'], krav: ['timmervagg'], material: [['torrgras'], ['grenar']], tid: 16 },
