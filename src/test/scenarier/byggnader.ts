@@ -26,6 +26,7 @@ SCENARIER.byggnader = {
 
 
 SCENARIER.forradshus = {
+  lang: true,
   text: 'Ruttnar maten eller är förrådet fullt bygger byn ett förrådshus. Golvet blir en lagerplats under tak, där det som ligger ruttnar och slits mindre, och maten bärs in dit',
   kor: () => {
     const s = createState(6, START);

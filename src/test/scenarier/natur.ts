@@ -997,7 +997,7 @@ SCENARIER.brasa = {
 };
 
 SCENARIER.odling = {
-  text: 'Steg 2.10.2: vilda grödor växer på kartan, vildkorn på ängarna och vilda ärter i skogsbrynet, men inte i istiden. Den som samlar där tar med sig frön, som inte går att äta, tills byn har nog. Tekniken Odling kommer man på när man samlar och byn har frön, fortare ju mer byn samlat av de vilda grödorna',
+  text: 'Steg 2.10.2: vilda grödor växer på kartan, vildkorn på ängarna och vilda ärter i skogsbrynet, men inte i istiden. Den som samlar där plockar frön, som inte går att äta, och tar med sig dem tills byn har nog. Tekniken Odling kommer man bara på när man plockar vilda frön (steg 2.10.11), fortare ju fler byn plockat, och plockandet räknas också när byn har nog',
   kor: () => {
     const s = createState(7, START);
     s.kal = nyKalender(s.now, 3); klockan(s);
@@ -1020,28 +1020,30 @@ SCENARIER.odling = {
     let fron = 0;
     for (let i = 0; i < 60; i++) fron += SIM.froFynd(s, p, tk, 60);
     const efter = fyndAt(s, 'vildkorn', kornI), vild = s.stat?.vildgrodor ?? 0;
-    // när byn har nog tar man inga fler
+    // när byn har nog tar man inga fler, men plockandet räknas och man tänker på odling
     setAmount(s, 'fron', SIM.ODLING.froVill);
-    const nog = SIM.froFynd(s, p, tk, 3600);
-    // tekniken: utan frön i byn kommer man inte på den, och ju mer byn samlat, desto fortare
-    const tek = SIM.TEK.odling, tank = (stat: number, fronIByn: number) => {
+    p.tek = {};
+    const vild0 = s.stat?.vildgrodor ?? 0, nog = SIM.froFynd(s, p, tk, 3600), raknat = (s.stat?.vildgrodor ?? 0) > vild0, tankt = (p.tek?.odling ?? 0) > 0;
+    // tekniken: vanligt samlande ger ingen tanke på odling, bara plockandet, och ju fler frön byn plockat, desto fortare
+    const tek = SIM.TEK.odling, tank = (stat: number, plocka: boolean) => {
       const t = createState(7, START), q = living(t).find(r => ageOf(r, t.now) >= 18)!;
-      q.tek = {}; setAmount(t, 'fron', fronIByn); (t.stat ??= {}).vildgrodor = stat;
-      for (let i = 0; i < 60; i++) SIM.thinkWhileWorking(t, q, 'samla', 60);
+      q.tek = {}; setAmount(t, 'fron', 5); (t.stat ??= {}).vildgrodor = stat;
+      for (let i = 0; i < 60; i++) plocka ? SIM.tankePa(t, q, 'odling', 60) : SIM.thinkWhileWorking(t, q, 'samla', 60);
       return q.tek.odling ?? 0;
     };
-    const utanFron = tank(400, 0), lite = tank(10, 5), mycket = tank(400, 5);
+    const samlar = tank(400, false), lite = tank(0, true), mycket = tank(400, true);
     return [
       [`på hösten växer vildkorn (${korn} rutor) och vilda ärter (${arter} rutor) (tidsålder ${host})`, host === 3 && korn > 0 && arter > 0],
       [`vildkornet bara i högt gräs och ärterna bara i skogsbrynet (${fel} fel)`, fel === 0],
       [`i istiden växer inga vilda grödor (${iIstid.toFixed(3)})`, iIstid === 0],
       [`en timmes samlande på en rik vildkornsruta ger frön (${fron.toFixed(1)}) och tömmer platsen lite (${fore.toFixed(2)} → ${efter.toFixed(2)})`, fron > 0.5 && efter < fore],
       [`byn räknar det som samlats av de vilda grödorna (${vild.toFixed(1)})`, Math.abs(vild - fron) < 1e-9],
-      [`när byn har ${SIM.ODLING.froVill} frön tar man inga fler (${nog})`, nog === 0],
+      [`när byn har ${SIM.ODLING.froVill} frön tar man inga fler (${nog}), men plockandet räknas och ger tankar på odling`, nog === 0 && raknat && tankt],
       ['fröna kan inte ätas', !SIM.isFood('fron')],
-      [`Odling kommer man på när man samlar och byn har frön (${tek?.omr.join(', ')}; ${tek?.material.flat().join(', ')})`, !!tek && tek.omr.includes('samla') && tek.material.flat().includes('fron')],
-      [`utan frön i byn ingen tanke på odling (${utanFron})`, utanFron === 0],
-      [`ju mer byn samlat av de vilda grödorna, desto fortare (${lite.toFixed(4)} mot ${mycket.toFixed(4)})`, mycket > lite * 2 && lite > 0],
+      [`Odling kommer man bara på när man ${tek?.nar}`, !!tek?.nar],
+      [`vanligt samlande ger ingen tanke på odling (${samlar})`, samlar === 0],
+      [`plockandet ger tankar redan från början, och fortare ju fler frön byn plockat (${lite.toFixed(4)} mot ${mycket.toFixed(4)})`, mycket > lite * 2 && lite > 0],
+      [`några timmars plockande räcker för en medelmåttig (${SIM.TEK.odling.tid} h)`, SIM.TEK.odling.tid <= 6],
     ];
   },
 };

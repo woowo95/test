@@ -11,7 +11,7 @@ import { FANGST, Kind, flintSpot, shoreOf, wantsFlint } from './fynd';
 import { coldOf, nederbord, temperature } from './vader';
 import { DJUR, Djurart, GORS, canProcess, djurKvar, freeOfKinds, makeTask, toolGroups, wantsTool } from './redskap';
 import { PROJEKT, Uppgift, bastaProjekt } from './projekt';
-import { faltNu } from './odling';
+import { faltNu, vildFronPlats } from './odling';
 import { areaOf, flintArea, pickSpot, prospectFor } from './minne';
 import { getMap } from './karta';
 import { amountOf, avbryt, fetchSpot, haulJob } from './lager';
@@ -67,6 +67,7 @@ const VAL = balans('val', {
   letaFlinta: 0.1, // flinta över detta (och inget behov av stenar) gör att någon letar flinta till en yxa ...
   letaMat: 1.5, // ... om maten räcker så många dygn ...
   letaChans: 0.3, // ... och med denna chans
+  fronChans: 0.2, // chansen att den som samlar går till de vilda grödorna och plockar frön, när byn vill ha fler (steg 2.10.11)
   stenarChans: 0.5, // chansen att den som samlar letar flinta eller stenar vid stenarna när byn saknar det (och ett helt pass)
   tandHamtare: 3, // så många hämtar tändmaterial åt en släckt eld som mest
   projektVikt: 1.5, // det mest värda projektet (projekt.ts) väger som arbete så här mycket gånger sitt värde
@@ -486,6 +487,11 @@ function withTools(s: State, p: Person, v: Val, best: Act, what: string, fd: num
   if (best === 'samla' && (leta || (flintaTillElden(s) || flintaTillYxa(s, p, fd, ai)) && rnd(s, 'val', p) < VAL.stenarChans)) { // byn saknar flinta eller stenar till eldringen. Stenarna ligger långt bort, så där letar man ett helt pass
     const fa = flintArea(p), fl = (fa !== undefined && flintSpot(s, p, (x, y) => areaOf(x, y) === fa)) || flintSpot(s, p);
     if (fl) { v.spot = fl; v.dur /= VAL.pass; v.sok = true; v.why = `${v.why} Letar efter ${stones ? 'stenar till en eldring' : 'flinta'} vid stenarna${fa !== undefined ? ' där hen vet att det finns flinta' : ''}.`; }
+  }
+  // byn vill ha frön: ibland går den som samlar till de vilda grödorna och plockar (där kommer man på odling, steg 2.10.11)
+  if (best === 'samla' && !v.sok && !v.tandmat) {
+    const vf = vildFronPlats(s);
+    if (vf && rnd(s, 'val', p) < VAL.fronChans) { v.spot = vf; v.why = `${v.why} Plockar vilda frön.`; }
   }
   const ax = best === 'ved' ? axeTask(s, p, fara.kyla) : undefined; // med yxa fälls träd och huggs ved
   if (ax) {

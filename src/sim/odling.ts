@@ -8,20 +8,20 @@ import { balans } from './balans';
 import { getMap } from './karta';
 import { groundOf } from './mark';
 import { FOREST } from './vag';
-import { knows } from './teknik';
+import { knows, tankePa } from './teknik';
 import { getable, takeMaterial } from './behov';
 import { freeTools, wearTool } from './agande';
 import { SAKER } from './saker';
-import { campDist } from './plats';
+import { PLATS, campCenter, campDist } from './plats';
 import { ledig, lekplats, paLek } from './stationer';
 import { temperature, vaxtFaktor } from './vader';
 import { ISTID, iIstiden, isLight, kalender } from './tid';
 
 // ---------- odling (steg 2.10.2–) ----------
 // Vilda grödor växer på kartan som andra växter: vildkorn på ängarna och vilda ärter i skogsbrynet (lagren i VILDA, rader i
-// FYND i fynd.ts). Den som samlar där de växer tar med sig frön (fron i saker.ts) tills byn har så många den vill ha. Fröna
-// kan inte ätas. Byn räknar hur mycket den samlat av de vilda grödorna (statistiken vildgrodor), och ju mer, desto fortare
-// kommer den som samlar på tekniken Odling (raden odling i teknik.ts, `okar`).
+// FYND i fynd.ts). Den som samlar där de växer plockar frön (fron i saker.ts) och tar med sig dem tills byn har så många den
+// vill ha. Fröna kan inte ätas. Bara den som plockar vilda frön kommer på tekniken Odling (raden odling i teknik.ts, `nar`),
+// och fortare ju fler byn plockat (statistiken vildgrodor, `okar`); det räknas också när byn redan har nog (steg 2.10.11).
 //
 // Fälten (steg 2.10.3): den som kan odla och har frön röjer ett fält (ODLING.faltW × faltH rutor) på jord nära byn, där inga
 // stora träd står: gräs, buskar och ungskog tas bort. Sedan grävs jorden upp, fortare med benspaden, och fröna sås. Grödan
@@ -35,6 +35,7 @@ export const ODLING = balans('odling', {
   froTakt: 3, // frön per arbetstimme på en mycket rik plats (gånger kunnigheten och SNABBARE)
   froUttag: 0.1, // varje frö tar så här mycket ur platsen
   froVill: 20, // man tar med sig frön tills byn har så här många
+  froLeta: 0.3, // den som samlar går till de vilda grödorna för att plocka frön med VAL.fronChans, om någon ruta har så här mycket (steg 2.10.11)
   // fälten (steg 2.10.3)
   faltW: 2, faltH: 2, // ett fält är så här många rutor brett och djupt
   faltFran: 3, faltTill: 9, // fältet ligger så här många rutor från byns läger ...
@@ -58,8 +59,8 @@ export const ODLING = balans('odling', {
 // per ruta, fron = frön tillbaka per ruta (rovorna äts hela, så de ger få), frost = den dör när det blir kallare än så här
 export interface GrodaDef { namn: string; sak: string; dygn: number; perRuta: number; fron: number; frost: number }
 export const GRODOR = {
-  rovor: { namn: 'Rovor', sak: 'rovor', dygn: 2, perRuta: 5, fron: 0.6, frost: -3 }, // snabba och härdiga
-  korn: { namn: 'Korn', sak: 'korn', dygn: 5, perRuta: 4, fron: 2.5, frost: -1 }, // håller länge
+  rovor: { namn: 'Rovor', sak: 'rovor', dygn: 2, perRuta: 5, fron: 2, frost: -3 }, // snabba och härdiga; lika många frön som de kostar (steg 2.10.11)
+  korn: { namn: 'Korn', sak: 'korn', dygn: 3, perRuta: 4, fron: 2.5, frost: -1 }, // håller länge; 3 dygn (Björn efter v107, steg 2.10.11)
 } satisfies Record<string, GrodaDef>;
 export type GrodaSlag = keyof typeof GRODOR;
 export const GRODA_LIST = Object.keys(GRODOR) as GrodaSlag[];
@@ -275,20 +276,43 @@ export function stepOdling(s: State) {
 // lagren i FYND med vilda grödor, som ger frön
 export const VILDA = ['vildkorn', 'arter'] as const;
 
-// medan man samlar (UTFALL samla i steg.ts): frön från de vilda grödorna där man står, och platsen töms lite
+// var man plockar vilda frön med flit (val.ts, steg 2.10.11): den rikaste rutan med vilda grödor inom en halv dags gång,
+// och närmare är bättre. Ingen när byn har nog frön eller inget växer. Samma plats för alla under timmen (regel 4)
+const vildCache = new WeakMap<State, { key: number; at?: { x: number; y: number } }>();
+export function vildFronPlats(s: State) {
+  if (amountOf(s, 'fron') >= ODLING.froVill) return undefined;
+  const key = Math.floor(s.now / HOUR), c = vildCache.get(s);
+  if (c && c.key === key) return c.at;
+  const mid = campCenter(s);
+  let at: { x: number; y: number } | undefined, bs = 0;
+  for (let y = Math.max(0, Math.floor(mid.y - PLATS.dagY)); y < Math.min(H, mid.y + PLATS.dagY); y++) for (let x = Math.max(0, Math.floor(mid.x - PLATS.dagX)); x < Math.min(W, mid.x + PLATS.dagX); x++) {
+    let r = 0;
+    for (const k of VILDA) r += richness(s, k, x + 0.5, y + 0.5);
+    if (r < ODLING.froLeta) continue;
+    const sc = r / (1 + campDist(s, x, y) / 8);
+    if (sc > bs) { bs = sc; at = { x: x + 0.5, y: y + 0.5 }; }
+  }
+  vildCache.set(s, { key, at });
+  return at;
+}
+
+// medan man samlar (UTFALL samla i steg.ts): frön från de vilda grödorna där man står, och platsen töms lite. Den som plockar
+// tänker på odling (steg 2.10.11). När byn har nog plockar man och tänker ändå, men tar inte med sig fler och lämnar platsen
 export function froFynd(s: State, p: Person, tk: Task, dtSec: number) {
-  if (amountOf(s, 'fron') + (tk.items?.fron ?? 0) >= ODLING.froVill) return 0;
+  const ta = amountOf(s, 'fron') + (tk.items?.fron ?? 0) < ODLING.froVill;
   const sk = kunnighet(p.skill.samla) * SNABBARE * dtSec / HOUR_S;
   let n = 0;
   for (const k of VILDA) {
     const r = richness(s, k, tk.tx, tk.ty);
     if (r <= 0) continue;
     const g = ODLING.froTakt * r / FYND[k].topp * sk;
-    takeFrom(s, k, tk.tx, tk.ty, g * ODLING.froUttag);
+    if (ta) takeFrom(s, k, tk.tx, tk.ty, g * ODLING.froUttag);
     n += g;
   }
   if (n <= 0) return 0;
   count(s, 'vildgrodor', n);
+  tankePa(s, p, 'odling', dtSec);
+  if (!ta) return 0;
   if (forstaGang(s, 'froForst')) log(s, `${p.name} tog med sig frön från de vilda grödorna. De går inte att äta.`, 'world', [p.id]);
   return n;
 }

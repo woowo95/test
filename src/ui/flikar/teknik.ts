@@ -72,7 +72,7 @@ export function tekInfo(ppl: Person[], id: string | undefined) {
   const finns = lista(t.material.map(g => lista(g.map(k => sakNamn(k).toLowerCase()), 'eller')));
   return `<div class="tinfo"><div class="tektop">${iconImg(t.id, 24)}<b>${esc(t.namn)}</b>${r.length ? `<span class="tmat" title="${esc(rtext)}">${mat}</span>` : ''}</div>
     <p class="small">${esc(t.text)} ${esc(t.effekt)}</p>
-    <p class="small muted">Den som ${esc(arb)} kan komma på det${esc(krav)}, när det finns ${esc(finns)} i byn.</p>
+    <p class="small muted">Den som ${esc(t.nar ?? arb)} kan komma på det${esc(krav)}${finns ? `, när det finns ${esc(finns)} i byn` : ''}.</p>
     ${kan.length ? `<p class="kan">${kan.map(pLink).join(', ')}</p>` : '<p class="muted small">Ingen kan det.</p>'}
     ${pa.length ? `<div class="tank">${pa.map(p => `${pLink(p)}${bar(p.tek![t.id], 'skill')}`).join('')}</div>` : ''}</div>`;
 }

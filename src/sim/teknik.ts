@@ -24,9 +24,12 @@ export interface Tek {
   // (spjutet täljs med flinta eller yxa). Att räkna fram det ur receptet skulle ändra när teknikerna kommer på
   material: string[][];
   tid: number; // arbetstimmar för en person med medelmåttig nyfikenhet och intelligens
-  // ju mer byn har gjort av något (statistiken stat), desto fortare kommer man på det: tiden delas med stat / per, högst
+  // ju mer byn har gjort av något (statistiken stat), desto fortare kommer man på det: tiden delas med 1 + stat / per, högst
   // TEKTAL.okarMax gånger fortare (odlingen, steg 2.10.2)
   okar?: { stat: string; per: number };
+  // det enda tillfälle då man kommer på den, i stället för arbetet i omr: systemet som har det tillfället anropar tankePa
+  // (odlingen kommer man bara på när man plockar vilda frön, steg 2.10.11). Texten visas i teknikträdet
+  nar?: string;
 }
 export const TEKNIK: Tek[] = [
   { id: 'korg', namn: 'Korg', text: 'En korg flätad av hö.', effekt: 'Man bär hem mer från varje tur och spiller mindre bär.',
@@ -88,9 +91,10 @@ export const TEKNIK: Tek[] = [
   // torkställningen (steg 2.8.2, matlagning.ts; tork i STATIONER, samma id)
   { id: 'tork', namn: 'Torkställning', text: 'Två A av korsade grenar som bär en lång slå, surrade med rep. På slån hänger köttet i remsor och fisken i stjärten.', effekt: 'Det kött och den fisk som byn inte hinner äta torkar på fem dygn och håller sedan länge i lagret.',
     omr: ['hantverk', 'slakta', 'rensa', 'fiske'], krav: ['rep'], material: [['grenar'], ['rep']], tid: 16 },
-  // odlingen (steg 2.10.2, odling.ts): kommer man på när man samlar och byn har frön, fortare ju mer byn samlat av de vilda grödorna
+  // odlingen (steg 2.10.2, odling.ts): kommer man bara på när man plockar vilda frön (froFynd), fortare ju fler vilda frön
+  // byn plockat; det krävs inte så många (Björn efter v107, steg 2.10.11)
   { id: 'odling', namn: 'Odling', text: 'Frön som sätts i jorden blir nya grödor.', effekt: 'Man kan så frön på ett fält och skörda grödorna.',
-    omr: ['samla'], krav: [], material: [['fron']], tid: 30, okar: { stat: 'vildgrodor', per: 40 } },
+    omr: ['samla'], krav: [], material: [], tid: 6, okar: { stat: 'vildgrodor', per: 5 }, nar: 'plockar vilda frön' },
 ];
 export const TEK = Object.fromEntries(TEKNIK.map(t => [t.id, t])) as Record<string, Tek>;
 
@@ -134,15 +138,20 @@ const omrAv = (act: Act): Act => HANTVERK.has(act) ? 'hantverk' : act;
 export function thinkWhileWorking(s: State, p: Person, act0: Act, dtSec: number) {
   const act = OMR.has(act0) ? act0 : omrAv(act0);
   if (!OMR.has(act) || ageOf(p, s.now) < ALDER.uppfinner) return;
+  for (const t of TEKNIK) if (!t.nar && t.omr.includes(act)) framat(s, p, t, dtSec);
+}
+// tillfället i nar (raden i TEKNIK): p tänker på tekniken id i dtSec sekunder
+export function tankePa(s: State, p: Person, id: string, dtSec: number) {
+  if (ageOf(p, s.now) >= ALDER.uppfinner) framat(s, p, TEK[id], dtSec);
+}
+function framat(s: State, p: Person, t: Tek, dtSec: number) {
+  if (!canThink(p, t) || !hasMaterial(s, t)) return;
   const nyf = stat(p, 'nyfikenhet', s.now) / 10, intel = stat(p, 'intelligens', s.now) / 10;
-  for (const t of TEKNIK) {
-    if (!t.omr.includes(act) || !canThink(p, t) || !hasMaterial(s, t)) continue;
-    p.tek ??= {};
-    const okar = t.okar ? Math.min(TEKTAL.okarMax, (s.stat?.[t.okar.stat] ?? 0) / t.okar.per) : 1;
-    const d = Math.min(1 - (p.tek[t.id] ?? 0), dtSec / HOUR_S / t.tid * nyf * intel * okar);
-    p.tek[t.id] = (p.tek[t.id] ?? 0) + d; count(s, 'tekTankt', d);
-    if (p.tek[t.id] >= 1) learn(s, p, t);
-  }
+  p.tek ??= {};
+  const okar = t.okar ? Math.min(TEKTAL.okarMax, 1 + (s.stat?.[t.okar.stat] ?? 0) / t.okar.per) : 1;
+  const d = Math.min(1 - (p.tek[t.id] ?? 0), dtSec / HOUR_S / t.tid * nyf * intel * okar);
+  p.tek[t.id] = (p.tek[t.id] ?? 0) + d; count(s, 'tekTankt', d);
+  if (p.tek[t.id] >= 1) learn(s, p, t);
 }
 
 // i samtal lär den som kan något ut det, och den som lyssnar lär sig fortare ju intelligentare hen är
