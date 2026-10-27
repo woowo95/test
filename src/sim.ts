@@ -22,6 +22,7 @@ export * from './sim/liv';
 export * from './sim/steg';
 export * from './sim/sjo';
 export * from './sim/torst';
+export * from './sim/odling';
 export * from './sim/halsa';
 export * from './sim/naring';
 export * from './sim/vag';

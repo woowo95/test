@@ -103,6 +103,12 @@ const BAR_PASSAR: Record<Markslag, number> = { skog: 0.8, ung: 1, hog: 1, kort: 
 const JAKT_PASSAR: Record<Markslag, number> = { skog: 0.85, ung: 0.9, hog: 1, kort: 1, bar: 0.3 };
 // kaninernas värde på rutan i: marken g, skygghet sky (0 nära folk, 1 långt bort) och mönstret m
 const jaktBas = (g: Ground, sky: ArrayLike<number>, i: number, m: number) => isSoil(g.tiles[i]) ? JAKT_PASSAR[markslag(g, i)] * (0.15 + 1.3 * m) * FANGST.jaktFaktor * sky[i] : 0;
+// skogsbrynet: en ruta med gräs eller ungskog intill skogen (de fyra grannarna)
+const BRYN = new Set<Markslag>(['ung', 'hog', 'kort']);
+const intillSkog = (g: Ground, i: number) => {
+  const x = i % W;
+  return (x > 0 && g.trees[i - 1] >= FOREST) || (x < W - 1 && g.trees[i + 1] >= FOREST) || (i >= W && g.trees[i - W] >= FOREST) || (i + W < W * H && g.trees[i + W] >= FOREST);
+};
 const ROTTER_PASSAR: Record<Markslag, number> = { skog: 0.5, ung: 0.5, hog: 0.5, kort: 0.4, bar: 0.1 };
 // Ordningen bland lagren med uttag är ordningen i sparfilen: nya lager med uttag läggs sist.
 const DEF = {
@@ -161,6 +167,20 @@ const DEF = {
       return ROTTER_PASSAR[markslag(groundOf(s), i)] * m;
     },
     uttag: { full: 0.35, reach: 1, regrow: [1 / 600, 1 / 180, 1 / 180, 1 / 240] },
+  },
+  // de vilda grödorna (steg 2.10.2, odling.ts): vildkorn i fläckar på ängarna (högt gräs) och vilda ärter i skogsbrynet
+  // (gräs eller ungskog intill skogen). Inget i istiden; de växer under sommaren och mognar på hösten. Den som samlar där tar med sig frön
+  vildkorn: {
+    namn: 'Vildkorn', grupp: 'vaxter', ikon: 'vildkorn', farg: 0xe8c040, topp: 1, arstid: [0, 0.3, 0.9, 1.2],
+    monster: { salt: 101, skala: 4, period: 56, troskel: 0.55 },
+    bas: (s, i, m) => land(s, i) && markslag(groundOf(s), i) === 'hog' ? m : 0,
+    uttag: { full: 1, reach: 1, regrow: [0, 1 / 240, 1 / 96, 1 / 120] },
+  },
+  arter: {
+    namn: 'Vilda ärter', grupp: 'vaxter', ikon: 'arter', farg: 0x6fcf4f, topp: 1, arstid: [0, 0.3, 1, 1.1],
+    monster: { salt: 103, skala: 3, period: 56, troskel: 0.55 },
+    bas: (s, i, m) => land(s, i) && BRYN.has(markslag(groundOf(s), i)) && intillSkog(groundOf(s), i) ? m : 0,
+    uttag: { full: 1, reach: 1, regrow: [0, 1 / 240, 1 / 96, 1 / 120] },
   },
 } satisfies Record<string, FyndDef>;
 export type FyndId = keyof typeof DEF;

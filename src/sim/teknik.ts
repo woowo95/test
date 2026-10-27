@@ -24,6 +24,9 @@ export interface Tek {
   // (spjutet täljs med flinta eller yxa). Att räkna fram det ur receptet skulle ändra när teknikerna kommer på
   material: string[][];
   tid: number; // arbetstimmar för en person med medelmåttig nyfikenhet och intelligens
+  // ju mer byn har gjort av något (statistiken stat), desto fortare kommer man på det: tiden delas med stat / per, högst
+  // TEKTAL.okarMax gånger fortare (odlingen, steg 2.10.2)
+  okar?: { stat: string; per: number };
 }
 export const TEKNIK: Tek[] = [
   { id: 'korg', namn: 'Korg', text: 'En korg flätad av hö.', effekt: 'Man bär hem mer från varje tur och spiller mindre bär.',
@@ -85,6 +88,9 @@ export const TEKNIK: Tek[] = [
   // torkställningen (steg 2.8.2, matlagning.ts; tork i STATIONER, samma id)
   { id: 'tork', namn: 'Torkställning', text: 'Två A av korsade grenar som bär en lång slå, surrade med rep. På slån hänger köttet i remsor och fisken i stjärten.', effekt: 'Det kött och den fisk som byn inte hinner äta torkar på fem dygn och håller sedan länge i lagret.',
     omr: ['hantverk', 'slakta', 'rensa', 'fiske'], krav: ['rep'], material: [['grenar'], ['rep']], tid: 16 },
+  // odlingen (steg 2.10.2, odling.ts): kommer man på när man samlar och byn har frön, fortare ju mer byn samlat av de vilda grödorna
+  { id: 'odling', namn: 'Odling', text: 'Frön som sätts i jorden blir nya grödor.', effekt: 'Man kan så frön på ett fält och skörda grödorna.',
+    omr: ['samla'], krav: [], material: [['fron']], tid: 30, okar: { stat: 'vildgrodor', per: 40 } },
 ];
 export const TEK = Object.fromEntries(TEKNIK.map(t => [t.id, t])) as Record<string, Tek>;
 
@@ -99,6 +105,7 @@ const TEKTAL = balans('teknik', {
   larChans: 0.2, // ... och i andra samtal
   larFramsteg: 0.2, // den som lyssnar kommer så här långt (av 1) mot tekniken i ett samtal, gånger larBas + intelligens / 20
   larBas: 0.5,
+  okarMax: 3, // en teknik med `okar` kommer man på högst så här många gånger fortare
 });
 
 export const knows = (p: Person, id: string) => (p.tek?.[id] ?? 0) >= 1;
@@ -131,7 +138,8 @@ export function thinkWhileWorking(s: State, p: Person, act0: Act, dtSec: number)
   for (const t of TEKNIK) {
     if (!t.omr.includes(act) || !canThink(p, t) || !hasMaterial(s, t)) continue;
     p.tek ??= {};
-    const d = Math.min(1 - (p.tek[t.id] ?? 0), dtSec / HOUR_S / t.tid * nyf * intel);
+    const okar = t.okar ? Math.min(TEKTAL.okarMax, (s.stat?.[t.okar.stat] ?? 0) / t.okar.per) : 1;
+    const d = Math.min(1 - (p.tek[t.id] ?? 0), dtSec / HOUR_S / t.tid * nyf * intel * okar);
     p.tek[t.id] = (p.tek[t.id] ?? 0) + d; count(s, 'tekTankt', d);
     if (p.tek[t.id] >= 1) learn(s, p, t);
   }

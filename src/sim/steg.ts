@@ -32,6 +32,7 @@ import { MATERIAL, bitById, gridOf, roomAt, shelterOf } from './byggnad';
 import { histParts, historikSteg, joinHist } from './historik';
 import { migrate } from './varld';
 import { stepDelning } from './delning';
+import { froFynd } from './odling';
 import { balans } from './balans';
 import { grilla, torka } from './matlagning';
 import { addFuelBrasa, brasaFor, stepBrasor } from './brasor';
@@ -455,6 +456,7 @@ const UTFALL: Partial<Record<Act, (s: State, p: Person, tk: Task, b: Arbetsbit) 
     const got = forageItems(s, p, dtSec) ?? {};
     bar('svamp', pickMushrooms(s, p, tk.tx, tk.ty, dtSec, got));
     bar('mossa', mossaFynd(s, tk, dtSec)); // mossa till förband (steg 2.5.2)
+    bar('fron', froFynd(s, p, tk, dtSec)); // frön från de vilda grödorna (steg 2.10.2)
     for (const k in got) bar(k, got[k]);
     return true;
   },

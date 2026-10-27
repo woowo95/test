@@ -988,3 +988,53 @@ SCENARIER.brasa = {
     ];
   },
 };
+
+SCENARIER.odling = {
+  text: 'Steg 2.10.2: vilda grödor växer på kartan, vildkorn på ängarna och vilda ärter i skogsbrynet, men inte i istiden. Den som samlar där tar med sig frön, som inte går att äta, tills byn har nog. Tekniken Odling kommer man på när man samlar och byn har frön, fortare ju mer byn samlat av de vilda grödorna',
+  kor: () => {
+    const s = createState(7, START);
+    s.kal = nyKalender(s.now, 3); klockan(s);
+    const g = groundOf(s), host = SIM.ageIndex(s);
+    // var de växer: vildkornet bara i högt gräs och ärterna bara i ungskogen
+    let korn = 0, arter = 0, fel = 0, kornI = -1;
+    for (let i = 0; i < W * H; i++) {
+      const k = vaxerAt(s, 'vildkorn', i), a = vaxerAt(s, 'arter', i);
+      if (k > 0) { korn++; if (SIM.markslag(g, i) !== 'hog') fel++; if (kornI < 0 || k > vaxerAt(s, 'vildkorn', kornI)) kornI = i; }
+      const sk = (j: number) => j >= 0 && j < W * H && g.trees[j] >= FOREST;
+      if (a > 0) { arter++; if (SIM.markslag(g, i) === 'skog' || !(sk(i - 1) || sk(i + 1) || sk(i - W) || sk(i + W))) fel++; }
+    }
+    const vinter = createState(7, START); vinter.kal = nyKalender(vinter.now, 0);
+    let iIstid = 0;
+    for (let i = 0; i < W * H; i++) iIstid += vaxerAt(vinter, 'vildkorn', i) + vaxerAt(vinter, 'arter', i);
+    // den som samlar på den rikaste vildkornsrutan tar med sig frön, och platsen töms lite
+    const p = living(s).find(q => ageOf(q, s.now) >= 18)!, x = kornI % W + 0.5, y = Math.floor(kornI / W) + 0.5;
+    const tk = { act: 'samla', tx: x, ty: y } as unknown as SIM.Task;
+    const fore = fyndAt(s, 'vildkorn', kornI);
+    let fron = 0;
+    for (let i = 0; i < 60; i++) fron += SIM.froFynd(s, p, tk, 60);
+    const efter = fyndAt(s, 'vildkorn', kornI), vild = s.stat?.vildgrodor ?? 0;
+    // när byn har nog tar man inga fler
+    setAmount(s, 'fron', SIM.ODLING.froVill);
+    const nog = SIM.froFynd(s, p, tk, 3600);
+    // tekniken: utan frön i byn kommer man inte på den, och ju mer byn samlat, desto fortare
+    const tek = SIM.TEK.odling, tank = (stat: number, fronIByn: number) => {
+      const t = createState(7, START), q = living(t).find(r => ageOf(r, t.now) >= 18)!;
+      q.tek = {}; setAmount(t, 'fron', fronIByn); (t.stat ??= {}).vildgrodor = stat;
+      for (let i = 0; i < 60; i++) SIM.thinkWhileWorking(t, q, 'samla', 60);
+      return q.tek.odling ?? 0;
+    };
+    const utanFron = tank(400, 0), lite = tank(10, 5), mycket = tank(400, 5);
+    return [
+      [`på hösten växer vildkorn (${korn} rutor) och vilda ärter (${arter} rutor) (tidsålder ${host})`, host === 3 && korn > 0 && arter > 0],
+      [`vildkornet bara i högt gräs och ärterna bara i skogsbrynet (${fel} fel)`, fel === 0],
+      [`i istiden växer inga vilda grödor (${iIstid.toFixed(3)})`, iIstid === 0],
+      [`en timmes samlande på en rik vildkornsruta ger frön (${fron.toFixed(1)}) och tömmer platsen lite (${fore.toFixed(2)} → ${efter.toFixed(2)})`, fron > 0.5 && efter < fore],
+      [`byn räknar det som samlats av de vilda grödorna (${vild.toFixed(1)})`, Math.abs(vild - fron) < 1e-9],
+      [`när byn har ${SIM.ODLING.froVill} frön tar man inga fler (${nog})`, nog === 0],
+      ['fröna kan inte ätas', !SIM.isFood('fron')],
+      [`Odling kommer man på när man samlar och byn har frön (${tek?.omr.join(', ')}; ${tek?.material.flat().join(', ')})`, !!tek && tek.omr.includes('samla') && tek.material.flat().includes('fron')],
+      [`utan frön i byn ingen tanke på odling (${utanFron})`, utanFron === 0],
+      [`ju mer byn samlat av de vilda grödorna, desto fortare (${lite.toFixed(4)} mot ${mycket.toFixed(4)})`, mycket > lite * 2 && lite > 0],
+    ];
+  },
+};

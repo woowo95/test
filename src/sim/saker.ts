@@ -105,6 +105,8 @@ const DEF = {
   // åt den som inte kan gå (torst.ts), och senare till fälten. Den tar en hand
   vattensack: { namn: 'Vattensäck', skaffa: { av: { skinn: 2, rep: 1 }, min: 10, tek: 'vattensack' }, vikt: 0.5, hander: 1, stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true, trasig: { stat: 'vattensackarTrasiga', text: '{namn}s vattensäck gick sönder.' },
     gors: { text: 'Syr en vattensäck av skinn.', stat: 'vattensackarGjorda', forsta: '{namn} sydde byns första vattensäck. Med den kan man bära vatten till den som inte kan gå.' } },
+  // fröna (steg 2.10.2, odling.ts): tas med från de vilda grödorna när man samlar. De kan inte ätas, och de sås på fälten
+  fron: { namn: 'Frön', skaffa: { act: 'samla' }, stack: 50, mapp: 'Material', slits: 0.0002 },
 } satisfies Record<string, SakDef>;
 
 type Sak = keyof typeof DEF;

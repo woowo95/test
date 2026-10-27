@@ -409,6 +409,9 @@ SCENARIER.forvaring = {
     const ryms = hy ? rymd(s, hy.x, hy.y, 'grenar') : 0;
     // mer grenar: hyllans ruta fylls mer än en vanlig ruta
     setAmount(s, 'grenar', SIM.amountOf(s, 'grenar') + SIM.rutaOf('grenar') * 40); // (nog för att fylla kistorna också)
+    // ligger något annat på hyllan (bär eller trä) fylls också det på, så att hyllans ruta blir full av sitt slag
+    const pa0 = hy ? pilesOf(s).find(a => a.x === hy.x && a.y === hy.y) : undefined;
+    if (pa0 && pa0.k !== 'grenar') setAmount(s, pa0.k, SIM.amountOf(s, pa0.k) + SIM.rutaOf(pa0.k) * STATION.hyllaRymmer);
     const pa = hy ? pilesOf(s).find(a => a.x === hy.x && a.y === hy.y) : undefined;
     // hyllan går inte att gå igenom: vägen förbi den går runt, och alla rutor i lagret nås fortfarande från elden
     const g = groundOf(s), f = getMap(s.seed).fire, i = hy ? hy.y * W + hy.x : -1;
