@@ -994,12 +994,52 @@ const isKarta = (stil) => ({ w: 3 * 18 + 2, h: 20, rita: (B, P) => {
     return h(x, y, 5) > (stil === 1 ? 0.92 : 0.8) ? P.i('ben', 3) : P.i('skiffer', 3); // snö på isen
   });
 } });
+const KV_SPRICKA = ['........', '.r......', '..R.....', '..RR..r.', '...RRR..', '.....R..', '....r...', '........'];
+const KV_FIN = ['........', '...a....', '...b....', '.abcba..', '...b....', '...a....', '........', '........'];
+const KV_MASTER = ['...a....', '...b....', '..aca...', 'abcwcba.', '..aca...', '...b....', '...a....', '........'];
+const KV_PERFEKT = ['...a..w.', '...b.wcw', '..aca.w.', 'abcwcba.', '..aca...', '...b..w.', '...a.wcw', '......w.'];
+// fältet (steg 2.10.3): fyra rutor med en gröda var, på jord i korn utan fåror
+const faltRutor = (planta) => ({ w: 36, h: 36, rita: (B, P) => {
+  for (let y = 0; y < 32; y++) for (let x = 0; x < 32; x++) { const h = hash(x, y, 77); B.satt(2 + x, 2 + y, P.i('jord', h < 0.12 ? 0 : h > 0.88 ? 2 : 1)); }
+  for (const [x0, y0] of [[2, 2], [18, 2], [2, 18], [18, 18]]) ritaSprite(B, planta, { ...GRODD, K: 'jord3' }, x0, y0);
+} });
+// isen målad över en hel sjö (steg 2.11.3), som i istiden i scenen: öppet vatten till vänster, tunn is, tjock is och ett hål
+const isSjo = (stil) => ({ w: 88, h: 52, rita: (B, P) => {
+  for (let y = 0; y < 52; y++) for (let x = 0; x < 88; x++) {
+    const nn = vn(x, y, 7, 2) * 0.35 + hash(x, y, 3) * 0.65, ton = (lo, mid, hi) => nn < 0.24 ? lo : nn > 0.8 ? hi : mid;
+    const vd = ((x - 44) / 40) ** 2 + ((y - 26) / 22) ** 2 + (vn(x, y, 7, 1) - 0.5) * 0.22;
+    let v;
+    if (vd >= 1.16) v = ton(P.i('ben', 1), P.i('ben', 2), P.i('ben', 3)); // snö på land
+    else if (vd >= 1) v = ton(P.i('ben', 0), P.i('ben', 1), P.i('ben', 2)); // stranden
+    else {
+      const kant = x + (vn(x, y, 6, 5) - 0.5) * 10;
+      const r2 = (x - 66) ** 2 + ((y - 24) * 1.1) ** 2;
+      if (kant < 22) v = vd < 0.7 && bayer(x, y) < 0.4 ? P.i('barr', 0) : P.i('skiffer', 0); // öppet vatten
+      else if (kant < 36) { // tunn is: mörk, blandas in mot vattnet
+        const t = (kant - 22) / 14;
+        v = bayer(x, y) < 0.55 - t * 0.5 ? P.i('skiffer', 0) : P.i('skiffer', 1);
+        if (stil === 3 && hash(x >> 1, y >> 1, 9) > 0.8) v = P.i('barr', 0); // vattnet syns under
+        if (stil !== 3 && nn > 0.85) v = P.i('skiffer', 2);
+      } else if (r2 <= 6) v = stil === 3 ? P.i('barr', 0) : P.i('skiffer', 0); // hålet
+      else if (r2 <= 14 && hash(x, y, 4) > 0.45) v = P.i('ben', 3); // isbitar runt hålet
+      else { // tjock is
+        v = ton(P.i('skiffer', 2), P.i('skiffer', 3), P.i('ben', 1));
+        if (stil === 2 && vn(x, y, 12, 21) > 0.6) v = vn(x, y, 12, 21) > 0.7 ? P.i('ben', 3) : P.i('ben', 2); // snödrivor
+        if (stil === 3 && (x + y * 2) % 13 < 2 && vn(x, y, 10, 22) > 0.55) v = P.i('ben', 3); // glansstreck
+      }
+      // långa tunna sprickor över hela isen
+      if (kant >= 22 && r2 > 14 && Math.abs(vn(x, y, 9, 31) - 0.5) < (stil === 2 ? 0.015 : 0.025)) v = P.i('skiffer', 1);
+    }
+    B.satt(x, y, v);
+  }
+} });
 const VAL = [
-  { id: 'isen', namn: 'Isen på sjön', vad: 'Nytt på kartan (steg 2.11.3), en ruta med 16 × 16 punkter: öppet vatten (till vänster), tunn is (i mitten) och tjock is med ett hål som någon huggit upp för att fiska eller dricka (till höger). I spelet nu: vattnet blir gråblått när isen är tunn och ljust när den är tjock, utan hål.', typ: 'tre',
+  { id: 'isen', namn: 'Isen på sjön', vad: 'Nytt på kartan (steg 2.11.3): isen målad över hela sjön, som i istiden i scenen överst, i stället för ruta för ruta. Från vänster: öppet vatten, tunn is, tjock is och ett hål som någon huggit upp för att fiska eller dricka. Tre nya versioner efter din kommentar.', typ: 'tre',
+    idag: { ...isKarta(1) }, idagText: 'Förra förslaget (version 1), ruta för ruta, som du sa nej till.',
     versioner: [
-      { text: 'Slät is: den tunna är mörk med några fläckar, den tjocka ljus med lite snö, och hålet är en mörk prick.', ...isKarta(1) },
-      { text: 'Sprucken is: den tunna har ljusa ränder, den tjocka vita sprickor, och runt hålet ligger isbitar.', ...isKarta(2) },
-      { text: 'Blank is: den tunna visar det mörka vattnet under, den tjocka glänser, och hålet är djupt och svart med isbitar runt.', ...isKarta(3) },
+      { text: 'Som i scenen: isen i korn med långa tunna sprickor över hela sjön. Den tunna isen är mörkare och blandas in mot det öppna vattnet.', ...isSjo(1) },
+      { text: 'Med snödrivor: mjuka vita fält av snö som blåst ut över den tjocka isen, och färre sprickor.', ...isSjo(2) },
+      { text: 'Blank is: ljusa glansstreck snett över isen, och i den tunna isen syns det mörka vattnet under.', ...isSjo(3) },
     ] },
   { id: 'vader', namn: 'Vädrets symboler', vad: 'Nya symboler (steg 2.11.1), 8 × 8 punkter: klart, mulet, regn, snö, blåst och åska, i den ordningen. De står bredvid temperaturen högst upp; håller man musen över dem står vad vädret gör.', typ: 'tre',
     idag: { text: '☀ ☁ 🌧 ❄ 💨 ⛈' },
@@ -1017,30 +1057,23 @@ const VAL = [
       { text: 'Sneda streck i vinden med stänk där de slår i marken, och snöflingor på två gånger två punkter.', ...regnKarta(2) },
       { text: 'Droppar med ljus topp, och snöflingor som små kors.', ...regnKarta(3) },
     ] },
-  { id: 'kvalitet', namn: 'Kvalitetens symboler', vad: 'Nya symboler (steg 2.2.2), 8 × 8 punkter: usel, slarvig, fin, mästerverk och perfekt mästerverk (★), i den ordningen. Normal har ingen symbol. De syns i hörnet på saken i utrustningen, i förrådslistan och i sakens inforuta. På kartan glänser bara mästerverken.', typ: 'tre',
-    idag: { text: '✕ — • ◆ ★' },
+  { id: 'kvalitet', namn: 'Kvalitetens symboler', vad: 'Nya symboler (steg 2.2.2), 8 × 8 punkter: usel, slarvig, fin, mästerverk och perfekt mästerverk, i den ordningen. Glansen (version 3) som du valde: de tre sista gnistorna i olika färger, och nya förslag på usel och slarvig, efter din kommentar.', typ: 'tre',
+    idag: { ...KV_M([
+      [{ R: 'rost2', r: 'rost1' }, KV_SPRICKA], [{ s: 'skiffer1', S: 'skiffer2' }, ['........', '........', '........', '..ss.s..', '.sSSss..', '..sss...', '........', '........']],
+      [KV_G, KV_FIN], [KV_G, KV_MASTER], [KV_G, KV_PERFEKT]]) }, idagText: 'Glansen du valde (version 3).',
     versioner: [
-      { text: 'Tecken: ett rostigt kryss, ett grått streck, en guldprick, en guldromb och en guldstjärna med vit mitt.', ...KV_M([
-        [{ R: 'rost2', r: 'rost1' }, ['........', '.R....R.', '..R..R..', '...Rr...', '...rR...', '..R..R..', '.R....R.', '........']],
-        [{ s: 'skiffer1', S: 'skiffer3' }, ['........', '........', '........', '.SSSSSS.', '.ssssss.', '........', '........', '........']],
-        [KV_G, ['........', '........', '...bb...', '..bccb..', '..bcbb..', '...bb...', '........', '........']],
-        [KV_G, ['...bb...', '..bccb..', '.bccccb.', 'bccwwccb', '.bccccb.', '..bccb..', '...bb...', '........']],
-        [KV_G, ['...bb...', '...cc...', 'bbccccbb', '.bcwwcb.', '..cccc..', '.bcbbcb.', '.bb..bb.', '........']],
-      ]) },
-      { text: 'Medaljer: en sprucken rostbrun, en grå, en i brons, en i guld och en i guld med en vit stjärna.', ...KV_M([
-        [{ a: 'rost0', b: 'rost1', c: 'rost2' }, ['..aa.a..', '.ab.bba.', 'abb.cbba', 'abcc.cba', 'ab.cccba', 'abb.cbba', '.abb.ba.', '..aa.a..']],
-        [{ a: 'skiffer1', b: 'skiffer2', c: 'skiffer3' }, KV_MEDALJ],
-        [{ a: 'rost1', b: 'rost2', c: 'rost3' }, KV_MEDALJ],
-        [KV_G, KV_MEDALJ],
-        [KV_G, ['..aaaa..', '.abbbba.', 'abbwwbba', 'abwwwwba', 'abbwwbba', 'abwbbwba', '.abbbba.', '..aaaa..']],
-      ]) },
-      { text: 'Glans: en spricka, en grå fläck, en liten gnista, en stor gnista och en stor gnista med två små, som glansen på kartan.', ...KV_M([
-        [{ R: 'rost2', r: 'rost1' }, ['........', '.r......', '..R.....', '..RR..r.', '...RRR..', '.....R..', '....r...', '........']],
-        [{ s: 'skiffer1', S: 'skiffer2' }, ['........', '........', '........', '..ss.s..', '.sSSss..', '..sss...', '........', '........']],
-        [KV_G, ['........', '...a....', '...b....', '.abcba..', '...b....', '...a....', '........', '........']],
-        [KV_G, ['...a....', '...b....', '..aca...', 'abcwcba.', '..aca...', '...b....', '...a....', '........']],
-        [KV_G, ['...a..w.', '...b.wcw', '..aca.w.', 'abcwcba.', '..aca...', '...b..w.', '...a.wcw', '......w.']],
-      ]) },
+      { text: 'Usel är en bruten pinne i rost, slarvig ett grått krafs. Fin i brons, mästerverk i guld och perfekt i vitt guld.', ...KV_M([
+        [{ R: 'rost2', r: 'rost1' }, ['........', '.R......', '..R.....', '...R.r..', '.....R..', '......R.', '........', '........']],
+        [{ s: 'skiffer1', S: 'skiffer3' }, ['........', '........', '........', '.s...s..', '.sS.sSs.', '..sS..S.', '........', '........']],
+        [{ a: 'rost1', b: 'rost2', c: 'rost3', w: 'ben3' }, KV_FIN], [KV_G, KV_MASTER], [{ a: 'ben1', b: 'ben2', c: 'senap3', w: 'ben3' }, KV_PERFEKT]]) },
+      { text: 'Usel är ett mörkt dammoln, slarvig en ojämn grå fläck. Fin i silver, mästerverk i guld och perfekt i guld med vita gnistor.', ...KV_M([
+        [{ k: 'kol2', K: 'kol3' }, ['........', '..kk....', '.kKKk.k.', '.kKKKkK.', '..kkKKk.', '...kkk..', '........', '........']],
+        [{ s: 'skiffer1', S: 'skiffer2' }, ['........', '........', '...s....', '..sSs...', '...ss...', '........', '........', '........']],
+        [{ a: 'skiffer2', b: 'skiffer3', c: 'ben3', w: 'ben3' }, KV_FIN], [KV_G, KV_MASTER], [KV_G, KV_PERFEKT]]) },
+      { text: 'Usel är en vinkel som pekar nedåt, slarvig två sneda streck i jord. Fin i grönt, mästerverk i guld och perfekt i rost och guld som eld.', ...KV_M([
+        [{ R: 'rost2', r: 'rost1' }, ['........', '........', '.R....R.', '..r..r..', '...RR...', '........', '........', '........']],
+        [{ S: 'jord3', s: 'jord2' }, ['........', '........', '.SS.....', '...s.SS.', '.....s..', '........', '........', '........']],
+        [{ a: 'oliv2', b: 'oliv3', c: 'ben3', w: 'ben3' }, KV_FIN], [KV_G, KV_MASTER], [{ a: 'rost2', b: 'rost3', c: 'senap3', w: 'ben3' }, KV_PERFEKT]]) },
     ] },
   { id: 'rovor', namn: 'Rovorna', vad: 'Ny sak (steg 2.10.3), 16 × 16 punkter: rovor från fälten. De växer på två dygn och tål lite frost.', typ: 'tre',
     idag: { w: 20, h: 20, rita: (B, P) => ritaIkon(B, 'rovor', 2, 2) }, idagText: 'Platshållaren i spelet nu.',
@@ -1056,12 +1089,12 @@ const VAL = [
       { text: 'Kärven ligger ner, med axen åt höger.', w: 20, h: 20, rita: (B, P) => ritaSprite(B, ['................', '................', '................', '...........L.L..', '..........LYLYL.', 'sy.y.y.yJk.LYLYL', 'syyyyyyyJkYyYyYL', 'yYyYyYyyjkyYyYyY', 'syyyyyyyJkYyYyYL', 'sy.y.y.yJk.LYLYL', '..........LYLYL.', '...........L.L..', '................', '................', '................', '................'], KORN, 2, 2) },
       { text: 'En smalare kärve med borst på axen och några korn på marken.', w: 20, h: 20, rita: (B, P) => ritaSprite(B, ['L...L..L..L...L.', '.L..L..L..L..L..', '..LYL.LYL.LYL...', '..YLY.YLY.YLY...', '...Yy.yYy.yY....', '....yyyYyyy.....', '.....yYyYy......', '.....kJJJk......', '.....yYyYy......', '.....yYyYy......', '....yyYyYyy.....', '....yY.y.Yy.....', '...yy..y..yy....', '...s...s...s....', '.........L.Y....', '..........Y.L...'], KORN, 2, 2) },
     ] },
-  { id: 'grodd', namn: 'Fältet', vad: 'Nytt på kartan (steg 2.10.3), en ruta med 16 × 16 punkter: fältet medan grödan växer. Tre nya varianter efter din kommentar, byggda på den stora grodden (version 2) som du valde.', typ: 'tre',
-    idag: { w: 20, h: 20, rita: (B, P) => ritaSprite(B, ['jjjjjjjjjjjjjjjj', 'kkkkkkkkkkkkkkkk', 'jjjjjjjjjjjjjjjj', 'jjjjjLLjjLLjjjjj', 'kkkkLGGgkGGLkkkk', 'jjjjjgGGjGgjjjjj', 'jjjjjjjgGgjjjjjj', 'kkkkkkkkgkkkkkkk', 'jjjjjjjjgjjjjjjj', 'jjjjjjjjjjjjjjjj', 'kkkkkkkkkkkkkkkk', 'jjjjjjjjjjjjjjjj', 'jjjjjjjjjjjjjjjj', 'kkkkkkkkkkkkkkkk', 'jjjjjjjjjjjjjjjj', 'jjjjjjjjjjjjjjjj'], GRODD, 2, 2) }, idagText: 'Grodden du valde (version 2).',
+  { id: 'grodd', namn: 'Fältet', vad: 'Nytt på kartan (steg 2.10.3): fältet medan grödan växer, en gröda per ruta och ingen fåra. Här visas fyra rutor bredvid varandra, som på ett fält. Tre nya varianter efter din kommentar.', typ: 'tre',
+    idag: { w: 20, h: 20, rita: (B, P) => ritaSprite(B, ['jjjjjjjjjjjjjjjj', 'kkkkkkkkkkkkkkkk', 'jjjjjjjjjjjjjjjj', 'jjjjjLLjjLLjjjjj', 'kkkkLGGgkGGLkkkk', 'jjjjjgGGjGgjjjjj', 'jjjjjjjgGgjjjjjj', 'kkkkkkkkgkkkkkkk', 'jjjjjjjjgjjjjjjj', 'jjjjjjjjjjjjjjjj', 'kkkkkkkkkkkkkkkk', 'jjjjjjjjjjjjjjjj', 'jjjjjjjjjjjjjjjj', 'kkkkkkkkkkkkkkkk', 'jjjjjjjjjjjjjjjj', 'jjjjjjjjjjjjjjjj'], GRODD, 2, 2) }, idagText: 'Grodden du valde (version 2), med fåror.',
     versioner: [
-      { text: 'Två groddar på rutan, snett emot varandra, i fåror med ljusa kammar.', w: 20, h: 20, rita: (B, P) => ritaSprite(B, ['JJJJJJJJJJJJJJJJ', 'jjjLjLjjjjjjjjjj', 'kkLGgGLkkkkkkkkk', 'jjjgGgjjjjjjjjjj', 'JJJJgJJJJJJJJJJJ', 'jjjjgjjjjjjjjjjj', 'kkkkkkkkkkkkkkkk', 'JJJJJJJJJJJJJJJJ', 'jjjjjjjjjjLjLjjj', 'kkkkkkkkkLGgGLkk', 'jjjjjjjjjjgGgjjj', 'JJJJJJJJJJJgJJJJ', 'jjjjjjjjjjjgjjjj', 'kkkkkkkkkkkkkkkk', 'JJJJJJJJJJJJJJJJ', 'jjjjjjjjjjjjjjjj'], GRODD, 2, 2) },
-      { text: 'En större grodd med fyra blad.', w: 20, h: 20, rita: (B, P) => ritaSprite(B, ['jjjjjjjjjjjjjjjj', 'kkkkkkkkkkkkkkkk', 'jjjjjjjLLjjjjjjj', 'jjjLLjjGGjjLLjjj', 'kkLGGgkgGkgGGLkk', 'jjjgGGggGggGGgjj', 'jjjjjgGGGGgjjjjj', 'kkkkkkkgGkkkkkkk', 'jjjjjjjjgjjjjjjj', 'jjjjjjjjgjjjjjjj', 'kkkkkkkkkkkkkkkk', 'jjjjjjjjjjjjjjjj', 'jjjjjjjjjjjjjjjj', 'kkkkkkkkkkkkkkkk', 'jjjjjjjjjjjjjjjj', 'jjjjjjjjjjjjjjjj'], GRODD, 2, 2) },
-      { text: 'Samma grodd i tydliga fåror med ljusa kammar och några småstenar.', w: 20, h: 20, rita: (B, P) => ritaSprite(B, ['JJJJJJJJJJJJJJJJ', 'jjjjjjjjjjjjjjjj', 'kkkkkkkkkkkkkkkk', 'JJJJJLLJJLLJJJJJ', 'jjjjLGGgjGGLjjjj', 'kkkkkgGGkGgkkkkk', 'JJJJJJJgGgJJJJJJ', 'jjjjjjjjgjjjjjjj', 'kkkkkkkkgkkkkkkk', 'JJJJJJJJJJJJJJJJ', 'jjjjjjjjjjjjjjjj', 'kkkJkkkkkkkkkkkk', 'JJJJJJJJJJJJJJJJ', 'jjjjjjjjjjjjJjjj', 'kkkkkkkkkkkkkkkk', 'JJJJJJJJJJJJJJJJ'], GRODD, 2, 2) },
+      { text: 'Grodden med fyra blad mitt på rutan, på jord i korn utan fåror.', ...faltRutor(['................', '................', '................', '................', '.......LL.......', '...LL..GG..LL...', '..LGGg.gG.gGGL..', '...gGGggGggGg...', '.....gGGGGg.....', '.......gG.......', '........g.......', '........g.......', '................', '................', '................', '................']) },
+      { text: 'En större ung planta med två våningar blad, som fyller rutan.', ...faltRutor(['................', '.......LL.......', '......LGGL......', '...LL..GG..LL...', '..LGGg.gG.gGGL..', '...gGGggGggGg...', '......gGGg......', '..LLg..gG..gLL..', '.LGGGg.gG.gGGGL.', '..gGGGggGgGGGg..', '....ggggGgggg...', '.......gG.......', '.......gg.......', '........g.......', '................', '................']) },
+      { text: 'Grodden i en liten kupa av uppkrattad jord, med en mörk skugga runt.', ...faltRutor(['................', '................', '................', '................', '.......LL.......', '...LL..GG..LL...', '..LGGg.gG.gGGL..', '...gGGggGggGg...', '.....gGGGGg.....', '.......gG.......', '.......gg.......', '.....kKgKk......', '....kKKKKKk.....', '.....kkkkk......', '................', '................']) },
     ] },
   { id: 'toa', namn: 'Toa-högen', vad: 'Symbol (steg 2.10.5), 16 × 16 punkter: toa-högen i inforutan när man trycker på den på kartan. Gjord efter stankslingan som du valde efter v89.', typ: 'janej',
     versioner: [{ text: 'En brun hög med en grön stank som stiger upp.', w: 20, h: 20, rita: (B, P) => ritaSprite(B, ['................', '.......v........', '.....vV.........', '....V...v.......', '.....V...v......', '......vV..v.....', '.........vV.....', '.......vV.......', '................', '.......cCc......', '......cCCcc.....', '.....ccCcccc....', '....kcccCccck...', '...kccccccccck..', '....kkkkkkkkk...', '................'], TOA, 2, 2) }] },
@@ -1079,13 +1112,9 @@ const VAL = [
       { text: 'Ett enda tungt ax som böjer sig ner, med borst som spretar.', w: 20, h: 20, rita: (B, P) => ritaSprite(B, ['................', '.....yyyy.......', '....y....yy.....', '...y.......y....', '...y........y...', '..Ly.........y..', '.LYL.........y..', 'L.YYL........y..', '.LYYL........y..', 'L.YYL.......y...', '.LYL........y...', '..LY.......y....', '...L......Oy....', '.........OGO....', '........O.o.O...', '.......o..o..o..'], VILDKORN, 2, 2) },
       { text: 'En tuva med gröna strån och gula ax, som på hösten.', w: 20, h: 20, rita: (B, P) => ritaSprite(B, ['...L......L.....', '..LYL....LYL....', '..YLY..L.YLY....', '..LYL.LYLLYL....', '...Y..YLY.Y..L..', '...y..LYL.y.LYL.', '...y...Y..y.YLY.', '..Gy...y..y.LYL.', '..Gy.G.y.Gy..Y..', '.G.yG..yG.y..y..', '.G.yG..yGy..Gy..', 'G..yGG.yG..G.y..', '.G.yOG.yO.G.yO..', '.OGyOOGyOGOOyO..', '..OOooOOooOOOo..', '...oo.oo..oo....'], VILDKORN, 2, 2) },
     ] },
-  { id: 'arter', namn: 'Vilda ärter', vad: 'Ny växt (steg 2.10.2), 16 × 16 punkter: vilda ärter i skogsbrynet. Tre nya versioner efter din kommentar, byggda på ärtväxten (version 3) som du valde.', typ: 'tre',
+  { id: 'arter', namn: 'Vilda ärter', vad: 'Ny växt (steg 2.10.2), 16 × 16 punkter: vilda ärter i skogsbrynet. Ärtväxten du valde, med en balja som syns mot gräset, efter din kommentar.', typ: 'janej',
     idag: { w: 20, h: 20, rita: (B, P) => ritaSprite(B, ['..........ww....', '.........wWWw...', '..........ww....', '....gg....g.....', '...gGLg..g......', '...gGGg.g...gg..', '....gg.g...gGLg.', '......g....gGGg.', '......g...g.gg..', '..gg..g..g......', '.gGLg.g.g.......', '.gGGg.gg...oo...', '..gg..g...oGGo..', '......g..oGLGo..', '......g.oGGGo...', '.....ggg.ooo....'], ARTER, 2, 2) }, idagText: 'Ärtväxten du valde (version 3).',
-    versioner: [
-      { text: 'Två vita blommor och en balja som hänger.', w: 20, h: 20, rita: (B, P) => ritaSprite(B, ['..ww........ww..', '.wWWw......wWWw.', '..ww...gg...ww..', '...g..gGLg..g...', '....g.gGGg.g....', '.....g.gg.g.....', '..gg..g.g.......', '.gGLg..g...gg...', '.gGGg..g..gGLg..', '..gg.oog..gGGg..', '....oGGgo..gg...', '...oGLGgo.......', '...oGLGo.g......', '....oGo..g......', '.....o..ggg.....', '.......ggggg....'], ARTER, 2, 2) },
-      { text: 'En klättrande ärt med klängen, en blomma och två baljor.', w: 20, h: 20, rita: (B, P) => ritaSprite(B, ['.......gg.......', '......g..g..ww..', '......g....wWWw.', '.......g....ww..', '..gg...g...g....', '.gGLg..g..g.....', '.gGGg.gg.g...gg.', '..gg.g.gg...gGLg', '....g..g....gGGg', '...oo..g.oo..gg.', '..oGGo.goGGo....', '..oGLGogoGLGo...', '...oGGo.g.oGo...', '....oo..g..o....', '........g.......', '......ggggg.....'], ARTER, 2, 2) },
-      { text: 'Samma växt, men baljan har öppnat sig och visar ärterna.', w: 20, h: 20, rita: (B, P) => ritaSprite(B, ['..........ww....', '.........wWWw...', '..........ww....', '....gg....g.....', '...gGLg..g......', '...gGGg.g...gg..', '....gg.g...gGLg.', '......g....gGGg.', '......g...g.gg..', '..gg..g..g......', '.gGLg.g.g.......', '.gGGg.gg..ooo...', '..gg..g..oGLyo..', '......g.oGyYyo..', '......g.oGyYo...', '.....ggg.ooo....'], ARTER, 2, 2) },
-    ] },
+    versioner: [{ text: 'Samma växt, men baljan är ljust gulgrön med mörk kant och ärterna syns som knölar. Den hänger på en egen stjälk.', w: 20, h: 20, rita: (B, P) => ritaSprite(B, ['..........ww....', '.........wWWw...', '..........ww....', '....gg....g.....', '...gGLg..g......', '...gGGg.g...gg..', '....gg.g...gGLg.', '......g....gGGg.', '......g...g.gg..', '..gg..g..g......', '.gGLg.g.gg......', '.gGGg.gg..g.....', '..gg..g..oooo...', '......g.oYyYyo..', '......g.oyYyYo..', '.....ggg.oooo...'], ARTER, 2, 2) }] },
   { id: 'fron', namn: 'Frön', vad: 'Ny sak (steg 2.10.2), 16 × 16 punkter: frön från de vilda grödorna. De går inte att äta; med tekniken Odling sås de på ett fält.', typ: 'tre',
     idag: { w: 20, h: 20, rita: (B, P) => ritaIkon(B, 'fron', 2, 2) }, idagText: 'Platshållaren i spelet nu.',
     versioner: [
@@ -1118,6 +1147,17 @@ const VAL = [
     idag: { text: SYMBOLER.map(s => s.ers).join(' ') },
     versioner: [{ text: SYMBOLER.map(s => s.namn).join(', ') + '.', w: SYMBOLER.length * 10 + 2, h: 12, kol: true, rita: (B, P) => SYMBOLER.forEach((s, i) => ritaSprite(B, s.p, s.l, 2 + i * 10, 2)) }] },
 ];
+// Björns val som är bestämda men inte inbyggda i spelet: de visas under Valt med den valda versionen (0 = förut-versionen
+// behålls) och steget där de byggs in. När saken är inbyggd tas raden bort här och ur VAL, och dess dokument i samlingen 'val'
+const BESLUT = {
+  rovor: { val: 1, steg: '2.10.10' }, korn: { val: 1, steg: '2.10.10' }, fron: { val: 3, steg: '2.10.10' }, vattensack: { val: 2, steg: '2.10.10' },
+  toa: { val: 1, steg: '2.10.10' }, vildkorn: { val: 0, steg: '2.10.10' }, odling: { val: 0, steg: '2.10.10' },
+  vader: { val: 2, steg: '2.10.10' }, vaderkarta: { val: 3, steg: '2.10.10' },
+  kista: { val: 1, steg: '5.1.8' }, lagereld: { val: 1, steg: '5.1.8' }, symboler: { val: 1, steg: '5.1.8' }, slojdbank: { val: 1, steg: '5.1.8' },
+  slaktbank: { val: 1, steg: '5.1.8' }, portratt: { val: 1, steg: '5.2.3', text: 'Sparas som förebild till karaktärsgeneratorn.' },
+};
+const VALT = VAL.filter(s => BESLUT[s.id]);
+for (const s of VALT) VAL.splice(VAL.indexOf(s), 1);
 // en version ritas stor och i kartans storlek (två skärmpunkter per punkt, som i spelet)
 function valBild(v, P) {
   const B = v.kol ? kolBild(v.w, v.h, P) : markBild(v.w, v.h, P);
@@ -1128,6 +1168,18 @@ function valBild(v, P) {
   stor.style.width = v.w * s + 'px'; liten.style.width = v.w * 2 + 'px';
   stor.setAttribute('aria-label', 'Stor'); liten.setAttribute('aria-label', 'I kartans storlek');
   const d = document.createElement('div'); d.className = 'bilder'; d.append(stor, liten); return d;
+}
+// det valda, med versionen Björn valde och steget där det byggs in
+function byggValt(P) {
+  const lista = $('#valt'); lista.textContent = '';
+  for (const s of VALT) {
+    const b = BESLUT[s.id], v = b.val === 0 ? s.idag : s.versioner[b.val - 1];
+    const f = document.createElement('figure'); f.className = 'alt';
+    if (v.rita) f.append(valBild(v, P));
+    const vilken = b.val === 0 ? 'Förut-versionen behålls' : s.typ === 'tre' ? 'Version ' + b.val : 'Ja';
+    f.insertAdjacentHTML('beforeend', `<figcaption><b>${s.namn}</b>${vilken}. ${b.text || 'Byggs in i steg ' + b.steg + '.'}</figcaption>`);
+    lista.append(f);
+  }
 }
 const SVAR = {}; // det som finns sparat i databasen, per sak
 let DB = null;
@@ -1213,6 +1265,7 @@ function bygg() {
   ritaPalett(PAL);
   ritaPanel(PAL);
   SYMBOLER.forEach((s, i) => ritaSymbol($('#sym' + i), s, PAL));
+  byggValt(PAL);
   byggVal(PAL);
   startaVal();
   addEventListener('resize', () => heltalsskala($('#huvud'), SC.W));

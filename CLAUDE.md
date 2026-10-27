@@ -2,6 +2,8 @@
 
 Björn programmerar inte; Claude skriver all kod. Svara på svenska.
 
+Notis (Björn, efter v112): skicka en notis till mobilen (PushNotification) varje gång en omgång är klar och Claude slutar arbeta: en rad om vad som är klart eller vad som behöver Björns svar.
+
 ## Innan du programmerar (varje prompt)
 
 Björn förklarar inte i prompten var fakta finns. Gör därför alltid så här innan du skriver kod:
