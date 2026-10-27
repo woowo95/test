@@ -460,7 +460,13 @@ SCENARIER.lagerplatser = {
     const zs = zonesOf(s), ps = pilesOf(s);
     const fel = ps.filter(p => p.zone >= 0 && !allows(zs[p.zone], p.k)).length;
     const summaOk = Object.keys(STACK).every(k => Math.abs(ps.filter(p => p.k === k && p.stored).reduce((a, p) => a + p.n, 0) - amountOf(s, k)) < 1e-3);
+    // ett tömt lager krymper först när det stått halvtomt i sex timmar (en kvarts år i spelet, steg 2.12.4)
+    const tom = cloneState(s); for (const k of Object.keys(STACK)) SIM.setAmount(tom, k, 0);
+    const zi = zonesOf(tom).findIndex(z => z.hus === undefined && z.w * z.h > SIM.LAGER.krympMin), yta = () => { const z = zonesOf(tom)[zi]; return z.w * z.h; };
+    const yta0 = zi >= 0 ? yta() : 0, ytor: number[] = [];
+    for (let h = 0; h < 8 && zi >= 0; h++) { SIM.tidyStore(tom); ytor.push(yta()); tom.now += HOUR; }
     return [
+      [`ett tomt lager krymper inte de första sex timmarna, sedan krymper det (${yta0} rutor, sedan ${ytor.join(', ')} timme för timme)`, zi >= 0 && ytor.slice(0, SIM.LAGER.krympTim).every(n => n === yta0) && ytor[ytor.length - 1] < yta0],
       [`den första lagerplatsen går att använda (${startFel.length ? 'inte i by ' + startFel.join(', ') : 'i alla tre byarna'})`, startFel.length === 0],
       [`en ny lagerplats görs när den första inte kan växa mer (${zs.length} lagerplatser)`, zs.length >= 2],
       [`maten får den första och material den nya (${zs.map(z => z.namn).join(', ')})`, zs[0].slag === 'mat' && zs[1]?.slag === 'material'],
@@ -538,7 +544,7 @@ SCENARIER.lekplats = {
     // när byns inre flyttar (en ny lagerplats långt bort) följer lekplatsen med, men elden står kvar
     const z = zonesOf(s)[0], fore = rektAvstand(mid.x, mid.y, l.x, l.y, l.w, l.h);
     const dir = l.x + l.w / 2 > mid.x ? -1 : 1; // åt andra hållet från lekplatsen, så att den måste flytta
-    s.lagren!.push({ x: z.x + dir * 16, y: z.y, w: 2, h: 2, namn: 'Prov', prio: 0 });
+    s.lagren!.push({ x: z.x + dir * 24, y: z.y, w: 2, h: 2, namn: 'Prov', prio: 0 }); // lagren krymper först efter sex timmar (steg 2.12.4) och är större, så den nya ligger längre bort
     const mid2 = SIM.byInne(s), l2 = SIM.lekplats(s);
     const foljer = (mid2.x - mid.x) * dir > 3 && (l2.x - l.x) * dir >= 3 && rektAvstand(mid2.x, mid2.y, l2.x, l2.y, l2.w, l2.h) <= SIM.PLATS.lekSok;
     s.lagren!.pop();
@@ -652,11 +658,11 @@ SCENARIER.eldflytt = {
     let vald: SIM.Person | undefined, flytt = s.fire.flytt;
     SIM.stepEldFlytt(s);
     flytt = s.fire.flytt; vald = living(s).find(p => p.task?.act === 'flyttaeld');
-    kor(s, 8);
+    let tand = s.fire.lightings; // elden kan tändas igen redan medan den flyttas
+    kor(s, 8, t => { if (t.fire.lit && t.fire.lightings > tand) tand = -1; });
     const e1 = SIM.eldPlats(s), narmare = Math.hypot(mid.x - e1.x, mid.y - e1.y);
     const g1 = SIM.stationerOf(s).find(t => t.id === grill.id);
-    let tand = s.fire.lightings;
-    kor(s, 24, t => { if (t.fire.lit && t.fire.lightings > tand) tand = -1; });
+    if (tand !== -1) kor(s, 24, t => { if (t.fire.lit && t.fire.lightings > tand) tand = -1; });
     // ett hus planeras där elden står: inget byggs inpå elden förrän den flyttats
     const t = createState(7, START);
     klockan(t, 8); tandEld(t); byggare(t);

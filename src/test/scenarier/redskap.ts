@@ -209,8 +209,9 @@ SCENARIER.slitage = {
     // skämd mat: allt i förrådet är nästan förstört
     const m = createState(6, START);
     setFood(m, 200); pilesOf(m); for (const st of m.stackar!) st.c = 0.08;
-    kor(m, 24, s => { for (const st of s.stackar!) if (FOOD.includes(st.k)) st.c = Math.min(st.c, 0.08); });
-    const sjuka = m.stat?.skamdMat ?? 0, tagg = living(m).some(p => p.sickWhy === 'Magsjuk av skämd mat');
+    let tagg = false; // (någon kan sedan bli magsjuk av annat, så det ses medan det händer)
+    kor(m, 24, s => { for (const st of s.stackar!) if (FOOD.includes(st.k)) st.c = Math.min(st.c, 0.08); tagg ||= living(s).some(p => p.sickWhy === 'Magsjuk av skämd mat'); });
+    const sjuka = m.stat?.skamdMat ?? 0;
     // högar på marken: en nära elden och en långt bort, mitt i natten
     const n = createState(5, START);
     const mp = getMap(5), f = mp.fire, land = (x: number, y: number) => x >= 0 && y >= 0 && x < W && y < H && mp.tiles[y * W + x] !== T.Vatten && mp.tiles[y * W + x] !== T.Sten;

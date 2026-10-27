@@ -108,6 +108,7 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
     for (const p of s.people) if (p.skill.matlagning === undefined) p.skill.matlagning = (p.skill.samla + p.skill.elda) / 2;
   }],
   [9, 'v110: fälten görs ruta för ruta (steg 2.10.13). Ett äldre fält blir 2 × 2 rutor', s => migrateFalt(s)],
+  [10, 'v124: matens dygn räknas av vad byn äter (steg 2.12.4), ungefär 0,45 av de gamla dygnen. Snittet räknas om lika mycket', s => { if (s.matSnitt !== undefined) s.matSnitt *= 0.45; }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];
 export function migrate(s: State) { return simulera(() => uppgradera(s)); }

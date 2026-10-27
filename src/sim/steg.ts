@@ -6,7 +6,7 @@ import { avbryt, capacity, dropSpot, fetchSpot, helaIBordan, homeKind, isCarryin
 import { DJURARTER, KANIN, REDSKAP, bearbeta, twineRope, wearUsed } from './redskap';
 import { GOR_ACTS, finishHalf, startWork, stepPaborjat, workHalf } from './paborjat';
 import { thinkWhileWorking } from './teknik';
-import { arbetsformaga, foodDays, workRate } from './ekonomi';
+import { arbetsformaga, atSteg, foodDays, workRate } from './ekonomi';
 import { TRY_SEC, growFynd, handFish, lagren, packFynd, pickMushrooms, richness, richnessDelar, takeFrom } from './fynd';
 import { halMin, halVal, islagt, stepIs } from './is';
 import { blotSteg, coldOf, stepVader, temperature, VADER, vaderGrader, vaderNu, vaxtFaktor } from './vader';
@@ -25,13 +25,13 @@ import { ARSTID, ageIndex, iIstiden, isLight } from './tid';
 import { ACTS, toolRow } from './handlingar';
 import { Act, DAY, HOUR, HOUR_S, MIN, Person, SEC, SKILL_NAMES, State, Task, W, H, useMap, Historik, simulera } from './typer';
 import { findPath, speedAt, wear } from './vag';
-import { chooseTask, dangers, nastaRedskap } from './val';
+import { chooseTask, dangers, nastaRedskap, spotFor } from './val';
 import { djurSteg } from './djur';
 import { bristSteg, frysFaktor, naringSjunker, skorbjugg, trottFaktor } from './naring';
 import { stepByggnader } from './byggnader';
 import { sumOf } from './egendom';
 import { avail, takeForHouse, buildJob, deliver as deliverBit, finishDorr, lacks, needOf, noteKom, planBuild, siteOf, toWalls, wearBuild, workOn } from './bygg';
-import { MATERIAL, bitById, gridOf, roomAt, shelterOf } from './byggnad';
+import { MATERIAL, bitById, freeNear, gridOf, roomAt, shelterOf } from './byggnad';
 import { histParts, historikSteg, joinHist } from './historik';
 import { migrate } from './varld';
 import { stepDelning } from './delning';
@@ -64,7 +64,7 @@ const STEG = balans('steg', {
   // graviditet
   dragtid: 0.75, // dygn som en graviditet varar
   mellanFodslar: 1.6, // dygn som en kvinna väntar efter en födsel innan hon kan bli gravid igen
-  matDygn: 4, // så många dygns mat i förrådet ger full vilja att skaffa barn (mindre ger mindre) ...
+  matDygn: 1.8, // så många dygns mat i förrådet ger full vilja att skaffa barn (mindre ger mindre) ...
   matMin: 0.15, // ... men aldrig mindre än denna del
   sedBarn: 0.2, // så mycket mer (eller mindre) vilja ger seden Barn fullt ut
   chans: 0.3, // chansen per dygn att bli gravid, gånger viljan
@@ -143,7 +143,7 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
   const fh = hearthOf(s.fire), temp = temperature(s), coldRate = coldOf(temp);
   const learn = 1 + 0.1 * s.seder.v.nyfikenhet; // en nyfiken by lär sig snabbare
   if (Math.floor(now / HOUR) !== Math.floor((now - dtSec * SEC) / HOUR)) {
-    stepSeder(s); updateTags(s); stepDelning(s);
+    atSteg(s); stepSeder(s); updateTags(s); stepDelning(s);
     stepVader(s); stepIs(s); growGround(s, 1, ai); growFynd(s, 1, ai, vaxtFaktor(s)); forget(s, 1); rotStumps(s); tidyStore(s);
     wearBuild(s, 1, ai); stepByggnader(s); planBuild(s); stepEldFlytt(s); stepPaborjat(s); stepStationer(s); stepBrasor(s); stepKlader(s); stepOdling(s);
     historikSteg(s); // nyckeltalen till byns historik (läses inte av simuleringen)
@@ -455,6 +455,13 @@ const UTFALL: Partial<Record<Act, (s: State, p: Person, tk: Task, b: Arbetsbit) 
       tk.carry += handFish(s, p, tk.tx, tk.ty, ageF, rd);
       if (rd?.bete && (p.fiske?.n ?? 0) > napp) tk.mask!--; // varje napp tar en mask
       if (rd) wearUsed(s, p, 1);
+    }
+    // stranden är utfiskad (steg 2.12.4): fiskaren ser det, minns det och går till en annan plats vid vattnet. Finns ingen bättre slutar hen
+    if (!tk.carry && richness(s, 'fiske', tk.tx, tk.ty) < PLATS.tomtGrans) {
+      lookAround(s, p, tk.tx, tk.ty);
+      const sp0 = spotFor(s, 'fiske', p), sp = freeNear(s, sp0.x, sp0.y); // aldrig i en husvägg
+      if (Math.hypot(sp.x - tk.tx, sp.y - tk.ty) > 1.5) { tk.tx = sp.x; tk.ty = sp.y; tk.phase = 'go'; tk.hal = undefined; count(s, 'fiskeByter'); }
+      else tk.until = s.now;
     }
   },
   hugga: (s, p, tk, { y, bar }) => {

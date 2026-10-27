@@ -35,7 +35,7 @@ const LIV = balans('liv', {
   parChans: 0.35, // chansen att en nybyggare kommer med en partner
   medhavd: 2, // rötter nybyggaren har med sig från vandringen (MEDHAVT nedan)
   // hur gott om mat byn haft (matGott): 0 vid matGottFran dygns mat i snitt, 1 vid Fran + Spann eller mer
-  matGottFran: 3, matGottSpann: 6, matStart: 9, // en by som ännu saknar snitt räknas som om den hade Start dygns mat
+  matGottFran: 1.4, matGottSpann: 2.7, matStart: 4, // en by som ännu saknar snitt räknas som om den hade Start dygns mat
   matSnittDygn: 1, // snittet glider över så många dygn (ett år i spelet)
   barnMatTapp: 0.6, barnMatFran: 6, barnMatSpann: 4, // knapp mat ger så här mycket färre barn, från sju invånare (full effekt vid Fran + Spann)
   hungerTakt: 0.6, hungerFran: 7, hungerSpann: 4, // knapp mat får så här många att flytta per dygn, från åtta invånare
@@ -127,7 +127,7 @@ export function emigrationRate(pop: number, mood: number) { // flyttar per dygn
 }
 export const immigrationRate = (pop: number) => pop < LIV.nybyggareUnder ? LIV.nybyggare * (LIV.nybyggareUnder - pop) / LIV.nybyggareUnder : 0; // nybyggare per dygn
 // Hur gott om mat byn har haft (steg 1.7.2): maten i förrådet räknad i dygn för alla, som ett glidande snitt över ungefär
-// ett dygn (ett år i spelet) så att årstiderna jämnas ut. 0 vid 3 dygns mat i snitt, 1 vid 9 eller mer. Är maten knapp
+// ett dygn (ett år i spelet) så att årstiderna jämnas ut. 0 vid 1,4 dygns mat i snitt, 1 vid 4,1 eller mer. Är maten knapp
 // föds färre barn (barnMat), fler flyttar (hungerFlytt) och färre nybyggare stannar: så når byn det tak som marken och redskapen kan föda, utan
 // att folk svälter ihjäl. En by på sju eller färre flyttar inte för maten
 export const matGott = (s: State) => clamp(((s.matSnitt ?? LIV.matStart) - LIV.matGottFran) / LIV.matGottSpann, 0, 1);

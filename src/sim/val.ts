@@ -52,7 +52,8 @@ const VAL = balans('val', {
   strandNara: 15, // stranden som räknas ligger närmare lägret än så här många rutor
   // faror
   fryserAndel: 0.25, // kylan är en fara när fler än så här stor andel fryser (kallt)
-  svaltDygn: 0.5, // hungern är en fara när maten räcker mindre än så här många dygn
+  // matens dygn räknas sedan steg 2.12.4 av vad byn äter (foodDays): ungefär 0,45 av de gamla dygnen, och talen i dygn skalades lika mycket
+  svaltDygn: 0.25, // hungern är en fara när maten räcker mindre än så här många dygn
   gammalSover: 0.6, // chansen att den som är över sovGammal sover på natten
   // dagen: byns behov mot egen lust
   baraChans: 0.25, baraTim: 3, // chansen att bära in det som ligger ute, och hur länge (timmar)
@@ -63,9 +64,9 @@ const VAL = balans('val', {
   extraMin: 5, // slakt och rensning varar 5 minuter över vad det tar (och högst maxTim i DJUR, redskap.ts)
   byggLaga: 1.2, byggHalvt: 3, byggNytt: 0.8, // hur mycket bygget väger: en vägg som lagas, ett hus som är påbörjat, ett nytt
   byggUtan: 3, // ... plus så mycket gånger andelen som saknar sovplats under tak
-  byggMatFran: 0.5, byggMatSpann: 2, byggMatMin: 0.1, // maten dämpar bygget: (matdygn - Fran) / Spann, aldrig under Min
+  byggMatFran: 0.25, byggMatSpann: 0.9, byggMatMin: 0.1, // maten dämpar bygget: (matdygn - Fran) / Spann, aldrig under Min
   letaFlinta: 0.1, // flinta över detta (och inget behov av stenar) gör att någon letar flinta till en yxa ...
-  letaMat: 1.5, // ... om maten räcker så många dygn ...
+  letaMat: 0.7, // ... om maten räcker så många dygn ...
   letaChans: 0.3, // ... och med denna chans
   fronChans: 0.2, // chansen att den som samlar går till de vilda grödorna och plockar frön, när byn vill ha fler (steg 2.10.11)
   stenarChans: 0.5, // chansen att den som samlar letar flinta eller stenar vid stenarna när byn saknar det (och ett helt pass)
@@ -83,7 +84,7 @@ const VAL = balans('val', {
   brusMin: 0.6, brusSpann: 0.8, // slumpbrus på poängen: mellan Min och Min + Spann
   forsiktig: 0.25, // en försiktig by vill ha så mycket större förråd
   behovTomt: 3.2, behovMax: 3.5, // vikten av ett tomt förråd av mat eller ved, och den högsta vikten
-  matDygn: 2.5, matMin: 0.4, // för mat: förrådets dygn dämpar vikten, aldrig under Min
+  matDygn: 1.1, matMin: 0.4, // för mat: förrådets dygn dämpar vikten, aldrig under Min
   vedDygn: 2, vedMin: 0.15, // ... och för ved
   tandMin: 0.8, tandVikt: 3, // tändmaterial: årstiden räknas minst Min, gånger Vikt
   prospektMin: 0.05, prospektMax: 1.3, // hur mycket platserna ger just nu räknas mellan dessa

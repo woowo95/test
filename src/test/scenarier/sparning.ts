@@ -38,7 +38,7 @@ SCENARIER.historik = {
 SCENARIER.sparning = {
   text: 'Byn sparas i delar som var och en ryms i ett dokument i molnet, och delarna blir samma by igen',
   kor: () => {
-    const s = createState(9, START); // by 7 svälter ut efter fem dygn sedan kartan blev 120 × 120 (2.10.9)
+    const s = createState(11, START); // by 7, 9 och 10 svälter ut efter några dygn (2.10.9, 2.12.4); byn ska inte vara på väg att dö
     kor(s, 3 * 24);
     const delar = serializeParts(s), hel = serialize(s);
     const ater = JSON.parse(joinParts(Object.values(delar))), ny = migrate(JSON.parse(joinParts(Object.values(delar))));

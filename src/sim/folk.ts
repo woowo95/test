@@ -40,6 +40,7 @@ export const KROPP = balans('kropp', {
   bordHunger: 0.15, // vid ett bord äter man redan när mättnaden är så här mycket över hungrig (måltiden, steg 2.2.15) ...
   bordGlad: 0.06, bordGladTim: 6, // ... och blir så här mycket gladare av det, i så många timmar
   hungerTim: 16, // timmar från full mättnad till tom
+  mattar: 0.55, // en hel portion av god mat höjer mättnaden så mycket (eat i behov.ts)
   hungerBarn: 0.7, // ett barn (matBarn) blir hungrigt så här mycket långsammare
   portionBarn: 0.6, // ett barn äter så stor del av en portion
   svaltTim: 5, // timmar som svälten tar från full hälsa

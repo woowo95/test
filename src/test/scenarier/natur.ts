@@ -1,5 +1,5 @@
 // Scenarier. Djur och natur: djur, abborre, sjön, kaniner, rötter, värmekartor och naturen.
-import { FANGST, createState, bearbeta, canProcess, makeTool, step, living, cloneState, ageStart, nyKalender, pilesOf, amountOf, STACK, isLight, T, ageOf, groundOf, getMap, DAY, HOUR, W, State, tileOf, findL, areaOf, describe, campDist, campCenter, FYND, FYND_IDS, GRUPPER, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, observe, hoped, Lager, skyggOf, grupperOf, KANINER, share, djurOf, KANIN, SLAKT, DJUR, DJURARTER, gain, ownsAmount, setAmount, BEAT, matGott, barnMat, hungerFlytt, regulate, EKONOMI, SAMTALSSLAG, SAKER } from '../../sim';
+import { FANGST, createState, bearbeta, canProcess, makeTool, step, living, cloneState, ageStart, nyKalender, pilesOf, amountOf, STACK, isLight, T, ageOf, groundOf, getMap, DAY, HOUR, W, State, tileOf, findL, areaOf, describe, campDist, campCenter, FYND, FYND_IDS, GRUPPER, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, observe, hoped, Lager, skyggOf, grupperOf, KANINER, share, djurOf, KANIN, SLAKT, DJUR, DJURARTER, gain, ownsAmount, setAmount, BEAT, matGott, barnMat, hungerFlytt, regulate, EKONOMI, kroppensMat, foodDays, SAMTALSSLAG, SAKER } from '../../sim';
 import * as SIM from '../../sim';
 import { FOREST, isSoil } from '../../sim/vag';
 import { START, STEG_DYGN, STEG_TIM } from '../kor';
@@ -137,7 +137,16 @@ SCENARIER.sjo = { // by 4: by 3 fiskade knappt efter steg 2.3.11
     bp.task = { act: 'bada', phase: 'do', tx: bx, ty: by, until: b.now, carry: 0, why: 'prov', dark: !isLight(b.now) };
     step(b, BEAT);
     const badSjo = b.sjoar?.[SIM.sjoVid(b, bx, by)];
+    // stranden är utfiskad: fiskaren går till en annan plats vid vattnet (steg 2.12.4)
+    const f = createState(4, START), fp = living(f).find(q => ageOf(q, f.now) >= 18)!, fs = SIM.shoreOf(f.seed);
+    let fi = -1, fr = 0; for (let i = 0; i < W * H; i++) if (fs[i]) { const r = SIM.richness(f, 'fiske', i % W + 0.5, Math.floor(i / W) + 0.5); if (r > fr) { fr = r; fi = i; } }
+    const fx = fi % W + 0.5, fy = Math.floor(fi / W) + 0.5;
+    for (let n = 0; n < 200 && SIM.richness(f, 'fiske', fx, fy) >= SIM.PLATS.tomtGrans; n++) SIM.takeFrom(f, 'fiske', fx, fy, 1);
+    fp.x = fx; fp.y = fy; fp.task = { act: 'fiske', phase: 'do', tx: fx, ty: fy, until: f.now + 2 * HOUR, carry: 0, why: 'prov', dark: !isLight(f.now) };
+    step(f, BEAT);
+    const flyttat = !!fp.task && fp.task.act === 'fiske' && Math.hypot(fp.task.tx - fx, fp.task.ty - fy) > 1.5;
     return [
+      [`fiskaren går till en annan plats när stranden är utfiskad (${f.stat?.fiskeByter ?? 0} byten)`, flyttat && (f.stat?.fiskeByter ?? 0) === 1],
       [`ett bad räknas vid sjön intill stranden (${SIM.sjoNamn(b, SIM.sjoVid(b, bx, by))}) och hos den som badade`, badSjo?.bad === 1 && badSjo.badare[bp.id] === 1 && badSjo.log[0]?.k === 'bad'],
       [`${sj.rutor.length} sjöar, varje ruta vatten hör till en, den största först (${SIM.sjoNamn(s, 0)})`, vatten && storst && SIM.sjoNamn(s, 0) === 'Sjön'],
       [`alla fiskeförsök räknas vid en sjö (${sum('forsok')} av ${s.stat?.fiskeForsok ?? 0} på sex dygn, sex år i spelet)`, sum('forsok') > 0 && sum('forsok') === (s.stat?.fiskeForsok ?? 0)],
@@ -338,16 +347,20 @@ SCENARIER.varmekarta = {
 SCENARIER.natur = {
   text: 'Maten sätter taket (steg 1.7.2): byn minns hur gott om mat den haft det senaste året. Är maten knapp föds färre barn, fler flyttar och färre nybyggare stannar, men en liten by flyttar inte för maten',
   kor: () => {
-    const s = createState(5, START), n = living(s).length, n0 = s.people.length, mat = () => setMat(s, { bar: EKONOMI.matPerDygn * n * 12 });
-    mat(); s.matSnitt = 2; // tolv dygns mat i förrådet, men ett knappt år bakom sig
+    const s = createState(5, START), n0 = s.people.length, mat = () => setMat(s, { bar: living(s).reduce((t, p) => t + kroppensMat(p, s.now), 0) * 12 });
+    mat(); s.matSnitt = 0.9; // tolv dygns mat i förrådet, men ett knappt år bakom sig
     const fore = barnMat(s, 12), flytt = flyttLitenBy(s);
     for (let t = 0; t < 3 * STEG_DYGN; t++) { regulate(s, BEAT); if (s.people.length !== n0) { s.people.length = n0; mat(); } } // (nybyggare skickas vidare)
     const efter = s.matSnitt!;
+    // foodDays: aldrig mindre än kroppen behöver, och mer när byn äter mer (atTakt, ekonomi.ts)
+    mat(); const kropp = living(s).reduce((t, p) => t + kroppensMat(p, s.now), 0) / living(s).length, dagar = { kropp: foodDays(s), mer: 0, mindre: 0 };
+    s.atTakt = kropp * 2; dagar.mer = foodDays(s); s.atTakt = kropp / 2; dagar.mindre = foodDays(s); s.atTakt = undefined;
     return [
-      [`ett knappt år: färre barn (${fore.toFixed(2)} av det vanliga) och fler flyttar (${hungerFlytt({ ...s, matSnitt: 2 } as State, 12).toFixed(2)} per dygn) i en by på 12`, fore < 0.5 && hungerFlytt({ ...s, matSnitt: 2 } as State, 12) > 0.5],
+      [`ett knappt år: färre barn (${fore.toFixed(2)} av det vanliga) och fler flyttar (${hungerFlytt({ ...s, matSnitt: 0.9 } as State, 12).toFixed(2)} per dygn) i en by på 12`, fore < 0.5 && hungerFlytt({ ...s, matSnitt: 0.9 } as State, 12) > 0.5],
       [`en by på sex flyttar inte för maten och får lika många barn (${flytt})`, flytt === 'ingen'],
       [`efter tre dygn (tre år i spelet) med tolv dygns mat har snittet nått dit (${efter.toFixed(1)})`, efter > 11 && efter < 12.1],
       [`gott om mat: inga färre barn, ingen flytt för maten (${matGott(s).toFixed(2)})`, matGott(s) === 1 && barnMat(s, 12) === 1 && hungerFlytt(s, 12) === 0],
+      [`maten räknas i dygn av det byn äter (steg 2.12.4): ${dagar.kropp.toFixed(1)} dygn efter kroppen, ${dagar.mer.toFixed(1)} när byn äter dubbelt så mycket, ${dagar.mindre.toFixed(1)} när den äter hälften`, Math.abs(dagar.kropp - 12) < 0.1 && Math.abs(dagar.mer - dagar.kropp / 2) < 1e-9 && dagar.mindre === dagar.kropp],
     ];
   },
 };

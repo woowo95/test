@@ -32,6 +32,7 @@ export const LAGER = balans('lager', {
   nyEldMin: 3, nyLagerMax: 8, // ... ligger minst så här långt från elden och högst så här långt från lägret
   krympMin: 4, // en lagerplats på så här många rutor eller färre krymper inte ...
   krympDel: 2, // ... annars när mer än 1 / Del av rutorna står tomma (2 = hälften) ...
+  krympTim: 6, // ... och har stått så i så här många timmar (en kvarts år i spelet, steg 2.12.4) ...
   minSida: 2, // ... till en lagerplats vars sidor är minst så här långa
   // slitage och ruttning (per timme)
   ute: 3, // saker utanför lagret slits så här många gånger fortare ...
@@ -63,7 +64,7 @@ export const LAGER = balans('lager', {
 // Lagerplatserna (zoner) görs större, mindre och nya av invånarna själva. Två eller fler sorteras: maten för sig och
 // material för sig, och den viktigaste ligger närmast elden. Vilka saker som finns, och hur stora stackarna är, står i saker.ts.
 // hus = lagerplatsen är golvet i ett förrådshus (byggnader.ts): den växer och krymper inte och räknas inte bland de vanliga
-export interface Zone { x: number; y: number; w: number; h: number; namn?: string; slag?: 'mat' | 'material'; prio?: number; hus?: number }
+export interface Zone { x: number; y: number; w: number; h: number; namn?: string; slag?: 'mat' | 'material'; prio?: number; hus?: number; tom?: number } // tom: sedan när lagerplatsen stått halvtom (tidyStore)
 // dold: det som ligger gömt i stacken (giftig svamp bland svampen, saker.ts: i)
 interface Stack { k: string; n: number; c: number; x: number; y: number; ag?: Del; dold?: number; gor?: string; klar?: number; id?: number; q?: number } // gor = vad ett påbörjat redskap ska bli (paborjat.ts), klar = hur mycket av det som är gjort, id = tinget när stacken är ett redskap, q = dess kvalitet
 // en stack som den visas: out = utanför lagerplatserna, stored = hör till byns förråd (i lagret eller precis bredvid)
@@ -686,10 +687,12 @@ export function tidyStore(s: State) {
   }
   if (grew >= 0) log(s, `${zs[grew].namn ?? 'Lagret'} blev för litet, så byn gjorde det större.`, 'world');
   else if (over().length && vanliga(s) < LAGER.zoner) newZone(s);
-  // mindre: ta bort en kant när mer än hälften står tom och det som ligger där får plats i resten
+  // mindre: ta bort en kant när mer än hälften har stått tom i sex timmar (krympTim) och det som ligger där får plats i resten
   for (let i = 0; i < zs.length; i++) {
     const z = zs[i], all = things(s), have = z.w * z.h, n = all.filter(a => inZone(z, a.x, a.y)).length;
-    if (z.hus !== undefined || have <= LAGER.krympMin || have - n <= have / LAGER.krympDel) continue;
+    if (z.hus !== undefined || have <= LAGER.krympMin || have - n <= have / LAGER.krympDel) { if (z.tom !== undefined) zs[i] = { ...z, tom: undefined }; continue; }
+    if (z.tom === undefined) { zs[i] = { ...z, tom: s.now }; continue; }
+    if (s.now - z.tom < LAGER.krympTim * HOUR) continue;
     const opts: Zone[] = [{ ...z, w: z.w - 1 }, { ...z, h: z.h - 1 }, { ...z, x: z.x + 1, w: z.w - 1 }, { ...z, y: z.y + 1, h: z.h - 1 }].filter(c => c.w >= LAGER.minSida && c.h >= LAGER.minSida);
     const cost = (c: Zone) => all.filter(a => inZone(z, a.x, a.y) && !inZone(c, a.x, a.y)).length;
     const mobel = (c: Zone) => { for (let y = z.y; y < z.y + z.h; y++) for (let x = z.x; x < z.x + z.w; x++) if (!inZone(c, x, y) && stationAt(s, x, y)) return true; return false; }; // hyllorna står kvar i lagret
