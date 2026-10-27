@@ -317,7 +317,9 @@ function tell(s: State, a: Person, b: Person, l: Lardom, r: Rel) {
   if (e) {
     if (e.src === undefined && e.led === 0 && e.c >= c && !nyhet(s, l)) return; // egen upplevelse väger tyngre, utom mot en nyhet
     // en nyhet om att platsen blivit sämre ersätter det man trodde; annars vägs det ihop
-    e.v = nyhet(s, l) ? v : (e.v * e.c + v * c) / (e.c + c); if (l.g !== undefined) e.g = l.g; e.c = Math.max(e.c, c); e.t = l.t;
+    // tiden vägs på samma sätt som värdet, så att det nyare väger in (steg 2.12.5)
+    e.t = nyhet(s, l) ? l.t : (e.t * e.c + l.t * c) / (e.c + c);
+    e.v = nyhet(s, l) ? v : (e.v * e.c + v * c) / (e.c + c); if (l.g !== undefined) e.g = l.g; e.c = Math.max(e.c, c);
     if (nyhet(s, l)) e.ny = l.ny;
     if ((e.src !== undefined || e.led) && (l.led ?? 0) + 1 < (e.led ?? 1)) { e.src = a.id; e.led = (l.led ?? 0) + 1; } // kortare väg till källan
     if (l.om && !e.om) e.om = l.om;

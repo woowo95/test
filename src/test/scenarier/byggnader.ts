@@ -158,8 +158,9 @@ SCENARIER.funktion = {
     kom(); stepByggnader(s);
     const tillbaka = fnId(B) === 'sovsal';
     // ingen sover där igen, och maten ruttnar: det blir ett förrådshus
-    gar(); s.ruttet = 50; stepByggnader(s); s.now += DAY + HOUR; stepByggnader(s);
-    const forrad = B.fn === 'forrad' && zonesOf(s).some(z => z.hus === B.id);
+    // (steg 2.12.5: ett tomt hus blir förrådshus redan efter några timmar, före ett nytt hus)
+    gar(); s.ruttet = 50; stepByggnader(s); s.now += 5 * HOUR; const hus0 = housesOf(s).length; stepByggnader(s);
+    const forrad = B.fn === 'forrad' && zonesOf(s).some(z => z.hus === B.id) && housesOf(s).length === hus0;
     // ett familjehus som ingen äger blir en sovsal
     A.fn = 'familjehus'; A.ag = undefined; stepByggnader(s);
     const fam = fnId(A) === 'sovsal';
@@ -170,7 +171,7 @@ SCENARIER.funktion = {
       [`den som ska värma sig går till elden som brinner, inte till ett samlingshus som är kallare (samtalet ${samtalInne ? 'inne' : 'ute'})`, !varmInne && samtalInne],
       ['finns redan ett samlingshus rivs nästa tomma sovsal, och en del av timret kommer tillbaka', rivet],
       ['saknas sovplatser blir samlingshuset en sovsal igen', tillbaka],
-      ['en tom sovsal blir förrådshus när maten ruttnar', forrad],
+      ['en tom sovsal blir förrådshus när maten ruttnar, efter fem timmar (en femtedels år i spelet) och i stället för ett nytt hus', forrad],
       ['ett familjehus utan ägare blir en sovsal', fam],
     ];
   },

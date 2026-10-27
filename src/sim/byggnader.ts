@@ -4,7 +4,7 @@ import { heatAt } from './eld';
 import { eldPlats } from './karta';
 import { changed, ownedAll, put, storeFull, zonesOf } from './lager';
 import { kronika } from './historik';
-import { DAY } from './typer';
+import { DAY, HOUR } from './typer';
 import { tingOf } from './agande';
 import { ARBETE, grundvarde, tingVarde, varuVarde } from './varde';
 import { Person, State } from './typer';
@@ -30,6 +30,7 @@ export const HUS = balans('hus', {
   familjMin: 3, // en familj med färre än så här många ger inget familjehus
   familjExtra: 1, // ett familjehus rymmer så här många fler än familjen, och familjen ska ha råd med det
   tomDygn: 1, // en sovsal som ingen sovit i så här länge (dygn, år i spelet) får en ny funktion eller rivs
+  tomTim: 4, // ... men behöver byn ett förrådshus blir den det redan efter så här många timmar, före ett nytt hus (steg 2.12.5)
   rivTillbaka: 0.5, // så mycket av materialet kommer tillbaka när ett hus rivs
   varmeMarg: 0.02, // ett samlingshus räknas som varmare än elden även om det är så här mycket kallare ...
   varmeY: 2.9, // ... mätt så här många rutor söder om elden
@@ -66,13 +67,8 @@ export const BYGGNADER = {
   },
   forrad: {
     namn: 'Förrådshus', ikon: '📦', behov: 'Maten ruttnar eller förrådet är fullt: under tak ruttnar och slits det mindre', fara: false, vikt: 2, agare: 'byn', lager: true,
-    // ett för maten när den ruttnar, ett för materialet när förrådet är fullt
-    akut: s => {
-      const har = (slag: string) => housesOf(s).some(h => h.fn === 'forrad' && (h.slag ?? 'mat') === slag), rot = s.ruttet ?? 0;
-      if (rot >= HUS.ruttMin && !har('mat')) return { v: Math.min(1, rot / (HUS.ruttFullt * HUS.ruttMin)), plats: HUS.forradPlats, slag: 'mat' };
-      if (storeFull(s) && !har('material')) return { v: HUS.forradFullt, plats: HUS.forradPlats, slag: 'material' };
-      return { v: 0, plats: 0 };
-    },
+    // ett tomt hus blir förrådshuset (funktionsbyte nedan), så då byggs inget nytt (steg 2.12.5)
+    akut: s => tommaSovsalar(s).length ? { v: 0, plats: 0 } : forradBehov(s),
     namnFor: (_s, _w, _h, same) => same ? `Förrådshus ${same + 1}` : 'Förrådshuset',
   },
   familjehus: {
@@ -113,6 +109,16 @@ export function antalLika(s: State, fn: Fn, w: number, h: number, utom?: Hus) {
   const big = w * h >= HUS.langhus, hs = housesOf(s).filter(q => q !== utom);
   return fn === 'sovsal' ? hs.filter(q => q.namn.startsWith(big ? 'Långhus' : 'Hydda')).length : hs.filter(q => fnId(q) === fn).length;
 }
+
+// ett för maten när den ruttnar, ett för materialet när förrådet är fullt
+function forradBehov(s: State): Akut {
+  const har = (slag: string) => housesOf(s).some(h => h.fn === 'forrad' && (h.slag ?? 'mat') === slag), rot = s.ruttet ?? 0;
+  if (rot >= HUS.ruttMin && !har('mat')) return { v: Math.min(1, rot / (HUS.ruttFullt * HUS.ruttMin)), plats: HUS.forradPlats, slag: 'mat' };
+  if (storeFull(s) && !har('material')) return { v: HUS.forradFullt, plats: HUS.forradPlats, slag: 'material' };
+  return { v: 0, plats: 0 };
+}
+// byns färdiga sovsalar som ingen sover i (h.tom sätts i funktionsbyte), utan station som gör dem till verkstäder
+const tommaSovsalar = (s: State): Hus[] => housesOf(s).filter(h => (h.fn ?? 'sovsal') === 'sovsal' && h.ag === undefined && h.klar && h.tom !== undefined && !harArbete(s, h));
 
 // det mest akuta behovet just nu: faror först, sedan vikten gånger hur akut det är
 export function mostUrgent(s: State) {
@@ -282,14 +288,14 @@ function funktionsbyte(s: State) {
   // saknas sovplatser blir ett samlingshus en sovsal igen
   if (homeless(s) > 0) { const h = hs.find(q => q.fn === 'samling' && fri(q)); if (h) bytFn(s, h, 'sovsal'); }
   // sovsalar som ingen sover i
-  const b = boende(s), anvand = new Set(b.gemensamt.slice(0, b.ovriga.length));
+  const b = boende(s), anvand = new Set(b.gemensamt.slice(0, b.ovriga.length)), f = forradBehov(s);
   for (const h of [...hs]) {
     if (fnId(h) !== 'sovsal' || h.ag !== undefined || !fri(h)) continue;
     const tiles = gridOf(s).rooms.filter(r => r.hus === h.id).flatMap(r => r.tiles);
     if (!tiles.length || tiles.some(i => anvand.has(i))) { h.tom = undefined; continue; }
     h.tom ??= s.now;
-    if (s.now - h.tom < HUS.tomDygn * DAY) continue;
-    const f = BYGGNADER.forrad.akut(s);
+    const forrad = f.v > 1e-9 && !harArbete(s, h); // byn behöver ett förrådshus: ett tomt hus blir det före ett nytt
+    if (s.now - h.tom < (forrad ? HUS.tomTim * HOUR : HUS.tomDygn * DAY)) continue;
     if (harArbete(s, h)) bytFn(s, h, 'verkstad'); // en station står där: den blir en verkstad och står kvar (steg 2.2.17)
     else if (f.v > 1e-9) bytFn(s, h, 'forrad', f.slag);
     else if (!hs.some(q => q.fn === 'samling')) bytFn(s, h, 'samling');

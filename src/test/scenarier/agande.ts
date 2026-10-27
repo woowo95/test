@@ -316,6 +316,18 @@ SCENARIER.arv = {
     die(s, d, 'sjukdom');
     const va = varde(s, a), vb = varde(s, b), barnen = Math.abs(va - vb) <= grundvarde('bar') + 1e-6 && // i hela saker (steg 2.10.7): högst en saks värde skiljer
        yxor(s, a) + yxor(s, b) === 1 && varde(s, c) === 0;
+    // husen delas ut först, det mest värda först, även till en arvinge som redan har ett hus (steg 2.12.5)
+    ({ s, d, a, b, c, e } = ny());
+    a.mother = d.id; b.father = d.id;
+    const nyttHus = (q: Person, x: number) => {
+      const id = (s.nextBit ??= 1), h: SIM.Hus = { id, namn: SIM.husNamn(q.name), x, y: 2, w: 3, h: 3, fn: 'familjehus', ag: q.id, klar: s.now };
+      s.nextBit++; SIM.housesOf(s).push(h);
+      bitsOf(s).push({ id: s.nextBit++, x, y: 2, k: SIM.MATERIAL.timmer.k, m: 'timmer', b: 1, mat: SIM.MATERIAL.timmer.n, c: 1, hus: id });
+      return h;
+    };
+    nyttHus(a, 2); const dHus = nyttHus(d, 8), husV = SIM.husVarde(s, dHus);
+    die(s, d, 'sjukdom');
+    const husForst = husV > 0 && dHus.ag === a.id && dHus.namn === SIM.husNamn(a.name) && yxor(s, b) === 1;
     // föräldrarna, sedan syskonen, sedan byn
     ({ s, d, a, b, c, e } = ny());
     d.mother = a.id; b.mother = a.id; die(s, d, 'sjukdom');
@@ -372,6 +384,7 @@ SCENARIER.arv = {
       ['det syns i loggen vem som ärvde vad', syns],
       [`ett arv räknas när något ärvs (${arv1}), inte när den döda inte ägde något (${arv0})`, arv1 === 1 && cTom && arv0 === 0],
       [`utan partner delar barnen jämnt efter värde (${va.toFixed(0)} och ${vb.toFixed(0)})`, barnen],
+      [`huset delas ut först (värt ${husV.toFixed(1)}), även till ett barn som redan har ett hus, och får hens namn; yxan går till det andra barnet`, husForst],
       ['utan partner och barn ärver föräldrarna', foraldrar],
       ['sedan syskonen', syskon],
       ['utan släkt blir allt byns', byn],

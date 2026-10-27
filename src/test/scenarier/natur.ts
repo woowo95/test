@@ -1,5 +1,5 @@
 // Scenarier. Djur och natur: djur, abborre, sjön, kaniner, rötter, värmekartor och naturen.
-import { FANGST, createState, bearbeta, canProcess, makeTool, step, living, cloneState, ageStart, nyKalender, pilesOf, amountOf, STACK, isLight, T, ageOf, groundOf, getMap, DAY, HOUR, W, State, tileOf, findL, areaOf, describe, campDist, campCenter, FYND, FYND_IDS, GRUPPER, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, observe, hoped, Lager, skyggOf, grupperOf, KANINER, share, djurOf, KANIN, SLAKT, DJUR, DJURARTER, gain, ownsAmount, setAmount, BEAT, matGott, barnMat, hungerFlytt, regulate, EKONOMI, kroppensMat, foodDays, SAMTALSSLAG, SAKER } from '../../sim';
+import { FANGST, createState, bearbeta, canProcess, makeTool, step, living, cloneState, ageStart, nyKalender, pilesOf, amountOf, STACK, isLight, T, ageOf, groundOf, getMap, DAY, HOUR, W, State, tileOf, findL, areaOf, describe, campDist, campCenter, FYND, FYND_IDS, GRUPPER, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, observe, hoped, Lager, skyggOf, grupperOf, KANINER, share, djurOf, KANIN, SLAKT, DJUR, DJURARTER, gain, ownsAmount, setAmount, BEAT, matGott, barnMat, hungerFlytt, regulate, EKONOMI, kroppensMat, foodDays, SAMTALSSLAG, SAKER, materialOf } from '../../sim';
 import * as SIM from '../../sim';
 import { FOREST, isSoil } from '../../sim/vag';
 import { START, STEG_DYGN, STEG_TIM } from '../kor';
@@ -305,13 +305,15 @@ SCENARIER.varmekarta = {
     const ql = findL(q, 'samla', aa)!, rattad = (s.stat?.rattat ?? 0) > fore2 && ql.ny !== undefined, qText = describe(s, ql).what;
     for (let n = 0; n < 200 && findL(r2, 'samla', aa)!.v > 2; n++) share(s, q, r2, { op: 60 } as never, SAMTALSSLAG['berättelse']);
     const spridd = findL(r2, 'samla', aa)!.v;
-    // att berätta om en plats ändrar inte när den sågs, och den som hör det får samma tid (återväxten räknas därifrån)
+    // att berätta om en plats ändrar inte när den sågs, och den som hör det får samma tid (återväxten räknas därifrån). Den som
+    // redan trodde något om platsen väger ihop tiderna som värdet, efter hur säkra de är (steg 2.12.5)
     const [t1, t2, t3] = living(s).slice(2, 5), sedd = s.now - 5 * DAY;
     t1.lardomar = [{ k: 'samla', a: aa, v: 0.2, g: 3, c: 0.9, t: sedd, led: 0 }]; t2.lardomar = [];
     t3.lardomar = [{ k: 'samla', a: aa, v: 1, g: 3, c: 0.05, t: s.now - DAY, src: p.id, led: 2 }];
     for (let n = 0; n < 200 && !findL(t2, 'samla', aa); n++) share(s, t1, t2, { op: 60 } as never, SAMTALSSLAG['berättelse']);
     for (let n = 0; n < 200 && findL(t3, 'samla', aa)!.led !== 1; n++) share(s, t1, t3, { op: 60 } as never, SAMTALSSLAG['berättelse']);
-    const tidKvar = t1.lardomar[0].t === sedd && findL(t2, 'samla', aa)?.t === sedd && findL(t3, 'samla', aa)!.t === sedd;
+    const tidKvar = t1.lardomar[0].t === sedd && findL(t2, 'samla', aa)?.t === sedd, t3t = findL(t3, 'samla', aa)!.t;
+    const vagd = t3t > sedd && t3t < s.now - 3 * DAY, t3d = (s.now - t3t) / DAY; // mellan de två tiderna, närmast den säkrare
     const l = findL(p, 'samla', areaOf(bx, by))!, nyss = hoped(s, l), text = describe(s, l).what;
     s.now += 3 * DAY; const sen = hoped(s, l);
     growFynd(s, 48, 3);
@@ -331,6 +333,7 @@ SCENARIER.varmekarta = {
       [`kaninerna skyr lägret (${(nara / naraN).toFixed(2)} nära mot ${(langt / langtN).toFixed(2)} långt bort)`, nara / naraN < 0.4 && langt / langtN > 0.7],
       [`den som kommer till en tömd plats rättar sig ("${qText}") och berättar det (${spridd.toFixed(2)} hos den som hörde det)`, rattad && qText.includes('sämre än man trott') && spridd < 2],
       ['att berätta om en plats ändrar inte när den sågs, och den som hör det får samma tid', tidKvar],
+      [`den som redan trodde något väger ihop tiderna efter hur säkra de är (${t3d.toFixed(1)} dygn sedan, av 5 och 1)`, vagd],
       [`kaniner trivs bättre i öppen mark (${(gr / grN).toFixed(2)}) än i skog (${(sk / skN).toFixed(2)})`, gr / grN > sk / skN],
       [`fisk bara i vattnet (${fiskLand} rutor på land), och man når den från stranden (${fiskFore.toFixed(2)} → ${fiskEfter.toFixed(2)} efter fiske)`, fiskLand === 0 && fiskFore > 0.3 && fiskEfter < fiskFore * 0.7],
       [`inget växer i lägret (${iLagret})`, iLagret === 0],
@@ -629,7 +632,7 @@ SCENARIER.skinnfall = {
       [`byns statistik räknar varje fäll en gång (${s.stat?.tillbehor_skinnfall ?? 0} för ${fallar})`, s.stat?.tillbehor_skinnfall === fallar],
       [`den som sover under fällen kyls mindre (${med.toFixed(3)} mot ${utan.toFixed(3)} i timmen)`, utan > 0 && Math.abs(med - utan * (1 - TILLBEHOR.skinnfall.varme)) < 1e-9],
       ['den som är vaken i bädden får ingen värme av fällen', vaken === 0],
-      ['skinnfällen är en egen teknik efter halmbädden, och byn måste ha skinn', !!tek && tek.krav.includes('halmbadd') && tek.material.some(g => g.includes('skinn'))],
+      ['skinnfällen är en egen teknik efter halmbädden, och byn måste ha skinn', !!tek && tek.krav.includes('halmbadd') && materialOf(tek).some(g => g.includes('skinn'))],
     ];
   },
 };
@@ -700,7 +703,7 @@ SCENARIER.dorr = {
       [`byns statistik räknar dörren en gång (${s.stat?.dorr_skinndorr ?? 0})`, s.stat?.dorr_skinndorr === 1],
       [`huset håller värmen bättre med dörren (${Math.round(med * 100)} % mot ${Math.round(utan * 100)} %)`, Math.abs(med - utan - BYGGNAD.oppningLacker * DORRAR.skinndorr.tat) < 1e-3], // (kopian avrundar väggarnas skick)
       ['ett förrådshus får ingen dörr', dorrOppningar(f).length === 0],
-      ['skinndörren är en egen teknik efter timmerhuset, och byn måste ha skinn', !!tek && tek.krav.includes('timmervagg') && tek.material.some(g => g.includes('skinn'))],
+      ['skinndörren är en egen teknik efter timmerhuset, och byn måste ha skinn', !!tek && tek.krav.includes('timmervagg') && materialOf(tek).some(g => g.includes('skinn'))],
     ];
   },
 };

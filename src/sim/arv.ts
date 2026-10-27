@@ -5,7 +5,9 @@
 // den som hittills fått minst, och resten (mat, ved, material) delas så att alla får lika mycket i värde. Ett arv är
 // inget man skaffat, så delningen efter byns rikedom (delning.ts) gäller inte. Arvet syns i loggen och krönikan men ger
 // inga känslor. Ingen sed styr arvet; längre fram kan religionen ge kyrkan en del (steg 10.1.3) och skattelagar staten
-// en del (steg 9.5.3). Ett familjehus (byggnader.ts) ärvs som ett redskap, efter sitt värde, och får den nya ägarens namn.
+// en del (steg 9.5.3). Ett familjehus (byggnader.ts) har ett värde: materialet och arbetet att bygga det (husVarde i varde.ts).
+// Husen delas ut först, det mest värda först, även till en arvinge som redan har ett hus, och får den nya ägarens namn
+// (steg 2.12.5). Den som inte vill ha sitt kan längre fram byta bort, sälja eller riva det (steg 7.2.5).
 // Den som flyttar tar med sig så mycket av sitt eget som hen orkar bära, det mest värda för vikten först; resten blir byns.
 import { tingOf } from './agande';
 import { count, isKin, isParent, living, log } from './folk';
@@ -34,17 +36,17 @@ export function inherit(s: State, p: Person) {
   const heirs = heirsOf(s, p);
   if (!heirs.length) return;
   const val = heirs.map(() => 0), fick: string[][] = heirs.map(() => []);
-  const tools = tingOf(s).filter(t => t.agare === p.id).sort((a, b) => tingVarde(b) - tingVarde(a) || a.id - b.id);
-  for (const t of tools) {
-    const i = val.indexOf(Math.min(...val));
-    t.agare = heirs[i].id; val[i] += tingVarde(t);
-    fick[i].push(tingNamn(t).toLowerCase());
-  }
   const hus = housesOf(s).filter(q => q.ag === p.id).sort((a, b) => husVarde(s, b) - husVarde(s, a) || a.id - b.id);
   for (const h of hus) {
     const i = val.indexOf(Math.min(...val));
     fick[i].push(h.namn); h.ag = heirs[i].id; val[i] += husVarde(s, h);
     if (h.namn === husNamn(p.name)) h.namn = husNamn(heirs[i].name);
+  }
+  const tools = tingOf(s).filter(t => t.agare === p.id).sort((a, b) => tingVarde(b) - tingVarde(a) || a.id - b.id);
+  for (const t of tools) {
+    const i = val.indexOf(Math.min(...val));
+    t.agare = heirs[i].id; val[i] += tingVarde(t);
+    fick[i].push(tingNamn(t).toLowerCase());
   }
   const eget = ownedAll(s, p.id);
   const rest = varuVarde(eget);

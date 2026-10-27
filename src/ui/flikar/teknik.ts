@@ -1,4 +1,4 @@
-import { ACTS, MATERIAL, SLAG, Person, SAKER, TEK, TEKNIK, Tek, amountOf, harSak, hasMaterial, knows, living, sakNamn, stationDef } from '../../sim';
+import { ACTS, MATERIAL, SLAG, Person, SAKER, TEK, TEKNIK, Tek, amountOf, harSak, hasMaterial, knows, materialOf, living, sakNamn, stationDef } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { bar, esc, fmtN, hjalpKnapp, hjalpText, pLink } from '../hjalp';
 import { s } from '../lage';
@@ -50,7 +50,7 @@ function tekHtml() {
 }
 const lista = (xs: string[], och = 'och') => xs.length > 1 ? xs.slice(0, -1).join(', ') + ` ${och} ` + xs[xs.length - 1] : xs[0] ?? '';
 // det som saknas i byn för att någon ska kunna komma på tekniken
-const saknas = (t: Tek) => lista(t.material.filter(g => !g.some(k => harSak(s, k))).map(g => lista(g.map(k => sakNamn(k).toLowerCase()), 'eller')));
+const saknas = (t: Tek) => lista(materialOf(t).filter(g => !g.some(k => harSak(s, k))).map(g => lista(g.map(k => sakNamn(k).toLowerCase()), 'eller')));
 // receptet: det som går åt för att göra en sak av tekniken (saker.ts), en station (stationer.ts) eller en ruta av ett bygge (byggnad.ts)
 function recept(t: Tek): { k: string; n: number; per?: string }[] {
   const av = SAKER[t.id]?.skaffa?.av ?? stationDef(t.id)?.av;
@@ -69,7 +69,7 @@ export function tekInfo(ppl: Person[], id: string | undefined) {
   // hur den upptäcks: arbetet där man kommer på den, tekniken man måste kunna först och det som måste finnas i byn
   const arb = lista([...new Set(t.omr.map(a => SLAG[ACTS[a].slag ?? 'hantverk'].toLowerCase()))], 'eller');
   const krav = t.krav.length ? ` om hen kan ${lista(t.krav.map(k => TEK[k].namn.toLowerCase()))}` : '';
-  const finns = lista(t.material.map(g => lista(g.map(k => sakNamn(k).toLowerCase()), 'eller')));
+  const finns = lista(materialOf(t).map(g => lista(g.map(k => sakNamn(k).toLowerCase()), 'eller')));
   return `<div class="tinfo"><div class="tektop">${iconImg(t.id, 24)}<b>${esc(t.namn)}</b>${r.length ? `<span class="tmat" title="${esc(rtext)}">${mat}</span>` : ''}</div>
     <p class="small">${esc(t.text)} ${esc(t.effekt)}</p>
     <p class="small muted">Den som ${esc(t.nar ?? arb)} kan komma på det${esc(krav)}${finns ? `, när det finns ${esc(finns)} i byn` : ''}.</p>

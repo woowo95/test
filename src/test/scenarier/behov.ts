@@ -556,7 +556,7 @@ SCENARIER.vard = {
     setAmount(s, 'mossa', 0); const fynd = mossaFynd(s, { ...t }, 3600);
     const k = { id: 999, x: 1, y: 1, ved: 5, grenar: 2, mossa: 2 }; (s.stockar ??= []).push(k); const hugg = chopStock(s, 999, 1)?.mossa ?? 0;
     // en by i tolv dygn (tolv år i spelet, knappt två veckor i verkligheten): mossa hittas och såren vårdas
-    const b = createState(1, START); kor(b, 288);
+    const b = createState(4, START); kor(b, 288); // skadorna är få: by 1 fick bara en, som inte blödde (steg 2.12.5)
     const st = (n: string) => b.stat?.[n] as number ?? 0;
     return [
       [`ett infekterat sår som inte rengörs blir kallbrand och dödar (${dog ?? 'överlevde'})`, dog === 'kallbrand' && kall],
