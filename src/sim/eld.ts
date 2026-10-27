@@ -3,6 +3,7 @@ import { Behov, addBehov, getable, takeMaterial } from './behov';
 import { Del, addDel } from './egendom';
 import { coldOf, temperature } from './vader';
 import { ALDER, KROPP, ageOf, count, doingAct, isSick, log, ovning, stat, think } from './folk';
+import { halsa } from './halsa';
 import { flintFactor, flintorOchYxor, stoneDist, takeFrom } from './fynd';
 import { observe } from './minne';
 import { getMap } from './karta';
@@ -200,7 +201,7 @@ export function fetchFuel(s: State, p: Person, why: string, fran?: Person) {
 }
 const awake = (s: State, p: Person, minAge: number) => {
   const t = p.task;
-  return ageOf(p, s.now) >= minAge && !isSick(p, s.now) && p.health >= KROPP.svag &&
+  return ageOf(p, s.now) >= minAge && !isSick(p, s.now) && halsa(p) >= KROPP.svag &&
     (!t || (t.act !== 'sova' && !(t.phase === 'back' && t.carry > 0) && !t.items));
 };
 export function stepFire(s: State, dtSec: number, ppl: Person[]) {

@@ -267,10 +267,10 @@ export function flintArea(p: Person) {
   return best?.a;
 }
 
-// en olycka: de som såg den, och de närmaste, blir rädda för platsen
-export function fearPlace(s: State, victim: Person, cause: string) {
+// en olycka (en död eller en svår skada, om = det man minns): de som såg den, och de närmaste, blir rädda för platsen
+export function fearPlace(s: State, victim: Person, cause: string, om = `${victim.name} dog ${cause} där`) {
   if (campDist(s, victim.x, victim.y) < MINNE.olyckaBy) return; // inte mitt i byn
-  const a = areaOf(victim.x, victim.y), om = `${victim.name} dog ${cause} där`;
+  const a = areaOf(victim.x, victim.y);
   for (const q of living(s)) {
     const saw = Math.hypot(q.x - victim.x, q.y - victim.y) < MINNE.olyckaSyn;
     const close = q.partner === victim.id || isParent(victim, q) || isParent(q, victim);

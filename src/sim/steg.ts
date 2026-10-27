@@ -34,6 +34,7 @@ import { stepDelning } from './delning';
 import { balans } from './balans';
 import { sjoRakna } from './sjo';
 import { DRICKA_ACTS, TORST, drick, torstSteg } from './torst';
+import { halsaSteg, rorlighet } from './halsa';
 import { bordPlats, kladVarme, stepKlader } from './utrustning';
 import { finishStation, finishTillbehor, stationRutor, stepStationer, tillbehorVarme, workStation } from './stationer';
 
@@ -243,7 +244,7 @@ function needsStep(s: State, p: Person, a: number, dtSec: number, coldRate: numb
 export function halsaLage(p: Person, now: number): 'svalt' | 'frys' | 'torst' | 'laker' | undefined {
   return p.hunger <= 0 ? 'svalt' : p.warm < KROPP.frysdod ? 'frys' : p.torst <= 0 ? 'torst' : p.hunger > KROPP.lakerMat && p.torst > TORST.laker && !isSick(p, now) ? 'laker' : undefined;
 }
-// hälsa, sjukdom och död: svält, kyla, sjukdom, ålderdom och olyckor. true = personen dog
+// hälsa, sjukdom och död: svält, kyla, sjukdom, ålderdom, olyckor och skador (halsa.ts). true = personen dog
 function healthStep(s: State, p: Person, a: number, ai: number, dtSec: number) {
   const now = s.now;
   const hl = halsaLage(p, now);
@@ -259,8 +260,8 @@ function healthStep(s: State, p: Person, a: number, ai: number, dtSec: number) {
   // ålderdom och olyckor (Gompertz, per år = per dygn)
   const q = KROPP.dodBas + KROPP.dodAlder * Math.exp(KROPP.dodTakt * a) + (a < ALDER.barnsjuk ? KROPP.dodBarn : 0);
   if (chance(s, q / 86400, dtSec, 'halsa', p)) { die(s, p, a > ALDER.alderdom ? 'alderdom' : a < ALDER.barnsjuk ? 'barnsjukdom' : 'olycka'); if (a >= ALDER.barnsjuk && a <= ALDER.alderdom) fearPlace(s, p, DODSORSAKER.olycka.text); return true; }
-  const pd = p.task && ACTS[p.task.act], fara = pd && pd.fara; // farligt arbete, som jakt
-  if (fara && p.task!.phase === 'do' && chance(s, fara.risk * (1 - (pd.arbete ? p.skill[pd.arbete] : 0) / 25) / HOUR_S, dtSec, 'halsa', p)) { die(s, p, fara.dod); fearPlace(s, p, DODSORSAKER[fara.dod].text); return true; }
+  const dod = halsaSteg(s, p, dtSec); // kroppen: olyckor i farligt arbete, blödning och läkning (steg 2.5.1)
+  if (dod) { die(s, p, dod); fearPlace(s, p, DODSORSAKER[dod].text); return true; }
   return false;
 }
 
@@ -342,7 +343,7 @@ function walk(s: State, p: Person, tk: Task, left: number, a: number) {
     if (!v && tk.phase === 'go' && pathFor(s, g, p.x, p.y, f.x + 0.5, f.y + 0.5)) { avbryt(s, p); return { used: Math.min(left, BIT), framme: false }; }
     tk.path = v ?? [];
   }
-  const off = sida(p, 0.18), fart = a < ALDER.gangBarn ? STEG.fartBarn : a > ALDER.gangGammal ? STEG.fartGammal : STEG.fart, t0 = s.now;
+  const off = sida(p, 0.18), fart = (a < ALDER.gangBarn ? STEG.fartBarn : a > ALDER.gangGammal ? STEG.fartGammal : STEG.fart) * rorlighet(p), t0 = s.now; // skadade ben och fötter går långsammare
   let budget = fart * left;
   const klocka = () => t0 + (fart * left - budget) / fart * SEC;
   if (budget <= 0) return { used: left, framme: false };

@@ -420,13 +420,14 @@ SCENARIER.forvaring = {
     // en kista på en full hög: det som ligger i den slits som under tak
     const ki = medBank(s, 'kista');
     const kOrsak = slitageNu(s, { k: 'grenar', x: ki.x, y: ki.y }).orsak, kMult = wearMult(s, ki.x, ki.y);
-    // ett ställ på ett redskap: flera redskap står där
-    for (let n = 0; n < 3; n++) { newTing(s, 'yxa', 1, SIM.BYN); }
-    placeTools(s);
-    const st = medBank(s, 'stall');
-    for (let n = 0; n < 3; n++) { newTing(s, 'fiskespjut', 1, SIM.BYN); }
-    placeTools(s);
-    const iStall = tingOf(s).filter(t => t.x === st.x && t.y === st.y && t.hos === undefined && t.lass === undefined).length;
+    // ett ställ på ett redskap: flera redskap står där (i en ny by, så att lagret har plats för redskapen)
+    const s2 = createState(1, START); klockan(s2);
+    for (let n = 0; n < 3; n++) { newTing(s2, 'yxa', 1, SIM.BYN); }
+    placeTools(s2);
+    const st = medBank(s2, 'stall');
+    for (let n = 0; n < 3; n++) { newTing(s2, 'fiskespjut', 1, SIM.BYN); }
+    placeTools(s2);
+    const iStall = tingOf(s2).filter(t => t.x === st.x && t.y === st.y && t.hos === undefined && t.lass === undefined).length;
     return [
       [`byn vill ha en hylla när golvet i lagret är fullt av högar (brist ${brist0.toFixed(2)})`, brist0 > 0.5],
       [`hyllan byggs på ${h} timmar, i en lagerplats`, !!hy && !!z],

@@ -1,5 +1,5 @@
 // Scenarier. Behov och val: behov, ved, aktivitet och fritid.
-import { Person, createState, getRel, step, living, temperature, nyKalender, amountOf, capacity, load, isLight, T, FOOD, ageOf, getMap, HOUR, W, tileOf, stat, campCenter, KANIN, gain, takeFuel, ownsAmount, ownedSum, addTo, setAmount, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, STOLD_LINDRIG, STOLD_OP, BEAT, spar, isWork, ACTS, groundOf, varmeDelar, nyVarme, addTool, stepKlader, chooseTask, iSkugga, KROPP, spotFor, shoreOf, torstDelar, drickPlats, areaOf, halsaLage, describe } from '../../sim';
+import { Person, createState, getRel, step, living, temperature, nyKalender, amountOf, capacity, load, isLight, T, FOOD, ageOf, getMap, HOUR, W, tileOf, stat, campCenter, KANIN, gain, takeFuel, ownsAmount, ownedSum, addTo, setAmount, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, STOLD_LINDRIG, STOLD_OP, BEAT, spar, isWork, ACTS, groundOf, varmeDelar, nyVarme, addTool, stepKlader, chooseTask, iSkugga, KROPP, spotFor, shoreOf, torstDelar, drickPlats, areaOf, halsaLage, describe, halsaSteg, skada, blodning, halsa, rorlighet, workRate, OLYCKOR, Act } from '../../sim';
 import { START, STEG_DYGN } from '../kor';
 import { setMat, setFood, kor, klockan, tandEld, tomtForrad, treVuxna, bastaJaktruta, SCENARIER, rikBy } from './hjalp';
 
@@ -366,6 +366,56 @@ SCENARIER.torst = {
       ['i istiden smälts snö vid elden', sno],
       ['i istiden utan eld hugger man upp isen och dricker', isen],
       [`på två dygn i tre byar: ${drickor} gånger drack man, ${magont} fick ont i magen, ${hort} lärdomar om vattnet hade man hört av andra, ${dog} törstade ihjäl (som mest ${maxTorstiga} uttorkade samtidigt)`, drickor > 50 && dog === 0 && hort > 0],
+    ];
+  },
+};
+
+SCENARIER.kropp = {
+  text: 'Steg 2.5.1: kroppen har tio delar. Olyckor i farliga arbeten (jakt, trädfällning, huggning, slakt, rensning, flintslagning) ger skador i en del. Ett sår blöder tills det levrat sig, och ett mycket svårt sår kan förblöda; blodet kommer tillbaka. Skadade ben går långsammare och skadade händer arbetar långsammare. Skadorna läker, och hälsan som visas är en sammanfattning av kroppen',
+  kor: () => {
+    const s = createState(5, START);
+    klockan(s, 10);
+    const p = living(s)[0], MIN60 = 60;
+    const fyll = () => Object.assign(p, { rest: 1, toa: 1, hunger: 1, social: 1, warm: 1, health: 1, torst: 1, blod: 1, skador: undefined, sickUntil: undefined, task: undefined });
+    const timmar = (h: number) => { for (let i = 0; i < h * 60; i++) { const d = halsaSteg(s, p, MIN60); if (d) return d; } return undefined; };
+    // en olycka under jakten ger en skada
+    fyll(); p.task = { act: 'jakt', phase: 'do', tx: p.x, ty: p.y, until: s.now + 1000 * HOUR, carry: 0, why: '' };
+    for (let i = 0; i < 2000 && !(s.stat?.skador); i++) halsaSteg(s, p, MIN60 * 30);
+    const olycka = (s.stat?.skador ?? 0) >= 1;
+    // ett lätt skärsår blöder en stund och levrar sig; ett mycket svårt kan förblöda
+    fyll(); p.task = undefined; skada(s, p, 'handH', 'skarsar', 0.5, 'olycka', '');
+    const blodNy = blodning(p), dogLatt = timmar(3), blodLatt = p.blod, levrat = blodning(p) === 0;
+    const hFore = halsa(p);
+    const laktTid = (() => { for (let h = 1; h <= 24; h++) { timmar(1); if (!p.skador) return h; } return 99; })();
+    const blodTillbaka = p.blod;
+    fyll(); skada(s, p, 'benV', 'skarsar', 1, 'olycka', '');
+    const dogSvart = timmar(4);
+    // skadade ben går långsammare, skadade händer arbetar långsammare
+    fyll(); const fart0 = rorlighet(p), arb0 = workRate(s, p, 'samla');
+    p.task = { act: 'slakta', phase: 'do', tx: p.x, ty: p.y, until: s.now + HOUR, carry: 0, why: '' };
+    skada(s, p, 'benV', 'benbrott', 1, 'olycka', ''); skada(s, p, 'handH', 'skarsar', 0.8, 'olycka', '');
+    const fart1 = rorlighet(p), arb1 = workRate(s, p, 'samla'), avbrot = p.task === undefined, halsa1 = halsa(p);
+    // varje farligt arbete ger sina skador i sina delar
+    const fel: string[] = [];
+    for (const [act, o] of Object.entries(OLYCKOR)) {
+      fyll(); s.stat = {}; p.task = { act: act as Act, phase: 'do', tx: p.x, ty: p.y, until: s.now + 1000 * HOUR, carry: 0, why: '' };
+      for (let i = 0; i < 2000 && !s.stat.skador; i++) halsaSteg(s, p, MIN60 * 30);
+      const w = p.skador?.[0];
+      if (!s.stat.skador || (w && (!o!.typer.includes(w.k) || !o!.delar.includes(w.d)))) fel.push(act);
+    }
+    // en by i tio dygn (tio år i spelet, knappt en och en halv vecka i verkligheten): olyckor händer
+    const b = createState(1, START); kor(b, 240);
+    const skador = b.stat?.skador as number ?? 0, blod = b.stat?.['dog av blodförlust'] as number ?? 0;
+    return [
+      ['en olycka under jakten ger en skada', olycka],
+      [`ett lätt skärsår blöder (${blodNy.toFixed(2)} i timmen), levrar sig och tar ${Math.round((1 - blodLatt) * 100)} % av blodet`, blodNy > 0 && !dogLatt && levrat && blodLatt < 1 && blodLatt > 0.6],
+      [`skadan sänker hälsan som visas (${hFore.toFixed(2)})`, hFore < 1],
+      [`det läker på ${laktTid} timmar, och blodet kommer tillbaka (${blodTillbaka.toFixed(2)})`, laktTid <= 13 && blodTillbaka > blodLatt],
+      [`ett mycket svårt skärsår kan förblöda (${dogSvart ?? 'överlevde'})`, dogSvart === 'blod'],
+      [`ett brutet ben går långsammare (${fart0.toFixed(2)} → ${fart1.toFixed(2)}), och ett skärsår i handen arbetar långsammare (${(arb1 / arb0).toFixed(2)} av farten)`, fart1 < fart0 && arb1 < arb0],
+      [`en svår skada avbryter arbetet, och hälsan blir ${halsa1.toFixed(2)}`, avbrot && halsa1 < KROPP.svag + 0.2],
+      [`olyckorna i ${Object.keys(OLYCKOR).join(', ')} ger sina skador i sina delar${fel.length ? ` (fel: ${fel.join(', ')})` : ''}`, !fel.length],
+      [`på tio dygn i en by: ${skador} skador, ${blod} förblödde`, skador > 0],
     ];
   },
 };

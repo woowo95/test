@@ -1,4 +1,5 @@
 import { ALDER, REL, ageOf, getRel, isKin, living, log, similarity, stat, think } from './folk';
+import { halsa } from './halsa';
 import { clamp, pickViktat, rnd } from './slump';
 import { DAY, HOUR, Person, State } from './typer';
 import { pair } from './varld';
@@ -162,7 +163,7 @@ export function moodOf(p: Person, now: number, ut?: { namn: string; v: number }[
   if (p.hunger < SAMTAL.humorHungerLag) del('Hungrig', -SAMTAL.humorHungerMinus); else if (p.hunger > SAMTAL.humorHungerHog) del('Mätt', SAMTAL.humorHungerPlus);
   if (p.rest < SAMTAL.humorViloLag) del('Trött', -SAMTAL.humorViloMinus);
   if (p.social < SAMTAL.humorSocialLag) del('Ensam', -SAMTAL.humorSocialMinus); else if (p.social > SAMTAL.humorSocialHog) del('Umgåtts mycket', SAMTAL.humorSocialPlus);
-  if (p.health < SAMTAL.humorHalsaLag) del('Mår dåligt', -SAMTAL.humorHalsaMinus);
+  if (halsa(p) < SAMTAL.humorHalsaLag) del('Mår dåligt', -SAMTAL.humorHalsaMinus);
   for (const t of p.thoughts) if (t.until > now) del(t.text, t.v);
   return clamp(m, 0, 1);
 }

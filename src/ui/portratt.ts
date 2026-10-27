@@ -1,4 +1,4 @@
-import { KROPP, Person, ageOf, alive, byId, living, moodOf, taskName } from '../sim';
+import { KROPP, Person, halsa, ageOf, alive, byId, living, moodOf, taskName } from '../sim';
 import { $, LAG, bar, esc, hex, tempBar, trend } from './hjalp';
 import { s, ui, vidNyBy } from './lage';
 
@@ -25,7 +25,7 @@ export function renderPorts() {
       portEls.set(p.id, el);
     }
     if (row.children[k] !== el) row.insertBefore(el, row.children[k] ?? null);
-    const low = p.hunger < LAG.hunger || p.health < KROPP.svag || p.warm < LAG.varmeRad || moodOf(p, s.now) < LAG.olycklig;
+    const low = p.hunger < LAG.hunger || halsa(p) < KROPP.svag || p.warm < LAG.varmeRad || moodOf(p, s.now) < LAG.olycklig;
     el.classList.toggle('low', low);
     el.setAttribute('aria-pressed', String(ui.selected === p.id));
     (el.children[0] as HTMLElement).style.background = hex(p);
@@ -44,7 +44,7 @@ function showTip(id: number) {
   tip.innerHTML = `<h4>${esc(p.name)}</h4><p class="op">${p.sex === 'k' ? 'Kvinna' : 'Man'}, ${Math.floor(ageOf(p, s.now))} år${p.tag ? ' · ' + esc(p.tag) : ''}</p>
     <p>${shortAct(p)}</p>${p.task?.why ? `<p class="op">${esc(p.task.why)}</p>` : ''}
     <dl><dt>Humör</dt><dd>${bar(m, m < LAG.humor ? 'low' : '', trend(p, 'humor', m))}</dd><dt>Mättnad</dt><dd>${bar(p.hunger, p.hunger < LAG.hunger ? 'low' : '', trend(p, 'hunger', p.hunger))}</dd>
-    <dt>Vila</dt><dd>${bar(p.rest, '', trend(p, 'rest', p.rest))}</dd><dt>Hälsa</dt><dd>${bar(p.health, p.health < LAG.halsa ? 'low' : '', trend(p, 'health', p.health))}</dd><dt>Temperatur</dt><dd>${tempBar(p.warm, trend(p, 'warm', p.warm))}</dd></dl>
+    <dt>Vila</dt><dd>${bar(p.rest, '', trend(p, 'rest', p.rest))}</dd><dt>Hälsa</dt><dd>${bar(halsa(p), halsa(p) < LAG.halsa ? 'low' : '', trend(p, 'health', halsa(p)))}</dd><dt>Temperatur</dt><dd>${tempBar(p.warm, trend(p, 'warm', p.warm))}</dd></dl>
     <p class="op">Klicka för att välja, dubbelklicka för att följa.</p>`;
   const wrap = $('ports').parentElement!.getBoundingClientRect(), r = el.getBoundingClientRect();
   tip.hidden = false;

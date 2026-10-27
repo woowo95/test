@@ -98,6 +98,9 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
   [6, 'v79: törsten (steg 2.4.1). Alla börjar otörstiga', s => {
     for (const p of s.people) if (p.torst === undefined) p.torst = 1;
   }],
+  [7, 'v80: kroppen (steg 2.5.1). Alla har allt sitt blod och inga skador', s => {
+    for (const p of s.people) if (p.blod === undefined) p.blod = 1;
+  }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];
 export function migrate(s: State) { return simulera(() => uppgradera(s)); }

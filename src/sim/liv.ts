@@ -60,13 +60,14 @@ const MEDHAVT: Record<string, number> = { rotter: LIV.medhavd };
 
 // ---------- dödsorsakerna (registret) ----------
 // text = det som står efter namnet ("dog av svält"), i loggen, krönikan och byns räknare ('dog av svält', som testerna läser).
-// sed = seden som ändras, hur mycket, och texten efter namnet i sedernas logg. Ett farligt arbete (fara i handlingar.ts) pekar hit
+// sed = seden som ändras, hur mycket, och texten efter namnet i sedernas logg. En olycka i ett farligt arbete (OLYCKOR i halsa.ts) pekar hit
 interface DodDef { text: string; sed?: { k: Sed; d: number; text: string } }
 const DOD = {
   svalt: { text: 'av svält', sed: { k: 'forsiktighet', d: LIV.sedSvalt, text: 'svalt ihjäl. Byn har blivit mer försiktig.' } },
   kyla: { text: 'av kyla', sed: { k: 'forsiktighet', d: LIV.sedKyla, text: 'frös ihjäl. Byn har blivit mer försiktig.' } },
   jakt: { text: 'under en jakt', sed: { k: 'forsiktighet', d: LIV.sedJakt, text: 'dog under en jakt. Byn blev lite försiktigare.' } },
   torst: { text: 'av törst' }, // steg 2.4.1
+  blod: { text: 'av blodförlust', sed: { k: 'forsiktighet', d: LIV.sedJakt, text: 'förblödde. Byn blev lite försiktigare.' } }, // steg 2.5.1
   svamp: { text: 'av svampförgiftning' },
   sjukdom: { text: 'av sjukdom' },
   alderdom: { text: 'av ålderdom' },

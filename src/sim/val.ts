@@ -4,6 +4,7 @@ import { RESERV, foodDays } from './ekonomi';
 import { ACTS, WORK, usesTool } from './handlingar';
 import { canLight, emberOn, fireWant, needStones, needTinder, woodDays } from './eld';
 import { ALDER, KROPP, ageOf, count, isSick, living, stat } from './folk';
+import { halsa } from './halsa';
 import { harMat } from './behov';
 import { FANGST, Kind, flintSpot, shoreOf, wantsFlint } from './fynd';
 import { coldOf, temperature } from './vader';
@@ -282,7 +283,7 @@ function needs(s: State, p: Person, v: Val, a: number, lazy: number, light: bool
   if (p.toa < KROPP.toaGenast) return set(v, 'toa', 'Måste gå på toa genast');
   if (tortarFarligt(p) && dricka(s, p, v)) return true; // också den som är sjuk eller svag dricker
   if (sick) return set(v, 'sova', 'Är sjuk');
-  if (p.health < KROPP.svag) return set(v, 'sova', 'Är för svag för att orka något');
+  if (halsa(p) < KROPP.svag) return set(v, 'sova', 'Är för svag för att orka något'); // också av blodförlust och smärta (halsa.ts)
   if (p.warm < KROPP.farligt && lit) return set(v, 'varma', 'Fryser farligt');
   // elden går inte att tända för att tändmaterial saknas: den som fryser men orkar hämtar det i stället för att gå in.
   // Kylan är faran och elden det enda som hjälper mot den (några räcker; de andra går in och väntar)

@@ -1,4 +1,5 @@
 import { ALDER, ageOf, isSick, living, stat } from './folk';
+import { handighet } from './halsa';
 import { ageIndex } from './tid';
 import { ACTS, SNABBARE } from './handlingar';
 import { Act, HOUR_S, Person, State } from './typer';
@@ -37,6 +38,6 @@ export const arbetsformaga = (p: Person, a: number, now: number) => ageFactor(a)
 export function workRate(s: State, p: Person, act: Act) {
   const a = ageOf(p, s.now);
   const sk = ACTS[act].arbete!, d = ACTS[sk as Act];
-  return d.bas! * SNABBARE / HOUR_S * d.sasong![ageIndex(s)] * (0.45 + p.skill[sk] / 20 + stat(p, d.egenskap!, s.now) / 40) * ageFactor(a) * sickFactor(p, s.now);
+  return d.bas! * SNABBARE / HOUR_S * d.sasong![ageIndex(s)] * (0.45 + p.skill[sk] / 20 + stat(p, d.egenskap!, s.now) / 40) * ageFactor(a) * sickFactor(p, s.now) * handighet(p); // skadade armar och händer arbetar långsammare (halsa.ts)
 }
 export function foodDays(s: State) { const n = living(s).length || 1; return foodOf(s) / (n * EKONOMI.matPerDygn); }

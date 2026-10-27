@@ -35,7 +35,7 @@ export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => voi
     for (const k of s.stockar ?? []) if (!(k.ved >= 0) || !(k.grenar >= 0)) larm('stam', () => `stam ${k.id} ved ${k.ved}, grenar ${k.grenar}`);
     const folk = living(s);
     for (const p of folk) {
-      for (const k of ['hunger', 'rest', 'social', 'health', 'toa', 'torst'] as const) if (!ok01(p[k])) larm('behov ' + k, () => `${p.name} ${k} = ${p[k]}`);
+      for (const k of ['hunger', 'rest', 'social', 'health', 'toa', 'torst', 'blod'] as const) if (!ok01(p[k])) larm('behov ' + k, () => `${p.name} ${k} = ${p[k]}`);
       if (!ok01(p.warm / KROPP.maxVarm)) larm('behov warm', () => `${p.name} warm = ${p.warm}`); // värmen går till maxVarm (steg 2.3.4)
       if (!Number.isFinite(p.x) || !Number.isFinite(p.y) || !inMap(p.x, p.y)) larm('position', () => `${p.name} på ${p.x},${p.y}`);
       else if (tiles[tileOf(p.x, p.y)] === T.Vatten) larm('i vattnet', () => `${p.name} står i vattnet (${p.task?.act})`);
