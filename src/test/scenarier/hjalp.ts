@@ -129,6 +129,8 @@ export function uiLasNu(s: State, t: number) {
     heldBy(s, p); ownedBy(s, p); ownedStock(s, p); capacity(s, p);
     if (p.task) { load(p.task, s); homeKind(p.task); taskName(p.task); carryKind(p.task.act); }
     for (const l of p.lardomar ?? []) describe(s, l);
+    // fliken Hälsa (steg 2.5.3)
+    SIM.skadeLista(p, s.now); for (const d of Object.keys(SIM.KROPPSDELAR) as SIM.Kroppsdel[]) SIM.delSkada(p, d); for (const f of Object.values(SIM.FORMAGOR)) { f.varde(p); f.delar(p); }
     for (const q of s.people) void s.rels[relKey(p.id, q.id)];
   }
 }

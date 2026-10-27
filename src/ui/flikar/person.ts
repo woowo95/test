@@ -1,4 +1,4 @@
-import { TORST, blodning, halsa, skadeText, smarta, torstDelar } from '../../sim';
+import { FORMAGOR, Kroppsdel, KROPPSDELAR, TORST, blodning, delSkada, halsa, skadeLista, skadeText, smarta, torstDelar } from '../../sim';
 import { ACTS, ALDER, Act, DAY, Lardom, SAMTAL, SKILL_GOR, STAT_GOR, Skill, Stat, coldOf, halsaLage, hearthOf, living, roomAt, temperature, varmeDelar, viloSlag, viloTak, SLAG, SLAG_TECKEN, Person, KUNSKAPER, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, SEDER, SED_LIST, TEKNIK, BYN, Ting, halvKlar, ageOf, alive, byId, childrenOf, drar, heldBy, ownedBy, PLATSER, PLATS_LIST, handerFor, homeKind, load, utrustning, viktOf, SAKER, ownedStock, sakNamn, slagIkon, tingNamn, STACK, describe, duty, habitShare, habitTotal, KROPP, kortTal, moodOf, num, REL, relKey, stat, taskName, timeLabel } from '../../sim';
 import { framstegSvg, hasIcon, iconImg } from '../../ikoner';
 import { LAG, bar, cap, carryTxt, cssFarg, durTxt, esc, hex, hsl, hjalpText, moodWord, pLink, prickar, relWord, sickNow, tempBar, tempOrd, trend, trendD } from '../hjalp';
@@ -34,6 +34,7 @@ interface Del { id: string; tecken: string; namn: string; levande?: true; html(p
 const DELAR: Del[] = [
   { id: 'pres', tecken: '🪪', namn: 'Presentation', html: presHtml },
   { id: 'behov', tecken: '❤️', namn: 'Behov', levande: true, html: behovHtml },
+  { id: 'halsa', tecken: '🩺', namn: 'Hälsa', levande: true, html: halsaHtml },
   { id: 'egen', tecken: '💪', namn: 'Egenskaper', html: egenHtml },
   { id: 'tid', tecken: '🕓', namn: 'Tiden', levande: true, html: tidHtml },
   { id: 'utr', tecken: '🎒', namn: 'Utrustning', levande: true, html: p => `<p class="muted">${carryTxt(p)}</p>${gearHtml(p)}` },
@@ -99,7 +100,7 @@ function behovHtml(p: Person) {
     ...sickNow(p) ? [{ namn: p.sickWhy ?? 'Sjuk', v: -1 / KROPP.sjukTim }] : [],
     // kroppen (steg 2.5.1): blodet som rinner ut, och det som håller hälsan nere
     ...blodning(p) > 0 ? [{ namn: 'Blöder', v: -blodning(p) }] : []];
-  const skador = [...skadeText(p), ...(p.blod ?? 1) < 1 ? [`Har förlorat ${Math.round((1 - (p.blod ?? 1)) * 100)} % av blodet`] : [], ...smarta(p) > 0.2 ? ['Har ont'] : []];
+  const skador = [...skadeText(p, now), ...(p.blod ?? 1) < 1 ? [`Har förlorat ${Math.round((1 - (p.blod ?? 1)) * 100)} % av blodet`] : [], ...smarta(p) > 0.2 ? ['Har ont'] : []];
   return `${sickNow(p) ? `<p class="why">${esc(p.sickWhy ?? 'Sjuk')}, ${durTxt(p.sickUntil! - now)} kvar</p>` : ''}<dl class="kv">
       ${rad(p, 'humor', 'Humör', `${bar(m, '', trend(p, 'humor', m))}<span>${moodWord(m)}</span>`, humor, '', 'Tankarna försvinner med tiden.')}
       ${rad(p, 'hunger', 'Mättnad', bar(p.hunger, '', trend(p, 'hunger', p.hunger)), [{ namn: 'Hungern växer', v: -1 / KROPP.hungerTim * (a < ALDER.matBarn ? KROPP.hungerBarn : 1) }], ' i timmen', 'Maten hen äter höjer den.')}
@@ -110,6 +111,39 @@ function behovHtml(p: Person) {
       ${rad(p, 'warm', 'Temperatur', `${tempBar(p.warm, trend(p, 'warm', p.warm))}<span>${tempOrd(p.warm)}</span>`, varme, ' i timmen', 'Mitten är lagom, till höger är för varmt. Ett bad kyler av, och i skugga värmer inte solen.')}
       ${rad(p, 'toa', 'Toa', bar(p.toa, p.toa < KROPP.toaBehov ? 'low' : '', trend(p, 'toa', p.toa)), [{ namn: p.task?.act === 'sova' ? 'Behovet växer, långsammare i sömnen' : 'Behovet växer', v: -1 / KROPP.toaTim * (p.task?.act === 'sova' ? KROPP.toaSomn : 1) }], ' i timmen', 'Ett toabesök fyller den.')}
     </dl>`;
+}
+// fliken Hälsa (steg 2.5.3): kroppen som pixelgubbe nr 3 ("händer och fötter", Björn efter v55), ritad i rutor som
+// människorna på kartan, utan kontur. Bildens vänstra sida är personens högra. Varje del är grön när den är hel och går mot
+// gult och rött ju mer skadad den är (delSkada); ett tryck eller musen visar vad som är fel just där. Under kroppen listan
+// över skadorna (skadeLista) och förmågorna som staplar (FORMAGOR). Saknade delar (grå) och proteser kommer senare
+const GUBBE = ['......hhhh......', ...Array(3).fill('.....hhhhhh.....'), '......hhhh......', '.......hh.......',
+  ...Array(8).fill('..AA.bbbbbb.aa..'), '.DDD.bbbbbb.ddd.', '.DD..bbbbbb..dd.', '................',
+  ...Array(8).fill('.....LL..ll.....'), '...FFFF..ffff...'];
+const GUBBE_DEL: Record<string, Kroppsdel> = { h: 'huvud', b: 'bal', A: 'armH', a: 'armV', D: 'handH', d: 'handV', L: 'benH', l: 'benV', F: 'fotH', f: 'fotV' };
+// rutorna per del, hopslagna till en rektangel per lopp i raden (räknas en gång)
+const GUBBE_RUTOR = (() => {
+  const m = {} as Record<Kroppsdel, string>;
+  GUBBE.forEach((r, y) => { for (let x = 0; x < r.length;) { const c = r[x]; let n = 1; while (r[x + n] === c) n++; if (c !== '.') m[GUBBE_DEL[c]] = (m[GUBBE_DEL[c]] ?? '') + `<rect x="${x}" y="${y}" width="${n}" height="1"/>`; x += n; } });
+  return m;
+})();
+const delFarg = (f: number) => `hsl(${Math.round(110 - 104 * f)} 55% 50%)`;
+function halsaHtml(p: Person) {
+  const rader = skadeLista(p, s.now), delar = Object.keys(KROPPSDELAR) as Kroppsdel[];
+  const vad = (d: Kroppsdel) => rader.filter(r => r.d === d);
+  const gubbe = delar.map(d => {
+    const r = vad(d), titel = `${KROPPSDELAR[d].namn}: ${r.length ? r.map(x => `${x.namn.split(' i ')[0].toLowerCase()}, ${x.grad}`).join('; ') : 'hel'}`;
+    return `<g class="klick" data-hjalp="k-${d}-${p.id}" fill="${delFarg(delSkada(p, d))}"><title>${esc(titel)}</title>${GUBBE_RUTOR[d]}</g>`;
+  }).join('');
+  const oppen = delar.map(d => hjalpText(`k-${d}-${p.id}`, `<p class="forkl"><b>${esc(KROPPSDELAR[d].namn)}</b>: ${vad(d).length ? vad(d).map(r => esc(`${r.namn.split(' i ')[0]}, ${r.grad}, ${r.gar}`)).join('; ') : 'hel'}</p>`)).join('');
+  const blod = p.blod ?? 1;
+  const lista = rader.length || blod < 1 ? `<ul class="skador">${rader.map(r => `<li class="${r.battre ? 'pos' : 'neg'}"><span class="tecken">${r.tecken}</span><span>${esc(r.namn)}<small class="muted">${esc([r.grad, ...r.bloder ? ['blöder'] : [], ...r.gjort].join(', '))}</small></span><span class="gar">${r.battre ? '↗' : '↘'} ${esc(r.gar)}</span></li>`).join('')}
+    ${blod < 1 ? `<li class="${blodning(p) > 0 ? 'neg' : 'pos'}"><span class="tecken">🩸</span><span>Har förlorat ${Math.round((1 - blod) * 100)} % av blodet</span><span class="gar">${blodning(p) > 0 ? '↘ blöder' : '↗ kommer tillbaka'}</span></li>` : ''}</ul>` : '<p class="muted">Inget är fel.</p>';
+  const formagor = (Object.keys(FORMAGOR) as (keyof typeof FORMAGOR)[]).map(k => {
+    const f = FORMAGOR[k], v = f.varde(p), ont = 'ont' in f;
+    return rad(p, 'f_' + k, `${f.tecken} ${f.namn}`, `${bar(v, (ont ? v > 0.5 : v < LAG.halsa) ? 'low' : '')}<span>${Math.round(v * 100)} %</span>`, f.delar(p), '', `Påverkar: ${f.gor}`);
+  }).join('');
+  return `<div class="kropp"><svg class="gubbe" viewBox="0 0 16 26" shape-rendering="crispEdges" role="img" aria-label="Kroppen">${gubbe}</svg>${oppen}</div>
+    <h3>Det som är fel</h3>${lista}<h3>Förmågor</h3><dl class="kv">${formagor}</dl>`;
 }
 // det en egenskap eller färdighet gör: arbetena som går fortare (ACTS) och raderna i STAT_GOR och SKILL_GOR
 function gorHtml(rader: string[], nu: string) {

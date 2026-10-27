@@ -176,6 +176,14 @@ h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: 
 .kv dd.forkl { grid-column: 1 / -1; display: block; margin: 0 0 6px; padding: 6px 8px; border-radius: 6px; background: var(--barbg); font-size: 14px; }
 .kv dd.forkl .thoughts { margin-top: 4px; }
 .kv dd.forkl p { margin: 0; }
+.kropp { display: flex; align-items: flex-start; gap: 12px; margin: 4px 0 8px; }
+.gubbe { width: 80px; height: 130px; flex: none; }
+.gubbe .klick { cursor: pointer; } .gubbe .klick:hover { filter: brightness(1.2); }
+.kropp .forkl { margin: 0 0 4px; padding: 6px 8px; border-radius: 6px; background: var(--barbg); font-size: 14px; }
+.skador { display: grid; gap: 4px; margin: 4px 0 8px; padding: 0; list-style: none; }
+.skador li { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 6px; align-items: baseline; font-size: 14px; }
+.skador li small { display: block; }
+.skador .gar { font-size: 13px; } .skador .pos .gar { color: var(--good); } .skador .neg .gar { color: var(--bad); }
 .bar.temp, .tip .bar.temp { position: relative; overflow: visible; background: linear-gradient(90deg, #3b7fd4, var(--barbg) 50%, #d4703b); }
 .bar.temp::after { content: ''; position: absolute; left: 50%; top: -3px; height: 12px; width: 1px; background: var(--muted); }
 .bar.temp > span { position: absolute; top: -2px; width: 4px; height: 10px; margin-left: -2px; border-radius: 2px; background: var(--fg); }

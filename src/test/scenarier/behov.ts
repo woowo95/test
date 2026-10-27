@@ -1,5 +1,5 @@
 // Scenarier. Behov och val: behov, ved, aktivitet och fritid.
-import { Person, createState, getRel, step, living, temperature, nyKalender, amountOf, capacity, load, isLight, T, FOOD, ageOf, getMap, HOUR, W, tileOf, stat, campCenter, KANIN, gain, takeFuel, ownsAmount, ownedSum, addTo, setAmount, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, STOLD_LINDRIG, STOLD_OP, BEAT, spar, isWork, ACTS, groundOf, varmeDelar, nyVarme, addTool, stepKlader, chooseTask, iSkugga, KROPP, spotFor, shoreOf, torstDelar, drickPlats, areaOf, halsaLage, describe, halsaSteg, skada, blodning, halsa, rorlighet, workRate, OLYCKOR, Act, HALSA, kanGa, gangFart, hemma, mossaFynd, chopStock } from '../../sim';
+import { Person, createState, getRel, step, living, temperature, nyKalender, amountOf, capacity, load, isLight, T, FOOD, ageOf, getMap, HOUR, W, tileOf, stat, campCenter, KANIN, gain, takeFuel, ownsAmount, ownedSum, addTo, setAmount, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, STOLD_LINDRIG, STOLD_OP, BEAT, spar, isWork, ACTS, groundOf, varmeDelar, nyVarme, addTool, stepKlader, chooseTask, iSkugga, KROPP, spotFor, shoreOf, torstDelar, drickPlats, areaOf, halsaLage, describe, halsaSteg, skada, blodning, halsa, rorlighet, workRate, OLYCKOR, Act, HALSA, kanGa, gangFart, hemma, mossaFynd, chopStock, skadeLista, skadeText, delSkada, FORMAGOR, smarta, handighet } from '../../sim';
 import { START, STEG_DYGN, STEG_TIM } from '../kor';
 import { setMat, setFood, kor, klockan, tandEld, tomtForrad, treVuxna, bastaJaktruta, SCENARIER, rikBy } from './hjalp';
 
@@ -474,6 +474,46 @@ SCENARIER.vard = {
       [`man läker fortare när man sover (${(0.5 - vaken).toFixed(3)} → ${(0.5 - sover).toFixed(3)} på fyra timmar)`, 0.5 - sover > 0.5 - vaken],
       [`mossa hittas när man letar (${fynd.toFixed(2)} i timmen) och när man hugger en fälld stam med mossa (${hugg})`, fynd > 0 && hugg === 2],
       [`på tolv dygn i en by: ${b.stat ? amountOf(b, 'mossa').toFixed(1) : 0} mossa, ${st('skador')} skador, ${st('vard')} vårdtillfällen (${st('vard av andra')} av andra), ${st('forband')} förband, ${st('infektioner')} infektioner, ${st('kallbrand')} kallbrand, ${st('buren hem')} burna hem`, st('vard') > 0 && amountOf(b, 'mossa') + st('forband') > 0],
+    ];
+  },
+};
+
+SCENARIER.halsoflik = {
+  text: 'Steg 2.5.3: fliken Hälsa läser kroppen: varje skada som en rad med symbol, var den sitter, hur svår den är, om den blöder, vad som är gjort (förband, rengjort) och om den blir bättre eller sämre. Varje del i figuren får sin färg av hur skadad den är, och förmågorna (rörlighet, händighet, blod och smärta) visar sina värden och vad som sänker dem',
+  kor: () => {
+    const s = createState(5, START);
+    const p = living(s)[0];
+    Object.assign(p, { hunger: 1, torst: 1, health: 1, blod: 1, skador: undefined });
+    const hel = skadeLista(p, s.now).length === 0 && Object.values(FORMAGOR).every(f => f.delar(p).length === 0) && delSkada(p, 'huvud') === 0;
+    skada(s, p, 'handH', 'skarsar', 0.4, 'olycka', ''); skada(s, p, 'benV', 'benbrott', 0.8, 'olycka', '');
+    const [sar, brott] = skadeLista(p, s.now);
+    const sarRad = sar.namn === 'Skärsår i högra handen' && sar.bloder && sar.grad === 'svårt' && sar.battre && sar.tecken === '🔪';
+    const brottRad = brott.namn === 'Benbrott i vänstra benet' && !brott.bloder && brott.grad === 'mycket svårt' && brott.tecken === '🦴';
+    const farg = delSkada(p, 'benV') > delSkada(p, 'handH') && delSkada(p, 'handH') > 0 && delSkada(p, 'handV') === 0;
+    // förmågorna: värdet är det simuleringen räknar med, och delarna visar var det kommer ifrån
+    const rf = FORMAGOR.rorlighet, hf = FORMAGOR.handighet;
+    const formagor = rf.varde(p) === rorlighet(p) && hf.varde(p) === handighet(p) && FORMAGOR.smarta.varde(p) === smarta(p)
+      && Math.abs(1 + rf.delar(p).reduce((a, x) => a + x.v, 0) - rorlighet(p)) < 1e-9 && rf.delar(p).length === 1 && hf.delar(p).length === 1
+      && FORMAGOR.blod.delar(p).length === 1 && FORMAGOR.smarta.delar(p).length === 2;
+    // vården syns: förband och rengjort, och ett infekterat sår som inte rengörs blir sämre
+    const w = p.skador![0]; w.f = 1; w.inf = 0.3;
+    const smutsig = skadeLista(p, s.now)[0];
+    w.ren = s.now + HOUR; const ren = skadeLista(p, s.now)[0];
+    const vard = smutsig.tecken === '🦠' && !smutsig.battre && smutsig.gjort.includes('förband av mossa') && ren.battre && ren.gjort.includes('rengjort')
+      && delSkada(p, 'handH') >= 0.3; // infektionen syns i figuren
+    w.ren = s.now - 1; const gammal = skadeLista(p, s.now)[0]; // rengjordes för länge sedan: räknas inte längre
+    w.inf = HALSA.kallbrand; const kall = skadeLista(p, s.now)[0];
+    const text = skadeText(p, s.now);
+    return [
+      ['den som är hel har inget i listan och inget som sänker förmågorna', hel],
+      [`ett skärsår blir en rad: ${sar.tecken} ${sar.namn}, ${sar.grad}, blöder, ${sar.gar}`, sarRad],
+      [`ett benbrott blir en rad: ${brott.tecken} ${brott.namn}, ${brott.grad}, ${brott.gar}`, brottRad],
+      [`delarna i figuren får färg av hur skadade de är (benet ${delSkada(p, 'benV').toFixed(2)}, handen ${delSkada(p, 'handH').toFixed(2)})`, farg],
+      [`förmågorna visar simuleringens värden (rörlighet ${rf.varde(p).toFixed(2)}, händighet ${hf.varde(p).toFixed(2)}) och vad som sänker dem`, formagor],
+      [`ett infekterat sår med förband visas som ${smutsig.gar}, och rengjort som ${ren.gar}`, vard],
+      ['ett sår som rengjordes för länge sedan räknas inte som rengjort', !gammal.gjort.includes('rengjort') && !gammal.battre],
+      [`kallbranden visas med ${kall.tecken} och blir sämre`, kall.tecken === '☠️' && !kall.battre],
+      [`personrutans text läser samma rader (${text.length} rader)`, text.length === 2 && text[0].startsWith('Skärsår i högra handen')],
     ];
   },
 };
