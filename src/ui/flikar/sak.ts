@@ -1,4 +1,4 @@
-import { BYN, HOUR, kortTal, Pile, SAKER, Slitage, Ting, byId, condOf, halvKlar, sakNamn, slitageNu, stationById, stationDef, temperature, tingOf } from '../../sim';
+import { BYN, HOUR, W, kortTal, Pile, SAKER, Slitage, Ting, byId, condOf, halvKlar, sakNamn, slitageNu, stationById, stationDef, temperature, tingOf, toaAt, toaInfo } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { condBar, durTxt, esc, pLink } from '../hjalp';
 import { piles, s, ui } from '../lage';
@@ -7,7 +7,8 @@ import type { Flik } from '../panel';
 // en sak eller en hög (steg 2.3.5): öppnas genom att trycka på den i lagret, en hög, personens utrustning eller en
 // stations redskapsplats. Symbolen och namnet, skicket, vad som sliter på den just nu och hur länge den håller i den
 // takten, vem som gjorde den och när. Kvaliteten (steg 2.2.2) kommer när den finns.
-// Det som går att trycka på har data-sak: "t:<tingets id>" för ett redskap eller plagg, "s:<x>,<y>,<slag>" för en stack
+// Det som går att trycka på har data-sak: "t:<tingets id>" för ett redskap eller plagg, "s:<x>,<y>,<slag>" för en stack.
+// En toa-hög på kartan (steg 2.10.5) öppnas som "f:<rutan>" och har en egen inforuta (toaHog)
 export const sakKey = (a: { id?: number; x?: number; y?: number; k: string }) => a.id !== undefined ? `t:${a.id}` : `s:${a.x},${a.y},${a.k}`;
 export const sakAttr = (a: { id?: number; x?: number; y?: number; k: string }) => `data-sak="${sakKey(a)}"`;
 // maten fryser i frost och ruttnar då nästan inte (LAGER.frost, steg 2.8.2): i lagret får symbolen en vit kant av rimfrost
@@ -33,10 +34,26 @@ function var_(t: Ting, p?: Pile) {
   if (t.vid !== undefined) { const st = stationById(s, t.vid); return st ? `Vid ${esc(stationDef(st.k)?.namn.toLowerCase() ?? 'stationen')}` : 'Vid en station'; }
   return p ? (p.stored ? 'I förrådet' : 'På marken') : 'I förrådet';
 }
+// toa-högen (steg 2.10.5): hur färsk den är, vem som lämnade den och när, hur länge den ligger kvar och vad den gör
+function toaHog(i: number) {
+  const f = toaAt(s, i % W, Math.floor(i / W));
+  if (!f) return '<p class="muted">Den har bleknat bort.</p>';
+  const inf = toaInfo(s, f), vem = f.av !== undefined ? byId(s, f.av) : undefined;
+  const gor = [inf.akel && 'Äcklar dem som går förbi', inf.plock && 'Ingen plockar här eller bredvid', inf.vatten && 'Smutsar vattnet i närheten'].filter(Boolean);
+  return `
+    <div class="phead">${iconImg('toa', 32)}<div><h2>${esc(sakNamn('toa'))}</h2></div></div>
+    <dl class="kv">
+      <dt>Färsk</dt><dd>${condBar(inf.n)}<span>${Math.round(inf.n * 100)} %</span></dd>
+      <dt>Lämnad</dt><dd>${vem ? `av ${pLink(vem)}, ` : ''}för ${durTxt(s.now - f.t)} sedan</dd>
+      <dt>Ligger kvar</dt><dd>${durTxt(inf.kvar * HOUR)} till</dd>
+      <dt>Gör</dt><dd>${gor.length ? gor.join('<br>') : 'Inget längre, den har nästan bleknat bort'}</dd>
+    </dl>`;
+}
 export const sak: Flik = {
   namn: 'Saken',
   knapp: 'person',
   html() {
+    if (ui.sak.startsWith('f:')) return toaHog(Number(ui.sak.slice(2)));
     const { t, p } = hitta(), a = t ?? p;
     if (!a) return '<p class="muted">Den finns inte längre.</p>';
     const k = t?.halv?.gor ?? p?.gor ?? a.k, c = t ? t.c : condOf(p!), sl = slitageNu(s, { k: a.k, x: t ? t.x ?? p?.x : p!.x, y: t ? t.y ?? p?.y : p!.y }, t);

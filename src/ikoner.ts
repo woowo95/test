@@ -55,6 +55,8 @@ const PAL: Record<string, Record<string, string>> = {
   // grödorna från fälten och grodden på fältet (steg 2.10.3, platshållare i bildstilens palett)
   rovor: { o: '#353204', g: '#4b4f00', G: '#647025', L: '#898b4c', r: '#742a01', R: '#a14808', b: '#a0947d', B: '#bdb39b', W: '#dad0bb' },
   korn: { s: '#694902', y: '#906f0f', Y: '#b2921b', L: '#d8b25f', k: '#3f2415', j: '#5e3c24', J: '#7d5b40' },
+  // toa-högen (steg 2.10.5, platshållare efter stankslingan på kartan, ui/smuts.ts)
+  toa: { v: '#aacd5a', V: '#7f9a44', c: '#6b4a1f', C: '#8f6a34', k: '#4a3014' },
   grodd: { g: '#4b4f00', G: '#647025', L: '#898b4c' },
   vattensack: { d: '#3f2415', b: '#5e3c24', B: '#7d5b40', L: '#987e62', y: '#906f0f', Y: '#b2921b', w: '#8a9c9e' }, // steg 2.10.1, platshållare i bildstilens palett
   benspade: { h: '#7a5a36', H: '#9c7848', y: '#c8b07a', Y: '#e8d4a0', w: '#e8e2d0', W: '#fffaf0', d: '#b8ae98', R: '#d8d0bc' },
@@ -939,6 +941,25 @@ const PIX: Record<string, string[]> = {
     '..jJLYLYLYLYJj..',
     '...kjjjjjjjjk...',
     '....kkkkkkkk....',
+  ],
+  // toa-högen (steg 2.10.5, platshållare): en brun hög med en grön stank som stiger upp
+  toa: [
+    '................',
+    '.......v........',
+    '.....vV.........',
+    '....V...v.......',
+    '.....V...v......',
+    '......vV..v.....',
+    '.........vV.....',
+    '.......vV.......',
+    '................',
+    '.......cCc......',
+    '......cCCcc.....',
+    '.....ccCcccc....',
+    '....kcccCccck...',
+    '...kccccccccck..',
+    '....kkkkkkkkk...',
+    '................',
   ],
   // grodden på fältet (steg 2.10.3, platshållare): ritas på varje ruta medan grödan växer
   grodd: [

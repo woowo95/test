@@ -772,6 +772,9 @@ SCENARIER.latrin = {
     p.thoughts = []; p.task = { act: 'toa' } as SIM.Person['task']; akel(s, p); const sjalv = !p.thoughts.length; p.task = undefined;
     const plock = forSmutsigt(s, Math.floor(p.x), Math.floor(p.y)) && !forSmutsigt(s, Math.floor(p.x) + 4, Math.floor(p.y));
     const rngOrord = JSON.stringify(s.rngs) === rng0;
+    // toa-högen är en sak som går att trycka på (steg 2.10.5): den vet vem som lämnade den, hur länge den ligger kvar och vad den gör
+    const th = SIM.toaAt(s, Math.floor(p.x), Math.floor(p.y)), ti = th && SIM.toaInfo(s, th);
+    const hog = SAKER.toa?.mark === true && th?.av === p.id && !!ti && ti.n === 1 && ti.kvar === 48 && ti.akel && ti.plock;
     // fläcken bleknar bort på två dygn
     const t0 = s.now; s.now += 49 * HOUR; const bleknat = toaNara(s, i) === 0; s.now = t0;
     // nära vattnet blir vattnet smutsigare, och den som får ont i magen av det lär byn något om hygien
@@ -815,6 +818,7 @@ SCENARIER.latrin = {
       ['den som står bredvid blir äcklad, men inte den som själv är på toa', akelQ && sjalv],
       ['man plockar inte på eller bredvid fläcken', plock],
       ['fläckarna rör inte byns slumpföljder', rngOrord],
+      ['toa-högen är en sak som vet vem som lämnade den, hur länge den ligger kvar och vad den gör', hog],
       ['fläcken bleknar bort på två dygn (två år i spelet, två dagar i verkligheten)', bleknat],
       [`en fläck på stranden gör vattnet smutsigare (${v0.toFixed(2)} → ${v1.toFixed(2)})`, vatten],
       [`ont i magen av toa-smutsat vatten lär byn hygien (${(s.hygien ?? 0).toFixed(2)})`, hygien],

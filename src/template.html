@@ -5,17 +5,12 @@
 <style>
 /* Layout: kartan fyller vänster yta, en smal journalpanel till höger; på mobil staplas de. */
 :root {
-  --bg: #e3e6df; --panel: #f1f3ee; --fg: #1e2420; --muted: #5d6860; --line: #c7cdc4;
-  --accent: #b5701a; --accent-fg: #ffffff; --good: #4f8a4a; --bad: #b8483b; --barbg: #d6dbd3;
+  /* mörkt läge är standard och det enda läget, oavsett datorns inställning (steg 2.10.5) */
+  --bg: #131816; --panel: #1b221f; --fg: #e2e6df; --muted: #93a096; --line: #2c3530;
+  --accent: #e3a045; --accent-fg: #1b1408; --good: #7dbb72; --bad: #e07a6c; --barbg: #2a332e; color-scheme: dark;
   --display: "Grenze", "Palatino Linotype", Georgia, serif;
   --body: "Alegreya Sans", "Segoe UI", system-ui, sans-serif;
 }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
-  --bg: #131816; --panel: #1b221f; --fg: #e2e6df; --muted: #93a096; --line: #2c3530;
-  --accent: #e3a045; --accent-fg: #1b1408; --good: #7dbb72; --bad: #e07a6c; --barbg: #2a332e; color-scheme: dark } }
-:root[data-theme="dark"] {
-  --bg: #131816; --panel: #1b221f; --fg: #e2e6df; --muted: #93a096; --line: #2c3530;
-  --accent: #e3a045; --accent-fg: #1b1408; --good: #7dbb72; --bad: #e07a6c; --barbg: #2a332e; color-scheme: dark }
 [hidden] { display: none !important; }
 html, body { height: 100%; }
 body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px; line-height: 1.4;

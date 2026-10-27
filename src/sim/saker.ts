@@ -23,6 +23,7 @@ interface SakDef {
   skaffa?: Skaffa; // hur en skaffas; grundvärdet räknas ur det (varde.ts). Saknas = inget värde
   gors?: Gors; // ett redskap som görs i ett eget arbete (redskap.ts): texterna och vad som räknas
   klad?: Klad; // ett klädesplagg (steg 2.3.2, utrustning.ts)
+  mark?: true; // ligger kvar på marken där den hamnade: ingen bär, äger eller lagrar den (toa-högen, smuts.ts)
 }
 // ett klädesplagg: platsen på kroppen (PLATSER i utrustning.ts), så stor del mindre kyla för den som har det på sig, och hur
 // många dygn (år i spelet) det håller på kroppen
@@ -110,6 +111,8 @@ const DEF = {
   // grödorna från fälten (steg 2.10.3, odling.ts). Rovorna håller en vinter i lagret, kornet flera år
   rovor: { namn: 'Rovor', skaffa: { tid: 0.2, tek: 'odling' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 6, naring: { energi: 1.4, vitamin: 1, mineral: 0.6, protein: 0.2, fett: 0.1 }, haller: 8 },
   korn: { namn: 'Korn', skaffa: { tid: 0.25, tek: 'odling' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 6.5, naring: { energi: 2, protein: 0.8, mineral: 0.6, vitamin: 0.3, fett: 0.2 }, haller: 20 }, // håller så länge något får hålla (LAGER.maxDygn), men det torkade äts sist
+  // toa-högen (steg 2.10.5): en toa-fläck på marken (FLACKAR i smuts.ts), som går att trycka på. Den bleknar bort av sig själv
+  toa: { namn: 'Toa-hög', mark: true },
 } satisfies Record<string, SakDef>;
 
 type Sak = keyof typeof DEF;

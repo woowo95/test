@@ -9,7 +9,8 @@
 // en, får vara ifred (lite bättre humör) och lämnar ingen fläck, men gropen fylls (Station.fyllt) och fylls igen när den är
 // full, så att byn gräver en ny. Får någon ont i magen av vatten som toaletten smutsat ner lär sig byn att smutsen kommer
 // därifrån (s.hygien), och lägger sedan latrinen längre från vattnet (siteUtkant i stationer.ts)
-import { Act, H, HOUR, Person, State, W } from './typer';
+import { Act, H, HOUR, Person, State, T, W } from './typer';
+import { getMap } from './karta';
 import { STATION, Station, isKlar, stationById, stationDef, stationFor, stationerOf, storlekAv } from './stationer';
 import { clamp } from './slump';
 import { balans } from './balans';
@@ -39,8 +40,8 @@ export const FLACKAR = {
 } satisfies Record<string, FlackDef>;
 export type FlackSlag = keyof typeof FLACKAR;
 const DEF: Record<string, FlackDef> = FLACKAR;
-// en fläck: slaget, rutan (index i kartan) och styrkan n (0–1) vid tiden t
-export interface Flack { k: string; i: number; n: number; t: number }
+// en fläck: slaget, rutan (index i kartan) och styrkan n (0–1) vid tiden t, och vem som lämnade den sist (av, personens id)
+export interface Flack { k: string; i: number; n: number; t: number; av?: number }
 
 // fläckens styrka nu: den bleknar jämnt från n till 0
 export const flackNu = (f: Flack, now: number) => clamp(f.n - (now - f.t) / ((DEF[f.k]?.bleknar ?? 1) * HOUR), 0, 1);
@@ -50,12 +51,12 @@ export const flackarOf = (s: State) => s.flackar ?? [];
 const hash = (a: number, b: number) => { const h = Math.sin(a * 12.9898 + b * 78.233) * 43758.5453; return h - Math.floor(h); };
 
 // en fläck av slaget k på rutan i, mangd enheter. De som bleknat bort tas bort
-function smutsaRuta(s: State, k: string, i: number, mangd: number) {
+function smutsaRuta(s: State, k: string, i: number, mangd: number, av?: number) {
   if (!DEF[k] || mangd <= 0 || i < 0 || i >= W * H) return;
   const ut = flackarOf(s).filter(f => flackNu(f, s.now) > 0);
   const f = ut.find(g => g.k === k && g.i === i);
-  if (f) { f.n = clamp(flackNu(f, s.now) + mangd * DEF[k].per, 0, 1); f.t = s.now; }
-  else ut.push({ k, i, n: clamp(mangd * DEF[k].per, 0, 1), t: s.now });
+  if (f) { f.n = clamp(flackNu(f, s.now) + mangd * DEF[k].per, 0, 1); f.t = s.now; if (av !== undefined) f.av = av; }
+  else ut.push({ k, i, n: clamp(mangd * DEF[k].per, 0, 1), t: s.now, ...(av !== undefined ? { av } : {}) });
   s.flackar = ut;
 }
 // mangd enheter av handlingen act har gjorts (bearbeta i redskap.ts): smutsar stationen där det görs ner, om den gör det.
@@ -125,6 +126,20 @@ export const vattenSmuts = (s: State, i: number) => clamp(smutsOf(s.seed)[i] + t
 // man plockar inte där det är toa-smuts (spotFor i val.ts)
 export const forSmutsigt = (s: State, x: number, y: number) => toaNara(s, y * W + x) > SMUTS.plock;
 
+// toa-högen på rutan (x, y), om det finns en som inte bleknat bort (steg 2.10.5: den går att trycka på)
+export const toaAt = (s: State, x: number, y: number) => flackarOf(s).find(f => f.k === 'toa' && f.i === y * W + x && flackNu(f, s.now) > 0);
+// vad toa-högen f gör nu (inforutan): styrkan, timmar tills den är borta, om den äcklar dem som går förbi, om ingen plockar
+// där och om den smutsar vattnet (det finns vatten inom SMUTS.vattenNara rutor)
+export function toaInfo(s: State, f: Flack) {
+  const n = flackNu(f, s.now), x0 = f.i % W, y0 = Math.floor(f.i / W), R = SMUTS.vattenNara, map = getMap(s.seed);
+  let vatten = false;
+  for (let dy = -R; dy <= R && !vatten; dy++) for (let dx = -R; dx <= R; dx++) {
+    const x = x0 + dx, y = y0 + dy;
+    if (x >= 0 && y >= 0 && x < W && y < H && map.tiles[y * W + x] === T.Vatten) { vatten = true; break; }
+  }
+  return { n, kvar: n * (DEF[f.k]?.bleknar ?? 0), akel: n > SMUTS.akel, plock: n > SMUTS.plock, vatten };
+}
+
 // varje steg för den som är vaken: står hen på eller bredvid en toa-fläck blir hen äcklad. Inte den som själv är på toa
 export function akel(s: State, p: Person) {
   if (!s.flackar?.length || p.task?.act === 'toa') return;
@@ -156,7 +171,7 @@ export function toaBesok(s: State, p: Person, ref?: number) {
     if (t.fyllt >= 1 - 1e-9) fyllIgen(s, t);
     return;
   }
-  smutsaRuta(s, 'toa', tileOf(p.x, p.y), 1);
+  smutsaRuta(s, 'toa', tileOf(p.x, p.y), 1, p.id);
   count(s, 'toafläckar');
 }
 // en full latrin fylls igen: den försvinner och rutan blir bar jord, som sedan blir gräs av sig själv (mark.ts)
