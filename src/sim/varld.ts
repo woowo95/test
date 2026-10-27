@@ -3,6 +3,7 @@ import { stepDelning } from './delning';
 import { setStock, storeFromSums } from './lager';
 import { isTool } from './saker';
 import { migrateTools, toolsFromItems } from './agande';
+import { migrateFalt } from './odling';
 import { VAR, inFas, nyKalender } from './tid';
 import { ageOf, byId, getRel, log, newPerson, startSkills, think } from './folk';
 import { newSeder, sederTarget, TAGS } from './seder';
@@ -68,6 +69,7 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
     if (!s.ting) toolsFromItems(s); // först, eftersom stackarna skapar en tom lista med ting
     if ('food' in s || s.mat || s.egna || Object.keys(s.items).some(k => !isTool(k))) storeFromSums(s); // äldre sparfiler (före v40): summorna blir stackar
     migrateTools(s); // och redskapen bara ting
+    migrateFalt(s); // fälten från före steg 2.10.13
     if (s.stackar) s.stackar = s.stackar.filter(a => !isTool(a.k));
     for (const p of s.people) { const t = p.task; if (t?.items?.pinnar) { t.items.grenar = (t.items.grenar ?? 0) + t.items.pinnar; delete t.items.pinnar; if (t.cond?.pinnar !== undefined) { t.cond.grenar ??= t.cond.pinnar; delete t.cond.pinnar; } } }
     if (!s.fire) {

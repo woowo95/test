@@ -136,7 +136,7 @@ export const PROJEKT: Record<string, ProjektDef> = {
   falt: {
     namn: 'Fält', ikon: 'odling', behov: 'mat', vikt: PROJEKT_TAL.falt, act: 'odla',
     brist: s => faltBrist(s),
-    kostnad: () => varuVarde({ fron: ODLING.froPerRuta * ODLING.faltW * ODLING.faltH }, (ODLING.beredaMin + ODLING.saMin) * ODLING.faltW * ODLING.faltH / 60 * ARBETE),
+    kostnad: () => varuVarde({ fron: ODLING.froPerRuta * ODLING.rutorPerMun }, (ODLING.beredaMin + ODLING.saMin) * ODLING.rutorPerMun / 60 * ARBETE), // ett fält för en person
     kan: (s, p, f) => !f.kyla && !!faltUppgift(s, p),
     uppgift: (s, p) => { const u = faltUppgift(s, p); return u && { act: 'odla', text: u.text, min: u.min, tool: u.tool, spot: u.spot, ref: u.ref }; },
   },

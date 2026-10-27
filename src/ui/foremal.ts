@@ -1,4 +1,4 @@
-import { MASTERVERK, PERFEKT, Act, DJUR, GRODOR, ODLING, faltKlar, faltOf, brasaHeat, radieAv, W, bordPlatser, sjoarna, stationById, GORS, MATERIAL, Pile, STATION, STUBBE_LIV, Station, bitAt, bitsOf, clamp, dorrDef, condOf, emberOn, fireHeat, forvarAt, getMap, grillVara, heatRadius, TORK, torrDel, isKlar, living, stationDef, stationKlar, stationerOf, storlekAv, tillbehorDef, tingOf, vidStation, zonesOf } from '../sim';
+import { MASTERVERK, PERFEKT, Act, DJUR, GRODOR, faltKlar, faltOf, faltRuta, brasaHeat, radieAv, W, bordPlatser, sjoarna, stationById, GORS, MATERIAL, Pile, STATION, STUBBE_LIV, Station, bitAt, bitsOf, clamp, dorrDef, condOf, emberOn, fireHeat, forvarAt, getMap, grillVara, heatRadius, TORK, torrDel, isKlar, living, stationDef, stationKlar, stationerOf, storlekAv, tillbehorDef, tingOf, vidStation, zonesOf } from '../sim';
 import { LagereldLage, iconCanvas, lagereldId } from '../ikoner';
 import { ritaHus } from './husbild';
 import { outPilesAt, piles, s, ui } from './lage';
@@ -29,18 +29,22 @@ function glans(x: number, y: number, t: number, id: number, perfekt: boolean) {
   const a = Math.sin(f / 0.18 * Math.PI), r = (perfekt ? 2.5 : 1.8) * a;
   overG.beginFill(0xfff3c8, 0.9 * a).drawRect(x - 0.5, y - r, 1, 2 * r).drawRect(x - r, y - 0.5, 2 * r, 1).endFill();
 }
-// fälten (steg 2.10.3, odling.ts): en ram medan de röjs, ljus jord när de är röjda och mörk jord med fåror när de är uppgrävda.
-// Grodden på varje ruta medan grödan växer (liten den första halvan) och grödans symbol när den är mogen. Framstegscirkeln
-// medan någon röjer, gräver eller sår
+// fälten (steg 2.10.3, 2.10.13, odling.ts), ruta för ruta: en ram runt rutan som ska röjas, ljus jord när den är röjd och mörk
+// jord med fåror när den är uppgrävd. Grodden mitt på varje sådd ruta medan grödan växer (liten den första halvan) och
+// grödans symbol när den är mogen, tills rutan skördats. Framstegscirkeln över rutan där någon röjer, gräver eller sår
 function drawFalt() {
   for (const f of faltOf(s)) {
-    const X = f.x * TS, Y = f.y * TS, w = ODLING.faltW * TS, h = ODLING.faltH * TS, grav = f.steg !== 'roja' && f.steg !== 'bereda';
-    if (f.steg === 'roja') structG.lineStyle(1, 0x5e3c24, 0.7).drawRect(X + 0.5, Y + 0.5, w - 1, h - 1).lineStyle(0);
-    else structG.beginFill(grav ? 0x5e3c24 : 0x7d5b40, 0.9).drawRect(X, Y, w, h).endFill();
-    if (grav) for (let k = 0; k < ODLING.faltH * 4; k++) structG.lineStyle(1, 0x3f2415, 0.8).moveTo(X + 1, Y + 2.5 + k * 4).lineTo(X + w - 1, Y + 2.5 + k * 4).lineStyle(0);
-    const vaxer = f.steg === 'vaxer', bild = f.steg === 'mogen' && f.groda ? GRODOR[f.groda].sak : vaxer ? 'grodd' : undefined, liten = vaxer && (f.vuxit ?? 0) < 0.5;
-    if (bild) for (let j = 0; j < ODLING.faltH; j++) for (let i = 0; i < ODLING.faltW; i++) pileIcons.add(bild, X + i * TS + (liten ? 4 : 0), Y + j * TS + (liten ? 8 : 0), liten ? 0.5 : 1);
-    if (!vaxer && f.steg !== 'mogen') framsteg(X + w / 2, Y + 3, faltKlar(f));
+    const vaxer = f.steg === 'vaxer', mogen = f.steg === 'mogen', sadda = f.sadda ?? 0, liten = vaxer && (f.vuxit ?? 0) < 0.5;
+    const bild = mogen && f.groda ? GRODOR[f.groda].sak : vaxer ? 'grodd' : undefined;
+    for (let k = 0; k < f.n; k++) {
+      const i = faltRuta(f, k), X = (i % W) * TS, Y = Math.floor(i / W) * TS;
+      const klar = k < f.klara, rojd = f.steg !== 'roja' || klar, grav = f.steg === 'bereda' ? klar : f.steg !== 'roja';
+      if (!rojd) structG.lineStyle(1, 0x5e3c24, 0.7).drawRect(X + 0.5, Y + 0.5, TS - 1, TS - 1).lineStyle(0);
+      else structG.beginFill(grav ? 0x5e3c24 : 0x7d5b40, 0.9).drawRect(X, Y, TS, TS).endFill();
+      if (grav) for (let r = 0; r < 4; r++) structG.lineStyle(1, 0x3f2415, 0.8).moveTo(X + 1, Y + 2.5 + r * 4).lineTo(X + TS - 1, Y + 2.5 + r * 4).lineStyle(0);
+      if (bild && k < sadda && !(mogen && klar)) { const sc = liten ? 0.5 : 1, b = iconCanvas(bild).width * sc; pileIcons.add(bild, X + (TS - b) / 2, Y + (TS - b) / 2, sc); }
+    }
+    if (!vaxer && !mogen) { const i = faltRuta(f, Math.min(f.klara, f.n - 1)); framsteg((i % W) * TS + TS / 2, Math.floor(i / W) * TS + 3, faltKlar(f)); }
   }
 }
 // framstegscirkeln för det som inte är klart (Björn valde A2 efter v55): en mörk bricka med vit kant som fylls med gult,

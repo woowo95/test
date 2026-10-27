@@ -1,4 +1,4 @@
-import { KROPP, alive, byId, count, isParent, living, log } from './folk';
+import { KROPP, alive, byId, count, familjOf, living, log } from './folk';
 import { Hus, MATERIAL, Rum, bitById, bitsOf, gridOf, housesOf, husById, shelterOf, touch } from './byggnad';
 import { heatAt } from './eld';
 import { getMap } from './karta';
@@ -134,13 +134,7 @@ export function mostUrgent(s: State) {
 // bygga ett. Huset ägs av den i paret som har lägst id (hus.ag); den som planerar det kan vara en annan i familjen (planBuild i
 // bygg.ts). Det går i arv som föremål (arv.ts) och blir byns när ingen äger det.
 // Materialet tas av familjens eget först, sedan efter behovsstegen (bygg.ts: takeForHouse). Familjen sover där.
-const barnTill = (q: Person, o?: Person) => !!o && isParent(o, q);
-export function familjOf(s: State, ag?: number): Person[] {
-  const o = byId(s, ag);
-  if (!o || !alive(o)) return [];
-  const pa = byId(s, o.partner), partner = pa && alive(pa) ? pa : undefined;
-  return living(s).filter(q => q === o || q === partner || ((barnTill(q, o) || barnTill(q, partner)) && !q.partner));
-}
+export { familjOf } from './folk'; // familjen står i folk.ts, så att odlingen också kan läsa den (steg 2.10.13)
 export const husNamn = (namn: string) => /[sxz]$/i.test(namn) ? `${namn} hus` : `${namn}s hus`;
 // vad familjen äger, i grundvärde: det i förrådet och redskapen
 function formogenhet(s: State, folk: Person[]) {

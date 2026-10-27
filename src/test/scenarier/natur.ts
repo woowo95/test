@@ -1058,7 +1058,7 @@ SCENARIER.odling = {
 };
 
 SCENARIER.falt = {
-  text: 'Steg 2.10.3: den som kan odla och har frön röjer ett fält på jorden nära byn, gräver upp det och sår. Grödan växer när det är varmt, skördas när den är mogen och ger mat och nya frön. Frosten dödar den, den mogna ruttnar om ingen skördar, och ett fält som ingen sköter blir gräs igen',
+  text: 'Steg 2.10.3 och 2.10.13: den som kan odla och har frön röjer ett fält på jorden nära byn, så stort som familjen behöver och fröna räcker till, och gräver upp det och sår ruta för ruta. Grödan växer när det är varmt, skördas när den är mogen och ger mat och nya frön. Frosten dödar den, den mogna ruttnar om ingen skördar, och ett fält som ingen sköter blir gräs igen',
   kor: () => {
     const s = createState(6, START); // by 6: röjer fält med och utan hela saker (by 7 gjorde det inte efter steg 2.10.7, slumpen)
     s.kal = nyKalender(s.now, 1); klockan(s, 7); tandEld(s);
@@ -1074,15 +1074,28 @@ SCENARIER.falt = {
       if (t !== T.Gras && t !== T.Skog || g.trees[i] >= FOREST || fs.some(r => r !== q && SIM.faltRutor(r).includes(i)) || pilesOf(s).some(pl => pl.y * W + pl.x === i)) fel++;
     }
     const sadd = s.stat?.sadd ?? 0, fronNu = amountOf(s, 'fron');
-    // skörden: den mogna grödan ger mat och frön, och fältet ska grävas upp igen
+    // storleken (steg 2.10.13): rutorPerMun rutor per person i familjen, och inte fler än det finns frön till
     const p = living(s).find(q => q.id === f?.agare) ?? living(s).find(q => ageOf(q, s.now) >= 18)!;
-    let skord = false, korn = 0, fronSkord = 0;
+    const storlekOk = fs.every(q => q.n >= SIM.ODLING.faltMin && q.n <= SIM.ODLING.faltMax && q.n <= SIM.faltBehov(s, s.people.find(r => r.id === q.agare) ?? p));
+    const enPerFamilj = fs.every(q => !fs.some(r => r !== q && SIM.familjOf(s, q.agare).some(m => m.id === r.agare)));
+    const perRuta = SIM.ODLING.rojaMin + SIM.ODLING.beredaMin + SIM.ODLING.saMin + SIM.ODLING.skordaMin;
+    // skörden ruta för ruta: två rutors arbete ger två rutors gröda, och steget är inte klart förrän hela fältet är skördat.
+    // Sedan växer fältet om ägaren behöver fler rutor och har frön, och annars grävs jorden upp igen
+    let skord = false, delvis = false, tva = 0, korn = 0, fronSkord = 0;
     if (f) {
-      Object.assign(f, { steg: 'mogen', groda: 'korn', mogen: s.now, kvar: 0 });
-      const k0 = amountOf(s, 'korn'), r0 = amountOf(s, 'fron');
-      SIM.finishOdla(s, p, { act: 'odla', tool: 'mogen', ref: f.id } as unknown as SIM.Task);
+      setAmount(s, 'fron', 200);
+      Object.assign(f, { steg: 'mogen', groda: 'korn', mogen: s.now, klara: 0, kvar: SIM.ODLING.skordaMin * 60000, sadda: f.n });
+      const tk = { act: 'odla', tool: 'mogen', ref: f.id, until: s.now + HOUR } as unknown as SIM.Task;
+      const k0 = amountOf(s, 'korn'), r0 = amountOf(s, 'fron'), n0 = f.n;
+      SIM.workOdla(s, p, tk, SIM.ODLING.skordaMin * 60 * 2);
+      tva = f.klara;
+      SIM.finishOdla(s, p, tk);
+      delvis = f.steg === 'mogen' && tva === 2;
+      SIM.workOdla(s, p, tk, SIM.ODLING.skordaMin * 60 * f.n);
+      SIM.finishOdla(s, p, tk);
       korn = amountOf(s, 'korn') - k0; fronSkord = amountOf(s, 'fron') - r0;
-      skord = f.steg === 'bereda' && korn > 0 && fronSkord > 0;
+      const vaxte = f.n > n0 ? f.steg === 'roja' && f.klara === n0 : f.steg === 'bereda';
+      skord = vaxte && korn > 0 && fronSkord > 0 && tk.until === s.now;
     }
     // rötan: den mogna grödan som ingen skördar
     let rutten = false;
@@ -1112,7 +1125,11 @@ SCENARIER.falt = {
       [`byn röjer ett fält när den kan odla och har frön (${fs.length} fält, ${f ? SIM.FALT_STEG[f.steg].namn.toLowerCase() : '-'})`, fs.length > 0],
       [`fälten ligger på jord utan stora träd, inte på varandra och inte på lagret (${fel} fel)`, fel === 0],
       [`fältet grävs upp och sås inom två dygn (två år i spelet), och fröna tas ur förrådet (${sadd} sådda, frön ${fron0.toFixed(0)} → ${fronNu.toFixed(1)})`, sadd > 0 && fronNu < fron0],
-      [`den mogna grödan skördas: korn (${korn.toFixed(1)}) och nya frön (${fronSkord.toFixed(1)}), och fältet ska grävas upp igen`, skord],
+      [`fältet har ${SIM.ODLING.rutorPerMun} rutor per person i familjen, mellan ${SIM.ODLING.faltMin} och ${SIM.ODLING.faltMax}, och inte fler än det finns frön till (${fs.map(q => q.n).join(', ')} rutor)`, storlekOk && fs.length > 0],
+      ['en familj har ett fält', enPerFamilj],
+      [`arbetet går ruta för ruta, och steget blir inte klart förrän hela fältet är gjort (${tva} rutor skördade efter två rutors arbete)`, delvis],
+      [`en ruta tar kort tid: ${perRuta} minuter att röja, gräva, så och skörda`, perRuta <= 20],
+      [`den mogna grödan skördas: korn (${korn.toFixed(1)}) och nya frön (${fronSkord.toFixed(1)}); sedan växer fältet eller grävs upp igen`, skord],
       ['den mogna grödan som ingen skördar ruttnar, och fältet ska sås igen', rutten],
       ['frosten i istiden dödar grödan, och ingen sår något nytt förrän det hinner mogna', frost && ingenSadd],
       ['ett fält som ingen skött på länge blir gräs igen', gras],

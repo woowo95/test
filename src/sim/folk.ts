@@ -241,6 +241,15 @@ export function getRel(s: State, a: Person, b: Person): Rel {
 }
 // p är förälder till c, och p:s barn bland alla i byn (också döda och bortflyttade)
 export const isParent = (p: Person, c: Person) => c.mother === p.id || c.father === p.id;
+// familjen (steg 1.6.3): personen med id ag, partnern och de barn till dem som inte har egen partner. Den bor i samma hus
+// (byggnader.ts) och odlar på samma fält (odling.ts)
+const barnTill = (q: Person, o?: Person) => !!o && isParent(o, q);
+export function familjOf(s: State, ag?: number): Person[] {
+  const o = byId(s, ag);
+  if (!o || !alive(o)) return [];
+  const pa = byId(s, o.partner), partner = pa && alive(pa) ? pa : undefined;
+  return living(s).filter(q => q === o || q === partner || ((barnTill(q, o) || barnTill(q, partner)) && !q.partner));
+}
 export const childrenOf = (s: State, p: Person) => s.people.filter(c => isParent(p, c));
 export function isKin(a: Person, b: Person) {
   return isParent(b, a) || isParent(a, b) ||
