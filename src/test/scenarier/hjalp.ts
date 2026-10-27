@@ -127,7 +127,7 @@ export function uiLasNu(s: State, t: number) {
     if (p.task) SIM.sjoVid(s, p.task.tx, p.task.ty);
     const tot = habitTotal(p); for (const a of slag) habitShare(p, [a], tot);
     heldBy(s, p); ownedBy(s, p); ownedStock(s, p); capacity(s, p);
-    if (p.task) { load(p.task); homeKind(p.task); taskName(p.task); carryKind(p.task.act); }
+    if (p.task) { load(p.task, s); homeKind(p.task); taskName(p.task); carryKind(p.task.act); }
     for (const l of p.lardomar ?? []) describe(s, l);
     for (const q of s.people) void s.rels[relKey(p.id, q.id)];
   }

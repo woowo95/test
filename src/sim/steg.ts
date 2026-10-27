@@ -33,11 +33,12 @@ import { migrate } from './varld';
 import { stepDelning } from './delning';
 import { balans } from './balans';
 import { sjoRakna } from './sjo';
+import { bordPlats } from './utrustning';
 import { finishStation, finishTillbehor, stationRutor, stepStationer, tillbehorVarme, workStation } from './stationer';
 
 // Simuleringen går i slag om fem minuter (BEAT), i spelet och vid ikappräkning likadant. Inom ett slag går tiden åt
 // till det som händer i tur och ordning (taskStep). Arbetet görs i bitar om högst BIT sekunder, och man bär aldrig mer
-// än en tredjedel av vad man orkar från arbetet (STEG.borda). STEG.markNot = hur mycket ett steg nöter marken (MARK.nott per ruta)
+// än en tredjedel av vad man orkar från arbetet (STEG.borda), och aldrig mer än som ryms i de fria händerna (bordPlats i utrustning.ts). STEG.markNot = hur mycket ett steg nöter marken (MARK.nott per ruta)
 export const BEAT = 300;
 const BIT = 60;
 // Balanstalen (regel 8). Kroppens gränser och takter (KROPP) och åldrarna (ALDER) står i folk.ts, eftersom val.ts och behov.ts läser dem
@@ -359,7 +360,7 @@ function arrive(s: State, p: Person, tk: Task, light: boolean) {
     if (r && r.until > now + 2 * MIN && tk.dark === !light) { tk.phase = 'go'; tk.tx = r.x; tk.ty = r.y; tk.until = r.until; tk.res = undefined; }
     else p.task = undefined;
   } else {
-    tk.phase = 'do'; if (tk.act === 'bara') { pickUp(s, p, tk); tk.until = now; }
+    tk.phase = 'do'; if (tk.act === 'bara') { pickUp(s, p, tk, bordPlats(s, p)); tk.until = now; }
     startWork(s, p, tk); // ett redskap eller ett träd: arbetet räknas härifrån, och det påbörjade fortsätter
     const tur = ACTS[tk.act].tur;
     tk.tur = 0; tk.lim = tur ? tur * (toolRow(tk)?.tur ?? 1) : undefined;
@@ -446,7 +447,7 @@ function workStep(s: State, p: Person, tk: Task, dtSec: number, a: number, learn
   }
   // arbetet sker i turer: efter en stunds arbete (tur), en fångst eller när bördan är full bärs det hem, sedan fortsätter man
   tk.tur = (tk.tur ?? 0) + dtSec;
-  const full = load(tk) >= capacity(s, p) * STEG.borda, has = isCarrying(tk);
+  const full = load(tk, s) >= Math.min(capacity(s, p) * STEG.borda, bordPlats(s, p)), has = isCarrying(tk);
   if (full || (tk.lim !== undefined && tk.tur >= tk.lim) || (tk.act === 'fiske' && tk.carry > 0)) {
     if (has && tk.until > now + 2 * MIN) { tk.res = { x: tk.tx, y: tk.ty, until: tk.until }; tk.until = now; count(s, 'turer'); }
     else if (has && full) { tk.until = now; count(s, 'turer'); }

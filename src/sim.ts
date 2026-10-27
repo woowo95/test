@@ -30,6 +30,7 @@ export * from './sim/paborjat';
 export * from './sim/stationer';
 export * from './sim/projekt';
 export * from './sim/agande';
+export * from './sim/utrustning';
 export * from './sim/egendom';
 export * from './sim/behov';
 export * from './sim/lager';

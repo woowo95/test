@@ -153,7 +153,7 @@ SCENARIER.aktivitet = {
       for (const p of living(s)) {
         const t = p.task, v = spar.v.get(p) ?? [];
         for (let k = 0; k < v.length; k += 3) if (vatt(v[k + 1], v[k + 2])) vatten++;
-        if (t?.phase === 'back' && t.act !== 'bara' && !(t.act === 'jakt' && load(t) <= KANIN + 0.01) && load(t) > capacity(s, p) / 3 + 0.05) tungt++; // bärandet av högar och en hel kanin får ta en full famn
+        if (t?.phase === 'back' && t.act !== 'bara' && !(t.act === 'jakt' && load(t, s) <= KANIN + 0.01) && load(t, s) > capacity(s, p) / 3 + 0.05) tungt++; // bärandet av högar och en hel kanin får ta en full famn
         const r = t?.phase === 'do' ? ACTS[t.act].vandra?.r : undefined; // hur långt från platsen man rör sig (handlingar.ts)
         if (t && r && Math.hypot(p.x - t.tx, p.y - t.ty) > r + 0.6) utanfor++;
         if (t?.phase === 'do' && isWork(t.act)) arbete += BEAT / 3600;

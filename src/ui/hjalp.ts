@@ -1,5 +1,5 @@
 import { framstegSvg, iconImg } from '../ikoner';
-import { HOUR, KROPP, LogEntry, MIN, Person, REL, byId, capacity, carryKind, clamp, isParent, isSick, load, num, sak, sakNamn, timeLabel } from '../sim';
+import { BORDA_KG, UTRUSTNING, HOUR, KROPP, LogEntry, MIN, Person, REL, byId, capacity, carryKind, clamp, isParent, isSick, load, num, sak, sakNamn, timeLabel } from '../sim';
 import { s, vidNyBy } from './lage';
 
 // små hjälpare för text, tal, färger och staplar som alla delar av gränssnittet använder
@@ -91,12 +91,13 @@ export const prickar = (p: Person, ord = false) => Object.values(PRICKAR).filter
   .map(q => ` <span class="prick" style="background:${cssFarg(q.farg)}" title="${q.namn}" aria-label="${q.namn}"></span>${ord ? ' ' + q.namn.toLowerCase() : ''}`).join('');
 // en stack i en lista: symbolen och namnet. Ett påbörjat redskap har det det ska bli med timglaset bredvid
 export const pileTxt = (p: { k: string; n: number; max: number; gor?: string; klar?: number }) => p.gor ? `${iconImg(p.gor)}${framstegSvg(p.klar ?? 0, 10)}${sakNamn(p.gor)} (inte klar, ${Math.round((p.klar ?? 0) * 100)} %)` : `${iconImg(p.k)}${sakNamn(p.k)}${p.max === 1 ? '' : ` ${fmtN(p.n)} st`}`;
-// vad en person bär och hur mycket hen orkar
+// vad en person bär, vad det väger och hur mycket hen orkar (steg 2.3.1)
 export function carryTxt(p: Person) {
   const t = p.task, orkar = capacity(s, p), parts: string[] = [];
   if (t && t.carry > 0.05) parts.push(`${fmtN(t.carry)} ${sakNamn(carryKind(t.act)).toLowerCase()}`);
   for (const k in t?.items ?? {}) if (t!.items![k] >= 0.5 && !sak(k)?.dold) parts.push(`${fmtN(t!.items![k])} ${sakNamn(k).toLowerCase()}`);
-  return parts.length ? `Bär ${parts.join(' och ')} (${Math.round(load(t!) / orkar * 100)} % av vad hen orkar)` : `Bär inget just nu, orkar bära ${Math.round(orkar * 100)} % av en full stack`;
+  const kg = (n: number) => `${num(n * BORDA_KG).replace(',0', '')} kg`;
+  return parts.length ? `Bär ${parts.join(' och ')}, ${kg(load(t!, s))} (${Math.round(load(t!, s) / orkar * 100)} % av vad hen orkar)` : `Bär inget just nu, orkar bära ${kg(orkar)} med båda händerna och ${kg(orkar * UTRUSTNING.en)} i en`;
 }
 // en rad i loggen där namnen går att trycka på
 export function linkify(l: LogEntry) {

@@ -1,6 +1,6 @@
 // Scenarier. Ägande och ekonomi: ägande, gåvor, byte, egendom, delning, arv och värde.
 import { isDeepStrictEqual } from 'node:util';
-import { Person, Act, createState, bearbeta, ownedBy, tidyTools, addTool, toolsOf, heldBy, take, usesTool, wearTool, freeSpear, getRel, isTool, BYN, makeTool, step, living, pilesOf, amountOf, capacity, isLight, isStored, spears, HOUR, State, migrate, die, bitsOf, KANIN, DJUR, askForTool, askForGift, gain, takeFood, takeFuel, ownsAmount, ownedStock, ownedSum, sumOf, addTo, setAmount, foodOf, STACK_ORDER, needLadder, takeMaterial, BEAT, stepDelning, rikedom, rikedomDelar, grundvarde, nivaOf, DELNING, packUp, releaseOwner, willing, tingOf, EKONOMI, SAK_LIST, ownedAll, leave, chooseTask, stackOf, birth, SAKER } from '../../sim';
+import { Person, Act, Task, createState, bearbeta, ownedBy, tidyTools, addTool, toolsOf, heldBy, take, usesTool, wearTool, freeSpear, getRel, isTool, BYN, makeTool, step, living, pilesOf, amountOf, capacity, isLight, isStored, spears, HOUR, State, migrate, die, bitsOf, KANIN, DJUR, askForTool, askForGift, gain, takeFood, takeFuel, ownsAmount, ownedStock, ownedSum, sumOf, addTo, setAmount, foodOf, STACK_ORDER, needLadder, takeMaterial, BEAT, stepDelning, rikedom, rikedomDelar, grundvarde, nivaOf, DELNING, packUp, releaseOwner, willing, tingOf, EKONOMI, SAK_LIST, ownedAll, leave, chooseTask, stackOf, birth, SAKER, viktOf, bordOf, BORDA_KG, handerFor, bordPlats, utrustning, PLATS_LIST, cloneState, pickUp, load } from '../../sim';
 import { START, STEG_DYGN, STEG_TIM } from '../kor';
 import { setItems, setMat, setFood, kor, tandEld, tomtForrad, treVuxna, SCENARIER, rikBy, medBank } from './hjalp';
 
@@ -405,6 +405,50 @@ SCENARIER.varde = {
       [`tio trä i förrådet gör byn ${tra.toFixed(1)} rikare`, Math.abs(tra - 10 * v('ved')) < 1e-6],
       [`en yxa räknas efter sitt skick (${yxa.toFixed(0)} ny, ${halv.toFixed(0)} halvsliten)`, Math.abs(yxa - v('yxa')) < 1e-6 && Math.abs(halv - v('yxa') / 2) < 1e-6],
       [`en timmervägg räknas efter material och arbete (${hus.toFixed(1)})`, Math.abs(hus - (2 * v('ved') + 0.8)) < 1e-6],
+    ];
+  },
+};
+
+SCENARIER.utrustning = {
+  text: 'Steg 2.3.1: var och en har platser för utrustning (två händer, kroppen i två lager, huvud, ben och fötter). Varje sak väger något, och hur många händer den tar räknas fram ur vikten och styrkan. Bördan bärs i de fria händerna: den som håller yxan bär mindre, och korgen tar en hand men rymmer så mycket att en vuxen med korg bär lika mycket som utan redskap',
+  kor: () => {
+    const s = createState(4, START);
+    setItems(s, { grenar: 20, flinta: 2, sten: 30 });
+    const p = living(s).sort((a, b) => capacity(s, b) - capacity(s, a))[0]!; // den starkaste
+    // vikten: varje redskap har en egen, och en stack av vad som helst är en full famn
+    const redskap = SAK_LIST.filter(k => SAKER[k]?.redskap);
+    const vikt = redskap.every(k => SAKER[k]!.vikt! > 0) && STACK_ORDER.every(k => SAKER[k]?.redskap || Math.abs(stackOf(k) * viktOf(k) - BORDA_KG) < 1e-9);
+    const kniv1 = handerFor(s, p, 'kniv') === 1, vilt2 = handerFor(s, p, 'vilt') === 2;
+    // händerna och bördan
+    const fri = bordPlats(s, p);
+    const yxa = addTool(s, 'yxa', p); take(s, p, 'yxa');
+    const medYxa = bordPlats(s, p);
+    const u = utrustning(s, p, true);
+    const platser = u.hoger.ting === yxa && u.vanster.borda === true && !u.inre.ting && PLATS_LIST.length === 7;
+    const korg = addTool(s, 'korg', p); take(s, p, 'korg');
+    const medKorg = bordPlats(s, p);
+    // att plocka upp stenar med och utan yxan i handen
+    const g = (s.stackar ?? []).find(x => x.k === 'sten')!;
+    const plocka = (hall?: string) => {
+      const c = cloneState(s), q = c.people.find(x => x.id === p.id)!;
+      for (const t of tingOf(c)) if (t.hos === q.id) t.hos = undefined;
+      if (hall) take(c, q, hall);
+      const t: Task = { act: 'bara', phase: 'go', tx: g.x + 0.5, ty: g.y + 0.5, until: c.now + HOUR, carry: 0, why: 'test', dark: false };
+      pickUp(c, q, t, bordPlats(c, q));
+      return t.items?.sten ?? 0;
+    };
+    const utan = plocka(), med = plocka('yxa');
+    // ett redskap i en börda väger det det väger, inte en hel famn som förut
+    const lass: Task = { act: 'bara', phase: 'back', tx: 0, ty: 0, until: s.now, carry: 0, ting: [korg.id] };
+    const korgVikt = Math.abs(load(lass, s) - bordOf('korg')) < 1e-9;
+    return [
+      ['varje redskap har en vikt, och en stack av något annat är en full famn', vikt],
+      ['kniven tar en hand och ett fällt vilt båda händerna hos en stark vuxen', kniv1 && vilt2],
+      [`med yxan i handen ryms mindre i händerna (${(medYxa * BORDA_KG).toFixed(1)} kg mot ${(fri * BORDA_KG).toFixed(1)} kg)`, medYxa < fri - 1e-6],
+      [`med korgen bär man lika mycket som med fria händer (${(medKorg * BORDA_KG).toFixed(1)} kg)`, Math.abs(medKorg - fri) < 1e-6],
+      ['yxan sitter i höger hand och bördan i den vänstra; kroppens platser är tomma', platser],
+      [`den som håller yxan plockar upp färre stenar (${med.toFixed(1)} mot ${utan.toFixed(1)})`, med > 0 && med < utan - 1e-6],
+      ['en korg i bördan väger som en korg', korgVikt],
     ];
   },
 };

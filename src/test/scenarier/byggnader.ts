@@ -378,7 +378,7 @@ SCENARIER.lager = {
       step(b, 2);
       // en kanin bärs hem hel, en i taget, hur stark man än är
       for (const p of living(b)) if (p.task?.phase === 'back' && p.task.act !== 'elda') {
-        const kv = p.task.act === 'jakt' ? load(p.task) / KANIN : load(p.task) / capacity(b, p); hem++; maxKvot = Math.max(maxKvot, kv); if (kv >= 0.95) fullt++;
+        const kv = p.task.act === 'jakt' ? load(p.task, b) / KANIN : load(p.task, b) / capacity(b, p); hem++; maxKvot = Math.max(maxKvot, kv); if (kv >= 0.95) fullt++;
       }
     }
     // den som har fullt går hem med en gång, även om uppgiften inte är klar

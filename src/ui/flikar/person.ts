@@ -1,4 +1,4 @@
-import { ACTS, ALDER, Act, DAY, Lardom, SAMTAL, SKILL_GOR, STAT_GOR, Skill, Stat, coldOf, halsaLage, hearthOf, living, roomAt, temperature, varmeDelar, viloSlag, viloTak, SLAG, SLAG_TECKEN, Person, KUNSKAPER, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, SEDER, SED_LIST, TEKNIK, BYN, Ting, halvKlar, ageOf, alive, byId, childrenOf, drar, heldBy, ownedBy, ownedStock, sakNamn, slagIkon, tingNamn, STACK, describe, duty, habitShare, habitTotal, KROPP, kortTal, moodOf, num, REL, relKey, stat, taskName, timeLabel } from '../../sim';
+import { ACTS, ALDER, Act, DAY, Lardom, SAMTAL, SKILL_GOR, STAT_GOR, Skill, Stat, coldOf, halsaLage, hearthOf, living, roomAt, temperature, varmeDelar, viloSlag, viloTak, SLAG, SLAG_TECKEN, Person, KUNSKAPER, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, SEDER, SED_LIST, TEKNIK, BYN, Ting, halvKlar, ageOf, alive, byId, childrenOf, drar, heldBy, ownedBy, PLATSER, PLATS_LIST, handerFor, homeKind, load, utrustning, viktOf, ownedStock, sakNamn, slagIkon, tingNamn, STACK, describe, duty, habitShare, habitTotal, KROPP, kortTal, moodOf, num, REL, relKey, stat, taskName, timeLabel } from '../../sim';
 import { framstegSvg, hasIcon, iconImg } from '../../ikoner';
 import { LAG, bar, cap, carryTxt, cssFarg, durTxt, esc, hex, hsl, hjalpText, moodWord, pLink, prickar, relWord, sickNow, tempBar, tempOrd, trend, trendD } from '../hjalp';
 import { s, ui } from '../lage';
@@ -134,16 +134,28 @@ function groups(ls: Lardom[]) {
   for (const l of ls) { const key = (l.k === 'fara' ? 'f' : 'p') + l.a; (m.get(key) ?? m.set(key, []).get(key)!).push(l); }
   return [...m.values()];
 }
-// utrustningen: handplatsen och det hen äger, som symboler. Ringen runt symbolen visar skicket; namnet, skicket och
-// var tinget är syns när man håller över eller trycker på symbolen
+// utrustningen (steg 2.3.1): platserna (händerna, kroppen, huvudet, benen, fötterna) som rutor med symboler, och sedan det
+// hen äger. Ringen runt ett redskap visar skicket; vad som sitter på platsen och vad det väger syns när man håller över
+// eller trycker på rutan
 function gearHtml(p: Person) {
   const hand = heldBy(s, p), own = ownedBy(s, p).filter(t => t !== hand);
   const whose = (t: Ting) => t.agare === p.id ? 'eget' : t.agare === BYN ? 'byns' : `lånat av ${byId(s, t.agare)?.name ?? 'någon'}`;
   const where = (t: Ting) => t.hos === undefined ? 'i förrådet' : `${byId(s, t.hos)?.name ?? 'någon'} har det i handen`;
   const ting = (t: Ting, title: string, cls = 'kan') => `<span class="tnod liten ${cls}" tabindex="0" title="${esc(title)}" aria-label="${esc(title)}">${iconImg(t.halv?.gor ?? t.k, 16)}${t.halv ? `<span class="halvmark">${framstegSvg(halvKlar(t.halv), 9)}</span>` : ''}<svg class="ring" viewBox="0 0 36 36"><circle cx="18" cy="18" r="16" pathLength="100" stroke-dasharray="${Math.round(t.c * 100)} 100"/></svg></span>`;
-  const slot = hand ? ting(hand, `I handen: ${sakNamn(hand.k).toLowerCase()}, ${whose(hand)}, ${Math.round(hand.c * 100)} %`, 'kan hand')
-    : `<span class="tnod liten hand tom" tabindex="0" title="Handen är tom" aria-label="Handen är tom">✋</span>`;
-  return `<h3>Utrustning</h3><div class="tekrad">${slot}${own.map(t => ting(t, `Äger: ${tingNamn(t).toLowerCase()}, ${Math.round(t.c * 100)} %, ${where(t)}`, 'pa')).join('')}</div>${stockHtml(p)}`;
+  const t = p.task, bar = !!t && load(t, s) > 0.02, u = utrustning(s, p, bar), kg = (n: number) => `${kortTal(n)} kg`;
+  const bordaTxt = bar ? `bär ${carryTxt(p).replace(/^Bär /, '')}` : '';
+  const slots = PLATS_LIST.map(k => {
+    const pl = PLATSER[k], x = u[k];
+    if (x.ting) {
+      const h = handerFor(s, p, x.ting.k);
+      const title = `${pl.namn}: ${sakNamn(x.ting.k).toLowerCase()}, ${whose(x.ting)}, ${Math.round(x.ting.c * 100)} %, väger ${kg(viktOf(x.ting.k))}${h === 2 ? ', tar båda händerna' : ''}${x.borda ? `; ${bordaTxt}` : ''}`;
+      return ting(x.ting, title, k === 'vanster' && x.ting === u.hoger.ting ? 'kan hand pa' : 'kan hand');
+    }
+    if (x.borda) { const title = `${pl.namn}: ${bordaTxt}`; return `<span class="tnod liten hand" tabindex="0" title="${esc(title)}" aria-label="${esc(title)}">${iconImg(homeKind(t!), 16)}</span>`; }
+    const title = `${pl.namn}: ${pl.hand ? 'tom' : 'inget'}`;
+    return `<span class="tnod liten hand tom" tabindex="0" title="${esc(title)}" aria-label="${esc(title)}">${pl.ikon}</span>`;
+  }).join('');
+  return `<h3>Utrustning</h3><div class="tekrad">${slots}</div><div class="tekrad">${own.map(t => ting(t, `Äger: ${tingNamn(t).toLowerCase()}, ${Math.round(t.c * 100)} %, väger ${kg(viktOf(t.k))}, ${where(t)}`, 'pa')).join('')}</div>${stockHtml(p)}`;
 }
 // det hen äger i byns förråd (egendom.ts): symbolen och hur mycket, namnet när man håller över. Saker utan egen stack
 // (giftig svamp bland den ätliga) syns inte, som i förrådet

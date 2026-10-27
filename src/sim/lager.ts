@@ -8,7 +8,7 @@ import { bitAt, roofed } from './byggnad';
 import { ACTS } from './handlingar';
 import { temperature } from './vader';
 import { BYN, Del, addDel, sumOf, takeOrder } from './egendom';
-import { FOOD, RUTA, SAKER, SAK_LIST, STACK, STACK_ORDER, isFood, isTool, rutaOf, sakNamn, stackOf } from './saker';
+import { FOOD, RUTA, SAKER, SAK_LIST, STACK, STACK_ORDER, bordOf, isFood, isTool, rutaOf, sakNamn, stackOf } from './saker';
 import { balans } from './balans';
 
 // ---------- balanstal (regel 8) ----------
@@ -590,16 +590,19 @@ export function homeKind(t: Task) {
   if (t.carry > 0 || !t.items) return carryKind(t.act);
   return Object.keys(t.items).sort((a, b) => t.items![b] - t.items![a])[0] ?? carryKind(t.act);
 }
-// hur mycket en person orkar bära, i fulla stackar: en normalstark vuxen bär en stack, starka mer, barn och gamla mindre
+// hur mycket en person orkar bära med båda händerna, i fulla famnar (stackar): en normalstark vuxen bär en famn, starka mer,
+// barn och gamla mindre. Hur det delas på händerna står i utrustning.ts
 export function capacity(s: State, p: Person) {
   const a = ageOf(p, s.now);
   return (LAGER.barBas + stat(p, 'styrka', s.now) / LAGER.barStyrka) * (a < LAGER.barBarn ? LAGER.barBarnDel : a < LAGER.barUng ? LAGER.barUngDel : 1);
 }
-// hur full bördan är, i stackar
-export function load(t: Task) {
+// hur full bördan är, i fulla famnar (en stack av vad som helst är en famn). Redskapen i bördan väger det de väger
+// (bordOf, steg 2.3.1); förut var ett redskap en full börda
+export function load(t: Task, s: State) {
   let l = t.carry / STACK[carryKind(t.act)];
   for (const k in t.items ?? {}) l += t.items![k] / stackOf(k);
-  return l + (t.ting?.length ?? 0); // ett redskap är en full börda
+  for (const id of t.ting ?? []) l += bordOf(tingOf(s).find(g => g.id === id)?.k ?? '');
+  return l;
 }
 // redskapen i bördan: de läggs på rutan at om den är ledig i förrådet, annars på bästa lediga plats
 function storeTings(s: State, t: Task, at?: { x: number; y: number }) {
@@ -668,10 +671,11 @@ export function haulJob(s: State, near?: number) {
   }
   return best;
 }
-// plocka upp så mycket man orkar av stackarna på rutan. Ägarna följer med i bördan, lika mycket av varjes del
-export function pickUp(s: State, p: Person, t: Task) {
+// plocka upp så mycket som ryms i händerna (plats, i famnar: bordPlats i utrustning.ts) av stackarna på rutan.
+// Ägarna följer med i bördan, lika mycket av varjes del
+export function pickUp(s: State, p: Person, t: Task, plats = capacity(s, p)) {
   const x = Math.floor(t.tx), y = Math.floor(t.ty);
-  let room = capacity(s, p) - load(t);
+  let room = plats - load(t, s);
   for (const g of stacksOf(s)) {
     if (g.x !== x || g.y !== y || room <= 1e-9) continue;
     const st = stackOf(g.k), v = Math.min(g.n, room * st), f = g.n > 0 ? v / g.n : 1;
