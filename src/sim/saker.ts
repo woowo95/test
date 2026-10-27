@@ -24,7 +24,8 @@ interface SakDef {
 }
 // ett klädesplagg: platsen på kroppen (PLATSER i utrustning.ts), så stor del mindre kyla för den som har det på sig, och hur
 // många dygn (år i spelet) det håller på kroppen
-interface Klad { plats: string; varme: number; dygn: number }
+// krok = redskapet hänger i plagget när man bär (bältet, steg 2.3.3): det tar inga händer och väger inget för bördan
+interface Klad { plats: string; varme: number; dygn: number; krok?: true }
 // ett redskap som görs: text = vad den som gör det gör, stat = räknas varje gång ett blir klart, forsta = loggen första
 // gången, fame = det den som gjorde det blir ihågkommen för, igen = loggen de andra gångerna, nyfiken = byn blir nyfiknare
 // första gången (REDSKAP.nyfiken), med den texten. {namn} = den som gjorde det, {verktyg} = verktyget (skaffa.verktyg)
@@ -82,6 +83,9 @@ const DEF = {
     gors: { text: 'Syr en skinnrock.', stat: 'skinnrockar', forsta: '{namn} sydde byns första skinnrock. Den som har den på sig fryser mindre.', fame: 'Sydde byns första skinnrock' } },
   skinnskor: { namn: 'Skinnskor', skaffa: { av: { skinn: 1, rep: 1 }, min: 30, tek: 'skinnklader' }, vikt: 0.6, stack: 1, mapp: 'Kläder', slits: 0.0003, redskap: true, klad: { plats: 'fotter', varme: 0.1, dygn: 3 },
     gors: { text: 'Syr ett par skinnskor.', stat: 'skinnskor', forsta: '{namn} sydde byns första par skinnskor.' } },
+  // bältet (steg 2.3.3): flätas av rep vid elden. Redskapet hänger i det när man bär hem, så båda händerna är fria
+  balte: { namn: 'Bälte', skaffa: { av: { rep: 2 }, min: 20, tek: 'balte' }, vikt: 0.2, stack: 1, mapp: 'Kläder', slits: 0.0003, redskap: true, klad: { plats: 'balte', varme: 0, dygn: 10, krok: true },
+    gors: { text: 'Flätar ett bälte av rep.', stat: 'balten', forsta: '{namn} flätade byns första bälte. Redskapet hänger i det, och båda händerna är fria att bära med.' } },
 } satisfies Record<string, SakDef>;
 
 type Sak = keyof typeof DEF;

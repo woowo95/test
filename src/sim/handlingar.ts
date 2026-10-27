@@ -96,6 +96,7 @@ const DEF = {
   bensyl: { namn: 'Slipar en bensyl', slag: 'hantverk', hantverk: true, plats: 'elden' }, // steg 2.3.2
   skinnrock: { namn: 'Syr en skinnrock', slag: 'hantverk', hantverk: true, stilla: true, plats: 'station' }, // bara vid slöjdbänken med bensylen (stationer.ts)
   skinnskor: { namn: 'Syr skinnskor', slag: 'hantverk', hantverk: true, stilla: true, plats: 'station' },
+  balte: { namn: 'Flätar ett bälte', slag: 'hantverk', hantverk: true, plats: 'elden' }, // steg 2.3.3
   tvinna: { namn: 'Tvinnar rep', yrke: 'Hantverkare', slag: 'hantverk', vila: true, hantverk: true, social: true, dygn: true, stilla: true, plats: 'station' }, // vid slöjdbänken, annars för hand vid elden
   rensa: { namn: 'Rensar fisk', slag: 'hantverk', hantverk: true, social: true, stilla: true, plats: 'station' },
   bygga: { namn: 'Bygger', yrke: 'Byggare', slag: 'bygga', verktyg: { laga: 'Lagar en vägg', lagaGolv: 'Lagar golvet', golv: 'Lägger golv', vagg: 'Bygger en vägg' }, hantverk: true, tungt: true, stilla: true },

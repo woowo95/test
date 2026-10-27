@@ -170,6 +170,7 @@ const VILL: Record<string, (s: State) => number> = {
   bensyl: s => tommaPlatser(s, 'bensyl'), // en till slöjdbänken (steg 2.3.2)
   skinnrock: s => living(s).length, // en per person (steg 2.3.2)
   skinnskor: s => living(s).length,
+  balte: s => living(s).length, // ett per person (steg 2.3.3)
   // en yxa per fyra över yxaFran år, och en till medan ett hus byggs (för träden där det ska stå)
   yxa: s => clamp(Math.floor(living(s).filter(q => ageOf(q, s.now) >= REDSKAP.yxaFran).length / REDSKAP.yxaPerVuxna), REDSKAP.yxaMin, REDSKAP.yxaMax) + (s.hus?.some(h => !h.klar) ? REDSKAP.yxaBygge : 0),
 };

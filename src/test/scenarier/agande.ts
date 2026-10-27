@@ -425,7 +425,7 @@ SCENARIER.utrustning = {
     const yxa = addTool(s, 'yxa', p); take(s, p, 'yxa');
     const medYxa = bordPlats(s, p);
     const u = utrustning(s, p, true);
-    const platser = u.hoger.ting === yxa && u.vanster.borda === true && !u.inre.ting && PLATS_LIST.length === 7;
+    const platser = u.hoger.ting === yxa && u.vanster.borda === true && !u.inre.ting && (['hoger', 'vanster', 'inre', 'yttre', 'huvud', 'ben', 'fotter'] as const).every(k => PLATS_LIST.includes(k));
     const korg = addTool(s, 'korg', p); take(s, p, 'korg');
     const medKorg = bordPlats(s, p);
     // att plocka upp stenar med och utan yxan i handen
@@ -506,6 +506,39 @@ SCENARIER.klader = {
       ['kläderna väger: den som har dem på sig bär mindre', tyngre],
       ['ett utslitet plagg försvinner och räknas', slitet],
       ['den dödes plagg tar någon annan på sig', arv],
+    ];
+  },
+};
+
+SCENARIER.balte = {
+  text: 'Steg 2.3.3: bältet flätas av rep vid elden av den som kan tekniken, och den som saknar ett tar på sig ett. När man bär hem hänger redskapet i bältet: det tar inga händer, så den som har yxan i bältet bär lika mycket som med tomma händer. En korg hänger inte i bältet',
+  kor: () => {
+    const s = createState(2, START); tandEld(s);
+    for (const r of s.people) r.tek = { ...r.tek, rep: 1, balte: 1 };
+    setMat(s, { bar: 300 }); setAmount(s, 'ved', 60); setAmount(s, 'rep', 12);
+    const balte = () => tingOf(s).find(t => t.k === 'balte' && t.bar !== undefined);
+    let h = 0;
+    while (!balte() && h < 120) { kor(s, 1); h++; }
+    const b = balte(), p = b && byId(s, b.bar!);
+    const flatat = (s.stat?.balten ?? 0) > 0;
+    let lika = false, mindreUtan = false, iKroken = false, korgEj = false;
+    if (p) {
+      for (const t of tingOf(s)) if (t.hos === p.id) t.hos = undefined;
+      const fri = bordPlats(s, p);
+      const yxa = addTool(s, 'yxa', p); take(s, p, 'yxa');
+      lika = Math.abs(bordPlats(s, p) - fri) < 1e-9;
+      const u = utrustning(s, p, true);
+      iKroken = u.krok.ting === yxa && u.hoger.borda === true && u.vanster.borda === true && u.balte.ting === b;
+      b.bar = undefined; mindreUtan = bordPlats(s, p) < fri - 1e-6; b.bar = p.id;
+      const korg = addTool(s, 'korg', p); yxa.hos = undefined; take(s, p, 'korg');
+      korgEj = utrustning(s, p, true).hoger.ting === korg && !utrustning(s, p, true).krok.ting;
+    }
+    return [
+      [`ett bälte flätas och tas på (efter ${h} timmar)`, !!b && flatat],
+      ['med yxan i bältet bär man lika mycket som med tomma händer', lika],
+      ['utan bältet bär man mindre med yxan i handen', mindreUtan],
+      ['yxan hänger i bältet och bördan är i båda händerna', iKroken],
+      ['korgen hänger inte i bältet', korgEj],
     ];
   },
 };

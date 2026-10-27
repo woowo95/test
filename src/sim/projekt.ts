@@ -23,7 +23,7 @@ import { dorrOppningar, dorrSpot, kanHangaDorr, utanDorr } from './bygg';
 
 // ---------- balanstal (regel 8) ----------
 export const PROJEKT_TAL = balans('projekt', {
-  kniv: 1.2, yxa: 1.2, spjut: 1, metspo: 0.8, korg: 0.8, bensyl: 1, skinnrock: 0.8, skinnskor: 0.5, // hur mycket varje redskap väger när byn saknar alla den vill ha
+  kniv: 1.2, yxa: 1.2, spjut: 1, metspo: 0.8, korg: 0.8, bensyl: 1, skinnrock: 0.8, skinnskor: 0.5, balte: 0.6, // hur mycket varje redskap väger när byn saknar alla den vill ha
   slaktbank: 1, flatarbank: 0.6, // ... varje station när byn saknar den
   halmbadd: 0.6, // ... halmbäddarna när alla som sover under tak saknar en
   skinnfall: 0.5, // ... skinnfällarna när alla halmbäddar saknar en
@@ -43,6 +43,7 @@ export const PROJEKT_BEHOV = {
   varme: { namn: 'Värme i sömnen', ikon: 'skinnfall' },
   maltid: { namn: 'Måltider vid bordet', ikon: 'bord' },
   klader: { namn: 'Kläder mot kylan', ikon: 'skinnrock' },
+  borda: { namn: 'Bära mer hem', ikon: 'balte' },
 } as const;
 export type ProjektBehov = keyof typeof PROJEKT_BEHOV;
 
@@ -59,7 +60,7 @@ export interface ProjektDef {
 }
 
 // ett redskap i gruppen g: bristen är hur stor del av det byn vill ha som saknas
-const VAD: Record<string, ProjektBehov> = { kniv: 'slakt', yxa: 'tra', spjut: 'mat', metspo: 'mat', korg: 'mat', bensyl: 'klader', skinnrock: 'klader', skinnskor: 'klader' };
+const VAD: Record<string, ProjektBehov> = { kniv: 'slakt', yxa: 'tra', spjut: 'mat', metspo: 'mat', korg: 'mat', bensyl: 'klader', skinnrock: 'klader', skinnskor: 'klader', balte: 'borda' };
 const NAMN: Record<string, string> = { kniv: 'Kniv', yxa: 'Yxa', spjut: 'Spjut', metspo: 'Metspö', korg: 'Korg' };
 const redskap = (g: string): ProjektDef => {
   const k = GORS[g][GORS[g].length - 1]; // det enklaste slaget räknas i kostnaden

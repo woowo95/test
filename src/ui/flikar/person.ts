@@ -148,7 +148,7 @@ function gearHtml(p: Person) {
     const pl = PLATSER[k], x = u[k];
     if (x.ting) {
       const h = handerFor(s, p, x.ting.k);
-      const title = `${pl.namn}: ${sakNamn(x.ting.k).toLowerCase()}, ${whose(x.ting)}, ${Math.round(x.ting.c * 100)} %, väger ${kg(viktOf(x.ting.k))}${SAKER[x.ting.k]?.klad ? `, skyddar ${Math.round(SAKER[x.ting.k]!.klad!.varme * 100)} % mot kylan` : ''}${pl.hand && h === 2 ? ', tar båda händerna' : ''}${x.borda ? `; ${bordaTxt}` : ''}`;
+      const title = `${pl.namn}: ${sakNamn(x.ting.k).toLowerCase()}, ${whose(x.ting)}, ${Math.round(x.ting.c * 100)} %, väger ${kg(viktOf(x.ting.k))}${SAKER[x.ting.k]?.klad?.varme ? `, skyddar ${Math.round(SAKER[x.ting.k]!.klad!.varme * 100)} % mot kylan` : ''}${pl.hand && h === 2 ? ', tar båda händerna' : ''}${k === 'krok' ? ', hänger i bältet medan hen bär' : ''}${x.borda ? `; ${bordaTxt}` : ''}`;
       return ting(x.ting, title, k === 'vanster' && x.ting === u.hoger.ting ? 'kan hand pa' : 'kan hand');
     }
     if (x.borda) { const title = `${pl.namn}: ${bordaTxt}`; return `<span class="tnod liten hand" tabindex="0" title="${esc(title)}" aria-label="${esc(title)}">${iconImg(homeKind(t!), 16)}</span>`; }

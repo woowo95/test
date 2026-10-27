@@ -8,6 +8,8 @@
 // sig ett som är fritt: sitt eget först, sedan byns, sedan ett lånat (stepKlader, varje timme). Plagget är på sig (Ting.bar)
 // tills det är utslitet (lager.ts, wearStore) eller den som har det dör. Kläderna väger: det man har på sig dras av från
 // det man orkar bära, och de skyddar mot kylan (kladVarme, steg.ts).
+// Bältet (steg 2.3.3) är ett plagg med en krok: när man bär hem hänger redskapet i det (iBaltet), så det tar inga händer
+// och bördan får hela famnen. En korg hänger inte där; den rymmer bördan.
 // En ny plats blir en rad i PLATSER.
 import { Person, State } from './typer';
 import { KLAD_SLAG, SAKER, bordOf } from './saker';
@@ -31,6 +33,8 @@ const DEF = {
   huvud: { namn: 'Huvud', ikon: '🧢' },
   ben: { namn: 'Ben', ikon: '👖' },
   fotter: { namn: 'Fötter', ikon: '🥾' },
+  balte: { namn: 'Bälte', ikon: '➰' },
+  krok: { namn: 'I bältet', ikon: '🪝' }, // redskapet som hänger i bältet medan man bär
 } satisfies Record<string, PlatsDef>;
 export type Plats = keyof typeof DEF;
 export const PLATSER: Record<Plats, PlatsDef> = DEF;
@@ -49,19 +53,24 @@ export function iHanden(s: State, p: Person): { ting: Ting; hander: 1 | 2 } | un
   const t = heldBy(s, p);
   return t && { ting: t, hander: handerFor(s, p, t.k) === 1 ? 1 : 2 };
 }
+// redskapet i handen hänger i bältet när p bär: p har ett bälte på sig och redskapet är inte en korg (steg 2.3.3)
+export function iBaltet(s: State, p: Person, h = iHanden(s, p)) {
+  return !!h && !SAKER[h.ting.k]?.rymmer && tingOf(s).some(t => t.bar === p.id && SAKER[t.k]!.klad!.krok);
+}
 // hur mycket p kan bära i de händer som är fria, i fulla famnar. Ett redskap i en hand lämnar den andra, och en korg i
-// handen rymmer mer än handen, men aldrig mer än hen orkar
+// handen rymmer mer än handen, men aldrig mer än hen orkar. Ett redskap i bältet lämnar båda händerna fria
 export function bordPlats(s: State, p: Person) {
   const cap = Math.max(0, capacity(s, p) - paSigVikt(s, p)), h = iHanden(s, p);
-  if (!h) return cap;
+  if (!h || iBaltet(s, p, h)) return cap;
   const fria = 2 - h.hander, rymmer = SAKER[h.ting.k]?.rymmer ?? 0;
   return Math.min(cap, (fria === 2 ? cap : fria === 1 ? cap * UTRUSTNING.en : 0) + rymmer);
 }
-// vad som finns på varje plats: redskapet i den eller de händer det tar (höger först), bördan i de fria händerna (eller i
-// korgen), och plaggen p har på sig på kroppens platser
+// vad som finns på varje plats: redskapet i den eller de händer det tar (höger först), eller i bältet när p bär, bördan i
+// de fria händerna (eller i korgen), och plaggen p har på sig på kroppens platser
 export function utrustning(s: State, p: Person, bar: boolean): Record<Plats, { ting?: Ting; borda?: true }> {
   const r = Object.fromEntries(PLATS_LIST.map(k => [k, {}])) as Record<Plats, { ting?: Ting; borda?: true }>;
-  const h = iHanden(s, p);
+  let h = iHanden(s, p);
+  if (h && bar && iBaltet(s, p, h)) { r.krok.ting = h.ting; h = undefined; }
   if (h) { r.hoger.ting = h.ting; if (h.hander === 2) r.vanster.ting = h.ting; }
   if (bar) {
     if (h && SAKER[h.ting.k]?.rymmer) r.hoger.borda = true;

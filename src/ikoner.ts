@@ -29,6 +29,7 @@ const PAL: Record<string, Record<string, string>> = {
   bensyl: { w: '#efe6cc', W: '#fff8e6', d: '#b8a882' },
   skinnrock: { b: '#8a6440', B: '#b48a5e', d: '#5e4026', w: '#d8c8a8' },
   skinnskor: { b: '#8a6440', B: '#b48a5e', d: '#5e4026' },
+  balte: { r: '#c9a86a', R: '#e2c792', d: '#8a6e3e' }, // bältet (steg 2.3.3): platshållare
   skinnklader: { b: '#8a6440', B: '#b48a5e', d: '#5e4026', w: '#d8c8a8' },
   slaktbank: { b: '#7a5a36', B: '#a8824e', d: '#4e3420', r: '#9c3328' },
   flatarbank: { b: '#7a5a36', B: '#a8824e', d: '#4e3420', y: '#c8ac5c', Y: '#ecd890', o: '#9a7444', O: '#d0aa70' },
@@ -561,6 +562,17 @@ const PIX: Record<string, string[]> = {
     '...Bb...',
     '...BB...',
     '...dd...',
+  ],
+  // ett bälte av flätat rep med en knut (platshållare, steg 2.3.3)
+  balte: [
+    '........',
+    '........',
+    '.RrRrRr.',
+    'rRrdRrRr',
+    'RrRdrRrR',
+    '.rRrRrR.',
+    '...dd...',
+    '...d.d..',
   ],
   // ett par skinnskor (platshållare)
   skinnskor: [

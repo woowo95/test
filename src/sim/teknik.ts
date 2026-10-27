@@ -64,6 +64,9 @@ export const TEKNIK: Tek[] = [
     omr: ['hantverk'], krav: ['flatarbank', 'kniv'], material: [['ben'], ['sten', 'flinta']], tid: 14 },
   { id: 'skinnklader', namn: 'Skinnkläder', text: 'Skinn som sys ihop med rep av senor till en rock och ett par skor.', effekt: 'Den som har kläderna på sig fryser mindre.',
     omr: ['hantverk', 'jakt'], krav: ['bensyl'], material: [['skinn'], ['rep']], tid: 16 },
+  // bältet (steg 2.3.3): kommer man på när man bär hem både redskap och börda, ganska tidigt
+  { id: 'balte', namn: 'Bälte', text: 'Ett rep som flätas till ett bälte runt midjan.', effekt: 'Redskapet hänger i bältet när man bär hem, så båda händerna är fria och man bär mer.',
+    omr: ['ved', 'samla', 'fiske', 'hantverk'], krav: ['rep'], material: [['rep']], tid: 16 },
 ];
 export const TEK = Object.fromEntries(TEKNIK.map(t => [t.id, t])) as Record<string, Tek>;
 
