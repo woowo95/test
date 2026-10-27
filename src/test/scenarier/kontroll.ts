@@ -97,6 +97,8 @@ const SALLSYNT: Record<string, string> = {
   hantverk: 'handarbete utan sak väljs inte sedan v55; rep tvinnas som en egen handling och resten är projekt',
   metspo: 'sen teknik efter fiskespjutet och repet, hinner inte alltid komma på 35 dygn',
   korg: 'sen teknik efter slöjdbänken, hinner inte alltid komma på 35 dygn',
+  buren: 'bara den som inte kan gå (ett svårt skadat ben eller en fot) långt från lägret bärs hem; scenariot vard prövar det',
+  fatt: 'bara den som inte kan gå får vatten av de andra; scenariot vard prövar det',
 };
 SCENARIER.aldrig = {
   text: 'Allt i registren används: varje handling, sak, husfunktion, djurart och teknik förekommer i minst en av fyra byar under 35 dygn (35 år i spelet, fem veckor i verkligheten)',
