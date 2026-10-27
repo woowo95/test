@@ -761,10 +761,37 @@ SCENARIER.blod = {
   },
 };
 
+SCENARIER.utkant = {
+  text: 'Byns utkant (steg 2.10.16 och 2.10.21): slaktbänken står en bit från byn eftersom den är smutsig, och latringropen alltid ganska långt bort. Avståndet räknas till lägret (elden och lagerplatserna) och till husen, så att det som står i utkanten flyttar ut när byn växer',
+  kor: () => {
+    const { stationSite, byAvstand, STATION } = SIM;
+    const rader: [string, boolean][] = [];
+    let slakt = true, latrin = true, langre = true, hus = true;
+    for (const seed of [1, 3, 42]) {
+      const s = createState(seed, START);
+      const b = stationSite(s, 'slaktbank'), l = stationSite(s, 'latrin');
+      const db = b ? byAvstand(s, b.x, b.y) : -1, dl = l ? byAvstand(s, l.x, l.y) : -1;
+      slakt &&= db >= STATION.slaktAvst - 1 && db <= STATION.slaktTill;
+      latrin &&= dl >= STATION.latrinAvst - 1 && dl <= STATION.latrinTill;
+      langre &&= dl > 5; // förr låg gropen 3–5 rutor från lägret
+      // ett hus där latrinen skulle ha legat: den flyttar så att den står lika långt från huset
+      if (l) {
+        (s.hus ??= []).push({ id: 99, namn: 'Hus', x: l.x - 1, y: l.y - 1, w: 3, h: 3 });
+        const l2 = stationSite(s, 'latrin');
+        hus &&= !!l2 && byAvstand(s, l2.x, l2.y) >= STATION.latrinAvst - 1 && Math.max(Math.abs(l2.x - l.x), Math.abs(l2.y - l.y)) > 2;
+      }
+    }
+    rader.push([`slaktbänken står ${STATION.slaktAvst - 1}–${STATION.slaktTill} rutor från byn`, slakt]);
+    rader.push([`latringropen står ${STATION.latrinAvst - 1}–${STATION.latrinTill} rutor från byn, längre bort än förr`, latrin && langre]);
+    rader.push(['avståndet räknas också till husen: ett hus där gropen skulle ligga flyttar ut den', hus]);
+    return rader;
+  },
+};
+
 SCENARIER.latrin = {
   text: 'Toa-smuts och latriner (steg 2.7.2): den som går på toa utanför en latrin lämnar en fläck som bleknar på två dygn. Den äcklar den som går förbi, man plockar inte där, och nära vattnet smutsar den vattnet. Latrinen är en grop i byns utkant som grävs med benspaden: man går dit, får vara ifred och lämnar ingen fläck, gropen fylls och fylls igen, och byn gräver en ny. Får någon ont i magen av toa-smutsat vatten lär sig byn att lägga latrinen långt från vattnet. Benspaden görs av tre ben, ett rep och en gren och gräver fram rötter fortare',
   kor: () => {
-    const { flackarOf, toaBesok, akel, toaNara, toaVatten, vattenSmuts, smutsOf, forSmutsigt, magont, latrinFor, latrinBrist, stationSite, STATION, shoreOf, tidyTools, stationerOf, isKlar } = SIM;
+    const { flackarOf, toaBesok, akel, toaNara, toaVatten, vattenSmuts, smutsOf, forSmutsigt, magont, latrinFor, latrinBrist, stationSite, byAvstand, STATION, shoreOf, tidyTools, stationerOf, isKlar } = SIM;
     const s = createState(1, START); klockan(s); tandEld(s);
     const [p, q] = living(s).filter(r => ageOf(r, s.now) >= 18) as [SIM.Person, SIM.Person];
     // utan latrin: en fläck där p står, som äcklar den som går förbi
@@ -793,7 +820,7 @@ SCENARIER.latrin = {
     const tillVatten = (at?: { x: number; y: number }) => { if (!at) return -1; const m = getMap(s.seed); let d = 99; for (let j = 0; j < W * H; j++) if (m.tiles[j] === T.Vatten) d = Math.min(d, Math.hypot(j % W - at.x, Math.floor(j / W) - at.y)); return d; };
     const u0 = createState(3, START), u1 = cloneState(u0); u1.hygien = 1;
     const d0 = tillVatten(stationSite(u0, 'latrin')), d1 = tillVatten(stationSite(u1, 'latrin'));
-    const at = stationSite(u0, 'latrin'), utkant = !!at && campDist(u0, at.x, at.y) >= STATION.latrinFran && campDist(u0, at.x, at.y) <= STATION.latrinTill;
+    const at = stationSite(u0, 'latrin'), utkant = !!at && byAvstand(u0, at.x, at.y) >= STATION.utkantMin && byAvstand(u0, at.x, at.y) <= STATION.latrinTill;
     // latrinen: man går dit, lämnar ingen fläck, gropen fylls och fylls igen
     const l = createState(1, START); klockan(l); tandEld(l);
     const lat = medBank(l, 'latrin'), lp = living(l).find(r => ageOf(r, l.now) >= 18)!;

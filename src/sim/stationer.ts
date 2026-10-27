@@ -49,6 +49,8 @@ export const STATION = balans('station', {
   slaktbankMin: 30, // ... och så många minuters arbete
   avstand: 2.5, // en station står helst så här många rutor från elden
   norr: 0.5, // ... och får fyra gånger så här många poäng (färre är bättre) om den står på lekplatsen (plats.ts, steg 2.10.4)
+  slaktTill: 9, slaktAvst: 6, // slaktbänken står högst och helst så här många rutor från byn, eftersom den är smutsig (steg 2.10.16)
+  utkantMin: 2, // det som står i byns utkant står aldrig närmare byn än så här (om ingen plats längre bort är ledig, t.ex. för skogen)
   knivplatser: 1, // så många knivar som ligger kvar vid slaktbänken
   flatarbankTra: 2, // en flätarbänk kräver så mycket trä ...
   flatarbankGrenar: 3, // ... och så många grenar ...
@@ -81,8 +83,8 @@ export const STATION = balans('station', {
   latrinSpade: 0.1, // ... som slits så här mycket för varje grop (tio gropar per spade)
   latrinRymmer: 150, // så många toabesök ryms i gropen innan den är full och fylls igen
   latrinNy: 0.85, // byn gräver en ny när den den har är så här full
-  latrinFran: 3, latrinTill: 5, // gropen ligger så här många rutor från byns läger ...
-  latrinAvst: 4, // ... helst så här långt ...
+  latrinTill: 10, // gropen ligger högst så här många rutor från byn (lägret och husen) ... (Björn efter v107: alltid ganska långt bort, steg 2.10.21)
+  latrinAvst: 8, // ... helst så här långt ...
   latrinVatten: 8, // ... och, när byn lärt sig att smutsen når vattnet (s.hygien), helst så här många rutor från vattnet ...
   latrinVattenPoang: 1, // ... med så här många poäng (färre är bättre) för varje ruta för nära, gånger s.hygien
   // grillställningen (steg 2.8.1, matlagning.ts): grenar och rep över elden
@@ -102,18 +104,19 @@ const bordTra = (w: number, h: number) => w * h * STATION.bordTra + ((w >= 2 ? 2
 // (slag och antal), kraver = handlingar som bara görs när ett av stationens redskap ligger där, bygger = texten för den som bygger,
 // forsta = loggen när byn fått sin första, inne = står inne i ett hus, mobel = en möbel, flera = byn kan ha flera, sover = en sovplats
 // (halmbädden), sitt = en sittplats framför den (bara utseende, steg 2.2.5), platser = ett bord med stubbar att sitta på runt
-// det (steg 2.2.15), verktyg = redskapet man bygger den med (benspaden till latrinen, steg 2.7.2), utkant = står i byns utkant
-// (latrinen, siteUtkant nedan), eld = står över elden, med elden i mitten, och används bara när den brinner (grillen, steg 2.8.1), forvar = förvaring som står i en lagerplats (steg 2.3.6): rymmer så många högar av ett slag (gånger en
+// det (steg 2.2.15), verktyg = redskapet man bygger den med (benspaden till latrinen, steg 2.7.2), utkant = står i byns utkant, högst till och helst avst rutor från byn,
+// och med vatten långt från vattnet när byn lärt sig det (latrinen och slaktbänken, siteUtkant nedan), eld = står över elden, med elden i mitten, och används bara när den brinner (grillen, steg 2.8.1), forvar = förvaring som står i en lagerplats (steg 2.3.6): rymmer så många högar av ett slag (gånger en
 // rutas stack) eller, för redskap, så många redskap; tak = det som ligger där slits som under tak,
 // stangd = det som ligger där syns inte på kartan, bara när man trycker på möbeln (kistan, Björn efter v92)
 // brasa = en extra eld (steg 2.9.1, brasor.ts): står nära sovplatserna den är till för (siteBrasa), och alla vuxna kan bygga den (tek är tom: den som är gammal nog att ta ansvar, ALDER.ansvar)
+export interface Utkant { till: number; avst: number; vatten?: true }
 export interface Forvar { rymmer: number; redskap?: true; tak?: true; stangd?: true }
-export interface StationDef { namn: string; ikon: string; w: number; h: number; tek: string[]; av: Record<string, number>; min: number; gor: Act[]; bara?: Act[]; vid?: Record<string, number>; verktyg?: string; utkant?: true; eld?: true; kraver?: Partial<Record<Act, string>>; smutsar?: Partial<Record<Act, string>>; bygger: string; forsta: string; inne?: true; mobel?: true; flera?: true; fart?: Partial<Record<Act, number>>; brasa?: true; sover?: true; sitt?: true; platser?: true; forvar?: Forvar }
+export interface StationDef { namn: string; ikon: string; w: number; h: number; tek: string[]; av: Record<string, number>; min: number; gor: Act[]; bara?: Act[]; vid?: Record<string, number>; verktyg?: string; utkant?: Utkant; eld?: true; kraver?: Partial<Record<Act, string>>; smutsar?: Partial<Record<Act, string>>; bygger: string; forsta: string; inne?: true; mobel?: true; flera?: true; fart?: Partial<Record<Act, number>>; brasa?: true; sover?: true; sitt?: true; platser?: true; forvar?: Forvar }
 // de enkla redskapen: görs vid slöjdbänken om byn har en, lite fortare där (fart), annars vid elden som förut (Björn, efter v90)
 const ENKLA: Act[] = ['yxa', 'spjut', 'metspo', 'kniv', 'bensyl', 'balte'];
 export const STATIONER = {
   slaktbank: {
-    namn: 'Slaktbänk', ikon: 'slaktbank', w: 3, h: 1, tek: ['slaktbank'], av: { ved: STATION.slaktbankTra }, min: STATION.slaktbankMin, gor: ['slakta', 'rensa'], bara: ['slakta', 'rensa'], vid: { kniv: STATION.knivplatser }, smutsar: { slakta: 'blod' }, // blir blodig när det slaktas (blod.ts)
+    namn: 'Slaktbänk', ikon: 'slaktbank', w: 3, h: 1, tek: ['slaktbank'], av: { ved: STATION.slaktbankTra }, min: STATION.slaktbankMin, gor: ['slakta', 'rensa'], bara: ['slakta', 'rensa'], vid: { kniv: STATION.knivplatser }, smutsar: { slakta: 'blod' }, utkant: { till: STATION.slaktTill, avst: STATION.slaktAvst }, // står en bit från byn (steg 2.10.16) // blir blodig när det slaktas (blod.ts)
     bygger: 'Bygger en slaktbänk av trä.',
     forsta: '{namn} byggde byns första slaktbänk av trä. Där slaktas viltet och rensas fisken, och en kniv ligger kvar vid bänken.',
   },
@@ -161,7 +164,7 @@ export const STATIONER = {
   },
   // latrinen (steg 2.7.2, smuts.ts): en grop som grävs med benspaden i byns utkant. Där går man på toa, och när den är full fylls den igen
   latrin: {
-    namn: 'Latrin', ikon: 'latrin', w: 1, h: 1, tek: ['latrin'], av: {}, min: STATION.latrinMin, gor: ['toa'], verktyg: 'benspade', utkant: true, flera: true,
+    namn: 'Latrin', ikon: 'latrin', w: 1, h: 1, tek: ['latrin'], av: {}, min: STATION.latrinMin, gor: ['toa'], verktyg: 'benspade', utkant: { till: STATION.latrinTill, avst: STATION.latrinAvst, vatten: true }, flera: true,
     bygger: 'Gräver en latrin med benspaden.',
     forsta: '{namn} grävde byns första latrin. Där går man på toa, så att smutsen hamnar på ett ställe.',
   },
@@ -334,20 +337,38 @@ export const paLek = (l: Rekt, x: number, y: number, w = 1, h = 1) => x < l.x + 
 
 // platsen för en station av sorten k: inne i ett hus om registret säger det, annars nära elden. Samma plats varje gång (ingen slump)
 export const stationSite = (s: State, k: string) => stationDef(k)?.brasa ? siteBrasa(s) : stationDef(k)?.eld ? siteEld(s) : stationDef(k)?.forvar ? siteForvar(s, k) : stationDef(k)?.utkant ? siteUtkant(s, k) : stationDef(k)?.inne ? siteInne(s, k) : siteUte(s, k);
-// i byns utkant (latrinen): en ledig ruta på gräs, sand eller i glesare skog, latrinFran–latrinTill rutor från byns läger, helst
-// latrinAvst, inte på lekplatsen, och när byn lärt sig det (s.hygien) långt från vattnet
-function siteUtkant(s: State, _k: string) {
-  const m = getMap(s.seed), f = eldPlats(s), R = STATION.latrinTill + 4, g = groundOf(s), lekR = lekplats(s);
+// avståndet från rutan (x, y) till byn: lägret (elden och lagerplatserna, campDist) och husen
+export function byAvstand(s: State, x: number, y: number) {
+  let d = campDist(s, x, y);
+  for (const h of housesOf(s)) d = Math.min(d, rektAvstand(x, y, h.x, h.y, h.w, h.h));
+  return d;
+}
+// i byns utkant (latrinen och slaktbänken): lediga rutor på gräs, sand eller i glesare skog, högst u.till rutor från byn (lägret
+// och husen, byAvstand), helst u.avst och aldrig närmare än utkantMin, inte på lekplatsen, och för latrinen, när byn lärt sig
+// det (s.hygien), långt från vattnet. Avståndet räknas från stationens närmaste ruta
+function siteUtkant(s: State, k: string) {
+  const u = stationDef(k)!.utkant!, m = getMap(s.seed), g = groundOf(s), lekR = lekplats(s), hus = housesOf(s);
+  // sökområdet: byn (elden, lagerplatserna och husen) och u.till rutor runt
+  const f = eldPlats(s), R = Math.ceil(u.till) + 1;
+  let x0 = f.x, y0 = f.y, x1 = f.x, y1 = f.y;
+  for (const z of [...zonesOf(s), ...hus]) { x0 = Math.min(x0, z.x); y0 = Math.min(y0, z.y); x1 = Math.max(x1, z.x + z.w - 1); y1 = Math.max(y1, z.y + z.h - 1); }
   let best: { x: number; y: number; rot?: 1 } | undefined, bs = Infinity;
-  for (let dy = -R; dy <= R; dy++) for (let dx = -R; dx <= R; dx++) {
-    const x = f.x + dx, y = f.y + dy;
-    if (x < 0 || y < 0 || x >= W || y >= H) continue;
-    const t = m.tiles[y * W + x], d = campDist(s, x, y);
-    if (d < STATION.latrinFran || d > STATION.latrinTill || t !== T.Gras && t !== T.Sand && t !== T.Skog || g.trees[y * W + x] >= FOREST || !ledig(s, x, y) || !friRunt(s, [{ x, y }])) continue;
-    const lek = paLek(lekR, x, y) ? STATION.norr * 4 : 0;
-    const vatten = s.hygien ? s.hygien * STATION.latrinVattenPoang * Math.max(0, STATION.latrinVatten - tillVatten(s, x, y, STATION.latrinVatten)) : 0;
-    const sc = Math.abs(d - STATION.latrinAvst) + lek + vatten;
-    if (sc < bs) { bs = sc; best = { x, y }; }
+  for (const rot of (stationDef(k)!.w === stationDef(k)!.h ? [0] : [0, 1]) as (0 | 1)[]) {
+    const { w, h } = storlek(k, rot);
+    for (let y = Math.max(0, y0 - R); y <= Math.min(H - h, y1 + R); y++) for (let x = Math.max(0, x0 - R); x <= Math.min(W - w, x1 + R); x++) {
+      const rutor = rutorAv(x, y, w, h);
+      let d = Infinity, ok = true;
+      for (const q of rutor) {
+        const t = m.tiles[q.y * W + q.x];
+        if (t !== T.Gras && t !== T.Sand && t !== T.Skog || g.trees[q.y * W + q.x] >= FOREST || !ledig(s, q.x, q.y)) { ok = false; break; }
+        d = Math.min(d, byAvstand(s, q.x, q.y));
+      }
+      if (!ok || d < STATION.utkantMin || d > u.till || !friRunt(s, rutor)) continue;
+      const lek = paLek(lekR, x, y, w, h) ? STATION.norr * 4 : 0;
+      const vatten = u.vatten && s.hygien ? s.hygien * STATION.latrinVattenPoang * Math.max(0, STATION.latrinVatten - tillVatten(s, x, y, STATION.latrinVatten)) : 0;
+      const sc = Math.abs(d - u.avst) + lek + vatten + rot * STATION.vriden;
+      if (sc < bs) { bs = sc; best = rot ? { x, y, rot } : { x, y }; }
+    }
   }
   return best;
 }
