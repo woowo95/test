@@ -20,6 +20,8 @@ const HISTORIK_TAL: { id: string; namn: string; hur: 'snitt' | 'sist'; varde: (s
   { id: 'torst', namn: 'Mycket törstiga', hur: 'snitt', varde: s => living(s).filter(p => p.torst < TORST.farligt).length }, // steg 2.4.1
   { id: 'skadade', namn: 'Skadade', hur: 'snitt', varde: s => living(s).filter(p => p.skador?.length).length }, // steg 2.5.1
   { id: 'skog', namn: 'Skog, andel av marken', hur: 'snitt', varde: s => skogAndel(s) },
+  { id: 'fukt', namn: 'Fukt i marken', hur: 'snitt', varde: s => s.vader?.fukt ?? 0.5 }, // steg 2.11.1
+  { id: 'sno', namn: 'Snö på marken', hur: 'snitt', varde: s => s.vader?.sno ?? 0 }, // steg 2.11.1
   { id: 'fodda', namn: 'Födda sedan byns början', hur: 'sist', varde: s => (s.stat?.fodda as number) ?? 0 },
   { id: 'doda', namn: 'Döda sedan byns början', hur: 'sist', varde: s => (s.stat?.doda as number) ?? 0 },
 ];

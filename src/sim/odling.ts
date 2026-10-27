@@ -14,7 +14,7 @@ import { freeTools, wearTool } from './agande';
 import { SAKER } from './saker';
 import { campDist } from './plats';
 import { ledig, lekplats, paLek } from './stationer';
-import { temperature } from './vader';
+import { temperature, vaxtFaktor } from './vader';
 import { ISTID, iIstiden, isLight, kalender } from './tid';
 
 // ---------- odling (steg 2.10.2–) ----------
@@ -260,7 +260,7 @@ export function stepOdling(s: State) {
       const d = GRODOR[f.groda!];
       if (istid || temp < d.frost) { forlorad(s, f, 'Frosten'); continue; }
       if (f.steg === 'mogen') { if (skordAndel(s, f) <= 0) forlorad(s, f, 'Rötan'); continue; }
-      if (temp > ODLING.vaxGrad) f.vuxit = Math.min(1, (f.vuxit ?? 0) + 1 / (d.dygn * 24));
+      if (temp > ODLING.vaxGrad) f.vuxit = Math.min(1, (f.vuxit ?? 0) + vaxtFaktor(s) / (d.dygn * 24)); // fortare i blöt mark (steg 2.11.1)
       if (f.vuxit! >= 1) { f.steg = 'mogen'; f.mogen = s.now; f.kvar = minFor('mogen'); }
       continue;
     }

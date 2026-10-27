@@ -8,7 +8,7 @@ import { onskan } from './naring';
 import { halsa, hemma, kanGa, vardVal, vilaHellre } from './halsa';
 import { harMat } from './behov';
 import { FANGST, Kind, flintSpot, shoreOf, wantsFlint } from './fynd';
-import { coldOf, temperature } from './vader';
+import { coldOf, nederbord, temperature } from './vader';
 import { DJUR, Djurart, GORS, canProcess, djurKvar, freeOfKinds, makeTask, toolGroups, wantsTool } from './redskap';
 import { PROJEKT, Uppgift, bastaProjekt } from './projekt';
 import { faltNu } from './odling';
@@ -157,6 +157,7 @@ export function spotFor(s: State, act: Act, p: Person): { x: number; y: number }
   const f = plats === 'elden' ? egenBrasa(s, p) ?? m.fire : m.fire; // vid elden: vid den brinnande brasa man hör till (steg 2.9.1), annars lägerelden
   // det som görs utan bänk görs inne i byn och inte vid elden (steg 2.10.6); när det är kallt sätter man sig vid elden som förut, för värmens skull
   const iByn = d.slag === 'hantverk' && (plats === 'elden' || plats === 'station' && !stationFor(s, act)) && coldOf(temperature(s)) === 0;
+  if (iByn && nederbord(s)) { const sal = samlingRum(s); if (sal) return punktIRuta(s, pick(s, sal.tiles, 'val', p), p); } // i regnet under tak (steg 2.11.1)
   if (iByn) return hantverkIByn(s, p);
   if (plats === 'skugga') return iSkugga(s, p.x, p.y) ? { x: p.x, y: p.y } : skuggaNara(s, p, p.x, p.y) ?? { x: p.x, y: p.y };
   // den som är för varm i solen vilar och gör handarbete i skuggan nära elden i stället (steg 2.3.13)
@@ -170,7 +171,7 @@ export function spotFor(s: State, act: Act, p: Person): { x: number; y: number }
   if (plats === 'elden' || plats === 'station' || plats === 'bord') {
     // när det är kallt samtalar och berättar man i samlingshuset, om det är varmare där än vid elden (byggnader.ts)
     const sal = d.social ? samlingRum(s) : undefined, c = sal ? coldOf(temperature(s)) : 0;
-    if (sal && c > 0 && varmareInne(s, sal, c, d.varmer)) return punktIRuta(s, pick(s, sal.tiles, 'val', p), p);
+    if (sal && (c > 0 && varmareInne(s, sal, c, d.varmer) || nederbord(s))) return punktIRuta(s, pick(s, sal.tiles, 'val', p), p); // ... och när det regnar (steg 2.11.1)
     // annars sätter man sig ofta vid ett bord för att samtala och berätta, när det inte är kallt
     if (d.slag === 'prata' && bordenOf(s).length && coldOf(temperature(s)) === 0 && rnd(s, 'val', p) < VAL.bordSamtal) { const at = ledigPlats(s, p); if (at) return at; }
     for (let k = 0; ; k++) { // runt elden, men inte i en husvägg eller i en station (Björn efter v89: någon stod i slaktbänken)
@@ -182,7 +183,7 @@ export function spotFor(s: State, act: Act, p: Person): { x: number; y: number }
   if (plats === 'sang') { // i huset om det finns plats under tak, annars på marken en bit från elden
     // i huset om det är varmare där än vid elden
     const bed = bedFor(s, p), c = coldOf(temperature(s)), rum = bed && roomAt(s, bed.x, bed.y);
-    if (bed && rum && (varmareInne(s, rum, c) || c === 0)) return bed; // när det inte är kallt räcker värmen överallt
+    if (bed && rum && (varmareInne(s, rum, c) || c === 0 || nederbord(s))) return bed; // när det inte är kallt räcker värmen överallt; i regnet under tak
     for (let k = 0; k < 12; k++) {
       const ang = (p.id * 2.399 + rnd(s, 'val', p) * 0.5) % (Math.PI * 2), r = 1.8 + rnd(s, 'val', p) * 1.2, x = f.x + 0.5 + Math.cos(ang) * r, y = f.y + 0.5 + Math.sin(ang) * r;
       if (inMap(x, y) && !blocked(s, x, y) && !stationAt(s, x, y)) return { x, y };

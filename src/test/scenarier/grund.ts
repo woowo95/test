@@ -1,5 +1,5 @@
 // Scenarier. Grunden: gläntan, yxan, vintern, knapphet, svamp och flinta, kunskap, temperatur och kalender.
-import { createState, step, living, temperature, coldOf, ageIndex, ageStart, kalender, yearNo, AGES, amountOf, groundOf, getMap, DAY, HOUR, W, tileOf, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, angOf, setAmount, BEAT, tingOf, eatPoison, HOST } from '../../sim';
+import { createState, step, living, temperature, coldOf, ageIndex, ageStart, kalender, yearNo, AGES, amountOf, groundOf, getMap, DAY, HOUR, W, tileOf, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, angOf, setAmount, BEAT, tingOf, eatPoison, HOST, vaderNu, VADER, VADERLAGE, VaderId, blotSteg, varmeDelar, stepVader, vaxtFaktor, stepFire, hearthOf, cloneState } from '../../sim';
 import { BAR, FOREST, HIGH, isSoil } from '../../sim/vag';
 import { START } from '../kor';
 import { setMat, Koll, kor, tandEld, logg, skogsandel, uttag, STOCKHOLM, SCENARIER } from './hjalp';
@@ -220,6 +220,55 @@ SCENARIER.temperatur = {
       [`dagen är varmare än natten (${dag.toFixed(0)}° mot ${natt.toFixed(0)}°)`, dag > natt + 4],
       [`vädret varierar (${Math.min(...kl12).toFixed(0)}° till ${Math.max(...kl12).toFixed(0)}° kl. 12)`, Math.max(...kl12) - Math.min(...kl12) > 2],
       ['kylan växer när det blir kallare och försvinner när det är varmt', coldOf(-15) > coldOf(0) && coldOf(0) > 0 && coldOf(15) === 0],
+    ];
+  },
+};
+
+SCENARIER.vader = {
+  text: 'Vädret (steg 2.11.1): klart, mulet, regn, snö, blåst och åska efter årstiden. Regnet blöter den som är ute, så att den fryser fortare, och vattnar marken så att växterna växer fortare; en eld ute brinner fortare i regnet',
+  kor: () => {
+    const s = createState(5, START), t0 = s.now, p = living(s)[0];
+    // ett år i spelet (fyra veckor) i sex byar, timme för timme: hur ofta varje väder är, per tidsålder
+    const per = [0, 1, 2, 3].map(() => ({} as Partial<Record<VaderId, number>>)), timmar = [0, 0, 0, 0];
+    let snoVarmt = 0, regnKallt = 0;
+    for (const seed of [5, 1, 2, 3, 4, 6]) {
+      const b = seed === 5 ? s : createState(seed, START);
+      for (let h = 0; h < 28 * 24; h++) {
+        const t = t0 + h * HOUR, ai = ageIndex(b, t), v = vaderNu(b, t), c = temperature(b, t);
+        per[ai][v.lage] = (per[ai][v.lage] ?? 0) + 1; timmar[ai]++;
+        if (v.sno && c >= VADER.snoGrad) snoVarmt++;
+        if (v.nb > 0 && !v.sno && c < VADER.snoGrad) regnKallt++;
+      }
+    }
+    const andel = (ai: number, ...l: VaderId[]) => l.reduce((a, k) => a + (per[ai][k] ?? 0), 0) / timmar[ai];
+    const alla = (Object.keys(VADERLAGE) as VaderId[]).filter(k => per.some(x => x[k]));
+    // samma by ger samma väder (det räknas ur tiden och fröet)
+    const s2 = createState(5, START), lika = [3, 50, 400].every(h => vaderNu(s2, t0 + h * HOUR).lage === vaderNu(s, t0 + h * HOUR).lage);
+    // ett regn: den som är ute blir blöt och fryser fortare, och torkar inne
+    let tr = t0; while (vaderNu(s, tr).lage !== 'regn' || vaderNu(s, tr).nb < 0.25) tr += HOUR;
+    s.now = tr; p.blot = undefined;
+    for (let i = 0; i < 4; i++) blotSteg(s, p, true, false, false, 0.25);
+    const blot = p.blot ?? 0, underTrad = (() => { const q = { ...p, blot: undefined }; for (let i = 0; i < 4; i++) blotSteg(s, q, true, true, false, 0.25); return q.blot ?? 0; })();
+    const kyla = (b: number, temp: number) => { p.blot = b || undefined; return varmeDelar(s, p, coldOf(temp), new Map(), temp).kyla; };
+    const torrKyla = kyla(0, 0), blotKyla = kyla(1, 0);
+    p.blot = 1; for (let i = 0; i < 4; i++) blotSteg(s, p, false, false, false, 0.5);
+    const torkat = p.blot === undefined;
+    // regnet vattnar marken, så att växterna växer fortare
+    s.vader = { fukt: 0.3, sno: 0 }; const fore = vaxtFaktor(s); stepVader(s); stepVader(s);
+    const blotare = s.vader.fukt > 0.3 && vaxtFaktor(s) > fore;
+    // en eld ute brinner fortare i regnet
+    const e = cloneState(s); e.fire.lit = true; e.fire.fuel = 100;
+    stepFire(e, 3600, []); const brann = 100 - e.fire.fuel, vanligt = hearthOf(e.fire).burn;
+    return [
+      [`alla väder förekommer under ett år (${alla.join(', ')})`, ['klart', 'moln', 'regn', 'sno', 'blast'].every(k => alla.includes(k as VaderId))],
+      [`det regnar oftare på våren och hösten än på sommaren (${(andel(1, 'regn', 'aska', 'sno') * 100).toFixed(0)} %, ${(andel(3, 'regn', 'aska', 'sno') * 100).toFixed(0)} % mot ${(andel(2, 'regn', 'aska', 'sno') * 100).toFixed(0)} %)`, andel(1, 'regn', 'aska', 'sno') > andel(2, 'regn', 'aska', 'sno') && andel(3, 'regn', 'aska', 'sno') > andel(2, 'regn', 'aska', 'sno')],
+      ['det snöar bara när det är kallt, och regnar bara när det inte är det', snoVarmt === 0 && regnKallt === 0],
+      ['samma by får samma väder', lika],
+      [`den som är ute i regnet blir blöt (${(blot * 100).toFixed(0)} % på en timme, under ett träd ${(underTrad * 100).toFixed(0)} %)`, blot > 0.3 && underTrad < blot],
+      [`den som är blöt fryser fortare (${torrKyla.toFixed(3)} mot ${blotKyla.toFixed(3)} i timmen vid 0°)`, blotKyla > torrKyla * 1.5],
+      ['den blöta torkar inne', torkat],
+      ['regnet vattnar marken och växterna växer fortare', blotare],
+      [`en eld ute brinner fortare i regnet (${brann.toFixed(2)} mot ${vanligt.toFixed(2)} i timmen)`, brann > vanligt * 1.05],
     ];
   },
 };

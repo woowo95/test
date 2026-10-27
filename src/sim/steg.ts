@@ -8,7 +8,7 @@ import { GOR_ACTS, finishHalf, startWork, stepPaborjat, workHalf } from './pabor
 import { thinkWhileWorking } from './teknik';
 import { arbetsformaga, foodDays, workRate } from './ekonomi';
 import { TRY_SEC, growFynd, handFish, lagren, packFynd, pickMushrooms, richness, richnessDelar, takeFrom } from './fynd';
-import { coldOf, temperature } from './vader';
+import { blotSteg, coldOf, stepVader, temperature, VADER, vaderGrader, vaderNu, vaxtFaktor } from './vader';
 import { VED, addFuel, canLight, fireWant, forageItems, fuelFor, hearthOf, heatAt, igniterOf, stepFire, takeCoal, takeFuel, tinderShort, tryLight } from './eld';
 import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, isSick, living, log, ovning, stat, think } from './folk';
 import { getMap } from './karta';
@@ -141,7 +141,7 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
   const learn = 1 + 0.1 * s.seder.v.nyfikenhet; // en nyfiken by lär sig snabbare
   if (Math.floor(now / HOUR) !== Math.floor((now - dtSec * SEC) / HOUR)) {
     stepSeder(s); updateTags(s); stepDelning(s);
-    growGround(s, 1, ai); growFynd(s, 1, ai); forget(s, 1); rotStumps(s); tidyStore(s);
+    stepVader(s); growGround(s, 1, ai); growFynd(s, 1, ai, vaxtFaktor(s)); forget(s, 1); rotStumps(s); tidyStore(s);
     wearBuild(s, 1, ai); stepByggnader(s); planBuild(s); stepPaborjat(s); stepStationer(s); stepBrasor(s); stepKlader(s); stepOdling(s);
     historikSteg(s); // nyckeltalen till byns historik (läses inte av simuleringen)
     compact(s); // här och inte i sparningen, så att alla lägen städar vid samma tid
@@ -214,10 +214,12 @@ export function varmeDelar(s: State, p: Person, coldRate: number, inRum: Map<num
   const fall = tillbehorVarme(s, p, rum); // skinnfällen i bädden (steg 2.2.14)
   const klad = kladVarme(s, p); // kläderna (steg 2.3.2)
   const skugga = !!rum || groundOf(s).trees[tileOf(p.x, p.y)] > KROPP.skugga;
-  const sol = skugga ? 0 : Math.max(0, temp - KROPP.solFran) / KROPP.solDiv;
+  // vädret (steg 2.11.1): den som är blöt eller ute i blåsten fryser som om det vore kallare, och molnen tar solen
+  const vg = vaderGrader(s, p, !rum), cr = vg ? coldRate + coldOf(temp - vg) - coldOf(temp) : coldRate;
+  const sol = skugga ? 0 : Math.max(0, temp - KROPP.solFran) / KROPP.solDiv * (1 - vaderNu(s).moln * VADER.molnSol);
   const kladHetta = klad * Math.max(0, temp - KROPP.kladFran) / KROPP.kladDiv, eldHetta = Math.max(0, heat - KROPP.eldTatt) * KROPP.eldHetta;
-  return { heat, rum, shelter, fall, klad, eld: heat * KROPP.eldVarme, kyla: coldRate * (1 - shelter) * (1 - fall) * (1 - klad) * frysFaktor(p), mild: coldRate === 0 ? KROPP.mildVarme : 0,
-    sol, kladHetta, eldHetta, hetta: sol + kladHetta + eldHetta, skugga };
+  return { heat, rum, shelter, fall, klad, eld: heat * KROPP.eldVarme, kyla: cr * (1 - shelter) * (1 - fall) * (1 - klad) * frysFaktor(p), mild: cr === 0 ? KROPP.mildVarme : 0,
+    sol, kladHetta, eldHetta, hetta: sol + kladHetta + eldHetta, skugga, blot: p.blot ?? 0, vaderGrader: vg };
 }
 // värmen efter dt timmar: under idealet som förut (elden, kylan, milt väder, aldrig över idealet). Vid och över idealet värmer
 // bara hettan, kylan kyler, och kroppen svalnar mot idealet (KROPP.svalnar) men aldrig under det
@@ -235,6 +237,11 @@ function needsStep(s: State, p: Person, a: number, dtSec: number, coldRate: numb
   naringSjunker(p, dtSec / HOUR_S * (a < ALDER.matBarn ? KROPP.hungerBarn : 1), KROPP.hungerTim, vs === 'restArbete' && p.warm > KROPP.forVarm);
   bristSteg(p, now);
   p.rest = clamp(p.rest + dtSec / HOUR_S * vilaTim(p, vs), 0, 1);
+  { // regnet blöter den som är ute; man torkar inne och vid elden (steg 2.11.1)
+    const ute = !roomAt(s, p.x, p.y);
+    blotSteg(s, p, ute, ute && groundOf(s).trees[tileOf(p.x, p.y)] > KROPP.skugga, heatAt(s, p.x, p.y) > KROPP.eldNara, dtSec / HOUR_S);
+    if ((p.blot ?? 0) > VADER.blotTanke) think(p, 'Blöt av regnet', -0.05, now, HOUR);
+  }
   const v = varmeDelar(s, p, coldRate, inRum, temp), heat = v.heat;
   p.warm = nyVarme(p.warm, v, dtSec / HOUR_S);
   const tak = viloTak(s, p, v.rum);

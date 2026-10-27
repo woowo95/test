@@ -1,7 +1,8 @@
 import { addTo, amountOf, avbryt, fetchSpot, takeLimit, use } from './lager';
 import { Behov, addBehov, getable, takeMaterial } from './behov';
 import { Del, addDel } from './egendom';
-import { coldOf, temperature } from './vader';
+import { coldOf, temperature, vaderNu, VADER } from './vader';
+import { roomAt } from './byggnad';
 import { ALDER, KROPP, ageOf, count, doingAct, isSick, log, ovning, stat, think } from './folk';
 import { halsa } from './halsa';
 import { flintFactor, flintorOchYxor, stoneDist, takeFrom } from './fynd';
@@ -213,7 +214,9 @@ const awake = (s: State, p: Person, minAge: number) => {
 export function stepFire(s: State, dtSec: number, ppl: Person[]) {
   const f = s.fire, h = hearthOf(f), m = getMap(s.seed), now = s.now;
   if (f.lit) {
-    const b = Math.min(f.fuel, h.burn / HOUR_S * dtSec);
+    // i regnet brinner en eld ute fortare (steg 2.11.1); en eld under tak gör det inte
+    const regn = vaderNu(s).sno || roomAt(s, m.fire.x + 0.5, m.fire.y + 0.5) ? 0 : vaderNu(s).nb;
+    const b = Math.min(f.fuel, h.burn / HOUR_S * dtSec * (1 + regn * VADER.regnEld));
     f.fuel -= b; f.burned += b; f.totalBurned += b; f.litSec += dtSec;
     if (f.fuel <= 1e-6) {
       f.fuel = 0; f.lit = false; f.emberUntil = now + ELD.glodTim * HOUR; f.outs++;

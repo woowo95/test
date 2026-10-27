@@ -118,6 +118,7 @@ export interface Person {
   pot: Record<Stat, number>; skill: Record<Skill, number>;
   delar?: Record<string, number>; // arbetet mot nästa hela sak, per slag (steg 2.10.7, lager.ts)
   hunger: number; rest: number; social: number; health: number;
+  blot?: number; // hur blöt personen är av regnet, 0 till 1 (steg 2.11.1, vader.ts)
   warm: number; // kroppsvärme 0–1
   toa: number; // 1 = inget behov, 0 = olycka
   torst: number; // 1 = släckt, 0 = uttorkad (steg 2.4.1, torst.ts)
@@ -191,6 +192,7 @@ export interface State {
   sjoar?: Record<number, import('./sjo').SjoStat>; // fiske och bad per sjö (sjo.ts)
   stationer?: import('./stationer').Station[]; nextStation?: number; // arbetsstationerna, som slaktbänken (stationer.ts)
   falt?: import('./odling').Falt[]; nextFalt?: number; // fälten (steg 2.10.3, odling.ts)
+  vader?: import('./vader').VaderMinne; // fukten och snön på marken (steg 2.11.1, vader.ts)
   brasa?: { vill: number; x: number; y: number }; // byn vill ha en brasa (0 till 1) nära mitten av sovplatserna x, y (brasor.ts, räknas varje timme)
   flackar?: import('./smuts').Flack[]; // fläckar på marken som bleknar: toa-smutsen (smuts.ts)
   blod?: import('./blod').Blodflack[]; // blodet på marken (bara utseende, blod.ts)

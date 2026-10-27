@@ -89,7 +89,7 @@ function behovHtml(p: Person) {
   const temp = temperature(s), v = varmeDelar(s, p, coldOf(temp), inRum), fh = hearthOf(s.fire);
   const varme: Orsak[] = [
     ...v.eld > 0 ? [{ namn: 'Elden värmer', v: v.eld }] : [],
-    ...v.kyla > 0 ? [{ namn: `Kylan, ${Math.round(temp)} grader${v.shelter > 0 ? `, huset skyddar ${Math.round(v.shelter * 100)} %` : ''}${v.fall > 0 ? `, skinnfällen ${Math.round(v.fall * 100)} %` : ''}${v.klad > 0 ? `, kläderna ${Math.round(v.klad * 100)} %` : ''}${frysFaktor(p) > 1 ? `, brist på fett: ${Math.round((frysFaktor(p) - 1) * 100)} % mer` : ''}`, v: -v.kyla }] : [],
+    ...v.kyla > 0 ? [{ namn: `Kylan, ${Math.round(temp)} grader${v.shelter > 0 ? `, huset skyddar ${Math.round(v.shelter * 100)} %` : ''}${v.fall > 0 ? `, skinnfällen ${Math.round(v.fall * 100)} %` : ''}${v.klad > 0 ? `, kläderna ${Math.round(v.klad * 100)} %` : ''}${frysFaktor(p) > 1 ? `, brist på fett: ${Math.round((frysFaktor(p) - 1) * 100)} % mer` : ''}${v.vaderGrader > 0.5 ? `, ${v.blot > 0.1 ? 'blöt' : 'blåsten'}: känns ${Math.round(v.vaderGrader)} grader kallare` : ''}`, v: -v.kyla }] : [],
     ...v.mild > 0 ? [{ namn: `Milt väder, ${Math.round(temp)} grader`, v: v.mild }] : [],
     // över idealet (steg 2.3.4)
     ...v.sol > 0 ? [{ namn: `Solen, ${Math.round(temp)} grader`, v: v.sol }] : [],

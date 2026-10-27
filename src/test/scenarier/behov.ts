@@ -1,5 +1,5 @@
 // Scenarier. Behov och val: behov, ved, aktivitet och fritid.
-import { Person, createState, getRel, step, living, temperature, nyKalender, amountOf, capacity, load, isLight, T, FOOD, ageOf, getMap, HOUR, W, tileOf, stat, campCenter, KANIN, gain, takeFuel, ownsAmount, ownedSum, addTo, setAmount, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, STOLD_LINDRIG, STOLD_OP, BEAT, spar, isWork, ACTS, groundOf, varmeDelar, nyVarme, addTool, stepKlader, chooseTask, iSkugga, KROPP, spotFor, shoreOf, torstDelar, drickPlats, areaOf, halsaLage, describe, halsaSteg, skada, blodning, halsa, rorlighet, workRate, OLYCKOR, Act, HALSA, kanGa, gangFart, hemma, mossaFynd, chopStock, skadeLista, skadeText, delSkada, FORMAGOR, smarta, handighet, NARINGAR, NARING, naringOf, naringNu, naringSjunker, mattnad, sjunker, bristGrad, bristSteg, berattaBrist, onskan, matOrdning, takeFood, vilaTim, skorbjugg, NARINGBAL, DODSORSAKER, converse, Naring, STATIONER, TEKNIK, tingOf } from '../../sim';
+import { Person, createState, getRel, step, living, temperature, nyKalender, amountOf, capacity, load, isLight, T, FOOD, ageOf, getMap, HOUR, W, tileOf, stat, campCenter, KANIN, gain, takeFuel, ownsAmount, ownedSum, addTo, setAmount, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, STOLD_LINDRIG, STOLD_OP, BEAT, spar, isWork, ACTS, groundOf, varmeDelar, nyVarme, addTool, stepKlader, chooseTask, iSkugga, KROPP, spotFor, shoreOf, torstDelar, drickPlats, areaOf, halsaLage, describe, halsaSteg, skada, blodning, halsa, rorlighet, workRate, OLYCKOR, Act, HALSA, kanGa, gangFart, hemma, mossaFynd, chopStock, skadeLista, skadeText, delSkada, FORMAGOR, smarta, handighet, NARINGAR, NARING, naringOf, naringNu, naringSjunker, mattnad, sjunker, bristGrad, bristSteg, berattaBrist, onskan, matOrdning, takeFood, vilaTim, skorbjugg, NARINGBAL, DODSORSAKER, converse, Naring, STATIONER, TEKNIK, tingOf, vaderNu } from '../../sim';
 import { START, STEG_DYGN, STEG_TIM } from '../kor';
 import { setMat, setFood, kor, klockan, tandEld, tomtForrad, treVuxna, bastaJaktruta, SCENARIER, rikBy } from './hjalp';
 
@@ -227,6 +227,7 @@ SCENARIER.varm = {
   kor: () => {
     const s = createState(5, START);
     s.kal = nyKalender(s.now, 2); klockan(s, 14); // sommar, mitt på dagen
+    for (let d = 0; d < 6 && vaderNu(s).moln > 0.1; d++) s.now += 24 * HOUR; // en klar dag (vädret, steg 2.11.1)
     const g = groundOf(s), p = living(s)[0], temp = temperature(s);
     // en ruta utan träd och en under träd
     const fri = (skog: boolean) => { for (let i = 0; i < g.trees.length; i++) if ((g.trees[i] > 0.5) === skog && getMap(s.seed).tiles[i] !== T.Vatten) return i; return -1; };

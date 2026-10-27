@@ -421,10 +421,11 @@ export function takeFrom(s: State, k: Lager, x: number, y: number, amount: numbe
   }
 }
 // en timme: platserna växer tillbaka
-export function growFynd(s: State, hours: number, season: number) {
+// vaxt: hur fort växterna växer åter (vaxtFaktor i vader.ts: fortare i blöt mark); djuren följer inte vädret
+export function growFynd(s: State, hours: number, season: number, vaxt = 1) {
   const d = takenOf(s);
   for (const k of UTTAG_IDS) {
-    const f = Math.exp(-FYND[k].uttag!.regrow[season] * hours), a = d[k]!;
+    const f = Math.exp(-FYND[k].uttag!.regrow[season] * hours * (FYND[k].grupp === 'vaxter' ? vaxt : 1)), a = d[k]!;
     if (f < 1) for (let i = 0; i < a.length; i++) if (a[i] > 0) a[i] = a[i] * f < FANGST.aterTom ? 0 : a[i] * f;
   }
 }
