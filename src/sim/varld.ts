@@ -4,6 +4,7 @@ import { setStock, storeFromSums } from './lager';
 import { isTool } from './saker';
 import { migrateTools, toolsFromItems } from './agande';
 import { migrateFalt } from './odling';
+import { behoverStorreKarta, storreKarta } from './kartflytt';
 import { VAR, inFas, nyKalender } from './tid';
 import { ageOf, byId, getRel, log, newPerson, startSkills, think } from './folk';
 import { newSeder, sederTarget, TAGS } from './seder';
@@ -11,10 +12,11 @@ import { clamp, gauss, rnd } from './slump';
 import { DAY, Fire, NEW_H, NEW_W, Person, SEC, State, simulera, useMap } from './typer';
 
 // ---------- skapa värld ----------
-export function createState(seed: number, now: number): State { return simulera(() => skapaBy(seed, now)); } // som simuleringen (typer.ts)
-function skapaBy(seed: number, now: number): State {
+// storlek: kartans storlek, för testerna av äldre byar (en ny by får alltid NEW_W × NEW_H)
+export function createState(seed: number, now: number, storlek = { W: NEW_W, H: NEW_H }): State { return simulera(() => skapaBy(seed, now, storlek)); } // som simuleringen (typer.ts)
+function skapaBy(seed: number, now: number, storlek: { W: number; H: number }): State {
   // en liten koloni: två par och ett barn, utan eld och med lite mat och grenar
-  const s: State = { v: SPARVERSION, seed, founded: now, now, people: [], rels: {}, nextId: 1, log: [], lastAgeIdx: VAR, fire: newFire(), seder: newSeder(), W: NEW_W, H: NEW_H, kal: nyKalender(now) };
+  const s: State = { v: SPARVERSION, seed, founded: now, now, people: [], rels: {}, nextId: 1, log: [], lastAgeIdx: VAR, fire: newFire(), seder: newSeder(), W: storlek.W, H: storlek.H, kal: nyKalender(now) };
   useMap(s);
   setStock(s, { bar: 30, grenar: 20 });
   const adults: [string, number][] = [['m', 30], ['k', 27], ['m', 23], ['k', 21]];
@@ -111,6 +113,7 @@ export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];
 export function migrate(s: State) { return simulera(() => uppgradera(s)); }
 function uppgradera(s: State) {
   useMap(s);
+  if (behoverStorreKarta(s)) storreKarta(s); // först av allt, innan något räknats på den gamla kartan (steg 2.10.9, kartflytt.ts)
   for (const [n, , gor] of UPPGRADERINGAR) if ((s.v ?? 1) < n) { gor(s); s.v = n; }
   return s;
 }

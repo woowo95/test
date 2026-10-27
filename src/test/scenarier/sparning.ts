@@ -162,3 +162,54 @@ SCENARIER.slump = {
     ];
   },
 };
+
+SCENARIER.karta = {
+  text: 'Steg 2.10.9: en ny by får kartan 120 × 120. En äldre by (80 × 50) får den stora kartan när den laddas: den gamla kartan ligger kvar i mitten och ser ut som förut, och allt i byn flyttas lika mycket',
+  kor: () => {
+    const ny = createState(4, START), nyOk = ny.W === 120 && ny.H === 120 && !ny.kart;
+    const s = createState(4, START, { W: 80, H: 50 });
+    kor(s, 30);
+    SIM.useMap(s);
+    const txt = serialize(s), m0 = SIM.getMap(s.seed), f0 = { ...m0.fire }, tiles0 = m0.tiles.slice(), g0 = SIM.groundOf(s);
+    const cover0 = g0.cover.slice(), trees0 = g0.trees.slice(), tagen0 = SIM.takenOf(s), sjo0 = SIM.sjoarna(s.seed).id.slice();
+    const folk0 = s.people.map(p => ({ x: p.x, y: p.y, tx: p.task?.tx, ty: p.task?.ty }));
+    const stack0 = (s.stackar ?? []).map(a => ({ x: a.x, y: a.y }));
+    const lard0 = s.people.map(p => (p.lardomar ?? []).map(l => ({ x: (l.a % 10) * 8, y: Math.floor(l.a / 10) * 8 })));
+    const sjoar0 = Object.keys(s.sjoar ?? {}).map(Number).map(k => sjo0.indexOf(k));
+    const t = migrate(JSON.parse(txt)), ox = t.kart?.x ?? 0, oy = t.kart?.y ?? 0, ny0 = (i: number) => (i % 80 + ox) + (Math.floor(i / 80) + oy) * 120;
+    const m1 = SIM.getMap(t.seed), g1 = SIM.groundOf(t), tagen1 = SIM.takenOf(t), sjo1 = SIM.sjoarna(t.seed).id;
+    const storlek = t.W === 120 && t.H === 120 && ox % 8 === 0 && oy % 8 === 0 && ox > 0 && oy > 0;
+    let fel = 0;
+    for (let i = 0; i < 80 * 50; i++) {
+      const j = ny0(i);
+      if (m1.tiles[j] !== tiles0[i] || Math.abs(g1.cover[j] - cover0[i]) > 0.003 || Math.abs(g1.trees[j] - trees0[i]) > 0.003) fel++;
+      for (const k of Object.keys(tagen0) as (keyof typeof tagen0)[]) if (Math.abs(tagen1[k]![j] - tagen0[k]![i]) > 0.003) fel++;
+    }
+    const eld = m1.fire.x === f0.x + ox && m1.fire.y === f0.y + oy;
+    const lika = (a: number, b: number) => Math.abs(a - b) < 0.002; // sparfilen avrundar lägena
+    const folk = t.people.every((p, n) => lika(p.x, folk0[n].x + ox) && lika(p.y, folk0[n].y + oy) && (folk0[n].tx === undefined || (lika(p.task!.tx, folk0[n].tx! + ox) && lika(p.task!.ty, folk0[n].ty! + oy))));
+    const stackar = (t.stackar ?? []).every((a, n) => lika(a.x, stack0[n].x + ox) && lika(a.y, stack0[n].y + oy)) && stack0.length === (t.stackar ?? []).length;
+    const lardomar = t.people.every((p, n) => (p.lardomar ?? []).every((l, k) => SIM.areaOf(lard0[n][k].x + ox, lard0[n][k].y + oy) === l.a));
+    const sjoar = sjoar0.every(i => i >= 0 && t.sjoar?.[sjo1[ny0(i)]] !== undefined);
+    // utanför den gamla kartan: orörd mark med skog, och sjöar och sten som bruset ger
+    let skog = 0, land = 0;
+    for (let y = 0; y < 120; y++) for (let x = 0; x < 120; x++) if (x < ox || y < oy || x >= ox + 80 || y >= oy + 50) { const i = y * 120 + x; if (m1.tiles[i] !== SIM.T.Vatten) land++; if (g1.trees[i] >= 0.5) skog++; }
+    // en gång: byn flyttas inte igen när den sparas och laddas på nytt, och den lever vidare på den stora kartan
+    const u = migrate(JSON.parse(serialize(t))), engang = u.kart?.x === ox && u.kart?.y === oy && SIM.getMap(u.seed).fire.x === m1.fire.x;
+    kor(u, 24);
+    const lever = u.people.every(p => p.died !== undefined || p.left !== undefined || (SIM.inMap(p.x, p.y) && Number.isFinite(p.x)));
+    return [
+      [`en ny by får kartan 120 × 120 (${ny.W} × ${ny.H})`, nyOk],
+      [`den äldre byn får kartan 120 × 120 med den gamla kartan i mitten, på hela lärdomsområden (hörnet ${ox}, ${oy})`, storlek],
+      [`den gamla kartan ser ut som förut: marken, stigarna, skogen och det som tagits ur platserna (${fel} fel)`, fel === 0],
+      ['elden ligger på samma ställe på den gamla kartan', eld],
+      ['människorna och det de är på väg till flyttas lika mycket', folk],
+      [`stackarna flyttas lika mycket (${stack0.length})`, stackar],
+      ['lärdomarna gäller samma rutor som förut', lardomar],
+      [`sjöarnas fiske följer med sjön (${sjoar0.length} sjöar)`, sjoar],
+      [`utanför den gamla kartan fortsätter landet med skog (${land} rutor land, ${skog} med skog)`, land > 3000 && skog > 1000],
+      ['byn flyttas en gång: den ligger kvar när den sparas och laddas igen', engang],
+      ['byn lever vidare på den stora kartan', lever],
+    ];
+  },
+};

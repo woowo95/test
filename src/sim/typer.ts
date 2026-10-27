@@ -11,13 +11,23 @@ export const HOUR_S = 3600; // en timme i sekunder (dtSec / HOUR_S = timmar)
 export const DAY = 24 * HOUR; // = ett levnadsår
 export const WEEK = 7 * DAY; // = en tidsålder
 
-// kartans storlek: varje by har sin egen (äldre byar 64×40, nya NEW_W×NEW_H). useMap(s) väljer byns karta och
-// anropas när en by skapas, räknas fram eller visas.
+// kartans storlek: varje by har sin egen (nya NEW_W×NEW_H). useMap(s) väljer byns karta och anropas när en by skapas,
+// räknas fram eller visas. En äldre by (64×40 eller 80×50) får den stora kartan när den laddas (steg 2.10.9, kartflytt.ts):
+// den gamla kartan ligger kvar i mitten med sitt hörn i (OX, OY) och sin storlek W0×H0, och allt som kommer ur kartans brus
+// räknas från det hörnet, så att det gamla ser ut som förut. Utanför den fortsätter samma brus. En ny by har OX = OY = 0
 export let W = 64;
 export let H = 40;
-export const NEW_W = 80, NEW_H = 50;
-export function useMap(s: { W?: number; H?: number }) { W = s.W ?? 64; H = s.H ?? 40; }
-export const mapKey = (seed: number) => `${seed}:${W}x${H}`;
+export let OX = 0, OY = 0, W0 = 64, H0 = 40;
+export const NEW_W = 120, NEW_H = 120;
+export interface Kart { x: number; y: number; w: number; h: number } // den gamla kartans hörn och storlek
+let KARTA = '64x40';
+export function useMap(s: { W?: number; H?: number; kart?: Kart }) {
+  W = s.W ?? 64; H = s.H ?? 40;
+  OX = s.kart?.x ?? 0; OY = s.kart?.y ?? 0; W0 = s.kart?.w ?? W; H0 = s.kart?.h ?? H;
+  KARTA = s.kart ? `${W}x${H}+${OX},${OY},${W0}x${H0}` : `${W}x${H}`;
+}
+export const kartNamn = () => KARTA; // kartans storlek och den gamla kartans plats: samma namn = samma karta för samma frö
+export const mapKey = (seed: number) => `${seed}:${KARTA}`;
 export const inMap = (x: number, y: number) => x >= 0 && y >= 0 && x < W && y < H; // punkten eller rutan ligger på kartan
 
 // Gränssnittet läser byn mellan stegen, och då är visning.pa sann (i webbläsaren, utom i step, createState och migrate, som
@@ -158,7 +168,8 @@ export interface State {
   seed: number; founded: number; now: number;
   rngs?: Record<string, number>; // var i sin slumpföljd varje system är (slump.ts)
   hist?: Historik; // byns historik: nyckeltal och krönika (historik.ts)
-  W?: number; H?: number; // kartans storlek (saknas i äldre byar: 64×40)
+  W?: number; H?: number; // kartans storlek (saknas i de äldsta byarna: 64×40)
+  kart?: Kart; // var den gamla kartan ligger i en äldre by som fått den stora kartan (steg 2.10.9, kartflytt.ts)
   people: Person[]; rels: Record<string, Rel>; nextId: number;
   food?: number; wood?: number; // äldre sparfiler (före v40): maten och veden i förrådet, nu räknade ur stackarna
   log: LogEntry[];

@@ -1,7 +1,7 @@
 // sjöarna: varje sammanhängande vatten på kartan är en sjö. Byn räknar fiskeförsök, fångster och bad per sjö
 // när de händer, och personrutan visar dem när man trycker på vattnet (ui/flikar/sjo.ts)
 import { getMap, perKarta, vnoise } from './karta';
-import { H, Person, State, T, W, inMap } from './typer';
+import { H, OX, OY, Person, State, T, W, inMap } from './typer';
 import { clamp } from './slump';
 import { balans } from './balans';
 
@@ -45,7 +45,7 @@ export const smutsOf = perKarta(seed => {
     if (t[y * W + x] === T.Vatten) continue;
     let vid = false;
     for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const xx = x + dx, yy = y + dy; if (inMap(xx, yy) && t[yy * W + xx] === T.Vatten) vid = true; }
-    if (vid) v[y * W + x] = clamp((vnoise(seed ^ 0x5a17, x / VATTEN.skala, y / VATTEN.skala) - VATTEN.fran) / VATTEN.spann, 0, 1);
+    if (vid) v[y * W + x] = clamp((vnoise(seed ^ 0x5a17, (x - OX) / VATTEN.skala, (y - OY) / VATTEN.skala) - VATTEN.fran) / VATTEN.spann, 0, 1);
   }
   return v;
 });

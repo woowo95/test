@@ -1,7 +1,7 @@
 import { getMap, hash, perKarta, vnoise } from './karta';
 import { campKey } from './plats';
 import { clampI, rnd } from './slump';
-import { H, HOUR, Person, State, W, inMap } from './typer';
+import { H, HOUR, OX, OY, Person, State, W, inMap } from './typer';
 import { BAR, FOREST, Ground, HIGH, VAG, decodeCover, encodeCover, isSoil } from './vag';
 import { balans } from './balans';
 
@@ -49,7 +49,8 @@ export function packGround(s: State) { const g = groundOf(s); s.mark = encodeCov
 export const angOf = perKarta(seed => {
   const a = new Uint8Array(W * H);
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-    const v = vnoise(seed + 41, x / 7, y / 7) * 0.7 + vnoise(seed + 43, x / 3, y / 3) * 0.3;
+    const gx = x - OX, gy = y - OY; // läget på den gamla kartan (typer.ts)
+    const v = vnoise(seed + 41, gx / 7, gy / 7) * 0.7 + vnoise(seed + 43, gx / 3, gy / 3) * 0.3;
     a[y * W + x] = v > MARK.angGrans ? 1 : 0;
   }
   return a;
@@ -62,7 +63,7 @@ function startForest(seed: number) {
     const i = y * W + x;
     if (!isSoil(m.tiles[i]) || ang[i]) continue;
     const d = Math.hypot(x - m.fire.x, (y - m.fire.y) * MARK.gladaHojd);
-    const edge = MARK.gladaRadie + hash(seed + 31, x, y) * MARK.gladaOjamn;
+    const edge = MARK.gladaRadie + hash(seed + 31, x - OX, y - OY) * MARK.gladaOjamn;
     trees[i] = d < edge ? 0 : d < edge + MARK.gladaKant ? MARK.gladaKantTrad : 1;
   }
   return trees;

@@ -82,7 +82,7 @@ export const MINNE = balans('minne', {
 // Båda sprids i samtal, och den som berättar stärker sitt eget minne. Egenskapen Minne avgör hur fort det glöms.
 
 // ---------- områden ----------
-const AREA = 8;
+export const AREA = 8; // ett lärdomsområde är AREA × AREA rutor
 const aw = () => Math.ceil(W / AREA), ah = () => Math.ceil(H / AREA);
 export const areaOf = (x: number, y: number) => Math.floor(clamp(y, 0, H - 1) / AREA) * aw() + Math.floor(clamp(x, 0, W - 1) / AREA);
 const areaCenter = (a: number) => ({ x: Math.min(W, (a % aw()) * AREA + AREA / 2), y: Math.min(H, Math.floor(a / aw()) * AREA + AREA / 2) });

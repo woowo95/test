@@ -1,4 +1,4 @@
-import { H, T, W, inMap, mapKey } from './typer';
+import { H, H0, OX, OY, T, W, W0, kartNamn, mapKey } from './typer';
 
 // ---------- karta ----------
 export function hash(seed: number, x: number, y: number) {
@@ -16,33 +16,36 @@ function fbm(seed: number, x: number, y: number) {
   return vnoise(seed, x / 12, y / 12) * 0.55 + vnoise(seed + 7, x / 6, y / 6) * 0.3 + vnoise(seed + 13, x / 3, y / 3) * 0.15;
 }
 
-// Det som bara beror på kartan (fröet och storleken W×H) räknas en gång per karta och sparas med nyckeln mapKey.
-// Den senaste kartan svarar direkt, utan att nyckeln byggs. Storleken hör till nyckeln, eftersom testerna kör
-// äldre byar (64×40) och nya i samma process.
+// Det som bara beror på kartan (fröet, storleken W×H och var en äldre by har sin gamla karta, kartNamn i typer.ts) räknas
+// en gång per karta och sparas med nyckeln mapKey. Den senaste kartan svarar direkt, utan att nyckeln byggs. Kartan hör
+// till nyckeln, eftersom testerna kör byar med olika kartor i samma process.
 export function perKarta<V>(gor: (seed: number) => V): (seed: number) => V {
   const cache = new Map<string, V>();
-  let seed0 = NaN, w0 = 0, h0 = 0, v0!: V;
+  let seed0 = NaN, k0 = '', v0!: V;
   return seed => {
-    if (seed === seed0 && W === w0 && H === h0) return v0;
+    if (seed === seed0 && kartNamn() === k0) return v0;
     const key = mapKey(seed);
     let v = cache.get(key);
     if (v === undefined) { v = gor(seed); cache.set(key, v); }
-    seed0 = seed; w0 = W; h0 = H; v0 = v;
+    seed0 = seed; k0 = kartNamn(); v0 = v;
     return v;
   };
 }
 
 interface MapData { tiles: Uint8Array; fire: { x: number; y: number }; stock: { x: number; y: number }; shade: Float32Array }
 
+// Kartan räknas från den gamla kartans hörn (OX, OY): sjön och byplatsen ligger där de låg på den gamla kartan, och
+// bruset ger samma mark där (steg 2.10.9). En ny by har sin karta i hörnet 0, 0 och samma storlek som den gamla
 export const getMap = perKarta((seed): MapData => {
   const tiles = new Uint8Array(W * H);
   const shade = new Float32Array(W * H);
-  const lx = W * (0.3 + hash(seed, 1, 1) * 0.4), ly = H * (0.25 + hash(seed, 2, 2) * 0.5);
+  const lx = W0 * (0.3 + hash(seed, 1, 1) * 0.4), ly = H0 * (0.25 + hash(seed, 2, 2) * 0.5);
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-    const d = Math.hypot((x - lx) / 1.4, y - ly);
-    const lake = Math.max(0, 1 - d / (9 * Math.sqrt(W * H / 2560)));
-    const h = fbm(seed, x, y) - lake * 0.55;
-    const f = fbm(seed + 99, x, y);
+    const gx = x - OX, gy = y - OY; // läget på den gamla kartan
+    const d = Math.hypot((gx - lx) / 1.4, gy - ly);
+    const lake = Math.max(0, 1 - d / (9 * Math.sqrt(W0 * H0 / 2560)));
+    const h = fbm(seed, gx, gy) - lake * 0.55;
+    const f = fbm(seed + 99, gx, gy);
     let t: T;
     if (h < 0.22) t = T.Vatten;
     else if (h < 0.27) t = T.Sand;
@@ -50,11 +53,12 @@ export const getMap = perKarta((seed): MapData => {
     else if (f > 0.55) t = T.Skog;
     else t = T.Gras;
     tiles[y * W + x] = t;
-    shade[y * W + x] = hash(seed + 5, x, y);
+    shade[y * W + x] = hash(seed + 5, gx, gy);
   }
-  // byplats: gräs nära vatten och skog, nära mitten
-  let best = { x: W >> 1, y: H >> 1 }, bs = -1e9;
-  for (let y = 5; y < H - 5; y++) for (let x = 6; x < W - 6; x++) {
+  // byplats: gräs nära vatten och skog, nära mitten av den gamla kartan (och bara inom den, så att den blir densamma)
+  const inne = (x: number, y: number) => x >= OX && y >= OY && x < OX + W0 && y < OY + H0;
+  let best = { x: OX + (W0 >> 1), y: OY + (H0 >> 1) }, bs = -1e9;
+  for (let y = OY + 5; y < OY + H0 - 5; y++) for (let x = OX + 6; x < OX + W0 - 6; x++) {
     if (tiles[y * W + x] !== T.Gras) continue;
     let water = 99, forest = 99, okArea = true;
     for (let dy = -3; dy <= 3; dy++) for (let dx = -3; dx <= 3; dx++) {
@@ -64,12 +68,12 @@ export const getMap = perKarta((seed): MapData => {
     if (!okArea) continue;
     for (let dy = -12; dy <= 12; dy++) for (let dx = -12; dx <= 12; dx++) {
       const xx = x + dx, yy = y + dy;
-      if (!inMap(xx, yy)) continue;
+      if (!inne(xx, yy)) continue;
       const t = tiles[yy * W + xx], d = Math.hypot(dx, dy);
       if (t === T.Vatten) water = Math.min(water, d);
       if (t === T.Skog) forest = Math.min(forest, d);
     }
-    const sc = -Math.abs(water - 6) * 2 - Math.abs(forest - 6) - Math.hypot(x - W / 2, y - H / 2) * 0.3;
+    const sc = -Math.abs(water - 6) * 2 - Math.abs(forest - 6) - Math.hypot(x - OX - W0 / 2, y - OY - H0 / 2) * 0.3;
     if (sc > bs) { bs = sc; best = { x, y }; }
   }
   const f = best;
@@ -78,7 +82,7 @@ export const getMap = perKarta((seed): MapData => {
   const fri = (x: number, y: number) => {
     for (let dy = 0; dy < 2; dy++) for (let dx = 0; dx < 2; dx++) {
       const xx = x + dx, yy = y + dy;
-      if (!inMap(xx, yy) || tiles[yy * W + xx] === T.Vatten || tiles[yy * W + xx] === T.Sten || Math.max(Math.abs(xx - f.x), Math.abs(yy - f.y)) <= 1) return false;
+      if (!inne(xx, yy) || tiles[yy * W + xx] === T.Vatten || tiles[yy * W + xx] === T.Sten || Math.max(Math.abs(xx - f.x), Math.abs(yy - f.y)) <= 1) return false;
     }
     return true;
   };

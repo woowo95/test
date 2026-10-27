@@ -9,7 +9,7 @@ import { ageIndex } from './tid';
 import { kunnighet } from './ekonomi';
 import { LAGER, addTo, amountOf, foodOf } from './lager';
 import { nTools } from './agande';
-import { DAY, H, HOUR, HOUR_S, Person, State, T, W, egen, inMap, tvaDelar, visning } from './typer';
+import { DAY, H, HOUR, HOUR_S, OX, OY, Person, State, T, W, egen, inMap, tvaDelar, visning } from './typer';
 import { FOREST, Ground, isSoil } from './vag';
 import { ACTS, RedskapDef, SNABBARE } from './handlingar';
 import { balans } from './balans';
@@ -188,7 +188,7 @@ const DEF = {
 export type FyndId = keyof typeof DEF;
 export const FYND: Record<FyndId, FyndDef> = DEF;
 export const FYND_IDS = Object.keys(FYND) as FyndId[];
-const UTTAG_IDS = FYND_IDS.filter(k => FYND[k].uttag);
+export const UTTAG_IDS = FYND_IDS.filter(k => FYND[k].uttag);
 // en handling kan ta ur flera lager: den som samlar tar både bär och rötter. Tabellen byggs en gång,
 // eftersom lagren frågas efter för varje ruta
 export type Lager = FyndId | Kind;
@@ -214,10 +214,10 @@ function monsterDag(fro: number, k: FyndId, dag: number) {
   let sum = 0;
   for (let i = 0; i < W * H; i++) {
     // två mönster tonas över i varandra medan de glider lite åt var sitt håll
-    const x = (i % W) / mo.skala, y = Math.floor(i / W) / mo.skala;
+    const gx = i % W - OX, gy = Math.floor(i / W) - OY, x = gx / mo.skala, y = gy / mo.skala; // läget på den gamla kartan (typer.ts)
     const a = vnoise(seed + t0 * 7919, x + ft * 0.6, y), b = vnoise(seed + (t0 + 1) * 7919, x - (1 - ft) * 0.6, y);
     let v = Math.max(0, (a + (b - a) * st - mo.troskel) / (1 - mo.troskel));
-    if (mo.gles !== undefined && hash(seed + 3, i % W, Math.floor(i / W)) > mo.gles) v *= 0.15;
+    if (mo.gles !== undefined && hash(seed + 3, gx, gy) > mo.gles) v *= 0.15;
     m[i] = Math.min(1, v * 1.6);
     sum += m[i];
   }
