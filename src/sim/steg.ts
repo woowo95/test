@@ -1,4 +1,5 @@
-import { tidyTools } from './agande';
+import { redskapIHanden, tidyTools } from './agande';
+import { kvEffekt } from './kvalitet';
 import { chopStock, fellTree, rotStumps, stocks } from './skog';
 import { needLadder, noticeTheft, stole } from './behov';
 import { avbryt, capacity, dropSpot, fetchSpot, helaIBordan, homeKind, isCarrying, load, pickUp, placeTools, sakerPaGolvet, storeLoad, tidyStore, wearStore } from './lager';
@@ -238,8 +239,9 @@ function needsStep(s: State, p: Person, a: number, dtSec: number, coldRate: numb
   p.warm = nyVarme(p.warm, v, dtSec / HOUR_S);
   const tak = viloTak(s, p, v.rum);
   if (tak) { // man vilar bättre under tak, och bäst på ett golv
-    p.rest = clamp(p.rest + dtSec / HOUR_S * KROPP[tak], 0, 1);
-    if (p.task!.act === 'sova') think(p, VILOTANKE[tak][0], VILOTANKE[tak][1], now, 8 * HOUR);
+    const e = tak === 'restBadd' ? kvEffekt(stationRutor(s).at.get(tileOf(p.x, p.y))) : 1; // man sover bättre i en finare bädd (kvalitet.ts)
+    p.rest = clamp(p.rest + dtSec / HOUR_S * KROPP[tak] * e, 0, 1);
+    if (p.task!.act === 'sova') think(p, VILOTANKE[tak][0], VILOTANKE[tak][1] * e, now, 8 * HOUR);
   }
   if (heat > KROPP.eldNara) {
     think(p, 'Värms av elden', fh.comfort, now, HOUR);
@@ -482,7 +484,7 @@ function workStep(s: State, p: Person, tk: Task, dtSec: number, a: number, learn
   // bär, rötter och vilt: platsen ger mindre ju mer som redan tagits där
   // (platsens värde räknas en gång, och takeFrom delar uttaget mellan bär och rötter efter samma tal)
   const res = d.resurs, del = res && d.takt === undefined ? richnessDelar(s, res, tk.tx, tk.ty) : undefined, rich = del ? del.rich : 1;
-  const y = workRate(s, p, tk.act) * dtSec * (rd?.ger ?? 1) * (d.takt ?? rich);
+  const y = workRate(s, p, tk.act) * dtSec * (rd?.ger ?? 1) * (rd ? kvEffekt(redskapIHanden(s, p, tk.tool!)) : 1) * (d.takt ?? rich); // ett bättre redskap ger lite mer (kvalitet.ts)
   if (y > 0) count(s, 'prod_' + tk.act, y);
   if (rd && y > 0 && d.slits?.per === 'ger') wearUsed(s, p, y); // korgen slits för det som samlas, inte per timme (steg 2.3.12)
   // tomt här: gå hem eller vidare. Den som letar flinta eller stenar fortsätter, och den som samlar tändmaterial tills det räcker

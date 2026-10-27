@@ -18,6 +18,7 @@ export const STROMMAR = {
   kunskap: 'tekniker som lärs ut',
   dela: 'gåvor, byten och mat ur andras förråd',
   eld: 'eld, tändning och kol',
+  kvalitet: 'hur bra det blir som någon gör',
 } as const;
 export type Strom = keyof typeof STROMMAR;
 

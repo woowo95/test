@@ -105,6 +105,7 @@ const SALLSYNT: Record<string, string> = {
   odla: 'bara efter odlingen och ett röjt fält (steg 2.10.3), sällan på 35 dygn; scenariot falt prövar det',
   rovor: 'grödor blir det bara på ett sått fält (steg 2.10.3); scenariot falt prövar det',
   korn: 'grödor blir det bara på ett sått fält (steg 2.10.3); scenariot falt prövar det',
+  forrad: 'förrådshuset byggs när maten ruttnar eller förrådet är fullt, i ungefär var femte by på 30 dygn sedan kvaliteten (steg 2.2.2); scenariot forradshus prövar det',
   samling: 'blir det bara av en sovsal som ingen längre sover i (steg 1.6.4); scenariot funktion prövar det',
 };
 SCENARIER.aldrig = {

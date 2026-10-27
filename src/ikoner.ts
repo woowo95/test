@@ -1683,6 +1683,25 @@ export function framstegSvg(p: number, size = 10) {
   const kil = f >= 0.999 ? '<circle cx="8" cy="8" r="5.6" fill="#e0b050"/>' : f > 0 ? `<path d="M8 8V2.4A5.6 5.6 0 ${a > Math.PI ? 1 : 0} 1 ${x.toFixed(2)} ${y.toFixed(2)}Z" fill="#e0b050"/>` : '';
   return `<svg class="ikon" width="${size}" height="${size}" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="rgba(28,24,20,0.88)" stroke="#f2ece0" stroke-width="1.4"/>${kil}</svg>`;
 }
+// kvalitetens märke (steg 2.2.2, platshållare tills Björn valt i bildstilen): usel ett rostrött kryss, slarvig ett grått
+// streck, normal inget, fin en liten guldprick, mästerverk en guldruta och det perfekta mästerverket en guldstjärna.
+// 8 × 8 punkter; m = mörk kant, g = guld, l = ljus, r = rost, s = grå
+const KV_PIX: readonly (readonly string[] | undefined)[] = [
+  ['........', '.rr..rr.', '..rrrr..', '...rr...', '..rrrr..', '.rr..rr.', '........', '........'],
+  ['........', '........', '........', '.ssssss.', '........', '........', '........', '........'],
+  undefined,
+  ['........', '........', '...mm...', '..mggm..', '..mggm..', '...mm...', '........', '........'],
+  ['...mm...', '..mggm..', '.mglggm.', 'mglggggm', 'mggggggm', '.mggggm.', '..mggm..', '...mm...'],
+  ['...gg...', '...gg...', 'gggllggg', '.gglggg.', '..gggg..', '.ggmmgg.', '.gm..mg.', '........'],
+];
+const KV_FARG: Record<string, string> = { m: '#2a1f16', g: '#e0b050', l: '#fff3c8', r: '#b0402a', s: '#9a948a' };
+export function kvSvg(q: number | undefined, size = 10) {
+  const rows = KV_PIX[q ?? 2];
+  if (!rows) return '';
+  let r = '';
+  rows.forEach((row, y) => [...row].forEach((ch, x) => { if (KV_FARG[ch]) r += `<rect x="${x}" y="${y}" width="1" height="1" fill="${KV_FARG[ch]}"/>`; }));
+  return `<svg class="ikon kvmark" width="${size}" height="${size}" viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true">${r}</svg>`;
+}
 // ikonen som <img> för listorna
 export function iconImg(k: string, size = 16) {
   if (!hasIcon(k)) return '';

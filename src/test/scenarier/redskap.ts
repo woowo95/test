@@ -445,3 +445,55 @@ SCENARIER.forvaring = {
     ];
   },
 };
+
+SCENARIER.kvalitet = {
+  text: 'Kvalitet (steg 2.2.2): det som görs blir usel, slarvig, normal, fin, mästerverk eller perfekt (★) efter görarens hantverk, lite slump och slöjdbänken. Bättre saker håller längre, är mer värda och fungerar lite bättre; möblerna har kvalitet men inte stationerna, och saker från äldre sparfiler är normala',
+  kor: () => {
+    const s = createState(7, START), p = living(s).find(q => ageOf(q, s.now) >= 18)!;
+    // många försök: medelnivån för en nybörjare, en mästare och en mästare vid slöjdbänken
+    const forsok = (skill: number, bank: boolean) => { p.skill.hantverk = skill; return Array.from({ length: 400 }, () => SIM.rullaKvalitet(s, p, bank)); };
+    const snitt = (a: number[]) => a.reduce((x, y) => x + y, 0) / a.length, andel = (a: number[], q: number) => a.filter(x => x === q).length / a.length;
+    const ny = forsok(0, false), van = forsok(8, false), mast = forsok(20, false), mastBank = forsok(20, true);
+    const ordning = snitt(ny) < snitt(van) && snitt(van) < snitt(mast) && snitt(mast) < snitt(mastBank);
+    const nyUsel = andel(ny, 0), stjarna = andel(mast, SIM.PERFEKT), stjarnaBank = andel(mastBank, SIM.PERFEKT);
+    // en yxa som blir klar får kvalitet, den som gjorde den en tanke om den, och ett mästerverk står i loggen
+    p.skill.hantverk = 20;
+    let yxa: SIM.Ting | undefined, tries = 0;
+    while ((!yxa || yxa.q! < SIM.MASTERVERK) && tries++ < 60) { SIM.toolDone(s, p, 'yxa'); yxa = tingOf(s).filter(q => q.k === 'yxa').pop(); }
+    const harQ = yxa?.q !== undefined, loggat = s.log.some(l => l.text.includes('mästerverk')), tanke = p.thoughts.some(t => t.text.includes('mästerverk'));
+    // slitaget: samma slitage tar mer av en usel yxa än av ett mästerverk
+    const a = addTool(s, 'yxa', p), b = addTool(s, 'yxa', p);
+    a.q = 0; b.q = SIM.MASTERVERK; a.hos = p.id;
+    SIM.wearTool(s, p, 'yxa', 0.1); const slitA = 1 - a.c;
+    a.hos = undefined; b.hos = p.id;
+    SIM.wearTool(s, p, 'yxa', 0.1); const slitB = 1 - b.c;
+    // i lagret: wearStore delar slitaget lika
+    const c0 = { u: a.c, m: b.c }; b.hos = undefined;
+    SIM.wearStore(s, 24 * 3600);
+    const lagerUsel = c0.u - a.c, lagerMast = c0.m - b.c;
+    // värdet och värmen
+    const v = (q?: number) => SIM.tingVarde({ id: 0, k: 'yxa', c: 1, agare: 0, q });
+    const varde = v(0) < v(1) && v(1) < v(undefined) && v(undefined) < v(3) && v(3) < v(4) && v(4) < v(5);
+    const rock = addTool(s, 'skinnrock', p); rock.bar = p.id;
+    rock.q = 0; const kallUsel = SIM.kladVarme(s, p);
+    rock.q = SIM.PERFEKT; const kallPerfekt = SIM.kladVarme(s, p);
+    // en möbel som blir klar får kvalitet, en station inte
+    const bord = medBank(s, 'bord'), bank = medBank(s, 'slaktbank');
+    const tk = (ref: number) => ({ act: 'bygga', phase: 'do', tx: p.x, ty: p.y, until: s.now, carry: 0, ref }) as unknown as SIM.Task;
+    SIM.finishStation(s, p, tk(bord.id)); SIM.finishStation(s, p, tk(bank.id));
+    // en äldre sparfil: tinget har ingen kvalitet och räknas som normalt
+    const gammal: SIM.Ting = { id: 0, k: 'yxa', c: 1, agare: 0 };
+    return [
+      [`medelnivån stiger med färdigheten och vid slöjdbänken (${[ny, van, mast, mastBank].map(x => snitt(x).toFixed(2)).join(', ')}; 2 = normal)`, ordning],
+      [`den som inte kan hantverk gör ofta usla saker (${(nyUsel * 100).toFixed(0)} %)`, nyUsel > 0.3],
+      [`det perfekta mästerverket är sällsynt även för en mästare (${(stjarna * 100).toFixed(1)} %, vid slöjdbänken ${(stjarnaBank * 100).toFixed(1)} %)`, stjarna < 0.1 && stjarnaBank > stjarna && stjarnaBank < 0.4],
+      ['ett nytt redskap får kvalitet, ett mästerverk står i loggen och den som gjorde det är stolt', harQ && loggat && tanke],
+      [`en usel yxa slits mer i handen än ett mästerverk (${(slitA * 100).toFixed(1)} % mot ${(slitB * 100).toFixed(1)} %)`, slitA > slitB * 3],
+      [`... och i förrådet (${(lagerUsel * 100).toFixed(1)} % mot ${(lagerMast * 100).toFixed(1)} % på ett dygn)`, lagerUsel > lagerMast],
+      [`värdet följer kvaliteten (usel ${v(0).toFixed(2)}, normal ${v(undefined).toFixed(2)}, ★ ${v(5).toFixed(2)})`, varde && v(0) < v(undefined) * 0.3],
+      [`ett perfekt plagg värmer mer än ett uselt (skyddar ${(kallPerfekt * 100).toFixed(0)} % mot ${(kallUsel * 100).toFixed(0)} %)`, kallPerfekt > kallUsel],
+      ['bordet har kvalitet, slaktbänken inte', bord.q !== undefined && bank.q === undefined],
+      ['ett ting från en äldre sparfil är normalt', SIM.kvOf(gammal) === SIM.NORMAL && SIM.kvHaller(gammal) === 1 && SIM.kvVarde(gammal) === 1],
+    ];
+  },
+};

@@ -4,6 +4,8 @@ import { actsOf, usesTool } from './handlingar';
 import { ALDER, KROPP, REL, ageOf, alive, byId, count, getRel, isKin, isParent, living, log, stat, think } from './folk';
 import { chance, clamp, pickViktat, rnd } from './slump';
 import { Ting, tingOf } from './agande';
+import { kvEffekt, kvVarde } from './kvalitet';
+import { bordVid } from './stationer';
 import { BYN, Del, addDel, sumOf } from './egendom';
 import { amountOf, helt, mayTake, ownMove, ownsAmount, takeFood, use } from './lager';
 import { eatPoison } from './fynd';
@@ -52,7 +54,7 @@ function eat(s: State, p: Person, fran?: Person) {
   for (const k in per) per[k] *= f;
   ata(p, per); eatPoison(s, p);
   if (q < 0.5) think(p, 'Maten var dålig', -0.05, now, 6 * HOUR);
-  if (portion > 0 && vidBordet(p)) { think(p, 'Åt vid bordet', KROPP.bordGlad, now, KROPP.bordGladTim * HOUR); count(s, 'bordMal'); }
+  if (portion > 0 && vidBordet(p)) { think(p, 'Åt vid bordet', KROPP.bordGlad * kvEffekt(bordVid(s, p)), now, KROPP.bordGladTim * HOUR); count(s, 'bordMal'); }
   if (q < 0.25 && rnd(s, 'halsa', p) < (0.25 - q) / 0.25 * 0.35) {
     p.sickUntil = Math.max(p.sickUntil ?? 0, now + (4 + rnd(s, 'halsa', p) * 8) * HOUR); p.sickWhy = 'Magsjuk av skämd mat';
     think(p, 'Åt skämd mat och blev magsjuk', -0.2, now, DAY / 2); count(s, 'skamdMat');
@@ -354,7 +356,7 @@ export const NARA = 0.3; // så stor vilja att ge (willing) har man till den man
 interface Vara { k: string; n: number; t?: Ting }
 const behovMed = (k: string) => BEHOV.find(b => b.slag.includes(k));
 const enheter = (v: Vara[]) => v.reduce((x, { k, n }) => x + n * (behovMed(k)?.per?.[k] ?? 1), 0);
-const vardeOf = (v: Vara) => grundvarde(v.k) * (v.t ? v.t.c : 1);
+const vardeOf = (v: Vara) => grundvarde(v.k) * (v.t ? v.t.c * kvVarde(v.t) : 1);
 // hur mycket p behöver en till av slaget k, gånger grundvärdet: BEHOV_SAKNAR för det p saknar för ett behov eller i sitt
 // arbete, 1 för det p behöver behålla (mat och ved upp till b.kvar, redskapet hen arbetar med) och BEHOV_OVER för resten.
 // Material som p saknar till ett arbete räknas där det tas (tradeMaterial)

@@ -2,6 +2,7 @@ import { MIN, State, Person } from './typer';
 import { REDSKAP_SLAG, SAKER, isTool } from './saker';
 import { usesTool } from './handlingar';
 import { alive, byId } from './folk';
+import { kvHaller } from './kvalitet';
 
 // ---------- ägande och handplatsen ----------
 // Varje redskap är ett eget ting (s.ting) med skick (c, 1 = nytt), ägare och, om någon har det i handen, vem (hos).
@@ -20,7 +21,7 @@ import { BYN, lends } from './egendom';
 interface Halv { gor: string; av: Record<string, number>; kvar: number; ag: number }
 // vid = stationen tinget hör till och ligger vid när ingen använder det (kniven vid slaktbänken, stationer.ts), bar = den
 // som har plagget på sig (utrustning.ts, steg 2.3.2)
-export interface Ting { id: number; k: string; c: number; agare: number; hos?: number; lass?: number; x?: number; y?: number; halv?: Halv; vid?: number; bar?: number; av?: number; gjord?: number } // av, gjord: vem som gjorde det och när (steg 2.3.5)
+export interface Ting { id: number; k: string; c: number; agare: number; hos?: number; lass?: number; x?: number; y?: number; halv?: Halv; vid?: number; bar?: number; av?: number; gjord?: number; q?: number } // av, gjord: vem som gjorde det och när (steg 2.3.5), q = kvaliteten (kvalitet.ts)
 export const tingOf = (s: State) => (s.ting ??= []);
 // hur stor del av arbetet med ett påbörjat redskap som är gjort (0 till 1), för framstegscirkeln på kartan och i panelerna
 export const halvKlar = (h: Halv) => Math.min(1, Math.max(0, 1 - h.kvar / ((SAKER[h.gor]?.skaffa?.min ?? 1) * MIN)));
@@ -29,6 +30,8 @@ export const nTools = (s: State, k: string) => tingOf(s).reduce((n, t) => n + (t
 // det redskap av slagen ks som p har påbörjat (paborjat.ts)
 export const halvOf = (s: State, p: Person, ks: readonly string[]) => tingOf(s).find(t => t.halv?.ag === p.id && ks.includes(t.halv.gor));
 export const heldBy = (s: State, p: Person) => tingOf(s).find(t => t.hos === p.id);
+// redskapet av slaget k som p har i handen
+export const redskapIHanden = (s: State, p: Person, k: string) => tingOf(s).find(t => t.hos === p.id && t.k === k);
 
 export function newTing(s: State, k: string, c: number, agare: number): Ting {
   const t = { id: s.nextTing = (s.nextTing ?? 0) + 1, k, c, agare };
@@ -65,7 +68,7 @@ export function wearTool(s: State, p: Person, k: string, v: number) {
   const ts = toolsOf(s, k);
   const t = ts.find(x => x.hos === p.id) ?? ts.find(x => x.agare === p.id) ?? ts.sort((a, b) => a.c - b.c)[0];
   if (!t) return false;
-  t.c -= v;
+  t.c -= v / kvHaller(t); // ett bättre redskap håller längre (kvalitet.ts)
   if (t.c > 1e-9) return false;
   s.ting = tingOf(s).filter(x => x !== t);
   return true;

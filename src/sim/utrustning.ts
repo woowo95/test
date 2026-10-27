@@ -14,6 +14,7 @@
 import { Person, State } from './typer';
 import { KLAD_SLAG, SAKER, bordOf } from './saker';
 import { heldBy, Ting, tingOf } from './agande';
+import { kvEffekt } from './kvalitet';
 import { BYN, lends } from './egendom';
 import { KROPP, living } from './folk';
 import { temperature } from './vader';
@@ -90,7 +91,7 @@ const paSigVikt = (s: State, p: Person) => { let v = 0; for (const t of tingOf(s
 // hur mycket kläderna skyddar mot kylan (0 = inget, 1 = helt): varje plagg tar bort sin del (klad.varme) av det som är kvar
 export function kladVarme(s: State, p: Person) {
   let kvar = 1;
-  for (const t of tingOf(s)) if (t.bar === p.id) kvar *= 1 - SAKER[t.k]!.klad!.varme;
+  for (const t of tingOf(s)) if (t.bar === p.id) kvar *= 1 - Math.min(0.95, SAKER[t.k]!.klad!.varme * kvEffekt(t)); // ett finare plagg värmer lite mer (kvalitet.ts)
   return 1 - kvar;
 }
 // i vilken ordning p tar ett plagg: sitt eget, byns, ett lånat. Inom det: bäst skick, och sedan det första bland tingen

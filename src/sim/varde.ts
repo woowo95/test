@@ -13,6 +13,7 @@ import { SAKER, SAK_LIST } from './saker';
 import { TEK } from './teknik';
 import { wornOf } from './lager';
 import { Ting, tingOf } from './agande';
+import { kvVarde } from './kvalitet';
 import { Bit, Hus, MATERIAL, bitsOf } from './byggnad';
 import { State } from './typer';
 
@@ -82,7 +83,8 @@ export function varuVarde(o: Record<string, number>, start = 0) { let v = start;
 // ---------- byns rikedom ----------
 interface Rikedom { forrad: number; redskap: number; hus: number }
 // vad ett ting är värt: ett påbörjat redskap (paborjat.ts) är värt sitt material, ett redskap grundvärdet gånger skicket
-export const tingVarde = (t: Ting) => t.halv ? Object.entries(t.halv.av).reduce((a, [k, n]) => a + n * grundvarde(k), 0) : grundvarde(t.k) * t.c;
+// och kvaliteten (kvalitet.ts)
+export const tingVarde = (t: Ting) => t.halv ? Object.entries(t.halv.av).reduce((a, [k, n]) => a + n * grundvarde(k), 0) : grundvarde(t.k) * t.c * kvVarde(t);
 export function rikedomDelar(s: State): Rikedom {
   let forrad = 0, redskap = 0, hus = 0;
   for (const k of SAK_LIST) if (!SAKER[k]!.redskap) forrad += wornOf(s, k) * grundvarde(k);

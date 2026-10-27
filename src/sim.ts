@@ -4,6 +4,7 @@ export * from './sim/format';
 export * from './sim/handlingar';
 export * from './sim/saker';
 export * from './sim/slump';
+export * from './sim/kvalitet';
 export * from './sim/karta';
 export * from './sim/mark';
 export * from './sim/folk';

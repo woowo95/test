@@ -13,6 +13,7 @@ import { Rum, bitAt, bitsOf, gridOf, housesOf, husById, roomAt, touch } from './
 import { fnOf, sovKvar } from './byggnader';
 import { ACTS } from './handlingar';
 import { SAKER, isTool } from './saker';
+import { nyKvalitet } from './kvalitet';
 import { groundOf, tileOf } from './mark';
 import { FOREST } from './vag';
 import { BrasaEld, brasaMal } from './brasor';
@@ -193,7 +194,7 @@ export const stationDef = (k: string): StationDef | undefined => (STATIONER as R
 // med = tillbehören som ligger i den (TILLBEHOR, t.ex. skinnfällen i bädden), fyllt = hur full latrinen är (0–1, smuts.ts)
 // tork = det som hänger på torkställningen (matlagning.ts): råvaran, hur mycket, när det hängdes upp och vems det är
 // eld = brasans eld (steg 2.9.1, brasor.ts)
-export interface Station { id: number; k: string; x: number; y: number; kvar: number; vem?: number[]; klar?: number; rot?: 1; inne?: 1; med?: string[]; fyllt?: number; tork?: { k: string; n: number; t: number; ag?: Record<string, number> }[]; eld?: BrasaEld }
+export interface Station { id: number; k: string; x: number; y: number; kvar: number; vem?: number[]; klar?: number; rot?: 1; inne?: 1; med?: string[]; fyllt?: number; q?: number; tork?: { k: string; n: number; t: number; ag?: Record<string, number> }[]; eld?: BrasaEld }
 const NONE: Station[] = [];
 export const stationerOf = (s: State) => s.stationer ?? NONE;
 export const stationById = (s: State, id?: number) => id === undefined ? undefined : stationerOf(s).find(t => t.id === id);
@@ -593,6 +594,7 @@ export function finishStation(s: State, p: Person, tk: Task) {
   t.kvar = 0; t.klar = s.now;
   if (stationDef(t.k)?.sover) touch(s); // en ny sovplats: var man sover räknas om
   const d = stationDef(t.k)!;
+  if (d.mobel) nyKvalitet(s, p, t, false, d.namn.toLowerCase()); // möblerna har kvalitet, stationerna inte (kvalitet.ts)
   if (d.verktyg && wearTool(s, p, d.verktyg, STATION.latrinSpade)) { const tr = SAKER[d.verktyg]?.trasig; if (tr) count(s, tr.stat); } // benspaden slits för varje grop
   if (forstaGang(s, 'station_' + t.k)) { log(s, d.forsta.replace('{namn}', p.name), 'world', [p.id]); p.fame.push(`Byggde byns första ${d.namn.toLowerCase()}`); }
   fyllPlatser(s);
@@ -634,6 +636,11 @@ export function ledigPlats(s: State, p: Person) {
 }
 // sitter p vid bordet och äter (handlingen maltid, framme)?
 export const vidBordet = (p: Person) => p.task?.act === 'maltid' && p.task.phase === 'do';
+// bordet som den som äter sitter vid (ett finare bord gör måltiden trevligare, kvalitet.ts)
+export function bordVid(s: State, p: Person) {
+  for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const t = stationAt(s, p.x + dx, p.y + dy); if (t && stationDef(t.k)?.platser) return t; }
+  return undefined;
+}
 // den storlek byn vill bygga: den minsta som räcker åt alla som saknar en plats, annars den största. Ingen när alla har en
 const BORD_LIST = STATION_LIST.filter(k => platserAv(k) > 0).sort((a, b) => platserAv(a) - platserAv(b));
 export function bordStorlek(s: State): StationSlag | undefined {

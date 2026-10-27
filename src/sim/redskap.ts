@@ -3,7 +3,8 @@ import { knows } from './teknik';
 import { clamp, rnd } from './slump';
 import { Act, State, Person } from './typer';
 import { ACTS, ACT_LIST, toolRow } from './handlingar';
-import { SAKER, SAK_LIST, gruppOf, isTool } from './saker';
+import { SAKER, SAK_LIST, gruppOf, isTool, sakNamn } from './saker';
+import { nyKvalitet } from './kvalitet';
 import { amountOf, gain, put, use } from './lager';
 import { getable, takeMaterial, takeRecipe } from './behov';
 import { addDel } from './egendom';
@@ -214,6 +215,7 @@ export function makeTask(s: State, p: Person, g: string) {
 // plagg sys med bänkens bensyl, och den slits för varje (REDSKAP.bensylSlits)
 export function toolDone(s: State, p: Person, k: string) {
   const t = addTool(s, k, p); t.av = p.id; t.gjord = s.now; // vem som gjorde det och när (inforutan, steg 2.3.5)
+  nyKvalitet(s, p, t, !!p.task && fartVid(s, p, p.task.act) > 1, sakNamn(k).toLowerCase()); // hur bra det blev (kvalitet.ts)
   nyttVid(s, t);
   if (SAKER[k]!.klad) slitVid(s, k as Act, REDSKAP.bensylSlits);
   const g = SAKER[k]!.gors!, text = (t: string) => t.replace('{namn}', p.name).replace('{verktyg}', ordFor(s, k));
