@@ -1,0 +1,200 @@
+<div class="sida">
+  <header>
+    <span class="ogon">Samhällssimulatorn · bildstil</span>
+    <h1>Samhällssimulatorns <span>bildstil</span></h1>
+    <p class="lede">Guiden för allt som ritas i spelet. Allt på kartan har 16 punkter per ruta. Alla färger kommer ur palett B, Avokado och rost, som har 32 färger. Ytan har korn men inga fläckar (smuts 1), stora ytor har låg kontrast och inget är fulltonssvart. Längst ner väljer Björn bland nya versioner.</p>
+  </header>
+
+  <section id="guide" aria-labelledby="h-guide">
+    <div class="rubrik">
+      <span class="ogon">Guiden</span>
+      <h2 id="h-guide">Så görs en ny bild</h2>
+      <p>Det här avsnittet är skrivet för den som ritar något nytt, oftast Claude. Läs det först varje gång något nytt ska synas i spelet: en sak, en station, en möbel, en byggnad, ett djur, en människa eller en symbol.</p>
+    </div>
+    <ol class="steg">
+      <li><b>Läs reglerna och paletten.</b> Reglerna står i avsnittet Riktlinjerna nedan. Varje material har en ramp med fyra toner: kol, jord, senap, rost, oliv, barr, skiffer eller ben. Använd bara de 32 färgerna.</li>
+      <li><b>Gör en platshållare.</b> Medan steget programmeras ritas en enkel platshållare i paletten, med 16 punkter per ruta, så att spelet går att köra.</li>
+      <li><b>Gör tre versioner av något nytt.</b> När steget är klart ritas tre olika versioner. De läggs i registret <code>VAL</code> i <code>bildstil/sida.js</code> med <code>typ: 'tre'</code> och visas längst ner på den här sidan, stora och i kartans storlek.</li>
+      <li><b>Gör en version när något gammalt görs om.</b> När en bild som redan finns skalas upp till 16 punkter per ruta, eller en emoji byts mot en pixelsymbol, räcker en version (<code>typ: 'janej'</code>). Bilden som den ser ut i dag visas bredvid.</li>
+      <li><b>Publicera sidan</b> till samma adress (källor nedan), så att Björns val finns kvar.</li>
+      <li><b>Björn väljer på sidan.</b> Valet sparas i sidans databas, i samlingen <code>val</code>, ett dokument per sak: <code>svar</code> är 1, 2, 3, ja eller nej, och <code>kommentar</code> är det Björn skrev. Läs dem med ArtifactData (<code>list</code>, samlingen <code>val</code>).</li>
+      <li><b>Bygg in det valda</b> i spelet i ett senare steg. Ta sedan bort saken ur <code>VAL</code>, ta bort dess dokument i <code>val</code> och publicera sidan igen, så att valet och de gamla versionerna försvinner. Är svaret nej: rita en ny version efter kommentaren och lägg in den igen.</li>
+    </ol>
+    <div class="kallor">
+      <div><b>Sidan</b><span>https://claude.ai/artifact/Khx8Ggn4CdRb76UpZLnQww</span></div>
+      <div><b>Källkoden</b><span><code>bildstil/</code> i spelets repo. <code>node bildstil/bygg.cjs</code> ger <code>bildstil/bildstil.html</code>, som publiceras med <code>capabilities: {db: {}}</code>.</span></div>
+      <div><b>Designdokumentet</b><span>Avsnittet Bildstil, och steget i Färdplanen för saken som ritas.</span></div>
+    </div>
+  </section>
+
+  <section id="scen" aria-labelledby="h-scen">
+    <div class="rubrik">
+      <span class="ogon">Scenen</span>
+      <h2 id="h-scen">Byn i 16 punkter per ruta</h2>
+      <p>14 × 9 rutor: lägerelden, förrådet, kistan, slaktbänken, slöjdbänken, folket, kaniner, sjön och skogen. Scenen visas alltid i hel skala, så att alla punkter blir lika stora. På natten är det mörkt, men elden lyser upp i steg utåt: dagsfärger närmast elden, ett varmt sken, skymning, kväll och natt.</p>
+    </div>
+    <div class="reglage">
+      <div class="grupp"><span>Tid</span><div class="knappar">
+        <button type="button" data-tid="dag">Dag</button><button type="button" data-tid="natt">Natt</button><button type="button" data-tid="istid">Istid</button>
+      </div></div>
+    </div>
+    <div class="scen"><canvas id="huvud" aria-label="Byn i palett B"></canvas></div>
+  </section>
+
+  <section aria-labelledby="h-folk">
+    <div class="rubrik">
+      <span class="ogon">Folket</span>
+      <h2 id="h-folk">Fem personer: porträttet och figuren på kartan</h2>
+      <p>Samma fem personer som i Porträttstilar. Porträttet har 64 × 64 punkter och visas i personrutan. Det har hårt ljus uppifrån vänster, varmt sken från elden på vänstra kanten och en rostig ram. Figuren på kartan har 14 × 20 punkter, ungefär en ruta bred. Alla färger byts mot närmaste färg i paletten, och konturen är den mörkaste färgen, #24201d. Ärr, förband, skägg och verktyg syns i båda storlekarna.</p>
+    </div>
+    <div class="folk" id="folk"></div>
+  </section>
+
+  <section aria-labelledby="h-tat">
+    <div class="rubrik">
+      <span class="ogon">Punktstorleken</span>
+      <h2 id="h-tat">16 punkter per ruta på allt</h2>
+      <p>Sakerna i förrådet ritas redan med 16 punkter per ruta, medan stationerna, möblerna och husen har 8. Marken, granarna och folket har inga punkter alls, utan är mjuka cirklar och trianglar. Björn bestämde efter v94 att allt på kartan får 16 punkter per ruta, alltså sakernas täthet. Det ger dubbelt så många punkter på bredden och fyra gånger så många per ruta.</p>
+    </div>
+    <div class="jamfor">
+      <div class="ruta">
+        <h3>I dag</h3>
+        <canvas id="idag" aria-label="Tre rutor som de ser ut i dag"></canvas>
+        <div class="etiketter"><div><b>8 per ruta</b>Kistan, som alla stationer</div><div><b>16 per ruta</b>Fyra saker i förrådet</div><div><b>Inga punkter</b>Granen och människan</div></div>
+      </div>
+      <div class="ruta">
+        <h3>Nytt</h3>
+        <canvas id="forslag" aria-label="Samma tre rutor i 16 punkter per ruta"></canvas>
+        <div class="etiketter"><div><b>16 per ruta</b>Kistan omritad</div><div><b>16 per ruta</b>Sakerna som förut</div><div><b>16 per ruta</b>Granen och människan i pixlar</div></div>
+      </div>
+    </div>
+    <div class="tabell">
+      <table>
+        <thead><tr><th>Vad som ritas</th><th>I dag, punkter per ruta</th><th>Nytt</th></tr></thead>
+        <tbody>
+          <tr><td>Saker i förrådet och på bänken, djuren, symbolen över huvudet</td><td class="tal ok">16</td><td>16, som nu</td></tr>
+          <tr><td>En ensam sak på högen, eller en sak som håller på att göras</td><td class="tal fel">ca 10,7 (skala 1,5)</td><td>16, i hel skala</td></tr>
+          <tr><td>En sak som någon bär</td><td class="tal fel">ca 26,7 (skala 0,6)</td><td>16, i hel skala</td></tr>
+          <tr><td>Stationer, lägerelden, brasan, möbler, dörrar, sittplatser</td><td class="tal fel">8</td><td>16, ritas om</td></tr>
+          <tr><td>Husens väggar och golv</td><td class="tal fel">8</td><td>16, ritas om</td></tr>
+          <tr><td>Blodet på marken</td><td class="tal fel">8</td><td>16</td></tr>
+          <tr><td>Marken, granarna, gräset, folket</td><td class="tal fel">inga (cirklar och trianglar)</td><td>16, ritas i pixlar</td></tr>
+          <tr><td>Symbolerna i panelen</td><td class="tal fel">66 emojier och några vektorbilder</td><td>pixelsymboler i paletten</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-bank">
+    <div class="rubrik">
+      <span class="ogon">Ett exempel</span>
+      <h2 id="h-bank">Slöjdbänken med 16 punkter per ruta</h2>
+      <p>Samma bänk som i spelet: två plankor på raka ben och två stolpar med ett rep spänt emellan. I dag har den 16 × 16 punkter på två rutor och förstoras två gånger, så varje punkt är fyra gånger så stor som punkterna i sakerna som ligger på den. Ritad om får den 32 × 32 punkter: träet får ådring, en kvist och knivmärken, repet blir tvinnat och hänger lite, stolparna blir runda grenar och skåran framtill får plats för bensylen. Sakerna på bänken har samma punktstorlek som bänken.</p>
+    </div>
+    <div class="jamfor">
+      <div class="ruta"><h3>I dag: 8 punkter per ruta</h3><canvas id="bankidag" aria-label="Slöjdbänken som den ser ut i dag, förstorad"></canvas><small>Spelets bild av bänken, förstorad två gånger, utan saker på.</small></div>
+      <div class="ruta"><h3>Ny: 16 punkter per ruta</h3><canvas id="bankny" aria-label="Slöjdbänken omritad med 16 punkter per ruta"></canvas><small>Omritad med rep, hö och bensyl på.</small></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-pal">
+    <div class="rubrik">
+      <span class="ogon">Färgerna</span>
+      <h2 id="h-pal">Palett B, Avokado och rost: 32 färger</h2>
+      <p>Åtta ramper med fyra toner, från mörk till ljus. Varje bild tar sina färger ur rampen för sitt material. Skuggorna drar mot rödbrunt och ljuset mot gult. Ingen färg är ren vit. Den mörkaste är #24201d, och utom kolets ramp är ingen färg mörkare än ljusheten 0,265. Natten och istiden använder samma 32 färger.</p>
+    </div>
+    <article class="palett">
+      <div class="text">
+        <span class="ogon">Palett B</span>
+        <h3>Avokado och rost</h3>
+        <p class="not">Köket på sjuttiotalets tröskel: avokadogrönt, skördeguld och bränd orange.</p>
+        <div class="ramper" id="ramp"></div>
+      </div>
+      <div class="bilder">
+        <div><canvas id="pd" aria-label="Byn på dagen"></canvas><small>Dag</small></div>
+        <div><canvas id="pn" aria-label="Byn på natten"></canvas><small>Natt</small></div>
+        <div><canvas id="pi" aria-label="Byn i istiden"></canvas><small>Istid</small></div>
+        <div><canvas id="pk" aria-label="Sakerna ur spelet i paletten"></canvas><small>Sakerna ur spelet, i paletten</small></div>
+      </div>
+    </article>
+  </section>
+
+  <section aria-labelledby="h-sym">
+    <div class="rubrik">
+      <span class="ogon">Symbolerna</span>
+      <h2 id="h-sym">Inga emojier: alla symboler ritas i pixlar</h2>
+      <p>I dag visar panelen 66 olika emojier. Några symboler är vektorbilder: cirkeln som visar hur långt ett arbete kommit, tårtan i personens tid och ringarna i teknikträdet. Alla ritas om som pixelsymboler på 8 × 8 punkter i paletten och visas i hel skala (två eller tre gånger). Här är de åtta som är ritade.</p>
+    </div>
+    <div class="symboler">
+      <div class="pixsym" id="symboler"></div>
+      <div class="emojilista">
+        <div><code>sim/handlingar.ts</code><span>♨⚫🌊🌳🍽🏊👁💤💧💬🚶🥤🩹🫂🫗</span></div>
+        <div><code>sim/halsa.ts</code><span>☠✋🐾🔪😣🦠🦴🦵🦷🩸🪨</span></div>
+        <div><code>ui/flikar/person.ts</code><span>❤🎒👥💧💪🕓🧠🩸🩺🪪</span></div>
+        <div><code>sim/naring.ts</code><span>⚡🍓🍖😩😵🥶🦴🦷🧂🧈</span></div>
+        <div><code>sim/utrustning.ts</code><span>✋➰👕👖🤚🥾🧢🧥🪝</span></div>
+        <div><code>ui/flikar/hus.ts</code><span>🎁🏘👪🙋🪓🫳</span></div>
+        <div><code>sim/byggnader.ts</code><span>🏠📦🛏🪑</span></div>
+        <div><code>övriga</code><span>⚖🌡🔥✕☁❄ ⚠✗</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-font">
+    <div class="rubrik">
+      <span class="ogon">Texten</span>
+      <h2 id="h-font">Pixeltypsnitt i panelen</h2>
+      <p>Silkscreen i rubriker, underrubriker, flikar och namn. Pixelify Sans i all annan text. Båda visas bara i storlekar där typsnittets punkter blir hela (16 punkter, eller 8 för små etiketter i Silkscreen), och utan utjämning. Mätarna är staplar med tio rutor. Hela den här sidan är skriven så.</p>
+    </div>
+    <div class="panelprov" id="panelprov">
+      <div class="flikar"><span class="vald">Arn</span><span>Behov</span><span>Kropp</span><span>Tid</span><span>Saker</span></div>
+      <div class="kort">
+        <canvas id="provgubbe" aria-label="Arn"></canvas>
+        <div><div class="pnamn">Arn</div><div class="pund">30 år · jägare · glad</div></div>
+      </div>
+      <div class="matare" id="matare"></div>
+      <p class="lopande">Arn går till elden för att värma sig. Han har burit ved i två timmar och fryser om händerna. Efter maten tänker han gå ut och jaga kanin igen.</p>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-regler">
+    <div class="rubrik">
+      <span class="ogon">Riktlinjerna</span>
+      <h2 id="h-regler">Åtta regler för allt som ritas</h2>
+    </div>
+    <div class="regler">
+      <div class="regel"><div><h3>En punktstorlek: 16 punkter per ruta</h3><p>En sak är 8 × 8 punkter, en fjärdedel ruta. En station är 16 punkter per ruta åt båda hållen, och en människa är 14 × 20 punkter. Ingen bild skalas med annat än hela tal, och zoomen gör alla punkter lika stora. Vrids något, så är det ett kvarts varv eller en spegling.</p></div></div>
+      <div class="regel"><div><h3>Bara paletten</h3><p>Varje punkt på kartan och i panelen har en av de 32 färgerna. Paletten är ett register i koden, och ett test larmar om en bild har en färg utanför den. Inga mjuka toningar och ingen genomskinlighet, utom skuggan, som gör färgen under ett steg mörkare.</p></div></div>
+      <div class="regel"><div><h3>Ljus från övre vänstra hörnet</h3><p>Den ljusaste tonen sitter uppe till vänster och den mörkaste nere till höger. Skuggan på marken faller snett nedåt till höger. Konturen är materialets mörkaste ton, aldrig svart. Det mörkaste i hela bilden är #24201d.</p></div></div>
+      <div class="regel"><div><h3>Korn, inte fläckar</h3><p>Smuts 1: tonen byts punkt för punkt, så ingen yta är slät, men det blir inga mörka fläckar eller prickar. Varje material har två till tre toner. Gräset och skogsmarken har mest mellantonen, så att stora ytor har låg kontrast. Glans är högst en eller två punkter och aldrig ren vit.</p></div></div>
+      <div class="regel"><div><h3>Mörkt på riktigt</h3><p>På natten byts varje färg mot en mörkare ur paletten. Elden behåller sina dagsfärger och lyser upp omgivningen i steg utåt: dagsfärger närmast, sedan ett varmt sken, skymning, kväll och natt. Övergången mellan stegen ritas med ett fast rastermönster i stället för en mjuk toning.</p></div></div>
+      <div class="regel"><div><h3>Inga symboler utanför pixelstilen</h3><p>Emojier och vektorbilder byts mot pixelsymboler i paletten, på 8 × 8 punkter, eller 16 × 16 när en symbol behöver mer. Nya symboler ritas direkt så.</p></div></div>
+      <div class="regel"><div><h3>Mid century: dämpat, och starkt bara där det betyder något</h3><p>Senap, rost, oliv och teak bär bilden. De mättade tonerna sparas till det man ska se: elden, blodet, maten och det som går att ta.</p></div></div>
+      <div class="regel"><div><h3>Det man ska se syns först</h3><p>Folk, djur och saker har kontur och är ljusare än marken. Marken har ingen kontur och är mörkare och mer dämpad, så att den aldrig tävlar med det som står på den.</p></div></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-beslut">
+    <div class="rubrik">
+      <span class="ogon">Bestämt</span>
+      <h2 id="h-beslut">Björns beslut</h2>
+    </div>
+    <div class="fragor">
+      <div class="fraga"><h3>Palett B, Avokado och rost</h3><p>Ramperna kan finjusteras efteråt. Vattnet och strandkanten är som de ska vara.</p></div>
+      <div class="fraga"><h3>16 punkter per ruta på allt</h3><p>Sakerna är redan rätt. Stationerna, möblerna, elden, väggarna och golven ritas om. Till dess visas de förstorade två gånger.</p></div>
+      <div class="fraga"><h3>Smuts 1</h3><p>Korn i stället för fläckar, och lägre kontrast på stora ytor. Inget fulltonssvart: det mörkaste är #24201d.</p></div>
+      <div class="fraga"><h3>Pixeltypsnitt överallt</h3><p>Silkscreen i rubriker och underrubriker, Pixelify Sans i all annan text, och stapelmätare i rutor.</p></div>
+      <div class="fraga"><h3>Nya saker: tre versioner att välja mellan</h3><p>När något nytt ska synas görs tre versioner. När något som redan finns görs om räcker en, som Björn säger ja eller nej till. Valet görs längst ner på den här sidan.</p></div>
+    </div>
+  </section>
+
+  <section id="val" aria-labelledby="h-val">
+    <div class="rubrik">
+      <span class="ogon">Att välja</span>
+      <h2 id="h-val">Björn väljer</h2>
+      <p>Varje sak visas i dag (om den finns) och som den nya versionen, stor och i kartans storlek. Tryck på Ja eller Nej, eller på den version du vill ha, och skriv gärna varför. Valet sparas direkt. När det valda är inbyggt i spelet tas saken bort härifrån.</p>
+    </div>
+    <p class="not" id="valstatus"></p>
+    <div class="vallista" id="vallista"></div>
+  </section>
+</div>

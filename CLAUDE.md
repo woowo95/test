@@ -32,7 +32,7 @@ Sök i dokumentet i stället för att läsa allt; det är långt.
 
 - Register och ett ställe per sak: allt det kan finnas fler av (handlingar, saker, tekniker, djurarter, behov, flikar) är rader i ett register som koden frågar, och allt om ett system samlas i en fil i koden och ett avsnitt i designdokumentet. Ett nytt system börjar med sitt register.
 - Gränssnittet: symboler först. Förklarande text göms och kommer fram när man trycker på något eller håller musen över det.
-- Nytt utseende (Björn, efter v55): när något nytt syns i spelet (en sak, station, möbel, byggnad, symbol), gör en enkel platshållare direkt medan du programmerar. När steget är klart, gör fem olika förslag på utseendet i en bild (stort och i kartans storlek) som Björn väljer mellan. Det valda byggs in i ett senare steg eller nästa gång.
+- Nytt utseende (Björn, efter v95): allt som ritas följer bildstilen, som också är guiden: https://claude.ai/artifact/Khx8Ggn4CdRb76UpZLnQww (källkoden i `bildstil/`, se `bildstil/README.md`). Läs avsnittet "Guiden" där först. När något nytt syns i spelet (en sak, station, möbel, byggnad, människa, symbol), gör en enkel platshållare i paletten med 16 punkter per ruta medan du programmerar. När steget är klart, gör tre versioner och lägg dem i bildstilens valdel (registret `VAL`), där Björn väljer direkt på sidan och kan skriva en kommentar. När något som redan finns görs om (uppskalning till 16 punkter per ruta, en emoji som blir pixelsymbol) räcker en version som Björn säger ja eller nej till. Läs valen med ArtifactData (samlingen `val`). Det valda byggs in i ett senare steg; ta sedan bort saken ur `VAL` och dess dokument i `val` och publicera bildstilen igen. Vid nej: rita en ny version efter kommentaren.
 - Snabbläget (ikappräkning, snabbspolning) ska ge samma utveckling som det levande läget. Kontrollera med `npm run likhet` när något i arbete, gång, samtal eller lärande ändras.
 - Tid i svar och dokument: skriv alltid ut vad ett tidsspann betyder. Spelet följer den verkliga klockan: ett dygn = ett år i spelet, en vecka = en tidsålder (årstid). Skriv t.ex. "28 dygn (28 år i spelet, fyra veckor i verkligheten)". Testernas körtid ("40 s") är datorns tid och har inget med spelet att göra; säg det om den nämns.
 - Elden är ett verktyg, inte ett mål. Att den brinner är inget mått på en lyckad by, och den får inte styra andra system. Faror som kyla går före förbättringar via prioriteringen i valet av aktivitet.
@@ -44,7 +44,7 @@ När Björn säger att Claude får programmera över natten:
 - Gå igenom stegen i Färdplanen ett i taget i den ordning "Nästa steg" säger, och sedan i nummerordning. Gå inte längre än Björn sagt (efter v55: inte efter 2.9).
 - Efter varje färdigt steg: testerna som vanligt (snabbkollen, och det stora testet efter ett systems sista steg), commit med versionen, publicera en ny version och uppdatera designdokumentet.
 - Behöver ett steg Björns svar ("Björn avgör" eller något som saknas): hoppa över det tills vidare, skriv frågan i steget och gå vidare. Stanna bara om något allvarligt gör att inget kan göras utan Björn.
-- Utseenden: platshållare under natten; de fem förslagen per sak samlas i en bild till morgonen.
+- Utseenden: platshållare under natten; de tre versionerna per sak läggs i bildstilens valdel till morgonen.
 - Balansera inte under natten (det görs i fasens Balans).
 - När Björn säger stopp: gör klart steget som pågår, publicera det och ge en rapport över allt som gjorts: steg och versioner, det som hoppades över och varför, frågorna, bilderna med förslag och testresultaten.
 
@@ -52,6 +52,7 @@ När Björn säger att Claude får programmera över natten:
 
 - Spelet (artefakt): https://claude.ai/artifact/TdCUKPj4wC55BVGq7db14n
 - Designdokument (Claude Docs): https://claude.ai/artifact/McP5446XiGQaJ3hbs9YXrc. Läs avsnittet "Läget just nu" först.
+- Bildstilen och guiden för allt som ritas (artefakt): https://claude.ai/artifact/Khx8Ggn4CdRb76UpZLnQww. Källkoden i `bildstil/`; `node bildstil/bygg.cjs` ger `bildstil/bildstil.html`, som publiceras till samma URL. Utelämna `capabilities` vid ny publicering, så att databasen med Björns val finns kvar.
 - Koden: läs `ARKITEKTUR.md` först. Den säger vilken fil som gör vad, vilka regler som håller ihop koden och hur man lägger till en handling, en sak, en teknik, en flik eller ett nytt system. Öppna sedan bara de filer som berörs.
 
 - Kodgranskning: när Björn ber om en grundlig genomgång av koden, följ `GRANSKNING.md`.
