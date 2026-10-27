@@ -223,6 +223,14 @@ function siteInne(s: State, k: string) {
   }
   return best;
 }
+// en station som står inne (inte en bädd) som byn vill bygga men inte har plats för i något hus (steg 2.2.17): någon kan
+// tekniken, byn har ingen och ingen är påbörjad. Då planerar byn en verkstad åt den (BYGGNADER i byggnader.ts)
+export function inneUtanPlats(s: State): StationSlag | undefined {
+  return STATION_LIST.find(k => {
+    const d: StationDef = STATIONER[k];
+    return d.inne && !d.sover && !harStation(s, k) && !halvbyggd(s, k) && living(s).some(p => d.tek.some(t => knows(p, t))) && !stationSite(s, k);
+  });
+}
 // rummet där en station som står inne står
 export const stationRum = (s: State, t: Station): Rum | undefined => t.inne ? roomAt(s, t.x, t.y) : undefined;
 

@@ -1,6 +1,6 @@
 // Scenariotester: ställ en by i ett visst läge, kör den en stund och kontrollera att det som ska hända händer.
 // npm run scenario            kör alla
-// npm run scenario -- glanta  kör bara ett
+// npm run scenario -- glanta  kör bara ett (flera namn: de körs samtidigt)
 import './scenarier/grund';
 import './scenarier/sparning';
 import './scenarier/redskap';
@@ -16,7 +16,7 @@ import { Utfall, korSkript, pool } from './pool';
 
 // Utan namn körs alla scenarier samtidigt, vart och ett i en egen process. Med ett namn körs bara det, här.
 // Med --snabb körs bara de som inte är långa, och dessutom de som nämns efter: --snabb delning arv
-const arg = process.argv.slice(2), snabb = arg[0] === '--snabb', val = snabb ? undefined : arg[0];
+const arg = process.argv.slice(2), snabb = arg[0] === '--snabb', val = !snabb && arg.length === 1 ? arg[0] : undefined;
 if (val) {
   const sc = SCENARIER[val];
   if (!sc) { console.log(`Okänt scenario: ${val}. Finns: ${Object.keys(SCENARIER).join(', ')}`); process.exit(1); }
@@ -35,9 +35,9 @@ if (val) {
     if (!ok) process.exitCode = 1;
   }
 } else {
-  const okanda = arg.slice(1).filter(n => !SCENARIER[n]);
+  const okanda = arg.filter(n => n !== '--snabb' && !SCENARIER[n]);
   if (okanda.length) { console.log(`Okänt scenario: ${okanda.join(', ')}. Finns: ${Object.keys(SCENARIER).join(', ')}`); process.exit(1); }
-  const namn = Object.keys(SCENARIER).filter(n => !snabb || !SCENARIER[n]!.lang || arg.includes(n));
+  const namn = Object.keys(SCENARIER).filter(n => snabb ? !SCENARIER[n]!.lang || arg.includes(n) : !arg.length || arg.includes(n));
   // de långa startas först, så att alla blir klara ungefär samtidigt; utskriften kommer ändå i vanlig ordning
   const ordning = [...namn.filter(n => SCENARIER[n]!.lang), ...namn.filter(n => !SCENARIER[n]!.lang)];
   const svar: Record<string, Utfall> = {};
@@ -51,6 +51,6 @@ if (val) {
     process.stdout.write(u.out + (krasch ? `FEL  ${n}: kraschade\n${u.err.slice(-1500)}\n` : ''));
   }
   const hoppade = Object.keys(SCENARIER).filter(n => !namn.includes(n));
-  if (hoppade.length) console.log(`(hoppade över de långa: ${hoppade.join(', ')})`);
+  if (hoppade.length && (snabb || !arg.length)) console.log(`(hoppade över de långa: ${hoppade.join(', ')})`);
   if (fel) { console.log(`${fel} scenario misslyckades.`); process.exitCode = 1; }
 }

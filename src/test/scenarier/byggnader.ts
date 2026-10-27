@@ -4,7 +4,7 @@ import { MIN, Person, Act, createState, addTool, toolsOf, BYN, step, living, see
 import * as SIM from '../../sim';
 import { findPath } from '../../sim/vag';
 import { START } from '../kor';
-import { setItems, setFood, kor, klockan, tandEld, byggare, byggKlart, STOCKHOLM, SCENARIER } from './hjalp';
+import { setItems, setFood, kor, klockan, tandEld, byggare, byggKlart, nyInvanare, STOCKHOLM, SCENARIER } from './hjalp';
 
 SCENARIER.byggnader = {
   text: 'Varje sorts byggnad är en rad i ett register med behov, vikt och ägare. Byn bygger för det mest akuta behovet, faror först: den som saknar tak över huvudet får en sovsal',
@@ -456,6 +456,43 @@ SCENARIER.lagerplatser = {
       [`maten får den första och material den nya (${zs.map(z => z.namn).join(', ')})`, zs[0].slag === 'mat' && zs[1]?.slag === 'material'],
       [`sakerna sorteras till rätt lagerplats (${fel} stackar ligger fel efter ett dygn)`, fel <= 2],
       ['stackarna innehåller allt i förrådet', summaOk && ps.every(p => p.n <= p.max + 1e-9)],
+    ];
+  },
+};
+
+SCENARIER.verkstad = {
+  text: 'Rummets funktion (steg 2.2.17): ett rum får sin funktion av det som står i det. När byn vill bygga en slöjdbänk men sovsalarna är fulla planerar den en verkstad åt den, och en sovsal som ingen sover i men där en station står blir en verkstad i stället för att rivas',
+  kor: () => {
+    const { HUS, inneUtanPlats, rumsFunktioner, sovKvar, stationerOf, stationRum, isKlar } = SIM;
+    // en by med en sovsal som är så full att slöjdbänken inte får plats där, där alla kan bygga en slöjdbänk
+    const s = createState(1, START); klockan(s); tandEld(s);
+    byggare(s); planBuild(s); const A = byggKlart(s)!;
+    const rumA = () => gridOf(s).rooms.find(r => r.hus === A.id && r.tiles.length)!;
+    for (let i = 0; sovKvar(s, rumA()) >= 2 && i < 20; i++) nyInvanare(s, i % 2 ? 'm' : 'k', 30);
+    for (const r of s.people) r.tek = { ...r.tek, flatarbank: 1, timmervagg: 1, yxa: 1 };
+    setFood(s, 400); setAmount(s, 'ved', 80); setAmount(s, 'grenar', 20);
+    const vill = inneUtanPlats(s), a = BYGGNADER.verkstad.akut(s), hemlosa = homeless(s);
+    s.byggSok = undefined; planBuild(s);
+    const B = byggKlart(s);
+    let h = 0;
+    const banken = () => stationerOf(s).find(t => t.k === 'flatarbank' && isKlar(t));
+    while (!banken() && h < 96) { kor(s, 1); h++; }
+    const t = banken(), iB = !!t && !!B && stationRum(s, t)?.hus === B.id;
+    const fnB = B ? rumsFunktioner(s, B).map(f => f.namn) : [], fnA = rumsFunktioner(s, A).map(f => f.namn);
+    const igen = BYGGNADER.verkstad.akut(s).v;
+    // en sovsal där ingen sover men där en station står blir en verkstad, och stationen står kvar
+    const q = cloneState(s), Bq = housesOf(q).find(r => r.id === B?.id)!;
+    Bq.fn = 'sovsal'; Bq.tom = q.now - 2 * DAY; q.ruttet = 20; // byn skulle annars vilja ha ett förrådshus
+    stepByggnader(q);
+    const kvar = !!t && !!stationerOf(q).find(r => r.id === t.id);
+    return [
+      [`byn vill bygga en slöjdbänk men den får inte plats i sovsalen (${living(s).length} bor där, ${hemlosa} utan sovplats)`, vill === 'flatarbank' && hemlosa === 0],
+      [`byn vill ha en verkstad (hur akut ${a.v}, ${a.plats} golvrutor)`, a.v === HUS.verkstadAkut && a.plats === 2 * 2 + HUS.verkstadExtra],
+      [`byn planerar ${B?.namn.toLowerCase() ?? 'inget hus'}`, B?.fn === 'verkstad' && B.namn === 'Verkstaden'],
+      [`slöjdbänken byggs i verkstaden på ${h} timmar`, iB],
+      [`verkstaden är en verkstad efter det som står där (${fnB.join(', ')}), sovsalen ett sovrum (${fnA.join(', ')})`, fnB.includes('Verkstad') && !fnB.includes('Sovrum') && fnA.includes('Sovrum') && !fnA.includes('Verkstad')],
+      ['ingen ny verkstad när slöjdbänken står', igen === 0],
+      [`en tom sovsal där en station står blir en verkstad och stationen står kvar (${Bq.namn})`, Bq.fn === 'verkstad' && kvar],
     ];
   },
 };

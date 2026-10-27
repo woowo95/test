@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { BAR, FOREST, HIGH, MATERIAL, MIN, Person, T, W, bitAt, campCenter, condOf, dorrDef, emberOn, getMap, groundOf, husById, inMap, insulation, isKlar, living, stationAt, stationDef, tingOf, roomAt, sakNamn, sjoarna, sovplatser, taskName, zoneAt, zonesOf, Pile } from '../sim';
+import { BAR, FOREST, HIGH, MATERIAL, MIN, Person, T, W, bitAt, campCenter, condOf, dorrDef, emberOn, getMap, groundOf, husById, inMap, insulation, isKlar, living, stationAt, stationDef, tingOf, roomAt, rumsFunktioner, sakNamn, sjoarna, sovplatser, taskName, zoneAt, zonesOf, Pile } from '../sim';
 import { iconImg } from '../ikoner';
 import { $, esc, fmtN, prickar } from './hjalp';
 import { outPilesAt, piles, s, ui } from './lage';
@@ -101,7 +101,10 @@ function showHover(gx: number, gy: number) {
     rows.push(`${iconImg(d?.ikon ?? M.ikon ?? '', 12)} <b>${esc(d?.namn ?? M.namn)}</b>${hus ? ` i ${esc(hus.namn.toLowerCase())}` : ''}${st ? ' · ' + st : ''}${d ? ` · släpper ut ${Math.round(d.tat * 100)} % mindre värme än en öppning` : ''}`);
   }
   const rum = roomAt(s, x, y);
-  if (rum) { const hus = husById(s, rum.hus), n = sovplatser(s, rum); rows.push(`Under tak${hus ? ` (${esc(hus.namn)})` : ''} · ${n ? `${n} sovplatser · ` : ''}håller värmen ${Math.round(insulation(s, rum) * 100)} %`); }
+  if (rum) {
+    const hus = husById(s, rum.hus), n = sovplatser(s, rum), fns = hus ? rumsFunktioner(s, hus).map(f => f.ikon).join('') : '';
+    rows.push(`Under tak${hus ? ` (${esc(hus.namn)})` : ''}${fns ? ' ' + fns : ''} · ${n ? `${n} sovplatser · ` : ''}håller värmen ${Math.round(insulation(s, rum) * 100)} %`);
+  }
   const here = living(s).filter(p => { const o = posOf(p); return Math.floor(o.x) === x && Math.floor(o.y) === y; });
   if (here.length) rows.push(here.map(p => `${esc(p.name)}${prickar(p, true)} (${p.task ? taskName(p.task).toLowerCase() : 'vilar'})`).join(', '));
   box.innerHTML = rows.map(r => `<p>${r}</p>`).join('');

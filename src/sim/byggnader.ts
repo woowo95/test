@@ -9,7 +9,7 @@ import { tingOf } from './agande';
 import { ARBETE, grundvarde, tingVarde, varuVarde } from './varde';
 import { Person, State } from './typer';
 import { balans } from './balans';
-import { stationRutor } from './stationer';
+import { inneUtanPlats, isKlar, stationDef, stationRum, stationRutor, stationerOf, storlek } from './stationer';
 
 // ---------- balanstal (regel 8) ----------
 // Husens storlek, vad de är till för och när de byter funktion eller rivs. Var de står och hur de byggs står i BYGG (bygg.ts)
@@ -33,6 +33,8 @@ export const HUS = balans('hus', {
   rivTillbaka: 0.5, // så mycket av materialet kommer tillbaka när ett hus rivs
   varmeMarg: 0.02, // ett samlingshus räknas som varmare än elden även om det är så här mycket kallare ...
   varmeY: 2.9, // ... mätt så här många rutor söder om elden
+  verkstadAkut: 0.5, // hur akut det är att få plats inne för en station som inte får plats i något hus (0 till 1, steg 2.2.17) ...
+  verkstadExtra: 2, // ... och så här många golvrutor fler än stationen och golvet framför den
 });
 
 // ---------- byggnaderna: vad ett hus är till för ----------
@@ -87,6 +89,19 @@ export const BYGGNADER = {
     // byggs inte nytt: en sovsal som ingen sover i blir ett samlingshus (steg 1.6.4). När det är kallt samtalar och
     // berättar man där i stället för vid elden, om det är varmare där (val.ts)
     namnFor: (_s, _w, _h, same) => same ? `Samlingshus ${same + 1}` : 'Samlingshuset',
+  },
+  verkstad: {
+    namn: 'Verkstad', ikon: '🪚', behov: 'Plats inne för en station som inte får plats i något annat hus (slöjdbänken)', fara: false, vikt: 1, agare: 'byn',
+    // steg 2.2.17: byn vill bygga en station som står inne, men inget hus har plats för den (sovsalarna är fulla och i ett
+    // förrådshus står inga stationer). Huset rymmer stationen, golvet framför den och lite till. Ingen sover där. Står det en
+    // verkstad utan station byggs ingen ny
+    akut: s => {
+      const k = inneUtanPlats(s);
+      if (!k || housesOf(s).some(h => h.fn === 'verkstad' && !stationerOf(s).some(t => stationRum(s, t)?.hus === h.id))) return { v: 0, plats: 0 };
+      const { w, h } = storlek(k);
+      return { v: HUS.verkstadAkut, plats: w * (h + 1) + HUS.verkstadExtra };
+    },
+    namnFor: (_s, _w, _h, same) => same ? `Verkstad ${same + 1}` : 'Verkstaden',
   },
 } satisfies Record<string, Byggnad>;
 export type Fn = keyof typeof BYGGNADER;
@@ -241,8 +256,9 @@ export function stepByggnader(s: State) {
 }
 
 // ---------- funktionen följer behovet (steg 1.6.4) ----------
-// En sovsal som ingen har sovit i på ett dygn (ett år i spelet) får en ny funktion: ett förrådshus om byn behöver ett,
-// annars ett samlingshus om byn inte har något, och annars rivs den och hälften av timret kommer tillbaka till byn.
+// En sovsal som ingen har sovit i på ett dygn (ett år i spelet) får en ny funktion: en verkstad om en station står där
+// (steg 2.2.17), annars ett förrådshus om byn behöver ett, annars ett samlingshus om byn inte har något, och annars rivs den
+// och hälften av timret kommer tillbaka till byn.
 // Saknas sovplatser blir ett samlingshus en sovsal igen, före ett nytt hus. Ett familjehus som ingen äger blir en sovsal.
 // ett nytt namn efter funktionen
 function nyttNamn(s: State, h: Hus, fn: Fn, a: Akut) {
@@ -280,7 +296,8 @@ function funktionsbyte(s: State) {
     h.tom ??= s.now;
     if (s.now - h.tom < HUS.tomDygn * DAY) continue;
     const f = BYGGNADER.forrad.akut(s);
-    if (f.v > 1e-9) bytFn(s, h, 'forrad', f.slag);
+    if (harArbete(s, h)) bytFn(s, h, 'verkstad'); // en station står där: den blir en verkstad och står kvar (steg 2.2.17)
+    else if (f.v > 1e-9) bytFn(s, h, 'forrad', f.slag);
     else if (!hs.some(q => q.fn === 'samling')) bytFn(s, h, 'samling');
     else riv(s, h);
     return; // ett hus i taget
@@ -296,6 +313,26 @@ export const samlingRum = (s: State): Rum | undefined => {
   const ids = new Set(housesOf(s).filter(h => h.fn === 'samling' && h.klar).map(h => h.id));
   return ids.size ? gridOf(s).rooms.find(r => r.hus !== undefined && ids.has(r.hus) && r.tiles.length) : undefined;
 };
+
+// ---------- rummets funktion av det som står i det (steg 2.2.17) ----------
+// Ett rum får sin funktion av det som står i det och det som görs där: där någon sover är det ett sovrum, där en station
+// står som man arbetar vid en verkstad, och där golvet är en lagerplats ett förråd. Flera funktioner i samma rum går bra. Varje
+// sort är en rad i registret RUMSFUNKTIONER; husets egen funktion (fn ovan) säger vad byn byggde det för och styr vem som
+// sover där och vad som får stå där. Gränssnittet visar båda (flikar/hus.ts, rutan under musen)
+interface RumsFunktion { namn: string; ikon: string; om: string; har: (s: State, h: Hus) => boolean }
+// en färdig station som man arbetar vid står i huset
+const harArbete = (s: State, h: Hus) => stationerOf(s).some(t => isKlar(t) && !!stationDef(t.k)?.gor.length && stationRum(s, t)?.hus === h.id);
+export const RUMSFUNKTIONER = {
+  sovrum: {
+    namn: 'Sovrum', ikon: '🛏️', om: 'Här sover någon',
+    har: (s, h) => { const tiles = new Set(gridOf(s).rooms.filter(r => r.hus === h.id).flatMap(r => r.tiles)); return living(s).some(p => { const t = bedTile(s, p); return t !== undefined && tiles.has(t); }); },
+  },
+  verkstad: { namn: 'Verkstad', ikon: '🪚', om: 'Här står en station som man arbetar vid', har: harArbete },
+  forrad: { namn: 'Förråd', ikon: '📦', om: 'Golvet är en lagerplats under tak', har: (s, h) => zonesOf(s).some(z => z.hus === h.id) },
+} satisfies Record<string, RumsFunktion>;
+export const RUMSFUNKTION_LIST = Object.keys(RUMSFUNKTIONER) as (keyof typeof RUMSFUNKTIONER)[];
+// husets funktioner efter det som står i det
+export const rumsFunktioner = (s: State, h: Hus): RumsFunktion[] => RUMSFUNKTION_LIST.map(k => RUMSFUNKTIONER[k] as RumsFunktion).filter(f => f.har(s, h));
 
 // ---------- ett hus blir färdigt ----------
 // ett förrådshus: golvet blir en lagerplats under tak, viktigast av alla, så att det som ligger ute bärs in dit

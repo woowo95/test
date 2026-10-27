@@ -92,7 +92,12 @@ SCENARIER.vakt = {
 };
 
 // Det i registren som bara händer i vissa byar: namnet och varför. Allt annat ska hända i minst en av byarna
-const SALLSYNT: Record<string, string> = { kol: 'kol blir det bara när elden brunnit ut helt' };
+const SALLSYNT: Record<string, string> = {
+  kol: 'kol blir det bara när elden brunnit ut helt',
+  hantverk: 'handarbete utan sak väljs inte sedan v55; rep tvinnas som en egen handling och resten är projekt',
+  metspo: 'sen teknik efter fiskespjutet och repet, hinner inte alltid komma på 35 dygn',
+  korg: 'sen teknik efter slöjdbänken, hinner inte alltid komma på 35 dygn',
+};
 SCENARIER.aldrig = {
   text: 'Allt i registren används: varje handling, sak, husfunktion, djurart och teknik förekommer i minst en av fyra byar under 35 dygn (35 år i spelet, fem veckor i verkligheten)',
   lang: true,
