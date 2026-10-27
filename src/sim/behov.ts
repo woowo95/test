@@ -12,7 +12,6 @@ import { ratt } from './matlagning';
 import { habitShare, habitTotal } from './seder';
 import { grundvarde } from './varde';
 import { EKONOMI } from './ekonomi';
-import { tiondel } from './format';
 
 // ---------- behovsstegen ----------
 // När någon behöver något går hen stegen i ordning: först sitt eget, sedan ett byte med någon i närheten (byten nedan),
@@ -381,7 +380,7 @@ function payable(s: State, p: Person, utom: readonly string[]): Vara[] {
   }
   return ut;
 }
-const tal = (n: number) => n >= 0.95 ? tiondel(n) : 'lite';
+const tal = (n: number) => n >= 0.5 ? String(Math.round(n)) : 'lite'; // saker i hela tal (Björn efter v89)
 const varorText = (v: Vara[]) => v.map(x => `${x.t ? 'en' : tal(x.n)} ${(SAKER[x.k]?.namn ?? x.k).toLowerCase()}`).join(' och ');
 interface Villkor { behov: number; minst: number; fara: number; typ: string; utom: readonly string[]; delad?: true }
 // m byter till sig vill (det g har över) av g, och betalar med det m har över som är värt mest för g och minst för m.

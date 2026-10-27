@@ -47,7 +47,7 @@ const PAL: Record<string, Record<string, string>> = {
   tork_karta: { w: '#5a3a1e', W: '#8b5a2b', L: '#b07a45', O: '#d0aa70', x: 'rgba(0,0,0,.30)' },
   torrkott: { r: '#4e2418', R: '#74402a', w: '#c8b088' },
   torrfisk: { p: '#7a5030', P: '#a07048', w: '#d8c098', s: '#583820' },
-  benspade: { h: '#8a6a40', H: '#b08a58', r: '#c8b07a', w: '#e8e2d0', W: '#fffaf0', d: '#b8ae98' },
+  benspade: { h: '#7a5a36', H: '#9c7848', y: '#c8b07a', Y: '#e8d4a0', w: '#e8e2d0', W: '#fffaf0', d: '#b8ae98', R: '#d8d0bc' },
   skinnklader: { b: '#8a6440', B: '#b48a5e', d: '#5e4026', w: '#d8c8a8' },
   slaktbank: { b: '#7a5a36', B: '#a8824e', d: '#4e3420', r: '#9c3328' },
   flatarbank: { b: '#7a5a36', B: '#a8824e', d: '#4e3420', y: '#c8ac5c', Y: '#ecd890', o: '#9a7444', O: '#d0aa70' },
@@ -769,16 +769,17 @@ const PIX: Record<string, string[]> = {
     '..sss...',
     '........',
   ],
-  // benspaden (Björn valde S1c/S1g): tre ben bredvid varandra som ett rakt avskuret blad, bundna med rep vid ett skaft mitt på
+  // benspaden (Björn valde S1g efter v85): snett uppåt höger som de andra redskapen, tre ben som ett rakt avskuret blad lika
+  // mycket åt båda hållen kring skaftet, bundna med rep
   benspade: [
-    '...hH...',
-    '...hH...',
-    '...hH...',
-    '..rrrr..',
-    '.WwWwWw.',
-    '.WwWwWw.',
-    '.WwWwWw.',
-    '.dddddd.',
+    '.....WR.',
+    '....WwwR',
+    '....Ywwd',
+    '....Hyd.',
+    '...Hh...',
+    '..Hh....',
+    '.Hh.....',
+    'Hh......',
   ],
   // en bänk med en tuss hö och ett nystan rep
   flatarbank: [

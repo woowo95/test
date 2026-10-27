@@ -22,7 +22,7 @@ export function addTalks(events: TalkEvent[], now: number, nu: number) {
 }
 // var personen syns vid tiden som visas: längs vägen hen gick under slaget (spar i steg.ts). På platsen rör man sig lite
 // för att det ska se levande ut, bara i bilden: från buske till buske, eller några steg hit och dit
-export function posOf(p: Person) {
+function platsAv(p: Person) {
   const v = spar.v.get(p), t = ui.nu;
   let x = p.x, y = p.y, still = true;
   if (v && v.length >= 6 && t < v[v.length - 3]) {
@@ -38,6 +38,36 @@ export function posOf(p: Person) {
     x += Math.sin(k * f + p.id * 1.7) * r * Math.sin(k * f * 0.37 + p.id);
     y += Math.cos(k * f * 0.83 + p.id * 2.3) * r * Math.sin(k * f * 0.29 + p.id * 0.5);
   }
+  return { x, y, still };
+}
+// de som står still sprider ut sig lite så att de inte står i varandra (Björn efter v89), bara i bilden. Den som går rör
+// sig inte undan och knuffar ingen, så att man kan mötas i en smal gång. SPRID = avståndet de vill ha (rutor), NARMRE = hur
+// långt från sin plats man högst flyttar sig
+const SPRID = 0.55, NARMRE = 0.4;
+let synlig = new Map<number, { x: number; y: number }>(), synligNu = NaN;
+function sprid(ppl: Person[]) {
+  const q = ppl.map(p => ({ id: p.id, ...platsAv(p) })), bas = q.map(o => ({ x: o.x, y: o.y }));
+  for (let varv = 0; varv < 3; varv++) for (let i = 0; i < q.length; i++) for (let j = i + 1; j < q.length; j++) {
+    const a = q[i], b = q[j];
+    if (!a.still || !b.still) continue;
+    let dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy);
+    if (d >= SPRID) continue;
+    if (d < 1e-4) { const v = (a.id * 2.399 + b.id) % (Math.PI * 2); dx = Math.cos(v); dy = Math.sin(v); d = 1; } // på samma punkt: ett håll efter vilka de är
+    const k = (SPRID - Math.min(d, SPRID)) / 2 / d;
+    a.x -= dx * k; a.y -= dy * k; b.x += dx * k; b.y += dy * k;
+  }
+  const m = new Map<number, { x: number; y: number }>();
+  q.forEach((o, i) => {
+    const ox = o.x - bas[i].x, oy = o.y - bas[i].y, l = Math.hypot(ox, oy), f = l > NARMRE ? NARMRE / l : 1;
+    m.set(o.id, { x: bas[i].x + ox * f, y: bas[i].y + oy * f });
+  });
+  return m;
+}
+// där personen syns: samma plats som i bilden som ritades senast, så att ett tryck och kameran träffar rätt
+export function posOf(p: Person) {
+  const q = synligNu === ui.nu ? synlig.get(p.id) : undefined;
+  if (q) return q;
+  const { x, y } = platsAv(p);
   return { x, y };
 }
 // symbolen över huvudet: slaget av arbete man gör på platsen (SLAG i handlingar.ts)
@@ -68,6 +98,7 @@ const nameTags = [0, 1].map(() => { const tx = new PIXI.Text('', nameStyle); tx.
 export function drawPeople(t: number) {
   peopleG.clear(); bubbleG.clear();
   const ppl = living(s), pos = new Map<number, { x: number; y: number }>();
+  synlig = sprid(ppl); synligNu = ui.nu;
   markIcons.start();
   for (const p of ppl) {
     const a = ageOf(p, s.now);

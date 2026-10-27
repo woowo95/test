@@ -1,7 +1,7 @@
-import { ACTS, MATERIAL, SLAG, Person, SAKER, TEK, TEKNIK, Tek, amountOf, harSak, hasMaterial, knows, living, sakNamn, stationDef, tiondel } from '../../sim';
+import { ACTS, MATERIAL, SLAG, Person, SAKER, TEK, TEKNIK, Tek, amountOf, harSak, hasMaterial, knows, living, sakNamn, stationDef } from '../../sim';
 import { iconImg } from '../../ikoner';
-import { bar, esc, hjalpKnapp, hjalpText, pLink } from '../hjalp';
-import { s, ui } from '../lage';
+import { bar, esc, fmtN, hjalpKnapp, hjalpText, pLink } from '../hjalp';
+import { s } from '../lage';
 import type { Flik } from '../panel';
 
 // teknikträdet som symboler: det som inte kräver något till vänster, sträck till det som är låst bakom det.
@@ -13,8 +13,6 @@ export const teknik: Flik = {
   klick(el) {
     const tn = el.closest<HTMLElement>('[data-tek]');
     if (tn) { tekSel = tekSel === tn.dataset.tek ? undefined : tn.dataset.tek; return true; }
-    const tg = el.closest<HTMLElement>('[data-tekgo]'); // en teknik i personfliken: öppna den i trädet
-    if (tg) { ui.tab = 'teknik'; tekSel = tg.dataset.tekgo; return true; }
     return false;
   },
 };
@@ -48,7 +46,7 @@ function tekHtml() {
   return `<div class="tekhead">${hjalpKnapp('teknik', 'Hur fungerar teknik?')}</div>
     ${hjalpText('teknik', `<p class="muted small">Den som arbetar med något kommer så småningom på hur det kan göras bättre. Nyfikenheten avgör hur ofta hen funderar och intelligensen hur fort det går. Det man kan lärs ut i samtal. Dör alla som kan något försvinner kunskapen. Ett sträck betyder att tekniken till höger kräver den till vänster. Siffran är hur många som kan tekniken och ringen hur långt den som funderat mest har kommit. Tryck på en teknik för att se vad den kräver och hur man kommer på den.</p>`)}
     <div class="ttrad" style="height:${h}px"><svg class="tlinjer" viewBox="0 0 100 100" preserveAspectRatio="none">${lines.join('')}</svg>${nodes.join('')}</div>
-    ${tekInfo(ppl)}`;
+    ${tekInfo(ppl, tekSel)}`;
 }
 const lista = (xs: string[], och = 'och') => xs.length > 1 ? xs.slice(0, -1).join(', ') + ` ${och} ` + xs[xs.length - 1] : xs[0] ?? '';
 // det som saknas i byn för att någon ska kunna komma på tekniken
@@ -59,15 +57,15 @@ function recept(t: Tek): { k: string; n: number; per?: string }[] {
   if (av) return Object.entries(av).map(([k, n]) => ({ k, n }));
   return Object.values(MATERIAL).filter(m => m.tek === t.id && m.item).map(m => ({ k: m.item!, n: m.n, per: m.namn.toLowerCase() }));
 }
-// det som visas när man tryckt på en symbol i trädet
-function tekInfo(ppl: Person[]) {
-  const t = tekSel ? TEK[tekSel] : undefined;
+// det som visas när man tryckt på en symbol i trädet, eller på en teknik i personens kunskap (flikar/person.ts)
+export function tekInfo(ppl: Person[], id: string | undefined) {
+  const t = id ? TEK[id] : undefined;
   if (!t) return '';
   const kan = ppl.filter(p => knows(p, t.id));
   const pa = ppl.filter(p => !knows(p, t.id) && (p.tek?.[t.id] ?? 0) > 0.01).sort((a, b) => b.tek![t.id] - a.tek![t.id]).slice(0, 5);
   const r = recept(t);
-  const rtext = 'Det som går åt: ' + lista(r.map(x => `${sakNamn(x.k).toLowerCase()} ×${tiondel(x.n)}${x.per ? ` per ${x.per}` : ''}`));
-  const mat = r.map(x => `<span class="${amountOf(s, x.k) >= x.n ? '' : 'saknas'}">${iconImg(x.k, 16) || esc(sakNamn(x.k))}<small>${tiondel(x.n)}</small></span>`).join('<i>+</i>');
+  const rtext = 'Det som går åt: ' + lista(r.map(x => `${sakNamn(x.k).toLowerCase()} ×${fmtN(x.n)}${x.per ? ` per ${x.per}` : ''}`));
+  const mat = r.map(x => `<span class="${amountOf(s, x.k) >= x.n ? '' : 'saknas'}">${iconImg(x.k, 16) || esc(sakNamn(x.k))}<small>${fmtN(x.n)}</small></span>`).join('<i>+</i>');
   // hur den upptäcks: arbetet där man kommer på den, tekniken man måste kunna först och det som måste finnas i byn
   const arb = lista([...new Set(t.omr.map(a => SLAG[ACTS[a].slag ?? 'hantverk'].toLowerCase()))], 'eller');
   const krav = t.krav.length ? ` om hen kan ${lista(t.krav.map(k => TEK[k].namn.toLowerCase()))}` : '';

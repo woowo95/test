@@ -133,7 +133,7 @@ ul, ol { list-style: none; margin: 0; padding: 0; }
 .tnod.liten { position: relative; transform: none; width: 30px; height: 30px; }
 .tnod.hand { border-radius: 8px; cursor: default; }
 .tnod.hand.tom { opacity: 0.45; border-style: dashed; font-size: 15px; }
-.tnod.liten.pa { cursor: default; }
+.tnod.liten.pa { cursor: default; } button.tnod.liten { cursor: pointer; }
 .tinfo { border-top: 1px solid var(--line); padding-top: 8px; }
 .tektop { display: flex; align-items: center; gap: 8px; }
 .tektop .ikon { image-rendering: pixelated; }
@@ -179,6 +179,8 @@ h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: 
 .kropp { display: flex; align-items: flex-start; gap: 12px; margin: 4px 0 8px; }
 .gubbe { width: 80px; height: 130px; flex: none; }
 .gubbe .klick { cursor: pointer; } .gubbe .klick:hover { filter: brightness(1.2); }
+.gubbe .vald { filter: brightness(1.35) drop-shadow(0 0 0.5px var(--accent)); }
+.kroppinfo { display: flex; flex-direction: column; min-width: 0; flex: 1; }
 .kropp .forkl { margin: 0 0 4px; padding: 6px 8px; border-radius: 6px; background: var(--barbg); font-size: 14px; }
 .skador { display: grid; gap: 4px; margin: 4px 0 8px; padding: 0; list-style: none; }
 .skador li { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 6px; align-items: baseline; font-size: 14px; }
@@ -212,6 +214,9 @@ h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: 
 .tid:has([data-i]:hover) .tart [data-i] { opacity: 0.45; }
 .tid:has([data-i="0"]:hover) [data-i="0"], .tid:has([data-i="1"]:hover) [data-i="1"], .tid:has([data-i="2"]:hover) [data-i="2"], .tid:has([data-i="3"]:hover) [data-i="3"], .tid:has([data-i="4"]:hover) [data-i="4"], .tid:has([data-i="5"]:hover) [data-i="5"], .tid:has([data-i="6"]:hover) [data-i="6"], .tid:has([data-i="7"]:hover) [data-i="7"], .tid:has([data-i="8"]:hover) [data-i="8"], .tid:has([data-i="9"]:hover) [data-i="9"], .tid:has([data-i="10"]:hover) [data-i="10"], .tid:has([data-i="11"]:hover) [data-i="11"] { opacity: 1; }
 .tid:has([data-i="0"]:hover) li[data-i="0"], .tid:has([data-i="1"]:hover) li[data-i="1"], .tid:has([data-i="2"]:hover) li[data-i="2"], .tid:has([data-i="3"]:hover) li[data-i="3"], .tid:has([data-i="4"]:hover) li[data-i="4"], .tid:has([data-i="5"]:hover) li[data-i="5"], .tid:has([data-i="6"]:hover) li[data-i="6"], .tid:has([data-i="7"]:hover) li[data-i="7"], .tid:has([data-i="8"]:hover) li[data-i="8"], .tid:has([data-i="9"]:hover) li[data-i="9"], .tid:has([data-i="10"]:hover) li[data-i="10"], .tid:has([data-i="11"]:hover) li[data-i="11"] { background: color-mix(in srgb, var(--accent) 18%, transparent); }
+.tid.har-vald .tart [data-i] { opacity: 0.45; } .tid .tart .vald { opacity: 1; }
+.tidlista li.vald { background: color-mix(in srgb, var(--accent) 28%, transparent); }
+.tart path, .tart circle, .tidlista li { cursor: pointer; }
 .tidlista .tecken { width: 16px; text-align: center; font-size: 13px; line-height: 16px; }
 .controls { border-top: 1px solid var(--line); padding: 10px 14px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
 .switch { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }

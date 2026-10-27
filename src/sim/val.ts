@@ -27,7 +27,7 @@ import { Act, H, HOUR, MIN, Person, Skill, Stat, State, T, Task, W, inMap } from
 import { balans } from './balans';
 import { drickVal, torstig, tortarFarligt } from './torst';
 import { forSmutsigt, latrinFor } from './smuts';
-import { bordenOf, ledigPlats, sittAt, stationFor, storlekAv, vidStation } from './stationer';
+import { bordenOf, ledigPlats, sittAt, stationAt, stationFor, storlekAv, vidStation } from './stationer';
 import { grillTid, kanGrilla, kanTorka, torkTid } from './matlagning';
 import { egenBrasa } from './brasor';
 
@@ -152,9 +152,9 @@ export function spotFor(s: State, act: Act, p: Person): { x: number; y: number }
     if (sal && c > 0 && varmareInne(s, sal, c, d.varmer)) return punktIRuta(s, pick(s, sal.tiles, 'val', p), p);
     // annars sätter man sig ofta vid ett bord för att samtala och berätta, när det inte är kallt
     if (d.slag === 'prata' && bordenOf(s).length && coldOf(temperature(s)) === 0 && rnd(s, 'val', p) < VAL.bordSamtal) { const at = ledigPlats(s, p); if (at) return at; }
-    for (let k = 0; ; k++) { // runt elden, men inte i en husvägg
+    for (let k = 0; ; k++) { // runt elden, men inte i en husvägg eller i en station (Björn efter v89: någon stod i slaktbänken)
       const ang = rnd(s, 'val', p) * Math.PI * 2, r = d.radie ?? 1.3 + rnd(s, 'val', p) * 0.9, x = f.x + 0.5 + Math.cos(ang) * r, y = f.y + 0.5 + Math.sin(ang) * r;
-      if (k >= 11 || !blocked(s, x, y) && !sittAt(s, x, y)) return k >= 11 ? freeNear(s, f.x + 0.5, f.y + 1.5) : { x, y }; // inte på en stubbe vid bordet
+      if (k >= 11 || !blocked(s, x, y) && !sittAt(s, x, y) && !stationAt(s, x, y)) return k >= 11 ? freeNear(s, f.x + 0.5, f.y + 1.5) : { x, y }; // inte på en stubbe vid bordet
     }
   }
   if (plats === 'kol') return { x: f.x + 0.5 + (rnd(s, 'val', p) - 0.5) * 0.6, y: f.y + 1.1 };
@@ -164,7 +164,7 @@ export function spotFor(s: State, act: Act, p: Person): { x: number; y: number }
     if (bed && rum && (varmareInne(s, rum, c) || c === 0)) return bed; // när det inte är kallt räcker värmen överallt
     for (let k = 0; k < 12; k++) {
       const ang = (p.id * 2.399 + rnd(s, 'val', p) * 0.5) % (Math.PI * 2), r = 1.8 + rnd(s, 'val', p) * 1.2, x = f.x + 0.5 + Math.cos(ang) * r, y = f.y + 0.5 + Math.sin(ang) * r;
-      if (inMap(x, y) && !blocked(s, x, y)) return { x, y };
+      if (inMap(x, y) && !blocked(s, x, y) && !stationAt(s, x, y)) return { x, y };
     }
     return freeNear(s, f.x + 0.5, f.y + 2);
   }

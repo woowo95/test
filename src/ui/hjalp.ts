@@ -44,10 +44,15 @@ export const condBar = (c: number) => bar(c, c < LAG.skick ? 'low' : '');
 const oppna = new Set<string>();
 export const hjalpKnapp = (id: string, title: string) => `<button type="button" class="hjalp" data-hjalp="${id}" aria-expanded="${oppna.has(id)}" title="${esc(title)}" aria-label="${esc(title)}">?</button>`;
 export const hjalpText = (id: string, html: string) => oppna.has(id) ? html : '';
+export const hjalpOppen = (id: string) => oppna.has(id);
+// data-hjalp-grupp: bara en i gruppen är öppen åt gången (de vars id börjar likadant, t.ex. kroppens delar)
 export function hjalpKlick(el: HTMLElement) {
   const b = el.closest<HTMLElement>('[data-hjalp]');
   if (!b) return false;
-  if (!oppna.delete(b.dataset.hjalp!)) oppna.add(b.dataset.hjalp!);
+  const id = b.dataset.hjalp!, g = b.dataset.hjalpGrupp;
+  if (oppna.delete(id)) return true;
+  if (g) for (const x of oppna) if (x.startsWith(g)) oppna.delete(x);
+  oppna.add(id);
   return true;
 }
 // pil vid en stapel som ändras märkbart just nu: jämför med värdet för en stund sedan (speltid). Gränsen är per stapel och
