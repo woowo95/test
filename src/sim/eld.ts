@@ -18,6 +18,7 @@ import { SNABBARE } from './handlingar';
 import { Act, DAY, Fire, FireLog, GREN, HEARTHS, HOUR, HOUR_S, IGNITERS, Person, SEC, State, Task } from './typer';
 import { balans } from './balans';
 import { num } from './format';
+import { brasaHeat, brasaSten, stepBrasaEld } from './brasor';
 
 // ---------- balanstal (regel 8) ----------
 // Elden: hur stark den är, vad var och en vill ha på den, hur den tänds och fylls på, och hur tändmaterial, stenar och flinta
@@ -89,21 +90,26 @@ export function takeFuel(s: State, n: number, p?: Person, ag?: Del, fran?: Perso
   return v + g * GREN;
 }
 // bränsle som inte fick plats går tillbaka till förrådet som grenar
-const giveBack = (s: State, n: number) => { if (n > 0) addTo(s, 'grenar', n / GREN); };
+export const giveBack = (s: State, n: number) => { if (n > 0) addTo(s, 'grenar', n / GREN); };
 function fireLog(s: State, e: Omit<FireLog, 't'>) { s.fire.log.push({ t: s.now, ...e }); if (s.fire.log.length > 80) s.fire.log.splice(0, s.fire.log.length - 80); }
 export const emberOn = (s: State) => !s.fire.lit && s.fire.emberUntil !== undefined && s.fire.emberUntil > s.now;
-// eldens styrka 0–1 efter hur mycket ved som brinner
-export function fireHeat(s: State) { const f = s.fire; return f.lit ? clamp(f.fuel / hearthOf(f).maxFuel * ELD.styrkaFaktor, ELD.styrkaMin, 1) : 0; }
-export function heatRadius(s: State) { return hearthOf(s.fire).radius * (ELD.radieMin + ELD.radieStyrka * fireHeat(s)); }
+// eldens styrka 0–1 efter hur mycket ved som brinner (lägerelden, och brasorna med samma eldstad: brasor.ts)
+export const eldStyrka = (fuel: number, h = HEARTHS[0]) => clamp(fuel / h.maxFuel * ELD.styrkaFaktor, ELD.styrkaMin, 1);
+export function fireHeat(s: State) { const f = s.fire; return f.lit ? eldStyrka(f.fuel, hearthOf(f)) : 0; }
+// hur långt värmen når från en eld med styrkan I
+export const radieAv = (s: State, I: number) => hearthOf(s.fire).radius * (ELD.radieMin + ELD.radieStyrka * I);
+export function heatRadius(s: State) { return radieAv(s, fireHeat(s)); }
+const varmeFran = (I: number, r: number, fx: number, fy: number, x: number, y: number) => { const d = Math.hypot(x - fx, y - fy); return d >= r ? 0 : I * (1 - d / r); };
+// värmen på platsen: från den eld som värmer mest där, lägerelden eller en brasa (steg 2.9.1)
 export function heatAt(s: State, x: number, y: number) {
-  const I = fireHeat(s); if (!I) return 0;
-  const m = getMap(s.seed), r = heatRadius(s);
-  const d = Math.hypot(x - (m.fire.x + 0.5), y - (m.fire.y + 0.5));
-  return d >= r ? 0 : I * (1 - d / r);
+  const I = fireHeat(s), m = getMap(s.seed);
+  let v = I ? varmeFran(I, heatRadius(s), m.fire.x + 0.5, m.fire.y + 0.5, x, y) : 0;
+  if (s.stationer?.length) for (const t of s.stationer) if (t.eld?.lit) { const J = brasaHeat(t); v = Math.max(v, varmeFran(J, radieAv(s, J), t.x + 0.5, t.y + 0.5, x, y)); }
+  return v;
 }
 // hur mycket ved som önskas på elden just nu (den som vill ha mest)
 export const fireWant = (s: State) => s.fire.want ?? 0;
-interface Wish { v: number; why: string }
+export interface Wish { v: number; why: string }
 const relightHard = (s: State) => 1 - (igniterOf(s) ?? IGNITERS[0]).chance;
 // varje invånares egen önskan om ved på elden; vc = hur mycket byn fryser 0–1
 function fireWish(s: State, p: Person, vc: number): Wish {
@@ -122,8 +128,8 @@ function fireWish(s: State, p: Person, vc: number): Wish {
 const tinderWant = (s: State) => (s.fire.lit ? RESERV.tandVill : RESERV.tandVillSlocknad);
 // hö eller grenar räcker inte till det byn vill ha, med det den som samlar redan bär (tk)
 export const tinderShort = (s: State, tk?: Task) => amountOf(s, 'torrgras') + (tk?.items?.torrgras ?? 0) < tinderWant(s) || amountOf(s, 'grenar') + (tk?.items?.grenar ?? 0) < tinderWant(s);
-// den första elden läggs i en ring av stenar; ringen ligger kvar när elden slocknat
-export const needStones = (s: State) => !s.fire.ring && amountOf(s, 'sten') < ELD.ring;
+// den första elden läggs i en ring av stenar; ringen ligger kvar när elden slocknat. Stenar behövs också till en brasa (brasor.ts)
+export const needStones = (s: State) => !s.fire.ring && amountOf(s, 'sten') < ELD.ring || brasaSten(s);
 // kan elden tändas (av p: med det p kan få, behov.ts)? Bränslet räknas efter att grenarna till tändningen tagits (tryLight)
 export function canLight(s: State, p?: Person) {
   const ig = igniterOf(s), has = (k: string) => p ? getable(s, p, k) : amountOf(s, k);
@@ -257,6 +263,7 @@ export function stepFire(s: State, dtSec: number, ppl: Person[]) {
     }
     if (c) assign(s, c.p, 'tanda', m.fire.x + 0.5 + (rnd(s, 'eld') - 0.5) * 1.2, m.fire.y + 1.3, ELD.tandTim * HOUR, `Vill ha eld. ${c.w.why}`);
   }
+  stepBrasaEld(s, dtSec, cands); // brasorna (steg 2.9.1)
 }
 // samling hittar tändmaterial, sten och flinta när förrådet behöver det
 export function forageItems(s: State, p: Person, dtSec: number): Record<string, number> | undefined {

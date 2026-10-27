@@ -34,6 +34,7 @@ import { migrate } from './varld';
 import { stepDelning } from './delning';
 import { balans } from './balans';
 import { grilla, torka } from './matlagning';
+import { addFuelBrasa, brasaFor, stepBrasor } from './brasor';
 import { sjoRakna } from './sjo';
 import { akel, toaBesok } from './smuts';
 import { DRICKA_ACTS, TORST, drick, torstSteg } from './torst';
@@ -136,7 +137,7 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
   if (Math.floor(now / HOUR) !== Math.floor((now - dtSec * SEC) / HOUR)) {
     stepSeder(s); updateTags(s); stepDelning(s);
     growGround(s, 1, ai); growFynd(s, 1, ai); forget(s, 1); rotStumps(s); tidyStore(s);
-    wearBuild(s, 1, ai); stepByggnader(s); planBuild(s); stepPaborjat(s); stepStationer(s); stepKlader(s);
+    wearBuild(s, 1, ai); stepByggnader(s); planBuild(s); stepPaborjat(s); stepStationer(s); stepBrasor(s); stepKlader(s);
     historikSteg(s); // nyckeltalen till byns historik (läses inte av simuleringen)
     compact(s); // här och inte i sparningen, så att alla lägen städar vid samma tid
   }
@@ -383,14 +384,16 @@ function arrive(s: State, p: Person, tk: Task, light: boolean) {
   if (tk.act === 'elda') {
     if (tk.phase === 'go') {
       // vid förrådet: ta en famn ved och gå till elden. Byns och sin egen, eller den andras (stöld i yttersta nöd, behov.ts)
-      const fran = byId(s, tk.fran);
-      const m = getMap(s.seed), n = s.fire.fuel >= fireWant(s) ? 0 : Math.min(1, fuelFor(s, p, fran)); // en famn i taget, så att elden matas oftare
+      // till en brasa (task.ref, brasor.ts) eller lägerelden
+      const fran = byId(s, tk.fran), br = brasaFor(s, tk.ref), e = br?.eld;
+      const m = getMap(s.seed), n = tk.ref !== undefined ? (!e || e.lit && e.fuel >= (e.want ?? 0) ? 0 : Math.min(1, fuelFor(s, p, fran))) : s.fire.fuel >= fireWant(s) ? 0 : Math.min(1, fuelFor(s, p, fran)); // en famn i taget, så att elden matas oftare
       if (n <= 0) p.task = undefined;
       else {
-        tk.ag = { ved: {} }; tk.carry = takeFuel(s, n, p, tk.ag.ved, fran); tk.phase = 'back'; tk.tx = m.fire.x + 0.5 + sida(p, 0.6); tk.ty = m.fire.y + 1.2;
+        const at = br ?? m.fire;
+        tk.ag = { ved: {} }; tk.carry = takeFuel(s, n, p, tk.ag.ved, fran); tk.phase = 'back'; tk.tx = at.x + 0.5 + sida(p, 0.6); tk.ty = at.y + 1.2;
         if (fran) stole(s, p, fran, VED.id, tk.carry); else if ((tk.ag.ved[p.id] ?? 0) > 1e-9) noticeTheft(s, p, VED.id);
       }
-    } else { addFuel(s, p, tk.carry); tk.carry = 0; p.task = undefined; }
+    } else { if (tk.ref !== undefined) addFuelBrasa(s, p, tk.ref, tk.carry); else addFuel(s, p, tk.carry); tk.carry = 0; p.task = undefined; }
   } else if (tk.act === 'bygga' && tk.phase === 'go' && tk.site) {
     // vid lagret: ta materialet och gå till bygget
     const b = bitById(s, tk.ref), k = b && MATERIAL[b.m].item, n = b ? needOf(b) : 0;

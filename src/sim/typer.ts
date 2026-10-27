@@ -187,6 +187,7 @@ export interface State {
   stat?: Record<string, number>; // räknare: svamp, fiskeförsök, napp, fångst med mera
   sjoar?: Record<number, import('./sjo').SjoStat>; // fiske och bad per sjö (sjo.ts)
   stationer?: import('./stationer').Station[]; nextStation?: number; // arbetsstationerna, som slaktbänken (stationer.ts)
+  brasa?: { vill: number; x: number; y: number }; // byn vill ha en brasa (0 till 1) nära mitten av sovplatserna x, y (brasor.ts, räknas varje timme)
   flackar?: import('./smuts').Flack[]; // fläckar på marken som bleknar: blodet vid slaktbänken (bara utseende) och toa-smutsen (smuts.ts)
   hygien?: number; // hur mycket byn vet om att toa-smutsen gör vattnet sjukt (0–1, smuts.ts, steg 2.7.2)
 }

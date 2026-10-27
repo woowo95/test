@@ -1,4 +1,4 @@
-import { ACTS, DJURARTER, MIN, bordPlatser, pilesOf, living, TEKNIK, TILLBEHOR_LIST, byId, isKlar, sakNamn, slagIkon, stationById, stationDef, tillbehorDef, tingOf, timeLabel, isTool, FLACKAR, smutsVid, TORK, torrDel } from '../../sim';
+import { ACTS, DJURARTER, MIN, bordPlatser, pilesOf, living, TEKNIK, TILLBEHOR_LIST, byId, isKlar, sakNamn, slagIkon, stationById, stationDef, tillbehorDef, tingOf, timeLabel, isTool, FLACKAR, smutsVid, TORK, torrDel, BRASA } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { sakAttr } from './sak';
 import { condBar, esc, fmtN, pLink } from '../hjalp';
@@ -51,15 +51,20 @@ export const station: Flik = {
     // det som hänger på torkställningen (steg 2.8.2): råvaran, hur mycket och hur långt torkningen kommit
     const hanger = (st.tork ?? []).map(q => `<span ${tip(`${fmtN(q.n)} ${sakNamn(q.k).toLowerCase()}, torkat till ${Math.round(torrDel(s, q) * 100)} % av ${TORK.dygn} dygn`)}>${iconImg(q.k)} ${Math.round(torrDel(s, q) * 100)} %</span>`).join(' ');
     const fyllt = (hanger ? `<p>${hanger}</p>` : '') + (d.gor.includes('toa') && klar ? `<p ${tip(`Fylld till ${Math.round((st.fyllt ?? 0) * 100)} %. När den är full fylls den igen med jord, och byn gräver en ny`)}>${iconImg('latrin')} ${Math.round((st.fyllt ?? 0) * 100)} %</p>` : '');
+    // brasan (steg 2.9.1): elden i den och de som sover närmast den
+    const be = d.brasa && klar ? st.eld : undefined, bfolk = (be?.folk ?? []).map(id => byId(s, id)).filter(p => p);
+    const brasa = d.brasa && klar ? `<h3>Eld</h3><p ${tip(be?.lit ? `Brinner, ${fmtN(be.fuel)} timmar ved kvar` : 'Släckt. Den tänds med en brand från lägerelden')}>${iconImg('brasa')} ${be?.lit ? `🔥 ${fmtN(be.fuel)} h` : '<span class="muted">släckt</span>'}</p>`
+      + `<p ${tip(`De som sover närmast den. När ingen gör det och den är släckt tas den isär efter ${BRASA.tomDygn} dygn, och stenarna läggs i en hög`)}>${bfolk.length ? bfolk.map(p => pLink(p)).join(' ') : '<span class="muted">ingen sover nära</span>'}</p>` : '';
     const av = Object.entries(d.av).map(([k, n]) => `<span ${tip(`${fmtN(n)} ${sakNamn(k).toLowerCase()}`)}>${iconImg(k)}${fmtN(n)}</span>`).join(' ');
     return `
     <div class="phead"><div><h2>${iconImg(d.ikon, 20)} ${esc(d.namn)}</h2><p class="muted">${status} ${st.inne ? 'Står inne.' : d.inne ? 'Står ute, men bärs in när ett hus har plats.' : 'Står ute.'}</p>${smuts ? `<p>${smuts}</p>` : ''}${fyllt}${vem.length ? `<p class="muted">Byggd av ${vem.map(p => pLink(p)).join(', ')}.</p>` : ''}</div></div>
     ${d.gor.length ? `<h3>Här görs</h3><dl class="kv">${d.gor.map(a => gorRad(a, !!d.bara?.includes(a))).join('')}</dl>` : ''}
     ${d.sover ? `<h3>Sovplats</h3><p class="muted">En sovplats. Den som sover här vilar upp sig fortare.</p>` : ''}
     ${d.platser ? `<h3>Platser</h3><p ${tip('Här äter man tillsammans och blir glad av det, och här samtalar man')}>${stubbar || `<span class="muted">${bordPlatser(st).length} stubbar när bordet är klart</span>`}</p>` : ''}
+    ${brasa}
     ${tb ? `<h3>Tillbehör</h3><dl class="kv">${tb}</dl>` : ''}
     ${d.forvar ? `<h3>Förvaring</h3><p>${inne || '<span class="muted">tom</span>'}</p><p class="muted">${forvar}</p>` : ''}
     ${platser ? `<h3>Redskap</h3><dl class="kv">${platser}</dl>` : ''}
-    <h3>Material</h3><p ${tip(`${d.min} minuters arbete. Kräver ${d.tek.length > 1 ? 'någon av teknikerna' : 'tekniken'} ${d.tek.map(k => TEKNIK.find(q => q.id === k)?.namn ?? k).join(' eller ')}`)}>${av} <span class="muted">· ${d.min} min</span></p>`;
+    <h3>Material</h3><p ${tip(`${d.min} minuters arbete. ${d.tek.length ? `Kräver ${d.tek.length > 1 ? 'någon av teknikerna' : 'tekniken'} ${d.tek.map(k => TEKNIK.find(q => q.id === k)?.namn ?? k).join(' eller ')}` : 'Kräver ingen teknik'}`)}>${av} <span class="muted">· ${d.min} min</span></p>`;
   },
 };

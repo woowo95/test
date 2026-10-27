@@ -10,6 +10,7 @@ export * from './sim/folk';
 export * from './sim/tid';
 export * from './sim/varld';
 export * from './sim/matlagning';
+export * from './sim/brasor';
 export * from './sim/historik';
 export * from './sim/ekonomi';
 export * from './sim/eld';

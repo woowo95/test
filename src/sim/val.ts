@@ -29,6 +29,7 @@ import { drickVal, torstig, tortarFarligt } from './torst';
 import { forSmutsigt, latrinFor } from './smuts';
 import { bordenOf, ledigPlats, sittAt, stationFor, storlekAv, vidStation } from './stationer';
 import { grillTid, kanGrilla, kanTorka, torkTid } from './matlagning';
+import { egenBrasa } from './brasor';
 
 // ---------- val av aktivitet ----------
 // Balanstalen (regel 8): vikter, chanser, avstånd och hur länge ett pass varar. Kroppens gränser (KROPP) och åldrarna (ALDER)
@@ -134,8 +135,8 @@ export function skuggaNara(s: State, p: Person, x0: number, y0: number): { x: nu
 }
 // var en handling görs, efter platsen i handlingar.ts
 export function spotFor(s: State, act: Act, p: Person): { x: number; y: number } {
-  const m = getMap(s.seed);
-  const f = m.fire, d = ACTS[act], plats = d.plats ?? 'skog';
+  const m = getMap(s.seed), d = ACTS[act], plats = d.plats ?? 'skog';
+  const f = plats === 'elden' ? egenBrasa(s, p) ?? m.fire : m.fire; // vid elden: vid den brinnande brasa man hör till (steg 2.9.1), annars lägerelden
   if (plats === 'skugga') return iSkugga(s, p.x, p.y) ? { x: p.x, y: p.y } : skuggaNara(s, p, p.x, p.y) ?? { x: p.x, y: p.y };
   // den som är för varm i solen vilar och gör handarbete i skuggan nära elden i stället (steg 2.3.13)
   if ((plats === 'elden' && d.hantverk || plats === 'sang' && act === 'vila') && forVarmISol(s, p)) {
@@ -515,6 +516,7 @@ function projektVal(v: Val, u: Uppgift, why: string) {
   if (u.min) v.dur = u.min * MIN;
   if (u.tool) v.tool = u.tool;
   if (u.spot) v.spot = u.spot;
+  if (u.sok) v.sok = true;
 }
 
 // egen lust: vila, hantverk, umgänge, promenad, bad eller att sitta vid stranden. u = hur akut byn behöver arbete

@@ -36,6 +36,9 @@ const PAL: Record<string, Record<string, string>> = {
   latrin_karta: { o: '#8a6a40', O: '#b08a58', d: '#4a3018', k: '#24160a' },
   // grillställningen och den grillade maten (steg 2.8.1; Björn valde 1b för kartan): platshållare för symbolerna
   grill: { w: '#5a3a1e', W: '#8b5a2b', L: '#b07a45', O: '#d0aa70', q: '#5e4226', D: '#2a1c12', f: '#e8862a', F: '#f6c24a' },
+  // brasan (steg 2.9.1): platshållare, en liten ring av stenar med ved och eld
+  brasa: { g: '#8a8f94', G: '#5e6266', w: '#5a3a1e', f: '#e8862a', F: '#f6c24a' },
+  brasa_karta: { g: '#8a8f94', G: '#5e6266', w: '#5a3a1e', x: 'rgba(0,0,0,.25)' },
   grill_karta: { w: '#5a3a1e', W: '#8b5a2b', L: '#b07a45', O: '#d0aa70', q: '#5e4226', D: '#2a1c12', x: 'rgba(0,0,0,.30)' },
   grillfisk: { p: '#b8683e', P: '#d8945e', w: '#f0d2a0', s: '#6e3418' },
   grillkott: { r: '#6e2c18', R: '#a85a32', w: '#e8d2a8' },
@@ -644,6 +647,28 @@ const PIX: Record<string, string[]> = {
     'odkkkkdo',
     '.oddddo.',
     '..oooo..',
+    '........',
+  ],
+  // brasan: en ring av stenar med ved och eld (platshållare)
+  brasa: [
+    '........',
+    '...F....',
+    '..fFf...',
+    '.gfFfG..',
+    'GwwfwwgG',
+    'g.wwww.g',
+    '.GgGgGg.',
+    '........',
+  ],
+  // kartbilden: ringen av stenar, elden ritas ovanpå när brasan brinner (foremal.ts)
+  brasa_karta: [
+    '..gGg...',
+    '.G...gG.',
+    'g.....G.',
+    'G..w..g.',
+    'g.w.w.G.',
+    '.G...gx.',
+    '..gGgx..',
     '........',
   ],
   // grillställningen: två klykor med ett spett emellan över elden

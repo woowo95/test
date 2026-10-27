@@ -1,7 +1,7 @@
 import { Act, H, MIN, Person, SEC, State, T, Task, W } from './typer';
 import { getMap } from './karta';
 import { knows } from './teknik';
-import { count, doingAct, forstaGang, living, log } from './folk';
+import { ALDER, ageOf, count, doingAct, forstaGang, living, log } from './folk';
 import { getable, takeMaterial } from './behov';
 import { RESERV } from './ekonomi';
 import { Ting, freeTools, tingOf, wearTool } from './agande';
@@ -15,6 +15,7 @@ import { ACTS } from './handlingar';
 import { SAKER, isTool } from './saker';
 import { groundOf, tileOf } from './mark';
 import { FOREST } from './vag';
+import { BrasaEld, brasaMal } from './brasor';
 
 // ---------- arbetsstationer och möbler (steg 2.2.3, 2.2.5) ----------
 // En station är en plats i byn där ett visst arbete görs: vid slaktbänken slaktas viltet och fisken rensas, vid slöjdbänken
@@ -84,6 +85,10 @@ export const STATION = balans('station', {
   grillGrenar: 3, grillRep: 1, grillMin: 15, // så många grenar och rep och så många minuters arbete
   // torkställningen (steg 2.8.2, matlagning.ts): två A av grenar och en slå, surrade med rep
   torkGrenar: 5, torkRep: 1, torkMin: 20, // så många grenar och rep och så många minuters arbete
+  // brasan (steg 2.9.1, brasor.ts): en ring av stenar för en extra eld
+  brasaSten: 6, brasaMin: 15, // så många stenar (som lägereldens ring) och så många minuters arbete
+  brasaFran: 2.5, // brasan ligger helst så här många rutor från mitten av sovplatserna den är till för ...
+  brasaSok: 4, // ... och högst så här många rutor därifrån
 });
 // trä till ett bord som tar w × h rutor, med stubbar på platserna runt det (platserAv nedan)
 const bordTra = (w: number, h: number) => w * h * STATION.bordTra + ((w >= 2 ? 2 * w : 0) + (h >= 2 ? 2 * h : 0)) * STATION.stubbeTra;
@@ -96,8 +101,9 @@ const bordTra = (w: number, h: number) => w * h * STATION.bordTra + ((w >= 2 ? 2
 // det (steg 2.2.15), verktyg = redskapet man bygger den med (benspaden till latrinen, steg 2.7.2), utkant = står i byns utkant
 // (latrinen, siteUtkant nedan), eld = står över elden, med elden i mitten, och används bara när den brinner (grillen, steg 2.8.1), forvar = förvaring som står i en lagerplats (steg 2.3.6): rymmer så många högar av ett slag (gånger en
 // rutas stack) eller, för redskap, så många redskap; tak = det som ligger där slits som under tak
+// brasa = en extra eld (steg 2.9.1, brasor.ts): står nära sovplatserna den är till för (siteBrasa), och alla vuxna kan bygga den (tek är tom: den som är gammal nog att ta ansvar, ALDER.ansvar)
 export interface Forvar { rymmer: number; redskap?: true; tak?: true }
-export interface StationDef { namn: string; ikon: string; w: number; h: number; tek: string[]; av: Record<string, number>; min: number; gor: Act[]; bara?: Act[]; vid?: Record<string, number>; verktyg?: string; utkant?: true; eld?: true; kraver?: Partial<Record<Act, string>>; smutsar?: Partial<Record<Act, string>>; bygger: string; forsta: string; inne?: true; mobel?: true; flera?: true; sover?: true; sitt?: true; platser?: true; forvar?: Forvar }
+export interface StationDef { namn: string; ikon: string; w: number; h: number; tek: string[]; av: Record<string, number>; min: number; gor: Act[]; bara?: Act[]; vid?: Record<string, number>; verktyg?: string; utkant?: true; eld?: true; kraver?: Partial<Record<Act, string>>; smutsar?: Partial<Record<Act, string>>; bygger: string; forsta: string; inne?: true; mobel?: true; flera?: true; brasa?: true; sover?: true; sitt?: true; platser?: true; forvar?: Forvar }
 export const STATIONER = {
   slaktbank: {
     namn: 'Slaktbänk', ikon: 'slaktbank', w: 3, h: 1, tek: ['slaktbank'], av: { ved: STATION.slaktbankTra }, min: STATION.slaktbankMin, gor: ['slakta', 'rensa'], bara: ['slakta', 'rensa'], vid: { kniv: STATION.knivplatser }, smutsar: { slakta: 'blod' }, // blir blodig när det slaktas (FLACKAR i smuts.ts)
@@ -164,6 +170,12 @@ export const STATIONER = {
     bygger: 'Sätter upp en torkställning av grenar och rep.',
     forsta: '{namn} satte upp byns första torkställning. Där torkar köttet och fisken som byn inte hinner äta, och det torkade håller länge.',
   },
+  // brasan (steg 2.9.1, brasor.ts): en ring av stenar där en extra eld brinner, nära hyddorna som ligger långt från lägerelden
+  brasa: {
+    namn: 'Brasa', ikon: 'brasa', w: 1, h: 1, tek: [], av: { sten: STATION.brasaSten }, min: STATION.brasaMin, gor: [], flera: true, brasa: true,
+    bygger: 'Lägger en ring av stenar till en brasa nära sovplatserna.',
+    forsta: '{namn} lade en ring av stenar till byns första brasa, långt från lägerelden och nära sovplatserna.',
+  },
 } satisfies Record<string, StationDef>;
 export type StationSlag = keyof typeof STATIONER;
 export const STATION_LIST = Object.keys(STATIONER) as StationSlag[];
@@ -174,7 +186,8 @@ export const stationDef = (k: string): StationDef | undefined => (STATIONER as R
 // rot = vriden (bredd och djup byter plats), inne = byggd inne i ett hus (den försvinner om huset rivs)
 // med = tillbehören som ligger i den (TILLBEHOR, t.ex. skinnfällen i bädden), fyllt = hur full latrinen är (0–1, smuts.ts)
 // tork = det som hänger på torkställningen (matlagning.ts): råvaran, hur mycket, när det hängdes upp och vems det är
-export interface Station { id: number; k: string; x: number; y: number; kvar: number; vem?: number[]; klar?: number; rot?: 1; inne?: 1; med?: string[]; fyllt?: number; tork?: { k: string; n: number; t: number; ag?: Record<string, number> }[] }
+// eld = brasans eld (steg 2.9.1, brasor.ts)
+export interface Station { id: number; k: string; x: number; y: number; kvar: number; vem?: number[]; klar?: number; rot?: 1; inne?: 1; med?: string[]; fyllt?: number; tork?: { k: string; n: number; t: number; ag?: Record<string, number> }[]; eld?: BrasaEld }
 const NONE: Station[] = [];
 export const stationerOf = (s: State) => s.stationer ?? NONE;
 export const stationById = (s: State, id?: number) => id === undefined ? undefined : stationerOf(s).find(t => t.id === id);
@@ -234,7 +247,7 @@ function ledig(s: State, x: number, y: number) {
   return !((s.stackar ?? []).some(a => a.x === x && a.y === y) || tingOf(s).some(k => k.x === x && k.y === y) || (s.stockar ?? []).some(k => Math.floor(k.x) === x && Math.floor(k.y) === y) || (s.stubbar ?? []).some(k => k.x === x && k.y === y));
 }
 // platsen för en station av sorten k: inne i ett hus om registret säger det, annars nära elden. Samma plats varje gång (ingen slump)
-export const stationSite = (s: State, k: string) => stationDef(k)?.eld ? siteEld(s) : stationDef(k)?.forvar ? siteForvar(s, k) : stationDef(k)?.utkant ? siteUtkant(s, k) : stationDef(k)?.inne ? siteInne(s, k) : siteUte(s, k);
+export const stationSite = (s: State, k: string) => stationDef(k)?.brasa ? siteBrasa(s) : stationDef(k)?.eld ? siteEld(s) : stationDef(k)?.forvar ? siteForvar(s, k) : stationDef(k)?.utkant ? siteUtkant(s, k) : stationDef(k)?.inne ? siteInne(s, k) : siteUte(s, k);
 // i byns utkant (latrinen): en ledig ruta på gräs, sand eller i glesare skog, latrinFran–latrinTill rutor från byns läger, helst
 // latrinAvst, inte i lekplatsen söder om elden, och när byn lärt sig det (s.hygien) långt från vattnet
 function siteUtkant(s: State, _k: string) {
@@ -248,6 +261,21 @@ function siteUtkant(s: State, _k: string) {
     const lek = Math.abs(dx) <= PLATS.lekBredd / 2 && dy >= PLATS.lekFran - 1 ? STATION.norr * 4 : 0;
     const vatten = s.hygien ? s.hygien * STATION.latrinVattenPoang * Math.max(0, STATION.latrinVatten - tillVatten(s, x, y, STATION.latrinVatten)) : 0;
     const sc = Math.abs(d - STATION.latrinAvst) + lek + vatten;
+    if (sc < bs) { bs = sc; best = { x, y }; }
+  }
+  return best;
+}
+// brasan (steg 2.9.1): en ledig ruta ute (inte i ett hus) nära mitten av sovplatserna den är till för (brasaMal i brasor.ts),
+// helst brasaFran rutor därifrån, så att den inte står i dörren
+function siteBrasa(s: State) {
+  const mal = brasaMal(s);
+  if (!mal) return undefined;
+  const R = STATION.brasaSok, cx = Math.floor(mal.x), cy = Math.floor(mal.y);
+  let best: { x: number; y: number; rot?: 1 } | undefined, bs = Infinity;
+  for (let dy = -R; dy <= R; dy++) for (let dx = -R; dx <= R; dx++) {
+    const x = cx + dx, y = cy + dy, d = Math.hypot(x + 0.5 - mal.x, y + 0.5 - mal.y);
+    if (d > R || x < 1 || y < 1 || x >= W - 1 || y >= H - 1 || roomAt(s, x, y) || !ledig(s, x, y)) continue;
+    const sc = Math.abs(d - STATION.brasaFran);
     if (sc < bs) { bs = sc; best = { x, y }; }
   }
   return best;
@@ -419,14 +447,14 @@ export const stationRum = (s: State, t: Station): Rum | undefined => t.inne ? ro
 // ---------- att bygga en station ----------
 const sparas = (k: string) => k === 'ved' ? RESERV.ved : k === 'grenar' ? RESERV.grenar : k === 'torrgras' ? RESERV.torrgras : 0;
 const halvbyggd = (s: State, k: string) => stationerOf(s).find(t => t.k === k && !isKlar(t));
-// den station p vill bygga: p kan någon av teknikerna, byn har ingen färdig av slaget, ingen annan bygger en, och den är påbörjad
+// den station p vill bygga: p kan någon av teknikerna (brasan kräver ingen, bara att man är minst ALDER.ansvar), byn har ingen färdig av slaget, ingen annan bygger en, och den är påbörjad
 // eller p kan få tag i materialet utan att ta det som sparas till elden
 export const stationAttBygga = (s: State, p: Person): StationSlag | undefined => STATION_LIST.find(k => kanBygga(s, p, k));
 // p kan bygga (eller bygga vidare på) en station av sorten k som byn saknar (det byn kan ha flera av: om projektet säger att byn
 // saknar fler, projekt.ts)
 export function kanBygga(s: State, p: Person, k: StationSlag) {
   const d: StationDef = STATIONER[k];
-  if (doingAct(s, 'station', p) || !d.tek.some(k => knows(p, k)) || !d.flera && harStation(s, k) || d.verktyg && !freeTools(s, p, d.verktyg)) return false;
+  if (doingAct(s, 'station', p) || (d.brasa ? ageOf(p, s.now) < ALDER.ansvar : !d.tek.some(k => knows(p, k))) || !d.flera && harStation(s, k) || d.verktyg && !freeTools(s, p, d.verktyg)) return false;
   return !!halvbyggd(s, k) || Object.entries(d.av).every(([m, n]) => getable(s, p, m) >= n + sparas(m)) && !!stationSite(s, k);
 }
 // byn har en färdig station av sorten k

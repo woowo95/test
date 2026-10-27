@@ -72,6 +72,7 @@ SCENARIER.yxa = {
 
 SCENARIER['vinter-slocknad'] = {
   text: 'Istiden börjar med slocknad eld, kolhög och lite grenar: byn tänder igen på kolhögen',
+  lang: true,
   kor: () => {
     // flintan lyckas bara ibland (några procent per försök), så provet körs i fem byar och minst två ska få fyr.
     // Kolonin grundas på hösten två dygn (två år i spelet) före istiden. Att i stället låta en ny koloni leva fram

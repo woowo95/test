@@ -1,4 +1,4 @@
-import { Act, DJUR, W, bordPlatser, sjoarna, stationById, GORS, MATERIAL, Pile, STATION, STUBBE_LIV, Station, bitAt, bitsOf, clamp, dorrDef, condOf, emberOn, fireHeat, getMap, grillVara, heatRadius, TORK, torrDel, isKlar, living, stationDef, stationKlar, stationerOf, storlekAv, tillbehorDef, tingOf, vidStation, zonesOf } from '../sim';
+import { Act, DJUR, brasaHeat, radieAv, W, bordPlatser, sjoarna, stationById, GORS, MATERIAL, Pile, STATION, STUBBE_LIV, Station, bitAt, bitsOf, clamp, dorrDef, condOf, emberOn, fireHeat, getMap, grillVara, heatRadius, TORK, torrDel, isKlar, living, stationDef, stationKlar, stationerOf, storlekAv, tillbehorDef, tingOf, vidStation, zonesOf } from '../sim';
 import { iconCanvas } from '../ikoner';
 import { ritaHus } from './husbild';
 import { outPilesAt, piles, s, ui } from './lage';
@@ -62,6 +62,14 @@ function hangande(st: Station, x0: number, y0: number) {
     }
   }
 }
+// brasan (steg 2.9.1, platshållare): lågor som lägerelden när den brinner, värmen när eldens flik är öppen
+function brasaBild(st: Station, t: number, flik: boolean) {
+  const I = brasaHeat(st), cx = st.x * TS + TS / 2, cy = st.y * TS + TS / 2, fl = 1 + Math.sin(t / 130 + st.id) * 0.12 + Math.sin(t / 47) * 0.08;
+  if (!I) return;
+  if (flik) overG.beginFill(0xff9a4a, 0.1).lineStyle(1, 0xffb070, 0.5).drawCircle(cx, cy, radieAv(s, I) * TS).endFill().lineStyle(0);
+  overG.beginFill(0xe2702e).drawCircle(cx, cy, (1.8 + 2.4 * I) * fl).endFill();
+  overG.beginFill(0xffd36b).drawCircle(cx, cy - 0.5, (0.9 + 1.2 * I) * fl).endFill();
+}
 // en vit kant runt rutorna: där en ruta inte har en granne i mängden
 function kant(rutor: number[]) {
   const i = new Set(rutor);
@@ -95,6 +103,7 @@ export function drawStructures(t: number) {
     pileIcons.add(ik, x0, y0, 2, !!st.rot);
     if (!isKlar(st)) { framsteg(st.x * TS + w / 2, y0 + 3, stationKlar(st)); continue; }
     if (st.fyllt) overG.beginFill(0x24160a, 0.75 * clamp(st.fyllt, 0, 1)).drawEllipse(st.x * TS + TS / 2, st.y * TS + TS / 2 + 1, 5, 4).endFill(); // latrinen mörknar när den fylls (smuts.ts)
+    if (d?.brasa) brasaBild(st, t, tab === 'eld');
     if (d?.sitt) pileIcons.add('sittplats', st.x * TS + w / 2 - 4, (st.y + bh) * TS + 1, 1); // sittplatsen framför bänken
     for (const q of bordPlatser(st)) pileIcons.add('sittplats', q.x * TS + TS / 2 - 4, q.y * TS + TS / 2 - 4, 1); // stubbarna runt bordet
     for (const k of st.med ?? []) pileIcons.add(tillbehorDef(k)?.ikon + '_karta', x0, y0, 2, !!st.rot); // tillbehören i den (skinnfällen i bädden)

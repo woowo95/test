@@ -9,6 +9,7 @@ import { GORS, REDSKAP, harAv, makeTask, villAv, wantsRope, wantsTool } from './
 import { STATIONER, STATION_LIST, StationDef, StationSlag, TILLBEHOR, TILLBEHOR_LIST, TillbehorDef, TillbehorSlag, bordBrist, forvarBrist, harStation, kanBygga, kanGoraTillbehor, stationSpot, tillbehorSpot, tillbehorStationer, utanTillbehor } from './stationer';
 import { utanBadd } from './byggnader';
 import { latrinBrist } from './smuts';
+import { brasaBrist, brasaLeta, kanLetaBrasaSten } from './brasor';
 import { DORRAR, DORR_LIST, DorrDef, DorrSlag } from './byggnad';
 import { dorrOppningar, dorrSpot, kanHangaDorr, utanDorr } from './bygg';
 
@@ -28,6 +29,7 @@ export const PROJEKT_TAL = balans('projekt', {
   slaktbank: 1, flatarbank: 0.6, // ... varje station när byn saknar den
   grill: 0.8, // ... grillställningen (steg 2.8.1)
   tork: 0.6, // ... torkställningen (steg 2.8.2)
+  brasa: 1, // ... en brasa när fyra eller fler sover långt från elden (steg 2.9.1, brasor.ts)
   latrin: 0.8, // ... latrinen när byn inte har en som inte är nästan full (steg 2.7.2)
   halmbadd: 0.6, // ... halmbäddarna när alla som sover under tak saknar en
   skinnfall: 0.5, // ... skinnfällarna när alla halmbäddar saknar en
@@ -51,11 +53,12 @@ export const PROJEKT_BEHOV = {
   klader: { namn: 'Kläder mot kylan', ikon: 'skinnrock' },
   borda: { namn: 'Bära mer hem', ikon: 'balte' },
   halsa: { namn: 'Renlighet', ikon: 'latrin' }, // steg 2.7.2
+  eld: { namn: 'Värme nära sovplatsen', ikon: 'brasa' }, // steg 2.9.1
 } as const;
 export type ProjektBehov = keyof typeof PROJEKT_BEHOV;
 
 // det p gör: handlingen, texten, hur många minuter (annars valets vanliga), slaget (task.tool) och platsen
-export interface Uppgift { act: Act; text: string; min?: number; tool?: string; spot?: { x: number; y: number } }
+export interface Uppgift { act: Act; text: string; min?: number; tool?: string; spot?: { x: number; y: number }; sok?: true } // sok: letar vid stenarna
 // det som gör att något inte görs just nu: kyla = kylan är en fara, gras = hö som sparas till värmen (dangers i val.ts)
 export interface ProjektFara { kyla: boolean; gras: number }
 export interface ProjektDef {
@@ -85,11 +88,11 @@ const redskap = (g: string): ProjektDef => {
 const station = (k: StationSlag): ProjektDef => {
   const d: StationDef = STATIONER[k];
   return {
-    namn: d.namn, ikon: d.ikon, behov: k === 'slaktbank' ? 'slakt' : d.eld || d.gor.includes('torka') ? 'mat' : d.gor.includes('toa') ? 'halsa' : d.sover ? 'vila' : d.platser ? 'maltid' : d.forvar ? 'forvar' : 'hantverk', vikt: (PROJEKT_TAL as Record<string, number>)[k] ?? 1, act: 'station', slag: k,
-    brist: s => d.sover ? (living(s).length ? utanBadd(s) / living(s).length : 0) : d.platser ? bordBrist(s, k) : d.forvar ? forvarBrist(s, k) : d.gor.includes('toa') ? latrinBrist(s) : harStation(s, k) ? 0 : 1,
+    namn: d.namn, ikon: d.ikon, behov: d.brasa ? 'eld' : k === 'slaktbank' ? 'slakt' : d.eld || d.gor.includes('torka') ? 'mat' : d.gor.includes('toa') ? 'halsa' : d.sover ? 'vila' : d.platser ? 'maltid' : d.forvar ? 'forvar' : 'hantverk', vikt: (PROJEKT_TAL as Record<string, number>)[k] ?? 1, act: 'station', slag: k,
+    brist: s => d.brasa ? brasaBrist(s) : d.sover ? (living(s).length ? utanBadd(s) / living(s).length : 0) : d.platser ? bordBrist(s, k) : d.forvar ? forvarBrist(s, k) : d.gor.includes('toa') ? latrinBrist(s) : harStation(s, k) ? 0 : 1,
     kostnad: () => varuVarde(d.av, d.min / 60 * ARBETE),
-    kan: (s, p, f) => !f.kyla && kanBygga(s, p, k),
-    uppgift: s => { const sp = stationSpot(s, k); return sp ? { act: 'station', text: d.bygger, min: d.min, tool: k, spot: sp } : undefined; },
+    kan: (s, p, f) => !f.kyla && (kanBygga(s, p, k) || !!d.brasa && kanLetaBrasaSten(s, p)), // brasans stenar letas först (brasor.ts)
+    uppgift: (s, p) => { if (d.brasa && !kanBygga(s, p, k)) return brasaLeta(s, p); const sp = stationSpot(s, k); return sp ? { act: 'station', text: d.bygger, min: d.min, tool: k, spot: sp } : undefined; },
   };
 };
 // ett tillbehör av sorten k (steg 2.2.14): bristen är hur stor del av stationerna det hör till som saknar det

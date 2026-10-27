@@ -82,6 +82,7 @@ SCENARIER.djur = {
 
 SCENARIER.abborre = {
   text: 'Det som fångas är en hel abborre. Den rensas med händerna vid slaktbänken till fiskkött, som är det man äter; köttet är dens som ägde fisken. Innan byn har en bänk äts abborren som den är',
+  lang: true,
   kor: () => {
     const s = createState(1, START);
     klockan(s);
@@ -460,7 +461,7 @@ SCENARIER.stationsteknik = {
   kor: () => {
     const { STATIONER, STATION_LIST, TEK, kanBygga, thinkWhileWorking, knows, migrate, SPARVERSION } = SIM;
     // en storlek av en annan station (de större borden, steg 2.2.15) har den stationens teknik
-    const register = STATION_LIST.every(k => { const tk = STATIONER[k].tek[0]; return STATIONER[k].tek.length === 1 && !!TEK[tk] && (tk === k || (STATIONER as Record<string, SIM.StationDef>)[tk]?.tek[0] === tk); });
+    const register = STATION_LIST.every(k => { if ((STATIONER[k] as SIM.StationDef).brasa) return !STATIONER[k].tek.length; const tk = STATIONER[k].tek[0]; return STATIONER[k].tek.length === 1 && !!TEK[tk] && (tk === k || (STATIONER as Record<string, SIM.StationDef>)[tk]?.tek[0] === tk); });
     const ordning = TEK.slaktbank.krav.includes('kniv') && TEK.flatarbank.krav.includes('rep') && TEK.korg.krav.includes('flatarbank');
     // den som kan kniven men inte slaktbänken bygger ingen; när hen kommit på den kan hen
     const s = createState(1, START); klockan(s); tandEld(s); medHus(s);
@@ -489,7 +490,7 @@ SCENARIER.stationsteknik = {
     g.v = 4; migrate(g);
     const sparad = knows(gp, 'slaktbank') && !knows(gn, 'slaktbank') && g.v === SPARVERSION;
     return [
-      ['varje station är en teknik med samma namn, och tekniken är det som krävs för att bygga den', register],
+      ['varje station är en teknik med samma namn, och tekniken är det som krävs för att bygga den (brasan kräver ingen)', register],
       ['slaktbänken kommer efter kniven, slöjdbänken efter repet och korgen efter slöjdbänken', ordning],
       ['den som kan kniven och repet men inte stationerna bygger ingen; med teknikerna kan hen', utan && med],
       ['den som jagar med kniv och tvinnar rep kommer på slaktbänken och slöjdbänken', kommer],
@@ -899,6 +900,55 @@ SCENARIER.tork = {
       ['i frost ruttnar maten nästan inte', frost],
       ['torkställningen är en teknik efter repet', tekOk],
       [`i en by med tekniken sätts ställningen upp (efter ${h} timmar) och fisken hängs upp (${upphangt.toFixed(0)} på ett dygn)`, byggd && upphangt > 0],
+    ];
+  },
+};
+SCENARIER.brasa = {
+  text: 'Flera brasor (steg 2.9.1): när två eller fler sover långt från elden och det är kallt vill byn ha en brasa nära dem. Fattas stenarna letar en i taget efter dem vid stenarna; sedan byggs brasan av sex stenar. Den tänds med en brand från lägerelden och värmer dem som sover nära. En släckt brasa som ingen sover nära tas isär, och stenarna läggs i en hög som används igen',
+  env: { BALANS: 'brasa.langt=0,brasa.kyla=-99' }, // alla sovplatser räknas som långt från elden, och det är alltid kallt nog
+  kor: () => {
+    const { STATION, BRASA, stepBrasor, brasaSten, brasorOf, brasaHeat, heatAt, PROJEKT, dangers, isKlar, stationerOf } = SIM;
+    const b = createState(1, START); klockan(b); tandEld(b);
+    setMat(b, { bar: 80, fisk: 30 }); setAmount(b, 'ved', 200); setAmount(b, 'sten', 0);
+    // utan hus sover man vid elden: byn vill inte ha någon brasa
+    stepBrasor(b); const ingen = !b.brasa;
+    medHus(b);
+    stepBrasor(b);
+    const vill = (b.brasa?.vill ?? 0) > 0;
+    const vuxen = living(b).find(r => ageOf(r, b.now) >= 18)!, f = dangers(b);
+    const u0 = PROJEKT.brasa.uppgift(b, vuxen);
+    const leta = brasaSten(b) && PROJEKT.brasa.kan(b, vuxen, f) && u0?.act === 'samla' && !!u0.sok;
+    setAmount(b, 'sten', STATION.brasaSten);
+    const bygga = !brasaSten(b) && PROJEKT.brasa.uppgift(b, vuxen)?.act === 'station';
+    // i byn: brasan byggs och tänds
+    let h = 0, t = brasorOf(b)[0];
+    while (!(t && t.eld?.lit) && h < 96) { kor(b, 1); b.fire.lit = true; b.fire.fuel = Math.max(b.fire.fuel, 3); setAmount(b, 'ved', Math.max(amountOf(b, 'ved'), 150)); h++; t = brasorOf(b)[0]; }
+    const fire = getMap(b.seed).fire;
+    const byggd = !!t && isKlar(t), tand = !!t?.eld?.lit && ((b.stat?.brasaTand as number) ?? 0) > 0;
+    const flyttad = !!t && Math.hypot(t.x - fire.x, t.y - fire.y) >= STATION.brasaFran;
+    // värmen: vid brasan är det varmare än lägerelden ensam ger
+    let varm = false;
+    if (t?.eld?.lit) { const med = heatAt(b, t.x + 0.5, t.y + 1.5); t.eld.lit = undefined; const utan = heatAt(b, t.x + 0.5, t.y + 1.5); t.eld.lit = 1; varm = brasaHeat(t) > 0 && med > utan; }
+    // isär: en släckt brasa som ingen sover nära tas isär, och stenarna blir en hög
+    let isar = false, hog = false, ateranv = false;
+    if (t) {
+      t.eld!.lit = undefined; t.eld!.fuel = 0; t.eld!.ut = b.now - (BRASA.tomDygn * DAY + HOUR);
+      t.x = 1; t.y = 1; // ingen sover närmast den här
+      setAmount(b, 'sten', 0);
+      stepBrasor(b);
+      isar = !stationerOf(b).includes(t) && ((b.stat?.brasaIsar as number) ?? 0) > 0;
+      hog = (b.stackar ?? []).some(a => a.k === 'sten' && a.x === 1 && a.y === 1 && a.n >= STATION.brasaSten);
+      ateranv = !!b.brasa && !brasaSten(b); // stenarna i högen räcker till nästa brasa: ingen behöver leta
+    }
+    return [
+      ['utan hus sover man vid elden, och byn vill inte ha någon brasa', ingen],
+      ['de sover långt bort och det är kallt: byn vill ha en brasa', vill],
+      ['utan stenar letar en vuxen efter dem vid stenarna', leta],
+      ['med sex stenar byggs brasan i stället', bygga],
+      [`brasan byggs (efter ${h} timmar) en bit från lägerelden och tänds med en brand från den`, byggd && flyttad && tand],
+      ['vid den brinnande brasan är det varmare än lägerelden ensam ger', varm],
+      ['en släckt brasa som ingen sover nära tas isär, och stenarna läggs i en hög', isar && hog],
+      ['stenarna i högen används till nästa brasa', ateranv],
     ];
   },
 };
