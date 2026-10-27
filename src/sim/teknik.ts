@@ -94,7 +94,7 @@ export const TEKNIK: Tek[] = [
   // odlingen (steg 2.10.2, odling.ts): kommer man bara på när man plockar vilda frön (froFynd), fortare ju fler vilda frön
   // byn plockat; det krävs inte så många (Björn efter v107, steg 2.10.11)
   { id: 'odling', namn: 'Odling', text: 'Frön som sätts i jorden blir nya grödor.', effekt: 'Man kan så frön på ett fält och skörda grödorna.',
-    omr: ['samla'], krav: [], material: [], tid: 6, okar: { stat: 'vildgrodor', per: 5 }, nar: 'plockar vilda frön' },
+    omr: ['samla'], krav: [], material: [], tid: 3, okar: { stat: 'vildgrodor', per: 5 }, nar: 'plockar vilda frön' },
 ];
 export const TEK = Object.fromEntries(TEKNIK.map(t => [t.id, t])) as Record<string, Tek>;
 

@@ -26,6 +26,7 @@ export const FANGST = balans('fangst', {
   lagerR: 3, // i byns läger växer inget: allt är redan hämtat och marken nött. Lägret växer när byn får fler lagerplatser
   skyggIn: 8, // vilt skyr människor: inget vilt närmare lägret än så här ...
   skyggR: 8, // ... och helt fram först så här mycket längre bort
+  vildIn: 4, vildR: 5, // de vilda grödorna växer inte närmare lägret än vildIn, och helt först vildR längre bort (steg 2.10.12)
   nottR: 2, nottMax: 0.8, nottDiv: 10, // nött mark skrämmer också: rutorna inom NottR runt en ruta räknas, och viltet minskar med antalet delat med Div, högst Max
   syn: 8, // byns närområde, som man i stort sett känner till från elden
   aterTom: 0.004, // ett uttag under detta räknas som orört när platsen växer tillbaka
@@ -169,17 +170,18 @@ const DEF = {
     uttag: { full: 0.35, reach: 1, regrow: [1 / 600, 1 / 180, 1 / 180, 1 / 240] },
   },
   // de vilda grödorna (steg 2.10.2, odling.ts): vildkorn i fläckar på ängarna (högt gräs) och vilda ärter i skogsbrynet
-  // (gräs eller ungskog intill skogen). Inget i istiden; de växer under sommaren och mognar på hösten. Den som samlar där tar med sig frön
+  // (gräs eller ungskog intill skogen). Inget i istiden; de växer under sommaren och mognar på hösten. Den som samlar där tar med sig frön.
+  // De växer inte nära byn eller där folk går och nöter marken (steg 2.10.12, orortOf)
   vildkorn: {
     namn: 'Vildkorn', grupp: 'vaxter', ikon: 'vildkorn', farg: 0xe8c040, topp: 1, arstid: [0, 0.3, 0.9, 1.2],
     monster: { salt: 101, skala: 4, period: 56, troskel: 0.55 },
-    bas: (s, i, m) => land(s, i) && markslag(groundOf(s), i) === 'hog' ? m : 0,
+    bas: (s, i, m) => land(s, i) && markslag(groundOf(s), i) === 'hog' ? m * orortOf(s)[i] : 0,
     uttag: { full: 1, reach: 1, regrow: [0, 1 / 240, 1 / 96, 1 / 120] },
   },
   arter: {
     namn: 'Vilda ärter', grupp: 'vaxter', ikon: 'arter', farg: 0x6fcf4f, topp: 1, arstid: [0, 0.3, 1, 1.1],
     monster: { salt: 103, skala: 3, period: 56, troskel: 0.55 },
-    bas: (s, i, m) => land(s, i) && BRYN.has(markslag(groundOf(s), i)) && intillSkog(groundOf(s), i) ? m : 0,
+    bas: (s, i, m) => land(s, i) && BRYN.has(markslag(groundOf(s), i)) && intillSkog(groundOf(s), i) ? m * orortOf(s)[i] : 0,
     uttag: { full: 1, reach: 1, regrow: [0, 1 / 240, 1 / 96, 1 / 120] },
   },
 } satisfies Record<string, FyndDef>;
@@ -227,20 +229,25 @@ const iLagretI = (lager: Float64Array, tiles: Uint8Array, i: number) => lager[i]
 // vilt skyr människor: ett stort område runt lägret, och marken där många går (stigar och nött mark).
 // Räknas om en gång per dygn (av gränssnittet i en egen del, typer.ts).
 const skygghet = tvaDelar<{ dag: number; v: Float32Array }>();
-export function skyggOf(s: State) {
+export const skyggOf = (s: State) => bortaOf(s, skygghet, FANGST.skyggIn, FANGST.skyggR);
+// de vilda grödorna växer inte heller nära byn eller där folk går, men närmare än viltet (steg 2.10.12)
+const orort = tvaDelar<{ dag: number; v: Float32Array }>();
+export const orortOf = (s: State) => bortaOf(s, orort, FANGST.vildIn, FANGST.vildR);
+// 0 närmare lägret än inne, 1 från inne + r, och mindre där marken runt omkring är nött
+function bortaOf(s: State, c2: typeof skygghet, inne: number, r: number) {
   const dag = Math.floor(s.now / DAY);
-  let c = skygghet.sim.get(s);
+  let c = c2.sim.get(s);
   if (c?.dag === dag) return c.v;
-  if (visning.pa) { c = skygghet.bild.get(s); if (c?.dag === dag) return c.v; }
+  if (visning.pa) { c = c2.bild.get(s); if (c?.dag === dag) return c.v; }
   const g = groundOf(s), v = new Float32Array(W * H), nott = new Uint8Array(W * H);
   for (let i = 0; i < W * H; i++) nott[i] = isSoil(g.tiles[i]) && markslag(g, i) === 'bar' ? 1 : 0;
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-    const d = clamp((campDist(s, x, y) - FANGST.skyggIn) / FANGST.skyggR, 0, 1);
+    const d = clamp((campDist(s, x, y) - inne) / r, 0, 1);
     let n = 0;
     for (let dy = -FANGST.nottR; dy <= FANGST.nottR; dy++) for (let dx = -FANGST.nottR; dx <= FANGST.nottR; dx++) if (inMap(x + dx, y + dy)) n += nott[(y + dy) * W + x + dx];
     v[y * W + x] = d * d * (3 - 2 * d) * (1 - Math.min(FANGST.nottMax, n / FANGST.nottDiv));
   }
-  egen(skygghet).set(s, { dag, v });
+  egen(c2).set(s, { dag, v });
   return v;
 }
 // vad en orörd ruta ger nu (utan årstid och uttag)

@@ -997,7 +997,7 @@ SCENARIER.brasa = {
 };
 
 SCENARIER.odling = {
-  text: 'Steg 2.10.2: vilda grödor växer på kartan, vildkorn på ängarna och vilda ärter i skogsbrynet, men inte i istiden. Den som samlar där plockar frön, som inte går att äta, och tar med sig dem tills byn har nog. Tekniken Odling kommer man bara på när man plockar vilda frön (steg 2.10.11), fortare ju fler byn plockat, och plockandet räknas också när byn har nog',
+  text: 'Steg 2.10.2: vilda grödor växer på kartan, vildkorn på ängarna och vilda ärter i skogsbrynet, men inte i istiden, nära byn eller där folk nött marken (steg 2.10.12). Den som samlar där plockar frön, som inte går att äta, och tar med sig dem tills byn har nog. Tekniken Odling kommer man bara på när man plockar vilda frön (steg 2.10.11), fortare ju fler byn plockat, och plockandet räknas också när byn har nog',
   kor: () => {
     const s = createState(7, START);
     s.kal = nyKalender(s.now, 3); klockan(s);
@@ -1010,6 +1010,13 @@ SCENARIER.odling = {
       const sk = (j: number) => j >= 0 && j < W * H && g.trees[j] >= FOREST;
       if (a > 0) { arter++; if (SIM.markslag(g, i) === 'skog' || !(sk(i - 1) || sk(i + 1) || sk(i - W) || sk(i + W))) fel++; }
     }
+    // inte nära byn (steg 2.10.12): inget närmare lägret än FANGST.vildIn, och nött mark runt omkring tar bort det mesta
+    let naraByn = 0;
+    for (let i = 0; i < W * H; i++) if (campDist(s, i % W, Math.floor(i / W)) < FANGST.vildIn) naraByn += vaxerAt(s, 'vildkorn', i) + vaxerAt(s, 'arter', i);
+    const trampad = createState(7, START); trampad.kal = nyKalender(trampad.now, 3); klockan(trampad);
+    const tg = groundOf(trampad), kx = kornI % W, ky = Math.floor(kornI / W);
+    for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) if ((dx || dy) && SIM.inMap(kx + dx, ky + dy)) { const j = (ky + dy) * W + kx + dx; tg.cover[j] = 0; tg.trees[j] = 0; }
+    const orord = vaxerAt(s, 'vildkorn', kornI), nott = vaxerAt(trampad, 'vildkorn', kornI);
     const vinter = createState(7, START); vinter.kal = nyKalender(vinter.now, 0);
     let iIstid = 0;
     for (let i = 0; i < W * H; i++) iIstid += vaxerAt(vinter, 'vildkorn', i) + vaxerAt(vinter, 'arter', i);
@@ -1035,6 +1042,8 @@ SCENARIER.odling = {
     return [
       [`på hösten växer vildkorn (${korn} rutor) och vilda ärter (${arter} rutor) (tidsålder ${host})`, host === 3 && korn > 0 && arter > 0],
       [`vildkornet bara i högt gräs och ärterna bara i skogsbrynet (${fel} fel)`, fel === 0],
+      [`inga vilda grödor närmare lägret än ${FANGST.vildIn} rutor (${naraByn.toFixed(3)})`, naraByn === 0],
+      [`där marken runt omkring är nött av folk växer de knappt (${orord.toFixed(2)} → ${nott.toFixed(2)})`, orord > 0 && nott < orord * 0.3],
       [`i istiden växer inga vilda grödor (${iIstid.toFixed(3)})`, iIstid === 0],
       [`en timmes samlande på en rik vildkornsruta ger frön (${fron.toFixed(1)}) och tömmer platsen lite (${fore.toFixed(2)} → ${efter.toFixed(2)})`, fron > 0.5 && efter < fore],
       [`byn räknar det som samlats av de vilda grödorna (${vild.toFixed(1)})`, Math.abs(vild - fron) < 1e-9],
