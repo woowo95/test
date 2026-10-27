@@ -107,6 +107,7 @@ export interface Task {
   pass?: number; // när ett pass med redskap som görs är slut (ms): blir ett klart före det görs ett till om byn vill ha fler (steg 2.3.8)
   tandmat?: true; // samlar tändmaterial åt en släckt eld: blir platsen tom på bär fortsätter man tills tändmaterialet räcker (steg.ts, workStep)
   bar?: number; // vården: den skadade som bärs hem (halsa.ts, steg 2.5.2)
+  vatten?: number; // vattensäcken: rutan där den fylldes, vars smuts följer med vattnet (torst.ts, steg 2.10.1)
 }
 
 export interface Person {

@@ -2,9 +2,11 @@
 // Man dricker vid vattnet och bär inte hem det. Vattnet är olika smutsigt på olika ställen (smutsOf i sjo.ts); smutsigt vatten
 // ger ont i magen, och var vattnet är rent eller smutsigt blir lärdomar (slaget 'vatten' i minne.ts) som sprids i samtal.
 // När sjön är frusen i istiden smälter man snö vid elden. Den som är för varm (steg 2.3.4) eller arbetar tungt törstar fortare.
-// Sätten att dricka står i registret DRICKA; val.ts väljer när, steg.ts räknar törsten och vad som händer när man dricker
+// Sätten att dricka står i registret DRICKA; val.ts väljer när, steg.ts räknar törsten och vad som händer när man dricker.
+// Med vattensäcken (steg 2.10.1) hämtar en vuxen vatten åt den som inte kan gå och ligger hemma; utan säck får hen vatten av
+// de andra (fatt), och när törsten blir farlig också om säcken inte kommer
 import { ACTS } from './handlingar';
-import { ALDER, count, isSick, think } from './folk';
+import { ALDER, ageOf, alive, byId, count, forstaGang, isSick, living, log, think } from './folk';
 import { areaOf, findL, observe } from './minne';
 import { magont, vattenSmuts } from './smuts';
 import { shoreOf } from './fynd';
@@ -14,7 +16,9 @@ import { clamp, rnd } from './slump';
 import { iIstiden, ageIndex } from './tid';
 import { Act, H, HOUR, HOUR_S, Person, State, T, Task, W, inMap } from './typer';
 import { balans } from './balans';
-import { hemma, kanGa } from './halsa';
+import { HALSA, hemma, kanGa } from './halsa';
+import { freeTools, nTools } from './agande';
+import { wearUsed } from './redskap';
 
 // ---------- balanstal (regel 8) ----------
 export const TORST = balans('torst', {
@@ -34,13 +38,15 @@ export const TORST = balans('torst', {
   okant: 0.3, // så smutsigt tror man att vatten man inte vet något om är
   mag: 0.4, // chansen att få ont i magen är vattnets smuts gånger detta ...
   magMin: 2, magSpann: 4, // ... och man är sjuk i magMin + slump × magSpann timmar
+  fyllMin: 3, // så många minuter det tar att fylla vattensäcken vid vattnet (steg 2.10.1)
 });
 
 // sätten att dricka (registret): handlingen, platsen den görs på, när den väljs och skälet
 interface DrickaDef { act: Act; why: string; min: () => number; nar: (s: State, p: Person) => boolean }
 export const DRICKA: DrickaDef[] = [
   // den som inte kan gå och är hemma får vatten av de andra där hen ligger (steg 2.5.2, halsa.ts)
-  { act: 'fatt', why: 'Kan inte gå och får vatten av de andra', min: () => TORST.drickMin, nar: (s, p) => !kanGa(p) && hemma(s, p) },
+  // Har byn en vattensäck väntar hen på den som hämtar vatten i den, tills törsten blir farlig (steg 2.10.1)
+  { act: 'fatt', why: 'Kan inte gå och får vatten av de andra', min: () => TORST.drickMin, nar: (s, p) => !kanGa(p) && hemma(s, p) && (nTools(s, 'vattensack') < 1 || tortarFarligt(p)) },
   // istiden: sjön är frusen, och den som kan smälter snö vid en brinnande eld
   { act: 'smalta', why: 'Är törstig och smälter snö vid elden', min: () => TORST.snoMin, nar: s => iIstiden(ageIndex(s)) && s.fire.lit },
   { act: 'dricka', why: 'Är törstig och går och dricker vid vattnet', min: () => TORST.drickMin, nar: () => true },
@@ -104,6 +110,7 @@ export function drickPlats(s: State, p: Person) {
 // det som väljs när man är törstig (val.ts): handlingen, skälet, hur länge och var. undefined = inget vatten att nå
 export function drickVal(s: State, p: Person) {
   const d = DRICKA.find(x => x.nar(s, p))!;
+  if (d.act !== 'fatt' && !kanGa(p) && hemma(s, p)) return undefined; // väntar på vattensäcken
   if (d.act === 'smalta') return { act: d.act, why: d.why, min: d.min() };
   if (d.act === 'fatt') return { act: d.act, why: d.why, min: d.min(), spot: { x: p.x, y: p.y } };
   const spot = drickPlats(s, p);
@@ -116,12 +123,56 @@ export function drick(s: State, p: Person, t: Task) {
   if (t.act === 'smalta') { count(s, 'smalt sno'); return; }
   if (t.act === 'fatt') { count(s, 'fick vatten'); return; }
   count(s, 'drack');
-  const x = Math.floor(t.tx), y = Math.floor(t.ty), smuts = inMap(x, y) ? vattenSmuts(s, y * W + x) : 0; // med toa-smutsen i närheten (steg 2.7.2)
+  const x = Math.floor(t.tx), y = Math.floor(t.ty);
   observe(s, p, 'vatten', x, y);
+  if (inMap(x, y)) smutsigt(s, p, y * W + x);
+}
+// vattnet från rutan i kan ge ont i magen, efter hur smutsigt det är där (med toa-smutsen i närheten, steg 2.7.2)
+function smutsigt(s: State, p: Person, i: number) {
+  const smuts = vattenSmuts(s, i);
   if (smuts > 0 && !isSick(p, s.now) && rnd(s, 'halsa', p) < smuts * TORST.mag) {
     p.sickUntil = s.now + (TORST.magMin + rnd(s, 'halsa', p) * TORST.magSpann) * HOUR; p.sickWhy = 'Ont i magen av smutsigt vatten';
     think(p, 'Fick ont i magen av vattnet', -0.1, s.now, 6 * HOUR);
     count(s, 'magont av vatten');
-    magont(s, y * W + x); // kom smutsen från toaletten lär sig byn något om hygien (smuts.ts)
+    magont(s, i); // kom smutsen från toaletten lär sig byn något om hygien (smuts.ts)
   }
+}
+
+// ---------- vattensäcken (steg 2.10.1) ----------
+// Den som inte kan gå och ligger hemma törstar. En vuxen som kan gå tar byns vattensäck, fyller den vid vattnet (där hen
+// skulle ha druckit själv) och bär den till hen. Det väljs som vården, före förbättringarna (val.ts). Säcken slits en gång per tur
+const hamtas = (s: State, q: Person) => living(s).some(o => o.task?.act === 'vatten' && o.task.ref === q.id);
+// det som väljs (val.ts): den närmaste som behöver vatten och som ingen annan redan hämtar åt, och vattnet att fylla säcken vid
+export function vattenVal(s: State, p: Person): { spot: { x: number; y: number }; ref: number; why: string } | undefined {
+  if (ageOf(p, s.now) < ALDER.vuxen || !kanGa(p) || freeTools(s, p, 'vattensack') < 1) return undefined;
+  let best: Person | undefined, bd = HALSA.vardR;
+  for (const q of living(s)) {
+    if (q === p || kanGa(q) || !torstig(q, 0) || ageOf(q, s.now) < ALDER.smabarn || !hemma(s, q)) continue;
+    const d = Math.hypot(q.x - p.x, q.y - p.y);
+    if (d >= bd || hamtas(s, q)) continue;
+    best = q; bd = d;
+  }
+  const spot = best && drickPlats(s, p);
+  return best && spot ? { spot, ref: best.id, why: `Hämtar vatten i säcken åt ${best.name}` } : undefined;
+}
+// säcken är fylld (KLAR i steg.ts): bär den till den törstige. Utan säck i handen blir det inget
+export function vattenFylld(s: State, p: Person, t: Task) {
+  const q = byId(s, t.ref);
+  if (!t.tool || !q || !alive(q)) return;
+  const x = Math.floor(t.tx), y = Math.floor(t.ty);
+  observe(s, p, 'vatten', x, y);
+  t.vatten = inMap(x, y) ? y * W + x : undefined;
+  t.phase = 'back'; t.tx = q.x; t.ty = q.y; t.why = `Bär vatten till ${q.name}`;
+}
+// framme hos den törstige (arrive i steg.ts): hen dricker, och säcken slits
+export function vattenFram(s: State, p: Person, t: Task) {
+  const q = byId(s, t.ref);
+  if (q && alive(q) && Math.hypot(q.x - p.x, q.y - p.y) <= 2) {
+    q.torst = 1; // (forstaGang räknar 'bar vatten' varje gång)
+    think(q, `${p.name} gav mig vatten`, 0.1, s.now, 12 * HOUR);
+    if (forstaGang(s, 'bar vatten')) log(s, `${p.name} bar vatten i säcken till ${q.name}, som inte kunde gå.`, 'world', [p.id, q.id]);
+    if (t.vatten !== undefined) smutsigt(s, q, t.vatten);
+    wearUsed(s, p, 1);
+  }
+  p.task = undefined;
 }

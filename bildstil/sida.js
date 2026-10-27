@@ -926,7 +926,15 @@ function forstorad(B, k, x0, y0) {
 // registret över det Björn ska välja: typ 'janej' (en ny version mot den i dag) eller 'tre' (tre nya versioner).
 // Varje version är en bild { w, h, rita(B, P) } på marken. När valet är inbyggt i spelet tas raden bort, och dess
 // dokument i databasens samling 'val' tas bort
+const VATTENSACK = { o: 'kol0', j: 'jord1', J: 'jord2', L: 'jord3', k: 'jord0', s: 'senap1', y: 'senap2', w: 'ben2', b: 'skiffer2', B: 'skiffer3' };
 const VAL = [
+  { id: 'vattensack', namn: 'Vattensäcken', vad: 'Ny sak (steg 2.10.1), 16 × 16 punkter: ett skinn som sys ihop till en säck och knyts med rep. Med den bär man vatten till den som inte kan gå.', typ: 'tre',
+    idag: { w: 20, h: 20, rita: (B, P) => ritaIkon(B, 'vattensack', 2, 2) }, idagText: 'Platshållaren i spelet nu.',
+    versioner: [
+      { text: 'Rund säck med repögla att bära i, knuten om halsen. En droppe bredvid.', w: 20, h: 20, rita: (B, P) => ritaSprite(B, ['................', '......ss........', '.....s..s.......', '......ss........', '.....oyyo.......', '.....ojjo.......', '....ojJJjo......', '...ojJLJJjo.....', '..ojJLJJJJjo....', '..ojJJJJJJjo....', '..ojJJJJJJjo....', '..ojjJJJJjjo....', '...ojjjjjjo..b..', '....oooooo..bBb.', '............bbb.', '................'], VATTENSACK, 2, 2) },
+      { text: 'Liggande säck med en rem över axeln och halsen åt sidan. Det droppar ur halsen.', w: 20, h: 20, rita: (B, P) => ritaSprite(B, ['................', '...ssssssssss...', '..s..........s..', '..s..........s..', '..s.ooooooo..s..', '..sojJJLLJJoo...', '..ojJJLLJJJJjoyo', '.ojJJJJJJJJJjyyo', '.ojJJJJJJJJjjoyo', '.ojjJJJJJJjjo.o.', '..ojjjjjjjjo....', '...oooooooo...b.', '..............b.', '.............bBb', '.............bbb', '................'], VATTENSACK, 2, 2) },
+      { text: 'Stående säck med en ljus söm, mörk och blöt i botten, och det droppar under.', w: 20, h: 20, rita: (B, P) => ritaSprite(B, ['................', '.....oooo.......', '.....oyyo.......', '......oo........', '.....ojjo.......', '....ojJJjo......', '...ojJJwJjo.....', '..ojJLJJwJjo....', '..ojLJJwJJjo....', '..ojJJJJwJjo....', '..ojJJJwJJjo....', '..ojjkkkkkjo....', '...okkkkkko.....', '....oooboo......', '.......b........', '.......B........'], VATTENSACK, 2, 2) },
+    ] },
   { id: 'slaktbank', namn: 'Slaktbänken', vad: 'Station, tre rutor. Tre nya försök med 16 punkter per ruta, efter din kommentar: den kluvna stocken med benen synliga och mer blod.', typ: 'tre',
     idag: { w: 52, h: 26, rita: (B, P) => forstorad(B, 'slaktbank_karta', 2, 2) },
     versioner: [

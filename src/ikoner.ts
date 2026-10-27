@@ -47,6 +47,7 @@ const PAL: Record<string, Record<string, string>> = {
   tork_karta: { w: '#5a3a1e', W: '#8b5a2b', L: '#b07a45', O: '#d0aa70', x: 'rgba(0,0,0,.30)' },
   torrkott: { r: '#4e2418', R: '#6e3a26', w: '#cbb48e', o: '#24100a', h: '#9a6040' },
   torrfisk: { p: '#7a5030', P: '#a07048', w: '#d8c098', s: '#583820' },
+  vattensack: { d: '#3f2415', b: '#5e3c24', B: '#7d5b40', L: '#987e62', y: '#906f0f', Y: '#b2921b', w: '#8a9c9e' }, // steg 2.10.1, platshållare i bildstilens palett
   benspade: { h: '#7a5a36', H: '#9c7848', y: '#c8b07a', Y: '#e8d4a0', w: '#e8e2d0', W: '#fffaf0', d: '#b8ae98', R: '#d8d0bc' },
   skinnklader: { b: '#8a6440', B: '#b48a5e', d: '#5e4026', w: '#d8c8a8' },
   slaktbank: { b: '#7a5a36', B: '#a8824e', d: '#4e3420', r: '#9c3328' },
@@ -104,6 +105,7 @@ const PAL: Record<string, Record<string, string>> = {
   a_dricka: { w: '#f4efe0', a: '#9fc6e8', y: '#f2d27a', r: '#e0604e' },
   a_fatt: { w: '#f4efe0', a: '#9fc6e8', y: '#f2d27a', r: '#e0604e' },
   a_smalta: { w: '#f4efe0', a: '#9fc6e8', y: '#f2d27a', r: '#e0604e' },
+  a_vatten: { w: '#dad0bb', a: '#8a9c9e' }, // steg 2.10.1, platshållare i bildstilens palett
   a_varda: { w: '#f4efe0', a: '#9fc6e8', y: '#f2d27a', r: '#e0604e' },
   verkstad: { l: '#6a4426', O: '#d0aa70', L: '#9a6a3e', B: '#b48a5e', b: '#8a6440', n: '#eef4fa', k: '#5e6266', d: '#3a2614' },
   s_skarsar: { E: '#c9cdd0', r: '#b02a22', e: '#8f9396', H: '#9c7848', h: '#7a5a36', m: '#6a1612' },
@@ -814,6 +816,25 @@ const PIX: Record<string, string[]> = {
     '..sss...',
     '........',
   ],
+  // vattensäcken (steg 2.10.1, platshållare i bildstilens palett, 16 punkter): en uppsvälld skinnsäck knuten med rep, och en droppe
+  vattensack: [
+    '................',
+    '.......yY.......',
+    '......yYYy......',
+    '.......dd.......',
+    '......dBBd......',
+    '.....dBLLBd.....',
+    '....dBBLBBBd....',
+    '...dBBLBBBBbd...',
+    '..dBBLBBBBBbbd..',
+    '..dBLBBBBBBbbd..',
+    '..dBBBBBBBBbbd..',
+    '..dbBBBBBBbbbd..',
+    '...dbbBBBbbbd.w.',
+    '....ddbbbbdd.www',
+    '......dddd...www',
+    '..............w.',
+  ],
   // benspaden (Björn valde S1g efter v85): snett uppåt höger som de andra redskapen, tre ben som ett rakt avskuret blad lika
   // mycket åt båda hållen kring skaftet, bundna med rep
   benspade: [
@@ -1130,6 +1151,25 @@ const PIX: Record<string, string[]> = {
     '.wwwwww.',
     '..wwww..',
     '........',
+  ],
+  // hämtar vatten i säcken (steg 2.10.1, platshållare i bildstilens palett, 16 punkter): säcken som en kontur och en droppe
+  a_vatten: [
+    '................',
+    '......ww........',
+    '.....w..w.......',
+    '......ww........',
+    '.....w..w.......',
+    '....w....w......',
+    '...w......w.....',
+    '..w........w....',
+    '..w........w....',
+    '..w........w..a.',
+    '..w........w..a.',
+    '...w......w..aaa',
+    '....w....w...aaa',
+    '.....wwww.....a.',
+    '................',
+    '................',
   ],
   // smälter snö (Björn valde 2 efter v89): en snöflinga som blir en droppe
   a_smalta: [

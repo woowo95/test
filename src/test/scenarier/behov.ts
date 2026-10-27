@@ -1,5 +1,5 @@
 // Scenarier. Behov och val: behov, ved, aktivitet och fritid.
-import { Person, createState, getRel, step, living, temperature, nyKalender, amountOf, capacity, load, isLight, T, FOOD, ageOf, getMap, HOUR, W, tileOf, stat, campCenter, KANIN, gain, takeFuel, ownsAmount, ownedSum, addTo, setAmount, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, STOLD_LINDRIG, STOLD_OP, BEAT, spar, isWork, ACTS, groundOf, varmeDelar, nyVarme, addTool, stepKlader, chooseTask, iSkugga, KROPP, spotFor, shoreOf, torstDelar, drickPlats, areaOf, halsaLage, describe, halsaSteg, skada, blodning, halsa, rorlighet, workRate, OLYCKOR, Act, HALSA, kanGa, gangFart, hemma, mossaFynd, chopStock, skadeLista, skadeText, delSkada, FORMAGOR, smarta, handighet, NARINGAR, NARING, naringOf, naringNu, naringSjunker, mattnad, sjunker, bristGrad, bristSteg, berattaBrist, onskan, matOrdning, takeFood, vilaTim, skorbjugg, NARINGBAL, DODSORSAKER, converse, Naring } from '../../sim';
+import { Person, createState, getRel, step, living, temperature, nyKalender, amountOf, capacity, load, isLight, T, FOOD, ageOf, getMap, HOUR, W, tileOf, stat, campCenter, KANIN, gain, takeFuel, ownsAmount, ownedSum, addTo, setAmount, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, STOLD_LINDRIG, STOLD_OP, BEAT, spar, isWork, ACTS, groundOf, varmeDelar, nyVarme, addTool, stepKlader, chooseTask, iSkugga, KROPP, spotFor, shoreOf, torstDelar, drickPlats, areaOf, halsaLage, describe, halsaSteg, skada, blodning, halsa, rorlighet, workRate, OLYCKOR, Act, HALSA, kanGa, gangFart, hemma, mossaFynd, chopStock, skadeLista, skadeText, delSkada, FORMAGOR, smarta, handighet, NARINGAR, NARING, naringOf, naringNu, naringSjunker, mattnad, sjunker, bristGrad, bristSteg, berattaBrist, onskan, matOrdning, takeFood, vilaTim, skorbjugg, NARINGBAL, DODSORSAKER, converse, Naring, STATIONER, TEKNIK, tingOf } from '../../sim';
 import { START, STEG_DYGN, STEG_TIM } from '../kor';
 import { setMat, setFood, kor, klockan, tandEld, tomtForrad, treVuxna, bastaJaktruta, SCENARIER, rikBy } from './hjalp';
 
@@ -416,6 +416,42 @@ SCENARIER.kropp = {
       [`en svår skada avbryter arbetet, och hälsan blir ${halsa1.toFixed(2)}`, avbrot && halsa1 < KROPP.svag + 0.2],
       [`olyckorna i ${Object.keys(OLYCKOR).join(', ')} ger sina skador i sina delar${fel.length ? ` (fel: ${fel.join(', ')})` : ''}`, !fel.length],
       [`på tio dygn i en by: ${skador} skador, ${blod} förblödde`, skador > 0],
+    ];
+  },
+};
+
+SCENARIER.vattensack = {
+  text: 'Steg 2.10.1: vattensäcken sys av skinn vid slöjdbänken med bensylen. Med den hämtar en vuxen vatten åt den som inte kan gå och ligger hemma; utan säck får hen vatten av de andra, och när törsten blir farlig också om säcken inte kommer',
+  kor: () => {
+    const s = createState(5, START);
+    klockan(s, 10); rikBy(s);
+    const [p, q, r] = treVuxna(s, 1);
+    const c = campCenter(s);
+    const fyll = (x: Person, dx: number) => Object.assign(x, { rest: 1, toa: 1, hunger: 1, social: 1, warm: 1, health: 1, torst: 1, blod: 1, skador: undefined, sickUntil: undefined, task: undefined, x: c.x + 0.5 + dx, y: c.y + 2.5 });
+    fyll(p, 0); fyll(q, 1); fyll(r, 2); r.x = c.x + 40;
+    skada(s, p, 'benH', 'benbrott', 0.9, 'olycka', ''); p.skador![0].b = 0;
+    const kanInte = !kanGa(p) && hemma(s, p);
+    // utan säck: hen får vatten av de andra
+    p.torst = 0.3; chooseTask(s, p); const utan = p.task?.act;
+    // med säck: hen väntar, och en annan hämtar vatten i säcken
+    const sack = addTool(s, 'vattensack', q);
+    const akt = (x: Person) => (x.task as Person['task'])?.act;
+    p.task = undefined; chooseTask(s, p); const vantar = akt(p);
+    chooseTask(s, q); const hamtar = q.task?.act, tar = q.task?.tool;
+    let fick = false;
+    for (let i = 0; i < 4 * STEG_TIM && !fick; i++) { step(s, BEAT); p.torst = Math.min(p.torst, 0.3); if ((s.stat?.['bar vatten'] as number ?? 0) > 0) fick = true; }
+    const sliten = (tingOf(s).find(t => t.id === sack.id)?.c ?? 0) < 1;
+    // farligt törstig: de andra ger vatten ändå
+    p.task = undefined; p.torst = 0.1; chooseTask(s, p); const farligt = akt(p);
+    const fl = STATIONER.flatarbank, tek = TEKNIK.find(t => t.id === 'vattensack');
+    return [
+      ['den som har brutit benet kan inte gå och ligger hemma', kanInte],
+      [`utan säck får hen vatten av de andra (${utan})`, utan === 'fatt'],
+      [`med en säck i byn väntar hen på den (${vantar ?? 'inget'})`, vantar !== 'fatt' && vantar !== 'dricka'],
+      [`en annan vuxen tar säcken och hämtar vatten (${hamtar}, ${tar})`, hamtar === 'vatten' && tar === 'vattensack'],
+      [`vattnet kommer fram inom fyra timmar och säcken slits (${fick}, ${sliten})`, fick && sliten],
+      [`farligt törstig får hen vatten av de andra ändå (${farligt})`, farligt === 'fatt'],
+      ['säcken sys bara vid slöjdbänken med bensylen, och tekniken kommer efter skinnkläderna', !!fl.bara?.includes('vattensack') && fl.kraver?.vattensack === 'bensyl' && !!tek?.krav.includes('skinnklader')],
     ];
   },
 };

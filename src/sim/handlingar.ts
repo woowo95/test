@@ -91,6 +91,8 @@ const DEF = {
   varda: { namn: 'Vårdar', tecken: '🩹', stilla: true },
   buren: { namn: 'Bärs hem', tecken: '🫂', stilla: true },
   fatt: { namn: 'Får vatten av de andra', tecken: '🥤', stilla: true },
+  // vattensäcken (steg 2.10.1, torst.ts): fylls vid vattnet och bärs till den som inte kan gå. Den slits en gång per tur
+  vatten: { namn: 'Hämtar vatten', tecken: '🫗', redskap: { vattensack: { tar: 'Tar vattensäcken.', haller: 150, kravs: true } }, slits: { enhet: 'turer med vatten', per: 'gang' } },
   kol: { namn: 'Hämtar kol ur den slocknade elden', tecken: '⚫', plats: 'kol' },
   falla: { namn: 'Fäller ett träd med yxa', yrke: 'Trähuggare', slag: 'tra', redskap: { yxa: { haller: 85, kravs: true } }, slits: { enhet: 'träd', per: 'gang' }, arbete: 'ved', takt: 0, tungt: true },
   hugga: { namn: 'Hugger trä av ett fällt träd', yrke: 'Trähuggare', slag: 'tra', redskap: { yxa: { haller: 85, kravs: true } }, slits: { enhet: 'träd' }, arbete: 'ved', ger: 'ved', takt: 1.5, tur: 1200, tungt: true },
@@ -109,6 +111,7 @@ const DEF = {
   skinnskor: { namn: 'Syr skinnskor', slag: 'hantverk', hantverk: true, stilla: true, plats: 'station' },
   balte: { namn: 'Flätar ett bälte', slag: 'hantverk', hantverk: true, plats: 'station' }, // steg 2.3.3
   benspade: { namn: 'Gör en benspade', slag: 'hantverk', hantverk: true, plats: 'station' }, // bara vid slöjdbänken (steg 2.7.2)
+  vattensack: { namn: 'Syr en vattensäck', slag: 'hantverk', hantverk: true, stilla: true, plats: 'station' }, // bara vid slöjdbänken med bensylen (steg 2.10.1)
   tvinna: { namn: 'Tvinnar rep', yrke: 'Hantverkare', slag: 'hantverk', vila: true, hantverk: true, social: true, dygn: true, stilla: true, plats: 'station' }, // vid slöjdbänken, annars för hand vid elden
   rensa: { namn: 'Rensar fisk', slag: 'hantverk', hantverk: true, social: true, stilla: true, plats: 'station' },
   grilla: { namn: 'Grillar mat över elden', slag: 'hantverk', hantverk: true, social: true, stilla: true, plats: 'station' }, // bara på grillställningen när elden brinner (matlagning.ts, steg 2.8.1)

@@ -38,7 +38,7 @@ import { addFuelBrasa, brasaFor, stepBrasor } from './brasor';
 import { sjoRakna } from './sjo';
 import { akel, toaBesok } from './smuts';
 import { blodas } from './blod';
-import { DRICKA_ACTS, TORST, drick, torstSteg } from './torst';
+import { DRICKA_ACTS, TORST, drick, torstSteg, vattenFram, vattenFylld } from './torst';
 import { HALSA, barMed, burenSteg, gangFart, halsaSteg, lamnaAv, mossaFynd, mossaPaStam, vardKlar, vardMal } from './halsa';
 import { bordPlats, kladVarme, stepKlader } from './utrustning';
 import { finishStation, finishTillbehor, stationRutor, stepStationer, tillbehorVarme, workStation } from './stationer';
@@ -98,6 +98,7 @@ const KLAR: Partial<Record<Act, Krok>> = {
   bada: (s, p, t) => { sjoRakna(s, t.tx, t.ty, 'bad', p); p.warm = p.warm > 1 ? Math.max(1, p.warm - KROPP.badSvalka) : Math.max(KROPP.badMin, p.warm - KROPP.badKyla); think(p, 'Badade i sjön', 0.08, s.now, 6 * HOUR); },
   strand: (s, p) => { p.rest = Math.min(1, p.rest + KROPP.strandVila); think(p, 'Satt vid vattnet och fick ro', 0.06, s.now, 6 * HOUR); },
   varda: vardKlar, // såren trycks på, förband läggs, infekterade sår rengörs, och den som inte kan gå bärs hem (halsa.ts)
+  vatten: vattenFylld, // vattensäcken är fylld och bärs till den som inte kan gå (torst.ts)
 };
 MEDAN.buren = burenSteg; // den som bärs hem väntar så länge någon bär hen
 // att dricka (torst.ts): en gång när man kommit fram, och törsten hålls släckt så länge man dricker
@@ -310,7 +311,7 @@ function taskStep(s: State, p: Person, a: number, t1: number, dtSec: number, lea
     const tk = p.task!, d = ACTS[tk.act];
     let used: number;
     if (tk.phase === 'go' || tk.phase === 'back') {
-      if (tk.act === 'varda' && tk.phase === 'go') vardMal(s, tk); // den skadade kan ha flyttat sig
+      if ((tk.act === 'varda' && tk.phase === 'go') || (tk.act === 'vatten' && tk.phase === 'back')) vardMal(s, tk); // den skadade kan ha flyttat sig
       const w = walk(s, p, tk, left, a);
       used = w.used;
       if (tk.bar !== undefined && !barMed(s, p, tk)) { left -= used; continue; } // den som bärs följer med
@@ -401,6 +402,7 @@ function arrive(s: State, p: Person, tk: Task, light: boolean) {
     if (!b || !k || avail(s, k, p, b.hus) < n) p.task = undefined;
     else { tk.kom = {}; tk.ag = { [k]: takeForHouse(s, p, b.hus, k, n, tk.kom) }; tk.items = { [k]: sumOf(tk.ag[k]) }; tk.tx = tk.site.x; tk.ty = tk.site.y; tk.site = undefined; } // det som togs, inte mer
   } else if (tk.act === 'varda' && tk.phase === 'back') lamnaAv(s, p, tk); // hemma med den som bars
+  else if (tk.act === 'vatten' && tk.phase === 'back') vattenFram(s, p, tk); // vattnet i säcken till den som inte kan gå
   else if (tk.phase === 'back') {
     storeLoad(s, tk, p.x, p.y, p.id);
     // ett arbetspass är klart: gå tillbaka och fortsätt om arbetet inte är slut och dagen inte vänt

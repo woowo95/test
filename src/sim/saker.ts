@@ -101,6 +101,10 @@ const DEF = {
   // (LAGER.maxDygn) och äts sist
   torrkott: { namn: 'Torkat kött', skaffa: { av: { kott: 1 }, min: 5, tek: 'tork' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 8, naring: { protein: 2, fett: 1, energi: 0.8, mineral: 0.6, vitamin: 0.2 }, haller: 20 },
   torrfisk: { namn: 'Torkad fisk', skaffa: { av: { fisk: 1 }, min: 5, tek: 'tork' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 7, naring: { protein: 2, fett: 0.8, mineral: 0.7, energi: 0.6, vitamin: 0.2 }, haller: 20 },
+  // vattensäcken (steg 2.10.1): ett skinn som sys ihop till en säck vid slöjdbänken med bensylen. Med den hämtar man vatten
+  // åt den som inte kan gå (torst.ts), och senare till fälten. Den tar en hand
+  vattensack: { namn: 'Vattensäck', skaffa: { av: { skinn: 2, rep: 1 }, min: 10, tek: 'vattensack' }, vikt: 0.5, hander: 1, stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true, trasig: { stat: 'vattensackarTrasiga', text: '{namn}s vattensäck gick sönder.' },
+    gors: { text: 'Syr en vattensäck av skinn.', stat: 'vattensackarGjorda', forsta: '{namn} sydde byns första vattensäck. Med den kan man bära vatten till den som inte kan gå.' } },
 } satisfies Record<string, SakDef>;
 
 type Sak = keyof typeof DEF;

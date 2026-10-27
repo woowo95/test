@@ -25,7 +25,7 @@ import { clamp, pick, pickNarmaste, rnd } from './slump';
 import { ARSTID, ageIndex, iIstiden, isLight, kallTid, yearNo } from './tid';
 import { Act, H, HOUR, MIN, Person, Skill, Stat, State, T, Task, W, inMap } from './typer';
 import { balans } from './balans';
-import { drickVal, torstig, tortarFarligt } from './torst';
+import { drickVal, torstig, tortarFarligt, vattenVal } from './torst';
 import { forSmutsigt, latrinFor } from './smuts';
 import { bordenOf, ledigPlats, sittAt, stationAt, stationFor, storlekAv, vidStation } from './stationer';
 import { grillTid, kanGrilla, kanTorka, torkTid } from './matlagning';
@@ -303,6 +303,7 @@ function needs(s: State, p: Person, v: Val, a: number, lazy: number, light: bool
   if (p.warm < KROPP.kallt + KROPP.latVarme * lazy && a >= ALDER.vuxen && tinderNeeded(s)) { v.tandmat = true; return set(v, 'samla', 'Fryser, men utan tändmaterial blir det ingen eld'); }
   if (p.warm < KROPP.farligt && bedTile(s, p) !== undefined) return set(v, 'vila', 'Fryser farligt och går in i huset');
   if (varda(s, p, v, false)) return true; // en skadad är en fara: vården går före förbättringarna (steg 2.5.2)
+  if (hamtaVatten(s, p, v)) return true; // vatten i säcken åt den som inte kan gå (steg 2.10.1)
   if (!light && a > ALDER.sovGammal && rnd(s, 'val', p) < VAL.gammalSover) return set(v, 'sova', 'Är gammal och sover på natten');
   if (p.toa < KROPP.toaBehov + KROPP.latToa * lazy) return set(v, 'toa', 'Behöver gå på toa');
   if (p.warm < KROPP.kallt + KROPP.latVarme * lazy && lit) return set(v, 'varma', 'Fryser');
@@ -329,6 +330,14 @@ function varda(s: State, p: Person, v: Val, sjalv: boolean) {
   if (!d) return false;
   v.spot = d.spot; v.ref = d.ref; v.dur = 0;
   return set(v, 'varda', d.why);
+}
+
+// vattensäcken (steg 2.10.1, torst.ts): till vattnet, och tiden att fylla den räknas från framkomsten (startsOnArrival)
+function hamtaVatten(s: State, p: Person, v: Val) {
+  const d = vattenVal(s, p);
+  if (!d) return false;
+  v.spot = d.spot; v.ref = d.ref; v.tool = 'vattensack'; v.dur = 0;
+  return set(v, 'vatten', d.why);
 }
 
 // törst (steg 2.4.1): vid vattnet, eller snö som smälts vid elden i istiden (torst.ts). false = inget vatten att nå

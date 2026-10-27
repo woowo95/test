@@ -29,6 +29,7 @@ export const REDSKAP = balans('redskap', {
   slaktMinDel: 2, // vilt slaktas när det finns minst 1 / Del kanin
   kottMin: 0.8, kottMax: 1.2, kottFull: 20, // slakten ger så stor del av köttet (slakt.kott i DJUR) utan jaktfärdighet, och så stor del med färdigheten Full eller mer
   spadar: 1, // så många benspadar byn vill ha (steg 2.7.2)
+  vattensackar: 1, // så många vattensäckar byn vill ha (steg 2.10.1)
   bensylSlits: 0.1, // ett plagg som sys slits bensylen vid slöjdbänken så här mycket (tio plagg per bensyl, steg 2.3.2)
   nyfiken: 0.08, // ett redskap med nyfiken i saker.ts (yxan) gör sedernas nyfikenhet så här mycket större första gången
 });
@@ -175,6 +176,7 @@ const VILL: Record<string, (s: State) => number> = {
   skinnskor: s => living(s).length,
   balte: s => living(s).length, // ett per person (steg 2.3.3)
   benspade: () => REDSKAP.spadar, // till latrinen och rötterna (steg 2.7.2)
+  vattensack: () => REDSKAP.vattensackar, // till den som inte kan gå (steg 2.10.1)
   // en yxa per fyra över yxaFran år, och en till medan ett hus byggs (för träden där det ska stå)
   yxa: s => clamp(Math.floor(living(s).filter(q => ageOf(q, s.now) >= REDSKAP.yxaFran).length / REDSKAP.yxaPerVuxna), REDSKAP.yxaMin, REDSKAP.yxaMax) + (s.hus?.some(h => !h.klar) ? REDSKAP.yxaBygge : 0),
 };

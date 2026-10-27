@@ -9,7 +9,7 @@ import { GORS, borjaTool, minOf, toolDone } from './redskap';
 import { fallTid } from './skog';
 import { fartVid, startStation, tillbehorDef } from './stationer';
 import { dorrDef } from './byggnad';
-import { DRICKA_ACTS, drickMin } from './torst';
+import { DRICKA_ACTS, TORST, drickMin } from './torst';
 import { HALSA } from './halsa';
 
 // ---------- påbörjat arbete (steg 1.5.14) ----------
@@ -25,7 +25,7 @@ export const HALV_TID = 2 * DAY; // så länge ett påbörjat redskap håller n�
 export const GA_TID = HOUR; // så länge man högst går till arbetet innan man väljer något annat
 export const GOR_ACTS = Object.keys(GORS) as Act[];
 // handlingar där arbetstiden räknas från att man kommit fram
-export const startsOnArrival = (act: Act) => !!GORS[act] || act === 'falla' || act === 'station' || act === 'tillbehor' || act === 'dorr' || DRICKA_ACTS.has(act) || act === 'varda'; // och att dricka (torst.ts) och vården (halsa.ts)
+export const startsOnArrival = (act: Act) => !!GORS[act] || act === 'falla' || act === 'station' || act === 'tillbehor' || act === 'dorr' || DRICKA_ACTS.has(act) || act === 'varda' || act === 'vatten'; // och att dricka och hämta vatten (torst.ts) och vården (halsa.ts)
 const halvById = (s: State, id?: number) => id === undefined ? undefined : tingOf(s).find(t => t.id === id && t.halv);
 
 // framme: arbeta vidare på det man har påbörjat, eller ta materialet och börja. Saknas materialet blir det inget
@@ -34,6 +34,7 @@ export function startWork(s: State, p: Person, tk: Task) {
   if (tk.act === 'dorr') { tk.until = s.now + (dorrDef(tk.tool)?.min ?? 0) * MIN; return; } // en dörr i en öppning (bygg.ts)
   if (DRICKA_ACTS.has(tk.act)) { tk.until = s.now + drickMin(tk.act) * MIN; return; } // att dricka (torst.ts)
   if (tk.act === 'varda') { tk.until = s.now + HALSA.vardMin * MIN; return; } // vården (halsa.ts)
+  if (tk.act === 'vatten') { tk.until = s.now + TORST.fyllMin * MIN; return; } // vattensäcken fylls (torst.ts)
   if (tk.act === 'tillbehor') { tk.until = s.now + (tillbehorDef(tk.tool ?? '')?.min ?? 0) * MIN; return; } // ett tillbehör till en möbel (stationer.ts)
   if (tk.act === 'falla') { const i = tileOf(tk.tx, tk.ty); tk.until = s.now + Math.max(0, fallTid(s, i) - (s.halvfallt?.[i] ?? 0)); return; }
   const ger = GORS[tk.act];
