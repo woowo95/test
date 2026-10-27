@@ -10,7 +10,7 @@ import { getMap } from './karta';
 import { Act, H, HOUR, HOUR_S, Person, State, T, Task, W, inMap } from './typer';
 import { bitAt, roofed } from './byggnad';
 import { ACTS, toolRow, usesTool } from './handlingar';
-import { temperature } from './vader';
+import { temperature, vaderSlit } from './vader';
 import { BYN, Del, addDel, sumOf, takeOrder } from './egendom';
 import { FOOD, RUTA, SAKER, SAK_LIST, STACK, STACK_ORDER, bordOf, isFood, isTool, rutaOf, sakNamn, stackOf } from './saker';
 import { balans } from './balans';
@@ -600,7 +600,8 @@ function wearAt(k: string, mult: number, ligger: boolean, temp: number) {
   const v = (ligger ? Math.max(r, 1 / (LAGER.maxDygn * 24 * LAGER.inne)) : r) * mult; // under tak som längst maxDygn, utan tak kortare
   return SAKER[k]?.haller !== undefined ? v * ruttTemp(temp) : v;
 }
-export const wearMult = (s: State, x: number, y: number) => roofed(s, x, y) || forvarAt(s, x, y)?.tak ? LAGER.inne : zoneAt(s, x, y) >= 0 ? 1 : LAGER.ute; // en kista skyddar som ett tak (steg 2.3.6)
+// en kista skyddar som ett tak (steg 2.3.6); det som ligger ute slits mer i regnet och snön (steg 2.11.2)
+export const wearMult = (s: State, x: number, y: number) => roofed(s, x, y) || forvarAt(s, x, y)?.tak ? LAGER.inne : (zoneAt(s, x, y) >= 0 ? 1 : LAGER.ute) * vaderSlit(s);
 // vad som sliter på en sak just nu och hur mycket av skicket det tar per timme (inforutan, steg 2.3.5). Samma tal som
 // wearStore och wearUsed (redskap.ts) räknar med. I handen slits redskapet dessutom per gång (steg 2.3.12): gang = så mycket av
 // skicket varje träd, kanin, fiskeförsök eller djur tar, och enhet vad det är (ACTS.slits)

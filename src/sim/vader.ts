@@ -43,6 +43,7 @@ export const VADER = balans('vader', {
   regnEld: 0.5, // en eld ute brinner så här mycket fortare i det kraftigaste regnet
   fuktRegn: 0.2, // markens fukt stiger så här mycket per timme i det kraftigaste regnet ...
   fuktTorkar: 0.006, // ... och sjunker så här mycket per timme (mer när det är varmt)
+  slitRegn: 1, slitSno: 0.5, // husens väggar och det som ligger ute slits upp till så här mycket mer i det kraftigaste regnet och snöfallet (steg 2.11.2)
   vaxtTorr: 0.7, vaxtBlot: 1.3, // växterna och grödorna växer så här fort i torr och i blöt mark (gånger)
   snoFaller: 0.15, // snön på marken växer så här mycket per timme i det kraftigaste snöfallet ...
   snoSmalter: 0.01, // ... och smälter så här mycket per timme och grad över noll
@@ -119,6 +120,8 @@ export const nederbord = (s: State) => vaderNu(s).nb > 0;
 const minneOf = (s: State) => (s.vader ??= { fukt: 0.5, sno: 0 });
 // hur fort växterna och grödorna växer efter fukten i marken (gånger)
 export const vaxtFaktor = (s: State) => VADER.vaxtTorr + (VADER.vaxtBlot - VADER.vaxtTorr) * (s.vader?.fukt ?? 0.5);
+// hur mycket mer det som är ute slits i regnet och snön (gånger; husens väggar och det som ligger ute, steg 2.11.2)
+export const vaderSlit = (s: State) => { const v = vaderNu(s); return 1 + v.nb * (v.sno ? VADER.slitSno : VADER.slitRegn); };
 // hur mycket snö som ligger på marken (0 till 1)
 export const snoPaMarken = (s: State) => s.vader?.sno ?? 0;
 

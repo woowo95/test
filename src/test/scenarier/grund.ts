@@ -1,5 +1,5 @@
 // Scenarier. Grunden: gläntan, yxan, vintern, knapphet, svamp och flinta, kunskap, temperatur och kalender.
-import { createState, step, living, temperature, coldOf, ageIndex, ageStart, kalender, yearNo, AGES, amountOf, groundOf, getMap, DAY, HOUR, W, tileOf, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, angOf, setAmount, BEAT, tingOf, eatPoison, HOST, vaderNu, VADER, VADERLAGE, VaderId, blotSteg, varmeDelar, stepVader, vaxtFaktor, stepFire, hearthOf, cloneState } from '../../sim';
+import { createState, step, living, temperature, coldOf, ageIndex, ageStart, kalender, yearNo, AGES, amountOf, groundOf, getMap, DAY, HOUR, W, tileOf, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, angOf, setAmount, BEAT, tingOf, eatPoison, HOST, vaderNu, VADER, VADERLAGE, VaderId, blotSteg, varmeDelar, stepVader, vaxtFaktor, stepFire, hearthOf, cloneState, wearMult, vaderSlit } from '../../sim';
 import { BAR, FOREST, HIGH, isSoil } from '../../sim/vag';
 import { START } from '../kor';
 import { setMat, Koll, kor, tandEld, logg, skogsandel, uttag, STOCKHOLM, SCENARIER } from './hjalp';
@@ -225,7 +225,7 @@ SCENARIER.temperatur = {
 };
 
 SCENARIER.vader = {
-  text: 'Vädret (steg 2.11.1): klart, mulet, regn, snö, blåst och åska efter årstiden. Regnet blöter den som är ute, så att den fryser fortare, och vattnar marken så att växterna växer fortare; en eld ute brinner fortare i regnet',
+  text: 'Vädret (steg 2.11.1–2.11.2): klart, mulet, regn, snö, blåst och åska efter årstiden. Regnet blöter den som är ute, så att den fryser fortare, och vattnar marken så att växterna växer fortare; en eld ute brinner fortare, och väggarna och det som ligger ute slits mer, i regnet',
   kor: () => {
     const s = createState(5, START), t0 = s.now, p = living(s)[0];
     // ett år i spelet (fyra veckor) i sex byar, timme för timme: hur ofta varje väder är, per tidsålder
@@ -249,6 +249,10 @@ SCENARIER.vader = {
     s.now = tr; p.blot = undefined;
     for (let i = 0; i < 4; i++) blotSteg(s, p, true, false, false, 0.25);
     const blot = p.blot ?? 0, underTrad = (() => { const q = { ...p, blot: undefined }; for (let i = 0; i < 4; i++) blotSteg(s, q, true, true, false, 0.25); return q.blot ?? 0; })();
+    // regnet sliter mer på väggarna och det som ligger ute (steg 2.11.2)
+    const ute = wearMult(s, 1.5, 1.5), slitRegn = vaderSlit(s);
+    let tk = t0; while (vaderNu(s, tk).nb > 0) tk += HOUR;
+    const nu0 = s.now; s.now = tk; const uteKlart = wearMult(s, 1.5, 1.5), slitKlart = vaderSlit(s); s.now = nu0;
     const kyla = (b: number, temp: number) => { p.blot = b || undefined; return varmeDelar(s, p, coldOf(temp), new Map(), temp).kyla; };
     const torrKyla = kyla(0, 0), blotKyla = kyla(1, 0);
     p.blot = 1; for (let i = 0; i < 4; i++) blotSteg(s, p, false, false, false, 0.5);
@@ -268,6 +272,7 @@ SCENARIER.vader = {
       [`den som är blöt fryser fortare (${torrKyla.toFixed(3)} mot ${blotKyla.toFixed(3)} i timmen vid 0°)`, blotKyla > torrKyla * 1.5],
       ['den blöta torkar inne', torkat],
       ['regnet vattnar marken och växterna växer fortare', blotare],
+      [`regnet sliter mer på väggarna och det som ligger ute (${slitRegn.toFixed(2)} och ${(ute / uteKlart).toFixed(2)} gånger så mycket som när det är uppehåll)`, slitRegn > 1.2 && slitKlart === 1 && ute > uteKlart],
       [`en eld ute brinner fortare i regnet (${brann.toFixed(2)} mot ${vanligt.toFixed(2)} i timmen)`, brann > vanligt * 1.05],
     ];
   },

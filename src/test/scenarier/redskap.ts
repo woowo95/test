@@ -284,12 +284,13 @@ SCENARIER.hallbarhet = {
     let varm = START, kall = START;
     for (let t = START, b = -99, c = 99; t < START + 7 * DAY; t += HOUR) {
       const s = createState(4, START), v = temperature(s, t);
+      if (SIM.vaderNu(s, t).nb > 0) continue; // uppehåll: regnet sliter mer (steg 2.11.2)
       if (v > b) { b = v; varm = t; }
       if (v < c) { c = v; kall = t; }
     }
     const sommar = dygn(varm), vinter = dygn(kall);
     // den kallaste timmen under fyra tidsåldrar (fyra veckor i verkligheten), i istiden
-    for (let t = START; t < START + 28 * DAY; t += 6 * HOUR) { const s = createState(4, START); if (temperature(s, t) < temperature(s, kall)) kall = t; }
+    for (let t = START; t < START + 28 * DAY; t += 6 * HOUR) { const s = createState(4, START); if (temperature(s, t) < temperature(s, kall) && !SIM.vaderNu(s, t).nb) kall = t; }
     const frost = dygn(kall);
     const ved = 24 / (LAGER.maxDygn * 24 * LAGER.inne); // ett dygn av det som får hållas längst utan tak
     const nara = (a: number, b: number) => Math.abs(a - b) < 1e-6;

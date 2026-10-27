@@ -1,6 +1,7 @@
 import { ALDER, ageOf, count, doingAct, forstaGang, living, log, stat } from './folk';
 import { Bit, DORRAR, DorrDef, DorrSlag, Hus, MATERIAL, bitById, dorrDef, bitsOf, blocked, freeNear, gridOf, housesOf, husById, touch } from './byggnad';
 import { getMap } from './karta';
+import { vaderSlit } from './vader';
 import { groundOf, punktIRuta } from './mark';
 import { PLATS, campCenter, rektAvstand } from './plats';
 import { lekplats, paLek, uteStation } from './stationer';
@@ -312,7 +313,7 @@ export function wearBuild(s: State, hours: number, ai: number) {
   for (const b of bitsOf(s)) {
     const M = MATERIAL[b.m];
     if (b.b < 1 || !M.slit) continue;
-    b.c -= M.slit * hours * (iIstiden(ai) ? ARSTID.slitIstid : 1);
+    b.c -= M.slit * hours * (iIstiden(ai) ? ARSTID.slitIstid : 1) * (b.k === 'vagg' ? vaderSlit(s) : 1); // väggarna slits mer i regnet och snön (steg 2.11.2)
     if (b.c > 0) continue;
     const h = husById(s, b.hus);
     if (b.k === 'vagg') {
