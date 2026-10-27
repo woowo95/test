@@ -1,5 +1,6 @@
 import { AGES, BEAT, DAY, HOUR, MIN, SEC, TalkEvent, VADERLAGE, vaderNu, kalender, alive, byId, cloneState, coverOf, createState, getMap, groundOf, isLight, rikedomDelar, spar, step, temperature, visning, yearNo, State } from './sim';
 import { $ } from './ui/hjalp';
+import { tecknet } from './ikoner';
 import { s, setByn, ui, nyBild, vidNyBy } from './ui/lage';
 import { TS, app, cam, layout, view, world } from './ui/scen';
 import { drawNight, drawTerrain } from './ui/terrang';
@@ -23,7 +24,9 @@ function renderClock() {
   { const k = kalender(s, t); $('calAge').textContent = `${AGES[k.ai]}, dag ${k.dag} av ${k.av}`; }
   { // temperaturen och vädret (steg 2.11.1); vädrets namn och vad det gör visas när man håller musen över det
     const c = Math.round(temperature(s, t)), v = VADERLAGE[vaderNu(s, t).lage], el = $('calTemp');
-    el.textContent = `${v.ikon} 🌡 ${c > 0 ? '+' : c < 0 ? '−' : ''}${Math.abs(c)} °C`; el.title = `${v.namn}. ${v.text}`;
+    const html = `${tecknet('vader_' + vaderNu(s, t).lage, v.ikon, 20)} 🌡 ${c > 0 ? '+' : c < 0 ? '−' : ''}${Math.abs(c)} °C`; // symbolen (steg 2.10.10)
+    if (el.dataset.v !== html) { el.innerHTML = html; el.dataset.v = html; }
+    el.title = `${v.namn}. ${v.text}`;
   }
   { // byns rikedom (varde.ts): talet, och vad den består av när musen är över
     const r = rikedomDelar(s), sum = r.forrad + r.redskap + r.hus, el = $('calRik'), a = s.delning?.andel ?? 0;
