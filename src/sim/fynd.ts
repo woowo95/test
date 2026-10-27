@@ -106,15 +106,16 @@ const jaktBas = (g: Ground, sky: ArrayLike<number>, i: number, m: number) => isS
 const ROTTER_PASSAR: Record<Markslag, number> = { skog: 0.5, ung: 0.5, hog: 0.5, kort: 0.4, bar: 0.1 };
 // Ordningen bland lagren med uttag är ordningen i sparfilen: nya lager med uttag läggs sist.
 const DEF = {
-  // bärbuskar i små täta snår i skog och högt gräs; de flyttar sig mycket långsamt. Inga bär i istiden
+  // bärbuskar i små täta snår i skog och högt gräs; de flyttar sig mycket långsamt. Inga bär i istiden.
+  // Sedan steg 2.3.9 lite ovanligare än svampen, men de växer tillbaka fortare och kommer tidigare på våren
   bar: {
-    namn: 'Bär', grupp: 'vaxter', ikon: 'bar', farg: 0x9a5cff, topp: 3, arstid: [0, 0.5, 1, 1.15],
-    monster: { salt: 71, skala: 2.5, period: 56, troskel: 0.68 },
+    namn: 'Bär', grupp: 'vaxter', ikon: 'bar', farg: 0x9a5cff, topp: 3, arstid: [0, 0.75, 1, 1.15],
+    monster: { salt: 71, skala: 2.5, period: 70, troskel: 0.72 },
     bas(s, i, m) {
       if (!land(s, i)) return 0;
       return BAR_PASSAR[markslag(groundOf(s), i)] * 4 * m;
     },
-    uttag: { full: 0.45, reach: 1, regrow: [0, 1 / 200, 1 / 72, 1 / 96] },
+    uttag: { full: 0.45, reach: 1, regrow: [0, 1 / 120, 1 / 48, 1 / 60] },
   },
   // kaniner trivs bäst i gräs, högt eller lågt, men finns också i skogen. Glest över stora områden som vandrar
   jakt: {
@@ -130,17 +131,18 @@ const DEF = {
     bas: (s, i, m) => getMap(s.seed).tiles[i] === T.Vatten ? 0.5 + 1.4 * m : 0,
     uttag: { full: 3, reach: 1, regrow: [1 / 300, 1 / 100, 1 / 100, 1 / 140] },
   },
-  // kantarellen växer bara i skogen, utspridd över större områden som vandrar långsamt. Mest på hösten
+  // kantarellen växer bara i skogen, utspridd över större områden som vandrar långsamt. Mest på hösten.
+  // Sedan steg 2.3.9 på ungefär lika många ställen som bären hade förut (en tredjedel så många som innan)
   kantarell: {
     namn: 'Kantarell', grupp: 'vaxter', ikon: 'svamp', farg: 0xffd21f, topp: 0.8, arstid: SVAMP_SEASON,
-    monster: { salt: 83, skala: 8, period: 28, troskel: 0.3, gles: 0.5 },
+    monster: { salt: 83, skala: 8, period: 28, troskel: 0.5, gles: 0.5 },
     bas: (s, i, m) => land(s, i) && groundOf(s).trees[i] >= FOREST ? 0.9 * m : 0,
     uttag: SVAMP_UTTAG,
   },
   // den giftiga orangea spindlingen liknar kantarellen. Den har egna områden som kan gå in i kantarellens
   spindling: {
     namn: 'Orange spindling (giftig)', grupp: 'vaxter', ikon: 'spindling', farg: 0xff2d6f, topp: 0.8, arstid: SVAMP_SEASON,
-    monster: { salt: 89, skala: 8, period: 28, troskel: 0.4, gles: 0.35 },
+    monster: { salt: 89, skala: 8, period: 28, troskel: 0.55, gles: 0.35 },
     bas: (s, i, m) => land(s, i) && groundOf(s).trees[i] >= FOREST ? 0.9 * m : 0,
     uttag: SVAMP_UTTAG,
   },

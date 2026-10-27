@@ -117,9 +117,10 @@ SCENARIER.svamp = {
   lang: true,
   text: 'På hösten plockas kantareller, men ibland följer en giftig orange spindling med; den som förgiftas lär sig skilja dem åt och lär andra',
   kor: () => {
-    const s = createState(16, START), s2 = createState(17, START);
-    kor(s, 21 * 24); kor(s2, 21 * 24); // vår, sommar och höst. Kantarellerna räknas i två byar: i en by är det mycket slump
-    const st = s.stat ?? {}, svamp = (st.svamp ?? 0) + (s2.stat?.svamp ?? 0);
+    // vår, sommar och höst. Kantarellerna räknas i fyra byar: i en by är det mycket slump, och sedan steg 2.3.9 är svampen ovanligare
+    const byar = [16, 17, 21, 22].map(f => { const b = createState(f, START); kor(b, 21 * 24); return b; });
+    const sum = (k: string) => byar.reduce((a, b) => a + ((b.stat as Record<string, number> | undefined)?.[k] ?? 0), 0);
+    const st = { giftsvamp: sum('giftsvamp'), giftsvampKand: sum('giftsvampKand') }, svamp = sum('svamp');
     // förgiftning prövas direkt: i de två byarna blir sällan någon förgiftad. Mycket gift i lite mat, så att det händer snart
     const g = createState(18, START), p = living(g)[0]!, kn0 = kn(p, 'svamp');
     setMat(g, { bar: 2 }); setAmount(g, 'giftsvamp', 10);
@@ -137,10 +138,10 @@ SCENARIER.svamp = {
     return [
       [`en ensam giftsvamp (0,9997) kan förgifta (${e.stat?.forgiftad ?? 0} förgiftad)`, (e.stat?.forgiftad ?? 0) === 1],
       [`bortsorterad giftsvamp försvinner ur svampen (svamp 12 till ${fSvamp.toFixed(2)}, gift 9 till ${fGift.toFixed(2)})`, (f.stat?.forgiftad ?? 0) === 1 && fGift < 9 && Math.abs((12 - fSvamp) - (9 - fGift)) < 1e-6],
-      [`kantareller plockade i två byar (${svamp}, minst 10: hur många beror mycket på slumpen)`, svamp >= 10],
+      [`kantareller plockade i fyra byar (${svamp}, minst 10: hur många beror mycket på slumpen)`, svamp >= 10],
       [`giftsvamp med i korgen (${st.giftsvamp ?? 0}) eller känd och lämnad (${st.giftsvampKand ?? 0})`, (st.giftsvamp ?? 0) + (st.giftsvampKand ?? 0) > 0],
-      [`den förgiftade lär sig om svampen (${kn0.toFixed(2)} till ${kn1.toFixed(2)}) och sorterar bort giften (${gift.toFixed(1)} av 9 kvar; ${st.forgiftad ?? 0} förgiftade i byn)`, (g.stat?.forgiftad ?? 0) === 1 && kn1 > kn0 && gift < 9],
-      ['byn lever', living(s).length > 0]];
+      [`den förgiftade lär sig om svampen (${kn0.toFixed(2)} till ${kn1.toFixed(2)}) och sorterar bort giften (${gift.toFixed(1)} av 9 kvar; ${sum('forgiftad')} förgiftade i byarna)`, (g.stat?.forgiftad ?? 0) === 1 && kn1 > kn0 && gift < 9],
+      ['byarna lever', byar.every(b => living(b).length > 0)]];
   },
 };
 

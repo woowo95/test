@@ -5,9 +5,10 @@ import type { Skill, Stat, Task } from './typer';
 // att ha egna listor. En ny handling läggs till här; det som händer när den är klar står i KLAR i steg.ts, och när den
 // väljs står i val.ts.
 // Sedan steg 1.5.13 går allt man skaffar 1,5 gånger så fort: bär, rötter, svamp, vilt, fisk, grenar, trä, hö, sten och flinta,
-// och att fälla ett träd. Takten i raderna nedan (bas) är den gamla; arbetet (workRate i ekonomi.ts) och värdet (varde.ts)
+// och att fälla ett träd. Sedan steg 2.3.9 ytterligare 1,5 gånger så fort (2,25 gånger raderna), så att byn kommer igång fortare.
+// Takten i raderna nedan (bas) är den gamla; arbetet (workRate i ekonomi.ts) och värdet (varde.ts)
 // räknar med SNABBARE. Att göra en sak tar sin tid i saker.ts (skaffa.min)
-export const SNABBARE = 1.5;
+export const SNABBARE = 2.25;
 // Ett redskap som hjälper i ett arbete. Raderna står med det bästa först
 export interface RedskapDef {
   namn?: string; // det som står att personen gör med redskapet

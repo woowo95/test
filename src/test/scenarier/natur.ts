@@ -434,9 +434,9 @@ SCENARIER.flatarbank = {
       return amountOf(w, 'rep');
     };
     const hand = rep(false), vidB = rep(true);
-    // en vanlig by i fyra dygn (fyra år i spelet): inget handarbete utan sak, och rep tvinnas som en egen handling
+    // en vanlig by i fem dygn (fem år i spelet): inget handarbete utan sak, och rep tvinnas som en egen handling
     const v = createState(2, START);
-    kor(v, 4 * 24, w => { for (const r of living(w)) { if (r.task?.act === 'hantverk') hantverk++; if (r.task?.act === 'tvinna') tvinnar++; } });
+    kor(v, 5 * 24, w => { for (const r of living(w)) { if (r.task?.act === 'hantverk') hantverk++; if (r.task?.act === 'tvinna') tvinnar++; } });
     // att tvinna rep är hantverk: den som gör det kommer på det som hör till hantverket (kniven)
     const t = createState(1, START), tq = living(t).find(r => ageOf(r, t.now) >= 18)!;
     tq.tek = { rep: 1 }; setAmount(t, 'flinta', 3);
@@ -447,7 +447,7 @@ SCENARIER.flatarbank = {
       ['den första slöjdbänken står i loggen', logg],
       ['utan slöjdbänk flätas ingen korg; med den flätas korgen vid bänken', utanBank && medBank_],
       [`rep tvinnas fortare vid bänken (${vidB.toFixed(2)} på sex minuter) än för hand vid elden (${hand.toFixed(2)})`, Math.abs(vidB - hand * STATION.repFart) < 1e-9 && hand > 0],
-      [`inget handarbete utan sak på fyra dygn (${hantverk} gånger), och rep tvinnas (${tvinnar} gånger)`, hantverk === 0 && tvinnar > 0],
+      [`inget handarbete utan sak på fem dygn (${hantverk} gånger), och rep tvinnas (${tvinnar} gånger)`, hantverk === 0 && tvinnar > 0],
       ['att tvinna rep ger tankar om det som hör till hantverket', tankt],
     ];
   },

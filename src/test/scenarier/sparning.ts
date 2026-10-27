@@ -60,7 +60,8 @@ SCENARIER.sparning = {
     for (const v of [a, b]) { const [x, y] = living(v); getRel(v, x, y).op = 30; die(v, x, 'olycka'); die(v, y, 'olycka'); }
     const relDoda = Object.keys(a.rels).length;
     for (let h = 0; h < 3 * 24; h++) { kor(a, 1); kor(b, 1); sparaSomUI(b); }
-    const sparLika = serialize(a) === serialize(b), dodaStadat = Object.keys(a.rels).every(k => k.split('-').map(Number).some(id => living(a).some(q => q.id === id)));
+    // oavsett i vilken ordning fälten skrivs (kanonisk): sparningen lägger kartorna packade i byn (packGround), och det första sparandet bestämmer var i texten
+    const sparLika = kanonisk(serialize(a)) === kanonisk(serialize(b)), dodaStadat = Object.keys(a.rels).every(k => k.split('-').map(Number).some(id => living(a).some(q => q.id === id)));
     const forst: Koll[] = [
       [`en by som sparas varje timme blir samma by som en som inte sparas (tre dygn)`, sparLika],
       [`relationer mellan två döda städas bort i simuleringen (${relDoda} relationer före)`, dodaStadat],
