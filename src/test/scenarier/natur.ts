@@ -457,7 +457,8 @@ SCENARIER.stationsteknik = {
   text: 'Varje station är en teknik i teknikträdet som byn måste komma på innan den kan byggas (steg 2.2.11): slaktbänken efter kniven, slöjdbänken efter repet och korgen efter slöjdbänken. En station som redan står i en sparad by kan byggas av dem som kunde det som räckte förut',
   kor: () => {
     const { STATIONER, STATION_LIST, TEK, kanBygga, thinkWhileWorking, knows, migrate, SPARVERSION } = SIM;
-    const register = STATION_LIST.every(k => !!TEK[k] && STATIONER[k].tek.length === 1 && STATIONER[k].tek[0] === k);
+    // en storlek av en annan station (de större borden, steg 2.2.15) har den stationens teknik
+    const register = STATION_LIST.every(k => { const tk = STATIONER[k].tek[0]; return STATIONER[k].tek.length === 1 && !!TEK[tk] && (tk === k || (STATIONER as Record<string, SIM.StationDef>)[tk]?.tek[0] === tk); });
     const ordning = TEK.slaktbank.krav.includes('kniv') && TEK.flatarbank.krav.includes('rep') && TEK.korg.krav.includes('flatarbank');
     // den som kan kniven men inte slaktbänken bygger ingen; när hen kommit på den kan hen
     const s = createState(1, START); klockan(s); tandEld(s); medHus(s);
@@ -592,6 +593,45 @@ SCENARIER.skinnfall = {
       [`den som sover under fällen kyls mindre (${med.toFixed(3)} mot ${utan.toFixed(3)} i timmen)`, utan > 0 && Math.abs(med - utan * (1 - TILLBEHOR.skinnfall.varme)) < 1e-9],
       ['den som är vaken i bädden får ingen värme av fällen', vaken === 0],
       ['skinnfällen är en egen teknik efter halmbädden, och byn måste ha skinn', !!tek && tek.krav.includes('halmbadd') && tek.material.some(g => g.includes('skinn'))],
+    ];
+  },
+};
+
+SCENARIER.bord = {
+  text: 'Bord och stubbar (steg 2.2.15): en egen teknik med tre storlekar (4, 8 och 10 platser). Byn bygger den storlek som räcker åt dem som saknar en plats, och vid bordet äter man tillsammans, blir glad av det och samtalar',
+  kor: () => {
+    const { STATION, TEK, PROJEKT, bordStorlek, bordPlatser, platserAv, stationerOf, isKlar, usable } = SIM;
+    // en by där alla kan bygga bord och det finns gott om trä och mat
+    const s = createState(1, START); klockan(s); tandEld(s);
+    for (const r of s.people) r.tek = { ...r.tek, bord: 1 };
+    setMat(s, { bar: 300 }); setAmount(s, 'ved', 40);
+    const n = living(s).length, k0 = bordStorlek(s)!, brist0 = PROJEKT[k0]!.brist(s), andra = ['bord', 'bord2', 'bord3'].filter(k => k !== k0).every(k => PROJEKT[k]!.brist(s) === 0);
+    let h = 0;
+    const bordet = () => stationerOf(s).find(t => isKlar(t) && platserAv(t.k) > 0);
+    while (!bordet() && h < 96) { kor(s, 1); h++; }
+    const b = bordet();
+    const pl = b ? bordPlatser(b) : [], tomma = pl.every(q => !usable(s, q.x, q.y));
+    const brist1 = PROJEKT[k0]!.brist(s);
+    // ett dygn med bordet: måltider och samtal vid det, och aldrig två på samma plats
+    const plats = new Set(pl.map(q => q.y * W + q.x));
+    let samtal = 0, krock = 0;
+    const mal0 = s.stat?.bordMal ?? 0;
+    for (let i = 0; i < 48; i++) {
+      kor(s, 0.5);
+      const vid = living(s).filter(p => p.task && plats.has(Math.floor(p.task.ty) * W + Math.floor(p.task.tx)) && ['maltid', 'samtal', 'beratta'].includes(p.task.act));
+      samtal += vid.filter(p => p.task!.act !== 'maltid' && p.task!.phase === 'do').length;
+      if (new Set(vid.map(p => Math.floor(p.task!.ty) * W + Math.floor(p.task!.tx))).size < vid.length) krock++;
+    }
+    const mal = (s.stat?.bordMal ?? 0) - mal0, glada = living(s).filter(p => p.thoughts.some(t => t.text === 'Åt vid bordet')).length;
+    const tek = TEK.bord;
+    return [
+      [`byn vill ha ${SIM.stationDef(k0)?.namn.toLowerCase()} (${platserAv(k0)} platser åt ${n}, brist ${brist0.toFixed(2)}), inte de andra storlekarna`, brist0 === 1 && andra && platserAv(k0) >= Math.min(n, 10)],
+      [`bordet byggs på ${h} timmar, med ${pl.length} stubbar runt där inget annat får stå`, !!b && b.k === k0 && pl.length === platserAv(k0) && tomma],
+      [`byns statistik räknar bordet en gång (${s.stat?.['station_' + k0] ?? 0}), och sedan har alla en plats (brist ${brist1.toFixed(2)})`, s.stat?.['station_' + k0] === 1 && brist1 === 0],
+      [`man äter vid bordet (${mal} måltider på ett dygn) och blir glad av det (${glada} av ${living(s).length})`, mal >= 3 && glada >= 1],
+      [`man samtalar vid bordet (${samtal} gånger någon satt där och pratade)`, samtal > 0],
+      [`aldrig två på samma plats (${krock} gånger)`, krock === 0],
+      [`stubbarna kostar trä (${STATION.stubbeTra} var), och bordet är en egen teknik efter timmerhuset`, !!tek && tek.krav.includes('timmervagg') && (SIM.stationDef('bord')?.av.ved ?? 0) > STATION.bordTra * 2],
     ];
   },
 };

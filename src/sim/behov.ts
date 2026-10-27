@@ -48,6 +48,7 @@ function eat(s: State, p: Person, fran?: Person) {
   const { n: portion, c: q } = takeFood(s, full, p, fran);
   p.hunger = clamp(p.hunger + 0.55 * portion / full * (q >= 0.5 ? 1 : 0.5 + q), 0, 1); eatPoison(s, p);
   if (q < 0.5) think(p, 'Maten var dålig', -0.05, now, 6 * HOUR);
+  if (portion > 0 && vidBordet(p)) { think(p, 'Åt vid bordet', KROPP.bordGlad, now, KROPP.bordGladTim * HOUR); count(s, 'bordMal'); }
   if (q < 0.25 && rnd(s, 'halsa', p) < (0.25 - q) / 0.25 * 0.35) {
     p.sickUntil = Math.max(p.sickUntil ?? 0, now + (4 + rnd(s, 'halsa', p) * 8) * HOUR); p.sickWhy = 'Magsjuk av skämd mat';
     think(p, 'Åt skämd mat och blev magsjuk', -0.2, now, DAY / 2); count(s, 'skamdMat');
@@ -55,12 +56,15 @@ function eat(s: State, p: Person, fran?: Person) {
   }
   return portion;
 }
+// p sitter vid bordet och äter (handlingen maltid, framme: val.ts och stationer.ts, steg 2.2.15)
+const vidBordet = (p: Person) => p.task?.act === 'maltid' && p.task.phase === 'do';
 export const MAT: Behov = {
   id: 'mat', namn: 'mat', slag: FOOD, minst: 0.3, mangd: portionOf,
   // det man själv äter på ett dygn. En getter, så att talet läses först när det behövs: förr importerade ekonomi.ts och behov.ts
   // varandra via lager.ts; i dag ingår ekonomi.ts inte i någon cirkulär import
   get kvar() { return EKONOMI.matPerDygn; },
-  behover: (_s, p) => p.hunger < KROPP.hungrig, genast: true,
+  // vid bordet äter man lite tidigare än annars: det är därför man satt sig där
+  behover: (_s, p) => p.hunger < KROPP.hungrig || vidBordet(p) && p.hunger < KROPP.hungrig + KROPP.bordHunger, genast: true,
   fara: (_s, p) => p.hunger <= 0 ? 1 - p.health : 0, // man svälter när hungern är slut, och hälsan sjunker
   anvand: eat,
 };
@@ -75,6 +79,8 @@ function hasFor(s: State, p: Person, b: Behov) { let n = 0; for (const k of b.sl
 export function ownFor(s: State, p: Person, b: Behov) { let n = 0; for (const k of b.slag) n += ownsAmount(s, p, k) * perOf(b, k); return n; }
 // p behöver det och har inget eget eller av byns att ta
 const lacksFor = (s: State, p: Person, b: Behov) => b.behover(s, p) && hasFor(s, p, b) < b.minst;
+// p har mat att äta, sin egen eller byns (för måltiden vid bordet, val.ts)
+export const harMat = (s: State, p: Person) => hasFor(s, p, MAT) >= MAT.minst;
 
 // varje steg: den som behöver något tar av sitt eget och byns. Finns inget ber hen någon i närheten om det, och i
 // yttersta nöd stjäl hen

@@ -50,6 +50,9 @@ export const TEKNIK: Tek[] = [
     omr: ['hantverk'], krav: ['rep'], material: [['ved'], ['grenar']], tid: 12 },
   { id: 'halmbadd', namn: 'Halmbädd', text: 'Hö som bäddas på en ram av grenar på golvet i huset.', effekt: 'Den som sover i en halmbädd vilar upp sig fortare.',
     omr: ['hantverk', 'bygga'], krav: ['timmervagg'], material: [['torrgras'], ['grenar']], tid: 16 },
+  // borden (steg 2.2.15): en teknik för alla tre storlekarna, med samma id som det minsta (bord i STATIONER)
+  { id: 'bord', namn: 'Bord', text: 'Kluvna stockar på ben, med stubbar att sitta på runt omkring.', effekt: 'Vid bordet äter man tillsammans, blir glad av det och samtalar.',
+    omr: ['hantverk', 'bygga'], krav: ['timmervagg'], material: [['ved']], tid: 16 },
   // tillbehören till möblerna (TILLBEHOR i stationer.ts, steg 2.2.14) har också samma id som raden där
   { id: 'skinnfall', namn: 'Skinnfäll', text: 'Skinn som sys ihop till ett täcke och läggs i halmbädden.', effekt: 'Den som sover under en skinnfäll fryser mindre.',
     omr: ['hantverk', 'jakt'], krav: ['halmbadd'], material: [['skinn']], tid: 16 },

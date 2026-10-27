@@ -1,7 +1,7 @@
 import { Act, MIN, Person, SEC, State, Task, W } from './typer';
 import { getMap } from './karta';
 import { knows } from './teknik';
-import { count, doingAct, forstaGang, log } from './folk';
+import { count, doingAct, forstaGang, living, log } from './folk';
 import { getable, takeMaterial } from './behov';
 import { RESERV } from './ekonomi';
 import { Ting, tingOf } from './agande';
@@ -58,13 +58,19 @@ export const STATION = balans('station', {
   fallSkinn: 2, // en skinnfäll kräver så många skinn ... (steg 2.2.14)
   fallMin: 20, // ... och så många minuters arbete
   fallVarme: 0.5, // den som sover under en skinnfäll kyls så här mycket mindre (av det som når in i huset)
+  bordTra: 1, // ett bord kräver så mycket trä för varje ruta det tar ... (steg 2.2.15)
+  stubbeTra: 0.5, // ... och så mycket för varje stubbe att sitta på runt det
+  bordMin: 20, bord2Min: 25, bord3Min: 30, // så många minuters arbete för det lilla bordet, bordet och långbordet
 });
+// trä till ett bord som tar w × h rutor, med stubbar på platserna runt det (platserAv nedan)
+const bordTra = (w: number, h: number) => w * h * STATION.bordTra + ((w >= 2 ? 2 * w : 0) + (h >= 2 ? 2 * h : 0)) * STATION.stubbeTra;
 
 // namn och ikon (ikoner.ts; kartans bild uppifrån heter ikon_karta), w och h = rutorna den tar (bredd och djup), tek = teknikerna, och den som kan någon av dem bygger den, av = materialet, min = minuters arbete,
 // gor = handlingarna som görs vid den, bara = de av dem som inte görs alls utan stationen, kniv = knivar som hör till den, bygger = texten för den som bygger,
 // forsta = loggen när byn fått sin första, inne = står inne i ett hus, mobel = en möbel, flera = byn kan ha flera, sover = en sovplats
-// (halmbädden), sitt = en sittplats framför den (bara utseende, steg 2.2.5)
-export interface StationDef { namn: string; ikon: string; w: number; h: number; tek: string[]; av: Record<string, number>; min: number; gor: Act[]; bara?: Act[]; kniv?: number; bygger: string; forsta: string; inne?: true; mobel?: true; flera?: true; sover?: true; sitt?: true }
+// (halmbädden), sitt = en sittplats framför den (bara utseende, steg 2.2.5), platser = ett bord med stubbar att sitta på runt
+// det (steg 2.2.15)
+export interface StationDef { namn: string; ikon: string; w: number; h: number; tek: string[]; av: Record<string, number>; min: number; gor: Act[]; bara?: Act[]; kniv?: number; bygger: string; forsta: string; inne?: true; mobel?: true; flera?: true; sover?: true; sitt?: true; platser?: true }
 export const STATIONER = {
   slaktbank: {
     namn: 'Slaktbänk', ikon: 'slaktbank', w: 3, h: 1, tek: ['slaktbank'], av: { ved: STATION.slaktbankTra }, min: STATION.slaktbankMin, gor: ['slakta', 'rensa'], bara: ['slakta', 'rensa'], kniv: STATION.knivplatser,
@@ -80,6 +86,22 @@ export const STATIONER = {
     namn: 'Halmbädd', ikon: 'halmbadd', w: 2, h: 1, tek: ['halmbadd'], av: { torrgras: STATION.halmbaddHo, grenar: STATION.halmbaddGrenar }, min: STATION.halmbaddMin, gor: [], inne: true, mobel: true, flera: true, sover: true,
     bygger: 'Bäddar en halmbädd av hö och grenar.',
     forsta: '{namn} gjorde byns första halmbädd. Den som sover i den vilar upp sig fortare.',
+  },
+  // borden (steg 2.2.15): tre storlekar av samma möbel och teknik. Byn bygger den storlek som räcker åt dem som saknar en plats
+  bord: {
+    namn: 'Litet bord', ikon: 'bord', w: 2, h: 1, tek: ['bord'], av: { ved: bordTra(2, 1) }, min: STATION.bordMin, gor: [], mobel: true, flera: true, platser: true,
+    bygger: 'Bygger ett bord med stubbar att sitta på.',
+    forsta: '{namn} byggde byns första bord, med stubbar att sitta på. Där äter man tillsammans och samtalar.',
+  },
+  bord2: {
+    namn: 'Bord', ikon: 'bord2', w: 2, h: 2, tek: ['bord'], av: { ved: bordTra(2, 2) }, min: STATION.bord2Min, gor: [], mobel: true, flera: true, platser: true,
+    bygger: 'Bygger ett bord med åtta stubbar runt.',
+    forsta: '{namn} byggde byns första fyrkantiga bord, med plats för åtta.',
+  },
+  bord3: {
+    namn: 'Långbord', ikon: 'bord3', w: 3, h: 2, tek: ['bord'], av: { ved: bordTra(3, 2) }, min: STATION.bord3Min, gor: [], mobel: true, flera: true, platser: true,
+    bygger: 'Bygger ett långbord med tio stubbar runt.',
+    forsta: '{namn} byggde byns första långbord, med plats för tio.',
   },
 } satisfies Record<string, StationDef>;
 export type StationSlag = keyof typeof STATIONER;
@@ -102,19 +124,21 @@ export const storlek = (k: string, rot?: unknown) => { const d = stationDef(k), 
 export const storlekAv = (t: { k: string; rot?: unknown }) => storlek(t.k, t.rot);
 // rutorna (index i kartan) som stationerna tar, och sovplatserna i de färdiga möbler man sover i (rutan uppe till vänster).
 // Räknas om när något byggs (s.byggV)
-interface Rutor { v: number; n: number; at: Map<number, Station>; sov: Set<number> }
+// och borden: platserna runt dem (sitt, där inget annat får stå)
+interface Rutor { v: number; n: number; at: Map<number, Station>; sov: Set<number>; sitt: Set<number> }
 const rutorCache = new WeakMap<State, Rutor>();
 export function stationRutor(s: State): Rutor {
   const st = stationerOf(s), v = s.byggV ?? 0;
   let r = rutorCache.get(s);
   if (r && r.v === v && r.n === st.length) return r;
-  const at = new Map<number, Station>(), sov = new Set<number>();
+  const at = new Map<number, Station>(), sov = new Set<number>(), sitt = new Set<number>();
   for (const t of st) {
     const { w, h } = storlekAv(t);
     for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) at.set((t.y + j) * W + t.x + i, t);
     if (isKlar(t) && stationDef(t.k)?.sover) sov.add(t.y * W + t.x);
+    for (const q of bordPlatser(t)) sitt.add(q.y * W + q.x);
   }
-  r = { v, n: st.length, at, sov };
+  r = { v, n: st.length, at, sov, sitt };
   rutorCache.set(s, r);
   return r;
 }
@@ -123,6 +147,8 @@ export function stationAt(s: State, x: number, y: number) {
   if (!s.stationer?.length || x < 0 || y < 0) return undefined;
   return x < W ? stationRutor(s).at.get(Math.floor(y) * W + Math.floor(x)) : undefined;
 }
+// är rutan en plats vid ett bord (en stubbe)?
+export const sittAt = (s: State, x: number, y: number) => !!s.stationer?.length && x >= 0 && y >= 0 && x < W && stationRutor(s).sitt.has(Math.floor(y) * W + Math.floor(x));
 // den färdiga station där handlingen görs, om byn har en
 export const stationFor = (s: State, act: Act) => stationerOf(s).find(t => isKlar(t) && stationDef(t.k)?.gor.includes(act));
 // handlingen görs bara vid en station (bara i registret)
@@ -135,7 +161,7 @@ export const vidStation = (t: Station) => { const { w, h } = storlekAv(t); retur
 // ---------- var den står ----------
 // en ruta där inget annat ligger eller står: inte på en lagerplats, ett hus, en stack, ett redskap, en stock eller en stubbe
 function ledig(s: State, x: number, y: number) {
-  if (!usable(s, x, y) || zonesOf(s).some(z => x >= z.x && x < z.x + z.w && y >= z.y && y < z.y + z.h)) return false;
+  if (!usable(s, x, y) || sittAt(s, x, y) || zonesOf(s).some(z => x >= z.x && x < z.x + z.w && y >= z.y && y < z.y + z.h)) return false;
   return !((s.stackar ?? []).some(a => a.x === x && a.y === y) || tingOf(s).some(k => k.x === x && k.y === y) || (s.stockar ?? []).some(k => Math.floor(k.x) === x && Math.floor(k.y) === y) || (s.stubbar ?? []).some(k => k.x === x && k.y === y));
 }
 // platsen för en station av sorten k: inne i ett hus om registret säger det, annars nära elden. Samma plats varje gång (ingen slump)
@@ -150,6 +176,7 @@ function siteUte(s: State, k: string) {
       const x = f.x + dx, y = f.y + dy;
       let fri = true;
       for (let j = 0; j < h && fri; j++) for (let i = 0; i < w && fri; i++) fri = ledig(s, x + i, y + j);
+      if (fri && stationDef(k)?.platser) fri = bordPlatser({ k, x, y, rot }).every(q => ledig(s, q.x, q.y)); // stubbarna runt bordet
       if (!fri) continue;
       const mx = dx + (w - 1) / 2, my = dy + (h - 1) / 2;
       const lek = Math.abs(mx) <= PLATS.lekBredd / 2 && my >= PLATS.lekFran - 1 ? STATION.norr * 4 : my > 0 ? STATION.norr : 0;
@@ -162,7 +189,7 @@ function siteUte(s: State, k: string) {
 // inne: en golvruta i rummet där ingen station står, inget ligger och som inte är en lagerplats
 function golvFri(s: State, rum: Set<number>, W: number, x: number, y: number) {
   const i = y * W + x;
-  return rum.has(i) && !stationRutor(s).at.has(i) && !zonesOf(s).some(z => x >= z.x && x < z.x + z.w && y >= z.y && y < z.y + z.h)
+  return rum.has(i) && !stationRutor(s).at.has(i) && !stationRutor(s).sitt.has(i) && !zonesOf(s).some(z => x >= z.x && x < z.x + z.w && y >= z.y && y < z.y + z.h)
     && !(s.stackar ?? []).some(a => a.x === x && a.y === y) && !tingOf(s).some(q => q.x === x && q.y === y && q.hos === undefined && q.lass === undefined);
 }
 // inne: i ett färdigt hus (en möbel man sover i bara där man sover, det andra inte i ett förrådshus), på lediga golvrutor med
@@ -252,6 +279,55 @@ export function finishStation(s: State, p: Person, tk: Task) {
   const d = stationDef(t.k)!;
   if (forstaGang(s, 'station_' + t.k)) { log(s, d.forsta.replace('{namn}', p.name), 'world', [p.id]); p.fame.push(`Byggde byns första ${d.namn.toLowerCase()}`); }
   fyllKnivplatser(s);
+}
+
+// ---------- borden (steg 2.2.15) ----------
+// Ett bord har stubbar att sitta på runt sig (platser i registret): en på varje ruta längs de sidor som är minst två rutor
+// långa. Det lilla bordet (2 × 1 rutor) har fyra platser på långsidorna, bordet (2 × 2) åtta, två på varje sida, och
+// långbordet (3 × 2) tio. Stubbarna hör till bordet: de byggs med det och inget annat får stå där. Bordet står ute nära
+// elden tills husen har plats för det (2.2.17). Den som är hungrig går till en ledig plats och äter där (måltiden i val.ts,
+// MAT i behov.ts) och blir glad av det, och vid bordet samtalar man (spotFor i val.ts). Byn bygger bord så länge någon saknar
+// en plats, och den storlek som räcker åt dem som saknar (bordStorlek, projekt.ts)
+export function bordPlatser(t: { k: string; x: number; y: number; rot?: unknown }) {
+  if (!stationDef(t.k)?.platser) return [];
+  const { w, h } = storlekAv(t), ut: { x: number; y: number }[] = [];
+  if (w >= 2) for (let i = 0; i < w; i++) ut.push({ x: t.x + i, y: t.y - 1 }, { x: t.x + i, y: t.y + h });
+  if (h >= 2) for (let j = 0; j < h; j++) ut.push({ x: t.x - 1, y: t.y + j }, { x: t.x + w, y: t.y + j });
+  return ut;
+}
+// så många platser ett bord av sorten k har
+export const platserAv = (k: string) => { const d = stationDef(k); return !d?.platser ? 0 : (d.w >= 2 ? 2 * d.w : 0) + (d.h >= 2 ? 2 * d.h : 0); };
+// de färdiga borden, och alla platser vid dem
+export const bordenOf = (s: State) => stationerOf(s).filter(t => isKlar(t) && stationDef(t.k)?.platser);
+export const allaPlatser = (s: State) => bordenOf(s).reduce((n, t) => n + platserAv(t.k), 0);
+// handlingarna man gör sittande vid bordet
+const VID_BORDET = new Set<Act>(['maltid', 'samtal', 'beratta']);
+// den lediga plats vid ett bord som ligger närmast p (mitt på stubben): ingen annan sitter där eller är på väg dit
+export function ledigPlats(s: State, p: Person) {
+  const borden = bordenOf(s);
+  if (!borden.length) return undefined;
+  const tagen = new Set<number>();
+  for (const q of living(s)) if (q !== p && q.task && VID_BORDET.has(q.task.act)) tagen.add(Math.floor(q.task.ty) * W + Math.floor(q.task.tx));
+  let best: { x: number; y: number } | undefined, bd = Infinity;
+  for (const t of borden) for (const q of bordPlatser(t)) {
+    const d = Math.hypot(q.x + 0.5 - p.x, q.y + 0.5 - p.y);
+    if (d < bd && !tagen.has(q.y * W + q.x)) { bd = d; best = { x: q.x + 0.5, y: q.y + 0.5 }; }
+  }
+  return best;
+}
+// sitter p vid bordet och äter (handlingen maltid, framme)?
+export const vidBordet = (p: Person) => p.task?.act === 'maltid' && p.task.phase === 'do';
+// den storlek byn vill bygga: den minsta som räcker åt alla som saknar en plats, annars den största. Ingen när alla har en
+const BORD_LIST = STATION_LIST.filter(k => platserAv(k) > 0).sort((a, b) => platserAv(a) - platserAv(b));
+export function bordStorlek(s: State): StationSlag | undefined {
+  const fattas = living(s).length - allaPlatser(s);
+  if (fattas <= 0) return undefined;
+  return BORD_LIST.find(k => platserAv(k) >= fattas) ?? BORD_LIST[BORD_LIST.length - 1];
+}
+// hur stor del av byn som saknar en plats vid ett bord, för den storlek som ska byggas (0 för de andra)
+export function bordBrist(s: State, k: string) {
+  const n = living(s).length;
+  return n && k === bordStorlek(s) ? Math.min(1, (n - allaPlatser(s)) / n) : 0;
 }
 
 // ---------- tillbehören (steg 2.2.14) ----------

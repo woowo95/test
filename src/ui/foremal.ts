@@ -1,4 +1,4 @@
-import { Act, DJUR, GORS, MATERIAL, Pile, STATION, STUBBE_LIV, Station, bitsOf, clamp, condOf, emberOn, fireHeat, getMap, heatRadius, isKlar, living, stationDef, stationKlar, stationerOf, storlekAv, tillbehorDef, tingOf, vidStation, zonesOf } from '../sim';
+import { Act, DJUR, bordPlatser, GORS, MATERIAL, Pile, STATION, STUBBE_LIV, Station, bitsOf, clamp, condOf, emberOn, fireHeat, getMap, heatRadius, isKlar, living, stationDef, stationKlar, stationerOf, storlekAv, tillbehorDef, tingOf, vidStation, zonesOf } from '../sim';
 import { iconCanvas } from '../ikoner';
 import { ritaHus } from './husbild';
 import { outPilesAt, piles, s, ui } from './lage';
@@ -62,6 +62,7 @@ export function drawStructures(t: number) {
     pileIcons.add(ik, x0, y0, 2, !!st.rot);
     if (!isKlar(st)) { framsteg(st.x * TS + w / 2, y0 + 3, stationKlar(st)); continue; }
     if (d?.sitt) pileIcons.add('sittplats', st.x * TS + w / 2 - 4, (st.y + bh) * TS + 1, 1); // sittplatsen framför bänken
+    for (const q of bordPlatser(st)) pileIcons.add('sittplats', q.x * TS + TS / 2 - 4, q.y * TS + TS / 2 - 4, 1); // stubbarna runt bordet
     for (const k of st.med ?? []) pileIcons.add(tillbehorDef(k)?.ikon + '_karta', x0, y0, 2, !!st.rot); // tillbehören i den (skinnfällen i bädden)
     if (st.rot) continue;
     const yta = YTA[st.k] ?? { x: 2, y: 2 };

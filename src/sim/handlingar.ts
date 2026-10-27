@@ -58,7 +58,8 @@ interface ActDef {
   stilla?: true; // står still på platsen (ingen småjustering i bilden)
   // var den görs (val.ts): runt elden, vid kolhögen, sovplats, lekplatsen, ute på marken (skog är förvalt) eller vid
   // stationen där handlingen görs (stationer.ts; runt elden så länge byn inte har någon)
-  plats?: 'elden' | 'kol' | 'sang' | 'lek' | 'ang' | 'strand' | 'avsides' | 'skog' | 'station';
+  // eller vid ett bord (en ledig plats, steg 2.2.15; vid elden om det inte finns någon)
+  plats?: 'elden' | 'kol' | 'sang' | 'lek' | 'ang' | 'strand' | 'avsides' | 'skog' | 'station' | 'bord';
   radie?: number; // avstånd från elden, för plats 'elden'
 }
 
@@ -70,6 +71,7 @@ const DEF = {
   leka: { namn: 'Leker', slag: 'leka', vandra: { r: 2, h0: 2, h1: 6, v: 1.3 }, social: true, dygn: true, plats: 'lek' },
   vila: { namn: 'Vilar', yrke: 'Dagdrivare', slag: 'vila', vila: true, dygn: true, plats: 'sang' },
   samtal: { namn: 'Samtalar vid elden', slag: 'prata', vila: true, social: true, dygn: true, plats: 'elden' },
+  maltid: { namn: 'Äter vid bordet', tecken: '🍽️', vila: true, social: true, dygn: true, stilla: true, plats: 'bord' }, // steg 2.2.15
   beratta: { namn: 'Berättar vid elden', yrke: 'Berättare', slag: 'prata', social: true, dygn: true, plats: 'elden' },
   hantverk: { namn: 'Gör handarbete', yrke: 'Hantverkare', slag: 'hantverk', verktyg: { rep: 'Tvinnar rep' }, vila: true, hantverk: true, social: true, dygn: true, stilla: true, plats: 'elden' },
   vakt: { namn: 'Håller vakt', yrke: 'Väktare', tecken: '👁️', social: true, dygn: true, stilla: true, plats: 'elden', radie: 2.6 },
