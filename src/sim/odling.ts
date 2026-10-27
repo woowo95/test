@@ -12,8 +12,8 @@ import { knows } from './teknik';
 import { getable, takeMaterial } from './behov';
 import { freeTools, wearTool } from './agande';
 import { SAKER } from './saker';
-import { PLATS, campDist } from './plats';
-import { ledig } from './stationer';
+import { campDist } from './plats';
+import { ledig, lekplats, paLek } from './stationer';
 import { temperature } from './vader';
 import { ISTID, iIstiden, isLight, kalender } from './tid';
 
@@ -130,7 +130,7 @@ export function faltSite(s: State) {
   return at;
 }
 function hittaSite(s: State) {
-  const m = getMap(s.seed), f = m.fire, R = ODLING.faltTill + 2, g = groundOf(s);
+  const m = getMap(s.seed), f = m.fire, R = ODLING.faltTill + 2, g = groundOf(s), lekR = lekplats(s);
   let best: { x: number; y: number } | undefined, bs = Infinity;
   for (let dy = -R; dy <= R; dy++) for (let dx = -R; dx <= R; dx++) {
     const x = f.x + dx, y = f.y + dy;
@@ -144,7 +144,7 @@ function hittaSite(s: State) {
       unga += tr;
     }
     if (!ok) continue;
-    const lek = Math.abs(dx) <= PLATS.lekBredd / 2 && dy >= PLATS.lekFran - 1 && dy <= PLATS.lekFran + PLATS.lekDjup ? 20 : 0;
+    const lek = paLek(lekR, x, y, ODLING.faltW, ODLING.faltH) ? 20 : 0;
     const sc = Math.abs(d - ODLING.faltAvst) + lek + unga;
     if (sc < bs) { bs = sc; best = { x, y }; }
   }

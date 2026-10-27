@@ -2,7 +2,8 @@ import { ALDER, ageOf, count, doingAct, forstaGang, living, log, stat } from './
 import { Bit, DORRAR, DorrDef, DorrSlag, Hus, MATERIAL, bitById, dorrDef, bitsOf, blocked, freeNear, gridOf, housesOf, husById, touch } from './byggnad';
 import { getMap } from './karta';
 import { groundOf, punktIRuta } from './mark';
-import { PLATS, campCenter, rektAvstand } from './plats';
+import { campCenter, rektAvstand } from './plats';
+import { lekplats, paLek } from './stationer';
 import { sedEvent } from './seder';
 import { RESERV, kunnighet } from './ekonomi';
 import { ARSTID, iIstiden } from './tid';
@@ -65,7 +66,7 @@ const tileOk = (s: State, x: number, y: number) => {
 // en plats för ett hus med yttermåtten w×h inom byområdet, helst en bit från elden och inte på lekplatsen. Träden där
 // huset ska stå fälls först, men en plats med färre träd går fortare
 function siteFor(s: State, w: number, h: number, okAt: Uint8Array) {
-  const f = getMap(s.seed).fire, mid = campCenter(s), R = BYGG.radieBas + living(s).length * BYGG.radiePerPerson, g = groundOf(s);
+  const f = getMap(s.seed).fire, mid = campCenter(s), R = BYGG.radieBas + living(s).length * BYGG.radiePerPerson, g = groundOf(s), lekR = lekplats(s);
   let best: { x: number; y: number } | undefined, bs = Infinity;
   for (let y = 1; y + h < H; y++) for (let x = 1; x + w < W; x++) {
     const cx = x + w / 2, cy = y + h / 2;
@@ -77,7 +78,7 @@ function siteFor(s: State, w: number, h: number, okAt: Uint8Array) {
     }
     if (!ok) continue;
     const near = rektAvstand(f.x, f.y, x, y, w, h);
-    const lek = x <= f.x + PLATS.lekBredd / 2 && x + w > f.x - PLATS.lekBredd / 2 && y <= f.y + PLATS.lekFran + PLATS.lekDjup && y + h > f.y + PLATS.lekFran ? BYGG.lekStraff : 0;
+    const lek = paLek(lekR, x, y, w, h) ? BYGG.lekStraff : 0; // lekplatsen räknas från byns inre (plats.ts, steg 2.10.4)
     let trad = 0; // helst en plats med få träd: varje träd ska fällas först
     for (let yy = y; yy < y + h; yy++) for (let xx = x; xx < x + w; xx++) if (g.trees[yy * W + xx] >= FOREST) trad++;
     const sc = Math.abs(near - BYGG.husAvst) + BYGG.mittVikt * Math.hypot(cx - mid.x, cy - mid.y) + lek + BYGG.tradVikt * trad;

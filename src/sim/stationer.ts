@@ -1,4 +1,4 @@
-import { Act, H, MIN, Person, SEC, State, T, Task, W } from './typer';
+import { Act, H, HOUR, MIN, Person, SEC, State, T, Task, W, inMap } from './typer';
 import { getMap } from './karta';
 import { knows } from './teknik';
 import { ALDER, ageOf, count, doingAct, forstaGang, living, log } from './folk';
@@ -7,9 +7,9 @@ import { RESERV } from './ekonomi';
 import { Ting, freeTools, tingOf, wearTool } from './agande';
 import { BYN } from './egendom';
 import { Zone, inZone, pilesOf, usable, zoneAt, zonesOf } from './lager';
-import { PLATS, campDist } from './plats';
+import { PLATS, campDist, campKey, rektAvstand } from './plats';
 import { balans } from './balans';
-import { Rum, bitAt, gridOf, husById, roomAt, touch } from './byggnad';
+import { Rum, bitAt, bitsOf, gridOf, housesOf, husById, roomAt, touch } from './byggnad';
 import { fnOf, sovKvar } from './byggnader';
 import { ACTS } from './handlingar';
 import { SAKER, isTool } from './saker';
@@ -47,7 +47,7 @@ export const STATION = balans('station', {
   slaktbankTra: 3, // en slaktbänk kräver så mycket trä ...
   slaktbankMin: 30, // ... och så många minuters arbete
   avstand: 2.5, // en station står helst så här många rutor från elden
-  norr: 0.5, // ... och får så här många poäng (färre är bättre) om den står söder om elden, där barnen leker
+  norr: 0.5, // ... och får fyra gånger så här många poäng (färre är bättre) om den står på lekplatsen (plats.ts, steg 2.10.4)
   knivplatser: 1, // så många knivar som ligger kvar vid slaktbänken
   flatarbankTra: 2, // en flätarbänk kräver så mycket trä ...
   flatarbankGrenar: 3, // ... och så många grenar ...
@@ -258,19 +258,73 @@ export function ledig(s: State, x: number, y: number) {
   if (!usable(s, x, y) || stationAt(s, x, y) || sittAt(s, x, y) || zonesOf(s).some(z => x >= z.x && x < z.x + z.w && y >= z.y && y < z.y + z.h)) return false;
   return !((s.stackar ?? []).some(a => a.x === x && a.y === y) || tingOf(s).some(k => k.x === x && k.y === y) || (s.stockar ?? []).some(k => Math.floor(k.x) === x && Math.floor(k.y) === y) || (s.stubbar ?? []).some(k => k.x === x && k.y === y));
 }
+// ---------- inne i byn och lekplatsen (steg 2.10.4) ----------
+// Byn inne är lagerplatserna och husen, inte elden: elden är ett verktyg och kan flyttas, och det som räknas från
+// byns inre (lekplatsen, och arbetet utan bänk i 2.10.6) ska inte hänga på var den ligger. byInne är mitten av dem:
+// varje lagerplats och varje hus väger lika. Innan byn har något av dem är det elden
+export function byInne(s: State) {
+  const pts: { x: number; y: number }[] = zonesOf(s).map(z => ({ x: z.x + (z.w - 1) / 2, y: z.y + (z.h - 1) / 2 }));
+  const hus = new Map<number, { x: number; y: number; n: number }>();
+  for (const b of bitsOf(s)) {
+    if (b.hus === undefined) continue;
+    const h = hus.get(b.hus) ?? { x: 0, y: 0, n: 0 };
+    h.x += b.x; h.y += b.y; h.n++; hus.set(b.hus, h);
+  }
+  for (const h of housesOf(s)) { const c = hus.get(h.id); if (c) pts.push({ x: c.x / c.n, y: c.y / c.n }); }
+  if (!pts.length) { const f = getMap(s.seed).fire; return { x: f.x, y: f.y }; }
+  return { x: pts.reduce((a, q) => a + q.x, 0) / pts.length, y: pts.reduce((a, q) => a + q.y, 0) / pts.length };
+}
+export interface Rekt { x: number; y: number; w: number; h: number }
+// Lekplatsen: lekBredd × lekDjup rutor öppen mark (inte vatten eller sten) nära byns inre, där inget står och inga stora
+// träd växer, helst lekFran rutor därifrån och söderut. Samma plats varje gång (ingen slump); den följer byn när den
+// växer. Sparas per by och timme, som fältets plats (regel 4)
+const lekCache = new WeakMap<State, { key: string; at: Rekt }>();
+export function lekplats(s: State): Rekt {
+  const key = `${Math.floor(s.now / HOUR)}:${s.byggV ?? 0}:${campKey(s)}`;
+  const c = lekCache.get(s);
+  if (c && c.key === key) return c.at;
+  const at = hittaLek(s);
+  lekCache.set(s, { key, at });
+  return at;
+}
+function hittaLek(s: State): Rekt {
+  const m = getMap(s.seed), g = groundOf(s), mid = byInne(s), w = PLATS.lekBredd, h = PLATS.lekDjup, R = PLATS.lekSok;
+  const cx = Math.round(mid.x), cy = Math.round(mid.y), x0 = cx - R - w, y0 = cy - R - h, bw = 2 * (R + w) + 1, bh = 2 * (R + h) + 1;
+  const kost = new Float64Array(bw * bh); // vad varje ruta i sökområdet kostar: Infinity för vatten, sten och kartans kant
+  for (let j = 0; j < bh; j++) for (let i = 0; i < bw; i++) {
+    const x = x0 + i, y = y0 + j;
+    if (!inMap(x, y)) { kost[j * bw + i] = Infinity; continue; }
+    const tt = m.tiles[y * W + x];
+    kost[j * bw + i] = tt === T.Vatten || tt === T.Sten ? Infinity : !ledig(s, x, y) || g.trees[y * W + x] >= FOREST ? PLATS.lekHinder : 0;
+  }
+  let best: Rekt = { x: cx - w / 2, y: cy + PLATS.lekFran, w, h }, bs = Infinity;
+  for (let y = cy - R; y <= cy + R; y++) for (let x = cx - R; x <= cx + R; x++) {
+    let sc = 0;
+    for (let j = 0; j < h && sc < bs; j++) for (let i = 0; i < w && sc < bs; i++) sc += kost[(y + j - y0) * bw + x + i - x0];
+    if (sc >= bs) continue;
+    const d = rektAvstand(mid.x, mid.y, x, y, w, h);
+    sc += Math.abs(d - PLATS.lekFran) + (y + (h - 1) / 2 < mid.y ? PLATS.lekNorr : 0);
+    if (sc < bs) { bs = sc; best = { x, y, w, h }; }
+  }
+  return best;
+}
+// ligger rektangeln med hörnet (x, y) och måtten w×h på lekplatsen l (någon ruta)? l = lekplats(s), hämtad en gång före
+// sökningen, så att den inte räknas om för varje ruta
+export const paLek = (l: Rekt, x: number, y: number, w = 1, h = 1) => x < l.x + l.w && x + w > l.x && y < l.y + l.h && y + h > l.y;
+
 // platsen för en station av sorten k: inne i ett hus om registret säger det, annars nära elden. Samma plats varje gång (ingen slump)
 export const stationSite = (s: State, k: string) => stationDef(k)?.brasa ? siteBrasa(s) : stationDef(k)?.eld ? siteEld(s) : stationDef(k)?.forvar ? siteForvar(s, k) : stationDef(k)?.utkant ? siteUtkant(s, k) : stationDef(k)?.inne ? siteInne(s, k) : siteUte(s, k);
 // i byns utkant (latrinen): en ledig ruta på gräs, sand eller i glesare skog, latrinFran–latrinTill rutor från byns läger, helst
-// latrinAvst, inte i lekplatsen söder om elden, och när byn lärt sig det (s.hygien) långt från vattnet
+// latrinAvst, inte på lekplatsen, och när byn lärt sig det (s.hygien) långt från vattnet
 function siteUtkant(s: State, _k: string) {
-  const m = getMap(s.seed), f = m.fire, R = STATION.latrinTill + 4, g = groundOf(s);
+  const m = getMap(s.seed), f = m.fire, R = STATION.latrinTill + 4, g = groundOf(s), lekR = lekplats(s);
   let best: { x: number; y: number; rot?: 1 } | undefined, bs = Infinity;
   for (let dy = -R; dy <= R; dy++) for (let dx = -R; dx <= R; dx++) {
     const x = f.x + dx, y = f.y + dy;
     if (x < 0 || y < 0 || x >= W || y >= H) continue;
     const t = m.tiles[y * W + x], d = campDist(s, x, y);
     if (d < STATION.latrinFran || d > STATION.latrinTill || t !== T.Gras && t !== T.Sand && t !== T.Skog || g.trees[y * W + x] >= FOREST || !ledig(s, x, y)) continue;
-    const lek = Math.abs(dx) <= PLATS.lekBredd / 2 && dy >= PLATS.lekFran - 1 ? STATION.norr * 4 : 0;
+    const lek = paLek(lekR, x, y) ? STATION.norr * 4 : 0;
     const vatten = s.hygien ? s.hygien * STATION.latrinVattenPoang * Math.max(0, STATION.latrinVatten - tillVatten(s, x, y, STATION.latrinVatten)) : 0;
     const sc = Math.abs(d - STATION.latrinAvst) + lek + vatten;
     if (sc < bs) { bs = sc; best = { x, y }; }
@@ -309,7 +363,7 @@ function siteEld(s: State) {
 }
 // ute: alla rutorna den tar är lediga, och den står helst inte där barnen leker. Avståndet räknas från stationens mitt
 function siteUte(s: State, k: string) {
-  const f = getMap(s.seed).fire;
+  const f = getMap(s.seed).fire, lekR = lekplats(s);
   let best: { x: number; y: number; rot?: 1 } | undefined, bs = Infinity;
   for (const rot of [0, 1] as const) {
     const { w, h } = storlek(k, rot), R = Math.ceil(STATION.avstand) + 2 + Math.max(w, h);
@@ -320,7 +374,7 @@ function siteUte(s: State, k: string) {
       if (fri && stationDef(k)?.platser) fri = bordPlatser({ k, x, y, rot }).every(q => ledig(s, q.x, q.y)); // stubbarna runt bordet
       if (!fri) continue;
       const mx = dx + (w - 1) / 2, my = dy + (h - 1) / 2;
-      const lek = Math.abs(mx) <= PLATS.lekBredd / 2 && my >= PLATS.lekFran - 1 ? STATION.norr * 4 : my > 0 ? STATION.norr : 0;
+      const lek = paLek(lekR, x, y, w, h) ? STATION.norr * 4 : 0;
       const sc = Math.abs(Math.hypot(mx, my) - STATION.avstand) + lek + rot * STATION.vriden;
       if (sc < bs) { bs = sc; best = rot ? { x, y, rot } : { x, y }; }
     }

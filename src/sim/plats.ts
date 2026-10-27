@@ -10,9 +10,12 @@ export const PLATS = balans('plats', {
   toppProspekt: 10, // byns närområde räknas som snittet av så många av de bästa platserna (fynd.ts)
   toppArea: 5, // ett område räknas som snittet av så många av de bästa rutorna (minne.ts)
   tomtGrans: 0.08, // en plats som ger mindre än så (rikedom, richness) är tömd: man går därifrån (steg.ts)
-  lekBredd: 8, // lekplatsen ligger söder om elden: så många rutor bred (hälften åt varje sida om elden) ...
-  lekFran: 3, // ... börjar så här många rutor söder om elden ...
+  lekBredd: 8, // lekplatsen (steg 2.10.4, lekplats i stationer.ts) är så många rutor bred ...
+  lekFran: 3, // ... ligger helst så här många rutor från byns inre mitt (byInne) till sin närmaste kant, helst söderut ...
   lekDjup: 3, // ... och är så här många rutor djup (barnen leker där i val.ts, och byn bygger helst inte där, bygg.ts)
+  lekSok: 14, // så långt från byns inre mitt som lekplatsen kan ligga
+  lekHinder: 4, // en ruta på lekplatsen där något står (ett hus, ett lager, en station, ett träd) kostar så här mycket ...
+  lekNorr: 1, // ... och en lekplats norr om byns inre mitt så här mycket (förr låg den alltid söder om elden)
 });
 
 // Byns läger är inte bara elden: det är elden och lagerplatserna, och senare fler eldar och byggnader.
@@ -70,3 +73,4 @@ export function campCenter(s: State) {
   for (const z of zs) { x += z.x + (z.w - 1) / 2; y += z.y + (z.h - 1) / 2; }
   return { x: Math.round((f.x + x / zs.length) / 2), y: Math.round((f.y + y / zs.length) / 2) };
 }
+

@@ -47,7 +47,7 @@ SCENARIER.forradshus = {
     // var tredje by bygger ett förrådshus så tidigt, så byarna är valda bland dem som gjort det med god marginal; med
     // byar som var nära gränsen (dygn 39 av 40) avgjorde minsta ändring någon annanstans om provet gick igenom
     let byggt = 0, iHuset = 0;
-    for (const seed of [8, 12, 6]) { // valda igen i v89 (by 8 bygger det dygn 15, by 12 dygn 16, by 6 dygn 18)
+    for (const seed of [6, 8, 12]) { // valda igen i v98 (by 6 bygger det dygn 17; by 8 och 12, som byggde det dygn 15 och 16 i v89, inte inom 30 dygn sedan lekplatsen flyttade i steg 2.10.4)
       const v = createState(seed, START);
       byggt = 0; iHuset = 0;
       for (let dygn = 0; dygn < 30 && !(byggt && iHuset); dygn++) kor(v, 24, v => {
@@ -373,6 +373,8 @@ SCENARIER.lager = {
     const start = zoneOf(s).w * zoneOf(s).h;
     setFood(s, 230); setAmount(s, 'ved', 90); setAmount(s, 'grenar', 70); setAmount(s, 'flinta', 3); // mycket på en gång
     kor(s, 18);
+    // när lagerplatsen krymper hamnar en stack ibland utanför en stund, och bärs in igen inom ett par timmar
+    for (let i = 0; i < 3 && pilesOf(s).some(p => p.out); i++) kor(s, 1);
     const z = zoneOf(s), ps = pilesOf(s), stor = z.w * z.h;
     const summaOk = Object.keys(STACK).every(k => Math.abs(ps.filter(p => p.k === k).reduce((a, p) => a + p.n, 0) - amountOf(s, k)) < 1e-6);
     // bära: kör en stund med gående invånare och se hur mycket de bär hem
@@ -452,7 +454,7 @@ SCENARIER.lagerplatser = {
     const startFel = [54, 990, 2612].filter(seed => { const k = createState(seed, START), z = zonesOf(k)[0]; for (let y = z.y; y < z.y + z.h; y++) for (let x = z.x; x < z.x + z.w; x++) if (!usable(k, x, y)) return true; return false; });
     const s = createState(9, START);
     setFood(s, 600); setAmount(s, 'ved', 200); setAmount(s, 'grenar', 400); setAmount(s, 'flinta', 1); s.fire.ring = true; // byn kan tända sin eld och har tid att sortera
-    kor(s, 24);
+    kor(s, 30); // sorteringen tar ungefär ett dygn, ibland några timmar till
     const zs = zonesOf(s), ps = pilesOf(s);
     const fel = ps.filter(p => p.zone >= 0 && !allows(zs[p.zone], p.k)).length;
     const summaOk = Object.keys(STACK).every(k => Math.abs(ps.filter(p => p.k === k && p.stored).reduce((a, p) => a + p.n, 0) - amountOf(s, k)) < 1e-3);
@@ -460,7 +462,7 @@ SCENARIER.lagerplatser = {
       [`den första lagerplatsen går att använda (${startFel.length ? 'inte i by ' + startFel.join(', ') : 'i alla tre byarna'})`, startFel.length === 0],
       [`en ny lagerplats görs när den första inte kan växa mer (${zs.length} lagerplatser)`, zs.length >= 2],
       [`maten får den första och material den nya (${zs.map(z => z.namn).join(', ')})`, zs[0].slag === 'mat' && zs[1]?.slag === 'material'],
-      [`sakerna sorteras till rätt lagerplats (${fel} stackar ligger fel efter ett dygn)`, fel <= 2],
+      [`sakerna sorteras till rätt lagerplats (${fel} stackar ligger fel efter 30 timmar)`, fel <= 2],
       ['stackarna innehåller allt i förrådet', summaOk && ps.every(p => p.n <= p.max + 1e-9)],
     ];
   },
@@ -507,6 +509,43 @@ SCENARIER.verkstad = {
       [`en tom sovsal där en station står blir en verkstad och stationen står kvar (${Bq.namn})`, Bq.fn === 'verkstad' && kvar],
       ['slaktbänken står ute och slöjdbänken inne (registret)', !stationDef('slaktbank')?.inne && !!stationDef('flatarbank')?.inne && !!ute && !('inne' in ute)],
       [`en slöjdbänk som står ute bärs in i ${B?.namn.toLowerCase() ?? 'inget hus'} inom två timmar`, inburen],
+    ];
+  },
+};
+
+SCENARIER.lekplats = {
+  text: 'Steg 2.10.4: lekplatsen räknas från byns inre (lagerplatserna och husen) och inte från elden. Den ligger på öppen mark där inget hus, lager eller station står, följer byn när den växer, och barnen leker där',
+  kor: () => {
+    const s = createState(3, START);
+    klockan(s); tandEld(s);
+    let leker = 0, paPlats = 0, fel = 0;
+    for (let h = 0; h < 72; h++) {
+      kor(s, 1);
+      const l = SIM.lekplats(s);
+      for (const q of living(s)) if (q.task?.act === 'leka' && q.task.phase === 'do') {
+        leker++;
+        if (q.x >= l.x - 2.5 && q.x <= l.x + l.w + 2.5 && q.y >= l.y - 2.5 && q.y <= l.y + l.h + 2.5) paPlats++; // de vandrar lite runt platsen
+      }
+      for (let y = l.y; y < l.y + l.h; y++) for (let x = l.x; x < l.x + l.w; x++) {
+        const t = getMap(s.seed).tiles[y * W + x];
+        if (t === T.Vatten || t === T.Sten || roomAt(s, x, y) || zonesOf(s).some(z => inZone(z, x, y))) fel++;
+      }
+    }
+    const l = SIM.lekplats(s), mid = SIM.byInne(s), f = getMap(s.seed).fire;
+    const storlek = l.w === SIM.PLATS.lekBredd && l.h === SIM.PLATS.lekDjup;
+    // när byns inre flyttar (en ny lagerplats långt bort) följer lekplatsen med, men elden står kvar
+    const z = zonesOf(s)[0], fore = rektAvstand(mid.x, mid.y, l.x, l.y, l.w, l.h);
+    const dir = l.x + l.w / 2 > mid.x ? -1 : 1; // åt andra hållet från lekplatsen, så att den måste flytta
+    s.lagren!.push({ x: z.x + dir * 16, y: z.y, w: 2, h: 2, namn: 'Prov', prio: 0 });
+    const mid2 = SIM.byInne(s), l2 = SIM.lekplats(s);
+    const foljer = (mid2.x - mid.x) * dir > 3 && (l2.x - l.x) * dir >= 3 && rektAvstand(mid2.x, mid2.y, l2.x, l2.y, l2.w, l2.h) <= SIM.PLATS.lekSok;
+    s.lagren!.pop();
+    return [
+      [`lekplatsen är ${SIM.PLATS.lekBredd} × ${SIM.PLATS.lekDjup} rutor`, storlek],
+      [`den ligger nära byns inre (${fore.toFixed(1)} rutor från dess mitt, elden ${Math.hypot(f.x - mid.x, f.y - mid.y).toFixed(1)} rutor därifrån)`, fore <= SIM.PLATS.lekSok],
+      [`den ligger aldrig i vattnet, på sten, i ett hus eller på en lagerplats (${fel} rutor fel på 72 timmar)`, fel === 0],
+      [`barnen leker på lekplatsen (${paPlats} av ${leker} timmar)`, leker > 0 && paPlats >= leker * 0.9],
+      [`när byns inre flyttar följer lekplatsen med (mitten ${mid.x.toFixed(1)} → ${mid2.x.toFixed(1)}, lekplatsen x ${l.x} → ${l2.x})`, foljer],
     ];
   },
 };

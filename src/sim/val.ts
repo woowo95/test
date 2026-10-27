@@ -28,7 +28,7 @@ import { Act, H, HOUR, MIN, Person, Skill, Stat, State, T, Task, W, inMap } from
 import { balans } from './balans';
 import { drickVal, torstig, tortarFarligt, vattenVal } from './torst';
 import { forSmutsigt, latrinFor } from './smuts';
-import { bordenOf, ledigPlats, sittAt, stationAt, stationFor, storlekAv, vidStation } from './stationer';
+import { bordenOf, ledigPlats, lekplats, sittAt, stationAt, stationFor, storlekAv, vidStation } from './stationer';
 import { grillTid, kanGrilla, kanTorka, torkTid } from './matlagning';
 import { egenBrasa } from './brasor';
 
@@ -169,12 +169,13 @@ export function spotFor(s: State, act: Act, p: Person): { x: number; y: number }
     }
     return freeNear(s, f.x + 0.5, f.y + 2);
   }
-  if (plats === 'lek') { // lekplatsen ligger söder om elden, men aldrig i vattnet
+  if (plats === 'lek') { // lekplatsen räknas från byns inre, inte från elden (plats.ts, steg 2.10.4), men aldrig i vattnet
+    const l = lekplats(s);
     for (let k = 0; k < 12; k++) {
-      const x = f.x + (rnd(s, 'val', p) - 0.5) * PLATS.lekBredd, y = f.y + PLATS.lekFran + rnd(s, 'val', p) * PLATS.lekDjup;
+      const x = l.x + rnd(s, 'val', p) * l.w, y = l.y + rnd(s, 'val', p) * l.h;
       if (inMap(x, y) && !blocked(s, x, y)) return { x, y };
     }
-    return freeNear(s, f.x + 0.5, f.y + 1.5);
+    return freeNear(s, l.x + l.w / 2, l.y + l.h / 2);
   }
   // ute på marken: vid stranden, på ängen och i skogen, eller avsides (toa)
   const strand = plats === 'strand' ? shoreOf(s.seed) : undefined;
