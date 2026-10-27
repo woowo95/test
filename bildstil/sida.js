@@ -942,7 +942,58 @@ const TOA = { v: 'senap3', V: 'oliv3', c: 'jord1', C: 'jord2', k: 'jord0' };
 const KV_M = (lista) => ({ w: lista.length * 10 + 2, h: 12, kol: true, rita: (B, P) => lista.forEach(([l, r], i) => ritaSprite(B, r, l, 2 + i * 10, 2)) });
 const KV_G = { a: 'senap1', b: 'senap2', c: 'senap3', w: 'ben3' };
 const KV_MEDALJ = ['..aaaa..', '.abbbba.', 'abbccbba', 'abccccba', 'abccccba', 'abbccbba', '.abbbba.', '..aaaa..'];
+// vädrets symboler (steg 2.11.4): klart, mulet, regn, snö, blåst och åska, 8 × 8 punkter
+const VS_L = { a: 'senap1', b: 'senap2', c: 'senap3', w: 'ben1', W: 'ben3', d: 'skiffer3', s: 'ben2', S: 'ben3', k: 'skiffer1', K: 'skiffer2', y: 'senap3', v: 'ben2' };
+const VS = [
+  ['...a....', '.a.b.a..', '..bcb...', 'abcccba.', '..bcb...', '.a.b.a..', '...a....', '........'],
+  ['........', '...ww...', '..wWWw..', '.wWWWWw.', 'wWWWWWWw', 'wwwwwwww', '........', '........'],
+  ['..ww....', '.wWWww..', 'wWWWWWw.', 'wwwwwww.', '.d..d...', '..d..d..', '.d..d...', '........'],
+  ['...s....', '.s.s.s..', '..sss...', 'sssSsss.', '..sss...', '.s.s.s..', '...s....', '........'],
+  ['........', 'vvvvv...', '.....v..', 'vvvvvv..', '........', '..vvvvvv', '.v......', '..vv....'],
+  ['..kk....', '.kKKkk..', 'kKKKKKk.', 'kkkykkk.', '...yy...', '..yy....', '...y....', '..y.....'],
+];
+// en mörk kontur runt symbolen (10 × 10)
+const konturera = rader => Array.from({ length: 10 }, (_, y) => Array.from({ length: 10 }, (_, x) => {
+  const c = (rader[y - 1] || '')[x - 1];
+  if (c && c !== '.') return c;
+  for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const n = (rader[y - 1 + dy] || '')[x - 1 + dx]; if (n && n !== '.') return 'o'; }
+  return '.';
+}).join(''));
+// symbolen på en liten himmel med marken under (10 × 10): himlens färg efter vädret
+const HIMMEL = ['skiffer3', 'skiffer2', 'skiffer1', 'skiffer2', 'skiffer3', 'kol3'];
+const VS_RAD = (lista, sida) => ({ w: lista.length * (sida + 2) + 2, h: sida + 4, kol: true, rita: (B, P) => lista.forEach((r, i) => r(B, P, 2 + i * (sida + 2), 2)) });
+const regnKarta = (stil) => ({ w: 64, h: 32, rita: (B, P) => {
+  const d = P.i('skiffer', 3), l = P.i('ben', 1), sn = P.i('ben', 3);
+  for (let i = 0; i < 26; i++) {
+    const x = Math.floor(hash(i, 1, 7) * 30), y = Math.floor(hash(i, 2, 7) * 28);
+    if (stil === 1) for (let k = 0; k < 3; k++) B.satt(x, y + k, d);
+    else if (stil === 2) { for (let k = 0; k < 4; k++) B.satt(x + (k >> 1), y + k, d); if (i % 4 === 0) { B.satt(x - 1, 31, l); B.satt(x + 1, 31, l); B.satt(x, 30, l); } }
+    else { B.satt(x, y, l); B.satt(x, y + 1, d); }
+  }
+  for (let i = 0; i < 22; i++) {
+    const x = 34 + Math.floor(hash(i, 3, 7) * 28), y = Math.floor(hash(i, 4, 7) * 30);
+    if (stil === 3) { B.satt(x, y, sn); B.satt(x - 1, y, l); B.satt(x + 1, y, l); B.satt(x, y - 1, l); B.satt(x, y + 1, l); }
+    else if (stil === 2) { B.satt(x, y, sn); B.satt(x + 1, y, sn); B.satt(x, y + 1, sn); B.satt(x + 1, y + 1, l); }
+    else B.satt(x, y, sn);
+  }
+} });
 const VAL = [
+  { id: 'vader', namn: 'Vädrets symboler', vad: 'Nya symboler (steg 2.11.1), 8 × 8 punkter: klart, mulet, regn, snö, blåst och åska, i den ordningen. De står bredvid temperaturen högst upp; håller man musen över dem står vad vädret gör.', typ: 'tre',
+    idag: { text: '☀ ☁ 🌧 ❄ 💨 ⛈' },
+    versioner: [
+      { text: 'Enkla tecken utan kontur: en sol med strålar, ett moln, moln med regn, en snöflinga, vindlinjer och moln med en blixt.', ...VS_RAD(VS.map(r => (B, P, x, y) => ritaSprite(B, r, VS_L, x + 1, y + 1)), 10) },
+      { text: 'Samma tecken med en mörk kontur, så att de syns mot både ljus och mörk bakgrund.', ...VS_RAD(VS.map(r => (B, P, x, y) => ritaSprite(B, konturera(r), { ...VS_L, o: 'kol0' }, x, y)), 10) },
+      { text: 'Tecknen på en liten bit himmel med marken under: blå himmel när det är klart, grå när det är mulet och mörk i åskan.', ...VS_RAD(VS.map((r, i) => (B, P, x, y) => {
+        for (let yy = 0; yy < 10; yy++) for (let xx = 0; xx < 10; xx++) B.satt(x + xx, y + yy, yy >= 8 ? P.i(i === 3 ? 'ben' : 'oliv', yy === 8 ? 2 : 1) : P.i(HIMMEL[i].slice(0, -1), +HIMMEL[i].slice(-1)));
+        ritaSprite(B, r, VS_L, x + 1, y);
+      }), 10) },
+    ] },
+  { id: 'vaderkarta', namn: 'Regn och snö på kartan', vad: 'Nytt på kartan (steg 2.11.4): regn (till vänster) och snö (till höger) som faller över kartan. Molnen gör samtidigt bilden lite mörkare. I spelet nu: tunna ljusa streck och små vita prickar.', typ: 'tre',
+    versioner: [
+      { text: 'Raka regnstreck, tre punkter långa, och snö som enstaka vita punkter.', ...regnKarta(1) },
+      { text: 'Sneda streck i vinden med stänk där de slår i marken, och snöflingor på två gånger två punkter.', ...regnKarta(2) },
+      { text: 'Droppar med ljus topp, och snöflingor som små kors.', ...regnKarta(3) },
+    ] },
   { id: 'kvalitet', namn: 'Kvalitetens symboler', vad: 'Nya symboler (steg 2.2.2), 8 × 8 punkter: usel, slarvig, fin, mästerverk och perfekt mästerverk (★), i den ordningen. Normal har ingen symbol. De syns i hörnet på saken i utrustningen, i förrådslistan och i sakens inforuta. På kartan glänser bara mästerverken.', typ: 'tre',
     idag: { text: '✕ — • ◆ ★' },
     versioner: [
