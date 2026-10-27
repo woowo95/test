@@ -2,7 +2,7 @@
 import { createState, addTool, twineRope, makeTool, wearUsed, isSpear, step, living, cloneState, pilesOf, zoneOf, amountOf, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, ageOf, spears, SPJUT_FORSOK, getMap, DAY, HOUR, W, State, takenOf, migrate, campCenter, TEKNIK, knows, thinkWhileWorking, die, isWall, H, richness, setAmount, BEAT, tingOf, wantsTool, makeTask, wantsFlint, ALDER, KROPP, inMap, canLight, dangers, toolGain, chooseTask } from '../../sim';
 import * as SIM from '../../sim';
 import { START } from '../kor';
-import { setItems, setMat, setFood, kor, klockan, tandEld, bastaJaktruta, SCENARIER, medBank } from './hjalp';
+import { setItems, setMat, setFood, kor, klockan, tandEld, bastaJaktruta, SCENARIER, medBank, medHus } from './hjalp';
 
 SCENARIER.stenring = {
   text: 'Den första elden läggs i en ring av stenar som samlas in, och tänds med flinta. Ringen ligger kvar när elden slocknat',
@@ -392,21 +392,35 @@ SCENARIER.sak = {
   },
 };
 
+// ett sovhus och ett förrådshus för material (det första förrådshuset byggs när maten ruttnar och är för mat; här görs
+// det till ett för material, som när förrådet blivit fullt). Ger lagerplatsen under dess tak
+function materialForrad(v: State) {
+  medHus(v); v.ruttet = 50;
+  const h = medHus(v), z = SIM.zonesOf(v).find(q => q.hus === h?.id);
+  if (h && z) { h.slag = 'material'; z.slag = 'material'; }
+  v.ruttet = 0; SIM.touch(v);
+  return z;
+}
 SCENARIER.forvaring = {
-  text: 'Förvaring (steg 2.3.6): hyllan, kistan och redskapsstället står i lagret, så att flera högar och redskap ryms på en ruta. De går inte att gå igenom, och lösa saker på golvet går man långsamt över',
+  text: 'Förvaring (steg 2.3.6): hyllan, kistan och redskapsstället står i lagret, så att flera högar och redskap ryms på en ruta. De går inte att gå igenom, och lösa saker på golvet går man långsamt över. Hyllan och stället byggs bara inomhus, i förrådshuset, och kistan inte alls i byns lager (steg 2.10.18)',
   kor: () => {
     const { STATION, PROJEKT, LAGER, VAG, stationerOf, isKlar, rymd, groundOf, findPath, speedAt, wearMult, slitageNu, zonesOf, inZone, placeTools, stationAt, newTing } = SIM;
     // en by där alla kan bygga förvaring, med lagret fullt av grenar och gott om trä och rep
-    const s = createState(1, START); klockan(s); tandEld(s);
+    const s = createState(6, START); klockan(s); tandEld(s);
     for (const r of s.people) r.tek = { ...r.tek, hylla: 1 };
     setMat(s, { bar: 300 }); setAmount(s, 'ved', 40); setAmount(s, 'rep', 6); setAmount(s, 'grenar', SIM.rutaOf('grenar') * 8);
+    // utan förrådshus: ingen hylla i lagret ute (steg 2.10.18)
+    const ute = PROJEKT.hylla!.brist(s) === 0 && !SIM.stationSite(s, 'hylla') && !SIM.stationSite(s, 'stall');
+    // ett förrådshus för material, och grenarna läggs om så att de hamnar där först
+    const fz = materialForrad(s);
+    setAmount(s, 'grenar', 0); setAmount(s, 'grenar', SIM.rutaOf('grenar') * 8);
     const brist0 = PROJEKT.hylla!.brist(s);
     let h = 0;
     const hyllan = () => stationerOf(s).find(t => t.k === 'hylla' && isKlar(t));
     // kistan fyller samma behov och är billigare, så under tiden byggs ingen kista (den prövas nedan)
     const kistTek = SIM.STATIONER.kista.tek; (SIM.STATIONER.kista as SIM.StationDef).tek = [];
     try { while (!hyllan() && h < 96) { kor(s, 1); h++; } } finally { (SIM.STATIONER.kista as SIM.StationDef).tek = kistTek; }
-    const hy = hyllan(), z = hy && zonesOf(s).find(q => inZone(q, hy.x, hy.y));
+    const hy = hyllan(), z = hy && zonesOf(s).find(q => inZone(q, hy.x, hy.y) && q.hus !== undefined);
     const ryms = hy ? rymd(s, hy.x, hy.y, 'grenar') : 0;
     // mer grenar: hyllans ruta fylls mer än en vanlig ruta
     setAmount(s, 'grenar', SIM.amountOf(s, 'grenar') + SIM.rutaOf('grenar') * 40); // (nog för att fylla kistorna också)
@@ -423,11 +437,15 @@ SCENARIER.forvaring = {
     const los = pilesOf(s).find(a => !stationAt(s, a.x, a.y) && a.n > 0), j = los ? los.y * W + los.x : -1;
     SIM.sakerPaGolvet(s);
     const med = j >= 0 ? speedAt(g, j) : 0, lost = g.lost!; g.lost = undefined; const utan = j >= 0 ? speedAt(g, j) : 0; g.lost = lost;
-    // en kista på en full hög: det som ligger i den slits som under tak
-    const ki = medBank(s, 'kista');
+    // kistan är för privata saker och byggs inte i byns lager (steg 2.10.18). En kista som redan står på en full hög: det som
+    // ligger i den slits som under tak
+    const ingenKista = PROJEKT.kista!.brist(s) === 0 && !SIM.stationSite(s, 'kista');
+    const hog = pilesOf(s).find(a => a.k === 'grenar' && !stationAt(s, a.x, a.y))!;
+    const ki: SIM.Station = { id: s.nextStation = (s.nextStation ?? 0) + 1, k: 'kista', x: hog.x, y: hog.y, kvar: 0 };
+    (s.stationer ??= []).push(ki); SIM.touch(s);
     const kOrsak = slitageNu(s, { k: 'grenar', x: ki.x, y: ki.y }).orsak, kMult = wearMult(s, ki.x, ki.y);
-    // ett ställ på ett redskap: flera redskap står där (i en ny by, så att lagret har plats för redskapen)
-    const s2 = createState(1, START); klockan(s2);
+    // ett ställ på ett redskap: flera redskap står där (i en ny by med ett förrådshus, så att lagret har plats för redskapen)
+    const s2 = createState(6, START); klockan(s2); materialForrad(s2);
     for (let n = 0; n < 3; n++) { newTing(s2, 'yxa', 1, SIM.BYN); }
     placeTools(s2);
     const st = medBank(s2, 'stall');
@@ -435,8 +453,10 @@ SCENARIER.forvaring = {
     placeTools(s2);
     const iStall = tingOf(s2).filter(t => t.x === st.x && t.y === st.y && t.hos === undefined && t.lass === undefined).length;
     return [
-      [`byn vill ha en hylla när golvet i lagret är fullt av högar (brist ${brist0.toFixed(2)})`, brist0 > 0.5],
-      [`hyllan byggs på ${h} timmar, i en lagerplats`, !!hy && !!z],
+      ['utan förrådshus byggs ingen hylla eller ställ i lagret ute', ute],
+      [`byn vill ha en hylla när golvet i förrådshuset är fullt av högar (brist ${brist0.toFixed(2)}${fz ? '' : ', inget förrådshus'})`, brist0 > 0.5 && !!fz],
+      [`hyllan byggs på ${h} timmar, i förrådshuset`, !!hy && !!z && !!hy.inne],
+      ['ingen kista byggs i byns lager', ingenKista],
       [`på hyllans ruta ryms ${STATION.hyllaRymmer} högar (${ryms} grenar), och där ligger nu ${pa ? Math.round(pa.n) : 0} ${pa ? SIM.sakNamn(pa.k).toLowerCase() : ''} (en vanlig ruta rymmer ${pa ? SIM.rutaOf(pa.k) : 0})`, ryms === SIM.rutaOf('grenar') * STATION.hyllaRymmer && !!pa && pa.n > SIM.rutaOf(pa.k) + 1e-6], // (ibland är det trä som hamnar på hyllan)
       [`hyllan går inte att gå igenom (vägen förbi: ${forbi ? forbi.length + ' rutor' : 'ingen'})`, g.hinder?.[i] === 1 && !!forbi && !forbi.includes(i)],
       [`alla rutor i lagret nås fortfarande (${natt} av ${alla})`, alla > 0 && natt === alla],

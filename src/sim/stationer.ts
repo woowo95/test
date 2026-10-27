@@ -107,10 +107,11 @@ const bordTra = (w: number, h: number) => w * h * STATION.bordTra + ((w >= 2 ? 2
 // det (steg 2.2.15), verktyg = redskapet man bygger den med (benspaden till latrinen, steg 2.7.2), utkant = står i byns utkant, högst till och helst avst rutor från byn,
 // och med vatten långt från vattnet när byn lärt sig det (latrinen och slaktbänken, siteUtkant nedan), eld = står över elden, med elden i mitten, och används bara när den brinner (grillen, steg 2.8.1), forvar = förvaring som står i en lagerplats (steg 2.3.6): rymmer så många högar av ett slag (gånger en
 // rutas stack) eller, för redskap, så många redskap; tak = det som ligger där slits som under tak,
-// stangd = det som ligger där syns inte på kartan, bara när man trycker på möbeln (kistan, Björn efter v92)
+// stangd = det som ligger där syns inte på kartan, bara när man trycker på möbeln (kistan, Björn efter v92), privat = bara för
+// privata saker (kistan, steg 2.10.18): byggs inte i byns lager
 // brasa = en extra eld (steg 2.9.1, brasor.ts): står nära sovplatserna den är till för (siteBrasa), och alla vuxna kan bygga den (tek är tom: den som är gammal nog att ta ansvar, ALDER.ansvar)
 export interface Utkant { till: number; avst: number; vatten?: true }
-export interface Forvar { rymmer: number; redskap?: true; tak?: true; stangd?: true }
+export interface Forvar { rymmer: number; redskap?: true; tak?: true; stangd?: true; privat?: true }
 export interface StationDef { namn: string; ikon: string; w: number; h: number; tek: string[]; av: Record<string, number>; min: number; gor: Act[]; bara?: Act[]; vid?: Record<string, number>; verktyg?: string; utkant?: Utkant; eld?: true; kraver?: Partial<Record<Act, string>>; smutsar?: Partial<Record<Act, string>>; bygger: string; forsta: string; inne?: true; mobel?: true; flera?: true; fart?: Partial<Record<Act, number>>; brasa?: true; sover?: true; sitt?: true; platser?: true; forvar?: Forvar }
 // de enkla redskapen: görs vid slöjdbänken om byn har en, lite fortare där (fart), annars vid elden som förut (Björn, efter v90)
 const ENKLA: Act[] = ['yxa', 'spjut', 'metspo', 'kniv', 'bensyl', 'balte'];
@@ -153,7 +154,7 @@ export const STATIONER = {
     forsta: '{namn} byggde byns första hylla. På den ryms flera högar på samma plats, så att lagret tar mindre plats.',
   },
   kista: {
-    namn: 'Kista', ikon: 'kista', w: 1, h: 1, tek: ['hylla'], av: { ved: STATION.kistaTra }, min: STATION.kistaMin, gor: [], mobel: true, flera: true, forvar: { rymmer: STATION.kistaRymmer, tak: true, stangd: true },
+    namn: 'Kista', ikon: 'kista', w: 1, h: 1, tek: ['hylla'], av: { ved: STATION.kistaTra }, min: STATION.kistaMin, gor: [], mobel: true, flera: true, forvar: { rymmer: STATION.kistaRymmer, tak: true, stangd: true, privat: true },
     bygger: 'Bygger en kista av trä i lagret.',
     forsta: '{namn} byggde byns första kista. Det som ligger i den ryms på mindre plats och slits som under tak.',
   },
@@ -473,18 +474,19 @@ function siteInne(s: State, k: string) {
 }
 // ---------- förvaringen (steg 2.3.6) ----------
 // Hyllan, kistan och redskapsstället står i en lagerplats, på en ruta där något redan ligger: hyllan och kistan på en full
-// hög (som då får plats för fler högar av samma slag), stället på ett redskap (som då kan stå bredvid fler). Helst i ett
-// förrådshus och i lagret närmast elden. De går inte att gå igenom, så de står bara där alla andra rutor i lagerplatsen och
+// hög (som då får plats för fler högar av samma slag), stället på ett redskap (som då kan stå bredvid fler). Bara inomhus,
+// i en lagerplats under tak (förrådshuset, steg 2.10.18), och där i lagret med högst prioritet. Kistan är för privata saker
+// och byggs inte i byns lager (privat). Möbler som redan står ute får stå kvar. De går inte att gå igenom, så de står bara där alla andra rutor i lagerplatsen och
 // alla möbler i den fortfarande nås från en ruta bredvid (nas). Det byn vill ha (forvarBrist, projekt.ts) räknas på det som
 // ligger på golvet i lagren: fulla högar för hyllan och kistan, redskap för stället
 export const forvarAt = (s: State, x: number, y: number) => { const t = stationAt(s, x, y); return t && isKlar(t) ? stationDef(t.k)?.forvar : undefined; };
 // det som ligger på golvet i en lagerplats (inte i en möbel) och som en möbel av sorten k är till för
 function golvet(s: State, k: string) {
   const f = stationDef(k)?.forvar, ut: { x: number; y: number; z: Zone }[] = [];
-  if (!f) return ut;
+  if (!f || f.privat) return ut;
   for (const a of pilesOf(s)) {
     const z = zonesOf(s)[a.zone];
-    if (!z || stationAt(s, a.x, a.y)) continue;
+    if (!z || z.hus === undefined || stationAt(s, a.x, a.y)) continue; // bara inomhus (steg 2.10.18)
     if (f.redskap ? isTool(a.k) : !isTool(a.k) && a.n >= a.max - 1e-9 && (!f.tak || SAKER[a.k]?.haller !== undefined || (SAKER[a.k]?.slits ?? 0) > 0)) ut.push({ x: a.x, y: a.y, z });
   }
   return ut;
@@ -528,11 +530,11 @@ function nas(s: State, z: Zone, extra: number) {
   }
   return true;
 }
-// platsen för en möbel av sorten k: i en lagerplats under tak först, sedan efter lagrets prioritet och närmast lagrets hörn
+// platsen för en möbel av sorten k: i en lagerplats under tak, efter lagrets prioritet och närmast lagrets hörn
 function siteForvar(s: State, k: string) {
-  const zs = zonesOf(s), c = golvet(s, k).sort((a, b) => (+!!b.z.hus - +!!a.z.hus) || ((b.z.prio ?? 0) - (a.z.prio ?? 0)) || zs.indexOf(a.z) - zs.indexOf(b.z) || a.y - b.y || a.x - b.x);
+  const zs = zonesOf(s), c = golvet(s, k).sort((a, b) => ((b.z.prio ?? 0) - (a.z.prio ?? 0)) || zs.indexOf(a.z) - zs.indexOf(b.z) || a.y - b.y || a.x - b.x);
   const at = c.find(q => nas(s, q.z, q.y * W + q.x));
-  return at && (at.z.hus !== undefined ? { x: at.x, y: at.y, rot: undefined, inne: 1 as const } : { x: at.x, y: at.y, rot: undefined });
+  return at && { x: at.x, y: at.y, rot: undefined, inne: 1 as const };
 }
 // där man står när man bygger en möbel som inte går att gå igenom: mitt på en ruta rakt bredvid som man kan gå på
 function bredvid(s: State, x: number, y: number) {
