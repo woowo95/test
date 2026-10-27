@@ -3,6 +3,7 @@ import { groundOf } from './mark';
 import { Ting, halvKlar, newTing, tingOf } from './agande';
 import { forvarAt, sittAt, stationAt, stationDef, tillbakaVid } from './stationer';
 import { alive, byId, count, living, stat, ageOf, log } from './folk';
+import { matOrdning } from './naring';
 import { getMap } from './karta';
 import { Act, H, HOUR, HOUR_S, Person, State, T, Task, W, inMap } from './typer';
 import { bitAt, roofed } from './byggnad';
@@ -454,7 +455,7 @@ export function setStock(s: State, m: Record<string, number>) { for (const k in 
 // först, och av den det sämsta. Ger hur mycket som åts, skicket och hur mycket av varje slag (näringen, naring.ts)
 export function takeFood(s: State, n: number, p?: Person, fran?: Person) {
   let got = 0, cw = 0; const per: Record<string, number> = {};
-  for (const k of FOOD) {
+  for (const k of p ? matOrdning(p) : FOOD) { // den som har brist på något tar helst mat som har det (steg 2.6.2)
     if (n - got <= 1e-12) break;
     const v = Math.min(n - got, amountOf(s, k), takeLimit(s, k, p, fran));
     if (v <= 1e-12) continue;

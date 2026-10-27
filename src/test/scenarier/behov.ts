@@ -1,5 +1,5 @@
 // Scenarier. Behov och val: behov, ved, aktivitet och fritid.
-import { Person, createState, getRel, step, living, temperature, nyKalender, amountOf, capacity, load, isLight, T, FOOD, ageOf, getMap, HOUR, W, tileOf, stat, campCenter, KANIN, gain, takeFuel, ownsAmount, ownedSum, addTo, setAmount, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, STOLD_LINDRIG, STOLD_OP, BEAT, spar, isWork, ACTS, groundOf, varmeDelar, nyVarme, addTool, stepKlader, chooseTask, iSkugga, KROPP, spotFor, shoreOf, torstDelar, drickPlats, areaOf, halsaLage, describe, halsaSteg, skada, blodning, halsa, rorlighet, workRate, OLYCKOR, Act, HALSA, kanGa, gangFart, hemma, mossaFynd, chopStock, skadeLista, skadeText, delSkada, FORMAGOR, smarta, handighet, NARINGAR, NARING, naringOf, naringNu, naringSjunker, mattnad, sjunker } from '../../sim';
+import { Person, createState, getRel, step, living, temperature, nyKalender, amountOf, capacity, load, isLight, T, FOOD, ageOf, getMap, HOUR, W, tileOf, stat, campCenter, KANIN, gain, takeFuel, ownsAmount, ownedSum, addTo, setAmount, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, STOLD_LINDRIG, STOLD_OP, BEAT, spar, isWork, ACTS, groundOf, varmeDelar, nyVarme, addTool, stepKlader, chooseTask, iSkugga, KROPP, spotFor, shoreOf, torstDelar, drickPlats, areaOf, halsaLage, describe, halsaSteg, skada, blodning, halsa, rorlighet, workRate, OLYCKOR, Act, HALSA, kanGa, gangFart, hemma, mossaFynd, chopStock, skadeLista, skadeText, delSkada, FORMAGOR, smarta, handighet, NARINGAR, NARING, naringOf, naringNu, naringSjunker, mattnad, sjunker, bristGrad, bristSteg, berattaBrist, onskan, matOrdning, takeFood, vilaTim, skorbjugg, NARINGBAL, DODSORSAKER, converse, Naring } from '../../sim';
 import { START, STEG_DYGN, STEG_TIM } from '../kor';
 import { setMat, setFood, kor, klockan, tandEld, tomtForrad, treVuxna, bastaJaktruta, SCENARIER, rikBy } from './hjalp';
 
@@ -562,6 +562,71 @@ SCENARIER.naring = {
       [`det som fyller ett värde över taket försvinner (bären höjde mättnaden med ${bar.okt.toFixed(2)})`, spill],
       ['i byn har alla fem värden mellan 0 och 1, och mättnaden är deras sammanfattning', iByn],
       ['i byn skiljer sig värdena från mättnaden efter vad man ätit', olika],
+    ];
+  },
+};
+
+SCENARIER.brist = {
+  text: 'Steg 2.6.2: under en gräns ger ett näringsvärde brist. Bristen gör en sämre (trötthet, svaghet, fryser lätt, skörbjugg, yrsel och kramp), man äter helst det som fyller bristen, man längtar efter det och berättar om det, och den som vet att någon längtar efter något hämtar hellre den maten',
+  kor: () => {
+    const s = createState(5, START);
+    const [p, q] = living(s);
+    const satt = (x: Person, k?: Naring, v = 0) => { x.naring = { energi: 0.8, protein: 0.8, fett: 0.8, vitamin: 0.8, mineral: 0.8 }; if (k) x.naring[k] = v; x.hunger = mattnad(x.naring); };
+    // hur stor bristen är
+    satt(p, 'vitamin', NARINGBAL.brist); const ingen = bristGrad(p, 'vitamin') === 0;
+    satt(p, 'vitamin', NARINGBAL.brist / 2); const halv = Math.abs(bristGrad(p, 'vitamin') - 0.5) < 1e-9;
+    // det bristen gör: jämför med en som inte har någon brist
+    satt(p); p.task = undefined; const arb0 = workRate(s, p, 'samla'), fart0 = rorlighet(p), vila0 = vilaTim(p), kyla0 = varmeDelar(s, p, 0.1, new Map(), -10).kyla;
+    satt(p, 'protein'); const svag = workRate(s, p, 'samla') < arb0;
+    satt(p, 'mineral'); const yr = rorlighet(p) < fart0 && workRate(s, p, 'samla') < arb0;
+    const rf = FORMAGOR.rorlighet, delar = Math.abs(1 + rf.delar(p).reduce((a, x) => a + x.v, 0) - rorlighet(p)) < 1e-9 && rf.delar(p).length === 1;
+    satt(p, 'energi'); const trott = vilaTim(p) < vila0;
+    satt(p, 'fett'); const fryser = varmeDelar(s, p, 0.1, new Map(), -10).kyla > kyla0;
+    satt(p, 'vitamin'); const skor = skorbjugg(p) > 0 && !!DODSORSAKER.skorbjugg;
+    satt(p); const inget = skorbjugg(p) === 0;
+    // man längtar efter det man saknar
+    satt(p, 'vitamin'); p.thoughts = []; bristSteg(p, s.now);
+    const langtar = p.thoughts.some(t => t.text === 'Längtar efter bär');
+    // man äter helst det som fyller bristen
+    const ord = matOrdning(p), forst = ord[0] === 'bar';
+    satt(p, 'protein'); const kottForst = ['kott', 'fisk', 'abborre', 'vilt'].includes(matOrdning(p)[0]);
+    satt(p); const vanlig = matOrdning(p) === FOOD;
+    rikBy(s); setMat(s, { rotter: 10, bar: 10, kott: 10 }); satt(p, 'vitamin');
+    const tar = takeFood(s, 0.3, p).per, tarBar = (tar.bar ?? 0) >= 0.3 - 1e-9;
+    // man berättar om det, och den som vet hämtar hellre det
+    satt(p, 'vitamin'); satt(q); q.langtan = undefined;
+    const fore = onskan(q, 'samla', s.now) === 1;
+    berattaBrist(p, q, s.now);
+    const minns = ((q as Person).langtan?.vitamin ?? 0) > s.now, samla = onskan(q, 'samla', s.now), jakt = onskan(q, 'jakt', s.now);
+    const hellre = samla > jakt && samla > 1 && onskan(q, 'ved', s.now) === 1;
+    q.langtan = undefined; let hort = false;
+    for (let i = 0; i < 20 && !hort; i++) { converse(s, p, [q]); hort = ((q as Person).langtan?.vitamin ?? 0) > s.now; }
+    const glomt = (() => { satt(q); bristSteg(q, s.now + (NARINGBAL.minns + 1) * HOUR); return (q as Person).langtan === undefined; })();
+    // i byn: efter tre dygn (tre år i spelet) längtar någon efter något, och inget omöjligt har hänt
+    const by = createState(3, START); kor(by, 72);
+    const iByn = living(by).some(x => x.langtan || x.thoughts.some(t => t.text.startsWith('Längtar efter')));
+    return [
+      ['inget under gränsen ger ingen brist', ingen],
+      ['halva gränsen ger halv brist', halv],
+      ['brist på protein: arbetet går långsammare', svag],
+      ['brist på mineraler: gången och arbetet går långsammare', yr],
+      ['fliken Hälsa visar yrseln som en del av rörligheten', delar],
+      ['brist på energi: vilan sjunker fortare', trott],
+      ['brist på fett: kylan biter mer', fryser],
+      ['brist på vitaminer: skörbjugg, hälsan sjunker', skor],
+      ['utan brist ingen skörbjugg', inget],
+      ['den som har brist på vitaminer längtar efter bär', langtar],
+      [`den som har brist på vitaminer äter helst bär (${ord.join(', ')})`, forst],
+      ['den som har brist på protein äter helst kött eller fisk', kottForst],
+      ['utan brist äts maten i den vanliga ordningen', vanlig],
+      [`ur förrådet tar den som saknar vitaminer bären (${JSON.stringify(tar)})`, tarBar],
+      ['den som inte vet något hämtar inte någon särskild mat hellre', fore],
+      ['den som får höra det minns det', minns],
+      [`och samlar hellre (${samla.toFixed(2)}) än jagar (${jakt.toFixed(2)}); veden ändras inte`, hellre],
+      ['i ett samtal berättar man vad man längtar efter', hort],
+      ['det glöms efter en tid', glomt],
+      ['i byn längtar någon efter något, eller har hört att någon gör det', iByn],
+      ['i byn har ingen fått något omöjligt', living(by).every(x => x.health >= 0 && x.health <= 1)],
     ];
   },
 };

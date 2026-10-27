@@ -24,6 +24,7 @@ import { getMap } from './karta';
 import { chance, clamp, pick, rnd } from './slump';
 import { Act, HOUR, HOUR_S, Person, Skill, State, Stock, Task } from './typer';
 import { balans } from './balans';
+import { lakFaktor, styrkaFaktor, yrselFaktor } from './naring';
 import type { Dodsorsak } from './liv';
 
 // ---------- balanstal (regel 8) ----------
@@ -132,13 +133,15 @@ function forlust(p: Person, vikt: 'rorlighet' | 'handighet') {
   for (const d of Object.keys(DEL) as Kroppsdel[]) v += (DEL[d][vikt] ?? 0) * delFel(p, d);
   return Math.max(HALSA.minst, 1 - v);
 }
-export const rorlighet = (p: Person) => forlust(p, 'rorlighet'); // gången gånger detta (steg.ts)
+// gången gånger detta (steg.ts): skadorna och yrseln av brist på mineraler (steg 2.6.2)
+export const rorlighet = (p: Person) => forlust(p, 'rorlighet') * yrselFaktor(p);
 // den som har ett ben eller en fot som är för skadad kan inte gå, utan kravlar (steg 2.5.2)
 export const kanGa = (p: Person) => !p.skador?.length || ![...BEN, ...FOTTER].some(d => delFel(p, d) >= HALSA.krypFel);
 export const gangFart = (p: Person) => kanGa(p) ? rorlighet(p) : HALSA.krypFart;
 export const hemma = (s: State, p: Person) => campDist(s, Math.floor(p.x), Math.floor(p.y)) <= HALSA.hemma;
 const infektion = (p: Person) => { let v = 0; for (const w of p.skador ?? []) v = Math.max(v, w.inf ?? 0); return v; };
-export const handighet = (p: Person) => forlust(p, 'handighet'); // arbetet gånger detta (workRate i ekonomi.ts)
+// arbetet gånger detta (workRate i ekonomi.ts): skadorna och styrkan, som sjunker av brist på protein och mineraler (steg 2.6.2)
+export const handighet = (p: Person) => forlust(p, 'handighet') * styrkaFaktor(p);
 export function smarta(p: Person) {
   let v = 0;
   for (const w of p.skador ?? []) v += SKADA[w.k].smarta * w.g + HALSA.infSmarta * (w.inf ?? 0);
@@ -185,8 +188,12 @@ export function delSkada(p: Person, d: Kroppsdel) {
 // staplarna i fliken Hälsa: värdet (1 = fullt, för smärtan 1 = så ont det kan göra), det som sänker det just nu och vad
 // det påverkar. Syn, hörsel, tal och medvetande kommer med de finare kroppsdelarna (ögon, öron, käke)
 interface FormagaDef { namn: string; tecken: string; ont?: true; varde(p: Person): number; delar(p: Person): { namn: string; v: number }[]; gor: string }
-const delarAv = (p: Person, vikt: 'rorlighet' | 'handighet') => (Object.keys(DEL) as Kroppsdel[])
-  .filter(d => (DEL[d][vikt] ?? 0) * delFel(p, d) > 0).map(d => ({ namn: DEL[d].namn, v: -(DEL[d][vikt] ?? 0) * delFel(p, d) }));
+// skadade delar, och sist bristen (steg 2.6.2), så att 1 + summan blir värdet
+const delarAv = (p: Person, vikt: 'rorlighet' | 'handighet') => {
+  const r = (Object.keys(DEL) as Kroppsdel[]).filter(d => (DEL[d][vikt] ?? 0) * delFel(p, d) > 0).map(d => ({ namn: DEL[d].namn, v: -(DEL[d][vikt] ?? 0) * delFel(p, d) }));
+  const f = forlust(p, vikt), b = vikt === 'rorlighet' ? yrselFaktor(p) : styrkaFaktor(p);
+  return b < 1 ? [...r, { namn: vikt === 'rorlighet' ? 'Yrsel (brist på mineraler)' : 'Brist på protein eller mineraler', v: -f * (1 - b) }] : r;
+};
 export const FORMAGOR = {
   rorlighet: { namn: 'Rörlighet', tecken: '🦵', varde: rorlighet, delar: p => delarAv(p, 'rorlighet'), gor: 'Gångfarten. Den som har ett ben eller en fot som är mycket skadad kan inte gå, utan kravlar hem eller bärs.' },
   handighet: { namn: 'Händighet', tecken: '✋', varde: handighet, delar: p => delarAv(p, 'handighet'), gor: 'Hur fort arbetet går, och om man kan vårda en annan.' },
@@ -221,7 +228,7 @@ export function halsaSteg(s: State, p: Person, dtSec: number): Dodsorsak | undef
   const dod = olyckaSteg(s, p, dtSec);
   if (dod) return dod;
   if (!p.skador?.length) { if ((p.blod ?? 1) < 1 && lakerFullt(p)) p.blod = Math.min(1, p.blod! + dtSec / (HALSA.blodTillbaka * HOUR_S)); return undefined; }
-  const h = dtSec / HOUR_S, blod = blodning(p), mat = lakerFullt(p), lak = (mat ? 1 : HALSA.lakSamre) * vilaLak(s, p);
+  const h = dtSec / HOUR_S, blod = blodning(p), mat = lakerFullt(p), lak = (mat ? 1 : HALSA.lakSamre) * vilaLak(s, p) * lakFaktor(p);
   p.blod = clamp((p.blod ?? 1) - blod * h, 0, 1);
   for (const w of p.skador) {
     if (w.b > 0) w.b = Math.max(0, w.b - h / (HALSA.levrar * (0.5 + w.g)));

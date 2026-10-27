@@ -1,4 +1,5 @@
 import { ALDER, REL, ageOf, getRel, isKin, living, log, similarity, stat, think } from './folk';
+import { berattaBrist } from './naring';
 import { halsa } from './halsa';
 import { clamp, pickViktat, rnd } from './slump';
 import { DAY, HOUR, Person, State } from './typer';
@@ -137,6 +138,7 @@ export function converse(s: State, a: Person, others: Person[], events?: TalkEve
       r.rom = clamp(r.rom + (out + att) * SAMTAL.flirtRomOk, 0, 100);
     }
     share(s, a, b, r, SAMTALSSLAG[kind]); // man berättar vad man vet och lär ut vad man kan
+    berattaBrist(a, b, now); // och vad man längtar efter ("jag längtar efter kött", steg 2.6.2)
     if (kind !== 'flirt' && out + like > SAMTAL.gavaMin) askForGift(s, a, b); // den som saknar något frågar efter det (mat, ved, redskap: behov.ts)
   }
   r.op = clamp(r.op, -100, 100);

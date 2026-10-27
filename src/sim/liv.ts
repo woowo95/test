@@ -70,6 +70,7 @@ const DOD = {
   blod: { text: 'av blodförlust', sed: { k: 'forsiktighet', d: LIV.sedJakt, text: 'förblödde. Byn blev lite försiktigare.' } }, // steg 2.5.1
   kallbrand: { text: 'av kallbrand', sed: { k: 'forsiktighet', d: LIV.sedJakt, text: 'dog av kallbrand. Byn blev lite försiktigare.' } }, // steg 2.5.2
   svamp: { text: 'av svampförgiftning' },
+  skorbjugg: { text: 'av skörbjugg' }, // brist på vitaminer (steg 2.6.2)
   sjukdom: { text: 'av sjukdom' },
   alderdom: { text: 'av ålderdom' },
   barnsjukdom: { text: 'av en barnsjukdom' },

@@ -131,7 +131,8 @@ export function uiLasNu(s: State, t: number) {
     for (const l of p.lardomar ?? []) describe(s, l);
     // fliken Hälsa (steg 2.5.3)
     SIM.skadeLista(p, s.now); for (const d of Object.keys(SIM.KROPPSDELAR) as SIM.Kroppsdel[]) SIM.delSkada(p, d); for (const f of Object.values(SIM.FORMAGOR)) { f.varde(p); f.delar(p); }
-    SIM.naringNu(p); for (const k of SIM.NARINGAR) SIM.sjunker(k, SIM.KROPP.hungerTim); // näringen (steg 2.6.1)
+    SIM.naringNu(p); for (const k of SIM.NARINGAR) { SIM.sjunker(k, SIM.KROPP.hungerTim); SIM.bristGrad(p, k); } // näringen och bristen (steg 2.6.1–2.6.2)
+    SIM.bristerNu(p); SIM.frysFaktor(p); SIM.skorbjugg(p); SIM.vilaTim(p);
     for (const q of s.people) void s.rels[relKey(p.id, q.id)];
   }
 }

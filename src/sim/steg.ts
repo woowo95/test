@@ -24,7 +24,7 @@ import { Act, DAY, HOUR, HOUR_S, MIN, Person, SEC, SKILL_NAMES, State, Task, W, 
 import { findPath, speedAt, wear } from './vag';
 import { chooseTask, nastaRedskap } from './val';
 import { djurSteg } from './djur';
-import { naringSjunker } from './naring';
+import { bristSteg, frysFaktor, naringSjunker, skorbjugg, trottFaktor } from './naring';
 import { stepByggnader } from './byggnader';
 import { sumOf } from './egendom';
 import { avail, takeForHouse, buildJob, deliver as deliverBit, finishDorr, lacks, needOf, noteKom, planBuild, siteOf, toWalls, wearBuild, workOn } from './bygg';
@@ -181,6 +181,8 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
 // behoven: hunger, törst, vila, värme, umgänge och toa. Elden värmer i ett område, och inne i ett hus kyls man långsammare
 // (sämre ju fler öppningar). Delarna nedan räknas här och visas i personrutan, så att den visar det som faktiskt händer
 // vilan per timme före tak och eld: talets namn i KROPP
+// vilan per timme före tak och eld: den som har brist på energi tröttnar fortare (steg 2.6.2)
+export const vilaTim = (p: Person, vs = viloSlag(p)) => KROPP[vs] * (KROPP[vs] < 0 ? trottFaktor(p) : 1);
 export function viloSlag(p: Person): 'restVila' | 'restArbete' | 'restVaken' {
   const pd = p.task && ACTS[p.task.act];
   return pd && pd.vila ? 'restVila' : pd && pd.tungt && p.task!.phase === 'do' ? 'restArbete' : 'restVaken';
@@ -204,7 +206,7 @@ export function varmeDelar(s: State, p: Person, coldRate: number, inRum: Map<num
   const skugga = !!rum || groundOf(s).trees[tileOf(p.x, p.y)] > KROPP.skugga;
   const sol = skugga ? 0 : Math.max(0, temp - KROPP.solFran) / KROPP.solDiv;
   const kladHetta = klad * Math.max(0, temp - KROPP.kladFran) / KROPP.kladDiv, eldHetta = Math.max(0, heat - KROPP.eldTatt) * KROPP.eldHetta;
-  return { heat, rum, shelter, fall, klad, eld: heat * KROPP.eldVarme, kyla: coldRate * (1 - shelter) * (1 - fall) * (1 - klad), mild: coldRate === 0 ? KROPP.mildVarme : 0,
+  return { heat, rum, shelter, fall, klad, eld: heat * KROPP.eldVarme, kyla: coldRate * (1 - shelter) * (1 - fall) * (1 - klad) * frysFaktor(p), mild: coldRate === 0 ? KROPP.mildVarme : 0,
     sol, kladHetta, eldHetta, hetta: sol + kladHetta + eldHetta, skugga };
 }
 // värmen efter dt timmar: under idealet som förut (elden, kylan, milt väder, aldrig över idealet). Vid och över idealet värmer
@@ -218,8 +220,11 @@ export function nyVarme(w: number, v: ReturnType<typeof varmeDelar>, dt: number)
 }
 function needsStep(s: State, p: Person, a: number, dtSec: number, coldRate: number, fh: ReturnType<typeof hearthOf>, inRum: Map<number, number>, temp: number) {
   const now = s.now;
-  naringSjunker(p, dtSec / HOUR_S * (a < ALDER.matBarn ? KROPP.hungerBarn : 1), KROPP.hungerTim); // mättnaden är en sammanfattning av näringen (steg 2.6.1)
-  p.rest = clamp(p.rest + dtSec / HOUR_S * KROPP[viloSlag(p)], 0, 1);
+  const vs = viloSlag(p);
+  // mättnaden är en sammanfattning av näringen (steg 2.6.1); den som är för varm och arbetar tungt tappar salt (steg 2.6.2)
+  naringSjunker(p, dtSec / HOUR_S * (a < ALDER.matBarn ? KROPP.hungerBarn : 1), KROPP.hungerTim, vs === 'restArbete' && p.warm > KROPP.forVarm);
+  bristSteg(p, now);
+  p.rest = clamp(p.rest + dtSec / HOUR_S * vilaTim(p, vs), 0, 1);
   const v = varmeDelar(s, p, coldRate, inRum, temp), heat = v.heat;
   p.warm = nyVarme(p.warm, v, dtSec / HOUR_S);
   const tak = viloTak(s, p, v.rum);
@@ -256,10 +261,11 @@ function healthStep(s: State, p: Person, a: number, ai: number, dtSec: number) {
   else if (hl === 'torst') p.health -= dtSec / (TORST.tomTim * HOUR_S);
   else if (hl === 'laker') p.health = clamp(p.health + dtSec / (KROPP.lakerTim * HOUR_S), 0, 1);
   if (isSick(p, now)) p.health -= dtSec / (KROPP.sjukTim * HOUR_S);
+  p.health -= dtSec / HOUR_S * skorbjugg(p); // brist på vitaminer (steg 2.6.2)
   if (!p.sickUntil || p.sickUntil < now) {
     if (chance(s, (iIstiden(ai) ? ARSTID.sjukIstid : ARSTID.sjuk) / 86400, dtSec, 'halsa', p)) { const dur = (KROPP.sjukMin + rnd(s, 'halsa', p) * KROPP.sjukSpann) * HOUR; p.sickUntil = now + dur; p.sickWhy = 'Sjuk'; if (dur > KROPP.svartSjuk * HOUR) log(s, `${p.name} blev svårt sjuk.`, 'world', [p.id]); }
   }
-  if (p.health <= 0) { die(s, p, p.hunger <= 0 ? 'svalt' : p.warm < KROPP.frysdod ? 'kyla' : p.torst <= 0 ? 'torst' : (p.poisonUntil ?? 0) > now ? 'svamp' : 'sjukdom'); return true; }
+  if (p.health <= 0) { die(s, p, p.hunger <= 0 ? 'svalt' : p.warm < KROPP.frysdod ? 'kyla' : p.torst <= 0 ? 'torst' : (p.poisonUntil ?? 0) > now ? 'svamp' : skorbjugg(p) > 0 && !isSick(p, now) ? 'skorbjugg' : 'sjukdom'); return true; }
   // ålderdom och olyckor (Gompertz, per år = per dygn)
   const q = KROPP.dodBas + KROPP.dodAlder * Math.exp(KROPP.dodTakt * a) + (a < ALDER.barnsjuk ? KROPP.dodBarn : 0);
   if (chance(s, q / 86400, dtSec, 'halsa', p)) { die(s, p, a > ALDER.alderdom ? 'alderdom' : a < ALDER.barnsjuk ? 'barnsjukdom' : 'olycka'); if (a >= ALDER.barnsjuk && a <= ALDER.alderdom) fearPlace(s, p, DODSORSAKER.olycka.text); return true; }

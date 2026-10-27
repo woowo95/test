@@ -4,6 +4,7 @@ import { RESERV, foodDays } from './ekonomi';
 import { ACTS, WORK, usesTool } from './handlingar';
 import { canLight, emberOn, fireWant, needStones, needTinder, woodDays } from './eld';
 import { ALDER, KROPP, ageOf, count, isSick, living, stat } from './folk';
+import { onskan } from './naring';
 import { halsa, hemma, kanGa, vardVal, vilaHellre } from './halsa';
 import { harMat } from './behov';
 import { FANGST, Kind, flintSpot, shoreOf, wantsFlint } from './fynd';
@@ -399,7 +400,8 @@ function bestWork(s: State, p: Person, fd: number, wd: number, ai: number, tot: 
     // nytta för byn; maten väger också in hur mycket platserna ger just nu och att fiske med händerna ger lite
     const yieldF = w === 'ved' || tinder ? 1 : clamp(prospectFor(s, p, w as Kind), VAL.prospektMin, VAL.prospektMax) * (w === 'fiske' ? FANGST.handFiske : 1) * toolGain(s, p, w, fara);
     const season = ACTS[w].sasong![ai];
-    const col = need * (w === 'ved' ? 1 : tinder ? Math.max(VAL.tandMin, season) * VAL.tandVikt : season * yieldF);
+    // maten som någon längtar efter är mer värd att hämta (steg 2.6.2)
+    const col = need * (w === 'ved' ? 1 : tinder ? Math.max(VAL.tandMin, season) * VAL.tandVikt : season * yieldF * onskan(p, w, s.now));
     const sc = poang(s, p, col, lust(s, p, w as Skill, ACTS[w].egenskap!, [w], tot)); // egen lust och vana
     burg = Math.max(burg, col);
     if (sc > bs) { bs = sc; best = w; }
