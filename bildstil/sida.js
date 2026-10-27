@@ -257,11 +257,103 @@ function ritaBank(B, x0, y0, P) {
   ritaIkon(B, 'kott', x0 + 15, y0 + 1);
 }
 
+// ---------- slaktbänken i tre versioner, tre rutor = 48 × 24 punkter (Björn efter v95: pröva ett par andra) ----------
+// alla tre bygger på Björns val efter v55: den kluvna stocken med benen synliga och mer blod.
+// 1 kluven stock på pinnben, 2 stock på två bockar med en blodränna, 3 tjock planka på två stubbar
+function ritaSlakt(B, x0, y0, P, ver) {
+  const J = t => P.i('jord', t), K = t => P.i('kol', t), R = t => P.i('rost', t), Bn = t => P.i('ben', t);
+  const s = (x, y, v) => B.satt(x0 + x, y0 + y, v);
+  const slit = (x, y, v) => hash(x0 + x, y0 + y, 121) < 0.04 ? P.smuts[v] : v;
+  const ben2 = (x, y1, y2) => { for (let y = y1; y <= y2; y++) { s(x, y, J(2)); s(x + 1, y, J(1)); s(x + 2, y, J(0)); } };
+  const skugga = (xa, xb, ya, yb) => { for (let y = ya; y <= yb; y++) for (let x = xa + (y - ya); x <= xb + (y - ya); x++) B.morka(x0 + x, y0 + y); };
+  // blod i träet: stora fläckar som korn, mörkast i mitten
+  const blodTra = (x, y, v, cx, r) => { const d = Math.abs(x - cx) / r, n = vn(x0 + x, y0 + y, 3, 131) - d * 0.55; return n > 0.42 ? R(0) : n > 0.3 ? R(1) : v; };
+  // en pöl på marken med mörk kant och en blank punkt
+  const pol = (cx, cy, rx, ry) => {
+    for (let y = -ry; y <= ry; y++) for (let x = -rx; x <= rx; x++) {
+      const d = (x / rx) ** 2 + (y / ry) ** 2 + (vn(x0 + cx + x, y0 + cy + y, 2, 133) - 0.5) * 0.5;
+      if (d <= 1) s(cx + x, cy + y, d > 0.72 ? R(0) : R(1));
+    }
+    s(cx - 1, cy - 1, R(2));
+  };
+  const dropp = (x, y1, y2) => { for (let y = y1; y <= y2; y++) s(x, y, y === y2 ? R(0) : R(1)); };
+  if (ver === 1) {
+    skugga(4, 45, 16, 21);
+    for (const lx of [6, 39]) { ben2(lx, 15, 21); ben2(lx + 3, 15, 20); }
+    // den kluvna ytan uppåt, barken framtill
+    for (let y = 5; y <= 15; y++) for (let x = 2; x <= 45; x++) {
+      const kant = y === 5 || x === 2 || x === 45 || y === 15;
+      let v;
+      if (kant) v = J(0);
+      else if (y <= 11) { v = y === 6 ? J(3) : hash(Math.floor((x + y * 5) / 4), y, 122) < 0.25 ? J(2) : J(3); if (x <= 4) v = (x + y) % 3 ? J(2) : J(1); v = blodTra(x, y, v, 24, 16); }
+      else v = y === 12 ? K(1) : hash(x, Math.floor(y / 2), 123) < 0.3 ? K(1) : J(0);
+      if (!kant) v = slit(x, y, v);
+      s(x, y, v);
+    }
+    for (const x of [19, 25, 30]) dropp(x, 12, 15 + (x % 3));
+    pol(25, 19, 7, 2);
+    for (const [x, y] of [[33, 8], [35, 9], [37, 8]]) s(x, y, J(1)); // knivmärken
+    ritaIkon(B, 'kniv', x0 + 34, y0 + 1);
+    ritaIkon(B, 'kott', x0 + 13, y0 + 3);
+  } else if (ver === 2) {
+    skugga(3, 46, 15, 22);
+    const bock = cx => { for (let t = 0; t <= 14; t++) { const y = 7 + t; for (const [x, v] of [[cx - 4 + Math.round(t * 0.6), J(1)], [cx + 4 - Math.round(t * 0.6), J(2)]]) { s(x, y, v); s(x + 1, y, J(0)); } } };
+    bock(7); bock(40);
+    // stocken: runda sidor, kluven yta med en ränna i mitten där blodet rinner åt höger
+    for (let y = 6; y <= 14; y++) for (let x = 1; x <= 46; x++) {
+      const kant = y === 6 || y === 14 || x === 1 || x === 46;
+      let v;
+      if (kant) v = J(0);
+      else if (y === 7) v = K(1);
+      else if (y === 13) v = J(0);
+      else if (y === 10) v = x > 12 ? R(x > 30 ? 0 : 1) : J(1); // rännan
+      else { v = hash(Math.floor((x + y * 7) / 5), y, 124) < 0.22 ? J(2) : J(3); v = blodTra(x, y, v, 22, 12); }
+      if (!kant && y !== 10) v = slit(x, y, v);
+      s(x, y, v);
+    }
+    for (const y of [8, 9, 11, 12]) { s(2, y, J(1)); s(3, y, (y & 1) ? J(2) : J(1)); } // årsringarna i änden
+    dropp(46, 11, 17); dropp(45, 14, 16);
+    pol(43, 20, 4, 2); pol(22, 18, 3, 1);
+    ritaIkon(B, 'skinn', x0 + 26, y0 + 8);
+    ritaIkon(B, 'kniv', x0 + 12, y0 + 2);
+  } else {
+    skugga(4, 45, 17, 23);
+    // två stubbar under plankan: barken med fåror, ljus till vänster, och rötterna ut i marken
+    for (const cx of [9, 38]) {
+      for (let y = 14; y <= 21; y++) for (let x = cx - 4; x <= cx + 4; x++) {
+        if (y === 21 && Math.abs(x - cx) === 4) continue;
+        const kant = Math.abs(x - cx) === 4 || y === 21;
+        s(x, y, kant ? J(0) : (x - cx) % 3 === 0 ? J(0) : x < cx ? J(1) : K(1));
+      }
+      for (const [x, y] of [[cx - 5, 21], [cx - 6, 22], [cx + 5, 21], [cx + 6, 22]]) s(x, y, J(0));
+    }
+    // plankan: tjock och kort, med två fogar och mörkt blod som runnit in i mitten
+    for (let y = 4; y <= 15; y++) for (let x = 1; x <= 46; x++) {
+      const kant = y === 4 || x === 1 || x === 46;
+      let v;
+      if (kant) v = J(0);
+      else if (y >= 13) v = y === 15 ? J(0) : J(1); // framkanten i skugga
+      else if (y === 8) v = J(0); // fogen
+      else { v = y === 5 || y === 9 ? J(3) : (hash(Math.floor((x + y * 3) / 3), y, 125) < 0.2 ? J(1) : J(2)); v = blodTra(x, y, v, 26, 14); }
+      if (!kant && y !== 8) v = slit(x, y, v);
+      s(x, y, v);
+    }
+    for (const [x, y] of [[14, 6], [15, 7], [17, 6], [18, 7], [36, 10], [37, 11]]) s(x, y, J(0)); // huggmärken
+    for (const x of [22, 27, 31]) dropp(x, 13, 16 + (x % 2));
+    pol(26, 20, 6, 2);
+    ritaIkon(B, 'kniv', x0 + 6, y0 + 4);
+    ritaIkon(B, 'ben', x0 + 30, y0 + 3);
+    // ett ben på marken
+    for (const [x, y] of [[44, 21], [45, 21], [46, 22]]) s(x, y, Bn(3));
+  }
+}
+
 // ---------- slöjdbänken (flätarbänken), två rutor = 32 × 32 punkter ----------
 // samma bänk som i spelet (Björn valde 4a efter v55): två plankor på raka ben, två stolpar med ett rep spänt emellan
 // och en skåra framtill där bensylen ligger. Med dubbelt så många punkter får träet ådring, kvistar och knivmärken,
 // repet får sin tvinning och sakerna på bänken har samma punktstorlek som bänken
-function ritaSlojdbank(B, x0, y0, P) {
+// spant = true (Björn efter v95): repet spänt rakt mellan stolparna, utan trådar som hänger ner
+function ritaSlojdbank(B, x0, y0, P, spant = false) {
   const J = t => P.i('jord', t), S = t => P.i('senap', t), K = t => P.i('kol', t);
   const s = (x, y, v) => B.satt(x0 + x, y0 + y, v);
   const slit = (x, y, v) => hash(x0 + x, y0 + y, 111) < 0.04 ? P.smuts[v] : v;
@@ -274,13 +366,13 @@ function ritaSlojdbank(B, x0, y0, P) {
     for (let y = 2; y <= 13; y++) { s(p, y, J(0)); s(p + 1, y, slit(p + 1, y, J(2))); s(p + 2, y, slit(p + 2, y, J(1))); s(p + 3, y, J(0)); }
     s(p + 1, 6, J(1)); s(p + 2, 9, J(0)); // en kvist och en spricka
   }
-  // repet mellan stolparna, lite slakt, tvinnat (varannan och var tredje punkt byter ton)
+  // repet mellan stolparna, lite slakt eller spänt, tvinnat (var tredje punkt byter ton)
   for (let x = 8; x <= 24; x++) {
-    const y = 4 + Math.round(Math.sin(((x - 8) / 16) * Math.PI) * 1.4), t = (x % 3) === 0;
+    const y = spant ? 4 : 4 + Math.round(Math.sin(((x - 8) / 16) * Math.PI) * 1.4), t = (x % 3) === 0;
     s(x, y, t ? S(1) : S(2)); s(x, y + 1, t ? S(2) : S(0));
   }
   for (const p of [4, 25]) for (let y = 3; y <= 6; y++) s(p + 1 + (y % 2), y, y % 2 ? S(1) : S(0)); // varven runt stolparna
-  for (const [x, l] of [[13, 4], [14, 3], [19, 5]]) for (let j = 0; j < l; j++) s(x + (j > 1 ? 1 : 0), 7 + j, j === l - 1 ? S(0) : S(1)); // fibrer som hänger ner
+  if (!spant) for (const [x, l] of [[13, 4], [14, 3], [19, 5]]) for (let j = 0; j < l; j++) s(x + (j > 1 ? 1 : 0), 7 + j, j === l - 1 ? S(0) : S(1)); // fibrer som hänger ner
   // skivan: två plankor sedda ovanifrån
   for (let y = 13; y <= 21; y++) for (let x = 1; x <= 30; x++) {
     let v;
@@ -705,9 +797,11 @@ function center(f) {
 }
 
 // porträttet, 64 × 64 punkter: formerna ritas i punkter med hårt ljus uppifrån vänster och varmt sken från elden,
-// och varje punkt byts sedan mot närmaste färg i paletten. Konturen är kolets mörkaste ton och bakgrunden kolets ramp
-function ritaPortratt(Pal, P, N = 64) {
-  const VX = 13, VY = 10, VW = 74, px = VW / N, F = former(P).filter(f => (f.det ?? 1) <= 3), g = Array(N * N).fill(null), id = Array(N * N).fill(-1), hud = Array(N * N).fill(0);
+// och varje punkt byts sedan mot närmaste färg i paletten. Konturen är kolets mörkaste ton och bakgrunden kolets ramp.
+// Ljuset ligger i hela band utan rutmönster, och håret och skägget har strån i klungor längs växtriktningen
+// (Björn efter v95: mindre schackrutigt). gammal = true ritar som före v95, för jämförelsen i valdelen
+function ritaPortratt(Pal, P, N = 64, gammal = false) {
+  const VX = 13, VY = 10, VW = 74, px = VW / N, F = former(P).filter(f => (f.det ?? 1) <= 3), g = Array(N * N).fill(null), id = Array(N * N).fill(-1), hud = Array(N * N).fill(0), harm = Array(N * N).fill(0), stra = new Int8Array(N * N);
   const seed = P.namn.length * 7 + P.age, smuts = 0.012 + (P.beauty < 0 ? 0.05 : 0) + (P.age > 55 ? 0.03 : 0);
   for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
     const u = VX + (i + 0.5) * px, v = VY + (j + 0.5) * px, k0 = j * N + i;
@@ -719,11 +813,18 @@ function ritaPortratt(Pal, P, N = 64) {
         // hårt ljus snett uppifrån vänster: ljus, mellan, rastrerad övergång, skugga
         const m = center(f), k = (u - m.cx) / m.rx * 0.65 + (v - m.cy) / m.ry * 0.7;
         const dark = mix(shade(c, 0.64), '#2a2238', 0.15), mid = shade(c, 0.84);
-        c = k > 0.7 ? dark : k > 0.55 ? ((i + j) % 2 ? dark : mid) : k > 0.1 ? mid : k < -0.6 ? mix(c, '#ffe2b0', 0.14) : c;
+        if (gammal) c = k > 0.7 ? dark : k > 0.55 ? ((i + j) % 2 ? dark : mid) : k > 0.1 ? mid : k < -0.6 ? mix(c, '#ffe2b0', 0.14) : c;
+        else c = k > 0.62 ? dark : k > 0.1 ? mid : k < -0.6 ? mix(c, '#ffe2b0', 0.14) : c;
       }
-      if (har) { const s = (i * 2 + j + Math.floor(hash(i, 0, 1) * 2)) % 6; if (s === 0) c = mix(c, '#fff0d0', 0.16); else if (s === 3) c = shade(c, 0.85); }
+      if (har && gammal) { const s = (i * 2 + j + Math.floor(hash(i, 0, 1) * 2)) % 6; if (s === 0) c = mix(c, '#fff0d0', 0.16); else if (s === 3) c = shade(c, 0.85); }
+      else if (har) {
+        // strån i klungor: smala och långa nedåt, så att ljuset följer hårets riktning i stället för ett mönster
+        // (ett steg ljusare eller mörkare i samma ramp i paletten, så att färgen inte byter ton)
+        const s = vn(i / 1.7, j / 5, 1, seed + 3 + (f.c === P.hair ? 0 : 9));
+        stra[k0] = s > 0.72 ? 1 : s < 0.22 ? -1 : 0;
+      }
       if (f.a) { if (g[k0]) g[k0] = mix(g[k0], c, f.a); return; }
-      g[k0] = c; id[k0] = n; hud[k0] = f.skin ? 1 : 0;
+      g[k0] = c; id[k0] = n; hud[k0] = f.skin ? 1 : 0; harm[k0] = har ? 1 : 0; if (!har) stra[k0] = 0;
     });
     // smuts och fläckar i huden
     if (hud[k0]) { const h = hash(i, j, seed); if (h < smuts) g[k0] = shade(g[k0], 0.92); else if (P.blemish && h > 0.993) g[k0] = mix(g[k0], '#9a3a30', 0.3); }
@@ -735,7 +836,7 @@ function ritaPortratt(Pal, P, N = 64) {
     if (!c) {
       if (nb.some(n => n >= 0 && g[n])) { B.satt(i, j, K(0)); continue; }
       // bakgrunden ljusnar svagt mot mitten, med rastrering
-      const r = Math.hypot(i - N * 0.3, j - N * 0.45) / N, b = r < 0.35 ? 2 : r < 0.45 ? ((i + j) % 2 ? 2 : 1) : r < 0.62 ? 1 : r < 0.7 ? ((i + j) % 2 ? 1 : 0) : 0;
+      const r = Math.hypot(i - N * 0.3, j - N * 0.45) / N, b = gammal ? (r < 0.35 ? 2 : r < 0.45 ? ((i + j) % 2 ? 2 : 1) : r < 0.62 ? 1 : r < 0.7 ? ((i + j) % 2 ? 1 : 0) : 0) : (r < 0.4 ? 2 : r < 0.66 ? 1 : 0);
       B.satt(i, j, K(b)); continue;
     }
     // inre konturer där två former med olika ljushet möts
@@ -743,7 +844,16 @@ function ritaPortratt(Pal, P, N = 64) {
     if ((r >= 0 && g[r] && id[r] !== id[k0] && Math.abs(lum(g[r]) - lum(c)) > 55) || (dn >= 0 && g[dn] && id[dn] !== id[k0] && Math.abs(lum(g[dn]) - lum(c)) > 55)) c = mix(c, SVART, 0.4);
     // varmt sken från elden till vänster
     else if (nb[1] >= 0 && !g[nb[1]]) c = mix(c, '#f0a050', 0.3);
-    B.satt(i, j, Pal.av(c));
+    let v = Pal.av(c);
+    if (stra[k0] > 0 && v % 4 < 3) v++; else if (stra[k0] < 0 && v % 4 > 0) v--;
+    B.satt(i, j, v);
+  }
+  // ensamma punkter i håret och skägget tar grannarnas färg, så att inget rutmönster blir kvar
+  if (!gammal) for (let j = 1; j < N - 1; j++) for (let i = 1; i < N - 1; i++) {
+    if (!harm[j * N + i]) continue;
+    const v = B.get(i, j), l = B.get(i - 1, j), r = B.get(i + 1, j), u = B.get(i, j - 1), d = B.get(i, j + 1);
+    if (v !== l && l === r && (u === l || d === l)) B.px[j * N + i] = l;
+    else if (v !== u && u === d && (l === u || r === u)) B.px[j * N + i] = u;
   }
   // rostig järnram med nitar
   for (let k = 0; k < N; k++) for (const [x, y] of [[k, 0], [k, 1], [k, N - 2], [k, N - 1], [0, k], [1, k], [N - 2, k], [N - 1, k]]) B.satt(x, y, Pal.i('jord', 0));
@@ -817,21 +927,24 @@ function forstorad(B, k, x0, y0) {
 // Varje version är en bild { w, h, rita(B, P) } på marken. När valet är inbyggt i spelet tas raden bort, och dess
 // dokument i databasens samling 'val' tas bort
 const VAL = [
+  { id: 'slaktbank', namn: 'Slaktbänken', vad: 'Station, tre rutor. Tre nya försök med 16 punkter per ruta, efter din kommentar: den kluvna stocken med benen synliga och mer blod.', typ: 'tre',
+    idag: { w: 52, h: 26, rita: (B, P) => forstorad(B, 'slaktbank_karta', 2, 2) },
+    versioner: [
+      { text: 'Kluven stock på fyra pinnben. Blodet har gått in i träet, droppar från barken och bildar en pöl.', w: 52, h: 28, rita: (B, P) => ritaSlakt(B, 2, 2, P, 1) },
+      { text: 'Stock på två bockar med en ränna i mitten. Blodet rinner åt höger och droppar ner i en pöl. Ett skinn ligger på stocken.', w: 52, h: 28, rita: (B, P) => ritaSlakt(B, 2, 2, P, 2) },
+      { text: 'Tjock planka på två stubbar, med huggmärken och mörkt blod i mitten. Ett ben ligger på marken.', w: 52, h: 28, rita: (B, P) => ritaSlakt(B, 2, 2, P, 3) },
+    ] },
+  { id: 'slojdbank', namn: 'Slöjdbänken', vad: 'Station, två rutor. Omritad med 16 punkter per ruta.', typ: 'janej',
+    idag: { w: 36, h: 36, rita: (B, P) => ritaSlojdbank(B, 2, 2, P) }, idagText: 'Förra versionen, som du sa nej till.',
+    versioner: [{ text: 'Efter din kommentar: repet spänt rakt mellan stolparna, utan trådar som hänger ner.', w: 36, h: 36, rita: (B, P) => ritaSlojdbank(B, 2, 2, P, true) }] },
+  { id: 'portratt', namn: 'Porträtten', vad: 'Personens porträtt i personrutan, 64 × 64 punkter. Mindre schackrutiga efter din kommentar; alla fem syns under Folket ovanför.', typ: 'janej',
+    idag: { w: 64, h: 64, kol: true, rita: (B, P) => { const R = ritaPortratt(P, PERSONER[0], 64, true); B.px.set(R.px); } }, idagText: 'Förra versionen, som du sa nej till.',
+    versioner: [{ text: 'Ljuset i hela band utan rutmönster, och håret och skägget med strån i klungor längs växtriktningen.', w: 64, h: 64, kol: true, rita: (B, P) => { const R = ritaPortratt(P, PERSONER[0]); B.px.set(R.px); } }] },
   { id: 'kista', namn: 'Kistan', vad: 'Station, en ruta. Omritad med 16 punkter per ruta.', typ: 'janej',
     idag: { w: 20, h: 20, rita: (B, P) => forstorad(B, 'kista_karta', 2, 2) },
     versioner: [{ text: 'Lock med ljus kant, järnband och lås i senap.', w: 20, h: 20, rita: (B, P) => ritaKista(B, 2, 2, P) }] },
-  { id: 'slaktbank', namn: 'Slaktbänken', vad: 'Station, två rutor. Omritad med 16 punkter per ruta.', typ: 'janej',
-    idag: { w: 52, h: 26, rita: (B, P) => forstorad(B, 'slaktbank_karta', 2, 2) },
-    versioner: [{ text: 'Blodet i träet som korn, kniven och köttet i sakernas storlek.', w: 36, h: 20, rita: (B, P) => ritaBank(B, 2, 2, P) }] },
-  { id: 'slojdbank', namn: 'Slöjdbänken', vad: 'Station, två rutor. Omritad med 16 punkter per ruta.', typ: 'janej',
-    idag: { w: 36, h: 36, rita: (B, P) => ritaSlojdbankIdag(B, 2, 2, P) },
-    versioner: [{ text: 'Ådring, kvist och knivmärken, tvinnat rep, rep, hö och bensyl på.', w: 36, h: 36, rita: (B, P) => ritaSlojdbank(B, 2, 2, P) }] },
   { id: 'lagereld', namn: 'Lägerelden', vad: 'Lägerelden i pixlar. I dag ritas den med cirklar.', typ: 'janej',
     versioner: [{ text: 'Stenring i skiffer, ved, aska och lågor med glöd längst ner.', w: 28, h: 26, rita: (B, P) => ritaEld(B, 14, 15, P, { tid: 'dag' }) }] },
-  { id: 'folket', namn: 'Folket på kartan', vad: 'Människorna i pixlar, 14 × 20 punkter. I dag är de cirklar.', typ: 'janej',
-    versioner: [{ text: 'Arn, Ylva, Gorm, Tova och Bodvar, med kontur, skuggsida och ljussida.', w: 86, h: 24, rita: (B, P) => PERSONER.forEach((p, i) => ritaPerson(B, i, 2 + i * 17, 1)) }] },
-  { id: 'portratt', namn: 'Porträtten', vad: 'Personens porträtt i personrutan, 64 × 64 punkter.', typ: 'janej',
-    versioner: [{ text: 'Hårt ljus uppifrån vänster, varmt sken från elden och en rostig ram.', w: 64, h: 64, kol: true, rita: (B, P) => { const R = ritaPortratt(P, PERSONER[0]); B.px.set(R.px); } }] },
   { id: 'symboler', namn: 'Symbolerna', vad: 'De första åtta pixelsymbolerna, 8 × 8 punkter, i stället för emojier.', typ: 'janej',
     idag: { text: SYMBOLER.map(s => s.ers).join(' ') },
     versioner: [{ text: SYMBOLER.map(s => s.namn).join(', ') + '.', w: SYMBOLER.length * 10 + 2, h: 12, kol: true, rita: (B, P) => SYMBOLER.forEach((s, i) => ritaSprite(B, s.p, s.l, 2 + i * 10, 2)) }] },
@@ -860,7 +973,7 @@ function byggVal(P) {
       const f = document.createElement('figure'); f.className = 'alt idag';
       if (s.idag.rita) f.append(valBild(s.idag, P));
       else { const t = document.createElement('div'); t.className = 'emojilista'; t.innerHTML = `<span>${s.idag.text}</span>`; f.append(t); }
-      f.insertAdjacentHTML('beforeend', '<figcaption><b>I dag</b>Som spelet ritar den nu.</figcaption>'); alt.append(f);
+      f.insertAdjacentHTML('beforeend', `<figcaption><b>${s.idagText ? 'Förut' : 'I dag'}</b>${s.idagText || 'Som spelet ritar den nu.'}</figcaption>`); alt.append(f);
     }
     s.versioner.forEach((v, i) => {
       const f = document.createElement('figure'); f.className = 'alt';
