@@ -45,12 +45,13 @@ export const KROPP = balans('kropp', {
   lakerMat: 0.3, // hälsan läker bara när mättnaden är över detta (och man inte är sjuk)
   lakerTim: 10, // timmar som läkningen tar från ingen hälsa till full
   // vila (rest)
-  trottDag: 0.15, // under detta är man trött på dagen ...
+  // Sedan steg 2.3.10 räcker vilan hela dagen (den tar slut långsammare) och man vilar ut när det är mörkt (VAL.nattVila i val.ts)
+  trottDag: 0.1, // under detta är man så trött på dagen att man måste vila (bufferten nästan tom) ...
   trottNatt: 0.12, // ... och på natten
   latVila: 0.2, // så mycket högre är gränsen för den som är helt lat
   restVila: 0.09, // vila per timme när man vilar
-  restArbete: -0.06, // ... när man arbetar hårt
-  restVaken: -0.03, // ... annars
+  restArbete: -0.04, // ... när man arbetar hårt (-0,06 före steg 2.3.10)
+  restVaken: -0.02, // ... annars (-0,03 före steg 2.3.10)
   restGolv: 0.03, // extra vila per timme när man sover inomhus på golv
   restTak: 0.02, // ... på bar mark under tak
   restBadd: 0.05, // ... i en halmbädd (steg 2.2.5)

@@ -77,7 +77,9 @@ const VAL = balans('val', {
   tandMin: 0.8, tandVikt: 3, // tändmaterial: årstiden räknas minst Min, gånger Vikt
   prospektMin: 0.05, prospektMax: 1.3, // hur mycket platserna ger just nu räknas mellan dessa
   // fritid (leisure): vikter (ju större desto oftare), u = hur akut byn behöver arbete
-  vilaVikt: 2, vilaLat: 0.6, // vila: per saknad vila, plus för den lata
+  vilaVikt: 2, vilaLat: 0.6, // vila: per saknad vila, plus för den lata ...
+  vilaDag: 0.3, // ... men på dagen bara när vilan är under detta (steg 2.3.10): annars vilar man ut när det är mörkt
+  nattVila: 0.6, // på natten vilar den vars vila är under detta, före berättande, handarbete och umgänge (steg 2.3.10)
   hantSkill: 10, hantFlit: 20, // handarbete: färdigheten delad med Skill plus flit-anlaget delat med Flit
   hantLugn: 0.25, hantLugnVikt: 1.5, hantAkutVikt: 0.6, // ... gånger Lugn när u är under Lugn (byn har det gott ställt), annars Akut
   umgasVikt: 2, // umgänge: per saknat umgänge
@@ -439,7 +441,7 @@ function projektVal(v: Val, u: Uppgift, why: string) {
 // egen lust: vila, hantverk, umgänge, promenad, bad eller att sitta vid stranden. u = hur akut byn behöver arbete
 function leisure(s: State, p: Person, v: Val, u: number, lazy: number, ai: number) {
   const now = s.now;
-  const wv = (1 - p.rest) * VAL.vilaVikt + lazy * VAL.vilaLat;
+  const wv = (p.rest < VAL.vilaDag ? (1 - p.rest) * VAL.vilaVikt : 0) + lazy * VAL.vilaLat;
   const wh = (p.skill.hantverk / VAL.hantSkill + p.pot.flit / VAL.hantFlit) * (u < VAL.hantLugn ? VAL.hantLugnVikt : VAL.hantAkutVikt);
   const wsoc = (1 - p.social) * VAL.umgasVikt;
   // promenad: den nyfikne går gärna ut och ser sig omkring. Bad: när det är varmt i vattnet
@@ -484,6 +486,7 @@ function night(s: State, p: Person, v: Val, a: number) {
   // på natten håller man sig vid lägret; de modiga går lite längre ut i mörkret för att bära in saker
   const near = VAL.nattNar + stat(p, 'mod', now) / 20 * VAL.nattLangt, gt = a >= ALDER.ansvar && r < VAL.nattBara && s.stackar?.length ? haulJob(s, near) : undefined;
   if (gt) { set(v, 'bara', `Mörkt, ${near > 6 ? 'men är modig och ' : ''}${gt.why[0].toLowerCase()}${gt.why.slice(1)}`); v.spot = gt; v.dur = VAL.nattBaraTim * HOUR; }
+  else if (a >= ALDER.hjalper && p.rest < VAL.nattVila) set(v, 'vila', 'Mörkt och trött efter dagen, vilar ut vid elden');
   else if (a < ALDER.hjalper) { if (r < VAL.nattBarnSamtal) set(v, 'samtal', 'Mörkt, sitter med de vuxna vid elden'); else set(v, 'sova', 'Barn sover på natten'); }
   else if (r < story) set(v, 'beratta', 'Mörkt, berättar för de andra vid elden');
   else if (r < story + craftW) craft(s, p, v, 'Mörkt, gör handarbete vid elden');

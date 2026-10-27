@@ -183,10 +183,11 @@ SCENARIER.aktivitet = {
 };
 
 SCENARIER.fritid = {
-  text: 'På fritiden tar folk promenader (de nyfikna och modiga längre bort), badar när det är varmt och sitter vid stranden',
+  text: 'På fritiden tar folk promenader (de nyfikna och modiga längre bort), badar när det är varmt och sitter vid stranden. Man vilar ut när det är mörkt och på dagen bara när man är mycket trött (steg 2.3.10)',
   kor: () => {
     const folk: { d: number; v: number }[] = [];
     let prom = 0, bad = 0, badVarmt = true, n = 0, strand = 0, strandLand = true;
+    const vila = { dag: 0, dagN: 0, natt: 0, nattN: 0 }; // vuxnas tid i vila på dagen och när det är mörkt (steg 2.3.10)
     for (const seed of [5, 6, 7, 8]) { // fyra byar, så att slumpen inte avgör
     const s = createState(seed, START), gang = new Map<number, number>(), sett = new WeakSet<object>();
     s.kal = nyKalender(s.now, 2); // sommar
@@ -194,6 +195,7 @@ SCENARIER.fritid = {
     kor(s, 4 * 24, s => {
       for (const p of living(s)) {
         const t = p.task;
+        if (ageOf(p, s.now) >= 16) { const l = isLight(s.now), v = t?.act === 'vila' ? 1 : 0; if (l) { vila.dag += v; vila.dagN++; } else { vila.natt += v; vila.nattN++; } }
         if (t?.phase !== 'do') continue;
         const c = campCenter(s), ny = !sett.has(t); sett.add(t); // varje promenad, bad och stund vid stranden räknas en gång
         if (t.act === 'promenad') { if (ny) prom++; gang.set(p.id, Math.max(gang.get(p.id) ?? 0, Math.hypot(t.tx - c.x - 0.5, t.ty - c.y - 0.5))); }
@@ -215,6 +217,7 @@ SCENARIER.fritid = {
       ['man badar bara när det är varmt', badVarmt],
       [`folk sitter vid stranden (${strand} gånger)`, strand >= 2],
       ['den som sitter vid stranden sitter på land', strandLand],
+      [`man vilar ut när det är mörkt (${(100 * vila.natt / vila.nattN).toFixed(0)} % av natten) och lite på dagen (${(100 * vila.dag / vila.dagN).toFixed(0)} %)`, vila.natt / vila.nattN > 2 * vila.dag / vila.dagN],
     ];
   },
 };
