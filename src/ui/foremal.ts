@@ -1,4 +1,4 @@
-import { MASTERVERK, PERFEKT, Act, DJUR, GRODOR, faltKlar, faltOf, faltRuta, brasaHeat, radieAv, W, bordPlatser, sjoarna, stationById, GORS, MATERIAL, Pile, STATION, STUBBE_LIV, Station, bitAt, bitsOf, clamp, dorrDef, condOf, emberOn, fireHeat, forvarAt, getMap, grillVara, heatRadius, TORK, torrDel, isKlar, living, stationDef, stationKlar, stationerOf, storlekAv, tillbehorDef, tingOf, vidStation, zonesOf } from '../sim';
+import { MASTERVERK, PERFEKT, Act, DJUR, GRODOR, faltById, faltKlar, faltOf, faltRuta, faltRutor, grodaPa, brasaHeat, radieAv, W, bordPlatser, sjoarna, stationById, GORS, MATERIAL, Pile, STATION, STUBBE_LIV, Station, bitAt, bitsOf, clamp, dorrDef, condOf, emberOn, fireHeat, forvarAt, getMap, grillVara, heatRadius, TORK, torrDel, isKlar, living, stationDef, stationKlar, stationerOf, storlekAv, tillbehorDef, tingOf, vidStation, zonesOf } from '../sim';
 import { LagereldLage, iconCanvas, lagereldId } from '../ikoner';
 import { ritaHus } from './husbild';
 import { outPilesAt, piles, s, ui } from './lage';
@@ -34,7 +34,7 @@ function glans(x: number, y: number, t: number, id: number, perfekt: boolean) {
 // grödans symbol när den är mogen, tills rutan skördats. Framstegscirkeln över rutan där någon röjer, gräver eller sår
 function drawFalt() {
   for (const f of faltOf(s)) {
-    const vaxer = f.steg === 'vaxer', mogen = f.steg === 'mogen', sadda = f.sadda ?? 0, liten = vaxer && (f.vuxit ?? 0) < 0.5;
+    const vaxer = f.steg === 'vaxer', mogen = f.steg === 'mogen', liten = vaxer && (f.vuxit ?? 0) < 0.5;
     const bild = mogen && f.groda ? GRODOR[f.groda].sak : vaxer ? 'grodd' : undefined;
     for (let k = 0; k < f.n; k++) {
       const i = faltRuta(f, k), X = (i % W) * TS, Y = Math.floor(i / W) * TS;
@@ -42,7 +42,7 @@ function drawFalt() {
       if (!rojd) structG.lineStyle(1, 0x5e3c24, 0.7).drawRect(X + 0.5, Y + 0.5, TS - 1, TS - 1).lineStyle(0);
       else structG.beginFill(grav ? 0x5e3c24 : 0x7d5b40, 0.9).drawRect(X, Y, TS, TS).endFill();
       if (grav) for (let r = 0; r < 4; r++) structG.lineStyle(1, 0x3f2415, 0.8).moveTo(X + 1, Y + 2.5 + r * 4).lineTo(X + TS - 1, Y + 2.5 + r * 4).lineStyle(0);
-      if (bild && k < sadda && !(mogen && klar)) { const sc = liten ? 0.5 : 1, b = iconCanvas(bild).width * sc; pileIcons.add(bild, X + (TS - b) / 2, Y + (TS - b) / 2, sc); }
+      if (bild && grodaPa(f, k)) { const sc = liten ? 0.5 : 1, b = iconCanvas(bild).width * sc; pileIcons.add(bild, X + (TS - b) / 2, Y + (TS - b) / 2, sc); }
     }
     if (!vaxer && !mogen) { const i = faltRuta(f, Math.min(f.klara, f.n - 1)); framsteg((i % W) * TS + TS / 2, Math.floor(i / W) * TS + 3, faltKlar(f)); }
   }
@@ -152,9 +152,11 @@ export function drawStructures(t: number) {
   // markerad hög utanför lagret: vit kant runt rutan, som lagerplatsen får
   const h = ui.hogAt;
   if (tab === 'hog' && outPilesAt(h.x, h.y).length) structG.lineStyle(1, 0xffffff, 0.9).drawRoundedRect(h.x * TS + 0.5, h.y * TS + 0.5, TS - 1, TS - 1, 3).lineStyle(0);
-  // det som är valt i panelen: vit kant runt huset, sjön eller stationen (steg 2.3.7)
+  // det som är valt i panelen: vit kant runt huset, sjön, fältet eller stationen (steg 2.3.7)
   if (tab === 'hus') kant(bitsOf(s).filter(b => b.hus === ui.husId).map(b => b.y * W + b.x));
   if (tab === 'sjo') kant(sjoarna(s.seed).rutor[ui.sjoNr] ?? []);
+  const fv = tab === 'falt' ? faltById(s, ui.faltId) : undefined; // fältet, eller grödan på en av dess rutor (steg 2.10.14)
+  if (fv) kant(ui.faltRuta >= 0 ? [faltRuta(fv, ui.faltRuta)] : faltRutor(fv));
   const vald = tab === 'station' ? stationById(s, ui.stationId) : undefined;
   if (vald) { const { w, h: d } = storlekAv(vald); overG.lineStyle(1, 0xffffff, 0.9).drawRoundedRect(vald.x * TS + 0.5, vald.y * TS + 0.5, w * TS - 1, d * TS - 1, 2).lineStyle(0); }
   // stubbar: bleknar medan de ruttnar bort

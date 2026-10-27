@@ -1074,6 +1074,8 @@ SCENARIER.falt = {
       if (t !== T.Gras && t !== T.Skog || g.trees[i] >= FOREST || fs.some(r => r !== q && SIM.faltRutor(r).includes(i)) || pilesOf(s).some(pl => pl.y * W + pl.x === i)) fel++;
     }
     const sadd = s.stat?.sadd ?? 0, fronNu = amountOf(s, 'fron');
+    // ett tryck på en ruta hittar rätt ruta i fältet (steg 2.10.14)
+    const index = fs.every(q => SIM.faltRutor(q).every((i, k) => SIM.faltIndex(q, i % W, Math.floor(i / W)) === k));
     // storleken (steg 2.10.13): rutorPerMun rutor per person i familjen, och inte fler än det finns frön till
     const p = living(s).find(q => q.id === f?.agare) ?? living(s).find(q => ageOf(q, s.now) >= 18)!;
     const storlekOk = fs.every(q => q.n >= SIM.ODLING.faltMin && q.n <= SIM.ODLING.faltMax && q.n <= SIM.faltBehov(s, s.people.find(r => r.id === q.agare) ?? p));
@@ -1127,6 +1129,7 @@ SCENARIER.falt = {
       [`fältet grävs upp och sås inom två dygn (två år i spelet), och fröna tas ur förrådet (${sadd} sådda, frön ${fron0.toFixed(0)} → ${fronNu.toFixed(1)})`, sadd > 0 && fronNu < fron0],
       [`fältet har ${SIM.ODLING.rutorPerMun} rutor per person i familjen, mellan ${SIM.ODLING.faltMin} och ${SIM.ODLING.faltMax}, och inte fler än det finns frön till (${fs.map(q => q.n).join(', ')} rutor)`, storlekOk && fs.length > 0],
       ['en familj har ett fält', enPerFamilj],
+      ['varje ruta på kartan hittar sin plats i fältet, så att ett tryck på den markerar rätt gröda', index && fs.length > 0],
       [`arbetet går ruta för ruta, och steget blir inte klart förrän hela fältet är gjort (${tva} rutor skördade efter två rutors arbete)`, delvis],
       [`en ruta tar kort tid: ${perRuta} minuter att röja, gräva, så och skörda`, perRuta <= 20],
       [`den mogna grödan skördas: korn (${korn.toFixed(1)}) och nya frön (${fronSkord.toFixed(1)}); sedan växer fältet eller grävs upp igen`, skord],

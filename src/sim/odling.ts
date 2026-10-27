@@ -106,6 +106,13 @@ export function faltAt(s: State, x: number, y: number) {
   if (!c || c.key !== key) { const at = new Map<number, Falt>(); for (const f of s.falt) for (const i of faltRutor(f)) at.set(i, f); c = { key, at }; rutCache.set(s, c); }
   return c.at.get(y * W + x);
 }
+// vilken ruta i fältet (x, y) är, eller -1
+export function faltIndex(f: Falt, x: number, y: number) {
+  const dx = x - f.x, rad = (y - f.y) * f.dir, k = rad * f.w + dx;
+  return dx >= 0 && dx < f.w && rad >= 0 && k < f.n ? k : -1;
+}
+// står det en gröda på ruta k: sådd, och inte redan skördad
+export const grodaPa = (f: Falt, k: number) => (f.steg === 'vaxer' || f.steg === 'mogen') && k >= 0 && k < (f.sadda ?? 0) && !(f.steg === 'mogen' && k < f.klara);
 // mitten av fältet, och mitten av rutan där arbetet i steget fortsätter
 export function faltMitt(f: Falt) {
   const rader = Math.ceil(f.n / f.w);
