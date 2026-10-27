@@ -7,6 +7,7 @@ import type { Flik } from '../panel';
 // teknikträdet som symboler: det som inte kräver något till vänster, sträck till det som är låst bakom det.
 // Ett tryck på en symbol visar mer om den.
 let tekSel: string | undefined;
+const KOLUMN = 64; // varje kolumn i trädet är lika bred; blir trädet bredare än rutan skrollar man i sidled (steg 2.12.7)
 export const teknik: Flik = {
   namn: 'Teknik',
   html: tekHtml,
@@ -30,7 +31,7 @@ function tekHtml() {
     // i höjdled nära det de kräver, så att sträcken korsar varandra så lite som möjligt
     const mitt = (id: string) => TEK[id].krav.reduce((a, k) => a + pos[k].y, 0) / Math.max(1, TEK[id].krav.length);
     const ids = TEKNIK.filter(t => depth[t.id] === c).map(t => t.id).sort((a, b) => mitt(a) - mitt(b));
-    ids.forEach((id, i) => { pos[id] = { x: cols > 1 ? 15 + c * (70 / (cols - 1)) : 50, y: (i + 0.5) / ids.length * 100 }; });
+    ids.forEach((id, i) => { pos[id] = { x: (c + 0.5) / cols * 100, y: (i + 0.5) / ids.length * 100 }; });
   }
   // linjerna visar vad som är låst bakom vad: en teknik kräver en annan
   const lines = TEKNIK.flatMap(t => t.krav.map(k => `<line x1="${pos[k].x}" y1="${pos[k].y}" x2="${pos[t.id].x}" y2="${pos[t.id].y}"/>`));
@@ -45,7 +46,7 @@ function tekHtml() {
   const h = Math.max(150, Math.max(...Array.from({ length: cols }, (_, c) => TEKNIK.filter(t => depth[t.id] === c).length)) * 64);
   return `<div class="tekhead">${hjalpKnapp('teknik', 'Hur fungerar teknik?')}</div>
     ${hjalpText('teknik', `<p class="muted small">Den som arbetar med något kommer så småningom på hur det kan göras bättre. Nyfikenheten avgör hur ofta hen funderar och intelligensen hur fort det går. Det man kan lärs ut i samtal. Dör alla som kan något försvinner kunskapen. Ett sträck betyder att tekniken till höger kräver den till vänster. Siffran är hur många som kan tekniken och ringen hur långt den som funderat mest har kommit. Tryck på en teknik för att se vad den kräver och hur man kommer på den.</p>`)}
-    <div class="ttrad" style="height:${h}px"><svg class="tlinjer" viewBox="0 0 100 100" preserveAspectRatio="none">${lines.join('')}</svg>${nodes.join('')}</div>
+    <div class="ttradram"><div class="ttrad" style="height:${h}px;width:${cols * KOLUMN}px"><svg class="tlinjer" viewBox="0 0 100 100" preserveAspectRatio="none">${lines.join('')}</svg>${nodes.join('')}</div></div>
     ${tekInfo(ppl, tekSel)}`;
 }
 const lista = (xs: string[], och = 'och') => xs.length > 1 ? xs.slice(0, -1).join(', ') + ` ${och} ` + xs[xs.length - 1] : xs[0] ?? '';

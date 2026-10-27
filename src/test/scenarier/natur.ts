@@ -531,6 +531,7 @@ SCENARIER.stationsteknik = {
       ['den som jagar med kniv och tvinnar rep kommer på slaktbänken och slöjdbänken', kommer],
       ['korgen kommer man inte på utan slöjdbänken', ingenKorg],
       ['i en sparad by med en slaktbänk kan de som kan kniven bygga den', sparad],
+      ['trädet på bredden (steg 2.12.7): grillen efter slaktbänken, torkställningen efter grillen, hyllorna efter bordet, metspöet efter träspjutet, skinndörren och skinnfällen efter skinnkläderna', ([['grill', 'slaktbank'], ['tork', 'grill'], ['hylla', 'bord'], ['metspo', 'fiskespjut'], ['skinndorr', 'skinnklader'], ['skinnfall', 'skinnklader']] as const).every(([t, k]) => TEK[t].krav.includes(k))],
     ];
   },
 };

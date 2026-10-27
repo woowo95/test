@@ -29,6 +29,8 @@ export interface Tek {
   // (odlingen kommer man bara på när man plockar vilda frön, steg 2.10.11). Texten visas i teknikträdet
   nar?: string;
 }
+// trädet på bredden (steg 2.12.7, Björn efter v115): grillen efter slaktbänken, torkställningen efter grillen, hyllor och
+// kistor efter bordet, metspöet efter träspjutet, skinndörren och skinnfällen efter skinnkläderna
 export const TEKNIK: Tek[] = [
   { id: 'korg', namn: 'Korg', text: 'En korg flätad av hö.', effekt: 'Man bär hem mer från varje tur och spiller mindre bär.',
     omr: ['samla', 'hantverk'], krav: ['flatarbank'], tid: 24 }, // korgen flätas bara vid slöjdbänken
@@ -41,7 +43,7 @@ export const TEKNIK: Tek[] = [
   { id: 'flintspjut', namn: 'Flintspjut', text: 'En flintspets som surras fast med rep vid en pinne.', effekt: 'Håller fyra gånger så länge som ett träspjut.',
     omr: ['fiske', 'jakt', 'hantverk'], krav: ['fiskespjut', 'rep'], tid: 16 },
   { id: 'metspo', namn: 'Metspö', text: 'Ett spö med ett rep och en krok av ben från slaktat vilt. Mask grävs fram och sätts på kroken.', effekt: 'Fisken nappar oftare och sitter kvar bättre än på spjutet.',
-    omr: ['fiske'], krav: ['rep'], tid: 20 },
+    omr: ['fiske'], krav: ['rep', 'fiskespjut'], tid: 20 },
   { id: 'kniv', namn: 'Flintkniv', text: 'En vass flintskärva med ett skaft av trä.', effekt: 'Med kniv slaktas vilt till mer kött, ben, skinn och senor.',
     omr: ['jakt', 'hantverk'], krav: [], tid: 14 },
   { id: 'timmervagg', namn: 'Timmerhus', text: 'Stockar som huggs till och läggs på varandra till en vägg, och trä som läggs som golv.', effekt: 'Byn kan bygga hus att sova i, med väggar och golv av trä.',
@@ -59,13 +61,13 @@ export const TEKNIK: Tek[] = [
     omr: ['hantverk', 'bygga'], krav: ['timmervagg'], tid: 16 },
   // förvaringen (steg 2.3.6): en teknik för hyllan, kistan och redskapsstället, med samma id som hyllan
   { id: 'hylla', namn: 'Hyllor och kistor', text: 'Hyllor och ställ av trä och rep i förrådshuset, och kistor för privata saker.', effekt: 'Flera högar ryms på samma plats, så att lagret tar mindre plats. I kistan slits det som under tak.',
-    omr: ['hantverk'], krav: ['rep'], tid: 14 },
+    omr: ['hantverk'], krav: ['rep', 'bord'], tid: 14 },
   // tillbehören till möblerna (TILLBEHOR i stationer.ts, steg 2.2.14) har också samma id som raden där
   { id: 'skinnfall', namn: 'Skinnfäll', text: 'Skinn som sys ihop till ett täcke och läggs i halmbädden.', effekt: 'Den som sover under en skinnfäll fryser mindre.',
-    omr: ['hantverk', 'jakt'], krav: ['halmbadd'], tid: 16 },
+    omr: ['hantverk', 'jakt'], krav: ['halmbadd', 'skinnklader'], tid: 16 },
   // dörrarna (DORRAR i byggnad.ts, steg 2.2.16) har också samma id som raden där
   { id: 'skinndorr', namn: 'Skinndörr', text: 'En hud som hängs i dörröppningen.', effekt: 'Huset släpper ut mindre värme genom dörren.',
-    omr: ['bygga', 'hantverk'], krav: ['timmervagg'], tid: 16 },
+    omr: ['bygga', 'hantverk'], krav: ['timmervagg', 'skinnklader'], tid: 16 },
   // kläderna (steg 2.3.2): bensylen slipas av ett ben och läggs vid slöjdbänken, och med den sys kläderna där
   { id: 'bensyl', namn: 'Bensyl', text: 'Ett vasst ben som slipas mot en sten eller en flinta.', effekt: 'Med bensylen vid slöjdbänken kan man sy skinn.',
     omr: ['hantverk'], krav: ['flatarbank', 'kniv'], tid: 14 },
@@ -85,10 +87,10 @@ export const TEKNIK: Tek[] = [
     omr: ['toa', 'hantverk', 'bygga'], krav: ['benspade'], tid: 12 },
   // grillställningen (steg 2.8.1, matlagning.ts; grill i STATIONER, samma id)
   { id: 'grill', namn: 'Grillställning', text: 'Två grenar med en klyka var på var sin sida om elden, och ett spett med vev som vilar i klykorna, surrat med rep.', effekt: 'Kött och fisk grillas över elden. Den grillade maten håller längre, och den som äter den blir inte sjuk av rått kött.',
-    omr: ['hantverk', 'slakta', 'rensa', 'fiske'], krav: ['rep'], tid: 14 },
+    omr: ['hantverk', 'slakta', 'rensa', 'fiske'], krav: ['rep', 'slaktbank'], tid: 14 },
   // torkställningen (steg 2.8.2, matlagning.ts; tork i STATIONER, samma id)
   { id: 'tork', namn: 'Torkställning', text: 'Två A av korsade grenar som bär en lång slå, surrade med rep. På slån hänger köttet i remsor och fisken i stjärten.', effekt: 'Det kött och den fisk som byn inte hinner äta torkar på fem dygn och håller sedan länge i lagret.',
-    omr: ['hantverk', 'slakta', 'rensa', 'fiske'], krav: ['rep'], tid: 16 },
+    omr: ['hantverk', 'slakta', 'rensa', 'fiske'], krav: ['rep', 'grill'], tid: 16 },
   // odlingen (steg 2.10.2, odling.ts): kommer man bara på när man plockar vilda frön (froFynd), fortare ju fler vilda frön
   // byn plockat; det krävs inte så många (Björn efter v107, steg 2.10.11)
   { id: 'odling', namn: 'Odling', text: 'Frön som sätts i jorden blir nya grödor.', effekt: 'Man kan så frön på ett fält och skörda grödorna.',
