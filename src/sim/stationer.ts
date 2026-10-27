@@ -278,22 +278,40 @@ function golvet(s: State, k: string) {
 }
 // hur mycket byn vill ha en möbel av sorten k (0 till 1)
 export const forvarBrist = (s: State, k: string) => { const f = stationDef(k)?.forvar; return f ? Math.min(1, golvet(s, k).length / (f.redskap ? STATION.forvarLosa : STATION.forvarFulla)) : 0; };
-// når man fortfarande alla rutor i lagerplatsen z om också rutan extra är ett hinder? En sökning inom lagerplatsen och
-// ringen runt den: från de rutor i ringen man kan gå på, genom lagerplatsens rutor utan hinder. Varje hinder i lagerplatsen
-// (möblerna) måste ha en nådd ruta rakt bredvid sig
+// rutorna man når från elden, rakt åt sidorna, utan vatten, väggar och möbler som inte går att gå igenom; med rutan extra
+// som ett hinder till och utan hindret på rutan utan. Ger de nådda rutorna och hur många de är
+// Sparas tills något byggs (s.byggV) eller antalet stationer ändras, som stationRutor
+const naddaCache = new WeakMap<State, { key: string; m: Map<number, { sedd: Uint8Array; n: number }> }>();
+function nadda(s: State, extra = -1, utan = -1) {
+  const key = `${s.byggV ?? 0}:${stationerOf(s).length}`, k = (extra + 1) * (W * H + 1) + utan + 1;
+  let c = naddaCache.get(s);
+  if (c?.key !== key) naddaCache.set(s, c = { key, m: new Map() });
+  let r = c.m.get(k);
+  if (!r) c.m.set(k, r = naddaNu(s, extra, utan));
+  return r;
+}
+function naddaNu(s: State, extra: number, utan: number) {
+  gridOf(s); // väggarna som de är nu
+  const g = groundOf(s), hinder = stationRutor(s).hinder, f = getMap(s.seed).fire, sedd = new Uint8Array(W * H), ko: number[] = [];
+  const fri = (i: number) => g.tiles[i] !== T.Vatten && !g.solid?.[i] && (!hinder[i] || i === utan) && i !== extra;
+  const lagg = (x: number, y: number) => { const i = y * W + x; if (x >= 0 && y >= 0 && x < W && y < H && !sedd[i] && fri(i)) { sedd[i] = 1; ko.push(i); } };
+  lagg(f.x, f.y);
+  for (const [dx, dy] of GRANNAR) lagg(f.x + dx, f.y + dy);
+  for (let k = 0; k < ko.length; k++) { const x = ko[k] % W, y = (ko[k] - x) / W; for (const [dx, dy] of GRANNAR) lagg(x + dx, y + dy); }
+  return { sedd, n: ko.length };
+}
+const GRANNAR = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+// går det att ställa ett hinder på rutan extra i lagerplatsen z? Inget som nåddes från elden får stängas in (inte heller ett
+// hus vars öppning leder ut i lagret), alla rutor i lagerplatsen nås, och varje hinder i den (möblerna) har en nådd ruta rakt
+// bredvid sig. Rakt åt sidorna, så att ingen väg bara går snett förbi en hörna
 function nas(s: State, z: Zone, extra: number) {
-  const g = groundOf(s), hinder = stationRutor(s).hinder, x0 = z.x - 1, y0 = z.y - 1, bw = z.w + 2, bh = z.h + 2;
-  const fri = (x: number, y: number) => x >= 0 && y >= 0 && x < W && y < H && g.tiles[y * W + x] !== T.Vatten && !g.solid?.[y * W + x] && !hinder[y * W + x] && y * W + x !== extra;
-  const sedd = new Uint8Array(bw * bh), ko: number[] = [];
-  for (let y = y0; y < y0 + bh; y++) for (let x = x0; x < x0 + bw; x++) if (!inZone(z, x, y) && fri(x, y)) { sedd[(y - y0) * bw + x - x0] = 1; ko.push(x, y); }
-  for (let i = 0; i < ko.length; i += 2) for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-    const x = ko[i] + dx, y = ko[i + 1] + dy, j = (y - y0) * bw + x - x0;
-    if (inZone(z, x, y) && !sedd[j] && fri(x, y)) { sedd[j] = 1; ko.push(x, y); }
-  }
+  const fore = nadda(s), efter = nadda(s, extra), g = groundOf(s), hinder = stationRutor(s).hinder;
+  if (efter.n < fore.n - fore.sedd[extra]) return false;
   for (let y = z.y; y < z.y + z.h; y++) for (let x = z.x; x < z.x + z.w; x++) {
-    if (fri(x, y)) { if (!sedd[(y - y0) * bw + x - x0]) return false; continue; }
-    if (!hinder[y * W + x] && y * W + x !== extra) continue; // en vägg (förrådshusets golv har inga)
-    if (![[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => sedd[(y + dy - y0) * bw + x + dx - x0])) return false;
+    const i = y * W + x;
+    if (!inZone(z, x, y) || g.tiles[i] === T.Vatten || g.solid?.[i]) continue; // en vägg (förrådshusets golv har inga)
+    if (!hinder[i] && i !== extra) { if (!efter.sedd[i]) return false; continue; }
+    if (!GRANNAR.some(([dx, dy]) => efter.sedd[(y + dy) * W + x + dx])) return false;
   }
   return true;
 }
@@ -309,13 +327,16 @@ function bredvid(s: State, x: number, y: number) {
   const r = [[0, 1], [0, -1], [1, 0], [-1, 0]].map(([dx, dy]) => ({ x: x + dx, y: y + dy })).find(q => q.x >= 0 && q.y >= 0 && q.x < W && q.y < H && g.tiles[q.y * W + q.x] !== T.Vatten && !g.solid?.[q.y * W + q.x] && !hinder[q.y * W + q.x]) ?? { x, y };
   return { x: r.x + 0.5, y: r.y + 0.5 };
 }
-// en möbel som inte längre står i en lagerplats (lagret i ett hus som fått en annan funktion) tas isär
+// en möbel som inte längre står i en lagerplats (lagret i ett hus som fått en annan funktion) tas isär, och likaså en som
+// stänger in något (ställd där före v78, eller ett hus byggdes bredvid den) så att ingen stängs ute
 function utanLager(s: State) {
-  const borta = stationerOf(s).filter(t => stationDef(t.k)?.forvar && zoneAt(s, t.x, t.y) < 0);
+  const fv = stationerOf(s).filter(t => stationDef(t.k)?.forvar), alla = fv.length ? nadda(s) : undefined;
+  const stanger = (t: Station) => nadda(s, -1, t.y * W + t.x).n > alla!.n + 1;
+  const borta = fv.filter(t => zoneAt(s, t.x, t.y) < 0 || stanger(t));
   if (!borta.length) return;
   s.stationer = stationerOf(s).filter(t => !borta.includes(t));
   s.byggV = (s.byggV ?? 0) + 1;
-  for (const t of borta) log(s, `${stationDef(t.k)!.namn} togs isär när lagret flyttades.`, 'world');
+  for (const t of borta) log(s, `${stationDef(t.k)!.namn} togs isär ${zoneAt(s, t.x, t.y) < 0 ? 'när lagret flyttades' : 'eftersom den stängde in en del av lagret'}.`, 'world');
 }
 
 // en station som står inne (inte en bädd) som byn vill bygga men inte har plats för i något hus (steg 2.2.17): någon kan

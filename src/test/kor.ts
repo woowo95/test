@@ -1,6 +1,6 @@
 // Kör en by utan grafik och samlar nyckeltalen (registret NYCKELTAL i nyckeltal.ts säger vad de heter och betyder).
 // Vakterna larmar om något blir omöjligt (NaN, negativa förråd, folk i vattnet).
-import { BEAT, createState, step, living, DAY, groundOf, isSoil, markslag, Markslag, ageIndex, moodOf, serialize, serializeParts, getMap, fuelStock, ACT_NAMES, T, State, inMap, isWall, tileOf, foodOf, amountOf, sumOf, okandaBalans, alive, isCarrying, BYN, isStored, housesOf, bitsOf, Person, HOUR, W, KROPP } from '../sim';
+import { BEAT, createState, step, living, DAY, groundOf, isSoil, markslag, Markslag, ageIndex, moodOf, serialize, serializeParts, getMap, fuelStock, ACT_NAMES, T, State, inMap, isWall, tileOf, foodOf, amountOf, sumOf, okandaBalans, alive, isCarrying, BYN, isStored, housesOf, bitsOf, Person, HOUR, W, KROPP, forvarAt, isTool } from '../sim';
 import { NYCKELTAL, Nyckeltal, tal } from './nyckeltal';
 
 // testbyarna grundas 08:00 svensk tid. Testerna körs i datorns tidszon (här UTC), så där är klockan 06:00 när byn grundas
@@ -104,13 +104,16 @@ function vakta(s: State, larm: Larm, timme: boolean) {
     if (t.agare !== BYN && !lever.has(t.agare)) larm('redskap utan ägare', () => `${t.k} ${t.id} ägs av ${t.agare}`);
     for (const [vad, id] of [['hos', t.hos], ['lass', t.lass]] as const) if (id !== undefined && !lever.has(id)) larm(`redskap ${vad} ingen`, () => `${t.k} ${t.id} ${vad} ${id}`);
   }
-  const tiles = getMap(s.seed).tiles, upptagen = new Map<number, string>();
+  const tiles = getMap(s.seed).tiles, upptagen = new Map<number, string[]>();
   const plats = (k: string, x: number, y: number) => {
     if (tiles[y * W + x] === T.Vatten) larm('sak i vattnet', () => `${k} på ${x},${y}`);
     else if (isWall(s, x + 0.5, y + 0.5)) larm('sak i en vägg', () => `${k} på ${x},${y}`);
     if (!isStored(s, x, y)) return;
-    const forr = upptagen.get(y * W + x);
-    if (forr !== undefined) larm('två saker på en ruta i lagret', () => `${forr} och ${k} på ${x},${y}`); else upptagen.set(y * W + x, k);
+    // i ett redskapsställ står flera redskap, så många som det rymmer (steg 2.3.6)
+    const forr = upptagen.get(y * W + x) ?? [], f = forvarAt(s, x, y);
+    const ryms = f?.redskap ? isTool(k) && forr.every(isTool) && forr.length < f.rymmer : !forr.length;
+    if (!ryms) larm('två saker på en ruta i lagret', () => `${forr.join(', ')} och ${k} på ${x},${y}`);
+    upptagen.set(y * W + x, [...forr, k]);
   };
   for (const a of s.stackar ?? []) {
     plats(a.k, a.x, a.y);

@@ -15,7 +15,7 @@ import { amountOf, avbryt, fetchSpot, haulJob } from './lager';
 import { bedFor, buildJob, siteOf } from './bygg';
 import { bitAt, blocked, freeNear, roomAt } from './byggnad';
 import { bedTile, homeless, samlingRum, varmareInne } from './byggnader';
-import { isForest, punktIRuta } from './mark';
+import { groundOf, isForest, punktIRuta, tileOf } from './mark';
 import { axeTask, fallTid } from './skog';
 import { GA_TID, startWork, startsOnArrival } from './paborjat';
 import { duty, dygn, habitShare, habitTotal } from './seder';
@@ -103,11 +103,39 @@ const VAL = balans('val', {
   // borden (steg 2.2.15)
   maltidMin: 20, maltidSpann: 10, // en måltid vid bordet
   bordSamtal: 0.5, // den som samtalar eller berättar sätter sig vid ett bord med denna chans, när det inte är kallt
+  // skuggan (steg 2.3.13)
+  skuggaRadie: 10, // så många rutor bort letar den som är för varm efter skugga
+  skuggaBland: 3, // en av så många av de närmaste skuggrutorna
+  svalkaMin: 30, svalkaSpann: 30, // så länge man svalkar sig i skuggan innan man väljer igen
 });
+// skugga (steg 2.3.13): i ett hus eller under ett träd, där solen inte värmer (varmeDelar i steg.ts)
+export const iSkugga = (s: State, x: number, y: number) => !!roomAt(s, x, y) || groundOf(s).trees[tileOf(x, y)] > KROPP.skugga;
+// för varm och i solen, så att solen värmer mer: då söker man skugga
+const forVarmISol = (s: State, p: Person) => p.warm > KROPP.forVarm && isLight(s.now) && temperature(s) > KROPP.solFran;
+// en skuggig plats nära (x, y): en av de närmaste rutorna under ett träd eller i ett hus, inte i en vägg eller på en möbel
+export function skuggaNara(s: State, p: Person, x0: number, y0: number): { x: number; y: number } | undefined {
+  const R = VAL.skuggaRadie, cx = Math.floor(x0), cy = Math.floor(y0), c: { x: number; y: number; d: number }[] = [];
+  for (let y = cy - R; y <= cy + R; y++) for (let x = cx - R; x <= cx + R; x++) {
+    const d = Math.hypot(x - cx, y - cy);
+    if (d > R || !inMap(x, y) || blocked(s, x + 0.5, y + 0.5) || bitAt(s, x, y) && !roomAt(s, x + 0.5, y + 0.5) || !iSkugga(s, x + 0.5, y + 0.5)) continue;
+    c.push({ x, y, d });
+  }
+  if (!c.length) return undefined;
+  c.sort((a, b) => a.d - b.d || a.y - b.y || a.x - b.x);
+  const t = c[Math.floor(rnd(s, 'val', p) * Math.min(VAL.skuggaBland, c.length))];
+  return { x: t.x + 0.3 + rnd(s, 'val', p) * 0.4, y: t.y + 0.3 + rnd(s, 'val', p) * 0.4 };
+}
 // var en handling görs, efter platsen i handlingar.ts
 export function spotFor(s: State, act: Act, p: Person): { x: number; y: number } {
   const m = getMap(s.seed);
   const f = m.fire, d = ACTS[act], plats = d.plats ?? 'skog';
+  if (plats === 'skugga') return iSkugga(s, p.x, p.y) ? { x: p.x, y: p.y } : skuggaNara(s, p, p.x, p.y) ?? { x: p.x, y: p.y };
+  // den som är för varm i solen vilar och gör handarbete i skuggan nära elden i stället (steg 2.3.13)
+  if ((plats === 'elden' && d.hantverk || plats === 'sang' && act === 'vila') && forVarmISol(s, p)) {
+    const bed = plats === 'sang' ? bedFor(s, p) : undefined;
+    if (bed && roomAt(s, bed.x, bed.y)) return bed;
+    const sk = skuggaNara(s, p, f.x + 0.5, f.y + 0.5); if (sk) return sk;
+  }
   if (plats === 'station') { const st = stationFor(s, act); if (st) { const at = vidStation(st); return { x: at.x + (rnd(s, 'val', p) - 0.5) * 0.6 * storlekAv(st).w, y: at.y }; } } // vid stationen, längs hela dess bredd, annars vid elden
   if (plats === 'bord') { const at = ledigPlats(s, p); if (at) return at; } // vid ett bord, annars vid elden
   if (plats === 'elden' || plats === 'station' || plats === 'bord') {
@@ -262,6 +290,11 @@ function needs(s: State, p: Person, v: Val, a: number, lazy: number, light: bool
   if (p.toa < KROPP.toaBehov + KROPP.latToa * lazy) return set(v, 'toa', 'Behöver gå på toa');
   if (p.warm < KROPP.kallt + KROPP.latVarme * lazy && lit) return set(v, 'varma', 'Fryser');
   if (p.warm < KROPP.kallt + KROPP.latVarme * lazy && bedTile(s, p) !== undefined) return set(v, 'vila', 'Fryser och går in i huset');
+  // för varm i solen: man söker skugga under ett träd eller i ett hus, så som den som fryser söker sig till elden (steg 2.3.13)
+  if (forVarmISol(s, p)) {
+    const sk = iSkugga(s, p.x, p.y) ? { x: p.x, y: p.y } : skuggaNara(s, p, p.x, p.y);
+    if (sk) { v.spot = sk; v.dur = (VAL.svalkaMin + rnd(s, 'val', p) * VAL.svalkaSpann) * MIN; return set(v, 'svalka', 'Är för varm och söker skugga'); }
+  }
   if (p.rest < (light ? KROPP.trottDag : KROPP.trottNatt) + KROPP.latVila * lazy) return set(v, 'vila', 'Är trött');
   // snart hungrig och det finns en ledig plats vid ett bord: man går dit och äter tillsammans med de andra (steg 2.2.15)
   const bord = p.hunger < KROPP.hungrig + KROPP.bordHunger && harMat(s, p) ? ledigPlats(s, p) : undefined;

@@ -1,5 +1,5 @@
 // Scenarier. Behov och val: behov, ved, aktivitet och fritid.
-import { Person, createState, getRel, step, living, temperature, nyKalender, amountOf, capacity, load, isLight, T, FOOD, ageOf, getMap, HOUR, W, tileOf, stat, campCenter, KANIN, gain, takeFuel, ownsAmount, ownedSum, addTo, setAmount, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, STOLD_LINDRIG, STOLD_OP, BEAT, spar, isWork, ACTS, groundOf, varmeDelar, nyVarme, addTool, stepKlader } from '../../sim';
+import { Person, createState, getRel, step, living, temperature, nyKalender, amountOf, capacity, load, isLight, T, FOOD, ageOf, getMap, HOUR, W, tileOf, stat, campCenter, KANIN, gain, takeFuel, ownsAmount, ownedSum, addTo, setAmount, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, STOLD_LINDRIG, STOLD_OP, BEAT, spar, isWork, ACTS, groundOf, varmeDelar, nyVarme, addTool, stepKlader, chooseTask, iSkugga, KROPP, spotFor } from '../../sim';
 import { START, STEG_DYGN } from '../kor';
 import { setMat, setFood, kor, klockan, tandEld, tomtForrad, treVuxna, bastaJaktruta, SCENARIER, rikBy } from './hjalp';
 
@@ -267,6 +267,54 @@ SCENARIER.varm = {
       ['i värmen tas rocken inte på igen', ejPa],
       ['den som är för varm blir tröttare och tänker på det', trott && tanke],
       [`folk blir varmare än idealet på sommaren (som mest ${maxVarm.toFixed(2)}) och badar då (${badVarm} bad)`, maxVarm > 1 && badVarm >= 1],
+    ];
+  },
+};
+
+SCENARIER.skugga = {
+  text: 'Steg 2.3.13: den som är för varm i solen söker sig till skuggan under ett träd eller i ett hus och svalkar sig där, så som den som fryser söker sig till elden. Står hen redan i skugga stannar hen där. I skuggan värmer solen inte, så kroppen svalnar. Den som vilar eller gör handarbete när hen är för varm gör det i skuggan nära elden',
+  kor: () => {
+    const s = createState(5, START);
+    s.kal = nyKalender(s.now, 2); klockan(s, 14); // sommar, mitt på dagen
+    const g = groundOf(s), p = living(s)[0], temp = temperature(s), m = getMap(s.seed);
+    const fri = (skog: boolean) => { for (let i = 0; i < g.trees.length; i++) if ((g.trees[i] > KROPP.skugga) === skog && m.tiles[i] !== T.Vatten && (skog || g.trees.some((t, j) => t > KROPP.skugga && Math.hypot(j % W - i % W, Math.floor(j / W) - Math.floor(i / W)) < 6))) return i; return -1; };
+    const satt = (i: number) => { p.x = i % W + 0.5; p.y = Math.floor(i / W) + 0.5; };
+    const fyll = () => { p.rest = 1; p.toa = 1; p.hunger = 1; p.social = 1; };
+    // för varm i solen: söker skugga
+    satt(fri(false)); fyll(); p.warm = 1.6; chooseTask(s, p);
+    const t = p.task!, valde = t.act === 'svalka', iSkuggan = iSkugga(s, t.tx, t.ty), avst = Math.hypot(t.tx - p.x, t.ty - p.y);
+    // framme i skuggan värmer solen inte, och kroppen svalnar
+    const w0 = p.warm; kor(s, 1);
+    const framme = p.task?.act === 'svalka' && iSkugga(s, p.x, p.y), sol = varmeDelar(s, p, 0, new Map(), temperature(s)).sol, svalnar = p.warm < w0;
+    // står redan i skugga: stannar där
+    satt(fri(true)); fyll(); p.warm = 1.6; chooseTask(s, p);
+    const stannar = p.task!.act === 'svalka' && Math.hypot(p.task!.tx - p.x, p.task!.ty - p.y) < 1;
+    // inte för varm: ingen svalka
+    satt(fri(false)); fyll(); p.warm = 1; chooseTask(s, p);
+    const inte = p.task!.act !== 'svalka';
+    // vila och handarbete görs i skuggan nära elden när man är för varm
+    p.warm = 1.6; const vs = spotFor(s, 'vila', p), hs = spotFor(s, 'hantverk', p), f = m.fire;
+    const vilaSkugga = iSkugga(s, vs.x, vs.y) && iSkugga(s, hs.x, hs.y) && Math.hypot(hs.x - f.x, hs.y - f.y) <= 11;
+    // på kvällen, när solen inte värmer, söker man ingen skugga
+    klockan(s, 23); satt(fri(false)); fyll(); p.warm = 1.6; chooseTask(s, p);
+    const kvall = p.task!.act !== 'svalka';
+    // en by på sommaren: folk svalkar sig i skuggan
+    let svalka = 0, iSol = 0;
+    for (const seed of [5, 6, 7]) {
+      const b = createState(seed, START); b.kal = nyKalender(b.now, 2); klockan(b, 8);
+      setFood(b, 40); setAmount(b, 'ved', 40);
+      const sett = new WeakSet<object>();
+      kor(b, 2 * 24, b => { for (const q of living(b)) { const k = q.task; if (k?.act === 'svalka' && k.phase === 'do' && !sett.has(k)) { sett.add(k); svalka++; if (!iSkugga(b, q.x, q.y)) iSol++; } } });
+    }
+    return [
+      [`den som är för varm i solen (${Math.round(temp)} grader) söker skugga`, valde],
+      [`skuggan ligger nära (${avst.toFixed(1)} rutor) under ett träd eller i ett hus`, iSkuggan && avst <= 10.5],
+      ['i skuggan värmer solen inte, och kroppen svalnar', framme && sol === 0 && svalnar],
+      ['den som redan står i skugga stannar där', stannar],
+      ['den som inte är för varm söker ingen skugga', inte],
+      ['den som är för varm vilar och gör handarbete i skuggan nära elden', vilaSkugga],
+      ['när solen inte värmer söker man ingen skugga', kvall],
+      [`folk svalkar sig i skuggan på sommaren (${svalka} gånger, ${iSol} i solen)`, svalka >= 1 && iSol === 0],
     ];
   },
 };
