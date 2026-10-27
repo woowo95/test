@@ -28,7 +28,7 @@ import { Act, H, HOUR, MIN, Person, Skill, Stat, State, T, Task, W, inMap } from
 import { balans } from './balans';
 import { drickVal, torstig, tortarFarligt, vattenVal } from './torst';
 import { forSmutsigt, latrinFor } from './smuts';
-import { bordenOf, ledigPlats, lekplats, sittAt, stationAt, stationFor, storlekAv, vidStation } from './stationer';
+import { bordenOf, byInne, ledigPlats, lekplats, sittAt, stationAt, stationFor, storlekAv, vidStation } from './stationer';
 import { grillTid, kanGrilla, kanTorka, torkTid } from './matlagning';
 import { egenBrasa } from './brasor';
 
@@ -116,6 +116,9 @@ const VAL = balans('val', {
   skuggaRadie: 10, // så många rutor bort letar den som är för varm efter skugga
   skuggaBland: 3, // en av så många av de närmaste skuggrutorna
   svalkaMin: 30, svalkaSpann: 30, // så länge man svalkar sig i skuggan innan man väljer igen
+  // handarbete utan bänk (steg 2.10.6)
+  bynRadie: 1, bynSpann: 2.5, // så här många rutor från byns inre (plus upp till Spann) sitter den som gör handarbete utan bänk
+  bynTak: 0.5, // med denna chans under tak i samlingshuset, när det finns
 });
 // skugga (steg 2.3.13): i ett hus eller under ett träd, där solen inte värmer (varmeDelar i steg.ts)
 export const iSkugga = (s: State, x: number, y: number) => !!roomAt(s, x, y) || groundOf(s).trees[tileOf(x, y)] > KROPP.skugga;
@@ -134,10 +137,27 @@ export function skuggaNara(s: State, p: Person, x0: number, y0: number): { x: nu
   const t = c[Math.floor(rnd(s, 'val', p) * Math.min(VAL.skuggaBland, c.length))];
   return { x: t.x + 0.3 + rnd(s, 'val', p) * 0.4, y: t.y + 0.3 + rnd(s, 'val', p) * 0.4 };
 }
+// handarbete utan bänk (steg 2.10.6): inne i byn, där lagret och husen är (byInne i stationer.ts), eller under tak i samlingshuset,
+// så att arbetet inte hänger på var elden ligger. Inte i en vägg, i vattnet, i en station eller på en stubbe vid bordet.
+// Den som är för varm i solen söker skugga nära platsen (steg 2.3.13).
+function hantverkIByn(s: State, p: Person): { x: number; y: number } {
+  const sal = samlingRum(s);
+  if (sal && rnd(s, 'val', p) < VAL.bynTak) return punktIRuta(s, pick(s, sal.tiles, 'val', p), p);
+  const mid = byInne(s), cx = mid.x + 0.5, cy = mid.y + 0.5;
+  if (forVarmISol(s, p)) { const sk = skuggaNara(s, p, cx, cy); if (sk) return sk; }
+  for (let k = 0; k < 12; k++) {
+    const ang = rnd(s, 'val', p) * Math.PI * 2, r = VAL.bynRadie + rnd(s, 'val', p) * VAL.bynSpann, x = cx + Math.cos(ang) * r, y = cy + Math.sin(ang) * r;
+    if (inMap(x, y) && !blocked(s, x, y) && !sittAt(s, x, y) && !stationAt(s, x, y)) return { x, y };
+  }
+  return freeNear(s, cx, cy);
+}
 // var en handling görs, efter platsen i handlingar.ts
 export function spotFor(s: State, act: Act, p: Person): { x: number; y: number } {
   const m = getMap(s.seed), d = ACTS[act], plats = d.plats ?? 'skog';
   const f = plats === 'elden' ? egenBrasa(s, p) ?? m.fire : m.fire; // vid elden: vid den brinnande brasa man hör till (steg 2.9.1), annars lägerelden
+  // det som görs utan bänk görs inne i byn och inte vid elden (steg 2.10.6); när det är kallt sätter man sig vid elden som förut, för värmens skull
+  const iByn = d.slag === 'hantverk' && (plats === 'elden' || plats === 'station' && !stationFor(s, act)) && coldOf(temperature(s)) === 0;
+  if (iByn) return hantverkIByn(s, p);
   if (plats === 'skugga') return iSkugga(s, p.x, p.y) ? { x: p.x, y: p.y } : skuggaNara(s, p, p.x, p.y) ?? { x: p.x, y: p.y };
   // den som är för varm i solen vilar och gör handarbete i skuggan nära elden i stället (steg 2.3.13)
   if ((plats === 'elden' && d.hantverk || plats === 'sang' && act === 'vila') && forVarmISol(s, p)) {
@@ -145,7 +165,7 @@ export function spotFor(s: State, act: Act, p: Person): { x: number; y: number }
     if (bed && roomAt(s, bed.x, bed.y)) return bed;
     const sk = skuggaNara(s, p, f.x + 0.5, f.y + 0.5); if (sk) return sk;
   }
-  if (plats === 'station') { const st = stationFor(s, act); if (st) { const at = vidStation(st); return { x: at.x + (rnd(s, 'val', p) - 0.5) * 0.6 * storlekAv(st).w, y: at.y }; } } // vid stationen, längs hela dess bredd, annars vid elden
+  if (plats === 'station') { const st = stationFor(s, act); if (st) { const at = vidStation(st); return { x: at.x + (rnd(s, 'val', p) - 0.5) * 0.6 * storlekAv(st).w, y: at.y }; } } // vid stationen, längs hela dess bredd, annars i byn (eller vid elden när det är kallt)
   if (plats === 'bord') { const at = ledigPlats(s, p); if (at) return at; } // vid ett bord, annars vid elden
   if (plats === 'elden' || plats === 'station' || plats === 'bord') {
     // när det är kallt samtalar och berättar man i samlingshuset, om det är varmare där än vid elden (byggnader.ts)

@@ -549,3 +549,28 @@ SCENARIER.lekplats = {
     ];
   },
 };
+
+SCENARIER.ibyn = {
+  text: 'Steg 2.10.6: det som görs utan bänk (redskapen när byn saknar slöjdbänk, repet och annat handarbete) görs inne i byn, vid lagret eller under tak, och inte vid elden. När det är kallt sätter man sig vid elden som förut, för värmens skull',
+  kor: () => {
+    const plats = (tidsalder: number) => {
+      const s = createState(3, START);
+      s.kal = SIM.nyKalender(s.now, tidsalder); klockan(s, 10); tandEld(s);
+      const z = zonesOf(s)[0], f = getMap(s.seed).fire;
+      s.lagren = [{ x: z.x + 14, y: z.y, w: 2, h: 2, namn: 'Prov', prio: 0 }]; // byns inre långt från elden
+      const mid = SIM.byInne(s), p = living(s)[0];
+      p.warm = 1; let iByn = 0, vidElden = 0, n = 0;
+      for (const act of ['kniv', 'hantverk', 'tvinna', 'balte'] as Act[]) for (let k = 0; k < 15; k++) {
+        const at = spotFor(s, act, p); n++;
+        if (Math.hypot(at.x - mid.x - 0.5, at.y - mid.y - 0.5) <= 5) iByn++;
+        if (Math.hypot(at.x - f.x - 0.5, at.y - f.y - 0.5) <= 3) vidElden++;
+      }
+      return { iByn, vidElden, n, kallt: SIM.coldOf(SIM.temperature(s)) > 0, avst: Math.hypot(mid.x - f.x, mid.y - f.y) };
+    };
+    const varmt = plats(SIM.SOMMAR), kallt = plats(SIM.ISTID);
+    return [
+      [`på sommaren görs handarbetet utan bänk inne i byn, ${varmt.avst.toFixed(0)} rutor från elden (${varmt.iByn} av ${varmt.n} gånger)`, !varmt.kallt && varmt.avst > 8 && varmt.iByn === varmt.n],
+      [`när det är kallt sitter man vid elden som förut (${kallt.vidElden} av ${kallt.n} gånger)`, kallt.kallt && kallt.vidElden === kallt.n],
+    ];
+  },
+};

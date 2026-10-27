@@ -83,7 +83,7 @@ export function twineRope(s: State, p: Person, hours: number) {
   gain(s, p, 'rep', n);
   const first = !(s.stat?.rep);
   count(s, 'rep', n);
-  if (first) log(s, `${p.name} började tvinna rep av hö ${bank ? 'vid slöjdbänken' : 'vid elden'}.`, 'world', [p.id]);
+  if (first) log(s, `${p.name} började tvinna rep av hö ${bank ? 'vid slöjdbänken' : 'i byn'}.`, 'world', [p.id]);
   if (bank) count(s, 'repBank', n);
 }
 
@@ -153,7 +153,7 @@ function stycka(s: State, p: Person, art: Djurart, n: number) {
 }
 
 // ---------- att göra ett redskap som saknas ----------
-// Varje redskap med gors i saker.ts görs i ett eget arbete vid elden (korgen vid slöjdbänken), som heter som redskapets grupp (yxa, spjut, metspo,
+// Varje redskap med gors i saker.ts görs i ett eget arbete vid slöjdbänken, eller utan bänk inne i byn (steg 2.10.6; korgen bara vid slöjdbänken), som heter som redskapets grupp (yxa, spjut, metspo,
 // kniv, korg). Receptet (skaffa.av), tekniken (skaffa.tek), verktyget (skaffa.verktyg), tiden (skaffa.min) och texterna
 // (gors) står i sakens rad. Här står hur många byn vill ha av varje grupp. Ett nytt redskap blir en rad i saker.ts, och
 // en ny grupp också en rad i VILL och en handling (handlingar.ts).

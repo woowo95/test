@@ -252,7 +252,7 @@ SCENARIER.varm = {
     const trott = p.rest < vila, tanke = p.thoughts.some(t => t.text === 'För varm');
     // badet kyler den som är för varm
     let badVarm = 0, maxVarm = 0;
-    for (const seed of [5, 6, 7]) {
+    for (const seed of [5, 6, 7, 8, 10]) { // 8 och 10 sedan steg 2.10.6, då handarbetet flyttade från elden in i byn och by 7 slutade bada varm
       const b = createState(seed, START); b.kal = nyKalender(b.now, 2); klockan(b, 8);
       setFood(b, 40); setAmount(b, 'ved', 40);
       const sett = new WeakSet<object>();
@@ -292,7 +292,7 @@ SCENARIER.skugga = {
     // inte för varm: ingen svalka
     satt(fri(false)); fyll(); p.warm = 1; chooseTask(s, p);
     const inte = p.task!.act !== 'svalka';
-    // vila och handarbete görs i skuggan nära elden när man är för varm
+    // vila och handarbete görs i skuggan nära elden eller byn när man är för varm
     p.warm = 1.6; const vs = spotFor(s, 'vila', p), hs = spotFor(s, 'hantverk', p), f = m.fire;
     const vilaSkugga = iSkugga(s, vs.x, vs.y) && iSkugga(s, hs.x, hs.y) && Math.hypot(hs.x - f.x, hs.y - f.y) <= 11;
     // på kvällen, när solen inte värmer, söker man ingen skugga
