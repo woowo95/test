@@ -18,8 +18,9 @@ import { alive, byId } from './folk';
 import { BYN, lends } from './egendom';
 // halv = ett påbörjat redskap (paborjat.ts): vad det ska bli, materialet som tagits till det, hur länge arbetet har kvar och vem som började
 interface Halv { gor: string; av: Record<string, number>; kvar: number; ag: number }
-// vid = stationen tinget hör till och ligger vid när ingen använder det (kniven vid slaktbänken, stationer.ts)
-export interface Ting { id: number; k: string; c: number; agare: number; hos?: number; lass?: number; x?: number; y?: number; halv?: Halv; vid?: number }
+// vid = stationen tinget hör till och ligger vid när ingen använder det (kniven vid slaktbänken, stationer.ts), bar = den
+// som har plagget på sig (utrustning.ts, steg 2.3.2)
+export interface Ting { id: number; k: string; c: number; agare: number; hos?: number; lass?: number; x?: number; y?: number; halv?: Halv; vid?: number; bar?: number }
 export const tingOf = (s: State) => (s.ting ??= []);
 // hur stor del av arbetet med ett påbörjat redskap som är gjort (0 till 1), för framstegscirkeln på kartan och i panelerna
 export const halvKlar = (h: Halv) => Math.min(1, Math.max(0, 1 - h.kvar / ((SAKER[h.gor]?.skaffa?.min ?? 1) * MIN)));
@@ -37,8 +38,9 @@ export function newTing(s: State, k: string, c: number, agare: number): Ting {
 // p gjorde ett redskap: det läggs i förrådet och är hens
 export function addTool(s: State, k: string, p: Person) { return newTing(s, k, 1, p.id); }
 
-// kan p ta tinget? Inte om någon annan arbetar med det
+// kan p ta tinget? Inte om någon annan arbetar med det eller har det på sig
 function usable(s: State, p: Person, t: Ting) {
+  if (t.bar !== undefined && t.bar !== p.id) return false;
   if (t.hos !== undefined && t.hos !== p.id) {
     const q = byId(s, t.hos);
     if (q && alive(q) && usesTool(q.task) === t.k) return false;
@@ -74,6 +76,7 @@ export function wearTool(s: State, p: Person, k: string, v: number) {
 export function tidyTools(s: State) {
   for (const t of tingOf(s)) {
     if (t.agare !== BYN) { const o = byId(s, t.agare); if (!o || !alive(o)) t.agare = BYN; }
+    if (t.bar !== undefined) { const q = byId(s, t.bar); if (!q || !alive(q)) t.bar = undefined; } // den döde har inte plagget på sig
     if (t.lass !== undefined) { const q = byId(s, t.lass); if (!q || !alive(q) || !q.task?.ting?.includes(t.id)) t.lass = undefined; }
     if (t.hos === undefined) continue;
     const q = byId(s, t.hos);

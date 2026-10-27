@@ -1,6 +1,7 @@
 // Scenarier. Ägande och ekonomi: ägande, gåvor, byte, egendom, delning, arv och värde.
 import { isDeepStrictEqual } from 'node:util';
-import { Person, Act, Task, createState, bearbeta, ownedBy, tidyTools, addTool, toolsOf, heldBy, take, usesTool, wearTool, freeSpear, getRel, isTool, BYN, makeTool, step, living, pilesOf, amountOf, capacity, isLight, isStored, spears, HOUR, State, migrate, die, bitsOf, KANIN, DJUR, askForTool, askForGift, gain, takeFood, takeFuel, ownsAmount, ownedStock, ownedSum, sumOf, addTo, setAmount, foodOf, STACK_ORDER, needLadder, takeMaterial, BEAT, stepDelning, rikedom, rikedomDelar, grundvarde, nivaOf, DELNING, packUp, releaseOwner, willing, tingOf, EKONOMI, SAK_LIST, ownedAll, leave, chooseTask, stackOf, birth, SAKER, viktOf, bordOf, BORDA_KG, handerFor, bordPlats, utrustning, PLATS_LIST, cloneState, pickUp, load } from '../../sim';
+import { Person, Act, Task, createState, bearbeta, ownedBy, tidyTools, addTool, toolsOf, heldBy, take, usesTool, wearTool, freeSpear, getRel, isTool, BYN, makeTool, step, living, pilesOf, amountOf, capacity, isLight, isStored, spears, HOUR, State, migrate, die, bitsOf, KANIN, DJUR, askForTool, askForGift, gain, takeFood, takeFuel, ownsAmount, ownedStock, ownedSum, sumOf, addTo, setAmount, foodOf, STACK_ORDER, needLadder, takeMaterial, BEAT, stepDelning, rikedom, rikedomDelar, grundvarde, nivaOf, DELNING, packUp, releaseOwner, willing, tingOf, EKONOMI, SAK_LIST, ownedAll, leave, chooseTask, stackOf, birth, SAKER, viktOf, bordOf, BORDA_KG, handerFor, bordPlats, utrustning, PLATS_LIST, cloneState, pickUp, load, byId } from '../../sim';
+import * as SIM from '../../sim';
 import { START, STEG_DYGN, STEG_TIM } from '../kor';
 import { setItems, setMat, setFood, kor, tandEld, tomtForrad, treVuxna, SCENARIER, rikBy, medBank } from './hjalp';
 
@@ -449,6 +450,62 @@ SCENARIER.utrustning = {
       ['yxan sitter i höger hand och bördan i den vänstra; kroppens platser är tomma', platser],
       [`den som håller yxan plockar upp färre stenar (${med.toFixed(1)} mot ${utan.toFixed(1)})`, med > 0 && med < utan - 1e-6],
       ['en korg i bördan väger som en korg', korgVikt],
+    ];
+  },
+};
+
+SCENARIER.klader = {
+  text: 'Steg 2.3.2: bensylen slipas av ett ben mot en sten och läggs vid slöjdbänken. Med den sys skinnrockar och skinnskor av skinn och rep vid bänken, och bensylen slits för varje plagg. Utan bensylen sys inga kläder. Den som saknar ett plagg tar på sig ett, kläderna skyddar mot kylan, väger något och slits ut, och den dödes kläder kan någon annan ta på sig',
+  kor: () => {
+    const s = createState(2, START); tandEld(s);
+    const st = medBank(s, 'flatarbank');
+    for (const r of s.people) r.tek = { ...r.tek, kniv: 1, flatarbank: 1, bensyl: 1, skinnklader: 1 };
+    setMat(s, { bar: 300 }); setAmount(s, 'ved', 60); setAmount(s, 'ben', 3); setAmount(s, 'sten', 6); setAmount(s, 'skinn', 30); setAmount(s, 'rep', 12);
+    // utan bensylen vid bänken sys inga kläder
+    const utan = !SIM.kanGoras(s, 'skinnrock') && !SIM.kanGoras(s, 'skinnskor');
+    let h = 0;
+    const bensyl = () => tingOf(s).find(t => t.k === 'bensyl' && t.vid === st.id);
+    while (!bensyl() && h < 72) { kor(s, 1); h++; }
+    const slipad = !!bensyl(), timBensyl = h;
+    const kan = SIM.kanGoras(s, 'skinnrock');
+    // kläderna sys och tas på
+    const paSig = () => tingOf(s).filter(t => SAKER[t.k]?.klad && t.bar !== undefined);
+    while (paSig().length < 2 && h < 240) { kor(s, 1); h++; }
+    const sydda = tingOf(s).filter(t => SAKER[t.k]?.klad).length, buren = paSig()[0];
+    const slits = (bensyl()?.c ?? 1) < 1 - 1e-9 || (s.stat?.bensylTrasiga ?? 0) > 0;
+    const p = buren && byId(s, buren.bar!);
+    const ejLiggande = !!buren && buren.x === undefined && buren.hos === undefined;
+    // värmen: kylan tar mindre av den som har kläder på sig, och kläderna väger
+    const kyla = (q: Person) => SIM.varmeDelar(s, q, 1, new Map()).kyla;
+    let varmare = false, tyngre = false;
+    if (p) {
+      const med = kyla(p), plats = bordPlats(s, p), mina = SIM.paSig(s, p);
+      for (const t of mina) t.bar = undefined;
+      varmare = kyla(p) > med + 1e-9; tyngre = bordPlats(s, p) > plats + 1e-9;
+      for (const t of mina) t.bar = p.id;
+    }
+    // ett utslitet plagg försvinner och räknas
+    const slitna0 = s.stat?.kladerSlitna ?? 0;
+    if (buren) { buren.c = 1e-5; SIM.wearStore(s, 3600); }
+    const slitet = !!buren && !tingOf(s).includes(buren) && (s.stat?.kladerSlitna ?? 0) > slitna0;
+    // den dödes kläder kan någon annan ta på sig
+    const nasta = paSig()[0], dod = nasta && byId(s, nasta.bar!);
+    let arv = false;
+    if (nasta && dod) {
+      for (const t of tingOf(s)) if (SAKER[t.k]?.klad && t !== nasta) s.ting = tingOf(s).filter(x => x !== t);
+      die(s, dod, 'olycka'); tidyTools(s); SIM.stepKlader(s);
+      arv = nasta.bar !== undefined && nasta.bar !== dod.id;
+    }
+    return [
+      ['utan bensylen vid slöjdbänken sys inga kläder', utan],
+      [`en bensyl slipas och läggs vid slöjdbänken (efter ${timBensyl} timmar)`, slipad && kan],
+      [`kläder sys vid bänken och tas på (${sydda} plagg efter ${h} timmar)`, sydda > 0 && !!buren],
+      ['bensylen slits när kläderna sys', slits],
+      ['ett plagg som någon har på sig ligger inte i förrådet', ejLiggande],
+      ['den som har kläder på sig fryser mindre', varmare],
+      ['kläderna väger: den som har dem på sig bär mindre', tyngre],
+      ['ett utslitet plagg försvinner och räknas', slitet],
+      ['den dödes plagg tar någon annan på sig', arv],
     ];
   },
 };

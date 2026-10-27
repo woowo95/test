@@ -29,14 +29,16 @@ function framsteg(cx: number, cy: number, p: number) {
   if (f > 0) overG.beginFill(0xe0b050).moveTo(cx, cy).arc(cx, cy, r - 0.7, -Math.PI / 2, -Math.PI / 2 + f * 2 * Math.PI).lineTo(cx, cy).endFill();
   overG.lineStyle(0.5, 0xf2ece0).drawCircle(cx, cy, r).lineStyle(0);
 }
-// stationens yta i bilden (världspixlar från bildens övre vänstra hörn): där saken som görs ligger, och kniven
-const YTA: Record<string, { x: number; y: number; kniv?: { x: number; y: number } }> = {
-  slaktbank: { x: 16, y: 0, kniv: { x: 30, y: -1 } },
-  flatarbank: { x: 4, y: 10 },
+// stationens yta i bilden (världspixlar från bildens övre vänstra hörn): där saken som görs ligger, och redskapet som hör
+// till den (kniven, bensylen i skåran)
+const YTA: Record<string, { x: number; y: number; vid?: { x: number; y: number } }> = {
+  slaktbank: { x: 16, y: 0, vid: { x: 30, y: -1 } },
+  flatarbank: { x: 4, y: 10, vid: { x: 22, y: 9 } },
 };
 // det som görs vid en station syns på den (steg 2.2.12): sakens egen symbol medan någon arbetar där. Viltet och fisken ur
-// djurregistret (DJUR), redskapen ur GORS, och repet när någon tvinnar. Bara utseende: spelet räknar likadant
-const PA_BANKEN: Partial<Record<Act, string>> = { ...Object.fromEntries(Object.values(DJUR).map(d => [d.act, d.sak])), ...Object.fromEntries(Object.keys(GORS).map(g => [g, GORS[g][0]])), tvinna: 'rep' };
+// djurregistret (DJUR), redskapen ur GORS, repet när någon tvinnar och skinnet när någon syr (steg 2.3.2). Bara utseende:
+// spelet räknar likadant
+const PA_BANKEN: Partial<Record<Act, string>> = { ...Object.fromEntries(Object.values(DJUR).map(d => [d.act, d.sak])), ...Object.fromEntries(Object.keys(GORS).map(g => [g, GORS[g][0]])), tvinna: 'rep', skinnrock: 'skinn', skinnskor: 'skinn' };
 function paBanken(st: Station) {
   const d = stationDef(st.k), at = vidStation(st);
   const p = d && living(s).find(q => q.task && d.gor.includes(q.task.act) && Math.hypot(q.x - at.x, q.y - at.y) < STATION.vidBank);
@@ -68,7 +70,8 @@ export function drawStructures(t: number) {
     const yta = YTA[st.k] ?? { x: 2, y: 2 };
     const sak = paBanken(st);
     if (sak) pileIcons.add(sak, x0 + yta.x, y0 + yta.y, 1);
-    if (yta.kniv && tingOf(s).some(k => k.vid === st.id && k.hos === undefined && k.lass === undefined)) pileIcons.add('kniv', x0 + yta.kniv.x, y0 + yta.kniv.y, 1);
+    const vid = yta.vid && tingOf(s).find(k => k.vid === st.id && k.hos === undefined && k.lass === undefined);
+    if (vid) pileIcons.add(vid.k, x0 + yta.vid!.x, y0 + yta.vid!.y, 1);
   }
   // dörrarna i öppningarna (DORRAR i byggnad.ts): vriden när väggen går uppåt (en vägg ovanför öppningen)
   for (const b of bitsOf(s)) if (b.dorr) pileIcons.add(dorrDef(b.dorr)?.ikon + '_karta', b.x * TS, b.y * TS, 2, bitAt(s, b.x, b.y - 1)?.k === 'vagg');

@@ -11,7 +11,7 @@ import { RESERV } from './ekonomi';
 import { addTool, freeTools, halvOf, nTools, ownsFree, wearTool } from './agande';
 import { balans } from './balans';
 import { sedEvent } from './seder';
-import { STATION, kanGoras, nyKniv, stationFor, tommaKnivplatser, vidStation } from './stationer';
+import { STATION, kanGoras, nyttVid, slitVid, stationFor, tommaKnivplatser, tommaPlatser, vidStation } from './stationer';
 
 // ---------- balanstal (regel 8) ----------
 // Hur många redskap byn vill ha och vad den sparar när den gör dem. Hur mycket ett redskap kräver står i receptet (skaffa.av
@@ -27,6 +27,7 @@ export const REDSKAP = balans('redskap', {
   maskPerGrav: 4, // en grävning ger så här många maskar
   slaktMinDel: 2, // vilt slaktas när det finns minst 1 / Del kanin
   kottMin: 0.8, kottMax: 1.2, kottFull: 20, // slakten ger så stor del av köttet (slakt.kott i DJUR) utan jaktfärdighet, och så stor del med färdigheten Full eller mer
+  bensylSlits: 0.1, // ett plagg som sys slits bensylen vid slöjdbänken så här mycket (tio plagg per bensyl, steg 2.3.2)
   nyfiken: 0.08, // ett redskap med nyfiken i saker.ts (yxan) gör sedernas nyfikenhet så här mycket större första gången
 });
 // vad ett slag kräver, ur receptet (skaffa.av i saker.ts)
@@ -166,6 +167,9 @@ const VILL: Record<string, (s: State) => number> = {
   metspo: spearsWanted, // ett metspö per spjut
   korg: basketsWanted,
   kniv: s => REDSKAP.knivar + tommaKnivplatser(s), // och en till för en tom knivplats vid slaktbänken
+  bensyl: s => tommaPlatser(s, 'bensyl'), // en till slöjdbänken (steg 2.3.2)
+  skinnrock: s => living(s).length, // en per person (steg 2.3.2)
+  skinnskor: s => living(s).length,
   // en yxa per fyra över yxaFran år, och en till medan ett hus byggs (för träden där det ska stå)
   yxa: s => clamp(Math.floor(living(s).filter(q => ageOf(q, s.now) >= REDSKAP.yxaFran).length / REDSKAP.yxaPerVuxna), REDSKAP.yxaMin, REDSKAP.yxaMax) + (s.hus?.some(h => !h.klar) ? REDSKAP.yxaBygge : 0),
 };
@@ -199,9 +203,11 @@ export function makeTask(s: State, p: Person, g: string) {
   return { act: g as Act, text: SAKER[k]!.gors!.text.replace('{verktyg}', ordFor(s, k)), min: minOf(k), tool: GORS[g].length > 1 ? k : undefined };
 }
 // redskapet k är klart (materialet togs när arbetet började, paborjat.ts). Första gången står det i loggen. En kniv läggs
-// vid slaktbänken om knivplatsen där står tom, och blir byns (stationer.ts)
+// vid slaktbänken om knivplatsen där står tom, och blir byns, och en bensyl likadant vid slöjdbänken (stationer.ts). Ett
+// plagg sys med bänkens bensyl, och den slits för varje (REDSKAP.bensylSlits)
 export function toolDone(s: State, p: Person, k: string) {
-  nyKniv(s, addTool(s, k, p));
+  nyttVid(s, addTool(s, k, p));
+  if (SAKER[k]!.klad) slitVid(s, k as Act, REDSKAP.bensylSlits);
   const g = SAKER[k]!.gors!, text = (t: string) => t.replace('{namn}', p.name).replace('{verktyg}', ordFor(s, k));
   if (forstaGang(s, g.stat)) {
     log(s, text(g.forsta), 'world', [p.id]);

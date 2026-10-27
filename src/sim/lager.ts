@@ -259,7 +259,7 @@ function ringTiles(s: State, z: Zone, fran = 1, till = LAGER.bredvid) {
 const key = (x: number, y: number) => y * W + x;
 // redskapen som ligger på en ruta (inte i någons hand eller börda). En kniv vid slaktbänken (vid, stationer.ts) ligger kvar
 // där och räknas inte till det som ligger i förrådet eller på marken
-const ligger = (t: Ting) => t.x !== undefined && t.hos === undefined && t.lass === undefined && t.vid === undefined;
+const ligger = (t: Ting) => t.x !== undefined && t.hos === undefined && t.lass === undefined && t.vid === undefined && t.bar === undefined;
 const lying = (s: State) => tingOf(s).filter(ligger);
 // det som ligger i förrådet, per ruta: stackarna och sedan redskapen ts (det sista på en ruta gäller, som i things)
 function occupancy(s: State, ts = tingOf(s)) {
@@ -272,7 +272,7 @@ const asStack = (t: Ting): Stack => ({ k: t.k, n: t.c, c: t.c, x: t.x!, y: t.y!,
 // allt som ligger på marken och i förrådet: stackarna och redskapen
 const things = (s: State): Stack[] => [...stacksOf(s), ...lying(s).map(asStack)];
 // redskap som ingen har och som inte har någon ruta (nygjorda, tillbakalagda) läggs i förrådet, ett på varje ruta
-const utanRuta = (t: Ting) => t.hos === undefined && t.lass === undefined && t.x === undefined;
+const utanRuta = (t: Ting) => t.hos === undefined && t.lass === undefined && t.x === undefined && t.bar === undefined;
 function placeOn(s: State, ts: Ting[]) {
   for (const t of ts) {
     if (!utanRuta(t) || tillbakaVid(s, t)) continue; // stationens kniv läggs tillbaka vid stationen
@@ -515,8 +515,11 @@ export function wearStore(s: State, dtSec: number) {
       a.n = 0;
     }
   }
-  // redskapen: i handen och i bördan som i lagret, på marken efter var de ligger
+  // redskapen: i handen och i bördan som i lagret, på marken efter var de ligger. Plaggen som någon har på sig slits
+  // efter hur länge de håller (klad.dygn i saker.ts, steg 2.3.2), och ett utslitet plagg räknas
   for (const t of tingOf(s)) {
+    const kl = t.bar !== undefined ? SAKER[t.k]?.klad : undefined;
+    if (kl) { t.c -= Math.min(t.c, h / (kl.dygn * 24)); if (t.c <= 1e-6) count(s, 'kladerSlitna'); continue; }
     const ligger = t.hos === undefined && t.lass === undefined; // på marken, vid en station eller i förrådet (utan plats än)
     t.c -= Math.min(t.c, wearAt(t.k, ligger && t.x !== undefined ? wearMult(s, t.x, t.y!) : 1, ligger, temp) * h);
   }

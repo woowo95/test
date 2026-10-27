@@ -1,4 +1,4 @@
-import { ACTS, ALDER, Act, DAY, Lardom, SAMTAL, SKILL_GOR, STAT_GOR, Skill, Stat, coldOf, halsaLage, hearthOf, living, roomAt, temperature, varmeDelar, viloSlag, viloTak, SLAG, SLAG_TECKEN, Person, KUNSKAPER, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, SEDER, SED_LIST, TEKNIK, BYN, Ting, halvKlar, ageOf, alive, byId, childrenOf, drar, heldBy, ownedBy, PLATSER, PLATS_LIST, handerFor, homeKind, load, utrustning, viktOf, ownedStock, sakNamn, slagIkon, tingNamn, STACK, describe, duty, habitShare, habitTotal, KROPP, kortTal, moodOf, num, REL, relKey, stat, taskName, timeLabel } from '../../sim';
+import { ACTS, ALDER, Act, DAY, Lardom, SAMTAL, SKILL_GOR, STAT_GOR, Skill, Stat, coldOf, halsaLage, hearthOf, living, roomAt, temperature, varmeDelar, viloSlag, viloTak, SLAG, SLAG_TECKEN, Person, KUNSKAPER, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, SEDER, SED_LIST, TEKNIK, BYN, Ting, halvKlar, ageOf, alive, byId, childrenOf, drar, heldBy, ownedBy, PLATSER, PLATS_LIST, handerFor, homeKind, load, utrustning, viktOf, SAKER, ownedStock, sakNamn, slagIkon, tingNamn, STACK, describe, duty, habitShare, habitTotal, KROPP, kortTal, moodOf, num, REL, relKey, stat, taskName, timeLabel } from '../../sim';
 import { framstegSvg, hasIcon, iconImg } from '../../ikoner';
 import { LAG, bar, cap, carryTxt, cssFarg, durTxt, esc, hex, hsl, hjalpText, moodWord, pLink, prickar, relWord, sickNow, tempBar, tempOrd, trend, trendD } from '../hjalp';
 import { s, ui } from '../lage';
@@ -75,7 +75,7 @@ function behovHtml(p: Person) {
   const temp = temperature(s), v = varmeDelar(s, p, coldOf(temp), inRum), fh = hearthOf(s.fire);
   const varme: Orsak[] = [
     ...v.eld > 0 ? [{ namn: 'Elden värmer', v: v.eld }] : [],
-    ...v.kyla > 0 ? [{ namn: `Kylan, ${Math.round(temp)} grader${v.shelter > 0 ? `, huset skyddar ${Math.round(v.shelter * 100)} %` : ''}${v.fall > 0 ? `, skinnfällen ${Math.round(v.fall * 100)} %` : ''}`, v: -v.kyla }] : [],
+    ...v.kyla > 0 ? [{ namn: `Kylan, ${Math.round(temp)} grader${v.shelter > 0 ? `, huset skyddar ${Math.round(v.shelter * 100)} %` : ''}${v.fall > 0 ? `, skinnfällen ${Math.round(v.fall * 100)} %` : ''}${v.klad > 0 ? `, kläderna ${Math.round(v.klad * 100)} %` : ''}`, v: -v.kyla }] : [],
     ...v.mild > 0 ? [{ namn: `Milt väder, ${Math.round(temp)} grader`, v: v.mild }] : [],
   ];
   const tak = viloTak(s, p, v.rum);
@@ -138,9 +138,9 @@ function groups(ls: Lardom[]) {
 // hen äger. Ringen runt ett redskap visar skicket; vad som sitter på platsen och vad det väger syns när man håller över
 // eller trycker på rutan
 function gearHtml(p: Person) {
-  const hand = heldBy(s, p), own = ownedBy(s, p).filter(t => t !== hand);
+  const hand = heldBy(s, p), own = ownedBy(s, p).filter(t => t !== hand && t.bar !== p.id);
   const whose = (t: Ting) => t.agare === p.id ? 'eget' : t.agare === BYN ? 'byns' : `lånat av ${byId(s, t.agare)?.name ?? 'någon'}`;
-  const where = (t: Ting) => t.hos === undefined ? 'i förrådet' : `${byId(s, t.hos)?.name ?? 'någon'} har det i handen`;
+  const where = (t: Ting) => t.bar !== undefined ? `${byId(s, t.bar)?.name ?? 'någon'} har det på sig` : t.hos === undefined ? 'i förrådet' : `${byId(s, t.hos)?.name ?? 'någon'} har det i handen`;
   const ting = (t: Ting, title: string, cls = 'kan') => `<span class="tnod liten ${cls}" tabindex="0" title="${esc(title)}" aria-label="${esc(title)}">${iconImg(t.halv?.gor ?? t.k, 16)}${t.halv ? `<span class="halvmark">${framstegSvg(halvKlar(t.halv), 9)}</span>` : ''}<svg class="ring" viewBox="0 0 36 36"><circle cx="18" cy="18" r="16" pathLength="100" stroke-dasharray="${Math.round(t.c * 100)} 100"/></svg></span>`;
   const t = p.task, bar = !!t && load(t, s) > 0.02, u = utrustning(s, p, bar), kg = (n: number) => `${kortTal(n)} kg`;
   const bordaTxt = bar ? `bär ${carryTxt(p).replace(/^Bär /, '')}` : '';
@@ -148,7 +148,7 @@ function gearHtml(p: Person) {
     const pl = PLATSER[k], x = u[k];
     if (x.ting) {
       const h = handerFor(s, p, x.ting.k);
-      const title = `${pl.namn}: ${sakNamn(x.ting.k).toLowerCase()}, ${whose(x.ting)}, ${Math.round(x.ting.c * 100)} %, väger ${kg(viktOf(x.ting.k))}${h === 2 ? ', tar båda händerna' : ''}${x.borda ? `; ${bordaTxt}` : ''}`;
+      const title = `${pl.namn}: ${sakNamn(x.ting.k).toLowerCase()}, ${whose(x.ting)}, ${Math.round(x.ting.c * 100)} %, väger ${kg(viktOf(x.ting.k))}${SAKER[x.ting.k]?.klad ? `, skyddar ${Math.round(SAKER[x.ting.k]!.klad!.varme * 100)} % mot kylan` : ''}${pl.hand && h === 2 ? ', tar båda händerna' : ''}${x.borda ? `; ${bordaTxt}` : ''}`;
       return ting(x.ting, title, k === 'vanster' && x.ting === u.hoger.ting ? 'kan hand pa' : 'kan hand');
     }
     if (x.borda) { const title = `${pl.namn}: ${bordaTxt}`; return `<span class="tnod liten hand" tabindex="0" title="${esc(title)}" aria-label="${esc(title)}">${iconImg(homeKind(t!), 16)}</span>`; }

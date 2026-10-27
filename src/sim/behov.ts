@@ -299,13 +299,13 @@ function ownedKind(s: State, p: Person, k: string) {
 }
 // tot = habitTotal(p), som räknas en gång när samma person frågas om flera slag
 const needsTool = (s: State, p: Person, k: string, tot = habitTotal(p)) => habitShare(p, actsOf(k), tot) > 0.1 && ownedKind(s, p, k) === 0;
-// ett redskap p har över: hen har fler av slaget, eller arbetar knappt med det. Inte det hen arbetar med just nu.
+// ett redskap p har över: hen har fler av slaget, eller arbetar knappt med det. Inte det hen arbetar med just nu eller har på sig.
 // Det i bäst skick, och av dem det första bland tingen
 function spare(s: State, p: Person, k: string, tot = habitTotal(p)) {
   if (habitShare(p, actsOf(k), tot) >= 0.03 && ownedKind(s, p, k) < 2) return;
   const iHanden = usesTool(p.task) === k;
   let best: Ting | undefined;
-  for (const t of tingOf(s)) if (t.agare === p.id && t.k === k && !(t.hos === p.id && iHanden) && (!best || t.c > best.c)) best = t;
+  for (const t of tingOf(s)) if (t.agare === p.id && t.k === k && !(t.hos === p.id && iHanden) && t.bar === undefined && (!best || t.c > best.c)) best = t;
   return best;
 }
 function give(t: Ting, g: Person, m: Person) {

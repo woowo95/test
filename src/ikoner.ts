@@ -25,6 +25,11 @@ const PAL: Record<string, Record<string, string>> = {
   ben: { w: '#e8e2d0', W: '#fffaf0', d: '#b8ae98' },
   vilt: { b: '#9a7650', B: '#c8a478', w: '#f2ece0', k: '#1a1a1a', r: '#9c3328' },
   kniv: { h: '#7a5a36', H: '#9c7848', g: '#8f9396', G: '#c9cdd0' },
+  // kläderna och bensylen (steg 2.3.2): platshållare tills Björn valt
+  bensyl: { w: '#efe6cc', W: '#fff8e6', d: '#b8a882' },
+  skinnrock: { b: '#8a6440', B: '#b48a5e', d: '#5e4026', w: '#d8c8a8' },
+  skinnskor: { b: '#8a6440', B: '#b48a5e', d: '#5e4026' },
+  skinnklader: { b: '#8a6440', B: '#b48a5e', d: '#5e4026', w: '#d8c8a8' },
   slaktbank: { b: '#7a5a36', B: '#a8824e', d: '#4e3420', r: '#9c3328' },
   flatarbank: { b: '#7a5a36', B: '#a8824e', d: '#4e3420', y: '#c8ac5c', Y: '#ecd890', o: '#9a7444', O: '#d0aa70' },
   // stationerna på kartan i blandperspektiv (ovansidan och framsidan): lika breda som rutorna de tar (8 punkter per ruta,
@@ -534,6 +539,50 @@ const PIX: Record<string, string[]> = {
     '.d....d.',
     '.d....d.',
     '.d....d.',
+  ],
+  // en bensyl: ett smalt ben, slipat till en spets (platshållare)
+  bensyl: [
+    '........',
+    '......W.',
+    '.....Ww.',
+    '....ww..',
+    '...ww...',
+    '..ww....',
+    '.dwd....',
+    '.dd.....',
+  ],
+  // en skinnrock med ärmar och pälskrage (platshållare)
+  skinnrock: [
+    '..wwww..',
+    '.BbwwbB.',
+    'BBbBBbBB',
+    'Bb.BB.bB',
+    'Bd.Bb.dB',
+    '...Bb...',
+    '...BB...',
+    '...dd...',
+  ],
+  // ett par skinnskor (platshållare)
+  skinnskor: [
+    '........',
+    '........',
+    '.Bb..Bb.',
+    '.Bb..Bb.',
+    '.BBb.BBb',
+    'BBBbBBBb',
+    'dddddddd',
+    '........',
+  ],
+  // skinnkläderna som teknik: rocken och skorna (platshållare)
+  skinnklader: [
+    '.ww.....',
+    'BbbB....',
+    'BBBB....',
+    'B..B....',
+    '....Bb..',
+    '....BBb.',
+    '...BBBBb',
+    '...ddddd',
   ],
   // en kort flintkniv med smalt blad och ett skaft på snedden (Björn valde K4 efter v55)
   kniv: [

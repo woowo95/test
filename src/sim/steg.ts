@@ -33,7 +33,7 @@ import { migrate } from './varld';
 import { stepDelning } from './delning';
 import { balans } from './balans';
 import { sjoRakna } from './sjo';
-import { bordPlats } from './utrustning';
+import { bordPlats, kladVarme, stepKlader } from './utrustning';
 import { finishStation, finishTillbehor, stationRutor, stepStationer, tillbehorVarme, workStation } from './stationer';
 
 // Simuleringen går i slag om fem minuter (BEAT), i spelet och vid ikappräkning likadant. Inom ett slag går tiden åt
@@ -123,7 +123,7 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
   if (Math.floor(now / HOUR) !== Math.floor((now - dtSec * SEC) / HOUR)) {
     stepSeder(s); updateTags(s); stepDelning(s);
     growGround(s, 1, ai); growFynd(s, 1, ai); forget(s, 1); rotStumps(s); tidyStore(s);
-    wearBuild(s, 1, ai); stepByggnader(s); planBuild(s); stepPaborjat(s); stepStationer(s);
+    wearBuild(s, 1, ai); stepByggnader(s); planBuild(s); stepPaborjat(s); stepStationer(s); stepKlader(s);
     historikSteg(s); // nyckeltalen till byns historik (läses inte av simuleringen)
     compact(s); // här och inte i sparningen, så att alla lägen städar vid samma tid
   }
@@ -186,11 +186,12 @@ export function viloTak(s: State, p: Person, rum: unknown): 'restBadd' | 'restGo
   const m0 = gridOf(s).at.get(tileOf(p.x, p.y))?.m;
   return m0 === 'ho' || m0 === 'tra' ? 'restGolv' : 'restTak';
 }
-// värmen per timme: elden, kylan (det huset och skinnfällen skyddar är borta) och milt väder. inRum = hur många som är i varje rum
+// värmen per timme: elden, kylan (det huset, skinnfällen och kläderna skyddar är borta) och milt väder. inRum = hur många som är i varje rum
 export function varmeDelar(s: State, p: Person, coldRate: number, inRum: Map<number, number>) {
   const heat = heatAt(s, p.x, p.y), rum = roomAt(s, p.x, p.y), shelter = rum ? shelterOf(s, rum, inRum.get(rum.id) ?? 1) : 0;
   const fall = tillbehorVarme(s, p, rum); // skinnfällen i bädden (steg 2.2.14)
-  return { heat, rum, shelter, fall, eld: heat * KROPP.eldVarme, kyla: coldRate * (1 - shelter) * (1 - fall), mild: coldRate === 0 ? KROPP.mildVarme : 0 };
+  const klad = kladVarme(s, p); // kläderna (steg 2.3.2)
+  return { heat, rum, shelter, fall, klad, eld: heat * KROPP.eldVarme, kyla: coldRate * (1 - shelter) * (1 - fall) * (1 - klad), mild: coldRate === 0 ? KROPP.mildVarme : 0 };
 }
 function needsStep(s: State, p: Person, a: number, dtSec: number, coldRate: number, fh: ReturnType<typeof hearthOf>, inRum: Map<number, number>) {
   const now = s.now;

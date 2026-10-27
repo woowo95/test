@@ -20,7 +20,11 @@ interface SakDef {
   i?: string; // ligger gömd i stackarna av det slaget (stack.dold) och har ingen egen stack
   skaffa?: Skaffa; // hur en skaffas; grundvärdet räknas ur det (varde.ts). Saknas = inget värde
   gors?: Gors; // ett redskap som görs i ett eget arbete (redskap.ts): texterna och vad som räknas
+  klad?: Klad; // ett klädesplagg (steg 2.3.2, utrustning.ts)
 }
+// ett klädesplagg: platsen på kroppen (PLATSER i utrustning.ts), så stor del mindre kyla för den som har det på sig, och hur
+// många dygn (år i spelet) det håller på kroppen
+interface Klad { plats: string; varme: number; dygn: number }
 // ett redskap som görs: text = vad den som gör det gör, stat = räknas varje gång ett blir klart, forsta = loggen första
 // gången, fame = det den som gjorde det blir ihågkommen för, igen = loggen de andra gångerna, nyfiken = byn blir nyfiknare
 // första gången (REDSKAP.nyfiken), med den texten. {namn} = den som gjorde det, {verktyg} = verktyget (skaffa.verktyg)
@@ -70,6 +74,14 @@ const DEF = {
   abborre: { namn: 'Abborre', skaffa: { act: 'fiske' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 1.2, haller: 1 }, // den hela fisken äts strax efter fiskköttet: innan byn har en slaktbänk rensas den inte (steg 2.2.8)
   // ett redskap som någon har börjat göra men inte gjort klart (paborjat.ts). Det slits och värderas där, inte här
   paborjat: { namn: 'Påbörjat', vikt: 0.5, stack: 1, mapp: 'Redskap', redskap: true },
+  // bensylen (steg 2.3.2): ett ben som slipas spetsigt mot en sten. Den ligger på slöjdbänken (stationer.ts), och med den sys kläderna
+  bensyl: { namn: 'Bensyl', skaffa: { av: { ben: 1 }, min: 20, tek: 'bensyl', verktyg: { sten: 'en sten', flinta: 'en flinta' } }, vikt: 0.05, stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true, trasig: { stat: 'bensylTrasiga' },
+    gors: { text: 'Slipar en bensyl av ett ben mot {verktyg}.', stat: 'bensylGjorda', forsta: '{namn} slipade byns första bensyl av ett ben. Med den kan man sy skinn.' } },
+  // kläderna (steg 2.3.2): sys vid slöjdbänken av skinn och rep av senor, med bensylen. Den som gjort dem äger dem och har dem på sig
+  skinnrock: { namn: 'Skinnrock', skaffa: { av: { skinn: 3, rep: 1 }, min: 60, tek: 'skinnklader' }, vikt: 2, stack: 1, mapp: 'Kläder', slits: 0.0003, redskap: true, klad: { plats: 'yttre', varme: 0.25, dygn: 4 },
+    gors: { text: 'Syr en skinnrock.', stat: 'skinnrockar', forsta: '{namn} sydde byns första skinnrock. Den som har den på sig fryser mindre.', fame: 'Sydde byns första skinnrock' } },
+  skinnskor: { namn: 'Skinnskor', skaffa: { av: { skinn: 1, rep: 1 }, min: 30, tek: 'skinnklader' }, vikt: 0.6, stack: 1, mapp: 'Kläder', slits: 0.0003, redskap: true, klad: { plats: 'fotter', varme: 0.1, dygn: 3 },
+    gors: { text: 'Syr ett par skinnskor.', stat: 'skinnskor', forsta: '{namn} sydde byns första par skinnskor.' } },
 } satisfies Record<string, SakDef>;
 
 type Sak = keyof typeof DEF;
@@ -96,6 +108,7 @@ export const isFood = (k: string) => SAKER[k]?.mat !== undefined;
 export const isTool = (k: string) => !!SAKER[k]?.redskap;
 export const REDSKAP_SLAG = SAK_LIST.filter(isTool); // alla redskapsslag, i registrets ordning
 export const gruppOf = (k: string) => SAKER[k]?.grupp ?? k;
+export const KLAD_SLAG = SAK_LIST.filter(k => SAKER[k]!.klad); // klädesplaggen (steg 2.3.2)
 // mappar i listan över allt byn äger; maten med det som håller längst först. summa = antalen läggs ihop på mappens rad
 const MAPP_SUMMA = new Set(['Mat', 'Bränsle']);
 export const FOLDERS: { namn: string; k: string[]; summa: boolean }[] = [...new Set(SAK_LIST.map(k => SAKER[k]!.mapp).filter(m => m))].map(namn => ({

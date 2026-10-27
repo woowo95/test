@@ -59,6 +59,11 @@ export const TEKNIK: Tek[] = [
   // dörrarna (DORRAR i byggnad.ts, steg 2.2.16) har också samma id som raden där
   { id: 'skinndorr', namn: 'Skinndörr', text: 'En hud som hängs i dörröppningen.', effekt: 'Huset släpper ut mindre värme genom dörren.',
     omr: ['bygga', 'hantverk'], krav: ['timmervagg'], material: [['skinn']], tid: 16 },
+  // kläderna (steg 2.3.2): bensylen slipas av ett ben och läggs vid slöjdbänken, och med den sys kläderna där
+  { id: 'bensyl', namn: 'Bensyl', text: 'Ett vasst ben som slipas mot en sten eller en flinta.', effekt: 'Med bensylen vid slöjdbänken kan man sy skinn.',
+    omr: ['hantverk'], krav: ['flatarbank', 'kniv'], material: [['ben'], ['sten', 'flinta']], tid: 14 },
+  { id: 'skinnklader', namn: 'Skinnkläder', text: 'Skinn som sys ihop med rep av senor till en rock och ett par skor.', effekt: 'Den som har kläderna på sig fryser mindre.',
+    omr: ['hantverk', 'jakt'], krav: ['bensyl'], material: [['skinn'], ['rep']], tid: 16 },
 ];
 export const TEK = Object.fromEntries(TEKNIK.map(t => [t.id, t])) as Record<string, Tek>;
 

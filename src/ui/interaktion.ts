@@ -89,8 +89,11 @@ function showHover(gx: number, gy: number) {
   if ((s.stubbar ?? []).some(k => k.x === x && k.y === y)) rows.push('Stubbe efter ett fällt träd');
   const st = stationAt(s, x, y), sd = st && stationDef(st.k);
   if (st && sd) {
-    const kniv = tingOf(s).filter(k => k.vid === st.id), ligger = kniv.filter(k => k.hos === undefined && k.lass === undefined).length;
-    const om = isKlar(st) ? (sd.kniv ? `${ligger} av ${sd.kniv} ${sd.kniv === 1 ? 'kniv' : 'knivar'} ligger här${kniv.length > ligger ? ', en används' : ''}` : '') : `byggs, ${Math.round(100 - st.kvar / (sd.min * MIN) * 100)} %`;
+    const vid = Object.entries(sd.vid ?? {}).map(([slag, n]) => {
+      const har = tingOf(s).filter(k => k.vid === st.id && k.k === slag), ligger = har.filter(k => k.hos === undefined && k.lass === undefined).length;
+      return `${iconImg(slag, 12)} ${ligger} av ${n} ligger här${har.length > ligger ? ', en används' : ''}`;
+    }).join(' · ');
+    const om = isKlar(st) ? vid : `byggs, ${Math.round(100 - st.kvar / (sd.min * MIN) * 100)} %`;
     rows.push(`${iconImg(sd.ikon, 12)} <b>${esc(sd.namn)}</b>${om ? ' · ' + om : ''}`);
   }
   const bit = bitAt(s, x, y);

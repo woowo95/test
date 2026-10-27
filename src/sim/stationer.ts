@@ -12,6 +12,7 @@ import { balans } from './balans';
 import { Rum, bitAt, gridOf, husById, roomAt, touch } from './byggnad';
 import { fnOf, sovKvar } from './byggnader';
 import { ACTS } from './handlingar';
+import { SAKER } from './saker';
 import { tileOf } from './mark';
 
 // ---------- arbetsstationer och möbler (steg 2.2.3, 2.2.5) ----------
@@ -33,8 +34,10 @@ import { tileOf } from './mark';
 // byggdes ute före v59 bärs in när ett hus har plats (barIn). Rivs huset försvinner det som stod inne. En möbel som sover (halmbädden) är en
 // sovplats, och rutorna den tar är inga andra sovplatser (byggnader.ts). Det byn kan ha flera av (flera) byggs så länge
 // projektet säger att byn saknar dem (projekt.ts). På kartan ritas den uppifrån, med en bild lika stor som rutorna (ikoner.ts).
-// Knivplatsen: en kniv hör till stationen (Ting.vid) och ligger kvar där när ingen använder den, så att det alltid finns
-// en kniv när någon ska slakta. Saknas kniven vill byn ha en till (VILL i redskap.ts), och den som görs läggs vid bänken.
+// Redskapsplatserna (vid i registret): en kniv hör till slaktbänken och en bensyl till slöjdbänken (Ting.vid), och de ligger kvar
+// där när ingen använder dem, så att det alltid finns en kniv när någon ska slakta. Saknas redskapet vill byn ha ett till (VILL i
+// redskap.ts), och det som görs läggs vid bänken. Det som kräver redskapet (kraver: kläderna kräver bensylen, steg 2.3.2) görs
+// inte förrän det ligger där, och det slits för varje sak som görs (slitVid).
 
 // ---------- balanstal (regel 8) ----------
 export const STATION = balans('station', {
@@ -66,21 +69,22 @@ export const STATION = balans('station', {
 const bordTra = (w: number, h: number) => w * h * STATION.bordTra + ((w >= 2 ? 2 * w : 0) + (h >= 2 ? 2 * h : 0)) * STATION.stubbeTra;
 
 // namn och ikon (ikoner.ts; kartans bild uppifrån heter ikon_karta), w och h = rutorna den tar (bredd och djup), tek = teknikerna, och den som kan någon av dem bygger den, av = materialet, min = minuters arbete,
-// gor = handlingarna som görs vid den, bara = de av dem som inte görs alls utan stationen, kniv = knivar som hör till den, bygger = texten för den som bygger,
+// gor = handlingarna som görs vid den, bara = de av dem som inte görs alls utan stationen, vid = redskapen som hör till den
+// (slag och antal), kraver = handlingar som bara görs när ett av stationens redskap ligger där, bygger = texten för den som bygger,
 // forsta = loggen när byn fått sin första, inne = står inne i ett hus, mobel = en möbel, flera = byn kan ha flera, sover = en sovplats
 // (halmbädden), sitt = en sittplats framför den (bara utseende, steg 2.2.5), platser = ett bord med stubbar att sitta på runt
 // det (steg 2.2.15)
-export interface StationDef { namn: string; ikon: string; w: number; h: number; tek: string[]; av: Record<string, number>; min: number; gor: Act[]; bara?: Act[]; kniv?: number; bygger: string; forsta: string; inne?: true; mobel?: true; flera?: true; sover?: true; sitt?: true; platser?: true }
+export interface StationDef { namn: string; ikon: string; w: number; h: number; tek: string[]; av: Record<string, number>; min: number; gor: Act[]; bara?: Act[]; vid?: Record<string, number>; kraver?: Partial<Record<Act, string>>; bygger: string; forsta: string; inne?: true; mobel?: true; flera?: true; sover?: true; sitt?: true; platser?: true }
 export const STATIONER = {
   slaktbank: {
-    namn: 'Slaktbänk', ikon: 'slaktbank', w: 3, h: 1, tek: ['slaktbank'], av: { ved: STATION.slaktbankTra }, min: STATION.slaktbankMin, gor: ['slakta', 'rensa'], bara: ['slakta', 'rensa'], kniv: STATION.knivplatser,
+    namn: 'Slaktbänk', ikon: 'slaktbank', w: 3, h: 1, tek: ['slaktbank'], av: { ved: STATION.slaktbankTra }, min: STATION.slaktbankMin, gor: ['slakta', 'rensa'], bara: ['slakta', 'rensa'], vid: { kniv: STATION.knivplatser },
     bygger: 'Bygger en slaktbänk av trä.',
     forsta: '{namn} byggde byns första slaktbänk av trä. Där slaktas viltet och rensas fisken, och en kniv ligger kvar vid bänken.',
   },
   flatarbank: { // slöjdbänken: id:t är kvar från när den hette flätarbänken, så att sparade byar fungerar
-    namn: 'Slöjdbänk', ikon: 'flatarbank', w: 2, h: 1, tek: ['flatarbank'], av: { ved: STATION.flatarbankTra, grenar: STATION.flatarbankGrenar }, min: STATION.flatarbankMin, gor: ['tvinna', 'korg'], bara: ['korg'], inne: true, sitt: true,
+    namn: 'Slöjdbänk', ikon: 'flatarbank', w: 2, h: 1, tek: ['flatarbank'], av: { ved: STATION.flatarbankTra, grenar: STATION.flatarbankGrenar }, min: STATION.flatarbankMin, gor: ['tvinna', 'korg', 'skinnrock', 'skinnskor'], bara: ['korg', 'skinnrock', 'skinnskor'], vid: { bensyl: 1 }, kraver: { skinnrock: 'bensyl', skinnskor: 'bensyl' }, inne: true, sitt: true,
     bygger: 'Bygger en slöjdbänk av trä och grenar.',
-    forsta: '{namn} byggde byns första slöjdbänk. Där tvinnas rep fortare än för hand och flätas korgar.',
+    forsta: '{namn} byggde byns första slöjdbänk. Där tvinnas rep fortare än för hand och flätas korgar.', // och sys kläder med bensylen (steg 2.3.2)
   },
   halmbadd: {
     namn: 'Halmbädd', ikon: 'halmbadd', w: 2, h: 1, tek: ['halmbadd'], av: { torrgras: STATION.halmbaddHo, grenar: STATION.halmbaddGrenar }, min: STATION.halmbaddMin, gor: [], inne: true, mobel: true, flera: true, sover: true,
@@ -153,8 +157,12 @@ export const sittAt = (s: State, x: number, y: number) => !!s.stationer?.length 
 export const stationFor = (s: State, act: Act) => stationerOf(s).find(t => isKlar(t) && stationDef(t.k)?.gor.includes(act));
 // handlingen görs bara vid en station (bara i registret)
 const BARA = new Set<Act>(STATION_LIST.flatMap(k => (STATIONER[k] as StationDef).bara ?? []));
-// handlingen kan göras: den kräver ingen station, eller byn har en färdig
-export const kanGoras = (s: State, act: Act) => !BARA.has(act) || !!stationFor(s, act);
+// handlingen kan göras: den kräver ingen station, eller byn har en färdig (och redskapet som handlingen kräver ligger där)
+export function kanGoras(s: State, act: Act) {
+  if (!BARA.has(act)) return true;
+  const t = stationFor(s, act), k = t && stationDef(t.k)?.kraver?.[act];
+  return !!t && (!k || redskapVid(s, t, k).length > 0);
+}
 // platsen där man står och arbetar vid stationen: mitt för den på rutan söder om den
 export const vidStation = (t: Station) => { const { w, h } = storlekAv(t); return { x: t.x + w / 2, y: t.y + h + 0.1 }; };
 
@@ -286,7 +294,7 @@ export function finishStation(s: State, p: Person, tk: Task) {
   if (stationDef(t.k)?.sover) touch(s); // en ny sovplats: var man sover räknas om
   const d = stationDef(t.k)!;
   if (forstaGang(s, 'station_' + t.k)) { log(s, d.forsta.replace('{namn}', p.name), 'world', [p.id]); p.fame.push(`Byggde byns första ${d.namn.toLowerCase()}`); }
-  fyllKnivplatser(s);
+  fyllPlatser(s);
 }
 
 // ---------- borden (steg 2.2.15) ----------
@@ -394,44 +402,60 @@ export function tillbehorVarme(s: State, p: Person, rum: unknown) {
   return v;
 }
 
-// ---------- knivplatsen ----------
-// knivarna som hör till stationen
-const knivarVid = (s: State, t: Station) => tingOf(s).filter(k => k.vid === t.id && k.k === 'kniv');
-// så många knivplatser som står tomma i byns färdiga stationer
-export function tommaKnivplatser(s: State) {
+// ---------- redskapsplatserna (knivplatsen, bensylen) ----------
+// redskapen av slaget k som hör till stationen
+export const redskapVid = (s: State, t: Station, k: string) => tingOf(s).filter(q => q.vid === t.id && q.k === k);
+const platserFor = (t: Station, k: string) => stationDef(t.k)?.vid?.[k] ?? 0;
+// så många platser för redskap av slaget k som står tomma i byns färdiga stationer
+export function tommaPlatser(s: State, k: string) {
   let n = 0;
-  for (const t of stationerOf(s)) if (isKlar(t)) n += Math.max(0, (stationDef(t.k)?.kniv ?? 0) - knivarVid(s, t).length);
+  for (const t of stationerOf(s)) if (isKlar(t)) n += Math.max(0, platserFor(t, k) - redskapVid(s, t, k).length);
   return n;
 }
-// den första färdiga station som har en tom knivplats
-const tomPlats = (s: State) => stationerOf(s).find(t => isKlar(t) && knivarVid(s, t).length < (stationDef(t.k)?.kniv ?? 0));
-// en kniv blir stationens: den är byns och ligger vid stationen när ingen använder den
+export const tommaKnivplatser = (s: State) => tommaPlatser(s, 'kniv');
+// den första färdiga station som har en tom plats för slaget k
+const tomPlats = (s: State, k: string) => stationerOf(s).find(t => isKlar(t) && redskapVid(s, t, k).length < platserFor(t, k));
+// slagen som har en plats vid någon station
+const VID_SLAG = [...new Set(STATION_LIST.flatMap(k => Object.keys((STATIONER[k] as StationDef).vid ?? {})))];
+// ett redskap blir stationens: det är byns och ligger vid stationen när ingen använder det
 function tillStation(k: Ting, t: Station) {
   k.vid = t.id; k.agare = BYN;
   if (k.hos === undefined && k.lass === undefined) { k.x = t.x; k.y = t.y; }
 }
-// en ny kniv läggs vid stationen om en knivplats står tom (redskap.ts, toolDone). true = den lades där
-export function nyKniv(s: State, k: Ting) {
-  const t = k.k === 'kniv' ? tomPlats(s) : undefined;
+// ett nytt redskap läggs vid stationen om en plats för det står tom (redskap.ts, toolDone). true = det lades där
+export function nyttVid(s: State, k: Ting) {
+  const t = tomPlats(s, k.k);
   if (!t) return false;
   tillStation(k, t);
   return true;
 }
-// en tom knivplats fylls med en av byns knivar som ligger i förrådet
-export function fyllKnivplatser(s: State) {
-  for (let t = tomPlats(s); t; t = tomPlats(s)) {
-    const k = tingOf(s).find(q => q.k === 'kniv' && q.agare === BYN && q.vid === undefined && q.hos === undefined && q.lass === undefined);
-    if (!k) return;
+// en tom plats fylls med ett av byns redskap av det slaget som ligger i förrådet
+export function fyllPlatser(s: State) {
+  for (const slag of VID_SLAG) for (let t = tomPlats(s, slag); t; t = tomPlats(s, slag)) {
+    const k = tingOf(s).find(q => q.k === slag && q.agare === BYN && q.vid === undefined && q.hos === undefined && q.lass === undefined && q.bar === undefined);
+    if (!k) break;
     tillStation(k, t);
   }
 }
-// en kniv som hör till en station och som ingen har i handen läggs tillbaka där (lager.ts, placeTools). true = den ligger där.
-// Finns inte stationen längre hör kniven inte till någon
+// ett redskap som hör till en station och som ingen har i handen läggs tillbaka där (lager.ts, placeTools). true = det ligger där.
+// Finns inte stationen längre hör det inte till någon
 export function tillbakaVid(s: State, k: Ting) {
   if (k.vid === undefined) return false;
   const t = stationById(s, k.vid);
   if (!t) { k.vid = undefined; return false; }
   k.x = t.x; k.y = t.y;
+  return true;
+}
+// handlingen act är gjord en gång vid stationen: redskapet den kräver (kraver) slits så mycket. true = det gick sönder
+export function slitVid(s: State, act: Act, v: number) {
+  const t = stationFor(s, act), k = t && stationDef(t.k)?.kraver?.[act];
+  const r = k ? redskapVid(s, t, k).sort((a, b) => a.c - b.c)[0] : undefined;
+  if (!r) return false;
+  r.c -= v;
+  if (r.c > 1e-9) return false;
+  s.ting = tingOf(s).filter(q => q !== r);
+  const tr = SAKER[r.k]?.trasig;
+  if (tr) count(s, tr.stat);
   return true;
 }
 // en station som bara får stå inne (inne i registret) men står ute, t.ex. en slöjdbänk byggd före v59, bärs in i ett hus
@@ -449,11 +473,11 @@ function barIn(s: State) {
     log(s, `${d.namn}en bars in i ${husById(s, stationRum(s, t)?.hus ?? -1)?.namn ?? 'ett hus'}.`, 'world');
   }
 }
-// varje timme: tomma knivplatser fylls, en station som ska stå inne men står ute bärs in, och det som stod inne i ett hus
+// varje timme: tomma redskapsplatser fylls, en station som ska stå inne men står ute bärs in, och det som stod inne i ett hus
 // som rivits försvinner
 export function stepStationer(s: State) {
   if (!s.stationer?.length) return;
-  fyllKnivplatser(s);
+  fyllPlatser(s);
   barIn(s);
   const borta = s.stationer.filter(t => t.inne && !stationRum(s, t));
   if (!borta.length) return;
