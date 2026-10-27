@@ -2,8 +2,8 @@ import { ALDER, ageOf, count, doingAct, forstaGang, living, log, stat } from './
 import { Bit, DORRAR, DorrDef, DorrSlag, Hus, MATERIAL, bitById, dorrDef, bitsOf, blocked, freeNear, gridOf, housesOf, husById, touch } from './byggnad';
 import { getMap } from './karta';
 import { groundOf, punktIRuta } from './mark';
-import { campCenter, rektAvstand } from './plats';
-import { lekplats, paLek } from './stationer';
+import { PLATS, campCenter, rektAvstand } from './plats';
+import { lekplats, paLek, uteStation } from './stationer';
 import { sedEvent } from './seder';
 import { RESERV, kunnighet } from './ekonomi';
 import { ARSTID, iIstiden } from './tid';
@@ -63,18 +63,22 @@ const tileOk = (s: State, x: number, y: number) => {
   if ((s.stackar ?? []).some(a => a.x === x && a.y === y) || tingOf(s).some(k => k.x === x && k.y === y && k.hos === undefined && k.lass === undefined) || (s.stockar ?? []).some(k => Math.floor(k.x) === x && Math.floor(k.y) === y) || (s.stubbar ?? []).some(k => k.x === x && k.y === y)) return false;
   return true;
 };
-// en plats för ett hus med yttermåtten w×h inom byområdet, helst en bit från elden och inte på lekplatsen. Träden där
+// en plats för ett hus med yttermåtten w×h inom byområdet, PLATS.husMellan rutor från andra hus och PLATS.uteFri från stationer
+// som står ute, helst en bit från elden och inte på lekplatsen. Träden där
 // huset ska stå fälls först, men en plats med färre träd går fortare
 function siteFor(s: State, w: number, h: number, okAt: Uint8Array) {
-  const f = getMap(s.seed).fire, mid = campCenter(s), R = BYGG.radieBas + living(s).length * BYGG.radiePerPerson, g = groundOf(s), lekR = lekplats(s);
+  const f = getMap(s.seed).fire, mid = campCenter(s), R = BYGG.radieBas + living(s).length * BYGG.radiePerPerson, g = groundOf(s), lekR = lekplats(s), M = Math.max(PLATS.husMellan, PLATS.uteFri);
   let best: { x: number; y: number } | undefined, bs = Infinity;
   for (let y = 1; y + h < H; y++) for (let x = 1; x + w < W; x++) {
     const cx = x + w / 2, cy = y + h / 2;
     if (Math.hypot(cx - mid.x, cy - mid.y) > R) continue;
     let ok = true;
-    for (let yy = y - 1; yy <= y + h && ok; yy++) for (let xx = x - 1; xx <= x + w && ok; xx++) {
+    for (let yy = y - M; yy < y + h + M && ok; yy++) for (let xx = x - M; xx < x + w + M && ok; xx++) {
       const inside = xx >= x && xx < x + w && yy >= y && yy < y + h;
-      if (inside ? !okAt[yy * W + xx] : gridOf(s).at.has(yy * W + xx)) ok = false; // en ruta fritt runt andra hus
+      if (inside) { ok = !!okAt[yy * W + xx]; continue; }
+      if (!inMap(xx, yy)) continue;
+      const d = Math.max(x - xx, xx - (x + w - 1), y - yy, yy - (y + h - 1)); // så många rutor från huset
+      if (gridOf(s).at.has(yy * W + xx) || d <= PLATS.uteFri && uteStation(s, xx, yy)) ok = false; // plats för en stig mellan husen och runt stationerna ute (steg 2.10.8)
     }
     if (!ok) continue;
     const near = rektAvstand(f.x, f.y, x, y, w, h);

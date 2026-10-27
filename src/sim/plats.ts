@@ -16,6 +16,8 @@ export const PLATS = balans('plats', {
   lekSok: 14, // så långt från byns inre mitt som lekplatsen kan ligga
   lekHinder: 4, // en ruta på lekplatsen där något står (ett hus, ett lager, en station, ett träd) kostar så här mycket ...
   lekNorr: 1, // ... och en lekplats norr om byns inre mitt så här mycket (förr låg den alltid söder om elden)
+  husMellan: 2, // byn sprids ut (steg 2.10.8): så många rutor fritt mellan två hus, plats för en stig (bygg.ts) ...
+  uteFri: 1, // ... och så många fria rutor runt en station eller möbel som står ute, mot lagerplatser och andra stationer (stationer.ts; mot en husvägg får den stå)
 });
 
 // Byns läger är inte bara elden: det är elden och lagerplatserna, och senare fler eldar och byggnader.

@@ -58,6 +58,7 @@ export const STATION = balans('station', {
   vriden: 0.5, // en station som står vriden får så här många poäng (färre är bättre), så att den helst står som i registret
   badd: 0.1, // inne: så här många poäng mindre för varje sida som står mot en vägg ...
   dorr: 1, // ... och så här många fler för varje ruta bredvid en öppning, där man går in
+  uteVagg: 0.6, // ute: så här många poäng mindre för varje ruta som står mot en husvägg (Björn efter v101: stationerna står snyggt mot väggarna)
   samling: 1, // ... och så här många mindre i ett hus där ingen sover (samlingshuset), för det som inte är en bädd
   halmbaddHo: 4, // en halmbädd kräver så mycket hö ...
   halmbaddGrenar: 2, // ... och så många grenar ...
@@ -258,6 +259,24 @@ export function ledig(s: State, x: number, y: number) {
   if (!usable(s, x, y) || stationAt(s, x, y) || sittAt(s, x, y) || zonesOf(s).some(z => x >= z.x && x < z.x + z.w && y >= z.y && y < z.y + z.h)) return false;
   return !((s.stackar ?? []).some(a => a.x === x && a.y === y) || tingOf(s).some(k => k.x === x && k.y === y) || (s.stockar ?? []).some(k => Math.floor(k.x) === x && Math.floor(k.y) === y) || (s.stubbar ?? []).some(k => k.x === x && k.y === y));
 }
+// ---------- avståndet ute (steg 2.10.8) ----------
+// står det en station eller en stubbe ute på rutan (x, y)? Det som står inne står i ett hus, och möblerna i lagren i en lagerplats
+export function uteStation(s: State, x: number, y: number) {
+  if (!s.stationer?.length || !inMap(x, y)) return false;
+  const r = stationRutor(s), i = y * W + x, t = r.at.get(i);
+  return r.sitt.has(i) || !!t && !t.inne && !stationDef(t.k)?.forvar;
+}
+// står inget annat (ett hus, en lagerplats, en station eller en stubbe ute) inom PLATS.uteFri rutor från rutorna? Då finns plats
+// för en stig runt det som ska stå där. motVagg: husen räknas inte, för en station får stå mot en vägg (Björn efter v101)
+export function friRunt(s: State, rutor: { x: number; y: number }[], motVagg = false) {
+  const r = PLATS.uteFri, egna = new Set(rutor.map(q => q.y * W + q.x)), g = gridOf(s), zs = zonesOf(s);
+  for (const q of rutor) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+    const x = q.x + dx, y = q.y + dy, i = y * W + x;
+    if (!inMap(x, y) || egna.has(i)) continue;
+    if (!motVagg && g.at.has(i) || uteStation(s, x, y) || zs.some(z => x >= z.x && x < z.x + z.w && y >= z.y && y < z.y + z.h)) return false;
+  }
+  return true;
+}
 // ---------- inne i byn och lekplatsen (steg 2.10.4) ----------
 // Byn inne är lagerplatserna och husen, inte elden: elden är ett verktyg och kan flyttas, och det som räknas från
 // byns inre (lekplatsen, och arbetet utan bänk i 2.10.6) ska inte hänga på var den ligger. byInne är mitten av dem:
@@ -323,7 +342,7 @@ function siteUtkant(s: State, _k: string) {
     const x = f.x + dx, y = f.y + dy;
     if (x < 0 || y < 0 || x >= W || y >= H) continue;
     const t = m.tiles[y * W + x], d = campDist(s, x, y);
-    if (d < STATION.latrinFran || d > STATION.latrinTill || t !== T.Gras && t !== T.Sand && t !== T.Skog || g.trees[y * W + x] >= FOREST || !ledig(s, x, y)) continue;
+    if (d < STATION.latrinFran || d > STATION.latrinTill || t !== T.Gras && t !== T.Sand && t !== T.Skog || g.trees[y * W + x] >= FOREST || !ledig(s, x, y) || !friRunt(s, [{ x, y }])) continue;
     const lek = paLek(lekR, x, y) ? STATION.norr * 4 : 0;
     const vatten = s.hygien ? s.hygien * STATION.latrinVattenPoang * Math.max(0, STATION.latrinVatten - tillVatten(s, x, y, STATION.latrinVatten)) : 0;
     const sc = Math.abs(d - STATION.latrinAvst) + lek + vatten;
@@ -340,7 +359,7 @@ function siteBrasa(s: State) {
   let best: { x: number; y: number; rot?: 1 } | undefined, bs = Infinity;
   for (let dy = -R; dy <= R; dy++) for (let dx = -R; dx <= R; dx++) {
     const x = cx + dx, y = cy + dy, d = Math.hypot(x + 0.5 - mal.x, y + 0.5 - mal.y);
-    if (d > R || x < 1 || y < 1 || x >= W - 1 || y >= H - 1 || roomAt(s, x, y) || !ledig(s, x, y)) continue;
+    if (d > R || x < 1 || y < 1 || x >= W - 1 || y >= H - 1 || roomAt(s, x, y) || !ledig(s, x, y) || !friRunt(s, [{ x, y }])) continue;
     const sc = Math.abs(d - STATION.brasaFran);
     if (sc < bs) { bs = sc; best = { x, y }; }
   }
@@ -361,7 +380,9 @@ function siteEld(s: State) {
   const f = getMap(s.seed).fire;
   return [-1, 0, 1].some(i => stationAt(s, f.x + i, f.y)) ? undefined : { x: f.x - 1, y: f.y, rot: undefined };
 }
-// ute: alla rutorna den tar är lediga, och den står helst inte där barnen leker. Avståndet räknas från stationens mitt
+// rutorna i rektangeln med hörnet (x, y) och måtten w×h
+const rutorAv = (x: number, y: number, w: number, h: number) => Array.from({ length: w * h }, (_, i) => ({ x: x + i % w, y: y + Math.floor(i / w) }));
+// ute: alla rutorna den tar är lediga, ingenting utom ett hus står inpå (friRunt), helst mot en vägg och inte där barnen leker. Avståndet räknas från stationens mitt
 function siteUte(s: State, k: string) {
   const f = getMap(s.seed).fire, lekR = lekplats(s);
   let best: { x: number; y: number; rot?: 1 } | undefined, bs = Infinity;
@@ -372,10 +393,20 @@ function siteUte(s: State, k: string) {
       let fri = true;
       for (let j = 0; j < h && fri; j++) for (let i = 0; i < w && fri; i++) fri = ledig(s, x + i, y + j);
       if (fri && stationDef(k)?.platser) fri = bordPlatser({ k, x, y, rot }).every(q => ledig(s, q.x, q.y)); // stubbarna runt bordet
+      if (fri) fri = friRunt(s, [...rutorAv(x, y, w, h), ...(stationDef(k)?.platser ? bordPlatser({ k, x, y, rot }) : [])], true); // plats för en stig runt (steg 2.10.8)
+      for (let i = 0; i < w && fri; i++) fri = !gridOf(s).at.has((y + h) * W + x + i); // man står framför den, inte i en vägg
+      if (!fri) continue;
+      // helst mot en vägg, men inte vid en öppning där man går in (Björn efter v101)
+      let vagg = 0;
+      for (let j = -1; j <= h; j++) for (let i = -1; i <= w; i++) {
+        if ((i === -1 || i === w) === (j === -1 || j === h)) continue; // bara rutorna rakt bredvid, inte hörnen
+        const b = bitAt(s, x + i, y + j);
+        if (b?.k === 'vagg') vagg++; else if (b?.k === 'oppning') fri = false;
+      }
       if (!fri) continue;
       const mx = dx + (w - 1) / 2, my = dy + (h - 1) / 2;
       const lek = paLek(lekR, x, y, w, h) ? STATION.norr * 4 : 0;
-      const sc = Math.abs(Math.hypot(mx, my) - STATION.avstand) + lek + rot * STATION.vriden;
+      const sc = Math.abs(Math.hypot(mx, my) - STATION.avstand) + lek + rot * STATION.vriden - vagg * STATION.uteVagg;
       if (sc < bs) { bs = sc; best = rot ? { x, y, rot } : { x, y }; }
     }
   }
