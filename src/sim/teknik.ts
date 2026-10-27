@@ -79,6 +79,9 @@ export const TEKNIK: Tek[] = [
   // grillställningen (steg 2.8.1, matlagning.ts; grill i STATIONER, samma id)
   { id: 'grill', namn: 'Grillställning', text: 'Två grenar med en klyka var på var sin sida om elden, och ett spett med vev som vilar i klykorna, surrat med rep.', effekt: 'Kött och fisk grillas över elden. Den grillade maten håller längre, och den som äter den blir inte sjuk av rått kött.',
     omr: ['hantverk', 'slakta', 'rensa', 'fiske'], krav: ['rep'], material: [['grenar'], ['rep']], tid: 14 },
+  // torkställningen (steg 2.8.2, matlagning.ts; tork i STATIONER, samma id)
+  { id: 'tork', namn: 'Torkställning', text: 'Två A av korsade grenar som bär en lång slå, surrade med rep. På slån hänger köttet i remsor och fisken i stjärten.', effekt: 'Det kött och den fisk som byn inte hinner äta torkar på fem dygn och håller sedan länge i lagret.',
+    omr: ['hantverk', 'slakta', 'rensa', 'fiske'], krav: ['rep'], material: [['grenar'], ['rep']], tid: 16 },
 ];
 export const TEK = Object.fromEntries(TEKNIK.map(t => [t.id, t])) as Record<string, Tek>;
 

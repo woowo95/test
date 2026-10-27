@@ -97,6 +97,10 @@ const DEF = {
   // maten som grillats (steg 2.8.1, RATTER i matlagning.ts): en enkel rätt som håller längre än den råa och äts först
   grillfisk: { namn: 'Grillad fisk', skaffa: { av: { fisk: 1 }, min: 7.5, tek: 'grill' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 0.5, naring: { protein: 2, fett: 0.8, mineral: 0.7, energi: 0.6, vitamin: 0.3 }, haller: 2 },
   grillkott: { namn: 'Grillat kött', skaffa: { av: { kott: 1 }, min: 7.5, tek: 'grill' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 0.6, naring: { protein: 2, fett: 1, energi: 0.8, mineral: 0.6, vitamin: 0.3 }, haller: 3 },
+  // det torkade köttet och den torkade fisken (steg 2.8.2, TORKAS i matlagning.ts): håller så länge något får hålla i lagret
+  // (LAGER.maxDygn) och äts sist
+  torrkott: { namn: 'Torkat kött', skaffa: { av: { kott: 1 }, min: 5, tek: 'tork' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 8, naring: { protein: 2, fett: 1, energi: 0.8, mineral: 0.6, vitamin: 0.2 }, haller: 20 },
+  torrfisk: { namn: 'Torkad fisk', skaffa: { av: { fisk: 1 }, min: 5, tek: 'tork' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 7, naring: { protein: 2, fett: 0.8, mineral: 0.7, energi: 0.6, vitamin: 0.2 }, haller: 20 },
 } satisfies Record<string, SakDef>;
 
 type Sak = keyof typeof DEF;

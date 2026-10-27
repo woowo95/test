@@ -1,4 +1,4 @@
-import { ACTS, DJURARTER, MIN, bordPlatser, pilesOf, living, TEKNIK, TILLBEHOR_LIST, byId, isKlar, sakNamn, slagIkon, stationById, stationDef, tillbehorDef, tingOf, timeLabel, isTool, FLACKAR, smutsVid } from '../../sim';
+import { ACTS, DJURARTER, MIN, bordPlatser, pilesOf, living, TEKNIK, TILLBEHOR_LIST, byId, isKlar, sakNamn, slagIkon, stationById, stationDef, tillbehorDef, tingOf, timeLabel, isTool, FLACKAR, smutsVid, TORK, torrDel } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { sakAttr } from './sak';
 import { condBar, esc, fmtN, pLink } from '../hjalp';
@@ -48,7 +48,9 @@ export const station: Flik = {
     // smutsen (steg 2.7.1): blodet vid slaktbänken, som bleknar på ett par dygn. Bara utseende
     const smuts = Object.entries(smutsVid(s, st)).filter(([, v]) => v > 0).map(([k, v]) => { const fd = (FLACKAR as Record<string, { namn: string; bleknar: number }>)[k]; return fd ? `<span ${tip(`${fd.namn} runt omkring, ${Math.round(v * 100)} %. Det bleknar bort på ${Math.round(fd.bleknar / 24)} dygn`)}>${k === 'blod' ? '🩸' : '·'} ${Math.round(v * 100)} %</span>` : ''; }).join(' ');
     // latrinen (steg 2.7.2): hur full den är. När den är full fylls den igen och byn gräver en ny
-    const fyllt = d.gor.includes('toa') && klar ? `<p ${tip(`Fylld till ${Math.round((st.fyllt ?? 0) * 100)} %. När den är full fylls den igen med jord, och byn gräver en ny`)}>${iconImg('latrin')} ${Math.round((st.fyllt ?? 0) * 100)} %</p>` : '';
+    // det som hänger på torkställningen (steg 2.8.2): råvaran, hur mycket och hur långt torkningen kommit
+    const hanger = (st.tork ?? []).map(q => `<span ${tip(`${fmtN(q.n)} ${sakNamn(q.k).toLowerCase()}, torkat till ${Math.round(torrDel(s, q) * 100)} % av ${TORK.dygn} dygn`)}>${iconImg(q.k)} ${Math.round(torrDel(s, q) * 100)} %</span>`).join(' ');
+    const fyllt = (hanger ? `<p>${hanger}</p>` : '') + (d.gor.includes('toa') && klar ? `<p ${tip(`Fylld till ${Math.round((st.fyllt ?? 0) * 100)} %. När den är full fylls den igen med jord, och byn gräver en ny`)}>${iconImg('latrin')} ${Math.round((st.fyllt ?? 0) * 100)} %</p>` : '');
     const av = Object.entries(d.av).map(([k, n]) => `<span ${tip(`${fmtN(n)} ${sakNamn(k).toLowerCase()}`)}>${iconImg(k)}${fmtN(n)}</span>`).join(' ');
     return `
     <div class="phead"><div><h2>${iconImg(d.ikon, 20)} ${esc(d.namn)}</h2><p class="muted">${status} ${st.inne ? 'Står inne.' : d.inne ? 'Står ute, men bärs in när ett hus har plats.' : 'Står ute.'}</p>${smuts ? `<p>${smuts}</p>` : ''}${fyllt}${vem.length ? `<p class="muted">Byggd av ${vem.map(p => pLink(p)).join(', ')}.</p>` : ''}</div></div>

@@ -82,6 +82,8 @@ export const STATION = balans('station', {
   latrinVattenPoang: 1, // ... med så här många poäng (färre är bättre) för varje ruta för nära, gånger s.hygien
   // grillställningen (steg 2.8.1, matlagning.ts): grenar och rep över elden
   grillGrenar: 3, grillRep: 1, grillMin: 15, // så många grenar och rep och så många minuters arbete
+  // torkställningen (steg 2.8.2, matlagning.ts): två A av grenar och en slå, surrade med rep
+  torkGrenar: 5, torkRep: 1, torkMin: 20, // så många grenar och rep och så många minuters arbete
 });
 // trä till ett bord som tar w × h rutor, med stubbar på platserna runt det (platserAv nedan)
 const bordTra = (w: number, h: number) => w * h * STATION.bordTra + ((w >= 2 ? 2 * w : 0) + (h >= 2 ? 2 * h : 0)) * STATION.stubbeTra;
@@ -156,6 +158,12 @@ export const STATIONER = {
     bygger: 'Sätter upp en grillställning av grenar och rep över elden.',
     forsta: '{namn} satte upp byns första grillställning över elden. Där grillas köttet och fisken, och den grillade maten håller längre.',
   },
+  // torkställningen (steg 2.8.2, matlagning.ts): en fiskhäck med A-ramar, två rutor bred, som sticker upp över raden ovanför
+  tork: {
+    namn: 'Torkställning', ikon: 'tork', w: 2, h: 1, tek: ['tork'], av: { grenar: STATION.torkGrenar, rep: STATION.torkRep }, min: STATION.torkMin, gor: ['torka'], bara: ['torka'],
+    bygger: 'Sätter upp en torkställning av grenar och rep.',
+    forsta: '{namn} satte upp byns första torkställning. Där torkar köttet och fisken som byn inte hinner äta, och det torkade håller länge.',
+  },
 } satisfies Record<string, StationDef>;
 export type StationSlag = keyof typeof STATIONER;
 export const STATION_LIST = Object.keys(STATIONER) as StationSlag[];
@@ -165,7 +173,8 @@ export const stationDef = (k: string): StationDef | undefined => (STATIONER as R
 // den och när den blev klar (det visas när man trycker på den, flikar/station.ts)
 // rot = vriden (bredd och djup byter plats), inne = byggd inne i ett hus (den försvinner om huset rivs)
 // med = tillbehören som ligger i den (TILLBEHOR, t.ex. skinnfällen i bädden), fyllt = hur full latrinen är (0–1, smuts.ts)
-export interface Station { id: number; k: string; x: number; y: number; kvar: number; vem?: number[]; klar?: number; rot?: 1; inne?: 1; med?: string[]; fyllt?: number }
+// tork = det som hänger på torkställningen (matlagning.ts): råvaran, hur mycket, när det hängdes upp och vems det är
+export interface Station { id: number; k: string; x: number; y: number; kvar: number; vem?: number[]; klar?: number; rot?: 1; inne?: 1; med?: string[]; fyllt?: number; tork?: { k: string; n: number; t: number; ag?: Record<string, number> }[] }
 const NONE: Station[] = [];
 export const stationerOf = (s: State) => s.stationer ?? NONE;
 export const stationById = (s: State, id?: number) => id === undefined ? undefined : stationerOf(s).find(t => t.id === id);

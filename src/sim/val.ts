@@ -28,7 +28,7 @@ import { balans } from './balans';
 import { drickVal, torstig, tortarFarligt } from './torst';
 import { forSmutsigt, latrinFor } from './smuts';
 import { bordenOf, ledigPlats, sittAt, stationFor, storlekAv, vidStation } from './stationer';
-import { grillTid, kanGrilla } from './matlagning';
+import { grillTid, kanGrilla, kanTorka, torkTid } from './matlagning';
 
 // ---------- val av aktivitet ----------
 // Balanstalen (regel 8): vikter, chanser, avstånd och hur länge ett pass varar. Kroppens gränser (KROPP) och åldrarna (ALDER)
@@ -56,6 +56,7 @@ const VAL = balans('val', {
   slaktChans: 0.5, // chansen att slakta vilt som finns
   rensaChans: 0.5, // ... och att rensa fisk som finns
   grillaChans: 0.5, // ... och att grilla rått kött och rå fisk (steg 2.8.1)
+  torkaChans: 0.5, // ... och att hänga upp det byn inte hinner äta på torkställningen och ta ner det torkade (steg 2.8.2)
   extraMin: 5, // slakt och rensning varar 5 minuter över vad det tar (och högst maxTim i DJUR, redskap.ts)
   byggLaga: 1.2, byggHalvt: 3, byggNytt: 0.8, // hur mycket bygget väger: en vägg som lagas, ett hus som är påbörjat, ett nytt
   byggUtan: 3, // ... plus så mycket gånger andelen som saknar sovplats under tak
@@ -349,6 +350,7 @@ function day(s: State, p: Person, v: Val, a: number, lazy: number) {
   if (s.stackar?.length && rnd(s, 'val', p) < VAL.baraChans && !fara.svalt && !fara.kyla && (gt = haulJob(s))) { set(v, 'bara', gt.why); v.spot = gt; v.dur = VAL.baraTim * HOUR; return; }
   if (a >= ALDER.vuxen && canProcess(s, p, DJUR.kanin) && rnd(s, 'val', p) < VAL.slaktChans) { processTask(s, v, DJUR.kanin, 'Det finns vilt att slakta innan det blir dåligt'); return; }
   if (a >= ALDER.rensar && canProcess(s, p, DJUR.abborre) && rnd(s, 'val', p) < VAL.rensaChans) { processTask(s, v, DJUR.abborre, 'Det finns fisk att rensa innan den blir dålig'); return; }
+  if (a >= ALDER.grillar && kanTorka(s, p) && rnd(s, 'val', p) < VAL.torkaChans) { torkVal(s, v, 'Det finns kött och fisk att torka'); return; }
   if (a >= ALDER.grillar && kanGrilla(s, p) && rnd(s, 'val', p) < VAL.grillaChans) { grillVal(s, v, 'Det finns rått kött och rå fisk att grilla'); return; }
   let { best, bs, burg } = bestWork(s, p, fd, wd, ai, tot, fara);
   // bygget: väger mer ju fler som saknar sovplats under tak, inför och under istiden, när en vägg behöver lagas och när huset inte är klart
@@ -481,12 +483,15 @@ function processTask(s: State, v: Val, art: Djurart, why: string) {
 }
 // grilla det råa på grillställningen över elden (matlagning.ts), så länge det tar
 function grillVal(s: State, v: Val, why: string) { set(v, 'grilla', why); v.dur = grillTid(s); }
+// hänga upp kött och fisk på torkställningen och ta ner det som torkat (matlagning.ts), så länge det tar
+function torkVal(s: State, v: Val, why: string) { set(v, 'torka', why); v.dur = torkTid(s); }
 // handarbete är alltid något bestämt som tar material och ger en sak (steg 2.2.4): den som har kniv slaktar viltet och
 // rensar fisken, annars gör man det mest värda projekt byn saknar och man kan göra (redskap, stationer och rep, projekt.ts;
 // redskap och stationer inte när kylan är en fara). Finns inget att göra sitter man med de andra vid elden
 function craft(s: State, p: Person, v: Val, why: string) {
   if (canProcess(s, p, DJUR.kanin)) { processTask(s, v, DJUR.kanin, `${why}. Slaktar viltet med kniven.`); return; }
   if (canProcess(s, p, DJUR.abborre)) { processTask(s, v, DJUR.abborre, `${why}. Rensar fisken.`); return; }
+  if (ageOf(p, s.now) >= ALDER.grillar && kanTorka(s, p)) { torkVal(s, v, `${why}. Torkar kött och fisk.`); return; }
   if (ageOf(p, s.now) >= ALDER.grillar && kanGrilla(s, p)) { grillVal(s, v, `${why}. Grillar maten.`); return; }
   const pr = bastaProjekt(s, p, dangers(s));
   if (pr) { projektVal(v, pr.u, why); return; }

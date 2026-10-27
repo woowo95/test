@@ -1,4 +1,4 @@
-import { Act, DJUR, W, bordPlatser, sjoarna, stationById, GORS, MATERIAL, Pile, STATION, STUBBE_LIV, Station, bitAt, bitsOf, clamp, dorrDef, condOf, emberOn, fireHeat, getMap, grillVara, heatRadius, isKlar, living, stationDef, stationKlar, stationerOf, storlekAv, tillbehorDef, tingOf, vidStation, zonesOf } from '../sim';
+import { Act, DJUR, W, bordPlatser, sjoarna, stationById, GORS, MATERIAL, Pile, STATION, STUBBE_LIV, Station, bitAt, bitsOf, clamp, dorrDef, condOf, emberOn, fireHeat, getMap, grillVara, heatRadius, TORK, torrDel, isKlar, living, stationDef, stationKlar, stationerOf, storlekAv, tillbehorDef, tingOf, vidStation, zonesOf } from '../sim';
 import { iconCanvas } from '../ikoner';
 import { ritaHus } from './husbild';
 import { outPilesAt, piles, s, ui } from './lage';
@@ -45,6 +45,23 @@ function paBanken(st: Station) {
   const p = d && living(s).find(q => q.task && d.gor.includes(q.task.act) && Math.hypot(q.x - at.x, q.y - at.y) < STATION.vidBank);
   return p?.task ? p.task.act === 'grilla' ? grillVara(s)?.ra : PA_BANKEN[p.task.act] : undefined; // på spettet: det som grillas
 }
+// maten som hänger på torkställningen (steg 2.8.2): köttet i remsor och fisken i stjärten under slån, åtta platser som fylls
+// efter hur mycket som hänger. Den byter färg från rött till mörkbrunt medan den torkar (torrDel). Bara utseende
+const blanda = (a: number, b: number, f: number) => { let c = 0; for (const sh of [16, 8, 0]) c |= Math.round(((a >> sh) & 255) * (1 - f) + ((b >> sh) & 255) * f) << sh; return c; };
+function hangande(st: Station, x0: number, y0: number) {
+  const platser = 8, per = TORK.rymd / platser;
+  let i = 0;
+  for (const q of st.tork!) {
+    const f = torrDel(s, q), n = Math.max(1, Math.round(q.n / per)), fisk = q.k !== 'kott';
+    const farg = blanda(fisk ? 0xb87a5a : 0xb0342a, fisk ? 0x5a3a22 : 0x4a2416, f);
+    for (let j = 0; j < n && i < platser; j++, i++) {
+      const x = x0 + 9 + i * 1.8, y = y0 + 3;
+      overG.beginFill(farg);
+      if (fisk) overG.drawRect(x, y, 1, 1.5).drawEllipse(x + 0.5, y + 4.5, 0.9, 3).endFill(); // stjärten i slån och kroppen under
+      else overG.drawRect(x, y, 1.4, 7 - (i % 3)).endFill(); // en köttremsa
+    }
+  }
+}
 // en vit kant runt rutorna: där en ruta inte har en granne i mängden
 function kant(rutor: number[]) {
   const i = new Set(rutor);
@@ -82,6 +99,7 @@ export function drawStructures(t: number) {
     for (const q of bordPlatser(st)) pileIcons.add('sittplats', q.x * TS + TS / 2 - 4, q.y * TS + TS / 2 - 4, 1); // stubbarna runt bordet
     for (const k of st.med ?? []) pileIcons.add(tillbehorDef(k)?.ikon + '_karta', x0, y0, 2, !!st.rot); // tillbehören i den (skinnfällen i bädden)
     if (st.rot) continue;
+    if (st.tork?.length) hangande(st, x0, y0);
     const yta = YTA[st.k] ?? { x: 2, y: 2 };
     const sak = paBanken(st);
     if (sak) pileIcons.add(sak, x0 + yta.x, y0 + yta.y, 1);

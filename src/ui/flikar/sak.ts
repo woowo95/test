@@ -10,6 +10,9 @@ import type { Flik } from '../panel';
 // Det som går att trycka på har data-sak: "t:<tingets id>" för ett redskap eller plagg, "s:<x>,<y>,<slag>" för en stack
 export const sakKey = (a: { id?: number; x?: number; y?: number; k: string }) => a.id !== undefined ? `t:${a.id}` : `s:${a.x},${a.y},${a.k}`;
 export const sakAttr = (a: { id?: number; x?: number; y?: number; k: string }) => `data-sak="${sakKey(a)}"`;
+// maten fryser i frost och ruttnar då nästan inte (LAGER.frost, steg 2.8.2): en ❄ efter den i lagret, texten när man håller musen över
+export const fryst = () => temperature(s) <= 0;
+export const frystTxt = (k: string) => SAKER[k]?.haller !== undefined && fryst() ? ' <span title="Fryst: ruttnar nästan inte">❄</span>' : '';
 
 const ORSAK: Record<Slitage['orsak'], string> = {
   ruttnar: 'Ruttnar', vadret: 'Ligger ute i vädret', lagret: 'Slits med tiden', tak: 'Ligger under tak',
@@ -41,7 +44,7 @@ export const sak: Flik = {
     const vem = t?.av !== undefined ? byId(s, t.av) : undefined;
     const gjord = t?.gjord !== undefined ? `<dt>Gjord</dt><dd>${vem ? `av ${pLink(vem)}, ` : ''}för ${durTxt(s.now - t.gjord)} sedan</dd>` : '';
     const agare = t ? (t.agare === BYN ? 'Byns' : pLink(byId(s, t.agare))) : '';
-    const orsak = sl.orsak === 'ruttnar' ? `Ruttnar, ${Math.round(temperature(s))} grader` : ORSAK[sl.orsak];
+    const orsak = sl.orsak === 'ruttnar' ? fryst() ? `❄ Fryst, ${Math.round(temperature(s))} grader: ruttnar nästan inte` : `Ruttnar, ${Math.round(temperature(s))} grader` : ORSAK[sl.orsak];
     const haller = sl.gang ? `<dt>Räcker till</dt><dd>${Math.max(0, Math.floor(c / sl.gang + 1e-9))} ${esc(sl.enhet!)} till</dd>` // per gång (steg 2.3.12)
       : sl.per > 0 ? `<dt>Håller</dt><dd>${durTxt(c / sl.per * HOUR)} till i den takten</dd>` : '';
     const klad = SAKER[a.k]?.klad?.varme ? `<dt>Värme</dt><dd>Skyddar ${Math.round(SAKER[a.k]!.klad!.varme * 100)} % mot kylan</dd>` : '';

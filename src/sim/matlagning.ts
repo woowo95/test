@@ -1,9 +1,10 @@
-import { HOUR, MIN, Person, State } from './typer';
-import { count, doingAct, forstaGang, log, ovning, stat, think } from './folk';
+import { DAY, HOUR, MIN, Person, State } from './typer';
+import { alive, byId, count, doingAct, forstaGang, living, log, ovning, stat, think } from './folk';
 import { clamp, rnd } from './slump';
-import { addDel } from './egendom';
+import { Del, addDel } from './egendom';
 import { amountOf, put, use } from './lager';
-import { kanGoras, stationFor } from './stationer';
+import { Station, kanGoras, stationFor } from './stationer';
+import { EKONOMI } from './ekonomi';
 import { SAKER } from './saker';
 import { balans } from './balans';
 
@@ -76,4 +77,87 @@ export function ratt(s: State, p: Person, per: Record<string, number>, full: num
   think(p, 'Blev matförgiftad av rått kött', MATLAG.forgiftad, s.now, 12 * HOUR);
   count(s, 'matforgiftad');
   log(s, `${p.name} blev matförgiftad av rått kött.`, 'world', [p.id]);
+}
+
+// ---------- torkning (steg 2.8.2) ----------
+// Torkställningen (tork i STATIONER, stationer.ts) är två A av korsade grenar som bär en lång slå, surrad med rep. Den står
+// ute nära elden. Det kött och den fisk som byn inte hinner äta innan det ruttnar hängs upp på slån (köttet i remsor och
+// abborren i stjärten) och torkar där på TORK.dygn dygn. Medan det hänger ruttnar det inte. Det torkade tas ner till lagret
+// och håller så länge något får hålla där (LAGER.maxDygn), och det äts sist (mat i saker.ts). Att hänga upp och ta ner är
+// en handling (torka), i arbetstimmar, likadant i båda lägena. Det som hänger är deras som ägde råvaran; den som dött
+// har inget kvar där, och det blir byns när det tas ner.
+// Frysningen: under istiden fryser maten i lagret och ruttnar bara LAGER.frost så fort (ruttTemp i lager.ts, sedan v60);
+// det syns som ❄ i lagret och på saken.
+export const TORK = balans('torkning', {
+  dygn: 5, // så många dygn tar det att torka kött och fisk på ställningen
+  rymd: 16, // så mycket ryms på ställningen
+  timme: 12, // så mycket som hängs upp eller tas ner i timmen
+  maxTim: 1, // ett pass vid ställningen är högst så här många timmar
+  spara: 1, // så många dygns mat för alla i byn behålls rått (det äts innan det ruttnar); resten hängs upp
+  min: 1, // byn hänger upp när det finns så här mycket över
+});
+// det som torkas och vad det blir. I den ordning det hängs upp: det som ruttnar fortast först. En ny rad här och en sak i saker.ts
+export const TORKAS: readonly Ratt[] = [
+  { ra: 'fisk', blir: 'torrfisk', per: 1 },
+  { ra: 'abborre', blir: 'torrfisk', per: 1 }, // den hela abborren hängs i stjärten
+  { ra: 'kott', blir: 'torrkott', per: 1 },
+];
+export type Hang = NonNullable<Station['tork']>[number];
+export const torken = (s: State) => stationFor(s, 'torka');
+const hangOf = (t: Station) => t.tork ?? (t.tork = []);
+const hangtSumma = (t?: Station) => { let n = 0; for (const q of t?.tork ?? []) n += q.n; return n; };
+// hur stor del av torkningen som är gjord (0–1): gränssnittet färgar maten efter det
+export const torrDel = (s: State, q: Hang) => clamp((s.now - q.t) / (TORK.dygn * DAY), 0, 1);
+const klar = (s: State, q: Hang) => s.now - q.t >= TORK.dygn * DAY;
+// så mycket rått som finns över det byn äter innan det ruttnar
+function ratOver(s: State) {
+  let n = 0;
+  for (const r of TORKAS) n += amountOf(s, r.ra);
+  return Math.max(0, n - TORK.spara * living(s).length * EKONOMI.matPerDygn);
+}
+// arbetet som väntar vid ställningen: det som är klart att ta ner, och det råa som ska upp och får plats
+function torkArbete(s: State) {
+  const t = torken(s);
+  if (!t) return { ner: 0, upp: 0 };
+  let ner = 0;
+  for (const q of t.tork ?? []) if (klar(s, q)) ner += q.n;
+  const over = ratOver(s), upp = over >= TORK.min ? Math.min(over, TORK.rymd - hangtSumma(t) + ner) : 0;
+  return { ner, upp: Math.max(0, upp) };
+}
+// p kan torka: byn har ställningen, något är klart att ta ner eller det finns rått över och plats, och ingen annan gör det
+export function kanTorka(s: State, p: Person) {
+  if (!kanGoras(s, 'torka') || doingAct(s, 'torka', p)) return false;
+  const a = torkArbete(s);
+  return a.ner > 1e-6 || a.upp >= TORK.min;
+}
+// hur länge ett pass vid ställningen varar
+export const torkTid = (s: State) => { const a = torkArbete(s); return Math.min(TORK.maxTim * HOUR, (a.ner + a.upp) / TORK.timme * HOUR + 5 * MIN); };
+
+// torka i hours timmar: först ner det som är klart, sedan upp med det råa som finns över
+export function torka(s: State, p: Person, hours: number) {
+  const t = torken(s);
+  if (!t) { if (p.task) p.task.until = s.now; return; }
+  const h = hangOf(t);
+  let kan = hours * TORK.timme;
+  for (let i = 0; i < h.length && kan > 1e-9;) {
+    const q = h[i];
+    if (!klar(s, q)) { i++; continue; }
+    const n = Math.min(q.n, kan), f = n / q.n, ag: Del = {};
+    for (const o in q.ag) { const m = q.ag[o] * f; q.ag[o] -= m; const ag0 = byId(s, Number(o)); if (ag0 && alive(ag0)) ag[o] = m; }
+    put(s, TORKAS.find(r => r.ra === q.k)!.blir, n, ag);
+    q.n -= n; kan -= n; count(s, 'torkat', n);
+    if (q.n <= 1e-6) h.splice(i, 1);
+    if (forstaGang(s, 'torkForsta')) log(s, `${p.name} tog ner byns första torkade ${q.k === 'kott' ? 'kött' : 'fisk'} från torkställningen. Den håller länge i lagret.`, 'world', [p.id]);
+  }
+  let plats = TORK.rymd - hangtSumma(t), over = ratOver(s);
+  for (const r of TORKAS) {
+    if (kan <= 1e-9 || plats <= 1e-9 || over < 1e-6) break;
+    const n = Math.min(kan, plats, over, amountOf(s, r.ra));
+    if (n <= 1e-6) continue;
+    const vems = use(s, p, r.ra, n), sist = h[h.length - 1];
+    if (sist && sist.k === r.ra && s.now - sist.t < HOUR) { sist.n += n; sist.ag = addDel(sist.ag ?? {}, vems); }
+    else h.push({ k: r.ra, n, t: s.now, ag: addDel({}, vems) });
+    kan -= n; plats -= n; over -= n; count(s, 'upphangt', n);
+  }
+  if (kan >= hours * TORK.timme - 1e-9 && p.task) p.task.until = s.now; // inget att göra
 }

@@ -850,3 +850,55 @@ SCENARIER.grill = {
     ];
   },
 };
+SCENARIER.tork = {
+  text: 'Torkställningen och torkningen (steg 2.8.2): ställningen görs av grenar och rep och står ute. Det kött och den fisk som byn inte hinner äta hängs upp och torkar på fem dygn, och det ruttnar inte medan det hänger. Det torkade tas ner till lagret, håller så länge något får hålla där och äts sist. I frost ruttnar maten nästan inte',
+  kor: () => {
+    const { TORK, kanTorka, torka, torken, ruttTemp, LAGER, FOOD } = SIM;
+    const s = createState(1, START); klockan(s); tandEld(s);
+    const folk = living(s), p = folk.find(r => ageOf(r, s.now) >= 18)!, spara = TORK.spara * folk.length * EKONOMI.matPerDygn;
+    setMat(s, { fisk: 40 });
+    const utan = !kanTorka(s, p);
+    const t = medBank(s, 'tork'), ute = !t.inne;
+    const kan = kanTorka(s, p);
+    const f0 = amountOf(s, 'fisk');
+    torka(s, p, 1);
+    const hangt = (t.tork ?? []).reduce((a, q) => a + q.n, 0), upp = Math.abs(hangt - TORK.timme) < 1e-6 && Math.abs(f0 - amountOf(s, 'fisk') - hangt) < 1e-6;
+    // det som hänger ruttnar inte, och det tas inte ner förrän det har torkat
+    s.now += (TORK.dygn - 1) * DAY; SIM.touch(s);
+    setMat(s, { fisk: 0 });
+    torka(s, p, 1);
+    const kvar = (t.tork ?? []).reduce((a, q) => a + q.n, 0), intefardigt = Math.abs(kvar - hangt) < 1e-6 && amountOf(s, 'torrfisk') === 0;
+    s.now += DAY; SIM.touch(s);
+    const klart = kanTorka(s, p);
+    torka(s, p, 1);
+    const torrt = amountOf(s, 'torrfisk'), ner = Math.abs(torrt - hangt) < 1e-6 && !(t.tork ?? []).length;
+    // byn behåller det rått som den äter innan det ruttnar
+    setMat(s, { fisk: spara * 0.9 });
+    const sparar = !kanTorka(s, p);
+    // det torkade håller så länge något får hålla i lagret och äts sist
+    const haller = SAKER.torrfisk!.haller === LAGER.maxDygn && SAKER.torrkott!.haller === LAGER.maxDygn && FOOD.slice(-2).sort().join() === 'torrfisk,torrkott';
+    // under istiden fryser maten och ruttnar nästan inte
+    const frost = ruttTemp(-5) === LAGER.frost && ruttTemp(-5) < ruttTemp(20) / 10;
+    const tek = SIM.TEKNIK.find(x => x.id === 'tork'), tekOk = !!tek && tek.krav.includes('rep');
+    // i en by som lever: med tekniken sätts ställningen upp och fisken hängs upp
+    const b = createState(1, START); klockan(b); tandEld(b);
+    for (const x of b.people) x.tek = { ...x.tek, tork: 1 };
+    setMat(b, { bar: 60, fisk: 40 }); setAmount(b, 'ved', 40); setAmount(b, 'grenar', 10); setAmount(b, 'rep', 3);
+    let h = 0; while (!torken(b) && h < 48) { kor(b, 1); h++; }
+    const byggd = !!torken(b);
+    for (let i = 0; i < 24; i++) { setMat(b, { bar: 60, fisk: Math.max(amountOf(b, 'fisk'), 30) }); kor(b, 1); }
+    const upphangt = (b.stat?.upphangt as number) ?? 0;
+    return [
+      ['utan torkställning torkar ingen', utan],
+      ['torkställningen står ute, och med fisk över går det att torka', ute && kan],
+      [`på en timme hängs ${TORK.timme} fisk upp från lagret (${hangt.toFixed(1)})`, upp],
+      [`det som hänger ruttnar inte och tas inte ner förrän efter ${TORK.dygn} dygn`, intefardigt],
+      [`efter ${TORK.dygn} dygn tas det ner som torkad fisk (${torrt.toFixed(1)})`, klart && ner],
+      [`byn behåller ${spara.toFixed(1)} rått, det den äter innan det ruttnar`, sparar],
+      ['det torkade håller så länge något får hålla i lagret och äts sist', haller],
+      ['i frost ruttnar maten nästan inte', frost],
+      ['torkställningen är en teknik efter repet', tekOk],
+      [`i en by med tekniken sätts ställningen upp (efter ${h} timmar) och fisken hängs upp (${upphangt.toFixed(0)} på ett dygn)`, byggd && upphangt > 0],
+    ];
+  },
+};
