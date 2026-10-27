@@ -934,6 +934,7 @@ const ODLING = { k: 'jord0', j: 'jord1', J: 'jord2', B: 'jord3', g: 'oliv1', G: 
 const ROVOR = { o: 'oliv0', g: 'oliv1', G: 'oliv2', L: 'oliv3', r: 'rost1', R: 'rost2', b: 'ben1', B: 'ben2', W: 'ben3', k: 'jord0', j: 'jord1', J: 'jord2' };
 const KORN = { s: 'senap0', y: 'senap1', Y: 'senap2', L: 'senap3', k: 'jord0', j: 'jord1', J: 'jord2' };
 const GRODD = { k: 'jord0', j: 'jord1', J: 'jord2', g: 'oliv1', G: 'oliv2', L: 'oliv3' };
+const TOA = { v: 'senap3', V: 'oliv3', c: 'jord1', C: 'jord2', k: 'jord0' };
 const VAL = [
   { id: 'rovor', namn: 'Rovorna', vad: 'Ny sak (steg 2.10.3), 16 × 16 punkter: rovor från fälten. De växer på två dygn och tål lite frost.', typ: 'tre',
     idag: { w: 20, h: 20, rita: (B, P) => ritaIkon(B, 'rovor', 2, 2) }, idagText: 'Platshållaren i spelet nu.',
@@ -956,6 +957,8 @@ const VAL = [
       { text: 'En större grodd mitt på rutan i mörk jord med fåror.', w: 20, h: 20, rita: (B, P) => ritaSprite(B, ['jjjjjjjjjjjjjjjj', 'kkkkkkkkkkkkkkkk', 'jjjjjjjjjjjjjjjj', 'jjjjjLLjjLLjjjjj', 'kkkkLGGgkGGLkkkk', 'jjjjjgGGjGgjjjjj', 'jjjjjjjgGgjjjjjj', 'kkkkkkkkgkkkkkkk', 'jjjjjjjjgjjjjjjj', 'jjjjjjjjjjjjjjjj', 'kkkkkkkkkkkkkkkk', 'jjjjjjjjjjjjjjjj', 'jjjjjjjjjjjjjjjj', 'kkkkkkkkkkkkkkkk', 'jjjjjjjjjjjjjjjj', 'jjjjjjjjjjjjjjjj'], GRODD, 2, 2) },
       { text: 'Halvvuxet: gröna rader som täcker jorden.', w: 20, h: 20, rita: (B, P) => ritaSprite(B, ['kkkkkkkkkkkkkkkk', 'gLGgLGgLGgLGgLGg', 'GgGLgGGgLGgGGgLG', 'gGgGgGgGgGgGgGgG', 'jjgjjjgjjjgjjjgj', 'kkkkkkkkkkkkkkkk', 'gLGgLGgLGgLGgLGg', 'GgGLgGGgLGgGGgLG', 'gGgGgGgGgGgGgGgG', 'jjgjjjgjjjgjjjgj', 'kkkkkkkkkkkkkkkk', 'gLGgLGgLGgLGgLGg', 'GgGLgGGgLGgGGgLG', 'gGgGgGgGgGgGgGgG', 'jjgjjjgjjjgjjjgj', 'kkkkkkkkkkkkkkkk'], GRODD, 2, 2) },
     ] },
+  { id: 'toa', namn: 'Toa-högen', vad: 'Symbol (steg 2.10.5), 16 × 16 punkter: toa-högen i inforutan när man trycker på den på kartan. Gjord efter stankslingan som du valde efter v89.', typ: 'janej',
+    versioner: [{ text: 'En brun hög med en grön stank som stiger upp.', w: 20, h: 20, rita: (B, P) => ritaSprite(B, ['................', '.......v........', '.....vV.........', '....V...v.......', '.....V...v......', '......vV..v.....', '.........vV.....', '.......vV.......', '................', '.......cCc......', '......cCCcc.....', '.....ccCcccc....', '....kcccCccck...', '...kccccccccck..', '....kkkkkkkkk...', '................'], TOA, 2, 2) }] },
   { id: 'vattensack', namn: 'Vattensäcken', vad: 'Ny sak (steg 2.10.1), 16 × 16 punkter: ett skinn som sys ihop till en säck och knyts med rep. Med den bär man vatten till den som inte kan gå.', typ: 'tre',
     idag: { w: 20, h: 20, rita: (B, P) => ritaIkon(B, 'vattensack', 2, 2) }, idagText: 'Platshållaren i spelet nu.',
     versioner: [
