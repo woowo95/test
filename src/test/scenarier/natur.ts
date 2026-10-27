@@ -498,7 +498,7 @@ SCENARIER.stationsteknik = {
 };
 
 SCENARIER.mobler = {
-  text: 'Möblerna (steg 2.2.5): halmbädden bäddas av hö och grenar inne i ett hus där man sover, och den som sover i den vilar upp sig fortare. Slöjdbänken står inne, slaktbänken ute, och en station kan stå vriden. Det som står inne tar golvrutor men aldrig en sovplats som någon behöver, och försvinner om huset rivs; en slöjdbänk som byggdes ute förut står kvar',
+  text: 'Möblerna (steg 2.2.5): halmbädden bäddas av hö och grenar inne i ett hus där man sover, och den som sover i den vilar upp sig fortare. Slöjdbänken står inne, slaktbänken ute, och en station kan stå vriden. Det som står inne tar golvrutor men aldrig en sovplats som någon behöver, och försvinner om huset rivs; en slöjdbänk som byggdes ute förut står kvar tills ett hus har plats för den',
   kor: () => {
     const { STATION, STATIONER, KROPP, stationerOf, stationSite, stationAt, stationRutor, storlek, isKlar, bedTile, homeless, sovplatser, viloTak, stepStationer, roomAt, PROJEKT } = SIM;
     // en by med en sovsal där alla kan bädda en halmbädd och har hö och grenar: bädden byggs inne i huset
@@ -539,7 +539,7 @@ SCENARIER.mobler = {
     const rot = storlek('slaktbank', 1);
     (v.stationer ??= []).push({ id: 1, k: 'slaktbank', x: 10, y: 10, kvar: 0, rot: 1 }); SIM.touch(v);
     const vriden = rot.w === STATIONER.slaktbank.h && rot.h === STATIONER.slaktbank.w && stationAt(v, 10, 12)?.id === 1 && !stationAt(v, 11, 10);
-    // rivs huset försvinner det som stod inne; en slöjdbänk ute från förut står kvar
+    // rivs huset försvinner det som stod inne; en slöjdbänk ute från förut står kvar när inget hus har plats
     const r = SIM.cloneState(s);
     const ute = stationSite(createState(1, START), 'slaktbank')!;
     (r.stationer ??= []).push({ id: 99, k: 'flatarbank', x: ute.x, y: ute.y, kvar: 0 });
@@ -554,7 +554,7 @@ SCENARIER.mobler = {
       [`bäddarna tar aldrig en sovplats som någon behöver (${baddar} bäddar; ${hemlos0} utan sovplats före, ${hemlos1} efter)`, hemlos1 <= hemlos0 && baddar >= 1],
       ['slöjdbänken står bara inne: utan hus finns ingen plats för den', utanBank && bankInne],
       ['en station kan stå vriden, och rutorna följer med', vriden],
-      ['rivs huset försvinner det som stod inne, men slöjdbänken ute står kvar', rivet],
+      ['rivs huset försvinner det som stod inne, men slöjdbänken ute står kvar när inget hus har plats', rivet],
     ];
   },
 };

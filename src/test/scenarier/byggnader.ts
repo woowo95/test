@@ -463,7 +463,7 @@ SCENARIER.lagerplatser = {
 SCENARIER.verkstad = {
   text: 'Rummets funktion (steg 2.2.17): ett rum får sin funktion av det som står i det. När byn vill bygga en slöjdbänk men sovsalarna är fulla planerar den en verkstad åt den, och en sovsal som ingen sover i men där en station står blir en verkstad i stället för att rivas',
   kor: () => {
-    const { HUS, inneUtanPlats, rumsFunktioner, sovKvar, stationerOf, stationRum, isKlar } = SIM;
+    const { HUS, stationDef, inneUtanPlats, rumsFunktioner, sovKvar, stationerOf, stationRum, stationSite, isKlar } = SIM;
     // en by med en sovsal som är så full att slöjdbänken inte får plats där, där alla kan bygga en slöjdbänk
     const s = createState(1, START); klockan(s); tandEld(s);
     byggare(s); planBuild(s); const A = byggKlart(s)!;
@@ -485,6 +485,12 @@ SCENARIER.verkstad = {
     Bq.fn = 'sovsal'; Bq.tom = q.now - 2 * DAY; q.ruttet = 20; // byn skulle annars vilja ha ett förrådshus
     stepByggnader(q);
     const kvar = !!t && !!stationerOf(q).find(r => r.id === t.id);
+    // en slöjdbänk som står ute (byggd före v59) bärs in när ett hus har plats; slaktbänken står alltid ute (Björn, efter v64)
+    const u = cloneState(s), ut = stationerOf(u).find(r => r.id === t?.id), ute = stationSite(u, 'slaktbank');
+    if (ut && ute) { ut.x = ute.x; ut.y = ute.y; delete ut.inne; delete ut.rot; u.byggV = (u.byggV ?? 0) + 1; }
+    for (const r of living(u)) r.task = undefined;
+    kor(u, 2);
+    const inburen = !!ut?.inne && stationRum(u, ut)?.hus === B?.id;
     return [
       [`byn vill bygga en slöjdbänk men den får inte plats i sovsalen (${living(s).length} bor där, ${hemlosa} utan sovplats)`, vill === 'flatarbank' && hemlosa === 0],
       [`byn vill ha en verkstad (hur akut ${a.v}, ${a.plats} golvrutor)`, a.v === HUS.verkstadAkut && a.plats === 2 * 2 + HUS.verkstadExtra],
@@ -493,6 +499,8 @@ SCENARIER.verkstad = {
       [`verkstaden är en verkstad efter det som står där (${fnB.join(', ')}), sovsalen ett sovrum (${fnA.join(', ')})`, fnB.includes('Verkstad') && !fnB.includes('Sovrum') && fnA.includes('Sovrum') && !fnA.includes('Verkstad')],
       ['ingen ny verkstad när slöjdbänken står', igen === 0],
       [`en tom sovsal där en station står blir en verkstad och stationen står kvar (${Bq.namn})`, Bq.fn === 'verkstad' && kvar],
+      ['slaktbänken står ute och slöjdbänken inne (registret)', !stationDef('slaktbank')?.inne && !!stationDef('flatarbank')?.inne && !!ute && !('inne' in ute)],
+      [`en slöjdbänk som står ute bärs in i ${B?.namn.toLowerCase() ?? 'inget hus'} inom två timmar`, inburen],
     ];
   },
 };

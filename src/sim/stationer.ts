@@ -30,7 +30,7 @@ import { tileOf } from './mark';
 // lager.ts), och den kan stå vriden (rot: bredd och djup byter plats), men står helst som i registret. Registret säger om
 // den står ute eller inne (inne): ute står den nära elden, inne på golvet i ett färdigt hus, med golv framför sig där man
 // står och arbetar, och bara där den inte tar en sovplats som någon behöver (sovKvar i byggnader.ts). En slöjdbänk som
-// byggdes ute före v59 står kvar där. Rivs huset försvinner det som stod inne. En möbel som sover (halmbädden) är en
+// byggdes ute före v59 bärs in när ett hus har plats (barIn). Rivs huset försvinner det som stod inne. En möbel som sover (halmbädden) är en
 // sovplats, och rutorna den tar är inga andra sovplatser (byggnader.ts). Det byn kan ha flera av (flera) byggs så länge
 // projektet säger att byn saknar dem (projekt.ts). På kartan ritas den uppifrån, med en bild lika stor som rutorna (ikoner.ts).
 // Knivplatsen: en kniv hör till stationen (Ting.vid) och ligger kvar där när ingen använder den, så att det alltid finns
@@ -434,10 +434,27 @@ export function tillbakaVid(s: State, k: Ting) {
   k.x = t.x; k.y = t.y;
   return true;
 }
-// varje timme: tomma knivplatser fylls, och det som stod inne i ett hus som rivits försvinner
+// en station som bara får stå inne (inne i registret) men står ute, t.ex. en slöjdbänk byggd före v59, bärs in i ett hus
+// när det finns plats och ingen arbetar vid den (Björn, efter v64). Kniven som hör till den följer med
+function barIn(s: State) {
+  for (const t of s.stationer ?? []) {
+    const d = stationDef(t.k);
+    if (!d?.inne || t.inne || !isKlar(t) || d.gor.some(a => doingAct(s, a))) continue;
+    const at = siteInne(s, t.k);
+    if (!at) continue;
+    t.x = at.x; t.y = at.y; t.inne = 1;
+    if (at.rot) t.rot = 1; else delete t.rot;
+    for (const k of tingOf(s)) if (k.vid === t.id && k.hos === undefined && k.lass === undefined) { k.x = t.x; k.y = t.y; }
+    s.byggV = (s.byggV ?? 0) + 1; // stationen står på ett nytt ställe: vägarna och platserna räknas om
+    log(s, `${d.namn}en bars in i ${husById(s, stationRum(s, t)?.hus ?? -1)?.namn ?? 'ett hus'}.`, 'world');
+  }
+}
+// varje timme: tomma knivplatser fylls, en station som ska stå inne men står ute bärs in, och det som stod inne i ett hus
+// som rivits försvinner
 export function stepStationer(s: State) {
   if (!s.stationer?.length) return;
   fyllKnivplatser(s);
+  barIn(s);
   const borta = s.stationer.filter(t => t.inne && !stationRum(s, t));
   if (!borta.length) return;
   s.stationer = s.stationer.filter(t => !borta.includes(t));
