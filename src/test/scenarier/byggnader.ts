@@ -70,6 +70,7 @@ SCENARIER.forradshus = {
 };
 
 SCENARIER.familjehus = {
+  lang: true,
   text: 'Ett par med barn som inte har något eget hus och äger nog för att betala det bygger ett familjehus. Familjens material tas först, familjen sover där, huset går i arv och blir byns när ingen äger det',
   kor: () => {
     const s = createState(6, START);
@@ -300,7 +301,7 @@ SCENARIER.bygg = {
     tingOf(s).splice(tingOf(s).indexOf(yxa), 1); hamtar.task = undefined; nv.b = 1;
     // en by där alla vuxna kan göra timmerväggar och har yxor bygger ett hus själv
     const kan = (s: State) => { byggare(s); setAmount(s, 'yxa', 2); };
-    const q = createState(6, START);
+    const q = createState(8, START); // by 6 hinner inte bli klar och by 7 dör ut sedan kartan blev 120 × 120 (2.10.9); det balanseras i 2.12
     kan(q);
     let inne = 0, sov = 0, iTrad = 0, trad = -1; // räknas när huset är klart, så att det inte beror på hur fort det råkar bli klart
     kor(q, 5 * 24, q => { // fyra vuxna i den nya kolonin: huset tar några dygn

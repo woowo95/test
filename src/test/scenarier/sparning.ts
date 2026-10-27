@@ -38,7 +38,7 @@ SCENARIER.historik = {
 SCENARIER.sparning = {
   text: 'Byn sparas i delar som var och en ryms i ett dokument i molnet, och delarna blir samma by igen',
   kor: () => {
-    const s = createState(7, START);
+    const s = createState(9, START); // by 7 svälter ut efter fem dygn sedan kartan blev 120 × 120 (2.10.9)
     kor(s, 3 * 24);
     const delar = serializeParts(s), hel = serialize(s);
     const ater = JSON.parse(joinParts(Object.values(delar))), ny = migrate(JSON.parse(joinParts(Object.values(delar))));
@@ -136,7 +136,7 @@ SCENARIER.slump = {
     const ed = drag(g, 'eld', () => stepFire(g, 1, living(g)));
     const tande = living(g).some(q => q.task?.act === 'tanda');
     // var en person går (promenad, strand, flinta, trädet som fälls) väljs med personens egen följd, inte byns
-    const h = createState(5, START), hv = () => living(h).filter(q => ageOf(q, h.now) >= ALDER.vuxen);
+    const h = createState(6, START), hv = () => living(h).filter(q => ageOf(q, h.now) >= ALDER.vuxen);
     h.now = new Date(h.now).setHours(10, 0, 0, 0); Object.assign(h.fire, { lit: true, fuel: 4, ring: true });
     for (const q of h.people) q.tek = { ...q.tek, yxa: 1 };
     const sett = new Set<string>();

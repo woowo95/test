@@ -1,4 +1,4 @@
-import { UTTAG_IDS } from './fynd';
+import { UTTAG_IDS, fyndBin } from './fynd';
 import { startGround } from './mark';
 import { AREA } from './minne';
 import { sjoarna } from './sjo';
@@ -21,8 +21,7 @@ export function storreKarta(s: State) {
   const ox = Math.max(0, Math.round((NEW_W - w0) / 2 / AREA) * AREA), oy = Math.max(0, Math.round((NEW_H - h0) / 2 / AREA) * AREA);
   // det som är packat per ruta och sjöarnas nummer, läst på den gamla kartan
   const cover0 = decodeCover(s.mark), trees0 = s.skog ? decodeCover(s.skog, 0) : undefined, sjo0 = sjoarna(s.seed).id;
-  let fynd0 = '';
-  if (s.fynd) try { fynd0 = atob(s.fynd); } catch { /* ny mark */ }
+  const fynd0 = fyndBin(s);
 
   s.W = NEW_W; s.H = NEW_H;
   s.kart = { x: (s.kart?.x ?? 0) + ox, y: (s.kart?.y ?? 0) + oy, w: s.kart?.w ?? w0, h: s.kart?.h ?? h0 };
@@ -41,7 +40,7 @@ export function storreKarta(s: State) {
     UTTAG_IDS.forEach((_, j) => { for (let i = 0; i < n0 && j * n0 + i < fynd0.length; i++) ut[j * N + ny(i)] = fynd0.charCodeAt(j * n0 + i); });
     let bin = '';
     for (let i = 0; i < ut.length; i += 8192) bin += String.fromCharCode(...ut.subarray(i, i + 8192));
-    s.fynd = btoa(bin);
+    s.fynd = btoa(bin); // rakt av; den packas när byn sparas (packFynd)
   }
   // sjöarna får nya nummer på den stora kartan (sjo.ts): varje sjö följer en av sina rutor. Växer två sjöar ihop vid den
   // gamla kantens vatten behålls den största sjöns fiske

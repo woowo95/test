@@ -295,19 +295,41 @@ export function takenOf(s: State) {
   if (!d) {
     d = {};
     for (const k of UTTAG_IDS) d[k] = new Float32Array(W * H);
-    if (s.fynd) try {
-      const bin = atob(s.fynd);
+    const bin = fyndBin(s);
+    if (bin) {
       UTTAG_IDS.forEach((k, j) => { for (let i = 0; i < W * H && j * W * H + i < bin.length; i++) d![k]![i] = bin.charCodeAt(j * W * H + i) / 255; });
-    } catch { /* ny mark */ }
+    }
     store.set(s, d);
   }
   return d;
 }
+// I sparfilen: en byte per ruta och slag (0–255), där en följd av orörda rutor (0) skrivs som 0 och hur många (1–255),
+// eftersom det mesta av kartan är orört (sedan kartan blev 120 × 120, steg 2.10.9). Det packade börjar med ~; en äldre
+// sparfil utan ~ har en byte per ruta rakt av
 export function packFynd(s: State) {
-  const d = takenOf(s);
-  let bin = '';
-  for (const k of UTTAG_IDS) for (let i = 0; i < W * H; i++) bin += String.fromCharCode(Math.round(clamp(d[k]![i], 0, 1) * 255));
-  s.fynd = btoa(bin);
+  const d = takenOf(s), ut: string[] = [];
+  let noll = 0;
+  for (const k of UTTAG_IDS) for (let i = 0; i < W * H; i++) {
+    const b = Math.round(clamp(d[k]![i], 0, 1) * 255);
+    if (b === 0 && noll < 255) { noll++; continue; }
+    if (noll) { ut.push('\0', String.fromCharCode(noll)); noll = 0; }
+    if (b === 0) noll = 1; else ut.push(String.fromCharCode(b));
+  }
+  if (noll) ut.push('\0', String.fromCharCode(noll));
+  s.fynd = '~' + btoa(ut.join(''));
+}
+// det som tagits ur platserna som en byte per ruta och slag, ur sparfilen (tom text om inget sparats eller det inte går att läsa)
+export function fyndBin(s: State) {
+  if (!s.fynd) return '';
+  try {
+    if (!s.fynd.startsWith('~')) return atob(s.fynd);
+    const p = atob(s.fynd.slice(1)), ut: string[] = [];
+    for (let i = 0; i < p.length; i++) {
+      if (p.charCodeAt(i) === 0) { ut.push('\0'.repeat(p.charCodeAt(++i))); continue; }
+      ut.push(p[i]);
+    }
+    return ut.join('');
+  } catch { return ''; }
 }
 
 // strand: land intill vatten, där man kan fiska

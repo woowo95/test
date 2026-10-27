@@ -6,6 +6,7 @@ import { START, STEG_DYGN, STEG_TIM } from '../kor';
 import { setMat, kor, klockan, bastaJaktruta, SCENARIER, flyttLitenBy, tandEld, medBank, medHus } from './hjalp';
 
 SCENARIER.djur = {
+  lang: true,
   text: 'Kaniner syns där det finns vilt, skuttar omkring och hoppar undan folk. Jakt fångar hela kaniner som bärs hem hela och äts som de är; med flintkniv slaktas de till mer kött, ben, skinn och senor',
   kor: () => {
     const s = createState(6, START);
@@ -54,7 +55,8 @@ SCENARIER.djur = {
     for (const r of s.people) r.tek = { ...r.tek, kniv: 1, rep: 1 };
     makeTool(s, p, 'kniv');
     const kniv = amountOf(s, 'kniv') === 1 && Math.abs(amountOf(s, 'flinta') - 1) < 1e-9;
-    setMat(s, { vilt: 3 * KANIN }); setAmount(s, 'ben', 0); setAmount(s, 'skinn', 0); setAmount(s, 'rep', 0);
+    // allt vilt är byns: med jägarens kaniner bland byns delas det upp på flera ägare, och var och en får bara hela saker (steg 2.10.7)
+    setMat(s, {}); setMat(s, { vilt: 3 * KANIN }); setAmount(s, 'ben', 0); setAmount(s, 'skinn', 0); setAmount(s, 'rep', 0);
     const kan = canProcess(s, p, DJUR.kanin);
     bearbeta(s, p, DJUR.kanin, 1);
     const slakt = Math.abs(amountOf(s, 'kott') - 3 * SLAKT.kott * SIM.kottFaktor(p)) < 1 // i hela saker (steg 2.10.7) && amountOf(s, 'vilt') < 1e-9 && Math.abs(amountOf(s, 'ben') - 3) < 1e-9 && Math.abs(amountOf(s, 'skinn') - 3) < 1e-9;

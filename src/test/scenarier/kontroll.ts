@@ -7,6 +7,7 @@ import { seedAv } from '../pool';
 import { Koll, kor, klockan, uiLas, SCENARIER, grenarUte, barGrenar } from './hjalp';
 
 SCENARIER['ui-ren'] = {
+  lang: true,
   text: 'Gränssnittet ändrar inte byn: två likadana byar i takt, den ena läser som gränssnittet varannan halvtimme, och sparfilerna blir lika',
   kor: () => {
     const a = createState(21, START), b = createState(21, START), DYGN = 3;

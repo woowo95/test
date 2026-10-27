@@ -1,5 +1,5 @@
 // Scenarier. Grunden: gläntan, yxan, vintern, knapphet, svamp och flinta, kunskap, temperatur och kalender.
-import { createState, step, living, temperature, coldOf, ageIndex, ageStart, kalender, yearNo, AGES, amountOf, groundOf, getMap, DAY, HOUR, W, tileOf, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, angOf, setAmount, BEAT, tingOf, eatPoison, HOST, vaderNu, VADER, VADERLAGE, VaderId, blotSteg, varmeDelar, stepVader, vaxtFaktor, stepFire, hearthOf, cloneState, wearMult, vaderSlit } from '../../sim';
+import { createState, step, living, temperature, coldOf, ageIndex, ageStart, kalender, yearNo, AGES, amountOf, groundOf, getMap, DAY, HOUR, W, tileOf, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, angOf, setAmount, BEAT, tingOf, eatPoison, HOST, vaderNu, VADER, VADERLAGE, VaderId, blotSteg, varmeDelar, stepVader, vaxtFaktor, stepFire, hearthOf, cloneState, wearMult, vaderSlit, NEW_W, NEW_H } from '../../sim';
 import { BAR, FOREST, HIGH, isSoil } from '../../sim/vag';
 import { START } from '../kor';
 import { setMat, Koll, kor, tandEld, logg, skogsandel, uttag, STOCKHOLM, SCENARIER } from './hjalp';
@@ -12,7 +12,7 @@ SCENARIER.glanta = {
     const ang = angar / jord;
     const forst: Koll[] = [
       [`en liten koloni: ${s.people.length} personer, ingen eld`, s.people.length === 5 && !s.fire.lit],
-      [`större karta (${s.W}×${s.H})`, s.W === 80 && s.H === 50],
+      [`större karta (${s.W}×${s.H})`, s.W === NEW_W && s.H === NEW_H],
       ['gläntan är tom på träd', skogsandel(s, 0, 3) === 0],
       ['gläntan är liten: skog sex rutor från elden', skogsandel(s, 6, 9) > 0.8],
       ['skog på nästan all jord utanför gläntan och ängarna', skogsandel(s, 9, 99) > 0.95],
@@ -100,7 +100,7 @@ SCENARIER['vinter-slocknad'] = {
 SCENARIER.knapphet = {
   text: 'Bär, rötter och vilt tar slut nära byn för en tid, så invånarna går längre bort; fiske med händerna ger få fiskar per försök',
   kor: () => {
-    const s = createState(16, START); // by 15 svälter ut sedan toa-smutsen kom (steg 2.7.2); det balanseras i 2.12
+    const s = createState(18, START); // by 15 svälter ut sedan toa-smutsen kom (steg 2.7.2), by 16 och 17 sedan kartan blev 120 × 120 (2.10.9); det balanseras i 2.12
     // mät varje dygn: buskarna växer tillbaka, så ett enda mått i slutet beror på slumpen
     let nara = 0, langt = 0;
     for (let d = 0; d < 12; d++) { kor(s, 24); const n = uttag(s, 'samla', 0, 8); if (n > nara) { nara = n; langt = uttag(s, 'samla', 16, 30); } }

@@ -212,11 +212,11 @@ SCENARIER.slitage = {
     kor(m, 24, s => { for (const st of s.stackar!) if (FOOD.includes(st.k)) st.c = Math.min(st.c, 0.08); });
     const sjuka = m.stat?.skamdMat ?? 0, tagg = living(m).some(p => p.sickWhy === 'Magsjuk av skämd mat');
     // högar på marken: en nära elden och en långt bort, mitt i natten
-    const mp = getMap(5), f = mp.fire, land = (x: number, y: number) => x >= 0 && y >= 0 && x < W && y < 40 && mp.tiles[y * W + x] !== T.Vatten && mp.tiles[y * W + x] !== T.Sten;
     const n = createState(5, START);
+    const mp = getMap(5), f = mp.fire, land = (x: number, y: number) => x >= 0 && y >= 0 && x < W && y < H && mp.tiles[y * W + x] !== T.Vatten && mp.tiles[y * W + x] !== T.Sten;
     klockan(n, 23);
     let nara: { x: number; y: number } | undefined, langt: { x: number; y: number } | undefined;
-    for (let y = 0; y < 40; y++) for (let x = 0; x < W; x++) {
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
       const d = Math.hypot(x - f.x, y - f.y);
       if (!nara && d >= 2.5 && d < 3.5 && land(x, y) && !isStored(n, x, y)) nara = { x, y };
       if (!langt && d >= 13 && d < 16 && land(x, y)) langt = { x, y };
@@ -311,7 +311,7 @@ SCENARIER.teknik = {
   lang: true,
   text: 'Ingen kan göra yxa, spjut eller rep från början: den som arbetar kommer på det (nyfikna och intelligenta fortare), lär ut det i samtal, och kunskapen dör med den sista som kan den',
   kor: () => {
-    const s = createState(3, START);
+    const s = createState(8, START); // by 3 hade bara en kvar efter 20 dygn sedan kartan blev 120 × 120 (2.10.9); det balanseras i 2.12
     const forst: Record<string, number> = {};
     let yxaInnan = false, repInnan = false;
     const kanFran = TEKNIK.every(t => !s.people.some(p => knows(p, t.id)));
@@ -371,7 +371,7 @@ SCENARIER.sak = {
     // långt från lagret: ute i vädret
     const mp = getMap(4);
     let ute: { x: number; y: number } | undefined;
-    for (let yy = 0; yy < 40 && !ute; yy++) for (let x = 0; x < W; x++) if (mp.tiles[yy * W + x] !== T.Vatten && zoneOf(y) && SIM.zoneAt(y, x, yy) < 0 && !SIM.roofed(y, x, yy)) { ute = { x, y: yy }; break; }
+    for (let yy = 0; yy < H && !ute; yy++) for (let x = 0; x < W; x++) if (mp.tiles[yy * W + x] !== T.Vatten && zoneOf(y) && SIM.zoneAt(y, x, yy) < 0 && !SIM.roofed(y, x, yy)) { ute = { x, y: yy }; break; }
     const vadret = SIM.slitageNu(y, { k: 'yxa', x: ute!.x, y: ute!.y }).orsak;
     // ett plagg på kroppen, maten som ruttnar, sten som inte slits
     const rock = addTool(y, 'skinnrock', yp); rock.bar = yp.id;
