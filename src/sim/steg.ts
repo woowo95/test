@@ -82,8 +82,9 @@ const MEDAN: Partial<Record<Act, Krok>> = {
 // det som händer när en handling är klar
 const KLAR: Partial<Record<Act, Krok>> = {
   falla: (s, p, t) => { // ett träd där ett hus ska stå, eller som fälldes för bygget, blir stockar i husets väggar direkt; resten huggs till trä
-    if (!t.tool) return; // yxan gick sönder (wearUsed): trädet står kvar halvfällt, och nästa fällare gör resten
+    if (!t.tool) return; // utan yxa står trädet kvar halvfällt, och nästa fällare gör resten
     const k = fellTree(s, p, t.tx, t.ty);
+    if (k) wearUsed(s, p, 1); // yxan slits för varje träd som faller (steg 2.3.12), också för trä som huggs ur det sedan
     if (k) { k.ved -= toWalls(s, Math.floor(k.x), Math.floor(k.y), k.ved, t.ref, p); if (k.ved <= 1e-6) s.stockar = stocks(s).filter(q => q !== k); }
   },
   promenad: (s, p, t) => { lookAround(s, p, t.tx, t.ty); think(p, 'Tog en skön promenad', 0.06, s.now, 6 * HOUR); },
@@ -433,6 +434,7 @@ const UTFALL: Partial<Record<Act, (s: State, p: Person, tk: Task, b: Arbetsbit) 
     if (y > 0 && rnd(s, 'arbete', p) < y / KANIN) {
       if (forstaGang(s, 'kaniner')) log(s, `${p.name} fångade byns första kanin och bar hem den hel.`, 'world', [p.id]);
       tk.carry += KANIN;
+      wearUsed(s, p, 1); // spjutet slits för varje kanin (steg 2.3.12)
     }
     return true;
   },
@@ -440,8 +442,7 @@ const UTFALL: Partial<Record<Act, (s: State, p: Person, tk: Task, b: Arbetsbit) 
 // arbete för byn (handlingar med arbete): det man får och bär, det platsen har kvar, redskapen som slits och det man lär sig
 function workStep(s: State, p: Person, tk: Task, dtSec: number, a: number, learn: number) {
   const now = s.now, d = ACTS[tk.act];
-  const rd = toolRow(tk); // redskapet i handen: vad det ger och hur det slits står i handlingens rad
-  if (rd && d.slits) wearUsed(s, p, dtSec / d.slits);
+  const rd = toolRow(tk); // redskapet i handen: vad det ger och hur länge det håller står i handlingens rad
   // utan yxa samlas grenar på marken (ved, takt 2); med yxa huggs trä ur en fälld stam (hugga, takt 1,5). Båda har arbetet ved
   // som bas (handlingar.ts). På den tid det tar att hugga en ved samlas alltså 1,33 grenar, värda 0,53 ved som bränsle (GREN)
   // bär, rötter och vilt: platsen ger mindre ju mer som redan tagits där
@@ -449,6 +450,7 @@ function workStep(s: State, p: Person, tk: Task, dtSec: number, a: number, learn
   const res = d.resurs, del = res && d.takt === undefined ? richnessDelar(s, res, tk.tx, tk.ty) : undefined, rich = del ? del.rich : 1;
   const y = workRate(s, p, tk.act) * dtSec * (rd?.ger ?? 1) * (d.takt ?? rich);
   if (y > 0) count(s, 'prod_' + tk.act, y);
+  if (rd && y > 0 && d.slits?.per === 'ger') wearUsed(s, p, y); // korgen slits för det som samlas, inte per timme (steg 2.3.12)
   // tomt här: gå hem eller vidare. Den som letar flinta eller stenar fortsätter, och den som samlar tändmaterial tills det räcker
   if (res && del) { takeFrom(s, res, tk.tx, tk.ty, y, del.r); if (rich < PLATS.tomtGrans && !tk.sok && !(tk.tandmat && tinderShort(s, tk))) tk.until = now; }
   // den som arbetar ser hur mycket som finns i området och minns det

@@ -1,6 +1,6 @@
 // Scenarier. Grunden: gläntan, yxan, vintern, knapphet, svamp och flinta, kunskap, temperatur och kalender.
 import { createState, step, living, temperature, coldOf, ageIndex, ageStart, kalender, yearNo, AGES, amountOf, groundOf, getMap, DAY, HOUR, W, tileOf, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, angOf, setAmount, BEAT, tingOf, eatPoison, HOST } from '../../sim';
-import { FOREST, HIGH, isSoil } from '../../sim/vag';
+import { BAR, FOREST, HIGH, isSoil } from '../../sim/vag';
 import { START } from '../kor';
 import { setMat, Koll, kor, tandEld, logg, skogsandel, uttag, STOCKHOLM, SCENARIER } from './hjalp';
 
@@ -48,7 +48,7 @@ SCENARIER['ingen-yxa'] = {
 };
 
 SCENARIER.yxa = {
-  text: 'Byn har en yxa: träd fälls, stammarna huggs till ved och det växer högt gräs där träden stod',
+  text: 'Byn har en yxa: träd fälls, stammarna huggs till ved och det växer gräs där träden stod',
   kor: () => {
     const s = createState(13, START);
     setAmount(s, 'yxa', 1);
@@ -60,7 +60,8 @@ SCENARIER.yxa = {
     const g = groundOf(s);
     // inne i lägret trampas marken där träden stod till jord, så räkna bara utanför
     const ute = [...fallda].filter(i => campDist(s, i % W, Math.floor(i / W)) >= 1);
-    let gras = 0; for (const i of ute) if (g.trees[i] < FOREST && g.cover[i] >= 0.7) gras++;
+    // gräs, inte bar jord: de som går förbi med trä trampar ner det högsta gräset (stigar, vag.ts)
+    let gras = 0; for (const i of ute) if (g.trees[i] < FOREST && g.cover[i] >= BAR) gras++;
     return [
       ['träd har fällts', (s.fallda ?? 0) >= 3],
       ['ved har huggits', ved > 0],

@@ -193,7 +193,7 @@ SCENARIER.redskap = {
 };
 
 SCENARIER.slitage = {
-  text: 'Varje stack har ett skick: fisk ruttnar fortast, utanför lagret slits allt fortare, redskap slits i lagret och när de används, skämd mat gör folk sjuka och högar på marken bärs in (på natten bara nära lägret)',
+  text: 'Varje stack har ett skick: fisk ruttnar fortast, utanför lagret slits allt fortare, redskap slits i lagret och när de används (yxan per träd, steg 2.3.12), skämd mat gör folk sjuka och högar på marken bärs in (på natten bara nära lägret)',
   kor: () => {
     const setup = (b: State) => { setMat(b, { fisk: 20, bar: 20 }); setAmount(b, 'ved', 25); setItems(b, { grenar: 50, yxa: 1 }); };
     const a = createState(4, START); setup(a);
@@ -229,25 +229,33 @@ SCENARIER.slitage = {
     const kvarNara = ute().some(g => g.x === nara!.x && g.y === nara!.y), kvarLangt = ute().some(g => g.x === langt!.x && g.y === langt!.y);
     klockan(n, 9);
     for (let i = 0; i < 6 * 3600 / 2 && ute().length; i++) step(n, 2);
-    // yxan slits när man hugger och fäller (steg 2.2.1). Går den sönder slutar man, och trädet står kvar halvfällt
+    // yxan slits för varje träd som faller (steg 2.3.12), inte per timme: att hugga trä ur stammen sliter den inte mer
     const y = createState(4, START), yp = living(y).find(q => ageOf(q, y.now) >= 18)!;
-    addTool(y, 'yxa', yp);
-    yp.task = { act: 'hugga', phase: 'do', tx: yp.x, ty: yp.y, until: y.now + HOUR, carry: 0, tool: 'yxa' };
-    for (let i = 0; i < 50; i++) wearUsed(y, yp, 1);
-    const halvYxa = Math.abs(amountOf(y, 'yxa') - 0.5) < 1e-9; // 50 av 100 arbetstimmar
+    const yx = addTool(y, 'yxa', yp), PER = 1 / SIM.ACTS.falla.redskap!.yxa.haller!;
     const g = SIM.groundOf(y), c = campCenter(y);
-    let ti = -1;
-    for (let d = 1; d < 30 && ti < 0; d++) for (let yy = c.y - d; yy <= c.y + d && ti < 0; yy++) for (let x = c.x - d; x <= c.x + d; x++) if (g.trees[yy * W + x] >= 0.95) { ti = yy * W + x; break; }
-    const ft: SIM.Task = { act: 'falla', phase: 'do', tx: (ti % W) + 0.5, ty: Math.floor(ti / W) + 0.5, until: 0, carry: 0, tool: 'yxa' };
-    yp.task = ft; SIM.startWork(y, yp, ft); SIM.workHalf(y, yp, ft, 600);
-    for (let i = 0; i < 50 && amountOf(y, 'yxa') > 0; i++) wearUsed(y, yp, 1);
-    const slutar = amountOf(y, 'yxa') === 0 && ft.until === y.now && !ft.tool && y.stat?.yxorTrasiga === 1;
-    step(y, 2);
-    const kvarTrad = g.trees[ti] >= 0.95 && (y.halvfallt?.[ti] ?? 0) > 0;
+    const trad = () => { for (let d = 1; d < 30; d++) for (let yy = c.y - d; yy <= c.y + d; yy++) for (let x = c.x - d; x <= c.x + d; x++) if (g.trees[yy * W + x] >= 0.95) return yy * W + x; return -1; };
+    const falla = (ti: number) => {
+      const ft: SIM.Task = { act: 'falla', phase: 'do', tx: (ti % W) + 0.5, ty: Math.floor(ti / W) + 0.5, until: 0, carry: 0, tool: 'yxa' };
+      yp.x = ft.tx; yp.y = ft.ty; yx.hos = yp.id; yp.task = ft; SIM.startWork(y, yp, ft);
+      for (let i = 0; i < 1800 && yp.task === ft; i++) step(y, 2);
+      return ft;
+    };
+    const ti = trad(), c0 = yx.c;
+    falla(ti);
+    const ettTrad = g.trees[ti] === 0 && Math.abs(c0 - yx.c - PER) < PER * 0.05; // (och lite av att den bärs)
+    const hugg: SIM.Task = { act: 'hugga', phase: 'do', tx: yp.x, ty: yp.y, until: y.now + HOUR, carry: 0, tool: 'yxa', ref: SIM.stocks(y)[0]?.id };
+    yx.hos = yp.id; yp.task = hugg;
+    const c1 = yx.c;
+    for (let i = 0; i < 1800 && yp.task === hugg; i++) step(y, 2);
+    const huggSlits = c1 - yx.c;
+    // när yxan går sönder faller trädet ändå, och sedan slutar man
+    yx.c = PER / 2;
+    const t2 = trad(), ft2 = falla(t2);
+    const slutar = g.trees[t2] === 0 && amountOf(y, 'yxa') === 0 && !ft2.tool && y.stat?.yxorTrasiga === 1;
     return [
-      ['yxan slits när man hugger trä', halvYxa],
-      ['när yxan går sönder slutar man fälla', slutar],
-      ['trädet står kvar halvfällt', kvarTrad],
+      [`yxan slits för ett träd som fälls (${(PER * 100).toFixed(2)} % per träd)`, ettTrad],
+      [`att hugga trä ur stammen sliter inte yxan mer än att bära den (${(huggSlits * 100).toFixed(3)} %)`, huggSlits < PER / 10],
+      ['när yxan går sönder faller trädet ändå, och sedan slutar man', slutar],
       [`fisk ruttnar fortare än bär (skick efter ett dygn: fisk ${(fisk * 100).toFixed(0)} %, bär ${(bar * 100).toFixed(0)} %)`, fisk < bar && fisk < 1],
       [`grenar utanför lagret slits fortare (slitage på ett dygn: i lagret ${(grenIn * 100).toFixed(1)} %, bredvid ${(grenUt * 100).toFixed(1)} %)`, grenUt > 2 * grenIn && grenIn > 0],
       [`en yxa i lagret slits också (${yxa.toFixed(3)} kvar)`, yxa < 1 && yxa > 0.8],
@@ -347,7 +355,7 @@ SCENARIER.sak = {
     SIM.toolDone(y, yp, 'yxa');
     const t = tingOf(y).find(q => q.k === 'yxa')!;
     const gjord = t.av === yp.id && t.gjord === y.now;
-    // i handen när man fäller: samma som wearUsed tar per timme
+    // i handen när man fäller: samma som wearUsed tar för ett träd (steg 2.3.12)
     t.hos = yp.id;
     yp.task = { act: 'falla', phase: 'do', tx: yp.x, ty: yp.y, until: y.now + HOUR, carry: 0, tool: 'yxa' };
     const iHand = SIM.slitageNu(y, t, t), c0 = t.c;
@@ -373,7 +381,7 @@ SCENARIER.sak = {
     const nara = (a: number, b: number) => Math.abs(a - b) < 1e-9 + 1e-6 * b;
     return [
       ['den som gjorde redskapet och när sparas', gjord],
-      [`i handen när man fäller slits yxan som slitaget räknar (${(iHand.per * 100).toFixed(2)} % per timme, slitaget tog ${(used * 100).toFixed(2)} %)`, iHand.orsak === 'anvands' && used > 0 && iHand.per >= used && iHand.per < used * 1.2],
+      [`i handen när man fäller slits yxan som slitaget räknar (${((iHand.gang ?? 0) * 100).toFixed(2)} % per ${iHand.enhet ?? '?'}, slitaget tog ${(used * 100).toFixed(2)} % för ett träd)`, iHand.orsak === 'anvands' && iHand.enhet === 'träd' && used > 0 && nara(iHand.gang ?? 0, used)],
       [`i lagret slits den som slitaget räknar (${(iLager.per * 100).toFixed(4)} % per timme)`, iLager.orsak === 'lagret' && nara(iLager.per, store)],
       ['utanför lagret slits den av vädret', vadret === 'vadret'],
       ['ett plagg på kroppen slits av att bäras', pa.orsak === 'pasig' && nara(pa.per, 1 / (SIM.SAKER.skinnrock!.klad!.dygn * 24))],

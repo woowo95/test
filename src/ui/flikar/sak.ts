@@ -42,7 +42,8 @@ export const sak: Flik = {
     const gjord = t?.gjord !== undefined ? `<dt>Gjord</dt><dd>${vem ? `av ${pLink(vem)}, ` : ''}för ${durTxt(s.now - t.gjord)} sedan</dd>` : '';
     const agare = t ? (t.agare === BYN ? 'Byns' : pLink(byId(s, t.agare))) : '';
     const orsak = sl.orsak === 'ruttnar' ? `Ruttnar, ${Math.round(temperature(s))} grader` : ORSAK[sl.orsak];
-    const haller = sl.per > 0 ? `<dt>Håller</dt><dd>${durTxt(c / sl.per * HOUR)} till i den takten</dd>` : '';
+    const haller = sl.gang ? `<dt>Räcker till</dt><dd>${Math.max(0, Math.floor(c / sl.gang + 1e-9))} ${esc(sl.enhet!)} till</dd>` // per gång (steg 2.3.12)
+      : sl.per > 0 ? `<dt>Håller</dt><dd>${durTxt(c / sl.per * HOUR)} till i den takten</dd>` : '';
     const klad = SAKER[a.k]?.klad?.varme ? `<dt>Värme</dt><dd>Skyddar ${Math.round(SAKER[a.k]!.klad!.varme * 100)} % mot kylan</dd>` : '';
     return `
     <div class="phead">${iconImg(k, 32)}<div><h2>${esc(sakNamn(k))}${halv}</h2></div></div>

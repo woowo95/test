@@ -512,8 +512,9 @@ function wearAt(k: string, mult: number, ligger: boolean, temp: number) {
 }
 export const wearMult = (s: State, x: number, y: number) => roofed(s, x, y) || forvarAt(s, x, y)?.tak ? LAGER.inne : zoneAt(s, x, y) >= 0 ? 1 : LAGER.ute; // en kista skyddar som ett tak (steg 2.3.6)
 // vad som sliter på en sak just nu och hur mycket av skicket det tar per timme (inforutan, steg 2.3.5). Samma tal som
-// wearStore och wearUsed (steg.ts) räknar med; användningen bara för arbeten som slits per sekund (ACTS.slits)
-export type Slitage = { orsak: 'ruttnar' | 'vadret' | 'lagret' | 'tak' | 'kista' | 'pasig' | 'anvands' | 'inget'; per: number };
+// wearStore och wearUsed (redskap.ts) räknar med. I handen slits redskapet dessutom per gång (steg 2.3.12): gang = så mycket av
+// skicket varje träd, kanin, fiskeförsök eller djur tar, och enhet vad det är (ACTS.slits)
+export type Slitage = { orsak: 'ruttnar' | 'vadret' | 'lagret' | 'tak' | 'kista' | 'pasig' | 'anvands' | 'inget'; per: number; gang?: number; enhet?: string };
 export function slitageNu(s: State, a: { k: string; x?: number; y?: number }, t?: Ting): Slitage {
   const temp = temperature(s), kl = t?.bar !== undefined ? SAKER[a.k]?.klad : undefined;
   if (kl) return { orsak: 'pasig', per: 1 / (kl.dygn * 24) };
@@ -521,7 +522,7 @@ export function slitageNu(s: State, a: { k: string; x?: number; y?: number }, t?
   if (bars) {
     const q = t.hos !== undefined ? byId(s, t.hos) : undefined, tk = q?.task, r = tk && usesTool(tk) === a.k ? toolRow(tk) : undefined;
     const slits = tk ? ACTS[tk.act]?.slits : undefined, bas = wearAt(a.k, 1, false, temp);
-    if (r?.haller && slits) return { orsak: 'anvands', per: bas + HOUR_S / slits / r.haller };
+    if (r?.haller && slits) return { orsak: 'anvands', per: bas, gang: 1 / r.haller, enhet: slits.enhet };
     return { orsak: bas > 0 ? (SAKER[a.k]?.haller !== undefined ? 'ruttnar' : 'lagret') : 'inget', per: bas };
   }
   const per = wearAt(a.k, a.x !== undefined ? wearMult(s, a.x, a.y!) : 1, true, temp);
