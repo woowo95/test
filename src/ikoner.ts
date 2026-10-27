@@ -35,6 +35,9 @@ const PAL: Record<string, Record<string, string>> = {
   halmbadd: { y: '#d8c070', Y: '#f0dc94', t: '#8a6a3a', b: '#6a4a2a' },
   halmbadd_karta: { y: '#c8ac5c', Y: '#ecd890', t: '#8a6a3a', b: '#5a3c22', B: '#7a5a36', x: 'rgba(0,0,0,0.30)' },
   sittplats: { b: '#6a4a2a', B: '#9c7848', d: '#4a3018', x: 'rgba(0,0,0,0.30)' },
+  // skinnfällen i halmbädden (steg 2.2.14): platshållare tills Björn valt
+  skinnfall: { b: '#8a6440', B: '#b48a5e', d: '#5e4026', w: '#d8c8a8' },
+  skinnfall_karta: { b: '#8a6440', B: '#b48a5e', d: '#5e4026', w: '#d8c8a8' },
   skinn: { b: '#8a6440', B: '#b48a5e', d: '#5e4026' },
   metspo: { h: '#8a6a40', y: '#c8b07a', w: '#e8e2d0' },
   korg: { t: '#6e4e2e', o: '#9a6a3e', O: '#c99a62', d: '#5e3c20' },
@@ -372,6 +375,28 @@ const PIX: Record<string, string[]> = {
     'BYyYyyYyYyyYyYtB',
     'BtyYtYytYyYtyYyB',
     'bBBBBBBBBBBBBBBb',
+  ],
+  // skinnfällen i listorna: ett hopvikt täcke av skinn med pälskant (platshållare)
+  skinnfall: [
+    '........',
+    '........',
+    '.wwwwww.',
+    'bBBbBBbd',
+    'BbBBbBBd',
+    'bBBbBBbd',
+    '.dddddd.',
+    '........',
+  ],
+  // skinnfällen över halmbädden på kartan: täcker bädden utom huvudänden till vänster (platshållare)
+  skinnfall_karta: [
+    '................',
+    '....wwwwwwwwwww.',
+    '....bBBbBBbBBbd.',
+    '....BbBBbBBbBBd.',
+    '....bBBbBBbBBbd.',
+    '....BbBBbBBbBBd.',
+    '....dddddddddd..',
+    '................',
   ],
   // en stubbe att sitta på framför slöjdbänken (platshållare)
   sittplats: [

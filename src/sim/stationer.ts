@@ -11,6 +11,8 @@ import { PLATS } from './plats';
 import { balans } from './balans';
 import { Rum, bitAt, gridOf, husById, roomAt, touch } from './byggnad';
 import { fnOf, sovKvar } from './byggnader';
+import { ACTS } from './handlingar';
+import { tileOf } from './mark';
 
 // ---------- arbetsstationer och möbler (steg 2.2.3, 2.2.5) ----------
 // En station är en plats i byn där ett visst arbete görs: vid slaktbänken slaktas viltet och fisken rensas, vid slöjdbänken
@@ -53,6 +55,9 @@ export const STATION = balans('station', {
   halmbaddHo: 4, // en halmbädd kräver så mycket hö ...
   halmbaddGrenar: 2, // ... och så många grenar ...
   halmbaddMin: 20, // ... och så många minuters arbete
+  fallSkinn: 2, // en skinnfäll kräver så många skinn ... (steg 2.2.14)
+  fallMin: 20, // ... och så många minuters arbete
+  fallVarme: 0.5, // den som sover under en skinnfäll kyls så här mycket mindre (av det som når in i huset)
 });
 
 // namn och ikon (ikoner.ts; kartans bild uppifrån heter ikon_karta), w och h = rutorna den tar (bredd och djup), tek = teknikerna, och den som kan någon av dem bygger den, av = materialet, min = minuters arbete,
@@ -84,7 +89,8 @@ export const stationDef = (k: string): StationDef | undefined => (STATIONER as R
 // en station i byn: rutan längst upp till vänster av dem den står på, hur länge (ms) arbetet med att bygga den har kvar (0 = klar), vilka som byggt på
 // den och när den blev klar (det visas när man trycker på den, flikar/station.ts)
 // rot = vriden (bredd och djup byter plats), inne = byggd inne i ett hus (den försvinner om huset rivs)
-export interface Station { id: number; k: string; x: number; y: number; kvar: number; vem?: number[]; klar?: number; rot?: 1; inne?: 1 }
+// med = tillbehören som ligger i den (TILLBEHOR, t.ex. skinnfällen i bädden)
+export interface Station { id: number; k: string; x: number; y: number; kvar: number; vem?: number[]; klar?: number; rot?: 1; inne?: 1; med?: string[] }
 const NONE: Station[] = [];
 export const stationerOf = (s: State) => s.stationer ?? NONE;
 export const stationById = (s: State, id?: number) => id === undefined ? undefined : stationerOf(s).find(t => t.id === id);
@@ -246,6 +252,62 @@ export function finishStation(s: State, p: Person, tk: Task) {
   const d = stationDef(t.k)!;
   if (forstaGang(s, 'station_' + t.k)) { log(s, d.forsta.replace('{namn}', p.name), 'world', [p.id]); p.fame.push(`Byggde byns första ${d.namn.toLowerCase()}`); }
   fyllKnivplatser(s);
+}
+
+// ---------- tillbehören (steg 2.2.14) ----------
+// Ett tillbehör görs till en färdig station eller möbel och ligger sedan i den (Station.med): skinnfällen är ett täcke i
+// halmbädden, och den som sover under den fryser mindre. Varje sort är en rad i registret TILLBEHOR: vilken station den hör
+// till (till), tekniken man måste kunna (tek, samma id som tillbehöret, teknik.ts), materialet (av) och minuterna (min), och
+// vad den gör (varme: så mycket mindre kyla för den som sover i möbeln). Den görs i handlingen tillbehor (task.tool = sorten)
+// av den som har tid för handarbete, när projektet säger att byn har möbler som saknar den (projekt.ts). Materialet tas
+// när arbetet är klart, så att inget går förlorat om det avbryts. Rivs huset försvinner tillbehöret med möbeln.
+export interface TillbehorDef { namn: string; ikon: string; till: string; tek: string[]; av: Record<string, number>; min: number; varme?: number; gor: string; forsta: string }
+export const TILLBEHOR = {
+  skinnfall: {
+    namn: 'Skinnfäll', ikon: 'skinnfall', till: 'halmbadd', tek: ['skinnfall'], av: { skinn: STATION.fallSkinn }, min: STATION.fallMin, varme: STATION.fallVarme,
+    gor: 'Lägger en skinnfäll i halmbädden.',
+    forsta: '{namn} lade byns första skinnfäll i en halmbädd. Den som sover under den fryser mindre.',
+  },
+} satisfies Record<string, TillbehorDef>;
+export type TillbehorSlag = keyof typeof TILLBEHOR;
+export const TILLBEHOR_LIST = Object.keys(TILLBEHOR) as TillbehorSlag[];
+export const tillbehorDef = (k: string): TillbehorDef | undefined => (TILLBEHOR as Record<string, TillbehorDef>)[k];
+// de färdiga stationer som tillbehöret hör till, och de av dem som saknar det
+export const tillbehorStationer = (s: State, k: TillbehorSlag) => stationerOf(s).filter(t => isKlar(t) && t.k === TILLBEHOR[k].till);
+export const utanTillbehor = (s: State, k: TillbehorSlag) => tillbehorStationer(s, k).filter(t => !t.med?.includes(k));
+// p kan göra tillbehöret: p kan tekniken, det finns fler stationer som saknar det än de som redan gör det, och p kan få tag i
+// materialet
+export function kanGoraTillbehor(s: State, p: Person, k: TillbehorSlag) {
+  const d: TillbehorDef = TILLBEHOR[k];
+  if (!d.tek.some(t => knows(p, t))) return false;
+  const gor = doingAct(s, 'tillbehor', p) ? 1 : 0, utan = utanTillbehor(s, k).length;
+  return utan > gor && Object.entries(d.av).every(([m, n]) => getable(s, p, m) >= n + sparas(m));
+}
+// platsen dit den som gör tillbehöret går: framför den första stationen som saknar det
+export function tillbehorSpot(s: State, k: TillbehorSlag) {
+  const t = utanTillbehor(s, k)[0];
+  return t ? vidStation(t) : undefined;
+}
+// klart: materialet tas och tillbehöret läggs i den första stationen som saknar det (har någon annan hunnit före blir det
+// nästa, och saknar ingen det längre blir det inget)
+export function finishTillbehor(s: State, p: Person, tk: Task) {
+  const k = tk.tool as TillbehorSlag, d = tillbehorDef(k);
+  if (!d) return;
+  const t = utanTillbehor(s, k)[0];
+  if (!t || !Object.entries(d.av).every(([m, n]) => getable(s, p, m) >= n)) return;
+  for (const [m, n] of Object.entries(d.av)) takeMaterial(s, p, m, n);
+  (t.med ??= []).push(k);
+  // byns statistik räknar dem (tillbehor_ + sorten), och den första står i loggen
+  if (forstaGang(s, 'tillbehor_' + k)) { log(s, d.forsta.replace('{namn}', p.name), 'world', [p.id]); p.fame.push(`Gjorde byns första ${d.namn.toLowerCase()}`); }
+}
+// så mycket mindre kyla p får av tillbehören i möbeln hen sover i (0 = ingen skillnad), rum = rummet hen är i
+export function tillbehorVarme(s: State, p: Person, rum: unknown) {
+  const pd = p.task && ACTS[p.task.act];
+  if (!rum || !s.stationer?.length || !pd?.vila || pd.plats !== 'sang' || p.task!.phase !== 'do') return 0;
+  const t = stationRutor(s).at.get(tileOf(p.x, p.y));
+  let v = 0;
+  for (const k of t && isKlar(t) ? t.med ?? [] : []) v = Math.max(v, tillbehorDef(k)?.varme ?? 0);
+  return v;
 }
 
 // ---------- knivplatsen ----------

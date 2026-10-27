@@ -557,3 +557,41 @@ SCENARIER.mobler = {
     ];
   },
 };
+
+SCENARIER.skinnfall = {
+  text: 'Skinnfällen (steg 2.2.14): ett tillbehör till halmbädden, en egen teknik som byn kommer på efter halmbädden när den har skinn. Den görs av skinn när byn har bäddar utan fäll, och den som sover under den kyls hälften så mycket',
+  kor: () => {
+    const { STATION, TILLBEHOR, TEK, PROJEKT, varmeDelar, roomAt } = SIM;
+    // en by med ett hus och en halmbädd, där alla kan göra en skinnfäll och har skinn
+    const s = createState(1, START); klockan(s); tandEld(s);
+    const b = medBank(s, 'halmbadd');
+    for (const r of s.people) r.tek = { ...r.tek, halmbadd: 1, skinnfall: 1 };
+    setMat(s, { bar: 200 }); setAmount(s, 'skinn', 10); setAmount(s, 'ved', 30);
+    const brist0 = PROJEKT.skinnfall!.brist(s);
+    let h = 0;
+    while (!b.med?.includes('skinnfall') && h < 72) { kor(s, 1); h++; }
+    const tog = Math.abs(amountOf(s, 'skinn') - (10 - STATION.fallSkinn)) < 0.5; // (skinnet slits lite under tiden)
+    const brist1 = PROJEKT.skinnfall!.brist(s);
+    // kylan för den som sover i bädden, med och utan fällen
+    const kyla = (med: boolean) => {
+      const q = cloneState(s), t = q.stationer!.find(r => r.id === b.id)!, p = living(q)[0];
+      t.med = med ? ['skinnfall'] : undefined;
+      p.x = t.x + 0.5; p.y = t.y + 0.5; p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: q.now + HOUR, carry: 0 } as SIM.Task;
+      return varmeDelar(q, p, 1, new Map([[roomAt(q, p.x, p.y)!.id, 1]])).kyla;
+    };
+    const med = kyla(true), utan = kyla(false);
+    // den som är vaken i bädden får ingen hjälp av fällen
+    const q = cloneState(s), p = living(q)[0];
+    p.x = b.x + 0.5; p.y = b.y + 0.5; p.task = { act: 'samtal', phase: 'do', tx: p.x, ty: p.y, until: q.now + HOUR, carry: 0 } as SIM.Task;
+    const vaken = SIM.tillbehorVarme(q, p, roomAt(q, p.x, p.y));
+    const tek = TEK.skinnfall;
+    return [
+      [`byn vill ha en skinnfäll när bädden saknar en (brist ${brist0.toFixed(2)}, ${brist1.toFixed(2)} efter)`, brist0 === 1 && brist1 === 0],
+      [`skinnfällen görs av ${STATION.fallSkinn} skinn och läggs i bädden på ${h} timmar`, !!b.med?.includes('skinnfall') && tog],
+      [`byns statistik räknar fällen en gång (${s.stat?.tillbehor_skinnfall ?? 0})`, s.stat?.tillbehor_skinnfall === 1],
+      [`den som sover under fällen kyls mindre (${med.toFixed(3)} mot ${utan.toFixed(3)} i timmen)`, utan > 0 && Math.abs(med - utan * (1 - TILLBEHOR.skinnfall.varme)) < 1e-9],
+      ['den som är vaken i bädden får ingen värme av fällen', vaken === 0],
+      ['skinnfällen är en egen teknik efter halmbädden, och byn måste ha skinn', !!tek && tek.krav.includes('halmbadd') && tek.material.some(g => g.includes('skinn'))],
+    ];
+  },
+};

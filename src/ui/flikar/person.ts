@@ -75,7 +75,7 @@ function behovHtml(p: Person) {
   const temp = temperature(s), v = varmeDelar(s, p, coldOf(temp), inRum), fh = hearthOf(s.fire);
   const varme: Orsak[] = [
     ...v.eld > 0 ? [{ namn: 'Elden värmer', v: v.eld }] : [],
-    ...v.kyla > 0 ? [{ namn: `Kylan, ${Math.round(temp)} grader${v.shelter > 0 ? `, huset skyddar ${Math.round(v.shelter * 100)} %` : ''}`, v: -v.kyla }] : [],
+    ...v.kyla > 0 ? [{ namn: `Kylan, ${Math.round(temp)} grader${v.shelter > 0 ? `, huset skyddar ${Math.round(v.shelter * 100)} %` : ''}${v.fall > 0 ? `, skinnfällen ${Math.round(v.fall * 100)} %` : ''}`, v: -v.kyla }] : [],
     ...v.mild > 0 ? [{ namn: `Milt väder, ${Math.round(temp)} grader`, v: v.mild }] : [],
   ];
   const tak = viloTak(s, p, v.rum);

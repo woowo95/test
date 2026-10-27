@@ -6,12 +6,12 @@ import { SAKER } from './saker';
 import { ARBETE, grundvarde, varuVarde } from './varde';
 import { balans } from './balans';
 import { GORS, REDSKAP, harAv, makeTask, villAv, wantsRope, wantsTool } from './redskap';
-import { STATIONER, STATION_LIST, StationDef, StationSlag, harStation, kanBygga, stationSpot } from './stationer';
+import { STATIONER, STATION_LIST, StationDef, StationSlag, TILLBEHOR, TILLBEHOR_LIST, TillbehorDef, TillbehorSlag, harStation, kanBygga, kanGoraTillbehor, stationSpot, tillbehorSpot, tillbehorStationer, utanTillbehor } from './stationer';
 import { utanBadd } from './byggnader';
 
 // ---------- byns projekt: vad den bygger och gör (steg 2.2.7) ----------
 // Allt byn kan bygga eller göra av handarbete är en rad i registret PROJEKT: redskapen (en rad per grupp i GORS,
-// redskap.ts), stationerna (en rad per sort i STATIONER, stationer.ts) och repet. Raden säger vilket behov den fyller
+// redskap.ts), stationerna (en rad per sort i STATIONER, stationer.ts), tillbehören (TILLBEHOR, stationer.ts) och repet. Raden säger vilket behov den fyller
 // (behov), hur mycket det väger (vikt, i balansblocket nedan), hur mycket byn saknar (brist, 0 till 1), vad den kostar
 // (kostnad: arbetstimmar och materialets värde, varde.ts) och om p kan göra den nu (kan). Värdet är vikt × brist / kostnad,
 // och listan sorteras på det: det byn saknar mest per arbete och material först. Den syns i fliken Projekt.
@@ -24,6 +24,7 @@ export const PROJEKT_TAL = balans('projekt', {
   kniv: 1.2, yxa: 1.2, spjut: 1, metspo: 0.8, korg: 0.8, // hur mycket varje redskap väger när byn saknar alla den vill ha
   slaktbank: 1, flatarbank: 0.6, // ... varje station när byn saknar den
   halmbadd: 0.6, // ... halmbäddarna när alla som sover under tak saknar en
+  skinnfall: 0.5, // ... skinnfällarna när alla halmbäddar saknar en
   rep: 0.5, // ... repet när förrådet är tomt
   minKostnad: 0.25, // kostnaden räknas aldrig under så här många arbetstimmar
 });
@@ -35,6 +36,7 @@ export const PROJEKT_BEHOV = {
   tra: { namn: 'Trä', ikon: 'ved' },
   hantverk: { namn: 'Hantverk', ikon: 'a_hantverk' },
   vila: { namn: 'Bättre sömn', ikon: 'halmbadd' },
+  varme: { namn: 'Värme i sömnen', ikon: 'skinnfall' },
 } as const;
 export type ProjektBehov = keyof typeof PROJEKT_BEHOV;
 
@@ -75,9 +77,21 @@ const station = (k: StationSlag): ProjektDef => {
     uppgift: s => { const sp = stationSpot(s, k); return sp ? { act: 'station', text: d.bygger, min: d.min, tool: k, spot: sp } : undefined; },
   };
 };
+// ett tillbehör av sorten k (steg 2.2.14): bristen är hur stor del av stationerna det hör till som saknar det
+const tillbehor = (k: TillbehorSlag): ProjektDef => {
+  const d: TillbehorDef = TILLBEHOR[k];
+  return {
+    namn: d.namn, ikon: d.ikon, behov: d.varme ? 'varme' : 'hantverk', vikt: (PROJEKT_TAL as Record<string, number>)[k] ?? 1, act: 'tillbehor', slag: k,
+    brist: s => { const n = tillbehorStationer(s, k).length; return n ? utanTillbehor(s, k).length / n : 0; },
+    kostnad: () => varuVarde(d.av, d.min / 60 * ARBETE),
+    kan: (s, p, f) => !f.kyla && kanGoraTillbehor(s, p, k),
+    uppgift: s => { const sp = tillbehorSpot(s, k); return sp ? { act: 'tillbehor', text: d.gor, min: d.min, tool: k, spot: sp } : undefined; },
+  };
+};
 export const PROJEKT: Record<string, ProjektDef> = {
   ...Object.fromEntries(Object.keys(GORS).map(g => [g, redskap(g)])),
   ...Object.fromEntries(STATION_LIST.map(k => [k, station(k)])),
+  ...Object.fromEntries(TILLBEHOR_LIST.map(k => [k, tillbehor(k)])),
   rep: {
     namn: SAKER.rep!.namn, ikon: 'rep', behov: 'hantverk', vikt: PROJEKT_TAL.rep, act: 'tvinna',
     brist: s => clamp(1 - amountOf(s, 'rep') / REDSKAP.repVill, 0, 1),
