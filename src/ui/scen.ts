@@ -12,6 +12,7 @@ export const view = app.view as HTMLCanvasElement;
 export const world = new PIXI.Container();
 export const terrainG = new PIXI.Graphics();
 export const plantG = new PIXI.Graphics(); // bärbuskar och svampar som finns just nu
+export const flackG = new PIXI.Graphics(); // fläckarna på marken, som blodet vid slaktbänken (smuts.ts)
 export const djurLayer = new PIXI.Container(); // kaninerna
 export const husLayer = new PIXI.Container(); // timmerväggarna och trägolven, som pixelbilder (husbild.ts)
 export const structG = new PIXI.Graphics();
@@ -25,7 +26,7 @@ export const glowG = new PIXI.Graphics();
 glowG.blendMode = PIXI.BLEND_MODES.ADD;
 export const filterG = new PIXI.Graphics(); // värmekartan när ett filter är på
 export const labels = new PIXI.Container();
-world.addChild(terrainG, plantG, djurLayer, husLayer, structG, pileLayer, overG, peopleG, nightG, glowG, filterG, bubbleG, markLayer, labels);
+world.addChild(terrainG, plantG, flackG, djurLayer, husLayer, structG, pileLayer, overG, peopleG, nightG, glowG, filterG, bubbleG, markLayer, labels);
 app.stage.addChild(world);
 
 // ikoner som sprites i ett lager. Varje bildruta börjar från första spriten; de som blir över göms

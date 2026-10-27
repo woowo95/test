@@ -12,6 +12,7 @@ import { addTool, freeTools, halvOf, nTools, ownsFree, wearTool } from './agande
 import { balans } from './balans';
 import { sedEvent } from './seder';
 import { STATION, kanGoras, nyttVid, slitVid, stationFor, tommaKnivplatser, tommaPlatser, vidStation } from './stationer';
+import { smutsa } from './smuts';
 
 // ---------- balanstal (regel 8) ----------
 // Hur många redskap byn vill ha och vad den sparar när den gör dem. Hur mycket ett redskap kräver står i receptet (skaffa.av
@@ -137,6 +138,7 @@ export function bearbeta(s: State, p: Person, art: Djurart, hours: number) {
   if (art.kniv) wearUsed(s, p, n); // kniven håller för ungefär 250 kaniner
   const first = !(s.stat?.[art.stat]);
   count(s, art.stat, n);
+  smutsa(s, art.act, n); // slaktbänken blir blodig (smuts.ts)
   if (first) log(s, art.forsta.replace('{namn}', p.name), 'world', [p.id]);
 }
 // så stor del av köttet p får ut av djuret: mer ju bättre hen är på jakt

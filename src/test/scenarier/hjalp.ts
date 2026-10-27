@@ -99,6 +99,7 @@ export function uiLasNu(s: State, t: number) {
   kalender(s, t); yearNo(s, t); temperature(s, t); isLight(t); lightLevel(t); timeLabel(s, t); ageIndex(s); rikedomDelar(s);
   // kartan: filtret, växterna, djuren, marken och elden
   for (const k of FYND_IDS) for (let i = 0; i < W * H; i++) { vaxerAt(s, k, i); fyndAt(s, k, i); }
+  for (const f of SIM.flackarOf(s)) SIM.flackNu(f, t); for (const st of SIM.stationerOf(s)) SIM.smutsVid(s, st); // fläckarna (smuts.ts)
   djurOf(s, t);
   groundOf(s); coverOf(s); campCenter(s); getMap(s.seed);
   { const sj = SIM.sjoarna(s.seed); sj.rutor.forEach((_, n) => { SIM.sjoNamn(s, n); void s.sjoar?.[n]; }); }

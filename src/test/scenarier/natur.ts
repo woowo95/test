@@ -669,3 +669,50 @@ SCENARIER.dorr = {
     ];
   },
 };
+
+SCENARIER.blod = {
+  text: 'Slaktbänken blir blodig (steg 2.7.1): stationsregistret säger vilka handlingar som smutsar ner en station och med vad, och fläckarna (registret FLACKAR) bleknar bort på ett par dygn. Bara utseende: fläckarna rör inte slumpen',
+  kor: () => {
+    const { FLACKAR, flackarOf, flackNu, smutsa, smutsVid, STATIONER, tidyTools, storlekAv } = SIM;
+    const s = createState(1, START); klockan(s); tandEld(s);
+    for (const r of s.people) r.tek = { ...r.tek, kniv: 1, slaktbank: 1, rep: 0 };
+    const t = medBank(s), p = living(s).find(r => ageOf(r, s.now) >= 18)!;
+    setAmount(s, 'kniv', 1); tidyTools(s);
+    const { w, h } = storlekAv(t);
+    const nara = (i: number) => { const x = i % W, y = Math.floor(i / W); return x >= t.x - 1 && x <= t.x + w && y >= t.y && y <= t.y + h; };
+    // fisken rensas vid samma bänk men blöder inte
+    setMat(s, { abborre: 3 }); bearbeta(s, p, DJUR.abborre, 1);
+    const rensaRent = flackarOf(s).length === 0 && amountOf(s, 'fisk') > 0;
+    // slakten gör fläckar på bänken och raden framför
+    setMat(s, { vilt: 3 * KANIN }); bearbeta(s, p, DJUR.kanin, 1);
+    const fl = flackarOf(s), blod = fl.length > 0 && fl.every(f => f.k === 'blod' && nara(f.i) && f.n > 0 && f.n <= 1);
+    const vid = smutsVid(s, t).blod ?? 0;
+    // fläckarna bleknar jämnt och är borta efter bleknar timmar
+    const f0 = fl[0]!, b = FLACKAR.blod.bleknar * HOUR;
+    const halv = flackNu(f0, f0.t + b * f0.n / 2), borta = flackNu(f0, f0.t + b * f0.n + 1);
+    const bleknar = Math.abs(halv - f0.n / 2) < 1e-9 && borta === 0;
+    // de bortbleknade tas bort när nya kommer, och slumpen rörs inte
+    s.now += b + HOUR;
+    const rng0 = JSON.stringify(s.rngs), st0 = JSON.stringify(s.stat);
+    smutsa(s, 'slakta', 1);
+    const rensat = flackarOf(s).length === 1 && JSON.stringify(s.rngs) === rng0 && JSON.stringify(s.stat) === st0;
+    // en station utan smutsar gör inga fläckar, och fläckarna följer med när byn sparas
+    const andra = (Object.keys(STATIONER) as (keyof typeof STATIONER)[]).filter(k => k !== 'slaktbank' && (STATIONER[k] as SIM.StationDef).smutsar).length === 0;
+    const sparad = JSON.stringify(cloneState(s).flackar) === JSON.stringify(s.flackar);
+    // i en by som lever: bänken blir blodig av sig själv när det finns vilt att slakta
+    const u = createState(1, START); klockan(u); tandEld(u);
+    for (const r of u.people) r.tek = { ...r.tek, kniv: 1, slaktbank: 1 };
+    medBank(u); setAmount(u, 'kniv', 2); tidyTools(u); setMat(u, { vilt: 6 * KANIN, bar: 100 }); setAmount(u, 'ved', 40);
+    let h2 = 0; while (!flackarOf(u).length && h2 < 24) { kor(u, 1); h2++; }
+    return [
+      ['rensningen av fisken gör inga fläckar', rensaRent],
+      [`slakten gör blodfläckar på bänken och raden framför (${fl.length} st)`, blod],
+      [`stationsfliken ser blodet: ${Math.round(vid * 100)} %`, vid > 0],
+      [`fläckarna bleknar jämnt och är borta efter ${FLACKAR.blod.bleknar} timmar i full styrka`, bleknar],
+      ['de bortbleknade tas bort när en ny fläck kommer, och fläckarna rör varken slumpen eller statistiken', rensat],
+      ['bara slaktbänken smutsar ner', andra],
+      ['fläckarna följer med när byn sparas', sparad],
+      [`i en by där det slaktas blir bänken blodig av sig själv (efter ${h2} timmar)`, flackarOf(u).length > 0],
+    ];
+  },
+};

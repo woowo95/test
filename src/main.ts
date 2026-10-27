@@ -6,6 +6,7 @@ import { drawNight, drawTerrain } from './ui/terrang';
 import { drawStructures } from './ui/foremal';
 import { drawFilter } from './ui/filter';
 import { drawAnimals, drawPlants } from './ui/vaxter';
+import { drawFlackar } from './ui/smuts';
 import { addTalks, drawPeople, posOf } from './ui/manniskor';
 import { renderPanel } from './ui/panel';
 import { renderPorts, stopFollow } from './ui/portratt';
@@ -116,7 +117,7 @@ function tick() {
     if (p && alive(p)) { const q = posOf(p); cam.x = q.x * TS + TS / 2; cam.y = q.y * TS + TS / 2; layout(); } else stopFollow();
   }
   drawTerrain();
-  drawPlants(); drawAnimals();
+  drawPlants(); drawFlackar(); drawAnimals();
   drawStructures(now);
   drawPeople(now);
   drawNight(ui.nu);
