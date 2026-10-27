@@ -1123,6 +1123,11 @@ SCENARIER.falt = {
       SIM.stepOdling(s);
       gras = SIM.faltOf(s).length === n - 1 && (s.stat?.faltIgen ?? 0) === 1;
     }
+    // en sparad by från före steg 2.10.13: fältet blir 2 × 2 rutor när byn laddas
+    const gm = cloneState(s);
+    gm.falt = [{ id: 1, x: 10, y: 10, agare: 0, steg: 'vaxer', groda: 'rovor', vuxit: 0.5, rord: gm.now } as unknown as SIM.Falt];
+    gm.v = 8; SIM.migrate(gm);
+    const gf = gm.falt[0], gammalt = gf.w === 2 && gf.n === 4 && gf.sadda === 4 && SIM.faltRutor(gf).length === 4;
     return [
       [`byn röjer ett fält när den kan odla och har frön (${fs.length} fält, ${f ? SIM.FALT_STEG[f.steg].namn.toLowerCase() : '-'})`, fs.length > 0],
       [`fälten ligger på jord utan stora träd, inte på varandra och inte på lagret (${fel} fel)`, fel === 0],
@@ -1136,6 +1141,7 @@ SCENARIER.falt = {
       ['den mogna grödan som ingen skördar ruttnar, och fältet ska sås igen', rutten],
       ['frosten i istiden dödar grödan, och ingen sår något nytt förrän det hinner mogna', frost && ingenSadd],
       ['ett fält som ingen skött på länge blir gräs igen', gras],
+      ['ett fält i en sparad by från före steget blir 2 × 2 rutor när byn laddas', gammalt],
     ];
   },
 };

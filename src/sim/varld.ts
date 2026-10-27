@@ -69,7 +69,6 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
     if (!s.ting) toolsFromItems(s); // först, eftersom stackarna skapar en tom lista med ting
     if ('food' in s || s.mat || s.egna || Object.keys(s.items).some(k => !isTool(k))) storeFromSums(s); // äldre sparfiler (före v40): summorna blir stackar
     migrateTools(s); // och redskapen bara ting
-    migrateFalt(s); // fälten från före steg 2.10.13
     if (s.stackar) s.stackar = s.stackar.filter(a => !isTool(a.k));
     for (const p of s.people) { const t = p.task; if (t?.items?.pinnar) { t.items.grenar = (t.items.grenar ?? 0) + t.items.pinnar; delete t.items.pinnar; if (t.cond?.pinnar !== undefined) { t.cond.grenar ??= t.cond.pinnar; delete t.cond.pinnar; } } }
     if (!s.fire) {
@@ -106,6 +105,7 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
   [8, 'v87: matlagningen (steg 2.8.1). Färdigheten Matlagning är snittet av samling och eldkonst', s => {
     for (const p of s.people) if (p.skill.matlagning === undefined) p.skill.matlagning = (p.skill.samla + p.skill.elda) / 2;
   }],
+  [9, 'v110: fälten görs ruta för ruta (steg 2.10.13). Ett äldre fält blir 2 × 2 rutor', s => migrateFalt(s)],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];
 export function migrate(s: State) { return simulera(() => uppgradera(s)); }
