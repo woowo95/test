@@ -63,7 +63,7 @@ export const TEKNIK: Tek[] = [
   { id: 'bord', namn: 'Bord', text: 'Kluvna stockar på ben, med stubbar att sitta på runt omkring.', effekt: 'Vid bordet äter man tillsammans, blir glad av det och samtalar.',
     omr: ['hantverk', 'bygga'], krav: ['timmervagg'], niva: 3, tid: 4 },
   // förvaringen (steg 2.3.6): en teknik för hyllan, kistan och redskapsstället, med samma id som hyllan
-  { id: 'hylla', namn: 'Hyllor och kistor', text: 'Hyllor och ställ av trä och rep i förrådshuset, och kistor för privata saker.', effekt: 'Flera högar ryms på samma plats, så att lagret tar mindre plats. I kistan slits det som under tak.',
+  { id: 'hylla', namn: 'Hyllor och kistor', text: 'Hyllor och ställ av trä och rep i förrådshuset, och kistor i sovrummet för egna redskap och kläder.', effekt: 'Flera högar ryms på samma plats, så att lagret tar mindre plats. I kistan slits det som under tak.',
     omr: ['hantverk'], krav: ['rep', 'bord'], niva: 4, tid: 3.3 },
   // tillbehören till möblerna (TILLBEHOR i stationer.ts, steg 2.2.14) har också samma id som raden där
   { id: 'skinnfall', namn: 'Skinnfäll', text: 'Skinn som sys ihop till ett täcke och läggs i halmbädden.', effekt: 'Den som sover under en skinnfäll fryser mindre.',

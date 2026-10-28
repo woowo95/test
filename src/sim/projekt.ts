@@ -96,7 +96,7 @@ const station = (k: StationSlag): ProjektDef => {
     brist: s => d.brasa ? brasaBrist(s) : d.sover ? (living(s).length ? utanBadd(s) / living(s).length : 0) : d.platser ? bordBrist(s, k) : d.forvar ? forvarBrist(s, k) : d.gor.includes('toa') ? latrinBrist(s) : d.gor.includes('torka') ? torkBrist(s) : harStation(s, k) ? 0 : 1,
     kostnad: () => varuVarde(d.av, d.min / 60 * ARBETE),
     kan: (s, p, f) => !f.kyla && (kanBygga(s, p, k) || !!d.brasa && kanLetaBrasaSten(s, p)), // brasans stenar letas först (brasor.ts)
-    uppgift: (s, p) => { if (d.brasa && !kanBygga(s, p, k)) return brasaLeta(s, p); const sp = stationSpot(s, k); return sp ? { act: 'station', text: d.bygger, min: d.min, tool: k, spot: sp } : undefined; },
+    uppgift: (s, p) => { if (d.brasa && !kanBygga(s, p, k)) return brasaLeta(s, p); const sp = stationSpot(s, k, p); return sp ? { act: 'station', text: d.bygger, min: d.min, tool: k, spot: sp } : undefined; },
   };
 };
 // ett tillbehör av sorten k (steg 2.2.14): bristen är hur stor del av stationerna det hör till som saknar det

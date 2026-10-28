@@ -470,6 +470,58 @@ SCENARIER.forvaring = {
   },
 };
 
+SCENARIER.kista = {
+  text: 'Kistan i sovrummet (steg 2.10.18): den som sover inne och har egna redskap och kläder som ingen använder bygger en kista i rummet där hen sover. Det egna läggs i den och tillbaka dit efter användning, annat tas ur den, och när ägaren dör tar någon i samma rum över kistan',
+  kor: () => {
+    const { STATION, PROJEKT, LAGER, isKlar, villKista, kistaOf, bedTile, stationRum, stepStationer, placeTools, take, tidyTools, slitageNu, wearMult, groundOf, newTing, BYN } = SIM;
+    // en by med ett hus, där alla kan bygga förvaring och har gott om trä. p äger en yxa och en kniv som ingen använder
+    const s = createState(6, START); klockan(s); tandEld(s); medHus(s);
+    for (const r of s.people) r.tek = { ...r.tek, hylla: 1 };
+    setMat(s, { bar: 300 }); setAmount(s, 'ved', 40);
+    const p = living(s)[0], q = living(s)[1];
+    const egna = [newTing(s, 'yxa', 1, p.id), newTing(s, 'kniv', 1, p.id)], byns = newTing(s, 'spjut', 1, BYN);
+    placeTools(s);
+    const vill = villKista(s, p), andra = living(s).filter(r => r !== p && villKista(s, r)).length, brist = PROJEKT.kista!.brist(s);
+    // kistan väger lite mot arbetet om maten; här väger den mer, så att p bygger den snart
+    let h = 0; const vikt = PROJEKT.kista!.vikt; PROJEKT.kista!.vikt = 20;
+    try { while (!(kistaOf(s, p) && isKlar(kistaOf(s, p)!)) && h < 72) { kor(s, 1); h++; } } finally { PROJEKT.kista!.vikt = vikt; }
+    const k = kistaOf(s, p), b = bedTile(s, p);
+    kor(s, 1);
+    const byggd = !!k && isKlar(k) && k.ag === p.id && !!k.inne && b !== undefined && !!stationRum(s, k)?.tiles.includes(b);
+    // det egna som ingen har i handen ligger i kistan, inte byns spjut, och det syns inte i lagret
+    const iKistan = (t: SIM.Ting) => !!k && t.vid === k.id && t.x === k.x && t.y === k.y;
+    const lediga = egna.filter(t => t.hos === undefined && t.bar === undefined && t.lass === undefined);
+    const iLagret = pilesOf(s).some(a => k && a.x === k.x && a.y === k.y);
+    // q lånar yxan: när q är klar ligger den i kistan igen
+    const yxa = egna[0]; yxa.vid = k?.id; yxa.x = k?.x; yxa.y = k?.y; yxa.hos = undefined;
+    const tog = take(s, q, 'yxa') === yxa;
+    q.task = undefined; tidyTools(s); placeTools(s);
+    const tillbaka = iKistan(yxa);
+    // något som inte är p:s tas ur kistan
+    if (k) { byns.vid = k.id; byns.x = k.x; byns.y = k.y; }
+    stepStationer(s); placeTools(s);
+    const ut = byns.vid === undefined && byns.x !== undefined && !(k && byns.x === k.x && byns.y === k.y);
+    // det som ligger i den slits som under tak, och kistan går att gå förbi
+    const orsak = k ? slitageNu(s, { k: 'yxa', x: k.x, y: k.y }, yxa).orsak : '', mult = k ? wearMult(s, k.x, k.y) : 0;
+    const hinder = k ? groundOf(s).hinder?.[k.y * W + k.x] ?? 0 : 1;
+    // p dör: sakerna går till arvingen eller byn, och någon som sover i samma rum och saknar en kista tar över kistan. Det som
+    // ligger kvar i den är den nya ägarens
+    SIM.die(s, p, 'svalt'); tidyTools(s); stepStationer(s); placeTools(s);
+    const ny = k?.ag !== undefined ? s.people.find(r => r.id === k.ag) : undefined;
+    const kvar = k ? SIM.tingOf(s).filter(t => t.vid === k.id) : [], tomd = egna.every(t => t.agare !== p.id) && kvar.every(t => t.agare === k?.ag);
+    return [
+      [`p vill ha en kista, de andra inte (${andra}), och byn vill bygga en (brist ${brist})`, vill && andra === 0 && brist === 1],
+      [`p bygger sin kista på ${h} timmar, inne i rummet där p sover`, byggd],
+      [`det egna som ingen använder ligger i kistan (${lediga.filter(iKistan).length} av ${lediga.length}), inte byns spjut, och inget av det syns i lagret`, lediga.length > 0 && lediga.every(iKistan) && !iKistan(byns) && !iLagret],
+      ['den som lånar yxan lägger tillbaka den i kistan', tog && tillbaka],
+      ['det som inte är ägarens tas ur kistan och läggs i lagret', ut],
+      [`i kistan slits det som under tak (${orsak}, ${mult} gånger), och den går att gå förbi`, orsak === 'kista' && mult === LAGER.inne && hinder === 0],
+      [`när ägaren dör går sakerna till arvingen eller byn, ${ny ? ny.name : 'ingen'} tar över kistan, och det som ligger i den (${kvar.length}) är hens`, tomd && !!ny && SIM.alive(ny) && ny !== p],
+      [`kistan rymmer ${STATION.kistaTing} saker`, STATION.kistaTing > STATION.kistaVill],
+    ];
+  },
+};
+
 SCENARIER.kvalitet = {
   text: 'Kvalitet (steg 2.2.2): det som görs blir usel, slarvig, normal, fin, mästerverk eller perfekt (★) efter görarens hantverk, lite slump och slöjdbänken. Bättre saker håller längre, är mer värda och fungerar lite bättre; möblerna har kvalitet men inte stationerna, och saker från äldre sparfiler är normala',
   kor: () => {

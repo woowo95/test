@@ -31,7 +31,7 @@ function var_(t: Ting, p?: Pile) {
   if (t.bar !== undefined) return `${pLink(byId(s, t.bar))} har den på sig`;
   if (t.hos !== undefined) return `${pLink(byId(s, t.hos))} har den i handen`;
   if (t.lass !== undefined) return `${pLink(byId(s, t.lass))} bär den`;
-  if (t.vid !== undefined) { const st = stationById(s, t.vid); return st ? `Vid ${esc(stationDef(st.k)?.namn.toLowerCase() ?? 'stationen')}` : 'Vid en station'; }
+  if (t.vid !== undefined) { const st = stationById(s, t.vid); return st?.ag !== undefined ? 'I kistan i sovrummet' : st ? `Vid ${esc(stationDef(st.k)?.namn.toLowerCase() ?? 'stationen')}` : 'Vid en station'; }
   return p ? (p.stored ? 'I förrådet' : 'På marken') : 'I förrådet';
 }
 // toa-högen (steg 2.10.5): hur färsk den är, vem som lämnade den och när, hur länge den ligger kvar och vad den gör
