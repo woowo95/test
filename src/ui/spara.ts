@@ -38,7 +38,7 @@ export async function saveDb() {
       for (let i = 0; i < n; i++) await docOf(db, uid, delNamn(ny, d, i)).set({ t: txt.slice(i * BIT, (i + 1) * BIT) });
       if (isHist(d)) skrivet.set(d, txt);
     }
-    await docOf(db, uid, 'byn').set({ slot: ny, delar, now: s.now, savedAt: Date.now() });
+    await docOf(db, uid, 'byn').set({ slot: ny, delar });
     slot = ny; ui.sparFel = false;
   } catch { ui.sparFel = true; }
   sparar = false;
@@ -142,10 +142,10 @@ export async function catchUp(target: number) {
   const before = knowSnapshot(), stat0 = { ...s.stat };
   const ov = $('overlay');
   if (showOverlay) { ov.hidden = false; $('ovBody').innerHTML = `<p class="ovLead">Byn har levt vidare medan du var borta.</p><div class="prog"><div id="progBar"></div></div><p class="muted" id="progTxt"></p>`; }
-  await new Promise<void>(resolve => {
+  await new Promise<void>((resolve, reject) => {
     const chunk = () => {
       const t0 = performance.now();
-      while (s.now < target && performance.now() - t0 < 30) step(s, BEAT);
+      try { while (s.now < target && performance.now() - t0 < 30) step(s, BEAT); } catch (e) { reject(e); return; }
       if (showOverlay) {
         const f = Math.min(1, (s.now - from) / span);
         const bar = document.getElementById('progBar'); if (bar) bar.style.width = (f * 100).toFixed(1) + '%';
@@ -154,6 +154,10 @@ export async function catchUp(target: number) {
       if (s.now < target) setTimeout(chunk, 0); else resolve();
     };
     chunk();
+  }).catch(e => {
+    // ett fel i simuleringen: spelet står still (det skulle bara hända igen), men spelaren får veta det
+    ov.hidden = false; $('ovBody').innerHTML = `<p class="ovLead">Något gick fel när byn räknades ikapp.</p><p class="muted">${esc(String(e))}</p>`;
+    throw e;
   });
   ui.busy = false; ui.nu = target;
   if (showOverlay) showSummary(from, before, stat0);

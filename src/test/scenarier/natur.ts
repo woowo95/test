@@ -59,7 +59,7 @@ SCENARIER.djur = {
     setMat(s, {}); setMat(s, { vilt: 3 * KANIN }); setAmount(s, 'ben', 0); setAmount(s, 'skinn', 0); setAmount(s, 'rep', 0);
     const kan = canProcess(s, p, DJUR.kanin);
     bearbeta(s, p, DJUR.kanin, 1);
-    const slakt = Math.abs(amountOf(s, 'kott') - 3 * SLAKT.kott * SIM.kottFaktor(p)) < 1 // i hela saker (steg 2.10.7) && amountOf(s, 'vilt') < 1e-9 && Math.abs(amountOf(s, 'ben') - 3) < 1e-9 && Math.abs(amountOf(s, 'skinn') - 3) < 1e-9;
+    const slakt = Math.abs(amountOf(s, 'kott') - 3 * SLAKT.kott * SIM.kottFaktor(p)) < 1 && amountOf(s, 'vilt') < 1e-9 && Math.abs(amountOf(s, 'ben') - 3) < 1e-9 && Math.abs(amountOf(s, 'skinn') - 3) < 1e-9; // köttet i hela saker (steg 2.10.7)
     // senorna blir ibland ett rep, men bara för den som kan tekniken Rep
     const repAv = (kan: boolean) => { let r = 0; for (let i = 0; i < 200; i++) { setMat(s, { vilt: KANIN }); setAmount(s, 'rep', 0); p.tek = { ...p.tek, rep: kan ? 1 : 0 }; bearbeta(s, p, DJUR.kanin, 1); r += amountOf(s, 'rep'); } return r; };
     const medRep = repAv(true), utanRep = repAv(false);
@@ -771,6 +771,7 @@ SCENARIER.blod = {
     // mycket blod på samma ställe: fläckarna växer, och pölar som blir för stora rinner över till nya bredvid
     const rng0 = JSON.stringify(s.rngs), st0 = JSON.stringify(s.stat), x0 = t.x + 1.5, y0 = t.y + 1.5;
     const u = createState(2, START); u.now = s.now;
+    const orort0 = (b: SIM.State) => JSON.stringify([b.rngs, b.stat]), u0 = orort0(u);
     blodas(u, x0, y0, 'slakt', 1); const en = blodOf(u).length;
     for (let k = 0; k < 12; k++) { u.now += 10 * MIN; blodas(u, x0, y0, 'slakt', 1); }
     const pol = blodOf(u).filter(q => q.f === 'pol'), yta = Math.max(...pol.map(q => Math.hypot(q.x - x0, q.y - y0)));
@@ -783,7 +784,7 @@ SCENARIER.blod = {
     const q = createState(4, START); q.now = s.now; const v = living(q)[0]!;
     v.skador = []; SIM.skada(q, v, 'handH', 'skarsar', 0.4, 'olycka', 'vid testet');
     const skada = blodOf(q).some(r => r.f === 'stank' && Math.hypot(r.x - v.x, r.y - v.y) < 1);
-    const n0 = blodOf(q).length; q.now += 30 * MIN; blodDroppar(q, v, 0.3, 30 * 60);
+    const q0 = orort0(q), n0 = blodOf(q).length; q.now += 30 * MIN; blodDroppar(q, v, 0.3, 30 * 60);
     const droppar = blodOf(q).some(r => r.f === 'droppar') && blodOf(q).length > n0;
     blodas(q, v.x, v.y, 'jakt', 1, 0); const jakt = blodOf(q).some(r => r.f === 'spar' && r.a === 0);
     // de bortbleknade tas bort när nya kommer, aldrig fler än max, och slumpen och statistiken rörs inte
@@ -791,7 +792,7 @@ SCENARIER.blod = {
     const rensat = blodOf(s).every(r => blodNu(r, s.now) > 0) && blodOf(s).length <= 3;
     for (let k = 0; k < BLODET.max + 50; k++) { q.now += MIN; blodas(q, (k * 7) % 60, (k * 3) % 40, 'blodning', 1); }
     const tak = blodOf(q).length <= BLODET.max;
-    const orort = JSON.stringify(s.rngs) === rng0 && JSON.stringify(s.stat) === st0;
+    const orort = JSON.stringify(s.rngs) === rng0 && JSON.stringify(s.stat) === st0 && orort0(u) === u0 && orort0(q) === q0;
     // bara slaktbänken smutsar ner med blod, och blodet följer med när byn sparas
     const andra = (Object.keys(STATIONER) as (keyof typeof STATIONER)[]).filter(k => k !== 'slaktbank' && (STATIONER[k] as SIM.StationDef).smutsar).length === 0;
     const sparad = JSON.stringify(cloneState(u).blod) === JSON.stringify(u.blod);
@@ -874,9 +875,9 @@ SCENARIER.latrin = {
     magont(s, strand);
     const hygien = (s.hygien ?? 0) > 0 && s.stat?.['magont av toa-smuts'] === 1;
     // när byn kan hygien läggs latrinen längre från vattnet
-    const tillVatten = (at?: { x: number; y: number }) => { if (!at) return -1; const m = getMap(s.seed); let d = 99; for (let j = 0; j < W * H; j++) if (m.tiles[j] === T.Vatten) d = Math.min(d, Math.hypot(j % W - at.x, Math.floor(j / W) - at.y)); return d; };
+    const tillVatten = (b: SIM.State, at?: { x: number; y: number }) => { if (!at) return -1; const m = getMap(b.seed); let d = 99; for (let j = 0; j < W * H; j++) if (m.tiles[j] === T.Vatten) d = Math.min(d, Math.hypot(j % W - at.x, Math.floor(j / W) - at.y)); return d; };
     const u0 = createState(3, START), u1 = cloneState(u0); u1.hygien = 1;
-    const d0 = tillVatten(stationSite(u0, 'latrin')), d1 = tillVatten(stationSite(u1, 'latrin'));
+    const d0 = tillVatten(u0, stationSite(u0, 'latrin')), d1 = tillVatten(u1, stationSite(u1, 'latrin'));
     const at = stationSite(u0, 'latrin'), utkant = !!at && byAvstand(u0, at.x, at.y) >= STATION.utkantMin && byAvstand(u0, at.x, at.y) <= STATION.latrinTill;
     // latrinen: man går dit, lämnar ingen fläck, gropen fylls och fylls igen
     const l = createState(1, START); klockan(l); tandEld(l);
@@ -911,7 +912,7 @@ SCENARIER.latrin = {
       ['fläcken bleknar bort på två dygn (två år i spelet, två dagar i verkligheten)', bleknat],
       [`en fläck på stranden gör vattnet smutsigare (${v0.toFixed(2)} → ${v1.toFixed(2)})`, vatten],
       [`ont i magen av toa-smutsat vatten lär byn hygien (${(s.hygien ?? 0).toFixed(2)})`, hygien],
-      [`latrinen ligger i byns utkant, och längre från vattnet när byn kan hygien (${d0.toFixed(1)} → ${d1.toFixed(1)} rutor)`, utkant && d1 >= d0],
+      [`latrinen ligger i byns utkant, och längre från vattnet när byn kan hygien (${d0.toFixed(1)} → ${d1.toFixed(1)} rutor)`, utkant && d1 > d0],
       ['den som går på toa går till latrinen', gar],
       ['i latrinen blir det ingen fläck, gropen fylls och man får vara ifred', ifred],
       ['byn vill ha en ny latrin när den är nästan full', brist],

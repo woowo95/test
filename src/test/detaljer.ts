@@ -1,5 +1,5 @@
 // npm run detaljer -- [by …]: den långa utskriften för en eller flera byar i 90 dygn (90 år i spelet), när något behöver undersökas
-import { BEAT, HOUR, createState, step, living, AGES, ageIndex, ageOf, serialize, State, SED_LIST, foodOf, amountOf, STACK_ORDER } from '../sim';
+import { ALDER, BEAT, HOUR, createState, step, living, AGES, ageIndex, ageOf, serialize, State, SED_LIST, foodOf, amountOf, STACK_ORDER } from '../sim';
 import { START as start, STEG_DYGN, markStat } from './kor';
 
 const valda = process.argv.slice(2).map(Number);
@@ -14,7 +14,7 @@ for (const seed of valda.length ? valda : [1, 42, 777]) {
       step(s, BEAT); minFood = Math.min(minFood, foodOf(s));
       steps++; if (s.fire.lit) litSteps++;
       // en olycka på toa: tanken är just tänkt, så den har hela sina 4 h kvar (den räknas bara det steget)
-      for (const p of living(s)) { if (p.thoughts.some(t => t.text === 'Kissade på sig' && t.until - s.now === 4 * HOUR)) accidents++; if (ageOf(p, s.now) >= 14 && p.task) acts[p.task.act] = (acts[p.task.act] || 0) + 1; }
+      for (const p of living(s)) { if (p.thoughts.some(t => t.text === 'Kissade på sig' && t.until - s.now === 4 * HOUR)) accidents++; if (ageOf(p, s.now) >= ALDER.vuxen && p.task) acts[p.task.act] = (acts[p.task.act] || 0) + 1; }
       if (firstFire < 0 && s.fire.lit) firstFire = (s.now - start) / HOUR;
     }
     if (d % 7 === 6 || d === days - 1) {

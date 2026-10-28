@@ -51,6 +51,6 @@ if (val) {
     process.stdout.write(u.out + (krasch ? `FEL  ${n}: kraschade\n${u.err.slice(-1500)}\n` : ''));
   }
   const hoppade = Object.keys(SCENARIER).filter(n => !namn.includes(n));
-  if (hoppade.length && (snabb || !arg.length)) console.log(`(hoppade över de långa: ${hoppade.join(', ')})`);
+  if (snabb && hoppade.length) console.log(`(hoppade över de långa: ${hoppade.join(', ')})`);
   if (fel) { console.log(`${fel} scenario misslyckades.`); process.exitCode = 1; }
 }

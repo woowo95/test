@@ -26,6 +26,7 @@ function enBy(seed: number) {
   return { seed, folk: living(s).length, r };
 }
 
+// medianen, med medelvärdet av de två mittersta (median i nyckeltal.ts tar det övre) och NaN för en tom lista (skrivs –)
 const med = (xs: number[]) => { if (!xs.length) return NaN; const a = [...xs].sort((x, y) => x - y); return a.length % 2 ? a[(a.length - 1) / 2] : (a[a.length / 2 - 1] + a[a.length / 2]) / 2; };
 const f = (n: number) => Number.isNaN(n) ? '–' : String(Math.round(n * 10) / 10);
 

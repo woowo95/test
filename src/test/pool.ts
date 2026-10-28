@@ -63,6 +63,6 @@ export function scenarioSammanfattning(u: Utfall): string {
 }
 
 // JSON med nycklarna i bokstavsordning: en jämförelse gäller då innehållet och inte i vilken ordning fälten skrevs
-// (serialize skriver fälten i den ordning de kom till i byn). Används av likhet; samma.ts hashar ännu texten som den är
+// (serialize skriver fälten i den ordning de kom till i byn). Används av likhet och samma
 export const kanonisk = (json: string) => JSON.stringify(JSON.parse(json), (_, v) =>
   v && typeof v === 'object' && !Array.isArray(v) ? Object.fromEntries(Object.entries(v).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0)) : v);
