@@ -140,6 +140,8 @@ export function skuggaNara(s: State, p: Person, x0: number, y0: number): { x: nu
   const t = c[Math.floor(rnd(s, 'val', p) * Math.min(VAL.skuggaBland, c.length))];
   return { x: t.x + 0.3 + rnd(s, 'val', p) * 0.4, y: t.y + 0.3 + rnd(s, 'val', p) * 0.4 };
 }
+// där p står om det är skugga, annars en skuggig plats nära
+const skuggaHar = (s: State, p: Person) => iSkugga(s, p.x, p.y) ? { x: p.x, y: p.y } : skuggaNara(s, p, p.x, p.y);
 // handarbete utan bänk (steg 2.10.6): inne i byn, där lagret och husen är (byInne i stationer.ts), eller under tak i samlingshuset,
 // så att arbetet inte hänger på var elden ligger. Inte i en vägg, i vattnet, i en station eller på en stubbe vid bordet.
 // Den som är för varm i solen söker skugga nära platsen (steg 2.3.13).
@@ -162,7 +164,7 @@ export function spotFor(s: State, act: Act, p: Person): { x: number; y: number }
   const iByn = d.slag === 'hantverk' && (plats === 'elden' || plats === 'station' && !stationFor(s, act)) && coldOf(temperature(s)) === 0;
   if (iByn && nederbord(s)) { const sal = samlingRum(s); if (sal) return punktIRuta(s, pick(s, sal.tiles, 'val', p), p); } // i regnet under tak (steg 2.11.1)
   if (iByn) return hantverkIByn(s, p);
-  if (plats === 'skugga') return iSkugga(s, p.x, p.y) ? { x: p.x, y: p.y } : skuggaNara(s, p, p.x, p.y) ?? { x: p.x, y: p.y };
+  if (plats === 'skugga') return skuggaHar(s, p) ?? { x: p.x, y: p.y };
   // den som är för varm i solen vilar och gör handarbete i skuggan nära elden i stället (steg 2.3.13)
   if ((plats === 'elden' && d.hantverk || plats === 'sang' && act === 'vila') && forVarmISol(s, p)) {
     const bed = plats === 'sang' ? bedFor(s, p) : undefined;
@@ -289,8 +291,7 @@ function strandOf(s: State) {
 const bathSpot = (s: State) => strandOf(s).bad;
 // en plats på land vid vattnet, inte för långt från byns läger (p:s egen slumpföljd)
 function strandSpot(s: State, p: Person) {
-  const { ok, bad } = strandOf(s);
-  if (!ok.length) return bad;
+  const { ok } = strandOf(s); // inte tom: leisure väljer stranden bara när det finns en badplats, och den är en av rutorna
   const i = pick(s, ok, 'val', p);
   return { x: i % W + 0.5, y: Math.floor(i / W) + 0.5 };
 }
@@ -308,8 +309,6 @@ const tinderNeeded = (s: State) => !s.fire.lit && !emberOn(s) && !canLight(s) &&
 // det som väljs: handlingen, varför, hur länge, och var om det inte följer av handlingen
 interface Val { act: Act; why: string; dur: number; pass?: number; spot?: { x: number; y: number }; ref?: number; tool?: string; site?: { x: number; y: number }; sok?: true; tandmat?: true }
 const set = (v: Val, act: Act, why: string) => { v.act = act; v.why = why; return true; };
-// dagens pass är hälften så långa som förr (steg 1.5.11, VAL.pass), arbete och fritid lika, så att tiden fördelas som förut men
-// folk väljer om oftare och syns gå mellan platserna
 
 // Viljan i tre steg: 1. nöd, 2. grundbehov, 3. byns behov mot egen lust (på dagen) eller kvällen vid elden (på natten).
 // Man går sedan dit (steg.ts)
@@ -356,7 +355,7 @@ function needs(s: State, p: Person, v: Val, a: number, lazy: number, light: bool
   // extremt varm i solen: man söker skugga under ett träd eller i ett hus, så som den som fryser söker sig till elden (steg 2.3.13).
   // Den som bara är för varm arbetar som vanligt (steg 2.10.20)
   if (forVarmISol(s, p, KROPP.extremVarm)) {
-    const sk = iSkugga(s, p.x, p.y) ? { x: p.x, y: p.y } : skuggaNara(s, p, p.x, p.y);
+    const sk = skuggaHar(s, p);
     if (sk) { v.spot = sk; v.dur = (VAL.svalkaMin + rnd(s, 'val', p) * VAL.svalkaSpann) * MIN; return set(v, 'svalka', 'Är för varm och söker skugga'); }
   }
   if (p.rest < (light ? KROPP.trottDag : KROPP.trottNatt) + KROPP.latVila * lazy) return set(v, 'vila', 'Är trött');
@@ -416,7 +415,7 @@ function day(s: State, p: Person, v: Val, a: number, lazy: number) {
   if (job) {
     const utan = homeless(s) / (ppl.length || 1);
     const halvt = !job.repair && !s.hus?.find(h => h.id === job.bit.hus)?.klar; // ett påbörjat hus vill man göra klart, även när det sista är ett hörn
-    // hungern är en fara och går före: räcker maten mindre än två och ett halvt dygn väger bygget mindre
+    // hungern är en fara och går före: räcker maten mindre än byggMatFran + byggMatSpann dygn (1,15) väger bygget mindre
     const col = ((job.repair ? VAL.byggLaga : halvt ? VAL.byggHalvt : VAL.byggNytt) + VAL.byggUtan * utan) * (kallTid(ai) ? ARSTID.byggKall : 1) * clamp((fd - VAL.byggMatFran) / VAL.byggMatSpann, VAL.byggMatMin, 1);
     const sc = poang(s, p, col, lust(s, p, 'hantverk', 'flit', ['bygga'], tot));
     burg = Math.max(burg, col);
