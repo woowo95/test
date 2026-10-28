@@ -71,7 +71,7 @@ SCENARIER.vakt = {
       const gd = q.lastGuardDay ?? -1, g = gd >= 0 && !isLight(q.now) ? living(q).find(p => p.guardDay === gd) : undefined;
       if (g && isSick(g, q.now) && g.task?.act !== 'vakt') sjuka.set(gd, g.name);
     });
-    for (const [d, namn] of sjuka) if (!natter.has(d)) console.log(`VARNING: vakt: natt ${d + 1} var ${namn} utsedd till vakt men sjuk, och ingen annan höll vakt. night() i val.ts väljer vakten bland alla vuxna, också de sjuka, och väljer ingen ny`);
+    for (const [d, namn] of sjuka) if (!natter.has(d)) console.log(`VARNING: vakt: natt ${d + 1} blev ${namn} sjuk efter att ha utsetts till vakt, och ingen annan höll vakt (night() i val.ts väljer ingen ny samma natt)`);
     // i natt: den modigaste bär två grenar när en annan väljer och nattens vakt utses
     const q = SIM.cloneState(s); klockan(q, 22); q.lastGuardDay = -1;
     const vuxna = living(q).filter(p => ageOf(p, q.now) >= SIM.ALDER.vaktFran && ageOf(p, q.now) < SIM.ALDER.vaktTill);
@@ -81,12 +81,12 @@ SCENARIER.vakt = {
     const grenar0 = grenarUte(q), akt = (x: Person) => x.task?.act; // (en funktion, så att typkontrollen inte tror att uppgiften är tom)
     SIM.chooseTask(q, p!);
     const utsedd = g!.guardDay === q.lastGuardDay && q.lastGuardDay !== -1, bordan = g!.task;
-    if (Math.abs(grenarUte(q) - grenar0 - 2) > 1e-6) console.log(`VARNING: vakt: ${g!.name} bar två grenar när hen blev nattens vakt, och de försvann. night() i val.ts sätter g.task = undefined utan att lägga ner bördan (motor-6, samhalle-66)`);
+    const nere = Math.abs(grenarUte(q) - grenar0 - 2) < 1e-6; // de två grenarna hen bar ligger kvar
     g!.task = undefined; SIM.chooseTask(q, g!);
     return [
       [`${natter.size} nätter under tre dygn (tre år i spelet) hade en vakt, och aldrig mer än en (${[...natter.values()].map(n => n.size).join(', ')}${sjuka.size ? `; ${[...sjuka.keys()].filter(d => !natter.has(d)).length} natt med en sjuk vakt` : ''})`, natter.size + [...sjuka.keys()].filter(d => !natter.has(d)).length >= 3 && [...natter.values()].every(n => n.size === 1)],
       [`vakterna var mellan ${Math.min(...aldrar).toFixed(0)} och ${Math.max(...aldrar).toFixed(0)} år`, aldrar.length > 0 && aldrar.every(a => a >= SIM.ALDER.vaktFran && a < SIM.ALDER.vaktTill)],
-      [`i natt (${isLight(q.now) ? 'ljust' : 'mörkt'}) utsågs den modigaste, ${g!.name}, när ${p!.name} valde (${akt(p!)}), och hen slutade med det hen gjorde`, !isLight(q.now) && utsedd && bordan === undefined && akt(p!) !== 'vakt'],
+      [`i natt (${isLight(q.now) ? 'ljust' : 'mörkt'}) utsågs den modigaste, ${g!.name}, när ${p!.name} valde (${akt(p!)}), och hen slutade med det hen gjorde och lade ner grenarna`, !isLight(q.now) && utsedd && bordan === undefined && nere && akt(p!) !== 'vakt'],
       [`${g!.name} väljer sedan att hålla vakt (${akt(g!)})`, akt(g!) === 'vakt'],
     ];
   },

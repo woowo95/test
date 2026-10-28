@@ -38,7 +38,7 @@ SCENARIER.agande = {
     const sonder = wearTool(s, b, 'fiskespjut', 2) && spears(s) === 0 && !heldBy(s, b);
     makeTool(s, a, 'spjut'); task(a, 'fiske', 'fiskespjut');
     a.died = s.now; a.cause = 'av ålder'; tidyTools(s);
-    const arv = toolsOf(s, 'fiskespjut').every(t => t.agare === BYN && t.hos === undefined);
+    const arv = toolsOf(s, 'fiskespjut').length === 1 && toolsOf(s, 'fiskespjut').every(t => t.agare === BYN && t.hos === undefined);
     const v = createState(5, START);
     for (const q of v.people) q.tek = { fiskespjut: 1, korg: 1 };
     setItems(v, { grenar: 20, flinta: 2, torrgras: 30 }); v.stat = { ...(v.stat ?? {}), fiskeForsok: 1 };

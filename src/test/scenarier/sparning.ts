@@ -74,10 +74,9 @@ SCENARIER.sparning = {
       // näringsvärdena och mättnaden avrundas var för sig; profilen får inte jämnas ut till mättnaden vid inläsningen
       ['näringsvärdena är kvar efter inläsningen', ny.people.every((p: Person) => !p.naring || SIM.naringNu(p) === p.naring) && ny.people.some((p: Person) => p.naring && new Set(Object.values(p.naring)).size > 1)],
     ];
-    // En sparad och inläst by (städad med compact, sparad och läst in) fortsätter giltig med samma folk, förråd, hus och
+    // En sparad och inläst by (sparad och läst in) fortsätter giltig med samma folk, förråd, hus och
     // redskap. Den fortsätter inte exakt som den som aldrig sparades: sparfilen avrundar talen till tre decimaler, och det
     // som räknas fram på nytt efter inläsningen kan skilja lite. Därför prövas bara att båda är giltiga och ligger nära
-    (SIM as unknown as { compact?: (s: State) => void }).compact?.(s); // i grenen main städar step själv varje timme
     const txt = serialize(s), inl = migrate(JSON.parse(txt));
     const folk = (q: State) => living(q).map(p => `${p.id} ${p.name}`).join();
     const saker = (q: State) => JSON.stringify([housesOf(q).map(h => [h.id, h.klar, fnId(h)]), tingOf(q).map(g => [g.k, g.agare]).sort()]);
@@ -192,7 +191,7 @@ SCENARIER.karta = {
     const folk = t.people.every((p, n) => lika(p.x, folk0[n].x + ox) && lika(p.y, folk0[n].y + oy) && (folk0[n].tx === undefined || (lika(p.task!.tx, folk0[n].tx! + ox) && lika(p.task!.ty, folk0[n].ty! + oy))));
     const stackar = (t.stackar ?? []).every((a, n) => lika(a.x, stack0[n].x + ox) && lika(a.y, stack0[n].y + oy)) && stack0.length === (t.stackar ?? []).length;
     const lardomar = t.people.every((p, n) => (p.lardomar ?? []).every((l, k) => SIM.areaOf(lard0[n][k].x + ox, lard0[n][k].y + oy) === l.a));
-    const sjoar = sjoar0.every(i => i >= 0 && t.sjoar?.[sjo1[ny0(i)]] !== undefined);
+    const sjoar = sjoar0.length > 0 && sjoar0.every(i => i >= 0 && t.sjoar?.[sjo1[ny0(i)]] !== undefined);
     // utanför den gamla kartan: orörd mark med skog, och sjöar och sten som bruset ger
     let skog = 0, land = 0;
     for (let y = 0; y < 120; y++) for (let x = 0; x < 120; x++) if (x < ox || y < oy || x >= ox + 80 || y >= oy + 50) { const i = y * 120 + x; if (m1.tiles[i] !== SIM.T.Vatten) land++; if (g1.trees[i] >= 0.5) skog++; }

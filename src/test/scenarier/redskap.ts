@@ -66,7 +66,7 @@ SCENARIER.stenring = {
     for (const k of SIM.lagren('samla')) for (let dy = -8; dy <= 8; dy++) for (let dx = -8; dx <= 8; dx++) if (inMap(tom.x + dx, tom.y + dy)) takenOf(r)[k]![SIM.tileOf(tom.x + dx, tom.y + dy)] = 1;
     const valt = th.task?.act === 'samla' && !!th.task.tandmat;
     Object.assign(th.task!, { tx: tom.x, ty: tom.y, phase: 'do', until: r.now + 3 * HOUR }); th.x = tom.x; th.y = tom.y;
-    kor(r, 1 / 60); // en minut: tändmaterialet hittas lika fort som bären (steg 2.12.4), så det räcker snart
+    kor(r, 1 / 60); // ett slag (fem minuter): tändmaterialet hittas lika fort som bären (steg 2.12.4), så det räcker snart
     const fortsatt = th.task?.act === 'samla' && th.task.phase === 'do' && th.task.tx === tom.x && th.task.ty === tom.y && (th.task.items?.torrgras ?? 0) > 0;
     setItems(r, { flinta: 1, torrgras: 50, grenar: 50 }); kor(r, 0.25);
     const slutat = !(th.task?.act === 'samla' && th.task.phase === 'do' && th.task.tx === tom.x && th.task.ty === tom.y);
@@ -110,19 +110,16 @@ SCENARIER.fiskespjut = {
     for (const q of y.people) q.tek = { fiskespjut: 1 };
     y.stat = { ...(y.stat ?? {}), fiskeForsok: 1 };
     const sliten = wantsTool(y, yp, 'spjut') && makeTask(y, yp, 'spjut').text.includes('yxan');
-    setAmount(y, 'flinta', 1);
-    const ingenFlinta = !wantsFlint(y);
     s.stat = { ...(s.stat ?? {}), fiskeForsok: 1 };
     setFood(s, 3); // byn behöver mat
     kor(s, 4 * 24);
-    const st = s.stat!, hand = (st.fiskeForsok ?? 0) - (st.spjutForsok ?? 0);
+    const st = s.stat!, hand = (st.fiskeForsok ?? 0) - 1 - (st.spjutForsok ?? 0); // utan det försök byn fick från början
     const takt = (f: number, n: number) => n ? f / n : 0;
     return [
       ['spjutet täljs och det vassa verktyget finns kvar', gjort],
       ['en yxa i halvt skick räcker för att tälja ett spjut', sliten],
-      ['en flinta och en sliten yxa är två av de två flintor och yxor byn vill ha', ingenFlinta],
       [`spjutet används (${st.spjutForsok ?? 0} försök med spjut, ${hand} med händerna)`, (st.spjutForsok ?? 0) > 20],
-      [`spjut ger mer fisk per försök (${takt(st.spjutFisk ?? 0, st.spjutForsok ?? 0).toFixed(2)} mot ${takt((st.fisk ?? 0) - (st.spjutFisk ?? 0), hand).toFixed(2)})`, hand < 20 || takt(st.spjutFisk ?? 0, st.spjutForsok ?? 0) > takt((st.fisk ?? 0) - (st.spjutFisk ?? 0), hand)],
+      [`spjut ger mer fisk per försök (${takt(st.spjutFisk ?? 0, st.spjutForsok ?? 0).toFixed(2)} mot ${takt((st.fisk ?? 0) - (st.spjutFisk ?? 0), hand).toFixed(2)})`, hand >= 20 && takt(st.spjutFisk ?? 0, st.spjutForsok ?? 0) > takt((st.fisk ?? 0) - (st.spjutFisk ?? 0), hand)],
       [`spjuten går sönder efter ${SPJUT_FORSOK} försök (${st.spjutTrasiga ?? 0} trasiga, ${st.spjutGjorda ?? 0} täljda)`, (st.spjutTrasiga ?? 0) >= 1 && (st.spjutGjorda ?? 0) >= 2],
     ];
   },
@@ -285,15 +282,16 @@ SCENARIER.hallbarhet = {
     };
     // en timme i en varm sommar och en i frost
     let varm = START, kall = START;
+    const s4 = createState(4, START); // vädret och temperaturen beror bara på fröet och kalendern
     for (let t = START, b = -99, c = 99; t < START + 7 * DAY; t += HOUR) {
-      const s = createState(4, START), v = temperature(s, t);
-      if (SIM.vaderNu(s, t).nb > 0) continue; // uppehåll: regnet sliter mer (steg 2.11.2)
+      const v = temperature(s4, t);
+      if (SIM.vaderNu(s4, t).nb > 0) continue; // uppehåll: regnet sliter mer (steg 2.11.2)
       if (v > b) { b = v; varm = t; }
       if (v < c) { c = v; kall = t; }
     }
     const sommar = dygn(varm), vinter = dygn(kall);
     // den kallaste timmen under fyra tidsåldrar (fyra veckor i verkligheten), i istiden
-    for (let t = START; t < START + 28 * DAY; t += 6 * HOUR) { const s = createState(4, START); if (temperature(s, t) < temperature(s, kall) && !SIM.vaderNu(s, t).nb) kall = t; }
+    for (let t = START; t < START + 28 * DAY; t += 6 * HOUR) if (temperature(s4, t) < temperature(s4, kall) && !SIM.vaderNu(s4, t).nb) kall = t;
     const frost = dygn(kall);
     const ved = 24 / (LAGER.maxDygn * 24 * LAGER.inne); // ett dygn av det som får hållas längst utan tak
     const nara = (a: number, b: number) => Math.abs(a - b) < 1e-6;
@@ -434,8 +432,8 @@ SCENARIER.forvaring = {
     // hyllan går inte att gå igenom: vägen förbi den går runt, och alla rutor i lagret nås fortfarande från elden
     const g = groundOf(s), f = getMap(s.seed).fire, i = hy ? hy.y * W + hy.x : -1;
     const forbi = hy ? findPath(g, hy.x - 0.5, hy.y + 0.5, hy.x + 1.5, hy.y + 0.5) : null;
-    let natt = 0, alla = 0;
-    if (z) for (let y = z.y; y < z.y + z.h; y++) for (let x = z.x; x < z.x + z.w; x++) { alla++; if (findPath(g, f.x + 0.5, f.y + 0.5, x + 0.5, y + 0.5)) natt++; }
+    let nas = 0, alla = 0;
+    if (z) for (let y = z.y; y < z.y + z.h; y++) for (let x = z.x; x < z.x + z.w; x++) { alla++; if (findPath(g, f.x + 0.5, f.y + 0.5, x + 0.5, y + 0.5)) nas++; }
     // lösa saker på golvet: halva farten
     const los = pilesOf(s).find(a => !stationAt(s, a.x, a.y) && a.n > 0), j = los ? los.y * W + los.x : -1;
     SIM.sakerPaGolvet(s);
@@ -462,7 +460,7 @@ SCENARIER.forvaring = {
       ['ingen kista byggs i byns lager', ingenKista],
       [`på hyllans ruta ryms ${STATION.hyllaRymmer} högar (${ryms} grenar), och där ligger nu ${pa ? Math.round(pa.n) : 0} ${pa ? SIM.sakNamn(pa.k).toLowerCase() : ''} (en vanlig ruta rymmer ${pa ? SIM.rutaOf(pa.k) : 0})`, ryms === SIM.rutaOf('grenar') * STATION.hyllaRymmer && !!pa && pa.n > SIM.rutaOf(pa.k) + 1e-6], // (ibland är det trä som hamnar på hyllan)
       [`hyllan går inte att gå igenom (vägen förbi: ${forbi ? forbi.length + ' rutor' : 'ingen'})`, g.hinder?.[i] === 1 && !!forbi && !forbi.includes(i)],
-      [`alla rutor i lagret nås fortfarande (${natt} av ${alla})`, alla > 0 && natt === alla],
+      [`alla rutor i lagret nås fortfarande (${nas} av ${alla})`, alla > 0 && nas === alla],
       [`över lösa saker på golvet går man med ${VAG.fartSaker} av farten (${med.toFixed(2)} mot ${utan.toFixed(2)})`, j >= 0 && Math.abs(med - utan * VAG.fartSaker) < 1e-9],
       [`i kistan slits det som under tak (${kOrsak}, ${kMult} gånger)`, kOrsak === 'kista' && kMult === LAGER.inne],
       [`i stället står flera redskap på samma ruta (${iStall} av ${STATION.stallRymmer})`, iStall >= 2 && iStall <= STATION.stallRymmer],

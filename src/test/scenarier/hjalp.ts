@@ -19,10 +19,8 @@ export const kor = (s: State, timmar: number, varje?: (s: State) => void) => { f
 export const klockan = (s: State, h = 10) => { s.now = new Date(s.now).setHours(h, 0, 0, 0); };
 // elden brinner (med en stenring), så att ingen behöver leta stenar och flinta för att tända den
 export const tandEld = (s: State, fuel = 4, ring = true) => { Object.assign(s.fire, ring ? { lit: true, fuel, ring: true } : { lit: true, fuel }); };
-// tomt förråd: ingen mat, inget trä, inga grenar, ingen flinta och inget hö
-// en färdig station vid elden (stationer.ts), slaktbänken om inget annat sägs: viltet slaktas och fisken rensas bara där,
-// korgen flätas bara vid slöjdbänken
-// en färdig station av sorten k; en som står inne (slöjdbänken, halmbädden) får ett hus om det inte finns något där den får stå
+// en färdig station av sorten k, slaktbänken om inget annat sägs (stationer.ts); en som står inne (slöjdbänken, halmbädden)
+// får ett hus om det inte finns något där den får stå
 export const medBank = (s: State, k = 'slaktbank') => {
   let at = SIM.stationSite(s, k);
   if (!at && SIM.stationDef(k)?.inne) { medHus(s); at = SIM.stationSite(s, k); }
@@ -49,6 +47,7 @@ export function medHus(s: State) {
   s.people.forEach((p, i) => { p.tek = tek[i]; });
   return byggKlart(s);
 }
+// tomt förråd: ingen mat, inget trä, inga grenar, ingen flinta och inget hö
 export const tomtForrad = (s: State) => { setMat(s, {}); setStock(s, { ved: 0, grenar: 0, flinta: 0, torrgras: 0 }); };
 // byns tre första blir tre vuxna utan släkt på samma ruta, friska, utan uppgift och med hungern hunger (byte, behov och ved).
 // Resten (s.people, vänskap) ställer varje scenario in själv, i sin ordning
@@ -95,7 +94,7 @@ export function uiLas(s: State, t: number) {
   visning.pa = true;
   try { uiLasNu(s, t); } finally { visning.pa = false; }
 }
-export function uiLasNu(s: State, t: number) {
+function uiLasNu(s: State, t: number) {
   kalender(s, t); yearNo(s, t); temperature(s, t); isLight(t); lightLevel(t); timeLabel(s, t); ageIndex(s); rikedomDelar(s);
   // kartan: filtret, växterna, djuren, marken och elden
   for (const k of FYND_IDS) for (let i = 0; i < W * H; i++) { vaxerAt(s, k, i); fyndAt(s, k, i); }
