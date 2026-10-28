@@ -36,7 +36,7 @@ function renderClock() {
   $('sparFel').hidden = !ui.sparFel;
   $('molnFel').hidden = !ui.molnFel;
   $('lokalFel').hidden = !ui.lokalFel;
-  $('calTime').textContent = `${isLight(t) ? 'Ljus tid' : 'Mörk tid'} · ${hh}:${mm}${ui.testMode ? ' (test)' : ''}`;
+  $('calTime').textContent = `${isLight(t) ? 'Dag' : 'Natt'} · ${hh}:${mm}${ui.testMode ? ' (test)' : ''}`;
 }
 
 // ---------- kontroller ----------

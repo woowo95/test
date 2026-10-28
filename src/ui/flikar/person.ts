@@ -1,5 +1,5 @@
 import { FORMAGOR, HALSA, Kroppsdel, KROPPSDELAR, NARING, NARINGAR, NARINGBAL, bristGrad, bristerNu, frysFaktor, naringNu, sjunker, skorbjugg, vilaTim, TORST, blodning, delSkada, halsa, skadeLista, skadeText, smarta, torstDelar } from '../../sim';
-import { INTRYCK, Intryck, LARDOMAR, LKind, anseendeSym, dodSymbol, intryckText, samlatIntryck, ACTS, ALDER, Act, DAY, Lardom, HUMOR, SKILL_GOR, STAT_GOR, Skill, Stat, coldOf, halsaLage, hearthOf, living, roomAt, temperature, varmeDelar, viloSlag, viloTak, takEffekt, SLAG, SLAG_TECKEN, Person, KUNSKAPER, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, SEDER, SED_LIST, sedOppen, TEKNIK, BYN, Ting, halvKlar, ageOf, alive, byId, childrenOf, drar, heldBy, ownedBy, PLATSER, PLATS_LIST, Plats, BORDA_KG, UTRUSTNING, bordOf, capacity, kvNamn, handerFor, homeKind, load, utrustning, viktOf, SAKER, ownedStock, sakNamn, slagIkon, tingNamn, STACK, describe, duty, habitShare, habitTotal, KROPP, kortTal, moodOf, num, REL, relKey, relTyper, stat, taskName, timeLabel, upplevelseText, uppEffekt } from '../../sim';
+import { INTRYCK, Intryck, LARDOMAR, LKind, anseendeSym, dodSymbol, intryckText, samlatIntryck, ACTS, ALDER, Act, DAY, Lardom, HUMOR, SKILL_GOR, STAT_GOR, Skill, Stat, coldOf, halsaLage, hearthOf, living, roomAt, temperature, varmeDelar, viloSlag, viloTak, takEffekt, SLAG, SLAG_TECKEN, Person, KUNSKAPER, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, SEDER, SED_LIST, sedOppen, TEKNIK, BYN, formogenhetDelar, Ting, halvKlar, ageOf, alive, byId, childrenOf, drar, heldBy, ownedBy, PLATSER, PLATS_LIST, Plats, BORDA_KG, UTRUSTNING, bordOf, capacity, kvNamn, handerFor, homeKind, load, utrustning, viktOf, SAKER, ownedStock, sakNamn, slagIkon, tingNamn, STACK, describe, duty, habitShare, habitTotal, KROPP, kortTal, moodOf, num, REL, relKey, relTyper, stat, taskName, timeLabel, upplevelseText, uppEffekt } from '../../sim';
 import { framstegSvg, hasIcon, iconImg, kvSvg, tecknet } from '../../ikoner';
 import { LAG, fmtN, bar, cap, carryTxt, cssFarg, durTxt, esc, hex, hsl, hjalpOppen, hjalpText, moodWord, pLink, prickar, relWord, sickNow, tempBar, tempOrd, trend, trendD } from '../hjalp';
 import { s, ui } from '../lage';
@@ -58,9 +58,16 @@ function presHtml(p: Person) {
       <dt>Yrke</dt><dd>${p.tag ? esc(p.tag) : '–'}</dd>
       <dt>Föräldrar</dt><dd>${p.mother || p.father ? [byId(s, p.mother), byId(s, p.father)].filter(Boolean).map(q => pLink(q)).join(' och ') : 'Bland de första i byn'}</dd>
       <dt>Partner</dt><dd>${pLink(byId(s, p.partner))}</dd><dt>Barn</dt><dd>${kids.length ? kids.map(pLink).join(', ') : '–'}</dd>
-      <dt>Övertygelser</dt><dd>${tro.length ? tro.join(' ') : '–'}</dd></dl>
+      <dt>Övertygelser</dt><dd>${tro.length ? tro.join(' ') : '–'}</dd>${formogenhetRad(p)}</dl>
       <h3>Viktiga händelser</h3>${p.fame.length ? `<ul class="fame">${p.fame.map(f => `<li>${esc(f.replace(/^Kom på /, 'Uppfann '))}</li>`).join('')}</ul>` : '<p class="muted">Inget som minns ännu.</p>'}
       ${p.upp?.length ? `<h3>Upplevelser</h3><ul class="fame">${p.upp.map(u => `<li>${u.a} år: ${esc(upplevelseText(u))} <span class="muted">${esc(effektText(u.e))}</span></li>`).join('')}</ul>` : ''}`;
+}
+// förmögenheten (steg 3.6.4): värdet av allt hen äger, ungefär i arbetstimmar (varde.ts); delarna när man trycker
+function formogenhetRad(p: Person) {
+  const f = formogenhetDelar(s, p.id), id = `form-${p.id}`, v = (n: number) => String(Math.round(n));
+  const delar = ([['Redskap', f.redskap], ['Kläder', f.klader], ['I förrådet och kistan', f.forrad], ['Hus', f.hus]] as const).filter(x => x[1] >= 0.5);
+  return `<dt class="klick" data-hjalp="${id}" title="Värdet av allt hen äger">Förmögenhet</dt><dd class="klick" data-hjalp="${id}">${v(f.sum)}</dd>
+    ${hjalpText(id, `<dd class="forkl"><ul class="thoughts">${delar.map(([n, x]) => `<li class="pos">${n} <span>${v(x)}</span></li>`).join('') || '<li>Äger inget</li>'}</ul><p class="muted">Ungefär i arbetstimmar: det det tar att skaffa eller göra sakerna.</p></dd>`)}`;
 }
 // det en upplevelse gjorde med egenskaperna (steg 3.1.2, uppvaxt.ts), till exempel "Mod −2, Uthållighet +1"
 const plusMinus = (v: number) => (v > 0 ? '+' : '−') + Math.abs(v);

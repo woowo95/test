@@ -20,7 +20,7 @@ export const styre: Flik = {
     const delar: [string, number, number][] = [['Folkets stöd', lg.stod, LED.wStod], ['Tiden vid makten', lg.tid, LED.wTid], ['Vintrar byn klarat', lg.vint, LED.wVint]];
     const ledare = l ? `<div class="tekhead">${iconImg('ledarskap', 24)} <b>${esc(f.namn)}</b> ${hjalpKnapp('styre', 'Vad är styret?')}</div>
       ${hjalpText('styre', `<p class="muted">${esc(f.text(l, st.titel ?? ''))} Bara den som kan ledarskap kan bli ledare. Ledaren drar byns seder åt sitt håll, bestämmer påbuden och straffar det hen sett eller hört om.</p>`)}
-      <ul class="rels"><li>${pLink(l)}<span></span><span class="muted">${esc(st.titel ?? '')}, ${dygnTxt(s.now - (st.sedan ?? s.now))}</span></li></ul>
+      <ul class="rels"><li>${pLink(l)}<span></span><span></span><span class="muted">${esc(st.titel ?? '')}, ${dygnTxt(s.now - (st.sedan ?? s.now))}</span></li></ul>
       <dl class="kv"><dt title="Hur mycket byn godtar ledaren">⚖️ Legitimitet</dt><dd>${bar(lg.v, lg.v < 0.3 ? 'low' : '')}<span>${Math.round(lg.v * 100)} %</span></dd>
       ${hjalpText('styre', delar.map(([n, v, w]) => `<dt class="small">${n}</dt><dd class="small">${bar(v)}<span>${Math.round(v * 100)} % · väger ${num(w)}</span></dd>`).join('') + (lg.oratt > 0.005 ? `<dt class="small">Orättvisa straff</dt><dd class="small">−${Math.round(lg.oratt * 100)} %</dd>` : ''))}</dl>`
       : '<p class="muted">Byn har ingen ledare just nu. Ingen vuxen som kan ledarskap är vald ännu.</p>';

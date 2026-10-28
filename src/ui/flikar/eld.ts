@@ -59,6 +59,6 @@ function fireHtml() {
       <dt>Välbehag</dt><dd>+${Math.round(h.comfort * 100)} i humör nära elden</dd>
       <dt>Inomhus</dt><dd>${h.indoor ? 'Ja' : 'Nej'}</dd>
       <dt>Spridningsrisk</dt><dd>${spreadWord(h.spread)}</dd></dl>
-    ${fills.length ? `<h3>Fyller oftast på</h3><ul class="rels">${fills.map(x => `<li>${pLink(x.p)}<span></span><span class="muted">${times(x.n)}</span></li>`).join('')}</ul>` : ''}
+    ${fills.length ? `<h3>Fyller oftast på</h3><ul class="rels">${fills.map(x => `<li>${pLink(x.p)}<span></span><span></span><span class="muted">${times(x.n)}</span></li>`).join('')}</ul>` : ''}
     <h3>Historik</h3>${f.log.length ? `<ol class="logg">${f.log.slice().reverse().slice(0, 40).map(fireEntry).join('')}</ol>` : '<p class="muted">Elden har aldrig brunnit.</p>'}`;
 }

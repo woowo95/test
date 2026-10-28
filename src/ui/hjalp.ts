@@ -1,5 +1,5 @@
 import { framstegSvg, iconImg, kvSvg } from '../ikoner';
-import { NORMAL, kvEffekt, kvHaller, kvNamn, kvOf, kvVarde, BORDA_KG, UTRUSTNING, HOUR, KROPP, LogEntry, MIN, Person, REL, byId, capacity, carryKind, clamp, isParent, isSick, load, num, sak, sakNamn, timeLabel } from '../sim';
+import { NORMAL, kvEffekt, kvHaller, kvNamn, kvOf, kvVarde, BORDA_KG, bordOf, UTRUSTNING, HOUR, KROPP, LogEntry, MIN, Person, REL, byId, capacity, carryKind, clamp, isParent, isSick, load, num, sak, sakNamn, timeLabel } from '../sim';
 import { s, vidNyBy } from './lage';
 
 // små hjälpare för text, tal, färger och staplar som alla delar av gränssnittet använder
@@ -102,9 +102,9 @@ export const pileTxt = (p: { k: string; n: number; max: number; gor?: string; kl
 // vad en person bär, vad det väger och hur mycket hen orkar (steg 2.3.1)
 export function carryTxt(p: Person) {
   const t = p.task, orkar = capacity(s, p), parts: string[] = [];
-  if (t && t.carry > 0.05) parts.push(`${fmtN(t.carry)} ${sakNamn(carryKind(t.act)).toLowerCase()}`);
-  for (const k in t?.items ?? {}) if (t!.items![k] >= 0.5 && !sak(k)?.dold) parts.push(`${fmtN(t!.items![k])} ${sakNamn(k).toLowerCase()}`);
-  const kg = (n: number) => `${num(n * BORDA_KG).replace(',0', '')} kg`;
+  const kg = (n: number) => `${num(n * BORDA_KG).replace(',0', '')} kg`, styck = (k: string, n: number) => `${fmtN(n)} ${sakNamn(k).toLowerCase()} (${kg(n * bordOf(k))})`;
+  if (t && t.carry > 0.05) parts.push(styck(carryKind(t.act), t.carry));
+  for (const k in t?.items ?? {}) if (t!.items![k] > 0 && !sak(k)?.dold) parts.push(styck(k, t!.items![k]));
   return parts.length ? `Bär ${parts.join(' och ')}, ${kg(load(t!, s))} (${Math.round(load(t!, s) / orkar * 100)} % av vad hen orkar)` : `Bär inget just nu, orkar bära ${kg(orkar)} med båda händerna och ${kg(orkar * UTRUSTNING.en)} i en`;
 }
 // en rad i loggen där namnen går att trycka på

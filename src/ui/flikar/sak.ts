@@ -1,4 +1,4 @@
-import { klenod, kladSkydd, BYN, HOUR, W, kortTal, Pile, SAKER, Slitage, Ting, byId, condOf, halvKlar, sakNamn, slitageNu, stationById, stationDef, temperature, tingOf, toaAt, toaInfo } from '../../sim';
+import { klenod, kladSkydd, BYN, HOUR, W, kortTal, Pile, SAKER, Slitage, Ting, byId, condOf, halvKlar, sakNamn, slitageNu, stationById, stationDef, temperature, tingOf, toaAt, toaInfo, viktOf } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { condBar, durTxt, esc, kvMark, kvText, pLink } from '../hjalp';
 import { piles, s, ui } from '../lage';
@@ -74,7 +74,7 @@ export const sak: Flik = {
       <dt>Skick</dt><dd>${condBar(c)}<span>${Math.round(c * 100)} %</span></dd>
       ${kv}
       <dt>Slitage</dt><dd>${esc(orsak)}${sl.per > 0 ? ` (${sl.per * 2400 < 0.1 ? 'under 0,1' : kortTal(sl.per * 2400)} % per dygn)` : ''}</dd>
-      ${haller}${mangd}${klad}
+      ${haller}${mangd}<dt>Vikt</dt><dd>${kortTal(viktOf(k))} kg${!t && p && p.n >= 2 ? `, ${kortTal(viktOf(k) * Math.round(p.n))} kg alla` : ''}</dd>${klad}
       ${t ? `<dt>Var</dt><dd>${var_(t, p)}</dd><dt>Ägare</dt><dd>${agare}</dd>` : ''}
       ${gjord}${klen}
     </dl>`;

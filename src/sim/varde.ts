@@ -113,3 +113,11 @@ export function formogenheter(s: State) {
   let sum = 0; for (const v of egen.values()) sum += v;
   return { egen, byn: Math.max(0, rikedom(s) - sum) };
 }
+// en persons förmögenhet i delar (steg 3.6.4): redskapen, kläderna (var de än ligger, också i kistan), andelarna i förrådet och egna hus
+export function formogenhetDelar(s: State, id: number) {
+  let redskap = 0, klader = 0, hus = 0;
+  for (const t of tingOf(s)) if (t.agare === id) { if (SAKER[t.k]?.klad) klader += tingVarde(t); else redskap += tingVarde(t); }
+  const forrad = agarVarde(s, grundvarde).get(id) ?? 0;
+  for (const h of housesOf(s)) if (h.ag === id) hus += husVarde(s, h);
+  return { redskap, klader, forrad, hus, sum: redskap + klader + forrad + hus };
+}

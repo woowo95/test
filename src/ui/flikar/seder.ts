@@ -13,7 +13,7 @@ export const seder: Flik = {
     ${hjalpText('seder', '<p class="muted">Byns seder är vad invånarna tillsammans tycker är viktigt. De växer fram ur deras egenskaper och ur det som händer byn. Äldre och karismatiska röster väger tyngst. Sederna påverkar vad var och en väljer att göra.</p>')}
     <ul class="seder">${SED_LIST.filter(k => sedOppen(s, k)).map(k => `<li title="${esc(SEDER[k].effect)}"><div class="sedtop"><span>${SEDER[k].neg}</span><span>${SEDER[k].pos}</span></div>${sedBar(sd.v[k])}
       <p class="sedw">${sedWord(k, sd.v[k])}</p>${hjalpText('seder', `<p class="muted small">${SEDER[k].effect}</p>`)}</li>`).join('')}</ul>
-    <h3>Tyngsta röster</h3>${voices.length ? `<ul class="rels">${voices.map(x => `<li>${pLink(x.p)}<span></span><span class="muted">${Math.floor(ageOf(x.p, s.now))} år${x.p.tag ? `, ${esc(x.p.tag.toLowerCase())}` : ''}</span></li>`).join('')}</ul>` : '<p class="muted">–</p>'}
+    <h3>Tyngsta röster</h3>${voices.length ? `<ul class="rels">${voices.map(x => `<li>${pLink(x.p)}<span></span><span>${x.p.tag ? esc(x.p.tag) : ''}</span><span class="muted">${Math.floor(ageOf(x.p, s.now))} år</span></li>`).join('')}</ul>` : '<p class="muted">–</p>'}
     <h3>Det som format sederna</h3>${sd.log.length ? `<ol class="logg">${sd.log.slice().reverse().map(l => `<li><span class="when">${timeLabel(s, l.t)}</span>${esc(l.text)}</li>`).join('')}</ol>` : '<p class="muted">Inget särskilt har hänt ännu.</p>'}`;
   },
 };
