@@ -1,4 +1,4 @@
-import { MASTERVERK, PERFEKT, Act, DJUR, GRODOR, faltById, faltKlar, faltOf, faltRuta, faltRutor, grodaPa, brasaHeat, radieAv, W, bordPlatser, sjoarna, stationById, GORS, MATERIAL, Pile, STATION, STUBBE_LIV, Station, bitAt, bitsOf, clamp, dorrDef, condOf, emberOn, fireHeat, forvarAt, eldPlats, grillVara, heatRadius, TORK, torrDel, isKlar, living, stationDef, stationKlar, stationerOf, storlekAv, tillbehorDef, tingOf, vidStation, zonesOf } from '../sim';
+import { MASTERVERK, PERFEKT, Act, DJUR, DJURARTER, HOUR, halvKlar, GRODOR, faltById, faltKlar, faltOf, faltRuta, faltRutor, grodaPa, brasaHeat, radieAv, W, bordPlatser, sjoarna, stationById, GORS, MATERIAL, Pile, STATION, STUBBE_LIV, Station, bitAt, bitsOf, clamp, dorrDef, condOf, emberOn, fireHeat, forvarAt, eldPlats, grillVara, heatRadius, TORK, torrDel, isKlar, living, stationDef, stationKlar, stationerOf, storlekAv, tillbehorDef, tingOf, vidStation, zonesOf } from '../sim';
 import { LagereldLage, iconCanvas, lagereldId } from '../ikoner';
 import { ritaHus } from './husbild';
 import { outPilesAt, piles, s, ui } from './lage';
@@ -67,10 +67,18 @@ const YTA: Record<string, { x: number; y: number; vid?: { x: number; y: number }
 // djurregistret (DJUR), redskapen ur GORS, repet när någon tvinnar och skinnet när någon syr (steg 2.3.2). Bara utseende:
 // spelet räknar likadant
 const PA_BANKEN: Partial<Record<Act, string>> = { ...Object.fromEntries(Object.values(DJUR).map(d => [d.act, d.sak])), ...Object.fromEntries(Object.keys(GORS).map(g => [g, GORS[g][0]])), tvinna: 'rep', skinnrock: 'skinn', skinnskor: 'skinn' };
-function paBanken(st: Station) {
+// det som används vid stationen just nu (steg 3.6.6): den som arbetar där, sakerna på bänken och hur långt arbetet kommit.
+// Ett påbörjat redskap (paborjat.ts) visar sitt material och sin framsteg; viltet visar hur långt slakten kommit av
+// den längsta tiden (maxTim). Annars saken ur PA_BANKEN och ingen stapel. Bara utseende
+export function iBruk(st: Station) {
   const d = stationDef(st.k), at = vidStation(st);
   const p = d && living(s).find(q => q.task && d.gor.includes(q.task.act) && Math.hypot(q.x - at.x, q.y - at.y) < STATION.vidBank);
-  return p?.task ? p.task.act === 'grilla' ? grillVara(s)?.ra : PA_BANKEN[p.task.act] : undefined; // på spettet: det som grillas
+  const tk = p?.task;
+  if (!p || !tk) return undefined;
+  const h = tk.ref !== undefined ? tingOf(s).find(t => t.id === tk.ref && t.halv)?.halv : undefined;
+  if (h) return { p, saker: Object.keys(h.av).filter(k => h.av[k] > 0), gor: h.gor, klar: halvKlar(h) };
+  const art = DJURARTER.find(a => a.act === tk.act), sak = tk.act === 'grilla' ? grillVara(s)?.ra : PA_BANKEN[tk.act]; // på spettet: det som grillas
+  return { p, saker: sak ? [sak] : [], gor: undefined, klar: art && tk.phase === 'do' ? clamp(1 - (tk.until - s.now) / (art.maxTim * HOUR), 0, 1) : undefined };
 }
 // maten som hänger på torkställningen (steg 2.8.2): köttet i remsor och fisken i stjärten under slån, åtta platser som fylls
 // efter hur mycket som hänger. Den byter färg från rött till mörkbrunt medan den torkar (torrDel). Bara utseende
@@ -141,8 +149,7 @@ export function drawStructures(t: number) {
     if (st.rot) continue;
     if (st.tork?.length) hangande(st, x0, y0);
     const yta = YTA[st.k] ?? { x: 2, y: 2 };
-    const sak = paBanken(st);
-    if (sak) pileIcons.add(sak, x0 + yta.x, y0 + yta.y, 1);
+    (iBruk(st)?.saker ?? []).slice(0, 3).forEach((k, i) => pileIcons.add(k, x0 + yta.x + i * 6, y0 + yta.y, 1)); // sida vid sida
     const vid = yta.vid && tingOf(s).find(k => k.vid === st.id && k.hos === undefined && k.lass === undefined);
     if (vid) pileIcons.add(vid.k, x0 + yta.vid!.x, y0 + yta.vid!.y, 1);
   }

@@ -1,7 +1,8 @@
 import { ACTS, DJURARTER, STATION, bordPlatser, pilesOf, living, TEKNIK, TILLBEHOR_LIST, byId, isKlar, sakNamn, slagIkon, stationById, stationDef, stationKlar, tillbehorDef, tingOf, timeLabel, isTool, FLACKAR, smutsVid, blodVid, storlekAv, TORK, torrDel, BRASA } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { sakAttr } from './sak';
-import { condBar, esc, fmtN, kvMark, kvText, pLink } from '../hjalp';
+import { iBruk } from '../foremal';
+import { condBar, durTxt, esc, fmtN, kvMark, kvText, pLink } from '../hjalp';
 import { s, ui } from '../lage';
 import type { Flik } from '../panel';
 
@@ -58,9 +59,14 @@ export const station: Flik = {
     const be = d.brasa && klar ? st.eld : undefined, bfolk = (be?.folk ?? []).map(id => byId(s, id)).filter(p => p);
     const brasa = d.brasa && klar ? `<h3>Eld</h3><p ${tip(be?.lit ? `Brinner, ${fmtN(be.fuel)} timmar ved kvar` : 'Släckt. Den tänds med en brand från lägerelden')}>${iconImg('brasa')} ${be?.lit ? `🔥 ${fmtN(be.fuel)} h` : '<span class="muted">släckt</span>'}</p>`
       + `<p ${tip(`De som sover närmast den. När ingen gör det och den är släckt tas den isär efter ${BRASA.tomDygn} dygn, och stenarna läggs i en hög`)}>${bfolk.length ? bfolk.map(p => pLink(p)).join(' ') : '<span class="muted">ingen sover nära</span>'}</p>` : '';
+    // det som används just nu (steg 3.6.6): den som arbetar, sakerna på bänken och hur långt arbetet kommit
+    const ib = klar ? iBruk(st) : undefined;
+    const bruk = ib ? `<h3>Används nu</h3><p>${pLink(ib.p)} ${ib.saker.map(k => `<span ${tip(sakNamn(k))}>${iconImg(k)}</span>`).join('')}${ib.gor ? ` → <span ${tip(sakNamn(ib.gor))}>${iconImg(ib.gor)}</span>` : ''}</p>`
+      + (ib.klar !== undefined ? `<p ${tip(`${Math.round(ib.klar * 100)} % klart`)}>${condBar(ib.klar)}<span>${Math.round(ib.klar * 100)} %</span></p>` : ib.p.task!.until > s.now ? `<p class="muted">${durTxt(ib.p.task!.until - s.now)} kvar</p>` : '') : '';
     const av = Object.entries(d.av).map(([k, n]) => `<span ${tip(`${fmtN(n)} ${sakNamn(k).toLowerCase()}`)}>${iconImg(k)}${fmtN(n)}</span>`).join(' ');
     return `
     <div class="phead"><div><h2>${iconImg(d.ikon, 20)} ${esc(d.namn)}</h2><p class="muted">${status}${st.q !== undefined ? ` ${kvMark(st, 12)} ${esc(kvText(st))}.` : ''} ${st.inne ? 'Står inne.' : d.inne ? 'Står ute, men bärs in när ett hus har plats.' : 'Står ute.'}</p>${smuts ? `<p>${smuts}</p>` : ''}${fyllt}${agare ? `<p>Ägs av ${pLink(agare)}.</p>` : ''}${vem.length ? `<p class="muted">Byggd av ${vem.map(p => pLink(p)).join(', ')}.</p>` : ''}</div></div>
+    ${bruk}
     ${d.gor.length ? `<h3>Här görs</h3><dl class="kv">${d.gor.map(a => gorRad(a, !!d.bara?.includes(a))).join('')}</dl>` : ''}
     ${d.sover ? `<h3>Sovplats</h3><p class="muted">En sovplats. Den som sover här vilar upp sig fortare.</p>` : ''}
     ${d.platser ? `<h3>Platser</h3><p ${tip('Här äter man tillsammans och blir glad av det, och här samtalar man')}>${stubbar || `<span class="muted">${bordPlatser(st).length} stubbar när bordet är klart</span>`}</p>` : ''}

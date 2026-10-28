@@ -211,7 +211,8 @@ export const storlek = (k: string, rot?: unknown) => { const d = stationDef(k), 
 export const storlekAv = (t: { k: string; rot?: unknown }) => storlek(t.k, t.rot);
 // rutorna (index i kartan) som stationerna tar, och sovplatserna i de färdiga möbler man sover i (rutan uppe till vänster).
 // Räknas om när något byggs (s.byggV)
-// och borden: platserna runt dem (sitt, där inget annat får stå)
+// och borden: platserna runt dem (sitt, där inget annat får stå), och rutan framför en arbetsstation, där man står eller
+// sitter när man arbetar (steg 3.6.6)
 // och förvaringen (steg 2.3.6): rutorna som inte går att gå igenom (hinder, i vägsökningen i vag.ts), också medan den byggs
 interface Rutor { v: number; n: number; at: Map<number, Station>; sov: Set<number>; sitt: Set<number>; hinder: Uint8Array }
 const rutorCache = new WeakMap<State, Rutor>();
@@ -225,6 +226,7 @@ export function stationRutor(s: State): Rutor {
       for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) { at.set((t.y + j) * W + t.x + i, t); if (d?.forvar && t.ag === undefined) hinder[(t.y + j) * W + t.x + i] = 1; }
       if (isKlar(t) && d?.sover) sov.add(t.y * W + t.x);
       for (const q of bordPlatser(t)) sitt.add(q.y * W + q.x);
+      for (const q of framfor(t)) sitt.add(q.y * W + q.x);
     }
     r = { v, n: st.length, at, sov, sitt, hinder };
     rutorCache.set(s, r);
@@ -240,7 +242,18 @@ export function stationAt(s: State, x: number, y: number) {
 // är rutan en plats vid ett bord (en stubbe)?
 export const sittAt = (s: State, x: number, y: number) => !!s.stationer?.length && x >= 0 && y >= 0 && x < W && stationRutor(s).sitt.has(Math.floor(y) * W + Math.floor(x));
 // den färdiga station där handlingen görs, om byn har en
-export const stationFor = (s: State, act: Act) => stationerOf(s).find(t => isKlar(t) && stationDef(t.k)?.gor.includes(act));
+export const stationFor = (s: State, act: Act) => stationerOf(s).find(t => isKlar(t) && stationDef(t.k)?.gor.includes(act) && framFri(s, t));
+// rutorna framför en arbetsstation (steg 3.6.6): där står den som arbetar, och där får inget annat stå än sittplatsen.
+// Inte förvaringen, sängarna, borden (stubbarna runt), grillen över elden eller brasan
+const arbetar = (d?: StationDef) => !!d && d.gor.length > 0 && !d.forvar && !d.sover && !d.platser && !d.eld && !d.brasa;
+export function framfor(t: Station) {
+  if (!arbetar(stationDef(t.k))) return [];
+  const { w, h } = storlekAv(t);
+  return Array.from({ length: w }, (_, i) => ({ x: t.x + i, y: t.y + h }));
+}
+// står något framför stationen (en hög, ett redskap på marken eller en annan station)? Då kan den inte användas
+export const framFri = (s: State, t: Station) => framfor(t).every(q => !(s.stackar ?? []).some(a => a.x === q.x && a.y === q.y)
+  && !tingOf(s).some(k => k.x === q.x && k.y === q.y && k.hos === undefined && k.lass === undefined && k.bar === undefined && k.vid === undefined) && !stationAt(s, q.x, q.y));
 // handlingen görs bara vid en station (bara i registret)
 const BARA = new Set<Act>(STATION_LIST.flatMap(k => (STATIONER[k] as StationDef).bara ?? []));
 // handlingen kan göras: den kräver ingen station, eller byn har en färdig (och redskapet som handlingen kräver ligger där)
@@ -418,7 +431,7 @@ function siteUte(s: State, k: string) {
       for (let j = 0; j < h && fri; j++) for (let i = 0; i < w && fri; i++) fri = ledig(s, x + i, y + j);
       if (fri && stationDef(k)?.platser) fri = bordPlatser({ k, x, y, rot }).every(q => ledig(s, q.x, q.y)); // stubbarna runt bordet
       if (fri) fri = friRunt(s, [...rutorAv(x, y, w, h), ...(stationDef(k)?.platser ? bordPlatser({ k, x, y, rot }) : [])], true); // plats för en stig runt (steg 2.10.8)
-      for (let i = 0; i < w && fri; i++) fri = !gridOf(s).at.has((y + h) * W + x + i); // man står framför den, inte i en vägg
+      for (let i = 0; i < w && fri; i++) fri = !gridOf(s).at.has((y + h) * W + x + i) && !stationAt(s, x + i, y + h); // man står framför den, inte i en vägg eller en annan station
       if (!fri) continue;
       // helst mot en vägg, men inte vid en öppning där man går in (Björn efter v101)
       let vagg = 0;
