@@ -71,6 +71,8 @@ SCENARIER.sparning = {
       [`redskapen i en sparfil från före v40 blir ting (${yxor} yxor av 2, ${gamlaGrenar} grenar av 7)`, yxor === 2 && Math.abs(gamlaGrenar - 7) < 1e-6],
       ['en uppgraderad by ändras inte av att uppgraderas igen', JSON.stringify(gammal) === igen],
       [`en ny by har den senaste sparversionen (${s.v})`, s.v === SPARVERSION],
+      // näringsvärdena och mättnaden avrundas var för sig; profilen får inte jämnas ut till mättnaden vid inläsningen
+      ['näringsvärdena är kvar efter inläsningen', ny.people.every((p: Person) => !p.naring || SIM.naringNu(p) === p.naring) && ny.people.some((p: Person) => p.naring && new Set(Object.values(p.naring)).size > 1)],
     ];
     // En sparad och inläst by (städad med compact, sparad och läst in) fortsätter giltig med samma folk, förråd, hus och
     // redskap. Den fortsätter inte exakt som den som aldrig sparades: sparfilen avrundar talen till tre decimaler, och det

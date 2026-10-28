@@ -41,9 +41,9 @@ export function newTing(s: State, k: string, c: number, agare: number): Ting {
 // p gjorde ett redskap: det läggs i förrådet och är hens
 export function addTool(s: State, k: string, p: Person) { return newTing(s, k, 1, p.id); }
 
-// kan p ta tinget? Inte om någon annan arbetar med det eller har det på sig
+// kan p ta tinget? Inte om någon bär det i bördan, arbetar med det eller har det på sig
 function usable(s: State, p: Person, t: Ting) {
-  if (t.bar !== undefined && t.bar !== p.id) return false;
+  if (t.lass !== undefined || (t.bar !== undefined && t.bar !== p.id)) return false;
   if (t.hos !== undefined && t.hos !== p.id) {
     const q = byId(s, t.hos);
     if (q && alive(q) && usesTool(q.task) === t.k) return false;

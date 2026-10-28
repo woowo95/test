@@ -50,8 +50,9 @@ const lika = (v: number) => Object.fromEntries(NARINGAR.map(k => [k, v])) as Rec
 // mättnaden av näringsvärdena
 export const mattnad = (n: Record<Naring, number>) => NARINGAR.reduce((a, k) => a + DEF[k].vikt * n[k], 0);
 // p:s näringsvärden. Den som inte har några (en äldre sparning) eller vars mättnad satts direkt (testerna) har alla värden
-// lika med mättnaden. naringNu ändrar inget (gränssnittet), naringOf sparar dem i p (simuleringen)
-const stammer = (p: Person) => !!p.naring && Math.abs(mattnad(p.naring) - p.hunger) <= 1e-9;
+// lika med mättnaden. naringNu ändrar inget (gränssnittet), naringOf sparar dem i p (simuleringen). Sparfilen avrundar
+// värdena och mättnaden var för sig till tre decimaler (steg.ts), så de får skilja så mycket efter en inläsning
+const stammer = (p: Person) => !!p.naring && Math.abs(mattnad(p.naring) - p.hunger) <= 2e-3;
 export const naringNu = (p: Person): Readonly<Record<Naring, number>> => stammer(p) ? p.naring! : lika(p.hunger);
 export function naringOf(p: Person) {
   if (!stammer(p)) p.naring = lika(p.hunger);
