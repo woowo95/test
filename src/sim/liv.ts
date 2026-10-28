@@ -16,11 +16,11 @@ import { balans } from './balans';
 // åldrar i år i spelet. Åldrarna för vuxen och barn (ALDER) står i folk.ts
 const LIV = balans('liv', {
   // trängsel: 0 upp till trangFran invånare, 1 vid trangFran + trangSpann, högst trangMax
-  trangFran: 14, trangSpann: 16, trangMax: 3,
+  trangFran: 24, trangSpann: 16, trangMax: 3, // (14 före steg 2.12.6: spelet byggs för ca 30 invånare)
   // hur många barn byn vill ha (birthWish): fler i en liten by, färre i en stor
-  barnLiten: 10, // en by på så här många eller färre vill ha fler barn ...
+  barnLiten: 20, // en by på så här många eller färre vill ha fler barn (10 före steg 2.12.6) ...
   barnLitenOkning: 0.03, // ... så här mycket mer för varje invånare under
-  barnTrangFran: 16, barnTrangTapp: 0.035, barnMin: 0.15, // över detta minskar viljan så här mycket per invånare, aldrig under Min
+  barnTrangFran: 26, barnTrangTapp: 0.035, barnMin: 0.15, // över detta minskar viljan så här mycket per invånare, aldrig under Min (16 före steg 2.12.6)
   // hur många som flyttar ut (emigrationRate, per dygn)
   nojd: 0.6, // snitthumör över detta ger inget missnöje (och en by utan invånare räknas som nöjd)
   missnoje: 4, missnojeMax: 1.5, // missnöjet = (Nöjd - humöret) gånger detta, högst Max
@@ -35,7 +35,7 @@ const LIV = balans('liv', {
   parChans: 0.35, // chansen att en nybyggare kommer med en partner
   medhavd: 2, // rötter nybyggaren har med sig från vandringen (MEDHAVT nedan)
   // hur gott om mat byn haft (matGott): 0 vid matGottFran dygns mat i snitt, 1 vid Fran + Spann eller mer
-  matGottFran: 1.4, matGottSpann: 2.7, matStart: 4, // en by som ännu saknar snitt räknas som om den hade Start dygns mat
+  matGottFran: 1, matGottSpann: 2.5, matStart: 4, // (1,4 och 2,7 före steg 2.12.6: hela familjer flyttade fast maten räckte) // en by som ännu saknar snitt räknas som om den hade Start dygns mat
   matSnittDygn: 1, // snittet glider över så många dygn (ett år i spelet)
   barnMatTapp: 0.6, barnMatFran: 6, barnMatSpann: 4, // knapp mat ger så här mycket färre barn, från sju invånare (full effekt vid Fran + Spann)
   hungerTakt: 0.6, hungerFran: 7, hungerSpann: 4, // knapp mat får så här många att flytta per dygn, från åtta invånare
@@ -119,7 +119,7 @@ export function birth(s: State, mother: Person) {
 // En stor by blir trång: fler flyttar ut och färre vill ha barn. En liten by lockar nybyggare och barn blir viktigare.
 // Att hålla nere befolkningen är starkare än att höja den. Nöjda invånare stannar, så en välfungerande by kan bli stor.
 // När byn är liten spelar humöret mindre roll för om folk flyttar.
-const crowd = (pop: number) => clamp((pop - LIV.trangFran) / LIV.trangSpann, 0, LIV.trangMax); // 0 upp till 14 invånare, 1 vid 30
+const crowd = (pop: number) => clamp((pop - LIV.trangFran) / LIV.trangSpann, 0, LIV.trangMax); // 0 upp till 24 invånare, 1 vid 40
 export function birthWish(pop: number) { return pop <= LIV.barnLiten ? 1 + LIV.barnLitenOkning * (LIV.barnLiten - pop) : clamp(1 - (pop - LIV.barnTrangFran) * LIV.barnTrangTapp, LIV.barnMin, 1); }
 export function emigrationRate(pop: number, mood: number) { // flyttar per dygn
   const unhappy = clamp((LIV.nojd - mood) * LIV.missnoje, 0, LIV.missnojeMax), w = clamp((pop - LIV.flyttaFran) / LIV.flyttaSpann, LIV.flyttaMin, 1);
@@ -127,7 +127,7 @@ export function emigrationRate(pop: number, mood: number) { // flyttar per dygn
 }
 export const immigrationRate = (pop: number) => pop < LIV.nybyggareUnder ? LIV.nybyggare * (LIV.nybyggareUnder - pop) / LIV.nybyggareUnder : 0; // nybyggare per dygn
 // Hur gott om mat byn har haft (steg 1.7.2): maten i förrådet räknad i dygn för alla, som ett glidande snitt över ungefär
-// ett dygn (ett år i spelet) så att årstiderna jämnas ut. 0 vid 1,4 dygns mat i snitt, 1 vid 4,1 eller mer. Är maten knapp
+// ett dygn (ett år i spelet) så att årstiderna jämnas ut. 0 vid 1 dygns mat i snitt, 1 vid 3,5 eller mer. Är maten knapp
 // föds färre barn (barnMat), fler flyttar (hungerFlytt) och färre nybyggare stannar: så når byn det tak som marken och redskapen kan föda, utan
 // att folk svälter ihjäl. En by på sju eller färre flyttar inte för maten
 export const matGott = (s: State) => clamp(((s.matSnitt ?? LIV.matStart) - LIV.matGottFran) / LIV.matGottSpann, 0, 1);

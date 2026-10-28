@@ -31,7 +31,7 @@ import { bristSteg, frysFaktor, naringSjunker, skorbjugg, trottFaktor } from './
 import { stepByggnader } from './byggnader';
 import { sumOf } from './egendom';
 import { avail, takeForHouse, buildJob, deliver as deliverBit, finishDorr, lacks, needOf, noteKom, planBuild, siteOf, toWalls, wearBuild, workOn } from './bygg';
-import { MATERIAL, bitById, freeNear, gridOf, roomAt, shelterOf } from './byggnad';
+import { MATERIAL, bitById, blocked, freeNear, gridOf, roomAt, shelterOf } from './byggnad';
 import { histParts, historikSteg, joinHist } from './historik';
 import { migrate } from './varld';
 import { stepDelning } from './delning';
@@ -67,7 +67,7 @@ const STEG = balans('steg', {
   matDygn: 1.8, // så många dygns mat i förrådet ger full vilja att skaffa barn (mindre ger mindre) ...
   matMin: 0.15, // ... men aldrig mindre än denna del
   sedBarn: 0.2, // så mycket mer (eller mindre) vilja ger seden Barn fullt ut
-  chans: 0.3, // chansen per dygn att bli gravid, gånger viljan
+  chans: 0.6, // chansen per dygn att bli gravid, gånger viljan (0,3 före steg 2.12.6: byarna stannade vid ca 9 invånare med gott om mat)
 });
 
 // spelet ritar folk där de är medan slaget visas: var och ens väg under det senaste slaget, som
@@ -393,6 +393,12 @@ function walk(s: State, p: Person, tk: Task, left: number, a: number) {
     if (budget <= 0) return { used: left, framme: false };
   }
 }
+// där man ställer sig för att lägga på ved: nedanför elden, eller vid en annan sida om rutan nedanför är vatten eller en
+// vägg (en brasa vid stranden, steg 2.12.6: den som bar ved dit gick ut i vattnet)
+function vidElden(s: State, p: Person, at: { x: number; y: number }) {
+  const sidor = [{ x: at.x + 0.5 + sida(p, 0.6), y: at.y + 1.2 }, { x: at.x + 0.5 + sida(p, 0.6), y: at.y - 0.2 }, { x: at.x - 0.2, y: at.y + 0.5 }, { x: at.x + 1.2, y: at.y + 0.5 }];
+  return sidor.find(v => !blocked(s, v.x, v.y)) ?? sidor[0];
+}
 // framme vid målet: vid förrådet, vid bygget, hemma med bördan eller på platsen där arbetet görs
 function arrive(s: State, p: Person, tk: Task, light: boolean) {
   const now = s.now;
@@ -405,7 +411,7 @@ function arrive(s: State, p: Person, tk: Task, light: boolean) {
       if (n <= 0) p.task = undefined;
       else {
         const at = br ?? eldPlats(s);
-        tk.ag = { ved: {} }; tk.carry = takeFuel(s, n, p, tk.ag.ved, fran); tk.phase = 'back'; tk.tx = at.x + 0.5 + sida(p, 0.6); tk.ty = at.y + 1.2;
+        tk.ag = { ved: {} }; tk.carry = takeFuel(s, n, p, tk.ag.ved, fran); tk.phase = 'back'; const v = vidElden(s, p, at); tk.tx = v.x; tk.ty = v.y;
         if (fran) stole(s, p, fran, VED.id, tk.carry); else if ((tk.ag.ved[p.id] ?? 0) > 1e-9) noticeTheft(s, p, VED.id);
       }
     } else { if (tk.ref !== undefined) addFuelBrasa(s, p, tk.ref, tk.carry); else addFuel(s, p, tk.carry); tk.carry = 0; p.task = undefined; }

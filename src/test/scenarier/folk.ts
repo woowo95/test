@@ -125,10 +125,10 @@ SCENARIER.samtal = {
     const [a, b] = [ny('m', 25), ny('m', 30)], r1 = getRel(s, a, b);
     r1.op = 10; a.social = b.social = 0.3;
     const ev1 = prata(a, b, 10);
-    // två som är osams grälar
+    // två som är osams grälar ibland (sällan sedan steg 2.12.6, så att det inte blir en spiral), och ett gräl gör dem mer osams
     const [c, d] = [ny('k', 27), ny('k', 33)], r2 = getRel(s, c, d);
-    r2.op = -60;
-    const gral = prata(c, d, 20).filter(e => e.kind === 'gräl').length;
+    let gral = 0, gralSanker = true;
+    for (let n = 0; n < 200; n++) { r2.op = -60; const ev = prata(c, d, 1); if (ev[0].kind === 'gräl') { gral++; if (r2.op >= -60) gralSanker = false; } }
     // ett par som blivit ovänner går isär
     const [e, f] = [ny('m', 28), ny('k', 26)], r3 = getRel(s, e, f);
     e.partner = f.id; f.partner = e.id; r3.op = -60;
@@ -148,7 +148,7 @@ SCENARIER.samtal = {
     if (fick && (l.t !== t0 || fick.t !== t0)) console.log(`VARNING: samtal: att berätta om platsen gjorde den nyss sedd: berättarens tid flyttades ${((l.t - t0) / HOUR).toFixed(0)} timmar och hoppet om återväxt föll från ${hopp0.toFixed(2)} till ${hoped(s, l).toFixed(2)}, och den som lyssnade fick ${fick.t === t0 ? 'samma tid' : 'tiden nu'}. tell i minne.ts sätter l.t = now (samhalle-49)`);
     return [
       [`tio samtal räknas (${r1.talks}), umgänget fylls på (${a.social.toFixed(2)}) och vänskapen ändras (10 → ${r1.op.toFixed(1)}, ${ev1.filter(x => x.good).length} av 10 gick bra)`, r1.talks === 10 && ev1.length === 10 && a.social > 0.8 && b.social > 0.8 && r1.op !== 10],
-      [`två som är osams grälar (${gral} av 20 samtal) och blir mer osams (-60 → ${r2.op.toFixed(1)})`, gral >= 5 && r2.op < -60],
+      [`två som är osams grälar ibland (${gral} av 200 samtal)${gralSanker ? '' : ', men ett gräl gjorde dem inte mer osams'}`, gral >= 3 && gral <= 60 && gralSanker],
       [`ett par som blivit ovänner går isär${e.partner === undefined && f.partner === undefined ? '' : ' (de är kvar som par)'}`, e.partner === undefined && f.partner === undefined && r3.rom === SIM.SAMTAL.skiltRom],
       [`två förälskade goda vänner blir ett par${g.partner === h.id && h.partner === g.id ? '' : ' (de blev det inte)'}`, g.partner === h.id && h.partner === g.id],
       [`en lärdom sprids i ett samtal: ${j.name} kan platsen efter ${samtal} samtal${fick ? ` (${fick.led} led från källan)` : ''}`, !!fick && fick.src === i.id],

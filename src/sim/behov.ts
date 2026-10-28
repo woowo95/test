@@ -39,7 +39,9 @@ export interface Behov {
 
 const STJAL_ALDRIG = 17; // empati från vilken man aldrig stjäl
 export const STOLD_OP = 15; // så mycket sämre blir relationen när stölden upptäcks
-export const STOLD_LINDRIG = 5; // ... när det var material till ett arbete (en lindrig stöld)
+export const STOLD_LINDRIG = 5; // ... när det var material till ett arbete (en lindrig stöld), om det var värt minst STOLD_VARDE ...
+const STOLD_VARDE = 3; // ... annars mindre efter värdet (grundvarde): en näve hö till elden märks knappt (steg 2.12.6)
+const STOLD_TANKE = 0.25; // den bestulne tänker på en lindrig stöld först när den är värd minst så stor del av STOLD_VARDE
 const FRAGA_R = 8; // så nära (rutor) måste man vara för att be någon om något
 const FRAGA_TAKT = 1 / (30 * 60); // så ofta (per sekund) den som saknar något ber någon i närheten
 
@@ -198,11 +200,12 @@ const namnOf = (key: string) => BEHOV.find(b => b.id === key)?.namn ?? (SAKER[ke
 // p har tagit av sitt eget för behovet eller slaget key och märker om någon stulit av det
 export function noticeTheft(s: State, p: Person, key: string) {
   if (!p.stulet?.some(x => x.k === key)) return;
-  for (const { av, l } of p.stulet.filter(x => x.k === key)) {
+  for (const { av, l, n } of p.stulet.filter(x => x.k === key)) {
     const t = byId(s, av);
     if (!t) continue;
-    const r = getRel(s, p, t);
-    r.op = clamp(r.op - (l ? STOLD_LINDRIG : STOLD_OP), -100, 100);
+    const r = getRel(s, p, t), w = l ? clamp(n * grundvarde(key) / STOLD_VARDE, 0, 1) : 1;
+    r.op = clamp(r.op - (l ? STOLD_LINDRIG * w : STOLD_OP), -100, 100);
+    if (w < STOLD_TANKE) continue;
     think(p, `${t.name} tog av min ${namnOf(key)}`, l ? -0.04 : -0.1, s.now, 12 * HOUR);
     if (alive(t)) think(t, `${p.name} vet att jag tog`, -0.05, s.now, 6 * HOUR);
     if (!l) log(s, `${p.name} märkte att ${t.name} hade stulit hens ${namnOf(key)}.`, 'rel', [p.id, t.id]);

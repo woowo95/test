@@ -20,9 +20,10 @@ export const SAMTAL = balans('samtal', {
   valKemi: 0.5,
   valPartner: 1.5,
   // vilket slag det blir, i den ordningen: gräl (dåligt humör eller osams), berättelse, flirt, tröst, djupt samtal, skämt, småprat
-  gralHumor: 0.3, // är humöret lägre än så här grälar man ofta ...
-  gralHumorChans: 0.35, // ... med så här stor chans
-  gralOsamsChans: 0.5, // är man osams (under REL.gral) grälar man med så här stor chans
+  gralHumor: 0.2, // är humöret lägre än så här grälar man ofta ...
+  gralHumorChans: 0.2, // ... med så här stor chans (0,3 och 0,35 före steg 2.12.6)
+  gralOsamsChans: 0.05, // är man osams (under REL.gral) grälar man med så här stor chans. Det var 0,5 före steg 2.12.6: ett gräl
+  // drog ner relationen under gränsen, och sedan blev det mest gräl tills alla i byn var ovänner (-100) och inga nya par blev till
   flirtBas: 0.12, // chansen att det blir flirt: flirtBas + romans / flirtRom, och flirtKemi mer om kemin är över flirtKemiGr
   flirtRom: 250,
   flirtKemiGr: 0.3,

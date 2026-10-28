@@ -11,7 +11,9 @@ import { areaOf, findL, observe } from './minne';
 import { magont, vattenSmuts } from './smuts';
 import { shoreOf } from './fynd';
 import { getMap, perKarta } from './karta';
-import { bitAt } from './byggnad';
+import { bitAt, gridOf } from './byggnad';
+import { stationRutor } from './stationer';
+import { groundOf } from './mark';
 import { clamp, rnd } from './slump';
 import { halMin, halVal, islagt, naVattnet } from './is';
 import { Act, H, HOUR, HOUR_S, Person, State, T, Task, W, inMap } from './typer';
@@ -84,6 +86,30 @@ const nabar = perKarta(seed => {
   }
   return ok;
 });
+// de sammanhängande områdena man kan gå i, med samma regler som vägsökningen (vag.ts): inte genom vatten, väggar eller
+// förvaring. Räknas om när något byggs (s.byggV). Ett hus vid vattnet kan stänga in en bit strand som ingen når; den som
+// valde att dricka där kom aldrig fram, valde samma plats igen och törstade ihjäl (steg 2.12.6). 0 = går inte att stå på
+const omraden = new WeakMap<State, { key: string; id: Int32Array }>();
+const D4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+function omradeOf(s: State) {
+  stationRutor(s); gridOf(s); // väggarna och förvaringen i marken (groundOf) är aktuella
+  const key = `${s.byggV ?? 0}:${s.stationer?.length ?? 0}`;
+  let o = omraden.get(s);
+  if (o?.key === key) return o.id;
+  const g = groundOf(s), id = new Int32Array(W * H), stopp = (i: number) => g.tiles[i] === T.Vatten || g.solid?.[i] === 1 || g.hinder?.[i] === 1;
+  let n = 0;
+  for (let i0 = 0; i0 < W * H; i0++) {
+    if (id[i0] || stopp(i0)) continue;
+    id[i0] = ++n;
+    const st = [i0];
+    while (st.length) {
+      const j = st.pop()!, x = j % W, y = (j - x) / W;
+      for (const [dx, dy] of D4) { const xx = x + dx, yy = y + dy, k = yy * W + xx; if (inMap(xx, yy) && !id[k] && !stopp(k)) { id[k] = n; st.push(k); } }
+    }
+  }
+  omraden.set(s, { key, id });
+  return id;
+}
 // hur smutsigt personen tror att vattnet är i ett område: det hen minns, och för resten en gissning
 function tror(p: Person, a: number) {
   const l = findL(p, 'vatten', a);
@@ -93,10 +119,13 @@ function tror(p: Person, a: number) {
 // närheten den närmaste som går att nå. undefined = det finns inget vatten att nå
 export function drickPlats(s: State, p: Person) {
   const sh = shoreOf(s.seed), nb = nabar(s.seed), px = Math.floor(p.x), py = Math.floor(p.y), tro = new Map<number, number>();
+  // området hen står i (eller bredvid, om hen står i en dörr eller vid förvaringen); utan något går hen rakt över som förut
+  const id = omradeOf(s), mitt = new Set<number>(), pi = py * W + px;
+  if (inMap(px, py)) { if (id[pi]) mitt.add(id[pi]); else for (const [dx, dy] of D4) if (inMap(px + dx, py + dy) && id[pi + dy * W + dx]) mitt.add(id[pi + dy * W + dx]); }
   let best: { x: number; y: number } | undefined, bs = Infinity;
   const prova = (x: number, y: number, nara: boolean) => {
     const i = y * W + x;
-    if (!inMap(x, y) || !sh[i] || !nb[i] || bitAt(s, x, y)) return;
+    if (!inMap(x, y) || !sh[i] || !nb[i] || bitAt(s, x, y) || (mitt.size && !mitt.has(id[i]))) return;
     const a = areaOf(x, y);
     let t = tro.get(a);
     if (t === undefined) tro.set(a, t = tror(p, a));
