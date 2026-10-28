@@ -163,6 +163,7 @@ export interface Person {
   lekt?: number; // när ett barn senast lekte (färre utbrott efteråt, steg 3.2.4)
   intryck?: import('./rykten').Intryck[]; // det personen tycker att andra är, och varför (steg 3.3, rykten.ts)
   smak?: Record<string, number>; // tycke och smak: 'a:' + arbete eller 'm:' + mat, -1 till 1 (steg 3.3.5, rykten.ts)
+  skam?: number; // straffad med skam av ledaren: håller sig undan elden och samtalen till dess (steg 3.5.3, styre.ts)
 }
 // en upplevelse i barndomen: slaget (UPPLEVELSER i uppvaxt.ts), åldern (år), när, vad den gjorde med egenskaperna och vem
 // eller vad den gällde
@@ -229,6 +230,7 @@ export interface State {
   flackar?: import('./smuts').Flack[]; // fläckar på marken som bleknar: toa-smutsen (smuts.ts)
   blod?: import('./blod').Blodflack[]; // blodet på marken (bara utseende, blod.ts)
   hygien?: number; // hur mycket byn vet om att toa-smutsen gör vattnet sjukt (0–1, smuts.ts, steg 2.7.2)
+  styre?: import('./styre').Styre; // ledaren, påbuden, straffen och vågskålarna (steg 3.5, styre.ts)
 }
 // ett fällt träd: ved och grenar som finns kvar att hugga ut
 export interface Stock { id: number; x: number; y: number; ved: number; grenar: number; mossa?: number } // mossa på stammen (steg 2.5.2)

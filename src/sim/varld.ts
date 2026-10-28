@@ -110,6 +110,7 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
   }],
   [9, 'v110: fälten görs ruta för ruta (steg 2.10.13). Ett äldre fält blir 2 × 2 rutor', s => migrateFalt(s)],
   [10, 'v124: matens dygn räknas av vad byn äter (steg 2.12.4), ungefär 0,45 av de gamla dygnen. Snittet räknas om lika mycket', s => { if (s.matSnitt !== undefined) s.matSnitt *= 0.45; }],
+  [11, 'v143: seden Jämlikhet – Rangordning (steg 3.5.1) börjar på 0', s => { s.seder.v.rang ??= 0; s.seder.ev.rang ??= 0; }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];
 export function migrate(s: State) { return simulera(() => uppgradera(s)); }

@@ -10,6 +10,7 @@ import { askForGift } from './behov';
 import { ACTS } from './handlingar';
 import { balans } from './balans';
 import { RELT, arArke, arBast, arMentor, arRivaler, skiljGrans } from './relationer';
+import { tankePa } from './teknik';
 
 // ---------- balanstal (regel 8) ----------
 // Samtalen: vem man pratar med, vilket slags samtal det blir, hur det går och vad det ger, och humöret. Relationen (op) går från
@@ -61,6 +62,7 @@ export const SAMTAL = balans('samtal', {
   berattaLar: 0.04, // en berättelse övar berättande med berattaLar * (berattaInt + intelligens / berattaDiv)
   berattaInt: 0.5,
   berattaDiv: 20,
+  ledTanke: 240, // ett samtal (inte gräl) får den vuxna att tänka på ledarskap i så här många sekunder (steg 3.5.1, teknik.ts)
   flirtAtt: 40, // attraktionen (skönhet och karisma hos den andra) är (skönhet + karisma) / flirtAtt, och romansen ökar med (ut + attraktion) * flirtRomOk
   flirtRomOk: 4,
   umgange: 0.06, // båda blir så här mycket mer sociala av ett samtal
@@ -137,6 +139,7 @@ export function converse(s: State, a: Person, others: Person[], events?: TalkEve
       r.rom = clamp(r.rom + (out + att) * SAMTAL.flirtRomOk, 0, 100);
     }
     share(s, a, b, r, SAMTALSSLAG[kind]); // man berättar vad man vet och lär ut vad man kan
+    tankePa(s, a, 'ledarskap', SAMTAL.ledTanke); // och kommer på vad som krävs för att leda (steg 3.5.1)
     berattaBrist(a, b, now); // och vad man längtar efter ("jag längtar efter kött", steg 2.6.2)
     if (kind !== 'flirt' && out + like > SAMTAL.gavaMin) askForGift(s, a, b); // den som saknar något frågar efter det (mat, ved, redskap: behov.ts)
   }

@@ -1,5 +1,5 @@
 import { FORMAGOR, HALSA, Kroppsdel, KROPPSDELAR, NARING, NARINGAR, NARINGBAL, bristGrad, bristerNu, frysFaktor, naringNu, sjunker, skorbjugg, vilaTim, TORST, blodning, delSkada, halsa, skadeLista, skadeText, smarta, torstDelar } from '../../sim';
-import { INTRYCK, Intryck, LARDOMAR, LKind, anseendeSym, dodSymbol, intryckText, samlatIntryck, ACTS, ALDER, Act, DAY, Lardom, HUMOR, SKILL_GOR, STAT_GOR, Skill, Stat, coldOf, halsaLage, hearthOf, living, roomAt, temperature, varmeDelar, viloSlag, viloTak, takEffekt, SLAG, SLAG_TECKEN, Person, KUNSKAPER, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, SEDER, SED_LIST, TEKNIK, BYN, Ting, halvKlar, ageOf, alive, byId, childrenOf, drar, heldBy, ownedBy, PLATSER, PLATS_LIST, Plats, BORDA_KG, UTRUSTNING, bordOf, capacity, kvNamn, handerFor, homeKind, load, utrustning, viktOf, SAKER, ownedStock, sakNamn, slagIkon, tingNamn, STACK, describe, duty, habitShare, habitTotal, KROPP, kortTal, moodOf, num, REL, relKey, relTyper, stat, taskName, timeLabel, upplevelseText, uppEffekt } from '../../sim';
+import { INTRYCK, Intryck, LARDOMAR, LKind, anseendeSym, dodSymbol, intryckText, samlatIntryck, ACTS, ALDER, Act, DAY, Lardom, HUMOR, SKILL_GOR, STAT_GOR, Skill, Stat, coldOf, halsaLage, hearthOf, living, roomAt, temperature, varmeDelar, viloSlag, viloTak, takEffekt, SLAG, SLAG_TECKEN, Person, KUNSKAPER, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, SEDER, SED_LIST, sedOppen, TEKNIK, BYN, Ting, halvKlar, ageOf, alive, byId, childrenOf, drar, heldBy, ownedBy, PLATSER, PLATS_LIST, Plats, BORDA_KG, UTRUSTNING, bordOf, capacity, kvNamn, handerFor, homeKind, load, utrustning, viktOf, SAKER, ownedStock, sakNamn, slagIkon, tingNamn, STACK, describe, duty, habitShare, habitTotal, KROPP, kortTal, moodOf, num, REL, relKey, relTyper, stat, taskName, timeLabel, upplevelseText, uppEffekt } from '../../sim';
 import { framstegSvg, hasIcon, iconImg, kvSvg, tecknet } from '../../ikoner';
 import { LAG, fmtN, bar, cap, carryTxt, cssFarg, durTxt, esc, hex, hsl, hjalpOppen, hjalpText, moodWord, pLink, prickar, relWord, sickNow, tempBar, tempOrd, trend, trendD } from '../hjalp';
 import { s, ui } from '../lage';
@@ -52,7 +52,7 @@ const DELAR: Del[] = [
 const OVERTYGAD = 0.35;
 function presHtml(p: Person) {
   const a = ageOf(p, s.now), kids = childrenOf(s, p), d = drar(s, p);
-  const tro = SED_LIST.filter(k => Math.abs(d[k]) >= OVERTYGAD).sort((x, y) => Math.abs(d[y]) - Math.abs(d[x]))
+  const tro = SED_LIST.filter(k => sedOppen(s, k) && Math.abs(d[k]) >= OVERTYGAD).sort((x, y) => Math.abs(d[y]) - Math.abs(d[x]))
     .map(k => { const sed = SEDER[k], namn = d[k] > 0 ? sed.pos : sed.neg; return `<span class="tro" title="${esc(sed.effect)}">${esc(namn)}</span>`; });
   return `<dl class="kv fam"><dt>${p.sex === 'k' ? 'Kvinna' : 'Man'}</dt><dd>${Math.floor(a)} år · född ${timeLabel(s, p.born)}</dd>
       <dt>Yrke</dt><dd>${p.tag ? esc(p.tag) : '–'}</dd>

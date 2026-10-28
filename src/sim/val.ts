@@ -35,6 +35,7 @@ import { grillTid, kanGrilla, kanTorka, torkTid } from './matlagning';
 import { egenBrasa } from './brasor';
 import { utbrottBorjar, utbrottNu } from './humor';
 import { smakDrag } from './rykten';
+import { pabud, skams } from './styre';
 
 // ---------- val av aktivitet ----------
 // Balanstalen (regel 8): vikter, chanser, avstånd och hur länge ett pass varar. Kroppens gränser (KROPP) och åldrarna (ALDER)
@@ -86,6 +87,7 @@ const VAL = balans('val', {
   lustBas: 4, lustEgenskap: 3, lustVana: 2, // lusten = (Bas + färdigheten + egenskapen / Egenskap) gånger (1 + Vana gånger andelen vana)
   brusMin: 0.6, brusSpann: 0.8, // slumpbrus på poängen: mellan Min och Min + Spann
   forsiktig: 0.25, // en försiktig by vill ha så mycket större förråd
+  torkPabud: 0.6, // ledarens påbud om torkat ändrar chansen att torka så mycket (-1 till 1, steg 3.5.2, styre.ts)
   behovTomt: 3.2, behovMax: 3.5, // vikten av ett tomt förråd av mat eller ved, och den högsta vikten
   matDygn: 1.1, matMin: 0.4, // för mat: förrådets dygn dämpar vikten, aldrig under Min
   vedDygn: 2, vedMin: 0.15, // ... och för ved
@@ -334,6 +336,7 @@ export function chooseTask(s: State, p: Person) {
   const a = ageOf(p, s.now), light = isLight(s.now), lazy = 1 - duty(s, p);
   const v: Val = { act: 'vila', why: '', dur: (VAL.vilaMin + rnd(s, 'val', p) * VAL.vilaSpann) * MIN }; // 20–60 min
   if (!needs(s, p, v, a, lazy, light) && !(light && utbrottVal(s, p, v))) { if (light) day(s, p, v, a, lazy); else night(s, p, v, a); }
+  if (ACTS[v.act].social && v.act !== 'maltid' && skams(p, s.now)) { v.act = 'skams'; v.why = 'Skäms och håller sig undan de andra'; v.spot = undefined; } // straffet skam (steg 3.5.3, styre.ts)
   if (v.act === 'toa') {
     v.dur = (VAL.toaMin + rnd(s, 'val', p) * VAL.toaSpann) * MIN;
     const l = latrinFor(s, p); // till latrinen om byn har en (steg 2.7.2, smuts.ts)
@@ -439,7 +442,7 @@ function day(s: State, p: Person, v: Val, a: number, lazy: number) {
   if (sk) { projektVal(v, { act: 'odla', text: sk.text, min: sk.min, tool: sk.tool, spot: sk.spot, ref: sk.ref }, sk.tool === 'mogen' ? 'Grödan på fältet är mogen' : 'Arbetar vidare på sitt fält'); return; }
   if (a >= ALDER.vuxen && canProcess(s, p, DJUR.kanin) && rnd(s, 'val', p) < VAL.slaktChans) { processTask(s, v, DJUR.kanin, 'Det finns vilt att slakta innan det blir dåligt'); return; }
   if (a >= ALDER.rensar && canProcess(s, p, DJUR.abborre) && rnd(s, 'val', p) < VAL.rensaChans) { processTask(s, v, DJUR.abborre, 'Det finns fisk att rensa innan den blir dålig'); return; }
-  if (a >= ALDER.grillar && kanTorka(s, p) && rnd(s, 'val', p) < VAL.torkaChans) { torkVal(s, v, 'Det finns kött och fisk att torka'); return; }
+  if (a >= ALDER.grillar && kanTorka(s, p) && rnd(s, 'val', p) < torkAndel(pabud(s, 'torkat'))) { torkVal(s, v, 'Det finns kött och fisk att torka'); return; }
   if (a >= ALDER.grillar && kanGrilla(s, p) && rnd(s, 'val', p) < VAL.grillaChans) { grillVal(s, v, 'Det finns rått kött och rå fisk att grilla'); return; }
   let { best, bs, burg } = bestWork(s, p, fd, wd, ai, tot, fara);
   // bygget: väger mer ju fler som saknar sovplats under tak, inför och under istiden, när en vägg behöver lagas och när huset inte är klart.
@@ -493,11 +496,15 @@ function day(s: State, p: Person, v: Val, a: number, lazy: number) {
 const lust = (s: State, p: Person, skill: Skill, egenskap: Stat, acts: Act[], tot: number) => (VAL.lustBas + p.skill[skill] + stat(p, egenskap, s.now) / VAL.lustEgenskap) * (1 + VAL.lustVana * habitShare(p, acts, tot)) * smakDrag(p, acts); // och smaken (steg 3.3.5)
 // byns behov (col) gånger lusten, med ett slumpbrus mellan brusMin och brusMin + brusSpann (drar ett tal ur 'val')
 const poang = (s: State, p: Person, col: number, like: number) => col * like * (VAL.brusMin + rnd(s, 'val', p) * VAL.brusSpann);
+// hur många dygn mat (eller ved) byn vill ha innan behovet är som minst, för förrådsseden eller påbudet v (fliken Påbud, steg 3.5.4)
+export const onskatLager = (ved: boolean, v: number) => (ved ? VAL.vedDygn : VAL.matDygn) * (1 + VAL.forsiktig * v) * (VAL.behovTomt - (ved ? VAL.vedMin : VAL.matMin));
+export const torkAndel = (v: number) => VAL.torkaChans * (1 + VAL.torkPabud * v);
 // det arbete byn behöver mest just nu, vägt mot egen lust och vana. burg = hur mycket det mest behövda behövs
 function bestWork(s: State, p: Person, fd: number, wd: number, ai: number, tot: number, fara: Faror) {
-  const fs = 1 + VAL.forsiktig * s.seder.v.forsiktighet; // en försiktig by vill ha större förråd
+  // en försiktig by vill ha större förråd, och ledarens påbud drar åt sitt håll (steg 3.5.2, styre.ts)
+  const fs = 1 + VAL.forsiktig * pabud(s, 'matlager'), vs = 1 + VAL.forsiktig * pabud(s, 'vedlager');
   const wFood = clamp(VAL.behovTomt - fd / (VAL.matDygn * fs), VAL.matMin, VAL.behovMax);
-  const wWood = clamp(VAL.behovTomt - wd / (VAL.vedDygn * fs), VAL.vedMin, VAL.behovMax) * (kallTid(ai) ? ARSTID.vedKall : 1); // inför och under istiden väger veden tyngre
+  const wWood = clamp(VAL.behovTomt - wd / (VAL.vedDygn * vs), VAL.vedMin, VAL.behovMax) * (kallTid(ai) ? ARSTID.vedKall : 1); // inför och under istiden väger veden tyngre
   const vikt = { mat: wFood, ved: wWood };
   let best: Act = 'samla', bs = -1, burg = 0;
   const ppl = living(s);

@@ -54,6 +54,8 @@ const PAL: Record<string, Record<string, string>> = {
   arter: { o: '#353204', g: '#4b4f00', G: '#647025', L: '#898b4c', y: '#b2921b' },
   fron: { G: '#898b4c', L: '#d8b25f', Y: '#b2921b', g: '#647025', o: '#24201d', y: '#906f0f' },
   odling: { k: '#3f2415', j: '#5e3c24', J: '#7d5b40', g: '#4b4f00', G: '#647025', L: '#898b4c' },
+  // ledarskapet: en hövdingastav med fjädrar (steg 3.5.1, platshållare i bildstilens palett)
+  ledarskap: { k: '#3f2415', j: '#5e3c24', J: '#7d5b40', y: '#906f0f', Y: '#d8b25f', w: '#dad0bb', W: '#bdb39b', r: '#a14808' },
   // grödorna från fälten och grodden på fältet (steg 2.10.3, platshållare i bildstilens palett)
   rovor: { B: '#bdb39b', G: '#647025', L: '#898b4c', R: '#a14808', W: '#dad0bb', b: '#a0947d', g: '#4b4f00', r: '#742a01' },
   korn: { J: '#7d5b40', L: '#d8b25f', Y: '#b2921b', j: '#5e3c24', k: '#3f2415', s: '#694902', y: '#906f0f' },
@@ -913,6 +915,24 @@ const PIX: Record<string, string[]> = {
     '................',
   ],
   // odlingen (steg 2.10.2, platshållare): en grodd i en fåra i jorden
+  ledarskap: [
+    '.......JJ.......',
+    '......JYYJ......',
+    '..ww..JYYJ..ww..',
+    '.wWw..jJJj..wWw.',
+    '..wWw.rrrr.wWw..',
+    '...wWwjJJjwWw...',
+    '.....wjJJjw.....',
+    '.......JJ.......',
+    '.......jJ.......',
+    '.......JJ.......',
+    '.......jJ.......',
+    '.......JJ.......',
+    '.......jJ.......',
+    '.......JJ.......',
+    '.......jj.......',
+    '.......kk.......',
+  ],
   odling: [
     '................',
     '................',

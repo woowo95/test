@@ -328,7 +328,8 @@ SCENARIER.bygg = {
     const fq = getMap(q.seed).fire, hq = housesOf(q)[0];
     const avst = hq ? rektAvstand(fq.x, fq.y, hq.x, hq.y, hq.w, hq.h) : 0;
     // ett planerat långhus räknas i statistiken (planerat_langhus; samhalle-192)
-    const langhus = housesOf(q).filter(h => h.namn.startsWith('Långhus')).length, langRaknat = q.stat?.planerat_langhus ?? 0;
+    const langhus = housesOf(q).filter(h => (h.fn === 'sovsal' || h.fn === 'samling') && h.w * h.h >= SIM.HUS.langhus).length, // en tom sovsal kan ha blivit samlingshus (steg 1.6.4)
+      langRaknat = q.stat?.planerat_langhus ?? 0;
     // en kall natt utan eld: den som är inne kyls långsammare än den som är ute
     const k = cloneState(q); k.now = ageStart(k, 0) + 3 * HOUR; k.fire.lit = false; k.fire.fuel = 0;
     let varmInne = 0, varmUte = 0, ni = 0, nu = 0;
@@ -356,7 +357,7 @@ SCENARIER.bygg = {
     // en vägg rasar och byggs om: huset är klart igen, men blir inte färdigt en gång till (krönikan, Gemenskap; samhalle-55)
     let omKlar = false, kronikaFore = 0, kronikaEfter = 0, gemFore = 0, gemEfter = 0;
     if (h?.klar) {
-      const fardigt = () => (q.hist?.kronika ?? []).filter(([, txt]) => txt === `${h.namn} blev färdigt.`).length;
+      const fardigt = () => (q.hist?.kronika ?? []).filter(([, txt]) => txt.endsWith(' blev färdigt.')).length; // huset kan ha bytt namn med funktionen (steg 1.6.4)
       const vg = bitsOf(q).find(b => b.hus === h.id && b.k === 'vagg')!, by = living(q)[0];
       kronikaFore = fardigt(); gemFore = q.seder.ev.gemenskap;
       vg.c = 1e-6; wearBuild(q, 1, ageIndex(q));
@@ -379,7 +380,7 @@ SCENARIER.bygg = {
       ['slitna väggar lagas', lagat],
       [`ett långhus räknas när det planeras (${langhus} långhus, ${langRaknat} räknade)`, langhus > 0 && langRaknat === langhus],
       [`en lagning kostar hälften av det nya (trägolv ${golvLag} av ${MATERIAL.tra.n}, timmervägg ${vaggLag} av ${MATERIAL.timmer.n})`, Math.abs(golvLag - MATERIAL.tra.n / 2) < 1e-9 && Math.abs(vaggLag - MATERIAL.timmer.n / 2) < 1e-9],
-      [`en rasad vägg som byggts om gör huset klart igen men inte färdigt en gång till (krönikan ${kronikaFore} → ${kronikaEfter}, Gemenskap ${gemFore.toFixed(3)} → ${gemEfter.toFixed(3)})`, omKlar && kronikaFore === 1 && kronikaEfter === 1 && gemEfter === gemFore],
+      [`en rasad vägg som byggts om gör huset klart igen men inte färdigt en gång till (krönikan ${kronikaFore} → ${kronikaEfter}, Gemenskap ${gemFore.toFixed(3)} → ${gemEfter.toFixed(3)})`, omKlar && kronikaFore >= 1 && kronikaEfter === kronikaFore && gemEfter === gemFore],
       [`huset minns var materialet kom ifrån (${Math.round(minns)} av ${Math.round(lagt)}: ${satt})`, lagt > 0 && Math.abs(minns - lagt) < 0.01 * lagt + 0.01],
     ];
   },

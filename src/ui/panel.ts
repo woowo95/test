@@ -11,6 +11,7 @@ import { person } from './flikar/person';
 import { seder } from './flikar/seder';
 import { teknik } from './flikar/teknik';
 import { sak } from './flikar/sak';
+import { pabudFlik, styre } from './flikar/styre';
 import { $, hjalpKlick } from './hjalp';
 import { piles, s, ui } from './lage';
 import { renderPorts } from './portratt';
@@ -22,8 +23,9 @@ export interface Flik {
   knapp?: string; // visas under en annan flikknapp i stället för en egen (elden, lagret och högen öppnas från kartan)
   html(): string; // innehållet; byggs om ett par gånger i sekunden
   klick?(el: HTMLElement): boolean; // tryck i sidan som fliken tar hand om, även när den inte är öppen; true = klart
+  syns?(): boolean; // knappen visas bara när detta är sant (styret och påbuden när byn haft en ledare, steg 3.5.4)
 }
-const FLIKAR = { folk, logg, person, eld, lager, hog, hus, station, sjo, falt, seder, teknik, sak } satisfies Record<string, Flik>;
+const FLIKAR = { folk, logg, person, eld, lager, hog, hus, station, sjo, falt, seder, styre, pabud: pabudFlik, teknik, sak } satisfies Record<string, Flik>;
 export type FlikId = keyof typeof FLIKAR;
 const ALLA: Record<FlikId, Flik> = FLIKAR;
 const IDS = Object.keys(FLIKAR) as FlikId[];
@@ -45,6 +47,7 @@ export function renderPanel(force = false) {
     const id = b.dataset.tab as FlikId;
     b.setAttribute('aria-selected', String(id === under));
     b.textContent = id === under ? cur.namn : ALLA[id].namn;
+    b.hidden = !(ALLA[id].syns?.() ?? true);
   }
   renderOwned();
   if (!force && (ui.busy || performance.now() - ui.lastPointer < 800 || musOver)) return;

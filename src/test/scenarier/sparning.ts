@@ -170,6 +170,7 @@ SCENARIER.karta = {
     const ny = createState(4, START), nyOk = ny.W === 120 && ny.H === 120 && !ny.kart;
     const s = createState(4, START, { W: 80, H: 50 });
     kor(s, 30);
+    for (let d = 0; d < 30 && !Object.keys(s.sjoar ?? {}).length; d++) kor(s, 1); // tills någon fiskat i en sjö
     SIM.useMap(s);
     const txt = serialize(s), m0 = SIM.getMap(s.seed), f0 = { ...m0.fire }, tiles0 = m0.tiles.slice(), g0 = SIM.groundOf(s);
     const cover0 = g0.cover.slice(), trees0 = g0.trees.slice(), tagen0 = SIM.takenOf(s), sjo0 = SIM.sjoarna(s.seed).id.slice();

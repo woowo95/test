@@ -5,6 +5,7 @@ import { Act, DAY, HOUR, Person, Seder, State } from './typer';
 import { balans } from './balans';
 import { kortTal } from './format';
 import { ACTS, ACT_LIST } from './handlingar';
+import { ledarVikt, sedOppen } from './styre';
 
 // ---------- balanstal (regel 8) ----------
 // Sederna (arbete, gemenskap, barn, nyfikenhet, försiktighet, från -1 till 1) rör sig långsamt mot det invånarna drar åt och
@@ -17,6 +18,7 @@ export const SED = balans('seder', {
   barnForalder: 0.1, // ... och så mycket mer för den som själv är förälder
   forsMod: 0.7, // försiktighet: modet (omvänt) gånger så här mycket ...
   forsInt: 0.3, // ... och intelligensen gånger så här mycket
+  rangDra: 0.5, // rangordning: modet minus empatin gånger så här mycket
   // inflytandet: hur mycket varje persons röst väger (efter ålder, ALDER), gånger 0,5 + karisma / rostKarisma
   rostUng: 0.5, // under ALDER.fullvuxen
   rostAldre: 1.5, // över ALDER.aldre
@@ -57,6 +59,8 @@ const DEF = {
   barn: { pos: 'Barnkär', neg: 'Barnsnål', effect: 'Hur gärna par skaffar barn, och om barnen får leka eller måste hjälpa till.', dra: (q, barn) => dev(q.empati) * SED.barnEmpati + (barn ? SED.barnForalder : 0) },
   nyfikenhet: { pos: 'Nyfikenhet', neg: 'Tradition', effect: 'Hur snabbt invånarna lär sig nya färdigheter.', dra: q => dev((q.nyfikenhet + q.intelligens) / 2) },
   forsiktighet: { pos: 'Försiktighet', neg: 'Leva i nuet', effect: 'Hur stora förråd byn vill ha innan man slappnar av, och om elden hålls vid liv.', dra: q => -dev(q.mod) * SED.forsMod + dev(q.intelligens) * SED.forsInt },
+  // den första vågskålen (steg 3.5.1): låst (står på 0) tills byn fått sin första ledare (sedOppen i styre.ts)
+  rang: { pos: 'Rangordning', neg: 'Jämlikhet', effect: 'Hur mycket ledaren bestämmer: ledarens vikt i sederna och påbuden, och hur hårt hen straffar.', dra: q => (dev(q.mod) - dev(q.empati)) * SED.rangDra },
 } satisfies Record<string, SedDef>;
 export type Sed = keyof typeof DEF;
 export const SEDER: Record<Sed, SedDef> = DEF;
@@ -85,7 +89,10 @@ export function sederTarget(s: State): Record<Sed, number> {
     tw += w; const d = drar(s, p);
     for (const k of SED_LIST) t[k] += d[k] * w;
   }
-  for (const k of SED_LIST) t[k] = clamp((tw ? t[k] / tw : 0) * SED.snittVikt + s.seder.ev[k], -1, 1);
+  // ledaren drar med en del av byns samlade vikt (steg 3.5.1, styre.ts)
+  const l = tw ? ledarVikt(s) : undefined;
+  if (l) { const d = drar(s, l.p), w = tw * l.w; for (const k of SED_LIST) t[k] += d[k] * w; tw += w; }
+  for (const k of SED_LIST) t[k] = sedOppen(s, k) ? clamp((tw ? t[k] / tw : 0) * SED.snittVikt + s.seder.ev[k], -1, 1) : 0;
   return t;
 }
 // händelser som formar sederna; effekten bleknar under några veckor

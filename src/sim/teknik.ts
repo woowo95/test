@@ -100,6 +100,9 @@ export const TEKNIK: Tek[] = [
   // byn plockat; det krävs inte så många (Björn efter v107, steg 2.10.11)
   { id: 'odling', namn: 'Odling', text: 'Frön som sätts i jorden blir nya grödor.', effekt: 'Man kan så frön på ett fält och skörda grödorna.',
     omr: ['samla'], krav: [], niva: 1, tid: 0.15, okar: { stat: 'vildgrodor', per: 5 }, nar: 'plockar vilda frön' },
+  // ledarskapet kommer man på i samtal (steg 3.5.1, styre.ts): bara den som kan det kan bli byns ledare
+  { id: 'ledarskap', namn: 'Ledarskap', text: 'Att förstå vad som krävs för att byn ska lyssna på en: att höra alla, döma rättvist och tänka på hela byn.', effekt: 'Bara den som kan ledarskap kan bli byns ledare.',
+    omr: [], krav: [], niva: 1, tid: 12, nar: 'i samtal' },
 ];
 export const TEK = Object.fromEntries(TEKNIK.map(t => [t.id, t])) as Record<string, Tek>;
 

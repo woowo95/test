@@ -133,6 +133,7 @@ const DEF = {
   // utbrotten (steg 3.2.2, humor.ts): den som mår mycket dåligt brister ut. Platsen väljs i val.ts (utbrottVal)
   grata: { namn: 'Gråter för sig själv', tecken: '😢', dygn: true, stilla: true, plats: 'avsides' },
   tjura: { namn: 'Tjurar för sig själv', tecken: '😤', dygn: true, stilla: true, plats: 'avsides' },
+  skams: { namn: 'Skäms och håller sig undan', tecken: '😔', dygn: true, stilla: true, plats: 'avsides' }, // straffet skam (steg 3.5.3, styre.ts)
   elak: { namn: 'Är elak mot någon', tecken: '😠', dygn: true, stilla: true },
   skvallra: { namn: 'Snackar skit om någon', tecken: '🗣️', dygn: true, stilla: true }, // steg 3.3.3 (rykten.ts)
   krossa: { namn: 'Slår sönder något', tecken: '💥', dygn: true, stilla: true },

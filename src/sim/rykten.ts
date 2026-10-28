@@ -81,6 +81,8 @@ const IDEF = {
   skicklig: { namn: 'skicklig', tecken: 1, op: 12, sym: '⭐' },
   flitig: { namn: 'flitig', tecken: 1, op: 8, sym: '💪' },
   rik: { namn: 'rik', tecken: 1, op: 0, sym: '💰' },
+  rattvis: { namn: 'rättvis', tecken: 1, op: 10, sym: '⚖️' }, // ledarens straff (steg 3.5.3, styre.ts)
+  orattvis: { namn: 'orättvis', tecken: -1, op: -15, sym: '🙅' },
 } satisfies Record<string, IntryckDef>;
 export type IntryckTyp = keyof typeof IDEF;
 export const INTRYCK: Record<IntryckTyp, IntryckDef> = IDEF;
@@ -102,6 +104,8 @@ const HDEF = {
   usel: { i: 'klapare', vikt: 0.3, text: 'gjorde en usel {sak}' },
   logn: { i: 'logn', vikt: 0.35, text: 'ljög om {om}' },
   overdrev: { i: 'logn', vikt: 0.2, text: 'överdrev om {om}' },
+  dom: { i: 'rattvis', vikt: 0.15, text: 'dömde {om} rättvist' },
+  orattvisDom: { i: 'orattvis', vikt: 0.3, text: 'dömde {om} orättvist' },
 } satisfies Record<string, HandelseDef>;
 export type HandelseTyp = keyof typeof HDEF;
 export const HANDELSER: Record<HandelseTyp, HandelseDef> = HDEF;
@@ -170,7 +174,7 @@ function intryck(s: State, p: Person, om: Person | { id: number; name: string },
 
 // ---------- händelser ----------
 // de som ser det som p gör: levande och vakna inom RYKTE.syn rutor (inte p), och den det gäller (offer)
-function vittnen(s: State, p: Person, offer?: Person) {
+export function vittnen(s: State, p: Person, offer?: Person) {
   return living(s).filter(q => q !== p && (q === offer || (q.task?.act !== 'sova' && Math.hypot(q.x - p.x, q.y - p.y) < RYKTE.syn)));
 }
 // p gjorde händelsen h mot offer (eller med saken sak): de som såg det får intrycket. Den det gällde har redan fått sin ändring
@@ -180,6 +184,12 @@ export function handelse(s: State, p: Person, h: HandelseTyp, offer?: Person, sa
   const b: Bevis = { h, t: s.now, ...(offer ? { mot: offer.id, motNamn: offer.name } : {}), ...(sak ? { sak } : {}), sett: true };
   count(s, 'rykte_' + h);
   for (const q of bara ? [bara] : vittnen(s, p, offer)) intryck(s, q, p, d.i, d.vikt, q === offer ? RYKTE.offerSaker : RYKTE.sjalvSaker, { ...b }, undefined, 0, q === offer, !!d.prestation);
+}
+
+// det som p gjort (beviset b) blir känt för alla i till (när ledaren straffar p, styre.ts): de hör det med del av vikten
+export function allmant(s: State, p: Person, b: Bevis, del: number, till: Person[]) {
+  const d = HANDELSER[b.h];
+  for (const q of till) if (q !== p) intryck(s, q, p, d.i, d.vikt * del, RYKTE.sjalvSaker, { ...b, sett: undefined } as Bevis, undefined, 1);
 }
 
 // ---------- samtal ----------

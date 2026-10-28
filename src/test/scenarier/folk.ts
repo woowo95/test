@@ -485,9 +485,9 @@ SCENARIER.vald = {
 SCENARIER.barnutbrott = {
   text: 'Barnens utbrott (steg 3.2.4): barn som mår mycket dåligt skriker, trotsar, puttas med ett syskon eller springer iväg, mer sällan med en förälder nära och efter lek',
   kor: () => {
-    // tre ledsna barn i en by där de vuxna mår bra, i tolv dygn (tolv år i spelet)
+    // fem ledsna barn i en by där de vuxna mår bra, i tolv dygn (tolv år i spelet)
     const s = createState(9, START);
-    const barn = [nyInvanare(s, 'm', 7), nyInvanare(s, 'k', 9), nyInvanare(s, 'm', 11)];
+    const barn = [nyInvanare(s, 'm', 4), nyInvanare(s, 'k', 5), nyInvanare(s, 'm', 6), nyInvanare(s, 'k', 7), nyInvanare(s, 'm', 8)];
     for (const c of barn) SIM.think(c, 'Sorg', -0.5, s.now, 12 * DAY);
     kor(s, 12 * 24);
     const BARNENS = ['skrika', 'trotsa', 'puttas', 'rymma'], VUXNAS = Object.keys(SIM.UTBROTT).filter(k => !BARNENS.includes(k));
@@ -599,6 +599,61 @@ SCENARIER.rykten = {
       [`den som arbetar mycket mer än de andra ses som flitig (${flitig?.v.toFixed(2) ?? 'nej'})`, !!flitig && flitig.v > 0.1],
       [`efter döden lever intrycket kvar med de ${bev} viktigaste händelserna, och bleknar långsammare (${cDod.toFixed(2)} mot ${cLev.toFixed(2)})`, !!dod && bev <= SIM.RYKTE.dodBev && bev >= 1 && cDod > cLev],
       [`smaken drar i valet (${drag.toFixed(2)}) och svampen som förgiftar ger avsmak`, drag > 1 && SIM.smakAv(k.q, 'm:svamp') < 0],
+    ];
+  },
+};
+
+SCENARIER.ledare = {
+  text: 'Ledarskapet (steg 3.5): bara den som kan tekniken Ledarskap blir ledare, när byn har sex vuxna väljs den mest omtyckta, den första ledaren låser upp seden Rangordning, påbuden sätts och drar förråden, och ledaren straffar en tjuv på kvällen: den som skäms håller sig undan elden',
+  kor: () => {
+    const by = () => {
+      const t = createState(11, START);
+      klockan(t, 11);
+      for (const [x, a] of [['m', 33], ['k', 29], ['m', 26]] as const) nyInvanare(t, x, a);
+      const vuxna = living(t).filter(p => ageOf(p, t.now) >= SIM.ALDER.vuxen);
+      return { t, vuxna };
+    };
+    // utan tekniken blir ingen ledare
+    const a = by();
+    for (let i = 0; i < 5; i++) SIM.stepStyre(a.t);
+    const ingen = !a.t.styre?.ledare;
+    // den som kan tekniken och är omtyckt väljs, och den första ledaren låser upp Rangordning
+    const b = by(), [l, tjuv, offer] = b.vuxna;
+    (l.tek ??= {}).ledarskap = 1;
+    for (const q of b.vuxna) if (q !== l) getRel(b.t, l, q).op = 40;
+    const rang0 = SIM.sedOppen(b.t, 'rang');
+    SIM.stepStyre(b.t);
+    const vald = SIM.ledareOf(b.t) === l, titel = b.t.styre?.titel, rang1 = SIM.sedOppen(b.t, 'rang');
+    const leg = SIM.legitimitet(b.t);
+    const harPabud = !!b.t.styre?.pabud && SIM.PABUD_LIST.every(k => b.t.styre!.pabud![k] !== undefined);
+    // påbudet blandas med byns egen sed
+    b.t.styre!.pabud!.matlager = 1; b.t.seder.v.forsiktighet = 0;
+    const drar = SIM.pabud(b.t, 'matlager');
+    // ledaren ser en stöld och straffar på kvällen
+    for (const q of b.vuxna) { q.x = l.x + 1; q.y = l.y; }
+    SIM.handelse(b.t, tjuv, 'stold', offer, 'mat');
+    klockan(b.t, SIM.STR.timme);
+    SIM.stepStyre(b.t);
+    const straff = b.t.stat?.straff ?? 0;
+    // den som skäms väljer inte samtal vid elden
+    tjuv.skam = b.t.now + DAY;
+    klockan(b.t, 22);
+    let social = 0;
+    for (let i = 0; i < 40; i++) { tjuv.task = undefined; Object.assign(tjuv, { hunger: 0.9, rest: 0.9, toa: 0.9, torst: 0.9, warm: 0.9 }); SIM.chooseTask(b.t, tjuv); if (ACTS[tjuv.task!.act].social && tjuv.task!.act !== 'maltid') social++; }
+    // ledaren dör: ingen annan kan tekniken, och påbuden upphör
+    SIM.die(b.t, l, 'alderdom');
+    SIM.stepStyre(b.t);
+    const slut = !SIM.ledareOf(b.t) && SIM.pabud(b.t, 'matlager') === b.t.seder.v.forsiktighet && b.t.styre!.historia[0].till !== undefined;
+    return [
+      ['utan tekniken Ledarskap blir ingen ledare', ingen],
+      [`den som kan ledarskap och är omtyckt blir ledare (${titel})`, vald],
+      ['den första ledaren låser upp seden Rangordning', !rang0 && rang1],
+      [`legitimiteten räknas ur stödet, tiden och vintrarna (${leg.v.toFixed(2)}, stöd ${leg.stod.toFixed(2)})`, leg.v > 0 && leg.v <= 1 && leg.stod > 0.5],
+      ['ledaren sätter påbuden', harPabud],
+      [`påbudet drar byns förråd åt ledarens håll (${drar.toFixed(2)})`, drar > 0 && drar < 1],
+      [`ledaren straffar tjuven på kvällen (${straff} straff)`, straff >= 1],
+      [`den som skäms håller sig undan elden (${social} av 40 val sociala)`, social === 0],
+      ['när ledaren dör och ingen annan kan ledarskap upphör påbuden', slut],
     ];
   },
 };
