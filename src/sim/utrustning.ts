@@ -23,6 +23,7 @@ import { balans } from './balans';
 
 export const UTRUSTNING = balans('utrustning', {
   en: 0.4, // en hand bär så stor del av det man orkar med båda (en famn)
+  maxVarme: 0.95, // ett plagg tar högst bort så stor del av kylan (kladVarme)
 });
 
 // platserna, i den ordning personrutan visar dem. hand = en hand att hålla saker och bördan i
@@ -64,8 +65,8 @@ export function iBaltet(s: State, p: Person, h = iHanden(s, p)) {
 export function bordPlats(s: State, p: Person) {
   const cap = Math.max(0, capacity(s, p) - paSigVikt(s, p)), h = iHanden(s, p);
   if (!h || iBaltet(s, p, h)) return cap;
-  const fria = 2 - h.hander, rymmer = SAKER[h.ting.k]?.rymmer ?? 0;
-  return Math.min(cap, (fria === 2 ? cap : fria === 1 ? cap * UTRUSTNING.en : 0) + rymmer);
+  const rymmer = SAKER[h.ting.k]?.rymmer ?? 0;
+  return Math.min(cap, (h.hander === 1 ? cap * UTRUSTNING.en : 0) + rymmer); // ett redskap i en hand lämnar den andra fri
 }
 // vad som finns på varje plats: redskapet i den eller de händer det tar (höger först), eller i bältet när p bär, bördan i
 // de fria händerna (eller i korgen), och plaggen p har på sig på kroppens platser
@@ -91,7 +92,7 @@ const paSigVikt = (s: State, p: Person) => { let v = 0; for (const t of tingOf(s
 // hur mycket kläderna skyddar mot kylan (0 = inget, 1 = helt): varje plagg tar bort sin del (klad.varme) av det som är kvar
 export function kladVarme(s: State, p: Person) {
   let kvar = 1;
-  for (const t of tingOf(s)) if (t.bar === p.id) kvar *= 1 - Math.min(0.95, SAKER[t.k]!.klad!.varme * kvEffekt(t)); // ett finare plagg värmer lite mer (kvalitet.ts)
+  for (const t of tingOf(s)) if (t.bar === p.id) kvar *= 1 - Math.min(UTRUSTNING.maxVarme, SAKER[t.k]!.klad!.varme * kvEffekt(t)); // ett finare plagg värmer lite mer (kvalitet.ts)
   return 1 - kvar;
 }
 // i vilken ordning p tar ett plagg: sitt eget, byns, ett lånat. Inom det: bäst skick, och sedan det första bland tingen

@@ -64,6 +64,7 @@ interface ActDef {
   varmer?: true; // görs för att bli varm: ett rum väljs bara om det är minst lika varmt som vid elden (varmareInne)
   dygn?: true; // avbryts när dag blir natt eller natt blir dag
   stilla?: true; // står still på platsen (ingen småjustering i bilden)
+  framme?: true; // arbetstiden räknas från att man kommit fram (startsOnArrival i paborjat.ts), så att vägen dit inte äter av den
   // var den görs (val.ts): runt elden, vid kolhögen, sovplats, lekplatsen, ute på marken (skog är förvalt) eller vid
   // stationen där handlingen görs (stationer.ts; runt elden så länge byn inte har någon)
   // eller vid ett bord (en ledig plats, steg 2.2.15; vid elden om det inte finns någon)
@@ -94,13 +95,13 @@ const DEF = {
   dricka: { namn: 'Dricker vid vattnet', tecken: '🥤' }, // steg 2.4.1: platsen väljs i torst.ts
   smalta: { namn: 'Smälter snö vid elden och dricker', tecken: '🫗', plats: 'elden' }, // i istiden, när sjön är frusen
   // vården (steg 2.5.2, halsa.ts): platsen är den skadade, och den som inte kan gå bärs hem eller får vatten där hen ligger
-  varda: { namn: 'Vårdar', tecken: '🩹', stilla: true },
+  varda: { namn: 'Vårdar', tecken: '🩹', stilla: true, framme: true },
   buren: { namn: 'Bärs hem', tecken: '🫂', stilla: true },
   fatt: { namn: 'Får vatten av de andra', tecken: '🥤', stilla: true },
   // vattensäcken (steg 2.10.1, torst.ts): fylls vid vattnet och bärs till den som inte kan gå. Den slits en gång per tur
-  vatten: { namn: 'Hämtar vatten', tecken: '🫗', redskap: { vattensack: { tar: 'Tar vattensäcken.', haller: 150, kravs: true } }, slits: { enhet: 'turer med vatten', per: 'gang' } },
+  vatten: { namn: 'Hämtar vatten', tecken: '🫗', redskap: { vattensack: { tar: 'Tar vattensäcken.', haller: 150, kravs: true } }, slits: { enhet: 'turer med vatten', per: 'gang' }, framme: true },
   kol: { namn: 'Hämtar kol ur den slocknade elden', tecken: '⚫', plats: 'kol' },
-  falla: { namn: 'Fäller ett träd med yxa', yrke: 'Trähuggare', slag: 'tra', redskap: { yxa: { haller: 85, kravs: true } }, slits: { enhet: 'träd', per: 'gang' }, arbete: 'ved', takt: 0, tungt: true },
+  falla: { namn: 'Fäller ett träd med yxa', yrke: 'Trähuggare', slag: 'tra', redskap: { yxa: { haller: 85, kravs: true } }, slits: { enhet: 'träd', per: 'gang' }, arbete: 'ved', takt: 0, tungt: true, framme: true },
   hugga: { namn: 'Hugger trä av ett fällt träd', yrke: 'Trähuggare', slag: 'tra', redskap: { yxa: { haller: 85, kravs: true } }, slits: { enhet: 'träd' }, arbete: 'ved', ger: 'ved', takt: 1.5, tur: 1200, tungt: true },
   yxa: { namn: 'Gör en yxa av en pinne och flinta', slag: 'hantverk', hantverk: true, plats: 'station' },
   spjut: { namn: 'Täljer ett spjut', verktyg: { flintspjut: 'Gör ett flintspjut' }, slag: 'hantverk', hantverk: true, plats: 'station' },
@@ -123,11 +124,11 @@ const DEF = {
   grilla: { namn: 'Grillar mat över elden', slag: 'hantverk', hantverk: true, social: true, stilla: true, plats: 'station' }, // bara på grillställningen när elden brinner (matlagning.ts, steg 2.8.1)
   torka: { namn: 'Hänger upp mat på torkställningen', slag: 'hantverk', hantverk: true, stilla: true, plats: 'station' }, // och tar ner det som torkat (matlagning.ts, steg 2.8.2)
   bygga: { namn: 'Bygger', yrke: 'Byggare', slag: 'bygga', verktyg: { laga: 'Lagar en vägg', lagaGolv: 'Lagar golvet', golv: 'Lägger golv', vagg: 'Bygger en vägg' }, hantverk: true, tungt: true, stilla: true },
-  station: { namn: 'Bygger en station', slag: 'bygga', verktyg: { slaktbank: 'Bygger en slaktbänk', flatarbank: 'Bygger en slöjdbänk', halmbadd: 'Bäddar en halmbädd', hylla: 'Bygger en hylla', kista: 'Bygger en kista', stall: 'Bygger ett redskapsställ', latrin: 'Gräver en latrin', grill: 'Sätter upp en grillställning', tork: 'Sätter upp en torkställning' }, hantverk: true, stilla: true, plats: 'station' }, // stationer.ts; task.tool = slaget
+  station: { namn: 'Bygger en station', slag: 'bygga', verktyg: { slaktbank: 'Bygger en slaktbänk', flatarbank: 'Bygger en slöjdbänk', halmbadd: 'Bäddar en halmbädd', hylla: 'Bygger en hylla', kista: 'Bygger en kista', stall: 'Bygger ett redskapsställ', latrin: 'Gräver en latrin', grill: 'Sätter upp en grillställning', tork: 'Sätter upp en torkställning', bord: 'Bygger ett litet bord', bord2: 'Bygger ett bord', bord3: 'Bygger ett långbord', brasa: 'Lägger en brasa' }, hantverk: true, stilla: true, plats: 'station', framme: true }, // stationer.ts; task.tool = slaget. En ny station får en rad i verktyg (STATIONER kan inte läsas här: cirkulärt)
   // fälten (steg 2.10.3, odling.ts): steget på fältet är task.tool, och arbetet sparas i fältet om det avbryts
-  odla: { namn: 'Odlar', slag: 'odla', verktyg: { roja: 'Röjer ett fält', bereda: 'Gräver upp jorden på fältet', sa: 'Sår', mogen: 'Skördar' }, tungt: true, stilla: true },
-  dorr: { namn: 'Hänger en dörr', slag: 'bygga', verktyg: { skinndorr: 'Hänger en hud i dörröppningen' }, hantverk: true, stilla: true }, // i en öppning (DORRAR i byggnad.ts, steg 2.2.16); task.tool = sorten
-  tillbehor: { namn: 'Gör ett tillbehör', slag: 'hantverk', verktyg: { skinnfall: 'Lägger en skinnfäll i halmbädden' }, hantverk: true, stilla: true }, // till en station eller möbel (TILLBEHOR i stationer.ts); task.tool = sorten
+  odla: { namn: 'Odlar', slag: 'odla', verktyg: { roja: 'Röjer ett fält', bereda: 'Gräver upp jorden på fältet', sa: 'Sår', mogen: 'Skördar' }, tungt: true, stilla: true, framme: true },
+  dorr: { namn: 'Hänger en dörr', slag: 'bygga', verktyg: { skinndorr: 'Hänger en hud i dörröppningen' }, hantverk: true, stilla: true, framme: true }, // i en öppning (DORRAR i byggnad.ts, steg 2.2.16); task.tool = sorten
+  tillbehor: { namn: 'Gör ett tillbehör', slag: 'hantverk', verktyg: { skinnfall: 'Lägger en skinnfäll i halmbädden' }, hantverk: true, stilla: true, framme: true }, // till en station eller möbel (TILLBEHOR i stationer.ts); task.tool = sorten
 } satisfies Record<string, ActDef>;
 
 export type Act = keyof typeof DEF;

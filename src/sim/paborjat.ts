@@ -11,6 +11,8 @@ import { fartVid, startStation, tillbehorDef } from './stationer';
 import { dorrDef } from './byggnad';
 import { DRICKA_ACTS, TORST, drickMin } from './torst';
 import { halMin } from './is';
+import { ACTS } from './handlingar';
+import { balans } from './balans';
 import { HALSA } from './halsa';
 import { startOdla } from './odling';
 
@@ -23,17 +25,21 @@ import { startOdla } from './odling';
 // Ett träd som någon har börjat fälla står kvar halvfällt (s.halvfallt), och vem som helst med yxa kan fälla det färdigt.
 // Arbetstiden räknas från att man kommit fram, så att vägen dit inte äter av den. Handlingarna där ett redskap görs och vad
 // de kan ge står i GORS (redskap.ts), som läser det ur saker.ts.
-export const HALV_TID = 2 * DAY; // så länge ett påbörjat redskap håller när ingen arbetar med det (två år i spelet)
-export const GA_TID = HOUR; // så länge man högst går till arbetet innan man väljer något annat
+const PABORJAT = balans('paborjat', {
+  halvDygn: 2, // så många dygn (år i spelet) håller ett påbörjat redskap när ingen arbetar med det
+  gaTim: 1, // så många timmar går man högst till arbetet innan man väljer något annat
+});
+export const HALV_TID = PABORJAT.halvDygn * DAY;
+export const GA_TID = PABORJAT.gaTim * HOUR;
 export const GOR_ACTS = Object.keys(GORS) as Act[];
-// handlingar där arbetstiden räknas från att man kommit fram
-export const startsOnArrival = (act: Act) => !!GORS[act] || act === 'falla' || act === 'station' || act === 'tillbehor' || act === 'dorr' || DRICKA_ACTS.has(act) || act === 'varda' || act === 'vatten' || act === 'odla'; // och att dricka och hämta vatten (torst.ts) och vården (halsa.ts)
+// handlingar där arbetstiden räknas från att man kommit fram: att göra ett redskap, de med framme i ACTS och att dricka (torst.ts)
+export const startsOnArrival = (act: Act) => !!GORS[act] || !!ACTS[act]?.framme || DRICKA_ACTS.has(act);
 const halvById = (s: State, id?: number) => id === undefined ? undefined : tingOf(s).find(t => t.id === id && t.halv);
 
 // framme: arbeta vidare på det man har påbörjat, eller ta materialet och börja. Saknas materialet blir det inget
 export function startWork(s: State, p: Person, tk: Task) {
-  if (tk.act === 'station') { startStation(s, p, tk); return; }
-  if (tk.act === 'odla') { startOdla(s, p, tk); return; } // på fältet (odling.ts) // en station byggs vidare där den står (stationer.ts)
+  if (tk.act === 'station') { startStation(s, p, tk); return; } // en station byggs vidare där den står (stationer.ts)
+  if (tk.act === 'odla') { startOdla(s, p, tk); return; } // på fältet (odling.ts)
   if (tk.act === 'dorr') { tk.until = s.now + (dorrDef(tk.tool)?.min ?? 0) * MIN; return; } // en dörr i en öppning (bygg.ts)
   if (DRICKA_ACTS.has(tk.act)) { tk.until = s.now + drickMin(s, p, tk.act) * MIN; return; } // att dricka (torst.ts)
   if (tk.act === 'varda') { tk.until = s.now + HALSA.vardMin * MIN; return; } // vården (halsa.ts)

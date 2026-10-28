@@ -94,7 +94,7 @@ export function twineRope(s: State, p: Person, hours: number) {
 
 // ---------- redskap: korg ----------
 // En korg flätas av hö av den som kan det. Med korg bär man hem mer från varje tur och spiller mindre bär.
-// Korgen slits när den används och håller ungefär 40 arbetstimmar.
+// Korgen slits för varje sak som samlas i den (haller i handlingar.ts).
 // ungefär en korg per tre vuxna
 const basketsWanted = (s: State) => clamp(Math.floor(living(s).filter(p => ageOf(p, s.now) >= ALDER.vuxen).length / REDSKAP.korgPerVuxna), REDSKAP.korgMin, REDSKAP.korgMax);
 
