@@ -1,6 +1,6 @@
 // Scenarier. Behov och val: behov, ved, aktivitet och fritid.
 import { Person, createState, getRel, step, living, temperature, nyKalender, amountOf, capacity, load, isLight, T, FOOD, ageOf, getMap, HOUR, W, tileOf, stat, campCenter, KANIN, gain, takeFuel, ownsAmount, addTo, setAmount, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, DELA, BEAT, spar, isWork, ACTS, groundOf, varmeDelar, nyVarme, addTool, stepKlader, chooseTask, iSkugga, KROPP, spotFor, shoreOf, torstDelar, drickPlats, areaOf, halsaLage, describe, halsaSteg, skada, blodning, halsa, rorlighet, workRate, OLYCKOR, Act, HALSA, kanGa, gangFart, hemma, mossaFynd, chopStock, skadeLista, skadeText, delSkada, FORMAGOR, smarta, handighet, NARINGAR, NARING, naringOf, naringNu, naringSjunker, mattnad, sjunker, bristGrad, bristSteg, berattaBrist, onskan, matOrdning, takeFood, vilaTim, skorbjugg, NARINGBAL, DODSORSAKER, converse, Naring, STATIONER, TEKNIK, tingOf, vaderNu } from '../../sim';
-import { stepIs, stepVader, isCm, vattenGrader, halVal, halMin, drickVal, iIstiden, ageIndex, tidyTools } from '../../sim';
+import { cloneState, stepIs, stepVader, isCm, vattenGrader, halVal, halMin, drickVal, iIstiden, ageIndex, tidyTools } from '../../sim';
 import { START, STEG_DYGN, STEG_TIM } from '../kor';
 import { setMat, setFood, kor, klockan, tandEld, tomtForrad, treVuxna, bastaJaktruta, SCENARIER, rikBy } from './hjalp';
 
@@ -247,8 +247,11 @@ SCENARIER.varm = {
     p.warm = 1; stepKlader(s);
     const ejPa = rock.bar === undefined;
     // en tanke när man är för varm, och tröttare först när man är extremt varm (steg 2.10.20)
-    p.warm = 1.9; const vila = p.rest = 1; kor(s, 1);
-    const trott = p.rest < vila, tanke = p.thoughts.some(t => t.text === 'För varm');
+    // samma person i en kopia av byn med samma arbete ett slag, men bara för varm: bara den extrema värmen skiljer dem åt
+    const lik = cloneState(s), pl = lik.people.find(q => q.id === p.id)!;
+    for (const q of [p, pl]) { q.rest = 1; q.task = { act: 'ved', phase: 'do', tx: q.x, ty: q.y, until: s.now + HOUR, carry: 0, why: '' }; }
+    p.warm = 1.9; pl.warm = (KROPP.forVarm + KROPP.extremVarm) / 2; step(s, BEAT); step(lik, BEAT);
+    const trott = 1 - p.rest > (1 - pl.rest) * 1.5, tanke = p.thoughts.some(t => t.text === 'För varm');
     // badet kyler den som är för varm
     let badVarm = 0, maxVarm = 0;
     for (const seed of [5, 6, 7, 8, 10]) { // 8 och 10 sedan steg 2.10.6, då handarbetet flyttade från elden in i byn och by 7 slutade bada varm
@@ -306,7 +309,7 @@ SCENARIER.skugga = {
       const b = createState(seed, START); b.kal = nyKalender(b.now, 2); klockan(b, 8);
       setFood(b, 40); setAmount(b, 'ved', 40);
       const sett = new WeakSet<object>();
-      kor(b, 2 * 24, b => { for (const q of living(b)) { if (q.warm > KROPP.forVarm) varmTim++; const k = q.task; if (k?.act === 'svalka' && k.phase === 'do' && !sett.has(k)) { sett.add(k); svalka++; if (!iSkugga(b, q.x, q.y)) iSol++; } } });
+      kor(b, 2 * 24, b => { for (const q of living(b)) { if (q.warm > KROPP.forVarm) varmTim += 1 / STEG_TIM; const k = q.task; if (k?.act === 'svalka' && k.phase === 'do' && !sett.has(k)) { sett.add(k); svalka++; if (!iSkugga(b, q.x, q.y)) iSol++; } } });
     }
     return [
       ['den som är för varm men inte extremt varm arbetar trots värmen', arbetar],
@@ -317,7 +320,7 @@ SCENARIER.skugga = {
       ['den som inte är för varm söker ingen skugga', inte],
       ['den som är för varm vilar och gör handarbete i skuggan nära elden', vilaSkugga],
       ['när solen inte värmer söker man ingen skugga', kvall],
-      [`på sommaren svalkar sig folk sällan (${svalka} gånger på ${varmTim} timmar som för varm), och då i skuggan (${iSol} i solen)`, iSol === 0 && svalka * 10 < Math.max(10, varmTim)],
+      [`på sommaren svalkar sig folk sällan (${svalka} gånger på ${Math.round(varmTim)} timmar som för varm, högst en gång per tre timmar), och då i skuggan (${iSol} i solen)`, iSol === 0 && svalka * 3 < Math.max(3, varmTim)],
     ];
   },
 };
@@ -376,7 +379,7 @@ SCENARIER.torst = {
 SCENARIER.is = {
   text: 'Steg 2.11.3: sjön har en egen temperatur som följer luftens långsamt. Isen lägger sig när vattnet kyls under noll, växer i kylan och smälter på våren. Den som fiskar eller dricker hugger först upp ett hål: tunn is med händerna, tjockare med en sten, och yxan, spjutet och spaden tar sig genom all is (tills isborren kommer). Fisket genom hålet är pimpling',
   kor: () => {
-    // ett år i spelet (fem veckor) från våren, timme för timme: isen i varje tidsålder
+    // 36 dygn (36 år i spelet, drygt fem veckor i verkligheten) från våren, timme för timme: isen i varje tidsålder
     const s = createState(5, START), t0 = s.now;
     let cmIstid = -1, maxCm = 0, varStart = -1, cmVar = -1, varmSommar = 0, forstIs = -1;
     for (let h = 0; h < 36 * 24; h++) {

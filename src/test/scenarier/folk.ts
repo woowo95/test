@@ -87,17 +87,17 @@ SCENARIER.seder = {
     const inom = (q: State) => [...Object.values(q.seder.v), ...Object.values(q.seder.ev)].every(v => v >= -1 && v <= 1);
     const vuxna = (q: State) => living(q).filter(p => ageOf(p, q.now) >= SIM.ALDER.vuxen);
     // två kopior av byn där alla är flitiga (flit 20) eller lata (1). Sederna rör sig i två dygn (två år i spelet)
-    const med = (flit: number) => { const q = structuredClone(s); for (const p of living(q)) p.pot.flit = flit; return q; };
+    const med = (flit: number) => { const q = SIM.cloneState(s); for (const p of living(q)) p.pot.flit = flit; return q; };
     const fl = med(20), la = med(1), mal = (q: State) => SIM.sederTarget(q).arbete;
     const fore = [fl, la].map(q => ({ v: q.seder.v.arbete, mal: mal(q) }));
     for (const q of [fl, la]) { SIM.stepSeder(q); q.now += 2 * DAY; SIM.stepSeder(q); }
     const narmare = [fl, la].every((q, i) => Math.abs(mal(q) - q.seder.v.arbete) < Math.abs(fore[i].mal - fore[i].v) - 0.05);
-    const lang = structuredClone(fl); lang.now += 40 * DAY; SIM.stepSeder(lang); // länge i ett svep: aldrig över 1
+    const lang = SIM.cloneState(fl); lang.now += 40 * DAY; SIM.stepSeder(lang); // länge i ett svep: aldrig över 1
     // pliktkänslan: samma person i båda byarna, och samma by med seden Arbete på 1 och -1
     const p = vuxna(fl)[0]!, q = vuxna(la).find(x => x.id === p.id)!, pf = SIM.duty(fl, p), pl = SIM.duty(la, q);
-    const sed = (v: number) => { const t = structuredClone(s); t.seder.v.arbete = v; return SIM.duty(t, vuxna(t)[0]!); };
+    const sed = (v: number) => { const t = SIM.cloneState(s); t.seder.v.arbete = v; return SIM.duty(t, vuxna(t)[0]!); };
     // yrket kommer av vanan: 20 timmars jakt ger Jägare, och att fälla och hugga ger Trähuggare
-    const t = structuredClone(s), [j, h, ...ovriga] = vuxna(t);
+    const t = SIM.cloneState(s), [j, h, ...ovriga] = vuxna(t);
     for (const x of vuxna(t)) { x.tag = undefined; x.kallad = undefined; x.habit = { samla: 6, ved: 4, vila: 2 }; }
     j.habit = { jakt: 20, samla: 2 }; h.habit = { hugga: 12, falla: 8, samla: 2 };
     SIM.updateTags(t);
@@ -187,7 +187,7 @@ SCENARIER.liv = {
       [`modern dog i barnsäng (${w.cause ?? 'lever'}) och är inte längre bland de levande`, w.cause === 'i barnsäng' && !living(s).includes(w)],
       [`ett barn som föds medan modern har en ny partner får en mor${barn2 ? ` (${barn2.father === m1.id ? 'och den far hon blev gravid med' : 'men fel far, se VARNING'})` : ''}`, !!barn2 && barn2.mother === w2.id],
       [`styrkan växer upp i åren och avtar på äldre dagar: ${st(5).toFixed(1)} vid 5 år, ${st(30).toFixed(1)} vid 30 och ${st(75).toFixed(1)} vid 75`, st(5) < st(30) && st(75) < st(30)],
-      [`åldern följer tiden: ${m.name} är ${ageOf(m, s.now).toFixed(1)} år efter ${(steg / STEG_DYGN).toFixed(1)} dygn`, Math.abs(ageOf(m, s.now) - 26 - (s.now - m.born - 26 * DAY) / DAY) < 1e-9 && ageOf(m, s.now) > 26],
+      [`åldern följer tiden: ${m.name} är ${ageOf(m, s.now).toFixed(1)} år efter ${(steg / STEG_DYGN).toFixed(1)} dygn`, Math.abs(ageOf(m, s.now) - (26 + steg / STEG_DYGN)) < 1e-6],
     ];
   },
 };
@@ -244,11 +244,11 @@ SCENARIER.personlighet = {
     const langtUt = (v: number) => Math.abs(v - 10) > 5;
     const utprag = alla.filter(langtUt).length / alla.length;
     const balans = ps.filter(p => SIM.STATS.every(k => Math.abs(p.pot[k] - 10) <= 4)).length / ps.length;
-    // barn i tre släktled: varje par får två barn, som paras med varandras
+    // barn i tre släktled: varje par får två barn, och barnen paras med grannparets (inte med sitt syskon)
     let led = ps.slice(0, 200);
     for (let g = 0; g < 3; g++) {
       const nya: Person[] = [];
-      for (let i = 0; i + 1 < led.length; i += 2) for (let b = 0; b < 2; b++) nya.push(SIM.newPerson(s, b ? 'k' : 'm', s.now, led[i], led[i + 1]));
+      for (let i = 0; i + 1 < led.length; i += 2) for (let b = 0; b < 2; b++) nya.push(SIM.newPerson(s, b ? 'k' : 'm', s.now, led[i], led[(i + 3) % led.length]));
       led = nya;
     }
     const barn = led.flatMap(p => SIM.STATS.map(k => p.pot[k]));
