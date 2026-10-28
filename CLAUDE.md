@@ -2,7 +2,7 @@
 
 Björn programmerar inte; Claude skriver all kod. Svara på svenska.
 
-Notis (Björn, efter v112): skicka en notis till mobilen (PushNotification) varje gång en omgång är klar och Claude slutar arbeta: en rad om vad som är klart eller vad som behöver Björns svar. Aldrig på natten (Björn, efter v143): mellan kl. 22 och 07 svensk tid (kolla med `TZ=Europe/Stockholm date`) skickas ingen notis, i någon chatt; svaret står ändå i chatten.
+Notis (Björn, efter v112): skicka en notis till mobilen (PushNotification) varje gång en omgång är klar och Claude slutar arbeta: en rad om vad som är klart eller vad som behöver Björns svar. Aldrig på natten (Björn, efter v143): mellan kl. 22 och 08 svensk tid (kolla med `TZ=Europe/Stockholm date`) skickas ingen notis, i någon chatt; svaret står ändå i chatten.
 
 ## Innan du programmerar (varje prompt)
 
