@@ -150,8 +150,9 @@ function learn(s: State, p: Person, t: Tek, from?: Person) {
   if (first) { p.fame.push(`Uppfann ${t.namn.toLowerCase()}`); sedEvent(s, 'nyfikenhet', TEKTAL.forstaNyfiken); }
 }
 
-// arbete för tankarna framåt mot det som hör till arbetet (omr). Allt hantverk (slag hantverk i handlingar.ts: att tvinna
-// rep, fläta en korg, göra ett redskap, slakta) räknas som hantverk. Andra handlingar ger inga idéer
+// arbete för tankarna framåt mot det som hör till arbetet (omr). Hantverk (slag hantverk i handlingar.ts: att tvinna rep,
+// fläta en korg, göra ett redskap) räknas som hantverk, utom det som själv står i någon tekniks omr: att slakta och rensa
+// ger bara idéer till de tekniker som nämner dem (grillen och torkställningen). Andra handlingar ger inga idéer
 const OMR = new Set(TEKNIK.flatMap(t => t.omr));
 const HANTVERK = new Set(ACT_LIST.filter(a => ACTS[a].slag === 'hantverk'));
 const omrAv = (act: Act): Act => HANTVERK.has(act) ? 'hantverk' : act;

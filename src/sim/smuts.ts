@@ -38,14 +38,14 @@ interface FlackDef { namn: string; farg: number; bleknar: number; per: number }
 export const FLACKAR = {
   toa: { namn: 'Toa', farg: 0x6b4a1f, bleknar: 48, per: 1 }, // steg 2.7.2
 } satisfies Record<string, FlackDef>;
-export type FlackSlag = keyof typeof FLACKAR;
 const DEF: Record<string, FlackDef> = FLACKAR;
 // en fläck: slaget, rutan (index i kartan) och styrkan n (0–1) vid tiden t, och vem som lämnade den sist (av, personens id)
 export interface Flack { k: string; i: number; n: number; t: number; av?: number }
 
 // fläckens styrka nu: den bleknar jämnt från n till 0
 export const flackNu = (f: Flack, now: number) => clamp(f.n - (now - f.t) / ((DEF[f.k]?.bleknar ?? 1) * HOUR), 0, 1);
-export const flackarOf = (s: State) => s.flackar ?? [];
+const TOMT: Flack[] = []; // samma tomma lista varje gång, så att toaKarta inte räknas om (ingen ändrar listan, smutsaRuta gör en ny)
+export const flackarOf = (s: State) => s.flackar ?? TOMT;
 
 // ett tal 0–1 som bara beror på a och b, utan byns slumpföljder
 const hash = (a: number, b: number) => { const h = Math.sin(a * 12.9898 + b * 78.233) * 43758.5453; return h - Math.floor(h); };

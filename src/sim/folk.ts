@@ -180,9 +180,12 @@ export function startSkills(s: State, p: Person, age: number) {
   p.skill.matlagning = (p.skill.samla + p.skill.elda) / 2;
 }
 
-// övning: färdigheten k ökar med vinst gånger det som återstår till den mjuka gränsen (21), högst taket (20)
-const SKILL_SOFT = 21, SKILL_MAX = 20;
-export function ovning(p: Person, k: Skill, vinst: number) { p.skill[k] = clamp(p.skill[k] + vinst * (1 - p.skill[k] / SKILL_SOFT), 0, SKILL_MAX); }
+// övning: färdigheten k ökar med vinst gånger det som återstår till den mjuka gränsen, högst taket
+const OVNING = balans('ovning', {
+  mjuk: 21, // ökningen avtar mot den här gränsen (vid färdigheten 10,5 ger övningen hälften så mycket som vid 0) ...
+  tak: 20, // ... och färdigheten blir aldrig högre än så här
+});
+export function ovning(p: Person, k: Skill, vinst: number) { p.skill[k] = clamp(p.skill[k] + vinst * (1 - p.skill[k] / OVNING.mjuk), 0, OVNING.tak); }
 
 // Egenskaperna (steg 2.3.11): utpräglade personligheter. En egenskap slumpas med tyngd i ändarna, så att de flesta är
 // tydligt låga eller höga i något och en helt balanserad person är ovanlig. Ett barn får varje egenskap från en av
@@ -260,7 +263,7 @@ export function isKin(a: Person, b: Person) {
 export function similarity(a: Person, b: Person) {
   let d = 0;
   for (const k of ['nyfikenhet', 'flit', 'empati', 'mod'] as Stat[]) d += Math.abs(a.pot[k] - b.pot[k]);
-  return 1 - d / 40; // ~ -0.5..1
+  return 1 - d / 40; // -0,9 (helt olika) till 1 (lika)
 }
 
 export function log(s: State, text: string, kind: LogEntry['kind'], ids: number[] = []) {

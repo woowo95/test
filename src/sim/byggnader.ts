@@ -265,9 +265,9 @@ function nyttNamn(s: State, h: Hus, fn: Fn, a: Akut) {
   const r: Byggnad = BYGGNADER[fn], w = h.w - 2, hh = h.h - 2, same = antalLika(s, fn, w, hh, h);
   return r.namnFor ? r.namnFor(s, w, hh, same, a) : r.namn;
 }
+// ett förrådshus byter aldrig funktion, så lagerplatsen behöver inte tas bort här
 function bytFn(s: State, h: Hus, fn: Fn, slag?: 'mat' | 'material') {
   const fore = h.namn;
-  if (fnOf(h).lager && !(BYGGNADER[fn] as Byggnad).lager) { s.lagren = zonesOf(s).filter(z => z.hus !== h.id); changed(s); }
   h.fn = fn; h.slag = slag; h.tom = undefined;
   h.namn = nyttNamn(s, h, fn, { v: 0, plats: 0, slag, ag: h.ag });
   touch(s); count(s, 'bytt_' + fn);
