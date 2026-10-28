@@ -60,6 +60,7 @@ interface ActDef {
   tungt?: true; // tröttar mer än att bara vara vaken
   vila?: true; // man återhämtar sig
   hantverk?: true; // övar hantverk
+  ovar?: Skill; // en färdighet till som övas (grilla övar matlagning, matlagning.ts); personrutan visar den som övad just nu
   social?: true; // man samtalar med dem som är nära
   varmer?: true; // görs för att bli varm: ett rum väljs bara om det är minst lika varmt som vid elden (varmareInne)
   dygn?: true; // avbryts när dag blir natt eller natt blir dag
@@ -121,7 +122,7 @@ const DEF = {
   vattensack: { namn: 'Syr en vattensäck', slag: 'hantverk', hantverk: true, stilla: true, plats: 'station' }, // bara vid slöjdbänken med bensylen (steg 2.10.1)
   tvinna: { namn: 'Tvinnar rep', yrke: 'Hantverkare', slag: 'hantverk', vila: true, hantverk: true, social: true, dygn: true, stilla: true, plats: 'station' }, // vid slöjdbänken, annars för hand inne i byn (vid elden när det är kallt, steg 2.10.6)
   rensa: { namn: 'Rensar fisk', slag: 'hantverk', hantverk: true, social: true, stilla: true, plats: 'station' },
-  grilla: { namn: 'Grillar mat över elden', slag: 'hantverk', hantverk: true, social: true, stilla: true, plats: 'station' }, // bara på grillställningen när elden brinner (matlagning.ts, steg 2.8.1)
+  grilla: { namn: 'Grillar mat över elden', slag: 'hantverk', hantverk: true, ovar: 'matlagning', social: true, stilla: true, plats: 'station' }, // bara på grillställningen när elden brinner (matlagning.ts, steg 2.8.1)
   torka: { namn: 'Hänger upp mat på torkställningen', slag: 'hantverk', hantverk: true, stilla: true, plats: 'station' }, // och tar ner det som torkat (matlagning.ts, steg 2.8.2)
   bygga: { namn: 'Bygger', yrke: 'Byggare', slag: 'bygga', verktyg: { laga: 'Lagar en vägg', lagaGolv: 'Lagar golvet', golv: 'Lägger golv', vagg: 'Bygger en vägg' }, hantverk: true, tungt: true, stilla: true },
   station: { namn: 'Bygger en station', slag: 'bygga', verktyg: { slaktbank: 'Bygger en slaktbänk', flatarbank: 'Bygger en slöjdbänk', halmbadd: 'Bäddar en halmbädd', hylla: 'Bygger en hylla', kista: 'Bygger en kista', stall: 'Bygger ett redskapsställ', latrin: 'Gräver en latrin', grill: 'Sätter upp en grillställning', tork: 'Sätter upp en torkställning', bord: 'Bygger ett litet bord', bord2: 'Bygger ett bord', bord3: 'Bygger ett långbord', brasa: 'Lägger en brasa' }, hantverk: true, stilla: true, plats: 'station', framme: true }, // stationer.ts; task.tool = slaget. En ny station får en rad i verktyg (STATIONER kan inte läsas här: cirkulärt)

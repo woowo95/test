@@ -108,8 +108,17 @@ export function carryTxt(p: Person) {
   return parts.length ? `Bär ${parts.join(' och ')}, ${kg(load(t!, s))} (${Math.round(load(t!, s) / orkar * 100)} % av vad hen orkar)` : `Bär inget just nu, orkar bära ${kg(orkar)} med båda händerna och ${kg(orkar * UTRUSTNING.en)} i en`;
 }
 // en rad i loggen där namnen går att trycka på
+// Namnen letas upp i den ursprungliga texten och byts i ett svep, så att samma namn två gånger, eller ett namn som är
+// början på ett annat, länkar rätt person. Ett namn står som ett eget ord (eller med genitivets s)
 export function linkify(l: LogEntry) {
-  let t = esc(l.text);
-  for (const id of l.ids) { const p = byId(s, id); if (p) t = t.replace(esc(p.name), pLink(p)); }
-  return t;
+  const txt = l.text, bitar: { i: number; n: number; p: Person }[] = [], bokstav = (c?: string) => !!c && /\p{L}/u.test(c);
+  const passar = (i: number, n: number) => !bokstav(txt[i - 1]) && (!bokstav(txt[i + n]) || txt[i + n] === 's' && !bokstav(txt[i + n + 1]))
+    && bitar.every(b => i + n <= b.i || i >= b.i + b.n);
+  for (const id of l.ids) {
+    const p = byId(s, id);
+    if (p) for (let i = txt.indexOf(p.name); i >= 0; i = txt.indexOf(p.name, i + 1)) if (passar(i, p.name.length)) { bitar.push({ i, n: p.name.length, p }); break; }
+  }
+  let ut = '', fran = 0;
+  for (const b of bitar.sort((a, b) => a.i - b.i)) { ut += esc(txt.slice(fran, b.i)) + pLink(b.p); fran = b.i + b.n; }
+  return ut + esc(txt.slice(fran));
 }

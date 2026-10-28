@@ -1,5 +1,5 @@
 import { FORMAGOR, HALSA, Kroppsdel, KROPPSDELAR, NARING, NARINGAR, NARINGBAL, bristGrad, bristerNu, frysFaktor, naringNu, sjunker, skorbjugg, vilaTim, TORST, blodning, delSkada, halsa, skadeLista, skadeText, smarta, torstDelar } from '../../sim';
-import { ACTS, ALDER, Act, DAY, Lardom, SAMTAL, SKILL_GOR, STAT_GOR, Skill, Stat, coldOf, halsaLage, hearthOf, living, roomAt, temperature, varmeDelar, viloSlag, viloTak, SLAG, SLAG_TECKEN, Person, KUNSKAPER, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, SEDER, SED_LIST, TEKNIK, BYN, Ting, halvKlar, ageOf, alive, byId, childrenOf, drar, heldBy, ownedBy, PLATSER, PLATS_LIST, Plats, BORDA_KG, UTRUSTNING, bordOf, capacity, kvNamn, handerFor, homeKind, load, utrustning, viktOf, SAKER, ownedStock, sakNamn, slagIkon, tingNamn, STACK, describe, duty, habitShare, habitTotal, KROPP, kortTal, moodOf, num, REL, relKey, stat, taskName, timeLabel } from '../../sim';
+import { ACTS, ALDER, Act, DAY, Lardom, SAMTAL, SKILL_GOR, STAT_GOR, Skill, Stat, coldOf, halsaLage, hearthOf, living, roomAt, temperature, varmeDelar, viloSlag, viloTak, takEffekt, SLAG, SLAG_TECKEN, Person, KUNSKAPER, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, SEDER, SED_LIST, TEKNIK, BYN, Ting, halvKlar, ageOf, alive, byId, childrenOf, drar, heldBy, ownedBy, PLATSER, PLATS_LIST, Plats, BORDA_KG, UTRUSTNING, bordOf, capacity, kvNamn, handerFor, homeKind, load, utrustning, viktOf, SAKER, ownedStock, sakNamn, slagIkon, tingNamn, STACK, describe, duty, habitShare, habitTotal, KROPP, kortTal, moodOf, num, REL, relKey, stat, taskName, timeLabel } from '../../sim';
 import { framstegSvg, hasIcon, iconImg, kvSvg, tecknet } from '../../ikoner';
 import { LAG, fmtN, bar, cap, carryTxt, cssFarg, durTxt, esc, hex, hsl, hjalpOppen, hjalpText, moodWord, pLink, prickar, relWord, sickNow, tempBar, tempOrd, trend, trendD } from '../hjalp';
 import { s, ui } from '../lage';
@@ -99,8 +99,9 @@ function behovHtml(p: Person) {
   ];
   const tak = viloTak(s, p, v.rum);
   const vs = viloSlag(p), trott = vilaTim(p, vs) - KROPP[vs];
-  const vila: Orsak[] = [{ namn: VILA[vs], v: KROPP[vs] }, ...trott ? [{ namn: 'Trött av brist på energi', v: trott }] : [], ...tak ? [{ namn: tak === 'restBadd' ? 'Sover i en halmbädd' : tak === 'restGolv' ? 'Sover på golvet i ett hus' : 'Sover under tak', v: KROPP[tak] }] : [],
-    ...v.heat > KROPP.eldNara ? [{ namn: 'Slappnar av vid elden', v: fh.comfort * v.heat }] : []];
+  const vila: Orsak[] = [{ namn: VILA[vs], v: KROPP[vs] }, ...trott ? [{ namn: 'Trött av brist på energi', v: trott }] : [], ...tak ? [{ namn: tak === 'restBadd' ? 'Sover i en halmbädd' : tak === 'restGolv' ? 'Sover på golvet i ett hus' : 'Sover under tak', v: KROPP[tak] * takEffekt(s, p, tak) }] : [],
+    ...v.heat > KROPP.eldNara ? [{ namn: 'Slappnar av vid elden', v: fh.comfort * v.heat }] : [],
+    ...p.warm > KROPP.extremVarm ? [{ namn: 'Slut av hettan', v: -KROPP.varmTrott * (p.warm - 1) }] : []]; // samma delar som needsStep i steg.ts
   const hl = halsaLage(p, now);
   const halsaDelar: Orsak[] = [...hl === 'svalt' ? [{ namn: 'Svälter', v: -1 / KROPP.svaltTim }] : hl === 'frys' ? [{ namn: 'Fryser farligt', v: -1 / KROPP.frysTim }] : hl === 'torst' ? [{ namn: 'Törstar ihjäl', v: -1 / TORST.tomTim }] : hl === 'laker' ? [{ namn: 'Mätt, otörstig och frisk: läker', v: 1 / KROPP.lakerTim }] : [],
     ...sickNow(p) ? [{ namn: p.sickWhy ?? 'Sjuk', v: -1 / KROPP.sjukTim }] : [],
@@ -169,7 +170,7 @@ function gorHtml(rader: string[], nu: string) {
 const arbetar = (sk: string[]) => sk.length ? [`Hur mycket hen får ut av arbetet: ${sk.map(k => SKILL_NAMES[k as Skill].toLowerCase()).join(', ')}`] : [];
 function ovarNu(p: Person, k: Skill) {
   const d = p.task && ACTS[p.task.act];
-  return !!d && p.task!.phase === 'do' && (d.arbete === k || (k === 'hantverk' && !!d.hantverk) || (k === 'elda' && d.slag === 'elda'));
+  return !!d && p.task!.phase === 'do' && (d.arbete === k || d.ovar === k || (k === 'hantverk' && !!d.hantverk) || (k === 'elda' && d.slag === 'elda'));
 }
 function egenHtml(p: Person) {
   const now = s.now, d = duty(s, p);

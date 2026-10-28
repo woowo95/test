@@ -219,6 +219,8 @@ export function viloTak(s: State, p: Person, rum: unknown): 'restBadd' | 'restGo
   const m0 = gridOf(s).at.get(tileOf(p.x, p.y))?.m;
   return m0 === 'ho' || m0 === 'tra' ? 'restGolv' : 'restTak';
 }
+// man sover bättre i en finare bädd (kvalitet.ts): vilan och tanken gånger detta. Personrutan visar samma tal
+export const takEffekt = (s: State, p: Person, tak: ReturnType<typeof viloTak>) => tak === 'restBadd' ? kvEffekt(stationRutor(s).at.get(tileOf(p.x, p.y))) : 1;
 // värmen per timme: elden, kylan (det huset, skinnfällen och kläderna skyddar är borta) och milt väder. inRum = hur många som är i varje rum.
 // Över idealet (steg 2.3.4): solen (inte i skugga: i ett hus eller under ett träd), kläderna när det är milt och elden tätt intill
 export function varmeDelar(s: State, p: Person, coldRate: number, inRum: Map<number, number>, temp = temperature(s)) {
@@ -258,7 +260,7 @@ function needsStep(s: State, p: Person, a: number, dtSec: number, coldRate: numb
   p.warm = nyVarme(p.warm, v, dtSec / HOUR_S);
   const tak = viloTak(s, p, v.rum);
   if (tak) { // man vilar bättre under tak, och bäst på ett golv
-    const e = tak === 'restBadd' ? kvEffekt(stationRutor(s).at.get(tileOf(p.x, p.y))) : 1; // man sover bättre i en finare bädd (kvalitet.ts)
+    const e = takEffekt(s, p, tak);
     p.rest = clamp(p.rest + dtSec / HOUR_S * KROPP[tak] * e, 0, 1);
     if (p.task!.act === 'sova') think(p, VILOTANKE[tak][0], VILOTANKE[tak][1] * e, now, 8 * HOUR);
   }
