@@ -6,7 +6,7 @@ import { groundOf, punktIRuta } from './mark';
 import { PLATS, campCenter, rektAvstand } from './plats';
 import { lekplats, paLek, uteStation } from './stationer';
 import { sedEvent } from './seder';
-import { RESERV, kunnighet } from './ekonomi';
+import { kunnighet, sparas } from './ekonomi';
 import { ARSTID, iIstiden } from './tid';
 import { knows } from './teknik';
 import { amountOf, changed, nearZone, ownMove, ownsAmount, use, usable, zonesOf } from './lager';
@@ -48,9 +48,6 @@ const BYGG = balans('bygg', {
 });
 
 // ---------- att bygga ----------
-// det som lämnas kvar i förrådet till elden av slaget k (RESERV i ekonomi.ts)
-const sparas = (k: string) => k === 'ved' ? RESERV.ved : k === 'grenar' ? RESERV.grenar : k === 'torrgras' ? RESERV.torrgras : 0;
-
 // var p sover: en egen ruta under tak om det finns, annars ingenstans (byggnader.ts)
 export function bedFor(s: State, p: Person) {
   const i = bedTile(s, p);

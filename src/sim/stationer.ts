@@ -3,7 +3,7 @@ import { eldPlats, getMap } from './karta';
 import { knows } from './teknik';
 import { ALDER, ageOf, alive, byId, count, doingAct, forstaGang, living, log } from './folk';
 import { getable, takeMaterial } from './behov';
-import { RESERV } from './ekonomi';
+import { sparas } from './ekonomi';
 import { Ting, freeTools, tingOf, wearTool } from './agande';
 import { BYN } from './egendom';
 import { Zone, inZone, pilesOf, stallBorta, usable, zoneAt, zonesOf } from './lager';
@@ -437,7 +437,7 @@ function siteUte(s: State, k: string) {
   return best;
 }
 // inne: en golvruta i rummet där ingen station står, inget ligger och som inte är en lagerplats
-function golvFri(s: State, rum: Set<number>, W: number, x: number, y: number) {
+function golvFri(s: State, rum: Set<number>, x: number, y: number) {
   const i = y * W + x;
   return rum.has(i) && !stationRutor(s).at.has(i) && !stationRutor(s).sitt.has(i) && !zonesOf(s).some(z => x >= z.x && x < z.x + z.w && y >= z.y && y < z.y + z.h)
     && !(s.stackar ?? []).some(a => a.x === x && a.y === y) && !tingOf(s).some(q => q.x === x && q.y === y && q.hos === undefined && q.lass === undefined);
@@ -460,7 +460,7 @@ function siteInne(s: State, k: string, bara?: Rum) {
       for (const i0 of r.tiles) {
         const x = i0 % W, y = (i0 - x) / W;
         let fri = true, sc = rot * STATION.vriden + bonus;
-        for (let j = 0; j < h && fri; j++) for (let i = 0; i < w && fri; i++) fri = golvFri(s, rum, W, x + i, y + j);
+        for (let j = 0; j < h && fri; j++) for (let i = 0; i < w && fri; i++) fri = golvFri(s, rum, x + i, y + j);
         for (let i = 0; i < w && fri; i++) fri = rum.has((y + h) * W + x + i) && !stationRutor(s).at.has((y + h) * W + x + i); // golvet framför
         if (!fri) continue;
         for (let j = -1; j <= h; j++) for (let i = -1; i <= w; i++) {
@@ -602,12 +602,8 @@ export function inneUtanPlats(s: State): StationSlag | undefined {
 export const stationRum = (s: State, t: Station): Rum | undefined => t.inne ? roomAt(s, t.x, t.y) : undefined;
 
 // ---------- att bygga en station ----------
-const sparas = (k: string) => k === 'ved' ? RESERV.ved : k === 'grenar' ? RESERV.grenar : k === 'torrgras' ? RESERV.torrgras : 0;
 // (en kista: p:s egen, steg 2.10.18)
 const halvbyggd = (s: State, k: string, p?: Person) => stationerOf(s).find(t => t.k === k && !isKlar(t) && (t.ag === undefined || t.ag === p?.id));
-// den station p vill bygga: p kan någon av teknikerna (brasan kräver ingen, bara att man är minst ALDER.ansvar), byn har ingen färdig av slaget, ingen annan bygger en, och den är påbörjad
-// eller p kan få tag i materialet utan att ta det som sparas till elden
-export const stationAttBygga = (s: State, p: Person): StationSlag | undefined => STATION_LIST.find(k => kanBygga(s, p, k));
 // p kan bygga (eller bygga vidare på) en station av sorten k som byn saknar (det byn kan ha flera av: om projektet säger att byn
 // saknar fler, projekt.ts)
 export function kanBygga(s: State, p: Person, k: StationSlag) {
@@ -666,7 +662,7 @@ export function finishStation(s: State, p: Person, tk: Task) {
 // Ett bord har stubbar att sitta på runt sig (platser i registret): en på varje ruta längs de sidor som är minst två rutor
 // långa. Det lilla bordet (2 × 1 rutor) har fyra platser på långsidorna, bordet (2 × 2) åtta, två på varje sida, och
 // långbordet (3 × 2) tio. Stubbarna hör till bordet: de byggs med det och inget annat får stå där. Bordet står ute nära
-// elden tills husen har plats för det (2.2.17). Den som är hungrig går till en ledig plats och äter där (måltiden i val.ts,
+// elden (siteUte). Den som är hungrig går till en ledig plats och äter där (måltiden i val.ts,
 // MAT i behov.ts) och blir glad av det, och vid bordet samtalar man (spotFor i val.ts). Byn bygger bord så länge någon saknar
 // en plats, och den storlek som räcker åt dem som saknar (bordStorlek, projekt.ts)
 export function bordPlatser(t: { k: string; x: number; y: number; rot?: unknown }) {

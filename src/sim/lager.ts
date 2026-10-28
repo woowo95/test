@@ -322,14 +322,13 @@ export function usable(s: State, x: number, y: number, utomElden = false) {
 }
 const allUsable = (s: State, z: Zone) => { for (let y = z.y; y < z.y + z.h; y++) for (let x = z.x; x < z.x + z.w; x++) if (!usable(s, x, y)) return false; return true; };
 const overlaps = (a: Zone, b: Zone, gap: number) => a.x < b.x + b.w + gap && b.x < a.x + a.w + gap && a.y < b.y + b.h + gap && b.y < a.y + a.h + gap;
-// rutorna runt en lagerplats, närmast först (från fran till och med till rutor ut)
-function ringTiles(s: State, z: Zone, fran = 1, till = LAGER.bredvid) {
-  const out: { x: number; y: number }[] = [];
+// rutorna runt en lagerplats, närmast först (från fran till och med till rutor ut). En i taget, så att den som letar efter
+// den första lediga inte går igenom hela kartan
+function* ringTiles(s: State, z: Zone, fran = 1, till = LAGER.bredvid) {
   for (let d = fran; d <= till; d++) for (let y = z.y - d; y < z.y + z.h + d; y++) for (let x = z.x - d; x < z.x + z.w + d; x++) {
     const e = Math.max(z.x - x, x - (z.x + z.w - 1), z.y - y, y - (z.y + z.h - 1));
-    if (e === d && usable(s, x, y)) out.push({ x, y });
+    if (e === d && usable(s, x, y)) yield { x, y };
   }
-  return out;
 }
 const key = (x: number, y: number) => y * W + x;
 // redskapen som ligger på en ruta (inte i någons hand eller börda). En kniv vid slaktbänken (vid, stationer.ts) ligger kvar
@@ -406,7 +405,7 @@ function besideSpot(s: State, k: string, occ: Occ) {
   const upptagen = new Set<number>();
   for (const a of things(s)) if (!(a.k === k && !isTool(k) && a.n < rymd(s, a.x, a.y, k) - 1e-9)) upptagen.add(key(a.x, a.y));
   const z0 = (base.length ? base : zs)[0];
-  for (const r of ringTiles(s, z0, LAGER.bredvid + 1, W + H)) if (zoneAt(s, r.x, r.y) < 0 && !upptagen.has(key(r.x, r.y))) return r;
+  for (const r of ringTiles(s, z0, LAGER.bredvid + 1, Math.max(W, H))) if (zoneAt(s, r.x, r.y) < 0 && !upptagen.has(key(r.x, r.y))) return r;
   return { x: zs[0].x, y: zs[0].y }; // hela kartan är full
 }
 export const fetchSpot = (s: State, k: string) => {
@@ -478,7 +477,7 @@ function hide(s: State, host: string, n: number, at?: { x: number; y: number }) 
 // hos ägaren. Skicket är de hela sakernas
 function takeOwn(s: State, k: string, n: number, p?: Person, common = false, fran?: number) {
   const ag: Del = {};
-  let got = 0, cw = 0, hela = 0;
+  let got = 0, cw = 0, tagna = 0;
   if (n > 1e-12) {
     const dold = !!SAKER[k]?.i, list = dold ? stored(s, SAKER[k]!.i!).filter(a => a.dold).sort((a, b) => b.dold! - a.dold!) : stored(s, k), shares: Del = { [BYN]: 0 };
     if (dold) for (const a of list) shares[BYN] += a.dold!; // det gömda är byns
@@ -494,14 +493,14 @@ function takeOwn(s: State, k: string, n: number, p?: Person, common = false, fra
         if (dold) a.dold! -= v; else { a.n -= v; if (o !== BYN) { a.ag![o] -= v; cleanDel(s, a); } }
         w -= v; tog += v; cw += v * a.c;
       }
-      hela += tog;
+      tagna += tog;
       const fick = u + Math.min(tog, r);
       setPabörjat(s, o, k, b - u + Math.max(0, tog - r));
       got += fick; if (fick > 0) ag[o] = (ag[o] ?? 0) + fick;
     }
     tidy(s);
   }
-  return { ag, n: got, c: hela > 0 && !SAKER[k]?.i ? cw / hela : 1 };
+  return { ag, n: got, c: tagna > 0 && !SAKER[k]?.i ? cw / tagna : 1 };
 }
 // ta n ur förrådet utan att någon tar det (sorteras bort, prov): i hela saker (forlorat), lika mycket ur varje stack och av
 // allas delar
@@ -650,8 +649,8 @@ export function wearStore(s: State, dtSec: number) {
   for (const t of tingOf(s)) {
     const kl = t.bar !== undefined ? SAKER[t.k]?.klad : undefined;
     if (kl) { t.c -= Math.min(t.c, h / (kl.dygn * 24) / kvHaller(t)); if (t.c <= 1e-6) count(s, 'kladerSlitna'); continue; }
-    const ligger = t.hos === undefined && t.lass === undefined; // på marken, vid en station eller i förrådet (utan plats än)
-    t.c -= Math.min(t.c, wearAt(t.k, ligger && t.x !== undefined ? wearMult(s, t.x, t.y!) : 1, ligger, temp) * h / kvHaller(t));
+    const nere = t.hos === undefined && t.lass === undefined; // på marken, vid en station eller i förrådet (utan plats än)
+    t.c -= Math.min(t.c, wearAt(t.k, nere && t.x !== undefined ? wearMult(s, t.x, t.y!) : 1, nere, temp) * h / kvHaller(t));
   }
   s.ting = tingOf(s).filter(t => t.c > 1e-6);
   tidy(s);

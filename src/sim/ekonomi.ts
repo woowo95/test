@@ -27,6 +27,8 @@ export const RESERV = balans('reserv', {
   tandVill: 12, // så mycket hö och grenar samlas det till när elden brinner
   tandVillSlocknad: 36, // ... och när elden är släckt
 });
+// det som lämnas kvar i förrådet till elden av slaget k när något byggs (bygg.ts, stationer.ts)
+export const sparas = (k: string) => k === 'ved' ? RESERV.ved : k === 'grenar' ? RESERV.grenar : k === 'torrgras' ? RESERV.torrgras : 0;
 // enheter per arbetstimme. Grundtakten, årstiden och egenskapen som hjälper står i handlingar.ts; att fälla och hugga
 // är vedarbete och räknas som ved
 // arbetsförmågan: ålder (barn och gamla orkar mindre) gånger sjukdom. workRate multiplicerar de två delarna var för sig
