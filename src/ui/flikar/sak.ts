@@ -1,4 +1,4 @@
-import { kvEffekt, BYN, HOUR, W, kortTal, Pile, SAKER, Slitage, Ting, byId, condOf, halvKlar, sakNamn, slitageNu, stationById, stationDef, temperature, tingOf, toaAt, toaInfo } from '../../sim';
+import { kladSkydd, BYN, HOUR, W, kortTal, Pile, SAKER, Slitage, Ting, byId, condOf, halvKlar, sakNamn, slitageNu, stationById, stationDef, temperature, tingOf, toaAt, toaInfo } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { condBar, durTxt, esc, kvMark, kvText, pLink } from '../hjalp';
 import { piles, s, ui } from '../lage';
@@ -65,7 +65,7 @@ export const sak: Flik = {
     const orsak = sl.orsak === 'ruttnar' ? fryst() ? `❄ Fryst, ${Math.round(temperature(s))} grader: ruttnar nästan inte` : `Ruttnar, ${Math.round(temperature(s))} grader` : ORSAK[sl.orsak];
     const haller = sl.gang ? `<dt>Räcker till</dt><dd>${Math.max(0, Math.floor(c / sl.gang + 1e-9))} ${esc(sl.enhet!)} till</dd>` // per gång (steg 2.3.12)
       : sl.per > 0 ? `<dt>Håller</dt><dd>${durTxt(c / sl.per * HOUR)} till i den takten</dd>` : '';
-    const klad = SAKER[a.k]?.klad?.varme ? `<dt>Värme</dt><dd>Skyddar ${Math.round(Math.min(0.95, SAKER[a.k]!.klad!.varme * kvEffekt(t)) * 100)} % mot kylan</dd>` : '';
+    const klad = SAKER[a.k]?.klad?.varme ? `<dt>Värme</dt><dd>Skyddar ${Math.round(kladSkydd(a.k, t) * 100)} % mot kylan</dd>` : '';
     const kv = t && !t.halv && t.q !== undefined ? `<dt>Kvalitet</dt><dd>${kvMark(t, 12)} ${esc(kvText(t))}</dd>` : ''; // (steg 2.2.2)
     return `
     <div class="phead">${iconImg(k, 32)}<div><h2>${esc(sakNamn(k))}${halv}</h2></div></div>

@@ -3,6 +3,7 @@ import { LagereldLage, iconCanvas, lagereldId } from '../ikoner';
 import { ritaHus } from './husbild';
 import { outPilesAt, piles, s, ui } from './lage';
 import { Ikoner, TS, overG, pileLayer, structG } from './scen';
+import { mix } from './terrang';
 
 // det som står på marken: lagerplatserna och stackarna, stationerna, husen, stubbar, fällda träd och elden
 const pileIcons = new Ikoner(pileLayer);
@@ -73,13 +74,12 @@ function paBanken(st: Station) {
 }
 // maten som hänger på torkställningen (steg 2.8.2): köttet i remsor och fisken i stjärten under slån, åtta platser som fylls
 // efter hur mycket som hänger. Den byter färg från rött till mörkbrunt medan den torkar (torrDel). Bara utseende
-const blanda = (a: number, b: number, f: number) => { let c = 0; for (const sh of [16, 8, 0]) c |= Math.round(((a >> sh) & 255) * (1 - f) + ((b >> sh) & 255) * f) << sh; return c; };
 function hangande(st: Station, x0: number, y0: number) {
   const platser = 8, per = TORK.rymd / platser;
   let i = 0;
   for (const q of st.tork!) {
     const f = torrDel(s, q), n = Math.max(1, Math.round(q.n / per)), fisk = q.k !== 'kott';
-    const farg = blanda(fisk ? 0xb87a5a : 0xb0342a, fisk ? 0x5a3a22 : 0x4a2416, f);
+    const farg = mix(fisk ? 0xb87a5a : 0xb0342a, fisk ? 0x5a3a22 : 0x4a2416, f);
     for (let j = 0; j < n && i < platser; j++, i++) {
       const x = x0 + 9 + i * 1.8, y = y0 + 3;
       overG.beginFill(farg);
@@ -194,21 +194,10 @@ function drawBuild() {
     if (b.k === 'golv') {
       const col = MATERIAL[b.m]?.farg ?? MATERIAL.jord.farg, a = b.b >= 1 ? (b.m === 'jord' ? 0.55 : 0.85) : 0.12 + 0.3 * b.b;
       structG.beginFill(col, a).drawRect(x, y, TS, TS).endFill();
-      if (b.m === 'tra' && b.b >= 1) for (let k = 1; k < 3; k++) structG.lineStyle(0.6, 0x5a3c22, 0.7).moveTo(x, y + TS * k / 3).lineTo(x + TS, y + TS * k / 3).lineStyle(0); // plankorna
     } else if (b.k === 'vagg') {
       if (b.b <= 0 && b.mat <= 0) { structG.lineStyle(1, 0x5a3c22, 0.45).drawRect(x + 1.5, y + 1.5, TS - 3, TS - 3).lineStyle(0); continue; }
       const a = b.b >= 1 ? 0.55 + 0.45 * b.c : 0.25 + 0.5 * b.b;
-      if (b.m === 'timmer') {
-        // stockarna läggs en i taget nerifrån: fler ju längre bygget kommit. De täcker hela rutan så att väggarna sitter ihop
-        const n = b.b >= 1 ? 4 : Math.ceil(4 * b.b), h = TS / 4;
-        if (!n) { structG.lineStyle(1, 0x5a3c22, 0.45).drawRect(x + 1.5, y + 1.5, TS - 3, TS - 3).lineStyle(0); continue; }
-        structG.beginFill(MATERIAL.timmer.farg, a).drawRect(x, y + TS - n * h, TS, n * h).endFill();
-        for (let k = 0; k < n; k++) {
-          const yy = y + TS - (k + 1) * h;
-          structG.lineStyle(0.8, 0x4a3018, a).moveTo(x, yy + h - 0.4).lineTo(x + TS, yy + h - 0.4).lineStyle(0);
-        }
-        continue;
-      }
+      // timmerväggarna och trägolven ritar ritaHus; här ritas risväggarna
       structG.beginFill(MATERIAL.ris.farg, a).drawRect(x + 1, y + 1, TS - 2, TS - 2).endFill();
       // flätningen: vågiga streck, färre ju mer slitet
       const n = b.b >= 1 ? Math.max(1, Math.round(3 * b.c)) : Math.ceil(3 * b.b);

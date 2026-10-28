@@ -26,17 +26,17 @@ function valjer(s: State, n: number) {
 }
 
 SCENARIER.projekt = {
-  text: 'Allt byn kan bygga eller göra av handarbete står i ett register med behovet det fyller och vad det kostar. Det byn saknar mest per arbete och material görs först, och tävlar med arbetet när ingen fara går före',
+  text: 'Allt byn kan bygga eller göra av handarbete står i ett register med vad det väger och vad det kostar. Det byn saknar mest per arbete och material görs först, och tävlar med arbetet när ingen fara går före',
   kor: () => {
     const allt = Object.keys(GORS).every(g => PROJEKT[g]) && STATION_LIST.every(k => PROJEKT[k]) && !!PROJEKT.rep;
-    const s = by(4), lista = projekt(s, dangers(s));
+    const s = by(4), lista = projekt(s);
     const sorterad = lista.every((r, i) => i === 0 || lista[i - 1].varde >= r.varde);
     const p = vuxna(s)[0], b = bastaProjekt(s, p, dangers(s));
     const forsta = lista.find(r => PROJEKT[r.k].kan(s, p, dangers(s)));
     // har byn knivar nog saknar den inga
     const knivFore = projektVarde(s, 'kniv');
     for (let i = 0; i < 4; i++) addTool(s, 'kniv', p);
-    const knivEfter = projektVarde(s, 'kniv'), ejListad = !projekt(s, dangers(s)).some(r => r.k === 'kniv');
+    const knivEfter = projektVarde(s, 'kniv'), ejListad = !projekt(s).some(r => r.k === 'kniv');
     // har byn slaktbänken saknar den ingen
     medBank(s, 'slaktbank');
     const bank = projektVarde(s, 'slaktbank') === 0;

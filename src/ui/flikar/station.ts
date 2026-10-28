@@ -1,4 +1,4 @@
-import { ACTS, DJURARTER, MIN, STATION, bordPlatser, pilesOf, living, TEKNIK, TILLBEHOR_LIST, byId, isKlar, sakNamn, slagIkon, stationById, stationDef, tillbehorDef, tingOf, timeLabel, isTool, FLACKAR, smutsVid, blodVid, storlekAv, TORK, torrDel, BRASA } from '../../sim';
+import { ACTS, DJURARTER, STATION, bordPlatser, pilesOf, living, TEKNIK, TILLBEHOR_LIST, byId, isKlar, sakNamn, slagIkon, stationById, stationDef, stationKlar, tillbehorDef, tingOf, timeLabel, isTool, FLACKAR, smutsVid, blodVid, storlekAv, TORK, torrDel, BRASA } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { sakAttr } from './sak';
 import { condBar, esc, fmtN, kvMark, kvText, pLink } from '../hjalp';
@@ -22,7 +22,7 @@ export const station: Flik = {
     const st = stationById(s, ui.stationId), d = st && stationDef(st.k);
     if (!st || !d) return '<p class="muted">Den finns inte längre.</p>';
     const klar = isKlar(st), vem = (st.vem ?? []).map(id => byId(s, id)).filter(p => p);
-    const status = klar ? (st.klar !== undefined ? `Klar ${esc(timeLabel(s, st.klar))}.` : 'Klar.') : `Byggs: ${Math.round(100 - st.kvar / (d.min * MIN) * 100)} %.`;
+    const status = klar ? (st.klar !== undefined ? `Klar ${esc(timeLabel(s, st.klar))}.` : 'Klar.') : `Byggs: ${Math.round(stationKlar(st) * 100)} %.`;
     // redskapsplatserna (vid i registret): kniven vid slaktbänken, bensylen vid slöjdbänken
     const platser = Object.entries(d.vid ?? {}).map(([slag, n]) => {
       const har = tingOf(s).filter(k => k.vid === st.id && k.k === slag), namn = sakNamn(slag).toLowerCase();

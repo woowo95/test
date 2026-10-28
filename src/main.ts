@@ -69,17 +69,23 @@ function nyareIMolnet(by: State) {
   ui.selected = undefined; ui.tab = 'folk';
   laddaIn(by).then(() => { renderClock(); renderPanel(true); });
 }
+// testläget byter till en kopia av byn och tillbaka: det som är valt i panelen är kvar (finns det inte visar fliken det)
+function bytBy(n: State) {
+  const { husId, stationId, hogAt, sak, faltId, faltRuta } = ui;
+  setByn(n);
+  Object.assign(ui, { husId, stationId, hogAt, sak, faltId, faltRuta });
+}
 $('testToggle').addEventListener('change', async e => {
   const on = (e.target as HTMLInputElement).checked;
   if (on) {
     saveLocal(); await saveDb();
     realState = s;
-    setByn(cloneState(s));
+    bytBy(cloneState(s));
     spar.v = new WeakMap();
     ui.testMode = true; $('speeds').hidden = false; document.body.classList.add('testing'); setSpeed(3600);
   } else {
     leaveTest();
-    if (realState) { setByn(realState); realState = null; }
+    if (realState) { bytBy(realState); realState = null; }
     drawTerrain(true); drawPlants(true);
     await catchUp(Date.now());
   }

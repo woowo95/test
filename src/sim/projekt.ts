@@ -17,8 +17,8 @@ import { ODLING, faltBrist, faltUppgift } from './odling';
 
 // ---------- byns projekt: vad den bygger och gör (steg 2.2.7) ----------
 // Allt byn kan bygga eller göra av handarbete är en rad i registret PROJEKT: redskapen (en rad per grupp i GORS,
-// redskap.ts), stationerna (en rad per sort i STATIONER, stationer.ts), tillbehören (TILLBEHOR, stationer.ts) och repet. Raden säger vilket behov den fyller
-// (behov), hur mycket det väger (vikt, i balansblocket nedan), hur mycket byn saknar (brist, 0 till 1), vad den kostar
+// redskap.ts), stationerna (en rad per sort i STATIONER, stationer.ts), tillbehören (TILLBEHOR, stationer.ts) och repet. Raden säger
+// hur mycket den väger (vikt, i balansblocket nedan), hur mycket byn saknar (brist, 0 till 1), vad den kostar
 // (kostnad: arbetstimmar och materialets värde, varde.ts) och om p kan göra den nu (kan). Värdet är vikt × brist / kostnad,
 // och listan sorteras på det: det byn saknar mest per arbete och material först. (Fliken Projekt togs bort i steg 2.10.5.)
 // Den som har tid för handarbete (craft i val.ts) gör det mest värda hen kan, och på dagen tävlar det mest värda med
@@ -43,43 +43,23 @@ export const PROJEKT_TAL = balans('projekt', {
   minKostnad: 0.25, // kostnaden räknas aldrig under så här många arbetstimmar
 });
 
-// behoven ett projekt fyller, med symbolen (ikoner.ts) och namnet
-export const PROJEKT_BEHOV = {
-  mat: { namn: 'Mat', ikon: 'bar' },
-  slakt: { namn: 'Mer kött av viltet', ikon: 'kott' },
-  tra: { namn: 'Trä', ikon: 'ved' },
-  hantverk: { namn: 'Hantverk', ikon: 'a_hantverk' },
-  vila: { namn: 'Bättre sömn', ikon: 'halmbadd' },
-  varme: { namn: 'Värme i sömnen', ikon: 'skinnfall' },
-  maltid: { namn: 'Måltider vid bordet', ikon: 'bord' },
-  forvar: { namn: 'Ordning i lagret', ikon: 'hylla' },
-  klader: { namn: 'Kläder mot kylan', ikon: 'skinnrock' },
-  borda: { namn: 'Bära mer hem', ikon: 'balte' },
-  halsa: { namn: 'Renlighet', ikon: 'latrin' }, // steg 2.7.2
-  vard: { namn: 'Vatten åt den som inte kan gå', ikon: 'vattensack' }, // steg 2.10.1
-  eld: { namn: 'Värme nära sovplatsen', ikon: 'brasa' }, // steg 2.9.1
-} as const;
-export type ProjektBehov = keyof typeof PROJEKT_BEHOV;
-
 // det p gör: handlingen, texten, hur många minuter (annars valets vanliga), slaget (task.tool) och platsen
 export interface Uppgift { act: Act; text: string; min?: number; tool?: string; spot?: { x: number; y: number }; sok?: true; ref?: number } // sok: letar vid stenarna, ref: fältet (odling.ts)
 // det som gör att något inte görs just nu: kyla = kylan är en fara, gras = hö som sparas till värmen (dangers i val.ts)
 export interface ProjektFara { kyla: boolean; gras: number }
 export interface ProjektDef {
-  namn: string; ikon: string; behov: ProjektBehov; vikt: number;
-  act: Act; slag?: string; // handlingen den görs i, och slaget (task.tool) när flera projekt görs i samma handling
+  namn: string; vikt: number;
   brist(s: State): number; kostnad(): number;
   kan(s: State, p: Person, f: ProjektFara): boolean;
   uppgift(s: State, p: Person): Uppgift | undefined;
 }
 
 // ett redskap i gruppen g: bristen är hur stor del av det byn vill ha som saknas
-const VAD: Record<string, ProjektBehov> = { kniv: 'slakt', yxa: 'tra', spjut: 'mat', metspo: 'mat', korg: 'mat', bensyl: 'klader', skinnrock: 'klader', skinnskor: 'klader', balte: 'borda', benspade: 'halsa', vattensack: 'vard' };
 const NAMN: Record<string, string> = { kniv: 'Kniv', yxa: 'Yxa', spjut: 'Spjut', metspo: 'Metspö', korg: 'Korg' };
 const redskap = (g: string): ProjektDef => {
   const k = GORS[g][GORS[g].length - 1]; // det enklaste slaget räknas i kostnaden
   return {
-    namn: NAMN[g] ?? SAKER[GORS[g][0]]!.namn, ikon: GORS[g][0], behov: VAD[g] ?? 'hantverk', vikt: (PROJEKT_TAL as Record<string, number>)[g] ?? 1, act: g as Act,
+    namn: NAMN[g] ?? SAKER[GORS[g][0]]!.namn, vikt: (PROJEKT_TAL as Record<string, number>)[g] ?? 1,
     brist: s => { const v = villAv(s, g); return v > 0 ? clamp((v - harAv(s, g)) / v, 0, 1) : 0; },
     kostnad: () => grundvarde(k),
     kan: (s, p, f) => !f.kyla && wantsTool(s, p, g, f.gras),
@@ -92,7 +72,7 @@ const redskap = (g: string): ProjektDef => {
 const station = (k: StationSlag): ProjektDef => {
   const d: StationDef = STATIONER[k];
   return {
-    namn: d.namn, ikon: d.ikon, behov: d.brasa ? 'eld' : k === 'slaktbank' ? 'slakt' : d.eld || d.gor.includes('torka') ? 'mat' : d.gor.includes('toa') ? 'halsa' : d.sover ? 'vila' : d.platser ? 'maltid' : d.forvar ? 'forvar' : 'hantverk', vikt: (PROJEKT_TAL as Record<string, number>)[k] ?? 1, act: 'station', slag: k,
+    namn: d.namn, vikt: (PROJEKT_TAL as Record<string, number>)[k] ?? 1,
     brist: s => d.brasa ? brasaBrist(s) : d.sover ? (living(s).length ? utanBadd(s) / living(s).length : 0) : d.platser ? bordBrist(s, k) : d.forvar ? forvarBrist(s, k) : d.gor.includes('toa') ? latrinBrist(s) : d.gor.includes('torka') ? torkBrist(s) : harStation(s, k) ? 0 : 1,
     kostnad: () => varuVarde(d.av, d.min / 60 * ARBETE),
     kan: (s, p, f) => !f.kyla && (kanBygga(s, p, k) || !!d.brasa && kanLetaBrasaSten(s, p)), // brasans stenar letas först (brasor.ts)
@@ -103,7 +83,7 @@ const station = (k: StationSlag): ProjektDef => {
 const tillbehor = (k: TillbehorSlag): ProjektDef => {
   const d: TillbehorDef = TILLBEHOR[k];
   return {
-    namn: d.namn, ikon: d.ikon, behov: d.varme ? 'varme' : 'hantverk', vikt: (PROJEKT_TAL as Record<string, number>)[k] ?? 1, act: 'tillbehor', slag: k,
+    namn: d.namn, vikt: (PROJEKT_TAL as Record<string, number>)[k] ?? 1,
     brist: s => { const n = tillbehorStationer(s, k).length; return n ? utanTillbehor(s, k).length / n : 0; },
     kostnad: () => varuVarde(d.av, d.min / 60 * ARBETE),
     kan: (s, p, f) => !f.kyla && kanGoraTillbehor(s, p, k),
@@ -114,7 +94,7 @@ const tillbehor = (k: TillbehorSlag): ProjektDef => {
 const dorr = (k: DorrSlag): ProjektDef => {
   const d: DorrDef = DORRAR[k];
   return {
-    namn: d.namn, ikon: d.ikon, behov: 'varme', vikt: (PROJEKT_TAL as Record<string, number>)[k] ?? 1, act: 'dorr', slag: k,
+    namn: d.namn, vikt: (PROJEKT_TAL as Record<string, number>)[k] ?? 1,
     brist: s => { const n = dorrOppningar(s).length; return n ? utanDorr(s, k).length / n : 0; },
     kostnad: () => varuVarde(d.av, d.min / 60 * ARBETE),
     kan: (s, p, f) => !f.kyla && kanHangaDorr(s, p, k),
@@ -127,7 +107,7 @@ export const PROJEKT: Record<string, ProjektDef> = {
   ...Object.fromEntries(TILLBEHOR_LIST.map(k => [k, tillbehor(k)])),
   ...Object.fromEntries(DORR_LIST.map(k => [k, dorr(k)])),
   rep: {
-    namn: SAKER.rep!.namn, ikon: 'rep', behov: 'hantverk', vikt: PROJEKT_TAL.rep, act: 'tvinna',
+    namn: SAKER.rep!.namn, vikt: PROJEKT_TAL.rep,
     brist: s => clamp(1 - amountOf(s, 'rep') / REDSKAP.repVill, 0, 1),
     kostnad: () => grundvarde('rep'),
     kan: (s, p) => wantsRope(s, p),
@@ -135,7 +115,7 @@ export const PROJEKT: Record<string, ProjektDef> = {
   },
   // fälten (steg 2.10.3, odling.ts): nästa steg på det egna fältet, eller att röja ett nytt
   falt: {
-    namn: 'Fält', ikon: 'odling', behov: 'mat', vikt: PROJEKT_TAL.falt, act: 'odla',
+    namn: 'Fält', vikt: PROJEKT_TAL.falt,
     brist: s => faltBrist(s),
     kostnad: () => varuVarde({ fron: ODLING.froPerRuta * ODLING.rutorPerMun }, (ODLING.beredaMin + ODLING.saMin) * ODLING.rutorPerMun / 60 * ARBETE), // ett fält för en person
     kan: (s, p, f) => !f.kyla && !!faltUppgift(s, p),
@@ -146,14 +126,9 @@ export const PROJEKT_LIST = Object.keys(PROJEKT);
 
 // värdet av projektet just nu: vikten gånger bristen, delat med kostnaden
 export const projektVarde = (s: State, k: string) => { const d = PROJEKT[k]; return d.vikt * d.brist(s) / Math.max(PROJEKT_TAL.minKostnad, d.kostnad()); };
-// de som arbetar med projektet k nu
-export const gorProjekt = (s: State, k: string) => { const d = PROJEKT[k]; return living(s).filter(p => p.task?.act === d.act && (!d.slag || p.task.tool === d.slag)); };
-// listan som fliken visar: allt byn saknar något av, det mest värda först, hur många som kan göra det nu och vilka som gör det
-export function projekt(s: State, f: ProjektFara) {
-  const ppl = living(s);
-  return PROJEKT_LIST.map(k => ({ k, d: PROJEKT[k], varde: projektVarde(s, k), brist: PROJEKT[k].brist(s), kan: ppl.filter(p => PROJEKT[k].kan(s, p, f)).length, gor: gorProjekt(s, k) }))
-    .filter(r => r.brist > 0).sort((a, b) => b.varde - a.varde);
-}
+// allt byn saknar något av, det mest värda först (scenariot projekt)
+export const projekt = (s: State) => PROJEKT_LIST.map(k => ({ k, d: PROJEKT[k], varde: projektVarde(s, k), brist: PROJEKT[k].brist(s) }))
+  .filter(r => r.brist > 0).sort((a, b) => b.varde - a.varde);
 // det mest värda projekt p kan göra nu, med uppgiften och värdet (lika värde: registrets ordning)
 export function bastaProjekt(s: State, p: Person, f: ProjektFara) {
   let best: { k: string; varde: number; u: Uppgift } | undefined;

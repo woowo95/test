@@ -58,7 +58,7 @@ export function temperature(s: State, t = s.now) {
   // under slutet av varje tidsålder glider temperaturen mot nästa
   const a = VADER.medel[i], b = VADER.medel[(i + 1) % 4], f = clamp((q - VADER.glidFran) / VADER.glidSpann, 0, 1);
   const base = a + (b - a) * (f * f * (3 - 2 * f));
-  const sun = VADER.sol * Math.cos((hourOf(t) - VADER.solTopp) / 24 * Math.PI * 2); // varmast mitt på eftermiddagen, kallast i gryningen
+  const sun = VADER.sol * Math.cos((hourOf(t) - VADER.solTopp) / 24 * Math.PI * 2); // varmast mitt på eftermiddagen, kallast mitt i natten
   const p = s.seed * 0.618;
   const weather = VADER.vaderStor * Math.sin(t / (VADER.vaderStorTim * HOUR) * 2 * Math.PI + p) + VADER.vaderMellan * Math.sin(t / (VADER.vaderMellanTim * HOUR) * 2 * Math.PI + p * 3.1) + VADER.vaderLiten * Math.sin(t / (VADER.vaderLitenTim * HOUR) * 2 * Math.PI + p * 7.7);
   return base + sun + weather;
@@ -88,7 +88,8 @@ export const VADERLAGE: Record<VaderId, { namn: string; ikon: string; text: stri
 export interface Vader { lage: VaderId; moln: number; nb: number; sno: boolean; vind: number; aska: boolean }
 export interface VaderMinne { fukt: number; sno: number }
 
-// en jämn slumpvåg ur byns frö: 0 till 1, som ändrar sig under ungefär `tim` timmar
+// en jämn slumpvåg ur byns frö: 0 till 1, som ändrar sig under ungefär `tim` timmar. En egen blandning (inte hash i
+// karta.ts): att byta den skulle ge alla byar ett annat väder
 function hash(a: number, b: number, c: number) {
   let h = Math.imul(a ^ 0x9e3779b9, 0x85ebca6b) ^ Math.imul(b + 0x632be5ab, 0xc2b2ae35) ^ Math.imul(c + 1, 0x27d4eb2f);
   h ^= h >>> 15; h = Math.imul(h, 0x2c1b3c6d); h ^= h >>> 12; h = Math.imul(h, 0x297a2d39); h ^= h >>> 15;

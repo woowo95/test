@@ -61,11 +61,15 @@ export function sjoVid(s: State, x: number, y: number) {
   return bast;
 }
 
-// sjöns namn: den största heter Sjön, de andra efter väderstrecket från elden
+// sjöns namn: den största heter Sjön, de andra efter väderstrecket från elden. Ligger flera åt samma håll heter de
+// mindre Andra, Tredje ... tjärnen
+const ORDNING = ['', 'Andra', 'Tredje', 'Fjärde', 'Femte'];
 export function sjoNamn(s: State, n: number) {
   if (n === 0) return 'Sjön';
-  const m = sjoarna(s.seed).mitt[n], f = getMap(s.seed).fire, dx = m.x - f.x, dy = m.y - f.y;
-  return `Tjärnen i ${Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'öster' : 'väster') : dy > 0 ? 'söder' : 'norr'}`;
+  const { mitt } = sjoarna(s.seed), f = getMap(s.seed).fire;
+  const hall = (m: { x: number; y: number }) => { const dx = m.x - f.x, dy = m.y - f.y; return Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'öster' : 'väster') : dy > 0 ? 'söder' : 'norr'; };
+  const h = hall(mitt[n]), i = mitt.slice(1, n).filter(m => hall(m) === h).length;
+  return i ? `${ORDNING[i] ?? `${i + 1}:e`} tjärnen i ${h}` : `Tjärnen i ${h}`;
 }
 
 // räkna det som hände vid sjön där personen står (x, y): ett fiskeförsök, ett napp, en fångad fisk eller ett bad

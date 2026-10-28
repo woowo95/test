@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { BAR, FALT_STEG, FOREST, GRODOR, Falt, byId, faltAt, faltIndex, faltKlar, grodaPa, HIGH, MATERIAL, MIN, Person, T, W, bitAt, campCenter, condOf, dorrDef, emberOn, eldPlats, getMap, groundOf, husById, inMap, insulation, isKlar, living, stationAt, stationDef, tingOf, toaAt, roomAt, rumsFunktioner, sakNamn, sjoarna, sovplatser, taskName, zoneAt, zonesOf, Pile } from '../sim';
+import { BAR, FALT_STEG, FOREST, GRODOR, Falt, byId, faltAt, faltIndex, faltKlar, grodaPa, HIGH, MATERIAL, Person, T, W, bitAt, campCenter, condOf, dorrDef, emberOn, eldPlats, getMap, groundOf, husById, inMap, insulation, isKlar, living, stationAt, stationDef, stationKlar, tingOf, toaAt, roomAt, rumsFunktioner, sakNamn, sjoarna, sovplatser, taskName, zoneAt, zonesOf, Pile } from '../sim';
 import { iconImg, tecknet } from '../ikoner';
 import { $, esc, fmtN, prickar } from './hjalp';
 import { outPilesAt, piles, s, ui } from './lage';
@@ -33,6 +33,7 @@ app.stage.on('pointertap', e => {
   if (drag && drag.moved > 6) return;
   const gx = e.global.x, gy = e.global.y, p = personAt(gx, gy), zi = storeAt(gx, gy), c = tileAt(gx, gy);
   if (p) selectPerson(p.id);
+  else if (!inMap(c.x, c.y)) avmarkera(); // utanför kartan finns inget att visa
   else if (fireAt(gx, gy)) visa('eld');
   else if (zi) valjLager(zi - 1, c);
   else if (stationAt(s, c.x, c.y)) { ui.stationId = stationAt(s, c.x, c.y)!.id; visa('station'); }
@@ -41,12 +42,15 @@ app.stage.on('pointertap', e => {
   else if (faltAt(s, c.x, c.y)) valjFalt(faltAt(s, c.x, c.y)!, c.x, c.y);
   else if (husAt(c.x, c.y) !== undefined) { ui.husId = husAt(c.x, c.y)!; visa('hus'); }
   else if (sjoAt(c.x, c.y) >= 0) { ui.sjoNr = sjoAt(c.x, c.y); visa('sjo'); }
-  else if (ui.selected !== undefined || ärPersonflik(ui.tab)) {
-    ui.selected = undefined; stopFollow();
-    if (ärPersonflik(ui.tab)) ui.tab = 'folk';
-    renderPanel(true); renderPorts();
-  }
+  else avmarkera();
 });
+// ett tryck där inget finns: personen släpps och personrutan stängs
+function avmarkera() {
+  if (ui.selected === undefined && !ärPersonflik(ui.tab)) return;
+  ui.selected = undefined; stopFollow();
+  if (ärPersonflik(ui.tab)) ui.tab = 'folk';
+  renderPanel(true); renderPorts();
+}
 // lagret (steg 2.10.17): första trycket visar lagerplatsen, och varje nytt tryck på samma ruta visar nästa sak på rutan, en
 // i taget (stackarna och redskapen, sedan förvaringen som står där), och efter den sista lagerplatsen igen
 let lagerVal: { x: number; y: number; i: number } | undefined;
@@ -78,7 +82,7 @@ app.stage.on('pointermove', e => {
   showHover(gx, gy);
   ui.hovered = personAt(gx, gy)?.id;
   const c = tileAt(gx, gy);
-  view.style.cursor = ui.hovered || fireAt(gx, gy) || storeAt(gx, gy) || outPilesAt(c.x, c.y).length || toaAt(s, c.x, c.y) || faltAt(s, c.x, c.y) || husAt(c.x, c.y) !== undefined || stationAt(s, c.x, c.y) ? 'pointer' : 'grab';
+  view.style.cursor = ui.hovered || inMap(c.x, c.y) && (fireAt(gx, gy) || storeAt(gx, gy) || outPilesAt(c.x, c.y).length || toaAt(s, c.x, c.y) || faltAt(s, c.x, c.y) || husAt(c.x, c.y) !== undefined || stationAt(s, c.x, c.y)) ? 'pointer' : 'grab';
 });
 view.addEventListener('wheel', e => { e.preventDefault(); const r = view.getBoundingClientRect(); zoomAt(e.deltaY < 0 ? 1.06 : 1 / 1.06, e.clientX - r.left, e.clientY - r.top); }, { passive: false });
 view.addEventListener('pointerleave', () => { $('hoverBox').hidden = true; ui.hovered = undefined; });
@@ -121,7 +125,7 @@ function showHover(gx: number, gy: number) {
       const har = tingOf(s).filter(k => k.vid === st.id && k.k === slag), ligger = har.filter(k => k.hos === undefined && k.lass === undefined).length;
       return `${iconImg(slag, 12)} ${ligger} av ${n} ligger här${har.length > ligger ? ', en används' : ''}`;
     }).join(' · ');
-    const om = isKlar(st) ? vid : `byggs, ${Math.round(100 - st.kvar / (sd.min * MIN) * 100)} %`;
+    const om = isKlar(st) ? vid : `byggs, ${Math.round(stationKlar(st) * 100)} %`;
     rows.push(`${iconImg(sd.ikon, 12)} <b>${esc(sd.namn)}</b>${om ? ' · ' + om : ''}`);
   }
   const bit = bitAt(s, x, y);

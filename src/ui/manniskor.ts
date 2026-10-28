@@ -63,7 +63,8 @@ function sprid(ppl: Person[]) {
   });
   return m;
 }
-// där personen syns: samma plats som i bilden som ritades senast, så att ett tryck och kameran träffar rätt
+// där personen syns: samma plats som i bilden som ritades senast, så att ett tryck träffar rätt (kameran frågar innan
+// bilden ritas och får då platsen innan de som står tätt knuffats isär)
 export function posOf(p: Person) {
   const q = synligNu === ui.nu ? synlig.get(p.id) : undefined;
   if (q) return q;
@@ -126,7 +127,8 @@ export function drawPeople(t: number) {
     if (!talking && o !== undefined && !flash.has(p.id)) talkWith.delete(p.id);
     if (talking || flash.has(p.id) && isSocial(p)) { // bara den som gör något socialt just nu, som personrutan säger (steg 2.3.7)
       const r = q ? s.rels[relKey(p.id, q.id)] : undefined;
-      const rel = q && (p.partner === q.id || (r?.rom ?? 0) > 40) ? 'karlek' : (r?.op ?? 0) < -20 ? 'ovan' : (r?.op ?? 0) > REL.van ? 'van' : 'neutral';
+      // bubblans färg: kär (partnern eller mycket romans), grälar (som i folk.ts), goda vänner eller annars
+      const rel = q && (p.partner === q.id || (r?.rom ?? 0) > 40) ? 'karlek' : (r?.op ?? 0) < REL.gral ? 'ovan' : (r?.op ?? 0) > REL.van ? 'van' : 'neutral';
       drawBubble(x + 4, top, flash.get(p.id), rel, t, p.id);
       continue;
     }

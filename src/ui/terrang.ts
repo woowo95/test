@@ -24,7 +24,8 @@ function coverSig() {
   for (let i = 0; i < g.cover.length; i++) h = (Math.imul(h, 31) + wornLevel(g.cover[i]) * 4 + treeLevel(g.trees[i])) | 0;
   return h;
 }
-function mix(a: number, b: number, f: number) {
+// färgen mellan a (f = 0) och b (f = 1)
+export function mix(a: number, b: number, f: number) {
   const ch = (sh: number) => Math.round(((a >> sh) & 255) * (1 - f) + ((b >> sh) & 255) * f);
   return (ch(16) << 16) | (ch(8) << 8) | ch(0);
 }

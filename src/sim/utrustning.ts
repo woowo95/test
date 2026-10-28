@@ -89,10 +89,12 @@ export function utrustning(s: State, p: Person, bar: boolean): Record<Plats, { t
 export const paSig = (s: State, p: Person) => tingOf(s).filter(t => t.bar === p.id);
 // vad de väger, i fulla famnar
 const paSigVikt = (s: State, p: Person) => { let v = 0; for (const t of tingOf(s)) if (t.bar === p.id) v += bordOf(t.k); return v; };
-// hur mycket kläderna skyddar mot kylan (0 = inget, 1 = helt): varje plagg tar bort sin del (klad.varme) av det som är kvar
+// hur stor del av kylan plagget t (av slaget k) tar bort: ett finare plagg värmer lite mer (kvalitet.ts)
+export const kladSkydd = (k: string, t?: { q?: number }) => Math.min(UTRUSTNING.maxVarme, (SAKER[k]?.klad?.varme ?? 0) * kvEffekt(t));
+// hur mycket kläderna skyddar mot kylan (0 = inget, 1 = helt): varje plagg tar bort sin del av det som är kvar
 export function kladVarme(s: State, p: Person) {
   let kvar = 1;
-  for (const t of tingOf(s)) if (t.bar === p.id) kvar *= 1 - Math.min(UTRUSTNING.maxVarme, SAKER[t.k]!.klad!.varme * kvEffekt(t)); // ett finare plagg värmer lite mer (kvalitet.ts)
+  for (const t of tingOf(s)) if (t.bar === p.id) kvar *= 1 - kladSkydd(t.k, t);
   return 1 - kvar;
 }
 // i vilken ordning p tar ett plagg: sitt eget, byns, ett lånat. Inom det: bäst skick, och sedan det första bland tingen
