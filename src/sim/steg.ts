@@ -23,7 +23,7 @@ import { PLATS } from './plats';
 import { chance, clamp, rnd } from './slump';
 import { ARSTID, ageIndex, iIstiden, isLight } from './tid';
 import { ACTS, toolRow } from './handlingar';
-import { Act, DAY, HOUR, HOUR_S, MIN, Person, SEC, SKILL_NAMES, State, Task, W, H, useMap, Historik, simulera } from './typer';
+import { AGES_BORJAR, Act, DAY, HOUR, HOUR_S, MIN, Person, SEC, SKILL_NAMES, State, Task, W, H, useMap, Historik, simulera } from './typer';
 import { findPath, speedAt, wear } from './vag';
 import { chooseTask, dangers, nastaBuske, nastaRedskap, spotFor } from './val';
 import { djurSteg } from './djur';
@@ -95,8 +95,11 @@ const KLAR: Partial<Record<Act, Krok>> = {
   falla: (s, p, t) => { // ett träd där ett hus ska stå, eller som fälldes för bygget, blir stockar i husets väggar direkt; resten huggs till trä
     if (!t.tool) return; // utan yxa står trädet kvar halvfällt, och nästa fällare gör resten
     const k = fellTree(s, p, t.tx, t.ty);
-    if (k) { wearUsed(s, p, 1); mossaPaStam(s, p, k); } // yxan slits för varje träd som faller (steg 2.3.12), också för trä som huggs ur det sedan; ibland har stammen mossa (steg 2.5.2)
-    if (k) { k.ved -= toWalls(s, Math.floor(k.x), Math.floor(k.y), k.ved, t.ref, p); if (k.ved <= 1e-6) s.stockar = stocks(s).filter(q => q !== k); }
+    if (k) { // yxan slits för varje träd som faller (steg 2.3.12), också för trä som huggs ur det sedan; ibland har stammen mossa (steg 2.5.2)
+      wearUsed(s, p, 1); mossaPaStam(s, p, k);
+      k.ved -= toWalls(s, Math.floor(k.x), Math.floor(k.y), k.ved, t.ref, p);
+      if (k.ved <= 1e-6) s.stockar = stocks(s).filter(q => q !== k);
+    }
   },
   promenad: (s, p, t) => { lookAround(s, p, t.tx, t.ty); think(p, 'Tog en skön promenad', 0.06, s.now, 6 * HOUR); },
   bada: (s, p, t) => { sjoRakna(s, t.tx, t.ty, 'bad', p); p.warm = p.warm > 1 ? Math.max(1, p.warm - KROPP.badSvalka) : Math.max(KROPP.badMin, p.warm - KROPP.badKyla); think(p, 'Badade i sjön', 0.08, s.now, 6 * HOUR); },
@@ -130,8 +133,7 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
   const ai = ageIndex(s);
   if (ai !== s.lastAgeIdx) {
     s.lastAgeIdx = ai;
-    const msg = ['Istiden har börjat. Sjön fryser och maten blir knapp.', 'Vårtiden har kommit. Isen släpper och marken tinar.', 'Sommartiden är här. Bär och fisk finns i överflöd.', 'Hösttiden har börjat. Nu gäller det att samla inför istiden.'][ai];
-    log(s, msg, 'world');
+    log(s, AGES_BORJAR[ai], 'world');
   }
   const ppl = living(s);
   gridOf(s); // väggarna och rummen, så att vägsökningen vet var väggarna står
@@ -193,8 +195,7 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
 
 // behoven: hunger, törst, vila, värme, umgänge och toa. Elden värmer i ett område, och inne i ett hus kyls man långsammare
 // (sämre ju fler öppningar). Delarna nedan räknas här och visas i personrutan, så att den visar det som faktiskt händer
-// vilan per timme före tak och eld: talets namn i KROPP
-// vilan per timme före tak och eld: den som har brist på energi tröttnar fortare (steg 2.6.2)
+// vilan per timme före tak och eld (talets namn i KROPP): den som har brist på energi tröttnar fortare (steg 2.6.2)
 export const vilaTim = (p: Person, vs = viloSlag(p)) => KROPP[vs] * (KROPP[vs] < 0 ? trottFaktor(p) : 1);
 export function viloSlag(p: Person): 'restVila' | 'restArbete' | 'restVaken' {
   const pd = p.task && ACTS[p.task.act];
@@ -558,7 +559,7 @@ function workStep(s: State, p: Person, tk: Task, dtSec: number, a: number, learn
     const n = d.fart && !full && tk.until > now + 2 * MIN ? nastaBuske(s, res!, tk.tx, tk.ty) : undefined;
     if (n) { tk.phase = 'go'; tk.tx = n.x; tk.ty = n.y; } else if (!(tk.tandmat && tinderShort(s, tk))) tk.until = now;
   }
-  if (full || (tk.lim !== undefined && tk.tur >= tk.lim) || (tk.act === 'fiske' && tk.carry > 0)) {
+  if (full || (tk.lim !== undefined && tk.tur >= tk.lim) || (d.hemVarje && tk.carry > 0)) {
     if (has && tk.until > now + 2 * MIN) { tk.res = { x: tk.tx, y: tk.ty, until: tk.until }; tk.until = now; count(s, 'turer'); }
     else if (has && full) { tk.until = now; count(s, 'turer'); }
     else tk.tur = 0;

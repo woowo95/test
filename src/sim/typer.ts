@@ -84,6 +84,8 @@ export const SKILL_GOR: Record<Skill, string[]> = {
 };
 
 export const AGES = ['Istid', 'Vårtid', 'Sommartid', 'Hösttid'];
+// det som står i händelseloggen när tidsåldern börjar (steg.ts), i samma ordning
+export const AGES_BORJAR = ['Istiden har börjat. Sjön fryser och maten blir knapp.', 'Vårtiden har kommit. Isen släpper och marken tinar.', 'Sommartiden är här. Bär och fisk finns i överflöd.', 'Hösttiden har börjat. Nu gäller det att samla inför istiden.'];
 
 export const GREN = 0.4; // en gren ger lika mycket bränsle som 0,4 ved: grenar brinner fort
 
