@@ -1182,6 +1182,8 @@ const VAL = [
 const BESLUT = {
   kista: { val: 1, steg: '5.1.8' }, lagereld: { val: 1, steg: '5.1.8' }, symboler: { val: 1, steg: '5.1.8' }, slojdbank: { val: 1, steg: '5.1.8' },
   slaktbank: { val: 1, steg: '5.1.8' }, portratt: { val: 1, steg: '5.2.3', text: 'Sparas som förebild till karaktärsgeneratorn.' },
+  arter: { val: 0, steg: '3.6.11' }, grodd: { val: 1, steg: '3.6.11' }, intryck: { val: 2, steg: '3.6.11' }, isen: { val: 1, steg: '3.6.11' },
+  kvalitet: { val: 2, steg: '3.6.11' }, relationer: { val: 2, steg: '3.6.11' },
 };
 const VALT = VAL.filter(s => BESLUT[s.id]);
 for (const s of VALT) VAL.splice(VAL.indexOf(s), 1);
