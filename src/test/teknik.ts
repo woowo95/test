@@ -29,6 +29,8 @@ function enBy(seed: number) {
 const med = (xs: number[]) => { if (!xs.length) return NaN; const a = [...xs].sort((x, y) => x - y); return a.length % 2 ? a[(a.length - 1) / 2] : (a[a.length / 2 - 1] + a[a.length / 2]) / 2; };
 const f = (n: number) => Number.isNaN(n) ? '–' : String(Math.round(n * 10) / 10);
 
+// namnkolumnens bredd: det längsta namnet och två mellanslag
+const NAMN = Math.max(...TEKNIK.map(t => t.namn.length)) + 2;
 async function main() {
   const args = process.argv.slice(2);
   if (args[0] === '--en') { console.log(JSON.stringify(enBy(Number(args[1])))); return; }
@@ -36,14 +38,14 @@ async function main() {
   const byar = await pool(seeds.map(n => () => korJson<ReturnType<typeof enBy>>('teknik.ts', ['--en', String(n)], `by ${n}`)));
   console.log(`${byar.length} byar i ${DYGN} dygn (${DYGN} år i spelet). Dygn = år i spelet; timmar = byns arbetstimmar i arbetet som låser upp, medan tekniken var öppen.`);
   console.log('✗ = medianen är längre än målet för nivån (TEKTAL.nivaDygn: ' + TEKTAL.nivaDygn.join(', ') + ' dygn för nivå 1, 2 …)');
-  console.log('  teknik          nivå  påkommen  öppen→påkommen dygn (median, längst)  timmar (median)  ointresserade  aldrig öppen');
+  console.log('  ' + 'teknik'.padEnd(NAMN) + 'nivå  påkommen  öppen→påkommen dygn (median, längst)  timmar (median)  ointresserade  aldrig öppen');
   for (const t of TEKNIK) {
     const xs = byar.map(b => b.r[t.id]);
     const pa = xs.filter(x => x.pa !== undefined), vantar = xs.filter(x => x.oppen !== undefined && x.pa === undefined);
     const tid = pa.map(x => x.pa! - x.oppen!);
     const ointr = vantar.filter(x => x.tim === 0).length, langsam = vantar.length - ointr;
     const mal = TEKTAL.nivaDygn[Math.min(TEKTAL.nivaDygn.length, TEK[t.id].niva) - 1];
-    console.log(`${med(tid) > mal ? '✗' : ' '} ${t.namn.padEnd(16)}${String(TEK[t.id].niva).padEnd(6)}${`${pa.length}/${xs.length}`.padEnd(10)}${`${f(med(tid))}, ${f(tid.length ? Math.max(...tid) : NaN)}${langsam ? ` (+${langsam} öppna utan att komma på den)` : ''}`.padEnd(38)}${f(med(pa.map(x => x.tim))).padEnd(17)}${String(ointr).padEnd(15)}${xs.filter(x => x.oppen === undefined).length}`);
+    console.log(`${med(tid) > mal ? '✗' : ' '} ${t.namn.padEnd(NAMN)}${String(TEK[t.id].niva).padEnd(6)}${`${pa.length}/${xs.length}`.padEnd(10)}${`${f(med(tid))}, ${f(tid.length ? Math.max(...tid) : NaN)}${langsam ? ` (+${langsam} öppna utan att komma på den)` : ''}`.padEnd(38)}${f(med(pa.map(x => x.tim))).padEnd(17)}${String(ointr).padEnd(15)}${xs.filter(x => x.oppen === undefined).length}`);
   }
   // den längsta tiden utan något nytt (öppna tekniker fanns men ingen kom på något)
   for (const b of byar) {

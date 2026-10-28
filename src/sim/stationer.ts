@@ -6,7 +6,7 @@ import { getable, takeMaterial } from './behov';
 import { RESERV } from './ekonomi';
 import { Ting, freeTools, tingOf, wearTool } from './agande';
 import { BYN } from './egendom';
-import { Zone, inZone, pilesOf, usable, zoneAt, zonesOf } from './lager';
+import { Zone, inZone, pilesOf, stallBorta, usable, zoneAt, zonesOf } from './lager';
 import { PLATS, campDist, campKey, rektAvstand } from './plats';
 import { balans } from './balans';
 import { Rum, bitAt, bitsOf, gridOf, housesOf, husById, roomAt, touch } from './byggnad';
@@ -551,6 +551,7 @@ function utanLager(s: State) {
   if (!borta.length) return;
   s.stationer = stationerOf(s).filter(t => !borta.includes(t));
   s.byggV = (s.byggV ?? 0) + 1;
+  for (const t of borta) if (stationDef(t.k)!.forvar!.redskap) stallBorta(s, t.x, t.y);
   for (const t of borta) log(s, `${stationDef(t.k)!.namn} togs isär ${zoneAt(s, t.x, t.y) < 0 ? 'när lagret flyttades' : 'eftersom den stängde in en del av lagret'}.`, 'world');
 }
 
@@ -815,6 +816,7 @@ export function stepStationer(s: State) {
   if (!borta.length) return;
   s.stationer = s.stationer.filter(t => !borta.includes(t));
   for (const k of tingOf(s)) if (borta.some(t => t.id === k.vid)) k.vid = undefined;
+  for (const t of borta) if (stationDef(t.k)?.forvar?.redskap) stallBorta(s, t.x, t.y); // redskapen i ett ställ läggs om, ett per ruta
   touch(s);
   for (const t of borta) log(s, `${stationDef(t.k)?.namn ?? 'En station'} försvann när huset revs.`, 'world');
 }

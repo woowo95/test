@@ -319,7 +319,9 @@ SCENARIER.bygg = {
     const k = cloneState(q); k.now = ageStart(k, 0) + 3 * HOUR; k.fire.lit = false; k.fire.fuel = 0;
     let varmInne = 0, varmUte = 0, ni = 0, nu = 0;
     const b2 = gridOf(k).rooms.flatMap(r => r.tiles); // golvrutor under tak
-    living(k).forEach((p, i) => { p.warm = 0.8; if (i < 3 && b2[i] !== undefined) { p.x = b2[i] % W + 0.5; p.y = Math.floor(b2[i] / W) + 0.5; } });
+    // tre inne i huset och de andra ute, långt från huset och elden (förr stod någon alltid ute, men inte sedan steg 2.12.1)
+    const ute = ringUte(k);
+    living(k).forEach((p, i) => { p.warm = 0.8; if (i < 3 && b2[i] !== undefined) { p.x = b2[i] % W + 0.5; p.y = Math.floor(b2[i] / W) + 0.5; } else if (ute) { p.x = ute.x + 0.5; p.y = ute.y + 0.5; } });
     const fore = new Map(living(k).map(p => [p.id, { inne: !!roomAt(k, p.x, p.y), ute: heatAt(k, p.x, p.y) < 0.05 }]));
     step(k, 120);
     for (const p of living(k)) { const f = fore.get(p.id); if (!f) continue; if (f.inne) { varmInne += p.warm; ni++; } else if (f.ute) { varmUte += p.warm; nu++; } }
@@ -686,3 +688,13 @@ SCENARIER.eldflytt = {
     ];
   },
 };
+// en ruta ute där värmen inte når (heatAt under 0,05), inte under tak, inte i en vägg och inte i vattnet: närmast elden från 8 rutor
+function ringUte(s: SIM.State) {
+  const f = getMap(s.seed).fire, tiles = getMap(s.seed).tiles;
+  for (let d = 8; d < 40; d++) for (let y = f.y - d; y <= f.y + d; y++) for (let x = f.x - d; x <= f.x + d; x++) {
+    if (Math.max(Math.abs(x - f.x), Math.abs(y - f.y)) !== d || x < 0 || y < 0 || x >= W || y >= SIM.H) continue;
+    if (tiles[y * W + x] === T.Vatten || tiles[y * W + x] === T.Sten || isWall(s, x + 0.5, y + 0.5) || roomAt(s, x + 0.5, y + 0.5) || heatAt(s, x + 0.5, y + 0.5) >= 0.05) continue;
+    return { x, y };
+  }
+  return undefined;
+}

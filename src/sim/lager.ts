@@ -35,7 +35,7 @@ export const LAGER = balans('lager', {
   krympTim: 6, // ... och har stått så i så här många timmar (en kvarts år i spelet, steg 2.12.4) ...
   minSida: 2, // ... till en lagerplats vars sidor är minst så här långa
   // slitage och ruttning (per timme)
-  ute: 3, // saker utanför lagret slits så här många gånger fortare ...
+  ute: 1.5, // saker utanför lagret slits så här många gånger fortare (3 före balansen av fas 2, steg 2.12.1) ...
   inne: 0.4, // ... och under tak så här många
   // maten håller så många dygn som saker.ts säger (haller) vid rumstemperaturen och utan tak (steg 2.2.9) ...
   rumstemp: 20,
@@ -361,6 +361,9 @@ function placeOn(s: State, ts: Ting[]) {
 // ett redskap som ingen har i handen eller bär, och som inte ligger någonstans (den som höll det släppte det eller dog),
 // läggs i förrådet. Görs sist i varje steg (steg.ts), så att alla redskap har en plats när gränssnittet ritar
 export const placeTools = (s: State) => placeOn(s, tingOf(s));
+// ett redskapsställ på rutan (x, y) finns inte längre (huset revs, lagret flyttades): redskapen som stod i det får en ny
+// plats var, av placeTools i slutet av steget
+export function stallBorta(s: State, x: number, y: number) { for (const t of lying(s)) if (t.x === x && t.y === y) { t.x = undefined; t.y = undefined; } }
 // hur mycket av slaget k som ryms på rutan: en stack, och i en hylla eller kista så många stackar som den rymmer (steg 2.3.6)
 export const rymd = (s: State, x: number, y: number, k: string) => { const f = forvarAt(s, x, y); return rutaOf(k) * (f && !f.redskap && !isTool(k) ? f.rymmer : 1); };
 // ryms mer av slaget k på rutan? En stack av samma slag som inte är full, eller ingenting. I ett ställ bara redskap, så

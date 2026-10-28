@@ -206,11 +206,11 @@ SCENARIER.slitage = {
     // ved som slits ut blir grenar
     const v = pilesOf(a).find(q => q.k === 'ved')!; a.stackar!.find(q => q.x === v.x && q.y === v.y)!.c = 0.0001;
     wearStore(a, 3600);
-    // skämd mat: allt i förrådet är nästan förstört
+    // skämd mat: allt i förrådet är nästan förstört. Två dygn: man äter mer sällan sedan hungern växer långsammare (steg 2.12.1)
     const m = createState(6, START);
     setFood(m, 200); pilesOf(m); for (const st of m.stackar!) st.c = 0.08;
     let tagg = false; // (någon kan sedan bli magsjuk av annat, så det ses medan det händer)
-    kor(m, 24, s => { for (const st of s.stackar!) if (FOOD.includes(st.k)) st.c = Math.min(st.c, 0.08); tagg ||= living(s).some(p => p.sickWhy === 'Magsjuk av skämd mat'); });
+    kor(m, 48, s => { for (const st of s.stackar!) if (FOOD.includes(st.k)) st.c = Math.min(st.c, 0.08); tagg ||= living(s).some(p => p.sickWhy === 'Magsjuk av skämd mat'); });
     const sjuka = m.stat?.skamdMat ?? 0;
     // högar på marken: en nära elden och en långt bort, mitt i natten
     const n = createState(5, START);
@@ -258,10 +258,10 @@ SCENARIER.slitage = {
       [`att hugga trä ur stammen sliter inte yxan mer än att bära den (${(huggSlits * 100).toFixed(3)} %)`, huggSlits < PER / 10],
       ['när yxan går sönder faller trädet ändå, och sedan slutar man', slutar],
       [`fisk ruttnar fortare än bär (skick efter ett dygn: fisk ${(fisk * 100).toFixed(0)} %, bär ${(bar * 100).toFixed(0)} %)`, fisk < bar && fisk < 1],
-      [`grenar utanför lagret slits fortare (slitage på ett dygn: i lagret ${(grenIn * 100).toFixed(1)} %, bredvid ${(grenUt * 100).toFixed(1)} %)`, grenUt > 2 * grenIn && grenIn > 0],
+      [`grenar utanför lagret slits fortare (slitage på ett dygn: i lagret ${(grenIn * 100).toFixed(1)} %, bredvid ${(grenUt * 100).toFixed(1)} %)`, grenUt > 1.25 * grenIn && grenIn > 0],
       [`en yxa i lagret slits också (${yxa.toFixed(3)} kvar)`, yxa < 1 && yxa > 0.8],
       ['ved som slits ut blir grenar', pilesOf(a).some(q => q.k === 'grenar' && q.x === v.x && q.y === v.y)],
-      [`skämd mat gör folk magsjuka (${sjuka} gånger på ett dygn)`, sjuka > 0 && tagg],
+      [`skämd mat gör folk magsjuka (${sjuka} gånger på två dygn)`, sjuka > 0 && tagg],
       [`den som kallas bort lägger bördan på marken (${lagd} högar)`, lagd === 2],
       ['på natten bärs högen nära lägret in men inte den långt bort', !kvarNara && kvarLangt],
       ['på dagen bärs även det som ligger långt bort in', !ute().length],
