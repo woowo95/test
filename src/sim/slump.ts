@@ -20,6 +20,7 @@ export const STROMMAR = {
   eld: 'eld, tändning och kol',
   kvalitet: 'hur bra det blir som någon gör',
   uppvaxt: 'vad som fastnar hos ett barn och vad det gör (steg 3.1.2)',
+  humor: 'utbrotten: när, hur allvarliga och mot vem (steg 3.2.2)',
 } as const;
 export type Strom = keyof typeof STROMMAR;
 

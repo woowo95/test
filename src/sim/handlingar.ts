@@ -130,6 +130,12 @@ const DEF = {
   odla: { namn: 'Odlar', slag: 'odla', verktyg: { roja: 'Röjer ett fält', bereda: 'Gräver upp jorden på fältet', sa: 'Sår', mogen: 'Skördar' }, tungt: true, stilla: true, framme: true },
   dorr: { namn: 'Hänger en dörr', slag: 'bygga', verktyg: { skinndorr: 'Hänger en hud i dörröppningen' }, hantverk: true, stilla: true, framme: true }, // i en öppning (DORRAR i byggnad.ts, steg 2.2.16); task.tool = sorten
   tillbehor: { namn: 'Gör ett tillbehör', slag: 'hantverk', verktyg: { skinnfall: 'Lägger en skinnfäll i halmbädden' }, hantverk: true, stilla: true, framme: true }, // till en station eller möbel (TILLBEHOR i stationer.ts); task.tool = sorten
+  // utbrotten (steg 3.2.2, humor.ts): den som mår mycket dåligt brister ut. Platsen väljs i val.ts (utbrottVal)
+  grata: { namn: 'Gråter för sig själv', tecken: '😢', dygn: true, stilla: true, plats: 'avsides' },
+  tjura: { namn: 'Tjurar för sig själv', tecken: '😤', dygn: true, stilla: true, plats: 'avsides' },
+  elak: { namn: 'Är elak mot någon', tecken: '😠', dygn: true, stilla: true },
+  krossa: { namn: 'Slår sönder något', tecken: '💥', dygn: true, stilla: true },
+  fly: { namn: 'Flyr ut i skogen', tecken: '🏃', vandra: { r: 3, h0: 1, h1: 3, v: 1.1 }, dygn: true },
 } satisfies Record<string, ActDef>;
 
 export type Act = keyof typeof DEF;

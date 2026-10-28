@@ -24,6 +24,7 @@ const HISTORIK_TAL: { id: string; namn: string; hur: 'snitt' | 'sist'; varde: (s
   { id: 'sno', namn: 'Snö på marken', hur: 'snitt', varde: s => s.vader?.sno ?? 0 }, // steg 2.11.1
   { id: 'fodda', namn: 'Födda sedan byns början', hur: 'sist', varde: s => (s.stat?.fodda as number) ?? 0 },
   { id: 'doda', namn: 'Döda sedan byns början', hur: 'sist', varde: s => (s.stat?.doda as number) ?? 0 },
+  { id: 'utbrott', namn: 'Utbrott sedan byns början', hur: 'sist', varde: s => (s.stat?.utbrott as number) ?? 0 }, // steg 3.2.2
 ];
 
 const ny = (): Historik => ({ tal: HISTORIK_TAL.map(t => t.id), tim: [], dygn: [], kronika: [] });

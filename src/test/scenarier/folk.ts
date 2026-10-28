@@ -374,3 +374,44 @@ SCENARIER.humor = {
     ];
   },
 };
+
+SCENARIER.utbrott = {
+  text: 'Utbrotten (steg 3.2.2): den som mår mycket dåligt brister ut, behoven går före, den som är elak sänker den andras humör, en sak slås sönder och efteråt mår man lite bättre',
+  kor: () => {
+    // en by där alla mår mycket dåligt i åtta dygn (åtta år i spelet)
+    const s = createState(9, START);
+    for (const p of living(s)) SIM.think(p, 'Sorg', -0.5, s.now, 8 * DAY);
+    kor(s, 8 * 24);
+    const utb = (s.stat?.utbrott as number) ?? 0, slag = Object.keys(s.stat ?? {}).filter(k => k.startsWith('utb_') && !k.startsWith('utb_sonder')).map(k => k.slice(4));
+    // ett utbrott som väntar: först behoven, sedan utbrottet
+    const t = createState(9, START);
+    klockan(t, 11);
+    const p = nyInvanare(t, 'm', 30), q = nyInvanare(t, 'k', 30);
+    p.x += 12; q.x = p.x + 1; q.y = p.y; // långt från de andra
+    p.ubr = { k: 'grata', t: t.now }; p.hunger = 0.05;
+    SIM.chooseTask(t, p);
+    const hungerForst = p.task?.act !== 'grata' && !!p.ubr;
+    p.hunger = 0.9; p.ubr = { k: 'elak', t: t.now };
+    const op0 = getRel(t, p, q).op, h0 = SIM.moodOf(q, t.now);
+    SIM.chooseTask(t, p);
+    const elak = p.task?.act === 'elak', op1 = getRel(t, p, q).op, h1 = SIM.moodOf(q, t.now);
+    const yxa = SIM.newTing(t, 'yxa', 1, p.id);
+    for (const x of tingOf(t)) if (x !== yxa && x.agare === p.id) x.agare = SIM.BYN;
+    p.ubr = { k: 'krossa', t: t.now };
+    SIM.chooseTask(t, p);
+    const krossa = p.task?.act === 'krossa' && p.task.ref === yxa.id;
+    const m0 = SIM.moodOf(p, t.now);
+    SIM.utbrottKlar(t, p, p.task!);
+    const borta = !tingOf(t).includes(yxa), m1 = SIM.moodOf(p, t.now);
+    p.ubr = { k: 'fly', t: t.now - 7 * HOUR }; // har väntat för länge
+    SIM.chooseTask(t, p);
+    return [
+      [`i en by där alla mår mycket dåligt i åtta dygn blir det utbrott (${utb}: ${slag.join(', ')})`, utb >= 3 && slag.length >= 2],
+      ['den som är hungrig äter först, och utbrottet väntar', hungerForst],
+      [`den som är elak sänker den andras humör (${h0.toFixed(2)} → ${h1.toFixed(2)}) och relationen (${op0.toFixed(0)} → ${op1.toFixed(0)})`, elak && h1 < h0 && op1 < op0],
+      ['den som slår sönder något tar sin egen sak, och den är borta efteråt', krossa && borta],
+      [`efter utbrottet mår man lite bättre (${m0.toFixed(2)} → ${m1.toFixed(2)})`, m1 > m0],
+      ['ett utbrott som väntat för länge blir inget', p.task?.act !== 'fly' && !p.ubr],
+    ];
+  },
+};

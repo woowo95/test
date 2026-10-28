@@ -33,6 +33,7 @@ import { forSmutsigt, latrinFor } from './smuts';
 import { bordenOf, byInne, ledigPlats, lekplats, sittAt, stationAt, stationFor, storlekAv, vidStation } from './stationer';
 import { grillTid, kanGrilla, kanTorka, torkTid } from './matlagning';
 import { egenBrasa } from './brasor';
+import { utbrottBorjar, utbrottNu } from './humor';
 
 // ---------- val av aktivitet ----------
 // Balanstalen (regel 8): vikter, chanser, avstånd och hur länge ett pass varar. Kroppens gränser (KROPP) och åldrarna (ALDER)
@@ -331,7 +332,7 @@ const set = (v: Val, act: Act, why: string) => { v.act = act; v.why = why; retur
 export function chooseTask(s: State, p: Person) {
   const a = ageOf(p, s.now), light = isLight(s.now), lazy = 1 - duty(s, p);
   const v: Val = { act: 'vila', why: '', dur: (VAL.vilaMin + rnd(s, 'val', p) * VAL.vilaSpann) * MIN }; // 20–60 min
-  if (!needs(s, p, v, a, lazy, light)) { if (light) day(s, p, v, a, lazy); else night(s, p, v, a); }
+  if (!needs(s, p, v, a, lazy, light) && !(light && utbrottVal(s, p, v))) { if (light) day(s, p, v, a, lazy); else night(s, p, v, a); }
   if (v.act === 'toa') {
     v.dur = (VAL.toaMin + rnd(s, 'val', p) * VAL.toaSpann) * MIN;
     const l = latrinFor(s, p); // till latrinen om byn har en (steg 2.7.2, smuts.ts)
@@ -379,6 +380,22 @@ function needs(s: State, p: Person, v: Val, a: number, lazy: number, light: bool
   const bord = p.hunger < KROPP.hungrig + KROPP.bordHunger && harMat(s, p) ? ledigPlats(s, p) : undefined;
   if (bord) { v.spot = bord; v.dur = (VAL.maltidMin + rnd(s, 'val', p) * VAL.maltidSpann) * MIN; return set(v, 'maltid', 'Är hungrig och äter vid bordet'); }
   return false;
+}
+
+// ett utbrott som väntar (steg 3.2.2, humor.ts), när grundbehoven är klara: den som är hungrig, törstig, fryser eller är
+// trött letar mat, vatten, värme eller vila först (needs och arbetet). Den som flyr går ut i skogen, den som är elak går
+// till den andra och den som slår sönder något gör det där hen står
+function utbrottVal(s: State, p: Person, v: Val) {
+  if (!p.ubr || p.hunger < KROPP.hungrig || torstig(p, 0) || p.warm < KROPP.kallt || p.rest < KROPP.trottDag) return false;
+  const u = utbrottNu(s, p);
+  if (!u) return false;
+  utbrottBorjar(s, p, u.k, u.mal, u.ting);
+  set(v, u.rad.act, 'Mår mycket dåligt');
+  v.dur = u.dur;
+  if (u.mal) v.spot = { x: u.mal.x, y: u.mal.y };
+  else if (u.ting) { v.spot = { x: p.x, y: p.y }; v.ref = u.ting.id; }
+  else if (u.rad.act === 'fly') v.spot = walkSpot(s, p, VAL.promNar + VAL.promBort * rnd(s, 'val', p));
+  return true;
 }
 
 // vården (steg 2.5.2, halsa.ts): platsen är den skadade, och tiden räknas från framkomsten (startsOnArrival)

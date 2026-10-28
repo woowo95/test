@@ -1,5 +1,5 @@
 import { stepUppvaxt } from './uppvaxt';
-import { stepHumor } from './humor';
+import { UTBROTT_ACTS, stepHumor, utbrottKlar } from './humor';
 import { redskapIHanden, tidyTools } from './agande';
 import { kvEffekt } from './kvalitet';
 import { chopStock, fellTree, rotStumps, stocks } from './skog';
@@ -119,6 +119,7 @@ const KLAR: Partial<Record<Act, Krok>> = {
   vatten: vattenFylld, // vattensäcken är fylld och bärs till den som inte kan gå (torst.ts)
   flyttaeld: (s, p) => flyttaElden(s, p), // elden står på en ny plats (eldflytt.ts)
 };
+for (const a of UTBROTT_ACTS) KLAR[a] = utbrottKlar; // efter ett utbrott (humor.ts, steg 3.2.2)
 MEDAN.buren = burenSteg; // den som bärs hem väntar så länge någon bär hen
 // att dricka (torst.ts): en gång när man kommit fram, och törsten hålls släckt så länge man dricker
 for (const act of DRICKA_ACTS) MEDAN[act] = (s, p, t) => { if (t.prog === undefined) { t.prog = 0; drick(s, p, t); } else p.torst = 1; };
