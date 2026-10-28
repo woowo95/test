@@ -13,7 +13,7 @@ import { Rum, bitAt, bitsOf, gridOf, housesOf, husById, roomAt, touch } from './
 import { bedTile, fnOf, sovKvar } from './byggnader';
 import { ACTS } from './handlingar';
 import { SAKER, isTool } from './saker';
-import { nyKvalitet } from './kvalitet';
+import { kvHaller, nyKvalitet } from './kvalitet';
 import { groundOf, tileOf } from './mark';
 import { FOREST } from './vag';
 import { BrasaEld, brasaMal } from './brasor';
@@ -817,7 +817,7 @@ export function slitVid(s: State, act: Act, v: number) {
   const t = stationFor(s, act), k = t && stationDef(t.k)?.kraver?.[act];
   const r = k ? redskapVid(s, t, k).sort((a, b) => a.c - b.c)[0] : undefined;
   if (!r) return false;
-  r.c -= v;
+  r.c -= v / kvHaller(r); // ett bättre redskap håller längre (kvalitet.ts)
   if (r.c > 1e-9) return false;
   s.ting = tingOf(s).filter(q => q !== r);
   const tr = SAKER[r.k]?.trasig;

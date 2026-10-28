@@ -12,7 +12,7 @@ import { bitAt, roofed } from './byggnad';
 import { ACTS, toolRow, usesTool } from './handlingar';
 import { temperature, vaderSlit } from './vader';
 import { BYN, Del, addDel, sumOf, takeOrder } from './egendom';
-import { FOOD, RUTA, SAKER, SAK_LIST, STACK, STACK_ORDER, bordOf, isFood, isTool, rutaOf, sakNamn, stackOf } from './saker';
+import { FOOD, SAKER, SAK_LIST, STACK, STACK_ORDER, bordOf, isFood, isTool, rutaOf, sakNamn, stackOf } from './saker';
 import { balans } from './balans';
 
 // ---------- balanstal (regel 8) ----------
@@ -629,14 +629,14 @@ export function wearStore(s: State, dtSec: number) {
   const h = dtSec / HOUR_S, temp = temperature(s), bort: Record<string, number> = {};
   for (const a of stacksOf(s)) {
     const m = wearMult(s, a.x, a.y), r = wearAt(a.k, m, true, temp) * h;
-    if (a.dold) { const d = DOLD_I[a.k]; bort[d] = (bort[d] ?? 0) + a.dold * (1 - Math.exp(-wearAt(d, m, true, temp) * h)); } // i hela saker nedan
+    if (a.dold && isStored(s, a.x, a.y)) { const d = DOLD_I[a.k]; bort[d] = (bort[d] ?? 0) + a.dold * (1 - Math.exp(-wearAt(d, m, true, temp) * h)); } // i hela saker nedan, ur förrådet (taBort)
     if (r <= 0) continue;
     a.c -= r;
     if (a.c > 0) continue;
     const into = SAKER[a.k]?.blir; // ved faller sönder till grenar, och ägarna äger grenarna
     a.dold = undefined;
     if (into && a.n > 0) {
-      const m = Math.min(RUTA[into.k], a.n * into.per);
+      const m = Math.min(rymd(s, a.x, a.y, into.k), a.n * into.per); // så mycket som får plats där (en hylla rymmer mer)
       if (a.ag) { const ks = Object.keys(a.ag), d = heltFordelat([a.n - sumOf(a.ag), ...ks.map(o => a.ag![o])], m); ks.forEach((o, i) => { a.ag![o] = d[i + 1]; }); }
       a.n = m; a.k = into.k; a.c = LAGER.blirSkick; cleanDel(s, a);
     } else {

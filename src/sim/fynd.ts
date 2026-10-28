@@ -527,8 +527,7 @@ export function pickMushrooms(s: State, p: Person, x: number, y: number, dtSec: 
   if (!chance(s, rate / HOUR_S, dtSec, 'arbete', p)) return 0;
   if (rnd(s, 'arbete', p) < kv / (kv + gv)) {
     takeFrom(s, 'kantarell', x, y, FANGST.svampUttag);
-    count(s, 'svamp');
-    if (!s.stat!.svamp1) { s.stat!.svamp1 = 1; log(s, `${p.name} hittade kantareller i skogen.`, 'world', [p.id]); }
+    if (forstaGang(s, 'svamp')) log(s, `${p.name} hittade kantareller i skogen.`, 'world', [p.id]);
     return 1;
   }
   // den giftiga: känner man igen den låter man den stå
