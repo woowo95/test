@@ -139,6 +139,7 @@ const DEF = {
   badd: { namn: 'Ligger i bädden och orkar inte gå upp', tecken: '🛌', vila: true, dygn: true, stilla: true, plats: 'sang' }, // steg 3.2.3
   slut: { namn: 'Gör slut', tecken: '💔', dygn: true, stilla: true },
   sla: { namn: 'Slår någon', tecken: '👊', dygn: true, stilla: true },
+  skrika: { namn: 'Skriker och gråter', tecken: '😭', dygn: true, stilla: true }, // barnens (steg 3.2.4)
 } satisfies Record<string, ActDef>;
 
 export type Act = keyof typeof DEF;

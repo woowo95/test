@@ -160,6 +160,7 @@ export interface Person {
   forv?: { f: number; w: number }; // förväntan och rikedom (humor.ts, steg 3.2.1)
   // utbrotten (steg 3.2.2, humor.ts): hur många nyss (klingar av), och det som väntar på att brista ut (slaget och när)
   utb?: number; ubr?: { k: string; t: number };
+  lekt?: number; // när ett barn senast lekte (färre utbrott efteråt, steg 3.2.4)
 }
 // en upplevelse i barndomen: slaget (UPPLEVELSER i uppvaxt.ts), åldern (år), när, vad den gjorde med egenskaperna och vem
 // eller vad den gällde

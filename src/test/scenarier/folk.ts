@@ -481,3 +481,45 @@ SCENARIER.vald = {
     ];
   },
 };
+
+SCENARIER.barnutbrott = {
+  text: 'Barnens utbrott (steg 3.2.4): barn som mår mycket dåligt skriker, trotsar, puttas med ett syskon eller springer iväg, mer sällan med en förälder nära och efter lek',
+  kor: () => {
+    // tre ledsna barn i en by där de vuxna mår bra, i åtta dygn (åtta år i spelet)
+    const s = createState(9, START);
+    const barn = [nyInvanare(s, 'm', 7), nyInvanare(s, 'k', 9), nyInvanare(s, 'm', 11)];
+    for (const c of barn) SIM.think(c, 'Sorg', -0.5, s.now, 8 * DAY);
+    kor(s, 8 * 24);
+    const BARNENS = ['skrika', 'trotsa', 'puttas', 'rymma'], VUXNAS = Object.keys(SIM.UTBROTT).filter(k => !BARNENS.includes(k));
+    const slag = Object.keys(s.stat ?? {}).filter(k => k.startsWith('utb_') && !k.startsWith('utb_sonder') && k !== 'utb_barn').map(k => k.slice(4));
+    const barnSlag = slag.filter(k => BARNENS.includes(k)), vuxnaSlag = slag.filter(k => VUXNAS.includes(k));
+    // risken: ensam, med en förälder nära och efter lek
+    const t = createState(9, START);
+    klockan(t, 11);
+    const c = nyInvanare(t, 'k', 8), f = nyInvanare(t, 'm', 30);
+    c.x += 12; f.x = c.x + 30; f.y = c.y;
+    SIM.think(c, 'Sorg', -0.5, t.now, DAY);
+    const ensam = SIM.utbrottChans(t, c);
+    c.father = f.id; f.x = c.x + 1;
+    const nara = SIM.utbrottChans(t, c);
+    c.lekt = t.now - HOUR;
+    const lekt = SIM.utbrottChans(t, c);
+    // att puttas med ett syskon, och att trotsa
+    const sy = nyInvanare(t, 'm', 6);
+    sy.father = f.id; sy.x = c.x + 0.5; sy.y = c.y;
+    const h0 = SIM.moodOf(sy, t.now);
+    c.ubr = { k: 'puttas', t: t.now };
+    SIM.chooseTask(t, c);
+    const puttas = c.task?.act === 'elak' && SIM.moodOf(sy, t.now) < h0;
+    SIM.newTing(t, 'yxa', 1, SIM.BYN);
+    c.ubr = { k: 'trotsa', t: t.now };
+    SIM.chooseTask(t, c);
+    const trotsa = c.task?.act === 'krossa';
+    return [
+      [`ledsna barn brister ut, bara i barnens slag (${barnSlag.join(', ') || 'inga'}; de vuxnas: ${vuxnaSlag.join(', ') || 'inga'})`, barnSlag.length >= 1 && (s.stat?.utbrott as number ?? 0) >= 2],
+      [`med en förälder nära är risken mindre (${ensam.toFixed(4)} → ${nara.toFixed(4)}), och efter lek ännu mindre (${lekt.toFixed(4)})`, ensam > 0 && nara < ensam && lekt < nara],
+      ['ett barn kan puttas med sitt syskon, som blir ledsnare', puttas],
+      ['ett barn kan trotsa och slå sönder något', trotsa],
+    ];
+  },
+};

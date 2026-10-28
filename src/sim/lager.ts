@@ -1,5 +1,6 @@
 import { campDist } from './plats';
 import { groundOf } from './mark';
+import { findPath } from './vag';
 import { Ting, halvKlar, newTing, tingOf } from './agande';
 import { kvHaller } from './kvalitet';
 import { forvarAt, sittAt, stationAt, stationDef, tillbakaVid } from './stationer';
@@ -715,16 +716,17 @@ function growOf(s: State, i: number): Zone | undefined {
     .filter(n => n.w <= LAGER.zonBredd && n.h <= LAGER.zonHojd && allUsable(s, n) && !zs.some((o, j) => j !== i && overlaps(n, o, LAGER.mellan)))
     .sort((a, b) => Math.abs(a.w - a.h) - Math.abs(b.w - b.h))[0];
 }
-// en ny lagerplats nära byns läger (eld och andra lagerplatser), men inte inpå elden. Den första uppdelningen sorterar: maten får den gamla platsen, materialet den nya
+// en ny lagerplats nära byns läger (eld och andra lagerplatser), men inte inpå elden. Den första uppdelningen sorterar: maten får den gamla platsen, materialet den nya.
+// Platsen ska gå att gå till från elden: en ö i sjön nära lägret blir ingen lagerplats (då gick bärarna genom vattnet)
 function newZone(s: State) {
-  const zs = zonesOf(s), f = eldPlats(s), z0 = zs[0];
-  let best: Zone | undefined, bd = Infinity;
+  const zs = zonesOf(s), f = eldPlats(s), z0 = zs[0], g = groundOf(s), kand: { c: Zone; d: number }[] = [];
   for (let y = 0; y < H - 2; y++) for (let x = 0; x < W - 2; x++) {
     const c: Zone = { x, y, w: LAGER.nyBredd, h: LAGER.nyHojd }, df = Math.hypot(x + c.w / 2 - f.x, y + c.h / 2 - f.y);
     if (df < LAGER.nyEldMin || campDist(s, x + (c.w - 1) / 2, y + (c.h - 1) / 2) > LAGER.nyLagerMax || !allUsable(s, c) || zs.some(o => overlaps(c, o, LAGER.mellan))) continue;
-    const d = Math.hypot(x - z0.x, y - z0.y);
-    if (d < bd) { bd = d; best = c; }
+    kand.push({ c, d: Math.hypot(x - z0.x, y - z0.y) });
   }
+  kand.sort((a, b) => a.d - b.d);
+  const best = kand.find(k => findPath(g, f.x + 0.5, f.y + 0.5, k.c.x + 0.5, k.c.y + 0.5))?.c;
   if (!best) return;
   if (vanliga(s) === 1) {
     Object.assign(z0, { namn: 'Matförrådet', slag: 'mat', prio: 2 });

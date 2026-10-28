@@ -22,6 +22,8 @@ import { balans } from './balans';
 // utbrott hen haft nyss, och hur allvarligt det blir beror också på empatin och slumpen. Behoven går före (val.ts), och efter
 // ett utbrott mår man lite bättre en stund. De allvarliga (steg 3.2.3): ligga kvar i bädden, göra slut, slå, misshandla, flytta
 // ut och, mycket sällan, dråp. Byn ogillar den som slår, och ett barn som blir slaget av sin förälder minns det alltid.
+// Barnen (steg 3.2.4) skriker och gråter, trotsar och slår sönder något, puttas med ett syskon eller springer iväg en
+// stund, mer sällan med en förälder nära och efter lek.
 
 // ---------- balanstal (regel 8) ----------
 export const HUMOR = balans('humor', {
@@ -60,6 +62,10 @@ export const HUMOR = balans('humor', {
   brytOp: 50, // den som bryter en vänskap: relationen sjunker så mycket ...
   brytTanke: 0.15, brytDygn: 3, // ... och den andra mår så mycket sämre i så många dygn
   flyttaVuxna: 2, // man flyttar ut bara om minst så här många andra vuxna blir kvar (annars flyr man ut i skogen)
+  // barnens utbrott (steg 3.2.4), från ALDER.smabarn
+  foraldNara: 6, foraldRisk: 0.5, // med en förälder inom så många rutor är risken så stor del
+  lekTim: 6, lekRisk: 0.5, // inom så många timmar efter lek är risken så stor del
+  puttHumor: 0.05, puttTim: 4, puttOp: 3, // det syskon som blir puttat: så mycket sämre humör i så många timmar, och relationen
 });
 
 // ---------- utbrotten (steg 3.2.2–3.2.3) ----------
@@ -68,9 +74,9 @@ export const HUMOR = balans('humor', {
 // `ting` att det behövs en sak att slå sönder; finns ingen blir det `annars` (eller tjura). `vald` är slagen: skadornas grad
 // (från, till), hur många, vilka och var, hur mycket relationen med den slagne sjunker, den slagnes tanke (hur mycket, dygn)
 // och hur mycket alla andra i byn ogillar den som slog. Att flytta ut händer direkt (utbrottRisk)
-type Mal = 'nast' | 'nara' | 'arke';
+type Mal = 'nast' | 'nara' | 'arke' | 'syskon';
 interface Vald { g: [number, number]; n: number; typer: SkadaTyp[]; delar: Kroppsdel[]; op: number; tanke: number; dygn: number; by: number }
-interface UtbDef { grad: number; act: Act; min: number; spann: number; text: string; mal?: Mal; ting?: true; annars?: string; vald?: Vald }
+interface UtbDef { grad: number; act: Act; min: number; spann: number; text: string; mal?: Mal; ting?: true; annars?: string; vald?: Vald; barn?: true }
 export const UTBROTT = {
   grata: { grad: 1, act: 'grata', min: 20, spann: 20, text: 'brister i gråt' },
   tjura: { grad: 1, act: 'tjura', min: 60, spann: 60, text: 'går undan och tjurar' },
@@ -83,10 +89,15 @@ export const UTBROTT = {
   misshandel: { grad: 4, act: 'sla', min: 10, spann: 10, text: 'misshandlar', mal: 'nast', vald: { g: [0.3, 0.7], n: 2, typer: ['blamarke', 'krossar', 'benbrott'], delar: ['huvud', 'bal', 'armV', 'armH', 'benV', 'benH'], op: 35, tanke: 0.3, dygn: 5, by: 15 } },
   flytta: { grad: 4, act: 'fly', min: 0, spann: 0, text: 'står inte ut längre och lämnar byn', annars: 'fly' },
   drap: { grad: 5, act: 'sla', min: 10, spann: 10, text: 'slår ihjäl', mal: 'arke', annars: 'misshandel', vald: { g: [1, 1], n: 0, typer: [], delar: [], op: 0, tanke: 0, dygn: 0, by: 40 } },
+  // barnens (steg 3.2.4): bara de, och de har bara dessa
+  skrika: { grad: 1, act: 'skrika', min: 10, spann: 20, text: 'skriker och gråter', barn: true },
+  trotsa: { grad: 2, act: 'krossa', min: 5, spann: 5, text: 'trotsar och slår sönder', ting: true, annars: 'puttas', barn: true },
+  puttas: { grad: 2, act: 'elak', min: 5, spann: 5, text: 'puttas med', mal: 'syskon', annars: 'skrika', barn: true },
+  rymma: { grad: 2, act: 'fly', min: 30, spann: 30, text: 'springer iväg en stund', barn: true },
 } satisfies Record<string, UtbDef>;
 export type Utbrott = keyof typeof UTBROTT;
 const UTB: Record<Utbrott, UtbDef> = UTBROTT;
-const UTB_LISTA = Object.keys(UTBROTT) as Utbrott[];
+const UTB_LISTA = Object.keys(UTBROTT) as Utbrott[], VUXNAS = UTB_LISTA.filter(k => !UTB[k].barn), BARNENS = UTB_LISTA.filter(k => UTB[k].barn);
 export const UTBROTT_ACTS = [...new Set(UTB_LISTA.filter(k => k !== 'flytta').map(k => UTB[k].act))] as Act[];
 
 // den närmaste p kan vara elak mot (eller slå), och en sak p kan slå sönder (sin egen helst, annars byns; ingen som någon har i
@@ -108,6 +119,7 @@ function malFor(s: State, p: Person, k: Utbrott, m: Mal) {
   const nar = (q: Person) => Math.hypot(q.x - p.x, q.y - p.y) < HUMOR.malAvst;
   if (m === 'nara') return living(s).find(q => q.id === p.partner) ?? living(s).find(q => q.id === p.bast);
   if (m === 'arke') return living(s).find(q => q.id === p.arke && nar(q));
+  if (m === 'syskon') return living(s).find(q => q !== p && ((q.mother !== undefined && q.mother === p.mother) || (q.father !== undefined && q.father === p.father)) && ageOf(q, s.now) >= ALDER.smabarn && nar(q));
   if (k === 'sla' && rnd(s, 'humor', p) < HUMOR.barnSla) {
     const barn = living(s).filter(c => isParent(p, c) && ageOf(c, s.now) >= ALDER.smabarn && ageOf(c, s.now) < ALDER.vuxen && nar(c));
     if (barn.length) return barn[Math.floor(rnd(s, 'humor', p) * barn.length)];
@@ -168,6 +180,9 @@ export function utbrottBorjar(s: State, p: Person, k: Utbrott, mal?: Person, tin
     if (k === 'elak') {
       think(mal, `${p.name} var elak mot mig`, -HUMOR.elakHumor, s.now, HUMOR.elakTim * HOUR);
       getRel(s, p, mal).op -= HUMOR.elakOp;
+    } else if (k === 'puttas') {
+      think(mal, `${p.name} puttade mig`, -HUMOR.puttHumor, s.now, HUMOR.puttTim * HOUR);
+      getRel(s, p, mal).op -= HUMOR.puttOp;
     } else if (k === 'slut') {
       const r = getRel(s, p, mal);
       if (!van) skiljas(s, p, mal, r);
@@ -197,18 +212,34 @@ export function flyttaUt(s: State, p: Person) {
   return true;
 }
 
-// en gång i timmen (stepHumor): utbrotten nyss klingar av, och den vuxne som mår mycket dåligt kan brista ut. Graden beror på
+// risken för ett utbrott den här timmen (på dagen): större ju sämre p mår och ju fler utbrott nyss. Ett barn brister mer sällan
+// med en förälder nära och efter lek
+export function utbrottChans(s: State, p: Person) {
+  const m = moodOf(p, s.now);
+  if (m >= HUMOR.grans) return 0;
+  let risk = HUMOR.risk * (HUMOR.grans - m) / HUMOR.grans * (1 + HUMOR.eskal * (p.utb ?? 0));
+  if (ageOf(p, s.now) < ALDER.vuxen) {
+    if (living(s).some(q => isParent(q, p) && Math.hypot(q.x - p.x, q.y - p.y) < HUMOR.foraldNara)) risk *= HUMOR.foraldRisk;
+    if (p.lekt !== undefined && s.now - p.lekt < HUMOR.lekTim * HOUR) risk *= HUMOR.lekRisk;
+  }
+  return risk;
+}
+
+// en gång i timmen (stepHumor): utbrotten nyss klingar av, och den som mår mycket dåligt kan brista ut (barnen bara i sina slag). Graden beror på
 // hur dåligt hen mår, utbrotten nyss, empatin och slumpen; slaget slumpas bland dem med den graden
 function utbrottRisk(s: State, p: Person, ljust: boolean) {
   if (p.utb) { p.utb *= Math.exp(-HOUR / (HUMOR.utbDygn * DAY)); if (p.utb < 0.01) p.utb = undefined; }
-  if (!ljust || p.ubr || ageOf(p, s.now) < ALDER.vuxen) return;
+  const a = ageOf(p, s.now), barn = a < ALDER.vuxen;
+  if (p.task?.act === 'leka' && p.task.phase === 'do') p.lekt = s.now; // barnen: leken (steg 3.2.4)
+  if (!ljust || p.ubr || a < ALDER.smabarn) return;
   const m = moodOf(p, s.now);
   if (m >= HUMOR.grans) return;
   const djup = (HUMOR.grans - m) / HUMOR.grans, utb = p.utb ?? 0;
-  if (rnd(s, 'humor', p) >= HUMOR.risk * djup * (1 + HUMOR.eskal * utb)) return;
+  if (rnd(s, 'humor', p) >= utbrottChans(s, p)) return;
   const allv = djup + HUMOR.allvUtb * utb + HUMOR.allvEmp * (10 - stat(p, 'empati', s.now)) / 10 + HUMOR.allvSlump * gauss(s, 'humor', p);
-  const grad = allv >= HUMOR.grad5 ? 5 : allv >= HUMOR.grad4 ? 4 : allv >= HUMOR.grad3 ? 3 : allv >= HUMOR.grad2 ? 2 : 1;
-  const av = UTB_LISTA.filter(k => UTB[k].grad === grad);
+  let grad = allv >= HUMOR.grad5 ? 5 : allv >= HUMOR.grad4 ? 4 : allv >= HUMOR.grad3 ? 3 : allv >= HUMOR.grad2 ? 2 : 1;
+  if (barn) grad = Math.min(grad, 2);
+  const av = (barn ? BARNENS : VUXNAS).filter(k => UTB[k].grad === grad);
   let k = av[Math.floor(rnd(s, 'humor', p) * av.length)];
   if (k === 'flytta') { if (flyttaUt(s, p)) return; k = 'fly'; }
   p.ubr = { k, t: s.now };
