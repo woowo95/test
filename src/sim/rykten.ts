@@ -335,7 +335,7 @@ export function glomRykten(s: State, hours: number) {
     const tau = 24 * (RYKTE.glomDygn + stat(p, 'minne', s.now) / RYKTE.glomMinne);
     p.intryck = p.intryck.filter(e => {
       const q = byId(s, e.om), dod = !q || !alive(q);
-      if (e.k === 'flitig' || e.k === 'lat' || e.k === 'rik' || e.k === 'fattig') { if (dod) return false; return styrka(e) >= RYKTE.glomGrans; }
+      if (e.k === 'flitig' || e.k === 'lat' || e.k === 'rik' || e.k === 'fattig') { if (dod) return false; return e.t >= s.now - hours * HOUR || styrka(e) >= RYKTE.glomGrans; } // det som ses nu glöms inte
       let t = tau * ((e.bev?.[0] && HANDELSER[e.bev[0].h].vikt >= RYKTE.tungVikt) ? RYKTE.glomTung : 1);
       if (dod) t *= RYKTE.dodGlom + rOf(e.om) / RYKTE.dodRykte;
       if (dod && q && isKin(p, q)) t *= RYKTE.dodSlakt;
