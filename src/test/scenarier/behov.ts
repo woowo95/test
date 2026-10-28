@@ -535,8 +535,10 @@ SCENARIER.vard = {
     fyll(p); fyll(q); q.x = c.x + 30; setAmount(s, 'mossa', 3);
     skada(s, p, 'handV', 'skarsar', 0.5, 'olycka', ''); p.task = undefined;
     chooseTask(s, p); const tk = () => p.task as Person['task']; const sjalvVal = tk()?.act === 'varda' && tk()?.ref === p.id;
+    // (förbanden räknas i statistiken: de andra i byn hittar också mossa när de samlar)
+    const forb0 = s.stat?.forband ?? 0;
     for (let i = 0; i < 40 * STEG_TIM && tk()?.act === 'varda'; i++) step(s, BEAT);
-    const w = p.skador?.[0], trycktes = w?.b === 0, forband = w?.f === 1, mossa = amountOf(s, 'mossa');
+    const w = p.skador?.[0], trycktes = w?.b === 0, forband = w?.f === 1, mossa = amountOf(s, 'mossa'), lagda = (s.stat?.forband as number ?? 0) - forb0;
     // ett brutet ben: man kan inte gå, utan kravlar
     fyll(p); skada(s, p, 'benH', 'benbrott', 0.9, 'olycka', ''); const kryp = gangFart(p), kravlar = !kanGa(p) && kryp === HALSA.krypFart;
     // långt från lägret: en annan vuxen går dit och bär hem hen
@@ -566,7 +568,7 @@ SCENARIER.vard = {
       [`ett infekterat sår som inte rengörs blir kallbrand och dödar (${dog ?? 'överlevde'})`, dog === 'kallbrand' && kall],
       ['ett rengjort infekterat sår blir friskt', botad],
       ['den som blöder väljer att vårda sitt sår', sjalvVal],
-      [`blödningen stannar och ett förband av mossa läggs på (mossa kvar ${mossa})`, trycktes && forband && mossa < 3],
+      [`blödningen stannar och ett förband av mossa läggs på (${lagda} förband, mossa kvar ${mossa})`, trycktes && forband && lagda === 1],
       [`den som har brutit benet kan inte gå och kravlar (${kryp} av farten)`, kravlar],
       [`den som inte kan gå långt från lägret bärs hem av en annan (${langtBort ? 'långt bort' : 'inte långt bort'}, bars ${bars}, hemma ${hem})`, langtBort && bars && hem],
       [`man läker fortare när man sover (${(0.5 - vaken).toFixed(3)} → ${(0.5 - sover).toFixed(3)} på fyra timmar)`, 0.5 - sover > 0.5 - vaken],

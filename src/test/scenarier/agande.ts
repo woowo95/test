@@ -118,6 +118,7 @@ SCENARIER.gava = {
 
 SCENARIER.byte = {
   text: 'Byten i behovsstegen, mellan sitt eget och byns förråd: den som saknar något byter till sig det mot något hen har över, när båda tjänar på det (grundvärdet gånger var och ens behov). Ojämna byten går när skillnaden är liten, när den ena håller på att dö eller när de står varandra nära. Mat, material och redskap kan bytas. I samtal, mest på kvällar och nätter, byter folk också utan akut behov när båda tjänar på det (steg 1.4.3).',
+  lang: true,
   kor: () => {
     const ny = () => {
       const s = createState(6, START);

@@ -1,6 +1,6 @@
 // Kör en by utan grafik och samlar nyckeltalen (registret NYCKELTAL i nyckeltal.ts säger vad de heter och betyder).
 // Vakterna larmar om något blir omöjligt (NaN, negativa förråd, folk i vattnet).
-import { BEAT, createState, step, living, DAY, groundOf, isSoil, markslag, Markslag, ageIndex, moodOf, serialize, serializeParts, getMap, fuelStock, ACT_NAMES, T, State, inMap, isWall, tileOf, foodOf, amountOf, sumOf, okandaBalans, alive, isCarrying, BYN, isStored, housesOf, bitsOf, Person, HOUR, W, KROPP, forvarAt, isTool, faltOf, faltRutor, faltAt } from '../sim';
+import { BEAT, createState, step, living, DAY, groundOf, isSoil, markslag, Markslag, ageIndex, moodOf, serialize, serializeParts, getMap, fuelStock, ACT_NAMES, T, State, inMap, isWall, tileOf, foodOf, amountOf, sumOf, okandaBalans, alive, isCarrying, BYN, isStored, housesOf, bitsOf, Person, HOUR, W, KROPP, forvarAt, isTool, faltOf, faltRutor, faltAt, stationById } from '../sim';
 import { NYCKELTAL, Nyckeltal, tal } from './nyckeltal';
 
 // testbyarna grundas 08:00 svensk tid. Testerna körs i datorns tidszon (här UTC), så där är klockan 06:00 när byn grundas
@@ -123,7 +123,8 @@ function vakta(s: State, larm: Larm, timme: boolean) {
     plats(a.k, a.x, a.y);
     for (const id in a.ag ?? {}) if (!lever.has(+id)) larm('andel hos ingen', () => `${a.k} på ${a.x},${a.y}: ${id} äger ${a.ag![id]}`);
   }
-  for (const t of s.ting ?? []) if (t.x !== undefined && t.hos === undefined && t.lass === undefined) plats(t.k, t.x, t.y!);
+  // det som ligger i en kista i sovrummet ligger i kistan, inte på golvet (steg 2.10.18)
+  for (const t of s.ting ?? []) if (t.x !== undefined && t.hos === undefined && t.lass === undefined && stationById(s, t.vid)?.ag === undefined) plats(t.k, t.x, t.y!);
   // fälten (steg 2.10.3): inte i vattnet eller en vägg, inte på varandra och inget lager på dem
   const faltRuta = new Set<number>();
   for (const f of faltOf(s)) for (const i of faltRutor(f)) {
