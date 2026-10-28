@@ -566,7 +566,7 @@ SCENARIER.lekplats = {
     const mid2 = SIM.byInne(s), l2 = SIM.lekplats(s);
     // hur långt den flyttar beror på husen, lagren och skogen i vägen; den ska flytta åt rätt håll och komma närmare den nya mitten
     const nu = rektAvstand(mid2.x, mid2.y, l2.x, l2.y, l2.w, l2.h), kvar = rektAvstand(mid2.x, mid2.y, l.x, l.y, l.w, l.h);
-    const foljer = (mid2.x - mid.x) * dir > 3 && (l2.x - l.x) * dir > 0 && nu < kvar && nu <= SIM.PLATS.lekSok;
+    const foljer = (mid2.x - mid.x) * dir > 3 && (l2.x - l.x) * dir > 0 && nu <= kvar + SIM.PLATS.lekNorr && nu <= SIM.PLATS.lekSok; // (söder om mitten får den ligga lite längre bort, lekNorr)
     s.lagren!.pop();
     return [
       [`lekplatsen är ${SIM.PLATS.lekBredd} × ${SIM.PLATS.lekDjup} rutor`, storlek],

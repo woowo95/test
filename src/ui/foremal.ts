@@ -17,8 +17,10 @@ function drawPile(pl: Pile, t: number) {
   // liten stapel för skicket längst ner i rutan
   g.beginFill(0x161210, 0.7).drawRect(x0 + 2, y0 + 13.5, 12, 2).endFill().beginFill(condCol(c)).drawRect(x0 + 2, y0 + 13.5, 12 * clamp(c, 0, 1), 2).endFill();
   // ikoner: ju fullare stacken är desto fler, redskap som en större bild
-  if (pl.gor) { pileIcons.add(pl.gor, x0 + 2, y0, 1.5); framsteg(x0 + 12.5, y0 + 1.5, pl.klar ?? 0); return; } // påbörjat: framstegscirkeln i hörnet
-  if (pl.max === 1) { pileIcons.add(pl.k, x0 + 2, y0, 1.5); if ((pl.q ?? 0) >= MASTERVERK) glans(x0 + 12, y0 + 3, t, pl.id ?? 0, pl.q === PERFEKT); return; }
+  // en symbol ritas 12 punkter stor mitt i rutan, hur stor bilden än är (8 eller 16 punkter, steg 3.6.7)
+  const stor = (k: string) => 12 / (iconCanvas(k).width || 8);
+  if (pl.gor) { pileIcons.add(pl.gor, x0 + 2, y0, stor(pl.gor)); framsteg(x0 + 12.5, y0 + 1.5, pl.klar ?? 0); return; } // påbörjat: framstegscirkeln i hörnet
+  if (pl.max === 1 || iconCanvas(pl.k).width > 8) { pileIcons.add(pl.k, x0 + 2, y0, stor(pl.k)); if ((pl.q ?? 0) >= MASTERVERK) glans(x0 + 12, y0 + 3, t, pl.id ?? 0, pl.q === PERFEKT); return; }
   const n = clamp(Math.ceil(f * 4), 1, 4);
   for (const [dx, dy] of PILE_LAYOUT[n - 1]) pileIcons.add(pl.k, x0 + dx, y0 + dy, 1);
 }

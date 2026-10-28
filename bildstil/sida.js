@@ -1099,6 +1099,15 @@ const LED_KRONA = UTB_KANT(['................', '.......W........', '...W..wWw..
 const LED_FOLK = UTB_KANT(['................', '......aaaa......', '......aaaa......', '......aaaa......', '...a...aa...a...', '....aaaaaaaa....', '......aaaa......', '......aaaa......', '......aaaa......', '..bb..a..a..bb..', '.bbbb.a..a.bbbb.', '..bb..a..a..bb..', '.bbbb.a..a.bbbb.', '.bbbb......bbbb.', '.b..b......b..b.', '................']);
 // en symbol i rätt storlek och tre gånger större bredvid
 const LED_M = (p, l) => ({ w: 74, h: 52, kol: true, rita: (B, P) => { ritaSprite(B, p, { o: 'kol0', ...l }, 3, 3); ritaSprite(B, p.flatMap(r => { const rr = [...r].map(c => c.repeat(3)).join(''); return [rr, rr, rr]; }), { o: 'kol0', ...l }, 22, 2); } });
+// grillen omritad (steg 3.6.7): kartbilden förstorad till 16 punkter per ruta, med en mörk kant runt klykorna och spettet
+// och en skugga under klykorna, så att den syns mot marken
+function grillNy() {
+  const g = IKONER.PIX.grill_karta.flatMap(r => { const rr = [...r].map(c => c + c).join(''); return [rr, rr]; }).map(r => [...r]);
+  const H = g.length, W = g[0].length, ut = g.map(r => r.map(c => c === 'x' ? '.' : c));
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (ut[y][x] === '.' && [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => { const c = g[y + dy]?.[x + dx]; return c && c !== '.' && c !== 'x'; })) ut[y][x] = 'o';
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (g[y][x] === 'x') for (let dx = -2; dx <= 3; dx++) if (ut[y + 1]?.[x + dx] === '.') { ut[y][x + dx] = 'z'; ut[y + 1][x + dx] = 'z'; }
+  return ut.map(r => r.join(''));
+}
 const VAL = [
   { id: 'ledarskap', namn: 'Ledarskapets symbol', vad: 'Ny symbol (steg 3.5), 16 × 16 punkter, för tekniken Ledarskap i teknikträdet och fliken Styre. Till vänster i rätt storlek, till höger tre gånger större. I spelet nu: hövdingastaven (version 1) som platshållare.', typ: 'tre',
     versioner: [
@@ -1156,6 +1165,9 @@ const VAL = [
       { text: 'En större ung planta med två våningar blad, som fyller rutan.', ...faltRutor(['................', '.......LL.......', '......LGGL......', '...LL..GG..LL...', '..LGGg.gG.gGGL..', '...gGGggGggGg...', '......gGGg......', '..LLg..gG..gLL..', '.LGGGg.gG.gGGGL.', '..gGGGggGgGGGg..', '....ggggGgggg...', '.......gG.......', '.......gg.......', '........g.......', '................', '................']) },
       { text: 'Grodden i en liten kupa av uppkrattad jord, med en mörk skugga runt.', ...faltRutor(['................', '................', '................', '................', '.......LL.......', '...LL..GG..LL...', '..LGGg.gG.gGGL..', '...gGGggGggGg...', '.....gGGGGg.....', '.......gG.......', '.......gg.......', '.....kKgKk......', '....kKKKKKk.....', '.....kkkkk......', '................', '................']) },
     ] },
+  { id: 'grill', namn: 'Grillen', vad: 'Station, tre rutor (steg 3.6.7). Omritad så att den syns bättre mot marken.', typ: 'janej',
+    idag: { w: 52, h: 36, rita: (B, P) => forstorad(B, 'grill_karta', 2, 2) }, idagText: 'Grillen som den ser ut i spelet nu.',
+    versioner: [{ text: 'En mörk kant runt klykorna och spettet, ljusare trä och en skugga på marken under klykorna.', w: 52, h: 36, rita: (B, P) => ritaSprite(B, grillNy(), { o: 'kol0', D: 'kol0', w: 'jord2', W: 'jord3', L: 'jord3', O: 'ben3', q: 'jord1', z: 'skugga' }, 2, 2) }] },
   { id: 'arter', namn: 'Vilda ärter', vad: 'Ny växt (steg 2.10.2), 16 × 16 punkter: vilda ärter i skogsbrynet. Ärtväxten du valde, med en balja som syns mot gräset, efter din kommentar.', typ: 'janej',
     idag: { w: 20, h: 20, rita: (B, P) => ritaSprite(B, ['..........ww....', '.........wWWw...', '..........ww....', '....gg....g.....', '...gGLg..g......', '...gGGg.g...gg..', '....gg.g...gGLg.', '......g....gGGg.', '......g...g.gg..', '..gg..g..g......', '.gGLg.g.g.......', '.gGGg.gg...oo...', '..gg..g...oGGo..', '......g..oGLGo..', '......g.oGGGo...', '.....ggg.ooo....'], ARTER, 2, 2) }, idagText: 'Ärtväxten du valde (version 3).',
     versioner: [{ text: 'Samma växt, men baljan är ljust gulgrön med mörk kant och ärterna syns som knölar. Den hänger på en egen stjälk.', w: 20, h: 20, rita: (B, P) => ritaSprite(B, ['..........ww....', '.........wWWw...', '..........ww....', '....gg....g.....', '...gGLg..g......', '...gGGg.g...gg..', '....gg.g...gGLg.', '......g....gGGg.', '......g...g.gg..', '..gg..g..g......', '.gGLg.g.gg......', '.gGGg.gg..g.....', '..gg..g..oooo...', '......g.oYyYyo..', '......g.oyYyYo..', '.....ggg.oooo...'], ARTER, 2, 2) }] },

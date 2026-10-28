@@ -34,7 +34,8 @@ function vagg(n: string, lx: number, ly: number) {
   const [l, r, u, d] = [...n].map(c => c === 'W'), o = [...n].map(c => c === 'O' || c === 'P');
   let h = l || r, v = u || d;
   if (!h && !v) h = o[0] || o[1] || !(o[2] || o[3]); // ensam vägg: stocken ligger längs öppningen
-  if (h && v) { const a = Math.hypot(lx - 3.5, ly - 3.5); if (a < 2.2) return Math.round(a * 2) % 2 ? 'e' : 'E'; if (a < 3.3) return 'd'; }
+  // hörnet: stockändarna när väggen går åt två håll, också när en dörröppning ligger på ena sidan om hörnet (steg 3.6.7)
+  if ((h || o[0] || o[1]) && (v || o[2] || o[3]) && (h || v)) { const a = Math.hypot(lx - 3.5, ly - 3.5); if (a < 2.2) return Math.round(a * 2) % 2 ? 'e' : 'E'; if (a < 3.3) return 'd'; }
   // dörrposterna: en stockände på var sida om öppningen
   const R = [1.3, 2.1, 2.6];
   const post = o[0] && lx <= 2 ? ande(lx, ly, 1.5, 3.5, R) : o[1] && lx >= 5 ? ande(lx, ly, 5.5, 3.5, R)

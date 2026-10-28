@@ -246,7 +246,8 @@ export function spotFor(s: State, act: Act, p: Person): { x: number; y: number }
   // man plockar inte där det är toa-smuts (steg 2.7.2), så länge det finns rena platser
   if (d.resurs === 'samla' && s.flackar?.length) { const rena = cands.filter(c => !forSmutsigt(s, c.x, c.y)); if (rena.length) cands.splice(0, cands.length, ...rena); }
   // mat: gå dit det finns mest att hämta, inte för långt bort; annars en av de närmaste platserna
-  const c = (d.resurs ? pickSpot(s, p, d.resurs, cands) : pickNarmaste(s, cands, VAL.narmaste, 'val', p)) ?? nearestWanted(s, want) ?? { x: mid.x, y: mid.y };
+  // avsides (toa): en plats var som helst mellan narAvstAng och langtAvsides, så att högarna inte bildar en ring (steg 3.6.7)
+  const c = (d.resurs ? pickSpot(s, p, d.resurs, cands) : plats === 'avsides' && cands.length ? cands[Math.floor(rnd(s, 'val', p) * cands.length)] : pickNarmaste(s, cands, VAL.narmaste, 'val', p)) ?? nearestWanted(s, want) ?? { x: mid.x, y: mid.y };
   return { x: c.x + 0.5, y: c.y + 0.5 };
 }
 
