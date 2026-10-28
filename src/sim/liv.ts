@@ -78,6 +78,7 @@ const DOD = {
   barnsjukdom: { text: 'av en barnsjukdom' },
   olycka: { text: 'i en olycka' },
   barnsang: { text: 'i barnsäng' },
+  drap: { text: 'av våld' }, // slagen till döds i ett utbrott (steg 3.2.3, humor.ts)
 } satisfies Record<string, DodDef>;
 export type Dodsorsak = keyof typeof DOD;
 export const DODSORSAKER: Record<Dodsorsak, DodDef> = DOD;

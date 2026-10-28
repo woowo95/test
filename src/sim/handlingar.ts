@@ -136,6 +136,9 @@ const DEF = {
   elak: { namn: 'Är elak mot någon', tecken: '😠', dygn: true, stilla: true },
   krossa: { namn: 'Slår sönder något', tecken: '💥', dygn: true, stilla: true },
   fly: { namn: 'Flyr ut i skogen', tecken: '🏃', vandra: { r: 3, h0: 1, h1: 3, v: 1.1 }, dygn: true },
+  badd: { namn: 'Ligger i bädden och orkar inte gå upp', tecken: '🛌', vila: true, dygn: true, stilla: true, plats: 'sang' }, // steg 3.2.3
+  slut: { namn: 'Gör slut', tecken: '💔', dygn: true, stilla: true },
+  sla: { namn: 'Slår någon', tecken: '👊', dygn: true, stilla: true },
 } satisfies Record<string, ActDef>;
 
 export type Act = keyof typeof DEF;

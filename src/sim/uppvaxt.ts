@@ -49,6 +49,9 @@ export const UPPLEVELSER = {
   mentor: { text: 'Fick lära sig av {om}', chans: 0.25, e: [{ intelligens: 1, minne: 1 }, { intelligens: 2 }, { nyfikenhet: 2 }] },
   uppfinning: { text: 'Var med när byn {om}', chans: 0.06, e: [{ nyfikenhet: 2 }, { intelligens: 1, nyfikenhet: 1 }] },
   trygg: { text: 'Växte upp tryggt i ett varmt hus', chans: 0.005, e: [{ mod: 1, karisma: 1 }, { nyfikenhet: 1, empati: 1 }] },
+  // en förälder som slår sitt barn (steg 3.2.3): det fastnar alltid och formar mycket, och mer om det händer igen
+  slagen: { text: 'Blev slagen av {om}', chans: 1, e: [{ mod: -3, empati: -2 }, { karisma: -3, mod: -2 }, { empati: -3, flit: -2 }] },
+  slagenIgen: { text: 'Blev slagen igen av {om}', chans: 1, e: [{ mod: -2, karisma: -2 }, { empati: -2, nyfikenhet: -2 }, { flit: -2, karisma: -2 }] },
 } satisfies Record<string, UpplevelseDef>;
 export type UpplevelseTyp = keyof typeof UPPLEVELSER;
 const DEF: Record<UpplevelseTyp, UpplevelseDef> = UPPLEVELSER;

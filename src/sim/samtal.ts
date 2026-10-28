@@ -3,7 +3,7 @@ import { ALDER, REL, ageOf, count, getRel, isKin, log, similarity, stat, think }
 import { berattaBrist } from './naring';
 import { moodOf } from './humor';
 import { clamp, pickViktat, rnd } from './slump';
-import { DAY, HOUR, Person, State } from './typer';
+import { DAY, HOUR, Person, Rel, State } from './typer';
 import { pair } from './varld';
 import { share } from './minne';
 import { askForGift } from './behov';
@@ -148,12 +148,14 @@ export function converse(s: State, a: Person, others: Person[], events?: TalkEve
   if (r.op > REL.naraVan && !(r.flags & 1) && !isKin(a, b) && a.partner !== b.id) { r.flags |= 1; log(s, `${a.name} och ${b.name} har blivit nära vänner.`, 'rel', [a.id, b.id]); }
   if (r.op < REL.ovan && !(r.flags & 2)) { r.flags |= 2; log(s, `${a.name} och ${b.name} har blivit ovänner.`, 'rel', [a.id, b.id]); }
   if (r.rom > REL.parRom && r.op > REL.van && a.partner === undefined && b.partner === undefined && canFlirt) pair(s, a, b);
-  if (a.partner === b.id && r.op < skiljGrans(r)) { // ett gift par håller mer, och en skilsmässa tar hårdare (steg 3.1.1)
-    const gift = r.gift !== undefined, f = gift ? RELT.skiljTanke : 1, ord = gift ? 'Skilde sig' : 'Separerade';
-    a.partner = undefined; b.partner = undefined; r.rom = SAMTAL.skiltRom; r.par = undefined; r.gift = undefined;
-    log(s, gift ? `${a.name} och ${b.name} skilde sig.` : `${a.name} och ${b.name} gick skilda vägar.`, 'rel', [a.id, b.id]);
-    if (gift) count(s, 'skilsmassa');
-    barnTill(s, a, b, 'skilsmassa'); // barnen minns det (steg 3.1.2)
-    think(a, `${ord} från ${b.name}`, -SAMTAL.skiltTanke * f, now, SAMTAL.skiltDygn * f * DAY); think(b, `${ord} från ${a.name}`, -SAMTAL.skiltTanke * f, now, SAMTAL.skiltDygn * f * DAY);
-  }
+  if (a.partner === b.id && r.op < skiljGrans(r)) skiljas(s, a, b, r); // ett gift par håller mer (steg 3.1.1)
+}
+// paret a och b går isär (när relationen blivit för dålig, eller i ett utbrott, humor.ts). En skilsmässa tar hårdare
+export function skiljas(s: State, a: Person, b: Person, r: Rel) {
+  const gift = r.gift !== undefined, f = gift ? RELT.skiljTanke : 1, ord = gift ? 'Skilde sig' : 'Separerade', now = s.now;
+  a.partner = undefined; b.partner = undefined; r.rom = SAMTAL.skiltRom; r.par = undefined; r.gift = undefined;
+  log(s, gift ? `${a.name} och ${b.name} skilde sig.` : `${a.name} och ${b.name} gick skilda vägar.`, 'rel', [a.id, b.id]);
+  if (gift) count(s, 'skilsmassa');
+  barnTill(s, a, b, 'skilsmassa'); // barnen minns det (steg 3.1.2)
+  think(a, `${ord} från ${b.name}`, -SAMTAL.skiltTanke * f, now, SAMTAL.skiltDygn * f * DAY); think(b, `${ord} från ${a.name}`, -SAMTAL.skiltTanke * f, now, SAMTAL.skiltDygn * f * DAY);
 }

@@ -1,5 +1,9 @@
-import { ALDER, ageOf, count, getRel, living, log, stat, think } from './folk';
-import { halsa } from './halsa';
+import { ALDER, ageOf, count, getRel, isParent, living, log, stat, think } from './folk';
+import { Kroppsdel, SkadaTyp, halsa, skada } from './halsa';
+import { die, leave } from './liv';
+import { skiljas } from './samtal';
+import { upplev } from './uppvaxt';
+import { blodas } from './blod';
 import { clamp, gauss, rnd } from './slump';
 import { isLight } from './tid';
 import { Ting, tingOf } from './agande';
@@ -16,7 +20,8 @@ import { balans } from './balans';
 // och en by som går dåligt vänjer sig.
 // Utbrotten (steg 3.2.2): den som mår mycket dåligt kan brista ut. Risken varje timme växer ju lägre humöret är och ju fler
 // utbrott hen haft nyss, och hur allvarligt det blir beror också på empatin och slumpen. Behoven går före (val.ts), och efter
-// ett utbrott mår man lite bättre en stund.
+// ett utbrott mår man lite bättre en stund. De allvarliga (steg 3.2.3): ligga kvar i bädden, göra slut, slå, misshandla, flytta
+// ut och, mycket sällan, dråp. Byn ogillar den som slår, och ett barn som blir slaget av sin förälder minns det alltid.
 
 // ---------- balanstal (regel 8) ----------
 export const HUMOR = balans('humor', {
@@ -48,25 +53,44 @@ export const HUMOR = balans('humor', {
   elakHumor: 0.08, elakTim: 12, // den som någon var elak mot: så mycket sämre humör i så många timmar
   elakOp: 6, // ... och relationen sjunker så mycket
   malAvst: 15, // den man är elak mot är den närmaste inom så många rutor
+  // de allvarliga utbrotten (steg 3.2.3)
+  grad3: 1, grad4: 1.25, grad5: 1.5, // allvaret från vilket det blir grad 3 (bädden, göra slut, slå), 4 (misshandel, flytta ut) och 5 (dråp)
+  drapEmp: 6, drapUtb: 2, // dråp bara för den som har högst så här mycket empati och minst så här många utbrott nyss (annars misshandel)
+  barnSla: 0.25, // den som slår och har ett barn nära slår barnet med den här chansen
+  brytOp: 50, // den som bryter en vänskap: relationen sjunker så mycket ...
+  brytTanke: 0.15, brytDygn: 3, // ... och den andra mår så mycket sämre i så många dygn
+  flyttaVuxna: 2, // man flyttar ut bara om minst så här många andra vuxna blir kvar (annars flyr man ut i skogen)
 });
 
-// ---------- utbrotten (steg 3.2.2) ----------
-// slagen av utbrott: graden (1 lindrigast), handlingen (handlingar.ts), hur länge (minuter: min plus upp till spann) och vad
-// som hände (loggen). `mal` säger om det behövs någon att vara elak mot och `ting` om det behövs en sak att slå sönder
+// ---------- utbrotten (steg 3.2.2–3.2.3) ----------
+// slagen av utbrott: graden (1 lindrigast, 5 dråp), handlingen (handlingar.ts), hur länge (minuter: min plus upp till spann) och
+// vad som hände (loggen). `mal` säger vem det går ut över (den närmaste, partnern eller bästa vännen, eller ärkefienden) och
+// `ting` att det behövs en sak att slå sönder; finns ingen blir det `annars` (eller tjura). `vald` är slagen: skadornas grad
+// (från, till), hur många, vilka och var, hur mycket relationen med den slagne sjunker, den slagnes tanke (hur mycket, dygn)
+// och hur mycket alla andra i byn ogillar den som slog. Att flytta ut händer direkt (utbrottRisk)
+type Mal = 'nast' | 'nara' | 'arke';
+interface Vald { g: [number, number]; n: number; typer: SkadaTyp[]; delar: Kroppsdel[]; op: number; tanke: number; dygn: number; by: number }
+interface UtbDef { grad: number; act: Act; min: number; spann: number; text: string; mal?: Mal; ting?: true; annars?: string; vald?: Vald }
 export const UTBROTT = {
   grata: { grad: 1, act: 'grata', min: 20, spann: 20, text: 'brister i gråt' },
   tjura: { grad: 1, act: 'tjura', min: 60, spann: 60, text: 'går undan och tjurar' },
-  elak: { grad: 2, act: 'elak', min: 10, spann: 10, text: 'är elak mot', mal: true },
+  elak: { grad: 2, act: 'elak', min: 10, spann: 10, text: 'är elak mot', mal: 'nast' },
   krossa: { grad: 2, act: 'krossa', min: 10, spann: 10, text: 'slår sönder', ting: true },
   fly: { grad: 2, act: 'fly', min: 90, spann: 90, text: 'flyr ut i skogen' },
-} satisfies Record<string, { grad: number; act: Act; min: number; spann: number; text: string; mal?: true; ting?: true }>;
+  badd: { grad: 3, act: 'badd', min: 240, spann: 240, text: 'lägger sig och orkar inte gå upp' },
+  slut: { grad: 3, act: 'slut', min: 10, spann: 10, text: 'gör slut med', mal: 'nara', annars: 'elak' },
+  sla: { grad: 3, act: 'sla', min: 5, spann: 5, text: 'slår', mal: 'nast', vald: { g: [0.1, 0.3], n: 1, typer: ['blamarke'], delar: ['huvud', 'bal', 'armV', 'armH'], op: 15, tanke: 0.15, dygn: 2, by: 5 } },
+  misshandel: { grad: 4, act: 'sla', min: 10, spann: 10, text: 'misshandlar', mal: 'nast', vald: { g: [0.3, 0.7], n: 2, typer: ['blamarke', 'krossar', 'benbrott'], delar: ['huvud', 'bal', 'armV', 'armH', 'benV', 'benH'], op: 35, tanke: 0.3, dygn: 5, by: 15 } },
+  flytta: { grad: 4, act: 'fly', min: 0, spann: 0, text: 'står inte ut längre och lämnar byn', annars: 'fly' },
+  drap: { grad: 5, act: 'sla', min: 10, spann: 10, text: 'slår ihjäl', mal: 'arke', annars: 'misshandel', vald: { g: [1, 1], n: 0, typer: [], delar: [], op: 0, tanke: 0, dygn: 0, by: 40 } },
+} satisfies Record<string, UtbDef>;
 export type Utbrott = keyof typeof UTBROTT;
-type UtbRad = (typeof UTBROTT)[Utbrott] & { mal?: true; ting?: true };
+const UTB: Record<Utbrott, UtbDef> = UTBROTT;
 const UTB_LISTA = Object.keys(UTBROTT) as Utbrott[];
-export const UTBROTT_ACTS = [...new Set(UTB_LISTA.map(k => UTBROTT[k].act))] as Act[];
+export const UTBROTT_ACTS = [...new Set(UTB_LISTA.filter(k => k !== 'flytta').map(k => UTB[k].act))] as Act[];
 
-// den närmaste p kan vara elak mot, och en sak p kan slå sönder (sin egen helst, annars byns; ingen som någon har i handen,
-// på sig eller i en börda)
+// den närmaste p kan vara elak mot (eller slå), och en sak p kan slå sönder (sin egen helst, annars byns; ingen som någon har i
+// handen, på sig eller i en börda)
 export function utbMal(s: State, p: Person) {
   let b: Person | undefined, bd = HUMOR.malAvst;
   for (const q of living(s)) { if (q === p || ageOf(q, s.now) < ALDER.smabarn) continue; const d = Math.hypot(q.x - p.x, q.y - p.y); if (d < bd) { bd = d; b = q; } }
@@ -78,28 +102,77 @@ export function utbTing(s: State, p: Person): Ting | undefined {
   const av = egna.length ? egna : fria.filter(t => t.agare === 0);
   return av.length ? av[Math.floor(rnd(s, 'humor', p) * av.length)] : undefined;
 }
+// den det går ut över: den närmaste (den som slår tar ibland sitt eget barn, steg 3.2.3), partnern eller bästa vännen, eller
+// ärkefienden om hen är nära
+function malFor(s: State, p: Person, k: Utbrott, m: Mal) {
+  const nar = (q: Person) => Math.hypot(q.x - p.x, q.y - p.y) < HUMOR.malAvst;
+  if (m === 'nara') return living(s).find(q => q.id === p.partner) ?? living(s).find(q => q.id === p.bast);
+  if (m === 'arke') return living(s).find(q => q.id === p.arke && nar(q));
+  if (k === 'sla' && rnd(s, 'humor', p) < HUMOR.barnSla) {
+    const barn = living(s).filter(c => isParent(p, c) && ageOf(c, s.now) >= ALDER.smabarn && ageOf(c, s.now) < ALDER.vuxen && nar(c));
+    if (barn.length) return barn[Math.floor(rnd(s, 'humor', p) * barn.length)];
+  }
+  return utbMal(s, p);
+}
+// dråp kräver låg empati och flera utbrott nyss
+const kanDrapa = (s: State, p: Person) => stat(p, 'empati', s.now) <= HUMOR.drapEmp && (p.utb ?? 0) >= HUMOR.drapUtb;
 
 // utbrottet som väntar hos p (eller inget, om det väntat för länge): slaget, med vem eller vad, och hur länge
-export function utbrottNu(s: State, p: Person): { k: Utbrott; rad: UtbRad; dur: number; mal?: Person; ting?: Ting } | undefined {
+export function utbrottNu(s: State, p: Person): { k: Utbrott; rad: UtbDef; dur: number; mal?: Person; ting?: Ting } | undefined {
   const u = p.ubr;
   if (!u) return;
-  if (s.now - u.t > HUMOR.vantar * HOUR || !(u.k in UTBROTT)) { p.ubr = undefined; return; }
-  let k = u.k as Utbrott, rad: UtbRad = UTBROTT[k];
-  const mal = rad.mal ? utbMal(s, p) : undefined, ting = rad.ting ? utbTing(s, p) : undefined;
-  if ((rad.mal && !mal) || (rad.ting && !ting)) { k = 'tjura'; rad = UTBROTT.tjura; } // ingen att vara elak mot, inget att slå sönder
   p.ubr = undefined;
+  if (s.now - u.t > HUMOR.vantar * HOUR || !(u.k in UTBROTT)) return;
+  let k = u.k as Utbrott, mal: Person | undefined, ting: Ting | undefined;
+  for (;;) { // finns ingen att gå ut över, eller inget att slå sönder, blir det något lindrigare
+    const rad = UTB[k];
+    mal = rad.mal ? malFor(s, p, k, rad.mal) : undefined; ting = rad.ting ? utbTing(s, p) : undefined;
+    if ((!rad.mal || mal) && (!rad.ting || ting) && (k !== 'drap' || kanDrapa(s, p))) break;
+    k = (rad.annars ?? 'tjura') as Utbrott;
+  }
+  const rad = UTB[k];
   return { k, rad, mal, ting, dur: (rad.min + rnd(s, 'humor', p) * rad.spann) * MIN };
+}
+
+// alla andra i byn ogillar den som slog (steg 3.2.3; inga straff än)
+function byOgillar(s: State, p: Person, offer: Person, d: number) {
+  for (const q of living(s)) if (q !== p && q !== offer) { const r = getRel(s, q, p); r.op = clamp(r.op - d, -100, 100); }
+}
+// p slår q: skadorna (eller döden), relationen, den slagnes tanke och byn. Ett barn som blir slaget av sin förälder minns det
+// alltid, och värre om det händer igen
+function slar(s: State, p: Person, q: Person, k: Utbrott, v: Vald) {
+  const r = getRel(s, p, q);
+  r.op = clamp(r.op - v.op, -100, 100);
+  byOgillar(s, p, q, v.by);
+  if (k === 'drap') { count(s, 'drap'); blodas(s, q.x, q.y, 'skada', 1); die(s, q, 'drap'); return; }
+  for (let i = 0; i < v.n; i++) {
+    const t = v.typer[Math.floor(rnd(s, 'humor', p) * v.typer.length)], d = v.delar[Math.floor(rnd(s, 'humor', p) * v.delar.length)];
+    const dod = skada(s, q, d, t, v.g[0] + rnd(s, 'humor', p) * (v.g[1] - v.g[0]), 'drap', `när ${p.name} slog hen`);
+    if (dod) { count(s, 'drap'); die(s, q, dod); return; }
+  }
+  think(q, `${p.name} slog mig`, -v.tanke, s.now, v.dygn * DAY);
+  if (isParent(p, q) && ageOf(q, s.now) < ALDER.vuxen) {
+    count(s, 'utb_barn');
+    upplev(s, q, q.upp?.some(u => u.k === 'slagen') ? 'slagenIgen' : 'slagen', p.name);
+  }
 }
 
 // när utbrottet börjar: loggen, statistiken och den som får ta emot det
 export function utbrottBorjar(s: State, p: Person, k: Utbrott, mal?: Person, ting?: Ting) {
-  const rad: UtbRad = UTBROTT[k];
+  const rad = UTB[k];
   count(s, 'utbrott'); count(s, 'utb_' + k);
   p.utb = (p.utb ?? 0) + 1;
   if (mal) {
-    think(mal, `${p.name} var elak mot mig`, -HUMOR.elakHumor, s.now, HUMOR.elakTim * HOUR);
-    getRel(s, p, mal).op -= HUMOR.elakOp;
-    log(s, `${p.name} mår dåligt och ${rad.text} ${mal.name}.`, 'rel', [p.id, mal.id]);
+    const van = k === 'slut' && p.partner !== mal.id;
+    log(s, `${p.name} mår dåligt och ${van ? 'bryter vänskapen med' : rad.text} ${mal.name}.`, 'rel', [p.id, mal.id]);
+    if (k === 'elak') {
+      think(mal, `${p.name} var elak mot mig`, -HUMOR.elakHumor, s.now, HUMOR.elakTim * HOUR);
+      getRel(s, p, mal).op -= HUMOR.elakOp;
+    } else if (k === 'slut') {
+      const r = getRel(s, p, mal);
+      if (!van) skiljas(s, p, mal, r);
+      else { r.op = clamp(r.op - HUMOR.brytOp, -100, 100); think(mal, `${p.name} bröt vänskapen`, -HUMOR.brytTanke, s.now, HUMOR.brytDygn * DAY); }
+    } else if (rad.vald) slar(s, p, mal, k, rad.vald);
   } else log(s, `${p.name} mår dåligt och ${rad.text}${ting ? (ting.agare === p.id ? ' sin egen ' : ' byns ') + (SAKER[ting.k]?.namn ?? ting.k).toLowerCase() : ''}.`, 'rel', [p.id]);
 }
 
@@ -112,6 +185,18 @@ export function utbrottKlar(s: State, p: Person, t: Task) {
   think(p, 'Fick ur mig det', HUMOR.lattnad, s.now, HUMOR.lattnadTim * HOUR);
 }
 
+// att flytta ut (steg 3.2.3) händer direkt, inte som en handling: bara den som inte har en partner i byn, och bara om minst
+// HUMOR.flyttaVuxna andra vuxna blir kvar. Barnen som inte har den andra föräldern i byn följer med
+export function flyttaUt(s: State, p: Person) {
+  const folk = living(s), now = s.now;
+  if (folk.some(q => q.id === p.partner) || folk.filter(q => q !== p && ageOf(q, now) >= ALDER.vuxen).length < HUMOR.flyttaVuxna) return false;
+  const barn = folk.filter(c => isParent(p, c) && ageOf(c, now) < ALDER.vuxen && !folk.some(o => o !== p && isParent(o, c)));
+  utbrottBorjar(s, p, 'flytta');
+  for (const g of [p, ...barn]) leave(s, g);
+  count(s, 'utvandrade', 1 + barn.length);
+  return true;
+}
+
 // en gång i timmen (stepHumor): utbrotten nyss klingar av, och den vuxne som mår mycket dåligt kan brista ut. Graden beror på
 // hur dåligt hen mår, utbrotten nyss, empatin och slumpen; slaget slumpas bland dem med den graden
 function utbrottRisk(s: State, p: Person, ljust: boolean) {
@@ -122,9 +207,11 @@ function utbrottRisk(s: State, p: Person, ljust: boolean) {
   const djup = (HUMOR.grans - m) / HUMOR.grans, utb = p.utb ?? 0;
   if (rnd(s, 'humor', p) >= HUMOR.risk * djup * (1 + HUMOR.eskal * utb)) return;
   const allv = djup + HUMOR.allvUtb * utb + HUMOR.allvEmp * (10 - stat(p, 'empati', s.now)) / 10 + HUMOR.allvSlump * gauss(s, 'humor', p);
-  const grad = allv >= HUMOR.grad2 ? 2 : 1;
-  const av = UTB_LISTA.filter(k => UTBROTT[k].grad === grad);
-  p.ubr = { k: av[Math.floor(rnd(s, 'humor', p) * av.length)], t: s.now };
+  const grad = allv >= HUMOR.grad5 ? 5 : allv >= HUMOR.grad4 ? 4 : allv >= HUMOR.grad3 ? 3 : allv >= HUMOR.grad2 ? 2 : 1;
+  const av = UTB_LISTA.filter(k => UTB[k].grad === grad);
+  let k = av[Math.floor(rnd(s, 'humor', p) * av.length)];
+  if (k === 'flytta') { if (flyttaUt(s, p)) return; k = 'fly'; }
+  p.ubr = { k, t: s.now };
 }
 
 

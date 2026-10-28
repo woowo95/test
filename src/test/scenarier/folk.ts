@@ -415,3 +415,69 @@ SCENARIER.utbrott = {
     ];
   },
 };
+
+SCENARIER.vald = {
+  text: 'De allvarliga utbrotten (steg 3.2.3): ligga kvar i bädden, göra slut, slå (ett barn minns det alltid), misshandel, flytta ut och dråp, och byn ogillar den som slår',
+  kor: () => {
+    // en vuxen långt från de andra, med en till bredvid sig
+    const by = () => {
+      const t = createState(9, START);
+      klockan(t, 11);
+      const p = nyInvanare(t, 'm', 30), q = nyInvanare(t, 'k', 30), r = living(t).find(o => o !== p && o !== q)!;
+      p.x += 12; q.x = p.x + 1; q.y = p.y;
+      return { t, p, q, r };
+    };
+    const utbrott = (t: State, p: Person, k: string) => { p.ubr = { k, t: t.now }; SIM.chooseTask(t, p); return p.task?.act; };
+    // bädden
+    const b = by(), badd = utbrott(b.t, b.p, 'badd') === 'badd';
+    // att slå: ett blåmärke, relationen och byn
+    const s1 = by(), op0 = getRel(s1.t, s1.p, s1.q).op, by0 = getRel(s1.t, s1.r, s1.p).op;
+    const sla = utbrott(s1.t, s1.p, 'sla') === 'sla';
+    const blamarke = !!s1.q.skador?.some(w => w.k === 'blamarke'), op1 = getRel(s1.t, s1.p, s1.q).op, by1 = getRel(s1.t, s1.r, s1.p).op;
+    // en förälder slår sitt barn, två gånger
+    const s2 = by(), c = nyInvanare(s2.t, 'k', 8);
+    c.father = s2.p.id; c.x = s2.p.x + 0.5; c.y = s2.p.y;
+    utbrott(s2.t, s2.p, 'sla');
+    const forst = c.upp?.some(u => u.k === 'slagen') ?? false;
+    utbrott(s2.t, s2.p, 'sla');
+    const igen = c.upp?.some(u => u.k === 'slagenIgen') ?? false;
+    const flytt = SIM.STATS.reduce((a, k) => a + Math.abs(c.pot[k] - (c.anlag?.[k] ?? c.pot[k])), 0);
+    // göra slut: med partnern, och med bästa vännen
+    const s3 = by();
+    s3.p.partner = s3.q.id; s3.q.partner = s3.p.id;
+    utbrott(s3.t, s3.p, 'slut');
+    const skilda = s3.p.partner === undefined && s3.q.partner === undefined;
+    const s4 = by();
+    s4.p.bast = s4.q.id; getRel(s4.t, s4.p, s4.q).op = 85;
+    utbrott(s4.t, s4.p, 'slut');
+    const bruten = getRel(s4.t, s4.p, s4.q).op;
+    // dråp: bara mot ärkefienden, för den med låg empati och flera utbrott nyss; annars misshandel
+    const s5 = by();
+    s5.p.arke = s5.q.id; s5.p.pot.empati = 2; s5.p.anlag = { ...s5.p.pot }; s5.p.utb = 3;
+    const by5 = getRel(s5.t, s5.r, s5.p).op;
+    utbrott(s5.t, s5.p, 'drap');
+    const drap = s5.q.died !== undefined && s5.q.cause === SIM.DODSORSAKER.drap.text, by6 = getRel(s5.t, s5.r, s5.p).op;
+    const s6 = by();
+    s6.p.arke = s6.q.id; s6.p.pot.empati = 15; s6.p.anlag = { ...s6.p.pot }; s6.p.utb = 3;
+    utbrott(s6.t, s6.p, 'drap');
+    const miss = s6.q.died === undefined && (s6.q.skador?.length ?? 0) >= 1;
+    // flytta ut: med barnet, men inte från sin partner
+    const s7 = by(), c7 = nyInvanare(s7.t, 'm', 6);
+    c7.father = s7.p.id;
+    const ut = SIM.flyttaUt(s7.t, s7.p) && s7.p.left !== undefined && c7.left !== undefined;
+    const s8 = by();
+    s8.p.partner = s8.q.id; s8.q.partner = s8.p.id;
+    const stannar = !SIM.flyttaUt(s8.t, s8.p) && s8.p.left === undefined;
+    return [
+      ['den som mår mycket dåligt kan ligga kvar i bädden', badd],
+      [`den som slår ger ett blåmärke, relationen sjunker (${op0.toFixed(0)} → ${op1.toFixed(0)}) och byn ogillar hen (${by0.toFixed(0)} → ${by1.toFixed(0)})`, sla && blamarke && op1 < op0 && by1 < by0],
+      [`ett barn som blir slaget av sin förälder minns det alltid, och mer när det händer igen (egenskaperna flyttade ${flytt})`, forst && igen && flytt >= 6],
+      ['den som gör slut med sin partner skiljer sig', skilda],
+      [`den som bryter med sin bästa vän: relationen 85 → ${bruten.toFixed(0)}`, bruten <= 40],
+      [`den med låg empati och många utbrott kan dräpa sin ärkefiende, och byn ogillar hen mycket (${by5.toFixed(0)} → ${by6.toFixed(0)})`, drap && by6 <= by5 - 30],
+      ['med mer empati blir det misshandel i stället', miss],
+      ['den som flyttar ut tar med sitt barn', ut],
+      ['den som har en partner i byn flyttar inte ut', stannar],
+    ];
+  },
+};
