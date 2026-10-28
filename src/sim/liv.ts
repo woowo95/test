@@ -9,6 +9,7 @@ import { avbryt, put, releaseOwner } from './lager';
 import { kronika } from './historik';
 import { inherit, packUp } from './arv';
 import { balans } from './balans';
+import { RELT } from './relationer';
 
 // ---------- balanstal (regel 8) ----------
 // Befolkningen regleras av naturen, inte av ett fast tak: en trång by får färre barn och fler som flyttar, en liten by lockar
@@ -94,9 +95,12 @@ export function die(s: State, p: Person, orsak: Dodsorsak) {
   if (a < LIV.barnDod) sedEvent(s, 'barn', LIV.sedBarn, `Byn sörjer barnet ${p.name} och värnar mer om sina barn.`);
   if (a >= ALDER.hogAlder) p.fame.push(`Blev ${a} år gammal`);
   for (const q of living(s)) {
-    if (q.partner === p.id) { q.partner = undefined; think(q, `Sörjer ${p.name}`, LIV.sorjPartner, s.now, LIV.sorjPartnerDygn * DAY); }
+    // den som var gift sörjer mer, den bästa vännen länge och en nära vän lite mer än en vän (steg 3.1.1)
+    const r = s.rels[relKey(p.id, q.id)];
+    if (q.partner === p.id) { q.partner = undefined; const f = r?.gift !== undefined ? RELT.giftSorj : 1; think(q, `Sörjer ${p.name}`, LIV.sorjPartner * f, s.now, LIV.sorjPartnerDygn * f * DAY); }
     else if (isParent(p, q) || isParent(q, p)) think(q, `Sörjer ${p.name}`, LIV.sorjNara, s.now, LIV.sorjNaraDygn * DAY);
-    else { const r = s.rels[relKey(p.id, q.id)]; if (r && r.op > REL.saknar) think(q, `Saknar ${p.name}`, LIV.saknar, s.now, LIV.saknarDygn * DAY); }
+    else if (q.bast === p.id) think(q, `Sörjer ${p.name}`, RELT.bastSorj, s.now, RELT.bastSorjDygn * DAY);
+    else if (r && r.op > REL.saknar) { const f = r.op > REL.naraVan ? RELT.naraSorj : 1; think(q, `Saknar ${p.name}`, LIV.saknar * f, s.now, LIV.saknarDygn * f * DAY); }
   }
 }
 

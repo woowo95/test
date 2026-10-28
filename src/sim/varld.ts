@@ -121,6 +121,7 @@ function uppgradera(s: State) {
 export function pair(s: State, a: Person, b: Person, silent = false) {
   a.partner = b.id; b.partner = a.id;
   const r = getRel(s, a, b); r.op = Math.max(r.op, 55); r.rom = Math.max(r.rom, 75);
+  r.par = s.now; r.gift = silent ? s.now : undefined; // de som kommer som par (de första och de som vandrar in) är redan gifta (steg 3.1.1)
   if (!silent) {
     log(s, `${a.name} och ${b.name} blev ett par.`, 'rel', [a.id, b.id]);
     think(a, `Blev tillsammans med ${b.name}`, 0.15, s.now, DAY);

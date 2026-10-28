@@ -35,7 +35,7 @@ SCENARIER['ui-ren'] = {
 };
 
 SCENARIER.ikoner = {
-  text: 'Allt som gränssnittet visar med en symbol har en pixelbild i ikoner.ts: saker, tekniker, djur, grupperna i filtret, lagren, byggmaterial och slagen av arbete',
+  text: 'Allt som gränssnittet visar med en symbol har en pixelbild i ikoner.ts: saker, tekniker, djur, grupperna i filtret, lagren, byggmaterial, slagen av arbete och relationstyperna',
   kor: () => {
     const saknas = (ks: (string | undefined)[]) => ks.filter((k): k is string => !!k && !hasIcon(k));
     const del: [string, string[]][] = [
@@ -48,6 +48,7 @@ SCENARIER.ikoner = {
       ['slag av arbete', saknas(Object.values(ACTS).map(a => a.slag && slagIkon(a.slag)).filter(k => k !== 'zzz'))], // vila ritas som z
       ['påbörjat redskap', saknas(['paborjat'])],
       ['stationer', saknas(SIM.STATION_LIST.map(k => SIM.STATIONER[k].ikon))],
+      ['relationstyper', saknas(Object.values(SIM.RELATIONER).map(t => t.ikon))],
     ];
     // tårtdiagrammet i personrutan: varje handling (utom sömnen) har slagets pixelbild, slagets tecken eller ett eget tecken
     const utan = (Object.keys(ACTS) as SIM.Act[]).filter(a => {

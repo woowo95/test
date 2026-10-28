@@ -203,10 +203,13 @@ h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: 
 .bar.temp::after { content: ''; position: absolute; left: 50%; top: -3px; height: 12px; width: 1px; background: var(--muted); }
 .bar.temp > span { position: absolute; top: -2px; width: 4px; height: 10px; margin-left: -2px; border-radius: 2px; background: var(--fg); }
 .bar.temp.low > span, .bar.temp.high > span { background: var(--bad); }
-.rels { display: grid; grid-template-columns: minmax(0, max-content) max-content 1fr; gap: 6px 12px; align-items: baseline; }
+.rels { display: grid; grid-template-columns: minmax(0, max-content) max-content max-content 1fr; gap: 6px 12px; align-items: center; }
 .rels li { display: contents; }
 .rels .plink { justify-self: start; text-align: left; }
-.rels li > :last-child { justify-self: end; }
+.rels li > .muted:not(.relfork) { justify-self: end; }
+.relsyms { display: flex; gap: 2px; }
+.relsym { border: none; background: none; padding: 0; cursor: pointer; line-height: 0; }
+.relfork { grid-column: 1 / -1; margin: 0 0 4px; }
 .rw.pos { color: var(--good); } .rw.neg { color: var(--bad); }
 .lard li { padding: 4px 0; } .lard li > span { display: block; padding-left: 10px; } .lard small { display: block; font-size: 11px; }
 .lard .fel { color: var(--bad); } .lard .fel::before { content: "⚠ "; } .lard li.fara { color: var(--warn, #e0a050); }

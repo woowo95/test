@@ -18,6 +18,7 @@ import { DODSORSAKER, barnMat, birth, birthWish, die, regulate } from './liv';
 import { MARK, groundOf, growGround, packGround, tileOf } from './mark';
 import { SAMTAL, TalkEvent, converse, isSocial } from './samtal';
 import { HABIT_FADE, addHabit, sedEvent, stepSeder, updateTags } from './seder';
+import { RELT, stepRelationer } from './relationer';
 import { fearPlace, forget, lookAround } from './minne';
 import { PLATS } from './plats';
 import { chance, clamp, rnd } from './slump';
@@ -153,7 +154,7 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
   const fh = hearthOf(s.fire), temp = temperature(s), coldRate = coldOf(temp);
   const learn = 1 + 0.1 * s.seder.v.nyfikenhet; // en nyfiken by lär sig snabbare
   if (Math.floor(now / HOUR) !== Math.floor((now - dtSec * SEC) / HOUR)) {
-    atSteg(s); stepSeder(s); updateTags(s); stepDelning(s);
+    atSteg(s); stepSeder(s); updateTags(s); stepRelationer(s); stepDelning(s);
     stepVader(s); stepIs(s); growGround(s, 1, ai); growFynd(s, 1, ai, vaxtFaktor(s)); forget(s, 1); rotStumps(s); tidyStore(s);
     wearBuild(s, 1, ai); stepByggnader(s); planBuild(s); stepEldFlytt(s); stepPaborjat(s); stepStationer(s); stepBrasor(s); stepKlader(s); stepOdling(s);
     historikSteg(s); // nyckeltalen till byns historik (läses inte av simuleringen)
@@ -554,7 +555,9 @@ function workStep(s: State, p: Person, tk: Task, dtSec: number, a: number, learn
   helaIBordan(p, tk); // bara hela saker i bördan (steg 2.10.7)
   const sk = d.arbete!;
   const before = p.skill[sk];
-  ovning(p, sk, dtSec / HOUR_S * STEG.ovningArbete * learn * (STEG.ovningBas + stat(p, 'intelligens', now) / 20));
+  const m = p.mentor !== undefined ? byId(s, p.mentor) : undefined; // bredvid sin mentor lär man sig fortare (steg 3.1.1)
+  const vidMentor = m?.task && ACTS[m.task.act].arbete === sk && Math.hypot(m.x - p.x, m.y - p.y) < RELT.mentorNara ? RELT.mentorOvning : 1;
+  ovning(p, sk, dtSec / HOUR_S * STEG.ovningArbete * learn * vidMentor * (STEG.ovningBas + stat(p, 'intelligens', now) / 20));
   if (before < 16 && p.skill[sk] >= 16) {
     const title = `Mästare i ${SKILL_NAMES[sk].toLowerCase()}`, first = !s.people.some(q => q.fame.includes(title));
     p.fame.push(title); log(s, `${p.name} har blivit en mästare i ${SKILL_NAMES[sk].toLowerCase()}.`, 'skill', [p.id]);

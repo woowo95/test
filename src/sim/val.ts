@@ -3,7 +3,8 @@ import { PLATS, campCenter, campDist, campKey } from './plats';
 import { RESERV, foodDays } from './ekonomi';
 import { ACTS, WORK, usesTool } from './handlingar';
 import { canLight, emberOn, fireWant, needStones, needTinder, woodDays } from './eld';
-import { ALDER, KROPP, ageOf, count, isSick, living, stat } from './folk';
+import { ALDER, KROPP, REL, ageOf, count, isSick, living, relKey, stat } from './folk';
+import { RELT, bredvidVikt } from './relationer';
 import { onskan } from './naring';
 import { halsa, hemma, kanGa, vardVal, vilaHellre } from './halsa';
 import { harMat } from './behov';
@@ -158,6 +159,16 @@ function hantverkIByn(s: State, p: Person): { x: number; y: number } {
   }
   return freeNear(s, cx, cy);
 }
+// var den bästa vännen och ovännerna ska sitta eller sitter vid elden f (steg 3.1.1)
+function sittPlatser(s: State, p: Person, f: { x: number; y: number }) {
+  let bast: { x: number; y: number } | undefined; const ovan: { x: number; y: number }[] = [];
+  for (const q of living(s)) {
+    const t = q.task; if (q === p || !t || ACTS[t.act].plats !== 'elden' || Math.hypot(t.tx - f.x, t.ty - f.y) > VAL.eldRadie + VAL.eldRadieSpann + 1) continue;
+    if (p.bast === q.id) bast = { x: t.tx, y: t.ty };
+    else if (p.arke === q.id || (s.rels[relKey(p.id, q.id)]?.op ?? 0) < REL.ovan) ovan.push({ x: t.tx, y: t.ty });
+  }
+  return { bast, ovan };
+}
 // var en handling görs, efter platsen i handlingar.ts
 export function spotFor(s: State, act: Act, p: Person): { x: number; y: number } {
   const m = getMap(s.seed), d = ACTS[act], plats = d.plats ?? 'skog';
@@ -181,9 +192,12 @@ export function spotFor(s: State, act: Act, p: Person): { x: number; y: number }
     if (sal && (c > 0 && varmareInne(s, sal, c, d.varmer) || nederbord(s))) return punktIRuta(s, pick(s, sal.tiles, 'val', p), p); // ... och när det regnar (steg 2.11.1)
     // annars sätter man sig ofta vid ett bord för att samtala och berätta, när det inte är kallt
     if (d.slag === 'prata' && bordenOf(s).length && coldOf(temperature(s)) === 0 && rnd(s, 'val', p) < VAL.bordSamtal) { const at = ledigPlats(s, p); if (at) return at; }
+    // bredvid den bästa vännen om hen sitter vid samma eld, och inte nära en ovän (steg 3.1.1)
+    const nara = sittPlatser(s, p, f), van = nara.bast && rnd(s, 'val', p) < RELT.bastSitt ? Math.atan2(nara.bast.y - f.y - 0.5, nara.bast.x - f.x - 0.5) : undefined;
     for (let k = 0; ; k++) { // runt elden, men inte i en husvägg eller i en station (Björn efter v89: någon stod i slaktbänken)
-      const ang = rnd(s, 'val', p) * Math.PI * 2, r = d.radie ?? VAL.eldRadie + rnd(s, 'val', p) * VAL.eldRadieSpann, x = f.x + 0.5 + Math.cos(ang) * r, y = f.y + 0.5 + Math.sin(ang) * r;
-      if (k >= 11 || !blocked(s, x, y) && !sittAt(s, x, y) && !stationAt(s, x, y)) return k >= 11 ? freeNear(s, f.x + 0.5, f.y + 1.5) : { x, y }; // inte på en stubbe vid bordet
+      const ang = van !== undefined && k < 4 ? van + (k % 2 ? -1 : 1) * (0.45 + 0.15 * Math.floor(k / 2)) : rnd(s, 'val', p) * Math.PI * 2, r = d.radie ?? VAL.eldRadie + rnd(s, 'val', p) * VAL.eldRadieSpann, x = f.x + 0.5 + Math.cos(ang) * r, y = f.y + 0.5 + Math.sin(ang) * r;
+      const ovanNara = k < 8 && nara.ovan.some(o => Math.hypot(o.x - x, o.y - y) < RELT.ovanAvstand);
+      if (k >= 11 || !blocked(s, x, y) && !sittAt(s, x, y) && !stationAt(s, x, y) && !ovanNara) return k >= 11 ? freeNear(s, f.x + 0.5, f.y + 1.5) : { x, y }; // inte på en stubbe vid bordet
     }
   }
   if (plats === 'kol') return { x: f.x + 0.5 + (rnd(s, 'val', p) - 0.5) * 0.6, y: f.y + 1.1 };
@@ -468,6 +482,7 @@ function bestWork(s: State, p: Person, fd: number, wd: number, ai: number, tot: 
   const wWood = clamp(VAL.behovTomt - wd / (VAL.vedDygn * fs), VAL.vedMin, VAL.behovMax) * (kallTid(ai) ? ARSTID.vedKall : 1); // inför och under istiden väger veden tyngre
   const vikt = { mat: wFood, ved: wWood };
   let best: Act = 'samla', bs = -1, burg = 0;
+  const ppl = living(s);
   for (const w of WORK) {
     // behovet, tändmaterialet och vattnet står i handlingens rad (ACTS i handlingar.ts, steg 2.12.3)
     const d = ACTS[w], need = vikt[d.behov!];
@@ -477,7 +492,7 @@ function bestWork(s: State, p: Person, fd: number, wd: number, ai: number, tot: 
     const season = d.sasong![ai];
     // maten som någon längtar efter är mer värd att hämta (steg 2.6.2)
     const col = need * (!d.resurs ? 1 : tinder ? Math.max(VAL.tandMin, season) * VAL.tandVikt : season * yieldF * onskan(p, w, s.now));
-    const sc = poang(s, p, col, lust(s, p, w as Skill, ACTS[w].egenskap!, [w], tot)); // egen lust och vana
+    const sc = poang(s, p, col, lust(s, p, w as Skill, ACTS[w].egenskap!, [w], tot)) * bredvidVikt(s, p, w, ppl); // egen lust och vana, och vad vänner och ovänner gör (steg 3.1.1)
     burg = Math.max(burg, col);
     if (sc > bs) { bs = sc; best = w; }
   }

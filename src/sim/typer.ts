@@ -151,6 +151,9 @@ export interface Person {
   kallad?: string[]; // yrkestaggar personen redan fått, så att det bara står i loggen första gången
   hue: number;
   tag?: string; // yrkestagg efter vad personen ägnar mest tid åt
+  // relationstyperna (steg 3.1.1, relationer.ts), räknade en gång i timmen: bästa vän, ärkefiende, rivaler (och yrket man tävlar
+  // i, om någon rival har samma), och för den unga mentorn och färdigheten mentorn lär ut
+  bast?: number; arke?: number; rivaler?: number[]; rivalom?: string; mentor?: number; mentorSk?: Skill;
 }
 
 // En lärdom om en plats: k = vad, a = område (8×8 rutor), v = hur mycket (eller hur rädd), c = hur säker (0–1),
@@ -160,8 +163,9 @@ export interface Person {
 // Det är en nyhet som gärna berättas vidare i ett par dygn.
 export interface Lardom { k: import('./minne').LKind; a: number; v: number; g?: number; c: number; t: number; src?: number; led?: number; om?: string; ny?: number }
 
-export interface Rel { chem: number; op: number; rom: number; talks: number; flags: number }
-// flags: 1 = nära vänner loggat, 2 = ovänner loggat
+// flags: 1 = nära vänner loggat, 2 = ovänner loggat, 4 = rivaler loggat, 8 = bästa vänner loggat (relationer.ts).
+// par: när de blev ett par, gift: när de gifte sig, lart: hur många gånger den äldre lärt den yngre något (steg 3.1.1)
+export interface Rel { chem: number; op: number; rom: number; talks: number; flags: number; par?: number; gift?: number; lart?: number }
 
 export interface LogEntry { t: number; text: string; kind: 'birth' | 'death' | 'rel' | 'skill' | 'world' | 'move'; ids: number[] }
 

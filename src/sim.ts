@@ -18,6 +18,7 @@ export * from './sim/ekonomi';
 export * from './sim/eld';
 export * from './sim/eldflytt';
 export * from './sim/seder';
+export * from './sim/relationer';
 export * from './sim/val';
 export * from './sim/samtal';
 export * from './sim/teknik';

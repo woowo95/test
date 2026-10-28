@@ -1,4 +1,4 @@
-import { ALDER, REL, ageOf, getRel, isKin, living, log, similarity, stat, think } from './folk';
+import { ALDER, REL, ageOf, count, getRel, isKin, living, log, similarity, stat, think } from './folk';
 import { berattaBrist } from './naring';
 import { halsa } from './halsa';
 import { clamp, pickViktat, rnd } from './slump';
@@ -8,6 +8,7 @@ import { share } from './minne';
 import { askForGift } from './behov';
 import { ACTS } from './handlingar';
 import { balans } from './balans';
+import { RELT, arArke, arBast, arMentor, arRivaler, skiljGrans } from './relationer';
 
 // ---------- balanstal (regel 8) ----------
 // Samtalen: vem man pratar med, vilket slags samtal det blir, hur det går och vad det ger, och humöret. Relationen (op) går från
@@ -101,7 +102,8 @@ export function converse(s: State, a: Person, others: Person[], events?: TalkEve
   const now = s.now;
   if (!others.length) return;
   // välj samtalspartner viktad efter relation
-  const w = others.map(b => { const r = getRel(s, a, b); return Math.max(SAMTAL.valMin, 1 + r.op / SAMTAL.valOp + r.chem * SAMTAL.valKemi + (b.partner === a.id ? SAMTAL.valPartner : 0)); });
+  const w = others.map(b => { const r = getRel(s, a, b); return Math.max(SAMTAL.valMin, 1 + r.op / SAMTAL.valOp + r.chem * SAMTAL.valKemi + (b.partner === a.id ? SAMTAL.valPartner : 0)
+    + (arBast(a, b) ? RELT.valBast : 0) + (arMentor(a, b) || arMentor(b, a) ? RELT.valMentor : 0)); }); // bästa vänner och mentorer (steg 3.1.1)
   const b = pickViktat(s, others, w, 'samtal', a);
   const r = getRel(s, a, b);
   const aa = ageOf(a, now), ba = ageOf(b, now);
@@ -109,7 +111,9 @@ export function converse(s: State, a: Person, others: Person[], events?: TalkEve
   let kind: Samtalsslag;
   const canFlirt = aa >= ALDER.flirtFran && ba >= ALDER.flirtFran && a.sex !== b.sex && !isKin(a, b) && Math.abs(aa - ba) < ALDER.flirtSkillnad &&
     ((a.partner === undefined && b.partner === undefined) || a.partner === b.id);
-  if ((mood < SAMTAL.gralHumor && rnd(s, 'samtal', a) < SAMTAL.gralHumorChans) || (r.op < REL.gral && rnd(s, 'samtal', a) < SAMTAL.gralOsamsChans)) kind = 'gräl';
+  // med sin ärkefiende grälar man nästan alltid, med en rival lite oftare (steg 3.1.1)
+  const gralExtra = arArke(a, b) ? RELT.arkeGral : arRivaler(a, b) ? RELT.rivalGral : 0;
+  if ((mood < SAMTAL.gralHumor && rnd(s, 'samtal', a) < SAMTAL.gralHumorChans) || (r.op < REL.gral && rnd(s, 'samtal', a) < SAMTAL.gralOsamsChans) || (gralExtra && rnd(s, 'samtal', a) < gralExtra)) kind = 'gräl';
   else if (a.task?.act === 'beratta') kind = 'berättelse';
   else if (canFlirt && rnd(s, 'samtal', a) < SAMTAL.flirtBas + r.rom / SAMTAL.flirtRom + (r.chem > SAMTAL.flirtKemiGr ? SAMTAL.flirtKemi : 0)) kind = 'flirt';
   else if (moodOf(b, now) < SAMTAL.trostHumor && rnd(s, 'samtal', a) < stat(a, 'empati', now) / SAMTAL.trostEmpati) kind = 'tröst';
@@ -150,10 +154,12 @@ export function converse(s: State, a: Person, others: Person[], events?: TalkEve
   if (r.op > REL.naraVan && !(r.flags & 1) && !isKin(a, b) && a.partner !== b.id) { r.flags |= 1; log(s, `${a.name} och ${b.name} har blivit nära vänner.`, 'rel', [a.id, b.id]); }
   if (r.op < REL.ovan && !(r.flags & 2)) { r.flags |= 2; log(s, `${a.name} och ${b.name} har blivit ovänner.`, 'rel', [a.id, b.id]); }
   if (r.rom > REL.parRom && r.op > REL.van && a.partner === undefined && b.partner === undefined && canFlirt) pair(s, a, b);
-  if (a.partner === b.id && r.op < REL.gral) {
-    a.partner = undefined; b.partner = undefined; r.rom = SAMTAL.skiltRom;
-    log(s, `${a.name} och ${b.name} gick skilda vägar.`, 'rel', [a.id, b.id]);
-    think(a, `Separerade från ${b.name}`, -SAMTAL.skiltTanke, now, SAMTAL.skiltDygn * DAY); think(b, `Separerade från ${a.name}`, -SAMTAL.skiltTanke, now, SAMTAL.skiltDygn * DAY);
+  if (a.partner === b.id && r.op < skiljGrans(r)) { // ett gift par håller mer, och en skilsmässa tar hårdare (steg 3.1.1)
+    const gift = r.gift !== undefined, f = gift ? RELT.skiljTanke : 1, ord = gift ? 'Skilde sig' : 'Separerade';
+    a.partner = undefined; b.partner = undefined; r.rom = SAMTAL.skiltRom; r.par = undefined; r.gift = undefined;
+    log(s, gift ? `${a.name} och ${b.name} skilde sig.` : `${a.name} och ${b.name} gick skilda vägar.`, 'rel', [a.id, b.id]);
+    if (gift) count(s, 'skilsmassa');
+    think(a, `${ord} från ${b.name}`, -SAMTAL.skiltTanke * f, now, SAMTAL.skiltDygn * f * DAY); think(b, `${ord} från ${a.name}`, -SAMTAL.skiltTanke * f, now, SAMTAL.skiltDygn * f * DAY);
   }
 }
 

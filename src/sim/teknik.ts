@@ -11,6 +11,7 @@ import { Act, HOUR, HOUR_S, Person, State } from './typer';
 import { balans } from './balans';
 import { ACTS, ACT_LIST } from './handlingar';
 import type { SamtalDef } from './samtal';
+import { lartUt } from './relationer';
 
 // ---------- teknik ----------
 // Ingen föds med kunskapen om hur man gör en yxa. Den som arbetar med något kommer så småningom på hur det kan göras
@@ -178,11 +179,12 @@ function framat(s: State, p: Person, t: Tek, dtSec: number) {
 }
 
 // i samtal lär den som kan något ut det, och den som lyssnar lär sig fortare ju intelligentare hen är
-export function teach(s: State, a: Person, b: Person, slag: SamtalDef) {
+export function teach(s: State, a: Person, b: Person, slag: SamtalDef, mer = 1) { // mer: mentorn lär ut mer (relationer.ts)
   if (!a.tek || ageOf(b, s.now) < ALDER.lar) return;
   for (const t of TEKNIK) {
     if (!knows(a, t.id) || knows(b, t.id) || !t.krav.every(k => knows(b, k))) continue;
-    if (rnd(s, 'kunskap', a) > TEKTAL[slag.lar ?? 'larChans']) continue;
+    if (rnd(s, 'kunskap', a) > TEKTAL[slag.lar ?? 'larChans'] * mer) continue;
+    lartUt(s, a, b);
     b.tek ??= {};
     const d = Math.min(1 - (b.tek[t.id] ?? 0), TEKTAL.larFramsteg * (TEKTAL.larBas + stat(b, 'intelligens', s.now) / 20));
     b.tek[t.id] = (b.tek[t.id] ?? 0) + d; count(s, 'tekLart', d);

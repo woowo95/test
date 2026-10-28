@@ -11,6 +11,7 @@ import { DAY, H, HOUR, Lardom, Person, Rel, State, T, W, egen, tvaDelar, visning
 import { FOREST } from './vag';
 import { balans } from './balans';
 import type { SamtalDef } from './samtal';
+import { RELT, arBast, arMentor, lartUt } from './relationer';
 import { vattenSmuts } from './smuts';
 
 // ---------- balanstal (regel 8) ----------
@@ -286,8 +287,9 @@ export function fearPlace(s: State, victim: Person, cause: string, om = `${victi
 // den som talar berättar ibland vad hen vet; sociala personer och berättare delar mer
 export function share(s: State, a: Person, b: Person, r: Rel, slag: SamtalDef) {
   const now = s.now;
-  teach(s, a, b, slag);
-  const talk = MINNE.delaBas + (stat(a, 'karisma', now) + stat(a, 'empati', now)) / MINNE.delaDiv + (slag.dela ? MINNE[slag.dela] : 0);
+  const mentor = arMentor(a, b) ? RELT.mentorLar : 1; // mentorn lär ut mer, och man berättar mer för sin bästa vän (steg 3.1.1)
+  teach(s, a, b, slag, mentor);
+  const talk = (MINNE.delaBas + (stat(a, 'karisma', now) + stat(a, 'empati', now)) / MINNE.delaDiv + (slag.dela ? MINNE[slag.dela] : 0)) * (arBast(a, b) ? RELT.bastBerattar : 1);
   if (a.lardomar?.length && rnd(s, 'minne', a) < talk) {
     // man berättar helst om rädslor, rika platser och platser som visat sig sämre än man trott
     const w = a.lardomar.map(l => (l.k === 'fara' ? MINNE.delaFara : l.k === 'flinta' || l.k === 'vatten' ? 1 : nyhet(s, l) ? Math.max(1, l.v) : l.v) * l.c);
@@ -296,7 +298,8 @@ export function share(s: State, a: Person, b: Person, r: Rel, slag: SamtalDef) {
   // kunskap: den som kan något bättre lär ut lite
   if (a.kunskap) for (const k in a.kunskap) {
     const e = a.kunskap[k], d = e.v - kn(b, k);
-    if (d > MINNE.larMin && rnd(s, 'minne', a) < MINNE.larChans) {
+    if (d > MINNE.larMin && rnd(s, 'minne', a) < MINNE.larChans * mentor) {
+      lartUt(s, a, b);
       const before = kn(b, k), v = learnK(b, k, d * MINNE.larDel * (MINNE.larBas + stat(b, 'intelligens', now) / 20), now);
       e.t = now; // att lära ut håller kunskapen vid liv
       const larAv = KUNSKAPER[k]?.larAv;

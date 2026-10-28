@@ -5,6 +5,7 @@ import { ACTS, SNABBARE } from './handlingar';
 import { Act, HOUR_S, Person, State } from './typer';
 import { foodOf } from './lager';
 import { balans } from './balans';
+import { RELT } from './relationer';
 
 // ---------- ekonomi ----------
 // Balanstalen (regel 8). Den som ger mat till någon utanför familjen behåller matPerDygn själv (MAT.kvar i behov.ts), och
@@ -47,7 +48,8 @@ export const arbetsformaga = (p: Person, a: number, now: number) => ageFactor(a)
 export function workRate(s: State, p: Person, act: Act) {
   const a = ageOf(p, s.now);
   const sk = ACTS[act].arbete!, d = ACTS[sk as Act];
-  return d.bas! * (d.fart ?? 1) * SNABBARE / HOUR_S * d.sasong![ageIndex(s)] * (EKONOMI.taktBas + p.skill[sk] / EKONOMI.taktFardighet + stat(p, d.egenskap!, s.now) / EKONOMI.taktEgenskap) * ageFactor(a) * sickFactor(p, s.now) * handighet(p); // skadade armar och händer arbetar långsammare (halsa.ts)
+  return d.bas! * (d.fart ?? 1) * SNABBARE / HOUR_S * d.sasong![ageIndex(s)] * (EKONOMI.taktBas + p.skill[sk] / EKONOMI.taktFardighet + stat(p, d.egenskap!, s.now) / EKONOMI.taktEgenskap) * ageFactor(a) * sickFactor(p, s.now) * handighet(p) // skadade armar och händer arbetar långsammare (halsa.ts)
+    * (p.rivalom && ACTS[act].yrke === p.rivalom ? 1 + RELT.rivalFlit : 1); // den som har en rival i sitt yrke arbetar lite hårdare (steg 3.1.1)
 }
 // det p äter på ett dygn enligt kroppen: mättnaden sjunker 1 / hungerTim i timmen (ett barn långsammare) och en portion god mat
 // höjer den KROPP.mattar. Ett barn äter en mindre portion som mättar lika mycket

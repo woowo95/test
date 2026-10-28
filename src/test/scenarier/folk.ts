@@ -260,3 +260,43 @@ SCENARIER.personlighet = {
     ];
   },
 };
+
+SCENARIER.relationer = {
+  text: 'Relationstyperna (steg 3.1.1): ett par som varit tillsammans i 14 dygn och är goda vänner gifter sig, ett gift par håller mer, två som tycker mycket om varandra blir bästa vänner och delar som släkt, den man hatar mest blir ärkefiende som man aldrig ger något, två med samma yrke som inte är vänner blir rivaler och arbetar lite hårdare, och en vuxen som lärt en ung mycket blir hens mentor. Allt skrivs i loggen och räknas',
+  kor: () => {
+    const s = createState(9, START);
+    for (const p of living(s)) p.partner = undefined;
+    const ny = (sex: 'm' | 'k', a: number) => { const p = nyInvanare(s, sex, a); for (const q of living(s)) if (q !== p) getRel(s, p, q).op = 0; return p; };
+    const m = ny('m', 30), k = ny('k', 28), m2 = ny('m', 32), k2 = ny('k', 29);
+    SIM.pair(s, m, k); SIM.pair(s, m2, k2);
+    const r = getRel(s, m, k), r2 = getRel(s, m2, k2);
+    r.op = 50; r.par = s.now - 15 * DAY; // tillsammans i 15 dygn och goda vänner
+    r2.op = 10; r2.par = s.now - 15 * DAY; // ... men inte längre goda vänner
+    const a = ny('m', 35), b = ny('m', 33), c = ny('k', 40), d = ny('k', 38);
+    getRel(s, a, b).op = 85; // bästa vänner
+    getRel(s, c, d).op = -90; // ärkefiender
+    const j1 = ny('m', 25), j2 = ny('m', 27);
+    j1.tag = 'Jägare'; j2.tag = 'Jägare'; getRel(s, j1, j2).op = 0; // samma yrke, inte vänner
+    const lar = ny('k', 40), ung = ny('m', 12);
+    lar.skill.hantverk = 12; ung.skill.hantverk = 2; const rl = getRel(s, lar, ung); rl.op = 45; rl.lart = 10;
+    const fore = { ...s.stat };
+    const rateFore = SIM.workRate(s, j1, 'jakt');
+    SIM.stepRelationer(s);
+    const st = (n: string) => (s.stat?.[n] ?? 0) - (fore[n] ?? 0), loggat = (t: string) => s.log.some(l => l.text.includes(t));
+    const typ = (p: Person, q: Person) => SIM.relTyper(s, p, q).map(t => t.namn);
+    // ett gift par skiljer sig först under RELT.skiljGift, ett ogift redan under REL.gral
+    const haller = SIM.skiljGrans(r) < SIM.skiljGrans(r2);
+    // den bästa vännen räknas som familjen när man delar: man ger allt utom en portion och kan väcka hen (behov.ts)
+    const somFamilj = SIM.isFamily(a, b) && !SIM.isFamily(j1, j2);
+    return [
+      [`paret som varit tillsammans i 15 dygn och är goda vänner gifter sig (${typ(m, k).join(', ')})`, r.gift !== undefined && st('gift') === 1 && loggat(`${m.name} och ${k.name} har gift sig`)],
+      ['paret som inte längre är goda vänner gifter sig inte', r2.gift === undefined],
+      ['ett gift par håller mer än ett ogift', haller],
+      [`två som tycker mycket om varandra blir bästa vänner (${typ(a, b).join(', ')})`, a.bast === b.id && b.bast === a.id && st('bastaVan') === 1 && loggat('bästa vänner')],
+      ['den bästa vännen delar som släkt', somFamilj],
+      [`den man hatar mest blir ärkefiende, och man ger hen aldrig något (${typ(c, d).join(', ')})`, c.arke === d.id && d.arke === c.id && st('arkefiende') === 2 && SIM.willing(s, c, d) === 0],
+      [`två jägare som inte är vänner blir rivaler och jagar lite hårdare (${typ(j1, j2).join(', ')})`, !!j1.rivaler?.includes(j2.id) && j1.rivalom === 'Jägare' && SIM.workRate(s, j1, 'jakt') > rateFore && loggat('rivaler')],
+      [`den vuxna som lärt den unga mycket blir mentor (${typ(lar, ung).join(', ')} / ${typ(ung, lar).join(', ')})`, ung.mentor === lar.id && ung.mentorSk === 'hantverk' && st('mentor') === 1],
+    ];
+  },
+};

@@ -15,6 +15,7 @@ import { habitShare, habitTotal } from './seder';
 import { grundvarde } from './varde';
 import { EKONOMI } from './ekonomi';
 import { balans } from './balans';
+import { RELT, arBast, arRivaler } from './relationer';
 
 // ---------- behovsstegen ----------
 // När någon behöver något går hen stegen i ordning: först sitt eget, sedan ett byte med någon i närheten (byten nedan),
@@ -126,7 +127,7 @@ export function needLadder(s: State, p: Person, dtSec: number) {
     if (v) stole(s, p, v, b.id, b.anvand(s, p, v));
   }
 }
-const isFamily = (g: Person, m: Person) => isParent(g, m) || g.partner === m.id || isKin(g, m);
+export const isFamily = (g: Person, m: Person) => isParent(g, m) || g.partner === m.id || isKin(g, m) || arBast(g, m); // den bästa vännen delar man med som med släkt (steg 3.1.1)
 // g är vaken (familjen kan man väcka) och så nära m att m kan be g om något
 const narvarande = (g: Person, m: Person) => (g.task?.act !== 'sova' || isFamily(g, m)) && Math.hypot(g.x - m.x, g.y - m.y) <= DELA.fragaR;
 // det g har över att ge m. En förälder delar med sitt barn också det sista, partner och släkt behåller en portion
@@ -206,7 +207,7 @@ function victimOf(s: State, p: Person, b: Behov) {
   if (emp >= DELA.stjalAldrig || b.fara(s, p) <= emp / DELA.stjalAldrig) return;
   const cands = living(s).filter(q => q !== p).map(q => {
     const own = ownFor(s, q, b);
-    const w = own >= b.minst ? own * clamp(1 - getRel(s, p, q).op / 50, 0.2, 3) : 0; // helst av den man inte tycker om
+    const w = own >= b.minst ? own * clamp(1 - getRel(s, p, q).op / 50, 0.2, 3) * (p.arke === q.id ? RELT.arkeStjal : 1) : 0; // helst av den man inte tycker om, och allra helst av sin ärkefiende
     return { q, w };
   }).filter(c => c.w > 0);
   if (!cands.length) return;
@@ -311,9 +312,9 @@ export function willing(s: State, g: Person, m: Person, overflod = 1) {
   const over = clamp(DELA.overflodBas + DELA.overflodSteg * overflod, DELA.overflodMin, DELA.overflodMax), sed = 1 + DELA.gemenskapGe * s.seder.v.gemenskap;
   if (isParent(g, m)) return clamp(DELA.geBarn * Math.max(1, over) * sed, 0, 1); // till sitt barn ger man också det sista
   const r = getRel(s, g, m);
-  if (r.op < REL.osams) return 0;
+  if (r.op < REL.osams || g.arke === m.id) return 0; // sin ärkefiende ger man aldrig något (steg 3.1.1)
   const emp = stat(g, 'empati', s.now) / 20, nara = g.partner === m.id;
-  const base = nara ? DELA.gePartner : isKin(g, m) ? DELA.geFamilj : clamp(r.op / DELA.geVanOp, 0, DELA.geVanMax);
+  const base = (nara ? DELA.gePartner : isKin(g, m) || arBast(g, m) ? DELA.geFamilj : clamp(r.op / DELA.geVanOp, 0, DELA.geVanMax)) * (arRivaler(g, m) ? RELT.rivalGe : 1); // rivaler ger varandra mindre
   const rik = nara ? 1 : DELA.rikGe + (1 - DELA.rikGe) * (s.delning?.andel ?? 1);
   return clamp(base * (DELA.geEmpati + emp) * over * sed * rik, 0, 1);
 }
