@@ -675,6 +675,8 @@ SCENARIER.eldflytt = {
     const isar = !!ny && !SIM.vidElden(t, ny.x, ny.y) && !(ny.x + 1 >= ph.x && ny.x - 1 < ph.x + ph.w && ny.y + 1 >= ph.y && ny.y - 1 < ph.y + ph.h);
     if (ny) t.fire.flytt = { ...ny, varfor: 'plats' };
     const fore = living(t).map(p => SIM.buildJob(t, p)).filter(j => j && SIM.vidElden(t, j.bit.x, j.bit.y)).length;
+    delete t.fire.flytt; SIM.stepEldFlytt(t); // den nya platsen har tagits: byn väljer en ny, annars blir huset aldrig klart
+    const igen = (t.fire as SIM.State['fire']).flytt?.varfor === 'plats'; // (typen: TypeScript tror att delete gäller kvar)
     kor(t, 10);
     const f1 = SIM.eldPlats(t), flyttad = f1.x !== f0.x || f1.y !== f0.y;
     const bygg = flyttad && (!!ph.klar || byggKlart(t) === ph); // med väggarna på 20 minuter (steg 2.12.8) kan huset bli klart under de tio timmarna
@@ -685,6 +687,7 @@ SCENARIER.eldflytt = {
       ['ringen av stenar följer med, och grillen står med elden i mitten', !!s.fire.ring && g1?.x === e1.x - 1 && g1?.y === e1.y],
       ['elden tänds igen på den nya platsen inom ett dygn', tand === -1],
       [`ett hus som planeras där elden står får en ny plats för elden (${ny ? `${ny.x}, ${ny.y}` : 'ingen'}) en bit från huset`, isar],
+      ['har den nya platsen tagits väljer byn en ny', igen],
       [`inget byggs inpå elden innan den flyttats (${fore} jobb där), och sedan flyttas den och huset kan byggas där (${bygg ? 'byggt' : 'inte byggt'})`, fore === 0 && flyttad && bygg],
     ];
   },

@@ -73,7 +73,6 @@ export const GRODOR = {
   korn: { namn: 'Korn', sak: 'korn', dygn: 3, perRuta: 4, fron: 6, frost: -4 }, // håller länge; 3 dygn (Björn efter v107, steg 2.10.11); fron 2,5 och frost -1 före steg 2.12.2
 } satisfies Record<string, GrodaDef>;
 export type GrodaSlag = keyof typeof GRODOR;
-export const GRODA_LIST = Object.keys(GRODOR) as GrodaSlag[];
 
 // fältets steg: namnet i inforutan, och det man gör (task.tool, namnet i handlingen odla). Växer har inget arbete
 export const FALT_STEG = {
@@ -115,11 +114,7 @@ export function faltIndex(f: Falt, x: number, y: number) {
 }
 // står det en gröda på ruta k: sådd, och inte redan skördad
 export const grodaPa = (f: Falt, k: number) => (f.steg === 'vaxer' || f.steg === 'mogen') && k >= 0 && k < (f.sadda ?? 0) && !(f.steg === 'mogen' && k < f.klara);
-// mitten av fältet, och mitten av rutan där arbetet i steget fortsätter
-export function faltMitt(f: Falt) {
-  const rader = Math.ceil(f.n / f.w);
-  return { x: f.x + Math.min(f.w, f.n) / 2, y: f.dir > 0 ? f.y + rader / 2 : f.y + 1 - rader / 2 };
-}
+// mitten av rutan där arbetet i steget fortsätter
 const nastaRuta = (f: Falt) => { const r = rutaXY(f, Math.min(f.klara, Math.max(0, antal(f) - 1))); return { x: r.x + 0.5, y: r.y + 0.5 }; };
 // hur långt arbetet i steget kommit (0–1), eller grödan vuxit
 export function faltKlar(f: Falt) {
@@ -262,7 +257,8 @@ export function startOdla(s: State, p: Person, tk: Task) {
       s.byggV = (s.byggV ?? 0) + 1; // en ny sak på kartan: platserna räknas om
     }
   }
-  if (!f || f.steg !== tk.tool || f.steg === 'vaxer') { tk.ref = undefined; tk.until = s.now; return; }
+  // en annan som lever hann före och tog över fältet (båda valde samma fält utan ägare)
+  if (!f || f.steg !== tk.tool || f.steg === 'vaxer' || (f.agare !== p.id && agareLever(s, f))) { tk.ref = undefined; tk.until = s.now; return; }
   if (f.steg === 'sa' && !f.groda) {
     const gr = grodaNu(s);
     if (!gr || froRutor(s, p) < 1) { tk.ref = undefined; tk.until = s.now; return; }
@@ -274,7 +270,7 @@ export function startOdla(s: State, p: Person, tk: Task) {
 // medan man arbetar: en ruta i taget. När steget är klart, eller fröna tar slut, slutar arbetet
 export function workOdla(s: State, p: Person, tk: Task, dtSec: number) {
   const f = faltById(s, tk.ref);
-  if (!f || f.steg === 'vaxer' || f.steg !== tk.tool) return;
+  if (!f || f.steg === 'vaxer' || f.steg !== tk.tool) { tk.until = s.now; return; } // steget ändrades (grödan frös, eller en annan blev klar)
   let t = dtSec * SEC * fart(s, p, f);
   while (t > 0 && f.klara < antal(f) && !froSlut(s, p, f)) {
     if (t < f.kvar - 1) { f.kvar -= t; break; } // en millisekund kvar räknas som klar (avrundningen)

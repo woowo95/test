@@ -169,24 +169,24 @@ function refound(s: State) {
   log(s, `${p.name} hittade den övergivna boplatsen och grundade byn på nytt.`, 'world', [p.id]);
 }
 
-// p lämnar byn och tar med sig det hen orkar bära (arv.ts); resten blir byns
-// bördan läggs ner först, sedan packar hen det hen orkar bära av allt hen äger (arv.ts) och resten blir byns
-export function leave(s: State, p: Person, now: number) { avbryt(s, p); p.left = now; packUp(s, p); releaseOwner(s, p.id); }
+// p lämnar byn: bördan läggs ner först, sedan packar hen det hen orkar bära av allt hen äger (arv.ts) och resten blir byns
+export function leave(s: State, p: Person) { avbryt(s, p); p.left = s.now; packUp(s, p); releaseOwner(s, p.id); }
 
 function emigrate(s: State) {
-  const now = s.now;
+  const now = s.now, barn = (...f: Person[]) => living(s).filter(c => f.some(q => isParent(q, c)) && ageOf(c, now) < ALDER.vuxen);
   const cands = living(s).filter(p => p.partner !== undefined && ageOf(p, now) > LIV.parFran && ageOf(p, now) < LIV.parTill);
   if (!cands.length) { // inget ungt par: en ensam vuxen ger sig av
     const one = living(s).filter(p => p.partner === undefined && ageOf(p, now) >= LIV.ensamFran && ageOf(p, now) < LIV.ensamTill);
     if (!one.length) return;
-    const p = pick(s, one, 'flytt'); leave(s, p, now);
-    log(s, `${p.name} lämnade byn för att söka lyckan på annat håll.`, 'move', [p.id]);
-    count(s, 'utvandrade');
+    const p = pick(s, one, 'flytt'), med = [p, ...barn(p)]; // en ensam förälder tar med sina barn
+    for (const g of med) leave(s, g);
+    log(s, `${p.name} lämnade byn${med.length > 1 ? ` med ${med.length - 1} barn` : ''} för att söka lyckan på annat håll.`, 'move', med.map(g => g.id));
+    count(s, 'utvandrade', med.length);
     return;
   }
   const a = pick(s, cands, 'flytt'), b = byId(s, a.partner)!;
-  const group = [a, b, ...living(s).filter(c => (isParent(a, c) || isParent(b, c)) && ageOf(c, now) < ALDER.vuxen)];
-  for (const g of group) leave(s, g, now);
+  const group = [a, b, ...barn(a, b)];
+  for (const g of group) leave(s, g);
   const n = group.length - 2;
   count(s, 'utvandrade', group.length);
   log(s, `Byn blev trång. ${a.name} och ${b.name} lämnade byn${n ? ` med ${n} barn` : ''} för att grunda en egen boplats.`, 'move', group.map(g => g.id));

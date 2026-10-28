@@ -359,7 +359,7 @@ SCENARIER.arv = {
     const dogBar = Math.abs(allt(s, 'skinn') - 4) < 1e-6 && Math.abs((ownedAll(s, a.id).skinn ?? 0) - 4) < 1e-6;
     ({ s, d, a, b, c, e } = ny()); setAmount(s, 'sten', 0);
     const orkar = capacity(s, d) * stackOf('sten');
-    bordan(s, d, 'sten', 30); leave(s, d, s.now);
+    bordan(s, d, 'sten', 30); leave(s, d);
     const flyttBar = allt(s, 'sten') > 0 && allt(s, 'sten') >= 30 - orkar - 1e-6 && !ownedAll(s, d.id).sten;
     ({ s, d, a, b, c, e } = ny()); setAmount(s, 'skinn', 0);
     s.now = new Date(s.now).setHours(23, 0, 0, 0); s.lastGuardDay = -5; Object.assign(s.fire, { lit: true, fuel: 5 });

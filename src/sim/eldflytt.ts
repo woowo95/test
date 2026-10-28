@@ -4,7 +4,7 @@ import { eldPlats } from './karta';
 import { avbryt } from './lager';
 import { canLight } from './eld';
 import { byInne, ledig, lekplats, paLek, stationDef, stationerOf } from './stationer';
-import { gridOf, housesOf, roomAt } from './byggnad';
+import { bitsOf, gridOf, housesOf, roomAt } from './byggnad';
 import { isLight } from './tid';
 import { kronika } from './historik';
 import { HOUR, Person, State, W, inMap } from './typer';
@@ -23,6 +23,8 @@ export const ELDFLYTT = balans('eldflytt', {
   tim: 2, // så här många timmar tar det att släcka elden och bära stenarna, när man kommit fram ...
   gang: 4, // ... och så här många timmar får det ta att gå dit
   husStraff: 6, // ett hus som skulle stå där elden står väljs bara om ingen annan plats är så här mycket bättre (bygg.ts)
+  tanke: 0.04, // den som flyttat elden blir så här mycket gladare ...
+  tankeTim: 6, // ... i så här många timmar
 });
 
 // står rutan (x, y) inpå elden (elden och rutorna runt den)?
@@ -60,6 +62,12 @@ export function stepEldFlytt(s: State) {
   const f = s.fire, ppl = living(s);
   if (f.flytt && !eldKanSta(s, f.flytt.x, f.flytt.y)) delete f.flytt; // platsen har tagits: en ny väljs nedan
   if (!f.flytt) {
+    // ett hus som ska stå där elden står väntar (bygg.ts bygger inget inpå elden): elden behöver en ny plats bredvid huset
+    const e = eldPlats(s), h = housesOf(s).find(q => bitsOf(s).some(b => b.hus === q.id && b.b < 1 && vidElden(s, b.x, b.y)));
+    const ny = h && nyEldplats(s, e.x, e.y, h);
+    if (ny) f.flytt = { ...ny, varfor: 'plats' };
+  }
+  if (!f.flytt) {
     const klara = housesOf(s).filter(h => h.klar).length, mid = byInne(s), e = eldPlats(s);
     if (klara >= ELDFLYTT.husMin && Math.hypot(mid.x - e.x, mid.y - e.y) > ELDFLYTT.vuxit) {
       const ny = nyEldplats(s, mid.x, mid.y);
@@ -86,7 +94,7 @@ export function stepEldFlytt(s: State) {
 export function flyttaElden(s: State, p: Person) {
   const f = s.fire, mal = f.flytt;
   if (!mal) return;
-  if (!eldKanSta(s, mal.x, mal.y)) { delete f.flytt; return; } // platsen hann tas: byn väljer en ny
+  if (!eldKanSta(s, mal.x, mal.y)) { delete f.flytt; return; } // platsen hann tas: byn väljer en ny nästa timme (stepEldFlytt)
   const gammal = eldPlats(s);
   Object.assign(f, { lit: false, fuel: 0, emberUntil: undefined, ash: 0, ashUntil: undefined, tryProg: 0 });
   f.at = { x: mal.x, y: mal.y };
@@ -96,5 +104,5 @@ export function flyttaElden(s: State, p: Person) {
   count(s, 'eldflytt');
   log(s, `${p.name} släckte elden och bar stenarna i ringen till en ny eldplats ${mal.varfor === 'plats' ? 'där ett hus ska byggas' : 'mitt i byn'}.`, 'world', [p.id]);
   if (s.stat!.eldflytt === 1) kronika(s, `${p.name} flyttade byns eld ${mal.varfor === 'plats' ? 'för att ge plats åt ett hus' : 'till byns mitt'}.`);
-  think(p, 'Flyttade elden', 0.04, s.now, 6 * HOUR);
+  think(p, 'Flyttade elden', ELDFLYTT.tanke, s.now, ELDFLYTT.tankeTim * HOUR);
 }

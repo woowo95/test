@@ -1,5 +1,5 @@
 import { PLATS, campCenter, campDist, campKey } from './plats';
-import { byId, count, isParent, living, log, stat } from './folk';
+import { byId, count, forstaGang, isParent, living, log, stat } from './folk';
 import { teach } from './teknik';
 import { FANGST, Kind, prospect, regrowOf, richness, shoreOf, standAt, stoneDist, synsOf, toppOf, vaxerAt } from './fynd';
 import { getMap } from './karta';
@@ -273,7 +273,7 @@ export function fearPlace(s: State, victim: Person, cause: string, om = `${victi
   const a = areaOf(victim.x, victim.y);
   for (const q of living(s)) {
     const saw = Math.hypot(q.x - victim.x, q.y - victim.y) < MINNE.olyckaSyn;
-    const close = q.partner === victim.id || isParent(victim, q) || isParent(q, victim);
+    const close = victim.partner === q.id || isParent(victim, q) || isParent(q, victim); // die() har redan tagit bort q.partner
     if (!saw && !close) continue;
     const l = findL(q, 'fara', a);
     const v = saw ? MINNE.radslaSett : MINNE.radslaHort, c = saw ? MINNE.radslaSettSaker : MINNE.radslaHortSaker;
@@ -328,10 +328,7 @@ function tell(s: State, a: Person, b: Person, l: Lardom, r: Rel) {
   (b.lardomar ??= []).push({ k: l.k, a: l.a, v, ...(l.g !== undefined ? { g: l.g } : {}), c, t: l.t, src: a.id, led: (l.led ?? 0) + 1, ...(l.om ? { om: l.om } : {}), ...(nyhet(s, l) ? { ny: l.ny } : {}) });
   trim(s, b);
   count(s, 'berattat');
-  if (l.k === 'fara' && l.om) {
-    const key = 'rykte' + l.a + ':' + l.om.length;
-    if (!s.stat?.[key]) { count(s, key); log(s, `Berättelsen om hur ${l.om.replace(' där', '')} sprids i byn. Fler blir rädda för ${placeName(s, l.a)}.`, 'world', [a.id, b.id]); }
-  }
+  if (l.k === 'fara' && l.om && forstaGang(s, 'rykte' + l.a + ':' + l.om)) log(s, `Berättelsen om hur ${l.om.replace(' där', '')} sprids i byn. Fler blir rädda för ${placeName(s, l.a)}.`, 'world', [a.id, b.id]);
 }
 
 // ---------- glömska ----------

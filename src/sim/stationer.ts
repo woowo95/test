@@ -839,6 +839,9 @@ function barIn(s: State) {
     log(s, `${d.namn}en bars in i ${husById(s, stationRum(s, t)?.hus ?? -1)?.namn ?? 'ett hus'}.`, 'world');
   }
 }
+// stationen stod inne i ett hus som rivits: rutan har inget golv i ett hus längre. Efter en rasad vägg är rummet borta
+// (roomAt) tills väggen lagats, men huset står kvar
+const iRivetHus = (s: State, t: Station) => { const b = bitAt(s, t.x, t.y); return b?.k !== 'golv' || !husById(s, b.hus); };
 // varje timme: tomma redskapsplatser fylls, det egna läggs i kistorna, en station som ska stå inne men står ute bärs in, och
 // det som stod inne i ett hus som rivits försvinner
 export function stepStationer(s: State) {
@@ -847,7 +850,7 @@ export function stepStationer(s: State) {
   kistorna(s);
   barIn(s);
   utanLager(s);
-  const borta = s.stationer.filter(t => t.inne && !stationRum(s, t));
+  const borta = s.stationer.filter(t => t.inne && iRivetHus(s, t));
   if (!borta.length) return;
   s.stationer = s.stationer.filter(t => !borta.includes(t));
   for (const k of tingOf(s)) if (borta.some(t => t.id === k.vid)) k.vid = undefined;

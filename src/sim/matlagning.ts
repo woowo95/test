@@ -3,7 +3,7 @@ import { alive, byId, count, doingAct, forstaGang, living, log, ovning, stat, th
 import { clamp, rnd } from './slump';
 import { Del, addDel } from './egendom';
 import { amountOf, put, use } from './lager';
-import { Station, isKlar, kanGoras, stationFor, stationerOf } from './stationer';
+import { Station, isKlar, kanGoras, stationerOf } from './stationer';
 import { EKONOMI } from './ekonomi';
 import { SAKER } from './saker';
 import { balans } from './balans';
@@ -60,9 +60,6 @@ export function grilla(s: State, p: Person, hours: number) {
   ovning(p, 'matlagning', hours * MATLAG.ovning * (0.4 + stat(p, 'intelligens', s.now) / 20));
   if (forstaGang(s, 'grillForsta')) log(s, `${p.name} grillade byns första ${SAKER[r.ra]!.namn.toLowerCase()} på spettet över elden.`, 'world', [p.id]);
 }
-// grillen står över elden (stationer.ts)
-export const grillen = (s: State) => stationFor(s, 'grilla');
-
 // ---------- rått kött och rå fisk ----------
 // p har ätit per (av varje slag, behov.ts) av en portion full: det råa köttet och den råa fisken (ra i saker.ts) gör en lite
 // sur och kan ge matförgiftning, oftare ju mer av portionen som var rå. En dragning bara när något rått ätits
@@ -73,10 +70,10 @@ export function ratt(s: State, p: Person, per: Record<string, number>, full: num
   count(s, 'rattAtit', ra);
   think(p, 'Åt rått', MATLAG.surt, s.now, MATLAG.surtTim * HOUR);
   if (rnd(s, 'halsa', p) >= ra / full * MATLAG.sjuk) return;
-  p.sickUntil = Math.max(p.sickUntil ?? 0, s.now + (MATLAG.sjukMin + rnd(s, 'halsa', p) * MATLAG.sjukSpann) * HOUR); p.sickWhy = 'Matförgiftad av rått kött';
-  think(p, 'Blev matförgiftad av rått kött', MATLAG.forgiftad, s.now, 12 * HOUR);
+  p.sickUntil = Math.max(p.sickUntil ?? 0, s.now + (MATLAG.sjukMin + rnd(s, 'halsa', p) * MATLAG.sjukSpann) * HOUR); p.sickWhy = 'Matförgiftad av rått kött eller rå fisk';
+  think(p, 'Blev matförgiftad av rått kött eller rå fisk', MATLAG.forgiftad, s.now, 12 * HOUR);
   count(s, 'matforgiftad');
-  log(s, `${p.name} blev matförgiftad av rått kött.`, 'world', [p.id]);
+  log(s, `${p.name} blev matförgiftad av rått kött eller rå fisk.`, 'world', [p.id]);
 }
 
 // ---------- torkning (steg 2.8.2) ----------

@@ -12,7 +12,7 @@
 import { tingOf } from './agande';
 import { count, isKin, isParent, living, log } from './folk';
 import { kronika } from './historik';
-import { capacity, carryOff, ownedAll, passOn } from './lager';
+import { capacity, carryOff, helt, ownedAll, passOn } from './lager';
 import { bordOf, sakNamn, stackOf, tingNamn } from './saker';
 import { grundvarde, husVarde, tingVarde, varuVarde } from './varde';
 import { housesOf } from './byggnad';
@@ -55,8 +55,9 @@ export function inherit(s: State, p: Person) {
     const mal = (val.reduce((a, b) => a + b, 0) + rest) / heirs.length, d = val.map(v => Math.max(0, mal - v)), sd = d.reduce((a, b) => a + b, 0);
     const f: Record<number, number> = {};
     heirs.forEach((h, i) => { f[h.id] = sd > 1e-9 ? d[i] / sd : 1 / heirs.length; });
+    const fore = heirs.map(h => ownedAll(s, h.id));
     passOn(s, p.id, f);
-    heirs.forEach((h, i) => { for (const k in eget) { const n = eget[k] * f[h.id]; if (n >= 0.5) fick[i].push(`${Math.round(n)} ${sakNamn(k).toLowerCase()}`); } });
+    heirs.forEach((h, i) => { const nu = ownedAll(s, h.id); for (const k in eget) { const n = Math.round((nu[k] ?? 0) - (fore[i][k] ?? 0)); if (n >= 1) fick[i].push(`${n} ${sakNamn(k).toLowerCase()}`); } }); // det som delades ut (hela saker)
   }
   heirs.forEach((h, i) => {
     if (!fick[i].length) return;
@@ -81,7 +82,8 @@ export function packUp(s: State, p: Person) {
       if (kvar < x.bord - 1e-9) continue;
       s.ting = tingOf(s).filter(t => t.id !== x.ting); kvar -= x.bord;
     } else {
-      const n = Math.min(x.n, kvar / x.bord);
+      const n = helt(Math.min(x.n, kvar / x.bord)); // bara hela saker: det som inte ryms tar inget av bärförmågan
+      if (n < 1) continue;
       carryOff(s, p.id, x.k, n); kvar -= n * x.bord;
     }
   }

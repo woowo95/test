@@ -5,7 +5,7 @@ import { ALDER, ageOf, count, doingAct, forstaGang, living, log, ovning } from '
 import { coldOf, temperature } from './vader';
 import { rnd } from './slump';
 import { duty } from './seder';
-import { amountOf, isStored } from './lager';
+import { amountOf, changed, isStored } from './lager';
 import { bedFor } from './bygg';
 import { ELD, Wish, emberOn, eldStyrka, fetchFuel, fuelFor, giveBack, hearthOf, woodDays } from './eld';
 import { STATION, Station, stationById } from './stationer';
@@ -109,7 +109,7 @@ function taIsar(s: State, t: Station) {
   const st = (s.stackar ??= []);
   let g = st.find(q => q.x === t.x && q.y === t.y && q.k === 'sten');
   if (!g) st.push(g = { x: t.x, y: t.y, k: 'sten', n: 0, c: 1 });
-  g.n += STATION.brasaSten;
+  g.n += STATION.brasaSten; changed(s);
   count(s, 'brasaIsar');
   log(s, 'En brasa som ingen längre sov nära togs isär. Stenarna ligger kvar och används till nästa brasa.', 'world');
 }
