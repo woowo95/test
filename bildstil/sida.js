@@ -1094,7 +1094,18 @@ const IK_M = satt => ({ w: IK_MOTIV.length * 22 + 2, h: 22, kol: true, rita: (B,
     ritaSprite(B, m.p, { o: 'kol0', ...ljus }, x0, y0);
   } else ritaSprite(B, satt === 'skugga' ? UTB_SKUGGA(m.p) : m.p, { o: 'kol0', z: 'skugga', ...m.l }, x0, y0);
 }) });
+const LED_STAV = UTB_KANT(['................', '.......ss.......', '......sSSs......', '..ww..sSSs..ww..', '..wW..jjjj..Ww..', '...wW.rrrr.Ww...', '....wWjJJjWw....', '......jJJj......', '.......Jj.......', '.......Jj.......', '.......Jj.......', '.......Jj.......', '.......Jj.......', '.......Jj.......', '.......jj.......', '................']);
+const LED_KRONA = UTB_KANT(['................', '.......W........', '...W..wWw...W...', '..wWw.wWw..wWw..', '..wWw.wWw..wWw..', '..wWw.wWw..wWw..', '..rWw.wWw..wWr..', '...rr.wrw..rr...', '......rrr.......', '.ssssssssssssss.', '.sSySsSySsSySss.', '.ssssssssssssss.', '................', '................', '................', '................']);
+const LED_FOLK = UTB_KANT(['................', '......aaaa......', '......aaaa......', '......aaaa......', '...a...aa...a...', '....aaaaaaaa....', '......aaaa......', '......aaaa......', '......aaaa......', '..bb..a..a..bb..', '.bbbb.a..a.bbbb.', '..bb..a..a..bb..', '.bbbb.a..a.bbbb.', '.bbbb......bbbb.', '.b..b......b..b.', '................']);
+// en symbol i rätt storlek och tre gånger större bredvid
+const LED_M = (p, l) => ({ w: 74, h: 52, kol: true, rita: (B, P) => { ritaSprite(B, p, { o: 'kol0', ...l }, 3, 3); ritaSprite(B, p.flatMap(r => { const rr = [...r].map(c => c.repeat(3)).join(''); return [rr, rr, rr]; }), { o: 'kol0', ...l }, 22, 2); } });
 const VAL = [
+  { id: 'ledarskap', namn: 'Ledarskapets symbol', vad: 'Ny symbol (steg 3.5), 16 × 16 punkter, för tekniken Ledarskap i teknikträdet och fliken Styre. Till vänster i rätt storlek, till höger tre gånger större. I spelet nu: hövdingastaven (version 1) som platshållare.', typ: 'tre',
+    versioner: [
+      { text: 'En hövdingastav i trä med en guldknopp, ett rött band och två vita fjädrar.', ...LED_M(LED_STAV, { s: 'senap2', S: 'senap3', w: 'ben2', W: 'ben3', j: 'jord1', J: 'jord2', r: 'rost2' }) },
+      { text: 'En fjäderkrona: tre vita fjädrar med röda spetsar i ett pannband med guldpärlor.', ...LED_M(LED_KRONA, { w: 'ben2', W: 'ben3', r: 'rost2', s: 'jord2', S: 'jord3', y: 'senap3' }) },
+      { text: 'Ledaren och folket: en stor människa med armarna ut mellan två mindre, i ljust mot de mörkare.', ...LED_M(LED_FOLK, { a: 'senap3', b: 'skiffer2' }) },
+    ] },
   { id: 'intryck', namn: 'Ryktenas och intryckens symboler', vad: 'Nya symboler (steg 3.3–3.4), 16 × 16 punkter, i personrutans nya del Rykten, vid namnet och bland lärdomarna. Från vänster, intrycken: våldsam, tjuv, elak, lögnare, klåpare, lat, fattig, generös, hjälpsam, skicklig, flitig och rik. Sedan en död som blivit legend och en som blivit ökänd, anseendet vid namnet (gott, blandat, dåligt) och lärdomen om en farlig plats. I spelet nu: enkla runda brickor med ett tecken som platshållare.', typ: 'tre',
     versioner: [
       { text: 'Enkla motiv med mörk kant: en knuten näve, en säck med knut, ett argt ansikte, ett ansikte med lång näsa, en bruten pinne, zzz över en kudde, en tom skål, ett paket med rosett, ett handslag, en stjärna, en hammare, en full korg, en strålande stjärna, en dödskalle, ett ansikte med gloria, ett neutralt, ett med horn och en varningstriangel.', ...IK_M('kant') },
