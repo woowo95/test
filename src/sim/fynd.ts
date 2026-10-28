@@ -413,6 +413,18 @@ export function richnessDelar(s: State, k: Lager, x: number, y: number): { rich:
   const r = ls.map(j => richness(s, j, x, y));
   return { rich: r.reduce((a, b) => a + b, 0), r };
 }
+// hur mycket platsens värde (richnessDelar) sjunker för varje bär man tar där, när uttaget delas mellan lagren som i
+// takeFrom. Bara på land och utan djur (r finns); annars 0
+export function sankning(s: State, k: Lager, x: number, y: number, rich: number, r?: number[]) {
+  if (!r || rich <= 0) return 0;
+  const i = tileOf(x, y), d = takenOf(s);
+  let v = 0;
+  lagren(k).forEach((j, n) => {
+    const u = FYND[j].uttag, kv = u && karna(u.reach);
+    if (kv && d[j]) v += vaxerAt(s, j, i) * kv.v[kv.v.length >> 1].w / kv.sum * (u.reach + 1) / u.full * r[n] / rich;
+  });
+  return v;
+}
 // hur många gånger byn tagit ur kartan: gränssnittet ritar om den när det ändrats (simuleringen läser det aldrig)
 const plock = new WeakMap<State, number>();
 export const plockOf = (s: State) => plock.get(s) ?? 0;

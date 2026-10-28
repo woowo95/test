@@ -3,7 +3,7 @@ import { Behov, addBehov, getable, takeMaterial } from './behov';
 import { Del, addDel } from './egendom';
 import { coldOf, temperature, vaderNu, VADER } from './vader';
 import { roomAt } from './byggnad';
-import { ALDER, KROPP, ageOf, count, doingAct, isSick, log, ovning, stat, think } from './folk';
+import { ALDER, KROPP, ageOf, count, doingAct, isSick, living, log, ovning, stat, think } from './folk';
 import { halsa } from './halsa';
 import { flintFactor, flintorOchYxor, stoneDist, takeFrom } from './fynd';
 import { observe } from './minne';
@@ -129,8 +129,10 @@ function fireWish(s: State, p: Person, vc: number): Wish {
 const tinderWant = (s: State) => (s.fire.lit ? RESERV.tandVill : RESERV.tandVillSlocknad);
 // hö eller grenar räcker inte till det byn vill ha, med det den som samlar redan bär (tk)
 export const tinderShort = (s: State, tk?: Task) => amountOf(s, 'torrgras') + (tk?.items?.torrgras ?? 0) < tinderWant(s) || amountOf(s, 'grenar') + (tk?.items?.grenar ?? 0) < tinderWant(s);
-// den första elden läggs i en ring av stenar; ringen ligger kvar när elden slocknat. Stenar behövs också till en brasa (brasor.ts)
-export const needStones = (s: State) => !s.fire.ring && amountOf(s, 'sten') < ELD.ring || brasaSten(s);
+// den första elden läggs i en ring av stenar; ringen ligger kvar när elden slocknat. Stenar behövs också till en brasa (brasor.ts).
+// Stenarna som någon bär hem räknas, så att ingen samlar fler än ringen behöver
+const stenarHem = (s: State) => living(s).reduce((n, q) => n + (q.task?.items?.sten ?? 0), 0);
+export const needStones = (s: State) => !s.fire.ring && amountOf(s, 'sten') + stenarHem(s) < ELD.ring || brasaSten(s);
 // kan elden tändas (av p: med det p kan få, behov.ts)? Bränslet räknas efter att grenarna till tändningen tagits (tryLight)
 export function canLight(s: State, p?: Person) {
   const ig = igniterOf(s), has = (k: string) => p ? getable(s, p, k) : amountOf(s, k);
@@ -269,12 +271,14 @@ export function stepFire(s: State, dtSec: number, ppl: Person[]) {
   stepBrasaEld(s, dtSec, cands); // brasorna (steg 2.9.1)
 }
 // samling hittar tändmaterial, sten och flinta när förrådet behöver det
-export function forageItems(s: State, p: Person, dtSec: number): Record<string, number> | undefined {
-  const ai = ageIndex(s), want = tinderWant(s), hrs = dtSec / HOUR_S * SNABBARE; // allt man skaffar går fortare sedan steg 1.5.13
+// fart: hö och grenar växer på platsen och hittas lika mycket fortare som det man samlar (steg 2.12.4); stenar och flinta letar man efter
+export function forageItems(s: State, p: Person, dtSec: number, fart = 1): Record<string, number> | undefined {
+  const ai = ageIndex(s), want = tinderWant(s), hrs = dtSec / HOUR_S * SNABBARE, vaxer = hrs * fart; // allt man skaffar går fortare sedan steg 1.5.13
   const sk = kunnighet(p.skill.samla);
   const got: Record<string, number> = {};
-  if (amountOf(s, 'torrgras') < want) got.torrgras = ELD.hoTakt * ARSTID.hoPerTid[ai] * sk * hrs;
-  if (amountOf(s, 'grenar') < want) got.grenar = ELD.grenarTakt * (iIstiden(ai) ? ARSTID.grenarIstid : 1) * sk * hrs;
+  const bar = (k: string) => amountOf(s, k) + (p.task?.items?.[k] ?? 0); // det man redan bär räknas, så att ingen bär hem mer än byn vill ha
+  if (bar('torrgras') < want) got.torrgras = ELD.hoTakt * ARSTID.hoPerTid[ai] * sk * vaxer;
+  if (bar('grenar') < want) got.grenar = ELD.grenarTakt * (iIstiden(ai) ? ARSTID.grenarIstid : 1) * sk * vaxer;
   // stenar till eldringen: många vid stenarna, några i sanden, få annars
   if (needStones(s)) {
     const d = p.task ? stoneDist(s.seed)[tileOf(p.task.tx, p.task.ty)] : 9;

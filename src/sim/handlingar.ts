@@ -14,7 +14,6 @@ export interface RedskapDef {
   namn?: string; // det som står att personen gör med redskapet
   tar?: string; // det som läggs till i skälet när redskapet tas
   ger?: number; // så mycket mer arbetet ger med redskapet (det man bedömer i valet av arbete, och i fisket bara där)
-  tur?: number; // så många gånger längre man arbetar innan bördan bärs hem (korgen rymmer mer)
   don?: 'spjut' | 'metspo'; // fiske: hur fisken fångas (fynd.ts)
   bete?: true; // fiske: mask grävs fram och sätts på kroken
   napp?: number; hall?: number; // fiske: chansen att det nappar per försök, och att fisken sitter kvar när den nappat (fynd.ts, handFish)
@@ -46,6 +45,7 @@ interface ActDef {
   // arbete för byn: färdigheten som övas. Är den samma som handlingen väljs arbetet i val.ts efter byns behov
   arbete?: Skill;
   bas?: number; sasong?: number[]; egenskap?: Stat; // hur mycket en arbetstimme ger, per tidsålder, och egenskapen som hjälper
+  fart?: number; // samlandet (steg 2.12.4): så många gånger fortare går arbetet, både det platsen ger och det man hittar där (svamp, mossa, frön), så att en full börda samlas på 10–20 minuter. Platsen töms lika mycket per bär, så man går vidare till nästa buske (nastaBuske i val.ts)
   // arbetet fyller byns förråd av mat eller ved, och förrådet avgör hur mycket arbetet behövs (bestWork i val.ts, steg 2.12.3)
   behov?: 'mat' | 'ved';
   tand?: true; // den som gör arbetet samlar också tändmaterial åt en släckt eld
@@ -72,7 +72,7 @@ interface ActDef {
 }
 
 const DEF = {
-  samla: { namn: 'Samlar bär och rötter', yrke: 'Samlare', slag: 'samla', redskap: { korg: { namn: 'Samlar bär och rötter med korg', tar: 'Tar en korg.', ger: 1.9, tur: 2.5, haller: 32 }, benspade: { namn: 'Gräver rötter med spaden', tar: 'Tar benspaden.', rotter: 2, haller: 40 } }, slits: { enhet: 'bär och rötter', per: 'ger' }, arbete: 'samla', behov: 'mat', tand: true, bas: 0.4, sasong: [0.4, 1.0, 1.25, 1.4], egenskap: 'uthallighet', ger: 'bar', resurs: 'samla', tur: 40, vandra: { r: 2, h0: 3, h1: 10, v: 0.6 }, tungt: true, dygn: true, plats: 'ang' },
+  samla: { namn: 'Samlar bär och rötter', yrke: 'Samlare', slag: 'samla', redskap: { korg: { namn: 'Samlar bär och rötter med korg', tar: 'Tar en korg.', ger: 1.9, haller: 32 }, benspade: { namn: 'Gräver rötter med spaden', tar: 'Tar benspaden.', rotter: 2, haller: 40 } }, slits: { enhet: 'bär och rötter', per: 'ger' }, arbete: 'samla', behov: 'mat', tand: true, bas: 0.4, sasong: [0.4, 1.0, 1.25, 1.4], egenskap: 'uthallighet', ger: 'bar', resurs: 'samla', fart: 100, vandra: { r: 2, h0: 3, h1: 10, v: 0.6 }, tungt: true, dygn: true, plats: 'ang' },
   jakt: { namn: 'Jagar', yrke: 'Jägare', redskap: { flintspjut: { namn: 'Jagar med spjut', tar: 'Tar ett flintspjut.', ger: 2.5, haller: 20 }, fiskespjut: { namn: 'Jagar med spjut', tar: 'Tar ett träspjut.', ger: 2.5, haller: 5 } }, slits: { enhet: 'kaniner', per: 'gang' }, slag: 'jaga', arbete: 'jakt', behov: 'mat', bas: 0.35, sasong: [0.7, 0.9, 1.0, 1.15], egenskap: 'mod', ger: 'vilt', resurs: 'jakt', vandra: { r: 3, h0: 3, h1: 10, v: 0.7 }, tungt: true, dygn: true, plats: 'ang' },
   fiske: { namn: 'Fiskar med händerna', yrke: 'Fiskare', slag: 'fiska', hand: { napp: 0.06, hall: 0.15 }, redskap: { metspo: { namn: 'Metar', tar: 'Tar ett metspö och gräver fram mask.', ger: 4.3, don: 'metspo', bete: true, napp: 0.17, hall: 0.65, haller: 200 }, flintspjut: { namn: 'Fiskar med spjut', tar: 'Tar ett flintspjut.', ger: 4.3, don: 'spjut', napp: 0.13, hall: 0.5, haller: 240 }, fiskespjut: { namn: 'Fiskar med spjut', tar: 'Tar ett träspjut.', ger: 4.3, don: 'spjut', napp: 0.13, hall: 0.5, haller: 60 } }, slits: { enhet: 'fiskeförsök', per: 'gang' }, arbete: 'fiske', behov: 'mat', vid: 'vatten', bas: 0.4, sasong: [0.45, 1.0, 1.1, 1.0], egenskap: 'uthallighet', ger: 'abborre', takt: 0, resurs: 'fiske', tungt: true, dygn: true, plats: 'strand' },
   ved: { namn: 'Samlar grenar', yrke: 'Trähuggare', slag: 'tra', arbete: 'ved', behov: 'ved', bas: 1.3, sasong: [0.9, 1, 1, 1], egenskap: 'styrka', ger: 'grenar', takt: 2, tur: 40, vandra: { r: 2, h0: 3, h1: 10, v: 0.6 }, tungt: true, dygn: true, plats: 'skog' },

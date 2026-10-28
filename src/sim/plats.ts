@@ -10,6 +10,7 @@ export const PLATS = balans('plats', {
   toppProspekt: 10, // byns närområde räknas som snittet av så många av de bästa platserna (fynd.ts)
   toppArea: 5, // ett område räknas som snittet av så många av de bästa rutorna (minne.ts)
   tomtGrans: 0.08, // en plats som ger mindre än så (rikedom, richness) är tömd: man går därifrån (steg.ts)
+  vidare: 0.2, // samlandet (steg 2.12.4): när busken är tom går man vidare till en ruta i närheten som ger minst så mycket (nastaBuske i val.ts), annars hem
   lekBredd: 8, // lekplatsen (steg 2.10.4, lekplats i stationer.ts) är så många rutor bred ...
   lekFran: 3, // ... ligger helst så här många rutor från byns inre mitt (byInne) till sin närmaste kant, helst söderut ...
   lekDjup: 3, // ... och är så här många rutor djup (barnen leker där i val.ts, och byn bygger helst inte där, bygg.ts)

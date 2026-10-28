@@ -381,7 +381,7 @@ SCENARIER.lager = {
     // när lagerplatsen krymper hamnar en stack ibland utanför en stund, och bärs in igen inom ett par timmar
     for (let i = 0; i < 3 && pilesOf(s).some(p => p.out); i++) kor(s, 1);
     const z = zoneOf(s), ps = pilesOf(s), stor = z.w * z.h;
-    const summaOk = Object.keys(STACK).every(k => Math.abs(ps.filter(p => p.k === k).reduce((a, p) => a + p.n, 0) - amountOf(s, k)) < 1e-6);
+    const summaOk = Object.keys(STACK).filter(k => !SIM.isTool(k)).every(k => Math.abs(ps.filter(p => p.k === k).reduce((a, p) => a + p.n, 0) - amountOf(s, k)) < 1e-6); // ett redskap kan vara i bruk
     // bära: kör en stund med gående invånare och se hur mycket de bär hem
     const b = createState(8, START);
     klockan(b, 7); setFood(b, 2); // morgon, och byn behöver mat
@@ -465,6 +465,7 @@ SCENARIER.lagerplatser = {
     const summaOk = Object.keys(STACK).every(k => Math.abs(ps.filter(p => p.k === k && p.stored).reduce((a, p) => a + p.n, 0) - amountOf(s, k)) < 1e-3);
     // ett tömt lager krymper först när det stått halvtomt i sex timmar (en kvarts år i spelet, steg 2.12.4)
     const tom = cloneState(s); for (const k of Object.keys(STACK)) SIM.setAmount(tom, k, 0);
+    for (const z of zonesOf(tom)) z.tom = undefined; // klockan börjar när lagret töms, inte när det blev halvtomt tidigare
     const zi = zonesOf(tom).findIndex(z => z.hus === undefined && z.w * z.h > SIM.LAGER.krympMin), yta = () => { const z = zonesOf(tom)[zi]; return z.w * z.h; };
     const yta0 = zi >= 0 ? yta() : 0, ytor: number[] = [];
     for (let h = 0; h < 8 && zi >= 0; h++) { SIM.tidyStore(tom); ytor.push(yta()); tom.now += HOUR; }

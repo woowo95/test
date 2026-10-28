@@ -39,7 +39,7 @@ export const arbetsformaga = (p: Person, a: number, now: number) => ageFactor(a)
 export function workRate(s: State, p: Person, act: Act) {
   const a = ageOf(p, s.now);
   const sk = ACTS[act].arbete!, d = ACTS[sk as Act];
-  return d.bas! * SNABBARE / HOUR_S * d.sasong![ageIndex(s)] * (0.45 + p.skill[sk] / 20 + stat(p, d.egenskap!, s.now) / 40) * ageFactor(a) * sickFactor(p, s.now) * handighet(p); // skadade armar och händer arbetar långsammare (halsa.ts)
+  return d.bas! * (d.fart ?? 1) * SNABBARE / HOUR_S * d.sasong![ageIndex(s)] * (0.45 + p.skill[sk] / 20 + stat(p, d.egenskap!, s.now) / 40) * ageFactor(a) * sickFactor(p, s.now) * handighet(p); // skadade armar och händer arbetar långsammare (halsa.ts)
 }
 // det p äter på ett dygn enligt kroppen: mättnaden sjunker 1 / hungerTim i timmen (ett barn långsammare) och en portion god mat
 // höjer den KROPP.mattar. Ett barn äter en mindre portion som mättar lika mycket

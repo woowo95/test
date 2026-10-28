@@ -54,7 +54,8 @@ SCENARIER.stenring = {
       Object.assign(p, { toa: 1, torst: 1, warm: 1, rest: 1, health: 1, hunger: 1, social: 1, task: undefined });
       chooseTask(f, p); if (p.task?.sok) fler++; p.task = undefined;
     }
-    // den som hämtar tändmaterial åt en släckt eld fortsätter på en plats utan bär, och slutar när tändmaterialet räcker
+    // den som hämtar tändmaterial åt en släckt eld fortsätter på en plats utan bär, och slutar när tändmaterialet räcker.
+    // Buskarna runt platsen töms, för annars går man vidare till nästa (nastaBuske, steg 2.12.4)
     const r = createState(4, START), rm = getMap(r.seed);
     r.now = new Date(r.now).setHours(10, 0, 0, 0); Object.assign(r.fire, { lit: false, fuel: 0, emberUntil: undefined, ring: true });
     setItems(r, { flinta: 1 }); setFood(r, 100);
@@ -62,9 +63,10 @@ SCENARIER.stenring = {
     Object.assign(th, { toa: 1, torst: 1, warm: KROPP.kallt - 0.05, rest: 1, health: 1, hunger: 1, social: 1, task: undefined });
     chooseTask(r, th);
     const tom = (() => { const c = campCenter(r); for (let d = 4; d < 30; d++) for (let k = 0; k < 16; k++) { const x = Math.floor(c.x + Math.cos(k / 16 * 6.283) * d), y = Math.floor(c.y + Math.sin(k / 16 * 6.283) * d); if (inMap(x, y) && rm.tiles[y * W + x] !== T.Vatten && !isWall(r, x + 0.5, y + 0.5) && richness(r, 'samla', x + 0.5, y + 0.5) < 0.01) return { x: x + 0.5, y: y + 0.5 }; } })()!;
+    for (const k of SIM.lagren('samla')) for (let dy = -8; dy <= 8; dy++) for (let dx = -8; dx <= 8; dx++) if (inMap(tom.x + dx, tom.y + dy)) takenOf(r)[k]![SIM.tileOf(tom.x + dx, tom.y + dy)] = 1;
     const valt = th.task?.act === 'samla' && !!th.task.tandmat;
     Object.assign(th.task!, { tx: tom.x, ty: tom.y, phase: 'do', until: r.now + 3 * HOUR }); th.x = tom.x; th.y = tom.y;
-    kor(r, 0.5);
+    kor(r, 1 / 60); // en minut: tändmaterialet hittas lika fort som bären (steg 2.12.4), så det räcker snart
     const fortsatt = th.task?.act === 'samla' && th.task.phase === 'do' && th.task.tx === tom.x && th.task.ty === tom.y && (th.task.items?.torrgras ?? 0) > 0;
     setItems(r, { flinta: 1, torrgras: 50, grenar: 50 }); kor(r, 0.25);
     const slutat = !(th.task?.act === 'samla' && th.task.phase === 'do' && th.task.tx === tom.x && th.task.ty === tom.y);

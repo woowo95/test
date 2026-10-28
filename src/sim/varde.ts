@@ -40,7 +40,8 @@ export function nivaOf(k: string): number {
   return n;
 }
 // arbetstimmar för att skaffa en i ett arbete: grundtakten i handlingen (eller i arbetet den hör till) gånger årstidernas
-// medel och arbetets takt. Där platsen avgör takten (takt 0 eller ingen takt) räknas en full plats
+// medel och arbetets takt. Där platsen avgör takten (takt 0 eller ingen takt) räknas en full plats. Samlandets fart (steg 2.12.4)
+// räknas inte: den gör bara att famnen fylls på en tur, och gången dit och mellan buskarna tar ändå tiden
 function actTid(act: string) {
   const a = ACTS[act as keyof typeof ACTS], d = a?.arbete ? ACTS[a.arbete as keyof typeof ACTS] : a;
   if (!a || !d?.bas) return 0;

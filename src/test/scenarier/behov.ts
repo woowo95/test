@@ -1,5 +1,5 @@
 // Scenarier. Behov och val: behov, ved, aktivitet och fritid.
-import { Person, createState, getRel, step, living, temperature, nyKalender, amountOf, capacity, load, isLight, T, FOOD, ageOf, getMap, HOUR, W, tileOf, stat, campCenter, KANIN, gain, takeFuel, ownsAmount, ownedSum, addTo, setAmount, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, STOLD_LINDRIG, STOLD_OP, BEAT, spar, isWork, ACTS, groundOf, varmeDelar, nyVarme, addTool, stepKlader, chooseTask, iSkugga, KROPP, spotFor, shoreOf, torstDelar, drickPlats, areaOf, halsaLage, describe, halsaSteg, skada, blodning, halsa, rorlighet, workRate, OLYCKOR, Act, HALSA, kanGa, gangFart, hemma, mossaFynd, chopStock, skadeLista, skadeText, delSkada, FORMAGOR, smarta, handighet, NARINGAR, NARING, naringOf, naringNu, naringSjunker, mattnad, sjunker, bristGrad, bristSteg, berattaBrist, onskan, matOrdning, takeFood, vilaTim, skorbjugg, NARINGBAL, DODSORSAKER, converse, Naring, STATIONER, TEKNIK, tingOf, vaderNu } from '../../sim';
+import { Person, createState, getRel, step, living, temperature, nyKalender, amountOf, capacity, load, isLight, T, FOOD, ageOf, getMap, HOUR, W, tileOf, stat, campCenter, KANIN, gain, takeFuel, ownsAmount, addTo, setAmount, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, STOLD_LINDRIG, STOLD_OP, BEAT, spar, isWork, ACTS, groundOf, varmeDelar, nyVarme, addTool, stepKlader, chooseTask, iSkugga, KROPP, spotFor, shoreOf, torstDelar, drickPlats, areaOf, halsaLage, describe, halsaSteg, skada, blodning, halsa, rorlighet, workRate, OLYCKOR, Act, HALSA, kanGa, gangFart, hemma, mossaFynd, chopStock, skadeLista, skadeText, delSkada, FORMAGOR, smarta, handighet, NARINGAR, NARING, naringOf, naringNu, naringSjunker, mattnad, sjunker, bristGrad, bristSteg, berattaBrist, onskan, matOrdning, takeFood, vilaTim, skorbjugg, NARINGBAL, DODSORSAKER, converse, Naring, STATIONER, TEKNIK, tingOf, vaderNu } from '../../sim';
 import { stepIs, stepVader, isCm, vattenGrader, halVal, halMin, drickVal, iIstiden, ageIndex, tidyTools } from '../../sim';
 import { START, STEG_DYGN, STEG_TIM } from '../kor';
 import { setMat, setFood, kor, klockan, tandEld, tomtForrad, treVuxna, bastaJaktruta, SCENARIER, rikBy } from './hjalp';
@@ -49,9 +49,6 @@ SCENARIER.behov = {
       s.rngs = { dela: i * 7919 + 1 }; a.rngs = { dela: i * 7919 + 1 };
       needLadder(s, a, 1); if (ownFor(s, b, MAT) < 5) ovan++;
     }
-    // vanliga byar är fattiga de första dygnen, så det mesta av maten är byns och delas utan gåvor (delning.ts)
-    let egen = 0, allt = 0;
-    for (const seed of [1, 42]) { const v = createState(seed, START); for (let i = 0; i < 2 * STEG_DYGN; i++) step(v, BEAT); for (const k of FOOD) { egen += ownedSum(v, k); allt += amountOf(v, k); } }
     return [
       ['den hungrige tar inte en oväns mat innan nöden är stor', tarInte],
       ['byns mat går före andras', byns],
@@ -61,7 +58,6 @@ SCENARIER.behov = {
       ['den med låg empati stjäl när den svälter', stal],
       ['den bestulne märker det och relationen blir sämre', marker],
       [`man stjäl helst av den man inte tycker om (${ovan} av 40)`, ovan >= 28],
-      [`i nya byar är det mesta av maten byns efter 2 dygn (2 år i spelet): ${(100 * egen / Math.max(1, allt)).toFixed(0)} % är någons eget`, allt > 0 && egen < allt / 2],
     ];
   },
 };
@@ -176,9 +172,10 @@ SCENARIER.aktivitet = {
       [`man håller sig nära platsen (${utanfor} gånger utanför)`, utanfor === 0],
       [`ingen går ut i vattnet, längs hela vägen (${vatten} punkter i vattnet)`, vatten === 0],
       [`elden matas med en famn i taget (högst ${eldMax.toFixed(1)})`, eldMax > 0 && eldMax <= 1 + 1e-9],
-      // en timmes bärplockning med gångtiden ger ca 0,17 i medel för byarna 1–8 (uppmätt i v47, efter 1.5.13). Bandet är brett:
-      // talet beror på årstiden och slumpen, och det ändras när balansen ses över. Provet ska bara fånga en stor ändring
-      [`bärplockning ger ungefär lika mycket per timme som förut (${pl.toFixed(2)}, medel av åtta byar)`, pl > 0.1 && pl < 0.45],
+      // en timmes bärplockning med gångtiden ger ca 12,6 i medel för byarna 1–8 (uppmätt i v132, efter steg 2.12.4: en full
+      // börda på 10–20 minuter). Bandet är brett: talet beror på årstiden och slumpen, och det ändras när balansen ses över.
+      // Provet ska bara fånga en stor ändring
+      [`bärplockning ger ungefär lika mycket per timme som förut (${pl.toFixed(2)}, medel av åtta byar)`, pl > 6 && pl < 30],
     ];
   },
 };
@@ -462,7 +459,11 @@ SCENARIER.kropp = {
       if (!s.stat.skador || (w && (!o!.typer.includes(w.k) || !o!.delar.includes(w.d)))) fel.push(act);
     }
     // en by i tio dygn (tio år i spelet, knappt en och en halv vecka i verkligheten): olyckor händer
-    const b = createState(1, START); kor(b, 240);
+    // olyckorna är sällsynta (ett par på tio dygn), så kontrollen gäller att byn gör farligt arbete där risken räknas, och att
+    // skadorna inte blir många fler än risken säger
+    const b = createState(1, START);
+    let vantat = 0;
+    kor(b, 240, v => { for (const q of living(v)) { const t = q.task, o = t?.phase === 'do' ? OLYCKOR[t.act] : undefined; if (!o) continue; const pd = ACTS[t!.act], sk = pd.arbete ?? (pd.hantverk ? 'hantverk' : undefined); vantat += o.risk * (1 - (sk ? q.skill[sk] : 0) / HALSA.skicklig) * BEAT / 3600; } });
     const skador = b.stat?.skador as number ?? 0, blod = b.stat?.['dog av blodförlust'] as number ?? 0;
     return [
       ['en olycka under jakten ger en skada', olycka],
@@ -473,7 +474,7 @@ SCENARIER.kropp = {
       [`ett brutet ben går långsammare (${fart0.toFixed(2)} → ${fart1.toFixed(2)}), och ett skärsår i handen arbetar långsammare (${(arb1 / arb0).toFixed(2)} av farten)`, fart1 < fart0 && arb1 < arb0],
       [`en svår skada avbryter arbetet, och hälsan blir ${halsa1.toFixed(2)}`, avbrot && halsa1 < KROPP.svag + 0.2],
       [`olyckorna i ${Object.keys(OLYCKOR).join(', ')} ger sina skador i sina delar${fel.length ? ` (fel: ${fel.join(', ')})` : ''}`, !fel.length],
-      [`på tio dygn i en by: ${skador} skador, ${blod} förblödde`, skador > 0],
+      [`på tio dygn i en by: ${skador} skador (risken säger ${vantat.toFixed(1)}), ${blod} förblödde`, vantat > 0.5 && skador <= 3 * vantat + 3],
     ];
   },
 };

@@ -122,7 +122,8 @@ SCENARIER.knapphet = {
     for (let d = 0; d < 12; d++) { kor(s, 24); const n = uttag(s, 'samla', 0, 8); if (n > nara) { nara = n; langt = uttag(s, 'samla', 16, 30); } }
     const st = s.stat ?? {};
     return [
-      [`mer plockat nära byn än långt bort (${nara.toFixed(3)} mot ${langt.toFixed(3)})`, nara > 0.005 && nara > langt * 3],
+      // sedan samlandet går fortare (steg 2.12.4, v132) töms buskarna nära byn snabbt och man plockar mer långt bort än förut
+      [`mer plockat nära byn än långt bort (${nara.toFixed(3)} mot ${langt.toFixed(3)})`, nara > 0.005 && nara > langt],
       // kaninerna håller sig undan folk, så inom 12 rutor jagas nästan inget (ca 0,001). Inom 30 rutor ca 0,02–0,03 (v47)
       [`vilt jagat inom 30 rutor från byn (${uttag(s, 'jakt', 0, 30).toFixed(3)}, ${st.kaniner ?? 0} kaniner)`, uttag(s, 'jakt', 0, 30) > 0.01],
       // fiske väljs inte i alla byar; fisket testas utförligt i fiskespjut-scenariot

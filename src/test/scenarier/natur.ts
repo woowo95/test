@@ -1,5 +1,5 @@
 // Scenarier. Djur och natur: djur, abborre, sjön, kaniner, rötter, värmekartor och naturen.
-import { FANGST, createState, bearbeta, canProcess, makeTool, step, living, cloneState, ageStart, nyKalender, pilesOf, amountOf, STACK, isLight, T, ageOf, groundOf, getMap, DAY, HOUR, W, State, tileOf, findL, areaOf, describe, campDist, campCenter, FYND, FYND_IDS, GRUPPER, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, observe, hoped, Lager, skyggOf, grupperOf, KANINER, share, djurOf, KANIN, SLAKT, DJUR, DJURARTER, gain, ownsAmount, setAmount, BEAT, matGott, barnMat, hungerFlytt, regulate, EKONOMI, kroppensMat, foodDays, SAMTALSSLAG, SAKER, materialOf } from '../../sim';
+import { FANGST, createState, bearbeta, canProcess, makeTool, step, living, cloneState, ageStart, nyKalender, pilesOf, amountOf, STACK, isLight, T, ageOf, groundOf, getMap, DAY, HOUR, W, State, tileOf, findL, areaOf, describe, campDist, campCenter, FYND, FYND_IDS, GRUPPER, fyndAt, takeFrom, packFynd, growFynd, H, vaxerAt, richness, observe, hoped, Lager, skyggOf, grupperOf, KANINER, share, djurOf, KANIN, SLAKT, DJUR, DJURARTER, gain, ownsAmount, setAmount, BEAT, matGott, barnMat, hungerFlytt, regulate, EKONOMI, kroppensMat, foodDays, SAMTALSSLAG, SAKER, materialOf, balansTal, load, capacity, bordPlats, PLATS, tinderShort } from '../../sim';
 import * as SIM from '../../sim';
 import { FOREST, isSoil } from '../../sim/vag';
 import { START, STEG_DYGN, STEG_TIM } from '../kor';
@@ -209,7 +209,7 @@ SCENARIER.kaniner = {
 };
 
 SCENARIER.rotter = {
-  text: 'Bär och rötter är olika slag i egna stackar; på sommaren samlar man mest bär, i istiden mest rötter',
+  text: 'Bär och rötter är olika slag i egna stackar; på sommaren samlar man mycket bär, i istiden bara rötter',
   kor: () => {
     // det som samlats av varje slag (byns statistik), i fyra byar: det som bärs hem äts snart upp, så förrådet säger lite (steg 2.12.9)
     const andel = (vecka: number) => [7, 8, 9, 10].map(n => enBy(n, vecka)).reduce((a, x) => ({ b: a.b + x.b, r: a.r + x.r, skild: a.skild && x.skild }));
@@ -219,7 +219,7 @@ SCENARIER.rotter = {
       setMat(s, { grillkott: 300 }); // grillat kött äts före bär och rötter, så det man samlar blir kvar (och ingen blir sjuk av rått)
       kor(s, 48);
       const b = s.stat?.samlat_bar ?? 0, r = s.stat?.samlat_rotter ?? 0;
-      return { b, r, skild: !pilesOf(s).some(p => p.k === 'bar' && p.n > STACK.bar + 1e-6) };
+      return { b, r, skild: !pilesOf(s).some(p => p.k === 'bar' && p.n > p.max + 1e-6) }; // i en förvaring ryms flera stackar på rutan
     };
     const sommar = andel(1), istid = andel(3);
     return [
@@ -227,8 +227,46 @@ SCENARIER.rotter = {
       [`i istiden mest rötter (${istid.r.toFixed(0)} rötter mot ${istid.b.toFixed(0)} bär)`, istid.r > istid.b],
       // rötternas andel räknas på platsen före uttaget (motor-9): annars blir en del av rötterna bär
       [`i istiden växer inga bär, så allt som samlas är rötter (${istid.b.toFixed(4)} bär)`, istid.r > 0 && istid.b < 1e-9],
-      [`på sommaren mest bär`, sommar.b > sommar.r],
-      [`bär och rötter i egna stackar, och ingen bärstack rymmer mer än ${STACK.bar}`, sommar.skild && istid.skild],
+      // en buske töms helt sedan steg 2.12.4, så bär och rötter tas i den mängd de växer: ungefär hälften var på sommaren
+      [`på sommaren är en stor del bär (${(sommar.b / (sommar.b + sommar.r) * 100).toFixed(0)} %)`, sommar.b > 0.35 * (sommar.b + sommar.r)],
+      [`bär och rötter i egna stackar, och ingen bärstack rymmer mer än ${STACK.bar} (mer i en förvaring)`, sommar.skild && istid.skild],
+    ];
+  },
+};
+
+SCENARIER.samlartur = {
+  text: 'En samlare fyller en full börda på 10–20 minuter, gången inräknad, och går vidare till nästa buske när den man står vid är tom (steg 2.12.4)',
+  kor: () => {
+    // turerna följs i steg om 10 sekunder (ett slag är fem minuter, kortare än en tur), i två byar under två dygn (två år i spelet)
+    const borda = balansTal().steg.borda as number, turer: { min: number; lass: number; flytt: number }[] = [];
+    let tomt = 0, arbete = 0;
+    for (const seed of [42, 7]) {
+      const s = createState(seed, START), pagar = new Map<number, { t0: number; last: string; lass: number; flytt: number; tom?: string }>();
+      for (let i = 0; i < 48 * 360; i++) {
+        step(s, 10);
+        for (const p of living(s)) {
+          const t = p.task, u = pagar.get(p.id), samla = t?.act === 'samla' && !t.sok;
+          if (u && (!samla || (u.last === 'back' && t!.phase !== 'back'))) { if (u.last === 'back') turer.push({ min: (s.now - u.t0) / 60000, lass: u.lass, flytt: u.flytt }); pagar.delete(p.id); }
+          if (!samla) continue;
+          const v = u && pagar.has(p.id) ? u : { t0: s.now, last: t.phase, lass: 0, flytt: 0 };
+          pagar.set(p.id, v);
+          if (t.phase === 'go' && v.last === 'do') v.flytt++;
+          // tom här: två som samlar vid samma buske märker det först i nästa steg när den andra tog det sista, så det räknas när man står kvar längre
+          const tomNu = t.phase === 'do' && richness(s, 'samla', t.tx, t.ty) < PLATS.tomtGrans && !(t.tandmat && tinderShort(s, t)), plats = `${t.tx},${t.ty}`;
+          if (t.phase === 'do') { arbete++; if (tomNu && v.tom === plats) tomt++; }
+          v.tom = tomNu ? plats : undefined;
+          if (t.phase === 'back') v.lass = load(t, s) / Math.min(capacity(s, p) * borda, bordPlats(s, p));
+          v.last = t.phase;
+        }
+      }
+    }
+    const med = (a: number[]) => [...a].sort((x, y) => x - y)[a.length >> 1] ?? NaN;
+    const min = med(turer.map(t => t.min)), lass = med(turer.map(t => t.lass)), vidare = turer.filter(t => t.flytt > 0).length;
+    return [
+      [`en tur tar 10–20 minuter, gången inräknad (median ${min.toFixed(1)} minuter av ${turer.length} turer)`, turer.length >= 20 && min >= 10 && min <= 20],
+      [`man bär hem en full börda (median ${(lass * 100).toFixed(0)} %)`, lass >= 0.9],
+      [`man går vidare till nästa buske när den är tom (${vidare} av ${turer.length} turer)`, vidare >= turer.length / 2],
+      [`ingen står kvar vid en tom buske längre än ett steg (10 sekunder), utom den som samlar tändmaterial till elden (${tomt} av ${arbete} gånger)`, arbete > 0 && tomt === 0],
     ];
   },
 };
@@ -1119,7 +1157,7 @@ SCENARIER.falt = {
     s.kal = nyKalender(s.now, 1); klockan(s, 7); tandEld(s);
     for (const q of living(s)) q.tek = { ...q.tek, odling: 1 };
     setAmount(s, 'fron', 30);
-    const fron0 = amountOf(s, 'fron'), m = getMap(s.seed), g = groundOf(s);
+    const m = getMap(s.seed), g = groundOf(s);
     kor(s, 48);
     const fs = SIM.faltOf(s), f = fs[0];
     // fälten ligger på jord, utan stora träd, inte på varandra och inte på lagret
@@ -1128,7 +1166,7 @@ SCENARIER.falt = {
       const t = m.tiles[i];
       if (t !== T.Gras && t !== T.Skog || g.trees[i] >= FOREST || fs.some(r => r !== q && SIM.faltRutor(r).includes(i)) || pilesOf(s).some(pl => pl.y * W + pl.x === i)) fel++;
     }
-    const sadd = s.stat?.sadd ?? 0, fronNu = amountOf(s, 'fron');
+    const sadd = s.stat?.sadd ?? 0, fronSadda = s.stat?.fronSadda ?? 0; // samlarna hittar nya frön under tiden, så förrådet säger lite (steg 2.12.4)
     // ett tryck på en ruta hittar rätt ruta i fältet (steg 2.10.14)
     const index = fs.every(q => SIM.faltRutor(q).every((i, k) => SIM.faltIndex(q, i % W, Math.floor(i / W)) === k));
     // storleken (steg 2.10.13): rutorPerMun rutor per person i familjen, och inte fler än det finns frön till
@@ -1186,7 +1224,7 @@ SCENARIER.falt = {
     return [
       [`byn röjer ett fält när den kan odla och har frön (${fs.length} fält, ${f ? SIM.FALT_STEG[f.steg].namn.toLowerCase() : '-'})`, fs.length > 0],
       [`fälten ligger på jord utan stora träd, inte på varandra och inte på lagret (${fel} fel)`, fel === 0],
-      [`fältet grävs upp och sås inom två dygn (två år i spelet), och fröna tas ur förrådet (${sadd} sådda, frön ${fron0.toFixed(0)} → ${fronNu.toFixed(1)})`, sadd > 0 && fronNu < fron0],
+      [`fältet grävs upp och sås inom två dygn (två år i spelet), och fröna tas ur förrådet (${sadd} sådda, ${fronSadda} frön)`, sadd > 0 && fronSadda > 0],
       [`fältet har ${SIM.ODLING.rutorPerMun} rutor per person i familjen, mellan ${SIM.ODLING.faltMin} och ${SIM.ODLING.faltMax}, och inte fler än det finns frön till (${fs.map(q => q.n).join(', ')} rutor)`, storlekOk && fs.length > 0],
       ['en familj har ett fält', enPerFamilj],
       ['varje ruta på kartan hittar sin plats i fältet, så att ett tryck på den markerar rätt gröda', index && fs.length > 0],

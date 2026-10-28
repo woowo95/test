@@ -7,12 +7,12 @@ import { ALDER, KROPP, ageOf, count, isSick, living, stat } from './folk';
 import { onskan } from './naring';
 import { halsa, hemma, kanGa, vardVal, vilaHellre } from './halsa';
 import { harMat } from './behov';
-import { FANGST, Kind, flintSpot, shoreOf, wantsFlint } from './fynd';
+import { FANGST, Kind, Lager, flintSpot, richness, shoreOf, wantsFlint } from './fynd';
 import { coldOf, nederbord, temperature } from './vader';
 import { DJUR, Djurart, GORS, canProcess, djurKvar, freeOfKinds, makeTask, toolGroups, wantsTool } from './redskap';
 import { PROJEKT, Uppgift, bastaProjekt } from './projekt';
 import { faltNu, vildFronPlats } from './odling';
-import { areaOf, flintArea, pickSpot, prospectFor } from './minne';
+import { MINNE, areaOf, flintArea, pickSpot, prospectFor } from './minne';
 import { eldPlats, getMap } from './karta';
 import { amountOf, avbryt, fetchSpot, haulJob } from './lager';
 import { bedFor, buildJob, siteOf } from './bygg';
@@ -228,6 +228,21 @@ export function spotFor(s: State, act: Act, p: Person): { x: number; y: number }
   return { x: c.x + 0.5, y: c.y + 0.5 };
 }
 
+// samlandet (steg 2.12.4): busken är tom men famnen inte full. Den bästa rutan inom MINNE.sokR, med lite avdrag för
+// avståndet som när man väljer plats (pickSpot), men inte i vattnet, i husen eller där det är toa-smuts. Ger ingen ruta
+// minst PLATS.vidare går man hem med det man har
+export function nastaBuske(s: State, k: Lager, x0: number, y0: number) {
+  const cx = Math.floor(x0), cy = Math.floor(y0), tiles = getMap(s.seed).tiles, R = MINNE.sokR;
+  let best: { x: number; y: number } | undefined, bv = -Infinity;
+  for (let y = Math.max(0, cy - R); y <= Math.min(H - 1, cy + R); y++) for (let x = Math.max(0, cx - R); x <= Math.min(W - 1, cx + R); x++) {
+    if (tiles[y * W + x] === T.Vatten || bitAt(s, x, y) || forSmutsigt(s, x, y)) continue;
+    const r = richness(s, k, x + 0.5, y + 0.5);
+    if (r < PLATS.vidare) continue;
+    const v = r - Math.hypot(x - cx, y - cy) * MINNE.sokPris;
+    if (v > bv) { bv = v; best = { x: x + 0.5, y: y + 0.5 }; }
+  }
+  return best;
+}
 // ingen plats hittades i närheten: den närmaste rutan som passar, var den än ligger
 function nearestWanted(s: State, want: (t: number, x: number, y: number) => boolean) {
   const m = getMap(s.seed);
@@ -413,7 +428,7 @@ function day(s: State, p: Person, v: Val, a: number, lazy: number) {
   if (pr && poang(s, p, pr.varde * VAL.projektVikt, lust(s, p, 'hantverk', 'flit', [pr.u.act], tot)) > Math.max(bs, bsBygg)) { proj = true; build = false; }
   // saknar byn flinta eller stenar till elden när maten räcker, eller har den flinta till elden (en sprucken räknas) men inte till
   // en yxa, går någon och letar vid stenarna, också när plockning inte är det mest behövda. En i taget (steg 2.12.3)
-  const eldFlinta = flintaTillElden(s, fara) && !ppl.some(q => q !== p && q.task?.sok);
+  const eldFlinta = flintaTillElden(s, p, fara);
   const leta = !build && !proj && a >= ALDER.vuxen && (eldFlinta || flintaTillYxa(s, p, fd, ai)) && rnd(s, 'val', p) < VAL.letaChans;
   if (leta) best = 'samla';
   const u = clamp(burg / VAL.akut, 0, 1); // hur akut byn behöver arbete
@@ -483,16 +498,18 @@ function building(s: State, p: Person, v: Val, job: NonNullable<ReturnType<typeo
   const site = siteOf(s, b); v.spot = job.need > 0 ? fetchSpot(s, job.item!) : site; if (job.need > 0) v.site = site;
 }
 
-// Flinta till en yxa är en förbättring: bara när maten räcker och inte inför eller under istiden, och en i taget
+// en i taget letar vid stenarna (steg 2.12.3)
+const andraLetar = (s: State, p: Person) => living(s).some(q => q !== p && q.task?.sok);
+// Flinta till en yxa är en förbättring: bara när maten räcker och inte inför eller under istiden
 // (byn har flinta till elden, en sprucken räknas, och stenar till eldringen)
-const flintaTillYxa = (s: State, p: Person, fd: number, ai: number) => amountOf(s, 'flinta') > VAL.letaFlinta && !needStones(s) && wantsFlint(s) && fd >= VAL.letaMat && !kallTid(ai) && !living(s).some(q => q !== p && q.task?.sok);
+const flintaTillYxa = (s: State, p: Person, fd: number, ai: number) => amountOf(s, 'flinta') > VAL.letaFlinta && !needStones(s) && wantsFlint(s) && fd >= VAL.letaMat && !kallTid(ai) && !andraLetar(s, p);
 // Flinta och stenar till elden letas när byn saknar dem och maten räcker: hungern är en fara och elden ett verktyg (steg 2.12.3)
-const flintaTillElden = (s: State, fara: Faror) => !fara.svalt && (amountOf(s, 'flinta') < FANGST.flintaMinsta || needStones(s));
+const flintaTillElden = (s: State, p: Person, fara: Faror) => !fara.svalt && (amountOf(s, 'flinta') < FANGST.flintaMinsta || needStones(s)) && !andraLetar(s, p);
 // arbetet med redskap: flinta letas vid stenarna, yxan fäller träd, korgen och spjutet görs först om de saknas.
 // fd: hur många dygn maten räcker, ai: tidsåldern, fara: farorna från day()
 function withTools(s: State, p: Person, v: Val, best: Act, what: string, fd: number, ai: number, fara: Faror, leta = false) {
   const stones = needStones(s);
-  if (best === 'samla' && (leta || (flintaTillElden(s, fara) || flintaTillYxa(s, p, fd, ai)) && rnd(s, 'val', p) < VAL.stenarChans)) { // byn saknar flinta eller stenar till eldringen. Stenarna ligger långt bort, så där letar man ett helt pass
+  if (best === 'samla' && (leta || (flintaTillElden(s, p, fara) || flintaTillYxa(s, p, fd, ai)) && rnd(s, 'val', p) < VAL.stenarChans)) { // byn saknar flinta eller stenar till eldringen. Stenarna ligger långt bort, så där letar man ett helt pass
     const fa = flintArea(p), fl = (fa !== undefined && flintSpot(s, p, (x, y) => areaOf(x, y) === fa)) || flintSpot(s, p);
     if (fl) { v.spot = fl; v.dur /= VAL.pass; v.sok = true; v.why = `${v.why} Letar efter ${stones ? 'stenar till en eldring' : 'flinta'} vid stenarna${fa !== undefined ? ' där hen vet att det finns flinta' : ''}.`; }
   }

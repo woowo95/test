@@ -289,7 +289,7 @@ export function workOdla(s: State, p: Person, tk: Task, dtSec: number) {
 function rutaKlar(s: State, p: Person, f: Falt) {
   if (f.steg === 'roja') { const i = faltRuta(f, f.klara), g = groundOf(s); g.trees[i] = 0; g.cover[i] = 0; } // gräs, buskar och ungskog är borta
   else if (f.steg === 'bereda') { if (freeTools(s, p, 'benspade') && wearTool(s, p, 'benspade', ODLING.spadeSlit)) { const tr = SAKER.benspade?.trasig; if (tr) count(s, tr.stat); } }
-  else if (f.steg === 'sa') takeMaterial(s, p, 'fron', ODLING.froPerRuta);
+  else if (f.steg === 'sa') { takeMaterial(s, p, 'fron', ODLING.froPerRuta); count(s, 'fronSadda', ODLING.froPerRuta); } // fröna som såtts (scenariot falt)
   else if (f.steg === 'mogen') {
     const d = GRODOR[f.groda!], a = skordAndel(s, f);
     if (a > 0) { gain(s, p, d.sak, d.perRuta * a); gain(s, p, 'fron', d.fron * a); count(s, 'skord', d.perRuta * a); }
