@@ -68,6 +68,14 @@ const STEG = balans('steg', {
   matMin: 0.15, // ... men aldrig mindre än denna del
   sedBarn: 0.2, // så mycket mer (eller mindre) vilja ger seden Barn fullt ut
   chans: 0.6, // chansen per dygn att bli gravid, gånger viljan (0,3 före steg 2.12.6: byarna stannade vid ca 9 invånare med gott om mat)
+  // samtal och relationer
+  samtalSek: 240, samtalBas: 0.6, samtalEmpati: 25, // den som är i en social aktivitet samtalar en gång per samtalSek sekunder, gånger samtalBas + empati / samtalEmpati
+  blekSek: 600, blek: 0.04, // relationerna bleknar ungefär var blekSek:e sekund, med blek per dygn
+  // lärande och minne
+  ovningHant: 0.1, // övning i hantverk per timme med hantverk
+  ovningArbete: 0.12, ovningBas: 0.4, // övning i arbetet per timme: ovningArbete × (ovningBas + intelligens / 20)
+  minneSek: 1800, // den som arbetar ser sig omkring och minns området ungefär så här ofta (sekunder)
+  svaltTanke: 7200, // tanken Svälter kommer ungefär så här ofta (sekunder)
 });
 
 // spelet ritar folk där de är medan slaget visas: var och ens väg under det senaste slaget, som
@@ -171,7 +179,7 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
   if (social.length > 1) {
     for (const p of social) {
       if (!alive(p)) continue;
-      const expect = dtSec / 240 * (0.6 + stat(p, 'empati', now) / 25);
+      const expect = dtSec / STEG.samtalSek * (STEG.samtalBas + stat(p, 'empati', now) / STEG.samtalEmpati);
       let n = Math.floor(expect); if (rnd(s, 'samtal', p) < expect - n) n++;
       // bara med dem som är nära när slaget slutar
       const others = social.filter(q => q !== p && alive(q) && Math.hypot(q.x - p.x, q.y - p.y) < SAMTAL.radie);
@@ -182,8 +190,8 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
   // samtalen visas utspridda över slaget
   if (events) for (let i = e0; i < events.length; i++) events[i].t = t0 + (i - e0 + 0.5) / (events.length - e0) * dtSec * SEC;
   // relationer bleknar långsamt utan umgänge
-  if (rnd(s, 'samtal') < dtSec / 600) {
-    const k = Math.exp(-0.04 * (600 / 86400));
+  if (rnd(s, 'samtal') < dtSec / STEG.blekSek) {
+    const k = Math.exp(-STEG.blek * (STEG.blekSek / 86400));
     for (const key in s.rels) { const r = s.rels[key]; r.op *= k; r.rom *= k; }
   }
   if (living(s).length === 0) log(s, 'Byn är tom. Ingen finns kvar vid elden.', 'world');
@@ -278,7 +286,7 @@ export function halsaLage(p: Person, now: number): 'svalt' | 'frys' | 'torst' | 
 function healthStep(s: State, p: Person, a: number, ai: number, dtSec: number) {
   const now = s.now;
   const hl = halsaLage(p, now);
-  if (hl === 'svalt') { p.health -= dtSec / (KROPP.svaltTim * HOUR_S); if (rnd(s, 'halsa', p) < dtSec / 7200) think(p, 'Svälter', -0.25, now, 3 * HOUR); }
+  if (hl === 'svalt') { p.health -= dtSec / (KROPP.svaltTim * HOUR_S); if (rnd(s, 'halsa', p) < dtSec / STEG.svaltTanke) think(p, 'Svälter', -0.25, now, 3 * HOUR); }
   else if (hl === 'frys') p.health -= dtSec / (KROPP.frysTim * HOUR_S);
   else if (hl === 'torst') p.health -= dtSec / (TORST.tomTim * HOUR_S);
   else if (hl === 'laker') p.health = clamp(p.health + dtSec / (KROPP.lakerTim * HOUR_S), 0, 1);
@@ -341,7 +349,7 @@ function taskStep(s: State, p: Person, a: number, t1: number, dtSec: number, lea
       MEDAN[tk.act]?.(s, p, tk, used);
       if (d.arbete && p.task === tk && tk.phase === 'do') workStep(s, p, tk, used, a, learn, tom);
       // (bygget kan just ha skickat iväg personen efter mer material)
-      if (tk.phase === 'do' && d.hantverk) ovning(p, 'hantverk', used / HOUR_S * 0.1 * learn);
+      if (tk.phase === 'do' && d.hantverk) ovning(p, 'hantverk', used / HOUR_S * STEG.ovningHant * learn);
       if (d.vandra) wear(groundOf(s), tileOf(tk.tx, tk.ty), MARK.nott * STEG.markNot * STEG.vandraNot * d.vandra.v * used); // man rör sig på platsen
     }
     // vana: tiden räknas mot yrkestaggar
@@ -536,7 +544,7 @@ function workStep(s: State, p: Person, tk: Task, dtSec: number, a: number, learn
   const tomt = !!del && (rich < PLATS.tomtGrans || tom) && !tk.sok;
   if (res && del) takeFrom(s, res, tk.tx, tk.ty, y, del.r);
   // den som arbetar ser hur mycket som finns i området och minns det
-  if (res && (rich < PLATS.tomtGrans || chance(s, 1 / 1800, dtSec, 'minne', p))) lookAround(s, p, tk.tx, tk.ty);
+  if (res && (rich < PLATS.tomtGrans || chance(s, 1 / STEG.minneSek, dtSec, 'minne', p))) lookAround(s, p, tk.tx, tk.ty);
   const bar = (k: string, n: number) => { if (n > 0) { tk.items ??= {}; tk.items[k] = (tk.items[k] ?? 0) + n; } };
   // det arbetet ger (UTFALL ovan); utan egen rad, eller om raden inte tagit hand om det, läggs det platsen gav i bördan
   const u = UTFALL[tk.act];
@@ -544,7 +552,7 @@ function workStep(s: State, p: Person, tk: Task, dtSec: number, a: number, learn
   helaIBordan(p, tk); // bara hela saker i bördan (steg 2.10.7)
   const sk = d.arbete!;
   const before = p.skill[sk];
-  ovning(p, sk, dtSec / HOUR_S * 0.12 * learn * (0.4 + stat(p, 'intelligens', now) / 20));
+  ovning(p, sk, dtSec / HOUR_S * STEG.ovningArbete * learn * (STEG.ovningBas + stat(p, 'intelligens', now) / 20));
   if (before < 16 && p.skill[sk] >= 16) {
     const title = `Mästare i ${SKILL_NAMES[sk].toLowerCase()}`, first = !s.people.some(q => q.fame.includes(title));
     p.fame.push(title); log(s, `${p.name} har blivit en mästare i ${SKILL_NAMES[sk].toLowerCase()}.`, 'skill', [p.id]);

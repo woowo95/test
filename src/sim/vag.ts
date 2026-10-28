@@ -18,6 +18,7 @@ export const VAG = balans('vag', {
   trampHog: 0.75, // högt gräs trampas ner direkt till så här högt ...
   trampPlanta: 4, // ... och en liten planta (under skog) trampas ihjäl så här många gånger fortare än gräset nöts
   fartSaker: 0.5, // fart (gånger farten på marken) över lösa saker och högar på golvet (steg 2.3.6)
+  sokVikt: 0.52, // sökningen räknar så mycket per ruta som är kvar till målet: mer än den billigaste rutan (stigBas), så att den går fort och hellre tar den raka vägen
 });
 
 // solid = väggar, built = byggda eller planerade rutor, hinder = hyllor, kistor och ställ (går inte att gå igenom, stationer.ts),
@@ -103,7 +104,7 @@ export function findPath(g: Ground, x0: number, y0: number, x1: number, y1: numb
   const sx = clampI(x0, W), sy = clampI(y0, H), gx = clampI(x1, W), gy = clampI(y1, H);
   const start = sy * W + sx, goal = gy * W + gx;
   if (start === goal) return [];
-  const tiles = g.tiles, solid = g.solid, hinder = g.hinder, aW = 2 * W + 1;
+  const tiles = g.tiles, solid = g.solid, hinder = g.hinder, aW = 2 * W + 1, sv = VAG.sokVikt;
   nySokning();
   sedd[start] = gen; gs[start] = 0; came[start] = -1; heap.push(start, 0);
   while (heap.size) {
@@ -121,7 +122,7 @@ export function findPath(g: Ground, x0: number, y0: number, x1: number, y1: numb
       if (dx && dy && (stop(g, y * W + nx) || stop(g, ny * W + x))) continue;
       if (kostad[ni] !== gen) { kostad[ni] = gen; kost[ni] = tiles[ni] === T.Vatten ? 1 : stepCost(g, ni); }
       const ng = gs[i] + (dx && dy ? SQ2 : 1) * kost[ni];
-      if (ng < (sedd[ni] === gen ? gs[ni] : Infinity)) { sedd[ni] = gen; gs[ni] = ng; came[ni] = i; heap.push(ni, ng + avst[(ny - gy + H) * aW + nx - gx + W] * 0.52); }
+      if (ng < (sedd[ni] === gen ? gs[ni] : Infinity)) { sedd[ni] = gen; gs[ni] = ng; came[ni] = i; heap.push(ni, ng + avst[(ny - gy + H) * aW + nx - gx + W] * sv); }
     }
   }
   if (sedd[goal] !== gen) return null;

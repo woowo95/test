@@ -115,6 +115,8 @@ const VAL = balans('val', {
   // borden (steg 2.2.15)
   maltidMin: 20, maltidSpann: 10, // en måltid vid bordet
   bordSamtal: 0.5, // den som samtalar eller berättar sätter sig vid ett bord med denna chans, när det inte är kallt
+  eldRadie: 1.3, eldRadieSpann: 0.9, // vid elden sätter man sig så här många rutor från den, plus upp till spann (handlingens radie går före)
+  sovRadie: 1.8, sovRadieSpann: 1.2, // ... och den som sover ute lägger sig så här långt bort
   // skuggan (steg 2.3.13)
   skuggaRadie: 10, // så många rutor bort letar den som är för varm efter skugga
   skuggaBland: 3, // en av så många av de närmaste skuggrutorna
@@ -180,7 +182,7 @@ export function spotFor(s: State, act: Act, p: Person): { x: number; y: number }
     // annars sätter man sig ofta vid ett bord för att samtala och berätta, när det inte är kallt
     if (d.slag === 'prata' && bordenOf(s).length && coldOf(temperature(s)) === 0 && rnd(s, 'val', p) < VAL.bordSamtal) { const at = ledigPlats(s, p); if (at) return at; }
     for (let k = 0; ; k++) { // runt elden, men inte i en husvägg eller i en station (Björn efter v89: någon stod i slaktbänken)
-      const ang = rnd(s, 'val', p) * Math.PI * 2, r = d.radie ?? 1.3 + rnd(s, 'val', p) * 0.9, x = f.x + 0.5 + Math.cos(ang) * r, y = f.y + 0.5 + Math.sin(ang) * r;
+      const ang = rnd(s, 'val', p) * Math.PI * 2, r = d.radie ?? VAL.eldRadie + rnd(s, 'val', p) * VAL.eldRadieSpann, x = f.x + 0.5 + Math.cos(ang) * r, y = f.y + 0.5 + Math.sin(ang) * r;
       if (k >= 11 || !blocked(s, x, y) && !sittAt(s, x, y) && !stationAt(s, x, y)) return k >= 11 ? freeNear(s, f.x + 0.5, f.y + 1.5) : { x, y }; // inte på en stubbe vid bordet
     }
   }
@@ -190,7 +192,7 @@ export function spotFor(s: State, act: Act, p: Person): { x: number; y: number }
     const bed = bedFor(s, p), c = coldOf(temperature(s)), rum = bed && roomAt(s, bed.x, bed.y);
     if (bed && rum && (varmareInne(s, rum, c) || c === 0 || nederbord(s))) return bed; // när det inte är kallt räcker värmen överallt; i regnet under tak
     for (let k = 0; k < 12; k++) {
-      const ang = (p.id * 2.399 + rnd(s, 'val', p) * 0.5) % (Math.PI * 2), r = 1.8 + rnd(s, 'val', p) * 1.2, x = f.x + 0.5 + Math.cos(ang) * r, y = f.y + 0.5 + Math.sin(ang) * r;
+      const ang = (p.id * 2.399 + rnd(s, 'val', p) * 0.5) % (Math.PI * 2), r = VAL.sovRadie + rnd(s, 'val', p) * VAL.sovRadieSpann, x = f.x + 0.5 + Math.cos(ang) * r, y = f.y + 0.5 + Math.sin(ang) * r;
       if (inMap(x, y) && !blocked(s, x, y) && !stationAt(s, x, y)) return { x, y };
     }
     return freeNear(s, f.x + 0.5, f.y + 2);
