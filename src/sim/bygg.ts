@@ -4,7 +4,7 @@ import { eldPlats, getMap } from './karta';
 import { vaderSlit } from './vader';
 import { groundOf, punktIRuta } from './mark';
 import { PLATS, campCenter, rektAvstand } from './plats';
-import { lekplats, paLek, uteStation } from './stationer';
+import { lekplats, paLek, stangerIn, uteStation } from './stationer';
 import { sedEvent } from './seder';
 import { kunnighet, sparas } from './ekonomi';
 import { ARSTID, iIstiden } from './tid';
@@ -65,11 +65,11 @@ const tileOk = (s: State, x: number, y: number, utomElden: boolean) => {
   return true;
 };
 // en plats för ett hus med yttermåtten w×h inom byområdet, PLATS.husMellan rutor från andra hus och PLATS.uteFri från stationer
-// som står ute, helst en bit från elden och inte på lekplatsen. Träden där
+// som står ute, helst en bit från elden och inte på lekplatsen, och inte så att väggarna stänger in mark. Träden där
 // huset ska stå fälls först, men en plats med färre träd går fortare
 function siteFor(s: State, w: number, h: number, okAt: Uint8Array) {
   const f = eldPlats(s), mid = campCenter(s), R = BYGG.radieBas + living(s).length * BYGG.radiePerPerson, g = groundOf(s), lekR = lekplats(s), M = Math.max(PLATS.husMellan, PLATS.uteFri);
-  let best: { x: number; y: number } | undefined, bs = Infinity;
+  const platser: { x: number; y: number; sc: number }[] = [];
   for (let y = 1; y + h < H; y++) for (let x = 1; x + w < W; x++) {
     const cx = x + w / 2, cy = y + h / 2;
     if (Math.hypot(cx - mid.x, cy - mid.y) > R) continue;
@@ -88,9 +88,11 @@ function siteFor(s: State, w: number, h: number, okAt: Uint8Array) {
     for (let yy = y; yy < y + h; yy++) for (let xx = x; xx < x + w; xx++) if (g.trees[yy * W + xx] >= FOREST) trad++;
     const eld = rektAvstand(f.x, f.y, x - 1, y - 1, w + 2, h + 2) === 0 ? ELDFLYTT.husStraff : 0; // där elden står bara om ingen annan plats finns: elden flyttas först
     const sc = Math.abs(near - BYGG.husAvst) + BYGG.mittVikt * Math.hypot(cx - mid.x, cy - mid.y) + lek + BYGG.tradVikt * trad + eld;
-    if (sc < bs) { bs = sc; best = { x, y }; }
+    platser.push({ x, y, sc });
   }
-  return best;
+  // den bästa platsen som inte stänger in någon mark (stationer.ts); lika bra platser i samma ordning som de söktes
+  const at = platser.sort((a, b) => a.sc - b.sc).find(q => !stangerIn(s, q.x, q.y, w, h));
+  return at && { x: at.x, y: at.y };
 }
 // kan man gå från rutan (ux, uy) utanför dörren till elden f, med huset på platsen at (yttermåtten w×h) i vägen?
 function kanGaUt(s: State, at: { x: number; y: number }, w: number, h: number, ux: number, uy: number, f: { x: number; y: number }) {

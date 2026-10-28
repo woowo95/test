@@ -16,7 +16,21 @@ SCENARIER.byggnader = {
     byggare(q); setAmount(q, 'yxa', 2);
     kor(q, 6);
     const h = housesOf(q)[0];
+    // ett hus får inte stänga in mark (v135): en udde med vatten på tre sidor stängs in av ett hus på den fjärde, men inte
+    // av ett hus mitt på land
+    const g = groundOf(ny), f = SIM.eldPlats(ny), fri = (x: number, y: number) => SIM.inMap(x, y) && g.tiles[y * W + x] !== T.Vatten;
+    const nas = (x: number, y: number) => !!findPath(g, f.x + 0.5, f.y + 0.5, x + 0.5, y + 0.5);
+    let udde: { x: number; y: number } | undefined, land: { x: number; y: number } | undefined;
+    for (let i = 0; i < W * SIM.H && !(udde && land); i++) {
+      const x = i % W, y = (i - x) / W, ut = [[1, 0], [-1, 0], [0, 1], [0, -1]].filter(([dx, dy]) => fri(x + dx, y + dy));
+      if (!udde && fri(x, y) && ut.length === 1 && nas(x, y)) udde = { x: ut[0][0] === 1 ? x + 1 : ut[0][0] === -1 ? x - 3 : x - 1, y: ut[0][1] === 1 ? y + 1 : ut[0][1] === -1 ? y - 3 : y - 1 };
+      let alltLand = true;
+      for (let yy = y - 1; yy <= y + 3 && alltLand; yy++) for (let xx = x - 1; xx <= x + 3 && alltLand; xx++) alltLand = fri(xx, yy);
+      if (!land && alltLand && Math.hypot(x - f.x, y - f.y) < 12 && nas(x - 1, y - 1)) land = { x, y };
+    }
     return [
+      [`ett hus intill en udde stänger in den (${udde ? `vid ${udde.x}, ${udde.y}` : 'ingen udde på kartan'})`, !!udde && SIM.stangerIn(ny, udde.x, udde.y, 3, 3)],
+      [`ett hus mitt på land stänger inte in något (${land ? `vid ${land.x}, ${land.y}` : 'ingen plats'})`, !!land && !SIM.stangerIn(ny, land.x, land.y, 3, 3)],
       ['varje rad har namn, symbol, behov och ägare', rader],
       [`utan sovplatser är sovsalen det mest akuta, en fara (${u?.fn ?? 'inget'})`, u?.fn === 'sovsal' && BYGGNADER.sovsal.fara],
       [`byns första hus blir en sovsal (${h ? fnOf(h).namn : 'inget hus'})`, h?.fn === 'sovsal' && fnOf(h).namn === 'Sovsal'],
@@ -461,7 +475,7 @@ SCENARIER.lagerplatser = {
     kor(s, 30); // sorteringen tar ungefär ett dygn, ibland några timmar till
     const zs = zonesOf(s), ps = pilesOf(s);
     const fel = ps.filter(p => p.zone >= 0 && !allows(zs[p.zone], p.k)).length;
-    const summaOk = Object.keys(STACK).every(k => Math.abs(ps.filter(p => p.k === k && p.stored).reduce((a, p) => a + p.n, 0) - amountOf(s, k)) < 1e-3);
+    const summaOk = Object.keys(STACK).filter(k => !SIM.isTool(k)).every(k => Math.abs(ps.filter(p => p.k === k && p.stored).reduce((a, p) => a + p.n, 0) - amountOf(s, k)) < 1e-3); // ett redskap kan vara i bruk eller hänga vid en station
     // ett tömt lager krymper först när det stått halvtomt i sex timmar (en kvarts år i spelet, steg 2.12.4)
     const tom = cloneState(s); for (const k of Object.keys(STACK)) SIM.setAmount(tom, k, 0);
     for (const z of zonesOf(tom)) z.tom = undefined; // klockan börjar när lagret töms, inte när det blev halvtomt tidigare
@@ -549,14 +563,16 @@ SCENARIER.lekplats = {
     const dir = l.x + l.w / 2 > mid.x ? -1 : 1; // åt andra hållet från lekplatsen, så att den måste flytta
     s.lagren!.push({ x: z.x + dir * 24, y: z.y, w: 2, h: 2, namn: 'Prov', prio: 0 }); // lagren krymper först efter sex timmar (steg 2.12.4) och är större, så den nya ligger längre bort
     const mid2 = SIM.byInne(s), l2 = SIM.lekplats(s);
-    const foljer = (mid2.x - mid.x) * dir > 3 && (l2.x - l.x) * dir >= 3 && rektAvstand(mid2.x, mid2.y, l2.x, l2.y, l2.w, l2.h) <= SIM.PLATS.lekSok;
+    // hur långt den flyttar beror på husen, lagren och skogen i vägen; den ska flytta åt rätt håll och komma närmare den nya mitten
+    const nu = rektAvstand(mid2.x, mid2.y, l2.x, l2.y, l2.w, l2.h), kvar = rektAvstand(mid2.x, mid2.y, l.x, l.y, l.w, l.h);
+    const foljer = (mid2.x - mid.x) * dir > 3 && (l2.x - l.x) * dir > 0 && nu < kvar && nu <= SIM.PLATS.lekSok;
     s.lagren!.pop();
     return [
       [`lekplatsen är ${SIM.PLATS.lekBredd} × ${SIM.PLATS.lekDjup} rutor`, storlek],
       [`den ligger nära byns inre (${fore.toFixed(1)} rutor från dess mitt, elden ${Math.hypot(f.x - mid.x, f.y - mid.y).toFixed(1)} rutor därifrån)`, fore <= SIM.PLATS.lekSok],
       [`den ligger aldrig i vattnet, på sten, i ett hus eller på en lagerplats (${fel} rutor fel på 72 timmar)`, fel === 0],
       [`barnen leker på lekplatsen (${paPlats} av ${leker} timmar)`, leker > 0 && paPlats >= leker * 0.9],
-      [`när byns inre flyttar följer lekplatsen med (mitten ${mid.x.toFixed(1)} → ${mid2.x.toFixed(1)}, lekplatsen x ${l.x} → ${l2.x})`, foljer],
+      [`när byns inre flyttar följer lekplatsen med (mitten ${mid.x.toFixed(1)} → ${mid2.x.toFixed(1)}, lekplatsen x ${l.x} → ${l2.x}, ${kvar.toFixed(1)} → ${nu.toFixed(1)} rutor från den nya mitten)`, foljer],
     ];
   },
 };

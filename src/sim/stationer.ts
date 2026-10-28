@@ -551,6 +551,20 @@ function naddaNu(s: State, extra: number, utan: number) {
   return { sedd, n: ko.length };
 }
 const GRANNAR = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+// stänger ett hus med yttermåtten w×h på platsen (x, y) in något som nåddes från elden? En vägg vid stranden kan lämna en
+// remsa mellan sig och vattnet som ingen kommer ut från: den som fiskade där när väggen blev klar gick rakt över sjön (v135).
+// Allt som nåddes utanför huset ska hänga ihop runt det
+export function stangerIn(s: State, x: number, y: number, w: number, h: number) {
+  const fore = nadda(s), sedd = new Uint8Array(W * H), ko: number[] = [];
+  const kvar = (i: number) => { const xx = i % W, yy = (i - xx) / W; return fore.sedd[i] === 1 && (xx < x || xx >= x + w || yy < y || yy >= y + h); };
+  let mal = 0;
+  for (let i = 0; i < W * H; i++) if (kvar(i)) { if (!mal) { sedd[i] = 1; ko.push(i); } mal++; }
+  for (let k = 0; k < ko.length; k++) {
+    const xx = ko[k] % W, yy = (ko[k] - xx) / W;
+    for (const [dx, dy] of GRANNAR) { const nx = xx + dx, ny = yy + dy, i = ny * W + nx; if (inMap(nx, ny) && !sedd[i] && kvar(i)) { sedd[i] = 1; ko.push(i); } }
+  }
+  return ko.length < mal;
+}
 // går det att ställa ett hinder på rutan extra i lagerplatsen z? Inget som nåddes från elden får stängas in (inte heller ett
 // hus vars öppning leder ut i lagret), alla rutor i lagerplatsen nås, och varje hinder i den (möblerna) har en nådd ruta rakt
 // bredvid sig. Rakt åt sidorna, så att ingen väg bara går snett förbi en hörna

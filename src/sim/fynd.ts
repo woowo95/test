@@ -30,7 +30,7 @@ export const FANGST = balans('fangst', {
   nottR: 2, nottMax: 0.8, nottDiv: 10, // nött mark skrämmer också: rutorna inom NottR runt en ruta räknas, och viltet minskar med antalet delat med Div, högst Max
   syn: 8, // byns närområde, som man i stort sett känner till från elden
   aterTom: 0.004, // ett uttag under detta räknas som orört när platsen växer tillbaka
-  barFull: 0.45, // så mycket bär en buske ger innan den är tom (full i bärens rad i FYND); den växer tillbaka på lika lång tid
+  barFull: 1.35, // så mycket bär en buske ger innan den är tom (full i bärens rad i FYND); den växer tillbaka på lika lång tid. Tre gånger mer än förut (0,45) sedan v135 (Björn efter v134)
   // fiske
   handFiske: 0.55, // fiske med händerna ger ungefär så mycket som samling på en lagom rik plats gånger detta
   forsokSek: 300, // ett fiskeförsök tar så här många sekunder (delat med SNABBARE)
