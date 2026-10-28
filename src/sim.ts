@@ -22,6 +22,7 @@ export * from './sim/relationer';
 export * from './sim/uppvaxt';
 export * from './sim/val';
 export * from './sim/samtal';
+export * from './sim/humor';
 export * from './sim/teknik';
 export * from './sim/liv';
 export * from './sim/steg';

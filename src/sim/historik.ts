@@ -1,7 +1,7 @@
 import { living } from './folk';
 import { amountOf, foodOf } from './lager';
 import { skogAndel } from './mark';
-import { avgMood } from './samtal';
+import { avgMood } from './humor';
 import { DAY, Historik, State, WEEK } from './typer';
 import { TORST } from './torst';
 

@@ -170,6 +170,12 @@ export function ownedStock(s: State, p: Person) {
   }
   return out;
 }
+// var och ens andelar i förrådet i värde (steg 3.2.1): ägarens id till summan av andelen gånger v(slaget)
+export function agarVarde(s: State, v: (k: string) => number) {
+  const m = new Map<number, number>();
+  for (const a of stacksOf(s)) if (a.ag) for (const id in a.ag) m.set(+id, (m.get(+id) ?? 0) + a.ag[id] * v(a.k));
+  return m;
+}
 // n av slaget k byter ägare (gåva, byte), utan att flyttas. Bara hela saker: en del av en sak blir en hel (steg 2.10.7).
 // Ger hur mycket som bytte ägare
 export function ownMove(s: State, k: string, n: number, from: number, to: number) {

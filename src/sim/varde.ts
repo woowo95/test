@@ -11,10 +11,10 @@
 import { ACTS, SNABBARE } from './handlingar';
 import { SAKER, SAK_LIST } from './saker';
 import { TEK } from './teknik';
-import { wornOf } from './lager';
+import { agarVarde, wornOf } from './lager';
 import { Ting, tingOf } from './agande';
 import { kvVarde } from './kvalitet';
-import { Bit, Hus, MATERIAL, bitsOf } from './byggnad';
+import { Bit, Hus, MATERIAL, bitsOf, housesOf } from './byggnad';
 import { State } from './typer';
 import { balans } from './balans';
 
@@ -101,3 +101,15 @@ export function rikedomDelar(s: State): Rikedom {
 const bitVarde = (b: Bit) => { const M = MATERIAL[b.m]; return M ? ((M.item ? b.mat * grundvarde(M.item) : 0) + M.tim * Math.min(1, b.b) * ARBETE) * b.c : 0; };
 export const husVarde = (s: State, h: Hus) => bitsOf(s).reduce((a, b) => a + (b.hus === h.id ? bitVarde(b) : 0), 0);
 export function rikedom(s: State) { const r = rikedomDelar(s); return r.forrad + r.redskap + r.hus; }
+
+// ---------- var och ens förmögenhet (steg 3.2.1) ----------
+// egen: vad var och en äger (andelar i förrådet, redskap och egna hus); byn: det gemensamma, byns rikedom minus det som är någons
+export function formogenheter(s: State) {
+  const egen = agarVarde(s, grundvarde);
+  const lagg = (id: number, v: number) => egen.set(id, (egen.get(id) ?? 0) + v);
+  for (const t of tingOf(s)) if (t.agare) lagg(t.agare, tingVarde(t));
+  for (const h of housesOf(s)) if (h.ag !== undefined) lagg(h.ag, husVarde(s, h));
+  egen.delete(0); // byns del räknas som resten
+  let sum = 0; for (const v of egen.values()) sum += v;
+  return { egen, byn: Math.max(0, rikedom(s) - sum) };
+}

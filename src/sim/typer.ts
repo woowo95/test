@@ -156,6 +156,7 @@ export interface Person {
   bast?: number; arke?: number; rivaler?: number[]; rivalom?: string; mentor?: number; mentorSk?: Skill;
   // uppväxten (steg 3.1.2, uppvaxt.ts): det hen var med om som barn, och anlagen (det hen föddes med, som barnen ärver).
   // p.pot är anlagen plus upplevelserna; anlag saknas så länge hen inte har någon upplevelse
+  forv?: { f: number; w: number }; // förväntan och rikedom (humor.ts, steg 3.2.1)
   upp?: Upplevelse[]; anlag?: Record<Stat, number>;
 }
 // en upplevelse i barndomen: slaget (UPPLEVELSER i uppvaxt.ts), åldern (år), när, vad den gjorde med egenskaperna och vem

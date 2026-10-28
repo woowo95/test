@@ -1,7 +1,7 @@
 import { barnTill } from './uppvaxt';
-import { ALDER, REL, ageOf, count, getRel, isKin, living, log, similarity, stat, think } from './folk';
+import { ALDER, REL, ageOf, count, getRel, isKin, log, similarity, stat, think } from './folk';
 import { berattaBrist } from './naring';
-import { halsa } from './halsa';
+import { moodOf } from './humor';
 import { clamp, pickViktat, rnd } from './slump';
 import { DAY, HOUR, Person, State } from './typer';
 import { pair } from './varld';
@@ -68,14 +68,6 @@ export const SAMTAL = balans('samtal', {
   skiltRom: 10, // romansen är så här stor efter en separation ...
   skiltTanke: 0.15, // ... och båda mår så här mycket sämre i skiltDygn dygn
   skiltDygn: 1,
-  // humöret: grundnivån, och vad som drar ner (Lag) eller upp (Hog) det
-  humorBas: 0.55,
-  humorHungerLag: 0.2, humorHungerMinus: 0.2, // hungern under 0,2 drar ner humöret med 0,2 ...
-  humorHungerHog: 0.6, humorHungerPlus: 0.05, // ... och över 0,6 upp 0,05
-  humorViloLag: 0.2, humorViloMinus: 0.12,
-  humorSocialLag: 0.2, humorSocialMinus: 0.1,
-  humorSocialHog: 0.7, humorSocialPlus: 0.05,
-  humorHalsaLag: 0.6, humorHalsaMinus: 0.12,
 });
 
 // ---------- samtalens slag (registret) ----------
@@ -164,18 +156,4 @@ export function converse(s: State, a: Person, others: Person[], events?: TalkEve
     barnTill(s, a, b, 'skilsmassa'); // barnen minns det (steg 3.1.2)
     think(a, `${ord} från ${b.name}`, -SAMTAL.skiltTanke * f, now, SAMTAL.skiltDygn * f * DAY); think(b, `${ord} från ${a.name}`, -SAMTAL.skiltTanke * f, now, SAMTAL.skiltDygn * f * DAY);
   }
-}
-
-// snitthumöret i byn; `tom` är värdet när ingen lever
-export function avgMood(s: State, tom: number) { const l = living(s); return l.length ? l.reduce((a, p) => a + moodOf(p, s.now), 0) / l.length : tom; }
-// humöret och, om ut finns med, delarna det består av (personrutan visar dem). Samma räkning i båda fallen
-export function moodOf(p: Person, now: number, ut?: { namn: string; v: number }[]) {
-  let m = SAMTAL.humorBas;
-  const del = (namn: string, v: number) => { m += v; ut?.push({ namn, v }); };
-  if (p.hunger < SAMTAL.humorHungerLag) del('Hungrig', -SAMTAL.humorHungerMinus); else if (p.hunger > SAMTAL.humorHungerHog) del('Mätt', SAMTAL.humorHungerPlus);
-  if (p.rest < SAMTAL.humorViloLag) del('Trött', -SAMTAL.humorViloMinus);
-  if (p.social < SAMTAL.humorSocialLag) del('Ensam', -SAMTAL.humorSocialMinus); else if (p.social > SAMTAL.humorSocialHog) del('Umgåtts mycket', SAMTAL.humorSocialPlus);
-  if (halsa(p) < SAMTAL.humorHalsaLag) del('Mår dåligt', -SAMTAL.humorHalsaMinus);
-  for (const t of p.thoughts) if (t.until > now) del(t.text, t.v);
-  return clamp(m, 0, 1);
 }

@@ -345,3 +345,32 @@ SCENARIER.uppvaxt = {
     }
   },
 };
+
+SCENARIER.humor = {
+  text: 'Förväntningarna (steg 3.2.1): den som blir rik blir gladare, vänjer sig efter några dygn och kräver sedan mer, den som blir fattig blir ledsnare och vänjer sig, och ett barn räknar med föräldrarnas rikedom',
+  kor: () => {
+    const s = createState(9, START);
+    const rik = nyInvanare(s, 'm', 30), fattig = nyInvanare(s, 'k', 30), barn = nyInvanare(s, 'k', 6);
+    barn.mother = rik.id;
+    const verktyg: SIM.Ting[] = [];
+    for (let i = 0; i < 10; i++) verktyg.push(SIM.newTing(s, 'yxa', 1, fattig.id));
+    const timmar = (n: number) => { for (let i = 0; i < n; i++) SIM.stepHumor(s); };
+    const delar = (p: Person) => { const u: { namn: string; v: number }[] = []; SIM.moodOf(p, s.now, u); return u; };
+    const har = (p: Person, namn: string) => delar(p).find(u => u.namn === namn)?.v ?? 0;
+    timmar(1); // alla vänjer sig vid det de har
+    const fore = SIM.moodOf(rik, s.now);
+    for (let i = 0; i < 100; i++) SIM.newTing(s, 'yxa', 1, rik.id); // rik blir rik på en gång ...
+    for (const t of verktyg) t.agare = SIM.BYN; // ... och fattig förlorar sina redskap
+    timmar(1);
+    const glad = har(rik, 'Rikare än förut'), ledsen = har(fattig, 'Fattigare än förut'), barnGlad = har(barn, 'Rikare än förut'), efter = SIM.moodOf(rik, s.now);
+    timmar(30 * 24); // 30 dygn (30 år i spelet)
+    const vant = har(rik, 'Rikare än förut'), mer = har(rik, 'Van vid mer'), vantF = har(fattig, 'Fattigare än förut');
+    return [
+      [`den som blir rik blir gladare (Rikare än förut ${glad.toFixed(2)}, humöret ${fore.toFixed(2)} → ${efter.toFixed(2)})`, glad > 0.05 && efter > fore],
+      [`den som förlorar sitt blir ledsnare (Fattigare än förut ${ledsen.toFixed(2)})`, ledsen < -0.03],
+      [`barnet räknar med förälderns rikedom (${barnGlad.toFixed(2)})`, barnGlad > 0.05],
+      [`efter 30 dygn har den rika vant sig (${vant.toFixed(3)}) och kräver mer (Van vid mer ${mer.toFixed(2)})`, Math.abs(vant) < 0.01 && mer < -0.02],
+      [`den fattiga har vant sig (${vantF.toFixed(3)})`, Math.abs(vantF) < 0.01],
+    ];
+  },
+};

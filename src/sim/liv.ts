@@ -2,7 +2,7 @@ import { uppvaxtDod, uppvaxtFodd } from './uppvaxt';
 import { ALDER, REL, ageOf, alive, byId, count, isParent, living, log, newPerson, relKey, startSkills, think } from './folk';
 import { Sed, sedEvent } from './seder';
 import { pair } from './varld';
-import { avgMood } from './samtal';
+import { avgMood } from './humor';
 import { chance, clamp, pick, rnd } from './slump';
 import { DAY, HOUR_S, Person, SEC, State } from './typer';
 import { foodDays } from './ekonomi';

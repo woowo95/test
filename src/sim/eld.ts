@@ -10,7 +10,7 @@ import { flintFactor, flintorOchYxor, stoneDist, takeFrom } from './fynd';
 import { observe } from './minne';
 import { eldPlats } from './karta';
 import { tileOf } from './mark';
-import { moodOf } from './samtal';
+import { moodOf } from './humor';
 import { duty, sedEvent } from './seder';
 import { RESERV, kunnighet } from './ekonomi';
 import { chance, clamp, rnd } from './slump';
