@@ -37,9 +37,9 @@ import { ISTID, iIstiden, isLight, kalender } from './tid';
 // Arbetet är projektet 'falt' (projekt.ts), handlingen 'odla' med steget som task.tool.
 // Bördighet, fukt och vattning kommer i steg 8.3.1, kompost och fler grödor i 8.3.2.
 export const ODLING = balans('odling', {
-  froTakt: 3, // frön per arbetstimme på en mycket rik plats (gånger kunnigheten och SNABBARE)
+  froTakt: 6, // frön per arbetstimme på en mycket rik plats (gånger kunnigheten och SNABBARE; 3 före balansen av fas 2, steg 2.12.2)
   froUttag: 0.1, // varje frö tar så här mycket ur platsen
-  froVill: 20, // man tar med sig frön tills byn har så här många
+  froVill: 40, // man tar med sig frön tills byn har så här många (20 före steg 2.12.2)
   froLeta: 0.3, // den som samlar går till de vilda grödorna för att plocka frön med VAL.fronChans, om någon ruta har så här mycket (steg 2.10.11)
   // fälten (steg 2.10.3, 2.10.13)
   rutorPerMun: 3, // ett fält ska ha så här många rutor per person i ägarens familj ...
@@ -60,15 +60,17 @@ export const ODLING = balans('odling', {
   overDygn: 1, // en mogen gröda står så här många dygn innan den börjar bli övermogen ...
   ruttDygn: 1.5, // ... och har sedan ruttnat helt efter så här många dygn till (skörden minskar under tiden)
   grasDygn: 3, // ett fält där ingen arbetat på så här många dygn och där inget växer blir gräs igen
-  kornMarg: 1.5, // korn sås bara om det hinner mogna med så här många dygn tillgodo före istiden; annars rovor
+  // på hösten blir nätterna kalla, och grödan hinner inte mogna innan frosten tar den (steg 2.12.2):
+  kornMarg: 5, // korn sås bara om det hinner mogna med så här många dygn tillgodo före istiden (1,5 före steg 2.12.2); annars rovor ...
+  rovMarg: 3, // ... med så här många dygn tillgodo
 });
 
 // grödorna (steg 2.10.3): sak = det som skördas (saker.ts), dygn = hur länge den växer innan den är mogen, perRuta = skörden
 // per ruta, fron = frön tillbaka per ruta (rovorna äts hela, så de ger få), frost = den dör när det blir kallare än så här
 export interface GrodaDef { namn: string; sak: string; dygn: number; perRuta: number; fron: number; frost: number }
 export const GRODOR = {
-  rovor: { namn: 'Rovor', sak: 'rovor', dygn: 2, perRuta: 5, fron: 2, frost: -3 }, // snabba och härdiga; lika många frön som de kostar (steg 2.10.11)
-  korn: { namn: 'Korn', sak: 'korn', dygn: 3, perRuta: 4, fron: 2.5, frost: -1 }, // håller länge; 3 dygn (Björn efter v107, steg 2.10.11)
+  rovor: { namn: 'Rovor', sak: 'rovor', dygn: 2, perRuta: 5, fron: 2, frost: -6 }, // snabba och härdiga; lika många frön som de kostar (steg 2.10.11); frost -3 före steg 2.12.2
+  korn: { namn: 'Korn', sak: 'korn', dygn: 3, perRuta: 4, fron: 6, frost: -4 }, // håller länge; 3 dygn (Björn efter v107, steg 2.10.11); fron 2,5 och frost -1 före steg 2.12.2
 } satisfies Record<string, GrodaDef>;
 export type GrodaSlag = keyof typeof GRODOR;
 export const GRODA_LIST = Object.keys(GRODOR) as GrodaSlag[];
@@ -150,7 +152,7 @@ function dygnTillIstid(s: State) {
 export function grodaNu(s: State): GrodaSlag | undefined {
   const d = dygnTillIstid(s);
   if (d >= GRODOR.korn.dygn + ODLING.kornMarg) return 'korn';
-  return d >= GRODOR.rovor.dygn ? 'rovor' : undefined;
+  return d >= GRODOR.rovor.dygn + ODLING.rovMarg ? 'rovor' : undefined;
 }
 const kanOdla = (s: State, p: Person) => ageOf(p, s.now) >= ALDER.vuxen && knows(p, 'odling');
 // p:s fält: det hen äger, annars ett som ingen levande äger (den som tar över det blir ägare när arbetet börjar)

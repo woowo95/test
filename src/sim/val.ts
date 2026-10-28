@@ -68,7 +68,7 @@ const VAL = balans('val', {
   letaFlinta: 0.1, // flinta över detta (och inget behov av stenar) gör att någon letar flinta till en yxa ...
   letaMat: 0.7, // ... om maten räcker så många dygn ...
   letaChans: 0.3, // ... och med denna chans
-  fronChans: 0.2, // chansen att den som samlar går till de vilda grödorna och plockar frön, när byn vill ha fler (steg 2.10.11)
+  fronChans: 0.4, // (0,2 före steg 2.12.2) chansen att den som samlar går till de vilda grödorna och plockar frön, när byn vill ha fler (steg 2.10.11)
   stenarChans: 0.5, // chansen att den som samlar letar flinta eller stenar vid stenarna när byn saknar det (och ett helt pass)
   tandHamtare: 3, // så många hämtar tändmaterial åt en släckt eld som mest
   projektVikt: 1.5, // det mest värda projektet (projekt.ts) väger som arbete så här mycket gånger sitt värde
