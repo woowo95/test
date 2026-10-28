@@ -1,5 +1,5 @@
 // Scenarier. Behov och val: behov, ved, aktivitet och fritid.
-import { Person, createState, getRel, step, living, temperature, nyKalender, amountOf, capacity, load, isLight, T, FOOD, ageOf, getMap, HOUR, W, tileOf, stat, campCenter, KANIN, gain, takeFuel, ownsAmount, addTo, setAmount, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, STOLD_LINDRIG, STOLD_OP, BEAT, spar, isWork, ACTS, groundOf, varmeDelar, nyVarme, addTool, stepKlader, chooseTask, iSkugga, KROPP, spotFor, shoreOf, torstDelar, drickPlats, areaOf, halsaLage, describe, halsaSteg, skada, blodning, halsa, rorlighet, workRate, OLYCKOR, Act, HALSA, kanGa, gangFart, hemma, mossaFynd, chopStock, skadeLista, skadeText, delSkada, FORMAGOR, smarta, handighet, NARINGAR, NARING, naringOf, naringNu, naringSjunker, mattnad, sjunker, bristGrad, bristSteg, berattaBrist, onskan, matOrdning, takeFood, vilaTim, skorbjugg, NARINGBAL, DODSORSAKER, converse, Naring, STATIONER, TEKNIK, tingOf, vaderNu } from '../../sim';
+import { Person, createState, getRel, step, living, temperature, nyKalender, amountOf, capacity, load, isLight, T, FOOD, ageOf, getMap, HOUR, W, tileOf, stat, campCenter, KANIN, gain, takeFuel, ownsAmount, addTo, setAmount, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, DELA, BEAT, spar, isWork, ACTS, groundOf, varmeDelar, nyVarme, addTool, stepKlader, chooseTask, iSkugga, KROPP, spotFor, shoreOf, torstDelar, drickPlats, areaOf, halsaLage, describe, halsaSteg, skada, blodning, halsa, rorlighet, workRate, OLYCKOR, Act, HALSA, kanGa, gangFart, hemma, mossaFynd, chopStock, skadeLista, skadeText, delSkada, FORMAGOR, smarta, handighet, NARINGAR, NARING, naringOf, naringNu, naringSjunker, mattnad, sjunker, bristGrad, bristSteg, berattaBrist, onskan, matOrdning, takeFood, vilaTim, skorbjugg, NARINGBAL, DODSORSAKER, converse, Naring, STATIONER, TEKNIK, tingOf, vaderNu } from '../../sim';
 import { stepIs, stepVader, isCm, vattenGrader, halVal, halMin, drickVal, iIstiden, ageIndex, tidyTools } from '../../sim';
 import { START, STEG_DYGN, STEG_TIM } from '../kor';
 import { setMat, setFood, kor, klockan, tandEld, tomtForrad, treVuxna, bastaJaktruta, SCENARIER, rikBy } from './hjalp';
@@ -100,7 +100,7 @@ SCENARIER.ved = {
     takeMaterial(s, a, 'flinta', 1);
     const lindrig = ownsAmount(s, b, 'flinta') === 2 && !!b.stulet?.some(x => x.k === 'flinta' && x.l);
     const fore = getRel(s, b, a).op; takeMaterial(s, b, 'flinta', 1);
-    const marker = Math.abs(getRel(s, b, a).op - (fore - STOLD_LINDRIG)) < 1e-9 && !b.stulet;
+    const marker = Math.abs(getRel(s, b, a).op - (fore - DELA.stoldLindrig)) < 1e-9 && !b.stulet;
     a.pot.empati = 20;
     const hogEmp = getable(s, a, 'flinta') === 0;
     // vanliga byar: elden brinner och ingen fryser ihjäl
@@ -114,7 +114,7 @@ SCENARIER.ved = {
       ['den som håller på att frysa ihjäl hämtar någon annans ved till elden', stjal],
       ['material tas av sitt eget och byns före andras', egetForst],
       ['andras material tas sist, som en lindrig stöld', lindrig],
-      [`den bestulne märker det, och relationen blir ${STOLD_LINDRIG} sämre (inte ${STOLD_OP})`, marker],
+      [`den bestulne märker det, och relationen blir ${DELA.stoldLindrig} sämre (inte ${DELA.stoldOp})`, marker],
       ['den med mycket hög empati tar inte andras material', hogEmp],
       [`ingen fryser ihjäl i två vanliga byar på 10 dygn (10 år i spelet) (${kyla})`, kyla === 0],
     ];

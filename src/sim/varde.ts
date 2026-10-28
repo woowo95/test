@@ -16,10 +16,14 @@ import { Ting, tingOf } from './agande';
 import { kvVarde } from './kvalitet';
 import { Bit, Hus, MATERIAL, bitsOf } from './byggnad';
 import { State } from './typer';
+import { balans } from './balans';
 
 export const ARBETE = 1; // värdet av en arbetstimme
-const NIVA_PASLAG = 0.25; // så mycket mer en sak är värd för varje teknisk nivå
-const SALLSYNT = 1.5; // så mycket mer en sällsynt råvara är värd
+// Balanstalen (regel 8). Läses bara inne i funktionerna: varde.ts ingår i en ring av importer
+const VARDE = balans('varde', {
+  nivaPaslag: 0.25, // så mycket mer en sak är värd för varje teknisk nivå
+  sallsynt: 1.5, // så mycket mer en sällsynt råvara är värd
+});
 
 // den tekniska nivån: en teknik utan krav är nivå 1, och varje teknik den bygger på lägger till en
 const tekNiva = new Map<string, number>();
@@ -58,7 +62,7 @@ function rakna(k: string): number {
   else {
     let x = (f.tid ?? 0) / SNABBARE + (f.act ? actTid(f.act) : 0) + (f.min ?? 0) / 60 * ARBETE;
     for (const j in f.av ?? {}) x += f.av![j] * grundvarde(j);
-    v = x * (1 + NIVA_PASLAG * nivaOf(k)) * (f.sallsynt ? SALLSYNT : 1);
+    v = x * (1 + VARDE.nivaPaslag * nivaOf(k)) * (f.sallsynt ? VARDE.sallsynt : 1);
   }
   raVarde.set(k, v);
   return v;
@@ -72,7 +76,7 @@ export function grundvarde(k: string): number {
   const n = nivaOf(k), mapp = SAKER[k]?.mapp;
   if (n > 0 && mapp) { // golvet: mer än de enkla råvarorna av samma slag
     const ra = SAK_LIST.filter(j => SAKER[j]!.mapp === mapp && nivaOf(j) === 0 && !SAKER[j]!.skaffa?.av).map(rakna);
-    if (ra.length) v = Math.max(v, Math.max(...ra) * (1 + NIVA_PASLAG * n));
+    if (ra.length) v = Math.max(v, Math.max(...ra) * (1 + VARDE.nivaPaslag * n));
   }
   varden.set(k, v);
   return v;

@@ -40,7 +40,8 @@ export const HALSA = balans('halsa', {
   logg: 0.4, // skador från den här graden står i loggen
   lakSamre: 1 / 3, // den som är hungrig eller törstig läker så här mycket långsammare
   smarta: 0.6, // hälsan som visas är högst 1 − smarta × smärtan ...
-  smartaHumor: 0.2, // ... och smärtan sänker humöret så här mycket (gånger smärtan)
+  smartaHumor: 0.2, // ... och smärtan sänker humöret så här mycket (gånger smärtan) ...
+  ontGrans: 0.2, // ... från den här smärtan (tanken "Har ont", och texten i personrutan)
   minst: 0.2, // rörligheten och händigheten går aldrig under detta
   skicklig: 25, // risken för en olycka gånger 1 − färdigheten / skicklig
   // vården (steg 2.5.2)
@@ -160,14 +161,15 @@ export function halsa(p: Person) {
   if (b >= 1 && !p.skador?.length) return p.health;
   return Math.max(0, Math.min(p.health, (b - HALSA.blodDod) / (1 - HALSA.blodDod), 1 - HALSA.smarta * smarta(p), 1 - infektion(p)));
 }
-const lakerFullt = (p: Person) => p.hunger > KROPP.lakerMat && p.torst > TORST.laker;
+// mätt och inte törstig: såren läker fullt, blodet kommer tillbaka och hälsan stiger (halsaLage i steg.ts)
+export const lakerFullt = (p: Person) => p.hunger > KROPP.lakerMat && p.torst > TORST.laker;
 // ---------- det som syns (personrutan och fliken Hälsa, steg 2.5.3) ----------
 // varje skada som en rad: symbolen, vad och var, hur svår, om den blöder, vad som är gjort och hur det går. Personrutan och
-// fliken Hälsa läser bara den, så att de aldrig räknar på olika sätt
+// fliken Hälsa läser bara den, så att de aldrig räknar på olika sätt. Timmarna kvar räknar inte med vilan (vilaLak)
 // ikon och vard är pixelbildernas nycklar i ikoner.ts (skadan, och förbandet och rengjort)
 export interface SkadeRad { d: Kroppsdel; tecken: string; ikon: string; namn: string; grad: string; bloder: boolean; gjort: string[]; vard: string[]; gar: string; battre: boolean }
 export function skadeLista(p: Person, now: number): SkadeRad[] {
-  const lak = lakerFullt(p) ? 1 : HALSA.lakSamre;
+  const lak = (lakerFullt(p) ? 1 : HALSA.lakSamre) * lakFaktor(p);
   return (p.skador ?? []).map(w => {
     const sk = SKADA[w.k], ren = (w.ren ?? 0) > now, kall = (w.inf ?? 0) >= HALSA.kallbrand;
     const gar = w.inf === undefined ? `läker, ungefär ${Math.ceil(w.g * sk.lakTim / lak)} timmar kvar` : kall ? 'kallbrand, blir sämre' : ren ? 'infekterat men rengjort, blir bättre' : 'infekterat, blir sämre';
@@ -245,7 +247,7 @@ export function halsaSteg(s: State, p: Person, dtSec: number): Dodsorsak | undef
   else if (blod === 0 && mat) p.blod = Math.min(1, p.blod + h / HALSA.blodTillbaka);
   if (p.blod < HALSA.blodDod) { blodas(s, p.x, p.y, 'forblodning', 1); return 'blod'; }
   const ont = smarta(p);
-  if (ont > 0.2) think(p, 'Har ont', -HALSA.smartaHumor * ont, s.now, HOUR);
+  if (ont > HALSA.ontGrans) think(p, 'Har ont', -HALSA.smartaHumor * ont, s.now, HOUR);
   return undefined;
 }
 

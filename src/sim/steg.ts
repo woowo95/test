@@ -43,7 +43,7 @@ import { sjoRakna } from './sjo';
 import { akel, toaBesok } from './smuts';
 import { blodas } from './blod';
 import { DRICKA_ACTS, TORST, drick, torstSteg, vattenFram, vattenFylld } from './torst';
-import { HALSA, barMed, burenSteg, gangFart, halsaSteg, lamnaAv, mossaFynd, mossaPaStam, vardKlar, vardMal } from './halsa';
+import { HALSA, barMed, burenSteg, gangFart, halsaSteg, lakerFullt, lamnaAv, mossaFynd, mossaPaStam, vardKlar, vardMal } from './halsa';
 import { bordPlats, kladVarme, stepKlader } from './utrustning';
 import { finishStation, finishTillbehor, stationRutor, stepStationer, tillbehorVarme, workStation } from './stationer';
 
@@ -280,7 +280,7 @@ function needsStep(s: State, p: Person, a: number, dtSec: number, coldRate: numb
 
 // det som just nu tär på hälsan eller läker den (sjukdomen kommer till utöver detta)
 export function halsaLage(p: Person, now: number): 'svalt' | 'frys' | 'torst' | 'laker' | undefined {
-  return p.hunger <= 0 ? 'svalt' : p.warm < KROPP.frysdod ? 'frys' : p.torst <= 0 ? 'torst' : p.hunger > KROPP.lakerMat && p.torst > TORST.laker && !isSick(p, now) ? 'laker' : undefined;
+  return p.hunger <= 0 ? 'svalt' : p.warm < KROPP.frysdod ? 'frys' : p.torst <= 0 ? 'torst' : lakerFullt(p) && !isSick(p, now) ? 'laker' : undefined;
 }
 // hälsa, sjukdom och död: svält, kyla, sjukdom, ålderdom, olyckor och skador (halsa.ts). true = personen dog
 function healthStep(s: State, p: Person, a: number, ai: number, dtSec: number) {

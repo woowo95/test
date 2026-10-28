@@ -14,6 +14,7 @@ import { ratt } from './matlagning';
 import { habitShare, habitTotal } from './seder';
 import { grundvarde } from './varde';
 import { EKONOMI } from './ekonomi';
+import { balans } from './balans';
 
 // ---------- behovsstegen ----------
 // När någon behöver något går hen stegen i ordning: först sitt eget, sedan ett byte med någon i närheten (byten nedan),
@@ -37,13 +38,35 @@ export interface Behov {
   genast?: true; // p tar det själv på en gång (äter), så ett byte prövas varje gång före byns förråd; annars när p frågar runt
 }
 
-const STJAL_ALDRIG = 17; // empati från vilken man aldrig stjäl
-export const STOLD_OP = 15; // så mycket sämre blir relationen när stölden upptäcks
-export const STOLD_LINDRIG = 5; // ... när det var material till ett arbete (en lindrig stöld), om det var värt minst STOLD_VARDE ...
-const STOLD_VARDE = 3; // ... annars mindre efter värdet (grundvarde): en näve hö till elden märks knappt (steg 2.12.6)
-const STOLD_TANKE = 0.25; // den bestulne tänker på en lindrig stöld först när den är värd minst så stor del av STOLD_VARDE
-const FRAGA_R = 8; // så nära (rutor) måste man vara för att be någon om något
-const FRAGA_TAKT = 1 / (30 * 60); // så ofta (per sekund) den som saknar något ber någon i närheten
+// Balanstalen (regel 8) för att fråga, stjäla, ge och byta
+export const DELA = balans('dela', {
+  stjalAldrig: 17, // empati från vilken man aldrig stjäl
+  stoldOp: 15, // så mycket sämre blir relationen när stölden upptäcks
+  stoldLindrig: 5, // ... när det var material till ett arbete (en lindrig stöld), om det var värt minst stoldVarde ...
+  stoldVarde: 3, // ... annars mindre efter värdet (grundvarde): en näve hö till elden märks knappt (steg 2.12.6)
+  stoldTanke: 0.25, // den bestulne tänker på en lindrig stöld först när den är värd minst så stor del av stoldVarde
+  fragaR: 8, // så nära (rutor) måste man vara för att be någon om något
+  fragaTakt: 1 / (30 * 60), // så ofta (per sekund) den som saknar något ber någon i närheten
+  // viljan att ge (willing)
+  overflodBas: 0.4, // viljan gånger overflodBas + overflodSteg * överflödet, mellan overflodMin och overflodMax
+  overflodSteg: 0.3,
+  overflodMin: 0.7,
+  overflodMax: 1.3,
+  gemenskapGe: 0.25, // så mycket givmildare (eller snålare) seden gör folk, vid Gemenskap fullt ut
+  rikGe: 0.7, // så mycket av viljan att ge till andra än barn och partner som finns kvar i en rik by
+  geBarn: 0.95, // viljan att ge till sitt barn ...
+  gePartner: 0.8, // ... till sin partner ...
+  geFamilj: 0.6, // ... till släkten ...
+  geVanOp: 80, // ... och till andra: relationen delat med geVanOp, högst geVanMax
+  geVanMax: 0.6,
+  geEmpati: 0.5, // viljan gånger geEmpati + empatin / 20
+  // byten
+  saknar: 2, // det man saknar och behöver nu är värt så många gånger grundvärdet (dubbelt så mycket nära döden)
+  over: 0.5, // ... det man har över: mer mat och ved än man själv behöver, material, redskap man inte arbetar med
+  ojamn: 0.2, // så mycket mindre än man ger går man med på att få, med vem som helst
+  byteMinst: 0.3, // ett byte om mindre än så (grundvärde, ungefär arbetstimmar) är inte värt att tala om
+  nara: 0.3, // så stor vilja att ge (willing) har man till den man står nära: familjen och goda vänner
+});
 
 // ---------- mat ----------
 const portionOf = (p: Person, now: number) => ageOf(p, now) < ALDER.matBarn ? KROPP.portionBarn : 1;
@@ -68,8 +91,8 @@ function eat(s: State, p: Person, fran?: Person) {
 const vidBordet = (p: Person) => p.task?.act === 'maltid' && p.task.phase === 'do';
 export const MAT: Behov = {
   id: 'mat', namn: 'mat', slag: FOOD, minst: 0.3, mangd: portionOf,
-  // det man själv äter på ett dygn. En getter, så att talet läses först när det behövs: förr importerade ekonomi.ts och behov.ts
-  // varandra via lager.ts; i dag ingår ekonomi.ts inte i någon cirkulär import
+  // det man själv äter på ett dygn. En getter, så att talet läses först när det behövs: behov.ts, ekonomi.ts och halsa.ts
+  // importerar varandra i en ring, så EKONOMI kan vara odefinierad när den här filen läses in
   get kvar() { return EKONOMI.matPerDygn; },
   // vid bordet äter man lite tidigare än annars: det är därför man satt sig där
   behover: (_s, p) => p.hunger < KROPP.hungrig || vidBordet(p) && p.hunger < KROPP.hungrig + KROPP.bordHunger, genast: true,
@@ -95,7 +118,7 @@ export const harMat = (s: State, p: Person) => hasFor(s, p, MAT) >= MAT.minst;
 export function needLadder(s: State, p: Person, dtSec: number) {
   for (const b of BEHOV) {
     if (!b.behover(s, p)) continue;
-    const byns = hasFor(s, p, b) >= b.minst, fraga = !byns && chance(s, FRAGA_TAKT, dtSec, 'dela', p);
+    const byns = hasFor(s, p, b) >= b.minst, fraga = !byns && chance(s, DELA.fragaTakt, dtSec, 'dela', p);
     if (ownFor(s, p, b) < b.minst && (fraga || (byns && b.genast))) tradeAround(s, p, b); // ett byte, före byns förråd
     if (fraga && hasFor(s, p, b) < b.minst) askAround(s, p, b);
     if (hasFor(s, p, b) >= b.minst) { if (b.anvand(s, p) > 0) noticeTheft(s, p, b.id); continue; }
@@ -105,7 +128,7 @@ export function needLadder(s: State, p: Person, dtSec: number) {
 }
 const isFamily = (g: Person, m: Person) => isParent(g, m) || g.partner === m.id || isKin(g, m);
 // g är vaken (familjen kan man väcka) och så nära m att m kan be g om något
-const narvarande = (g: Person, m: Person) => (g.task?.act !== 'sova' || isFamily(g, m)) && Math.hypot(g.x - m.x, g.y - m.y) <= FRAGA_R;
+const narvarande = (g: Person, m: Person) => (g.task?.act !== 'sova' || isFamily(g, m)) && Math.hypot(g.x - m.x, g.y - m.y) <= DELA.fragaR;
 // det g har över att ge m. En förälder delar med sitt barn också det sista, partner och släkt behåller en portion
 // åt sig själva, andra så mycket de själva behöver (b.kvar)
 const overOf = (s: State, g: Person, b: Behov, m: Person) =>
@@ -180,7 +203,7 @@ function eveningTrade(s: State, a: Person, b: Person) {
 // är nöden så stor att p stjäl, och av vem? Ju högre empati, desto närmare döden innan man stjäl
 function victimOf(s: State, p: Person, b: Behov) {
   const emp = stat(p, 'empati', s.now);
-  if (emp >= STJAL_ALDRIG || b.fara(s, p) <= emp / STJAL_ALDRIG) return;
+  if (emp >= DELA.stjalAldrig || b.fara(s, p) <= emp / DELA.stjalAldrig) return;
   const cands = living(s).filter(q => q !== p).map(q => {
     const own = ownFor(s, q, b);
     const w = own >= b.minst ? own * clamp(1 - getRel(s, p, q).op / 50, 0.2, 3) : 0; // helst av den man inte tycker om
@@ -203,9 +226,9 @@ export function noticeTheft(s: State, p: Person, key: string) {
   for (const { av, l, n } of p.stulet.filter(x => x.k === key)) {
     const t = byId(s, av);
     if (!t) continue;
-    const r = getRel(s, p, t), w = l ? clamp(n * grundvarde(key) / STOLD_VARDE, 0, 1) : 1;
-    r.op = clamp(r.op - (l ? STOLD_LINDRIG * w : STOLD_OP), -100, 100);
-    if (w < STOLD_TANKE) continue;
+    const r = getRel(s, p, t), w = l ? clamp(n * grundvarde(key) / DELA.stoldVarde, 0, 1) : 1;
+    r.op = clamp(r.op - (l ? DELA.stoldLindrig * w : DELA.stoldOp), -100, 100);
+    if (w < DELA.stoldTanke) continue;
     think(p, `${t.name} tog av min ${namnOf(key)}`, l ? -0.04 : -0.1, s.now, 12 * HOUR);
     if (alive(t)) think(t, `${p.name} vet att jag tog`, -0.05, s.now, 6 * HOUR);
     if (!l) log(s, `${p.name} märkte att ${t.name} hade stulit hens ${namnOf(key)}.`, 'rel', [p.id, t.id]);
@@ -217,19 +240,19 @@ export function noticeTheft(s: State, p: Person, key: string) {
 // ---------- material till ett arbete ----------
 // Den som tillverkar, bygger eller tänder elden tar materialet i samma steg som maten: sitt eget och byns, sedan som
 // gåva av den i närheten som helst ger. Räcker det inte tar man av andras: en lindrig stöld, som man inte behöver vara
-// nära döden för, men som ger sämre relation (STOLD_LINDRIG) när den bestulne märker det. Den med mycket hög empati
+// nära döden för, men som ger sämre relation (DELA.stoldLindrig) när den bestulne märker det. Den med mycket hög empati
 // tar aldrig av andras och gör då inte arbetet.
-const aldrigStjal = (s: State, p: Person) => stat(p, 'empati', s.now) >= STJAL_ALDRIG;
+const aldrigStjal = (s: State, p: Person) => stat(p, 'empati', s.now) >= DELA.stjalAldrig;
 // så mycket av slaget k som p kan få till ett arbete
 export const getable = (s: State, p: Person, k: string) => aldrigStjal(s, p) ? mayTake(s, p, k) : amountOf(s, k);
-// p tar n av slaget k till ett arbete; common = till byns eld eller hus (byns först). Ger vems det var. kom = var det
-// kom ifrån, nycklar som `kom` i bygg.ts skriver dem (eget, byn, familj, gava, stold)
 // materialet till ett redskap efter receptet (saker.ts: skaffa.av), till ens eget arbete: hur mycket av varje som togs
 export function takeRecipe(s: State, p: Person, k: string) {
   const av: Record<string, number> = {};
   for (const [m, n] of Object.entries(SAKER[k]?.skaffa?.av ?? {})) av[m] = sumOf(takeMaterial(s, p, m, n));
   return av;
 }
+// p tar n av slaget k till ett arbete; common = till byns eld eller hus (byns först). Ger vems det var. kom = var det
+// kom ifrån, nycklar som `kom` i bygg.ts skriver dem (eget, byn, familj, gava, stold)
 export function takeMaterial(s: State, p: Person, k: string, n: number, common = false, kom?: Record<string, number>): Del {
   const ag: Del = {};
   if (n <= 1e-12) return ag;
@@ -270,7 +293,7 @@ function tradeMaterial(s: State, p: Person, k: string, n: number) {
   for (const g of kretsen(s, p, g => ownsAmount(s, g, k) > 1e-9, g => willing(s, g, p, ownsAmount(s, g, k) / rest), true)) {
     // rest räknas i styck av k: mät det som kom (byte ger behovets enheter, för grenar 0,4 per gren)
     const fore = ownsAmount(s, p, k);
-    byte(s, p, g, [{ k, n: Math.min(rest, ownsAmount(s, g, k)) }], { behov: BEHOV_SAKNAR, minst: 1e-6, fara: 0, typ: 'material', utom: [k] });
+    byte(s, p, g, [{ k, n: Math.min(rest, ownsAmount(s, g, k)) }], { behov: DELA.saknar, minst: 1e-6, fara: 0, typ: 'material', utom: [k] });
     rest -= ownsAmount(s, p, k) - fore;
     if (rest <= 1e-9) break;
   }
@@ -284,18 +307,15 @@ function tradeMaterial(s: State, p: Person, k: string, n: number) {
 // mest. Den som har mycket över ger lättare (overflod = vad hen har delat med vad hen själv behöver: 1 ger 0,7 gånger,
 // 2 ger 1 och 3 eller mer 1,3 gånger), seden Gemenskap gör alla givmildare och Var och en för sig snålare, och ju
 // rikare byn är desto mindre ger man (delning.ts). Till sina barn och sin partner ger man lika gärna i en rik by
-const OVERFLOD = { min: 0.7, max: 1.3 };
-const GEMENSKAP_GE = 0.25; // så mycket givmildare (eller snålare) seden gör folk, vid Gemenskap fullt ut
-const RIK_GE = 0.7; // så mycket av viljan att ge till andra än barn och partner som finns kvar i en rik by
 export function willing(s: State, g: Person, m: Person, overflod = 1) {
-  const over = clamp(0.4 + 0.3 * overflod, OVERFLOD.min, OVERFLOD.max), sed = 1 + GEMENSKAP_GE * s.seder.v.gemenskap;
-  if (isParent(g, m)) return clamp(0.95 * Math.max(1, over) * sed, 0, 1); // till sitt barn ger man också det sista
+  const over = clamp(DELA.overflodBas + DELA.overflodSteg * overflod, DELA.overflodMin, DELA.overflodMax), sed = 1 + DELA.gemenskapGe * s.seder.v.gemenskap;
+  if (isParent(g, m)) return clamp(DELA.geBarn * Math.max(1, over) * sed, 0, 1); // till sitt barn ger man också det sista
   const r = getRel(s, g, m);
   if (r.op < REL.osams) return 0;
   const emp = stat(g, 'empati', s.now) / 20, nara = g.partner === m.id;
-  const base = nara ? 0.8 : isKin(g, m) ? 0.6 : clamp(r.op / 80, 0, 0.6);
-  const rik = nara ? 1 : RIK_GE + (1 - RIK_GE) * (s.delning?.andel ?? 1);
-  return clamp(base * (0.5 + emp) * over * sed * rik, 0, 1);
+  const base = nara ? DELA.gePartner : isKin(g, m) ? DELA.geFamilj : clamp(r.op / DELA.geVanOp, 0, DELA.geVanMax);
+  const rik = nara ? 1 : DELA.rikGe + (1 - DELA.rikGe) * (s.delning?.andel ?? 1);
+  return clamp(base * (DELA.geEmpati + emp) * over * sed * rik, 0, 1);
 }
 // Byten och gåvor i samtal: den som saknar ett redskap hen behöver i sitt arbete tar upp det. Den andra har ett redskap
 // över (har två av slaget, eller arbetar inte med det). Har den som frågar något över som är värt nog blir det ett byte
@@ -330,7 +350,7 @@ export function askForTool(s: State, a: Person, b: Person): 'gåva' | 'byte' | u
       if (!needsTool(s, m, k, totM)) continue;
       const t = spare(s, g, k, totG ??= habitTotal(g));
       if (!t) continue;
-      if (!osams(s, g, m) && byte(s, m, g, [{ k, n: 1, t }], { behov: BEHOV_SAKNAR, minst: 1, fara: 0, typ: 'redskap', utom: [k] })) return 'byte';
+      if (!osams(s, g, m) && byte(s, m, g, [{ k, n: 1, t }], { behov: DELA.saknar, minst: 1, fara: 0, typ: 'redskap', utom: [k] })) return 'byte';
       if (rnd(s, 'dela', g) >= willing(s, g, m, ownedKind(s, g, k))) continue;
       give(t, g, m);
       const namn = (SAKER[k]?.namn ?? k).toLowerCase(), r = getRel(s, a, b);
@@ -348,28 +368,23 @@ export function askForTool(s: State, a: Person, b: Person): 'gåva' | 'byte' | u
 // Ett byte är ett steg i behovsstegen mellan sitt eget och byns förråd (steg 1.4.2): den som saknar något byter till sig
 // det mot något hen inte behöver, med folk i närheten, familj och vänner först (samma krets som gåvorna). Var och en
 // värderar en sak som grundvärdet (varde.ts) gånger sitt eget behov av den (behovAv), och bytet blir av när båda tjänar
-// på det. Ojämna byten går när den ena får högst en femtedel mindre än hen ger (OJAMN), när den som frågar håller på att
-// dö av bristen (fara i BEHOV) eller när de står varandra nära (willing minst NARA). Mat, ved, material och redskap
+// på det. Ojämna byten går när den ena får högst en femtedel mindre än hen ger (DELA.ojamn), när den som frågar håller på att
+// dö av bristen (fara i BEHOV) eller när de står varandra nära (willing minst DELA.nara). Mat, ved, material och redskap
 // byts här: i behovsstegen, när material tas till ett eget arbete, och när ett redskap saknas (i samtal).
-const BEHOV_SAKNAR = 2; // det man saknar och behöver nu är värt så många gånger grundvärdet (dubbelt så mycket nära döden)
-const BEHOV_OVER = 0.5; // ... det man har över: mer mat och ved än man själv behöver, material, redskap man inte arbetar med
-const OJAMN = 0.2; // så mycket mindre än man ger går man med på att få, med vem som helst
-const BYTE_MINST = 0.3; // ett byte om mindre än så (grundvärde, ungefär arbetstimmar) är inte värt att tala om
-export const NARA = 0.3; // så stor vilja att ge (willing) har man till den man står nära: familjen och goda vänner
 interface Vara { k: string; n: number; t?: Ting }
 const behovMed = (k: string) => BEHOV.find(b => b.slag.includes(k));
 const enheter = (v: Vara[]) => v.reduce((x, { k, n }) => x + n * (behovMed(k)?.per?.[k] ?? 1), 0);
 const vardeOf = (v: Vara) => grundvarde(v.k) * (v.t ? v.t.c * kvVarde(v.t) : 1);
-// hur mycket p behöver en till av slaget k, gånger grundvärdet: BEHOV_SAKNAR för det p saknar för ett behov eller i sitt
-// arbete, 1 för det p behöver behålla (mat och ved upp till b.kvar, redskapet hen arbetar med) och BEHOV_OVER för resten.
+// hur mycket p behöver en till av slaget k, gånger grundvärdet: DELA.saknar för det p saknar för ett behov eller i sitt
+// arbete, 1 för det p behöver behålla (mat och ved upp till b.kvar, redskapet hen arbetar med) och DELA.over för resten.
 // Material som p saknar till ett arbete räknas där det tas (tradeMaterial)
 export function behovAv(s: State, p: Person, k: string) {
-  if (isTool(k)) return needsTool(s, p, k) ? BEHOV_SAKNAR : ownedKind(s, p, k) > 0 && !spare(s, p, k) ? 1 : BEHOV_OVER;
+  if (isTool(k)) return needsTool(s, p, k) ? DELA.saknar : ownedKind(s, p, k) > 0 && !spare(s, p, k) ? 1 : DELA.over;
   const b = behovMed(k);
-  if (!b) return BEHOV_OVER;
+  if (!b) return DELA.over;
   const own = ownFor(s, p, b);
-  if (b.behover(s, p) && own < b.minst) return BEHOV_SAKNAR * (1 + b.fara(s, p));
-  return own <= b.kvar ? 1 : BEHOV_OVER;
+  if (b.behover(s, p) && own < b.minst) return DELA.saknar * (1 + b.fara(s, p));
+  return own <= b.kvar ? 1 : DELA.over;
 }
 // det p kan byta bort: mat och ved utöver det hen själv behöver (b.kvar), material och redskap hen har över. Inte slagen i utom
 function payable(s: State, p: Person, utom: readonly string[]): Vara[] {
@@ -414,14 +429,14 @@ function byte(s: State, m: Person, g: Person, vill: Vara[], v: Villkor): number 
   };
   let { betal, fick, kost } = betala(ger);
   if (!betal.length) return 0;
-  const desperat = v.fara > 0, nara = (a: Person, b: Person) => willing(s, a, b) >= NARA;
+  const desperat = v.fara > 0, nara = (a: Person, b: Person) => willing(s, a, b) >= DELA.nara;
   let del = 1; // så stor del av vill som byts
-  if (fick < (1 - OJAMN) * ger) {
+  if (fick < (1 - DELA.ojamn) * ger) {
     const kan = vill.some(w => w.t) ? 0 : fick / ger, hela = vill.reduce((x, w) => x + helt(w.n * kan) * vardeOf(w) * behovAv(s, g, w.k), 0) / ger;
     if (hela * enheter(vill) >= v.minst && hela > 0) { del = hela; ({ betal, fick, kost } = betala(ger * del)); } // m får det m kan betala, i hela saker
     else if (!desperat && !nara(g, m)) return 0;
   }
-  if (v.delad ? far * del <= kost : far * del < (1 - OJAMN) * kost && !desperat && !nara(m, g)) return 0;
+  if (v.delad ? far * del <= kost : far * del < (1 - DELA.ojamn) * kost && !desperat && !nara(m, g)) return 0;
   if (v.delad && del === 1) { // m betalar hälften av sin vinst till g, med det som är värt mest för g
     let extra = (far - kost) / 2;
     for (const w of varor) {
@@ -433,7 +448,7 @@ function byte(s: State, m: Person, g: Person, vill: Vara[], v: Villkor): number 
       extra -= n * w.in;
     }
   }
-  if (vill.reduce((x, w) => x + w.n * vardeOf(w), 0) * del < BYTE_MINST) return 0;
+  if (vill.reduce((x, w) => x + w.n * vardeOf(w), 0) * del < DELA.byteMinst) return 0;
   const fatt = vill.map(w => ({ ...w, n: w.t ? 1 : helt(w.n * del) })).filter(w => w.n > 0);
   for (const w of fatt) if (w.t) give(w.t, g, m); else ownMove(s, w.k, w.n, g.id, m.id);
   for (const w of betal) if (w.t) give(w.t, m, g); else ownMove(s, w.k, w.n, m.id, g.id);

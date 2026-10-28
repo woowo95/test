@@ -14,6 +14,12 @@ export const EKONOMI = balans('ekonomi', {
   atGlid: 1 / 24, // det byn äter per person och dygn är ett glidande snitt som byts ut så här mycket i timmen (ungefär ett dygn, ett år i spelet)
   barnArbete: 0.3, // ett barn (under ALDER.vuxen) orkar så här stor del av en vuxens arbete ...
   gammalArbete: 0.6, // ... och en gammal (över ALDER.gammal) så här stor del
+  sjukArbete: 0.3, // den som är sjuk orkar så här stor del
+  kunnigBas: 0.6, // en färdighet (0–20) hjälper i arbetet med kunnigBas + färdigheten / kunnigSteg: 0,6 utan, 1,4 med högsta
+  kunnigSteg: 25,
+  taktBas: 0.45, // arbetstakten gånger taktBas + färdigheten / taktFardighet + egenskapen som hjälper / taktEgenskap
+  taktFardighet: 20,
+  taktEgenskap: 40,
 });
 // Reserver: det som lämnas kvar i förrådet till elden, och tändmaterialet byn vill ha. Mängder i förrådets enheter
 export const RESERV = balans('reserv', {
@@ -34,14 +40,14 @@ export const sparas = (k: string) => k === 'ved' ? RESERV.ved : k === 'grenar' ?
 // arbetsförmågan: ålder (barn och gamla orkar mindre) gånger sjukdom. workRate multiplicerar de två delarna var för sig
 // sist i sin kedja; (kedja * a) * b är inte alltid samma flyttal som kedja * (a * b)
 export const ageFactor = (a: number) => a < ALDER.vuxen ? EKONOMI.barnArbete : a > ALDER.gammal ? EKONOMI.gammalArbete : 1;
-export const sickFactor = (p: Person, now: number) => isSick(p, now) ? 0.3 : 1;
-// hur mycket en färdighet (0–20) hjälper i arbetet: 0,6 utan färdighet, 1,4 med högsta
-export const kunnighet = (skill: number) => 0.6 + skill / 25;
+export const sickFactor = (p: Person, now: number) => isSick(p, now) ? EKONOMI.sjukArbete : 1;
+// hur mycket en färdighet (0–20) hjälper i arbetet
+export const kunnighet = (skill: number) => EKONOMI.kunnigBas + skill / EKONOMI.kunnigSteg;
 export const arbetsformaga = (p: Person, a: number, now: number) => ageFactor(a) * sickFactor(p, now);
 export function workRate(s: State, p: Person, act: Act) {
   const a = ageOf(p, s.now);
   const sk = ACTS[act].arbete!, d = ACTS[sk as Act];
-  return d.bas! * (d.fart ?? 1) * SNABBARE / HOUR_S * d.sasong![ageIndex(s)] * (0.45 + p.skill[sk] / 20 + stat(p, d.egenskap!, s.now) / 40) * ageFactor(a) * sickFactor(p, s.now) * handighet(p); // skadade armar och händer arbetar långsammare (halsa.ts)
+  return d.bas! * (d.fart ?? 1) * SNABBARE / HOUR_S * d.sasong![ageIndex(s)] * (EKONOMI.taktBas + p.skill[sk] / EKONOMI.taktFardighet + stat(p, d.egenskap!, s.now) / EKONOMI.taktEgenskap) * ageFactor(a) * sickFactor(p, s.now) * handighet(p); // skadade armar och händer arbetar långsammare (halsa.ts)
 }
 // det p äter på ett dygn enligt kroppen: mättnaden sjunker 1 / hungerTim i timmen (ett barn långsammare) och en portion god mat
 // höjer den KROPP.mattar. Ett barn äter en mindre portion som mättar lika mycket

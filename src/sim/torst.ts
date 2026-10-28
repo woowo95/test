@@ -18,7 +18,7 @@ import { clamp, rnd } from './slump';
 import { halMin, halVal, islagt, naVattnet } from './is';
 import { Act, H, HOUR, HOUR_S, Person, State, T, Task, W, inMap } from './typer';
 import { balans } from './balans';
-import { HALSA, hemma, kanGa } from './halsa';
+import { hemma, kanGa } from './halsa';
 import { freeTools, nTools } from './agande';
 import { wearUsed } from './redskap';
 
@@ -41,6 +41,7 @@ export const TORST = balans('torst', {
   mag: 0.2, // chansen att få ont i magen är vattnets smuts gånger detta (0,4 före balansen av fas 2, steg 2.12.1) ...
   magMin: 2, magSpann: 4, // ... och man är sjuk i magMin + slump × magSpann timmar
   fyllMin: 3, // så många minuter det tar att fylla vattensäcken vid vattnet (steg 2.10.1)
+  hamtaR: 30, // man hämtar vatten åt den som inte kan gå och är högst så här många rutor bort
 });
 
 // sätten att dricka (registret): handlingen, platsen den görs på, när den väljs och skälet
@@ -176,7 +177,7 @@ const hamtas = (s: State, q: Person) => living(s).some(o => o.task?.act === 'vat
 // det som väljs (val.ts): den närmaste som behöver vatten och som ingen annan redan hämtar åt, och vattnet att fylla säcken vid
 export function vattenVal(s: State, p: Person): { spot: { x: number; y: number }; ref: number; why: string } | undefined {
   if (ageOf(p, s.now) < ALDER.vuxen || !kanGa(p) || freeTools(s, p, 'vattensack') < 1) return undefined;
-  let best: Person | undefined, bd = HALSA.vardR;
+  let best: Person | undefined, bd = TORST.hamtaR;
   for (const q of living(s)) {
     if (q === p || kanGa(q) || !torstig(q, 0) || ageOf(q, s.now) < ALDER.smabarn || !hemma(s, q)) continue;
     const d = Math.hypot(q.x - p.x, q.y - p.y);

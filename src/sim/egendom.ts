@@ -14,7 +14,8 @@ import { REL, alive, byId, getRel, isKin } from './folk';
 // Det som bärs har ägarna med sig (task.ag), också när bördan läggs ner på marken.
 // Utom för maten ändrar ägandet ännu inget i vad folk gör; det visar bara vems det är.
 export const BYN = 0;
-export type Del = Record<string, number>; // ägare (id) → mängd. Byn står aldrig med: det som inte är någons är byns
+export type Del = Record<string, number>; // ägare (id) → mängd. I en stack står byn aldrig med (det som inte är någons är byns);
+// i det som tas ur förrådet (takeOwn, takeOrder, takeMaterial) står byns del under BYN
 export function sumOf(d?: Del) { let n = 0; if (d) for (const o in d) n += d[o]; return n; }
 export function addDel(a: Del, b: Del | undefined, f = 1) { if (b) for (const o in b) a[o] = (a[o] ?? 0) + b[o] * f; return a; }
 // lånar ägaren ut ett redskap till p? (agande.ts; här så att agande inte beror på behov.ts)
