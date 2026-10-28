@@ -1,3 +1,4 @@
+import { allaBarn } from './uppvaxt';
 import { addTo, amountOf, avbryt, fetchSpot, takeLimit, use } from './lager';
 import { Behov, addBehov, getable, takeMaterial } from './behov';
 import { Del, addDel } from './egendom';
@@ -153,7 +154,7 @@ function lightFire(s: State, p: Person) {
   fireLog(s, { k: 'tänd', id: p.id, n: f.tries });
   log(s, `${p.name} lyckades tända elden${onCoal ? ' på den gamla kolhögen' : ''}${f.tries > 1 ? ` efter ${f.tries} försök` : ''}.`, 'world', [p.id]);
   think(p, 'Tände elden', ELD.tandGlad, s.now, ELD.tandGladDygn * DAY);
-  if (f.lightings === 1) { p.fame.push('Tände byns första eld'); kronika(s, `${p.name} tände byns första eld.`); sedEvent(s, 'nyfikenhet', ELD.sedNyfiken, 'Elden har gjort byn nyfiken på vad mer som går att lära sig.'); }
+  if (f.lightings === 1) { p.fame.push('Tände byns första eld'); allaBarn(s, 'uppfinning', 'tände sin första eld'); kronika(s, `${p.name} tände byns första eld.`); sedEvent(s, 'nyfikenhet', ELD.sedNyfiken, 'Elden har gjort byn nyfiken på vad mer som går att lära sig.'); }
   f.tries = 0;
 }
 // Varje misslyckat försök sedan elden senast brann gör nästa lättare: man får kläm på det och tändmaterialet blir

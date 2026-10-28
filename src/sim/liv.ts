@@ -1,3 +1,4 @@
+import { uppvaxtDod, uppvaxtFodd } from './uppvaxt';
 import { ALDER, REL, ageOf, alive, byId, count, isParent, living, log, newPerson, relKey, startSkills, think } from './folk';
 import { Sed, sedEvent } from './seder';
 import { pair } from './varld';
@@ -94,6 +95,7 @@ export function die(s: State, p: Person, orsak: Dodsorsak) {
   if (sed) sedEvent(s, sed.k, sed.d, `${p.name} ${sed.text}`);
   if (a < LIV.barnDod) sedEvent(s, 'barn', LIV.sedBarn, `Byn sörjer barnet ${p.name} och värnar mer om sina barn.`);
   if (a >= ALDER.hogAlder) p.fame.push(`Blev ${a} år gammal`);
+  uppvaxtDod(s, p); // barnen som miste hen eller såg det (steg 3.1.2)
   for (const q of living(s)) {
     // den som var gift sörjer mer, den bästa vännen länge och en nära vän lite mer än en vän (steg 3.1.1)
     const r = s.rels[relKey(p.id, q.id)];
@@ -112,6 +114,7 @@ export function birth(s: State, mother: Person) {
   s.people.push(ch);
   log(s, `${ch.name} föddes, ${ch.sex === 'k' ? 'dotter' : 'son'} till ${mother.name}${father ? ' och ' + father.name : ''}.`, 'birth', [ch.id, mother.id, ...(father ? [father.id] : [])]);
   count(s, 'fodda'); kronika(s, `${ch.name} föddes.`);
+  uppvaxtFodd(s, ch);
   think(mother, `Fick barnet ${ch.name}`, LIV.fodMor, s.now, LIV.fodDygn * DAY);
   if (father && alive(father)) think(father, `Fick barnet ${ch.name}`, LIV.fodFar, s.now, LIV.fodDygn * DAY);
   const kids = s.people.filter(q => q.mother === mother.id).length;

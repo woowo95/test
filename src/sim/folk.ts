@@ -215,7 +215,8 @@ export function newPerson(s: State, sex: 'm' | 'k', born: number, mother?: Perso
     else if (!mother || !father) v = nyEgenskap(s);
     else {
       const r = rnd(s, 'folk');
-      v = r < EGENSKAP.ny ? nyEgenskap(s) : (r < (1 + EGENSKAP.ny) / 2 ? mother : father).pot[k] + gauss(s, 'folk') * EGENSKAP.arvSlump;
+      const f = r < (1 + EGENSKAP.ny) / 2 ? mother : father; // barnet ärver anlagen, inte det föräldern varit med om (steg 3.1.2)
+      v = r < EGENSKAP.ny ? nyEgenskap(s) : (f.anlag ?? f.pot)[k] + gauss(s, 'folk') * EGENSKAP.arvSlump;
     }
     pot[k] = clamp(v, 1, 20);
   }

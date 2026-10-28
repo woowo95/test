@@ -1,3 +1,4 @@
+import { barnTill } from './uppvaxt';
 import { ALDER, REL, ageOf, count, getRel, isKin, living, log, similarity, stat, think } from './folk';
 import { berattaBrist } from './naring';
 import { halsa } from './halsa';
@@ -132,6 +133,7 @@ export function converse(s: State, a: Person, others: Person[], events?: TalkEve
     r.op -= SAMTAL.gralOp + rnd(s, 'samtal', a) * SAMTAL.gralSpann;
     think(a, `Grälade med ${b.name}`, -SAMTAL.gralTankeEgen, now, SAMTAL.gralTim * HOUR);
     think(b, `Grälade med ${a.name}`, -SAMTAL.gralTankeAndra, now, SAMTAL.gralTim * HOUR);
+    if (a.partner === b.id) barnTill(s, a, b, 'gral'); // föräldrar som grälar ofta formar barnen (steg 3.1.2)
   } else {
     // vänskap växer allt långsammare ju närmare man redan är; ovänskap fördjupas lättare
     const d = SAMTALSSLAG[kind].v * (out + like) * (kind === 'skämt' && out < 0 ? SAMTAL.skamtOvan : 1);
@@ -159,6 +161,7 @@ export function converse(s: State, a: Person, others: Person[], events?: TalkEve
     a.partner = undefined; b.partner = undefined; r.rom = SAMTAL.skiltRom; r.par = undefined; r.gift = undefined;
     log(s, gift ? `${a.name} och ${b.name} skilde sig.` : `${a.name} och ${b.name} gick skilda vägar.`, 'rel', [a.id, b.id]);
     if (gift) count(s, 'skilsmassa');
+    barnTill(s, a, b, 'skilsmassa'); // barnen minns det (steg 3.1.2)
     think(a, `${ord} från ${b.name}`, -SAMTAL.skiltTanke * f, now, SAMTAL.skiltDygn * f * DAY); think(b, `${ord} från ${a.name}`, -SAMTAL.skiltTanke * f, now, SAMTAL.skiltDygn * f * DAY);
   }
 }

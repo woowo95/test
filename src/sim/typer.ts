@@ -154,7 +154,13 @@ export interface Person {
   // relationstyperna (steg 3.1.1, relationer.ts), räknade en gång i timmen: bästa vän, ärkefiende, rivaler (och yrket man tävlar
   // i, om någon rival har samma), och för den unga mentorn och färdigheten mentorn lär ut
   bast?: number; arke?: number; rivaler?: number[]; rivalom?: string; mentor?: number; mentorSk?: Skill;
+  // uppväxten (steg 3.1.2, uppvaxt.ts): det hen var med om som barn, och anlagen (det hen föddes med, som barnen ärver).
+  // p.pot är anlagen plus upplevelserna; anlag saknas så länge hen inte har någon upplevelse
+  upp?: Upplevelse[]; anlag?: Record<Stat, number>;
 }
+// en upplevelse i barndomen: slaget (UPPLEVELSER i uppvaxt.ts), åldern (år), när, vad den gjorde med egenskaperna och vem
+// eller vad den gällde
+export interface Upplevelse { k: import('./uppvaxt').UpplevelseTyp; a: number; t: number; e: Partial<Record<Stat, number>>; om?: string }
 
 // En lärdom om en plats: k = vad, a = område (8×8 rutor), v = hur mycket (eller hur rädd), c = hur säker (0–1),
 // t = när platsen sågs (den som hör det får samma tid; återväxten räknas därifrån), src = vem den hördes av (saknas = egen upplevelse), led = hur många led från den som var där, om = vad som hände.

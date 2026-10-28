@@ -19,6 +19,7 @@ export const STROMMAR = {
   dela: 'gåvor, byten och mat ur andras förråd',
   eld: 'eld, tändning och kol',
   kvalitet: 'hur bra det blir som någon gör',
+  uppvaxt: 'vad som fastnar hos ett barn och vad det gör (steg 3.1.2)',
 } as const;
 export type Strom = keyof typeof STROMMAR;
 

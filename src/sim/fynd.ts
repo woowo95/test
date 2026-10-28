@@ -1,3 +1,4 @@
+import { upplev } from './uppvaxt';
 import { PLATS, campCenter, campDist, campGrid, rektAvstand } from './plats';
 import { count, forstaGang, stat, log, think } from './folk';
 import { getMap, hash, perKarta, vnoise } from './karta';
@@ -550,6 +551,7 @@ export function eatPoison(s: State, p: Person) {
   p.poisonUntil = p.sickUntil; p.sickWhy = 'Förgiftad av svamp';
   p.health = clamp(p.health - FANGST.giftHalsa, 0, 1);
   think(p, 'Blev förgiftad av en svamp', FANGST.giftTanke, s.now, FANGST.giftTankeDygn * DAY);
+  upplev(s, p, 'svamp');
   const before = kn(p, 'svamp'), v = learnK(p, 'svamp', FANGST.giftLar, s.now);
   log(s, `${p.name} blev förgiftad av svamp ur förrådet.`, 'world', [p.id]);
   if ((s.stat!.forgiftad ?? 0) <= 1) {

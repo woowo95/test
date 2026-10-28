@@ -1,3 +1,4 @@
+import { upplev } from './uppvaxt';
 import { ALDER, REL, ageOf, count, getRel, isParent, living, log, relKey, think } from './folk';
 import { DAY, Person, Rel, SKILLS, Skill, State } from './typer';
 import { balans } from './balans';
@@ -105,6 +106,7 @@ export function stepRelationer(s: State) {
     if (ny !== undefined && p.bast !== ny && p.id < ny) {
       const r = rel(p, q!)!; count(s, 'bastaVan');
       if (!(r.flags & 8)) { r.flags |= 8; log(s, `${p.name} och ${q!.name} har blivit bästa vänner.`, 'rel', [p.id, ny]); }
+      upplev(s, p, 'bastaVan', q!.name); upplev(s, q!, 'bastaVan', p.name); // barn minns sin bästa vän (steg 3.1.2)
     }
     p.bast = ny;
   }
@@ -167,6 +169,7 @@ export function stepRelationer(s: State) {
     if (best && bsk) {
       ung.mentor = best.id; ung.mentorSk = bsk; count(s, 'mentor');
       log(s, `${best.name} har blivit mentor för ${ung.name} i ${skillNamn(bsk)}.`, 'rel', [best.id, ung.id]);
+      upplev(s, ung, 'mentor', `${best.name} i ${skillNamn(bsk)}`);
     }
   }
 }

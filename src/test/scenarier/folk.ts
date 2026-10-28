@@ -300,3 +300,48 @@ SCENARIER.relationer = {
     ];
   },
 };
+
+SCENARIER.uppvaxt = {
+  text: 'Uppväxten (steg 3.1.2): ett barn som mister sina föräldrar minns det och blir föräldralöst, en vuxen formas inte, samma slag fastnar bara en gång, högst UPPV.max upplevelser och högst UPPV.tak åt varje håll, nära svält blir ett minne, egenskaperna är anlagen plus upplevelserna, och barnen ärver anlagen, inte det föräldrarna varit med om',
+  kor: () => {
+    const s = createState(9, START);
+    const chans = Object.fromEntries(Object.entries(SIM.UPPLEVELSER).map(([k, d]) => [k, d.chans]));
+    for (const d of Object.values(SIM.UPPLEVELSER)) d.chans = 1; // allt fastnar, så att provet inte beror på slumpen
+    try {
+      const mor = nyInvanare(s, 'k', 35), far = nyInvanare(s, 'm', 37), barn = nyInvanare(s, 'm', 8), vuxen = nyInvanare(s, 'k', 20);
+      barn.mother = mor.id; barn.father = far.id; vuxen.mother = mor.id; vuxen.father = far.id;
+      const fore = { ...barn.pot };
+      SIM.die(s, mor, 'olycka'); SIM.die(s, far, 'olycka');
+      const har = (p: Person, k: string) => !!p.upp?.some(u => u.k === k);
+      const foralder = barn.upp?.find(u => u.k === 'foralder');
+      const flyttad = !!foralder && (Object.entries(foralder.e) as [SIM.Stat, number][]).every(([k, v]) => Math.abs(barn.pot[k] - SIM.clamp(fore[k] + SIM.uppEffekt(barn, k), 1, 20)) < 1e-9 && v !== 0);
+      // samma slag en gång: två svåra skador ger ett minne
+      SIM.skada(s, barn, 'benV', 'benbrott', 0.9, 'olycka', 'när ett träd föll'); SIM.skada(s, barn, 'benH', 'benbrott', 0.9, 'olycka', 'när ett träd föll');
+      const skador = barn.upp?.filter(u => u.k === 'skadad').length ?? 0;
+      // nära svält en timme
+      const hungrig = nyInvanare(s, 'k', 9); hungrig.hunger = 0; hungrig.health = 0.4;
+      SIM.stepUppvaxt(s);
+      // många slag: högst UPPV.max, och högst UPPV.tak åt varje håll
+      const manga = nyInvanare(s, 'm', 10);
+      for (const k of Object.keys(SIM.UPPLEVELSER) as SIM.UpplevelseTyp[]) SIM.upplev(s, manga, k, 'någon');
+      const tak = SIM.STATS.every(k => Math.abs(SIM.uppEffekt(manga, k)) <= SIM.UPPV.tak);
+      // barnen ärver anlagen: föräldrar med anlagen 10 som upplevelserna flyttat till 20
+      const fa = nyInvanare(s, 'm', 30), mo = nyInvanare(s, 'k', 30);
+      for (const p of [fa, mo]) { p.anlag = {} as Record<SIM.Stat, number>; for (const k of SIM.STATS) { p.anlag[k] = 10; p.pot[k] = 20; } }
+      let summa = 0, n = 0;
+      for (let i = 0; i < 20; i++) { const c = SIM.newPerson(s, 'k', s.now, mo, fa); for (const k of SIM.STATS) { summa += c.pot[k]; n++; } }
+      const medel = summa / n;
+      return [
+        [`barnet (8 år) som miste sina föräldrar minns det och blev föräldralöst (${(barn.upp ?? []).map(SIM.upplevelseText).join('; ')})`, har(barn, 'foralder') && har(barn, 'foraldralos') && s.log.some(l => l.text.includes('Blev föräldralös'))],
+        [`egenskaperna är anlagen plus upplevelserna, och anlagen sparas (${!!barn.anlag})`, flyttad && !!barn.anlag],
+        [`den vuxna (20 år) formas inte (${vuxen.upp?.length ?? 0} upplevelser)`, !vuxen.upp],
+        [`två svåra skador ger ett minne (${skador}): ${SIM.upplevelseText(barn.upp!.find(u => u.k === 'skadad')!)}`, skador === 1],
+        [`ett barn nära svält minns det (${(hungrig.upp ?? []).map(u => u.k).join(', ')})`, har(hungrig, 'svalt')],
+        [`högst ${SIM.UPPV.max} upplevelser (${manga.upp?.length}) och högst ${SIM.UPPV.tak} åt varje håll`, manga.upp?.length === SIM.UPPV.max && tak],
+        [`barnen ärver anlagen (10), inte det upplevelserna gjort (20): medel ${medel.toFixed(1)}`, medel < 13],
+      ];
+    } finally {
+      for (const [k, d] of Object.entries(SIM.UPPLEVELSER)) d.chans = chans[k];
+    }
+  },
+};
