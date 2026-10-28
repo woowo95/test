@@ -17,6 +17,7 @@ import { grundvarde } from './varde';
 import { EKONOMI } from './ekonomi';
 import { balans } from './balans';
 import { RELT, arBast, arRivaler } from './relationer';
+import { handelse, smakMat } from './rykten';
 
 // ---------- behovsstegen ----------
 // När någon behöver något går hen stegen i ordning: först sitt eget, sedan ett byte med någon i närheten (byten nedan),
@@ -79,7 +80,7 @@ function eat(s: State, p: Person, fran?: Person) {
   // maten fyller näringsvärdena, och mättnaden är en sammanfattning av dem (steg 2.6.1, naring.ts)
   ratt(s, p, per, full); // rått kött och rå fisk (matlagning.ts, steg 2.8.1), av det som åts innan det skalas till mättnad
   for (const k in per) per[k] *= f;
-  ata(p, per); eatPoison(s, p); count(s, 'atit', portion); // portioner som ätits (foodDays i ekonomi.ts mäts mot det)
+  ata(p, per); smakMat(s, p, per); eatPoison(s, p); count(s, 'atit', portion); // portioner som ätits (foodDays i ekonomi.ts mäts mot det)
   if (q < 0.5) think(p, 'Maten var dålig', -0.05, now, 6 * HOUR);
   if (portion > 0 && vidBordet(p)) { think(p, 'Åt vid bordet', KROPP.bordGlad * kvEffekt(bordVid(s, p)), now, KROPP.bordGladTim * HOUR); count(s, 'bordMal'); }
   if (q < 0.25 && rnd(s, 'halsa', p) < (0.25 - q) / 0.25 * 0.35) {
@@ -181,6 +182,7 @@ function gift(s: State, m: Person, g: Person, n: Behov) {
   think(m, `Fick ${n.namn} av ${g.name}`, 0.1, s.now, 12 * HOUR);
   think(g, `Gav ${n.namn} till ${m.name}`, 0.05, s.now, 6 * HOUR);
   if (n.fara(s, m) > 0) log(s, `${g.name} gav ${n.namn} till ${m.name}, som höll på att dö.`, 'rel', [g.id, m.id]); // vardagens gåvor fyller inte loggen
+  handelse(s, g, n.fara(s, m) > 0 ? 'hjalp' : 'gava', m, n.namn); // de som ser det tycker bättre om den som ger (steg 3.3.1)
   count(s, 'gava_' + n.id, want - rest);
   return true;
 }
@@ -233,6 +235,7 @@ export function noticeTheft(s: State, p: Person, key: string) {
     if (w < DELA.stoldTanke) continue;
     think(p, `${t.name} tog av min ${namnOf(key)}`, l ? -0.04 : -0.1, s.now, 12 * HOUR);
     if (alive(t)) think(t, `${p.name} vet att jag tog`, -0.05, s.now, 6 * HOUR);
+    handelse(s, t, l ? 'stoldLindrig' : 'stold', p, namnOf(key), p); // bara den bestulne vet, och kan berätta det (steg 3.3.1)
     if (!l) { log(s, `${p.name} märkte att ${t.name} hade stulit hens ${namnOf(key)}.`, 'rel', [p.id, t.id]); upplev(s, p, 'bestulen', t.name); upplev(s, t, 'tjuv', p.name); }
   }
   p.stulet = p.stulet.filter(x => x.k !== key);
@@ -361,6 +364,7 @@ export function askForTool(s: State, a: Person, b: Person): 'gåva' | 'byte' | u
       think(g, `Gav en ${namn} till ${m.name}`, 0.05, s.now, 6 * HOUR);
       count(s, 'gavor');
       log(s, `${g.name} gav en ${namn} till ${m.name}.`, 'rel', [g.id, m.id]);
+      handelse(s, g, 'gava', m, 'en ' + namn);
       return 'gåva';
     }
   }

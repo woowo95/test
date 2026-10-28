@@ -15,6 +15,7 @@ import { FOREST, Ground, isSoil } from './vag';
 import { ACTS, RedskapDef, SNABBARE } from './handlingar';
 import { balans } from './balans';
 import { sjoRakna } from './sjo';
+import { smakGift } from './rykten';
 
 // ---------- balanstal (regel 8) ----------
 // Fångst och insamling: var viltet håller sig borta, hur fort platserna tömmas och växer tillbaka, fiske, flinta och svamp.
@@ -551,7 +552,7 @@ export function eatPoison(s: State, p: Person) {
   p.poisonUntil = p.sickUntil; p.sickWhy = 'Förgiftad av svamp';
   p.health = clamp(p.health - FANGST.giftHalsa, 0, 1);
   think(p, 'Blev förgiftad av en svamp', FANGST.giftTanke, s.now, FANGST.giftTankeDygn * DAY);
-  upplev(s, p, 'svamp');
+  upplev(s, p, 'svamp'); smakGift(p); // avsmak för svamp (steg 3.3.5)
   const before = kn(p, 'svamp'), v = learnK(p, 'svamp', FANGST.giftLar, s.now);
   log(s, `${p.name} blev förgiftad av svamp ur förrådet.`, 'world', [p.id]);
   if ((s.stat!.forgiftad ?? 0) <= 1) {

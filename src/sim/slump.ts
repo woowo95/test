@@ -21,6 +21,7 @@ export const STROMMAR = {
   kvalitet: 'hur bra det blir som någon gör',
   uppvaxt: 'vad som fastnar hos ett barn och vad det gör (steg 3.1.2)',
   humor: 'utbrotten: när, hur allvarliga och mot vem (steg 3.2.2)',
+  rykte: 'rykten: vad som berättas, överdrifter, skitsnack och smak (steg 3.3)',
 } as const;
 export type Strom = keyof typeof STROMMAR;
 

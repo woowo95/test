@@ -10,6 +10,7 @@ import { ageOf, byId, getRel, log, newPerson, startSkills, think } from './folk'
 import { newSeder, sederTarget, TAGS } from './seder';
 import { clamp, gauss, rnd } from './slump';
 import { DAY, Fire, NEW_H, NEW_W, Person, SEC, State, simulera, useMap } from './typer';
+import { startSmak } from './rykten';
 
 // ---------- skapa värld ----------
 // storlek: kartans storlek, för testerna av äldre byar (en ny by får alltid NEW_W × NEW_H)
@@ -25,7 +26,7 @@ function skapaBy(seed: number, now: number, storlek: { W: number; H: number }): 
   pair(s, a, b, true); pair(s, c, d, true);
   s.people.push(newPerson(s, rnd(s, 'folk') < 0.5 ? 'm' : 'k', now - (4 + rnd(s, 'folk') * 0.5) * DAY, b, a));
   // startfärdigheter efter ålder
-  for (const p of s.people) startSkills(s, p, ageOf(p, now));
+  for (const p of s.people) { startSkills(s, p, ageOf(p, now)); startSmak(s, p); }
   s.seder.v = sederTarget(s);
   stepDelning(s); // en ny by är fattig och delar nästan allt
   log(s, `${s.people.length} människor slog sig ner vid sjön. De har ingen eld ännu.`, 'world');

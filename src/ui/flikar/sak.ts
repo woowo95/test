@@ -1,4 +1,4 @@
-import { kladSkydd, BYN, HOUR, W, kortTal, Pile, SAKER, Slitage, Ting, byId, condOf, halvKlar, sakNamn, slitageNu, stationById, stationDef, temperature, tingOf, toaAt, toaInfo } from '../../sim';
+import { klenod, kladSkydd, BYN, HOUR, W, kortTal, Pile, SAKER, Slitage, Ting, byId, condOf, halvKlar, sakNamn, slitageNu, stationById, stationDef, temperature, tingOf, toaAt, toaInfo } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { condBar, durTxt, esc, kvMark, kvText, pLink } from '../hjalp';
 import { piles, s, ui } from '../lage';
@@ -61,6 +61,7 @@ export const sak: Flik = {
     const mangd = !t && p && p.max > 1 ? `<dt>Mängd</dt><dd>${Math.round(p.n)} st</dd>` : '';
     const vem = t?.av !== undefined ? byId(s, t.av) : undefined;
     const gjord = t?.gjord !== undefined ? `<dt>Gjord</dt><dd>${vem ? `av ${pLink(vem)}, ` : ''}för ${durTxt(s.now - t.gjord)} sedan</dd>` : '';
+    const kl = t && klenod(s, t), klen = kl ? `<dt>Klenod</dt><dd>★ Byn minns ${pLink(kl)} genom den</dd>` : ''; // (steg 3.4.3)
     const agare = t ? (t.agare === BYN ? 'Byns' : pLink(byId(s, t.agare))) : '';
     const orsak = sl.orsak === 'ruttnar' ? fryst() ? `❄ Fryst, ${Math.round(temperature(s))} grader: ruttnar nästan inte` : `Ruttnar, ${Math.round(temperature(s))} grader` : ORSAK[sl.orsak];
     const haller = sl.gang ? `<dt>Räcker till</dt><dd>${Math.max(0, Math.floor(c / sl.gang + 1e-9))} ${esc(sl.enhet!)} till</dd>` // per gång (steg 2.3.12)
@@ -75,7 +76,7 @@ export const sak: Flik = {
       <dt>Slitage</dt><dd>${esc(orsak)}${sl.per > 0 ? ` (${sl.per * 2400 < 0.1 ? 'under 0,1' : kortTal(sl.per * 2400)} % per dygn)` : ''}</dd>
       ${haller}${mangd}${klad}
       ${t ? `<dt>Var</dt><dd>${var_(t, p)}</dd><dt>Ägare</dt><dd>${agare}</dd>` : ''}
-      ${gjord}
+      ${gjord}${klen}
     </dl>`;
   },
   klick(el) {

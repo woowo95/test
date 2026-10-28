@@ -13,6 +13,7 @@ import { balans } from './balans';
 import type { SamtalDef } from './samtal';
 import { RELT, arBast, arMentor, lartUt } from './relationer';
 import { vattenSmuts } from './smuts';
+import { lognFaktor, skvaller } from './rykten';
 
 // ---------- balanstal (regel 8) ----------
 // Lärdomar: hur många man minns, hur mycket man tror på dem, hur de sprids och hur fort de glöms. Värdet (v) mäts i det en
@@ -96,14 +97,15 @@ const areaCenter = (a: number) => ({ x: Math.min(W, (a % aw()) * AREA + AREA / 2
 // arbetar (serOmFinns: bara där det finns något), växer tillbaka i minnet och kan visa sig sämre än man trott.
 // Flinta, rädslor (fara) och vattnet har egna regler nedan. Vattnets värde är hur smutsigt det är (0 = rent, 1 = mycket
 // smutsigt, smutsOf i sjo.ts): man lär sig det där man dricker (steg 2.4.1, torst.ts). Ordningen är den i cachen nedan
-interface LardomDef { vad: string; namn: string; inga?: string; fynd?: true; serOmFinns?: true }
+// ikon/tecken: symbolen för slaget av lärdom i personrutan (steg 3.3.6)
+interface LardomDef { vad: string; namn: string; inga?: string; fynd?: true; serOmFinns?: true; ikon: string; tecken: string }
 const LDEF = {
-  samla: { vad: 'bär och rötter', namn: 'bär och rötter', inga: 'Inga bär och rötter', fynd: true },
-  jakt: { vad: 'kaniner', namn: 'vilt', inga: 'Inga kaniner', fynd: true },
-  fiske: { vad: 'fisk i vattnet', namn: 'abborre', inga: 'Ingen fisk', fynd: true, serOmFinns: true },
-  flinta: { vad: 'flinta', namn: 'flinta' },
-  fara: { vad: '', namn: 'farliga platser' },
-  vatten: { vad: 'vatten', namn: 'rent och smutsigt vatten' },
+  samla: { vad: 'bär och rötter', namn: 'bär och rötter', inga: 'Inga bär och rötter', fynd: true, ikon: 'bar', tecken: '🫐' },
+  jakt: { vad: 'kaniner', namn: 'vilt', inga: 'Inga kaniner', fynd: true, ikon: 'kanin', tecken: '🐇' },
+  fiske: { vad: 'fisk i vattnet', namn: 'abborre', inga: 'Ingen fisk', fynd: true, serOmFinns: true, ikon: 'abborre', tecken: '🐟' },
+  flinta: { vad: 'flinta', namn: 'flinta', ikon: 'flinta', tecken: '🪨' },
+  fara: { vad: '', namn: 'farliga platser', ikon: 'l_fara', tecken: '⚠️' },
+  vatten: { vad: 'vatten', namn: 'rent och smutsigt vatten', ikon: 'a_vatten', tecken: '💧' },
 } satisfies Record<string, LardomDef>;
 export type LKind = keyof typeof LDEF;
 export const LARDOMAR: Record<LKind, LardomDef> = LDEF;
@@ -295,6 +297,7 @@ export function share(s: State, a: Person, b: Person, r: Rel, slag: SamtalDef) {
     const w = a.lardomar.map(l => (l.k === 'fara' ? MINNE.delaFara : l.k === 'flinta' || l.k === 'vatten' ? 1 : nyhet(s, l) ? Math.max(1, l.v) : l.v) * l.c);
     tell(s, a, b, pickViktat(s, a.lardomar, w, 'minne', a), r);
   }
+  skvaller(s, a, b, r, slag.dela === 'delaBerattelse'); // och om vad hen tycker om andra (steg 3.3, rykten.ts)
   // kunskap: den som kan något bättre lär ut lite
   if (a.kunskap) for (const k in a.kunskap) {
     const e = a.kunskap[k], d = e.v - kn(b, k);
@@ -312,7 +315,7 @@ const nyhet = (s: State, l: Lardom) => l.ny !== undefined && s.now - l.ny < MINN
 function tell(s: State, a: Person, b: Person, l: Lardom, r: Rel) {
   // att berätta stärker det egna minnet, men platsen sågs inte nu (t, återväxten räknas därifrån)
   l.c = Math.min(1, l.c + MINNE.berattaStark * (1 - l.c));
-  const trust = clamp(MINNE.troBas + r.op / MINNE.troDiv, MINNE.troMin, MINNE.troMax);
+  const trust = clamp(MINNE.troBas + r.op / MINNE.troDiv, MINNE.troMin, MINNE.troMax) * lognFaktor(b, a); // mindre på en lögnare (steg 3.3.3)
   const c = l.c * trust * MINNE.troDel;
   // man överdriver gärna, särskilt det som är farligt
   const v = clamp(l.v * (l.k === 'fara' ? 1 + (rnd(s, 'minne', a) - MINNE.overFara) * MINNE.overFaraSpann : 1 + (rnd(s, 'minne', a) - MINNE.over) * MINNE.overSpann), 0, l.k === 'fara' ? MINNE.vMaxFara : l.k === 'vatten' ? 1 : MINNE.vMax);

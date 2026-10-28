@@ -12,6 +12,7 @@ import { SAKER } from './saker';
 import { DAY, HOUR, MIN, Person, State, Task } from './typer';
 import { formogenheter } from './varde';
 import { balans } from './balans';
+import { handelse, skitsnack, skitsnackOm } from './rykten';
 
 // Humöret (steg 3.2, "Humör, psykiskt mående och ondska" i designdokumentet): ett grundläge, behoven och tankarna
 // (think i folk.ts), och förväntningarna (steg 3.2.1). Var och en vänjer sig långsamt vid sin rikedom, värdet av det hen
@@ -21,7 +22,7 @@ import { balans } from './balans';
 // Utbrotten (steg 3.2.2): den som mår mycket dåligt kan brista ut. Risken varje timme växer ju lägre humöret är och ju fler
 // utbrott hen haft nyss, och hur allvarligt det blir beror också på empatin och slumpen. Behoven går före (val.ts), och efter
 // ett utbrott mår man lite bättre en stund. De allvarliga (steg 3.2.3): ligga kvar i bädden, göra slut, slå, misshandla, flytta
-// ut och, mycket sällan, dråp. Byn ogillar den som slår, och ett barn som blir slaget av sin förälder minns det alltid.
+// ut och, mycket sällan, dråp. De som ser det tycker sämre om den som slår (rykten.ts), och ett barn som blir slaget av sin förälder minns det alltid.
 // Barnen (steg 3.2.4) skriker och gråter, trotsar och slår sönder något, puttas med ett syskon eller springer iväg en
 // stund, mer sällan med en förälder nära och efter lek.
 
@@ -72,23 +73,25 @@ export const HUMOR = balans('humor', {
 // slagen av utbrott: graden (1 lindrigast, 5 dråp), handlingen (handlingar.ts), hur länge (minuter: min plus upp till spann) och
 // vad som hände (loggen). `mal` säger vem det går ut över (den närmaste, partnern eller bästa vännen, eller ärkefienden) och
 // `ting` att det behövs en sak att slå sönder; finns ingen blir det `annars` (eller tjura). `vald` är slagen: skadornas grad
-// (från, till), hur många, vilka och var, hur mycket relationen med den slagne sjunker, den slagnes tanke (hur mycket, dygn)
-// och hur mycket alla andra i byn ogillar den som slog. Att flytta ut händer direkt (utbrottRisk)
-type Mal = 'nast' | 'nara' | 'arke' | 'syskon';
-interface Vald { g: [number, number]; n: number; typer: SkadaTyp[]; delar: Kroppsdel[]; op: number; tanke: number; dygn: number; by: number }
+// (från, till), hur många, vilka och var, hur mycket relationen med den slagne sjunker och den slagnes tanke (hur mycket, dygn).
+// De som såg det får intrycket att den som slog är våldsam (rykten.ts, steg 3.3.1). `skvaller` = den närmaste att snacka skit
+// med, om det finns någon man ogillar. Att flytta ut händer direkt (utbrottRisk)
+type Mal = 'nast' | 'nara' | 'arke' | 'syskon' | 'skvaller';
+interface Vald { g: [number, number]; n: number; typer: SkadaTyp[]; delar: Kroppsdel[]; op: number; tanke: number; dygn: number }
 interface UtbDef { grad: number; act: Act; min: number; spann: number; text: string; mal?: Mal; ting?: true; annars?: string; vald?: Vald; barn?: true }
 export const UTBROTT = {
   grata: { grad: 1, act: 'grata', min: 20, spann: 20, text: 'brister i gråt' },
   tjura: { grad: 1, act: 'tjura', min: 60, spann: 60, text: 'går undan och tjurar' },
   elak: { grad: 2, act: 'elak', min: 10, spann: 10, text: 'är elak mot', mal: 'nast' },
+  skitsnack: { grad: 2, act: 'skvallra', min: 10, spann: 10, text: 'snackar skit med', mal: 'skvaller', annars: 'elak' }, // steg 3.3.3 (rykten.ts)
   krossa: { grad: 2, act: 'krossa', min: 10, spann: 10, text: 'slår sönder', ting: true },
   fly: { grad: 2, act: 'fly', min: 90, spann: 90, text: 'flyr ut i skogen' },
   badd: { grad: 3, act: 'badd', min: 240, spann: 240, text: 'lägger sig och orkar inte gå upp' },
   slut: { grad: 3, act: 'slut', min: 10, spann: 10, text: 'gör slut med', mal: 'nara', annars: 'elak' },
-  sla: { grad: 3, act: 'sla', min: 5, spann: 5, text: 'slår', mal: 'nast', vald: { g: [0.1, 0.3], n: 1, typer: ['blamarke'], delar: ['huvud', 'bal', 'armV', 'armH'], op: 15, tanke: 0.15, dygn: 2, by: 5 } },
-  misshandel: { grad: 4, act: 'sla', min: 10, spann: 10, text: 'misshandlar', mal: 'nast', vald: { g: [0.3, 0.7], n: 2, typer: ['blamarke', 'krossar', 'benbrott'], delar: ['huvud', 'bal', 'armV', 'armH', 'benV', 'benH'], op: 35, tanke: 0.3, dygn: 5, by: 15 } },
+  sla: { grad: 3, act: 'sla', min: 5, spann: 5, text: 'slår', mal: 'nast', vald: { g: [0.1, 0.3], n: 1, typer: ['blamarke'], delar: ['huvud', 'bal', 'armV', 'armH'], op: 15, tanke: 0.15, dygn: 2 } },
+  misshandel: { grad: 4, act: 'sla', min: 10, spann: 10, text: 'misshandlar', mal: 'nast', vald: { g: [0.3, 0.7], n: 2, typer: ['blamarke', 'krossar', 'benbrott'], delar: ['huvud', 'bal', 'armV', 'armH', 'benV', 'benH'], op: 35, tanke: 0.3, dygn: 5 } },
   flytta: { grad: 4, act: 'fly', min: 0, spann: 0, text: 'står inte ut längre och lämnar byn', annars: 'fly' },
-  drap: { grad: 5, act: 'sla', min: 10, spann: 10, text: 'slår ihjäl', mal: 'arke', annars: 'misshandel', vald: { g: [1, 1], n: 0, typer: [], delar: [], op: 0, tanke: 0, dygn: 0, by: 40 } },
+  drap: { grad: 5, act: 'sla', min: 10, spann: 10, text: 'slår ihjäl', mal: 'arke', annars: 'misshandel', vald: { g: [1, 1], n: 0, typer: [], delar: [], op: 0, tanke: 0, dygn: 0 } },
   // barnens (steg 3.2.4): bara de, och de har bara dessa
   skrika: { grad: 1, act: 'skrika', min: 10, spann: 20, text: 'skriker och gråter', barn: true },
   trotsa: { grad: 2, act: 'krossa', min: 5, spann: 5, text: 'trotsar och slår sönder', ting: true, annars: 'puttas', barn: true },
@@ -119,6 +122,7 @@ function malFor(s: State, p: Person, k: Utbrott, m: Mal) {
   const nar = (q: Person) => Math.hypot(q.x - p.x, q.y - p.y) < HUMOR.malAvst;
   if (m === 'nara') return living(s).find(q => q.id === p.partner) ?? living(s).find(q => q.id === p.bast);
   if (m === 'arke') return living(s).find(q => q.id === p.arke && nar(q));
+  if (m === 'skvaller') { const l = utbMal(s, p); return l && skitsnackOm(s, p, l) ? l : undefined; }
   if (m === 'syskon') return living(s).find(q => q !== p && ((q.mother !== undefined && q.mother === p.mother) || (q.father !== undefined && q.father === p.father)) && ageOf(q, s.now) >= ALDER.smabarn && nar(q));
   if (k === 'sla' && rnd(s, 'humor', p) < HUMOR.barnSla) {
     const barn = living(s).filter(c => isParent(p, c) && ageOf(c, s.now) >= ALDER.smabarn && ageOf(c, s.now) < ALDER.vuxen && nar(c));
@@ -146,16 +150,12 @@ export function utbrottNu(s: State, p: Person): { k: Utbrott; rad: UtbDef; dur: 
   return { k, rad, mal, ting, dur: (rad.min + rnd(s, 'humor', p) * rad.spann) * MIN };
 }
 
-// alla andra i byn ogillar den som slog (steg 3.2.3; inga straff än)
-function byOgillar(s: State, p: Person, offer: Person, d: number) {
-  for (const q of living(s)) if (q !== p && q !== offer) { const r = getRel(s, q, p); r.op = clamp(r.op - d, -100, 100); }
-}
-// p slår q: skadorna (eller döden), relationen, den slagnes tanke och byn. Ett barn som blir slaget av sin förälder minns det
+// p slår q: skadorna (eller döden), relationen, den slagnes tanke och de som såg det (rykten.ts). Ett barn som blir slaget av sin förälder minns det
 // alltid, och värre om det händer igen
 function slar(s: State, p: Person, q: Person, k: Utbrott, v: Vald) {
   const r = getRel(s, p, q);
   r.op = clamp(r.op - v.op, -100, 100);
-  byOgillar(s, p, q, v.by);
+  handelse(s, p, k === 'drap' ? 'drap' : k === 'misshandel' ? 'misshandel' : 'sla', q);
   if (k === 'drap') { count(s, 'drap'); blodas(s, q.x, q.y, 'skada', 1); die(s, q, 'drap'); return; }
   for (let i = 0; i < v.n; i++) {
     const t = v.typer[Math.floor(rnd(s, 'humor', p) * v.typer.length)], d = v.delar[Math.floor(rnd(s, 'humor', p) * v.delar.length)];
@@ -180,6 +180,9 @@ export function utbrottBorjar(s: State, p: Person, k: Utbrott, mal?: Person, tin
     if (k === 'elak') {
       think(mal, `${p.name} var elak mot mig`, -HUMOR.elakHumor, s.now, HUMOR.elakTim * HOUR);
       getRel(s, p, mal).op -= HUMOR.elakOp;
+      handelse(s, p, 'elak', mal);
+    } else if (k === 'skitsnack') {
+      skitsnack(s, p, mal);
     } else if (k === 'puttas') {
       think(mal, `${p.name} puttade mig`, -HUMOR.puttHumor, s.now, HUMOR.puttTim * HOUR);
       getRel(s, p, mal).op -= HUMOR.puttOp;

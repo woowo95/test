@@ -1,7 +1,8 @@
 import { balans } from './balans';
-import { count, log, think } from './folk';
+import { alive, byId, count, log, think } from './folk';
 import { gauss } from './slump';
 import { HOUR, Person, State } from './typer';
+import { handelse } from './rykten';
 
 // ---------- kvaliteten (steg 2.2.2) ----------
 // Det någon gör blir olika bra: usel, slarvig, normal, fin, mästerverk eller ett perfekt mästerverk (★). Kvaliteten följer
@@ -57,4 +58,13 @@ export function nyKvalitet(s: State, p: Person, t: { q?: number }, bank: boolean
   count(s, 'kv_' + q);
   if (KV.glad[q]) think(p, k.tanke, KV.glad[q], s.now, KV.gladTim * HOUR);
   if (q >= MASTERVERK) log(s, `${p.name} gjorde ${q === PERFEKT ? 'ett perfekt mästerverk' : 'ett mästerverk'}: ${namn}.`, 'world', [p.id]);
+  // de som ser det blir imponerade (eller avundsjuka) och skrattar åt det usla (steg 3.3.1, 3.4.3)
+  if (q >= MASTERVERK) handelse(s, p, q === PERFEKT ? 'perfekt' : 'masterverk', undefined, namn.toLowerCase());
+  else if (q === 0) handelse(s, p, 'usel', undefined, namn.toLowerCase());
+}
+// ett mästerverk vars görare är död blir en klenod: byn minns hen genom saken (steg 3.4.3). Ger den döda göraren, annars inget
+export function klenod(s: State, t: { q?: number; av?: number }) {
+  if (kvOf(t) < MASTERVERK || t.av === undefined) return;
+  const p = byId(s, t.av);
+  return p && !alive(p) ? p : undefined;
 }

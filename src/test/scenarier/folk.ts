@@ -417,23 +417,23 @@ SCENARIER.utbrott = {
 };
 
 SCENARIER.vald = {
-  text: 'De allvarliga utbrotten (steg 3.2.3): ligga kvar i bädden, göra slut, slå (ett barn minns det alltid), misshandel, flytta ut och dråp, och byn ogillar den som slår',
+  text: 'De allvarliga utbrotten (steg 3.2.3): ligga kvar i bädden, göra slut, slå (ett barn minns det alltid), misshandel, flytta ut och dråp, och de som ser det ogillar den som slår (steg 3.3.1)',
   kor: () => {
     // en vuxen långt från de andra, med en till bredvid sig
     const by = () => {
       const t = createState(9, START);
       klockan(t, 11);
-      const p = nyInvanare(t, 'm', 30), q = nyInvanare(t, 'k', 30), r = living(t).find(o => o !== p && o !== q)!;
-      p.x += 12; q.x = p.x + 1; q.y = p.y;
-      return { t, p, q, r };
+      const p = nyInvanare(t, 'm', 30), q = nyInvanare(t, 'k', 30), r = living(t).find(o => o !== p && o !== q)!, w = nyInvanare(t, 'k', 40);
+      p.x += 12; q.x = p.x + 1; q.y = p.y; w.x = p.x + 4; w.y = p.y; // w ser det, r är för långt bort
+      return { t, p, q, r, w };
     };
     const utbrott = (t: State, p: Person, k: string) => { p.ubr = { k, t: t.now }; SIM.chooseTask(t, p); return p.task?.act; };
     // bädden
     const b = by(), badd = utbrott(b.t, b.p, 'badd') === 'badd';
     // att slå: ett blåmärke, relationen och byn
-    const s1 = by(), op0 = getRel(s1.t, s1.p, s1.q).op, by0 = getRel(s1.t, s1.r, s1.p).op;
+    const s1 = by(), op0 = getRel(s1.t, s1.p, s1.q).op, by0 = getRel(s1.t, s1.w, s1.p).op, langt0 = getRel(s1.t, s1.r, s1.p).op;
     const sla = utbrott(s1.t, s1.p, 'sla') === 'sla';
-    const blamarke = !!s1.q.skador?.some(w => w.k === 'blamarke'), op1 = getRel(s1.t, s1.p, s1.q).op, by1 = getRel(s1.t, s1.r, s1.p).op;
+    const blamarke = !!s1.q.skador?.some(w => w.k === 'blamarke'), op1 = getRel(s1.t, s1.p, s1.q).op, by1 = getRel(s1.t, s1.w, s1.p).op, langt1 = getRel(s1.t, s1.r, s1.p).op;
     // en förälder slår sitt barn, två gånger
     const s2 = by(), c = nyInvanare(s2.t, 'k', 8);
     c.father = s2.p.id; c.x = s2.p.x + 0.5; c.y = s2.p.y;
@@ -454,9 +454,9 @@ SCENARIER.vald = {
     // dråp: bara mot ärkefienden, för den med låg empati och flera utbrott nyss; annars misshandel
     const s5 = by();
     s5.p.arke = s5.q.id; s5.p.pot.empati = 2; s5.p.anlag = { ...s5.p.pot }; s5.p.utb = 3;
-    const by5 = getRel(s5.t, s5.r, s5.p).op;
+    const by5 = getRel(s5.t, s5.w, s5.p).op;
     utbrott(s5.t, s5.p, 'drap');
-    const drap = s5.q.died !== undefined && s5.q.cause === SIM.DODSORSAKER.drap.text, by6 = getRel(s5.t, s5.r, s5.p).op;
+    const drap = s5.q.died !== undefined && s5.q.cause === SIM.DODSORSAKER.drap.text, by6 = getRel(s5.t, s5.w, s5.p).op;
     const s6 = by();
     s6.p.arke = s6.q.id; s6.p.pot.empati = 15; s6.p.anlag = { ...s6.p.pot }; s6.p.utb = 3;
     utbrott(s6.t, s6.p, 'drap');
@@ -470,11 +470,11 @@ SCENARIER.vald = {
     const stannar = !SIM.flyttaUt(s8.t, s8.p) && s8.p.left === undefined;
     return [
       ['den som mår mycket dåligt kan ligga kvar i bädden', badd],
-      [`den som slår ger ett blåmärke, relationen sjunker (${op0.toFixed(0)} → ${op1.toFixed(0)}) och byn ogillar hen (${by0.toFixed(0)} → ${by1.toFixed(0)})`, sla && blamarke && op1 < op0 && by1 < by0],
+      [`den som slår ger ett blåmärke, relationen sjunker (${op0.toFixed(0)} → ${op1.toFixed(0)}), den som såg det ogillar hen (${by0.toFixed(0)} → ${by1.toFixed(0)}) men inte den som var långt bort (${langt0.toFixed(0)} → ${langt1.toFixed(0)})`, sla && blamarke && op1 < op0 && by1 < by0 && langt1 === langt0],
       [`ett barn som blir slaget av sin förälder minns det alltid, och mer när det händer igen (egenskaperna flyttade ${flytt})`, forst && igen && flytt >= 6],
       ['den som gör slut med sin partner skiljer sig', skilda],
       [`den som bryter med sin bästa vän: relationen 85 → ${bruten.toFixed(0)}`, bruten <= 40],
-      [`den med låg empati och många utbrott kan dräpa sin ärkefiende, och byn ogillar hen mycket (${by5.toFixed(0)} → ${by6.toFixed(0)})`, drap && by6 <= by5 - 30],
+      [`den med låg empati och många utbrott kan dräpa sin ärkefiende, och den som såg det ogillar hen mycket (${by5.toFixed(0)} → ${by6.toFixed(0)})`, drap && by6 <= by5 - 30],
       ['med mer empati blir det misshandel i stället', miss],
       ['den som flyttar ut tar med sitt barn', ut],
       ['den som har en partner i byn flyttar inte ut', stannar],
@@ -485,11 +485,11 @@ SCENARIER.vald = {
 SCENARIER.barnutbrott = {
   text: 'Barnens utbrott (steg 3.2.4): barn som mår mycket dåligt skriker, trotsar, puttas med ett syskon eller springer iväg, mer sällan med en förälder nära och efter lek',
   kor: () => {
-    // tre ledsna barn i en by där de vuxna mår bra, i åtta dygn (åtta år i spelet)
+    // tre ledsna barn i en by där de vuxna mår bra, i tolv dygn (tolv år i spelet)
     const s = createState(9, START);
     const barn = [nyInvanare(s, 'm', 7), nyInvanare(s, 'k', 9), nyInvanare(s, 'm', 11)];
-    for (const c of barn) SIM.think(c, 'Sorg', -0.5, s.now, 8 * DAY);
-    kor(s, 8 * 24);
+    for (const c of barn) SIM.think(c, 'Sorg', -0.5, s.now, 12 * DAY);
+    kor(s, 12 * 24);
     const BARNENS = ['skrika', 'trotsa', 'puttas', 'rymma'], VUXNAS = Object.keys(SIM.UTBROTT).filter(k => !BARNENS.includes(k));
     const slag = Object.keys(s.stat ?? {}).filter(k => k.startsWith('utb_') && !k.startsWith('utb_sonder') && k !== 'utb_barn').map(k => k.slice(4));
     const barnSlag = slag.filter(k => BARNENS.includes(k)), vuxnaSlag = slag.filter(k => VUXNAS.includes(k));
@@ -520,6 +520,85 @@ SCENARIER.barnutbrott = {
       [`med en förälder nära är risken mindre (${ensam.toFixed(4)} → ${nara.toFixed(4)}), och efter lek ännu mindre (${lekt.toFixed(4)})`, ensam > 0 && nara < ensam && lekt < nara],
       ['ett barn kan puttas med sitt syskon, som blir ledsnare', puttas],
       ['ett barn kan trotsa och slå sönder något', trotsa],
+    ];
+  },
+};
+
+SCENARIER.rykten = {
+  text: 'Rykten (steg 3.3–3.4): det man ser blir intryck med bevis, de sprids svagare i samtal, man tiger om sina vänner, lögnaren ertappas, flitig och lat, avund, tycke och smak, och minnet av en död lever kvar',
+  kor: () => {
+    const by = () => {
+      const t = createState(9, START);
+      klockan(t, 11);
+      const p = nyInvanare(t, 'm', 30), q = nyInvanare(t, 'k', 30), w = nyInvanare(t, 'k', 40), r = nyInvanare(t, 'm', 35);
+      p.x += 12; q.x = p.x + 1; q.y = p.y; w.x = p.x + 4; w.y = p.y; r.x = p.x + 30; r.y = p.y; // w ser, r är långt bort
+      return { t, p, q, w, r };
+    };
+    // att slå: vittnet får intrycket våldsam med beviset, den som var långt bort inget
+    const a = by();
+    SIM.handelse(a.t, a.p, 'sla', a.q);
+    const e = SIM.intryckOm(a.w, a.p.id, 'valdsam'), bort = SIM.intryckOm(a.r, a.p.id);
+    const bevis = e?.bev?.[0] ? SIM.bevisText(e.bev[0], a.p.name) : '';
+    // vittnet berättar för den som var borta: svagare och mindre säker, ett led
+    SIM.beratta(a.t, a.w, a.r, e!, getRel(a.t, a.w, a.r));
+    const hort = SIM.intryckOm(a.r, a.p.id, 'valdsam');
+    // hemligheter: partnern berättar inte om det dåliga
+    const b = by();
+    b.w.partner = b.p.id; b.p.partner = b.w.id;
+    SIM.handelse(b.t, b.p, 'sla', b.q);
+    let tiger = true;
+    for (let i = 0; i < 200; i++) SIM.skvaller(b.t, b.w, b.r, getRel(b.t, b.w, b.r), true);
+    if (SIM.intryckOm(b.r, b.p.id)) tiger = false;
+    // skitsnack: ett påhittat rykte, och den det sägs ha hänt märker att det är påhittat
+    const c = by();
+    getRel(c.t, c.p, c.q).op = -60;
+    SIM.skitsnack(c.t, c.p, c.w);
+    const falsk = SIM.intryckOm(c.w, c.q.id);
+    const mot = falsk?.bev?.[0]?.mot !== undefined ? living(c.t).find(o => o.id === falsk.bev![0].mot) : undefined;
+    let ertappad = false;
+    if (falsk && mot && mot !== c.w) { SIM.beratta(c.t, c.w, mot, falsk, getRel(c.t, c.w, mot)); ertappad = !!SIM.intryckOm(mot, c.w.id, 'logn') && SIM.lognFaktor(mot, c.w) < 1; }
+    // stöld: den bestulne vet
+    const d = by();
+    SIM.stole(d.t, d.p, d.q, 'mat', 2);
+    SIM.noticeTheft(d.t, d.q, 'mat');
+    const tjuv = SIM.intryckOm(d.q, d.p.id, 'tjuv');
+    // mästerverk: imponerad, men rivalen blir avundsjuk
+    const m = by();
+    m.r.x = m.p.x + 3; m.r.rivaler = [m.p.id];
+    const imp0 = getRel(m.t, m.w, m.p).op, riv0 = getRel(m.t, m.r, m.p).op;
+    SIM.handelse(m.t, m.p, 'masterverk', undefined, 'en yxa');
+    const imp1 = getRel(m.t, m.w, m.p).op, riv1 = getRel(m.t, m.r, m.p).op;
+    // flitig: den som arbetar mycket mer än de andra
+    const f = by();
+    for (const o of living(f.t)) o.habit = { samla: 5 };
+    f.p.habit = { samla: 40 };
+    for (let i = 0; i < 30; i++) SIM.stepRykten(f.t, SIM.moodOf);
+    const flitig = SIM.intryckOm(f.q, f.p.id, 'flitig');
+    // döden: intrycket lever kvar med de viktigaste bevisen, och bleknar långsammare än om en levande
+    const g = by();
+    for (const h of ['sla', 'elak', 'misshandel', 'sla'] as const) { g.t.now += 60_000; SIM.handelse(g.t, g.p, h, g.q); }
+    const o = by();
+    SIM.handelse(o.t, o.p, 'misshandel', o.q);
+    SIM.die(g.t, g.p, 'drap');
+    const dod = SIM.intryckOm(g.w, g.p.id, 'valdsam');
+    const bev = dod?.bev?.length ?? 0;
+    SIM.glomRykten(g.t, 5 * 24); SIM.glomRykten(o.t, 5 * 24);
+    const cDod = SIM.intryckOm(g.w, g.p.id, 'valdsam')?.c ?? 0, cLev = SIM.intryckOm(o.w, o.p.id, 'valdsam')?.c ?? 0;
+    // tycke och smak
+    const k = by();
+    k.p.smak = { 'a:fiske': 0.8 };
+    const drag = SIM.smakDrag(k.p, ['fiske']);
+    SIM.smakGift(k.q);
+    return [
+      [`den som såg slaget tycker att hen är våldsam (${bevis}), den som var långt bort vet inget`, !!e && e.c === 1 && bevis.includes(a.q.name) && !bort],
+      [`ryktet sprids svagare och mindre säkert (säkerhet ${e?.c.toFixed(2)} → ${hort?.c.toFixed(2)}, led ${hort?.led})`, !!hort && hort.c < e!.c && hort.led === 1 && hort.src === a.w.id],
+      ['partnern tiger om det dåliga', tiger],
+      [`skitsnack ger ett påhittat rykte, och den det sägs ha hänt ertappar lögnaren`, !!falsk?.bev?.[0]?.falsk && ertappad],
+      ['den bestulne vet att tjuven är tjuv', !!tjuv && tjuv.bev?.[0]?.h === 'stold'],
+      [`ett mästerverk gör folk imponerade (${imp0.toFixed(0)} → ${imp1.toFixed(0)}) men rivalen avundsjuk (${riv0.toFixed(0)} → ${riv1.toFixed(0)})`, imp1 > imp0 && riv1 < riv0],
+      [`den som arbetar mycket mer än de andra ses som flitig (${flitig?.v.toFixed(2) ?? 'nej'})`, !!flitig && flitig.v > 0.1],
+      [`efter döden lever intrycket kvar med de ${bev} viktigaste händelserna, och bleknar långsammare (${cDod.toFixed(2)} mot ${cLev.toFixed(2)})`, !!dod && bev <= SIM.RYKTE.dodBev && bev >= 1 && cDod > cLev],
+      [`smaken drar i valet (${drag.toFixed(2)}) och svampen som förgiftar ger avsmak`, drag > 1 && SIM.smakAv(k.q, 'm:svamp') < 0],
     ];
   },
 };

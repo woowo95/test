@@ -237,10 +237,10 @@ SCENARIER.rotter = {
 SCENARIER.samlartur = {
   text: 'En samlare fyller en full börda på 10–20 minuter, gången inräknad, och går vidare till nästa buske när den man står vid är tom (steg 2.12.4)',
   kor: () => {
-    // turerna följs i steg om 10 sekunder (ett slag är fem minuter, kortare än en tur), i två byar under två dygn (två år i spelet)
+    // turerna följs i steg om 10 sekunder (ett slag är fem minuter, kortare än en tur), i tre byar under två dygn (två år i spelet)
     const borda = balansTal().steg.borda as number, turer: { min: number; lass: number; flytt: number }[] = [];
     let tomt = 0, arbete = 0;
-    for (const seed of [42, 7]) {
+    for (const seed of [42, 7, 3]) {
       const s = createState(seed, START), pagar = new Map<number, { t0: number; last: string; lass: number; flytt: number; tom?: string }>();
       for (let i = 0; i < 48 * 360; i++) {
         step(s, 10);

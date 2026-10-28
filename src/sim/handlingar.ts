@@ -134,6 +134,7 @@ const DEF = {
   grata: { namn: 'Gråter för sig själv', tecken: '😢', dygn: true, stilla: true, plats: 'avsides' },
   tjura: { namn: 'Tjurar för sig själv', tecken: '😤', dygn: true, stilla: true, plats: 'avsides' },
   elak: { namn: 'Är elak mot någon', tecken: '😠', dygn: true, stilla: true },
+  skvallra: { namn: 'Snackar skit om någon', tecken: '🗣️', dygn: true, stilla: true }, // steg 3.3.3 (rykten.ts)
   krossa: { namn: 'Slår sönder något', tecken: '💥', dygn: true, stilla: true },
   fly: { namn: 'Flyr ut i skogen', tecken: '🏃', vandra: { r: 3, h0: 1, h1: 3, v: 1.1 }, dygn: true },
   badd: { namn: 'Ligger i bädden och orkar inte gå upp', tecken: '🛌', vila: true, dygn: true, stilla: true, plats: 'sang' }, // steg 3.2.3
