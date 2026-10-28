@@ -269,20 +269,23 @@ export function toWalls(s: State, x: number, y: number, n: number, hus?: number,
   return used;
 }
 // en stunds arbete på en ruta. Ger true när rutan är klar
-export function workOn(s: State, p: Person, b: Bit, dtSec: number) {
+// har = materialet som byggaren håller i händerna (steg 3.6.5): det läggs i bygget först när biten är klar
+export function workOn(s: State, p: Person, b: Bit, dtSec: number, har = 0) {
   const M = MATERIAL[b.m], repair = b.b >= 1;
   const rate = dtSec / HOUR_S / (M.tim || 0.01) * kunnighet(p.skill.hantverk) * (ageOf(p, s.now) < ALDER.byggFullt ? BYGG.ungFart : 1);
   if (repair) {
-    if (M.item && (b.lm ?? 0) < lagKostnad(M) - 1e-9) return false;
+    if (M.item && (b.lm ?? 0) + har < lagKostnad(M) - 1e-9) return false;
     b.lp = (b.lp ?? 0) + rate * BYGG.lagFart;
     if (b.lp < 1) return false;
+    deliver(b, har, true);
     b.c = 1; b.lp = b.lm = undefined;
     if (forstaGang(s, 'lagat')) log(s, `${p.name} lagade ${b.k === 'golv' ? 'ett slitet golv' : 'en sliten vägg'} för första gången.`, 'world', [p.id]);
     return true;
   }
-  if (M.item && b.mat < M.n - 1e-9) return false;
+  if (M.item && b.mat + har < M.n - 1e-9) return false;
   b.b = Math.min(1, b.b + rate);
   if (b.b < 1) return false;
+  deliver(b, har, false);
   b.c = 1; count(s, 'byggt_' + b.m); touch(s);
   if (b.k === 'vagg') clearTile(s, b);
   const h = husById(s, b.hus);

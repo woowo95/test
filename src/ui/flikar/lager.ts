@@ -11,7 +11,7 @@ export const lager: Flik = {
   html() {
     const zs = zonesOf(s), z = zs[Math.min(ui.lagerNr, zs.length - 1)], zi = zs.indexOf(z);
     const ps = piles().filter(p => p.zone === zi).sort((a, b) => sakNamn(a.k).localeCompare(sakNamn(b.k), 'sv') || b.n - a.n || condOf(b) - condOf(a));
-    const barare = living(s).filter(p => p.task && (p.task.carry > 0.05 || p.task.items));
+    const barare = living(s).filter(p => p.task && (p.task.carry > 0 || p.task.items));
     // turordningen: byn lägger saker i lagerplatsen med högst prio först (lager.ts)
     const nr = zs.map((q, i) => ({ q, i })).sort((a, b) => (b.q.prio ?? 0) - (a.q.prio ?? 0)).findIndex(x => x.i === zi) + 1;
     const what = !z.slag ? '' : z.slag === 'mat' ? 'Här läggs maten. ' : 'Här läggs material och redskap. ';

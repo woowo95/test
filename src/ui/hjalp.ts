@@ -103,7 +103,7 @@ export const pileTxt = (p: { k: string; n: number; max: number; gor?: string; kl
 export function carryTxt(p: Person) {
   const t = p.task, orkar = capacity(s, p), parts: string[] = [];
   const kg = (n: number) => `${num(n * BORDA_KG).replace(',0', '')} kg`, styck = (k: string, n: number) => `${fmtN(n)} ${sakNamn(k).toLowerCase()} (${kg(n * bordOf(k))})`;
-  if (t && t.carry > 0.05) parts.push(styck(carryKind(t.act), t.carry));
+  if (t && t.carry > 0) parts.push(styck(carryKind(t.act), t.carry));
   for (const k in t?.items ?? {}) if (t!.items![k] > 0 && !sak(k)?.dold) parts.push(styck(k, t!.items![k]));
   return parts.length ? `Bär ${parts.join(' och ')}, ${kg(load(t!, s))} (${Math.round(load(t!, s) / orkar * 100)} % av vad hen orkar)` : `Bär inget just nu, orkar bära ${kg(orkar)} med båda händerna och ${kg(orkar * UTRUSTNING.en)} i en`;
 }

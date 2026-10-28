@@ -115,7 +115,7 @@ export function drawPeople(t: number) {
     peopleG.lineStyle(0);
     if (PRICKAR.sjuk.har(p)) peopleG.beginFill(PRICKAR.sjuk.farg).drawCircle(x + r * 0.7, y - r * 0.7, 1.8).endFill();
     if (PRICKAR.gravid.har(p)) peopleG.beginFill(PRICKAR.gravid.farg).drawCircle(x - r * 0.7, y - r * 0.7, 1.6).endFill();
-    if (p.task && load(p.task, s) > 0.02) markIcons.add(homeKind(p.task), x + r - 2.5, y - 1, 0.6); // det man bär syns på figuren
+    if (p.task && load(p.task, s) > 0) markIcons.add(homeKind(p.task), x + r - 2.5, y - 1, 0.6); // det man bär syns på figuren, hur lite det än är (steg 3.6.5)
   }
   // pågående samtal och symboler
   const flash = new Map<number, string>();

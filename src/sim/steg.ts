@@ -35,7 +35,7 @@ import { djurSteg } from './djur';
 import { bristSteg, frysFaktor, naringSjunker, skorbjugg, trottFaktor } from './naring';
 import { stepByggnader } from './byggnader';
 import { sumOf } from './egendom';
-import { avail, takeForHouse, buildJob, deliver as deliverBit, finishDorr, lacks, needOf, noteKom, planBuild, siteOf, toWalls, wearBuild, workOn } from './bygg';
+import { avail, takeForHouse, buildJob, finishDorr, needOf, noteKom, planBuild, siteOf, toWalls, wearBuild, workOn } from './bygg';
 import { MATERIAL, bitById, blocked, freeNear, gridOf, roomAt, shelterOf } from './byggnad';
 import { histParts, historikSteg, joinHist } from './historik';
 import { migrate } from './varld';
@@ -437,9 +437,13 @@ function arrive(s: State, p: Person, tk: Task, light: boolean) {
     } else { if (tk.ref !== undefined) addFuelBrasa(s, p, tk.ref, tk.carry); else addFuel(s, p, tk.carry); tk.carry = 0; p.task = undefined; }
   } else if (tk.act === 'bygga' && tk.phase === 'go' && tk.site) {
     // vid lagret: ta materialet och gå till bygget
-    const b = bitById(s, tk.ref), k = b && MATERIAL[b.m].item, n = b ? needOf(b) : 0;
-    if (!b || !k || avail(s, k, p, b.hus) < n) p.task = undefined;
-    else { tk.kom = {}; tk.ag = { [k]: takeForHouse(s, p, b.hus, k, n, tk.kom) }; tk.items = { [k]: sumOf(tk.ag[k]) }; tk.tx = tk.site.x; tk.ty = tk.site.y; tk.site = undefined; } // det som togs, inte mer
+    const b = bitById(s, tk.ref), k = b && MATERIAL[b.m].item, har = (k && tk.items?.[k]) || 0, n = b ? needOf(b) - har : 0;
+    if (!b || !k || avail(s, k, p, b.hus) < n) avbryt(s, p); // det man redan bar läggs i lagret där man står
+    else { // det som togs, inte mer, till det man redan har i händerna
+      tk.kom ??= {}; const ag = takeForHouse(s, p, b.hus, k, n, tk.kom), mitt = (tk.ag ??= {})[k] ??= {};
+      for (const id in ag) mitt[id] = (mitt[id] ?? 0) + ag[id];
+      tk.items = { ...tk.items, [k]: har + sumOf(ag) }; tk.tx = tk.site.x; tk.ty = tk.site.y; tk.site = undefined;
+    }
   } else if (tk.act === 'varda' && tk.phase === 'back') lamnaAv(s, p, tk); // hemma med den som bars
   else if (tk.act === 'vatten' && tk.phase === 'back') vattenFram(s, p, tk); // vattnet i säcken till den som inte kan gå
   else if (tk.phase === 'back') {
@@ -589,10 +593,15 @@ function buildStep(s: State, p: Person, tk: Task, dtSec: number) {
   const b = bitById(s, tk.ref);
   if (!b) { tk.until = s.now; return; }
   const k = MATERIAL[b.m].item;
-  if (tk.items && k && tk.items[k]) { deliverBit(b, tk.items[k], b.b >= 1); delete tk.items[k]; if (!Object.keys(tk.items).length) tk.items = undefined; }
-  if (tk.kom) { noteKom(s, b.hus, tk.kom); tk.kom = undefined; }
+  // materialet ligger kvar i händerna medan man bygger och läggs i bygget när biten är klar (steg 3.6.5). Avbryts arbetet
+  // bär man hem det som inte använts (taskStep: den som bär något går hem med det)
+  const har = (k && tk.items?.[k]) || 0;
   const done = b.b >= 1 && b.lp === undefined && b.c >= 0.5;
-  if (!done && !lacks(b) && !workOn(s, p, b, dtSec)) return;
+  if (!done && needOf(b) - har <= 1e-9) {
+    if (!workOn(s, p, b, dtSec, har)) return;
+    if (har) { delete tk.items![k!]; if (tk.ag) delete tk.ag[k!]; if (!Object.keys(tk.items!).length) tk.items = undefined; }
+    if (tk.kom) { noteKom(s, b.hus, tk.kom); tk.kom = undefined; } // varifrån materialet kom räknas när det används
+  }
   const j = buildJob(s, p);
   if (!j || j.missing || j.fell || dangers(s).kyla) { tk.until = s.now; return; } // ett träd i vägen, eller kylan är en fara (steg 2.12.3): välj på nytt
   // nästa bit av bygget: man går först till lagret om det behövs material

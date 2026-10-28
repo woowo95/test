@@ -265,7 +265,7 @@ function gearHtml(p: Person) {
   const whose = (t: Ting) => t.agare === p.id ? 'eget' : t.agare === BYN ? 'byns' : `lånat av ${byId(s, t.agare)?.name ?? 'någon'}`;
   const where = (t: Ting) => t.bar !== undefined ? `${byId(s, t.bar)?.name ?? 'någon'} har det på sig` : t.hos === undefined ? 'i förrådet' : `${byId(s, t.hos)?.name ?? 'någon'} har det i handen`;
   const ting = (t: Ting, title: string, cls = 'kan', px = 16) => `<span class="tnod liten ${cls}" tabindex="0" data-sak="t:${t.id}" title="${esc(title)}" aria-label="${esc(title)}">${iconImg(t.halv?.gor ?? t.k, px)}${kvSvg(t.q, px > 20 ? 14 : 9) && `<span class="kvhorn">${kvSvg(t.q, px > 20 ? 14 : 9)}</span>`}${t.halv ? `<span class="halvmark">${framstegSvg(halvKlar(t.halv), 9)}</span>` : ''}${skickRing(t.c, cls.includes('hand') ? (px > 20 ? 9 : 11) : 0)}</span>`;
-  const t = p.task, borda = t ? load(t, s) : 0, bar = !!t && borda > 0.02, u = utrustning(s, p, bar), kg = (n: number) => `${kortTal(n)} kg`;
+  const t = p.task, borda = t ? load(t, s) : 0, bar = !!t && borda > 0, u = utrustning(s, p, bar), kg = (n: number) => `${kortTal(n)} kg`;
   const bordaTxt = bar ? `bär ${carryTxt(p).replace(/^Bär /, '')}` : '';
   const ruta = (k: Plats, stor = false) => {
     const pl = PLATSER[k], x = u[k], cls = stor ? ' stor' : '';
