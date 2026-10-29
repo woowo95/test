@@ -112,6 +112,10 @@ const PAL: Record<string, Record<string, string>> = {
   a_samla: AKT,
   a_odla: AKT,
   a_jaga: AKT,
+  a_smyga: AKT,
+  a_sikta: AKT,
+  kanin_larm: { y: '#f0c040', k: '#2a241e' },
+  kanin_dod: { b: '#9a7650', B: '#c8a478', w: '#f2ece0', k: '#1a1a1a', r: '#a03028' },
   a_fiska: AKT,
   a_tra: AKT,
   a_bygga: AKT,
@@ -221,6 +225,28 @@ const PIX: Record<string, string[]> = {
     '....rwww',
     '.....ww.',
     '........',
+  ],
+  // kaninen som sett någon: ett utropstecken (platshållare, Björn efter v159)
+  kanin_larm: [
+    '..kyyk..',
+    '..kyyk..',
+    '..kyyk..',
+    '..kyyk..',
+    '...kk...',
+    '..kyyk..',
+    '..kyyk..',
+    '...kk...',
+  ],
+  // en fångad kanin som ligger på sidan (platshållare)
+  kanin_dod: [
+    '........',
+    '........',
+    '........',
+    '.bb.....',
+    'bkBbbbb.',
+    'bBBBBBBw',
+    '.bBBrBb.',
+    '..bbbb..',
   ],
   kanin: [
     '.b.b....',
@@ -1348,6 +1374,28 @@ const PIX: Record<string, string[]> = {
     '.wwwwww.',
     '..wwww..',
     '..wwww..',
+    '........',
+  ],
+  // jägaren smyger: en fot på tå och tysta prickar (platshållare, Björn efter v159)
+  a_smyga: [
+    '........',
+    '.w...w..',
+    '........',
+    '...ww...',
+    '..wwww..',
+    '..www...',
+    '.ww.....',
+    '........',
+  ],
+  // jägaren siktar: ett spjut snett uppåt med spetsen åt höger (platshållare)
+  a_sikta: [
+    '......aw',
+    '.....aw.',
+    '....w...',
+    '...w....',
+    '..w.....',
+    '.w......',
+    'w.......',
     '........',
   ],
   // ett sikte

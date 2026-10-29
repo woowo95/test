@@ -1317,7 +1317,7 @@ SCENARIER.kaninjakt = {
     const k0 = djurOf(s0)[0];
     // många försök från samma läge, med spjut och med stenar: varje försök med en ny slump ur jägarens följd
     const prova = (verktyg: string | undefined, n: number) => {
-      const ut = { fangst: 0, skadad: 0, borta: 0, skramd: 0, sar: 0 };
+      const ut = { fangst: 0, skadad: 0, borta: 0, skramd: 0, sar: 0, sett: 0, ratt: 0 };
       const s = cloneState(s0), p = SIM.byId(s, p0.id)!;
       for (let i = 0; i < n; i++) {
         Object.assign(s, { djurDoda: undefined, djurHalsa: undefined, djurSkramd: undefined }); s.ting = (s.ting ?? []).filter(t => t.k !== 'flintspjut');
@@ -1326,6 +1326,10 @@ SCENARIER.kaninjakt = {
         const tk = { act: 'jakt', phase: 'do', tx: k.x, ty: k.y, until: s.now + HOUR, carry: 0, tool: verktyg } as SIM.Task;
         const sar = (p.skador ?? []).length;
         SIM.jaktForsok(s, p, tk);
+        const f = tk.jf!; // försöket planeras när det börjar (Björn efter v159), och inget händer förrän det är slut
+        if (f.sett) ut.sett++;
+        if (tk.carry === 0 && !s.djurHalsa && (f.kast > 0 ? f.stopp === f.kast : f.stopp <= f.kast * -10) && f.id === k.id) ut.ratt++;
+        SIM.jaktKlar(s, p, tk);
         if (tk.carry > 0) ut.fangst++;
         if (s.djurHalsa?.length) ut.skadad++;
         if (verktyg && !SIM.toolsOf(s, verktyg).length) ut.borta++;
@@ -1352,6 +1356,7 @@ SCENARIER.kaninjakt = {
     const st = s.stat ?? {};
     return [
       [`med spjut fångas ${spjut.fangst} av ${N}, med stenar ${sten.fangst}: stenen fångar sämre`, spjut.fangst > sten.fangst && sten.fangst > 0],
+      [`försöket planeras när det börjar: kaninen, var jägaren stannar och om hen blev sedd sparas (${spjut.ratt + sten.ratt} av ${2 * N} rätt; sedd ${spjut.sett + sten.sett} gånger), och kaninen fångas först när försöket är slut`, spjut.ratt + sten.ratt === 2 * N && spjut.sett + sten.sett > 0 && spjut.sett + sten.sett < 2 * N],
       [`gruppen skräms av varje försök (${spjut.skramd} av ${N})`, spjut.skramd === N],
       [`en kanin som bara skadas springer (${spjut.skadad + sten.skadad} gånger i provet, ${st.jaktSkadad ?? 0} i byn)`, spjut.skadad + sten.skadad + (st.jaktSkadad ?? 0) > 0],
       [`det kastade spjutet försvinner ibland (${spjut.borta} av ${N} försök), oftare i vattnet (${iVatten} av ${N} kast) än på kort gräs (${paLand})`, spjut.borta > 0 && iVatten > paLand * 2],

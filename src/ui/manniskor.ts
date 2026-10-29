@@ -3,6 +3,7 @@ import { ACTS, ALDER, Person, slagIkon, SEC, TalkEvent, ageOf, SAMTAL, alive, by
 import { PRICKAR, personFarg } from './hjalp';
 import { s, ui, vidNyBy } from './lage';
 import { Ikoner, TS, bubbleG, labels, markLayer, peopleG } from './scen';
+import { jaktPlats } from './jakt';
 
 // människorna på kartan: kroppen, det de bär, pratbubblor, symbolen för vad de gör och namnet
 const bubbles: { id: number; kind: string; good: boolean; until: number }[] = [];
@@ -23,6 +24,8 @@ export function addTalks(events: TalkEvent[], now: number, nu: number) {
 // var personen syns vid tiden som visas: längs vägen hen gick under slaget (spar i steg.ts). På platsen rör man sig lite
 // för att det ska se levande ut, bara i bilden: från buske till buske, eller några steg hit och dit
 function platsAv(p: Person) {
+  const j = jaktPlats(p); // jägaren som smyger, siktar och hämtar (jakt.ts)
+  if (j) return { x: j.x, y: j.y, still: false };
   const v = spar.v.get(p), t = ui.nu;
   let x = p.x, y = p.y, still = true;
   if (v && v.length >= 6 && t < v[v.length - 3]) {
@@ -73,6 +76,8 @@ export function posOf(p: Person) {
 }
 // symbolen över huvudet: slaget av arbete man gör på platsen (SLAG i handlingar.ts)
 function markOf(p: Person): string | undefined {
+  const j = jaktPlats(p);
+  if (j) return j.mark ?? 'a_jaga'; // smyger, siktar eller jagar (jakt.ts)
   const t = p.task, k = t?.phase === 'do' ? ACTS[t.act].slag : undefined;
   return k && slagIkon(k);
 }

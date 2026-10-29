@@ -138,9 +138,9 @@ function narvaroAt(s: State, i: number) {
 }
 setNarvaro('jakt', narvaroAt);
 // var kaninerna är vid tiden t (gränssnittet ger tiden som visas): nära gruppens mitt, ett skutt i taget, och undan
-// från folk som kommer nära
-export function djurOf(s: State, t = s.now): Djur[] {
-  const ppl = living(s), out: Djur[] = [];
+// från folk som kommer nära. Gränssnittet ger var folket syns (folk), eftersom simuleringen ligger före bilden
+export function djurOf(s: State, t = s.now, folk?: readonly { x: number; y: number }[]): Djur[] {
+  const ppl = folk ?? living(s), out: Djur[] = [];
   const doda = new Set(s.djurDoda?.map(d => d.id));
   for (const g of grupperOf(s, t)) for (let j = 0, kvar = g.n; j < 8 && kvar > 0; j++) {
     const id = g.id * 8 + j;

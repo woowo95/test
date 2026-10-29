@@ -35,7 +35,7 @@ import { chooseTask, dangers, nastaBuske, nastaRedskap, spotFor } from './val';
 import { djurSteg } from './djur';
 import { vargSteg, vargjaktSteg } from './varg';
 import { vaktSteg } from './vakt';
-import { JAKT, jaktForsok } from './jakt';
+import { JAKT, jaktForsok, jaktKlar } from './jakt';
 import { bristSteg, frysFaktor, naringSjunker, skorbjugg, trottFaktor } from './naring';
 import { stepByggnader } from './byggnader';
 import { sumOf } from './egendom';
@@ -532,12 +532,16 @@ const UTFALL: Partial<Record<Act, (s: State, p: Person, tk: Task, b: Arbetsbit) 
   // jakten (steg 3.7.3, jakt.ts): ett försök i taget, där jägaren smyger sig fram till en kanin och sticker eller kastar.
   // Kaninen fyller famnen och bärs hem hel
   jakt: (s, p, tk, { dtSec }) => {
+    // Försöket planeras när det börjar och avgörs när det är slut (Björn efter v159): prog = sekunder sedan det började
     tk.prog = (tk.prog ?? 0) + dtSec;
-    while (tk.prog >= JAKT.smygSek && !tk.carry) {
-      const extra = jaktForsok(s, p, tk);
-      if (extra < 0) { tk.prog = Math.min(tk.prog, JAKT.smygSek); break; } // ingen kanin nära: hen går dit det finns kaniner eller letar vidare
-      tk.prog -= JAKT.smygSek + extra;
+    if (tk.jf && s.now - tk.jf.t > (JAKT.smygSek + tk.jf.extra + dtSec + 1) * SEC) { tk.jf = undefined; tk.prog = dtSec; } // jägaren gick ifrån försöket: börja om
+    while (!tk.carry) {
+      if (!tk.jf && jaktForsok(s, p, tk, s.now - tk.prog * SEC) < 0) { tk.prog = 0; break; } // ingen kanin nära: hen går dit det finns kaniner eller letar vidare
+      const lang = JAKT.smygSek + tk.jf!.extra;
+      if (tk.prog < lang) break;
+      tk.prog -= lang; jaktKlar(s, p, tk);
     }
+    if (tk.carry) tk.prog = 0;
     return true;
   },
 };

@@ -112,6 +112,7 @@ export interface Task {
   pk?: string; // nyckeln som vägen gäller för: målet och byggversionen. Ändras den räknas vägen om
   ref?: number; // det arbetet gäller: stammen som huggs, biten som byggs eller huset som ett träd fälls för
   prog?: number; // fiske: sekunder arbete mot nästa försök
+  jf?: Jaktforsok; // jakten: försöket som pågår (jakt.ts, Björn efter v159)
   tool?: string; // redskapet som används, t.ex. fiskespjut, eller slaget av bygge eller hantverk (vagg, golv, laga, rep)
   tur?: number; // sekunder arbete sedan bördan bars hem sist
   lim?: number; // hur länge en tur varar (sekunder), innan bördan bärs hem
@@ -126,6 +127,16 @@ export interface Task {
   tandmat?: true; // samlar tändmaterial åt en släckt eld: blir platsen tom på bär fortsätter man tills tändmaterialet räcker (steg.ts, workStep)
   bar?: number; // vården: den skadade som bärs hem (halsa.ts, steg 2.5.2)
   vatten?: number; // vattensäcken: rutan där den fylldes, vars smuts följer med vattnet (torst.ts, steg 2.10.1)
+}
+
+// ett jaktförsök (jakt.ts): planerat när det börjar och avgjort när det är slut, så att gränssnittet kan visa hur jägaren
+// smyger, siktar och kastar. t = när det började; kaninen (id) satt vid x, y och jägaren stod vid sx, sy. stopp = hur nära
+// kaninen jägaren smyger (rutor), kast = avståndet hen kastar från (−1 = inget kast), sett = kaninen såg jägaren innan hen
+// slog till, extra = sekunder efter smygandet (att hämta spjutet eller leta en ny sten). g och blod: träffens grad och
+// kaninens blod efter den
+export interface Jaktforsok {
+  t: number; id: number; x: number; y: number; sx: number; sy: number; v: string;
+  stopp: number; kast: number; sett: boolean; ut: 'fangad' | 'skadad' | 'miss' | 'flydde'; hand?: true; extra: number; g: number; blod: number;
 }
 
 export interface Person {

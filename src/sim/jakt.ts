@@ -19,8 +19,8 @@ import { wearTool } from './agande';
 // Jägaren gissar var hen blir sedd (bättre med vana): tror hen att hen kommer ända fram smyger hen hela vägen och sticker
 // (eller griper med händerna), annars stannar hen och kastar spjutet eller en sten därifrån. Den kanin som inte sett
 // jägaren varken duckar eller hoppar undan; den som ser jägaren först flyr, och då hinner jägaren bara kasta efter den.
-// Kaninen slår aldrig tillbaka, men den som griper en levande kanin kan bli biten. Hela försöket räknas på en gång med
-// stridens regler och en egen slumpföljd (fröet ur jägarens följd), så att det blir likadant i båda lägena. Gruppen
+// Kaninen slår aldrig tillbaka, men den som griper en levande kanin kan bli biten. Hela försöket räknas när det börjar
+// med stridens regler och en egen slumpföljd (fröet ur jägarens följd), så att det blir likadant i båda lägena. Gruppen
 // skräms av varje försök och är svårare att smyga på en stund. Stenen träffar sämre och tappas oftast bort
 export const JAKT = balans('jakt', {
   smygSek: 450, // ett försök: så många sekunder att leta upp en kanin och smyga sig fram
@@ -49,10 +49,11 @@ function skram(s: State, g: number) {
 }
 const TERR = { hog: JAKT.hog, ung: JAKT.ung, skog: JAKT.skog, kort: 1, bar: JAKT.bar };
 
-// ett försök: p jagar nära jaktplatsen med redskapet i handen (ett spjut) eller stenar. Svarar hur många sekunder utöver
-// smygandet det tog (att hämta spjutet eller leta upp en ny sten), −2 om jägaren gick mot en kanin längre bort, eller −1
-// om ingen kanin finns inom räckhåll
-export function jaktForsok(s: State, p: Person, tk: Task): number {
+// ett försök: p jagar nära jaktplatsen med redskapet i handen (ett spjut) eller stenar. Försöket planeras när det börjar
+// (t, tiden då det började) och sparas i tk.jf, så att gränssnittet kan visa hur jägaren smyger, siktar och kastar och om
+// kaninen ser hen (Björn efter v159). Det som händer i världen händer när det är slut (jaktKlar). Svarar 0, −2 om jägaren
+// gick mot en kanin längre bort, eller −1 om ingen kanin finns inom räckhåll
+export function jaktForsok(s: State, p: Person, tk: Task, t = s.now): number {
   let m: ReturnType<typeof djurOf>[number] | undefined, md = KANINER.narvR + KANINER.hopp * KANINER.hoppMax;
   const dj = djurOf(s);
   for (const d of dj) { const dd = Math.hypot(d.x - tk.tx, d.y - tk.ty); if (dd < md) { md = dd; m = d; } }
@@ -85,10 +86,11 @@ export function jaktForsok(s: State, p: Person, tk: Task): number {
     / Math.max(0.3, 1 + JAKT.smid * (a.st.smidighet - 10) + JAKT.vana * jakt);
   const tror = sedd * (1 + (r() * 2 - 1) * JAKT.gissa * (1 - clamp(jakt / 20, 0, 1))) * JAKT.marg;
   const kv = (VAPEN[v] as { kast?: { rack: number; skada: number } }).kast!, nar = v === 'sten' ? VAPEN.hand : VAPEN[v]; // med stenar i handen griper man kaninen
-  let traff = false, kastD = -1, hand = false;
+  let traff = false, kastD = -1, hand = false, sett: boolean, stopp: number;
   skram(s, m.grupp);
   if (tror <= nar.rack) { // smyger ända fram
-    if (sedd < nar.rack) {
+    sett = sedd >= nar.rack; stopp = sett ? sedd : nar.rack * 0.5;
+    if (!sett) {
       count(s, 'jaktSmyg');
       if (r() < chansMot(a, b, a.st.skicklighet) * JAKT.smyg) {
         traff = true; hand = v === 'sten';
@@ -97,7 +99,9 @@ export function jaktForsok(s: State, p: Person, tk: Task): number {
     } else count(s, 'jaktSedd');
   } else { // kastar därifrån hen tror att hen inte syns, eller efter kaninen som såg hen först
     const osedd = Math.min(tror, kv.rack) >= sedd;
+    sett = !osedd;
     kastD = osedd ? Math.min(tror, kv.rack) : sedd <= kv.rack ? sedd : -1;
+    stopp = osedd ? kastD : sedd;
     if (!osedd) count(s, 'jaktSedd');
     if (kastD > 0) {
       count(s, 'jaktKast');
@@ -108,27 +112,34 @@ export function jaktForsok(s: State, p: Person, tk: Task): number {
   }
   const g = b.skador.reduce((x, w) => x + w.g, 0);
   const dog = traff && (hand || b.lage === 'dod' || g + h.sar >= JAKT.dod);
-  let extra = 0;
-  if (kastD > 0) { // det kastade: stenen tappas oftast bort, spjutet hämtas om det inte försvann
-    if (v === 'sten') extra += r() < JAKT.stenBorta ? JAKT.stenSek : JAKT.hamtaSek;
-    else {
-      const ut = kastat(s, p, v, kastD, m.x, m.y, r);
-      if (ut) {
-        tk.tool = undefined;
-        if (ut === 'borta' && forstaGang(s, 'spjutBorta')) log(s, `${p.name} kastade ${VAPEN[v].namn.toLowerCase()} efter en kanin och hittade det aldrig igen.`, 'world', [p.id]);
-      } else extra += JAKT.hamtaSek;
+  // det kastade: stenen tappas oftast bort och då letar hen upp en ny, annars hämtas det som kastades
+  const extra = kastD > 0 ? (v === 'sten' && r() < JAKT.stenBorta ? JAKT.stenSek : JAKT.hamtaSek) : 0;
+  tk.jf = { t, id: m.id, x: m.x, y: m.y, sx: p.x, sy: p.y, v, stopp, kast: kastD, sett, ut: dog ? 'fangad' : traff && g > 0 ? 'skadad' : kastD > 0 || !sett ? 'miss' : 'flydde', ...(hand ? { hand: true as const } : {}), extra, g, blod: b.blod };
+  return 0;
+}
+// när försöket är slut: spjutet som kastades hämtas (eller är borta), stacket sliter spjutet, och den fångade kaninen
+// bärs hem. En kanin som någon annan hann fånga under tiden är borta
+export function jaktKlar(s: State, p: Person, tk: Task) {
+  const f = tk.jf!, r = () => rnd(s, 'arbete', p);
+  tk.jf = undefined;
+  if (f.kast > 0 && f.v !== 'sten') {
+    const ut = kastat(s, p, f.v, f.kast, f.x, f.y, r);
+    if (ut) {
+      tk.tool = undefined;
+      if (ut === 'borta' && forstaGang(s, 'spjutBorta')) log(s, `${p.name} kastade ${VAPEN[f.v as Vapen].namn.toLowerCase()} efter en kanin och hittade det aldrig igen.`, 'world', [p.id]);
     }
-  } else if (traff && !hand && tk.tool) { // stacket sliter spjutet
+  } else if (f.ut !== 'miss' && f.ut !== 'flydde' && !f.hand && tk.tool) { // stacket sliter spjutet
     if (wearTool(s, p, tk.tool, r() * KAST.slit)) tk.tool = undefined;
   }
-  if (dog) {
+  const h = halsaOf(s, f.id);
+  if (h.dod) return;
+  if (f.ut === 'fangad') {
     count(s, 'jaktFangst');
-    dodaDjur(s, m.id);
+    dodaDjur(s, f.id);
     if (forstaGang(s, 'kaniner')) log(s, `${p.name} fångade byns första kanin och bar hem den hel.`, 'world', [p.id]);
     tk.carry += KANIN;
-    blodas(s, m.x, m.y, 'jakt', 1); // där kaninen fångades
-    ovning(p, kastD > 0 ? 'traff' : 'narstrid', SLAGSMAL.jakt); // träffsäkerheten eller närstriden (strid.ts)
-    if (hand && r() < JAKT.bett) { count(s, 'jaktBett'); skada(s, p, r() < 0.5 ? 'handH' : 'handV', 'bett', JAKT.bettGrad, 'jakt', 'när hen grep en kanin'); }
-  } else if (traff && g > 0) { count(s, 'jaktSkadad'); satDjurHalsa(s, m.id, b.blod, h.sar + g); }
-  return extra;
+    blodas(s, f.x, f.y, 'jakt', 1); // där kaninen fångades
+    ovning(p, f.kast > 0 ? 'traff' : 'narstrid', SLAGSMAL.jakt); // träffsäkerheten eller närstriden (strid.ts)
+    if (f.hand && r() < JAKT.bett) { count(s, 'jaktBett'); skada(s, p, r() < 0.5 ? 'handH' : 'handV', 'bett', JAKT.bettGrad, 'jakt', 'när hen grep en kanin'); }
+  } else if (f.ut === 'skadad') { count(s, 'jaktSkadad'); satDjurHalsa(s, f.id, Math.min(f.blod, h.blod), h.sar + f.g); }
 }

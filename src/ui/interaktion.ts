@@ -1,9 +1,10 @@
 import * as PIXI from 'pixi.js';
-import { BAR, FALT_STEG, FOREST, GRODOR, Falt, byId, faltAt, faltIndex, faltKlar, grodaPa, HIGH, MATERIAL, Person, T, W, bitAt, campCenter, condOf, dorrDef, emberOn, eldPlats, djurOf, vargarOf, getMap, groundOf, husById, inMap, insulation, isKlar, living, stationAt, stationDef, stationKlar, tingOf, toaAt, roomAt, rumsFunktioner, sakNamn, sjoarna, sovplatser, taskName, zoneAt, zonesOf, Pile } from '../sim';
+import { BAR, FALT_STEG, FOREST, GRODOR, Falt, byId, faltAt, faltIndex, faltKlar, grodaPa, HIGH, MATERIAL, Person, T, W, bitAt, campCenter, condOf, dorrDef, emberOn, eldPlats, getMap, groundOf, husById, inMap, insulation, isKlar, living, stationAt, stationDef, stationKlar, tingOf, toaAt, roomAt, rumsFunktioner, sakNamn, sjoarna, sovplatser, taskName, zoneAt, zonesOf, Pile } from '../sim';
 import { iconImg, tecknet } from '../ikoner';
 import { $, esc, fmtN, prickar } from './hjalp';
 import { outPilesAt, piles, s, ui } from './lage';
 import { posOf } from './manniskor';
+import { djurSynliga } from './vaxter';
 import { sakKey } from './flikar/sak';
 import { renderPanel, selectPerson, visa, ärPersonflik } from './panel';
 import { renderPorts, stopFollow } from './portratt';
@@ -20,7 +21,7 @@ function personAt(gx: number, gy: number) {
 function djurAt(gx: number, gy: number) {
   const p = toWorld(gx, gy);
   let best: number | undefined, bd = 8;
-  for (const d of [...djurOf(s, ui.nu), ...vargarOf(s)]) { const dd = Math.hypot(d.x * TS - p.x, d.y * TS - 2 - p.y); if (dd < bd) { bd = dd; best = d.id; } }
+  for (const d of djurSynliga()) { const dd = Math.hypot(d.x * TS - p.x, d.y * TS - 2 - p.y); if (dd < bd) { bd = dd; best = d.id; } }
   return best;
 }
 function fireAt(gx: number, gy: number) {
