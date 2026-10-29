@@ -55,7 +55,8 @@ import type { Person, State } from './typer';
 // ---------- balanstal (regel 8) ----------
 export const STRID = balans('strid', {
   tick: 0.2, // sekunder i spelet per tidssteg i striden (samma i båda lägena)
-  maxTid: 240, // en strid slutar senast efter så här många sekunder (oavgjort)
+  tempo: 2, // striden går så här många gånger långsammare än den räknas: allt i den (slagen, stegen, blodet, orken) tar längre tid men slutar likadant (steg 3.7.18)
+  maxTid: 480, // en strid slutar senast efter så här många sekunder (oavgjort)
   fart: 1.6, // rutor i sekunden för en frisk vuxen som springer i strid (gånger djurets fart)
   traffBas: 0.6, // chansen att träffa någon som är lika skicklig
   traffPer: 0.03, // ... och så här mycket mer per poäng skicklighet över motståndarens
@@ -522,11 +523,11 @@ function kastaMot(st: Strid, k: Kampe, m: Kampe, snabbt?: true): boolean {
   return true;
 }
 
-// ett tidssteg (STRID.tick sekunder)
+// ett tidssteg (STRID.tick sekunder på klockan, STRID.tick / STRID.tempo sekunder i striden)
 export function stridSteg(st: Strid) {
   if (st.slut) return;
-  const dt = STRID.tick, avs = AVS[st.avsikt];
-  st.t += dt;
+  const dt = STRID.tick / STRID.tempo, avs = AVS[st.avsikt];
+  st.t += STRID.tick;
   const hot = hotet(st), slagits = st.logg.some(r => r.h === 'traff' || r.h === 'miss' || r.h === 'tog' || r.h === 'knuff' || r.h === 'omkull');
   for (const k of st.kampar) {
     if (k.lage === 'borta' || k.lage === 'dod') continue;
