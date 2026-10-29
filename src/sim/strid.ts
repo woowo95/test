@@ -40,12 +40,14 @@ import { blodtorst } from './humor';
 import { die } from './liv';
 import { handelse, larma, smaka, smakAv } from './rykten';
 import { avbryt } from './lager';
-import { HOUR, SEC } from './typer';
+import { HOUR, SEC, T } from './typer';
 import { harBalte, paSig, paSigVikt } from './utrustning';
 import { capacity } from './lager';
 import { snoPaMarken, vaderNu } from './vader';
 import { bordOf } from './saker';
-import { ownedBy } from './agande';
+import { ownedBy, toolsOf, wearTool } from './agande';
+import { getMap } from './karta';
+import { groundOf, markslag, tileOf } from './mark';
 import type { Person, State } from './typer';
 
 // ---------- balanstal (regel 8) ----------
@@ -273,7 +275,7 @@ export interface Strid {
 export interface Uppstallning { avsikt: Avsikt; w: number; h: number; vind?: number; dimma?: number; halt?: number; kampar: Omit<Kampe, 'skador' | 'blod' | 'ork' | 'modNu' | 'lage' | 'vant' | 'mal' | 'backar' | 'slag' | 'traffar' | 'gjort' | 'skott' | 'haller' | 'vantar' | 'ifatt' | 'vada' | 'ligger' | 'bocker' | 'later'>[] }
 
 // stridens egen slumpföljd (samma blandning som rnd i slump.ts)
-function slump(st: Strid) {
+export function slump(st: Strid) {
   let t = (st.r = (st.r + 0x6d2b79f5) | 0);
   t = Math.imul(t ^ (t >>> 15), t | 1);
   t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
@@ -339,7 +341,7 @@ function falla(st: Strid, k: Kampe, h: 'nere' | 'dod' | 'ger' | 'flykt', rad: Ha
 }
 
 const orkAv = (a: Kampe) => { a.slag++; a.ork = Math.max(0, a.ork - STRID.orkSlag * (1 - (a.st.uthallighet - 10) / 40)); };
-const chansMot = (a: Kampe, b: Kampe, skick: number) => clamp((STRID.traffBas + (skick - b.st.skicklighet) * STRID.traffPer - (b.st.smidighet - 10) * STRID.smidUndan) * (1 - STRID.trott * (1 - a.ork)), STRID.traffMin, STRID.traffMax) * (b.lage === 'nere' || b.lage === 'flykt' || b.ligger || b.bocker ? STRID.utsatt : 1); // den som ligger, böjer sig ner eller vänt ryggen är lätt att träffa
+export const chansMot = (a: Kampe, b: Kampe, skick: number) => clamp((STRID.traffBas + (skick - b.st.skicklighet) * STRID.traffPer - (b.st.smidighet - 10) * STRID.smidUndan) * (1 - STRID.trott * (1 - a.ork)), STRID.traffMin, STRID.traffMax) * (b.lage === 'nere' || b.lage === 'flykt' || b.ligger || b.bocker ? STRID.utsatt : 1); // den som ligger, böjer sig ner eller vänt ryggen är lätt att träffa
 const duckar = (st: Strid, b: Kampe) => !b.ligger && !b.bocker && slump(st) < STRID.duck * Math.max(0, 1 + STRID.duckSmid * (b.st.smidighet - 10)) * rorlighet(b) * b.ork * (b.klader.includes('skinnrock') ? 1 - STRID.duckTung : 1);
 function slaEtt(st: Strid, a: Kampe, b: Kampe) {
   const v = VAP[a.vapen];
@@ -382,7 +384,7 @@ function byt(st: Strid, a: Kampe) {
   st.logg.push({ t: st.t, h: 'byter', a: a.id, v: ny });
 }
 // en träff av graden skada med slaget sl: kroppsdelen, kläderna, skadan och följderna
-function traffa(st: Strid, a: Kampe, b: Kampe, skada0: number, sl: Slag, kast?: true) {
+export function traffa(st: Strid, a: Kampe, b: Kampe, skada0: number, sl: Slag, kast?: true) {
   const kastad = kast ? VAP[a.vapen].kast : undefined;
   let x = slump(st);
   let d: Kroppsdel = 'bal';
@@ -709,6 +711,27 @@ export function djurKampe(art: string, id: number, sida: 0 | 1, x: number, y: nu
 export interface DjurStrid { namn: string; art: string; alder: number; styrka: number; uthallighet: number; mod: number; smidighet: number; skicklighet: number; fart: number; vapen: Vapen }
 export const STRIDSDJUR = () => Object.keys(DJUR).filter(a => (DJUR as Record<string, { strid?: DjurStrid }>)[a].strid);
 
+// ---------- det kastade (steg 3.7.3) ----------
+// det som kastas (i jakten och i all strid): det slits och kan försvinna
+export const KAST = balans('kast', {
+  slit: 0.1, // ett kast sliter en slumpad del av hållbarheten, upp till så här mycket ...
+  borta: 0.01, // ... och det kastade försvinner med den här chansen ...
+  hog: 2, skog: 2.5, sno: 2, vatten: 6, // ... gånger detta i högt gräs, i snår och skog, i snön (1 + sno × snön) och i vattnet ...
+  langt: 1, // ... och gånger 1 + langt × kastets längd mot räckvidden
+});
+
+// det kastade vapnet v (från p, d rutor, landade vid x, y): slitaget och risken att det försvinner. r = slumpföljden.
+// Svarar 'borta' eller 'trasig' när tinget är borta
+export function kastat(s: State, p: Person, v: string, d: number, x: number, y: number, r: () => number): 'borta' | 'trasig' | undefined {
+  const kv = VAP[v]?.kast;
+  if (!kv || !toolsOf(s, v).length) return undefined; // stenarna är inga ting
+  const i = tileOf(x, y), ms = markslag(groundOf(s), i);
+  const f = (ms === 'hog' ? KAST.hog : ms === 'skog' || ms === 'ung' ? KAST.skog : 1) * (1 + KAST.sno * snoPaMarken(s))
+    * (getMap(s.seed).tiles[i] === T.Vatten ? KAST.vatten : 1) * (1 + KAST.langt * d / kv.rack);
+  if (r() < KAST.borta * f) { wearTool(s, p, v, Infinity); count(s, 'kastBorta'); return 'borta'; }
+  return wearTool(s, p, v, r() * KAST.slit) ? 'trasig' : undefined;
+}
+
 // ---------- striden i byn (steg 3.7.2) ----------
 // Ett gräl kan bli ett slagsmål, och barn som leker brottas ibland. Striden räknas färdigt på en gång (stridTillSlut, med
 // fröet ur byns följd 'strid'), så att den blir likadan i båda lägena; sedan står de som var med och slåss (handlingen
@@ -760,6 +783,8 @@ export function stridIByn(s: State, avsikt: Avsikt, sidor: [Person[], Person[]],
       if (!dod && skada(s, p, w.d, w.k, w.g, 'drap', `i ett ${lek ? 'lekslagsmål' : 'slagsmål'} med ${mot.map(q => q.name).join(' och ')}`)) dod = true;
       if (w.fast && p.skador?.length) p.skador[p.skador.length - 1].fast = 1; // spjutet sitter kvar till vården (steg 3.7.7)
     }
+    // det hen kastade slits och kan ha försvunnit (steg 3.7.3)
+    for (const r of st.logg) if (r.a === k.id && r.v && (r.kast || r.h === 'vada')) kastat(s, p, r.v, VAP[r.v].kast!.rack / 2, p.x, p.y, () => rnd(s, 'strid'));
     if (dod) { count(s, 'drap'); die(s, p, 'drap'); continue; }
     p.blod = Math.min(p.blod ?? 1, Math.max(HALSA.blodDod, k.blod));
     ovning(p, 'narstrid', lek ? SLAGSMAL.ovningLek : SLAGSMAL.ovning);

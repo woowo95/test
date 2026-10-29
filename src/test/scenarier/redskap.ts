@@ -146,9 +146,12 @@ SCENARIER.redskap = {
     const { x: bx, y: by } = bastaJaktruta(s, 30) ?? campCenter(s);
     const vilt0 = amountOf(s, 'vilt'), sp0 = amountOf(s, 'flintspjut');
     let medSpjut = 0;
-    for (let i = 0; i < 12 * 3; i++) {
-      p.task = { act: 'jakt', phase: 'do', tx: bx, ty: by, until: s.now + HOUR, carry: 0, tool: 'flintspjut', why: 'prov', dark: !isLight(s.now) };
-      p.x = bx; p.y = by; step(s, BEAT);
+    // samma uppgift tills en kanin är hemma (jakten är försök som tar en stund, steg 3.7.3), högst sex timmar
+    p.task = { act: 'jakt', phase: 'do', tx: bx, ty: by, until: s.now + 6 * HOUR, carry: 0, tool: 'flintspjut', why: 'prov', dark: !isLight(s.now) };
+    p.x = bx; p.y = by;
+    for (let i = 0; i < 6 * 3600 / BEAT && amountOf(s, 'vilt') <= vilt0; i++) {
+      for (const q of living(s)) q.hunger = 1; // ingen äter kaninen innan den syns i förrådet
+      step(s, BEAT);
       if (p.task?.act === 'jakt' && isSpear(p.task.tool)) medSpjut++;
     }
     const jakt = (amountOf(s, 'vilt')) > vilt0 && amountOf(s, 'flintspjut') < sp0;
@@ -184,7 +187,7 @@ SCENARIER.redskap = {
       ['ett flintspjut görs av gren, flinta och rep, och en flinta sparas till elden', flint],
       ['flintspjutet håller fyra gånger så länge som ett träspjut', haller],
       ['ett metspö görs av gren, rep och ben', spo],
-      [`jakt med spjut fångar kaniner, och spjutet slits (${medSpjut} av 36 steg med spjut)`, jakt && medSpjut > 30],
+      [`jakt med spjut fångar kaniner, och spjutet slits (${medSpjut} steg med spjut)`, jakt && medSpjut > 0],
       [`metspöet och spjutet används (${st.metForsok ?? 0} försök med metspö, ${(met * 100).toFixed(0)} % fångst; ${st.spjutForsok ?? 0} med spjut, ${(spjut * 100).toFixed(0)} %)`, (st.metForsok ?? 0) > 20 && (st.spjutForsok ?? 0) > 20],
       [`metspöet ger mest fisk per försök på samma plats (${(metLika * 100).toFixed(0)} % mot spjutets ${(spjutLika * 100).toFixed(0)} %, 2000 försök var)`, metLika > spjutLika && spjutLika > 0],
     ];

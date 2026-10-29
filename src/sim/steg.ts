@@ -2,13 +2,13 @@ import { stepUppvaxt } from './uppvaxt';
 import { UTBROTT_ACTS, moodOf, stepHumor, utbrottKlar } from './humor';
 import { glomRykten, stepRykten } from './rykten';
 import { stepStyre } from './styre';
-import { SLAGSMAL, gralBlirSlagsmal, lekSteg } from './strid';
+import { gralBlirSlagsmal, lekSteg } from './strid';
 import { redskapIHanden, tidyTools } from './agande';
 import { kvEffekt } from './kvalitet';
 import { chopStock, fellTree, rotStumps, stocks } from './skog';
 import { needLadder, noticeTheft, stole } from './behov';
 import { avbryt, capacity, dropSpot, fetchSpot, helaIBordan, homeKind, isCarrying, load, pickUp, placeTools, sakerPaGolvet, storeLoad, tidyStore, wearStore } from './lager';
-import { DJURARTER, KANIN, REDSKAP, bearbeta, twineRope, wearUsed } from './redskap';
+import { DJURARTER, REDSKAP, bearbeta, twineRope, wearUsed } from './redskap';
 import { GOR_ACTS, finishHalf, startWork, stepPaborjat, workHalf } from './paborjat';
 import { thinkWhileWorking } from './teknik';
 import { arbetsformaga, atSteg, foodDays, workRate } from './ekonomi';
@@ -33,6 +33,7 @@ import { AGES_BORJAR, Act, DAY, HOUR, HOUR_S, MIN, Person, SEC, SKILL_NAMES, Sta
 import { findPath, speedAt, wear } from './vag';
 import { chooseTask, dangers, nastaBuske, nastaRedskap, spotFor } from './val';
 import { djurSteg } from './djur';
+import { JAKT, jaktForsok } from './jakt';
 import { bristSteg, frysFaktor, naringSjunker, skorbjugg, trottFaktor } from './naring';
 import { stepByggnader } from './byggnader';
 import { sumOf } from './egendom';
@@ -47,7 +48,6 @@ import { grilla, torka } from './matlagning';
 import { addFuelBrasa, brasaFor, stepBrasor } from './brasor';
 import { sjoRakna } from './sjo';
 import { akel, toaBesok } from './smuts';
-import { blodas } from './blod';
 import { DRICKA_ACTS, TORST, drick, torstSteg, vattenFram, vattenFylld } from './torst';
 import { HALSA, barMed, burenSteg, gangFart, halsaSteg, lakerFullt, lamnaAv, mossaFynd, mossaPaStam, vardKlar, vardMal } from './halsa';
 import { bordPlats, kladVarme, stepKlader } from './utrustning';
@@ -63,7 +63,6 @@ const STEG = balans('steg', {
   // att gå (rutor per sekund) och nöta marken
   fart: 1.6, // i vanliga fall
   smidTerr: 0.3, // i skog och snår (marken långsammare än 1) tar den smidiga igen så här stor del av det man förlorar, gånger (smidigheten − 10) / 10 (steg 3.7.6)
-  smidJakt: 0.25, // chansen att fånga en kanin gånger 1 + smidJakt × (smidigheten − 10) / 10 (steg 3.7.6)
   fartBarn: 0.9, // under ALDER.gangBarn
   fartGammal: 1, // över ALDER.gangGammal
   markNot: 0.03, // hur mycket ett steg nöter marken (MARK.nott per ruta)
@@ -523,15 +522,14 @@ const UTFALL: Partial<Record<Act, (s: State, p: Person, tk: Task, b: Arbetsbit) 
     for (const k in got) bar(k, got[k]);
     return true;
   },
-  // man fångar hela djur, än så länge bara kaniner. Chansen är sådan att man i snitt får lika mycket som platsen ger.
+  // jakten (steg 3.7.3, jakt.ts): ett försök i taget, där jägaren smyger sig fram till en kanin och sticker eller kastar.
   // Kaninen fyller famnen och bärs hem hel
-  jakt: (s, p, tk, { y }) => {
-    if (y > 0 && rnd(s, 'arbete', p) < y / KANIN * (1 + STEG.smidJakt * franMitt(p, 'smidighet', s.now))) {
-      if (forstaGang(s, 'kaniner')) log(s, `${p.name} fångade byns första kanin och bar hem den hel.`, 'world', [p.id]);
-      tk.carry += KANIN;
-      blodas(s, p.x, p.y, 'jakt', 1); // där kaninen fångades
-      wearUsed(s, p, 1); // spjutet slits för varje kanin (steg 2.3.12)
-      ovning(p, 'traff', SLAGSMAL.jakt); // träffsäkerheten (steg 3.7.2, strid.ts)
+  jakt: (s, p, tk, { dtSec }) => {
+    tk.prog = (tk.prog ?? 0) + dtSec;
+    while (tk.prog >= JAKT.smygSek && !tk.carry) {
+      const extra = jaktForsok(s, p, tk);
+      if (extra < 0) { tk.prog = Math.min(tk.prog, JAKT.smygSek); break; } // ingen kanin nära: hen går dit det finns kaniner eller letar vidare
+      tk.prog -= JAKT.smygSek + extra;
     }
     return true;
   },

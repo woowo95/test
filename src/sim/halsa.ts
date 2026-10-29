@@ -232,6 +232,7 @@ function olyckaSteg(s: State, p: Person, dtSec: number): Dodsorsak | undefined {
   const pd = ACTS[t!.act], sk: Skill | undefined = pd.arbete ?? (pd.hantverk ? 'hantverk' : undefined);
   if (!chance(s, o.risk * (1 - (sk ? p.skill[sk] : 0) / HALSA.skicklig) * (1 - HALSA.smidig * franMitt(p, 'smidighet', s.now)) / HOUR_S, dtSec, 'halsa', p)) return undefined;
   const k = pick(s, o.typer, 'halsa', p), d = pick(s, o.delar, 'halsa', p), u = rnd(s, 'halsa', p);
+  count(s, 'olyckor'); // skadorna i arbetet (de i slagsmål och straff räknas inte här)
   return skada(s, p, d, k, o.min + u * u * (o.max - o.min), o.dod, o.nar);
 }
 // kroppen varje steg (healthStep i steg.ts): olyckor, blödningen, läkningen och blodet som kommer tillbaka.

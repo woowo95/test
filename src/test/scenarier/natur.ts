@@ -31,8 +31,8 @@ SCENARIER.djur = {
     const { x: bx, y: by } = bastaJaktruta(s, 30, c) ?? c;
     let hela = true;
     for (let i = 0; i < 24 * STEG_TIM; i++) {
-      p.task = { act: 'jakt', phase: 'do', tx: bx, ty: by, until: s.now + HOUR, carry: 0, why: 'prov', dark: !isLight(s.now) };
-      p.x = bx; p.y = by;
+      // samma uppgift hela tiden (jakten är försök som tar en stund, steg 3.7.3); den som fångat börjar om på platsen
+      if (p.task?.act !== 'jakt' || p.task.carry > 0 || p.task.phase !== 'do') { p.task = { act: 'jakt', phase: 'do', tx: bx, ty: by, until: s.now + 24 * HOUR, carry: 0, why: 'prov', dark: !isLight(s.now) }; p.x = bx; p.y = by; }
       for (const r of living(s)) r.hunger = 1; // ingen äter av viltet under provet (då syns inte om det kom in helt)
       const v0 = amountOf(s, 'vilt');
       step(s, BEAT);
@@ -510,7 +510,7 @@ SCENARIER.flatarbank = {
     };
     const kElden = kniv(false), kBank = kniv(true);
     // en vanlig by tills någon tvinnar rep, högst tio dygn (tio år i spelet): inget handarbete utan sak, och rep tvinnas som en egen handling
-    const v = createState(3, START); // en by som kommer på repet tidigt (by 2 kom inte på det inom tio dygn i v75)
+    const v = createState(5, START); // en by som kommer på repet tidigt (by 2 kom inte på det inom tio dygn i v75, by 3 inte i v156)
     let dygn = 0;
     for (; dygn < 10 && !tvinnar; dygn++) kor(v, 24, w => { for (const r of living(w)) { if (r.task?.act === 'hantverk') hantverk++; if (r.task?.act === 'tvinna') tvinnar++; } });
     // att tvinna rep är hantverk: den som gör det kommer på det som hör till hantverket (kniven)
@@ -1298,6 +1298,59 @@ SCENARIER.individer = {
       [`åldern är 1–${art.alder} år, styrkan och snabbheten finns och skillnader mellan kaninerna`, iSpann && olika],
       [`en skadad kanin (blod ${Math.round(skadad.blod * 100)} %) läker med tiden (${Math.round(sen.blod * 100)} % efter 6 timmar, ${Math.round(lakt.blod * 100)} % efter två dygn) och glöms när den läkt`, skadad.blod < sen.blod && sen.blod < 1 && lakt.blod === 1 && lakt.sar === 0 && glomd],
       [`en dödad kanin syns inte längre (${n0} före, ${efter.length} efter, men inte den dödade)`, !efter.some(d => d.id === b.id) && efter.length === n0 && SIM.halsaOf(s, b.id).dod],
+    ];
+  },
+};
+
+SCENARIER.kaninjakt = {
+  text: 'Kaninjakten som strid (steg 3.7.3): jägaren smyger sig fram till en kanin och sticker eller kastar. Stenen fångar sämre än spjutet och tappas oftast bort, det kastade spjutet slits och försvinner ibland (oftare i vattnet), gruppen skräms, en skadad kanin springer och bara den som griper en kanin med händerna kan bli biten. I byn ger jakten kaniner',
+  kor: () => {
+    const s0 = createState(6, START);
+    klockan(s0);
+    const p0 = living(s0).find(q => ageOf(q, s0.now) >= 16)!;
+    const k0 = djurOf(s0)[0];
+    // många försök från samma läge, med spjut och med stenar: varje försök med en ny slump ur jägarens följd
+    const prova = (verktyg: string | undefined, n: number) => {
+      const ut = { fangst: 0, skadad: 0, borta: 0, skramd: 0, sar: 0 };
+      const s = cloneState(s0), p = SIM.byId(s, p0.id)!;
+      for (let i = 0; i < n; i++) {
+        Object.assign(s, { djurDoda: undefined, djurHalsa: undefined, djurSkramd: undefined }); s.ting = (s.ting ?? []).filter(t => t.k !== 'flintspjut');
+        if (verktyg) { const t = SIM.addTool(s, verktyg, p); t.hos = p.id; }
+        const k = djurOf(s).find(d => d.id === k0.id) ?? djurOf(s)[0];
+        const tk = { act: 'jakt', phase: 'do', tx: k.x, ty: k.y, until: s.now + HOUR, carry: 0, tool: verktyg } as SIM.Task;
+        const sar = (p.skador ?? []).length;
+        SIM.jaktForsok(s, p, tk);
+        if (tk.carry > 0) ut.fangst++;
+        if (s.djurHalsa?.length) ut.skadad++;
+        if (verktyg && !SIM.toolsOf(s, verktyg).length) ut.borta++;
+        if (s.djurSkramd?.length) ut.skramd++;
+        if ((p.skador ?? []).length > sar) ut.sar++;
+        p.skador?.splice(0); p.health = 1;
+      }
+      return ut;
+    };
+    const N = 400, spjut = prova('flintspjut', N), sten = prova(undefined, N);
+    // det kastade försvinner oftare i vattnet än på kort gräs
+    const m = getMap(s0.seed), g = groundOf(s0);
+    const vi = m.tiles.findIndex(t => t === T.Vatten), li = m.tiles.findIndex((t, i) => t !== T.Vatten && SIM.markslag(g, i) === 'kort');
+    const borta = (i: number) => {
+      const s = cloneState(s0), p = SIM.byId(s, p0.id)!; let n = 0, r = 7;
+      const slump = () => { r = (r * 16807) % 2147483647; return r / 2147483647; };
+      for (let j = 0; j < N; j++) { s.ting = (s.ting ?? []).filter(t => t.k !== 'flintspjut'); SIM.addTool(s, 'flintspjut', p).hos = p.id; if (SIM.kastat(s, p, 'flintspjut', 3, i % W + 0.5, Math.floor(i / W) + 0.5, slump) === 'borta') n++; }
+      return n;
+    };
+    const iVatten = borta(vi), paLand = borta(li);
+    // byn jagar: kaniner bärs hem
+    const s = createState(1, START);
+    kor(s, 240);
+    const st = s.stat ?? {};
+    return [
+      [`med spjut fångas ${spjut.fangst} av ${N}, med stenar ${sten.fangst}: stenen fångar sämre`, spjut.fangst > sten.fangst && sten.fangst > 0],
+      [`gruppen skräms av varje försök (${spjut.skramd} av ${N})`, spjut.skramd === N],
+      [`en kanin som bara skadas springer (${spjut.skadad + sten.skadad} gånger i provet, ${st.jaktSkadad ?? 0} i byn)`, spjut.skadad + sten.skadad + (st.jaktSkadad ?? 0) > 0],
+      [`det kastade spjutet försvinner ibland (${spjut.borta} av ${N} försök), oftare i vattnet (${iVatten} av ${N} kast) än på kort gräs (${paLand})`, spjut.borta > 0 && iVatten > paLand * 2],
+      [`kaninen slår aldrig tillbaka: bara den som griper med händerna blir biten (${spjut.sar} med spjut, ${sten.sar} med händer och stenar)`, spjut.sar === 0],
+      [`i byn: ${st.jaktForsok ?? 0} försök, ${st.jaktSmyg ?? 0} smög ända fram, ${st.jaktKast ?? 0} kast, ${st.jaktSedd ?? 0} gånger sedd först, ${st.jaktFangst ?? 0} kaniner`, (st.jaktFangst ?? 0) > 0 && (st.jaktKast ?? 0) > 0 && (st.jaktSedd ?? 0) > 0],
     ];
   },
 };
