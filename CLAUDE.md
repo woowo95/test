@@ -65,6 +65,7 @@ När Björn säger att Claude får programmera över natten:
 - `npm install`, sedan `npm run build`. Det ger `samhallssimulatorn.html`, och i `publicera/` källkoden som .txt och fillistan `filer.json`.
 - Publicera alltid till samma artefakt-URL så att Björns sparade by och länk finns kvar: `file_path` = `samhallssimulatorn.html`, `url` = spelets URL och `files` = innehållet i `publicera/filer.json`. Då kommer källkoden med under `kalla/`.
 - Uppdatera "Läget just nu" i designdokumentet när något nytt är byggt, och bocka av steget i Färdplanen.
+- Programmeras nu (Björn, efter v159): när du börjar programmera något, skriv först vad (steget eller uppgiften) under "Programmeras nu" i "Läget just nu". När det är klart och publicerat: skriv "avslutat" med versionen.
 - Commiten som publiceras säger versionen inom parentes, t.ex. "(v44)". Då hittar `jamfor --mot v44` den (git-taggar går inte att pusha härifrån).
 
 ## Enklare modeller (spara tokens)

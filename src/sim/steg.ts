@@ -179,6 +179,7 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
   const inRum = new Map<number, number>(); // hur många som är i varje rum
   for (const p of ppl) { const r = roomAt(s, p.x, p.y); if (r) inRum.set(r.id, (inRum.get(r.id) ?? 0) + 1); }
   for (const p of ppl) {
+    if (!alive(p)) continue; // dödad tidigare i samma slag (av vargar eller i ett slagsmål)
     const a = ageOf(p, now);
     needsStep(s, p, a, dtSec, coldRate, fh, inRum, temp);
     if (p.task?.act !== 'strid') needLadder(s, p, dtSec); // äta: sitt eget, byns, och i yttersta nöd andras (behov.ts). Inte mitt i en strid (strid.ts)

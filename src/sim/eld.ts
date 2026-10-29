@@ -86,7 +86,7 @@ export const fuelFor = (s: State, p: Person, fran?: Person) => takeLimit(s, 'ved
 export function takeFuel(s: State, n: number, p?: Person, ag?: Del, fran?: Person) {
   const v = Math.min(n, takeLimit(s, 'ved', p, fran));
   const w = use(s, p, 'ved', v, true, fran?.id);
-  const g = Math.min(takeLimit(s, 'grenar', p, fran), (n - v) / GREN);
+  const g = Math.min(Math.floor(takeLimit(s, 'grenar', p, fran) + 1e-9), Math.ceil((n - v) / GREN - 1e-9)); // hela grenar (steg 3.6.13)
   if (g > 0) { const d = use(s, p, 'grenar', g, true, fran?.id); if (ag) addDel(ag, d, GREN); }
   if (ag) addDel(ag, w);
   return v + g * GREN;
