@@ -111,6 +111,7 @@ const SALLSYNT: Record<string, string> = {
   forrad: 'förrådshuset byggs när maten ruttnar eller förrådet är fullt, i ungefär var femte by på 30 dygn sedan kvaliteten (steg 2.2.2); scenariot forradshus prövar det',
   samling: 'blir det bara av en sovsal som ingen längre sover i (steg 1.6.4); scenariot funktion prövar det',
   krossa: 'utbrotten är sällsynta (Björn efter v138: de blir vanligare med motgångar och attacker); att slå sönder något och barnens trots prövas i scenarierna utbrott och barnutbrott',
+  skams: 'straffet skam döms bara när en ledare straffar någon för ett brott, och brotten är sällsynta; scenariot ledare prövar det',
   elak: 'utbrotten är sällsynta; att vara elak prövas i scenariot utbrott',
   grata: 'utbrotten är sällsynta; att gråta prövas i scenariot utbrott',
   tjura: 'utbrotten är sällsynta; att tjura prövas i scenariot utbrott',
