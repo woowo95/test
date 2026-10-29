@@ -39,6 +39,7 @@ export const BLOD = {
   blodning: { namn: 'Blödning', delar: [['droppar', 1]], sprid: 0.15 },
   forblodning: { namn: 'Förblödning', delar: [['pol', 2.5], ['stank', 0.5]], sprid: 0.1 },
   jakt: { namn: 'Jakt', delar: [['stank', 0.6], ['spar', 0.6]], sprid: 0.2 },
+  kryp: { namn: 'Den som kryper', delar: [['spar', 1]], sprid: 0.05 }, // steg 3.7.19
 } satisfies Record<string, SortDef>;
 export type BlodSort = keyof typeof BLOD;
 
@@ -89,12 +90,12 @@ export function blodas(s: State, x: number, y: number, sort: BlodSort, mangd: nu
   if (ut.length > BLODET.max) s.blod = ut.sort((a, b) => b.t - a.t).slice(0, BLODET.max);
 }
 
-// den som blöder tappar droppar där hen går: en gång för varje gång klockan passerat en ny dropparVar-minut under steget,
+// den som blöder tappar droppar där hen går (eller ett släpspår åt hållet hen kryper, sort 'kryp'): en gång för varje gång klockan passerat en ny dropparVar-minut under steget,
 // lika i levande läget och snabbläget
-export function blodDroppar(s: State, p: Person, blodTim: number, dtSec: number) {
+export function blodDroppar(s: State, p: Person, blodTim: number, dtSec: number, sort: BlodSort = 'blodning', riktning?: number) {
   if (blodTim < BLODET.dropparMin) return;
   const var_ = BLODET.dropparVar * MIN, n = Math.floor(s.now / var_) - Math.floor((s.now - dtSec * SEC) / var_);
-  if (n > 0) blodas(s, p.x, p.y, 'blodning', n * Math.min(BLODET.dropparMax, BLODET.dropparPer * blodTim));
+  if (n > 0) blodas(s, p.x, p.y, sort, n * Math.min(BLODET.dropparMax, BLODET.dropparPer * blodTim), riktning);
 }
 
 // hur blodigt det är vid stationen t (stationsfliken): det färskaste blodet på dess rutor och raden framför

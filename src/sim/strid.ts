@@ -30,7 +30,8 @@
 // följer inte hotet. Ropen räknas med när larmen kommer (3.7.11), och behovet (hunger, att försvara hemmet) med rovdjuren
 // (3.7.1) och räderna (11.2.5).
 import { balans } from './balans';
-import { HALSA, KROPPSDELAR, Kroppsdel, SKADOR, SkadaTyp, skada } from './halsa';
+import { GADELAR, HALSA, KROPPSDELAR, Kroppsdel, SKADOR, SkadaTyp, skada } from './halsa';
+import { blodas } from './blod';
 import { DJUR } from './redskap';
 import { SAKER, sakNamn } from './saker';
 import { clamp, rnd } from './slump';
@@ -57,6 +58,8 @@ export const STRID = balans('strid', {
   tick: 0.2, // sekunder i spelet per tidssteg i striden (samma i båda lägena)
   tempo: 2, // striden går så här många gånger långsammare än den räknas: allt i den (slagen, stegen, blodet, orken) tar längre tid men slutar likadant (steg 3.7.18)
   maxTid: 480, // en strid slutar senast efter så här många sekunder (oavgjort)
+  krypNara: 1, // den som kryper stannar så här många rutor från vännen hen kryper mot (steg 3.7.19) ...
+  krypBlod: 0.5, // ... och lämnar så här mycket släpspår per ruta i byn
   fart: 1.6, // rutor i sekunden för en frisk vuxen som springer i strid (gånger djurets fart)
   traffBas: 0.6, // chansen att träffa någon som är lika skicklig
   traffPer: 0.03, // ... och så här mycket mer per poäng skicklighet över motståndarens
@@ -239,6 +242,7 @@ export const STRIDHANDELSER = {
   tappar: { tecken: '👐', namn: 'Tappar vapnet' },
   plockar: { tecken: '🤲', namn: 'Tar upp' },
   nere: { tecken: '⤵️', namn: 'Faller' },
+  kryper: { tecken: '🐛', namn: 'Kryper undan' }, // steg 3.7.19
   ger: { tecken: '🏳️', namn: 'Ger upp' },
   flykt: { tecken: '🏃', namn: 'Flyr' },
   borta: { tecken: '🚪', namn: 'Har flytt' },
@@ -268,6 +272,7 @@ export interface Kampe {
   tung?: number; // steg 3.7.8: bördan (det hen bär genom vad hen orkar, 0–1) ...
   ligger?: number; bocker?: number; later?: number; // ... sekunder kvar på marken och kvar av att böja sig ner, den hen låter resa sig
   ledare?: 'fram' | 'bak'; skyddar?: number; // steg 3.7.12: byns ledare (går först eller står bakom), och ledaren (kämpens id) som vännen skyddar
+  kryper?: number; // steg 3.7.19: hen kan inte gå och kryper undan; rutorna hen krupit
 }
 // en rad i loggen: tiden (sekunder), vem (a) och mot vem (b), del, skada och grad, och det kläderna tog
 export interface StridRad { t: number; h: Handelse; a?: number; b?: number; d?: Kroppsdel; k?: SkadaTyp; g?: number; v?: Vapen; kl?: string; kast?: 1 }
@@ -278,7 +283,7 @@ export interface Strid {
   slut?: { t: number; vinnare: 0 | 1 | -1 };
 }
 // uppställningen som en strid börjar ur (arenan och, senare, byn)
-export interface Uppstallning { avsikt: Avsikt; w: number; h: number; vind?: number; dimma?: number; halt?: number; kampar: Omit<Kampe, 'skador' | 'blod' | 'ork' | 'modNu' | 'lage' | 'vant' | 'mal' | 'backar' | 'slag' | 'traffar' | 'gjort' | 'skott' | 'haller' | 'vantar' | 'ifatt' | 'vada' | 'ligger' | 'bocker' | 'later'>[] }
+export interface Uppstallning { avsikt: Avsikt; w: number; h: number; vind?: number; dimma?: number; halt?: number; kampar: Omit<Kampe, 'skador' | 'blod' | 'ork' | 'modNu' | 'lage' | 'vant' | 'mal' | 'backar' | 'slag' | 'traffar' | 'gjort' | 'skott' | 'haller' | 'vantar' | 'ifatt' | 'vada' | 'ligger' | 'bocker' | 'later' | 'kryper'>[] }
 
 // stridens egen slumpföljd (samma blandning som rnd i slump.ts)
 export function slump(st: Strid) {
@@ -309,6 +314,18 @@ function rorlighet(k: Kampe) {
   let v = 0;
   for (const d of DELAR) v += ((KROPPSDELAR[d] as { rorlighet?: number }).rorlighet ?? 0) * delFel(k, d);
   return Math.max(HALSA.minst, 1 - v);
+}
+// den som har ett ben eller en fot så skadad att hen inte kan gå (HALSA.krypFel, som kanGa i halsa.ts; djuren haltar bara)
+const kanGaK = (k: Kampe) => !!k.djur || !GADELAR.some(d => delFel(k, d) >= HALSA.krypFel);
+// den som inte kan gå kryper mot tryggheten (steg 3.7.19): till den närmaste vännen som står kvar, annars bort mot sin egen
+// sida av platsen. Lika långsamt som i byn (HALSA.krypFart)
+function krypa(st: Strid, k: Kampe, dt: number) {
+  let van: Kampe | undefined, vd = Infinity;
+  for (const o of st.kampar) if (o.sida === k.sida && o !== k && iStrid(o) && dist(k, o) < vd) { vd = dist(k, o); van = o; }
+  const x0 = k.x, y0 = k.y, lang = STRID.fart * k.fart * HALSA.krypFart * dt;
+  if (van) { if (vd > STRID.krypNara) ga(st, k, van.x, van.y, Math.min(lang, vd - STRID.krypNara)); }
+  else ga(st, k, k.sida === 0 ? 0 : st.w, k.y, lang);
+  k.kryper! += Math.hypot(k.x - x0, k.y - y0);
 }
 // den som kan slåss: står kvar i striden
 const iStrid = (k: Kampe) => k.lage === 'strid';
@@ -418,6 +435,7 @@ export function traffa(st: Strid, a: Kampe, b: Kampe, skada0: number, sl: Slag, 
   if (((KROPPSDELAR[d] as { livsviktig?: true }).livsviktig && g >= HALSA.dodGrad) || b.blod < HALSA.blodDod) return falla(st, b, 'dod');
   if (AVS[st.avsikt].lek && g >= STRID.lek) return falla(st, b, 'ger');
   if (b.lage === 'nere') return; // den som redan ligger
+  if ((iStrid(b) || b.lage === 'flykt') && !kanGaK(b)) { b.kryper = 0; return falla(st, b, 'nere', 'kryper'); } // kan inte resa sig utan kryper undan (steg 3.7.19)
   if (smartaAv(b) >= STRID.nere) return falla(st, b, 'nere');
 }
 
@@ -536,6 +554,7 @@ export function stridSteg(st: Strid) {
     // den som står kvar drar ut ett spjut som fastnat: det blöder mer (steg 3.7.7)
     if (iStrid(k)) for (const w of k.skador) if (w.fast && slump(st) < STRID.draUt * dt) { w.fast = undefined; k.blod -= SKADOR[w.k].blod * w.g * STRID.blodSlag * STRID.draBlod; st.logg.push({ t: st.t, h: 'drar', a: k.id, d: w.d }); }
     if (k.blod < HALSA.blodDod) { falla(st, k, 'dod'); continue; }
+    if (k.lage === 'nere' && k.kryper !== undefined) { krypa(st, k, dt); continue; }
     if (k.lage === 'flykt') { // springer mot närmaste kanten och är borta när hen når den
       const ut = [k.x, st.w - k.x, k.y, st.h - k.y], i = ut.indexOf(Math.min(...ut));
       const lang = farten(k) * dt;
@@ -622,6 +641,7 @@ export function stridText(st: Strid, r: StridRad): string {
     case 'tappar': return `${a} tappar ${v?.namn.toLowerCase()}.`;
     case 'plockar': return r.b !== undefined ? `${a} tar upp ${v?.namn.toLowerCase()} som ${b} tappade.` : `${a} tar upp ${v?.namn.toLowerCase()} igen.`;
     case 'nere': return `${a} faller och kan inte slåss längre.`;
+    case 'kryper': return `${a} kan inte gå längre och kryper undan.`;
     case 'ger': return `${a} ger upp.`;
     case 'flykt': return `${a} vänder och flyr.`;
     case 'borta': return `${a} har flytt från platsen.`;
@@ -796,6 +816,7 @@ export function stridIByn(s: State, avsikt: Avsikt, sidor: [Person[], Person[]],
     }
     // det hen kastade slits och kan ha försvunnit (steg 3.7.3)
     for (const r of st.logg) if (r.a === k.id && r.v && (r.kast || r.h === 'vada')) kastat(s, p, r.v, VAP[r.v].kast!.rack / 2, p.x, p.y, () => rnd(s, 'strid'));
+    if (k.kryper) blodas(s, p.x, p.y, 'kryp', k.kryper * STRID.krypBlod); // släpspåret efter den som kröp undan (steg 3.7.19)
     if (dod) { count(s, 'drap'); die(s, p, 'drap'); continue; }
     p.blod = Math.min(p.blod ?? 1, Math.max(HALSA.blodDod, k.blod));
     ovning(p, 'narstrid', lek ? SLAGSMAL.ovningLek : SLAGSMAL.ovning);

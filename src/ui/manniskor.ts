@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { ACTS, ALDER, Person, slagIkon, SEC, TalkEvent, ageOf, SAMTAL, alive, byId, clamp, homeKind, isSocial, living, load, REL, relKey, spar } from '../sim';
+import { ACTS, ALDER, Person, slagIkon, SEC, TalkEvent, ageOf, SAMTAL, alive, byId, clamp, homeKind, isSocial, kanGa, living, load, REL, relKey, spar } from '../sim';
 import { PRICKAR, personFarg } from './hjalp';
 import { s, ui, vidNyBy } from './lage';
 import { Ikoner, TS, bubbleG, labels, markLayer, peopleG } from './scen';
@@ -118,7 +118,8 @@ export function drawPeople(t: number) {
     peopleG.beginFill(0x000000, 0.25).drawEllipse(x, y + r * 0.9, r * 0.9, r * 0.35).endFill();
     if (p.id === ui.selected) peopleG.lineStyle(2.5, 0xffffff, 1);
     else peopleG.lineStyle(1.2, 0x1a1a1a, 0.8);
-    peopleG.beginFill(col).drawCircle(x, y, r).endFill();
+    if (!sleeping && !kanGa(p)) peopleG.beginFill(col).drawEllipse(x, y + r * 0.4, r * 1.3, r * 0.6).endFill(); // den som inte kan gå ligger och kravlar (steg 3.7.19)
+    else peopleG.beginFill(col).drawCircle(x, y, r).endFill();
     peopleG.lineStyle(0);
     if (PRICKAR.sjuk.har(p)) peopleG.beginFill(PRICKAR.sjuk.farg).drawCircle(x + r * 0.7, y - r * 0.7, 1.8).endFill();
     if (PRICKAR.gravid.har(p)) peopleG.beginFill(PRICKAR.gravid.farg).drawCircle(x - r * 0.7, y - r * 0.7, 1.6).endFill();

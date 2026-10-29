@@ -61,7 +61,7 @@ export const HALSA = balans('halsa', {
   vardHand: 0.5, // den som vårdar någon annan har minst så här bra händer
   hemma: 6, // så nära lägret är man hemma (rutor): längre bort kravlar den som inte kan gå, eller bärs
   krypFel: 0.6, // den som har ett ben eller en fot som är så här skadad kan inte gå, utan kravlar ...
-  krypFart: 0.002, // ... med den här farten jämfört med att gå (ungefär en ruta på fem minuter)
+  krypFart: 0.12, // ... med den här farten jämfört med att gå (ungefär en ruta på fem sekunder), i byn och i striden (steg 3.7.19)
   baraFart: 0.6, // den som bär någon går så här fort
   buren: 6, // timmar som den skadade som mest väntar på att bäras hem
   vila: 1.5, // man läker så här mycket fortare när man sover eller vilar ...
@@ -144,6 +144,7 @@ function forlust(p: Person, vikt: 'rorlighet' | 'handighet') {
 // gången gånger detta (steg.ts): skadorna och yrseln av brist på mineraler (steg 2.6.2)
 export const rorlighet = (p: Person) => forlust(p, 'rorlighet') * yrselFaktor(p);
 // den som har ett ben eller en fot som är för skadad kan inte gå, utan kravlar (steg 2.5.2)
+export const GADELAR: readonly Kroppsdel[] = [...BEN, ...FOTTER]; // delarna man går med
 export const kanGa = (p: Person) => !p.skador?.length || ![...BEN, ...FOTTER].some(d => delFel(p, d) >= HALSA.krypFel);
 export const gangFart = (p: Person) => kanGa(p) ? rorlighet(p) : HALSA.krypFart;
 export const hemma = (s: State, p: Person) => campDist(s, Math.floor(p.x), Math.floor(p.y)) <= HALSA.hemma;
@@ -243,7 +244,8 @@ export function halsaSteg(s: State, p: Person, dtSec: number): Dodsorsak | undef
   if (!p.skador?.length) { if ((p.blod ?? 1) < 1 && lakerFullt(p)) p.blod = Math.min(1, p.blod! + dtSec / (HALSA.blodTillbaka * HOUR_S)); return undefined; }
   const h = dtSec / HOUR_S, blod = blodning(p), mat = lakerFullt(p), lak = (mat ? 1 : HALSA.lakSamre) * vilaLak(s, p) * lakFaktor(p);
   p.blod = clamp((p.blod ?? 1) - blod * h, 0, 1);
-  blodDroppar(s, p, blod, dtSec);
+  const kryper = !kanGa(p) && p.task !== undefined && p.task.phase !== 'do'; // den som kravlar lämnar ett släpspår (steg 3.7.19)
+  blodDroppar(s, p, blod, dtSec, kryper ? 'kryp' : 'blodning', kryper ? Math.atan2(p.task!.ty - p.y, p.task!.tx - p.x) : undefined);
   for (const w of p.skador) {
     if (w.b > 0) w.b = Math.max(0, w.b - h / (HALSA.levrar * (0.5 + w.g)));
     infSteg(s, p, w, h, dtSec);

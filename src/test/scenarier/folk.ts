@@ -660,6 +660,48 @@ SCENARIER.ledare = {
   },
 };
 
+SCENARIER.kryper = {
+  text: 'Den svårt skadade kryper (steg 3.7.19): den som inte kan gå (ett ben eller en fot skadad till HALSA.krypFel) reser sig inte i striden utan kryper mot vännerna eller bort mot sin sida, lika långsamt som i byn (ungefär en ruta på fem sekunder), och den som kravlar i byn med ett blödande sår lämnar ett släpspår',
+  kor: () => {
+    const m = (id: number, sida: 0 | 1, vapen: SIM.Vapen, x: number, y: number) => ({ id, namn: `K${id}`, sida, st: { styrka: 10, uthallighet: 10, mod: 10, smidighet: 10, skicklighet: 10 }, vapen, klader: [] as string[], fart: 1, x, y });
+    let kropp = 0, flyttade = 0, reste = 0, slog = 0, forFort = 0, nara = 0;
+    const fart = SIM.STRID.fart * SIM.HALSA.krypFart / SIM.STRID.tempo; // rutor per sekund på klockan
+    let sjalv = 0; // hur ofta det händer av sig självt, med yxor (bara information)
+    for (let fro = 1; fro <= 200; fro++) sjalv += SIM.stridTillSlut(SIM.nyStrid({ avsikt: 'doda', w: 20, h: 14, kampar: [m(1, 0, 'yxa', 8, 6), m(2, 0, 'kniv', 7, 8), m(3, 1, 'yxa', 12, 7)] }, fro)).logg.filter(r => r.h === 'kryper').length;
+    for (let fro = 1; fro <= 100; fro++) {
+      // K1 har redan ett brutet ben när striden börjar; nästa träff fäller hen, och hen kan inte resa sig
+      const st = SIM.nyStrid({ avsikt: 'skada', w: 20, h: 14, kampar: [m(1, 0, 'yxa', 8, 6), m(2, 0, 'kniv', 7, 8), m(3, 1, 'yxa', 12, 7)] }, fro);
+      st.kampar[0].skador.push({ d: 'benH', k: 'benbrott', g: 0.7, ny: 0 });
+      SIM.traffa(st, st.kampar[2], st.kampar[0], 0.15, 'slag');
+      SIM.stridTillSlut(st);
+      for (const r of st.logg.filter(r => r.h === 'kryper')) {
+        const k = st.kampar.find(o => o.id === r.a)!, efter = st.logg.filter(o => o.t > r.t);
+        kropp++;
+        if ((k.kryper ?? 0) > 0) flyttade++;
+        if (efter.some(o => o.h === 'upp' && o.a === k.id)) reste++;
+        if (efter.some(o => o.a === k.id && (o.h === 'traff' || o.h === 'miss' || o.h === 'knuff'))) slog++;
+        if ((k.kryper ?? 0) > fart * (st.t - r.t) + 0.05) forFort++;
+        const van = st.kampar.find(o => o.sida === k.sida && o !== k && o.lage === 'strid');
+        if (van && Math.hypot(van.x - k.x, van.y - k.y) < SIM.STRID.krypNara - 0.01) nara++;
+      }
+    }
+    // i byn: farten, bilden och släpspåret
+    const s = createState(3, START), p = living(s).find(q => ageOf(q, s.now) >= 18)!;
+    SIM.skada(s, p, 'benH', 'benbrott', 0.9, 'olycka', ''); SIM.skada(s, p, 'armV', 'skarsar', 0.6, 'olycka', '');
+    const kravlar = !SIM.kanGa(p) && SIM.gangFart(p) === SIM.HALSA.krypFart;
+    p.task = { act: 'samla', phase: 'go', tx: p.x + 6, ty: p.y, until: s.now + HOUR, carry: 0 } as SIM.Task;
+    s.blod = []; for (let i = 0; i < 20; i++) SIM.halsaSteg(s, p, 60);
+    const spar = SIM.blodOf(s).filter(b => b.f === 'spar').length, droppar = SIM.blodOf(s).filter(b => b.f === 'droppar').length;
+    return [
+      [`krypfarten är ${SIM.HALSA.krypFart} av gångfarten (en ruta på ${(1 / (SIM.STRID.fart * SIM.HALSA.krypFart)).toFixed(0)} s för en frisk vuxen i striden)`, SIM.HALSA.krypFart >= 0.1 && SIM.HALSA.krypFart <= 0.15],
+      [`den som har ett brutet ben och fälls kryper i ${kropp} av 100 strider, och ${flyttade} av dem kom någonstans (av sig själv med yxor: ${sjalv} gånger i 200 strider till döden)`, kropp >= 90 && flyttade >= kropp * 0.5],
+      [`den som kryper reser sig aldrig (${reste}) och slår aldrig mer (${slog})`, reste === 0 && slog === 0],
+      [`hen kryper aldrig fortare än krypfarten (${forFort} för fort) och stannar en bit från vännen (${nara} för nära)`, forFort === 0 && nara === 0],
+      [`i byn kravlar den som har ett skadat ben (${kravlar ? 'ja' : 'nej'}) och lämnar ett släpspår när såret blöder (${spar} spår, ${droppar} droppar)`, kravlar && spar > 0 && droppar === 0],
+    ];
+  },
+};
+
 SCENARIER.langsam = {
   text: 'Långsammare strider (steg 3.7.18): striden går dubbelt så långsamt som den räknas (STRID.tempo), så att en strid tar ungefär dubbelt så lång tid som förut (ett slagsmål med händerna 11 s före v164) men samma sida vinner lika ofta, också mot vargen (80 % och 79 % i 3.7.1)',
   kor: () => {

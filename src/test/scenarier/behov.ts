@@ -573,7 +573,7 @@ SCENARIER.vard = {
       ['den som blöder väljer att vårda sitt sår', sjalvVal],
       [`blödningen stannar och ett förband av mossa läggs på (${lagda} förband, mossa kvar ${mossa})`, trycktes && forband && lagda === 1],
       [`den som har brutit benet kan inte gå och kravlar (${kryp} av farten)`, kravlar],
-      [`den som inte kan gå långt från lägret bärs hem av en annan (${langtBort ? 'långt bort' : 'inte långt bort'}, bars ${bars}, hemma ${hem})`, langtBort && bars && hem],
+      [`den som inte kan gå långt från lägret kravlar hem eller bärs hem av en annan (${langtBort ? 'långt bort' : 'inte långt bort'}, ${bars ? 'buren' : 'kravlade själv'}, hemma ${hem}); sedan steg 3.7.19 kravlar man en ruta på fem sekunder`, langtBort && hem],
       [`man läker fortare när man sover (${(0.5 - vaken).toFixed(3)} → ${(0.5 - sover).toFixed(3)} på fyra timmar)`, 0.5 - sover > 0.5 - vaken],
       [`mossa hittas när man letar (${fynd.toFixed(2)} i timmen) och när man hugger en fälld stam med mossa (${hugg})`, fynd > 0 && hugg === 2],
       [`på tolv dygn i en by: ${b.stat ? amountOf(b, 'mossa').toFixed(1) : 0} mossa, ${st('skador')} skador, ${st('vard')} vårdtillfällen (${st('vard av andra')} av andra), ${st('forband')} förband, ${st('infektioner')} infektioner, ${st('kallbrand')} kallbrand, ${st('buren hem')} burna hem`, st('vard') > 0 && amountOf(b, 'mossa') + st('forband') > 0],
