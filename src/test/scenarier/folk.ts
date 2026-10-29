@@ -671,7 +671,7 @@ SCENARIER.strid = {
     const lekMedHand = SIM.nyStrid(u('lek', m(1, 0, 'yxa'), m(2, 1, 'yxa')), 1).kampar.every(k => k.vapen === 'hand');
     const doda = SIM.korManga(u('doda', m(1, 0, 'yxa'), m(2, 1, 'yxa')), 1, 100), skada = SIM.korManga(u('skada', m(1, 0, 'yxa'), m(2, 1, 'yxa')), 1, 100);
     const yxa = SIM.korManga(u('skada', m(1, 0, 'yxa'), m(2, 1, 'hand')), 1, 100);
-    const rock = SIM.korManga(u('skada', m(1, 0, 'kniv', ['skinnrock', 'skinnskor']), m(2, 1, 'kniv')), 1, 200);
+    const rock = SIM.korManga(u('skada', m(1, 0, 'kniv', ['skinnrock', 'skinnskor']), m(2, 1, 'kniv')), 1, 1000);
     const stark = SIM.korManga(u('slagsmal', m(1, 0, 'hand', [], 16), m(2, 1, 'hand', [], 6)), 1, 100);
     const kanin = SIM.korManga({ avsikt: 'doda', w: 20, h: 14, kampar: [m(1, 0, 'kniv'), SIM.djurKampe('kanin', 2, 1, 12, 7)] }, 1, 50);
     const t = createState(11, START), p = living(t)[0];
@@ -684,7 +684,7 @@ SCENARIER.strid = {
       ['i lek och slagsmål slåss man med händerna', lekMedHand],
       [`med avsikten döda dör fler än med skada (${doda.slut.dod} mot ${skada.slut.dod} av 100)`, doda.slut.dod > skada.slut.dod],
       [`yxan vinner mot knytnävarna (${yxa.vann[0]} av 100)`, yxa.vann[0] >= 80],
-      [`skinnrock och skor hjälper (${rock.vann[0]} mot ${rock.vann[1]} av 200)`, rock.vann[0] > rock.vann[1]],
+      [`skinnrock och skor hjälper (${rock.vann[0]} mot ${rock.vann[1]} av 1000)`, rock.vann[0] > rock.vann[1]],
       [`den starke vinner slagsmålet (${stark.vann[0]} av 100)`, stark.vann[0] >= 70],
       [`kaninen flyr eller dör, vinner aldrig (${kanin.vann[1]} vann)`, kanin.vann[1] === 0],
       [`personen ur byn tar med sin yxa (${fran.vapen}) och sitt namn`, fran.vapen === 'yxa' && fran.namn === p.name && fran.pid === p.id],
@@ -792,6 +792,54 @@ SCENARIER.knuff = {
       [`vapen tappas (${rader(tapp, 'tappar')} gånger) och tas upp igen (${rader(tapp, 'plockar')})`, rader(tapp, 'tappar') > 0 && rader(tapp, 'plockar') > 0],
       [`en motståndare utan vapen tar upp det som tappats (${rader(tappHand, 'plockar', r => r.b !== undefined)} gånger)`, rader(tappHand, 'plockar', r => r.b !== undefined) > 0],
       ['leran efter regnet gör marken hal i en strid i byn, och bördan räknas', halIByn && borda],
+      ['varje ny rad i loggen blir en mening', texter],
+    ];
+  },
+};
+
+SCENARIER.hot = {
+  text: 'Mod, hot och att ge upp (steg 3.7.9): varje sida jämför sin styrka med motståndarnas, den svagare ger upp eller flyr tidigare och kan dra sig undan före första slaget, de främstas mod drar med de andra, den rädda drar sig bakom vännerna, leken följer inte hotet, och den som backar i byn får rykte om sig att vara feg',
+  kor: () => {
+    type K = SIM.Uppstallning['kampar'][number];
+    const m = (id: number, sida: 0 | 1, vapen: SIM.Vapen, o: Partial<K> = {}, st: Partial<K['st']> = {}): K => ({ id, namn: `K${id}`, sida, st: { styrka: 10, uthallighet: 10, mod: 10, smidighet: 10, skicklighet: 10, ...st }, vapen, klader: [], fart: 1, x: sida ? 13 : 7, y: 7, ...o });
+    const kor = (avsikt: SIM.Avsikt, k: K[], n: number) => Array.from({ length: n }, (_, i) => SIM.stridTillSlut(SIM.nyStrid({ avsikt, w: 20, h: 14, kampar: k }, i * 7919 + 9)));
+    const avstar = (sts: SIM.Strid[], id: number) => sts.filter(st => st.logg.some(r => r.h === 'avstar' && r.a === id)).length;
+    const traffar = (sts: SIM.Strid[], id: number) => sts.reduce((a, st) => a + st.logg.filter(r => (r.h === 'traff' || r.h === 'tog') && r.b === id).length, 0);
+    // ensam mot tre, och med händerna mot två yxor
+    const enEn = kor('skada', [m(1, 0, 'kniv', {}, { mod: 3 }), m(2, 1, 'kniv')], 100);
+    const enTre = kor('skada', [m(1, 0, 'kniv', {}, { mod: 3 }), m(2, 1, 'kniv', { y: 5 }), m(3, 1, 'kniv'), m(4, 1, 'kniv', { y: 9 })], 100);
+    const handYxa = kor('skada', [m(1, 0, 'hand', {}, { mod: 2 }), m(2, 1, 'yxa'), m(3, 1, 'yxa', { y: 9 })], 100), handHand = kor('skada', [m(1, 0, 'hand', {}, { mod: 2 }), m(2, 1, 'hand'), m(3, 1, 'hand', { y: 9 })], 100);
+    // de främstas mod: den räddas vän går först, modig eller rädd
+    const modigFram = kor('skada', [m(1, 0, 'kniv', { x: 8 }, { mod: 20 }), m(2, 0, 'kniv', { x: 4 }, { mod: 4 }), m(3, 1, 'kniv'), m(4, 1, 'kniv', { y: 9 })], 150);
+    const raddFram = kor('skada', [m(1, 0, 'kniv', { x: 8 }, { mod: 1 }), m(2, 0, 'kniv', { x: 4 }, { mod: 4 }), m(3, 1, 'kniv'), m(4, 1, 'kniv', { y: 9 })], 150);
+    const kvar = (sts: SIM.Strid[], id: number) => sts.reduce((a, st) => { const r = st.logg.find(q => (q.h === 'ger' || q.h === 'flykt' || q.h === 'avstar' || q.h === 'nere' || q.h === 'dod') && q.a === id); return a + (r ? r.t : st.t); }, 0) / sts.length;
+    // ge upp mitt i striden, och den rädda drar sig bakom vännen
+    const modigTre = kor('skada', [m(1, 0, 'kniv', {}, { mod: 12 }), m(2, 1, 'kniv', { y: 5 }), m(3, 1, 'kniv'), m(4, 1, 'kniv', { y: 9 })], 100);
+    const mitt = modigTre.filter(st => st.logg.some(r => r.h === 'ger' || r.h === 'flykt') && traffar([st], 1) > 0).length;
+    const bakom = kor('skada', [m(1, 0, 'kniv', {}, { mod: 1, uthallighet: 20 }), m(2, 0, 'kniv', { y: 9 }, { mod: 20 }), m(3, 1, 'kniv', {}, { mod: 20 })], 150);
+    const backar = bakom.reduce((a, st) => a + st.logg.filter(r => r.h === 'backar' && r.a === 1).length, 0);
+    // leken följer inte hotet
+    const lek = kor('lek', [m(1, 0, 'hand', {}, { mod: 1 }), m(2, 1, 'hand', { y: 5 }), m(3, 1, 'hand'), m(4, 1, 'hand', { y: 9 })], 100);
+    // i byn: den som backar blir känd som feg
+    const t = createState(11, START), [p, q] = living(t).filter(x => ageOf(x, t.now) >= SIM.ALDER.vuxen);
+    SIM.addTool(t, 'yxa', q);
+    p.pot.mod = 1; q.pot.mod = 20;
+    let feg = false;
+    for (let i = 0; i < 20 && !feg; i++) {
+      p.skador = []; p.health = 1; p.blod = 1; q.skador = []; q.health = 1; q.blod = 1;
+      SIM.stridIByn(t, 'skada', [[p], [q]], 'för att pröva');
+      feg = living(t).some(x => x !== p && x.intryck?.some(e => e.om === p.id && e.k === 'feg'));
+      p.task = undefined; q.task = undefined;
+    }
+    const texter = [...enTre, ...handYxa, ...bakom].every(st => st.logg.every(r => SIM.stridText(st, r).length > 5 && !SIM.stridText(st, r).includes('undefined')));
+    return [
+      [`ensam mot tre drar den rädda sig undan utan strid oftare (${avstar(enTre, 1)} av 100) än mot en (${avstar(enEn, 1)})`, avstar(enTre, 1) > avstar(enEn, 1)],
+      [`med händerna mot två yxor oftare (${avstar(handYxa, 1)} av 100) än mot två med händerna (${avstar(handHand, 1)})`, avstar(handYxa, 1) > avstar(handHand, 1)],
+      [`den rädda står kvar längre när en modig går först (${kvar(modigFram, 2).toFixed(1)} s) än när en rädd gör det (${kvar(raddFram, 2).toFixed(1)} s)`, kvar(modigFram, 2) > kvar(raddFram, 2)],
+      [`man ger också upp mitt i striden, efter att ha blivit träffad (${mitt} av 100 ensam mot tre med mod 12)`, mitt > 0],
+      [`den rädda drar sig bakom vännen (${backar} gånger på 150 strider)`, backar > 0],
+      [`leken följer inte hotet (${lek.filter(st => st.logg.some(r => r.h === 'avstar')).length} drog sig undan)`, lek.every(st => !st.logg.some(r => r.h === 'avstar'))],
+      ['den som backar från en strid i byn får rykte om sig att vara feg', feg],
       ['varje ny rad i loggen blir en mening', texter],
     ];
   },
