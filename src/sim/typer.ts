@@ -108,6 +108,7 @@ export interface Task {
   why?: string; // varför personen valde uppgiften
   dark?: boolean; // påbörjad under mörk tid
   path?: number[]; // rutorna kvar att gå längs vägen (steg.ts, walk)
+  runda?: number; varv?: number; stopp?: number; vidEld?: boolean; // vaktens runda: stoppet hen är vid, antal stopp sedan elden, när stoppet är slut, om hen står vid elden (vakt.ts)
   pk?: string; // nyckeln som vägen gäller för: målet och byggversionen. Ändras den räknas vägen om
   ref?: number; // det arbetet gäller: stammen som huggs, biten som byggs eller huset som ett träd fälls för
   prog?: number; // fiske: sekunder arbete mot nästa försök

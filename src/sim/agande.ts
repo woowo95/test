@@ -84,7 +84,7 @@ export function tidyTools(s: State) {
     if (t.hos === undefined) continue;
     const q = byId(s, t.hos);
     if (!q || !alive(q)) t.hos = undefined;
-    else if (usesTool(q.task) !== t.k && t.agare !== q.id) t.hos = undefined;
+    else if (usesTool(q.task) !== t.k && t.agare !== q.id && q.task?.act !== 'vakt') t.hos = undefined; // vakten har byns vapen i handen hela natten (vakt.ts)
   }
 }
 // äldre sparfiler: redskapen räknades bara som summor (s.items, och i v30 ägarlistor). Varje helt redskap blir ett ting.

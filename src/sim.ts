@@ -60,6 +60,7 @@ export * from './sim/varde';
 export * from './sim/arv';
 export * from './sim/djur';
 export * from './sim/varg';
+export * from './sim/vakt';
 export * from './sim/balans';
 export * from './sim/tider';
 export * from './sim/strid';

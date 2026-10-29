@@ -516,7 +516,7 @@ SCENARIER.flatarbank = {
     };
     const kElden = kniv(false), kBank = kniv(true);
     // en vanlig by tills någon tvinnar rep, högst tio dygn (tio år i spelet): inget handarbete utan sak, och rep tvinnas som en egen handling
-    const v = createState(5, START); // en by som kommer på repet tidigt (by 2 kom inte på det inom tio dygn i v75, by 3 inte i v156)
+    const v = createState(3, START); // en by som kommer på repet tidigt (by 2 kom inte på det inom tio dygn i v75, by 3 inte i v156, by 5 inte i v159)
     let dygn = 0;
     for (; dygn < 10 && !tvinnar; dygn++) kor(v, 24, w => { for (const r of living(w)) { if (r.task?.act === 'hantverk') hantverk++; if (r.task?.act === 'tvinna') tvinnar++; } });
     // att tvinna rep är hantverk: den som gör det kommer på det som hör till hantverket (kniven)
@@ -1425,6 +1425,38 @@ SCENARIER.varg = {
       [`på natten när alla sover och elden slocknat stjäl vargarna mat (${stal} saker i tre byar)`, stal > 0],
       [`byn jagar en ensam varg med spjut (${jakt} jakter, ${dodad} dödade vargar, ${hemma} hemburna, ${dodare} vargdödare)`, jakt > 0 && dodad > 0 && hemma > 0 && dodare > 0],
       [`under istiden kommer flockar (${kom} i tre byar på 120 timmar) och drar vidare (${borta})`, kom > 0 && borta > 0],
+    ];
+  },
+};
+
+SCENARIER.patrull = {
+  text: 'Vakten patrullerar (steg 3.7.4): nattens vakt går runt byn hela tiden, stannar kort vid elden ibland och har sitt eget eller byns bästa vapen i handen, aldrig någon annans',
+  kor: () => {
+    const s = createState(2, START); s.kal = nyKalender(s.now, 0); klockan(s, 22); tandEld(s);
+    kor(s, 1);
+    const vakten = living(s).find(q => q.task?.act === 'vakt'), annan = living(s).find(q => q !== vakten && ageOf(q, s.now) >= 18)!;
+    // ett spjut som byn äger och ett bättre som någon annan äger; vakten väljer vapen på nytt
+    for (const t of SIM.tingOf(s)) if (t.hos === vakten?.id) t.hos = undefined;
+    SIM.newTing(s, 'fiskespjut', 1, SIM.BYN);
+    const annans = SIM.addTool(s, 'flintspjut', annan);
+    if (vakten) vakten.task!.runda = undefined;
+    const e = SIM.eldPlats(s), stopp = new Set<string>();
+    let vaktId: number | undefined, langt = 0, vidEld = 0, maxR = 0, haller = 0, tog = 0, slag = '', kv = '';
+    kor(s, 4, s => {
+      const v = living(s).find(q => q.task?.act === 'vakt'); if (!v) return;
+      vaktId ??= v.id; if (v.id !== vaktId) return;
+      const r = Math.hypot(v.x - e.x - 0.5, v.y - e.y - 0.5); maxR = Math.max(maxR, r);
+      if (r > 6) { langt++; stopp.add(`${v.task!.runda}`); } else if (r < 4 && v.task!.phase === 'do') vidEld++;
+      const h = SIM.tingOf(s).find(t => t.hos === v.id); if (h) { haller++; slag = h.k; }
+      if (annans.hos === v.id) tog++;
+      if (h) kv = SIM.personKampe(s, v, 1, 0, v.x, v.y).vapen;
+    });
+    return [
+      [`någon håller vakt på natten`, vaktId !== undefined],
+      [`vakten går runt byn: ${stopp.size} olika stopp långt från elden (${langt} stunder), som längst ${maxR.toFixed(1)} rutor bort`, stopp.size >= 4 && maxR > 8],
+      [`vakten stannar vid elden ibland (${vidEld} stunder)`, vidEld > 0],
+      [`vakten har byns spjut i handen (${haller} stunder, ${slag}) och striden räknar med det (${kv})`, haller > 0 && slag === 'fiskespjut' && kv === 'fiskespjut'],
+      [`vakten tar aldrig någon annans vapen (${tog} gånger)`, tog === 0],
     ];
   },
 };

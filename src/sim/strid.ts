@@ -45,7 +45,7 @@ import { harBalte, paSig, paSigVikt } from './utrustning';
 import { capacity } from './lager';
 import { snoPaMarken, vaderNu } from './vader';
 import { bordOf } from './saker';
-import { ownedBy, toolsOf, wearTool } from './agande';
+import { ownedBy, tingOf, toolsOf, wearTool } from './agande';
 import { getMap } from './karta';
 import { groundOf, markslag, tileOf } from './mark';
 import type { Person, State } from './typer';
@@ -682,7 +682,7 @@ export function korManga(u: Uppstallning, fro: number, n: number): ManyResultat 
 // (steg 3.7.7): ett litet vapen i bältet, om hen har ett bälte på sig och orkar bära det; den som en gång blev ifattsprungen
 // utan reserv tar alltid med en
 export function personKampe(s: State, p: Person, id: number, sida: 0 | 1, x: number, y: number): Uppstallning['kampar'][number] {
-  const bar = [...new Set([...paSig(s, p), ...ownedBy(s, p)].map(t => t.k))]; // det hen bär och äger (i arenan har man sina saker med sig)
+  const bar = [...new Set([...paSig(s, p), ...ownedBy(s, p), ...tingOf(s).filter(t => t.hos === p.id)].map(t => t.k))]; // det hen bär, äger och har i handen (i arenan har man sina saker med sig)
   const val = (v: Vapen) => VAP[v].skada * (1 + STRID.tyckeVal * smakAv(p, 'v:' + v)); // tycket drar i valet (steg 3.7.10)
   const vapen = MANNISKOVAPEN.filter(v => bar.includes(v)).sort((a, b) => val(b) - val(a))[0] ?? 'hand';
   const res = (MANNISKOVAPEN.filter(v => v !== vapen && VAP[v].liten && bar.includes(v)) as Vapen[]).sort((a, b) => VAP[a].takt - VAP[b].takt)[0]; // den snabbaste (kniven)
