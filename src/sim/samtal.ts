@@ -11,6 +11,7 @@ import { ACTS } from './handlingar';
 import { balans } from './balans';
 import { RELT, arArke, arBast, arMentor, arRivaler, skiljGrans } from './relationer';
 import { tankePa } from './teknik';
+import { samtalAmne, samtalBorjar } from './berattelser';
 
 // ---------- balanstal (regel 8) ----------
 // Samtalen: vem man pratar med, vilket slags samtal det blir, hur det går och vad det ger, och humöret. Relationen (op) går från
@@ -94,7 +95,7 @@ export const SAMTALSSLAG: Record<Samtalsslag, SamtalDef> = SLAG;
 // ---------- samtal ----------
 // om p håller på med något socialt just nu (vid elden, i samtal); hur nära man ska vara för att prata står i SAMTAL.radie
 export const isSocial = (p: Person) => !!p.task && p.task.phase === 'do' && !!ACTS[p.task.act].social;
-export interface TalkEvent { a: number; b: number; kind: Samtalsslag; good: boolean; t: number }
+export interface TalkEvent { a: number; b: number; kind: Samtalsslag; good: boolean; t: number; i?: string } // i: ämnets symbol (steg 3.9.5)
 // ger den andra om samtalet blev ett gräl (steg 3.7.2: gräl kan bli slagsmål, strid.ts)
 export function converse(s: State, a: Person, others: Person[], events?: TalkEvent[]): Person | undefined {
   const now = s.now;
@@ -131,6 +132,7 @@ export function converse(s: State, a: Person, others: Person[], events?: TalkEve
     r.op -= SAMTAL.gralOp + rnd(s, 'samtal', a) * SAMTAL.gralSpann;
     think(a, `Grälade med ${b.name}`, -SAMTAL.gralTankeEgen, now, SAMTAL.gralTim * HOUR);
     think(b, `Grälade med ${a.name}`, -SAMTAL.gralTankeAndra, now, SAMTAL.gralTim * HOUR);
+    samtalAmne(s, a, b, kind);
     if (a.partner === b.id) barnTill(s, a, b, 'gral'); // föräldrar som grälar ofta formar barnen (steg 3.1.2)
   } else {
     // vänskap växer allt långsammare ju närmare man redan är; ovänskap fördjupas lättare
@@ -142,15 +144,17 @@ export function converse(s: State, a: Person, others: Person[], events?: TalkEve
       const att = (stat(b, 'skonhet', now) + stat(b, 'karisma', now)) / SAMTAL.flirtAtt;
       r.rom = clamp(r.rom + (out + att) * SAMTAL.flirtRomOk, 0, 100);
     }
+    samtalBorjar(); // det som delas nu blir samtalets ämne (steg 3.9.5, berattelser.ts)
     share(s, a, b, r, SAMTALSSLAG[kind]); // man berättar vad man vet och lär ut vad man kan
     tankePa(s, a, 'ledarskap', SAMTAL.ledTanke); // och kommer på vad som krävs för att leda (steg 3.5.1)
     berattaBrist(a, b, now); // och vad man längtar efter ("jag längtar efter kött", steg 2.6.2)
+    samtalAmne(s, a, b, kind);
     if (kind !== 'flirt' && out + like > SAMTAL.gavaMin) askForGift(s, a, b); // den som saknar något frågar efter det (mat, ved, redskap: behov.ts)
   }
   r.op = clamp(r.op, -100, 100);
   r.talks++;
   a.social = clamp(a.social + SAMTAL.umgange, 0, 1); b.social = clamp(b.social + SAMTAL.umgange, 0, 1);
-  events?.push({ a: a.id, b: b.id, kind, good: kind !== 'gräl' && out > 0, t: now });
+  events?.push({ a: a.id, b: b.id, kind, good: kind !== 'gräl' && out > 0, t: now, i: a.prat?.i });
 
   if (r.op > REL.naraVan && !(r.flags & 1) && !isKin(a, b) && a.partner !== b.id) { r.flags |= 1; log(s, `${a.name} och ${b.name} har blivit nära vänner.`, 'rel', [a.id, b.id]); }
   if (r.op < REL.ovan && !(r.flags & 2)) { r.flags |= 2; log(s, `${a.name} och ${b.name} har blivit ovänner.`, 'rel', [a.id, b.id]); }

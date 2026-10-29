@@ -173,6 +173,7 @@ export interface Person {
   // uppväxten (steg 3.1.2, uppvaxt.ts): det hen var med om som barn, och anlagen (det hen föddes med, som barnen ärver).
   // p.pot är anlagen plus upplevelserna; anlag saknas så länge hen inte har någon upplevelse
   upp?: Upplevelse[]; anlag?: Record<Stat, number>;
+  prat?: import('./berattelser').Prat; // det senaste samtalet: med vem och om vad (steg 3.9.5, berattelser.ts)
   binamn?: import('./berattelser').Binamn; // öknamnet eller hedersnamnet byn gav (steg 3.9.1, berattelser.ts)
   varsel?: { k: import('./motgang').MotgangId; t: number; c: number; src?: number }; // en motgång som personen anar eller hört om: när den börjar och hur säker (steg 3.8.1, motgang.ts)
   forv?: { f: number; w: number }; // förväntan och rikedom (humor.ts, steg 3.2.1)

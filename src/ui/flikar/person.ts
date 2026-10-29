@@ -1,5 +1,5 @@
 import { FORMAGOR, HALSA, Kroppsdel, KROPPSDELAR, NARING, NARINGAR, NARINGBAL, bristGrad, bristerNu, frysFaktor, naringNu, sjunker, skorbjugg, vilaTim, TORST, blodning, delSkada, halsa, skadeLista, skadeText, smarta, torstDelar } from '../../sim';
-import { beskrivning, binamnInfo, INTRYCK, Intryck, LARDOMAR, LKind, anseendeSym, dodSymbol, intryckText, samlatIntryck, ACTS, ALDER, Act, DAY, Lardom, HUMOR, SKILL_GOR, STAT_GOR, Skill, Stat, coldOf, halsaLage, hearthOf, living, roomAt, temperature, varmeDelar, viloSlag, viloTak, takEffekt, SLAG, SLAG_TECKEN, Person, KUNSKAPER, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, SEDER, SED_LIST, sedOppen, TEKNIK, BYN, formogenhetDelar, Ting, halvKlar, ageOf, alive, byId, childrenOf, drar, heldBy, ownedBy, PLATSER, PLATS_LIST, Plats, BORDA_KG, UTRUSTNING, bordOf, capacity, kvNamn, handerFor, homeKind, load, utrustning, viktOf, SAKER, ownedStock, sakNamn, slagIkon, tingNamn, STACK, describe, duty, habitShare, habitTotal, KROPP, kortTal, moodOf, num, REL, relKey, relTyper, stat, taskName, timeLabel, upplevelseText, uppEffekt } from '../../sim';
+import { pratText, beskrivning, binamnInfo, INTRYCK, Intryck, LARDOMAR, LKind, anseendeSym, dodSymbol, intryckText, samlatIntryck, ACTS, ALDER, Act, DAY, Lardom, HUMOR, SKILL_GOR, STAT_GOR, Skill, Stat, coldOf, halsaLage, hearthOf, living, roomAt, temperature, varmeDelar, viloSlag, viloTak, takEffekt, SLAG, SLAG_TECKEN, Person, KUNSKAPER, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, SEDER, SED_LIST, sedOppen, TEKNIK, BYN, formogenhetDelar, Ting, halvKlar, ageOf, alive, byId, childrenOf, drar, heldBy, ownedBy, PLATSER, PLATS_LIST, Plats, BORDA_KG, UTRUSTNING, bordOf, capacity, kvNamn, handerFor, homeKind, load, utrustning, viktOf, SAKER, ownedStock, sakNamn, slagIkon, tingNamn, STACK, describe, duty, habitShare, habitTotal, KROPP, kortTal, moodOf, num, REL, relKey, relTyper, stat, taskName, timeLabel, upplevelseText, uppEffekt } from '../../sim';
 import { framstegSvg, hasIcon, iconImg, kvSvg, tecknet } from '../../ikoner';
 import { LAG, fmtN, bar, cap, carryTxt, cssFarg, durTxt, esc, hex, hsl, hjalpOppen, hjalpText, moodWord, pLink, prickar, relWord, sickNow, tempBar, tempOrd, trend, trendD } from '../hjalp';
 import { s, ui } from '../lage';
@@ -17,7 +17,7 @@ export const person: Flik = {
     const status = alive(p) ? (p.task ? taskName(p.task) : '–') : p.died !== undefined ? `Dog ${p.cause} (${timeLabel(s, p.died)})` : `Flyttade från byn (${timeLabel(s, p.left!)})`;
     return `
       <div class="phead"><span class="dot big" style="background:${hex(p)}"></span><div><h2>${esc(p.name)}${binamnHtml(p)}${alive(p) ? prickar(p) : ''}${anseende(p)}</h2>${binamnForkl(p)}
-      <p class="status">${status}</p>${alive(p) && p.task?.why ? `<p class="why">Varför: ${esc(p.task.why)}</p>` : ''}</div></div>
+      <p class="status">${status}</p>${alive(p) && p.task?.why ? `<p class="why">Varför: ${esc(p.task.why)}</p>` : ''}${prat(p)}</div></div>
       <div class="pdelar" role="tablist">${delar.map(d => `<button type="button" role="tab" data-pdel="${d.id}" aria-selected="${d === del}" title="${d.namn}" aria-label="${d.namn}">${d.tecken}</button>`).join('')}</div>
       <h3>${del.namn}</h3>${del.html(p)}`;
   },
@@ -402,4 +402,10 @@ function tidHtml(p: Person) {
   return `<div class="tid${vald ? ' har-vald' : ''}"><svg class="tart" viewBox="-1 -1 2 2" role="img" aria-label="Vad hen ägnat sin vakna tid åt">${tart}</svg>
     <ul class="tidlista">${bitar.map((b, i) => `<li title="${esc(b.name)}: ${Math.round(b.v * 100)} %" data-i="${i}" data-t="${esc(b.name)}"${b.name === tidVald ? ' class="vald"' : ''}><span class="fg" style="background:${b.farg}"></span>${b.ikon}<span class="namn">${esc(b.name)}</span><span class="pc">${Math.round(b.v * 100)} %</span></li>`).join('')}</ul></div>
     <p class="muted small">Den vakna tiden de senaste dygnen. Tryck på en del eller en rad, eller håll musen över den, så lyser båda.</p>`;
+}
+
+// det senaste samtalet, med ämnets symbol först (steg 3.9.5)
+function prat(p: Person) {
+  const t = alive(p) ? pratText(s, p) : '', i = p.prat?.i;
+  return t ? `<p class="why">${i && hasIcon(i) ? iconImg(i, 14) : '💬'} ${esc(t)}</p>` : '';
 }

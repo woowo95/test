@@ -1,5 +1,6 @@
 import { balans } from './balans';
 import { ageOf, alive, count, living, log } from './folk';
+import { delade } from './berattelser';
 import { kronika } from './historik';
 import { clamp, rnd } from './slump';
 import { kalender, yearNo } from './tid';
@@ -99,6 +100,7 @@ function anar(s: State, k: MotgangId, start: number) {
 export function delaVarsel(s: State, a: Person, b: Person, r: Rel) {
   const v = vetOm(s, a);
   if (!v || v.t <= s.now || v.c < MOTGANG.glomGrans || rnd(s, 'minne', a) >= MOTGANG.berattar) return;
+  delade('varsel', DEF[v.k].ikon, DEF[v.k].namn.toLowerCase()); // samtalets ämne (steg 3.9.5)
   const c = v.c * clamp(MOTGANG.troBas + r.op / MOTGANG.troDiv, MOTGANG.troMin, MOTGANG.troMax);
   const e = vetOm(s, b);
   if (e && e.t === v.t && e.c >= c) return;

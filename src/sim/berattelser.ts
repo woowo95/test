@@ -1,6 +1,7 @@
 import { balans } from './balans';
 import { ALDER, ageOf, alive, byId, count, living, log } from './folk';
-import { ACTS, Act } from './handlingar';
+import { ACTS, Act, slagIkon } from './handlingar';
+import { TAGS } from './seder';
 import { kronika } from './historik';
 import { HANDELSER, INTRYCK, IntryckTyp, intryckOm, samlatIntryck } from './rykten';
 import { SAKER, sakNamn } from './saker';
@@ -36,6 +37,12 @@ export const BERATT = balans('beratt', {
   barnDygn: 3, // ett barn som föddes för högst så här många dygn sedan: göraren hade fått barn
   inskr: 0.6, // så stor del av mästerverken får en tillägnan, när det finns någon att tillägna dem
   dimma: 0.5, // dimman räknas från den här tätheten
+  // samtalens ämnen (steg 3.9.5)
+  dodDygn: 2, // man pratar om den som dog för högst så här många dygn sedan
+  kallt: -5, // ... om kylan från den här temperaturen (°C) och neråt
+  varmt: 25, // ... om värmen från den här och uppåt
+  hungrig: 0.4, // ... och om maten när mättnaden är under den här
+  pratTim: 2, // personrutan visar det senaste samtalet i så här många timmar
 });
 
 // ---------- registren ----------
@@ -536,6 +543,167 @@ const MDEF = {
     '{nara} satt bredvid och bet sig i läppen för att inte skratta.',
     '{nara} frågade vad det skulle bli. Det undrar byn fortfarande.',
   ],
+  // samtalens ämnen (steg 3.9.5): {namn} och {med} pratade, {om} är det de pratade om
+  p_gral: [
+    '{namn} och {med} grälade.',
+    '{namn} och {med} kom i luven på varandra.',
+    '{namn} och {med} kunde inte hålla sams.',
+    'Det blev hårda ord mellan {namn} och {med}.',
+    '{namn} och {med} grälade så att andra vände sig om.',
+    '{namn} sa något som {med} inte tålde, och sedan var grälet igång.',
+    '{namn} och {med} skildes osams.',
+    'Det blev gräl mellan {namn} och {med}, som så ofta förut.',
+  ],
+  p_varsel: [
+    '{namn} varnade {med} för {om}.',
+    '{namn} berättade för {med} att {om} kommer.',
+    '{namn} sa till {med} att det är bäst att samla inför {om}.',
+    '{namn} och {med} pratade om {om} som kommer.',
+    '{namn} hade anat {om}, och nu vet {med} det också.',
+    '{namn} sänkte rösten och berättade om {om} för {med}.',
+    '{med} fick höra av {namn} att {om} är på väg.',
+    '{namn} och {med} undrade hur de ska klara {om}.',
+  ],
+  p_fara: [
+    '{namn} varnade {med} för {om}.',
+    '{namn} berättade för {med} om {om}.',
+    '{namn} sa åt {med} att hålla sig borta från {om}.',
+    '{namn} och {med} pratade om {om}, och båda blev lite rädda.',
+    '{med} fick höra om {om} av {namn}.',
+    '{namn} gjorde {om} farligare än det kanske är när {med} lyssnade.',
+    '{namn} och {med} pratade lågt om {om}.',
+    '{namn} lärde {med} att vara rädd för {om}.',
+  ],
+  p_rykte: [
+    '{namn} berättade för {med} vad man säger om {om}.',
+    '{namn} och {med} skvallrade om {om}.',
+    '{namn} viskade till {med} om {om}.',
+    '{namn} och {med} pratade om {om}, som inte var där.',
+    '{med} fick höra ett och annat om {om} av {namn}.',
+    '{namn} hade mycket att säga om {om}, och {med} lyssnade.',
+    '{namn} och {med} undrade över {om}.',
+    '{namn} visste något om {om} som {med} inte visste.',
+  ],
+  p_teknik: [
+    '{namn} lärde {med} om {om}.',
+    '{namn} visade {med} hur {om} går till.',
+    '{namn} och {med} pratade om {om}.',
+    '{med} frågade {namn} om {om}.',
+    '{namn} förklarade {om} för {med}.',
+    '{namn} och {med} funderade över {om}.',
+    '{namn} lät {med} se hur {om} går till.',
+    '{med} lärde sig om {om} av {namn}.',
+  ],
+  p_kunskap: [
+    '{namn} lärde {med} att {om}.',
+    '{namn} visade {med} hur man ska {om}.',
+    '{namn} och {med} pratade om att {om}.',
+    '{med} fick lära sig av {namn} att {om}.',
+    '{namn} förklarade för {med} hur man ska {om}.',
+    '{med} frågade {namn} hur man ska {om}.',
+    '{namn} var noga med att {med} skulle kunna {om}.',
+    '{namn} och {med} övade på att {om}.',
+  ],
+  p_plats: [
+    '{namn} berättade för {med} var det finns {om}.',
+    '{namn} och {med} pratade om var man hittar {om}.',
+    '{namn} visste ett bra ställe för {om} och sa det till {med}.',
+    '{med} fick veta av {namn} var det finns {om}.',
+    '{namn} och {med} jämförde var de hittat {om}.',
+    '{namn} beskrev för {med} vägen till {om}.',
+    '{namn} sa till {med} att det finns {om} på ett ställe {namn} vet.',
+    '{namn} och {med} pratade om {om} och var det brukar finnas.',
+  ],
+  p_langtan: [
+    '{namn} sa till {med} att {namn} längtar efter {om}.',
+    '{namn} och {med} pratade om hur gott {om} vore.',
+    '{namn} klagade för {med} att {namn} inte fått {om} på länge.',
+    '{namn} och {med} drömde om {om}.',
+    '{med} fick höra att {namn} saknar {om}.',
+    '{namn} pratade om {om} så att {med} också blev sugen.',
+    '{namn} och {med} undrade var de kan få tag på {om}.',
+    '{namn} sa att {om} är det {namn} längtar mest efter.',
+  ],
+  p_karlek: [
+    '{namn} och {med} flirtade.',
+    '{namn} och {med} satt tätt intill varandra och pratade lågt.',
+    '{namn} sa något fint till {med}.',
+    '{namn} fick {med} att skratta och rodna.',
+    '{namn} och {med} tittade länge på varandra.',
+    '{namn} och {med} pratade om ingenting och om allt.',
+    '{namn} försökte vinna {med}s hjärta.',
+    '{namn} och {med} log mot varandra mer än de pratade.',
+  ],
+  p_trost: [
+    '{namn} tröstade {med}.',
+    '{namn} lade armen om {med} och lyssnade.',
+    '{namn} sa till {med} att det kommer bli bättre.',
+    '{med} fick gråta ut hos {namn}.',
+    '{namn} satt hos {med} tills det kändes lite lättare.',
+    '{namn} lyssnade när {med} hade det svårt.',
+    '{namn} försökte muntra upp {med}.',
+    '{med} berättade vad som tyngde, och {namn} lyssnade.',
+  ],
+  p_dod: [
+    '{namn} och {med} pratade om {om}, som är död.',
+    '{namn} och {med} mindes {om}.',
+    '{namn} berättade för {med} om när {om} levde.',
+    '{namn} och {med} saknar {om}.',
+    '{namn} och {med} undrade hur det blir utan {om}.',
+    '{namn} och {med} pratade lågt om {om}.',
+    '{namn} sa att {om} var en bra människa, och {med} höll med.',
+    '{namn} och {med} sörjde {om} tillsammans.',
+  ],
+  p_vader: [
+    '{namn} och {med} pratade om {om}.',
+    '{namn} klagade på {om} för {med}.',
+    '{namn} och {med} undrade hur länge {om} ska hålla i sig.',
+    '{namn} sa till {med} att {om} aldrig varit värre.',
+    '{namn} och {med} tittade upp mot himlen och pratade om {om}.',
+    '{namn} och {med} höll med varandra om {om}.',
+    '{med} fick höra vad {namn} tycker om {om}.',
+    '{namn} och {med} pratade om {om}, som man gör.',
+  ],
+  p_mat: [
+    '{namn} och {med} pratade om maten.',
+    '{namn} klagade för {med} att {namn} är hungrig.',
+    '{namn} och {med} undrade om maten räcker.',
+    '{namn} och {med} pratade om vad de ska äta.',
+    '{namn} sa till {med} att magen knorrar.',
+    '{namn} och {med} pratade om den senaste goda måltiden.',
+    '{namn} och {med} räknade på vad som finns kvar att äta.',
+    '{namn} och {med} pratade om var man kan hitta mat.',
+  ],
+  p_arbete: [
+    '{namn} berättade för {med} om livet som {om}.',
+    '{namn} och {med} pratade om arbetet.',
+    '{namn} klagade för {med} på hur slitsamt det är att vara {om}.',
+    '{namn} berättade stolt för {med} om dagens arbete.',
+    '{namn} och {med} pratade om vad som ska göras i morgon.',
+    '{namn} förklarade för {med} hur en {om} gör.',
+    '{med} fick höra allt om arbetet som {om}.',
+    '{namn} och {med} pratade om hur arbetet går.',
+  ],
+  p_barn: [
+    '{namn} och {med} pratade om barnen.',
+    '{namn} berättade för {med} vad barnen hittat på.',
+    '{namn} och {med} undrade hur barnen ska klara sig.',
+    '{namn} var stolt och berättade om barnen för {med}.',
+    '{namn} klagade för {med} på barnen.',
+    '{namn} och {med} pratade om barnen och vad de ska bli.',
+    '{namn} och {med} skrattade åt något barnen gjort.',
+    '{namn} oroade sig för barnen, och {med} lyssnade.',
+  ],
+  p_vardag: [
+    '{namn} och {med} småpratade.',
+    '{namn} och {med} pratade om lite av varje.',
+    '{namn} och {med} skämtade.',
+    '{namn} och {med} pratade om vad som hänt i byn.',
+    '{namn} och {med} pratade en stund.',
+    '{namn} berättade en lustig historia för {med}.',
+    '{namn} och {med} pratade om ingenting särskilt.',
+    '{namn} och {med} satt och pratade.',
+  ],
 } satisfies Record<string, Variant[]>;
 export type MallId = keyof typeof MDEF;
 export const BERATTELSER: Record<MallId, Variant[]> = MDEF;
@@ -780,4 +948,67 @@ export function sakBerattelse(s: State, t: { id: number; k: string; q?: number; 
   if (vem) ut.push(del('m_varg', 4, { vem: vem === p ? p.name : vem.name, hen2: hen(vem) }));
   if (q >= 5 && m.namn) ut.push(del('m_perfekt', 5));
   return ut.join(' ');
+}
+
+// ---------- samtalens ämnen (steg 3.9.5) ----------
+// Vad ett samtal handlade om: det som delades i samtalet (en motgång som kommer, en farlig plats, ett rykte, en teknik,
+// något man kan, en plats, det man längtar efter), annars något som passar läget (en död nyss, vädret, maten, arbetet,
+// barnen). Det som delas anmäls med delade() där det händer (minne.ts, rykten.ts, teknik.ts, motgang.ts, naring.ts), och
+// det med högst prio blir ämnet. ikon: symbolen i pratbubblan när den inte kommer från det som delades (platsens,
+// teknikens eller intryckets egen bild). Texten i personrutan är mallen p_<ämne> ovan. Ämnet väljs utan spelets slump
+export interface AmneDef { prio: number; namn: string; ikon?: string }
+const ADEF = {
+  gral: { prio: 100, namn: 'Gräl' },
+  varsel: { prio: 90, namn: 'En motgång som kommer' },
+  fara: { prio: 80, namn: 'En farlig plats' },
+  rykte: { prio: 70, namn: 'Ett rykte' },
+  teknik: { prio: 60, namn: 'En teknik' },
+  kunskap: { prio: 55, namn: 'Något man kan' },
+  plats: { prio: 50, namn: 'En plats' },
+  langtan: { prio: 40, namn: 'Det man längtar efter', ikon: 's_mat' },
+  karlek: { prio: 30, namn: 'Kärlek' },
+  trost: { prio: 25, namn: 'Tröst', ikon: 's_trost' },
+  dod: { prio: 20, namn: 'En död', ikon: 's_dod' },
+  vader: { prio: 10, namn: 'Vädret' },
+  mat: { prio: 10, namn: 'Maten', ikon: 's_mat' },
+  arbete: { prio: 10, namn: 'Arbetet' },
+  barn: { prio: 10, namn: 'Barnen', ikon: 's_barn' },
+  vardag: { prio: 0, namn: 'Lite av varje' },
+} satisfies Record<string, AmneDef>;
+export type AmneId = keyof typeof ADEF;
+export const AMNEN: Record<AmneId, AmneDef> = ADEF;
+// det senaste samtalet: med vem (m), ämnet (k), symbolen (i), vad det handlade om (o) och när (t)
+export interface Prat { m: number; k: AmneId; i?: string; o?: string; t: number }
+// det som delats i samtalet som pågår (converse i samtal.ts nollställer det före och läser det efter)
+let delat: { k: AmneId; i?: string; o?: string } | undefined;
+export function samtalBorjar() { delat = undefined; }
+export function delade(k: AmneId, i?: string, o?: string) { if (!delat || AMNEN[k].prio > AMNEN[delat.k].prio) delat = { k, i, o }; }
+const VADER_PRAT: Record<string, string> = { regn: 'regnet', sno: 'snön', blast: 'blåsten', aska: 'åskan', dimma: 'dimman' };
+// ämnet för samtalet mellan a och b av slaget kind, sparat hos båda
+export function samtalAmne(s: State, a: Person, b: Person, kind: string) {
+  let x: { k: AmneId; i?: string; o?: string } | undefined = kind === 'gräl' ? { k: 'gral' } : delat ?? (kind === 'flirt' ? { k: 'karlek' } : kind === 'tröst' ? { k: 'trost' } : undefined);
+  if (!x) {
+    const val: { k: AmneId; i?: string; o?: string }[] = [{ k: 'vardag' }];
+    const dag = 24 * HOUR, dod = s.people.filter(c => c.died !== undefined && s.now - c.died < BERATT.dodDygn * dag).sort((c, d) => d.died! - c.died!)[0];
+    if (dod) val.push({ k: 'dod', o: dod.name });
+    const v = vaderNu(s), t = temperature(s), vl = v.sno ? 'sno' : VADER_PRAT[v.lage] ? v.lage : undefined;
+    if (vl) val.push({ k: 'vader', i: 'vader_' + vl, o: VADER_PRAT[vl] });
+    else if (t <= BERATT.kallt) val.push({ k: 'vader', i: 'vader_sno', o: 'kylan' });
+    else if (t >= BERATT.varmt) val.push({ k: 'vader', i: 'vader_klart', o: 'värmen' });
+    if (a.hunger < BERATT.hungrig) val.push({ k: 'mat' });
+    if (a.tag && a.tag !== 'Dagdrivare') { const tg = TAGS.find(g => g.tag === a.tag), sl = tg?.acts.map(k => ACTS[k].slag).find(k => k); val.push({ k: 'arbete', i: sl && slagIkon(sl), o: a.tag.toLowerCase() }); }
+    if (s.people.some(c => alive(c) && (c.mother === a.id || c.father === a.id) && ageOf(c, s.now) < ALDER.vuxen)) val.push({ k: 'barn' });
+    x = val[Math.floor(hash(s.seed, a.id * 997 + b.id, Math.round(s.now / 60)) * val.length)];
+  }
+  const i = x.i ?? AMNEN[x.k].ikon;
+  a.prat = { m: b.id, k: x.k, t: s.now, ...(i ? { i } : {}), ...(x.o ? { o: x.o } : {}) };
+  b.prat = { ...a.prat, m: a.id };
+  return a.prat;
+}
+// texten om p:s senaste samtal ("Ask och Ylva pratade om vädret"), eller inget om det är längesedan
+export function pratText(s: State, p: Person) {
+  const x = p.prat, q = x && byId(s, x.m);
+  if (!x || !q || s.now - x.t > BERATT.pratTim * HOUR) return '';
+  const f: Fyllning = { namn: p.name, med: q.name, om: x.o ?? '' };
+  return fyll(valjVariant(s, `p_${x.k}` as MallId, p.id + q.id, f, Math.round(x.t / 60)), f);
 }

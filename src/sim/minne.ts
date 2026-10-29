@@ -1,5 +1,6 @@
 import { PLATS, campCenter, campDist, campKey } from './plats';
 import { byId, count, forstaGang, isParent, living, log, stat } from './folk';
+import { delade } from './berattelser';
 import { teach } from './teknik';
 import { FANGST, Kind, prospect, regrowOf, richness, shoreOf, standAt, stoneDist, synsOf, toppOf, vaxerAt } from './fynd';
 import { getMap } from './karta';
@@ -305,6 +306,7 @@ export function share(s: State, a: Person, b: Person, r: Rel, slag: SamtalDef) {
     const e = a.kunskap[k], d = e.v - kn(b, k);
     if (d > MINNE.larMin && rnd(s, 'minne', a) < MINNE.larChans * mentor) {
       lartUt(s, a, b);
+      delade('kunskap', k, KUNSKAPER[k]?.larAv ?? KUNSKAPER[k]?.namn.toLowerCase()); // samtalets ämne (steg 3.9.5)
       const before = kn(b, k), v = learnK(b, k, d * MINNE.larDel * (MINNE.larBas + stat(b, 'intelligens', now) / 20), now);
       e.t = now; // att lära ut håller kunskapen vid liv
       const larAv = KUNSKAPER[k]?.larAv;
@@ -317,6 +319,7 @@ const nyhet = (s: State, l: Lardom) => l.ny !== undefined && s.now - l.ny < MINN
 function tell(s: State, a: Person, b: Person, l: Lardom, r: Rel) {
   // att berätta stärker det egna minnet, men platsen sågs inte nu (t, återväxten räknas därifrån)
   l.c = Math.min(1, l.c + MINNE.berattaStark * (1 - l.c));
+  delade(l.k === 'fara' ? 'fara' : 'plats', LARDOMAR[l.k].ikon, l.k === 'fara' ? 'en farlig plats' : LARDOMAR[l.k].vad); // samtalets ämne (steg 3.9.5)
   const trust = clamp(MINNE.troBas + r.op / MINNE.troDiv, MINNE.troMin, MINNE.troMax) * lognFaktor(b, a); // mindre på en lögnare (steg 3.3.3)
   const c = l.c * trust * MINNE.troDel;
   // man överdriver gärna, särskilt det som är farligt

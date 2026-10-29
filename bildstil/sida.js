@@ -1363,7 +1363,46 @@ const BN_STJARNA = ['.......oo.......', '.......og.......', '...o..ogyo..o...', 
 const BN_BUBBLA = ['................', '..oooooooooooo..', '.owwwwwwwwwwwwo.', '.owwrwwwwwwrwwo.', '.owwwrwwwwrwwwo.', '.owwwwrwwrwwwwo.', '.owwwwwrrwwwwwo.', '.owwwwwrrwwwwwo.', '.owwwwrwwrwwwwo.', '.owwwrwwwwrwwwo.', '.owwrwwwwwwrwwo.', '.owwwwwwwwwwwwo.', '..ooookwoooooo..', '.....okwo.......', '.....oko........', '.....oo.........'];
 const BN_MOLN = ['................', '.....oooo.......', '...ooBBBBoo.....', '..oBBbbbbBBooo..', '.oBbbbbbbbbBBBo.', 'oBbbbbbbbbbbbbBo', 'oBbbbbbbbbbbbbBo', '.oBBBBBBBBBBBBo.', '..oooooyooooo...', '......oyo.......', '.....oyo........', '....oyyyyo......', '......oyo.......', '.....oyo........', '.....oo.........', '................'];
 const BN_SPRUCKEN = ['................', '.....oooooo.....', '....oBBBBBBo....', '...oBbbbobbBo...', '..oBbbbbobbbBo..', '..oBbbbobbbbBo..', '..oBbbboobbbBo..', '..oBbbbbobbbBo..', '..oBbbbobbbbBo..', '..oBbbobbbbbBo..', '...oBbobbbbBo...', '....oBobBBBo....', '.....oooooo.....', '................', '................', '................'];
+// Samtalens ämnen (steg 3.9.5)
+const AM_L = { o: 'kol0', b: 'jord2', B: 'jord1', k: 'rost1', w: 'ben2', W: 'ben3', h: 'rost2', H: 'rost1', s: 'skiffer2', S: 'skiffer3', g: 'oliv2', G: 'oliv1', y: 'senap2' };
+const AM_MAT1 = ['................', '................', '......w..w......', '.....w..w.......', '......w..w......', '................', '...oooooooooo...', '..okkkkkkkkkko..', '..obbbbbbbbbbo..', '...obbbbbbbbo...', '...oBbbbbbbBo...', '....oBBBBBBo....', '.....oooooo.....', '................', '................', '................'];
+const AM_MAT2 = ['................', '.........oo.....', '........obbo....', '.......obbo.....', '......obbo......', '.....obbo.......', '..oooobooooooo..', '.okkkkkkkkkkkko.', '.oyykkyykkyykko.', '..obbbbbbbbbbo..', '..oBbbbbbbbbBo..', '...oBbbbbbbBo...', '....oBBBBBBo....', '.....oooooo.....', '................', '................'];
+const AM_MAT3 = ['................', '................', '.....oooooo.....', '...ooyyyyyyoo...', '..oyyyyyyyyyyo..', '..oyyyoyyoyyyo..', '..oyyyyyyyyyyo..', '...oyyyyyyyyo...', '....oooooooo....', '.....okkkko.....', '....okkkkkko....', '....okkkkkko....', '.....okkkko.....', '......oooo......', '................', '................'];
+const AM_TROST1 = ['................', '................', '................', '...ooo....ooo...', '..ohhho..oHHHo..', '..ohhhhooHHHHo..', '..ohhhhhHHHHHo..', '...ohhhhHHHHo...', '....ohhhHHHo....', '.....ohhHHo.....', '......ohHo......', '.......oo.......', '................', '................', '................', '................'];
+const AM_TROST2 = ['................', '.....oooo.......', '....ohhhho......', '....ohhhho......', '.....oooo.oooo..', '..ooohhhooHHHHo.', '.ohhhhhhhoHHHHo.', '.ohhhhhhhhooooo.', '.ohhhhhhhHHHHHo.', '..ohhhhhHHHHHo..', '..ohhhhhHHHHHo..', '..ohhhhoHHHHHo..', '..ohhhho.oHHHo..', '..oooooo.ooooo..', '................', '................'];
+const AM_TROST3 = ['................', '...oo....oo.....', '..okko..okko....', '..okkkookkkko...', '..okkkkkkkkko...', '...okkkkkkkko...', '....okkkkkko....', '.....okkkko.....', '......okko......', '.......oo.......', '..oooooooooooo..', '.ohhhhhhhhhhhho.', '.ohhhhhhhhhhhho.', '..oooooooooooo..', '................', '................'];
+const AM_DOD1 = ['................', '................', '.....oooooo.....', '....oWWWWWWo....', '...oWWWoWWWWo...', '...oWWoooWWWo...', '...oWWWoWWWwo...', '...oWWWoWWWwo...', '...oWWWWWWWwo...', '...oWWWWWWwwo...', '...oWwwwwwwwo...', '..goooooooooog..', '.gggggggggggggg.', '................', '................', '................'];
+const AM_DOD2 = ['................', '.......oo.......', '.......ob.......', '.....oooboo.....', '.....obbbbo.....', '.....oooboo.....', '.......ob.......', '.......ob.......', '.......ob.......', '.......ob.......', '.......ob.......', '....ooooBooo....', '...osssssssso...', '..ossssssssss...', '.gggggggggggggg.', '................'];
+const AM_DOD3 = ['................', '................', '......oooo......', '.....oyyyyo.....', '.....oyyyyo.....', '......oyyo......', '.......oo.......', '.......ob.......', '......oBBo......', '.....oBBBBo.....', '.....oBBBBo.....', '.....oBBBBo.....', '.....oBBBBo.....', '......oooo......', '................', '................'];
+const AM_BARN1 = ['................', '................', '......oooo......', '.....oBBBBo.....', '.....ohhhho.....', '.....ohhhho.....', '......oooo......', '.....owwwwo.....', '....owwwwwwo....', '....owowwowo....', '....oowwwwoo....', '......owwo......', '......o..o......', '......o..o......', '................', '................'];
+const AM_BARN2 = ['................', '....oooo........', '...oBBBBo.......', '...ohhhho.......', '...ohhhho...ooo.', '....oooo...oBBBo', '...owwwwo..ohhho', '..owwwwwwo.ohhho', '..owowwowo..ooo.', '...owwwwo..owwwo', '....owwo..owwwwo', '....o..o..owwwwo', '....o..o...o..o.', '...oo..oo..o..o.', '................', '................'];
+const AM_BARN3 = ['................', '................', '................', '......oooo......', '.....okkkko.....', '....okkkkkko....', '...okkhhhhkko...', '...okhhhhhhko...', '...okhohhohko...', '...okhhhhhhko...', '...okkhhhhkko...', '....okkkkkko....', '.....oooooo.....', '................', '................', '................'];
 const VAL = [
+  { id: 's_mat', namn: 'Samtal om mat', vad: 'Ny symbol (steg 3.9.5), 16 × 16 punkter, i pratbubblan och personrutan när två pratar om maten eller längtar efter något att äta. Till vänster i rätt storlek, till höger tre gånger större. I spelet nu: version 1 (platshållare).', typ: 'tre',
+    versioner: [
+      { text: 'En skål med ångande mat.', ...LED_M(AM_MAT1, AM_L) },
+      { text: 'En skål med gryta och en träslev.', ...LED_M(AM_MAT2, AM_L) },
+      { text: 'Ett gyllene bröd ovanpå en köttbit.', ...LED_M(AM_MAT3, AM_L) },
+    ] },
+  { id: 's_trost', namn: 'Samtal som tröstar', vad: 'Ny symbol (steg 3.9.5), 16 × 16 punkter, när någon tröstar någon annan. I spelet nu: version 1 (platshållare).', typ: 'tre',
+    versioner: [
+      { text: 'Två händer som håller om varandra.', ...LED_M(AM_TROST1, AM_L) },
+      { text: 'Två människor där den ena lägger armen om den andra.', ...LED_M(AM_TROST2, AM_L) },
+      { text: 'Ett hjärta som vilar i en öppen hand.', ...LED_M(AM_TROST3, AM_L) },
+    ] },
+  { id: 's_dod', namn: 'Samtal om en död', vad: 'Ny symbol (steg 3.9.5), 16 × 16 punkter, när byn pratar om någon som dött nyss. I spelet nu: version 1 (platshållare).', typ: 'tre',
+    versioner: [
+      { text: 'En gravsten med ett kors i gräset.', ...LED_M(AM_DOD1, AM_L) },
+      { text: 'Ett träkors på en stenhög.', ...LED_M(AM_DOD2, AM_L) },
+      { text: 'Ett tänt ljus i minne av den döda.', ...LED_M(AM_DOD3, AM_L) },
+    ] },
+  { id: 's_barn', namn: 'Samtal om barnen', vad: 'Ny symbol (steg 3.9.5), 16 × 16 punkter, när två pratar om barnen. I spelet nu: version 1 (platshållare).', typ: 'tre',
+    versioner: [
+      { text: 'Ett litet barn i vit särk.', ...LED_M(AM_BARN1, AM_L) },
+      { text: 'Två barn bredvid varandra.', ...LED_M(AM_BARN2, AM_L) },
+      { text: 'Ett spädbarns ansikte i en filt.', ...LED_M(AM_BARN3, AM_L) },
+    ] },
+
   { id: 'binamn', namn: 'Hedersnamn och öknamn', vad: 'Två nya symboler (steg 3.9.1), 16 × 16 punkter, i personrutan efter namnet när byn gett någon ett hedersnamn ("Brand den flitige") eller ett öknamn ("Ask Tjuven"). Varje version har ett par: heder överst och skam under, och till höger dubbelt så stora. I spelet nu: medaljen och pratbubblan med kryss (platshållare).', typ: 'tre',
     versioner: [
       { text: 'Heder: en guldmedalj i ett rött band. Skam: en pratbubbla med ett rött kryss.', w: 92, h: 38, kol: true, rita: (B, P) => { ritaSprite(B, BN_MEDALJ, BN_L, 2, 2); ritaSprite(B, BN_BUBBLA, BN_L, 2, 20); ritaSprite(B, BN_2(BN_MEDALJ), BN_L, 22, 3); ritaSprite(B, BN_2(BN_BUBBLA), BN_L, 58, 3); } },

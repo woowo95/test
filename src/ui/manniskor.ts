@@ -4,9 +4,10 @@ import { PRICKAR, personFarg } from './hjalp';
 import { s, ui, vidNyBy } from './lage';
 import { Ikoner, TS, bubbleG, labels, markLayer, peopleG } from './scen';
 import { jaktPlats } from './jakt';
+import { hasIcon, iconCanvas } from '../ikoner';
 
 // människorna på kartan: kroppen, det de bär, pratbubblor, symbolen för vad de gör och namnet
-const bubbles: { id: number; kind: string; good: boolean; until: number }[] = [];
+const bubbles: { id: number; kind: string; good: boolean; until: number; i?: string }[] = [];
 // vem var och en senast pratade med: bubblan står kvar så länge båda är kvar i samtalet
 const talkWith = new Map<number, number>();
 vidNyBy.push(() => { bubbles.length = 0; talkWith.clear(); });
@@ -17,7 +18,7 @@ export function addTalks(events: TalkEvent[], now: number, nu: number) {
   for (const e of events) {
     if (e.t > nu) break;
     n++;
-    if (nu - e.t < 20 * SEC) { bubbles.push({ id: e.a, kind: e.kind, good: e.good, until: now + 2600 }); talkWith.set(e.a, e.b); talkWith.set(e.b, e.a); }
+    if (nu - e.t < 20 * SEC) { bubbles.push({ id: e.a, kind: e.kind, good: e.good, until: now + 2600, i: e.i }); talkWith.set(e.a, e.b); talkWith.set(e.b, e.a); }
   }
   events.splice(0, n);
 }
@@ -81,8 +82,9 @@ function markOf(p: Person): string | undefined {
   const t = p.task, k = t?.phase === 'do' ? ACTS[t.act].slag : undefined;
   return k && slagIkon(k);
 }
-// pratbubblan: utseendet följer relationen, ett nytt samtal syns en stund i sin egen färg
-function drawBubble(x: number, y: number, kind: string | undefined, rel: 'karlek' | 'van' | 'ovan' | 'neutral', t: number, seed: number) {
+// pratbubblan: utseendet följer relationen, ett nytt samtal syns en stund i sin egen färg, och ämnets symbol (ikon, steg 3.9.5)
+// står i bubblan när samtalet inte är ett gräl eller en flirt
+function drawBubble(x: number, y: number, kind: string | undefined, rel: 'karlek' | 'van' | 'ovan' | 'neutral', t: number, seed: number, ikon?: string) {
   const fill = kind === 'gräl' ? 0xd9534f : kind === 'flirt' ? 0xf0a3bd : kind === 'berättelse' ? 0xf2d27a : kind ? 0xffffff
     : rel === 'karlek' ? 0xf6c6d6 : rel === 'ovan' ? 0xc98a80 : rel === 'van' ? 0xe4f2d8 : 0xf2f2ee;
   const edge = rel === 'karlek' ? 0xd0607e : rel === 'ovan' ? 0x7a2a22 : rel === 'van' ? 0x5f9a44 : 0x555555;
@@ -92,6 +94,9 @@ function drawBubble(x: number, y: number, kind: string | undefined, rel: 'karlek
     bubbleG.lineStyle(1, 0x3a1410, 0.9).moveTo(x - 4, y + 1).lineTo(x - 2, y - 1.5).lineTo(x, y + 1).lineTo(x + 2, y - 1.5).lineTo(x + 4, y + 1).lineStyle(0);
   } else if (kind === 'flirt' || (!kind && rel === 'karlek')) { // hjärta
     bubbleG.beginFill(0xc0304e).drawCircle(x - 1.2, y - 0.8, 1.4).drawCircle(x + 1.2, y - 0.8, 1.4).drawPolygon([x - 2.6, y - 0.4, x + 2.6, y - 0.4, x, y + 2.6]).endFill();
+  } else if (ikon && hasIcon(ikon)) {
+    const sc = 7 / iconCanvas(ikon).width;
+    markIcons.add(ikon, x - 3.5, y - 3.5, sc);
   } else { // tre punkter som tänds en i taget
     const on = Math.floor(t / 400 + seed) % 3;
     for (let k = -1; k <= 1; k++) bubbleG.beginFill(0x333333, k + 1 === on ? 1 : 0.45).drawCircle(x + k * 3, y, 0.9).endFill();
@@ -127,7 +132,8 @@ export function drawPeople(t: number) {
   }
   // pågående samtal och symboler
   const flash = new Map<number, string>();
-  for (let i = bubbles.length - 1; i >= 0; i--) { const b = bubbles[i]; if (b.until < t) bubbles.splice(i, 1); else flash.set(b.id, b.kind); }
+  const flashIkon = new Map<number, string | undefined>();
+  for (let i = bubbles.length - 1; i >= 0; i--) { const b = bubbles[i]; if (b.until < t) bubbles.splice(i, 1); else { flash.set(b.id, b.kind); flashIkon.set(b.id, b.i); } }
   for (const p of ppl) {
     const pp = pos.get(p.id)!, x = pp.x * TS, y = pp.y * TS, a = ageOf(p, s.now), top = y - (a < ALDER.smabarn ? 9 : a < ALDER.vuxen ? 11 : 13);
     const o = talkWith.get(p.id), q = o !== undefined ? byId(s, o) : undefined;
@@ -137,7 +143,8 @@ export function drawPeople(t: number) {
       const r = q ? s.rels[relKey(p.id, q.id)] : undefined;
       // bubblans färg: kär (partnern eller mycket romans), grälar (som i folk.ts), goda vänner eller annars
       const rel = q && (p.partner === q.id || (r?.rom ?? 0) > 40) ? 'karlek' : (r?.op ?? 0) < REL.gral ? 'ovan' : (r?.op ?? 0) > REL.van ? 'van' : 'neutral';
-      drawBubble(x + 4, top, flash.get(p.id), rel, t, p.id);
+      const ikon = flash.has(p.id) ? flashIkon.get(p.id) : q && p.prat?.m === q.id ? p.prat.i : undefined; // ämnet (steg 3.9.5)
+      drawBubble(x + 4, top, flash.get(p.id), rel, t, p.id, ikon);
       continue;
     }
     const m = markOf(p);

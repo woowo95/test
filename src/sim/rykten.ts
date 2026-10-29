@@ -1,3 +1,4 @@
+import { delade } from './berattelser';
 import { ALDER, REL, ageOf, alive, byId, count, forstaGang, getRel, isKin, isParent, living, log, relKey, stat, think } from './folk';
 import { clamp, pickViktat, rnd } from './slump';
 import { HOUR, Person, Rel, State } from './typer';
@@ -245,6 +246,7 @@ export function beratta(s: State, a: Person, b: Person, e: Intryck, r: Rel) {
   const tak = e.bev?.length ? e.bev.reduce((t, x) => t + bevVikt(x), 0) * (1 + RYKTE.over) : RYKTE.vMax;
   const v = clamp(Math.min(e.v * over, Math.max(e.v, tak)), 0, RYKTE.vMax), c = e.c * troPa(s, b, a, r) * RYKTE.led;
   count(s, 'rykte_berattat');
+  delade('rykte', 'i_' + e.k, e.namn); // samtalets ämne (steg 3.9.5)
   // påhittat om b själv, eller om något b var med om: b vet bättre (steg 3.3.3)
   if (ex?.falsk && ex.mot === b.id) { ertappad(s, b, a, e, 'logn'); return; }
   const egen = intryckOm(b, e.om, e.k);

@@ -1,5 +1,5 @@
 import { allaBarn } from './uppvaxt';
-import { kronikaBer, personFalt } from './berattelser';
+import { delade, kronikaBer, personFalt } from './berattelser';
 import { ALDER, ageOf, count, log, stat, think } from './folk';
 import { sedEvent } from './seder';
 import { rnd } from './slump';
@@ -191,6 +191,7 @@ export function teach(s: State, a: Person, b: Person, slag: SamtalDef, mer = 1) 
     if (!knows(a, t.id) || knows(b, t.id) || !t.krav.every(k => knows(b, k))) continue;
     if (rnd(s, 'kunskap', a) > TEKTAL[slag.lar ?? 'larChans'] * mer) continue;
     lartUt(s, a, b);
+    delade('teknik', t.id, t.namn.toLowerCase()); // samtalets ämne (steg 3.9.5)
     b.tek ??= {};
     const d = Math.min(1 - (b.tek[t.id] ?? 0), TEKTAL.larFramsteg * (TEKTAL.larBas + stat(b, 'intelligens', s.now) / 20));
     b.tek[t.id] = (b.tek[t.id] ?? 0) + d; count(s, 'tekLart', d);

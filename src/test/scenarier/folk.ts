@@ -2,6 +2,7 @@
 import { Person, createState, tidyTools, addTool, getRel, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, ageStart, amountOf, isLight, ageOf, DAY, HOUR, State, findL, areaOf, stat, hoped, gain, ownedSum, setAmount, setStock, BEAT, tingOf, planBuild, regulate, ACTS } from '../../sim';
 import * as SIM from '../../sim';
 import { START, STEG_DYGN } from '../kor';
+import { hasIcon } from '../../ikoner';
 import { setFood, kor, klockan, tandEld, byggare, SCENARIER, pct, grenarUte, barGrenar, nyInvanare, valjer, MATARBETE, TRAARBETE, REDSKAPSARBETE, FORBATTRING, MATMEDREDSKAP, rikBy } from './hjalp';
 
 SCENARIER.befolkning = {
@@ -1330,6 +1331,32 @@ SCENARIER.masterverk = {
         SIM.bestamd('Flintkniv')[0] === 'flintkniven' && SIM.bestamd('Träspjut')[0] === 'träspjutet' && SIM.bestamd('Skinnskor')[0] === 'skinnskorna' && SIM.bestamd('Bälte')[0] === 'bältet' && SIM.bestamd('Hylla')[0] === 'hyllan'],
       [`ett perfekt vapen som fäller en varg heter Vargdräparen (${vt})`, pf.ber?.namn === 'Vargdräparen' && vt.includes('varg')],
       [`i byn har varje mästerverk och usel sak en hel berättelse (${alla.length} st, t.ex. ${alla[0] ?? '–'})`, gjorda.every(x => x.ber) && alla.every(hel)],
+    ];
+  },
+};
+
+SCENARIER.amnen = {
+  text: 'Steg 3.9.5: ett samtal handlar om det som delades i det (en motgång som kommer, en farlig plats, ett rykte, en teknik, en plats, det man längtar efter), annars om något som passar läget (en död nyss, vädret, maten, arbetet, barnen). Ämnet sparas hos båda, personrutan berättar om det senaste samtalet (mallarna p_* i BERATTELSER), och ämnets symbol står i pratbubblan',
+  kor: () => {
+    const hel = (x: string) => !/[{}]|undefined|  | \.|^\s*$/.test(x) && /[.!"]$/.test(x);
+    // ett gräl handlar om grälet, och det som delas blir ämnet
+    const t = createState(5, START);
+    klockan(t, 12);
+    const [a, b] = living(t);
+    SIM.samtalBorjar(); SIM.samtalAmne(t, a, b, 'gräl');
+    const gral = a.prat?.k, gralB = b.prat?.m === a.id && b.prat?.k;
+    SIM.samtalBorjar(); SIM.delade('plats', 'bar', 'bär och rötter'); SIM.delade('rykte', 'i_tjuv', 'Ask'); SIM.samtalAmne(t, a, b, 'småprat');
+    const delat = a.prat?.k, text = SIM.pratText(t, a);
+    // i en by som lever: vad samtalen handlade om under fyra dygn
+    const v = createState(3, START), sett = new Map<string, string>(), ikoner = new Set<string>();
+    kor(v, 4 * 24, x => { if (x.now % (10 * 60 * 1000) === 0) for (const p of living(x)) if (p.prat && x.now - p.prat.t < 60 * 1000 * 5) { sett.set(p.prat.k, SIM.pratText(x, p)); if (p.prat.i) ikoner.add(p.prat.i); } });
+    const texter = [...sett.values()];
+    return [
+      [`ett gräl handlar om grälet, hos båda (${text})`, gral === 'gral' && gralB === 'gral'],
+      [`det som delades med högst prio blir ämnet (ett rykte före en plats)`, delat === 'rykte' && text.includes('Ask') && hel(text)],
+      [`samtalen i byn handlar om olika saker (${[...sett.keys()].join(', ')})`, sett.size >= 4],
+      [`varje text är hel (t.ex. ${texter[0] ?? '–'})`, texter.length > 0 && texter.every(hel)],
+      [`varje symbol i pratbubblan finns (${[...ikoner].join(', ')})`, [...ikoner].every(hasIcon) && Object.values(SIM.AMNEN).every(d => !d.ikon || hasIcon(d.ikon))],
     ];
   },
 };

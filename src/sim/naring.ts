@@ -11,6 +11,7 @@ import { FOOD, SAKER } from './saker';
 import { clamp } from './slump';
 import { balans } from './balans';
 import { think } from './folk';
+import { delade } from './berattelser';
 
 export const NARINGBAL = balans('naring', {
   brist: 0.2, // under detta värde har man brist; bristen växer till full när värdet är slut
@@ -112,7 +113,7 @@ export function bristSteg(p: Person, now: number) {
 }
 // a berättar för b vad a längtar efter (converse i samtal.ts); b minns det i NARINGBAL.minns timmar
 export function berattaBrist(a: Person, b: Person, now: number) {
-  for (const k of bristerNu(a)) (b.langtan ??= {})[k] = now + NARINGBAL.minns * HOUR;
+  for (const k of bristerNu(a)) { (b.langtan ??= {})[k] = now + NARINGBAL.minns * HOUR; delade('langtan', undefined, NARING[k].langtar); } // samtalets ämne (steg 3.9.5)
 }
 // hur mycket mer värt det är för p att göra arbetet act (samla, jakt, fiske: bestWork i val.ts) för att maten det ger har det
 // som p själv eller någon p pratat med längtar efter. 1 = inget särskilt
