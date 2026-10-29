@@ -120,6 +120,9 @@ const VAL = balans('val', {
   // borden (steg 2.2.15)
   maltidMin: 20, maltidSpann: 10, // en måltid vid bordet
   bordSamtal: 0.5, // den som samtalar eller berättar sätter sig vid ett bord med denna chans, när det inte är kallt
+  isar: 1.05, isarForsok: 24, // vid elden står man minst så här många rutor från de andra, så många försök (steg 3.6.8) ...
+  isarVidga: 0.12, // ... och ringen blir så här mycket bredare för varje försök efter det fjärde, när det är trångt
+  nattPrat: 10, nattPratSpann: 15, // på natten samtalar man så här många minuter, plus upp till spann, och går sedan till en ny plats (steg 3.6.8)
   eldRadie: 1.3, eldRadieSpann: 0.9, // vid elden sätter man sig så här många rutor från den, plus upp till spann (handlingens radie går före)
   sovRadie: 1.8, sovRadieSpann: 1.2, // ... och den som sover ute lägger sig så här långt bort
   // skuggan (steg 2.3.13)
@@ -165,13 +168,22 @@ function hantverkIByn(s: State, p: Person): { x: number; y: number } {
 }
 // var den bästa vännen och ovännerna ska sitta eller sitter vid elden f (steg 3.1.1)
 function sittPlatser(s: State, p: Person, f: { x: number; y: number }) {
-  let bast: { x: number; y: number } | undefined; const ovan: { x: number; y: number }[] = [];
+  let bast: { x: number; y: number } | undefined; const ovan: { x: number; y: number }[] = [], alla: { x: number; y: number }[] = [];
   for (const q of living(s)) {
     const t = q.task; if (q === p || !t || ACTS[t.act].plats !== 'elden' || Math.hypot(t.tx - f.x, t.ty - f.y) > VAL.eldRadie + VAL.eldRadieSpann + 1) continue;
+    alla.push({ x: t.tx, y: t.ty });
     if (p.bast === q.id) bast = { x: t.tx, y: t.ty };
     else if (p.arke === q.id || (s.rels[relKey(p.id, q.id)]?.op ?? 0) < REL.ovan) ovan.push({ x: t.tx, y: t.ty });
   }
-  return { bast, ovan };
+  return { bast, ovan, alla };
+}
+// en plats i rummet minst en ruta från de andra som är eller ska dit (steg 3.6.8), annars den sista som prövades
+function isarIRum(s: State, p: Person, tiles: number[]) {
+  const andra: { x: number; y: number }[] = [];
+  for (const q of living(s)) if (q !== p && q.task && q.task.phase !== 'back') andra.push({ x: q.task.tx, y: q.task.ty });
+  let at = punktIRuta(s, pick(s, tiles, 'val', p), p);
+  for (let k = 1; k < VAL.isarForsok && andra.some(o => Math.hypot(o.x - at.x, o.y - at.y) < VAL.isar); k++) at = punktIRuta(s, pick(s, tiles, 'val', p), p);
+  return at;
 }
 // var en handling görs, efter platsen i handlingar.ts
 export function spotFor(s: State, act: Act, p: Person): { x: number; y: number } {
@@ -193,15 +205,17 @@ export function spotFor(s: State, act: Act, p: Person): { x: number; y: number }
   if (plats === 'elden' || plats === 'station' || plats === 'bord') {
     // när det är kallt samtalar och berättar man i samlingshuset, om det är varmare där än vid elden (byggnader.ts)
     const sal = d.social ? samlingRum(s) : undefined, c = sal ? coldOf(temperature(s)) : 0;
-    if (sal && (c > 0 && varmareInne(s, sal, c, d.varmer) || nederbord(s))) return punktIRuta(s, pick(s, sal.tiles, 'val', p), p); // ... och när det regnar (steg 2.11.1)
+    if (sal && (c > 0 && varmareInne(s, sal, c, d.varmer) || nederbord(s))) return isarIRum(s, p, sal.tiles); // ... och när det regnar (steg 2.11.1)
     // annars sätter man sig ofta vid ett bord för att samtala och berätta, när det inte är kallt
     if (d.slag === 'prata' && bordenOf(s).length && coldOf(temperature(s)) === 0 && rnd(s, 'val', p) < VAL.bordSamtal) { const at = ledigPlats(s, p); if (at) return at; }
     // bredvid den bästa vännen om hen sitter vid samma eld, och inte nära en ovän (steg 3.1.1)
     const nara = sittPlatser(s, p, f), van = nara.bast && rnd(s, 'val', p) < RELT.bastSitt ? Math.atan2(nara.bast.y - f.y - 0.5, nara.bast.x - f.x - 0.5) : undefined;
     for (let k = 0; ; k++) { // runt elden, men inte i en husvägg eller i en station (Björn efter v89: någon stod i slaktbänken)
-      const ang = van !== undefined && k < 4 ? van + (k % 2 ? -1 : 1) * (0.45 + 0.15 * Math.floor(k / 2)) : rnd(s, 'val', p) * Math.PI * 2, r = d.radie ?? VAL.eldRadie + rnd(s, 'val', p) * VAL.eldRadieSpann, x = f.x + 0.5 + Math.cos(ang) * r, y = f.y + 0.5 + Math.sin(ang) * r;
+      // bredvid vännen: minst en ruta bort längs ringen (vinkeln efter radien)
+      const r = (d.radie ?? VAL.eldRadie + rnd(s, 'val', p) * VAL.eldRadieSpann) + VAL.isarVidga * Math.max(0, k - 4), ang = van !== undefined && k < 4 ? van + (k % 2 ? -1 : 1) * (VAL.isar + 0.3 * Math.floor(k / 2)) / r : rnd(s, 'val', p) * Math.PI * 2, x = f.x + 0.5 + Math.cos(ang) * r, y = f.y + 0.5 + Math.sin(ang) * r;
       const ovanNara = k < 8 && nara.ovan.some(o => Math.hypot(o.x - x, o.y - y) < RELT.ovanAvstand);
-      if (k >= 11 || !blocked(s, x, y) && !sittAt(s, x, y) && !stationAt(s, x, y) && !ovanNara) return k >= 11 ? freeNear(s, f.x + 0.5, f.y + 1.5) : { x, y }; // inte på en stubbe vid bordet
+      const tatt = k < VAL.isarForsok && nara.alla.some(o => Math.hypot(o.x - x, o.y - y) < VAL.isar); // minst en ruta mellan dem som samtalar (steg 3.6.8)
+      if (k >= VAL.isarForsok + 3 || !blocked(s, x, y) && !sittAt(s, x, y) && !stationAt(s, x, y) && !ovanNara && !tatt) return k >= VAL.isarForsok + 3 ? freeNear(s, f.x + 0.5, f.y + 1.5) : { x, y }; // inte på en stubbe vid bordet
     }
   }
   if (plats === 'kol') return { x: f.x + 0.5 + (rnd(s, 'val', p) - 0.5) * 0.6, y: f.y + 1.1 };
@@ -682,6 +696,6 @@ function night(s: State, p: Person, v: Val, a: number) {
   else if (a < ALDER.hjalper) { if (r < VAL.nattBarnSamtal) set(v, 'samtal', 'Mörkt, sitter med de vuxna vid elden'); else set(v, 'sova', 'Barn sover på natten'); }
   else if (r < story) set(v, 'beratta', 'Mörkt, berättar för de andra vid elden');
   else if (r < story + craftW) craft(s, p, v, 'Mörkt, gör handarbete vid elden');
-  else if (r < VAL.nattSamtal) set(v, 'samtal', 'Mörkt, umgås vid elden');
+  else if (r < VAL.nattSamtal) { set(v, 'samtal', 'Mörkt, umgås vid elden'); v.dur = (VAL.nattPrat + rnd(s, 'val', p) * VAL.nattPratSpann) * MIN; } // en stund, sedan går man en bit till nästa samtal
   else set(v, 'vila', 'Mörkt, vilar vid elden');
 }

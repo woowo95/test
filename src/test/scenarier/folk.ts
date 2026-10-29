@@ -489,6 +489,7 @@ SCENARIER.barnutbrott = {
     const s = createState(9, START);
     const barn = [nyInvanare(s, 'm', 4), nyInvanare(s, 'k', 5), nyInvanare(s, 'm', 6), nyInvanare(s, 'k', 7), nyInvanare(s, 'm', 8)];
     for (const c of barn) SIM.think(c, 'Sorg', -0.5, s.now, 12 * DAY);
+    tandEld(s); // elden brinner från början: scenariot gäller barnen, inte om flintan tar fyr i tid (2,5 % per försök)
     kor(s, 12 * 24);
     const BARNENS = ['skrika', 'trotsa', 'puttas', 'rymma'], VUXNAS = Object.keys(SIM.UTBROTT).filter(k => !BARNENS.includes(k));
     const slag = Object.keys(s.stat ?? {}).filter(k => k.startsWith('utb_') && !k.startsWith('utb_sonder') && k !== 'utb_barn').map(k => k.slice(4));
