@@ -1,5 +1,5 @@
 import { balans } from './balans';
-import { ALDER, REL, ageOf, alive, byId, count, living, log } from './folk';
+import { ALDER, REL, ageOf, alive, byId, count, isParent, living, log, relKey } from './folk';
 import { ACTS, Act, slagIkon } from './handlingar';
 import { TAGS } from './seder';
 import { kronika } from './historik';
@@ -29,6 +29,9 @@ export const BERATT = balans('beratt', {
   drag: 4, // beskrivningen (steg 3.9.2) nämner en egenskap som ligger så här långt från mitten (10) eller mer
   smak: 0.4, // ... och en smak (tycke, -1 till 1) som är så här stark eller starkare
   rykte: 1.5, // ... och vad byn tycker om hen, när intrycken tillsammans är så här starka
+  skon: 5, // skönheten står alltid med (steg 3.9.7) när den ligger så här långt från mitten (10) eller mer
+  aldstBy: 4, // den äldsta i byn nämns när byn har minst så här många invånare
+  mycket: 0.6, // beskrivningen får en mening till när minst fem delar (de fasta med) sticker ut så här mycket (vikt 0–1)
   // mästerverken och de usla sakerna (steg 3.9.4)
   glad: 0.7, // göraren var glad med humöret så här högt ...
   ledsen: 0.35, // ... och nedstämd så här lågt
@@ -270,6 +273,126 @@ const MDEF = {
     'Det som formade {honom} mest var när {hen} {minne}, {vid} år gammal.',
     'Ingen som var där har glömt när {hen} {minne}. {Hen} var {vid} år.',
     '{Hen} talar sällan om det, men {hen} {minne} när {hen} var {vid}.',
+  ],
+  // vem hen är i byn (steg 3.9.7). {ny} = grundade byn på nytt, {kvar} = lever
+  besk_grundare: [
+    'Det var {namn} och de andra första som grundade byn.',
+    '{Hen} var en av dem som slog sig ner här först.',
+    'När byn grundades var {namn} med.',
+    '{Hen} hör till grundarna: {hen} var här när här inte fanns något.',
+    'Byn finns för att {namn} och de andra slog sig ner vid sjön.',
+    '{namn} minns hur det var innan byn fanns, för {hen} var med och grundade den.',
+    'De första stigarna här trampade {namn}.',
+    '{Hen} var här från början och såg byn växa fram.',
+    { t: '{namn} hittade den tomma boplatsen och grundade byn på nytt.', om: f => f.ny === true },
+    { t: 'Byn hade stått tom tills {namn} kom och grundade den på nytt.', om: f => f.ny === true },
+  ],
+  // skönheten: {del} = det vackra eller fula som syns ('förföriska ögon')
+  besk_vacker: [
+    '{namn} har {del}, och det vet {hen} om.',
+    'Folk ser efter {namn}: {hen} har {del}.',
+    'Det man minns hos {namn} är att {hen} har {del}.',
+    'Med {del} är {namn} den vackraste i byn, säger många.',
+    '{Hen} har {del}, och fler än en har tappat tråden i samtalet med {honom}.',
+    'Ingen kan låta bli att se på {namn}; {hen} har {del}.',
+    '{namn} är vacker, med {del}.',
+    'Byn talar om att {namn} har {del}.',
+  ],
+  besk_ful: [
+    '{namn} har {del}, och barnen skrattar bakom {hans} rygg.',
+    'Det första man ser hos {namn} är att {hen} har {del}.',
+    '{Hen} är ingen skönhet: {hen} har {del}.',
+    'Med {del} är {namn} lätt att känna igen på långt håll.',
+    '{namn} har {del}, men {hen} bryr sig inte om vad de andra säger.',
+    'Ingen kallar {namn} vacker; {hen} har {del}.',
+    'Man vänjer sig vid att {hen} har {del}, säger de som känner {honom}.',
+    '{Hen} har {del}, och det har {hen} fått höra.',
+  ],
+  // {ar} = åldern
+  besk_aldst: [
+    'Ingen i byn är äldre än {namn}, som är {ar} år.',
+    '{namn} är äldst i byn, {ar} år gammal.',
+    'Med sina {ar} år är {namn} byns äldsta.',
+    '{Hen} har levt längre än alla andra här: {ar} år.',
+    'När de unga vill veta hur det var förr frågar de {namn}. {Hen} är {ar} år och äldst i byn.',
+    'Byns äldsta är {namn}, {ar} år.',
+    '{ar} år har {namn} levt, längre än någon annan i byn.',
+    'Ingen har sett så många vintrar som {namn}: {ar} stycken.',
+  ],
+  // {vad} = det hen är känd som ('mästare i snickeri', 'byns första ledare')
+  besk_titel: [
+    '{Hen} är känd som {vad}.',
+    'Byn vet att {hen} är {vad}.',
+    'Alla vet vem {namn} är: {vad}.',
+    'Det sägs om {namn} att {hen} är {vad}.',
+    '{namn} är {vad}, och det är byn stolt över.',
+    'Fråga i byn, och du får höra att {hen} är {vad}.',
+    'Bland mycket annat är {hen} {vad}.',
+    'Byn minns {honom} som {vad}.',
+  ],
+  // {vad} = det hen uppfann ('lerkrukor och rep')
+  besk_uppfann: [
+    'Det var {namn} som kom på {vad}.',
+    '{Hen} uppfann {vad}, och byn har haft nytta av det sedan dess.',
+    'Utan {namn} hade byn inte haft {vad}.',
+    '{vad}: det var {namn} som kom på det.',
+    'Byn har {honom} att tacka för {vad}.',
+    'En dag kom {namn} på {vad}. Ingen hade tänkt på det förut.',
+    '{Hen} är den som kom på {vad}.',
+    'Det var i {hans} huvud som {vad} föddes.',
+  ],
+  // {vad} = det hen gjorde ('tände byns första eld och fällde byns första träd')
+  besk_bedrift: [
+    'Byn minns att {hen} {vad}.',
+    'Det var {namn} som {vad}.',
+    'En gång var det {namn} som {vad}, och det berättar man om än.',
+    'Vid elden berättar man hur {namn} {vad}.',
+    '{Hen} {vad}, och ingen har glömt det.',
+    'Det är {namn} man tänker på när man minns vem som {vad}.',
+    'Barnen får höra hur {namn} {vad}.',
+    'Byn glömmer inte att {hen} {vad}.',
+  ],
+  // den döda som stod hen närmast: {dod} = namnet, {vem} = 'mor', 'son', 'hustru', 'vän' …
+  besk_sorjer: [
+    '{Hen} sörjer {dod}, {hans} {vem}.',
+    'Sedan {dod} dog går {hen} tyst omkring.',
+    '{Hen} saknar {dod}, {hans} {vem}, och det syns.',
+    'Döden tog {dod} ifrån {honom}, och sorgen sitter kvar.',
+    'Ibland ser man {honom} stå vid graven efter {dod}.',
+    '{dod}, {hans} {vem}, är död, och {hen} har inte kommit över det.',
+    'Om kvällarna tänker {hen} på {dod}.',
+    'Det är tomt för {honom} sedan {dod} gick bort.',
+  ],
+  besk_saknar: [
+    '{Hen} minns {dod}, {hans} {vem}, som är död.',
+    'Ibland talar {hen} om {dod}, {hans} {vem}.',
+    '{Hen} har förlorat {dod}, {hans} {vem}.',
+    '{dod}, {hans} {vem}, lever inte längre, men {hen} har inte glömt.',
+    'Ibland tänker {hen} på {dod}.',
+    '{Hen} bär minnet av {dod} med sig.',
+    'Det var länge sedan {dod} dog, men {hen} minns.',
+    '{Hen} har sett {dod}, {hans} {vem}, dö.',
+  ],
+  // vapnet hen föredrar: {vad} = vapnet ('flintkniv', 'bara händerna')
+  besk_vapenGilla: [
+    'I strid tar {hen} helst {vad}.',
+    '{Hen} litar mest på {vad} när det blir bråk.',
+    'Ge {honom} {vad}, och {hen} är inte rädd för något.',
+    'Med {vad} i handen känner {hen} sig trygg.',
+    '{Hen} har lärt sig slåss med {vad}.',
+    'Blir det strid griper {hen} efter {vad}.',
+    '{vad} är {hans} vapen.',
+    'Ingen hanterar {vad} som {namn}.',
+  ],
+  besk_vapenOgilla: [
+    '{Hen} litar inte på {vad} i strid.',
+    'Med {vad} har {hen} aldrig haft tur.',
+    '{Hen} lämnar helst {vad} åt andra när det blir bråk.',
+    'Efter det som hänt tar {hen} aldrig {vad} till en strid.',
+    '{vad} känns fel i {hans} hand.',
+    '{Hen} har förlorat för många gånger med {vad}.',
+    'Ge inte {honom} {vad}; {hen} vill hellre ha något annat.',
+    '{Hen} slåss sämre med {vad} än med något annat.',
   ],
   besk_inget: [
     'Mer än så vet byn inte om {honom} än.',
@@ -874,7 +997,7 @@ export function binamnInfo(p: Person) {
 // ---------- personen (steg 3.9.2) ----------
 // orden för en egenskap som sticker ut: [hög, låg]
 const DRAG: Record<Stat, [string, string]> = {
-  styrka: ['stark', 'klen'], uthallighet: ['seg', 'snart trött'], intelligens: ['klok', 'trög i tanken'],
+  styrka: ['stark', 'klen'], uthallighet: ['uthållig', 'lätt att trötta ut'], intelligens: ['klok', 'trög i tanken'],
   nyfikenhet: ['nyfiken på allt', 'rädd för det nya'], karisma: ['talför', 'tystlåten'], skonhet: ['vacker', 'ful'],
   flit: ['arbetsam', 'bekväm av sig'], empati: ['varmhjärtad', 'kall'], mod: ['modig', 'rädd av sig'],
   minne: ['minnesgod', 'glömsk'], smidighet: ['vig', 'klumpig'], aggression: ['hetlevrad', 'fridsam'],
@@ -882,8 +1005,10 @@ const DRAG: Record<Stat, [string, string]> = {
 const alderOrd = (a: number, sex: 'm' | 'k') => a < ALDER.vuxen ? (sex === 'm' ? 'pojke' : 'flicka') : a < 25 ? (sex === 'm' ? 'ung man' : 'ung kvinna') : a < ALDER.gammal ? (sex === 'm' ? 'man' : 'kvinna') : (sex === 'm' ? 'gammal man' : 'gammal kvinna');
 const liten = (t: string) => t.charAt(0).toLowerCase() + t.slice(1);
 // de egenskaper som skiljer sig mest från det vanliga (10), högst två, och bara de som sticker ut (minst BERATT.drag)
-function personDrag(p: Person) {
-  return STATS.map(k => [k, p.pot[k] - 10] as const).filter(([, d]) => Math.abs(d) >= BERATT.drag)
+// skönheten hos en vuxen som sticker ut mycket har en egen del i beskrivningen (steg 3.9.7)
+const skonDel = (s: State, p: Person) => Math.abs(p.pot.skonhet - 10) >= BERATT.skon && ageOf(p, s.now) >= ALDER.vuxen;
+function personDrag(s: State, p: Person) {
+  return STATS.map(k => [k, p.pot[k] - 10] as const).filter(([k, d]) => Math.abs(d) >= BERATT.drag && !(k === 'skonhet' && skonDel(s, p)))
     .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1])).slice(0, 2).map(([k, d]) => DRAG[k][d > 0 ? 0 : 1]);
 }
 // smaken som sticker ut mest: [text, tycke] eller inget
@@ -894,6 +1019,7 @@ function smakText(p: Person) {
   const [k, v] = bast, slag = k.slice(0, 2), vad = k.slice(2);
   if (slag === 'a:' && ACTS[vad as Act]) return { slag: 'arbete', vad: liten(ACTS[vad as Act].namn), v };
   if (slag === 'm:') return { slag: 'mat', vad: liten(sakNamn(vad)), v };
+  if (slag === 'v:') return { slag: 'vapen', vad: vad === 'hand' ? 'bara händerna' : liten(sakNamn(vad)), v }; // vapnet hen föredrar (steg 3.7.10)
   return undefined;
 }
 // upplevelsen som gjorde mest med hen
@@ -902,36 +1028,91 @@ function starkastUpp(p: Person) {
   for (const u of p.upp ?? []) { if (u.k === 'skilsmassa' || u.k === 'gral') continue; const v = Object.values(u.e).reduce((a, x) => a + Math.abs(x ?? 0), 0); if (v > bv) { bv = v; bast = u; } }
   return bast;
 }
-// 2–4 meningar om vem hen är: egenskaperna och åldern, yrket och vad byn tycker, de viktigaste relationerna och smaken
-// eller minnet. Texten väljs ur personens id, så den är densamma tills något i den ändras
+// Vem hen är i byn (steg 3.9.7): beskrivningen byggs av delar ur registret BESK_DELAR. Varje del har ett villkor (vikt 0
+// = gäller inte) och hur mycket den sticker ut (vikt upp till 1). Egenskaperna och åldern kommer alltid först; de fasta
+// delarna (grundare, skönheten, äldst i byn) står alltid med när de gäller, och sedan tas de som sticker ut mest. Texten
+// blir 2–4 meningar, och en mening längre (5) när det finns mycket att säga. Delarna står i registrets ordning
+interface Besk { s: State; p: Person; f: Fyllning; nyck: (i: number) => number }
+interface BeskDel { id: string; fast?: true; vikt: (b: Besk) => number; text: (b: Besk) => string }
+const mening = (b: Besk, m: MallId, i: number) => { const t = fyll(valjVariant(b.s, m, b.nyck(i), b.f, 0), b.f); return t.charAt(0).toUpperCase() + t.slice(1); };
+// de viktiga händelserna i hens liv (p.fame): uppfinningarna för sig, namnet byn gav och den höga åldern står i egna delar
+const FAME_EGEN = /^(Uppfann|Kallades|Blev \d+ år)/;
+const TITEL = /^(Mästare i|Byns första ledare|Mor till)/; // det hen är; resten är det hen gjorde ('Tände byns första eld')
+// den döda som stod hen närmast: [personen, vad hen var för hen, sörjer hen nu]
+function saknad(s: State, p: Person) {
+  let bast: [Person, string, boolean] | undefined;
+  for (const q of s.people) {
+    if (q.died === undefined || q.id === p.id) continue;
+    const r = s.rels[relKey(p.id, q.id)], sorj = p.thoughts.some(t => t.text === `Sörjer ${q.name}` && t.until > s.now);
+    const vem = isParent(q, p) ? (q.sex === 'k' ? 'mor' : 'far') : isParent(p, q) ? (q.sex === 'k' ? 'dotter' : 'son')
+      : r?.gift !== undefined || r?.par !== undefined ? (q.sex === 'k' ? 'hustru' : 'man') : sorj ? 'vän' : undefined;
+    if (vem && (!bast || (sorj && !bast[2]) || (sorj === bast[2] && q.died > bast[0].died!))) bast = [q, vem, sorj];
+  }
+  return bast;
+}
+const SKONA: Record<'vacker' | 'ful', string[]> = {
+  vacker: ['förföriska ögon', 'ett leende som får folk att stanna upp', 'ett ansikte som folk vänder sig om efter', 'blankt, tjockt hår', 'en röst som man gärna lyssnar på', 'mörka, djupa ögon', 'en hy som lyser i solen', 'ett skratt som smittar'],
+  ful: ['en näsa som pekar åt sidan', 'ett ansikte som barnen stirrar på', 'tänder som spretar åt alla håll', 'en käke som en sten', 'små, misstänksamma ögon', 'en röst som skär i öronen', 'öron som står ut', 'en gång som en anka'],
+};
+export const BESK_DELAR: BeskDel[] = [
+  { id: 'grundare', fast: true, vikt: b => b.p.grundare ? 1 : 0, text: b => mening(b, 'besk_grundare', 10) },
+  { id: 'skonhet', fast: true, vikt: b => skonDel(b.s, b.p) ? 1 : 0, text: b => {
+    const l = SKONA[b.p.pot.skonhet > 10 ? 'vacker' : 'ful'];
+    b.f.del = l[Math.floor(hash(b.s.seed, b.p.id, 11) * l.length)];
+    return mening(b, b.p.pot.skonhet > 10 ? 'besk_vacker' : 'besk_ful', 11);
+  } },
+  { id: 'aldst', fast: true, vikt: b => {
+    const l = living(b.s);
+    if (!alive(b.p) || l.length < BERATT.aldstBy || ageOf(b.p, b.s.now) < ALDER.gammal) return 0;
+    return l.every(q => q === b.p || q.born > b.p.born) ? 1 : 0;
+  }, text: b => { b.f.ar = Math.floor(ageOf(b.p, b.s.now)); return mening(b, 'besk_aldst', 12); } },
+  { id: 'namn', vikt: b => b.f.binamn ? 0.9 : b.f.yrke && b.f.rykte ? 0.85 : b.f.rykte ? 0.8 : b.f.yrke ? 0.5 : 0,
+    text: b => mening(b, b.f.binamn ? 'besk_binamn' : b.f.yrke && b.f.rykte ? 'besk_yrkeRykte' : b.f.yrke ? 'besk_yrke' : 'besk_rykte', 1) },
+  { id: 'titel', vikt: b => titlar(b.p).length ? 0.8 : 0, text: b => { b.f.vad = liten(titlar(b.p)[0]); return mening(b, 'besk_titel', 13); } },
+  { id: 'uppfann', vikt: b => uppfann(b.p).length ? 0.75 : 0, text: b => { b.f.vad = och(uppfann(b.p).slice(-3)); return mening(b, 'besk_uppfann', 14); } },
+  { id: 'bedrift', vikt: b => bedrifter(b.p).length ? 0.7 : 0, text: b => { b.f.vad = ihop(bedrifter(b.p).slice(-2).map(liten)); return mening(b, 'besk_bedrift', 15); } },
+  { id: 'rel', vikt: b => b.f.partner || b.f.van ? 0.6 : 0, text: b => mening(b, b.f.partner && b.f.van ? 'besk_partnerVan' : b.f.partner ? 'besk_partner' : 'besk_van', 2) },
+  { id: 'fiende', vikt: b => b.f.fiende ? 0.65 : 0, text: b => mening(b, 'besk_fiende', 3) },
+  { id: 'saknad', vikt: b => { const d = alive(b.p) ? saknad(b.s, b.p) : undefined; return d ? (d[2] ? 0.85 : 0.45) : 0; }, text: b => {
+    const [q, vem, sorj] = saknad(b.s, b.p)!;
+    b.f.dod = q.name; b.f.vem = vem;
+    return mening(b, sorj ? 'besk_sorjer' : 'besk_saknar', 16);
+  } },
+  { id: 'smak', vikt: b => { const m = smakText(b.p); return m ? 0.3 + 0.3 * Math.abs(m.v) : 0; }, text: b => {
+    const m = smakText(b.p)!;
+    b.f.vad = m.vad;
+    return mening(b, `besk_${m.slag}${m.v > 0 ? 'Gilla' : 'Ogilla'}` as MallId, 4);
+  } },
+  { id: 'minne', vikt: b => starkastUpp(b.p) ? 0.4 : 0, text: b => {
+    const u = starkastUpp(b.p)!;
+    b.f.minne = liten(upplevelseText(u)); b.f.vid = u.a;
+    return mening(b, 'besk_minne', 5);
+  } },
+];
+const titlar = (p: Person) => p.fame.filter(x => TITEL.test(x));
+const uppfann = (p: Person) => p.fame.filter(x => x.startsWith('Uppfann ')).map(x => x.slice(8));
+const bedrifter = (p: Person) => p.fame.filter(x => !FAME_EGEN.test(x) && !TITEL.test(x));
+// två bedrifter med samma verb säger verbet en gång: 'byggde byns första bord och byns första slaktbänk'
+const ihop = (l: string[]) => l.length === 2 && l[0].split(' ')[0] === l[1].split(' ')[0] ? `${l[0]} och ${l[1].split(' ').slice(1).join(' ')}` : och(l);
 export function beskrivning(s: State, p: Person) {
-  const a = ageOf(p, s.now), drag = personDrag(p), Hen = hen(p);
-  const f: Fyllning = { namn: p.name, hen: Hen, honom: p.sex === 'm' ? 'honom' : 'henne', hans: p.sex === 'm' ? 'hans' : 'hennes', alder: alderOrd(a, p.sex), drag1: drag[0], drag2: drag[1], ung: a < ALDER.vuxen, gammal: a >= ALDER.gammal };
-  const ut: string[] = [];
-  const nyck = (i: number) => p.id * 8 + i;
-  ut.push(fyll(valjVariant(s, drag.length >= 2 ? 'besk_drag2' : drag.length ? 'besk_drag1' : 'besk_drag0', nyck(0), f, 0), f));
-  // yrket och vad byn tycker
+  const a = ageOf(p, s.now), drag = personDrag(s, p), Hen = hen(p);
+  const f: Fyllning = { namn: p.name, hen: Hen, honom: p.sex === 'm' ? 'honom' : 'henne', hans: p.sex === 'm' ? 'hans' : 'hennes', alder: alderOrd(a, p.sex), drag1: drag[0], drag2: drag[1], ung: a < ALDER.vuxen, gammal: a >= ALDER.gammal, kvar: alive(p), ny: p.grundare === 'ny' };
+  const b: Besk = { s, p, f, nyck: i => p.id * 8 + i };
+  // yrket och vad byn tycker, och relationerna
   const by = samlatIntryck(s, p.id)[0];
   f.yrke = p.tag && p.tag !== 'Dagdrivare' ? liten(p.tag) : undefined;
   f.rykte = by && by[1] >= BERATT.rykte ? INTRYCK[by[0]].namn : undefined;
   f.gott = by ? INTRYCK[by[0]].tecken > 0 : undefined;
   f.binamn = p.binamn?.namn;
-  if (f.binamn) ut.push(fyll(valjVariant(s, 'besk_binamn', nyck(1), f, 0), f));
-  else if (f.yrke && f.rykte) ut.push(fyll(valjVariant(s, 'besk_yrkeRykte', nyck(1), f, 0), f));
-  else if (f.yrke) ut.push(fyll(valjVariant(s, 'besk_yrke', nyck(1), f, 0), f));
-  else if (f.rykte) ut.push(fyll(valjVariant(s, 'besk_rykte', nyck(1), f, 0), f));
-  // relationerna: partnern, bästa vännen, ärkefienden, mentorn
   const namnPa = (id?: number) => { const q = id !== undefined ? byId(s, id) : undefined; return q ? q.name : undefined; };
   f.partner = alive(p) ? namnPa(p.partner) : undefined; f.van = namnPa(p.bast); f.fiende = namnPa(p.arke); f.mentor = namnPa(p.mentor);
-  const rel = f.partner && f.van ? 'besk_partnerVan' : f.partner ? 'besk_partner' : f.van ? 'besk_van' : undefined;
-  if (rel) ut.push(fyll(valjVariant(s, rel, nyck(2), f, 0), f));
-  if (f.fiende) ut.push(fyll(valjVariant(s, 'besk_fiende', nyck(3), f, 0), f));
-  // smaken, annars det starkaste minnet
-  const sm = smakText(p), u = starkastUpp(p);
-  if (ut.length < 4 && sm) { f.vad = sm.vad; ut.push(fyll(valjVariant(s, `besk_${sm.slag}${sm.v > 0 ? 'Gilla' : 'Ogilla'}` as MallId, nyck(4), f, 0), f)); }
-  if (ut.length < 4 && u) { f.minne = liten(upplevelseText(u)); f.vid = u.a; ut.push(fyll(valjVariant(s, 'besk_minne', nyck(5), f, 0), f)); }
-  if (ut.length < 2) ut.push(fyll(valjVariant(s, 'besk_inget', nyck(6), f, 0), f));
-  return ut.slice(0, 4).join(' ');
+  const delar = BESK_DELAR.map((d, i) => ({ d, i, v: d.vikt(b) })).filter(x => x.v > 0);
+  const fasta = delar.filter(x => x.d.fast), andra = delar.filter(x => !x.d.fast).sort((x, y) => y.v - x.v || x.i - y.i);
+  const max = Math.max(fasta.length, delar.filter(x => x.v >= BERATT.mycket).length >= 5 ? 4 : 3);
+  const valda = [...fasta, ...andra].slice(0, max).sort((x, y) => x.i - y.i);
+  const ut = [mening(b, drag.length >= 2 ? 'besk_drag2' : drag.length ? 'besk_drag1' : 'besk_drag0', 0), ...valda.map(x => x.d.text(b))];
+  if (ut.length < 2) ut.push(mening(b, 'besk_inget', 6));
+  return ut.join(' ');
 }
 
 // ---------- krönikan (steg 3.9.3) ----------

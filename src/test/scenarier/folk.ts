@@ -1267,13 +1267,50 @@ SCENARIER.beskrivning = {
     const meningar = (x: string) => x.split(/(?<=[.!?])\s+(?=[A-ZÅÄÖ])/).length;
     // alla i en by: ingen tom plats, ingen mall kvar, 2–4 meningar
     const alla = living(t).map(x => SIM.beskrivning(t, x));
-    const hela = alla.every(x => !/[{}]|undefined|  | \.|^\s*$/.test(x) && meningar(x) >= 2 && meningar(x) <= 4);
+    const hela = alla.every(x => !/[{}]|undefined|  | \.|^\s*$/.test(x) && meningar(x) >= 2 && meningar(x) <= 5);
     return [
       [`de egenskaper som sticker ut står med (${b1})`, /stark/.test(b1) && /kall/.test(b1)],
       ['partnern, vännen och ovännen nämns', b1.includes(q.name) && b1.includes(v.name) && b1.includes(o.name)],
       ['texten står kvar när tiden går', b1 === b2],
       [`namnet byn gav står med (${b3})`, b3.includes('Björnen')],
       [`alla i byn får en hel text (${alla[0]})`, hela],
+    ];
+  },
+};
+
+SCENARIER.vemibyn = {
+  text: 'Steg 3.9.7: beskrivningen byggs av delar ur registret BESK_DELAR, med ett villkor och hur mycket delen sticker ut: grundare av byn, skönheten och äldst i byn står alltid med när de gäller; sedan namnet byn gav, yrket och ryktet, det hen är känd som, uppfinningarna, bedrifterna, relationerna, den döda hen saknar, smaken (också vapnet) och minnet. 2–4 meningar, 5 när det finns mycket att säga',
+  kor: () => {
+    const t = createState(13, START);
+    klockan(t, 12);
+    const meningar = (x: string) => x.split(/(?<=[.!?])\s+(?=[A-ZÅÄÖ])/).length;
+    const hel = (x: string) => !/[{}]|undefined|NaN|  | \.|^\s*$/.test(x) && /[.!]$/.test(x);
+    const [p] = living(t);
+    for (const k of SIM.STATS) p.pot[k] = 10;
+    p.pot.skonhet = 19; p.fame.push('Uppfann rep');
+    const b1 = SIM.beskrivning(t, p);
+    // en gammal, ful nybyggare som uppfunnit, gjort och förlorat mycket
+    const g = nyInvanare(t, 'm', 70), mor = nyInvanare(t, 'k', 30);
+    for (const k of SIM.STATS) g.pot[k] = 10;
+    g.pot.skonhet = 2; g.pot.styrka = 18;
+    g.fame.push('Uppfann rep', 'Uppfann lerkrukor', 'Tände byns första eld', 'Mästare i snickeri');
+    g.smak = { 'v:kniv': 0.9 };
+    const barn = nyInvanare(t, 'k', 20); barn.father = g.id;
+    barn.died = t.now - HOUR; SIM.think(g, `Sörjer ${barn.name}`, -0.3, t.now, 10 * DAY);
+    const b2 = SIM.beskrivning(t, g);
+    void mor;
+    const alla = living(t).map(x => SIM.beskrivning(t, x));
+    const varianter = ['besk_grundare', 'besk_vacker', 'besk_ful', 'besk_aldst', 'besk_titel', 'besk_uppfann', 'besk_bedrift', 'besk_sorjer', 'besk_saknar', 'besk_vapenGilla', 'besk_vapenOgilla']
+      .every(m => (SIM.BERATTELSER as Record<string, unknown[]>)[m].length >= 8);
+    return [
+      [`registret har delarna (${SIM.BESK_DELAR.length})`, SIM.BESK_DELAR.length >= 12 && SIM.BESK_DELAR.filter(d => d.fast).length === 3],
+      [`grundaren, skönheten och det som sticker ut mest står med (${b1})`, p.grundare === true && /grund|först|början|stigarna|slog sig ner/.test(b1) && /rep/.test(b1) && meningar(b1) === 4],
+      ['skönheten är en egen del, inte ett ord bland egenskaperna', !/vacker\b.*vacker\b/.test(b1)],
+      [`den äldsta och det hen är känd som, och en femte mening när mycket sticker ut (${b2})`, /70/.test(b2) && /mästare/.test(b2) && meningar(b2) === 5],
+      ['den döda hen sörjer står med före smaken', b2.includes(barn.name)],
+      ['seg heter nu uthållig', !alla.some(x => /\bseg\b|snart trött/.test(x))],
+      [`alla i byn får en hel text med 2–5 meningar (${alla.length})`, alla.every(x => hel(x) && meningar(x) >= 2 && meningar(x) <= 5)],
+      ['minst åtta varianter i varje ny mall', varianter],
     ];
   },
 };

@@ -142,6 +142,7 @@ export interface Jaktforsok {
 export interface Person {
   id: number; name: string; sex: 'm' | 'k';
   born: number; died?: number; cause?: string; left?: number;
+  grundare?: true | 'ny'; // grundade byn, eller grundade den på nytt (steg 3.9.7)
   mother?: number; father?: number; partner?: number;
   rngs?: Record<string, number>; // var i sina egna slumpföljder personen är (slump.ts)
   pot: Record<Stat, number>; skill: Record<Skill, number>;

@@ -23,6 +23,7 @@ function skapaBy(seed: number, now: number, storlek: { W: number; H: number }): 
   const adults: [string, number][] = [['m', 30], ['k', 27], ['m', 23], ['k', 21]];
   for (const [sex, age] of adults) s.people.push(newPerson(s, sex as 'm' | 'k', now - (age + rnd(s, 'folk')) * DAY));
   const [a, b, c, d] = s.people;
+  for (const p of s.people) p.grundare = true;
   pair(s, a, b, true); pair(s, c, d, true);
   s.people.push(newPerson(s, rnd(s, 'folk') < 0.5 ? 'm' : 'k', now - (4 + rnd(s, 'folk') * 0.5) * DAY, b, a));
   // startfärdigheter efter ålder

@@ -176,6 +176,7 @@ function immigrate(s: State, alone: boolean) {
 // alla är borta: en vandrare hittar den övergivna boplatsen och grundar byn på nytt
 function refound(s: State) {
   const p = immigrate(s, true);
+  p.grundare = 'ny';
   count(s, 'atergrundad'); kronikaBer(s, 'k_atergrundad', p.id, personFalt(p));
   log(s, `${p.name} hittade den övergivna boplatsen och grundade byn på nytt.`, 'world', [p.id]);
 }
