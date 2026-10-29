@@ -1337,7 +1337,28 @@ const LARM_BUBBLA = ['kkkkkkk.', 'kkkwkkk.', 'kkkwkkk.', 'kkkwkkk.', 'kkkkkkk.',
 const DOD_SIDA = ['........', '........', '........', '.bb.....', 'bkBbbbb.', 'bBBBBBBw', '.bBBrBb.', '..bbbb..'];
 const DOD_HANGER = ['..b.b...', '..bbb...', '..bBb...', '.bBBBb..', '.bBBBb..', '.bBBBb..', '..bkb...', '..b.b...'];
 const DOD_BLOD = ['........', '........', '.bb.....', 'bkBbbbb.', 'bBBBBBBw', '.bbbbbb.', '.rrrrr..', 'rrrrrrr.'];
+// trädörren (steg 3.7.21), 16 × 16 punkter som en vägg
+const DORR_REP = [
+  'oooooooooooooooo', 'oJjoJjoJjoJjoJjo', 'oJjoJjoJjoJjoJjo', 'oyyyyyyyyyyyyyyo', 'oJjoJjoJjoJjoJjo', 'oJjoJjoJjoJjoJjo', 'oJjoJjoJjoJjoJjo', 'oJjoJjoJjoJjoJjo',
+  'oJjoJjoJjoJjkkjo', 'oJjoJjoJjoJjkkjo', 'oJjoJjoJjoJjoJjo', 'oJjoJjoJjoJjoJjo', 'oyyyyyyyyyyyyyyo', 'oJjoJjoJjoJjoJjo', 'oJjoJjoJjoJjoJjo', 'oooooooooooooooo',
+];
+const DORR_Z = [
+  'oooooooooooooooo', 'oJjJjJjJjJjJjJjo', 'oWWWWWWWWWWWWWWo', 'oJjJjJjJjJjJWWjo', 'oJjJjJjJjJjWWJjo', 'oJjJjJjJjJWWjJjo', 'oJjJjJjJjWWJjJjo', 'oJjJjJjJWWjJjJjo',
+  'oJjJjJjWWJjJjkko', 'oJjJjJWWjJjJjkko', 'oJjJjWWJjJjJjJjo', 'oJjJWWjJjJjJjJjo', 'oJjWWJjJjJjJjJjo', 'oWWWWWWWWWWWWWWo', 'oJjJjJjJjJjJjJjo', 'oooooooooooooooo',
+];
+const DORR_BOM = [
+  'oooooooooooooooo', 'oJjoJjoJjoJjoJjo', 'oJjoJjoJjoJjoJjo', 'oJjoJjoJjoJjoJjo', 'oJjoJjoJjoJjoJjo', 'oJjoJjoJjoJjoJjo', 'ssJjoJjoJjoJjoss', 'oSSSSSSSSSSSSSSo',
+  'oSSSSSSSSSSSSSSo', 'ssJjoJjoJjoJjoss', 'oJjoJjoJjoJjoJjo', 'oJjoJjoJjoJjoJjo', 'oJjoJjoJjoJjoJjo', 'oJjoJjoJjoJjoJjo', 'oJjoJjoJjoJjoJjo', 'oooooooooooooooo',
+];
+const DORR_L = { J: 'jord2', j: 'jord1', W: 'jord3', y: 'senap2', k: 'kol0', S: 'jord3', s: 'skiffer1' };
 const VAL = [
+  { id: 'tradorr', namn: 'Trädörren', vad: 'Ny dörr (steg 3.7.21), 16 × 16 punkter, i husets dörröppning. Den stängs när någon gömmer sig i huset, och vargarna kommer inte in. Till vänster i rätt storlek, till höger tre gånger större. I spelet nu: plankor med två rader rep (platshållare).', typ: 'tre',
+    versioner: [
+      { text: 'Lodräta plankor med mörka springor, bundna med två rader rep och ett handtag av trä.', ...LED_M(DORR_REP, DORR_L) },
+      { text: 'Plankor med en ljus regel upptill och nedtill och en sned regel emellan, som en Z-dörr.', ...LED_M(DORR_Z, DORR_L) },
+      { text: 'Plankor med en tjock bom av trä tvärs över, i två hållare av sten, som när dörren är stängd.', ...LED_M(DORR_BOM, DORR_L) },
+    ] },
+
   { id: 'a_smyga', namn: 'Att smyga', vad: 'Ny symbol över huvudet (Björn efter v159), 8 × 8 punkter som de andra handlingarna: jägaren smyger fram mot en kanin. I spelet nu: version 1 (platshållare).', typ: 'tre',
     versioner: [
       { text: 'En fot på tå med två tysta prickar.', ...SYM8_M(SMYG_TA, AKT_L) },
