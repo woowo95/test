@@ -110,11 +110,12 @@ const basketsWanted = (s: State) => clamp(Math.floor(living(s).filter(p => ageOf
 // det är), slakt = det ett djur ger slaktat eller rensat, rep = chansen per djur att senorna blir ett rep, timme = djur per
 // timme, maxTim = arbetet varar högst så här många timmar, act = arbetet där det görs (vid slaktbänken), kniv = det kräver en kniv (och att man kan tekniken), minDel = det görs när
 // det finns minst 1 / minDel djur, stat = räknas (i djur), forsta = loggen första gången. En ny art blir en rad här (fler
-// fiskar: steg 7.4.3). Receptet för det ett djur ger står också i saker.ts (skaffa.av, för värdet); scenariot "djur"
-// kontrollerar att de stämmer med raden här.
-export interface Djurart { sak: string; mat: number; slakt: Record<string, number>; rep: number; timme: number; maxTim: number; act: Act; kniv?: true; minDel: number; stat: string; forsta: string }
+// fiskar: steg 7.4.3). Allt är hela saker (steg 3.6.13). Värdet av det ett djur ger: varde = hur djurets värde delas på
+// det slaktade, i delar per styck (kött, ben och skinn har inget recept i saker.ts). Utan varde står receptet i saker.ts
+// (skaffa.av, som fisken av en abborre); scenariot "djur" kontrollerar att de stämmer med raden här.
+export interface Djurart { sak: string; mat: number; slakt: Record<string, number>; varde?: Record<string, number>; rep: number; timme: number; maxTim: number; act: Act; kniv?: true; minDel: number; stat: string; forsta: string }
 export const DJUR = {
-  kanin: { sak: 'vilt', mat: SAKER.vilt!.stack!, slakt: { kott: 2.6, ben: 1, skinn: 1 }, rep: 0.15, timme: 15, maxTim: 2, act: 'slakta', kniv: true, minDel: REDSKAP.slaktMinDel, stat: 'slaktat', forsta: '{namn} slaktade byns första vilt med en flintkniv. Det gav mer kött, ett ben och ett skinn.' },
+  kanin: { sak: 'vilt', mat: SAKER.vilt!.stack!, slakt: { kott: 3, ben: 1, skinn: 1 }, varde: { kott: 4, ben: 1, skinn: 2 }, rep: 0.15, timme: 15, maxTim: 2, act: 'slakta', kniv: true, minDel: REDSKAP.slaktMinDel, stat: 'slaktat', forsta: '{namn} slaktade byns första vilt med en flintkniv. Det gav mer kött, ett ben och ett skinn.' },
   abborre: { sak: 'abborre', mat: 1, slakt: { fisk: 1 }, rep: 0, timme: 30, maxTim: 1, act: 'rensa', minDel: 1, stat: 'rensat', forsta: '{namn} rensade byns första abborre. Den blev fiskkött.' },
 } satisfies Record<string, Djurart>;
 export const DJURARTER: readonly Djurart[] = Object.values(DJUR);
@@ -144,12 +145,13 @@ export function bearbeta(s: State, p: Person, art: Djurart, hours: number) {
   smutsa(s, art.act, n); // slaktbänken blir blodig (smuts.ts)
   if (first) log(s, art.forsta.replace('{namn}', p.name), 'world', [p.id]);
 }
-// så stor del av köttet p får ut av djuret: mer ju bättre hen är på jakt
+// så stor del av köttet p får ut av djuret: mer ju bättre hen är på jakt. Köttet per djur blir ett helt tal (kottAv)
+export const kottAv = (p: Person, m0: number) => Math.max(1, Math.round(m0 * kottFaktor(p)));
 export const kottFaktor = (p: Person) => REDSKAP.kottMin + (REDSKAP.kottMax - REDSKAP.kottMin) * clamp(p.skill.jakt / REDSKAP.kottFull, 0, 1);
 // det som fångats delas upp: köttet och resten är deras som ägde fångsten
 function stycka(s: State, p: Person, art: Djurart, n: number) {
-  const vems = use(s, p, art.sak, n * art.mat), kf = kottFaktor(p);
-  for (const [k, m0] of Object.entries(art.slakt)) { const m = k === 'kott' ? m0 * kf : m0; put(s, k, n * m, addDel({}, vems, m / art.mat)); }
+  const vems = use(s, p, art.sak, n * art.mat);
+  for (const [k, m0] of Object.entries(art.slakt)) { const m = k === 'kott' ? kottAv(p, m0) : m0; put(s, k, n * m, addDel({}, vems, m / art.mat)); }
   return vems;
 }
 

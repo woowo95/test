@@ -222,8 +222,8 @@ export function buildJob(s: State, p: Person): Job | undefined {
   }
   return best;
 }
-// materialet en lagning kräver: en del av det nya (inte avrundat, så att ett trägolv på 0,5 inte kostar 1 att laga)
-const lagKostnad = (M: { n: number }) => M.n / BYGG.lagMatDiv;
+// materialet en lagning kräver: en del av det nya, i hela saker och minst en (steg 3.6.13: inga resurser i decimaler)
+export const lagKostnad = (M: { n: number }) => M.n > 0 ? Math.max(1, Math.floor(M.n / BYGG.lagMatDiv)) : 0;
 // material som fattas på bygget eller lagningen
 export function needOf(b: Bit) {
   const M = MATERIAL[b.m];

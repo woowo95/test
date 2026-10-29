@@ -59,12 +59,13 @@ SCENARIER.djur = {
     setMat(s, {}); setMat(s, { vilt: 3 * KANIN }); setAmount(s, 'ben', 0); setAmount(s, 'skinn', 0); setAmount(s, 'rep', 0);
     const kan = canProcess(s, p, DJUR.kanin);
     bearbeta(s, p, DJUR.kanin, 1);
-    const slakt = Math.abs(amountOf(s, 'kott') - 3 * SLAKT.kott * SIM.kottFaktor(p)) < 1 && amountOf(s, 'vilt') < 1e-9 && Math.abs(amountOf(s, 'ben') - 3) < 1e-9 && Math.abs(amountOf(s, 'skinn') - 3) < 1e-9; // köttet i hela saker (steg 2.10.7)
+    const slakt = amountOf(s, 'kott') === 3 * SIM.kottAv(p, SLAKT.kott) && amountOf(s, 'vilt') < 1e-9 && Math.abs(amountOf(s, 'ben') - 3) < 1e-9 && Math.abs(amountOf(s, 'skinn') - 3) < 1e-9; // köttet i hela saker (steg 2.10.7)
     // senorna blir ibland ett rep, men bara för den som kan tekniken Rep
     const repAv = (kan: boolean) => { let r = 0; for (let i = 0; i < 200; i++) { setMat(s, { vilt: KANIN }); setAmount(s, 'rep', 0); p.tek = { ...p.tek, rep: kan ? 1 : 0 }; bearbeta(s, p, DJUR.kanin, 1); r += amountOf(s, 'rep'); } return r; };
     const medRep = repAv(true), utanRep = repAv(false);
-    // receptet i saker.ts (för värdet) och DJUR (det som händer) säger samma sak: inom 10 %
-    const fran = (art: (typeof DJURARTER)[number]) => Object.entries(art.slakt).reduce((x, [k, n]) => x + (SAKER[k]?.skaffa?.av?.[art.sak] ?? NaN) * n, 0) / art.mat;
+    // receptet i saker.ts (för värdet) och DJUR (det som händer) säger samma sak: inom 10 %. Det som får sitt värde ur
+    // djuret (varde i DJUR, steg 3.6.13) räknas som sin del av djuret
+    const fran = (art: (typeof DJURARTER)[number]) => { const tot = Object.entries(art.slakt).reduce((y, [j, n]) => y + n * (art.varde?.[j] ?? 0), 0); return Object.entries(art.slakt).reduce((x, [k, n]) => x + (art.varde?.[k] ? art.varde[k] / tot * art.mat : SAKER[k]?.skaffa?.av?.[art.sak] ?? NaN) * n, 0) / art.mat; };
     const recept = DJURARTER.map(art => `${art.sak} ${fran(art).toFixed(2)}`).join(', ');
     const receptOk = DJURARTER.every(art => Math.abs(fran(art) - 1) <= 0.1);
     return [
@@ -449,7 +450,7 @@ SCENARIER.slaktbank = {
     // jaktfärdigheten: mer kött för den som jagat mycket
     const kott = (jakt: number) => { p.skill.jakt = jakt; setMat(s, { vilt: 3 * KANIN }); bearbeta(s, p, DJUR.kanin, 1); return amountOf(s, 'kott'); };
     const ny = kott(0), van = kott(REDSKAP.kottFull);
-    const kottOk = Math.abs(ny - 3 * SLAKT.kott * REDSKAP.kottMin) < 1 && Math.abs(van - 3 * SLAKT.kott * REDSKAP.kottMax) < 1 && van > ny && Math.abs(kottFaktor(p) - REDSKAP.kottMax) < 1e-9; // i hela saker (steg 2.10.7)
+    const kottOk = ny === 3 * Math.max(1, Math.round(SLAKT.kott * REDSKAP.kottMin)) && van === 3 * Math.max(1, Math.round(SLAKT.kott * REDSKAP.kottMax)) && van > ny && Math.abs(kottFaktor(p) - REDSKAP.kottMax) < 1e-9; // i hela saker (steg 2.10.7)
     return [
       [`slaktbänken byggs av ${STATION.slaktbankTra} trä på ${h} timmar av den som kan göra en kniv (${byggare})`, klar && enda && ved0 - amountOf(s, 'ved') >= STATION.slaktbankTra - 1e-9 && byggare.includes(STATIONER.slaktbank.bygger)],
       ['den första slaktbänken står i loggen', logg],

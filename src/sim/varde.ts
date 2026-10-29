@@ -17,6 +17,7 @@ import { kvVarde } from './kvalitet';
 import { Bit, Hus, MATERIAL, bitsOf, housesOf } from './byggnad';
 import { State } from './typer';
 import { balans } from './balans';
+import { DJURARTER } from './redskap';
 
 export const ARBETE = 1; // värdet av en arbetstimme
 // Balanstalen (regel 8). Läses bara inne i funktionerna: varde.ts ingår i en ring av importer
@@ -38,7 +39,7 @@ export function nivaOf(k: string): number {
   let n = sakNiva.get(k);
   if (n === undefined) {
     const f = SAKER[k]?.skaffa;
-    n = Math.max(f?.tek ? nivaOfTek(f.tek) : 0, ...Object.keys(f?.av ?? {}).map(nivaOf));
+    n = Math.max(f?.tek ? nivaOfTek(f.tek) : 0, ...Object.keys(f?.av ?? {}).map(nivaOf), ...DJURARTER.filter(a => a.varde?.[k]).map(a => nivaOf(a.sak)));
     sakNiva.set(k, n);
   }
   return n;
@@ -52,6 +53,18 @@ function actTid(act: string) {
   const sas = d.sasong ? d.sasong.reduce((x, y) => x + y, 0) / d.sasong.length : 1;
   return 1 / (d.bas * SNABBARE * sas * (a.takt || 1));
 }
+// det slaktade (kött, ben, skinn) är värt sin del av djurets värde (varde i DJUR, redskap.ts): hela djuret delat på det
+// det ger, efter delarna per styck (steg 3.6.13: inga recept i decimaler)
+function slaktDel(k: string) {
+  let x = 0;
+  for (const a of DJURARTER) {
+    const w = a.varde?.[k];
+    if (!w) continue;
+    const tot = Object.entries(a.slakt).reduce((y, [j, n]) => y + n * (a.varde![j] ?? 0), 0);
+    x += a.mat * grundvarde(a.sak) * w / tot;
+  }
+  return x;
+}
 // värdet innan golvet för nivån
 const raVarde = new Map<string, number>();
 function rakna(k: string): number {
@@ -62,6 +75,7 @@ function rakna(k: string): number {
   else {
     let x = (f.tid ?? 0) / SNABBARE + (f.act ? actTid(f.act) : 0) + (f.min ?? 0) / 60 * ARBETE;
     for (const j in f.av ?? {}) x += f.av![j] * grundvarde(j);
+    x += slaktDel(k);
     v = x * (1 + VARDE.nivaPaslag * nivaOf(k)) * (f.sallsynt ? VARDE.sallsynt : 1);
   }
   raVarde.set(k, v);

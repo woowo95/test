@@ -379,7 +379,7 @@ SCENARIER.bygg = {
       [`huset står en bit från elden (${avst.toFixed(1)} rutor)`, avst >= 4],
       ['slitna väggar lagas', lagat],
       [`ett långhus räknas när det planeras (${langhus} långhus, ${langRaknat} räknade)`, langhus > 0 && langRaknat === langhus],
-      [`en lagning kostar hälften av det nya (trägolv ${golvLag} av ${MATERIAL.tra.n}, timmervägg ${vaggLag} av ${MATERIAL.timmer.n})`, Math.abs(golvLag - MATERIAL.tra.n / 2) < 1e-9 && Math.abs(vaggLag - MATERIAL.timmer.n / 2) < 1e-9],
+      [`en lagning kostar hälften av det nya, i hela saker och minst en (trägolv ${golvLag} av ${MATERIAL.tra.n}, timmervägg ${vaggLag} av ${MATERIAL.timmer.n})`, golvLag === Math.max(1, Math.floor(MATERIAL.tra.n / 2)) && vaggLag === Math.max(1, Math.floor(MATERIAL.timmer.n / 2))],
       [`en rasad vägg som byggts om gör huset klart igen men inte färdigt en gång till (krönikan ${kronikaFore} → ${kronikaEfter}, Gemenskap ${gemFore.toFixed(3)} → ${gemEfter.toFixed(3)})`, omKlar && kronikaFore >= 1 && kronikaEfter === kronikaFore && gemEfter === gemFore],
       [`huset minns var materialet kom ifrån (${Math.round(minns)} av ${Math.round(lagt)}: ${satt})`, lagt > 0 && Math.abs(minns - lagt) < 0.01 * lagt + 0.01],
     ];
@@ -604,9 +604,21 @@ SCENARIER.ibyn = {
 };
 
 SCENARIER.heltal = {
-  text: 'Hela saker (steg 2.10.7): förrådet har bara hela saker. Arbetet räknas hos den som arbetar tills det blivit en hel sak, och den som tar en del av en sak tar en hel; resten blir påbörjad hos ägaren och tas först nästa gång',
+  text: 'Hela saker (steg 2.10.7): förrådet har bara hela saker. Arbetet räknas hos den som arbetar tills det blivit en hel sak, och den som tar en del av en sak tar en hel; resten blir påbörjad hos ägaren och tas först nästa gång. Inga resurser i decimaler (steg 3.6.13): inget recept, bygge, lagning eller utfall är mindre än en hel sak',
   kor: () => {
     const hel = (v: number) => Math.abs(v - Math.round(v)) < 1e-6;
+    // registren (steg 3.6.13): allt som går åt, ges eller fås är hela saker, minst en
+    const fel: string[] = [], kolla = (vad: string, n: number) => { if (!hel(n) || n < 0) fel.push(`${vad} ${n}`); };
+    for (const k of SIM.SAK_LIST) for (const [m, n] of Object.entries(SIM.SAKER[k]!.skaffa?.av ?? {})) kolla(`${k} av ${m}`, n);
+    for (const [k, d] of Object.entries(SIM.STATIONER)) for (const [m, n] of Object.entries(d.av)) kolla(`${k} av ${m}`, n);
+    for (const [k, d] of Object.entries(SIM.TILLBEHOR)) for (const [m, n] of Object.entries(d.av)) kolla(`${k} av ${m}`, n);
+    for (const [k, d] of Object.entries(SIM.DORRAR)) for (const [m, n] of Object.entries(d.av ?? {})) kolla(`${k} av ${m}`, n);
+    for (const [k, M] of Object.entries(MATERIAL)) { kolla(`${k} n`, M.n); kolla(`${k} lagning`, SIM.lagKostnad(M)); if (M.n > 0 && SIM.lagKostnad(M) < 1) fel.push(`${k} lagning 0`); }
+    for (const [k, a] of Object.entries(SIM.DJUR)) {
+      kolla(`${k} mat`, a.mat);
+      for (const [m, n] of Object.entries(a.slakt)) { kolla(`${k} ger ${m}`, n); if (m === 'kott') for (let j = 0; j <= SIM.REDSKAP.kottFull; j++) kolla(`${k} ger kött vid jakt ${j}`, SIM.kottAv({ skill: { jakt: j } } as SIM.Person, n)); }
+    }
+    for (const [k, g] of Object.entries(SIM.GRODOR)) { kolla(`${k} perRuta`, g.perRuta); kolla(`${k} fron`, g.fron); }
     // en vanlig by i tre dygn: alla stackar, det gömda i dem och ägarnas delar är hela, och det påbörjade är under en hel sak
     const s = createState(1, START);
     kor(s, 72);
@@ -631,6 +643,7 @@ SCENARIER.heltal = {
       [`arbetet räknas tills det blivit en hel sak (0,6 bär: ${fore} i förrådet, ${arb.toFixed(1)} arbetat; igen: ${efter} och ${arb2.toFixed(1)})`, arbetet],
       [`en halv portion tar ett helt bär och resten blir påbörjad (${n0} → ${n1} bär, ${p1.toFixed(1)} påbörjat), och nästa halva tas av det påbörjade (${n2} bär, ${p2.toFixed(1)} påbörjat)`, halv],
       [`en kanin är ${SIM.KANIN} hela vilt`, hel(SIM.KANIN) && SIM.KANIN >= 1],
+      [`inga recept, byggen, lagningar eller utfall i decimaler (${fel.join(', ') || 'alla hela'})`, !fel.length],
     ];
   },
 };

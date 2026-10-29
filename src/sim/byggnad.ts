@@ -33,7 +33,7 @@ export const MATERIAL: Record<string, Material> = {
   timmer: { namn: 'Timmervägg', k: 'vagg', item: 'ved', n: 5, tim: 20 / 60, slit: 0.0005, isol: 0.7, tek: 'timmervagg', farg: 0x8a5e34, ikon: 'timmervagg' },
   ris: { namn: 'Risvägg', k: 'vagg', item: 'grenar', n: 5, tim: 20 / 60, slit: 0.002, isol: 0.55, farg: 0x6b4a2a, ikon: 'risvagg' }, // äldre sparfiler: risväggar byggs inte längre men kan lagas
   jord: { namn: 'Jordgolv', k: 'golv', n: 0, tim: 5 / 60, slit: 0, farg: 0x7a5a3a },
-  tra: { namn: 'Trägolv', k: 'golv', item: 'ved', n: 0.5, tim: 10 / 60, slit: 0.0002, tek: 'timmervagg', farg: 0xa07446, ikon: 'tragolv' },
+  tra: { namn: 'Trägolv', k: 'golv', item: 'ved', n: 1, tim: 10 / 60, slit: 0.0002, tek: 'timmervagg', farg: 0xa07446, ikon: 'tragolv' },
   ho: { namn: 'Golv av hö', k: 'golv', item: 'torrgras', n: 1, tim: 5 / 60, slit: 0.002, farg: 0xd2b866, ikon: 'hogolv' }, // äldre sparfiler: hö-golv läggs inte längre, slits till jordgolv
   oppning: { namn: 'Öppning', k: 'oppning', n: 0, tim: 0, slit: 0, farg: 0x7a5a3a },
 };
