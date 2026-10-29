@@ -38,6 +38,7 @@ import { ALDER, ageOf, byId, count, getRel, log, ovning, stat, think } from './f
 import { ledareOf } from './styre';
 import { blodtorst } from './humor';
 import { die } from './liv';
+import { kronika } from './historik';
 import { handelse, larma, smaka, smakAv } from './rykten';
 import { avbryt } from './lager';
 import { HOUR, SEC, T } from './typer';
@@ -759,6 +760,8 @@ export const SLAGSMAL = balans('slagsmal', {
   minst: 20, // den som slåss står kvar minst så här många sekunder (striden tar tid också när den är kort)
   sparas: 10, // så många strider sparas i byn
 });
+// svårt skadad efter striden (krönikan, steg 3.7.16): föll av smärtan, eller en skada som är svår i personrutan (HALSA.avbryt)
+export function svartSkadad(k: Kampe) { return k.lage === 'nere' || k.skador.some(w => w.g >= HALSA.avbryt); }
 // en strid som sparats i byn: när, varför, uppställningen och fröet (samma strid kan räknas om i arenan) och vem som vann
 export interface StridMinne { t: number; orsak: string; u: Uppstallning; fro: number; vinnare: 0 | 1 | -1 }
 
@@ -796,6 +799,7 @@ export function stridIByn(s: State, avsikt: Avsikt, sidor: [Person[], Person[]],
     ovning(p, 'narstrid', lek ? SLAGSMAL.ovningLek : SLAGSMAL.ovning);
     // tycket för vapnet (steg 3.7.10): den som vann eller övade med det gillar det, en svår förlust ger ogillande
     const svar = k.lage === 'nere' || k.skador.reduce((a, w) => a + w.g, 0) >= STRID.tyckeSvar;
+    if (svartSkadad(k)) kronika(s, `${p.name} skadades svårt ${lek ? 'när barnen brottades' : 'i ett slagsmål'} med ${mot.map(q => q.name).join(' och ')}.`); // steg 3.7.16: döden skriver die
     if (lek) smaka(p, 'v:' + k.vapen, STRID.tyckeLek);
     else if (vinnare === k.sida) smaka(p, 'v:' + k.vapen, STRID.tyckeVann);
     else if (vinnare !== -1 && svar) smaka(p, 'v:' + k.vapen, -STRID.tyckeForlust);

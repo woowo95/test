@@ -1506,3 +1506,53 @@ SCENARIER.vargskydd = {
     ];
   },
 };
+
+SCENARIER.stridkronika = {
+  text: 'Striderna i krönikan (steg 3.7.16): den som dör eller skadas svårt i ett slagsmål skrivs i krönikan, liksom varje vargjakt, den som skadas svårt när vargar anfaller och byns första fällda varg. Vanliga slagsmål och lekar skrivs inte',
+  kor: () => {
+    const krn = (s: State) => (s.hist?.kronika ?? []).map(([, t]) => t);
+    // slagsmål i byn: med vapen och avsikten skada blir någon svårt skadad eller dör, med händerna oftast inte
+    const s = createState(11, START), [p, q] = living(s).filter(x => ageOf(x, s.now) >= SIM.ALDER.vuxen);
+    SIM.addTool(s, 'flintspjut', p);
+    const fore = krn(s).length;
+    let svara = 0, vanliga = 0, lekar = 0;
+    for (let i = 0; i < 40; i++) {
+      const n0 = krn(s).length, st = SIM.stridIByn(s, i % 2 ? 'skada' : 'slagsmal', [[p], [q]], 'för att pröva');
+      const svart = st.kampar.some(k => SIM.svartSkadad(k) || k.lage === 'dod');
+      if (svart) svara++; else if (krn(s).length > n0) vanliga++;
+      for (const x of [p, q]) { x.skador = []; x.health = 1; x.blod = 1; x.task = undefined; x.died = undefined; }
+    }
+    const slagRader = krn(s).length - fore;
+    const barn = living(s).filter(x => ageOf(x, s.now) >= SIM.ALDER.smabarn && ageOf(x, s.now) < SIM.ALDER.vuxen);
+    if (barn.length >= 2) for (let i = 0; i < 20; i++) {
+      const n0 = krn(s).length, st = SIM.stridIByn(s, 'lek', [[barn[0]], [barn[1]]], 'på lek');
+      if (krn(s).length > n0 && !st.kampar.some(k => SIM.svartSkadad(k))) lekar++;
+      for (const x of barn) { x.skador = []; x.health = 1; x.blod = 1; x.task = undefined; }
+    }
+    // vargjakt: en rad efter varje jakt, och byns första fällda varg
+    const v = createState(12, START), jag = living(v).filter(x => ageOf(x, v.now) >= SIM.ALDER.vuxen).slice(0, 3);
+    for (const x of jag) SIM.addTool(v, 'flintspjut', x);
+    let jakter = 0, forsta = 0;
+    for (let i = 0; i < 6; i++) {
+      const id = v.vargNr = (v.vargNr ?? 0) + 1, c = campCenter(v);
+      const f: SIM.Vargflock = { id, vargar: [10_000_000 + id * 8], x: c.x + 5, y: c.y, mx: c.x + 5, my: c.y, kom: v.now, gar: v.now + 48 * HOUR, hunger: 0.5, gor: 'stryker' };
+      (v.vargar ??= []).push(f);
+      const n0 = krn(v).length;
+      SIM.vargStrid(v, f, jag.filter(x => x.health > 0), 'doda', 'på vargjakt');
+      const nya = krn(v).slice(n0);
+      if (nya.some(t => /vargjakt/.test(t))) jakter++;
+      forsta += krn(v).filter(t => /byns första varg/.test(t)).length > 0 ? 1 : 0;
+      v.vargar = undefined;
+      for (const x of jag) { x.skador = []; x.blod = 1; x.task = undefined; }
+    }
+    const forstaRader = krn(v).filter(t => /byns första varg/.test(t)).length;
+    const exempel = [...krn(s).slice(fore), ...krn(v)].slice(0, 3).join(' | ');
+    return [
+      [`ett slagsmål där någon skadas svårt eller dör skrivs i krönikan (${svara} av 40 strider, ${slagRader} rader; t.ex. ${exempel})`, svara > 0 && slagRader >= svara],
+      [`vanliga slagsmål skrivs inte (${vanliga} rader utan svår skada)`, vanliga === 0],
+      [`lekar skrivs inte (${lekar} rader)`, barn.length < 2 || lekar === 0],
+      [`varje vargjakt skrivs (${jakter} av 6)`, jakter === 6],
+      [`byns första fällda varg skrivs en gång (${forstaRader})`, forstaRader === (forsta > 0 ? 1 : 0) && forsta > 0],
+    ];
+  },
+};
