@@ -39,6 +39,7 @@ import { ledareOf } from './styre';
 import { blodtorst } from './humor';
 import { die } from './liv';
 import { kronika } from './historik';
+import { setRanStrid } from './behov';
 import { handelse, larma, smaka, smakAv } from './rykten';
 import { avbryt } from './lager';
 import { HOUR, SEC, T } from './typer';
@@ -822,6 +823,8 @@ export function stridIByn(s: State, avsikt: Avsikt, sidor: [Person[], Person[]],
 }
 
 // ett gräl (samtal.ts) kan bli ett slagsmål: oftare hos den blodtörstiga
+setRanStrid((s, p, offer, orsak) => stridIByn(s, 'slagsmal', [[p], [offer]], orsak).slut!.vinnare === 0); // rånet (steg 3.7.17, behov.ts)
+
 export function gralBlirSlagsmal(s: State, a: Person, b: Person) {
   if (ageOf(a, s.now) < ALDER.smabarn || ageOf(b, s.now) < ALDER.smabarn || a.task?.act === 'strid' || b.task?.act === 'strid') return;
   if (rnd(s, 'strid', a) >= SLAGSMAL.gral * (1 + SLAGSMAL.gralTorst * blodtorst(s, a))) return;

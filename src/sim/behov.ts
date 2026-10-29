@@ -2,7 +2,8 @@ import { upplev } from './uppvaxt';
 import { State, Person, HOUR, DAY } from './typer';
 import { FOOD, REDSKAP_SLAG, SAKER, SAK_LIST, isTool } from './saker';
 import { actsOf, usesTool } from './handlingar';
-import { ALDER, KROPP, REL, ageOf, alive, byId, count, getRel, isKin, isParent, living, log, stat, think } from './folk';
+import { ALDER, KROPP, REL, ageOf, alive, byId, count, getRel, isKin, isParent, living, log, relKey, stat, think } from './folk';
+import { kanGa } from './halsa';
 import { chance, clamp, pickViktat, rnd } from './slump';
 import { Ting, tingOf } from './agande';
 import { kvEffekt, kvVarde } from './kvalitet';
@@ -45,6 +46,9 @@ export interface Behov {
 export const DELA = balans('dela', {
   stjalAldrig: 17, // empati från vilken man aldrig stjäl
   stoldOp: 15, // så mycket sämre blir relationen när stölden upptäcks
+  ranAgg: 13, // rån (steg 3.7.17): den som är desperat nog att stjäla och har minst så här mycket aggression tar hellre med våld ...
+  ranTakt: 1 / 3600, // ... så ofta (per sekund) hen försöker ...
+  ranNara: 6, // ... av någon inom så många rutor
   stoldLindrig: 5, // ... när det var material till ett arbete (en lindrig stöld), om det var värt minst stoldVarde ...
   stoldVarde: 3, // ... annars mindre efter värdet (grundvarde): en näve hö till elden märks knappt (steg 2.12.6)
   stoldTanke: 0.25, // den bestulne tänker på en lindrig stöld först när den är värd minst så stor del av stoldVarde
@@ -125,10 +129,38 @@ export function needLadder(s: State, p: Person, dtSec: number) {
     if (ownFor(s, p, b) < b.minst && (fraga || (byns && b.genast))) tradeAround(s, p, b); // ett byte, före byns förråd
     if (fraga && hasFor(s, p, b) < b.minst) askAround(s, p, b);
     if (hasFor(s, p, b) >= b.minst) { if (b.anvand(s, p) > 0) noticeTheft(s, p, b.id); continue; }
+    if (desperat(s, p, b) && ran(s, p, b, dtSec)) return;
     const v = victimOf(s, p, b);
     if (v) stole(s, p, v, b.id, b.anvand(s, p, v));
   }
 }
+// rån (steg 3.7.17): den som är desperat nog att stjäla och aggressiv (DELA.ranAgg) tar hellre med våld av någon i närheten
+// än ur förrådet, helst av den hen tycker minst om. Det blir ett slagsmål (strid.ts); vinner hen tar hen saken. De som såg
+// det tycker att hen är våldsam, och en tjuv
+function ran(s: State, p: Person, b: Behov, dtSec: number) {
+  if (stat(p, 'aggression', s.now) < DELA.ranAgg || ageOf(p, s.now) < ALDER.vaktFran || p.task?.act === 'strid' || !kanGa(p)) return false;
+  if (!chance(s, DELA.ranTakt, dtSec, 'dela', p)) return false;
+  const op = (q: Person) => s.rels[relKey(p.id, q.id)]?.op ?? 0;
+  const offer = living(s).filter(q => q !== p && q.task?.act !== 'sova' && q.task?.act !== 'strid' && !isFamily(p, q) && ageOf(q, s.now) >= ALDER.smabarn
+    && Math.hypot(q.x - p.x, q.y - p.y) <= DELA.ranNara && ownFor(s, q, b) >= b.minst).sort((a, c) => op(a) - op(c) || a.id - c.id)[0];
+  if (!offer) return false;
+  count(s, 'ran');
+  const vann = ranStrid!(s, p, offer, `${p.name} ville ta ${b.namn} av ${offer.name}`);
+  if (!alive(p)) return true;
+  handelse(s, p, 'ranVald', offer, b.namn);
+  handelse(s, p, vann ? 'ran' : 'ranForsok', offer, b.namn);
+  if (!vann || !alive(offer)) return true;
+  count(s, 'ranVann');
+  b.anvand(s, p, offer);
+  log(s, `${p.name} tog ${b.namn} av ${offer.name} med våld.`, 'rel', [p.id, offer.id]);
+  upplev(s, offer, 'bestulen', p.name);
+  return true;
+}
+// slagsmålet i rånet: strid.ts lägger in det (behov.ts laddas före striden), ger true om rånaren vann
+let ranStrid: ((s: State, p: Person, offer: Person, orsak: string) => boolean) | undefined;
+export const setRanStrid = (f: typeof ranStrid) => { ranStrid = f; };
+// p är så nära döden av bristen att hen stjäl (victimOf)
+const desperat = (s: State, p: Person, b: Behov) => { const emp = stat(p, 'empati', s.now); return emp < DELA.stjalAldrig && b.fara(s, p) > emp / DELA.stjalAldrig; };
 export const isFamily = (g: Person, m: Person) => isParent(g, m) || g.partner === m.id || isKin(g, m) || arBast(g, m); // den bästa vännen delar man med som med släkt (steg 3.1.1)
 // g är vaken (familjen kan man väcka) och så nära m att m kan be g om något
 const narvarande = (g: Person, m: Person) => (g.task?.act !== 'sova' || isFamily(g, m)) && Math.hypot(g.x - m.x, g.y - m.y) <= DELA.fragaR;
@@ -206,8 +238,7 @@ function eveningTrade(s: State, a: Person, b: Person) {
 
 // är nöden så stor att p stjäl, och av vem? Ju högre empati, desto närmare döden innan man stjäl
 function victimOf(s: State, p: Person, b: Behov) {
-  const emp = stat(p, 'empati', s.now);
-  if (emp >= DELA.stjalAldrig || b.fara(s, p) <= emp / DELA.stjalAldrig) return;
+  if (!desperat(s, p, b)) return;
   const cands = living(s).filter(q => q !== p).map(q => {
     const own = ownFor(s, q, b);
     const w = own >= b.minst ? own * clamp(1 - getRel(s, p, q).op / 50, 0.2, 3) * (p.arke === q.id ? RELT.arkeStjal : 1) : 0; // helst av den man inte tycker om, och allra helst av sin ärkefiende

@@ -13,7 +13,7 @@
   "vintermat": 91,
   "vinterved": 123,
   "eld": 98,
-  "ms": 154735,
+  "ms": 153871,
   "kb": 539,
   "delKb": 356
  },
@@ -31,26 +31,26 @@
   "vintermat": 717,
   "vinterved": 123,
   "eld": 100,
-  "ms": 140230,
+  "ms": 142264,
   "kb": 668,
   "delKb": 472
  },
  "777": {
-  "pop": 8,
+  "pop": 15,
   "atergrundad": 0,
   "invandrade": 4,
-  "utvandrade": 1,
-  "fodda": 14,
-  "doda": 16,
+  "utvandrade": 0,
+  "fodda": 21,
+  "doda": 17,
   "svalt": 0,
   "kyla": 0,
   "hunger": 0,
-  "humor": 0.57,
-  "vintermat": 1079,
-  "vinterved": 95,
+  "humor": 0.589,
+  "vintermat": 761,
+  "vinterved": 113,
   "eld": 100,
-  "ms": 86311,
-  "kb": 278,
-  "delKb": 114
+  "ms": 82495,
+  "kb": 332,
+  "delKb": 173
  }
 }

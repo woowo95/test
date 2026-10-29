@@ -99,6 +99,9 @@ interface HandelseDef { i: IntryckTyp; vikt: number; text: string; prestation?: 
 const HDEF = {
   stold: { i: 'tjuv', vikt: 0.5, text: 'stal {sak} av {om}' },
   stoldLindrig: { i: 'tjuv', vikt: 0.2, text: 'tog {sak} av {om}' },
+  ranVald: { i: 'valdsam', vikt: 0.3, text: 'gick på {om} för att ta {sak}' }, // rånet (steg 3.7.17)
+  ran: { i: 'tjuv', vikt: 0.6, text: 'tog {sak} av {om} med våld' },
+  ranForsok: { i: 'tjuv', vikt: 0.3, text: 'försökte ta {sak} av {om} med våld' },
   elak: { i: 'elak', vikt: 0.25, text: 'var elak mot {om}' },
   sla: { i: 'valdsam', vikt: 0.2, text: 'slog {om}' },
   misshandel: { i: 'valdsam', vikt: 0.5, text: 'misshandlade {om}' },

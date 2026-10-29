@@ -1,4 +1,4 @@
-import { ALDER, ageOf, count, franMitt, getRel, isParent, living, log, stat, think } from './folk';
+import { ALDER, ageOf, count, franMitt, getRel, isParent, living, log, relKey, stat, think } from './folk';
 import { Kroppsdel, SkadaTyp, halsa, skada } from './halsa';
 import { die, leave } from './liv';
 import { skiljas } from './samtal';
@@ -61,7 +61,8 @@ export const HUMOR = balans('humor', {
   lattnad: 0.1, lattnadTim: 6, // "Fick ur mig det": så mycket bättre humör i så många timmar efter ett utbrott
   elakHumor: 0.08, elakTim: 12, // den som någon var elak mot: så mycket sämre humör i så många timmar
   elakOp: 6, // ... och relationen sjunker så mycket
-  malAvst: 15, // den man är elak mot är den närmaste inom så många rutor
+  malAvst: 15, // den man är elak mot är den närmaste inom så många rutor ...
+  argOp: -25, // ... eller den inom malAvst man tycker minst om, om relationen är högst så här (hämnd, steg 3.7.17)
   // de allvarliga utbrotten (steg 3.2.3)
   grad3: 1, grad4: 1.25, grad5: 1.5, // allvaret från vilket det blir grad 3 (bädden, göra slut, slå), 4 (misshandel, flytta ut) och 5 (dråp)
   drapEmp: 6, drapUtb: 2, // dråp bara för den som har högst så här mycket empati och minst så här många utbrott nyss (annars misshandel)
@@ -111,10 +112,17 @@ export const UTBROTT_ACTS = [...new Set(UTB_LISTA.filter(k => k !== 'flytta').ma
 
 // den närmaste p kan vara elak mot (eller slå), och en sak p kan slå sönder (sin egen helst, annars byns; ingen som någon har i
 // handen, på sig eller i en börda)
-export function utbMal(s: State, p: Person) {
-  let b: Person | undefined, bd = HUMOR.malAvst;
-  for (const q of living(s)) { if (q === p || ageOf(q, s.now) < ALDER.smabarn) continue; const d = Math.hypot(q.x - p.x, q.y - p.y); if (d < bd) { bd = d; b = q; } }
-  return b;
+// arg: helst den nära som p är arg på (tjuven efter en upptäckt stöld, steg 3.7.17)
+export function utbMal(s: State, p: Person, arg = false) {
+  let b: Person | undefined, bd = HUMOR.malAvst, a: Person | undefined, ao = HUMOR.argOp;
+  for (const q of living(s)) {
+    if (q === p || ageOf(q, s.now) < ALDER.smabarn) continue;
+    const d = Math.hypot(q.x - p.x, q.y - p.y);
+    if (d < bd) { bd = d; b = q; }
+    const op = arg && d < HUMOR.malAvst ? s.rels[relKey(p.id, q.id)]?.op : undefined;
+    if (op !== undefined && op <= ao) { ao = op; a = q; }
+  }
+  return a ?? b;
 }
 export function utbTing(s: State, p: Person): Ting | undefined {
   const fria = tingOf(s).filter(t => t.hos === undefined && t.bar === undefined && t.lass === undefined && !t.halv);
@@ -134,7 +142,7 @@ function malFor(s: State, p: Person, k: Utbrott, m: Mal) {
     const barn = living(s).filter(c => isParent(p, c) && ageOf(c, s.now) >= ALDER.smabarn && ageOf(c, s.now) < ALDER.vuxen && nar(c));
     if (barn.length) return barn[Math.floor(rnd(s, 'humor', p) * barn.length)];
   }
-  return utbMal(s, p);
+  return utbMal(s, p, true);
 }
 // blodtörsten (steg 3.7.6): aggressionen, låg empati och dåligt humör, 0–1
 export const blodtorst = (s: State, p: Person) => clamp(HUMOR.torstAgg * franMitt(p, 'aggression', s.now) - HUMOR.torstEmp * franMitt(p, 'empati', s.now) + HUMOR.torstHumor * (0.5 - moodOf(p, s.now)) * 2, 0, 1);

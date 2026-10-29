@@ -1556,3 +1556,54 @@ SCENARIER.stridkronika = {
     ];
   },
 };
+
+SCENARIER.ran = {
+  text: 'Stölder med våld (steg 3.7.17): den som är desperat nog att stjäla och aggressiv tar hellre med våld av någon i närheten än ur förrådet. Det blir ett slagsmål, vinnaren får saken, och de som såg det tycker att hen är våldsam och en tjuv. Den som får ett utbrott går helst på den nära hen är arg på',
+  kor: () => {
+    // a svälter (hälsan sjunker), har ingen mat och ingen av byns; b har mat och står nära, d ser på
+    const ny = (fro: number, agg: number) => {
+      const s = createState(fro, START), vuxna = living(s).filter(x => ageOf(x, s.now) >= SIM.ALDER.vuxen), a = vuxna[0];
+      const [b, d] = vuxna.filter(x => x !== a && !SIM.isFamily(a, x));
+      for (const q of living(s)) q.habit = {}; // ingen sed om att dela
+      if (s.delning) s.delning.andel = 0; // det man samlar är ens eget
+      for (const k of SIM.FOOD) setAmount(s, k, 0);
+      gain(s, b, 'bar', 6);
+      a.pot.aggression = agg; a.pot.empati = 1; a.hunger = 0; a.health = 0.7; a.task = undefined; b.task = undefined; d.task = undefined;
+      b.x = a.x + 2; b.y = a.y; d.x = a.x - 2; d.y = a.y;
+      for (const q of living(s)) if (q !== a && q !== b && q !== d) { q.x = a.x + 60; q.y = a.y + 60; }
+      for (const q of [b, d]) { SIM.getRel(s, a, q).op = 0; q.partner = undefined; }
+      return { s, a, b, d };
+    };
+    let ran = 0, vann = 0, vald = 0, tjuv = 0, fick = 0, stolAgg = 0;
+    for (let i = 0; i < 12; i++) {
+      const { s, a, b, d } = ny(20 + i, 20);
+      if (!d) continue;
+      for (let h = 0; h < 6 && !s.stat?.ran; h++) SIM.needLadder(s, a, 3600);
+      if (!s.stat?.ran) continue;
+      ran++; stolAgg += s.stat?.stold_mat ?? 0;
+      if (s.stat?.ranVann) { vann++; if (ownsAmount(s, b, 'bar') < 6) fick++; }
+      if (SIM.intryckOm(d, a.id, 'valdsam')) vald++;
+      if (SIM.intryckOm(d, a.id, 'tjuv')) tjuv++;
+    }
+    // den som inte är aggressiv stjäl som förut, utan våld
+    let fredlig = 0, stal = 0;
+    for (let i = 0; i < 6; i++) {
+      const { s, a } = ny(40 + i, 3);
+      for (let h = 0; h < 6; h++) SIM.needLadder(s, a, 3600);
+      fredlig += s.stat?.ran ?? 0; stal += s.stat?.stold_mat ?? 0;
+    }
+    // hämnd: utbrottet går helst ut över den nära man är arg på, inte bara den närmaste
+    const { s, a, b, d } = ny(60, 10);
+    d.x = a.x - 8; SIM.getRel(s, a, d).op = -50; SIM.getRel(s, a, b).op = 0;
+    const arg = SIM.utbMal(s, a, true) === d, nast = SIM.utbMal(s, a) === b;
+    SIM.getRel(s, a, d).op = -10;
+    const inteArg = SIM.utbMal(s, a, true) === b;
+    return [
+      [`den aggressiva svältande rånar någon nära (${ran} av 12 byar), i stället för att stjäla (${stolAgg} stölder)`, ran >= 8 && stolAgg === 0],
+      [`vinnaren tar saken (vann ${vann}, fick maten ${fick})`, vann > 0 && fick === vann],
+      [`de som såg det tycker att hen är våldsam (${vald} av ${ran}) och en tjuv (${tjuv} av ${ran})`, vald === ran && tjuv === ran],
+      [`den som inte är aggressiv rånar inte (${fredlig}) men stjäl (${stal})`, fredlig === 0 && stal > 0],
+      [`utbrottet går ut över den man är arg på (${arg}), annars den närmaste (${nast}, ${inteArg})`, arg && nast && inteArg],
+    ];
+  },
+};
