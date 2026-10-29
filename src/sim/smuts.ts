@@ -11,14 +11,14 @@
 // därifrån (s.hygien), och lägger sedan latrinen längre från vattnet (siteUtkant i stationer.ts)
 import { Act, H, HOUR, Person, State, T, W } from './typer';
 import { getMap } from './karta';
-import { STATION, Station, isKlar, stationById, stationDef, stationFor, stationerOf, storlekAv } from './stationer';
+import { STATION, Station, byAvstand, isKlar, stationById, stationDef, stationFor, stationerOf, storlekAv } from './stationer';
 import { clamp } from './slump';
 import { balans } from './balans';
 import { count, forstaGang, log, think } from './folk';
 import { groundOf, tileOf } from './mark';
 import { FOREST } from './vag';
 import { smutsOf } from './sjo';
-import { blodas } from './blod';
+import { blodNu, blodOf, blodas } from './blod';
 
 // ---------- balanstal (regel 8) ----------
 export const SMUTS = balans('smuts', {
@@ -29,6 +29,11 @@ export const SMUTS = balans('smuts', {
   akelHumor: -0.05, akelTim: 2, // ... så här mycket (humör), i så många timmar
   plock: 0.15, // man plockar inte på eller bredvid en toa-fläck som är starkare än så här
   ifred: 0.04, ifredTim: 2, // den som går på toa i latrinen får vara ifred: så här mycket bättre humör, i så många timmar
+  byn: 1, // blod och toa-högar så här nära byn (byAvstand: lägret och husen) ligger inne i byn (steg 3.6.10) ...
+  ser: 4, // ... och syns för den som är vaken inom så här många rutor ...
+  blodSyns: 0.2, // ... blodet när det är färskare än så här (blodNu), en toa-hög när den är starkare än akel ...
+  synHumor: -0.04, synTim: 3, // ... och sänker humöret så här mycket, i så många timmar
+  rutt: 2, // mat som ligger i en blodfläck, eller på eller bredvid en toa-hög, ruttnar så här många gånger fortare
   lardom: 0.25, // byns kunskap om hygien (s.hygien, 0–1) ökar så här mycket när någon får ont i magen av vatten som toaletten smutsat ner
 });
 
@@ -140,11 +145,42 @@ export function toaInfo(s: State, f: Flack) {
   return { n, kvar: n * (DEF[f.k]?.bleknar ?? 0), akel: n > SMUTS.akel, plock: n > SMUTS.plock, vatten };
 }
 
-// varje steg för den som är vaken: står hen på eller bredvid en toa-fläck blir hen äcklad. Inte den som själv är på toa
+// varje steg för den som är vaken: står hen på eller bredvid en toa-fläck blir hen äcklad. Inte den som själv är på toa.
+// Ser hen blod eller en toa-hög inne i byn (steg 3.6.10) blir humöret sämre
 export function akel(s: State, p: Person) {
+  if (p.task?.act === 'sova') return;
+  const syns = smutsIByn(s).punkter, R = SMUTS.ser;
+  if (syns.length && syns.some(q => Math.abs(q.x - p.x) <= R && Math.abs(q.y - p.y) <= R && Math.hypot(q.x - p.x, q.y - p.y) <= R)) think(p, 'Blod och smuts i byn', SMUTS.synHumor, s.now, SMUTS.synTim * HOUR);
   if (!s.flackar?.length || p.task?.act === 'toa') return;
   if (toaNara(s, tileOf(p.x, p.y)) > SMUTS.akel) think(p, 'Äcklad av smuts', SMUTS.akelHumor, s.now, SMUTS.akelTim * HOUR);
 }
+// blodet och toa-högarna inne i byn som syns (punkter), och rutorna där det ligger blod (blod). Räknas om varje timme i spelet
+// och när en fläck tillkommer, så att levande läget och snabbläget får samma (som toaKarta)
+const synCache = new WeakMap<State, { nyckel: string; punkter: { x: number; y: number }[]; blod: Set<number> }>();
+export function smutsIByn(s: State) {
+  const b = blodOf(s), fl = s.flackar ?? [], nyckel = `${Math.floor(s.now / HOUR)}|${b.length}|${fl.length}`;
+  let c = synCache.get(s);
+  if (c?.nyckel === nyckel) return c;
+  const punkter: { x: number; y: number }[] = [], blod = new Set<number>();
+  for (const g of b) {
+    const n = blodNu(g, s.now);
+    if (n <= 0) continue;
+    blod.add(tileOf(g.x, g.y));
+    if (n > SMUTS.blodSyns && byAvstand(s, Math.floor(g.x), Math.floor(g.y)) <= SMUTS.byn) punkter.push({ x: g.x, y: g.y });
+  }
+  for (const f of fl) {
+    const x = f.i % W, y = Math.floor(f.i / W);
+    if (f.k === 'toa' && flackNu(f, s.now) > SMUTS.akel && byAvstand(s, x, y) <= SMUTS.byn) punkter.push({ x: x + 0.5, y: y + 0.5 });
+  }
+  synCache.set(s, c = { nyckel, punkter, blod });
+  return c;
+}
+// maten på rutan (x, y) ruttnar fortare i en blodfläck eller på eller bredvid en toa-hög (steg 3.6.10): så här många gånger
+export const ruttSmuts = (s: State, x: number, y: number) => {
+  if (!s.blod?.length && !s.flackar?.length) return 1;
+  const i = y * W + x;
+  return toaNara(s, i) > 0 || smutsIByn(s).blod.has(i) ? SMUTS.rutt : 1;
+};
 
 // ---------- latrinen ----------
 // den latrin p går till: den närmaste färdiga som inte är full

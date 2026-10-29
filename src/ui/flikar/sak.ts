@@ -63,7 +63,7 @@ export const sak: Flik = {
     const gjord = t?.gjord !== undefined ? `<dt>Gjord</dt><dd>${vem ? `av ${pLink(vem)}, ` : ''}för ${durTxt(s.now - t.gjord)} sedan</dd>` : '';
     const kl = t && klenod(s, t), klen = kl ? `<dt>Klenod</dt><dd>★ Byn minns ${pLink(kl)} genom den</dd>` : ''; // (steg 3.4.3)
     const agare = t ? (t.agare === BYN ? 'Byns' : pLink(byId(s, t.agare))) : '';
-    const orsak = sl.orsak === 'ruttnar' ? fryst() ? `❄ Fryst, ${Math.round(temperature(s))} grader: ruttnar nästan inte` : `Ruttnar, ${Math.round(temperature(s))} grader` : ORSAK[sl.orsak];
+    const orsak = sl.orsak === 'ruttnar' ? fryst() ? `❄ Fryst, ${Math.round(temperature(s))} grader: ruttnar nästan inte` : `Ruttnar${sl.smuts ? ' fortare i blod och smuts' : ''}, ${Math.round(temperature(s))} grader` : ORSAK[sl.orsak];
     const haller = sl.gang ? `<dt>Räcker till</dt><dd>${Math.max(0, Math.floor(c / sl.gang + 1e-9))} ${esc(sl.enhet!)} till</dd>` // per gång (steg 2.3.12)
       : sl.per > 0 ? `<dt>Håller</dt><dd>${durTxt(c / sl.per * HOUR)} till i den takten</dd>` : '';
     const klad = SAKER[a.k]?.klad?.varme ? `<dt>Värme</dt><dd>Skyddar ${Math.round(kladSkydd(a.k, t) * 100)} % mot kylan</dd>` : '';

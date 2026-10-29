@@ -5,6 +5,7 @@ import { Ting, halvKlar, nTools, newTing, tingOf } from './agande';
 import { kvHaller } from './kvalitet';
 import { forvarAt, sittAt, stationAt, stationDef, tillbakaVid } from './stationer';
 import { faltAt } from './odling';
+import { ruttSmuts } from './smuts';
 import { alive, byId, count, living, stat, ageOf, log } from './folk';
 import { matOrdning } from './naring';
 import { eldPlats, getMap } from './karta';
@@ -623,7 +624,7 @@ export const wearMult = (s: State, x: number, y: number) => roofed(s, x, y) || f
 // vad som sliter på en sak just nu och hur mycket av skicket det tar per timme (inforutan, steg 2.3.5). Samma tal som
 // wearStore och wearUsed (redskap.ts) räknar med. I handen slits redskapet dessutom per gång (steg 2.3.12): gang = så mycket av
 // skicket varje träd, kanin, fiskeförsök eller djur tar, och enhet vad det är (ACTS.slits)
-export type Slitage = { orsak: 'ruttnar' | 'vadret' | 'lagret' | 'tak' | 'kista' | 'pasig' | 'anvands' | 'inget'; per: number; gang?: number; enhet?: string };
+export type Slitage = { orsak: 'ruttnar' | 'vadret' | 'lagret' | 'tak' | 'kista' | 'pasig' | 'anvands' | 'inget'; per: number; gang?: number; enhet?: string; smuts?: true }; // smuts: ligger i blod eller toa-smuts (steg 3.6.10)
 export function slitageNu(s: State, a: { k: string; x?: number; y?: number }, t?: Ting): Slitage {
   const temp = temperature(s), kl = t?.bar !== undefined ? SAKER[a.k]?.klad : undefined;
   const hq = kvHaller(t); // ett bättre ting håller längre (kvalitet.ts); en stack har ingen kvalitet
@@ -635,15 +636,16 @@ export function slitageNu(s: State, a: { k: string; x?: number; y?: number }, t?
     if (r?.haller && slits) return { orsak: 'anvands', per: bas, gang: 1 / r.haller / hq, enhet: slits.enhet };
     return { orsak: bas > 0 ? (SAKER[a.k]?.haller !== undefined ? 'ruttnar' : 'lagret') : 'inget', per: bas };
   }
-  const per = wearAt(a.k, a.x !== undefined ? wearMult(s, a.x, a.y!) : 1, true, temp) / hq;
+  const smuts = a.x !== undefined && SAKER[a.k]?.haller !== undefined ? ruttSmuts(s, a.x, a.y!) : 1;
+  const per = wearAt(a.k, a.x !== undefined ? wearMult(s, a.x, a.y!) : 1, true, temp) / hq * smuts;
   if (per <= 0) return { orsak: 'inget', per: 0 };
-  if (SAKER[a.k]?.haller !== undefined) return { orsak: 'ruttnar', per };
+  if (SAKER[a.k]?.haller !== undefined) return { orsak: 'ruttnar', per, ...(smuts > 1 ? { smuts: true } : {}) };
   return { orsak: a.x === undefined ? 'lagret' : forvarAt(s, a.x, a.y!)?.tak ? 'kista' : roofed(s, a.x, a.y!) ? 'tak' : zoneAt(s, a.x, a.y!) >= 0 ? 'lagret' : 'vadret', per };
 }
 export function wearStore(s: State, dtSec: number) {
   const h = dtSec / HOUR_S, temp = temperature(s), bort: Record<string, number> = {};
   for (const a of stacksOf(s)) {
-    const m = wearMult(s, a.x, a.y), r = wearAt(a.k, m, true, temp) * h;
+    const m = wearMult(s, a.x, a.y), r = wearAt(a.k, m, true, temp) * h * (SAKER[a.k]?.haller !== undefined ? ruttSmuts(s, a.x, a.y) : 1); // i blod och toa-smuts fortare (steg 3.6.10)
     if (a.dold && isStored(s, a.x, a.y)) { const d = DOLD_I[a.k]; bort[d] = (bort[d] ?? 0) + a.dold * (1 - Math.exp(-wearAt(d, m, true, temp) * h)); } // i hela saker nedan, ur förrådet (taBort)
     if (r <= 0) continue;
     a.c -= r;

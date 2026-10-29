@@ -1239,3 +1239,31 @@ SCENARIER.falt = {
     ];
   },
 };
+
+SCENARIER.smutsibyn = {
+  text: 'Steg 3.6.10: blod och toa-högar inne i byn ger en tanke som sänker humöret hos dem som ser dem, och mat som ligger i en blodfläck eller på eller bredvid en toa-hög ruttnar fortare',
+  kor: () => {
+    const { blodas, akel, toaBesok, slitageNu, smutsIByn, SMUTS, zoneOf, byAvstand } = SIM;
+    const s = createState(1, START); klockan(s); tandEld(s);
+    const [p, q] = living(s).filter(r => ageOf(r, s.now) >= 18) as [SIM.Person, SIM.Person];
+    const z = zoneOf(s), bx = z.x + 0.5, by = z.y + 0.5;
+    const tankar = (r: SIM.Person) => { r.thoughts = []; akel(s, r); return r.thoughts.some(t => t.text === 'Blod och smuts i byn'); };
+    const fore = (Object.assign(p, { x: bx + 1, y: by, task: undefined }), tankar(p));
+    blodas(s, bx, by, 'slakt', 1);
+    Object.assign(q, { x: bx + SMUTS.ser + 6, y: by + SMUTS.ser + 6, task: undefined });
+    const ser = tankar(p), langtBort = tankar(q), sover = (p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: s.now + HOUR, carry: 0, why: 'test', dark: false }, tankar(p));
+    // maten: samma sak på blodet, bredvid en toa-hög och på en ren ruta
+    const ren = { k: 'bar', x: z.x + z.w - 1, y: z.y + z.h - 1 };
+    const pa = slitageNu(s, { k: 'bar', x: z.x, y: z.y }).per, rent = slitageNu(s, ren).per;
+    Object.assign(q, { x: z.x + 0.5, y: z.y + z.h - 1 + 0.5, task: undefined }); toaBesok(s, q); // i lagrets andra hörn
+    const toa = slitageNu(s, { k: 'bar', x: z.x + 1, y: z.y + z.h - 1 }).per;
+    const ibyn = smutsIByn(s).punkter.length, inne = byAvstand(s, z.x, z.y) <= SMUTS.byn;
+    return [
+      ['ingen tanke utan blod', !fore],
+      [`den som ser blodet inne i byn får tanken (${ibyn} fläckar och högar syns, lagret inne i byn: ${inne})`, ser && inne],
+      ['inte den som är långt bort eller sover', !langtBort && !sover],
+      [`maten i blodet ruttnar fortare (${(pa / rent).toFixed(1)} gånger)`, Math.abs(pa / rent - SMUTS.rutt) < 1e-9],
+      [`... och bredvid en toa-hög (${(toa / rent).toFixed(1)} gånger)`, Math.abs(toa / rent - SMUTS.rutt) < 1e-9],
+    ];
+  },
+};

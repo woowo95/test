@@ -1,5 +1,6 @@
-// Blodet (Björn efter v93): blod som hamnar på marken i olika sammanhang och bleknar bort på ett par dygn. Bara utseende: det
-// rör inte byns slumpföljder och ingen bryr sig om det. Två register:
+// Blodet (Björn efter v93): blod som hamnar på marken i olika sammanhang och bleknar bort på ett par dygn. Det rör inte byns
+// slumpföljder. Blod inne i byn sänker humöret hos dem som ser det, och mat i det ruttnar fortare (steg 3.6.10, smutsIByn och
+// ruttSmuts i smuts.ts). Två register:
 // - BLODFORM: hur blodet ligger (pöl, stänk, droppar, släpspår) och hur fort det bleknar.
 // - BLOD: sammanhangen (slakt, skada, blödning, förblödning, jakt): vilka former de ger och hur mycket. Strid och annat som
 //   blöder längre fram blir en ny rad här och ett anrop till blodas.
