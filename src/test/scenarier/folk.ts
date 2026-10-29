@@ -660,6 +660,62 @@ SCENARIER.ledare = {
   },
 };
 
+SCENARIER.blockera = {
+  text: 'Fiender blockerar vägen (steg 3.7.20): i striden går man inte närmare än STRID.kropp en fiende som står, utan runt hen, och inte genom väggar. Den som står i en dörröppning stänger den; när hen fallit går de andra igenom öppningen. Vänner och de som ligger går man igenom',
+  kor: () => {
+    const m = (id: number, sida: 0 | 1, vapen: SIM.Vapen, x: number, y: number, fart = 1) => ({ id, namn: `K${id}`, sida, st: { styrka: 10, uthallighet: 10, mod: 14, smidighet: 10, skicklighet: 10 }, vapen, klader: [] as string[], fart, x, y });
+    const KR = SIM.STRID.kropp;
+    // öppen plan: ingen kliver någonsin närmare än kroppen till en fiende som står (bara bort)
+    let steg = 0, nara = 0, runt = 0;
+    for (let fro = 1; fro <= 60; fro++) {
+      const st = SIM.nyStrid({ avsikt: 'skada', w: 14, h: 9, kampar: [m(1, 0, 'yxa', 3, 3), m(2, 0, 'kniv', 3, 6), m(3, 0, 'hand', 2, 4.5), m(4, 1, 'yxa', 11, 3), m(5, 1, 'fiskespjut', 11, 6), m(6, 1, 'kniv', 12, 4.5)] }, fro);
+      while (!st.slut) {
+        const fore = st.kampar.map(k => ({ x: k.x, y: k.y, star: k.lage === 'strid' }));
+        SIM.stridSteg(st); steg++;
+        for (const [i, k] of st.kampar.entries()) for (const [j, o] of st.kampar.entries()) {
+          if (k.sida === o.sida || !fore[i].star || !fore[j].star || k.lage !== 'strid' || o.lage !== 'strid') continue;
+          const efter = Math.hypot(k.x - o.x, k.y - o.y), forut = Math.hypot(fore[i].x - fore[j].x, fore[i].y - fore[j].y);
+          if (efter < KR - 1e-6 && efter < forut - 0.02) nara++;
+        }
+      }
+    }
+    // den som flyr mot kanten går runt fienden som står i vägen (B står stilla mellan A och kanten)
+    let borta = false;
+    {
+      const st = SIM.nyStrid({ avsikt: 'skada', w: 14, h: 9, kampar: [m(1, 0, 'hand', 3, 4.5), m(2, 1, 'hand', 1.5, 4.5, 0), m(3, 1, 'hand', 12, 4.5, 0)] }, 1);
+      st.kampar[0].lage = 'flykt';
+      for (let i = 0; i < 400 && !st.slut; i++) { SIM.stridSteg(st); if (st.kampar[0].lage === 'flykt') runt = Math.min(runt || 99, Math.hypot(st.kampar[0].x - 1.5, st.kampar[0].y - 4.5)); }
+      borta = (st.kampar[0].lage as string) === 'borta';
+    }
+    // dörröppningen: en vägg tvärs över planen med en öppning på en ruta. D står stilla i öppningen; de tre på andra sidan
+    // kommer inte förbi så länge D står, och när D fallit går de genom öppningen till E
+    const vagg: SIM.Hinder[] = [{ x: 6.75, y: 0, b: 0.5, h: 4 }, { x: 6.75, y: 5, b: 0.5, h: 4 }];
+    let forbi = 0, iVaggen = 0, igenom = 0, utan = 0, n = 0;
+    for (let fro = 1; fro <= 40; fro++) {
+      const st = SIM.nyStrid({ avsikt: 'skada', w: 14, h: 9, hinder: vagg, kampar: [m(1, 0, 'kniv', 2, 3), m(2, 0, 'kniv', 2, 4.5), m(3, 0, 'kniv', 2, 6), m(4, 1, 'yxa', 7, 4.5, 0), m(5, 1, 'hand', 12, 4.5, 0)] }, fro);
+      const D = st.kampar[3]; let slaE = false; n++;
+      const sist = new Map<number, number>();
+      while (!st.slut) {
+        SIM.stridSteg(st);
+        for (const k of st.kampar.filter(k => k.sida === 0 && k.lage === 'strid')) {
+          if (D.lage === 'strid' && k.x > 7.25) forbi++;
+          if (st.hinder!.some(o => k.x > o.x && k.x < o.x + o.b && k.y > o.y && k.y < o.y + o.h)) iVaggen++;
+          const fx = sist.get(k.id); if (fx !== undefined && fx <= 7 && k.x > 7 && (k.y < 4 || k.y > 5)) utan++;
+          sist.set(k.id, k.x);
+        }
+        if (st.logg.some(r => r.b === 5 && (r.h === 'traff' || r.h === 'miss'))) slaE = true;
+      }
+      if (slaE) igenom++;
+    }
+    return [
+      [`öppen plan, 60 strider tre mot tre (${steg} steg): ingen kliver närmare än ${KR} rutor till en fiende som står (${nara} gånger)`, steg > 1000 && nara === 0],
+      [`den som flyr förbi en fiende som står går runt hen (som närmast ${runt.toFixed(2)} rutor) och kommer undan (${borta ? 'ja' : 'nej'})`, runt >= KR - 1e-6 && runt < 1.2 && borta],
+      [`dörröppningen: ingen kommer förbi den som står i den (${forbi} gånger) eller går genom väggen (${iVaggen}, ${utan} vid sidan av öppningen)`, forbi === 0 && iVaggen === 0 && utan === 0],
+      [`när den i öppningen fallit går de andra igenom och slåss med den bakom (${igenom} av ${n} strider)`, igenom >= n * 0.6],
+    ];
+  },
+};
+
 SCENARIER.kryper = {
   text: 'Den svårt skadade kryper (steg 3.7.19): den som inte kan gå (ett ben eller en fot skadad till HALSA.krypFel) reser sig inte i striden utan kryper mot vännerna eller bort mot sin sida, lika långsamt som i byn (ungefär en ruta på fem sekunder), och den som kravlar i byn med ett blödande sår lämnar ett släpspår',
   kor: () => {

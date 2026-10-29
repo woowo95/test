@@ -60,6 +60,7 @@ export const STRID = balans('strid', {
   maxTid: 480, // en strid slutar senast efter så här många sekunder (oavgjort)
   krypNara: 1, // den som kryper stannar så här många rutor från vännen hen kryper mot (steg 3.7.19) ...
   krypBlod: 0.5, // ... och lämnar så här mycket släpspår per ruta i byn
+  kropp: 0.6, // man kommer inte närmare än så här (rutor) till en fiende som står: man går runt hen (steg 3.7.20)
   fart: 1.6, // rutor i sekunden för en frisk vuxen som springer i strid (gånger djurets fart)
   traffBas: 0.6, // chansen att träffa någon som är lika skicklig
   traffPer: 0.03, // ... och så här mycket mer per poäng skicklighet över motståndarens
@@ -279,11 +280,14 @@ export interface StridRad { t: number; h: Handelse; a?: number; b?: number; d?: 
 export interface Strid {
   avsikt: Avsikt; t: number; w: number; h: number; r: number; fro: number; vind: number; dimma: number; // vind = blåsten 0–1 och dimma = dimman 0–1 (vädret)
   halt: number; marken: { v: Vapen; x: number; y: number; av: number }[]; // halkan 0–1 och vapnen som tappats (steg 3.7.8)
+  hinder?: Hinder[]; // väggarna på platsen (steg 3.7.20)
   kampar: Kampe[]; logg: StridRad[];
   slut?: { t: number; vinnare: 0 | 1 | -1 };
 }
+// en vägg på platsen: rektangeln x, y, b(redd), h(öjd) i rutor (steg 3.7.20)
+export interface Hinder { x: number; y: number; b: number; h: number }
 // uppställningen som en strid börjar ur (arenan och, senare, byn)
-export interface Uppstallning { avsikt: Avsikt; w: number; h: number; vind?: number; dimma?: number; halt?: number; kampar: Omit<Kampe, 'skador' | 'blod' | 'ork' | 'modNu' | 'lage' | 'vant' | 'mal' | 'backar' | 'slag' | 'traffar' | 'gjort' | 'skott' | 'haller' | 'vantar' | 'ifatt' | 'vada' | 'ligger' | 'bocker' | 'later' | 'kryper'>[] }
+export interface Uppstallning { avsikt: Avsikt; w: number; h: number; vind?: number; dimma?: number; halt?: number; hinder?: Hinder[]; kampar: Omit<Kampe, 'skador' | 'blod' | 'ork' | 'modNu' | 'lage' | 'vant' | 'mal' | 'backar' | 'slag' | 'traffar' | 'gjort' | 'skott' | 'haller' | 'vantar' | 'ifatt' | 'vada' | 'ligger' | 'bocker' | 'later' | 'kryper'>[] }
 
 // stridens egen slumpföljd (samma blandning som rnd i slump.ts)
 export function slump(st: Strid) {
@@ -299,6 +303,7 @@ export function nyStrid(u: Uppstallning, fro: number): Strid {
     modNu: clamp(STRID.modStart + (k.st.mod / 20) * STRID.modMod + (k.st.torst ?? 0) * STRID.torst, 0.05, 1), lage: 'strid', vant: 0, slag: 0, traffar: 0, gjort: 0,
   }));
   const st: Strid = { avsikt: u.avsikt, t: 0, w: u.w, h: u.h, r: fro | 0, fro, vind: u.vind ?? 0, dimma: u.dimma ?? 0, halt: u.halt ?? 0, marken: [], kampar, logg: [{ t: 0, h: 'borjar' }] };
+  if (u.hinder?.length) st.hinder = u.hinder.map(o => ({ ...o }));
   if (!AVS[u.avsikt].vapen) for (const k of kampar) if (!k.djur) { k.vapen = 'hand'; k.reserv = undefined; }
   for (const k of kampar) { const kv = VAP[k.vapen].kast; if (kv) k.skott = kv.skott; }
   for (const k of kampar) k.vant = slump(st) * VAP[k.vapen].takt; // ingen slår exakt samtidigt
@@ -349,11 +354,68 @@ function valjMal(st: Strid, k: Kampe) {
   return bast;
 }
 
+// ---------- vägen (steg 3.7.20) ----------
+// man går inte igenom en fiende som står (närmare än STRID.kropp) eller en vägg, utan runt. Vänner och de som ligger går man
+// igenom. Den som står i en dörröppning stänger den, så bara en kommer fram i taget
+const KANT = 0.3; // så nära en vägg eller planens kant kommer man
+const iVagg = (st: Strid, x: number, y: number) => !!st.hinder?.some(o => x > o.x - KANT && x < o.x + o.b + KANT && y > o.y - KANT && y < o.y + o.h + KANT);
+// fiender som står i vägen för k (inte den hen går mot, som står vid mx, my)
+const ivagen = (st: Strid, k: Kampe, mx: number, my: number) => st.kampar.filter(o => o.sida !== k.sida && iStrid(o) && Math.hypot(o.x - mx, o.y - my) > 0.01);
+function fri(st: Strid, k: Kampe, x: number, y: number, fi: Kampe[]) {
+  if (iVagg(st, x, y)) return false;
+  for (const o of fi) { const d = Math.hypot(o.x - x, o.y - y); if (d < STRID.kropp && d < dist(k, o) - 1e-9) return false; } // bort från en som står för nära går alltid
+  return true;
+}
+// syns punkten bakom väggarna (en rak linje utan vägg)?
+function sikt(st: Strid, x0: number, y0: number, x1: number, y1: number) {
+  const n = Math.ceil(Math.hypot(x1 - x0, y1 - y0) / 0.25);
+  for (let i = 1; i <= n; i++) if (iVagg(st, x0 + (x1 - x0) * i / n, y0 + (y1 - y0) * i / n)) return false;
+  return true;
+}
+// vägen runt väggarna (rutor om en halv ruta, bredden först): den sista punkten på vägen som syns härifrån. Fienderna som
+// står i vägen räknas med om det finns en väg förbi dem; annars går man fram till dem och väntar
+const RUT = 0.5;
+function vagRunt(st: Strid, k: Kampe, mx: number, my: number, fi: Kampe[]): [number, number] | undefined {
+  const W = Math.ceil(st.w / RUT), H = Math.ceil(st.h / RUT), cell = (x: number, y: number) => clamp(Math.floor(y / RUT), 0, H - 1) * W + clamp(Math.floor(x / RUT), 0, W - 1);
+  const mitt = (c: number): [number, number] => [(c % W + 0.5) * RUT, (Math.floor(c / W) + 0.5) * RUT];
+  const fran = cell(k.x, k.y), till = cell(mx, my);
+  for (const med of [fi, []]) {
+    const prev = new Int32Array(W * H).fill(-1), ko = [fran];
+    prev[fran] = fran;
+    for (let i = 0; i < ko.length && prev[till] < 0; i++) {
+      const c = ko[i], cx = c % W, cy = Math.floor(c / W);
+      for (const [ex, ey] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const nx = cx + ex, ny = cy + ey, n = ny * W + nx;
+        if (nx < 0 || ny < 0 || nx >= W || ny >= H || prev[n] >= 0) continue;
+        const [px, py] = mitt(n);
+        if (n !== till && (iVagg(st, px, py) || med.some(o => Math.hypot(o.x - px, o.y - py) < STRID.kropp))) continue;
+        prev[n] = c; ko.push(n);
+      }
+    }
+    if (prev[till] < 0) continue;
+    const vag: number[] = [];
+    for (let c = till; c !== fran; c = prev[c]) vag.push(c);
+    for (let i = 0; i < vag.length; i++) { const [px, py] = mitt(vag[i]); if (i === vag.length - 1 || sikt(st, k.x, k.y, px, py)) return i === 0 ? [mx, my] : [px, py]; }
+  }
+  return undefined;
+}
+const VRID = [0.6, -0.6, 1.2, -1.2, 1.8, -1.8]; // åt sidan, mer och mer, när den raka vägen är stängd
 function ga(st: Strid, k: Kampe, mx: number, my: number, langd: number) {
-  const dx = mx - k.x, dy = my - k.y, d = Math.hypot(dx, dy);
+  let dx = mx - k.x, dy = my - k.y, d = Math.hypot(dx, dy);
   if (d < 1e-6) return;
-  const f = Math.min(1, langd / d);
-  k.x = clamp(k.x + dx * f, 0.3, st.w - 0.3); k.y = clamp(k.y + dy * f, 0.3, st.h - 0.3);
+  const fi = ivagen(st, k, mx, my);
+  if (st.hinder && !sikt(st, k.x, k.y, mx, my)) { // bakom en vägg: mot nästa punkt på vägen runt
+    const p = vagRunt(st, k, mx, my, fi);
+    if (p) { dx = p[0] - k.x; dy = p[1] - k.y; d = Math.hypot(dx, dy); if (d < 1e-6) return; }
+  }
+  const l = Math.min(langd, d), x = clamp(k.x + dx / d * l, KANT, st.w - KANT), y = clamp(k.y + dy / d * l, KANT, st.h - KANT);
+  if (fri(st, k, x, y, fi)) { k.x = x; k.y = y; return; }
+  const v = Math.atan2(dy, dx);
+  for (const r of VRID) {
+    const nx = clamp(k.x + Math.cos(v + r) * l, KANT, st.w - KANT), ny = clamp(k.y + Math.sin(v + r) * l, KANT, st.h - KANT);
+    if (fri(st, k, nx, ny, fi)) { k.x = nx; k.y = ny; return; }
+  }
+  // stängt åt alla håll: hen står kvar
 }
 
 function falla(st: Strid, k: Kampe, h: 'nere' | 'dod' | 'ger' | 'flykt', rad: Handelse = h) {

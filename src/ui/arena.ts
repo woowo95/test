@@ -4,7 +4,7 @@
 // uppställningen och loggen ligger vid sidan av kartan. Loggen visar symbolerna först med hela meningen när man trycker på raden eller håller musen över den.
 import {
   AVSIKTER, Avsikt, KLADER_STRID, MANNISKOVAPEN, STRID, STRIDHANDELSER, STRIDSDJUR, LAGE_ORD, VAPEN, Vapen, DJUR,
-  Strid, Uppstallning, korManga, djurKampe, foljet, personKampe, nyStrid, stridRapport, stridSteg, stridText, sakNamn, living, byId, timeLabel,
+  Strid, Uppstallning, Hinder, korManga, djurKampe, foljet, personKampe, nyStrid, stridRapport, stridSteg, stridText, sakNamn, living, byId, timeLabel,
   getMap, eldPlats, T, W as MW, H as MH, ageOf, ALDER,
 } from '../sim';
 import * as PIXI from 'pixi.js';
@@ -19,7 +19,13 @@ const MAX = 3; // kämpar per sida
 type Kalla = { typ: 'by'; pid: number } | { typ: 'egen' } | { typ: 'djur'; art: string };
 interface Rad { kalla: Kalla; vapen: Vapen; reserv?: Vapen; klader: string[]; st: { styrka: number; uthallighet: number; mod: number; smidighet: number; skicklighet: number } }
 const ny = (): Rad => ({ kalla: { typ: 'egen' }, vapen: 'hand', klader: [], st: { styrka: 10, uthallighet: 10, mod: 10, smidighet: 10, skicklighet: 10 } });
-const lag: { sidor: [Rad[], Rad[]]; avsikt: Avsikt; fro: number; fart: number; vind: number; dimma: number; halt: number } = { sidor: [[ny()], [ny()]], avsikt: 'skada', fro: 1, fart: 1, vind: 0, dimma: 0, halt: 0 };
+// platserna (steg 3.7.20): väggarna i rutor på planen (AW × AH). Den som står i öppningen stänger den för fienderna
+const PLATSER: Record<string, { tecken: string; namn: string; hinder: Hinder[] }> = {
+  oppen: { tecken: '⬜', namn: 'Öppen plan', hinder: [] },
+  dorr: { tecken: '🚪', namn: 'En vägg med en dörröppning', hinder: [{ x: AW / 2 - 0.25, y: 0, b: 0.5, h: 4 }, { x: AW / 2 - 0.25, y: 5, b: 0.5, h: 4 }] },
+  gang: { tecken: '🛤️', namn: 'En trång gång mellan två väggar', hinder: [{ x: 5, y: 0, b: 4, h: 4 }, { x: 5, y: 5, b: 4, h: 4 }] },
+};
+const lag: { sidor: [Rad[], Rad[]]; avsikt: Avsikt; fro: number; fart: number; vind: number; dimma: number; halt: number; plats: string } = { sidor: [[ny()], [ny()]], avsikt: 'skada', fro: 1, fart: 1, vind: 0, dimma: 0, halt: 0, plats: 'oppen' };
 let st: Strid | undefined, spelar = false, sist = 0, kvar = 0, sedd = 0, filter = -1, manga = '';
 const blink = new Map<number, { t: number; h: 'traff' | 'miss' | 'tog'; mot?: number; kast?: 1 }>(); // senaste slaget per kämpe (för utfallet)
 const FARG = ['#b2921b', '#61767a'], SIDA = [0xb2921b, 0x61767a]; // sidornas färg (ringen runt kämpen)
@@ -36,7 +42,8 @@ function uppstallning(): Uppstallning {
     else kampar.push({ id: id++, namn: `Kämpe ${sd === 0 ? 'A' : 'B'}${sida.length > 1 ? i + 1 : ''}`, sida: side, st: { ...r.st }, vapen: r.vapen, reserv: r.reserv !== r.vapen ? r.reserv : undefined, klader: r.klader, fart: 1, x, y });
   }));
   foljet(s, kampar); // byns ledare och vännerna som skyddar hen (steg 3.7.12)
-  return { avsikt: lag.avsikt, w: AW, h: AH, vind: lag.vind, dimma: lag.dimma, halt: lag.halt, kampar };
+  const hinder = PLATSER[lag.plats].hinder;
+  return { avsikt: lag.avsikt, w: AW, h: AH, vind: lag.vind, dimma: lag.dimma, halt: lag.halt, ...(hinder.length ? { hinder } : {}), kampar };
 }
 let senast: { u: Uppstallning; fro: number } | undefined; // striden som visas (↺ visar den igen)
 function starta(u = uppstallning(), fro = lag.fro) { senast = { u, fro }; st = nyStrid(u, fro); sedd = 0; kvar = 0; blink.clear(); filter = -1; manga = ''; byFolk(); visaLogg(); }
@@ -124,6 +131,7 @@ export function drawArena() {
   arenaG.clear();
   if ($('arena').hidden || !st) { if (dolda.size) dolda.clear(); return; }
   arenaG.lineStyle(1, 0xffffff, 0.35).drawRect(ox * TS, oy * TS, AW * TS, AH * TS).lineStyle(0); // planens kant
+  for (const o of st.hinder ?? []) arenaG.beginFill(0x6b5236).drawRect((ox + o.x) * TS, (oy + o.y) * TS, o.b * TS, o.h * TS).endFill().beginFill(0x4a3926).drawRect((ox + o.x) * TS, (oy + o.y + o.h) * TS - 2, o.b * TS, 2).endFill(); // väggarna (steg 3.7.20), platshållare
   for (const o of st.marken) arenaG.lineStyle(1.2, 0x5a4630, 1).moveTo((ox + o.x) * TS - 4, (oy + o.y) * TS + 2).lineTo((ox + o.x) * TS + 4, (oy + o.y) * TS - 1).lineStyle(0); // vapen på marken (steg 3.7.8)
   for (const k of st.kampar) {
     if (k.lage === 'borta') continue;
@@ -212,6 +220,7 @@ $('arena').innerHTML = `<div class="card arena">
         <select id="arVind" title="Blåsten (sämre kast)">${[0, 0.5, 1].map(v => `<option value="${v}">${v === 0 ? '🍃' : v < 1 ? '💨' : '🌪️'}</option>`).join('')}</select>
         <select id="arDimma" title="Dimman (sämre kast, steg 3.7.11)">${[0, 0.5, 1].map(v => `<option value="${v}">${v === 0 ? '👁' : v < 1 ? '🌁' : '🌫'}</option>`).join('')}</select>
         <select id="arHalt" title="Marken (hal mark fäller lättare)">${[0, 0.5, 1].map(v => `<option value="${v}">${v === 0 ? '🟫' : v < 1 ? '💧' : '🧊'}</option>`).join('')}</select>
+        <select id="arPlats" title="Platsen">${Object.entries(PLATSER).map(([k, p]) => `<option value="${k}" title="${esc(p.namn)}">${p.tecken}</option>`).join('')}</select>
         <select id="arFart" title="Fart">${[0.25, 0.5, 1, 2, 4].map(f => `<option value="${f}"${f === 1 ? ' selected' : ''}>${f}×</option>`).join('')}</select>
         <span id="arTid" class="muted"></span>
       </div>
@@ -234,6 +243,7 @@ $('arByn').addEventListener('change', e => { const m = s.strider?.[Number((e.tar
 $('arHalt').addEventListener('change', e => { lag.halt = Number((e.target as HTMLSelectElement).value); starta(); });
 $('arDimma').addEventListener('change', e => { lag.dimma = Number((e.target as HTMLSelectElement).value); starta(); });
 $('arVind').addEventListener('change', e => { lag.vind = Number((e.target as HTMLSelectElement).value); starta(); });
+$('arPlats').addEventListener('change', e => { lag.plats = (e.target as HTMLSelectElement).value; starta(); });
 $('arFart').addEventListener('change', e => { lag.fart = Number((e.target as HTMLSelectElement).value); });
 $('arFilt').addEventListener('change', e => { filter = Number((e.target as HTMLSelectElement).value); visaLogg(); });
 $('arLogg').addEventListener('click', e => (e.target as HTMLElement).closest('li')?.classList.toggle('open'));
