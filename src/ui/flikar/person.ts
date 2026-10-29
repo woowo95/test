@@ -223,9 +223,12 @@ function relHtml(p: Person) {
 // rykten och intryck (steg 3.3, 3.4): vad byn tycker om hen, och vad hen tror om andra. Varje intryck är en symbol; ett
 // tryck visar hur säker hen är, varifrån det kommer, om det är överdrivet eller påhittat och händelserna bakom
 const ikTecken = (k: keyof typeof INTRYCK, px = 16) => tecknet('i_' + k, INTRYCK[k].sym, px);
+// anseendet och minnet efter döden som pixelsymboler (steg 3.6.11), med tecknet om bilden saknas
+const ANS_IKON: Record<string, string> = { '★': 'i_legend', '☠': 'i_okand', '😇': 'a_gott', '😐': 'a_blandat', '😈': 'a_daligt' };
+const ansTecken = (a: string, px = 16) => tecknet(ANS_IKON[a] ?? '', a, px);
 function anseende(p: Person) {
   const a = alive(p) ? anseendeSym(s, p.id) : dodSymbol(s, p.id);
-  return a ? ` <span class="anseende" title="${esc(alive(p) ? 'Vad byn tycker om hen' : a === '★' ? 'En legend i byn' : 'Ökänd i byn')}">${a}</span>` : '';
+  return a ? ` <span class="anseende" title="${esc(alive(p) ? 'Vad byn tycker om hen' : a === '★' ? 'En legend i byn' : 'Ökänd i byn')}">${ansTecken(a)}</span>` : '';
 }
 function ryktenHtml(p: Person) {
   const byn = samlatIntryck(s, p.id).slice(0, 6);
@@ -238,7 +241,7 @@ function ryktenHtml(p: Person) {
     const sym = L.map(e => `<button type="button" class="relsym" data-hjalp="${id(e)}" data-hjalp-grupp="ik-${p.id}-${e.om}-" title="${esc(INTRYCK[e.k].namn)}" aria-label="${esc(INTRYCK[e.k].namn)}">${ikTecken(e.k)}</button>`).join('');
     const e = L.find(x => hjalpOppen(id(x))), t = e && intryckText(s, e);
     const mer = t ? `<p class="muted small relfork"><b>${esc(cap(t.namn))}</b>: ${esc([t.sure, t.varifran, t.slag, t.sant].filter(Boolean).join(', '))}${t.bevis.length ? `<br>${t.bevis.map(b => esc(b)).join('<br>')}` : ''}</p>` : '';
-    return `<li>${namn}${dod ? ` <span title="${dod === '★' ? 'En legend' : dod === '☠' ? 'Ökänd' : 'Död'}">${dod}</span>` : ''}<span class="relsyms">${sym}</span>${mer}</li>`;
+    return `<li>${namn}${dod ? ` <span title="${dod === '★' ? 'En legend' : dod === '☠' ? 'Ökänd' : 'Död'}">${ansTecken(dod, 12)}</span>` : ''}<span class="relsyms">${sym}</span>${mer}</li>`;
   });
   return `<h3>Vad byn tycker om hen</h3>${omHen}<h3>Vad hen tror om andra</h3>${rader.length ? `<ul class="rels">${rader.join('')}</ul>` : '<p class="muted">Inga intryck ännu.</p>'}`;
 }

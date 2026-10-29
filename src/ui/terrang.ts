@@ -1,6 +1,7 @@
+import * as PIXI from 'pixi.js';
 import { H, T, W, ageIndex, emberOn, fireHeat, eldPlats, getMap, groundOf, isCm, lightLevel } from '../sim';
 import { s } from './lage';
-import { TS, glowG, nightG, terrainG } from './scen';
+import { TS, glowG, nightG, terrainG, world } from './scen';
 
 // marken: vatten, sand, gräs som trampas ner till stigar, skog som växer, och natten med eldens sken
 const PAL = [
@@ -13,6 +14,43 @@ const PAL = [
 // isen på sjön (steg 2.11.3, sim/is.ts): 0 = öppet vatten, 1 = tunn is (under 5 cm, mörk och genomskinlig), 2 = tjock is
 const ISFARG = [0, 0x8fb0bf, 0xb9d2dc];
 const isNiva = () => { const cm = isCm(s); return cm <= 0 ? 0 : cm < 5 ? 1 : 2; };
+// isen målad över hela sjön, punkt för punkt (steg 3.6.11, Björn valde version 1 i bildstilen): is i korn med långa tunna
+// sprickor; den tunna isen är mörk och fläckig av vattnet under. Färgerna är bildstilens skiffer och ben. En bild för
+// hela kartan, som ritas om bara när isen blir tunn eller tjock eller kartan byts
+const hash = (x: number, y: number, k = 0) => { const h = Math.sin(x * 127.1 + y * 311.7 + k * 74.7) * 43758.5453; return h - Math.floor(h); };
+function vn(x: number, y: number, sk: number, k: number) {
+  const fx = x / sk, fy = y / sk, x0 = Math.floor(fx), y0 = Math.floor(fy), tx = fx - x0, ty = fy - y0;
+  const u = tx * tx * (3 - 2 * tx), v = ty * ty * (3 - 2 * ty);
+  const a = hash(x0, y0, k), b = hash(x0 + 1, y0, k), c = hash(x0, y0 + 1, k), d = hash(x0 + 1, y0 + 1, k);
+  return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+}
+const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map(v => (v + 0.5) / 16);
+const ISPAL = { s0: 0x233035, s1: 0x3e5156, s2: 0x61767a, s3: 0x8a9c9e, b1: 0xa0947d };
+const isSprite = new PIXI.Sprite();
+let isNyckel = '';
+function ritaIs(is: number) {
+  const nyckel = is ? `${s.seed}|${is}` : '';
+  if (nyckel === isNyckel) return;
+  isNyckel = nyckel; isSprite.visible = !!is;
+  if (!is) return;
+  if (!isSprite.parent) world.addChildAt(isSprite, world.getChildIndex(terrainG) + 1);
+  const m = getMap(s.seed), c = document.createElement('canvas'); c.width = W * TS; c.height = H * TS;
+  const g = c.getContext('2d')!, img = g.createImageData(c.width, c.height), d = img.data;
+  for (let ty = 0; ty < H; ty++) for (let tx = 0; tx < W; tx++) {
+    if (m.tiles[ty * W + tx] !== T.Vatten) continue;
+    for (let py = 0; py < TS; py++) for (let px = 0; px < TS; px++) {
+      const x = tx * TS + px, y = ty * TS + py, nn = vn(x, y, 7, 2) * 0.35 + hash(x, y, 3) * 0.65;
+      let col = is === 1 ? (BAYER[(y & 3) * 4 + (x & 3)] < 0.3 ? ISPAL.s0 : nn > 0.85 ? ISPAL.s2 : ISPAL.s1) // tunn is
+        : nn < 0.24 ? ISPAL.s2 : nn > 0.8 ? ISPAL.b1 : ISPAL.s3; // tjock is
+      if (Math.abs(vn(x, y, 9, 31) - 0.5) < 0.025) col = ISPAL.s1; // sprickorna
+      const o = (y * c.width + x) * 4;
+      d[o] = col >> 16; d[o + 1] = (col >> 8) & 255; d[o + 2] = col & 255; d[o + 3] = 255;
+    }
+  }
+  g.putImageData(img, 0, 0);
+  if (isSprite.texture !== PIXI.Texture.EMPTY) isSprite.texture.destroy(true);
+  isSprite.texture = PIXI.Texture.from(c, { scaleMode: PIXI.SCALE_MODES.NEAREST });
+}
 let drawnAge = -1, drawnSig = -1, drawnIs = -1, lastSigCheck = 0;
 const PATH_COL = [0xb4b9b3, 0x8e7752, 0x9a8258, 0x846c47]; // upptrampad mark per tidsålder (snö i istiden)
 // hur sliten en ruta ser ut, i fem steg: 0 = orörd, 4 = bar jord
@@ -41,6 +79,7 @@ export function drawTerrain(force = false) {
   const is = isNiva();
   if (!force && ai === drawnAge && sig === drawnSig && is === drawnIs) return;
   drawnAge = ai; drawnSig = sig; drawnIs = is;
+  ritaIs(is);
   const m = getMap(s.seed), pal = PAL[ai], g = groundOf(s);
   terrainG.clear();
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {

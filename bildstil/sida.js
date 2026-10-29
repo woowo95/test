@@ -932,16 +932,11 @@ function forstorad(B, k, x0, y0) {
 // dokument i databasens samling 'val' tas bort
 const VATTENSACK = { o: 'kol0', j: 'jord1', J: 'jord2', L: 'jord3', k: 'jord0', s: 'senap1', y: 'senap2', w: 'ben2', b: 'skiffer2', B: 'skiffer3' };
 const VILDKORN = { s: 'senap0', y: 'senap1', Y: 'senap2', L: 'senap3', o: 'oliv1', O: 'oliv2', G: 'oliv3' };
-const ARTER = { o: 'kol0', g: 'barr1', G: 'oliv2', L: 'oliv3', y: 'senap2', Y: 'senap3', w: 'ben3', W: 'ben2' };
 const FRON = { k: 'jord0', j: 'jord1', J: 'jord2', B: 'jord3', y: 'senap1', Y: 'senap2', L: 'senap3', g: 'oliv2', G: 'oliv3', o: 'kol0' };
 const ODLING = { k: 'jord0', j: 'jord1', J: 'jord2', B: 'jord3', g: 'oliv1', G: 'oliv2', H: 'oliv3', y: 'senap2', Y: 'senap3' };
 const ROVOR = { o: 'oliv0', g: 'oliv1', G: 'oliv2', L: 'oliv3', r: 'rost1', R: 'rost2', b: 'ben1', B: 'ben2', W: 'ben3', k: 'jord0', j: 'jord1', J: 'jord2' };
 const KORN = { s: 'senap0', y: 'senap1', Y: 'senap2', L: 'senap3', k: 'jord0', j: 'jord1', J: 'jord2' };
-const GRODD = { k: 'jord0', j: 'jord1', J: 'jord2', g: 'oliv1', G: 'oliv2', L: 'oliv3' };
 const TOA = { v: 'senap3', V: 'oliv3', c: 'jord1', C: 'jord2', k: 'jord0' };
-const KV_M = (lista) => ({ w: lista.length * 10 + 2, h: 12, kol: true, rita: (B, P) => lista.forEach(([l, r], i) => ritaSprite(B, r, l, 2 + i * 10, 2)) });
-const KV_G = { a: 'senap1', b: 'senap2', c: 'senap3', w: 'ben3' };
-const KV_MEDALJ = ['..aaaa..', '.abbbba.', 'abbccbba', 'abccccba', 'abccccba', 'abbccbba', '.abbbba.', '..aaaa..'];
 // vädrets symboler (steg 2.11.4): klart, mulet, regn, snö, blåst och åska, 8 × 8 punkter
 const VS_L = { a: 'senap1', b: 'senap2', c: 'senap3', w: 'ben1', W: 'ben3', d: 'skiffer3', s: 'ben2', S: 'ben3', k: 'skiffer1', K: 'skiffer2', y: 'senap3', v: 'ben2' };
 const VS = [
@@ -977,64 +972,6 @@ const regnKarta = (stil) => ({ w: 64, h: 32, rita: (B, P) => {
     else B.satt(x, y, sn);
   }
 } });
-// isen på sjön (steg 2.11.3): öppet vatten, tunn is och tjock is med ett upphugget hål, en ruta (16 × 16) var
-const isKarta = (stil) => ({ w: 3 * 18 + 2, h: 20, rita: (B, P) => {
-  const ruta = (x0, f) => { for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) B.satt(x0 + x, 2 + y, f(x, y)); };
-  const h = (x, y, s) => hash(x, y, s + stil * 13);
-  ruta(2, (x, y) => (y % 5 === 2 && x % 7 < 3) ? P.i('skiffer', 2) : P.i('skiffer', 1));
-  ruta(20, (x, y) => stil === 1 ? (h(x, y, 1) > 0.85 ? P.i('skiffer', 1) : P.i('skiffer', 2))
-    : stil === 2 ? ((x + y * 2) % 9 === 0 ? P.i('skiffer', 3) : P.i('skiffer', 2))
-    : (h(x >> 1, y >> 1, 2) > 0.7 ? P.i('barr', 2) : P.i('skiffer', 2)));
-  ruta(38, (x, y) => {
-    const dx = x - 8, dy = y - 8, r = dx * dx + dy * dy;
-    if (r <= 5) return P.i(stil === 3 ? 'barr' : 'skiffer', stil === 3 ? 0 : 1); // hålet
-    if (stil >= 2 && r <= 10 && h(x, y, 3) > 0.4) return P.i('ben', 3); // isbitar runt hålet
-    if (stil === 2 && (x === y + 3 || x === 15 - y - 2) && h(x, y, 4) > 0.3) return P.i('ben', 3); // sprickor
-    if (stil === 3 && (x + y) % 11 === 0 && y < 7) return P.i('ben', 3); // glans
-    return h(x, y, 5) > (stil === 1 ? 0.92 : 0.8) ? P.i('ben', 3) : P.i('skiffer', 3); // snö på isen
-  });
-} });
-const KV_SPRICKA = ['........', '.r......', '..R.....', '..RR..r.', '...RRR..', '.....R..', '....r...', '........'];
-const KV_FIN = ['........', '...a....', '...b....', '.abcba..', '...b....', '...a....', '........', '........'];
-const KV_MASTER = ['...a....', '...b....', '..aca...', 'abcwcba.', '..aca...', '...b....', '...a....', '........'];
-const KV_PERFEKT = ['...a..w.', '...b.wcw', '..aca.w.', 'abcwcba.', '..aca...', '...b..w.', '...a.wcw', '......w.'];
-// fältet (steg 2.10.3): fyra rutor med en gröda var, på jord i korn utan fåror
-const faltRutor = (planta) => ({ w: 36, h: 36, rita: (B, P) => {
-  for (let y = 0; y < 32; y++) for (let x = 0; x < 32; x++) { const h = hash(x, y, 77); B.satt(2 + x, 2 + y, P.i('jord', h < 0.12 ? 0 : h > 0.88 ? 2 : 1)); }
-  for (const [x0, y0] of [[2, 2], [18, 2], [2, 18], [18, 18]]) ritaSprite(B, planta, { ...GRODD, K: 'jord3' }, x0, y0);
-} });
-// isen målad över en hel sjö (steg 2.11.3), som i istiden i scenen: öppet vatten till vänster, tunn is, tjock is och ett hål
-const isSjo = (stil) => ({ w: 88, h: 52, rita: (B, P) => {
-  for (let y = 0; y < 52; y++) for (let x = 0; x < 88; x++) {
-    const nn = vn(x, y, 7, 2) * 0.35 + hash(x, y, 3) * 0.65, ton = (lo, mid, hi) => nn < 0.24 ? lo : nn > 0.8 ? hi : mid;
-    const vd = ((x - 44) / 40) ** 2 + ((y - 26) / 22) ** 2 + (vn(x, y, 7, 1) - 0.5) * 0.22;
-    let v;
-    if (vd >= 1.16) v = ton(P.i('ben', 1), P.i('ben', 2), P.i('ben', 3)); // snö på land
-    else if (vd >= 1) v = ton(P.i('ben', 0), P.i('ben', 1), P.i('ben', 2)); // stranden
-    else {
-      const kant = x + (vn(x, y, 6, 5) - 0.5) * 10;
-      const r2 = (x - 66) ** 2 + ((y - 24) * 1.1) ** 2;
-      if (kant < 22) v = vd < 0.7 && bayer(x, y) < 0.4 ? P.i('barr', 0) : P.i('skiffer', 0); // öppet vatten
-      else if (kant < 36) { // tunn is: mörk, blandas in mot vattnet
-        const t = (kant - 22) / 14;
-        v = bayer(x, y) < 0.55 - t * 0.5 ? P.i('skiffer', 0) : P.i('skiffer', 1);
-        if (stil === 3 && hash(x >> 1, y >> 1, 9) > 0.8) v = P.i('barr', 0); // vattnet syns under
-        if (stil !== 3 && nn > 0.85) v = P.i('skiffer', 2);
-      } else if (r2 <= 6) v = stil === 3 ? P.i('barr', 0) : P.i('skiffer', 0); // hålet
-      else if (r2 <= 14 && hash(x, y, 4) > 0.45) v = P.i('ben', 3); // isbitar runt hålet
-      else { // tjock is
-        v = ton(P.i('skiffer', 2), P.i('skiffer', 3), P.i('ben', 1));
-        if (stil === 2 && vn(x, y, 12, 21) > 0.6) v = vn(x, y, 12, 21) > 0.7 ? P.i('ben', 3) : P.i('ben', 2); // snödrivor
-        if (stil === 3 && (x + y * 2) % 13 < 2 && vn(x, y, 10, 22) > 0.55) v = P.i('ben', 3); // glansstreck
-      }
-      // långa tunna sprickor över hela isen
-      if (kant >= 22 && r2 > 14 && Math.abs(vn(x, y, 9, 31) - 0.5) < (stil === 2 ? 0.015 : 0.025)) v = P.i('skiffer', 1);
-    }
-    B.satt(x, y, v);
-  }
-} });
-// relationstypernas symboler (steg 3.1.1): tio i rad, 16 × 16 punkter, samma legend för alla i en version
-const REL_M = (legend, lista) => ({ w: lista.length * 18 + 2, h: 20, kol: true, rita: (B, P) => lista.forEach((r, i) => ritaSprite(B, r, legend, 2 + i * 18, 2)) });
 // utbrottens symboler (steg 3.2.2–3.2.4): motiven ritas bara med fyllning, och kanten (o), skuggan (z) och brickan läggs på i koden
 const UTB_KANT = rader => rader.map((row, y) => [...row].map((ch, x) => ch !== '.' ? ch : [[0, -1], [0, 1], [-1, 0], [1, 0]].some(([dx, dy]) => { const c = rader[y + dy]?.[x + dx]; return c && c !== '.' && c !== 'o'; }) ? 'o' : '.').join(''));
 const UTB_SKUGGA = rader => rader.map((row, y) => [...row].map((ch, x) => ch === '.' && y > 0 && x > 0 && rader[y - 1][x - 1] !== '.' ? 'z' : ch).join(''));
@@ -1052,17 +989,6 @@ const UTB_MOTIV = [
   { namn: 'skrika (barn)', grad: 1, l: { a: 'ben2', w: 'ben3', b: 'ben1', t: 'skiffer3', r: 'rost2' }, p: UTB_DRAG({ 6: '   oo      oo   ', 7: '  t          t  ', 8: '  t          t  ', 9: '  t   oooo   t  ', 10: '  t  obbbbo  t  ', 11: '     obrrbo     ', 12: '      oooo      ' }) },
   { namn: 'blåmärket', grad: 0, l: { a: 'ben2', r: 'rost1', b: 'skiffer2', c: 'skiffer1' }, p: UTB_KANT(['................', '................', '...aaaaaaaaaa...', '..aaaaaaaaaaaa..', '.aaaaarrraaaaaa.', '.aaaarbbbraaaaa.', '.aaarbbcbbraaaa.', '.aaarbcccbraaaa.', '.aaaarbcbbraaaa.', '.aaaaarbbraaaaa.', '.aaaaaarraaaaaa.', '.aaaaaaaaaaaaaa.', '..aaaaaaaaaaaa..', '...aaaaaaaaaa...', '................', '................']) },
 ];
-const UTB_GRAD = ['skiffer2', 'oliv2', 'senap2', 'rost1'];
-// sätt = 'kant', 'skugga' eller 'bricka' (ljust motiv på en bricka i gradens färg, 20 × 20 punkter)
-const UTB_M = satt => ({ w: UTB_MOTIV.length * 22 + 2, h: 22, kol: true, rita: (B, P) => UTB_MOTIV.forEach((m, i) => {
-  const x0 = 3 + i * 22, y0 = 3;
-  if (satt === 'bricka') {
-    const tile = Array.from({ length: 20 }, (_, y) => Array.from({ length: 20 }, (_, x) => { const kx = Math.min(x, 19 - x), ky = Math.min(y, 19 - y); return kx + ky < 2 ? '.' : kx === 0 || ky === 0 || kx + ky === 2 ? 'k' : 'g'; }).join(''));
-    ritaSprite(B, tile, { k: 'kol0', g: UTB_GRAD[m.grad] }, x0 - 2, y0 - 2);
-    const ljus = Object.fromEntries(Object.keys(m.l).map(k => [k, ['a', 'h', 'w'].includes(k) ? 'ben3' : 'ben1']));
-    ritaSprite(B, m.p, { o: 'kol0', ...ljus }, x0, y0);
-  } else ritaSprite(B, satt === 'skugga' ? UTB_SKUGGA(m.p) : m.p, { o: 'kol0', z: 'skugga', ...m.l }, x0, y0);
-}) });
 // intryckens och ryktenas symboler (steg 3.3–3.4): motiven ritas med fyllning, och kanten, skuggan eller brickan läggs på i koden (som utbrotten)
 const IK_MOTIV = [
   { namn: 'våldsam', t: -1, l: { a: 'ben2', b: 'ben1' }, p: UTB_MOTIV[7].p },
@@ -1084,15 +1010,25 @@ const IK_MOTIV = [
   { namn: 'dåligt anseende', t: -1, l: { a: 'rost2', w: 'rost3', b: 'rost1', h: 'kol1' }, p: UTB_DRAG({ 0: '..h..........h..', 1: '..hh........hh..', 5: '    oo    oo    ', 6: '     o    o     ', 10: '     oooooo     ', 11: '    o      o    ' }) },
   { namn: 'farlig plats', t: -1, l: { a: 'senap2', b: 'senap1', k: 'kol0' }, p: UTB_KANT(['................', '.......aa.......', '.......aa.......', '......aaaa......', '......akka......', '.....aakkaa.....', '.....aakkaa.....', '....aaakkaaa....', '....aaakkaaa....', '...aaaakkaaaa...', '...aaaaaaaaaa...', '..aaaaakkaaaaa..', '..aaaaakkaaaaa..', '.aaaaaaaaaaaaaa.', '.bbbbbbbbbbbbbb.', '................']) },
 ];
-const IK_FARG = { '1': 'oliv2', '0': 'skiffer2', '-1': 'rost1' };
-const IK_M = satt => ({ w: IK_MOTIV.length * 22 + 2, h: 22, kol: true, rita: (B, P) => IK_MOTIV.forEach((m, i) => {
+// utbrotten förenklade (efter v143): en symbol per allvarsgrad 1–5, ur motiven ovan. 'skugga', 'bricka' (ljust motiv på en
+// bricka i gradens färg) eller 'ansikte' (bara ansiktet, argare och rödare för varje grad)
+const UTB5_FARG = ['oliv2', 'senap2', 'rost3', 'rost1', 'kol2'];
+const UTB5_MOTIV = [UTB_MOTIV[0], UTB_MOTIV[2], UTB_MOTIV[6], UTB_MOTIV[7], IK_MOTIV[13]];
+const UTB5_ANSIKTE = [
+  UTB_MOTIV[0],
+  { l: { a: 'senap3', w: 'ben3', b: 'senap2' }, p: UTB_DRAG({ 4: '   o        o   ', 5: '    oo    oo    ', 6: '     o    o     ', 11: '     oooooo     ' }) },
+  { l: { a: 'rost3', w: 'senap3', b: 'rost2' }, p: UTB_MOTIV[2].p },
+  { l: { a: 'rost2', w: 'ben3', b: 'rost1' }, p: UTB_DRAG({ 4: '   o        o   ', 5: '    oo    oo    ', 6: '    oo    oo    ', 10: '     oooooo     ', 11: '     owowow     ', 12: 'w    oooooo    w', 13: 'ww            ww', 14: ' w            w ' }) },
+  IK_MOTIV[13],
+];
+const UTB5_M = satt => ({ w: 5 * 22 + 2, h: 22, kol: true, rita: (B, P) => (satt === 'ansikte' ? UTB5_ANSIKTE : UTB5_MOTIV).forEach((m, i) => {
   const x0 = 3 + i * 22, y0 = 3;
   if (satt === 'bricka') {
     const tile = Array.from({ length: 20 }, (_, y) => Array.from({ length: 20 }, (_, x) => { const kx = Math.min(x, 19 - x), ky = Math.min(y, 19 - y); return kx + ky < 2 ? '.' : kx === 0 || ky === 0 || kx + ky === 2 ? 'k' : 'g'; }).join(''));
-    ritaSprite(B, tile, { k: 'kol0', g: IK_FARG[m.t] }, x0 - 2, y0 - 2);
+    ritaSprite(B, tile, { k: 'kol0', g: UTB5_FARG[i] }, x0 - 2, y0 - 2);
     const ljus = Object.fromEntries(Object.keys(m.l).map(k => [k, ['a', 'h', 'w'].includes(k) ? 'ben3' : 'ben1']));
     ritaSprite(B, m.p, { o: 'kol0', ...ljus }, x0, y0);
-  } else ritaSprite(B, satt === 'skugga' ? UTB_SKUGGA(m.p) : m.p, { o: 'kol0', z: 'skugga', ...m.l }, x0, y0);
+  } else ritaSprite(B, UTB_SKUGGA(m.p), { o: 'kol0', z: 'skugga', ...m.l }, x0, y0);
 }) });
 const LED_STAV = UTB_KANT(['................', '.......ss.......', '......sSSs......', '..ww..sSSs..ww..', '..wW..jjjj..Ww..', '...wW.rrrr.Ww...', '....wWjJJjWw....', '......jJJj......', '.......Jj.......', '.......Jj.......', '.......Jj.......', '.......Jj.......', '.......Jj.......', '.......Jj.......', '.......jj.......', '................']);
 const LED_KRONA = UTB_KANT(['................', '.......W........', '...W..wWw...W...', '..wWw.wWw..wWw..', '..wWw.wWw..wWw..', '..wWw.wWw..wWw..', '..rWw.wWw..wWr..', '...rr.wrw..rr...', '......rrr.......', '.ssssssssssssss.', '.sSySsSySsSySss.', '.ssssssssssssss.', '................', '................', '................', '................']);
@@ -1115,62 +1051,15 @@ const VAL = [
       { text: 'En fjäderkrona: tre vita fjädrar med röda spetsar i ett pannband med guldpärlor.', ...LED_M(LED_KRONA, { w: 'ben2', W: 'ben3', r: 'rost2', s: 'jord2', S: 'jord3', y: 'senap3' }) },
       { text: 'Ledaren och folket: en stor människa med armarna ut mellan två mindre, i ljust mot de mörkare.', ...LED_M(LED_FOLK, { a: 'senap3', b: 'skiffer2' }) },
     ] },
-  { id: 'intryck', namn: 'Ryktenas och intryckens symboler', vad: 'Nya symboler (steg 3.3–3.4), 16 × 16 punkter, i personrutans nya del Rykten, vid namnet och bland lärdomarna. Från vänster, intrycken: våldsam, tjuv, elak, lögnare, klåpare, lat, fattig, generös, hjälpsam, skicklig, flitig och rik. Sedan en död som blivit legend och en som blivit ökänd, anseendet vid namnet (gott, blandat, dåligt) och lärdomen om en farlig plats. I spelet nu: enkla runda brickor med ett tecken som platshållare.', typ: 'tre',
+  { id: 'utbrott', namn: 'Utbrottens symboler', vad: 'Nya symboler (steg 3.2.2–3.2.4), 16 × 16 punkter, i stället för emojierna som visar vad någon gör. Förenklade efter din kommentar: en symbol för varje allvarsgrad. Från vänster: grad 1 (gråta, tjura, skrika), grad 2 (vara elak, slå sönder något, springa iväg), grad 3 (ligga kvar i bädden, göra slut, slå), grad 4 (misshandla, lämna byn) och grad 5 (dråp).', typ: 'tre',
     versioner: [
-      { text: 'Enkla motiv med mörk kant: en knuten näve, en säck med knut, ett argt ansikte, ett ansikte med lång näsa, en bruten pinne, zzz över en kudde, en tom skål, ett paket med rosett, ett handslag, en stjärna, en hammare, en full korg, en strålande stjärna, en dödskalle, ett ansikte med gloria, ett neutralt, ett med horn och en varningstriangel.', ...IK_M('kant') },
-      { text: 'Samma motiv med en skugga snett nedanför, som relationernas symboler.', ...IK_M('skugga') },
-      { text: 'Ljusa motiv på en bricka: grön för det goda, rost för det dåliga och grå för det blandade.', ...IK_M('bricka') },
-    ] },
-  { id: 'utbrott', namn: 'Utbrottens symboler', vad: 'Nya symboler (steg 3.2.2–3.2.4), 16 × 16 punkter, i stället för emojierna som visar vad någon gör. Från vänster: gråta, tjura, vara elak (också när ett barn puttas med ett syskon), slå sönder något (också barnets trots), springa iväg (också när ett barn rymmer), ligga kvar i bädden, göra slut, slå, skrika (bara barn) och blåmärket efter ett slag.', typ: 'tre',
-    versioner: [
-      { text: 'Enkla motiv med mörk kant: ansikten för känslorna (tårar, ånga ur näsan, arga ögonbryn och tänder, ett skrikande barn), en kruka i bitar, en som springer, någon under filten, ett brustet hjärta, en knuten näve och ett blåmärke på huden.', ...UTB_M('kant') },
-      { text: 'Samma motiv med en skugga snett nedanför, som relationernas symboler.', ...UTB_M('skugga') },
-      { text: 'Ljusa motiv på en bricka i gradens färg: grönt för det lindriga (gråta, tjura, skrika), guld för grad 2 (vara elak, slå sönder, springa iväg), rost för det allvarliga (bädden, göra slut, slå) och grått för blåmärket.', ...UTB_M('bricka') },
-    ] },
-  { id: 'relationer', namn: 'Relationernas symboler', vad: 'Nya symboler (steg 3.1.1), 16 × 16 punkter, i personrutans relationsflik. Från vänster: gift, par, bästa vän, nära vän, vän, mentor, lärling, rival, ovän och ärkefiende.', typ: 'tre',
-    versioner: [
-      { text: 'Platshållarna som finns i spelet nu: två ringar, ett hjärta, två personer (närmare och närmare för vän, nära vän och bästa vän med ett hjärta), en stor och en liten person för mentor och lärling, en blixt mellan rivalerna och ett sprucket hjärta för ovän och ärkefiende.', ...REL_M({ o: 'kol0', k: 'kol2', d: 'rost1', r: 'rost2', R: 'rost3', g: 'senap3', G: 'senap2', b: 'ben3', s: 'skiffer3', S: 'skiffer2' }, [['................', '................', '................', '................', '...gggggggggg...', '..gg...gg...gg..', '.gg...gggg...gg.', '.gg...gggg...gg.', '.GG...GGGG...GG.', '.GG...GGGG...GG.', '..GG...GG...GG..', '...GGGGGGGGGG...', '................', '................', '................', '................'], ['................', '..ddddd..ddddd..', '..dRrrrddRrrrd..', '.dRrrrrrrrrrrrd.', '.drrrrrrrrrrrrd.', '.drrrrrrrrrrrrd.', '.drrrrrrrrrrrrd.', '.drrrrrrrrrrrrd.', '..drrrrrrrrrrd..', '...drrrrrrrrd...', '...drrrrrrrrd...', '....drrrrrrd....', '.....ddrrdd.....', '.......dd.......', '................', '................'], ['.....dddddd.....', '.....drrrrd.....', '.....drrrrd.....', '......drrd......', '......dddd......', '....o......o....', '..ooboo..ooboo..', '..obbbo..obbbo..', '..obbbo..obbbo..', '..ooboo..ooboo..', '..obobo..obobo..', '.obbbbboobbbbbo.', '.obbbbboobbbbbo.', '.obbbbboobbbbbo.', '.obbbbboobbbbbo.', '.oooooooooooooo.'], ['................', '................', '................', '................', '.....o....o.....', '...oobooooboo...', '...obbboobbbo...', '...obbboobbbo...', '...oobooooboo...', '...oboboobobo...', '..obbbbobbbbbo..', '..obbbbobbbbbo..', '..obbbbobbbbbo..', '..obbbbobbbbbo..', '..obbbbobbbbbo..', '..oooooooooooo..'], ['................', '................', '................', '................', '....o......o....', '..ooboo..ooboo..', '..obbbo..obbbo..', '..obbbo..obbbo..', '..ooboo..ooboo..', '..obobo..obobo..', '.obbbbboobbbbbo.', '.obbbbboobbbbbo.', '.obbbbboobbbbbo.', '.obbbbboobbbbbo.', '.obbbbboobbbbbo.', '.oooooooooooooo.'], ['................', '................', '...oooo.........', '..ooggoo........', '..oggggo........', '..ooggoo........', '...oooo.........', '..oggggo........', '.oggggggo.oooo..', '.oggggggo.osso..', '.oggggggo.oooo..', '.oggggggo.osso..', '.oggggggo.osso..', '.oggggggo.osso..', '.oggggggo.osso..', '.oooooooo.oooo..'], ['................', '................', '...oooo.........', '..oossoo........', '..osssso........', '..oossoo........', '...oooo.........', '..osssso........', '.osssssso.oooo..', '.osssssso.oggo..', '.osssssso.oooo..', '.osssssso.oggo..', '.osssssso.oggo..', '.osssssso.oggo..', '.osssssso.oggo..', '.oooooooo.oooo..'], ['................', '................', '.........g......', '........g.......', '........g.......', '.......g........', '.oooo..ggg.oooo.', '.obbo....g.obbo.', '.obbo...g..obbo.', '.oooo...g..oooo.', '.obbo..g...obbo.', 'obbbbo....obbbbo', 'obbbbo....obbbbo', 'obbbbo....obbbbo', 'obbbbo....obbbbo', 'oooooo....oooooo'], ['................', '..SSSSS..SSSSS..', '..SssssSSssssS..', '.SssssssssssssS.', '.SssssssosssssS.', '.SsssssossssssS.', '.SssssssosssssS.', '.SsssssssossssS.', '..SsssssossssS..', '...SsssossssS...', '...SssssosssS...', '....SsssossS....', '.....SSssSS.....', '.......SS.......', '................', '................'], ['................', '..ooooo..ooooo..', '..okkkkookkkko..', '.okkkkkkkkkkkko.', '.okkkkkkrkkkkko.', '.okkkkkrkkkkkko.', '.okkkkkkrkkkkko.', '.okkkkkkkrkkkko.', '..okkkkkrkkkko..', '...okkkrkkkko...', '...okkkkrkkko...', '....okkkrkko....', '.....ookkoo.....', '.......oo.......', '................', '................']]) },
-      { text: 'Samma motiv i färg efter typen: vännerna i olivgrönt, mentorn i guld, rivalerna i grått med en rostig blixt och ärkefiendens hjärta mörkt med guldspricka, och en skugga snett nedanför.', ...REL_M({ o: 'kol0', k: 'kol2', d: 'rost1', r: 'rost2', R: 'rost3', g: 'senap3', G: 'senap2', b: 'ben3', s: 'skiffer3', S: 'skiffer2', O: 'oliv3', Q: 'oliv2', z: 'skugga' }, [['................', '................', '................', '................', '...gggggggggg...', '..ggzzzggzzzgg..', '.ggzz.gggg...gg.', '.ggz..ggggz..ggz', '.GGz..GGGGz..GGz', '.GGz..GGGGz..GGz', '..GG...GGzz.GGzz', '...GGGGGGGGGGzz.', '....zzzzzzzzzz..', '................', '................', '................'], ['................', '..ddddd..ddddd..', '..dRrrrddRrrrdz.', '.dRrrrrrrrrrrrd.', '.drrrrrrrrrrrrdz', '.drrrrrrrrrrrrdz', '.drrrrrrrrrrrrdz', '.drrrrrrrrrrrrdz', '..drrrrrrrrrrdzz', '...drrrrrrrrdzz.', '...drrrrrrrrdz..', '....drrrrrrdzz..', '.....ddrrddzz...', '......zddzzz....', '........zz......', '................'], ['.....dddddd.....', '.....drrrrdz....', '.....drrrrdz....', '......drrdzz....', '......ddddz.....', '....o..zzzzo....', '..ooOoo..ooOoo..', '..oOOOoz.oOOOoz.', '..oOOOoz.oOOOoz.', '..ooOooz.ooOooz.', '..oOoOoz.oOoOoz.', '.oOOOOOooOOOOOo.', '.oOOOOOooOOOOOoz', '.oOOOOOooOOOOOoz', '.oOOOOOooOOOOOoz', '.ooooooooooooooz'], ['................', '................', '................', '................', '.....o....o.....', '...ooOooooOoo...', '...oOOOooOOOoz..', '...oOOOooOOOoz..', '...ooOooooOooz..', '...oOoOooOoOoz..', '..oOOOOoOOOOOo..', '..oOOOOoOOOOOoz.', '..oOOOOoOOOOOoz.', '..oOOOOoOOOOOoz.', '..oOOOOoOOOOOoz.', '..ooooooooooooz.'], ['................', '................', '................', '................', '....o......o....', '..ooQoo..ooQoo..', '..oQQQoz.oQQQoz.', '..oQQQoz.oQQQoz.', '..ooQooz.ooQooz.', '..oQoQoz.oQoQoz.', '.oQQQQQooQQQQQo.', '.oQQQQQooQQQQQoz', '.oQQQQQooQQQQQoz', '.oQQQQQooQQQQQoz', '.oQQQQQooQQQQQoz', '.ooooooooooooooz'], ['................', '................', '...oooo.........', '..ooGGoo........', '..oGGGGoz.......', '..ooGGooz.......', '...oooozz.......', '..oGGGGo........', '.oGGGGGGo.oooo..', '.oGGGGGGozoOOoz.', '.oGGGGGGozooooz.', '.oGGGGGGozoOOoz.', '.oGGGGGGozoOOoz.', '.oGGGGGGozoOOoz.', '.oGGGGGGozoOOoz.', '.oooooooozooooz.'], ['................', '................', '...oooo.........', '..ooGGoo........', '..oGGGGoz.......', '..ooGGooz.......', '...oooozz.......', '..oGGGGo........', '.oGGGGGGo.oooo..', '.oGGGGGGozoOOoz.', '.oGGGGGGozooooz.', '.oGGGGGGozoOOoz.', '.oGGGGGGozoOOoz.', '.oGGGGGGozoOOoz.', '.oGGGGGGozoOOoz.', '.oooooooozooooz.'], ['................', '................', '.........R......', '........R.z.....', '........Rz......', '.......R.z......', '.oooo..RRR.oooo.', '.ossoz..zRzossoz', '.ossoz..R.zossoz', '.ooooz..Rz.ooooz', '.ossoz.R.z.ossoz', 'osssso..z.osssso', 'ossssoz...osssso', 'ossssoz...osssso', 'ossssoz...osssso', 'ooooooz...oooooo'], ['................', '..SSSSS..SSSSS..', '..SssssSSssssSz.', '.SssssssssssssS.', '.SssssssosssssSz', '.SsssssossssssSz', '.SssssssosssssSz', '.SsssssssossssSz', '..SsssssossssSzz', '...SsssossssSzz.', '...SssssosssSz..', '....SsssossSzz..', '.....SSssSSzz...', '......zSSzzz....', '........zz......', '................'], ['................', '..ooooo..ooooo..', '..oddddooddddoz.', '.oddddddddddddo.', '.oddddddgdddddoz', '.odddddgddddddoz', '.oddddddgdddddoz', '.odddddddgddddoz', '..odddddgddddozz', '...odddgddddozz.', '...oddddgdddoz..', '....odddgddozz..', '.....ooddoozz...', '......zoozzz....', '........zz......', '................']]) },
-      { text: 'Runda brickor i typens färg med ett enkelt ljust tecken: rost för kärleken (ringar, hjärta), grönt för vännerna (två hjärtan, två prickar nära och längre isär), guld för mentor och lärling (stor och liten prick), grått för rival (korsade streck) och ovän, och mörkt för ärkefienden.', ...REL_M({ o: 'kol0', k: 'kol2', d: 'rost1', r: 'rost2', R: 'rost3', g: 'senap3', G: 'senap2', w: 'ben3', b: 'ben1', h: 'oliv1', S: 'skiffer1' }, [['......oooo......', '....oooooooo....', '...oorrrrrroo...', '..orrrrrrrrrro..', '.oorrrrrrrrrroo.', '.orrrggrrwwrrro.', 'oorrggggwwwwrroo', 'oorgrrrwgrrrwroo', 'oorgrrrwgrrrwroo', 'oorgrrrwgrrrwroo', '.orrggggwwwwrro.', '.oorrggrrwwrroo.', '..orrrrrrrrrro..', '...oorrrrrroo...', '....oooooooo....', '......oooo......'], ['......oooo......', '....oooooooo....', '...oorrrrrroo...', '..orrwrrrrwrro..', '.oorwwwwwwwwroo.', '.orrwwwwwwwwrro.', 'oorwwwwwwwwwwroo', 'oorrwwwwwwwwrroo', 'oorrwwwwwwwwrroo', 'oorrrwwwwwwrrroo', '.orrrrwwwwrrrro.', '.oorrrrwwrrrroo.', '..orrrrrrrrrro..', '...oorrrrrroo...', '....oooooooo....', '......oooo......'], ['......oooo......', '....oooooooo....', '...oohhhhhhoo...', '..ohhhhhhhhhho..', '.oohhhhhhhhhhoo.', '.ohhwhhhhhhRhho.', 'oohwwwwwRRRRRhoo', 'oohwwwwwRRRRRhoo', 'oohwwwwwRRRRRhoo', 'oohhwwwhhRRRhhoo', '.ohhhwhhhhhhhho.', '.oohhhhhhhhhhoo.', '..ohhhhhhhhhho..', '...oohhhhhhoo...', '....oooooooo....', '......oooo......'], ['......oooo......', '....oooooooo....', '...oohhhhhhoo...', '..ohhhhhhhhhho..', '.oohhhhhhhhhhoo.', '.ohhhhhhhhhhhho.', 'oohhhwwhhwwhhhoo', 'oohhhwwwwwwhhhoo', 'oohhhwwwwwwhhhoo', 'oohhhwwhhwwhhhoo', '.ohhhhhhhhhhhho.', '.oohhhhhhhhhhoo.', '..ohhhhhhhhhho..', '...oohhhhhhoo...', '....oooooooo....', '......oooo......'], ['......oooo......', '....oooooooo....', '...oohhhhhhoo...', '..ohhhhhhhhhho..', '.oohhhhhhhhhhoo.', '.ohhhhhhhhhhhho.', 'oohhwwhhhhwwhhoo', 'oohwwwwhhwwwwhoo', 'oohwwwwhhwwwwhoo', 'oohhwwhhhhwwhhoo', '.ohhhhhhhhhhhho.', '.oohhhhhhhhhhoo.', '..ohhhhhhhhhho..', '...oohhhhhhoo...', '....oooooooo....', '......oooo......'], ['......oooo......', '....oooooooo....', '...ooGGGGGGoo...', '..oGGGGGGGGGGo..', '.ooGGwwGGGGGGoo.', '.oGGwwwwGGGGGGo.', 'ooGGwwwwGGGGGGoo', 'ooGGwwwwGGGGGGoo', 'ooGGGwwGGGGGGGoo', 'ooGGGGGGGbbbGGoo', '.oGGGGGGGbbbGGo.', '.ooGGGGGGGGGGoo.', '..oGGGGGGGGGGo..', '...ooGGGGGGoo...', '....oooooooo....', '......oooo......'], ['......oooo......', '....oooooooo....', '...ooGGGGGGoo...', '..oGGGGGGGGGGo..', '.ooGGbbGGGGGGoo.', '.oGGbbbbGGGGGGo.', 'ooGGbbbbGGGGGGoo', 'ooGGbbbbGGGGGGoo', 'ooGGGbbGGGGGGGoo', 'ooGGGGGGGwwwGGoo', '.oGGGGGGGwwwGGo.', '.ooGGGGGGGGGGoo.', '..oGGGGGGGGGGo..', '...ooGGGGGGoo...', '....oooooooo....', '......oooo......'], ['......oooo......', '....oooooooo....', '...ooSSSSSSoo...', '..oSSSSSSSSSSo..', '.ooSwSSSSSSbSoo.', '.oSSwwSSSSbbSSo.', 'ooSSSwwSSbbSSSoo', 'ooSSSSwwbbSSSSoo', 'ooSSSSSbbSSSSSoo', 'ooSSSSbbwwSSSSoo', '.oSSSbbSSwwSSSo.', '.ooSbbSSSSwwSoo.', '..oSSSSSSSSSSo..', '...ooSSSSSSoo...', '....oooooooo....', '......oooo......'], ['......oooo......', '....oooooooo....', '...ooSSSSSSoo...', '..oSSbSSSSbSSo..', '.ooSbbbbSbbbSoo.', '.oSSbbbSbbbbSSo.', 'ooSbbbbbSbbbbSoo', 'ooSSbbbbbSbbSSoo', 'ooSSbbbbSbbbSSoo', 'ooSSSbbSbbbSSSoo', '.oSSSSbbSbSSSSo.', '.ooSSSSbSSSSSoo.', '..oSSSSSSSSSSo..', '...ooSSSSSSoo...', '....oooooooo....', '......oooo......'], ['......oooo......', '....oooooooo....', '...ookkkkkkoo...', '..okkdkkkkdkko..', '.ookddddodddkoo.', '.okkdddoddddkko.', 'ookdddddoddddkoo', 'ookkdddddoddkkoo', 'ookkddddodddkkoo', 'ookkkddodddkkkoo', '.okkkkddodkkkko.', '.ookkkkdokkkkoo.', '..okkkkkkkkkko..', '...ookkkkkkoo...', '....oooooooo....', '......oooo......']]) },
-    ] },
-  { id: 'isen', namn: 'Isen på sjön', vad: 'Nytt på kartan (steg 2.11.3): isen målad över hela sjön, som i istiden i scenen överst, i stället för ruta för ruta. Från vänster: öppet vatten, tunn is, tjock is och ett hål som någon huggit upp för att fiska eller dricka. Tre nya versioner efter din kommentar.', typ: 'tre',
-    idag: { ...isKarta(1) }, idagText: 'Förra förslaget (version 1), ruta för ruta, som du sa nej till.',
-    versioner: [
-      { text: 'Som i scenen: isen i korn med långa tunna sprickor över hela sjön. Den tunna isen är mörkare och blandas in mot det öppna vattnet.', ...isSjo(1) },
-      { text: 'Med snödrivor: mjuka vita fält av snö som blåst ut över den tjocka isen, och färre sprickor.', ...isSjo(2) },
-      { text: 'Blank is: ljusa glansstreck snett över isen, och i den tunna isen syns det mörka vattnet under.', ...isSjo(3) },
-    ] },
-  { id: 'kvalitet', namn: 'Kvalitetens symboler', vad: 'Nya symboler (steg 2.2.2), 8 × 8 punkter: usel, slarvig, fin, mästerverk och perfekt mästerverk, i den ordningen. Glansen (version 3) som du valde: de tre sista gnistorna i olika färger, och nya förslag på usel och slarvig, efter din kommentar.', typ: 'tre',
-    idag: { ...KV_M([
-      [{ R: 'rost2', r: 'rost1' }, KV_SPRICKA], [{ s: 'skiffer1', S: 'skiffer2' }, ['........', '........', '........', '..ss.s..', '.sSSss..', '..sss...', '........', '........']],
-      [KV_G, KV_FIN], [KV_G, KV_MASTER], [KV_G, KV_PERFEKT]]) }, idagText: 'Glansen du valde (version 3).',
-    versioner: [
-      { text: 'Usel är en bruten pinne i rost, slarvig ett grått krafs. Fin i brons, mästerverk i guld och perfekt i vitt guld.', ...KV_M([
-        [{ R: 'rost2', r: 'rost1' }, ['........', '.R......', '..R.....', '...R.r..', '.....R..', '......R.', '........', '........']],
-        [{ s: 'skiffer1', S: 'skiffer3' }, ['........', '........', '........', '.s...s..', '.sS.sSs.', '..sS..S.', '........', '........']],
-        [{ a: 'rost1', b: 'rost2', c: 'rost3', w: 'ben3' }, KV_FIN], [KV_G, KV_MASTER], [{ a: 'ben1', b: 'ben2', c: 'senap3', w: 'ben3' }, KV_PERFEKT]]) },
-      { text: 'Usel är ett mörkt dammoln, slarvig en ojämn grå fläck. Fin i silver, mästerverk i guld och perfekt i guld med vita gnistor.', ...KV_M([
-        [{ k: 'kol2', K: 'kol3' }, ['........', '..kk....', '.kKKk.k.', '.kKKKkK.', '..kkKKk.', '...kkk..', '........', '........']],
-        [{ s: 'skiffer1', S: 'skiffer2' }, ['........', '........', '...s....', '..sSs...', '...ss...', '........', '........', '........']],
-        [{ a: 'skiffer2', b: 'skiffer3', c: 'ben3', w: 'ben3' }, KV_FIN], [KV_G, KV_MASTER], [KV_G, KV_PERFEKT]]) },
-      { text: 'Usel är en vinkel som pekar nedåt, slarvig två sneda streck i jord. Fin i grönt, mästerverk i guld och perfekt i rost och guld som eld.', ...KV_M([
-        [{ R: 'rost2', r: 'rost1' }, ['........', '........', '.R....R.', '..r..r..', '...RR...', '........', '........', '........']],
-        [{ S: 'jord3', s: 'jord2' }, ['........', '........', '.SS.....', '...s.SS.', '.....s..', '........', '........', '........']],
-        [{ a: 'oliv2', b: 'oliv3', c: 'ben3', w: 'ben3' }, KV_FIN], [KV_G, KV_MASTER], [{ a: 'rost2', b: 'rost3', c: 'senap3', w: 'ben3' }, KV_PERFEKT]]) },
-    ] },
-  { id: 'grodd', namn: 'Fältet', vad: 'Nytt på kartan (steg 2.10.3): fältet medan grödan växer, en gröda per ruta och ingen fåra. Här visas fyra rutor bredvid varandra, som på ett fält. Tre nya varianter efter din kommentar.', typ: 'tre',
-    idag: { w: 20, h: 20, rita: (B, P) => ritaSprite(B, ['jjjjjjjjjjjjjjjj', 'kkkkkkkkkkkkkkkk', 'jjjjjjjjjjjjjjjj', 'jjjjjLLjjLLjjjjj', 'kkkkLGGgkGGLkkkk', 'jjjjjgGGjGgjjjjj', 'jjjjjjjgGgjjjjjj', 'kkkkkkkkgkkkkkkk', 'jjjjjjjjgjjjjjjj', 'jjjjjjjjjjjjjjjj', 'kkkkkkkkkkkkkkkk', 'jjjjjjjjjjjjjjjj', 'jjjjjjjjjjjjjjjj', 'kkkkkkkkkkkkkkkk', 'jjjjjjjjjjjjjjjj', 'jjjjjjjjjjjjjjjj'], GRODD, 2, 2) }, idagText: 'Grodden du valde (version 2), med fåror.',
-    versioner: [
-      { text: 'Grodden med fyra blad mitt på rutan, på jord i korn utan fåror.', ...faltRutor(['................', '................', '................', '................', '.......LL.......', '...LL..GG..LL...', '..LGGg.gG.gGGL..', '...gGGggGggGg...', '.....gGGGGg.....', '.......gG.......', '........g.......', '........g.......', '................', '................', '................', '................']) },
-      { text: 'En större ung planta med två våningar blad, som fyller rutan.', ...faltRutor(['................', '.......LL.......', '......LGGL......', '...LL..GG..LL...', '..LGGg.gG.gGGL..', '...gGGggGggGg...', '......gGGg......', '..LLg..gG..gLL..', '.LGGGg.gG.gGGGL.', '..gGGGggGgGGGg..', '....ggggGgggg...', '.......gG.......', '.......gg.......', '........g.......', '................', '................']) },
-      { text: 'Grodden i en liten kupa av uppkrattad jord, med en mörk skugga runt.', ...faltRutor(['................', '................', '................', '................', '.......LL.......', '...LL..GG..LL...', '..LGGg.gG.gGGL..', '...gGGggGggGg...', '.....gGGGGg.....', '.......gG.......', '.......gg.......', '.....kKgKk......', '....kKKKKKk.....', '.....kkkkk......', '................', '................']) },
+      { text: 'Ett motiv per grad med mörk kant och skugga: tårar, arga ögonbryn, ett brustet hjärta, en knuten näve och en dödskalle.', ...UTB5_M('skugga') },
+      { text: 'Samma motiv i ljust på en bricka i gradens färg: grönt, guld, orange, rost och mörkt.', ...UTB5_M('bricka') },
+      { text: 'Bara ansiktet, som blir argare och rödare för varje grad: ledset med en tår, surt i guld, argt med tänder i orange, rasande i rost med ånga och en dödskalle för dråpet.', ...UTB5_M('ansikte') },
     ] },
   { id: 'grill', namn: 'Grillen', vad: 'Station, tre rutor (steg 3.6.7). Omritad så att den syns bättre mot marken.', typ: 'janej',
     idag: { w: 52, h: 36, rita: (B, P) => forstorad(B, 'grill_karta', 2, 2) }, idagText: 'Grillen som den ser ut i spelet nu.',
     versioner: [{ text: 'En mörk kant runt klykorna och spettet, ljusare trä och en skugga på marken under klykorna.', w: 52, h: 36, rita: (B, P) => ritaSprite(B, grillNy(), { o: 'kol0', D: 'kol0', w: 'jord2', W: 'jord3', L: 'jord3', O: 'ben3', q: 'jord1', z: 'skugga' }, 2, 2) }] },
-  { id: 'arter', namn: 'Vilda ärter', vad: 'Ny växt (steg 2.10.2), 16 × 16 punkter: vilda ärter i skogsbrynet. Ärtväxten du valde, med en balja som syns mot gräset, efter din kommentar.', typ: 'janej',
-    idag: { w: 20, h: 20, rita: (B, P) => ritaSprite(B, ['..........ww....', '.........wWWw...', '..........ww....', '....gg....g.....', '...gGLg..g......', '...gGGg.g...gg..', '....gg.g...gGLg.', '......g....gGGg.', '......g...g.gg..', '..gg..g..g......', '.gGLg.g.g.......', '.gGGg.gg...oo...', '..gg..g...oGGo..', '......g..oGLGo..', '......g.oGGGo...', '.....ggg.ooo....'], ARTER, 2, 2) }, idagText: 'Ärtväxten du valde (version 3).',
-    versioner: [{ text: 'Samma växt, men baljan är ljust gulgrön med mörk kant och ärterna syns som knölar. Den hänger på en egen stjälk.', w: 20, h: 20, rita: (B, P) => ritaSprite(B, ['..........ww....', '.........wWWw...', '..........ww....', '....gg....g.....', '...gGLg..g......', '...gGGg.g...gg..', '....gg.g...gGLg.', '......g....gGGg.', '......g...g.gg..', '..gg..g..g......', '.gGLg.g.gg......', '.gGGg.gg..g.....', '..gg..g..oooo...', '......g.oYyYyo..', '......g.oyYyYo..', '.....ggg.oooo...'], ARTER, 2, 2) }] },
   { id: 'slaktbank', namn: 'Slaktbänken', vad: 'Station, tre rutor. Version 1 som du valde, med benen flyttade efter din kommentar.', typ: 'janej',
     idag: { w: 52, h: 28, rita: (B, P) => ritaSlakt(B, 2, 2, P, 1) }, idagText: 'Version 1 som du valde.',
     versioner: [{ text: 'Benen står i bordets fyra hörn: de främre längst ut i ändarna, de bakre lite innanför och kortare, som om de står längre bort.', w: 52, h: 28, rita: (B, P) => ritaSlakt(B, 2, 2, P, 1, true) }] },
@@ -1194,8 +1083,6 @@ const VAL = [
 const BESLUT = {
   kista: { val: 1, steg: '5.1.8' }, lagereld: { val: 1, steg: '5.1.8' }, symboler: { val: 1, steg: '5.1.8' }, slojdbank: { val: 1, steg: '5.1.8' },
   slaktbank: { val: 1, steg: '5.1.8' }, portratt: { val: 1, steg: '5.2.3', text: 'Sparas som förebild till karaktärsgeneratorn.' },
-  arter: { val: 0, steg: '3.6.11' }, grodd: { val: 1, steg: '3.6.11' }, intryck: { val: 2, steg: '3.6.11' }, isen: { val: 1, steg: '3.6.11' },
-  kvalitet: { val: 2, steg: '3.6.11' }, relationer: { val: 2, steg: '3.6.11' },
 };
 const VALT = VAL.filter(s => BESLUT[s.id]);
 for (const s of VALT) VAL.splice(VAL.indexOf(s), 1);
