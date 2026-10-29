@@ -1,4 +1,4 @@
-import { AGES, BEAT, DAY, HOUR, MIN, SEC, TalkEvent, VADERLAGE, vaderNu, kalender, alive, byId, cloneState, coverOf, createState, getMap, groundOf, isLight, rikedomDelar, spar, step, temperature, visning, yearNo, State } from './sim';
+import { AGES, BEAT, DAY, HOUR, MIN, SEC, TalkEvent, VADERLAGE, vaderNu, kalender, alive, byId, cloneState, coverOf, createState, getMap, groundOf, isLight, rikedomDelar, spar, step, temperature, visning, yearNo, State, motgangNu, motgangNasta, motgangDef, varslade } from './sim';
 import { $ } from './ui/hjalp';
 import { tecknet } from './ikoner';
 import { s, setByn, ui, nyBild, vidNyBy } from './ui/lage';
@@ -28,6 +28,17 @@ function renderClock() {
     const html = `${tecknet('vader_' + vaderNu(s, t).lage, v.ikon, 20)} 🌡 ${c > 0 ? '+' : c < 0 ? '−' : ''}${Math.abs(c)} °C`; // symbolen (steg 2.10.10)
     if (el.dataset.v !== html) { el.innerHTML = html; el.dataset.v = html; }
     el.title = `${v.namn}. ${v.text}`;
+  }
+  { // motgången som pågår, eller som någon i byn anar (steg 3.8.1, motgang.ts): symbolen, och vad den gör när musen är över den
+    const nu = motgangNu(s, t), na = nu ? undefined : motgangNasta(s, t), n = na ? varslade(s, na.start) : 0, el = $('calMotgang');
+    const m = nu ?? (n ? na : undefined), d = m && motgangDef(m.id);
+    el.hidden = !d;
+    if (d) {
+      const html = tecknet(d.ikon, d.tecken, 20);
+      if (el.dataset.v !== html) { el.innerHTML = html; el.dataset.v = html; }
+      el.style.opacity = nu ? '1' : '0.55';
+      el.title = nu ? `${d.namn}. ${d.text}` : `${n === 1 ? 'En' : n} i byn anar att det blir en ${d.namn.toLowerCase()}. ${d.text}`;
+    }
   }
   { // byns rikedom (varde.ts): talet, och vad den består av när musen är över
     const r = rikedomDelar(s), sum = r.forrad + r.redskap + r.hus, el = $('calRik'), a = s.delning?.andel ?? 0;

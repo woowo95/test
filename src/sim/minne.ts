@@ -14,6 +14,7 @@ import type { SamtalDef } from './samtal';
 import { RELT, arBast, arMentor, lartUt } from './relationer';
 import { vattenSmuts } from './smuts';
 import { lognFaktor, skvaller } from './rykten';
+import { delaVarsel } from './motgang';
 
 // ---------- balanstal (regel 8) ----------
 // Lärdomar: hur många man minns, hur mycket man tror på dem, hur de sprids och hur fort de glöms. Värdet (v) mäts i det en
@@ -298,6 +299,7 @@ export function share(s: State, a: Person, b: Person, r: Rel, slag: SamtalDef) {
     tell(s, a, b, pickViktat(s, a.lardomar, w, 'minne', a), r);
   }
   skvaller(s, a, b, r, slag.dela === 'delaBerattelse'); // och om vad hen tycker om andra (steg 3.3, rykten.ts)
+  if (a.varsel) delaVarsel(s, a, b, r); // och om en motgång som kommer (steg 3.8.1, motgang.ts)
   // kunskap: den som kan något bättre lär ut lite
   if (a.kunskap) for (const k in a.kunskap) {
     const e = a.kunskap[k], d = e.v - kn(b, k);

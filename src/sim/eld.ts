@@ -2,7 +2,8 @@ import { allaBarn } from './uppvaxt';
 import { addTo, amountOf, avbryt, fetchSpot, takeLimit, use } from './lager';
 import { Behov, addBehov, getable, takeMaterial } from './behov';
 import { Del, addDel } from './egendom';
-import { coldOf, temperature, vaderNu, VADER } from './vader';
+import { coldOf, hardVinter, temperature, vaderNu, VADER } from './vader';
+import { MOTGANG } from './motgang';
 import { roomAt } from './byggnad';
 import { ALDER, KROPP, ageOf, count, doingAct, isSick, living, log, ovning, stat, think } from './folk';
 import { halsa } from './halsa';
@@ -217,9 +218,9 @@ const awake = (s: State, p: Person, minAge: number) => {
 export function stepFire(s: State, dtSec: number, ppl: Person[]) {
   const f = s.fire, h = hearthOf(f), now = s.now;
   if (f.lit) {
-    // i regnet brinner en eld ute fortare (steg 2.11.1); en eld under tak gör det inte
+    // i regnet brinner en eld ute fortare (steg 2.11.1); en eld under tak gör det inte. I en hård vinter äter elden mer (steg 3.8.1)
     const regn = vaderNu(s).sno || roomAt(s, eldPlats(s).x + 0.5, eldPlats(s).y + 0.5) ? 0 : vaderNu(s).nb;
-    const b = Math.min(f.fuel, h.burn / HOUR_S * dtSec * (1 + regn * VADER.regnEld));
+    const b = Math.min(f.fuel, h.burn / HOUR_S * dtSec * (1 + regn * VADER.regnEld) * (1 + MOTGANG.hardVed * hardVinter(s)));
     f.fuel -= b; f.burned += b; f.totalBurned += b; f.litSec += dtSec;
     if (f.fuel <= 1e-6) {
       f.fuel = 0; f.lit = false; f.emberUntil = now + ELD.glodTim * HOUR; f.outs++;

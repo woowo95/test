@@ -1350,8 +1350,19 @@ const DORR_BOM = [
   'oooooooooooooooo', 'oJjoJjoJjoJjoJjo', 'oJjoJjoJjoJjoJjo', 'oJjoJjoJjoJjoJjo', 'oJjoJjoJjoJjoJjo', 'oJjoJjoJjoJjoJjo', 'ssJjoJjoJjoJjoss', 'oSSSSSSSSSSSSSSo',
   'oSSSSSSSSSSSSSSo', 'ssJjoJjoJjoJjoss', 'oJjoJjoJjoJjoJjo', 'oJjoJjoJjoJjoJjo', 'oJjoJjoJjoJjoJjo', 'oJjoJjoJjoJjoJjo', 'oJjoJjoJjoJjoJjo', 'oooooooooooooooo',
 ];
+const HV_L = { o: 'kol0', s: 'ben2', S: 'ben3', b: 'skiffer2', B: 'skiffer3', k: 'skiffer1', r: 'rost1' };
+const HV_FLINGA = ['.......o........', '....o.oso.o.....', '....osoSoso.....', '.o...osSso...o..', 'oso...oSo...oso.', '.osooooSooooso..', '..oSSSSSSSSSo...', '.osooooSooooso..', 'oso...oSo...ooo.', '.o...osSso..oBo.', '....osoSoso.oBo.', '....o.oso.o.oBo.', '.......o...ooboo', '...........obbbo', '...........obbbo', '............ooo.'];
+const HV_ANSIKTE = ['.....oooooo.....', '...oobbbbbboo...', '..obbBBBBBBbbo..', '.obBBBBBBBBBBbo.', '.obBBoBBBBoBBbo.', 'obBBBBBBBBBBBBbo', 'obBBBBBBBBBBBBbo', 'obBBoSoSoSoBBBbo', 'obBBoooooooBBBbo', '.obBBBBBBBBBBbo.', '.obbBBBBBBBBbbo.', '..oSbbbbbbbbSo..', '..oS.oooooo.So..', '...o........o...', '..oSo..oo..oSo..', '...o...oo...o...'];
+const HV_ISTAPP = ['oooooooooooooooo', 'oSSSSSSSSSSSSSSo', 'oSSSsSSSSSsSSSSo', '.osSSosSSsoSSSo.', '.oSSo.oSSo.oSso.', '.oSso.oSso..oSo.', '..oSo.osSo..oSo.', '..oso..oSo..oo..', '..oSo..oso......', '...o...oSo......', '.......oSo......', '........o.......', '....o.....o.....', '...oso...oso....', '....o.....o.....', '................'];
 const DORR_L = { J: 'jord2', j: 'jord1', W: 'jord3', y: 'senap2', k: 'kol0', S: 'jord3', s: 'skiffer1' };
 const VAL = [
+  { id: 'm_hardVinter', namn: 'Den hårda vintern', vad: 'Ny symbol (steg 3.8.1), 16 × 16 punkter, i kalendern bredvid temperaturen när en hård vinter pågår (blek när de äldsta i byn bara anar den). I spelet nu: version 1 (platshållare).', typ: 'tre',
+    versioner: [
+      { text: 'En snöflinga med en kall termometer bredvid.', ...LED_M(HV_FLINGA, HV_L) },
+      { text: 'Ett blått, frusande ansikte med hackande tänder och snö på hakan.', ...LED_M(HV_ANSIKTE, HV_L) },
+      { text: 'Istappar som hänger från en takkant, med snöflingor under.', ...LED_M(HV_ISTAPP, HV_L) },
+    ] },
+
   { id: 'tradorr', namn: 'Trädörren', vad: 'Ny dörr (steg 3.7.21), 16 × 16 punkter, i husets dörröppning. Den stängs när någon gömmer sig i huset, och vargarna kommer inte in. Till vänster i rätt storlek, till höger tre gånger större. I spelet nu: plankor med två rader rep (platshållare).', typ: 'tre',
     versioner: [
       { text: 'Lodräta plankor med mörka springor, bundna med två rader rep och ett handtag av trä.', ...LED_M(DORR_REP, DORR_L) },

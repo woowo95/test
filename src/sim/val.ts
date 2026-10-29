@@ -11,6 +11,7 @@ import { halsa, hemma, kanGa, vardVal, vilaHellre } from './halsa';
 import { harMat } from './behov';
 import { FANGST, Kind, Lager, flintSpot, richness, shoreOf, wantsFlint } from './fynd';
 import { coldOf, nederbord, temperature } from './vader';
+import { varselSamla } from './motgang';
 import { DJUR, DJURARTER, Djurart, GORS, canProcess, djurKvar, freeOfKinds, makeTask, toolGroups, wantsTool } from './redskap';
 import { PROJEKT, Uppgift, bastaProjekt } from './projekt';
 import { faltNu, vildFronPlats } from './odling';
@@ -521,7 +522,9 @@ export const torkAndel = (v: number) => VAL.torkaChans * (1 + VAL.torkPabud * v)
 // det arbete byn behöver mest just nu, vägt mot egen lust och vana. burg = hur mycket det mest behövda behövs
 function bestWork(s: State, p: Person, fd: number, wd: number, ai: number, tot: number, fara: Faror) {
   // en försiktig by vill ha större förråd, och ledarens påbud drar åt sitt håll (steg 3.5.2, styre.ts)
-  const fs = 1 + VAL.forsiktig * pabud(s, 'matlager'), vs = 1 + VAL.forsiktig * pabud(s, 'vedlager');
+  // den som anar en hård vinter vill ha ännu större förråd, mer i en förutseende by (steg 3.8.1, motgang.ts)
+  const mer = p.varsel ? varselSamla(s, p) : 0;
+  const fs = 1 + VAL.forsiktig * pabud(s, 'matlager') + mer, vs = 1 + VAL.forsiktig * pabud(s, 'vedlager') + mer;
   const wFood = clamp(VAL.behovTomt - fd / (VAL.matDygn * fs), VAL.matMin, VAL.behovMax);
   const wWood = clamp(VAL.behovTomt - wd / (VAL.vedDygn * vs), VAL.vedMin, VAL.behovMax) * (kallTid(ai) ? ARSTID.vedKall : 1); // inför och under istiden väger veden tyngre
   const vikt = { mat: wFood, ved: wWood };

@@ -173,6 +173,7 @@ export interface Person {
   // uppväxten (steg 3.1.2, uppvaxt.ts): det hen var med om som barn, och anlagen (det hen föddes med, som barnen ärver).
   // p.pot är anlagen plus upplevelserna; anlag saknas så länge hen inte har någon upplevelse
   upp?: Upplevelse[]; anlag?: Record<Stat, number>;
+  varsel?: { k: import('./motgang').MotgangId; t: number; c: number; src?: number }; // en motgång som personen anar eller hört om: när den börjar och hur säker (steg 3.8.1, motgang.ts)
   forv?: { f: number; w: number }; // förväntan och rikedom (humor.ts, steg 3.2.1)
   // utbrotten (steg 3.2.2, humor.ts): hur många nyss (klingar av), och det som väntar på att brista ut (slaget och när)
   utb?: number; ubr?: { k: string; t: number };
@@ -250,6 +251,7 @@ export interface State {
   hygien?: number; // hur mycket byn vet om att toa-smutsen gör vattnet sjukt (0–1, smuts.ts, steg 2.7.2)
   styre?: import('./styre').Styre; // ledaren, påbuden, straffen och vågskålarna (steg 3.5, styre.ts)
   djurHalsa?: import('./djur').DjurHalsa[]; djurDoda?: { id: number; t: number }[]; // skadade och dödade djur (steg 3.7.13, djur.ts)
+  motgang?: { varslad?: number; pagar?: { k: import('./motgang').MotgangId; t: number; dog: number } }; // motgången som byn varslats om (när den börjar) och den som pågår (steg 3.8.1, motgang.ts)
   vargar?: Vargflock[]; vargNr?: number; // vargflockarna på kartan och hur många som kommit (steg 3.7.1, varg.ts)
   djurSkramd?: { g: number; t: number }[]; // kaningrupper som skrämts av en jägare, och när (steg 3.7.3, jakt.ts)
   strider?: import('./strid').StridMinne[]; // de senaste striderna i byn, så att arenan kan visa dem igen (steg 3.7.2, strid.ts)

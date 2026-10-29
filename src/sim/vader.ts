@@ -3,6 +3,7 @@ import { HOUR, Person, State } from './typer';
 import { hourOf, kalender, yearPos } from './tid';
 import { balans } from './balans';
 import { count, log } from './folk';
+import { MOTGANG, hardGrader, motgangVid } from './motgang';
 
 // Balanstal (regel 8): temperaturen och hur fort man kyls
 export const VADER = balans('vader', {
@@ -61,12 +62,29 @@ export function temperature(s: State, t = s.now) {
   const c = yearPos(s, t); // var i året: 0 = istidens början
   const i = Math.floor(c), q = c - i;
   // under slutet av varje tidsålder glider temperaturen mot nästa
-  const a = VADER.medel[i], b = VADER.medel[(i + 1) % 4], f = clamp((q - VADER.glidFran) / VADER.glidSpann, 0, 1);
-  const base = a + (b - a) * (f * f * (3 - 2 * f));
+  const a = VADER.medel[i], b = VADER.medel[(i + 1) % 4], g = glid(q);
+  const base = a + (b - a) * g - hardKyla(s, t, i, g); // en hård vinter är kallare (steg 3.8.1)
   const sun = VADER.sol * Math.cos((hourOf(t) - VADER.solTopp) / 24 * Math.PI * 2); // varmast mitt på eftermiddagen, kallast mitt i natten
   const p = s.seed * 0.618;
   const weather = VADER.vaderStor * Math.sin(t / (VADER.vaderStorTim * HOUR) * 2 * Math.PI + p) + VADER.vaderMellan * Math.sin(t / (VADER.vaderMellanTim * HOUR) * 2 * Math.PI + p * 3.1) + VADER.vaderLiten * Math.sin(t / (VADER.vaderLitenTim * HOUR) * 2 * Math.PI + p * 7.7);
   return base + sun + weather;
+}
+// hur långt temperaturen glidit mot nästa tidsålder (0–1), q = del av tidsåldern som gått
+const glid = (q: number) => { const f = clamp((q - VADER.glidFran) / VADER.glidSpann, 0, 1); return f * f * (3 - 2 * f); };
+// den hårda vintern (steg 3.8.1, motgang.ts): hur många grader kallare det är. Kylan glider in i slutet av hösten och ut
+// i slutet av istiden, som temperaturen. i = tidsåldern, g = hur långt den glidit mot nästa
+function hardKyla(s: State, t: number, i: number, g: number) {
+  if (i !== 0 && i !== 3) return 0;
+  const k = kalender(s, t), start = i === 0 ? k.start : k.slut;
+  if (motgangVid(s, start, 0) !== 'hardVinter') return 0;
+  return (i === 0 ? 1 - g : g) * hardGrader(s, start);
+}
+// hur mycket av en hård vinter som gäller just nu (0–1): elden äter mer ved och vargarna kommer oftare (eld.ts, varg.ts)
+export function hardVinter(s: State, t = s.now) {
+  const c = yearPos(s, t), i = Math.floor(c), g = glid(c - i);
+  if (i !== 0 && i !== 3) return 0;
+  const k = kalender(s, t), start = i === 0 ? k.start : k.slut;
+  return motgangVid(s, start, 0) === 'hardVinter' ? (i === 0 ? 1 - g : g) : 0;
 }
 // hur fort man kyls ner utan eld, del av värmen per timme
 export function coldOf(temp: number) { return Math.max(0, (VADER.kallFran - temp) / VADER.kallDiv); }
@@ -115,7 +133,7 @@ export function vaderNu(s: State, t = s.now): Vader {
   if (c && c.t === t) return c.v;
   const ai = kalender(s, t).ai;
   const m = (1 - VADER.fuktLiten) * vag(s, t, VADER.fuktTim, 1) + VADER.fuktLiten * vag(s, t, VADER.fuktLitenTim, 2);
-  const g = VADER.regnFran[ai], nb = clamp((m - g) / (1 - g), 0, 1), moln = clamp((m - g + VADER.molnSpann) / VADER.molnSpann, 0, 1);
+  const g = VADER.regnFran[ai] - MOTGANG.hardSno * hardVinter(s, t), nb = clamp((m - g) / (1 - g), 0, 1), moln = clamp((m - g + VADER.molnSpann) / VADER.molnSpann, 0, 1);
   const temp = temperature(s, t), sno = nb > 0 && temp < VADER.snoGrad;
   const vind = clamp((vag(s, t, VADER.vindTim, 3) - VADER.blastFran[ai]) / (1 - VADER.blastFran[ai]), 0, 1);
   const aska = nb > 0 && !sno && temp > VADER.askaGrad && vag(s, t, VADER.askaTim, 4) > VADER.askaFran;

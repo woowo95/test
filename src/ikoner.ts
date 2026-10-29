@@ -135,6 +135,7 @@ const PAL: Record<string, Record<string, string>> = {
   a_smalta: { w: '#f4efe0', a: '#9fc6e8', y: '#f2d27a', r: '#e0604e' },
   a_vatten: { w: '#dad0bb', a: '#8a9c9e' }, // steg 2.10.1, platshållare i bildstilens palett
   // relationstyperna (steg 3.1.1, RELATIONER i relationer.ts), platshållare i bildstilens palett
+  m_hardVinter: { o: '#24201d', s: '#bdb39b', S: '#f2ece0', k: '#dad0bb', b: '#61767a' },
   i_legend: { a: '#d8b25f', b: '#b2921b', g: '#906f0f', o: '#24201d', w: '#dad0bb', z: 'rgba(0,0,0,.30)' },
   i_okand: { a: '#dad0bb', b: '#a0947d', k: '#2f261d', o: '#24201d', z: 'rgba(0,0,0,.30)' },
   a_gott: { a: '#bdb39b', b: '#a0947d', g: '#d8b25f', o: '#24201d', w: '#dad0bb', z: 'rgba(0,0,0,.30)' },
@@ -1160,6 +1161,25 @@ const PIX: Record<string, string[]> = {
     '...oyo....',
     '..oyo.....',
     '...o......',
+  ],
+  // den hårda vintern (steg 3.8.1, platshållare i bildstilens palett, 16 punkter): en snöflinga med en kall termometer
+  m_hardVinter: [
+    '.......o........',
+    '....o.oso.o.....',
+    '....osoSoso.....',
+    '.o...osSso...o..',
+    'oso...oSo...oso.',
+    '.osooooSooooso..',
+    '..oSSSSSSSSSo...',
+    '.osooooSooooso..',
+    'oso...oSo...ooo.',
+    '.o...osSso..oko.',
+    '....osoSoso.oko.',
+    '....o.oso.o.oko.',
+    '.......o...ooboo',
+    '...........obbbo',
+    '...........obbbo',
+    '............ooo.',
   ],
   vader_dimma: [ // platshållare (steg 3.7.11)
     '..........',

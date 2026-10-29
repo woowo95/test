@@ -17,6 +17,8 @@ import { clamp, rnd } from './slump';
 import { STRID, SLAGSMAL, VAPEN, Avsikt, Strid, Uppstallning, djurKampe, foljet, kastat, nyStrid, personKampe, stridTillSlut, svartSkadad } from './strid';
 import { ledareOf } from './styre';
 import { ageIndex, iIstiden, isLight } from './tid';
+import { hardVinter } from './vader';
+import { MOTGANG } from './motgang';
 import { H, HOUR, MIN, Person, SEC, State, T, Task, Vargflock, W } from './typer';
 import { taVapen } from './vakt';
 import { snoPaMarken, vaderNu } from './vader';
@@ -132,9 +134,10 @@ function nyttMal(s: State, f: Vargflock, bort?: { x: number; y: number }) {
   f.mx = bx; f.my = by;
 }
 
-// en flock kommer in från kanten under istiden
+// en flock kommer in från kanten under istiden, oftare och hungrigare i en hård vinter (steg 3.8.1, motgang.ts)
 function kommer(s: State) {
-  if (flockarna(s).length || !iIstiden(ageIndex(s)) || rnd(s, 'varg') >= VARG.kommer) return;
+  const hv = hardVinter(s);
+  if (flockarna(s).length || !iIstiden(ageIndex(s)) || rnd(s, 'varg') >= VARG.kommer * (1 + (MOTGANG.hardVarg - 1) * hv)) return;
   const m = getMap(s.seed);
   let x = 0, y = 0;
   for (let i = 0; i < 20; i++) {
@@ -147,7 +150,7 @@ function kommer(s: State) {
   const f: Vargflock = {
     id: nr, vargar: Array.from({ length: n }, (_, j) => 10_000_000 + nr * 8 + j), x, y, mx: x, my: y, kom: s.now,
     gar: s.now + (VARG.stannarTim[0] + rnd(s, 'varg') * (VARG.stannarTim[1] - VARG.stannarTim[0])) * HOUR,
-    hunger: VARG.hunger0[0] + rnd(s, 'varg') * (VARG.hunger0[1] - VARG.hunger0[0]), gor: 'stryker',
+    hunger: Math.min(1, VARG.hunger0[0] + rnd(s, 'varg') * (VARG.hunger0[1] - VARG.hunger0[0]) + MOTGANG.hardHunger * hv), gor: 'stryker',
   };
   nyttMal(s, f);
   (s.vargar ??= []).push(f);

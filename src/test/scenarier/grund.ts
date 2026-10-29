@@ -1,8 +1,11 @@
 // Scenarier. Grunden: gläntan, yxan, vintern, knapphet, svamp och flinta, kunskap, temperatur och kalender.
 import { createState, growGround, step, living, temperature, coldOf, ageIndex, ageStart, kalender, yearNo, AGES, amountOf, groundOf, getMap, DAY, HOUR, W, tileOf, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, angOf, setAmount, BEAT, tingOf, eatPoison, HOST, vaderNu, VADER, VADERLAGE, VaderId, blotSteg, varmeDelar, stepVader, vaxtFaktor, stepFire, hearthOf, cloneState, wearMult, vaderSlit, NEW_W, NEW_H, allaTider, tiderUtanfor, skaRojas } from '../../sim';
 import { BAR, FOREST, HIGH, isSoil } from '../../sim/vag';
+import * as SIM from '../../sim';
+import type { Person, State } from '../../sim';
+import { nyKalender } from '../../sim';
 import { START } from '../kor';
-import { setMat, Koll, kor, tandEld, logg, skogsandel, uttag, STOCKHOLM, SCENARIER } from './hjalp';
+import { setMat, Koll, kor, tandEld, logg, skogsandel, uttag, STOCKHOLM, SCENARIER, nyInvanare } from './hjalp';
 
 SCENARIER.glanta = {
   text: 'Ny by: fem personer utan eld i en liten glänta på en större karta, skog och ängar med högt gräs står runt omkring och marken nöts till stigar',
@@ -346,6 +349,64 @@ SCENARIER.tider = {
     return [
       ['registren har tider för saker, stationer, väggar, golv och fältet', ['Flintyxa', 'Slaktbänk', 'Timmervägg', 'Jordgolv', 'Fältruta: röja'].every(har)],
       [`alla tider ligger inom sitt slag${utanfor.length ? ` (utanför: ${utanfor.map(t => `${t.namn} ${t.min} min`).join(', ')})` : ''}`, !utanfor.length],
+    ];
+  },
+};
+
+SCENARIER.hardvinter = {
+  text: 'Steg 3.8.1: motgångarna (registret MOTGANGAR) räknas ur byns frö och tiden. En hård vinter kommer ungefär var femte istid, aldrig under byns första tio dygn: istiden är 5–8 grader kallare, det snöar mer, elden äter mer ved och vargarna kommer oftare. Den äldsta i byn anar den ett par dygn innan och berättar om det i samtal, och den som vet samlar mer. Den hårda vintern hamnar i byns krönika och barnen minns den',
+  kor: () => {
+    // 300 byar i 16 istider var (bara fröet behövs): hur ofta vintern blir hård, och aldrig under de första tio dygnen eller i en annan tidsålder
+    let istider = 0, harda = 0, tidiga = 0, andra = 0;
+    const b = createState(1, START);
+    for (let seed = 1; seed <= 300; seed++) {
+      b.seed = seed;
+      for (let w = 0; w < 64; w++) {
+        const t = b.now + w * 7 * DAY + DAY, k = kalender(b, t), m = SIM.motgangNu(b, t);
+        if (k.ai !== 0) { if (m) andra++; continue; }
+        if (k.start < b.founded + SIM.MOTGANG.forstaDygn * DAY) { if (m) tidiga++; continue; }
+        istider++; if (m?.id === 'hardVinter') harda++;
+      }
+    }
+    // en by vars nästa istid är hård: den grundades för länge sedan och hösten slutar om knappt tre dygn, så att den äldsta hinner ana den
+    const t1 = START + 3 * DAY, fore = (x: State) => { x.founded -= 20 * DAY; x.kal = nyKalender(x.now - 7 * DAY, 3); };
+    const hitta = createState(1, t1); fore(hitta);
+    let seed = 1; while (seed < 400) { hitta.seed = seed; if (SIM.motgangNasta(hitta)?.id === 'hardVinter') break; seed++; }
+    const v: State | undefined = seed < 400 ? createState(seed, t1) : undefined;
+    if (v) fore(v);
+    const start = v ? SIM.motgangNasta(v)!.start : 0;
+    if (!v) return [['en by med en hård vinter strax framför sig', false]];
+    // samma tid utan den hårda vintern: kallare, mer snö, mer ved
+    const mitt = start + 3 * DAY, utan = <T>(f: () => T) => { const c = SIM.MOTGANGAR.hardVinter.chans; SIM.MOTGANGAR.hardVinter.chans = 0; try { return f(); } finally { SIM.MOTGANGAR.hardVinter.chans = c; } };
+    const kallare = utan(() => temperature(v!, mitt)) - temperature(v, mitt);
+    let sno = 0, snoUtan = 0;
+    const vu = cloneState(v); // en egen by, så att vädret inte hämtas ur det sparade svaret för samma timme
+    for (let h = 0; h < 10 * 24; h++) { const t = start + h * HOUR; if (vaderNu(v, t).nb > 0) sno++; if (utan(() => vaderNu(vu, t).nb > 0)) snoUtan++; }
+    const e = cloneState(v); e.now = mitt; e.fire.lit = true; e.fire.fuel = 100; stepFire(e, 3600, []);
+    const e2 = cloneState(v); e2.now = mitt; e2.fire.lit = true; e2.fire.fuel = 100; utan(() => stepFire(e2, 3600, []));
+    const ved = 100 - e.fire.fuel, vedUtan = 100 - e2.fire.fuel;
+    // byn går in i den hårda vintern: en gammal, ett barn och de vanliga
+    const gammal = nyInvanare(v, 'k', 55), barn = nyInvanare(v, 'm', 8);
+    tandEld(v); setMat(v, { bar: 20, torkat: 20 });
+    const ch = SIM.UPPLEVELSER.hardVinter.chans; SIM.UPPLEVELSER.hardVinter.chans = 1; // så att barnet säkert minns den
+    let anadeFore = false, visste = 0;
+    kor(v, (start - v.now) / HOUR + 30, b => { if (b.now < start && gammal.varsel?.t === start) anadeFore = true; if (b.now < start) visste = Math.max(visste, living(b).filter(p => p.varsel?.t === start).length); });
+    SIM.UPPLEVELSER.hardVinter.chans = ch;
+    const kron = v.hist?.kronika.some(([, t]) => /hård vinter/.test(t)) ?? false;
+    const minns = barn.upp?.some(u => u.k === 'hardVinter');
+    const fs = (q: Person) => { const c = q.varsel; return c ? SIM.varselSamla(v!, { ...q, varsel: { ...c, t: v!.now + DAY } }) : 0; };
+    const merForsiktig = (() => { const q = gammal, s0 = v.seder.v.forsiktighet; v.seder.v.forsiktighet = 1; const hog = fs(q); v.seder.v.forsiktighet = -1; const lag = fs(q); v.seder.v.forsiktighet = s0; return hog > lag; })();
+    return [
+      [`ungefär var femte istid blir hård (${harda} av ${istider})`, harda > istider * 0.13 && harda < istider * 0.27],
+      [`ingen motgång under byns första tio dygn eller i en annan tidsålder än istiden (${tidiga}, ${andra})`, tidiga === 0 && andra === 0],
+      [`den hårda vintern är 5–8 grader kallare (${kallare.toFixed(1)})`, kallare >= 5 && kallare <= 8],
+      [`det snöar oftare (${sno} mot ${snoUtan} timmar på tio dygn)`, sno > snoUtan],
+      [`elden äter mer ved (${ved.toFixed(2)} mot ${vedUtan.toFixed(2)} i timmen)`, ved > vedUtan * 1.2],
+      ['den äldsta anar den hårda vintern innan den kommer', anadeFore],
+      [`varslet sprids i samtal (${visste} visste innan, ${(v.stat?.varselBerattat ?? 0)} gånger berättat)`, visste >= 2],
+      ['en förutseende by vill samla mer när den vet', merForsiktig],
+      [`den hårda vintern kom (${(v.stat?.motgang_hardVinter ?? 0)}) och står i byns krönika`, (v.stat?.motgang_hardVinter ?? 0) === 1 && kron],
+      [`barnet minns den (${barn.upp?.map(u => u.k).join(', ') || 'inget'})`, !!minns],
     ];
   },
 };
