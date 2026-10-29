@@ -3,6 +3,7 @@ import { alive, byId, count, franMitt, log, think } from './folk';
 import { gauss } from './slump';
 import { HOUR, Person, State } from './typer';
 import { handelse } from './rykten';
+import { SakMinne, sakMinne } from './berattelser';
 
 // ---------- kvaliteten (steg 2.2.2) ----------
 // Det någon gör blir olika bra: usel, slarvig, normal, fin, mästerverk eller ett perfekt mästerverk (★). Kvaliteten följer
@@ -53,12 +54,13 @@ export function rullaKvalitet(s: State, p: Person, bank: boolean) {
   while (q < KV.grans.length && v >= KV.grans[q]) q++;
   return q;
 }
-// saken t blev klar och fick sin kvalitet: görarens humör, byns statistik och loggen för mästerverken
-export function nyKvalitet(s: State, p: Person, t: { q?: number }, bank: boolean, namn: string) {
+// saken t blev klar och fick sin kvalitet: görarens humör, byns statistik, loggen för mästerverken och berättelsen
+export function nyKvalitet(s: State, p: Person, t: { id: number; k: string; q?: number; ber?: SakMinne }, bank: boolean, namn: string) {
   const q = t.q = rullaKvalitet(s, p, bank), k = KVALITET[q];
+  if (q >= MASTERVERK || q === 0) sakMinne(s, p, t); // det berättelsen om saken behöver (steg 3.9.4)
   count(s, 'kv_' + q);
   if (KV.glad[q]) think(p, k.tanke, KV.glad[q], s.now, KV.gladTim * HOUR);
-  if (q >= MASTERVERK) log(s, `${p.name} gjorde ${q === PERFEKT ? 'ett perfekt mästerverk' : 'ett mästerverk'}: ${namn}.`, 'world', [p.id]);
+  if (q >= MASTERVERK) log(s, `${p.name} gjorde ${q === PERFEKT ? 'ett perfekt mästerverk' : 'ett mästerverk'}: ${namn}${t.ber?.namn ? `, som byn kallar ${t.ber.namn}` : ''}.`, 'world', [p.id]);
   // de som ser det blir imponerade (eller avundsjuka) och skrattar åt det usla (steg 3.3.1, 3.4.3)
   if (q >= MASTERVERK) handelse(s, p, q === PERFEKT ? 'perfekt' : 'masterverk', undefined, namn.toLowerCase());
   else if (q === 0) handelse(s, p, 'usel', undefined, namn.toLowerCase());

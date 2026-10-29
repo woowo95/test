@@ -1295,3 +1295,41 @@ SCENARIER.kronika = {
     ];
   },
 };
+
+SCENARIER.masterverk = {
+  text: 'Steg 3.9.4: när ett mästerverk eller en usel sak görs sparas görarens humör, årstiden, vädret, vem som var nära, vem det gjordes åt och något om görarens liv. Inforutan berättar om saken (mallarna m_* och u_* i BERATTELSER), ett perfekt mästerverk (★) får ett eget namn, och ett perfekt vapen som fäller en varg heter sedan Vargdräparen',
+  kor: () => {
+    const t = createState(11, START);
+    klockan(t, 12);
+    const p = nyInvanare(t, 'k', 30), q = nyInvanare(t, 'm', 32), v = nyInvanare(t, 'k', 28);
+    p.partner = q.id; q.partner = p.id; p.x = p.y = v.x = v.y = 1; v.x = 2; // v är närmast
+    const hel = (x: string) => !/[{}]|undefined|  | \.|^\s*$/.test(x) && /[.!"]$/.test(x);
+    // tre saker: ett mästerverk, ett perfekt och en usel, och en möbel som är ett mästerverk
+    const gor = (k: string, q0: number) => { const x = addTool(t, k, p); x.av = p.id; x.q = q0; SIM.sakMinne(t, p, x); return x; };
+    const m = gor('kniv', 4), pf = gor('flintspjut', 5), u = gor('korg', 0);
+    const mt = SIM.sakBerattelse(t, m, 'Flintkniv'), pt = SIM.sakBerattelse(t, pf, 'Flintspjut'), ut = SIM.sakBerattelse(t, u, 'Korg');
+    // samma text när tiden går, och ett perfekt vapen som fäller en varg döps om
+    t.now += 5 * HOUR;
+    const mt2 = SIM.sakBerattelse(t, m, 'Flintkniv');
+    const fore = pf.ber?.namn;
+    SIM.sakVarg(t, pf, p);
+    const vt = SIM.sakBerattelse(t, pf, 'Flintspjut');
+    // i en by som lever: varje mästerverk och usel sak som görs har ett minne och en hel berättelse
+    const b = createState(3, START);
+    for (const x of b.people) x.skill.hantverk = 20; // skickliga, så att det blir mästerverk
+    kor(b, 6 * 24);
+    const gjorda = tingOf(b).filter(x => x.av !== undefined && (x.q === 0 || (x.q ?? 0) >= 4));
+    const alla = gjorda.map(x => SIM.sakBerattelse(b, x, SIM.sakNamn(x.k)));
+    return [
+      [`mästerverket berättas (${mt})`, hel(mt) && mt.includes(p.name)],
+      [`den som var nära står med (${v.name})`, mt.includes(v.name) || ut.includes(v.name)],
+      [`texten står kvar när tiden går`, mt === mt2],
+      [`det perfekta mästerverket har ett eget namn (${fore}: ${pt})`, !!fore && pt.includes(fore)],
+      [`den usla saken beskrivs med lite hån (${ut})`, hel(ut) && ut !== mt],
+      [`bestämd form: ${SIM.bestamd('Flintkniv')[0]}, ${SIM.bestamd('Träspjut')[0]}, ${SIM.bestamd('Skinnskor')[0]}, ${SIM.bestamd('Bälte')[0]}, ${SIM.bestamd('Hylla')[0]}`,
+        SIM.bestamd('Flintkniv')[0] === 'flintkniven' && SIM.bestamd('Träspjut')[0] === 'träspjutet' && SIM.bestamd('Skinnskor')[0] === 'skinnskorna' && SIM.bestamd('Bälte')[0] === 'bältet' && SIM.bestamd('Hylla')[0] === 'hyllan'],
+      [`ett perfekt vapen som fäller en varg heter Vargdräparen (${vt})`, pf.ber?.namn === 'Vargdräparen' && vt.includes('varg')],
+      [`i byn har varje mästerverk och usel sak en hel berättelse (${alla.length} st, t.ex. ${alla[0] ?? '–'})`, gjorda.every(x => x.ber) && alla.every(hel)],
+    ];
+  },
+};

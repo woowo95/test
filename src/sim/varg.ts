@@ -1,5 +1,6 @@
 import { balans } from './balans';
-import { kronikaBer, personFalt, talOrd } from './berattelser';
+import { kronikaBer, personFalt, sakVarg, talOrd } from './berattelser';
+import { redskapIHanden } from './agande';
 import { blodas } from './blod';
 import { bedFor } from './bygg';
 import { Bit, Rum, bitAt, dorrDef, roomAt, freeNear, gridOf } from './byggnad';
@@ -472,7 +473,8 @@ export function vargStrid(s: State, f: Vargflock, folk: Person[], avsikt: Avsikt
       dodaDjur(s, id);
       const forsta = forstaGang(s, 'vargDodad'); // räknar också
       const r = [...st.logg].reverse().find(x => x.h === 'traff' && x.b === k.id), fallde = r && folk[r.a! - 1];
-      if (fallde) { handelse(s, fallde, 'vargdodare'); if (forsta) { log(s, `${fallde.name} dödade byns första varg.`, 'world', [fallde.id]); kronikaBer(s, 'k_forstaVarg', fallde.id, personFalt(fallde)); } }
+      if (fallde) { handelse(s, fallde, 'vargdodare'); if (r.v) sakVarg(s, redskapIHanden(s, fallde, r.v), fallde); // vapnet minns vargen (steg 3.9.4)
+         if (forsta) { log(s, `${fallde.name} dödade byns första varg.`, 'world', [fallde.id]); kronikaBer(s, 'k_forstaVarg', fallde.id, personFalt(fallde)); } }
       doda.push(fallde ?? folk[0]);
     } else { kvar.push(id); satDjurHalsa(s, id, k.blod, halsaOf(s, id).sar + k.skador.reduce((a, w) => a + w.g, 0)); }
   });

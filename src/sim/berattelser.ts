@@ -3,7 +3,8 @@ import { ALDER, ageOf, alive, byId, count, living, log } from './folk';
 import { ACTS, Act } from './handlingar';
 import { kronika } from './historik';
 import { HANDELSER, INTRYCK, IntryckTyp, intryckOm, samlatIntryck } from './rykten';
-import { sakNamn } from './saker';
+import { SAKER, sakNamn } from './saker';
+import { moodOf } from './humor';
 import { HOUR, Person, STATS, Stat, State, Upplevelse } from './typer';
 import { upplevelseText } from './uppvaxt';
 import { isLight, kalender } from './tid';
@@ -27,6 +28,14 @@ export const BERATT = balans('beratt', {
   drag: 4, // beskrivningen (steg 3.9.2) nämner en egenskap som ligger så här långt från mitten (10) eller mer
   smak: 0.4, // ... och en smak (tycke, -1 till 1) som är så här stark eller starkare
   rykte: 1.5, // ... och vad byn tycker om hen, när intrycken tillsammans är så här starka
+  // mästerverken och de usla sakerna (steg 3.9.4)
+  glad: 0.7, // göraren var glad med humöret så här högt ...
+  ledsen: 0.35, // ... och nedstämd så här lågt
+  nara: 5, // den som var närmast inom så här många rutor var med
+  sorgDygn: 5, // en nära släkting som dog för högst så här många dygn sedan: göraren sörjde
+  barnDygn: 3, // ett barn som föddes för högst så här många dygn sedan: göraren hade fått barn
+  inskr: 0.6, // så stor del av mästerverken får en tillägnan, när det finns någon att tillägna dem
+  dimma: 0.5, // dimman räknas från den här tätheten
 });
 
 // ---------- registren ----------
@@ -438,6 +447,95 @@ const MDEF = {
     '{namn} fann en övergiven boplats och gjorde den till sin. Byn grundades på nytt.',
     { t: 'I kylan hittade {namn} den övergivna boplatsen och grundade byn på nytt.', om: f => f.kallt === true },
   ],
+  // mästerverken och de usla sakerna (steg 3.9.4). {saken} = sakens namn i bestämd form, {den} = den/det/de, {pa} = "på våren" osv.
+  m_gjord: [
+    '{namn} gjorde {saken} {pa}{vader}, och det blev ett mästerverk.',
+    'Det var {arstid} när {namn} gjorde {saken}{vader}. {Den} blev bättre än något {hen} gjort förut.',
+    '{Saken} gjordes av {namn} {pa}{vader}. Den som håller i {den} märker genast att {den} är något utöver det vanliga.',
+    'När {namn} gjorde {saken} {pa} tog {hen} god tid på sig med varje del, och det syns.',
+    '{namn} lade allt {hen} kunde i {saken}. Det var {arstid}{vader}.',
+    'Ingen i byn hade sett något liknande när {namn} visade upp {saken} {pa}.',
+    '{Saken} gjordes {pa}{vader} av {namn}, som genast förstod att {den} blev något särskilt.',
+    'Det tog {namn} tid att göra {saken} {pa}, men när {den} var klar ville alla se {den}.',
+    { t: '{namn} var på gott humör den dagen {pa} när {hen} gjorde {saken}, och glädjen syns i varje del.', om: f => f.glad === true },
+    { t: '{namn} var nedstämd när {hen} gjorde {saken} {pa}, men händerna gjorde ett mästerverk ändå.', om: f => f.ledsen === true },
+    { t: 'Det var natt när {namn} gjorde klart {saken}, i skenet från elden.', om: f => f.natt === true },
+  ],
+  m_liv: [
+    { t: 'Det var dagarna efter att {om} föddes, och {namn} arbetade med ett nytt barn i tankarna.', om: f => f.l === 'barn' },
+    { t: '{om} hade just fötts, och {namn} ville göra något som höll länge.', om: f => f.l === 'barn' },
+    { t: 'Det var strax efter att {om} dog, och {namn} arbetade för att slippa tänka.', om: f => f.l === 'sorg' },
+    { t: '{namn} sörjde {om} när {hen} gjorde {den}, och kanske är det därför {den} blev så fin.', om: f => f.l === 'sorg' },
+    { t: '{namn} var sjuk och borde ha vilat, men satt uppe och arbetade.', om: f => f.l === 'sjuk' },
+    { t: 'Febern höll {namn} vaken, och {hen} arbetade i stället för att sova.', om: f => f.l === 'sjuk' },
+    { t: '{namn} väntade barn och arbetade med händerna på magen mellan varven.', om: f => f.l === 'gravid' },
+    { t: '{namn} bar på ett barn när {hen} gjorde {den}, och tänkte på det som skulle komma.', om: f => f.l === 'gravid' },
+    { t: '{namn} var byns ledare då och hade lite tid över, men tog den här tiden ändå.', om: f => f.l === 'ledare' },
+    { t: 'Mellan allt {namn} hade att göra som ledare fann {hen} stunder till det här arbetet.', om: f => f.l === 'ledare' },
+  ],
+  m_nara: [
+    '{nara} satt bredvid och såg på medan {namn} arbetade.',
+    '{nara} var den första som fick se {saken}.',
+    'Det var {nara} som först sa att {den} var ett mästerverk.',
+    '{nara} var där och har berättat om det sedan.',
+    '{nara} satt bredvid {namn} och pratade, och {namn} lyssnade med ett halvt öra.',
+    '{nara} hämtade det {namn} behövde medan {hen} arbetade.',
+    'Ingen annan än {nara} var där när {saken} blev klar.',
+    '{nara} säger att {namn} inte sa ett ord medan {hen} arbetade.',
+  ],
+  m_inskr: [
+    'I {den} har {namn} ristat sitt märke och orden "Åt {at}{som}."',
+    'Inristat står det "Åt {at}{som}." {namn} gjorde {den} till {at}.',
+    '{namn} ristade in en tillägnan: "Åt {at}{som}."',
+    'Längs kanten står det, bredvid {namn}s märke: "Åt {at}{som}."',
+    'Under {namn}s tecken står det "Åt {at}{som}."',
+    'Den som vänder på {saken} ser {namn}s märke och orden "Åt {at}{som}."',
+    'Det var åt {at} som {saken} gjordes, och det står där: "Åt {at}{som}."',
+    'Inristat finns {namn}s tecken och en tillägnan: "Åt {at}{som}."',
+  ],
+  m_perfekt: [
+    'Byn kallar {den} {egen}.',
+    '{Den} har ett eget namn: {egen}.',
+    '{egen}, säger man, och alla vet vad som menas.',
+    'Så fullkomlig blev {saken} att {den} fick ett namn: {egen}.',
+    'Ingen säger {saken} om {den}. {Den} heter {egen}.',
+    'Vid elden talar man om {egen}, som {namn} gjorde.',
+    'Barnen viskar namnet när de ser {den}: {egen}.',
+    '{egen} kallas {den}, och namnet kommer att leva längre än {namn}.',
+  ],
+  m_varg: [
+    'Med {den} fällde {vem} en varg.',
+    '{vem} hade {den} i handen när {hen2} fällde en varg.',
+    'En varg föll för {den}, i {vem}s händer.',
+    '{Den} har smakat vargblod: {vem} fällde en varg med {den}.',
+    'Det var med {den} som {vem} dödade en varg.',
+    '{vem} fällde en varg, och det var {saken} som gjorde det.',
+    'Sedan {vem} fällde en varg med {den} är {den} något mer än ett redskap.',
+    'Vargen som {vem} fällde dog för {den}.',
+  ],
+  u_gjord: [
+    '{namn} gjorde {saken} {pa}{vader}. Det borde {hen} kanske inte ha gjort.',
+    'Byn skrattar fortfarande åt {saken} som {namn} gjorde {pa}.',
+    '{Saken} är {namn}s verk, och det syns, tyvärr.',
+    'Ingen vill låna {saken}. {namn} gjorde {den} {pa}{vader}, och mer än så finns inte att säga.',
+    '{namn} säger att {saken} blev som {hen} tänkt sig. Ingen tror på det.',
+    'Det går att använda {saken}, om man inte är noga. {namn} gjorde {den} {pa}.',
+    'Barnen gör sig lustiga över {saken}, som {namn} gjorde {pa}{vader}.',
+    '"Det håller nog en dag till", säger {namn} om {saken} varje dag.',
+    { t: '{namn} var på dåligt humör när {hen} gjorde {saken}, och det märks.', om: f => f.ledsen === true },
+    { t: '{namn} hade bråttom in ur blåsten när {hen} gjorde {saken}.', om: f => f.vader === ' i blåsten' },
+    { t: 'Det var mörkt när {namn} gjorde {saken}. Det är det enda {hen} har att skylla på.', om: f => f.natt === true },
+  ],
+  u_nara: [
+    '{nara} såg {namn} göra {saken} och sa ingenting, vilket sa allt.',
+    '{nara} skrattade så att {namn} blev röd i ansiktet.',
+    '{nara} var där och har berättat om det för alla sedan.',
+    'Det var {nara} som först började skratta.',
+    '{nara} försökte hjälpa till, men det blev inte bättre av det.',
+    '{nara} höll god min men berättade det för hela byn vid elden.',
+    '{nara} satt bredvid och bet sig i läppen för att inte skratta.',
+    '{nara} frågade vad det skulle bli. Det undrar byn fortfarande.',
+  ],
 } satisfies Record<string, Variant[]>;
 export type MallId = keyof typeof MDEF;
 export const BERATTELSER: Record<MallId, Variant[]> = MDEF;
@@ -598,3 +696,88 @@ export function kronikaBer(s: State, mall: MallId, nyckel: number, f: Fyllning) 
 }
 // fälten för en person: namnet, namnet byn gav och hen
 export const personFalt = (p: Person): Fyllning => ({ namn: p.name, helt: heltNamn(p), hen: hen(p), honom: p.sex === 'm' ? 'honom' : 'henne' });
+
+// ---------- mästerverken och de usla sakerna (steg 3.9.4) ----------
+// När ett mästerverk eller en usel sak blir klar sparas det som berättelsen behöver: görarens humör, årstiden, vädret,
+// natten, göraren (g), vem som var nära, vem saken gjordes åt och något om görarens liv just då. Texten skrivs när den visas (sakens
+// inforuta), med tiden 0 så att den står kvar. Ett perfekt mästerverk (★) får ett eget namn, och ett vapen som fäller en
+// varg minns det (vargdöden i varg.ts); ett perfekt vapen heter sedan Vargdräparen.
+export type SakLiv = 'barn' | 'sorg' | 'sjuk' | 'gravid' | 'ledare';
+export interface SakMinne { g: number; h: number; ai: number; v?: string; natt?: 1; nara?: number; at?: number; l?: SakLiv; lo?: number; namn?: string; varg?: number }
+type SakGrupp = 'egg' | 'vapen' | 'klad' | 'mobel' | 'redskap';
+const PA = ['under istiden', 'på våren', 'på sommaren', 'på hösten'];
+const VADER_ORD: Record<string, string> = { regn: ' i regnet', sno: ' i snön', blast: ' i blåsten', dimma: ' i dimman' };
+// det egna namnet: en förled efter det som hände när saken gjordes och en efterled efter vad saken är
+const FORLED = { sorg: 'Sorg', barn: 'Glädje', sno: 'Snö', regn: 'Regn', blast: 'Storm', dimma: 'Dim', natt: 'Natt', glad: 'Sol', ledsen: 'Tår', ai: ['Vinter', 'Vår', 'Sommar', 'Höst'] };
+const EFTERLED: Record<SakGrupp, string[]> = {
+  egg: ['eggen', 'bettet', 'skäraren'], vapen: ['udden', 'stöten', 'spetsen'], klad: ['värmen', 'skinnet', 'skyddet'],
+  mobel: ['vilan', 'vännen', 'hemmet'], redskap: ['handen', 'hjälpen', 'vännen'],
+};
+const SOM = ['', ', som aldrig frös', ', som alltid kommer hem', ', mitt ljus', ', som skrattar', ', av hela mitt hjärta', ', som jag aldrig glömmer', ', i vinter och i sommar'];
+const sakGrupp = (k: string): SakGrupp => {
+  const d = SAKER[k];
+  return !d ? 'mobel' : d.klad ? 'klad' : d.grupp === 'spjut' ? 'vapen' : k === 'kniv' || k === 'yxa' ? 'egg' : 'redskap';
+};
+// sakens namn i bestämd form och pronomenet: flintkniven/den, träspjutet/det, skinnskorna/de
+const NEUTRUM = ['spjut', 'spö', 'bord', 'ställ', 'bälte'];
+export function bestamd(namn: string): [string, string] {
+  const n = namn.toLowerCase();
+  if (n === 'litet bord') return ['det lilla bordet', 'det'];
+  if (n.endsWith('skor')) return [n + 'na', 'de'];
+  if (NEUTRUM.some(e => n.endsWith(e))) return [n + (/[aeiouyåäö]$/.test(n) ? 't' : 'et'), 'det'];
+  return [n + (/[aeiouyåäö]$/.test(n) ? 'n' : 'en'), 'den'];
+}
+
+// saken t (ett ting eller en möbel) blev ett mästerverk eller usel: spara det berättelsen behöver
+export function sakMinne(s: State, p: Person, t: { id: number; k: string; q?: number; ber?: SakMinne }) {
+  const v = vaderNu(s), dag = 24 * HOUR;
+  const vad = v.sno ? 'sno' : v.lage === 'regn' || v.lage === 'blast' ? v.lage : v.dimma > BERATT.dimma ? 'dimma' : undefined;
+  const m: SakMinne = { g: p.id, h: Math.round(moodOf(p, s.now) * 100) / 100, ai: kalender(s).ai };
+  if (vad) m.v = vad;
+  if (!isLight(s.now)) m.natt = 1;
+  let bast = BERATT.nara;
+  for (const q of living(s)) { const d = Math.hypot(q.x - p.x, q.y - p.y); if (q !== p && d < bast) { bast = d; m.nara = q.id; } }
+  // åt vem: partnern, annars det yngsta barnet, annars bästa vännen
+  const partner = p.partner !== undefined ? byId(s, p.partner) : undefined, barn = s.people.filter(c => alive(c) && (c.mother === p.id || c.father === p.id)).sort((a, b) => b.born - a.born)[0];
+  const at = partner && alive(partner) ? partner : barn ?? (p.bast !== undefined ? byId(s, p.bast) : undefined);
+  if (at && alive(at) && hash(s.seed, t.id, 3) < BERATT.inskr) m.at = at.id;
+  // något om görarens liv just då
+  const nytt = s.people.find(c => (c.mother === p.id || c.father === p.id) && s.now - c.born < BERATT.barnDygn * dag);
+  const sorg = s.people.find(c => c.died !== undefined && s.now - c.died < BERATT.sorgDygn * dag && (c.id === p.partner || c.mother === p.id || c.father === p.id || p.mother === c.id || p.father === c.id));
+  const liv: [SakLiv, number?] | undefined = sorg ? ['sorg', sorg.id] : nytt ? ['barn', nytt.id] : p.sickUntil !== undefined && p.sickUntil > s.now ? ['sjuk']
+    : p.pregnantSince !== undefined ? ['gravid'] : s.styre?.ledare === p.id ? ['ledare'] : undefined;
+  if (liv) { m.l = liv[0]; if (liv[1] !== undefined) m.lo = liv[1]; }
+  if ((t.q ?? 0) >= 5) {
+    const ef = EFTERLED[sakGrupp(t.k)], fore = liv?.[0] === 'sorg' || liv?.[0] === 'barn' ? FORLED[liv[0]] : vad ? FORLED[vad as 'sno'] : m.natt ? FORLED.natt
+      : m.h >= BERATT.glad ? FORLED.glad : m.h <= BERATT.ledsen ? FORLED.ledsen : FORLED.ai[m.ai];
+    m.namn = fore + ef[Math.floor(hash(s.seed, t.id, 4) * ef.length)];
+  }
+  t.ber = m;
+}
+// ett vapen med ett minne fällde en varg: det minns vem som gjorde det, och ett perfekt vapen döps om
+export function sakVarg(s: State, t: { id: number; k: string; q?: number; ber?: SakMinne } | undefined, vem: Person) {
+  if (!t?.ber || t.ber.varg !== undefined) return;
+  t.ber.varg = vem.id;
+  const g = sakGrupp(t.k);
+  if ((t.q ?? 0) >= 5 && (g === 'vapen' || g === 'egg')) {
+    const gammalt = t.ber.namn; t.ber.namn = 'Vargdräparen';
+    log(s, `${gammalt ?? sakNamn(t.k)} heter nu Vargdräparen: ${vem.name} fällde en varg med den.`, 'world', [vem.id]);
+  }
+}
+// berättelsen om saken t (namnet = sakens namn), eller inget om den inte har något minne
+export function sakBerattelse(s: State, t: { id: number; k: string; q?: number; ber?: SakMinne }, namn: string) {
+  const m = t.ber, p = m && byId(s, m.g);
+  if (!m || !p) return '';
+  const [saken, den] = bestamd(namn), q = t.q ?? 0, usel = q === 0;
+  const f: Fyllning = { namn: p.name, hen: hen(p), saken, den, pa: PA[m.ai], arstid: ARSTIDER[m.ai], vader: m.v ? VADER_ORD[m.v] : '', glad: m.h >= BERATT.glad, ledsen: m.h <= BERATT.ledsen, natt: m.natt === 1, l: m.l, egen: m.namn, perfekt: q >= 5 };
+  const nara = m.nara !== undefined ? byId(s, m.nara) : undefined, at = m.at !== undefined ? byId(s, m.at) : undefined, lo = m.lo !== undefined ? byId(s, m.lo) : undefined;
+  const vem = m.varg !== undefined ? byId(s, m.varg) : undefined;
+  const del = (mall: MallId, n: number, g: Fyllning = {}) => fyll(valjVariant(s, mall, t.id * 16 + n, { ...f, ...g }, 0), { ...f, ...g });
+  const ut = [del(usel ? 'u_gjord' : 'm_gjord', 0)];
+  if (!usel && m.l && (lo || m.lo === undefined)) ut.push(del('m_liv', 1, { om: lo?.name }));
+  if (nara) ut.push(del(usel ? 'u_nara' : 'm_nara', 2, { nara: nara.name }));
+  if (!usel && at) ut.push(del('m_inskr', 3, { at: at.name, som: SOM[Math.floor(hash(s.seed, t.id, 5) * SOM.length)] }));
+  if (vem) ut.push(del('m_varg', 4, { vem: vem === p ? p.name : vem.name, hen2: hen(vem) }));
+  if (q >= 5 && m.namn) ut.push(del('m_perfekt', 5));
+  return ut.join(' ');
+}
