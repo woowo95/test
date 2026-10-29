@@ -845,6 +845,33 @@ SCENARIER.hot = {
   },
 };
 
+SCENARIER.vapentycke = {
+  text: 'Tycke för vapen (steg 3.7.10): som smaken för mat. Den som vann med ett vapen gillar det, slåss lite bättre med det och väljer det inför striden; en svår förlust ger ogillande',
+  kor: () => {
+    const t = createState(5, START), [p, q] = living(t).filter(x => ageOf(x, t.now) >= SIM.ALDER.vuxen);
+    SIM.addTool(t, 'yxa', p); SIM.addTool(t, 'flintspjut', p);
+    const fore = SIM.personKampe(t, p, 1, 0, 0, 0);
+    p.smak = { ...p.smak, 'v:flintspjut': 1 };
+    const efter = SIM.personKampe(t, p, 1, 0, 0, 0);
+    p.smak = { ...p.smak, 'v:flintspjut': 0 };
+    // slagsmål med yxan mot händerna tills båda hänt: vinnaren gillar vapnet, den som förlorar svårt ogillar sitt
+    let vann = false, ogillar = false;
+    for (let i = 0; i < 30 && !(vann && ogillar); i++) {
+      for (const x of [p, q]) { x.skador = []; x.health = 1; x.blod = 1; x.task = undefined; }
+      SIM.stridIByn(t, 'skada', [[p], [q]], 'för att pröva');
+      vann ||= SIM.smakAv(p, 'v:yxa') > 0;
+      ogillar ||= SIM.smakAv(q, 'v:hand') < 0;
+      if (p.health <= 0 || q.health <= 0) break;
+    }
+    return [
+      [`utan tycke väljer hen det som skadar mest (${fore.vapen}), med tycke för spjutet spjutet (${efter.vapen})`, fore.vapen === 'yxa' && efter.vapen === 'flintspjut'],
+      [`tycket ger skicklighet med vapnet (${fore.st.skicklighet.toFixed(1)} → ${efter.st.skicklighet.toFixed(1)})`, efter.st.skicklighet > fore.st.skicklighet],
+      [`den som vann med yxan gillar den (${SIM.smakAv(p, 'v:yxa').toFixed(2)})`, vann],
+      [`den som förlorade svårt med händerna ogillar dem (${SIM.smakAv(q, 'v:hand').toFixed(2)})`, ogillar],
+    ];
+  },
+};
+
 SCENARIER.smidighet = {
   text: 'Smidighet och Aggression (steg 3.7.6): båda finns hos alla och ärvs, smidigheten sjunker tidigare än styrkan, den smidiga gör finare arbete och vinner oftare i striden, den aggressiva slår hellre i ett utbrott, och blodtörsten kommer av aggression, låg empati och dåligt humör',
   kor: () => {

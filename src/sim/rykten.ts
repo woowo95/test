@@ -364,7 +364,7 @@ export function glomRykten(s: State, hours: number) {
 // ---------- tycke och smak (steg 3.3.5) ----------
 // smaken: 'a:' + arbete eller 'm:' + mat, från -1 (avsmak) till 1 (tycke)
 export const smakAv = (p: Person, k: string) => p.smak?.[k] ?? 0;
-function smaka(p: Person, k: string, d: number) {
+export function smaka(p: Person, k: string, d: number) {
   const v = clamp(smakAv(p, k) + d, -1, 1);
   if (Math.abs(v) < 1e-3) { if (p.smak) delete p.smak[k]; return; }
   (p.smak ??= {})[k] = v;

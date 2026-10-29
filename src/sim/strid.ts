@@ -37,7 +37,7 @@ import { clamp, rnd } from './slump';
 import { ALDER, ageOf, count, getRel, log, ovning, stat, think } from './folk';
 import { blodtorst } from './humor';
 import { die } from './liv';
-import { handelse } from './rykten';
+import { handelse, smaka, smakAv } from './rykten';
 import { avbryt } from './lager';
 import { HOUR, SEC } from './typer';
 import { harBalte, paSig, paSigVikt } from './utrustning';
@@ -121,6 +121,12 @@ export const STRID = balans('strid', {
   hot: 0.6, // stridsmodet ändras så här mycket gånger (sidans andel av styrkan − ½) × 2: −hot ensam mot en övermakt ...
   framst: 0.3, // ... och så här mycket gånger (de främstas stridsmod − ½), de två som står närmast fienden
   avsta: 0.2, // före första slaget drar sig den undan vars stridsmod med hotet är under så här mycket
+  tyckeSkick: 2, // tycket för vapnet (steg 3.7.10, -1 till 1) ger så här mycket skicklighet med det ...
+  tyckeVal: 0.3, // ... och drar så här mycket i valet av vapen inför striden (skadan gånger 1 + tyckeVal × tycket)
+  tyckeVann: 0.15, // den som vann med vapnet får så här mycket tycke för det ...
+  tyckeLek: 0.02, // ... den som lekte (övade) med det så här mycket ...
+  tyckeForlust: 0.25, // ... och den som förlorade svårt (låg nere eller blev svårt skadad) så här mycket ogillande
+  tyckeSvar: 0.3, // en svår förlust: skadornas grad sammanlagt minst så här mycket
   backaMod: 0.15, // den som har så lite stridsmod med hotet drar sig bakom vännerna (som den utmattade) ...
   backaModTill: 0.3, // ... tills hen har så här mycket igen
 });
@@ -636,12 +642,13 @@ export function korManga(u: Uppstallning, fro: number, n: number): ManyResultat 
 // utan reserv tar alltid med en
 export function personKampe(s: State, p: Person, id: number, sida: 0 | 1, x: number, y: number): Uppstallning['kampar'][number] {
   const bar = [...new Set([...paSig(s, p), ...ownedBy(s, p)].map(t => t.k))]; // det hen bär och äger (i arenan har man sina saker med sig)
-  const vapen = MANNISKOVAPEN.filter(v => bar.includes(v)).sort((a, b) => VAP[b].skada - VAP[a].skada)[0] ?? 'hand';
+  const val = (v: Vapen) => VAP[v].skada * (1 + STRID.tyckeVal * smakAv(p, 'v:' + v)); // tycket drar i valet (steg 3.7.10)
+  const vapen = MANNISKOVAPEN.filter(v => bar.includes(v)).sort((a, b) => val(b) - val(a))[0] ?? 'hand';
   const res = (MANNISKOVAPEN.filter(v => v !== vapen && VAP[v].liten && bar.includes(v)) as Vapen[]).sort((a, b) => VAP[a].takt - VAP[b].takt)[0]; // den snabbaste (kniven)
   const reserv = res && (p.reservAlltid || (harBalte(s, p) && paSigVikt(s, p) + bordOf(res) <= capacity(s, p))) ? res : undefined;
   return {
     id, namn: p.name, sida, pid: p.id, vapen, reserv, klader: bar.filter(k => SKYDD[k]), fart: 1, x, y, tung: clamp(paSigVikt(s, p) / Math.max(1, capacity(s, p)), 0, 1),
-    st: { styrka: stat(p, 'styrka', s.now), uthallighet: stat(p, 'uthallighet', s.now), mod: stat(p, 'mod', s.now), smidighet: stat(p, 'smidighet', s.now), skicklighet: 5 + (p.skill.narstrid ?? 0) / 2, sikte: 5 + (p.skill.traff ?? 0) / 2, torst: blodtorst(s, p) },
+    st: { styrka: stat(p, 'styrka', s.now), uthallighet: stat(p, 'uthallighet', s.now), mod: stat(p, 'mod', s.now), smidighet: stat(p, 'smidighet', s.now), skicklighet: 5 + (p.skill.narstrid ?? 0) / 2 + STRID.tyckeSkick * smakAv(p, 'v:' + vapen), sikte: 5 + (p.skill.traff ?? 0) / 2, torst: blodtorst(s, p) },
   };
 }
 // en kämpe ur ett djur i djurregistret (DJUR.strid)
@@ -703,6 +710,11 @@ export function stridIByn(s: State, avsikt: Avsikt, sidor: [Person[], Person[]],
     if (dod) { count(s, 'drap'); die(s, p, 'drap'); continue; }
     p.blod = Math.min(p.blod ?? 1, Math.max(HALSA.blodDod, k.blod));
     ovning(p, 'narstrid', lek ? SLAGSMAL.ovningLek : SLAGSMAL.ovning);
+    // tycket för vapnet (steg 3.7.10): den som vann eller övade med det gillar det, en svår förlust ger ogillande
+    const svar = k.lage === 'nere' || k.skador.reduce((a, w) => a + w.g, 0) >= STRID.tyckeSvar;
+    if (lek) smaka(p, 'v:' + k.vapen, STRID.tyckeLek);
+    else if (vinnare === k.sida) smaka(p, 'v:' + k.vapen, STRID.tyckeVann);
+    else if (vinnare !== -1 && svar) smaka(p, 'v:' + k.vapen, -STRID.tyckeForlust);
     if (k.ifatt) p.reservAlltid = true; // ifattsprungen utan reserv: tar alltid med en sedan (steg 3.7.7)
     if (k.vada) { // vådaträffen: skytten minns det, och de som såg det tycker hen är en klåpare
       const offer = st.kampar.find(o => o.sida === k.sida && o !== k && st.logg.some(r => r.h === 'vada' && r.a === k.id && r.b === o.id));

@@ -166,7 +166,7 @@ export interface Person {
   utb?: number; ubr?: { k: string; t: number };
   lekt?: number; // när ett barn senast lekte (färre utbrott efteråt, steg 3.2.4)
   intryck?: import('./rykten').Intryck[]; // det personen tycker att andra är, och varför (steg 3.3, rykten.ts)
-  smak?: Record<string, number>; // tycke och smak: 'a:' + arbete eller 'm:' + mat, -1 till 1 (steg 3.3.5, rykten.ts)
+  smak?: Record<string, number>; // tycke och smak: 'a:' + arbete, 'm:' + mat eller 'v:' + vapen (steg 3.7.10), -1 till 1 (steg 3.3.5, rykten.ts)
   reservAlltid?: true; // blev ifattsprungen utan reservvapen: tar alltid med ett i strid (steg 3.7.7, strid.ts)
   skam?: number; // straffad med skam av ledaren: håller sig undan elden och samtalen till dess (steg 3.5.3, styre.ts)
 }
