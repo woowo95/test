@@ -12,7 +12,7 @@ import { SAKER } from './saker';
 import { DAY, HOUR, MIN, Person, State, Task } from './typer';
 import { formogenheter } from './varde';
 import { balans } from './balans';
-import { handelse, skitsnack, skitsnackOm } from './rykten';
+import { LARM, handelse, larma, skitsnack, skitsnackOm } from './rykten';
 
 // Humöret (steg 3.2, "Humör, psykiskt mående och ondska" i designdokumentet): ett grundläge, behoven och tankarna
 // (think i folk.ts), och förväntningarna (steg 3.2.1). Var och en vänjer sig långsamt vid sin rikedom, värdet av det hen
@@ -182,6 +182,7 @@ export function utbrottBorjar(s: State, p: Person, k: Utbrott, mal?: Person, tin
   const rad = UTB[k];
   count(s, 'utbrott'); count(s, 'utb_' + k);
   p.utb = (p.utb ?? 0) + 1;
+  if (!rad.barn && rad.grad >= 2 && rnd(s, 'humor', p) < LARM.falskt) larma(s, p.x, p.y, 'fara', 1 + Math.floor(rnd(s, 'humor', p) * 5), [p], true); // ett falskt larm (steg 3.7.11)
   if (mal) {
     const van = k === 'slut' && p.partner !== mal.id;
     log(s, `${p.name} mår dåligt och ${van ? 'bryter vänskapen med' : rad.text} ${mal.name}.`, 'rel', [p.id, mal.id]);

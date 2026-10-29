@@ -3,6 +3,8 @@ import { clamp, pickViktat, rnd } from './slump';
 import { HOUR, Person, Rel, State } from './typer';
 import { balans } from './balans';
 import { ACTS, Act } from './handlingar';
+import { isLight } from './tid';
+import { vaderNu } from './vader';
 
 // Rykten (steg 3.3–3.4, "Rykten, anseende och minnet efter döden" i designdokumentet).
 // Det någon gör (en händelse: stöld, slag, gåva, mästerverk …) blir ett intryck hos den som ser det (våldsam, tjuv, generös,
@@ -21,7 +23,8 @@ export const RYKTE = balans('rykte', {
   bevMax: 3, // så många händelser sparas som bevis för ett intryck ...
   dodBev: 2, // ... och så många när personen är död (de viktigaste)
   vMax: 1.5, // ett intryck är som starkast så här
-  syn: 10, // de som var närmare än så här många rutor (och vakna) såg det som hände
+  syn: 10, // de som var närmare än så här många rutor (och vakna) såg det som hände ...
+  synDimma: 0.6, // ... och så här mycket kortare i den tätaste dimman (steg 3.7.11)
   sjalvSaker: 1, // den som såg det själv är så här säker ...
   offerSaker: 1, // ... och den som det hände
   delaBas: 0.06, // chansen att man berättar om ett intryck i ett samtal: delaBas + karisma / delaDiv, och mer i en berättelse
@@ -180,7 +183,8 @@ function intryck(s: State, p: Person, om: Person | { id: number; name: string },
 // ---------- händelser ----------
 // de som ser det som p gör: levande och vakna inom RYKTE.syn rutor (inte p), och den det gäller (offer)
 export function vittnen(s: State, p: Person, offer?: Person) {
-  return living(s).filter(q => q !== p && (q === offer || (q.task?.act !== 'sova' && Math.hypot(q.x - p.x, q.y - p.y) < RYKTE.syn)));
+  const syn = RYKTE.syn * (1 - RYKTE.synDimma * vaderNu(s).dimma);
+  return living(s).filter(q => q !== p && (q === offer || (q.task?.act !== 'sova' && Math.hypot(q.x - p.x, q.y - p.y) < syn)));
 }
 // p gjorde händelsen h mot offer (eller med saken sak): de som såg det får intrycket. Den det gällde har redan fått sin ändring
 // i relationen (utanOp), och en rival eller den med låg empati blir avundsjuk på en prestation
@@ -436,3 +440,51 @@ export function anseendeSym(s: State, om: number) {
   const { r, a } = ryktbarhet(s, om);
   return r < 0.3 ? '' : a > r * 0.3 ? '😇' : a < -r * 0.3 ? '😈' : '😐';
 }
+
+// ---------- varningar och larm (steg 3.7.11) ----------
+// Bara de som ser eller hör vet om en strid. Den som slåss eller ser en fara ropar; ropet hörs runt hor rutor, längre på
+// natten när det är tyst (dimman tar inte ljudet), och den som hör ropar för det mesta vidare, så att larmet sprids genom
+// byn. Storleken (hur många, eller hur farligt) förvrängs lite för varje led. Den som har ett utbrott kan ropa falskt larm
+// (humor.ts). Den som hört larmet minns det en stund (p.larm); vad man gör (springer dit eller flyr) kommer med rovdjuren
+// (3.7.1) och räderna (11.2.5), och anfallarna som samlas i utkanten och vakten som ser dem med räderna. Horn, trumma och
+// vakthund kommer senare som tekniker
+export const LARM = balans('larm', {
+  hor: 15, // ropet hörs så här många rutor ...
+  natt: 1.5, // ... gånger så här mycket på natten
+  vidare: 0.8, // den som hör ropar vidare med den här chansen
+  forvrang: 0.3, // storleken förvrängs upp till så här mycket (del) åt båda hållen för varje led
+  falskt: 0.1, // chansen att ett utbrott (grad 2 eller mer, inte barnens) blir ett falskt larm
+  tim: 6, // man minns larmet så här många timmar
+  oro: 0.05, // den som hör ett larm oroar sig så här mycket ...
+  oroTim: 2, // ... så här många timmar
+});
+export interface Larm { t: number; x: number; y: number; vad: string; storlek: number; led: number; falskt?: true }
+
+// ett larm från (x, y) om vad (storleken: hur många eller hur farligt). ropare ropar först (de vet redan). Returnerar de
+// som hörde det
+export function larma(s: State, x: number, y: number, vad: string, storlek: number, ropare: Person[], falskt = false): Person[] {
+  const hor = LARM.hor * (isLight(s.now) ? 1 : LARM.natt);
+  const vet = new Set<Person>(ropare), hort: Person[] = [];
+  for (const p of ropare) p.larm = { t: s.now, x, y, vad, storlek, led: 0, ...(falskt ? { falskt: true as const } : {}) };
+  let ropar = [...ropare];
+  for (let led = 1; ropar.length; led++) {
+    const nya: Person[] = [];
+    for (const q of living(s)) {
+      if (vet.has(q)) continue;
+      const fran = ropar.find(r => Math.hypot(r.x - q.x, r.y - q.y) <= hor);
+      if (!fran) continue;
+      vet.add(q); hort.push(q);
+      const st = Math.max(1, Math.round((fran.larm?.storlek ?? storlek) * (1 + LARM.forvrang * (2 * rnd(s, 'rykte', q) - 1))));
+      q.larm = { t: s.now, x, y, vad, storlek: st, led, ...(falskt ? { falskt: true as const } : {}) };
+      think(q, `Hörde rop: ${vad}`, -LARM.oro, s.now, LARM.oroTim * HOUR);
+      count(s, 'larm_hort');
+      if (rnd(s, 'rykte', q) < LARM.vidare) nya.push(q);
+    }
+    ropar = nya;
+  }
+  count(s, falskt ? 'larm_falskt' : 'larm');
+  if (hort.length) log(s, `${ropare.map(p => p.name).join(' och ')} ropade ${falskt ? 'falskt larm' : 'larm'} (${vad}). ${hort.length} hörde det.`, 'rel', ropare.map(p => p.id));
+  return hort;
+}
+// minns p ett larm nu?
+export const larmNu = (s: State, p: Person) => p.larm && s.now - p.larm.t < LARM.tim * HOUR ? p.larm : undefined;

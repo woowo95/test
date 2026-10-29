@@ -872,6 +872,66 @@ SCENARIER.vapentycke = {
   },
 };
 
+SCENARIER.larm = {
+  text: 'Varningar, larm och dimma (steg 3.7.11): ropet från ett slagsmål hörs runt 15 rutor, längre på natten, och sprids vidare genom byn med storleken lite förvrängd; den som har ett utbrott kan ropa falskt larm; dimman ligger på morgonen och mest på hösten, gör att man ser kortare och träffar sämre på avstånd',
+  kor: () => {
+    const t = createState(3, START), folk = living(t), p = folk[0];
+    // alla står på rad, fem rutor isär: ropet sprids led för led
+    folk.forEach((q, i) => { q.x = 10 + i * 5; q.y = 10; q.task = undefined; q.larm = undefined; });
+    while (!SIM.isLight(t.now)) t.now += HOUR;
+    const dag = SIM.larma(t, p.x, p.y, 'slagsmål', 2, [p]);
+    const leden = Math.max(0, ...dag.map(q => q.larm!.led));
+    // långt bort: en ensam på 20 rutor hör inte på dagen, men på natten
+    folk.forEach((q, i) => { q.x = 10 + i * 40; q.larm = undefined; }); const r = folk[1]; r.x = p.x + 20;
+    const dagLangt = SIM.larma(t, p.x, p.y, 'slagsmål', 2, [p]).includes(r);
+    while (SIM.isLight(t.now)) t.now += HOUR;
+    r.larm = undefined;
+    const nattLangt = SIM.larma(t, p.x, p.y, 'slagsmål', 2, [p]).includes(r);
+    // storleken förvrängs ibland längs vägen
+    let forvrangt = false;
+    for (let i = 0; i < 20 && !forvrangt; i++) {
+      folk.forEach((q, j) => { q.x = 10 + j * 5; q.larm = undefined; });
+      forvrangt = SIM.larma(t, p.x, p.y, 'fara', 4, [p]).some(q => q.larm!.storlek !== 4);
+    }
+    // ett slagsmål i byn: de som slåss ropar
+    folk.forEach((q, j) => { q.x = 10 + j * 3; q.larm = undefined; q.task = undefined; });
+    const fore = t.stat?.larm ?? 0;
+    SIM.stridIByn(t, 'slagsmal', [[folk[0]], [folk[1]]], 'för att pröva');
+    const slagsmal = (t.stat?.larm ?? 0) > fore && folk.slice(2).some(q => q.larm?.vad === 'slagsmål');
+    // falskt larm ur ett utbrott
+    let falskt = false;
+    for (let i = 0; i < 200 && !falskt; i++) { folk.forEach(q => { q.larm = undefined; }); SIM.utbrottBorjar(t, p, 'krossa'); falskt = folk.some(q => q.larm?.falskt); }
+    // dimman: ett år i sex byar
+    const morgon = [0, 0], hostVar = [0, 0];
+    for (const seed of [1, 2, 3, 4, 5, 6]) {
+      const b = createState(seed, START);
+      for (let h = 0; h < 28 * 24; h++) {
+        const tt = b.now + h * HOUR, v = SIM.vaderNu(b, tt); if (v.lage !== 'dimma') continue;
+        const tim = SIM.hourOf(tt); morgon[tim >= 4 && tim < 10 ? 0 : 1]++;
+        const ai = SIM.kalender(b, tt).ai; if (ai === 3) hostVar[0]++; if (ai === 1) hostVar[1]++;
+      }
+    }
+    // i dimman: färre ser det som händer, och kasten träffar sämre
+    const kast = (dimma: number) => {
+      const sts = Array.from({ length: 200 }, (_, i) => SIM.stridTillSlut(SIM.nyStrid({ avsikt: 'skada', w: 20, h: 14, dimma, kampar: [
+        { id: 1, namn: 'A', sida: 0, st: { styrka: 10, uthallighet: 10, mod: 10, smidighet: 10, skicklighet: 10 }, vapen: 'sten', klader: [], fart: 1, x: 7, y: 7 },
+        { id: 2, namn: 'B', sida: 1, st: { styrka: 10, uthallighet: 10, mod: 20, smidighet: 10, skicklighet: 10 }, vapen: 'hand', klader: [], fart: 1, x: 13, y: 7 }] }, i * 7919 + 3)));
+      const n = (h: SIM.StridRad['h']) => sts.reduce((a, st) => a + st.logg.filter(r => r.h === h && r.kast === 1).length, 0);
+      return n('traff') + n('tog') ? (n('traff') + n('tog')) / (n('traff') + n('tog') + n('miss')) : 0;
+    };
+    const klar = kast(0), dimmig = kast(1);
+    return [
+      [`ropet sprids led för led genom byn (${dag.length} av ${folk.length - 1} hörde, ${leden} led)`, dag.length === folk.length - 1 && leden >= 2],
+      ['på 20 rutor hörs ropet inte på dagen, men på natten', !dagLangt && nattLangt],
+      ['storleken förvrängs ibland längs vägen', forvrangt],
+      ['de som slåss i byn ropar, och de andra hör det', slagsmal],
+      ['den som har ett utbrott kan ropa falskt larm', falskt],
+      [`dimman ligger på morgonen (${morgon[0]} timmar) och inte resten av dygnet (${morgon[1]}), mer på hösten (${hostVar[0]}) än på våren (${hostVar[1]})`, morgon[0] > 0 && morgon[1] === 0 && hostVar[0] > hostVar[1]],
+      [`i dimman träffar kasten sämre (${(dimmig * 100).toFixed(0)} % mot ${(klar * 100).toFixed(0)} % i klart väder)`, dimmig < klar],
+    ];
+  },
+};
+
 SCENARIER.smidighet = {
   text: 'Smidighet och Aggression (steg 3.7.6): båda finns hos alla och ärvs, smidigheten sjunker tidigare än styrkan, den smidiga gör finare arbete och vinner oftare i striden, den aggressiva slår hellre i ett utbrott, och blodtörsten kommer av aggression, låg empati och dåligt humör',
   kor: () => {

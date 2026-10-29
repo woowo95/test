@@ -165,6 +165,7 @@ export interface Person {
   // utbrotten (steg 3.2.2, humor.ts): hur många nyss (klingar av), och det som väntar på att brista ut (slaget och när)
   utb?: number; ubr?: { k: string; t: number };
   lekt?: number; // när ett barn senast lekte (färre utbrott efteråt, steg 3.2.4)
+  larm?: import('./rykten').Larm; // det senaste larmet man hört (steg 3.7.11, rykten.ts)
   intryck?: import('./rykten').Intryck[]; // det personen tycker att andra är, och varför (steg 3.3, rykten.ts)
   smak?: Record<string, number>; // tycke och smak: 'a:' + arbete, 'm:' + mat eller 'v:' + vapen (steg 3.7.10), -1 till 1 (steg 3.3.5, rykten.ts)
   reservAlltid?: true; // blev ifattsprungen utan reservvapen: tar alltid med ett i strid (steg 3.7.7, strid.ts)

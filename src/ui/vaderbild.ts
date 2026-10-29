@@ -21,6 +21,7 @@ const BILD = {
   vindSnett: 0.6, // så snett faller regnet i den hårdaste blåsten (sidled per fall)
   blixtVar: 9000, // i åskan blixtrar det ungefär så här ofta (millisekunder, datorns tid) ...
   blixtMs: 180, // ... och blixten lyser så här länge
+  dimma: 0.4, dimmaFarg: 0xdad0bb, // dimman (steg 3.7.11): så här tät (andel) i den tätaste dimman, i ben 3
 };
 export const vaderG = new PIXI.Graphics();
 app.stage.addChild(vaderG);
@@ -34,6 +35,7 @@ export function drawVader(ms: number) {
   const v = vaderNu(s, ui.nu), w = app.screen.width, h = app.screen.height;
   const mork = v.moln * BILD.molnMork + v.nb * BILD.nbMork;
   if (mork > 0.005) vaderG.beginFill(0x10141c, mork).drawRect(0, 0, w, h).endFill();
+  if (v.dimma > 0.01) vaderG.beginFill(BILD.dimmaFarg, v.dimma * BILD.dimma).drawRect(0, 0, w, h).endFill();
   if (v.nb > 0.01) {
     const yta = w * h / (1280 * 800), snett = v.vind * BILD.vindSnett;
     if (v.sno) {

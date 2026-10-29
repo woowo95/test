@@ -62,7 +62,7 @@ const PAL: Record<string, Record<string, string>> = {
   // toa-högen (steg 2.10.5, platshållare efter stankslingan på kartan, ui/smuts.ts)
   toa: { C: '#7d5b40', V: '#898b4c', c: '#5e3c24', k: '#3f2415', v: '#d8b25f' },
   grodd: { G: '#647025', L: '#898b4c', g: '#4b4f00' },
-  ...Object.fromEntries(['klart', 'moln', 'regn', 'sno', 'blast', 'aska'].map(k => ['vader_' + k, VADER_PAL])),
+  ...Object.fromEntries(['klart', 'moln', 'regn', 'sno', 'blast', 'aska', 'dimma'].map(k => ['vader_' + k, VADER_PAL])),
   vattensack: { B: '#8a9c9e', J: '#7d5b40', L: '#987e62', b: '#61767a', j: '#5e3c24', o: '#24201d', s: '#906f0f', y: '#b2921b' },
   benspade: { h: '#7a5a36', H: '#9c7848', y: '#c8b07a', Y: '#e8d4a0', w: '#e8e2d0', W: '#fffaf0', d: '#b8ae98', R: '#d8d0bc' },
   skinnklader: { b: '#8a6440', B: '#b48a5e', d: '#5e4026', w: '#d8c8a8' },
@@ -1105,6 +1105,18 @@ const PIX: Record<string, string[]> = {
     '...oyo....',
     '..oyo.....',
     '...o......',
+  ],
+  vader_dimma: [ // platshållare (steg 3.7.11)
+    '..........',
+    '.ovvvvvvo.',
+    '..........',
+    'ovvvvvvvvo',
+    '..........',
+    '.ovvvvvvo.',
+    '..........',
+    'ovvvvvvvvo',
+    '..........',
+    '..ovvvvo..',
   ],
   vattensack: [
     '................',

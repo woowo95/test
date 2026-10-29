@@ -37,7 +37,7 @@ import { clamp, rnd } from './slump';
 import { ALDER, ageOf, count, getRel, log, ovning, stat, think } from './folk';
 import { blodtorst } from './humor';
 import { die } from './liv';
-import { handelse, smaka, smakAv } from './rykten';
+import { handelse, larma, smaka, smakAv } from './rykten';
 import { avbryt } from './lager';
 import { HOUR, SEC } from './typer';
 import { harBalte, paSig, paSigVikt } from './utrustning';
@@ -88,7 +88,8 @@ export const STRID = balans('strid', {
   hjarnaOrk: 0.4, // ... som tar så här mycket ork
   // avståndet (steg 3.7.7)
   langt: 0.5, // ett kast träffar så här mycket sämre vid kastets längsta räckvidd (mindre närmare) ...
-  vind: 0.6, // ... och så här mycket sämre i den hårdaste blåsten vid längsta räckvidden
+  vind: 0.6, // ... och så här mycket sämre i den hårdaste blåsten vid längsta räckvidden ...
+  dimma: 0.5, // ... och i den tätaste dimman (steg 3.7.11)
   nara: 2.2, // en fiende som har skytten som mål och är så här nära har nått skytten
   hall: 4, // skytten backar undan från den som kommer närmare än så här, om hen är snabbare
   byta: 0.7, // sekunder det tar att byta till reservvapnet i bältet
@@ -248,13 +249,13 @@ export interface Kampe {
 // en rad i loggen: tiden (sekunder), vem (a) och mot vem (b), del, skada och grad, och det kläderna tog
 export interface StridRad { t: number; h: Handelse; a?: number; b?: number; d?: Kroppsdel; k?: SkadaTyp; g?: number; v?: Vapen; kl?: string; kast?: 1 }
 export interface Strid {
-  avsikt: Avsikt; t: number; w: number; h: number; r: number; fro: number; vind: number; // vind = blåsten 0–1 (vädret)
+  avsikt: Avsikt; t: number; w: number; h: number; r: number; fro: number; vind: number; dimma: number; // vind = blåsten 0–1 och dimma = dimman 0–1 (vädret)
   halt: number; marken: { v: Vapen; x: number; y: number; av: number }[]; // halkan 0–1 och vapnen som tappats (steg 3.7.8)
   kampar: Kampe[]; logg: StridRad[];
   slut?: { t: number; vinnare: 0 | 1 | -1 };
 }
 // uppställningen som en strid börjar ur (arenan och, senare, byn)
-export interface Uppstallning { avsikt: Avsikt; w: number; h: number; vind?: number; halt?: number; kampar: Omit<Kampe, 'skador' | 'blod' | 'ork' | 'modNu' | 'lage' | 'vant' | 'mal' | 'backar' | 'slag' | 'traffar' | 'gjort' | 'skott' | 'haller' | 'vantar' | 'ifatt' | 'vada' | 'ligger' | 'bocker' | 'later'>[] }
+export interface Uppstallning { avsikt: Avsikt; w: number; h: number; vind?: number; dimma?: number; halt?: number; kampar: Omit<Kampe, 'skador' | 'blod' | 'ork' | 'modNu' | 'lage' | 'vant' | 'mal' | 'backar' | 'slag' | 'traffar' | 'gjort' | 'skott' | 'haller' | 'vantar' | 'ifatt' | 'vada' | 'ligger' | 'bocker' | 'later'>[] }
 
 // stridens egen slumpföljd (samma blandning som rnd i slump.ts)
 function slump(st: Strid) {
@@ -269,7 +270,7 @@ export function nyStrid(u: Uppstallning, fro: number): Strid {
     ...k, st: { ...k.st }, klader: [...k.klader], skador: [], blod: 1, ork: 1,
     modNu: clamp(STRID.modStart + (k.st.mod / 20) * STRID.modMod + (k.st.torst ?? 0) * STRID.torst, 0.05, 1), lage: 'strid', vant: 0, slag: 0, traffar: 0, gjort: 0,
   }));
-  const st: Strid = { avsikt: u.avsikt, t: 0, w: u.w, h: u.h, r: fro | 0, fro, vind: u.vind ?? 0, halt: u.halt ?? 0, marken: [], kampar, logg: [{ t: 0, h: 'borjar' }] };
+  const st: Strid = { avsikt: u.avsikt, t: 0, w: u.w, h: u.h, r: fro | 0, fro, vind: u.vind ?? 0, dimma: u.dimma ?? 0, halt: u.halt ?? 0, marken: [], kampar, logg: [{ t: 0, h: 'borjar' }] };
   if (!AVS[u.avsikt].vapen) for (const k of kampar) if (!k.djur) { k.vapen = 'hand'; k.reserv = undefined; }
   for (const k of kampar) { const kv = VAP[k.vapen].kast; if (kv) k.skott = kv.skott; }
   for (const k of kampar) k.vant = slump(st) * VAP[k.vapen].takt; // ingen slår exakt samtidigt
@@ -337,7 +338,7 @@ function kasta(st: Strid, a: Kampe, b: Kampe) {
   orkAv(a);
   a.skott = (a.skott ?? 1) - 1;
   const van = vanVid(st, a, b);
-  const chans = chansMot(a, b, a.st.sikte ?? a.st.skicklighet) * (1 - STRID.langt * d) * (1 - STRID.vind * st.vind * d);
+  const chans = chansMot(a, b, a.st.sikte ?? a.st.skicklighet) * (1 - STRID.langt * d) * (1 - STRID.vind * st.vind * d) * (1 - STRID.dimma * st.dimma * d);
   const traff = slump(st) < chans && !(iStrid(b) && b.mal === a.id && duckar(st, b));
   if (!traff && van && slump(st) < STRID.vada) {
     a.vada = (a.vada ?? 0) + 1;
@@ -690,7 +691,7 @@ export function stridIByn(s: State, avsikt: Avsikt, sidor: [Person[], Person[]],
   const kampar = sidor.flatMap((sida, sd) => sida.map((p, i) => personKampe(s, p, 0, sd as 0 | 1, sd === 0 ? W / 2 - isar : W / 2 + isar, H / 2 + (i - (sida.length - 1) / 2))));
   kampar.forEach((k, i) => { k.id = i + 1; });
   const halt = clamp(Math.max(((s.vader?.fukt ?? 0) - STRID.leraFran) / (1 - STRID.leraFran), snoPaMarken(s) * STRID.snoHalt), 0, 1); // lera och snö (steg 3.7.8)
-  const u: Uppstallning = { avsikt, w: W, h: H, vind: vaderNu(s).vind, halt, kampar };
+  const u: Uppstallning = { avsikt, w: W, h: H, vind: vaderNu(s).vind, dimma: vaderNu(s).dimma, halt, kampar };
   const fro = Math.floor(rnd(s, 'strid') * 2147483647);
   const st = stridTillSlut(nyStrid(u, fro));
   const lek = !!(AVSIKTER[avsikt] as { lek?: true }).lek, vinnare = st.slut!.vinnare;
@@ -699,6 +700,7 @@ export function stridIByn(s: State, avsikt: Avsikt, sidor: [Person[], Person[]],
   count(s, 'strider'); count(s, 'strid_' + avsikt);
   const folk = st.kampar.map(k => ({ k, p: sidor[k.sida][st.kampar.filter(o => o.sida === k.sida).indexOf(k)] }));
   const namn = (sd: 0 | 1) => sidor[sd].map(p => p.name).join(' och ');
+  if (!lek) larma(s, sidor[0][0].x, sidor[0][0].y, 'slagsmål', kampar.length, [...sidor[0], ...sidor[1]].filter(p => p.task?.act !== 'sova')); // de som slåss ropar (steg 3.7.11)
   if (!lek) log(s, `${namn(0)} och ${namn(1)} slogs (${orsak}). ${vinnare === -1 ? 'Ingen vann.' : `${namn(vinnare as 0 | 1)} vann.`}`, 'rel', folk.map(f => f.p.id));
   for (const { k, p } of folk) {
     const mot = sidor[1 - k.sida];

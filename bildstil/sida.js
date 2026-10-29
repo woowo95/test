@@ -1044,7 +1044,18 @@ function grillNy() {
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (g[y][x] === 'x') for (let dx = -2; dx <= 3; dx++) if (ut[y + 1]?.[x + dx] === '.') { ut[y][x + dx] = 'z'; ut[y + 1][x + dx] = 'z'; }
   return ut.map(r => r.join(''));
 }
+// dimman (steg 3.7.11): vädersymbol 10 × 10 punkter, i rätt storlek och tre gånger större
+const DIM_M = (p, l) => ({ w: 48, h: 36, kol: true, rita: (B, P) => { ritaSprite(B, p, { o: 'kol0', ...l }, 2, 2); ritaSprite(B, p.flatMap(r => { const rr = [...r].map(c => c.repeat(3)).join(''); return [rr, rr, rr]; }), { o: 'kol0', ...l }, 15, 3); } });
+const DIM_BAND = ['..........', '.ovvvvvvo.', '..........', 'ovvvvvvvvo', '..........', '.ovvvvvvo.', '..........', 'ovvvvvvvvo', '..........', '..ovvvvo..'];
+const DIM_SOL = ['...oooo...', '..oyyyyo..', '.oyyyyyyo.', 'oWWWWWWWWo', '.oyyyyyyo.', 'oWWWWWWWWo', '..ovvvvo..', '.oWWWWWWo.', '..........', 'ovvvvvvvvo'];
+const DIM_TRAD = ['....dd....', '...dddd...', 'oWWWWWWWWo', '..dddddd..', '.oWWWWWWo.', '.dddddddd.', 'oWWWWWWWWo', '....dd....', 'ovvvvvvvvo', '..........'];
 const VAL = [
+  { id: 'dimma', namn: 'Dimman', vad: 'Ny vädersymbol (steg 3.7.11), 10 × 10 punkter som de andra vädersymbolerna, i panelen bredvid temperaturen. Till vänster i rätt storlek, till höger tre gånger större. I spelet nu: dimbanden (version 1) som platshållare, och kartan blir ljusare och blekare i dimman.', typ: 'tre',
+    versioner: [
+      { text: 'Bara dimman: ljusa band i olika längd ovanför varandra.', ...DIM_M(DIM_BAND, { v: 'ben2' }) },
+      { text: 'En blek sol bakom dimbanden.', ...DIM_M(DIM_SOL, { y: 'senap3', W: 'ben3', v: 'ben2' }) },
+      { text: 'En gran som försvinner i dimman: mörka grenar mellan ljusa band.', ...DIM_M(DIM_TRAD, { d: 'skiffer2', W: 'ben3', v: 'ben2' }) },
+    ] },
   { id: 'ledarskap', namn: 'Ledarskapets symbol', vad: 'Ny symbol (steg 3.5), 16 × 16 punkter, för tekniken Ledarskap i teknikträdet och fliken Styre. Till vänster i rätt storlek, till höger tre gånger större. I spelet nu: hövdingastaven (version 1) som platshållare.', typ: 'tre',
     versioner: [
       { text: 'En hövdingastav i trä med en guldknopp, ett rött band och två vita fjädrar.', ...LED_M(LED_STAV, { s: 'senap2', S: 'senap3', w: 'ben2', W: 'ben3', j: 'jord1', J: 'jord2', r: 'rost2' }) },

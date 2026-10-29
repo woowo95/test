@@ -30,6 +30,11 @@ export const VADER = balans('vader', {
   blastFran: [0.62, 0.68, 0.75, 0.6], // ... och över så här mycket blåser det, per tidsålder
   askaTim: 1.5, askaFran: 0.8, askaGrad: 12, // åskan: en kort våg, över så här mycket i ett regn när det är varmare än askaGrad
   blixt: 0.15, // chansen per timme med åska att blixten slår ner
+  dimmaTim: 5, // dimman (steg 3.7.11): vågens längd (timmar) ...
+  dimmaFran: [0.75, 0.68, 0.8, 0.55], // ... och över så här mycket ligger det dimma på morgonen, per tidsålder (mest på hösten)
+  dimmaMorgon: [4, 10], // dimman ligger tätast mellan de här timmarna ...
+  dimmaDag: 0.55, // ... och vågen är så här mycket svagare resten av dygnet
+  dimmaLage: 0.3, // över så här tät dimma är väderläget Dimma
   // vad vädret gör
   molnSol: 0.8, // molnen tar så här stor del av solens värme
   blotTakt: 2.5, // hur fort man blir blöt i regnet (del per timme vid det kraftigaste regnet) ...
@@ -76,7 +81,9 @@ export function coldOf(temp: number) { return Math.max(0, (VADER.kallFran - temp
 // molnen tar solens värme; regnet vattnar marken, så att växterna och grödorna växer fortare (vaxtFaktor); en eld ute
 // brinner fortare i regnet; man söker tak när det regnar (val.ts); snön lägger sig på marken. Blixten slår ibland ner;
 // bränderna den kan starta kommer i 3.8.2. Taken och slitaget av regn och snö är steg 2.11.2, och hur vädret syns 2.11.4.
-export type VaderId = 'klart' | 'moln' | 'regn' | 'sno' | 'blast' | 'aska';
+// Dimman (steg 3.7.11) ligger oftast på morgonen och på hösten, aldrig när det blåser eller regnar: den gör det svårare att
+// se långt (rykten.ts) och att träffa på avstånd (strid.ts). Anfallare som vill vara tysta väljer den (11.2.5).
+export type VaderId = 'klart' | 'moln' | 'regn' | 'sno' | 'blast' | 'aska' | 'dimma';
 export const VADERLAGE: Record<VaderId, { namn: string; ikon: string; text: string }> = {
   klart: { namn: 'Klart', ikon: '☀', text: 'Solen värmer den som är ute.' },
   moln: { namn: 'Mulet', ikon: '☁', text: 'Molnen tar solens värme.' },
@@ -84,8 +91,9 @@ export const VADERLAGE: Record<VaderId, { namn: string; ikon: string; text: stri
   sno: { namn: 'Snö', ikon: '❄', text: 'Snön blöter lite och lägger sig på marken.' },
   blast: { namn: 'Blåst', ikon: '💨', text: 'Vinden kyler den som är ute.' },
   aska: { namn: 'Åska', ikon: '⛈', text: 'Ett kort oväder med regn. Ibland slår blixten ner.' },
+  dimma: { namn: 'Dimma', ikon: '🌫', text: 'Man ser inte långt, och det är svårt att träffa på avstånd.' },
 };
-export interface Vader { lage: VaderId; moln: number; nb: number; sno: boolean; vind: number; aska: boolean }
+export interface Vader { lage: VaderId; moln: number; nb: number; sno: boolean; vind: number; aska: boolean; dimma: number }
 export interface VaderMinne { fukt: number; sno: number }
 
 // en jämn slumpvåg ur byns frö: 0 till 1, som ändrar sig under ungefär `tim` timmar. En egen blandning (inte hash i
@@ -111,8 +119,10 @@ export function vaderNu(s: State, t = s.now): Vader {
   const temp = temperature(s, t), sno = nb > 0 && temp < VADER.snoGrad;
   const vind = clamp((vag(s, t, VADER.vindTim, 3) - VADER.blastFran[ai]) / (1 - VADER.blastFran[ai]), 0, 1);
   const aska = nb > 0 && !sno && temp > VADER.askaGrad && vag(s, t, VADER.askaTim, 4) > VADER.askaFran;
-  const lage: VaderId = aska ? 'aska' : nb > 0 ? (sno ? 'sno' : 'regn') : vind > 0 ? 'blast' : moln > 0.5 ? 'moln' : 'klart';
-  const v = { lage, moln, nb, sno, vind, aska };
+  const h = hourOf(t), [m0, m1] = VADER.dimmaMorgon, df = VADER.dimmaFran[ai];
+  const dimma = nb > 0 || vind > 0 ? 0 : clamp((vag(s, t, VADER.dimmaTim, 5) * (h >= m0 && h < m1 ? 1 : VADER.dimmaDag) - df) / (1 - df), 0, 1);
+  const lage: VaderId = aska ? 'aska' : nb > 0 ? (sno ? 'sno' : 'regn') : vind > 0 ? 'blast' : dimma > VADER.dimmaLage ? 'dimma' : moln > 0.5 ? 'moln' : 'klart';
+  const v = { lage, moln, nb, sno, vind, aska, dimma };
   vaderCache.set(s, { t, v });
   return v;
 }

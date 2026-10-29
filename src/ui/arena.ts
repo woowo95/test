@@ -19,7 +19,7 @@ const MAX = 3; // kämpar per sida
 type Kalla = { typ: 'by'; pid: number } | { typ: 'egen' } | { typ: 'djur'; art: string };
 interface Rad { kalla: Kalla; vapen: Vapen; reserv?: Vapen; klader: string[]; st: { styrka: number; uthallighet: number; mod: number; smidighet: number; skicklighet: number } }
 const ny = (): Rad => ({ kalla: { typ: 'egen' }, vapen: 'hand', klader: [], st: { styrka: 10, uthallighet: 10, mod: 10, smidighet: 10, skicklighet: 10 } });
-const lag: { sidor: [Rad[], Rad[]]; avsikt: Avsikt; fro: number; fart: number; vind: number; halt: number } = { sidor: [[ny()], [ny()]], avsikt: 'skada', fro: 1, fart: 1, vind: 0, halt: 0 };
+const lag: { sidor: [Rad[], Rad[]]; avsikt: Avsikt; fro: number; fart: number; vind: number; dimma: number; halt: number } = { sidor: [[ny()], [ny()]], avsikt: 'skada', fro: 1, fart: 1, vind: 0, dimma: 0, halt: 0 };
 let st: Strid | undefined, spelar = false, sist = 0, kvar = 0, sedd = 0, filter = -1, manga = '';
 const blink = new Map<number, { t: number; h: 'traff' | 'miss' | 'tog'; mot?: number; kast?: 1 }>(); // senaste slaget per kämpe (för utfallet)
 const FARG = ['#b2921b', '#61767a'], SIDA = [0xb2921b, 0x61767a]; // sidornas färg (ringen runt kämpen)
@@ -35,7 +35,7 @@ function uppstallning(): Uppstallning {
     else if (p) kampar.push({ ...personKampe(s, p, id++, side, x, y), vapen: r.vapen, reserv: r.reserv !== r.vapen ? r.reserv : undefined, klader: r.klader });
     else kampar.push({ id: id++, namn: `Kämpe ${sd === 0 ? 'A' : 'B'}${sida.length > 1 ? i + 1 : ''}`, sida: side, st: { ...r.st }, vapen: r.vapen, reserv: r.reserv !== r.vapen ? r.reserv : undefined, klader: r.klader, fart: 1, x, y });
   }));
-  return { avsikt: lag.avsikt, w: AW, h: AH, vind: lag.vind, halt: lag.halt, kampar };
+  return { avsikt: lag.avsikt, w: AW, h: AH, vind: lag.vind, dimma: lag.dimma, halt: lag.halt, kampar };
 }
 let senast: { u: Uppstallning; fro: number } | undefined; // striden som visas (↺ visar den igen)
 function starta(u = uppstallning(), fro = lag.fro) { senast = { u, fro }; st = nyStrid(u, fro); sedd = 0; kvar = 0; blink.clear(); filter = -1; manga = ''; byFolk(); visaLogg(); }
@@ -209,6 +209,7 @@ $('arena').innerHTML = `<div class="card arena">
         <button type="button" class="ghost" id="arFro" title="En ny strid med samma uppställning">🎲</button>
         <button type="button" class="ghost" id="arHundra" title="Samma uppställning 100 gånger">×100</button>
         <select id="arVind" title="Blåsten (sämre kast)">${[0, 0.5, 1].map(v => `<option value="${v}">${v === 0 ? '🍃' : v < 1 ? '💨' : '🌪️'}</option>`).join('')}</select>
+        <select id="arDimma" title="Dimman (sämre kast, steg 3.7.11)">${[0, 0.5, 1].map(v => `<option value="${v}">${v === 0 ? '👁' : v < 1 ? '🌁' : '🌫'}</option>`).join('')}</select>
         <select id="arHalt" title="Marken (hal mark fäller lättare)">${[0, 0.5, 1].map(v => `<option value="${v}">${v === 0 ? '🟫' : v < 1 ? '💧' : '🧊'}</option>`).join('')}</select>
         <select id="arFart" title="Fart">${[0.25, 0.5, 1, 2, 4].map(f => `<option value="${f}"${f === 1 ? ' selected' : ''}>${f}×</option>`).join('')}</select>
         <span id="arTid" class="muted"></span>
@@ -230,6 +231,7 @@ $('arFro').addEventListener('click', () => { lag.fro = (lag.fro * 1103515245 + 1
 $('arHundra').addEventListener('click', korHundra);
 $('arByn').addEventListener('change', e => { const m = s.strider?.[Number((e.target as HTMLSelectElement).value)]; if (m) { starta(m.u, m.fro); spela(true); } });
 $('arHalt').addEventListener('change', e => { lag.halt = Number((e.target as HTMLSelectElement).value); starta(); });
+$('arDimma').addEventListener('change', e => { lag.dimma = Number((e.target as HTMLSelectElement).value); starta(); });
 $('arVind').addEventListener('change', e => { lag.vind = Number((e.target as HTMLSelectElement).value); starta(); });
 $('arFart').addEventListener('change', e => { lag.fart = Number((e.target as HTMLSelectElement).value); });
 $('arFilt').addEventListener('change', e => { filter = Number((e.target as HTMLSelectElement).value); visaLogg(); });
