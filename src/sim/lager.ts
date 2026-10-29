@@ -1,7 +1,7 @@
 import { campDist } from './plats';
 import { groundOf } from './mark';
-import { findPath } from './vag';
-import { Ting, halvKlar, newTing, tingOf } from './agande';
+import { FOREST, findPath } from './vag';
+import { Ting, halvKlar, nTools, newTing, tingOf } from './agande';
 import { kvHaller } from './kvalitet';
 import { forvarAt, sittAt, stationAt, stationDef, tillbakaVid } from './stationer';
 import { faltAt } from './odling';
@@ -28,6 +28,7 @@ export const LAGER = balans('lager', {
   fullt: 3, // förrådet är fullt när lagerplatserna inte kan bli fler och så här många saker ligger bredvid dem
   vaxSteg: 4, // högst så här många förstoringar av lagerplatserna per timme
   mellan: 1, // lagerplatser ligger minst så här långt ifrån varandra
+  skogKost: 2, // en ny lagerplats i skogen räknas så här många rutor längre bort per vuxet träd som ska fällas (steg 3.6.9)
   bredvid: 2, // det som ligger så här nära en lagerplats räknas till förrådet, och läggs ut i ringen runt den
   nyBredd: 3, nyHojd: 2, // en ny lagerplats
   nyEldMin: 3, nyLagerMax: 8, // ... ligger minst så här långt från elden och högst så här långt från lägret
@@ -65,7 +66,7 @@ export const LAGER = balans('lager', {
 // Lagerplatserna (zoner) görs större, mindre och nya av invånarna själva. Två eller fler sorteras: maten för sig och
 // material för sig, och den viktigaste ligger närmast elden. Vilka saker som finns, och hur stora stackarna är, står i saker.ts.
 // hus = lagerplatsen är golvet i ett förrådshus (byggnader.ts): den växer och krymper inte och räknas inte bland de vanliga
-export interface Zone { x: number; y: number; w: number; h: number; namn?: string; slag?: 'mat' | 'material'; prio?: number; hus?: number; tom?: number } // tom: sedan när lagerplatsen stått halvtom (tidyStore)
+export interface Zone { x: number; y: number; w: number; h: number; namn?: string; slag?: 'mat' | 'material'; prio?: number; hus?: number; tom?: number; rojs?: boolean } // tom: sedan när lagerplatsen stått halvtom (tidyStore); rojs: lagd i skogen, träden fälls (steg 3.6.9)
 // dold: det som ligger gömt i stacken (giftig svamp bland svampen, saker.ts: i)
 interface Stack { k: string; n: number; c: number; x: number; y: number; ag?: Del; dold?: number; gor?: string; klar?: number; id?: number; q?: number } // gor = vad ett påbörjat redskap ska bli (paborjat.ts), klar = hur mycket av det som är gjort, id = tinget när stacken är ett redskap, q = dess kvalitet
 // en stack som den visas: out = utanför lagerplatserna, stored = hör till byns förråd (i lagret eller precis bredvid)
@@ -327,6 +328,12 @@ export function usable(s: State, x: number, y: number, utomElden = false) {
   const st = stationAt(s, x, y);
   return !st || !!stationDef(st.k)?.forvar || utomElden && !!stationDef(st.k)?.eld; // i en hylla, kista eller ett ställ ligger saker (steg 2.3.6); grillen flyttas med elden
 }
+// vuxna träd i lagerplatsen z: de fälls först (steg 3.6.9), så i skogen bara när byn har en yxa (Infinity annars)
+function skogI(s: State, z: Zone) {
+  const g = groundOf(s); let n = 0;
+  for (let y = z.y; y < z.y + z.h; y++) for (let x = z.x; x < z.x + z.w; x++) if (inMap(x, y) && g.trees[y * W + x] >= FOREST) n++;
+  return n && !nTools(s, 'yxa') ? Infinity : n;
+}
 const allUsable = (s: State, z: Zone) => { for (let y = z.y; y < z.y + z.h; y++) for (let x = z.x; x < z.x + z.w; x++) if (!usable(s, x, y)) return false; return true; };
 const overlaps = (a: Zone, b: Zone, gap: number) => a.x < b.x + b.w + gap && b.x < a.x + a.w + gap && a.y < b.y + b.h + gap && b.y < a.y + a.h + gap;
 // rutorna runt en lagerplats, närmast först (från fran till och med till rutor ut). En i taget, så att den som letar efter
@@ -375,6 +382,7 @@ export const rymd = (s: State, x: number, y: number, k: string) => { const f = f
 // ryms mer av slaget k på rutan? En stack av samma slag som inte är full, eller ingenting. I ett ställ bara redskap, så
 // många som det rymmer. Medan det byggs ryms ett redskap där, annars ligger något annat i stället när det blir klart
 function roomIn(s: State, occ: Occ, x: number, y: number, k: string) {
+  if (groundOf(s).trees[key(x, y)] >= FOREST && zonesOf(s).some(z => z.rojs && inZone(z, x, y))) return false; // ett träd i lagret i skogen fälls först (steg 3.6.9)
   const a = occ.get(key(x, y)), f = forvarAt(s, x, y), st = stationAt(s, x, y);
   if (f?.redskap) return isTool(k) && (!a || isTool(a.k)) && (occ.redskap.get(key(x, y)) ?? 0) < f.rymmer;
   if (st && stationDef(st.k)?.forvar?.redskap) return isTool(k) && !a; // ett ställ som byggs: ett redskap, som på marken
@@ -712,9 +720,10 @@ export function tidyStore(s: State) {
 }
 function growOf(s: State, i: number): Zone | undefined {
   const zs = zonesOf(s), z = zs[i];
-  return [{ ...z, w: z.w + 1 }, { ...z, h: z.h + 1 }, { ...z, x: z.x - 1, w: z.w + 1 }, { ...z, y: z.y - 1, h: z.h + 1 }]
-    .filter(n => n.w <= LAGER.zonBredd && n.h <= LAGER.zonHojd && allUsable(s, n) && !zs.some((o, j) => j !== i && overlaps(n, o, LAGER.mellan)))
+  const n = [{ ...z, w: z.w + 1 }, { ...z, h: z.h + 1 }, { ...z, x: z.x - 1, w: z.w + 1 }, { ...z, y: z.y - 1, h: z.h + 1 }]
+    .filter(n => n.w <= LAGER.zonBredd && n.h <= LAGER.zonHojd && allUsable(s, n) && skogI(s, n) < Infinity && !zs.some((o, j) => j !== i && overlaps(n, o, LAGER.mellan)))
     .sort((a, b) => Math.abs(a.w - a.h) - Math.abs(b.w - b.h))[0];
+  return n && !n.rojs && skogI(s, n) > 0 ? { ...n, rojs: true } : n;
 }
 // en ny lagerplats nära byns läger (eld och andra lagerplatser), men inte inpå elden. Den första uppdelningen sorterar: maten får den gamla platsen, materialet den nya.
 // Platsen ska gå att gå till från elden: en ö i sjön nära lägret blir ingen lagerplats (då gick bärarna genom vattnet)
@@ -723,11 +732,13 @@ function newZone(s: State) {
   for (let y = 0; y < H - 2; y++) for (let x = 0; x < W - 2; x++) {
     const c: Zone = { x, y, w: LAGER.nyBredd, h: LAGER.nyHojd }, df = Math.hypot(x + c.w / 2 - f.x, y + c.h / 2 - f.y);
     if (df < LAGER.nyEldMin || campDist(s, x + (c.w - 1) / 2, y + (c.h - 1) / 2) > LAGER.nyLagerMax || !allUsable(s, c) || zs.some(o => overlaps(c, o, LAGER.mellan))) continue;
-    kand.push({ c, d: Math.hypot(x - z0.x, y - z0.y) });
+    const skog = skogI(s, c); // i skogen fälls träden först (steg 3.6.9)
+    if (skog < Infinity) kand.push({ c, d: Math.hypot(x - z0.x, y - z0.y) + skog * LAGER.skogKost });
   }
   kand.sort((a, b) => a.d - b.d);
   const best = kand.find(k => findPath(g, f.x + 0.5, f.y + 0.5, k.c.x + 0.5, k.c.y + 0.5))?.c;
   if (!best) return;
+  if (skogI(s, best) > 0) best.rojs = true;
   if (vanliga(s) === 1) {
     Object.assign(z0, { namn: 'Matförrådet', slag: 'mat', prio: 2 });
     zs.push({ ...best, namn: 'Materiallagret', slag: 'material', prio: 1 });

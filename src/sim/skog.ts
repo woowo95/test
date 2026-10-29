@@ -8,13 +8,14 @@ import { Act, DAY, H, HOUR, MIN, Person, State, Stock, W } from './typer';
 import { SNABBARE } from './handlingar';
 import { minOf, wantsTool } from './redskap';
 import { balans } from './balans';
+import { faltOf, faltRuta } from './odling';
 
 // ---------- skog: fälla träd, hugga ved, flinta och yxa ----------
 // Utan yxa kan invånarna bara samla grenar på marken. Med en flintyxa kan de fälla träd.
 // Ett fällt träd blir en liggande stam som sedan huggs till ved, och då blir det grenar också.
 // Balanstal (regel 8): vad ett träd ger, hur lång tid det tar att fälla, och vilket träd man väljer. Hur många yxor byn vill
 // ha och hur många som får bygga står i REDSKAP (redskap.ts)
-const SKOG = balans('skog', {
+export const SKOG = balans('skog', {
   stamVed: 8, // ett vuxet träd ger så här mycket trä ...
   stamGrenar: 5, // ... och så här många grenar
   fallTim: 0.1, // så många timmar tar det att fälla ett träd, delat med SNABBARE: fyra minuter (steg 2.3.8; 48 minuter förut)
@@ -32,14 +33,31 @@ const FALL_TID = SKOG.fallTim * HOUR / SNABBARE; // så lång tid det tar att f�
 // hur lång tid det tar att fälla trädet på ruta i: ett litet träd fälls fortare
 export const fallTid = (s: State, i: number) => FALL_TID * Math.max(SKOG.fallMin, groundOf(s).trees[i]);
 
+// rutorna med vuxna träd som ska fällas för att något ska ligga där: lagerplatserna som lagts i skogen och fälten som
+// röjs, de rutor som inte är röjda än (steg 3.6.9)
+export function skaRojas(s: State) {
+  const g = groundOf(s), ut: number[] = [];
+  for (const z of s.lagren ?? []) if (z.rojs && z.hus === undefined) for (let y = z.y; y < z.y + z.h; y++) for (let x = z.x; x < z.x + z.w; x++) if (g.trees[y * W + x] >= FOREST) ut.push(y * W + x);
+  for (const f of faltOf(s)) if (f.steg === 'roja') for (let k = f.klara; k < f.n; k++) { const i = faltRuta(f, k); if (g.trees[i] >= FOREST) ut.push(i); }
+  return ut;
+}
+// det närmaste trädet att fälla i ett lager eller på ett fält i skogen, som ingen annan fäller (projektet rojning i projekt.ts)
+export function rojSpot(s: State, p: Person) {
+  const taken = fellingTiles(s, p); let best = -1, bd = Infinity;
+  for (const i of skaRojas(s)) { const d = campDist(s, i % W, Math.floor(i / W)); if (!taken.has(i) && d < bd) { bd = d; best = i; } }
+  return best < 0 ? undefined : { x: (best % W) + 0.5, y: Math.floor(best / W) + 0.5, i: best };
+}
 // rutorna där någon annan än utom håller på att fälla ett träd
 export const fellingTiles = (s: State, utom: Person) => new Set(living(s).filter(q => q !== utom && q.task?.act === 'falla').map(q => tileOf(q.task!.tx, q.task!.ty)));
 // närmaste vuxna träd att fälla, helst i skogskanten nära byn (p väljer med sin egen slumpföljd)
 export function treeSpot(s: State, taken: Set<number>, p: Person): { x: number; y: number } | undefined {
   const g = groundOf(s), f = campCenter(s);
-  // först träden där ett hus ska stå: de måste bort ändå, och stockarna blir husets väggar
+  // först träden där ett hus ska stå: de måste bort ändå, och stockarna blir husets väggar. Sedan träden på en lagerplats
+  // och ett fält som röjs (steg 3.6.9): där fälls de först, och de blir trä
   let site = -1, sd = Infinity;
-  if (g.built) for (let i = 0; i < W * H; i++) if (g.built[i] && g.trees[i] >= FOREST && !taken.has(i)) { const d = campDist(s, i % W, Math.floor(i / W)); if (d < sd) { sd = d; site = i; } }
+  const prova = (i: number) => { if (g.trees[i] >= FOREST && !taken.has(i)) { const d = campDist(s, i % W, Math.floor(i / W)); if (d < sd) { sd = d; site = i; } } };
+  if (g.built) for (let i = 0; i < W * H; i++) if (g.built[i]) prova(i);
+  if (site < 0) for (const i of skaRojas(s)) prova(i);
   if (site >= 0) return { x: (site % W) + 0.5, y: Math.floor(site / W) + 0.5 };
   // sedan ett träd som någon har börjat fälla (paborjat.ts): det närmaste
   let half = -1, hd = Infinity;

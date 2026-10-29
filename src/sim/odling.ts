@@ -11,7 +11,7 @@ import { groundOf } from './mark';
 import { FOREST } from './vag';
 import { knows, tankePa } from './teknik';
 import { getable, takeMaterial } from './behov';
-import { freeTools, wearTool } from './agande';
+import { freeTools, nTools, wearTool } from './agande';
 import { SAKER } from './saker';
 import { PLATS, campCenter, campDist } from './plats';
 import { ledig, lekplats, paLek } from './stationer';
@@ -47,6 +47,7 @@ export const ODLING = balans('odling', {
   faltBredd: 10, // ett fält är högst så här många rutor brett; det växer i rader bort från lägret
   faltFran: 3, faltTill: 9, // fältets första rad ligger så här många rutor från byns läger ...
   faltAvst: 5, // ... helst så här långt
+  skogKost: 2, // ett vuxet träd på platsen räknas som så många rutor längre bort: det fälls först (steg 3.6.9)
   // arbetet per ruta är kort, så att fälten kan bli stora (Björn efter v107, steg 2.10.13)
   rojaMin: 5, // minuters arbete per ruta att röja gräs, buskar och ungskog
   beredaMin: 8, // minuters arbete per ruta att gräva upp jorden för hand ...
@@ -171,7 +172,7 @@ const riktning = (s: State, y: number) => y + 0.5 >= campCenter(s).y ? 1 : -1;
 function rutaFri(s: State, x: number, y: number) {
   if (!inMap(x, y) || x < 1 || y < 1 || x >= W - 1 || y >= H - 1) return false;
   const i = y * W + x, t = getMap(s.seed).tiles[i];
-  return (t === T.Gras || t === T.Skog) && groundOf(s).trees[i] < FOREST && ledig(s, x, y) && !faltAt(s, x, y);
+  return (t === T.Gras || t === T.Skog) && (groundOf(s).trees[i] < FOREST || nTools(s, 'yxa') > 0) && ledig(s, x, y) && !faltAt(s, x, y); // i skogen fälls träden först, med en yxa (steg 3.6.9)
 }
 
 // var ett nytt fält med n rutor och bredden w läggs: alla rutor fria, första raden faltFran–faltTill rutor från lägret,
@@ -193,7 +194,7 @@ function hittaSite(s: State, w: number, n: number) {
     if (d < ODLING.faltFran || d > ODLING.faltTill) continue;
     const ny = { x, y, w, dir: riktning(s, y), n } as Falt;
     let ok = true, unga = 0;
-    for (let k = 0; k < n && ok; k++) { const r = rutaXY(ny, k); if (!rutaFri(s, r.x, r.y)) ok = false; else unga += g.trees[r.y * W + r.x]; }
+    for (let k = 0; k < n && ok; k++) { const r = rutaXY(ny, k); if (!rutaFri(s, r.x, r.y)) ok = false; else { const tr = g.trees[r.y * W + r.x]; unga += tr >= FOREST ? ODLING.skogKost : tr; } }
     if (!ok) continue;
     const lek = paLek(lekR, x, ny.dir > 0 ? y : y - rader + 1, b, rader) ? 20 : 0;
     const sc = Math.abs(d - ODLING.faltAvst) + lek + unga;
@@ -210,6 +211,7 @@ export function faltUppgift(s: State, p: Person): FaltUppgift | undefined {
   const f = egetFalt(s, p);
   if (f) {
     if (f.steg === 'vaxer') return undefined;
+    if (f.steg === 'roja' && f.klara < f.n && groundOf(s).trees[faltRuta(f, f.klara)] >= FOREST) return undefined; // trädet fälls först (skog.ts, steg 3.6.9)
     // sådden: frön till en ruta till, eller att sådden avslutas när fröna tagit slut
     if (f.steg === 'sa' && f.klara === 0 && (froRutor(s, p) < 1 || !grodaNu(s))) return undefined;
     return { tool: f.steg, text: `${FALT_STEG[f.steg].gor}.`, min: ODLING.pass, spot: nastaRuta(f), ref: f.id };
@@ -273,6 +275,7 @@ export function workOdla(s: State, p: Person, tk: Task, dtSec: number) {
   if (!f || f.steg === 'vaxer' || f.steg !== tk.tool) { tk.until = s.now; return; } // steget ändrades (grödan frös, eller en annan blev klar)
   let t = dtSec * SEC * fart(s, p, f);
   while (t > 0 && f.klara < antal(f) && !froSlut(s, p, f)) {
+    if (f.steg === 'roja' && groundOf(s).trees[faltRuta(f, f.klara)] >= FOREST) { tk.until = s.now; break; } // ett träd fälls först (steg 3.6.9)
     if (t < f.kvar - 1) { f.kvar -= t; break; } // en millisekund kvar räknas som klar (avrundningen)
     t -= f.kvar;
     rutaKlar(s, p, f);

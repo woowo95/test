@@ -92,9 +92,9 @@ function built(s: State) {
   const key = campKey(s);
   let c = builtCache.get(s);
   if (c?.key === key) return c.b;
-  const f = eldPlats(s), b = new Uint8Array(W * H);
+  const f = eldPlats(s), b = new Uint8Array(W * H); // 1 = vid elden och i lagret, 2 = på en lagerplats i skogen (steg 3.6.9)
+  for (const z of s.lagren ?? []) for (let y = z.y; y < z.y + z.h; y++) for (let x = z.x; x < z.x + z.w; x++) if (inMap(x, y)) b[y * W + x] = z.rojs ? 2 : 1; // träden fälls bara där byn valt att lägga lagret i skogen
   for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (inMap(f.x + dx, f.y + dy)) b[(f.y + dy) * W + f.x + dx] = 1;
-  for (const z of s.lagren ?? []) for (let y = z.y; y < z.y + z.h; y++) for (let x = z.x; x < z.x + z.w; x++) if (inMap(x, y)) b[y * W + x] = 1;
   builtCache.set(s, c = { key, b });
   return b;
 }
@@ -107,7 +107,7 @@ export function growGround(s: State, hours: number, season: number) {
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     const i = y * W + x;
     if (!isSoil(tiles[i])) continue;
-    if (b[i] || g.built?.[i]) { cover[i] = Math.min(cover[i], MARK.lagerTak); if (b[i] || trees[i] < FOREST) trees[i] = 0; continue; } // inget växer vid elden, i lagret eller i husen: gräset kapas och plantor och ungskog tas bort. Ett vuxet träd står kvar på en husplats tills det fälls, men i lägret (b: elden och lagerplatserna) tas det bort utan att fällas
+    if (b[i] || g.built?.[i]) { cover[i] = Math.min(cover[i], MARK.lagerTak); if (b[i] === 1 || trees[i] < FOREST) trees[i] = 0; continue; } // inget växer vid elden, i lagret eller i husen: gräset kapas och plantor och ungskog tas bort. Ett vuxet träd står kvar på en husplats och en lagerplats i skogen tills det fälls (steg 3.6.9), men vid elden och i det första lagret tas det bort
     if (old[i] < 1) {
       let n = 0, c = 0;
       if (x > 0 && isSoil(tiles[i - 1])) { n += old[i - 1]; c++; }

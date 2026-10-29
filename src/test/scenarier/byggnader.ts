@@ -1,6 +1,6 @@
 // Scenarier. Byggnader och lager: byggnader, förrådshus, familjehus, funktion, påbörjat, bostad, bygg, lager och lagerplatser.
 import { isDeepStrictEqual } from 'node:util';
-import { MIN, Person, Act, createState, addTool, toolsOf, BYN, step, living, sees, ageIndex, cloneState, ageStart, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, dropLoad, T, isStored, zonesOf, allows, ageOf, groundOf, getMap, DAY, HOUR, W, State, tileOf, rektAvstand, stat, campCenter, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, isWall, Bit, wearBuild, treeOn, KANIN, ownsAmount, addTo, setAmount, isFood, grundvarde, tingOf, komOf, BYGGNADER, FN, mostUrgent, fnId, fnOf, planBuild, workOn, wearMult, LAGER, homeless, sovplatser, inZone, startWork, workHalf, finishHalf, stepPaborjat, halvOf, tingVarde, HALV_TID, fallTid, treeSpot, SEC, Task, familjOf, bedTile, takeForHouse, put, stepByggnader, husNamn, spotFor, roofed, MATERIAL, usable, dropSpot, ALDER, KROPP, samlingRum, varmareInne, haulJob, fetchFuel, chooseTask, minOf } from '../../sim';
+import { MIN, Person, Act, createState, addTool, FOREST, HOUR_S, toolsOf, BYN, step, living, sees, ageIndex, cloneState, ageStart, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, dropLoad, T, isStored, zonesOf, allows, ageOf, groundOf, getMap, DAY, HOUR, W, State, tileOf, rektAvstand, stat, campCenter, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, isWall, Bit, wearBuild, treeOn, KANIN, ownsAmount, addTo, setAmount, isFood, grundvarde, tingOf, komOf, BYGGNADER, FN, mostUrgent, fnId, fnOf, planBuild, workOn, wearMult, LAGER, homeless, sovplatser, inZone, startWork, workHalf, finishHalf, stepPaborjat, halvOf, tingVarde, HALV_TID, fallTid, treeSpot, SEC, Task, familjOf, bedTile, takeForHouse, put, stepByggnader, husNamn, spotFor, roofed, MATERIAL, usable, dropSpot, ALDER, KROPP, samlingRum, varmareInne, haulJob, fetchFuel, chooseTask, minOf } from '../../sim';
 import * as SIM from '../../sim';
 import { findPath } from '../../sim/vag';
 import { START } from '../kor';
@@ -411,9 +411,9 @@ SCENARIER.lager = {
     }
     // den som har fullt går hem med en gång, även om uppgiften inte är klar
     const v = living(b).find(p => ageOf(p, b.now) >= 18)!;
-    v.task = { act: 'samla', phase: 'do', tx: v.x, ty: v.y, until: b.now + 3 * HOUR, carry: capacity(b, v) * STACK.bar, why: 'test', dark: false };
+    const tk0: SIM.Task = v.task = { act: 'samla', phase: 'do', tx: v.x, ty: v.y, until: b.now + 3 * HOUR, carry: capacity(b, v) * STACK.bar, why: 'test', dark: false };
     step(b, 2); step(b, 2);
-    const gickHem = v.task?.phase === 'back';
+    const gickHem = tk0.phase === 'back'; // på väg hem, eller redan framme vid lagret och har lämnat bördan
     const stark = living(b).slice().sort((x, y) => stat(y, 'styrka', b.now) - stat(x, 'styrka', b.now));
     // tomt lager krymper
     setFood(s, 5); setAmount(s, 'ved', 0); setItems(s, { flinta: 1 });
@@ -718,3 +718,42 @@ function ringUte(s: SIM.State) {
   }
   return undefined;
 }
+
+SCENARIER.skogsrojning = {
+  text: 'Steg 3.6.9: en lagerplats och ett fält kan ligga i skogen. Träden där står kvar tills någon med yxa fäller dem, före andra träd, och de blir trä; inget läggs på en ruta där ett träd står och ingen ruta röjs under ett träd',
+  kor: () => {
+    const s = createState(9, START);
+    tandEld(s); klockan(s, 9);
+    const g = groundOf(s), c = campCenter(s), m = getMap(s.seed);
+    // ett skogsparti nära lägret, två gånger två rutor, och ett fält i skogen bredvid
+    const skog = (x: number, y: number, w: number, h: number) => { for (let yy = y; yy < y + h; yy++) for (let xx = x; xx < x + w; xx++) if (m.tiles[yy * W + xx] !== T.Skog && m.tiles[yy * W + xx] !== T.Gras || bitAt(xx, yy)) return false; return true; };
+    const bitAt = (x: number, y: number) => usable(s, x, y) === false;
+    let at: { x: number; y: number } | undefined;
+    for (let d = 4; d < 14 && !at; d++) for (let dy = -d; dy <= d && !at; dy++) for (let dx = -d; dx <= d && !at; dx++) if (Math.max(Math.abs(dx), Math.abs(dy)) === d && skog(Math.floor(c.x) + dx, Math.floor(c.y) + dy, 2, 4)) at = { x: Math.floor(c.x) + dx, y: Math.floor(c.y) + dy };
+    if (!at) return [['ett skogsparti nära lägret', false]];
+    for (let yy = at.y; yy < at.y + 4; yy++) for (let xx = at.x; xx < at.x + 2; xx++) g.trees[yy * W + xx] = 0.9;
+    zonesOf(s).push({ x: at.x, y: at.y, w: 2, h: 2, namn: 'Skogslagret', prio: 3, rojs: true });
+    const agare = living(s).find(q => ageOf(q, s.now) >= 18)!, f: SIM.Falt = { id: 99, x: at.x, y: at.y + 2, w: 2, dir: 1, n: 4, agare: agare.id, steg: 'roja', klara: 0, kvar: SIM.ODLING.rojaMin * 60000, rord: s.now };
+    (s.falt ??= []).push(f); s.byggV = (s.byggV ?? 0) + 1;
+    const lagerRutor = [0, 1, 2, 3].map(k => (at!.y + (k >> 1)) * W + at!.x + (k & 1)), faltRutor = SIM.faltRutor(f);
+    // inget läggs under ett träd, och ägaren röjer inte fältet förrän träden fällts
+    const sp = dropSpot(s, 'bar'), underTrad = lagerRutor.includes(tileOf(sp.x, sp.y));
+    const vantar = !SIM.faltUppgift(s, agare);
+    const tk = { act: 'odla', tool: 'roja', ref: f.id, until: s.now + HOUR } as unknown as Task;
+    SIM.workOdla(s, agare, tk, HOUR_S);
+    const orord = f.klara === 0 && g.trees[faltRutor[0]] >= FOREST;
+    // den som har en yxa fäller först träden i lagret och på fältet
+    const p = living(s).find(q => q !== agare && ageOf(q, s.now) >= 18)!;
+    addTool(s, 'yxa', p);
+    const forst = treeSpot(s, new Set(), p), forstOk = !!forst && SIM.skaRojas(s).includes(tileOf(forst.x, forst.y));
+    kor(s, 48);
+    const kvar = [...lagerRutor, ...faltRutor].filter(i => g.trees[i] >= FOREST).length;
+    const tra = SIM.stocks(s).length + amountOf(s, 'ved');
+    return [
+      [`inget läggs i lagret där träden står (${underTrad ? 'lades under ett träd' : 'bredvid'})`, !underTrad],
+      ['ägaren röjer inte fältet under träden', vantar && orord],
+      [`den med yxa fäller först ett träd i lagret eller på fältet`, forstOk],
+      [`efter 48 timmar (två dygn, två år i spelet) är träden fällda (${kvar} av 8 kvar) och har blivit trä (${Math.round(tra)} trä och stammar)`, kvar <= 2 && tra > 0],
+    ];
+  },
+};
