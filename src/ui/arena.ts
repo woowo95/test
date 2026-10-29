@@ -17,11 +17,11 @@ import { stopFollow } from './portratt';
 const AW = 14, AH = 9; // planen i rutor
 const MAX = 3; // kämpar per sida
 type Kalla = { typ: 'by'; pid: number } | { typ: 'egen' } | { typ: 'djur'; art: string };
-interface Rad { kalla: Kalla; vapen: Vapen; klader: string[]; st: { styrka: number; uthallighet: number; mod: number; smidighet: number; skicklighet: number } }
+interface Rad { kalla: Kalla; vapen: Vapen; reserv?: Vapen; klader: string[]; st: { styrka: number; uthallighet: number; mod: number; smidighet: number; skicklighet: number } }
 const ny = (): Rad => ({ kalla: { typ: 'egen' }, vapen: 'hand', klader: [], st: { styrka: 10, uthallighet: 10, mod: 10, smidighet: 10, skicklighet: 10 } });
-const lag: { sidor: [Rad[], Rad[]]; avsikt: Avsikt; fro: number; fart: number } = { sidor: [[ny()], [ny()]], avsikt: 'skada', fro: 1, fart: 1 };
+const lag: { sidor: [Rad[], Rad[]]; avsikt: Avsikt; fro: number; fart: number; vind: number } = { sidor: [[ny()], [ny()]], avsikt: 'skada', fro: 1, fart: 1, vind: 0 };
 let st: Strid | undefined, spelar = false, sist = 0, kvar = 0, sedd = 0, filter = -1, manga = '';
-const blink = new Map<number, { t: number; h: 'traff' | 'miss' | 'tog'; mot?: number }>(); // senaste slaget per kämpe (för utfallet)
+const blink = new Map<number, { t: number; h: 'traff' | 'miss' | 'tog'; mot?: number; kast?: 1 }>(); // senaste slaget per kämpe (för utfallet)
 const FARG = ['#b2921b', '#61767a'], SIDA = [0xb2921b, 0x61767a]; // sidornas färg (ringen runt kämpen)
 const STATNAMN = { styrka: 'Styrka', uthallighet: 'Uthållighet', mod: 'Mod', smidighet: 'Smidighet', skicklighet: 'Skicklighet' } as const;
 
@@ -32,10 +32,10 @@ function uppstallning(): Uppstallning {
     const x = sd === 0 ? 3.5 : AW - 3.5, y = AH / 2 + (i - (sida.length - 1) / 2) * 2, side = sd as 0 | 1;
     const p = r.kalla.typ === 'by' ? byId(s, r.kalla.pid) : undefined;
     if (r.kalla.typ === 'djur') kampar.push(djurKampe(r.kalla.art, id++, side, x, y));
-    else if (p) kampar.push({ ...personKampe(s, p, id++, side, x, y), vapen: r.vapen, klader: r.klader });
-    else kampar.push({ id: id++, namn: `Kämpe ${sd === 0 ? 'A' : 'B'}${sida.length > 1 ? i + 1 : ''}`, sida: side, st: { ...r.st }, vapen: r.vapen, klader: r.klader, fart: 1, x, y });
+    else if (p) kampar.push({ ...personKampe(s, p, id++, side, x, y), vapen: r.vapen, reserv: r.reserv !== r.vapen ? r.reserv : undefined, klader: r.klader });
+    else kampar.push({ id: id++, namn: `Kämpe ${sd === 0 ? 'A' : 'B'}${sida.length > 1 ? i + 1 : ''}`, sida: side, st: { ...r.st }, vapen: r.vapen, reserv: r.reserv !== r.vapen ? r.reserv : undefined, klader: r.klader, fart: 1, x, y });
   }));
-  return { avsikt: lag.avsikt, w: AW, h: AH, kampar };
+  return { avsikt: lag.avsikt, w: AW, h: AH, vind: lag.vind, kampar };
 }
 let senast: { u: Uppstallning; fro: number } | undefined; // striden som visas (↺ visar den igen)
 function starta(u = uppstallning(), fro = lag.fro) { senast = { u, fro }; st = nyStrid(u, fro); sedd = 0; kvar = 0; blink.clear(); filter = -1; manga = ''; byFolk(); visaLogg(); }
@@ -54,10 +54,11 @@ function radHtml(sd: number, i: number, r: Rad) {
     ...STRIDSDJUR().map(a => `<option value="djur:${a}"${k === `djur:${a}` ? ' selected' : ''}>🐾 ${esc((DJUR as Record<string, { strid?: { namn: string } }>)[a].strid!.namn)}</option>`)].join('');
   const manniska = r.kalla.typ !== 'djur';
   const vap = manniska ? `<select data-f="vapen" title="Vapen">${MANNISKOVAPEN.map(v => `<option value="${v}"${r.vapen === v ? ' selected' : ''}>${VAPEN[v].tecken} ${esc(VAPEN[v].namn)}</option>`).join('')}</select>` : '';
+  const res = manniska ? `<select data-f="reserv" title="Reservvapen i bältet"><option value="">➰ –</option>${MANNISKOVAPEN.filter(v => (VAPEN[v] as { liten?: true }).liten).map(v => `<option value="${v}"${r.reserv === v ? ' selected' : ''}>➰ ${VAPEN[v].tecken}</option>`).join('')}</select>` : '';
   const kl = manniska ? KLADER_STRID.map(c => `<label title="${esc(sakNamn(c))}"><input type="checkbox" data-f="klad" value="${c}"${r.klader.includes(c) ? ' checked' : ''}> ${esc(sakNamn(c))}</label>`).join('') : '';
   const sl = r.kalla.typ === 'egen' ? `<div class="arStat">${(Object.keys(STATNAMN) as (keyof typeof STATNAMN)[]).map(n => `<label title="${STATNAMN[n]} (1–20)">${STATNAMN[n].slice(0, 3)} <input type="range" min="1" max="20" data-f="st" data-n="${n}" value="${r.st[n]}"><b>${r.st[n]}</b></label>`).join('')}</div>` : '';
   const bort = lag.sidor[sd].length > 1 ? `<button type="button" class="ghost" data-f="bort" title="Ta bort">✕</button>` : '';
-  return `<div class="arRad" data-sd="${sd}" data-i="${i}"><div><select data-f="kalla" title="Vem">${val}</select>${vap}${bort}</div><div class="arKl">${kl}</div>${sl}</div>`;
+  return `<div class="arRad" data-sd="${sd}" data-i="${i}"><div><select data-f="kalla" title="Vem">${val}</select>${vap}${res}${bort}</div><div class="arKl">${kl}</div>${sl}</div>`;
 }
 function visaUpp() {
   $('arUpp').innerHTML = lag.sidor.map((sida, sd) => `<div class="arSida" style="border-color:${FARG[sd]}"><b style="color:${FARG[sd]}">${sd === 0 ? '◀' : '▶'}</b>${sida.map((r, i) => radHtml(sd, i, r)).join('')}${sida.length < MAX ? `<button type="button" class="ghost" data-f="mer" data-sd="${sd}" title="En till på den här sidan">＋</button>` : ''}</div>`).join('')
@@ -73,9 +74,10 @@ function andra(e: Event) {
     const [t, v] = el.value.split(':');
     r.kalla = t === 'by' ? { typ: 'by', pid: Number(v) } : t === 'djur' ? { typ: 'djur', art: v } : { typ: 'egen' };
     const p = r.kalla.typ === 'by' ? byId(s, r.kalla.pid) : undefined;
-    if (p) { const k = personKampe(s, p, 0, 0, 0, 0); r.vapen = k.vapen; r.klader = k.klader; }
+    if (p) { const k = personKampe(s, p, 0, 0, 0, 0); r.vapen = k.vapen; r.reserv = k.reserv; r.klader = k.klader; }
     visaUpp();
   } else if (f === 'vapen') r.vapen = el.value as Vapen;
+  else if (f === 'reserv') r.reserv = (el.value || undefined) as Vapen | undefined;
   else if (f === 'klad') r.klader = el.checked ? [...r.klader, el.value] : r.klader.filter(c => c !== el.value);
   else if (f === 'st') { r.st[el.dataset.n as keyof Rad['st']] = Number(el.value); el.nextElementSibling!.textContent = el.value; }
   starta();
@@ -125,7 +127,8 @@ export function drawArena() {
     if (k.lage === 'borta') continue;
     let x = (ox + k.x) * TS, y = (oy + k.y) * TS;
     const b = blink.get(k.id), ny = b && st.t - b.t < 0.35, mal = b?.mot !== undefined ? st.kampar.find(m => m.id === b.mot) : undefined;
-    if (ny && mal) { const d = Math.hypot(mal.x - k.x, mal.y - k.y) || 1; x += ((mal.x - k.x) / d) * 4; y += ((mal.y - k.y) / d) * 4; } // utfallet mot målet
+    if (ny && mal && b.kast) { const f = (st.t - b.t) / 0.35; arenaG.beginFill(0x8a8378).drawCircle((ox + k.x + (mal.x - k.x) * f) * TS, (oy + k.y + (mal.y - k.y) * f) * TS - 4, 1.5).endFill(); } // det kastade på väg (steg 3.7.7)
+    else if (ny && mal) { const d = Math.hypot(mal.x - k.x, mal.y - k.y) || 1; x += ((mal.x - k.x) / d) * 4; y += ((mal.y - k.y) / d) * 4; } // utfallet mot målet
     const p = k.pid !== undefined ? byId(s, k.pid) : undefined;
     const r = k.djur ? 4 : p && ageOf(p, s.now) < ALDER.smabarn ? 2.8 : p && ageOf(p, s.now) < ALDER.vuxen ? 3.8 : 5;
     const traffad = [...blink.values()].some(v => v.mot === k.id && v.h === 'traff' && st!.t - v.t < 0.35);
@@ -173,7 +176,7 @@ function korHundra() {
 function steg() {
   if (!st || st.slut) return;
   stridSteg(st);
-  for (; sedd < st.logg.length; sedd++) { const r = st.logg[sedd]; if ((r.h === 'traff' || r.h === 'miss' || r.h === 'tog') && r.a !== undefined) blink.set(r.a, { t: r.t, h: r.h, mot: r.b }); }
+  for (; sedd < st.logg.length; sedd++) { const r = st.logg[sedd]; if ((r.h === 'traff' || r.h === 'miss' || r.h === 'tog') && r.a !== undefined) blink.set(r.a, { t: r.t, h: r.h, mot: r.b, kast: r.kast }); }
 }
 function ram(nu: number) {
   if ($('arena').hidden) { spelar = false; return; }
@@ -204,6 +207,7 @@ $('arena').innerHTML = `<div class="card arena">
         <button type="button" class="ghost" id="arOm" title="Samma strid igen">↺</button>
         <button type="button" class="ghost" id="arFro" title="En ny strid med samma uppställning">🎲</button>
         <button type="button" class="ghost" id="arHundra" title="Samma uppställning 100 gånger">×100</button>
+        <select id="arVind" title="Blåsten (sämre kast)">${[0, 0.5, 1].map(v => `<option value="${v}">${v === 0 ? '🍃' : v < 1 ? '💨' : '🌪️'}</option>`).join('')}</select>
         <select id="arFart" title="Fart">${[0.25, 0.5, 1, 2, 4].map(f => `<option value="${f}"${f === 1 ? ' selected' : ''}>${f}×</option>`).join('')}</select>
         <span id="arTid" class="muted"></span>
       </div>
@@ -223,6 +227,7 @@ $('arOm').addEventListener('click', () => { starta(senast?.u, senast?.fro); spel
 $('arFro').addEventListener('click', () => { lag.fro = (lag.fro * 1103515245 + 12345) | 0; starta(); spela(true); });
 $('arHundra').addEventListener('click', korHundra);
 $('arByn').addEventListener('change', e => { const m = s.strider?.[Number((e.target as HTMLSelectElement).value)]; if (m) { starta(m.u, m.fro); spela(true); } });
+$('arVind').addEventListener('change', e => { lag.vind = Number((e.target as HTMLSelectElement).value); starta(); });
 $('arFart').addEventListener('change', e => { lag.fart = Number((e.target as HTMLSelectElement).value); });
 $('arFilt').addEventListener('change', e => { filter = Number((e.target as HTMLSelectElement).value); visaLogg(); });
 $('arLogg').addEventListener('click', e => (e.target as HTMLElement).closest('li')?.classList.toggle('open'));

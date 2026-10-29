@@ -107,6 +107,7 @@ const HDEF = {
   overdrev: { i: 'logn', vikt: 0.2, text: 'överdrev om {om}' },
   dom: { i: 'rattvis', vikt: 0.15, text: 'dömde {om} rättvist' },
   orattvisDom: { i: 'orattvis', vikt: 0.3, text: 'dömde {om} orättvist' },
+  vadaskott: { i: 'klapare', vikt: 0.25, text: 'träffade {om} av misstag i en strid' }, // steg 3.7.7
   vannSlagsmal: { i: 'stark', vikt: 0.3, text: 'vann ett slagsmål mot {om}', prestation: true },
 } satisfies Record<string, HandelseDef>;
 export type HandelseTyp = keyof typeof HDEF;

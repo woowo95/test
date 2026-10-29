@@ -88,7 +88,9 @@ export function utrustning(s: State, p: Person, bar: boolean): Record<Plats, { t
 // plaggen p har på sig
 export const paSig = (s: State, p: Person) => tingOf(s).filter(t => t.bar === p.id);
 // vad de väger, i fulla famnar
-const paSigVikt = (s: State, p: Person) => { let v = 0; for (const t of tingOf(s)) if (t.bar === p.id) v += bordOf(t.k); return v; };
+// p har ett bälte på sig (där reservvapnet hänger i strid, steg 3.7.7)
+export const harBalte = (s: State, p: Person) => tingOf(s).some(t => t.bar === p.id && SAKER[t.k]?.klad?.krok);
+export const paSigVikt = (s: State, p: Person) => { let v = 0; for (const t of tingOf(s)) if (t.bar === p.id) v += bordOf(t.k); return v; };
 // hur stor del av kylan plagget t (av slaget k) tar bort: ett finare plagg värmer lite mer (kvalitet.ts)
 export const kladSkydd = (k: string, t?: { q?: number }) => Math.min(UTRUSTNING.maxVarme, (SAKER[k]?.klad?.varme ?? 0) * kvEffekt(t));
 // hur mycket kläderna skyddar mot kylan (0 = inget, 1 = helt): varje plagg tar bort sin del av det som är kvar

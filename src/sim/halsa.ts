@@ -48,6 +48,7 @@ export const HALSA = balans('halsa', {
   smidig: 0.3, // ... och gånger 1 − smidig × (smidigheten − 10) / 10 (steg 3.7.6)
   // vården (steg 2.5.2)
   infRisk: 0.01, // chansen i timmen att ett öppet sår blir infekterat ...
+  fastInf: 4, // ... gånger detta medan ett spjut sitter kvar i såret (steg 3.7.7)
   forband: 0.25, // ... gånger detta med ett förband
   infTim: 36, // timmar för en infektion som inte rengörs att växa från ingenting till döden
   infLak: 8, // timmar för en rengjord infektion att gå tillbaka helt ...
@@ -111,7 +112,7 @@ export type SkadaTyp = keyof typeof SKADOR;
 const SKADA: Record<SkadaTyp, SkadaDef> = SKADOR;
 // en skada: del, typ, grad (0–1, sjunker när den läker), blödningen kvar (1 = som nyss, 0 = levrad) och när den hände.
 // f = ett förband av mossa ligger på, inf = infektionen (0–1; vid 1 dör man), ren = rengjord till den tiden (steg 2.5.2)
-export interface Skada { d: Kroppsdel; k: SkadaTyp; g: number; b: number; t: number; f?: 1; inf?: number; ren?: number }
+export interface Skada { d: Kroppsdel; k: SkadaTyp; g: number; b: number; t: number; f?: 1; inf?: number; ren?: number; fast?: 1 } // fast = ett spjut sitter kvar i såret (steg 3.7.7)
 const oppet = (w: Skada) => SKADA[w.k].blod > 0; // ett öppet sår (inte ett benbrott)
 
 // ---------- olyckorna (registret) ----------
@@ -267,7 +268,7 @@ function vilaLak(s: State, p: Person) {
 // ett öppet sår kan bli infekterat; infektionen växer tills den rengörs, och från kallbranden hjälper inte det
 function infSteg(s: State, p: Person, w: Skada, h: number, dtSec: number) {
   if (w.inf === undefined) {
-    if (!oppet(w) || !chance(s, HALSA.infRisk * (w.f ? HALSA.forband : 1) / HOUR_S, dtSec, 'halsa', p)) return;
+    if (!oppet(w) || !chance(s, HALSA.infRisk * (w.f ? HALSA.forband : 1) * (w.fast ? HALSA.fastInf : 1) / HOUR_S, dtSec, 'halsa', p)) return;
     w.inf = 0; count(s, 'infektioner');
     if (w.g >= HALSA.logg) log(s, `${p.name}s sår i ${DEL[w.d].i} blev infekterat.`, 'world', [p.id]);
     return;
@@ -329,6 +330,7 @@ export function vardKlar(s: State, p: Person, t: Task) {
   if (!b) return;
   for (const w of q.skador ?? []) {
     if (!oppet(w) || w.g < HALSA.vardFel) continue;
+    if (w.fast) { w.fast = undefined; count(s, 'spjut utdragna'); } // den som vårdar tar ut det som fastnat (steg 3.7.7)
     if (w.b > 0) { w.b = 0; count(s, 'sar tryckta'); }
     if (!w.f && w.inf === undefined && getable(s, p, 'mossa') >= 1) { takeMaterial(s, p, 'mossa', 1); w.f = 1; count(s, 'forband'); }
   }

@@ -693,6 +693,61 @@ SCENARIER.strid = {
   },
 };
 
+SCENARIER.avstand = {
+  text: 'Avstånd och närstrid (steg 3.7.7): stenar och spjut kastas på avstånd, sämre i blåsten, den snabbe skytten håller avståndet, den som nås byter till reservvapnet i bältet, den gode och lugne skytten väntar på fritt läge och den ovane träffar ibland sin vän, ett kastat spjut kan fastna i såret, och den som blev ifattsprungen utan reserv tar alltid med en sedan',
+  kor: () => {
+    type K = SIM.Uppstallning['kampar'][number];
+    const m = (id: number, sida: 0 | 1, vapen: SIM.Vapen, o: Partial<K> = {}, st: Partial<K['st']> = {}): K => ({ id, namn: `K${id}`, sida, st: { styrka: 10, uthallighet: 10, mod: 10, smidighet: 10, skicklighet: 10, ...st }, vapen, klader: [], fart: 1, x: sida ? 17 : 3, y: 7, ...o });
+    const kor = (k: K[], n: number, vind = 0) => Array.from({ length: n }, (_, i) => SIM.stridTillSlut(SIM.nyStrid({ avsikt: 'skada', w: 20, h: 14, vind, kampar: k }, i * 7919 + 3)));
+    const rader = (sts: SIM.Strid[], h: SIM.StridRad['h'], f: (r: SIM.StridRad) => boolean = () => true) => sts.reduce((a, st) => a + st.logg.filter(r => r.h === h && f(r)).length, 0);
+    // stenen kastas innan någon slår
+    const sten = kor([m(1, 0, 'sten'), m(2, 1, 'kniv')], 40);
+    const forst = sten.filter(st => { const i = st.logg.findIndex(r => r.h === 'traff' || r.h === 'miss' || r.h === 'tog'); return i >= 0 && st.logg[i].kast === 1; }).length;
+    // blåsten: andelen kast som träffar
+    const andel = (sts: SIM.Strid[]) => { const tr = rader(sts, 'traff', r => r.kast === 1) + rader(sts, 'tog', r => r.kast === 1), mi = rader(sts, 'miss', r => r.kast === 1); return tr / Math.max(1, tr + mi); };
+    const lugnt = andel(kor([m(1, 0, 'sten'), m(2, 1, 'hand', {}, { mod: 20 })], 200)), blast = andel(kor([m(1, 0, 'sten'), m(2, 1, 'hand', {}, { mod: 20 })], 200, 1));
+    // den snabbe håller avståndet, den långsamme byter till kniven i bältet, och utan reserv blir man ifattsprungen
+    const snabb = kor([m(1, 0, 'sten', {}, { smidighet: 20 }), m(2, 1, 'kniv', {}, { smidighet: 1 })], 40);
+    const byter = kor([m(1, 0, 'sten', { reserv: 'kniv' }, { smidighet: 1 }), m(2, 1, 'kniv', {}, { smidighet: 20 })], 40);
+    const utan = kor([m(1, 0, 'sten', {}, { smidighet: 1 }), m(2, 1, 'kniv', {}, { smidighet: 20 })], 40);
+    // vådaskott: en vän slåss med målet; den ovane och rädde chansar, den gode och lugne väntar
+    const tre = (sikte: number, mod: number) => kor([m(1, 0, 'sten', {}, { sikte, mod }), m(2, 0, 'kniv', { x: 9 }), m(3, 1, 'kniv', { x: 10 })], 150);
+    const ovan = tre(1, 1), god = tre(20, 20);
+    // spjutet: kastas av den som har en reserv, kan fastna, och den som står drar ut det
+    const spjut = kor([m(1, 0, 'flintspjut', { reserv: 'kniv' }), m(2, 1, 'yxa', {}, { mod: 20 })], 300);
+    const utanRes = kor([m(1, 0, 'flintspjut'), m(2, 1, 'yxa')], 20);
+    // i byn: reservvapnet, minnet av att bli ifattsprungen och spjutet som sitter kvar till vården
+    const t = createState(11, START), [p, q] = living(t).filter(x => ageOf(x, t.now) >= SIM.ALDER.vuxen);
+    SIM.addTool(t, 'flintspjut', p); SIM.addTool(t, 'kniv', p);
+    const fore = SIM.personKampe(t, p, 1, 0, 0, 0).reserv;
+    p.reservAlltid = true;
+    const efter = SIM.personKampe(t, p, 1, 0, 0, 0).reserv;
+    const sikte = SIM.personKampe(t, p, 1, 0, 0, 0).st.sikte === 5 + (p.skill.traff ?? 0) / 2;
+    let fastIByn = false;
+    for (let i = 0; i < 60 && !fastIByn; i++) {
+      q.skador = []; q.health = 1; q.blod = 1;
+      const st = SIM.stridIByn(t, 'skada', [[p], [q]], 'för att pröva');
+      if (st.logg.some(r => r.h === 'fastnar' && r.a === st.kampar[1].id) && q.health > 0) fastIByn = !!q.skador?.some(w => w.fast) || st.logg.some(r => r.h === 'drar');
+      p.skador = []; p.health = 1; p.blod = 1; p.task = undefined; q.task = undefined;
+    }
+    const texter = [...spjut, ...ovan, ...byter, ...snabb].every(st => st.logg.every(r => SIM.stridText(st, r).length > 5 && !SIM.stridText(st, r).includes('undefined')));
+    return [
+      [`stenen kastas innan någon slår (${forst} av 40)`, forst >= 35],
+      [`blåsten gör kasten sämre (${Math.round(lugnt * 100)} % träffar i lugnt väder, ${Math.round(blast * 100)} % i hård blåst)`, blast < lugnt],
+      [`den snabbe skytten håller avståndet (${rader(snabb, 'avstand')} gånger på 40 strider)`, rader(snabb, 'avstand') >= 10],
+      [`den långsamme skytten byter till kniven i bältet (${rader(byter, 'byter', r => r.v === 'kniv')} av 40)`, rader(byter, 'byter', r => r.v === 'kniv') >= 20],
+      [`utan reserv blir den långsamme ifattsprungen (${utan.filter(st => st.kampar[0].ifatt).length} av 40)`, utan.filter(st => st.kampar[0].ifatt).length >= 20],
+      [`den ovane och rädde träffar ibland sin vän (${rader(ovan, 'vada')} vådaträffar), den gode och lugne mer sällan (${rader(god, 'vada')}) och väntar (${rader(god, 'vantar')})`, rader(ovan, 'vada') > rader(god, 'vada') && rader(god, 'vantar') > 0],
+      [`spjutet kastas av den som har en kniv i bältet (${rader(spjut, 'byter', r => r.v === 'kniv')} av 300) men inte utan (${rader(utanRes, 'byter')})`, rader(spjut, 'byter', r => r.v === 'kniv') >= 100 && rader(utanRes, 'byter') === 0],
+      [`ett kastat spjut kan fastna (${rader(spjut, 'fastnar')} gånger) och dras ut (${rader(spjut, 'drar')})`, rader(spjut, 'fastnar') > 0 && rader(spjut, 'drar') > 0],
+      [`utan bälte tas ingen reserv (${fore ?? 'ingen'}), men den som blivit ifattsprungen tar alltid med en (${efter})`, fore === undefined && efter === 'kniv'],
+      ['siktet i striden är färdigheten Träffsäkerhet', sikte],
+      ['ett spjut som fastnat i en strid i byn sitter kvar i såret eller dras ut', fastIByn],
+      ['varje ny rad i loggen blir en mening', texter],
+    ];
+  },
+};
+
 SCENARIER.smidighet = {
   text: 'Smidighet och Aggression (steg 3.7.6): båda finns hos alla och ärvs, smidigheten sjunker tidigare än styrkan, den smidiga gör finare arbete och vinner oftare i striden, den aggressiva slår hellre i ett utbrott, och blodtörsten kommer av aggression, låg empati och dåligt humör',
   kor: () => {
