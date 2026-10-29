@@ -180,8 +180,13 @@ export const franMitt = (p: Person, k: Stat, now: number) => (stat(p, k, now) - 
 // färdigheterna en nykomling har efter sin ålder (en dragning ur 'folk' per färdighet, i SKILLS ordning). Matlagningen
 // (steg 2.8.1) är snittet av samling och eldkonst, utan en egen dragning, så att nykomlingarna blev som förut
 export function startSkills(s: State, p: Person, age: number) {
-  for (const k of SKILLS) if (k !== 'matlagning') p.skill[k] = clamp((age - ALDER.skickFran) * 0.25 * (0.4 + rnd(s, 'folk')) * (p.pot.intelligens / 12), 0, 12);
+  for (const k of SKILLS) if (k !== 'matlagning' && k !== 'narstrid' && k !== 'traff') p.skill[k] = clamp((age - ALDER.skickFran) * 0.25 * (0.4 + rnd(s, 'folk')) * (p.pot.intelligens / 12), 0, 12);
   p.skill.matlagning = (p.skill.samla + p.skill.elda) / 2;
+  stridSkills(s, p, age);
+}
+// närstriden och träffsäkerheten (steg 3.7.2) efter ålder, ur följden 'anlag' så att de andra dragningarna blir som förut
+export function stridSkills(s: State, p: Person, age: number) {
+  for (const k of ['narstrid', 'traff'] as const) p.skill[k] = clamp((age - ALDER.skickFran) * 0.1 * (0.4 + rnd(s, 'anlag')) * (p.pot.smidighet ?? 10) / 10, 0, 6);
 }
 
 // övning: färdigheten k ökar med vinst gånger det som återstår till den mjuka gränsen, högst taket

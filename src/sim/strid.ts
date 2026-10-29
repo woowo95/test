@@ -8,15 +8,22 @@
 // stridRapport sammanfattar den. Slumpen är stridens egen följd (Strid.r): striden är en ren funktion av uppställningen och
 // fröet, så att arenan kan köra om samma strid. När striden kommer in i byn (steg 3.7.2) tas fröet ur byns följd 'strid'.
 // Smidigheten (steg 3.7.6) gör en kämpe snabbare och svårare att träffa, och blodtörsten (aggressionen, låg empati och dåligt
-// humör, humor.ts) gör att man ger sig senare. Det som kommer i senare steg: duck, parering och rörelse (3.7.2), avstånd och
+// humör, humor.ts) gör att man ger sig senare. Försvaret (steg 3.7.2): den som har den som slår som mål kan parera (med vapen
+// bättre än med händerna) eller ducka (smidigheten); den som slåss med någon annan är inringad och försvarar sig inte, och
+// den som är utmattad backar undan medan en vän håller striden. Ett djupt stick blir ett sticksår och ett hårt slag mot
+// huvudet en hjärnskakning. Byns slagsmål och lek finns längst ner (stridIByn, steg 3.7.2). Det som kommer i senare steg: avstånd och
 // reservvapen (3.7.7), knuff, fall och tappade vapen (3.7.8), mod och att ge upp efter hotet (3.7.9).
 import { balans } from './balans';
-import { HALSA, KROPPSDELAR, Kroppsdel, SKADOR, SkadaTyp } from './halsa';
+import { HALSA, KROPPSDELAR, Kroppsdel, SKADOR, SkadaTyp, skada } from './halsa';
 import { DJUR } from './redskap';
 import { SAKER, sakNamn } from './saker';
-import { clamp } from './slump';
-import { stat } from './folk';
+import { clamp, rnd } from './slump';
+import { ALDER, ageOf, count, getRel, log, ovning, stat, think } from './folk';
 import { blodtorst } from './humor';
+import { die } from './liv';
+import { handelse } from './rykten';
+import { avbryt } from './lager';
+import { HOUR, SEC } from './typer';
 import { paSig } from './utrustning';
 import { ownedBy } from './agande';
 import type { Person, State } from './typer';
@@ -48,6 +55,18 @@ export const STRID = balans('strid', {
   lek: 0.2, // i lek slutar striden vid första skada av den här graden
   utsatt: 1.5, // chansen att träffa den som ligger eller flyr, gånger detta
   takt: 0.3, // tiden mellan slagen gånger 1 − (uthållighet − 10) / 20 × detta
+  // försvaret (steg 3.7.2): bara den som står och har den som slår som mål kan parera eller ducka
+  parera: 0.3, // chansen att parera ett slag som skulle ha träffat, med vapen och lika skicklig som den som slår ...
+  pareraHand: 0.12, // ... och med händerna
+  pareraPer: 0.03, // ... och så här mycket mer per poäng skicklighet över den som slår
+  duck: 0.15, // chansen att ducka ett slag som inte parerades, för den med smidighet 10 och full ork ...
+  duckSmid: 0.06, // ... gånger 1 + duckSmid × (smidigheten − 10)
+  duckTung: 0.15, // ... och så här mycket mindre med skinnrock (tungt att röra sig i)
+  ringa: 1.5, // ett mål vars uppmärksamhet är på någon annan (inringat) väljs som om det stod så här många rutor närmare
+  backa: 0.25, // den som har så lite ork backar undan om en vän står kvar i striden ...
+  backaTill: 0.6, // ... tills orken är tillbaka till så här mycket
+  hjarna: 0.2, // ett slag mot huvudet av minst den här graden ger hjärnskakning ...
+  hjarnaOrk: 0.4, // ... som tar så här mycket ork
 });
 
 // ---------- vapnen (registret) ----------
@@ -76,11 +95,15 @@ export const MANNISKOVAPEN = VAPEN_LIST.filter(v => v === 'hand' || SAKER[v]);
 type Slag = 'hugg' | 'stick' | 'slag' | 'bett';
 const SLAGEN: Record<Slag, { namn: string; skada: [number, SkadaTyp][] }> = {
   hugg: { namn: 'Hugg', skada: [[0, 'skarsar']] },
-  stick: { namn: 'Stick', skada: [[0, 'skarsar']] }, // egen skada för djupa stick kommer med skadetyperna (steg 3.7.2)
+  stick: { namn: 'Stick', skada: [[0, 'skarsar'], [0.35, 'sticksar']] }, // ett djupt stick blöder mer (steg 3.7.2)
   slag: { namn: 'Slag', skada: [[0, 'blamarke'], [0.3, 'krossar'], [0.65, 'benbrott']] },
   bett: { namn: 'Bett', skada: [[0, 'bett']] },
 };
-const skadaAv = (sl: Slag, g: number): SkadaTyp => { const r = SLAGEN[sl].skada; for (let i = r.length - 1; i > 0; i--) if (g >= r[i][0]) return r[i][1]; return r[0][1]; };
+// ett hårt slag mot huvudet blir hjärnskakning (steg 3.7.2)
+const skadaAv = (sl: Slag, g: number, d: Kroppsdel): SkadaTyp => {
+  if (sl === 'slag' && d === 'huvud' && g >= STRID.hjarna) return 'hjarnskakning';
+  const r = SLAGEN[sl].skada; for (let i = r.length - 1; i > 0; i--) if (g >= r[i][0]) return r[i][1]; return r[0][1];
+};
 
 // ---------- var slagen träffar ----------
 // hur ofta en träff hamnar på varje del (huvudet sällan)
@@ -115,6 +138,9 @@ export const STRIDHANDELSER = {
   traff: { tecken: '💥', namn: 'Träff' },
   tog: { tecken: '🛡️', namn: 'Kläderna tog slaget' },
   miss: { tecken: '💨', namn: 'Miss' },
+  parera: { tecken: '⚔️', namn: 'Parerar' }, // steg 3.7.2
+  duck: { tecken: '🌀', namn: 'Duckar' },
+  backar: { tecken: '↩️', namn: 'Backar' },
   nere: { tecken: '⤵️', namn: 'Faller' },
   ger: { tecken: '🏳️', namn: 'Ger upp' },
   flykt: { tecken: '🏃', namn: 'Flyr' },
@@ -133,7 +159,7 @@ export interface Kampe {
   x: number; y: number; // rutor (med decimaler)
   skador: { d: Kroppsdel; k: SkadaTyp; g: number; ny: number }[]; // ny = öppet sår som blöder (1) eller levrat (0)
   blod: number; ork: number; modNu: number; lage: KampeLage;
-  vant: number; mal?: number; // sekunder till nästa slag, och målet
+  vant: number; mal?: number; backar?: true; // sekunder till nästa slag, målet, och om hen backar undan för att hämta andan
   slag: number; traffar: number; gjort: number; // för rapporten: slag, träffar och summan av skadornas grad
 }
 // en rad i loggen: tiden (sekunder), vem (a) och mot vem (b), del, skada och grad, och det kläderna tog
@@ -144,7 +170,7 @@ export interface Strid {
   slut?: { t: number; vinnare: 0 | 1 | -1 };
 }
 // uppställningen som en strid börjar ur (arenan och, senare, byn)
-export interface Uppstallning { avsikt: Avsikt; w: number; h: number; kampar: Omit<Kampe, 'skador' | 'blod' | 'ork' | 'modNu' | 'lage' | 'vant' | 'mal' | 'slag' | 'traffar' | 'gjort'>[] }
+export interface Uppstallning { avsikt: Avsikt; w: number; h: number; kampar: Omit<Kampe, 'skador' | 'blod' | 'ork' | 'modNu' | 'lage' | 'vant' | 'mal' | 'backar' | 'slag' | 'traffar' | 'gjort'>[] }
 
 // stridens egen slumpföljd (samma blandning som rnd i slump.ts)
 function slump(st: Strid) {
@@ -184,7 +210,7 @@ function valjMal(st: Strid, k: Kampe) {
   let bast: Kampe | undefined, bd = Infinity;
   for (const m of st.kampar) {
     if (m.sida === k.sida || !(iStrid(m) || (nere && (m.lage === 'nere' || m.lage === 'flykt')))) continue;
-    const d = dist(k, m) + (m.lage === 'nere' ? 2 : 0); // den som står är farligare än den som ligger
+    const d = dist(k, m) + (m.lage === 'nere' ? 2 : 0) - (iStrid(m) && m.mal !== undefined && m.mal !== k.id ? STRID.ringa : 0); // den som står är farligare än den som ligger, och den som slåss med en annan är lättast (ringa in)
     if (d < bd) { bd = d; bast = m; }
   }
   return bast;
@@ -209,6 +235,12 @@ function slaEtt(st: Strid, a: Kampe, b: Kampe) {
   a.ork = Math.max(0, a.ork - STRID.orkSlag * (1 - (a.st.uthallighet - 10) / 40));
   const chans = clamp((STRID.traffBas + (a.st.skicklighet - b.st.skicklighet) * STRID.traffPer - (b.st.smidighet - 10) * STRID.smidUndan) * (1 - STRID.trott * (1 - a.ork)), STRID.traffMin, STRID.traffMax) * (b.lage === 'nere' || b.lage === 'flykt' ? STRID.utsatt : 1); // den som ligger eller vänt ryggen är lätt att träffa
   if (slump(st) >= chans) { st.logg.push({ t: st.t, h: 'miss', a: a.id, b: b.id, v: a.vapen }); return; }
+  if (iStrid(b) && b.mal === a.id && !b.backar) { // försvaret: bara mot den man vänt sig mot (den inringade försvarar sig inte)
+    const par = (b.vapen === 'hand' || b.vapen === 'bett' ? STRID.pareraHand : STRID.parera) + (b.st.skicklighet - a.st.skicklighet) * STRID.pareraPer;
+    if (slump(st) < par * b.ork) { st.logg.push({ t: st.t, h: 'parera', a: b.id, b: a.id, v: b.vapen }); return; }
+    const duck = STRID.duck * Math.max(0, 1 + STRID.duckSmid * (b.st.smidighet - 10)) * rorlighet(b) * b.ork * (b.klader.includes('skinnrock') ? 1 - STRID.duckTung : 1);
+    if (slump(st) < duck) { st.logg.push({ t: st.t, h: 'duck', a: b.id, b: a.id }); return; }
+  }
   let x = slump(st);
   let d: Kroppsdel = 'bal';
   for (const del of DELAR) { x -= TRAFFDEL[del]; if (x <= 0) { d = del; break; } }
@@ -218,7 +250,8 @@ function slaEtt(st: Strid, a: Kampe, b: Kampe) {
   g = Math.min(1, g);
   a.traffar++;
   if (g < STRID.ingen) { st.logg.push({ t: st.t, h: 'tog', a: a.id, b: b.id, d, v: a.vapen, kl }); return; }
-  const k = skadaAv(v.slag, g);
+  const k = skadaAv(v.slag, g, d);
+  if (k === 'hjarnskakning') b.ork = Math.max(0, b.ork - STRID.hjarnaOrk);
   b.skador.push({ d, k, g, ny: SKADOR[k].blod > 0 ? 1 : 0 });
   b.blod -= SKADOR[k].blod * g * STRID.blodSlag;
   b.modNu -= STRID.modSkada * g;
@@ -255,6 +288,10 @@ export function stridSteg(st: Strid) {
     k.mal = m?.id;
     if (!m) continue;
     const v = VAP[k.vapen], d = dist(k, m);
+    // den som är utmattad backar undan och hämtar andan medan en vän håller striden igång (steg 3.7.2)
+    if (k.backar && k.ork >= STRID.backaTill) k.backar = undefined;
+    else if (!k.backar && k.ork < STRID.backa && st.kampar.some(o => o.sida === k.sida && o !== k && iStrid(o) && !o.backar)) { k.backar = true; st.logg.push({ t: st.t, h: 'backar', a: k.id }); }
+    if (k.backar) { const l = d || 1, f = STRID.fart * k.fart * smidFart(k) * rorlighet(k) * dt * 0.6; ga(st, k, k.x - (m.x - k.x) / l * 3, k.y - (m.y - k.y) / l * 3, f); continue; }
     if (d > v.rack) ga(st, k, m.x, m.y, Math.min(d - v.rack * 0.9, STRID.fart * k.fart * smidFart(k) * rorlighet(k) * dt));
     if (dist(k, m) <= v.rack && k.vant <= 0) { // den som just kom fram slår samma ögonblick
       slaEtt(st, k, m);
@@ -286,6 +323,9 @@ export function stridText(st: Strid, r: StridRad): string {
   switch (r.h) {
     case 'borjar': return `Striden börjar: ${AVS[st.avsikt].namn.toLowerCase()}. ${AVS[st.avsikt].text}`;
     case 'miss': return `${a} ${v?.ord ?? 'slår'} efter ${b}${med} men missar.`;
+    case 'parera': return `${a} parerar slaget från ${b}${med}.`;
+    case 'duck': return `${a} duckar undan slaget från ${b}.`;
+    case 'backar': return `${a} är utmattad och backar undan för att hämta andan.`;
     case 'tog': return `${a} ${v?.ord ?? 'slår'} ${b} i ${delNamn(r.d!)}${med}, men ${sakNamn(r.kl ?? '').toLowerCase()} tar slaget.`;
     case 'traff': return `${a} ${v?.ord ?? 'slår'} ${b} i ${delNamn(r.d!)}${med}: ${SKADOR[r.k!].ett}, ${GRAD(r.g!)}${r.kl ? ` (${sakNamn(r.kl).toLowerCase()} tog en del)` : ''}.`;
     case 'nere': return `${a} faller och kan inte slåss längre.`;
@@ -343,14 +383,14 @@ export function korManga(u: Uppstallning, fro: number, n: number): ManyResultat 
 }
 
 // ---------- kämpar ur byn och påhittade ----------
-// en kämpe ur en person i byn: anlagen (åldern med), det bästa vapnet hen bär och kläderna. Skickligheten är jakten tills
-// närstriden och träffsäkerheten blir egna färdigheter (steg 3.7.2); smidigheten och blodtörsten (steg 3.7.6)
+// en kämpe ur en person i byn: anlagen (åldern med), det bästa vapnet hen bär och kläderna. Skickligheten är färdigheten
+// Närstrid (steg 3.7.2; Träffsäkerhet används med avståndsvapnen i 3.7.7); smidigheten och blodtörsten (steg 3.7.6)
 export function personKampe(s: State, p: Person, id: number, sida: 0 | 1, x: number, y: number): Uppstallning['kampar'][number] {
   const bar = [...new Set([...paSig(s, p), ...ownedBy(s, p)].map(t => t.k))]; // det hen bär och äger (i arenan har man sina saker med sig)
   const vapen = MANNISKOVAPEN.filter(v => bar.includes(v)).sort((a, b) => VAP[b].skada - VAP[a].skada)[0] ?? 'hand';
   return {
     id, namn: p.name, sida, pid: p.id, vapen, klader: bar.filter(k => SKYDD[k]), fart: 1, x, y,
-    st: { styrka: stat(p, 'styrka', s.now), uthallighet: stat(p, 'uthallighet', s.now), mod: stat(p, 'mod', s.now), smidighet: stat(p, 'smidighet', s.now), skicklighet: 5 + (p.skill.jakt ?? 0) / 2, torst: blodtorst(s, p) },
+    st: { styrka: stat(p, 'styrka', s.now), uthallighet: stat(p, 'uthallighet', s.now), mod: stat(p, 'mod', s.now), smidighet: stat(p, 'smidighet', s.now), skicklighet: 5 + (p.skill.narstrid ?? 0) / 2, torst: blodtorst(s, p) },
   };
 }
 // en kämpe ur ett djur i djurregistret (DJUR.strid)
@@ -361,3 +401,78 @@ export function djurKampe(art: string, id: number, sida: 0 | 1, x: number, y: nu
 // det en djurart har i strid (djurregistret i redskap.ts)
 export interface DjurStrid { namn: string; styrka: number; uthallighet: number; mod: number; smidighet: number; skicklighet: number; fart: number; vapen: Vapen }
 export const STRIDSDJUR = () => Object.keys(DJUR).filter(a => (DJUR as Record<string, { strid?: DjurStrid }>)[a].strid);
+
+// ---------- striden i byn (steg 3.7.2) ----------
+// Ett gräl kan bli ett slagsmål, och barn som leker brottas ibland. Striden räknas färdigt på en gång (stridTillSlut, med
+// fröet ur byns följd 'strid'), så att den blir likadan i båda lägena; sedan står de som var med och slåss (handlingen
+// strid) så länge striden tog, och under tiden väntar de andra behoven (Björn efter v144): ingen går på toa, äter eller
+// dricker mitt i striden. Skadorna blir riktiga skador (halsa.ts), den som dog i striden dör, och den som vann ett
+// slagsmål blir ett rykte (rykten.ts). De senaste striderna sparas i byn (s.strider) så att arenan kan visa dem igen
+export const SLAGSMAL = balans('slagsmal', {
+  gral: 0.04, // chansen att ett gräl mellan två som är minst småbarn blir ett slagsmål ...
+  gralTorst: 4, // ... gånger 1 + gralTorst × blodtörsten hos den som grälar (humor.ts)
+  lek: 0.12, // chansen i timmen att ett barn som leker brottas med ett annat barn som leker nära ...
+  lekNara: 3, // ... inom så här många rutor
+  ovning: 0.15, // närstriden växer så här mycket efter en strid (ovning i folk.ts) ...
+  ovningLek: 0.06, // ... och efter en lek
+  kast: 0.03, // träffsäkerheten växer så här mycket per timme lek (kastlek med stenar och pinnar)
+  jakt: 0.05, // ... och så här mycket per kanin man fångar
+  op: 8, // relationen sjunker så här mycket efter ett slagsmål ...
+  lekOp: 2, // ... och stiger så här mycket efter en lek
+  vann: 0.15, forlora: 0.2, tankeTim: 8, // tanken efter att ha vunnit eller förlorat, och hur många timmar den varar
+  minst: 20, // den som slåss står kvar minst så här många sekunder (striden tar tid också när den är kort)
+  sparas: 10, // så många strider sparas i byn
+});
+// en strid som sparats i byn: när, varför, uppställningen och fröet (samma strid kan räknas om i arenan) och vem som vann
+export interface StridMinne { t: number; orsak: string; u: Uppstallning; fro: number; vinnare: 0 | 1 | -1 }
+
+// en strid mellan två sidor av folk i byn. Returnerar striden (för scenarierna)
+export function stridIByn(s: State, avsikt: Avsikt, sidor: [Person[], Person[]], orsak: string): Strid {
+  const W = 8, H = 6;
+  const kampar = sidor.flatMap((sida, sd) => sida.map((p, i) => personKampe(s, p, 0, sd as 0 | 1, sd === 0 ? W / 2 - 1 : W / 2 + 1, H / 2 + (i - (sida.length - 1) / 2))));
+  kampar.forEach((k, i) => { k.id = i + 1; });
+  const u: Uppstallning = { avsikt, w: W, h: H, kampar };
+  const fro = Math.floor(rnd(s, 'strid') * 2147483647);
+  const st = stridTillSlut(nyStrid(u, fro));
+  const lek = !!(AVSIKTER[avsikt] as { lek?: true }).lek, vinnare = st.slut!.vinnare;
+  (s.strider ??= []).push({ t: s.now, orsak, u, fro, vinnare });
+  if (s.strider.length > SLAGSMAL.sparas) s.strider.splice(0, s.strider.length - SLAGSMAL.sparas);
+  count(s, 'strider'); count(s, 'strid_' + avsikt);
+  const folk = st.kampar.map(k => ({ k, p: sidor[k.sida][st.kampar.filter(o => o.sida === k.sida).indexOf(k)] }));
+  const namn = (sd: 0 | 1) => sidor[sd].map(p => p.name).join(' och ');
+  if (!lek) log(s, `${namn(0)} och ${namn(1)} slogs (${orsak}). ${vinnare === -1 ? 'Ingen vann.' : `${namn(vinnare as 0 | 1)} vann.`}`, 'rel', folk.map(f => f.p.id));
+  for (const { k, p } of folk) {
+    const mot = sidor[1 - k.sida];
+    let dod = k.lage === 'dod';
+    for (const w of k.skador) if (!dod && skada(s, p, w.d, w.k, w.g, 'drap', `i ett ${lek ? 'lekslagsmål' : 'slagsmål'} med ${mot.map(q => q.name).join(' och ')}`)) dod = true;
+    if (dod) { count(s, 'drap'); die(s, p, 'drap'); continue; }
+    p.blod = Math.min(p.blod ?? 1, Math.max(HALSA.blodDod, k.blod));
+    ovning(p, 'narstrid', lek ? SLAGSMAL.ovningLek : SLAGSMAL.ovning);
+    for (const q of mot) { const r = getRel(s, p, q); r.op = Math.max(-100, Math.min(100, r.op + (lek ? SLAGSMAL.lekOp : -SLAGSMAL.op / 2))); } // båda hållen: op/2 var
+    if (!lek && vinnare !== -1) think(p, k.sida === vinnare ? `Vann slagsmålet mot ${mot[0].name}` : `Förlorade slagsmålet mot ${mot[0].name}`, k.sida === vinnare ? SLAGSMAL.vann : -SLAGSMAL.forlora, s.now, SLAGSMAL.tankeTim * HOUR);
+    // striden tar tid: hen står kvar och slåss medan de andra behoven väntar
+    avbryt(s, p);
+    p.task = { act: 'strid', phase: 'do', tx: p.x, ty: p.y, until: s.now + Math.max(SLAGSMAL.minst, st.slut!.t) * SEC, carry: 0, why: orsak };
+  }
+  // vinnaren blir ett rykte i byn (steg 3.3.1): de som såg det minns det
+  if (!lek && vinnare !== -1) for (const p of sidor[vinnare]) if (p.health > 0) handelse(s, p, 'vannSlagsmal', sidor[1 - vinnare][0]);
+  return st;
+}
+
+// ett gräl (samtal.ts) kan bli ett slagsmål: oftare hos den blodtörstiga
+export function gralBlirSlagsmal(s: State, a: Person, b: Person) {
+  if (ageOf(a, s.now) < ALDER.smabarn || ageOf(b, s.now) < ALDER.smabarn || a.task?.act === 'strid' || b.task?.act === 'strid') return;
+  if (rnd(s, 'strid', a) >= SLAGSMAL.gral * (1 + SLAGSMAL.gralTorst * blodtorst(s, a))) return;
+  stridIByn(s, 'slagsmal', [[a], [b]], 'efter ett gräl');
+  if (a.health > 0 && b.health > 0) handelse(s, a, 'sla', b); // den som började slagsmålet slog först
+}
+
+// medan ett barn leker: kastlek ger träffsäkerhet, och ibland brottas hen med ett annat barn som leker nära
+export function lekSteg(s: State, p: Person, dtSec: number) {
+  const h = dtSec / 3600;
+  ovning(p, 'traff', SLAGSMAL.kast * h);
+  if (rnd(s, 'strid', p) >= SLAGSMAL.lek * h) return;
+  const andra = s.people.filter(q => q !== p && q.health > 0 && q.task?.act === 'leka' && q.task.phase === 'do' && Math.hypot(q.x - p.x, q.y - p.y) <= SLAGSMAL.lekNara);
+  if (!andra.length) return;
+  stridIByn(s, 'lek', [[p], [andra[Math.floor(rnd(s, 'strid', p) * andra.length)]]], 'på lek');
+}

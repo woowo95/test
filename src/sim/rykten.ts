@@ -83,6 +83,7 @@ const IDEF = {
   rik: { namn: 'rik', tecken: 1, op: 0, sym: '💰' },
   rattvis: { namn: 'rättvis', tecken: 1, op: 10, sym: '⚖️' }, // ledarens straff (steg 3.5.3, styre.ts)
   orattvis: { namn: 'orättvis', tecken: -1, op: -15, sym: '🙅' },
+  stark: { namn: 'stark', tecken: 1, op: 4, sym: '🥊' }, // vann ett slagsmål (steg 3.7.2, strid.ts)
 } satisfies Record<string, IntryckDef>;
 export type IntryckTyp = keyof typeof IDEF;
 export const INTRYCK: Record<IntryckTyp, IntryckDef> = IDEF;
@@ -106,6 +107,7 @@ const HDEF = {
   overdrev: { i: 'logn', vikt: 0.2, text: 'överdrev om {om}' },
   dom: { i: 'rattvis', vikt: 0.15, text: 'dömde {om} rättvist' },
   orattvisDom: { i: 'orattvis', vikt: 0.3, text: 'dömde {om} orättvist' },
+  vannSlagsmal: { i: 'stark', vikt: 0.3, text: 'vann ett slagsmål mot {om}', prestation: true },
 } satisfies Record<string, HandelseDef>;
 export type HandelseTyp = keyof typeof HDEF;
 export const HANDELSER: Record<HandelseTyp, HandelseDef> = HDEF;

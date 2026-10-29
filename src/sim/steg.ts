@@ -2,6 +2,7 @@ import { stepUppvaxt } from './uppvaxt';
 import { UTBROTT_ACTS, moodOf, stepHumor, utbrottKlar } from './humor';
 import { glomRykten, stepRykten } from './rykten';
 import { stepStyre } from './styre';
+import { SLAGSMAL, gralBlirSlagsmal, lekSteg } from './strid';
 import { redskapIHanden, tidyTools } from './agande';
 import { kvEffekt } from './kvalitet';
 import { chopStock, fellTree, rotStumps, stocks } from './skog';
@@ -133,6 +134,7 @@ MEDAN.torka = (s, p, _t, dtSec) => torka(s, p, dtSec / HOUR_S); // torkställnin
 // redskap som görs och träd som fälls: arbetet sparas om det avbryts (paborjat.ts)
 for (const a of GOR_ACTS) { MEDAN[a] = workHalf; KLAR[a] = (s, p, t) => { if (finishHalf(s, p, t)) nastaRedskap(s, p, t); }; } // och ett till i samma pass (val.ts)
 MEDAN.falla = workHalf;
+MEDAN.leka = (s, p, _t, dtSec) => lekSteg(s, p, dtSec); // kastlek och brottning (strid.ts, steg 3.7.2)
 MEDAN.station = workStation; KLAR.station = finishStation; // en station som byggs (stationer.ts)
 KLAR.tillbehor = finishTillbehor; // ett tillbehör till en möbel (stationer.ts)
 KLAR.dorr = finishDorr; // en dörr i en öppning (bygg.ts)
@@ -174,7 +176,7 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
   for (const p of ppl) {
     const a = ageOf(p, now);
     needsStep(s, p, a, dtSec, coldRate, fh, inRum, temp);
-    needLadder(s, p, dtSec); // äta: sitt eget, byns, och i yttersta nöd andras (behov.ts)
+    if (p.task?.act !== 'strid') needLadder(s, p, dtSec); // äta: sitt eget, byns, och i yttersta nöd andras (behov.ts). Inte mitt i en strid (strid.ts)
     if (healthStep(s, p, a, ai, dtSec)) continue; // dog
     pregnancy(s, p, a, ppl.length, dtSec);
     if (!alive(p)) continue; // dog i barnsäng
@@ -191,7 +193,7 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
       let n = Math.floor(expect); if (rnd(s, 'samtal', p) < expect - n) n++;
       // bara med dem som är nära när slaget slutar
       const others = social.filter(q => q !== p && alive(q) && Math.hypot(q.x - p.x, q.y - p.y) < SAMTAL.radie);
-      for (let i = 0; i < n; i++) converse(s, p, others, events);
+      for (let i = 0; i < n; i++) { const g = converse(s, p, others, events); if (g) gralBlirSlagsmal(s, p, g); } // ett gräl kan bli ett slagsmål (strid.ts)
       if (n && others.length) count(s, 'samtal', n);
     }
   }
@@ -335,7 +337,7 @@ function taskStep(s: State, p: Person, a: number, t1: number, dtSec: number, lea
     const phaseFlip = t && t.dark !== !light && ACTS[t.act].dygn; // dag blev natt eller tvärtom
     if (t && t.phase === 'do' && t.until <= now) KLAR[t.act]?.(s, p, t, 0); // ett träd som fällts färdigt, en yxa som gjorts klar
     const lightDone = t?.act === 'tanda' && (s.fire.lit || !canLight(s, p));
-    const mustGo = t && p.toa < KROPP.toaAvbryt && t.act !== 'toa' && t.act !== 'buren' && a >= ALDER.smabarn; // nöden avbryter det man håller på med (inte den som bärs)
+    const mustGo = t && p.toa < KROPP.toaAvbryt && t.act !== 'toa' && t.act !== 'buren' && t.act !== 'strid' && a >= ALDER.smabarn; // nöden avbryter det man håller på med (inte den som bärs eller den som slåss)
     if (!t || (t.until <= now && t.phase !== 'back') || ((phaseFlip || mustGo) && t.phase !== 'back') || lightDone) {
       if (t && isCarrying(t) && t.act !== 'elda') { t.phase = 'back'; const d = dropSpot(s, homeKind(t)); t.tx = d.x + sida(p, 0.2); t.ty = d.y + sida(p, -0.2); }
       else chooseTask(s, p);
@@ -529,6 +531,7 @@ const UTFALL: Partial<Record<Act, (s: State, p: Person, tk: Task, b: Arbetsbit) 
       tk.carry += KANIN;
       blodas(s, p.x, p.y, 'jakt', 1); // där kaninen fångades
       wearUsed(s, p, 1); // spjutet slits för varje kanin (steg 2.3.12)
+      ovning(p, 'traff', SLAGSMAL.jakt); // träffsäkerheten (steg 3.7.2, strid.ts)
     }
     return true;
   },

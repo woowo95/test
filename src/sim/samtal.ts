@@ -95,7 +95,8 @@ export const SAMTALSSLAG: Record<Samtalsslag, SamtalDef> = SLAG;
 // om p håller på med något socialt just nu (vid elden, i samtal); hur nära man ska vara för att prata står i SAMTAL.radie
 export const isSocial = (p: Person) => !!p.task && p.task.phase === 'do' && !!ACTS[p.task.act].social;
 export interface TalkEvent { a: number; b: number; kind: Samtalsslag; good: boolean; t: number }
-export function converse(s: State, a: Person, others: Person[], events?: TalkEvent[]) {
+// ger den andra om samtalet blev ett gräl (steg 3.7.2: gräl kan bli slagsmål, strid.ts)
+export function converse(s: State, a: Person, others: Person[], events?: TalkEvent[]): Person | undefined {
   const now = s.now;
   if (!others.length) return;
   // välj samtalspartner viktad efter relation
@@ -155,6 +156,7 @@ export function converse(s: State, a: Person, others: Person[], events?: TalkEve
   if (r.op < REL.ovan && !(r.flags & 2)) { r.flags |= 2; log(s, `${a.name} och ${b.name} har blivit ovänner.`, 'rel', [a.id, b.id]); }
   if (r.rom > REL.parRom && r.op > REL.van && a.partner === undefined && b.partner === undefined && canFlirt) pair(s, a, b);
   if (a.partner === b.id && r.op < skiljGrans(r)) skiljas(s, a, b, r); // ett gift par håller mer (steg 3.1.1)
+  return kind === 'gräl' ? b : undefined;
 }
 // paret a och b går isär (när relationen blivit för dålig, eller i ett utbrott, humor.ts). En skilsmässa tar hårdare
 export function skiljas(s: State, a: Person, b: Person, r: Rel) {

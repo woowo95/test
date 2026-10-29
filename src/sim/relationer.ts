@@ -57,7 +57,7 @@ export const RELATIONER: Record<string, RelTyp> = {
   fiende: { namn: 'Ovän', ikon: 'r_fiende', har: (_s, p, q, r) => r.op < REL.ovan && p.arke !== q.id, varfor: () => 'Ovänner: de undviker att arbeta och sitta nära varandra och grälar när de möts.' },
   arke: { namn: 'Ärkefiende', ikon: 'r_arke', har: (_s, p, q) => p.arke === q.id, varfor: (_s, p, q) => `Den ${p.name} hatar mest. De grälar nästan varje gång de möts, ${p.name} ger ${q.name} aldrig något och tar hellre av hen.` },
 };
-const SKILL_ORD: Record<Skill, string> = { samla: 'samlande', jakt: 'jakt', fiske: 'fiske', ved: 'vedhuggning', hantverk: 'hantverk', berattande: 'berättande', elda: 'eldning', matlagning: 'matlagning' };
+const SKILL_ORD: Record<Skill, string> = { samla: 'samlande', jakt: 'jakt', fiske: 'fiske', ved: 'vedhuggning', hantverk: 'hantverk', berattande: 'berättande', elda: 'eldning', matlagning: 'matlagning', narstrid: 'närstrid', traff: 'träffsäkerhet' };
 const skillNamn = (k?: Skill) => k ? SKILL_ORD[k] : 'något';
 // relationstyperna mellan p och q, i registrets ordning
 export const relTyper = (s: State, p: Person, q: Person) => { const r = s.rels[relKey(p.id, q.id)]; return r ? Object.entries(RELATIONER).filter(([, t]) => t.har(s, p, q, r)).map(([id, t]) => ({ id, ...t })) : []; };
@@ -163,7 +163,7 @@ export function stepRelationer(s: State) {
       if (q === ung || ageOf(q, s.now) < RELT.mentorAlder) continue;
       const r = rel(q, ung); if (!r || (r.lart ?? 0) < RELT.mentorLart || r.op <= REL.van || (r.lart ?? 0) <= bl) continue;
       let sk: Skill | undefined, d = RELT.mentorSkill;
-      for (const k of SKILLS) if (q.skill[k] - ung.skill[k] >= d) { d = q.skill[k] - ung.skill[k]; sk = k; }
+      for (const k of SKILLS) if (k !== 'narstrid' && k !== 'traff' && q.skill[k] - ung.skill[k] >= d) { d = q.skill[k] - ung.skill[k]; sk = k; }
       if (sk) { best = q; bl = r.lart!; bsk = sk; }
     }
     if (best && bsk) {

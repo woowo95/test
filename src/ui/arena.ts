@@ -4,7 +4,7 @@
 // uppställningen och loggen ligger vid sidan av kartan. Loggen visar symbolerna först med hela meningen när man trycker på raden eller håller musen över den.
 import {
   AVSIKTER, Avsikt, KLADER_STRID, MANNISKOVAPEN, STRID, STRIDHANDELSER, STRIDSDJUR, LAGE_ORD, VAPEN, Vapen, DJUR,
-  Strid, Uppstallning, korManga, djurKampe, personKampe, nyStrid, stridRapport, stridSteg, stridText, sakNamn, living, byId,
+  Strid, Uppstallning, korManga, djurKampe, personKampe, nyStrid, stridRapport, stridSteg, stridText, sakNamn, living, byId, timeLabel,
   getMap, eldPlats, T, W as MW, H as MH, ageOf, ALDER,
 } from '../sim';
 import * as PIXI from 'pixi.js';
@@ -37,7 +37,13 @@ function uppstallning(): Uppstallning {
   }));
   return { avsikt: lag.avsikt, w: AW, h: AH, kampar };
 }
-function starta() { st = nyStrid(uppstallning(), lag.fro); sedd = 0; kvar = 0; blink.clear(); filter = -1; manga = ''; byFolk(); visaLogg(); }
+let senast: { u: Uppstallning; fro: number } | undefined; // striden som visas (↺ visar den igen)
+function starta(u = uppstallning(), fro = lag.fro) { senast = { u, fro }; st = nyStrid(u, fro); sedd = 0; kvar = 0; blink.clear(); filter = -1; manga = ''; byFolk(); visaLogg(); }
+// striderna som hänt i byn (steg 3.7.2, s.strider): samma uppställning och frö ger samma strid igen
+function visaByStrider() {
+  const m = s.strider ?? [];
+  $('arByn').innerHTML = `<option value="-1">🏘️ ${m.length ? 'Striderna i byn' : 'Inga strider i byn än'}</option>` + m.map((x, i) => ({ x, i })).reverse().map(({ x, i }) => `<option value="${i}">${esc(timeLabel(s, x.t))}: ${esc(x.u.kampar.map(k => k.namn).join(' mot '))} (${esc(x.orsak)})</option>`).join('');
+}
 
 // ---------- uppställningen ----------
 function radHtml(sd: number, i: number, r: Rad) {
@@ -187,7 +193,7 @@ export function oppnaArena() {
   $('arena').hidden = false;
   valjPlats(); visaPlats();
   if (!st) starta(); else { byFolk(); visaLogg(); }
-  visaUpp();
+  visaUpp(); visaByStrider();
 }
 $('arena').innerHTML = `<div class="card arena">
   <div class="arTopp"><h2>⚔️ Arena</h2><span><button type="button" class="ghost" id="arVisa" title="Visa striden på kartan">🎯</button><button type="button" class="ghost" id="arStang" title="Stäng arenan">✕</button></span></div>
@@ -201,6 +207,7 @@ $('arena').innerHTML = `<div class="card arena">
         <select id="arFart" title="Fart">${[0.25, 0.5, 1, 2, 4].map(f => `<option value="${f}"${f === 1 ? ' selected' : ''}>${f}×</option>`).join('')}</select>
         <span id="arTid" class="muted"></span>
       </div>
+      <select id="arByn" title="Se en strid som hänt i byn igen"></select>
       <div id="arRapport"></div>
     </div>
     <div id="arUpp"></div>
@@ -212,9 +219,10 @@ $('arStang').addEventListener('click', () => { spelar = false; $('arena').hidden
 $('arVisa').addEventListener('click', visaPlats);
 $('arSpela').addEventListener('click', () => { if (st?.slut) starta(); spela(!spelar); });
 $('arSteg').addEventListener('click', () => { spela(false); steg(); visaLogg(); });
-$('arOm').addEventListener('click', () => { starta(); spela(true); });
+$('arOm').addEventListener('click', () => { starta(senast?.u, senast?.fro); spela(true); });
 $('arFro').addEventListener('click', () => { lag.fro = (lag.fro * 1103515245 + 12345) | 0; starta(); spela(true); });
 $('arHundra').addEventListener('click', korHundra);
+$('arByn').addEventListener('change', e => { const m = s.strider?.[Number((e.target as HTMLSelectElement).value)]; if (m) { starta(m.u, m.fro); spela(true); } });
 $('arFart').addEventListener('change', e => { lag.fart = Number((e.target as HTMLSelectElement).value); });
 $('arFilt').addEventListener('change', e => { filter = Number((e.target as HTMLSelectElement).value); visaLogg(); });
 $('arLogg').addEventListener('click', e => (e.target as HTMLElement).closest('li')?.classList.toggle('open'));

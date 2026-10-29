@@ -6,7 +6,7 @@ import { migrateTools, toolsFromItems } from './agande';
 import { migrateFalt } from './odling';
 import { behoverStorreKarta, storreKarta } from './kartflytt';
 import { VAR, inFas, nyKalender } from './tid';
-import { ageOf, byId, getRel, log, newPerson, startSkills, think } from './folk';
+import { ageOf, alive, byId, getRel, log, newPerson, startSkills, stridSkills, think } from './folk';
 import { newSeder, sederTarget, TAGS } from './seder';
 import { clamp, gauss, rnd } from './slump';
 import { DAY, Fire, NEW_H, NEW_W, Person, SEC, State, simulera, useMap } from './typer';
@@ -116,6 +116,9 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
       if (p.pot[k] === undefined) p.pot[k] = clamp(10 + gauss(s, 'anlag') * 5, 1, 20);
       if (p.anlag && p.anlag[k] === undefined) p.anlag[k] = p.pot[k];
     }
+  }],
+  [13, 'v148: färdigheterna Närstrid och Träffsäkerhet (steg 3.7.2) efter ålder för dem som redan finns', s => {
+    for (const p of s.people) if (p.skill.narstrid === undefined) { if (alive(p)) stridSkills(s, p, ageOf(p, s.now)); else p.skill.narstrid = p.skill.traff = 0; }
   }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];

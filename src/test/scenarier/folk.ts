@@ -743,3 +743,58 @@ SCENARIER.smidighet = {
     ];
   },
 };
+
+SCENARIER.slagsmal = {
+  text: 'Slagsmål och lek i byn (steg 3.7.2): ett gräl kan bli ett slagsmål, striden räknas färdigt och sparas, skadorna blir riktiga skador, de som slåss står kvar och behoven väntar, vinnaren blir ett rykte, barn brottas på lek, närstriden och träffsäkerheten växer, och duck, parering och de nya skadorna finns i striden',
+  kor: () => {
+    const t = createState(21, START), ps = living(t).filter(x => ageOf(x, t.now) >= SIM.ALDER.vuxen), [a, b] = ps;
+    const n0 = a.skill.narstrid;
+    const st = SIM.stridIByn(t, 'slagsmal', [[a], [b]], 'för att pröva');
+    const sparad = t.strider?.length === 1 && t.strider[0].orsak === 'för att pröva';
+    const igen = SIM.stridTillSlut(SIM.nyStrid(t.strider![0].u, t.strider![0].fro));
+    const sammaIgen = JSON.stringify(igen.logg) === JSON.stringify(st.logg);
+    const skadad = (a.skador?.length ?? 0) + (b.skador?.length ?? 0) > 0 || st.kampar.every(k => !k.skador.length);
+    const star = [a, b].filter(x => x.health > 0).every(x => x.task?.act === 'strid' && x.task.until > t.now);
+    const ovat = a.skill.narstrid > n0;
+    const v = st.slut!.vinnare, vinnare = v === -1 ? undefined : [a, b][v];
+    const rykte = !vinnare || [a, b].some(x => x.intryck?.some(e => e.om === vinnare.id && e.k === 'stark'));
+    // behoven väntar: en kissnödig som slåss går inte på toa
+    const q = [a, b].find(x => x.health > 0)!;
+    q.toa = 0.01; q.task!.until = t.now + 2 * HOUR;
+    step(t, 600);
+    const vantar = q.task?.act === 'strid';
+    // gräl blir slagsmål: många gräl mellan två blodtörstiga
+    const g = createState(22, START), [c, d] = living(g).filter(x => ageOf(x, g.now) >= SIM.ALDER.vuxen);
+    c.pot.aggression = 20; c.pot.empati = 1; SIM.think(c, 'Rasande', -0.7, g.now, DAY);
+    for (let i = 0; i < 200 && !g.strider?.length; i++) { c.task = undefined; d.task = undefined; SIM.gralBlirSlagsmal(g, c, d); }
+    const gral = (g.stat?.strid_slagsmal ?? 0) >= 1;
+    // barn som leker brottas
+    const l = createState(23, START), barn = living(l).find(x => ageOf(x, l.now) < SIM.ALDER.vuxen)!, kamrat = living(l).find(x => x !== barn)!;
+    kamrat.task = { act: 'leka', phase: 'do', tx: barn.x, ty: barn.y, until: l.now + DAY, carry: 0 }; kamrat.x = barn.x; kamrat.y = barn.y;
+    const t0 = barn.skill.traff;
+    for (let i = 0; i < 400 && !l.strider?.length; i++) SIM.lekSteg(l, barn, 600);
+    const lek = l.strider?.[0]?.u.avsikt === 'lek', kast = barn.skill.traff > t0, ingenDod = living(l).length === l.people.length;
+    // de nya händelserna och skadorna i striden
+    const m = (id: number, sida: 0 | 1, vapen: SIM.Vapen) => ({ id, namn: `K${id}`, sida, st: { styrka: 10, uthallighet: 10, mod: 10, smidighet: 14, skicklighet: 12 }, vapen, klader: [], fart: 1, x: sida ? 12 : 8, y: 7 });
+    const sl = new Set<string>(), sk = new Set<string>();
+    for (let f = 1; f <= 60; f++) { const x = SIM.stridTillSlut(SIM.nyStrid({ avsikt: 'skada', w: 20, h: 14, kampar: [m(1, 0, 'flintspjut'), m(2, 1, 'sten')] }, f)); for (const r of x.logg) sl.add(r.h); for (const k of x.kampar) for (const w of k.skador) sk.add(w.k); }
+    // en sparad by får de nya färdigheterna
+    const u = createState(3, START); for (const x of u.people) { delete (x.skill as Partial<Record<SIM.Skill, number>>).narstrid; delete (x.skill as Partial<Record<SIM.Skill, number>>).traff; }
+    u.v = 12; SIM.migrate(u);
+    const upp = u.people.every(x => x.skill.narstrid >= 0 && x.skill.traff >= 0);
+    return [
+      ['striden sparas i byn och blir likadan när den räknas om', sparad && sammaIgen],
+      ['skadorna från striden blir skador på personerna', skadad],
+      ['de som slåss står kvar i striden', star],
+      ['närstriden växer av ett slagsmål', ovat],
+      ['vinnaren får ryktet att vara stark', rykte],
+      ['den kissnödiga går inte på toa mitt i striden', vantar],
+      [`ett gräl kan bli ett slagsmål (${g.stat?.strid_slagsmal ?? 0})`, gral],
+      ['barn som leker brottas, och ingen dör av det', lek && ingenDod],
+      ['kastleken ger träffsäkerhet', kast],
+      [`man duckar och parerar (${[...sl].filter(h => h === 'duck' || h === 'parera').join(', ')})`, sl.has('duck') && sl.has('parera')],
+      [`spjutet ger sticksår och stenen hjärnskakning (${[...sk].join(', ')})`, sk.has('sticksar') && sk.has('hjarnskakning')],
+      ['en sparad by får Närstrid och Träffsäkerhet', upp],
+    ];
+  },
+};
