@@ -37,6 +37,7 @@ import { DJUR } from './redskap';
 import { SAKER, sakNamn } from './saker';
 import { clamp, rnd } from './slump';
 import { ALDER, ageOf, byId, count, getRel, log, ovning, stat, think } from './folk';
+import { minnsRel } from './relationer';
 import { ledareOf } from './styre';
 import { blodtorst } from './humor';
 import { die } from './liv';
@@ -896,6 +897,8 @@ export function stridIByn(s: State, avsikt: Avsikt, sidor: [Person[], Person[]],
     }
     if (!lek && (k.lage === 'flykt' || k.lage === 'borta' || st.logg.some(r => r.h === 'avstar' && r.a === k.id)) && mot[0]) handelse(s, p, 'backade', mot[0]); // steg 3.7.9
     for (const q of mot) { const r = getRel(s, p, q); r.op = Math.max(-100, Math.min(100, r.op + (lek ? SLAGSMAL.lekOp : -SLAGSMAL.op / 2))); } // båda hållen: op/2 var
+    for (const q of mot) if (p.id < q.id) minnsRel(s, p, q, lek ? 'lek' : 'slag'); // det relationen minns, en gång per par (steg 3.9.6)
+    if (!lek) for (const q of sidor[k.sida]) if (p.id < q.id) minnsRel(s, p, q, 'sida');
     if (!lek && vinnare !== -1) think(p, k.sida === vinnare ? `Vann slagsmålet mot ${mot[0].name}` : `Förlorade slagsmålet mot ${mot[0].name}`, k.sida === vinnare ? SLAGSMAL.vann : -SLAGSMAL.forlora, s.now, SLAGSMAL.tankeTim * HOUR);
     // striden tar tid: hen står kvar och slåss medan de andra behoven väntar
     avbryt(s, p);

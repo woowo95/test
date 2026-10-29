@@ -199,7 +199,10 @@ export interface Lardom { k: import('./minne').LKind; a: number; v: number; g?: 
 
 // flags: 1 = nära vänner loggat, 2 = ovänner loggat, 4 = rivaler loggat, 8 = bästa vänner loggat (relationer.ts).
 // par: när de blev ett par, gift: när de gifte sig, lart: hur många gånger den äldre lärt den yngre något (steg 3.1.1)
-export interface Rel { chem: number; op: number; rom: number; talks: number; flags: number; par?: number; gift?: number; lart?: number }
+export interface Rel { chem: number; op: number; rom: number; talks: number; flags: number; par?: number; gift?: number; lart?: number; minns?: RelMinne }
+// det två har varit med om tillsammans (steg 3.9.6): gräl, slagsmål, lekslagsmål, strider sida vid sida och gåvor åt båda
+// hållen (gav[0] är gåvorna från den med lägst id)
+export interface RelMinne { gral?: number; slag?: number; lek?: number; sida?: number; gav?: [number, number] }
 
 export interface LogEntry { t: number; text: string; kind: 'birth' | 'death' | 'rel' | 'skill' | 'world' | 'move'; ids: number[] }
 

@@ -1,5 +1,5 @@
 import { FORMAGOR, HALSA, Kroppsdel, KROPPSDELAR, NARING, NARINGAR, NARINGBAL, bristGrad, bristerNu, frysFaktor, naringNu, sjunker, skorbjugg, vilaTim, TORST, blodning, delSkada, halsa, skadeLista, skadeText, smarta, torstDelar } from '../../sim';
-import { pratText, beskrivning, binamnInfo, INTRYCK, Intryck, LARDOMAR, LKind, anseendeSym, dodSymbol, intryckText, samlatIntryck, ACTS, ALDER, Act, DAY, Lardom, HUMOR, SKILL_GOR, STAT_GOR, Skill, Stat, coldOf, halsaLage, hearthOf, living, roomAt, temperature, varmeDelar, viloSlag, viloTak, takEffekt, SLAG, SLAG_TECKEN, Person, KUNSKAPER, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, SEDER, SED_LIST, sedOppen, TEKNIK, BYN, formogenhetDelar, Ting, halvKlar, ageOf, alive, byId, childrenOf, drar, heldBy, ownedBy, PLATSER, PLATS_LIST, Plats, BORDA_KG, UTRUSTNING, bordOf, capacity, kvNamn, handerFor, homeKind, load, utrustning, viktOf, SAKER, ownedStock, sakNamn, slagIkon, tingNamn, STACK, describe, duty, habitShare, habitTotal, KROPP, kortTal, moodOf, num, REL, relKey, relTyper, stat, taskName, timeLabel, upplevelseText, uppEffekt } from '../../sim';
+import { pratText, relationText, beskrivning, binamnInfo, INTRYCK, Intryck, LARDOMAR, LKind, anseendeSym, dodSymbol, intryckText, samlatIntryck, ACTS, ALDER, Act, DAY, Lardom, HUMOR, SKILL_GOR, STAT_GOR, Skill, Stat, coldOf, halsaLage, hearthOf, living, roomAt, temperature, varmeDelar, viloSlag, viloTak, takEffekt, SLAG, SLAG_TECKEN, Person, KUNSKAPER, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, SEDER, SED_LIST, sedOppen, TEKNIK, BYN, formogenhetDelar, Ting, halvKlar, ageOf, alive, byId, childrenOf, drar, heldBy, ownedBy, PLATSER, PLATS_LIST, Plats, BORDA_KG, UTRUSTNING, bordOf, capacity, kvNamn, handerFor, homeKind, load, utrustning, viktOf, SAKER, ownedStock, sakNamn, slagIkon, tingNamn, STACK, describe, duty, habitShare, habitTotal, KROPP, kortTal, moodOf, num, REL, relKey, relTyper, stat, taskName, timeLabel, upplevelseText, uppEffekt } from '../../sim';
 import { framstegSvg, hasIcon, iconImg, kvSvg, tecknet } from '../../ikoner';
 import { LAG, fmtN, bar, cap, carryTxt, cssFarg, durTxt, esc, hex, hsl, hjalpOppen, hjalpText, moodWord, pLink, prickar, relWord, sickNow, tempBar, tempOrd, trend, trendD } from '../hjalp';
 import { s, ui } from '../lage';
@@ -215,8 +215,11 @@ function relHtml(p: Person) {
   return rels.length ? `<ul class="rels">${rels.map(({ q, r }) => {
     const typer = relTyper(s, p, q), id = (k: string) => `rt-${p.id}-${q.id}-${k}`;
     const sym = typer.map(t => `<button type="button" class="relsym" data-hjalp="${id(t.id)}" data-hjalp-grupp="rt-${p.id}-${q.id}-" title="${esc(t.namn)}" aria-label="${esc(t.namn)}">${iconImg(t.ikon)}</button>`).join('');
-    const oppen = typer.find(t => hjalpOppen(id(t.id)));
-    return `<li>${pLink(q)}<span class="relsyms">${sym}</span><span class="rw ${r.op < REL.osams ? 'neg' : r.op > REL.vanOrd ? 'pos' : ''}">${relWord(p, q, r.op)}</span><span class="muted">${r.talks} samtal</span>${oppen ? `<p class="muted small relfork"><b>${esc(oppen.namn)}</b>: ${esc(oppen.varfor(s, p, q, r))}</p>` : ''}</li>`;
+    const oppen = typer.find(t => hjalpOppen(id(t.id))), utf = hjalpOppen(id('mer'));
+    // ordet för relationen: ett tryck visar utförligt vad hen tycker om den andra och varför (steg 3.9.6)
+    const ord = `<button type="button" class="rw klick ${r.op < REL.osams ? 'neg' : r.op > REL.vanOrd ? 'pos' : ''}" data-hjalp="${id('mer')}" data-hjalp-grupp="rt-${p.id}-${q.id}-" title="Vad ${esc(p.name)} tycker om ${esc(q.name)}">${relWord(p, q, r.op)}</button>`;
+    const mer = utf ? `<p class="muted small relfork">${relationText(s, p, q, r).map(esc).join(' ')}</p>` : oppen ? `<p class="muted small relfork"><b>${esc(oppen.namn)}</b>: ${esc(oppen.varfor(s, p, q, r))}</p>` : '';
+    return `<li>${pLink(q)}<span class="relsyms">${sym}</span>${ord}<span class="muted">${r.talks} samtal</span>${mer}</li>`;
   }).join('')}</ul>` : '<p class="muted">Inga relationer ännu.</p>';
 }
 

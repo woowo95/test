@@ -1,12 +1,12 @@
 import { balans } from './balans';
-import { ALDER, ageOf, alive, byId, count, living, log } from './folk';
+import { ALDER, REL, ageOf, alive, byId, count, living, log } from './folk';
 import { ACTS, Act, slagIkon } from './handlingar';
 import { TAGS } from './seder';
 import { kronika } from './historik';
-import { HANDELSER, INTRYCK, IntryckTyp, intryckOm, samlatIntryck } from './rykten';
+import { HANDELSER, INTRYCK, IntryckTyp, intryckOm, intryckText, samlatIntryck } from './rykten';
 import { SAKER, sakNamn } from './saker';
 import { moodOf } from './humor';
-import { HOUR, Person, STATS, Stat, State, Upplevelse } from './typer';
+import { HOUR, Person, Rel, STATS, Stat, State, Upplevelse } from './typer';
 import { upplevelseText } from './uppvaxt';
 import { isLight, kalender } from './tid';
 import { temperature, vaderNu } from './vader';
@@ -43,6 +43,9 @@ export const BERATT = balans('beratt', {
   varmt: 25, // ... om värmen från den här och uppåt
   hungrig: 0.4, // ... och om maten när mättnaden är under den här
   pratTim: 2, // personrutan visar det senaste samtalet i så här många timmar
+  // relationerna utförligt (steg 3.9.6)
+  kemi: 0.4, // personkemin (−1 till 1) nämns från så här långt från noll
+  relIntryck: 3, // så här många av intrycken visas
 });
 
 // ---------- registren ----------
@@ -704,6 +707,87 @@ const MDEF = {
     '{namn} och {med} pratade om ingenting särskilt.',
     '{namn} och {med} satt och pratade.',
   ],
+  // relationerna utförligt (steg 3.9.6): vad {namn} tycker om {om}, efter hur nära de är
+  r_partner: [
+    '{namn} älskar {om}.',
+    '{namn} kan inte tänka sig ett liv utan {om}.',
+    '{namn} delar allt med {om}.',
+    '{namn} litar mer på {om} än på någon annan.',
+    '{namn} blir glad bara {om} kommer in.',
+    '{namn} och {om} hör ihop.',
+    '{namn} saknar {om} så fort de är ifrån varandra.',
+    '{namn} har valt {om} för livet.',
+  ],
+  r_nara: [
+    '{namn} tycker mycket om {om}.',
+    '{namn} och {om} står varandra nära.',
+    '{namn} skulle göra vad som helst för {om}.',
+    '{namn} söker sig gärna till {om}.',
+    '{namn} litar på {om}.',
+    '{namn} och {om} har inga hemligheter för varandra.',
+    '{namn} går till {om} när något är svårt.',
+    '{namn} saknar {om} när de inte ses.',
+  ],
+  r_van: [
+    '{namn} tycker om {om}.',
+    '{namn} trivs i sällskap med {om}.',
+    '{namn} ser {om} som en vän.',
+    '{namn} pratar gärna med {om}.',
+    '{namn} och {om} kommer bra överens.',
+    '{namn} skrattar gärna åt det {om} säger.',
+    '{namn} hjälper {om} när det behövs.',
+    '{namn} gillar {om}.',
+  ],
+  r_bekant: [
+    '{namn} känner {om} men inte så väl.',
+    '{namn} har inget särskilt emot {om}.',
+    '{namn} hälsar på {om} men inte mer.',
+    '{namn} vet vem {om} är, men de står inte varandra nära.',
+    '{namn} pratar med {om} ibland.',
+    '{namn} och {om} har inte mycket gemensamt.',
+    '{namn} bryr sig inte mycket om {om}, varken åt det ena eller det andra hållet.',
+    '{namn} och {om} lever mest var för sig.',
+  ],
+  r_ogillar: [
+    '{namn} tycker inte om {om}.',
+    '{namn} undviker {om} när det går.',
+    '{namn} blir på dåligt humör av {om}.',
+    '{namn} litar inte på {om}.',
+    '{namn} himlar med ögonen åt {om}.',
+    '{namn} tycker att {om} är jobbig.',
+    '{namn} och {om} kommer inte överens.',
+    '{namn} säger helst inget alls till {om}.',
+  ],
+  r_ovan: [
+    '{namn} kan inte med {om}.',
+    '{namn} hatar {om}.',
+    '{namn} vill inte ha med {om} att göra.',
+    '{namn} ser {om} som en fiende.',
+    '{namn} blir arg bara {om} syns.',
+    '{namn} och {om} är ovänner.',
+    '{namn} har inget gott att säga om {om}.',
+    '{namn} går en omväg för att slippa {om}.',
+  ],
+  r_kemiBra: [
+    'Det klickade mellan dem från början.',
+    'De har alltid haft lätt för varandra.',
+    'De har samma sätt att se på saker.',
+    'Det var lätt mellan dem från första stund.',
+    'De förstår varandra utan många ord.',
+    'De drar sig till varandra.',
+    'De skrattar åt samma saker.',
+    'Det har alltid varit enkelt mellan dem.',
+  ],
+  r_kemiDalig: [
+    'De har haft svårt för varandra från början.',
+    'De skaver mot varandra hur de än gör.',
+    'De ser på saker på helt olika sätt.',
+    'Det har aldrig stämt mellan dem.',
+    'De missförstår varandra hela tiden.',
+    'De retar sig på varandra.',
+    'De har aldrig förstått sig på varandra.',
+    'Det har alltid skurit sig mellan dem.',
+  ],
 } satisfies Record<string, Variant[]>;
 export type MallId = keyof typeof MDEF;
 export const BERATTELSER: Record<MallId, Variant[]> = MDEF;
@@ -1012,3 +1096,35 @@ export function pratText(s: State, p: Person) {
   const f: Fyllning = { namn: p.name, med: q.name, om: x.o ?? '' };
   return fyll(valjVariant(s, `p_${x.k}` as MallId, p.id + q.id, f, Math.round(x.t / 60)), f);
 }
+
+// ---------- relationerna utförligt (steg 3.9.6) ----------
+// Ett tryck på en relation i personrutan: vad p tycker om q och varför. Personkemin, vad de varit med om tillsammans
+// (samtal, barn, det den äldre lärt den yngre, gräl, slagsmål, lek, strider sida vid sida och gåvor åt båda hållen, Rel.minns)
+// och vad p tror om q: intrycken, de hen sett själv och ryktena hen hört (rykten.ts). Texten väljs utan slump (hash)
+export function relationText(s: State, p: Person, q: Person, r: Rel): string[] {
+  const f = { namn: p.name, om: q.name };
+  const mall: MallId = p.partner === q.id ? 'r_partner' : r.op > REL.naraVan ? 'r_nara' : r.op > REL.vanOrd ? 'r_van' : r.op > REL.osams ? 'r_bekant' : r.op > REL.ovan ? 'r_ogillar' : 'r_ovan';
+  const nyckel = p.id * 7919 + q.id, ut: string[] = [fyll(valjVariant(s, mall, nyckel, f, 0), f)];
+  if (Math.abs(r.chem) >= BERATT.kemi) ut.push(valjVariant(s, r.chem > 0 ? 'r_kemiBra' : 'r_kemiDalig', nyckel, f, 0));
+  const ggr = (n: number) => n === 1 ? 'en gång' : `${talOrd(n)} gånger`;
+  const m = r.minns ?? {}, gjort: string[] = [];
+  if (r.talks) gjort.push(`pratat ${ggr(r.talks)}`);
+  if (m.sida) gjort.push(`slagits sida vid sida ${ggr(m.sida)}`);
+  if (m.lek) gjort.push(`brottats på lek ${ggr(m.lek)}`);
+  if (m.gral) gjort.push(`grälat ${ggr(m.gral)}`);
+  if (m.slag) gjort.push(`slagits mot varandra ${ggr(m.slag)}`);
+  if (gjort.length) ut.push(`De har ${och(gjort)}.`);
+  const barn = s.people.filter(c => (c.mother === p.id && c.father === q.id) || (c.mother === q.id && c.father === p.id)).length;
+  if (barn) ut.push(`De har ${barn === 1 ? 'ett' : talOrd(barn)} barn tillsammans.`);
+  if (r.lart) { const [a, b] = ageOf(p, s.now) > ageOf(q, s.now) ? [p, q] : [q, p]; ut.push(`${a.name} har lärt ${b.name} något ${ggr(r.lart)}.`); }
+  const gav = m.gav ?? [0, 0], g = gav[p.id < q.id ? 0 : 1], fick = gav[p.id < q.id ? 1 : 0];
+  const gavor = (n: number) => n === 1 ? 'en gåva' : `${talOrd(n)} gåvor`;
+  if (g) ut.push(`${p.name} har gett ${q.name} ${gavor(g)}${fick ? ` och fått ${fick === 1 ? 'en' : talOrd(fick)} tillbaka` : ' men aldrig fått något tillbaka'}.`);
+  else if (fick) ut.push(`${q.name} har gett ${p.name} ${gavor(fick)}, men ${p.name} har aldrig gett något tillbaka.`);
+  for (const e of (p.intryck ?? []).filter(x => x.om === q.id).sort((x, y) => y.v * y.c - x.v * x.c).slice(0, BERATT.relIntryck)) {
+    const t = intryckText(s, e);
+    ut.push(`${cap(hen(p))} ser ${q.name} som ${t.namn}: ${t.sure}, ${t.varifran}.${t.bevis.length ? ` ${cap(t.bevis[0])}.` : ''}`);
+  }
+  return ut;
+}
+const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);

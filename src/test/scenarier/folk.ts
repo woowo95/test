@@ -1360,3 +1360,28 @@ SCENARIER.amnen = {
     ];
   },
 };
+
+SCENARIER.relationstext = {
+  text: 'Steg 3.9.6: ett tryck på en relation i personrutan berättar utförligt vad hen tycker om den andra och varför: hur nära de är, personkemin, vad de varit med om tillsammans (samtal, barn, gräl, slagsmål, lek, strider sida vid sida, gåvor åt båda hållen; Rel.minns) och vad hen tror om den andra (intrycken och ryktena)',
+  kor: () => {
+    const hel = (x: string) => !/[{}]|undefined|NaN|  | \.|^\s*$/.test(x) && /[.!"]$/.test(x);
+    // gåvorna räknas åt rätt håll
+    const t = createState(5, START);
+    const [a, b] = living(t), r = getRel(t, a, b);
+    SIM.minnsGava(t, a, b); SIM.minnsGava(t, a, b); SIM.minnsGava(t, b, a); SIM.minnsRel(t, a, b, 'gral');
+    const ta = SIM.relationText(t, a, b, r).join(' '), tb = SIM.relationText(t, b, a, r).join(' ');
+    // i en by som lever: vad relationerna minns efter sex dygn
+    const v = createState(3, START);
+    kor(v, 6 * 24);
+    const rels = Object.values(v.rels), sum = (k: 'gral' | 'slag' | 'lek' | 'sida') => rels.reduce((n, x) => n + (x.minns?.[k] ?? 0), 0);
+    const gavor = rels.reduce((n, x) => n + (x.minns?.gav?.[0] ?? 0) + (x.minns?.gav?.[1] ?? 0), 0);
+    const texter = living(v).flatMap(p => living(v).filter(q => q !== p && v.rels[SIM.relKey(p.id, q.id)]).map(q => SIM.relationText(v, p, q, v.rels[SIM.relKey(p.id, q.id)])));
+    const exempel = texter.find(x => x.length >= 3)?.join(' ') ?? '–';
+    return [
+      [`gåvorna åt båda hållen (${ta} / ${tb})`, ta.includes(`har gett ${b.name} två gåvor och fått en tillbaka`) && tb.includes(`har gett ${a.name} en gåva och fått två tillbaka`) && ta.includes('grälat en gång')],
+      [`relationerna i byn minns gåvorna (${gavor}); gräl ${sum('gral')}, slagsmål ${sum('slag')}, lek ${sum('lek')}, sida vid sida ${sum('sida')} (gräl och slagsmål är sällsynta när byn mår bra)`, gavor > 0],
+      [`varje mening är hel (t.ex. ${exempel})`, texter.length > 0 && texter.every(x => x.length >= 1 && x.every(hel))],
+      [`texten säger mer än hur nära de är (${texter.filter(x => x.length >= 2).length} av ${texter.length})`, texter.filter(x => x.length >= 2).length > texter.length / 2],
+    ];
+  },
+};

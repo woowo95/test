@@ -17,7 +17,7 @@ import { habitShare, habitTotal } from './seder';
 import { grundvarde } from './varde';
 import { EKONOMI } from './ekonomi';
 import { balans } from './balans';
-import { RELT, arBast, arRivaler } from './relationer';
+import { RELT, arBast, arRivaler, minnsGava } from './relationer';
 import { handelse, smakMat } from './rykten';
 
 // ---------- behovsstegen ----------
@@ -212,7 +212,7 @@ function gift(s: State, m: Person, g: Person, n: Behov) {
   const r = getRel(s, m, g);
   r.op = clamp(r.op + 3, -100, 100);
   think(m, `Fick ${n.namn} av ${g.name}`, 0.1, s.now, 12 * HOUR);
-  think(g, `Gav ${n.namn} till ${m.name}`, 0.05, s.now, 6 * HOUR);
+  think(g, `Gav ${n.namn} till ${m.name}`, 0.05, s.now, 6 * HOUR); minnsGava(s, g, m);
   if (n.fara(s, m) > 0) log(s, `${g.name} gav ${n.namn} till ${m.name}, som höll på att dö.`, 'rel', [g.id, m.id]); // vardagens gåvor fyller inte loggen
   handelse(s, g, n.fara(s, m) > 0 ? 'hjalp' : 'gava', m, n.namn); // de som ser det tycker bättre om den som ger (steg 3.3.1)
   count(s, 'gava_' + n.id, want - rest);
@@ -392,7 +392,7 @@ export function askForTool(s: State, a: Person, b: Person): 'gåva' | 'byte' | u
       const namn = (SAKER[k]?.namn ?? k).toLowerCase(), r = getRel(s, a, b);
       r.op = clamp(r.op + 4, -100, 100);
       think(m, `Fick en ${namn} av ${g.name}`, 0.1, s.now, 12 * HOUR);
-      think(g, `Gav en ${namn} till ${m.name}`, 0.05, s.now, 6 * HOUR);
+      think(g, `Gav en ${namn} till ${m.name}`, 0.05, s.now, 6 * HOUR); minnsGava(s, g, m);
       count(s, 'gavor');
       log(s, `${g.name} gav en ${namn} till ${m.name}.`, 'rel', [g.id, m.id]);
       handelse(s, g, 'gava', m, 'en ' + namn);

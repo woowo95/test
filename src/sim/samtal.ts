@@ -9,7 +9,7 @@ import { share } from './minne';
 import { askForGift } from './behov';
 import { ACTS } from './handlingar';
 import { balans } from './balans';
-import { RELT, arArke, arBast, arMentor, arRivaler, skiljGrans } from './relationer';
+import { RELT, arArke, arBast, arMentor, arRivaler, minnsRel, skiljGrans } from './relationer';
 import { tankePa } from './teknik';
 import { samtalAmne, samtalBorjar } from './berattelser';
 
@@ -132,7 +132,7 @@ export function converse(s: State, a: Person, others: Person[], events?: TalkEve
     r.op -= SAMTAL.gralOp + rnd(s, 'samtal', a) * SAMTAL.gralSpann;
     think(a, `Grälade med ${b.name}`, -SAMTAL.gralTankeEgen, now, SAMTAL.gralTim * HOUR);
     think(b, `Grälade med ${a.name}`, -SAMTAL.gralTankeAndra, now, SAMTAL.gralTim * HOUR);
-    samtalAmne(s, a, b, kind);
+    samtalAmne(s, a, b, kind); minnsRel(s, a, b, 'gral');
     if (a.partner === b.id) barnTill(s, a, b, 'gral'); // föräldrar som grälar ofta formar barnen (steg 3.1.2)
   } else {
     // vänskap växer allt långsammare ju närmare man redan är; ovänskap fördjupas lättare
