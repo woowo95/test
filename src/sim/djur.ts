@@ -16,7 +16,7 @@ import { DJUR } from './redskap';
 // En kanin sitter still en stund och skuttar sedan en bit. Den som kommer nära får den att hoppa undan en bit och sitta
 // still där. De enskilda kaninerna ritas bara; jakten ger mest nära en grupp (`narvaroAt`, via richness). Fler arter
 // (rådjur, fågel) blir egna lager och grupper senare.
-export interface Djur { id: number; art: 'kanin'; x: number; y: number; grupp: number }
+export interface Djur { id: number; art: 'kanin' | 'varg'; x: number; y: number; grupp: number } // grupp = kaningruppen eller vargflocken
 export interface Kaningrupp { id: number; x: number; y: number; n: number; n0: number } // n: så många kaniner gruppen har just nu, n0: när den inte jagats
 // Balanstal (regel 8): kaninernas grupper (antal, storlek, hur länge de stannar och hur långt de rör sig), hur de flyr
 // från folk och hur mycket jakten ger nära dem. Jaktens ursprungliga värde finns i viltlagret (FYND.jakt i fynd.ts)
@@ -165,6 +165,16 @@ export function djurOf(s: State, t = s.now): Djur[] {
   return out;
 }
 
+// vargarna (steg 3.7.1, varg.ts): flockarna är sparade i byn, och vargarna går tätt kring flockens mitt, ledaren först
+export function vargarOf(s: State): Djur[] {
+  const out: Djur[] = [];
+  for (const f of s.vargar ?? []) f.vargar.forEach((id, j) => {
+    const ang = hash(id, 4, 11) * Math.PI * 2 + s.now / (60 * SEC) * (hash(id, 7, 11) - 0.5), r = j ? 0.7 + 0.9 * hash(id, 5, 13) : 0;
+    out.push({ id, art: 'varg', x: clamp(f.x + Math.cos(ang) * r, 0.2, W - 0.2), y: clamp(f.y + Math.sin(ang) * r, 0.2, H - 0.2), grupp: f.id });
+  });
+  return out;
+}
+
 // ---------- djuren som individer (steg 3.7.13) ----------
 // Varje djur är en individ med ålder, styrka, snabbhet och skygghet (kaninen) eller mod (vargen, steg 3.7.1). Egenskaperna
 // räknas ur djurets id kring artens värden i djurregistret (DJUR[art].strid i redskap.ts), så att inget behöver sparas.
@@ -186,7 +196,7 @@ export interface DjurHalsa { id: number; blod: number; sar: number; t: number } 
 export function dragOf(art: Djur['art'], id: number): DjurDrag {
   const d = DJUR[art].strid, v = (n: number) => 1 + (hash(id, n, 21) * 2 - 1) * INDIVID.spann;
   const alder = Math.floor(hash(id, 1, 21) * d.alder) + 1, aldr = Math.max(0, alder / d.alder - INDIVID.gammal) / (1 - INDIVID.gammal);
-  return { alder, styrka: d.styrka * v(2), snabbhet: d.fart * v(3) * (1 - INDIVID.gammalFart * aldr), skygghet: hash(id, 4, 21) };
+  return { alder, styrka: d.styrka * v(2), snabbhet: d.fart * v(3) * (1 - INDIVID.gammalFart * aldr), ...(art === 'varg' ? { mod: hash(id, 5, 21) } : { skygghet: hash(id, 4, 21) }) };
 }
 // djurets hälsa just nu: det sparade, läkt med tiden sedan dess
 export function halsaOf(s: State, id: number): { blod: number; sar: number; dod: boolean } {

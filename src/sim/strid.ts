@@ -138,6 +138,7 @@ export const STRID = balans('strid', {
   ledAggr: 0.5, ledSed: 1,
   ledFram: 0.15, // ... och då har hela sidan så här mycket mer stridsmod, och ledaren står längst fram ...
   ledBak: 0.05, // ... annars står ledaren bakom vännerna och leder, och sidan har så här mycket mer
+  flock: 0.2, // och för en flock så här mycket till när en av dem flyr, faller eller dör (steg 3.7.1)
   ledFaller: 0.35, // stridsmodet sjunker så här mycket för hela sidan när ledaren faller eller dör (utöver modVan)
   skyddVan: 60, // ledarens närmaste vänner (partner, bästa vän och den som tycker om ledaren minst så här mycket) skyddar hen ...
   skyddVakt: 5, // ... de går mot den som anfaller ledaren inom så här många rutor från ledaren ...
@@ -161,6 +162,7 @@ export const VAPEN = {
   benspade: { namn: 'Benspaden', skada: 0.28, takt: 1.4, rack: 1.3, slag: 'slag', ord: 'slår', tecken: '🦴' },
   sten: { namn: 'Stenen', skada: 0.25, takt: 1.1, rack: 0.9, slag: 'slag', ord: 'slår', tecken: '🪨', kast: { rack: 8, skada: 0.22, skott: 3 } }, // tre stenar att kasta, sedan slår man med den sista
   bett: { namn: 'Tänderna', skada: 0.1, takt: 0.8, rack: 0.7, slag: 'bett', ord: 'biter', tecken: '🦷' },
+  vargbett: { namn: 'Vargens käftar', skada: 0.28, takt: 1.4, rack: 0.9, slag: 'bett', ord: 'biter', tecken: '🐺' }, // vargen biter hårt (steg 3.7.1)
 } satisfies Record<string, VapenDef>;
 export type Vapen = keyof typeof VAPEN;
 const VAP: Record<string, VapenDef> = VAPEN;
@@ -292,7 +294,7 @@ export function nyStrid(u: Uppstallning, fro: number): Strid {
   if (!AVS[u.avsikt].vapen) for (const k of kampar) if (!k.djur) { k.vapen = 'hand'; k.reserv = undefined; }
   for (const k of kampar) { const kv = VAP[k.vapen].kast; if (kv) k.skott = kv.skott; }
   for (const k of kampar) k.vant = slump(st) * VAP[k.vapen].takt; // ingen slår exakt samtidigt
-  for (const k of kampar) if (k.ledare === 'fram' && !AVS[u.avsikt].lek) st.logg.push({ t: 0, h: 'leder', a: k.id });
+  for (const k of kampar) if (k.ledare === 'fram' && !k.djur && !AVS[u.avsikt].lek) st.logg.push({ t: 0, h: 'leder', a: k.id });
   return st;
 }
 
@@ -337,7 +339,8 @@ function ga(st: Strid, k: Kampe, mx: number, my: number, langd: number) {
 function falla(st: Strid, k: Kampe, h: 'nere' | 'dod' | 'ger' | 'flykt', rad: Handelse = h) {
   k.lage = h; k.mal = undefined; k.ligger = undefined; k.bocker = undefined;
   st.logg.push({ t: st.t, h: rad, a: k.id });
-  if (h === 'nere' || h === 'dod') for (const v of st.kampar) if (v.sida === k.sida && v !== k && iStrid(v)) v.modNu -= STRID.modVan + (k.ledare ? STRID.ledFaller : 0);
+  // när en faller sjunker modet hos de andra på samma sida; i en flock också när en varg flyr svårt skadad (steg 3.7.1)
+  if (h === 'nere' || h === 'dod' || (h === 'flykt' && k.djur)) for (const v of st.kampar) if (v.sida === k.sida && v !== k && iStrid(v)) v.modNu -= STRID.modVan + (k.ledare ? STRID.ledFaller : 0) + (k.djur ? STRID.flock : 0);
   if (k.ledare && (h === 'nere' || h === 'dod') && !AVS[st.avsikt].lek) st.logg.push({ t: st.t, h: 'ledareFaller', a: k.id }); // steg 3.7.12
 }
 
@@ -353,8 +356,10 @@ function slaEtt(st: Strid, a: Kampe, b: Kampe) {
   orkAv(a);
   if (slump(st) >= chansMot(a, b, a.st.skicklighet)) { st.logg.push({ t: st.t, h: 'miss', a: a.id, b: b.id, v: a.vapen }); return; }
   if (iStrid(b) && b.mal === a.id && !b.backar && !b.ligger && !b.bocker) { // försvaret: bara mot den man vänt sig mot (den inringade försvarar sig inte)
-    const par = (b.vapen === 'hand' || b.vapen === 'bett' ? STRID.pareraHand : STRID.parera) + (b.st.skicklighet - a.st.skicklighet) * STRID.pareraPer;
-    if (slump(st) < par * b.ork) { st.logg.push({ t: st.t, h: 'parera', a: b.id, b: a.id, v: b.vapen }); return; }
+    const par = b.djur ? 0 : (b.vapen === 'hand' ? STRID.pareraHand : STRID.parera) + (b.st.skicklighet - a.st.skicklighet) * STRID.pareraPer;
+    if (par > 0 && slump(st) < par * b.ork) { // djuren parerar inte, de duckar (steg 3.7.1)
+      st.logg.push({ t: st.t, h: 'parera', a: b.id, b: a.id, v: b.vapen }); return;
+    }
     if (duckar(st, b)) { st.logg.push({ t: st.t, h: 'duck', a: b.id, b: a.id }); return; }
   }
   traffa(st, a, b, v.skada, v.slag);
@@ -591,7 +596,7 @@ const namnOf = (st: Strid, id?: number) => st.kampar.find(k => k.id === id)?.nam
 // hela meningen för en rad i loggen (syns när man trycker på raden eller håller musen över den)
 export function stridText(st: Strid, r: StridRad): string {
   const a = namnOf(st, r.a), b = namnOf(st, r.b), v = r.v ? VAP[r.v] : undefined;
-  const med = v && r.v !== 'hand' && r.v !== 'bett' ? ` med ${v.namn.toLowerCase()}` : '';
+  const med = v && r.v !== 'hand' && r.v !== 'bett' && r.v !== 'vargbett' ? ` med ${v.namn.toLowerCase()}` : '';
   switch (r.h) {
     case 'borjar': return `Striden börjar: ${AVS[st.avsikt].namn.toLowerCase()}. ${AVS[st.avsikt].text}`;
     case 'miss': return r.kast ? `${a} kastar ${v?.namn.toLowerCase()} mot ${b} men missar.` : `${a} ${v?.ord ?? 'slår'} efter ${b}${med} men missar.`;

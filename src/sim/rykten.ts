@@ -87,7 +87,8 @@ const IDEF = {
   rattvis: { namn: 'rättvis', tecken: 1, op: 10, sym: '⚖️' }, // ledarens straff (steg 3.5.3, styre.ts)
   orattvis: { namn: 'orättvis', tecken: -1, op: -15, sym: '🙅' },
   stark: { namn: 'stark', tecken: 1, op: 4, sym: '🥊' }, // vann ett slagsmål (steg 3.7.2, strid.ts)
-  feg: { namn: 'feg', tecken: -1, op: -5, sym: '🐔' }, // backade från en strid (steg 3.7.9, strid.ts)
+  feg: { namn: 'feg', tecken: -1, op: -5, sym: '🐔' },
+  vargdodare: { namn: 'vargdödare', tecken: 1, op: 5, sym: '🐺' }, // dödade en varg (steg 3.7.1, varg.ts) // backade från en strid (steg 3.7.9, strid.ts)
 } satisfies Record<string, IntryckDef>;
 export type IntryckTyp = keyof typeof IDEF;
 export const INTRYCK: Record<IntryckTyp, IntryckDef> = IDEF;
@@ -114,6 +115,7 @@ const HDEF = {
   vadaskott: { i: 'klapare', vikt: 0.25, text: 'träffade {om} av misstag i en strid' }, // steg 3.7.7
   vannSlagsmal: { i: 'stark', vikt: 0.3, text: 'vann ett slagsmål mot {om}', prestation: true },
   backade: { i: 'feg', vikt: 0.2, text: 'backade från en strid med {om}' }, // steg 3.7.9
+  vargdodare: { i: 'vargdodare', vikt: 0.5, text: 'dödade en varg', prestation: true }, // steg 3.7.1
 } satisfies Record<string, HandelseDef>;
 export type HandelseTyp = keyof typeof HDEF;
 export const HANDELSER: Record<HandelseTyp, HandelseDef> = HDEF;

@@ -1360,3 +1360,71 @@ SCENARIER.kaninjakt = {
     ];
   },
 };
+
+SCENARIER.varg = {
+  text: 'Vargen och vakten (steg 3.7.1): vargar kommer under istiden, oftast i flock och ibland ensamma, och drar vidare efter en tid. Vakten ser dem och väcker byn, en flock anfaller den som är ensam, på natten stjäl de mat ur förrådet när ingen är vaken nära, och byn kan jaga dem i grupp. Svårigheten: en varg slår oftast en obeväpnad, med spjut klarar man sig oftast, och tre med spjut slår oftast fyra vargar men någon skadas',
+  kor: () => {
+    // svårigheten i testarenan
+    const m = (id: number, vapen: SIM.Vapen, y: number) => ({ id, namn: `K${id}`, sida: 0 as const, st: { styrka: 10, uthallighet: 10, mod: 10, smidighet: 10, skicklighet: 10 }, vapen, klader: [] as string[], fart: 1, x: 3, y });
+    const v = (id: number, y: number, led = false) => { const k = SIM.djurKampe('varg', id, 1, 13, y); if (led) k.ledare = 'fram'; return k; };
+    const N = 200, prov = (folk: ReturnType<typeof m>[], vargar: ReturnType<typeof v>[]) => SIM.korManga({ avsikt: 'doda', w: 16, h: 8, kampar: [...folk, ...vargar] }, 3, N);
+    const hand = prov([m(1, 'hand', 4)], [v(2, 4)]), spjut = prov([m(1, 'flintspjut', 4)], [v(2, 4)]);
+    const tre = prov([m(1, 'flintspjut', 3), m(2, 'flintspjut', 4), m(3, 'flintspjut', 5)], [v(4, 2.5, true), v(5, 3.5), v(6, 4.5), v(7, 5.5)]);
+    const treSkadade = tre.per.slice(0, 3).reduce((a, p) => a + p.nere + p.dog, 0);
+    // en by i istiden med en flock nära
+    const by = (h: number, seed = 1) => { const s = createState(seed, START); s.kal = nyKalender(s.now, 0); klockan(s, h); tandEld(s); return s; };
+    const flock = (s: State, n: number, dx: number, hunger: number) => {
+      const c = campCenter(s), id = s.vargNr = (s.vargNr ?? 0) + 1;
+      const f: SIM.Vargflock = { id, vargar: Array.from({ length: n }, (_, j) => 10_000_000 + id * 8 + j), x: c.x + dx, y: c.y, mx: c.x + dx, my: c.y, kom: s.now, gar: s.now + 48 * HOUR, hunger, gor: 'stryker' };
+      (s.vargar ??= []).push(f); return f;
+    };
+    // vakten ser flocken på natten och väcker byn
+    const nv = by(2); kor(nv, 0.5);
+    for (const q of living(nv)) if (q.task?.act !== 'vakt') q.task = { act: 'sova', phase: 'do', tx: q.x, ty: q.y, until: nv.now + 4 * HOUR, carry: 0 } as SIM.Task;
+    const harVakt = living(nv).some(q => q.task?.act === 'vakt');
+    flock(nv, 4, 12, 0.3); kor(nv, 1);
+    const vakt = nv.stat?.vargVackt ?? 0, sedd = nv.stat?.vargSedd ?? 0;
+    const vaken = living(nv).filter(q => SIM.vaktarVarg(nv, q)).length;
+    // en hungrig flock anfaller den som är ensam långt från byn
+    const an = by(12), e = SIM.eldPlats(an), tl = SIM.getMap(an.seed).tiles, ensam = living(an).find(q => ageOf(q, an.now) >= 18)!;
+    const land = (a: number, r: number) => { const x = Math.round(e.x + Math.cos(a) * r), y = Math.round(e.y + Math.sin(a) * r); return SIM.inMap(x, y) && tl[y * W + x] !== SIM.T.Vatten ? { x: x + 0.5, y: y + 0.5 } : undefined; };
+    let ri = 0; while (ri < 6.3 && !(land(ri, 26) && land(ri, 36))) ri += 0.2;
+    const ut = land(ri, 26)!, fl = land(ri, 36)!;
+    const fa = flock(an, 4, 0, 1); fa.x = fa.mx = fl.x; fa.y = fa.my = fl.y;
+    // den ensamma står kvar och samlar tills flocken är framme
+    kor(an, 3, s => { if (!s.stat?.vargstrid) { ensam.x = ut.x; ensam.y = ut.y; ensam.task = { act: 'samla', phase: 'do', tx: ut.x, ty: ut.y, until: s.now + HOUR, carry: 0 } as SIM.Task; } });
+    const anfall = an.stat?.vargAnfall ?? 0, stridAn = an.stat?.vargstrid ?? 0;
+    // på natten, när elden slocknat och alla sover, stjäl de mat ur förrådet
+    let stal = 0;
+    for (const seed of [1, 2, 3]) {
+      const st = by(1, seed); st.fire.lit = false; setMat(st, { vilt: 6, bar: 10 });
+      for (const q of living(st)) { q.guardDay = undefined; q.task = { act: 'sova', phase: 'do', tx: q.x, ty: q.y, until: st.now + 5 * HOUR, carry: 0 } as SIM.Task; }
+      st.lastGuardDay = 1e9;
+      flock(st, 3, 15, 0.9); kor(st, 4); stal += st.stat?.vargStal ?? 0;
+    }
+    // byn jagar en ensam varg i dagsljus när alla har spjut
+    let jakt = 0, dodad = 0, hemma = 0, dodare = 0;
+    for (const seed of [1, 2, 3, 4, 5, 6, 7, 8]) {
+      const j = by(9, seed);
+      for (const q of living(j)) if (ageOf(q, j.now) >= 16) { const t = SIM.addTool(j, 'flintspjut', q); t.hos = q.id; }
+      const f = flock(j, 1, 14, 0.5); f.sedd = j.now;
+      kor(j, 8);
+      jakt += j.stat?.vargjakt ?? 0; dodad += j.stat?.vargDodad ?? 0; hemma += amountOf(j, 'varg') + (j.stat?.slaktatVarg ?? 0);
+      dodare += j.stat?.rykte_vargdodare ?? 0;
+    }
+    // under istiden kommer flockar av sig själva och drar vidare
+    let kom = 0, borta = 0;
+    for (const seed of [4, 5, 6]) { const s = by(10, seed); kor(s, 120); kom += s.stat?.vargflockar ?? 0; borta += s.stat?.vargflockBorta ?? 0; }
+    const pc = (n: number) => Math.round(100 * n / N);
+    return [
+      [`en varg mot en obeväpnad: vargen vinner ${pc(hand.vann[1])} %`, hand.vann[1] > N * 0.6],
+      [`en varg mot en med spjut: människan vinner ${pc(spjut.vann[0])} %, mycket oftare än med händerna`, spjut.vann[0] > hand.vann[0] * 2 && spjut.vann[0] < N * 0.9],
+      [`tre med spjut mot fyra vargar: människorna vinner ${pc(tre.vann[0])} %, och någon skadas eller faller (${treSkadade} gånger på ${N} strider)`, tre.vann[0] > N * 0.5 && treSkadade > 0],
+      [`vakten ser flocken på natten (${sedd} gånger) och väcker byn (${vakt} väckta, ${vaken} håller sig vakna vid elden)`, harVakt && sedd > 0 && vakt > 0 && vaken > 0],
+      [`en hungrig flock anfaller den som är ensam (${anfall} anfall, ${stridAn} strider)`, anfall > 0 && stridAn > 0],
+      [`på natten när alla sover och elden slocknat stjäl vargarna mat (${stal} saker i tre byar)`, stal > 0],
+      [`byn jagar en ensam varg med spjut (${jakt} jakter, ${dodad} dödade vargar, ${hemma} hemburna, ${dodare} vargdödare)`, jakt > 0 && dodad > 0 && hemma > 0 && dodare > 0],
+      [`under istiden kommer flockar (${kom} i tre byar på 120 timmar) och drar vidare (${borta})`, kom > 0 && borta > 0],
+    ];
+  },
+};

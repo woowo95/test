@@ -1,4 +1,4 @@
-import { FYND, H, HOUR, W, ageIndex, djurOf, fyndAt, getMap, plockOf } from '../sim';
+import { FYND, H, HOUR, W, ageIndex, djurOf, fyndAt, getMap, plockOf, vargarOf } from '../sim';
 import { s, ui } from './lage';
 import { Ikoner, TS, djurLayer, plantG } from './scen';
 
@@ -43,6 +43,6 @@ export function drawPlants(force = false) {
 const djurIkoner = new Ikoner(djurLayer);
 export function drawAnimals() {
   djurIkoner.start();
-  for (const d of djurOf(s, ui.nu)) djurIkoner.add(d.art, d.x * TS - 4, d.y * TS - 6, 1);
+  for (const d of [...djurOf(s, ui.nu), ...vargarOf(s)]) djurIkoner.add(d.art, d.x * TS - 4, d.y * TS - 6, 1); // vargarna med den fällda vargens symbol tills vidare (steg 3.7.1)
   djurIkoner.end();
 }

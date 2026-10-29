@@ -1,5 +1,6 @@
 import { take } from './agande';
 import { PLATS, campCenter, campDist, campKey } from './plats';
+import { vaktarVarg } from './varg';
 import { RESERV, foodDays } from './ekonomi';
 import { ACTS, WORK, usesTool } from './handlingar';
 import { canLight, emberOn, fireWant, needStones, needTinder, woodDays } from './eld';
@@ -690,6 +691,7 @@ function night(s: State, p: Person, v: Val, a: number) {
     }
   }
   if (p.guardDay === guardDay && a >= ALDER.vaktFran) { set(v, 'vakt', 'Håller vakt i natt'); return; }
+  if (a >= ALDER.vaktFran && vaktarVarg(s, p)) { set(v, 'samtal', 'Vargar är nära, håller sig vaken vid elden'); return; } // väckt av vakten (varg.ts)
   const r = rnd(s, 'val', p);
   const story = (p.skill.berattande + (a > VAL.berattaAlder ? VAL.berattaBonus : 0)) / VAL.berattaDiv;
   const craftW = (p.skill.hantverk + stat(p, 'flit', now)) / VAL.nattHantDiv;

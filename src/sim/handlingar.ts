@@ -142,6 +142,7 @@ const DEF = {
   slut: { namn: 'Gör slut', tecken: '💔', dygn: true, stilla: true },
   sla: { namn: 'Slår någon', tecken: '👊', dygn: true, stilla: true },
   strid: { namn: 'Slåss', tecken: '⚔️', stilla: true }, // steg 3.7.2 (strid.ts): står kvar i striden medan de andra behoven väntar
+  vargjakt: { namn: 'Jagar varg', slag: 'jaga', ger: 'varg', tungt: true }, // steg 3.7.1 (varg.ts): ledaren samlar jägare, och den fällda vargen bärs hem
   skrika: { namn: 'Skriker och gråter', tecken: '😭', dygn: true, stilla: true }, // barnens (steg 3.2.4)
 } satisfies Record<string, ActDef>;
 

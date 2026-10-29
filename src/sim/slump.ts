@@ -24,6 +24,7 @@ export const STROMMAR = {
   uppvaxt: 'vad som fastnar hos ett barn och vad det gör (steg 3.1.2)',
   humor: 'utbrotten: när, hur allvarliga och mot vem (steg 3.2.2)',
   rykte: 'rykten: vad som berättas, överdrifter, skitsnack och smak (steg 3.3)',
+  varg: 'vargarna: när en flock kommer, hur stor den är, vad den gör och vargjakten (steg 3.7.1)',
 } as const;
 export type Strom = keyof typeof STROMMAR;
 

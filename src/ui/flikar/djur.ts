@@ -1,4 +1,4 @@
-import { DJUR, djurOf, dragOf, grupperOf, halsaOf, kortTal } from '../../sim';
+import { DJUR, djurOf, dragOf, grupperOf, halsaOf, kortTal, vargarOf } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { condBar, esc } from '../hjalp';
 import { s, ui } from '../lage';
@@ -9,9 +9,10 @@ import type { Flik } from '../panel';
 const rad = (tecken: string, namn: string, varde: string, text: string) =>
   `<dt title="${esc(namn)}">${tecken}</dt><dd title="${esc(text)}">${varde}</dd>`;
 function djurHtml() {
-  const d = djurOf(s, ui.nu).find(x => x.id === ui.djurId);
+  const d = [...djurOf(s, ui.nu), ...vargarOf(s)].find(x => x.id === ui.djurId);
   if (!d) return '<p class="muted">Djuret syns inte längre här.</p>';
-  const art = DJUR[d.art].strid, drag = dragOf(d.art, d.id), h = halsaOf(s, d.id), g = grupperOf(s, ui.nu).find(x => x.id === d.grupp);
+  const art = DJUR[d.art].strid, drag = dragOf(d.art, d.id), h = halsaOf(s, d.id), g = d.art === 'kanin' ? grupperOf(s, ui.nu).find(x => x.id === d.grupp) : undefined;
+  const f = d.art === 'varg' ? s.vargar?.find(x => x.id === d.grupp) : undefined;
   const jfr = (v: number, bas: number) => v > bas * 1.08 ? 'mer än de flesta' : v < bas * 0.92 ? 'mindre än de flesta' : 'som de flesta';
   return `
     <div class="phead">${iconImg(d.art, 32)}<div><h2>${esc(art.art)}</h2></div></div>
@@ -22,6 +23,9 @@ function djurHtml() {
       ${drag.skygghet !== undefined ? rad('👁', 'Skygghet', `${Math.round(drag.skygghet * 100)} %`, 'Hur tidigt den märker den som smyger och flyr') : ''}
       ${rad('❤', 'Hälsa', `${condBar(h.blod)}<span>${Math.round(h.blod * 100)} %</span>`, h.sar > 0 ? `Skadad: blodet och såren läker med tiden` : 'Frisk')}
       ${h.sar > 0 ? rad('🩹', 'Sår', kortTal(h.sar), 'Summan av såren. De läker med tiden') : ''}
+      ${drag.mod !== undefined ? rad('🦁', 'Mod', `${Math.round(drag.mod * 100)} %`, 'Hur modig vargen är. Flocken blir modigare ju fler den är, och den flyr när en varg faller eller ledarvargen dör') : ''}
+      ${f ? rad('🍖', 'Hunger', `${Math.round(f.hunger * 100)} %`, 'Flockens hunger. En hungrig flock jagar kaniner, smyger till förrådet på natten och kan anfalla den som är ensam') : ''}
+      ${f ? rad('👥', 'Flock', `${f.vargar.length} st`, f.vargar.length > 1 ? `Flocken har ${f.vargar.length} vargar${f.vargar[0] === d.id ? '. Den här är ledarvargen' : ''}` : 'En ensam varg') : ''}
       ${g ? rad('👥', 'Grupp', `${g.n} st`, `Gruppen har ${g.n} kaniner just nu`) : ''}
     </dl>`;
 }
