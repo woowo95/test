@@ -96,9 +96,11 @@ const markIcons = new Ikoner(markLayer);
 // namnet över den valda och den under musen. Två texter som återanvänds: att skapa en text varje bildruta är dyrt
 const nameStyle = new PIXI.TextStyle({ fontFamily: 'Alegreya Sans, system-ui, sans-serif', fontSize: 22, fill: 0xffffff, stroke: 0x111111, strokeThickness: 5, fontWeight: '700' });
 const nameTags = [0, 1].map(() => { const tx = new PIXI.Text('', nameStyle); tx.scale.set(0.5); tx.anchor.set(0.5, 1); tx.visible = false; labels.addChild(tx); return tx; });
+// de ur byn som slåss i testarenan: de syns bara i striden (ui/arena.ts)
+export const dolda = new Set<number>();
 export function drawPeople(t: number) {
   peopleG.clear(); bubbleG.clear();
-  const ppl = living(s), pos = new Map<number, { x: number; y: number }>();
+  const ppl = dolda.size ? living(s).filter(p => !dolda.has(p.id)) : living(s), pos = new Map<number, { x: number; y: number }>();
   synlig = sprid(ppl); synligNu = ui.nu;
   markIcons.start();
   for (const p of ppl) {

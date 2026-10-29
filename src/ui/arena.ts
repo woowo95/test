@@ -1,15 +1,20 @@
 // Testarenan (steg 3.7.5): ett fönster i testläget där man ställer upp en strid och ser den hända, utan att byn påverkas.
 // Kämparna är folk ur byn (som de är nu), påhittade med egna anlag eller djur ur djurregistret. Striden räknas av
-// sim/strid.ts; här ritas den på en liten plan med 16 punkter per ruta (platshållare tills bildstilen har figurerna), och
-// loggen visar symbolerna först med hela meningen när man trycker på raden eller håller musen över den.
+// sim/strid.ts och ritas på byns egen karta nära elden, med kämparna som folket i spelet (Björn efter v146); rutan med
+// uppställningen och loggen ligger vid sidan av kartan. Loggen visar symbolerna först med hela meningen när man trycker på raden eller håller musen över den.
 import {
   AVSIKTER, Avsikt, KLADER_STRID, MANNISKOVAPEN, STRID, STRIDHANDELSER, STRIDSDJUR, LAGE_ORD, VAPEN, Vapen, DJUR,
   Strid, Uppstallning, korManga, djurKampe, personKampe, nyStrid, stridRapport, stridSteg, stridText, sakNamn, living, byId,
+  getMap, eldPlats, T, W as MW, H as MH, ageOf, ALDER,
 } from '../sim';
-import { $, esc } from './hjalp';
+import * as PIXI from 'pixi.js';
+import { $, esc, personFarg } from './hjalp';
 import { s } from './lage';
+import { TS, cam, layout, peopleG, world } from './scen';
+import { dolda } from './manniskor';
+import { stopFollow } from './portratt';
 
-const RUTA = 16, W = 20, H = 14; // planen: rutor och punkter per ruta
+const AW = 14, AH = 9; // planen i rutor
 const MAX = 3; // kämpar per sida
 type Kalla = { typ: 'by'; pid: number } | { typ: 'egen' } | { typ: 'djur'; art: string };
 interface Rad { kalla: Kalla; vapen: Vapen; klader: string[]; st: { styrka: number; uthallighet: number; mod: number; smidighet: number; skicklighet: number } }
@@ -17,22 +22,22 @@ const ny = (): Rad => ({ kalla: { typ: 'egen' }, vapen: 'hand', klader: [], st: 
 const lag: { sidor: [Rad[], Rad[]]; avsikt: Avsikt; fro: number; fart: number } = { sidor: [[ny()], [ny()]], avsikt: 'skada', fro: 1, fart: 1 };
 let st: Strid | undefined, spelar = false, sist = 0, kvar = 0, sedd = 0, filter = -1, manga = '';
 const blink = new Map<number, { t: number; h: 'traff' | 'miss' | 'tog'; mot?: number }>(); // senaste slaget per kämpe (för utfallet)
-const FARG = ['#b2921b', '#61767a'], MARK = '#8f9a5a', LINJE = '#7a8450', MORK = '#24201d', BLOD = '#8e2f22';
+const FARG = ['#b2921b', '#61767a'], SIDA = [0xb2921b, 0x61767a]; // sidornas färg (ringen runt kämpen)
 const STATNAMN = { styrka: 'Styrka', uthallighet: 'Uthållighet', mod: 'Mod', smidighet: 'Smidighet', skicklighet: 'Skicklighet' } as const;
 
 function uppstallning(): Uppstallning {
   const kampar: Uppstallning['kampar'] = [];
   let id = 1;
   lag.sidor.forEach((sida, sd) => sida.forEach((r, i) => {
-    const x = sd === 0 ? 5 : W - 5, y = H / 2 + (i - (sida.length - 1) / 2) * 2.5, side = sd as 0 | 1;
+    const x = sd === 0 ? 3.5 : AW - 3.5, y = AH / 2 + (i - (sida.length - 1) / 2) * 2, side = sd as 0 | 1;
     const p = r.kalla.typ === 'by' ? byId(s, r.kalla.pid) : undefined;
     if (r.kalla.typ === 'djur') kampar.push(djurKampe(r.kalla.art, id++, side, x, y));
     else if (p) kampar.push({ ...personKampe(s, p, id++, side, x, y), vapen: r.vapen, klader: r.klader });
     else kampar.push({ id: id++, namn: `Kämpe ${sd === 0 ? 'A' : 'B'}${sida.length > 1 ? i + 1 : ''}`, sida: side, st: { ...r.st }, vapen: r.vapen, klader: r.klader, fart: 1, x, y });
   }));
-  return { avsikt: lag.avsikt, w: W, h: H, kampar };
+  return { avsikt: lag.avsikt, w: AW, h: AH, kampar };
 }
-function starta() { st = nyStrid(uppstallning(), lag.fro); sedd = 0; kvar = 0; blink.clear(); filter = -1; manga = ''; rita(); visaLogg(); }
+function starta() { st = nyStrid(uppstallning(), lag.fro); sedd = 0; kvar = 0; blink.clear(); filter = -1; manga = ''; byFolk(); visaLogg(); }
 
 // ---------- uppställningen ----------
 function radHtml(sd: number, i: number, r: Rad) {
@@ -78,37 +83,57 @@ function klickUpp(e: Event) {
   visaUpp(); starta();
 }
 
-// ---------- planen ----------
-function rita() {
-  const c = $('arPlan') as HTMLCanvasElement, g = c.getContext('2d')!;
-  g.imageSmoothingEnabled = false;
-  g.fillStyle = MARK; g.fillRect(0, 0, c.width, c.height);
-  g.fillStyle = LINJE;
-  for (let x = 0; x < W; x++) for (let y = 0; y < H; y++) if ((x * 7 + y * 13) % 5 === 0) g.fillRect(x * RUTA + 5, y * RUTA + 9, 2, 1); // grässtrån
-  if (!st) return;
+// ---------- platsen på kartan ----------
+// striden visas på byns egen karta (Björn efter v146): planen läggs på marken nära elden där det finns minst vatten, och
+// kämparna ritas som folket i spelet. De ur byn som är med syns bara i striden så länge arenan är öppen
+let ox = 0, oy = 0;
+function valjPlats() {
+  const m = getMap(s.seed), e = eldPlats(s);
+  let bast = Infinity;
+  for (let dy = -16; dy <= 16; dy += 2) for (let dx = -16; dx <= 16; dx += 2) {
+    const x0 = Math.round(e.x + dx - AW / 2), y0 = Math.round(e.y + dy - AH / 2);
+    if (x0 < 0 || y0 < 0 || x0 + AW > MW || y0 + AH > MH) continue;
+    let vatten = 0;
+    for (let y = y0; y < y0 + AH; y++) for (let x = x0; x < x0 + AW; x++) if (m.tiles[y * MW + x] === T.Vatten) vatten++;
+    const v = vatten * 10 + Math.abs(Math.hypot(dx, dy) - 12); // en bit från elden, så att lägret inte står i vägen
+    if (v < bast) { bast = v; ox = x0; oy = y0; }
+  }
+}
+// kameran på planen, till höger om rutan med uppställningen och stor nog att se slagen
+function visaPlats() {
+  stopFollow();
+  const el = $('map'), w = el.clientWidth, h = el.clientHeight, ruta = Math.min($('arena').offsetWidth + 10, w * 0.5);
+  const fit = Math.min(w / (MW * TS), h / (MH * TS)), sc = Math.min((w - ruta) * 0.85 / (AW * TS), h * 0.85 / (AH * TS));
+  cam.zoom = sc / fit;
+  cam.x = (ox + AW / 2) * TS - ruta / 2 / sc; cam.y = (oy + AH / 2) * TS; layout();
+}
+const arenaG = new PIXI.Graphics();
+world.addChildAt(arenaG, world.getChildIndex(peopleG) + 1);
+function byFolk() { dolda.clear(); if (!$('arena').hidden && st) for (const k of st.kampar) if (k.pid !== undefined) dolda.add(k.pid); }
+// ritas varje bildruta från huvudloopen (main.ts)
+export function drawArena() {
+  arenaG.clear();
+  if ($('arena').hidden || !st) { if (dolda.size) dolda.clear(); return; }
+  arenaG.lineStyle(1, 0xffffff, 0.35).drawRect(ox * TS, oy * TS, AW * TS, AH * TS).lineStyle(0); // planens kant
   for (const k of st.kampar) {
     if (k.lage === 'borta') continue;
-    let x = k.x * RUTA, y = k.y * RUTA;
+    let x = (ox + k.x) * TS, y = (oy + k.y) * TS;
     const b = blink.get(k.id), ny = b && st.t - b.t < 0.35, mal = b?.mot !== undefined ? st.kampar.find(m => m.id === b.mot) : undefined;
-    if (ny && mal) { const d = Math.hypot(mal.x - k.x, mal.y - k.y) || 1; x += ((mal.x - k.x) / d) * 5; y += ((mal.y - k.y) / d) * 5; } // utfallet mot målet
-    const liggande = k.lage === 'nere' || k.lage === 'dod';
+    if (ny && mal) { const d = Math.hypot(mal.x - k.x, mal.y - k.y) || 1; x += ((mal.x - k.x) / d) * 4; y += ((mal.y - k.y) / d) * 4; } // utfallet mot målet
+    const p = k.pid !== undefined ? byId(s, k.pid) : undefined;
+    const r = k.djur ? 4 : p && ageOf(p, s.now) < ALDER.smabarn ? 2.8 : p && ageOf(p, s.now) < ALDER.vuxen ? 3.8 : 5;
     const traffad = [...blink.values()].some(v => v.mot === k.id && v.h === 'traff' && st!.t - v.t < 0.35);
-    g.save(); g.translate(Math.round(x), Math.round(y));
-    if (liggande) g.rotate(Math.PI / 2);
-    const kropp = k.lage === 'dod' ? '#6b6560' : traffad ? '#d65a3a' : FARG[k.sida];
-    if (k.djur) { g.fillStyle = kropp; g.fillRect(-5, -3, 10, 6); g.fillRect(3, -6, 2, 4); g.fillRect(-1, -6, 2, 4); g.fillStyle = MORK; g.fillRect(3, -2, 1, 1); }
-    else {
-      g.fillStyle = '#d8b25f'; g.fillRect(-2, -8, 5, 4); // huvudet
-      g.fillStyle = kropp; g.fillRect(-3, -4, 7, 6); // kroppen
-      g.fillStyle = MORK; g.fillRect(-2, 2, 2, 5); g.fillRect(1, 2, 2, 5); // benen
-      if (k.vapen !== 'hand') { g.fillStyle = '#5a4630'; g.fillRect(4, -7, 1, VAPEN[k.vapen].rack > 1.5 ? 12 : 7); }
-    }
-    g.restore();
-    if (k.lage === 'dod') { g.fillStyle = MORK; g.font = '10px sans-serif'; g.fillText('✕', x - 3, y - 9); }
-    const blod = Math.max(0, k.blod), sk = k.skador.length;
-    if (sk) { g.fillStyle = BLOD; g.fillRect(x - 6, y + 9, Math.round(12 * (1 - blod)), 2); }
-    if (k.lage === 'ger' || k.lage === 'flykt') { g.font = '10px sans-serif'; g.fillText(STRIDHANDELSER[k.lage].tecken, x - 5, y - 10); }
-    if (ny && b.h === 'miss' && mal) { g.font = '10px sans-serif'; g.fillText('💨', mal.x * RUTA + 4, mal.y * RUTA - 8); }
+    const col = k.lage === 'dod' ? 0x6b6560 : traffad ? 0xd65a3a : p ? personFarg(p) : k.djur ? 0x8a6a48 : 0xc9b48a;
+    const liggande = k.lage === 'nere' || k.lage === 'dod';
+    arenaG.beginFill(0x000000, 0.25).drawEllipse(x, y + r * 0.9, r * 0.9, r * 0.35).endFill();
+    arenaG.lineStyle(1.6, SIDA[k.sida], 1).beginFill(col);
+    if (liggande) arenaG.drawEllipse(x, y + r * 0.4, r * 1.3, r * 0.6); else if (k.djur) arenaG.drawEllipse(x, y, r * 1.3, r * 0.8); else arenaG.drawCircle(x, y, r);
+    arenaG.endFill().lineStyle(0);
+    if (k.vapen !== 'hand' && k.vapen !== 'bett' && !liggande) arenaG.lineStyle(1.2, 0x5a4630, 1).moveTo(x + r, y + 2).lineTo(x + r + 2, y - (VAPEN[k.vapen].rack > 1.5 ? 9 : 5)).lineStyle(0);
+    if (k.lage === 'dod') arenaG.lineStyle(1.2, 0x24201d, 1).moveTo(x - 3, y - r - 6).lineTo(x + 3, y - r).moveTo(x + 3, y - r - 6).lineTo(x - 3, y - r).lineStyle(0);
+    if (k.lage === 'ger') arenaG.lineStyle(1, 0xeeeeee, 1).moveTo(x + 2, y - r).lineTo(x + 2, y - r - 8).lineStyle(0).beginFill(0xffffff).drawRect(x + 2, y - r - 8, 4, 3).endFill(); // vit flagga
+    if (k.skador.length) arenaG.beginFill(0x8e2f22).drawRect(x - 5, y + r + 2, Math.round(10 * (1 - Math.max(0, k.blod)) + 1), 1.5).endFill(); // blodet hen förlorat
+    if (ny && b.h === 'miss' && mal) arenaG.beginFill(0xffffff, 0.7).drawCircle((ox + mal.x) * TS + 5, (oy + mal.y) * TS - 6, 1.6).drawCircle((ox + mal.x) * TS + 7.5, (oy + mal.y) * TS - 7, 1.2).endFill(); // luft: missen
   }
 }
 
@@ -152,7 +177,7 @@ function ram(nu: number) {
     if (st.slut) spelar = false;
     visaLogg();
   }
-  sist = nu; rita();
+  sist = nu;
   if (spelar) requestAnimationFrame(ram);
 }
 function spela(on: boolean) { spelar = on; visaLogg(); if (on) { sist = performance.now(); requestAnimationFrame(ram); } }
@@ -160,14 +185,14 @@ function spela(on: boolean) { spelar = on; visaLogg(); if (on) { sist = performa
 // ---------- fönstret ----------
 export function oppnaArena() {
   $('arena').hidden = false;
-  if (!st) starta(); else { visaLogg(); rita(); }
+  valjPlats(); visaPlats();
+  if (!st) starta(); else { byFolk(); visaLogg(); }
   visaUpp();
 }
 $('arena').innerHTML = `<div class="card arena">
-  <div class="arTopp"><h2>⚔️ Arena</h2><button type="button" class="ghost" id="arStang" title="Stäng arenan">✕</button></div>
+  <div class="arTopp"><h2>⚔️ Arena</h2><span><button type="button" class="ghost" id="arVisa" title="Visa striden på kartan">🎯</button><button type="button" class="ghost" id="arStang" title="Stäng arenan">✕</button></span></div>
   <div class="arHuvud">
-    <div><canvas id="arPlan" width="${W * RUTA}" height="${H * RUTA}"></canvas>
-      <div class="arKnappar">
+    <div><div class="arKnappar">
         <button type="button" class="ghost" id="arSpela" title="Spela eller pausa">▶</button>
         <button type="button" class="ghost" id="arSteg" title="Ett steg (${STRID.tick} s)">⏭</button>
         <button type="button" class="ghost" id="arOm" title="Samma strid igen">↺</button>
@@ -183,9 +208,10 @@ $('arena').innerHTML = `<div class="card arena">
   <div class="arLoggTopp"><b>📜</b> <select id="arFilt" title="Visa bara en kämpe"></select></div>
   <ol id="arLogg"></ol>
 </div>`;
-$('arStang').addEventListener('click', () => { spelar = false; $('arena').hidden = true; });
+$('arStang').addEventListener('click', () => { spelar = false; $('arena').hidden = true; byFolk(); });
+$('arVisa').addEventListener('click', visaPlats);
 $('arSpela').addEventListener('click', () => { if (st?.slut) starta(); spela(!spelar); });
-$('arSteg').addEventListener('click', () => { spela(false); steg(); visaLogg(); rita(); });
+$('arSteg').addEventListener('click', () => { spela(false); steg(); visaLogg(); });
 $('arOm').addEventListener('click', () => { starta(); spela(true); });
 $('arFro').addEventListener('click', () => { lag.fro = (lag.fro * 1103515245 + 12345) | 0; starta(); spela(true); });
 $('arHundra').addEventListener('click', korHundra);
