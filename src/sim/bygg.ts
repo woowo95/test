@@ -1,5 +1,5 @@
 import { ALDER, ageOf, count, doingAct, forstaGang, living, log, stat } from './folk';
-import { Bit, DORRAR, DorrDef, DorrSlag, Hus, MATERIAL, bitById, dorrDef, bitsOf, blocked, freeNear, gridOf, housesOf, husById, touch } from './byggnad';
+import { Bit, DORRAR, DorrDef, DorrSlag, Hus, MATERIAL, bitById, dorrDef, dorrRang, bitsOf, blocked, freeNear, gridOf, housesOf, husById, touch } from './byggnad';
 import { eldPlats, getMap } from './karta';
 import { vaderSlit } from './vader';
 import { groundOf, punktIRuta } from './mark';
@@ -345,7 +345,8 @@ export const dorrOppningar = (s: State) => bitsOf(s).filter(b => {
   const h = husById(s, b.hus);
   return !!h?.klar && !fnOf(h).lager;
 });
-export const utanDorr = (s: State, k: DorrSlag) => dorrOppningar(s).filter(b => b.dorr !== k);
+// öppningarna som saknar dörren k eller en bättre (en skinndörr ersätter aldrig en trädörr)
+export const utanDorr = (s: State, k: DorrSlag) => dorrOppningar(s).filter(b => dorrRang(b.dorr) < dorrRang(k));
 // p kan hänga dörren: p kan tekniken, det finns fler öppningar utan den än de som redan hänger en, och p kan få tag i materialet
 export function kanHangaDorr(s: State, p: Person, k: DorrSlag) {
   const d: DorrDef = DORRAR[k];

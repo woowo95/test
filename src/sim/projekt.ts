@@ -40,6 +40,7 @@ export const PROJEKT_TAL = balans('projekt', {
   bord: 0.5, bord2: 0.5, bord3: 0.5, // ... borden när ingen har en plats vid ett bord (steg 2.2.15)
   hylla: 0.4, kista: 0.3, stall: 0.3, // ... förvaringen när golvet i lagren är fullt av högar och redskap (steg 2.3.6)
   skinndorr: 0.6, // ... skinndörrarna när alla hus där man bor eller umgås har en öppen dörröppning (steg 2.2.16)
+  tradorr: 0.6, // ... trädörrarna när alla sådana hus saknar en (steg 3.7.21)
   rep: 0.5, // ... repet när förrådet är tomt
   rojning: 1, // ... att fälla träden på en lagerplats eller ett fält i skogen (steg 3.6.9)
   falt: 1, // ... arbetet på fälten när ett fält har arbete att göra, eller någon som kan odla har frön men inget fält (steg 2.10.3)

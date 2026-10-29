@@ -95,6 +95,8 @@ const PAL: Record<string, Record<string, string>> = {
   skinnfall_karta: { z: '#4e3c2e', S: '#a08870', s: '#7c6450', f: '#5e4a3a' },
   // skinndörren i dörröppningen (steg 2.2.16; Björn valde kartbilden efter v89)
   skinndorr: { p: '#4a3018', b: '#8a6440', B: '#b48a5e', d: '#5e4026' },
+  tradorr: { p: '#4a3018', b: '#9a6a3a', B: '#c08a52', r: '#d8c8a0' },
+  tradorr_karta: { e: '#d8b480', E: '#efd3a0', b: '#8a5a2e', B: '#b07a44', r: '#d8c8a0', d: '#4a3018' },
   skinndorr_karta: { e: '#d8b480', E: '#efd3a0', o: '#6a4a2a', O: '#9c7848', S: '#a08870', s: '#7c6450', Z: '#36281e', z: '#4e3c2e', d: '#4a3018' },
   skinn: { b: '#8a6440', B: '#b48a5e', d: '#5e4026' },
   // vargen (steg 3.7.14, platshållare): grå päls
@@ -725,6 +727,28 @@ const PIX: Record<string, string[]> = {
     '.bBbBbB.',
     '.dBbBbd.',
     '..d..d..',
+  ],
+  // trädörren i listorna: bräder surrade med rep (platshållare, steg 3.7.21)
+  tradorr: [
+    '.pppppp.',
+    '.bBbBbB.',
+    '.bBbBbB.',
+    '.rrrrrr.',
+    '.bBbBbB.',
+    '.bBbBbB.',
+    '.rrrrrr.',
+    '.bBbBbB.',
+  ],
+  // trädörren på kartan (platshållare): bräder mellan dörrposterna, med två rader rep
+  tradorr_karta: [
+    '........',
+    'ebBbBbBe',
+    'EbBbBbBE',
+    'ErrrrrrE',
+    'ebBbBbBd',
+    'dbBbBbBd',
+    'drrrrrrd',
+    '.bBbBbB.',
   ],
   // skinndörren på kartan (Björn valde 3 efter v89, två flikar): huden hänger från en stång mellan dörrposterna, delad på mitten. I en vägg som går uppåt ritas den vriden
   skinndorr_karta: [

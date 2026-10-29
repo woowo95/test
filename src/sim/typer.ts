@@ -255,8 +255,9 @@ export interface State {
   strider?: import('./strid').StridMinne[]; // de senaste striderna i byn, så att arenan kan visa dem igen (steg 3.7.2, strid.ts)
 }
 // en vargflock (steg 3.7.1, varg.ts): vargarnas id (den första leder flocken), var den är och vart den går (mx, my), när den
-// kom och när den drar vidare, hungern (0–1), vad den gör, personen den anfaller, när den senast sågs och jägarna efter den
-export interface Vargflock { id: number; vargar: number[]; x: number; y: number; mx: number; my: number; kom: number; gar: number; hunger: number; gor: 'stryker' | 'smyger' | 'anfaller' | 'flyr'; byte?: number; sedd?: number; jagare?: number[]; samlas?: number }
+// kom och när den drar vidare, hungern (0–1), vad den gör, personen den anfaller, när den senast sågs och jägarna efter den.
+// dorr = öppningen (rutan) där den väntar utanför en stängd dörr, och vantar = sedan när (steg 3.7.21)
+export interface Vargflock { id: number; vargar: number[]; x: number; y: number; mx: number; my: number; kom: number; gar: number; hunger: number; gor: 'stryker' | 'smyger' | 'anfaller' | 'vantar' | 'flyr'; byte?: number; sedd?: number; jagare?: number[]; samlas?: number; dorr?: { x: number; y: number }; vantar?: number; trottnat?: true }
 // ett fällt träd: ved och grenar som finns kvar att hugga ut
 export interface Stock { id: number; x: number; y: number; ved: number; grenar: number; mossa?: number } // mossa på stammen (steg 2.5.2)
 

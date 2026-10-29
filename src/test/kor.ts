@@ -1,6 +1,6 @@
 // Kör en by utan grafik och samlar nyckeltalen (registret NYCKELTAL i nyckeltal.ts säger vad de heter och betyder).
 // Vakterna larmar om något blir omöjligt (NaN, negativa förråd, folk i vattnet).
-import { BEAT, createState, step, living, DAY, groundOf, isSoil, markslag, Markslag, ageIndex, moodOf, serialize, serializeParts, getMap, fuelStock, ACT_NAMES, T, State, inMap, isWall, tileOf, foodOf, amountOf, sumOf, okandaBalans, alive, isCarrying, BYN, isStored, housesOf, bitsOf, Person, HOUR, W, KROPP, forvarAt, isTool, faltOf, faltRutor, faltAt, stationById } from '../sim';
+import { BEAT, createState, step, living, DAY, groundOf, isSoil, markslag, Markslag, ageIndex, moodOf, serialize, serializeParts, getMap, fuelStock, ACT_NAMES, T, State, inMap, isWall, tileOf, foodOf, amountOf, sumOf, okandaBalans, alive, isCarrying, BYN, isStored, housesOf, bitsOf, Person, HOUR, W, KROPP, forvarAt, isTool, faltOf, faltRutor, faltAt, stationById, gridOf } from '../sim';
 import { NYCKELTAL, Nyckeltal, tal } from './nyckeltal';
 
 // testbyarna grundas 08:00 svensk tid. Testerna körs i datorns tidszon (här UTC), så där är klockan 06:00 när byn grundas
@@ -149,6 +149,8 @@ function vakta(s: State, larm: Larm, timme: boolean) {
     if (![b.b, b.mat, b.c].every(v => Number.isFinite(v)) || !fin(b.lp) || !fin(b.lm) || b.c < -1e-9 || b.c > 1 + 1e-9 || b.mat < -1e-9) larm('husdel', () => JSON.stringify(b));
     if (b.hus !== undefined && !hus.has(b.hus)) larm('husdel utan hus', () => `${b.m} ${b.id} på ${b.x},${b.y} hör till hus ${b.hus}`);
   }
+  // varje rum har minst en dörr eller öppning, så att ingen behöver bryta en vägg (steg 3.7.21)
+  for (const r of gridOf(s).rooms) if (r.tiles.length && !r.open) larm('rum utan öppning', () => `rummet vid ${r.tiles[0] % W},${Math.floor(r.tiles[0] / W)}${r.hus !== undefined ? ` (hus ${r.hus})` : ''}`);
 }
 
 // en rad per by (npm test): hur byn mår, och efter | datorns mått

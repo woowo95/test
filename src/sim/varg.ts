@@ -1,7 +1,7 @@
 import { balans } from './balans';
 import { blodas } from './blod';
 import { bedFor } from './bygg';
-import { roomAt, freeNear, gridOf } from './byggnad';
+import { Bit, Rum, bitAt, dorrDef, roomAt, freeNear, gridOf } from './byggnad';
 import { dodaDjur, dragOf, djurOf, grupperOf, halsaOf, satDjurHalsa } from './djur';
 import { ALDER, KROPP, ageOf, byId, count, forstaGang, getRel, isSick, living, log, ovning, stat, think } from './folk';
 import { halsa, kanGa, skada } from './halsa';
@@ -84,6 +84,8 @@ export const VARG = balans('varg', {
   fler: 0.3,
   vagar: 0.8,
   smaBarn: 8, // en förälder stannar hos sina barn under den här åldern
+  // dörren (steg 3.7.21): en hungrig flock som inte ser någon ensam väntar utanför en stängd dörr så här många timmar
+  vantaTim: 2,
 });
 
 const flockarna = (s: State) => s.vargar ?? [];
@@ -100,13 +102,20 @@ function kanten(x: number, y: number) {
   const ut = [x, W - x, y, H - y], i = ut.indexOf(Math.min(...ut));
   return { x: i === 0 ? 0.3 : i === 1 ? W - 0.3 : x, y: i === 2 ? 0.3 : i === 3 ? H - 0.3 : y };
 }
-// flocken går mot (x, y) med farten (rutor i sekunden). Svarar hur långt det är kvar
-function ga(f: Vargflock, fart: number, dtSec: number) {
+// flocken går mot (x, y) med farten (rutor i sekunden), aldrig in i ett stängt hus: är den raka vägen stängd tar den steget
+// snett åt sidan. Svarar hur långt det är kvar, eller −1 när den inte kommer någonstans
+const SNETT = [0, 0.8, -0.8, 1.6, -1.6];
+function ga(s: State, f: Vargflock, fart: number, dtSec: number) {
   const dx = f.mx - f.x, dy = f.my - f.y, d = Math.hypot(dx, dy);
   if (d < 1e-6) return 0;
   const l = Math.min(d, fart * dtSec);
-  f.x = clamp(f.x + dx / d * l, 0.3, W - 0.3); f.y = clamp(f.y + dy / d * l, 0.3, H - 0.3);
-  return d - l;
+  for (const v of SNETT) {
+    const c = Math.cos(v), sn = Math.sin(v), x = clamp(f.x + (dx * c - dy * sn) / d * l, 0.3, W - 0.3), y = clamp(f.y + (dx * sn + dy * c) / d * l, 0.3, H - 0.3);
+    if (stangd(s, x, y)) continue;
+    f.x = x; f.y = y;
+    return v ? Math.hypot(f.mx - f.x, f.my - f.y) : d - l;
+  }
+  return -1;
 }
 // ett nytt mål en bit bort, bort från elden (och mot en kaningrupp när flocken är hungrig)
 function nyttMal(s: State, f: Vargflock, bort?: { x: number; y: number }) {
@@ -198,6 +207,8 @@ function husPlats(s: State, p: Person) {
 const vidElden = (s: State) => { const e = eldPlats(s); return freeNear(s, e.x + 0.5, e.y + 1.5); };
 // vad p gör när vargar är nära (val.ts), eller undefined
 export function vargSkydd(s: State, p: Person): { act: Act; why: string; spot?: { x: number; y: number }; dur: number } | undefined {
+  const fi = kanGa(p) ? instangd(s, p) : undefined; // en varg väntar utanför dörren (steg 3.7.21)
+  if (fi) return { act: 'gomma', why: `${fi.vargar.length > 1 ? 'Vargarna' : 'Vargen'} väntar utanför dörren`, spot: { x: p.x, y: p.y }, dur: Math.max(MIN, fi.vantar! + VARG.vantaTim * HOUR - s.now) };
   const l = vargLarm(s, p);
   if (!l || !kanGa(p)) return;
   const dur = Math.max(MIN, l.t + VARG.vakenTim * HOUR - s.now), a = ageOf(p, s.now);
@@ -221,10 +232,11 @@ function soker(s: State, folk: Person[]) {
   }
 }
 
-// den som är ensam: ingen annan nära, inte i ett hus och inte vid en brinnande eld
+// den som är ensam: ingen annan nära, inte bakom en stängd dörr och inte vid en brinnande eld (steg 3.7.21: en skinndörr
+// stoppar ingen)
 function ensam(s: State, p: Person, folk: Person[]) {
   const e = eldPlats(s);
-  if (roomAt(s, p.x, p.y) || (s.fire.lit && Math.hypot(p.x - e.x - 0.5, p.y - e.y - 0.5) < VARG.eldR)) return false;
+  if (iStangt(s, p) || (s.fire.lit && Math.hypot(p.x - e.x - 0.5, p.y - e.y - 0.5) < VARG.eldR)) return false;
   return !folk.some(q => q !== p && avst(q, p) < VARG.grupp);
 }
 
@@ -234,7 +246,7 @@ function flockSteg(s: State, f: Vargflock, folk: Person[], dtSec: number) {
   if (f.gor !== 'flyr' && s.now >= f.gar) { f.gor = 'flyr'; f.jagare = undefined; }
   if (f.gor === 'flyr') {
     const k = kanten(f.x, f.y); f.mx = k.x; f.my = k.y;
-    if (ga(f, VARG.flyFart, dtSec) < 0.5) { f.vargar = []; count(s, 'vargflockBorta'); }
+    if (ga(s, f, VARG.flyFart, dtSec) < 0.5) { f.vargar = []; count(s, 'vargflockBorta'); }
     return;
   }
   // jägarna går mot flocken (som inte märker dem förrän de är nära)
@@ -245,31 +257,132 @@ function flockSteg(s: State, f: Vargflock, folk: Person[], dtSec: number) {
   if (f.gor === 'anfaller') {
     const p = f.byte !== undefined ? byId(s, f.byte) : undefined;
     if (!p || p.health <= 0 || !ensam(s, p, folk)) { f.gor = 'stryker'; f.byte = undefined; nyttMal(s, f); return; }
-    f.mx = p.x; f.my = p.y;
-    if (ga(f, VARG.flyFart * 4, dtSec) < 1) { f.gor = 'stryker'; f.byte = undefined; vargStrid(s, f, [p], 'skada', 'när vargarna anföll'); nyttMal(s, f, p); }
+    const m = vagIn(s, f, p); f.mx = m.x; f.my = m.y;
+    const kvar = ga(s, f, VARG.flyFart * 4, dtSec);
+    if (kvar < 0) { f.gor = 'stryker'; f.byte = undefined; nyttMal(s, f); return; } // kommer inte fram
+    if (m === p && kvar < 1) { f.gor = 'stryker'; f.byte = undefined; vargStrid(s, f, [p], 'skada', 'när vargarna anföll'); nyttMal(s, f, p); }
     return;
   }
   if (f.gor === 'smyger') {
     if (folk.some(q => vaken(q) && avst(q, f) < VARG.vaken)) { f.gor = 'stryker'; nyttMal(s, f, eld); return; }
-    if (ga(f, VARG.gaFart, dtSec) < 1) { stjal(s, f); f.gor = 'stryker'; nyttMal(s, f, eld); }
+    const kvar = ga(s, f, VARG.gaFart, dtSec);
+    if (kvar < 0) { f.gor = 'stryker'; nyttMal(s, f, eld); } // förrådet är i ett stängt hus
+    else if (kvar < 1) { stjal(s, f); f.gor = 'stryker'; nyttMal(s, f, eld); }
     return;
   }
   // stryker omkring: undan från grupper och elden, mot en ensam människa när den är hungrig, eller fram till förrådet på natten
   const n = f.vargar.length, mod = flockMod(f);
+  // (den som är bakom en stängd dörr är ingen fara för flocken)
+  const ute = folk.filter(q => !iStangt(s, q));
   if (!f.jagare) {
-    const grupp = folk.find(q => avst(q, f) < VARG.undvik && folk.some(o => o !== q && avst(o, q) < VARG.grupp));
-    if (grupp) { nyttMal(s, f, grupp); ga(f, VARG.flyFart, dtSec); return; }
+    const grupp = ute.find(q => avst(q, f) < VARG.undvik && ute.some(o => o !== q && avst(o, q) < VARG.grupp));
+    if (grupp) { slutaVanta(f); nyttMal(s, f, grupp); ga(s, f, VARG.flyFart, dtSec); return; }
   }
-  if (s.fire.lit && avst(f, eld) < VARG.eldR && f.hunger < VARG.eldHunger) { nyttMal(s, f, eld); ga(f, VARG.flyFart, dtSec); return; }
+  if (s.fire.lit && avst(f, eld) < VARG.eldR && f.hunger < VARG.eldHunger) { slutaVanta(f); nyttMal(s, f, eld); ga(s, f, VARG.flyFart, dtSec); return; }
+  if (f.gor === 'vantar') { vanta(s, f, folk, dtSec); return; }
   if (n >= 2 && f.hunger * (0.5 + mod) > VARG.anfall) {
-    const p = folk.filter(q => avst(q, f) < VARG.ser && ensam(s, q, folk)).sort((a, b) => avst(a, f) - avst(b, f))[0];
+    const p = bytet(s, f, folk);
     if (p && rnd(s, 'varg') < VARG.anfallChans) { f.gor = 'anfaller'; f.byte = p.id; count(s, 'vargAnfall'); return; }
+    if (!p) { // ingen är ensam: flocken kan vänta utanför ett stängt hus där någon gömmer sig
+      const o = stangdDorr(s, f, folk);
+      if (o && !f.trottnat && rnd(s, 'varg') < VARG.anfallChans) { borjaVanta(s, f, o, folk); return; }
+    }
   }
   const z = zoneOf(s);
   if (z && !isLight(s.now) && f.hunger > VARG.stjalHunger && (!s.fire.lit || f.hunger >= VARG.eldHunger) && rnd(s, 'varg') < VARG.stjalChans) {
     f.gor = 'smyger'; f.mx = z.x + z.w / 2; f.my = z.y + z.h / 2; count(s, 'vargSmyger'); return;
   }
-  if (ga(f, VARG.gaFart, dtSec) < 1) nyttMal(s, f);
+  if (ga(s, f, VARG.gaFart, dtSec) < 1) nyttMal(s, f);
+}
+const bytet = (s: State, f: Vargflock, folk: Person[]) => folk.filter(q => avst(q, f) < VARG.ser && ensam(s, q, folk)).sort((a, b) => avst(a, f) - avst(b, f))[0];
+
+// ---------- dörren och vargen (steg 3.7.21) ----------
+// En dörr som stängs (stanger i DORRAR, byggnad.ts: trädörren) stängs när någon gömmer sig i huset (3.7.15), och vargarna kommer
+// aldrig igenom den: de går inte in i huset eller dess väggar (ga). Ser en hungrig flock ingen som är ensam kan den vänta utanför
+// dörren en stund (VARG.vantaTim) och stänga in dem som är där: de håller sig gömda (vargSkydd), men de vuxna som vågar möta
+// flocken går ut och slåss. Efter ett tag tröttnar flocken (och väntar inte vid någon dörr igen), och ser den någon ensam i byn jagar den hellre den. En skinndörr
+// håller bara värmen inne och stoppar ingen; den som är ensam i ett hus med en öppen dörr kan anfallas där
+const GRANNAR = [[1, 0], [-1, 0], [0, 1], [0, -1]] as const;
+const RUNT = [...GRANNAR, [1, 1], [1, -1], [-1, 1], [-1, -1]] as const; // också snett, för hörnen
+const grannRum = (s: State, x: number, y: number) => RUNT.map(([dx, dy]) => roomAt(s, x + dx + 0.5, y + dy + 0.5)).filter((r): r is Rum => !!r);
+// rummet är stängt: alla dess öppningar har en dörr som stängs, och någon gömmer sig där
+export function stangt(s: State, r: Rum) {
+  if (!r.open) return false;
+  const g = gridOf(s);
+  for (const i of r.walls) { const b = g.at.get(i)!; if (b.k === 'oppning' && !dorrDef(b.dorr)?.stanger) return false; }
+  return living(s).some(q => q.task?.act === 'gomma' && roomAt(s, q.x, q.y) === r);
+}
+const iStangt = (s: State, p: { x: number; y: number }) => { const r = roomAt(s, p.x, p.y); return !!r && stangt(s, r); };
+// en varg kan inte vara här: i ett stängt rum eller i dess väggar och dörrar
+function stangd(s: State, x: number, y: number) {
+  if (!s.hus?.length) return false;
+  const r = roomAt(s, x, y);
+  if (r) return stangt(s, r);
+  return !!bitAt(s, x, y) && grannRum(s, Math.floor(x), Math.floor(y)).some(q => stangt(s, q));
+}
+// öppningarna i rummet, och platsen precis utanför en öppning
+const oppningar = (s: State, r: Rum) => r.walls.map(i => gridOf(s).at.get(i)!).filter(b => b.k === 'oppning');
+function utanfor(s: State, o: Bit) {
+  for (const [dx, dy] of GRANNAR) {
+    const x = o.x + dx + 0.5, y = o.y + dy + 0.5;
+    if (!roomAt(s, x, y) && !bitAt(s, x, y)) return { x, y };
+  }
+  return { x: o.x + 0.5, y: o.y + 0.5 };
+}
+// vägen in till den som är i ett hus: först till platsen utanför dörren, sedan genom öppningen
+function vagIn(s: State, f: Vargflock, p: Person): { x: number; y: number } {
+  const r = roomAt(s, p.x, p.y);
+  if (!r || roomAt(s, f.x, f.y) === r) return p;
+  const o = oppningar(s, r).sort((a, b) => avst(f, { x: a.x + 0.5, y: a.y + 0.5 }) - avst(f, { x: b.x + 0.5, y: b.y + 0.5 }))[0];
+  if (!o) return p;
+  const oc = { x: o.x + 0.5, y: o.y + 0.5 }, ut = utanfor(s, o);
+  return avst(f, oc) < 0.75 ? p : avst(f, ut) < 0.3 ? oc : ut;
+}
+// dörren till det närmaste stängda huset där någon gömmer sig, inom synhåll
+function stangdDorr(s: State, f: Vargflock, folk: Person[]) {
+  const q = folk.filter(p => p.task?.act === 'gomma' && avst(p, f) < VARG.ser && iStangt(s, p)).sort((a, b) => avst(a, f) - avst(b, f))[0];
+  const r = q && roomAt(s, q.x, q.y);
+  return r ? oppningar(s, r).sort((a, b) => avst(f, a) - avst(f, b))[0] : undefined;
+}
+// rummet bakom dörren där flocken väntar, om det fortfarande är stängt
+const vantarVid = (s: State, f: Vargflock) => f.dorr ? grannRum(s, f.dorr.x, f.dorr.y).find(r => stangt(s, r)) : undefined;
+// vem i rummet som är där flocken väntar (vargSkydd)
+const instangd = (s: State, p: Person) => flockarna(s).find(f => { if (f.gor !== 'vantar') return false; const r = vantarVid(s, f); return !!r && roomAt(s, p.x, p.y) === r; });
+function slutaVanta(f: Vargflock) { if (f.gor === 'vantar') { f.gor = 'stryker'; f.dorr = f.vantar = undefined; } }
+function borjaVanta(s: State, f: Vargflock, o: Bit, folk: Person[]) {
+  f.gor = 'vantar'; f.dorr = { x: o.x, y: o.y }; f.vantar = s.now;
+  const ut = utanfor(s, o); f.mx = ut.x; f.my = ut.y;
+  count(s, 'vargVantar');
+  const r = vantarVid(s, f), inne = folk.filter(q => r && roomAt(s, q.x, q.y) === r);
+  // de som är vakna i huset slutar med det de gör och håller sig gömda
+  for (const q of inne) if (q.task && !AVBRYTS_INTE.has(q.task.act) && q.task.act !== 'sova') { avbryt(s, q); q.task = undefined; }
+  log(s, `${f.vargar.length > 1 ? 'Vargarna' : 'Vargen'} väntar utanför dörren${inne.length ? `, och ${inne.map(q => q.name).join(', ')} är instängda` : ''}.`, 'world', inne.map(q => q.id));
+}
+// de vuxna i huset som vågar gå ut och möta flocken: modet och hur många de är mot vargarna (som vargSkydd)
+function modiga(s: State, inne: Person[], f: Vargflock) {
+  const kan = inne.filter(q => !skyddas(s, q) && kanGa(q) && ageOf(q, s.now) >= ALDER.vaktFran);
+  return kan.filter(q => stat(q, 'mod', s.now) / 20 + VARG.fler * kan.length / Math.max(1, f.vargar.length) > VARG.vagar);
+}
+// flocken som väntar utanför dörren
+function vanta(s: State, f: Vargflock, folk: Person[], dtSec: number) {
+  const r = vantarVid(s, f), o = f.dorr && bitAt(s, f.dorr.x + 0.5, f.dorr.y + 0.5);
+  if (!r || !o) { slutaVanta(f); nyttMal(s, f); return; } // dörren öppnades eller ingen gömmer sig längre
+  const ut = utanfor(s, o);
+  if (s.now - f.vantar! > VARG.vantaTim * HOUR) { // flocken tröttnar
+    slutaVanta(f); f.trottnat = true; nyttMal(s, f, ut); count(s, 'vargTrottnade');
+    log(s, `${f.vargar.length > 1 ? 'Vargarna' : 'Vargen'} tröttnade på att vänta utanför dörren och drog sig bort.`, 'world');
+    return;
+  }
+  const p = bytet(s, f, folk); // ser den någon ensam i byn jagar den hellre den
+  if (p && rnd(s, 'varg') < VARG.anfallChans) { slutaVanta(f); f.gor = 'anfaller'; f.byte = p.id; count(s, 'vargAnfall'); return; }
+  f.mx = ut.x; f.my = ut.y;
+  if (ga(s, f, VARG.flyFart, dtSec) > 1) return;
+  const modigaUt = modiga(s, folk.filter(q => roomAt(s, q.x, q.y) === r), f); // de som vågar går ut och slåss
+  if (!modigaUt.length) return;
+  slutaVanta(f); count(s, 'vargDorrStrid');
+  for (const q of modigaUt) { q.x = ut.x; q.y = ut.y; }
+  vargStrid(s, f, modigaUt, 'skada', 'utanför dörren');
+  if (f.gor !== 'flyr') nyttMal(s, f, ut);
 }
 
 // flocken tar mat ur förrådet: köttet först, hela saker

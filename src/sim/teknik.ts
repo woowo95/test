@@ -73,6 +73,8 @@ export const TEKNIK: Tek[] = [
   // dörrarna (DORRAR i byggnad.ts, steg 2.2.16) har också samma id som raden där
   { id: 'skinndorr', namn: 'Skinndörr', text: 'En hud som hängs i dörröppningen.', effekt: 'Huset släpper ut mindre värme genom dörren.',
     omr: ['bygga', 'hantverk'], krav: ['timmervagg', 'skinnklader'], niva: 5, tid: 6.7 },
+  { id: 'tradorr', namn: 'Trädörr', text: 'Kluvna bräder som surras ihop med rep och hängs i dörröppningen.', effekt: 'Huset håller värmen bättre, och dörren stängs när någon gömmer sig för vargarna.',
+    omr: ['bygga', 'hantverk'], krav: ['timmervagg', 'rep'], niva: 3, tid: 4 },
   // kläderna (steg 2.3.2): bensylen slipas av ett ben och läggs vid slöjdbänken, och med den sys kläderna där
   { id: 'bensyl', namn: 'Bensyl', text: 'Ett vasst ben som slipas mot en sten eller en flinta.', effekt: 'Med bensylen vid slöjdbänken kan man sy skinn.',
     omr: ['hantverk'], krav: ['flatarbank', 'kniv'], niva: 3, tid: 4.2 },

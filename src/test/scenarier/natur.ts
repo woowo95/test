@@ -1507,6 +1507,64 @@ SCENARIER.vargskydd = {
   },
 };
 
+SCENARIER.tradorr = {
+  text: 'Trädörren och vargen (steg 3.7.21): en dörr av trä efter timmerhuset, i hela saker, som ersätter skinndörren. När någon gömmer sig i huset stängs den, och vargarna kommer aldrig in. En hungrig flock kan vänta utanför och stänga in dem som är där, de som vågar går ut och slåss, och efter ett tag tröttnar flocken, eller jagar hellre någon som är ensam. En skinndörr stoppar ingen',
+  kor: () => {
+    const { DORRAR, TEK, utanDorr, bitsOf, gridOf, roomAt, bitAt, stangt } = SIM;
+    const av = DORRAR.tradorr.av as Record<string, number>, tek = TEK.tradorr;
+    // ett hus där byn hänger trädörren
+    const s = createState(1, START); klockan(s); tandEld(s);
+    const hus = medHus(s)!;
+    for (const r of s.people) r.tek = { ...r.tek, tradorr: 1 };
+    setMat(s, { bar: 200 }); setAmount(s, 'ved', 40); setAmount(s, 'rep', 6);
+    const opp = bitsOf(s).filter(b => b.hus === hus.id && b.k === 'oppning');
+    let h = 0;
+    while (!opp.every(b => b.dorr === 'tradorr') && h < 72) { kor(s, 1); h++; }
+    const rum = gridOf(s).rooms.find(r => r.hus === hus.id && r.tiles.length)!, inneX = rum.tiles[0] % W + 0.5, inneY = Math.floor(rum.tiles[0] / W) + 0.5;
+    // en vuxen gömmer sig i huset, de andra är långt borta och elden har slocknat; en hungrig flock kommer nära
+    const prov = (dorr: string, mod: number, ensam = false) => {
+      const q = cloneState(s);
+      for (const b of bitsOf(q)) if (b.hus === hus.id && b.k === 'oppning') b.dorr = dorr;
+      SIM.touch(q); q.fire.lit = false; q.fire.fuel = 0;
+      const folk = living(q).filter(x => ageOf(x, q.now) >= SIM.ALDER.vuxen), p = folk[0], ute = folk[1];
+      // (de andra är borta, utom en som är långt bort och kan komma ut ensam)
+      for (const x of living(q)) if (x !== p && x !== ute) { x.left = q.now; x.task = undefined; }
+      const fx = Math.min(W - 2, ute.x + 45); ute.x = fx; ute.task = { act: 'vila', phase: 'do', tx: fx, ty: ute.y, until: q.now + 20 * HOUR, carry: 0, why: 'långt borta', dark: !isLight(q.now) };
+      for (const x of [p, ute]) { x.toa = x.hunger = x.torst = x.rest = 1; x.health = 1; x.skador = []; x.blod = 1; }
+      p.pot.mod = mod; p.x = inneX; p.y = inneY;
+      p.task = { act: 'gomma', phase: 'do', tx: inneX, ty: inneY, until: q.now + 20 * HOUR, carry: 0, why: 'Vargar är nära, gömmer sig i huset', dark: !isLight(q.now) };
+      const id = q.vargNr = (q.vargNr ?? 0) + 1;
+      (q.vargar ??= []).push({ id, vargar: [0, 1, 2].map(j => 10_000_000 + id * 8 + j), x: inneX + 8, y: inneY, mx: inneX + 8, my: inneY, kom: q.now, gar: q.now + 48 * HOUR, hunger: 1, gor: 'stryker' });
+      let inne = 0, vantade = 0, gomde = 0, anfoll = false, stangd = false;
+      const seen = new Set<string>();
+      kor(q, 4, q => {
+        const f = q.vargar?.[0]; if (!f) return;
+        seen.add(f.gor);
+        const nu = stangt(q, roomAt(q, inneX, inneY)!); // (vargen får gå in när dörren öppnats)
+        if (nu) stangd = true;
+        if (nu && (roomAt(q, f.x, f.y) === roomAt(q, inneX, inneY) || bitAt(q, f.x, f.y))) inne++;
+        if (f.gor === 'vantar') { vantade++; if (p.task?.act === 'gomma') gomde++; if (ensam && ute && !anfoll) { ute.x = f.x + 6; ute.y = f.y + 4; ute.task = { act: 'vila', phase: 'do', tx: ute.x, ty: ute.y, until: q.now + 5 * HOUR, carry: 0, why: 'ensam ute' }; anfoll = true; } }
+      });
+      const strider = (q.strider ?? []).map(x => x.orsak);
+      return { inne, vantade, gomde, seen, strider, st: q.stat ?? {}, stangd, byte: q.vargar?.[0]?.byte, ute: ute.id };
+    };
+    const tra = prov('tradorr', 0), modig = prov('tradorr', 20), annan = prov('tradorr', 0, true), skinn = prov('skinndorr', 0);
+    const ordn = cloneState(s); for (const b of bitsOf(ordn)) if (b.k === 'oppning') b.dorr = 'tradorr';
+    return [
+      [`trädörren görs av ${Object.entries(av).map(([k, n]) => `${n} ${k}`).join(' och ')} (hela saker) och är en teknik efter timmerhuset`, Object.values(av).every(n => Number.isInteger(n) && n >= 1) && !!tek && tek.krav.includes('timmervagg')],
+      [`byn hänger trädörren i husets ${opp.length} öppning${opp.length > 1 ? 'ar' : ''} på ${h} timmar, och en skinndörr ersätter den aldrig (${utanDorr(ordn, 'skinndorr').length} öppningar vill ha en skinndörr)`, opp.every(b => b.dorr === 'tradorr') && utanDorr(ordn, 'skinndorr').length === 0],
+      [`dörren stängs när någon gömmer sig i huset`, tra.stangd],
+      [`flocken väntar utanför den stängda dörren (${tra.vantade} slag) och den som gömmer sig stannar inne (${tra.gomde} slag)`, tra.vantade > 0 && tra.gomde === tra.vantade],
+      [`vargarna kommer aldrig in i det stängda huset (${tra.inne + modig.inne + annan.inne} slag)`, tra.inne + modig.inne + annan.inne === 0],
+      [`efter ett tag tröttnar flocken (${tra.st.vargTrottnade ?? 0}) och ingen strid blir av (${tra.strider.length})`, (tra.st.vargTrottnade ?? 0) > 0 && tra.strider.length === 0],
+      [`den som vågar går ut och slåss (${modig.strider.join(', ') || 'ingen strid'})`, modig.strider.includes('vargar utanför dörren')],
+      [`ser flocken någon ensam ute jagar den hellre den (${[...annan.seen].join(', ')}; ${annan.strider.join(', ') || 'ingen strid'})`, annan.seen.has('anfaller') && annan.strider.includes('vargar när vargarna anföll')],
+      [`en skinndörr stoppar ingen: dörren stängs inte (${skinn.stangd ? 'stängd' : 'öppen'}), och vargarna går in och anfaller den som är ensam där (${skinn.strider.join(', ') || 'ingen strid'})`, !skinn.stangd && skinn.vantade === 0 && skinn.strider.includes('vargar när vargarna anföll')],
+      [`varje rum har en dörr eller öppning (${gridOf(s).rooms.filter(r => r.tiles.length).length} rum; vakten i testerna larmar annars)`, gridOf(s).rooms.every(r => !r.tiles.length || r.open > 0)],
+    ];
+  },
+};
+
 SCENARIER.stridkronika = {
   text: 'Striderna i krönikan (steg 3.7.16): den som dör eller skadas svårt i ett slagsmål skrivs i krönikan, liksom varje vargjakt, den som skadas svårt när vargar anfaller och byns första fällda varg. Vanliga slagsmål och lekar skrivs inte',
   kor: () => {

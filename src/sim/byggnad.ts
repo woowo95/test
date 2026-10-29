@@ -11,6 +11,9 @@ export const BYGGNAD = balans('byggnad', {
   skinndorrTat: 0.6, // en skinndörr släpper ut så här mycket mindre värme än en öppen dörröppning (steg 2.2.16) ...
   skinndorrSkinn: 2, // ... görs av så många skinn ...
   skinndorrMin: 20, // ... och så många minuters arbete
+  tradorrTat: 0.85, // en trädörr släpper ut så här mycket mindre värme än en öppen dörröppning (steg 3.7.21) ...
+  tradorrVed: 4, tradorrRep: 1, // ... görs av så mycket trä och rep ...
+  tradorrMin: 20, // ... och så många minuters arbete
 });
 
 // ---------- byggen ----------
@@ -42,18 +45,28 @@ export const MATERIAL: Record<string, Material> = {
 // Dörrarna kommer i nivåer: först en öppning, sedan en hängd hud, sist en riktig dörr (7.2.1). Varje sort är en rad: tekniken
 // (tek, samma id i TEKNIK, teknik.ts), materialet (av), minuterna (min) och hur mycket mindre värme den släpper ut än en
 // öppning (tat). Den hängs i handlingen dorr (task.tool = sorten, bygg.ts) i ett färdigt hus där man bor eller umgås. En ny
-// sorts dörr blir en rad här, en rad i TEKNIK, ett namn i verktyg för handlingen dorr (handlingar.ts) och två bilder i ikoner.ts
-export interface DorrDef { namn: string; ikon: string; tek: string[]; av: Record<string, number>; min: number; tat: number; gor: string; forsta: string }
+// sorts dörr blir en rad här, en rad i TEKNIK, ett namn i verktyg för handlingen dorr (handlingar.ts) och två bilder i ikoner.ts.
+// Raderna står i ordning från den sämsta till den bästa: en bättre dörr ersätter en sämre, aldrig tvärtom (utanDorr i bygg.ts).
+// stanger = dörren stängs när någon gömmer sig i huset, och djur kommer aldrig igenom den (steg 3.7.21, varg.ts); en skinndörr
+// håller bara värmen inne och stoppar ingen
+export interface DorrDef { namn: string; ikon: string; tek: string[]; av: Record<string, number>; min: number; tat: number; gor: string; forsta: string; stanger?: true }
 export const DORRAR = {
   skinndorr: {
     namn: 'Skinndörr', ikon: 'skinndorr', tek: ['skinndorr'], av: { skinn: BYGGNAD.skinndorrSkinn }, min: BYGGNAD.skinndorrMin, tat: BYGGNAD.skinndorrTat,
     gor: 'Hänger en hud i dörröppningen.',
     forsta: '{namn} hängde byns första skinndörr i en dörröppning. Huset håller värmen bättre.',
   },
+  tradorr: {
+    namn: 'Trädörr', ikon: 'tradorr', tek: ['tradorr'], av: { ved: BYGGNAD.tradorrVed, rep: BYGGNAD.tradorrRep }, min: BYGGNAD.tradorrMin, tat: BYGGNAD.tradorrTat, stanger: true,
+    gor: 'Hänger en dörr av trä i dörröppningen.',
+    forsta: '{namn} hängde byns första trädörr. Den håller värmen inne och kan stängas mot vargarna.',
+  },
 } satisfies Record<string, DorrDef>;
 export type DorrSlag = keyof typeof DORRAR;
 export const DORR_LIST = Object.keys(DORRAR) as DorrSlag[];
 export const dorrDef = (k?: string): DorrDef | undefined => k ? (DORRAR as Record<string, DorrDef>)[k] : undefined;
+// dörrens plats i ordningen (−1 = ingen dörr)
+export const dorrRang = (k?: string) => k ? DORR_LIST.indexOf(k as DorrSlag) : -1;
 
 export const bitsOf = (s: State) => (s.byggen ??= []);
 export const housesOf = (s: State) => (s.hus ??= []);
