@@ -932,6 +932,49 @@ SCENARIER.larm = {
   },
 };
 
+SCENARIER.ledarstrid = {
+  text: 'Ledaren i strid (steg 3.7.12): en modig och aggressiv ledare går först och ger sidan mer mod, en försiktig står bakom och leder, de närmaste vännerna skyddar ledaren och kliver emellan, och när ledaren faller sjunker modet hos de andra',
+  kor: () => {
+    type K = SIM.Uppstallning['kampar'][number];
+    const m = (id: number, sida: 0 | 1, o: Partial<K> = {}, st: Partial<K['st']> = {}): K => ({ id, namn: `K${id}`, sida, st: { styrka: 10, uthallighet: 10, mod: 10, smidighet: 10, skicklighet: 10, ...st }, vapen: 'kniv', klader: [], fart: 1, x: sida ? 13 : 7, y: 7, ...o });
+    const kor = (k: K[], n: number) => Array.from({ length: n }, (_, i) => SIM.stridTillSlut(SIM.nyStrid({ avsikt: 'skada', w: 20, h: 14, kampar: k }, i * 7919 + 13)));
+    const vann = (sts: SIM.Strid[]) => sts.filter(st => st.slut!.vinnare === 0).length;
+    const fiender = () => [m(3, 1), m(4, 1, { y: 9 })];
+    // samma sida med och utan en ledare som går först
+    const utan = kor([m(1, 0), m(2, 0, { y: 9 }), ...fiender()], 200), fram = kor([m(1, 0, { ledare: 'fram' }), m(2, 0, { y: 9 }), ...fiender()], 200);
+    // ledaren som står bakom slåss mindre än den som går först
+    const slag = (sts: SIM.Strid[]) => sts.reduce((a, st) => a + st.kampar.find(k => k.id === 1)!.slag, 0);
+    const bak = kor([m(1, 0, { ledare: 'bak', x: 5 }), m(2, 0, { y: 9 }), ...fiender()], 200);
+    // vännen skyddar ledaren
+    const skydd = kor([m(1, 0, { ledare: 'fram' }), m(2, 0, { y: 8, skyddar: 1 }), ...fiender()], 200);
+    const kliver = skydd.reduce((a, st) => a + st.logg.filter(r => r.h === 'skyddar').length, 0);
+    const traffLed = (sts: SIM.Strid[]) => sts.reduce((a, st) => a + st.logg.filter(r => (r.h === 'traff' || r.h === 'tog') && r.b === 1).length, 0);
+    const utanSkydd = kor([m(1, 0, { ledare: 'fram' }), m(2, 0, { y: 8 }), ...fiender()], 200);
+    // ledaren faller: modet sjunker (vännen ger upp eller flyr oftare)
+    // ledaren faller: modet sjunker mer hos vännen än när en vän som inte är ledare faller (blodet tar slut i första steget)
+    const efterFall = (o: Partial<K>) => { const st = SIM.nyStrid({ avsikt: 'skada', w: 20, h: 14, kampar: [m(1, 0, o), m(2, 0, { y: 9 }), ...fiender()] }, 5); const fore = st.kampar[1].modNu; st.kampar[0].blod = 0; SIM.stridSteg(st); return { fall: fore - st.kampar[1].modNu, logg: st.logg.some(r => r.h === 'ledareFaller') }; };
+    const ledFall = efterFall({ ledare: 'fram' }), ingenLed = efterFall({});
+    // i byn: ledarens plats efter personligheten, och vännen i följet
+    const t = createState(11, START), [a, b] = living(t).filter(x => ageOf(x, t.now) >= SIM.ALDER.vuxen);
+    t.styre = { ledare: a.id, historia: [], oppna: [] } as unknown as typeof t.styre;
+    a.pot.mod = 18; a.pot.aggression = 18; const modig = SIM.ledarPlats(t, a);
+    a.pot.mod = 3; a.pot.aggression = 3; const feg = SIM.ledarPlats(t, a);
+    b.bast = a.id;
+    const ka = SIM.personKampe(t, a, 1, 0, 0, 0), kb = SIM.personKampe(t, b, 2, 0, 0, 1);
+    SIM.foljet(t, [ka, kb]);
+    const texter = [...fram, ...skydd, ...bak].every(st => st.logg.every(r => SIM.stridText(st, r).length > 5 && !SIM.stridText(st, r).includes('undefined')));
+    return [
+      [`en ledare som går först vinner oftare (${vann(fram)} av 200) än samma sida utan (${vann(utan)})`, vann(fram) > vann(utan)],
+      [`ledaren som står bakom slåss mindre (${slag(bak)} slag) än den som går först (${slag(fram)})`, slag(bak) < slag(fram)],
+      [`vännen kliver emellan (${kliver} gånger på 200 strider), och ledaren träffas mer sällan (${traffLed(skydd)} träffar) än utan skydd (${traffLed(utanSkydd)})`, kliver > 0 && traffLed(skydd) < traffLed(utanSkydd)],
+      [`när ledaren faller syns det i loggen, och vännens stridsmod sjunker mer (${ledFall.fall.toFixed(2)}) än när en vän som inte är ledare faller (${ingenLed.fall.toFixed(2)})`, ledFall.logg && ledFall.fall > ingenLed.fall],
+      [`en modig och aggressiv ledare går först (${modig}), en rädd står bakom (${feg})`, modig === 'fram' && feg === 'bak'],
+      [`i byn får ledaren sin plats (${ka.ledare}) och bästa vännen skyddar hen (${kb.skyddar === 1 ? 'ja' : 'nej'})`, ka.ledare === 'bak' && kb.skyddar === 1],
+      ['loggen har en hel mening för varje rad', texter],
+    ];
+  },
+};
+
 SCENARIER.smidighet = {
   text: 'Smidighet och Aggression (steg 3.7.6): båda finns hos alla och ärvs, smidigheten sjunker tidigare än styrkan, den smidiga gör finare arbete och vinner oftare i striden, den aggressiva slår hellre i ett utbrott, och blodtörsten kommer av aggression, låg empati och dåligt humör',
   kor: () => {

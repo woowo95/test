@@ -4,7 +4,7 @@
 // uppställningen och loggen ligger vid sidan av kartan. Loggen visar symbolerna först med hela meningen när man trycker på raden eller håller musen över den.
 import {
   AVSIKTER, Avsikt, KLADER_STRID, MANNISKOVAPEN, STRID, STRIDHANDELSER, STRIDSDJUR, LAGE_ORD, VAPEN, Vapen, DJUR,
-  Strid, Uppstallning, korManga, djurKampe, personKampe, nyStrid, stridRapport, stridSteg, stridText, sakNamn, living, byId, timeLabel,
+  Strid, Uppstallning, korManga, djurKampe, foljet, personKampe, nyStrid, stridRapport, stridSteg, stridText, sakNamn, living, byId, timeLabel,
   getMap, eldPlats, T, W as MW, H as MH, ageOf, ALDER,
 } from '../sim';
 import * as PIXI from 'pixi.js';
@@ -35,6 +35,7 @@ function uppstallning(): Uppstallning {
     else if (p) kampar.push({ ...personKampe(s, p, id++, side, x, y), vapen: r.vapen, reserv: r.reserv !== r.vapen ? r.reserv : undefined, klader: r.klader });
     else kampar.push({ id: id++, namn: `Kämpe ${sd === 0 ? 'A' : 'B'}${sida.length > 1 ? i + 1 : ''}`, sida: side, st: { ...r.st }, vapen: r.vapen, reserv: r.reserv !== r.vapen ? r.reserv : undefined, klader: r.klader, fart: 1, x, y });
   }));
+  foljet(s, kampar); // byns ledare och vännerna som skyddar hen (steg 3.7.12)
   return { avsikt: lag.avsikt, w: AW, h: AH, vind: lag.vind, dimma: lag.dimma, halt: lag.halt, kampar };
 }
 let senast: { u: Uppstallning; fro: number } | undefined; // striden som visas (↺ visar den igen)
