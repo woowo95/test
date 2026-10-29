@@ -12,7 +12,7 @@ import { allaBarn } from './uppvaxt';
 // det levande läget och ikappräkningen får samma motgångar. För varje tidsålder dras ett tal; motgångarna som hör till
 // årstiden tar var sin del av det efter sin chans, så att det aldrig blir två på en gång. Under byns första
 // MOTGANG.forstaDygn dygn kommer ingen.
-// Vad torkan gör står i torka.ts (steg 3.8.2). Vad den hårda vintern gör står där den gör det: kylan och snön i vader.ts (hardVinter), veden i eld.ts och vargarna i
+// Vad torkan gör står i torka.ts (steg 3.8.2) och översvämningen i flod.ts (steg 3.8.3). Vad den hårda vintern gör står där den gör det: kylan och snön i vader.ts (hardVinter), veden i eld.ts och vargarna i
 // varg.ts. De äldsta anar den i förväg; varslet sprids i samtal (minne.ts) och får byn att samla mer (val.ts).
 
 // Balanstal (regel 8)
@@ -53,6 +53,13 @@ export const MOTGANGAR = {
     borjar: 'En torka har kommit. Himlen är klar dag efter dag och marken spricker.',
     slutar: 'Torkan är över. Regnet kommer tillbaka.',
   },
+  oversvamning: {
+    namn: 'Översvämning', tecken: '🌊', ikon: 'm_oversvamning', tider: [1, 3], chans: 0.1,
+    text: 'Efter snösmältningen eller ett långt regn stiger sjön en till tre rutor upp på land, står kvar ett par dygn och sjunker. Maten under vatten förstörs, lätta saker flyter bort ute, tunga saker ligger kvar och slits fortare och fält under vatten dör. Det som ligger i kistor och på hyllor klarar sig.',
+    anar: 'Ser på sjön att vattnet kommer att stiga',
+    borjar: 'Det har regnat länge och sjön är full till brädden.',
+    slutar: 'Tiden med högvatten är över.',
+  },
 } satisfies Record<string, MotgangDef>;
 export type MotgangId = keyof typeof MOTGANGAR;
 const DEF: Record<MotgangId, MotgangDef> = MOTGANGAR;
@@ -65,6 +72,8 @@ function hash(a: number, b: number, c: number) {
   return (h >>> 0) / 4294967296;
 }
 const timNr = (start: number) => Math.round(start / HOUR);
+// ett tal mellan 0 och 1 för motgången som börjar vid start (salt skiljer talen åt): hur den blir (torka.ts, flod.ts)
+export const motgangTal = (s: State, start: number, salt: number) => hash(s.seed, timNr(start), salt);
 // motgången i tidsåldern ai som börjar vid start, eller ingen
 export function motgangVid(s: State, start: number, ai: number): MotgangId | undefined {
   if (start < s.founded + MOTGANG.forstaDygn * DAY) return;

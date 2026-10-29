@@ -16,6 +16,8 @@ import { temperature, vaderSlit } from './vader';
 import { BYN, Del, addDel, sumOf, takeOrder } from './egendom';
 import { FOOD, SAKER, SAK_LIST, STACK, STACK_ORDER, bordOf, isFood, isTool, rutaOf, sakNamn, stackOf } from './saker';
 import { balans } from './balans';
+import { iVattnetNu } from './sjo';
+import { FLOD } from './flod';
 
 // ---------- balanstal (regel 8) ----------
 // Förrådet: hur lagerplatserna växer, hur fort saker slits och ruttnar, hur mycket en person bär och vad som bärs in först.
@@ -103,7 +105,7 @@ export function isStored(s: State, x: number, y: number) {
   for (let i = 0; i < zs.length; i++) if (nearZone(zs[i], x, y, LAGER.bredvid)) return true;
   return false;
 }
-function stacksOf(s: State): Stack[] {
+export function stacksOf(s: State): Stack[] {
   if (!s.stackar) {
     s.stackar = [];
     for (const g of s.marken ?? []) s.stackar.push({ ...g, c: 1 }); // gamla sparfiler
@@ -111,7 +113,7 @@ function stacksOf(s: State): Stack[] {
   }
   return s.stackar;
 }
-const tidy = (s: State) => { s.stackar = stacksOf(s).filter(a => a.n > 1e-6 || (a.dold ?? 0) > 1e-6); changed(s); };
+export const tidy = (s: State) => { s.stackar = stacksOf(s).filter(a => a.n > 1e-6 || (a.dold ?? 0) > 1e-6); changed(s); };
 
 // ---------- summorna ----------
 // Summorna räknas om när en stack ändrats. Allt som ändrar en stack anropar changed (bygg.ts när ett hus flyttar en stack),
@@ -325,7 +327,7 @@ export function usable(s: State, x: number, y: number, utomElden = false) {
   const m = getMap(s.seed), f = eldPlats(s);
   if (!inMap(x, y)) return false;
   const t = m.tiles[y * W + x];
-  if (t === T.Vatten || t === T.Sten || !utomElden && Math.max(Math.abs(x - f.x), Math.abs(y - f.y)) <= 1 || bitAt(s, x, y) || sittAt(s, x, y) || faltAt(s, x, y)) return false; // inte heller på ett fält (odling.ts)
+  if (t === T.Vatten || s.flod && iVattnetNu(s, y * W + x) || t === T.Sten || !utomElden && Math.max(Math.abs(x - f.x), Math.abs(y - f.y)) <= 1 || bitAt(s, x, y) || sittAt(s, x, y) || faltAt(s, x, y)) return false; // inte heller på ett fält (odling.ts)
   const st = stationAt(s, x, y);
   return !st || !!stationDef(st.k)?.forvar || utomElden && !!stationDef(st.k)?.eld; // i en hylla, kista eller ett ställ ligger saker (steg 2.3.6); grillen flyttas med elden
 }
@@ -383,6 +385,7 @@ export const rymd = (s: State, x: number, y: number, k: string) => { const f = f
 // ryms mer av slaget k på rutan? En stack av samma slag som inte är full, eller ingenting. I ett ställ bara redskap, så
 // många som det rymmer. Medan det byggs ryms ett redskap där, annars ligger något annat i stället när det blir klart
 function roomIn(s: State, occ: Occ, x: number, y: number, k: string) {
+  if (s.flod && iVattnetNu(s, key(x, y))) return false; // ute i en översvämning (flod.ts)
   if (groundOf(s).trees[key(x, y)] >= FOREST && zonesOf(s).some(z => z.rojs && inZone(z, x, y))) return false; // ett träd i lagret i skogen fälls först (steg 3.6.9)
   const a = occ.get(key(x, y)), f = forvarAt(s, x, y), st = stationAt(s, x, y);
   if (f?.redskap) return isTool(k) && (!a || isTool(a.k)) && (occ.redskap.get(key(x, y)) ?? 0) < f.rymmer;
@@ -426,7 +429,8 @@ function besideSpot(s: State, k: string, occ: Occ) {
 }
 export const fetchSpot = (s: State, k: string) => {
   if (isTool(k)) placeTools(s);
-  const all = things(s), a = all.find(q => q.k === k && zoneAt(s, q.x, q.y) >= 0) ?? all.find(q => q.k === k && isStored(s, q.x, q.y));
+  const all = things(s).filter(q => !s.flod || !iVattnetNu(s, q.y * W + q.x)); // inte ute i en översvämning (flod.ts)
+  const a = all.find(q => q.k === k && zoneAt(s, q.x, q.y) >= 0) ?? all.find(q => q.k === k && isStored(s, q.x, q.y));
   return a ? { x: a.x + 0.5, y: a.y + 0.5 } : dropSpot(s, k);
 };
 // stackarna av ett slag i förrådet, sämst skick först
@@ -620,7 +624,11 @@ function wearAt(k: string, mult: number, ligger: boolean, temp: number) {
   return SAKER[k]?.haller !== undefined ? v * ruttTemp(temp) : v;
 }
 // en kista skyddar som ett tak (steg 2.3.6); det som ligger ute slits mer i regnet och snön (steg 2.11.2)
-export const wearMult = (s: State, x: number, y: number) => roofed(s, x, y) || forvarAt(s, x, y)?.tak ? LAGER.inne : (zoneAt(s, x, y) >= 0 ? 1 : LAGER.ute) * vaderSlit(s);
+// under en översvämnings vatten slits det fortare (steg 3.8.3, flod.ts), utom i en kista eller på en hylla
+export const wearMult = (s: State, x: number, y: number) => {
+  const fv = forvarAt(s, x, y), v = roofed(s, x, y) || fv?.tak ? LAGER.inne : (zoneAt(s, x, y) >= 0 ? 1 : LAGER.ute) * vaderSlit(s);
+  return s.flod && !fv && iVattnetNu(s, y * W + x) ? v * FLOD.slit : v;
+};
 // vad som sliter på en sak just nu och hur mycket av skicket det tar per timme (inforutan, steg 2.3.5). Samma tal som
 // wearStore och wearUsed (redskap.ts) räknar med. I handen slits redskapet dessutom per gång (steg 2.3.12): gang = så mycket av
 // skicket varje träd, kanin, fiskeförsök eller djur tar, och enhet vad det är (ACTS.slits)

@@ -45,7 +45,7 @@ export function stepTorka(s: State) {
       st.niva = mal;
       const nya = mal >= 2 ? sjoarna(s.seed).rutor.map((r, n) => ({ r, n })).filter(({ r, n }) => n > 0 && r.length <= TORKA.liten && !st!.tomma.includes(n)).map(x => x.n) : [];
       st.tomma.push(...nya);
-      andra(s, fore);
+      vattnetAndrat(s, fore);
       count(s, 'sjon sjunker');
       log(s, nya.length ? `Torkan håller i sig. Sjön har dragit sig tillbaka och ${nya.length === 1 ? sjoNamn(s, nya[0]).toLowerCase() + ' har' : nya.length + ' tjärnar har'} torkat ut.` : 'Torkan håller i sig. Sjön har dragit sig tillbaka från stranden.', 'world');
       if (nya.length) count(s, 'sjo torkat ut', nya.length);
@@ -61,13 +61,14 @@ export function stepTorka(s: State) {
   if (st.tomma.length) st.tomma = [];
   else if (st.niva > 0) st.niva--;
   if (!st.niva && !st.tomma.length) delete s.sjoTorr;
-  andra(s, fore);
+  vattnetAndrat(s, fore);
   count(s, 'sjon stiger');
   log(s, s.sjoTorr ? 'Regnet har fyllt på sjöarna igen.' : 'Sjön är tillbaka vid stranden.', 'world');
 }
 
-// vattnet har ändrats: kartan, vägarna och det som stod där vattnet kom tillbaka
-function andra(s: State, fore: Uint8Array) {
+// vattnet har ändrats: kartan, vägarna och det som stod där vattnet kom tillbaka. flytta = stackarna och tingen flyttas
+// upp på land (efter torkan); vid en översvämning ligger de kvar (flod.ts)
+export function vattnetAndrat(s: State, fore: Uint8Array, flytta = true) {
   if (s.sjoTorr) { s.sjoTorr.v++; s.sjoTorr.t = s.now; }
   const efter = vattenNu(s);
   nyttVatten(s); touch(s);
@@ -80,6 +81,7 @@ function andra(s: State, fore: Uint8Array) {
     if (blot(p.x, p.y)) { const f = freeNear(s, Math.floor(p.x), Math.floor(p.y)); p.x = f.x + 0.5; p.y = f.y + 0.5; }
     if (mal) avbryt(s, p); // målet står under vatten: hen väljer något annat
   }
+  if (!flytta) return;
   for (const a of s.stackar ?? []) if (blot(a.x, a.y)) { const f = freeNear(s, a.x, a.y); a.x = f.x; a.y = f.y; }
   for (const t of s.ting ?? []) if (t.x !== undefined && t.y !== undefined && blot(t.x, t.y)) { const f = freeNear(s, t.x, t.y); t.x = f.x; t.y = f.y; }
 }

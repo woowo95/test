@@ -1,6 +1,6 @@
 // Kör en by utan grafik och samlar nyckeltalen (registret NYCKELTAL i nyckeltal.ts säger vad de heter och betyder).
 // Vakterna larmar om något blir omöjligt (NaN, negativa förråd, folk i vattnet).
-import { BEAT, createState, step, living, DAY, groundOf, isSoil, markslag, Markslag, ageIndex, moodOf, serialize, serializeParts, vattenNu, fuelStock, ACT_NAMES, T, State, inMap, isWall, tileOf, foodOf, amountOf, sumOf, okandaBalans, alive, isCarrying, BYN, isStored, housesOf, bitsOf, Person, HOUR, W, KROPP, forvarAt, isTool, faltOf, faltRutor, faltAt, stationById, gridOf } from '../sim';
+import { BEAT, createState, step, living, DAY, groundOf, isSoil, markslag, Markslag, ageIndex, moodOf, serialize, serializeParts, vattenNu, fuelStock, ACT_NAMES, T, State, inMap, isWall, tileOf, foodOf, amountOf, sumOf, okandaBalans, alive, isCarrying, BYN, isStored, housesOf, bitsOf, Person, HOUR, W, KROPP, forvarAt, isTool, faltOf, faltRutor, faltAt, stationById, gridOf, getMap } from '../sim';
 import { NYCKELTAL, Nyckeltal, tal } from './nyckeltal';
 
 // testbyarna grundas 08:00 svensk tid. Testerna körs i datorns tidszon (här UTC), så där är klockan 06:00 när byn grundas
@@ -113,7 +113,8 @@ function vakta(s: State, larm: Larm, timme: boolean) {
   }
   const tiles = vattenNu(s), upptagen = new Map<number, string[]>();
   const plats = (k: string, x: number, y: number) => {
-    if (tiles[y * W + x] === T.Vatten) larm('sak i vattnet', () => `${k} på ${x},${y}`);
+    // under en översvämning ligger tunga saker kvar på rutorna som vattnet nått (flod.ts), men aldrig i sjön
+    if (tiles[y * W + x] === T.Vatten && (!s.flod || getMap(s.seed).tiles[y * W + x] === T.Vatten)) larm('sak i vattnet', () => `${k} på ${x},${y}`);
     else if (isWall(s, x + 0.5, y + 0.5)) larm('sak i en vägg', () => `${k} på ${x},${y}`);
     if (!isStored(s, x, y)) return;
     // i ett redskapsställ står flera redskap, så många som det rymmer (steg 2.3.6)

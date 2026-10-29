@@ -465,3 +465,68 @@ SCENARIER.torka = {
     ];
   },
 };
+
+SCENARIER.oversvamning = {
+  text: 'Steg 3.8.3: översvämningen kommer ibland på våren och hösten. Efter ett långt regn stiger sjön en ruta i taget en till tre rutor upp på land, står kvar ett par dygn och sjunker. Maten under vatten förstörs, lätta saker (grenar) flyter bort ute, tunga saker (sten) ligger kvar och slits fortare, fält under vatten dör och ingen står i vattnet. Efteråt är stranden som förut',
+  kor: () => {
+    // en by vars vårtid just börjat och har en översvämning som når minst två rutor upp på land
+    const fore = (x: State) => { x.founded -= 20 * DAY; x.kal = nyKalender(x.now - HOUR, 1); };
+    let v: State | undefined;
+    for (let seed = 1; seed < 800 && !v; seed++) {
+      const b = createState(seed, START); fore(b);
+      const m = SIM.motgangNu(b);
+      if (m?.id !== 'oversvamning') continue;
+      let topp = 0;
+      for (let t = m.start; t < m.slut; t += HOUR) topp = Math.max(topp, SIM.flodNiva(b, t));
+      if (topp >= 2) v = b;
+    }
+    if (!v) return [['en by med en översvämning på våren', false]];
+    const s = v, m = SIM.motgangNu(s)!;
+    tandEld(s); setMat(s, { bar: 40, torkat: 40 });
+    const vatten0 = SIM.vattenNu(s).filter(t => t === T.Vatten).length;
+    // regnet innan och medan vattnet stiger
+    let regn = 0, regnUtan = 0;
+    const vu = cloneState(s), c0 = SIM.MOTGANGAR.oversvamning.chans;
+    for (let h = 0; h < 2 * 24; h++) { const t = m.start + h * HOUR; if (vaderNu(s, t).nb > 0) regn++; SIM.MOTGANGAR.oversvamning.chans = 0; try { if (vaderNu(vu, t).nb > 0) regnUtan++; } finally { SIM.MOTGANGAR.oversvamning.chans = c0; } }
+    // fram till timmen innan vattnet börjar stiga
+    let b0 = m.start; while (!SIM.flodNiva(s, b0 + HOUR)) b0 += HOUR;
+    kor(s, (b0 - s.now) / HOUR);
+    // på stranden närmast byn (en ruta från vattnet): en hög bär, en hög grenar och en hög sten, och ett fält med korn
+    const { land } = SIM.djupOf(s.seed), g = getMap(s.seed).tiles, c = SIM.campCenter(s);
+    const strand: { x: number; y: number }[] = [];
+    for (let i = 0; i < W * W; i++) if (land[i] === 1 && g[i] !== T.Sten) strand.push({ x: i % W, y: Math.floor(i / W) });
+    strand.sort((a, b) => Math.hypot(a.x - c.x, a.y - c.y) - Math.hypot(b.x - c.x, b.y - c.y));
+    const [pb, pg, ps] = [strand[0], strand.find(p => Math.hypot(p.x - strand[0].x, p.y - strand[0].y) >= 3)!, strand.find(p => Math.hypot(p.x - strand[0].x, p.y - strand[0].y) >= 6)!];
+    s.stackar!.push({ k: 'rotter', n: 30, c: 1, x: pb.x, y: pb.y }, { k: 'grenar', n: 8, c: 1, x: pg.x, y: pg.y }, { k: 'sten', n: 3, c: 1, x: ps.x, y: ps.y });
+    SIM.tidy(s);
+    const pf = strand.find(p => Math.hypot(p.x - strand[0].x, p.y - strand[0].y) >= 9)!;
+    s.falt = [{ id: 1, x: pf.x, y: pf.y, w: 1, dir: 1, n: 1, agare: -1, steg: 'vaxer', klara: 0, kvar: 0, sadda: 1, groda: 'korn', vuxit: 0, rord: s.now } as SIM.Falt];
+    s.nextFalt = 1; s.byggV = (s.byggV ?? 0) + 1;
+    const hog = (k: string, p: { x: number; y: number }) => (s.stackar ?? []).find(a => a.k === k && a.x === p.x && a.y === p.y);
+    const slit0 = wearMult(s, ps.x, ps.y);
+    // tills vattnet står som högst
+    let hogst = 0, iVattnet = 0, slit1 = 0;
+    for (let h = 0; h < 4 * 24 && !(hogst && (s.flod?.niva ?? 0) < hogst); h++) {
+      kor(s, 1);
+      if ((s.flod?.niva ?? 0) > hogst) { hogst = s.flod!.niva; slit1 = wearMult(s, ps.x, ps.y); }
+      iVattnet = Math.max(iVattnet, living(s).filter(p => SIM.iVattnetNu(s, Math.floor(p.y) * W + Math.floor(p.x))).length);
+    }
+    const vatten1 = SIM.vattenNu(s).filter(t => t === T.Vatten).length;
+    const barKvar = hog('rotter', pb)?.n ?? 0, grenKvar = hog('grenar', pg)?.n ?? 0, stenKvar = hog('sten', ps)?.n ?? 0;
+    const faltDog = (s.stat?.['drankt falt'] ?? 0) >= 1, frost = s.stat?.frostdod ?? 0;
+    // efter tidsåldern: vattnet är tillbaka vid stranden och stenen ligger kvar
+    kor(s, (m.slut - s.now) / HOUR + 1);
+    const vatten2 = SIM.vattenNu(s).filter(t => t === T.Vatten).length;
+    return [
+      [`det regnar mer innan och medan vattnet stiger (${regn} timmar mot ${regnUtan} utan översvämningen, av 48)`, regn > regnUtan],
+      [`sjön svämmar över ${hogst} rutor upp på land (${vatten0} → ${vatten1} rutor vatten)`, hogst >= 2 && vatten1 > vatten0],
+      [`maten på stranden förstördes (${s.stat?.['flod mat'] ?? 0} rötter; resten bars in innan, ${barKvar} kvar av 30)`, barKvar === 0 && (s.stat?.['flod mat'] ?? 0) > 0],
+      [`grenarna flöt bort (${grenKvar} kvar av 8)`, grenKvar === 0],
+      [`stenen ligger kvar (${stenKvar} av 3) och slits fortare i vattnet (${slit0.toFixed(2)} → ${slit1.toFixed(2)})`, stenKvar === 3 && slit1 > slit0 * 2],
+      [`kornet på fältet under vatten dog${frost ? ` (frosten tog ${frost})` : ''}`, faltDog],
+      [`ingen står i vattnet (högst ${iVattnet})`, iVattnet === 0],
+      [`vattnet är tillbaka vid stranden efteråt (${vatten2} rutor, ${s.flod ? 'nivå ' + s.flod.niva : 'ingen översvämning'})`, !s.flod && vatten2 === vatten0],
+      [`översvämningen kom (${s.stat?.motgang_oversvamning ?? 0})`, (s.stat?.motgang_oversvamning ?? 0) === 1],
+    ];
+  },
+};

@@ -1372,6 +1372,11 @@ const LE_L = { o: 'kol0', j: 'jord1', J: 'jord2', k: 'jord0', l: 'jord3', s: 'sk
 const LE_SPRICK = ['JJJjJJJJkJJJJjJJ', 'JJjJJJJkJJJjJJJJ', 'kkJJJJkJJJJJJJkk', 'JJkkJkJJJJJJkkJJ', 'JJJJkJJJJJJkJJJJ', 'JJJJkJJJJkkJJJJJ', 'JJJkJkkkkJJJJJJJ', 'JJkJJJJJkJJJJJJJ', 'JkJJJJJJJkJJJJJJ', 'kJJJJJJJJkkJJJkk', 'JJJJJJJJkJJkkkJJ', 'JJJJJJJkJJJJJkJJ', 'JJJJJkkJJJJJJJkJ', 'JJJJkJJJJJJJJJJk', 'JJJkJJJJJJJJJJJJ', 'JJkJJJJJJJJJJJJJ'];
 const LE_STEN = ['JJJJJJJJJJJJJJJJ', 'JJlJJJJJJJJJJJJJ', 'JJJJJJsSJJJJJJJJ', 'JJJJJJssJJJJlJJJ', 'JJJJJJJJJJJJJJJJ', 'JJJjJJJJJJJJJJJJ', 'JJjjjJJJJJJsJJJJ', 'JJJjJJJJJJJJJJJJ', 'JJJJJJJJJlJJJJJJ', 'JJJJJJJJJJJJJjJJ', 'JsSJJJJJJJJJjjjJ', 'JssJJJJJJJJJJjJJ', 'JJJJJJlJJJJJJJJJ', 'JJJJJJJJJJJsSJJJ', 'JJJJJJJJJJJssJJJ', 'JJJJJJJJJJJJJJJJ'];
 const LE_FUKT = ['JJJJJJJJJJJJJJJJ', 'JJJJJJJJJJJjJJJJ', 'JJJjJJJJJJJJJJJJ', 'JJJJJJJJjJJJJJJJ', 'JJJJJJjjjjjJJJJJ', 'JJJJjjjvvvjjjJJJ', 'JJJjjvvVVvvvjJJJ', 'JJJjjvVVVVvjjJJJ', 'JJJJjjvvvvjjJJJJ', 'JJJJJjjjjjjJJJJJ', 'JJJJJJJJJJJJJjJJ', 'JjJJJJJJJJJJJJJJ', 'JJJJJJJJJjJJJJJJ', 'JJJJJJJJJJJJJJJJ', 'JJJJjJJJJJJJJJJJ', 'JJJJJJJJJJJJJJJJ'];
+// Översvämningen (steg 3.8.3)
+const FL_L = { o: 'kol0', b: 'skiffer1', B: 'skiffer2', l: 'skiffer3', g: 'oliv1', G: 'oliv2', k: 'jord0', j: 'jord1', J: 'jord2', Y: 'ben3' };
+const FL_STRAND = ['................', '..........G.....', '.........GgG....', '..........g.....', 'oooooooo..g.....', 'ogGgGgGgo.g.....', 'okkkkkkkko......', '..l..l...l..l...', '.lBl.lBl.lBl.lB.', 'lBbBlBbBlBbBlBbB', 'BbbbBbbbBbgbBbbb', 'bbbbbbbbbbgbbbbb', 'bBbbbbBbbbbbBbbb', 'bbbbBbbbbbBbbbbb', 'bbBbbbbbBbbbbbBb', 'oooooooooooooooo'];
+const FL_HUS = ['................', '.......oo.......', '......ojjo......', '.....ojJJjo.....', '....ojJJJJjo....', '...ojJJJJJJjo...', '..oooooooooooo..', '...okkkkkkkko...', '...okkkoookko...', '...okkkobbokko..', 'l.lokkkobboklo.l', 'BlBlBlBlBlBlBlBl', 'bBbbbbBbbbbbBbbb', 'bbbbBbbbbbBbbbbb', 'bbBbbbbbBbbbbbBb', 'oooooooooooooooo'];
+const FL_STOLPE = ['......oo........', '.....oYYo.......', '....oYYYYo......', '......Yk........', '......kk....o...', '......kk...oYo..', '......Ykl..oYo..', '......kk...oYo..', '......kk...oYo..', 'llllllkklllllll.', 'BlBlBlkkBlBlBlBl', 'bbbbbbkkbbbbbbbb', 'bBbbbbkkbbbbBbbb', 'bbbbBbkkbbBbbbbb', 'bbBbbbkkBbbbbbBb', 'oooooooooooooooo'];
 // Samtalens ämnen (steg 3.9.5)
 const AM_L = { o: 'kol0', b: 'jord2', B: 'jord1', k: 'rost1', w: 'ben2', W: 'ben3', h: 'rost2', H: 'rost1', s: 'skiffer2', S: 'skiffer3', g: 'oliv2', G: 'oliv1', y: 'senap2' };
 const AM_MAT1 = ['................', '................', '......w..w......', '.....w..w.......', '......w..w......', '................', '...oooooooooo...', '..okkkkkkkkkko..', '..obbbbbbbbbbo..', '...obbbbbbbbo...', '...oBbbbbbbBo...', '....oBBBBBBo....', '.....oooooo.....', '................', '................', '................'];
@@ -1426,6 +1431,12 @@ const VAL = [
       { text: 'Istappar som hänger från en takkant, med snöflingor under.', ...LED_M(HV_ISTAPP, HV_L) },
     ] },
 
+  { id: 'm_oversvamning', namn: 'Översvämningen', vad: 'Ny symbol (steg 3.8.3), 16 × 16 punkter, i kalendern bredvid temperaturen när en översvämning pågår. I spelet nu: version 1 (platshållare).', typ: 'tre',
+    versioner: [
+      { text: 'Vågor som stiger över en grässtrand, med ett grässtrå som sticker upp ur vattnet.', ...LED_M(FL_STRAND, FL_L) },
+      { text: 'Ett hus som står till hälften i vatten.', ...LED_M(FL_HUS, FL_L) },
+      { text: 'En märkt påle i vattnet och en pil uppåt: vattnet stiger.', ...LED_M(FL_STOLPE, FL_L) },
+    ] },
   { id: 'm_torka', namn: 'Torkan', vad: 'Ny symbol (steg 3.8.2), 16 × 16 punkter, i kalendern bredvid temperaturen när en torka pågår (blek när de äldsta i byn bara anar den). I spelet nu: version 1 (platshållare).', typ: 'tre',
     versioner: [
       { text: 'En het sol över sprucken mark.', ...LED_M(TK_SOL, TK_L) },

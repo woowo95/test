@@ -123,9 +123,10 @@ export const djupOf = perKarta(seed => {
 });
 // vattnet som det är nu: under en torka är kanten av sjöarna torr sjöbotten (T.Lera) så många rutor ut som nivån säger,
 // men aldrig sjöns djupaste del, och en sjö som torkat ut är lera helt. Utan torka kartans eget vatten
+// Under en översvämning (flod.ts) står vattnet så många rutor upp på land som nivån säger (utom på stenarna)
 const nu = new WeakMap<State, { v: number; tiles: Uint8Array; strand: Uint8Array }>();
 function vattenOf(s: State) {
-  const st = s.sjoTorr, v = st ? st.v : -1;
+  const st = s.sjoTorr, fl = s.flod?.niva ?? 0, v = (st ? st.v : -1) * 4 + fl;
   let c = nu.get(s);
   if (c?.v === v) return c;
   const m = getMap(s.seed).tiles;
@@ -135,6 +136,11 @@ function vattenOf(s: State) {
     const { d, max } = djupOf(s.seed), { id } = sjoarna(s.seed), tom = new Set(st.tomma);
     for (let i = 0; i < W * H; i++) if (m[i] === T.Vatten && (tom.has(id[i]) || d[i] <= st.niva && d[i] < max[id[i]])) tiles[i] = T.Lera;
   }
+  if (fl) {
+    if (tiles === m) tiles = m.slice();
+    const { land } = djupOf(s.seed);
+    for (let i = 0; i < W * H; i++) if (m[i] !== T.Vatten && m[i] !== T.Sten && land[i] <= fl) tiles[i] = T.Vatten;
+  }
   c = { v, tiles, strand: tiles === m ? strandStart(s.seed) : strandAv(tiles) };
   nu.set(s, c);
   return c;
@@ -142,5 +148,5 @@ function vattenOf(s: State) {
 const strandStart = perKarta(seed => strandAv(getMap(seed).tiles));
 export const vattenNu = (s: State) => vattenOf(s).tiles;
 export const strandNu = (s: State) => vattenOf(s).strand;
-// är rutan i vatten just nu (kartans vatten utom den torra sjöbottnen)
+// är rutan i vatten just nu (kartans vatten utom den torra sjöbottnen, och översvämningens vatten)
 export const iVattnetNu = (s: State, i: number) => vattenOf(s).tiles[i] === T.Vatten;

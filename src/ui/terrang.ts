@@ -77,7 +77,7 @@ export function drawTerrain(force = false) {
   let sig = drawnSig;
   if (force || now - lastSigCheck > 1000) { lastSigCheck = now; sig = coverSig(); }
   const is = isNiva();
-  const vat = s.sjoTorr?.v ?? -1; // torkan: vattnet som det är nu (steg 3.8.2)
+  const vat = (s.sjoTorr?.v ?? -1) * 4 + (s.flod?.niva ?? 0); // torkan och översvämningen: vattnet som det är nu (steg 3.8.2, 3.8.3)
   if (!force && ai === drawnAge && sig === drawnSig && is === drawnIs && vat === drawnVatten) return;
   drawnAge = ai; drawnSig = sig; drawnIs = is; drawnVatten = vat;
   ritaIs(is);

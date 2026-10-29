@@ -17,6 +17,7 @@ import { PLATS, campCenter, campDist } from './plats';
 import { ledig, lekplats, paLek } from './stationer';
 import { temperature, vaxtFaktor } from './vader';
 import { TORKA } from './torka';
+import { iVattnetNu } from './sjo';
 import { ISTID, iIstiden, isLight, kalender } from './tid';
 
 // ---------- odling (steg 2.10.2–) ----------
@@ -332,7 +333,7 @@ function storre(s: State, p: Person, f: Falt) {
 function forlorad(s: State, f: Falt, varfor: string) {
   const d = GRODOR[f.groda!], agare = s.people.find(q => q.id === f.agare);
   log(s, `${varfor} tog ${d.namn.toLowerCase()}na på ${agare ? agare.name + 's' : 'ett'} fält.`, 'world', agare ? [agare.id] : undefined);
-  count(s, varfor === 'Frosten' ? 'frostdod' : varfor === 'Torkan' ? 'vissnat' : 'ruttnat');
+  count(s, varfor === 'Frosten' ? 'frostdod' : varfor === 'Torkan' ? 'vissnat' : varfor === 'Översvämningen' ? 'drankt falt' : 'ruttnat');
   nasta(f, 'sa'); f.vatten = undefined; f.groda = undefined; f.vuxit = undefined; f.mogen = undefined; f.sadda = undefined;
 }
 
@@ -347,6 +348,7 @@ export function stepOdling(s: State) {
     if (f.steg === 'vaxer' || f.steg === 'mogen') {
       const d = GRODOR[f.groda!];
       if (istid || temp < d.frost) { forlorad(s, f, 'Frosten'); continue; }
+      if (s.flod && faltRutor(f).some(i => iVattnetNu(s, i))) { forlorad(s, f, 'Översvämningen'); continue; } // steg 3.8.3 (flod.ts)
       if (f.steg === 'mogen') { if (skordAndel(s, f) <= 0) forlorad(s, f, 'Rötan'); continue; }
       // under torkan vissnar grödan om ingen vattnar den (steg 3.8.2, torst.ts)
       if (s.sjoTorr?.pa) { f.vatten = (f.vatten ?? 1) - 1 / TORKA.falt; if (f.vatten <= 0) { forlorad(s, f, 'Torkan'); continue; } }

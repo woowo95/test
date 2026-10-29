@@ -5,6 +5,7 @@ import { balans } from './balans';
 import { count, log } from './folk';
 import { MOTGANG, hardGrader, motgangVid } from './motgang';
 import { TORKA, torkaNu } from './torka';
+import { FLOD, flodRegn } from './flod';
 
 // Balanstal (regel 8): temperaturen och hur fort man kyls
 export const VADER = balans('vader', {
@@ -134,7 +135,7 @@ export function vaderNu(s: State, t = s.now): Vader {
   if (c && c.t === t) return c.v;
   const ai = kalender(s, t).ai;
   const m = (1 - VADER.fuktLiten) * vag(s, t, VADER.fuktTim, 1) + VADER.fuktLiten * vag(s, t, VADER.fuktLitenTim, 2);
-  const g = VADER.regnFran[ai] - MOTGANG.hardSno * hardVinter(s, t) + (torkaNu(s, t) ? TORKA.regn : 0), nb = clamp((m - g) / (1 - g), 0, 1), moln = clamp((m - g + VADER.molnSpann) / VADER.molnSpann, 0, 1);
+  const g = VADER.regnFran[ai] - MOTGANG.hardSno * hardVinter(s, t) + (torkaNu(s, t) ? TORKA.regn : 0) - (flodRegn(s, t) ? FLOD.regn : 0), nb = clamp((m - g) / (1 - g), 0, 1), moln = clamp((m - g + VADER.molnSpann) / VADER.molnSpann, 0, 1);
   const temp = temperature(s, t), sno = nb > 0 && temp < VADER.snoGrad;
   const vind = clamp((vag(s, t, VADER.vindTim, 3) - VADER.blastFran[ai]) / (1 - VADER.blastFran[ai]), 0, 1);
   const aska = nb > 0 && !sno && temp > VADER.askaGrad && vag(s, t, VADER.askaTim, 4) > VADER.askaFran;

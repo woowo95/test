@@ -2,6 +2,7 @@ import { getMap } from './karta';
 import { groundOf, tileOf } from './mark';
 import { H, State, T, W, inMap } from './typer';
 import { balans } from './balans';
+import { iVattnetNu } from './sjo';
 
 // Balanstal (regel 8): hur väl ett rum skyddar mot kylan
 export const BYGGNAD = balans('byggnad', {
@@ -126,7 +127,7 @@ export function gridOf(s: State): Grid {
 export const bitAt = (s: State, x: number, y: number) => gridOf(s).at.get(Math.floor(y) * W + Math.floor(x));
 export const isWall = (s: State, x: number, y: number) => inMap(x, y) && gridOf(s).solid[tileOf(x, y)] === 1;
 // man kan inte stå här: vatten eller en vägg
-export const blocked = (s: State, x: number, y: number) => getMap(s.seed).tiles[Math.floor(y) * W + Math.floor(x)] === T.Vatten || isWall(s, x, y);
+export const blocked = (s: State, x: number, y: number) => { const i = Math.floor(y) * W + Math.floor(x); return getMap(s.seed).tiles[i] === T.Vatten || !!s.flod && iVattnetNu(s, i) || isWall(s, x, y); }; // och översvämningens vatten (flod.ts)
 // närmaste plats som inte är vatten eller vägg
 // inte = rutan själv räknas inte (där en vägg ska byggas)
 export function freeNear(s: State, x: number, y: number, inte = false) {

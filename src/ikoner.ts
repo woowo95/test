@@ -143,6 +143,7 @@ const PAL: Record<string, Record<string, string>> = {
   b_heder: { o: '#24201d', g: '#d8b25f', G: '#906f0f', r: '#a8423a', R: '#7a2c26' }, // hedersnamnet (steg 3.9.1, platshållare)
   b_skam: { o: '#24201d', w: '#dad0bb', k: '#8a7f6a', r: '#a8423a' }, // öknamnet (steg 3.9.1, platshållare)
   m_hardVinter: { o: '#24201d', s: '#bdb39b', S: '#f2ece0', k: '#dad0bb', b: '#61767a' },
+  m_oversvamning: { o: '#24201d', b: '#3f6e9a', B: '#5f93c0', l: '#a9cfe6', g: '#5d8a3e', G: '#7aa654', k: '#5a3a1e' },
   m_torka: { o: '#24201d', y: '#d8b25f', Y: '#f2d27a', r: '#bd753e', j: '#b07a45', J: '#d0a26a', k: '#5a3a1e' },
   i_legend: { a: '#d8b25f', b: '#b2921b', g: '#906f0f', o: '#24201d', w: '#dad0bb', z: 'rgba(0,0,0,.30)' },
   i_okand: { a: '#dad0bb', b: '#a0947d', k: '#2f261d', o: '#24201d', z: 'rgba(0,0,0,.30)' },
@@ -1320,6 +1321,24 @@ const PIX: Record<string, string[]> = {
     'ojjkjjkJjjjkjjjo',
     'okjjkjjjkjkjjkjo',
     'ojkjjjrjjkjjjjko',
+    'oooooooooooooooo',
+  ],
+  m_oversvamning: [ // platshållare (steg 3.8.3): vattnet stiger över en grässtrand med ett halvt dränkt grässtrå
+    '................',
+    '..........G.....',
+    '.........GgG....',
+    '..........g.....',
+    'oooooooo..g.....',
+    'ogGgGgGgo.g.....',
+    'okkkkkkkko......',
+    '..l..l...l..l...',
+    '.lBl.lBl.lBl.lB.',
+    'lBbBlBbBlBbBlBbB',
+    'BbbbBbbbBbgbBbbb',
+    'bbbbbbbbbbgbbbbb',
+    'bBbbbbBbbbbbBbbb',
+    'bbbbBbbbbbBbbbbb',
+    'bbBbbbbbBbbbbbBb',
     'oooooooooooooooo',
   ],
   vader_dimma: [ // platshållare (steg 3.7.11)
