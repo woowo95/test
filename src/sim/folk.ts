@@ -152,6 +152,13 @@ function makeName(s: State, sex: 'm' | 'k') {
 
 // ---------- personer ----------
 export const alive = (p: Person) => p.died === undefined && p.left === undefined;
+// personens statistik över livet (steg 3.9.8): räknas när det händer. Med en episod räknas samma slag bara en gång
+// per dygn (en svältperiod, en strid med flera bett). Drar ingen slump
+export function livet(s: State, p: Person, k: string, episod = false) {
+  const l = (p.liv ??= {});
+  if (episod) { if (s.now - (l['t:' + k] ?? -Infinity) < DAY) { l['t:' + k] = s.now; return; } l['t:' + k] = s.now; }
+  l[k] = (l[k] ?? 0) + 1;
+}
 export const ageOf = (p: Person, now: number) => ((p.died ?? p.left ?? now) - p.born) / DAY;
 export function living(s: State) { return s.people.filter(alive); }
 // sjuk just nu (sickUntil är aldrig 0 eller NaN i spelet; då ger uttrycket ändå samma svar som !!sickUntil &&)

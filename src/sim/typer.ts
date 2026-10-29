@@ -185,6 +185,7 @@ export interface Person {
   intryck?: import('./rykten').Intryck[]; // det personen tycker att andra är, och varför (steg 3.3, rykten.ts)
   smak?: Record<string, number>; // tycke och smak: 'a:' + arbete, 'm:' + mat eller 'v:' + vapen (steg 3.7.10), -1 till 1 (steg 3.3.5, rykten.ts)
   reservAlltid?: true; // blev ifattsprungen utan reservvapen: tar alltid med ett i strid (steg 3.7.7, strid.ts)
+  liv?: Record<string, number>; // det hen varit med om och gjort, i tal: vargar hen dödat, folk hen vårdat, hus, svält hen överlevt … och 't:' + slaget = när det senast räknades (steg 3.9.8, folk.ts livet)
   skam?: number; // straffad med skam av ledaren: håller sig undan elden och samtalen till dess (steg 3.5.3, styre.ts)
 }
 // en upplevelse i barndomen: slaget (UPPLEVELSER i uppvaxt.ts), åldern (år), när, vad den gjorde med egenskaperna och vem

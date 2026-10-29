@@ -13,9 +13,9 @@
   "vintermat": 980,
   "vinterved": 896,
   "eld": 98,
-  "ms": 231121,
-  "kb": 632,
-  "delKb": 423
+  "ms": 241755,
+  "kb": 633,
+  "delKb": 425
  },
  "42": {
   "pop": 31,
@@ -31,9 +31,9 @@
   "vintermat": 136,
   "vinterved": 201,
   "eld": 100,
-  "ms": 164212,
-  "kb": 596,
-  "delKb": 397
+  "ms": 170418,
+  "kb": 598,
+  "delKb": 399
  },
  "777": {
   "pop": 6,
@@ -49,8 +49,8 @@
   "vintermat": 775,
   "vinterved": 122,
   "eld": 100,
-  "ms": 103676,
+  "ms": 106475,
   "kb": 271,
-  "delKb": 103
+  "delKb": 104
  }
 }

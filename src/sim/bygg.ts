@@ -1,4 +1,4 @@
-import { ALDER, ageOf, count, doingAct, forstaGang, living, log, stat } from './folk';
+import { ALDER, ageOf, count, doingAct, forstaGang, livet, living, log, stat } from './folk';
 import { kronikaBer, personFalt } from './berattelser';
 import { Bit, DORRAR, DorrDef, DorrSlag, Hus, MATERIAL, bitById, dorrDef, dorrRang, bitsOf, blocked, freeNear, gridOf, housesOf, husById, touch } from './byggnad';
 import { eldPlats, getMap } from './karta';
@@ -294,6 +294,7 @@ export function workOn(s: State, p: Person, b: Bit, dtSec: number, har = 0) {
   if (h && !h.klar && bitsOf(s).every(q => q.hus !== h.id || q.b >= 1)) {
     h.klar = s.now;
     if (h.varKlar !== undefined) return true;
+    livet(s, p, 'hus'); // satte sista biten (steg 3.9.8)
     const n = gridOf(s).rooms.filter(r => r.hus === h.id).reduce((a, r) => a + r.tiles.length, 0);
     if (fnOf(h).sover) log(s, `${h.namn} är färdigt. Nu kan ${n} sova under tak.`, 'world', [p.id]);
     kronikaBer(s, 'k_husKlar', h.id, { ...personFalt(p), hus: h.namn }); husKlar(s, h);

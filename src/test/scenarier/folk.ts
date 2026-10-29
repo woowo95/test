@@ -1287,7 +1287,7 @@ SCENARIER.vemibyn = {
     const hel = (x: string) => !/[{}]|undefined|NaN|  | \.|^\s*$/.test(x) && /[.!]$/.test(x);
     const [p] = living(t);
     for (const k of SIM.STATS) p.pot[k] = 10;
-    p.pot.skonhet = 19; p.fame.push('Uppfann rep');
+    p.pot.skonhet = 19; p.fame.push('Uppfann rep'); for (const k of SIM.SKILLS) p.skill[k] = 0;
     const b1 = SIM.beskrivning(t, p);
     // en gammal, ful nybyggare som uppfunnit, gjort och förlorat mycket
     const g = nyInvanare(t, 'm', 70), mor = nyInvanare(t, 'k', 30);
@@ -1311,6 +1311,73 @@ SCENARIER.vemibyn = {
       ['seg heter nu uthållig', !alla.some(x => /\bseg\b|snart trött/.test(x))],
       [`alla i byn får en hel text med 2–5 meningar (${alla.length})`, alla.every(x => hel(x) && meningar(x) >= 2 && meningar(x) <= 5)],
       ['minst åtta varianter i varje ny mall', varianter],
+    ];
+  },
+};
+
+SCENARIER.merliv = {
+  text: 'Steg 3.9.8: mer ur livet i beskrivningen: familjen (många barn, föräldralös, först född i byn, barn till en grundare), bäst i byn på något, bedrifterna i tal (vargar, vårdade, hus) räknade i personens statistik (p.liv), lärare och lärling, rädslan efter ett vargbett (stark men rädd), det hen överlevt, ägodelarna (mästerverk, rik, fattig, eget hus), ledaren, skammen, arvet från föräldrarna och längtan',
+  kor: () => {
+    const t = createState(13, START);
+    klockan(t, 12);
+    const hel = (x: string) => !/[{}]|undefined|NaN|  | \.|^\s*$/.test(x) && /[.!]$/.test(x);
+    const ny = (sex: 'm' | 'k', a: number) => { const p = nyInvanare(t, sex, a); for (const k of SIM.STATS) p.pot[k] = 10; for (const k of SIM.SKILLS) p.skill[k] = 0; return p; };
+    const besk = (p: Person) => SIM.beskrivning(t, p);
+    for (const q of living(t)) for (const k of SIM.SKILLS) q.skill[k] = 0;
+    // räknaren: en episod räknas en gång per dygn
+    const r = ny('m', 30);
+    SIM.livet(t, r, 'svalt', true); t.now += HOUR; SIM.livet(t, r, 'svalt', true); const en = r.liv!.svalt;
+    t.now += 2 * DAY; SIM.livet(t, r, 'svalt', true); const tva = r.liv!.svalt;
+    // vargar och ett vargbett, en stark men rädd
+    const v = ny('m', 30); v.liv = { vargar: 3, bett: 1 }; v.pot.mod = 8; v.pot.styrka = 16;
+    const bv = besk(v);
+    // föräldern till många barn, och arvet
+    const mor = ny('k', 45); mor.pot.styrka = 17;
+    const kids = [0, 1, 2, 3].map(() => { const c = ny('k', 18); c.mother = mor.id; return c; });
+    kids[0].pot.styrka = 16;
+    const bm = besk(mor), bk = besk(kids[0]);
+    // föräldralös
+    const fl = ny('m', 25), fm = ny('k', 60), ff = ny('m', 60);
+    fl.mother = fm.id; fl.father = ff.id; fm.died = fl.born + 5 * DAY; ff.died = fl.born + 8 * DAY;
+    const bfl = besk(fl);
+    // bäst i byn och lärare
+    const ja = ny('k', 35); ja.skill.jakt = 14;
+    const lar = ny('m', 10); lar.mentor = ja.id;
+    const bja = besk(ja), blar = besk(lar);
+    // ledaren och skammen
+    const le = ny('m', 40); t.styre = { ...(t.styre ?? {}), ledare: le.id, titel: 'Den vise' } as typeof t.styre;
+    const sk = ny('k', 30); sk.liv = { stal: 2, slogBarn: 1 };
+    const ble = besk(le), bsk = besk(sk);
+    // överlevt och längtan
+    const ov = ny('k', 30); ov.liv = { svalt: 1, skadad: 2, 'mg:hardVinter': 1 };
+    const la = ny('m', 28), lb = ny('k', 27); getRel(t, la, lb).rom = 80;
+    const bov = besk(ov), bla = besk(la);
+    // ett mästerverk med namn
+    const ma = ny('m', 30);
+    (t.ting ??= []).push({ id: 9999, k: 'kniv', c: 1, agare: ma.id, q: 5, ber: { g: ma.id, h: 0.5, ai: 0, namn: 'Vintervargen' } });
+    const bma = besk(ma);
+    // räknarna fylls i en vanlig by
+    const by = createState(3, START);
+    kor(by, 8 * 24);
+    const liv = by.people.filter(p => p.liv && Object.keys(p.liv).some(k => !k.startsWith('t:'))).length;
+    const alla = [...living(t), ...living(by)].map(besk);
+    const nya = ['besk_barn', 'besk_foraldralos', 'besk_forstFodd', 'besk_grundarbarn', 'besk_bast', 'besk_vargar', 'besk_vardat', 'besk_hus', 'besk_larare', 'besk_larling', 'besk_raddVarg', 'besk_overlevt', 'besk_mastarverk', 'besk_egetHus', 'besk_rik', 'besk_fattig', 'besk_ledare', 'besk_skam', 'besk_arv', 'besk_langtan'];
+    return [
+      [`en episod räknas en gång per dygn (${en}, sedan ${tva})`, en === 1 && tva === 2],
+      [`vargarna i tal och rädslan, stark men rädd (${bv})`, /tre vargar/i.test(bv) && /stark/i.test(bv) && /varg/.test(bv.replace(/tre vargar/i, ''))],
+      [`föräldern till många barn (${bm})`, /fyra barn/.test(bm)],
+      [`arvet efter modern (${bk})`, /mors|sin mor|hennes mor/.test(bk)],
+      [`föräldralös (${bfl})`, /föräldr|mor och far/.test(bfl)],
+      [`bäst i byn på jakt och lärare (${bja})`, /jakt/.test(bja) && bja.includes(lar.name)],
+      [`lärlingen (${blar})`, blar.includes(ja.name)],
+      [`ledaren (${ble})`, /led|bestämmer|Den vise|tyngst|byn i sina/.test(ble)],
+      [`skammen (${bsk})`, /stulit/.test(bsk) && /slagit sitt barn/.test(bsk)],
+      [`det hen överlevt (${bov})`, /svält/.test(bov) && /två svåra skador/.test(bov) && /hård vinter/.test(bov)],
+      [`längtan (${bla})`, bla.includes(lb.name)],
+      [`mästerverket (${bma})`, bma.includes('Vintervargen')],
+      [`räknarna fylls i en vanlig by efter 8 dygn (${liv} personer har något i p.liv)`, liv >= 1],
+      [`alla får en hel text (${alla.length})`, alla.every(hel)],
+      ['minst åtta varianter i varje ny mall', nya.every(m => (SIM.BERATTELSER as Record<string, unknown[]>)[m].length >= 8)],
     ];
   },
 };

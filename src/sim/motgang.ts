@@ -1,5 +1,5 @@
 import { balans } from './balans';
-import { ageOf, alive, count, living, log } from './folk';
+import { ageOf, alive, count, livet, living, log } from './folk';
 import { delade } from './berattelser';
 import { kronika } from './historik';
 import { clamp, rnd } from './slump';
@@ -136,6 +136,7 @@ export function stepMotgang(s: State) {
     const dog = deadCount(s) - m.pagar.dog, d = DEF[m.pagar.k];
     log(s, `${d.slutar}${dog ? ` ${dog} dog under den.` : ' Alla klarade sig.'}`, 'world');
     kronika(s, `${d.namn} tog slut${dog ? `. ${dog} dog under den` : ' och alla klarade sig'}.`);
+    for (const p of living(s)) if (p.born < m.pagar.t) livet(s, p, 'mg:' + m.pagar.k); // de som klarade den (steg 3.9.8)
     delete m.pagar;
   }
   for (const p of s.people) if (p.varsel && (!alive(p) || p.varsel.t < s.now - DAY * 7)) delete p.varsel;

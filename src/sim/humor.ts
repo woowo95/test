@@ -1,4 +1,4 @@
-import { ALDER, ageOf, count, franMitt, getRel, isParent, living, log, relKey, stat, think } from './folk';
+import { ALDER, ageOf, count, franMitt, getRel, isParent, livet, living, log, relKey, stat, think } from './folk';
 import { Kroppsdel, SkadaTyp, halsa, skada } from './halsa';
 import { die, leave } from './liv';
 import { skiljas } from './samtal';
@@ -180,7 +180,7 @@ function slar(s: State, p: Person, q: Person, k: Utbrott, v: Vald) {
   }
   think(q, `${p.name} slog mig`, -v.tanke, s.now, v.dygn * DAY);
   if (isParent(p, q) && ageOf(q, s.now) < ALDER.vuxen) {
-    count(s, 'utb_barn');
+    count(s, 'utb_barn'); livet(s, p, 'slogBarn');
     upplev(s, q, q.upp?.some(u => u.k === 'slagen') ? 'slagenIgen' : 'slagen', p.name);
   }
 }

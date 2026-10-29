@@ -2,7 +2,7 @@ import { upplev } from './uppvaxt';
 import { State, Person, HOUR, DAY } from './typer';
 import { FOOD, REDSKAP_SLAG, SAKER, SAK_LIST, isTool } from './saker';
 import { actsOf, usesTool } from './handlingar';
-import { ALDER, KROPP, REL, ageOf, alive, byId, count, getRel, isKin, isParent, living, log, relKey, stat, think } from './folk';
+import { ALDER, KROPP, REL, ageOf, alive, byId, count, getRel, isKin, isParent, livet, living, log, relKey, stat, think } from './folk';
 import { kanGa } from './halsa';
 import { chance, clamp, pickViktat, rnd } from './slump';
 import { Ting, tingOf } from './agande';
@@ -150,7 +150,7 @@ function ran(s: State, p: Person, b: Behov, dtSec: number) {
   handelse(s, p, 'ranVald', offer, b.namn);
   handelse(s, p, vann ? 'ran' : 'ranForsok', offer, b.namn);
   if (!vann || !alive(offer)) return true;
-  count(s, 'ranVann');
+  count(s, 'ranVann'); livet(s, p, 'ran');
   b.anvand(s, p, offer);
   log(s, `${p.name} tog ${b.namn} av ${offer.name} med våld.`, 'rel', [p.id, offer.id]);
   upplev(s, offer, 'bestulen', p.name);
@@ -267,7 +267,7 @@ export function noticeTheft(s: State, p: Person, key: string) {
     think(p, `${t.name} tog av min ${namnOf(key)}`, l ? -0.04 : -0.1, s.now, 12 * HOUR);
     if (alive(t)) think(t, `${p.name} vet att jag tog`, -0.05, s.now, 6 * HOUR);
     handelse(s, t, l ? 'stoldLindrig' : 'stold', p, namnOf(key), p); // bara den bestulne vet, och kan berätta det (steg 3.3.1)
-    if (!l) { log(s, `${p.name} märkte att ${t.name} hade stulit hens ${namnOf(key)}.`, 'rel', [p.id, t.id]); upplev(s, p, 'bestulen', t.name); upplev(s, t, 'tjuv', p.name); }
+    if (!l) { livet(s, t, 'stal'); log(s, `${p.name} märkte att ${t.name} hade stulit hens ${namnOf(key)}.`, 'rel', [p.id, t.id]); upplev(s, p, 'bestulen', t.name); upplev(s, t, 'tjuv', p.name); }
   }
   p.stulet = p.stulet.filter(x => x.k !== key);
   if (!p.stulet.length) delete p.stulet;

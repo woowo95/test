@@ -1,12 +1,12 @@
 import { balans } from './balans';
-import { ALDER, REL, ageOf, alive, byId, count, isParent, living, log, relKey } from './folk';
+import { ALDER, REL, ageOf, alive, byId, count, isKin, isParent, living, log, relKey } from './folk';
 import { ACTS, Act, slagIkon } from './handlingar';
 import { TAGS } from './seder';
 import { kronika } from './historik';
 import { HANDELSER, INTRYCK, IntryckTyp, intryckOm, intryckText, samlatIntryck } from './rykten';
 import { SAKER, sakNamn } from './saker';
 import { moodOf } from './humor';
-import { HOUR, Person, Rel, STATS, Stat, State, Upplevelse } from './typer';
+import { HOUR, Person, Rel, SKILLS, SKILL_NAMES, STATS, Skill, Stat, State, Upplevelse } from './typer';
 import { upplevelseText } from './uppvaxt';
 import { isLight, kalender } from './tid';
 import { temperature, vaderNu } from './vader';
@@ -32,6 +32,15 @@ export const BERATT = balans('beratt', {
   skon: 5, // skönheten står alltid med (steg 3.9.7) när den ligger så här långt från mitten (10) eller mer
   aldstBy: 4, // den äldsta i byn nämns när byn har minst så här många invånare
   mycket: 0.6, // beskrivningen får en mening till när minst fem delar (de fasta med) sticker ut så här mycket (vikt 0–1)
+  // mer ur livet (steg 3.9.8)
+  mangaBarn: 4, // föräldern nämns med barnen från så här många barn
+  bastSk: 10, // bäst i byn på en färdighet räknas från den här nivån (färdigheterna går till 20, mästare vid 16)
+  vardMin: 5, // den som vårdat andra så här många gånger nämns för det
+  raddMod: 13, // ett vargbett gör den rädd för vargar som har lägre mod än så här
+  starkRadd: 14, // ... och styrkan där hen kallas stark men rädd
+  rik: 2, // rik med så här många gånger byns median (rikedomen i humor.ts), fattig med den här delen eller mindre:
+  fattig: 0.4,
+  langtan: 50, // längtan efter någon med så här mycket romans (rom, 0–100) eller mer, när hen inte har någon partner
   // mästerverken och de usla sakerna (steg 3.9.4)
   glad: 0.7, // göraren var glad med humöret så här högt ...
   ledsen: 0.35, // ... och nedstämd så här lågt
@@ -393,6 +402,220 @@ const MDEF = {
     '{Hen} har förlorat för många gånger med {vad}.',
     'Ge inte {honom} {vad}; {hen} vill hellre ha något annat.',
     '{Hen} slåss sämre med {vad} än med något annat.',
+  ],
+  // mer ur livet (steg 3.9.8). {foralder} = 'mor' eller 'far', {vad} = 'fem barn'
+  besk_barn: [
+    '{Hen} är {foralder} till {vad}.',
+    '{vad} kallar {honom} {foralder}.',
+    '{Hen} har {vad}.',
+    'Huset är fullt av {hans} {vad}.',
+    'Med {vad} har {hen} alltid någon omkring sig.',
+    '{Hen} har fött upp {vad}.',
+    'Byn växer tack vare {honom}: {hen} har {vad}.',
+    'Det är inte lätt att hålla reda på {hans} {vad}.',
+  ],
+  besk_foraldralos: [
+    '{Hen} förlorade både mor och far som liten.',
+    '{Hen} växte upp utan föräldrar.',
+    'Både {hans} mor och far dog medan {hen} var barn.',
+    'Ingen mor och ingen far fanns kvar när {hen} växte upp.',
+    'Byn fick bli {hans} familj när föräldrarna dog.',
+    '{Hen} blev föräldralös som liten.',
+    'Det var andra som fick ta hand om {honom} när föräldrarna dog.',
+    '{Hen} minns knappt sina föräldrar.',
+  ],
+  besk_forstFodd: [
+    '{Hen} var det första barnet som föddes i byn.',
+    'Ingen i byn föddes före {honom}.',
+    '{Hen} är byns förstfödda.',
+    'När {hen} kom till världen var {hen} det första barnet i byn.',
+    'Byns första barn var {namn}.',
+    '{Hen} var det första nya livet i byn.',
+    'Med {honom} började byns barn.',
+    'Alla minns när byns första barn kom: det var {namn}.',
+  ],
+  // {vem} = föräldern som grundade byn, {fo} = 'mor' eller 'far', {barnord} = 'dotter' eller 'son'
+  besk_grundarbarn: [
+    '{Hen} är {barnord} till {vem}, en av dem som grundade byn.',
+    '{vem}, som var med och grundade byn, är {hans} {fo}.',
+    'Som {barnord} till {vem} har {hen} byn i blodet.',
+    '{Hen} är barn till en av de första: {vem}.',
+    'En av byns grundare, {vem}, är {hans} {fo}.',
+    '{Hen} föddes in i byn som {vem} var med och grundade.',
+    'Byn som {vem} grundade är {hans} arv.',
+    '{Hen} är {barnord} till {vem}, och det vet alla.',
+  ],
+  // {vad} = färdigheten ('jakt', 'eldkonst')
+  besk_bast: [
+    'Ingen i byn är bättre på {vad} än {namn}.',
+    '{Hen} är bäst i byn på {vad}.',
+    'När det gäller {vad} slår ingen {honom}.',
+    'Vill man lära sig {vad} går man till {namn}.',
+    'I {vad} har {hen} ingen like i byn.',
+    'Byn vet att ingen klarar {vad} bättre än {namn}.',
+    'Ingen i byn kan mäta sig med {honom} i {vad}.',
+    'Om {vad} vet {hen} mer än någon annan i byn.',
+  ],
+  // bedrifterna i tal: {vad} = 'tre vargar', 'många gånger', 'två hus'
+  besk_vargar: [
+    '{Hen} har dödat {vad}.',
+    'Vargarna har lärt sig frukta {namn}: {hen} har fällt {vad}.',
+    'Med egna händer har {hen} fällt {vad}.',
+    'När vargarna kom fällde {hen} {vad}.',
+    '{vad} har {namn} fällt i strid.',
+    '{Hen} har {vad} på sitt samvete, och byn tackar {honom} för det.',
+    'Det är {namn} som har fällt {vad}.',
+    'Byn berättar gärna att {namn} har dödat {vad}.',
+  ],
+  besk_vardat: [
+    '{Hen} har vårdat sjuka och skadade {vad}.',
+    'Många har {namn} att tacka för att såren läkte.',
+    'Det är {namn} man går till när man är sjuk eller skadad.',
+    '{Hen} har tagit hand om andra {vad}.',
+    '{Hans} händer har lagt om sår {vad}.',
+    'Många i byn lever tack vare {hans} vård.',
+    '{Hen} har suttit hos de sjuka {vad}.',
+    'Byn vet att {namn} tar hand om den som är illa ute.',
+  ],
+  besk_hus: [
+    '{Hen} har byggt {vad} i byn.',
+    'Det var {namn} som gjorde färdigt {vad}.',
+    '{Hen} har lagt sista handen vid {vad}.',
+    'Folk sover under tak som {namn} har byggt.',
+    '{Hen} har varit med och byggt {vad}.',
+    'Byn har {namn} att tacka för {vad}.',
+    '{Hen} kan peka på {vad} och säga: det byggde jag.',
+    'Med sina händer har {hen} rest {vad}.',
+  ],
+  // {vem} = lärlingen eller läraren (mentorn, steg 3.1.1)
+  besk_larare: [
+    '{Hen} lär {vem} allt {hen} kan.',
+    '{vem} följer {honom} och lär sig.',
+    '{Hen} har tagit {vem} under sina vingar.',
+    'Det är {namn} som lär upp {vem}.',
+    '{vem} ser upp till {honom} och vill bli lika skicklig.',
+    '{Hen} har en lärling: {vem}.',
+    'Vart {hen} går följer {vem} efter för att lära sig.',
+    '{Hen} visar {vem} hur man gör.',
+  ],
+  besk_larling: [
+    '{Hen} lär sig av {vem}.',
+    '{vem} är {hans} lärare.',
+    '{Hen} följer {vem} och ser hur det görs.',
+    '{Hen} ser upp till {vem} och vill bli lika skicklig.',
+    '{Hen} går i lära hos {vem}.',
+    'Vart {vem} går följer {namn} efter.',
+    '{vem} har tagit {honom} under sina vingar.',
+    '{Hen} har mycket att lära av {vem}, och vet om det.',
+  ],
+  // rädslan efter ett vargbett; stark = en kontrast (stark men rädd)
+  besk_raddVarg: [
+    'Sedan vargen bet {honom} är {hen} rädd för vargar.',
+    '{Hen} bär märken efter vargens tänder, och rädslan sitter kvar.',
+    'När vargarna ylar kryper {hen} närmare elden.',
+    '{Hen} har känt vargens tänder och glömmer det aldrig.',
+    'Ett vargbett har gjort {honom} rädd för skogen om natten.',
+    'Sedan vargen bet {honom} ser {hen} sig ofta om i skogen.',
+    'Bara ordet varg får {honom} att rysa.',
+    'Vargen bet {honom} en gång, och {hen} har inte glömt det.',
+    { t: 'Stark som {hen} är, blir {hen} ändå rädd när vargarna ylar.', om: f => f.stark === true },
+    { t: 'Så stark {hen} är, och ändå rädd för vargar sedan bettet.', om: f => f.stark === true },
+  ],
+  // {vad} = det hen överlevt ('svält och en hård vinter')
+  besk_overlevt: [
+    '{Hen} har överlevt {vad}.',
+    '{Hen} har klarat sig igenom {vad}.',
+    'Livet har inte varit lätt: {hen} har gått igenom {vad}.',
+    '{Hen} har överlevt {vad}, och det har gjort {honom} seg.',
+    'Det krävs mycket för att knäcka {honom}; {hen} har klarat {vad}.',
+    '{Hen} vet hur det är att nästan dö: {hen} har överlevt {vad}.',
+    'Byn har sett {honom} klara {vad}.',
+    '{Hen} har varit nära döden, men klarat {vad}.',
+  ],
+  // ägodelarna: {vad} = mästerverkets namn
+  besk_mastarverk: [
+    '{Hen} äger {vad}, ett mästerverk som hela byn känner.',
+    '{vad} är {hans}, och hela byn vet det.',
+    'Mästerverket {vad} tillhör {namn}.',
+    '{Hen} vaktar {vad} som ögonstenen.',
+    'Det är {namn} som äger {vad}.',
+    'Alla vet vem {vad} tillhör: {namn}.',
+    '{Hen} skulle aldrig skiljas från {vad}.',
+    'Av allt {hen} äger är {hen} stoltast över {vad}.',
+  ],
+  besk_egetHus: [
+    '{Hen} har ett eget hus.',
+    '{Hen} bor i ett eget hus.',
+    'Huset {hen} bor i är {hans} eget.',
+    '{Hen} sover under eget tak.',
+    '{Hen} har ett hus som är {hans} eget.',
+    'Inte alla har ett eget hus, men det har {namn}.',
+    'I byn finns ett hus som är {hans}.',
+    '{Hen} har eget tak över huvudet.',
+  ],
+  besk_rik: [
+    '{Hen} äger mer än de flesta i byn.',
+    '{Hen} är rik.',
+    'Få i byn har så mycket som {namn}.',
+    '{Hen} har samlat på sig mycket.',
+    'Det saknas inget hos {namn}.',
+    '{Hen} är en av de rikaste i byn.',
+    'Andra tittar avundsjukt på allt {hen} äger.',
+    '{Hans} kista är full.',
+  ],
+  besk_fattig: [
+    '{Hen} äger nästan ingenting.',
+    '{Hen} är fattig.',
+    'Få i byn har så lite som {namn}.',
+    '{Hen} har knappt något eget.',
+    '{Hen} är en av de fattigaste i byn.',
+    'Det {hen} äger ryms i en hand.',
+    '{Hen} har aldrig haft mycket.',
+    'Väldigt lite av allt i byn är {hans}.',
+  ],
+  // {titel} = ledarens titel ('Äldste', 'Den vise')
+  besk_ledare: [
+    '{Hen} leder byn, och man kallar {honom} {titel}.',
+    '{Hen} är byns ledare.',
+    'Det är {namn} som bestämmer i byn.',
+    'När byn ska bestämma något väger {hans} ord tyngst.',
+    'Som {titel} leder {hen} byn.',
+    '{Hen} har byn i sina händer.',
+    'Alla vet vem som leder byn: {namn}, {titel}.',
+    'Byn följer {honom}; {hen} är dess ledare.',
+  ],
+  // {vad} = det byn inte glömt ('har stulit från andra och slagit sitt barn')
+  besk_skam: [
+    'Byn har inte glömt att {hen} {vad}.',
+    'Det sägs att {hen} {vad}.',
+    'Det finns en skam i {hans} liv: {hen} {vad}.',
+    '{Hen} {vad}, och det hänger kvar vid {honom}.',
+    'Folk viskar om att {hen} {vad}.',
+    'Man litar inte helt på {honom}, eftersom {hen} {vad}.',
+    'Ingen har glömt att {namn} {vad}.',
+    'Allt i {hans} liv är inte {hen} stolt över: {hen} {vad}.',
+  ],
+  // arvet: {vad} = egenskapen ('styrka'), {adj} = 'stark', {fo} = 'fars' eller 'mors', {fo2} = 'far' eller 'mor'
+  besk_arv: [
+    '{Hen} har sin {fo} {vad}.',
+    '{Hen} har fått sin {fo} {vad}.',
+    'Alla ser att {hen} har ärvt sin {fo} {vad}.',
+    'Sin {fo} {vad} har {hen} fått i arv.',
+    'Man känner igen {hans} {fo} {vad} i {honom}.',
+    'Precis som {hans} {fo2} är {hen} {adj}.',
+    '{adj} som sin {fo2}, säger folk om {honom}.',
+    '{Hans} {vad} har {hen} efter sin {fo2}.',
+  ],
+  // längtan: {vem} = den hen är förälskad i
+  besk_langtan: [
+    '{Hen} längtar efter {vem}.',
+    'I hemlighet tänker {hen} ofta på {vem}.',
+    '{Hans} ögon söker sig gärna till {vem}.',
+    '{Hen} skulle vilja vara mer än vän med {vem}.',
+    'Det är {vem} som {hen} drömmer om.',
+    'När {vem} kommer förbi blir {hen} tyst.',
+    '{Hen} har ett gott öga till {vem}.',
+    'Hjärtat slår fortare hos {honom} när {vem} är nära.',
   ],
   besk_inget: [
     'Mer än så vet byn inte om {honom} än.',
@@ -1066,18 +1289,33 @@ export const BESK_DELAR: BeskDel[] = [
     if (!alive(b.p) || l.length < BERATT.aldstBy || ageOf(b.p, b.s.now) < ALDER.gammal) return 0;
     return l.every(q => q === b.p || q.born > b.p.born) ? 1 : 0;
   }, text: b => { b.f.ar = Math.floor(ageOf(b.p, b.s.now)); return mening(b, 'besk_aldst', 12); } },
+  { id: 'ledare', vikt: b => alive(b.p) && b.s.styre?.ledare === b.p.id ? 0.95 : 0, text: b => { b.f.titel = b.s.styre?.titel ?? 'ledare'; return mening(b, 'besk_ledare', 20); } },
   { id: 'namn', vikt: b => b.f.binamn ? 0.9 : b.f.yrke && b.f.rykte ? 0.85 : b.f.rykte ? 0.8 : b.f.yrke ? 0.5 : 0,
     text: b => mening(b, b.f.binamn ? 'besk_binamn' : b.f.yrke && b.f.rykte ? 'besk_yrkeRykte' : b.f.yrke ? 'besk_yrke' : 'besk_rykte', 1) },
   { id: 'titel', vikt: b => titlar(b.p).length ? 0.8 : 0, text: b => { b.f.vad = liten(titlar(b.p)[0]); return mening(b, 'besk_titel', 13); } },
+  { id: 'familj', vikt: b => familj(b.s, b.p)?.[1] ?? 0, text: b => { const [m, , f] = familj(b.s, b.p)!; Object.assign(b.f, f); return mening(b, m, 21); } },
+  { id: 'bast', vikt: b => bastPa(b.s, b.p) ? 0.7 : 0, text: b => { b.f.vad = SKILL_NAMES[bastPa(b.s, b.p)!].toLowerCase(); return mening(b, 'besk_bast', 22); } },
   { id: 'uppfann', vikt: b => uppfann(b.p).length ? 0.75 : 0, text: b => { b.f.vad = och(uppfann(b.p).slice(-3)); return mening(b, 'besk_uppfann', 14); } },
   { id: 'bedrift', vikt: b => bedrifter(b.p).length ? 0.7 : 0, text: b => { b.f.vad = ihop(bedrifter(b.p).slice(-2).map(liten)); return mening(b, 'besk_bedrift', 15); } },
+  { id: 'tal', vikt: b => talDel(b.p)?.[1] ?? 0, text: b => { const [m, , vad] = talDel(b.p)!; b.f.vad = vad; return mening(b, m, 23); } },
+  { id: 'larare', vikt: b => alive(b.p) && laraVem(b.s, b.p) ? 0.5 : 0, text: b => { const [m, q] = laraVem(b.s, b.p)!; b.f.vem = q.name; return mening(b, m, 24); } },
   { id: 'rel', vikt: b => b.f.partner || b.f.van ? 0.6 : 0, text: b => mening(b, b.f.partner && b.f.van ? 'besk_partnerVan' : b.f.partner ? 'besk_partner' : 'besk_van', 2) },
+  { id: 'langtan', vikt: b => langtar(b.s, b.p) ? 0.55 : 0, text: b => { b.f.vem = langtar(b.s, b.p)!.name; return mening(b, 'besk_langtan', 25); } },
   { id: 'fiende', vikt: b => b.f.fiende ? 0.65 : 0, text: b => mening(b, 'besk_fiende', 3) },
   { id: 'saknad', vikt: b => { const d = alive(b.p) ? saknad(b.s, b.p) : undefined; return d ? (d[2] ? 0.85 : 0.45) : 0; }, text: b => {
     const [q, vem, sorj] = saknad(b.s, b.p)!;
     b.f.dod = q.name; b.f.vem = vem;
     return mening(b, sorj ? 'besk_sorjer' : 'besk_saknar', 16);
   } },
+  { id: 'overlevt', vikt: b => overlevt(b.p).length ? 0.45 + 0.05 * overlevt(b.p).length : 0, text: b => { b.f.vad = och(overlevt(b.p)); return mening(b, 'besk_overlevt', 26); } },
+  { id: 'radd', vikt: b => (b.p.liv?.bett ?? 0) > 0 && b.p.pot.mod < BERATT.raddMod ? 0.55 : 0, text: b => { b.f.stark = b.p.pot.styrka >= BERATT.starkRadd; return mening(b, 'besk_raddVarg', 27); } },
+  { id: 'arv', vikt: b => arvet(b.s, b.p) ? 0.45 : 0, text: b => {
+    const [k, q] = arvet(b.s, b.p)!;
+    Object.assign(b.f, { vad: ARV_ORD[k], adj: DRAG[k][0], fo: q.sex === 'k' ? 'mors' : 'fars', fo2: q.sex === 'k' ? 'mor' : 'far' });
+    return mening(b, 'besk_arv', 28);
+  } },
+  { id: 'ago', vikt: b => agodel(b.s, b.p)?.[1] ?? 0, text: b => { const [m, , vad] = agodel(b.s, b.p)!; b.f.vad = vad; return mening(b, m, 29); } },
+  { id: 'skam', vikt: b => skammen(b.p).length ? 0.6 : 0, text: b => { b.f.vad = ihop(skammen(b.p)); return mening(b, 'besk_skam', 30); } },
   { id: 'smak', vikt: b => { const m = smakText(b.p); return m ? 0.3 + 0.3 * Math.abs(m.v) : 0; }, text: b => {
     const m = smakText(b.p)!;
     b.f.vad = m.vad;
@@ -1089,6 +1327,92 @@ export const BESK_DELAR: BeskDel[] = [
     return mening(b, 'besk_minne', 5);
   } },
 ];
+// mer ur livet (steg 3.9.8). Familjen: [mallen, vikten, fyllningen], den som sticker ut mest
+function familj(s: State, p: Person): [MallId, number, Fyllning] | undefined {
+  const barn = s.people.filter(c => c.mother === p.id || c.father === p.id).length, fo = p.sex === 'k' ? 'mor' : 'far';
+  if (barn >= BERATT.mangaBarn && !titlar(p).some(x => x.startsWith('Mor till'))) return ['besk_barn', 0.7, { foralder: fo, vad: `${talOrd(barn)} barn` }];
+  const mor = byId(s, p.mother ?? -1), far = byId(s, p.father ?? -1), vuxen = p.born + ALDER.vuxen * 24 * HOUR;
+  if (mor && far && mor.died !== undefined && far.died !== undefined && Math.max(mor.died, far.died) < vuxen) return ['besk_foraldralos', 0.65, {}];
+  if (!p.grundare && s.people.every(q => q.grundare || q.born >= p.born)) return ['besk_forstFodd', 0.6, {}];
+  const g = [mor, far].find(q => q?.grundare);
+  if (g && !p.grundare) return ['besk_grundarbarn', 0.5, { vem: g.name, fo: g.sex === 'k' ? 'mor' : 'far', barnord: p.sex === 'k' ? 'dotter' : 'son' }];
+  return undefined;
+}
+// färdigheten där hen är bäst bland de vuxna i byn (striden räknas inte), från BERATT.bastSk
+function bastPa(s: State, p: Person): Skill | undefined {
+  if (!alive(p) || ageOf(p, s.now) < ALDER.vuxen) return undefined;
+  const vuxna = living(s).filter(q => q !== p && ageOf(q, s.now) >= ALDER.vuxen);
+  let bast: Skill | undefined;
+  for (const k of SKILLS) if (k !== 'narstrid' && k !== 'traff' && p.skill[k] >= BERATT.bastSk && vuxna.every(q => q.skill[k] < p.skill[k]) && (!bast || p.skill[k] > p.skill[bast])) bast = k;
+  return bast;
+}
+// bedrifterna i tal (räknade i p.liv när de hände): [mallen, vikten, texten]
+const ggrOrd = (n: number) => n >= 10 ? 'många gånger' : `${talOrd(n)} gånger`;
+function talDel(p: Person): [MallId, number, string] | undefined {
+  const l = p.liv ?? {};
+  if (l.vargar) return ['besk_vargar', 0.65 + Math.min(0.2, 0.05 * l.vargar), l.vargar === 1 ? 'en varg' : `${talOrd(l.vargar)} vargar`];
+  if (l.hus) return ['besk_hus', 0.55 + Math.min(0.15, 0.05 * l.hus), l.hus === 1 ? 'ett hus' : `${talOrd(l.hus)} hus`];
+  if ((l.vardat ?? 0) >= BERATT.vardMin) return ['besk_vardat', 0.55, ggrOrd(l.vardat)];
+  return undefined;
+}
+// läraren (mentorn, steg 3.1.1) eller lärlingen: den unga som har hen som mentor
+function laraVem(s: State, p: Person): [MallId, Person] | undefined {
+  const m = p.mentor !== undefined ? byId(s, p.mentor) : undefined;
+  if (m && alive(m)) return ['besk_larling', m];
+  const l = living(s).find(q => q.mentor === p.id);
+  return l ? ['besk_larare', l] : undefined;
+}
+// den hen är förälskad i, när hen inte har någon partner
+function langtar(s: State, p: Person) {
+  if (!alive(p) || p.partner !== undefined || ageOf(p, s.now) < ALDER.vuxen) return undefined;
+  let bast: Person | undefined, br = BERATT.langtan;
+  for (const q of living(s)) {
+    const r = q !== p ? s.rels[relKey(p.id, q.id)] : undefined;
+    if (r && r.rom >= br && ageOf(q, s.now) >= ALDER.vuxen && !isKin(p, q)) { br = r.rom; bast = q; }
+  }
+  return bast;
+}
+// det hen överlevt: svält, köld, sjukdom, en svår skada och motgångarna (i tal när det hänt flera gånger)
+const OVERLEVT: [string, string, string][] = [['svalt', 'svält', 'svält'], ['frys', 'svår köld', 'svår köld'], ['sjuk', 'en svår sjukdom', 'svåra sjukdomar'], ['skadad', 'en svår skada', 'svåra skador'], ['mg:hardVinter', 'en hård vinter', 'hårda vintrar']];
+function overlevt(p: Person) {
+  if (!alive(p)) return [];
+  const l = p.liv ?? {};
+  return OVERLEVT.filter(([k]) => l[k]).map(([k, ett, fler]) => l[k] === 1 || ett === fler ? (l[k] > 1 ? `${ett} ${talOrd(l[k])} gånger` : ett) : `${talOrd(l[k])} ${fler}`).slice(0, 3);
+}
+// den egenskap hen har efter en förälder: båda höga (BERATT.drag eller mer). [egenskapen, föräldern]
+const ARV_ORD: Record<Stat, string> = { styrka: 'styrka', uthallighet: 'uthållighet', intelligens: 'klokhet', nyfikenhet: 'nyfikenhet', karisma: 'talförhet', skonhet: 'skönhet', flit: 'flit', empati: 'värme', mod: 'mod', minne: 'minne', smidighet: 'smidighet', aggression: 'hetta' };
+function arvet(s: State, p: Person): [Stat, Person] | undefined {
+  let bast: [Stat, Person, number] | undefined;
+  for (const id of [p.mother, p.father]) {
+    const q = id !== undefined ? byId(s, id) : undefined;
+    if (!q) continue;
+    for (const k of STATS) { const v = Math.min(p.pot[k], q.pot[k]) - 10; if (v >= BERATT.drag && (!bast || v > bast[2])) bast = [k, q, v]; }
+  }
+  return bast && [bast[0], bast[1]];
+}
+// ägodelarna: ett mästerverk (med namn), annars rik eller fattig, annars eget hus
+function agodel(s: State, p: Person): [MallId, number, string?] | undefined {
+  if (!alive(p)) return undefined;
+  const m = (s.ting ?? []).find(t => t.agare === p.id && t.ber?.namn);
+  if (m) return ['besk_mastarverk', 0.65, m.ber!.namn];
+  const vuxna = living(s).filter(q => ageOf(q, s.now) >= ALDER.vuxen && q.forv), w = p.forv?.w;
+  if (w !== undefined && vuxna.length >= BERATT.aldstBy && ageOf(p, s.now) >= ALDER.vuxen) {
+    const l = vuxna.map(q => q.forv!.w).sort((a, b) => a - b), med = l[Math.floor(l.length / 2)];
+    if (med > 0 && w >= BERATT.rik * med) return ['besk_rik', 0.5];
+    if (med > 0 && w <= BERATT.fattig * med) return ['besk_fattig', 0.5];
+  }
+  if (s.hus?.some(h => h.ag === p.id && h.klar !== undefined)) return ['besk_egetHus', 0.4];
+  return undefined;
+}
+// skammen: det byn inte glömt
+function skammen(p: Person) {
+  const l = p.liv ?? {}, ut: string[] = [];
+  if (l.stal || p.upp?.some(u => u.k === 'tjuv')) ut.push('har stulit från andra');
+  if (l.ran) ut.push('har tagit saker med våld');
+  if (l.slogBarn) ut.push('har slagit sitt barn');
+  if (p.skam !== undefined) ut.push('har straffats av ledaren');
+  return ut.slice(0, 2);
+}
 const titlar = (p: Person) => p.fame.filter(x => TITEL.test(x));
 const uppfann = (p: Person) => p.fame.filter(x => x.startsWith('Uppfann ')).map(x => x.slice(8));
 const bedrifter = (p: Person) => p.fame.filter(x => !FAME_EGEN.test(x) && !TITEL.test(x));

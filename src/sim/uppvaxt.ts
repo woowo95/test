@@ -1,4 +1,4 @@
-import { KROPP, ageOf, alive, count, isParent, isSick, living, log } from './folk';
+import { KROPP, ageOf, alive, count, isParent, isSick, livet, living, log } from './folk';
 import { pick, rnd } from './slump';
 import { Person, STATS, Stat, State, Upplevelse } from './typer';
 import { roomAt } from './byggnad';
@@ -120,6 +120,11 @@ export function uppvaxtFodd(s: State, ch: Person) {
 // en gång i timmen (steg.ts, utan att ändra någon annans slump): nära svält eller köld, svårt sjuk, lek och trygghet
 export function stepUppvaxt(s: State) {
   for (const p of s.people) {
+    if (alive(p)) { // det hen överlevt, i alla åldrar (steg 3.9.8)
+      if (p.hunger <= 0 && p.health < UPPV.naraHalsa) livet(s, p, 'svalt', true);
+      if (p.warm < KROPP.frysdod && p.health < UPPV.naraHalsa) livet(s, p, 'frys', true);
+      if (isSick(p, s.now) && p.health < UPPV.sjukHalsa) livet(s, p, 'sjuk', true);
+    }
     if (!formas(s, p) || ageOf(p, s.now) < UPPV.fran) continue;
     if (p.hunger <= 0 && p.health < UPPV.naraHalsa) upplev(s, p, 'svalt');
     if (p.warm < KROPP.frysdod && p.health < UPPV.naraHalsa) upplev(s, p, 'frys');

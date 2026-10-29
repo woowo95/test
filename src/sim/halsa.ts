@@ -12,7 +12,7 @@ import { UPPV, upplev } from './uppvaxt';
 // vilar eller sover, och fortare inne. Smuts och hygien kommer med hygienen (2.7). Fliken Hälsa (steg 2.5.3) läser skadeLista,
 // delSkada och förmågorna (FORMAGOR)
 import { ACTS } from './handlingar';
-import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, franMitt, living, log, think } from './folk';
+import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, franMitt, livet, living, log, think } from './folk';
 import { amountOf, avbryt } from './lager';
 import { fearPlace } from './minne';
 import { TORST } from './torst';
@@ -219,6 +219,7 @@ export function skada(s: State, p: Person, d: Kroppsdel, k: SkadaTyp, g: number,
   (p.skador ??= []).push({ d, k, g, b: SKADA[k].blod > 0 ? 1 : 0, t: s.now });
   if (SKADA[k].blod > 0) blodas(s, p.x, p.y, 'skada', g * SKADA[k].blod);
   count(s, 'skador'); count(s, 'skada ' + SKADA[k].namn.toLowerCase());
+  if (g >= UPPV.skadaGrad) livet(s, p, 'skadad', true); // det hen överlevt (steg 3.9.8)
   if (g >= UPPV.skadaGrad) upplev(s, p, 'skadad', `${SKADA[k].ett} ${nar}`); // ett barn minns det (steg 3.1.2)
   if (DEL[d].livsviktig && g >= HALSA.dodGrad) return dod;
   if (g >= HALSA.logg) log(s, `${p.name} fick ${SKADA[k].ett} i ${DEL[d].i} ${nar}.`, 'world', [p.id]);
@@ -339,7 +340,7 @@ export function vardKlar(s: State, p: Person, t: Task) {
   }
   for (const w of q.skador ?? []) if (w.inf !== undefined && w.inf < HALSA.kallbrand) { w.ren = s.now + HALSA.renTim * HOUR; count(s, 'sar rengjorda'); }
   count(s, 'vard');
-  if (q !== p) { count(s, 'vard av andra'); think(q, `${p.name} tog hand om mig`, 0.1, s.now, 12 * HOUR); }
+  if (q !== p) { count(s, 'vard av andra'); livet(s, p, 'vardat'); think(q, `${p.name} tog hand om mig`, 0.1, s.now, 12 * HOUR); }
   if (b.bara) bara(s, p, q, t);
 }
 // att bära hem den som inte kan gå: till sovplatsen, annars vid elden. Den skadade följer med (barMed)
