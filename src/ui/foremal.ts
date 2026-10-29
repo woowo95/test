@@ -88,7 +88,7 @@ function hangande(st: Station, x0: number, y0: number) {
   const platser = 8, per = TORK.rymd / platser;
   let i = 0;
   for (const q of st.tork!) {
-    const f = torrDel(s, q), n = Math.max(1, Math.round(q.n / per)), fisk = q.k !== 'kott';
+    const f = torrDel(s, q), n = Math.max(1, Math.round(q.n / per)), fisk = q.k !== 'kott' && q.k !== 'vargkott';
     const farg = mix(fisk ? 0xb87a5a : 0xb0342a, fisk ? 0x5a3a22 : 0x4a2416, f);
     for (let j = 0; j < n && i < platser; j++, i++) {
       const x = x0 + 9 + i * 1.8, y = y0 + 3;

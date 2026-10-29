@@ -8,7 +8,7 @@ import { kvEffekt } from './kvalitet';
 import { chopStock, fellTree, rotStumps, stocks } from './skog';
 import { needLadder, noticeTheft, stole } from './behov';
 import { avbryt, capacity, dropSpot, fetchSpot, helaIBordan, homeKind, isCarrying, load, pickUp, placeTools, sakerPaGolvet, storeLoad, tidyStore, wearStore } from './lager';
-import { DJURARTER, REDSKAP, bearbeta, twineRope, wearUsed } from './redskap';
+import { DJURARTER, REDSKAP, bearbeta, djurKvar, twineRope, wearUsed } from './redskap';
 import { GOR_ACTS, finishHalf, startWork, stepPaborjat, workHalf } from './paborjat';
 import { thinkWhileWorking } from './teknik';
 import { arbetsformaga, atSteg, foodDays, workRate } from './ekonomi';
@@ -127,7 +127,8 @@ for (const a of UTBROTT_ACTS) KLAR[a] = utbrottKlar; // efter ett utbrott (humor
 MEDAN.buren = burenSteg; // den som bärs hem väntar så länge någon bär hen
 // att dricka (torst.ts): en gång när man kommit fram, och törsten hålls släckt så länge man dricker
 for (const act of DRICKA_ACTS) MEDAN[act] = (s, p, t) => { if (t.prog === undefined) { t.prog = 0; drick(s, p, t); } else p.torst = 1; };
-for (const art of DJURARTER) MEDAN[art.act] = (s, p, _t, dtSec) => bearbeta(s, p, art, dtSec / HOUR_S); // slakt och rensning
+// slakt och rensning: den första arten med arbetet som finns i förrådet (kaninen före vargen, steg 3.7.14)
+for (const art of DJURARTER) MEDAN[art.act] ??= (s, p, _t, dtSec) => bearbeta(s, p, DJURARTER.find(a => a.act === art.act && djurKvar(s, a) > 0) ?? art, dtSec / HOUR_S);
 MEDAN.grilla = (s, p, _t, dtSec) => grilla(s, p, dtSec / HOUR_S); // grillen över elden (matlagning.ts)
 MEDAN.torka = (s, p, _t, dtSec) => torka(s, p, dtSec / HOUR_S); // torkställningen (matlagning.ts)
 // redskap som görs och träd som fälls: arbetet sparas om det avbryts (paborjat.ts)

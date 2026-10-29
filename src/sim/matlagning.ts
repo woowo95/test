@@ -38,6 +38,7 @@ export const RATTER: readonly Ratt[] = [
   { ra: 'fisk', blir: 'grillfisk', per: 1 },
   { ra: 'abborre', blir: 'grillfisk', per: 1 }, // den hela abborren grillas som den är när den inte rensats
   { ra: 'kott', blir: 'grillkott', per: 1 },
+  { ra: 'vargkott', blir: 'grillkott', per: 1 }, // köttet är eget per art men blir samma grillade kött (steg 3.7.14)
 ];
 // det som grillas nu: den första råvaran det finns tillräckligt av (gränssnittet visar den på spettet)
 export const grillVara = (s: State) => RATTER.find(r => amountOf(s, r.ra) >= MATLAG.min);
@@ -101,6 +102,7 @@ export const TORKAS: readonly Ratt[] = [
   { ra: 'fisk', blir: 'torrfisk', per: 1 },
   { ra: 'abborre', blir: 'torrfisk', per: 1 }, // den hela abborren hängs i stjärten
   { ra: 'kott', blir: 'torrkott', per: 1 },
+  { ra: 'vargkott', blir: 'torrkott', per: 1 },
 ];
 export type Hang = NonNullable<Station['tork']>[number];
 // byns färdiga torkställningar, och den första av dem
@@ -159,7 +161,7 @@ export function torka(s: State, p: Person, hours: number) {
     put(s, TORKAS.find(r => r.ra === q.k)!.blir, n, ag);
     q.n -= n; kan -= n; count(s, 'torkat', n);
     if (q.n <= 1e-6) h.splice(i, 1);
-    if (forstaGang(s, 'torkForsta')) log(s, `${p.name} tog ner byns första torkade ${q.k === 'kott' ? 'kött' : 'fisk'} från torkställningen. Den håller länge i lagret.`, 'world', [p.id]);
+    if (forstaGang(s, 'torkForsta')) log(s, `${p.name} tog ner byns första torkade ${SAKER[q.k]?.namn.endsWith('ött') ? 'kött' : 'fisk'} från torkställningen. Den håller länge i lagret.`, 'world', [p.id]);
   }
   for (const t of ts) {
     const h = hangOf(t);

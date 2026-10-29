@@ -102,7 +102,8 @@ const basketsWanted = (s: State) => clamp(Math.floor(living(s).filter(p => ageOf
 // ---------- redskap: kniv och slakt ----------
 // En flintkniv är en vass flintskärva med ett skaft. Utan kniv och slaktbänk äter byn direkt av det fällda djuret. Med kniv
 // slaktas det vid slaktbänken till mer kött, ett ben och ett skinn. Ett djur med senor ger dessutom ibland ett rep, men bara om den som
-// slaktar kan tekniken Rep (fisk har inga senor). Kött, ben och skinn är samma vilket djur det än kommer från.
+// slaktar kan tekniken Rep (fisk har inga senor). Köttet och skinnet är eget för varje art (kaninkött, vargkött, kaninskinn,
+// vargskinn; steg 3.7.14), men benen är samma sak.
 // Jaktfärdigheten avgör hur mycket kött man får ut av djuret (kottFaktor, steg 2.2.3).
 // Kniven kräver en flinta utöver den som sparas att tända eld med. Fisken rensas med händerna till fiskkött.
 // Viltet slaktas och fisken rensas bara vid slaktbänken (bara i STATIONER, stationer.ts; Björn, steg 2.2.6 och 2.2.8); innan
@@ -111,13 +112,15 @@ const basketsWanted = (s: State) => clamp(Math.floor(living(s).filter(p => ageOf
 // det är), slakt = det ett djur ger slaktat eller rensat, rep = chansen per djur att senorna blir ett rep, timme = djur per
 // timme, maxTim = arbetet varar högst så här många timmar, act = arbetet där det görs (vid slaktbänken), kniv = det kräver en kniv (och att man kan tekniken), minDel = det görs när
 // det finns minst 1 / minDel djur, stat = räknas (i djur), forsta = loggen första gången. En ny art blir en rad här (fler
-// fiskar: steg 7.4.3). Allt är hela saker (steg 3.6.13). Värdet av det ett djur ger: varde = hur djurets värde delas på
+// fiskar: steg 7.4.3). kott = köttet, som blir mer med jaktfärdigheten (kottAv). Flera arter kan ha samma arbete (kaninen och
+// vargen slaktas): arbetet tar den första arten i registret som finns i förrådet. Allt är hela saker (steg 3.6.13). Värdet av det ett djur ger: varde = hur djurets värde delas på
 // det slaktade, i delar per styck (kött, ben och skinn har inget recept i saker.ts). Utan varde står receptet i saker.ts
 // (skaffa.av, som fisken av en abborre); scenariot "djur" kontrollerar att de stämmer med raden här.
-export interface Djurart { sak: string; mat: number; slakt: Record<string, number>; varde?: Record<string, number>; rep: number; timme: number; maxTim: number; act: Act; kniv?: true; minDel: number; stat: string; forsta: string; strid?: DjurStrid } // strid = hur djuret slåss (strid.ts, steg 3.7.5)
+export interface Djurart { sak: string; kott?: string; mat: number; slakt: Record<string, number>; varde?: Record<string, number>; rep: number; timme: number; maxTim: number; act: Act; kniv?: true; minDel: number; stat: string; forsta: string; strid?: DjurStrid } // strid = hur djuret slåss (strid.ts, steg 3.7.5)
 export const DJUR = {
-  kanin: { sak: 'vilt', mat: SAKER.vilt!.stack!, slakt: { kott: 3, ben: 1, skinn: 1 }, varde: { kott: 4, ben: 1, skinn: 2 }, rep: 0.15, timme: 15, maxTim: 2, act: 'slakta', kniv: true, minDel: REDSKAP.slaktMinDel, stat: 'slaktat', forsta: '{namn} slaktade byns första vilt med en flintkniv. Det gav mer kött, ett ben och ett skinn.', strid: { namn: 'Kaninen', art: 'Kanin', alder: 6, styrka: 2, uthallighet: 6, mod: 2, smidighet: 16, skicklighet: 4, fart: 1.4, vapen: 'bett' } },
+  kanin: { sak: 'vilt', kott: 'kott', mat: SAKER.vilt!.stack!, slakt: { kott: 3, ben: 1, skinn: 1 }, varde: { kott: 4, ben: 1, skinn: 2 }, rep: 0.15, timme: 15, maxTim: 2, act: 'slakta', kniv: true, minDel: REDSKAP.slaktMinDel, stat: 'slaktat', forsta: '{namn} slaktade byns första vilt med en flintkniv. Det gav mer kött, ett ben och ett skinn.', strid: { namn: 'Kaninen', art: 'Kanin', alder: 6, styrka: 2, uthallighet: 6, mod: 2, smidighet: 16, skicklighet: 4, fart: 1.4, vapen: 'bett' } },
   abborre: { sak: 'abborre', mat: 1, slakt: { fisk: 1 }, rep: 0, timme: 30, maxTim: 1, act: 'rensa', minDel: 1, stat: 'rensat', forsta: '{namn} rensade byns första abborre. Den blev fiskkött.' },
+  varg: { sak: 'varg', kott: 'vargkott', mat: 1, slakt: { vargkott: 12, ben: 3, vargskinn: 1 }, varde: { vargkott: 4, ben: 1, vargskinn: 12 }, rep: 0.6, timme: 2, maxTim: 2, act: 'slakta', kniv: true, minDel: 1, stat: 'slaktatVarg', forsta: '{namn} slaktade byns första varg. Den gav mycket kött, ben och ett tjockt vargskinn.' },
 } satisfies Record<string, Djurart>;
 export const DJURARTER: readonly Djurart[] = Object.values(DJUR);
 export const KANIN = DJUR.kanin.mat; // så mycket mat en kanin är, uppäten som den är: en stack fällt vilt (saker.ts)
@@ -152,7 +155,7 @@ export const kottFaktor = (p: Person) => REDSKAP.kottMin + (REDSKAP.kottMax - RE
 // det som fångats delas upp: köttet och resten är deras som ägde fångsten
 function stycka(s: State, p: Person, art: Djurart, n: number) {
   const vems = use(s, p, art.sak, n * art.mat);
-  for (const [k, m0] of Object.entries(art.slakt)) { const m = k === 'kott' ? kottAv(p, m0) : m0; put(s, k, n * m, addDel({}, vems, m / art.mat)); }
+  for (const [k, m0] of Object.entries(art.slakt)) { const m = k === art.kott ? kottAv(p, m0) : m0; put(s, k, n * m, addDel({}, vems, m / art.mat)); }
   return vems;
 }
 

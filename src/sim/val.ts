@@ -10,7 +10,7 @@ import { halsa, hemma, kanGa, vardVal, vilaHellre } from './halsa';
 import { harMat } from './behov';
 import { FANGST, Kind, Lager, flintSpot, richness, shoreOf, wantsFlint } from './fynd';
 import { coldOf, nederbord, temperature } from './vader';
-import { DJUR, Djurart, GORS, canProcess, djurKvar, freeOfKinds, makeTask, toolGroups, wantsTool } from './redskap';
+import { DJUR, DJURARTER, Djurart, GORS, canProcess, djurKvar, freeOfKinds, makeTask, toolGroups, wantsTool } from './redskap';
 import { PROJEKT, Uppgift, bastaProjekt } from './projekt';
 import { faltNu, vildFronPlats } from './odling';
 import { MINNE, areaOf, flintArea, pickSpot, prospectFor } from './minne';
@@ -455,7 +455,8 @@ function day(s: State, p: Person, v: Val, a: number, lazy: number) {
   // fältet (steg 2.10.3): den mogna grödan skördas innan den blir övermogen eller fryser, och den som börjat på sitt fält arbetar vidare
   const sk = a >= ALDER.vuxen ? faltNu(s, p, fara.svalt || fara.kyla) : undefined;
   if (sk) { projektVal(v, { act: 'odla', text: sk.text, min: sk.min, tool: sk.tool, spot: sk.spot, ref: sk.ref }, sk.tool === 'mogen' ? 'Grödan på fältet är mogen' : 'Arbetar vidare på sitt fält'); return; }
-  if (a >= ALDER.vuxen && canProcess(s, p, DJUR.kanin) && rnd(s, 'val', p) < VAL.slaktChans) { processTask(s, v, DJUR.kanin, 'Det finns vilt att slakta innan det blir dåligt'); return; }
+  const vilt = slaktbart(s, p);
+  if (a >= ALDER.vuxen && vilt && rnd(s, 'val', p) < VAL.slaktChans) { processTask(s, v, vilt, 'Det finns vilt att slakta innan det blir dåligt'); return; }
   if (a >= ALDER.rensar && canProcess(s, p, DJUR.abborre) && rnd(s, 'val', p) < VAL.rensaChans) { processTask(s, v, DJUR.abborre, 'Det finns fisk att rensa innan den blir dålig'); return; }
   if (a >= ALDER.grillar && kanTorka(s, p) && rnd(s, 'val', p) < torkAndel(pabud(s, 'torkat'))) { torkVal(s, v, 'Det finns kött och fisk att torka'); return; }
   if (a >= ALDER.grillar && kanGrilla(s, p) && rnd(s, 'val', p) < VAL.grillaChans) { grillVal(s, v, 'Det finns rått kött och rå fisk att grilla'); return; }
@@ -602,6 +603,8 @@ export function toolGain(s: State, p: Person, act: Act, fara: Faror) {
   return 1;
 }
 // slakta det fällda viltet eller rensa fisken vid slaktbänken (DJUR i redskap.ts), så länge det tar, med kniven om det behövs
+// det första djuret som p kan slakta (kaninen, vargen; steg 3.7.14)
+const slaktbart = (s: State, p: Person) => DJURARTER.find(art => art.act === 'slakta' && canProcess(s, p, art));
 function processTask(s: State, v: Val, art: Djurart, why: string) {
   set(v, art.act, why); if (art.kniv) v.tool = 'kniv';
   v.dur = Math.min(art.maxTim * HOUR, (djurKvar(s, art) / art.timme) * HOUR + VAL.extraMin * MIN);
@@ -614,7 +617,8 @@ function torkVal(s: State, v: Val, why: string) { set(v, 'torka', why); v.dur = 
 // rensar fisken, annars gör man det mest värda projekt byn saknar och man kan göra (redskap, stationer och rep, projekt.ts;
 // redskap och stationer inte när kylan är en fara). Finns inget att göra sitter man med de andra vid elden
 function craft(s: State, p: Person, v: Val, why: string) {
-  if (canProcess(s, p, DJUR.kanin)) { processTask(s, v, DJUR.kanin, `${why}. Slaktar viltet med kniven.`); return; }
+  const vilt = slaktbart(s, p);
+  if (vilt) { processTask(s, v, vilt, `${why}. Slaktar viltet med kniven.`); return; }
   if (canProcess(s, p, DJUR.abborre)) { processTask(s, v, DJUR.abborre, `${why}. Rensar fisken.`); return; }
   if (ageOf(p, s.now) >= ALDER.grillar && kanTorka(s, p)) { torkVal(s, v, `${why}. Torkar kött och fisk.`); return; }
   if (ageOf(p, s.now) >= ALDER.grillar && kanGrilla(s, p)) { grillVal(s, v, `${why}. Grillar maten.`); return; }

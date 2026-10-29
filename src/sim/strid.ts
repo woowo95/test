@@ -192,6 +192,7 @@ const DELAR = Object.keys(TRAFFDEL) as Kroppsdel[];
 // per klädesplagg i saker.ts: delarna det täcker och hur stor del av skadan det tar per slag. Rustningen kommer i 9.4.1
 export const SKYDD: Record<string, { delar: Kroppsdel[]; tar: Partial<Record<Slag, number>> }> = {
   skinnrock: { delar: ['bal', 'armV', 'armH'], tar: { hugg: 0.25, stick: 0.15, slag: 0.2, bett: 0.3 } },
+  vargpals: { delar: ['bal', 'armV', 'armH'], tar: { hugg: 0.3, stick: 0.2, slag: 0.25, bett: 0.35 } }, // tjockare än skinnrocken (steg 3.7.14)
   skinnskor: { delar: ['fotV', 'fotH'], tar: { hugg: 0.2, stick: 0.2, slag: 0.1, bett: 0.3 } },
 };
 export const KLADER_STRID = Object.keys(SKYDD);
@@ -342,7 +343,7 @@ function falla(st: Strid, k: Kampe, h: 'nere' | 'dod' | 'ger' | 'flykt', rad: Ha
 
 const orkAv = (a: Kampe) => { a.slag++; a.ork = Math.max(0, a.ork - STRID.orkSlag * (1 - (a.st.uthallighet - 10) / 40)); };
 export const chansMot = (a: Kampe, b: Kampe, skick: number) => clamp((STRID.traffBas + (skick - b.st.skicklighet) * STRID.traffPer - (b.st.smidighet - 10) * STRID.smidUndan) * (1 - STRID.trott * (1 - a.ork)), STRID.traffMin, STRID.traffMax) * (b.lage === 'nere' || b.lage === 'flykt' || b.ligger || b.bocker ? STRID.utsatt : 1); // den som ligger, böjer sig ner eller vänt ryggen är lätt att träffa
-const duckar = (st: Strid, b: Kampe) => !b.ligger && !b.bocker && slump(st) < STRID.duck * Math.max(0, 1 + STRID.duckSmid * (b.st.smidighet - 10)) * rorlighet(b) * b.ork * (b.klader.includes('skinnrock') ? 1 - STRID.duckTung : 1);
+const duckar = (st: Strid, b: Kampe) => !b.ligger && !b.bocker && slump(st) < STRID.duck * Math.max(0, 1 + STRID.duckSmid * (b.st.smidighet - 10)) * rorlighet(b) * b.ork * (b.klader.some(k => k === 'skinnrock' || k === 'vargpals') ? 1 - STRID.duckTung : 1);
 function slaEtt(st: Strid, a: Kampe, b: Kampe) {
   const v = VAP[a.vapen];
   if (b.ledare) { // en vän som står nära ledaren kliver emellan och tar slaget (steg 3.7.12)

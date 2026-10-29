@@ -408,7 +408,7 @@ SCENARIER.natur = {
 };
 
 SCENARIER.slaktbank = {
-  text: 'Slaktbänken (steg 2.2.3) byggs av trä av den som kommit på den (steg 2.2.11). Vid den slaktas viltet och rensas fisken, och en kniv hör till bänken och ligger kvar där. Viltet slaktas bara vid bänken; innan den finns äts det som det är. Också fisken rensas bara vid bänken (steg 2.2.8). Jaktfärdigheten avgör hur mycket kött en kanin ger',
+  text: 'Slaktbänken (steg 2.2.3) byggs av trä av den som kommit på den (steg 2.2.11). Vid den slaktas viltet och rensas fisken, och en kniv hör till bänken och ligger kvar där. Viltet slaktas bara vid bänken; innan den finns äts det som det är. Också fisken rensas bara vid bänken (steg 2.2.8). Jaktfärdigheten avgör hur mycket kött en kanin ger. Vargen ger eget kött och skinn men samma ben (steg 3.7.14)',
   kor: () => {
     const { STATION, STATIONER, stationerOf, stationFor, isKlar, vidStation, tommaKnivplatser, stepStationer, kottFaktor, addTool, take, tidyTools, placeTools, usable, spotFor, tingOf, BYN, REDSKAP } = SIM;
     // en by där alla kan göra en kniv och slaktbänken, med gott om mat och trä: bänken byggs
@@ -450,6 +450,11 @@ SCENARIER.slaktbank = {
     // jaktfärdigheten: mer kött för den som jagat mycket
     const kott = (jakt: number) => { p.skill.jakt = jakt; setMat(s, { vilt: 3 * KANIN }); bearbeta(s, p, DJUR.kanin, 1); return amountOf(s, 'kott'); };
     const ny = kott(0), van = kott(REDSKAP.kottFull);
+    // vargen (steg 3.7.14): eget kött och skinn, samma ben
+    setMat(s, { vilt: 0 }); const k0 = amountOf(s, 'kott'), b0 = amountOf(s, 'ben'), vk0 = amountOf(s, 'vargkott');
+    setAmount(s, 'varg', 1); bearbeta(s, p, DJUR.varg, 1);
+    const varg = { kott: amountOf(s, 'vargkott') - vk0, skinn: amountOf(s, 'vargskinn'), ben: amountOf(s, 'ben') - b0 };
+    const vargOk = amountOf(s, 'varg') === 0 && varg.kott >= DJUR.varg.slakt.vargkott * REDSKAP.kottMin - 1 && varg.skinn === 1 && varg.ben === DJUR.varg.slakt.ben && amountOf(s, 'kott') === k0;
     const kottOk = ny === 3 * Math.max(1, Math.round(SLAKT.kott * REDSKAP.kottMin)) && van === 3 * Math.max(1, Math.round(SLAKT.kott * REDSKAP.kottMax)) && van > ny && Math.abs(kottFaktor(p) - REDSKAP.kottMax) < 1e-9; // i hela saker (steg 2.10.7)
     return [
       [`slaktbänken byggs av ${STATION.slaktbankTra} trä på ${h} timmar av den som kan göra en kniv (${byggare})`, klar && enda && ved0 - amountOf(s, 'ved') >= STATION.slaktbankTra - 1e-9 && byggare.includes(STATIONER.slaktbank.bygger)],
@@ -459,6 +464,7 @@ SCENARIER.slaktbank = {
       ['den som slaktar utan egen kniv tar bänkens, och den läggs tillbaka vid bänken', tog && tillbaka],
       ['viltet slaktas och fisken rensas vid bänken', vidBank],
       ['utan bänk slaktas och rensas inget: viltet och abborren ligger kvar att ätas som de är', ingenSlakt && kvar],
+      [`en fälld varg slaktas till ${varg.kott} vargkött, ${varg.skinn} vargskinn och ${varg.ben} ben (benen är samma sak som kaninens; steg 3.7.14)`, vargOk],
       [`jaktfärdigheten avgör köttet: ${ny.toFixed(2)} kött av tre kaniner för den ovane, ${van.toFixed(2)} för den vane`, kottOk && van > ny],
     ];
   },
