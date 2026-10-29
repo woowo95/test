@@ -12,13 +12,13 @@ import { s } from './lage';
 const RUTA = 16, W = 20, H = 14; // planen: rutor och punkter per ruta
 const MAX = 3; // kämpar per sida
 type Kalla = { typ: 'by'; pid: number } | { typ: 'egen' } | { typ: 'djur'; art: string };
-interface Rad { kalla: Kalla; vapen: Vapen; klader: string[]; st: { styrka: number; uthallighet: number; mod: number; skicklighet: number } }
-const ny = (): Rad => ({ kalla: { typ: 'egen' }, vapen: 'hand', klader: [], st: { styrka: 10, uthallighet: 10, mod: 10, skicklighet: 10 } });
+interface Rad { kalla: Kalla; vapen: Vapen; klader: string[]; st: { styrka: number; uthallighet: number; mod: number; smidighet: number; skicklighet: number } }
+const ny = (): Rad => ({ kalla: { typ: 'egen' }, vapen: 'hand', klader: [], st: { styrka: 10, uthallighet: 10, mod: 10, smidighet: 10, skicklighet: 10 } });
 const lag: { sidor: [Rad[], Rad[]]; avsikt: Avsikt; fro: number; fart: number } = { sidor: [[ny()], [ny()]], avsikt: 'skada', fro: 1, fart: 1 };
 let st: Strid | undefined, spelar = false, sist = 0, kvar = 0, sedd = 0, filter = -1, manga = '';
 const blink = new Map<number, { t: number; h: 'traff' | 'miss' | 'tog'; mot?: number }>(); // senaste slaget per kämpe (för utfallet)
 const FARG = ['#b2921b', '#61767a'], MARK = '#8f9a5a', LINJE = '#7a8450', MORK = '#24201d', BLOD = '#8e2f22';
-const STATNAMN = { styrka: 'Styrka', uthallighet: 'Uthållighet', mod: 'Mod', skicklighet: 'Skicklighet' } as const;
+const STATNAMN = { styrka: 'Styrka', uthallighet: 'Uthållighet', mod: 'Mod', smidighet: 'Smidighet', skicklighet: 'Skicklighet' } as const;
 
 function uppstallning(): Uppstallning {
   const kampar: Uppstallning['kampar'] = [];
@@ -28,7 +28,7 @@ function uppstallning(): Uppstallning {
     const p = r.kalla.typ === 'by' ? byId(s, r.kalla.pid) : undefined;
     if (r.kalla.typ === 'djur') kampar.push(djurKampe(r.kalla.art, id++, side, x, y));
     else if (p) kampar.push({ ...personKampe(s, p, id++, side, x, y), vapen: r.vapen, klader: r.klader });
-    else kampar.push({ id: id++, namn: `Kämpe ${sd === 0 ? 'A' : 'B'}${sida.length > 1 ? i + 1 : ''}`, sida: side, st: { ...r.st, smidighet: 10 }, vapen: r.vapen, klader: r.klader, fart: 1, x, y });
+    else kampar.push({ id: id++, namn: `Kämpe ${sd === 0 ? 'A' : 'B'}${sida.length > 1 ? i + 1 : ''}`, sida: side, st: { ...r.st }, vapen: r.vapen, klader: r.klader, fart: 1, x, y });
   }));
   return { avsikt: lag.avsikt, w: W, h: H, kampar };
 }

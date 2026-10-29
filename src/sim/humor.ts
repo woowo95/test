@@ -1,4 +1,4 @@
-import { ALDER, ageOf, count, getRel, isParent, living, log, stat, think } from './folk';
+import { ALDER, ageOf, count, franMitt, getRel, isParent, living, log, stat, think } from './folk';
 import { Kroppsdel, SkadaTyp, halsa, skada } from './halsa';
 import { die, leave } from './liv';
 import { skiljas } from './samtal';
@@ -52,6 +52,12 @@ export const HUMOR = balans('humor', {
   allvUtb: 0.15, // allvaret ökar så mycket per utbrott nyss
   allvEmp: 0.3, // ... och med (10 − empatin) / 10 gånger så mycket
   allvSlump: 0.25, // ... och med slumpen (gauss) gånger så mycket
+  allvAgg: 0.2, // ... och med (aggressionen − 10) / 10 gånger så mycket (steg 3.7.6)
+  aggVal: 1, // bland utbrotten med samma grad väger de våldsamma (hard) 1 + aggVal × (aggressionen − 10) / 10, minst aggMin
+  aggMin: 0.2,
+  // blodtörsten (steg 3.7.6, 0–1): aggressionen, låg empati och dåligt humör, så här mycket var
+  torstAgg: 0.5, torstEmp: 0.3, torstHumor: 0.4,
+  drapTorst: 0.6, // dråp också för den vars blodtörst är minst så här stor (och har minst drapUtb utbrott nyss)
   lattnad: 0.1, lattnadTim: 6, // "Fick ur mig det": så mycket bättre humör i så många timmar efter ett utbrott
   elakHumor: 0.08, elakTim: 12, // den som någon var elak mot: så mycket sämre humör i så många timmar
   elakOp: 6, // ... och relationen sjunker så mycket
@@ -74,28 +80,28 @@ export const HUMOR = balans('humor', {
 // vad som hände (loggen). `mal` säger vem det går ut över (den närmaste, partnern eller bästa vännen, eller ärkefienden) och
 // `ting` att det behövs en sak att slå sönder; finns ingen blir det `annars` (eller tjura). `vald` är slagen: skadornas grad
 // (från, till), hur många, vilka och var, hur mycket relationen med den slagne sjunker och den slagnes tanke (hur mycket, dygn).
-// De som såg det får intrycket att den som slog är våldsam (rykten.ts, steg 3.3.1). `skvaller` = den närmaste att snacka skit
+// De som såg det får intrycket att den som slog är våldsam (rykten.ts, steg 3.3.1). `hard` = våldsamt: den aggressiva väljer det hellre (steg 3.7.6). `skvaller` = den närmaste att snacka skit
 // med, om det finns någon man ogillar. Att flytta ut händer direkt (utbrottRisk)
 type Mal = 'nast' | 'nara' | 'arke' | 'syskon' | 'skvaller';
 interface Vald { g: [number, number]; n: number; typer: SkadaTyp[]; delar: Kroppsdel[]; op: number; tanke: number; dygn: number }
-interface UtbDef { grad: number; act: Act; min: number; spann: number; text: string; mal?: Mal; ting?: true; annars?: string; vald?: Vald; barn?: true }
+interface UtbDef { grad: number; act: Act; min: number; spann: number; text: string; mal?: Mal; ting?: true; annars?: string; vald?: Vald; barn?: true; hard?: true }
 export const UTBROTT = {
   grata: { grad: 1, act: 'grata', min: 20, spann: 20, text: 'brister i gråt' },
   tjura: { grad: 1, act: 'tjura', min: 60, spann: 60, text: 'går undan och tjurar' },
-  elak: { grad: 2, act: 'elak', min: 10, spann: 10, text: 'är elak mot', mal: 'nast' },
+  elak: { grad: 2, act: 'elak', min: 10, spann: 10, text: 'är elak mot', mal: 'nast', hard: true },
   skitsnack: { grad: 2, act: 'skvallra', min: 10, spann: 10, text: 'snackar skit med', mal: 'skvaller', annars: 'elak' }, // steg 3.3.3 (rykten.ts)
-  krossa: { grad: 2, act: 'krossa', min: 10, spann: 10, text: 'slår sönder', ting: true },
+  krossa: { grad: 2, act: 'krossa', min: 10, spann: 10, text: 'slår sönder', ting: true, hard: true },
   fly: { grad: 2, act: 'fly', min: 90, spann: 90, text: 'flyr ut i skogen' },
   badd: { grad: 3, act: 'badd', min: 240, spann: 240, text: 'lägger sig och orkar inte gå upp' },
   slut: { grad: 3, act: 'slut', min: 10, spann: 10, text: 'gör slut med', mal: 'nara', annars: 'elak' },
-  sla: { grad: 3, act: 'sla', min: 5, spann: 5, text: 'slår', mal: 'nast', vald: { g: [0.1, 0.3], n: 1, typer: ['blamarke'], delar: ['huvud', 'bal', 'armV', 'armH'], op: 15, tanke: 0.15, dygn: 2 } },
-  misshandel: { grad: 4, act: 'sla', min: 10, spann: 10, text: 'misshandlar', mal: 'nast', vald: { g: [0.3, 0.7], n: 2, typer: ['blamarke', 'krossar', 'benbrott'], delar: ['huvud', 'bal', 'armV', 'armH', 'benV', 'benH'], op: 35, tanke: 0.3, dygn: 5 } },
+  sla: { grad: 3, act: 'sla', min: 5, spann: 5, text: 'slår', mal: 'nast', hard: true, vald: { g: [0.1, 0.3], n: 1, typer: ['blamarke'], delar: ['huvud', 'bal', 'armV', 'armH'], op: 15, tanke: 0.15, dygn: 2 } },
+  misshandel: { grad: 4, act: 'sla', min: 10, spann: 10, text: 'misshandlar', mal: 'nast', hard: true, vald: { g: [0.3, 0.7], n: 2, typer: ['blamarke', 'krossar', 'benbrott'], delar: ['huvud', 'bal', 'armV', 'armH', 'benV', 'benH'], op: 35, tanke: 0.3, dygn: 5 } },
   flytta: { grad: 4, act: 'fly', min: 0, spann: 0, text: 'står inte ut längre och lämnar byn', annars: 'fly' },
   drap: { grad: 5, act: 'sla', min: 10, spann: 10, text: 'slår ihjäl', mal: 'arke', annars: 'misshandel', vald: { g: [1, 1], n: 0, typer: [], delar: [], op: 0, tanke: 0, dygn: 0 } },
   // barnens (steg 3.2.4): bara de, och de har bara dessa
   skrika: { grad: 1, act: 'skrika', min: 10, spann: 20, text: 'skriker och gråter', barn: true },
-  trotsa: { grad: 2, act: 'krossa', min: 5, spann: 5, text: 'trotsar och slår sönder', ting: true, annars: 'puttas', barn: true },
-  puttas: { grad: 2, act: 'elak', min: 5, spann: 5, text: 'puttas med', mal: 'syskon', annars: 'skrika', barn: true },
+  trotsa: { grad: 2, act: 'krossa', min: 5, spann: 5, text: 'trotsar och slår sönder', ting: true, hard: true, annars: 'puttas', barn: true },
+  puttas: { grad: 2, act: 'elak', min: 5, spann: 5, text: 'puttas med', mal: 'syskon', hard: true, annars: 'skrika', barn: true },
   rymma: { grad: 2, act: 'fly', min: 30, spann: 30, text: 'springer iväg en stund', barn: true },
 } satisfies Record<string, UtbDef>;
 export type Utbrott = keyof typeof UTBROTT;
@@ -130,8 +136,10 @@ function malFor(s: State, p: Person, k: Utbrott, m: Mal) {
   }
   return utbMal(s, p);
 }
-// dråp kräver låg empati och flera utbrott nyss
-const kanDrapa = (s: State, p: Person) => stat(p, 'empati', s.now) <= HUMOR.drapEmp && (p.utb ?? 0) >= HUMOR.drapUtb;
+// blodtörsten (steg 3.7.6): aggressionen, låg empati och dåligt humör, 0–1
+export const blodtorst = (s: State, p: Person) => clamp(HUMOR.torstAgg * franMitt(p, 'aggression', s.now) - HUMOR.torstEmp * franMitt(p, 'empati', s.now) + HUMOR.torstHumor * (0.5 - moodOf(p, s.now)) * 2, 0, 1);
+// dråp kräver låg empati eller stor blodtörst, och flera utbrott nyss
+const kanDrapa = (s: State, p: Person) => (stat(p, 'empati', s.now) <= HUMOR.drapEmp || blodtorst(s, p) >= HUMOR.drapTorst) && (p.utb ?? 0) >= HUMOR.drapUtb;
 
 // utbrottet som väntar hos p (eller inget, om det väntat för länge): slaget, med vem eller vad, och hur länge
 export function utbrottNu(s: State, p: Person): { k: Utbrott; rad: UtbDef; dur: number; mal?: Person; ting?: Ting } | undefined {
@@ -230,7 +238,7 @@ export function utbrottChans(s: State, p: Person) {
 
 // en gång i timmen (stepHumor): utbrotten nyss klingar av, och den som mår mycket dåligt kan brista ut (barnen bara i sina slag). Graden beror på
 // hur dåligt hen mår, utbrotten nyss, empatin och slumpen; slaget slumpas bland dem med den graden
-function utbrottRisk(s: State, p: Person, ljust: boolean) {
+export function utbrottRisk(s: State, p: Person, ljust: boolean) {
   if (p.utb) { p.utb *= Math.exp(-HOUR / (HUMOR.utbDygn * DAY)); if (p.utb < 0.01) p.utb = undefined; }
   const a = ageOf(p, s.now), barn = a < ALDER.vuxen;
   if (p.task?.act === 'leka' && p.task.phase === 'do') p.lekt = s.now; // barnen: leken (steg 3.2.4)
@@ -239,11 +247,14 @@ function utbrottRisk(s: State, p: Person, ljust: boolean) {
   if (m >= HUMOR.grans) return;
   const djup = (HUMOR.grans - m) / HUMOR.grans, utb = p.utb ?? 0;
   if (rnd(s, 'humor', p) >= utbrottChans(s, p)) return;
-  const allv = djup + HUMOR.allvUtb * utb + HUMOR.allvEmp * (10 - stat(p, 'empati', s.now)) / 10 + HUMOR.allvSlump * gauss(s, 'humor', p);
+  const allv = djup + HUMOR.allvUtb * utb + HUMOR.allvEmp * (10 - stat(p, 'empati', s.now)) / 10 + HUMOR.allvSlump * gauss(s, 'humor', p) + HUMOR.allvAgg * franMitt(p, 'aggression', s.now);
   let grad = allv >= HUMOR.grad5 ? 5 : allv >= HUMOR.grad4 ? 4 : allv >= HUMOR.grad3 ? 3 : allv >= HUMOR.grad2 ? 2 : 1;
   if (barn) grad = Math.min(grad, 2);
   const av = (barn ? BARNENS : VUXNAS).filter(k => UTB[k].grad === grad);
-  let k = av[Math.floor(rnd(s, 'humor', p) * av.length)];
+  const ag = Math.max(HUMOR.aggMin, 1 + HUMOR.aggVal * franMitt(p, 'aggression', s.now)); // den aggressiva slår hellre (steg 3.7.6)
+  const w = av.map(k => UTB[k].hard ? ag : 1);
+  let u = rnd(s, 'humor', p) * w.reduce((a, b) => a + b, 0), k = av[av.length - 1];
+  for (let i = 0; i < av.length; i++) { u -= w[i]; if (u < 0) { k = av[i]; break; } }
   if (k === 'flytta') { if (flyttaUt(s, p)) return; k = 'fly'; }
   p.ubr = { k, t: s.now };
 }

@@ -380,7 +380,7 @@ SCENARIER.utbrott = {
   kor: () => {
     // en by där alla mår mycket dåligt i åtta dygn (åtta år i spelet)
     const s = createState(9, START);
-    for (const p of living(s)) SIM.think(p, 'Sorg', -0.5, s.now, 8 * DAY);
+    for (const p of living(s)) SIM.think(p, 'Sorg', -0.6, s.now, 8 * DAY);
     kor(s, 8 * 24);
     const utb = (s.stat?.utbrott as number) ?? 0, slag = Object.keys(s.stat ?? {}).filter(k => k.startsWith('utb_') && !k.startsWith('utb_sonder')).map(k => k.slice(4));
     // ett utbrott som väntar: först behoven, sedan utbrottet
@@ -437,6 +437,7 @@ SCENARIER.vald = {
     // en förälder slår sitt barn, två gånger
     const s2 = by(), c = nyInvanare(s2.t, 'k', 8);
     c.father = s2.p.id; c.x = s2.p.x + 0.5; c.y = s2.p.y;
+    for (const k of SIM.STATS) c.pot[k] = 10; // mitt på skalan, så att inget slår i taket
     utbrott(s2.t, s2.p, 'sla');
     const forst = c.upp?.some(u => u.k === 'slagen') ?? false;
     utbrott(s2.t, s2.p, 'sla');
@@ -688,6 +689,57 @@ SCENARIER.strid = {
       [`kaninen flyr eller dör, vinner aldrig (${kanin.vann[1]} vann)`, kanin.vann[1] === 0],
       [`personen ur byn tar med sin yxa (${fran.vapen}) och sitt namn`, fran.vapen === 'yxa' && fran.namn === p.name && fran.pid === p.id],
       ['varje rad i loggen blir en mening, och rapporten säger vem som vann', allaText && rap.vinnare === en.slut!.vinnare],
+    ];
+  },
+};
+
+SCENARIER.smidighet = {
+  text: 'Smidighet och Aggression (steg 3.7.6): båda finns hos alla och ärvs, smidigheten sjunker tidigare än styrkan, den smidiga gör finare arbete och vinner oftare i striden, den aggressiva slår hellre i ett utbrott, och blodtörsten kommer av aggression, låg empati och dåligt humör',
+  kor: () => {
+    const t = createState(5, START), ps = living(t), p = ps[0];
+    const alla = ps.every(q => q.pot.smidighet >= 1 && q.pot.smidighet <= 20 && q.pot.aggression >= 1 && q.pot.aggression <= 20);
+    // åldern: 40 år
+    p.born = t.now - 40 * SIM.DAY; p.pot.smidighet = 15; p.pot.styrka = 15;
+    const aldras = SIM.stat(p, 'smidighet', t.now) < 15 && SIM.stat(p, 'styrka', t.now) === 15;
+    // hantverket: samma färdighet, olika smidighet
+    p.skill.hantverk = 8;
+    const kv = (sm: number) => { p.pot.smidighet = sm; let n = 0; for (let i = 0; i < 400; i++) n += SIM.rullaKvalitet(t, p, false); return n; };
+    const fin = kv(20) > kv(1);
+    // striden: två lika, den ena smidigare
+    const m = (id: number, sida: 0 | 1, smidighet: number) => ({ id, namn: `K${id}`, sida, st: { styrka: 10, uthallighet: 10, mod: 10, smidighet, skicklighet: 10 }, vapen: 'kniv' as SIM.Vapen, klader: [], fart: 1, x: sida ? 12 : 8, y: 7 });
+    const smid = SIM.korManga({ avsikt: 'skada', w: 20, h: 14, kampar: [m(1, 0, 18), m(2, 1, 4)] }, 1, 200);
+    // blodtörsten
+    const q = ps[1];
+    q.pot.aggression = 20; q.pot.empati = 1; SIM.think(q, 'Rasande', -0.6, t.now, SIM.DAY);
+    const hog = SIM.blodtorst(t, q);
+    q.pot.aggression = 1; q.pot.empati = 20; q.thoughts = [];
+    const lag = SIM.blodtorst(t, q);
+    // utbrotten: samma dåliga humör, hög och låg aggression, och hur ofta det blir våldsamt
+    const vald = (agg: number) => {
+      const u = createState(9, START), r = living(u).find(x => SIM.ageOf(x, u.now) >= SIM.ALDER.vuxen)!;
+      r.pot.aggression = agg; r.pot.empati = 10;
+      let n = 0, alla = 0;
+      for (let i = 0; i < 600; i++) {
+        r.ubr = undefined; r.utb = undefined; r.thoughts = []; SIM.think(r, 'Mår uselt', -0.7, u.now, SIM.DAY);
+        SIM.utbrottRisk(u, r, true);
+        const b = r.ubr as { k: string } | undefined;
+        if (b) { alla++; if ((SIM.UTBROTT as Record<string, { hard?: true }>)[b.k].hard) n++; }
+      }
+      return alla ? n / alla : 0;
+    };
+    const arg = vald(20), lugn = vald(1);
+    // en sparad by utan de nya egenskaperna får dem
+    const g = createState(3, START); for (const x of g.people) { delete (x.pot as Partial<Record<SIM.Stat, number>>).smidighet; delete (x.pot as Partial<Record<SIM.Stat, number>>).aggression; }
+    g.v = 11; SIM.migrate(g);
+    const upp = g.people.every(x => x.pot.smidighet >= 1 && x.pot.aggression >= 1);
+    return [
+      ['alla har smidighet och aggression mellan 1 och 20', alla],
+      ['vid 40 har smidigheten börjat sjunka men inte styrkan', aldras],
+      ['den smidiga gör finare arbete', fin],
+      [`den smidiga vinner oftare i striden (${smid.vann[0]} mot ${smid.vann[1]} av 200)`, smid.vann[0] > smid.vann[1]],
+      [`blodtörsten är hög hos den aggressiva, kalla och arga (${hog.toFixed(2)}) och noll hos den milda (${lag.toFixed(2)})`, hog >= 0.6 && lag === 0],
+      [`den aggressiva slår hellre i utbrotten (${Math.round(arg * 100)} % våldsamma mot ${Math.round(lugn * 100)} %)`, arg > lugn],
+      ['en sparad by utan egenskaperna får dem när den läses in', upp],
     ];
   },
 };

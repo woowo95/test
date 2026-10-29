@@ -46,11 +46,11 @@ export function simulera<T>(fn: () => T): T {
 
 export enum T { Vatten, Sand, Gras, Skog, Sten }
 
-export const STATS = ['styrka', 'uthallighet', 'intelligens', 'nyfikenhet', 'karisma', 'skonhet', 'flit', 'empati', 'mod', 'minne'] as const;
+export const STATS = ['styrka', 'uthallighet', 'intelligens', 'nyfikenhet', 'karisma', 'skonhet', 'flit', 'empati', 'mod', 'minne', 'smidighet', 'aggression'] as const; // smidighet och aggression: steg 3.7.6
 export type Stat = typeof STATS[number];
 export const STAT_NAMES: Record<Stat, string> = {
   styrka: 'Styrka', uthallighet: 'Uthållighet', intelligens: 'Intelligens', nyfikenhet: 'Nyfikenhet',
-  karisma: 'Karisma', skonhet: 'Skönhet', flit: 'Flit', empati: 'Empati', mod: 'Mod', minne: 'Minne',
+  karisma: 'Karisma', skonhet: 'Skönhet', flit: 'Flit', empati: 'Empati', mod: 'Mod', minne: 'Minne', smidighet: 'Smidighet', aggression: 'Aggression',
 };
 // vad varje egenskap påverkar utöver arbetena som har den som egenskap (ACTS), med orden personrutan visar.
 // Skriv till en rad när simuleringen börjar fråga efter egenskapen på ett nytt ställe
@@ -65,6 +65,8 @@ export const STAT_GOR: Record<Stat, string[]> = {
   empati: ['Att trösta och ge gåvor', 'Att aldrig ta något utan lov, när den är hög', 'Att vilja ha eld när andra fryser', 'Hur ofta hen pratar med andra', 'Pliktkänslan'],
   mod: ['Att väljas till nattvakt', 'Hur långt bort hen vågar gå', 'Att inte låta rädslor styra'],
   minne: ['Hur länge hen minns platser och lärdomar'],
+  smidighet: ['Att inte råka ut för olyckor i arbetet', 'Att fånga kaniner', 'Att fisken sitter kvar när den nappat', 'Hur fort hen tar sig fram i skog och snår', 'Hur fint det blir som hen tillverkar', 'Hur snabb hen är och hur bra hen duckar i en strid'],
+  aggression: ['Att slå i stället för att gråta när hen mår dåligt', 'Att gräla', 'Hur hårt hen straffar som ledare', 'Blodtörsten: att vilja döda, med låg empati och dåligt humör', 'Att inte ge sig i en strid'],
 };
 export const SKILLS = ['samla', 'jakt', 'fiske', 'ved', 'hantverk', 'berattande', 'elda', 'matlagning'] as const; // matlagning: steg 2.8.1 (matlagning.ts)
 export type Skill = typeof SKILLS[number];

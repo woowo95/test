@@ -12,7 +12,7 @@ import { UPPV, upplev } from './uppvaxt';
 // vilar eller sover, och fortare inne. Smuts och hygien kommer med hygienen (2.7). Fliken Hälsa (steg 2.5.3) läser skadeLista,
 // delSkada och förmågorna (FORMAGOR)
 import { ACTS } from './handlingar';
-import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, living, log, think } from './folk';
+import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, franMitt, living, log, think } from './folk';
 import { amountOf, avbryt } from './lager';
 import { fearPlace } from './minne';
 import { TORST } from './torst';
@@ -44,7 +44,8 @@ export const HALSA = balans('halsa', {
   smartaHumor: 0.2, // ... och smärtan sänker humöret så här mycket (gånger smärtan) ...
   ontGrans: 0.2, // ... från den här smärtan (tanken "Har ont", och texten i personrutan)
   minst: 0.2, // rörligheten och händigheten går aldrig under detta
-  skicklig: 25, // risken för en olycka gånger 1 − färdigheten / skicklig
+  skicklig: 25, // risken för en olycka gånger 1 − färdigheten / skicklig ...
+  smidig: 0.3, // ... och gånger 1 − smidig × (smidigheten − 10) / 10 (steg 3.7.6)
   // vården (steg 2.5.2)
   infRisk: 0.01, // chansen i timmen att ett öppet sår blir infekterat ...
   forband: 0.25, // ... gånger detta med ett förband
@@ -226,7 +227,7 @@ function olyckaSteg(s: State, p: Person, dtSec: number): Dodsorsak | undefined {
   const t = p.task, o = t && t.phase === 'do' ? OLYCKOR[t.act] : undefined;
   if (!o) return undefined;
   const pd = ACTS[t!.act], sk: Skill | undefined = pd.arbete ?? (pd.hantverk ? 'hantverk' : undefined);
-  if (!chance(s, o.risk * (1 - (sk ? p.skill[sk] : 0) / HALSA.skicklig) / HOUR_S, dtSec, 'halsa', p)) return undefined;
+  if (!chance(s, o.risk * (1 - (sk ? p.skill[sk] : 0) / HALSA.skicklig) * (1 - HALSA.smidig * franMitt(p, 'smidighet', s.now)) / HOUR_S, dtSec, 'halsa', p)) return undefined;
   const k = pick(s, o.typer, 'halsa', p), d = pick(s, o.delar, 'halsa', p), u = rnd(s, 'halsa', p);
   return skada(s, p, d, k, o.min + u * u * (o.max - o.min), o.dod, o.nar);
 }

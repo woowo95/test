@@ -13,6 +13,7 @@ export const STROMMAR = {
   arbete: 'vad arbetet ger: fynd, fångst, fiske, svamp, rep',
   halsa: 'sjukdom, olyckor, död, graviditet och förlossning',
   folk: 'nya människor: kön, namn, anlag, färdigheter',
+  anlag: 'anlagen som kom senare (smidighet och aggression, steg 3.7.6), så att följden folk blev som förut',
   flytt: 'in- och utflyttning',
   samtal: 'samtal och relationer',
   minne: 'lärdomar: vad man ser, berättar och överdriver',

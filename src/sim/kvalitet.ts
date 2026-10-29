@@ -1,5 +1,5 @@
 import { balans } from './balans';
-import { alive, byId, count, log, think } from './folk';
+import { alive, byId, count, franMitt, log, think } from './folk';
 import { gauss } from './slump';
 import { HOUR, Person, State } from './typer';
 import { handelse } from './rykten';
@@ -20,6 +20,7 @@ export const KV = balans('kvalitet', {
   kunnig: 12, // färdigheten i hantverk delas med detta: 0 = ingen färdighet, 1 = kunnig
   brus: 0.3, // slumpen: högst så här mycket upp eller ner (oftast mycket mindre)
   bank: 0.1, // vid slöjdbänken blir det så här mycket bättre
+  smid: 0.1, // den smidiga gör finare arbete: så här mycket gånger (smidigheten − 10) / 10 (steg 3.7.6)
   grans: [0, 0.25, 0.85, 1.3, 1.9], // gränserna mellan nivåerna: under den första usel, sedan slarvig, normal, fin, mästerverk och ★
   haller: [0.3, 0.85, 1, 1.15, 1.3, 2], // hur länge saken håller (slitaget delas med detta), per nivå
   varde: [0.25, 0.8, 1, 1.3, 1.8, 4], // vad den är värd
@@ -47,7 +48,7 @@ export const kvNamn = (t?: { q?: number }) => KVALITET[kvOf(t)].namn;
 
 // hur bra det blir som p gör nu: färdigheten, slumpen (kvalitetens egen följd) och slöjdbänken
 export function rullaKvalitet(s: State, p: Person, bank: boolean) {
-  const v = p.skill.hantverk / KV.kunnig + gauss(s, 'kvalitet', p) * KV.brus + (bank ? KV.bank : 0);
+  const v = p.skill.hantverk / KV.kunnig + gauss(s, 'kvalitet', p) * KV.brus + (bank ? KV.bank : 0) + KV.smid * franMitt(p, 'smidighet', s.now);
   let q = 0;
   while (q < KV.grans.length && v >= KV.grans[q]) q++;
   return q;

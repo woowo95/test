@@ -7,7 +7,8 @@
 // står i stridens egen logg (Strid.logg, raderna i STRIDHANDELSER), som sparas med striden och inte i händelseloggen, och
 // stridRapport sammanfattar den. Slumpen är stridens egen följd (Strid.r): striden är en ren funktion av uppställningen och
 // fröet, så att arenan kan köra om samma strid. När striden kommer in i byn (steg 3.7.2) tas fröet ur byns följd 'strid'.
-// Det som kommer i senare steg: smidighet och aggression (3.7.6), duck, parering och rörelse (3.7.2), avstånd och
+// Smidigheten (steg 3.7.6) gör en kämpe snabbare och svårare att träffa, och blodtörsten (aggressionen, låg empati och dåligt
+// humör, humor.ts) gör att man ger sig senare. Det som kommer i senare steg: duck, parering och rörelse (3.7.2), avstånd och
 // reservvapen (3.7.7), knuff, fall och tappade vapen (3.7.8), mod och att ge upp efter hotet (3.7.9).
 import { balans } from './balans';
 import { HALSA, KROPPSDELAR, Kroppsdel, SKADOR, SkadaTyp } from './halsa';
@@ -15,6 +16,7 @@ import { DJUR } from './redskap';
 import { SAKER, sakNamn } from './saker';
 import { clamp } from './slump';
 import { stat } from './folk';
+import { blodtorst } from './humor';
 import { paSig } from './utrustning';
 import { ownedBy } from './agande';
 import type { Person, State } from './typer';
@@ -26,6 +28,9 @@ export const STRID = balans('strid', {
   fart: 1.6, // rutor i sekunden för en frisk vuxen som springer i strid (gånger djurets fart)
   traffBas: 0.6, // chansen att träffa någon som är lika skicklig
   traffPer: 0.03, // ... och så här mycket mer per poäng skicklighet över motståndarens
+  smidUndan: 0.015, // ... och så här mycket mindre per poäng smidighet hos motståndaren över 10 (steg 3.7.6)
+  smidFart: 0.02, // farten gånger 1 + smidFart × (smidigheten − 10)
+  torst: 0.3, // stridsmodet i början plus så här mycket gånger blodtörsten (0–1)
   traffMin: 0.1, traffMax: 0.95, // chansen att träffa är aldrig lägre eller högre än så här
   trott: 0.4, // den som är helt utmattad träffar så här mycket sämre
   styrka: 0.05, // skadan gånger 1 + (styrka − 10) × detta
@@ -120,7 +125,7 @@ export const STRIDHANDELSER = {
 export type Handelse = keyof typeof STRIDHANDELSER;
 
 // ---------- en strid ----------
-export interface KampeStats { styrka: number; uthallighet: number; mod: number; smidighet: number; skicklighet: number }
+export interface KampeStats { styrka: number; uthallighet: number; mod: number; smidighet: number; skicklighet: number; torst?: number } // torst = blodtörsten 0–1 (steg 3.7.6)
 export type KampeLage = 'strid' | 'nere' | 'ger' | 'flykt' | 'borta' | 'dod';
 export interface Kampe {
   id: number; namn: string; sida: 0 | 1; pid?: number; djur?: string; // pid = personen i byn, djur = arten i DJUR
@@ -152,7 +157,7 @@ function slump(st: Strid) {
 export function nyStrid(u: Uppstallning, fro: number): Strid {
   const kampar: Kampe[] = u.kampar.map(k => ({
     ...k, st: { ...k.st }, klader: [...k.klader], skador: [], blod: 1, ork: 1,
-    modNu: clamp(STRID.modStart + (k.st.mod / 20) * STRID.modMod, 0.05, 1), lage: 'strid', vant: 0, slag: 0, traffar: 0, gjort: 0,
+    modNu: clamp(STRID.modStart + (k.st.mod / 20) * STRID.modMod + (k.st.torst ?? 0) * STRID.torst, 0.05, 1), lage: 'strid', vant: 0, slag: 0, traffar: 0, gjort: 0,
   }));
   const st: Strid = { avsikt: u.avsikt, t: 0, w: u.w, h: u.h, r: fro | 0, fro, kampar, logg: [{ t: 0, h: 'borjar' }] };
   if (!AVS[u.avsikt].vapen) for (const k of kampar) if (!k.djur) k.vapen = 'hand';
@@ -163,6 +168,7 @@ export function nyStrid(u: Uppstallning, fro: number): Strid {
 // ---------- kroppen i striden ----------
 const smartaAv = (k: Kampe) => k.skador.reduce((a, w) => a + SKADOR[w.k].smarta * w.g, 0);
 const delFel = (k: Kampe, d: Kroppsdel) => Math.min(1, k.skador.reduce((a, w) => a + (w.d === d ? SKADOR[w.k].fel * w.g : 0), 0));
+const smidFart = (k: Kampe) => 1 + STRID.smidFart * (k.st.smidighet - 10); // den smidiga är snabbare (steg 3.7.6)
 function rorlighet(k: Kampe) {
   let v = 0;
   for (const d of DELAR) v += ((KROPPSDELAR[d] as { rorlighet?: number }).rorlighet ?? 0) * delFel(k, d);
@@ -201,7 +207,7 @@ function slaEtt(st: Strid, a: Kampe, b: Kampe) {
   const v = VAP[a.vapen];
   a.slag++;
   a.ork = Math.max(0, a.ork - STRID.orkSlag * (1 - (a.st.uthallighet - 10) / 40));
-  const chans = clamp((STRID.traffBas + (a.st.skicklighet - b.st.skicklighet) * STRID.traffPer) * (1 - STRID.trott * (1 - a.ork)), STRID.traffMin, STRID.traffMax) * (b.lage === 'nere' || b.lage === 'flykt' ? STRID.utsatt : 1); // den som ligger eller vänt ryggen är lätt att träffa
+  const chans = clamp((STRID.traffBas + (a.st.skicklighet - b.st.skicklighet) * STRID.traffPer - (b.st.smidighet - 10) * STRID.smidUndan) * (1 - STRID.trott * (1 - a.ork)), STRID.traffMin, STRID.traffMax) * (b.lage === 'nere' || b.lage === 'flykt' ? STRID.utsatt : 1); // den som ligger eller vänt ryggen är lätt att träffa
   if (slump(st) >= chans) { st.logg.push({ t: st.t, h: 'miss', a: a.id, b: b.id, v: a.vapen }); return; }
   let x = slump(st);
   let d: Kroppsdel = 'bal';
@@ -236,7 +242,7 @@ export function stridSteg(st: Strid) {
     if (k.blod < HALSA.blodDod) { falla(st, k, 'dod'); continue; }
     if (k.lage === 'flykt') { // springer mot närmaste kanten och är borta när hen når den
       const ut = [k.x, st.w - k.x, k.y, st.h - k.y], i = ut.indexOf(Math.min(...ut));
-      const lang = STRID.fart * k.fart * rorlighet(k) * dt;
+      const lang = STRID.fart * k.fart * smidFart(k) * rorlighet(k) * dt;
       ga(st, k, i === 0 ? 0 : i === 1 ? st.w : k.x, i === 2 ? 0 : i === 3 ? st.h : k.y, lang);
       if (Math.min(k.x, st.w - k.x, k.y, st.h - k.y) <= 0.31) { k.lage = 'borta'; st.logg.push({ t: st.t, h: 'borta', a: k.id }); }
       continue;
@@ -249,7 +255,7 @@ export function stridSteg(st: Strid) {
     k.mal = m?.id;
     if (!m) continue;
     const v = VAP[k.vapen], d = dist(k, m);
-    if (d > v.rack) ga(st, k, m.x, m.y, Math.min(d - v.rack * 0.9, STRID.fart * k.fart * rorlighet(k) * dt));
+    if (d > v.rack) ga(st, k, m.x, m.y, Math.min(d - v.rack * 0.9, STRID.fart * k.fart * smidFart(k) * rorlighet(k) * dt));
     if (dist(k, m) <= v.rack && k.vant <= 0) { // den som just kom fram slår samma ögonblick
       slaEtt(st, k, m);
       k.vant = v.takt * (1 - ((k.st.uthallighet - 10) / 20) * STRID.takt) * (0.85 + slump(st) * 0.3);
@@ -338,13 +344,13 @@ export function korManga(u: Uppstallning, fro: number, n: number): ManyResultat 
 
 // ---------- kämpar ur byn och påhittade ----------
 // en kämpe ur en person i byn: anlagen (åldern med), det bästa vapnet hen bär och kläderna. Skickligheten är jakten tills
-// närstriden och träffsäkerheten blir egna färdigheter (steg 3.7.2), smidigheten 10 tills den finns (steg 3.7.6)
+// närstriden och träffsäkerheten blir egna färdigheter (steg 3.7.2); smidigheten och blodtörsten (steg 3.7.6)
 export function personKampe(s: State, p: Person, id: number, sida: 0 | 1, x: number, y: number): Uppstallning['kampar'][number] {
   const bar = [...new Set([...paSig(s, p), ...ownedBy(s, p)].map(t => t.k))]; // det hen bär och äger (i arenan har man sina saker med sig)
   const vapen = MANNISKOVAPEN.filter(v => bar.includes(v)).sort((a, b) => VAP[b].skada - VAP[a].skada)[0] ?? 'hand';
   return {
     id, namn: p.name, sida, pid: p.id, vapen, klader: bar.filter(k => SKYDD[k]), fart: 1, x, y,
-    st: { styrka: stat(p, 'styrka', s.now), uthallighet: stat(p, 'uthallighet', s.now), mod: stat(p, 'mod', s.now), smidighet: 10, skicklighet: 5 + (p.skill.jakt ?? 0) / 2 },
+    st: { styrka: stat(p, 'styrka', s.now), uthallighet: stat(p, 'uthallighet', s.now), mod: stat(p, 'mod', s.now), smidighet: stat(p, 'smidighet', s.now), skicklighet: 5 + (p.skill.jakt ?? 0) / 2, torst: blodtorst(s, p) },
   };
 }
 // en kämpe ur ett djur i djurregistret (DJUR.strid)

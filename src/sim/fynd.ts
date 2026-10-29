@@ -1,6 +1,6 @@
 import { upplev } from './uppvaxt';
 import { PLATS, campCenter, campDist, campGrid, rektAvstand } from './plats';
-import { count, forstaGang, stat, log, think } from './folk';
+import { count, forstaGang, franMitt, stat, log, think } from './folk';
 import { getMap, hash, perKarta, vnoise } from './karta';
 import { Markslag, groundOf, markslag, startGround, tileOf } from './mark';
 import { sedEvent } from './seder';
@@ -37,7 +37,8 @@ export const FANGST = balans('fangst', {
   handFiske: 0.55, // fiske med händerna ger ungefär så mycket som samling på en lagom rik plats gånger detta
   forsokSek: 300, // ett fiskeförsök tar så här många sekunder (delat med SNABBARE)
   fiskRikMax: 1.3, // en plats räknas inte som rikare än så här vid napp
-  hallSkill: 40, hallUthall: 100, // fisken sitter kvar: redskapets hall plus färdigheten delad med Skill plus uthålligheten delad med Uthall
+  hallSkill: 40, hallUthall: 100, // fisken sitter kvar: redskapets hall plus färdigheten delad med Skill plus uthålligheten delad med Uthall ...
+  hallSmid: 0.05, // ... plus så här mycket gånger (smidigheten − 10) / 10 (steg 3.7.6)
   // flinta
   flintaMinsta: 1, flintaBehov: 2, // byn vill ha minst en flinta, och så här många flintor och yxor tillsammans
   flintaAvstand: 30, // en flintplats ligger närmare lägret än så här ...
@@ -580,7 +581,7 @@ export function handFish(s: State, p: Person, x: number, y: number, ageF: number
   const season = ACTS.fiske.sasong![ageIndex(s)];
   if (rnd(s, 'arbete', p) >= napp * season * Math.min(FANGST.fiskRikMax, richness(s, 'fiske', x, y)) * ageF) return 0;
   st.n++; count(s, 'fiskeNapp'); sjoRakna(s, x, y, 'napp', p);
-  const hold = hall + p.skill.fiske / FANGST.hallSkill + stat(p, 'uthallighet', s.now) / FANGST.hallUthall;
+  const hold = hall + p.skill.fiske / FANGST.hallSkill + stat(p, 'uthallighet', s.now) / FANGST.hallUthall + FANGST.hallSmid * franMitt(p, 'smidighet', s.now);
   if (rnd(s, 'arbete', p) >= hold) return 0;
   st.k++; sjoRakna(s, x, y, 'fisk', p); const forsta = forstaGang(s, 'fisk'); if (spear) count(s, 'spjutFisk'); if (gear === 'metspo') count(s, 'metFisk');
   takeFrom(s, 'fiske', x, y, 1);

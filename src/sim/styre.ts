@@ -1,4 +1,4 @@
-import { ALDER, REL, ageOf, alive, byId, count, isKin, living, log, relKey, stat, think } from './folk';
+import { ALDER, REL, ageOf, alive, byId, count, franMitt, isKin, living, log, relKey, stat, think } from './folk';
 import { skada } from './halsa';
 import { die, leave } from './liv';
 import { moodOf } from './humor';
@@ -45,6 +45,7 @@ export const STR = balans('straff', {
   timme: 20, // på kvällen vid den här timmen
   rang: 1, // hårdheten: 1 + rang × Rangordning + empati × (10 - empatin) / 10 + humor × (0,5 - humöret), mellan min och max
   empati: 0.3, humor: 0.4, min: 0.3, max: 2.5,
+  agg: 0.3, // ... plus agg × (aggressionen − 10) / 10 (steg 3.7.6)
   nara: 0.7, // sina nära (partner, släkt, goda vänner) straffar ledaren så här mycket mildare
   skam: 0.3, slag: 0.6, utvis: 0.9, // straffet: från så här mycket (händelsens vikt gånger hårdheten) skam, slag och utvisning
   slagRang: 0.2, utvisRang: 0.4, // ... slag bara från så här mycket Rangordning, och utvisning bara för dråp och från så här mycket
@@ -205,7 +206,7 @@ function doma(s: State, l: Person) {
     if (!f || HANDELSER[b.h].vikt > HANDELSER[f.h].vikt) fall.set(e.om, b);
   }
   if (!fall.size) return;
-  const hard0 = clamp(1 + STR.rang * rang + STR.empati * (10 - stat(l, 'empati', now)) / 10 + STR.humor * (0.5 - moodOf(l, now)), STR.min, STR.max);
+  const hard0 = clamp(1 + STR.rang * rang + STR.empati * (10 - stat(l, 'empati', now)) / 10 + STR.humor * (0.5 - moodOf(l, now)) + STR.agg * franMitt(l, 'aggression', now), STR.min, STR.max);
   for (const [id, b] of fall) {
     const q = byId(s, id)!;
     for (const e of l.intryck ?? []) if (e.om === id) for (const x of e.bev ?? []) if (BROTT.has(x.h)) domt.push(`${id}:${x.h}:${Math.round(x.t)}`);

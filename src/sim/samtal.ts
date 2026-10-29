@@ -1,5 +1,5 @@
 import { barnTill } from './uppvaxt';
-import { ALDER, REL, ageOf, count, getRel, isKin, log, similarity, stat, think } from './folk';
+import { ALDER, REL, ageOf, count, franMitt, getRel, isKin, log, similarity, stat, think } from './folk';
 import { berattaBrist } from './naring';
 import { moodOf } from './humor';
 import { clamp, pickViktat, rnd } from './slump';
@@ -25,6 +25,8 @@ export const SAMTAL = balans('samtal', {
   // vilket slag det blir, i den ordningen: gräl (dåligt humör eller osams), berättelse, flirt, tröst, djupt samtal, skämt, småprat
   gralHumor: 0.2, // är humöret lägre än så här grälar man ofta ...
   gralHumorChans: 0.2, // ... med så här stor chans (0,3 och 0,35 före steg 2.12.6)
+  gralAgg: 0.5, // chanserna att gräla gånger 1 + gralAgg × (aggressionen − 10) / 10, minst gralAggMin (steg 3.7.6)
+  gralAggMin: 0.3,
   gralOsamsChans: 0.05, // är man osams (under REL.gral) grälar man med så här stor chans. Det var 0,5 före steg 2.12.6: ett gräl
   // drog ner relationen under gränsen, och sedan blev det mest gräl tills alla i byn var ovänner (-100) och inga nya par blev till
   flirtBas: 0.12, // chansen att det blir flirt: flirtBas + romans / flirtRom, och flirtKemi mer om kemin är över flirtKemiGr
@@ -108,7 +110,8 @@ export function converse(s: State, a: Person, others: Person[], events?: TalkEve
     ((a.partner === undefined && b.partner === undefined) || a.partner === b.id);
   // med sin ärkefiende grälar man nästan alltid, med en rival lite oftare (steg 3.1.1)
   const gralExtra = arArke(a, b) ? RELT.arkeGral : arRivaler(a, b) ? RELT.rivalGral : 0;
-  if ((mood < SAMTAL.gralHumor && rnd(s, 'samtal', a) < SAMTAL.gralHumorChans) || (r.op < REL.gral && rnd(s, 'samtal', a) < SAMTAL.gralOsamsChans) || (gralExtra && rnd(s, 'samtal', a) < gralExtra)) kind = 'gräl';
+  const ag = Math.max(SAMTAL.gralAggMin, 1 + SAMTAL.gralAgg * franMitt(a, 'aggression', now)); // den aggressiva grälar oftare (steg 3.7.6)
+  if ((mood < SAMTAL.gralHumor && rnd(s, 'samtal', a) < SAMTAL.gralHumorChans * ag) || (r.op < REL.gral && rnd(s, 'samtal', a) < SAMTAL.gralOsamsChans * ag) || (gralExtra && rnd(s, 'samtal', a) < gralExtra * ag)) kind = 'gräl';
   else if (a.task?.act === 'beratta') kind = 'berättelse';
   else if (canFlirt && rnd(s, 'samtal', a) < SAMTAL.flirtBas + r.rom / SAMTAL.flirtRom + (r.chem > SAMTAL.flirtKemiGr ? SAMTAL.flirtKemi : 0)) kind = 'flirt';
   else if (moodOf(b, now) < SAMTAL.trostHumor && rnd(s, 'samtal', a) < stat(a, 'empati', now) / SAMTAL.trostEmpati) kind = 'tröst';

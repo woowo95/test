@@ -524,6 +524,7 @@ SCENARIER.kvalitet = {
   text: 'Kvalitet (steg 2.2.2): det som görs blir usel, slarvig, normal, fin, mästerverk eller perfekt (★) efter görarens hantverk, lite slump och slöjdbänken. Bättre saker håller längre, är mer värda och fungerar lite bättre; möblerna har kvalitet men inte stationerna, och saker från äldre sparfiler är normala',
   kor: () => {
     const s = createState(7, START), p = living(s).find(q => ageOf(q, s.now) >= 18)!;
+    p.pot.smidighet = 10; // smidigheten (steg 3.7.6) i mitten, så att bara hantverket räknas
     // många försök: medelnivån för en nybörjare, en mästare och en mästare vid slöjdbänken
     const forsok = (skill: number, bank: boolean) => { p.skill.hantverk = skill; return Array.from({ length: 400 }, () => SIM.rullaKvalitet(s, p, bank)); };
     const snitt = (a: number[]) => a.reduce((x, y) => x + y, 0) / a.length, andel = (a: number[], q: number) => a.filter(x => x === q).length / a.length;

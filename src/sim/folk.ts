@@ -1,6 +1,6 @@
 import { eldPlats } from './karta';
 import { freeNear } from './byggnad';
-import { clamp, gauss, pick, rnd } from './slump';
+import { Strom, clamp, gauss, pick, rnd } from './slump';
 import { Act, DAY, LogEntry, Person, Rel, SKILLS, STATS, Skill, Stat, State } from './typer';
 import { balans } from './balans';
 
@@ -116,6 +116,7 @@ export const ALDER = balans('alder', {
   // åldrandet: egenskapen backar från Fran år, och tappar hela sin kraft på Spann år till, men aldrig under Golv
   potFodd: 0.06, // en nyfödd har så här stor del av sin potential
   styrkaFran: 45, styrkaSpann: 45, styrkaGolv: 0.25, // styrka och uthållighet
+  smidFran: 35, smidSpann: 45, smidGolv: 0.3, // smidigheten sjunker tidigare än styrkan (steg 3.7.6)
   minneFran: 50, minneSpann: 40, minneGolv: 0.3, // minne
   skonhetFran: 40, skonhetSpann: 70, skonhetGolv: 0.5, // skönhet
   sinneFran: 60, sinneSpann: 60, sinneGolv: 0.5, // intelligens, nyfikenhet, flit och mod
@@ -167,11 +168,14 @@ export function stat(p: Person, k: Stat, now: number) {
   let g = clamp(ALDER.potFodd + a / ALDER.potVaxt, ALDER.potFodd, 1);
   // åldrande: minne, styrka och uthållighet backar först och fortast, det mesta annat långsamt efter 60
   if ((k === 'styrka' || k === 'uthallighet') && a > ALDER.styrkaFran) g *= clamp(1 - (a - ALDER.styrkaFran) / ALDER.styrkaSpann, ALDER.styrkaGolv, 1);
+  else if (k === 'smidighet' && a > ALDER.smidFran) g *= clamp(1 - (a - ALDER.smidFran) / ALDER.smidSpann, ALDER.smidGolv, 1);
   else if (k === 'minne' && a > ALDER.minneFran) g *= clamp(1 - (a - ALDER.minneFran) / ALDER.minneSpann, ALDER.minneGolv, 1);
   else if (k === 'skonhet' && a > ALDER.skonhetFran) g *= clamp(1 - (a - ALDER.skonhetFran) / ALDER.skonhetSpann, ALDER.skonhetGolv, 1);
   else if ((k === 'intelligens' || k === 'nyfikenhet' || k === 'flit' || k === 'mod') && a > ALDER.sinneFran) g *= clamp(1 - (a - ALDER.sinneFran) / ALDER.sinneSpann, ALDER.sinneGolv, 1);
   return p.pot[k] * g;
 }
+// egenskapen k från mitten: 0 för den som har 10, −0,9 och +1 i ändarna (för det som ska bli som förut i snitt, steg 3.7.6)
+export const franMitt = (p: Person, k: Stat, now: number) => (stat(p, k, now) - 10) / 10;
 
 // färdigheterna en nykomling har efter sin ålder (en dragning ur 'folk' per färdighet, i SKILLS ordning). Matlagningen
 // (steg 2.8.1) är snittet av samling och eldkonst, utan en egen dragning, så att nykomlingarna blev som förut
@@ -201,22 +205,25 @@ export const EGENSKAP = balans('egenskap', {
   arvSlump: 1.2, // så mycket (gånger gauss) en ärvd egenskap ändras
 });
 // en ny egenskap: en dragning för hållet och en för avståndet
-const nyEgenskap = (s: State) => {
-  const hall = rnd(s, 'folk') < 0.5 ? -1 : 1;
-  return EGENSKAP.mitt + hall * Math.pow(rnd(s, 'folk'), EGENSKAP.utprag) * EGENSKAP.vidd;
+const nyEgenskap = (s: State, f: Strom) => {
+  const hall = rnd(s, f) < 0.5 ? -1 : 1;
+  return EGENSKAP.mitt + hall * Math.pow(rnd(s, f), EGENSKAP.utprag) * EGENSKAP.vidd;
 };
+// egenskaperna som kom senare slumpas ur en egen följd, så att följden folk (och alla nya människor) blev som förut
+const SENARE: Stat[] = ['smidighet', 'aggression'];
 
 export function newPerson(s: State, sex: 'm' | 'k', born: number, mother?: Person, father?: Person): Person {
   const pot = {} as Record<Stat, number>;
   const balanserad = !mother || !father ? rnd(s, 'folk') < EGENSKAP.balanserad : false;
   for (const k of STATS) {
     let v: number;
-    if (balanserad) v = EGENSKAP.mitt + gauss(s, 'folk') * EGENSKAP.balanseradVidd;
-    else if (!mother || !father) v = nyEgenskap(s);
+    const fs: Strom = SENARE.includes(k) ? 'anlag' : 'folk';
+    if (balanserad) v = EGENSKAP.mitt + gauss(s, fs) * EGENSKAP.balanseradVidd;
+    else if (!mother || !father) v = nyEgenskap(s, fs);
     else {
-      const r = rnd(s, 'folk');
+      const r = rnd(s, fs);
       const f = r < (1 + EGENSKAP.ny) / 2 ? mother : father; // barnet ärver anlagen, inte det föräldern varit med om (steg 3.1.2)
-      v = r < EGENSKAP.ny ? nyEgenskap(s) : (f.anlag ?? f.pot)[k] + gauss(s, 'folk') * EGENSKAP.arvSlump;
+      v = r < EGENSKAP.ny ? nyEgenskap(s, fs) : ((f.anlag ?? f.pot)[k] ?? EGENSKAP.mitt) + gauss(s, fs) * EGENSKAP.arvSlump;
     }
     pot[k] = clamp(v, 1, 20);
   }
