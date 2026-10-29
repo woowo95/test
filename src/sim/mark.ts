@@ -4,6 +4,7 @@ import { clampI, rnd } from './slump';
 import { H, HOUR, OX, OY, Person, State, W, inMap } from './typer';
 import { BAR, FOREST, Ground, HIGH, VAG, decodeCover, encodeCover, isSoil } from './vag';
 import { balans } from './balans';
+import { vattenNu } from './sjo';
 
 // Balanstal (regel 8): ängarna, gläntan byn börjar i, hur gräset och skogen växer tillbaka och hur mycket stegen nöter. Hur
 // fort man går på marken och hur marken trampas ner står i VAG (vag.ts)
@@ -33,11 +34,12 @@ export const MARK = balans('mark', {
 // ---------- mark: gräs, stigar och skog ----------
 // Förr fanns skog överallt där det är jord. Byn börjar i en liten glänta; resten är skog.
 const grounds = new WeakMap<State, Ground>();
+// vattnet har ändrats under en torka (steg 3.8.2, torka.ts): marken följer vattnet som det är nu (sjo.ts)
+export function nyttVatten(s: State) { const g = grounds.get(s); if (g) g.tiles = vattenNu(s); }
 export function groundOf(s: State): Ground {
   let g = grounds.get(s);
   if (!g) {
-    const m = getMap(s.seed);
-    g = { tiles: m.tiles, cover: decodeCover(s.mark), trees: s.skog ? decodeCover(s.skog, 0) : startForest(s.seed) };
+    g = { tiles: vattenNu(s), cover: decodeCover(s.mark), trees: s.skog ? decodeCover(s.skog, 0) : startForest(s.seed) };
     if (!s.skog) for (let i = 0; i < g.trees.length; i++) if (g.cover[i] < HIGH) g.trees[i] = 0; // äldre sparfil: inga träd på stigarna
     grounds.set(s, g);
   }

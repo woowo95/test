@@ -42,8 +42,8 @@ export const VATTEN = balans('vatten', {
 export const smutsOf = perKarta(seed => {
   const t = getMap(seed).tiles, v = new Float32Array(W * H);
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-    if (t[y * W + x] === T.Vatten) continue;
-    let vid = false;
+    // på vattnet också: där blir stranden när sjön sjunker under en torka (steg 3.8.2)
+    let vid = t[y * W + x] === T.Vatten;
     for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const xx = x + dx, yy = y + dy; if (inMap(xx, yy) && t[yy * W + xx] === T.Vatten) vid = true; }
     if (vid) v[y * W + x] = clamp((vnoise(seed ^ 0x5a17, (x - OX) / VATTEN.skala, (y - OY) / VATTEN.skala) - VATTEN.fran) / VATTEN.spann, 0, 1);
   }
@@ -85,3 +85,62 @@ export function sjoRakna(s: State, x: number, y: number, k: 'forsok' | 'napp' | 
     if (st.log.length > SJO_LOGG) st.log.splice(0, st.log.length - SJO_LOGG);
   }
 }
+
+// ---------- torkan (steg 3.8.2, torka.ts) ----------
+const D4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+// strand: land intill vatten, där man dricker och fiskar, för kartan tiles
+export function strandAv(t: Uint8Array) {
+  const b = new Uint8Array(W * H);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    if (t[y * W + x] === T.Vatten) continue;
+    for (const [dx, dy] of D4) { const xx = x + dx, yy = y + dy; if (inMap(xx, yy) && t[yy * W + xx] === T.Vatten) { b[y * W + x] = 1; break; } }
+  }
+  return b;
+}
+// hur långt ut i sjön varje vattenruta ligger (1 = vid stranden), sjöns största avstånd, och för land hur långt det är
+// till vattnet (högst 255)
+export const djupOf = perKarta(seed => {
+  const t = getMap(seed).tiles, d = new Uint8Array(W * H), land = new Uint8Array(W * H).fill(255), q: number[] = [], ql: number[] = [];
+  for (let i = 0; i < W * H; i++) {
+    const x = i % W, y = (i - x) / W;
+    for (const [dx, dy] of D4) {
+      const xx = x + dx, yy = y + dy;
+      if (!inMap(xx, yy) || (t[yy * W + xx] === T.Vatten) === (t[i] === T.Vatten)) continue;
+      if (t[i] === T.Vatten) { d[i] = 1; q.push(i); } else { land[i] = 1; ql.push(i); }
+      break;
+    }
+  }
+  for (const [kö, v, vatten] of [[q, d, true], [ql, land, false]] as const) for (let n = 0; n < kö.length; n++) {
+    const j = kö[n], x = j % W, y = (j - x) / W;
+    for (const [dx, dy] of D4) {
+      const xx = x + dx, yy = y + dy, k = yy * W + xx;
+      if (!inMap(xx, yy) || (t[k] === T.Vatten) !== vatten || (vatten ? v[k] : v[k] < 255)) continue;
+      v[k] = Math.min(254, v[j] + 1); kö.push(k);
+    }
+  }
+  const max = sjoarna(seed).rutor.map(r => { let m = 0; for (const i of r) m = Math.max(m, d[i]); return m; });
+  return { d, max, land };
+});
+// vattnet som det är nu: under en torka är kanten av sjöarna torr sjöbotten (T.Lera) så många rutor ut som nivån säger,
+// men aldrig sjöns djupaste del, och en sjö som torkat ut är lera helt. Utan torka kartans eget vatten
+const nu = new WeakMap<State, { v: number; tiles: Uint8Array; strand: Uint8Array }>();
+function vattenOf(s: State) {
+  const st = s.sjoTorr, v = st ? st.v : -1;
+  let c = nu.get(s);
+  if (c?.v === v) return c;
+  const m = getMap(s.seed).tiles;
+  let tiles = m;
+  if (st && (st.niva || st.tomma.length)) {
+    tiles = m.slice();
+    const { d, max } = djupOf(s.seed), { id } = sjoarna(s.seed), tom = new Set(st.tomma);
+    for (let i = 0; i < W * H; i++) if (m[i] === T.Vatten && (tom.has(id[i]) || d[i] <= st.niva && d[i] < max[id[i]])) tiles[i] = T.Lera;
+  }
+  c = { v, tiles, strand: tiles === m ? strandStart(s.seed) : strandAv(tiles) };
+  nu.set(s, c);
+  return c;
+}
+const strandStart = perKarta(seed => strandAv(getMap(seed).tiles));
+export const vattenNu = (s: State) => vattenOf(s).tiles;
+export const strandNu = (s: State) => vattenOf(s).strand;
+// är rutan i vatten just nu (kartans vatten utom den torra sjöbottnen)
+export const iVattnetNu = (s: State, i: number) => vattenOf(s).tiles[i] === T.Vatten;

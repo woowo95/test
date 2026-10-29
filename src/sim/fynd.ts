@@ -14,7 +14,7 @@ import { DAY, H, HOUR, HOUR_S, OX, OY, Person, State, T, W, egen, inMap, tvaDela
 import { FOREST, Ground, isSoil } from './vag';
 import { ACTS, RedskapDef, SNABBARE } from './handlingar';
 import { balans } from './balans';
-import { sjoRakna } from './sjo';
+import { djupOf, iVattnetNu, sjoRakna, sjoarna, strandAv, vattenNu } from './sjo';
 import { smakGift } from './rykten';
 
 // ---------- balanstal (regel 8) ----------
@@ -22,6 +22,10 @@ import { smakGift } from './rykten';
 // Det som varje lager (bär, kaniner, abborre, svamp, flinta, rötter) ger står i raderna i FYND, platsernas storlek i PLATS
 // (plats.ts) och fiskeredskapens träffsäkerhet i raderna för fiske i handlingar.ts. Avstånd är i rutor, om inget annat sägs
 export const FANGST = balans('fangst', {
+  // under torkan (steg 3.8.2, torka.ts): fisken samlas i vattnet som är kvar, så här mycket mer fisk per ruta när sjön sjunkit två rutor ...
+  torkaFisk: 0.5,
+  fiskStor: 150, fiskLiten: 0.3, // ... i en sjö med färre rutor än fiskStor växer fisken tillbaka långsammare, ned till fiskLiten ...
+  torkaVilt: 0.5, torkaViltR: 12, // ... och kaninerna trivs så här mycket sämre torkaViltR rutor från vattnet (mindre närmare)
   // var det finns
   stenNara: 2, // så nära en sten finns flintan oftast
   jaktFaktor: 2.1, // kaninerna håller sig långt från byn (skyggIn), så en jakttur är lång; i gengäld ger platserna så mycket mer än förr
@@ -97,6 +101,7 @@ interface FyndDef {
   bas(s: State, i: number, m: number): number;
   monster?: Monster;
   arstid?: number[]; // hur mycket som finns per tidsålder (istid, vår, sommar, höst), annars lika året om
+  torka?: number; // så mycket finns under en torka (steg 3.8.2, torka.ts), annars som vanligt
   uttag?: Uttag;
   vatten?: number; // lagret finns i vattnet; man står på stranden och når så många rutor ut
 }
@@ -120,7 +125,7 @@ const DEF = {
   // bärbuskar i små täta snår i skog och högt gräs; de flyttar sig mycket långsamt. Inga bär i istiden.
   // Sedan steg 2.3.9 lite ovanligare än svampen, men de växer tillbaka fortare och kommer tidigare på våren
   bar: {
-    namn: 'Bär', grupp: 'vaxter', ikon: 'bar', farg: 0x9a5cff, topp: 3, arstid: [0, 0.75, 1, 1.15],
+    namn: 'Bär', grupp: 'vaxter', ikon: 'bar', farg: 0x9a5cff, topp: 3, arstid: [0, 0.75, 1, 1.15], torka: 0.6,
     monster: { salt: 71, skala: 2.5, period: 70, troskel: 0.72 },
     bas(s, i, m) {
       if (!land(s, i)) return 0;
@@ -139,20 +144,21 @@ const DEF = {
   fiske: {
     namn: 'Abborre', grupp: 'djur', ikon: 'abborre', farg: 0x2f7fd0, topp: 1.6, vatten: 2,
     monster: { salt: 79, skala: 3, period: 14, troskel: 0.3 },
-    bas: (s, i, m) => getMap(s.seed).tiles[i] === T.Vatten ? 0.5 + 1.4 * m : 0,
+    // under en torka samlas fisken i det vatten som är kvar (steg 3.8.2)
+    bas: (s, i, m) => iVattnetNu(s, i) ? (0.5 + 1.4 * m) * (1 + FANGST.torkaFisk * (s.sjoTorr?.niva ?? 0) / 2) : 0,
     uttag: { full: 3, reach: 1, regrow: [1 / 300, 1 / 100, 1 / 100, 1 / 140] },
   },
   // kantarellen växer bara i skogen, utspridd över större områden som vandrar långsamt. Mest på hösten.
   // Sedan steg 2.3.9 på ungefär lika många ställen som bären hade förut (en tredjedel så många som innan)
   kantarell: {
-    namn: 'Kantarell', grupp: 'vaxter', ikon: 'svamp', farg: 0xffd21f, topp: 0.8, arstid: SVAMP_SEASON,
+    namn: 'Kantarell', grupp: 'vaxter', ikon: 'svamp', farg: 0xffd21f, topp: 0.8, arstid: SVAMP_SEASON, torka: 0.1,
     monster: { salt: 83, skala: 8, period: 28, troskel: 0.5, gles: 0.5 },
     bas: (s, i, m) => land(s, i) && groundOf(s).trees[i] >= FOREST ? 0.9 * m : 0,
     uttag: SVAMP_UTTAG,
   },
   // den giftiga orangea spindlingen liknar kantarellen. Den har egna områden som kan gå in i kantarellens
   spindling: {
-    namn: 'Orange spindling (giftig)', grupp: 'vaxter', ikon: 'spindling', farg: 0xff2d6f, topp: 0.8, arstid: SVAMP_SEASON,
+    namn: 'Orange spindling (giftig)', grupp: 'vaxter', ikon: 'spindling', farg: 0xff2d6f, topp: 0.8, arstid: SVAMP_SEASON, torka: 0.1,
     monster: { salt: 89, skala: 8, period: 28, troskel: 0.55, gles: 0.35 },
     bas: (s, i, m) => land(s, i) && groundOf(s).trees[i] >= FOREST ? 0.9 * m : 0,
     uttag: SVAMP_UTTAG,
@@ -165,7 +171,7 @@ const DEF = {
   },
   // rötter finns mycket glest men nästan överallt på jorden. De ger minst, men finns kvar i istiden när bär och svamp är borta
   rotter: {
-    namn: 'Rötter', grupp: 'vaxter', ikon: 'rotter', farg: 0xf2d9a0, topp: 0.5, arstid: [0.6, 1, 0.8, 1],
+    namn: 'Rötter', grupp: 'vaxter', ikon: 'rotter', farg: 0xf2d9a0, topp: 0.5, arstid: [0.6, 1, 0.8, 1], torka: 0.6,
     monster: { salt: 97, skala: 3, period: 84, troskel: 0, gles: 0.25 },
     bas(s, i, m) {
       if (!land(s, i)) return 0;
@@ -177,13 +183,13 @@ const DEF = {
   // (gräs eller ungskog intill skogen). Inget i istiden; de växer under sommaren och mognar på hösten. Den som samlar där tar med sig frön.
   // De växer inte nära byn eller där folk går och nöter marken (steg 2.10.12, orortOf)
   vildkorn: {
-    namn: 'Vildkorn', grupp: 'vaxter', ikon: 'vildkorn', farg: 0xe8c040, topp: 1, arstid: [0, 0.3, 0.9, 1.2],
+    namn: 'Vildkorn', grupp: 'vaxter', ikon: 'vildkorn', farg: 0xe8c040, topp: 1, arstid: [0, 0.3, 0.9, 1.2], torka: 0.6,
     monster: { salt: 101, skala: 4, period: 56, troskel: 0.55 },
     bas: (s, i, m) => land(s, i) && markslag(groundOf(s), i) === 'hog' ? m * orortOf(s)[i] : 0,
     uttag: { full: 1, reach: 1, regrow: [0, 1 / 240, 1 / 96, 1 / 120] },
   },
   arter: {
-    namn: 'Vilda ärter', grupp: 'vaxter', ikon: 'arter', farg: 0x6fcf4f, topp: 1, arstid: [0, 0.3, 1, 1.1],
+    namn: 'Vilda ärter', grupp: 'vaxter', ikon: 'arter', farg: 0x6fcf4f, topp: 1, arstid: [0, 0.3, 1, 1.1], torka: 0.6,
     monster: { salt: 103, skala: 3, period: 56, troskel: 0.55 },
     bas: (s, i, m) => land(s, i) && BRYN.has(markslag(groundOf(s), i)) && intillSkog(groundOf(s), i) ? m * orortOf(s)[i] : 0,
     uttag: { full: 1, reach: 1, regrow: [0, 1 / 240, 1 / 96, 1 / 120] },
@@ -267,7 +273,7 @@ export function synsOf(s: State, k: Lager, i: number): number {
   for (const j of lagren(k)) { const f = FYND[j]; v += f.bas(s, i, f.monster ? monsterOf(s, j).snitt : 1) * sasong(s, j); }
   return v;
 }
-const sasong = (s: State, k: FyndId) => FYND[k].arstid?.[ageIndex(s)] ?? 1;
+const sasong = (s: State, k: FyndId) => (FYND[k].arstid?.[ageIndex(s)] ?? 1) * (s.sjoTorr?.pa ? FYND[k].torka ?? 1 : 1);
 // var det växer just nu, med årstiden men utan uttaget: det man ser av buskar och spår även när det är plockat
 export function vaxerAt(s: State, k: Lager, i: number) {
   let v = 0;
@@ -286,10 +292,12 @@ const skyggStart = perKarta(seed => {
   }
   return v;
 });
-export function viltStart(s: State, t: number) {
+// torka: att det är torka vid tiden t (djur.ts frågar motgang.ts, som fynd.ts inte kan importera)
+export function viltStart(s: State, t: number, torka = false) {
   const g = startGround(s.seed), sky = skyggStart(s.seed), m = monsterDag(s.seed, 'jakt', Math.floor(t / DAY)).m;
   const sa = FYND.jakt.arstid?.[ageIndex(s, t)] ?? 1, v = new Float64Array(W * H);
   for (let i = 0; i < W * H; i++) v[i] = jaktBas(g, sky, i, m[i]) * sa;
+  if (torka) { const { land } = djupOf(s.seed); for (let i = 0; i < W * H; i++) v[i] *= 1 - FANGST.torkaVilt * Math.min(1, (land[i] - 1) / FANGST.torkaViltR); } // under torkan söker kaninerna sig mot vattnet (steg 3.8.2)
   return v;
 }
 const store = new WeakMap<State, Partial<Record<FyndId, Float32Array>>>();
@@ -336,14 +344,13 @@ export function fyndBin(s: State) {
   } catch { return ''; }
 }
 
-// strand: land intill vatten, där man kan fiska
-export const shoreOf = perKarta(seed => {
-  const t = getMap(seed).tiles, b = new Uint8Array(W * H);
-  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-    if (t[y * W + x] === T.Vatten) continue;
-    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const xx = x + dx, yy = y + dy; if (inMap(xx, yy) && t[yy * W + xx] === T.Vatten) b[y * W + x] = 1; }
-  }
-  return b;
+// strand: land intill vatten, där man kan fiska. Kartans egen strand; under en torka flyttar den ut (strandNu i sjo.ts)
+export const shoreOf = perKarta(seed => strandAv(getMap(seed).tiles));
+// hur fort fisken växer tillbaka i sjön (1 = som vanligt): långsammare ju mindre sjön är (steg 3.8.2)
+const fiskAter = perKarta(seed => {
+  const { id, rutor } = sjoarna(seed), v = new Float32Array(W * H).fill(1);
+  for (let i = 0; i < W * H; i++) if (id[i] >= 0) v[i] = clamp(rutor[id[i]].length / FANGST.fiskStor, FANGST.fiskLiten, 1);
+  return v;
 });
 // avstånd i rutor till närmaste sten (högst 9)
 export const stoneDist = perKarta(seed => {
@@ -390,7 +397,7 @@ const iVattnet = (tiles: Uint8Array, cx: number, cy: number, dx: number, dy: num
 export function standAt(s: State, k: Lager, x: number, y: number, fn: (i: number) => number) {
   const cx = clampI(x, W), cy = clampI(y, H), i = cy * W + cx, r = FYND[lagren(k)[0]].vatten;
   if (!r) return fn(i);
-  const tiles = getMap(s.seed).tiles;
+  const tiles = vattenNu(s);
   if (tiles[i] === T.Vatten) return 0;
   let sum = 0, n = 0;
   for (const { dx, dy, w } of karna(r).v) {
@@ -471,7 +478,10 @@ export function growFynd(s: State, hours: number, season: number, vaxt = 1) {
   const d = takenOf(s);
   for (const k of UTTAG_IDS) {
     const f = Math.exp(-FYND[k].uttag!.regrow[season] * hours * (FYND[k].grupp === 'vaxter' ? vaxt : 1)), a = d[k]!;
-    if (f < 1) for (let i = 0; i < a.length; i++) if (a[i] > 0) a[i] = a[i] * f < FANGST.aterTom ? 0 : a[i] * f;
+    if (f >= 1) continue;
+    // fisken växer tillbaka långsammare i en liten sjö (steg 3.8.2)
+    if (k === 'fiske') { const ft = fiskAter(s.seed); for (let i = 0; i < a.length; i++) if (a[i] > 0) { const fi = ft[i] < 1 ? Math.pow(f, ft[i]) : f; a[i] = a[i] * fi < FANGST.aterTom ? 0 : a[i] * fi; } }
+    else for (let i = 0; i < a.length; i++) if (a[i] > 0) a[i] = a[i] * f < FANGST.aterTom ? 0 : a[i] * f;
   }
 }
 // hur mycket de bästa platserna inom räckhåll ger just nu (snitt av de tio bästa), räknas om en gång i timmen

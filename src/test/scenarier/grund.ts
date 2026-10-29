@@ -1,6 +1,7 @@
 // Scenarier. Grunden: gläntan, yxan, vintern, knapphet, svamp och flinta, kunskap, temperatur och kalender.
 import { createState, growGround, step, living, temperature, coldOf, ageIndex, ageStart, kalender, yearNo, AGES, amountOf, groundOf, getMap, DAY, HOUR, W, tileOf, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, angOf, setAmount, BEAT, tingOf, eatPoison, HOST, vaderNu, VADER, VADERLAGE, VaderId, blotSteg, varmeDelar, stepVader, vaxtFaktor, stepFire, hearthOf, cloneState, wearMult, vaderSlit, NEW_W, NEW_H, allaTider, tiderUtanfor, skaRojas } from '../../sim';
-import { BAR, FOREST, HIGH, isSoil } from '../../sim/vag';
+import { BAR, FOREST, HIGH, VAG, isSoil } from '../../sim/vag';
+import { T } from '../../sim/typer';
 import * as SIM from '../../sim';
 import type { Person, State } from '../../sim';
 import { nyKalender } from '../../sim';
@@ -363,7 +364,7 @@ SCENARIER.hardvinter = {
       b.seed = seed;
       for (let w = 0; w < 64; w++) {
         const t = b.now + w * 7 * DAY + DAY, k = kalender(b, t), m = SIM.motgangNu(b, t);
-        if (k.ai !== 0) { if (m) andra++; continue; }
+        if (k.ai !== 0) { if (m?.id === 'hardVinter') andra++; continue; }
         if (k.start < b.founded + SIM.MOTGANG.forstaDygn * DAY) { if (m) tidiga++; continue; }
         istider++; if (m?.id === 'hardVinter') harda++;
       }
@@ -398,7 +399,7 @@ SCENARIER.hardvinter = {
     const merForsiktig = (() => { const q = gammal, s0 = v.seder.v.forsiktighet; v.seder.v.forsiktighet = 1; const hog = fs(q); v.seder.v.forsiktighet = -1; const lag = fs(q); v.seder.v.forsiktighet = s0; return hog > lag; })();
     return [
       [`ungefär var femte istid blir hård (${harda} av ${istider})`, harda > istider * 0.13 && harda < istider * 0.27],
-      [`ingen motgång under byns första tio dygn eller i en annan tidsålder än istiden (${tidiga}, ${andra})`, tidiga === 0 && andra === 0],
+      [`ingen motgång under byns första tio dygn och ingen hård vinter i en annan tidsålder än istiden (${tidiga}, ${andra})`, tidiga === 0 && andra === 0],
       [`den hårda vintern är 5–8 grader kallare (${kallare.toFixed(1)})`, kallare >= 5 && kallare <= 8],
       [`det snöar oftare (${sno} mot ${snoUtan} timmar på tio dygn)`, sno > snoUtan],
       [`elden äter mer ved (${ved.toFixed(2)} mot ${vedUtan.toFixed(2)} i timmen)`, ved > vedUtan * 1.2],
@@ -407,6 +408,60 @@ SCENARIER.hardvinter = {
       ['en förutseende by vill samla mer när den vet', merForsiktig],
       [`den hårda vintern kom (${(v.stat?.motgang_hardVinter ?? 0)}) och står i byns krönika`, (v.stat?.motgang_hardVinter ?? 0) === 1 && kron],
       [`barnet minns den (${barn.upp?.map(u => u.k).join(', ') || 'inget'})`, !!minns],
+    ];
+  },
+};
+
+SCENARIER.torka = {
+  lang: true,
+  text: 'Steg 3.8.2: torkan kommer ibland på sommaren. Nästan inget regn, marken torkar, sjöarna drar sig tillbaka till torr sjöbotten som går att gå på och små tjärnar torkar ut. Folk kan ändå dricka, grödor som inte vattnas vissnar och ägaren vattnar sitt fält med vattensäcken. När torkan är över och det har regnat kommer vattnet tillbaka',
+  kor: () => {
+    // en by med en tjärn, mitt i en torka som just börjat (sommaren slutar om sju dygn)
+    const fore = (x: State) => { x.founded -= 20 * DAY; x.kal = nyKalender(x.now - DAY / 2, 2); };
+    let v: State | undefined;
+    for (let seed = 1; seed < 600 && !v; seed++) {
+      const b = createState(seed, START); fore(b);
+      const m = SIM.motgangNu(b);
+      if (m?.id === 'torka' && SIM.sjoarna(seed).rutor.some((r, n) => n > 0 && r.length <= SIM.TORKA.liten)) v = b;
+    }
+    if (!v) return [['en by med en tjärn mitt i en torka', false]];
+    const s = v, m = SIM.motgangNu(s)!;
+    tandEld(s); setMat(s, { bar: 40, torkat: 40 });
+    const vatten0 = SIM.vattenNu(s).filter(t => t === T.Vatten).length;
+    // två fält med växande korn: det ena hos en med vattensäck, det andra utan ägare som vattnar
+    const vuxna = living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen), c = SIM.campCenter(s), g = getMap(s.seed).tiles;
+    const ledigt = (x0: number, y0: number) => { for (let k = 0; k < 6; k++) { const x = x0 + k % 3, y = y0 + Math.floor(k / 3); if (g[y * W + x] !== T.Gras) return false; } return true; };
+    const platser: { x: number; y: number }[] = [];
+    for (let r = 4; r < 20 && platser.length < 2; r++) for (const [dx, dy] of [[r, 0], [-r, 0], [0, r], [0, -r]]) { const x = Math.floor(c.x) + dx, y = Math.floor(c.y) + dy; if (platser.length < 2 && ledigt(x, y) && !platser.some(q => Math.abs(q.x - x) < 5 && Math.abs(q.y - y) < 5)) platser.push({ x, y }); }
+    s.falt = platser.map((at, i) => ({ id: i + 1, x: at.x, y: at.y, w: 3, dir: 1, n: 6, agare: i ? -1 : vuxna[0].id, steg: 'vaxer', klara: 0, kvar: 0, sadda: 6, groda: 'korn', vuxit: 0, rord: s.now } as SIM.Falt));
+    s.nextFalt = 2; s.byggV = (s.byggV ?? 0) + 1;
+    SIM.addTool(s, 'vattensack', vuxna[0]);
+    // torkan: fyra och ett halvt dygn (år i spelet)
+    kor(s, (m.start + 4.5 * DAY - s.now) / HOUR);
+    const utanVatten = living(s).filter(p => !SIM.drickPlats(s, p)).length, torstDoda = s.people.filter(p => /törst/.test(p.cause ?? '')).length;
+    const lera = SIM.torrRutor(s), tomma = s.sjoTorr?.tomma ?? [], vatten1 = SIM.vattenNu(s).filter(t => t === T.Vatten).length;
+    const tjarnTorr = tomma.length > 0 && tomma.every(n => SIM.sjoarna(s.seed).rutor[n].every(i => SIM.vattenNu(s)[i] === T.Lera));
+    const torrMark = (s.vader?.fukt ?? 1);
+    const vattnat = s.stat?.vattnat ?? 0, vissnat = s.stat?.vissnat ?? 0;
+    // ingen står i vattnet, och den torra sjöbotten går att gå på
+    const iVattnet = living(s).filter(p => SIM.iVattnetNu(s, Math.floor(p.y) * W + Math.floor(p.x))).length;
+    const gar = VAG.fartMark[T.Lera] > 0;
+    // efter torkan: vattnet kommer tillbaka när det har regnat (högst sex dygn)
+    kor(s, (m.slut - s.now) / HOUR + 1);
+    const efter = s.sjoTorr ? 1 : 0;
+    let tillbaka = 0;
+    for (let h = 0; h < 6 * 24 && s.sjoTorr; h++) { kor(s, 1); tillbaka = h + 1; }
+    const vatten2 = SIM.vattenNu(s).filter(t => t === T.Vatten).length;
+    return [
+      [`sjöarna har dragit sig tillbaka (${lera} rutor torr sjöbotten, ${vatten0} → ${vatten1} rutor vatten)`, lera > 0 && vatten1 < vatten0],
+      [`små tjärnar har torkat ut (${tomma.length})`, tjarnTorr],
+      [`marken är torr (fukt ${torrMark.toFixed(2)})`, torrMark < 0.2],
+      ['den torra sjöbotten går att gå på', gar],
+      [`ingen står i vattnet (${iVattnet})`, iVattnet === 0],
+      [`alla hittar vatten att dricka (${utanVatten} utan) och ingen dör av törst (${torstDoda})`, utanVatten === 0 && torstDoda === 0],
+      [`ägaren med säck vattnar sitt fält (${vattnat} säckar), grödan på det andra vissnar (${vissnat})`, vattnat > 0 && vissnat === 1],
+      [`vattnet kommer tillbaka efter torkan (${efter ? `tillbaka ${tillbaka} timmar efter torkan` : 'redan när torkan slutade'}, ${vatten2} rutor vatten)`, !s.sjoTorr && vatten2 === vatten0],
+      [`torkan kom (${s.stat?.motgang_torka ?? 0})`, (s.stat?.motgang_torka ?? 0) === 1],
     ];
   },
 };

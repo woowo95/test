@@ -12,7 +12,7 @@ import { allaBarn } from './uppvaxt';
 // det levande läget och ikappräkningen får samma motgångar. För varje tidsålder dras ett tal; motgångarna som hör till
 // årstiden tar var sin del av det efter sin chans, så att det aldrig blir två på en gång. Under byns första
 // MOTGANG.forstaDygn dygn kommer ingen.
-// Vad den hårda vintern gör står där den gör det: kylan och snön i vader.ts (hardVinter), veden i eld.ts och vargarna i
+// Vad torkan gör står i torka.ts (steg 3.8.2). Vad den hårda vintern gör står där den gör det: kylan och snön i vader.ts (hardVinter), veden i eld.ts och vargarna i
 // varg.ts. De äldsta anar den i förväg; varslet sprids i samtal (minne.ts) och får byn att samla mer (val.ts).
 
 // Balanstal (regel 8)
@@ -45,6 +45,13 @@ export const MOTGANGAR = {
     anar: 'Känner i lederna att vintern blir hård',
     borjar: 'En hård vinter har kommit. Kylan biter hårdare än någon minns.',
     slutar: 'Den hårda vintern är över.',
+  },
+  torka: {
+    namn: 'Torka', tecken: '🏜️', ikon: 'm_torka', tider: [2], chans: 0.15, varsel: true,
+    text: 'Nästan inget regn på hela sommaren. Marken torkar, sjöarna drar sig tillbaka och små tjärnar torkar ut. Bär, rötter och svamp växer sämre, kaninerna söker sig mot vattnet och grödor som inte vattnas vissnar. Fisken samlas i vattnet som är kvar.',
+    anar: 'Ser på himlen och växterna att sommaren blir torr',
+    borjar: 'En torka har kommit. Himlen är klar dag efter dag och marken spricker.',
+    slutar: 'Torkan är över. Regnet kommer tillbaka.',
   },
 } satisfies Record<string, MotgangDef>;
 export type MotgangId = keyof typeof MOTGANGAR;

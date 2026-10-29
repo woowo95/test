@@ -4,6 +4,7 @@ import { hourOf, kalender, yearPos } from './tid';
 import { balans } from './balans';
 import { count, log } from './folk';
 import { MOTGANG, hardGrader, motgangVid } from './motgang';
+import { TORKA, torkaNu } from './torka';
 
 // Balanstal (regel 8): temperaturen och hur fort man kyls
 export const VADER = balans('vader', {
@@ -133,7 +134,7 @@ export function vaderNu(s: State, t = s.now): Vader {
   if (c && c.t === t) return c.v;
   const ai = kalender(s, t).ai;
   const m = (1 - VADER.fuktLiten) * vag(s, t, VADER.fuktTim, 1) + VADER.fuktLiten * vag(s, t, VADER.fuktLitenTim, 2);
-  const g = VADER.regnFran[ai] - MOTGANG.hardSno * hardVinter(s, t), nb = clamp((m - g) / (1 - g), 0, 1), moln = clamp((m - g + VADER.molnSpann) / VADER.molnSpann, 0, 1);
+  const g = VADER.regnFran[ai] - MOTGANG.hardSno * hardVinter(s, t) + (torkaNu(s, t) ? TORKA.regn : 0), nb = clamp((m - g) / (1 - g), 0, 1), moln = clamp((m - g + VADER.molnSpann) / VADER.molnSpann, 0, 1);
   const temp = temperature(s, t), sno = nb > 0 && temp < VADER.snoGrad;
   const vind = clamp((vag(s, t, VADER.vindTim, 3) - VADER.blastFran[ai]) / (1 - VADER.blastFran[ai]), 0, 1);
   const aska = nb > 0 && !sno && temp > VADER.askaGrad && vag(s, t, VADER.askaTim, 4) > VADER.askaFran;
@@ -157,7 +158,7 @@ export const snoPaMarken = (s: State) => s.vader?.sno ?? 0;
 // varje timme (steg.ts): fukten och snön på marken, och blixten
 export function stepVader(s: State) {
   const v = vaderNu(s), mi = minneOf(s), temp = temperature(s);
-  mi.fukt = clamp(mi.fukt + (v.sno ? 0 : v.nb * VADER.fuktRegn) - VADER.fuktTorkar * (1 + Math.max(0, temp) / 10), 0, 1);
+  mi.fukt = clamp(mi.fukt + (v.sno ? 0 : v.nb * VADER.fuktRegn) - VADER.fuktTorkar * (1 + Math.max(0, temp) / 10) * (torkaNu(s) ? TORKA.torkar : 1), 0, 1); // fortare under en torka (steg 3.8.2)
   mi.sno = clamp(mi.sno + (v.sno ? v.nb * VADER.snoFaller : 0) - Math.max(0, temp) * VADER.snoSmalter, 0, 1);
   count(s, 'vader_' + v.lage);
   if (v.aska && hash(s.seed, Math.floor(s.now / HOUR), 7) < VADER.blixt) {

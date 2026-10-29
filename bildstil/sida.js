@@ -1363,6 +1363,15 @@ const BN_STJARNA = ['.......oo.......', '.......og.......', '...o..ogyo..o...', 
 const BN_BUBBLA = ['................', '..oooooooooooo..', '.owwwwwwwwwwwwo.', '.owwrwwwwwwrwwo.', '.owwwrwwwwrwwwo.', '.owwwwrwwrwwwwo.', '.owwwwwrrwwwwwo.', '.owwwwwrrwwwwwo.', '.owwwwrwwrwwwwo.', '.owwwrwwwwrwwwo.', '.owwrwwwwwwrwwo.', '.owwwwwwwwwwwwo.', '..ooookwoooooo..', '.....okwo.......', '.....oko........', '.....oo.........'];
 const BN_MOLN = ['................', '.....oooo.......', '...ooBBBBoo.....', '..oBBbbbbBBooo..', '.oBbbbbbbbbBBBo.', 'oBbbbbbbbbbbbbBo', 'oBbbbbbbbbbbbbBo', '.oBBBBBBBBBBBBo.', '..oooooyooooo...', '......oyo.......', '.....oyo........', '....oyyyyo......', '......oyo.......', '.....oyo........', '.....oo.........', '................'];
 const BN_SPRUCKEN = ['................', '.....oooooo.....', '....oBBBBBBo....', '...oBbbbobbBo...', '..oBbbbbobbbBo..', '..oBbbbobbbbBo..', '..oBbbboobbbBo..', '..oBbbbbobbbBo..', '..oBbbbobbbbBo..', '..oBbbobbbbbBo..', '...oBbobbbbBo...', '....oBobBBBo....', '.....oooooo.....', '................', '................', '................'];
+// torkan och den torra sjöbottnen (steg 3.8.2)
+const TK_L = { o: 'kol0', y: 'senap2', Y: 'senap3', r: 'rost2', j: 'jord2', J: 'jord3', k: 'jord0', v: 'skiffer2', V: 'skiffer3', g: 'oliv1', G: 'oliv2', b: 'jord1' };
+const TK_SOL = ['.....o..o.......', '..o..oyyo..o....', '...ooyYYyoo.....', '...oyYYYYyo.....', 'ooyYYYYYYYYyoo..', '...oyYYYYyo.....', '...ooyYYyoo.....', '..o..oyyo..o....', '.....o..o.......', '................', 'oooooooooooooooo', 'ojJJjkJJJjJJkJjo', 'ojjkjjkJjjjkjjjo', 'okjjkjjjkjkjjkjo', 'ojkjjjrjjkjjjjko', 'oooooooooooooooo'];
+const TK_SJO = ['................', '...oooooooooo...', '..ojJJjjJJJjjo..', '.ojJkjjJjjkJjjo.', 'ojjkjjoooojjkjjo', 'ojJjjovVVvojjJjo', 'ojjkjovvvvojkjjo', 'ojJjjjoooojjjJjo', '.ojjkjjJjkjjjjo.', '..ojjjkjjjJjjo..', '...oooooooooo...', '................', '..o..........o..', '.oyo........oyo.', '..o..........o..', '................'];
+const TK_VISSEN = ['................', '.......o........', '......oGo.......', '.....oGgo..o....', '....ogo.o.oyo...', '....oo..oyyo....', '........obo.....', '.....oyyob......', '....oyo.ob......', '....oo..ob......', '........ob......', 'oooooooooooooooo', 'ojJjkjjJjkjjJjjo', 'ojkjjJjkjjjkjjko', 'okjjjkjjjJjkjjjo', 'oooooooooooooooo'];
+const LE_L = { o: 'kol0', j: 'jord1', J: 'jord2', k: 'jord0', l: 'jord3', s: 'skiffer1', S: 'skiffer2', v: 'skiffer2', V: 'skiffer3' };
+const LE_SPRICK = ['JJJjJJJJkJJJJjJJ', 'JJjJJJJkJJJjJJJJ', 'kkJJJJkJJJJJJJkk', 'JJkkJkJJJJJJkkJJ', 'JJJJkJJJJJJkJJJJ', 'JJJJkJJJJkkJJJJJ', 'JJJkJkkkkJJJJJJJ', 'JJkJJJJJkJJJJJJJ', 'JkJJJJJJJkJJJJJJ', 'kJJJJJJJJkkJJJkk', 'JJJJJJJJkJJkkkJJ', 'JJJJJJJkJJJJJkJJ', 'JJJJJkkJJJJJJJkJ', 'JJJJkJJJJJJJJJJk', 'JJJkJJJJJJJJJJJJ', 'JJkJJJJJJJJJJJJJ'];
+const LE_STEN = ['JJJJJJJJJJJJJJJJ', 'JJlJJJJJJJJJJJJJ', 'JJJJJJsSJJJJJJJJ', 'JJJJJJssJJJJlJJJ', 'JJJJJJJJJJJJJJJJ', 'JJJjJJJJJJJJJJJJ', 'JJjjjJJJJJJsJJJJ', 'JJJjJJJJJJJJJJJJ', 'JJJJJJJJJlJJJJJJ', 'JJJJJJJJJJJJJjJJ', 'JsSJJJJJJJJJjjjJ', 'JssJJJJJJJJJJjJJ', 'JJJJJJlJJJJJJJJJ', 'JJJJJJJJJJJsSJJJ', 'JJJJJJJJJJJssJJJ', 'JJJJJJJJJJJJJJJJ'];
+const LE_FUKT = ['JJJJJJJJJJJJJJJJ', 'JJJJJJJJJJJjJJJJ', 'JJJjJJJJJJJJJJJJ', 'JJJJJJJJjJJJJJJJ', 'JJJJJJjjjjjJJJJJ', 'JJJJjjjvvvjjjJJJ', 'JJJjjvvVVvvvjJJJ', 'JJJjjvVVVVvjjJJJ', 'JJJJjjvvvvjjJJJJ', 'JJJJJjjjjjjJJJJJ', 'JJJJJJJJJJJJJjJJ', 'JjJJJJJJJJJJJJJJ', 'JJJJJJJJJjJJJJJJ', 'JJJJJJJJJJJJJJJJ', 'JJJJjJJJJJJJJJJJ', 'JJJJJJJJJJJJJJJJ'];
 // Samtalens ämnen (steg 3.9.5)
 const AM_L = { o: 'kol0', b: 'jord2', B: 'jord1', k: 'rost1', w: 'ben2', W: 'ben3', h: 'rost2', H: 'rost1', s: 'skiffer2', S: 'skiffer3', g: 'oliv2', G: 'oliv1', y: 'senap2' };
 const AM_MAT1 = ['................', '................', '......w..w......', '.....w..w.......', '......w..w......', '................', '...oooooooooo...', '..okkkkkkkkkko..', '..obbbbbbbbbbo..', '...obbbbbbbbo...', '...oBbbbbbbBo...', '....oBBBBBBo....', '.....oooooo.....', '................', '................', '................'];
@@ -1415,6 +1424,19 @@ const VAL = [
       { text: 'En snöflinga med en kall termometer bredvid.', ...LED_M(HV_FLINGA, HV_L) },
       { text: 'Ett blått, frusande ansikte med hackande tänder och snö på hakan.', ...LED_M(HV_ANSIKTE, HV_L) },
       { text: 'Istappar som hänger från en takkant, med snöflingor under.', ...LED_M(HV_ISTAPP, HV_L) },
+    ] },
+
+  { id: 'm_torka', namn: 'Torkan', vad: 'Ny symbol (steg 3.8.2), 16 × 16 punkter, i kalendern bredvid temperaturen när en torka pågår (blek när de äldsta i byn bara anar den). I spelet nu: version 1 (platshållare).', typ: 'tre',
+    versioner: [
+      { text: 'En het sol över sprucken mark.', ...LED_M(TK_SOL, TK_L) },
+      { text: 'En uttorkad sjö med en sista liten pöl i mitten, under solen.', ...LED_M(TK_SJO, TK_L) },
+      { text: 'En vissen växt som hänger med bladen i torr jord.', ...LED_M(TK_VISSEN, TK_L) },
+    ] },
+  { id: 'lera', namn: 'Torr sjöbotten', vad: 'Ny mark (steg 3.8.2), 16 × 16 punkter per ruta, där sjön dragit sig tillbaka under torkan. Det går att gå på den, och vattnet kommer tillbaka när det regnar. I spelet nu: en grå-brun ruta (platshållare).', typ: 'tre',
+    versioner: [
+      { text: 'Brun lera med mörka sprickor i ett nät.', ...LED_M(LE_SPRICK, LE_L) },
+      { text: 'Slät lera med småsten och torra fläckar.', ...LED_M(LE_STEN, LE_L) },
+      { text: 'Lera med en sista fuktig, blågrå fläck.', ...LED_M(LE_FUKT, LE_L) },
     ] },
 
   { id: 'tradorr', namn: 'Trädörren', vad: 'Ny dörr (steg 3.7.21), 16 × 16 punkter, i husets dörröppning. Den stängs när någon gömmer sig i huset, och vargarna kommer inte in. Till vänster i rätt storlek, till höger tre gånger större. I spelet nu: plankor med två rader rep (platshållare).', typ: 'tre',

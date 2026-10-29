@@ -8,7 +8,7 @@ import { balans } from './balans';
 // Balanstal (regel 8): hur fort man går på olika mark, hur gärna man följer en stig och hur marken nöts. Hur fort marken
 // växer tillbaka och när den är skog står i MARK (mark.ts). Hur snabbt en människa går står i STEG.fart (steg.ts)
 export const VAG = balans('vag', {
-  fartMark: [0, 0.9, 1, 1, 0.8], // fart (gånger gångfarten) på vatten, sand, de två jordslagen och sten
+  fartMark: [0, 0.9, 1, 1, 0.8, 0.85], // fart (gånger gångfarten) på vatten, sand, de två jordslagen, sten och torr sjöbotten (steg 3.8.2)
   fartSkog: 0.6, // ... på en ruta med skog
   fartUng: 0.75, // ... med ungskog
   fartHog: 0.8, // ... med högt gräs (kort gräs och stigar går man fortast på: 1)

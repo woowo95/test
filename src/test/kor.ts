@@ -1,6 +1,6 @@
 // Kör en by utan grafik och samlar nyckeltalen (registret NYCKELTAL i nyckeltal.ts säger vad de heter och betyder).
 // Vakterna larmar om något blir omöjligt (NaN, negativa förråd, folk i vattnet).
-import { BEAT, createState, step, living, DAY, groundOf, isSoil, markslag, Markslag, ageIndex, moodOf, serialize, serializeParts, getMap, fuelStock, ACT_NAMES, T, State, inMap, isWall, tileOf, foodOf, amountOf, sumOf, okandaBalans, alive, isCarrying, BYN, isStored, housesOf, bitsOf, Person, HOUR, W, KROPP, forvarAt, isTool, faltOf, faltRutor, faltAt, stationById, gridOf } from '../sim';
+import { BEAT, createState, step, living, DAY, groundOf, isSoil, markslag, Markslag, ageIndex, moodOf, serialize, serializeParts, vattenNu, fuelStock, ACT_NAMES, T, State, inMap, isWall, tileOf, foodOf, amountOf, sumOf, okandaBalans, alive, isCarrying, BYN, isStored, housesOf, bitsOf, Person, HOUR, W, KROPP, forvarAt, isTool, faltOf, faltRutor, faltAt, stationById, gridOf } from '../sim';
 import { NYCKELTAL, Nyckeltal, tal } from './nyckeltal';
 
 // testbyarna grundas 08:00 svensk tid. Testerna körs i datorns tidszon (här UTC), så där är klockan 06:00 när byn grundas
@@ -18,7 +18,7 @@ export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => voi
   if (okanda.length) throw new Error(`BALANS: inget balanstal heter ${okanda.join(', ')} (se npm run talen)`);
   const s = fran ?? createState(seed, START);
   const t0 = performance.now();
-  const tiles = getMap(seed).tiles;
+  const tiles = () => vattenNu(s); // vattnet som det är nu: under en torka går man på torr sjöbotten (steg 3.8.2)
   const fel = new Map<string, { n: number; forsta: string }>();
   // texten görs bara första gången ett larm går, så att vakterna inte tar tid när allt är rätt
   const larm = (typ: string, text: () => string) => { const f = fel.get(typ); if (f) f.n++; else fel.set(typ, { n: 1, forsta: `dag ${dag()}: ${text()}` }); };
@@ -44,7 +44,7 @@ export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => voi
       if (p.task && (p.task.act !== 'elda' && decimal(p.task.carry ?? 0) || Object.values(p.task.items ?? {}).some(decimal))) larm('börda med decimaler', () => `${p.name} (${p.task!.act}) bär ${p.task!.carry} och ${JSON.stringify(p.task!.items ?? {})}`);
       if (!ok01(p.warm / KROPP.maxVarm)) larm('behov warm', () => `${p.name} warm = ${p.warm}`); // värmen går till maxVarm (steg 2.3.4)
       if (!Number.isFinite(p.x) || !Number.isFinite(p.y) || !inMap(p.x, p.y)) larm('position', () => `${p.name} på ${p.x},${p.y}`);
-      else if (tiles[tileOf(p.x, p.y)] === T.Vatten) larm('i vattnet', () => `${p.name} står i vattnet (${p.task?.act})`);
+      else if (tiles()[tileOf(p.x, p.y)] === T.Vatten) larm('i vattnet', () => `${p.name} står i vattnet (${p.task?.act})`);
       else if (isWall(s, p.x, p.y)) larm('i en vägg', () => `${p.name} står i en vägg (${p.task?.act})`);
       // den som bär material till ett bygge bär inte mer än det som togs ur förrådet
       if (p.task?.act === 'bygga' && p.task.items) for (const k in p.task.items) if (p.task.items[k] > sumOf(p.task.ag?.[k]) + 1e-6) larm('bygge utan material', () => `${p.name} bär ${p.task!.items![k]} ${k} till bygget men tog ${sumOf(p.task!.ag?.[k])}`);
@@ -111,7 +111,7 @@ function vakta(s: State, larm: Larm, timme: boolean) {
     if (t.agare !== BYN && !lever.has(t.agare)) larm('redskap utan ägare', () => `${t.k} ${t.id} ägs av ${t.agare}`);
     for (const [vad, id] of [['hos', t.hos], ['lass', t.lass]] as const) if (id !== undefined && !lever.has(id)) larm(`redskap ${vad} ingen`, () => `${t.k} ${t.id} ${vad} ${id}`);
   }
-  const tiles = getMap(s.seed).tiles, upptagen = new Map<number, string[]>();
+  const tiles = vattenNu(s), upptagen = new Map<number, string[]>();
   const plats = (k: string, x: number, y: number) => {
     if (tiles[y * W + x] === T.Vatten) larm('sak i vattnet', () => `${k} på ${x},${y}`);
     else if (isWall(s, x + 0.5, y + 0.5)) larm('sak i en vägg', () => `${k} på ${x},${y}`);

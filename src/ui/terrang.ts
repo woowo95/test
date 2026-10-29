@@ -6,10 +6,10 @@ import { TS, glowG, nightG, terrainG, world } from './scen';
 // marken: vatten, sand, gräs som trampas ner till stigar, skog som växer, och natten med eldens sken
 const PAL = [
   // istid, vårtid, sommartid, hösttid (vattnet i istiden är öppet vatten; isen ritas efter isens tjocklek, ISFARG)
-  { [T.Vatten]: 0x52788c, [T.Sand]: 0xd8dbd3, [T.Gras]: 0xdfe5e6, [T.Skog]: 0xb0bdb9, [T.Sten]: 0xb7bab7, tree: 0x5c6e68 },
-  { [T.Vatten]: 0x4a7a95, [T.Sand]: 0xc9b98a, [T.Gras]: 0x8daa5f, [T.Skog]: 0x527d47, [T.Sten]: 0x8e8d84, tree: 0x355e33 },
-  { [T.Vatten]: 0x3e6e8a, [T.Sand]: 0xd2bf8b, [T.Gras]: 0x7c9a52, [T.Skog]: 0x426c3a, [T.Sten]: 0x8b8b82, tree: 0x2b4f2b },
-  { [T.Vatten]: 0x456f84, [T.Sand]: 0xc7b183, [T.Gras]: 0xa59450, [T.Skog]: 0x7b6a36, [T.Sten]: 0x8b867b, tree: 0xa95c26 },
+  { [T.Vatten]: 0x52788c, [T.Sand]: 0xd8dbd3, [T.Gras]: 0xdfe5e6, [T.Skog]: 0xb0bdb9, [T.Sten]: 0xb7bab7, [T.Lera]: 0x9aa0a0, tree: 0x5c6e68 },
+  { [T.Vatten]: 0x4a7a95, [T.Sand]: 0xc9b98a, [T.Gras]: 0x8daa5f, [T.Skog]: 0x527d47, [T.Sten]: 0x8e8d84, [T.Lera]: 0x8f7a5c, tree: 0x355e33 },
+  { [T.Vatten]: 0x3e6e8a, [T.Sand]: 0xd2bf8b, [T.Gras]: 0x7c9a52, [T.Skog]: 0x426c3a, [T.Sten]: 0x8b8b82, [T.Lera]: 0x9c8461, tree: 0x2b4f2b },
+  { [T.Vatten]: 0x456f84, [T.Sand]: 0xc7b183, [T.Gras]: 0xa59450, [T.Skog]: 0x7b6a36, [T.Sten]: 0x8b867b, [T.Lera]: 0x857055, tree: 0xa95c26 },
 ] as Array<Record<number, number> & { tree: number }>;
 // isen på sjön (steg 2.11.3, sim/is.ts): 0 = öppet vatten, 1 = tunn is (under 5 cm, mörk och genomskinlig), 2 = tjock is
 const ISFARG = [0, 0x8fb0bf, 0xb9d2dc];
@@ -51,7 +51,7 @@ function ritaIs(is: number) {
   if (isSprite.texture !== PIXI.Texture.EMPTY) isSprite.texture.destroy(true);
   isSprite.texture = PIXI.Texture.from(c, { scaleMode: PIXI.SCALE_MODES.NEAREST });
 }
-let drawnAge = -1, drawnSig = -1, drawnIs = -1, lastSigCheck = 0;
+let drawnAge = -1, drawnSig = -1, drawnIs = -1, drawnVatten = -2, lastSigCheck = 0;
 const PATH_COL = [0xb4b9b3, 0x8e7752, 0x9a8258, 0x846c47]; // upptrampad mark per tidsålder (snö i istiden)
 // hur sliten en ruta ser ut, i fem steg: 0 = orörd, 4 = bar jord
 const wornLevel = (c: number) => c >= 0.85 ? 0 : c >= 0.65 ? 1 : c >= 0.45 ? 2 : c >= 0.25 ? 3 : 4;
@@ -77,13 +77,14 @@ export function drawTerrain(force = false) {
   let sig = drawnSig;
   if (force || now - lastSigCheck > 1000) { lastSigCheck = now; sig = coverSig(); }
   const is = isNiva();
-  if (!force && ai === drawnAge && sig === drawnSig && is === drawnIs) return;
-  drawnAge = ai; drawnSig = sig; drawnIs = is;
+  const vat = s.sjoTorr?.v ?? -1; // torkan: vattnet som det är nu (steg 3.8.2)
+  if (!force && ai === drawnAge && sig === drawnSig && is === drawnIs && vat === drawnVatten) return;
+  drawnAge = ai; drawnSig = sig; drawnIs = is; drawnVatten = vat;
   ritaIs(is);
   const m = getMap(s.seed), pal = PAL[ai], g = groundOf(s);
   terrainG.clear();
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-    const i = y * W + x, t = m.tiles[i], sh = m.shade[i];
+    const i = y * W + x, t = g.tiles[i], sh = m.shade[i];
     const soil = t === T.Gras || t === T.Skog, tr = soil ? g.trees[i] : 0;
     // jord: skogsmark under träden, annars gräs som trampas ner till kort gräs och bar jord
     let col = shadeCol(soil ? pal[tr >= 0.5 ? T.Skog : T.Gras] : t === T.Vatten && is ? ISFARG[is] : pal[t], 0.94 + sh * 0.12);
@@ -105,6 +106,9 @@ export function drawTerrain(force = false) {
       terrainG.lineStyle(0);
     } else if (t === T.Sten) {
       terrainG.beginFill(shadeCol(pal[t], 0.78)).drawCircle(x * TS + 5 + sh * 6, y * TS + 6 + sh * 4, 2.2).drawCircle(x * TS + 11, y * TS + 11 - sh * 3, 1.6).endFill();
+    } else if (t === T.Lera) {
+      // torr sjöbotten: sprickor i leran (platshållare, steg 3.8.2)
+      terrainG.lineStyle(1, shadeCol(pal[t], 0.7), 0.9).moveTo(x * TS + 2, y * TS + 4 + sh * 6).lineTo(x * TS + 8, y * TS + 8).lineTo(x * TS + 14, y * TS + 5 + sh * 4).moveTo(x * TS + 8, y * TS + 8).lineTo(x * TS + 7 + sh * 3, y * TS + 14).lineStyle(0);
     } else if (t === T.Vatten && !is && sh > 0.82) {
       terrainG.lineStyle(1, 0xffffff, 0.25).moveTo(x * TS + 3, y * TS + 8).lineTo(x * TS + 9, y * TS + 8).lineStyle(0);
     }

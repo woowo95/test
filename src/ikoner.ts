@@ -143,6 +143,7 @@ const PAL: Record<string, Record<string, string>> = {
   b_heder: { o: '#24201d', g: '#d8b25f', G: '#906f0f', r: '#a8423a', R: '#7a2c26' }, // hedersnamnet (steg 3.9.1, platshållare)
   b_skam: { o: '#24201d', w: '#dad0bb', k: '#8a7f6a', r: '#a8423a' }, // öknamnet (steg 3.9.1, platshållare)
   m_hardVinter: { o: '#24201d', s: '#bdb39b', S: '#f2ece0', k: '#dad0bb', b: '#61767a' },
+  m_torka: { o: '#24201d', y: '#d8b25f', Y: '#f2d27a', r: '#bd753e', j: '#b07a45', J: '#d0a26a', k: '#5a3a1e' },
   i_legend: { a: '#d8b25f', b: '#b2921b', g: '#906f0f', o: '#24201d', w: '#dad0bb', z: 'rgba(0,0,0,.30)' },
   i_okand: { a: '#dad0bb', b: '#a0947d', k: '#2f261d', o: '#24201d', z: 'rgba(0,0,0,.30)' },
   a_gott: { a: '#bdb39b', b: '#a0947d', g: '#d8b25f', o: '#24201d', w: '#dad0bb', z: 'rgba(0,0,0,.30)' },
@@ -1301,6 +1302,25 @@ const PIX: Record<string, string[]> = {
     '...........obbbo',
     '...........obbbo',
     '............ooo.',
+  ],
+  // torkan (steg 3.8.2, platshållare i bildstilens palett, 16 punkter): en het sol över sprucken mark
+  m_torka: [
+    '.....o..o.......',
+    '..o..oyyo..o....',
+    '...ooyYYyoo.....',
+    '...oyYYYYyo.....',
+    'ooyYYYYYYYYyoo..',
+    '...oyYYYYyo.....',
+    '...ooyYYyoo.....',
+    '..o..oyyo..o....',
+    '.....o..o.......',
+    '................',
+    'oooooooooooooooo',
+    'ojJJjkJJJjJJkJjo',
+    'ojjkjjkJjjjkjjjo',
+    'okjjkjjjkjkjjkjo',
+    'ojkjjjrjjkjjjjko',
+    'oooooooooooooooo',
   ],
   vader_dimma: [ // platshållare (steg 3.7.11)
     '..........',

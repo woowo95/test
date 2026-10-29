@@ -1,3 +1,4 @@
+import { strandNu } from './sjo';
 import { take } from './agande';
 import { PLATS, campCenter, campDist, campKey } from './plats';
 import { vargSkydd } from './varg';
@@ -9,7 +10,7 @@ import { RELT, bredvidVikt } from './relationer';
 import { onskan } from './naring';
 import { halsa, hemma, kanGa, vardVal, vilaHellre } from './halsa';
 import { harMat } from './behov';
-import { FANGST, Kind, Lager, flintSpot, richness, shoreOf, wantsFlint } from './fynd';
+import { FANGST, Kind, Lager, flintSpot, richness, wantsFlint } from './fynd';
 import { coldOf, nederbord, temperature } from './vader';
 import { varselSamla } from './motgang';
 import { DJUR, DJURARTER, Djurart, GORS, canProcess, djurKvar, freeOfKinds, makeTask, toolGroups, wantsTool } from './redskap';
@@ -240,7 +241,7 @@ export function spotFor(s: State, act: Act, p: Person): { x: number; y: number }
     return freeNear(s, l.x + l.w / 2, l.y + l.h / 2);
   }
   // ute på marken: vid stranden, på ängen och i skogen, eller avsides (toa)
-  const strand = plats === 'strand' ? shoreOf(s.seed) : undefined;
+  const strand = plats === 'strand' ? strandNu(s) : undefined; // under en torka flyttar stranden ut (steg 3.8.2)
   const want = (t: number, x: number, y: number) => {
     if (bitAt(s, x, y)) return false; // inte i husen
     if (strand) return strand[y * W + x] === 1;
@@ -311,7 +312,7 @@ function strandOf(s: State) {
   const key = `${campKey(s)},${s.byggV ?? 0}`;
   let c = strandCache.get(s);
   if (c?.key !== key) {
-    const sh = shoreOf(s.seed), ok: number[] = [];
+    const sh = strandNu(s), ok: number[] = [];
     let bad: { x: number; y: number } | undefined, bd = VAL.strandNara;
     for (let i = 0; i < W * H; i++) {
       if (!sh[i]) continue;
@@ -344,7 +345,7 @@ type Faror = ReturnType<typeof dangers>;
 // elden är släckt och kan inte tändas för att det saknas tändmaterial, och för få hämtar det
 const tinderNeeded = (s: State) => !s.fire.lit && !emberOn(s) && !canLight(s) && needTinder(s) && living(s).filter(q => q.task?.act === 'samla').length < VAL.tandHamtare;
 // det som väljs: handlingen, varför, hur länge, och var om det inte följer av handlingen
-interface Val { act: Act; why: string; dur: number; pass?: number; spot?: { x: number; y: number }; ref?: number; tool?: string; site?: { x: number; y: number }; sok?: true; tandmat?: true }
+interface Val { act: Act; why: string; dur: number; pass?: number; spot?: { x: number; y: number }; ref?: number; tool?: string; site?: { x: number; y: number }; sok?: true; tandmat?: true; falt?: true }
 const set = (v: Val, act: Act, why: string) => { v.act = act; v.why = why; return true; };
 
 // Viljan i tre steg: 1. nöd, 2. grundbehov, 3. byns behov mot egen lust (på dagen) eller kvällen vid elden (på natten).
@@ -362,7 +363,7 @@ export function chooseTask(s: State, p: Person) {
     if (l) { v.spot = { x: l.x + 0.5, y: l.y + 0.5 }; v.ref = l.id; v.why += '. Går till latrinen'; }
   }
   const sp0 = v.spot ?? spotFor(s, v.act, p), sp = freeNear(s, sp0.x, sp0.y); // aldrig i en husvägg
-  p.task = { act: v.act, phase: 'go', tx: sp.x, ty: sp.y, until: s.now + v.dur + (startsOnArrival(v.act) ? GA_TID : 0), carry: 0, why: v.why, dark: !light, ref: v.ref, tool: v.tool, site: v.site, sok: v.sok, tandmat: v.tandmat, pass: v.pass !== undefined ? s.now + v.pass : undefined };
+  p.task = { act: v.act, phase: 'go', tx: sp.x, ty: sp.y, until: s.now + v.dur + (startsOnArrival(v.act) ? GA_TID : 0), carry: 0, why: v.why, dark: !light, ref: v.ref, tool: v.tool, site: v.site, sok: v.sok, tandmat: v.tandmat, falt: v.falt, pass: v.pass !== undefined ? s.now + v.pass : undefined };
   const k = usesTool(p.task);
   if (k && !take(s, p, k)) p.task.tool = undefined; // redskapet tas i handen: det egna först (agande.ts)
 }
@@ -433,7 +434,7 @@ function varda(s: State, p: Person, v: Val, sjalv: boolean) {
 function hamtaVatten(s: State, p: Person, v: Val) {
   const d = vattenVal(s, p);
   if (!d) return false;
-  v.spot = d.spot; v.ref = d.ref; v.tool = 'vattensack'; v.dur = 0;
+  v.spot = d.spot; v.ref = d.ref; v.tool = 'vattensack'; v.dur = 0; v.falt = d.falt;
   return set(v, 'vatten', d.why);
 }
 

@@ -1,3 +1,4 @@
+import { strandNu, vattenNu } from './sjo';
 import { PLATS, campCenter, campDist, campKey } from './plats';
 import { byId, count, forstaGang, isParent, living, log, stat } from './folk';
 import { delade } from './berattelser';
@@ -253,7 +254,7 @@ export function pickSpot(s: State, p: Person, k: Kind, cands: { x: number; y: nu
   if (!best || sees(s, p, best.x, best.y, sight)) return best;
   // väl framme letar hen upp den bästa platsen i området
   const x0 = Math.max(0, best.x - MINNE.sokR), y0 = Math.max(0, best.y - MINNE.sokR);
-  const tiles = getMap(s.seed).tiles, shore = shoreOf(s.seed);
+  const tiles = vattenNu(s), shore = strandNu(s); // vattnet som det är nu (torkan, steg 3.8.2)
   let r = best, rs = richness(s, k, best.x + 0.5, best.y + 0.5);
   for (let y = y0; y < Math.min(H, best.y + MINNE.sokR + 1); y++) for (let x = x0; x < Math.min(W, best.x + MINNE.sokR + 1); x++) {
     const i = y * W + x; // bara land, och för fiske bara stranden

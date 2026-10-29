@@ -5,11 +5,11 @@
 // Sätten att dricka står i registret DRICKA; val.ts väljer när, steg.ts räknar törsten och vad som händer när man dricker.
 // Med vattensäcken (steg 2.10.1) hämtar en vuxen vatten åt den som inte kan gå och ligger hemma; utan säck får hen vatten av
 // de andra (fatt), och när törsten blir farlig också om säcken inte kommer
+import { strandNu } from './sjo';
 import { ACTS } from './handlingar';
 import { ALDER, ageOf, alive, byId, count, forstaGang, isSick, living, log, think } from './folk';
 import { areaOf, findL, observe } from './minne';
 import { magont, vattenSmuts } from './smuts';
-import { shoreOf } from './fynd';
 import { getMap, perKarta } from './karta';
 import { bitAt, gridOf } from './byggnad';
 import { stationRutor } from './stationer';
@@ -21,6 +21,8 @@ import { balans } from './balans';
 import { hemma, kanGa } from './halsa';
 import { freeTools, nTools } from './agande';
 import { wearUsed } from './redskap';
+import { Falt, faltById, faltOf, faltRutor } from './odling';
+import { TORKA } from './torka';
 
 // ---------- balanstal (regel 8) ----------
 export const TORST = balans('torst', {
@@ -119,14 +121,14 @@ function tror(p: Person, a: number) {
 // var man dricker: den strandruta i närheten som är bäst när vägen dit och smutsen man tror finns vägs ihop. Utan strand i
 // närheten den närmaste som går att nå. undefined = det finns inget vatten att nå
 export function drickPlats(s: State, p: Person) {
-  const sh = shoreOf(s.seed), nb = nabar(s.seed), px = Math.floor(p.x), py = Math.floor(p.y), tro = new Map<number, number>();
+  const sh = strandNu(s), nb = nabar(s.seed), m = getMap(s.seed).tiles, px = Math.floor(p.x), py = Math.floor(p.y), tro = new Map<number, number>();
   // området hen står i (eller bredvid, om hen står i en dörr eller vid förvaringen); utan något går hen rakt över som förut
   const id = omradeOf(s), mitt = new Set<number>(), pi = py * W + px;
   if (inMap(px, py)) { if (id[pi]) mitt.add(id[pi]); else for (const [dx, dy] of D4) if (inMap(px + dx, py + dy) && id[pi + dy * W + dx]) mitt.add(id[pi + dy * W + dx]); }
   let best: { x: number; y: number } | undefined, bs = Infinity;
   const prova = (x: number, y: number, nara: boolean) => {
     const i = y * W + x;
-    if (!inMap(x, y) || !sh[i] || !nb[i] || bitAt(s, x, y) || (mitt.size && !mitt.has(id[i]))) return;
+    if (!inMap(x, y) || !sh[i] || !nb[i] && m[i] !== T.Vatten || bitAt(s, x, y) || (mitt.size && !mitt.has(id[i]))) return;
     const a = areaOf(x, y);
     let t = tro.get(a);
     if (t === undefined) tro.set(a, t = tror(p, a));
@@ -173,9 +175,12 @@ function smutsigt(s: State, p: Person, i: number) {
 // ---------- vattensäcken (steg 2.10.1) ----------
 // Den som inte kan gå och ligger hemma törstar. En vuxen som kan gå tar byns vattensäck, fyller den vid vattnet (där hen
 // skulle ha druckit själv) och bär den till hen. Det väljs som vården, före förbättringarna (val.ts). Säcken slits en gång per tur
-const hamtas = (s: State, q: Person) => living(s).some(o => o.task?.act === 'vatten' && o.task.ref === q.id);
+const hamtas = (s: State, q: Person) => living(s).some(o => o.task?.act === 'vatten' && !o.task.falt && o.task.ref === q.id);
+// under torkan (steg 3.8.2) vattnar ägaren sitt fält med säcken när grödan snart vissnar, om ingen annan redan gör det
+const vattnas = (s: State, f: Falt) => living(s).some(o => o.task?.act === 'vatten' && o.task.falt && o.task.ref === f.id);
+const torrtFalt = (s: State, p: Person) => s.sjoTorr?.pa ? faltOf(s).find(f => f.agare === p.id && f.steg === 'vaxer' && (f.vatten ?? 1) < TORKA.vattna && !vattnas(s, f)) : undefined;
 // det som väljs (val.ts): den närmaste som behöver vatten och som ingen annan redan hämtar åt, och vattnet att fylla säcken vid
-export function vattenVal(s: State, p: Person): { spot: { x: number; y: number }; ref: number; why: string } | undefined {
+export function vattenVal(s: State, p: Person): { spot: { x: number; y: number }; ref: number; why: string; falt?: true } | undefined {
   if (ageOf(p, s.now) < ALDER.vuxen || !kanGa(p) || freeTools(s, p, 'vattensack') < 1) return undefined;
   let best: Person | undefined, bd = TORST.hamtaR;
   for (const q of living(s)) {
@@ -184,11 +189,14 @@ export function vattenVal(s: State, p: Person): { spot: { x: number; y: number }
     if (d >= bd || hamtas(s, q)) continue;
     best = q; bd = d;
   }
-  const spot = best && naVattnet(s, p) && drickPlats(s, p); // genom isen bara med ett hål (is.ts)
-  return best && spot ? { spot, ref: best.id, why: `Hämtar vatten i säcken åt ${best.name}` } : undefined;
+  const f = best ? undefined : torrtFalt(s, p);
+  const spot = (best || f) && naVattnet(s, p) && drickPlats(s, p); // genom isen bara med ett hål (is.ts)
+  if (!spot) return undefined;
+  return best ? { spot, ref: best.id, why: `Hämtar vatten i säcken åt ${best.name}` } : { spot, ref: f!.id, why: 'Hämtar vatten till sitt fält', falt: true };
 }
 // säcken är fylld (KLAR i steg.ts): bär den till den törstige. Utan säck i handen blir det inget
 export function vattenFylld(s: State, p: Person, t: Task) {
+  if (t.falt) { const f = faltById(s, t.ref); if (!t.tool || !f) return; const r = faltRutor(f), i = r[Math.floor(r.length / 2)]; t.phase = 'back'; t.tx = i % W + 0.5; t.ty = Math.floor(i / W) + 0.5; t.why = 'Vattnar sitt fält'; return; }
   const q = byId(s, t.ref);
   if (!t.tool || !q || !alive(q)) return;
   const x = Math.floor(t.tx), y = Math.floor(t.ty);
@@ -198,6 +206,16 @@ export function vattenFylld(s: State, p: Person, t: Task) {
 }
 // framme hos den törstige (arrive i steg.ts): hen dricker, och säcken slits
 export function vattenFram(s: State, p: Person, t: Task) {
+  if (t.falt) { // vattnet på fältet: en säck räcker till TORKA.sackRutor rutor
+    const f = faltById(s, t.ref);
+    if (f && f.vatten !== undefined) {
+      f.vatten = Math.min(1, f.vatten + TORKA.sackRutor / f.n);
+      count(s, 'vattnat');
+      if (forstaGang(s, 'vattnat falt')) log(s, `${p.name} bar vatten i säcken till sitt fält för att grödan inte skulle vissna i torkan.`, 'world', [p.id]);
+      wearUsed(s, p, 1);
+    }
+    p.task = undefined; return;
+  }
   const q = byId(s, t.ref);
   if (q && alive(q) && Math.hypot(q.x - p.x, q.y - p.y) <= 2) {
     q.torst = 1; // (forstaGang räknar 'bar vatten' varje gång)

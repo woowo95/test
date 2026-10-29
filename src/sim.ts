@@ -40,6 +40,7 @@ export * from './sim/kunskap';
 export * from './sim/minne';
 export * from './sim/vader';
 export * from './sim/motgang';
+export * from './sim/torka';
 export * from './sim/berattelser';
 export * from './sim/is';
 export * from './sim/redskap';

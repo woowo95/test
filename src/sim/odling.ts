@@ -16,6 +16,7 @@ import { SAKER } from './saker';
 import { PLATS, campCenter, campDist } from './plats';
 import { ledig, lekplats, paLek } from './stationer';
 import { temperature, vaxtFaktor } from './vader';
+import { TORKA } from './torka';
 import { ISTID, iIstiden, isLight, kalender } from './tid';
 
 // ---------- odling (steg 2.10.2–) ----------
@@ -35,7 +36,7 @@ import { ISTID, iIstiden, isLight, kalender } from './tid';
 // Bara en person sköter ett fält och äger både fältet och skörden (ägandet, beslut), och en familj har ett fält; dör hen
 // eller flyttar tar en annan som kan odla över det. Ett fält där ingen arbetat på länge och där inget växer blir gräs igen.
 // Arbetet är projektet 'falt' (projekt.ts), handlingen 'odla' med steget som task.tool.
-// Bördighet, fukt och vattning kommer i steg 8.3.1, kompost och fler grödor i 8.3.2.
+// Under torkan vissnar grödan om ägaren inte vattnar den med vattensäcken (steg 3.8.2, torst.ts). Bördighet och fukt kommer i steg 8.3.1, kompost och fler grödor i 8.3.2.
 export const ODLING = balans('odling', {
   froTakt: 6, // frön per arbetstimme på en mycket rik plats (gånger kunnigheten och SNABBARE; 3 före balansen av fas 2, steg 2.12.2)
   froUttag: 0.1, // varje frö tar så här mycket ur platsen
@@ -87,7 +88,7 @@ export type FaltSteg = keyof typeof FALT_STEG;
 // ett fält: hörnet (x, y) av den första raden, närmast lägret, bredden w, åt vilket håll raderna växer (dir, 1 nedåt och -1
 // uppåt), antalet rutor n, ägaren, steget, hur många rutor som är klara i steget och arbetet som är kvar på nästa (ms), hur
 // många rutor som såddes, grödan, hur långt den vuxit (0–1), när den mognade och när någon senast arbetade där
-export interface Falt { id: number; x: number; y: number; w: number; dir: number; n: number; agare: number; steg: FaltSteg; klara: number; kvar: number; sadda?: number; groda?: GrodaSlag; vuxit?: number; mogen?: number; rord: number }
+export interface Falt { id: number; x: number; y: number; w: number; dir: number; n: number; agare: number; steg: FaltSteg; klara: number; kvar: number; sadda?: number; groda?: GrodaSlag; vuxit?: number; mogen?: number; rord: number; vatten?: number } // vatten: hur länge grödan klarar sig under torkan (1 = nyss vattnad, torka.ts)
 // arbetet per ruta i steget (ms)
 const minPer = (steg: FaltSteg) => (steg === 'roja' ? ODLING.rojaMin : steg === 'bereda' ? ODLING.beredaMin : steg === 'sa' ? ODLING.saMin : steg === 'mogen' ? ODLING.skordaMin : 0) * MIN;
 // så många rutor steget har: alla, utom skörden som bara har de sådda
@@ -331,8 +332,8 @@ function storre(s: State, p: Person, f: Falt) {
 function forlorad(s: State, f: Falt, varfor: string) {
   const d = GRODOR[f.groda!], agare = s.people.find(q => q.id === f.agare);
   log(s, `${varfor} tog ${d.namn.toLowerCase()}na på ${agare ? agare.name + 's' : 'ett'} fält.`, 'world', agare ? [agare.id] : undefined);
-  count(s, varfor === 'Frosten' ? 'frostdod' : 'ruttnat');
-  nasta(f, 'sa'); f.groda = undefined; f.vuxit = undefined; f.mogen = undefined; f.sadda = undefined;
+  count(s, varfor === 'Frosten' ? 'frostdod' : varfor === 'Torkan' ? 'vissnat' : 'ruttnat');
+  nasta(f, 'sa'); f.vatten = undefined; f.groda = undefined; f.vuxit = undefined; f.mogen = undefined; f.sadda = undefined;
 }
 
 // varje timme (steg.ts): grödorna växer när det är varmt nog och dör i frost eller ruttnar, och ett fält som ingen sköter
@@ -347,6 +348,9 @@ export function stepOdling(s: State) {
       const d = GRODOR[f.groda!];
       if (istid || temp < d.frost) { forlorad(s, f, 'Frosten'); continue; }
       if (f.steg === 'mogen') { if (skordAndel(s, f) <= 0) forlorad(s, f, 'Rötan'); continue; }
+      // under torkan vissnar grödan om ingen vattnar den (steg 3.8.2, torst.ts)
+      if (s.sjoTorr?.pa) { f.vatten = (f.vatten ?? 1) - 1 / TORKA.falt; if (f.vatten <= 0) { forlorad(s, f, 'Torkan'); continue; } }
+      else f.vatten = undefined;
       if (temp > ODLING.vaxGrad) f.vuxit = Math.min(1, (f.vuxit ?? 0) + vaxtFaktor(s) / (d.dygn * 24)); // fortare i blöt mark (steg 2.11.1)
       if (f.vuxit! >= 1) { nasta(f, 'mogen'); f.mogen = s.now; }
       continue;

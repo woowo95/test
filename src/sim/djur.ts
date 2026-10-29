@@ -2,6 +2,7 @@ import { FYND, fyndAt, setNarvaro, vaxerAt, viltStart } from './fynd';
 import { hash } from './karta';
 import { clamp } from './slump';
 import { living } from './folk';
+import { motgangNu } from './motgang';
 import { H, HOUR, SEC, State, W, egen, inMap, mapKey, tvaDelar, visning } from './typer';
 import { balans } from './balans';
 import { DJUR } from './redskap';
@@ -61,7 +62,7 @@ function start(s: State, k: number, e: number): Start | null {
   const andra: { x: number; y: number }[] = [];
   for (let j = 0; j < k; j++) { const g = mitt(s, j, t0); if (g) andra.push(g); }
   let bi = -1, bs = -Infinity;
-  const vax = viltStart(s, t0);
+  const vax = viltStart(s, t0, motgangNu(s, t0)?.id === 'torka');
   for (let i = 0; i < W * H; i++) {
     const v = vax[i] / topp;
     if (v < KANINER.startMin) continue;
