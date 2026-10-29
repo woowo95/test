@@ -4,6 +4,7 @@ import { clamp } from './slump';
 import { living } from './folk';
 import { H, HOUR, SEC, State, W, egen, inMap, mapKey, tvaDelar, visning } from './typer';
 import { balans } from './balans';
+import { DJUR } from './redskap';
 
 // ---------- djur: kaniner i grupper ----------
 // Viltlagret (fynd.ts) är kartan över var förhållandena är bra för kaniner. Själva kaninerna finns i några få små grupper
@@ -15,8 +16,8 @@ import { balans } from './balans';
 // En kanin sitter still en stund och skuttar sedan en bit. Den som kommer nära får den att hoppa undan en bit och sitta
 // still där. De enskilda kaninerna ritas bara; jakten ger mest nära en grupp (`narvaroAt`, via richness). Fler arter
 // (rådjur, fågel) blir egna lager och grupper senare.
-export interface Djur { id: number; art: 'kanin'; x: number; y: number }
-interface Kaningrupp { id: number; x: number; y: number; n: number } // n: så många kaniner gruppen har just nu
+export interface Djur { id: number; art: 'kanin'; x: number; y: number; grupp: number }
+export interface Kaningrupp { id: number; x: number; y: number; n: number; n0: number } // n: så många kaniner gruppen har just nu, n0: när den inte jagats
 // Balanstal (regel 8): kaninernas grupper (antal, storlek, hur länge de stannar och hur långt de rör sig), hur de flyr
 // från folk och hur mycket jakten ger nära dem. Jaktens ursprungliga värde finns i viltlagret (FYND.jakt i fynd.ts)
 export const KANINER = balans('djur', {
@@ -109,7 +110,7 @@ export function grupperOf(s: State, t = s.now): Kaningrupp[] {
       const i = y * W + x; har += fyndAt(s, 'jakt', i); kan += vaxerAt(s, 'jakt', i);
     }
     const n = kan > 0 ? Math.round(c.st.n0 * Math.min(1, har / kan)) : 0;
-    ut.push({ id: c.e * KANINER.grupper + k, x: c.x, y: c.y, n });
+    ut.push({ id: c.e * KANINER.grupper + k, x: c.x, y: c.y, n, n0: c.st.n0 });
   }
   return ut;
 }
@@ -140,8 +141,12 @@ setNarvaro('jakt', narvaroAt);
 // från folk som kommer nära
 export function djurOf(s: State, t = s.now): Djur[] {
   const ppl = living(s), out: Djur[] = [];
-  for (const g of grupperOf(s, t)) for (let j = 0; j < g.n; j++) {
-    const id = g.id * 8 + j, ang = hash(id, 4, 11) * Math.PI * 2, r = KANINER.spridd * Math.sqrt(hash(id, 5, 13));
+  const doda = new Set(s.djurDoda?.map(d => d.id));
+  for (const g of grupperOf(s, t)) for (let j = 0, kvar = g.n; j < 8 && kvar > 0; j++) {
+    const id = g.id * 8 + j;
+    if (doda.has(id)) continue; // en dödad kanin är borta, och nästa i gruppen syns i stället (steg 3.7.13)
+    kvar--;
+    const ang = hash(id, 4, 11) * Math.PI * 2, r = KANINER.spridd * Math.sqrt(hash(id, 5, 13));
     const hx = g.x + Math.cos(ang) * r, hy = g.y + Math.sin(ang) * r;
     const u = t / SKUTT + hash(id, 3, 5) * 10, k = Math.floor(u), f = u - k;
     const at = (n: number) => ({ x: hx + (hash(id, n, 1) - 0.5) * 1.2, y: hy + (hash(id, n, 2) - 0.5) * 1.2 });
@@ -155,7 +160,51 @@ export function djurOf(s: State, t = s.now): Djur[] {
       const v = Math.round(Math.atan2(y - near.y, x - near.x) / (Math.PI / 4)) * (Math.PI / 4);
       x += Math.cos(v) * KANINER.hopp; y += Math.sin(v) * KANINER.hopp;
     }
-    out.push({ id, art: 'kanin', x: clamp(x, 0.2, W - 0.2), y: clamp(y, 0.2, H - 0.2) });
+    out.push({ id, art: 'kanin', x: clamp(x, 0.2, W - 0.2), y: clamp(y, 0.2, H - 0.2), grupp: g.id });
   }
   return out;
+}
+
+// ---------- djuren som individer (steg 3.7.13) ----------
+// Varje djur är en individ med ålder, styrka, snabbhet och skygghet (kaninen) eller mod (vargen, steg 3.7.1). Egenskaperna
+// räknas ur djurets id kring artens värden i djurregistret (DJUR[art].strid i redskap.ts), så att inget behöver sparas.
+// Hälsan är förenklad: blod och sår som i striden, inga kroppsdelar, sjukdomar eller behov. Bara skadade och dödade djur
+// sparas i byn (s.djurHalsa och s.djurDoda); blodet och såren läker med tiden, räknat ur klockan, och ett djur som läkt
+// eller dött för länge sedan glöms. Allt är därför detsamma i båda lägena
+export const INDIVID = balans('individ', {
+  spann: 0.25, // styrka och snabbhet varierar så här mycket åt båda håll kring artens värde
+  gammal: 0.7, // ett djur som levt mer än så här stor del av sin längsta ålder blir långsammare ...
+  gammalFart: 0.4, // ... med upp till så här stor del av farten
+  blodTim: 0.05, // så mycket blod kommer tillbaka per timme
+  sarTim: 0.04, // så mycket sår (summan av skadornas grad) läker per timme
+  glomTim: 24, // ett dödat djur glöms efter så här många timmar (gruppen det hörde till har bytt plats då)
+});
+export interface DjurDrag { alder: number; styrka: number; snabbhet: number; skygghet?: number; mod?: number }
+export interface DjurHalsa { id: number; blod: number; sar: number; t: number } // blod 0–1 och sår, sparat vid tiden t
+// djurets egenskaper: ur id:t, kring artens värden. Ålder i år (ett dygn i verkligheten), styrka och snabbhet i artens
+// mått (snabbhet gånger stridens fart), skygghet och mod 0–1
+export function dragOf(art: Djur['art'], id: number): DjurDrag {
+  const d = DJUR[art].strid, v = (n: number) => 1 + (hash(id, n, 21) * 2 - 1) * INDIVID.spann;
+  const alder = Math.floor(hash(id, 1, 21) * d.alder) + 1, aldr = Math.max(0, alder / d.alder - INDIVID.gammal) / (1 - INDIVID.gammal);
+  return { alder, styrka: d.styrka * v(2), snabbhet: d.fart * v(3) * (1 - INDIVID.gammalFart * aldr), skygghet: hash(id, 4, 21) };
+}
+// djurets hälsa just nu: det sparade, läkt med tiden sedan dess
+export function halsaOf(s: State, id: number): { blod: number; sar: number; dod: boolean } {
+  if (s.djurDoda?.some(d => d.id === id)) return { blod: 0, sar: 0, dod: true };
+  const h = s.djurHalsa?.find(x => x.id === id);
+  if (!h) return { blod: 1, sar: 0, dod: false };
+  const tim = (s.now - h.t) / HOUR;
+  return { blod: Math.min(1, h.blod + INDIVID.blodTim * tim), sar: Math.max(0, h.sar - INDIVID.sarTim * tim), dod: false };
+}
+// efter en strid: djurets blod och sår just nu, eller att det dog. Läkta och glömda djur tas bort samtidigt
+export function satDjurHalsa(s: State, id: number, blod: number, sar: number) {
+  if (blod <= 0) { dodaDjur(s, id); return; }
+  const h = (s.djurHalsa ?? []).filter(x => x.id !== id && halsaOf(s, x.id).blod < 1);
+  if (blod < 1 || sar > 0) h.push({ id, blod, sar, t: s.now });
+  s.djurHalsa = h.length ? h : undefined;
+}
+export function dodaDjur(s: State, id: number) {
+  s.djurHalsa = s.djurHalsa?.filter(x => x.id !== id);
+  if (!s.djurHalsa?.length) s.djurHalsa = undefined;
+  s.djurDoda = [...(s.djurDoda ?? []).filter(d => s.now - d.t < INDIVID.glomTim * HOUR), { id, t: s.now }];
 }

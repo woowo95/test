@@ -1268,3 +1268,36 @@ SCENARIER.smutsibyn = {
     ];
   },
 };
+
+SCENARIER.individer = {
+  text: 'Djuren som individer (steg 3.7.13): varje kanin har en egen ålder, styrka, snabbhet och skygghet som är densamma varje gång, en skadad kanin läker med tiden och glöms när den läkt, och en dödad kanin är borta medan resten av gruppen syns',
+  kor: () => {
+    const s = createState(6, START);
+    klockan(s);
+    const dj = djurOf(s), art = SIM.DJUR.kanin.strid;
+    const drag = dj.map(d => SIM.dragOf(d.art, d.id));
+    const samma = dj.every((d, i) => JSON.stringify(SIM.dragOf(d.art, d.id)) === JSON.stringify(drag[i]));
+    const iSpann = drag.every(g => g.alder >= 1 && g.alder <= art.alder && g.styrka > 0 && g.snabbhet > 0 && g.skygghet! >= 0 && g.skygghet! <= 1);
+    const olika = new Set(drag.map(g => g.styrka.toFixed(2))).size > 1;
+    // en skadad kanin läker med tiden
+    const a = dj[0], b = dj[1], fore = s.now;
+    SIM.satDjurHalsa(s, a.id, 0.4, 2);
+    const skadad = SIM.halsaOf(s, a.id);
+    s.now += 6 * HOUR; const sen = SIM.halsaOf(s, a.id);
+    s.now += 48 * HOUR; const lakt = SIM.halsaOf(s, a.id);
+    SIM.satDjurHalsa(s, b.id, 0.9, 0); // den läkta glöms när en annan sparas
+    const glomd = !s.djurHalsa!.some(h => h.id === a.id);
+    s.now = fore; s.djurHalsa = undefined;
+    // en dödad kanin är borta, men gruppen syns fortfarande lika stor (tills lagret tömts)
+    const n0 = djurOf(s).filter(d => d.grupp === b.grupp).length;
+    SIM.dodaDjur(s, b.id);
+    const efter = djurOf(s).filter(d => d.grupp === b.grupp);
+    const kopia = djurOf(cloneState(s)).map(d => d.id).join() === djurOf(s).map(d => d.id).join();
+    return [
+      [`${dj.length} kaniner har egna egenskaper som är desamma varje gång och efter inläsning`, dj.length > 0 && samma && kopia],
+      [`åldern är 1–${art.alder} år, styrkan och snabbheten finns och skillnader mellan kaninerna`, iSpann && olika],
+      [`en skadad kanin (blod ${Math.round(skadad.blod * 100)} %) läker med tiden (${Math.round(sen.blod * 100)} % efter 6 timmar, ${Math.round(lakt.blod * 100)} % efter två dygn) och glöms när den läkt`, skadad.blod < sen.blod && sen.blod < 1 && lakt.blod === 1 && lakt.sar === 0 && glomd],
+      [`en dödad kanin syns inte längre (${n0} före, ${efter.length} efter, men inte den dödade)`, !efter.some(d => d.id === b.id) && efter.length === n0 && SIM.halsaOf(s, b.id).dod],
+    ];
+  },
+};

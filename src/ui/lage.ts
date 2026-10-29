@@ -8,7 +8,7 @@ export let s: State;
 export const vidNyBy: (() => void)[] = [];
 export function setByn(n: State) {
   s = n; ui.nu = n.now; useMap(n); nyBild();
-  ui.hovered = undefined; ui.husId = -1; ui.stationId = -1; ui.hogAt = { x: 0, y: 0 }; ui.sak = ''; ui.faltId = -1; ui.faltRuta = -1;
+  ui.hovered = undefined; ui.husId = -1; ui.stationId = -1; ui.hogAt = { x: 0, y: 0 }; ui.sak = ''; ui.faltId = -1; ui.faltRuta = -1; ui.djurId = -1;
   for (const f of vidNyBy) f();
 }
 export const ui = {
@@ -30,6 +30,7 @@ export const ui = {
   faltId: -1, // fältet som visas i panelen (flikar/falt.ts) ...
   faltRuta: -1, // ... och rutan med grödan som visas, eller -1 för hela fältet
   hogAt: { x: 0, y: 0 }, // rutan med högar utanför lagret som visas i panelen
+  djurId: -1, // djuret som visas i panelen (flikar/djur.ts)
   sak: '', // saken som visas i panelen: "t:<id>" eller "s:<x>,<y>,<slag>" (flikar/sak.ts)
   lagerNr: 0, // vilken lagerplats som visas i panelen
   filter: undefined as Grupp | undefined, // värmekartan som visas på kartan

@@ -116,7 +116,7 @@ const basketsWanted = (s: State) => clamp(Math.floor(living(s).filter(p => ageOf
 // (skaffa.av, som fisken av en abborre); scenariot "djur" kontrollerar att de stämmer med raden här.
 export interface Djurart { sak: string; mat: number; slakt: Record<string, number>; varde?: Record<string, number>; rep: number; timme: number; maxTim: number; act: Act; kniv?: true; minDel: number; stat: string; forsta: string; strid?: DjurStrid } // strid = hur djuret slåss (strid.ts, steg 3.7.5)
 export const DJUR = {
-  kanin: { sak: 'vilt', mat: SAKER.vilt!.stack!, slakt: { kott: 3, ben: 1, skinn: 1 }, varde: { kott: 4, ben: 1, skinn: 2 }, rep: 0.15, timme: 15, maxTim: 2, act: 'slakta', kniv: true, minDel: REDSKAP.slaktMinDel, stat: 'slaktat', forsta: '{namn} slaktade byns första vilt med en flintkniv. Det gav mer kött, ett ben och ett skinn.', strid: { namn: 'Kaninen', styrka: 2, uthallighet: 6, mod: 2, smidighet: 16, skicklighet: 4, fart: 1.4, vapen: 'bett' } },
+  kanin: { sak: 'vilt', mat: SAKER.vilt!.stack!, slakt: { kott: 3, ben: 1, skinn: 1 }, varde: { kott: 4, ben: 1, skinn: 2 }, rep: 0.15, timme: 15, maxTim: 2, act: 'slakta', kniv: true, minDel: REDSKAP.slaktMinDel, stat: 'slaktat', forsta: '{namn} slaktade byns första vilt med en flintkniv. Det gav mer kött, ett ben och ett skinn.', strid: { namn: 'Kaninen', art: 'Kanin', alder: 6, styrka: 2, uthallighet: 6, mod: 2, smidighet: 16, skicklighet: 4, fart: 1.4, vapen: 'bett' } },
   abborre: { sak: 'abborre', mat: 1, slakt: { fisk: 1 }, rep: 0, timme: 30, maxTim: 1, act: 'rensa', minDel: 1, stat: 'rensat', forsta: '{namn} rensade byns första abborre. Den blev fiskkött.' },
 } satisfies Record<string, Djurart>;
 export const DJURARTER: readonly Djurart[] = Object.values(DJUR);

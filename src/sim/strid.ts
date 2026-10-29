@@ -705,8 +705,8 @@ export function djurKampe(art: string, id: number, sida: 0 | 1, x: number, y: nu
   const d = (DJUR as Record<string, { strid?: DjurStrid }>)[art].strid!;
   return { id, namn: d.namn, sida, djur: art, st: { styrka: d.styrka, uthallighet: d.uthallighet, mod: d.mod, smidighet: d.smidighet, skicklighet: d.skicklighet }, vapen: d.vapen, klader: [], fart: d.fart, x, y };
 }
-// det en djurart har i strid (djurregistret i redskap.ts)
-export interface DjurStrid { namn: string; styrka: number; uthallighet: number; mod: number; smidighet: number; skicklighet: number; fart: number; vapen: Vapen }
+// det en djurart har i strid (djurregistret i redskap.ts). art = artens namn och alder = den längsta åldern i år (steg 3.7.13)
+export interface DjurStrid { namn: string; art: string; alder: number; styrka: number; uthallighet: number; mod: number; smidighet: number; skicklighet: number; fart: number; vapen: Vapen }
 export const STRIDSDJUR = () => Object.keys(DJUR).filter(a => (DJUR as Record<string, { strid?: DjurStrid }>)[a].strid);
 
 // ---------- striden i byn (steg 3.7.2) ----------
