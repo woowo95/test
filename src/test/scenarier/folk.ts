@@ -1247,3 +1247,32 @@ SCENARIER.berattelser = {
     ];
   },
 };
+
+SCENARIER.beskrivning = {
+  text: 'Steg 3.9.2: överst i Presentation står 2–4 meningar om vem personen är: egenskaperna som sticker ut och åldern, namnet byn gav, yrket och ryktet, partnern, vännen och ovännen, smaken och det starkaste minnet. Texten ur mallarna i BERATTELSER står kvar tills något i den ändras',
+  kor: () => {
+    const t = createState(11, START);
+    klockan(t, 12);
+    const p = nyInvanare(t, 'k', 30), q = nyInvanare(t, 'm', 32), v = nyInvanare(t, 'k', 28), o = nyInvanare(t, 'm', 40);
+    for (const k of SIM.STATS) p.pot[k] = 10;
+    p.pot.styrka = 19; p.pot.empati = 2;
+    p.partner = q.id; q.partner = p.id; p.bast = v.id; p.arke = o.id;
+    p.smak = { 'a:samla': 0.9 };
+    const b1 = SIM.beskrivning(t, p);
+    t.now += 5 * HOUR;
+    const b2 = SIM.beskrivning(t, p);
+    p.binamn = { k: 'stark', namn: 'Björnen', v: 3, t: t.now };
+    const b3 = SIM.beskrivning(t, p);
+    const meningar = (x: string) => x.split(/(?<=[.!?])\s+(?=[A-ZÅÄÖ])/).length;
+    // alla i en by: ingen tom plats, ingen mall kvar, 2–4 meningar
+    const alla = living(t).map(x => SIM.beskrivning(t, x));
+    const hela = alla.every(x => !/[{}]|undefined|  | \.|^\s*$/.test(x) && meningar(x) >= 2 && meningar(x) <= 4);
+    return [
+      [`de egenskaper som sticker ut står med (${b1})`, /stark/.test(b1) && /kall/.test(b1)],
+      ['partnern, vännen och ovännen nämns', b1.includes(q.name) && b1.includes(v.name) && b1.includes(o.name)],
+      ['texten står kvar när tiden går', b1 === b2],
+      [`namnet byn gav står med (${b3})`, b3.includes('Björnen')],
+      [`alla i byn får en hel text (${alla[0]})`, hela],
+    ];
+  },
+};
