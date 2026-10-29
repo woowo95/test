@@ -1,4 +1,5 @@
 import { ALDER, ageOf, count, doingAct, forstaGang, living, log, stat } from './folk';
+import { kronikaBer, personFalt } from './berattelser';
 import { Bit, DORRAR, DorrDef, DorrSlag, Hus, MATERIAL, bitById, dorrDef, dorrRang, bitsOf, blocked, freeNear, gridOf, housesOf, husById, touch } from './byggnad';
 import { eldPlats, getMap } from './karta';
 import { vaderSlit } from './vader';
@@ -15,7 +16,6 @@ import { getable, takeMaterial } from './behov';
 import { Del } from './egendom';
 import { fellingTiles } from './skog';
 import { FOREST, findPath } from './vag';
-import { kronika } from './historik';
 import { BYGGNADER, Byggnad, Fn, HUS, antalLika, bedTile, familjOf, fnOf, husKlar, mostUrgent } from './byggnader';
 import { H, HOUR, HOUR_S, Person, State, T, Task, W, inMap } from './typer';
 import { balans } from './balans';
@@ -296,7 +296,7 @@ export function workOn(s: State, p: Person, b: Bit, dtSec: number, har = 0) {
     if (h.varKlar !== undefined) return true;
     const n = gridOf(s).rooms.filter(r => r.hus === h.id).reduce((a, r) => a + r.tiles.length, 0);
     if (fnOf(h).sover) log(s, `${h.namn} är färdigt. Nu kan ${n} sova under tak.`, 'world', [p.id]);
-    kronika(s, `${h.namn} blev färdigt.`); husKlar(s, h);
+    kronikaBer(s, 'k_husKlar', h.id, { ...personFalt(p), hus: h.namn }); husKlar(s, h);
     sedEvent(s, 'gemenskap', BYGG.klartGemenskap);
   }
   return true;

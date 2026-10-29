@@ -6,7 +6,8 @@ import { HANDELSER, INTRYCK, IntryckTyp, intryckOm, samlatIntryck } from './rykt
 import { sakNamn } from './saker';
 import { HOUR, Person, STATS, Stat, State, Upplevelse } from './typer';
 import { upplevelseText } from './uppvaxt';
-import { temperature } from './vader';
+import { isLight, kalender } from './tid';
+import { temperature, vaderNu } from './vader';
 
 // Berättelserna (steg 3.9, "Berättelser" i designdokumentet): texterna om människorna, händelserna och sakerna. Varje
 // text är en mall i registret BERATTELSER med många varianter; varianten väljs ur byns frö, personen och tiden (hash),
@@ -261,6 +262,182 @@ const MDEF = {
     'Det mesta i {hans} liv har inte hänt än.',
     'Ingen har ännu något att berätta om {honom}.',
   ],
+  // krönikan (steg 3.9.3). Alla har {arstid} ('istiden', 'våren' …), och villkoren kallt, sno, regn, natt och blast
+  k_dog: [
+    '{helt} dog {orsak}, {alder} år gammal.',
+    'Byn sörjde när {helt} dog {orsak}. {Hen} blev {alder} år.',
+    '{alder} år fick {namn} leva innan {hen} dog {orsak}.',
+    'Det var {arstid} när {helt} dog {orsak}, {alder} år gammal.',
+    '{helt} är borta. {Hen} dog {orsak} vid {alder} års ålder.',
+    'En tystnad föll över byn: {helt} dog {orsak}, {alder} år gammal.',
+    'Elden brann lågt den kvällen. {helt} hade dött {orsak}, {alder} år gammal.',
+    '{helt} dog {orsak}. {Hen} hann bli {alder} år.',
+    { t: '{partner} vakade hos {helt} till slutet. {Hen} dog {orsak}, {alder} år gammal.', om: f => !!f.partner },
+    { t: '{helt} dog {orsak}, {alder} år gammal, och lämnade {barn} barn efter sig.', om: f => (f.barn as number) > 1 },
+    { t: 'Snön föll när {helt} dog {orsak}. {Hen} blev {alder} år.', om: f => f.sno === true },
+    { t: 'Mitt i natten dog {helt} {orsak}, {alder} år gammal.', om: f => f.natt === true },
+  ],
+  k_fodd: [
+    '{namn} föddes, {barnet} till {foraldrar}.',
+    'Ett nytt barn kom till byn: {namn}, {barnet} till {foraldrar}.',
+    'Ett skrik hördes i byn: {namn} hade fötts, {barnet} till {foraldrar}.',
+    '{namn} föddes. {mor} höll sitt barn i famnen hela natten.',
+    'Byn fick en ny invånare, {namn}, {barnet} till {foraldrar}.',
+    'Det var {arstid} när {namn} föddes, {barnet} till {foraldrar}.',
+    '{mor} födde {namn}, och byn samlades för att se barnet.',
+    'Så kom {namn} till världen, {barnet} till {foraldrar}.',
+    { t: 'Mitt i natten föddes {namn}, {barnet} till {foraldrar}.', om: f => f.natt === true },
+    { t: 'I kylan föddes {namn}, {barnet} till {foraldrar}, och alla samlades kring elden.', om: f => f.kallt === true },
+    { t: '{foraldrar} fick ett barn till, {namn}.', om: f => (f.syskon as number) > 0 },
+  ],
+  k_forstaEld: [
+    '{namn} tände byns första eld.',
+    'Det var {namn} som fick gnistan att ta i torrt gräs. Byn hade fått sin första eld.',
+    'Byn hade frusit länge. Sedan tände {namn} den första elden, och alla samlades kring den.',
+    'Röken steg för första gången över byn: {namn} hade tänt en eld.',
+    '{namn} slog sten mot sten tills det tog eld. Det var byns första eld.',
+    'Ingen glömmer när {namn} tände byns första eld.',
+    'Det var {arstid} när {namn} tände byns första eld.',
+    '{namn} blåste liv i den första glöden, och byn fick sin första eld.',
+    { t: 'Mitt i natten tände {namn} byns första eld, och mörkret drog sig undan.', om: f => f.natt === true },
+    { t: 'I kylan tände {namn} byns första eld, och ingen behövde frysa den natten.', om: f => f.kallt === true },
+  ],
+  k_uppfann: [
+    '{namn} uppfann {teknik}.',
+    'Ingen hade gjort det förut: {namn} kom på {teknik}.',
+    'Det var {namn} som först förstod sig på {teknik}.',
+    '{namn} satt länge och funderade. Sedan kom {hen} på {teknik}.',
+    'Byn fick {teknik}, och det var {namn} som kom på det.',
+    'Det var {arstid} när {namn} kom på {teknik}.',
+    '{namn} prövade och misslyckades, prövade igen, och till sist hade {hen} uppfunnit {teknik}.',
+    'Alla kom för att se när {namn} visade {teknik} för första gången.',
+    { t: 'Medan regnet föll kom {namn} på {teknik}.', om: f => f.regn === true },
+    { t: 'En kall dag kom {namn} på {teknik}.', om: f => f.kallt === true },
+  ],
+  k_husKlar: [
+    '{hus} blev färdigt.',
+    '{hus} stod färdigt, och {namn} lade den sista biten.',
+    'Det sista lades på plats av {namn}: {hus} var färdigt.',
+    'Efter mycket arbete stod {hus} färdigt.',
+    'Det var {arstid} när {hus} blev färdigt.',
+    'Byn samlades och såg på när {namn} gjorde klart {hus}.',
+    '{namn} torkade svetten ur pannan. {hus} var färdigt.',
+    'Nu stod {hus} färdigt, och byn var lite större.',
+    { t: 'Precis före kylan blev {hus} färdigt.', om: f => f.kallt === true },
+    { t: 'I regnet gjorde {namn} klart {hus}, och nu kunde man sitta torrt.', om: f => f.regn === true },
+  ],
+  k_forstaLedare: [
+    '{namn} blev byns första ledare ({titel}).',
+    'Byn hade aldrig haft någon som bestämde. Nu blev {namn} den första, {titel}.',
+    'De flesta lyssnade redan på {namn}, och nu blev {hen} byns första ledare, {titel}.',
+    'Det var {arstid} när byn fick sin första ledare: {namn}, {titel}.',
+    'Vid elden bestämdes det: {namn} skulle leda byn, den första som {titel}.',
+    'Från den dagen ledde {namn} byn, den första som gjorde det. Man kallade {honom} {titel}.',
+    'Byn valde {namn} till sin första ledare, {titel}, och började undra om alla är lika mycket värda.',
+    'Den första som ledde byn var {namn}, {titel}.',
+    { t: 'En kall tid behövde byn någon som bestämde. Det blev {namn}, byns första ledare, {titel}.', om: f => f.kallt === true },
+  ],
+  k_ledare: [
+    '{namn} blev byns ledare ({titel}).',
+    'Byn fick en ny ledare: {namn}, {titel}.',
+    'Nu var det {namn} som ledde byn, {titel}.',
+    'Det var {arstid} när {namn} blev byns ledare, {titel}.',
+    'De flesta lyssnade på {namn}, och {hen} blev byns ledare, {titel}.',
+    'Byn valde {namn}, {titel}, att leda den.',
+    'Vid elden bestämdes det att {namn} skulle leda byn, {titel}.',
+    'Från den dagen ledde {namn} byn. Man kallade {honom} {titel}.',
+  ],
+  k_utvisad: [
+    '{ledare} drev ut {namn} ur byn {varfor}.',
+    '{namn} fick lämna byn. {ledare} drev ut {honom} {varfor}.',
+    'Det var {arstid} när {ledare} drev ut {namn} ur byn {varfor}.',
+    'Ingen talade för {namn} när {ledare} drev ut {honom} {varfor}.',
+    '{namn} gick ensam ut ur byn. {ledare} hade drivit ut {honom} {varfor}.',
+    '{ledare} pekade mot skogen, och {namn} fick gå {varfor}.',
+    'Byn såg på när {ledare} drev ut {namn} {varfor}.',
+    'Så slutade tiden i byn för {namn}: {ledare} drev ut {honom} {varfor}.',
+    { t: 'I kylan fick {namn} lämna byn. {ledare} drev ut {honom} {varfor}.', om: f => f.kallt === true },
+    { t: 'I snön syntes spåren efter {namn} länge sedan {ledare} drivit ut {honom} {varfor}.', om: f => f.sno === true },
+  ],
+  k_skadad: [
+    '{namn} skadades svårt i ett slagsmål med {mot}.',
+    'Det blev slagsmål mellan {namn} och {mot}, och {namn} skadades svårt.',
+    '{namn} och {mot} kom i luven på varandra. Det slutade med att {namn} låg svårt skadad.',
+    'Det var {arstid} när {namn} skadades svårt i ett slagsmål med {mot}.',
+    'Ingen kunde stoppa slagsmålet mellan {namn} och {mot} förrän {namn} låg svårt skadad.',
+    'Ord blev slag, och {namn} skadades svårt av {mot}.',
+    'Byn talade länge om slagsmålet där {mot} skadade {namn} svårt.',
+    '{namn} bar länge märkena efter slagsmålet med {mot}.',
+    { t: 'Mitt i natten slogs {namn} och {mot}, och {namn} skadades svårt.', om: f => f.natt === true },
+    { t: 'I snön syntes blodet efter slagsmålet där {mot} skadade {namn} svårt.', om: f => f.sno === true },
+  ],
+  k_skadadLek: [
+    '{namn} skadades svårt när barnen brottades med {mot}.',
+    'Leken gick för långt: {namn} skadades svårt när {hen} brottades med {mot}.',
+    'Det började som en lek mellan {namn} och {mot} men slutade med att {namn} skadades svårt.',
+    'Det var {arstid} när {namn} skadades svårt i en lek med {mot}.',
+    'De vuxna kom springande när {namn} skadades svårt i leken med {mot}.',
+    'Barnen brottades, och {namn} skadades svårt av {mot}.',
+    'Ingen hade trott att leken mellan {namn} och {mot} kunde gå så illa: {namn} skadades svårt.',
+    '{namn} skadades svårt när {hen} lekte med {mot}, och byn blev rädd.',
+  ],
+  k_forstaVarg: [
+    '{namn} dödade byns första varg.',
+    'Det var {namn} som fällde byns första varg.',
+    'Byn hade länge varit rädd för vargarna. Sedan dödade {namn} den första.',
+    'Det var {arstid} när {namn} dödade byns första varg.',
+    'Alla kom ut för att se vargen som {namn} hade fällt, byns första.',
+    '{namn} stod över den döda vargen. Det var den första byn fällt.',
+    'Ingen glömmer när {namn} dödade byns första varg.',
+    'Med en väl riktad stöt dödade {namn} byns första varg.',
+    { t: 'I snön dödade {namn} byns första varg.', om: f => f.sno === true },
+    { t: 'Mitt i natten dödade {namn} byns första varg.', om: f => f.natt === true },
+  ],
+  k_vargjakt: [
+    '{folk} gick på vargjakt mot {vargar} och fällde {fallde}.{svara}',
+    'Det var {arstid} när {folk} gick på vargjakt mot {vargar}. De fällde {fallde}.{svara}',
+    '{folk} tog sina spjut och gick mot {vargar}. De fällde {fallde}.{svara}',
+    'Byn skickade {folk} på vargjakt mot {vargar}, och de fällde {fallde}.{svara}',
+    'Med spjuten i händerna gick {folk} mot {vargar}. De fällde {fallde}.{svara}',
+    '{folk} följde spåren till {vargar} och fällde {fallde}.{svara}',
+    'Det var en vargjakt byn talade om länge: {folk} mot {vargar}, och de fällde {fallde}.{svara}',
+    '{folk} gick ut för att göra slut på {vargar}, och fällde {fallde}.{svara}',
+    { t: 'I snön följde {folk} spåren till {vargar} på vargjakt, och de fällde {fallde}.{svara}', om: f => f.sno === true },
+    { t: 'I blåsten gick {folk} på vargjakt mot {vargar}, och de fällde {fallde}.{svara}', om: f => f.blast === true },
+  ],
+  k_vargSprang: [
+    '{namn} gick på vargjakt{med}, men vargarna sprang innan de hann fram.',
+    'Vargarna var borta innan {namn}{med} hann fram. Vargjakten blev ingenting.',
+    '{namn} gick på vargjakt{med}, men vargarna hörde dem och sprang.',
+    'Det var {arstid} när {namn} gick på vargjakt{med}. Vargarna sprang innan de hann fram.',
+    'Vargjakten slutade innan den börjat: vargarna sprang när {namn}{med} kom.',
+    '{namn} gick på vargjakt{med}, men såg bara vargarnas ryggar.',
+    'Vargarna var för snabba för {namn}{med} på vargjakten.',
+    'Ingen varg föll den dagen. {namn} gick på vargjakt{med}, men vargarna sprang.',
+    { t: 'I snön syntes vargarnas spår, men de sprang innan {namn}{med} på vargjakten hann fram.', om: f => f.sno === true },
+  ],
+  k_vargAnfall: [
+    '{svara} skadades svårt när vargar anföll.',
+    'Vargarna anföll, och {svara} skadades svårt.',
+    'Det var {arstid} när vargar anföll och {svara} skadades svårt.',
+    'Ingen hann undan när vargarna kom: {svara} skadades svårt.',
+    'Vargarnas tänder fick tag, och {svara} skadades svårt.',
+    'Byn kommer ihåg dagen då vargarna anföll och {svara} skadades svårt.',
+    'Vargarna kom ur skogen, och {svara} skadades svårt.',
+    '{svara} skadades svårt när vargar anföll, och byn blev rädd.',
+    { t: 'Mitt i natten anföll vargar, och {svara} skadades svårt.', om: f => f.natt === true },
+  ],
+  k_atergrundad: [
+    '{namn} grundade byn på nytt.',
+    'Byn hade stått tom. Sedan kom {namn} och grundade den på nytt.',
+    '{namn} hittade de övergivna husen och stannade. Byn levde igen.',
+    'Det var {arstid} när {namn} grundade byn på nytt.',
+    'Ingen bodde kvar, men {namn} kom vandrande och grundade byn på nytt.',
+    'I askan efter den gamla byn tände {namn} en ny eld och grundade byn på nytt.',
+    'Byn var tom tills {namn} kom och grundade den på nytt.',
+    '{namn} fann en övergiven boplats och gjorde den till sin. Byn grundades på nytt.',
+    { t: 'I kylan hittade {namn} den övergivna boplatsen och grundade byn på nytt.', om: f => f.kallt === true },
+  ],
 } satisfies Record<string, Variant[]>;
 export type MallId = keyof typeof MDEF;
 export const BERATTELSER: Record<MallId, Variant[]> = MDEF;
@@ -333,7 +510,7 @@ function gebinamn(s: State, p: Person, k: IntryckTyp, v: number) {
   const f: Fyllning = { namn: p.name, binamn: namnet, helt: heltNamn(p), hen: hen(p), skal, kallt: temperature(s) < 0, gamla: living(s).filter(q => ageOf(q, s.now) >= ALDER.gammal).length, arg: !heder && hash(s.seed, p.id, 3) < 0.5 };
   const text = berattelse(s, heder ? 'hedersnamn' : 'oknamn', p.id, f);
   log(s, `${heder ? '🏅' : '🗯️'} ${text}`, 'rel', [p.id]);
-  kronika(s, text);
+  kronika(s, text, heder ? 'hedersnamn' : 'oknamn');
   p.fame.push(`Kallades ${heltNamn(p)}${fore ? ` (förut ${fore.namn})` : ''}`);
   count(s, 'binamn'); count(s, heder ? 'hedersnamn' : 'oknamn');
 }
@@ -406,3 +583,18 @@ export function beskrivning(s: State, p: Person) {
   if (ut.length < 2) ut.push(fyll(valjVariant(s, 'besk_inget', nyck(6), f, 0), f));
   return ut.slice(0, 4).join(' ');
 }
+
+// ---------- krönikan (steg 3.9.3) ----------
+const ARSTIDER = ['istiden', 'våren', 'sommaren', 'hösten'];
+const TAL = ['ingen', 'en', 'två', 'tre', 'fyra', 'fem', 'sex', 'sju', 'åtta', 'nio', 'tio'];
+export const talOrd = (n: number) => TAL[n] ?? String(n);
+export const och = (l: string[]) => l.length > 1 ? `${l.slice(0, -1).join(', ')} och ${l[l.length - 1]}` : l[0] ?? '';
+// en händelse som en liten berättelse i krönikan, med årstiden, vädret och natten (loggen behåller sin korta rad).
+// Raden får mallens id som slag, så att den kan hittas utan att läsa texten
+export function kronikaBer(s: State, mall: MallId, nyckel: number, f: Fyllning) {
+  const v = vaderNu(s);
+  const g: Fyllning = { arstid: ARSTIDER[kalender(s).ai], kallt: temperature(s) < 0, sno: v.sno, regn: v.lage === 'regn', blast: v.lage === 'blast', natt: !isLight(s.now), ...f };
+  kronika(s, berattelse(s, mall, nyckel + (s.hist?.kronika.length ?? 0) * 7919, g), mall);
+}
+// fälten för en person: namnet, namnet byn gav och hen
+export const personFalt = (p: Person): Fyllning => ({ namn: p.name, helt: heltNamn(p), hen: hen(p), honom: p.sex === 'm' ? 'honom' : 'henne' });

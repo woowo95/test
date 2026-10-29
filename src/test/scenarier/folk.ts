@@ -1276,3 +1276,22 @@ SCENARIER.beskrivning = {
     ];
   },
 };
+
+SCENARIER.kronika = {
+  text: 'Steg 3.9.3: händelserna (födslar, dödsfall, första elden, uppfinningar, hus, ledare, strider och vargjakter) skrivs som små berättelser i krönikan ur mallarna k_* i BERATTELSER, med årstiden, vädret och natten; loggen behåller sin korta rad',
+  kor: () => {
+    const t = createState(3, START);
+    kor(t, 10 * 24);
+    const rader = t.hist?.kronika ?? [], ber = rader.filter(k => k[2]?.startsWith('k_'));
+    const hela = ber.every(([, x]) => !/[{}]|undefined|  | \.|^\s*$/.test(x) && /[.!]$/.test(x));
+    const slag = new Set(ber.map(k => k[2]));
+    const fodda = ber.filter(k => k[2] === 'k_fodd').map(k => k[1]);
+    const logFodd = t.log.find(l => / föddes, (son|dotter) till /.test(l.text))?.text ?? '';
+    return [
+      [`krönikan har berättelser (${ber.length} av ${rader.length} rader, ${slag.size} slag)`, ber.length >= 5 && slag.size >= 3],
+      [`varje berättelse är hel (t.ex. ${ber.slice(0, 3).map(k => k[1]).join(' | ')})`, hela],
+      [`födslarna berättas olika (${new Set(fodda).size} texter av ${fodda.length})`, fodda.length < 3 || new Set(fodda).size >= 2],
+      [`loggen behåller den korta raden (${logFodd})`, !fodda.length || !!logFodd],
+    ];
+  },
+};

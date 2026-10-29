@@ -1,4 +1,5 @@
 import { balans } from './balans';
+import { kronikaBer, personFalt, talOrd } from './berattelser';
 import { blodas } from './blod';
 import { bedFor } from './bygg';
 import { Bit, Rum, bitAt, dorrDef, roomAt, freeNear, gridOf } from './byggnad';
@@ -9,7 +10,6 @@ import { Act } from './handlingar';
 import { eldPlats, getMap } from './karta';
 import { punktIRuta } from './mark';
 import { addTo, amountOf, avbryt, foodOf, zoneOf } from './lager';
-import { kronika } from './historik';
 import { die } from './liv';
 import { handelse, larma, larmNu } from './rykten';
 import { SAKER } from './saker';
@@ -432,7 +432,7 @@ export function vargjaktSteg(s: State, p: Person, tk: Task) {
     f.gor = 'flyr'; count(s, 'vargjaktFlydde');
     for (const q of med) { q.task!.until = s.now; q.task!.prog = 1; }
     log(s, `Vargarna märkte jägarna och sprang innan ${p.name} och de andra hann fram.`, 'world', med.map(q => q.id));
-    kronika(s, `${p.name} gick på vargjakt${med.length > 1 ? ` med ${med.length - 1} till` : ''}, men vargarna sprang innan de hann fram.`); // steg 3.7.16
+    kronikaBer(s, 'k_vargSprang', p.id, { ...personFalt(p), med: med.length > 1 ? ` med ${talOrd(med.length - 1)} till` : '' }); // steg 3.7.16
     return;
   }
   vargStrid(s, f, med, 'doda', 'på vargjakt');
@@ -472,7 +472,7 @@ export function vargStrid(s: State, f: Vargflock, folk: Person[], avsikt: Avsikt
       dodaDjur(s, id);
       const forsta = forstaGang(s, 'vargDodad'); // räknar också
       const r = [...st.logg].reverse().find(x => x.h === 'traff' && x.b === k.id), fallde = r && folk[r.a! - 1];
-      if (fallde) { handelse(s, fallde, 'vargdodare'); if (forsta) { log(s, `${fallde.name} dödade byns första varg.`, 'world', [fallde.id]); kronika(s, `${fallde.name} dödade byns första varg.`); } }
+      if (fallde) { handelse(s, fallde, 'vargdodare'); if (forsta) { log(s, `${fallde.name} dödade byns första varg.`, 'world', [fallde.id]); kronikaBer(s, 'k_forstaVarg', fallde.id, personFalt(fallde)); } }
       doda.push(fallde ?? folk[0]);
     } else { kvar.push(id); satDjurHalsa(s, id, k.blod, halsaOf(s, id).sar + k.skador.reduce((a, w) => a + w.g, 0)); }
   });
@@ -508,8 +508,8 @@ export function vargStrid(s: State, f: Vargflock, folk: Person[], avsikt: Avsikt
   log(s, `${namn} slogs med ${n > 1 ? `${n} vargar` : 'en varg'} ${orsak}. ${doda.length ? `${doda.length} ${doda.length === 1 ? 'varg dog' : 'vargar dog'}. ` : ''}${vinnare === 0 ? 'Vargarna förlorade.' : vinnare === 1 ? 'Vargarna vann.' : 'Ingen vann.'}`, 'world', folk.map(p => p.id));
   // krönikan (steg 3.7.16): varje vargjakt, och den som skadades svårt när vargarna anföll (döden skriver die)
   const och = (l: string[]) => l.length > 1 ? `${l.slice(0, -1).join(', ')} och ${l[l.length - 1]}` : l[0];
-  if (avsikt === 'doda') kronika(s, `${och(folk.map(p => p.name))} gick på vargjakt mot ${n > 1 ? `${n} vargar` : 'en varg'} och fällde ${doda.length ? doda.length : 'ingen'}.${svara.length ? ` ${och(svara)} skadades svårt.` : ''}`);
-  else if (svara.length) kronika(s, `${och(svara)} skadades svårt när vargar anföll.`);
+  if (avsikt === 'doda') kronikaBer(s, 'k_vargjakt', folk[0].id, { folk: och(folk.map(p => p.name)), vargar: n > 1 ? `${talOrd(n)} vargar` : 'en varg', fallde: talOrd(doda.length), svara: svara.length ? ` ${och(svara)} skadades svårt.` : '' });
+  else if (svara.length) kronikaBer(s, 'k_vargAnfall', folk[0].id, { svara: och(svara) });
   if (vinnare !== 1 || doda.length) f.gor = 'flyr';
   return st;
 }

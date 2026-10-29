@@ -1,4 +1,5 @@
 // Striden (fas 3, system 3.7). Grunden byggdes med testarenan (steg 3.7.5): en strid är två sidor av kämpar (Kampe) på en
+import { kronikaBer, och, personFalt } from './berattelser';
 // liten plats, med en avsikt (AVSIKTER) som avgör när den slutar. Den räknas i fasta tidssteg om STRID.tick sekunder
 // (stridSteg), så att den blir likadan i levande läge och i snabbläget. Var och en väljer mål, går fram och slår när målet
 // är inom räckhåll; ett slag träffar eller missar, och en träff hamnar på en kroppsdel (KROPPSDELAR i halsa.ts) och blir en
@@ -39,7 +40,6 @@ import { ALDER, ageOf, byId, count, getRel, log, ovning, stat, think } from './f
 import { ledareOf } from './styre';
 import { blodtorst } from './humor';
 import { die } from './liv';
-import { kronika } from './historik';
 import { setRanStrid } from './behov';
 import { handelse, larma, smaka, smakAv } from './rykten';
 import { avbryt } from './lager';
@@ -884,7 +884,7 @@ export function stridIByn(s: State, avsikt: Avsikt, sidor: [Person[], Person[]],
     ovning(p, 'narstrid', lek ? SLAGSMAL.ovningLek : SLAGSMAL.ovning);
     // tycket för vapnet (steg 3.7.10): den som vann eller övade med det gillar det, en svår förlust ger ogillande
     const svar = k.lage === 'nere' || k.skador.reduce((a, w) => a + w.g, 0) >= STRID.tyckeSvar;
-    if (svartSkadad(k)) kronika(s, `${p.name} skadades svårt ${lek ? 'när barnen brottades' : 'i ett slagsmål'} med ${mot.map(q => q.name).join(' och ')}.`); // steg 3.7.16: döden skriver die
+    if (svartSkadad(k)) kronikaBer(s, lek ? 'k_skadadLek' : 'k_skadad', p.id, { ...personFalt(p), mot: och(mot.map(q => q.name)) }); // steg 3.7.16: döden skriver die
     if (lek) smaka(p, 'v:' + k.vapen, STRID.tyckeLek);
     else if (vinnare === k.sida) smaka(p, 'v:' + k.vapen, STRID.tyckeVann);
     else if (vinnare !== -1 && svar) smaka(p, 'v:' + k.vapen, -STRID.tyckeForlust);

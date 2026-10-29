@@ -1,4 +1,5 @@
 import { uppvaxtDod, uppvaxtFodd } from './uppvaxt';
+import { kronikaBer, personFalt } from './berattelser';
 import { ALDER, REL, ageOf, alive, byId, count, isParent, living, log, newPerson, relKey, startSkills, think } from './folk';
 import { Sed, sedEvent } from './seder';
 import { pair } from './varld';
@@ -7,7 +8,6 @@ import { chance, clamp, pick, rnd } from './slump';
 import { DAY, HOUR_S, Person, SEC, State } from './typer';
 import { foodDays } from './ekonomi';
 import { avbryt, put, releaseOwner } from './lager';
-import { kronika } from './historik';
 import { inherit, packUp } from './arv';
 import { balans } from './balans';
 import { RELT } from './relationer';
@@ -94,7 +94,7 @@ export function die(s: State, p: Person, orsak: Dodsorsak) {
   releaseOwner(s, p.id); // det som blev kvar blir byns
   const a = Math.floor(ageOf(p, s.now));
   log(s, `${p.name} dog ${cause}, ${a} år gammal.`, 'death', [p.id]);
-  count(s, 'doda'); count(s, 'dog ' + cause); kronika(s, `${p.name} dog ${cause}, ${a} år gammal.`);
+  count(s, 'doda'); count(s, 'dog ' + cause); kronikaBer(s, 'k_dog', p.id, { ...personFalt(p), orsak: cause, alder: a, partner: (q => q && alive(q) ? q.name : undefined)(byId(s, p.partner)), barn: s.people.filter(q => (q.mother === p.id || q.father === p.id) && alive(q)).length });
   if (sed) sedEvent(s, sed.k, sed.d, `${p.name} ${sed.text}`);
   if (a < LIV.barnDod) sedEvent(s, 'barn', LIV.sedBarn, `Byn sörjer barnet ${p.name} och värnar mer om sina barn.`);
   if (a >= ALDER.hogAlder) p.fame.push(`Blev ${a} år gammal`);
@@ -117,7 +117,7 @@ export function birth(s: State, mother: Person) {
   ch.x = mother.x; ch.y = mother.y;
   s.people.push(ch);
   log(s, `${ch.name} föddes, ${ch.sex === 'k' ? 'dotter' : 'son'} till ${mother.name}${father ? ' och ' + father.name : ''}.`, 'birth', [ch.id, mother.id, ...(father ? [father.id] : [])]);
-  count(s, 'fodda'); kronika(s, `${ch.name} föddes.`);
+  count(s, 'fodda'); kronikaBer(s, 'k_fodd', ch.id, { namn: ch.name, barnet: ch.sex === 'k' ? 'dotter' : 'son', mor: mother.name, foraldrar: mother.name + (father ? ' och ' + father.name : ''), syskon: s.people.filter(q => q !== ch && q.mother === mother.id).length });
   uppvaxtFodd(s, ch); startSmak(s, ch);
   think(mother, `Fick barnet ${ch.name}`, LIV.fodMor, s.now, LIV.fodDygn * DAY);
   if (father && alive(father)) think(father, `Fick barnet ${ch.name}`, LIV.fodFar, s.now, LIV.fodDygn * DAY);
@@ -176,7 +176,7 @@ function immigrate(s: State, alone: boolean) {
 // alla är borta: en vandrare hittar den övergivna boplatsen och grundar byn på nytt
 function refound(s: State) {
   const p = immigrate(s, true);
-  count(s, 'atergrundad'); kronika(s, `${p.name} grundade byn på nytt.`);
+  count(s, 'atergrundad'); kronikaBer(s, 'k_atergrundad', p.id, personFalt(p));
   log(s, `${p.name} hittade den övergivna boplatsen och grundade byn på nytt.`, 'world', [p.id]);
 }
 

@@ -1,8 +1,8 @@
 import { allaBarn } from './uppvaxt';
+import { kronikaBer, personFalt } from './berattelser';
 import { ALDER, ageOf, count, log, stat, think } from './folk';
 import { sedEvent } from './seder';
 import { rnd } from './slump';
-import { kronika } from './historik';
 import { amountOf } from './lager';
 import { SAKER, isTool } from './saker';
 import { STATIONER, TILLBEHOR } from './stationer';
@@ -151,7 +151,7 @@ function learn(s: State, p: Person, t: Tek, from?: Person) {
   if (from) { log(s, `${p.name} har lärt sig av ${from.name} att göra ${t.namn.toLowerCase()}.`, 'skill', [p.id, from.id]); return; }
   const first = !s.people.some(q => q !== p && knows(q, t.id)) && !(s.stat?.['tek_' + t.id]);
   count(s, 'tek_' + t.id);
-  if (first) kronika(s, `${p.name} uppfann ${t.namn.toLowerCase()}.`);
+  if (first) kronikaBer(s, 'k_uppfann', p.id, { ...personFalt(p), teknik: t.namn.toLowerCase() });
   log(s, `${p.name} kom på hur man gör ${t.namn.toLowerCase()}. ${t.effekt}`, 'skill', [p.id]);
   think(p, `Kom på hur man gör ${t.namn.toLowerCase()}`, TEKTAL.kommaPa, s.now, TEKTAL.kommaPaTim * HOUR);
   if (first) { p.fame.push(`Uppfann ${t.namn.toLowerCase()}`); sedEvent(s, 'nyfikenhet', TEKTAL.forstaNyfiken); allaBarn(s, 'uppfinning', `uppfann ${t.namn.toLowerCase()}`); }

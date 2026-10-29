@@ -1568,7 +1568,7 @@ SCENARIER.tradorr = {
 SCENARIER.stridkronika = {
   text: 'Striderna i krönikan (steg 3.7.16): den som dör eller skadas svårt i ett slagsmål skrivs i krönikan, liksom varje vargjakt, den som skadas svårt när vargar anfaller och byns första fällda varg. Vanliga slagsmål och lekar skrivs inte',
   kor: () => {
-    const krn = (s: State) => (s.hist?.kronika ?? []).map(([, t]) => t);
+    const krn = (s: State) => (s.hist?.kronika ?? []).map(([, t]) => t), slag = (s: State) => (s.hist?.kronika ?? []).map(k => k[2] ?? '');
     // slagsmål i byn: med vapen och avsikten skada blir någon svårt skadad eller dör, med händerna oftast inte
     const s = createState(11, START), [p, q] = living(s).filter(x => ageOf(x, s.now) >= SIM.ALDER.vuxen);
     SIM.addTool(s, 'flintspjut', p);
@@ -1597,13 +1597,13 @@ SCENARIER.stridkronika = {
       (v.vargar ??= []).push(f);
       const n0 = krn(v).length;
       SIM.vargStrid(v, f, jag.filter(x => x.health > 0), 'doda', 'på vargjakt');
-      const nya = krn(v).slice(n0);
-      if (nya.some(t => /vargjakt/.test(t))) jakter++;
-      forsta += krn(v).filter(t => /byns första varg/.test(t)).length > 0 ? 1 : 0;
+      const nya = slag(v).slice(n0);
+      if (nya.some(t => t === 'k_vargjakt' || t === 'k_vargSprang')) jakter++;
+      forsta += slag(v).includes('k_forstaVarg') ? 1 : 0;
       v.vargar = undefined;
       for (const x of jag) { x.skador = []; x.blod = 1; x.task = undefined; }
     }
-    const forstaRader = krn(v).filter(t => /byns första varg/.test(t)).length;
+    const forstaRader = slag(v).filter(t => t === 'k_forstaVarg').length;
     const exempel = [...krn(s).slice(fore), ...krn(v)].slice(0, 3).join(' | ');
     return [
       [`ett slagsmål där någon skadas svårt eller dör skrivs i krönikan (${svara} av 40 strider, ${slagRader} rader; t.ex. ${exempel})`, svara > 0 && slagRader >= svara],

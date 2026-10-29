@@ -31,7 +31,8 @@ const ny = (): Historik => ({ tal: HISTORIK_TAL.map(t => t.id), tim: [], dygn: [
 const histOf = (s: State) => (s.hist ??= ny());
 
 // en viktig händelse i krönikan: en kort rad som sparas för alltid
-export function kronika(s: State, text: string) { histOf(s).kronika.push([Math.round(s.now), text]); }
+// slag: vad raden handlar om (mallens id i BERATTELSER, steg 3.9.3), så att den kan hittas utan att läsa texten
+export function kronika(s: State, text: string, slag?: string) { histOf(s).kronika.push(slag ? [Math.round(s.now), text, slag] : [Math.round(s.now), text]); }
 
 // varje timme: en rad med nyckeltalen, och timmar äldre än en vecka slås ihop till ett värde per dygn
 export function historikSteg(s: State) {

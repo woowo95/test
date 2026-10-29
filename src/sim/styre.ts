@@ -1,4 +1,5 @@
 import { ALDER, REL, ageOf, alive, byId, count, franMitt, isKin, living, log, relKey, stat, think } from './folk';
+import { kronikaBer, personFalt } from './berattelser';
 import { skada } from './halsa';
 import { die, leave } from './liv';
 import { moodOf } from './humor';
@@ -171,8 +172,8 @@ function valj(s: State) {
   st.ledare = best.id; st.sedan = s.now; st.titel = titel; st.vintrar = 0; st.pabud = undefined; st.oratt = 0;
   st.historia.push({ id: best.id, namn: best.name, titel, fran: s.now });
   count(s, 'ledare_vald');
-  if (forsta) { st.oppna.push('rang'); best.fame.push('Byns första ledare'); kronika(s, `${best.name} blev byns första ledare (${titel.toLowerCase()}).`); }
-  else kronika(s, `${best.name} blev byns ledare (${titel.toLowerCase()}).`);
+  if (forsta) { st.oppna.push('rang'); best.fame.push('Byns första ledare'); kronikaBer(s, 'k_forstaLedare', best.id, { ...personFalt(best), titel: titel.toLowerCase() }); }
+  else kronikaBer(s, 'k_ledare', best.id, { ...personFalt(best), titel: titel.toLowerCase() });
   log(s, forsta ? `Byn har fått sin första ledare: ${best.name}, ${titel.toLowerCase()}. Byn börjar fundera på om alla är lika mycket värda.` : `${best.name} är byns nya ledare, ${titel.toLowerCase()}.`, 'world', [best.id]);
 }
 function slutar(s: State, varfor: string) {
@@ -222,7 +223,7 @@ function doma(s: State, l: Person) {
     think(q, `Straffades av ${l.name}`, -STR.tanke * (steg + 1), now, STR.tankeDygn * DAY);
     if (steg === 1) q.skam = now + STR.skamDygn * DAY;
     if (steg === 2) { const dod = skada(s, q, 'bal', 'blamarke', STR.slagG, 'drap', `när ${l.name} straffade hen`); if (dod) { die(s, q, dod); continue; } }
-    if (steg === 3) { kronika(s, `${l.name} drev ut ${q.name} ur byn för att ${hon(q)} ${brottText(b)}.`); count(s, 'utvisad'); leave(s, q); }
+    if (steg === 3) { kronikaBer(s, 'k_utvisad', q.id, { ...personFalt(q), ledare: l.name, varfor: `för att ${hon(q)} ${brottText(b)}` }); count(s, 'utvisad'); leave(s, q); }
     if (orattvist) {
       count(s, 'straff_orattvist');
       handelse(s, l, 'orattvisDom', q);

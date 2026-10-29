@@ -1,4 +1,5 @@
 import { allaBarn } from './uppvaxt';
+import { kronikaBer, personFalt } from './berattelser';
 import { addTo, amountOf, avbryt, fetchSpot, takeLimit, use } from './lager';
 import { Behov, addBehov, getable, takeMaterial } from './behov';
 import { Del, addDel } from './egendom';
@@ -16,7 +17,6 @@ import { duty, sedEvent } from './seder';
 import { RESERV, kunnighet } from './ekonomi';
 import { chance, clamp, rnd } from './slump';
 import { ARSTID, ageIndex, iIstiden, isLight } from './tid';
-import { kronika } from './historik';
 import { SNABBARE } from './handlingar';
 import { Act, DAY, Fire, FireLog, GREN, HEARTHS, HOUR, HOUR_S, IGNITERS, Person, SEC, State, Task } from './typer';
 import { balans } from './balans';
@@ -155,7 +155,7 @@ function lightFire(s: State, p: Person) {
   fireLog(s, { k: 'tänd', id: p.id, n: f.tries });
   log(s, `${p.name} lyckades tända elden${onCoal ? ' på den gamla kolhögen' : ''}${f.tries > 1 ? ` efter ${f.tries} försök` : ''}.`, 'world', [p.id]);
   think(p, 'Tände elden', ELD.tandGlad, s.now, ELD.tandGladDygn * DAY);
-  if (f.lightings === 1) { p.fame.push('Tände byns första eld'); allaBarn(s, 'uppfinning', 'tände sin första eld'); kronika(s, `${p.name} tände byns första eld.`); sedEvent(s, 'nyfikenhet', ELD.sedNyfiken, 'Elden har gjort byn nyfiken på vad mer som går att lära sig.'); }
+  if (f.lightings === 1) { p.fame.push('Tände byns första eld'); allaBarn(s, 'uppfinning', 'tände sin första eld'); kronikaBer(s, 'k_forstaEld', p.id, personFalt(p)); sedEvent(s, 'nyfikenhet', ELD.sedNyfiken, 'Elden har gjort byn nyfiken på vad mer som går att lära sig.'); }
   f.tries = 0;
 }
 // Varje misslyckat försök sedan elden senast brann gör nästa lättare: man får kläm på det och tändmaterialet blir

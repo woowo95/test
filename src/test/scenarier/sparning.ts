@@ -17,7 +17,7 @@ SCENARIER.historik = {
     const dagar = h.dygn.map(r => Math.floor(r[0] / DAY)), ettPerDygn = dagar.every((d, k) => k === 0 || d === dagar[k - 1] + 1);
     const fortsatt = h.dygn.length > 0 && Math.floor(h.tim[0][0] / DAY) === dagar[dagar.length - 1] + 1;
     const folkOk = [...h.tim, ...h.dygn].every(r => r[i('folk')] >= 0 && r[i('folk')] <= 40 && r[i('humor')] >= 0 && r[i('humor')] <= 1 && r[i('skog')] > 0 && r[i('skog')] < 1);
-    const sist = h.tim[h.tim.length - 1], fodda = h.kronika.filter(k => k[1].endsWith('föddes.')).length;
+    const sist = h.tim[h.tim.length - 1], fodda = h.kronika.filter(k => k[2] === 'k_fodd').length;
     const delar = serializeParts(s), hd = Object.keys(delar).filter(d => d.startsWith('historik-'));
     const storst = Math.max(...hd.map(d => new TextEncoder().encode(delar[d]).length)); // byte, som molndokumentet räknar
     const ater = JSON.parse(joinParts(Object.values(delar))).hist;
@@ -27,7 +27,7 @@ SCENARIER.historik = {
       [`äldre timmar är ett värde per dygn, utan luckor och fram till timmarna (${h.dygn.length} dygn)`, h.dygn.length >= 2 && ettPerDygn && fortsatt],
       ['nyckeltalen är rimliga (invånare, humör 0–1, skog som andel)', folkOk],
       [`födda och döda räknas upp som i byns statistik (${sist[i('fodda')]} födda, ${sist[i('doda')]} döda)`, sist[i('fodda')] === (s.stat?.fodda ?? 0) && sist[i('doda')] === (s.stat?.doda ?? 0)],
-      [`krönikan har byns födslar och första eld (${h.kronika.length} rader)`, fodda === (s.stat?.fodda ?? 0) && h.kronika.some(k => k[1].includes('första eld')) === s.fire.lightings > 0],
+      [`krönikan har byns födslar och första eld (${h.kronika.length} rader)`, fodda === (s.stat?.fodda ?? 0) && h.kronika.some(k => k[2] === 'k_forstaEld') === s.fire.lightings > 0],
       [`historiken sparas i en del per vecka (${hd.join(', ')}; största ${Math.round(storst / 1024)} KB av högst ${DOK_KB})`, hd.length === 2 && storst < DOK_KB * 1024 && !delar.byn.includes('"hist"')],
       ['delarna blir samma historik igen', isDeepStrictEqual(ater, JSON.parse(serialize(s)).hist)],
       ['historiken ändrar inget i byn', JSON.stringify(utan) === serialize(t)],

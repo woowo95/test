@@ -357,7 +357,7 @@ SCENARIER.bygg = {
     // en vägg rasar och byggs om: huset är klart igen, men blir inte färdigt en gång till (krönikan, Gemenskap; samhalle-55)
     let omKlar = false, kronikaFore = 0, kronikaEfter = 0, gemFore = 0, gemEfter = 0;
     if (h?.klar) {
-      const fardigt = () => (q.hist?.kronika ?? []).filter(([, txt]) => txt.endsWith(' blev färdigt.')).length; // huset kan ha bytt namn med funktionen (steg 1.6.4)
+      const fardigt = () => (q.hist?.kronika ?? []).filter(k => k[2] === 'k_husKlar').length; // huset kan ha bytt namn med funktionen (steg 1.6.4)
       const vg = bitsOf(q).find(b => b.hus === h.id && b.k === 'vagg')!, by = living(q)[0];
       kronikaFore = fardigt(); gemFore = q.seder.ev.gemenskap;
       vg.c = 1e-6; wearBuild(q, 1, ageIndex(q));
