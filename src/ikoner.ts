@@ -135,6 +135,8 @@ const PAL: Record<string, Record<string, string>> = {
   a_smalta: { w: '#f4efe0', a: '#9fc6e8', y: '#f2d27a', r: '#e0604e' },
   a_vatten: { w: '#dad0bb', a: '#8a9c9e' }, // steg 2.10.1, platshållare i bildstilens palett
   // relationstyperna (steg 3.1.1, RELATIONER i relationer.ts), platshållare i bildstilens palett
+  b_heder: { o: '#24201d', g: '#d8b25f', G: '#906f0f', r: '#a8423a', R: '#7a2c26' }, // hedersnamnet (steg 3.9.1, platshållare)
+  b_skam: { o: '#24201d', w: '#dad0bb', k: '#8a7f6a', r: '#a8423a' }, // öknamnet (steg 3.9.1, platshållare)
   m_hardVinter: { o: '#24201d', s: '#bdb39b', S: '#f2ece0', k: '#dad0bb', b: '#61767a' },
   i_legend: { a: '#d8b25f', b: '#b2921b', g: '#906f0f', o: '#24201d', w: '#dad0bb', z: 'rgba(0,0,0,.30)' },
   i_okand: { a: '#dad0bb', b: '#a0947d', k: '#2f261d', o: '#24201d', z: 'rgba(0,0,0,.30)' },
@@ -1161,6 +1163,44 @@ const PIX: Record<string, string[]> = {
     '...oyo....',
     '..oyo.....',
     '...o......',
+  ],
+  // hedersnamnet (steg 3.9.1, platshållare i bildstilens palett, 16 punkter): en medalj i ett band
+  b_heder: [
+    '...oo......oo...',
+    '...orro..oRRo...',
+    '....orRooRro....',
+    '.....orRRro.....',
+    '......oRRo......',
+    '.....oooooo.....',
+    '....oggggggo....',
+    '...ogGggggGgo...',
+    '...oggGggGggo...',
+    '...ogggGGgggo...',
+    '...oggGggGggo...',
+    '...ogGggggGgo...',
+    '....oggggggo....',
+    '.....oooooo.....',
+    '................',
+    '................',
+  ],
+  // öknamnet (steg 3.9.1, platshållare i bildstilens palett, 16 punkter): en pratbubbla med ett rött kryss
+  b_skam: [
+    '................',
+    '..oooooooooooo..',
+    '.owwwwwwwwwwwwo.',
+    '.owwrwwwwwwrwwo.',
+    '.owwwrwwwwrwwwo.',
+    '.owwwwrwwrwwwwo.',
+    '.owwwwwrrwwwwwo.',
+    '.owwwwwrrwwwwwo.',
+    '.owwwwrwwrwwwwo.',
+    '.owwwrwwwwrwwwo.',
+    '.owwrwwwwwwrwwo.',
+    '.owwwwwwwwwwwwo.',
+    '..ooookwoooooo..',
+    '.....okwo.......',
+    '.....oko........',
+    '.....oo.........',
   ],
   // den hårda vintern (steg 3.8.1, platshållare i bildstilens palett, 16 punkter): en snöflinga med en kall termometer
   m_hardVinter: [

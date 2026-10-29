@@ -1196,3 +1196,54 @@ SCENARIER.slagsmal = {
     ];
   },
 };
+
+SCENARIER.berattelser = {
+  text: 'Steg 3.9.1: berättelserna är mallar i registret BERATTELSER med minst åtta varianter var, valda ur byns frö, personen och tiden (aldrig spelets slump). När minst hälften av de andra vuxna har samma starka intryck av någon får hen ett öknamn eller hedersnamn efter det ("Ask Tjuven"). Namnet syns i loggen och krönikan och står kvar livet ut, och ett nytt tar bara över om det är mycket starkare',
+  kor: () => {
+    const t = createState(9, START);
+    klockan(t, 12);
+    const p = nyInvanare(t, 'm', 30), andra = [0, 1, 2, 3, 4].map(i => nyInvanare(t, i % 2 ? 'k' : 'm', 25 + i));
+    const vuxna = living(t).filter(q => ageOf(q, t.now) >= SIM.ALDER.vuxen && q !== p);
+    const ge = (k: SIM.IntryckTyp, v: number, n: number, h: SIM.HandelseTyp) => {
+      for (const q of vuxna.slice(0, n)) {
+        const e = SIM.intryckOm(q, p.id, k);
+        if (e) e.v = v; else (q.intryck ??= []).push({ om: p.id, namn: p.name, k, v, c: 1, t: t.now, bev: [{ h, t: t.now, mot: andra[0].id, motNamn: andra[0].name, sak: 'en yxa', sett: true }] });
+      }
+    };
+    const halva = Math.ceil(vuxna.length * SIM.BERATT.andel);
+    // för få: inget namn
+    ge('tjuv', 1, halva - 1, 'stold'); t.now = Math.ceil(t.now / (6 * HOUR)) * 6 * HOUR; SIM.stepBerattelser(t);
+    const forFa = !p.binamn;
+    // hälften: ett öknamn efter tjuveriet, i loggen och krönikan
+    ge('tjuv', 1, halva, 'stold'); SIM.stepBerattelser(t);
+    const ok = p.binamn, logRad = t.log.find(l => l.ids.includes(p.id) && l.text.includes(ok?.namn ?? '¤'))?.text ?? '';
+    const kron = t.hist?.kronika.some(([, x]) => x.includes(ok?.namn ?? '¤')) ?? false;
+    // ett lite starkare hedersnamn tar inte över, ett mycket starkare gör det
+    ge('flitig', 1.05, halva, 'masterverk'); SIM.stepBerattelser(t);
+    const kvar = p.binamn?.k === 'tjuv';
+    ge('flitig', 1.5, vuxna.length, 'masterverk'); SIM.stepBerattelser(t);
+    const bytt = p.binamn?.k === 'flitig';
+    // intrycken bleknar: namnet stannar
+    for (const q of vuxna) q.intryck = [];
+    SIM.stepBerattelser(t);
+    const stannar = p.binamn?.k === 'flitig';
+    // varianterna: minst åtta i varje mall, båda formerna i varje namn, och samma nyckel ger samma text
+    const mallar = Object.values(SIM.BERATTELSER).every(v => v.length >= 8);
+    const namn = Object.values(SIM.BINAMN).every(b => b.namn.length >= 3 && b.namn.every(([m, k]) => m && k));
+    const f = { namn: 'Ask', binamn: 'Tjuven', helt: 'Ask Tjuven', hen: 'han', skal: 'stal en yxa' };
+    const lika = SIM.berattelse(t, 'oknamn', 7, f) === SIM.berattelse(t, 'oknamn', 7, f);
+    const olika = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(i => SIM.berattelse(t, 'oknamn', i, f))).size;
+    return [
+      ['för få med samma intryck ger inget namn', forFa],
+      [`hälften av de vuxna ger ett öknamn (${ok ? SIM.heltNamn({ ...p, binamn: ok }) : 'inget'})`, ok?.k === 'tjuv'],
+      [`loggen berättar varför (${logRad})`, /yxa/.test(logRad)],
+      ['namnet står i krönikan', kron],
+      ['ett lite starkare intryck tar inte över namnet', kvar],
+      [`ett mycket starkare gör det (${p.binamn?.namn ?? '–'})`, bytt],
+      ['namnet stannar när intrycken bleknar', stannar],
+      ['personens viktiga händelser minns namnet', p.fame.some(x => /Kallades/.test(x))],
+      ['minst åtta varianter i varje mall, och båda formerna av varje namn', mallar && namn],
+      [`samma nyckel ger samma text, olika nycklar olika (${olika} av 12)`, lika && olika >= 5],
+    ];
+  },
+};
