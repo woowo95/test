@@ -748,6 +748,55 @@ SCENARIER.avstand = {
   },
 };
 
+SCENARIER.knuff = {
+  text: 'Knuff, fall och tappade vapen (steg 3.7.8): knuffen fäller lättare den som bär tungt och på hal mark, man halkar på hal mark, den som fallit reser sig, i lek och hos den som inte är blodtörstig får den som ligger resa sig, och ett tappat vapen hämtas av ägaren eller en motståndare',
+  kor: () => {
+    type K = SIM.Uppstallning['kampar'][number];
+    const m = (id: number, sida: 0 | 1, vapen: SIM.Vapen, o: Partial<K> = {}, st: Partial<K['st']> = {}): K => ({ id, namn: `K${id}`, sida, st: { styrka: 10, uthallighet: 10, mod: 10, smidighet: 10, skicklighet: 10, ...st }, vapen, klader: [], fart: 1, x: sida ? 11 : 9, y: 7, ...o });
+    const kor = (avsikt: SIM.Avsikt, k: K[], n: number, halt = 0) => Array.from({ length: n }, (_, i) => SIM.stridTillSlut(SIM.nyStrid({ avsikt, w: 20, h: 14, halt, kampar: k }, i * 7919 + 5)));
+    const rader = (sts: SIM.Strid[], h: SIM.StridRad['h'], f: (r: SIM.StridRad) => boolean = () => true) => sts.reduce((a, st) => a + st.logg.filter(r => r.h === h && f(r)).length, 0);
+    const fall = (sts: SIM.Strid[]) => rader(sts, 'omkull') / Math.max(1, rader(sts, 'omkull') + rader(sts, 'knuff'));
+    // knuffen: oftare med händerna, och den fäller lättare på hal mark och den som bär tungt
+    const hand = kor('slagsmal', [m(1, 0, 'hand'), m(2, 1, 'hand')], 100), vapen = kor('skada', [m(1, 0, 'kniv'), m(2, 1, 'kniv')], 100);
+    const knH = (rader(hand, 'knuff') + rader(hand, 'omkull')) / Math.max(1, rader(hand, 'traff') + rader(hand, 'miss')), knV = (rader(vapen, 'knuff') + rader(vapen, 'omkull')) / Math.max(1, rader(vapen, 'traff') + rader(vapen, 'miss'));
+    const torr = fall(kor('slagsmal', [m(1, 0, 'hand'), m(2, 1, 'hand')], 150)), hal = fall(kor('slagsmal', [m(1, 0, 'hand'), m(2, 1, 'hand')], 150, 1));
+    const tung = fall(kor('slagsmal', [m(1, 0, 'hand'), m(2, 1, 'hand', { tung: 1 })], 150));
+    const halka = kor('skada', [m(1, 0, 'kniv', { x: 2 }), m(2, 1, 'kniv', { x: 18 })], 100, 1);
+    // den som fallit reser sig, och i lek får hen resa sig; den blodtörstige rusar fram i ett slagsmål
+    const lek = kor('lek', [m(1, 0, 'hand'), m(2, 1, 'hand')], 150);
+    const snall = kor('slagsmal', [m(1, 0, 'hand', {}, { torst: 0 }), m(2, 1, 'hand', {}, { torst: 0 })], 150), arg = kor('slagsmal', [m(1, 0, 'hand', {}, { torst: 1 }), m(2, 1, 'hand', {}, { torst: 1 })], 150);
+    const legatSla = (sts: SIM.Strid[]) => sts.some(st => st.logg.some((r, i) => {
+      if (r.h !== 'omkull') return false;
+      const efter = st.logg.slice(i + 1), u = efter.findIndex(q => q.h === 'upp' && q.a === r.b);
+      return efter.slice(0, u < 0 ? efter.length : u).some(q => (q.h === 'parera' || q.h === 'duck') && q.a === r.b);
+    }));
+    // tappade vapen: hämtas av ägaren eller en motståndare utan vapen
+    const tapp = kor('skada', [m(1, 0, 'yxa', {}, { mod: 20 }), m(2, 1, 'yxa', {}, { mod: 20 })], 300);
+    const tappHand = kor('skada', [m(1, 0, 'yxa', {}, { mod: 20 }), m(2, 1, 'hand', {}, { mod: 20 })], 300);
+    // i byn: lera efter regnet gör marken hal, och bördan räknas
+    const t = createState(11, START), [p, q] = living(t).filter(x => ageOf(x, t.now) >= SIM.ALDER.vuxen);
+    (t.vader ??= { fukt: 0, sno: 0 }).fukt = 1;
+    SIM.stridIByn(t, 'slagsmal', [[p], [q]], 'för att pröva');
+    const halIByn = (t.strider?.[t.strider.length - 1].u.halt ?? 0) > 0;
+    const borda = typeof SIM.personKampe(t, p, 1, 0, 0, 0).tung === 'number';
+    const texter = [...hand, ...halka, ...lek, ...tapp, ...tappHand].every(st => st.logg.every(r => SIM.stridText(st, r).length > 5 && !SIM.stridText(st, r).includes('undefined')));
+    return [
+      [`man knuffar oftare med händerna (${Math.round(knH * 100)} % av slagen) än med vapen (${Math.round(knV * 100)} %)`, knH > knV && rader(hand, 'omkull') > 0],
+      [`knuffen fäller lättare på hal mark (${Math.round(hal * 100)} % av knuffarna) än på torr (${Math.round(torr * 100)} %)`, hal > torr],
+      [`... och den som bär tungt (${Math.round(tung * 100)} %)`, tung > torr],
+      [`man halkar när man springer på hal mark (${rader(halka, 'halkar')} gånger på 100 strider)`, rader(halka, 'halkar') > 0],
+      [`den som fallit reser sig (${rader(hand, 'upp')} av ${rader(hand, 'omkull')} fall)`, rader(hand, 'upp') > 0],
+      ['den som ligger varken parerar eller duckar', !legatSla([...hand, ...lek, ...vapen])],
+      [`i lek får den som ligger resa sig (${rader(lek, 'later')} gånger)`, rader(lek, 'later') > 0],
+      [`i ett slagsmål låter den snälla den som ligger resa sig (${rader(snall, 'later')}), den blodtörstige rusar fram (${rader(arg, 'later')})`, rader(snall, 'later') > 0 && rader(arg, 'later') === 0],
+      [`vapen tappas (${rader(tapp, 'tappar')} gånger) och tas upp igen (${rader(tapp, 'plockar')})`, rader(tapp, 'tappar') > 0 && rader(tapp, 'plockar') > 0],
+      [`en motståndare utan vapen tar upp det som tappats (${rader(tappHand, 'plockar', r => r.b !== undefined)} gånger)`, rader(tappHand, 'plockar', r => r.b !== undefined) > 0],
+      ['leran efter regnet gör marken hal i en strid i byn, och bördan räknas', halIByn && borda],
+      ['varje ny rad i loggen blir en mening', texter],
+    ];
+  },
+};
+
 SCENARIER.smidighet = {
   text: 'Smidighet och Aggression (steg 3.7.6): båda finns hos alla och ärvs, smidigheten sjunker tidigare än styrkan, den smidiga gör finare arbete och vinner oftare i striden, den aggressiva slår hellre i ett utbrott, och blodtörsten kommer av aggression, låg empati och dåligt humör',
   kor: () => {
