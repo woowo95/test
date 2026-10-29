@@ -1321,7 +1321,47 @@ const FALLD_BLOD = [
   '................',
 ];
 const VARG_L = { G: 'skiffer2', H: 'skiffer3', g: 'skiffer1', d: 'skiffer0', W: 'ben3', w: 'ben3', k: 'kol0', y: 'senap3', r: 'rost1', R: 'rost2', q: 'rost0', j: 'jord1', J: 'jord2', x: 'kol1', O: 'jord2' }, VARG_M = { d: 'kol2', D: 'kol3', W: 'ben2', w: 'ben2', k: 'kol0', y: 'senap3' }, KOTT_L = { R: 'rost2', r: 'rost1', q: 'rost0', w: 'ben3', W: 'ben3', j: 'jord1', J: 'jord2' };
+// jaktens och kaninernas nya symboler (Björn efter v159), 8 × 8 punkter som de andra symbolerna i spelet: till vänster i rätt
+// storlek, till höger fyra gånger större
+const SYM8_M = (p, l) => ({ w: 48, h: 38, kol: true, rita: (B, P) => { ritaSprite(B, p, l, 2, 2); ritaSprite(B, p.flatMap(r => { const rr = [...r].map(c => c.repeat(4)).join(''); return [rr, rr, rr, rr]; }), l, 13, 3); } });
+const AKT_L = { w: 'ben3', a: 'skiffer3' }, KANIN_L = { b: 'jord2', B: 'jord3', w: 'ben3', k: 'kol0', r: 'rost2', y: 'senap3' };
+const SMYG_TA = ['........', '.w...w..', '........', '...ww...', '..wwww..', '..www...', '.ww.....', '........'];
+const SMYG_HUK = ['........', '....ww..', '....ww..', '.wwwww..', 'w.www...', '..w.w...', '.w...w..', '........'];
+const SMYG_SPAR = ['.....ww.', '.....ww.', '......w.', '.ww.....', '.ww.....', '..w.....', '....ww..', '....ww..'];
+const SIKTA_SPJUT = ['......aw', '.....aw.', '....w...', '...w....', '..w.....', '.w......', 'w.......', '........'];
+const SIKTA_KAST = ['.ww.....', '.ww...wa', '..w..w..', '.wwww...', '..w.....', '..w.....', '.w.w....', 'w...w...'];
+const SIKTA_OGA = ['........', '.wwwww..', 'w.waw.w.', '.wwwww..', '........', '...a....', '....a...', '.....aaa'];
+const LARM_GUL = ['..kyyk..', '..kyyk..', '..kyyk..', '..kyyk..', '...kk...', '..kyyk..', '..kyyk..', '...kk...'];
+const LARM_ROD = ['..rrrr..', '.rrwwrr.', 'rrrwwrrr', 'rrrwwrrr', 'rrrwwrrr', 'rrrrrrrr', '.rrwwrr.', '..rrrr..'];
+const LARM_BUBBLA = ['kkkkkkk.', 'kkkwkkk.', 'kkkwkkk.', 'kkkwkkk.', 'kkkkkkk.', 'kkkwkkk.', 'kkkkkkk.', '.kk.....'];
+const DOD_SIDA = ['........', '........', '........', '.bb.....', 'bkBbbbb.', 'bBBBBBBw', '.bBBrBb.', '..bbbb..'];
+const DOD_HANGER = ['..b.b...', '..bbb...', '..bBb...', '.bBBBb..', '.bBBBb..', '.bBBBb..', '..bkb...', '..b.b...'];
+const DOD_BLOD = ['........', '........', '.bb.....', 'bkBbbbb.', 'bBBBBBBw', '.bbbbbb.', '.rrrrr..', 'rrrrrrr.'];
 const VAL = [
+  { id: 'a_smyga', namn: 'Att smyga', vad: 'Ny symbol över huvudet (Björn efter v159), 8 × 8 punkter som de andra handlingarna: jägaren smyger fram mot en kanin. I spelet nu: version 1 (platshållare).', typ: 'tre',
+    versioner: [
+      { text: 'En fot på tå med två tysta prickar.', ...SYM8_M(SMYG_TA, AKT_L) },
+      { text: 'En människa som hukar sig framåt.', ...SYM8_M(SMYG_HUK, AKT_L) },
+      { text: 'Tre fotspår i rad.', ...SYM8_M(SMYG_SPAR, AKT_L) },
+    ] },
+  { id: 'a_sikta', namn: 'Att sikta', vad: 'Ny symbol över huvudet (Björn efter v159), 8 × 8 punkter: jägaren har stannat och siktar innan hen kastar. I spelet nu: version 1 (platshållare).', typ: 'tre',
+    versioner: [
+      { text: 'Ett spjut snett uppåt med spetsen åt höger.', ...SYM8_M(SIKTA_SPJUT, AKT_L) },
+      { text: 'En människa med armen bakåt och spjutet redo att kastas.', ...SYM8_M(SIKTA_KAST, AKT_L) },
+      { text: 'Ett öga som tittar längs en linje mot målet.', ...SYM8_M(SIKTA_OGA, AKT_L) },
+    ] },
+  { id: 'kanin_larm', namn: 'Kaninen har sett någon', vad: 'Ny symbol (Björn efter v159), 8 × 8 punkter, över en kanin som ser en människa och flyr. I spelet nu: version 1 (platshållare).', typ: 'tre',
+    versioner: [
+      { text: 'Ett gult utropstecken med mörk kant.', ...SYM8_M(LARM_GUL, KANIN_L) },
+      { text: 'Ett vitt utropstecken på en röd bricka.', ...SYM8_M(LARM_ROD, KANIN_L) },
+      { text: 'Ett vitt utropstecken i en mörk pratbubbla.', ...SYM8_M(LARM_BUBBLA, KANIN_L) },
+    ] },
+  { id: 'kanin_dod', namn: 'Den fångade kaninen', vad: 'Ny bild (Björn efter v159), 8 × 8 punkter som kaninen: kaninen som jägaren fångat ligger kvar tills hen hämtar den. I spelet nu: version 1 (platshållare).', typ: 'tre',
+    versioner: [
+      { text: 'Kaninen på sidan med en röd fläck.', ...SYM8_M(DOD_SIDA, KANIN_L) },
+      { text: 'Kaninen som hänger i bakbenen.', ...SYM8_M(DOD_HANGER, KANIN_L) },
+      { text: 'Kaninen på sidan med en blodpöl under.', ...SYM8_M(DOD_BLOD, KANIN_L) },
+    ] },
   { id: 'varg', namn: 'Vargen', vad: 'Nytt djur (steg 3.7.1), 16 × 16 punkter, på kartan när en flock stryker runt byn. Till vänster i rätt storlek, till höger tre gånger större. I spelet nu: den fällda vargens platshållare.', typ: 'tre',
     versioner: [
       { text: 'En grå varg från sidan med spetsiga öron, ljus nos och bröst och en buskig svans.', ...LED_M(VARG_STAR, VARG_L) },
