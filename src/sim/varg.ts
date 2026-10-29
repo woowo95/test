@@ -1,10 +1,13 @@
 import { balans } from './balans';
 import { blodas } from './blod';
-import { roomAt, freeNear } from './byggnad';
+import { bedFor } from './bygg';
+import { roomAt, freeNear, gridOf } from './byggnad';
 import { dodaDjur, dragOf, djurOf, grupperOf, halsaOf, satDjurHalsa } from './djur';
 import { ALDER, KROPP, ageOf, byId, count, forstaGang, getRel, isSick, living, log, ovning, stat, think } from './folk';
 import { halsa, kanGa, skada } from './halsa';
+import { Act } from './handlingar';
 import { eldPlats, getMap } from './karta';
+import { punktIRuta } from './mark';
 import { addTo, amountOf, avbryt, foodOf, zoneOf } from './lager';
 import { die } from './liv';
 import { handelse, larma, larmNu } from './rykten';
@@ -13,7 +16,8 @@ import { clamp, rnd } from './slump';
 import { STRID, SLAGSMAL, VAPEN, Avsikt, Strid, Uppstallning, djurKampe, foljet, kastat, nyStrid, personKampe, stridTillSlut } from './strid';
 import { ledareOf } from './styre';
 import { ageIndex, iIstiden, isLight } from './tid';
-import { H, HOUR, Person, SEC, State, T, Task, Vargflock, W } from './typer';
+import { H, HOUR, MIN, Person, SEC, State, T, Task, Vargflock, W } from './typer';
+import { taVapen } from './vakt';
 import { snoPaMarken, vaderNu } from './vader';
 
 // ---------- vargen och vakten (steg 3.7.1) ----------
@@ -75,6 +79,10 @@ export const VARG = balans('varg', {
   flyrJakt: 0.3, // flocken springer innan striden med den här chansen, gånger jägarnas antal mot vargarnas (högst 1)
   // striden
   bettInf: 0.3, // ett vargbett blir infekterat med den här chansen
+  // skyddet (steg 3.7.15): den vuxna vågar möta flocken när mod / 20 + fler × (de vuxna som kan slåss / vargarna) är över vagar
+  fler: 0.3,
+  vagar: 0.8,
+  smaBarn: 8, // en förälder stannar hos sina barn under den här åldern
 });
 
 const flockarna = (s: State) => s.vargar ?? [];
@@ -157,17 +165,60 @@ function ses(s: State, f: Vargflock, folk: Person[]) {
   if (!p) return;
   f.sedd = s.now;
   if (forstaGang(s, 'vargSedd')) log(s, `${p.name} såg ${f.vargar.length > 1 ? `en flock vargar (${f.vargar.length})` : 'en ensam varg'} för första gången.`, 'world', [p.id]);
-  larma(s, f.x, f.y, 'varg', f.vargar.length, [p]);
+  const hort = larma(s, f.x, f.y, 'varg', f.vargar.length, [p]);
   // vakten väcker de vuxna som sover när flocken är nära byn
   const e = eldPlats(s);
   if (vakt && Math.hypot(f.x - e.x - 0.5, f.y - e.y - 0.5) < VARG.vack) {
     let n = 0;
-    for (const q of folk) if (q.task?.act === 'sova' && ageOf(q, s.now) >= ALDER.vaktFran) { avbryt(s, q); q.task = undefined; q.larm = { t: s.now, x: f.x, y: f.y, vad: 'varg', storlek: f.vargar.length, led: 0 }; n++; }
+    for (const q of folk) if (q.task?.act === 'sova' && ageOf(q, s.now) >= ALDER.vaktFran && !(skyddas(s, q) && iHus(s, q))) { avbryt(s, q); q.task = undefined; q.larm = { t: s.now, x: f.x, y: f.y, vad: 'varg', storlek: f.vargar.length, led: 0 }; n++; }
     if (n) { count(s, 'vargVackt', n); log(s, `${vakt.name} höll vakt och väckte byn: vargar nära.`, 'world', [vakt.id]); }
   }
+  soker(s, [p, ...hort]);
 }
-// har p väckts av vargar och håller sig vaken vid elden? (val.ts)
-export const vaktarVarg = (s: State, p: Person) => { const l = larmNu(s, p); return !!l && l.vad === 'varg' && s.now - l.t < VARG.vakenTim * HOUR; };
+// har p hört att vargar är nära (ropet eller vakten) inom VARG.vakenTim?
+const vargLarm = (s: State, p: Person) => { const l = larmNu(s, p); return l && l.vad === 'varg' && s.now - l.t < VARG.vakenTim * HOUR ? l : undefined; };
+
+// ---------- skyddet när vargen kommer (steg 3.7.15) ----------
+// När ropet hörs eller vakten väcker byn går barnen, de gamla, de sjuka och de svårt skadade in i närmaste hus, familjens eget
+// först, och utan hus till elden nära de vuxna. Den som redan sover i ett hus sover vidare. En förälder med små barn stannar
+// hos dem. De vuxna som vågar möta flocken (modet mot flockens storlek) tar sitt eget bästa vapen eller byns och samlas vid
+// elden. Det varar VARG.vakenTim; sedan läggs vapnet tillbaka (agande.ts: tidyTools)
+const skyddas = (s: State, p: Person) => { const a = ageOf(p, s.now); return a < ALDER.vaktFran || a >= ALDER.gammal || isSick(p, s.now) || halsa(p) < KROPP.svag; };
+const iHus = (s: State, p: Person) => !!roomAt(s, Math.floor(p.x), Math.floor(p.y));
+const smaBarnOf = (s: State, p: Person) => living(s).filter(c => (c.mother === p.id || c.father === p.id) && ageOf(c, s.now) < VARG.smaBarn);
+// närmaste plats under tak: den egna sängen om den är under tak, annars en ruta i närmaste rum
+function husPlats(s: State, p: Person) {
+  const bed = bedFor(s, p);
+  if (bed && roomAt(s, Math.floor(bed.x), Math.floor(bed.y))) return bed;
+  let bast: number | undefined, bd = Infinity;
+  for (const r of gridOf(s).rooms) for (const i of r.tiles) { const d = Math.hypot(i % W + 0.5 - p.x, Math.floor(i / W) + 0.5 - p.y); if (d < bd) { bd = d; bast = i; } }
+  return bast === undefined ? undefined : punktIRuta(s, bast, p);
+}
+const vidElden = (s: State) => { const e = eldPlats(s); return freeNear(s, e.x + 0.5, e.y + 1.5); };
+// vad p gör när vargar är nära (val.ts), eller undefined
+export function vargSkydd(s: State, p: Person): { act: Act; why: string; spot?: { x: number; y: number }; dur: number } | undefined {
+  const l = vargLarm(s, p);
+  if (!l || !kanGa(p)) return;
+  const dur = Math.max(MIN, l.t + VARG.vakenTim * HOUR - s.now), a = ageOf(p, s.now);
+  if (skyddas(s, p)) {
+    if (p.task?.act === 'sova' && iHus(s, p)) return;
+    const hus = husPlats(s, p);
+    return hus ? { act: 'gomma', why: 'Vargar är nära, gömmer sig i huset', spot: hus, dur } : { act: 'gomma', why: 'Vargar är nära, håller sig vid elden nära de vuxna', spot: vidElden(s), dur };
+  }
+  const barn = smaBarnOf(s, p)[0];
+  if (barn) { const hus = husPlats(s, barn); return { act: 'gomma', why: 'Vargar är nära, stannar hos barnen', spot: hus ?? vidElden(s), dur }; }
+  const vuxna = living(s).filter(q => !skyddas(s, q) && kanGa(q)).length;
+  if (a >= ALDER.vaktFran && stat(p, 'mod', s.now) / 20 + VARG.fler * vuxna / Math.max(1, l.storlek) > VARG.vagar) return { act: 'forsvar', why: `Vargar är nära, tar ${taVapen(s, p) ? 'ett vapen' : 'det som finns'} och väntar vid elden`, dur };
+  return { act: 'samtal', why: 'Vargar är nära, håller sig vaken vid elden', dur };
+}
+// den som hör ropet avbryter det hen gör och söker skydd (inte den som slåss, vårdar, bärs eller håller vakt)
+const AVBRYTS_INTE = new Set<string>(['strid', 'vargjakt', 'vakt', 'buren', 'fatt', 'varda', 'gomma', 'forsvar']);
+function soker(s: State, folk: Person[]) {
+  for (const q of folk) {
+    if (!q.task || AVBRYTS_INTE.has(q.task.act) || q.task.act === 'sova' && iHus(s, q) || !vargLarm(s, q)) continue; // den som sover i ett hus sover vidare
+    avbryt(s, q); q.task = undefined; count(s, 'vargSkydd');
+  }
+}
 
 // den som är ensam: ingen annan nära, inte i ett hus och inte vid en brinnande eld
 function ensam(s: State, p: Person, folk: Person[]) {
@@ -291,7 +342,7 @@ export function vargStrid(s: State, f: Vargflock, folk: Person[], avsikt: Avsikt
   (s.strider ??= []).push({ t: s.now, orsak: 'vargar ' + orsak, u, fro, vinnare });
   if (s.strider.length > SLAGSMAL.sparas) s.strider.splice(0, s.strider.length - SLAGSMAL.sparas);
   count(s, 'strider'); count(s, 'vargstrid');
-  larma(s, folk[0].x, folk[0].y, 'varg', n, folk.filter(vaken));
+  soker(s, larma(s, folk[0].x, folk[0].y, 'varg', n, folk.filter(vaken)));
   // vargarna: de döda och de skadade, och vem som dödade
   const doda: Person[] = [], kvar: number[] = [];
   f.vargar.forEach((id, j) => {

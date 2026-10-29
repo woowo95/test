@@ -1,6 +1,6 @@
 import { MIN, State, Person } from './typer';
 import { REDSKAP_SLAG, SAKER, isTool } from './saker';
-import { usesTool } from './handlingar';
+import { ACTS, usesTool } from './handlingar';
 import { alive, byId } from './folk';
 import { kvHaller } from './kvalitet';
 
@@ -84,7 +84,7 @@ export function tidyTools(s: State) {
     if (t.hos === undefined) continue;
     const q = byId(s, t.hos);
     if (!q || !alive(q)) t.hos = undefined;
-    else if (usesTool(q.task) !== t.k && t.agare !== q.id && q.task?.act !== 'vakt') t.hos = undefined; // vakten har byns vapen i handen hela natten (vakt.ts)
+    else if (usesTool(q.task) !== t.k && t.agare !== q.id && !(q.task && ACTS[q.task.act].vapen)) t.hos = undefined; // vakten har byns vapen i handen hela natten (vakt.ts), och den som väntar på vargarna (varg.ts)
   }
 }
 // äldre sparfiler: redskapen räknades bara som summor (s.items, och i v30 ägarlistor). Varje helt redskap blir ett ting.

@@ -29,14 +29,16 @@ function punkt(s: State, i: number) {
   }
   return { x: e.x + 0.5, y: e.y + 1.5 };
 }
-// vakten tar sitt eget bästa vapen eller byns, som ingen annan har i handen eller bär
-function taVapen(s: State, p: Person) {
+// vakten (och den som försvarar byn mot vargarna, varg.ts) tar sitt eget bästa vapen eller byns, som ingen annan har i handen eller bär
+export function taVapen(s: State, p: Person) {
   const ok = (MANNISKOVAPEN as readonly string[]).filter(v => v !== 'hand');
   const t = tingOf(s).filter(t => ok.includes(t.k) && !t.halv && (t.agare === p.id || t.agare === BYN) && (t.hos === undefined || t.hos === p.id) && t.lass === undefined && (t.bar === undefined || t.bar === p.id))
     .sort((a, b) => (VAPEN as Record<string, { skada: number }>)[b.k].skada - (VAPEN as Record<string, { skada: number }>)[a.k].skada || b.c - a.c)[0];
-  if (!t || t.hos === p.id) return;
+  if (!t) return false;
+  if (t.hos === p.id) return true;
   for (const o of tingOf(s)) if (o.hos === p.id) o.hos = undefined;
   t.hos = p.id; t.x = t.y = undefined;
+  return true;
 }
 // medan vakten står vid elden eller vid ett stopp (MEDAN i steg.ts): när stoppet är slut går hen vidare
 export function vaktSteg(s: State, p: Person, tk: Task) {

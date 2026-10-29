@@ -1,6 +1,6 @@
 import { take } from './agande';
 import { PLATS, campCenter, campDist, campKey } from './plats';
-import { vaktarVarg } from './varg';
+import { vargSkydd } from './varg';
 import { RESERV, foodDays } from './ekonomi';
 import { ACTS, WORK, usesTool } from './handlingar';
 import { canLight, emberOn, fireWant, needStones, needTinder, woodDays } from './eld';
@@ -351,7 +351,9 @@ const set = (v: Val, act: Act, why: string) => { v.act = act; v.why = why; retur
 export function chooseTask(s: State, p: Person) {
   const a = ageOf(p, s.now), light = isLight(s.now), lazy = 1 - duty(s, p);
   const v: Val = { act: 'vila', why: '', dur: (VAL.vilaMin + rnd(s, 'val', p) * VAL.vilaSpann) * MIN }; // 20–60 min
-  if (!needs(s, p, v, a, lazy, light) && !(light && utbrottVal(s, p, v))) { if (light) day(s, p, v, a, lazy); else night(s, p, v, a); }
+  const sk = vargSkydd(s, p); // vargar är nära (steg 3.7.15)
+  if (sk) { set(v, sk.act, sk.why); v.spot = sk.spot; v.dur = sk.dur; }
+  else if (!needs(s, p, v, a, lazy, light) && !(light && utbrottVal(s, p, v))) { if (light) day(s, p, v, a, lazy); else night(s, p, v, a); }
   if (ACTS[v.act].social && v.act !== 'maltid' && skams(p, s.now)) { v.act = 'skams'; v.why = 'Skäms och håller sig undan de andra'; v.spot = undefined; } // straffet skam (steg 3.5.3, styre.ts)
   if (v.act === 'toa') {
     v.dur = (VAL.toaMin + rnd(s, 'val', p) * VAL.toaSpann) * MIN;
@@ -691,7 +693,6 @@ function night(s: State, p: Person, v: Val, a: number) {
     }
   }
   if (p.guardDay === guardDay && a >= ALDER.vaktFran) { set(v, 'vakt', 'Håller vakt i natt'); return; }
-  if (a >= ALDER.vaktFran && vaktarVarg(s, p)) { set(v, 'samtal', 'Vargar är nära, håller sig vaken vid elden'); return; } // väckt av vakten (varg.ts)
   const r = rnd(s, 'val', p);
   const story = (p.skill.berattande + (a > VAL.berattaAlder ? VAL.berattaBonus : 0)) / VAL.berattaDiv;
   const craftW = (p.skill.hantverk + stat(p, 'flit', now)) / VAL.nattHantDiv;

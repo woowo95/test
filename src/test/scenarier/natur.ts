@@ -1389,7 +1389,7 @@ SCENARIER.varg = {
     const harVakt = living(nv).some(q => q.task?.act === 'vakt');
     flock(nv, 4, 12, 0.3); kor(nv, 1);
     const vakt = nv.stat?.vargVackt ?? 0, sedd = nv.stat?.vargSedd ?? 0;
-    const vaken = living(nv).filter(q => SIM.vaktarVarg(nv, q)).length;
+    const vaken = living(nv).filter(q => q.larm?.vad === 'varg' && q.task && q.task.act !== 'sova').length;
     // en hungrig flock anfaller den som är ensam långt från byn
     const an = by(12), e = SIM.eldPlats(an), tl = SIM.getMap(an.seed).tiles, ensam = living(an).find(q => ageOf(q, an.now) >= 18)!;
     const land = (a: number, r: number) => { const x = Math.round(e.x + Math.cos(a) * r), y = Math.round(e.y + Math.sin(a) * r); return SIM.inMap(x, y) && tl[y * W + x] !== SIM.T.Vatten ? { x: x + 0.5, y: y + 0.5 } : undefined; };
@@ -1462,6 +1462,47 @@ SCENARIER.patrull = {
       [`vakten stannar vid elden ibland (${vidEld} stunder)`, vidEld > 0],
       [`vakten har byns spjut i handen (${haller} stunder, ${slag}) och striden räknar med det (${kv})`, haller > 0 && slag === 'fiskespjut' && kv === 'fiskespjut'],
       [`vakten tar aldrig någon annans vapen (${tog} gånger)`, tog === 0],
+    ];
+  },
+};
+
+SCENARIER.vargskydd = {
+  text: 'Skydd när vargen kommer (steg 3.7.15): när ropet hörs eller vakten väcker byn går barnen, de gamla, de sjuka och de svårt skadade in i närmaste hus (utan hus till elden), en förälder stannar hos sina små barn, och de modiga vuxna tar ett vapen och väntar vid elden. Efter en stund läggs vapnen tillbaka',
+  kor: () => {
+    const prov = (hus: boolean, seed: number) => {
+      const s = createState(seed, START); s.kal = nyKalender(s.now, 0); klockan(s, 20); tandEld(s);
+      if (hus) medHus(s);
+      for (let i = 0; i < 4; i++) SIM.newTing(s, 'fiskespjut', 1, SIM.BYN);
+      kor(s, 0.2);
+      const c = campCenter(s), id = s.vargNr = (s.vargNr ?? 0) + 1;
+      (s.vargar ??= []).push({ id, vargar: [10_000_000 + id * 8, 10_000_001 + id * 8], x: c.x + 9, y: c.y, mx: c.x + 9, my: c.y, kom: s.now, gar: s.now + 48 * HOUR, hunger: 0.1, gor: 'stryker' });
+      let gom = 0, svaga = 0, iHus = 0, vidEld = 0, forsvar = 0, medVapen = 0, foralder = 0;
+      kor(s, 0.4);
+      s.vargar = undefined; // flocken drar vidare
+      const e = SIM.eldPlats(s);
+      for (const q of living(s)) {
+        if (q.larm?.vad !== 'varg') continue;
+        const a = ageOf(q, s.now), svag = a < SIM.ALDER.vaktFran || a >= SIM.ALDER.gammal;
+        const at = q.task?.phase === 'go' ? { x: q.task.tx, y: q.task.ty } : q;
+        if (svag) { svaga++; if (q.task?.act === 'gomma' || q.task?.act === 'sova' && SIM.roomAt(s, Math.floor(q.x), Math.floor(q.y))) { gom++; if (SIM.roomAt(s, Math.floor(at.x), Math.floor(at.y))) iHus++; else if (Math.hypot(at.x - e.x - 0.5, at.y - e.y - 0.5) < 5) vidEld++; } }
+        if (!svag && q.task?.act === 'gomma' && /barnen/.test(q.task.why ?? '')) foralder++;
+        if (q.task?.act === 'forsvar') { forsvar++; if (SIM.tingOf(s).some(t => t.hos === q.id)) medVapen++; }
+      }
+      kor(s, 2);
+      const kvar = living(s).filter(q => q.task?.act === 'gomma' || q.task?.act === 'forsvar').length;
+      const iHanden = SIM.tingOf(s).filter(t => t.k === 'fiskespjut' && t.hos !== undefined && byIdTask(s, t.hos) !== 'vakt').length;
+      return { gom, svaga, iHus, vidEld, forsvar, medVapen, foralder, kvar, iHanden, skydd: s.stat?.vargSkydd ?? 0 };
+    };
+    const byIdTask = (s: State, id: number) => living(s).find(q => q.id === id)?.task?.act;
+    const ute = [1, 2, 3].map(sd => prov(false, sd)), inne = [1, 2, 3].map(sd => prov(true, sd));
+    const sum = (r: ReturnType<typeof prov>[], k: keyof ReturnType<typeof prov>) => r.reduce((a, x) => a + x[k], 0);
+    return [
+      [`ropet får folk att söka skydd (${sum(ute, 'skydd') + sum(inne, 'skydd')} avbrutna uppgifter)`, sum(ute, 'skydd') + sum(inne, 'skydd') > 0],
+      [`utan hus håller sig barnen och de gamla vid elden (${sum(ute, 'vidEld')} av ${sum(ute, 'svaga')} som hört ropet)`, sum(ute, 'vidEld') > 0 && sum(ute, 'iHus') === 0],
+      [`med hus gömmer de sig i huset (${sum(inne, 'iHus')} av ${sum(inne, 'svaga')})`, sum(inne, 'iHus') > sum(inne, 'svaga') / 2],
+      [`de modiga vuxna väntar vid elden (${sum(ute, 'forsvar') + sum(inne, 'forsvar')}), med vapen i handen (${sum(ute, 'medVapen') + sum(inne, 'medVapen')})`, sum(ute, 'forsvar') + sum(inne, 'forsvar') > 0 && sum(ute, 'medVapen') + sum(inne, 'medVapen') > 0],
+      [`en förälder stannar hos sina små barn (${sum(ute, 'foralder') + sum(inne, 'foralder')} gånger)`, sum(ute, 'foralder') + sum(inne, 'foralder') > 0],
+      [`efter en stund går man tillbaka till det vanliga (${sum(ute, 'kvar') + sum(inne, 'kvar')} gömmer sig eller väntar kvar) och vapnen läggs tillbaka (${sum(ute, 'iHanden') + sum(inne, 'iHanden')} spjut i handen utom hos vakten)`, sum(ute, 'kvar') + sum(inne, 'kvar') === 0 && sum(ute, 'iHanden') + sum(inne, 'iHanden') === 0],
     ];
   },
 };

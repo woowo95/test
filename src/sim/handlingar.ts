@@ -65,6 +65,7 @@ interface ActDef {
   varmer?: true; // görs för att bli varm: ett rum väljs bara om det är minst lika varmt som vid elden (varmareInne)
   dygn?: true; // avbryts när dag blir natt eller natt blir dag
   stilla?: true; // står still på platsen (ingen småjustering i bilden)
+  vapen?: true; // har sitt vapen i handen hela tiden (vakt.ts: taVapen; agande.ts: tidyTools)
   framme?: true; // arbetstiden räknas från att man kommit fram (startsOnArrival i paborjat.ts), så att vägen dit inte äter av den
   // var den görs (val.ts): runt elden, vid kolhögen, sovplats, lekplatsen, ute på marken (skog är förvalt) eller vid
   // stationen där handlingen görs (stationer.ts; runt elden så länge byn inte har någon)
@@ -85,7 +86,10 @@ const DEF = {
   maltid: { namn: 'Äter vid bordet', tecken: '🍽️', vila: true, social: true, dygn: true, stilla: true, plats: 'bord' }, // steg 2.2.15
   beratta: { namn: 'Berättar vid elden', yrke: 'Berättare', slag: 'prata', social: true, dygn: true, plats: 'elden' },
   hantverk: { namn: 'Gör handarbete', yrke: 'Hantverkare', slag: 'hantverk', verktyg: { rep: 'Tvinnar rep' }, vila: true, hantverk: true, social: true, dygn: true, stilla: true, plats: 'elden' },
-  vakt: { namn: 'Håller vakt', yrke: 'Väktare', tecken: '👁️', social: true, dygn: true, stilla: true, plats: 'elden', radie: 2.6 },
+  vakt: { namn: 'Håller vakt', yrke: 'Väktare', tecken: '👁️', social: true, dygn: true, stilla: true, vapen: true, plats: 'elden', radie: 2.6 },
+  // när vargar är nära (steg 3.7.15, varg.ts): de svaga gömmer sig i huset, de modiga väntar med vapen vid elden
+  gomma: { namn: 'Gömmer sig för vargarna', tecken: '🫣', dygn: true, stilla: true, plats: 'sang' },
+  forsvar: { namn: 'Väntar på vargarna med vapen', tecken: '🛡️', social: true, dygn: true, stilla: true, vapen: true, plats: 'elden', radie: 2.2 },
   sova: { namn: 'Sover', slag: 'vila', vila: true, stilla: true, plats: 'sang' },
   elda: { namn: 'Lägger trä på elden', yrke: 'Eldvaktare', slag: 'elda', ger: 'ved' },
   tanda: { namn: 'Försöker tända elden', yrke: 'Eldvaktare', slag: 'elda' },
