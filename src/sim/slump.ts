@@ -8,6 +8,7 @@ import { Person, State } from './typer';
 // Det levande läget och snabbläget räknar likadant (steg.ts), så ingen följd hör till bara det ena. Det som bara syns
 // i bilden (hur man rör sig på platsen) tar sin slump i gränssnittet och rör aldrig byns följder.
 export const STROMMAR = {
+  strid: 'fröet till en strid (striden har sedan sin egen följd)',
   val: 'vad man väljer att göra och var',
   arbete: 'vad arbetet ger: fynd, fångst, fiske, svamp, rep',
   halsa: 'sjukdom, olyckor, död, graviditet och förlossning',

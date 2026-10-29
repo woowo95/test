@@ -14,6 +14,7 @@ import { renderPanel } from './ui/panel';
 import { renderPorts, stopFollow } from './ui/portratt';
 import { catchUp, loadSaves, nyByVald, saveDb, saveLocal } from './ui/spara';
 import './ui/interaktion';
+import { oppnaArena } from './ui/arena';
 
 // startpunkten: klockan, kontrollerna, huvudloopen och uppstarten. Allt annat i gränssnittet ligger i ui/
 function renderClock() {
@@ -46,7 +47,7 @@ function setSpeed(v: number) {
   speed = v;
   for (const b of document.querySelectorAll<HTMLButtonElement>('#speeds button')) b.setAttribute('aria-pressed', String(Number(b.dataset.v) === v));
 }
-function leaveTest() { ui.testMode = false; $('speeds').hidden = true; document.body.classList.remove('testing'); setSpeed(1); }
+function leaveTest() { ui.testMode = false; $('arena').hidden = true; $('speeds').hidden = true; document.body.classList.remove('testing'); setSpeed(1); }
 // testläget stängs utan att den verkliga byn kommer tillbaka (en annan by tar dess plats)
 function dropTest() { if (ui.testMode) { ($('testToggle') as HTMLInputElement).checked = false; realState = null; leaveTest(); } }
 // en ny by med slumpat frö, sparad direkt
@@ -92,6 +93,7 @@ $('testToggle').addEventListener('change', async e => {
   renderClock(); renderPanel(true);
 });
 for (const b of document.querySelectorAll<HTMLButtonElement>('#speeds button')) b.addEventListener('click', () => setSpeed(Number(b.dataset.v)));
+$('arenaKnapp').addEventListener('click', oppnaArena);
 $('newVillage').addEventListener('click', () => { $('confirmNew').hidden = false; });
 $('cancelNew').addEventListener('click', () => { $('confirmNew').hidden = true; });
 $('okNew').addEventListener('click', () => {

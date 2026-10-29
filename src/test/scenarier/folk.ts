@@ -658,3 +658,36 @@ SCENARIER.ledare = {
     ];
   },
 };
+
+SCENARIER.strid = {
+  text: 'Striden i testarenan (steg 3.7.5): samma uppställning och frö ger samma strid, avsikten avgör hur den slutar (lek vid första smärtan, slagsmål med händerna, döda slår den som ligger), vapen och kläder spelar roll, kaninen flyr, och en person ur byn tar med sitt vapen',
+  kor: () => {
+    const m = (id: number, sida: 0 | 1, vapen: SIM.Vapen, klader: string[] = [], styrka = 10) => ({ id, namn: `K${id}`, sida, st: { styrka, uthallighet: 10, mod: 10, smidighet: 10, skicklighet: 10 }, vapen, klader, fart: 1, x: sida ? 12 : 8, y: 7 });
+    const u = (avsikt: SIM.Avsikt, a: ReturnType<typeof m>, b: ReturnType<typeof m>): SIM.Uppstallning => ({ avsikt, w: 20, h: 14, kampar: [a, b] });
+    const en = SIM.stridTillSlut(SIM.nyStrid(u('skada', m(1, 0, 'yxa'), m(2, 1, 'kniv')), 7)), tva = SIM.stridTillSlut(SIM.nyStrid(u('skada', m(1, 0, 'yxa'), m(2, 1, 'kniv')), 7));
+    const samma = JSON.stringify(en.logg) === JSON.stringify(tva.logg);
+    const lek = SIM.korManga(u('lek', m(1, 0, 'yxa'), m(2, 1, 'yxa')), 1, 50);
+    const lekMedHand = SIM.nyStrid(u('lek', m(1, 0, 'yxa'), m(2, 1, 'yxa')), 1).kampar.every(k => k.vapen === 'hand');
+    const doda = SIM.korManga(u('doda', m(1, 0, 'yxa'), m(2, 1, 'yxa')), 1, 100), skada = SIM.korManga(u('skada', m(1, 0, 'yxa'), m(2, 1, 'yxa')), 1, 100);
+    const yxa = SIM.korManga(u('skada', m(1, 0, 'yxa'), m(2, 1, 'hand')), 1, 100);
+    const rock = SIM.korManga(u('skada', m(1, 0, 'kniv', ['skinnrock', 'skinnskor']), m(2, 1, 'kniv')), 1, 200);
+    const stark = SIM.korManga(u('slagsmal', m(1, 0, 'hand', [], 16), m(2, 1, 'hand', [], 6)), 1, 100);
+    const kanin = SIM.korManga({ avsikt: 'doda', w: 20, h: 14, kampar: [m(1, 0, 'kniv'), SIM.djurKampe('kanin', 2, 1, 12, 7)] }, 1, 50);
+    const t = createState(11, START), p = living(t)[0];
+    SIM.addTool(t, 'yxa', p);
+    const fran = SIM.personKampe(t, p, 1, 0, 5, 5);
+    const allaText = en.logg.every(r => SIM.stridText(en, r).length > 5), rap = SIM.stridRapport(en);
+    return [
+      ['samma uppställning och frö ger exakt samma strid', samma],
+      [`lek slutar med att någon ger upp, aldrig död (${lek.slut.ger}/50 gav upp)`, lek.slut.ger === 50 && lek.slut.dod === 0],
+      ['i lek och slagsmål slåss man med händerna', lekMedHand],
+      [`med avsikten döda dör fler än med skada (${doda.slut.dod} mot ${skada.slut.dod} av 100)`, doda.slut.dod > skada.slut.dod],
+      [`yxan vinner mot knytnävarna (${yxa.vann[0]} av 100)`, yxa.vann[0] >= 80],
+      [`skinnrock och skor hjälper (${rock.vann[0]} mot ${rock.vann[1]} av 200)`, rock.vann[0] > rock.vann[1]],
+      [`den starke vinner slagsmålet (${stark.vann[0]} av 100)`, stark.vann[0] >= 70],
+      [`kaninen flyr eller dör, vinner aldrig (${kanin.vann[1]} vann)`, kanin.vann[1] === 0],
+      [`personen ur byn tar med sin yxa (${fran.vapen}) och sitt namn`, fran.vapen === 'yxa' && fran.namn === p.name && fran.pid === p.id],
+      ['varje rad i loggen blir en mening, och rapporten säger vem som vann', allaText && rap.vinnare === en.slut!.vinnare],
+    ];
+  },
+};

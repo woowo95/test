@@ -245,6 +245,28 @@ h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: 
 #confirmNew { width: 100%; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 14px; }
 button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 body.testing .mapwrap { box-shadow: 0 0 0 3px var(--accent); }
+#arenaKnapp { display: none; } body.testing #arenaKnapp { display: inline-block; }
+#arena { position: fixed; inset: 0; background: rgba(10, 14, 12, 0.55); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 19; }
+#arena[hidden] { display: none; }
+.card.arena { width: min(860px, 100%); max-height: 92vh; font-size: 14px; }
+.arTopp { display: flex; justify-content: space-between; align-items: center; }
+.arHuvud { display: flex; gap: 14px; flex-wrap: wrap; align-items: flex-start; }
+.arHuvud > div { flex: 1 1 300px; min-width: 0; }
+#arPlan { width: 100%; max-width: 480px; image-rendering: pixelated; border-radius: 4px; display: block; }
+.arKnappar { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; margin: 6px 0; }
+.arKnappar select, .arRad select, #arFilt { font: inherit; font-size: 13px; background: var(--panel); color: var(--fg); border: 1px solid var(--line); border-radius: 4px; padding: 3px; max-width: 100%; }
+.arSida { border-left: 3px solid; padding: 2px 0 6px 8px; margin-bottom: 8px; }
+.arRad { margin: 4px 0; display: grid; gap: 3px; }
+.arRad > div:first-child { display: flex; gap: 4px; flex-wrap: wrap; }
+.arKl, .arAvs { display: flex; gap: 8px; flex-wrap: wrap; font-size: 13px; }
+.arStat { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2px 10px; font-size: 12px; }
+.arStat label { display: flex; align-items: center; gap: 4px; } .arStat input { flex: 1; min-width: 0; }
+#arRapport p { margin: 3px 0; }
+.arLoggTopp { margin-top: 8px; }
+#arLogg { list-style: none; padding: 0; margin: 4px 0 0; max-height: 30vh; overflow-y: auto; font-size: 13px; }
+#arLogg li { padding: 2px 0; border-bottom: 1px solid var(--line); cursor: pointer; }
+#arLogg .arT { color: var(--muted); font-variant-numeric: tabular-nums; display: inline-block; min-width: 3em; }
+#arLogg .arText { display: none; color: var(--muted); } #arLogg li.open .arText { display: block; padding-left: 3em; }
 #overlay, #loading { position: fixed; inset: 0; background: rgba(10, 14, 12, 0.55); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 20; }
 .card { background: var(--panel); color: var(--fg); border-radius: 8px; padding: 20px 22px; width: min(460px, 100%); max-height: 85vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.35); box-sizing: border-box; }
 .card h2 { font-family: var(--display); font-size: 1.6rem; margin: 0 0 4px; }
@@ -301,6 +323,7 @@ body.testing .mapwrap { box-shadow: 0 0 0 3px var(--accent); }
           <button type="button" data-v="3600">1 tim/s</button>
           <button type="button" data-v="86400">1 år/s</button>
         </div>
+        <button type="button" class="ghost" id="arenaKnapp" title="Arenan: prova strider utan att byn påverkas">⚔️</button>
         <span class="spacer"></span>
         <button type="button" class="ghost" id="newVillage">Ny by</button>
         <div id="confirmNew" hidden>
@@ -313,5 +336,6 @@ body.testing .mapwrap { box-shadow: 0 0 0 3px var(--accent); }
   </div>
 </div>
 <div id="loading"><div class="card"><h2>Samhällssimulatorn</h2><p class="muted">Letar efter din by…</p></div></div>
+<div id="arena" hidden></div>
 <div id="overlay" hidden><div class="card"><h2>Välkommen tillbaka</h2><div id="ovBody"></div></div></div>
 <script>/*BUNDLE*/</script>
