@@ -24,10 +24,10 @@ Sök i dokumentet i stället för att läsa allt; det är långt.
 
 ## Färdplanen
 
-- Färdplanen i designdokumentet är numrerad: fas, system, steg. Ett steg med tre siffror (t.ex. 2.5.1) är en prompt.
-- Björn säger t.ex. "gör 2.5.1", "gör 2.5" eller "gör till och med 2.6.2". Bygg de steg som nämns och stanna efter det sista.
+- Färdplanen i designdokumentet är numrerad: fas, system, steg. Ett steg med tre siffror (t.ex. 2.5.1) är en prompt. Är det delat i steg med fyra siffror (Björn efter v178: en sak per steg, t.ex. 7.3.9.1–7.3.9.5), är varje fyrsiffrigt steg en prompt, och det tresiffriga steget har bara det som gäller alla delarna.
+- Björn säger t.ex. "gör 2.5.1.2", "gör 2.5.1", "gör 2.5" eller "gör till och med 2.6.2". Bygg de steg som nämns och stanna efter det sista; "gör 2.5.1" bygger alla dess fyrsiffriga delar.
 - Läs avsnitten som systemets "Läs:" pekar på innan du bygger. Står det "Björn avgör" i steget, fråga först.
-- Bocka av ett byggt steg och skriv versionen efter, t.ex. "(v36)". Byggda steg byter aldrig nummer.
+- Bocka av ett byggt steg och skriv versionen efter, t.ex. "(v36)". Ett tresiffrigt steg som är delat bockas av när alla dess delar är byggda. Byggda steg byter aldrig nummer.
 - Nya steg läggs alltid framför där vi är, i ett system som inte är byggt än, aldrig i ett system som redan är passerat. Säger Björn hur långt fram (t.ex. "tidigast efter 2.3.4"), läggs de där eller senare. Passar inget system, läggs stegen sist i det närmaste systemet efter den platsen, så att de obyggda systemen behåller sina nummer. Säg i svaret vilka nummer stegen fick.
 
 ## Principer
