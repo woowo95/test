@@ -327,14 +327,19 @@ export function wearBuild(s: State, hours: number, ai: number) {
     if (b.b < 1 || !M.slit) continue;
     b.c -= M.slit * hours * (iIstiden(ai) ? ARSTID.slitIstid : 1) * (b.k === 'vagg' ? vaderSlit(s) : 1); // väggarna slits mer i regnet och snön (steg 2.11.2)
     if (b.c > 0) continue;
-    const h = husById(s, b.hus);
     if (b.k === 'vagg') {
-      b.b = 0; b.mat = 0; b.c = 1; b.lp = b.lm = undefined; count(s, 'rasat');
-      if (h) { h.varKlar ??= h.klar; h.klar = undefined; }
+      const h = rasar(s, b);
       log(s, `En vägg i ${h ? h.namn.toLowerCase() : 'ett hus'} var så sliten att den rasade.`, 'world');
     } else { b.m = 'jord'; b.c = 1; }
     touch(s);
   }
+}
+// väggen b rasar (sliten, eller riven av tornadon i tornado.ts) och måste byggas om; huset är inte klart längre. Ger huset
+export function rasar(s: State, b: Bit) {
+  const h = husById(s, b.hus);
+  b.b = 0; b.mat = 0; b.c = 1; b.lp = b.lm = undefined; count(s, 'rasat');
+  if (h) { h.varKlar ??= h.klar; h.klar = undefined; }
+  return h;
 }
 
 // ---------- dörrarna (steg 2.2.16) ----------

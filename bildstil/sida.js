@@ -1391,6 +1391,78 @@ const AM_DOD3 = ['................', '................', '......oooo......', '..
 const AM_BARN1 = ['................', '................', '......oooo......', '.....oBBBBo.....', '.....ohhhho.....', '.....ohhhho.....', '......oooo......', '.....owwwwo.....', '....owwwwwwo....', '....owowwowo....', '....oowwwwoo....', '......owwo......', '......o..o......', '......o..o......', '................', '................'];
 const AM_BARN2 = ['................', '....oooo........', '...oBBBBo.......', '...ohhhho.......', '...ohhhho...ooo.', '....oooo...oBBBo', '...owwwwo..ohhho', '..owwwwwwo.ohhho', '..owowwowo..ooo.', '...owwwwo..owwwo', '....owwo..owwwwo', '....o..o..owwwwo', '....o..o...o..o.', '...oo..oo..o..o.', '................', '................'];
 const AM_BARN3 = ['................', '................', '................', '......oooo......', '.....okkkko.....', '....okkkkkko....', '...okkhhhhkko...', '...okhhhhhhko...', '...okhohhohko...', '...okhhhhhhko...', '...okkhhhhkko...', '....okkkkkko....', '.....oooooo.....', '................', '................', '................'];
+// Tornadon (steg 3.8.4): symbolen i kalendern och tornadon på kartan (32 × 48 punkter, 2 × 3 rutor)
+const TN_L = { o: 'kol0', g: 'skiffer2', G: 'ben2', d: 'jord1', D: 'ben3', k: 'kol1', K: 'kol2', l: 'oliv1', j: 'jord2', J: 'jord3' };
+const TN_TRATT = ['................', '.oooooooooooooo.', '.ogGgGgGgGgGgGo.', '..ooGgGgGgGgoo..', '...ogGgGgGgGo...', '....ooGgGgoo....', '.....ogGgGo.....', '......oGgo......', '......ogGo......', '.......oGo......', '.......ogo......', '......oGo.......', '......ogo.......', '....dDdoDd......', '..dDdDdDdDdD....', '................'];
+const TN_MOLN = ['.ooooooooooooo..', 'okKKkKKKkKKKkKo.', 'okkkkkkkkkkkkko.', '.oooogGgGgooooo.', '....ogGgGgo.....', '.....oGgGo..l...', '.....ogGgo.l....', '......oGgo......', '..l...ogGo......', '.......oGo...l..', '.......ogo......', '......oGo.......', '.l....ogo...j...', '....dDdoDd..jj..', '..dDdDdDdDdD....', '................'];
+const TN_SKRAP = ['................', '..oooooooooooo..', '.oGgggggggggGGo.', '..oGGggggggGGo..', '..j.oGGggGGo....', '.jj..oGgggo..JJ.', '.....oGGgo...JJ.', '......oGgo......', '......ogGo..j...', '.JJ....oGo.jj...', '.JJ....ogo......', '......oGo.......', '......ogo.......', '...dDdDoDdD.....', '.dDdDdDdDdDdD...', '................'];
+const TN_KARTA1 = [
+  '..oggggggGGGGGGGGGGGGGGGgggggo..',
+  '..oggggGGGGGGGGGGGGGGGGggggggo..',
+  '...ogGGGGGGGGGGGGGGGGgggggggo...',
+  '...oGGGGGGGGGGGGGGGggggggggGo...',
+  '...oGGGGGGGGGGGGGggggggggGGGo...',
+  '....oGGGGGGGGGGggggggggGGGGGo...',
+  '....oGGGGGGGGggggggggGGGGGGGo...',
+  '....ooGGGGGggggggggGGGGGGGGoo...',
+  '.....oGGGggggggggGGGGGGGGggo....',
+  '.....oGggggggggGGGGGGGGggggo....',
+  '.....ooggggggGGGGGGGGggggggo....',
+  '......oggggGGGGGGGGggggggggo....',
+  '......oggGGGGGGGGggggggggGo.....',
+  '......oGGGGGGGGggggggggGGGo.....',
+  '.......oGGGGGggggggggGGGGGo.....',
+  '.......oGGGggggggggGGGGGGoo.....',
+  '.......oGggggggggGGGGGGGGo......',
+  '.......ogggggggGGGGGGGGggo......',
+  '.......ogggggGGGGGGGGgggo.......',
+  '.......oggGGGGGGGGggggggo.......',
+  '.......oGGGGGGGGgggggggo........',
+  '.......oGGGGGGggggggggGo........',
+  '.......oGGGGggggggggGGo.........',
+  '.......oGggggggggGGGGGo.........',
+  '.......ooggggggGGGGGGo..........',
+  '.......ooggggGGGGGGGGo..........',
+  '.......ooggGGGGGGGGgo...........',
+  '........oGGGGGGGGgggo...........',
+  '........oGGGGGGggggo............',
+  '........oGGGGggggggo............',
+  '........oGGggggggggo............',
+  '.........ogggggggGoo............',
+  '.........ogggggGGGo.............',
+  '.........ooggGGGGGo.............',
+  '..........oGGGGGGGo.............',
+  '...........oGGGGGgo.............',
+  '...........oGGGGggo.............',
+  '............oGggggoo............',
+  '............oogggggo............',
+  '.............ogggggo............',
+  '..............ogggGo............',
+  '...............oGGGo............',
+  '..........ddDddooGGodD..........',
+  '.......dDddDddDdoGGooddDd.......',
+  '......dDddDddDddDddDddDddD......',
+  '......DddDddDddDddDddDddDd......',
+  '.......dDddDddDddDddDddDd.......',
+  '..........DddDddDddDdd..........',
+];
+// tratten på kartan räknad rad för rad: bredden uppe och nere, hur mycket den svajar, banden som snurrar, ett moln
+// överst och saker som flyger runt den
+function tnKarta({ topp, fot, svaj, band, moln = 0, skrap = [] }) {
+  const R = Array.from({ length: 48 }, () => Array(32).fill('.'));
+  for (let y = moln; y < 43; y++) {
+    const u = (y - moln) / (42 - moln), w = fot + (topp - fot) * Math.pow(1 - u, 1.6), cx = 15.5 + Math.sin(u * Math.PI * 1.4) * svaj * u;
+    const a = Math.max(0, Math.round(cx - w / 2)), b = Math.min(31, Math.round(cx + w / 2));
+    for (let x = a; x <= b; x++) R[y][x] = x === a || x === b ? 'o' : (((x - a + Math.round(y * band)) % 6) + 6) % 6 < 3 ? 'g' : 'G';
+  }
+  for (let y = 0; y < moln; y++) for (let x = 0; x < 32; x++) { const k = Math.abs(x - 15.5) / 16 + (moln - y) / (moln * 2.2); if (k < 1) R[y][x] = k > 0.88 ? 'o' : (x + y * 3) % 7 < 2 ? 'K' : 'k'; }
+  for (let y = 42; y < 48; y++) for (let x = 0; x < 32; x++) { const e = ((x - 15.5) / 13) ** 2 + ((y - 45) / 3) ** 2; if (e < 1 && R[y][x] === '.') R[y][x] = (x + y) % 3 ? 'd' : 'D'; }
+  for (const [x, y, c] of skrap) R[y][x] = c;
+  return R.map(r => r.join(''));
+}
+const TN_KARTA2 = tnKarta({ topp: 30, fot: 4, svaj: 2, band: 0.7, moln: 7, skrap: [[3, 14, 'j'], [4, 15, 'j'], [27, 20, 'l'], [26, 26, 'J'], [27, 27, 'J'], [5, 30, 'l'], [24, 34, 'j']] });
+const TN_KARTA3 = tnKarta({ topp: 24, fot: 3, svaj: 6, band: 1.2, skrap: [[2, 8, 'l'], [29, 12, 'l'], [3, 22, 'J'], [4, 22, 'J'], [28, 30, 'j'], [27, 31, 'j'], [6, 38, 'l']] });
+const TN_KART_M = p => ({ w: 104, h: 100, rita: (B, P) => { ritaSprite(B, p, TN_L, 2, 50); ritaSprite(B, p.flatMap(r => { const rr = [...r].map(c => c.repeat(2)).join(''); return [rr, rr]; }), TN_L, 38, 2); } });
 const VAL = [
   { id: 's_mat', namn: 'Samtal om mat', vad: 'Ny symbol (steg 3.9.5), 16 × 16 punkter, i pratbubblan och personrutan när två pratar om maten eller längtar efter något att äta. Till vänster i rätt storlek, till höger tre gånger större. I spelet nu: version 1 (platshållare).', typ: 'tre',
     versioner: [
@@ -1436,6 +1508,18 @@ const VAL = [
       { text: 'Vågor som stiger över en grässtrand, med ett grässtrå som sticker upp ur vattnet.', ...LED_M(FL_STRAND, FL_L) },
       { text: 'Ett hus som står till hälften i vatten.', ...LED_M(FL_HUS, FL_L) },
       { text: 'En märkt påle i vattnet och en pil uppåt: vattnet stiger.', ...LED_M(FL_STOLPE, FL_L) },
+    ] },
+  { id: 'm_tornado', namn: 'Tornadon', vad: 'Ny symbol (steg 3.8.4), 16 × 16 punkter, i kalendern bredvid temperaturen medan en tornado drar fram (blek när de äldsta i byn bara anar den). I spelet nu: version 1 (platshållare).', typ: 'tre',
+    versioner: [
+      { text: 'En grå tratt som snurrar ner mot marken och river upp damm.', ...LED_M(TN_TRATT, TN_L) },
+      { text: 'Ett mörkt moln med en tratt ner till marken, och löv och en gren som flyger.', ...LED_M(TN_MOLN, TN_L) },
+      { text: 'En ljus tratt med bräder och grenar som snurrar runt den.', ...LED_M(TN_SKRAP, TN_L) },
+    ] },
+  { id: 'tornado', namn: 'Tornadon på kartan', vad: 'Ny bild (steg 3.8.4), 32 × 48 punkter (2 × 3 rutor), på kartan där tornadon är medan den drar fram, med foten mitt på banan. Till vänster i rätt storlek, till höger dubbelt så stor. I spelet nu: version 1 (platshållare).', typ: 'tre',
+    versioner: [
+      { text: 'En grå och ljus tratt som smalnar nedåt och svajar lite, med damm vid foten.', ...TN_KART_M(TN_KARTA1) },
+      { text: 'En bred tratt som hänger ur ett mörkt moln, med grenar och löv som flyger runt.', ...TN_KART_M(TN_KARTA2) },
+      { text: 'En smal tratt som slingrar sig som ett rep, med ett stort dammoln vid foten.', ...TN_KART_M(TN_KARTA3) },
     ] },
   { id: 'm_torka', namn: 'Torkan', vad: 'Ny symbol (steg 3.8.2), 16 × 16 punkter, i kalendern bredvid temperaturen när en torka pågår (blek när de äldsta i byn bara anar den). I spelet nu: version 1 (platshållare).', typ: 'tre',
     versioner: [

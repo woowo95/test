@@ -6,6 +6,7 @@ import { count, log } from './folk';
 import { MOTGANG, hardGrader, motgangVid } from './motgang';
 import { TORKA, torkaNu } from './torka';
 import { FLOD, flodRegn } from './flod';
+import { TORNADO, tornadoNu } from './tornado';
 
 // Balanstal (regel 8): temperaturen och hur fort man kyls
 export const VADER = balans('vader', {
@@ -137,7 +138,7 @@ export function vaderNu(s: State, t = s.now): Vader {
   const m = (1 - VADER.fuktLiten) * vag(s, t, VADER.fuktTim, 1) + VADER.fuktLiten * vag(s, t, VADER.fuktLitenTim, 2);
   const g = VADER.regnFran[ai] - MOTGANG.hardSno * hardVinter(s, t) + (torkaNu(s, t) ? TORKA.regn : 0) - (flodRegn(s, t) ? FLOD.regn : 0), nb = clamp((m - g) / (1 - g), 0, 1), moln = clamp((m - g + VADER.molnSpann) / VADER.molnSpann, 0, 1);
   const temp = temperature(s, t), sno = nb > 0 && temp < VADER.snoGrad;
-  const vind = clamp((vag(s, t, VADER.vindTim, 3) - VADER.blastFran[ai]) / (1 - VADER.blastFran[ai]), 0, 1);
+  const vind = Math.max(tornadoNu(s, t) ? TORNADO.vind : 0, clamp((vag(s, t, VADER.vindTim, 3) - VADER.blastFran[ai]) / (1 - VADER.blastFran[ai]), 0, 1)); // det stormar medan tornadon drar fram (tornado.ts)
   const aska = nb > 0 && !sno && temp > VADER.askaGrad && vag(s, t, VADER.askaTim, 4) > VADER.askaFran;
   const h = hourOf(t), [m0, m1] = VADER.dimmaMorgon, df = VADER.dimmaFran[ai];
   const dimma = nb > 0 || vind > 0 ? 0 : clamp((vag(s, t, VADER.dimmaTim, 5) * (h >= m0 && h < m1 ? 1 : VADER.dimmaDag) - df) / (1 - df), 0, 1);

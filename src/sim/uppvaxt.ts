@@ -46,6 +46,7 @@ export const UPPLEVELSER = {
   tjuv: { text: 'Blev påkommen med att stjäla av {om}', chans: 0.5, e: [{ empati: 2 }, { karisma: -2 }] },
   hardVinter: { text: 'Var med om en hård vinter', chans: 0.5, e: [{ uthallighet: 2 }, { flit: 1, mod: -1 }, { empati: 1, flit: 1 }, { flit: 2 }] }, // motgångarna (steg 3.8.1, motgang.ts)
   torka: { text: 'Var med om en torka', chans: 0.5, e: [{ uthallighet: 1, flit: 1 }, { empati: 1 }, { flit: 1, mod: -1 }, { uthallighet: 2 }] }, // steg 3.8.2, torka.ts
+  tornado: { text: 'Var med om en tornado', chans: 0.6, e: [{ mod: 1, flit: 1 }, { minne: 1 }, { mod: -2 }, { uthallighet: 1, flit: 1 }] }, // steg 3.8.4, tornado.ts
   oversvamning: { text: 'Var med om en översvämning', chans: 0.5, e: [{ uthallighet: 1, flit: 1 }, { minne: 1 }, { mod: -1, flit: 1 }, { flit: 2 }] }, // steg 3.8.3, flod.ts
   lek: { text: 'Lekte mycket på lekplatsen', chans: 0.003, e: [{ karisma: 2 }, { nyfikenhet: 2 }, { smidighet: 2 }, { karisma: 1, smidighet: 1 }] }, // barn som tumlar blir smidigare (steg 3.7.6)
   bastaVan: { text: 'Hade en bästa vän, {om}', chans: 0.35, e: [{ karisma: 1, empati: 1 }, { karisma: 2 }] },

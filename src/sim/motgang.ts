@@ -6,13 +6,14 @@ import { clamp, rnd } from './slump';
 import { kalender, yearNo } from './tid';
 import { DAY, HOUR, Person, Rel, State } from './typer';
 import { allaBarn } from './uppvaxt';
+import { tornadoTid } from './tornado';
 
 // Motgångarna (steg 3.8, "Motgångarna i spelet" i designdokumentet): en hård vinter, torka, översvämning och tornado.
 // Varje motgång är en rad i registret MOTGANGAR och räknas ur byns frö och tiden, precis som vädret (vader.ts), så att
 // det levande läget och ikappräkningen får samma motgångar. För varje tidsålder dras ett tal; motgångarna som hör till
 // årstiden tar var sin del av det efter sin chans, så att det aldrig blir två på en gång. Under byns första
 // MOTGANG.forstaDygn dygn kommer ingen.
-// Vad torkan gör står i torka.ts (steg 3.8.2) och översvämningen i flod.ts (steg 3.8.3). Vad den hårda vintern gör står där den gör det: kylan och snön i vader.ts (hardVinter), veden i eld.ts och vargarna i
+// Vad torkan gör står i torka.ts (steg 3.8.2), översvämningen i flod.ts (steg 3.8.3) och tornadon i tornado.ts (steg 3.8.4). Vad den hårda vintern gör står där den gör det: kylan och snön i vader.ts (hardVinter), veden i eld.ts och vargarna i
 // varg.ts. De äldsta anar den i förväg; varslet sprids i samtal (minne.ts) och får byn att samla mer (val.ts).
 
 // Balanstal (regel 8)
@@ -36,8 +37,9 @@ export const MOTGANG = balans('motgang', {
 // ---------- motgångarna (registret) ----------
 // namn och tecken: i gränssnittet (ikon = pixelsymbolen i ikoner.ts), tider: tidsåldrarna den kan komma i
 // (0 istid, 1 vår, 2 sommar, 3 höst), chans: att den kommer en sådan tidsålder, varsel: att de äldsta anar den,
-// text: vad som händer (när musen är över symbolen), anar: vad den som anar den tänker, borjar och slutar: händelseloggen
-interface MotgangDef { namn: string; tecken: string; ikon: string; tider: number[]; chans: number; varsel?: true; text: string; anar: string; borjar: string; slutar: string }
+// text: vad som händer (när musen är över symbolen), anar: vad den som anar den tänker, borjar och slutar: händelseloggen,
+// tid: när den pågår i tidsåldern som börjar vid start, om den inte pågår hela tidsåldern (tornadon)
+interface MotgangDef { namn: string; tecken: string; ikon: string; tider: number[]; chans: number; varsel?: true; text: string; anar: string; borjar: string; slutar: string; tid?: (s: State, start: number) => { fran: number; till: number } }
 export const MOTGANGAR = {
   hardVinter: {
     namn: 'Hård vinter', tecken: '🥶', ikon: 'm_hardVinter', tider: [0], chans: 0.2, varsel: true,
@@ -59,6 +61,14 @@ export const MOTGANGAR = {
     anar: 'Ser på sjön att vattnet kommer att stiga',
     borjar: 'Det har regnat länge och sjön är full till brädden.',
     slutar: 'Tiden med högvatten är över.',
+  },
+  tornado: {
+    namn: 'Tornado', tecken: '🌪️', ikon: 'm_tornado', tider: [2, 3], chans: 0.05,
+    text: 'Den enda stormen. Den varar några timmar och går långsamt längs en bana över kartan. I sin väg fäller den träd, river väggar (timmer håller bättre än ris) och lyfter saker ur förrådet, som hamnar utspridda runt banan; en del går sönder. Det i kistor, på hyllor och under tak som håller klarar sig. Folk som ser den ropar och går undan.',
+    anar: 'Känner att luften är tung och att något kommer',
+    borjar: 'En tornado kommer. Himlen är svart och det dånar.',
+    slutar: 'Tornadon har dragit förbi.',
+    tid: (s: State, start: number) => tornadoTid(s, start),
   },
 } satisfies Record<string, MotgangDef>;
 export type MotgangId = keyof typeof MOTGANGAR;
@@ -91,7 +101,10 @@ export const hardGrader = (s: State, start: number) => MOTGANG.hardGrader[0] + h
 // motgången som pågår vid tiden t, med tidsålderns början och slut
 export function motgangNu(s: State, t = s.now) {
   const k = kalender(s, t), id = motgangVid(s, k.start, k.ai);
-  return id ? { id, start: k.start, slut: k.slut } : undefined;
+  if (!id) return undefined;
+  const f = DEF[id].tid?.(s, k.start); // bara en del av tidsåldern (tornadon)
+  if (f && (t < f.fran || t >= f.till)) return undefined;
+  return { id, start: k.start, slut: f ? f.till : k.slut };
 }
 // motgången som kommer i nästa tidsålder (den som börjar när den här slutar)
 export function motgangNasta(s: State, t = s.now) {

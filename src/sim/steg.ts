@@ -2,6 +2,7 @@ import { stepUppvaxt } from './uppvaxt';
 import { stepMotgang } from './motgang';
 import { stepTorka } from './torka';
 import { stepFlod } from './flod';
+import { tornadoSteg } from './tornado';
 import { stepBerattelser } from './berattelser';
 import { UTBROTT_ACTS, moodOf, stepHumor, utbrottKlar } from './humor';
 import { glomRykten, stepRykten } from './rykten';
@@ -166,6 +167,7 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
   stationRutor(s); sakerPaGolvet(s); // ... och var hyllorna står och sakerna ligger på golvet (steg 2.3.6)
   djurSteg(s); // kaningrupperna väljer plats när deras tid börjar
   vargSteg(s, dtSec); // vargarna under istiden (varg.ts, steg 3.7.1)
+  tornadoSteg(s); // tornadon drar fram (tornado.ts, steg 3.8.4)
   // förråd: ruttning och ved
   wearStore(s, dtSec); // slitage per slag, fortare utanför lagret
   stepFire(s, dtSec, ppl);

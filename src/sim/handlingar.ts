@@ -141,6 +141,7 @@ const DEF = {
   elak: { namn: 'Är elak mot någon', tecken: '😠', dygn: true, stilla: true },
   skvallra: { namn: 'Snackar skit om någon', tecken: '🗣️', dygn: true, stilla: true }, // steg 3.3.3 (rykten.ts)
   krossa: { namn: 'Slår sönder något', tecken: '💥', dygn: true, stilla: true },
+  undan: { namn: 'Går undan för tornadon', tecken: '🌪️', stilla: true }, // steg 3.8.4 (tornado.ts)
   fly: { namn: 'Flyr ut i skogen', tecken: '🏃', vandra: { r: 3, h0: 1, h1: 3, v: 1.1 }, dygn: true },
   badd: { namn: 'Ligger i bädden och orkar inte gå upp', tecken: '🛌', vila: true, dygn: true, stilla: true, plats: 'sang' }, // steg 3.2.3
   slut: { namn: 'Gör slut', tecken: '💔', dygn: true, stilla: true },

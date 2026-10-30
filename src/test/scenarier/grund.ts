@@ -530,3 +530,75 @@ SCENARIER.oversvamning = {
     ];
   },
 };
+
+SCENARIER.tornado = {
+  lang: true,
+  text: 'Steg 3.8.4: tornadon kommer ibland på sommaren och hösten. Den går på några timmar längs en rak bana från kartans kant till kartans kant nära byn, fäller träd till liggande stammar, river en risvägg men inte en ny timmervägg, lyfter saker som ligger ute (en del går sönder, resten hamnar några rutor från banan) och det blåser hårt. Folk ser den, ropar och går undan, ingen står i en vägg eller i vattnet, och efteråt bärs det som spridits in i lagret',
+  kor: () => {
+    // en by vars sommar just börjat och som får en tornado tidigt i den
+    const fore = (x: State) => { x.founded -= 20 * DAY; x.kal = nyKalender(x.now - HOUR, 2); };
+    let v: State | undefined;
+    for (let seed = 1; seed < 2000 && !v; seed++) {
+      const b = createState(seed, START); fore(b);
+      const k = kalender(b);
+      if (SIM.motgangVid(b, k.start, k.ai) !== 'tornado' || SIM.tornadoTid(b, k.start).fran - k.start > 30 * HOUR) continue;
+      v = b;
+    }
+    if (!v) return [['en by med en tornado tidigt på sommaren', false]];
+    const s = v, k0 = kalender(s), tid = SIM.tornadoTid(s, k0.start);
+    tandEld(s); setMat(s, { bar: 40, torkat: 40 });
+    kor(s, (tid.fran - s.now) / HOUR);
+    const t = s.tornado;
+    if (!t) return [['tornadon kom', false]];
+    const kant = (x: number, y: number) => Math.min(x, y, W - x, W - y) < 0.01;
+    const vind = vaderNu(s).vind;
+    // punkten på banan närmast elden: där läggs en hög grenar, en risvägg och en ny timmervägg i vägen
+    const e = SIM.eldPlats(s), dx = t.x1 - t.x0, dy = t.y1 - t.y0, L = Math.hypot(dx, dy);
+    const ledig = (x: number, y: number) => !SIM.blocked(s, x, y) && !SIM.stationAt(s, x, y) && !(s.stackar ?? []).some(a => a.x === x && a.y === y) && !SIM.bitAt(s, x, y) && !SIM.isStored(s, x, y) && Math.hypot(x - e.x, y - e.y) > 3;
+    const pa = (f: number) => { for (let d = 0; d < 30; d++) for (const sg of [1, -1]) { const u = f + sg * d / L, x = Math.floor(t.x0 + dx * u), y = Math.floor(t.y0 + dy * u); if (u > 0.05 && u < 0.95 && ledig(x, y)) return { x, y, u }; } return undefined; };
+    const fe = ((e.x + 0.5 - t.x0) * dx + (e.y + 0.5 - t.y0) * dy) / (L * L);
+    const ph = pa(fe), pr = ph && pa(ph.u + 4 / L), pt = pr && pa(pr.u + 4 / L);
+    if (!ph || !pr || !pt) return [['platser i vägen för tornadon', false]];
+    // vänta tills tornadon nästan är framme, så att ingen hinner bära in högen innan
+    let vantat = 0;
+    while (t.u < ph.u - 5 / L && vantat++ < 12 * 10) kor(s, 1 / 12);
+    s.stackar!.push({ k: 'grenar', n: 10, c: 1, x: ph.x, y: ph.y }); SIM.tidy(s);
+    const bits = SIM.bitsOf(s), id = Math.max(0, ...bits.map(b => b.id)) + 1;
+    bits.push({ id, x: pr.x, y: pr.y, k: 'vagg', m: 'ris', b: 1, mat: 5, c: 1 }, { id: id + 1, x: pt.x, y: pt.y, k: 'vagg', m: 'timmer', b: 1, mat: 5, c: 1 });
+    SIM.touch(s);
+    const stock0 = (s.stockar ?? []).length;
+    // medan tornadon drar fram: ingen i en vägg eller i vattnet, och vem som går undan
+    const ris = bits.find(b => b.id === id)!, timmer = bits.find(b => b.id === id + 1)!, gs = s.stackar!.find(a => a.k === 'grenar' && a.x === ph.x && a.y === ph.y)!;
+    // medan tornadon drar fram: ingen i en vägg eller i vattnet, och vem som går undan. Väggarna och högen läses när den just passerat
+    let iVagg = 0, iVattnet = 0, undan = 0, risRasad = false, timmerC = 1, efter: { x: number; y: number; n: number } | undefined;
+    const skadade0 = s.stat?.skador ?? 0, undanSedd = new Set<number>();
+    for (let h = 0; h < 12 * 8 && s.tornado; h++) {
+      kor(s, 1 / 12);
+      if (ris.b < 1) risRasad = true; // byggarna börjar genast bygga upp den igen
+      timmerC = Math.min(timmerC, timmer.c);
+      if (!efter && t.u > ph.u + 3 / L) efter = { x: gs.x, y: gs.y, n: gs.n };
+      for (const p of living(s)) {
+        if (SIM.isWall(s, p.x, p.y)) iVagg++;
+        if (SIM.vattenNu(s)[Math.floor(p.y) * W + Math.floor(p.x)] === T.Vatten) iVattnet++;
+        if (p.task?.act === 'undan' && !undanSedd.has(p.id)) { undanSedd.add(p.id); undan++; }
+      }
+    }
+    const avst = efter ? Math.abs(((efter.x + 0.5 - t.x0) * -dy + (efter.y + 0.5 - t.y0) * dx) / L) : -1;
+    const st = s.stat ?? {};
+    const skadade = (st.skador ?? 0) - skadade0;
+    // efteråt bärs grenarna in
+    kor(s, 24);
+    const inburet = gs.n < 1e-6 || SIM.isStored(s, gs.x, gs.y);
+    return [
+      [`tornadon kom på sommaren (${st.motgang_tornado ?? 0}) och dess bana går från kant till kant (${t.x0.toFixed(0)},${t.y0.toFixed(0)} → ${t.x1.toFixed(0)},${t.y1.toFixed(0)})`, (st.motgang_tornado ?? 0) === 1 && kant(t.x0, t.y0) && kant(t.x1, t.y1)],
+      [`det stormar medan den drar fram (blåsten ${vind.toFixed(2)})`, vind === 1],
+      [`den fällde träd till liggande stammar (${st['tornado trad'] ?? 0} träd, ${stock0} → ${(s.stockar ?? []).length} stammar)`, (st['tornado trad'] ?? 0) > 0],
+      [`risväggen rasade (${risRasad ? 'rasad' : 'stod kvar'}; ${st['tornado vagg'] ?? 0} väggar rivna), den nya timmerväggen stod kvar men skadades (lägst skick ${timmerC.toFixed(2)})`, risRasad && timmerC < 1 && timmerC > 0],
+      [`grenarna lyftes: ${efter ? `${10 - efter.n} av 10 gick sönder och resten hamnade ${avst.toFixed(1)} rutor från banan` : 'högen låg kvar'} (${st['tornado sonder'] ?? 0} saker gick sönder i allt)`, !!efter && efter.n >= 5 && efter.n < 10 && avst >= 2.5 && avst <= 9],
+      [`folk såg den och ropade (${st['tornado sedd'] ?? 0}, ${st.larm ?? 0} larm) och ${undan} gick undan`, (st['tornado sedd'] ?? 0) >= 1 && undan >= 1],
+      [`nästan ingen skadades (${skadade} skador, ${st['tornado skadad'] ?? 0} av tornadon)`, (st['tornado skadad'] ?? 0) <= 1],
+      [`ingen stod i en vägg (${iVagg}) eller i vattnet (${iVattnet})`, iVagg === 0 && iVattnet === 0],
+      [`tornadon är borta (${s.tornado ? 'kvar' : 'borta'}) och grenarna bars in i lagret efteråt`, !s.tornado && inburet],
+    ];
+  },
+};

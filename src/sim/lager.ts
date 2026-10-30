@@ -296,7 +296,7 @@ function forlorat(s: State, k: string, n: number) {
   return w;
 }
 // ta v hela ur stacken a: av byns del och ägarnas i förhållande till hur stora de är
-function minska(s: State, a: Stack, v: number) {
+export function minska(s: State, a: Stack, v: number) {
   const ks = Object.keys(a.ag ?? {}), m = heltFordelat([a.n - sumOf(a.ag), ...ks.map(o => a.ag![o])], v);
   ks.forEach((o, i) => { a.ag![o] -= m[i + 1]; });
   a.n -= v;
