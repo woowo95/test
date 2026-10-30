@@ -248,7 +248,7 @@ export function spotFor(s: State, act: Act, p: Person): { x: number; y: number }
     if (bitAt(s, x, y)) return false; // inte i husen
     if (strand) return strand[y * W + x] === 1;
     if (plats === 'ang') return t === T.Gras || t === T.Skog;
-    if (plats === 'avsides') return t === T.Gras || t === T.Skog || t === T.Sand;
+    if (plats === 'avsides') return (t === T.Gras || t === T.Skog || t === T.Sand) && !vidBanken(s, x, y); // aldrig bredvid ett bord eller en bänk (steg 3.10.3)
     return isForest(s, y * W + x); // grenar och vilt finns i skogen
   };
   // arbetsplatser räknas från byns läger (eld och lagerplatser), inte bara från elden
@@ -266,8 +266,13 @@ export function spotFor(s: State, act: Act, p: Person): { x: number; y: number }
   if (d.resurs === 'samla' && s.flackar?.length) { const rena = cands.filter(c => !forSmutsigt(s, c.x, c.y)); if (rena.length) cands.splice(0, cands.length, ...rena); }
   // mat: gå dit det finns mest att hämta, inte för långt bort; annars en av de närmaste platserna
   // avsides (toa): en plats var som helst mellan narAvstAng och langtAvsides, så att högarna inte bildar en ring (steg 3.6.7)
-  const c = (d.resurs ? pickSpot(s, p, d.resurs, cands) : plats === 'avsides' && cands.length ? cands[Math.floor(rnd(s, 'val', p) * cands.length)] : pickNarmaste(s, cands, VAL.narmaste, 'val', p)) ?? nearestWanted(s, want) ?? { x: mid.x, y: mid.y };
+  const c = (d.resurs ? pickSpot(s, p, d.resurs, cands) : plats === 'avsides' && cands.length ? cands[Math.floor(rnd(s, 'val', p) * cands.length)] : pickNarmaste(s, cands, VAL.narmaste, 'val', p)) ?? nearestWanted(s, want, plats === 'avsides' ? min : 0) ?? { x: mid.x, y: mid.y };
   return { x: c.x + 0.5, y: c.y + 0.5 };
+}
+// en station eller en plats vid ett bord på rutan eller bredvid den
+function vidBanken(s: State, x: number, y: number) {
+  for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (stationAt(s, x + dx, y + dy) || sittAt(s, x + dx, y + dy)) return true;
+  return false;
 }
 
 // samlandet (steg 2.12.4): busken är tom men famnen inte full. Den bästa rutan inom MINNE.sokR, med lite avdrag för
@@ -286,14 +291,14 @@ export function nastaBuske(s: State, k: Lager, x0: number, y0: number) {
   return best;
 }
 // ingen plats hittades i närheten: den närmaste rutan som passar, var den än ligger
-function nearestWanted(s: State, want: (t: number, x: number, y: number) => boolean) {
+function nearestWanted(s: State, want: (t: number, x: number, y: number) => boolean, min = 0) {
   const m = getMap(s.seed);
   let best: { x: number; y: number } | undefined, bd = Infinity;
   for (let i = 0; i < W * H; i++) {
     const x = i % W, y = Math.floor(i / W);
     if (!want(m.tiles[i], x, y)) continue;
     const d = campDist(s, x, y);
-    if (d < bd) { bd = d; best = { x, y }; }
+    if (d >= min && d < bd) { bd = d; best = { x, y }; } // inte närmare lägret än min (toa: inte mitt i byn, steg 3.10.3)
   }
   return best;
 }

@@ -1,6 +1,6 @@
 import { balans } from './balans';
 import { blodas } from './blod';
-import { freeNear } from './byggnad';
+import { blocked, freeNear } from './byggnad';
 import { KANINER, dodaDjur, djurOf, dragOf, halsaOf, satDjurHalsa } from './djur';
 import { count, forstaGang, log, ovning, stat } from './folk';
 import { skada } from './halsa';
@@ -9,7 +9,11 @@ import { KANIN } from './redskap';
 import { clamp, rnd } from './slump';
 import { KAST, SLAGSMAL, STRID, VAPEN, Vapen, Uppstallning, chansMot, djurKampe, kastat, nyStrid, slump, traffa } from './strid';
 import { isLight } from './tid';
-import { HOUR, Person, State, Task } from './typer';
+import { HOUR, Person, State, T, Task, W, inMap } from './typer';
+import { viltStart } from './fynd';
+import { getMap, hash } from './karta';
+import { motgangNu } from './motgang';
+import { campDist } from './plats';
 import { snoPaMarken, vaderNu } from './vader';
 import { wearTool } from './agande';
 
@@ -24,7 +28,10 @@ import { wearTool } from './agande';
 // skräms av varje försök och är svårare att smyga på en stund. Stenen träffar sämre och tappas oftast bort
 export const JAKT = balans('jakt', {
   smygSek: 450, // ett försök: så många sekunder att leta upp en kanin och smyga sig fram
-  letaR: 30, // finns ingen kanin nära jaktplatsen går jägaren till den närmaste inom så här många rutor
+  letaR: 30, // finns ingen kanin nära jaktplatsen går jägaren till den närmaste gruppen inom så här många rutor ...
+  letaMin: 8, letaMax: 16, // ... och ser hen ingen letar hen vidare: till en ruta så här långt bort där viltkartan är hög (steg 3.10.3) ...
+  letaHem: 45, // ... men inte längre än så här från byn ...
+  letaSlump: 0.5, // ... med så här mycket slump i valet, så att jägarna inte går till samma ruta
   upptack: 3, // så långt (rutor) en kanin med medelskygghet ser den som smyger på öppen mark i dagsljus ...
   skygg: 0.6, // ... gånger 1 − skygg/2 + skygg × kaninens skygghet (0–1) ...
   natt: 0.6, hog: 0.7, ung: 0.6, skog: 0.5, bar: 1.15, // ... i mörkret och i terrängen där kaninen sitter ...
@@ -49,6 +56,23 @@ function skram(s: State, g: number) {
 }
 const TERR = { hog: JAKT.hog, ung: JAKT.ung, skog: JAKT.skog, kort: 1, bar: JAKT.bar };
 
+// var jägaren letar när hen inte ser några kaniner (steg 3.10.3): den ruta letaMin–letaMax rutor bort där viltkartan (som
+// kaningrupperna väljer plats efter, fynd.ts) är högst, med lite slump, inte i vattnet, i husen eller för långt från byn.
+// Varannan ruta prövas. Ingen ruta: hen står kvar och spanar
+function letaPlats(s: State, p: Person) {
+  const v = viltStart(s, s.now, motgangNu(s)?.id === 'torka'), tiles = getMap(s.seed).tiles, salt = Math.floor(rnd(s, 'arbete', p) * 1e9);
+  const x0 = Math.floor(p.x), y0 = Math.floor(p.y), R = JAKT.letaMax;
+  let b: { x: number; y: number } | undefined, bv = 0;
+  for (let dy = -R; dy <= R; dy += 2) for (let dx = -R; dx <= R; dx += 2) {
+    const x = x0 + dx, y = y0 + dy, d = Math.hypot(dx, dy);
+    if (d < JAKT.letaMin || d > R || !inMap(x, y)) continue;
+    const i = y * W + x;
+    if (!(v[i] > bv) || tiles[i] === T.Vatten || campDist(s, x, y) > JAKT.letaHem || blocked(s, x + 0.5, y + 0.5)) continue;
+    const sc = v[i] * (1 - JAKT.letaSlump * hash(salt, x, y));
+    if (sc > bv) { bv = sc; b = { x: x + 0.5, y: y + 0.5 }; }
+  }
+  return b;
+}
 // ett försök: p jagar nära jaktplatsen med redskapet i handen (ett spjut) eller stenar. Försöket planeras när det börjar
 // (t, tiden då det började) och sparas i tk.jf, så att gränssnittet kan visa hur jägaren smyger, siktar och kastar och om
 // kaninen ser hen (Björn efter v159). Det som händer i världen händer när det är slut (jaktKlar). Svarar 0, −2 om jägaren
@@ -57,14 +81,15 @@ export function jaktForsok(s: State, p: Person, tk: Task, t = s.now): number {
   let m: ReturnType<typeof djurOf>[number] | undefined, md = KANINER.narvR + KANINER.hopp * KANINER.hoppMax;
   const dj = djurOf(s);
   for (const d of dj) { const dd = Math.hypot(d.x - tk.tx, d.y - tk.ty); if (dd < md) { md = dd; m = d; } }
-  if (!m) { // ingen kanin nära: jägaren letar upp den närmaste gruppen och går dit
+  if (!m) { // ingen kanin nära: jägaren går i vanlig fart till den närmaste gruppen hen ser ...
     let n: ReturnType<typeof djurOf>[number] | undefined, nd: number = JAKT.letaR;
     for (const d of dj) { const dd = Math.hypot(d.x - p.x, d.y - p.y); if (dd < nd) { nd = dd; n = d; } }
-    if (!n) return -1;
-    const sp = freeNear(s, n.x, n.y);
-    tk.tx = sp.x; tk.ty = sp.y; tk.phase = 'go'; count(s, 'jaktLetar');
+    const sp = n ? freeNear(s, n.x, n.y) : letaPlats(s, p); // ... och ser hen ingen letar hen dit kaninerna brukar vara (steg 3.10.3)
+    if (!sp) return -1;
+    tk.tx = sp.x; tk.ty = sp.y; tk.phase = 'go'; tk.leta = n ? 'grupp' : 'karta'; count(s, n ? 'jaktLetar' : 'jaktSoker');
     return -2;
   }
+  tk.leta = undefined;
   count(s, 'jaktForsok');
   const drag = dragOf(m.art, m.id), h = halsaOf(s, m.id), now = s.now, jakt = p.skill.jakt ?? 0;
   const v: Vapen = tk.tool && tk.tool in VAPEN && (VAPEN as Record<string, { kast?: unknown }>)[tk.tool].kast ? tk.tool as Vapen : 'sten';

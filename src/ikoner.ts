@@ -115,6 +115,7 @@ const PAL: Record<string, Record<string, string>> = {
   a_odla: AKT,
   a_jaga: AKT,
   a_smyga: AKT,
+  a_prata: AKT, a_toa: AKT,
   a_sikta: AKT,
   kanin_larm: { y: '#f0c040', k: '#2a241e' },
   kanin_dod: { b: '#9a7650', B: '#c8a478', w: '#f2ece0', k: '#1a1a1a', r: '#a03028' },
@@ -1667,6 +1668,28 @@ const PIX: Record<string, string[]> = {
     '.wwwwww.',
     '..wwww..',
     '..wwww..',
+    '........',
+  ],
+  // pratbubblan (steg 3.10.3, platshållare): bubblan med tre prickar och spetsen nere till vänster
+  a_prata: [
+    '.wwwww..',
+    'wwwwwww.',
+    'w.w.w.w.',
+    'wwwwwww.',
+    '.wwwww..',
+    '.ww.....',
+    '.w......',
+    '........',
+  ],
+  // toa (steg 3.10.3, platshållare): en droppe
+  a_toa: [
+    '...a....',
+    '...a....',
+    '..aaa...',
+    '..aaa...',
+    '.aaaaa..',
+    '.aaawa..',
+    '..aaa...',
     '........',
   ],
   // jägaren smyger: en fot på tå och tysta prickar (platshållare, Björn efter v159)

@@ -411,8 +411,10 @@ function walk(s: State, p: Person, tk: Task, left: number, a: number) {
   if (tk.pk !== key) {
     tk.pk = key;
     const v = pathFor(s, g, p.x, p.y, tk.tx, tk.ty), f = eldPlats(s);
-    // målet går inte att nå (en ö): man lägger ner det man bär och väljer något annat. Bara den som själv är avskuren från lägret går rakt över
-    if (!v && tk.phase === 'go' && pathFor(s, g, p.x, p.y, f.x + 0.5, f.y + 0.5)) { avbryt(s, p); return { used: Math.min(left, BIT), framme: false }; }
+    // målet går inte att nå (en ö, ett förråd bakom en översvämning): man lägger ner det man bär och väljer något annat. Bara
+    // den som själv är avskuren från lägret går rakt över. Den som bär en skadad eller vatten till någon går inte ifrån det
+    const bara = tk.phase === 'back' && tk.act !== 'varda' && tk.act !== 'vatten' && tk.act !== 'slacka';
+    if (!v && (tk.phase === 'go' || bara) && pathFor(s, g, p.x, p.y, f.x + 0.5, f.y + 0.5)) { avbryt(s, p); return { used: Math.min(left, BIT), framme: false }; }
     tk.path = v ?? [];
   }
   const off = sida(p, 0.18), fart = (a < ALDER.gangBarn ? STEG.fartBarn : a > ALDER.gangGammal ? STEG.fartGammal : STEG.fart) * gangFart(p) * (tk.bar !== undefined ? HALSA.baraFart : 1), t0 = s.now; // skadade ben och fötter går långsammare, och den som inte kan gå kravlar (halsa.ts)
@@ -602,8 +604,8 @@ function workStep(s: State, p: Person, tk: Task, dtSec: number, a: number, learn
   tk.tur = (tk.tur ?? 0) + dtSec;
   const full = load(tk, s) >= Math.min(capacity(s, p) * STEG.borda, bordPlats(s, p)), has = isCarrying(tk);
   // busken är tom: den som samlar går vidare till nästa i närheten tills famnen är full (steg 2.12.4), annars hem.
-  // Den som samlar tändmaterial stannar tills det räcker
-  if (tomt) {
+  // Den som samlar tändmaterial stannar tills det räcker. Jägaren som redan gått vidare för att leta (jakt.ts) fortsätter
+  if (tomt && tk.phase === 'do') {
     const n = d.fart && !full && tk.until > now + 2 * MIN ? nastaBuske(s, res!, tk.tx, tk.ty) : undefined;
     if (n) { tk.phase = 'go'; tk.tx = n.x; tk.ty = n.y; } else if (!(tk.tandmat && tinderShort(s, tk))) tk.until = now;
   }

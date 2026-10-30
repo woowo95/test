@@ -1,9 +1,10 @@
 import * as PIXI from 'pixi.js';
-import { BAR, FALT_STEG, FOREST, GRODOR, Falt, byId, faltAt, faltIndex, faltKlar, grodaPa, HIGH, MATERIAL, Person, T, W, bitAt, campCenter, condOf, dorrDef, emberOn, eldPlats, getMap, groundOf, husById, inMap, insulation, isKlar, living, stationAt, stationDef, stationKlar, tingOf, toaAt, roomAt, rumsFunktioner, sakNamn, sjoarna, sovplatser, taskName, zoneAt, zonesOf, Pile } from '../sim';
+import { BAR, FALT_STEG, FOREST, GRODOR, Falt, byId, faltAt, faltIndex, faltKlar, grodaPa, HIGH, MATERIAL, Person, T, W, bitAt, campCenter, condOf, dorrDef, emberOn, eldPlats, getMap, groundOf, husById, inMap, insulation, isKlar, living, stationAt, stationDef, stationKlar, tingOf, toaAt, roomAt, rumsFunktioner, sakNamn, sjoarna, sovplatser, taskText, verbOf, zoneAt, zonesOf, Pile } from '../sim';
 import { iconImg, tecknet } from '../ikoner';
 import { $, esc, fmtN, prickar } from './hjalp';
 import { outPilesAt, piles, s, ui } from './lage';
 import { posOf } from './manniskor';
+import { iBruk } from './foremal';
 import { djurSynliga } from './vaxter';
 import { sakKey } from './flikar/sak';
 import { flyttaHit } from './flikar/station';
@@ -137,8 +138,9 @@ function showHover(gx: number, gy: number) {
       const har = tingOf(s).filter(k => k.vid === st.id && k.k === slag), ligger = har.filter(k => k.hos === undefined && k.lass === undefined).length;
       return `${iconImg(slag, 12)} ${ligger} av ${n} ligger här${har.length > ligger ? ', en används' : ''}`;
     }).join(' · ');
-    const om = isKlar(st) ? vid : `byggs, ${Math.round(stationKlar(st) * 100)} %`;
-    rows.push(`${iconImg(sd.ikon, 12)} <b>${esc(sd.namn)}</b>${om ? ' · ' + om : ''}`);
+    const om = isKlar(st) ? vid : `byggs, ${Math.round(stationKlar(st) * 100)} %`, ib = isKlar(st) ? iBruk(st) : undefined;
+    const bruk = ib ? `${esc(ib.p.name)} ${esc(verbOf(ib.p.task!.act))} ${ib.saker.map(k => iconImg(k, 12)).join('')}` : ''; // den som arbetar där och med vad (steg 3.10.3)
+    rows.push(`${iconImg(sd.ikon, 12)} <b>${esc(sd.namn)}</b>${om ? ' · ' + om : ''}${bruk ? ' · ' + bruk : ''}`);
   }
   const bit = bitAt(s, x, y);
   if (bit) {
@@ -153,7 +155,7 @@ function showHover(gx: number, gy: number) {
     rows.push(`Under tak${hus ? ` (${esc(hus.namn)})` : ''}${fns ? ' ' + fns : ''} · ${n ? `${n} sovplatser · ` : ''}håller värmen ${Math.round(insulation(s, rum) * 100)} %`);
   }
   const here = living(s).filter(p => { const o = posOf(p); return Math.floor(o.x) === x && Math.floor(o.y) === y; });
-  if (here.length) rows.push(here.map(p => `${esc(p.name)}${prickar(p, true)} (${p.task ? taskName(p.task).toLowerCase() : 'vilar'})`).join(', '));
+  if (here.length) rows.push(here.map(p => `${esc(p.name)}${prickar(p, true)} (${p.task ? taskText(p.task).toLowerCase() : 'vilar'})`).join(', '));
   box.innerHTML = rows.map(r => `<p>${r}</p>`).join('');
   box.hidden = false;
 }

@@ -130,6 +130,22 @@ export function findPath(g: Ground, x0: number, y0: number, x1: number, y1: numb
   for (let i = came[goal]; i !== start && i >= 0; i = came[i]) out.push(i);
   return out.reverse();
 }
+// rutorna man kan gå till från (x0, y0), med samma regler som vägsökningen: 1 = man kan gå dit, 2 = man kan ställa sig
+// bredvid (en hylla, som vägsökningen når som mål), 0 = ingen väg dit (t.ex. ett hus där vattnet står innanför dörren)
+export function nasbara(g: Ground, x0: number, y0: number) {
+  const ut = new Uint8Array(W * H), st = [clampI(y0, H) * W + clampI(x0, W)];
+  ut[st[0]] = 1;
+  while (st.length) {
+    const i = st.pop()!, x = i % W, y = (i - x) / W;
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+      const nx = x + dx, ny = y + dy, ni = ny * W + nx;
+      if ((!dx && !dy) || !inMap(nx, ny) || ut[ni]) continue;
+      if (dx && dy && (stop(g, y * W + nx) || stop(g, ny * W + x))) continue;
+      if (stop(g, ni)) ut[ni] = 2; else { ut[ni] = 1; st.push(ni); }
+    }
+  }
+  return ut;
+}
 
 // en person går över rutan: högt gräs trampas ner direkt till kort gräs, sedan nöts det långsamt till bar jord.
 // Små plantor trampas ihjäl.

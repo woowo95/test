@@ -1325,6 +1325,12 @@ const VARG_L = { G: 'skiffer2', H: 'skiffer3', g: 'skiffer1', d: 'skiffer0', W: 
 // storlek, till höger fyra gånger större
 const SYM8_M = (p, l) => ({ w: 48, h: 38, kol: true, rita: (B, P) => { ritaSprite(B, p, l, 2, 2); ritaSprite(B, p.flatMap(r => { const rr = [...r].map(c => c.repeat(4)).join(''); return [rr, rr, rr, rr]; }), l, 13, 3); } });
 const AKT_L = { w: 'ben3', a: 'skiffer3' }, KANIN_L = { b: 'jord2', B: 'jord3', w: 'ben3', k: 'kol0', r: 'rost2', y: 'senap3' };
+const PRATA_PRICK = ['.wwwww..', 'wwwwwww.', 'w.w.w.w.', 'wwwwwww.', '.wwwww..', '.ww.....', '.w......', '........'];
+const PRATA_TVA = ['wwww....', 'w..w....', 'wwww....', '.w..aaaa', '....a..a', '....aaaa', '.......a', '........'];
+const PRATA_MUN = ['........', '..www...', '.w...w..', 'w..a..w.', 'w.aaa.w.', '.w...w..', '..www...', '........'];
+const TOA_DROPPE = ['...a....', '...a....', '..aaa...', '..aaa...', '.aaaaa..', '.aaawa..', '..aaa...', '........'];
+const TOA_HUK = ['....ww..', '....ww..', '...www..', '..www...', '.ww.w...', '.w..w...', '.......a', '......aa'];
+const TOA_GROP = ['........', '..ww....', '..ww....', '.wwww...', '..ww....', '.w..w...', 'aaaaaaa.', '.aaaaa..'];
 const SMYG_TA = ['........', '.w...w..', '........', '...ww...', '..wwww..', '..www...', '.ww.....', '........'];
 const SMYG_HUK = ['........', '....ww..', '....ww..', '.wwwww..', 'w.www...', '..w.w...', '.w...w..', '........'];
 const SMYG_SPAR = ['.....ww.', '.....ww.', '......w.', '.ww.....', '.ww.....', '..w.....', '....ww..', '....ww..'];
@@ -1552,6 +1558,18 @@ const VAL = [
       { text: 'Plankor med en tjock bom av trä tvärs över, i två hållare av sten, som när dörren är stängd.', ...LED_M(DORR_BOM, DORR_L) },
     ] },
 
+  { id: 'a_prata', namn: 'Att prata', vad: 'Ny symbol över huvudet (steg 3.10.3), 8 × 8 punkter i samma mörka ruta som arbetssymbolerna: pratbubblan visas bara medan två pratar, och kanten får samtalets färg (rött gräl, rosa kärlek, guld berättelse). Har samtalet ett ämne visas ämnets symbol i stället. I spelet nu: version 1 (platshållare).', typ: 'tre',
+    versioner: [
+      { text: 'En pratbubbla med tre prickar.', ...SYM8_M(PRATA_PRICK, AKT_L) },
+      { text: 'Två små bubblor som svarar varandra.', ...SYM8_M(PRATA_TVA, AKT_L) },
+      { text: 'Ett huvud med öppen mun.', ...SYM8_M(PRATA_MUN, AKT_L) },
+    ] },
+  { id: 'a_toa', namn: 'Att gå på toa', vad: 'Ny symbol över huvudet (steg 3.10.3), 8 × 8 punkter som de andra handlingarna: den som gått avsides eller sitter i latrinen. I spelet nu: version 1 (platshållare).', typ: 'tre',
+    versioner: [
+      { text: 'En blå droppe.', ...SYM8_M(TOA_DROPPE, AKT_L) },
+      { text: 'En människa som sitter på huk.', ...SYM8_M(TOA_HUK, AKT_L) },
+      { text: 'En människa vid en grop.', ...SYM8_M(TOA_GROP, AKT_L) },
+    ] },
   { id: 'a_smyga', namn: 'Att smyga', vad: 'Ny symbol över huvudet (Björn efter v159), 8 × 8 punkter som de andra handlingarna: jägaren smyger fram mot en kanin. I spelet nu: version 1 (platshållare).', typ: 'tre',
     versioner: [
       { text: 'En fot på tå med två tysta prickar.', ...SYM8_M(SMYG_TA, AKT_L) },

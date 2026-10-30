@@ -1,4 +1,4 @@
-import { flyttaStation, taBortStation, sakBerattelse, ACTS, DJURARTER, STATION, bordPlatser, pilesOf, living, TEKNIK, TILLBEHOR_LIST, byId, isKlar, sakNamn, slagIkon, stationById, stationDef, stationKlar, tillbehorDef, tingOf, timeLabel, isTool, FLACKAR, smutsVid, blodVid, storlekAv, TORK, torrDel, BRASA } from '../../sim';
+import { flyttaStation, taBortStation, sakBerattelse, ACTS, DJURARTER, STATION, bordPlatser, pilesOf, living, TEKNIK, TILLBEHOR_LIST, byId, isKlar, sakNamn, actIkon, verbOf, stationById, stationDef, stationKlar, tillbehorDef, tingOf, timeLabel, isTool, FLACKAR, smutsVid, blodVid, storlekAv, TORK, torrDel, BRASA } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { sakAttr } from './sak';
 import { iBruk } from '../foremal';
@@ -11,7 +11,7 @@ import type { Flik } from '../panel';
 const tip = (t: string) => `title="${esc(t)}" aria-label="${esc(t)}"`;
 // det som görs vid stationen: djuret och det det blir (DJUR i redskap.ts), annars handlingens symbol
 function gorRad(a: keyof typeof ACTS, bara: boolean) {
-  const art = DJURARTER.find(d => d.act === a), sl = ACTS[a].slag, px = sl && slagIkon(sl);
+  const art = DJURARTER.find(d => d.act === a), px = actIkon(a);
   const vad = art ? `${iconImg(art.sak)} → ${Object.keys(art.slakt).map(k => iconImg(k)).join('')}` : px ? iconImg(px) : '';
   const om = art ? `${ACTS[a].namn}: ${sakNamn(art.sak).toLowerCase()} blir ${Object.keys(art.slakt).map(k => sakNamn(k).toLowerCase()).join(', ')}` : ACTS[a].namn;
   return `<dt ${tip(om + (bara ? '. Görs bara här' : ''))}>${vad}</dt><dd>${esc(ACTS[a].namn)}${bara ? ' <span class="muted">bara här</span>' : ''}</dd>`;
@@ -81,7 +81,7 @@ export const station: Flik = {
       + `<p ${tip(`De som sover närmast den. När ingen gör det och den är släckt tas den isär efter ${BRASA.tomDygn} dygn, och stenarna läggs i en hög`)}>${bfolk.length ? bfolk.map(p => pLink(p)).join(' ') : '<span class="muted">ingen sover nära</span>'}</p>` : '';
     // det som används just nu (steg 3.6.6): den som arbetar, sakerna på bänken och hur långt arbetet kommit
     const ib = klar ? iBruk(st) : undefined;
-    const bruk = ib ? `<h3>Används nu</h3><p>${pLink(ib.p)} ${ib.saker.map(k => `<span ${tip(sakNamn(k))}>${iconImg(k)}</span>`).join('')}${ib.gor ? ` → <span ${tip(sakNamn(ib.gor))}>${iconImg(ib.gor)}</span>` : ''}</p>`
+    const bruk = ib ? `<h3>Används nu</h3><p>${pLink(ib.p)} ${esc(verbOf(ib.p.task!.act))} ${ib.saker.map(k => `<span ${tip(sakNamn(k))}>${iconImg(k)}</span>`).join('')}${ib.gor ? ` → <span ${tip(sakNamn(ib.gor))}>${iconImg(ib.gor)}</span>` : ''}</p>`
       + (ib.klar !== undefined ? `<p ${tip(`${Math.round(ib.klar * 100)} % klart`)}>${condBar(ib.klar)}<span>${Math.round(ib.klar * 100)} %</span></p>` : ib.p.task!.until > s.now ? `<p class="muted">${durTxt(ib.p.task!.until - s.now)} kvar</p>` : '') : '';
     const av = Object.entries(d.av).map(([k, n]) => `<span ${tip(`${fmtN(n)} ${sakNamn(k).toLowerCase()}`)}>${iconImg(k)}${fmtN(n)}</span>`).join(' ');
     return `

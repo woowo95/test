@@ -1,9 +1,9 @@
 import { campDist } from './plats';
 import { groundOf } from './mark';
-import { FOREST, findPath } from './vag';
+import { FOREST, findPath, nasbara } from './vag';
 import { Ting, halvKlar, nTools, newTing, tingOf } from './agande';
 import { kvHaller } from './kvalitet';
-import { forvarAt, sittAt, stationAt, stationDef, tillbakaVid } from './stationer';
+import { forvarAt, sittAt, stationAt, stationDef, stationRutor, tillbakaVid } from './stationer';
 import { faltAt } from './odling';
 import { ruttSmuts } from './smuts';
 import { alive, byId, count, living, stat, ageOf, log } from './folk';
@@ -386,8 +386,20 @@ export function stallBorta(s: State, x: number, y: number) { for (const t of lyi
 export const rymd = (s: State, x: number, y: number, k: string) => { const f = forvarAt(s, x, y); return rutaOf(k) * (f && !f.redskap && !isTool(k) ? f.rymmer : 1); };
 // ryms mer av slaget k på rutan? En stack av samma slag som inte är full, eller ingenting. I ett ställ bara redskap, så
 // många som det rymmer. Medan det byggs ryms ett redskap där, annars ligger något annat i stället när det blir klart
+// under en översvämning: kan man gå dit från elden? Ett förrådshus där vattnet står innanför dörren nås inte, och där
+// lägger ingen något eller hämtar något förrän vattnet sjunkit (annars gick bäraren rakt genom väggen). Vattnet ändrar
+// byggV (touch i byggnad.ts), så kartan räknas om när vattnet stiger eller sjunker
+const narFlod = new WeakMap<State, { k: string; v: Uint8Array }>();
+function nasIFloden(s: State, i: number) {
+  if (!s.flod) return true;
+  const f = eldPlats(s), r = stationRutor(s), k = `${s.byggV ?? 0},${r.n},${f.x},${f.y}`;
+  let c = narFlod.get(s);
+  if (c?.k !== k) narFlod.set(s, c = { k, v: nasbara(groundOf(s), f.x + 0.5, f.y + 0.5) });
+  return c.v[i] > 0;
+}
 function roomIn(s: State, occ: Occ, x: number, y: number, k: string) {
   if (s.flod && iVattnetNu(s, key(x, y))) return false; // ute i en översvämning (flod.ts)
+  if (!nasIFloden(s, key(x, y))) return false;
   if (s.flodHot && isFood(k) && flodHotad(s, key(x, y)) && !forvarAt(s, x, y)) return false; // vattnet stiger hit: maten bärs undan (steg 3.8.7)
   if (groundOf(s).trees[key(x, y)] >= FOREST && zonesOf(s).some(z => z.rojs && inZone(z, x, y))) return false; // ett träd i lagret i skogen fälls först (steg 3.6.9)
   const a = occ.get(key(x, y)), f = forvarAt(s, x, y), st = stationAt(s, x, y);
@@ -427,12 +439,12 @@ function besideSpot(s: State, k: string, occ: Occ) {
   const upptagen = new Set<number>();
   for (const a of things(s)) if (!(a.k === k && !isTool(k) && a.n < rymd(s, a.x, a.y, k) - 1e-9)) upptagen.add(key(a.x, a.y));
   const z0 = (base.length ? base : zs)[0];
-  for (const r of ringTiles(s, z0, LAGER.bredvid + 1, Math.max(W, H))) if (zoneAt(s, r.x, r.y) < 0 && !upptagen.has(key(r.x, r.y)) && !(s.flodHot && isFood(k) && flodHotad(s, key(r.x, r.y)))) return r; // inte dit vattnet stiger (steg 3.8.7)
+  for (const r of ringTiles(s, z0, LAGER.bredvid + 1, Math.max(W, H))) if (zoneAt(s, r.x, r.y) < 0 && !upptagen.has(key(r.x, r.y)) && nasIFloden(s, key(r.x, r.y)) && !(s.flodHot && isFood(k) && flodHotad(s, key(r.x, r.y)))) return r; // inte dit vattnet stiger (steg 3.8.7)
   return { x: zs[0].x, y: zs[0].y }; // hela kartan är full
 }
 export const fetchSpot = (s: State, k: string) => {
   if (isTool(k)) placeTools(s);
-  const all = things(s).filter(q => !s.flod || !iVattnetNu(s, q.y * W + q.x)); // inte ute i en översvämning (flod.ts)
+  const all = things(s).filter(q => !s.flod || !iVattnetNu(s, q.y * W + q.x) && nasIFloden(s, q.y * W + q.x)); // inte ute i en översvämning eller bakom den (flod.ts)
   const a = all.find(q => q.k === k && zoneAt(s, q.x, q.y) >= 0) ?? all.find(q => q.k === k && isStored(s, q.x, q.y));
   return a ? { x: a.x + 0.5, y: a.y + 0.5 } : dropSpot(s, k);
 };

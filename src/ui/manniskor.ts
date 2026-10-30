@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { ACTS, ALDER, Person, slagIkon, SEC, TalkEvent, ageOf, SAMTAL, alive, byId, clamp, homeKind, isSocial, kanGa, living, load, REL, relKey, spar } from '../sim';
+import { ACTS, ALDER, Person, actIkon, SEC, TalkEvent, ageOf, SAMTAL, alive, bordVid, byId, clamp, homeKind, isSocial, kanGa, living, load, REL, relKey, spar, storlekAv, vidBordet } from '../sim';
 import { PRICKAR, personFarg } from './hjalp';
 import { s, ui, vidNyBy } from './lage';
 import { Ikoner, TS, bubbleG, labels, markLayer, peopleG } from './scen';
@@ -8,8 +8,10 @@ import { hasIcon, iconCanvas } from '../ikoner';
 
 // människorna på kartan: kroppen, det de bär, pratbubblor, symbolen för vad de gör och namnet
 const bubbles: { id: number; kind: string; good: boolean; until: number; i?: string }[] = [];
-// vem var och en senast pratade med: bubblan står kvar så länge båda är kvar i samtalet
+// vem var och en senast pratade med: bubblan står kvar så länge båda är kvar i samtalet, men bara PRATAR_SEK sekunder
+// (spelets tid) efter samtalet: sedan sitter de tysta tills nästa (steg 3.10.3)
 const talkWith = new Map<number, number>();
+const PRATAR_SEK = 20;
 vidNyBy.push(() => { bubbles.length = 0; talkWith.clear(); });
 // samtal som startat sedan förra bildrutan (vid tiden som visas, nu): en bubbla i samtalets färg en stund. Samtal som
 // hunnit bli gamla, när tiden spolas fram, visas inte
@@ -75,32 +77,22 @@ export function posOf(p: Person) {
   const { x, y } = platsAv(p);
   return { x, y };
 }
-// symbolen över huvudet: slaget av arbete man gör på platsen (SLAG i handlingar.ts)
+// symbolen över huvudet: slaget av arbete man gör på platsen (SLAG i handlingar.ts), eller handlingens egen (toa, steg 3.10.3)
 function markOf(p: Person): string | undefined {
   const j = jaktPlats(p);
   if (j) return j.mark ?? 'a_jaga'; // smyger, siktar eller jagar (jakt.ts)
-  const t = p.task, k = t?.phase === 'do' ? ACTS[t.act].slag : undefined;
-  return k && slagIkon(k);
+  const t = p.task;
+  return t?.phase === 'do' ? actIkon(t.act) : undefined;
 }
-// pratbubblan: utseendet följer relationen, ett nytt samtal syns en stund i sin egen färg, och ämnets symbol (ikon, steg 3.9.5)
-// står i bubblan när samtalet inte är ett gräl eller en flirt
-function drawBubble(x: number, y: number, kind: string | undefined, rel: 'karlek' | 'van' | 'ovan' | 'neutral', t: number, seed: number, ikon?: string) {
-  const fill = kind === 'gräl' ? 0xd9534f : kind === 'flirt' ? 0xf0a3bd : kind === 'berättelse' ? 0xf2d27a : kind ? 0xffffff
-    : rel === 'karlek' ? 0xf6c6d6 : rel === 'ovan' ? 0xc98a80 : rel === 'van' ? 0xe4f2d8 : 0xf2f2ee;
-  const edge = rel === 'karlek' ? 0xd0607e : rel === 'ovan' ? 0x7a2a22 : rel === 'van' ? 0x5f9a44 : 0x555555;
-  bubbleG.lineStyle(0.8, edge, 0.9).beginFill(fill, 0.95).drawRoundedRect(x - 6, y - 4, 12, 8, 3).endFill().lineStyle(0);
-  bubbleG.beginFill(fill, 0.95).drawPolygon([x - 3, y + 3.6, x, y + 3.6, x - 4, y + 7]).endFill();
-  if (kind === 'gräl' || (!kind && rel === 'ovan')) { // sicksack: osams
-    bubbleG.lineStyle(1, 0x3a1410, 0.9).moveTo(x - 4, y + 1).lineTo(x - 2, y - 1.5).lineTo(x, y + 1).lineTo(x + 2, y - 1.5).lineTo(x + 4, y + 1).lineStyle(0);
-  } else if (kind === 'flirt' || (!kind && rel === 'karlek')) { // hjärta
-    bubbleG.beginFill(0xc0304e).drawCircle(x - 1.2, y - 0.8, 1.4).drawCircle(x + 1.2, y - 0.8, 1.4).drawPolygon([x - 2.6, y - 0.4, x + 2.6, y - 0.4, x, y + 2.6]).endFill();
-  } else if (ikon && hasIcon(ikon)) {
-    const sc = 7 / iconCanvas(ikon).width;
-    markIcons.add(ikon, x - 3.5, y - 3.5, sc);
-  } else { // tre punkter som tänds en i taget
-    const on = Math.floor(t / 400 + seed) % 3;
-    for (let k = -1; k <= 1; k++) bubbleG.beginFill(0x333333, k + 1 === on ? 1 : 0.45).drawCircle(x + k * 3, y, 0.9).endFill();
-  }
+// pratbubblan (steg 3.10.3): samma ruta som arbetssymbolerna, med pratbubblan i pixlar eller ämnets symbol (ikon, steg 3.9.5).
+// Kanten följer samtalet och relationen: rött gräl, rosa flirt eller kärlek, guld berättelse, grönt vänner, mörkrött ovänner
+function pratRuta(x: number, top: number, bob: number, kind: string | undefined, rel: 'karlek' | 'van' | 'ovan' | 'neutral', ikon?: string) {
+  const kant = kind === 'gräl' ? 0xd9534f : kind === 'flirt' ? 0xf0a3bd : kind === 'berättelse' ? 0xf2d27a
+    : rel === 'karlek' ? 0xf0a3bd : rel === 'ovan' ? 0x8a2a22 : rel === 'van' ? 0x7fbf5a : undefined;
+  if (kant !== undefined) bubbleG.lineStyle(1, kant, 0.95);
+  bubbleG.beginFill(0x111111, 0.35).drawRoundedRect(x - 5, top - 5 + bob, 10, 10, 3).endFill().lineStyle(0);
+  const k = ikon && hasIcon(ikon) ? ikon : 'a_prata';
+  markIcons.add(k, x - 4, top - 4 + bob, 8 / iconCanvas(k).width);
 }
 const markIcons = new Ikoner(markLayer);
 // namnet över den valda och den under musen. Två texter som återanvänds: att skapa en text varje bildruta är dyrt
@@ -129,6 +121,12 @@ export function drawPeople(t: number) {
     if (PRICKAR.sjuk.har(p)) peopleG.beginFill(PRICKAR.sjuk.farg).drawCircle(x + r * 0.7, y - r * 0.7, 1.8).endFill();
     if (PRICKAR.gravid.har(p)) peopleG.beginFill(PRICKAR.gravid.farg).drawCircle(x - r * 0.7, y - r * 0.7, 1.6).endFill();
     if (p.task && load(p.task, s) > 0) markIcons.add(homeKind(p.task), x + r - 2.5, y - 1, 0.6); // det man bär syns på figuren, hur lite det än är (steg 3.6.5)
+    const mal = vidBordet(p) && p.task!.mal, bord = mal && hasIcon(mal) ? bordVid(s, p) : undefined;
+    if (mal && bord) { // den som äter vid bordet har maten i händerna och framför sig på bordet (steg 3.10.3)
+      const { w, h } = storlekAv(bord), dx = (bord.x + w / 2) * TS - x, dy = (bord.y + h / 2) * TS - y, d = Math.hypot(dx, dy) || 1, f = Math.min(1, TS * 0.7 / d);
+      markIcons.add(mal, x + r - 2.5, y - 1, 0.6);
+      markIcons.add(mal, x + dx * f - 2.4, y + dy * f - 2.4, 0.6);
+    }
   }
   // pågående samtal och symboler
   const flash = new Map<number, string>();
@@ -137,14 +135,15 @@ export function drawPeople(t: number) {
   for (const p of ppl) {
     const pp = pos.get(p.id)!, x = pp.x * TS, y = pp.y * TS, a = ageOf(p, s.now), top = y - (a < ALDER.smabarn ? 9 : a < ALDER.vuxen ? 11 : 13);
     const o = talkWith.get(p.id), q = o !== undefined ? byId(s, o) : undefined;
-    const talking = q && alive(q) && isSocial(p) && isSocial(q) && Math.hypot(q.x - p.x, q.y - p.y) < SAMTAL.radie;
+    // bara medan de pratar: en stund efter samtalet (steg 3.10.3), inte så länge de sitter nära varandra
+    const talking = q && alive(q) && isSocial(p) && isSocial(q) && Math.hypot(q.x - p.x, q.y - p.y) < SAMTAL.radie && p.prat?.m === q.id && s.now - p.prat.t < PRATAR_SEK * SEC;
     if (!talking && o !== undefined && !flash.has(p.id)) talkWith.delete(p.id);
     if (talking || flash.has(p.id) && isSocial(p)) { // bara den som gör något socialt just nu, som personrutan säger (steg 2.3.7)
       const r = q ? s.rels[relKey(p.id, q.id)] : undefined;
       // bubblans färg: kär (partnern eller mycket romans), grälar (som i folk.ts), goda vänner eller annars
       const rel = q && (p.partner === q.id || (r?.rom ?? 0) > 40) ? 'karlek' : (r?.op ?? 0) < REL.gral ? 'ovan' : (r?.op ?? 0) > REL.van ? 'van' : 'neutral';
       const ikon = flash.has(p.id) ? flashIkon.get(p.id) : q && p.prat?.m === q.id ? p.prat.i : undefined; // ämnet (steg 3.9.5)
-      drawBubble(x + 4, top, flash.get(p.id), rel, t, p.id, ikon);
+      pratRuta(x, top, Math.sin(t / 500 + p.id) * 0.6, flash.get(p.id), rel, ikon);
       continue;
     }
     const m = markOf(p);

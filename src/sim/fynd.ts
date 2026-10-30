@@ -10,7 +10,7 @@ import { ageIndex } from './tid';
 import { kunnighet } from './ekonomi';
 import { LAGER, addTo, amountOf, foodOf } from './lager';
 import { nTools } from './agande';
-import { DAY, H, HOUR, HOUR_S, OX, OY, Person, State, T, W, egen, inMap, tvaDelar, visning } from './typer';
+import { DAY, H, HOUR, HOUR_S, OX, OY, Person, State, T, W, egen, inMap, mapKey, tvaDelar, visning } from './typer';
 import { FOREST, Ground, isSoil } from './vag';
 import { ACTS, RedskapDef, SNABBARE } from './handlingar';
 import { balans } from './balans';
@@ -293,7 +293,17 @@ const skyggStart = perKarta(seed => {
   return v;
 });
 // torka: att det är torka vid tiden t (djur.ts frågar motgang.ts, som fynd.ts inte kan importera)
+// Kartan räknas bara ur seed och dygnet, så de senaste sparas (jägarna som letar frågar ofta, jakt.ts)
+const viltMinne = new Map<string, Float64Array>();
 export function viltStart(s: State, t: number, torka = false) {
+  const key = `${mapKey(s.seed)},${Math.floor(t / DAY)},${ageIndex(s, t)},${torka}`, f = viltMinne.get(key);
+  if (f) return f;
+  if (viltMinne.size >= 8) viltMinne.delete(viltMinne.keys().next().value!);
+  const v = viltRakna(s, t, torka);
+  viltMinne.set(key, v);
+  return v;
+}
+function viltRakna(s: State, t: number, torka: boolean) {
   const g = startGround(s.seed), sky = skyggStart(s.seed), m = monsterDag(s.seed, 'jakt', Math.floor(t / DAY)).m;
   const sa = FYND.jakt.arstid?.[ageIndex(s, t)] ?? 1, v = new Float64Array(W * H);
   for (let i = 0; i < W * H; i++) v[i] = jaktBas(g, sky, i, m[i]) * sa;

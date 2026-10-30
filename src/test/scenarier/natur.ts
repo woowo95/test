@@ -1719,3 +1719,71 @@ SCENARIER.ran = {
     ];
   },
 };
+
+SCENARIER.arbete = {
+  text: 'Arbetet som syns (steg 3.10.3): jägaren som ser en grupp kaniner går dit, och den som inte ser någon letar dit viltkartan säger att de brukar vara. Jobben har en undertext och bänkarna ett verb, ingen går avsides på toa vid ett bord eller en bänk, fiskrensaren står vid slaktbänken och den som äter vid bordet har maten framför sig',
+  kor: () => {
+    const { JAKT, jaktForsok, underText, taskText, verbOf, viltStart, spotFor, vidStation, needLadder, bordVid, STATIONER, ACTS, FOOD } = SIM;
+    const s0 = createState(6, START); klockan(s0); tandEld(s0);
+    const p0 = living(s0).find(q => ageOf(q, s0.now) >= 16)!;
+    const jakt = (s: State, x: number, y: number) => ({ act: 'jakt', phase: 'do', tx: x, ty: y, until: s.now + 2 * HOUR, carry: 0, dark: !SIM.isLight(s.now) }) as SIM.Task;
+    // nära en kanin smyger jägaren; ser hen en grupp längre bort går hen dit
+    const s1 = cloneState(s0), p1 = SIM.byId(s1, p0.id)!, k = djurOf(s1)[0];
+    const nara = jakt(s1, k.x, k.y), r1 = jaktForsok(s1, p1, nara);
+    // en plats där ingen kanin är nära men någon syns
+    const md = SIM.KANINER.narvR + SIM.KANINER.hopp * SIM.KANINER.hoppMax, tiles = getMap(s1.seed).tiles;
+    let gx = -1, gy = -1;
+    for (let r = Math.ceil(md) + 1; r < JAKT.letaR - 1 && gx < 0; r++) for (let v = 0; v < 32 && gx < 0; v++) {
+      const x = k.x + r * Math.cos(v * Math.PI / 16), y = k.y + r * Math.sin(v * Math.PI / 16);
+      if (x < 1 || y < 1 || x >= W - 1 || y >= H - 1 || tiles[Math.floor(y) * W + Math.floor(x)] === T.Vatten) continue;
+      if (djurOf(s1).every(d => Math.hypot(d.x - x, d.y - y) > md)) { gx = x; gy = y; }
+    }
+    const bort = jakt(s1, gx, gy); Object.assign(p1, { x: gx, y: gy });
+    const r2 = gx >= 0 ? jaktForsok(s1, p1, bort) : 0;
+    // inga kaniner alls: hen letar dit viltkartan är hög, i vanlig fart, tills en grupp syns eller jakten är slut
+    const s = cloneState(s0), p = SIM.byId(s, p0.id)!;
+    for (let i = 0; i < 9 && djurOf(s).length; i++) s.djurDoda = [...(s.djurDoda ?? []), ...djurOf(s).map(d => ({ id: d.id, t: s.now }))];
+    const c = campCenter(s), tk = jakt(s, c.x + 0.5, c.y + 0.5); Object.assign(p, { x: tk.tx, y: tk.ty });
+    const r3 = jaktForsok(s, p, tk), d3 = Math.hypot(tk.tx - p.x, tk.ty - p.y);
+    const v = viltStart(s, s.now), vi = Math.floor(tk.ty) * W + Math.floor(tk.tx);
+    let hogre = 0, alla = 0;
+    for (let dy = -JAKT.letaMax; dy <= JAKT.letaMax; dy++) for (let dx = -JAKT.letaMax; dx <= JAKT.letaMax; dx++) {
+      const x = Math.floor(p.x) + dx, y = Math.floor(p.y) + dy, d = Math.hypot(dx, dy);
+      if (d < JAKT.letaMin || d > JAKT.letaMax || x < 0 || y < 0 || x >= W || y >= H || getMap(s.seed).tiles[y * W + x] === T.Vatten) continue;
+      alla++; if (v[y * W + x] > v[vi]) hogre++;
+    }
+    const under3 = underText(tk);
+    p.task = tk; p.hunger = 1; p.torst = 1; p.rest = 1; const x0 = p.x, y0 = p.y;
+    kor(s, 1.5);
+    const soker = s.stat?.jaktSoker ?? 0, gick = Math.hypot(p.x - x0, p.y - y0);
+    // toa: aldrig bredvid ett bord eller en bänk, och fiskrensaren står vid slaktbänken
+    const b = cloneState(s0), bp = SIM.byId(b, p0.id)!, bord = medBank(b, 'bord'), bank = medBank(b, 'slaktbank');
+    let vidBank = 0;
+    for (let i = 0; i < 300; i++) { const sp = spotFor(b, 'toa', bp); for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (SIM.stationAt(b, sp.x + dx, sp.y + dy) || SIM.sittAt(b, sp.x + dx, sp.y + dy)) vidBank++; }
+    const at = vidStation(bank);
+    let langt = 0;
+    for (let i = 0; i < 50; i++) { const sp = spotFor(b, 'rensa', bp); if (Math.hypot(sp.x - at.x, sp.y - at.y) > 2) langt++; }
+    // måltiden: maten på bordet och i händerna
+    setMat(b, { bar: 100 });
+    const plats = SIM.ledigPlats(b, bp)!;
+    Object.assign(bp, { x: plats.x, y: plats.y, hunger: 0.1 });
+    bp.task = { act: 'maltid', phase: 'do', tx: plats.x, ty: plats.y, until: b.now + HOUR, carry: 0 } as SIM.Task;
+    needLadder(b, bp, 60);
+    const mal = bp.task?.mal;
+    // verben vid bänkarna och undertexterna
+    const verb = verbOf('rensa') === 'rensar' && verbOf('slakta') === 'slaktar' && verbOf('yxa') === 'gör' && verbOf('grilla') === 'grillar';
+    const gor = Object.values(STATIONER).flatMap(d => d.gor).every(a => verbOf(a).length > 0);
+    const text = taskText(nara) === 'Jagar: smyger på byte' && taskText({ act: 'elda', phase: 'back', tx: 0, ty: 0, until: 0, carry: 1 }) === 'Lägger trä på elden: bär trä till elden';
+    return [
+      [`nära en kanin smyger jägaren (${r1}, ${underText(nara)})`, r1 === 0 && !!nara.jf && nara.leta === undefined && underText(nara) === 'smyger på byte'],
+      [`ser hen en grupp längre bort går hen dit (${r2}, ${underText(bort)})`, gx >= 0 && r2 === -2 && bort.leta === 'grupp' && bort.phase === 'go' && underText(bort) === 'går mot kaninerna'],
+      [`ser hen ingen letar hen ${d3.toFixed(1)} rutor bort (${under3}), dit viltkartan är högre än på ${alla - hogre} av ${alla} rutor`, r3 === -2 && tk.leta === 'karta' && under3 === 'letar efter byte' && d3 >= JAKT.letaMin - 1 && d3 <= JAKT.letaMax + 1 && hogre < alla * 0.15],
+      [`... och fortsätter leta (${soker} gånger på 1,5 timmar, gick ${gick.toFixed(1)} rutor)`, soker >= 2 && gick >= JAKT.letaMin],
+      [`ingen går avsides på toa bredvid ett bord eller en bänk (${vidBank} av 300)`, !!bord && vidBank === 0],
+      [`fiskrensaren står vid slaktbänken (${langt} av 50 längre bort)`, langt === 0],
+      [`den som äter vid bordet har maten framför sig (${mal ?? 'ingen'})`, !!mal && FOOD.includes(mal) && !!bordVid(b, bp)],
+      ['bänkarna har ett verb ("Arkiv rensar") och toa en egen symbol', verb && gor && ACTS.toa.ikon === 'a_toa'],
+      ['jobben har en undertext ("Jagar: smyger på byte")', text],
+    ];
+  },
+};
