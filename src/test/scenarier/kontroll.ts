@@ -126,6 +126,8 @@ const SALLSYNT: Record<string, string> = {
   varg: 'vargarna kommer bara i istiden (steg 3.7.13); scenariot varg prövar dem',
   vargkott: 'vargkött blir det bara av en fälld varg (steg 3.7.14); scenariot varg prövar det',
   vargskinn: 'vargskinn blir det bara av en fälld varg (steg 3.7.14); scenariot varg prövar det',
+  slacka: 'eldsvådor nära byn kommer bara när marken är torr på sommaren (steg 3.8.5); scenariot brand prövar att släcka',
+  flyEld: 'bara den som står nära en brinnande ruta och inte släcker går undan (steg 3.8.5); scenariot brand prövar branden',
   vargpals: 'en vargpäls behöver två vargskinn, alltså två fällda vargar (steg 3.7.14), sällan på 35 dygn',
 };
 SCENARIER.aldrig = {

@@ -52,6 +52,9 @@ export const VADER = balans('vader', {
   regnEld: 0.5, // en eld ute brinner så här mycket fortare i det kraftigaste regnet
   fuktRegn: 0.2, // markens fukt stiger så här mycket per timme i det kraftigaste regnet ...
   fuktTorkar: 0.006, // ... och sjunker så här mycket per timme (mer när det är varmt)
+  torrFukt: 0.05, // under så här mycket fukt är marken torr, och torrheten (timmar, torrTim) stiger en per timme ...
+  torrBlot: 12, // ... och sjunker så här många per timme när marken är blöt (en skur fuktar inte skogen hela vägen ner) ...
+  torrMax: 240, // ... men blir aldrig mer än så här många timmar (eldsvådorna i brand.ts, steg 3.8.5)
   slitRegn: 1, slitSno: 0.5, // husens väggar och det som ligger ute slits upp till så här mycket mer i det kraftigaste regnet och snöfallet (steg 2.11.2)
   vaxtTorr: 0.7, vaxtBlot: 1.3, // växterna och grödorna växer så här fort i torr och i blöt mark (gånger)
   snoFaller: 0.15, // snön på marken växer så här mycket per timme i det kraftigaste snöfallet ...
@@ -115,7 +118,7 @@ export const VADERLAGE: Record<VaderId, { namn: string; ikon: string; text: stri
   dimma: { namn: 'Dimma', ikon: '🌫', text: 'Man ser inte långt, och det är svårt att träffa på avstånd.' },
 };
 export interface Vader { lage: VaderId; moln: number; nb: number; sno: boolean; vind: number; aska: boolean; dimma: number }
-export interface VaderMinne { fukt: number; sno: number }
+export interface VaderMinne { fukt: number; sno: number; torr?: number } // torr = hur torr marken är, i timmar (torrTim, steg 3.8.5)
 
 // en jämn slumpvåg ur byns frö: 0 till 1, som ändrar sig under ungefär `tim` timmar. En egen blandning (inte hash i
 // karta.ts): att byta den skulle ge alla byar ett annat väder
@@ -156,14 +159,19 @@ export const vaxtFaktor = (s: State) => VADER.vaxtTorr + (VADER.vaxtBlot - VADER
 export const vaderSlit = (s: State) => { const v = vaderNu(s); return 1 + v.nb * (v.sno ? VADER.slitSno : VADER.slitRegn); };
 // hur mycket snö som ligger på marken (0 till 1)
 export const snoPaMarken = (s: State) => s.vader?.sno ?? 0;
+// hur torr marken är, i timmar: en per torr timme, mindre när det regnat (eldsvådorna, brand.ts)
+export const torrTim = (s: State) => s.vader?.torr ?? 0;
+// slår blixten ner den här timmen? (loggen här och elden den kan tända, brand.ts)
+export const blixtNu = (s: State) => vaderNu(s).aska && hash(s.seed, Math.floor(s.now / HOUR), 7) < VADER.blixt;
 
 // varje timme (steg.ts): fukten och snön på marken, och blixten
 export function stepVader(s: State) {
   const v = vaderNu(s), mi = minneOf(s), temp = temperature(s);
   mi.fukt = clamp(mi.fukt + (v.sno ? 0 : v.nb * VADER.fuktRegn) - VADER.fuktTorkar * (1 + Math.max(0, temp) / 10) * (torkaNu(s) ? TORKA.torkar : 1), 0, 1); // fortare under en torka (steg 3.8.2)
   mi.sno = clamp(mi.sno + (v.sno ? v.nb * VADER.snoFaller : 0) - Math.max(0, temp) * VADER.snoSmalter, 0, 1);
+  mi.torr = mi.fukt > VADER.torrFukt ? Math.max(0, (mi.torr ?? 0) - VADER.torrBlot) : Math.min(VADER.torrMax, (mi.torr ?? 0) + 1);
   count(s, 'vader_' + v.lage);
-  if (v.aska && hash(s.seed, Math.floor(s.now / HOUR), 7) < VADER.blixt) {
+  if (blixtNu(s)) {
     count(s, 'blixt');
     log(s, 'Blixten slog ner i skogen. Åskan mullrade länge efteråt.', 'world');
   }

@@ -43,6 +43,7 @@ export * from './sim/motgang';
 export * from './sim/torka';
 export * from './sim/flod';
 export * from './sim/tornado';
+export * from './sim/brand';
 export * from './sim/berattelser';
 export * from './sim/is';
 export * from './sim/redskap';

@@ -25,6 +25,7 @@ interface SakDef {
   gors?: Gors; // ett redskap som görs i ett eget arbete (redskap.ts): texterna och vad som räknas
   klad?: Klad; // ett klädesplagg (steg 2.3.2, utrustning.ts)
   mark?: true; // ligger kvar på marken där den hamnade: ingen bär, äger eller lagrar den (toa-högen, smuts.ts)
+  brinnerInte?: true; // brinner inte upp i en eldsvåda (brand.ts, steg 3.8.5); allt annat i förrådet gör det
 }
 // ett klädesplagg: platsen på kroppen (PLATSER i utrustning.ts), så stor del mindre kyla för den som har det på sig, och hur
 // många dygn (år i spelet) det håller på kroppen
@@ -53,7 +54,7 @@ const DEF = {
   grenar: { namn: 'Grenar', skaffa: { act: 'ved' }, stack: 50, mapp: 'Bränsle', slits: 0.0006 },
   torrgras: { namn: 'Hö', skaffa: { tid: 0.4 }, stack: 50, mapp: 'Bränsle', slits: 0.006 }, // hö ruttnar på ett par dygn när det ligger utanför lagret (steg 2.2.9)
   kol: { namn: 'Kol', skaffa: { tid: 0.3 }, stack: 25, mapp: 'Bränsle' },
-  flinta: { namn: 'Flinta', skaffa: { tid: 8, sallsynt: true }, stack: 10, mapp: 'Sten' },
+  flinta: { namn: 'Flinta', skaffa: { tid: 8, sallsynt: true }, stack: 10, mapp: 'Sten', brinnerInte: true },
   yxa: { namn: 'Flintyxa', skaffa: { av: { flinta: 1, grenar: 1 }, min: 5, slag: 'stor', tek: 'yxa' }, vikt: 1.5, stack: 1, mapp: 'Redskap', slits: 0.0004, redskap: true, trasig: { stat: 'yxorTrasiga', text: '{namn}s yxa gick sönder.' },
     gors: { text: 'Gör en flintyxa.', stat: 'yxa1', forsta: '{namn} gjorde byns första yxa av en pinne och en flintsten. Nu kan byn fälla träd.', fame: 'Gjorde byns första yxa', igen: '{namn} gjorde en flintyxa.', nyfiken: 'Flintyxan har gjort byn nyfiken på vad mer som går att tillverka.' } },
   fiskespjut: { namn: 'Träspjut', skaffa: { av: { grenar: 1 }, min: 4, slag: 'liten', tek: 'fiskespjut', verktyg: { yxa: 'yxan', flinta: 'en flintsten' } }, vikt: 1, stack: 1, mapp: 'Redskap', slits: 0.001, redskap: true, grupp: 'spjut', trasig: { stat: 'spjutTrasiga', text: '{namn}s träspjut gick sönder. Träspjuten håller inte länge.' },
@@ -62,9 +63,9 @@ const DEF = {
     gors: { text: 'Flätar en korg av hö.', stat: 'korgarGjorda', forsta: '{namn} flätade byns första korg av hö.' } },
   // giftig svamp som av misstag hamnat i förrådet bland den ätliga (fynd.ts). Den ligger i svampstacken och syns inte
   giftsvamp: { namn: 'Giftig svamp', haller: 2, dold: true, i: 'svamp' },
-  sten: { namn: 'Sten', skaffa: { tid: 0.8 }, stack: 10, mapp: 'Sten' },
+  sten: { namn: 'Sten', skaffa: { tid: 0.8 }, stack: 10, mapp: 'Sten', brinnerInte: true },
   rep: { namn: 'Rep', skaffa: { av: { torrgras: 2 }, min: 4, slag: 'liten', tek: 'rep' }, stack: 20, mapp: 'Material', slits: 0.0003 },
-  ben: { namn: 'Ben', skaffa: { min: 3, slag: 'bearbeta', tek: 'kniv' }, stack: 20, mapp: 'Material' },
+  ben: { namn: 'Ben', skaffa: { min: 3, slag: 'bearbeta', tek: 'kniv' }, stack: 20, mapp: 'Material', brinnerInte: true },
   flintspjut: { namn: 'Flintspjut', skaffa: { av: { flinta: 1, rep: 1, grenar: 1 }, min: 4, slag: 'liten', tek: 'flintspjut' }, vikt: 1.2, stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true, grupp: 'spjut', trasig: { stat: 'spjutTrasiga', text: '{namn}s flintspjut gick sönder.' },
     gors: { text: 'Gör ett flintspjut med flinta och rep.', stat: 'flintspjutGjorda', forsta: '{namn} gjorde byns första flintspjut: en flintspets surrad med rep vid en pinne. Det håller mycket längre än ett träspjut.' } },
   metspo: { namn: 'Metspö', skaffa: { av: { rep: 1, ben: 1, grenar: 1 }, min: 4, slag: 'liten', tek: 'metspo' }, vikt: 0.6, stack: 1, mapp: 'Redskap', slits: 0.0005, redskap: true, trasig: { stat: 'metspoTrasiga' },

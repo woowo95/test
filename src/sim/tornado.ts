@@ -4,7 +4,7 @@ import { MATERIAL, bitAt, blocked, roofed, touch } from './byggnad';
 import { alive, count, living, log } from './folk';
 import { kanGa, skada, Kroppsdel } from './halsa';
 import { eldPlats } from './karta';
-import { avbryt, minska, stacksOf, tidy } from './lager';
+import { avbryt, minska, nagotPa, stacksOf, tidy } from './lager';
 import { die } from './liv';
 import { groundOf } from './mark';
 import { motgangNu, motgangTal } from './motgang';
@@ -138,7 +138,7 @@ function svep(s: State, t: Tornado, a: number, b: number) {
     for (let f = 0; f < 6; f++) {
       const d = TORNADO.sprid[0] + ur(s, t, i, 3828 + f) * (TORNADO.sprid[1] - TORNADO.sprid[0]), fram = (ur(s, t, i, 3834 + f) - 0.3) * d;
       const nx = Math.floor(st.x + 0.5 - dy / L * d * sid + dx / L * fram), ny = Math.floor(st.y + 0.5 + dx / L * d * sid + dy / L * fram);
-      if (!inMap(nx, ny) || blocked(s, nx, ny) || stationAt(s, nx, ny) || stacksOf(s).some(o => o.x === nx && o.y === ny)) continue;
+      if (!inMap(nx, ny) || blocked(s, nx, ny) || stationAt(s, nx, ny) || nagotPa(s, nx, ny)) continue;
       st.x = nx; st.y = ny; break;
     }
   }

@@ -609,12 +609,14 @@ function bredvid(s: State, x: number, y: number) {
 function utanLager(s: State) {
   const fv = stationerOf(s).filter(t => stationDef(t.k)?.forvar && t.ag === undefined), alla = fv.length ? nadda(s) : undefined;
   const stanger = (t: Station) => nadda(s, -1, t.y * W + t.x).n > alla!.n + 1;
-  const borta = fv.filter(t => zoneAt(s, t.x, t.y) < 0 || stanger(t));
+  // ingen ruta rakt bredvid nås: ingen kommer åt möbeln (tre hyllor i ett hörn, eller en vägg som byggts upp igen efter en tornado)
+  const utom = (t: Station) => !GRANNAR.some(([dx, dy]) => alla!.sedd[(t.y + dy) * W + t.x + dx]);
+  const borta = fv.filter(t => zoneAt(s, t.x, t.y) < 0 || stanger(t) || utom(t));
   if (!borta.length) return;
   s.stationer = stationerOf(s).filter(t => !borta.includes(t));
   s.byggV = (s.byggV ?? 0) + 1;
   for (const t of borta) if (stationDef(t.k)!.forvar!.redskap) stallBorta(s, t.x, t.y);
-  for (const t of borta) log(s, `${stationDef(t.k)!.namn} togs isär ${zoneAt(s, t.x, t.y) < 0 ? 'när lagret flyttades' : 'eftersom den stängde in en del av lagret'}.`, 'world');
+  for (const t of borta) log(s, `${stationDef(t.k)!.namn} togs isär ${zoneAt(s, t.x, t.y) < 0 ? 'när lagret flyttades' : utom(t) ? 'eftersom ingen kom åt den' : 'eftersom den stängde in en del av lagret'}.`, 'world');
 }
 
 // en station som står inne (inte en bädd) som byn vill bygga men inte har plats för i något hus (steg 2.2.17): någon kan

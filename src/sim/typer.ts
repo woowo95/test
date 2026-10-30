@@ -261,6 +261,8 @@ export interface State {
   djurHalsa?: import('./djur').DjurHalsa[]; djurDoda?: { id: number; t: number }[]; // skadade och dödade djur (steg 3.7.13, djur.ts)
   flod?: { niva: number }; // översvämningen (steg 3.8.3, flod.ts): så många rutor upp på land som vattnet står
   tornado?: import('./tornado').Tornado; // tornadon som drar fram (steg 3.8.4, tornado.ts): banan, hur långt den kommit och vad den gjort
+  brand?: import('./brand').Brand; // eldsvådan som brinner (steg 3.8.5, brand.ts): rutorna som brinner och det den gjort
+  aska?: [number, number][]; // rutorna som brann nyss och när (steg 3.8.5, brand.ts): marken är svart en tid
   sjoTorr?: { niva: number; tomma: number[]; v: number; t: number; pa?: true; regn?: number }; // torkan (steg 3.8.2, torka.ts): så många rutor vid kanten som är torr sjöbotten, sjöarna som torkat ut, ändringsräknaren, när det senast ändrades, om torkan pågår och regnet sedan vattnet steg senast
   motgang?: { varslad?: number; pagar?: { k: import('./motgang').MotgangId; t: number; dog: number } }; // motgången som byn varslats om (när den börjar) och den som pågår (steg 3.8.1, motgang.ts)
   vargar?: Vargflock[]; vargNr?: number; // vargflockarna på kartan och hur många som kommit (steg 3.7.1, varg.ts)

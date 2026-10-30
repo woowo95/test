@@ -333,9 +333,12 @@ function storre(s: State, p: Person, f: Falt) {
 function forlorad(s: State, f: Falt, varfor: string) {
   const d = GRODOR[f.groda!], agare = s.people.find(q => q.id === f.agare);
   log(s, `${varfor} tog ${d.namn.toLowerCase()}na på ${agare ? agare.name + 's' : 'ett'} fält.`, 'world', agare ? [agare.id] : undefined);
-  count(s, varfor === 'Frosten' ? 'frostdod' : varfor === 'Torkan' ? 'vissnat' : varfor === 'Översvämningen' ? 'drankt falt' : 'ruttnat');
+  count(s, varfor === 'Frosten' ? 'frostdod' : varfor === 'Torkan' ? 'vissnat' : varfor === 'Översvämningen' ? 'drankt falt' : varfor === 'Elden' ? 'brant falt' : 'ruttnat');
   nasta(f, 'sa'); f.vatten = undefined; f.groda = undefined; f.vuxit = undefined; f.mogen = undefined; f.sadda = undefined;
 }
+
+// grödan på fältet brann i en eldsvåda (brand.ts, steg 3.8.5)
+export function faltBrann(s: State, f: Falt) { if (f.groda) forlorad(s, f, 'Elden'); }
 
 // varje timme (steg.ts): grödorna växer när det är varmt nog och dör i frost eller ruttnar, och ett fält som ingen sköter
 // blir gräs igen. Inget träd växer på rutorna som röjts

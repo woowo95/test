@@ -107,6 +107,7 @@ export const SKADOR = {
   blamarke: { namn: 'Blåmärke', ett: 'ett blåmärke', tecken: '🟣', blod: 0, smarta: 0.4, fel: 0.2, lakTim: 24 }, // efter ett slag (steg 3.2.3)
   sticksar: { namn: 'Sticksår', ett: 'ett sticksår', tecken: '🗡️', blod: 1.5, smarta: 0.7, fel: 0.5, lakTim: 48 }, // ett djupt stick (steg 3.7.2, strid.ts)
   hjarnskakning: { namn: 'Hjärnskakning', ett: 'en hjärnskakning', tecken: '💫', blod: 0, smarta: 0.6, fel: 0.3, lakTim: 48 }, // ett hårt slag mot huvudet
+  brannskada: { namn: 'Brännskada', ett: 'en brännskada', tecken: '🔥', blod: 0, smarta: 0.8, fel: 0.4, lakTim: 72 }, // av elden i en eldsvåda (steg 3.8.5, brand.ts)
 } satisfies Record<string, SkadaDef>;
 export type SkadaTyp = keyof typeof SKADOR;
 const SKADA: Record<SkadaTyp, SkadaDef> = SKADOR;

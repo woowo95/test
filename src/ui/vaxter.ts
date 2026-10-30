@@ -1,4 +1,4 @@
-import { Djur, FYND, H, HOUR, SEC, W, ageIndex, djurOf, fyndAt, getMap, living, plockOf, tornadoAndel, tornadoPos, vargarOf } from '../sim';
+import { Djur, FYND, H, HOUR, SEC, W, ageIndex, brinnande, djurOf, fyndAt, getMap, living, plockOf, tornadoAndel, tornadoPos, vargarOf } from '../sim';
 import { s, ui, vidNyBy } from './lage';
 import { Ikoner, TS, djurFx, djurLayer, djurMarkLayer, plantG } from './scen';
 import { jagade, samlaJakt } from './jakt';
@@ -85,6 +85,7 @@ export function drawAnimals() {
   for (const id of visad.keys()) if (!sedda.has(id)) visad.delete(id);
   for (const d of vargarOf(s)) { djurIkoner.add(d.art, d.x * TS - 4, d.y * TS - 6, 1); ut.push(d); } // vargarna med den fällda vargens symbol tills vidare (steg 3.7.1)
   if (s.tornado) { const p = tornadoPos(s.tornado, tornadoAndel(s.tornado, ui.nu)); djurIkoner.add('tornado', p.x * TS - 16, p.y * TS - 44, 1); } // tornadon där den är (steg 3.8.4), foten mitt på banan
+  for (const [i] of brinnande(s)) djurIkoner.add('brand', (i % W) * TS, Math.floor(i / W) * TS, 1); // lågorna där det brinner (steg 3.8.5)
   for (const k of jagas.kast) { // spjutet eller stenen i luften, i en låg båge
     const x = (k.fran.x + (k.till.x - k.fran.x) * k.k) * TS, y = (k.fran.y + (k.till.y - k.fran.y) * k.k) * TS - Math.sin(k.k * Math.PI) * 6;
     if (k.sten) djurFx.beginFill(0x8a8f94).drawCircle(x, y, 1.2).endFill();

@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { H, T, W, ageIndex, emberOn, fireHeat, eldPlats, getMap, groundOf, isCm, lightLevel } from '../sim';
+import { BRAND, DAY, H, HOUR, T, W, ageIndex, emberOn, fireHeat, eldPlats, getMap, groundOf, isCm, lightLevel } from '../sim';
 import { s } from './lage';
 import { TS, glowG, nightG, terrainG, world } from './scen';
 
@@ -51,7 +51,8 @@ function ritaIs(is: number) {
   if (isSprite.texture !== PIXI.Texture.EMPTY) isSprite.texture.destroy(true);
   isSprite.texture = PIXI.Texture.from(c, { scaleMode: PIXI.SCALE_MODES.NEAREST });
 }
-let drawnAge = -1, drawnSig = -1, drawnIs = -1, drawnVatten = -2, lastSigCheck = 0;
+let drawnAge = -1, drawnSig = -1, drawnIs = -1, drawnVatten = -2, drawnAska = -1, lastSigCheck = 0;
+const ASKA = 0x2a2622; // marken efter en eldsvåda (platshållare, steg 3.8.5)
 const PATH_COL = [0xb4b9b3, 0x8e7752, 0x9a8258, 0x846c47]; // upptrampad mark per tidsålder (snö i istiden)
 // hur sliten en ruta ser ut, i fem steg: 0 = orörd, 4 = bar jord
 const wornLevel = (c: number) => c >= 0.85 ? 0 : c >= 0.65 ? 1 : c >= 0.45 ? 2 : c >= 0.25 ? 3 : 4;
@@ -78,10 +79,14 @@ export function drawTerrain(force = false) {
   if (force || now - lastSigCheck > 1000) { lastSigCheck = now; sig = coverSig(); }
   const is = isNiva();
   const vat = (s.sjoTorr?.v ?? -1) * 4 + (s.flod?.niva ?? 0); // torkan och översvämningen: vattnet som det är nu (steg 3.8.2, 3.8.3)
-  if (!force && ai === drawnAge && sig === drawnSig && is === drawnIs && vat === drawnVatten) return;
-  drawnAge = ai; drawnSig = sig; drawnIs = is; drawnVatten = vat;
+  const ask = s.aska?.length ? s.aska.length * 1000 + Math.floor(s.now / (6 * HOUR)) % 1000 : 0; // det svarta efter en eldsvåda bleknar (steg 3.8.5)
+  if (!force && ai === drawnAge && sig === drawnSig && is === drawnIs && vat === drawnVatten && ask === drawnAska) return;
+  drawnAge = ai; drawnSig = sig; drawnIs = is; drawnVatten = vat; drawnAska = ask;
   ritaIs(is);
   const m = getMap(s.seed), pal = PAL[ai], g = groundOf(s);
+  // marken som brann nyss: mörk, och ljusare ju längre sedan (BRAND.svart dygn)
+  let svart: Map<number, number> | undefined;
+  for (const [i, t] of s.aska ?? []) (svart ??= new Map()).set(i, Math.max(0, 0.75 * (1 - (s.now - t) / (BRAND.svart * DAY))));
   terrainG.clear();
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     const i = y * W + x, t = g.tiles[i], sh = m.shade[i];
@@ -89,6 +94,8 @@ export function drawTerrain(force = false) {
     // jord: skogsmark under träden, annars gräs som trampas ner till kort gräs och bar jord
     let col = shadeCol(soil ? pal[tr >= 0.5 ? T.Skog : T.Gras] : t === T.Vatten && is ? ISFARG[is] : pal[t], 0.94 + sh * 0.12);
     if (soil) { const lv = wornLevel(g.cover[i]); if (lv) col = mix(col, shadeCol(PATH_COL[ai], 0.95 + sh * 0.1), lv * 0.22); }
+    const sv = svart?.get(i);
+    if (sv) col = mix(col, ASKA, sv);
     terrainG.beginFill(col).drawRect(x * TS, y * TS, TS, TS).endFill();
     if (tr > 0) {
       // vuxna träd: två eller tre granar; plantor: en liten gran som växer

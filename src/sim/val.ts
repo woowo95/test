@@ -3,6 +3,7 @@ import { take } from './agande';
 import { PLATS, campCenter, campDist, campKey } from './plats';
 import { vargSkydd } from './varg';
 import { tornadoSkydd } from './tornado';
+import { brandVal } from './brand';
 import { RESERV, foodDays } from './ekonomi';
 import { ACTS, WORK, usesTool } from './handlingar';
 import { canLight, emberOn, fireWant, needStones, needTinder, woodDays } from './eld';
@@ -354,8 +355,9 @@ const set = (v: Val, act: Act, why: string) => { v.act = act; v.why = why; retur
 export function chooseTask(s: State, p: Person) {
   const a = ageOf(p, s.now), light = isLight(s.now), lazy = 1 - duty(s, p);
   const v: Val = { act: 'vila', why: '', dur: (VAL.vilaMin + rnd(s, 'val', p) * VAL.vilaSpann) * MIN }; // 20–60 min
-  const sk = vargSkydd(s, p) ?? tornadoSkydd(s, p); // vargar är nära (steg 3.7.15), eller en tornado kommer (steg 3.8.4)
+  const sk = vargSkydd(s, p) ?? tornadoSkydd(s, p), br = sk ? undefined : brandVal(s, p); // vargar är nära (steg 3.7.15), en tornado kommer (steg 3.8.4) eller det brinner (steg 3.8.5)
   if (sk) { set(v, sk.act, sk.why); v.spot = sk.spot; v.dur = sk.dur; }
+  else if (br) { set(v, br.act, br.why); v.spot = br.spot; v.dur = br.dur; v.tool = br.tool; v.ref = br.ref; }
   else if (!needs(s, p, v, a, lazy, light) && !(light && utbrottVal(s, p, v))) { if (light) day(s, p, v, a, lazy); else night(s, p, v, a); }
   if (ACTS[v.act].social && v.act !== 'maltid' && skams(p, s.now)) { v.act = 'skams'; v.why = 'Skäms och håller sig undan de andra'; v.spot = undefined; } // straffet skam (steg 3.5.3, styre.ts)
   if (v.act === 'toa') {

@@ -142,6 +142,10 @@ const DEF = {
   skvallra: { namn: 'Snackar skit om någon', tecken: '🗣️', dygn: true, stilla: true }, // steg 3.3.3 (rykten.ts)
   krossa: { namn: 'Slår sönder något', tecken: '💥', dygn: true, stilla: true },
   undan: { namn: 'Går undan för tornadon', tecken: '🌪️', stilla: true }, // steg 3.8.4 (tornado.ts)
+  // eldsvådorna (steg 3.8.5, brand.ts): de vuxna släcker en eld nära byn, med vattensäcken (fylls vid vattnet och töms över
+  // elden) eller med händerna, och de andra går undan
+  slacka: { namn: 'Släcker elden', tecken: '🧯', redskap: { vattensack: { namn: 'Släcker elden med vattensäcken', tar: 'Tar vattensäcken.', haller: 150 } }, slits: { enhet: 'turer med vatten', per: 'gang' }, tungt: true, framme: true },
+  flyEld: { namn: 'Går undan för elden', tecken: '🔥', stilla: true },
   fly: { namn: 'Flyr ut i skogen', tecken: '🏃', vandra: { r: 3, h0: 1, h1: 3, v: 1.1 }, dygn: true },
   badd: { namn: 'Ligger i bädden och orkar inte gå upp', tecken: '🛌', vila: true, dygn: true, stilla: true, plats: 'sang' }, // steg 3.2.3
   slut: { namn: 'Gör slut', tecken: '💔', dygn: true, stilla: true },

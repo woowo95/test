@@ -3,6 +3,7 @@ import { stepMotgang } from './motgang';
 import { stepTorka } from './torka';
 import { stepFlod } from './flod';
 import { tornadoSteg } from './tornado';
+import { askaSteg, brandSteg, slackaFram, slackaFylld, slackaSteg } from './brand';
 import { stepBerattelser } from './berattelser';
 import { UTBROTT_ACTS, moodOf, stepHumor, utbrottKlar } from './humor';
 import { glomRykten, stepRykten } from './rykten';
@@ -148,6 +149,7 @@ MEDAN.station = workStation; KLAR.station = finishStation; // en station som byg
 KLAR.tillbehor = finishTillbehor; // ett tillbehör till en möbel (stationer.ts)
 KLAR.dorr = finishDorr; // en dörr i en öppning (bygg.ts)
 MEDAN.odla = workOdla; KLAR.odla = finishOdla; // fälten (odling.ts)
+MEDAN.slacka = slackaSteg; KLAR.slacka = slackaFylld; // att släcka en eldsvåda med händerna eller vattensäcken (brand.ts)
 
 // ---------- huvudsteg ----------
 // ett slag om dtSec sekunder (BEAT i spelet och ikappräkningen; testerna kan ta andra). events = samtalen, för att visa dem
@@ -168,6 +170,7 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
   djurSteg(s); // kaningrupperna väljer plats när deras tid börjar
   vargSteg(s, dtSec); // vargarna under istiden (varg.ts, steg 3.7.1)
   tornadoSteg(s); // tornadon drar fram (tornado.ts, steg 3.8.4)
+  brandSteg(s, dtSec); // gnistor, blixten och elden som sprider sig (brand.ts, steg 3.8.5)
   // förråd: ruttning och ved
   wearStore(s, dtSec); // slitage per slag, fortare utanför lagret
   stepFire(s, dtSec, ppl);
@@ -177,6 +180,7 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
     atSteg(s); stepSeder(s); updateTags(s); stepRelationer(s); stepUppvaxt(s); stepHumor(s); stepDelning(s);
     stepVader(s); stepMotgang(s); stepTorka(s); stepFlod(s); stepIs(s); growGround(s, 1, ai); growFynd(s, 1, ai, vaxtFaktor(s)); forget(s, 1); stepRykten(s, moodOf); glomRykten(s, 1); stepBerattelser(s); stepStyre(s); rotStumps(s); tidyStore(s);
     wearBuild(s, 1, ai); stepByggnader(s); planBuild(s); stepEldFlytt(s); stepPaborjat(s); stepStationer(s); stepBrasor(s); stepKlader(s); stepOdling(s);
+    askaSteg(s); // det svarta efter en eldsvåda försvinner (brand.ts)
     historikSteg(s); // nyckeltalen till byns historik (läses inte av simuleringen)
     compact(s); // här och inte i sparningen, så att alla lägen städar vid samma tid
   }
@@ -463,6 +467,7 @@ function arrive(s: State, p: Person, tk: Task, light: boolean) {
     }
   } else if (tk.act === 'varda' && tk.phase === 'back') lamnaAv(s, p, tk); // hemma med den som bars
   else if (tk.act === 'vatten' && tk.phase === 'back') vattenFram(s, p, tk); // vattnet i säcken till den som inte kan gå
+  else if (tk.act === 'slacka' && tk.phase === 'back') slackaFram(s, p, tk); // vattnet i säcken på elden (brand.ts)
   else if (tk.phase === 'back') {
     storeLoad(s, tk, p.x, p.y, p.id);
     // ett arbetspass är klart: gå tillbaka och fortsätt om arbetet inte är slut och dagen inte vänt

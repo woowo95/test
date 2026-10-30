@@ -602,3 +602,93 @@ SCENARIER.tornado = {
     ];
   },
 };
+
+SCENARIER.brand = {
+  text: 'Steg 3.8.5: eldsvådor och skogsbrand. När marken är torr på sommaren tar elden sig från ruta till ruta i skogen och träden dör; när marken är blöt tar den sig inte vidare. Gnistor från lägerelden tänder ibland marken. Elden nära byn: folk ser den och ropar, de vuxna släcker med vattensäcken och med händerna, en risvägg brinner, ingen står i en vägg eller i vattnet, och elden slocknar. Där skogen brann kommer plantor, som växer upp när gräset kommit tillbaka, och det svarta försvinner efter några dygn',
+  kor: () => {
+    // en by på sommaren, vid en sjö, med en torr dag utan regn framför sig
+    const fore = (x: State) => { x.founded -= 20 * DAY; x.kal = nyKalender(x.now - HOUR, 2); };
+    const torrDag = (x: State, h0: number) => { for (let h = 0; h < 30; h++) if (vaderNu(x, x.now + (h0 + h) * HOUR).nb > 0) return false; return true; };
+    let v: State | undefined, h0 = 0;
+    for (let seed = 1; seed < 400 && !v; seed++) {
+      const b = createState(seed, START); fore(b);
+      for (h0 = 0; h0 < 48 && !torrDag(b, h0); h0++);
+      if (h0 < 48 && living(b).some(p => SIM.naVattnet(b, p))) v = b;
+    }
+    if (!v) return [['en by på sommaren med en torr dag', false]];
+    const s = v;
+    tandEld(s); setMat(s, { bar: 40, torkat: 40 });
+    const torr = (x: State) => { if (x.vader) { x.vader.torr = 240; x.vader.fukt = 0; } };
+    {
+      kor(s, h0, torr);
+      while (!SIM.isLight(s.now)) kor(s, 1, torr);
+      // gnistorna: i en by med torr mark tänder lägerelden förr eller senare marken
+      const gn = cloneState(s);
+      let gnistTim = 0;
+      while (!(gn.stat?.['brand gnista']) && gnistTim < 48) { kor(gn, 1, torr); gnistTim++; }
+      // skogsbranden: en ruta mitt i tät skog 25 till 35 rutor från elden (gnistor från lägerelden blir en del av samma brand)
+      const e = SIM.eldPlats(s), g = groundOf(s);
+      const tat = (i: number) => { let n = 0; const x = i % W, y = Math.floor(i / W); for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) if (SIM.inMap(x + dx, y + dy) && g.trees[(y + dy) * W + x + dx] >= FOREST) n++; return n; };
+      let mitt = -1;
+      for (let i = 0; i < W * W && mitt < 0; i++) { const d = Math.hypot(i % W - e.x, Math.floor(i / W) - e.y); if (d >= 25 && d <= 35 && g.trees[i] >= FOREST && tat(i) >= 24) mitt = i; }
+      if (mitt < 0) return [['tät skog 25 till 35 rutor från elden', false]];
+      const vat = cloneState(s), by = cloneState(s);
+      const skog0 = new Set<number>(); for (let i = 0; i < W * W; i++) if (g.trees[i] >= FOREST) skog0.add(i);
+      SIM.tand(s, mitt, 'blixt', 0);
+      kor(s, 18, torr);
+      const rutor = s.stat?.['brand ruta'] ?? 0, trad = s.stat?.['brand trad'] ?? 0;
+      const brunnen = [...new Set((s.aska ?? []).map(a => a[0]))].filter(i => skog0.has(i));
+      const planta = (t: number) => Math.abs(t - SIM.MARK.nyPlanta) < 1e-6, plantor = brunnen.filter(i => planta(groundOf(s).trees[i])).length;
+      const askan = brunnen.length ? Math.max(...brunnen.map(i => groundOf(s).cover[i])) : 1;
+      // samma ruta när marken är blöt: elden tar sig inte vidare
+      SIM.tand(vat, mitt, 'blixt', 0);
+      kor(vat, 18, x => { if (x.vader) x.vader.torr = 0; });
+      const vatRutor = vat.stat?.['brand ruta'] ?? 0;
+      // återväxten: gräset kommer tillbaka och plantorna växer (bara marken, en sommar i taget)
+      const gr = cloneState(s), gg = groundOf(gr);
+      let vaxtTim = 0;
+      while (vaxtTim < 30 * 24 && brunnen.filter(i => gg.trees[i] > SIM.MARK.nyPlanta + 1e-6).length < brunnen.length / 2) { growGround(gr, 6, 2); vaxtTim += 6; }
+      const vuxna = brunnen.filter(i => gg.trees[i] > SIM.MARK.nyPlanta + 1e-6).length;
+      // elden nära byn: en risvägg fem rutor från elden tar eld, och en vuxen har en vattensäck
+      const ledig = (x: number, y: number) => !SIM.blocked(by, x, y) && !SIM.stationAt(by, x, y) && !(by.stackar ?? []).some(a => a.x === x && a.y === y) && !SIM.bitAt(by, x, y) && !SIM.isStored(by, x, y) && isSoil(groundOf(by).tiles[y * W + x]);
+      let pv: { x: number; y: number } | undefined;
+      for (let r = 5; r < 9 && !pv; r++) for (let a = 0; a < 16 && !pv; a++) { const x = Math.round(e.x + r * Math.cos(a * Math.PI / 8)), y = Math.round(e.y + r * Math.sin(a * Math.PI / 8)); if (ledig(x, y)) pv = { x, y }; }
+      if (!pv) return [['en plats för risväggen', false]];
+      const bits = SIM.bitsOf(by), id = Math.max(0, ...bits.map(q => q.id)) + 1;
+      bits.push({ id, x: pv.x, y: pv.y, k: 'vagg', m: 'ris', b: 1, mat: 5, c: 1 }); SIM.touch(by);
+      const ris = bits.find(q => q.id === id)!;
+      const vuxen = living(by).find(p => SIM.ageOf(p, by.now) >= SIM.ALDER.vuxen)!;
+      SIM.addTool(by, 'vattensack', vuxen);
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) SIM.tand(by, (pv.y + dy) * W + pv.x + dx, 'gnista', 0);
+      const t0 = by.now;
+      let iVagg = 0, iVattnet = 0, sack = 0, hand = 0, risC = 1, tim = 0;
+      const sedda = new Set<number>();
+      for (; tim < 12 * 12 && by.brand; tim++) {
+        kor(by, 1 / 12, torr);
+        risC = Math.min(risC, ris.b < 1 ? 0 : ris.c);
+        for (const p of living(by)) {
+          if (SIM.isWall(by, p.x, p.y)) iVagg++;
+          if (SIM.vattenNu(by)[Math.floor(p.y) * W + Math.floor(p.x)] === T.Vatten) iVattnet++;
+          if (p.task?.act === 'slacka' && !sedda.has(p.id * 2 + (p.task.tool ? 1 : 0))) { sedda.add(p.id * 2 + (p.task.tool ? 1 : 0)); if (p.task.tool) sack++; else hand++; }
+        }
+      }
+      const st = by.stat ?? {}, slocknat = by.log.some(l => l.t >= t0 && l.text.startsWith('Elden har slocknat'));
+      // det svarta försvinner efter några dygn
+      const svart0 = (by.aska ?? []).length, sv = cloneState(by);
+      sv.now += (SIM.BRAND.svart * DAY) + HOUR; SIM.askaSteg(sv);
+      return [
+        [`gnistor från lägerelden tände marken efter ${gnistTim} timmar med torr mark`, (gn.stat?.['brand gnista'] ?? 0) >= 1],
+        [`skogsbranden spred sig i torr skog (${rutor} rutor på 18 timmar, ${trad} träd dog)`, rutor >= 8 && trad >= 5],
+        [`när marken är blöt tar den sig inte vidare (${vatRutor} ruta)`, vatRutor <= 2],
+        [`där skogen brann står plantor (${plantor} av ${brunnen.length}) i aska (gräset högst ${askan.toFixed(2)})`, brunnen.length > 0 && plantor === brunnen.length && askan < HIGH],
+        [`plantorna växer när gräset kommit tillbaka (${vuxna} av ${brunnen.length} efter ${vaxtTim} timmar sommar)`, vuxna >= brunnen.length / 2],
+        [`elden nära byn sågs (${st['brand sedd'] ?? 0}) och hotade byn (${st['brand hot'] ?? 0})`, (st['brand sedd'] ?? 0) >= 1 && (st['brand hot'] ?? 0) >= 1],
+        [`de vuxna släckte: ${sack} med vattensäcken (${st['brand sack'] ?? 0} säckar), ${hand} med händerna, ${st['brand slackt'] ?? 0} rutor släckta, ${st['brand skadad'] ?? 0} brännskador`, sack >= 1 && hand >= 1 && (st['brand slackt'] ?? 0) >= 1],
+        [`risväggen brann (skick ${risC.toFixed(2)}${ris.b < 1 ? ', rasade' : ''})`, risC < 1],
+        [`ingen stod i en vägg (${iVagg}) eller i vattnet (${iVattnet})`, iVagg === 0 && iVattnet === 0],
+        [`elden slocknade efter ${(tim / 12).toFixed(1)} timmar`, !by.brand && slocknat],
+        [`marken var svart (${svart0} rutor) och det svarta är borta efter ${SIM.BRAND.svart} dygn`, svart0 > 0 && !sv.aska],
+      ];
+    }
+  },
+};

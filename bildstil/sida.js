@@ -1391,6 +1391,11 @@ const AM_DOD3 = ['................', '................', '......oooo......', '..
 const AM_BARN1 = ['................', '................', '......oooo......', '.....oBBBBo.....', '.....ohhhho.....', '.....ohhhho.....', '......oooo......', '.....owwwwo.....', '....owwwwwwo....', '....owowwowo....', '....oowwwwoo....', '......owwo......', '......o..o......', '......o..o......', '................', '................'];
 const AM_BARN2 = ['................', '....oooo........', '...oBBBBo.......', '...ohhhho.......', '...ohhhho...ooo.', '....oooo...oBBBo', '...owwwwo..ohhho', '..owwwwwwo.ohhho', '..owowwowo..ooo.', '...owwwwo..owwwo', '....owwo..owwwwo', '....o..o..owwwwo', '....o..o...o..o.', '...oo..oo..o..o.', '................', '................'];
 const AM_BARN3 = ['................', '................', '................', '......oooo......', '.....okkkko.....', '....okkkkkko....', '...okkhhhhkko...', '...okhhhhhhko...', '...okhohhohko...', '...okhhhhhhko...', '...okkhhhhkko...', '....okkkkkko....', '.....oooooo.....', '................', '................', '................'];
+// Eldsvådan (steg 3.8.5): lågorna på en ruta som brinner
+const BR_L = { r: 'rost1', R: 'rost2', y: 'senap2', Y: 'senap3', k: 'kol1', s: 'skiffer2', S: 'skiffer1', g: 'oliv1' };
+const BR_TUNGOR = ['.......o........', '......oRo.......', '......oRo...o...', '..o..oRYRo.oRo..', '.oRo.oRYRo.oRo..', '.oRRooRYYRooRRo.', 'oRYRooRYYRooRYRo', 'oRYRRoRYYYRoRYRo', 'oRYYRRYYYYRRYYRo', 'oRYYYRYYYYRYYYRo', '.oRYYYYYYYYYYRo.', '.orRYYYYYYYYRro.', '..orRRYYYYRRro..', '..okrrRRRRrrko..', '.okkkkkkkkkkkko.', '..oooooooooooo..'];
+const BR_ROK = ['.....sSs........', '....sSSSs..s....', '.....sSs..sSs...', '.......o...s....', '......oRo.......', '.....oRRRo......', '.....oRYRo..o...', '....oRYYRo.oRo..', '...oRRYYYRooRo..', '...oRYYYYYRRRo..', '..oRYYYYYYYRYRo.', '..oRYYYYYYYYYRo.', '..orRYYYYYYYRro.', '...orRRYYYRRro..', '...okrrRRRrrko..', '....oooooooooo..'];
+const BR_GRAS = ['................', '................', '................', '................', '...o.......o....', '..oRo..o..oRo...', '..oRo.oRo.oRo.o.', '.oRYRooRo.oYRoRo', '.oRYRoRYRooYRoRo', 'goRYYRYYRoRYYRRo', 'goRYYYYYYRYYYYRo', 'gorRRYYYRRRYYRro', '.okrrRRRrrrRRrko', 'g.oykoykkoykkyo.', 'gg.oooooooooooo.', '................'];
 // Tornadon (steg 3.8.4): symbolen i kalendern och tornadon på kartan (32 × 48 punkter, 2 × 3 rutor)
 const TN_L = { o: 'kol0', g: 'skiffer2', G: 'ben2', d: 'jord1', D: 'ben3', k: 'kol1', K: 'kol2', l: 'oliv1', j: 'jord2', J: 'jord3' };
 const TN_TRATT = ['................', '.oooooooooooooo.', '.ogGgGgGgGgGgGo.', '..ooGgGgGgGgoo..', '...ogGgGgGgGo...', '....ooGgGgoo....', '.....ogGgGo.....', '......oGgo......', '......ogGo......', '.......oGo......', '.......ogo......', '......oGo.......', '......ogo.......', '....dDdoDd......', '..dDdDdDdDdD....', '................'];
@@ -1508,6 +1513,12 @@ const VAL = [
       { text: 'Vågor som stiger över en grässtrand, med ett grässtrå som sticker upp ur vattnet.', ...LED_M(FL_STRAND, FL_L) },
       { text: 'Ett hus som står till hälften i vatten.', ...LED_M(FL_HUS, FL_L) },
       { text: 'En märkt påle i vattnet och en pil uppåt: vattnet stiger.', ...LED_M(FL_STOLPE, FL_L) },
+    ] },
+  { id: 'brand', namn: 'Elden som brinner', vad: 'Ny bild (steg 3.8.5), 16 × 16 punkter (en ruta), på varje ruta som brinner i en eldsvåda eller skogsbrand: i skogen, i gräset, på en vägg eller en hög i förrådet. I spelet nu: version 1 (platshållare).', typ: 'tre',
+    versioner: [
+      { text: 'Tre lågor med gula kärnor över en svart, förkolnad botten.', ...LED_M(BR_TUNGOR, BR_L) },
+      { text: 'En stor låga med en mindre bredvid och grå rök som stiger.', ...LED_M(BR_ROK, BR_L) },
+      { text: 'Låga lågor som kryper fram i gräset, med glöd i den svarta marken bakom.', ...LED_M(BR_GRAS, BR_L) },
     ] },
   { id: 'm_tornado', namn: 'Tornadon', vad: 'Ny symbol (steg 3.8.4), 16 × 16 punkter, i kalendern bredvid temperaturen medan en tornado drar fram (blek när de äldsta i byn bara anar den). I spelet nu: version 1 (platshållare).', typ: 'tre',
     versioner: [
