@@ -412,6 +412,49 @@ SCENARIER.hardvinter = {
   },
 };
 
+SCENARIER.kloka = {
+  text: 'Steg 3.8.6: den klokaste i byn anar en hård vinter eller en torka tidigare än den äldsta, ju klokare desto tidigare (upp till tre dygn före, mot ett till två för den äldsta) och säkrare. Varslet sprids i samtal som förut, och i en by där ingen är klok nog anar bara den äldsta',
+  kor: () => {
+    // en by vars nästa tidsålder har en hård vinter, som börjar om tre till sex dygn
+    const fore = (x: State) => { x.founded -= 20 * DAY; x.kal = nyKalender(x.now - 3 * DAY, 3); };
+    let v: State | undefined;
+    for (let seed = 1; seed < 600 && !v; seed++) {
+      const b = createState(seed, START); fore(b);
+      const m = SIM.motgangNasta(b);
+      if (m?.id === 'hardVinter' && m.start - b.now > 3.2 * DAY && m.start - b.now < 6 * DAY) v = b;
+    }
+    if (!v) return [['en by med en hård vinter några dygn framför sig', false]];
+    const start = SIM.motgangNasta(v)!.start;
+    // en klok, en gammal och de andra mindre kloka än klokFran
+    const klok = nyInvanare(v, 'k', 30), gammal = nyInvanare(v, 'm', 58);
+    for (const p of living(v)) p.pot.intelligens = 8;
+    klok.pot.intelligens = 20;
+    // timme för timme fram till vintern, bara motgångarna (inga samtal): när och hur säkert de anar den
+    const anar = (b: State, ids: number[]) => {
+      const nar: Record<number, { t: number; c: number }> = {};
+      for (let t = b.now; t < start; t += HOUR) { b.now = t; SIM.stepMotgang(b); for (const id of ids) { const p = b.people.find(q => q.id === id)!; if (!nar[id] && p.varsel?.t === start) nar[id] = { t: (start - t) / DAY, c: p.varsel.c }; } }
+      return nar;
+    };
+    const a = anar(cloneState(v), [klok.id, gammal.id]);
+    const halv = cloneState(v); halv.people.find(q => q.id === klok.id)!.pot.intelligens = 15;
+    const b = anar(halv, [klok.id]);
+    const trog = cloneState(v); trog.people.find(q => q.id === klok.id)!.pot.intelligens = 8;
+    const c = anar(trog, [klok.id, gammal.id]);
+    // i byn: varslet sprids i samtal innan den äldsta anar det
+    tandEld(v); setMat(v, { bar: 20, torkat: 20 });
+    kor(v, (start - 2.1 * DAY - v.now) / HOUR);
+    const hort = living(v).filter(p => p.varsel?.t === start && p.varsel.src !== undefined).length;
+    const f = (x?: { t: number; c: number }) => x ? `${x.t.toFixed(1)} dygn innan, säker ${x.c.toFixed(2)}` : 'inte alls';
+    return [
+      [`den klokaste (intelligens 20) anar den tre dygn innan och säkrare (${f(a[klok.id])})`, !!a[klok.id] && a[klok.id].t > 2.9 && a[klok.id].t <= 3.05 && a[klok.id].c > 0.9],
+      [`den äldsta anar den ett till två dygn innan (${f(a[gammal.id])})`, !!a[gammal.id] && a[gammal.id].t >= 0.95 && a[gammal.id].t <= 2.05 && Math.abs(a[gammal.id].c - SIM.MOTGANG.varselSaker) < 1e-9],
+      [`en mindre klok (intelligens 15) anar den senare och mindre säkert (${f(b[klok.id])})`, !!b[klok.id] && b[klok.id].t < a[klok.id]?.t && b[klok.id].t > 1.5 && b[klok.id].c < a[klok.id].c],
+      [`när ingen är klok nog anar bara den äldsta (den klokaste: ${f(c[klok.id])}, den äldsta: ${f(c[gammal.id])})`, !c[klok.id] && !!c[gammal.id] && (trog.stat?.varselKlok ?? 0) === 0],
+      [`varslet sprids i samtal innan den äldsta anar det (${hort} har hört det)`, hort >= 1],
+    ];
+  },
+};
+
 SCENARIER.torka = {
   lang: true,
   text: 'Steg 3.8.2: torkan kommer ibland på sommaren. Nästan inget regn, marken torkar, sjöarna drar sig tillbaka till torr sjöbotten som går att gå på och små tjärnar torkar ut. Folk kan ändå dricka, grödor som inte vattnas vissnar och ägaren vattnar sitt fält med vattensäcken. När torkan är över och det har regnat kommer vattnet tillbaka',

@@ -1,5 +1,5 @@
 import { balans } from './balans';
-import { ageOf, alive, count, livet, living, log } from './folk';
+import { ageOf, alive, count, livet, living, log, stat } from './folk';
 import { delade } from './berattelser';
 import { kronika } from './historik';
 import { clamp, rnd } from './slump';
@@ -14,7 +14,8 @@ import { tornadoTid } from './tornado';
 // årstiden tar var sin del av det efter sin chans, så att det aldrig blir två på en gång. Under byns första
 // MOTGANG.forstaDygn dygn kommer ingen.
 // Vad torkan gör står i torka.ts (steg 3.8.2), översvämningen i flod.ts (steg 3.8.3) och tornadon i tornado.ts (steg 3.8.4). Vad den hårda vintern gör står där den gör det: kylan och snön i vader.ts (hardVinter), veden i eld.ts och vargarna i
-// varg.ts. De äldsta anar den i förväg; varslet sprids i samtal (minne.ts) och får byn att samla mer (val.ts).
+// varg.ts. De äldsta anar den i förväg, och den klokaste i byn ännu tidigare och säkrare (steg 3.8.6); varslet sprids i
+// samtal (minne.ts) och får byn att samla mer (val.ts).
 
 // Balanstal (regel 8)
 export const MOTGANG = balans('motgang', {
@@ -27,6 +28,10 @@ export const MOTGANG = balans('motgang', {
   varselDygn: [1, 2], // de äldsta anar motgången så här många dygn i förväg (slumpas mellan) ...
   gammal: 30, // ... om de är minst så här gamla (år)
   varselSaker: 0.8, // så säker är den som anar det själv ...
+  klokDygn: [1, 3], // den klokaste i byn anar den så här många dygn i förväg (steg 3.8.6), tidigare ju klokare ...
+  klokSaker: [0.8, 0.95], // ... och så här säker ...
+  klokFran: 10, klokTill: 20, // ... från den här intelligensen (den som är mindre klok anar inget) till den här (då det tidigaste och säkraste)
+  klokAlder: 14, // den klokaste räknas bland dem som är minst så här gamla (år)
   berattar: 0.4, // ... chansen i ett samtal att den som vet berättar om det ...
   troBas: 0.6, troDiv: 200, troMin: 0.3, troMax: 0.95, // ... hur mycket den som lyssnar tror på det: troBas + relationen / troDiv
   glomGrans: 0.2, // den som är mindre säker än så här berättar det inte vidare
@@ -116,15 +121,24 @@ export const motgangDef = (k: MotgangId) => DEF[k];
 // ---------- varslet ----------
 // den som anar (eller hört om) en motgång: p.varsel = { k, t: när den börjar, c: hur säker, src: vem hen hörde det av }
 const vetOm = (s: State, p: Person) => p.varsel && p.varsel.t > s.now - DAY * 7 ? p.varsel : undefined;
-// den äldsta i byn anar motgången (om hen är gammal nog)
-function anar(s: State, k: MotgangId, start: number) {
-  const gamla = living(s).filter(p => ageOf(p, s.now) >= MOTGANG.gammal).sort((a, b) => ageOf(b, s.now) - ageOf(a, s.now));
-  const p = gamla[0];
-  if (!p) return;
-  p.varsel = { k, t: start, c: MOTGANG.varselSaker };
+// p anar motgången k som börjar vid start, så här säker (vem: hen är en av de äldsta, eller den klokaste i byn). Den som
+// redan vet det lika säkert (hen anade det själv tidigare, eller hörde det) anar inget nytt
+function anar(s: State, p: Person, k: MotgangId, start: number, c: number, vem: string) {
+  const e = vetOm(s, p);
+  if (e && e.t === start && e.c >= c) return;
+  p.varsel = { k, t: start, c };
   count(s, 'varsel');
-  log(s, `${p.name} är en av de äldsta i byn och ${DEF[k].anar.toLowerCase()}.`, 'world', [p.id]);
+  log(s, `${p.name} ${vem} och ${DEF[k].anar.toLowerCase()}.`, 'world', [p.id]);
 }
+// den äldsta i byn (om hen är gammal nog)
+const aldst = (s: State) => living(s).filter(p => ageOf(p, s.now) >= MOTGANG.gammal).sort((a, b) => ageOf(b, s.now) - ageOf(a, s.now))[0];
+// den klokaste i byn (steg 3.8.6) och hur klok: 0 vid klokFran och 1 vid klokTill. Den som är mindre klok än klokFran anar inget
+export function klokast(s: State) {
+  const p = living(s).filter(q => ageOf(q, s.now) >= MOTGANG.klokAlder).sort((a, b) => stat(b, 'intelligens', s.now) - stat(a, 'intelligens', s.now))[0];
+  const i = p ? stat(p, 'intelligens', s.now) : -Infinity;
+  return p && i >= MOTGANG.klokFran ? { p, f: clamp((i - MOTGANG.klokFran) / (MOTGANG.klokTill - MOTGANG.klokFran), 0, 1) } : undefined;
+}
+const mellan = (v: number[], f: number) => v[0] + f * (v[1] - v[0]);
 // i ett samtal (minne.ts): den som vet berättar ibland om motgången som kommer. Drar bara ur slumpen när a vet något
 export function delaVarsel(s: State, a: Person, b: Person, r: Rel) {
   const v = vetOm(s, a);
@@ -150,9 +164,16 @@ export const varslade = (s: State, start: number) => living(s).filter(p => p.var
 export function stepMotgang(s: State) {
   const m = (s.motgang ??= {});
   const nasta = motgangNasta(s);
+  // den klokaste anar den tidigare, ju klokare desto tidigare och säkrare (steg 3.8.6)
+  const klok = nasta && DEF[nasta.id].varsel && m.klok !== nasta.start ? klokast(s) : undefined;
+  if (nasta && klok && s.now >= nasta.start - mellan(MOTGANG.klokDygn, klok.f) * DAY) {
+    m.klok = nasta.start; count(s, 'varselKlok');
+    anar(s, klok.p, nasta.id, nasta.start, mellan(MOTGANG.klokSaker, klok.f), 'är den klokaste i byn');
+  }
+  // och den äldsta 1–2 dygn innan
   if (nasta && DEF[nasta.id].varsel && m.varslad !== nasta.start) {
-    const dygn = MOTGANG.varselDygn[0] + hash(s.seed, timNr(nasta.start), 3803) * (MOTGANG.varselDygn[1] - MOTGANG.varselDygn[0]);
-    if (s.now >= nasta.start - dygn * DAY) { m.varslad = nasta.start; anar(s, nasta.id, nasta.start); }
+    const dygn = mellan(MOTGANG.varselDygn, hash(s.seed, timNr(nasta.start), 3803));
+    if (s.now >= nasta.start - dygn * DAY) { m.varslad = nasta.start; const p = aldst(s); if (p) anar(s, p, nasta.id, nasta.start, MOTGANG.varselSaker, 'är en av de äldsta i byn'); }
   }
   const nu = motgangNu(s);
   if (nu && m.pagar?.t !== nu.start) {

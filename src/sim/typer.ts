@@ -264,7 +264,7 @@ export interface State {
   brand?: import('./brand').Brand; // eldsvådan som brinner (steg 3.8.5, brand.ts): rutorna som brinner och det den gjort
   aska?: [number, number][]; // rutorna som brann nyss och när (steg 3.8.5, brand.ts): marken är svart en tid
   sjoTorr?: { niva: number; tomma: number[]; v: number; t: number; pa?: true; regn?: number }; // torkan (steg 3.8.2, torka.ts): så många rutor vid kanten som är torr sjöbotten, sjöarna som torkat ut, ändringsräknaren, när det senast ändrades, om torkan pågår och regnet sedan vattnet steg senast
-  motgang?: { varslad?: number; pagar?: { k: import('./motgang').MotgangId; t: number; dog: number } }; // motgången som byn varslats om (när den börjar) och den som pågår (steg 3.8.1, motgang.ts)
+  motgang?: { varslad?: number; klok?: number; pagar?: { k: import('./motgang').MotgangId; t: number; dog: number } }; // motgången som byn varslats om (när den börjar), den som den klokaste anat (steg 3.8.6) och den som pågår (steg 3.8.1, motgang.ts)
   vargar?: Vargflock[]; vargNr?: number; // vargflockarna på kartan och hur många som kommit (steg 3.7.1, varg.ts)
   djurSkramd?: { g: number; t: number }[]; // kaningrupper som skrämts av en jägare, och när (steg 3.7.3, jakt.ts)
   strider?: import('./strid').StridMinne[]; // de senaste striderna i byn, så att arenan kan visa dem igen (steg 3.7.2, strid.ts)
