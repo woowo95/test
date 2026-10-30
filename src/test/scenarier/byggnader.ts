@@ -137,6 +137,64 @@ SCENARIER.familjehus = {
   },
 };
 
+SCENARIER.agandet = {
+  text: 'Ägandet i husen (steg 3.10.2): en bädd har alltid en ägare, den som sover i den, och delas inte. Ingen bygger möbler i någon annans hus. Får en familj ett eget hus bär de dit sina bäddar eller lämnar dem åt den som sover i sovsalen, och det som inte är husägarens flyttas ut eller tas isär när huset byter ägare; det byn äger gemensamt står kvar',
+  kor: () => {
+    const { stationerOf, stationRum, stepStationer, stationSpot, sovPlats, farBygga, isKlar, roomAt } = SIM;
+    const s = createState(6, START);
+    klockan(s); byggare(s);
+    planBuild(s); byggKlart(s); // en sovsal åt alla
+    for (let i = 0; i < 4 && SIM.stationSite(s, 'halmbadd'); i++) medBank(s, 'halmbadd');
+    for (const p of living(s)) { p.x = 1.5; p.y = 1.5; p.task = undefined; } // ingen står i vägen
+    stepStationer(s);
+    const baddar = () => stationerOf(s).filter(t => t.k === 'halmbadd' && isKlar(t)), ruta = (t: SIM.Station) => t.y * W + t.x;
+    const b0 = baddar(), agare = b0.map(t => t.ag), egen = b0.every(t => { const o = s.people.find(q => q.id === t.ag); return !!o && sovPlats(s, o) === ruta(t); });
+    // familjen bygger ett eget hus
+    const ppl = living(s).sort((x, y) => x.id - y.id), c = ppl.find(q => q.mother !== undefined)!, a = ppl.find(q => q.id === Math.min(c.mother!, c.father!))!;
+    const b = ppl.find(q => q.id === a.partner)!;
+    put(s, 'ved', 30 * MATERIAL.timmer!.n, { [b.id]: 30 * MATERIAL.timmer!.n });
+    planBuild(s);
+    const h = housesOf(s).find(q => q.fn === 'familjehus')!;
+    byggKlart(s);
+    const fam = familjOf(s, a.id), ute = ppl.find(q => !fam.includes(q))!;
+    const iH = (t: SIM.Station) => stationRum(s, t)?.hus === h.id;
+    // ingen annan bygger i familjens hus: en halvbyggd bädd där byggs bara vidare av familjen
+    const rum = SIM.gridOf(s).rooms.find(r => r.hus === h.id)!, i0 = rum.tiles.find(i => !SIM.stationAt(s, i % W, Math.floor(i / W)) && !SIM.stationAt(s, i % W + 1, Math.floor(i / W)) && rum.tiles.includes(i + 1))!;
+    const halv: SIM.Station = { id: s.nextStation = (s.nextStation ?? 0) + 1, k: 'halmbadd', x: i0 % W, y: Math.floor(i0 / W), kvar: 10 * MIN, inne: 1 };
+    s.stationer!.push(halv); SIM.touch(s);
+    const spotA = stationSpot(s, 'halmbadd', a), spotU = stationSpot(s, 'halmbadd', ute);
+    const halvOk = farBygga(s, h, a) && !farBygga(s, h, ute) && !!spotA && roomAt(s, Math.floor(spotA.x), Math.floor(spotA.y))?.hus === h.id && (!spotU || roomAt(s, Math.floor(spotU.x), Math.floor(spotU.y))?.hus !== h.id);
+    s.stationer = s.stationer!.filter(t => t !== halv); SIM.touch(s);
+    const egetHus = !!h.klar && h.ag === a.id;
+    // familjens bäddar i sovsalen bärs hem eller lämnas
+    for (let i = 0; i < 3; i++) stepStationer(s);
+    const famBaddar = baddar().filter(t => fam.some(q => q.id === t.ag)), hemma = famBaddar.every(iH);
+    const famFore = agare.filter(x => fam.some(q => q.id === x)).length;
+    const bar = s.log.filter(r => /bar sin halmbädd/.test(r.text)).length, lamnade = s.log.filter(r => /lämnade sin halmbädd/.test(r.text)).length;
+    // familjens egen bädd i huset och byns slöjdbänk, som också står där
+    const fri = () => rum.tiles.find(i => rum.tiles.includes(i + 1) && [i, i + 1].every(j => !SIM.stationAt(s, j % W, Math.floor(j / W))));
+    const stall = (k: string, ag?: number) => { const i = fri() ?? i0, t: SIM.Station = { id: s.nextStation = (s.nextStation ?? 0) + 1, k, x: i % W, y: Math.floor(i / W), kvar: 0, inne: 1, ag }; s.stationer!.push(t); SIM.touch(s); return t; };
+    const egenB = stall('halmbadd', a.id), bank = stall('flatarbank');
+    const iHus = iH(egenB);
+    const iHuset = iHus && iH(bank);
+    // huset byter ägare (som när det köps eller ärvs av någon utanför familjen): familjens bäddar flyttas ut eller tas isär
+    h.ag = ute.id; SIM.touch(s);
+    for (let i = 0; i < 3; i++) stepStationer(s);
+    const nyFam = familjOf(s, ute.id), kvar = stationerOf(s).filter(t => iH(t) && t.ag !== undefined && !nyFam.some(q => q.id === t.ag));
+    const bankKvar = iHuset && stationerOf(s).some(t => t.id === bank.id && iH(t)), egenUt = !stationerOf(s).some(t => t.id === egenB.id && iH(t));
+    const enPer = new Set(baddar().map(t => t.ag).filter(x => x !== undefined)).size === baddar().filter(t => t.ag !== undefined).length;
+    return [
+      [`varje bädd har en ägare, som sover i den (${b0.length} bäddar, ägare ${agare.join(', ')})`, b0.length >= 2 && agare.every(x => x !== undefined) && egen],
+      [`familjen får ett eget hus (${h?.namn ?? 'inget'})`, egetHus],
+      ['i familjens hus bygger bara familjen, också vidare på en halvbyggd bädd', halvOk],
+      [`familjens bäddar bärs till deras hus eller lämnas (${bar} bars dit, ${lamnade} lämnades, ${famBaddar.length} i familjens ägo)`, hemma && bar + lamnade >= 1 && bar + lamnade === famFore],
+      [`när huset får en ny ägare flyttas det ut som inte är den nya familjens (${kvar.length} kvar, familjens egen bädd ${egenUt ? 'ute' : 'kvar'})`, kvar.length === 0 && egenUt],
+      ['byns slöjdbänk i huset står kvar', bankKvar],
+      ['ingen äger två bäddar', enPer],
+    ];
+  },
+};
+
 SCENARIER.funktion = {
   text: 'Funktionen följer behovet: en sovsal som ingen sover i blir förrådshus eller samlingshus eller rivs, ett samlingshus blir sovsal när sovplatserna inte räcker, och ett familjehus utan ägare blir sovsal. När det är kallt umgås man i samlingshuset',
   kor: () => {

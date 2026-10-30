@@ -133,7 +133,8 @@ function vakta(s: State, larm: Larm, timme: boolean) {
   const faltRuta = new Set<number>();
   for (const f of faltOf(s)) for (const i of faltRutor(f)) {
     const x = i % W, y = (i - x) / W;
-    if (tiles[i] === T.Vatten || isWall(s, x + 0.5, y + 0.5)) larm('fält i vattnet eller en vägg', () => `fält ${f.id} på ${x},${y}`);
+    // en översvämning får stå över fälten (grödan dör, odling.ts), men inget fält görs i sjön
+    if (tiles[i] === T.Vatten && (!s.flod || getMap(s.seed).tiles[i] === T.Vatten) || isWall(s, x + 0.5, y + 0.5)) larm('fält i vattnet eller en vägg', () => `fält ${f.id} på ${x},${y}`);
     if (faltRuta.has(i)) larm('två fält på en ruta', () => `fält ${f.id} på ${x},${y}`);
     faltRuta.add(i);
   }
