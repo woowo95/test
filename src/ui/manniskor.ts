@@ -1,7 +1,7 @@
 import * as PIXI from 'pixi.js';
 import { ACTS, ALDER, Person, actIkon, SEC, TalkEvent, ageOf, SAMTAL, alive, bordVid, byId, clamp, homeKind, isSocial, kanGa, living, load, REL, relKey, spar, storlekAv, vidBordet } from '../sim';
 import { PRICKAR, personFarg } from './hjalp';
-import { s, ui, vidNyBy } from './lage';
+import { s, sakVar, ui, vidNyBy } from './lage';
 import { Ikoner, TS, bubbleG, labels, markLayer, peopleG } from './scen';
 import { jaktPlats } from './jakt';
 import { hasIcon, iconCanvas } from '../ikoner';
@@ -105,6 +105,7 @@ export function drawPeople(t: number) {
   const ppl = dolda.size ? living(s).filter(p => !dolda.has(p.id)) : living(s), pos = new Map<number, { x: number; y: number }>();
   synlig = sprid(ppl); synligNu = ui.nu;
   markIcons.start();
+  const sv = ui.tab === 'sak' ? sakVar() : undefined, harSaken = sv && 'person' in sv ? sv.person : undefined; // den som har den markerade saken (steg 3.10.4)
   for (const p of ppl) {
     const a = ageOf(p, s.now);
     const r = a < ALDER.smabarn ? 2.8 : a < ALDER.vuxen ? 3.8 : 5;
@@ -113,7 +114,7 @@ export function drawPeople(t: number) {
     const sleeping = p.task?.act === 'sova';
     const col = personFarg(p, sleeping);
     peopleG.beginFill(0x000000, 0.25).drawEllipse(x, y + r * 0.9, r * 0.9, r * 0.35).endFill();
-    if (p.id === ui.selected) peopleG.lineStyle(2.5, 0xffffff, 1);
+    if (p.id === ui.selected || p.id === harSaken) peopleG.lineStyle(2.5, 0xffffff, 1);
     else peopleG.lineStyle(1.2, 0x1a1a1a, 0.8);
     if (!sleeping && !kanGa(p)) peopleG.beginFill(col).drawEllipse(x, y + r * 0.4, r * 1.3, r * 0.6).endFill(); // den som inte kan gå ligger och kravlar (steg 3.7.19)
     else peopleG.beginFill(col).drawCircle(x, y, r).endFill();

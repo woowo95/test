@@ -1,4 +1,4 @@
-import { FyndId, Grupp, Pile, State, pilesOf, useMap } from '../sim';
+import { FyndId, Grupp, Pile, State, W, pilesOf, tingOf, useMap } from '../sim';
 import type { FlikId } from './panel';
 
 // det hela gränssnittet delar: byn som visas och vad spelaren har valt.
@@ -45,3 +45,17 @@ export const piles = () => pileCache ??= pilesOf(s);
 export function nyBild() { pileCache = undefined; }
 // högar utanför lagret på en ruta: det som inte fick plats och det som lagts på marken
 export const outPilesAt = (x: number, y: number) => piles().filter(q => q.out && q.x === x && q.y === y);
+// var saken som visas i panelen (ui.sak) finns i byn, för den vita kanten runt den (steg 3.10.4): rutan den ligger på, stationen
+// den står vid eller den som har den på sig, i handen eller bär den
+export function sakVar(): { x: number; y: number } | { station: number } | { person: number } | undefined {
+  const [slag, rest = ''] = ui.sak.split(':');
+  if (slag === 'f') { const i = Number(rest); return { x: i % W, y: Math.floor(i / W) }; }
+  if (slag === 's') { const [x, y] = rest.split(',').map(Number); return { x, y }; }
+  const t = slag === 't' ? tingOf(s).find(k => k.id === Number(rest)) : undefined;
+  if (!t) return undefined;
+  const person = t.bar ?? t.hos ?? t.lass;
+  if (person !== undefined) return { person };
+  if (t.vid !== undefined) return { station: t.vid };
+  const p = piles().find(q => q.id === t.id);
+  return p && { x: p.x, y: p.y };
+}

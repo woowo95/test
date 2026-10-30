@@ -94,7 +94,7 @@ $('testToggle').addEventListener('change', async e => {
     realState = s;
     bytBy(cloneState(s));
     spar.v = new WeakMap();
-    ui.testMode = true; $('speeds').hidden = false; document.body.classList.add('testing'); setSpeed(3600);
+    ui.testMode = true; $('speeds').hidden = false; document.body.classList.add('testing'); setSpeed(1);
   } else {
     leaveTest();
     if (realState) { bytBy(realState); realState = null; }
@@ -121,6 +121,9 @@ const events: TalkEvent[] = [];
 vidNyBy.push(() => { events.length = 0; });
 const IKAPP_EFTER = 120 * SEC; // är byn mer än två minuter efter klockan (fliken var gömd) räknas den ikapp
 const MAX_SLAG = 300; // högst så här många slag per bildruta (25 timmar i spelet)
+// och högst så här länge (datorns tid) räknas byn per bildruta: hinner den inte med farten i testläget går spelet
+// långsammare, men bilden och knapparna svarar (steg 3.10.4)
+const RAKNA_MS = 40;
 const PANEL_MS = 600, LOKAL_MS = 20000, MOLN_MS = MIN; // hur ofta (datorns tid) panelen ritas om och byn sparas i webbläsaren och i molnet
 let lastUi = 0, lastLocal = 0, lastDb = 0;
 function tick() {
@@ -133,7 +136,8 @@ function tick() {
     if (vt - s.now > IKAPP_EFTER) { catchUp(vt); return; }
   }
   // spar.pa är på också här: varje slag börjar om vägen (steg.ts), så bara det sista slaget sparas och ritas
-  for (let n = 0; s.now < vt && n < MAX_SLAG; n++) step(s, BEAT, events);
+  const t0 = performance.now();
+  for (let n = 0; s.now < vt && n < MAX_SLAG && (!n || performance.now() - t0 < RAKNA_MS); n++) step(s, BEAT, events);
   ui.nu = Math.min(vt, s.now);
   nyBild();
   const now = performance.now();

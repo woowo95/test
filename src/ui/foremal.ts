@@ -1,7 +1,7 @@
 import { MASTERVERK, PERFEKT, Act, DJUR, DJURARTER, HOUR, halvKlar, GRODOR, faltById, faltKlar, faltOf, faltRuta, faltRutor, grodaPa, brasaHeat, radieAv, W, bordPlatser, sjoarna, stationById, GORS, MATERIAL, Pile, STATION, STUBBE_LIV, Station, bitAt, bitsOf, clamp, dorrDef, condOf, emberOn, fireHeat, forvarAt, eldPlats, grillVara, heatRadius, TORK, torrDel, isKlar, living, stationDef, stationKlar, stationerOf, storlekAv, tillbehorDef, tingOf, vidStation, zonesOf } from '../sim';
 import { LagereldLage, iconCanvas, lagereldId } from '../ikoner';
 import { ritaHus } from './husbild';
-import { outPilesAt, piles, s, ui } from './lage';
+import { outPilesAt, piles, s, sakVar, ui } from './lage';
 import { Ikoner, TS, overG, pileLayer, structG } from './scen';
 import { mix } from './terrang';
 
@@ -161,12 +161,15 @@ export function drawStructures(t: number) {
   // markerad hög utanför lagret: vit kant runt rutan, som lagerplatsen får
   const h = ui.hogAt;
   if (tab === 'hog' && outPilesAt(h.x, h.y).length) structG.lineStyle(1, 0xffffff, 0.9).drawRoundedRect(h.x * TS + 0.5, h.y * TS + 0.5, TS - 1, TS - 1, 3).lineStyle(0);
+  // markerad sak (steg 3.10.4): rutan den ligger på eller stationen den står vid; den som bär den får kanten i manniskor.ts
+  const sv = tab === 'sak' ? sakVar() : undefined, sst = sv && 'station' in sv ? stationById(s, sv.station) : undefined;
+  if (sv && 'x' in sv) overG.lineStyle(1, 0xffffff, 0.9).drawRoundedRect(sv.x * TS + 0.5, sv.y * TS + 0.5, TS - 1, TS - 1, 3).lineStyle(0);
   // det som är valt i panelen: vit kant runt huset, sjön, fältet eller stationen (steg 2.3.7)
   if (tab === 'hus') kant(bitsOf(s).filter(b => b.hus === ui.husId).map(b => b.y * W + b.x));
   if (tab === 'sjo') kant(sjoarna(s.seed).rutor[ui.sjoNr] ?? []);
   const fv = tab === 'falt' ? faltById(s, ui.faltId) : undefined; // fältet, eller grödan på en av dess rutor (steg 2.10.14)
   if (fv) kant(ui.faltRuta >= 0 ? [faltRuta(fv, ui.faltRuta)] : faltRutor(fv));
-  const vald = tab === 'station' ? stationById(s, ui.stationId) : undefined;
+  const vald = tab === 'station' ? stationById(s, ui.stationId) : sst;
   if (vald) { const { w, h: d } = storlekAv(vald); overG.lineStyle(1, 0xffffff, 0.9).drawRoundedRect(vald.x * TS + 0.5, vald.y * TS + 0.5, w * TS - 1, d * TS - 1, 2).lineStyle(0); }
   // stubbar: bleknar medan de ruttnar bort
   for (const k of s.stubbar ?? []) {

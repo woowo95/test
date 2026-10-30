@@ -3,17 +3,19 @@ import { s, ui, vidNyBy } from './lage';
 import { Ikoner, TS, djurFx, djurLayer, djurMarkLayer, plantG } from './scen';
 import { jagade, samlaJakt } from './jakt';
 import { posOf } from './manniskor';
+import { OMRITA_MS } from './terrang';
 
 // det som växer just nu, diskret i vanliga vyn: små bärbuskar och svampar där det finns något att hämta.
 // Var det kan växa syns inte, inte heller rötterna under jorden. Ritas om varje timme och när någon tagit något. Kaninerna ritas varje
 // bildruta vid tiden som visas (ui.nu), som folket, eftersom de skuttar omkring (djur.ts).
-let ritad = '';
+let ritad = '', ritadNar = -Infinity;
 // en fast plats i rutan för varje sak, så att buskarna inte hoppar runt när kartan ritas om
 const plats = (i: number, j: number) => { const h = Math.sin(i * 12.9898 + j * 78.233) * 43758.5453; return h - Math.floor(h); };
 export function drawPlants(force = false) {
   const key = `${s.seed},${Math.floor(s.now / HOUR)},${ageIndex(s)},${plockOf(s)}`;
-  if (!force && key === ritad) return;
-  ritad = key;
+  const nu = performance.now();
+  if (!force && (key === ritad || nu - ritadNar < OMRITA_MS)) return; // högst en gång i sekunden, som marken
+  ritad = key; ritadNar = nu;
   plantG.clear();
   const sh = getMap(s.seed).shade;
   const bar = FYND.bar, kant = FYND.kantarell, spin = FYND.spindling;
@@ -94,6 +96,9 @@ export function drawAnimals() {
       djurFx.lineStyle(1, 0x8a6a40, 1).moveTo(x - vx / v * 4, y - vy / v * 4).lineTo(x, y).lineStyle(0);
     }
   }
+  // det markerade djuret (steg 3.10.4): en vit kant runt symbolen, som allt annat som är markerat
+  const vald = ui.tab === 'djur' ? ut.find(d => d.id === ui.djurId) : undefined;
+  if (vald) djurFx.lineStyle(1, 0xffffff, 0.9).drawRoundedRect(vald.x * TS - 5.5, vald.y * TS - 7.5, 11, 11, 3).lineStyle(0);
   djurIkoner.end(); larmIkoner.end();
   synliga = ut;
 }

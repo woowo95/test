@@ -51,7 +51,10 @@ function ritaIs(is: number) {
   if (isSprite.texture !== PIXI.Texture.EMPTY) isSprite.texture.destroy(true);
   isSprite.texture = PIXI.Texture.from(c, { scaleMode: PIXI.SCALE_MODES.NEAREST });
 }
-let drawnAge = -1, drawnSig = -1, drawnIs = -1, drawnVatten = -2, drawnAska = -1, lastSigCheck = 0;
+let drawnAge = -1, drawnSig = -1, drawnIs = -1, drawnVatten = -2, drawnAska = -1, lastSigCheck = 0, lastDraw = -Infinity;
+// hela marken ritas om högst en gång i sekunden (datorns tid): när man snabbspolar ändras den nästan varje bildruta, och
+// att rita om hela kartan tar mer tid än en bildruta har (steg 3.10.4)
+export const OMRITA_MS = 1000;
 const ASKA = 0x2a2622; // marken efter en eldsvåda (platshållare, steg 3.8.5)
 const PATH_COL = [0xb4b9b3, 0x8e7752, 0x9a8258, 0x846c47]; // upptrampad mark per tidsålder (snö i istiden)
 // hur sliten en ruta ser ut, i fem steg: 0 = orörd, 4 = bar jord
@@ -80,8 +83,8 @@ export function drawTerrain(force = false) {
   const is = isNiva();
   const vat = (s.sjoTorr?.v ?? -1) * 4 + (s.flod?.niva ?? 0); // torkan och översvämningen: vattnet som det är nu (steg 3.8.2, 3.8.3)
   const ask = s.aska?.length ? s.aska.length * 1000 + Math.floor(s.now / (6 * HOUR)) % 1000 : 0; // det svarta efter en eldsvåda bleknar (steg 3.8.5)
-  if (!force && ai === drawnAge && sig === drawnSig && is === drawnIs && vat === drawnVatten && ask === drawnAska) return;
-  drawnAge = ai; drawnSig = sig; drawnIs = is; drawnVatten = vat; drawnAska = ask;
+  if (!force && (ai === drawnAge && sig === drawnSig && is === drawnIs && vat === drawnVatten && ask === drawnAska || now - lastDraw < OMRITA_MS)) return;
+  lastDraw = now; drawnAge = ai; drawnSig = sig; drawnIs = is; drawnVatten = vat; drawnAska = ask;
   ritaIs(is);
   const m = getMap(s.seed), pal = PAL[ai], g = groundOf(s);
   // marken som brann nyss: mörk, och ljusare ju längre sedan (BRAND.svart dygn)
