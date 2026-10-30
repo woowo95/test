@@ -25,8 +25,8 @@ export const BYGGNAD = balans('byggnad', {
 type BitK = 'vagg' | 'golv' | 'oppning';
 // en byggd eller planerad ruta. b = hur långt bygget kommit (1 = klart), mat = material som lagts på bygget,
 // c = skick (1 = nytt), lp/lm = lagning: hur långt den kommit och material som lagts på den, dorr = dörren som hänger i en
-// öppning (en rad i DORRAR)
-export interface Bit { id: number; x: number; y: number; k: BitK; m: string; b: number; mat: number; c: number; hus?: number; lp?: number; lm?: number; dorr?: string }
+// öppning (en rad i DORRAR), lera = när ett jordgolv som legat under vatten har torkat och blir jordgolv igen (steg 3.8.7, flod.ts)
+export interface Bit { id: number; x: number; y: number; k: BitK; m: string; b: number; mat: number; c: number; hus?: number; lp?: number; lm?: number; dorr?: string; lera?: number }
 // kom = var materialet kom ifrån (bygg.ts), fn = husets funktion (en rad i BYGGNADER, byggnader.ts; saknas = sovsal), ag = ägaren (ett familjehus), slag = vad ett förrådshus rymmer
 export interface Hus { id: number; namn: string; x: number; y: number; w: number; h: number; klar?: number; varKlar?: number; kom?: Record<string, number>; fn?: string; ag?: number; slag?: 'mat' | 'material'; tom?: number } // tom = sedan när ingen sover i sovsalen; varKlar = när huset först blev färdigt, sparat när en vägg rasar (klar nollas då)
 // per material: vad som går åt per ruta, timmar för en ovan byggare (riktlinjen, steg 2.12.8: 20 minuter per vägg, 5 per ruta
@@ -40,6 +40,7 @@ export const MATERIAL: Record<string, Material> = {
   jord: { namn: 'Jordgolv', k: 'golv', n: 0, tim: 5 / 60, slit: 0, farg: 0x7a5a3a },
   tra: { namn: 'Trägolv', k: 'golv', item: 'ved', n: 1, tim: 10 / 60, slit: 0.0002, tek: 'timmervagg', farg: 0xa07446, ikon: 'tragolv' },
   ho: { namn: 'Golv av hö', k: 'golv', item: 'torrgras', n: 1, tim: 5 / 60, slit: 0.002, farg: 0xd2b866, ikon: 'hogolv' }, // äldre sparfiler: hö-golv läggs inte längre, slits till jordgolv
+  lera: { namn: 'Lera', k: 'golv', n: 0, tim: 5 / 60, slit: 0, farg: 0x5c4630 }, // ett jordgolv som legat under vatten (steg 3.8.7, flod.ts): ingen sover där, och det blir jordgolv igen när det torkat
   oppning: { namn: 'Öppning', k: 'oppning', n: 0, tim: 0, slit: 0, farg: 0x7a5a3a },
 };
 

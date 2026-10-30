@@ -574,6 +574,101 @@ SCENARIER.oversvamning = {
   },
 };
 
+SCENARIER.flodrest = {
+  text: 'Steg 3.8.7: medan vattnet stiger bär de vuxna undan maten från lagerplatserna som vattnet kan nå; när vattnet sjunker minns byn hur högt det nådde (en lärdom) och bygger inte där; ett jordgolv under vatten blir lera och torkar till jordgolv igen; en vägg i vattnet slits fortare; ingen sover på en blöt ruta; en brasa i vattnet slocknar',
+  kor: () => {
+    // en by vars vårtid just börjat och har en översvämning som når minst två rutor upp på land
+    const fore = (x: State) => { x.founded -= 20 * DAY; x.kal = nyKalender(x.now - HOUR, 1); };
+    let v: State | undefined;
+    for (let seed = 1; seed < 800 && !v; seed++) {
+      const b = createState(seed, START); fore(b);
+      const m = SIM.motgangNu(b);
+      if (m?.id !== 'oversvamning') continue;
+      let topp = 0;
+      for (let t = m.start; t < m.slut; t += HOUR) topp = Math.max(topp, SIM.flodNiva(b, t));
+      if (topp >= 2) v = b;
+    }
+    if (!v) return [['en by med en översvämning på våren', false]];
+    const s = v, m = SIM.motgangNu(s)!;
+    tandEld(s); setMat(s, { bar: 40, torkat: 40 });
+    let b0 = m.start; while (!SIM.flodNiva(s, b0 + HOUR)) b0 += HOUR;
+    kor(s, (b0 - s.now) / HOUR);
+    const { land } = SIM.djupOf(s.seed), g = getMap(s.seed).tiles, c = SIM.campCenter(s);
+    const fritt = (x: number, y: number) => x > 0 && y > 0 && x < W - 1 && y < W - 1 && g[y * W + x] !== T.Sten && g[y * W + x] !== T.Vatten && SIM.ledig(s, x, y) && !SIM.bitAt(s, x, y);
+    const nara = (f: (i: number) => boolean, ej: { x: number; y: number }[] = []) => {
+      let b: { x: number; y: number } | undefined, bd = Infinity;
+      for (let i = 0; i < W * W; i++) {
+        const x = i % W, y = Math.floor(i / W), d = Math.hypot(x - c.x, y - c.y);
+        if (d < bd && f(i) && fritt(x, y) && ej.every(q => Math.hypot(q.x - x, q.y - y) >= 4)) { bd = d; b = { x, y }; }
+      }
+      return b!;
+    };
+    // ett hus (4 × 3, timmerväggar, öppning i söder, trägolv) där en golvruta ligger högst två rutor upp på land
+    let hus: { x: number; y: number } | undefined, hd = Infinity;
+    for (let y = 1; y < W - 4; y++) for (let x = 1; x < W - 5; x++) {
+      const d = Math.hypot(x - c.x, y - c.y);
+      if (d >= hd || Math.min(land[(y + 1) * W + x + 1], land[(y + 1) * W + x + 2]) > 2) continue;
+      let ok = true;
+      for (let yy = y; yy < y + 3 && ok; yy++) for (let xx = x; xx < x + 4 && ok; xx++) ok = fritt(xx, yy);
+      if (ok) { hd = d; hus = { x, y }; }
+    }
+    if (!hus) return [['en plats för ett hus vid stranden', false]];
+    const h: SIM.Hus = { id: (s.nextBit ??= 1), namn: 'Hydda', x: hus.x, y: hus.y, w: 4, h: 3, fn: 'sovsal', klar: s.now };
+    s.nextBit++;
+    for (let yy = hus.y; yy < hus.y + 3; yy++) for (let xx = hus.x; xx < hus.x + 4; xx++) {
+      const edge = xx === hus.x || yy === hus.y || xx === hus.x + 3 || yy === hus.y + 2, open = xx === hus.x + 2 && yy === hus.y + 2;
+      const mt = open ? 'oppning' : edge ? 'timmer' : 'tra';
+      SIM.bitsOf(s).push({ id: s.nextBit++, x: xx, y: yy, k: SIM.MATERIAL[mt].k, m: mt, b: 1, mat: SIM.MATERIAL[mt].n, c: 1, hus: h.id });
+    }
+    SIM.housesOf(s).push(h); SIM.touch(s);
+    const golv = [(hus.y + 1) * W + hus.x + 1, (hus.y + 1) * W + hus.x + 2], rekt = [{ x: hus.x + 1, y: hus.y + 1 }];
+    // på stranden: ett jordgolv och en vägg en ruta från vattnet, en vägg långt därifrån, en tänd brasa en ruta från vattnet,
+    // och när vattnet stigit en ruta en hög rötter två rutor från vattnet
+    const pj = nara(i => land[i] === 1, rekt), pv = nara(i => land[i] === 1, [...rekt, pj]), pw = nara(i => land[i] >= 10, rekt);
+    const pb = nara(i => land[i] === 1, [...rekt, pj, pv]), pm = nara(i => land[i] === 2, [...rekt, pj, pv, pb]);
+    const lagt = [pj, pv, pw].map((p, n) => { const mt = n ? 'timmer' : 'jord', b: SIM.Bit = { id: s.nextBit!++, x: p.x, y: p.y, k: SIM.MATERIAL[mt].k, m: mt, b: 1, mat: SIM.MATERIAL[mt].n, c: 1 }; SIM.bitsOf(s).push(b); return b; });
+    SIM.touch(s);
+    const [jord, vNara, vLangt] = lagt;
+    (s.stationer ??= []).push({ id: (s.nextStation ??= 1), k: 'brasa', x: pb.x, y: pb.y, kvar: 0, eld: { fuel: 6, lit: 1 } } as SIM.Station);
+    const brasa = s.stationer[s.stationer.length - 1]; s.nextStation = (s.nextStation ?? 1) + 1;
+    const sang0 = new Map(living(s).map(p => [p.id, SIM.bedTile(s, p)])), sangar0 = [...sang0.values()].filter(t => t !== undefined && golv.includes(t)).length;
+    const minnesRuta = nara(i => land[i] === 1, [...rekt, pj, pv, pb, pm]);
+    // tills vattnet sjunkit undan, och två dygn till
+    const c0 = [vNara.c, vLangt.c];
+    let lera = false, brasaUt = false, hogst = 0, rotterKvarVid1 = -1, blotSang = 0, flyttad = 0, cSlut: number[] = [];
+    const rotter = () => (s.stackar ?? []).filter(a => a.k === 'rotter' && a.x === pm.x && a.y === pm.y).reduce((n, a) => n + a.n, 0);
+    for (let h2 = 0; h2 < 8 * 24; h2++) {
+      kor(s, 1);
+      const niva = s.flod?.niva ?? 0;
+      hogst = Math.max(hogst, niva);
+      if (niva === 1 && hogst === 1) { if (rotterKvarVid1 < 0) { s.stackar!.push({ k: 'rotter', n: 12, c: 1, x: pm.x, y: pm.y }); SIM.tidy(s); } rotterKvarVid1 = rotter(); }
+      if (jord.m === 'lera') lera = true;
+      if (niva && !brasa.eld?.lit) brasaUt = true;
+      for (const p of living(s)) {
+        const t = SIM.bedTile(s, p);
+        if (t !== undefined && SIM.flodBlot(s, t)) blotSang++;
+        const t0 = sang0.get(p.id);
+        if (t0 !== undefined && SIM.flodBlot(s, t0) && t !== t0) flyttad++;
+      }
+      if (hogst && !niva && !cSlut.length) cSlut = [vNara.c, vLangt.c];
+      if (cSlut.length && !s.flodBlot && jord.m === 'jord' && lera) break;
+    }
+    const dNara = c0[0] - (cSlut[0] ?? c0[0]), dLangt = c0[1] - (cSlut[1] ?? c0[1]);
+    const minns = living(s).filter(p => p.lardomar?.some(l => l.k === 'flod' && l.v === hogst)).length, utan = living(s).filter(p => !p.lardomar?.some(l => l.k === 'flod')).map(p => `${p.name} ${SIM.ageOf(p, s.now).toFixed(0)} år, ${p.lardomar?.length ?? 0} lärdomar`);
+    const ledigNu = SIM.ledig(s, minnesRuta.x, minnesRuta.y);
+    return [
+      [`vattnet nådde ${hogst} rutor upp på land`, hogst >= 2],
+      [`de vuxna bar undan maten innan vattnet kom (${s.stat?.['flod undan'] ?? 0} gånger; ${rotterKvarVid1} av 12 rötter kvar två rutor från vattnet medan det stod en ruta upp)`, (s.stat?.['flod undan'] ?? 0) >= 1 && rotterKvarVid1 === 0],
+      [`alla i byn minns hur högt vattnet nådde (${minns} av ${living(s).length}, byn minns ${s.flodMinne ?? 0} rutor${utan.length ? `; inte ${utan.join(', ')}` : ''})`, minns === living(s).length && s.flodMinne === hogst],
+      [`där bygger man inte (en ruta från vattnet är ${ledigNu ? 'ledig' : 'inte ledig'} efteråt)`, !ledigNu],
+      [`jordgolvet blev lera och torkade till jordgolv igen (${lera ? 'lera' : 'aldrig lera'}, nu ${SIM.MATERIAL[jord.m].namn.toLowerCase()})`, lera && jord.m === 'jord'],
+      [`väggen i vattnet slets fortare än väggen långt därifrån (${(dNara * 1000).toFixed(2)} mot ${(dLangt * 1000).toFixed(2)} tusendelar)`, dLangt > 0 && dNara > dLangt * 2],
+      [`ingen sover på en blöt ruta (${blotSang} gånger; ${sangar0} sov vid stranden innan, ${flyttad} gånger någon annanstans medan det var blött)`, blotSang === 0 && sangar0 > 0 && flyttad > 0],
+      [`brasan i vattnet slocknade (${s.stat?.['flod brasa'] ?? 0})`, brasaUt && (s.stat?.['flod brasa'] ?? 0) >= 1],
+    ];
+  },
+};
+
 SCENARIER.tornado = {
   lang: true,
   text: 'Steg 3.8.4: tornadon kommer ibland på sommaren och hösten. Den går på några timmar längs en rak bana från kartans kant till kartans kant nära byn, fäller träd till liggande stammar, river en risvägg men inte en ny timmervägg, lyfter saker som ligger ute (en del går sönder, resten hamnar några rutor från banan) och det blåser hårt. Folk ser den, ropar och går undan, ingen står i en vägg eller i vattnet, och efteråt bärs det som spridits in i lagret',

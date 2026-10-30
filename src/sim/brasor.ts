@@ -1,4 +1,5 @@
-import { HOUR_S, DAY, Person, State } from './typer';
+import { HOUR_S, DAY, Person, State, W } from './typer';
+import { iVattnetNu } from './sjo';
 import { balans } from './balans';
 import { eldPlats } from './karta';
 import { ALDER, ageOf, count, doingAct, forstaGang, living, log, ovning } from './folk';
@@ -123,6 +124,7 @@ export function stepBrasaEld(s: State, dtSec: number, cands: { p: Person; w: Wis
   const h = hearthOf(s.fire), now = s.now;
   for (const t of br) {
     const e = brasaEld(t);
+    if (e.lit && s.flod && iVattnetNu(s, t.y * W + t.x)) { e.fuel = 0; e.lit = undefined; e.ut = now; count(s, 'flod brasa'); log(s, 'Vattnet släckte en brasa.', 'world'); } // steg 3.8.7, flod.ts
     if (e.lit) {
       e.fuel -= Math.min(e.fuel, h.burn / HOUR_S * dtSec);
       if (e.fuel <= 1e-6) { e.fuel = 0; e.lit = undefined; e.ut = now; log(s, 'En brasa slocknade.', 'world'); }
@@ -134,6 +136,7 @@ export function stepBrasaEld(s: State, dtSec: number, cands: { p: Person; w: Wis
   if (doingAct(s, 'elda') || vedPerEld(s, 0) < BRASA.slackDygn) return; // en i taget, och ingen ved till brasorna när den tryter
   for (const t of br) {
     const e = t.eld!, fyll = e.fuel * ELD.fyllMarg + ELD.fyllPlus;
+    if (s.flod && iVattnetNu(s, t.y * W + t.x)) continue; // ingen tänder en brasa i vattnet
     if (e.lit ? e.want! < fyll : !s.fire.lit && !emberOn(s) || e.want! < h.maxFuel * ELD.tandVill) continue; // den tänds med en brand från lägerelden
     let best: { p: Person; w: Wish } | undefined, bs = -1e9;
     for (const c of cands) {

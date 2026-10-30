@@ -20,7 +20,7 @@ import { PROJEKT, Uppgift, bastaProjekt } from './projekt';
 import { faltNu, vildFronPlats } from './odling';
 import { MINNE, areaOf, flintArea, pickSpot, prospectFor } from './minne';
 import { eldPlats, getMap } from './karta';
-import { amountOf, avbryt, fetchSpot, haulJob } from './lager';
+import { amountOf, avbryt, fetchSpot, flodUndan, haulJob } from './lager';
 import { bedFor, buildJob, siteOf } from './bygg';
 import { bitAt, blocked, freeNear, roomAt } from './byggnad';
 import { bedTile, homeless, samlingRum, varmareInne } from './byggnader';
@@ -356,8 +356,11 @@ export function chooseTask(s: State, p: Person) {
   const a = ageOf(p, s.now), light = isLight(s.now), lazy = 1 - duty(s, p);
   const v: Val = { act: 'vila', why: '', dur: (VAL.vilaMin + rnd(s, 'val', p) * VAL.vilaSpann) * MIN }; // 20–60 min
   const sk = vargSkydd(s, p) ?? tornadoSkydd(s, p), br = sk ? undefined : brandVal(s, p); // vargar är nära (steg 3.7.15), en tornado kommer (steg 3.8.4) eller det brinner (steg 3.8.5)
+  // vattnet stiger (steg 3.8.7, flod.ts): de vuxna som orkar bär undan maten från lagerplatserna vattnet kan nå, också på natten
+  const fl = sk || br || !s.flodHot || a < ALDER.vuxen || isSick(p, s.now) || !kanGa(p) ? undefined : flodUndan(s);
   if (sk) { set(v, sk.act, sk.why); v.spot = sk.spot; v.dur = sk.dur; }
   else if (br) { set(v, br.act, br.why); v.spot = br.spot; v.dur = br.dur; v.tool = br.tool; v.ref = br.ref; }
+  else if (fl) { set(v, 'bara', fl.why); v.spot = fl; v.dur = VAL.baraTim * HOUR; count(s, 'flod undan'); }
   else if (!needs(s, p, v, a, lazy, light) && !(light && utbrottVal(s, p, v))) { if (light) day(s, p, v, a, lazy); else night(s, p, v, a); }
   if (ACTS[v.act].social && v.act !== 'maltid' && skams(p, s.now)) { v.act = 'skams'; v.why = 'Skäms och håller sig undan de andra'; v.spot = undefined; } // straffet skam (steg 3.5.3, styre.ts)
   if (v.act === 'toa') {

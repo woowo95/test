@@ -9,6 +9,7 @@ import { tingOf } from './agande';
 import { ARBETE, grundvarde, tingVarde, varuVarde } from './varde';
 import { Person, State } from './typer';
 import { balans } from './balans';
+import { flodBlot } from './sjo';
 import { inneUtanPlats, isKlar, stationDef, stationRum, stationRutor, stationerOf, storlek } from './stationer';
 
 // ---------- balanstal (regel 8) ----------
@@ -239,8 +240,11 @@ export const homeless = (s: State) => { const b = boende(s); return Math.max(0, 
 export function bedTile(s: State, p: Person) {
   const b = boende(s), e = b.egna.get(p.id), tiles = e?.tiles ?? b.gemensamt, ppl = e?.folk ?? b.ovriga;
   if (!tiles.length) return undefined;
-  return tiles[Math.max(0, ppl.indexOf(p)) % tiles.length];
+  const t = tiles[Math.max(0, ppl.indexOf(p)) % tiles.length];
+  return blot(s, t) ? tiles.find(i => !blot(s, i)) : t; // ingen sover på en blöt ruta: en annan, eller ingen (steg 3.8.7, flod.ts)
 }
+// rutan är blöt: vattnet står där eller stod där nyss, eller golvet är lera (steg 3.8.7, flod.ts)
+const blot = (s: State, i: number) => flodBlot(s, i) || gridOf(s).at.get(i)?.m === 'lera';
 
 // ---------- varje timme ----------
 export function stepByggnader(s: State) {

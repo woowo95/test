@@ -150,3 +150,10 @@ export const vattenNu = (s: State) => vattenOf(s).tiles;
 export const strandNu = (s: State) => vattenOf(s).strand;
 // är rutan i vatten just nu (kartans vatten utom den torra sjöbottnen, och översvämningens vatten)
 export const iVattnetNu = (s: State, i: number) => vattenOf(s).tiles[i] === T.Vatten;
+// översvämningen (steg 3.8.7, flod.ts): ligger rutan högst n rutor upp på land (inte på stenarna)? Rutorna där maten bärs
+// undan medan vattnet stiger (s.flodHot), de blöta där ingen sover (s.flodBlot) och de byn minns att vattnet nådde, där inget
+// byggs (s.flodMinne). Talen räknas varje timme i flod.ts
+const uppTill = (s: State, i: number, n?: number) => !!n && djupOf(s.seed).land[i] <= n && getMap(s.seed).tiles[i] !== T.Sten;
+export const flodHotad = (s: State, i: number) => uppTill(s, i, s.flodHot);
+export const flodBlot = (s: State, i: number) => uppTill(s, i, s.flodBlot);
+export const underMinnet = (s: State, i: number) => uppTill(s, i, s.flodMinne);

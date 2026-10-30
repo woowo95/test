@@ -16,7 +16,7 @@ import { temperature, vaderSlit } from './vader';
 import { BYN, Del, addDel, sumOf, takeOrder } from './egendom';
 import { FOOD, SAKER, SAK_LIST, STACK, STACK_ORDER, bordOf, isFood, isTool, rutaOf, sakNamn, stackOf } from './saker';
 import { balans } from './balans';
-import { iVattnetNu } from './sjo';
+import { flodHotad, iVattnetNu, underMinnet } from './sjo';
 import { FLOD } from './flod';
 
 // ---------- balanstal (regel 8) ----------
@@ -337,7 +337,7 @@ function skogI(s: State, z: Zone) {
   for (let y = z.y; y < z.y + z.h; y++) for (let x = z.x; x < z.x + z.w; x++) if (inMap(x, y) && g.trees[y * W + x] >= FOREST) n++;
   return n && !nTools(s, 'yxa') ? Infinity : n;
 }
-const allUsable = (s: State, z: Zone) => { for (let y = z.y; y < z.y + z.h; y++) for (let x = z.x; x < z.x + z.w; x++) if (!usable(s, x, y)) return false; return true; };
+const allUsable = (s: State, z: Zone) => { for (let y = z.y; y < z.y + z.h; y++) for (let x = z.x; x < z.x + z.w; x++) if (!usable(s, x, y) || underMinnet(s, key(x, y))) return false; return true; }; // inte där byn minns att vattnet nått (steg 3.8.7, flod.ts)
 const overlaps = (a: Zone, b: Zone, gap: number) => a.x < b.x + b.w + gap && b.x < a.x + a.w + gap && a.y < b.y + b.h + gap && b.y < a.y + a.h + gap;
 // rutorna runt en lagerplats, närmast först (från fran till och med till rutor ut). En i taget, så att den som letar efter
 // den första lediga inte går igenom hela kartan
@@ -388,6 +388,7 @@ export const rymd = (s: State, x: number, y: number, k: string) => { const f = f
 // många som det rymmer. Medan det byggs ryms ett redskap där, annars ligger något annat i stället när det blir klart
 function roomIn(s: State, occ: Occ, x: number, y: number, k: string) {
   if (s.flod && iVattnetNu(s, key(x, y))) return false; // ute i en översvämning (flod.ts)
+  if (s.flodHot && isFood(k) && flodHotad(s, key(x, y)) && !forvarAt(s, x, y)) return false; // vattnet stiger hit: maten bärs undan (steg 3.8.7)
   if (groundOf(s).trees[key(x, y)] >= FOREST && zonesOf(s).some(z => z.rojs && inZone(z, x, y))) return false; // ett träd i lagret i skogen fälls först (steg 3.6.9)
   const a = occ.get(key(x, y)), f = forvarAt(s, x, y), st = stationAt(s, x, y);
   if (f?.redskap) return isTool(k) && (!a || isTool(a.k)) && (occ.redskap.get(key(x, y)) ?? 0) < f.rymmer;
@@ -426,7 +427,7 @@ function besideSpot(s: State, k: string, occ: Occ) {
   const upptagen = new Set<number>();
   for (const a of things(s)) if (!(a.k === k && !isTool(k) && a.n < rymd(s, a.x, a.y, k) - 1e-9)) upptagen.add(key(a.x, a.y));
   const z0 = (base.length ? base : zs)[0];
-  for (const r of ringTiles(s, z0, LAGER.bredvid + 1, Math.max(W, H))) if (zoneAt(s, r.x, r.y) < 0 && !upptagen.has(key(r.x, r.y))) return r;
+  for (const r of ringTiles(s, z0, LAGER.bredvid + 1, Math.max(W, H))) if (zoneAt(s, r.x, r.y) < 0 && !upptagen.has(key(r.x, r.y)) && !(s.flodHot && isFood(k) && flodHotad(s, key(r.x, r.y)))) return r; // inte dit vattnet stiger (steg 3.8.7)
   return { x: zs[0].x, y: zs[0].y }; // hela kartan är full
 }
 export const fetchSpot = (s: State, k: string) => {
@@ -867,6 +868,20 @@ export function haulJob(s: State, near?: number, baraMat = false) {
     else if (!allows(zs[zi], a.k)) { if (zoneSpot(s, a.k, -Infinity, occ)) { why = `Sorterar: flyttar ${sakNamn(a.k).toLowerCase()} till ${zs.find(z => allows(z, a.k))?.namn?.toLowerCase() ?? 'rätt lager'}`; sc += LAGER.barSortera; } }
     else if (zoneSpot(s, a.k, zs[zi].prio ?? 0, occ)) { why = 'Flyttar saker till ett lager närmare elden'; sc += LAGER.barNarmare; }
     if (why && sc < bs) { bs = sc; best = { x: a.x + 0.5, y: a.y + 0.5, why }; }
+  }
+  return best;
+}
+// medan vattnet stiger (steg 3.8.7, flod.ts): maten på en lagerplats som vattnet kan nå (flodHotad i sjo.ts), närmast lägret
+// först. Den bärs till en plats som vattnet inte når (roomIn). Det som ligger i en kista eller på en hylla klarar sig
+export function flodUndan(s: State) {
+  if (!s.flodHot) return undefined;
+  const taken = new Set(living(s).filter(p => p.task?.act === 'bara' && p.task.phase === 'go').map(p => key(Math.floor(p.task!.tx), Math.floor(p.task!.ty))));
+  let best: { x: number; y: number; why: string } | undefined, bs = Infinity;
+  for (const a of things(s)) {
+    const i = key(a.x, a.y);
+    if (!isFood(a.k) || !flodHotad(s, i) || iVattnetNu(s, i) || taken.has(i) || forvarAt(s, a.x, a.y)) continue;
+    const d = campDist(s, a.x, a.y);
+    if (d < bs) { bs = d; best = { x: a.x + 0.5, y: a.y + 0.5, why: 'Vattnet stiger: bär undan maten' }; }
   }
   return best;
 }

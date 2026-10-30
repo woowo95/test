@@ -18,6 +18,8 @@ import { fellingTiles } from './skog';
 import { FOREST, findPath } from './vag';
 import { BYGGNADER, Byggnad, Fn, HUS, antalLika, bedTile, familjOf, fnOf, husKlar, mostUrgent } from './byggnader';
 import { H, HOUR, HOUR_S, Person, State, T, Task, W, inMap } from './typer';
+import { iVattnetNu, underMinnet } from './sjo';
+import { FLOD } from './flod';
 import { balans } from './balans';
 import { ELDFLYTT, nyEldplats, vidElden } from './eldflytt';
 import { canLight } from './eld';
@@ -61,6 +63,7 @@ const tileOk = (s: State, x: number, y: number, utomElden: boolean) => {
   if (x < 1 || y < 1 || x >= W - 1 || y >= H - 1) return false;
   if (!usable(s, x, y, utomElden)) return false; // inte vatten, sten, inpå elden (utom när elden kan flyttas) eller på ett annat bygge (träden spelar ingen roll: de fälls innan bygget börjar)
   if (zonesOf(s).some(z => nearZone(z, x, y, BYGG.lagerMarg))) return false;
+  if (underMinnet(s, y * W + x)) return false; // byn minns att vattnet nådde hit (steg 3.8.7, flod.ts)
   if ((s.stackar ?? []).some(a => a.x === x && a.y === y) || tingOf(s).some(k => k.x === x && k.y === y && k.hos === undefined && k.lass === undefined) || (s.stockar ?? []).some(k => Math.floor(k.x) === x && Math.floor(k.y) === y) || (s.stubbar ?? []).some(k => k.x === x && k.y === y)) return false;
   return true;
 };
@@ -325,7 +328,7 @@ export function wearBuild(s: State, hours: number, ai: number) {
   for (const b of bitsOf(s)) {
     const M = MATERIAL[b.m];
     if (b.b < 1 || !M.slit) continue;
-    b.c -= M.slit * hours * (iIstiden(ai) ? ARSTID.slitIstid : 1) * (b.k === 'vagg' ? vaderSlit(s) : 1); // väggarna slits mer i regnet och snön (steg 2.11.2)
+    b.c -= M.slit * hours * (iIstiden(ai) ? ARSTID.slitIstid : 1) * (b.k === 'vagg' ? vaderSlit(s) * (s.flod && iVattnetNu(s, b.y * W + b.x) ? FLOD.vaggSlit : 1) : 1); // väggarna slits mer i regnet och snön (steg 2.11.2) och i en översvämnings vatten (steg 3.8.7, flod.ts)
     if (b.c > 0) continue;
     if (b.k === 'vagg') {
       const h = rasar(s, b);

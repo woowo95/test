@@ -363,7 +363,7 @@ function knowledgeHtml(p: Person) {
 function lardomHtml(p: Person, ls: Lardom[]) {
   const slag = [...new Set(ls.map(l => l.k))], id = (k: LKind) => `ld-${p.id}-${k}`;
   const sym = slag.map(k => {
-    const d = LARDOMAR[k], n = ls.filter(l => l.k === k), fel = n.some(l => describe(s, l).wrong), title = `${cap(d.namn)}: ${n.length} ${n.length === 1 ? 'plats' : 'platser'}${fel ? ', något stämmer inte' : ''}`;
+    const d = LARDOMAR[k], n = ls.filter(l => l.k === k), fel = n.some(l => describe(s, l).wrong), title = k === 'flod' ? `${cap(d.namn)}: ${describe(s, n[0]).what.toLowerCase()}` : `${cap(d.namn)}: ${n.length} ${n.length === 1 ? 'plats' : 'platser'}${fel ? ', något stämmer inte' : ''}`; // högvattnet: hur högt det nådde (steg 3.8.7)
     return `<button type="button" class="tnod liten kan${hjalpOppen(id(k)) ? ' sel' : ''}" data-hjalp="${id(k)}" data-hjalp-grupp="ld-${p.id}-" title="${esc(title)}" aria-label="${esc(title)}">${tecknet(d.ikon, d.tecken)}<span class="antal">${n.length}</span>${fel ? '<span class="brist">!</span>' : ''}</button>`;
   }).join('');
   const k = slag.find(x => hjalpOppen(id(x)));
