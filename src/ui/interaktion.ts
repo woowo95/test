@@ -6,6 +6,7 @@ import { outPilesAt, piles, s, ui } from './lage';
 import { posOf } from './manniskor';
 import { djurSynliga } from './vaxter';
 import { sakKey } from './flikar/sak';
+import { flyttaHit } from './flikar/station';
 import { renderPanel, selectPerson, visa, ärPersonflik } from './panel';
 import { renderPorts, stopFollow } from './portratt';
 import { TS, app, cam, layout, tileAt, toWorld, view, world, zoomAt } from './scen';
@@ -40,6 +41,7 @@ app.stage.on('pointerupoutside', () => { drag = null; });
 app.stage.on('pointertap', e => {
   if (drag && drag.moved > 6) return;
   const gx = e.global.x, gy = e.global.y, p = personAt(gx, gy), zi = storeAt(gx, gy), c = tileAt(gx, gy);
+  if (ui.testMode && ui.flytta >= 0) { flyttaHit(c.x, c.y); renderPanel(true); return; } // stationen som flyttas i testläget (steg 3.10.1)
   const dj = p ? undefined : djurAt(gx, gy);
   if (p) selectPerson(p.id);
   else if (dj !== undefined) { ui.djurId = dj; visa('djur'); }

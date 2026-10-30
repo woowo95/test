@@ -457,9 +457,11 @@ function golvFri(s: State, rum: Set<number>, x: number, y: number) {
   return rum.has(i) && !stationRutor(s).at.has(i) && !stationRutor(s).sitt.has(i) && !zonesOf(s).some(z => x >= z.x && x < z.x + z.w && y >= z.y && y < z.y + z.h)
     && !(s.stackar ?? []).some(a => a.x === x && a.y === y) && !tingOf(s).some(q => q.x === x && q.y === y && q.hos === undefined && q.lass === undefined);
 }
+// står något på rutorna (x, y, w×h) i ett hus ingång: rutan innanför en öppning (steg 3.10.1)? Öppningen själv är inget golv
+const iIngang = (s: State, x: number, y: number, w: number, h: number) => rutorAv(x, y, w, h).some(q => GRANNAR.some(([dx, dy]) => bitAt(s, q.x + dx, q.y + dy)?.k === 'oppning'));
 // inne: i ett färdigt hus (en möbel man sover i bara där man sover, det andra inte i ett förrådshus), på lediga golvrutor med
-// golv framför sig, och bara om den inte tar en sovplats som någon behöver. Helst mot en vägg och inte vid öppningen. bara =
-// bara i det rummet
+// golv framför sig, och bara om den inte tar en sovplats som någon behöver. Helst mot en vägg och inte vid öppningen, och en
+// bädd aldrig i ingången. bara = bara i det rummet
 function siteInne(s: State, k: string, bara?: Rum) {
   const d = stationDef(k)!, g = gridOf(s);
   let best: { x: number; y: number; rot?: 1; inne: 1 } | undefined, bs = Infinity;
@@ -477,7 +479,7 @@ function siteInne(s: State, k: string, bara?: Rum) {
         let fri = true, sc = rot * STATION.vriden + bonus;
         for (let j = 0; j < h && fri; j++) for (let i = 0; i < w && fri; i++) fri = golvFri(s, rum, x + i, y + j);
         for (let i = 0; i < w && fri; i++) fri = rum.has((y + h) * W + x + i) && !stationRutor(s).at.has((y + h) * W + x + i); // golvet framför
-        if (!fri) continue;
+        if (!fri || d.sover && iIngang(s, x, y, w, h)) continue; // en bädd aldrig i ingången (steg 3.10.1)
         for (let j = -1; j <= h; j++) for (let i = -1; i <= w; i++) {
           if ((i === -1 || i === w) === (j === -1 || j === h)) continue; // bara rutorna rakt bredvid, inte hörnen
           const b = bitAt(s, x + i, y + j);
@@ -613,12 +615,13 @@ function utanLager(s: State) {
   const stanger = (t: Station) => nadda(s, -1, t.y * W + t.x).n > alla!.n + 1;
   // ingen ruta rakt bredvid nås: ingen kommer åt möbeln (tre hyllor i ett hörn, eller en vägg som byggts upp igen efter en tornado)
   const utom = (t: Station) => !GRANNAR.some(([dx, dy]) => alla!.sedd[(t.y + dy) * W + t.x + dx]);
-  const borta = fv.filter(t => zoneAt(s, t.x, t.y) < 0 || stanger(t) || utom(t));
+  const fram = framRutor(s), iVag = (t: Station) => fram.has(t.y * W + t.x); // framför en arbetsstation (steg 3.10.1)
+  const borta = fv.filter(t => zoneAt(s, t.x, t.y) < 0 || stanger(t) || utom(t) || iVag(t));
   if (!borta.length) return;
   s.stationer = stationerOf(s).filter(t => !borta.includes(t));
   s.byggV = (s.byggV ?? 0) + 1;
   for (const t of borta) if (stationDef(t.k)!.forvar!.redskap) stallBorta(s, t.x, t.y);
-  for (const t of borta) log(s, `${stationDef(t.k)!.namn} togs isär ${zoneAt(s, t.x, t.y) < 0 ? 'när lagret flyttades' : utom(t) ? 'eftersom ingen kom åt den' : 'eftersom den stängde in en del av lagret'}.`, 'world');
+  for (const t of borta) log(s, `${stationDef(t.k)!.namn} togs isär ${zoneAt(s, t.x, t.y) < 0 ? 'när lagret flyttades' : utom(t) ? 'eftersom ingen kom åt den' : iVag(t) ? 'eftersom den stod där man arbetar vid en bänk' : 'eftersom den stängde in en del av lagret'}.`, 'world');
 }
 
 // en station som står inne (inte en bädd) som byn vill bygga men inte har plats för i något hus (steg 2.2.17): någon kan
@@ -857,29 +860,96 @@ export function slitVid(s: State, act: Act, v: number) {
 }
 // en station som bara får stå inne (inne i registret) men står ute, t.ex. en slöjdbänk byggd före v59, bärs in i ett hus
 // när det finns plats och ingen arbetar vid den (Björn, efter v64). Kniven som hör till den följer med
+// ---------- det som står i vägen (steg 3.10.1) ----------
+// rutorna framför alla arbetsstationer, där man står och arbetar
+function framRutor(s: State) {
+  const fram = new Set<number>();
+  for (const t of stationerOf(s)) for (const q of framfor(t)) fram.add(q.y * W + q.x);
+  return fram;
+}
+// f räknat som om stationen t inte stod där (dess nya plats). Byggversionen räknas upp före och efter, så att inget som
+// räknats utan den sparas
+function utan<R>(s: State, t: Station, f: () => R): R {
+  const alla = stationerOf(s);
+  s.stationer = alla.filter(q => q !== t); s.byggV = (s.byggV ?? 0) + 1;
+  try { return f(); } finally { s.stationer = alla; s.byggV = (s.byggV ?? 0) + 1; }
+}
+// stationen t står på en ny plats: redskapen som hör till den följer med
+function flytta(s: State, t: Station, at: { x: number; y: number; rot?: 1; inne?: 1 }) {
+  t.x = at.x; t.y = at.y;
+  if (at.rot) t.rot = 1; else delete t.rot;
+  if (at.inne) t.inne = 1; else delete t.inne;
+  for (const k of tingOf(s)) if (k.vid === t.id && k.hos === undefined && k.lass === undefined) { k.x = t.x; k.y = t.y; }
+  s.byggV = (s.byggV ?? 0) + 1; // stationen står på ett nytt ställe: vägarna och platserna räknas om
+}
+// stationen t tas bort: det som låg i den läggs på marken
+function taBort(s: State, t: Station) {
+  s.stationer = stationerOf(s).filter(q => q !== t);
+  for (const k of tingOf(s)) if (k.vid === t.id) k.vid = undefined;
+  if (stationDef(t.k)?.forvar?.redskap) stallBorta(s, t.x, t.y);
+  touch(s);
+}
+// En möbel eller station som står framför en arbetsstation (på rutan där man står och arbetar), eller en bädd i ett hus
+// ingång, flyttas till en plats där den får stå, en i timmen och när ingen står på den eller arbetar vid den. Får den
+// ingen plats tas den isär. Förvaringen tas isär (utanLager), och grillen och brasorna står vid sin eld. Det händer i
+// byar som sparades innan rutan framför hölls fri (3.6.6) och bäddarna hölls ur ingången
+function iVagen(s: State) {
+  const fram = framRutor(s);
+  const t = stationerOf(s).find(t => {
+    const d = stationDef(t.k);
+    if (!d || !isKlar(t) || d.forvar || d.eld || d.brasa) return false;
+    const { w, h } = storlekAv(t), rutor = rutorAv(t.x, t.y, w, h);
+    if (!rutor.some(q => fram.has(q.y * W + q.x)) && !(d.sover && t.inne && iIngang(s, t.x, t.y, w, h))) return false;
+    return !d.gor.some(a => doingAct(s, a)) && !living(s).some(p => rutor.some(q => q.x === Math.floor(p.x) && q.y === Math.floor(p.y)));
+  });
+  if (!t) return;
+  const d = stationDef(t.k)!, { w, h } = storlekAv(t);
+  const var_ = rutorAv(t.x, t.y, w, h).some(q => fram.has(q.y * W + q.x)) ? 'där man arbetar vid en bänk' : 'i ingången';
+  const at = utan(s, t, () => stationSite(s, t.k, byId(s, t.ag)));
+  count(s, 'station i vägen');
+  if (at) { flytta(s, t, at); log(s, `${d.namn} flyttades eftersom den stod ${var_}.`, 'world'); return; }
+  taBort(s, t);
+  log(s, `${d.namn} togs isär eftersom den stod ${var_} och inte fick plats någon annanstans.`, 'world');
+}
+// ---------- testläget (steg 3.10.1) ----------
+// spelaren tar bort en station eller möbel
+export function taBortStation(s: State, t: Station) { taBort(s, t); log(s, `${stationDef(t.k)?.namn ?? 'En station'} togs bort i testläget.`, 'world'); }
+// spelaren flyttar den så att hörnet uppe till vänster hamnar på rutan (x, y): på golv i ett hus eller på mark där saker
+// kan ligga (lager.ts), där ingen annan station och ingen sittplats står. Byns regler gäller sedan som vanligt (det som ska
+// stå inne bärs in, förvaringen utanför ett lager tas isär). false = den fick inte plats
+export function flyttaStation(s: State, t: Station, x: number, y: number) {
+  const { w, h } = storlekAv(t), rutor = rutorAv(x, y, w, h);
+  const ok = utan(s, t, () => rutor.every(q => {
+    if (!inMap(q.x, q.y) || stationAt(s, q.x, q.y) || sittAt(s, q.x, q.y)) return false;
+    const b = bitAt(s, q.x, q.y);
+    return b ? b.k === 'golv' && !!roomAt(s, q.x, q.y) : usable(s, q.x, q.y, true);
+  }));
+  if (!ok) return false;
+  flytta(s, t, { x, y, rot: t.rot ? 1 : undefined, inne: bitAt(s, x, y) ? 1 : undefined });
+  log(s, `${stationDef(t.k)?.namn ?? 'En station'} flyttades i testläget.`, 'world');
+  return true;
+}
 function barIn(s: State) {
   for (const t of s.stationer ?? []) {
     const d = stationDef(t.k);
     if (!d?.inne || t.inne || !isKlar(t) || d.gor.some(a => doingAct(s, a))) continue;
     const at = siteInne(s, t.k);
     if (!at) continue;
-    t.x = at.x; t.y = at.y; t.inne = 1;
-    if (at.rot) t.rot = 1; else delete t.rot;
-    for (const k of tingOf(s)) if (k.vid === t.id && k.hos === undefined && k.lass === undefined) { k.x = t.x; k.y = t.y; }
-    s.byggV = (s.byggV ?? 0) + 1; // stationen står på ett nytt ställe: vägarna och platserna räknas om
+    flytta(s, t, { ...at, inne: 1 });
     log(s, `${d.namn}en bars in i ${husById(s, stationRum(s, t)?.hus ?? -1)?.namn ?? 'ett hus'}.`, 'world');
   }
 }
 // stationen stod inne i ett hus som rivits: rutan har inget golv i ett hus längre. Efter en rasad vägg är rummet borta
 // (roomAt) tills väggen lagats, men huset står kvar
 const iRivetHus = (s: State, t: Station) => { const b = bitAt(s, t.x, t.y); return b?.k !== 'golv' || !husById(s, b.hus); };
-// varje timme: tomma redskapsplatser fylls, det egna läggs i kistorna, en station som ska stå inne men står ute bärs in, och
-// det som stod inne i ett hus som rivits försvinner
+// varje timme: tomma redskapsplatser fylls, det egna läggs i kistorna, en station som ska stå inne men står ute bärs in, det
+// som står i vägen flyttas, och det som stod inne i ett hus som rivits försvinner
 export function stepStationer(s: State) {
   if (!s.stationer?.length) return;
   fyllPlatser(s);
   kistorna(s);
   barIn(s);
+  iVagen(s);
   utanLager(s);
   const borta = s.stationer.filter(t => t.inne && iRivetHus(s, t));
   if (!borta.length) return;

@@ -8,7 +8,7 @@ export let s: State;
 export const vidNyBy: (() => void)[] = [];
 export function setByn(n: State) {
   s = n; ui.nu = n.now; useMap(n); nyBild();
-  ui.hovered = undefined; ui.husId = -1; ui.stationId = -1; ui.hogAt = { x: 0, y: 0 }; ui.sak = ''; ui.faltId = -1; ui.faltRuta = -1; ui.djurId = -1;
+  ui.hovered = undefined; ui.husId = -1; ui.stationId = -1; ui.flytta = -1; ui.flyttFel = false; ui.hogAt = { x: 0, y: 0 }; ui.sak = ''; ui.faltId = -1; ui.faltRuta = -1; ui.djurId = -1;
   for (const f of vidNyBy) f();
 }
 export const ui = {
@@ -26,6 +26,8 @@ export const ui = {
   lastPointer: 0, // när spelaren senast tryckte: panelen byts inte ut mitt i ett tryck
   husId: -1, // huset som visas i panelen
   stationId: -1, // stationen som visas i panelen
+  flytta: -1, // testläget (steg 3.10.1): stationen som flyttas till rutan man trycker på härnäst ...
+  flyttFel: false, // ... och om den inte fick plats där
   sjoNr: 0, // sjön som visas i panelen
   faltId: -1, // fältet som visas i panelen (flikar/falt.ts) ...
   faltRuta: -1, // ... och rutan med grödan som visas, eller -1 för hela fältet

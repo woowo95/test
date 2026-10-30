@@ -644,6 +644,60 @@ SCENARIER.mobler = {
   },
 };
 
+SCENARIER.ivagen = {
+  text: 'Möbler på rätt plats (steg 3.10.1): en möbel (här ett bord) som står framför en arbetsstation, där man står och arbetar, flyttas, och likaså en halmbädd i ett hus ingång (rutan innanför öppningen); nya bäddar läggs aldrig där. I testläget går det att flytta en station och ta bort den',
+  kor: () => {
+    const { stationerOf, framfor, framFri, stationAt, stepStationer, stationSite, bitAt, roomAt, storlek, storlekAv, taBortStation, flyttaStation } = SIM;
+    const s = createState(1, START); klockan(s); tandEld(s);
+    const hus = medHus(s)!, bank = medBank(s, 'slaktbank'), fram = framfor(bank);
+    const nytt = (t: Omit<SIM.Station, 'id'>) => { const b = { id: s.nextStation = (s.nextStation ?? 0) + 1, ...t }; s.stationer!.push(b); SIM.touch(s); return b; };
+    const rutor = (t: { k: string; x: number; y: number; rot?: unknown }) => { const { w, h } = storlek(t.k, t.rot); return Array.from({ length: w * h }, (_, i) => ({ x: t.x + i % w, y: t.y + Math.floor(i / w) })); };
+    const iIngang = (t: SIM.Station) => rutor(t).some(q => [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => bitAt(s, q.x + dx, q.y + dy)?.k === 'oppning'));
+    const framAlla = () => new Set(stationerOf(s).flatMap(t => framfor(t).map(q => q.y * SIM.W + q.x)));
+    const iVag = (t: SIM.Station) => rutor(t).some(q => framAlla().has(q.y * SIM.W + q.x));
+    // nya bäddar så länge det finns plats (i en kopia): ingen i ingången eller framför en station
+    const s0 = cloneState(s);
+    for (let i = 0; i < 20 && stationSite(s0, 'halmbadd'); i++) medBank(s0, 'halmbadd');
+    const baddar = stationerOf(s0).filter(t => t.k === 'halmbadd');
+    // ett bord framför slaktbänken, som i en by som sparades före v144: bänken går inte att använda
+    const b1 = nytt({ k: 'bord', x: fram[0].x, y: fram[0].y, kvar: 0 });
+    const blockerad = !framFri(s, bank);
+    // en halmbädd i ingången: på rutan innanför husets öppning
+    const opp = SIM.bitsOf(s).find(q => q.hus === hus.id && q.k === 'oppning')!;
+    const inn = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([dx, dy]) => ({ x: opp.x + dx, y: opp.y + dy })).find(q => roomAt(s, q.x, q.y)?.hus === hus.id)!;
+    const kand: { x: number; y: number; rot?: 1 }[] = [{ x: inn.x, y: inn.y }, { x: inn.x - 1, y: inn.y }, { x: inn.x, y: inn.y, rot: 1 }, { x: inn.x, y: inn.y - 1, rot: 1 }];
+    const at2 = kand.find(q => rutor({ k: 'halmbadd', ...q }).every(r => roomAt(s, r.x, r.y)?.hus === hus.id && !stationAt(s, r.x, r.y)))!;
+    const b2 = nytt({ k: 'halmbadd', x: at2.x, y: at2.y, kvar: 0, inne: 1, ...at2.rot ? { rot: 1 as const } : {} });
+    const iIngang0 = iIngang(b2);
+    for (const p of living(s)) { p.x = 1.5; p.y = 1.5; } // ingen står på bäddarna
+    for (let i = 0; i < 3; i++) stepStationer(s);
+    const kvar1 = stationerOf(s).find(t => t.id === b1.id), kvar2 = stationerOf(s).find(t => t.id === b2.id);
+    const loggat = s.log.filter(r => /flyttades eftersom|togs isär eftersom den stod/.test(r.text)).length;
+    // testläget: flytta slaktbänken till en ledig plats, inte ut i vattnet, och ta bort den
+    const q = cloneState(s), bq = q.stationer!.find(t => t.id === bank.id)!, m = getMap(q.seed), f = SIM.eldPlats(q);
+    const vatten = Array.from({ length: W * H }, (_, i) => i).find(i => m.tiles[i] === T.Vatten)!;
+    const iVattnet = !flyttaStation(q, bq, vatten % W, Math.floor(vatten / W));
+    let flyttad: { x: number; y: number } | undefined;
+    for (let r = 6; r < 20 && !flyttad; r++) for (let dx = -r; dx <= r && !flyttad; dx++) {
+      const x = f.x + dx, y = f.y + r;
+      if (flyttaStation(q, bq, x, y)) flyttad = { x, y };
+    }
+    const dar = !!flyttad && stationAt(q, flyttad.x, flyttad.y)?.id === bank.id && bq.x === flyttad.x && bq.y === flyttad.y;
+    taBortStation(q, bq);
+    const borta = !stationerOf(q).some(t => t.id === bank.id) && !stationAt(q, bq.x, bq.y);
+    const { w: bw } = storlekAv(bank);
+    return [
+      [`ett bord framför slaktbänken gör att bänken inte går att använda`, blockerad],
+      [`bordet framför bänken flyttas (${kvar1 ? `till ${kvar1.x}, ${kvar1.y}${kvar1.inne ? ', inne' : ''}` : 'togs isär'}), och bänken går att använda`, (!kvar1 || !iVag(kvar1)) && framFri(s, bank)],
+      [`bädden i ingången flyttas (${iIngang0 ? 'stod i ingången' : 'stod inte där'}; ${kvar2 ? `nu ${kvar2.x}, ${kvar2.y}` : 'togs isär'})`, iIngang0 && (!kvar2 || !iIngang(kvar2))],
+      [`händelseloggen säger varför (${loggat} rader, statistiken ${s.stat?.['station i vägen'] ?? 0})`, loggat >= 2 && (s.stat?.['station i vägen'] ?? 0) >= 2],
+      [`nya bäddar läggs aldrig i ingången eller framför en station (${baddar.length} bäddar)`, baddar.length >= 2 && baddar.every(t => !iIngang(t) && rutor(t).every(r => !framfor(bank).some(q => q.x === r.x && q.y === r.y)))],
+      [`testläget: slaktbänken (${bw} rutor bred) går inte att flytta ut i vattnet men till en ledig plats${flyttad ? ` (${flyttad.x}, ${flyttad.y})` : ''}`, iVattnet && dar],
+      ['testläget: slaktbänken går att ta bort', borta],
+    ];
+  },
+};
+
 SCENARIER.skinnfall = {
   text: 'Skinnfällen (steg 2.2.14): ett tillbehör till halmbädden, en egen teknik som byn kommer på efter halmbädden när den har skinn. Den görs av skinn när byn har bäddar utan fäll, och den som sover under den kyls hälften så mycket',
   kor: () => {

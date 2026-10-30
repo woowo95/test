@@ -1,4 +1,4 @@
-import { sakBerattelse, ACTS, DJURARTER, STATION, bordPlatser, pilesOf, living, TEKNIK, TILLBEHOR_LIST, byId, isKlar, sakNamn, slagIkon, stationById, stationDef, stationKlar, tillbehorDef, tingOf, timeLabel, isTool, FLACKAR, smutsVid, blodVid, storlekAv, TORK, torrDel, BRASA } from '../../sim';
+import { flyttaStation, taBortStation, sakBerattelse, ACTS, DJURARTER, STATION, bordPlatser, pilesOf, living, TEKNIK, TILLBEHOR_LIST, byId, isKlar, sakNamn, slagIkon, stationById, stationDef, stationKlar, tillbehorDef, tingOf, timeLabel, isTool, FLACKAR, smutsVid, blodVid, storlekAv, TORK, torrDel, BRASA } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { sakAttr } from './sak';
 import { iBruk } from '../foremal';
@@ -16,9 +16,29 @@ function gorRad(a: keyof typeof ACTS, bara: boolean) {
   const om = art ? `${ACTS[a].namn}: ${sakNamn(art.sak).toLowerCase()} blir ${Object.keys(art.slakt).map(k => sakNamn(k).toLowerCase()).join(', ')}` : ACTS[a].namn;
   return `<dt ${tip(om + (bara ? '. Görs bara här' : ''))}>${vad}</dt><dd>${esc(ACTS[a].namn)}${bara ? ' <span class="muted">bara här</span>' : ''}</dd>`;
 }
+// testläget (steg 3.10.1): stationen kan tas bort eller flyttas till en ruta man trycker på på kartan (interaktion.ts)
+function testRad(id: number) {
+  if (!ui.testMode) return '';
+  const val = ui.flytta === id;
+  return `<h3>Testläget</h3><p><button type="button" class="ghost" data-test="flytta" aria-pressed="${val}" ${tip('Flytta: tryck sedan på rutan på kartan där hörnet uppe till vänster ska stå')}>✥</button> <button type="button" class="ghost" data-test="bort" ${tip('Ta bort')}>🗑️</button>`
+    + `${val ? ' <span class="muted">Tryck på kartan där den ska stå.</span>' : ui.flyttFel ? ' <span class="muted">Den fick inte plats där.</span>' : ''}</p>`;
+}
+// den markerade stationen flyttas hit (trycket på kartan i testläget). false = den fick inte plats
+export function flyttaHit(x: number, y: number) {
+  const st = stationById(s, ui.flytta);
+  ui.flytta = -1;
+  ui.flyttFel = !!st && !flyttaStation(s, st, x, y);
+}
 export const station: Flik = {
   namn: 'Stationen',
   knapp: 'person',
+  klick(el) {
+    const b = el.closest<HTMLElement>('[data-test]'), st = b && ui.testMode ? stationById(s, ui.stationId) : undefined;
+    if (!b || !st) return false;
+    ui.flyttFel = false;
+    if (b.dataset.test === 'bort') { taBortStation(s, st); ui.flytta = -1; } else ui.flytta = ui.flytta === st.id ? -1 : st.id;
+    return true;
+  },
   html() {
     const st = stationById(s, ui.stationId), d = st && stationDef(st.k);
     if (!st || !d) return '<p class="muted">Den finns inte längre.</p>';
@@ -74,6 +94,7 @@ export const station: Flik = {
     ${tb ? `<h3>Tillbehör</h3><dl class="kv">${tb}</dl>` : ''}
     ${d.forvar ? `<h3>Förvaring</h3><p>${inne || '<span class="muted">tom</span>'}</p><p class="muted">${forvar}</p>` : ''}
     ${platser ? `<h3>Redskap</h3><dl class="kv">${platser}</dl>` : ''}
-    <h3>Material</h3><p ${tip(`${d.min} minuters arbete. ${d.tek.length ? `Kräver ${d.tek.length > 1 ? 'någon av teknikerna' : 'tekniken'} ${d.tek.map(k => TEKNIK.find(q => q.id === k)?.namn ?? k).join(' eller ')}` : 'Kräver ingen teknik'}`)}>${av} <span class="muted">· ${d.min} min</span></p>`;
+    <h3>Material</h3><p ${tip(`${d.min} minuters arbete. ${d.tek.length ? `Kräver ${d.tek.length > 1 ? 'någon av teknikerna' : 'tekniken'} ${d.tek.map(k => TEKNIK.find(q => q.id === k)?.namn ?? k).join(' eller ')}` : 'Kräver ingen teknik'}`)}>${av} <span class="muted">· ${d.min} min</span></p>
+    ${testRad(st.id)}`;
   },
 };
