@@ -37,7 +37,7 @@ import { snoPaMarken, vaderNu } from './vader';
 // flyr när en varg faller eller ledarvargen dör. Bett blir ofta infekterade. En dödad varg blir en fälld varg som bärs hem
 // och slaktas (redskap.ts), och den som dödade den blir en vargdödare (rykten.ts)
 export const VARG = balans('varg', {
-  kommer: 0.03, // chansen i timmen under istiden att en flock kommer, när ingen är på kartan
+  kommer: 0.08, // chansen i timmen under istiden att en flock kommer, när ingen är på kartan (0,03 före steg 3.10.15: nu finns vargar nästan hela vintern)
   ensam: 0.3, // chansen att det är en ensam varg ...
   flockMax: 6, // ... annars 2 till så här många
   stannarTim: [12, 36], // så många timmar stannar flocken innan den drar vidare (minst, högst)
