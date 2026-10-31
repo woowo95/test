@@ -1,4 +1,4 @@
-import { strandNu } from './sjo';
+import { strandNu, vattenNu } from './sjo';
 import { take } from './agande';
 import { PLATS, campCenter, campDist, campKey } from './plats';
 import { vargSkydd } from './varg';
@@ -267,7 +267,7 @@ export function spotFor(s: State, act: Act, p: Person): { x: number; y: number }
   if (d.resurs === 'samla' && s.flackar?.length) { const rena = cands.filter(c => !forSmutsigt(s, c.x, c.y)); if (rena.length) cands.splice(0, cands.length, ...rena); }
   // mat: gå dit det finns mest att hämta, inte för långt bort; annars en av de närmaste platserna
   // avsides (toa): en plats var som helst mellan narAvstAng och langtAvsides, så att högarna inte bildar en ring (steg 3.6.7)
-  const c = (d.resurs ? pickSpot(s, p, d.resurs, cands) : plats === 'avsides' && cands.length ? cands[Math.floor(rnd(s, 'val', p) * cands.length)] : pickNarmaste(s, cands, VAL.narmaste, 'val', p)) ?? nearestWanted(s, want, plats === 'avsides' ? min : 0) ?? { x: mid.x, y: mid.y };
+  const c = (d.resurs ? pickSpot(s, p, d.resurs, cands, min) : plats === 'avsides' && cands.length ? cands[Math.floor(rnd(s, 'val', p) * cands.length)] : pickNarmaste(s, cands, VAL.narmaste, 'val', p)) ?? nearestWanted(s, want, plats === 'avsides' ? min : 0) ?? { x: mid.x, y: mid.y };
   return { x: c.x + 0.5, y: c.y + 0.5 };
 }
 // en station eller en plats vid ett bord på rutan eller bredvid den
@@ -280,7 +280,7 @@ function vidBanken(s: State, x: number, y: number) {
 // avståndet som när man väljer plats (pickSpot), men inte i vattnet, i husen eller där det är toa-smuts. Ger ingen ruta
 // minst PLATS.vidare går man hem med det man har
 export function nastaBuske(s: State, k: Lager, x0: number, y0: number) {
-  const cx = Math.floor(x0), cy = Math.floor(y0), tiles = getMap(s.seed).tiles, R = MINNE.sokR;
+  const cx = Math.floor(x0), cy = Math.floor(y0), tiles = vattenNu(s), R = MINNE.sokR; // vattnet som det är nu (torkan och översvämningen)
   let best: { x: number; y: number } | undefined, bv = -Infinity;
   for (let y = Math.max(0, cy - R); y <= Math.min(H - 1, cy + R); y++) for (let x = Math.max(0, cx - R); x <= Math.min(W - 1, cx + R); x++) {
     if (tiles[y * W + x] === T.Vatten || bitAt(s, x, y) || forSmutsigt(s, x, y)) continue;

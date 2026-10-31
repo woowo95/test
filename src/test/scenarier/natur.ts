@@ -968,7 +968,32 @@ SCENARIER.latrin = {
     const byggd = stationerOf(b).some(t => t.k === 'latrin' && isKlar(t));
     kor(b, 24);
     const besok = b.stat?.latrinbesok as number ?? 0;
+    // väl framme letar den som samlar upp den bästa platsen i närheten, men inte där det är toa-smuts, i ett hus eller närmare
+    // lägret än platserna hen valde bland (pickSpot i minne.ts, kodgenomgången 3.10.25)
+    let spotVal = 0, spotFel = 0;
+    {
+      const v = createState(2, START); klockan(v); tandEld(v);
+      const [a, b] = living(v).filter(r => ageOf(r, v.now) >= 18) as [SIM.Person, SIM.Person];
+      const mid = SIM.campCenter(v), ax = a.x, ay = a.y, vat = SIM.vattenNu(v);
+      let n = 0;
+      for (let dy = -14; dy <= 14; dy += 2) for (let dx = -14; dx <= 14; dx += 2) {
+        const x = Math.floor(mid.x + dx), y = Math.floor(mid.y + dy);
+        if (vat[y * SIM.W + x] === SIM.T.Vatten || n++ % 3) continue;
+        a.x = x + 0.5; a.y = y + 0.5; toaBesok(v, a);
+      }
+      a.x = ax; a.y = ay; b.x = mid.x + 60; b.y = mid.y + 60;
+      const min = 5;
+      for (let dy = -12; dy <= 12; dy++) for (let dx = -12; dx <= 12; dx++) {
+        const x = Math.floor(mid.x + dx), y = Math.floor(mid.y + dy), d = SIM.campDist(v, x, y);
+        if (d < min || vat[y * SIM.W + x] === SIM.T.Vatten || forSmutsigt(v, x, y) || SIM.bitAt(v, x, y)) continue;
+        const r = SIM.pickSpot(v, b, 'samla', [{ x, y, d }], min);
+        if (!r) continue;
+        spotVal++;
+        if (forSmutsigt(v, r.x, r.y) || SIM.bitAt(v, r.x, r.y) || r.d < min) spotFel++;
+      }
+    }
     return [
+      [`den som samlar väljer aldrig en plats med toa-smuts, i ett hus eller för nära lägret (${spotFel} av ${spotVal})`, spotVal > 50 && spotFel === 0],
       [`toabesöket utanför en latrin lämnar en fläck där man står`, flack],
       ['den som står bredvid blir äcklad, men inte den som själv är på toa', akelQ && sjalv],
       ['man plockar inte på eller bredvid fläcken', plock],
