@@ -1,5 +1,5 @@
 import { balans } from './balans';
-import { kronikaBer, personFalt, sakVarg, talOrd } from './berattelser';
+import { kronikaBer, och, personFalt, sakVarg, talOrd } from './berattelser';
 import { redskapIHanden } from './agande';
 import { blodas } from './blod';
 import { bedFor } from './bygg';
@@ -15,14 +15,14 @@ import { die } from './liv';
 import { handelse, larma, larmNu, ryktbarhet } from './rykten';
 import { SAKER } from './saker';
 import { clamp, rnd } from './slump';
-import { STRID, SLAGSMAL, VAPEN, Avsikt, Strid, Uppstallning, djurKampe, foljet, nyStrid, personKampe, slitKastat, stridTillSlut, svartSkadad } from './strid';
+import { SLAGSMAL, VAPEN, Avsikt, Strid, Uppstallning, djurKampe, foljet, nyStrid, personKampe, slitKastat, sparaStrid, stridTillSlut, svartSkadad, vadretIStriden } from './strid';
 import { ledareOf } from './styre';
 import { ageIndex, iIstiden, isLight } from './tid';
 import { hardVinter } from './vader';
 import { MOTGANG } from './motgang';
 import { H, HOUR, MIN, Person, SEC, State, T, Task, Vargflock, W } from './typer';
 import { taVapen } from './vakt';
-import { snoPaMarken, vaderNu } from './vader';
+import { vaderNu } from './vader';
 
 // ---------- vargen och vakten (steg 3.7.1) ----------
 // Under istiden kommer vargar in på kartan från kanten, oftast i flock och ibland en ensam. En flock stryker omkring en tid
@@ -486,15 +486,12 @@ export function vargStrid(s: State, f: Vargflock, folk: Person[], avsikt: Avsikt
   });
   kampar.forEach((k, i) => { k.id = i + 1; });
   foljet(s, kampar);
-  const halt = clamp(Math.max(((s.vader?.fukt ?? 0) - STRID.leraFran) / (1 - STRID.leraFran), snoPaMarken(s) * STRID.snoHalt), 0, 1);
-  const u: Uppstallning = { avsikt, w: W0, h: H0, vind: vaderNu(s).vind, dimma: vaderNu(s).dimma, halt, kampar };
+  const u: Uppstallning = { avsikt, w: W0, h: H0, ...vadretIStriden(s), kampar };
   const fro = Math.floor(rnd(s, 'strid') * 2147483647), st = nyStrid(u, fro);
   f.vargar.forEach((id, j) => { st.kampar[folk.length + j].blod = halsaOf(s, id).blod; });
   stridTillSlut(st);
   const vinnare = st.slut!.vinnare;
-  (s.strider ??= []).push({ t: s.now, orsak: 'vargar ' + orsak, u, fro, vinnare });
-  if (s.strider.length > SLAGSMAL.sparas) s.strider.splice(0, s.strider.length - SLAGSMAL.sparas);
-  count(s, 'strider'); count(s, 'vargstrid');
+  sparaStrid(s, { t: s.now, orsak: 'vargar ' + orsak, u, fro, vinnare }); count(s, 'vargstrid');
   soker(s, larma(s, folk[0].x, folk[0].y, 'varg', n, folk.filter(vaken)));
   // vargarna: de döda och de skadade, och vem som dödade
   const doda: Person[] = [], kvar: number[] = [];
@@ -544,7 +541,6 @@ export function vargStrid(s: State, f: Vargflock, folk: Person[], avsikt: Avsikt
   const namn = folk.map(p => p.name).join(' och ');
   log(s, `${namn} slogs med ${n > 1 ? `${n} vargar` : 'en varg'} ${orsak}. ${doda.length ? `${doda.length} ${doda.length === 1 ? 'varg dog' : 'vargar dog'}. ` : ''}${vinnare === 0 ? 'Vargarna förlorade.' : vinnare === 1 ? 'Vargarna vann.' : 'Ingen vann.'}`, 'world', folk.map(p => p.id));
   // krönikan (steg 3.7.16): varje vargjakt, och den som skadades svårt när vargarna anföll (döden skriver die)
-  const och = (l: string[]) => l.length > 1 ? `${l.slice(0, -1).join(', ')} och ${l[l.length - 1]}` : l[0];
   if (avsikt === 'doda') kronikaBer(s, 'k_vargjakt', folk[0].id, { folk: och(folk.map(p => p.name)), vargar: n > 1 ? `${talOrd(n)} vargar` : 'en varg', fallde: talOrd(doda.length), svara: svara.length ? ` ${och(svara)} skadades svårt.` : '' });
   else if (svara.length) kronikaBer(s, 'k_vargAnfall', folk[0].id, { svara: och(svara) });
   if (vinnare !== 1 || doda.length) f.gor = 'flyr';

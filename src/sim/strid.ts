@@ -860,6 +860,19 @@ export function svartSkadad(k: Kampe) { return k.lage === 'nere' || k.skador.som
 // en strid som sparats i byn: när, varför, uppställningen och fröet (samma strid kan räknas om i arenan) och vem som vann
 export interface StridMinne { t: number; orsak: string; u: Uppstallning; fro: number; vinnare: 0 | 1 | -1 }
 
+// blåsten, dimman och halkan (lera och snö, steg 3.7.8) i en strid i byn just nu
+export function vadretIStriden(s: State): Pick<Uppstallning, 'vind' | 'dimma' | 'halt'> {
+  const halt = clamp(Math.max(((s.vader?.fukt ?? 0) - STRID.leraFran) / (1 - STRID.leraFran), snoPaMarken(s) * STRID.snoHalt), 0, 1);
+  return { vind: vaderNu(s).vind, dimma: vaderNu(s).dimma, halt };
+}
+
+// striden sparas så att arenan kan visa den igen; de äldsta faller bort efter SLAGSMAL.sparas
+export function sparaStrid(s: State, m: StridMinne) {
+  (s.strider ??= []).push(m);
+  if (s.strider.length > SLAGSMAL.sparas) s.strider.splice(0, s.strider.length - SLAGSMAL.sparas);
+  count(s, 'strider');
+}
+
 // en strid mellan två sidor av folk i byn. Returnerar striden (för scenarierna)
 export function stridIByn(s: State, avsikt: Avsikt, sidor: [Person[], Person[]], orsak: string): Strid {
   const lek0 = !!(AVSIKTER[avsikt] as { lek?: true }).lek;
@@ -868,14 +881,11 @@ export function stridIByn(s: State, avsikt: Avsikt, sidor: [Person[], Person[]],
   kampar.forEach((k, i) => { k.id = i + 1; });
   for (const k of kampar) if (k.ledare && !lek0) k.x += (k.ledare === 'fram' ? 1 : -1.5) * (k.sida === 0 ? 1 : -1); // ledaren först eller bakom (steg 3.7.12)
   foljet(s, kampar);
-  const halt = clamp(Math.max(((s.vader?.fukt ?? 0) - STRID.leraFran) / (1 - STRID.leraFran), snoPaMarken(s) * STRID.snoHalt), 0, 1); // lera och snö (steg 3.7.8)
-  const u: Uppstallning = { avsikt, w: W, h: H, vind: vaderNu(s).vind, dimma: vaderNu(s).dimma, halt, kampar };
+  const u: Uppstallning = { avsikt, w: W, h: H, ...vadretIStriden(s), kampar };
   const fro = Math.floor(rnd(s, 'strid') * 2147483647);
   const st = stridTillSlut(nyStrid(u, fro));
   const lek = !!(AVSIKTER[avsikt] as { lek?: true }).lek, vinnare = st.slut!.vinnare;
-  (s.strider ??= []).push({ t: s.now, orsak, u, fro, vinnare });
-  if (s.strider.length > SLAGSMAL.sparas) s.strider.splice(0, s.strider.length - SLAGSMAL.sparas);
-  count(s, 'strider'); count(s, 'strid_' + avsikt);
+  sparaStrid(s, { t: s.now, orsak, u, fro, vinnare }); count(s, 'strid_' + avsikt);
   const folk = st.kampar.map(k => ({ k, p: sidor[k.sida][st.kampar.filter(o => o.sida === k.sida).indexOf(k)] }));
   const namn = (sd: 0 | 1) => sidor[sd].map(p => p.name).join(' och ');
   if (!lek) larma(s, sidor[0][0].x, sidor[0][0].y, 'slagsmål', kampar.length, [...sidor[0], ...sidor[1]].filter(p => p.task?.act !== 'sova')); // de som slåss ropar (steg 3.7.11)
