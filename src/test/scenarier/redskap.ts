@@ -315,7 +315,9 @@ SCENARIER.teknik = {
   lang: true,
   text: 'Ingen kan göra yxa, spjut eller rep från början: den som arbetar kommer på det (nyfikna och intelligenta fortare), lär ut det i samtal, och kunskapen dör med den sista som kan den',
   kor: () => {
-    const s = createState(8, START); // by 3 hade bara en kvar efter 20 dygn sedan kartan blev 120 × 120 (2.10.9); det balanseras i 2.12
+    // by 3 hade bara en kvar efter 20 dygn sedan kartan blev 120 × 120 (2.10.9). När repet kommer på skiljer mycket mellan byarna
+    // (0,5–18 dygn, och i någon by inte på 20 dygn); by 8 slutade komma på det efter fynd 28 i 3.10.25, by 2 kommer på det tidigt
+    const s = createState(2, START);
     const forst: Record<string, number> = {};
     let yxaInnan = false, repInnan = false;
     const kanFran = TEKNIK.every(t => !s.people.some(p => knows(p, t.id)));
