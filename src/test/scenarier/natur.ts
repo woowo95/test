@@ -3,7 +3,7 @@ import { FANGST, createState, bearbeta, canProcess, makeTool, step, living, clon
 import * as SIM from '../../sim';
 import { FOREST, isSoil } from '../../sim/vag';
 import { START, STEG_DYGN, STEG_TIM } from '../kor';
-import { setMat, kor, klockan, bastaJaktruta, SCENARIER, flyttLitenBy, tandEld, medBank, medHus } from './hjalp';
+import { setMat, kor, klockan, bastaJaktruta, SCENARIER, flyttLitenBy, tandEld, medBank, medHus, nyInvanare } from './hjalp';
 
 SCENARIER.djur = {
   lang: true,
@@ -1499,6 +1499,53 @@ SCENARIER.varg = {
       [`på natten när alla sover och elden slocknat stjäl vargarna mat (${stal} saker i tre byar)`, stal > 0],
       [`byn jagar en ensam varg med spjut (${jakt} jakter, ${dodad} dödade vargar, ${hemma} hemburna, ${dodare} vargdödare)`, jakt > 0 && dodad > 0 && hemma > 0 && dodare > 0],
       [`under istiden kommer flockar (${kom} i tre byar på 120 timmar) och drar vidare (${borta})`, kom > 0 && borta > 0],
+    ];
+  },
+};
+
+SCENARIER.kallar = {
+  text: 'Vem som kallar till vargjakt (steg 3.10.20): den som såg flocken först kallar om hen vågar, annars någon annan som vågar, och hur många som följer beror också på den som kallar: anseendet, karisman, om hen är vargdödare och om hen leder byn',
+  kor: () => {
+    // en by i istiden med en flock på två vargar som någon just sett; alla vuxna har spjut och mat finns
+    const by = () => {
+      const s = createState(1, START); s.kal = nyKalender(s.now, 0); klockan(s, 10); tandEld(s);
+      for (const [x, a] of [['m', 30], ['k', 28], ['m', 35], ['k', 24], ['m', 40]] as const) nyInvanare(s, x, a);
+      setMat(s, { vilt: 60, bar: 60 });
+      const vuxna = living(s).filter(q => ageOf(q, s.now) >= 18 && ageOf(q, s.now) < 55);
+      for (const q of vuxna) { const t = SIM.addTool(s, 'flintspjut', q); t.hos = q.id; q.pot.mod = 10; q.pot.karisma = 10; }
+      const c = campCenter(s), id = s.vargNr = 1;
+      const f: SIM.Vargflock = { id, vargar: [10_000_008, 10_000_009], x: c.x + 14, y: c.y, mx: c.x + 14, my: c.y, kom: s.now, gar: s.now + 48 * HOUR, hunger: 0.5, gor: 'stryker', sedd: s.now };
+      (s.vargar ??= []).push(f);
+      return { s, f, vuxna };
+    };
+    // försöker tills jakten blir av (högst 40 gånger); svarar med den som kallade och hur många som gick
+    const forsok = (s: State, f: SIM.Vargflock) => {
+      for (let i = 0; i < 40; i++) {
+        SIM.jaktBeslut(s, f, living(s));
+        if (f.jagare) { const jag = f.jagare.map(id => SIM.byId(s, id)!), k = jag.find(q => q.task?.why === 'Kallar till vargjakt'); for (const q of jag) q.task = undefined; f.jagare = undefined; return { k, n: jag.length }; }
+      }
+      return { k: undefined, n: 0 };
+    };
+    // den som såg flocken kallar, fast hen inte leder byn
+    const a = by(), sag = a.vuxna[3]; sag.pot.mod = 16; a.f.sag = sag.id;
+    const r1 = forsok(a.s, a.f);
+    // den som såg den men inte vågar (modet mot flockens storlek) kallar inte; någon som vågar gör det (de andra är modiga, så att jakten blir av)
+    const b = by(), rad = b.vuxna[3]; for (const q of b.vuxna) q.pot.mod = 16; rad.pot.mod = 0; b.vuxna[0].pot.mod = 18; b.f.sag = rad.id;
+    const kan = living(b.s).filter(q => ageOf(q, b.s.now) >= SIM.ALDER.vaktFran && ageOf(q, b.s.now) < SIM.ALDER.vaktTill).length;
+    while (b.f.vargar.length < Math.ceil(SIM.VARG.fler * kan / SIM.VARG.vagar)) b.f.vargar.push(10_000_008 + b.f.vargar.length); // så många att modet avgör
+    const r2 = forsok(b.s, b.f);
+    // gehöret: samma by, en känd vargdödare med hög karisma mot en okänd med låg; antalet som följer i 20 jakter vardera
+    let hog = 0, lag = 0, hogJ = 0, lagJ = 0;
+    for (let i = 0; i < 20; i++) {
+      const h = by(), kh = h.vuxna[2]; kh.pot.karisma = 20; kh.pot.mod = 16; (kh.liv ??= {}).vargar = 2; h.f.sag = kh.id;
+      const x = forsok(h.s, h.f); if (x.k === kh) { hog += x.n - 1; hogJ++; }
+      const l = by(), kl = l.vuxna[2]; kl.pot.karisma = 0; kl.pot.mod = 16; l.f.sag = kl.id; for (let j = 0; j <= i; j++) SIM.rnd(l.s, 'varg');
+      const y = forsok(l.s, l.f); if (y.k === kl) { lag += y.n - 1; lagJ++; }
+    }
+    return [
+      [`den som såg flocken kallar till vargjakt fast hen inte leder byn (${r1.k?.name ?? 'ingen'}, ${r1.n} gick)`, r1.k === sag],
+      [`den som såg den men inte vågar kallar inte; ${r2.k?.name ?? 'ingen'} kallade i stället`, !!r2.k && r2.k !== rad],
+      [`en känd vargdödare med hög karisma får fler med sig än en okänd med låg (${hog} följde i ${hogJ} jakter mot ${lag} i ${lagJ})`, hogJ > 0 && hog / Math.max(1, hogJ) > lag / Math.max(1, lagJ)],
     ];
   },
 };

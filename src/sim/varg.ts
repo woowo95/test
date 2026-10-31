@@ -5,14 +5,14 @@ import { blodas } from './blod';
 import { bedFor } from './bygg';
 import { Bit, Rum, bitAt, dorrDef, roomAt, freeNear, gridOf } from './byggnad';
 import { dodaDjur, dragOf, djurOf, grupperOf, halsaOf, satDjurHalsa } from './djur';
-import { ALDER, KROPP, ageOf, byId, count, forstaGang, getRel, isSick, livet, living, log, ovning, stat, think } from './folk';
+import { ALDER, KROPP, ageOf, byId, count, forstaGang, franMitt, getRel, isSick, livet, living, log, ovning, stat, think } from './folk';
 import { halsa, kanGa, skada } from './halsa';
 import { Act } from './handlingar';
 import { eldPlats, getMap } from './karta';
 import { punktIRuta } from './mark';
 import { addTo, amountOf, avbryt, foodOf, zoneOf } from './lager';
 import { die } from './liv';
-import { handelse, larma, larmNu } from './rykten';
+import { handelse, larma, larmNu, ryktbarhet } from './rykten';
 import { SAKER } from './saker';
 import { clamp, rnd } from './slump';
 import { STRID, SLAGSMAL, VAPEN, Avsikt, Strid, Uppstallning, djurKampe, foljet, kastat, nyStrid, personKampe, stridTillSlut, svartSkadad } from './strid';
@@ -31,9 +31,10 @@ import { snoPaMarken, vaderNu } from './vader';
 // stjäl mat, men bara när ingen är vaken i närheten. Varje varg är en individ med mod och hälsa (djur.ts), och flocken är
 // hungrig (s.vargar, sparat i byn och stegat likadant i båda lägena med byns följd 'varg').
 // Den som ser vargar ropar (larma i rykten.ts), vakten vid elden ser längst och väcker byn när vargarna är nära, och den som
-// väckts håller sig vaken vid elden en stund (val.ts). Byns ledare (eller den modigaste) kan kalla till vargjakt när byn
-// vet om flocken: oftare när byn är hungrig, har spjut och är många mot få vargar. Vem som följer med avgör modet, tycket
-// för den som kallar och seden om strid. Striden räknas med stridens regler (strid.ts), med flockens mod som en sida: den
+// väckts håller sig vaken vid elden en stund (val.ts). Den som såg flocken först kallar till vargjakt om hen vågar (modet
+// mot flockens storlek), annars ledaren eller den modigaste som vågar (steg 3.10.20), när byn vet om flocken: oftare när byn
+// är hungrig, har spjut och är många mot få vargar. Vem som följer med avgör modet, tycket för den som kallar, seden om
+// strid och den som kallar: anseendet, karisman, om hen är vargdödare och om hen leder byn. Striden räknas med stridens regler (strid.ts), med flockens mod som en sida: den
 // flyr när en varg faller eller ledarvargen dör. Bett blir ofta infekterade. En dödad varg blir en fälld varg som bärs hem
 // och slaktas (redskap.ts), och den som dödade den blir en vargdödare (rykten.ts)
 export const VARG = balans('varg', {
@@ -75,6 +76,9 @@ export const VARG = balans('varg', {
   matNog: 8,
   jaktChans: 0.5, // ... och då med den här chansen i timmen (i dagsljus)
   foljMod: 1, foljTycke: 1, foljSed: 0.5, foljNod: 0.5, foljSlump: 0.4, // den som följer med: modet, tycket för den som kallar, seden om strid, byns hunger och slump ...
+  // ... och gehöret för den som kallar (steg 3.10.20): byns anseende för hen (per invånare, -1 till 1), karisman från mitten,
+  // vargdödare och ledare
+  foljAns: 0.5, foljKar: 0.3, foljDrap: 0.3, foljLed: 0.3,
   folj: 0.2, // ... är tillsammans över detta
   na: 4, // jägarna anfaller när flocken är så här nära ...
   samlas: 8, // ... med de jägare som är så här nära den första ...
@@ -177,7 +181,7 @@ function ses(s: State, f: Vargflock, folk: Person[]) {
   const ser = (q: Person) => vaken(q) && avst(q, f) < (q.task?.act === 'vakt' ? VARG.vaktSer : VARG.folkSer) * natt * dimma;
   const vakt = folk.find(q => q.task?.act === 'vakt' && ser(q)), p = vakt ?? folk.find(ser);
   if (!p) return;
-  f.sedd = s.now;
+  f.sedd = s.now; f.sag = p.id;
   if (forstaGang(s, 'vargSedd')) log(s, `${p.name} såg ${f.vargar.length > 1 ? `en flock vargar (${f.vargar.length})` : 'en ensam varg'} för första gången.`, 'world', [p.id]);
   const hort = larma(s, f.x, f.y, 'varg', f.vargar.length, [p]);
   // vakten väcker de vuxna som sover när flocken är nära byn
@@ -400,14 +404,20 @@ function stjal(s: State, f: Vargflock) {
   log(s, `Vargar smög in i byn i mörkret och tog ${tog} ${tog === 1 ? 'sak' : 'saker'} mat ur förrådet.`, 'world');
 }
 
-// ledaren (eller den modigaste) kallar till vargjakt när byn vet om flocken
-function jaktBeslut(s: State, f: Vargflock, folk: Person[]) {
+// när byn vet om flocken kallar den som såg den först till vargjakt om hen vågar, annars ledaren eller den modigaste som vågar
+// (steg 3.10.20). Hur många som följer beror också på gehöret för den som kallar
+export function jaktBeslut(s: State, f: Vargflock, folk: Person[]) {
   if (f.jagare || f.gor === 'flyr' || !isLight(s.now) || f.sedd === undefined || s.now - f.sedd > VARG.jaktVet * HOUR) return;
   const kan = folk.filter(q => ageOf(q, s.now) >= ALDER.vaktFran && ageOf(q, s.now) < ALDER.vaktTill && !isSick(q, s.now) && halsa(q) >= KROPP.svag && kanGa(q) && q.task?.act !== 'strid' && q.task?.act !== 'vargjakt' && !larmNu(s, q)?.falskt);
   if (!kan.length) return;
-  const led = ledareOf(s), kallar = led && kan.includes(led) ? led : kan.reduce((a, q) => stat(q, 'mod', s.now) > stat(a, 'mod', s.now) ? q : a);
+  const vagar = (q?: Person) => !!q && kan.includes(q) && stat(q, 'mod', s.now) / 20 + VARG.fler * kan.length / Math.max(1, f.vargar.length) > VARG.vagar;
+  const led = ledareOf(s), sag = f.sag === undefined ? undefined : byId(s, f.sag), modiga = kan.filter(q => vagar(q));
+  const kallar = vagar(sag) ? sag! : vagar(led) ? led! : modiga.length ? modiga.reduce((a, q) => stat(q, 'mod', s.now) > stat(a, 'mod', s.now) ? q : a) : undefined;
+  if (!kallar) return;
+  const gehor = VARG.foljAns * clamp(ryktbarhet(s, kallar.id).a / Math.max(1, folk.length), -1, 1) + VARG.foljKar * franMitt(kallar, 'karisma', s.now)
+    + (kallar.liv?.vargar ? VARG.foljDrap : 0) + (kallar === led ? VARG.foljLed : 0);
   const nod = clamp(1 - foodOf(s) / Math.max(1, folk.length) / VARG.matNog, 0, 1), sed = (s.seder.v as Record<string, number>).strid ?? 0;
-  const vill = kan.map(q => ({ q, v: q === kallar ? Infinity : VARG.foljMod * (stat(q, 'mod', s.now) - 10) / 10 + VARG.foljTycke * getRel(s, q, kallar).op / 100 + VARG.foljSed * sed + VARG.foljNod * nod + VARG.foljSlump * (rnd(s, 'varg', q) - 0.5) }))
+  const vill = kan.map(q => ({ q, v: q === kallar ? Infinity : VARG.foljMod * (stat(q, 'mod', s.now) - 10) / 10 + VARG.foljTycke * getRel(s, q, kallar).op / 100 + VARG.foljSed * sed + VARG.foljNod * nod + gehor + VARG.foljSlump * (rnd(s, 'varg', q) - 0.5) }))
     .filter(x => x.v > VARG.folj).sort((a, b) => b.v - a.v).slice(0, VARG.jaktMax).map(x => x.q);
   const kraft = vill.reduce((a, q) => a + 0.5 + 2 * VAPEN[personKampe(s, q, 0, 0, 0, 0).vapen].skada, 0);
   const kvot = kraft / (f.vargar.length * VARG.kraftVarg) * (1 + VARG.nod * nod) * (0.7 + 0.6 * stat(kallar, 'mod', s.now) / 20);
