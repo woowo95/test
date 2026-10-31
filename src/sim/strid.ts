@@ -567,8 +567,8 @@ function avstandSteg(st: Strid, k: Kampe, m: Kampe, d: number, dt: number): bool
   const kv = VAP[k.vapen].kast;
   if (!kv || !k.skott || (kv.reserv && !k.reserv)) return false;
   if (kv.reserv) { // spjutet: kastas när målet är på avstånd, annars sticker man med det
-    if (d < STRID.kastMin || d > kv.rack || k.vant > 0) return false;
-    return kastaMot(st, k, m);
+    if (d < STRID.kastMin || d > kv.rack) { k.vantar = undefined; return false; }
+    return kastaMot(st, k, m) || !!k.vantar; // den som väntar på fritt läge står kvar
   }
   let hot: Kampe | undefined, hd = Infinity;
   for (const o of st.kampar) if (o.sida !== k.sida && iStrid(o) && o.mal === k.id && dist(o, k) < hd) { hd = dist(o, k); hot = o; }
