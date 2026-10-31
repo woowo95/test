@@ -1684,6 +1684,9 @@ SCENARIER.amnen = {
     const gral = a.prat?.k, gralB = b.prat?.m === a.id && b.prat?.k;
     SIM.samtalBorjar(); SIM.delade('plats', 'bar', 'bär och rötter'); SIM.delade('rykte', 'i_tjuv', 'Ask'); SIM.samtalAmne(t, a, b, 'småprat');
     const delat = a.prat?.k, text = SIM.pratText(t, a);
+    // den som tröstar står som den som tröstar också i den tröstades personruta (kodgenomgången 3.10.25)
+    SIM.samtalBorjar(); SIM.samtalAmne(t, a, b, 'tröst');
+    const trostA = SIM.pratText(t, a), trostB = SIM.pratText(t, b);
     // i en by som lever: vad samtalen handlade om under fyra dygn
     const v = createState(3, START), sett = new Map<string, string>(), ikoner = new Set<string>();
     kor(v, 4 * 24, x => { if (x.now % (10 * 60 * 1000) === 0) for (const p of living(x)) if (p.prat && x.now - p.prat.t < 60 * 1000 * 5) { sett.set(p.prat.k, SIM.pratText(x, p)); if (p.prat.i) ikoner.add(p.prat.i); } });
@@ -1691,6 +1694,7 @@ SCENARIER.amnen = {
     return [
       [`ett gräl handlar om grälet, hos båda (${text})`, gral === 'gral' && gralB === 'gral'],
       [`det som delades med högst prio blir ämnet (ett rykte före en plats)`, delat === 'rykte' && text.includes('Ask') && hel(text)],
+      [`den som tröstade är densamma i bådas personruta (${trostA} / ${trostB})`, trostA === trostB && trostA.indexOf(a.name) < trostA.indexOf(b.name) && trostA.indexOf(a.name) >= 0],
       [`samtalen i byn handlar om olika saker (${[...sett.keys()].join(', ')})`, sett.size >= 4],
       [`varje text är hel (t.ex. ${texter[0] ?? '–'})`, texter.length > 0 && texter.every(hel)],
       [`varje symbol i pratbubblan finns (${[...ikoner].join(', ')})`, [...ikoner].every(hasIcon) && Object.values(SIM.AMNEN).every(d => !d.ikon || hasIcon(d.ikon))],

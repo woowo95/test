@@ -1607,7 +1607,7 @@ const ADEF = {
 export type AmneId = keyof typeof ADEF;
 export const AMNEN: Record<AmneId, AmneDef> = ADEF;
 // det senaste samtalet: med vem (m), ämnet (k), symbolen (i), vad det handlade om (o) och när (t)
-export interface Prat { m: number; k: AmneId; i?: string; o?: string; t: number }
+export interface Prat { m: number; k: AmneId; i?: string; o?: string; t: number; fr?: number } // fr = den som talade (samma hos båda)
 // det som delats i samtalet som pågår (converse i samtal.ts nollställer det före och läser det efter)
 let delat: { k: AmneId; i?: string; o?: string } | undefined;
 export function samtalBorjar() { delat = undefined; }
@@ -1630,7 +1630,7 @@ export function samtalAmne(s: State, a: Person, b: Person, kind: string) {
     x = val[Math.floor(hash(s.seed, a.id * 997 + b.id, Math.round(s.now / 60)) * val.length)];
   }
   const i = x.i ?? AMNEN[x.k].ikon;
-  a.prat = { m: b.id, k: x.k, t: s.now, ...(i ? { i } : {}), ...(x.o ? { o: x.o } : {}) };
+  a.prat = { m: b.id, k: x.k, t: s.now, fr: a.id, ...(i ? { i } : {}), ...(x.o ? { o: x.o } : {}) }; // a talar: delar, lär ut, tröstar
   b.prat = { ...a.prat, m: a.id };
   return a.prat;
 }
@@ -1638,7 +1638,8 @@ export function samtalAmne(s: State, a: Person, b: Person, kind: string) {
 export function pratText(s: State, p: Person) {
   const x = p.prat, q = x && byId(s, x.m);
   if (!x || !q || s.now - x.t > BERATT.pratTim * HOUR) return '';
-  const f: Fyllning = { namn: p.name, med: q.name, om: x.o ?? '' };
+  const [t, l] = (x.fr ?? p.id) === p.id ? [p, q] : [q, p]; // den som talade först, i bådas ruta
+  const f: Fyllning = { namn: t.name, med: l.name, om: x.o ?? '' };
   return fyll(valjVariant(s, `p_${x.k}` as MallId, p.id + q.id, f, Math.round(x.t / 60)), f);
 }
 
