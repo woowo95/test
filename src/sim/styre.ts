@@ -16,8 +16,8 @@ import { ISTID, ageIndex, hourOf, kallTid } from './tid';
 // Ledarskap är en teknik som man kommer på och lär ut i samtal (teknik.ts). Bara den som kan den kan bli ledare: när byn har
 // minst LED.vuxna vuxna väljs den mest omtyckta med hög karisma av dem som kan tekniken och inte har dåligt anseende. Dör ledaren
 // väljs nästa på samma sätt; kan ingen vuxen tekniken har byn ingen ledare, och påbuden upphör (en by kan glömma ledarskapet).
-// Den första ledaren låser upp den första vågskålen, seden Jämlikhet – Rangordning (seder.ts). Ledaren drar sederna med ungefär
-// en tredjedel av byns vikt, mer vid Rangordning och hög legitimitet. Legitimiteten räknas ur folkets stöd, tiden vid makten och
+// Den första ledaren låser upp den första vågskålen, seden Allmogen – Envälde (seder.ts). Ledaren drar sederna med ungefär
+// en tredjedel av byns vikt, mer vid Envälde och hög legitimitet. Legitimiteten räknas ur folkets stöd, tiden vid makten och
 // vintrarna byn klarat, och sjunker av orättvisa straff; den sparas inte. Påbuden (matlager, vedlager, torkat) kommer ur ledarens
 // personlighet och ses över en gång per årstid; straffen delas ut på kvällen för det ledaren sett eller hört som rykte.
 
@@ -27,8 +27,8 @@ export const LED = balans('ledare', {
   anseende: 0, // ... bland dem som kan ledarskap och inte har ett anseende under detta (rykten.ts)
   karisma: 2, // valet: stödet (relationen till de andra vuxna, -100 till 100) plus karisman gånger så här mycket
   vis: 14, // titeln Den vise: intelligens minst så här
-  hovding: 0.35, // styrelseformen är ett hövdingadöme från så här mycket Rangordning
-  // ledarens vikt i sederna: byns vikt gånger sedVikt × (1 + sedRang × Rangordning) × (sedLegBas + legitimiteten)
+  hovding: 0.35, // styrelseformen är ett hövdingadöme från så här mycket Envälde
+  // ledarens vikt i sederna: byns vikt gånger sedVikt × (1 + sedRang × Envälde) × (sedLegBas + legitimiteten)
   sedVikt: 0.5, sedRang: 1, sedLegBas: 0.5,
   // legitimiteten (0 till 1): stödet (0,5 + snittrelationen / 200) gånger wStod, tiden vid makten (1 - e^(-dygn / tidDygn))
   // gånger wTid, och vintrarna (högst vintrar) gånger wVint, minus orättvisan
@@ -37,19 +37,19 @@ export const LED = balans('ledare', {
   tanke: 0.04, // ledaren mår så här mycket bättre (tanken Leder byn)
 });
 export const PAB = balans('pabud', {
-  andel: 0.5, // ledarens del av påbuden: andel × (legBas + legitimiteten) × (1 + rang × Rangordning), högst max
+  andel: 0.5, // ledarens del av påbuden: andel × (legBas + legitimiteten) × (1 + rang × Envälde), högst max
   legBas: 0.5, rang: 1, max: 0.8,
   plan: 0.4, // inför och under istiden lägger en intelligent ledare (intelligens över 10) till så här mycket per steg (6) på lagren
 });
 export const STR = balans('straff', {
   dygn: 2, // ledaren dömer för det som hänt de senaste så här många dygnen
   timme: 20, // på kvällen vid den här timmen
-  rang: 1, // hårdheten: 1 + rang × Rangordning + empati × (10 - empatin) / 10 + humor × (0,5 - humöret), mellan min och max
+  rang: 1, // hårdheten: 1 + rang × Envälde + empati × (10 - empatin) / 10 + humor × (0,5 - humöret), mellan min och max
   empati: 0.3, humor: 0.4, min: 0.3, max: 2.5,
   agg: 0.3, // ... plus agg × (aggressionen − 10) / 10 (steg 3.7.6)
   nara: 0.7, // sina nära (partner, släkt, goda vänner) straffar ledaren så här mycket mildare
   skam: 0.3, slag: 0.6, utvis: 0.9, // straffet: från så här mycket (händelsens vikt gånger hårdheten) skam, slag och utvisning
-  slagRang: 0.2, utvisRang: 0.4, // ... slag bara från så här mycket Rangordning, och utvisning bara för dråp och från så här mycket
+  slagRang: 0.2, utvisRang: 0.4, // ... slag bara från så här mycket Envälde, och utvisning bara för dråp och från så här mycket
   skamDygn: 1, // skammen: inte äta vid bordet eller sitta vid elden med de andra så här länge
   tanke: 0.06, tankeDygn: 1, // den straffade mår så här mycket sämre per steg i straffet
   slagG: 0.15, // slaget ger ett blåmärke med så här stor svårighet
@@ -78,7 +78,7 @@ const FORMER: { namn: string; passar: (s: State) => boolean; text: (l: Person, t
 ];
 // vågskålarna: sederna som låses upp av styret, i den ordning de visas. steg = när en låst vågskål byggs
 export const VAGSKALAR: { id: string; sed?: Sed; namn: string; steg?: string }[] = [
-  { id: 'rang', sed: 'rang', namn: 'Jämlikhet – Rangordning' },
+  { id: 'rang', sed: 'rang', namn: 'Allmogen – Envälde' },
   { id: 'fortjanst', namn: 'Förtjänst – Härkomst', steg: '9.2.1' },
 ];
 // påbuden: vad ledaren tycker (åt vilket håll från byns egen sed, som en sed från -1 till 1). sed = byns egen sed som påbudet

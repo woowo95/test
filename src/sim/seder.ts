@@ -54,13 +54,13 @@ const dev = (v: number) => (v - SED.mitt) / SED.spann;
 // sin personlighet (q = egenskaperna, barn = personen är förälder). Alla börjar på 0. Ordningen sparas, så nya seder läggs sist
 interface SedDef { pos: string; neg: string; effect: string; dra: (q: Person['pot'], barn: boolean) => number }
 const DEF = {
-  arbete: { pos: 'Arbete', neg: 'Lugn', effect: 'Pliktkänsla: hur mycket man jobbar för byn och hur mycket man vilar.', dra: q => dev(q.flit) },
-  gemenskap: { pos: 'Gemenskap', neg: 'Var och en för sig', effect: 'Hur mycket man bryr sig om att andra fryser och hjälper dem med elden.', dra: q => dev(q.empati) },
-  barn: { pos: 'Barnkär', neg: 'Barnsnål', effect: 'Hur gärna par skaffar barn, och om barnen får leka eller måste hjälpa till.', dra: (q, barn) => dev(q.empati) * SED.barnEmpati + (barn ? SED.barnForalder : 0) },
-  nyfikenhet: { pos: 'Nyfikenhet', neg: 'Tradition', effect: 'Hur snabbt invånarna lär sig nya färdigheter.', dra: q => dev((q.nyfikenhet + q.intelligens) / 2) },
-  forsiktighet: { pos: 'Försiktighet', neg: 'Leva i nuet', effect: 'Hur stora förråd byn vill ha innan man slappnar av, och om elden hålls vid liv.', dra: q => -dev(q.mod) * SED.forsMod + dev(q.intelligens) * SED.forsInt },
+  arbete: { pos: 'Plikt', neg: 'Vila', effect: 'Pliktkänsla: hur mycket man jobbar för byn och hur mycket man vilar.', dra: q => dev(q.flit) },
+  gemenskap: { pos: 'Sammanhållning', neg: 'Självförsörjning', effect: 'Hur mycket man bryr sig om att andra fryser och hjälper dem med elden.', dra: q => dev(q.empati) },
+  barn: { pos: 'Ättens växt', neg: 'Ättens bärkraft', effect: 'Hur gärna par skaffar barn, och om barnen får leka eller måste hjälpa till.', dra: (q, barn) => dev(q.empati) * SED.barnEmpati + (barn ? SED.barnForalder : 0) },
+  nyfikenhet: { pos: 'Förnyelse', neg: 'Tradition', effect: 'Hur snabbt invånarna lär sig nya färdigheter.', dra: q => dev((q.nyfikenhet + q.intelligens) / 2) },
+  forsiktighet: { pos: 'Förutseende', neg: 'Dagens behov', effect: 'Hur stora förråd byn vill ha innan man slappnar av, och om elden hålls vid liv.', dra: q => -dev(q.mod) * SED.forsMod + dev(q.intelligens) * SED.forsInt },
   // den första vågskålen (steg 3.5.1): låst (står på 0) tills byn fått sin första ledare (sedOppen i styre.ts)
-  rang: { pos: 'Rangordning', neg: 'Jämlikhet', effect: 'Hur mycket ledaren bestämmer: ledarens vikt i sederna och påbuden, och hur hårt hen straffar.', dra: q => (dev(q.mod) - dev(q.empati)) * SED.rangDra },
+  rang: { pos: 'Envälde', neg: 'Allmogen', effect: 'Hur mycket ledaren bestämmer: ledarens vikt i sederna och påbuden, och hur hårt hen straffar.', dra: q => (dev(q.mod) - dev(q.empati)) * SED.rangDra },
 } satisfies Record<string, SedDef>;
 export type Sed = keyof typeof DEF;
 export const SEDER: Record<Sed, SedDef> = DEF;

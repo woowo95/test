@@ -46,7 +46,7 @@ const BYGG = balans('bygg', {
   lagFart: 2, // lagning går så här många gånger fortare än att bygga ...
   lagMatDiv: 2, // ... och kräver materialet delat med så mycket
   ungFart: 0.6, // en ung byggare (yngre än ALDER.byggFullt) bygger med så här stor del av takten
-  klartGemenskap: 0.03, // när ett hus blir färdigt stärks sedernas gemenskap så här mycket
+  klartGemenskap: 0.03, // när ett hus blir färdigt stärks seden Sammanhållning så här mycket
 });
 
 // ---------- att bygga ----------

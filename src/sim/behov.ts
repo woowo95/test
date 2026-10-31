@@ -60,7 +60,7 @@ export const DELA = balans('dela', {
   overflodSteg: 0.3,
   overflodMin: 0.7,
   overflodMax: 1.3,
-  gemenskapGe: 0.25, // så mycket givmildare (eller snålare) seden gör folk, vid Gemenskap fullt ut
+  gemenskapGe: 0.25, // så mycket givmildare (eller snålare) seden gör folk, vid Sammanhållning fullt ut
   rikGe: 0.7, // så mycket av viljan att ge till andra än barn och partner som finns kvar i en rik by
   geBarn: 0.95, // viljan att ge till sitt barn ...
   gePartner: 0.8, // ... till sin partner ...
@@ -346,7 +346,7 @@ function tradeMaterial(s: State, p: Person, k: string, n: number) {
 // den unga byn lånar ut till alla den inte är osams med. Stjäl gör man inte: att sakna ett redskap dödar ingen.
 // hur gärna giver ger till mottagaren, 0–1 (samma för mat, ved, material och redskap). Empati och relationen avgör
 // mest. Den som har mycket över ger lättare (overflod = vad hen har delat med vad hen själv behöver: 1 ger 0,7 gånger,
-// 2 ger 1 och 3 eller mer 1,3 gånger), seden Gemenskap gör alla givmildare och Var och en för sig snålare, och ju
+// 2 ger 1 och 3 eller mer 1,3 gånger), seden Sammanhållning gör alla givmildare och Självförsörjning snålare, och ju
 // rikare byn är desto mindre ger man (delning.ts). Till sina barn och sin partner ger man lika gärna i en rik by
 export function willing(s: State, g: Person, m: Person, overflod = 1) {
   const over = clamp(DELA.overflodBas + DELA.overflodSteg * overflod, DELA.overflodMin, DELA.overflodMax), sed = 1 + DELA.gemenskapGe * s.seder.v.gemenskap;

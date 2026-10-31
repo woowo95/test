@@ -396,7 +396,7 @@ SCENARIER.arv = {
       ['den som blir nattens vakt lägger ner det hen bär', vaktBar],
       ['barnets far är den hon blev gravid med, inte en ny partner', far],
       [`den som har mycket över ger lättare (${lite.toFixed(2)} mot ${mycket.toFixed(2)})`, mycket > lite],
-      [`Gemenskap gör folk givmildare (${egen.toFixed(2)} → ${gem.toFixed(2)})`, gem > lite && lite > egen],
+      [`Sammanhållning gör folk givmildare (${egen.toFixed(2)} → ${gem.toFixed(2)})`, gem > lite && lite > egen],
       [`i en rik by ger man mindre till vänner (${rikVan.toFixed(2)}) men lika till barn och partner`, rikVan < lite && rikBarn === fattigBarn && rikPartner === fattigPartner],
     ];
   },

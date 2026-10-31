@@ -48,7 +48,7 @@ const LIV = balans('liv', {
   // död och födsel
   barnsang: 0.025, // chansen att modern dör i barnsäng
   barnDod: 5, // ett barn som dör under så här många år sörjs av hela byn (sedan Barn)
-  sedSvalt: 0.15, sedKyla: 0.1, sedJakt: 0.04, // hur mycket Försiktighet ökar när någon dör av svält, kyla eller under en jakt
+  sedSvalt: 0.15, sedKyla: 0.1, sedJakt: 0.04, // hur mycket Förutseende ökar när någon dör av svält, kyla eller under en jakt
   sedBarn: 0.08, // ... och Barn när ett barn dör
   // tankarna efter en död eller flytt: styrkan (humör) och hur länge de varar (dygn)
   sorjPartner: -0.3, sorjPartnerDygn: 1.2, // partnern

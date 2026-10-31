@@ -81,7 +81,7 @@ SCENARIER.faror = {
 };
 
 SCENARIER.seder = {
-  text: 'Sederna håller sig mellan -1 och 1 och rör sig mot det invånarna drar åt: en flitig by drar Arbete uppåt och får högre pliktkänsla än en lat. Yrket kommer av vanan',
+  text: 'Sederna håller sig mellan -1 och 1 och rör sig mot det invånarna drar åt: en flitig by drar Plikt uppåt och får högre pliktkänsla än en lat. Yrket kommer av vanan',
   kor: () => {
     const s = createState(4, START);
     kor(s, 3 * 24);
@@ -94,7 +94,7 @@ SCENARIER.seder = {
     for (const q of [fl, la]) { SIM.stepSeder(q); q.now += 2 * DAY; SIM.stepSeder(q); }
     const narmare = [fl, la].every((q, i) => Math.abs(mal(q) - q.seder.v.arbete) < Math.abs(fore[i].mal - fore[i].v) - 0.05);
     const lang = SIM.cloneState(fl); lang.now += 40 * DAY; SIM.stepSeder(lang); // länge i ett svep: aldrig över 1
-    // pliktkänslan: samma person i båda byarna, och samma by med seden Arbete på 1 och -1
+    // pliktkänslan: samma person i båda byarna, och samma by med seden Plikt på 1 och -1
     const p = vuxna(fl)[0]!, q = vuxna(la).find(x => x.id === p.id)!, pf = SIM.duty(fl, p), pl = SIM.duty(la, q);
     const sed = (v: number) => { const t = SIM.cloneState(s); t.seder.v.arbete = v; return SIM.duty(t, vuxna(t)[0]!); };
     // yrket kommer av vanan: 20 timmars jakt ger Jägare, och att fälla och hugga ger Trähuggare
@@ -105,9 +105,9 @@ SCENARIER.seder = {
     const okanda = [...SIM.TAGS.flatMap(g => g.acts).filter(a => !(a in ACTS)), ...SIM.TAGS.filter(g => !g.acts.length).map(g => g.tag)];
     return [
       [`sederna ligger mellan -1 och 1 efter tre dygn (tre år i spelet) och efter 40 dygn i ett svep`, inom(s) && inom(fl) && inom(la) && inom(lang)],
-      [`en flitig by drar Arbete mot ${fore[0].mal.toFixed(2)} och en lat mot ${fore[1].mal.toFixed(2)}`, fore[0].mal > 0.5 && fore[1].mal < -0.5],
-      [`efter två dygn har Arbete rört sig mot målet: flitig ${fore[0].v.toFixed(2)} → ${fl.seder.v.arbete.toFixed(2)}, lat ${fore[1].v.toFixed(2)} → ${la.seder.v.arbete.toFixed(2)}`, narmare && fl.seder.v.arbete > la.seder.v.arbete + 0.5],
-      [`pliktkänslan är högre i den flitiga byn (${pf.toFixed(2)} mot ${pl.toFixed(2)}) och högre med seden Arbete (${sed(1).toFixed(2)} mot ${sed(-1).toFixed(2)}), alltid mellan ${SIM.SED.pliktMin} och ${SIM.SED.pliktMax}`,
+      [`en flitig by drar Plikt mot ${fore[0].mal.toFixed(2)} och en lat mot ${fore[1].mal.toFixed(2)}`, fore[0].mal > 0.5 && fore[1].mal < -0.5],
+      [`efter två dygn har Plikt rört sig mot målet: flitig ${fore[0].v.toFixed(2)} → ${fl.seder.v.arbete.toFixed(2)}, lat ${fore[1].v.toFixed(2)} → ${la.seder.v.arbete.toFixed(2)}`, narmare && fl.seder.v.arbete > la.seder.v.arbete + 0.5],
+      [`pliktkänslan är högre i den flitiga byn (${pf.toFixed(2)} mot ${pl.toFixed(2)}) och högre med seden Plikt (${sed(1).toFixed(2)} mot ${sed(-1).toFixed(2)}), alltid mellan ${SIM.SED.pliktMin} och ${SIM.SED.pliktMax}`,
         pf > pl && sed(1) > sed(-1) && [pf, pl, sed(1), sed(-1)].every(v => v >= SIM.SED.pliktMin && v <= SIM.SED.pliktMax)],
       [`vanan ger yrket: ${j.name} (jakt 20 timmar) kallas ${j.tag ?? 'inget'}, ${h.name} (fälla och hugga) ${h.tag ?? 'inget'}${ovriga.length ? `, de andra ${ovriga.map(x => x.tag ?? 'inget').join(', ')}` : ''}`,
         j.tag === 'Jägare' && !!j.kallad?.includes('Jägare') && h.tag === 'Trähuggare' && !ovriga.some(x => x.tag === 'Jägare' || x.tag === 'Trähuggare')],
@@ -607,7 +607,7 @@ SCENARIER.rykten = {
 };
 
 SCENARIER.ledare = {
-  text: 'Ledarskapet (steg 3.5): bara den som kan tekniken Ledarskap blir ledare, när byn har sex vuxna väljs den mest omtyckta, den första ledaren låser upp seden Rangordning, påbuden sätts och drar förråden, och ledaren straffar en tjuv på kvällen: den som skäms håller sig undan elden',
+  text: 'Ledarskapet (steg 3.5): bara den som kan tekniken Ledarskap blir ledare, när byn har sex vuxna väljs den mest omtyckta, den första ledaren låser upp seden Envälde, påbuden sätts och drar förråden, och ledaren straffar en tjuv på kvällen: den som skäms håller sig undan elden',
   kor: () => {
     const by = () => {
       const t = createState(11, START);
@@ -620,7 +620,7 @@ SCENARIER.ledare = {
     const a = by();
     for (let i = 0; i < 5; i++) SIM.stepStyre(a.t);
     const ingen = !a.t.styre?.ledare;
-    // den som kan tekniken och är omtyckt väljs, och den första ledaren låser upp Rangordning
+    // den som kan tekniken och är omtyckt väljs, och den första ledaren låser upp Envälde
     const b = by(), [l, tjuv, offer] = b.vuxna;
     (l.tek ??= {}).ledarskap = 1;
     for (const q of b.vuxna) if (q !== l) getRel(b.t, l, q).op = 40;
@@ -650,7 +650,7 @@ SCENARIER.ledare = {
     return [
       ['utan tekniken Ledarskap blir ingen ledare', ingen],
       [`den som kan ledarskap och är omtyckt blir ledare (${titel})`, vald],
-      ['den första ledaren låser upp seden Rangordning', !rang0 && rang1],
+      ['den första ledaren låser upp seden Envälde', !rang0 && rang1],
       [`legitimiteten räknas ur stödet, tiden och vintrarna (${leg.v.toFixed(2)}, stöd ${leg.stod.toFixed(2)})`, leg.v > 0 && leg.v <= 1 && leg.stod > 0.5],
       ['ledaren sätter påbuden', harPabud],
       [`påbudet drar byns förråd åt ledarens håll (${drar.toFixed(2)})`, drar > 0 && drar < 1],

@@ -36,7 +36,7 @@ export const ELD = balans('eld', {
   kolDygn: 3, // ... som ligger så här länge (dygn)
   // vad var och en vill ha på elden (fireWish): det högsta av
   onskaFryser: 1.2, onskaKyla: 2.4, // egen köld: (1 - värmen) gånger Fryser plus kylan ute gånger Kyla
-  onskaEmpati: 10, onskaGemBas: 0.6, onskaGem: 0.4, // att andra fryser: byns frysande gånger empatin delad med Empati gånger (Bas + Gemenskap gånger seden)
+  onskaEmpati: 10, onskaGemBas: 0.6, onskaGem: 0.4, // att andra fryser: byns frysande gånger empatin delad med Empati gånger (Bas + Sammanhållning gånger seden)
   trivsDag: 0.12, trivsNatt: 0.55, trivsMood: 1.5, trivsMin: 0.4, // en trivsam eld, mest i mörkret och för den som mår dåligt
   slocknaFran: 11, slocknaSpann: 9, slocknaForsBas: 0.6, slocknaFors: 0.4, slocknaVikt: 0.14, // att elden inte ska slockna: den kloka, när den är svår att tända, och den försiktiga byn
   forstaEld: 0.3, forstaBas: 0.6, forstaNyfiken: 25, // byn har aldrig haft eld: den nyfikna vill ha en

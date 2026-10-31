@@ -412,7 +412,7 @@ SCENARIER.bygg = {
     // en lagning kostar hälften av det nya, också för ett trägolv (samhalle-62)
     const lagPris = (m: string) => SIM.needOf({ id: 0, x: 0, y: 0, k: MATERIAL[m].k, m, b: 1, mat: MATERIAL[m].n, c: 0.3 });
     const golvLag = lagPris('tra'), vaggLag = lagPris('timmer');
-    // en vägg rasar och byggs om: huset är klart igen, men blir inte färdigt en gång till (krönikan, Gemenskap; samhalle-55)
+    // en vägg rasar och byggs om: huset är klart igen, men blir inte färdigt en gång till (krönikan, Sammanhållning; samhalle-55)
     let omKlar = false, kronikaFore = 0, kronikaEfter = 0, gemFore = 0, gemEfter = 0;
     if (h?.klar) {
       const fardigt = () => (q.hist?.kronika ?? []).filter(k => k[2] === 'k_husKlar').length; // huset kan ha bytt namn med funktionen (steg 1.6.4)
@@ -438,7 +438,7 @@ SCENARIER.bygg = {
       ['slitna väggar lagas', lagat],
       [`ett långhus räknas när det planeras (${langhus} långhus, ${langRaknat} räknade)`, langhus > 0 && langRaknat === langhus],
       [`en lagning kostar hälften av det nya, i hela saker och minst en (trägolv ${golvLag} av ${MATERIAL.tra.n}, timmervägg ${vaggLag} av ${MATERIAL.timmer.n})`, golvLag === Math.max(1, Math.floor(MATERIAL.tra.n / 2)) && vaggLag === Math.max(1, Math.floor(MATERIAL.timmer.n / 2))],
-      [`en rasad vägg som byggts om gör huset klart igen men inte färdigt en gång till (krönikan ${kronikaFore} → ${kronikaEfter}, Gemenskap ${gemFore.toFixed(3)} → ${gemEfter.toFixed(3)})`, omKlar && kronikaFore >= 1 && kronikaEfter === kronikaFore && gemEfter === gemFore],
+      [`en rasad vägg som byggts om gör huset klart igen men inte färdigt en gång till (krönikan ${kronikaFore} → ${kronikaEfter}, Sammanhållning ${gemFore.toFixed(3)} → ${gemEfter.toFixed(3)})`, omKlar && kronikaFore >= 1 && kronikaEfter === kronikaFore && gemEfter === gemFore],
       [`huset minns var materialet kom ifrån (${Math.round(minns)} av ${Math.round(lagt)}: ${satt})`, lagt > 0 && Math.abs(minns - lagt) < 0.01 * lagt + 0.01],
     ];
   },
