@@ -439,7 +439,9 @@ export function vargjaktSteg(s: State, p: Person, tk: Task) {
   if (tk.carry || tk.prog) return;
   const f = flockarna(s).find(x => x.jagare?.includes(p.id));
   if (!f || f.gor === 'flyr') { tk.until = s.now; tk.prog = 1; return; }
-  if (avst(p, f) > VARG.na) { const sp = freeNear(s, f.x, f.y); tk.tx = sp.x; tk.ty = sp.y; tk.phase = 'go'; return; }
+  // längre bort än na: går närmare, om det går (står flocken på isen kommer man inte närmare än stranden, och anfaller därifrån)
+  const sp = freeNear(s, f.x, f.y);
+  if (avst(p, f) > VARG.na && Math.hypot(sp.x - p.x, sp.y - p.y) > 1) { tk.tx = sp.x; tk.ty = sp.y; tk.phase = 'go'; return; }
   const alla = f.jagare!.map(id => byId(s, id)).filter((q): q is Person => !!q && q.health > 0 && q.task?.act === 'vargjakt');
   const med = alla.filter(q => avst(q, p) <= VARG.samlas);
   if (med.length < alla.length && s.now - (f.samlas ??= s.now) < VARG.samlasTim * HOUR) return; // väntar in de andra

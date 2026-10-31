@@ -1573,6 +1573,15 @@ SCENARIER.kallar = {
     const avJag = av.f.jagare?.length ?? 0;
     for (const id of av.f.jagare ?? []) SIM.byId(av.s, id)!.task = undefined;
     step(av.s, SIM.BEAT);
+    // flocken står på isen längre från land än VARG.na: jägarna kommer inte längre än stranden och anfaller därifrån (kodgenomgången 3.10.25)
+    const is = by(); is.vuxna[3].pot.mod = 16; is.f.sag = is.vuxna[3].id; is.s.is = { vatten: -5, cm: 30 };
+    const ic = campCenter(is.s), m = getMap(is.s.seed), landNara = (x: number, y: number) => { let d = Infinity; for (let dy = -6; dy <= 6; dy++) for (let dx = -6; dx <= 6; dx++) { const i = (y + dy) * W + x + dx; if (i >= 0 && i < W * H && m.tiles[i] !== T.Vatten) d = Math.min(d, Math.hypot(dx, dy)); } return d; };
+    let isR = { x: -1, y: -1, d: Infinity };
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const d = Math.hypot(x - ic.x, y - ic.y), l = m.tiles[y * W + x] === T.Vatten ? landNara(x, y) : 0; if (l > SIM.VARG.na + 0.5 && l < 5.5 && d < isR.d) isR = { x, y, d }; }
+    const pa = () => { is.f.x = is.f.mx = isR.x + 0.5; is.f.y = is.f.my = isR.y + 0.5; is.f.gor = 'vantar'; };
+    pa(); for (let i = 0; i < 40 && !is.f.jagare; i++) SIM.jaktBeslut(is.s, is.f, living(is.s));
+    const isJag = is.f.jagare?.length ?? 0, isStrid0 = is.s.stat?.vargstrid ?? 0;
+    for (let i = 0; i < 12 * 4 && is.f.jagare; i++) { pa(); step(is.s, SIM.BEAT); }
     // gehöret: samma by, en känd vargdödare med hög karisma mot en okänd med låg; antalet som följer i 20 jakter vardera
     let hog = 0, lag = 0, hogJ = 0, lagJ = 0;
     for (let i = 0; i < 20; i++) {
@@ -1583,6 +1592,7 @@ SCENARIER.kallar = {
     }
     return [
       [`en avbruten vargjakt är slut: ${avJag} jägare slutade jaga, och flocken ${av.f.jagare ? 'väntar fortfarande på dem' : 'minns inga jägare'} efter ett slag`, avJag > 0 && !av.f.jagare],
+      [`en flock på isen ${isR.d < Infinity ? `(${isR.x}, ${isR.y})` : '(ingen sjö)'}: ${isJag} jägare gick, och ${(is.s.stat?.vargstrid ?? 0) > isStrid0 ? 'de anföll från stranden' : 'de kom aldrig fram'}`, isJag > 0 && (is.s.stat?.vargstrid ?? 0) > isStrid0],
       [`den som såg flocken kallar till vargjakt fast hen inte leder byn (${r1.k?.name ?? 'ingen'}, ${r1.n} gick)`, r1.k === sag],
       [`den som såg den men inte vågar kallar inte; ${r2.k?.name ?? 'ingen'} kallade i stället`, !!r2.k && r2.k !== rad],
       [`en känd vargdödare med hög karisma får fler med sig än en okänd med låg (${hog} följde i ${hogJ} jakter mot ${lag} i ${lagJ})`, hogJ > 0 && hog / Math.max(1, hogJ) > lag / Math.max(1, lagJ)],
