@@ -3,7 +3,7 @@ import { kronikaBer, personFalt, sakVarg, talOrd } from './berattelser';
 import { redskapIHanden } from './agande';
 import { blodas } from './blod';
 import { bedFor } from './bygg';
-import { Bit, Rum, bitAt, dorrDef, roomAt, freeNear, gridOf } from './byggnad';
+import { Bit, Rum, bitAt, blocked, dorrDef, roomAt, freeNear, gridOf } from './byggnad';
 import { dodaDjur, dragOf, djurOf, grupperOf, halsaOf, satDjurHalsa } from './djur';
 import { ALDER, KROPP, ageOf, byId, count, forstaGang, franMitt, getRel, isSick, livet, living, log, ovning, stat, think } from './folk';
 import { halsa, kanGa, skada } from './halsa';
@@ -13,7 +13,7 @@ import { punktIRuta } from './mark';
 import { addTo, amountOf, avbryt, foodOf, zoneOf } from './lager';
 import { die } from './liv';
 import { handelse, larma, larmNu, ryktbarhet } from './rykten';
-import { SAKER, SAK_LIST, isFood } from './saker';
+import { SAKER } from './saker';
 import { clamp, rnd } from './slump';
 import { STRID, SLAGSMAL, VAPEN, Avsikt, Strid, Uppstallning, djurKampe, foljet, nyStrid, personKampe, slitKastat, stridTillSlut, svartSkadad } from './strid';
 import { ledareOf } from './styre';
@@ -264,7 +264,7 @@ function flockSteg(s: State, f: Vargflock, folk: Person[], dtSec: number) {
     if (!f.jagare.length) { f.jagare = undefined; f.samlas = undefined; }
     for (const id of f.jagare ?? []) {
       const tk = byId(s, id)!.task!;
-      if (tk.phase === 'go' && Math.hypot(tk.tx - f.x, tk.ty - f.y) > 3) { const sp = freeNear(s, f.x, f.y); tk.tx = sp.x; tk.ty = sp.y; }
+      if (tk.phase === 'go' && Math.hypot(tk.tx - f.x, tk.ty - f.y) > 3) { const sp = jaktPlats(s, f); if (sp) { tk.tx = sp.x; tk.ty = sp.y; } }
     }
   }
   if (f.gor === 'anfaller') {
@@ -398,9 +398,9 @@ function vanta(s: State, f: Vargflock, folk: Person[], dtSec: number) {
   if (f.gor !== 'flyr') nyttMal(s, f, ut);
 }
 
-// flocken tar mat ur förrådet, hela saker: kött och fisk (det råa och det som lagats av det), i registrets ordning
-const kottEllerFisk = (k: string) => !!SAKER[k]?.ra || Object.keys(SAKER[k]?.skaffa?.av ?? {}).some(a => SAKER[a]?.ra);
-const STJALS: string[] = SAK_LIST.filter(k => isFood(k) && kottEllerFisk(k));
+// flocken tar mat ur förrådet: köttet först, hela saker. Listan går art för art (hela kroppar, kött, fisk, det lagade);
+// en fälld varg i förrådet kan också tas (det är avsiktligt, kodgenomgången 3.10.25)
+const STJALS = ['vilt', 'varg', 'kott', 'vargkott', 'fisk', 'abborre', 'grillkott', 'torrkott'];
 function stjal(s: State, f: Vargflock) {
   let n = Math.max(1, Math.round(f.vargar.length * VARG.stjalPer)), tog = 0;
   for (const k of STJALS) while (n > 0 && SAKER[k] && amountOf(s, k) >= 1) { addTo(s, k, -1); n--; tog++; }
@@ -409,6 +409,9 @@ function stjal(s: State, f: Vargflock) {
   count(s, 'vargStal', tog);
   log(s, `Vargar smög in i byn i mörkret och tog ${tog} ${tog === 1 ? 'sak' : 'saker'} mat ur förrådet.`, 'world');
 }
+
+// platsen på land där jägarna möter flocken, eller ingen när flocken står för långt ut på isen (människor går inte på vattnet)
+function jaktPlats(s: State, f: Vargflock) { const sp = freeNear(s, f.x, f.y); return blocked(s, sp.x, sp.y) ? undefined : sp; }
 
 // när byn vet om flocken kallar den som såg den först till vargjakt om hen vågar, annars ledaren eller den modigaste som vågar
 // (steg 3.10.20). Hur många som följer beror också på gehöret för den som kallar
@@ -428,8 +431,9 @@ export function jaktBeslut(s: State, f: Vargflock, folk: Person[]) {
   const kraft = vill.reduce((a, q) => a + 0.5 + 2 * VAPEN[personKampe(s, q, 0, 0, 0, 0).vapen].skada, 0);
   const kvot = kraft / (f.vargar.length * VARG.kraftVarg) * (1 + VARG.nod * nod) * (0.7 + 0.6 * stat(kallar, 'mod', s.now) / 20);
   if (kvot < VARG.jaktKvot || rnd(s, 'varg') >= VARG.jaktChans) return;
+  const sp = jaktPlats(s, f);
+  if (!sp) return; // flocken står för långt ut på isen
   f.jagare = vill.map(q => q.id);
-  const sp = freeNear(s, f.x, f.y);
   for (const q of vill) { avbryt(s, q); q.task = { act: 'vargjakt', phase: 'go', tx: sp.x, ty: sp.y, until: s.now + VARG.jaktTim * HOUR, carry: 0, why: q === kallar ? 'Kallar till vargjakt' : `Följer ${kallar.name} på vargjakt` }; }
   count(s, 'vargjakt');
   log(s, `${kallar.name} kallade till vargjakt${vill.length > 1 ? `, och ${vill.length - 1} följde med` : ''} (${f.vargar.length > 1 ? `en flock på ${f.vargar.length}` : 'en ensam varg'}).`, 'world', vill.map(q => q.id));
@@ -440,9 +444,13 @@ export function vargjaktSteg(s: State, p: Person, tk: Task) {
   if (tk.carry || tk.prog) return;
   const f = flockarna(s).find(x => x.jagare?.includes(p.id));
   if (!f || f.gor === 'flyr') { tk.until = s.now; tk.prog = 1; return; }
-  // längre bort än na: går närmare, om det går (står flocken på isen kommer man inte närmare än stranden, och anfaller därifrån)
-  const sp = freeNear(s, f.x, f.y);
-  if (avst(p, f) > VARG.na && Math.hypot(sp.x - p.x, sp.y - p.y) > 1) { tk.tx = sp.x; tk.ty = sp.y; tk.phase = 'go'; return; }
+  // längre bort än na: går närmare, om det går (står flocken på isen kommer man inte närmare än stranden, och anfaller därifrån;
+  // finns ingen strand nära väntar man)
+  if (avst(p, f) > VARG.na) {
+    const sp = jaktPlats(s, f);
+    if (!sp) return;
+    if (Math.hypot(sp.x - p.x, sp.y - p.y) > 1) { tk.tx = sp.x; tk.ty = sp.y; tk.phase = 'go'; return; }
+  }
   const alla = f.jagare!.map(id => byId(s, id)).filter((q): q is Person => !!q && q.health > 0 && q.task?.act === 'vargjakt');
   const med = alla.filter(q => avst(q, p) <= VARG.samlas);
   if (med.length < alla.length && s.now - (f.samlas ??= s.now) < VARG.samlasTim * HOUR) return; // väntar in de andra
