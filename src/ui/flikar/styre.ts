@@ -5,7 +5,7 @@ import { s } from '../lage';
 import { sedBar } from './seder';
 import type { Flik } from '../panel';
 
-// styret (steg 3.5.4, styre.ts): ledaren, styrelseformen, legitimiteten, vågskålarna och de ledare byn haft.
+// styret (steg 3.5.4, styre.ts): ledaren, styrelseformen, legitimiteten, påbuden, vågskålarna och de ledare byn haft.
 // Fliken syns först när byn fått sin första ledare
 const harHaft = () => !!s.styre?.historia.length;
 const dygnTxt = (ms: number) => { const d = ms / DAY; return d < 1 ? 'mindre än ett år' : `${Math.floor(d)} år`; };
@@ -31,25 +31,22 @@ export const styre: Flik = {
       return `<li title="${esc(d.effect)}"><div class="sedtop"><span>${esc(d.neg)}</span><span>${esc(d.pos)}</span></div>${sedBar(x)}</li>`;
     }).join('');
     const hist = st.historia.slice().reverse().map(h => `<li><span class="when">${timeLabel(s, h.fran)}</span>${pLink(byId(s, h.id)) === '–' ? esc(h.namn) : pLink(byId(s, h.id))}, ${esc(h.titel.toLowerCase())}${h.till !== undefined ? ` – ${dygnTxt(h.till - h.fran)}, ${esc(h.slut ?? '')}` : ''}</li>`).join('');
-    return `${ledare}<h3>Vågskålar</h3><ul class="seder">${skalar}</ul><h3>Byns ledare</h3><ol class="logg">${hist}</ol>`;
+    return `${ledare}<h3>Påbud</h3>${pabudDel()}<h3>Vågskålar</h3><ul class="seder">${skalar}</ul><h3>Byns ledare</h3><ol class="logg">${hist}</ol>`;
   },
 };
 
-// påbuden (steg 3.5.2): vad ledaren bestämt mot vad byn själv tycker, och hur mycket byn lyssnar
+// påbuden (steg 3.5.2): vad ledaren bestämt mot vad byn själv tycker, och hur mycket byn lyssnar. En del i Styre efter ledaren
+// och legitimiteten (steg 3.10.16; förr en egen flik). När lagarna kommer (9.2.6) blir delen Lagar
 const varde = (k: Pabud, v: number) => k === 'torkat' ? `${Math.round(torkAndel(v) * 100)} %` : `${num(onskatLager(k === 'vedlager', v))} dygn`;
-export const pabudFlik: Flik = {
-  namn: 'Påbud',
-  syns: harHaft,
-  html() {
-    const st = s.styre, l = ledareOf(s);
-    if (!l || !st?.pabud) return '<p class="muted">Inga påbud gäller. Utan ledare gör byn som den själv tycker.</p>';
-    const a = pabudAndel(s);
-    return `<div class="tekhead">${hjalpKnapp('pabud', 'Vad är påbud?')}</div>
+function pabudDel() {
+  const st = s.styre, l = ledareOf(s);
+  if (!l || !st?.pabud) return '<p class="muted">Inga påbud gäller. Utan ledare gör byn som den själv tycker.</p>';
+  const a = pabudAndel(s);
+  return `<div class="tekhead">${hjalpKnapp('pabud', 'Vad är påbud?')}</div>
     <dl class="kv"><dt title="Hur mycket byn rättar sig efter påbuden">📜 Lyssnar</dt><dd>${bar(a)}<span>${Math.round(a * 100)} %</span></dd></dl>
     ${hjalpText('pabud', `<p class="muted">${esc(l.name)} bestämmer påbuden efter sin personlighet och ser över dem varje årstid. Byn blandar påbudet med sin egen sed: ju högre legitimitet och rangordning, desto mer lyssnar byn.</p>`)}
     <dl class="kv">${PABUD_LIST.map(k => {
       const d = PABUD[k], egen = d.sed ? s.seder.v[d.sed] : 0, led = st.pabud![k] ?? egen;
       return `<dt title="${esc(d.text)}">${esc(d.namn)}</dt><dd title="${esc(`${l.name} vill ${varde(k, led)}, byn själv ${varde(k, egen)}`)}"><b>${varde(k, pabud(s, k))}</b><span class="muted">${led > egen + 0.02 ? '▲' : led < egen - 0.02 ? '▼' : ''}</span></dd>${hjalpText('pabud', `<dt></dt><dd class="small muted">${esc(d.text)}. ${esc(l.name)}: ${varde(k, led)}, byn: ${varde(k, egen)}</dd>`)}`;
     }).join('')}</dl>`;
-  },
-};
+}
