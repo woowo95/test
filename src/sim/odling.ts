@@ -422,6 +422,7 @@ function forlorad(s: State, f: Falt, varfor: string) {
   log(s, `${varfor} tog ${d.namn.toLowerCase()}na på ${agare ? agare.name + 's' : 'ett'} fält.`, 'world', agare ? [agare.id] : undefined);
   count(s, varfor === 'Frosten' ? 'frostdod' : varfor === 'Torkan' ? 'vissnat' : varfor === 'Översvämningen' ? 'drankt falt' : varfor === 'Elden' ? 'brant falt' : 'ruttnat');
   nasta(f, 'sa'); f.vatten = undefined; f.groda = undefined; f.vuxit = undefined; f.mogen = undefined; f.sadda = undefined;
+  f.rord = s.now; // gräset börjar ta fältet först nu, när det står utan gröda (inte från sådden)
 }
 
 // grödan på fältet brann i en eldsvåda (brand.ts, steg 3.8.5)

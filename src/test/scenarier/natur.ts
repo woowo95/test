@@ -1274,11 +1274,14 @@ SCENARIER.falt = {
       skord = vaxte && arter > 0 && fronSkord > 0 && tk.until === s.now;
     }
     // rötan: den mogna grödan som ingen skördar
-    let rutten = false;
+    let rutten = false, kvarEfter = false;
     if (f) {
-      Object.assign(f, { steg: 'mogen', groda: 'rovor', mogen: s.now - (SIM.ODLING.overDygn + SIM.ODLING.ruttDygn + 0.1) * DAY, rord: s.now });
+      // ingen har skött fältet på fyra dygn medan grödan växte, men det blir inte gräs direkt efter förlusten: ägaren hinner så om (kodgenomgången 3.10.25)
+      Object.assign(f, { steg: 'mogen', groda: 'rovor', mogen: s.now - (SIM.ODLING.overDygn + SIM.ODLING.ruttDygn + 0.1) * DAY, rord: s.now - (SIM.ODLING.grasDygn + 1) * DAY });
       SIM.stepOdling(s);
       rutten = f.steg === 'sa' && (s.stat?.ruttnat ?? 0) === 1;
+      SIM.stepOdling(s);
+      kvarEfter = SIM.faltOf(s).includes(f);
     }
     // frosten: i istiden dör grödan, och ingen sår något nytt
     let frost = false, ingenSadd = false;
@@ -1340,6 +1343,7 @@ SCENARIER.falt = {
       [`en ruta tar kort tid: ${perRuta} minuter att röja, gräva, så och skörda`, perRuta <= 20],
       [`den mogna grödan skördas: ärter (${arter.toFixed(1)}) och nya ärtfrön (${fronSkord.toFixed(1)}); sedan växer fältet eller grävs upp igen`, skord],
       ['den mogna grödan som ingen skördar ruttnar, och fältet ska sås igen', rutten],
+      ['fältet blir inte gräs direkt efter att grödan gått förlorad', kvarEfter],
       ['frosten i istiden dödar grödan, och ingen sår något nytt förrän det hinner mogna', frost && ingenSadd],
       ['ett fält som ingen skött på länge blir gräs igen', gras],
       ['ett fält i en sparad by från före steget blir 2 × 2 rutor när byn laddas', gammalt],
