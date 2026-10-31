@@ -678,7 +678,28 @@ SCENARIER.ledare = {
     tjuv.skam = b.t.now + DAY;
     klockan(b.t, 22);
     let social = 0;
-    for (let i = 0; i < 40; i++) { tjuv.task = undefined; Object.assign(tjuv, { hunger: 0.9, rest: 0.9, toa: 0.9, torst: 0.9, warm: 0.9 }); SIM.chooseTask(b.t, tjuv); if (ACTS[tjuv.task!.act].social && tjuv.task!.act !== 'maltid') social++; }
+    for (let i = 0; i < 40; i++) { tjuv.task = undefined; Object.assign(tjuv, { hunger: 0.9, rest: 0.9, toa: 0.9, torst: 0.9, warm: 0.9 }); SIM.chooseTask(b.t, tjuv); if (ACTS[tjuv.task!.act].social && !ACTS[tjuv.task!.act].skamfri) social++; }
+    // men skammen tar inte bort det som skyddar (kodgenomgången 3.10.25): den som fryser farligt värmer sig vid elden,
+    // och den som skäms blir inte nattens vakt
+    tandEld(b.t); tjuv.task = undefined; tjuv.warm = SIM.KROPP.farligt / 2; SIM.chooseTask(b.t, tjuv);
+    const varmer = tjuv.task!.act;
+    // samma natt utan och med skam: den som annars blev vakt blir det inte, och någon annan håller vakt
+    let vaktSkams = 0, utanVakt = 0;
+    for (let n = 0; n < 6; n++) {
+      const natt = (skam?: number) => {
+        const v = SIM.cloneState(b.t);
+        v.now += n * DAY; v.lastGuardDay = undefined; klockan(v, 22);
+        for (const q of living(v)) { q.task = undefined; q.skam = undefined; q.warm = 0.9; }
+        if (skam !== undefined) v.people.find(q => q.id === skam)!.skam = v.now + DAY;
+        for (const q of living(v)) SIM.chooseTask(v, q);
+        return { v, vakt: living(v).find(q => q.guardDay === v.lastGuardDay && q.task?.act === 'vakt') };
+      };
+      const g = natt().vakt;
+      if (!g) continue;
+      const m = natt(g.id);
+      if (m.v.people.find(q => q.id === g.id)!.guardDay === m.v.lastGuardDay) vaktSkams++;
+      if (!m.vakt) utanVakt++;
+    }
     // ledaren dör: ingen annan kan tekniken, och påbuden upphör
     SIM.die(b.t, l, 'alderdom');
     SIM.stepStyre(b.t);
@@ -692,6 +713,8 @@ SCENARIER.ledare = {
       [`påbudet drar byns förråd åt ledarens håll (${drar.toFixed(2)})`, drar > 0 && drar < 1],
       [`ledaren straffar tjuven på kvällen (${straff} straff)`, straff >= 1],
       [`den som skäms håller sig undan elden (${social} av 40 val sociala)`, social === 0],
+      [`den som skäms och fryser farligt värmer sig ändå vid elden (${varmer})`, varmer === 'varma'],
+      [`den som skäms blir inte nattens vakt, någon annan blir det (${vaktSkams} av 6 nätter vakt ändå, ${utanVakt} utan vakt)`, vaktSkams === 0 && utanVakt === 0],
       ['när ledaren dör och ingen annan kan ledarskap upphör påbuden', slut],
     ];
   },
