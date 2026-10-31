@@ -304,6 +304,7 @@ function arbetstimmar(p: Person) {
 // en gång i timmen: de som är nära varandra ser om den andra är flitig eller lat och rik eller fattig. Intrycket närmar sig
 // det man ser; det som inte stämmer längre bleknar bort
 export function stepRykten(s: State, mood: (p: Person, now: number) => number) {
+  stepSmak(s, mood); // tycke och smak, också när bara en vuxen är kvar
   const folk = living(s).filter(p => ageOf(p, s.now) >= ALDER.vuxen);
   if (folk.length < 2) return;
   let ht = 0, wt = 0;
@@ -325,7 +326,6 @@ export function stepRykten(s: State, mood: (p: Person, now: number) => number) {
       }
     }
   }
-  stepSmak(s, mood);
 }
 
 // ---------- glömska och döden (steg 3.4.1) ----------

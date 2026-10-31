@@ -592,6 +592,13 @@ SCENARIER.rykten = {
     k.p.smak = { 'a:fiske': 0.8 };
     const drag = SIM.smakDrag(k.p, ['fiske']);
     SIM.smakGift(k.q);
+    // en by med en enda vuxen: barnet bredvid som ser föräldern fiska får ändå tycke för fisket (kodgenomgången 3.10.25)
+    const en = by(), mor = en.q;
+    for (const x of living(en.t)) if (x !== mor && ageOf(x, en.t.now) >= SIM.ALDER.vuxen) x.died = en.t.now;
+    const barn = nyInvanare(en.t, 'k', 8); barn.mother = mor.id; barn.x = mor.x + 1; barn.y = mor.y; barn.smak = {};
+    mor.task = { act: 'fiske', phase: 'do', tx: mor.x, ty: mor.y, until: en.t.now + HOUR, carry: 0 };
+    SIM.stepRykten(en.t, () => 0.5);
+    const barnSmak = SIM.smakAv(barn, 'a:fiske');
     return [
       [`den som såg slaget tycker att hen är våldsam (${bevis}), den som var långt bort vet inget`, !!e && e.c === 1 && bevis.includes(a.q.name) && !bort],
       [`ryktet sprids svagare och mindre säkert (säkerhet ${e?.c.toFixed(2)} → ${hort?.c.toFixed(2)}, led ${hort?.led})`, !!hort && hort.c < e!.c && hort.led === 1 && hort.src === a.w.id],
@@ -602,6 +609,7 @@ SCENARIER.rykten = {
       [`den som arbetar mycket mer än de andra ses som flitig (${flitig?.v.toFixed(2) ?? 'nej'})`, !!flitig && flitig.v > 0.1],
       [`efter döden lever intrycket kvar med de ${bev} viktigaste händelserna, och bleknar långsammare (${cDod.toFixed(2)} mot ${cLev.toFixed(2)})`, !!dod && bev <= SIM.RYKTE.dodBev && bev >= 1 && cDod > cLev],
       [`smaken drar i valet (${drag.toFixed(2)}) och svampen som förgiftar ger avsmak`, drag > 1 && SIM.smakAv(k.q, 'm:svamp') < 0],
+      [`i en by med en enda vuxen får barnet tycke för det föräldern arbetar med (${barnSmak.toFixed(3)})`, barnSmak > 0],
     ];
   },
 };
