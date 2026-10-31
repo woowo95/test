@@ -698,7 +698,12 @@ SCENARIER.flodrest = {
     const dar = living(s).filter(p => sang0.has(p.id));
     const minns = dar.filter(p => p.lardomar?.some(l => l.k === 'flod' && l.v === hogst)).length, utan = dar.filter(p => !p.lardomar?.some(l => l.k === 'flod')).map(p => `${p.name} ${SIM.ageOf(p, s.now).toFixed(0)} år, ${p.lardomar?.length ?? 0} lärdomar`);
     const ledigNu = SIM.ledig(s, minnesRuta.x, minnesRuta.y);
+    // vattenkartan som sparas mellan anropen blandar inte ihop torkan och en högre översvämning (kodgenomgången 3.10.25)
+    const vk = createState(1, START), vattenRutor = () => SIM.vattenNu(vk).filter(t => t === T.Vatten).length;
+    vk.sjoTorr = { niva: 0, tomma: [], v: 1, t: vk.now }; const utanFlod = vattenRutor();
+    vk.sjoTorr = { niva: 0, tomma: [], v: 0, t: vk.now }; vk.flod = { niva: 4 }; const medFlod = vattenRutor();
     return [
+      [`vattenkartan följer översvämningen också när den når fyra rutor upp (${utanFlod} rutor vatten utan, ${medFlod} med)`, medFlod > utanFlod],
       [`vattnet nådde ${hogst} rutor upp på land`, hogst >= 2],
       [`de vuxna bar undan maten innan vattnet kom (${s.stat?.['flod undan'] ?? 0} gånger; ${rotterKvarVid1} av 12 rötter kvar två rutor från vattnet medan det stod en ruta upp)`, (s.stat?.['flod undan'] ?? 0) >= 1 && rotterKvarVid1 === 0],
       [`alla i byn som var där minns hur högt vattnet nådde (${minns} av ${dar.length}, byn minns ${s.flodMinne ?? 0} rutor${utan.length ? `; inte ${utan.join(', ')}` : ''})`, minns === dar.length && dar.length > 0 && s.flodMinne === hogst],
