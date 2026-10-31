@@ -29,6 +29,7 @@ export function useMap(s: { W?: number; H?: number; kart?: Kart }) {
 export const kartNamn = () => KARTA; // kartans storlek och den gamla kartans plats: samma namn = samma karta för samma frö
 export const mapKey = (seed: number) => `${seed}:${KARTA}`;
 export const inMap = (x: number, y: number) => x >= 0 && y >= 0 && x < W && y < H; // punkten eller rutan ligger på kartan
+export const GRANNAR4 = [[1, 0], [-1, 0], [0, 1], [0, -1]] as const; // rutorna bredvid, utan de snett
 
 // Gränssnittet läser byn mellan stegen, och då är visning.pa sann (i webbläsaren, utom i step, createState och migrate, som
 // räknar som simuleringen: `simulera`). En cache vars svar beror på när det räknas och inte bara på nyckeln har två delar

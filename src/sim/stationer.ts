@@ -1,4 +1,4 @@
-import { Act, H, HOUR, MIN, Person, SEC, State, T, Task, W, inMap } from './typer';
+import { Act, GRANNAR4, H, HOUR, MIN, Person, SEC, State, T, Task, W, inMap } from './typer';
 import { eldPlats, getMap } from './karta';
 import { knows } from './teknik';
 import { ALDER, ageOf, alive, byId, count, doingAct, familjOf, forstaGang, gjort, living, log } from './folk';
@@ -422,6 +422,11 @@ function siteEld(s: State) {
 }
 // rutorna i rektangeln med hörnet (x, y) och måtten w×h
 const rutorAv = (x: number, y: number, w: number, h: number) => Array.from({ length: w * h }, (_, i) => ({ x: x + i % w, y: y + Math.floor(i / w) }));
+// väggbitarna rakt bredvid en möbel med hörnet x, y och storleken w × h (inte hörnen), i en fast ordning
+function runtOm(s: State, x: number, y: number, w: number, h: number, f: (k: string | undefined) => void) {
+  for (let j = -1; j <= h; j++) for (let i = -1; i <= w; i++) if ((i === -1 || i === w) !== (j === -1 || j === h)) f(bitAt(s, x + i, y + j)?.k);
+}
+
 // ute: alla rutorna den tar är lediga, ingenting utom ett hus står inpå (friRunt), helst mot en vägg och inte där barnen leker. Avståndet räknas från stationens mitt
 function siteUte(s: State, k: string) {
   const f = eldPlats(s), lekR = lekplats(s);
@@ -438,11 +443,7 @@ function siteUte(s: State, k: string) {
       if (!fri) continue;
       // helst mot en vägg, men inte vid en öppning där man går in (Björn efter v101)
       let vagg = 0;
-      for (let j = -1; j <= h; j++) for (let i = -1; i <= w; i++) {
-        if ((i === -1 || i === w) === (j === -1 || j === h)) continue; // bara rutorna rakt bredvid, inte hörnen
-        const b = bitAt(s, x + i, y + j);
-        if (b?.k === 'vagg') vagg++; else if (b?.k === 'oppning') fri = false;
-      }
+      runtOm(s, x, y, w, h, k => { if (k === 'vagg') vagg++; else if (k === 'oppning') fri = false; });
       if (!fri) continue;
       const mx = dx + (w - 1) / 2, my = dy + (h - 1) / 2;
       const lek = paLek(lekR, x, y, w, h) ? STATION.norr * STATION.lekGanger : 0;
@@ -459,7 +460,7 @@ function golvFri(s: State, rum: Set<number>, x: number, y: number) {
     && !(s.stackar ?? []).some(a => a.x === x && a.y === y) && !tingOf(s).some(q => q.x === x && q.y === y && q.hos === undefined && q.lass === undefined);
 }
 // står något på rutorna (x, y, w×h) i ett hus ingång: rutan innanför en öppning (steg 3.10.1)? Öppningen själv är inget golv
-const iIngang = (s: State, x: number, y: number, w: number, h: number) => rutorAv(x, y, w, h).some(q => GRANNAR.some(([dx, dy]) => bitAt(s, q.x + dx, q.y + dy)?.k === 'oppning'));
+const iIngang = (s: State, x: number, y: number, w: number, h: number) => rutorAv(x, y, w, h).some(q => GRANNAR4.some(([dx, dy]) => bitAt(s, q.x + dx, q.y + dy)?.k === 'oppning'));
 // inne: i ett färdigt hus (en möbel man sover i bara där man sover, det andra inte i ett förrådshus), på lediga golvrutor med
 // golv framför sig, och bara om den inte tar en sovplats som någon behöver. Helst mot en vägg och inte vid öppningen, och en
 // bädd aldrig i ingången. bara = bara i det rummet, far = bara i de husen (ingen bygger i någon annans hus, steg 3.10.2)
@@ -481,11 +482,7 @@ function siteInne(s: State, k: string, bara?: Rum, far?: (h: Hus) => boolean) {
         for (let j = 0; j < h && fri; j++) for (let i = 0; i < w && fri; i++) fri = golvFri(s, rum, x + i, y + j);
         for (let i = 0; i < w && fri; i++) fri = rum.has((y + h) * W + x + i) && !stationRutor(s).at.has((y + h) * W + x + i); // golvet framför
         if (!fri || d.sover && iIngang(s, x, y, w, h)) continue; // en bädd aldrig i ingången (steg 3.10.1)
-        for (let j = -1; j <= h; j++) for (let i = -1; i <= w; i++) {
-          if ((i === -1 || i === w) === (j === -1 || j === h)) continue; // bara rutorna rakt bredvid, inte hörnen
-          const b = bitAt(s, x + i, y + j);
-          if (b?.k === 'vagg') sc -= STATION.badd; else if (b?.k === 'oppning') sc += STATION.dorr;
-        }
+        runtOm(s, x, y, w, h, k => { if (k === 'vagg') sc -= STATION.badd; else if (k === 'oppning') sc += STATION.dorr; });
         if (sc < bs) { bs = sc; best = rot ? { x, y, rot, inne: 1 } : { x, y, inne: 1 }; }
       }
     }
@@ -564,11 +561,10 @@ function naddaNu(s: State, extra: number, utan: number) {
   const fri = (i: number) => g.tiles[i] !== T.Vatten && !g.solid?.[i] && (!hinder[i] || i === utan) && i !== extra;
   const lagg = (x: number, y: number) => { const i = y * W + x; if (x >= 0 && y >= 0 && x < W && y < H && !sedd[i] && fri(i)) { sedd[i] = 1; ko.push(i); } };
   lagg(f.x, f.y);
-  for (const [dx, dy] of GRANNAR) lagg(f.x + dx, f.y + dy);
-  for (let k = 0; k < ko.length; k++) { const x = ko[k] % W, y = (ko[k] - x) / W; for (const [dx, dy] of GRANNAR) lagg(x + dx, y + dy); }
+  for (const [dx, dy] of GRANNAR4) lagg(f.x + dx, f.y + dy);
+  for (let k = 0; k < ko.length; k++) { const x = ko[k] % W, y = (ko[k] - x) / W; for (const [dx, dy] of GRANNAR4) lagg(x + dx, y + dy); }
   return { sedd, n: ko.length };
 }
-const GRANNAR = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 // stänger ett hus med yttermåtten w×h på platsen (x, y) in något som nåddes från elden? En vägg vid stranden kan lämna en
 // remsa mellan sig och vattnet som ingen kommer ut från: den som fiskade där när väggen blev klar gick rakt över sjön (v135).
 // Allt som nåddes utanför huset ska hänga ihop runt det
@@ -579,7 +575,7 @@ export function stangerIn(s: State, x: number, y: number, w: number, h: number) 
   for (let i = 0; i < W * H; i++) if (kvar(i)) { if (!mal) { sedd[i] = 1; ko.push(i); } mal++; }
   for (let k = 0; k < ko.length; k++) {
     const xx = ko[k] % W, yy = (ko[k] - xx) / W;
-    for (const [dx, dy] of GRANNAR) { const nx = xx + dx, ny = yy + dy, i = ny * W + nx; if (inMap(nx, ny) && !sedd[i] && kvar(i)) { sedd[i] = 1; ko.push(i); } }
+    for (const [dx, dy] of GRANNAR4) { const nx = xx + dx, ny = yy + dy, i = ny * W + nx; if (inMap(nx, ny) && !sedd[i] && kvar(i)) { sedd[i] = 1; ko.push(i); } }
   }
   return ko.length < mal;
 }
@@ -593,7 +589,7 @@ function nas(s: State, z: Zone, extra: number) {
     const i = y * W + x;
     if (!inZone(z, x, y) || g.tiles[i] === T.Vatten || g.solid?.[i]) continue; // en vägg (förrådshusets golv har inga)
     if (!hinder[i] && i !== extra) { if (!efter.sedd[i]) return false; continue; }
-    if (!GRANNAR.some(([dx, dy]) => efter.sedd[(y + dy) * W + x + dx])) return false;
+    if (!GRANNAR4.some(([dx, dy]) => efter.sedd[(y + dy) * W + x + dx])) return false;
   }
   return true;
 }
@@ -615,7 +611,7 @@ function utanLager(s: State) {
   const fv = stationerOf(s).filter(t => stationDef(t.k)?.forvar && t.ag === undefined), alla = fv.length ? nadda(s) : undefined;
   const stanger = (t: Station) => nadda(s, -1, t.y * W + t.x).n > alla!.n + 1;
   // ingen ruta rakt bredvid nås: ingen kommer åt möbeln (tre hyllor i ett hörn, eller en vägg som byggts upp igen efter en tornado)
-  const utom = (t: Station) => !GRANNAR.some(([dx, dy]) => alla!.sedd[(t.y + dy) * W + t.x + dx]);
+  const utom = (t: Station) => !GRANNAR4.some(([dx, dy]) => alla!.sedd[(t.y + dy) * W + t.x + dx]);
   const fram = framRutor(s), iVag = (t: Station) => fram.has(t.y * W + t.x); // framför en arbetsstation (steg 3.10.1)
   // medan sjön svämmar över räknas inte vem som når vad: vattnet runt ett förrådshus sjunker undan (flod.ts)
   const borta = fv.filter(t => zoneAt(s, t.x, t.y) < 0 || (!s.flod && (stanger(t) || utom(t))) || iVag(t));
@@ -733,7 +729,7 @@ export function ledigPlats(s: State, p: Person) {
 export const vidBordet = (p: Person) => p.task?.act === 'maltid' && p.task.phase === 'do';
 // bordet som den som äter sitter vid (ett finare bord gör måltiden trevligare, kvalitet.ts)
 export function bordVid(s: State, p: Person) {
-  for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const t = stationAt(s, p.x + dx, p.y + dy); if (t && stationDef(t.k)?.platser) return t; }
+  for (const [dx, dy] of GRANNAR4) { const t = stationAt(s, p.x + dx, p.y + dy); if (t && stationDef(t.k)?.platser) return t; }
   return undefined;
 }
 // den storlek byn vill bygga: den minsta som räcker åt alla som saknar en plats, annars den största. Ingen när alla har en

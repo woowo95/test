@@ -17,7 +17,7 @@ import { Del } from './egendom';
 import { fellingTiles } from './skog';
 import { FOREST, findPath } from './vag';
 import { BYGGNADER, Byggnad, Fn, HUS, antalLika, bedTile, familjOf, fnOf, husKlar, mostUrgent } from './byggnader';
-import { H, HOUR, HOUR_S, Person, State, T, Task, W, inMap } from './typer';
+import { GRANNAR4, H, HOUR, HOUR_S, Person, State, T, Task, W, inMap } from './typer';
 import { iVattnetNu, underMinnet } from './sjo';
 import { FLOD } from './flod';
 import { balans } from './balans';
@@ -238,7 +238,7 @@ export const lacks = (b: Bit) => needOf(b) > 1e-9;
 export function siteOf(s: State, b: Bit) {
   if (b.k !== 'vagg') return { x: b.x + 0.5, y: b.y + 0.5 };
   const hus = husById(s, b.hus);
-  const opts = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([dx, dy]) => ({ x: b.x + dx, y: b.y + dy })).filter(o => inMap(o.x, o.y) && !blocked(s, o.x, o.y))
+  const opts = GRANNAR4.map(([dx, dy]) => ({ x: b.x + dx, y: b.y + dy })).filter(o => inMap(o.x, o.y) && !blocked(s, o.x, o.y))
     .sort((a, c) => inHus(hus, c) - inHus(hus, a));
   const o = opts[0] ?? freeNear(s, b.x, b.y, true); // aldrig på väggen själv: då står man i den när den är klar
   return { x: o.x + 0.5, y: o.y + 0.5 };

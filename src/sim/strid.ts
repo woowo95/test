@@ -46,7 +46,7 @@ import { die } from './liv';
 import { setRanStrid } from './behov';
 import { handelse, larma, smaka, smakAv } from './rykten';
 import { avbryt } from './lager';
-import { HOUR, SEC, T } from './typer';
+import { GRANNAR4, HOUR, SEC, T } from './typer';
 import { harBalte, paSig, paSigVikt } from './utrustning';
 import { capacity } from './lager';
 import { snoPaMarken, vaderNu } from './vader';
@@ -384,7 +384,7 @@ function vagRunt(st: Strid, k: Kampe, mx: number, my: number, fi: Kampe[]): [num
     prev[fran] = fran;
     for (let i = 0; i < ko.length && prev[till] < 0; i++) {
       const c = ko[i], cx = c % W, cy = Math.floor(c / W);
-      for (const [ex, ey] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      for (const [ex, ey] of GRANNAR4) {
         const nx = cx + ex, ny = cy + ey, n = ny * W + nx;
         if (nx < 0 || ny < 0 || nx >= W || ny >= H || prev[n] >= 0) continue;
         const [px, py] = mitt(n);

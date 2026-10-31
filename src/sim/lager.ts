@@ -839,6 +839,10 @@ function arbete(p: Person, k: string, v: number) {
   if (!Object.keys(d).length) delete p.delar;
   return w;
 }
+// bördan är tom (det som låg i den har lagts någonstans)
+function tomBorda(t: Task) { t.carry = 0; t.items = undefined; t.cond = undefined; t.ag = undefined; }
+// rutorna där någon redan är på väg att hämta något att bära
+const paVagAttBara = (s: State) => new Set(living(s).filter(p => p.task?.act === 'bara' && p.task.phase === 'go').map(p => key(Math.floor(p.task!.tx), Math.floor(p.task!.ty))));
 const loadOf = (t: Task) => { const all: Record<string, number> = { ...(t.items ?? {}) }; if (t.carry) all[carryKind(t.act)] = (all[carryKind(t.act)] ?? 0) + t.carry; return all; };
 // lägg det som bärs i förrådet, helst där man står. Det är ägarnas i t.ag, resten är dens som skaffade det (owner);
 // det som bärs mellan lagerplatser har alltid sina ägare med sig
@@ -846,7 +850,7 @@ export function storeLoad(s: State, t: Task, x?: number, y?: number, owner = BYN
   const all = loadOf(t), at = x !== undefined ? { x: Math.floor(x), y: Math.floor(y!) } : undefined;
   for (const k in all) if (all[k] > 1e-9) place(s, k, all[k], t.cond?.[k] ?? 1, shareOf(t.ag?.[k], all[k], t.act === 'bara' ? BYN : owner, s), at);
   storeTings(s, t, at);
-  t.carry = 0; t.items = undefined; t.cond = undefined; t.ag = undefined;
+  tomBorda(t);
 }
 // den som kallas bort lägger ner bördan där hen står; ligger den långt från lagret får någon bära in den senare
 export function dropLoad(s: State, t: Task, x: number, y: number, owner = BYN) {
@@ -865,7 +869,7 @@ export function dropLoad(s: State, t: Task, x: number, y: number, owner = BYN) {
   }
   for (const id of t.ting ?? []) { const g = tingOf(s).find(q => q.id === id); if (g) { g.lass = undefined; g.x = tx; g.y = ty; } }
   t.ting = undefined;
-  t.carry = 0; t.items = undefined; t.cond = undefined; t.ag = undefined;
+  tomBorda(t);
   changed(s);
 }
 // p slutar med det hen gör (blir vakt, dör, flyttar, når inte målet): bördan och redskapen i den läggs ner där hen står,
@@ -882,7 +886,7 @@ export function avbryt(s: State, p: Person) {
 export function haulJob(s: State, near?: number, baraMat = false) {
   placeTools(s);
   const zs = zonesOf(s), occ = occupancy(s);
-  const taken = new Set(living(s).filter(p => p.task?.act === 'bara' && p.task.phase === 'go').map(p => key(Math.floor(p.task!.tx), Math.floor(p.task!.ty))));
+  const taken = paVagAttBara(s);
   let best: { x: number; y: number; why: string } | undefined, bs = Infinity;
   for (const a of things(s)) {
     if (taken.has(key(a.x, a.y)) || baraMat && !isFood(a.k)) continue;
@@ -903,7 +907,7 @@ export function haulJob(s: State, near?: number, baraMat = false) {
 // först. Den bärs till en plats som vattnet inte når (roomIn). Det som ligger i en kista eller på en hylla klarar sig
 export function flodUndan(s: State) {
   if (!s.flodHot) return undefined;
-  const taken = new Set(living(s).filter(p => p.task?.act === 'bara' && p.task.phase === 'go').map(p => key(Math.floor(p.task!.tx), Math.floor(p.task!.ty))));
+  const taken = paVagAttBara(s);
   let best: { x: number; y: number; why: string } | undefined, bs = Infinity;
   for (const a of things(s)) {
     const i = key(a.x, a.y);

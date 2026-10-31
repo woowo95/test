@@ -20,7 +20,7 @@ import { ledareOf } from './styre';
 import { ageIndex, iIstiden, isLight } from './tid';
 import { hardVinter } from './vader';
 import { MOTGANG } from './motgang';
-import { H, HOUR, MIN, Person, SEC, State, T, Task, Vargflock, W } from './typer';
+import { GRANNAR4, H, HOUR, MIN, Person, SEC, State, T, Task, Vargflock, W } from './typer';
 import { taVapen } from './vakt';
 import { vaderNu } from './vader';
 
@@ -323,8 +323,7 @@ const bytet = (s: State, f: Vargflock, folk: Person[]) => folk.filter(q => avst(
 // dörren en stund (VARG.vantaTim) och stänga in dem som är där: de håller sig gömda (vargSkydd), men de vuxna som vågar möta
 // flocken går ut och slåss. Efter ett tag tröttnar flocken (och väntar inte vid någon dörr igen), och ser den någon ensam i byn jagar den hellre den. En skinndörr
 // håller bara värmen inne och stoppar ingen; den som är ensam i ett hus med en öppen dörr kan anfallas där
-const GRANNAR = [[1, 0], [-1, 0], [0, 1], [0, -1]] as const;
-const RUNT = [...GRANNAR, [1, 1], [1, -1], [-1, 1], [-1, -1]] as const; // också snett, för hörnen
+const RUNT = [...GRANNAR4, [1, 1], [1, -1], [-1, 1], [-1, -1]] as const; // också snett, för hörnen
 const grannRum = (s: State, x: number, y: number) => RUNT.map(([dx, dy]) => roomAt(s, x + dx + 0.5, y + dy + 0.5)).filter((r): r is Rum => !!r);
 // rummet är stängt: alla dess öppningar har en dörr som stängs, och någon gömmer sig där
 export function stangt(s: State, r: Rum) {
@@ -344,7 +343,7 @@ function stangd(s: State, x: number, y: number) {
 // öppningarna i rummet, och platsen precis utanför en öppning
 const oppningar = (s: State, r: Rum) => r.walls.map(i => gridOf(s).at.get(i)!).filter(b => b.k === 'oppning');
 function utanfor(s: State, o: Bit) {
-  for (const [dx, dy] of GRANNAR) {
+  for (const [dx, dy] of GRANNAR4) {
     const x = o.x + dx + 0.5, y = o.y + dy + 0.5;
     if (!roomAt(s, x, y) && !bitAt(s, x, y)) return { x, y };
   }
