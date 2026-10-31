@@ -545,6 +545,14 @@ SCENARIER.rykten = {
     // vittnet berättar för den som var borta: svagare och mindre säker, ett led
     SIM.beratta(a.t, a.w, a.r, e!, getRel(a.t, a.w, a.r));
     const hort = SIM.intryckOm(a.r, a.p.id, 'valdsam');
+    // ryktet om en död berättas vidare med halva styrkan, också när den döda inte längre finns bland folket (kodgenomgången 3.10.25)
+    const dodV = (bort: boolean) => {
+      const x = by(); SIM.handelse(x.t, x.p, 'sla', x.q); SIM.die(x.t, x.p, 'drap');
+      if (bort) x.t.people = x.t.people.filter(y => y !== x.p);
+      SIM.beratta(x.t, x.w, x.r, SIM.intryckOm(x.w, x.p.id, 'valdsam')!, getRel(x.t, x.w, x.r));
+      return SIM.intryckOm(x.r, x.p.id, 'valdsam')?.v ?? 0;
+    };
+    const dodKvar = dodV(false), dodBort = dodV(true);
     // hemligheter: partnern berättar inte om det dåliga
     const b = by();
     b.w.partner = b.p.id; b.p.partner = b.w.id;
@@ -609,6 +617,7 @@ SCENARIER.rykten = {
       [`den som arbetar mycket mer än de andra ses som flitig (${flitig?.v.toFixed(2) ?? 'nej'})`, !!flitig && flitig.v > 0.1],
       [`efter döden lever intrycket kvar med de ${bev} viktigaste händelserna, och bleknar långsammare (${cDod.toFixed(2)} mot ${cLev.toFixed(2)})`, !!dod && bev <= SIM.RYKTE.dodBev && bev >= 1 && cDod > cLev],
       [`smaken drar i valet (${drag.toFixed(2)}) och svampen som förgiftar ger avsmak`, drag > 1 && SIM.smakAv(k.q, 'm:svamp') < 0],
+      [`ryktet om en död har samma styrka när den döda finns bland folket som när hen inte gör det (${dodKvar.toFixed(3)} och ${dodBort.toFixed(3)})`, dodKvar > 0 && Math.abs(dodKvar - dodBort) < 1e-9],
       [`i en by med en enda vuxen får barnet tycke för det föräldern arbetar med (${barnSmak.toFixed(3)})`, barnSmak > 0],
     ];
   },

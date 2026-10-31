@@ -253,13 +253,13 @@ export function beratta(s: State, a: Person, b: Person, e: Intryck, r: Rel) {
   const egen = intryckOm(b, e.om, e.k);
   if (egen && !egen.led && egen.src === undefined && egen.c >= RYKTE.ertappaSaker && v - egen.v > RYKTE.ertappa && v > egen.v * (1 + RYKTE.ertappa)) { ertappad(s, b, a, e, 'overdrev'); return; }
   if (egen && !egen.src && !egen.led) return; // det man såg själv väger tyngre
-  const om = byId(s, e.om) ?? { id: e.om, name: e.namn };
+  const q = byId(s, e.om), om = q ?? { id: e.om, name: e.namn }; // den döda kan vara borta ur folket (compact i steg.ts)
   const led = (e.led ?? 0) + 1;
   // minnet av en död blir mer likt berättarens eget (steg 3.4.2)
-  intryck(s, b, om, e.k, v * (alive(om as Person) ? 1 : 0.5), c, ex ? { ...ex, sett: undefined } as Bevis : undefined, a.id, led);
+  intryck(s, b, om, e.k, v * (q && alive(q) ? 1 : 0.5), c, ex ? { ...ex, sett: undefined } as Bevis : undefined, a.id, led);
   const ny = intryckOm(b, e.om, e.k);
   if (ny && ex) for (const x of e.bev!.slice(1)) addBevis(ny, { ...x, sett: undefined } as Bevis);
-  if (forstaGang(s, 'rykte:' + e.om + ':' + e.k) && byId(s, e.om)) log(s, `Det går rykten om att ${e.namn} är ${d.namn}.`, 'rel', [e.om]);
+  if (forstaGang(s, 'rykte:' + e.om + ':' + e.k) && q) log(s, `Det går rykten om att ${e.namn} är ${d.namn}.`, 'rel', [e.om]);
 }
 // b märker att a ljög eller överdrev om personen i e
 function ertappad(s: State, b: Person, a: Person, e: Intryck, h: 'logn' | 'overdrev') {
