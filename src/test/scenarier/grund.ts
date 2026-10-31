@@ -592,8 +592,9 @@ SCENARIER.oversvamning = {
     const slit0 = wearMult(s, ps.x, ps.y);
     // tills vattnet står som högst
     let hogst = 0, iVattnet = 0, slit1 = 0, q2: State | undefined;
+    let malIVatten = 0; // någon går för att bära något som ligger i vattnet (bara mot en ruta under vatten)
     for (let h = 0; h < 4 * 24 && !(hogst && (s.flod?.niva ?? 0) < hogst); h++) {
-      kor(s, 1);
+      kor(s, 1, s => { if (s.flod) for (const p of living(s)) if (p.task?.act === 'bara' && SIM.iVattnetNu(s, Math.floor(p.task.ty) * W + Math.floor(p.task.tx))) malIVatten++; });
       if ((s.flod?.niva ?? 0) > hogst) { hogst = s.flod!.niva; slit1 = wearMult(s, ps.x, ps.y); }
       if (!q2 && hogst >= 2) q2 = cloneState(s);
       iVattnet = Math.max(iVattnet, living(s).filter(p => SIM.iVattnetNu(s, Math.floor(p.y) * W + Math.floor(p.x))).length);
@@ -620,6 +621,21 @@ SCENARIER.oversvamning = {
       if (SIM.stationerOf(h).some(q => q.k === 'hylla')) hyllorKvar++;
     }
     // mat som vattnet hotar men som ingen når (här en ö som vattnet och timmer stänger in) får de vuxna inte att stå utan något att göra (kodgenomgången 3.10.25)
+    // det som ligger i vattnet hämtar ingen medan vattnet står där (haulJob i lager.ts, kodgenomgången 3.10.25)
+    let hjVatten = false;
+    if (q2) {
+      const q = cloneState(q2), cq = SIM.campCenter(q);
+      let ruta: { x: number; y: number } | undefined, bd = Infinity;
+      for (let i = 0; i < W * SIM.H; i++) {
+        const x = i % W, y = Math.floor(i / W), d = Math.hypot(x - cq.x, y - cq.y);
+        if (SIM.iVattnetNu(q, i) && SIM.djupOf(q.seed).land[i] && d < bd) { bd = d; ruta = { x, y }; } // en landruta under vattnet
+      }
+      if (ruta) {
+        q.stackar!.push({ k: 'sten', n: 2, c: 1, x: ruta.x, y: ruta.y }); SIM.tidy(q);
+        const hj = SIM.haulJob(cloneState(q)); // haulJob ordnar också redskapen: på en kopia
+        hjVatten = !!hj && SIM.iVattnetNu(q, Math.floor(hj.y) * W + Math.floor(hj.x));
+      }
+    }
     let utan = 0, steg = 0, dodaQ = 0, inmurad = false;
     if (q2) {
       const q = q2, cq = SIM.campCenter(q), gq = getMap(q.seed).tiles;
@@ -653,7 +669,8 @@ SCENARIER.oversvamning = {
       [`grenarna flöt bort (${grenKvar} kvar av 8)`, grenKvar === 0],
       [`stenen ligger kvar (${stenKvar} av 3) och slits fortare i vattnet (${slit0.toFixed(2)} → ${slit1.toFixed(2)})`, stenKvar === 3 && slit1 > slit0 * 2],
       [`ärterna på fältet under vatten dog${frost ? ` (frosten tog ${frost})` : ''}`, faltDog],
-      [`ingen står i vattnet (högst ${iVattnet})`, iVattnet === 0],
+      [`ingen står i vattnet (högst ${iVattnet}) eller går ut i det för att bära något (${malIVatten} steg)`, iVattnet === 0 && malIVatten === 0],
+      [`stenen som ligger i vattnet väljs inte för att bäras in medan vattnet står där${hjVatten ? ' (väljs)' : ''}`, !hjVatten],
       [`vattnet är tillbaka vid stranden efteråt (${vatten2} rutor, ${s.flod ? 'nivå ' + s.flod.niva : 'ingen översvämning'})`, !s.flod && vatten2 === vatten0],
       [`översvämningen kom (${s.stat?.motgang_oversvamning ?? 0})`, (s.stat?.motgang_oversvamning ?? 0) === 1],
       [`hyllan i förrådshuset står kvar medan vattnet står runt huset (${hyllorKvar} av ${hyllor})`, hyllor > 0 && hyllorKvar === hyllor],
