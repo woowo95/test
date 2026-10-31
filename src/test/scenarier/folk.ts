@@ -1652,6 +1652,9 @@ SCENARIER.masterverk = {
     const fore = pf.ber?.namn;
     SIM.sakVarg(t, pf, p);
     const vt = SIM.sakBerattelse(t, pf, 'Flintspjut');
+    // den som gör ett mästerverk dagarna efter att maken dött sörjer (die() har redan släppt partnern, kodgenomgången 3.10.25)
+    SIM.die(t, q, 'sjukdom'); t.now += HOUR;
+    const sorg = gor('kniv', 4).ber?.l;
     // i en by som lever: varje mästerverk och usel sak som görs har ett minne och en hel berättelse
     const b = createState(3, START);
     for (const x of b.people) x.skill.hantverk = 20; // skickliga, så att det blir mästerverk
@@ -1667,6 +1670,7 @@ SCENARIER.masterverk = {
       [`bestämd form: ${SIM.bestamd('Flintkniv')[0]}, ${SIM.bestamd('Träspjut')[0]}, ${SIM.bestamd('Skor av kaninskinn')[0]}, ${SIM.bestamd('Rock av vargskinn')[0]}, ${SIM.bestamd('Bälte')[0]}, ${SIM.bestamd('Hylla')[0]}`,
         SIM.bestamd('Flintkniv')[0] === 'flintkniven' && SIM.bestamd('Träspjut')[0] === 'träspjutet' && SIM.bestamd('Skor av kaninskinn')[0] === 'skorna av kaninskinn' && SIM.bestamd('Rock av vargskinn')[0] === 'rocken av vargskinn' && SIM.bestamd('Bälte')[0] === 'bältet' && SIM.bestamd('Hylla')[0] === 'hyllan'],
       [`ett perfekt vapen som fäller en varg heter Vargdräparen (${vt})`, pf.ber?.namn === 'Vargdräparen' && vt.includes('varg')],
+      [`ett mästerverk som görs efter makens död minns sorgen (${sorg ?? 'inget'})`, sorg === 'sorg'],
       [`i byn har varje mästerverk och usel sak en hel berättelse (${alla.length} st, t.ex. ${alla[0] ?? '–'})`, gjorda.every(x => x.ber) && alla.every(hel)],
     ];
   },

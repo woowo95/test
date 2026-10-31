@@ -1540,7 +1540,7 @@ export function sakMinne(s: State, p: Person, t: { id: number; k: string; q?: nu
   if (at && alive(at) && hash(s.seed, t.id, 3) < BERATT.inskr) m.at = at.id;
   // något om görarens liv just då
   const nytt = s.people.find(c => (c.mother === p.id || c.father === p.id) && s.now - c.born < BERATT.barnDygn * dag);
-  const sorg = s.people.find(c => c.died !== undefined && s.now - c.died < BERATT.sorgDygn * dag && (c.id === p.partner || c.mother === p.id || c.father === p.id || p.mother === c.id || p.father === c.id));
+  const sorg = s.people.find(c => c.died !== undefined && s.now - c.died < BERATT.sorgDygn * dag && (c.partner === p.id || c.mother === p.id || c.father === p.id || p.mother === c.id || p.father === c.id)); // den dödes partner står kvar (die() i liv.ts släpper bara den levandes)
   const liv: [SakLiv, number?] | undefined = sorg ? ['sorg', sorg.id] : nytt ? ['barn', nytt.id] : p.sickUntil !== undefined && p.sickUntil > s.now ? ['sjuk']
     : p.pregnantSince !== undefined ? ['gravid'] : s.styre?.ledare === p.id ? ['ledare'] : undefined;
   if (liv) { m.l = liv[0]; if (liv[1] !== undefined) m.lo = liv[1]; }
