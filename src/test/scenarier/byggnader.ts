@@ -40,7 +40,6 @@ SCENARIER.byggnader = {
 
 
 SCENARIER.forradshus = {
-  lang: true,
   text: 'Ruttnar maten eller är förrådet fullt bygger byn ett förrådshus. Golvet blir en lagerplats under tak, där det som ligger ruttnar och slits mindre, och maten bärs in dit',
   kor: () => {
     const s = createState(6, START);
@@ -84,7 +83,6 @@ SCENARIER.forradshus = {
 };
 
 SCENARIER.familjehus = {
-  lang: true,
   text: 'Ett par med barn som inte har något eget hus och äger nog för att betala det bygger ett familjehus. Familjens material tas först, familjen sover där, huset går i arv och blir byns när ingen äger det',
   kor: () => {
     const s = createState(6, START);

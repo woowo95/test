@@ -6,7 +6,6 @@ import { START, STEG_DYGN, STEG_TIM } from '../kor';
 import { setMat, kor, klockan, bastaJaktruta, SCENARIER, flyttLitenBy, tandEld, medBank, medHus, nyInvanare } from './hjalp';
 
 SCENARIER.djur = {
-  lang: true,
   text: 'Kaniner syns där det finns vilt, skuttar omkring och hoppar undan folk. Jakt fångar hela kaniner som bärs hem hela och äts som de är; med flintkniv slaktas de till mer kött, ben, skinn och senor',
   kor: () => {
     const s = createState(6, START);
@@ -85,7 +84,6 @@ SCENARIER.djur = {
 
 SCENARIER.abborre = {
   text: 'Det som fångas är en hel abborre. Den rensas med händerna vid slaktbänken till fiskkött, som är det man äter; köttet är dens som ägde fisken. Innan byn har en bänk äts abborren som den är',
-  lang: true,
   kor: () => {
     const s = createState(1, START);
     klockan(s);
@@ -236,6 +234,7 @@ SCENARIER.rotter = {
 };
 
 SCENARIER.samlartur = {
+  lang: true,
   text: 'En samlare fyller en full börda på 10–20 minuter, gången inräknad, och går vidare till nästa buske när den man står vid är tom (steg 2.12.4)',
   kor: () => {
     // turerna följs i steg om 10 sekunder (ett slag är fem minuter, kortare än en tur), i tre byar under två dygn (två år i spelet).
@@ -1792,8 +1791,10 @@ SCENARIER.stridkronika = {
       for (const x of [p, q]) { x.skador = []; x.health = 1; x.blod = 1; x.task = undefined; x.died = undefined; }
     }
     const slagRader = krn(s).length - fore;
+    // två barn som leker (by 11 har bara ett, så ett till flyttar in; kodgenomgången 3.10.25: annars prövades lekarna aldrig)
     const barn = living(s).filter(x => ageOf(x, s.now) >= SIM.ALDER.smabarn && ageOf(x, s.now) < SIM.ALDER.vuxen);
-    if (barn.length >= 2) for (let i = 0; i < 20; i++) {
+    while (barn.length < 2) barn.push(nyInvanare(s, 'm', 6));
+    for (let i = 0; i < 20; i++) {
       const n0 = krn(s).length, st = SIM.stridIByn(s, 'lek', [[barn[0]], [barn[1]]], 'på lek');
       if (krn(s).length > n0 && !st.kampar.some(k => SIM.svartSkadad(k))) lekar++;
       for (const x of barn) { x.skador = []; x.health = 1; x.blod = 1; x.task = undefined; }
@@ -1819,7 +1820,7 @@ SCENARIER.stridkronika = {
     return [
       [`ett slagsmål där någon skadas svårt eller dör skrivs i krönikan (${svara} av 40 strider, ${slagRader} rader; t.ex. ${exempel})`, svara > 0 && slagRader >= svara],
       [`vanliga slagsmål skrivs inte (${vanliga} rader utan svår skada)`, vanliga === 0],
-      [`lekar skrivs inte (${lekar} rader)`, barn.length < 2 || lekar === 0],
+      [`lekar skrivs inte (${lekar} rader på 20 lekar)`, lekar === 0],
       [`varje vargjakt skrivs (${jakter} av 6)`, jakter === 6],
       [`byns första fällda varg skrivs en gång (${forstaRader})`, forstaRader === (forsta > 0 ? 1 : 0) && forsta > 0],
     ];

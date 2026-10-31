@@ -186,7 +186,6 @@ SCENARIER.flinta = {
 };
 
 SCENARIER.kunskap = {
-  lang: true,
   text: 'Var och en minns var det finns mat och flinta, berättar det för andra (ibland överdrivet), glömmer med tiden och blir rädd för platser där någon dött',
   kor: () => {
     const s = createState(32, START); // by 31 svälter ihjäl under den långa första vårtiden sedan kalendern kom (1.5.2)
@@ -472,7 +471,6 @@ SCENARIER.kloka = {
 };
 
 SCENARIER.torka = {
-  lang: true,
   text: 'Steg 3.8.2: torkan kommer ibland på sommaren. Nästan inget regn, marken torkar, sjöarna drar sig tillbaka till torr sjöbotten som går att gå på och små tjärnar torkar ut. Folk kan ändå dricka, grödor som inte vattnas vissnar och ägaren vattnar sitt fält med vattensäcken. När torkan är över och det har regnat kommer vattnet tillbaka',
   kor: () => {
     // en by med en tjärn, mitt i en torka som just börjat (sommaren slutar om sju dygn)
