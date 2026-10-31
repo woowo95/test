@@ -1,5 +1,5 @@
 import { balans } from './balans';
-import { ALDER, REL, ageOf, alive, byId, count, isKin, isParent, living, log, relKey } from './folk';
+import { ALDER, KROPP, REL, ageOf, alive, byId, count, isKin, isParent, living, log, relKey } from './folk';
 import { ACTS, Act, slagIkon } from './handlingar';
 import { TAGS } from './seder';
 import { kronika } from './historik';
@@ -53,7 +53,7 @@ export const BERATT = balans('beratt', {
   dodDygn: 2, // man pratar om den som dog för högst så här många dygn sedan
   kallt: -5, // ... om kylan från den här temperaturen (°C) och neråt
   varmt: 25, // ... om värmen från den här och uppåt
-  hungrig: 0.4, // ... och om maten när mättnaden är under den här
+  hungrigOver: 0.05, // ... och om maten strax innan man äter: mättnaden under ätgränsen (KROPP.hungrig) plus så här mycket
   pratTim: 2, // personrutan visar det senaste samtalet i så här många timmar
   // relationerna utförligt (steg 3.9.6)
   kemi: 0.4, // personkemin (−1 till 1) nämns från så här långt från noll
@@ -1624,7 +1624,7 @@ export function samtalAmne(s: State, a: Person, b: Person, kind: string) {
     if (vl) val.push({ k: 'vader', i: 'vader_' + vl, o: VADER_PRAT[vl] });
     else if (t <= BERATT.kallt) val.push({ k: 'vader', i: 'vader_sno', o: 'kylan' });
     else if (t >= BERATT.varmt) val.push({ k: 'vader', i: 'vader_klart', o: 'värmen' });
-    if (a.hunger < BERATT.hungrig) val.push({ k: 'mat' });
+    if (a.hunger < KROPP.hungrig + BERATT.hungrigOver) val.push({ k: 'mat' });
     if (a.tag && a.tag !== 'Dagdrivare') { const tg = TAGS.find(g => g.tag === a.tag), sl = tg?.acts.map(k => ACTS[k].slag).find(k => k); val.push({ k: 'arbete', i: sl && slagIkon(sl), o: a.tag.toLowerCase() }); }
     if (s.people.some(c => alive(c) && (c.mother === a.id || c.father === a.id) && ageOf(c, s.now) < ALDER.vuxen)) val.push({ k: 'barn' });
     x = val[Math.floor(hash(s.seed, a.id * 997 + b.id, Math.round(s.now / 60)) * val.length)];

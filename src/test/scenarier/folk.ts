@@ -1700,6 +1700,7 @@ SCENARIER.amnen = {
       [`det som delades med högst prio blir ämnet (ett rykte före en plats)`, delat === 'rykte' && text.includes('Ask') && hel(text)],
       [`den som tröstade är densamma i bådas personruta (${trostA} / ${trostB})`, trostA === trostB && trostA.indexOf(a.name) < trostA.indexOf(b.name) && trostA.indexOf(a.name) >= 0],
       [`samtalen i byn handlar om olika saker (${[...sett.keys()].join(', ')})`, sett.size >= 4],
+      [`maten är ett ämne i en by som har mat, strax innan man äter (kodgenomgången 3.10.25)`, sett.has('mat')],
       [`varje text är hel (t.ex. ${texter[0] ?? '–'})`, texter.length > 0 && texter.every(hel)],
       [`varje symbol i pratbubblan finns (${[...ikoner].join(', ')})`, [...ikoner].every(hasIcon) && Object.values(SIM.AMNEN).every(d => !d.ikon || hasIcon(d.ikon))],
     ];
