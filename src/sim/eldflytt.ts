@@ -82,7 +82,7 @@ export function stepEldFlytt(s: State) {
   for (const p of ppl) {
     const t = p.task;
     if (ageOf(p, s.now) < ALDER.vuxen || isSick(p, s.now) || halsa(p) < KROPP.svag || t && (t.act === 'sova' || t.phase === 'back' && t.carry > 0 || t.items)) continue;
-    const sc = Math.hypot(p.x - e.x, p.y - e.y) - p.skill.elda;
+    const sc = Math.hypot(p.x - e.x, p.y - e.y) - p.skill.hantverk;
     if (sc < bs) { bs = sc; best = p; }
   }
   if (!best) return;

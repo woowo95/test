@@ -185,6 +185,7 @@ SCENARIER.flinta = {
 };
 
 SCENARIER.kunskap = {
+  lang: true,
   text: 'Var och en minns var det finns mat och flinta, berättar det för andra (ibland överdrivet), glömmer med tiden och blir rädd för platser där någon dött',
   kor: () => {
     const s = createState(32, START); // by 31 svälter ihjäl under den långa första vårtiden sedan kalendern kom (1.5.2)
@@ -655,12 +656,14 @@ SCENARIER.flodrest = {
       if (cSlut.length && !s.flodBlot && jord.m === 'jord' && lera) break;
     }
     const dNara = c0[0] - (cSlut[0] ?? c0[0]), dLangt = c0[1] - (cSlut[1] ?? c0[1]);
-    const minns = living(s).filter(p => p.lardomar?.some(l => l.k === 'flod' && l.v === hogst)).length, utan = living(s).filter(p => !p.lardomar?.some(l => l.k === 'flod')).map(p => `${p.name} ${SIM.ageOf(p, s.now).toFixed(0)} år, ${p.lardomar?.length ?? 0} lärdomar`);
+    // de som levde när vattnet steg (ett barn som föds efteråt minns inget)
+    const dar = living(s).filter(p => sang0.has(p.id));
+    const minns = dar.filter(p => p.lardomar?.some(l => l.k === 'flod' && l.v === hogst)).length, utan = dar.filter(p => !p.lardomar?.some(l => l.k === 'flod')).map(p => `${p.name} ${SIM.ageOf(p, s.now).toFixed(0)} år, ${p.lardomar?.length ?? 0} lärdomar`);
     const ledigNu = SIM.ledig(s, minnesRuta.x, minnesRuta.y);
     return [
       [`vattnet nådde ${hogst} rutor upp på land`, hogst >= 2],
       [`de vuxna bar undan maten innan vattnet kom (${s.stat?.['flod undan'] ?? 0} gånger; ${rotterKvarVid1} av 12 rötter kvar två rutor från vattnet medan det stod en ruta upp)`, (s.stat?.['flod undan'] ?? 0) >= 1 && rotterKvarVid1 === 0],
-      [`alla i byn minns hur högt vattnet nådde (${minns} av ${living(s).length}, byn minns ${s.flodMinne ?? 0} rutor${utan.length ? `; inte ${utan.join(', ')}` : ''})`, minns === living(s).length && s.flodMinne === hogst],
+      [`alla i byn som var där minns hur högt vattnet nådde (${minns} av ${dar.length}, byn minns ${s.flodMinne ?? 0} rutor${utan.length ? `; inte ${utan.join(', ')}` : ''})`, minns === dar.length && dar.length > 0 && s.flodMinne === hogst],
       [`där bygger man inte (en ruta från vattnet är ${ledigNu ? 'ledig' : 'inte ledig'} efteråt)`, !ledigNu],
       [`jordgolvet blev lera och torkade till jordgolv igen (${lera ? 'lera' : 'aldrig lera'}, nu ${SIM.MATERIAL[jord.m].namn.toLowerCase()})`, lera && jord.m === 'jord'],
       [`väggen i vattnet slets fortare än väggen långt därifrån (${(dNara * 1000).toFixed(2)} mot ${(dLangt * 1000).toFixed(2)} tusendelar)`, dLangt > 0 && dNara > dLangt * 2],

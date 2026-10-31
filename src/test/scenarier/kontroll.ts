@@ -53,6 +53,7 @@ SCENARIER.ikoner = {
       // alltid likadant), tillbehören till dem och dörrarna
       ['stående bilder', saknas([...SIM.STATION_LIST.filter(k => SIM.STATIONER[k].w !== SIM.STATIONER[k].h && k !== 'grill' && !SIM.stationDef(k)?.eld).map(k => SIM.STATIONER[k].ikon + '_karta_v'),
         ...Object.values(SIM.DORRAR).map(d => d.ikon + '_karta_v')])],
+      ['intryck', saknas(Object.keys(SIM.INTRYCK).map(k => 'i_' + k))], // pratbubblan och personrutan visar intrycket som pixelbild (steg 3.10.8)
     ];
     // tårtdiagrammet i personrutan: varje handling (utom sömnen) har slagets pixelbild, slagets tecken eller ett eget tecken
     const utan = (Object.keys(ACTS) as SIM.Act[]).filter(a => {

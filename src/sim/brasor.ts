@@ -2,7 +2,7 @@ import { HOUR_S, DAY, Person, State, W } from './typer';
 import { iVattnetNu } from './sjo';
 import { balans } from './balans';
 import { eldPlats } from './karta';
-import { ALDER, ageOf, count, doingAct, forstaGang, living, log, ovning } from './folk';
+import { ALDER, ageOf, count, doingAct, forstaGang, living, log } from './folk';
 import { coldOf, temperature } from './vader';
 import { rnd } from './slump';
 import { duty } from './seder';
@@ -162,7 +162,6 @@ export function addFuelBrasa(s: State, p: Person, id: number, n: number) {
   }
   const put = Math.min(n, max - e.fuel);
   e.fuel += put; giveBack(s, n - put);
-  ovning(p, 'elda', ELD.ovFyll);
 }
 // den brasa p bär ved till (task.ref), med sin önskan
 export const brasaFor = (s: State, ref?: number) => ref === undefined ? undefined : stationById(s, ref);

@@ -6,7 +6,7 @@ import { Del, addDel } from './egendom';
 import { coldOf, hardVinter, temperature, vaderNu, VADER } from './vader';
 import { MOTGANG } from './motgang';
 import { roomAt } from './byggnad';
-import { ALDER, KROPP, ageOf, count, doingAct, gjort, isSick, living, log, ovning, stat, think } from './folk';
+import { ALDER, KROPP, ageOf, count, doingAct, gjort, isSick, living, log, stat, think } from './folk';
 import { halsa } from './halsa';
 import { flintFactor, flintorOchYxor, stoneDist, takeFrom } from './fynd';
 import { observe } from './minne';
@@ -46,19 +46,17 @@ export const ELD = balans('eld', {
   hamtaTim: 1, // den som hämtar ved har en timme på sig
   fyllMarg: 2, fyllPlus: 0.2, // någon hämtar ved när hens önskan är över bränslet gånger Marg plus Plus
   valjPlikt: 0.4, valjAvstand: 25, valjVakt: 0.3, valjBrus: 0.1, // vem som hämtar: önskan gånger (Plikt + pliktkänslan), minus avståndet delat med Avstand, plus Vakt för en vakt, plus slump
-  ovFyll: 0.01, // övning i att elda av att fylla på
   // tända
   ring: 6, // stenar i ringen runt eldplatsen
   tandBransle: 2, // bränsle som läggs i när elden tänds
   tandVedMin: 1, // minst så mycket bränsle krävs för att tända
   tandVill: 0.1, tandKandidat: 0.05, // någon tänder när byns önskan är över Vill gånger eldstadens max; den som tänder har själv över Kandidat
-  tandFlit: 2, tandBrus: 3, // vem som tänder: färdigheten plus flit delad med Flit plus slump gånger Brus
+  tandFlit: 2, tandBrus: 3, // vem som tänder: hantverket plus flit delad med Flit plus slump gånger Brus
   tandTim: 3, // den som ska tända har tre timmar på sig
-  tandBas: 0.5, tandSkill: 20, tandInt: 40, // chansen att lyckas: tänddonets gånger (Bas + färdigheten / Skill + intelligensen / Int) ...
+  tandBas: 0.5, tandSkill: 20, tandInt: 40, // chansen att lyckas: tänddonets gånger (Bas + hantverket / Skill + intelligensen / Int) ...
   tandKol: 1.5, // ... gånger Kol på en gammal kolhög, gånger tidsåldern, och gånger 1 plus (misslyckade försök - 1) / ForsokLara
   forsokLara: 10, // efter så här många misslyckade försök sedan elden brann är chansen dubbelt så stor
   flintSprack: 0.004, // chansen att flintan spricker vid ett misslyckat försök
-  ovTand: 0.08, ovBas: 0.5, ovInt: 20, // övning i att elda av att försöka tända: Tand gånger (Bas + intelligensen / Int)
   tandGlad: 0.15, tandGladDygn: 0.5, // glädjen över att tända elden och hur länge den varar (dygn)
   sedNyfiken: 0.1, // den första elden gör byn nyfiken
   // samla tändmaterial, stenar och flinta (forageItems): per arbetstimme gånger kunnigheten
@@ -168,8 +166,8 @@ export function tryLight(s: State, p: Person) {
   else takeMaterial(s, p, 'kol', 1, true); // lite kol kan ersätta grenarna
 
   f.tries++; f.tryTotal++; gjort(s, p, 'tandForsok');
-  ovning(p, 'elda', ELD.ovTand * (ELD.ovBas + p.pot.intelligens / ELD.ovInt));
-  const c = ig.chance * (ELD.tandBas + p.skill.elda / ELD.tandSkill + stat(p, 'intelligens', s.now) / ELD.tandInt) * (iIstiden(ageIndex(s)) ? ARSTID.tandIstid : 1) * ((f.ash ?? 0) >= 1 ? ELD.tandKol : 1) // en gammal kolhög tar lättare fyr
+  // eldandet är ingen egen färdighet (steg 3.10.8): chansen räknas ur hantverket, och ingen övar av att tända eller fylla på
+  const c = ig.chance * (ELD.tandBas + p.skill.hantverk / ELD.tandSkill + stat(p, 'intelligens', s.now) / ELD.tandInt) * (iIstiden(ageIndex(s)) ? ARSTID.tandIstid : 1) * ((f.ash ?? 0) >= 1 ? ELD.tandKol : 1) // en gammal kolhög tar lättare fyr
     * (1 + (f.tries - 1) / ELD.forsokLara); // varje misslyckat försök sedan elden brann gör nästa lättare
   if (rnd(s, 'eld', p) < c) { gjort(s, p, 'tande'); lightFire(s, p); return true; }
   if (ig.id === 'flinta' && rnd(s, 'eld', p) < ELD.flintSprack) {
@@ -197,7 +195,6 @@ export function addFuel(s: State, p: Person, n: number) {
   f.fuel += put; giveBack(s, n - put);
   f.fills[p.id] = (f.fills[p.id] ?? 0) + 1;
   fireLog(s, { k: 'fyll', id: p.id, n: put });
-  ovning(p, 'elda', ELD.ovFyll);
 }
 function assign(s: State, p: Person, act: Act, tx: number, ty: number, dur: number, why: string) {
   avbryt(s, p); // bördan läggs ner där hen står, den försvinner inte
@@ -265,7 +262,7 @@ export function stepFire(s: State, dtSec: number, ppl: Person[]) {
     let c: { p: Person; w: Wish } | undefined, ck = -Infinity;
     for (const o of cands) {
       if (ageOf(o.p, now) < ALDER.ansvar || o.w.v < h.maxFuel * ELD.tandKandidat || !canLight(s, o.p)) continue;
-      const k = o.p.skill.elda + stat(o.p, 'flit', now) / ELD.tandFlit + rnd(s, 'eld') * ELD.tandBrus;
+      const k = o.p.skill.hantverk + stat(o.p, 'flit', now) / ELD.tandFlit + rnd(s, 'eld') * ELD.tandBrus;
       if (k > ck) { ck = k; c = o; }
     }
     if (c) assign(s, c.p, 'tanda', eldPlats(s).x + 0.5 + (rnd(s, 'eld') - 0.5) * 1.2, eldPlats(s).y + 1.3, ELD.tandTim * HOUR, `Vill ha eld. ${c.w.why}`);

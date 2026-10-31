@@ -44,7 +44,8 @@ function newFire(): Fire {
 const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
   [2, 'allt före v40: äldre fält, sammanslagna saker, redskap som ting och en brinnande eld i de allra första byarna', s => {
     for (const p of s.people) {
-      if (p.skill.elda === undefined) p.skill.elda = clamp((ageOf(p, s.now) - 10) * 0.15, 0, 6);
+      const sk = p.skill as Record<string, number>; // eldkonsten, som inte är en färdighet sedan steg 3.10.8 (uppgradering 14)
+      if (sk.elda === undefined) sk.elda = clamp((ageOf(p, s.now) - 10) * 0.15, 0, 6);
       if (p.warm === undefined) p.warm = 1;
       if (p.toa === undefined) p.toa = 1;
       if (!p.habit) p.habit = {};
@@ -107,7 +108,7 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
     for (const p of s.people) if (p.blod === undefined) p.blod = 1;
   }],
   [8, 'v87: matlagningen (steg 2.8.1). Färdigheten Matlagning är snittet av samling och eldkonst', s => {
-    for (const p of s.people) if (p.skill.matlagning === undefined) p.skill.matlagning = (p.skill.samla + p.skill.elda) / 2;
+    for (const p of s.people) if (p.skill.matlagning === undefined) p.skill.matlagning = (p.skill.samla + (p.skill as Record<string, number>).elda) / 2;
   }],
   [9, 'v110: fälten görs ruta för ruta (steg 2.10.13). Ett äldre fält blir 2 × 2 rutor', s => migrateFalt(s)],
   [10, 'v124: matens dygn räknas av vad byn äter (steg 2.12.4), ungefär 0,45 av de gamla dygnen. Snittet räknas om lika mycket', s => { if (s.matSnitt !== undefined) s.matSnitt *= 0.45; }],
@@ -120,6 +121,12 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
   }],
   [13, 'v148: färdigheterna Närstrid och Träffsäkerhet (steg 3.7.2) efter ålder för dem som redan finns', s => {
     for (const p of s.people) if (p.skill.narstrid === undefined) { if (alive(p)) stridSkills(s, p, ageOf(p, s.now)); else p.skill.narstrid = p.skill.traff = 0; }
+  }],
+  [14, 'v190: eldkonsten är ingen färdighet (steg 3.10.8). Den tas bort, och den som hade en mentor i att elda har ingen', s => {
+    for (const p of s.people) {
+      delete (p.skill as Record<string, number>).elda;
+      if ((p.mentorSk as string | undefined) === 'elda') { p.mentor = undefined; p.mentorSk = undefined; }
+    }
   }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];

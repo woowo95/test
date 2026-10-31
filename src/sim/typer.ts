@@ -68,10 +68,10 @@ export const STAT_GOR: Record<Stat, string[]> = {
   smidighet: ['Att inte råka ut för olyckor i arbetet', 'Att fånga kaniner', 'Att fisken sitter kvar när den nappat', 'Hur fort hen tar sig fram i skog och snår', 'Hur fint det blir som hen tillverkar', 'Hur snabb hen är och hur bra hen duckar i en strid'],
   aggression: ['Att slå i stället för att gråta när hen mår dåligt', 'Att gräla', 'Hur hårt hen straffar som ledare', 'Blodtörsten: att vilja döda, med låg empati och dåligt humör', 'Att inte ge sig i en strid'],
 };
-export const SKILLS = ['samla', 'jakt', 'fiske', 'ved', 'hantverk', 'berattande', 'elda', 'matlagning', 'narstrid', 'traff'] as const; // matlagning: steg 2.8.1 (matlagning.ts); narstrid, traff: steg 3.7.2 (strid.ts)
+export const SKILLS = ['samla', 'jakt', 'fiske', 'ved', 'hantverk', 'berattande', 'matlagning', 'narstrid', 'traff'] as const; // matlagning: steg 2.8.1 (matlagning.ts); narstrid, traff: steg 3.7.2 (strid.ts). Eldkonsten togs bort i steg 3.10.8
 export type Skill = typeof SKILLS[number];
 export const SKILL_NAMES: Record<Skill, string> = {
-  samla: 'Samling', jakt: 'Jakt', fiske: 'Fiske', ved: 'Trähuggning', hantverk: 'Hantverk', berattande: 'Berättande', elda: 'Eldkonst', matlagning: 'Matlagning', narstrid: 'Närstrid', traff: 'Träffsäkerhet',
+  samla: 'Samling', jakt: 'Jakt', fiske: 'Fiske', ved: 'Trähuggning', hantverk: 'Hantverk', berattande: 'Berättande', matlagning: 'Matlagning', narstrid: 'Närstrid', traff: 'Träffsäkerhet',
 };
 // vad varje färdighet påverkar utöver arbetena som övar den (ACTS arbete), och hur den växer
 export const SKILL_GOR: Record<Skill, string[]> = {
@@ -79,9 +79,8 @@ export const SKILL_GOR: Record<Skill, string[]> = {
   jakt: [],
   fiske: ['Att fisken sitter kvar när den nappat'],
   ved: [],
-  hantverk: ['Hur fort hen tillverkar och bygger', 'Att väljas till byggare', 'Lusten att göra hantverk'],
+  hantverk: ['Hur fort hen tillverkar och bygger', 'Att väljas till byggare', 'Lusten att göra hantverk', 'Att tända elden', 'Att väljas till att tända och flytta elden'],
   berattande: ['Lusten att berätta på kvällen'],
-  elda: ['Att tända elden', 'Att fylla på elden i rätt tid'],
   matlagning: ['Att inte bränna maten vid grillen'],
   narstrid: ['Att träffa, parera och slå hårt i en strid', 'Växer av slagsmål och brottning på lek'],
   traff: ['Att träffa med ett kast eller skott', 'Växer av kastlek och jakt'],
@@ -94,9 +93,8 @@ export const SKILL_STAT: Record<Skill, { k: string; namn: string; av?: string }[
   jakt: [{ k: 'jaktForsok', namn: 'Försök' }, { k: 'kanin', namn: 'Kaniner fångade', av: 'jaktForsok' }],
   fiske: [{ k: 'fiskeForsok', namn: 'Försök' }, { k: 'fisk', namn: 'Gav fisk', av: 'fiskeForsok' }],
   ved: [{ k: 'trad', namn: 'Träd fällda' }],
-  hantverk: [{ k: 'gjort', namn: 'Saker gjorda' }, { k: 'mobel', namn: 'Möbler och stationer byggda' }],
+  hantverk: [{ k: 'gjort', namn: 'Saker gjorda' }, { k: 'mobel', namn: 'Möbler och stationer byggda' }, { k: 'tandForsok', namn: 'Försök att tända elden' }, { k: 'tande', namn: 'Tände elden', av: 'tandForsok' }], // tändningen räknas ur hantverket (steg 3.10.8)
   berattande: [{ k: 'berattat', namn: 'Lärdomar berättade' }],
-  elda: [{ k: 'tandForsok', namn: 'Försök att tända' }, { k: 'tande', namn: 'Tände elden', av: 'tandForsok' }],
   matlagning: [{ k: 'grillat', namn: 'Grillat' }],
   narstrid: [{ k: 'slagsmal', namn: 'Slagsmål' }, { k: 'vann', namn: 'Vann', av: 'slagsmal' }],
   traff: [{ k: 'kast', namn: 'Kast' }, { k: 'kastTraff', namn: 'Träffade', av: 'kast' }],

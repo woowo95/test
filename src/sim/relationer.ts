@@ -57,7 +57,7 @@ export const RELATIONER: Record<string, RelTyp> = {
   fiende: { namn: 'Ovän', ikon: 'r_fiende', har: (_s, p, q, r) => r.op < REL.ovan && p.arke !== q.id, varfor: () => 'Ovänner: de undviker att arbeta och sitta nära varandra och grälar när de möts.' },
   arke: { namn: 'Ärkefiende', ikon: 'r_arke', har: (_s, p, q) => p.arke === q.id, varfor: (_s, p, q) => `Den ${p.name} hatar mest. De grälar nästan varje gång de möts, ${p.name} ger ${q.name} aldrig något och tar hellre av hen.` },
 };
-const SKILL_ORD: Record<Skill, string> = { samla: 'samlande', jakt: 'jakt', fiske: 'fiske', ved: 'vedhuggning', hantverk: 'hantverk', berattande: 'berättande', elda: 'eldning', matlagning: 'matlagning', narstrid: 'närstrid', traff: 'träffsäkerhet' };
+const SKILL_ORD: Record<Skill, string> = { samla: 'samlande', jakt: 'jakt', fiske: 'fiske', ved: 'vedhuggning', hantverk: 'hantverk', berattande: 'berättande', matlagning: 'matlagning', narstrid: 'närstrid', traff: 'träffsäkerhet' };
 const skillNamn = (k?: Skill) => k ? SKILL_ORD[k] : 'något';
 // relationstyperna mellan p och q, i registrets ordning
 export const relTyper = (s: State, p: Person, q: Person) => { const r = s.rels[relKey(p.id, q.id)]; return r ? Object.entries(RELATIONER).filter(([, t]) => t.har(s, p, q, r)).map(([id, t]) => ({ id, ...t })) : []; };

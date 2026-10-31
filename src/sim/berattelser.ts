@@ -445,7 +445,7 @@ const MDEF = {
     'Byn som {vem} grundade är {hans} arv.',
     '{Hen} är {barnord} till {vem}, och det vet alla.',
   ],
-  // {vad} = färdigheten ('jakt', 'eldkonst')
+  // {vad} = färdigheten ('jakt', 'hantverk')
   besk_bast: [
     'Ingen i byn är bättre på {vad} än {namn}.',
     '{Hen} är bäst i byn på {vad}.',

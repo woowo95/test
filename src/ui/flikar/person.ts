@@ -196,7 +196,7 @@ function gjortHtml(p: Person, k: Skill) {
 const arbetar = (sk: string[]) => sk.length ? [`Hur mycket hen får ut av arbetet: ${sk.map(k => SKILL_NAMES[k as Skill].toLowerCase()).join(', ')}`] : [];
 function ovarNu(p: Person, k: Skill) {
   const d = p.task && ACTS[p.task.act];
-  return !!d && p.task!.phase === 'do' && (d.arbete === k || d.ovar === k || (k === 'hantverk' && !!d.hantverk) || (k === 'elda' && d.slag === 'elda'));
+  return !!d && p.task!.phase === 'do' && (d.arbete === k || d.ovar === k || (k === 'hantverk' && !!d.hantverk));
 }
 function egenHtml(p: Person) {
   const now = s.now, d = duty(s, p);
