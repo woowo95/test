@@ -4,14 +4,14 @@ import { cap, esc, fmtN, pLink } from '../hjalp';
 import { s, ui } from '../lage';
 import type { Flik } from '../panel';
 
-// var materialet kom ifrån (bygg.ts): en symbol per sätt, förklaringen när musen är över
-const HUR: Record<typeof KOM[number], { ikon: string; namn: string }> = {
-  byn: { ikon: '🏘️', namn: 'Från byns förråd' },
-  eget: { ikon: '🙋', namn: 'Byggarnas eget' },
-  familj: { ikon: '👪', namn: 'Från familjen' },
-  gava: { ikon: '🎁', namn: 'Skänkt' },
-  fallt: { ikon: '🪓', namn: 'Stockar från träd som fälldes för bygget' },
-  stold: { ikon: '🫳', namn: 'Taget utan lov' },
+// var materialet kom ifrån (bygg.ts), som text (steg 3.10.21)
+const HUR: Record<typeof KOM[number], string> = {
+  byn: 'Från byns förråd',
+  eget: 'Byggarnas eget',
+  familj: 'Från familjen',
+  gava: 'Skänkt',
+  fallt: 'Från träd som fälldes för bygget',
+  stold: 'Taget utan lov',
 };
 
 // ett hus: öppnas genom att trycka på det på kartan
@@ -40,11 +40,10 @@ export const hus: Flik = {
       for (const q of xs) per[q.k] = (per[q.k] ?? 0) + q.n;
       const vem = hur === 'byn' || hur === 'eget' ? [] : [...new Set(xs.map(q => q.vem))].map(id => byId(s, id)).filter(p => p);
       const txt = Object.entries(per).map(([k, n]) => `${fmtN(n)} ${sakNamn(k).toLowerCase()}`).join(', ');
-      const title = `${HUR[hur].namn}: ${txt}`;
-      return `<dt title="${esc(title)}" aria-label="${esc(title)}">${HUR[hur].ikon}</dt><dd>${Object.entries(per).map(([k, n]) => `${iconImg(k)}${fmtN(n)}`).join(' ')}${vem.length ? ` <span class="muted">${vem.map(p => pLink(p)).join(', ')}</span>` : ''}</dd>`;
+      return `<p>${esc(`${HUR[hur]}: ${txt}`)}${vem.length ? ` <span class="muted">${vem.map(p => pLink(p)).join(', ')}</span>` : ''}</p>`;
     }).join('');
     return `
     <div class="phead"><div><h2><span title="${esc(`${fn.namn}: ${fn.behov}`)}" aria-label="${esc(fn.namn)}">${tecknet(fn.ikon, fn.ikon, 20)}</span> ${esc(h.namn)}</h2><p class="muted">${status}</p>${anv ? `<p>${anv}</p>` : ''}${agare ? `<p class="muted">Ägs av ${pLink(agare)} och familjen.</p>` : ''}${dorrar && klar === bits.length ? `<p>${dorrar}</p>` : ''}</div></div>
-    <h3>Materialet kom från</h3>${rader ? `<dl class="kv">${rader}</dl>` : '<p class="muted">Huset byggdes innan byn började minnas var materialet kom ifrån.</p>'}`;
+    <h3>Materialet kom från</h3>${rader ? rader : '<p class="muted">Huset byggdes innan byn började minnas var materialet kom ifrån.</p>'}`;
   },
 };
