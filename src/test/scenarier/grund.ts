@@ -6,7 +6,7 @@ import * as SIM from '../../sim';
 import type { Person, State } from '../../sim';
 import { nyKalender } from '../../sim';
 import { START } from '../kor';
-import { setMat, Koll, kor, tandEld, logg, skogsandel, uttag, STOCKHOLM, SCENARIER, nyInvanare } from './hjalp';
+import { setMat, Koll, kor, tandEld, logg, skogsandel, uttag, STOCKHOLM, SCENARIER, nyInvanare, klockan, medHus } from './hjalp';
 
 SCENARIER.glanta = {
   text: 'Ny by: fem personer utan eld i en liten glänta på en större karta, skog och ängar med högt gräs står runt omkring och marken nöts till stigar',
@@ -603,6 +603,21 @@ SCENARIER.oversvamning = {
     // efter tidsåldern: vattnet är tillbaka vid stranden och stenen ligger kvar
     kor(s, (m.slut - s.now) / HOUR + 1);
     const vatten2 = SIM.vattenNu(s).filter(t => t === T.Vatten).length;
+    // en hylla i förrådshuset tas inte isär för att vattnet en tid står runt huset: det sjunker undan (kodgenomgången 3.10.25)
+    let hyllor = 0, hyllorKvar = 0;
+    for (const seed of [4, 5, 6]) {
+      const h = createState(seed, START); klockan(h); tandEld(h); medHus(h); h.ruttet = 50;
+      const hh = medHus(h), z = SIM.zonesOf(h).find(q => q.hus === hh?.id);
+      if (!hh || !z) continue;
+      hh.slag = 'material'; z.slag = 'material'; h.ruttet = 0; SIM.touch(h);
+      (h.stationer ??= []).push({ id: h.nextStation = (h.nextStation ?? 0) + 1, k: 'hylla', x: z.x + (z.w > 1 ? 1 : 0), y: z.y, kvar: 0, inne: 1 } as SIM.Station); SIM.touch(h);
+      SIM.stepStationer(h);
+      if (!SIM.stationerOf(h).some(q => q.k === 'hylla')) continue;
+      hyllor++;
+      h.flod = { niva: 3, hogst: 3 }; SIM.nyttVatten(h); h.byggV = (h.byggV ?? 0) + 1;
+      SIM.stepStationer(h);
+      if (SIM.stationerOf(h).some(q => q.k === 'hylla')) hyllorKvar++;
+    }
     return [
       [`det regnar mer innan och medan vattnet stiger (${regn} timmar mot ${regnUtan} utan översvämningen, av 48)`, regn > regnUtan],
       [`sjön svämmar över ${hogst} rutor upp på land (${vatten0} → ${vatten1} rutor vatten)`, hogst >= 2 && vatten1 > vatten0],
@@ -613,6 +628,7 @@ SCENARIER.oversvamning = {
       [`ingen står i vattnet (högst ${iVattnet})`, iVattnet === 0],
       [`vattnet är tillbaka vid stranden efteråt (${vatten2} rutor, ${s.flod ? 'nivå ' + s.flod.niva : 'ingen översvämning'})`, !s.flod && vatten2 === vatten0],
       [`översvämningen kom (${s.stat?.motgang_oversvamning ?? 0})`, (s.stat?.motgang_oversvamning ?? 0) === 1],
+      [`hyllan i förrådshuset står kvar medan vattnet står runt huset (${hyllorKvar} av ${hyllor})`, hyllor > 0 && hyllorKvar === hyllor],
     ];
   },
 };

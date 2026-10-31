@@ -616,7 +616,8 @@ function utanLager(s: State) {
   // ingen ruta rakt bredvid nås: ingen kommer åt möbeln (tre hyllor i ett hörn, eller en vägg som byggts upp igen efter en tornado)
   const utom = (t: Station) => !GRANNAR.some(([dx, dy]) => alla!.sedd[(t.y + dy) * W + t.x + dx]);
   const fram = framRutor(s), iVag = (t: Station) => fram.has(t.y * W + t.x); // framför en arbetsstation (steg 3.10.1)
-  const borta = fv.filter(t => zoneAt(s, t.x, t.y) < 0 || stanger(t) || utom(t) || iVag(t));
+  // medan sjön svämmar över räknas inte vem som når vad: vattnet runt ett förrådshus sjunker undan (flod.ts)
+  const borta = fv.filter(t => zoneAt(s, t.x, t.y) < 0 || (!s.flod && (stanger(t) || utom(t))) || iVag(t));
   if (!borta.length) return;
   s.stationer = stationerOf(s).filter(t => !borta.includes(t));
   s.byggV = (s.byggV ?? 0) + 1;
