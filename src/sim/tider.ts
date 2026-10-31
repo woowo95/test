@@ -15,7 +15,7 @@ export const TIDSLAG = {
   station: { namn: 'Station eller möbel', min: 10, max: 20 },
   vagg: { namn: 'Vägg (per ruta)', min: 20, max: 20 },
   golv: { namn: 'Golv (per ruta)', min: 5, max: 10 },
-  falt: { namn: 'Fältruta', min: 2, max: 8 },
+  falt: { namn: 'Fältruta', min: 1, max: 8 }, // 1: att så en ruta tar en minut (steg 3.10.23.4; 2 före)
   // inte i riktlinjen: att slakta, rensa, grilla och torka en bit (förslag, Björn kan ändra)
   bearbeta: { namn: 'Bearbeta mat och vilt', min: 2, max: 8 },
 };

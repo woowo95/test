@@ -5,7 +5,7 @@ import { SNABBARE } from './handlingar';
 import { DAY, H, HOUR, HOUR_S, MIN, Person, SEC, State, T, Task, W, inMap } from './typer';
 import { balans } from './balans';
 import { clamp } from './slump';
-import { eldPlats, getMap } from './karta';
+import { eldPlats, getMap, hash } from './karta';
 import { groundOf } from './mark';
 import { FOREST, VAG } from './vag';
 import { knows, tankePa } from './teknik';
@@ -27,9 +27,10 @@ import { ISTID, iIstiden, isLight, kalender } from './tid';
 // vill ha. Fröna kan inte ätas. Bara den som plockar vilda frön kommer på tekniken Odling (raden odling i teknik.ts, `nar`),
 // och fortare ju fler byn plockat (statistiken vildgrodor, `okar`); det räknas också när byn redan har nog (steg 2.10.11).
 //
-// Fälten (steg 2.10.3, 2.10.13): den som kan odla och har frön röjer ett fält på jord nära byn, där inga stora träd står:
-// gräs, buskar och ungskog tas bort. Fältet har ingen fast storlek: ägaren gör det så stort som familjen behöver
-// (ODLING.rutorPerMun per person) och hen har frön till, i rader från lägret och utåt, högst faltBredd rutor brett. Sedan
+// Fälten (steg 2.10.3, 2.10.13, 3.10.23): den som kan odla och har frön till ett minsta fält röjer ett fält på jord utanför
+// byn, där inga stora träd står: gräs, buskar och ungskog tas bort. Fältet har ingen fast storlek: ägaren gör det så stort
+// som familjen behöver (ODLING.rutorPerMun per person) och hen har frön till, i rader från lägret och utåt. Bredden slås fram
+// för varje fält (bredder), så att fälten får olika form med sidorna sidaMin–sidaMax rutor. Sedan
 // grävs jorden upp, fortare med benspaden, och fröna sås. Man röjer, gräver, sår och skördar en ruta i taget, men gör klart
 // hela fältet i ett steg innan nästa börjar; varje ruta tar kort tid, så att en stor by kan ha stora fält. Grödan (GRODOR)
 // växer när det är varmt nog, och frost dödar den: mest tål rovorna. Inget växer i istiden. Den mogna grödan skördas av den
@@ -42,24 +43,23 @@ import { ISTID, iIstiden, isLight, kalender } from './tid';
 export const ODLING = balans('odling', {
   froTakt: 6, // frön per arbetstimme på en mycket rik plats (gånger kunnigheten och SNABBARE; 3 före balansen av fas 2, steg 2.12.2)
   froUttag: 0.1, // varje frö tar så här mycket ur platsen
-  froVill: 40, // man tar med sig frön tills byn har så här många (20 före steg 2.12.2)
   froLeta: 0.3, // den som samlar går till de vilda grödorna för att plocka frön med VAL.fronChans, om någon ruta har så här mycket (steg 2.10.11)
-  // fälten (steg 2.10.3, 2.10.13)
-  rutorPerMun: 3, // ett fält ska ha så här många rutor per person i ägarens familj ...
-  faltMin: 2, faltMax: 200, // ... men minst och högst så här många
-  faltBredd: 10, // ett fält är högst så här många rutor brett; det växer i rader bort från lägret
+  // fälten (steg 2.10.3, 2.10.13, 3.10.23)
+  rutorPerMun: 5, // ett fält ska ha så här många rutor per person i ägarens familj (3 före steg 3.10.23) ...
+  faltMin: 16, faltMax: 64, // ... men minst och högst så här många (2 och 200 före steg 3.10.23); ett nytt fält läggs först när ägaren har frön till faltMin rutor
+  sidaMin: 3, sidaMax: 12, // fältets bredd och antalet rader när det har alla rutor det ska ha (steg 3.10.23.2; högst 10 brett före)
   faltStig: 3, // fältet ligger utanför byns yttersta hus, station och lagerplats, med så många rutor fritt emellan för en stig (steg 3.10.14) ...
   faltTill: 15, // ... och dess första rad högst så här många rutor från elden (9 från lägret före steg 3.10.14, värdet från 3.10.23.6) ...
   faltUtom: 4, // ... men alltid så här många rutor utanför byns gräns, också när byn är större än så (steg 3.10.14)
   skogKost: 2, // ett vuxet träd på platsen räknas som så många rutor längre bort: det fälls först (steg 3.6.9)
-  // arbetet per ruta är kort, så att fälten kan bli stora (Björn efter v107, steg 2.10.13)
-  rojaMin: 5, // minuters arbete per ruta att röja gräs, buskar och ungskog
-  beredaMin: 8, // minuters arbete per ruta att gräva upp jorden för hand ...
-  beredaSpade: 2.5, // ... så här många gånger fortare med benspaden ...
+  // arbetet per ruta är kort, så att fälten kan bli stora (Björn efter v107, steg 2.10.13; kortare i steg 3.10.23.4)
+  rojaMin: 3, // minuters arbete per ruta att röja gräs, buskar och ungskog (5 före steg 3.10.23)
+  beredaMin: 4, // minuters arbete per ruta att gräva upp jorden för hand (8 före steg 3.10.23) ...
+  beredaSpade: 4 / 1.5, // ... så här många gånger fortare med benspaden: 1,5 minuter (3,2 före steg 3.10.23) ...
   spadeSlit: 0.0125, // ... som slits så här mycket per ruta
-  saMin: 2, // minuters arbete per ruta att så
-  froPerRuta: 2, // frön som sås per ruta
-  skordaMin: 3, // minuters arbete per ruta att skörda
+  saMin: 1, // minuters arbete per ruta att så (2 före steg 3.10.23)
+  froPerRuta: 1, // frön som sås per ruta (2 före steg 3.10.23.3)
+  skordaMin: 2, // minuters arbete per ruta att skörda (3 före steg 3.10.23)
   pass: 90, // man arbetar på fältet högst så här många minuter åt gången
   vaxGrad: 4, // grödan växer bara när det är varmare än så här många grader
   overDygn: 1, // en mogen gröda står så här många dygn innan den börjar bli övermogen ...
@@ -70,12 +70,13 @@ export const ODLING = balans('odling', {
   rovMarg: 3, // ... med så här många dygn tillgodo
 });
 
-// grödorna (steg 2.10.3): sak = det som skördas (saker.ts), dygn = hur länge den växer innan den är mogen, perRuta = skörden
-// per ruta, fron = frön tillbaka per ruta (rovorna äts hela, så de ger få), frost = den dör när det blir kallare än så här
-export interface GrodaDef { namn: string; sak: string; dygn: number; perRuta: number; fron: number; frost: number }
+// grödorna (steg 2.10.3): sak = det som skördas (saker.ts), fro = fröna den sås med, dygn = hur länge den växer innan den är
+// mogen, perRuta = skörden per ruta, fron = frön tillbaka per ruta i snitt (rovorna äts hela, så de ger få; varje ruta ger hela
+// frön, froTillbaka), frost = den dör när det blir kallare än så här
+export interface GrodaDef { namn: string; sak: string; fro: string; dygn: number; perRuta: number; fron: number; frost: number }
 export const GRODOR = {
-  rovor: { namn: 'Rovor', sak: 'rovor', dygn: 2, perRuta: 5, fron: 2, frost: -6 }, // snabba och härdiga; lika många frön som de kostar (steg 2.10.11); frost -3 före steg 2.12.2
-  korn: { namn: 'Korn', sak: 'korn', dygn: 3, perRuta: 4, fron: 6, frost: -4 }, // håller länge; 3 dygn (Björn efter v107, steg 2.10.11); fron 2,5 och frost -1 före steg 2.12.2
+  rovor: { namn: 'Rovor', sak: 'rovor', fro: 'fron', dygn: 3, perRuta: 3, fron: 1.5, frost: -6 }, // snabba och härdiga; 1 eller 2 frön per ruta (steg 3.10.23.3); dygn 2 och perRuta 5 före steg 3.10.23.5; frost -3 före steg 2.12.2
+  korn: { namn: 'Korn', sak: 'korn', fro: 'fron', dygn: 4, perRuta: 3, fron: 2, frost: -4 }, // håller länge; dygn 3, perRuta 4 och fron 6 före steg 3.10.23; frost -1 före steg 2.12.2
 } satisfies Record<string, GrodaDef>;
 export type GrodaSlag = keyof typeof GRODOR;
 
@@ -156,12 +157,14 @@ function dygnTillIstid(s: State) {
   if (iIstiden(k.ai)) return 0;
   return (k.slut - s.now) / DAY + ((ISTID - k.ai - 1 + 8) % 4) * 7;
 }
-// grödan som sås nu: korn om det hinner mogna före istiden med marginal, annars rovor om de hinner, annars ingen
-export function grodaNu(s: State): GrodaSlag | undefined {
-  const d = dygnTillIstid(s);
-  if (d >= GRODOR.korn.dygn + ODLING.kornMarg) return 'korn';
-  return d >= GRODOR.rovor.dygn + ODLING.rovMarg ? 'rovor' : undefined;
+// grödorna som kan sås nu, den bästa först: korn om det hinner mogna före istiden med marginal, och rovor om de hinner
+export function grodorNu(s: State): GrodaSlag[] {
+  const d = dygnTillIstid(s), r: GrodaSlag[] = [];
+  if (d >= GRODOR.korn.dygn + ODLING.kornMarg) r.push('korn');
+  if (d >= GRODOR.rovor.dygn + ODLING.rovMarg) r.push('rovor');
+  return r;
 }
+export const grodaNu = (s: State): GrodaSlag | undefined => grodorNu(s)[0];
 const kanOdla = (s: State, p: Person) => ageOf(p, s.now) >= ALDER.vuxen && knows(p, 'odling');
 // p:s fält: det hen äger, annars ett som ingen levande äger (den som tar över det blir ägare när arbetet börjar)
 export function egetFalt(s: State, p: Person) {
@@ -173,11 +176,34 @@ const agareLever = (s: State, f: Falt) => s.people.some(q => q.id === f.agare &&
 const familjFalt = (s: State, p: Person) => familjOf(s, p.id).some(q => q !== p && faltOf(s).some(f => f.agare === q.id));
 // så många rutor p:s fält ska ha: rutorPerMun per person i familjen, mellan faltMin och faltMax ...
 export const faltBehov = (s: State, p: Person) => clamp(ODLING.rutorPerMun * Math.max(1, familjOf(s, p.id).length), ODLING.faltMin, ODLING.faltMax);
-// ... och så många hen har frön till
-const froRutor = (s: State, p: Person) => Math.floor(getable(s, p, 'fron') / ODLING.froPerRuta);
-const storlek = (s: State, p: Person) => Math.min(faltBehov(s, p), froRutor(s, p));
-// ett nytt fält är så brett att det blir ungefär fyrkantigt när det har alla rutor det ska ha
-const bredd = (s: State, p: Person) => clamp(Math.ceil(Math.sqrt(faltBehov(s, p))), 1, ODLING.faltBredd);
+// ... och så många hen har frön till med grödan g, eller med den av grödorna som kan sås nu som hen har flest frön till
+const froRutor = (s: State, p: Person, g: GrodaSlag) => Math.floor(getable(s, p, GRODOR[g].fro) / ODLING.froPerRuta);
+const froNu = (s: State, p: Person) => { let m = 0; for (const g of grodorNu(s)) m = Math.max(m, froRutor(s, p, g)); return m; };
+const storlek = (s: State, p: Person) => Math.min(faltBehov(s, p), froNu(s, p));
+// grödan p sår på n rutor: den första som kan sås nu och som hen har frön till alla rutorna med, annars den hen har flest frön till
+function grodaFor(s: State, p: Person, n: number): GrodaSlag | undefined {
+  let best: GrodaSlag | undefined, bn = 0;
+  for (const g of grodorNu(s)) { const r = froRutor(s, p, g); if (r >= n) return g; if (r > bn) { bn = r; best = g; } }
+  return best;
+}
+// bredderna ett nytt fält kan få (steg 3.10.23.2): de där fältet får sidaMin–sidaMax rader när det har alla behov rutor (en rad
+// räknas när den är minst halvfull). Den som slås fram ur byns frö och fältets nummer nr kommer först (ingen slump dras, så att
+// spelet och ikappräkningen blir lika) och sedan de andra, om den första inte får plats
+export function bredder(s: State, nr: number, behov: number) {
+  const ok: number[] = [];
+  for (let w = ODLING.sidaMin; w <= ODLING.sidaMax; w++) { const r = behov / w; if (r >= ODLING.sidaMin - 0.5 && r <= ODLING.sidaMax) ok.push(w); }
+  if (!ok.length) ok.push(ODLING.sidaMin);
+  const i = Math.floor(hash(s.seed ^ 0x2f1d, nr, 0) * ok.length);
+  return [...ok.slice(i), ...ok.slice(0, i)];
+}
+// ett fält med bredden w har högst sidaMax rader
+const iRader = (w: number, n: number) => Math.min(n, w * ODLING.sidaMax);
+// var p:s nya fält läggs och hur brett det blir: den första bredden som får plats
+function nyttFalt(s: State, p: Person) {
+  const n = storlek(s, p);
+  for (const w of bredder(s, (s.nextFalt ?? 0) + 1, faltBehov(s, p))) { const at = faltSite(s, w, iRader(w, n)); if (at) return { ...at, w, n: iRader(w, n) }; }
+  return undefined;
+}
 // åt vilket håll raderna växer från första raden y: bort från lägret
 export const faltRiktning = (s: State, y: number) => y + 0.5 >= campCenter(s).y ? 1 : -1;
 // byns gräns (steg 3.10.14): hur långt från elden byns yttersta hus, station, lagerplats eller eld står åt varje håll (SEKTORER
@@ -262,11 +288,11 @@ export function faltUppgift(s: State, p: Person): FaltUppgift | undefined {
     if (f.steg === 'vaxer') return undefined;
     if (f.steg === 'roja' && f.klara < f.n && groundOf(s).trees[faltRuta(f, f.klara)] >= FOREST) return undefined; // trädet fälls först (skog.ts, steg 3.6.9)
     // sådden: frön till en ruta till, eller att sådden avslutas när fröna tagit slut
-    if (f.steg === 'sa' && f.klara === 0 && (froRutor(s, p) < 1 || !grodaNu(s))) return undefined;
+    if (f.steg === 'sa' && f.klara === 0 && !grodaFor(s, p, f.n)) return undefined;
     return { tool: f.steg, text: `${FALT_STEG[f.steg].gor}.`, min: ODLING.pass, spot: nastaRuta(f), ref: f.id };
   }
-  if (familjFalt(s, p) || storlek(s, p) < ODLING.faltMin || !grodaNu(s)) return undefined;
-  const at = faltSite(s, bredd(s, p), storlek(s, p));
+  if (familjFalt(s, p) || storlek(s, p) < ODLING.faltMin) return undefined;
+  const at = nyttFalt(s, p);
   return at && { tool: 'roja', text: `${FALT_STEG.roja.gor}.`, min: ODLING.pass, spot: { x: at.x + 0.5, y: at.y + 0.5 } };
 }
 // arbetet på p:s fält (val.ts): den mogna grödan skördas före förbättringar, och den som har börjat på sitt fält arbetar vidare
@@ -281,29 +307,32 @@ export function faltNu(s: State, p: Person, fara: boolean) {
 export function faltBrist(s: State) {
   const fs = faltOf(s), arbete = fs.filter(f => f.steg !== 'vaxer').length;
   if (arbete) return 1;
-  return amountOf(s, 'fron') >= ODLING.froPerRuta * ODLING.faltMin && grodaNu(s) && living(s).some(p => kanOdla(s, p) && !egetFalt(s, p) && !familjFalt(s, p)) ? 1 : 0;
+  return grodorNu(s).some(g => amountOf(s, GRODOR[g].fro) >= ODLING.froPerRuta * ODLING.faltMin) && living(s).some(p => kanOdla(s, p) && !egetFalt(s, p) && !familjFalt(s, p)) ? 1 : 0;
 }
 
 // fart på fältet: att gräva upp jorden går fortare med benspaden
 const fart = (s: State, p: Person, f: Falt) => f.steg === 'bereda' && freeTools(s, p, 'benspade') ? ODLING.beredaSpade : 1;
 // sådden är slut när nästa ruta inte är påbörjad och fröna inte räcker till den
-const froSlut = (s: State, p: Person, f: Falt) => f.steg === 'sa' && f.kvar >= minPer('sa') && froRutor(s, p) < 1;
+const froSlut = (s: State, p: Person, f: Falt) => f.steg === 'sa' && f.kvar >= minPer('sa') && (!f.groda || froRutor(s, p, f.groda) < 1);
 // arbetet som är kvar i steget (ms), utan farten: på sådden bara så många rutor som det finns frön till
 function kvarTid(s: State, p: Person, f: Falt) {
   let n = antal(f) - f.klara;
-  if (f.steg === 'sa') n = Math.min(n, froRutor(s, p) + (f.kvar < minPer('sa') ? 1 : 0));
+  if (f.steg === 'sa') n = Math.min(n, (f.groda ? froRutor(s, p, f.groda) : 0) + (f.kvar < minPer('sa') ? 1 : 0));
   return n <= 0 ? 0 : f.kvar + (n - 1) * minPer(f.steg);
 }
-// framme (paborjat.ts): arbeta vidare på fältet, eller röja ett nytt där det ska ligga. Den som arbetar blir ägare
+// framme (paborjat.ts): arbeta vidare på fältet, eller röja ett nytt där det ska ligga, med den bredd som platsen valdes för
+// (eller den första som får plats där, om något ändrats sedan). Den som arbetar blir ägare
 export function startOdla(s: State, p: Person, tk: Task) {
   let f = faltById(s, tk.ref);
-  if (!f && tk.tool === 'roja' && !faltOf(s).some(q => q.agare === p.id) && !familjFalt(s, p)) {
-    const x = Math.floor(tk.tx), y = Math.floor(tk.ty), n = storlek(s, p);
-    const ny: Falt = { id: 0, x, y, w: bredd(s, p), dir: faltRiktning(s, y), n, agare: p.id, steg: 'roja', klara: 0, kvar: minPer('roja'), rord: s.now };
-    let ok = n >= ODLING.faltMin;
-    const gr = byGrans(s);
-    for (let k = 0; k < n && ok; k++) { const r = rutaXY(ny, k); ok = rutaFri(s, gr, r.x, r.y); }
-    if (ok) {
+  if (!f && tk.tool === 'roja' && !faltOf(s).some(q => q.agare === p.id) && !familjFalt(s, p) && storlek(s, p) >= ODLING.faltMin) {
+    const x = Math.floor(tk.tx), y = Math.floor(tk.ty), gr = byGrans(s), at = nyttFalt(s, p);
+    const passar = (w: number) => {
+      const ny: Falt = { id: 0, x, y, w, dir: faltRiktning(s, y), n: iRader(w, storlek(s, p)), agare: p.id, steg: 'roja', klara: 0, kvar: minPer('roja'), rord: s.now };
+      for (let k = 0; k < ny.n; k++) { const r = rutaXY(ny, k); if (!rutaFri(s, gr, r.x, r.y)) return undefined; }
+      return ny;
+    };
+    const ny = at && at.x === x && at.y === y ? passar(at.w) : bredder(s, (s.nextFalt ?? 0) + 1, faltBehov(s, p)).map(passar).find(q => q);
+    if (ny) {
       f = ny; f.id = s.nextFalt = (s.nextFalt ?? 0) + 1;
       (s.falt ??= []).push(f);
       noteraFore(s, f, 0);
@@ -312,9 +341,9 @@ export function startOdla(s: State, p: Person, tk: Task) {
   }
   // en annan som lever hann före och tog över fältet (båda valde samma fält utan ägare)
   if (!f || f.steg !== tk.tool || f.steg === 'vaxer' || (f.agare !== p.id && agareLever(s, f))) { tk.ref = undefined; tk.until = s.now; return; }
-  if (f.steg === 'sa' && !f.groda) {
-    const gr = grodaNu(s);
-    if (!gr || froRutor(s, p) < 1) { tk.ref = undefined; tk.until = s.now; return; }
+  if (f.steg === 'sa' && f.klara === 0) { // grödan väljs när sådden börjar
+    const gr = grodaFor(s, p, f.n);
+    if (!gr) { tk.ref = undefined; tk.until = s.now; return; }
     f.groda = gr;
   }
   f.agare = p.id; f.rord = s.now;
@@ -340,12 +369,15 @@ function rutaKlar(s: State, p: Person, f: Falt) {
   const nu = Math.round(s.now); (f.skott ??= [])[f.klara] = nu; if (f.steg === 'bereda') (f.bered ??= [])[f.klara] = nu;
   if (f.steg === 'roja') { const i = faltRuta(f, f.klara), g = groundOf(s); g.trees[i] = 0; g.cover[i] = 0; } // gräs, buskar och ungskog är borta
   else if (f.steg === 'bereda') { if (freeTools(s, p, 'benspade') && wearTool(s, p, 'benspade', ODLING.spadeSlit)) { const tr = SAKER.benspade?.trasig; if (tr) count(s, tr.stat); } }
-  else if (f.steg === 'sa') { takeMaterial(s, p, 'fron', ODLING.froPerRuta); count(s, 'fronSadda', ODLING.froPerRuta); } // fröna som såtts (scenariot falt)
+  else if (f.steg === 'sa') { takeMaterial(s, p, GRODOR[f.groda!].fro, ODLING.froPerRuta); count(s, 'fronSadda', ODLING.froPerRuta); } // fröna som såtts (scenariot falt)
   else if (f.steg === 'mogen') {
     const d = GRODOR[f.groda!], a = skordAndel(s, f);
-    if (a > 0) { gain(s, p, d.sak, d.perRuta * a); gain(s, p, 'fron', d.fron * a); count(s, 'skord', d.perRuta * a); }
+    if (a > 0) { gain(s, p, d.sak, d.perRuta * a); gain(s, p, d.fro, froTillbaka(s, f, f.klara, d) * a); count(s, 'skord', d.perRuta * a); }
   }
 }
+// frön tillbaka från ruta k (steg 3.10.23.3): fron är snittet, och rutan ger hela frön, slaget fram ur byns frö, fältet, rutan
+// och när grödan mognade (ingen slump dras, så att spelet och ikappräkningen blir lika)
+export const froTillbaka = (s: State, f: Falt, k: number, d: GrodaDef) => Math.floor(d.fron) + (hash(s.seed ^ 0x51f7 ^ Math.imul(f.id, 7919), k, Math.floor((f.mogen ?? 0) / HOUR)) < d.fron % 1 ? 1 : 0);
 // arbetet är slut: är steget klart på hela fältet går det till nästa
 export function finishOdla(s: State, p: Person, tk: Task) {
   const f = faltById(s, tk.ref);
@@ -371,7 +403,7 @@ function nasta(f: Falt, steg: FaltSteg) { f.steg = steg; f.klara = 0; f.kvar = m
 // efter skörden: behöver ägaren ett större fält och har frön till det, växer det med de lediga rutorna i raderna utåt, som
 // röjs först. Annars grävs jorden upp igen
 function storre(s: State, p: Person, f: Falt) {
-  const mal = Math.min(ODLING.faltMax, storlek(s, p));
+  const mal = Math.min(ODLING.faltMax, storlek(s, p), iRader(f.w, Infinity));
   let n = f.n;
   const gr = byGrans(s);
   while (n < mal) { const r = rutaXY(f, n); if (!rutaFri(s, gr, r.x, r.y)) break; n++; }
@@ -422,12 +454,37 @@ export function stepOdling(s: State) {
 }
 // lagren i FYND med vilda grödor, som ger frön
 export const VILDA = ['vildkorn', 'arter'] as const;
+// fröna grödorna sås med
+const FROSORTER = [...new Set(Object.values(GRODOR).map(g => g.fro))];
+
+// hur många familjer byn plockar vilda frön åt (steg 3.10.23.3): de som kan odla och saknar fält. Innan någon i byn kan odla
+// räknas alla familjer med en vuxen, så att plockandet ger tankar på odling. En gång i timmen (regel 4)
+const famCache = new WeakMap<State, { key: number; n: number }>();
+export function fronFamiljer(s: State) {
+  const key = Math.floor(s.now / HOUR), c = famCache.get(s);
+  if (c && c.key === key) return c.n;
+  const vuxna = living(s).filter(p => ageOf(p, s.now) >= ALDER.vuxen), kan = vuxna.some(p => knows(p, 'odling')), sedda = new Set<number>();
+  let n = 0;
+  for (const p of vuxna) {
+    if (sedda.has(p.id) || (kan && !knows(p, 'odling'))) continue;
+    for (const q of familjOf(s, p.id)) sedda.add(q.id);
+    if (!faltOf(s).some(f => f.agare === p.id) && !familjFalt(s, p)) n++;
+  }
+  famCache.set(s, { key, n });
+  return n;
+}
+// har byn nog frön, med dem som bärs (bar): frön till ett minsta fält för varje sådan familj
+function fronNog(s: State, bar?: Partial<Record<string, number>>) {
+  let falt = 0;
+  for (const k of FROSORTER) falt += Math.floor((amountOf(s, k) + (bar?.[k] ?? 0)) / (ODLING.froPerRuta * ODLING.faltMin));
+  return falt >= fronFamiljer(s);
+}
 
 // var man plockar vilda frön med flit (val.ts, steg 2.10.11): den rikaste rutan med vilda grödor inom en halv dags gång,
 // och närmare är bättre. Ingen när byn har nog frön eller inget växer. Samma plats för alla under timmen (regel 4)
 const vildCache = new WeakMap<State, { key: number; at?: { x: number; y: number } }>();
 export function vildFronPlats(s: State) {
-  if (amountOf(s, 'fron') >= ODLING.froVill) return undefined;
+  if (fronNog(s)) return undefined;
   const key = Math.floor(s.now / HOUR), c = vildCache.get(s);
   if (c && c.key === key) return c.at;
   const mid = campCenter(s);
@@ -446,7 +503,7 @@ export function vildFronPlats(s: State) {
 // medan man samlar (UTFALL samla i steg.ts): frön från de vilda grödorna där man står, och platsen töms lite. Den som plockar
 // tänker på odling (steg 2.10.11). När byn har nog plockar man och tänker ändå, men tar inte med sig fler och lämnar platsen
 export function froFynd(s: State, p: Person, tk: Task, dtSec: number) {
-  const ta = amountOf(s, 'fron') + (tk.items?.fron ?? 0) < ODLING.froVill;
+  const ta = !fronNog(s, tk.items);
   const sk = kunnighet(p.skill.samla) * SNABBARE * dtSec / HOUR_S;
   let n = 0;
   for (const k of VILDA) {

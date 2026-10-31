@@ -1182,8 +1182,12 @@ SCENARIER.odling = {
     let fron = 0;
     for (let i = 0; i < 60; i++) fron += SIM.froFynd(s, p, tk, 60);
     const efter = fyndAt(s, 'vildkorn', kornI), vild = s.stat?.vildgrodor ?? 0;
-    // när byn har nog tar man inga fler, men plockandet räknas och man tänker på odling
-    setAmount(s, 'fron', SIM.ODLING.froVill);
+    // byn vill ha frön till ett minsta fält för varje familj som kan odla och saknar fält (steg 3.10.23.3; innan någon kan odla
+    // alla familjer). När byn har nog tar man inga fler, men plockandet räknas och man tänker på odling
+    const fam = SIM.fronFamiljer(s), vill = SIM.ODLING.froPerRuta * SIM.ODLING.faltMin * fam;
+    setAmount(s, 'fron', vill - 1);
+    const fattas = SIM.froFynd(s, p, tk, 600) > 0;
+    setAmount(s, 'fron', vill);
     p.tek = {};
     const vild0 = s.stat?.vildgrodor ?? 0, nog = SIM.froFynd(s, p, tk, 3600), raknat = (s.stat?.vildgrodor ?? 0) > vild0, tankt = (p.tek?.odling ?? 0) > 0;
     // tekniken: vanligt samlande ger ingen tanke på odling, bara plockandet, och ju fler frön byn plockat, desto fortare
@@ -1202,7 +1206,7 @@ SCENARIER.odling = {
       [`i istiden växer inga vilda grödor (${iIstid.toFixed(3)})`, iIstid === 0],
       [`en timmes samlande på en rik vildkornsruta ger frön (${fron.toFixed(1)}) och tömmer platsen lite (${fore.toFixed(2)} → ${efter.toFixed(2)})`, fron > 0.5 && efter < fore],
       [`byn räknar det som samlats av de vilda grödorna (${vild.toFixed(1)})`, Math.abs(vild - fron) < 1e-9],
-      [`när byn har ${SIM.ODLING.froVill} frön tar man inga fler (${nog}), men plockandet räknas och ger tankar på odling`, nog === 0 && raknat && tankt],
+      [`byn plockar frön till ett minsta fält för var och en av familjerna (${fam}): med ${vill - 1} frön tar man fler, med ${vill} inga (${nog}), men plockandet räknas och ger tankar på odling`, fam > 0 && fattas && nog === 0 && raknat && tankt],
       ['fröna kan inte ätas', !SIM.isFood('fron')],
       [`Odling kommer man bara på när man ${tek?.nar}`, !!tek?.nar],
       [`vanligt samlande ger ingen tanke på odling (${samlar})`, samlar === 0],
@@ -1235,6 +1239,14 @@ SCENARIER.falt = {
     const p = living(s).find(q => q.id === f?.agare) ?? living(s).find(q => ageOf(q, s.now) >= 18)!;
     const storlekOk = fs.every(q => q.n >= SIM.ODLING.faltMin && q.n <= SIM.ODLING.faltMax && q.n <= SIM.faltBehov(s, s.people.find(r => r.id === q.agare) ?? p));
     const enPerFamilj = fs.every(q => !fs.some(r => r !== q && SIM.familjOf(s, q.agare).some(m => m.id === r.agare)));
+    // formen (steg 3.10.23.2): sidorna sidaMin–sidaMax rutor, och bredden slås fram per fält så att fälten blir olika
+    const { sidaMin, sidaMax } = SIM.ODLING;
+    const formOk = fs.every(q => q.w >= sidaMin && q.w <= sidaMax && Math.ceil(q.n / q.w) <= sidaMax);
+    const former = new Set(Array.from({ length: 12 }, (_, i) => SIM.bredder(s, i + 1, 25)[0]));
+    // fröna tillbaka (steg 3.10.23.3): rovorna 1 eller 2 per ruta, ungefär hälften av vardera, och kornet 2
+    const rovFron = f ? Array.from({ length: 60 }, (_, k) => SIM.froTillbaka(s, { ...f, mogen: s.now }, k, SIM.GRODOR.rovor)) : [];
+    const rovSnitt = rovFron.reduce((a, b) => a + b, 0) / (rovFron.length || 1);
+    const kornFron = f ? Array.from({ length: 20 }, (_, k) => SIM.froTillbaka(s, { ...f, mogen: s.now }, k, SIM.GRODOR.korn)) : [];
     const perRuta = SIM.ODLING.rojaMin + SIM.ODLING.beredaMin + SIM.ODLING.saMin + SIM.ODLING.skordaMin;
     // skörden ruta för ruta: två rutors arbete ger två rutors gröda, och steget är inte klart förrän hela fältet är skördat.
     // Sedan växer fältet om ägaren behöver fler rutor och har frön, och annars grävs jorden upp igen
@@ -1303,6 +1315,8 @@ SCENARIER.falt = {
       [`fältet grävs upp och sås inom två dygn (två år i spelet), och fröna tas ur förrådet (${sadd} sådda, ${fronSadda} frön)`, sadd > 0 && fronSadda > 0],
       [`fältet har ${SIM.ODLING.rutorPerMun} rutor per person i familjen, mellan ${SIM.ODLING.faltMin} och ${SIM.ODLING.faltMax}, och inte fler än det finns frön till (${fs.map(q => q.n).join(', ')} rutor)`, storlekOk && fs.length > 0],
       ['en familj har ett fält', enPerFamilj],
+      [`fältets sidor är ${sidaMin}–${sidaMax} rutor (${fs.map(q => `${q.w} × ${Math.ceil(q.n / q.w)}`).join(', ')}), och bredden skiljer sig mellan fälten (${[...former].join(', ')} för 25 rutor)`, formOk && fs.length > 0 && former.size >= 3],
+      [`rovorna ger 1 eller 2 frön per ruta, i snitt ${rovSnitt.toFixed(2)}, och kornet ${kornFron[0]}`, rovFron.every(n => n === 1 || n === 2) && rovSnitt > 1.3 && rovSnitt < 1.7 && kornFron.every(n => n === 2)],
       ['varje ruta på kartan hittar sin plats i fältet, så att ett tryck på den markerar rätt gröda', index && fs.length > 0],
       [`arbetet går ruta för ruta, och steget blir inte klart förrän hela fältet är gjort (${tva} rutor skördade efter två rutors arbete)`, delvis],
       [`en ruta tar kort tid: ${perRuta} minuter att röja, gräva, så och skörda`, perRuta <= 20],

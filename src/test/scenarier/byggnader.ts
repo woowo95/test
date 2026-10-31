@@ -676,7 +676,8 @@ SCENARIER.heltal = {
       kolla(`${k} mat`, a.mat);
       for (const [m, n] of Object.entries(a.slakt)) { kolla(`${k} ger ${m}`, n); if (m === 'kott') for (let j = 0; j <= SIM.REDSKAP.kottFull; j++) kolla(`${k} ger kött vid jakt ${j}`, SIM.kottAv({ skill: { jakt: j } } as SIM.Person, n)); }
     }
-    for (const [k, g] of Object.entries(SIM.GRODOR)) { kolla(`${k} perRuta`, g.perRuta); kolla(`${k} fron`, g.fron); }
+    // fron är snittet: varje ruta ger hela frön, det närmaste hela talet under eller över (froTillbaka, steg 3.10.23.3)
+    for (const [k, g] of Object.entries(SIM.GRODOR)) { kolla(`${k} perRuta`, g.perRuta); kolla(`${k} fron`, Math.floor(g.fron)); kolla(`${k} fron`, Math.ceil(g.fron)); }
     // en vanlig by i tre dygn: alla stackar, det gömda i dem och ägarnas delar är hela, och det påbörjade är under en hel sak
     const s = createState(1, START);
     kor(s, 72);
