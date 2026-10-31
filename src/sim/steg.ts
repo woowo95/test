@@ -622,11 +622,16 @@ function buildStep(s: State, p: Person, tk: Task, dtSec: number) {
   const k = MATERIAL[b.m].item;
   // materialet ligger kvar i händerna medan man bygger och läggs i bygget när biten är klar (steg 3.6.5). Avbryts arbetet
   // bär man hem det som inte använts (taskStep: den som bär något går hem med det)
-  const har = (k && tk.items?.[k]) || 0;
+  // bara det som fattas läggs i bygget: har någon annan lagt stockar i väggen under tiden (toWalls i bygg.ts) behåller man resten
+  const har = (k && tk.items?.[k]) || 0, anv = Math.min(har, needOf(b));
   const done = b.b >= 1 && b.lp === undefined && b.c >= 0.5;
   if (!done && needOf(b) - har <= 1e-9) {
-    if (!workOn(s, p, b, dtSec, har)) return;
-    if (har) { delete tk.items![k!]; if (tk.ag) delete tk.ag[k!]; if (!Object.keys(tk.items!).length) tk.items = undefined; }
+    if (!workOn(s, p, b, dtSec, anv)) return;
+    if (anv) {
+      const kvar = har - anv;
+      if (kvar > 1e-9) { tk.items![k!] = kvar; const ag = tk.ag?.[k!]; if (ag) for (const id in ag) ag[id] *= kvar / har; } // ägarna behåller var sin del av resten
+      else { delete tk.items![k!]; if (tk.ag) delete tk.ag[k!]; if (!Object.keys(tk.items!).length) tk.items = undefined; }
+    }
     if (tk.kom) { noteKom(s, b.hus, tk.kom); tk.kom = undefined; } // varifrån materialet kom räknas när det används
   }
   const j = buildJob(s, p);

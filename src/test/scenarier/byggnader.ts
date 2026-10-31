@@ -423,6 +423,20 @@ SCENARIER.bygg = {
       for (let n = 0; n < 100 && vg.b < 1; n++) workOn(q, by, vg, 600);
       omKlar = !!h.klar; kronikaEfter = fardigt(); gemEfter = q.seder.ev.gemenskap;
     }
+    // stockar läggs i väggen (toWalls: ett träd fälldes på husplatsen) medan byggaren håller materialet till den: väggen får
+    // det den behöver och byggaren behåller resten (buildStep i steg.ts, kodgenomgången 3.10.25)
+    const u = createState(8, START); klockan(u); byggare(u); u.byggSok = undefined; planBuild(u);
+    const uh = housesOf(u).find(x => !x.klar), ub = uh && bitsOf(u).find(x => x.hus === uh.id && x.k === 'vagg' && MATERIAL[x.m].item === 'ved');
+    let iVaggen = 0, iHanden = 0, behov = 0;
+    if (uh && ub) {
+      behov = MATERIAL[ub.m].n; ub.mat = 0; ub.b = 0.999; touch(u);
+      const bp = living(u).find(x => ageOf(x, u.now) >= 18)!;
+      bp.x = ub.x + 0.5; bp.y = ub.y + 1.5; bp.hunger = 0;
+      bp.task = { act: 'bygga', phase: 'do', tx: bp.x, ty: bp.y, until: u.now + HOUR, carry: 0, ref: ub.id, items: { ved: behov } };
+      SIM.toWalls(u, ub.x, ub.y, 1, uh.id);
+      step(u, 60);
+      iVaggen = ub.mat; iHanden = bp.task?.items?.ved ?? 0;
+    }
     return [
       ['ett slutet rum med väggar räknas som under tak', !!rum && rum.tiles.length === 4],
       [`vägen går runt väggarna (${path.length} steg)`, path.length > 0 && !genomVagg],
@@ -439,6 +453,7 @@ SCENARIER.bygg = {
       [`ett långhus räknas när det planeras (${langhus} långhus, ${langRaknat} räknade)`, langhus > 0 && langRaknat === langhus],
       [`en lagning kostar hälften av det nya, i hela saker och minst en (trägolv ${golvLag} av ${MATERIAL.tra.n}, timmervägg ${vaggLag} av ${MATERIAL.timmer.n})`, golvLag === Math.max(1, Math.floor(MATERIAL.tra.n / 2)) && vaggLag === Math.max(1, Math.floor(MATERIAL.timmer.n / 2))],
       [`en rasad vägg som byggts om gör huset klart igen men inte färdigt en gång till (krönikan ${kronikaFore} → ${kronikaEfter}, Sammanhållning ${gemFore.toFixed(3)} → ${gemEfter.toFixed(3)})`, omKlar && kronikaFore >= 1 && kronikaEfter === kronikaFore && gemEfter === gemFore],
+      [`stockar som läggs i väggen medan någon bär material dit försvinner inte (väggen ${iVaggen} av ${behov}, ${iHanden} kvar i händerna)`, behov > 0 && iVaggen === behov && iHanden === 1],
       [`huset minns var materialet kom ifrån (${Math.round(minns)} av ${Math.round(lagt)}: ${satt})`, lagt > 0 && Math.abs(minns - lagt) < 0.01 * lagt + 0.01],
     ];
   },
