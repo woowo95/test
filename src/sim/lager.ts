@@ -665,6 +665,21 @@ export function slitageNu(s: State, a: { k: string; x?: number; y?: number }, t?
   if (SAKER[a.k]?.haller !== undefined) return { orsak: 'ruttnar', per, ...(smuts > 1 ? { smuts: true } : {}) };
   return { orsak: a.x === undefined ? 'lagret' : forvarAt(s, a.x, a.y!)?.tak ? 'kista' : roofed(s, a.x, a.y!) ? 'tak' : zoneAt(s, a.x, a.y!) >= 0 ? 'lagret' : 'vadret', per };
 }
+// hur mycket av maten i förrådet som hinner ätas innan den ruttnar (steg 3.10.9), när byn äter perTim portioner i timmen och
+// tar det som ruttnar först först. En stack ruttnar bort när skicket är slut: den håller så många timmar som skicket räcker
+// med det som sliter på den just nu (temperaturen, taket, vädret och smutsen, som i wearStore)
+export function matSomHaller(s: State, perTim: number) {
+  const temp = temperature(s), st: { tim: number; n: number }[] = [];
+  for (const a of summa(s).st) {
+    if (a.n <= 0 || !isFood(a.k) || !isStored(s, a.x, a.y)) continue;
+    const r = wearAt(a.k, wearMult(s, a.x, a.y), true, temp) * ruttSmuts(s, a.x, a.y);
+    st.push({ tim: r > 0 ? a.c / r : Infinity, n: a.n });
+  }
+  st.sort((a, b) => a.tim - b.tim);
+  let atit = 0;
+  for (const a of st) atit += Math.max(0, Math.min(a.n, perTim * a.tim - atit));
+  return atit;
+}
 export function wearStore(s: State, dtSec: number) {
   const h = dtSec / HOUR_S, temp = temperature(s), bort: Record<string, number> = {};
   for (const a of stacksOf(s)) {

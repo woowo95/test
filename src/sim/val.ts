@@ -94,7 +94,8 @@ const VAL = balans('val', {
   forsiktig: 0.25, // en försiktig by vill ha så mycket större förråd
   torkPabud: 0.6, // ledarens påbud om torkat ändrar chansen att torka så mycket (-1 till 1, steg 3.5.2, styre.ts)
   behovTomt: 3.2, behovMax: 3.5, // vikten av ett tomt förråd av mat eller ved, och den högsta vikten
-  matDygn: 1.1, matMin: 0.4, // för mat: förrådets dygn dämpar vikten, aldrig under Min
+  matDygn: 1.1, matMin: 0.4, // för mat: förrådets dygn dämpar vikten ner till Min, när förrådet räcker så länge byn vill (onskatLager) ...
+  matMatt: 2, matMinMatt: 0.04, // ... och sedan vidare ner till MinMatt när det räcker Matt gånger så länge: då upphör matarbetet nästan (steg 3.10.9)
   vedDygn: 2, vedMin: 0.15, // ... och för ved
   tandMin: 0.8, tandVikt: 3, // tändmaterial: årstiden räknas minst Min, gånger Vikt
   prospektMin: 0.05, prospektMax: 1.3, // hur mycket platserna ger just nu räknas mellan dessa
@@ -502,7 +503,9 @@ function day(s: State, p: Person, v: Val, a: number, lazy: number) {
   const u = clamp(burg / VAL.akut, 0, 1); // hur akut byn behöver arbete
   const sat = Math.min(p.hunger, p.rest, p.social); // hur väl de egna behoven är fyllda
   const tandmat = !leta && !(build && job!.missing) && best === 'samla' && needTinder(s); // samlar tändmaterial åt en släckt eld
-  const what = leta ? `Byn behöver ${needStones(s) ? 'stenar' : 'flinta'}` : build && job!.missing ? `Bygget behöver ${job!.item === 'torrgras' ? 'hö' : job!.item === 'ved' ? 'trä' : 'grenar'}` : best === 'ved' ? `Byn behöver trä, förrådet räcker ${dygn(wd)}` : tandmat ? 'Byn behöver tändmaterial till elden' : `Byn behöver mat, förrådet räcker ${dygn(fd)}`;
+  // skälet "behöver mat" bara när förrådet räcker kortare än byn vill (steg 3.10.9)
+  const what = leta ? `Byn behöver ${needStones(s) ? 'stenar' : 'flinta'}` : build && job!.missing ? `Bygget behöver ${job!.item === 'torrgras' ? 'hö' : job!.item === 'ved' ? 'trä' : 'grenar'}` : best === 'ved' ? `Byn behöver trä, förrådet räcker ${dygn(wd)}` : tandmat ? 'Byn behöver tändmaterial till elden'
+    : fd < matOnskat(s, p) ? `Byn behöver mat, förrådet räcker ${dygn(fd)}` : `Mer mat till förrådet, som räcker ${dygn(fd)}`;
   let works = false;
   if (a >= ALDER.ansvar && (s.fire.ash ?? 0) >= 1 && !s.fire.lit && !emberOn(s) && fireWant(s) < VAL.kolEld && rnd(s, 'val', p) < VAL.kolChans && !ppl.some(q => q.task?.act === 'kol')) {
     set(v, 'kol', 'Det ligger kol kvar i den slocknade elden');
@@ -530,6 +533,9 @@ const lust = (s: State, p: Person, skill: Skill, egenskap: Stat, acts: Act[], to
 const poang = (s: State, p: Person, col: number, like: number) => col * like * (VAL.brusMin + rnd(s, 'val', p) * VAL.brusSpann);
 // hur många dygn mat (eller ved) byn vill ha innan behovet är som minst, för förrådsseden eller påbudet v (fliken Påbud, steg 3.5.4)
 export const onskatLager = (ved: boolean, v: number) => (ved ? VAL.vedDygn : VAL.matDygn) * (1 + VAL.forsiktig * v) * (VAL.behovTomt - (ved ? VAL.vedMin : VAL.matMin));
+// hur många dygn mat p tycker att byn ska ha (som onskatLager, med p:s aning om en hård vinter, steg 3.8.1): kortare tid är matarbetet
+// ett behov, längre bara ett tillskott (steg 3.10.9)
+const matOnskat = (s: State, p: Person) => VAL.matDygn * (1 + VAL.forsiktig * pabud(s, 'matlager') + (p.varsel ? varselSamla(s, p) : 0)) * (VAL.behovTomt - VAL.matMin);
 export const torkAndel = (v: number) => VAL.torkaChans * (1 + VAL.torkPabud * v);
 // det arbete byn behöver mest just nu, vägt mot egen lust och vana. burg = hur mycket det mest behövda behövs
 function bestWork(s: State, p: Person, fd: number, wd: number, ai: number, tot: number, fara: Faror) {
@@ -537,7 +543,9 @@ function bestWork(s: State, p: Person, fd: number, wd: number, ai: number, tot: 
   // den som anar en hård vinter vill ha ännu större förråd, mer i en förutseende by (steg 3.8.1, motgang.ts)
   const mer = p.varsel ? varselSamla(s, p) : 0;
   const fs = 1 + VAL.forsiktig * pabud(s, 'matlager') + mer, vs = 1 + VAL.forsiktig * pabud(s, 'vedlager') + mer;
-  const wFood = clamp(VAL.behovTomt - fd / (VAL.matDygn * fs), VAL.matMin, VAL.behovMax);
+  const onskat = matOnskat(s, p);
+  const wFood = fd < onskat ? clamp(VAL.behovTomt - fd / (VAL.matDygn * fs), VAL.matMin, VAL.behovMax)
+    : Math.max(VAL.matMinMatt, VAL.matMin - (VAL.matMin - VAL.matMinMatt) * (fd - onskat) / (onskat * (VAL.matMatt - 1)));
   const wWood = clamp(VAL.behovTomt - wd / (VAL.vedDygn * vs), VAL.vedMin, VAL.behovMax) * (kallTid(ai) ? ARSTID.vedKall : 1); // inför och under istiden väger veden tyngre
   const vikt = { mat: wFood, ved: wWood };
   let best: Act = 'samla', bs = -1, burg = 0;

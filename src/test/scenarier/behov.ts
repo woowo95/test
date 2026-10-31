@@ -1,6 +1,7 @@
 // Scenarier. Behov och val: behov, ved, aktivitet och fritid.
 import { Person, createState, getRel, step, living, temperature, nyKalender, amountOf, capacity, load, isLight, T, FOOD, ageOf, getMap, HOUR, W, tileOf, stat, campCenter, KANIN, gain, takeFuel, ownsAmount, addTo, setAmount, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, DELA, BEAT, spar, isWork, ACTS, groundOf, varmeDelar, nyVarme, addTool, stepKlader, chooseTask, iSkugga, KROPP, spotFor, shoreOf, torstDelar, drickPlats, areaOf, halsaLage, describe, halsaSteg, skada, blodning, halsa, rorlighet, workRate, OLYCKOR, Act, HALSA, kanGa, gangFart, hemma, mossaFynd, chopStock, skadeLista, skadeText, delSkada, FORMAGOR, smarta, handighet, NARINGAR, NARING, naringOf, naringNu, naringSjunker, mattnad, sjunker, bristGrad, bristSteg, berattaBrist, onskan, matOrdning, takeFood, vilaTim, skorbjugg, NARINGBAL, DODSORSAKER, converse, Naring, STATIONER, TEKNIK, tingOf, vaderNu } from '../../sim';
 import { cloneState, stepIs, stepVader, isCm, vattenGrader, halVal, halMin, drickVal, iIstiden, ageIndex, tidyTools } from '../../sim';
+import * as SIM from '../../sim';
 import { START, STEG_DYGN, STEG_TIM } from '../kor';
 import { setMat, setFood, kor, klockan, tandEld, tomtForrad, treVuxna, bastaJaktruta, SCENARIER, rikBy } from './hjalp';
 
@@ -731,6 +732,44 @@ SCENARIER.brist = {
       ['det glöms efter en tid', glomt],
       ['i byn längtar någon efter något, eller har hört att någon gör det', iByn],
       ['i byn har ingen fått något omöjligt', living(by).every(x => x.health >= 0 && x.health <= 1)],
+    ];
+  },
+};
+
+SCENARIER.matdygn = {
+  text: 'Mat som håller (steg 3.10.9): förrådets dygn räknar bara den mat som hinner ätas innan den ruttnar. När förrådet räcker länge upphör matarbetet nästan, och skälet "Byn behöver mat" står bara när det stämmer',
+  kor: () => {
+    const { foodDays, foodOf, chooseTask, ALDER, SAKER, ruttTemp } = SIM;
+    const by = () => { const s = createState(6, START); klockan(s, 11); tandEld(s); return s; };
+    // lika mycket fisk (håller ett dygn) och torkat kött (håller länge): fisken räcker kortare, eftersom det mesta hinner ruttna
+    const f = by(); setMat(f, { fisk: 120 });
+    const t = by(); setMat(t, { torrkott: 120 });
+    const fdFisk = foodDays(f), fdTorr = foodDays(t), perDygn = foodOf(t) / fdTorr;
+    const fiskHaller = SAKER.fisk!.haller! / ruttTemp(temperature(f)); // dygn i lagret vid temperaturen nu
+    // de vuxnas val med de egna behoven fyllda: hur ofta de väljer matarbete, och vad de säger om varför (samla räknas inte när
+    // man letar flinta eller tändmaterial, bara när skälet är maten)
+    const val = (s: SIM.State) => {
+      const vuxna = living(s).filter(p => ageOf(p, s.now) >= ALDER.vuxen), skal: string[] = [];
+      let alla = 0;
+      for (let i = 0; i < 30; i++) {
+        for (const p of vuxna) { Object.assign(p, { hunger: 0.9, rest: 0.9, social: 0.9, toa: 0.9, torst: 0.9, warm: 0.9, health: 1, sickUntil: undefined }); p.task = undefined; }
+        tidyTools(s);
+        for (const p of vuxna) { chooseTask(s, p); alla++; if (['samla', 'jakt', 'fiske'].includes(p.task!.act)) skal.push(p.task!.why ?? ''); }
+      }
+      const behover = skal.filter(w => w.includes('Byn behöver mat')).length, mer = skal.filter(w => w.includes('Mer mat till förrådet')).length;
+      return { andel: (behover + mer) / (alla || 1), behover, mer };
+    };
+    const rik = by(); setMat(rik, { torrkott: 600 });
+    const tom = by(); setMat(tom, { bar: 3 });
+    const fdRik = foodDays(rik), fdTom = foodDays(tom), vr = val(rik), vt = val(tom);
+    const pc = (x: number) => `${Math.round(x * 100)} %`;
+    return [
+      [`120 fisk räcker kortare än 120 torkat kött (${fdFisk.toFixed(1)} mot ${fdTorr.toFixed(1)} dygn)`, fdFisk < fdTorr / 2],
+      [`fisken räknas bara för det byn hinner äta innan den ruttnar: inte längre än den håller (${fdFisk.toFixed(2)} av ${fiskHaller.toFixed(2)} dygn)`, fdFisk <= fiskHaller * 1.001 && fdFisk > 0 && fdFisk * perDygn < 120],
+      [`det torkade köttet hinner ätas, allt räknas (${fdTorr.toFixed(1)} dygn, ${perDygn.toFixed(1)} portioner om dygnet)`, Math.abs(fdTorr * perDygn - 120) < 1e-6],
+      [`med ett förråd som räcker länge (${fdRik.toFixed(1)} dygn) väljer de vuxna sällan matarbete (${pc(vr.andel)}), mot ${pc(vt.andel)} när det nästan är tomt (${fdTom.toFixed(2)} dygn)`, vr.andel < 0.1 && vt.andel > 0.5],
+      [`med det stora förrådet säger ingen att byn behöver mat (${vr.behover} gånger; ${vr.mer} gånger mer mat till förrådet)`, vr.behover === 0],
+      [`med det tomma förrådet säger de som hämtar mat att byn behöver det (${vt.behover} gånger)`, vt.behover > 0 && vt.mer === 0],
     ];
   },
 };

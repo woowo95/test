@@ -620,7 +620,7 @@ SCENARIER.lekplats = {
     // när byns inre flyttar (en ny lagerplats långt bort) följer lekplatsen med, men elden står kvar
     const z = zonesOf(s)[0], fore = rektAvstand(mid.x, mid.y, l.x, l.y, l.w, l.h);
     const dir = l.x + l.w / 2 > mid.x ? -1 : 1; // åt andra hållet från lekplatsen, så att den måste flytta
-    s.lagren!.push({ x: z.x + dir * 24, y: z.y, w: 2, h: 2, namn: 'Prov', prio: 0 }); // lagren krymper först efter sex timmar (steg 2.12.4) och är större, så den nya ligger längre bort
+    s.lagren!.push({ x: z.x + dir * 36, y: z.y, w: 2, h: 2, namn: 'Prov', prio: 0 }); // lagren krymper först efter sex timmar (steg 2.12.4) och är större, så den nya ligger längre bort (36 rutor sedan steg 3.10.9: med 24 flyttade mitten för lite för att lekplatsen skulle behöva flytta, när rutorna närmare var upptagna)
     const mid2 = SIM.byInne(s), l2 = SIM.lekplats(s);
     // hur långt den flyttar beror på husen, lagren och skogen i vägen; den ska flytta åt rätt håll och komma närmare den nya mitten
     const nu = rektAvstand(mid2.x, mid2.y, l2.x, l2.y, l2.w, l2.h), kvar = rektAvstand(mid2.x, mid2.y, l.x, l.y, l.w, l.h);

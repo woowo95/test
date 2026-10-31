@@ -389,7 +389,7 @@ SCENARIER.varmekarta = {
 SCENARIER.natur = {
   text: 'Maten sätter taket (steg 1.7.2): byn minns hur gott om mat den haft det senaste året. Är maten knapp föds färre barn, fler flyttar och färre nybyggare stannar, men en liten by flyttar inte för maten',
   kor: () => {
-    const s = createState(5, START), n0 = s.people.length, mat = () => setMat(s, { bar: living(s).reduce((t, p) => t + kroppensMat(p, s.now), 0) * 12 });
+    const s = createState(5, START), n0 = s.people.length, mat = () => setMat(s, { torrkott: living(s).reduce((t, p) => t + kroppensMat(p, s.now), 0) * 12 }); // torkat kött, som hinner ätas innan det ruttnar (steg 3.10.9)
     mat(); s.matSnitt = 0.9; // tolv dygns mat i förrådet, men ett knappt år bakom sig
     const fore = barnMat(s, 12), flytt = flyttLitenBy(s);
     for (let t = 0; t < 3 * STEG_DYGN; t++) { regulate(s, BEAT); if (s.people.length !== n0) { s.people.length = n0; mat(); } } // (nybyggare skickas vidare)
