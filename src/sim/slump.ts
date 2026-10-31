@@ -58,3 +58,12 @@ export function pickViktat<X>(s: State, items: X[], vikter: number[], k: Strom, 
   return items[sista ? items.length - 1 : 0];
 }
 export function chance(s: State, ratePerSec: number, dtSec: number, k: Strom, p?: Person) { return rnd(s, k, p) < 1 - Math.exp(-ratePerSec * dtSec); }
+
+// ett tal mellan 0 och 1 ur tre heltal, utan att dra ur någon slumpföljd: vädret, motgångarna, eldsvådan och berättelserna
+// (kodgenomgången 3.10.25: fyra kopior blev en). Blandningen får inte ändras, för då får alla byar ett annat väder; k0 och
+// c0 är berättelsernas egna konstanter. Inte hash i karta.ts, som är en annan blandning
+export function hash3(a: number, b: number, c: number, k0 = 0x9e3779b9, c0 = 1) {
+  let h = Math.imul(a ^ k0, 0x85ebca6b) ^ Math.imul(b + 0x632be5ab, 0xc2b2ae35) ^ Math.imul(c + c0, 0x27d4eb2f);
+  h ^= h >>> 15; h = Math.imul(h, 0x2c1b3c6d); h ^= h >>> 12; h = Math.imul(h, 0x297a2d39); h ^= h >>> 15;
+  return (h >>> 0) / 4294967296;
+}

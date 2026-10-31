@@ -15,6 +15,7 @@ import { forvarAt, stationAt } from './stationer';
 import { isLight } from './tid';
 import { H, HOUR, MIN, Person, State, W, inMap } from './typer';
 import { FOREST } from './vag';
+import { larmAvbryter } from './handlingar';
 
 // Tornadon (steg 3.8.4, "Motgångarna i spelet" i designdokumentet): den enda stormen. En av motgångarna i registret
 // MOTGANGAR (motgang.ts), på sommaren och hösten. Den kommer en gång under tidsåldern, varar några timmar och går långsamt
@@ -169,13 +170,12 @@ function ser(s: State, t: Tornado) {
   const ser = living(s).filter(p => p.task?.act !== 'sova' && p.task?.act !== 'badd' && larmNu(s, p)?.vad !== 'tornado' && Math.hypot(p.x - pos.x, p.y - pos.y) <= sikt);
   if (!ser.length) return;
   if (!living(s).some(p => larmNu(s, p)?.vad === 'tornado')) count(s, 'tornado sedd');
-  larma(s, pos.x, pos.y, 'tornado', 1, ser);
+  larma(s, 'tornado', 1, ser);
 }
 // den som vet om tornadon och är nära banan som är kvar avbryter det hen gör och går undan (inte den som slåss, vårdar eller bärs)
-const AVBRYTS_INTE = new Set<string>(['strid', 'vargjakt', 'buren', 'fatt', 'varda', 'undan']);
 function soker(s: State, t: Tornado) {
   for (const p of living(s)) {
-    if (!p.task || AVBRYTS_INTE.has(p.task.act) || larmNu(s, p)?.vad !== 'tornado' || !fara(s, t, p)) continue;
+    if (!p.task || !larmAvbryter(p.task.act, 'tornado') || larmNu(s, p)?.vad !== 'tornado' || !fara(s, t, p)) continue;
     avbryt(s, p); count(s, 'tornado undan');
   }
 }

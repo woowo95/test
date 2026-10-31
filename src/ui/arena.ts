@@ -157,15 +157,21 @@ export function drawArena() {
 }
 
 // ---------- loggen och rapporten ----------
+let byggd: { st: Strid; n: number; filter: number; slut: boolean; manga: string } | undefined; // det loggen senast byggdes för
+// loggen, filtret och rapporten byggs om bara när en rad, filtret, slutet eller de hundra striderna ändrats, inte varje
+// bildruta: annars stängs en rad man öppnat och rullgardinen medan striden spelas
 function visaLogg() {
   if (!st) return;
+  $('arTid').textContent = `${st.t.toFixed(1)} s`;
+  $('arSpela').textContent = spelar ? '⏸' : '▶';
+  if (byggd && byggd.st === st && byggd.n === st.logg.length && byggd.filter === filter && byggd.slut === !!st.slut && byggd.manga === manga) return;
+  byggd = { st, n: st.logg.length, filter, slut: !!st.slut, manga };
   const rader = st.logg.filter(r => filter < 0 || r.a === filter || r.b === filter);
   const namn = (id?: number) => id === undefined ? '' : esc(st!.kampar.find(k => k.id === id)?.namn ?? '');
   const ord = (r: typeof rader[number]) => r.h === 'traff' || r.h === 'miss' || r.h === 'tog' ? `${namn(r.a)} ${r.v ? VAPEN[r.v].tecken : ''} ${namn(r.b)}` : namn(r.a);
-  $('arLogg').innerHTML = rader.slice().reverse().map(r => { const t = esc(stridText(st!, r)); return `<li title="${t}"><span class="arT">${r.t.toFixed(1)}</span> ${STRIDHANDELSER[r.h].tecken} ${ord(r)}<span class="arText">${t}</span></li>`; }).join('');
+  const nr = new Map(st.logg.map((r, i) => [r, i])), oppna = new Set([...$('arLogg').querySelectorAll<HTMLElement>('li.open')].map(li => li.dataset.i)); // de öppna raderna är öppna också efter ombygget
+  $('arLogg').innerHTML = rader.slice().reverse().map(r => { const t = esc(stridText(st!, r)), i = String(nr.get(r)); return `<li data-i="${i}"${oppna.has(i) ? ' class="open"' : ''} title="${t}"><span class="arT">${r.t.toFixed(1)}</span> ${STRIDHANDELSER[r.h].tecken} ${ord(r)}<span class="arText">${t}</span></li>`; }).join('');
   $('arFilt').innerHTML = `<option value="-1">👥 Alla</option>` + st.kampar.map(k => `<option value="${k.id}"${filter === k.id ? ' selected' : ''}>${esc(k.namn)}</option>`).join('');
-  $('arTid').textContent = `${st.t.toFixed(1)} s`;
-  $('arSpela').textContent = spelar ? '⏸' : '▶';
   let rap = '';
   if (st.slut) {
     const r = stridRapport(st);

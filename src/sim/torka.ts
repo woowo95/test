@@ -114,5 +114,5 @@ function iLand(s: State) {
     avbryt(s, p);
   }
 }
-// hur många rutor av sjön som är torr sjöbotten just nu (gränssnittet)
+// hur många rutor av sjön som är torr sjöbotten just nu (scenariot torka)
 export const torrRutor = (s: State) => { const t = vattenNu(s); let n = 0; if (s.sjoTorr) for (let i = 0; i < W * H; i++) if (t[i] === T.Lera) n++; return n; };

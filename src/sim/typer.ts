@@ -29,6 +29,7 @@ export function useMap(s: { W?: number; H?: number; kart?: Kart }) {
 export const kartNamn = () => KARTA; // kartans storlek och den gamla kartans plats: samma namn = samma karta för samma frö
 export const mapKey = (seed: number) => `${seed}:${KARTA}`;
 export const inMap = (x: number, y: number) => x >= 0 && y >= 0 && x < W && y < H; // punkten eller rutan ligger på kartan
+export const GRANNAR4 = [[1, 0], [-1, 0], [0, 1], [0, -1]] as const; // rutorna bredvid, utan de snett
 
 // Gränssnittet läser byn mellan stegen, och då är visning.pa sann (i webbläsaren, utom i step, createState och migrate, som
 // räknar som simuleringen: `simulera`). En cache vars svar beror på när det räknas och inte bara på nyckeln har två delar
@@ -205,9 +206,9 @@ export interface Person {
   liv?: Record<string, number>; // det hen varit med om och gjort, i tal: vargar hen dödat, folk hen vårdat, hus, svält hen överlevt … och 't:' + slaget = när det senast räknades (steg 3.9.8, folk.ts livet)
   skam?: number; // straffad med skam av ledaren: håller sig undan elden och samtalen till dess (steg 3.5.3, styre.ts)
 }
-// en upplevelse i barndomen: slaget (UPPLEVELSER i uppvaxt.ts), åldern (år), när, vad den gjorde med egenskaperna och vem
+// en upplevelse i barndomen: slaget (UPPLEVELSER i uppvaxt.ts), åldern (år), vad den gjorde med egenskaperna och vem
 // eller vad den gällde
-export interface Upplevelse { k: import('./uppvaxt').UpplevelseTyp; a: number; t: number; e: Partial<Record<Stat, number>>; om?: string }
+export interface Upplevelse { k: import('./uppvaxt').UpplevelseTyp; a: number; e: Partial<Record<Stat, number>>; om?: string }
 
 // En lärdom om en plats: k = vad, a = område (8×8 rutor), v = hur mycket (eller hur rädd), c = hur säker (0–1),
 // t = när platsen sågs (den som hör det får samma tid; återväxten räknas därifrån), src = vem den hördes av (saknas = egen upplevelse), led = hur många led från den som var där, om = vad som hände.
@@ -291,9 +292,9 @@ export interface State {
 // kunde (kunskapen, 0–1) och trodde (lärdomarna som 'slag:plats') då. Sparas med byn tills spelaren stänger den
 export interface Borta { fran: number; fodda: number; doda: number; kan: Record<number, { k: Record<string, number>; l: string[] }> }
 // en vargflock (steg 3.7.1, varg.ts): vargarnas id (den första leder flocken), var den är och vart den går (mx, my), när den
-// kom och när den drar vidare, hungern (0–1), vad den gör, personen den anfaller, när den senast sågs och av vem (sag, steg 3.10.20) och jägarna efter den.
+// drar vidare, hungern (0–1), vad den gör, personen den anfaller, när den senast sågs och av vem (sag, steg 3.10.20) och jägarna efter den.
 // dorr = öppningen (rutan) där den väntar utanför en stängd dörr, och vantar = sedan när (steg 3.7.21)
-export interface Vargflock { id: number; vargar: number[]; x: number; y: number; mx: number; my: number; kom: number; gar: number; hunger: number; gor: 'stryker' | 'smyger' | 'anfaller' | 'vantar' | 'flyr'; byte?: number; sedd?: number; sag?: number; jagare?: number[]; samlas?: number; dorr?: { x: number; y: number }; vantar?: number; trottnat?: true }
+export interface Vargflock { id: number; vargar: number[]; x: number; y: number; mx: number; my: number; gar: number; hunger: number; gor: 'stryker' | 'smyger' | 'anfaller' | 'vantar' | 'flyr'; byte?: number; sedd?: number; sag?: number; jagare?: number[]; samlas?: number; dorr?: { x: number; y: number }; vantar?: number; trottnat?: true }
 // ett fällt träd: ved och grenar som finns kvar att hugga ut
 export interface Stock { id: number; x: number; y: number; ved: number; grenar: number; mossa?: number } // mossa på stammen (steg 2.5.2)
 

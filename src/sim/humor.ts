@@ -190,19 +190,19 @@ export function utbrottBorjar(s: State, p: Person, k: Utbrott, mal?: Person, tin
   const rad = UTB[k];
   count(s, 'utbrott'); count(s, 'utb_' + k);
   p.utb = (p.utb ?? 0) + 1;
-  if (!rad.barn && rad.grad >= 2 && rnd(s, 'humor', p) < LARM.falskt) larma(s, p.x, p.y, 'fara', 1 + Math.floor(rnd(s, 'humor', p) * 5), [p], true); // ett falskt larm (steg 3.7.11)
+  if (!rad.barn && rad.grad >= 2 && rnd(s, 'humor', p) < LARM.falskt) larma(s, 'fara', 1 + Math.floor(rnd(s, 'humor', p) * 5), [p], true); // ett falskt larm (steg 3.7.11)
   if (mal) {
     const van = k === 'slut' && p.partner !== mal.id;
     log(s, `${p.name} mår dåligt och ${van ? 'bryter vänskapen med' : rad.text} ${mal.name}.`, 'rel', [p.id, mal.id]);
     if (k === 'elak') {
       think(mal, `${p.name} var elak mot mig`, -HUMOR.elakHumor, s.now, HUMOR.elakTim * HOUR);
-      getRel(s, p, mal).op -= HUMOR.elakOp;
+      { const r = getRel(s, p, mal); r.op = clamp(r.op - HUMOR.elakOp, -100, 100); }
       handelse(s, p, 'elak', mal);
     } else if (k === 'skitsnack') {
       skitsnack(s, p, mal);
     } else if (k === 'puttas') {
       think(mal, `${p.name} puttade mig`, -HUMOR.puttHumor, s.now, HUMOR.puttTim * HOUR);
-      getRel(s, p, mal).op -= HUMOR.puttOp;
+      { const r = getRel(s, p, mal); r.op = clamp(r.op - HUMOR.puttOp, -100, 100); }
     } else if (k === 'slut') {
       const r = getRel(s, p, mal);
       if (!van) skiljas(s, p, mal, r);
@@ -230,7 +230,7 @@ export function flyttaUt(s: State, p: Person) {
   if (folk.some(q => q.id === p.partner) || folk.filter(q => q !== p && ageOf(q, now) >= ALDER.vuxen).length < HUMOR.flyttaVuxna) return false;
   const barn = folk.filter(c => isParent(p, c) && ageOf(c, now) < ALDER.vuxen && !folk.some(o => o !== p && isParent(o, c)));
   utbrottBorjar(s, p, 'flytta');
-  for (const g of [p, ...barn]) leave(s, g);
+  leave(s, p, ...barn);
   count(s, 'utvandrade', 1 + barn.length);
   return true;
 }
@@ -254,6 +254,7 @@ export function utbrottRisk(s: State, p: Person, ljust: boolean) {
   if (p.utb) { p.utb *= Math.exp(-HOUR / (HUMOR.utbDygn * DAY)); if (p.utb < 0.01) p.utb = undefined; }
   const a = ageOf(p, s.now), barn = a < ALDER.vuxen;
   if (p.task?.act === 'leka' && p.task.phase === 'do') p.lekt = s.now; // barnen: leken (steg 3.2.4)
+  if (p.ubr && s.now - p.ubr.t > HUMOR.vantar * HOUR) p.ubr = undefined; // det som väntat för länge blir inget, också på natten
   if (!ljust || p.ubr || a < ALDER.smabarn) return;
   const m = moodOf(p, s.now);
   if (m >= HUMOR.grans) return;

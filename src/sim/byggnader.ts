@@ -2,7 +2,7 @@ import { KROPP, alive, byId, count, familjOf, living, log } from './folk';
 import { Hus, MATERIAL, Rum, bitById, bitsOf, gridOf, housesOf, husById, shelterOf, touch } from './byggnad';
 import { heatAt } from './eld';
 import { eldPlats } from './karta';
-import { changed, ownedAll, put, storeFull, zonesOf } from './lager';
+import { changed, enPerRuta, ownedAll, put, storeFull, zonesOf } from './lager';
 import { kronika } from './historik';
 import { DAY, HOUR, W } from './typer';
 import { tingOf } from './agande';
@@ -53,7 +53,6 @@ export interface Byggnad {
   behov: string; // vilket behov den fyller (förklaringen i gränssnittet)
   fara: boolean; // behovet är en fara (kylan): går före all bekvämlighet
   vikt: number; // hur viktigt behovet är bland dem som är lika farliga
-  agare: 'byn' | 'familj';
   sover?: boolean; // man sover här
   lager?: boolean; // golvet är en lagerplats under tak: det som ligger där ruttnar och slits mindre (LAGER.inne i lager.ts)
   akut?: (s: State) => Akut; // saknas: byn planerar inga nya hus för det
@@ -61,19 +60,19 @@ export interface Byggnad {
 }
 export const BYGGNADER = {
   sovsal: {
-    namn: 'Sovsal', ikon: '🛏️', behov: 'Sovplatser under tak åt alla, mot kylan', fara: true, vikt: 3, agare: 'byn', sover: true,
+    namn: 'Sovsal', ikon: '🛏️', behov: 'Sovplatser under tak åt alla, mot kylan', fara: true, vikt: 3, sover: true,
     // så många som saknar en sovplats, och lite till för barn som kommer
     akut: s => { const n = living(s).length, u = homeless(s); return { v: n ? u / n : 0, plats: u + HUS.sovExtra }; },
     namnFor: (_s, w, h, same) => { const big = w * h >= HUS.langhus; return same ? `${big ? 'Långhus' : 'Hydda'} ${same + 1}` : big ? 'Långhuset' : 'Hyddan'; },
   },
   forrad: {
-    namn: 'Förrådshus', ikon: '📦', behov: 'Maten ruttnar eller förrådet är fullt: under tak ruttnar och slits det mindre', fara: false, vikt: 2, agare: 'byn', lager: true,
+    namn: 'Förrådshus', ikon: '📦', behov: 'Maten ruttnar eller förrådet är fullt: under tak ruttnar och slits det mindre', fara: false, vikt: 2, lager: true,
     // ett tomt hus blir förrådshuset (funktionsbyte nedan), så då byggs inget nytt (steg 2.12.5)
     akut: s => tommaSovsalar(s).length ? { v: 0, plats: 0 } : forradBehov(s),
     namnFor: (_s, _w, _h, same) => same ? `Förrådshus ${same + 1}` : 'Förrådshuset',
   },
   familjehus: {
-    namn: 'Familjehus', ikon: '🏠', behov: 'En familj vill bo för sig och har råd att bygga ett eget hus', fara: false, vikt: 1, agare: 'familj', sover: true,
+    namn: 'Familjehus', ikon: '🏠', behov: 'En familj vill bo för sig och har råd att bygga ett eget hus', fara: false, vikt: 1, sover: true,
     // en familj (ett par med barn) utan eget hus som äger så mycket att den kan betala huset själv
     akut: s => {
       const f = familjUtanHus(s);
@@ -82,13 +81,13 @@ export const BYGGNADER = {
     namnFor: (s, _w, _h, _same, a) => husNamn(byId(s, a.ag)?.name ?? 'Familjens'),
   },
   samling: {
-    namn: 'Samlingshus', ikon: '🪑', behov: 'En plats att umgås under tak när det är kallt', fara: false, vikt: 1, agare: 'byn',
+    namn: 'Samlingshus', ikon: '🪑', behov: 'En plats att umgås under tak när det är kallt', fara: false, vikt: 1,
     // byggs inte nytt: en sovsal som ingen sover i blir ett samlingshus (steg 1.6.4). När det är kallt samtalar och
     // berättar man där i stället för vid elden, om det är varmare där (val.ts)
     namnFor: (_s, _w, _h, same) => same ? `Samlingshus ${same + 1}` : 'Samlingshuset',
   },
   verkstad: {
-    namn: 'Verkstad', ikon: 'verkstad', behov: 'Plats inne för en station som inte får plats i något annat hus (slöjdbänken)', fara: false, vikt: 1, agare: 'byn',
+    namn: 'Verkstad', ikon: 'verkstad', behov: 'Plats inne för en station som inte får plats i något annat hus (slöjdbänken)', fara: false, vikt: 1,
     // steg 2.2.17: byn vill bygga en station som står inne, men inget hus har plats för den (sovsalarna är fulla och i ett
     // förrådshus står inga stationer). Huset rymmer stationen, golvet framför den och lite till. Ingen sover där. Står det en
     // verkstad utan station byggs ingen ny
@@ -361,5 +360,6 @@ export function husKlar(s: State, h: Hus) {
   if (!fnOf(h).lager || zonesOf(s).some(z => z.hus === h.id)) return;
   zonesOf(s).push({ x: h.x + 1, y: h.y + 1, w: h.w - 2, h: h.h - 2, namn: h.namn, slag: h.slag, prio: 3, hus: h.id });
   changed(s);
+  enPerRuta(s);
   log(s, `${h.namn} är färdigt. Där ruttnar och slits ${h.slag === 'material' ? 'materialet' : 'maten'} mindre.`, 'world');
 }

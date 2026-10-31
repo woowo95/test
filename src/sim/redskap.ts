@@ -119,14 +119,14 @@ const basketsWanted = (s: State) => clamp(Math.floor(living(s).filter(p => ageOf
 // timme, maxTim = arbetet varar högst så här många timmar, act = arbetet där det görs (vid slaktbänken), kniv = det kräver en kniv (och att man kan tekniken), minDel = det görs när
 // det finns minst 1 / minDel djur, stat = räknas (i djur), forsta = loggen första gången. En ny art blir en rad här (fler
 // fiskar: steg 7.4.3). kott = köttet, som blir mer med jaktfärdigheten (kottAv). Flera arter kan ha samma arbete (kaninen och
-// vargen slaktas): arbetet tar den första arten i registret som finns i förrådet. Allt är hela saker (steg 3.6.13). Värdet av det ett djur ger: varde = hur djurets värde delas på
-// det slaktade, i delar per styck (kött, ben och skinn har inget recept i saker.ts). Utan varde står receptet i saker.ts
-// (skaffa.av, som fisken av en abborre); scenariot "djur" kontrollerar att de stämmer med raden här.
-export interface Djurart { sak: string; kott?: string; mat: number; slakt: Record<string, number>; varde?: Record<string, number>; rep: number; timme: number; maxTim: number; act: Act; kniv?: true; minDel: number; stat: string; forsta: string; strid?: DjurStrid } // strid = hur djuret slåss (strid.ts, steg 3.7.5)
+// vargen slaktas): arbetet tar den första arten i registret som finns i förrådet. Allt är hela saker (steg 3.6.13). Kött, ben och skinn har inget recept i saker.ts och är värda
+// golvet för sin nivå (varde.ts); där receptet finns (skaffa.av, som fisken av en abborre) kontrollerar scenariot "djur" att
+// det stämmer med raden här.
+export interface Djurart { sak: string; kott?: string; mat: number; slakt: Record<string, number>; rep: number; timme: number; maxTim: number; act: Act; kniv?: true; minDel: number; stat: string; forsta: string; strid?: DjurStrid } // strid = hur djuret slåss (strid.ts, steg 3.7.5)
 export const DJUR = {
-  kanin: { sak: 'vilt', kott: 'kott', mat: SAKER.vilt!.stack!, slakt: { kott: 3, ben: 1, skinn: 1 }, varde: { kott: 4, ben: 1, skinn: 2 }, rep: 0.15, timme: 15, maxTim: 2, act: 'slakta', kniv: true, minDel: REDSKAP.slaktMinDel, stat: 'slaktat', forsta: '{namn} slaktade byns första vilt med en flintkniv. Det gav mer kött, ett ben och ett skinn.', strid: { namn: 'Haren', art: 'Hare', alder: 6, styrka: 2, uthallighet: 6, mod: 2, smidighet: 16, skicklighet: 4, fart: 1.4, vapen: 'bett' } },
+  kanin: { sak: 'vilt', kott: 'kott', mat: SAKER.vilt!.stack!, slakt: { kott: 3, ben: 1, skinn: 1 }, rep: 0.15, timme: 15, maxTim: 2, act: 'slakta', kniv: true, minDel: REDSKAP.slaktMinDel, stat: 'slaktat', forsta: '{namn} slaktade byns första vilt med en flintkniv. Det gav mer kött, ett ben och ett skinn.', strid: { namn: 'Haren', art: 'Hare', alder: 6, styrka: 2, uthallighet: 6, mod: 2, smidighet: 16, skicklighet: 4, fart: 1.4, vapen: 'bett' } },
   abborre: { sak: 'abborre', mat: 1, slakt: { fisk: 1 }, rep: 0, timme: 30, maxTim: 1, act: 'rensa', minDel: 1, stat: 'rensat', forsta: '{namn} rensade byns första abborre. Den blev fiskkött.' },
-  varg: { sak: 'varg', kott: 'vargkott', mat: 1, slakt: { vargkott: 12, ben: 3, vargskinn: 1 }, varde: { vargkott: 4, ben: 1, vargskinn: 12 }, rep: 0.6, timme: 2, maxTim: 2, act: 'slakta', kniv: true, minDel: 1, stat: 'slaktatVarg', forsta: '{namn} slaktade byns första varg. Den gav mycket kött, ben och ett tjockt vargskinn.', strid: { namn: 'Vargen', art: 'Varg', alder: 12, styrka: 10, uthallighet: 14, mod: 10, smidighet: 16, skicklighet: 9, fart: 1.5, vapen: 'vargbett' } }, // snabb och svår att träffa, duckar men parerar inte och biter hårt (steg 3.7.1)
+  varg: { sak: 'varg', kott: 'vargkott', mat: 1, slakt: { vargkott: 12, ben: 3, vargskinn: 1 }, rep: 0.6, timme: 2, maxTim: 2, act: 'slakta', kniv: true, minDel: 1, stat: 'slaktatVarg', forsta: '{namn} slaktade byns första varg. Den gav mycket kött, ben och ett tjockt vargskinn.', strid: { namn: 'Vargen', art: 'Varg', alder: 12, styrka: 10, uthallighet: 14, mod: 10, smidighet: 16, skicklighet: 9, fart: 1.5, vapen: 'vargbett' } }, // snabb och svår att träffa, duckar men parerar inte och biter hårt (steg 3.7.1)
 } satisfies Record<string, Djurart>;
 export const DJURARTER: readonly Djurart[] = Object.values(DJUR);
 export const KANIN = DJUR.kanin.mat; // så mycket mat en kanin är, uppäten som den är: en stack fällt vilt (saker.ts)
@@ -229,7 +229,7 @@ function materialVal(s: State, p: Person, g: string, ks: string[]) {
     let behovs = 0;
     for (const q of PLAGG_LIST) if (PLAGG[q].slag.includes(M.slag)) behovs += Math.max(0, villAv(s, q) - harAv(s, q) - (q === g ? 1 : 0)) * materialTill(q, r.mat);
     for (const d of DORR_LIST) { const n = (DORRAR[d].av as Record<string, number>)[M.sak]; if (n && folk.some(q => DORRAR[d].tek.every(t => knows(q, t)))) behovs += n * utanDorr(s, d).length; }
-    return { k, varme: SAKER[k]!.klad!.varme, skydd: M.skydd, kvar: amountOf(s, M.sak) - till, behovs, till, varde: grundvarde(k) };
+    return { k, varme: SAKER[k]!.klad!.varme, skydd: M.skydd, kvar: amountOf(s, M.sak) - till, behovs, till, finhet: M.finhet, varde: grundvarde(k) };
   });
   const egen = !tingOf(s).some(t => (t.agare === p.id || t.bar === p.id) && gruppOf(t.k) === g);
   return valMaterial(lage, { kyla, hot, fin: egen && anseendeSym(s, p.id) === '😇' });
@@ -251,12 +251,12 @@ export function makeTask(s: State, p: Person, g: string) {
 }
 // redskapet k är klart (materialet togs när arbetet började, paborjat.ts). Första gången står det i loggen. En kniv läggs
 // vid slaktbänken om knivplatsen där står tom, och blir byns, och en bensyl likadant vid slöjdbänken (stationer.ts). Ett
-// plagg sys med bänkens bensyl, och den slits för varje (REDSKAP.bensylSlits)
+// plagg (och en vattensäck) sys med bänkens bensyl, och den slits för varje (REDSKAP.bensylSlits)
 export function toolDone(s: State, p: Person, k: string) {
   const t = addTool(s, k, p); t.av = p.id; t.gjord = s.now; // vem som gjorde det och när (inforutan, steg 2.3.5)
   nyKvalitet(s, p, t, !!p.task && fartVid(s, p, p.task.act) > 1, sakNamn(k).toLowerCase()); // hur bra det blev (kvalitet.ts)
   nyttVid(s, t); gjort(s, p, 'gjort');
-  if (SAKER[k]!.klad) slitVid(s, k as Act, REDSKAP.bensylSlits);
+  slitVid(s, gruppOf(k) as Act, REDSKAP.bensylSlits); // det som kräver bänkens redskap (plaggen och vattensäcken), efter arbetet och inte saken
   const g = SAKER[k]!.gors!, text = (t: string) => t.replace('{namn}', p.name).replace('{verktyg}', ordFor(s, k));
   if (forstaGang(s, g.stat)) {
     log(s, text(g.forsta), 'world', [p.id]);

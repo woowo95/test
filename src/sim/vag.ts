@@ -42,13 +42,18 @@ const stepCost = (g: Ground, i: number) => (isSoil(g.tiles[i]) ? VAG.stigBas + V
 // vatten, väggar och hyllor går man inte genom
 const stop = (g: Ground, i: number) => g.tiles[i] === T.Vatten || g.solid?.[i] === 1 || g.hinder?.[i] === 1;
 
+// heapen ligger i typade fält som växer vid behov (kodgenomgången 3.10.25); jämförelserna är desamma som förut
 class Heap {
-  private ids: number[] = []; private keys: number[] = [];
-  get size() { return this.ids.length; }
-  clear() { this.ids.length = 0; this.keys.length = 0; }
+  private ids = new Int32Array(1024); private keys = new Float64Array(1024); private n = 0;
+  get size() { return this.n; }
+  clear() { this.n = 0; }
   push(id: number, k: number) {
+    if (this.n === this.ids.length) {
+      const a = new Int32Array(this.n * 2), b = new Float64Array(this.n * 2);
+      a.set(this.ids); b.set(this.keys); this.ids = a; this.keys = b;
+    }
     const a = this.ids, b = this.keys;
-    let i = a.length; a.push(id); b.push(k);
+    let i = this.n++;
     while (i > 0) {
       const p = (i - 1) >> 1;
       if (b[p] <= k) break;
@@ -57,15 +62,14 @@ class Heap {
     a[i] = id; b[i] = k;
   }
   pop() {
-    const a = this.ids, b = this.keys, top = a[0];
-    const id = a.pop()!, k = b.pop()!;
-    if (a.length) {
+    const a = this.ids, b = this.keys, top = a[0], n = --this.n, id = a[n], k = b[n];
+    if (n) {
       let i = 0;
       for (;;) {
         const l = 2 * i + 1, r = l + 1;
         let m = i, mk = k;
-        if (l < a.length && b[l] < mk) { m = l; mk = b[l]; }
-        if (r < a.length && b[r] < mk) { m = r; mk = b[r]; }
+        if (l < n && b[l] < mk) { m = l; mk = b[l]; }
+        if (r < n && b[r] < mk) { m = r; mk = b[r]; }
         if (m === i) break;
         a[i] = a[m]; b[i] = b[m]; i = m;
       }
@@ -109,16 +113,14 @@ export function findPath(g: Ground, x0: number, y0: number, x1: number, y1: numb
     if (i === goal) break;
     if (stangd[i] === gen) continue;
     stangd[i] = gen;
-    const x = i % W, y = (i - x) / W;
-    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+    const x = i % W, y = (i - x) / W, xa = x > 0 ? -1 : 0, xe = x < W - 1 ? 1 : 0, gi = gs[i];
+    for (let dy = y > 0 ? -1 : 0, ye = y < H - 1 ? 1 : 0; dy <= ye; dy++) for (let dx = xa; dx <= xe; dx++) { // grannarna på kartan
       if (!dx && !dy) continue;
-      const nx = x + dx, ny = y + dy;
-      if (!inMap(nx, ny)) continue;
-      const ni = ny * W + nx;
+      const nx = x + dx, ny = y + dy, ni = ny * W + nx;
       if (stangd[ni] === gen || ((tiles[ni] === T.Vatten || solid?.[ni] || hinder?.[ni]) && ni !== goal)) continue;
       if (dx && dy && (stop(g, y * W + nx) || stop(g, ny * W + x))) continue;
       if (kostad[ni] !== gen) { kostad[ni] = gen; kost[ni] = tiles[ni] === T.Vatten ? 1 : stepCost(g, ni); }
-      const ng = gs[i] + (dx && dy ? SQ2 : 1) * kost[ni];
+      const ng = gi + (dx && dy ? SQ2 : 1) * kost[ni];
       if (ng < (sedd[ni] === gen ? gs[ni] : Infinity)) { sedd[ni] = gen; gs[ni] = ng; came[ni] = i; heap.push(ni, ng + avst[(ny - gy + H) * aW + nx - gx + W] * sv); }
     }
   }

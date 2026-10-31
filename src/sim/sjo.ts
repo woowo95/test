@@ -1,7 +1,7 @@
 // sjöarna: varje sammanhängande vatten på kartan är en sjö. Byn räknar fiskeförsök, fångster och bad per sjö
 // när de händer, och personrutan visar dem när man trycker på vattnet (ui/flikar/sjo.ts)
 import { getMap, perKarta, vnoise } from './karta';
-import { H, OX, OY, Person, State, T, W, inMap } from './typer';
+import { GRANNAR4, H, OX, OY, Person, State, T, W, inMap } from './typer';
 import { clamp } from './slump';
 import { balans } from './balans';
 
@@ -20,7 +20,7 @@ export const sjoarna = perKarta(seed => {
     const del: number[] = [i], st = [i]; id[i] = 0;
     while (st.length) {
       const j = st.pop()!, x = j % W, y = (j - x) / W;
-      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      for (const [dx, dy] of GRANNAR4) {
         const xx = x + dx, yy = y + dy, k = yy * W + xx;
         if (inMap(xx, yy) && t[k] === T.Vatten && id[k] < 0) { id[k] = 0; del.push(k); st.push(k); }
       }
@@ -44,7 +44,7 @@ export const smutsOf = perKarta(seed => {
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     // på vattnet också: där blir stranden när sjön sjunker under en torka (steg 3.8.2)
     let vid = t[y * W + x] === T.Vatten;
-    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const xx = x + dx, yy = y + dy; if (inMap(xx, yy) && t[yy * W + xx] === T.Vatten) vid = true; }
+    for (const [dx, dy] of GRANNAR4) { const xx = x + dx, yy = y + dy; if (inMap(xx, yy) && t[yy * W + xx] === T.Vatten) vid = true; }
     if (vid) v[y * W + x] = clamp((vnoise(seed ^ 0x5a17, (x - OX) / VATTEN.skala, (y - OY) / VATTEN.skala) - VATTEN.fran) / VATTEN.spann, 0, 1);
   }
   return v;
@@ -87,13 +87,12 @@ export function sjoRakna(s: State, x: number, y: number, k: 'forsok' | 'napp' | 
 }
 
 // ---------- torkan (steg 3.8.2, torka.ts) ----------
-const D4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 // strand: land intill vatten, där man dricker och fiskar, för kartan tiles
 export function strandAv(t: Uint8Array) {
   const b = new Uint8Array(W * H);
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     if (t[y * W + x] === T.Vatten) continue;
-    for (const [dx, dy] of D4) { const xx = x + dx, yy = y + dy; if (inMap(xx, yy) && t[yy * W + xx] === T.Vatten) { b[y * W + x] = 1; break; } }
+    for (const [dx, dy] of GRANNAR4) { const xx = x + dx, yy = y + dy; if (inMap(xx, yy) && t[yy * W + xx] === T.Vatten) { b[y * W + x] = 1; break; } }
   }
   return b;
 }
@@ -103,7 +102,7 @@ export const djupOf = perKarta(seed => {
   const t = getMap(seed).tiles, d = new Uint8Array(W * H), land = new Uint8Array(W * H).fill(255), q: number[] = [], ql: number[] = [];
   for (let i = 0; i < W * H; i++) {
     const x = i % W, y = (i - x) / W;
-    for (const [dx, dy] of D4) {
+    for (const [dx, dy] of GRANNAR4) {
       const xx = x + dx, yy = y + dy;
       if (!inMap(xx, yy) || (t[yy * W + xx] === T.Vatten) === (t[i] === T.Vatten)) continue;
       if (t[i] === T.Vatten) { d[i] = 1; q.push(i); } else { land[i] = 1; ql.push(i); }
@@ -112,7 +111,7 @@ export const djupOf = perKarta(seed => {
   }
   for (const [kö, v, vatten] of [[q, d, true], [ql, land, false]] as const) for (let n = 0; n < kö.length; n++) {
     const j = kö[n], x = j % W, y = (j - x) / W;
-    for (const [dx, dy] of D4) {
+    for (const [dx, dy] of GRANNAR4) {
       const xx = x + dx, yy = y + dy, k = yy * W + xx;
       if (!inMap(xx, yy) || (t[k] === T.Vatten) !== vatten || (vatten ? v[k] : v[k] < 255)) continue;
       v[k] = Math.min(254, v[j] + 1); kö.push(k);
@@ -124,11 +123,11 @@ export const djupOf = perKarta(seed => {
 // vattnet som det är nu: under en torka är kanten av sjöarna torr sjöbotten (T.Lera) så många rutor ut som nivån säger,
 // men aldrig sjöns djupaste del, och en sjö som torkat ut är lera helt. Utan torka kartans eget vatten
 // Under en översvämning (flod.ts) står vattnet så många rutor upp på land som nivån säger (utom på stenarna)
-const nu = new WeakMap<State, { v: number; tiles: Uint8Array; strand: Uint8Array }>();
+const nu = new WeakMap<State, { v: number; fl: number; tiles: Uint8Array; strand: Uint8Array }>();
 function vattenOf(s: State) {
-  const st = s.sjoTorr, fl = s.flod?.niva ?? 0, v = (st ? st.v : -1) * 4 + fl;
+  const st = s.sjoTorr, fl = s.flod?.niva ?? 0, v = st ? st.v : -1; // torkans version och översvämningens nivå, var för sig
   let c = nu.get(s);
-  if (c?.v === v) return c;
+  if (c?.v === v && c.fl === fl) return c;
   const m = getMap(s.seed).tiles;
   let tiles = m;
   if (st && (st.niva || st.tomma.length)) {
@@ -141,7 +140,7 @@ function vattenOf(s: State) {
     const { land } = djupOf(s.seed);
     for (let i = 0; i < W * H; i++) if (m[i] !== T.Vatten && m[i] !== T.Sten && land[i] <= fl) tiles[i] = T.Vatten;
   }
-  c = { v, tiles, strand: tiles === m ? strandStart(s.seed) : strandAv(tiles) };
+  c = { v, fl, tiles, strand: tiles === m ? strandStart(s.seed) : strandAv(tiles) };
   nu.set(s, c);
   return c;
 }

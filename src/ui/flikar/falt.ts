@@ -1,4 +1,4 @@
-import { DAY, FALT_STEG, GRODOR, MARK_FORE, ODLING, byId, faltById, faltKlar, grodaPa, living, skordAndel } from '../../sim';
+import { DAY, FALT_STEG, GRODOR, MARK_FORE, ODLING, byId, faltById, faltKlar, grodaPa, living, skordAndel, vaxtFaktor } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { bar, durTxt, esc, fmtN, pLink } from '../hjalp';
 import { s, ui } from '../lage';
@@ -47,6 +47,7 @@ function rutaHtml() {
     <p class="muted">${vid} · ruta ${k + 1} av ${f.n}</p></div></div>
     <p class="muted">${f.groda ? 'Här växer inget.' : 'Inget är sått här.'}</p>${markHtml(f, k)}`;
   const d = GRODOR[f.groda], mogen = f.steg === 'mogen', a = mogen ? skordAndel(s, f) : 1;
+  // mogen om: som odling.ts växer grödan vaxtFaktor (fortare i blöt mark, långsammare i torr) delat med d.dygn × 24 i timmen
   const over = mogen && f.mogen !== undefined ? ODLING.overDygn * DAY - (s.now - f.mogen) : 0;
   return `
     <div class="phead">${iconImg(mogen ? d.sak : 'grodd', 32)}<div><h2>${esc(d.namn)}</h2>
@@ -54,7 +55,7 @@ function rutaHtml() {
     <dl class="kv">
       <dt>${mogen ? 'Mogen' : 'Växer'}</dt><dd>${bar(mogen ? 1 : f.vuxit ?? 0)}<span>${Math.round((mogen ? 1 : f.vuxit ?? 0) * 100)} %</span></dd>
       ${mogen ? `<dt>Skörda</dt><dd>${over > 0 ? `inom ${durTxt(over)}, sedan blir den övermogen` : `övermogen, ${Math.round(a * 100)} % kvar`}</dd>`
-        : `<dt>Mogen</dt><dd>om ungefär ${durTxt((1 - (f.vuxit ?? 0)) * d.dygn * DAY)} när det är varmt</dd>`}
+        : `<dt>Mogen</dt><dd>om ungefär ${durTxt((1 - (f.vuxit ?? 0)) * d.dygn * DAY / vaxtFaktor(s))} när det är varmt</dd>`}
       <dt>Ger</dt><dd>${iconImg(d.sak, 14)} ${fmtN(d.perRuta * a)} och ${iconImg(d.fro, 14)} ${fmtN(d.fron * a)} frön</dd>
       <dt>Frosten</dt><dd>dör när det blir kallare än ${d.frost} grader, och i istiden</dd>
     </dl>${markHtml(f, k)}`;

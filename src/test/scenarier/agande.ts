@@ -180,13 +180,13 @@ SCENARIER.byte = {
     gain(s, a, 'bar', 0.5); gain(s, a, 'ved', 6); gain(s, b, 'bar', 6); gain(s, b, 'ved', 1); getRel(s, b, a).op = -40;
     askForGift(s, a, b); const kvallOvan = !s.stat?.byten;
     // vanliga byar
-    let byten = 0, mat = 0, mtrl = 0, natt = 0, dag = 0;
+    let byten = 0, mat = 0, mtrl = 0, natt = 0, dag = 0, ljusa = 0, morka = 0; // ljusa, morka: steg i dagsljus och i mörker
     for (const seed of [1, 42]) {
       const v = createState(seed, START);
       for (let i = 0; i < 8 * STEG_DYGN; i++) {
         const f = v.stat?.kvallsbyten ?? 0, ljust = isLight(v.now);
         step(v, BEAT);
-        if (ljust) dag += (v.stat?.kvallsbyten ?? 0) - f; else natt += (v.stat?.kvallsbyten ?? 0) - f;
+        if (ljust) { dag += (v.stat?.kvallsbyten ?? 0) - f; ljusa++; } else { natt += (v.stat?.kvallsbyten ?? 0) - f; morka++; }
       }
       byten += v.stat?.byten ?? 0; mat += v.stat?.byte_mat ?? 0; mtrl += v.stat?.byte_material ?? 0;
     }
@@ -203,14 +203,15 @@ SCENARIER.byte = {
       ['har båda det de vill ha kvar blir det inget byte', nog],
       ['en ovän byter inte i samtal heller', kvallOvan],
       [`i vanliga byar byter folk (${byten} byten på 8 dygn i 2 byar: ${mat.toFixed(1)} portioner mat, ${mtrl.toFixed(1)} material)`, byten > 0],
-      [`kvällens byten blir mest av på kvällar och nätter (${natt} i mörker, ${dag} i dagsljus)`, natt > 2 * dag && natt > 0],
+      // per timme, eftersom hur många timmar som är mörka beror på årstiden. Kvällens byten är minst en och en halv gång så
+      // vanliga i mörkret (2,6 gånger före steg 3.10.25, 1,9 sedan fler samlar nära lägret på dagen, fynd 28)
+      [`kvällens byten blir mest av på kvällar och nätter (${natt} i mörker, ${dag} i dagsljus; ${(natt / Math.max(1, morka) * STEG_DYGN / 24).toFixed(2)} och ${(dag / Math.max(1, ljusa) * STEG_DYGN / 24).toFixed(2)} i timmen)`, natt > 0 && natt / Math.max(1, morka) > 1.5 * dag / Math.max(1, ljusa)],
     ];
   },
 };
 
 
 SCENARIER.egendom = {
-  lang: true,
   text: 'Det någon samlar, hugger, jagar och gör är hens, också i byns förråd. Det som redan var byns förblir byns. Till sig själv tar man sitt eget först, till elden byns. Det som ruttnar minskar allas delar, slaktat kött är dens som ägde viltet, och den som dör lämnar sin del till byn.',
   kor: () => {
     const s = createState(6, START);
@@ -514,11 +515,19 @@ SCENARIER.klader = {
       die(s, dod, 'olycka'); tidyTools(s); SIM.stepKlader(s);
       arv = nasta.bar !== undefined && nasta.bar !== dod.id;
     }
+    // varje plagg och vattensäck som sys sliter bänkens bensyl (REDSKAP.bensylSlits), inte bara tiden i förrådet (kodgenomgången 3.10.25)
+    let syrSlits = 'ingen bensyl', syrOk = false;
+    const bs = bensyl(), sy = living(s)[0];
+    if (bs && sy) {
+      bs.c = 1; SIM.toolDone(s, sy, 'rock_kaninskinn'); const c1 = bs.c; SIM.toolDone(s, sy, 'vattensack'); const c2 = bs.c;
+      syrSlits = `1 → ${c1.toFixed(2)} → ${c2.toFixed(2)}`; syrOk = c1 < 1 - 0.01 && c2 < c1 - 0.01;
+    }
     return [
       ['utan bensylen vid slöjdbänken sys inga kläder', utan],
       [`en bensyl slipas och läggs vid slöjdbänken (efter ${timBensyl} timmar)`, slipad && kan],
       [`kläder sys vid bänken och tas på (${sydda} plagg efter ${h} timmar)`, sydda > 0 && !!buren],
       ['bensylen slits när kläderna sys', slits],
+      [`bensylen slits av en sydd rock och en vattensäck (${syrSlits})`, syrOk],
       ['ett plagg som någon har på sig ligger inte i förrådet', ejLiggande],
       ['den som har kläder på sig fryser mindre', varmare],
       ['kläderna väger: den som har dem på sig bär mindre', tyngre],
@@ -562,7 +571,7 @@ SCENARIER.balte = {
 };
 
 SCENARIER.plagg = {
-  text: 'Steg 3.10.12: kläderna är plagg av ett material. Varje plagg och material som går ihop är en sak (en rock och skor av kaninskinn eller vargskinn, ett bälte av rep), med värmen, vikten, hållbarheten och skyddet räknade ur båda. Den som syr väljer materialet: det varma inför och under istiden, det som skyddar mest efter en strid, inte det som behövs till annat, annars det billigaste. Sparade byar läses in med de nya namnen',
+  text: 'Steg 3.10.12: kläderna är plagg av ett material. Varje plagg och material som går ihop är en sak (en rock och skor av kaninskinn eller vargskinn, ett bälte av rep), med värmen, vikten, hållbarheten och skyddet räknade ur båda. Den som syr väljer materialet: det varma inför och under istiden, det som skyddar mest efter en strid, inte det som behövs till annat, och sist det enklare (den ansedda det finare). Sparade byar läses in med de nya namnen',
   kor: () => {
     const K = SIM.SAKER;
     // registret: varje par är en sak i plaggets grupp, och vargskinnet värmer och skyddar mer
@@ -585,10 +594,15 @@ SCENARIER.plagg = {
     const varmt = val(sommar) === 'rock_kaninskinn';
     (strid.strider ??= []).push({ t: strid.now - HOUR, orsak: 'test', u: { avsikt: 'skada', w: 10, h: 10, kampar: [] }, fro: 1, vinnare: 0 } as SIM.StridMinne);
     const hot = val(strid) === 'rock_vargskinn';
-    setAmount(behovs, 'skinn', 3); // tre kaninskinn: en rock, men skorna som alla saknar behöver dem, och vargskinnet räcker till båda
+    setAmount(behovs, 'skinn', 3); setAmount(behovs, 'vargskinn', 20); // tre kaninskinn: en rock, men skorna och rockarna som alla saknar behöver dem, och vargskinnet räcker till allt
     const sparas = val(behovs) === 'rock_vargskinn';
     setAmount(sommar, 'skinn', 0);
     const barafinns = val(sommar) === 'rock_vargskinn';
+    // smak och anseende (punkt 6): när inget annat skiljer tar den ansedda det finare materialet (vargskinnet) och andra det
+    // enklare (kodgenomgången 3.10.25: förut avgjorde plaggets värde, och vargrocken räknas billigare än harrocken)
+    const lage = (k: string, mat: SIM.KladMaterial) => ({ k, varme: K[k]!.klad!.varme, skydd: SIM.KLADMATERIAL[mat].skydd, kvar: 20, behovs: 0, till: 1, finhet: SIM.KLADMATERIAL[mat].finhet, varde: SIM.grundvarde(k) });
+    const tva = [lage('rock_kaninskinn', 'kaninskinn'), lage('rock_vargskinn', 'vargskinn')];
+    const finare = SIM.valMaterial(tva, { kyla: false, hot: false, fin: true }) === 'rock_vargskinn' && SIM.valMaterial(tva, { kyla: false, hot: false, fin: false }) === 'rock_kaninskinn';
     // en gammal sparfil: skinnrocken, vargpälsen, skinnskorna och bältet får de nya namnen, och det som räknats följer med
     const g = by(2), [a, b] = living(g);
     const gammal = (k: string, p: Person) => { const t = addTool(g, 'yxa', p); t.k = k; t.bar = p.id; return t; };
@@ -612,10 +626,11 @@ SCENARIER.plagg = {
       [`namnen: ${K.rock_vargskinn!.namn}, "${K.rock_vargskinn!.gors!.text}", ${SIM.bestamd(K.skor_kaninskinn!.namn)[0]}`, namn],
       ['receptet: en rock tar tre kaninskinn eller två vargskinn, skorna ett vargskinn', recept],
       ['inför och under istiden sys rocken av vargskinn, som värmer nog', kallt],
-      ['på sommaren sys den av kaninskinn, som är billigare och finns gott om', varmt],
+      ['på sommaren sys den av kaninskinn, som finns gott om och är enklare', varmt],
       ['efter en strid i byn sys den av vargskinn, som skyddar mer', hot],
       ['på sommaren sparas kaninskinnet när det behövs till skorna som alla saknar', sparas],
       ['finns bara vargskinn sys rocken av det', barafinns],
+      ['när inget annat skiljer tar den ansedda vargskinnet, som är finare, och andra kaninskinnet', finare],
       ['en gammal sparfil: skinnrocken, vargpälsen, skinnskorna, bältet och det påbörjade får de nya namnen', sakerNya],
       ['... och arbetet, vanorna, smaken och det stulna', arbetet],
       [`... och räknarna; tekniken Bälte heter som förut (${pa})`, rakna],

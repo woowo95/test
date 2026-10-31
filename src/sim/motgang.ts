@@ -2,7 +2,7 @@ import { balans } from './balans';
 import { ageOf, alive, count, livet, living, log, stat } from './folk';
 import { delade } from './berattelser';
 import { kronika } from './historik';
-import { clamp, rnd } from './slump';
+import { clamp, hash3, rnd } from './slump';
 import { kalender, yearNo } from './tid';
 import { DAY, HOUR, Person, Rel, State } from './typer';
 import { allaBarn } from './uppvaxt';
@@ -80,12 +80,8 @@ export type MotgangId = keyof typeof MOTGANGAR;
 const DEF: Record<MotgangId, MotgangDef> = MOTGANGAR;
 const IDS = Object.keys(DEF) as MotgangId[];
 
-// ett tal mellan 0 och 1 ur byns frö och tidsålderns början (samma sätt som vädret i vader.ts)
-function hash(a: number, b: number, c: number) {
-  let h = Math.imul(a ^ 0x9e3779b9, 0x85ebca6b) ^ Math.imul(b + 0x632be5ab, 0xc2b2ae35) ^ Math.imul(c + 1, 0x27d4eb2f);
-  h ^= h >>> 15; h = Math.imul(h, 0x2c1b3c6d); h ^= h >>> 12; h = Math.imul(h, 0x297a2d39); h ^= h >>> 15;
-  return (h >>> 0) / 4294967296;
-}
+// ett tal mellan 0 och 1 ur byns frö och tidsålderns början (som vädret, hash3 i slump.ts)
+const hash = hash3;
 const timNr = (start: number) => Math.round(start / HOUR);
 // ett tal mellan 0 och 1 för motgången som börjar vid start (salt skiljer talen åt): hur den blir (torka.ts, flod.ts)
 export const motgangTal = (s: State, start: number, salt: number) => hash(s.seed, timNr(start), salt);
@@ -176,18 +172,20 @@ export function stepMotgang(s: State) {
     if (s.now >= nasta.start - dygn * DAY) { m.varslad = nasta.start; const p = aldst(s); if (p) anar(s, p, nasta.id, nasta.start, MOTGANG.varselSaker, 'är en av de äldsta i byn'); }
   }
   const nu = motgangNu(s);
+  // den som pågick är slut, också när nästa börjar direkt efter (en torka och sedan en översvämning)
+  if (m.pagar && m.pagar.t !== nu?.start) {
+    const dog = deadCount(s) - m.pagar.dog, d = DEF[m.pagar.k];
+    log(s, `${d.slutar}${dog ? ` ${dog} dog under den.` : ' Alla klarade sig.'}`, 'world');
+    kronika(s, `${d.namn} tog slut${dog ? `. ${dog} dog under den` : ' och alla klarade sig'}.`);
+    for (const p of living(s)) if (p.born < m.pagar.t) livet(s, p, 'mg:' + m.pagar.k); // de som klarade den (steg 3.9.8)
+    delete m.pagar;
+  }
   if (nu && m.pagar?.t !== nu.start) {
     m.pagar = { k: nu.id, t: nu.start, dog: deadCount(s) };
     count(s, 'motgang_' + nu.id);
     log(s, DEF[nu.id].borjar, 'world');
     kronika(s, `År ${yearNo(s)}: ${DEF[nu.id].borjar.split('.')[0]}.`);
     allaBarn(s, nu.id);
-  } else if (!nu && m.pagar) {
-    const dog = deadCount(s) - m.pagar.dog, d = DEF[m.pagar.k];
-    log(s, `${d.slutar}${dog ? ` ${dog} dog under den.` : ' Alla klarade sig.'}`, 'world');
-    kronika(s, `${d.namn} tog slut${dog ? `. ${dog} dog under den` : ' och alla klarade sig'}.`);
-    for (const p of living(s)) if (p.born < m.pagar.t) livet(s, p, 'mg:' + m.pagar.k); // de som klarade den (steg 3.9.8)
-    delete m.pagar;
   }
   for (const p of s.people) if (p.varsel && (!alive(p) || p.varsel.t < s.now - DAY * 7)) delete p.varsel;
 }

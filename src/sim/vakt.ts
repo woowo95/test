@@ -5,6 +5,7 @@ import { tingOf } from './agande';
 import { balans } from './balans';
 import { freeNear } from './byggnad';
 import { BYN } from './egendom';
+import { ACTS } from './handlingar';
 import { getMap, eldPlats } from './karta';
 import { rnd } from './slump';
 import { MANNISKOVAPEN, VAPEN } from './strid';
@@ -47,7 +48,7 @@ export function vaktSteg(s: State, p: Person, tk: Task) {
   if (s.now < tk.stopp) return;
   tk.stopp = undefined;
   if (!tk.vidEld && (p.warm < VAKT.fryser || ++tk.varv! % VAKT.eldVar === 0)) {
-    const e = eldPlats(s), v = rnd(s, 'vakt', p) * Math.PI * 2, at = freeNear(s, e.x + 0.5 + Math.cos(v) * 2.6, e.y + 0.5 + Math.sin(v) * 2.6);
+    const e = eldPlats(s), v = rnd(s, 'vakt', p) * Math.PI * 2, at = freeNear(s, e.x + 0.5 + Math.cos(v) * ACTS.vakt.radie!, e.y + 0.5 + Math.sin(v) * ACTS.vakt.radie!); // som första platsen (spotFor)
     tk.vidEld = true; tk.tx = at.x; tk.ty = at.y;
   } else {
     tk.vidEld = false; tk.runda = (tk.runda + 1) % VAKT.punkter; tk.varv ??= 0;

@@ -9,7 +9,8 @@ import { TORST } from './torst';
 // Några nyckeltal sparas en gång i timmen (en timme är ca 15 dagar i spelet). Efter en vecka (en tidsålder) slås
 // timmarna ihop till ett värde per dygn (ett år i spelet), så att historiken räcker till byns början utan att växa
 // mycket. Viktiga händelser sparas för alltid i krönikan. Historiken sparas i egna delar, en per vecka (serializeParts
-// i steg.ts), och läses inte av simuleringen: graferna (steg 5.3.1) läser den.
+// i steg.ts). Byn beror aldrig på den (scenariot historik): simuleringen läser bara krönikans längd, som väljer textens
+// variant i kronikaBer (berattelser.ts); graferna (steg 5.3.1) läser resten.
 // hur: 'snitt' = medelvärdet över dygnet när timmarna slås ihop, 'sist' = det sista värdet (det som räknas upp)
 const HISTORIK_TAL: { id: string; namn: string; hur: 'snitt' | 'sist'; varde: (s: State) => number }[] = [
   { id: 'folk', namn: 'Invånare', hur: 'snitt', varde: s => living(s).length },
@@ -32,7 +33,14 @@ const histOf = (s: State) => (s.hist ??= ny());
 
 // en viktig händelse i krönikan: en kort rad som sparas för alltid
 // slag: vad raden handlar om (mallens id i BERATTELSER, steg 3.9.3), så att den kan hittas utan att läsa texten
-export function kronika(s: State, text: string, slag?: string) { histOf(s).kronika.push(slag ? [Math.round(s.now), text, slag] : [Math.round(s.now), text]); }
+// Raden läggs i tidsordning: i ett steg räknar var och en sin egen tid (taskStep i steg.ts), så den som skrivs sist kan ha
+// hänt lite tidigare. Då blir krönikan likadan när delarna läses in igen (joinHist sorterar på tiden)
+export function kronika(s: State, text: string, slag?: string) {
+  const k = histOf(s).kronika, t = Math.round(s.now);
+  let i = k.length;
+  while (i > 0 && k[i - 1][0] > t) i--;
+  k.splice(i, 0, slag ? [t, text, slag] : [t, text]);
+}
 
 // varje timme: en rad med nyckeltalen, och timmar äldre än en vecka slås ihop till ett värde per dygn
 export function historikSteg(s: State) {

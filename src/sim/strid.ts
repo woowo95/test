@@ -38,7 +38,7 @@ import { DJUR } from './redskap';
 import { KLAD_SLAG, SAKER, sakNamn } from './saker';
 import { kladSkyddStrid, kladTung } from './klader';
 import { clamp, rnd } from './slump';
-import { ALDER, ageOf, byId, count, getRel, gjort, log, ovning, stat, think } from './folk';
+import { ALDER, ageOf, byId, count, getRel, gjort, log, ovning, relKey, stat, think } from './folk';
 import { minnsRel } from './relationer';
 import { ledareOf } from './styre';
 import { blodtorst } from './humor';
@@ -46,7 +46,7 @@ import { die } from './liv';
 import { setRanStrid } from './behov';
 import { handelse, larma, smaka, smakAv } from './rykten';
 import { avbryt } from './lager';
-import { HOUR, SEC, T } from './typer';
+import { GRANNAR4, HOUR, SEC, T } from './typer';
 import { harBalte, paSig, paSigVikt } from './utrustning';
 import { capacity } from './lager';
 import { snoPaMarken, vaderNu } from './vader';
@@ -278,7 +278,7 @@ export interface Kampe {
 // en rad i loggen: tiden (sekunder), vem (a) och mot vem (b), del, skada och grad, och det kläderna tog
 export interface StridRad { t: number; h: Handelse; a?: number; b?: number; d?: Kroppsdel; k?: SkadaTyp; g?: number; v?: Vapen; kl?: string; kast?: 1 }
 export interface Strid {
-  avsikt: Avsikt; t: number; w: number; h: number; r: number; fro: number; vind: number; dimma: number; // vind = blåsten 0–1 och dimma = dimman 0–1 (vädret)
+  avsikt: Avsikt; t: number; w: number; h: number; r: number; vind: number; dimma: number; // vind = blåsten 0–1 och dimma = dimman 0–1 (vädret)
   halt: number; marken: { v: Vapen; x: number; y: number; av: number }[]; // halkan 0–1 och vapnen som tappats (steg 3.7.8)
   hinder?: Hinder[]; // väggarna på platsen (steg 3.7.20)
   kampar: Kampe[]; logg: StridRad[];
@@ -302,7 +302,7 @@ export function nyStrid(u: Uppstallning, fro: number): Strid {
     ...k, st: { ...k.st }, klader: [...k.klader], skador: [], blod: 1, ork: 1,
     modNu: clamp(STRID.modStart + (k.st.mod / 20) * STRID.modMod + (k.st.torst ?? 0) * STRID.torst, 0.05, 1), lage: 'strid', vant: 0, slag: 0, traffar: 0, gjort: 0,
   }));
-  const st: Strid = { avsikt: u.avsikt, t: 0, w: u.w, h: u.h, r: fro | 0, fro, vind: u.vind ?? 0, dimma: u.dimma ?? 0, halt: u.halt ?? 0, marken: [], kampar, logg: [{ t: 0, h: 'borjar' }] };
+  const st: Strid = { avsikt: u.avsikt, t: 0, w: u.w, h: u.h, r: fro | 0, vind: u.vind ?? 0, dimma: u.dimma ?? 0, halt: u.halt ?? 0, marken: [], kampar, logg: [{ t: 0, h: 'borjar' }] };
   if (u.hinder?.length) st.hinder = u.hinder.map(o => ({ ...o }));
   if (!AVS[u.avsikt].vapen) for (const k of kampar) if (!k.djur) { k.vapen = 'hand'; k.reserv = undefined; }
   for (const k of kampar) { const kv = VAP[k.vapen].kast; if (kv) k.skott = kv.skott; }
@@ -384,7 +384,7 @@ function vagRunt(st: Strid, k: Kampe, mx: number, my: number, fi: Kampe[]): [num
     prev[fran] = fran;
     for (let i = 0; i < ko.length && prev[till] < 0; i++) {
       const c = ko[i], cx = c % W, cy = Math.floor(c / W);
-      for (const [ex, ey] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      for (const [ex, ey] of GRANNAR4) {
         const nx = cx + ex, ny = cy + ey, n = ny * W + nx;
         if (nx < 0 || ny < 0 || nx >= W || ny >= H || prev[n] >= 0) continue;
         const [px, py] = mitt(n);
@@ -517,7 +517,7 @@ function omkull(st: Strid, k: Kampe, av?: Kampe) {
 }
 // vapnet hamnar på marken (händerna och betten tappar man inte)
 function tappa(st: Strid, k: Kampe) {
-  if (k.vapen === 'hand' || k.vapen === 'bett') return;
+  if (k.djur || k.vapen === 'hand') return; // ett djur tappar aldrig sina tänder eller käftar
   st.marken.push({ v: k.vapen, x: clamp(k.x + slump(st) - 0.5, 0.3, st.w - 0.3), y: clamp(k.y + slump(st) - 0.5, 0.3, st.h - 0.3), av: k.id });
   st.logg.push({ t: st.t, h: 'tappar', a: k.id, v: k.vapen });
   k.vapen = 'hand'; k.skott = undefined; k.haller = undefined;
@@ -567,6 +567,7 @@ function avstandSteg(st: Strid, k: Kampe, m: Kampe, d: number, dt: number): bool
   const kv = VAP[k.vapen].kast;
   if (!kv || !k.skott || (kv.reserv && !k.reserv)) return false;
   if (kv.reserv) { // spjutet: kastas när målet är på avstånd, annars sticker man med det
+    // den som väntar på fritt läge går ändå fram och sticker med spjutet, och kastar om läget blir fritt (det är avsiktligt)
     if (d < STRID.kastMin || d > kv.rack || k.vant > 0) return false;
     return kastaMot(st, k, m);
   }
@@ -674,7 +675,6 @@ export function stridTillSlut(st: Strid) { while (!st.slut) stridSteg(st); retur
 
 // ---------- texten ----------
 const GRAD = (g: number) => g >= 0.75 ? 'mycket svårt' : g >= 0.45 ? 'svårt' : g >= 0.2 ? 'måttligt' : 'lätt';
-export const gradOrd = GRAD;
 export const delNamn = (d: Kroppsdel) => KROPPSDELAR[d].i;
 const namnOf = (st: Strid, id?: number) => st.kampar.find(k => k.id === id)?.namn ?? '?';
 // hela meningen för en rad i loggen (syns när man trycker på raden eller håller musen över den)
@@ -767,7 +767,10 @@ export function korManga(u: Uppstallning, fro: number, n: number): ManyResultat 
 // (steg 3.7.7): ett litet vapen i bältet, om hen har ett bälte på sig och orkar bära det; den som en gång blev ifattsprungen
 // utan reserv tar alltid med en
 export function personKampe(s: State, p: Person, id: number, sida: 0 | 1, x: number, y: number): Uppstallning['kampar'][number] {
-  const bar = [...new Set([...paSig(s, p), ...ownedBy(s, p), ...tingOf(s).filter(t => t.hos === p.id)].map(t => t.k))]; // det hen bär, äger och har i handen (i arenan har man sina saker med sig)
+  // det hen bär, äger och har i handen (man tar med sina saker), men inte det hen äger som någon annan har på sig, i handen
+  // eller i bördan (samma regel som taVapen i vakt.ts)
+  const egen = (t: { hos?: number; lass?: number; bar?: number }) => (t.hos === undefined || t.hos === p.id) && (t.lass === undefined || t.lass === p.id) && (t.bar === undefined || t.bar === p.id);
+  const bar = [...new Set([...paSig(s, p), ...ownedBy(s, p).filter(egen), ...tingOf(s).filter(t => t.hos === p.id)].map(t => t.k))];
   const val = (v: Vapen) => VAP[v].skada * (1 + STRID.tyckeVal * smakAv(p, 'v:' + v)); // tycket drar i valet (steg 3.7.10)
   const vapen = MANNISKOVAPEN.filter(v => bar.includes(v)).sort((a, b) => val(b) - val(a))[0] ?? 'hand';
   const res = (MANNISKOVAPEN.filter(v => v !== vapen && VAP[v].liten && bar.includes(v)) as Vapen[]).sort((a, b) => VAP[a].takt - VAP[b].takt)[0]; // den snabbaste (kniven)
@@ -785,12 +788,13 @@ export function ledarPlats(s: State, p: Person): 'fram' | 'bak' {
   return v > 0 ? 'fram' : 'bak';
 }
 // ledarens följe: de på samma sida som står ledaren närmast skyddar hen (partner, bästa vän, eller tycker om hen minst skyddVan)
+// (läser bara: arenan i gränssnittet ställer upp följet, så en relation som saknas skapas inte här)
 export function foljet(s: State, kampar: Uppstallning['kampar']) {
   const led = kampar.find(k => k.ledare && k.pid !== undefined), l = led && byId(s, led.pid!);
   if (!led || !l) return;
   for (const k of kampar) {
     const p = k.pid !== undefined && k !== led && k.sida === led.sida ? byId(s, k.pid) : undefined;
-    if (p && (p.partner === l.id || p.bast === l.id || getRel(s, p, l).op >= STRID.skyddVan)) k.skyddar = led.id;
+    if (p && (p.partner === l.id || p.bast === l.id || (s.rels[relKey(p.id, l.id)]?.op ?? 0) >= STRID.skyddVan)) k.skyddar = led.id;
   }
 }
 // en kämpe ur ett djur i djurregistret (DJUR.strid)
@@ -823,6 +827,12 @@ export function kastat(s: State, p: Person, v: string, d: number, x: number, y: 
   return wearTool(s, p, v, r() * KAST.slit) ? 'trasig' : undefined;
 }
 
+// det kämpen k kastade i striden slits och kan ha försvunnit (steg 3.7.3). Varje kast har en rad med kast, också den som
+// blev en vådaträff (vada-raden före är bara för berättelsen)
+export function slitKastat(s: State, p: Person, st: Strid, k: Kampe) {
+  for (const r of st.logg) if (r.a === k.id && r.v && r.kast) kastat(s, p, r.v, VAP[r.v].kast!.rack / 2, p.x, p.y, () => rnd(s, 'strid'));
+}
+
 // ---------- striden i byn (steg 3.7.2) ----------
 // Ett gräl kan bli ett slagsmål, och barn som leker brottas ibland. Striden räknas färdigt på en gång (stridTillSlut, med
 // fröet ur byns följd 'strid'), så att den blir likadan i båda lägena; sedan står de som var med och slåss (handlingen
@@ -849,6 +859,19 @@ export function svartSkadad(k: Kampe) { return k.lage === 'nere' || k.skador.som
 // en strid som sparats i byn: när, varför, uppställningen och fröet (samma strid kan räknas om i arenan) och vem som vann
 export interface StridMinne { t: number; orsak: string; u: Uppstallning; fro: number; vinnare: 0 | 1 | -1 }
 
+// blåsten, dimman och halkan (lera och snö, steg 3.7.8) i en strid i byn just nu
+export function vadretIStriden(s: State): Pick<Uppstallning, 'vind' | 'dimma' | 'halt'> {
+  const halt = clamp(Math.max(((s.vader?.fukt ?? 0) - STRID.leraFran) / (1 - STRID.leraFran), snoPaMarken(s) * STRID.snoHalt), 0, 1);
+  return { vind: vaderNu(s).vind, dimma: vaderNu(s).dimma, halt };
+}
+
+// striden sparas så att arenan kan visa den igen; de äldsta faller bort efter SLAGSMAL.sparas
+export function sparaStrid(s: State, m: StridMinne) {
+  (s.strider ??= []).push(m);
+  if (s.strider.length > SLAGSMAL.sparas) s.strider.splice(0, s.strider.length - SLAGSMAL.sparas);
+  count(s, 'strider');
+}
+
 // en strid mellan två sidor av folk i byn. Returnerar striden (för scenarierna)
 export function stridIByn(s: State, avsikt: Avsikt, sidor: [Person[], Person[]], orsak: string): Strid {
   const lek0 = !!(AVSIKTER[avsikt] as { lek?: true }).lek;
@@ -857,17 +880,14 @@ export function stridIByn(s: State, avsikt: Avsikt, sidor: [Person[], Person[]],
   kampar.forEach((k, i) => { k.id = i + 1; });
   for (const k of kampar) if (k.ledare && !lek0) k.x += (k.ledare === 'fram' ? 1 : -1.5) * (k.sida === 0 ? 1 : -1); // ledaren först eller bakom (steg 3.7.12)
   foljet(s, kampar);
-  const halt = clamp(Math.max(((s.vader?.fukt ?? 0) - STRID.leraFran) / (1 - STRID.leraFran), snoPaMarken(s) * STRID.snoHalt), 0, 1); // lera och snö (steg 3.7.8)
-  const u: Uppstallning = { avsikt, w: W, h: H, vind: vaderNu(s).vind, dimma: vaderNu(s).dimma, halt, kampar };
+  const u: Uppstallning = { avsikt, w: W, h: H, ...vadretIStriden(s), kampar };
   const fro = Math.floor(rnd(s, 'strid') * 2147483647);
   const st = stridTillSlut(nyStrid(u, fro));
   const lek = !!(AVSIKTER[avsikt] as { lek?: true }).lek, vinnare = st.slut!.vinnare;
-  (s.strider ??= []).push({ t: s.now, orsak, u, fro, vinnare });
-  if (s.strider.length > SLAGSMAL.sparas) s.strider.splice(0, s.strider.length - SLAGSMAL.sparas);
-  count(s, 'strider'); count(s, 'strid_' + avsikt);
+  sparaStrid(s, { t: s.now, orsak, u, fro, vinnare }); count(s, 'strid_' + avsikt);
   const folk = st.kampar.map(k => ({ k, p: sidor[k.sida][st.kampar.filter(o => o.sida === k.sida).indexOf(k)] }));
   const namn = (sd: 0 | 1) => sidor[sd].map(p => p.name).join(' och ');
-  if (!lek) larma(s, sidor[0][0].x, sidor[0][0].y, 'slagsmål', kampar.length, [...sidor[0], ...sidor[1]].filter(p => p.task?.act !== 'sova')); // de som slåss ropar (steg 3.7.11)
+  if (!lek) larma(s, 'slagsmål', kampar.length, [...sidor[0], ...sidor[1]].filter(p => p.task?.act !== 'sova')); // de som slåss ropar (steg 3.7.11)
   if (!lek) log(s, `${namn(0)} och ${namn(1)} slogs (${orsak}). ${vinnare === -1 ? 'Ingen vann.' : `${namn(vinnare as 0 | 1)} vann.`}`, 'rel', folk.map(f => f.p.id));
   for (const { k, p } of folk) {
     const mot = sidor[1 - k.sida];
@@ -880,8 +900,7 @@ export function stridIByn(s: State, avsikt: Avsikt, sidor: [Person[], Person[]],
       if (!dod && skada(s, p, w.d, w.k, w.g, 'drap', `i ett ${lek ? 'lekslagsmål' : 'slagsmål'} med ${mot.map(q => q.name).join(' och ')}`)) dod = true;
       if (w.fast && p.skador?.length) p.skador[p.skador.length - 1].fast = 1; // spjutet sitter kvar till vården (steg 3.7.7)
     }
-    // det hen kastade slits och kan ha försvunnit (steg 3.7.3)
-    for (const r of st.logg) if (r.a === k.id && r.v && (r.kast || r.h === 'vada')) kastat(s, p, r.v, VAP[r.v].kast!.rack / 2, p.x, p.y, () => rnd(s, 'strid'));
+    slitKastat(s, p, st, k);
     if (k.kryper) blodas(s, p.x, p.y, 'kryp', k.kryper * STRID.krypBlod); // släpspåret efter den som kröp undan (steg 3.7.19)
     if (dod) { count(s, 'drap'); die(s, p, 'drap'); continue; }
     p.blod = Math.min(p.blod ?? 1, Math.max(HALSA.blodDod, k.blod));

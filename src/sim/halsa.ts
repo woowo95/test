@@ -110,9 +110,9 @@ export const SKADOR = {
 } satisfies Record<string, SkadaDef>;
 export type SkadaTyp = keyof typeof SKADOR;
 const SKADA: Record<SkadaTyp, SkadaDef> = SKADOR;
-// en skada: del, typ, grad (0–1, sjunker när den läker), blödningen kvar (1 = som nyss, 0 = levrad) och när den hände.
+// en skada: del, typ, grad (0–1, sjunker när den läker) och blödningen kvar (1 = som nyss, 0 = levrad).
 // f = ett förband av mossa ligger på, inf = infektionen (0–1; vid 1 dör man), ren = rengjord till den tiden (steg 2.5.2)
-export interface Skada { d: Kroppsdel; k: SkadaTyp; g: number; b: number; t: number; f?: 1; inf?: number; ren?: number; fast?: 1 } // fast = ett spjut sitter kvar i såret (steg 3.7.7)
+export interface Skada { d: Kroppsdel; k: SkadaTyp; g: number; b: number; f?: 1; inf?: number; ren?: number; fast?: 1 } // fast = ett spjut sitter kvar i såret (steg 3.7.7)
 const oppet = (w: Skada) => SKADA[w.k].blod > 0; // ett öppet sår (inte ett benbrott)
 
 // ---------- olyckorna (registret) ----------
@@ -147,7 +147,7 @@ export const rorlighetSkador = (p: Person) => forlust(p, 'rorlighet');
 export const rorlighet = (p: Person) => forlust(p, 'rorlighet') * yrselFaktor(p);
 // den som har ett ben eller en fot som är för skadad kan inte gå, utan kravlar (steg 2.5.2)
 export const GADELAR: readonly Kroppsdel[] = [...BEN, ...FOTTER]; // delarna man går med
-export const kanGa = (p: Person) => !p.skador?.length || ![...BEN, ...FOTTER].some(d => delFel(p, d) >= HALSA.krypFel);
+export const kanGa = (p: Person) => !p.skador?.length || !GADELAR.some(d => delFel(p, d) >= HALSA.krypFel);
 export const hemma = (s: State, p: Person) => campDist(s, Math.floor(p.x), Math.floor(p.y)) <= HALSA.hemma;
 const infektion = (p: Person) => { let v = 0; for (const w of p.skador ?? []) v = Math.max(v, w.inf ?? 0); return v; };
 // arbetet gånger detta (workRate i ekonomi.ts): skadorna och styrkan, som sjunker av brist på protein och mineraler (steg 2.6.2)
@@ -212,12 +212,11 @@ export const FORMAGOR = {
   blod: { namn: 'Blod', tecken: '🩸', varde: p => p.blod ?? 1, delar: p => blodning(p) > 0 ? [{ namn: 'Blöder i timmen', v: -blodning(p) }] : [], gor: `Hälsan. Under ${Math.round(HALSA.blodDod * 100)} % förblöder man. Blodet kommer tillbaka på ${HALSA.blodTillbaka} timmar för den som inte blöder och är mätt och otörstig.` },
   smarta: { namn: 'Smärta', tecken: '😣', ont: true, varde: smarta, delar: p => (p.skador ?? []).map(w => ({ namn: `${SKADA[w.k].namn} i ${DEL[w.d].i}`, v: -(SKADA[w.k].smarta * w.g + HALSA.infSmarta * (w.inf ?? 0)) })), gor: 'Hälsan och humöret. Den som har mycket ont vilar hellre än arbetar.' },
 } satisfies Record<string, FormagaDef>;
-export type Formaga = keyof typeof FORMAGOR;
 
 // ---------- varje steg ----------
 // en ny skada: loggen, byns räknare, rädsla för platsen och att arbetet avbryts. Returnerar dödsorsaken om den dödar direkt
 export function skada(s: State, p: Person, d: Kroppsdel, k: SkadaTyp, g: number, dod: Dodsorsak, nar: string): Dodsorsak | undefined {
-  (p.skador ??= []).push({ d, k, g, b: SKADA[k].blod > 0 ? 1 : 0, t: s.now });
+  (p.skador ??= []).push({ d, k, g, b: SKADA[k].blod > 0 ? 1 : 0 });
   if (SKADA[k].blod > 0) blodas(s, p.x, p.y, 'skada', g * SKADA[k].blod);
   count(s, 'skador'); count(s, 'skada ' + SKADA[k].namn.toLowerCase());
   if (g >= UPPV.skadaGrad) livet(s, p, 'skadad', true); // det hen överlevt (steg 3.9.8)

@@ -27,7 +27,7 @@ const vakter = res.flatMap(r => r.vakter.map(v => `by ${r.seed}: ${v}`));
 if (process.argv.includes('--spara')) {
   // en by där något omöjligt hänt blir inte facit (och npm run facit stannar då före samma-kollen)
   if (vakter.length) console.log('Facit sparas inte, eftersom vakterna larmar (se nedan).');
-  else { writeFileSync(FACIT, JSON.stringify(nu, null, 1) + '\n'); console.log('Facit sparat.'); }
+  else { writeFileSync(FACIT, JSON.stringify(nu, (k, v) => k === 'ms' ? undefined : v, 1) + '\n'); console.log('Facit sparat.'); } // körtiden jämförs aldrig: facit ändras bara när spelet gör det
 } else if (!existsSync(FACIT)) {
   console.log('Inget facit ännu. Spara med: npm run facit');
 } else {

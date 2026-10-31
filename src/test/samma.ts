@@ -1,5 +1,6 @@
 // npm run samma: utvecklas byarna exakt som förut? För ombyggnader som inte ska ändra något i spelet.
-// Tre byar: två i 30 dygn och en i 2 dygn. Hela byns tillstånd jämförs med test/samma.json.
+// Fem byar: tre i 30 dygn, en i 14 och en i 2. By 139 får tornado, översvämning och hård vinter och by 121 torka inom
+// tiden, så att alla motgångar (MOTGANGAR) körs (kodgenomgången 3.10.25). Hela byns tillstånd jämförs med test/samma.json.
 // npm run samma -- --spara sparar dagens utfall när en ändring i spelet är avsiktlig (görs också av npm run facit), men inte en krasch.
 // Hashen gäller sparfilens innehåll med nycklarna sorterade, så den beror inte på i vilken ordning fälten lades till i byn
 // (serialize får alltså anropas mitt i en körning som hashas).
@@ -10,7 +11,7 @@ import { BEAT, createState, serialize, step } from '../sim';
 import { START } from './kor';
 import { kanonisk, korSkript, sek } from './pool';
 
-const BYAR: [seed: number, dygn: number][] = [[42, 30], [1, 30], [3, 2]];
+const BYAR: [seed: number, dygn: number][] = [[42, 30], [1, 30], [3, 2], [139, 30], [121, 14]];
 const FIL = fileURLToPath(new URL('../../test/samma.json', import.meta.url));
 const namn = ([seed, dygn]: (typeof BYAR)[number]) => `by ${seed}, ${dygn} dygn`;
 

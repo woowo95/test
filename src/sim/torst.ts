@@ -16,7 +16,7 @@ import { stationRutor } from './stationer';
 import { groundOf } from './mark';
 import { clamp, rnd } from './slump';
 import { halMin, halVal, islagt, naVattnet } from './is';
-import { Act, H, HOUR, HOUR_S, Person, State, T, Task, W, inMap } from './typer';
+import { Act, GRANNAR4, H, HOUR, HOUR_S, Person, State, T, Task, W, inMap } from './typer';
 import { balans } from './balans';
 import { hemma, kanGa } from './halsa';
 import { freeTools, nTools } from './agande';
@@ -82,7 +82,7 @@ const nabar = perKarta(seed => {
   ok[st[0]] = 1;
   while (st.length) {
     const j = st.pop()!, x = j % W, y = (j - x) / W;
-    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+    for (const [dx, dy] of GRANNAR4) {
       const xx = x + dx, yy = y + dy, k = yy * W + xx;
       if (inMap(xx, yy) && !ok[k] && t[k] !== T.Vatten) { ok[k] = 1; st.push(k); }
     }
@@ -93,7 +93,6 @@ const nabar = perKarta(seed => {
 // förvaring. Räknas om när något byggs (s.byggV). Ett hus vid vattnet kan stänga in en bit strand som ingen når; den som
 // valde att dricka där kom aldrig fram, valde samma plats igen och törstade ihjäl (steg 2.12.6). 0 = går inte att stå på
 const omraden = new WeakMap<State, { key: string; id: Int32Array }>();
-const D4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 function omradeOf(s: State) {
   stationRutor(s); gridOf(s); // väggarna och förvaringen i marken (groundOf) är aktuella
   const key = `${s.byggV ?? 0}:${s.stationer?.length ?? 0}`;
@@ -107,7 +106,7 @@ function omradeOf(s: State) {
     const st = [i0];
     while (st.length) {
       const j = st.pop()!, x = j % W, y = (j - x) / W;
-      for (const [dx, dy] of D4) { const xx = x + dx, yy = y + dy, k = yy * W + xx; if (inMap(xx, yy) && !id[k] && !stopp(k)) { id[k] = n; st.push(k); } }
+      for (const [dx, dy] of GRANNAR4) { const xx = x + dx, yy = y + dy, k = yy * W + xx; if (inMap(xx, yy) && !id[k] && !stopp(k)) { id[k] = n; st.push(k); } }
     }
   }
   omraden.set(s, { key, id });
@@ -124,7 +123,7 @@ export function drickPlats(s: State, p: Person) {
   const sh = strandNu(s), nb = nabar(s.seed), m = getMap(s.seed).tiles, px = Math.floor(p.x), py = Math.floor(p.y), tro = new Map<number, number>();
   // området hen står i (eller bredvid, om hen står i en dörr eller vid förvaringen); utan något går hen rakt över som förut
   const id = omradeOf(s), mitt = new Set<number>(), pi = py * W + px;
-  if (inMap(px, py)) { if (id[pi]) mitt.add(id[pi]); else for (const [dx, dy] of D4) if (inMap(px + dx, py + dy) && id[pi + dy * W + dx]) mitt.add(id[pi + dy * W + dx]); }
+  if (inMap(px, py)) { if (id[pi]) mitt.add(id[pi]); else for (const [dx, dy] of GRANNAR4) if (inMap(px + dx, py + dy) && id[pi + dy * W + dx]) mitt.add(id[pi + dy * W + dx]); }
   let best: { x: number; y: number } | undefined, bs = Infinity;
   const prova = (x: number, y: number, nara: boolean) => {
     const i = y * W + x;

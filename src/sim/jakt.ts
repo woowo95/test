@@ -1,7 +1,7 @@
 import { balans } from './balans';
 import { blodas } from './blod';
 import { blocked, freeNear } from './byggnad';
-import { KANINER, dodaDjur, djurOf, dragOf, halsaOf, satDjurHalsa } from './djur';
+import { KANINER, KANIN_UT, dodaDjur, djurOf, dragOf, halsaOf, satDjurHalsa } from './djur';
 import { count, forstaGang, gjort, log, ovning, stat } from './folk';
 import { skada } from './halsa';
 import { groundOf, markslag, tileOf } from './mark';
@@ -58,18 +58,24 @@ const TERR = { hog: JAKT.hog, ung: JAKT.ung, skog: JAKT.skog, kort: 1, bar: JAKT
 
 // var jägaren letar när hen inte ser några kaniner (steg 3.10.3): den ruta letaMin–letaMax rutor bort där viltkartan (som
 // kaningrupperna väljer plats efter, fynd.ts) är högst, med lite slump, inte i vattnet, i husen eller för långt från byn.
-// Varannan ruta prövas. Ingen ruta: hen står kvar och spanar
+// Varannan ruta prövas (ringen räknas en gång). Ingen ruta: hen står kvar och spanar
+const LETA_RING: { dx: number; dy: number }[] = [];
+for (let dy = -JAKT.letaMax; dy <= JAKT.letaMax; dy += 2) for (let dx = -JAKT.letaMax; dx <= JAKT.letaMax; dx += 2) {
+  const d = Math.hypot(dx, dy);
+  if (d >= JAKT.letaMin && d <= JAKT.letaMax) LETA_RING.push({ dx, dy });
+}
 function letaPlats(s: State, p: Person) {
   const v = viltStart(s, s.now, motgangNu(s)?.id === 'torka'), tiles = getMap(s.seed).tiles, salt = Math.floor(rnd(s, 'arbete', p) * 1e9);
-  const x0 = Math.floor(p.x), y0 = Math.floor(p.y), R = JAKT.letaMax;
+  const x0 = Math.floor(p.x), y0 = Math.floor(p.y);
   let b: { x: number; y: number } | undefined, bv = 0;
-  for (let dy = -R; dy <= R; dy += 2) for (let dx = -R; dx <= R; dx += 2) {
-    const x = x0 + dx, y = y0 + dy, d = Math.hypot(dx, dy);
-    if (d < JAKT.letaMin || d > R || !inMap(x, y)) continue;
+  for (const { dx, dy } of LETA_RING) {
+    const x = x0 + dx, y = y0 + dy;
+    if (!inMap(x, y)) continue;
     const i = y * W + x;
-    if (!(v[i] > bv) || tiles[i] === T.Vatten || campDist(s, x, y) > JAKT.letaHem || blocked(s, x + 0.5, y + 0.5)) continue;
+    if (!(v[i] > bv)) continue;
+    // poängen först (den är billig och avgör de flesta rutor), sedan de dyra villkoren; alla är rena, så valet blir detsamma
     const sc = v[i] * (1 - JAKT.letaSlump * hash(salt, x, y));
-    if (sc > bv) { bv = sc; b = { x: x + 0.5, y: y + 0.5 }; }
+    if (sc > bv && tiles[i] !== T.Vatten && !(campDist(s, x, y) > JAKT.letaHem) && !blocked(s, x + 0.5, y + 0.5)) { bv = sc; b = { x: x + 0.5, y: y + 0.5 }; }
   }
   return b;
 }
@@ -79,7 +85,8 @@ function letaPlats(s: State, p: Person) {
 // gick mot en kanin längre bort, eller −1 om ingen kanin finns inom räckhåll
 export function jaktForsok(s: State, p: Person, tk: Task, t = s.now): number {
   let m: ReturnType<typeof djurOf>[number] | undefined, md = KANINER.narvR + KANINER.hopp * KANINER.hoppMax;
-  const dj = djurOf(s);
+  // bara de grupper som kan ha en kanin inom räckhåll räknas fram (kodgenomgången 3.10.25: de andra räknades vid varje arbetsbit)
+  const dj = djurOf(s, s.now, undefined, (gx, gy) => Math.hypot(gx - tk.tx, gy - tk.ty) < md + KANIN_UT || Math.hypot(gx - p.x, gy - p.y) < JAKT.letaR + KANIN_UT);
   for (const d of dj) { const dd = Math.hypot(d.x - tk.tx, d.y - tk.ty); if (dd < md) { md = dd; m = d; } }
   if (!m) { // ingen kanin nära: jägaren går i vanlig fart till den närmaste gruppen hen ser ...
     let n: ReturnType<typeof djurOf>[number] | undefined, nd: number = JAKT.letaR;

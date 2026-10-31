@@ -2,6 +2,7 @@ import { upplev } from './uppvaxt';
 import { ALDER, REL, ageOf, count, getRel, isParent, living, log, relKey, think } from './folk';
 import { DAY, Person, Rel, SKILLS, Skill, State } from './typer';
 import { balans } from './balans';
+import { ACTS } from './handlingar';
 
 // ---------- balanstal (regel 8) ----------
 // Relationstyperna (steg 3.1.1, "Relationstyper" i designdokumentet). Relationen (op) går från -100 till 100; vän, nära vän,
@@ -69,17 +70,17 @@ export const arRivaler = (a: Person, b: Person) => !!a.rivaler?.includes(b.id);
 export const arMentor = (m: Person, ung: Person) => ung.mentor === m.id;
 // gränsen där ett par går isär: ett gift par håller mer
 export const skiljGrans = (r: Rel) => r.gift !== undefined ? RELT.skiljGift : REL.gral;
-// den äldre lärde den yngre något i ett samtal (minne.ts och teknik.ts): räknas mot mentorskapet
 // det relationen minns (steg 3.9.6), som berättas när man trycker på relationen i personrutan (relationText i berattelser.ts)
 // bara en relation som finns: att skapa en ny drar ur slumpen (getRel) och skulle ändra byns utveckling
 export function minnsRel(s: State, a: Person, b: Person, k: 'gral' | 'slag' | 'lek' | 'sida') { const r = s.rels[relKey(a.id, b.id)]; if (!r) return; const m = r.minns ??= {}; m[k] = (m[k] ?? 0) + 1; }
 export function minnsGava(s: State, g: Person, m: Person) { const r = s.rels[relKey(g.id, m.id)]; if (!r) return; const x = r.minns ??= {}; (x.gav ??= [0, 0])[g.id < m.id ? 0 : 1]++; }
+// den äldre lärde den yngre något i ett samtal (minne.ts och teknik.ts): räknas mot mentorskapet
 export function lartUt(s: State, a: Person, b: Person) { if (ageOf(a, s.now) > ageOf(b, s.now)) { const r = getRel(s, a, b); r.lart = (r.lart ?? 0) + 1; } }
 // hur mycket mer en handling väger för p när den bästa vännen, mentorn eller en ovän gör den just nu
 export function bredvidVikt(s: State, p: Person, act: string, ppl: Person[]) {
   let f = 1;
   for (const q of ppl) {
-    if (q === p || q.task?.act !== act) continue;
+    if (q === p || !q.task || (ACTS[q.task.act].arbete ?? q.task.act) !== act) continue; // samma arbete: också fälla och hugga är vedarbete (workStep i steg.ts)
     if (p.bast === q.id) f *= RELT.bastArbete;
     if (p.mentor === q.id) f *= RELT.mentorArbete;
     if (p.arke === q.id || (s.rels[relKey(p.id, q.id)]?.op ?? 0) < REL.ovan) f *= RELT.ovanArbete;

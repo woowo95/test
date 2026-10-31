@@ -22,6 +22,11 @@ SCENARIER.historik = {
     const storst = Math.max(...hd.map(d => new TextEncoder().encode(delar[d]).length)); // byte, som molndokumentet räknar
     const ater = JSON.parse(joinParts(Object.values(delar))).hist;
     const utan = JSON.parse(serialize(s)); delete utan.hist;
+    // krönikans text beror inte på historiken: samma händelse ger samma text fast krönikan är kortare (kronikaBer)
+    const ka = cloneState(s), kb = cloneState(s), p0 = living(s)[0];
+    kb.hist!.kronika = kb.hist!.kronika.slice(0, 1);
+    for (const k of [ka, kb]) for (let n = 0; n < 8; n++) SIM.kronikaBer(k, 'k_forstaEld', p0.id + n, SIM.personFalt(p0));
+    const sammaText = isDeepStrictEqual(ka.hist!.kronika.slice(-8).map(r => r[1]), kb.hist!.kronika.slice(-8).map(r => r[1]));
     return [
       [`en rad i timmen den senaste veckan (${h.tim.length} timmar)`, timOk],
       [`äldre timmar är ett värde per dygn, utan luckor och fram till timmarna (${h.dygn.length} dygn)`, h.dygn.length >= 2 && ettPerDygn && fortsatt],
@@ -31,6 +36,7 @@ SCENARIER.historik = {
       [`historiken sparas i en del per vecka (${hd.join(', ')}; största ${Math.round(storst / 1024)} KB av högst ${DOK_KB})`, hd.length === 2 && storst < DOK_KB * 1024 && !delar.byn.includes('"hist"')],
       ['delarna blir samma historik igen', isDeepStrictEqual(ater, JSON.parse(serialize(s)).hist)],
       ['historiken ändrar inget i byn', JSON.stringify(utan) === serialize(t)],
+      ['krönikans text beror inte på hur lång krönikan är', sammaText],
     ];
   },
 };

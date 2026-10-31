@@ -14,7 +14,8 @@ import { FOREST } from './vag';
 import { balans } from './balans';
 import type { SamtalDef } from './samtal';
 import { RELT, arBast, arMentor, lartUt } from './relationer';
-import { vattenSmuts } from './smuts';
+import { forSmutsigt, vattenSmuts } from './smuts';
+import { bitAt } from './byggnad';
 import { lognFaktor, skvaller } from './rykten';
 import { delaVarsel } from './motgang';
 
@@ -261,13 +262,16 @@ export function pickSpot(s: State, p: Person, k: Kind, cands: { x: number; y: nu
     if (sc > bs) { bs = sc; best = c; }
   }
   if (!best || sees(s, p, best.x, best.y, sight)) return best;
-  // väl framme letar hen upp den bästa platsen i området
+  // väl framme letar hen upp den bästa platsen i området, med samma krav som platserna hen valde bland (spotFor i val.ts):
+  // inte i ett hus och för samlandet inte där det är toa-smuts (om platsen hen valde var ren). Närmare lägret går bra: där
+  // växer inget, och nastaBuske i val.ts frågar inte heller avståndet
   const x0 = Math.max(0, best.x - MINNE.sokR), y0 = Math.max(0, best.y - MINNE.sokR);
   const tiles = vattenNu(s), shore = strandNu(s); // vattnet som det är nu (torkan, steg 3.8.2)
+  const ren = k === 'samla' && !!s.flackar?.length && !forSmutsigt(s, best.x, best.y);
   let r = best, rs = richness(s, k, best.x + 0.5, best.y + 0.5);
   for (let y = y0; y < Math.min(H, best.y + MINNE.sokR + 1); y++) for (let x = x0; x < Math.min(W, best.x + MINNE.sokR + 1); x++) {
     const i = y * W + x; // bara land, och för fiske bara stranden
-    if (tiles[i] === T.Vatten || (k === 'fiske' && !shore[i])) continue;
+    if (tiles[i] === T.Vatten || (k === 'fiske' && !shore[i]) || bitAt(s, x, y) || (ren && forSmutsigt(s, x, y))) continue;
     const v = richness(s, k, x + 0.5, y + 0.5) - Math.hypot(x - best.x, y - best.y) * MINNE.sokPris;
     if (v > rs) { rs = v; r = { x, y, d: campDist(s, x, y) }; }
   }

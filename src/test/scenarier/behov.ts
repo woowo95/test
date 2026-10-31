@@ -1,5 +1,5 @@
 // Scenarier. Behov och val: behov, ved, aktivitet och fritid.
-import { Person, createState, getRel, step, living, temperature, nyKalender, amountOf, capacity, load, isLight, T, FOOD, ageOf, getMap, HOUR, W, tileOf, stat, campCenter, KANIN, gain, takeFuel, ownsAmount, addTo, setAmount, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, DELA, BEAT, spar, isWork, ACTS, groundOf, varmeDelar, nyVarme, addTool, stepKlader, chooseTask, iSkugga, KROPP, spotFor, shoreOf, torstDelar, drickPlats, areaOf, halsaLage, describe, halsaSteg, skada, blodning, halsa, rorlighet, workRate, OLYCKOR, Act, GANG, HALSA, kanGa, kroppFaktor, hemma, mossaFynd, chopStock, skadeLista, skadeText, delSkada, FORMAGOR, smarta, handighet, NARINGAR, NARING, naringOf, naringNu, naringSjunker, mattnad, sjunker, bristGrad, bristSteg, berattaBrist, onskan, matOrdning, takeFood, vilaTim, skorbjugg, NARINGBAL, DODSORSAKER, converse, Naring, STATIONER, TEKNIK, tingOf, vaderNu } from '../../sim';
+import { Person, createState, getRel, step, living, temperature, nyKalender, amountOf, capacity, load, isLight, T, FOOD, ageOf, getMap, HOUR, W, tileOf, stat, campCenter, KANIN, gain, takeFuel, ownsAmount, addTo, setAmount, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, DELA, BEAT, spar, isWork, ACTS, groundOf, varmeDelar, nyVarme, varmeRaknas, addTool, stepKlader, chooseTask, iSkugga, KROPP, spotFor, shoreOf, torstDelar, drickPlats, areaOf, halsaLage, describe, halsaSteg, skada, blodning, halsa, rorlighet, workRate, OLYCKOR, Act, GANG, HALSA, kanGa, kroppFaktor, hemma, mossaFynd, chopStock, skadeLista, skadeText, delSkada, FORMAGOR, smarta, handighet, NARINGAR, NARING, naringOf, naringNu, naringSjunker, mattnad, sjunker, bristGrad, bristSteg, berattaBrist, onskan, matOrdning, takeFood, vilaTim, skorbjugg, NARINGBAL, DODSORSAKER, converse, Naring, STATIONER, TEKNIK, tingOf, vaderNu } from '../../sim';
 import { cloneState, stepIs, stepVader, isCm, vattenGrader, halVal, halMin, drickVal, iIstiden, ageIndex, tidyTools } from '../../sim';
 import * as SIM from '../../sim';
 import { START, STEG_DYGN, STEG_TIM } from '../kor';
@@ -242,6 +242,10 @@ SCENARIER.varm = {
     const under = Math.abs(nyVarme(0.5, v0, 1) - 0.6) < 1e-9 && nyVarme(0.95, { ...v0, eld: 1 }, 1) === 1;
     // över idealet svalnar man, aldrig under idealet
     const svalnar = nyVarme(1.5, { ...v0, eld: 0, kyla: 0, hetta: 0 }, 1) < 1.5 && nyVarme(1.05, { ...v0, eld: 0, kyla: 0, hetta: 0 }, 1) === 1;
+    // personrutan visar det som räknas (varmeRaknas): vid och över idealet blir hettan, det som kyler och att kroppen svalnar
+    // lika mycket som värmen ändras på en timme (kodgenomgången 3.10.25)
+    const fall = [sol, { ...sol, mild: 0.5, eld: 0.3 }, { ...v0, kyla: 2, eld: 0.1 }, { ...sol, hetta: 0.4 }];
+    const rutan = [1, 1.05, 1.2].every(w0 => fall.every(v => { const r = varmeRaknas(w0, v); return Math.abs(Math.max(0, w0 + v.hetta + r.netto - r.svalnar) - nyVarme(w0, v, 1)) < 1e-9; }));
     // för varm: kläderna tas av, bältet sitter kvar, och nya tas inte på i värmen
     const rock = addTool(s, 'rock_kaninskinn', p), balte = addTool(s, 'balte_rep', p);
     rock.bar = p.id; balte.bar = p.id; rock.x = rock.y = balte.x = balte.y = undefined;
@@ -268,6 +272,7 @@ SCENARIER.varm = {
       ['under ett träd värmer inte solen', skugga.sol === 0],
       ['under idealet är det som förut', under],
       ['över idealet svalnar man, men aldrig under idealet', svalnar],
+      ['personrutans värme vid och över idealet är det som räknas', rutan],
       ['den som är för varm tar av sig rocken men inte bältet', avtagen],
       ['i värmen tas rocken inte på igen', ejPa],
       ['den som är extremt varm blir tröttare och tänker på det', trott && tanke],

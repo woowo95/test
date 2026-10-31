@@ -1,15 +1,16 @@
 import { balans } from './balans';
-import { ALDER, REL, ageOf, alive, byId, count, isKin, isParent, living, log, relKey } from './folk';
+import { ALDER, KROPP, REL, ageOf, alive, byId, count, isKin, isParent, living, log, relKey } from './folk';
 import { ACTS, Act, slagIkon } from './handlingar';
 import { TAGS } from './seder';
 import { kronika } from './historik';
 import { HANDELSER, INTRYCK, IntryckTyp, intryckOm, intryckText, samlatIntryck } from './rykten';
 import { SAKER, sakNamn } from './saker';
 import { moodOf } from './humor';
-import { HOUR, Person, Rel, SKILLS, SKILL_NAMES, STATS, Skill, Stat, State, Upplevelse } from './typer';
+import { HOUR, MIN, Person, Rel, SKILLS, SKILL_NAMES, STATS, Skill, Stat, State, Upplevelse } from './typer';
 import { upplevelseText } from './uppvaxt';
 import { isLight, kalender } from './tid';
 import { temperature, vaderNu } from './vader';
+import { hash3 } from './slump';
 
 // Berättelserna (steg 3.9, "Berättelser" i designdokumentet): texterna om människorna, händelserna och sakerna. Varje
 // text är en mall i registret BERATTELSER med många varianter; varianten väljs ur byns frö, personen och tiden (hash),
@@ -53,7 +54,7 @@ export const BERATT = balans('beratt', {
   dodDygn: 2, // man pratar om den som dog för högst så här många dygn sedan
   kallt: -5, // ... om kylan från den här temperaturen (°C) och neråt
   varmt: 25, // ... om värmen från den här och uppåt
-  hungrig: 0.4, // ... och om maten när mättnaden är under den här
+  hungrigOver: 0.05, // ... och om maten strax innan man äter: mättnaden under ätgränsen (KROPP.hungrig) plus så här mycket
   pratTim: 2, // personrutan visar det senaste samtalet i så här många timmar
   // relationerna utförligt (steg 3.9.6)
   kemi: 0.4, // personkemin (−1 till 1) nämns från så här långt från noll
@@ -65,7 +66,7 @@ export const BERATT = balans('beratt', {
 export type Variant = string | { t: string; om: (f: Fyllning) => boolean };
 export type Fyllning = Record<string, string | number | boolean | undefined>;
 
-// öknamnen och hedersnamnen per intryck: [mannens, kvinnans]. '*' före namnet = det står efter förnamnet utan "den"
+// öknamnen och hedersnamnen per intryck: [mannens, kvinnans]
 interface BinamnDef { namn: [string, string][] }
 const BDEF: Record<IntryckTyp, BinamnDef> = {
   valdsam: { namn: [['Knytnäven', 'Knytnäven'], ['den vilde', 'den vilda'], ['Slagskämpen', 'Slagskämpen'], ['den hårde', 'den hårda']] },
@@ -1176,11 +1177,8 @@ export type MallId = keyof typeof MDEF;
 export const BERATTELSER: Record<MallId, Variant[]> = MDEF;
 
 // ---------- att välja och fylla i ----------
-function hash(a: number, b: number, c: number) {
-  let h = Math.imul(a ^ 0x5bd1e995, 0x85ebca6b) ^ Math.imul(b + 0x632be5ab, 0xc2b2ae35) ^ Math.imul(c + 7, 0x27d4eb2f);
-  h ^= h >>> 15; h = Math.imul(h, 0x2c1b3c6d); h ^= h >>> 12; h = Math.imul(h, 0x297a2d39); h ^= h >>> 15;
-  return (h >>> 0) / 4294967296;
-}
+// ett tal mellan 0 och 1 ur byns frö och två tal, med berättelsernas egna konstanter (hash3 i slump.ts)
+const hash = (a: number, b: number, c: number) => hash3(a, b, c, 0x5bd1e995, 7);
 // väljer en variant ur mallen: bara de vars villkor stämmer, och samma nyckel ger alltid samma text
 // t: tiden i timmar (en ny text varje timme), eller 0 för en text som står kvar (beskrivningen av en person)
 export function valjVariant(s: State, mall: MallId, nyckel: number, f: Fyllning = {}, t = Math.round(s.now / HOUR)) {
@@ -1486,7 +1484,7 @@ export const och = (l: string[]) => l.length > 1 ? `${l.slice(0, -1).join(', ')}
 export function kronikaBer(s: State, mall: MallId, nyckel: number, f: Fyllning) {
   const v = vaderNu(s);
   const g: Fyllning = { arstid: ARSTIDER[kalender(s).ai], kallt: temperature(s) < 0, sno: v.sno, regn: v.lage === 'regn', blast: v.lage === 'blast', natt: !isLight(s.now), ...f };
-  kronika(s, berattelse(s, mall, nyckel + (s.hist?.kronika.length ?? 0) * 7919, g), mall);
+  kronika(s, berattelse(s, mall, nyckel, g), mall); // varianten väljs ur nyckeln och timmen, inte ur historiken (som simuleringen inte läser)
 }
 // fälten för en person: namnet, namnet byn gav och hen
 export const personFalt = (p: Person): Fyllning => ({ namn: p.name, helt: heltNamn(p), hen: hen(p), honom: p.sex === 'm' ? 'honom' : 'henne' });
@@ -1540,7 +1538,7 @@ export function sakMinne(s: State, p: Person, t: { id: number; k: string; q?: nu
   if (at && alive(at) && hash(s.seed, t.id, 3) < BERATT.inskr) m.at = at.id;
   // något om görarens liv just då
   const nytt = s.people.find(c => (c.mother === p.id || c.father === p.id) && s.now - c.born < BERATT.barnDygn * dag);
-  const sorg = s.people.find(c => c.died !== undefined && s.now - c.died < BERATT.sorgDygn * dag && (c.id === p.partner || c.mother === p.id || c.father === p.id || p.mother === c.id || p.father === c.id));
+  const sorg = s.people.find(c => c.died !== undefined && s.now - c.died < BERATT.sorgDygn * dag && (c.partner === p.id || c.mother === p.id || c.father === p.id || p.mother === c.id || p.father === c.id)); // den dödes partner står kvar (die() i liv.ts släpper bara den levandes)
   const liv: [SakLiv, number?] | undefined = sorg ? ['sorg', sorg.id] : nytt ? ['barn', nytt.id] : p.sickUntil !== undefined && p.sickUntil > s.now ? ['sjuk']
     : p.pregnantSince !== undefined ? ['gravid'] : s.styre?.ledare === p.id ? ['ledare'] : undefined;
   if (liv) { m.l = liv[0]; if (liv[1] !== undefined) m.lo = liv[1]; }
@@ -1607,7 +1605,7 @@ const ADEF = {
 export type AmneId = keyof typeof ADEF;
 export const AMNEN: Record<AmneId, AmneDef> = ADEF;
 // det senaste samtalet: med vem (m), ämnet (k), symbolen (i), vad det handlade om (o) och när (t)
-export interface Prat { m: number; k: AmneId; i?: string; o?: string; t: number }
+export interface Prat { m: number; k: AmneId; i?: string; o?: string; t: number; fr?: number } // fr = den som talade (samma hos båda)
 // det som delats i samtalet som pågår (converse i samtal.ts nollställer det före och läser det efter)
 let delat: { k: AmneId; i?: string; o?: string } | undefined;
 export function samtalBorjar() { delat = undefined; }
@@ -1624,13 +1622,13 @@ export function samtalAmne(s: State, a: Person, b: Person, kind: string) {
     if (vl) val.push({ k: 'vader', i: 'vader_' + vl, o: VADER_PRAT[vl] });
     else if (t <= BERATT.kallt) val.push({ k: 'vader', i: 'vader_sno', o: 'kylan' });
     else if (t >= BERATT.varmt) val.push({ k: 'vader', i: 'vader_klart', o: 'värmen' });
-    if (a.hunger < BERATT.hungrig) val.push({ k: 'mat' });
+    if (a.hunger < KROPP.hungrig + BERATT.hungrigOver) val.push({ k: 'mat' });
     if (a.tag && a.tag !== 'Dagdrivare') { const tg = TAGS.find(g => g.tag === a.tag), sl = tg?.acts.map(k => ACTS[k].slag).find(k => k); val.push({ k: 'arbete', i: sl && slagIkon(sl), o: a.tag.toLowerCase() }); }
     if (s.people.some(c => alive(c) && (c.mother === a.id || c.father === a.id) && ageOf(c, s.now) < ALDER.vuxen)) val.push({ k: 'barn' });
-    x = val[Math.floor(hash(s.seed, a.id * 997 + b.id, Math.round(s.now / 60)) * val.length)];
+    x = val[Math.floor(hash(s.seed, a.id * 997 + b.id, Math.round(s.now / MIN)) * val.length)];
   }
   const i = x.i ?? AMNEN[x.k].ikon;
-  a.prat = { m: b.id, k: x.k, t: s.now, ...(i ? { i } : {}), ...(x.o ? { o: x.o } : {}) };
+  a.prat = { m: b.id, k: x.k, t: s.now, fr: a.id, ...(i ? { i } : {}), ...(x.o ? { o: x.o } : {}) }; // a talar: delar, lär ut, tröstar
   b.prat = { ...a.prat, m: a.id };
   return a.prat;
 }
@@ -1638,8 +1636,9 @@ export function samtalAmne(s: State, a: Person, b: Person, kind: string) {
 export function pratText(s: State, p: Person) {
   const x = p.prat, q = x && byId(s, x.m);
   if (!x || !q || s.now - x.t > BERATT.pratTim * HOUR) return '';
-  const f: Fyllning = { namn: p.name, med: q.name, om: x.o ?? '' };
-  return fyll(valjVariant(s, `p_${x.k}` as MallId, p.id + q.id, f, Math.round(x.t / 60)), f);
+  const [t, l] = (x.fr ?? p.id) === p.id ? [p, q] : [q, p]; // den som talade först, i bådas ruta
+  const f: Fyllning = { namn: t.name, med: l.name, om: x.o ?? '' };
+  return fyll(valjVariant(s, `p_${x.k}` as MallId, p.id + q.id, f, Math.round(x.t / MIN)), f);
 }
 
 // ---------- relationerna utförligt (steg 3.9.6) ----------

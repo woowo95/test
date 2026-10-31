@@ -147,6 +147,12 @@ KLAR.tillbehor = finishTillbehor; // ett tillbehör till en möbel (stationer.ts
 KLAR.dorr = finishDorr; // en dörr i en öppning (bygg.ts)
 MEDAN.odla = workOdla; KLAR.odla = finishOdla; // fälten (odling.ts)
 MEDAN.slacka = slackaSteg; KLAR.slacka = slackaFylld; // att släcka en eldsvåda med händerna eller vattensäcken (brand.ts)
+// de som bär till någon eller till elden, inte hem till förrådet: vad som görs framme, och att de inte lägger ner bördan när vägen är stängd (walk)
+const LAMNA: Partial<Record<Act, (s: State, p: Person, tk: Task) => void>> = {
+  varda: lamnaAv, // hemma med den som bars (halsa.ts)
+  vatten: vattenFram, // vattnet i säcken till den som inte kan gå (torst.ts)
+  slacka: slackaFram, // vattnet i säcken på elden (brand.ts)
+};
 
 // ---------- huvudsteg ----------
 // ett slag om dtSec sekunder (BEAT i spelet och ikappräkningen; testerna kan ta andra). events = samtalen, för att visa dem
@@ -260,12 +266,18 @@ export function varmeDelar(s: State, p: Person, coldRate: number, inRum: Map<num
 }
 // värmen efter dt timmar: under idealet som förut (elden, kylan, milt väder, aldrig över idealet). Vid och över idealet värmer
 // bara hettan, kylan kyler, och kroppen svalnar mot idealet (KROPP.svalnar) men aldrig under det
-export function nyVarme(w: number, v: ReturnType<typeof varmeDelar>, dt: number) {
+// varmeRaknas ger det som räknas vid värmen w på dt timmar (personrutan visar samma, dt = 1): under idealet netto = elden, kylan
+// och det milda vädret, vid och över det bara den del av dem som kyler, hettan och hur mycket kroppen svalnar (svalnar)
+export function varmeRaknas(w: number, v: ReturnType<typeof varmeDelar>, dt = 1) {
   const under = v.eld - v.kyla + v.mild;
-  if (w < 1) return clamp(w + dt * under, 0, 1);
-  let n = w + dt * (v.hetta + Math.min(0, under));
-  n -= Math.min(Math.max(0, n - 1), dt * KROPP.svalnar);
-  return clamp(n, 0, KROPP.maxVarm);
+  if (w < 1) return { under: true, netto: under, svalnar: 0 };
+  const netto = Math.min(0, under), n = w + dt * (v.hetta + netto);
+  return { under: false, netto, svalnar: Math.min(Math.max(0, n - 1), dt * KROPP.svalnar) };
+}
+export function nyVarme(w: number, v: ReturnType<typeof varmeDelar>, dt: number) {
+  const r = varmeRaknas(w, v, dt);
+  if (r.under) return clamp(w + dt * r.netto, 0, 1);
+  return clamp(w + dt * (v.hetta + r.netto) - r.svalnar, 0, KROPP.maxVarm);
 }
 function needsStep(s: State, p: Person, a: number, dtSec: number, coldRate: number, fh: ReturnType<typeof hearthOf>, inRum: Map<number, number>, temp: number) {
   const now = s.now;
@@ -345,12 +357,13 @@ function pregnancy(s: State, p: Person, a: number, pop: number, dtSec: number) {
 function taskStep(s: State, p: Person, a: number, t1: number, dtSec: number, learn: number, social: Person[]) {
   let left = dtSec;
   for (let n = 0; left > 1e-6 && n < 80; n++) {
+    if (!alive(p)) break; // dödad mitt i steget, i en strid hen själv började (en vargjakt hen kallade till); kodgenomgången 3.10.25
     s.now = t1 - left * SEC;
     const now = s.now, light = isLight(now), t = p.task;
     const phaseFlip = t && t.dark !== !light && ACTS[t.act].dygn; // dag blev natt eller tvärtom
     if (t && t.phase === 'do' && t.until <= now) KLAR[t.act]?.(s, p, t, 0); // ett träd som fällts färdigt, en yxa som gjorts klar
     const lightDone = t?.act === 'tanda' && (s.fire.lit || !canLight(s, p));
-    const mustGo = t && p.toa < KROPP.toaAvbryt && t.act !== 'toa' && t.act !== 'buren' && t.act !== 'strid' && a >= ALDER.smabarn; // nöden avbryter det man håller på med (inte den som bärs eller den som slåss)
+    const mustGo = t && p.toa < KROPP.toaAvbryt && !ACTS[t.act].nodFri && a >= ALDER.smabarn; // nöden avbryter det man håller på med (inte den som bärs eller den som slåss)
     if (!t || (t.until <= now && t.phase !== 'back') || ((phaseFlip || mustGo) && t.phase !== 'back') || lightDone) {
       if (t && isCarrying(t) && t.act !== 'elda') { t.phase = 'back'; const d = dropSpot(s, homeKind(t)); t.tx = d.x + sida(p, 0.2); t.ty = d.y + sida(p, -0.2); }
       else chooseTask(s, p);
@@ -410,7 +423,7 @@ function walk(s: State, p: Person, tk: Task, left: number) {
     const v = pathFor(s, g, p.x, p.y, tk.tx, tk.ty), f = eldPlats(s);
     // målet går inte att nå (en ö, ett förråd bakom en översvämning): man lägger ner det man bär och väljer något annat. Bara
     // den som själv är avskuren från lägret går rakt över. Den som bär en skadad eller vatten till någon går inte ifrån det
-    const bara = tk.phase === 'back' && tk.act !== 'varda' && tk.act !== 'vatten' && tk.act !== 'slacka';
+    const bara = tk.phase === 'back' && !LAMNA[tk.act];
     if (!v && (tk.phase === 'go' || bara) && pathFor(s, g, p.x, p.y, f.x + 0.5, f.y + 0.5)) { avbryt(s, p); return { used: Math.min(left, BIT), framme: false }; }
     tk.path = v ?? [];
   }
@@ -464,9 +477,7 @@ function arrive(s: State, p: Person, tk: Task, light: boolean) {
       for (const id in ag) mitt[id] = (mitt[id] ?? 0) + ag[id];
       tk.items = { ...tk.items, [k]: har + sumOf(ag) }; tk.tx = tk.site.x; tk.ty = tk.site.y; tk.site = undefined;
     }
-  } else if (tk.act === 'varda' && tk.phase === 'back') lamnaAv(s, p, tk); // hemma med den som bars
-  else if (tk.act === 'vatten' && tk.phase === 'back') vattenFram(s, p, tk); // vattnet i säcken till den som inte kan gå
-  else if (tk.act === 'slacka' && tk.phase === 'back') slackaFram(s, p, tk); // vattnet i säcken på elden (brand.ts)
+  } else if (tk.phase === 'back' && LAMNA[tk.act]) LAMNA[tk.act]!(s, p, tk); // framme hos den man bär till (LAMNA)
   else if (tk.phase === 'back') {
     storeLoad(s, tk, p.x, p.y, p.id);
     // ett arbetspass är klart: gå tillbaka och fortsätt om arbetet inte är slut och dagen inte vänt
@@ -622,11 +633,16 @@ function buildStep(s: State, p: Person, tk: Task, dtSec: number) {
   const k = MATERIAL[b.m].item;
   // materialet ligger kvar i händerna medan man bygger och läggs i bygget när biten är klar (steg 3.6.5). Avbryts arbetet
   // bär man hem det som inte använts (taskStep: den som bär något går hem med det)
-  const har = (k && tk.items?.[k]) || 0;
+  // bara det som fattas läggs i bygget: har någon annan lagt stockar i väggen under tiden (toWalls i bygg.ts) behåller man resten
+  const har = (k && tk.items?.[k]) || 0, anv = Math.min(har, needOf(b));
   const done = b.b >= 1 && b.lp === undefined && b.c >= 0.5;
   if (!done && needOf(b) - har <= 1e-9) {
-    if (!workOn(s, p, b, dtSec, har)) return;
-    if (har) { delete tk.items![k!]; if (tk.ag) delete tk.ag[k!]; if (!Object.keys(tk.items!).length) tk.items = undefined; }
+    if (!workOn(s, p, b, dtSec, anv)) return;
+    if (anv) {
+      const kvar = har - anv;
+      if (kvar > 1e-9) { tk.items![k!] = kvar; const ag = tk.ag?.[k!]; if (ag) for (const id in ag) ag[id] *= kvar / har; } // ägarna behåller var sin del av resten
+      else { delete tk.items![k!]; if (tk.ag) delete tk.ag[k!]; if (!Object.keys(tk.items!).length) tk.items = undefined; }
+    }
     if (tk.kom) { noteKom(s, b.hus, tk.kom); tk.kom = undefined; } // varifrån materialet kom räknas när det används
   }
   const j = buildJob(s, p);

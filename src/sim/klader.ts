@@ -20,6 +20,7 @@ export const KLADER = balans('klader', {
   hotTim: 48, // vargar sedda nära byn eller en strid i byn för högst så här många timmar sedan: byn hotas (punkt 2)
   gottOm: 2, // det finns gott om ett material när det räcker till så här många plagg till, utöver det som behövs (punkt 4)
   dyrt: 1.5, // ett plagg som kostar så här många gånger det billigaste är dyrt och sparas (punkt 5)
+  skyddTak: 0.9, // ett plagg tar som mest så här stor del av en skada (kodgenomgången 3.10.25: talet stod löst)
 });
 
 export type MaterialSlag = 'skinn' | 'lader' | 'tyg' | 'flatat';
@@ -50,12 +51,13 @@ export const PLAGG: Record<Plagg, PlaggDef> = PLAGG_DEF;
 export const PLAGG_LIST = Object.keys(PLAGG_DEF) as Plagg[];
 
 // ett material. sak = saken i förrådet, namn = i plaggets namn ("av vargskinn"), bit = hur många bitar en sak räcker till,
-// varme/hallbar/vikt/skydd = gånger kaninskinnets. Värdet är sakens (varde.ts)
-interface MaterialDef { sak: string; namn: string; slag: MaterialSlag; bit: number; varme: number; hallbar: number; vikt: number; skydd: number }
+// varme/hallbar/vikt/skydd = gånger kaninskinnets, finhet = hur fint det är (den ansedda tar det finaste, punkt 6). Värdet
+// är sakens (varde.ts)
+interface MaterialDef { sak: string; namn: string; slag: MaterialSlag; bit: number; varme: number; hallbar: number; vikt: number; skydd: number; finhet: number }
 const KLADMATERIAL_DEF = {
-  kaninskinn: { sak: 'skinn', namn: 'harskinn', slag: 'skinn', bit: 1, varme: 1, hallbar: 1, vikt: 1, skydd: 1 },
-  vargskinn: { sak: 'vargskinn', namn: 'vargskinn', slag: 'skinn', bit: 2, varme: 1.8, hallbar: 1, vikt: 1.5, skydd: 1.2 }, // tjockare än kaninens (steg 3.7.14): varmare, tyngre och skyddar mer
-  rep: { sak: 'rep', namn: 'rep', slag: 'flatat', bit: 1, varme: 1, hallbar: 1, vikt: 1, skydd: 1 },
+  kaninskinn: { sak: 'skinn', namn: 'harskinn', slag: 'skinn', bit: 1, varme: 1, hallbar: 1, vikt: 1, skydd: 1, finhet: 0 },
+  vargskinn: { sak: 'vargskinn', namn: 'vargskinn', slag: 'skinn', bit: 2, varme: 1.8, hallbar: 1, vikt: 1.5, skydd: 1.2, finhet: 1 }, // tjockare än kaninens (steg 3.7.14): varmare, tyngre och skyddar mer
+  rep: { sak: 'rep', namn: 'rep', slag: 'flatat', bit: 1, varme: 1, hallbar: 1, vikt: 1, skydd: 1, finhet: 0 },
 } satisfies Record<string, MaterialDef>;
 export type KladMaterial = keyof typeof KLADMATERIAL_DEF;
 export const KLADMATERIAL: Record<KladMaterial, MaterialDef> = KLADMATERIAL_DEF;
@@ -80,7 +82,7 @@ export function kladSkyddStrid(k: string) {
   const r = kladAv(k), sk = r && (PLAGG[r.plagg] as PlaggDef).skydd;
   if (!r || !sk) return undefined;
   const f = KLADMATERIAL[r.mat].skydd;
-  return { delar: sk.delar, tar: Object.fromEntries(Object.entries(sk.tar).map(([sl, v]) => [sl, Math.min(0.9, v! * f)])) as Partial<Record<Skadeslag, number>> };
+  return { delar: sk.delar, tar: Object.fromEntries(Object.entries(sk.tar).map(([sl, v]) => [sl, Math.min(KLADER.skyddTak, v! * f)])) as Partial<Record<Skadeslag, number>> };
 }
 // saken i förrådet som plagget k görs av (rocken av vargskinn: vargskinnet)
 export const materialSak = (k: string) => { const r = kladAv(k); return r && KLADMATERIAL[r.mat].sak; };
@@ -104,8 +106,8 @@ export function kladSaker() {
 // ---------- valet av material ----------
 // läget för ett material: varme = plaggets värme av det, skydd = materialets skydd, kvar = hur många saker av det som finns
 // kvar när det här plagget gjorts, behovs = hur många som behövs till annat viktigt (dörrar, plagg som andra saknar), till =
-// hur många saker ett plagg tar, varde = vad plagget kostar (varde.ts)
-export interface MaterialLage { k: string; varme: number; skydd: number; kvar: number; behovs: number; till: number; varde: number }
+// hur många saker ett plagg tar, finhet = materialets (KLADMATERIAL), varde = vad plagget kostar (varde.ts)
+export interface MaterialLage { k: string; varme: number; skydd: number; kvar: number; behovs: number; till: number; finhet: number; varde: number }
 // läget i byn: kyla = vintern närmar sig eller någon fryser, hot = vargar nära eller en strid nyligen, fin = den som syr åt
 // sig själv har gott anseende och tar ett finare material när inget annat skiljer
 export interface ValLage { kyla: boolean; hot: boolean; fin: boolean }
@@ -120,7 +122,8 @@ export function valMaterial(ks: MaterialLage[], l: ValLage): string | undefined 
     m => m.kvar < m.behovs ? 1 : 0, // (3) det som saknas sparas
     m => m.kvar - m.behovs >= KLADER.gottOm * m.till ? 0 : 1, // (4) det som finns gott om används först
     m => m.varde > billigast * KLADER.dyrt ? 1 : 0, // (5) det dyra sparas till byten och gåvor
-    m => l.fin ? -m.varde : m.varde, // (6) smak och anseende: den ansedda tar det finare, annars det billigare
+    m => l.fin ? -m.finhet : m.finhet, // (6) smak och anseende: den ansedda tar det finare materialet, andra det enklare
+    m => l.fin ? -m.varde : m.varde, // ... och sist värdet: den ansedda tar det dyrare plagget, andra det billigare
   ];
   return [...ks].sort((a, b) => { for (const f of punkter) { const d = f(a) - f(b); if (d) return d; } return 0; })[0].k;
 }

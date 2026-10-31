@@ -1,6 +1,6 @@
-import { strandNu } from './sjo';
+import { strandNu, vattenNu } from './sjo';
 import { take } from './agande';
-import { PLATS, campCenter, campDist, campKey } from './plats';
+import { PLATS, campCenter, campDist, campGrid, campKey } from './plats';
 import { vargSkydd } from './varg';
 import { tornadoSkydd } from './tornado';
 import { brandVal } from './brand';
@@ -280,7 +280,7 @@ function vidBanken(s: State, x: number, y: number) {
 // avståndet som när man väljer plats (pickSpot), men inte i vattnet, i husen eller där det är toa-smuts. Ger ingen ruta
 // minst PLATS.vidare går man hem med det man har
 export function nastaBuske(s: State, k: Lager, x0: number, y0: number) {
-  const cx = Math.floor(x0), cy = Math.floor(y0), tiles = getMap(s.seed).tiles, R = MINNE.sokR;
+  const cx = Math.floor(x0), cy = Math.floor(y0), tiles = vattenNu(s), R = MINNE.sokR; // vattnet som det är nu (torkan och översvämningen)
   let best: { x: number; y: number } | undefined, bv = -Infinity;
   for (let y = Math.max(0, cy - R); y <= Math.min(H - 1, cy + R); y++) for (let x = Math.max(0, cx - R); x <= Math.min(W - 1, cx + R); x++) {
     if (tiles[y * W + x] === T.Vatten || bitAt(s, x, y) || forSmutsigt(s, x, y)) continue;
@@ -293,12 +293,12 @@ export function nastaBuske(s: State, k: Lager, x0: number, y0: number) {
 }
 // ingen plats hittades i närheten: den närmaste rutan som passar, var den än ligger
 function nearestWanted(s: State, want: (t: number, x: number, y: number) => boolean, min = 0) {
-  const m = getMap(s.seed);
+  const m = getMap(s.seed), lager = campGrid(s);
   let best: { x: number; y: number } | undefined, bd = Infinity;
   for (let i = 0; i < W * H; i++) {
     const x = i % W, y = Math.floor(i / W);
     if (!want(m.tiles[i], x, y)) continue;
-    const d = campDist(s, x, y);
+    const d = lager[i];
     if (d >= min && d < bd) { bd = d; best = { x, y }; } // inte närmare lägret än min (toa: inte mitt i byn, steg 3.10.3)
   }
   return best;
@@ -320,13 +320,13 @@ function strandOf(s: State) {
   const key = `${campKey(s)},${s.byggV ?? 0}`;
   let c = strandCache.get(s);
   if (c?.key !== key) {
-    const sh = strandNu(s), ok: number[] = [];
+    const sh = strandNu(s), ok: number[] = [], lager = campGrid(s);
     let bad: { x: number; y: number } | undefined, bd = VAL.strandNara;
     for (let i = 0; i < W * H; i++) {
       if (!sh[i]) continue;
       const x = i % W, y = Math.floor(i / W);
       if (bitAt(s, x, y)) continue;
-      const d = campDist(s, x, y);
+      const d = lager[i];
       if (d < VAL.strandNara) ok.push(i);
       if (d < bd) { bd = d; bad = { x: x + 0.5, y: y + 0.5 }; }
     }
@@ -368,7 +368,8 @@ export function chooseTask(s: State, p: Person) {
   else if (br) { set(v, br.act, br.why); v.spot = br.spot; v.dur = br.dur; v.tool = br.tool; v.ref = br.ref; }
   else if (fl) { set(v, 'bara', fl.why); v.spot = fl; v.dur = VAL.baraTim * HOUR; count(s, 'flod undan'); }
   else if (!needs(s, p, v, a, lazy, light) && !(light && utbrottVal(s, p, v))) { if (light) day(s, p, v, a, lazy); else night(s, p, v, a); }
-  if (ACTS[v.act].social && v.act !== 'maltid' && skams(p, s.now)) { v.act = 'skams'; v.why = 'Skäms och håller sig undan de andra'; v.spot = undefined; } // straffet skam (steg 3.5.3, styre.ts)
+  // straffet skam (steg 3.5.3, styre.ts): inte det faran väljer (vargarna, tornadon, branden, vattnet) och inte det som skyddar (skamfri i ACTS)
+  if (!sk && !br && !fl && ACTS[v.act].social && !ACTS[v.act].skamfri && skams(p, s.now)) { v.act = 'skams'; v.why = 'Skäms och håller sig undan de andra'; v.spot = undefined; }
   if (v.act === 'toa') {
     v.dur = (VAL.toaMin + rnd(s, 'val', p) * VAL.toaSpann) * MIN;
     const l = latrinFor(s, p); // till latrinen om byn har en (steg 2.7.2, smuts.ts)
@@ -706,7 +707,7 @@ function night(s: State, p: Person, v: Val, a: number) {
   const guardDay = yearNo(s, now - VAL.vaktByte * HOUR); // vaktdygnet är kalenderns dygn, förskjutet så att det byts kl. 7
   if (guardDay !== s.lastGuardDay) {
     // välj nattens vakt (modigast med lite slump) bland de vuxna som orkar (den sjuka, svaga eller skadade sover, needs), byts varje natt
-    const adults = living(s).filter(q => ageOf(q, now) >= ALDER.vaktFran && ageOf(q, now) < ALDER.vaktTill && !isSick(q, now) && halsa(q) >= KROPP.svag && kanGa(q) && !vilaHellre(q) && q.task?.act !== 'strid'); // inte den som slåss (strid.ts)
+    const adults = living(s).filter(q => ageOf(q, now) >= ALDER.vaktFran && ageOf(q, now) < ALDER.vaktTill && !isSick(q, now) && halsa(q) >= KROPP.svag && kanGa(q) && !vilaHellre(q) && q.task?.act !== 'strid' && !skams(q, now)); // inte den som slåss (strid.ts) eller skäms
     if (adults.length) {
       s.lastGuardDay = guardDay;
       // ett slumptal per vuxen i byns ordning, sedan den högsta (inte i sorteringens jämförelser: deras antal beror på webbläsaren)

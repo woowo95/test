@@ -21,6 +21,8 @@ import { DAY, H, HEARTHS, HOUR, HOUR_S, MIN, Person, SEC, State, Task, W, inMap 
 import { allaBarn } from './uppvaxt';
 import { FOREST, VAG, isSoil } from './vag';
 import { blixtNu, snoPaMarken, torrTim, vaderNu } from './vader';
+import { hash3 } from './slump';
+import { larmAvbryter } from './handlingar';
 
 // Eldsvådor och skogsbrand (steg 3.8.5, "Motgångarna i spelet" och "Elden" i designdokumentet). Inte en rad i MOTGANGAR:
 // branden har ingen tid i kalendern utan börjar när en gnista eller blixten tänder något som brinner. Gnistor flyger från
@@ -35,6 +37,9 @@ import { blixtNu, snoPaMarken, torrTim, vaderNu } from './vader';
 // släcker de vuxna: med vattensäcken (hämtar vatten och häller på flera rutor) eller med händerna (långsamt, och man kan få
 // brännskador); de andra går undan. Den som står i elden bränns. Allt räknas med hashade tal ur tiden och rutan, så att
 // det levande läget och ikappräkningen blir lika. Branden sparas i s.brand och det som brunnit nyss i s.aska (det svarta).
+
+// gnista och sprid är chanser per fem minuter speltid, oavsett hur långt steget är (en tidsenhet, inget balanstal)
+const FEM_MIN = 5 * MIN / SEC;
 
 // Balanstal (regel 8)
 export const BRAND = balans('brand', {
@@ -82,12 +87,9 @@ export type BrandRuta = [number, number, number, number];
 // hur många rutor som tagit eld, och vad den gjort
 export interface Brand { t: number; x: number; y: number; kalla: 'gnista' | 'blixt'; r: BrandRuta[]; ut: number[]; n: number; trad: number; vagg: number; saker: number; skadade: number; slackt: number; hot?: 1; sagd?: 1 }
 
-// ett tal mellan 0 och 1 ur byns frö, tiden (i steg), en ruta eller person och ett salt (drar inget ur slumpföljderna)
-function hash(a: number, b: number, c: number) {
-  let h = Math.imul(a ^ 0x9e3779b9, 0x85ebca6b) ^ Math.imul(b + 0x632be5ab, 0xc2b2ae35) ^ Math.imul(c + 1, 0x27d4eb2f);
-  h ^= h >>> 15; h = Math.imul(h, 0x2c1b3c6d); h ^= h >>> 12; h = Math.imul(h, 0x297a2d39); h ^= h >>> 15;
-  return (h >>> 0) / 4294967296;
-}
+// ett tal mellan 0 och 1 ur byns frö, tiden (i steg), en ruta eller person och ett salt (hash3 i slump.ts, drar inget ur
+// slumpföljderna)
+const hash = hash3;
 const ur = (s: State, a: number, salt: number) => hash(s.seed + salt * 7919, Math.round(s.now / SEC), a);
 const chans = (takt: number, dtSec: number) => 1 - Math.exp(-takt * dtSec / HOUR_S); // takt i timmen under dtSec sekunder
 
@@ -150,7 +152,7 @@ export function brandSteg(s: State, dtSec: number) {
   if (!b) return;
   const v = vaderNu(s), k = kartaOf(b), slag = Math.round(s.now / SEC);
   // elden tar sig till grannrutorna
-  const sprid = BRAND.sprid * dry * (1 + BRAND.vind * v.vind) * (1 - v.nb) * dtSec / 300, bransle = bransleAv(s);
+  const sprid = BRAND.sprid * dry * (1 + BRAND.vind * v.vind) * (1 - v.nb) * dtSec / FEM_MIN, bransle = bransleAv(s);
   const nya: number[] = [];
   if (sprid > 0) for (const [i] of b.r) {
     const x = i % W, y = Math.floor(i / W);
@@ -188,7 +190,7 @@ export function brandSteg(s: State, dtSec: number) {
 
 // gnistor från elden och brasorna, och blixten när den slår ner (en gång i timmen)
 function gnistor(s: State, dtSec: number, dry: number) {
-  const v = vaderNu(s), takt = BRAND.gnista * dry * (1 + BRAND.vind * v.vind) * (1 - v.nb) * dtSec / 300;
+  const v = vaderNu(s), takt = BRAND.gnista * dry * (1 + BRAND.vind * v.vind) * (1 - v.nb) * dtSec / FEM_MIN;
   const fran = (x: number, y: number, spread: number, salt: number) => {
     if (ur(s, salt, 3852) >= takt * spread) return;
     const R = BRAND.gnistaR, nx = x + Math.round((ur(s, salt, 3853) * 2 - 1) * R), ny = y + Math.round((ur(s, salt, 3854) * 2 - 1) * R);
@@ -265,14 +267,12 @@ function ser(s: State, b: Brand) {
   const ser = living(s).filter(p => p.task?.act !== 'sova' && p.task?.act !== 'badd' && larmNu(s, p)?.vad !== 'brand' && narmast(b, p.x, p.y).d <= sikt);
   if (!ser.length) return;
   if (!living(s).some(p => larmNu(s, p)?.vad === 'brand')) count(s, 'brand sedd');
-  const n = narmast(b, ser[0].x, ser[0].y).i;
-  larma(s, n % W + 0.5, Math.floor(n / W) + 0.5, 'brand', 1, ser);
+  larma(s, 'brand', 1, ser);
 }
 // den som vet om elden avbryter det hen gör när hen ska släcka eller gå undan (inte den som slåss, vårdar eller bärs)
-const AVBRYTS_INTE = new Set<string>(['strid', 'vargjakt', 'buren', 'fatt', 'varda', 'undan', 'slacka', 'flyEld']);
 function soker(s: State, b: Brand, hot: boolean) {
   for (const p of living(s)) {
-    if (!p.task || AVBRYTS_INTE.has(p.task.act) || larmNu(s, p)?.vad !== 'brand' || !brandMal(s, b, p, hot)) continue;
+    if (!p.task || !larmAvbryter(p.task.act, 'brand') || larmNu(s, p)?.vad !== 'brand' || !brandMal(s, b, p, hot)) continue;
     avbryt(s, p); count(s, 'brand avbryter');
   }
 }

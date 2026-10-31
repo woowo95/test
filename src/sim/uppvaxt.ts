@@ -82,7 +82,7 @@ export function upplev(s: State, p: Person, k: UpplevelseTyp, om?: string) {
   const d = DEF[k];
   if (!formas(s, p) || (!d.tidig && ageOf(p, s.now) < UPPV.fran) || p.upp?.some(u => u.k === k)) return;
   if (rnd(s, 'uppvaxt', p) >= d.chans) return;
-  const u: Upplevelse = { k, a: Math.floor(ageOf(p, s.now)), t: s.now, e: { ...pick(s, d.e, 'uppvaxt', p) }, ...om ? { om } : {} };
+  const u: Upplevelse = { k, a: Math.floor(ageOf(p, s.now)), e: { ...pick(s, d.e, 'uppvaxt', p) }, ...om ? { om } : {} };
   const lista = [...p.upp ?? [], u];
   if (lista.length > UPPV.max) {
     let svag = lista.length - 1; // vid lika styrka trängs den nya undan

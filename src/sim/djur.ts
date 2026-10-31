@@ -1,9 +1,10 @@
-import { FYND, fyndAt, setNarvaro, vaxerAt, viltStart } from './fynd';
+import { FYND, setNarvaro, takenOf, vaxerAt, viltStart } from './fynd';
 import { hash } from './karta';
 import { clamp } from './slump';
 import { living } from './folk';
 import { motgangNu } from './motgang';
-import { H, HOUR, SEC, State, W, egen, inMap, mapKey, tvaDelar, visning } from './typer';
+import { H, HOUR, SEC, State, T, W, egen, inMap, mapKey, tvaDelar, visning } from './typer';
+import { vattenNu } from './sjo';
 import { balans } from './balans';
 import { DJUR } from './redskap';
 
@@ -18,7 +19,7 @@ import { DJUR } from './redskap';
 // still där. De enskilda kaninerna ritas bara; jakten ger mest nära en grupp (`narvaroAt`, via richness). Fler arter
 // (rådjur, fågel) blir egna lager och grupper senare.
 export interface Djur { id: number; art: 'kanin' | 'varg'; x: number; y: number; grupp: number } // grupp = kaningruppen eller vargflocken
-export interface Kaningrupp { id: number; x: number; y: number; n: number; n0: number } // n: så många kaniner gruppen har just nu, n0: när den inte jagats
+export interface Kaningrupp { id: number; x: number; y: number; n: number } // n: så många kaniner gruppen har just nu
 // Balanstal (regel 8): kaninernas grupper (antal, storlek, hur länge de stannar och hur långt de rör sig), hur de flyr
 // från folk och hur mycket jakten ger nära dem. Jaktens ursprungliga värde finns i viltlagret (FYND.jakt i fynd.ts)
 export const KANINER = balans('djur', {
@@ -97,21 +98,22 @@ function mitt(s: State, k: number, t = s.now) {
 // varje steg: en grupp som får en ny tid väljer sin plats direkt, så att platsen blir densamma i båda lägena
 export function djurSteg(s: State) { for (let k = 0; k < KANINER.grupper; k++) mitt(s, k); }
 // grupperna vid tiden t (just nu om inget annat sägs). En grupp krymper där lagret är tömt (där man jagat), och är tom
-// när det jagats slut
-export function grupperOf(s: State, t = s.now): Kaningrupp[] {
-  const ut: Kaningrupp[] = [];
+// när det jagats slut. Med bara (en fråga om gruppens mitt) räknas bara de grupper som den godtar
+export function grupperOf(s: State, t = s.now, bara?: (x: number, y: number) => boolean): Kaningrupp[] {
+  const ut: Kaningrupp[] = [], tj = takenOf(s).jakt;
   for (let k = 0; k < KANINER.grupper; k++) {
     const c = mitt(s, k, t);
-    if (!c) continue;
+    if (!c || (bara && !bara(c.x, c.y))) continue;
     let har = 0, kan = 0;
     const cx = Math.floor(c.x), cy = Math.floor(c.y);
     for (let dy = -KANINER.kollR; dy <= KANINER.kollR; dy++) for (let dx = -KANINER.kollR; dx <= KANINER.kollR; dx++) {
       const x = cx + dx, y = cy + dy;
       if (!inMap(x, y)) continue;
-      const i = y * W + x; har += fyndAt(s, 'jakt', i); kan += vaxerAt(s, 'jakt', i);
+      const i = y * W + x, v = vaxerAt(s, 'jakt', i); // det som finns kvar är det som växer gånger det som inte tagits (som fyndAt)
+      har += v * (tj ? 1 - tj[i] : 1); kan += v;
     }
     const n = kan > 0 ? Math.round(c.st.n0 * Math.min(1, har / kan)) : 0;
-    ut.push({ id: c.e * KANINER.grupper + k, x: c.x, y: c.y, n, n0: c.st.n0 });
+    ut.push({ id: c.e * KANINER.grupper + k, x: c.x, y: c.y, n });
   }
   return ut;
 }
@@ -140,10 +142,12 @@ function narvaroAt(s: State, i: number) {
 setNarvaro('jakt', narvaroAt);
 // var kaninerna är vid tiden t (gränssnittet ger tiden som visas): nära gruppens mitt, ett skutt i taget, och undan
 // från folk som kommer nära. Gränssnittet ger var folket syns (folk), eftersom simuleringen ligger före bilden
-export function djurOf(s: State, t = s.now, folk?: readonly { x: number; y: number }[]): Djur[] {
-  const ppl = folk ?? living(s), out: Djur[] = [];
+// så långt (rutor) en kanin kan sitta från gruppens mitt: spridningen, skuttet, hoppen undan och vägen till land (landNara)
+export const KANIN_UT = KANINER.spridd + 0.6 * Math.SQRT2 + KANINER.hopp * KANINER.hoppMax + 5.5 * Math.SQRT2 + 1;
+export function djurOf(s: State, t = s.now, folk?: readonly { x: number; y: number }[], bara?: (x: number, y: number) => boolean): Djur[] {
+  const ppl = folk ?? living(s), out: Djur[] = [], vt = vattenNu(s), torr = (q: { x: number; y: number }) => vt[Math.floor(q.y) * W + Math.floor(q.x)] !== T.Vatten;
   const doda = new Set(s.djurDoda?.map(d => d.id));
-  for (const g of grupperOf(s, t)) for (let j = 0, kvar = g.n; j < 8 && kvar > 0; j++) {
+  for (const g of grupperOf(s, t, bara)) for (let j = 0, kvar = g.n; j < 8 && kvar > 0; j++) {
     const id = g.id * 8 + j;
     if (doda.has(id)) continue; // en dödad kanin är borta, och nästa i gruppen syns i stället (steg 3.7.13)
     kvar--;
@@ -161,17 +165,35 @@ export function djurOf(s: State, t = s.now, folk?: readonly { x: number; y: numb
       const v = Math.round(Math.atan2(y - near.y, x - near.x) / (Math.PI / 4)) * (Math.PI / 4);
       x += Math.cos(v) * KANINER.hopp; y += Math.sin(v) * KANINER.hopp;
     }
-    out.push({ id, art: 'kanin', x: clamp(x, 0.2, W - 0.2), y: clamp(y, 0.2, H - 0.2), grupp: g.id });
+    // kaninen står aldrig i vattnet (kodgenomgången 3.10.25): den sitter kvar, går till sin plats i gruppen, till gruppens
+    // mitt eller till närmaste land
+    let q = { x: clamp(x, 0.2, W - 0.2), y: clamp(y, 0.2, H - 0.2) };
+    if (!torr(q)) q = [a, { x: hx, y: hy }, g].map(c => ({ x: clamp(c.x, 0.2, W - 0.2), y: clamp(c.y, 0.2, H - 0.2) })).find(torr) ?? landNara(vt, q);
+    out.push({ id, art: 'kanin', x: q.x, y: q.y, grupp: g.id });
   }
   return out;
 }
 
-// vargarna (steg 3.7.1, varg.ts): flockarna är sparade i byn, och vargarna går tätt kring flockens mitt, ledaren först
+// närmaste land i ringar kring punkten (som freeNear i byggnad.ts), annars punkten själv
+function landNara(vt: Uint8Array | number[], q: { x: number; y: number }) {
+  const x0 = Math.floor(q.x), y0 = Math.floor(q.y);
+  for (let r = 1; r < 6; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+    if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
+    const x = x0 + dx, y = y0 + dy;
+    if (inMap(x, y) && vt[y * W + x] !== T.Vatten) return { x: x + 0.5, y: y + 0.5 };
+  }
+  return q;
+}
+
+// vargarna (steg 3.7.1, varg.ts): flockarna är sparade i byn, och vargarna går tätt kring flockens mitt, ledaren först.
+// En varg står aldrig i vattnet (kodgenomgången 3.10.25): den går vid flockens mitt eller på närmaste land
 export function vargarOf(s: State): Djur[] {
-  const out: Djur[] = [];
+  const out: Djur[] = [], vt = vattenNu(s), torr = (q: { x: number; y: number }) => vt[Math.floor(q.y) * W + Math.floor(q.x)] !== T.Vatten;
   for (const f of s.vargar ?? []) f.vargar.forEach((id, j) => {
     const ang = hash(id, 4, 11) * Math.PI * 2 + s.now / (60 * SEC) * (hash(id, 7, 11) - 0.5), r = j ? 0.7 + 0.9 * hash(id, 5, 13) : 0;
-    out.push({ id, art: 'varg', x: clamp(f.x + Math.cos(ang) * r, 0.2, W - 0.2), y: clamp(f.y + Math.sin(ang) * r, 0.2, H - 0.2), grupp: f.id });
+    let q = { x: clamp(f.x + Math.cos(ang) * r, 0.2, W - 0.2), y: clamp(f.y + Math.sin(ang) * r, 0.2, H - 0.2) };
+    if (!torr(q)) q = torr(f) ? { x: f.x, y: f.y } : landNara(vt, q);
+    out.push({ id, art: 'varg', x: q.x, y: q.y, grupp: f.id });
   });
   return out;
 }

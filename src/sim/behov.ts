@@ -430,10 +430,11 @@ export function behovAv(s: State, p: Person, k: string) {
 }
 // det p kan byta bort: mat och ved utöver det hen själv behöver (b.kvar), material och redskap hen har över. Inte slagen i utom
 function payable(s: State, p: Person, utom: readonly string[]): Vara[] {
-  const ut: Vara[] = [], over = new Map<Behov, number>();
+  // den som inte äger något redskap har inget att avvara (spare), och de flesta som betalar äger inget
+  const ut: Vara[] = [], over = new Map<Behov, number>(), harRedskap = tingOf(s).some(t => t.agare === p.id);
   for (const k of SAK_LIST) {
     if (utom.includes(k) || !grundvarde(k)) continue;
-    if (isTool(k)) { const t = spare(s, p, k); if (t) ut.push({ k, n: 1, t }); continue; }
+    if (isTool(k)) { const t = harRedskap ? spare(s, p, k) : undefined; if (t) ut.push({ k, n: 1, t }); continue; }
     const own = ownsAmount(s, p, k), b = behovMed(k);
     if (own <= 1e-9) continue;
     if (!b) { ut.push({ k, n: own }); continue; }

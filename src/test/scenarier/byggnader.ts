@@ -7,9 +7,9 @@ import { START } from '../kor';
 import { setItems, setFood, kor, klockan, tandEld, byggare, byggKlart, nyInvanare, medBank, STOCKHOLM, SCENARIER } from './hjalp';
 
 SCENARIER.byggnader = {
-  text: 'Varje sorts byggnad är en rad i ett register med behov, vikt och ägare. Byn bygger för det mest akuta behovet, faror först: den som saknar tak över huvudet får en sovsal',
+  text: 'Varje sorts byggnad är en rad i ett register med behov och vikt. Byn bygger för det mest akuta behovet, faror först: den som saknar tak över huvudet får en sovsal',
   kor: () => {
-    const rader = FN.every(fn => { const r = BYGGNADER[fn]; return !!(r.namn && r.ikon && r.behov && r.agare); });
+    const rader = FN.every(fn => { const r = BYGGNADER[fn]; return !!(r.namn && r.ikon && r.behov); });
     const ny = createState(6, START), u = mostUrgent(ny);
     // en by där alla vuxna kan göra timmerväggar och har yxor bygger ett hus
     const q = createState(6, START);
@@ -31,7 +31,7 @@ SCENARIER.byggnader = {
     return [
       [`ett hus intill en udde stänger in den (${udde ? `vid ${udde.x}, ${udde.y}` : 'ingen udde på kartan'})`, !!udde && SIM.stangerIn(ny, udde.x, udde.y, 3, 3)],
       [`ett hus mitt på land stänger inte in något (${land ? `vid ${land.x}, ${land.y}` : 'ingen plats'})`, !!land && !SIM.stangerIn(ny, land.x, land.y, 3, 3)],
-      ['varje rad har namn, symbol, behov och ägare', rader],
+      ['varje rad har namn, symbol och behov', rader],
       [`utan sovplatser är sovsalen det mest akuta, en fara (${u?.fn ?? 'inget'})`, u?.fn === 'sovsal' && BYGGNADER.sovsal.fara],
       [`byns första hus blir en sovsal (${h ? fnOf(h).namn : 'inget hus'})`, h?.fn === 'sovsal' && fnOf(h).namn === 'Sovsal'],
     ];
@@ -40,7 +40,6 @@ SCENARIER.byggnader = {
 
 
 SCENARIER.forradshus = {
-  lang: true,
   text: 'Ruttnar maten eller är förrådet fullt bygger byn ett förrådshus. Golvet blir en lagerplats under tak, där det som ligger ruttnar och slits mindre, och maten bärs in dit',
   kor: () => {
     const s = createState(6, START);
@@ -84,7 +83,6 @@ SCENARIER.forradshus = {
 };
 
 SCENARIER.familjehus = {
-  lang: true,
   text: 'Ett par med barn som inte har något eget hus och äger nog för att betala det bygger ett familjehus. Familjens material tas först, familjen sover där, huset går i arv och blir byns när ingen äger det',
   kor: () => {
     const s = createState(6, START);
@@ -423,6 +421,20 @@ SCENARIER.bygg = {
       for (let n = 0; n < 100 && vg.b < 1; n++) workOn(q, by, vg, 600);
       omKlar = !!h.klar; kronikaEfter = fardigt(); gemEfter = q.seder.ev.gemenskap;
     }
+    // stockar läggs i väggen (toWalls: ett träd fälldes på husplatsen) medan byggaren håller materialet till den: väggen får
+    // det den behöver och byggaren behåller resten (buildStep i steg.ts, kodgenomgången 3.10.25)
+    const u = createState(8, START); klockan(u); byggare(u); u.byggSok = undefined; planBuild(u);
+    const uh = housesOf(u).find(x => !x.klar), ub = uh && bitsOf(u).find(x => x.hus === uh.id && x.k === 'vagg' && MATERIAL[x.m].item === 'ved');
+    let iVaggen = 0, iHanden = 0, behov = 0;
+    if (uh && ub) {
+      behov = MATERIAL[ub.m].n; ub.mat = 0; ub.b = 0.999; touch(u);
+      const bp = living(u).find(x => ageOf(x, u.now) >= 18)!;
+      bp.x = ub.x + 0.5; bp.y = ub.y + 1.5; bp.hunger = 0;
+      bp.task = { act: 'bygga', phase: 'do', tx: bp.x, ty: bp.y, until: u.now + HOUR, carry: 0, ref: ub.id, items: { ved: behov } };
+      SIM.toWalls(u, ub.x, ub.y, 1, uh.id);
+      step(u, 60);
+      iVaggen = ub.mat; iHanden = bp.task?.items?.ved ?? 0;
+    }
     return [
       ['ett slutet rum med väggar räknas som under tak', !!rum && rum.tiles.length === 4],
       [`vägen går runt väggarna (${path.length} steg)`, path.length > 0 && !genomVagg],
@@ -439,6 +451,7 @@ SCENARIER.bygg = {
       [`ett långhus räknas när det planeras (${langhus} långhus, ${langRaknat} räknade)`, langhus > 0 && langRaknat === langhus],
       [`en lagning kostar hälften av det nya, i hela saker och minst en (trägolv ${golvLag} av ${MATERIAL.tra.n}, timmervägg ${vaggLag} av ${MATERIAL.timmer.n})`, golvLag === Math.max(1, Math.floor(MATERIAL.tra.n / 2)) && vaggLag === Math.max(1, Math.floor(MATERIAL.timmer.n / 2))],
       [`en rasad vägg som byggts om gör huset klart igen men inte färdigt en gång till (krönikan ${kronikaFore} → ${kronikaEfter}, Sammanhållning ${gemFore.toFixed(3)} → ${gemEfter.toFixed(3)})`, omKlar && kronikaFore >= 1 && kronikaEfter === kronikaFore && gemEfter === gemFore],
+      [`stockar som läggs i väggen medan någon bär material dit försvinner inte (väggen ${iVaggen} av ${behov}, ${iHanden} kvar i händerna)`, behov > 0 && iVaggen === behov && iHanden === 1],
       [`huset minns var materialet kom ifrån (${Math.round(minns)} av ${Math.round(lagt)}: ${satt})`, lagt > 0 && Math.abs(minns - lagt) < 0.01 * lagt + 0.01],
     ];
   },
@@ -504,12 +517,23 @@ SCENARIER.lager = {
       return n;
     };
     const barMat = barare(200, false), barSvalt = barare(0, false), barKall = barare(200, true);
+    // när lagret växer över marken där någon lagt flera saker på en ruta (grenar och ved av ett fällt träd) ligger det
+    // sedan bara en sak på varje ruta i förrådet, och inget försvinner (riktad-körningen i steg 3.10.25, by 8920)
+    const vx = createState(3, START), vz = zoneOf(vx), ut = br + 1, tot = () => (vx.stackar ?? []).reduce((a, q) => a + q.n, 0);
+    vx.ting = []; vx.stackar = [{ k: 'sten', n: 1, c: 1, x: vz.x - 1, y: vz.y }]; // bredvid lagerplatsen: lagret är fullt och växer
+    for (let y = vz.y - ut; y < vz.y + vz.h + ut; y++) for (let x = vz.x - ut; x < vz.x + vz.w + ut; x++) if (!isStored(vx, x, y) && usable(vx, x, y)) vx.stackar.push({ k: 'grenar', n: 1, c: 1, x, y }, { k: 'ved', n: 1, c: 1, x, y });
+    const vxFore = tot(), vxYta = vz.w * vz.h;
+    SIM.tidyStore(vx);
+    const vxRutor = new Map<number, number>();
+    for (const q of vx.stackar) if (isStored(vx, q.x, q.y)) vxRutor.set(q.y * SIM.W + q.x, (vxRutor.get(q.y * SIM.W + q.x) ?? 0) + 1);
+    const vxTva = [...vxRutor.values()].filter(n => n > 1).length, vxStor = zoneOf(vx).w * zoneOf(vx).h;
     // en stack där bara den gömda giftsvampen finns kvar visas inte som "svamp 0 st" (pilesOf)
     const gs = createState(3, START), gz = zoneOf(gs);
     (gs.stackar ??= []).push({ k: 'svamp', n: 0, c: 1, x: gz.x, y: gz.y, dold: 0.5 });
     const doldSyns = pilesOf(gs).some(p => p.k === 'svamp' && p.n <= 1e-6);
     return [
       ['en stack med bara gömd giftsvamp visas inte som "svamp 0 st"', !doldSyns],
+      [`när lagret växer över en ruta med flera saker ligger det sedan en sak på varje ruta, och inget försvinner (${vxYta} → ${vxStor} rutor, ${vxTva} rutor med två saker, ${vxFore} → ${tot()} saker)`, vxStor > vxYta && vxTva === 0 && tot() === vxFore],
       [`i ett fullt lager läggs det nya på en egen ruta (${fx},${fy}${paAnnan ? ', på sten' : ''})`, !paAnnan && usable(fu, fx, fy)],
       [`ingen bär in när byn svälter eller fryser (${barSvalt} när maten är slut, ${barKall} i kylan, ${barMat} av 200 annars)`, barMat > 0 && barSvalt === 0 && barKall === 0],
       ['en död med en uppgift kvar låser inte en stack som ska bäras in (haulJob)', stackFri],
