@@ -254,6 +254,7 @@ export function utbrottRisk(s: State, p: Person, ljust: boolean) {
   if (p.utb) { p.utb *= Math.exp(-HOUR / (HUMOR.utbDygn * DAY)); if (p.utb < 0.01) p.utb = undefined; }
   const a = ageOf(p, s.now), barn = a < ALDER.vuxen;
   if (p.task?.act === 'leka' && p.task.phase === 'do') p.lekt = s.now; // barnen: leken (steg 3.2.4)
+  if (p.ubr && s.now - p.ubr.t > HUMOR.vantar * HOUR) p.ubr = undefined; // det som väntat för länge blir inget, också på natten
   if (!ljust || p.ubr || a < ALDER.smabarn) return;
   const m = moodOf(p, s.now);
   if (m >= HUMOR.grans) return;

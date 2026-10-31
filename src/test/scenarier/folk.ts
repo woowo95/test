@@ -418,6 +418,11 @@ SCENARIER.utbrott = {
       return getRel(u, a, b).op;
     };
     const golvElak = golv('elak'), golvPutt = golv('puttas');
+    // ett utbrott som väntat längre än HUMOR.vantar blir inget, också på natten när man inte väljer något (kodgenomgången 3.10.25)
+    const natt = createState(9, START); klockan(natt, 2);
+    const n = nyInvanare(natt, 'm', 30); n.ubr = { k: 'grata', t: natt.now - (SIM.HUMOR.vantar + 1) * HOUR };
+    SIM.utbrottRisk(natt, n, false);
+    const nattBorta = !n.ubr;
     return [
       [`relationen går inte under -100 när den som redan avskys är elak (${golvElak.toFixed(0)}) eller puttar (${golvPutt.toFixed(0)})`, golvElak >= -100 && golvPutt >= -100],
       [`i en by där alla mår mycket dåligt i åtta dygn blir det utbrott (${utb}: ${slag.join(', ')})`, utb >= 3 && slag.length >= 2],
@@ -426,6 +431,7 @@ SCENARIER.utbrott = {
       ['den som slår sönder något tar sin egen sak, och den är borta efteråt', krossa && borta],
       [`efter utbrottet mår man lite bättre (${m0.toFixed(2)} → ${m1.toFixed(2)})`, m1 > m0],
       ['ett utbrott som väntat för länge blir inget', p.task?.act !== 'fly' && !p.ubr],
+      ['ett utbrott som väntat för länge är borta också på natten', nattBorta],
     ];
   },
 };
