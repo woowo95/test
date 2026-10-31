@@ -196,13 +196,13 @@ export function utbrottBorjar(s: State, p: Person, k: Utbrott, mal?: Person, tin
     log(s, `${p.name} mår dåligt och ${van ? 'bryter vänskapen med' : rad.text} ${mal.name}.`, 'rel', [p.id, mal.id]);
     if (k === 'elak') {
       think(mal, `${p.name} var elak mot mig`, -HUMOR.elakHumor, s.now, HUMOR.elakTim * HOUR);
-      getRel(s, p, mal).op -= HUMOR.elakOp;
+      { const r = getRel(s, p, mal); r.op = clamp(r.op - HUMOR.elakOp, -100, 100); }
       handelse(s, p, 'elak', mal);
     } else if (k === 'skitsnack') {
       skitsnack(s, p, mal);
     } else if (k === 'puttas') {
       think(mal, `${p.name} puttade mig`, -HUMOR.puttHumor, s.now, HUMOR.puttTim * HOUR);
-      getRel(s, p, mal).op -= HUMOR.puttOp;
+      { const r = getRel(s, p, mal); r.op = clamp(r.op - HUMOR.puttOp, -100, 100); }
     } else if (k === 'slut') {
       const r = getRel(s, p, mal);
       if (!van) skiljas(s, p, mal, r);

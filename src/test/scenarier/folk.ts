@@ -409,7 +409,17 @@ SCENARIER.utbrott = {
     const borta = !tingOf(t).includes(yxa), m1 = SIM.moodOf(p, t.now);
     p.ubr = { k: 'fly', t: t.now - 7 * HOUR }; // har väntat för länge
     SIM.chooseTask(t, p);
+    // relationen går aldrig under -100, också när man är elak mot eller puttar den man redan avskyr (kodgenomgången 3.10.25)
+    const golv = (k: SIM.Utbrott) => {
+      const u = createState(9, START); klockan(u, 11);
+      const a = nyInvanare(u, 'm', 30), b = nyInvanare(u, 'k', 30); a.x += 12; b.x = a.x + 1; b.y = a.y;
+      getRel(u, a, b).op = -98;
+      SIM.utbrottBorjar(u, a, k, b);
+      return getRel(u, a, b).op;
+    };
+    const golvElak = golv('elak'), golvPutt = golv('puttas');
     return [
+      [`relationen går inte under -100 när den som redan avskys är elak (${golvElak.toFixed(0)}) eller puttar (${golvPutt.toFixed(0)})`, golvElak >= -100 && golvPutt >= -100],
       [`i en by där alla mår mycket dåligt i åtta dygn blir det utbrott (${utb}: ${slag.join(', ')})`, utb >= 3 && slag.length >= 2],
       ['den som är hungrig äter först, och utbrottet väntar', hungerForst],
       [`den som är elak sänker den andras humör (${h0.toFixed(2)} → ${h1.toFixed(2)}) och relationen (${op0.toFixed(0)} → ${op1.toFixed(0)})`, elak && h1 < h0 && op1 < op0],
