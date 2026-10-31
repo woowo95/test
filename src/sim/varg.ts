@@ -70,8 +70,8 @@ export const VARG = balans('varg', {
   jaktTim: 3, // jägarna letar efter flocken högst så här många timmar
   jaktMax: 6, // högst så många följer med
   jaktVet: 6, // byn vet om flocken i så här många timmar efter ett larm
-  kraftVarg: 1.1, // en vargs styrka mot jägarnas: 0,5 + 2 × vapnets skada (händerna 0,78, flintspjutet 1,4)
-  jaktKvot: 1.3, // jakten blir av när jägarnas styrka mot vargarnas, gånger (1 + nod × byns hunger) och (0,7 + 0,6 × kallarens mod / 20), är över detta ...
+  kraftVarg: 1.1, // en vargs styrka mot jägarnas: kraftBas + kraftSkada × vapnets skada (händerna 0,78, flintspjutet 1,4)
+  jaktKvot: 1.3, // jakten blir av när jägarnas styrka mot vargarnas, gånger (1 + nod × byns hunger) och (kallarBas + kallarMod × kallarens mod / 20), är över detta ...
   nod: 1, // ... byns hunger: 1 − maten per person / matNog
   matNog: 8,
   jaktChans: 0.5, // ... och då med den här chansen i timmen (i dagsljus)
@@ -93,6 +93,15 @@ export const VARG = balans('varg', {
   smaBarn: 8, // en förälder stannar hos sina barn under den här åldern
   // dörren (steg 3.7.21): en hungrig flock som inte ser någon ensam väntar utanför en stängd dörr så här många timmar
   vantaTim: 2,
+  // talen som stod lösa i flockens val och i striden (kodgenomgången 3.10.25), med samma värden
+  motKanin: 0.3, kaninEld: 1.5, // en flock hungrigare än motKanin går mot en kaningrupp som ligger mer än eldR × kaninEld från elden ...
+  kaninHunger: 0.2, // ... och tar en kanin bara när hungern är minst så här stor
+  dimmaSer: 0.5, // tät dimma tar bort så här stor del av vargarnas syn
+  anfallFart: 4, // flocken springer så här många gånger flyFart när den anfaller
+  kraftBas: 0.5, kraftSkada: 2, // en jägares styrka i jaktens kvot: kraftBas + kraftSkada × vapnets skada ...
+  kallarBas: 0.7, kallarMod: 0.6, // ... och kvoten gånger kallarBas + kallarMod × kallarens mod / 20
+  stridModBas: 0.6, stridModDrag: 0.8, // vargens mod i striden gånger stridModBas + stridModDrag × vargens drag (0–1) ...
+  stridHungerBas: 0.7, stridHunger: 0.6, // ... och gånger stridHungerBas + stridHunger × flockens hunger
 });
 
 const flockarna = (s: State) => s.vargar ?? [];
@@ -128,7 +137,7 @@ function ga(s: State, f: Vargflock, fart: number, dtSec: number) {
 function nyttMal(s: State, f: Vargflock, bort?: { x: number; y: number }) {
   const e = eldPlats(s), ex = e.x + 0.5, ey = e.y + 0.5;
   if (bort) { const d = avst(f, bort) || 1; f.mx = clamp(f.x + (f.x - bort.x) / d * VARG.vandra, 1, W - 1); f.my = clamp(f.y + (f.y - bort.y) / d * VARG.vandra, 1, H - 1); return; }
-  const g = f.hunger > 0.3 ? grupperOf(s).filter(q => q.n > 0 && Math.hypot(q.x - ex, q.y - ey) > VARG.eldR * 1.5).sort((a, b) => avst(a, f) - avst(b, f))[0] : undefined;
+  const g = f.hunger > VARG.motKanin ? grupperOf(s).filter(q => q.n > 0 && Math.hypot(q.x - ex, q.y - ey) > VARG.eldR * VARG.kaninEld).sort((a, b) => avst(a, f) - avst(b, f))[0] : undefined;
   if (g && avst(g, f) < VARG.vandra * 2) { f.mx = g.x; f.my = g.y; return; }
   let bx = f.x, by = f.y, bd = -1;
   for (let i = 0; i < 3; i++) {
@@ -164,7 +173,7 @@ function kommer(s: State) {
 
 // en hungrig flock nära en kaningrupp tar en kanin
 function kaninJakt(s: State, f: Vargflock) {
-  if (f.hunger < 0.2) return;
+  if (f.hunger < VARG.kaninHunger) return;
   const g = grupperOf(s).find(q => q.n > 0 && avst(q, f) < VARG.kaninR);
   if (!g || rnd(s, 'varg') >= VARG.kaninChans) return;
   const k = djurOf(s).find(d => d.grupp === g.id);
@@ -177,7 +186,7 @@ function kaninJakt(s: State, f: Vargflock) {
 // de som är vakna ser flocken och ropar; vakten ser längst och väcker byn när flocken är nära
 function ses(s: State, f: Vargflock, folk: Person[]) {
   if (f.sedd !== undefined && s.now - f.sedd < VARG.larmTim * HOUR) return;
-  const natt = isLight(s.now) ? 1 : VARG.nattSer, dimma = 1 - 0.5 * vaderNu(s).dimma;
+  const natt = isLight(s.now) ? 1 : VARG.nattSer, dimma = 1 - VARG.dimmaSer * vaderNu(s).dimma;
   const ser = (q: Person) => vaken(q) && avst(q, f) < (q.task?.act === 'vakt' ? VARG.vaktSer : VARG.folkSer) * natt * dimma;
   const vakt = folk.find(q => q.task?.act === 'vakt' && ser(q)), p = vakt ?? folk.find(ser);
   if (!p) return;
@@ -271,7 +280,7 @@ function flockSteg(s: State, f: Vargflock, folk: Person[], dtSec: number) {
     const p = f.byte !== undefined ? byId(s, f.byte) : undefined;
     if (!p || p.health <= 0 || !ensam(s, p, folk)) { f.gor = 'stryker'; f.byte = undefined; nyttMal(s, f); return; }
     const m = vagIn(s, f, p); f.mx = m.x; f.my = m.y;
-    const kvar = ga(s, f, VARG.flyFart * 4, dtSec);
+    const kvar = ga(s, f, VARG.flyFart * VARG.anfallFart, dtSec);
     if (kvar < 0) { f.gor = 'stryker'; f.byte = undefined; nyttMal(s, f); return; } // kommer inte fram
     if (m === p && kvar < 1) { f.gor = 'stryker'; f.byte = undefined; vargStrid(s, f, [p], 'skada', 'när vargarna anföll'); nyttMal(s, f, p); }
     return;
@@ -428,8 +437,8 @@ export function jaktBeslut(s: State, f: Vargflock, folk: Person[]) {
   const nod = clamp(1 - foodOf(s) / Math.max(1, folk.length) / VARG.matNog, 0, 1), sed = (s.seder.v as Record<string, number>).strid ?? 0;
   const vill = kan.map(q => ({ q, v: q === kallar ? Infinity : VARG.foljMod * (stat(q, 'mod', s.now) - 10) / 10 + VARG.foljTycke * getRel(s, q, kallar).op / 100 + VARG.foljSed * sed + VARG.foljNod * nod + gehor + VARG.foljSlump * (rnd(s, 'varg', q) - 0.5) }))
     .filter(x => x.v > VARG.folj).sort((a, b) => b.v - a.v).slice(0, VARG.jaktMax).map(x => x.q);
-  const kraft = vill.reduce((a, q) => a + 0.5 + 2 * VAPEN[personKampe(s, q, 0, 0, 0, 0).vapen].skada, 0);
-  const kvot = kraft / (f.vargar.length * VARG.kraftVarg) * (1 + VARG.nod * nod) * (0.7 + 0.6 * stat(kallar, 'mod', s.now) / 20);
+  const kraft = vill.reduce((a, q) => a + VARG.kraftBas + VARG.kraftSkada * VAPEN[personKampe(s, q, 0, 0, 0, 0).vapen].skada, 0);
+  const kvot = kraft / (f.vargar.length * VARG.kraftVarg) * (1 + VARG.nod * nod) * (VARG.kallarBas + VARG.kallarMod * stat(kallar, 'mod', s.now) / 20);
   if (kvot < VARG.jaktKvot || rnd(s, 'varg') >= VARG.jaktChans) return;
   const sp = jaktPlats(s, f);
   if (!sp) return; // flocken står för långt ut på isen
@@ -472,7 +481,7 @@ export function vargStrid(s: State, f: Vargflock, folk: Person[], avsikt: Avsikt
   const kampar: Uppstallning['kampar'] = folk.map((p, i) => personKampe(s, p, 0, 0, 3, H0 / 2 + (i - (folk.length - 1) / 2)));
   f.vargar.forEach((id, j) => {
     const d = dragOf('varg', id), k = djurKampe('varg', 0, 1, W0 - 3, H0 / 2 + (j - (n - 1) / 2));
-    k.fart = d.snabbhet; k.st.styrka = d.styrka; k.st.mod = clamp(k.st.mod * (0.6 + 0.8 * (d.mod ?? 0.5)) * modF * (0.7 + 0.6 * f.hunger), 1, 20);
+    k.fart = d.snabbhet; k.st.styrka = d.styrka; k.st.mod = clamp(k.st.mod * (VARG.stridModBas + VARG.stridModDrag * (d.mod ?? 0.5)) * modF * (VARG.stridHungerBas + VARG.stridHunger * f.hunger), 1, 20);
     if (j === 0 && n > 1) { k.ledare = 'fram'; k.namn = 'Ledarvargen'; } else if (n > 1) k.namn = `Varg ${j + 1}`; // ledarvargen: faller den sjunker modet hos de andra
     kampar.push(k);
   });

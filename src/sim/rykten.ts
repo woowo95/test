@@ -66,7 +66,16 @@ export const RYKTE = balans('rykte', {
   smakMat: 0.05, // ett barn som äter med en förälder nära får så här mycket tycke för maten
   smakGift: 0.6, // den som blev förgiftad av svamp får så här mycket avsmak för svampen
   smakDrag: 0.15, // smaken drar så här mycket i valet av arbete (lusten gånger 1 + smakDrag × smaken)
-  smakTanke: 0.03, // glädjen (eller olusten) av att äta det man tycker om (eller inte)
+  smakTanke: 0.03, // glädjen (eller olusten) av att äta det man tycker om (eller inte) ...
+  smakKanns: 0.2, smakTankeTim: 3, // ... när smaken är starkare än så här, i så här många timmar
+  // talen som stod lösa (kodgenomgången 3.10.25), med samma värden
+  falskVikt: 0.8, // ett påhittat bevis väger så här mycket som ett riktigt
+  vTak: 1.5, // ett intryck växer långsammare ju närmare det är vMax × vTak
+  lognMax: 0.9, // tron på den man tror är en lögnare sjunker som mest så här mycket
+  dodBer: 0.5, // det man berättar om en död för man vidare med så här stor del av styrkan
+  lognTanke: -0.05, lognTankeTim: 12, // den som hör att någon ljuger om hen blir så här ledsen i så här många timmar
+  skitsnack: 1.5, // ett påhittat rykte är så här starkt gånger händelsens vikt
+  smakTycke: 0.7, // chansen att en smak från början är tycke (annars avsmak)
 });
 
 // ---------- registren ----------
@@ -133,7 +142,7 @@ export interface Bevis { h: HandelseTyp; t: number; mot?: number; motNamn?: stri
 export interface Intryck { om: number; namn: string; k: IntryckTyp; v: number; c: number; t: number; src?: number; led?: number; bev?: Bevis[] }
 
 const styrka = (e: Intryck) => e.v * e.c;
-const bevVikt = (b: Bevis) => HANDELSER[b.h].vikt * (b.falsk ? 0.8 : 1);
+const bevVikt = (b: Bevis) => HANDELSER[b.h].vikt * (b.falsk ? RYKTE.falskVikt : 1);
 export const intryckOm = (p: Person, om: number, k?: IntryckTyp) => p.intryck?.find(e => e.om === om && (k === undefined || e.k === k));
 
 // relationen ändras när intrycket blir starkare (eller svagare). utanOp: den det hände har redan fått sin ändring
@@ -174,7 +183,7 @@ function intryck(s: State, p: Person, om: Person | { id: number; name: string },
   if (e) {
     // det man såg själv väger tyngre än det man hört
     // samma rykte en gång till gör det inte värre: det man hört blir som det starkaste man hört
-    const ny = led ? Math.max(e.v, Math.min(v, RYKTE.vMax)) : clamp(e.v + v * (1 - e.v / (RYKTE.vMax * 1.5)), 0, RYKTE.vMax);
+    const ny = led ? Math.max(e.v, Math.min(v, RYKTE.vMax)) : clamp(e.v + v * (1 - e.v / (RYKTE.vMax * RYKTE.vTak)), 0, RYKTE.vMax);
     e.v = ny; e.c = Math.max(e.c, c); e.t = s.now;
     if (led < (e.led ?? 0)) { e.led = led; if (src === undefined) delete e.src; else e.src = src; }
   } else {
@@ -211,10 +220,9 @@ export function allmant(s: State, p: Person, b: Bevis, del: number, till: Person
 // ---------- samtal ----------
 // hur mycket b tror på det a berättar: relationen, och mindre om b tror att a är en lögnare (minne.ts använder samma)
 export function troPa(s: State, b: Person, a: Person, r: Rel = getRel(s, a, b)) {
-  const l = intryckOm(b, a.id, 'logn');
-  return clamp(RYKTE.troBas + r.op / RYKTE.troDiv, RYKTE.troMin, RYKTE.troMax) * (l ? 1 - Math.min(0.9, RYKTE.lognTro * styrka(l)) : 1);
+  return clamp(RYKTE.troBas + r.op / RYKTE.troDiv, RYKTE.troMin, RYKTE.troMax) * lognFaktor(b, a);
 }
-export const lognFaktor = (b: Person, a: Person) => { const l = intryckOm(b, a.id, 'logn'); return l ? 1 - Math.min(0.9, RYKTE.lognTro * styrka(l)) : 1; };
+export const lognFaktor = (b: Person, a: Person) => { const l = intryckOm(b, a.id, 'logn'); return l ? 1 - Math.min(RYKTE.lognMax, RYKTE.lognTro * styrka(l)) : 1; };
 // vad a tycker om personen om: relationen om hen lever, annars det a har för intryck av hen (de döda, steg 3.4.2)
 function asikt(s: State, a: Person, om: number) {
   const q = byId(s, om);
@@ -256,7 +264,7 @@ export function beratta(s: State, a: Person, b: Person, e: Intryck, r: Rel) {
   const q = byId(s, e.om), om = q ?? { id: e.om, name: e.namn }; // den döda kan vara borta ur folket (compact i steg.ts)
   const led = (e.led ?? 0) + 1;
   // minnet av en död blir mer likt berättarens eget (steg 3.4.2)
-  intryck(s, b, om, e.k, v * (q && alive(q) ? 1 : 0.5), c, ex ? { ...ex, sett: undefined } as Bevis : undefined, a.id, led);
+  intryck(s, b, om, e.k, v * (q && alive(q) ? 1 : RYKTE.dodBer), c, ex ? { ...ex, sett: undefined } as Bevis : undefined, a.id, led);
   const ny = intryckOm(b, e.om, e.k);
   if (ny && ex) for (const x of e.bev!.slice(1)) addBevis(ny, { ...x, sett: undefined } as Bevis);
   if (forstaGang(s, 'rykte:' + e.om + ':' + e.k) && q) log(s, `Det går rykten om att ${e.namn} är ${d.namn}.`, 'rel', [e.om]);
@@ -267,7 +275,7 @@ function ertappad(s: State, b: Person, a: Person, e: Intryck, h: 'logn' | 'overd
   r.op = clamp(r.op - RYKTE.ertappaOp, -100, 100);
   intryck(s, b, a, 'logn', HANDELSER[h].vikt, 1, { h, t: s.now, mot: e.om, motNamn: e.namn, sett: true }, undefined, 0, true);
   count(s, 'rykte_' + h);
-  if (h === 'logn') think(b, `${a.name} ljuger om mig`, -0.05, s.now, 12 * HOUR);
+  if (h === 'logn') think(b, `${a.name} ljuger om mig`, RYKTE.lognTanke, s.now, RYKTE.lognTankeTim * HOUR);
 }
 
 // skitsnack (utbrott av grad 2, humor.ts): den som mår dåligt hittar på något om den hen ogillar mest och berättar det för
@@ -288,7 +296,7 @@ export function skitsnack(s: State, p: Person, lyss: Person) {
   const andra = living(s).filter(q => q !== p && q !== om && q !== lyss);
   const mot = andra.length ? andra[Math.floor(rnd(s, 'rykte', p) * andra.length)] : p;
   const d = HANDELSER[h];
-  const e: Intryck = { om: om.id, namn: om.name, k: d.i, v: d.vikt * 1.5, c: 1, t: s.now, bev: [{ h, t: s.now, mot: mot.id, motNamn: mot.name, falsk: true, ...(h === 'stold' ? { sak: 'mat' } : {}) }] };
+  const e: Intryck = { om: om.id, namn: om.name, k: d.i, v: d.vikt * RYKTE.skitsnack, c: 1, t: s.now, bev: [{ h, t: s.now, mot: mot.id, motNamn: mot.name, falsk: true, ...(h === 'stold' ? { sak: 'mat' } : {}) }] };
   count(s, 'rykte_skitsnack');
   beratta(s, p, lyss, e, getRel(s, p, lyss));
 }
@@ -386,7 +394,7 @@ const STARTSMAK = ['a:samla', 'a:jakt', 'a:fiske', 'a:ved', 'm:abborre', 'm:bar'
 export function startSmak(s: State, p: Person) {
   if (rnd(s, 'rykte', p) >= RYKTE.smakStart) return;
   const k = STARTSMAK[Math.floor(rnd(s, 'rykte', p) * STARTSMAK.length)];
-  smaka(p, k, (rnd(s, 'rykte', p) < 0.7 ? 1 : -1) * RYKTE.smakStartV);
+  smaka(p, k, (rnd(s, 'rykte', p) < RYKTE.smakTycke ? 1 : -1) * RYKTE.smakStartV);
 }
 // en gång i timmen: barnet nära en förälder som arbetar får tycke för arbetet, och den vuxne som är glad eller ledsen när hen
 // arbetar får tycke eller avsmak för det
@@ -413,7 +421,7 @@ export function smakMat(s: State, p: Person, per: Record<string, number>) {
   if (!k) return;
   if (ageOf(p, s.now) < ALDER.vuxen && living(s).some(q => isParent(q, p) && Math.hypot(q.x - p.x, q.y - p.y) < RYKTE.syn)) smaka(p, 'm:' + k, RYKTE.smakMat);
   const v = smakAv(p, 'm:' + k);
-  if (Math.abs(v) > 0.2) think(p, v > 0 ? 'Fick äta något gott' : 'Fick äta något äckligt', v * RYKTE.smakTanke, s.now, 3 * HOUR);
+  if (Math.abs(v) > RYKTE.smakKanns) think(p, v > 0 ? 'Fick äta något gott' : 'Fick äta något äckligt', v * RYKTE.smakTanke, s.now, RYKTE.smakTankeTim * HOUR);
 }
 // den som blev förgiftad av svamp får avsmak för svamp (fynd.ts)
 export const smakGift = (p: Person) => smaka(p, 'm:svamp', -RYKTE.smakGift);
