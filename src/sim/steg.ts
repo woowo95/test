@@ -357,7 +357,7 @@ function taskStep(s: State, p: Person, a: number, t1: number, dtSec: number, lea
     const phaseFlip = t && t.dark !== !light && ACTS[t.act].dygn; // dag blev natt eller tvärtom
     if (t && t.phase === 'do' && t.until <= now) KLAR[t.act]?.(s, p, t, 0); // ett träd som fällts färdigt, en yxa som gjorts klar
     const lightDone = t?.act === 'tanda' && (s.fire.lit || !canLight(s, p));
-    const mustGo = t && p.toa < KROPP.toaAvbryt && t.act !== 'toa' && t.act !== 'buren' && t.act !== 'strid' && a >= ALDER.smabarn; // nöden avbryter det man håller på med (inte den som bärs eller den som slåss)
+    const mustGo = t && p.toa < KROPP.toaAvbryt && !ACTS[t.act].nodFri && a >= ALDER.smabarn; // nöden avbryter det man håller på med (inte den som bärs eller den som slåss)
     if (!t || (t.until <= now && t.phase !== 'back') || ((phaseFlip || mustGo) && t.phase !== 'back') || lightDone) {
       if (t && isCarrying(t) && t.act !== 'elda') { t.phase = 'back'; const d = dropSpot(s, homeKind(t)); t.tx = d.x + sida(p, 0.2); t.ty = d.y + sida(p, -0.2); }
       else chooseTask(s, p);
@@ -417,7 +417,7 @@ function walk(s: State, p: Person, tk: Task, left: number) {
     const v = pathFor(s, g, p.x, p.y, tk.tx, tk.ty), f = eldPlats(s);
     // målet går inte att nå (en ö, ett förråd bakom en översvämning): man lägger ner det man bär och väljer något annat. Bara
     // den som själv är avskuren från lägret går rakt över. Den som bär en skadad eller vatten till någon går inte ifrån det
-    const bara = tk.phase === 'back' && tk.act !== 'varda' && tk.act !== 'vatten' && tk.act !== 'slacka';
+    const bara = tk.phase === 'back' && !ACTS[tk.act].barTill;
     if (!v && (tk.phase === 'go' || bara) && pathFor(s, g, p.x, p.y, f.x + 0.5, f.y + 0.5)) { avbryt(s, p); return { used: Math.min(left, BIT), framme: false }; }
     tk.path = v ?? [];
   }

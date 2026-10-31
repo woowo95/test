@@ -7,7 +7,7 @@ import { Bit, Rum, bitAt, blocked, dorrDef, roomAt, freeNear, gridOf } from './b
 import { dodaDjur, dragOf, djurOf, grupperOf, halsaOf, satDjurHalsa } from './djur';
 import { ALDER, KROPP, ageOf, byId, count, forstaGang, franMitt, getRel, isSick, livet, living, log, ovning, stat, think } from './folk';
 import { halsa, kanGa, skada } from './halsa';
-import { Act } from './handlingar';
+import { Act, larmAvbryter } from './handlingar';
 import { eldPlats, getMap } from './karta';
 import { punktIRuta } from './mark';
 import { addTo, amountOf, avbryt, foodOf, zoneOf } from './lager';
@@ -241,10 +241,9 @@ export function vargSkydd(s: State, p: Person): { act: Act; why: string; spot?: 
   return { act: 'samtal', why: 'Vargar är nära, håller sig vaken vid elden', dur };
 }
 // den som hör ropet avbryter det hen gör och söker skydd (inte den som slåss, vårdar, bärs eller håller vakt)
-const AVBRYTS_INTE = new Set<string>(['strid', 'vargjakt', 'vakt', 'buren', 'fatt', 'varda', 'gomma', 'forsvar']);
 function soker(s: State, folk: Person[]) {
   for (const q of folk) {
-    if (!q.task || AVBRYTS_INTE.has(q.task.act) || q.task.act === 'sova' && iHus(s, q) || !vargLarm(s, q)) continue; // den som sover i ett hus sover vidare
+    if (!q.task || !larmAvbryter(q.task.act, 'varg') || q.task.act === 'sova' && iHus(s, q) || !vargLarm(s, q)) continue; // den som sover i ett hus sover vidare
     avbryt(s, q); q.task = undefined; count(s, 'vargSkydd');
   }
 }
@@ -377,7 +376,7 @@ function borjaVanta(s: State, f: Vargflock, o: Bit, folk: Person[]) {
   count(s, 'vargVantar');
   const r = vantarVid(s, f), inne = folk.filter(q => r && roomAt(s, q.x, q.y) === r);
   // de som är vakna i huset slutar med det de gör och håller sig gömda
-  for (const q of inne) if (q.task && !AVBRYTS_INTE.has(q.task.act) && q.task.act !== 'sova') { avbryt(s, q); q.task = undefined; }
+  for (const q of inne) if (q.task && larmAvbryter(q.task.act, 'varg') && q.task.act !== 'sova') { avbryt(s, q); q.task = undefined; }
   log(s, `${f.vargar.length > 1 ? 'Vargarna' : 'Vargen'} väntar utanför dörren${inne.length ? `, och ${inne.map(q => q.name).join(', ')} är instängda` : ''}.`, 'world', inne.map(q => q.id));
 }
 // de vuxna i huset som vågar gå ut och möta flocken: modet och hur många de är mot vargarna (som vargSkydd)

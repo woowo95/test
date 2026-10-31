@@ -79,7 +79,14 @@ interface ActDef {
   // eller i skuggan under ett träd eller i ett hus nära den som är för varm (steg 2.3.13)
   plats?: 'elden' | 'kol' | 'sang' | 'lek' | 'ang' | 'strand' | 'avsides' | 'skog' | 'station' | 'bord' | 'skugga';
   radie?: number; // avstånd från elden, för plats 'elden'
+  fortsatter?: readonly Larmslag[]; // larmen som inte avbryter handlingen (brand.ts, tornado.ts, varg.ts)
+  nodFri?: true; // nöden (toa) avbryter den inte (steg.ts)
+  barTill?: true; // bär till någon eller till elden, inte hem till förrådet: man lägger inte ner det när vägen är stängd (steg.ts)
 }
+export type Larmslag = 'brand' | 'tornado' | 'varg';
+// avbryter larmet om en eldsvåda, en tornado eller vargar handlingen? (kodgenomgången 3.10.25: tre listor med namn blev en
+// egenskap i registret)
+export const larmAvbryter = (act: string, larm: Larmslag) => !(ACTS as Record<string, ActDef>)[act]?.fortsatter?.includes(larm);
 
 const DEF = {
   samla: { namn: 'Samlar bär och rötter', yrke: 'Samlare', slag: 'samla', redskap: { korg: { namn: 'Samlar bär och rötter med korg', tar: 'Tar en korg.', ger: 1.9, haller: 32 }, benspade: { namn: 'Gräver rötter med spaden', tar: 'Tar benspaden.', rotter: 2, haller: 40 } }, slits: { enhet: 'bär och rötter', per: 'ger' }, arbete: 'samla', behov: 'mat', tand: true, bas: 0.4, sasong: [0.4, 1.0, 1.25, 1.4], egenskap: 'uthallighet', ger: 'bar', resurs: 'samla', fart: 100, vandra: { r: 2, h0: 3, h1: 10, v: 0.6 }, tungt: true, dygn: true, plats: 'ang' },
@@ -92,25 +99,25 @@ const DEF = {
   maltid: { namn: 'Äter vid bordet', tecken: '🍽️', vila: true, social: true, skamfri: true, dygn: true, stilla: true, plats: 'bord' }, // steg 2.2.15
   beratta: { namn: 'Berättar vid elden', yrke: 'Berättare', slag: 'prata', social: true, dygn: true, plats: 'elden' },
   hantverk: { namn: 'Gör handarbete', yrke: 'Hantverkare', slag: 'hantverk', verktyg: { rep: 'Tvinnar rep' }, vila: true, hantverk: true, social: true, dygn: true, stilla: true, plats: 'elden' },
-  vakt: { namn: 'Håller vakt', yrke: 'Väktare', tecken: '👁️', social: true, skamfri: true, dygn: true, stilla: true, vapen: true, plats: 'elden', radie: 2.6 },
+  vakt: { namn: 'Håller vakt', yrke: 'Väktare', tecken: '👁️', social: true, skamfri: true, dygn: true, stilla: true, vapen: true, plats: 'elden', radie: 2.6, fortsatter: ['varg'] as const },
   // när vargar är nära (steg 3.7.15, varg.ts): de svaga gömmer sig i huset, de modiga väntar med vapen vid elden
-  gomma: { namn: 'Gömmer sig för vargarna', tecken: '🫣', dygn: true, stilla: true, plats: 'sang' },
-  forsvar: { namn: 'Väntar på vargarna med vapen', tecken: '🛡️', social: true, skamfri: true, dygn: true, stilla: true, vapen: true, plats: 'elden', radie: 2.2 },
+  gomma: { namn: 'Gömmer sig för vargarna', tecken: '🫣', dygn: true, stilla: true, plats: 'sang', fortsatter: ['varg'] as const },
+  forsvar: { namn: 'Väntar på vargarna med vapen', tecken: '🛡️', social: true, skamfri: true, dygn: true, stilla: true, vapen: true, plats: 'elden', radie: 2.2, fortsatter: ['varg'] as const },
   sova: { namn: 'Sover', slag: 'vila', under: { go: 'går och lägger sig' }, vila: true, stilla: true, plats: 'sang' },
   elda: { namn: 'Lägger trä på elden', yrke: 'Eldvaktare', slag: 'elda', under: { go: 'hämtar trä', back: 'bär trä till elden' }, ger: 'ved' },
   tanda: { namn: 'Försöker tända elden', yrke: 'Eldvaktare', slag: 'elda' },
   flyttaeld: { namn: 'Flyttar elden', yrke: 'Eldvaktare', slag: 'elda', tungt: true }, // steg 2.10.4: släcker elden och bär stenarna till en ny eldplats (eldflytt.ts)
   varma: { namn: 'Värmer sig vid elden', tecken: '♨️', vila: true, social: true, skamfri: true, varmer: true, plats: 'elden' },
   svalka: { namn: 'Svalkar sig i skuggan', tecken: '🌳', vila: true, social: true, skamfri: true, dygn: true, stilla: true, plats: 'skugga' }, // steg 2.3.13
-  toa: { namn: 'Går avsides på toa', tecken: '💧', ikon: 'a_toa', verb: 'är på toa', plats: 'avsides' },
+  toa: { namn: 'Går avsides på toa', tecken: '💧', ikon: 'a_toa', verb: 'är på toa', plats: 'avsides', nodFri: true },
   dricka: { namn: 'Dricker vid vattnet', tecken: '🥤' }, // steg 2.4.1: platsen väljs i torst.ts
   smalta: { namn: 'Smälter snö vid elden och dricker', tecken: '🫗', plats: 'elden' }, // i istiden, när sjön är frusen
   // vården (steg 2.5.2, halsa.ts): platsen är den skadade, och den som inte kan gå bärs hem eller får vatten där hen ligger
-  varda: { namn: 'Vårdar', tecken: '🩹', under: { back: 'bär den skadade' }, stilla: true, framme: true },
-  buren: { namn: 'Bärs hem', tecken: '🫂', stilla: true },
-  fatt: { namn: 'Får vatten av de andra', tecken: '🥤', stilla: true },
+  varda: { namn: 'Vårdar', tecken: '🩹', under: { back: 'bär den skadade' }, stilla: true, framme: true, fortsatter: ['brand', 'tornado', 'varg'] as const, barTill: true },
+  buren: { namn: 'Bärs hem', tecken: '🫂', stilla: true, fortsatter: ['brand', 'tornado', 'varg'] as const, nodFri: true },
+  fatt: { namn: 'Får vatten av de andra', tecken: '🥤', stilla: true, fortsatter: ['brand', 'tornado', 'varg'] as const },
   // vattensäcken (steg 2.10.1, torst.ts): fylls vid vattnet och bärs till den som inte kan gå. Den slits en gång per tur
-  vatten: { namn: 'Hämtar vatten', tecken: '🫗', under: { go: 'fyller vattensäcken', back: 'bär vatten' }, redskap: { vattensack: { tar: 'Tar vattensäcken.', haller: 150, kravs: true } }, slits: { enhet: 'turer med vatten', per: 'gang' }, framme: true },
+  vatten: { namn: 'Hämtar vatten', tecken: '🫗', under: { go: 'fyller vattensäcken', back: 'bär vatten' }, redskap: { vattensack: { tar: 'Tar vattensäcken.', haller: 150, kravs: true } }, slits: { enhet: 'turer med vatten', per: 'gang' }, framme: true, barTill: true },
   kol: { namn: 'Hämtar kol ur den slocknade elden', tecken: '⚫', plats: 'kol' },
   falla: { namn: 'Fäller ett träd med yxa', yrke: 'Trähuggare', slag: 'tra', redskap: { yxa: { haller: 85, kravs: true } }, slits: { enhet: 'träd', per: 'gang' }, arbete: 'ved', takt: 0, tungt: true, framme: true },
   hugga: { namn: 'Hugger trä av ett fällt träd', yrke: 'Trähuggare', slag: 'tra', redskap: { yxa: { haller: 85, kravs: true } }, slits: { enhet: 'träd' }, arbete: 'ved', ger: 'ved', takt: 1.5, tur: 1200, tungt: true },
@@ -148,17 +155,17 @@ const DEF = {
   elak: { namn: 'Är elak mot någon', tecken: '😠', ikon: 'utb2', dygn: true, stilla: true },
   skvallra: { namn: 'Snackar skit om någon', tecken: '🗣️', ikon: 'utb2', dygn: true, stilla: true }, // steg 3.3.3 (rykten.ts)
   krossa: { namn: 'Slår sönder något', tecken: '💥', ikon: 'utb2', dygn: true, stilla: true },
-  undan: { namn: 'Går undan för tornadon', tecken: '🌪️', stilla: true }, // steg 3.8.4 (tornado.ts)
+  undan: { namn: 'Går undan för tornadon', tecken: '🌪️', stilla: true, fortsatter: ['brand', 'tornado'] as const }, // steg 3.8.4 (tornado.ts)
   // eldsvådorna (steg 3.8.5, brand.ts): de vuxna släcker en eld nära byn, med vattensäcken (fylls vid vattnet och töms över
   // elden) eller med händerna, och de andra går undan
-  slacka: { namn: 'Släcker elden', tecken: '🧯', under: { go: 'hämtar vatten', back: 'bär vatten till elden' }, redskap: { vattensack: { namn: 'Släcker elden med vattensäcken', tar: 'Tar vattensäcken.', haller: 150 } }, slits: { enhet: 'turer med vatten', per: 'gang' }, tungt: true, framme: true },
-  flyEld: { namn: 'Går undan för elden', tecken: '🔥', stilla: true },
+  slacka: { namn: 'Släcker elden', tecken: '🧯', under: { go: 'hämtar vatten', back: 'bär vatten till elden' }, redskap: { vattensack: { namn: 'Släcker elden med vattensäcken', tar: 'Tar vattensäcken.', haller: 150 } }, slits: { enhet: 'turer med vatten', per: 'gang' }, tungt: true, framme: true, fortsatter: ['brand'] as const, barTill: true },
+  flyEld: { namn: 'Går undan för elden', tecken: '🔥', stilla: true, fortsatter: ['brand'] as const },
   fly: { namn: 'Flyr ut i skogen', tecken: '🏃', ikon: 'utb2', vandra: { r: 3, h0: 1, h1: 3, v: 1.1 }, dygn: true },
   badd: { namn: 'Ligger i bädden och orkar inte gå upp', tecken: '🛌', ikon: 'utb3', vila: true, dygn: true, stilla: true, plats: 'sang' }, // steg 3.2.3
   slut: { namn: 'Gör slut', tecken: '💔', ikon: 'utb3', dygn: true, stilla: true },
   sla: { namn: 'Slår någon', tecken: '👊', ikon: 'utb3', verktyg: { misshandel: 'Misshandlar någon', drap: 'Slår ihjäl någon' }, dygn: true, stilla: true },
-  strid: { namn: 'Slåss', tecken: '⚔️', stilla: true }, // steg 3.7.2 (strid.ts): står kvar i striden medan de andra behoven väntar
-  vargjakt: { namn: 'Jagar varg', slag: 'jaga', ger: 'varg', tungt: true }, // steg 3.7.1 (varg.ts): ledaren samlar jägare, och den fällda vargen bärs hem
+  strid: { namn: 'Slåss', tecken: '⚔️', stilla: true, fortsatter: ['brand', 'tornado', 'varg'] as const, nodFri: true }, // steg 3.7.2 (strid.ts): står kvar i striden medan de andra behoven väntar
+  vargjakt: { namn: 'Jagar varg', slag: 'jaga', ger: 'varg', tungt: true, fortsatter: ['brand', 'tornado', 'varg'] as const }, // steg 3.7.1 (varg.ts): ledaren samlar jägare, och den fällda vargen bärs hem
   skrika: { namn: 'Skriker och gråter', tecken: '😭', ikon: 'utb1', dygn: true, stilla: true }, // barnens (steg 3.2.4)
 } satisfies Record<string, ActDef>;
 

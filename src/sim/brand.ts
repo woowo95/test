@@ -22,6 +22,7 @@ import { allaBarn } from './uppvaxt';
 import { FOREST, VAG, isSoil } from './vag';
 import { blixtNu, snoPaMarken, torrTim, vaderNu } from './vader';
 import { hash3 } from './slump';
+import { larmAvbryter } from './handlingar';
 
 // Eldsvådor och skogsbrand (steg 3.8.5, "Motgångarna i spelet" och "Elden" i designdokumentet). Inte en rad i MOTGANGAR:
 // branden har ingen tid i kalendern utan börjar när en gnista eller blixten tänder något som brinner. Gnistor flyger från
@@ -268,10 +269,9 @@ function ser(s: State, b: Brand) {
   larma(s, n % W + 0.5, Math.floor(n / W) + 0.5, 'brand', 1, ser);
 }
 // den som vet om elden avbryter det hen gör när hen ska släcka eller gå undan (inte den som slåss, vårdar eller bärs)
-const AVBRYTS_INTE = new Set<string>(['strid', 'vargjakt', 'buren', 'fatt', 'varda', 'undan', 'slacka', 'flyEld']);
 function soker(s: State, b: Brand, hot: boolean) {
   for (const p of living(s)) {
-    if (!p.task || AVBRYTS_INTE.has(p.task.act) || larmNu(s, p)?.vad !== 'brand' || !brandMal(s, b, p, hot)) continue;
+    if (!p.task || !larmAvbryter(p.task.act, 'brand') || larmNu(s, p)?.vad !== 'brand' || !brandMal(s, b, p, hot)) continue;
     avbryt(s, p); count(s, 'brand avbryter');
   }
 }
