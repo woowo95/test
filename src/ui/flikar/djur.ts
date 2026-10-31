@@ -27,9 +27,9 @@ function djurHtml() {
       ${rad('Hälsa', h.blod, pr(h.blod), h.sar > 0 ? 'Skadad: blodet och såren läker med tiden' : 'Frisk', 'cond')}
       ${h.sar > 0 ? `<dt title="Summan av såren. De läker med tiden">Sår</dt><dd title="Summan av såren. De läker med tiden"><span>${kortTal(h.sar)}</span></dd>` : ''}
       ${drag.mod !== undefined ? rad('Mod', drag.mod, pr(drag.mod), 'Hur modig vargen är. Flocken blir modigare ju fler den är, och den flyr när en varg faller eller ledarvargen dör', 'skill') : ''}
-      ${f ? rad('Hunger', f.hunger, pr(f.hunger), 'Flockens hunger. En hungrig flock jagar kaniner, smyger till förrådet på natten och kan anfalla den som är ensam', f.hunger > 0.6 ? 'low' : '') : ''}
+      ${f ? rad('Hunger', f.hunger, pr(f.hunger), 'Flockens hunger. En hungrig flock jagar harar, smyger till förrådet på natten och kan anfalla den som är ensam', f.hunger > 0.6 ? 'low' : '') : ''}
       ${f ? `<dt>Flock</dt><dd title="${esc(f.vargar.length > 1 ? `Flocken har ${f.vargar.length} vargar${f.vargar[0] === d.id ? '. Den här är ledarvargen' : ''}` : 'En ensam varg')}"><span>${f.vargar.length} st</span></dd>` : ''}
-      ${g ? `<dt>Grupp</dt><dd title="Gruppen har ${g.n} kaniner just nu"><span>${g.n} st</span></dd>` : ''}
+      ${g ? `<dt>Grupp</dt><dd title="Gruppen har ${g.n} harar just nu"><span>${g.n} st</span></dd>` : ''}
     </dl>`;
 }
 export const djur: Flik = { namn: 'Djuret', knapp: 'person', html: djurHtml };

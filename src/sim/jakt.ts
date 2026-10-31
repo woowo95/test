@@ -151,7 +151,7 @@ export function jaktKlar(s: State, p: Person, tk: Task) {
     const ut = kastat(s, p, f.v, f.kast, f.x, f.y, r);
     if (ut) {
       tk.tool = undefined;
-      if (ut === 'borta' && forstaGang(s, 'spjutBorta')) log(s, `${p.name} kastade ${VAPEN[f.v as Vapen].namn.toLowerCase()} efter en kanin och hittade det aldrig igen.`, 'world', [p.id]);
+      if (ut === 'borta' && forstaGang(s, 'spjutBorta')) log(s, `${p.name} kastade ${VAPEN[f.v as Vapen].namn.toLowerCase()} efter en hare och hittade det aldrig igen.`, 'world', [p.id]);
     }
   } else if (f.ut !== 'miss' && f.ut !== 'flydde' && !f.hand && tk.tool) { // stacket sliter spjutet
     if (wearTool(s, p, tk.tool, r() * KAST.slit)) tk.tool = undefined;
@@ -161,10 +161,10 @@ export function jaktKlar(s: State, p: Person, tk: Task) {
   if (f.ut === 'fangad') {
     count(s, 'jaktFangst'); gjort(s, p, 'kanin');
     dodaDjur(s, f.id);
-    if (forstaGang(s, 'kaniner')) log(s, `${p.name} fångade byns första kanin och bar hem den hel.`, 'world', [p.id]);
+    if (forstaGang(s, 'kaniner')) log(s, `${p.name} fångade byns första hare och bar hem den hel.`, 'world', [p.id]);
     tk.carry += KANIN;
     blodas(s, f.x, f.y, 'jakt', 1); // där kaninen fångades
     ovning(p, f.kast > 0 ? 'traff' : 'narstrid', SLAGSMAL.jakt); // träffsäkerheten eller närstriden (strid.ts)
-    if (f.hand && r() < JAKT.bett) { count(s, 'jaktBett'); skada(s, p, r() < 0.5 ? 'handH' : 'handV', 'bett', JAKT.bettGrad, 'jakt', 'när hen grep en kanin'); }
+    if (f.hand && r() < JAKT.bett) { count(s, 'jaktBett'); skada(s, p, r() < 0.5 ? 'handH' : 'handV', 'bett', JAKT.bettGrad, 'jakt', 'när hen grep en hare'); }
   } else if (f.ut === 'skadad') { count(s, 'jaktSkadad'); satDjurHalsa(s, f.id, Math.min(f.blod, h.blod), h.sar + f.g); }
 }

@@ -53,7 +53,7 @@ export const PLAGG_LIST = Object.keys(PLAGG_DEF) as Plagg[];
 // varme/hallbar/vikt/skydd = gånger kaninskinnets. Värdet är sakens (varde.ts)
 interface MaterialDef { sak: string; namn: string; slag: MaterialSlag; bit: number; varme: number; hallbar: number; vikt: number; skydd: number }
 const KLADMATERIAL_DEF = {
-  kaninskinn: { sak: 'skinn', namn: 'kaninskinn', slag: 'skinn', bit: 1, varme: 1, hallbar: 1, vikt: 1, skydd: 1 },
+  kaninskinn: { sak: 'skinn', namn: 'harskinn', slag: 'skinn', bit: 1, varme: 1, hallbar: 1, vikt: 1, skydd: 1 },
   vargskinn: { sak: 'vargskinn', namn: 'vargskinn', slag: 'skinn', bit: 2, varme: 1.8, hallbar: 1, vikt: 1.5, skydd: 1.2 }, // tjockare än kaninens (steg 3.7.14): varmare, tyngre och skyddar mer
   rep: { sak: 'rep', namn: 'rep', slag: 'flatat', bit: 1, varme: 1, hallbar: 1, vikt: 1, skydd: 1 },
 } satisfies Record<string, MaterialDef>;

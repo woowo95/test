@@ -65,7 +65,7 @@ export const STAT_GOR: Record<Stat, string[]> = {
   empati: ['Att trösta och ge gåvor', 'Att aldrig ta något utan lov, när den är hög', 'Att vilja ha eld när andra fryser', 'Hur ofta hen pratar med andra', 'Pliktkänslan'],
   mod: ['Att väljas till nattvakt', 'Hur långt bort hen vågar gå', 'Att inte låta rädslor styra'],
   minne: ['Hur länge hen minns platser och lärdomar'],
-  smidighet: ['Att inte råka ut för olyckor i arbetet', 'Att fånga kaniner', 'Att fisken sitter kvar när den nappat', 'Hur fort hen tar sig fram i skog och snår', 'Hur fint det blir som hen tillverkar', 'Hur snabb hen är och hur bra hen duckar i en strid'],
+  smidighet: ['Att inte råka ut för olyckor i arbetet', 'Att fånga harar', 'Att fisken sitter kvar när den nappat', 'Hur fort hen tar sig fram i skog och snår', 'Hur fint det blir som hen tillverkar', 'Hur snabb hen är och hur bra hen duckar i en strid'],
   aggression: ['Att slå i stället för att gråta när hen mår dåligt', 'Att gräla', 'Hur hårt hen straffar som ledare', 'Blodtörsten: att vilja döda, med låg empati och dåligt humör', 'Att inte ge sig i en strid'],
 };
 export const SKILLS = ['samla', 'jakt', 'fiske', 'ved', 'hantverk', 'berattande', 'matlagning', 'narstrid', 'traff'] as const; // matlagning: steg 2.8.1 (matlagning.ts); narstrid, traff: steg 3.7.2 (strid.ts). Eldkonsten togs bort i steg 3.10.8
@@ -90,7 +90,7 @@ export const SKILL_GOR: Record<Skill, string[]> = {
 // dygnet och totalt. av = nyckeln det är en del av, så att andelen visas (hur stor del av försöken som gav fisk)
 export const SKILL_STAT: Record<Skill, { k: string; namn: string; av?: string }[]> = {
   samla: [{ k: 'samlat', namn: 'Bär och rötter samlade' }],
-  jakt: [{ k: 'jaktForsok', namn: 'Försök' }, { k: 'kanin', namn: 'Kaniner fångade', av: 'jaktForsok' }],
+  jakt: [{ k: 'jaktForsok', namn: 'Försök' }, { k: 'kanin', namn: 'Harar fångade', av: 'jaktForsok' }],
   fiske: [{ k: 'fiskeForsok', namn: 'Försök' }, { k: 'fisk', namn: 'Gav fisk', av: 'fiskeForsok' }],
   ved: [{ k: 'trad', namn: 'Träd fällda' }],
   hantverk: [{ k: 'gjort', namn: 'Saker gjorda' }, { k: 'mobel', namn: 'Möbler och stationer byggda' }, { k: 'tandForsok', namn: 'Försök att tända elden' }, { k: 'tande', namn: 'Tände elden', av: 'tandForsok' }], // tändningen räknas ur hantverket (steg 3.10.8)

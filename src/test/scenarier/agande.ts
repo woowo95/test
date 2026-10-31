@@ -569,7 +569,7 @@ SCENARIER.plagg = {
     const alla = SIM.KLADER_AV.every(({ k, plagg }) => !!K[k]?.klad && K[k]!.grupp === plagg && SIM.GORS[plagg].includes(k));
     const varmare = K.rock_vargskinn!.klad!.varme > K.rock_kaninskinn!.klad!.varme && K.skor_vargskinn!.klad!.varme > K.skor_kaninskinn!.klad!.varme;
     const skyddar = (SIM.SKYDD.rock_vargskinn?.tar.bett ?? 0) > (SIM.SKYDD.rock_kaninskinn?.tar.bett ?? 0);
-    const namn = K.rock_vargskinn!.namn === 'Rock av vargskinn' && K.rock_vargskinn!.gors!.text === 'Syr en rock av vargskinn.' && SIM.bestamd(K.skor_kaninskinn!.namn)[0] === 'skorna av kaninskinn';
+    const namn = K.rock_vargskinn!.namn === 'Rock av vargskinn' && K.rock_vargskinn!.gors!.text === 'Syr en rock av vargskinn.' && SIM.bestamd(K.skor_kaninskinn!.namn)[0] === 'skorna av harskinn';
     const recept = SIM.receptAv('rock', 'vargskinn').vargskinn === 2 && SIM.receptAv('rock', 'kaninskinn').skinn === 3 && SIM.receptAv('skor', 'vargskinn').vargskinn === 1;
     // valet av material i en by som har båda skinnen
     const by = (ai: number) => {

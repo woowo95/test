@@ -135,7 +135,7 @@ const DEF = {
   },
   // kaniner trivs bäst i gräs, högt eller lågt, men finns också i skogen. Glest över stora områden som vandrar
   jakt: {
-    namn: 'Kaniner', grupp: 'djur', ikon: 'kanin', farg: 0xc89a60, topp: 1.4 * FANGST.jaktFaktor,
+    namn: 'Harar', grupp: 'djur', ikon: 'kanin', farg: 0xc89a60, topp: 1.4 * FANGST.jaktFaktor,
     monster: { salt: 73, skala: 7, period: 7, troskel: 0.25 },
     bas(s, i, m) { return jaktBas(groundOf(s), skyggOf(s), i, m); },
     uttag: { full: 6, reach: 3, regrow: [1 / 800, 1 / 480, 1 / 480, 1 / 600] },

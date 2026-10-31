@@ -1871,7 +1871,7 @@ SCENARIER.arbete = {
     const text = taskText(nara) === 'Jagar: smyger på byte' && taskText({ act: 'elda', phase: 'back', tx: 0, ty: 0, until: 0, carry: 1 }) === 'Lägger trä på elden: bär trä till elden';
     return [
       [`nära en kanin smyger jägaren (${r1}, ${underText(nara)})`, r1 === 0 && !!nara.jf && nara.leta === undefined && underText(nara) === 'smyger på byte'],
-      [`ser hen en grupp längre bort går hen dit (${r2}, ${underText(bort)})`, gx >= 0 && r2 === -2 && bort.leta === 'grupp' && bort.phase === 'go' && underText(bort) === 'går mot kaninerna'],
+      [`ser hen en grupp längre bort går hen dit (${r2}, ${underText(bort)})`, gx >= 0 && r2 === -2 && bort.leta === 'grupp' && bort.phase === 'go' && underText(bort) === 'går mot hararna'],
       [`ser hen ingen letar hen ${d3.toFixed(1)} rutor bort (${under3}), dit viltkartan är högre än på ${alla - hogre} av ${alla} rutor`, r3 === -2 && tk.leta === 'karta' && under3 === 'letar efter byte' && d3 >= JAKT.letaMin - 1 && d3 <= JAKT.letaMax + 1 && hogre < alla * 0.15],
       [`... och fortsätter leta (${soker} gånger på 1,5 timmar, gick ${gick.toFixed(1)} rutor)`, soker >= 2 && gick >= JAKT.letaMin],
       [`ingen går avsides på toa bredvid ett bord eller en bänk (${vidBank} av 300)`, !!bord && vidBank === 0],

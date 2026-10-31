@@ -55,7 +55,7 @@ export const MOTGANGAR = {
   },
   torka: {
     namn: 'Torka', tecken: '🏜️', ikon: 'm_torka', tider: [2], chans: 0.15, varsel: true,
-    text: 'Nästan inget regn på hela sommaren. Marken torkar, sjöarna drar sig tillbaka och små tjärnar torkar ut. Bär, rötter och svamp växer sämre, kaninerna söker sig mot vattnet och grödor som inte vattnas vissnar. Fisken samlas i vattnet som är kvar.',
+    text: 'Nästan inget regn på hela sommaren. Marken torkar, sjöarna drar sig tillbaka och små tjärnar torkar ut. Bär, rötter och svamp växer sämre, hararna söker sig mot vattnet och grödor som inte vattnas vissnar. Fisken samlas i vattnet som är kvar.',
     anar: 'Ser på himlen och växterna att sommaren blir torr',
     borjar: 'En torka har kommit. Himlen är klar dag efter dag och marken spricker.',
     slutar: 'Torkan är över. Regnet kommer tillbaka.',

@@ -105,7 +105,7 @@ const areaCenter = (a: number) => ({ x: Math.min(W, (a % aw()) * AREA + AREA / 2
 interface LardomDef { vad: string; namn: string; inga?: string; fynd?: true; serOmFinns?: true; ikon: string; tecken: string }
 const LDEF = {
   samla: { vad: 'bär och rötter', namn: 'bär och rötter', inga: 'Inga bär och rötter', fynd: true, ikon: 'bar', tecken: '🫐' },
-  jakt: { vad: 'kaniner', namn: 'vilt', inga: 'Inga kaniner', fynd: true, ikon: 'kanin', tecken: '🐇' },
+  jakt: { vad: 'harar', namn: 'vilt', inga: 'Inga harar', fynd: true, ikon: 'kanin', tecken: '🐇' },
   fiske: { vad: 'fisk i vattnet', namn: 'abborre', inga: 'Ingen fisk', fynd: true, serOmFinns: true, ikon: 'abborre', tecken: '🐟' },
   flinta: { vad: 'flinta', namn: 'flinta', ikon: 'flinta', tecken: '🪨' },
   fara: { vad: '', namn: 'farliga platser', ikon: 'l_fara', tecken: '⚠️' },
