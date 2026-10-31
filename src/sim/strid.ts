@@ -38,7 +38,7 @@ import { DJUR } from './redskap';
 import { KLAD_SLAG, SAKER, sakNamn } from './saker';
 import { kladSkyddStrid, kladTung } from './klader';
 import { clamp, rnd } from './slump';
-import { ALDER, ageOf, byId, count, getRel, gjort, log, ovning, stat, think } from './folk';
+import { ALDER, ageOf, byId, count, getRel, gjort, log, ovning, relKey, stat, think } from './folk';
 import { minnsRel } from './relationer';
 import { ledareOf } from './styre';
 import { blodtorst } from './humor';
@@ -785,12 +785,13 @@ export function ledarPlats(s: State, p: Person): 'fram' | 'bak' {
   return v > 0 ? 'fram' : 'bak';
 }
 // ledarens följe: de på samma sida som står ledaren närmast skyddar hen (partner, bästa vän, eller tycker om hen minst skyddVan)
+// (läser bara: arenan i gränssnittet ställer upp följet, så en relation som saknas skapas inte här)
 export function foljet(s: State, kampar: Uppstallning['kampar']) {
   const led = kampar.find(k => k.ledare && k.pid !== undefined), l = led && byId(s, led.pid!);
   if (!led || !l) return;
   for (const k of kampar) {
     const p = k.pid !== undefined && k !== led && k.sida === led.sida ? byId(s, k.pid) : undefined;
-    if (p && (p.partner === l.id || p.bast === l.id || getRel(s, p, l).op >= STRID.skyddVan)) k.skyddar = led.id;
+    if (p && (p.partner === l.id || p.bast === l.id || (s.rels[relKey(p.id, l.id)]?.op ?? 0) >= STRID.skyddVan)) k.skyddar = led.id;
   }
 }
 // en kämpe ur ett djur i djurregistret (DJUR.strid)

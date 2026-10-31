@@ -116,6 +116,7 @@ function uiLasNu(s: State, t: number) {
   // teknik och seder
   for (const tk of TEKNIK) { hasMaterial(s, tk); for (const p of living(s)) knows(p, tk.id); }
   for (const p of living(s)) influence(s, p);
+  { const ku = living(s).map((p, i) => SIM.personKampe(s, p, i + 1, 0, 0, 0)); SIM.foljet(s, ku); } // testarenan med byns folk (ui/arena.ts): ledaren och följet
   // varje person: porträtten, invånarlistan, personfliken och figuren på kartan
   const slag = Object.keys(ACTS) as Act[];
   for (const p of s.people) {

@@ -1228,6 +1228,10 @@ SCENARIER.ledarstrid = {
     b.bast = a.id;
     const ka = SIM.personKampe(t, a, 1, 0, 0, 0), kb = SIM.personKampe(t, b, 2, 0, 0, 1);
     SIM.foljet(t, [ka, kb]);
+    // arenan i gränssnittet ställer upp följet med hela byn: det får inte skapa relationer eller ändra byn (kodgenomgången 3.10.25)
+    const rels0 = Object.keys(t.rels).length, spar0 = SIM.serialize(t);
+    SIM.foljet(t, living(t).map((p, i) => SIM.personKampe(t, p, i + 1, 0, 0, 0)));
+    const rels1 = Object.keys(t.rels).length, orord = SIM.serialize(t) === spar0;
     const texter = [...fram, ...skydd, ...bak].every(st => st.logg.every(r => SIM.stridText(st, r).length > 5 && !SIM.stridText(st, r).includes('undefined')));
     return [
       [`en ledare som går först vinner oftare (${vann(fram)} av 200) än samma sida utan (${vann(utan)})`, vann(fram) > vann(utan)],
@@ -1236,6 +1240,7 @@ SCENARIER.ledarstrid = {
       [`när ledaren faller syns det i loggen, och vännens stridsmod sjunker mer (${ledFall.fall.toFixed(2)}) än när en vän som inte är ledare faller (${ingenLed.fall.toFixed(2)})`, ledFall.logg && ledFall.fall > ingenLed.fall],
       [`en modig och aggressiv ledare går först (${modig}), en rädd står bakom (${feg})`, modig === 'fram' && feg === 'bak'],
       [`i byn får ledaren sin plats (${ka.ledare}) och bästa vännen skyddar hen (${kb.skyddar === 1 ? 'ja' : 'nej'})`, ka.ledare === 'bak' && kb.skyddar === 1],
+      [`följet läser bara relationerna: ${rels0} relationer före och ${rels1} efter, och byn ${orord ? 'är orörd' : 'ändrades'}`, rels1 === rels0 && orord],
       ['loggen har en hel mening för varje rad', texter],
     ];
   },
