@@ -514,11 +514,19 @@ SCENARIER.klader = {
       die(s, dod, 'olycka'); tidyTools(s); SIM.stepKlader(s);
       arv = nasta.bar !== undefined && nasta.bar !== dod.id;
     }
+    // varje plagg och vattensäck som sys sliter bänkens bensyl (REDSKAP.bensylSlits), inte bara tiden i förrådet (kodgenomgången 3.10.25)
+    let syrSlits = 'ingen bensyl', syrOk = false;
+    const bs = bensyl(), sy = living(s)[0];
+    if (bs && sy) {
+      bs.c = 1; SIM.toolDone(s, sy, 'rock_kaninskinn'); const c1 = bs.c; SIM.toolDone(s, sy, 'vattensack'); const c2 = bs.c;
+      syrSlits = `1 → ${c1.toFixed(2)} → ${c2.toFixed(2)}`; syrOk = c1 < 1 - 0.01 && c2 < c1 - 0.01;
+    }
     return [
       ['utan bensylen vid slöjdbänken sys inga kläder', utan],
       [`en bensyl slipas och läggs vid slöjdbänken (efter ${timBensyl} timmar)`, slipad && kan],
       [`kläder sys vid bänken och tas på (${sydda} plagg efter ${h} timmar)`, sydda > 0 && !!buren],
       ['bensylen slits när kläderna sys', slits],
+      [`bensylen slits av en sydd rock och en vattensäck (${syrSlits})`, syrOk],
       ['ett plagg som någon har på sig ligger inte i förrådet', ejLiggande],
       ['den som har kläder på sig fryser mindre', varmare],
       ['kläderna väger: den som har dem på sig bär mindre', tyngre],

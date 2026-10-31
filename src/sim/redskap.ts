@@ -251,12 +251,12 @@ export function makeTask(s: State, p: Person, g: string) {
 }
 // redskapet k är klart (materialet togs när arbetet började, paborjat.ts). Första gången står det i loggen. En kniv läggs
 // vid slaktbänken om knivplatsen där står tom, och blir byns, och en bensyl likadant vid slöjdbänken (stationer.ts). Ett
-// plagg sys med bänkens bensyl, och den slits för varje (REDSKAP.bensylSlits)
+// plagg (och en vattensäck) sys med bänkens bensyl, och den slits för varje (REDSKAP.bensylSlits)
 export function toolDone(s: State, p: Person, k: string) {
   const t = addTool(s, k, p); t.av = p.id; t.gjord = s.now; // vem som gjorde det och när (inforutan, steg 2.3.5)
   nyKvalitet(s, p, t, !!p.task && fartVid(s, p, p.task.act) > 1, sakNamn(k).toLowerCase()); // hur bra det blev (kvalitet.ts)
   nyttVid(s, t); gjort(s, p, 'gjort');
-  if (SAKER[k]!.klad) slitVid(s, k as Act, REDSKAP.bensylSlits);
+  slitVid(s, gruppOf(k) as Act, REDSKAP.bensylSlits); // det som kräver bänkens redskap (plaggen och vattensäcken), efter arbetet och inte saken
   const g = SAKER[k]!.gors!, text = (t: string) => t.replace('{namn}', p.name).replace('{verktyg}', ordFor(s, k));
   if (forstaGang(s, g.stat)) {
     log(s, text(g.forsta), 'world', [p.id]);
