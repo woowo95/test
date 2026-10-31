@@ -1,5 +1,5 @@
 import { FORMAGOR, gangDelar, HALSA, Kroppsdel, KROPPSDELAR, NARING, NARINGAR, NARINGBAL, bristGrad, bristerNu, frysFaktor, naringNu, sjunker, skorbjugg, vilaTim, TORST, blodning, delSkada, halsa, skadeLista, skadeText, smarta, torstDelar } from '../../sim';
-import { pratText, relationText, beskrivning, binamnInfo, INTRYCK, Intryck, IntryckTyp, anseendeText, intryckOm, LARDOMAR, LKind, anseendeSym, dodSymbol, intryckText, samlatIntryck, SKILL_STAT, gjortDygn, ACTS, ALDER, Act, DAY, Lardom, HUMOR, SKILL_GOR, STAT_GOR, Skill, Stat, coldOf, halsaLage, hearthOf, living, roomAt, temperature, varmeDelar, viloSlag, viloTak, takEffekt, SLAG, SLAG_TECKEN, Person, KUNSKAPER, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, SEDER, SED_LIST, sedOppen, TEKNIK, BYN, formogenhetDelar, Ting, halvKlar, ageOf, alive, byId, childrenOf, drar, heldBy, ownedBy, PLATSER, PLATS_LIST, Plats, BORDA_KG, UTRUSTNING, bordOf, capacity, kvNamn, handerFor, homeKind, load, utrustning, viktOf, SAKER, ownedStock, sakNamn, slagIkon, tingNamn, STACK, describe, duty, habitShare, habitTotal, KROPP, kortTal, moodOf, num, REL, relKey, relTyper, stat, taskText, timeLabel, vidBordet, upplevelseText, uppEffekt, yrkeNamn } from '../../sim';
+import { pratText, relationText, beskrivning, binamnInfo, INTRYCK, Intryck, IntryckTyp, anseendeText, intryckOm, LARDOMAR, LKind, anseendeSym, dodSymbol, intryckText, samlatIntryck, SKILL_STAT, gjortDygn, ACTS, ALDER, Act, DAY, Lardom, HUMOR, SKILL_GOR, STAT_GOR, Skill, Stat, coldOf, halsaLage, hearthOf, living, roomAt, temperature, varmeDelar, varmeRaknas, viloSlag, viloTak, takEffekt, SLAG, SLAG_TECKEN, Person, KUNSKAPER, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, SEDER, SED_LIST, sedOppen, TEKNIK, BYN, formogenhetDelar, Ting, halvKlar, ageOf, alive, byId, childrenOf, drar, heldBy, ownedBy, PLATSER, PLATS_LIST, Plats, BORDA_KG, UTRUSTNING, bordOf, capacity, kvNamn, handerFor, homeKind, load, utrustning, viktOf, SAKER, ownedStock, sakNamn, slagIkon, tingNamn, STACK, describe, duty, habitShare, habitTotal, KROPP, kortTal, moodOf, num, REL, relKey, relTyper, stat, taskText, timeLabel, vidBordet, upplevelseText, uppEffekt, yrkeNamn } from '../../sim';
 import { framstegSvg, hasIcon, iconImg, kvSvg, tecknet } from '../../ikoner';
 import { LAG, ansStapel, ansTecken, fmtN, bar, cap, carryTxt, cssFarg, durTxt, esc, hex, hsl, hjalpOppen, hjalpText, moodWord, pLink, prickar, relWord, sickNow, tempBar, tempOrd, trend, trendD } from '../hjalp';
 import { s, ui } from '../lage';
@@ -102,11 +102,16 @@ function behovHtml(p: Person) {
   const inRum = new Map<number, number>();
   for (const q of living(s)) { const r = roomAt(s, q.x, q.y); if (r) inRum.set(r.id, (inRum.get(r.id) ?? 0) + 1); }
   const temp = temperature(s), v = varmeDelar(s, p, coldOf(temp), inRum), fh = hearthOf(s.fire);
-  const varme: Orsak[] = [
+  // bara det som räknas vid personens värme (varmeRaknas i steg.ts): under idealet elden, kylan och milt väder, vid och över
+  // det hettan, det som kyler mer än elden värmer och att kroppen svalnar (steg 2.3.4)
+  const r = varmeRaknas(p.warm, v);
+  const kylan = `Kylan, ${Math.round(temp)} grader${v.shelter > 0 ? `, huset skyddar ${Math.round(v.shelter * 100)} %` : ''}${v.fall > 0 ? `, skinnfällen ${Math.round(v.fall * 100)} %` : ''}${v.klad > 0 ? `, kläderna ${Math.round(v.klad * 100)} %` : ''}${frysFaktor(p) > 1 ? `, brist på fett: ${Math.round((frysFaktor(p) - 1) * 100)} % mer` : ''}${v.vaderGrader > 0.5 ? `, ${v.blot > 0.1 ? 'blöt' : 'blåsten'}: känns ${Math.round(v.vaderGrader)} grader kallare` : ''}`;
+  const varme: Orsak[] = r.under ? [
     ...v.eld > 0 ? [{ namn: 'Elden värmer', v: v.eld }] : [],
-    ...v.kyla > 0 ? [{ namn: `Kylan, ${Math.round(temp)} grader${v.shelter > 0 ? `, huset skyddar ${Math.round(v.shelter * 100)} %` : ''}${v.fall > 0 ? `, skinnfällen ${Math.round(v.fall * 100)} %` : ''}${v.klad > 0 ? `, kläderna ${Math.round(v.klad * 100)} %` : ''}${frysFaktor(p) > 1 ? `, brist på fett: ${Math.round((frysFaktor(p) - 1) * 100)} % mer` : ''}${v.vaderGrader > 0.5 ? `, ${v.blot > 0.1 ? 'blöt' : 'blåsten'}: känns ${Math.round(v.vaderGrader)} grader kallare` : ''}`, v: -v.kyla }] : [],
+    ...v.kyla > 0 ? [{ namn: kylan, v: -v.kyla }] : [],
     ...v.mild > 0 ? [{ namn: `Milt väder, ${Math.round(temp)} grader`, v: v.mild }] : [],
-    // över idealet (steg 2.3.4)
+  ] : [
+    ...r.netto < 0 ? [{ namn: v.eld > 0 || v.mild > 0 ? `${kylan} (mer än ${v.eld > 0 ? 'elden' : 'vädret'} värmer)` : kylan, v: r.netto }] : [],
     ...v.sol > 0 ? [{ namn: `Solen, ${Math.round(temp)} grader`, v: v.sol }] : [],
     ...v.kladHetta > 0 ? [{ namn: 'Kläderna värmer', v: v.kladHetta }] : [],
     ...v.eldHetta > 0 ? [{ namn: 'Sitter tätt vid elden', v: v.eldHetta }] : [],
@@ -285,7 +290,8 @@ function ryktenHtml(p: Person) {
     const sym = L.map(e => `<button type="button" class="relsym" data-hjalp="${id(e)}" data-hjalp-grupp="ik-${p.id}-${e.om}-" title="${esc(INTRYCK[e.k].namn)}" aria-label="${esc(INTRYCK[e.k].namn)}">${ikTecken(e.k)}</button>`).join('');
     const e = L.find(x => hjalpOppen(id(x))), t = e && intryckText(s, e);
     const mer = t ? `<p class="muted small relfork"><b>${esc(cap(t.namn))}</b>: ${esc([t.sure, t.varifran, t.slag, t.sant].filter(Boolean).join(', '))}${t.bevis.length ? `<br>${t.bevis.map(b => esc(b)).join('<br>')}` : ''}</p>` : '';
-    return `<li>${namn}${dod ? ` <span title="${dod === '★' ? 'En legend' : dod === '☠' ? 'Ökänd' : 'Död'}">${ansTecken(dod, 12)}</span>` : ''}<span class="relsyms">${sym}</span>${mer}</li>`;
+    // fyra celler som de andra listorna i .rels (rutnätet har fyra kolumner): namnet, dödssymbolen, intrycken och en tom
+    return `<li>${namn}<span${dod ? ` title="${dod === '★' ? 'En legend' : dod === '☠' ? 'Ökänd' : 'Död'}">${ansTecken(dod, 12)}` : '>'}</span><span class="relsyms">${sym}</span><span></span>${mer}</li>`;
   });
   return `<h3>Vad byn tycker om hen</h3>${omHen}<h3>Vad hen tror om andra</h3>${rader.length ? `<ul class="rels">${rader.join('')}</ul>` : '<p class="muted">Inga intryck ännu.</p>'}`;
 }

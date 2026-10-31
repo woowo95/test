@@ -260,10 +260,13 @@ export function varmeDelar(s: State, p: Person, coldRate: number, inRum: Map<num
 }
 // värmen efter dt timmar: under idealet som förut (elden, kylan, milt väder, aldrig över idealet). Vid och över idealet värmer
 // bara hettan, kylan kyler, och kroppen svalnar mot idealet (KROPP.svalnar) men aldrig under det
+// varmeRaknas ger det som räknas vid värmen w (personrutan visar samma): under idealet netto = elden, kylan och det milda vädret,
+// vid och över det bara den del av dem som kyler (hettan läggs till i nyVarme)
+export const varmeRaknas = (w: number, v: ReturnType<typeof varmeDelar>) => { const under = v.eld - v.kyla + v.mild; return w < 1 ? { under: true, netto: under } : { under: false, netto: Math.min(0, under) }; };
 export function nyVarme(w: number, v: ReturnType<typeof varmeDelar>, dt: number) {
-  const under = v.eld - v.kyla + v.mild;
-  if (w < 1) return clamp(w + dt * under, 0, 1);
-  let n = w + dt * (v.hetta + Math.min(0, under));
+  const r = varmeRaknas(w, v);
+  if (r.under) return clamp(w + dt * r.netto, 0, 1);
+  let n = w + dt * (v.hetta + r.netto);
   n -= Math.min(Math.max(0, n - 1), dt * KROPP.svalnar);
   return clamp(n, 0, KROPP.maxVarm);
 }

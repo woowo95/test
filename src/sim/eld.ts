@@ -212,12 +212,17 @@ const awake = (s: State, p: Person, minAge: number) => {
   return ageOf(p, s.now) >= minAge && !isSick(p, s.now) && halsa(p) >= KROPP.svag &&
     (!t || (t.act !== 'sova' && !(t.phase === 'back' && t.carry > 0) && !t.items));
 };
+// så mycket fortare än vanligt elden brinner nu, två faktorer: i regnet brinner en eld ute fortare (steg 2.11.1; en eld under
+// tak gör det inte), och i en hård vinter äter elden mer (steg 3.8.1). Fliken Elden visar samma
+export function eldFaktor(s: State) {
+  const regn = vaderNu(s).sno || roomAt(s, eldPlats(s).x + 0.5, eldPlats(s).y + 0.5) ? 0 : vaderNu(s).nb;
+  return [1 + regn * VADER.regnEld, 1 + MOTGANG.hardVed * hardVinter(s)] as const;
+}
 export function stepFire(s: State, dtSec: number, ppl: Person[]) {
   const f = s.fire, h = hearthOf(f), now = s.now;
   if (f.lit) {
-    // i regnet brinner en eld ute fortare (steg 2.11.1); en eld under tak gör det inte. I en hård vinter äter elden mer (steg 3.8.1)
-    const regn = vaderNu(s).sno || roomAt(s, eldPlats(s).x + 0.5, eldPlats(s).y + 0.5) ? 0 : vaderNu(s).nb;
-    const b = Math.min(f.fuel, h.burn / HOUR_S * dtSec * (1 + regn * VADER.regnEld) * (1 + MOTGANG.hardVed * hardVinter(s)));
+    const [fr, fv] = eldFaktor(s);
+    const b = Math.min(f.fuel, h.burn / HOUR_S * dtSec * fr * fv);
     f.fuel -= b; f.burned += b; f.totalBurned += b; f.litSec += dtSec;
     if (f.fuel <= 1e-6) {
       f.fuel = 0; f.lit = false; f.emberUntil = now + ELD.glodTim * HOUR; f.outs++;

@@ -1,4 +1,4 @@
-import { ELD, FireLog, HOUR, amountOf, byId, emberOn, fireHeat, fireWant, hearthOf, heatRadius, igniterOf, living } from '../../sim';
+import { ELD, FireLog, HOUR, amountOf, byId, eldFaktor, emberOn, fireHeat, fireWant, hearthOf, heatRadius, igniterOf, living } from '../../sim';
 import { bar, clockTxt, durTxt, esc, fmtN, num, pLink, times } from '../hjalp';
 import { s } from '../lage';
 import type { Flik } from '../panel';
@@ -18,6 +18,7 @@ function fireEntry(e: FireLog) {
 }
 function fireHtml() {
   const f = s.fire, h = hearthOf(f), now = s.now, ig = igniterOf(s);
+  const [fr, fv] = eldFaktor(s), takt = h.burn * fr * fv; // som stepFire i eld.ts: regnet och den hårda vintern
   const status = f.lit ? 'Brinner' : emberOn(s) ? `Glöder. Nytt trä får den att brinna igen (${durTxt(f.emberUntil! - now)} kvar).` : (f.ash ?? 0) >= 1 ? 'Utbrunnen. Kvar ligger en svart hög med kol.' : 'Släckt. Den måste tändas på nytt.';
   const tender = living(s).find(p => p.task?.act === 'elda'), lighter = living(s).find(p => p.task?.act === 'tanda');
   const fills = Object.entries(f.fills).map(([id, n]) => ({ p: byId(s, Number(id)), n })).filter(x => x.p).sort((a, b) => b.n - a.n).slice(0, 6);
@@ -28,8 +29,8 @@ function fireHtml() {
     <h3>Just nu</h3><dl class="kv">
       <dt>Trä på elden</dt><dd>${bar(f.fuel / h.maxFuel)}<span>${fmtN(f.fuel)} av ${h.maxFuel}</span></dd>
       <dt>Värme</dt><dd>${bar(fireHeat(s))}<span>${f.lit ? `${num(heatRadius(s))} rutor ut` : '–'}</span></dd>
-      <dt>Förbrukning</dt><dd>${num(h.burn)} trä i timmen</dd>
-      <dt>Räcker</dt><dd>${f.lit ? `ca ${durTxt(f.fuel / h.burn * HOUR)}` : '–'}</dd>
+      <dt>Förbrukning</dt><dd>${num(takt)} trä i timmen${fr > 1 || fv > 1 ? ` <span class="muted">(${[fr > 1 ? 'regnet' : '', fv > 1 ? 'den hårda vintern' : ''].filter(Boolean).join(' och ')})</span>` : ''}</dd>
+      <dt>Räcker</dt><dd>${f.lit ? `ca ${durTxt(f.fuel / takt * HOUR)}` : '–'}</dd>
       <dt>Önskat</dt><dd>${fmtN(tgt)} trä på elden</dd>
       ${f.wantWhy && byId(s, f.wantBy) ? `<dt>Önskas av</dt><dd>${pLink(byId(s, f.wantBy))}: ${esc(f.wantWhy).toLowerCase()}</dd>` : ''}
       ${tender ? `<dt>Hämtar trä</dt><dd>${pLink(tender)}</dd>` : ''}

@@ -15,7 +15,7 @@ function sjoEntry(e: SjoLogg) {
 const andel = (a: number, b: number) => b ? ` (${Math.round(a / b * 100)} %)` : '';
 function topp(r: Record<number, number>) {
   const xs = Object.entries(r).map(([id, n]) => ({ p: byId(s, Number(id)), n })).filter(x => x.p).sort((a, b) => b.n - a.n).slice(0, 6);
-  return `<ul class="rels">${xs.map(x => `<li>${pLink(x.p)}<span></span><span class="muted">${fmtN(x.n)}</span></li>`).join('')}</ul>`;
+  return `<ul class="rels">${xs.map(x => `<li>${pLink(x.p)}<span></span><span></span><span class="muted">${fmtN(x.n)}</span></li>`).join('')}</ul>`; // fyra celler, som rutnätet .rels (antalet sist, som i Elden)
 }
 // isens tjocklek och vad som tar sig igenom den (is.ts)
 function isText() {
