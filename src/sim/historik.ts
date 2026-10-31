@@ -32,7 +32,14 @@ const histOf = (s: State) => (s.hist ??= ny());
 
 // en viktig händelse i krönikan: en kort rad som sparas för alltid
 // slag: vad raden handlar om (mallens id i BERATTELSER, steg 3.9.3), så att den kan hittas utan att läsa texten
-export function kronika(s: State, text: string, slag?: string) { histOf(s).kronika.push(slag ? [Math.round(s.now), text, slag] : [Math.round(s.now), text]); }
+// Raden läggs i tidsordning: i ett steg räknar var och en sin egen tid (taskStep i steg.ts), så den som skrivs sist kan ha
+// hänt lite tidigare. Då blir krönikan likadan när delarna läses in igen (joinHist sorterar på tiden)
+export function kronika(s: State, text: string, slag?: string) {
+  const k = histOf(s).kronika, t = Math.round(s.now);
+  let i = k.length;
+  while (i > 0 && k[i - 1][0] > t) i--;
+  k.splice(i, 0, slag ? [t, text, slag] : [t, text]);
+}
 
 // varje timme: en rad med nyckeltalen, och timmar äldre än en vecka slås ihop till ett värde per dygn
 export function historikSteg(s: State) {

@@ -6,7 +6,7 @@ import { kronika } from './historik';
 import { HANDELSER, INTRYCK, IntryckTyp, intryckOm, intryckText, samlatIntryck } from './rykten';
 import { SAKER, sakNamn } from './saker';
 import { moodOf } from './humor';
-import { HOUR, Person, Rel, SKILLS, SKILL_NAMES, STATS, Skill, Stat, State, Upplevelse } from './typer';
+import { HOUR, MIN, Person, Rel, SKILLS, SKILL_NAMES, STATS, Skill, Stat, State, Upplevelse } from './typer';
 import { upplevelseText } from './uppvaxt';
 import { isLight, kalender } from './tid';
 import { temperature, vaderNu } from './vader';
@@ -65,7 +65,7 @@ export const BERATT = balans('beratt', {
 export type Variant = string | { t: string; om: (f: Fyllning) => boolean };
 export type Fyllning = Record<string, string | number | boolean | undefined>;
 
-// öknamnen och hedersnamnen per intryck: [mannens, kvinnans]. '*' före namnet = det står efter förnamnet utan "den"
+// öknamnen och hedersnamnen per intryck: [mannens, kvinnans]
 interface BinamnDef { namn: [string, string][] }
 const BDEF: Record<IntryckTyp, BinamnDef> = {
   valdsam: { namn: [['Knytnäven', 'Knytnäven'], ['den vilde', 'den vilda'], ['Slagskämpen', 'Slagskämpen'], ['den hårde', 'den hårda']] },
@@ -1486,7 +1486,7 @@ export const och = (l: string[]) => l.length > 1 ? `${l.slice(0, -1).join(', ')}
 export function kronikaBer(s: State, mall: MallId, nyckel: number, f: Fyllning) {
   const v = vaderNu(s);
   const g: Fyllning = { arstid: ARSTIDER[kalender(s).ai], kallt: temperature(s) < 0, sno: v.sno, regn: v.lage === 'regn', blast: v.lage === 'blast', natt: !isLight(s.now), ...f };
-  kronika(s, berattelse(s, mall, nyckel + (s.hist?.kronika.length ?? 0) * 7919, g), mall);
+  kronika(s, berattelse(s, mall, nyckel, g), mall); // varianten väljs ur nyckeln och timmen, inte ur historiken (som simuleringen inte läser)
 }
 // fälten för en person: namnet, namnet byn gav och hen
 export const personFalt = (p: Person): Fyllning => ({ namn: p.name, helt: heltNamn(p), hen: hen(p), honom: p.sex === 'm' ? 'honom' : 'henne' });
@@ -1627,7 +1627,7 @@ export function samtalAmne(s: State, a: Person, b: Person, kind: string) {
     if (a.hunger < KROPP.hungrig + BERATT.hungrigOver) val.push({ k: 'mat' });
     if (a.tag && a.tag !== 'Dagdrivare') { const tg = TAGS.find(g => g.tag === a.tag), sl = tg?.acts.map(k => ACTS[k].slag).find(k => k); val.push({ k: 'arbete', i: sl && slagIkon(sl), o: a.tag.toLowerCase() }); }
     if (s.people.some(c => alive(c) && (c.mother === a.id || c.father === a.id) && ageOf(c, s.now) < ALDER.vuxen)) val.push({ k: 'barn' });
-    x = val[Math.floor(hash(s.seed, a.id * 997 + b.id, Math.round(s.now / 60)) * val.length)];
+    x = val[Math.floor(hash(s.seed, a.id * 997 + b.id, Math.round(s.now / MIN)) * val.length)];
   }
   const i = x.i ?? AMNEN[x.k].ikon;
   a.prat = { m: b.id, k: x.k, t: s.now, fr: a.id, ...(i ? { i } : {}), ...(x.o ? { o: x.o } : {}) }; // a talar: delar, lär ut, tröstar
@@ -1640,7 +1640,7 @@ export function pratText(s: State, p: Person) {
   if (!x || !q || s.now - x.t > BERATT.pratTim * HOUR) return '';
   const [t, l] = (x.fr ?? p.id) === p.id ? [p, q] : [q, p]; // den som talade först, i bådas ruta
   const f: Fyllning = { namn: t.name, med: l.name, om: x.o ?? '' };
-  return fyll(valjVariant(s, `p_${x.k}` as MallId, p.id + q.id, f, Math.round(x.t / 60)), f);
+  return fyll(valjVariant(s, `p_${x.k}` as MallId, p.id + q.id, f, Math.round(x.t / MIN)), f);
 }
 
 // ---------- relationerna utförligt (steg 3.9.6) ----------
