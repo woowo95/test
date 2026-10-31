@@ -511,6 +511,32 @@ SCENARIER.torka = {
   },
 };
 
+SCENARIER.avskuren = {
+  text: 'Den som vattnet har skurit av från lägret (en udde på torr sjöbotten som blev en ö när sjön kom tillbaka) vadar i land när vattnet ändras: hen hamnar på den närmaste rutan som når lägret och går inte rakt över vattnet (vaktlarmet i by 777, v206)',
+  kor: () => {
+    // en by med en ö i sjön: land som inte når lägret
+    let s: State | undefined, o = -1;
+    for (let seed = 777; seed < 900 && !s; seed++) {
+      const b = createState(seed, START), g = groundOf(b), f = SIM.eldPlats(b), n = SIM.nasbara(g, f.x + 0.5, f.y + 0.5);
+      for (let i = 0; i < g.tiles.length && o < 0; i++) if (g.tiles[i] !== T.Vatten && !g.solid?.[i] && !g.hinder?.[i] && !n[i]) o = i;
+      if (o >= 0) s = b;
+    }
+    if (!s) return [['en by med en ö i sjön', false]];
+    const p = living(s)[0], ox = o % W + 0.5, oy = Math.floor(o / W) + 0.5;
+    p.x = ox; p.y = oy; p.task = undefined;
+    SIM.vattnetAndrat(s, SIM.vattenNu(s).slice());
+    const f = SIM.eldPlats(s), lagret = SIM.nasbara(groundOf(s), f.x + 0.5, f.y + 0.5), flytt = Math.hypot(p.x - ox, p.y - oy);
+    const iLand = lagret[tileOf(p.x, p.y)] === 1;
+    // sedan går hen som vanligt, och ingen står i vattnet
+    let iVattnet = 0;
+    for (let h = 0; h < 12; h++) { kor(s, 1); iVattnet += living(s).filter(q => SIM.iVattnetNu(s!, tileOf(q.x, q.y))).length; }
+    return [
+      [`hen hamnar på en ruta som når lägret (${flytt.toFixed(1)} rutor från ön)`, iLand && flytt < 20],
+      [`ingen står i vattnet de följande tolv timmarna (${iVattnet})`, iVattnet === 0],
+    ];
+  },
+};
+
 SCENARIER.oversvamning = {
   lang: true,
   text: 'Steg 3.8.3: översvämningen kommer ibland på våren och hösten. Efter ett långt regn stiger sjön en ruta i taget en till tre rutor upp på land, står kvar ett par dygn och sjunker. Maten under vatten förstörs, lätta saker (grenar) flyter bort ute, tunga saker (sten) ligger kvar och slits fortare, fält under vatten dör och ingen står i vattnet. Efteråt är stranden som förut',

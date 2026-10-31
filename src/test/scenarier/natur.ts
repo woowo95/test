@@ -238,11 +238,14 @@ SCENARIER.rotter = {
 SCENARIER.samlartur = {
   text: 'En samlare fyller en full börda på 10–20 minuter, gången inräknad, och går vidare till nästa buske när den man står vid är tom (steg 2.12.4)',
   kor: () => {
-    // turerna följs i steg om 10 sekunder (ett slag är fem minuter, kortare än en tur), i tre byar under två dygn (två år i spelet)
+    // turerna följs i steg om 10 sekunder (ett slag är fem minuter, kortare än en tur), i tre byar under två dygn (två år i spelet).
+    // Byarna har ingen mat men gott om trä, så att de samlar mat: sedan det vilda blev sällsyntare (steg 3.10.23.7) samlade de annars
+    // nästan bara tändmaterial de första dygnen
     const borda = balansTal().steg.borda as number, turer: { min: number; lass: number; flytt: number }[] = [];
     let tomt = 0, arbete = 0;
     for (const seed of [42, 7, 3]) {
       const s = createState(seed, START), pagar = new Map<number, { t0: number; last: string; lass: number; flytt: number; tom?: string }>();
+      setMat(s, {}); setAmount(s, 'ved', 300);
       for (let i = 0; i < 48 * 360; i++) {
         step(s, 10);
         for (const p of living(s)) {
@@ -273,7 +276,7 @@ SCENARIER.samlartur = {
 };
 
 SCENARIER.varmekarta = {
-  text: 'Värmekartorna: bär i små snår som står kvar, svamp i skogen, rötter glest överallt även på vintern, kaniner helst i gräs och borta från folk, fisk i vattnet och flinta vid stenarna. Inget växer i lägret, mönstren kryper med tiden, uttag tömmer platsen som växer tillbaka, och den som ser en plockad plats vet att den växer tillbaka',
+  text: 'Värmekartorna: bär i små snår som står kvar, svamp i skogen, rötter glest på ungefär hälften av marken även på vintern, kaniner helst i gräs och borta från folk, fisk i vattnet och flinta vid stenarna. Inget växer i lägret, mönstren kryper med tiden, uttag tömmer platsen som växer tillbaka, och den som ser en plockad plats vet att den växer tillbaka',
   kor: () => {
     const s = createState(21, START), g = groundOf(s), m = getMap(s.seed);
     const vid = (ai: number) => { s.now = ageStart(s, ai) + HOUR; };
@@ -368,7 +371,8 @@ SCENARIER.varmekarta = {
       [`svamp bara i skogen (${svampUtanfor} rutor utanför)`, svampUtanfor === 0],
       [`kantarell och spindling växer ibland ihop (${bada} rutor) och ibland var för sig (${baraK} bara kantarell)`, bada > 0 && baraK > bada * 0.2],
       [`bärbuskar i små snår (${Math.round(buskar / jord * 100)} % av marken), bär och rötter finns (${bHost.toFixed(0)})`, buskar > 0 && buskar / jord < 0.2 && bHost > 100],
-      [`rötter glest men nästan överallt (${Math.round(rotLand / jord * 100)} % av marken, ${Math.round(rotRik / jord * 100)} % rik), kvar på vintern (${rotVinter.toFixed(0)}) när bären är borta (${barVinter.toFixed(0)})`, rotLand / jord > 0.8 && rotRik / jord < 0.3 && rotVinter > 20 && barVinter < 1],
+      // sedan steg 3.10.23.7 på ungefär hälften så många rutor som förut, då nästan överallt
+      [`rötter glest på ungefär hälften av marken (${Math.round(rotLand / jord * 100)} %, ${Math.round(rotRik / jord * 100)} % rik), kvar på vintern (${rotVinter.toFixed(0)}) när bären är borta (${barVinter.toFixed(0)})`, rotLand / jord > 0.35 && rotLand / jord < 0.75 && rotRik / jord < 0.3 && rotVinter > 20 && barVinter < 1],
       [`kaninerna skyr lägret (${(nara / naraN).toFixed(2)} nära mot ${(langt / langtN).toFixed(2)} långt bort)`, nara / naraN < 0.4 && langt / langtN > 0.7],
       [`den som kommer till en tömd plats rättar sig ("${qText}") och berättar det (${spridd.toFixed(2)} hos den som hörde det)`, rattad && qText.includes('sämre än man trott') && spridd < 2],
       ['att berätta om en plats ändrar inte när den sågs, och den som hör det får samma tid', tidKvar],

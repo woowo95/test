@@ -174,10 +174,11 @@ SCENARIER.aktivitet = {
       [`ingen går ut i vattnet, längs hela vägen (${vatten} punkter i vattnet)`, vatten === 0],
       [`elden matas med en famn i taget (högst ${eldMax.toFixed(1)})`, eldMax > 0 && eldMax <= 1 + 1e-9],
       // en timmes bärplockning med gångtiden ger ca 12,6 i medel för byarna 1–8 (uppmätt i v132, efter steg 2.12.4: en full
-      // börda på 10–20 minuter), 6,4 i v189 och 5,2 i v190 (andra byar när eldkonsten togs bort, steg 3.10.8). Bandet är brett:
+      // börda på 10–20 minuter), 6,4 i v189, 5,2 i v190 (andra byar när eldkonsten togs bort, steg 3.10.8) och 2,9 i v206 (det vilda
+      // blev sällsyntare, steg 3.10.23.7). Bandet är brett:
       // talet beror på årstiden och slumpen, och det ändras när balansen ses över (varför det sjunkit ses över i 3.10.26).
       // Provet ska bara fånga en stor ändring
-      [`bärplockning ger ungefär lika mycket per timme som förut (${pl.toFixed(2)}, medel av åtta byar)`, pl > 3 && pl < 30],
+      [`bärplockning ger ungefär lika mycket per timme som förut (${pl.toFixed(2)}, medel av åtta byar)`, pl > 1.5 && pl < 30],
     ];
   },
 };
@@ -740,7 +741,8 @@ SCENARIER.matdygn = {
   text: 'Mat som håller (steg 3.10.9): förrådets dygn räknar bara den mat som hinner ätas innan den ruttnar. När förrådet räcker länge upphör matarbetet nästan, och skälet "Byn behöver mat" står bara när det stämmer',
   kor: () => {
     const { foodDays, foodOf, chooseTask, ALDER, SAKER, ruttTemp } = SIM;
-    const by = () => { const s = createState(6, START); klockan(s, 11); tandEld(s); return s; };
+    // gott om trä, så att det bara är maten som fattas (sedan steg 3.10.23.7 väljer de annars trä när förrådet räcker 0,7 dygn)
+    const by = () => { const s = createState(6, START); klockan(s, 11); tandEld(s); setAmount(s, 'ved', 300); return s; };
     // lika mycket fisk (håller ett dygn) och torkat kött (håller länge): fisken räcker kortare, eftersom det mesta hinner ruttna
     const f = by(); setMat(f, { fisk: 120 });
     const t = by(); setMat(t, { torrkott: 120 });

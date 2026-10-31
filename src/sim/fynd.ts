@@ -126,7 +126,7 @@ const DEF = {
   // Sedan steg 2.3.9 lite ovanligare än svampen, men de växer tillbaka fortare och kommer tidigare på våren
   bar: {
     namn: 'Bär', grupp: 'vaxter', ikon: 'bar', farg: 0x9a5cff, topp: 3, arstid: [0, 0.75, 1, 1.15], torka: 0.6,
-    monster: { salt: 71, skala: 2.5, period: 70, troskel: 0.72 },
+    monster: { salt: 71, skala: 2.5, period: 70, troskel: 0.77 }, // hälften så många rutor som med 0,72 före steg 3.10.23.7
     bas(s, i, m) {
       if (!land(s, i)) return 0;
       return BAR_PASSAR[markslag(groundOf(s), i)] * 4 * m;
@@ -152,14 +152,14 @@ const DEF = {
   // Sedan steg 2.3.9 på ungefär lika många ställen som bären hade förut (en tredjedel så många som innan)
   kantarell: {
     namn: 'Kantarell', grupp: 'vaxter', ikon: 'svamp', farg: 0xffd21f, topp: 0.8, arstid: SVAMP_SEASON, torka: 0.1,
-    monster: { salt: 83, skala: 8, period: 28, troskel: 0.5, gles: 0.5 },
+    monster: { salt: 83, skala: 8, period: 28, troskel: 0.66, gles: 0.5 }, // hälften så många rutor som med 0,5 före steg 3.10.23.7
     bas: (s, i, m) => land(s, i) && groundOf(s).trees[i] >= FOREST ? 0.9 * m : 0,
     uttag: SVAMP_UTTAG,
   },
   // den giftiga orangea spindlingen liknar kantarellen. Den har egna områden som kan gå in i kantarellens
   spindling: {
     namn: 'Orange spindling (giftig)', grupp: 'vaxter', ikon: 'spindling', farg: 0xff2d6f, topp: 0.8, arstid: SVAMP_SEASON, torka: 0.1,
-    monster: { salt: 89, skala: 8, period: 28, troskel: 0.55, gles: 0.35 },
+    monster: { salt: 89, skala: 8, period: 28, troskel: 0.685, gles: 0.35 }, // som kantarellen, hälften så många rutor (0,55 före steg 3.10.23.7)
     bas: (s, i, m) => land(s, i) && groundOf(s).trees[i] >= FOREST ? 0.9 * m : 0,
     uttag: SVAMP_UTTAG,
   },
@@ -169,10 +169,10 @@ const DEF = {
     bas: (s, i) => getMap(s.seed).tiles[i] === T.Vatten ? 0 : stoneDist(s.seed)[i] <= FANGST.stenNara ? 4 : getMap(s.seed).tiles[i] === T.Sand ? 1.5 : 0.4,
     uttag: { full: 2, reach: 1, regrow: [1 / 500, 1 / 300, 1 / 300, 1 / 300] },
   },
-  // rötter finns mycket glest men nästan överallt på jorden. De ger minst, men finns kvar i istiden när bär och svamp är borta
+  // rötter finns glest på jorden, sedan steg 3.10.23.7 på hälften så många rutor som förut. De ger minst, men finns kvar i istiden när bär och svamp är borta
   rotter: {
     namn: 'Rötter', grupp: 'vaxter', ikon: 'rotter', farg: 0xf2d9a0, topp: 0.5, arstid: [0.6, 1, 0.8, 1], torka: 0.6,
-    monster: { salt: 97, skala: 3, period: 84, troskel: 0, gles: 0.25 },
+    monster: { salt: 97, skala: 3, period: 84, troskel: 0.5, gles: 0.25 }, // hälften så många rutor som utan tröskel före steg 3.10.23.7
     bas(s, i, m) {
       if (!land(s, i)) return 0;
       return ROTTER_PASSAR[markslag(groundOf(s), i)] * m;
@@ -184,13 +184,13 @@ const DEF = {
   // De växer inte nära byn eller där folk går och nöter marken (steg 2.10.12, orortOf)
   vildkorn: {
     namn: 'Vildkorn', grupp: 'vaxter', ikon: 'vildkorn', farg: 0xe8c040, topp: 1, arstid: [0, 0.3, 0.9, 1.2], torka: 0.6,
-    monster: { salt: 101, skala: 4, period: 56, troskel: 0.55 },
+    monster: { salt: 101, skala: 4, period: 56, troskel: 0.59 }, // en fjärdedel färre rutor (0,55 före steg 3.10.23.7)
     bas: (s, i, m) => land(s, i) && markslag(groundOf(s), i) === 'hog' ? m * orortOf(s)[i] : 0,
     uttag: { full: 1, reach: 1, regrow: [0, 1 / 240, 1 / 96, 1 / 120] },
   },
   arter: {
     namn: 'Vilda ärter', grupp: 'vaxter', ikon: 'arter', farg: 0x6fcf4f, topp: 1, arstid: [0, 0.3, 1, 1.1], torka: 0.6,
-    monster: { salt: 103, skala: 3, period: 56, troskel: 0.55 },
+    monster: { salt: 103, skala: 3, period: 56, troskel: 0.595 }, // en fjärdedel färre rutor (0,55 före steg 3.10.23.7)
     bas: (s, i, m) => land(s, i) && BRYN.has(markslag(groundOf(s), i)) && intillSkog(groundOf(s), i) ? m * orortOf(s)[i] : 0,
     uttag: { full: 1, reach: 1, regrow: [0, 1 / 240, 1 / 96, 1 / 120] },
   },

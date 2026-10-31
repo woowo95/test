@@ -2,7 +2,9 @@ import { balans } from './balans';
 import { count, living, log } from './folk';
 import { motgangNu } from './motgang';
 import { freeNear, touch } from './byggnad';
-import { nyttVatten } from './mark';
+import { groundOf, nyttVatten, tileOf } from './mark';
+import { eldPlats } from './karta';
+import { nasbara } from './vag';
 import { takenOf } from './fynd';
 import { avbryt } from './lager';
 import { sjoNamn, sjoarna, vattenNu } from './sjo';
@@ -81,9 +83,36 @@ export function vattnetAndrat(s: State, fore: Uint8Array, flytta = true) {
     if (blot(p.x, p.y)) { const f = freeNear(s, Math.floor(p.x), Math.floor(p.y)); p.x = f.x + 0.5; p.y = f.y + 0.5; }
     if (mal) avbryt(s, p); // målet står under vatten: hen väljer något annat
   }
+  iLand(s);
   if (!flytta) return;
   for (const a of s.stackar ?? []) if (blot(a.x, a.y)) { const f = freeNear(s, a.x, a.y); a.x = f.x; a.y = f.y; }
   for (const t of s.ting ?? []) if (t.x !== undefined && t.y !== undefined && blot(t.x, t.y)) { const f = freeNear(s, t.x, t.y); t.x = f.x; t.y = f.y; }
+}
+// den som vattnet har skurit av från lägret (en udde på torr sjöbotten som blev en ö när sjön kom tillbaka, eller en strand
+// som översvämningen tog vägen till) vadar i land: hen hamnar på den närmaste rutan som når lägret, som den som stod där
+// vattnet kom, och väljer något annat. Annars gick hen rakt över vattnet nästa gång (walk i steg.ts; vaktlarmet i by 777,
+// där ett barn som föddes på den torra sjöbotten låg kvar på en ö, v206). Ligger lägret själv på den mindre biten land
+// flyttas ingen
+function iLand(s: State) {
+  const g = groundOf(s), f = eldPlats(s), lagret = nasbara(g, f.x + 0.5, f.y + 0.5);
+  let stor = -1;
+  for (const p of living(s)) {
+    if (lagret[tileOf(p.x, p.y)]) continue;
+    if (stor < 0) { stor = 0; for (let i = 0; i < W * H; i++) if (lagret[i] === 1) stor++; }
+    const egen = nasbara(g, p.x, p.y);
+    let liten = 0;
+    for (let i = 0; i < W * H; i++) if (egen[i] === 1) liten++;
+    if (liten >= stor) continue;
+    let bast = -1, bd = Infinity;
+    for (let i = 0; i < W * H; i++) {
+      if (lagret[i] !== 1) continue;
+      const d = Math.hypot(i % W + 0.5 - p.x, Math.floor(i / W) + 0.5 - p.y);
+      if (d < bd) { bd = d; bast = i; }
+    }
+    if (bast < 0) continue;
+    p.x = bast % W + 0.5; p.y = Math.floor(bast / W) + 0.5;
+    avbryt(s, p);
+  }
 }
 // hur många rutor av sjön som är torr sjöbotten just nu (gränssnittet)
 export const torrRutor = (s: State) => { const t = vattenNu(s); let n = 0; if (s.sjoTorr) for (let i = 0; i < W * H; i++) if (t[i] === T.Lera) n++; return n; };
