@@ -12,6 +12,8 @@ const condCol = (c: number) => c >= 0.5 ? 0x6fbf5a : c >= 0.25 ? 0xe0b040 : 0xd2
 // var ikonerna ligger i rutan, bakersta först
 const PILE_LAYOUT = [[[4, 5]], [[1, 5], [7, 5]], [[4, 1], [1, 5], [7, 5]], [[2, 0], [6, 1], [0, 5], [8, 5]]];
 // en stack: ju fullare desto fler saker i högen
+// en sak i en station och ett redskap ritas 8 punkter stort, hur stor bilden än är (8 eller 16 punkter, steg 3.10.13)
+const atta = (k: string) => 8 / (iconCanvas(k).width || 8);
 function drawPile(pl: Pile, t: number) {
   const x0 = pl.x * TS, y0 = pl.y * TS, f = Math.min(1, pl.n / pl.max), g = structG, c = condOf(pl);
   // liten stapel för skicket längst ner i rutan
@@ -154,12 +156,12 @@ export function drawStructures(t: number) {
     for (const k of st.med ?? []) pileIcons.add(tillbehorDef(k)?.ikon + '_karta' + v, x0, y0, 2); // tillbehören i den (skinnfällen i bädden)
     if (st.tork?.length) hangande(st, x0, y0);
     const yta = (v ? YTA[st.k]?.v : YTA[st.k]) ?? { x: 2, y: 2 };
-    (iBruk(st)?.saker ?? []).slice(0, 3).forEach((k, i) => pileIcons.add(k, x0 + yta.x + (v ? 0 : i * 6), y0 + yta.y + (v ? i * 7 : 0), 1)); // sida vid sida, i den stående under varandra
+    (iBruk(st)?.saker ?? []).slice(0, 3).forEach((k, i) => pileIcons.add(k, x0 + yta.x + (v ? 0 : i * 6), y0 + yta.y + (v ? i * 7 : 0), atta(k))); // sida vid sida, i den stående under varandra
     const vid = yta.vid && tingOf(s).find(k => k.vid === st.id && k.hos === undefined && k.lass === undefined);
-    if (vid) pileIcons.add(vid.k, x0 + yta.vid!.x, y0 + yta.vid!.y, 1);
+    if (vid) pileIcons.add(vid.k, x0 + yta.vid!.x, y0 + yta.vid!.y, atta(vid.k));
   }
   // dörrarna i öppningarna (DORRAR i byggnad.ts): den stående bilden (_v) när väggen går uppåt (en vägg ovanför öppningen)
-  for (const b of bitsOf(s)) if (b.dorr) pileIcons.add(dorrDef(b.dorr)?.ikon + '_karta' + (bitAt(s, b.x, b.y - 1)?.k === 'vagg' ? '_v' : ''), b.x * TS, b.y * TS, 2);
+  for (const b of bitsOf(s)) if (b.dorr) { const k = dorrDef(b.dorr)?.ikon + '_karta' + (bitAt(s, b.x, b.y - 1)?.k === 'vagg' ? '_v' : ''); pileIcons.add(k, b.x * TS, b.y * TS, TS / iconCanvas(k).width); }
   pileIcons.end();
   // markerad hög utanför lagret: vit kant runt rutan, som lagerplatsen får
   const h = ui.hogAt;

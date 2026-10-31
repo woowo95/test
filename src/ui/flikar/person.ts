@@ -404,13 +404,13 @@ function lardomHtml(p: Person, ls: Lardom[]) {
   return `<div class="tekrad">${sym}</div>${lista}`;
 }
 // vad personen brukar ägna sin vakna tid åt, i grupper efter slaget av arbete (SLAG); en handling utan slag står för sig.
-// Symbolen är slagets pixelbild, annars slagets eller handlingens tecken
+// Symbolen är slagets pixelbild, annars handlingens egen (ikon, t.ex. utbrottens grader) eller slagets eller handlingens tecken
 const HABIT_GROUPS = (() => {
   const m = new Map<string, { name: string; ikon: string; acts: Act[] }>();
   for (const a of Object.keys(ACTS) as Act[]) {
     if (a === 'sova') continue;
     const sl = ACTS[a].slag, name = sl ? SLAG[sl] : ACTS[a].namn, px = sl && slagIkon(sl);
-    const ikon = px && hasIcon(px) ? iconImg(px, 16) : !sl && hasIcon('a_' + a) ? iconImg('a_' + a, 16) : `<span class="tecken">${(sl ? SLAG_TECKEN[sl] : ACTS[a].tecken) ?? '•'}</span>`;
+    const egen = !sl && (ACTS[a].ikon ?? 'a_' + a), ikon = px && hasIcon(px) ? iconImg(px, 16) : egen && hasIcon(egen) ? iconImg(egen, 16) : `<span class="tecken">${(sl ? SLAG_TECKEN[sl] : ACTS[a].tecken) ?? '•'}</span>`;
     (m.get(name) ?? m.set(name, { name, ikon, acts: [] }).get(name)!).acts.push(a);
   }
   // en egen färg per grupp, jämnt fördelad runt färghjulet, så att samma slag alltid har samma färg

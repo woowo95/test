@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { ACTS, ALDER, Person, actIkon, SEC, TalkEvent, ageOf, SAMTAL, alive, bordVid, byId, clamp, homeKind, isSocial, kanGa, living, load, REL, relKey, spar, storlekAv, vidBordet } from '../sim';
+import { ACTS, ALDER, Person, actIkon, utbIkon, SEC, TalkEvent, ageOf, SAMTAL, alive, bordVid, byId, clamp, homeKind, isSocial, kanGa, living, load, REL, relKey, spar, storlekAv, vidBordet } from '../sim';
 import { PRICKAR, personFarg } from './hjalp';
 import { s, sakVar, ui, vidNyBy } from './lage';
 import { Ikoner, TS, bubbleG, labels, markLayer, peopleG } from './scen';
@@ -82,7 +82,7 @@ function markOf(p: Person): string | undefined {
   const j = jaktPlats(p);
   if (j) return j.mark ?? 'a_jaga'; // smyger, siktar eller jagar (jakt.ts)
   const t = p.task;
-  return t?.phase === 'do' ? actIkon(t.act) : undefined;
+  return t?.phase === 'do' ? utbIkon(t) ?? actIkon(t.act) : undefined;
 }
 // pratbubblan (steg 3.10.3): samma ruta som arbetssymbolerna, med pratbubblan i pixlar eller ämnets symbol (ikon, steg 3.9.5).
 // Kanten följer samtalet och relationen: rött gräl, rosa flirt eller kärlek, guld berättelse, grönt vänner, mörkrött ovänner
@@ -121,7 +121,7 @@ export function drawPeople(t: number) {
     peopleG.lineStyle(0);
     if (PRICKAR.sjuk.har(p)) peopleG.beginFill(PRICKAR.sjuk.farg).drawCircle(x + r * 0.7, y - r * 0.7, 1.8).endFill();
     if (PRICKAR.gravid.har(p)) peopleG.beginFill(PRICKAR.gravid.farg).drawCircle(x - r * 0.7, y - r * 0.7, 1.6).endFill();
-    if (p.task && load(p.task, s) > 0) markIcons.add(homeKind(p.task), x + r - 2.5, y - 1, 0.6); // det man bär syns på figuren, hur lite det än är (steg 3.6.5)
+    if (p.task && load(p.task, s) > 0) markIcons.add(homeKind(p.task), x + r - 2.5, y - 1, 4.8 / iconCanvas(homeKind(p.task)).width); // det man bär syns på figuren, hur lite det än är (steg 3.6.5)
     const mal = vidBordet(p) && p.task!.mal, bord = mal && hasIcon(mal) ? bordVid(s, p) : undefined;
     if (mal && bord) { // den som äter vid bordet har maten i händerna och framför sig på bordet (steg 3.10.3)
       const { w, h } = storlekAv(bord), dx = (bord.x + w / 2) * TS - x, dy = (bord.y + h / 2) * TS - y, d = Math.hypot(dx, dy) || 1, f = Math.min(1, TS * 0.7 / d);
@@ -156,7 +156,7 @@ export function drawPeople(t: number) {
     } else if (m) {
       const bob = Math.sin(t / 500 + p.id) * 0.6;
       bubbleG.beginFill(0x111111, 0.35).drawRoundedRect(x - 5, top - 5 + bob, 10, 10, 3).endFill();
-      markIcons.add(m, x - 4, top - 4 + bob, 1);
+      markIcons.add(m, x - 4, top - 4 + bob, 8 / iconCanvas(m).width);
     }
   }
   markIcons.end();

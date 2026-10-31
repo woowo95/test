@@ -211,6 +211,9 @@ export function utbrottBorjar(s: State, p: Person, k: Utbrott, mal?: Person, tin
   } else log(s, `${p.name} mår dåligt och ${rad.text}${ting ? (ting.agare === p.id ? ' sin egen ' : ' byns ') + (SAKER[ting.k]?.namn ?? ting.k).toLowerCase() : ''}.`, 'rel', [p.id]);
 }
 
+// symbolen för utbrottets grad (steg 3.10.13): utbrottet är uppgiftens task.tool (val.ts)
+export const utbIkon = (t: Task) => t.tool && t.tool in UTBROTT ? 'utb' + UTB[t.tool as Utbrott].grad : undefined;
+
 // när utbrottet är över (steg.ts): saken är sönder, och man mår lite bättre
 export function utbrottKlar(s: State, p: Person, t: Task) {
   if (t.act === 'krossa' && t.ref !== undefined) {

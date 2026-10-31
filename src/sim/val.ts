@@ -427,7 +427,7 @@ function utbrottVal(s: State, p: Person, v: Val) {
   if (!u) return false;
   utbrottBorjar(s, p, u.k, u.mal, u.ting);
   set(v, u.rad.act, 'Mår mycket dåligt');
-  v.dur = u.dur;
+  v.dur = u.dur; v.tool = u.k; // utbrottet: symbolen över huvudet (utbIkon) och namnet (verktyg)
   if (u.mal) v.spot = { x: u.mal.x, y: u.mal.y };
   else if (u.ting) { v.spot = { x: p.x, y: p.y }; v.ref = u.ting.id; }
   else if (u.rad.act === 'fly') v.spot = walkSpot(s, p, VAL.promNar + VAL.promBort * rnd(s, 'val', p));

@@ -139,25 +139,26 @@ const DEF = {
   odla: { namn: 'Odlar', slag: 'odla', verktyg: { roja: 'Röjer ett fält', bereda: 'Gräver upp jorden på fältet', sa: 'Sår', mogen: 'Skördar' }, tungt: true, stilla: true, framme: true },
   dorr: { namn: 'Hänger en dörr', slag: 'bygga', verktyg: { skinndorr: 'Hänger en hud i dörröppningen', tradorr: 'Hänger en dörr av trä i dörröppningen' }, hantverk: true, stilla: true, framme: true }, // i en öppning (DORRAR i byggnad.ts, steg 2.2.16); task.tool = sorten
   tillbehor: { namn: 'Gör ett tillbehör', slag: 'hantverk', verktyg: { skinnfall: 'Lägger en skinnfäll i halmbädden' }, hantverk: true, stilla: true, framme: true }, // till en station eller möbel (TILLBEHOR i stationer.ts); task.tool = sorten
-  // utbrotten (steg 3.2.2, humor.ts): den som mår mycket dåligt brister ut. Platsen väljs i val.ts (utbrottVal)
-  grata: { namn: 'Gråter för sig själv', tecken: '😢', dygn: true, stilla: true, plats: 'avsides' },
-  tjura: { namn: 'Tjurar för sig själv', tecken: '😤', dygn: true, stilla: true, plats: 'avsides' },
+  // utbrotten (steg 3.2.2, humor.ts): den som mår mycket dåligt brister ut. Platsen väljs i val.ts (utbrottVal). Symbolen är gradens
+  // (steg 3.10.13), och över huvudet utbrottets egen (task.tool, utbIkon i humor.ts)
+  grata: { namn: 'Gråter för sig själv', tecken: '😢', ikon: 'utb1', dygn: true, stilla: true, plats: 'avsides' },
+  tjura: { namn: 'Tjurar för sig själv', tecken: '😤', ikon: 'utb1', dygn: true, stilla: true, plats: 'avsides' },
   skams: { namn: 'Skäms och håller sig undan', tecken: '😔', dygn: true, stilla: true, plats: 'avsides' }, // straffet skam (steg 3.5.3, styre.ts)
-  elak: { namn: 'Är elak mot någon', tecken: '😠', dygn: true, stilla: true },
-  skvallra: { namn: 'Snackar skit om någon', tecken: '🗣️', dygn: true, stilla: true }, // steg 3.3.3 (rykten.ts)
-  krossa: { namn: 'Slår sönder något', tecken: '💥', dygn: true, stilla: true },
+  elak: { namn: 'Är elak mot någon', tecken: '😠', ikon: 'utb2', dygn: true, stilla: true },
+  skvallra: { namn: 'Snackar skit om någon', tecken: '🗣️', ikon: 'utb2', dygn: true, stilla: true }, // steg 3.3.3 (rykten.ts)
+  krossa: { namn: 'Slår sönder något', tecken: '💥', ikon: 'utb2', dygn: true, stilla: true },
   undan: { namn: 'Går undan för tornadon', tecken: '🌪️', stilla: true }, // steg 3.8.4 (tornado.ts)
   // eldsvådorna (steg 3.8.5, brand.ts): de vuxna släcker en eld nära byn, med vattensäcken (fylls vid vattnet och töms över
   // elden) eller med händerna, och de andra går undan
   slacka: { namn: 'Släcker elden', tecken: '🧯', under: { go: 'hämtar vatten', back: 'bär vatten till elden' }, redskap: { vattensack: { namn: 'Släcker elden med vattensäcken', tar: 'Tar vattensäcken.', haller: 150 } }, slits: { enhet: 'turer med vatten', per: 'gang' }, tungt: true, framme: true },
   flyEld: { namn: 'Går undan för elden', tecken: '🔥', stilla: true },
-  fly: { namn: 'Flyr ut i skogen', tecken: '🏃', vandra: { r: 3, h0: 1, h1: 3, v: 1.1 }, dygn: true },
-  badd: { namn: 'Ligger i bädden och orkar inte gå upp', tecken: '🛌', vila: true, dygn: true, stilla: true, plats: 'sang' }, // steg 3.2.3
-  slut: { namn: 'Gör slut', tecken: '💔', dygn: true, stilla: true },
-  sla: { namn: 'Slår någon', tecken: '👊', dygn: true, stilla: true },
+  fly: { namn: 'Flyr ut i skogen', tecken: '🏃', ikon: 'utb2', vandra: { r: 3, h0: 1, h1: 3, v: 1.1 }, dygn: true },
+  badd: { namn: 'Ligger i bädden och orkar inte gå upp', tecken: '🛌', ikon: 'utb3', vila: true, dygn: true, stilla: true, plats: 'sang' }, // steg 3.2.3
+  slut: { namn: 'Gör slut', tecken: '💔', ikon: 'utb3', dygn: true, stilla: true },
+  sla: { namn: 'Slår någon', tecken: '👊', ikon: 'utb3', verktyg: { misshandel: 'Misshandlar någon', drap: 'Slår ihjäl någon' }, dygn: true, stilla: true },
   strid: { namn: 'Slåss', tecken: '⚔️', stilla: true }, // steg 3.7.2 (strid.ts): står kvar i striden medan de andra behoven väntar
   vargjakt: { namn: 'Jagar varg', slag: 'jaga', ger: 'varg', tungt: true }, // steg 3.7.1 (varg.ts): ledaren samlar jägare, och den fällda vargen bärs hem
-  skrika: { namn: 'Skriker och gråter', tecken: '😭', dygn: true, stilla: true }, // barnens (steg 3.2.4)
+  skrika: { namn: 'Skriker och gråter', tecken: '😭', ikon: 'utb1', dygn: true, stilla: true }, // barnens (steg 3.2.4)
 } satisfies Record<string, ActDef>;
 
 export type Act = keyof typeof DEF;
