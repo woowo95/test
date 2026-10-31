@@ -517,7 +517,7 @@ function omkull(st: Strid, k: Kampe, av?: Kampe) {
 }
 // vapnet hamnar på marken (händerna och betten tappar man inte)
 function tappa(st: Strid, k: Kampe) {
-  if (k.vapen === 'hand' || k.vapen === 'bett') return;
+  if (k.djur || k.vapen === 'hand') return; // ett djur tappar aldrig sina tänder eller käftar
   st.marken.push({ v: k.vapen, x: clamp(k.x + slump(st) - 0.5, 0.3, st.w - 0.3), y: clamp(k.y + slump(st) - 0.5, 0.3, st.h - 0.3), av: k.id });
   st.logg.push({ t: st.t, h: 'tappar', a: k.id, v: k.vapen });
   k.vapen = 'hand'; k.skott = undefined; k.haller = undefined;

@@ -1,4 +1,4 @@
-import { FYND, fyndAt, setNarvaro, vaxerAt, viltStart } from './fynd';
+import { FYND, setNarvaro, takenOf, vaxerAt, viltStart } from './fynd';
 import { hash } from './karta';
 import { clamp } from './slump';
 import { living } from './folk';
@@ -99,7 +99,7 @@ export function djurSteg(s: State) { for (let k = 0; k < KANINER.grupper; k++) m
 // grupperna vid tiden t (just nu om inget annat sägs). En grupp krymper där lagret är tömt (där man jagat), och är tom
 // när det jagats slut
 export function grupperOf(s: State, t = s.now): Kaningrupp[] {
-  const ut: Kaningrupp[] = [];
+  const ut: Kaningrupp[] = [], tj = takenOf(s).jakt;
   for (let k = 0; k < KANINER.grupper; k++) {
     const c = mitt(s, k, t);
     if (!c) continue;
@@ -108,7 +108,8 @@ export function grupperOf(s: State, t = s.now): Kaningrupp[] {
     for (let dy = -KANINER.kollR; dy <= KANINER.kollR; dy++) for (let dx = -KANINER.kollR; dx <= KANINER.kollR; dx++) {
       const x = cx + dx, y = cy + dy;
       if (!inMap(x, y)) continue;
-      const i = y * W + x; har += fyndAt(s, 'jakt', i); kan += vaxerAt(s, 'jakt', i);
+      const i = y * W + x, v = vaxerAt(s, 'jakt', i); // det som finns kvar är det som växer gånger det som inte tagits (som fyndAt)
+      har += v * (tj ? 1 - tj[i] : 1); kan += v;
     }
     const n = kan > 0 ? Math.round(c.st.n0 * Math.min(1, har / kan)) : 0;
     ut.push({ id: c.e * KANINER.grupper + k, x: c.x, y: c.y, n, n0: c.st.n0 });

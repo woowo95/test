@@ -910,7 +910,9 @@ SCENARIER.langsam = {
     const hand: SIM.Uppstallning = { avsikt: 'slagsmal', w: 20, h: 14, kampar: [m(1, 0, 'hand', 8, 7), m(2, 1, 'hand', 12, 7)] };
     const h = SIM.korManga(hand, 5, 200), sp = SIM.korManga(vu('flintspjut'), 5, 200), ha = SIM.korManga(vu('hand'), 5, 200);
     const pc = (n: number, r: SIM.ManyResultat) => Math.round(100 * n / r.n);
+    const kaftar = Array.from({ length: 60 }, (_, i) => SIM.stridTillSlut(SIM.nyStrid(vu('flintspjut'), i)).logg).filter(l => l.some(r => (r.h === 'tappar' || r.h === 'plockar') && (r.a === 2 || r.v === 'vargbett'))).length;
     return [
+      [`vargen tappar aldrig sina käftar och ingen tar upp dem: ${kaftar} av 60 strider (11 före kodgenomgången 3.10.25)`, kaftar === 0],
       [`STRID.tempo är ${SIM.STRID.tempo} och tiden i striden är ${SIM.STRID.maxTid / SIM.STRID.tempo} s som förut`, SIM.STRID.tempo === 2 && SIM.STRID.maxTid / SIM.STRID.tempo === 240],
       [`ett slagsmål mellan två vuxna tar ${h.tid.toFixed(1)} s (11 s före steget), och sidorna vinner ${pc(h.vann[0], h)} % och ${pc(h.vann[1], h)} %`, h.tid > 18 && h.tid < 26 && Math.abs(h.vann[0] - h.vann[1]) < h.n * 0.2],
       [`en med spjut mot en varg: människan vinner ${pc(sp.vann[0], sp)} % på ${sp.tid.toFixed(1)} s (7 s före steget)`, sp.vann[0] > sp.n * 0.7 && sp.vann[0] < sp.n * 0.9 && sp.tid > 11],
