@@ -447,7 +447,18 @@ SCENARIER.kloka = {
     kor(v, (start - 2.1 * DAY - v.now) / HOUR);
     const hort = living(v).filter(p => p.varsel?.t === start && p.varsel.src !== undefined).length;
     const f = (x?: { t: number; c: number }) => x ? `${x.t.toFixed(1)} dygn innan, säker ${x.c.toFixed(2)}` : 'inte alls';
+    // en motgång som tar slut när nästa börjar direkt efter: slutet räknas ändå, och de som klarade den minns den (kodgenomgången 3.10.25)
+    let gr: State | undefined, gm: ReturnType<typeof SIM.motgangNu>;
+    for (let seed = 1; seed < 400 && !gr; seed++) { const b = createState(seed, START); b.founded -= 20 * DAY; for (let w = 0; w < 64 && !gr; w++) { const m = SIM.motgangNu(b, b.now + w * 7 * DAY + DAY); if (m) { gr = b; gm = m; } } }
+    let foreSlut = false, foreKvar = '', foreMinns = 0;
+    if (gr && gm) {
+      gr.now = gm.start; (gr.motgang ??= {}).pagar = { k: 'torka', t: gm.start - 7 * DAY, dog: 0 };
+      const lev = living(gr)[0];
+      SIM.stepMotgang(gr);
+      foreSlut = gr.log.some(r => r.text.startsWith(SIM.MOTGANGAR.torka.slutar)); foreKvar = gr.motgang.pagar?.k ?? ''; foreMinns = lev.liv?.['mg:torka'] ?? 0;
+    }
     return [
+      [`torkan tar slut när ${gm?.id ?? 'nästa motgång'} börjar direkt efter (${foreSlut ? 'slutet loggades' : 'inget slut'}, de som klarade den minns den ${foreMinns} gång), och den nya pågår (${foreKvar})`, foreSlut && foreMinns === 1 && foreKvar === gm?.id],
       [`den klokaste (intelligens 20) anar den tre dygn innan och säkrare (${f(a[klok.id])})`, !!a[klok.id] && a[klok.id].t > 2.9 && a[klok.id].t <= 3.05 && a[klok.id].c > 0.9],
       [`den äldsta anar den ett till två dygn innan (${f(a[gammal.id])})`, !!a[gammal.id] && a[gammal.id].t >= 0.95 && a[gammal.id].t <= 2.05 && Math.abs(a[gammal.id].c - SIM.MOTGANG.varselSaker) < 1e-9],
       [`en mindre klok (intelligens 15) anar den senare och mindre säkert (${f(b[klok.id])})`, !!b[klok.id] && b[klok.id].t < a[klok.id]?.t && b[klok.id].t > 1.5 && b[klok.id].c < a[klok.id].c],
