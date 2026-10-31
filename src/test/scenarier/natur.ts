@@ -1396,12 +1396,20 @@ SCENARIER.smutsibyn = {
     Object.assign(q, { x: z.x + 0.5, y: z.y + z.h - 1 + 0.5, task: undefined }); toaBesok(s, q); // i lagrets andra hörn
     const toa = slitageNu(s, { k: 'bar', x: z.x + 1, y: z.y + z.h - 1 }).per;
     const ibyn = smutsIByn(s).punkter.length, inne = byAvstand(s, z.x, z.y) <= SMUTS.byn;
+    // nytt blod i en bleknad fläck (samma antal fläckar) syns genast, inte först nästa timme (smutsIByn, kodgenomgången 3.10.25)
+    const u = createState(1, START); klockan(u); tandEld(u);
+    const uz = zoneOf(u);
+    u.blod = [{ x: uz.x + 0.5, y: uz.y + 0.5, f: 'droppar', m: 1, t: u.now - 18 * HOUR }];
+    const bleknad = smutsIByn(u).punkter.length;
+    blodas(u, uz.x + 0.5, uz.y + 0.5, 'blodning', 1);
+    const farsk = smutsIByn(u).punkter.length, antal = u.blod.length;
     return [
       ['ingen tanke utan blod', !fore],
       [`den som ser blodet inne i byn får tanken (${ibyn} fläckar och högar syns, lagret inne i byn: ${inne})`, ser && inne],
       ['inte den som är långt bort eller sover', !langtBort && !sover],
       [`maten i blodet ruttnar fortare (${(pa / rent).toFixed(1)} gånger)`, Math.abs(pa / rent - SMUTS.rutt) < 1e-9],
       [`... och bredvid en toa-hög (${(toa / rent).toFixed(1)} gånger)`, Math.abs(toa / rent - SMUTS.rutt) < 1e-9],
+      [`nytt blod i en bleknad fläck syns genast (${bleknad} → ${farsk} som syns, ${antal} fläck)`, bleknad === 0 && farsk === 1 && antal === 1],
     ];
   },
 };

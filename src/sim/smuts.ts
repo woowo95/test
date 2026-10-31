@@ -155,24 +155,25 @@ export function akel(s: State, p: Person) {
   if (toaNara(s, tileOf(p.x, p.y)) > SMUTS.akel) think(p, 'Äcklad av smuts', SMUTS.akelHumor, s.now, SMUTS.akelTim * HOUR);
 }
 // blodet och toa-högarna inne i byn som syns (punkter), och rutorna där det ligger blod (blod). Räknas om varje timme i spelet
-// och när en fläck tillkommer, så att levande läget och snabbläget får samma (som toaKarta)
-const synCache = new WeakMap<State, { nyckel: string; punkter: { x: number; y: number }[]; blod: Set<number> }>();
+// och när blod eller en fläck tillkommer (blodas och smutsaRuta lägger en ny lista), med styrkan vid timmens början, så att
+// levande läget, snabbläget och en inläst by får samma (som toaKarta)
+const synCache = new WeakMap<State, { hr: number; b: unknown; fl: unknown; punkter: { x: number; y: number }[]; blod: Set<number> }>();
 export function smutsIByn(s: State) {
-  const b = blodOf(s), fl = s.flackar ?? [], nyckel = `${Math.floor(s.now / HOUR)}|${b.length}|${fl.length}`;
+  const b = blodOf(s), fl = flackarOf(s), hr = Math.floor(s.now / HOUR), h0 = hr * HOUR;
   let c = synCache.get(s);
-  if (c?.nyckel === nyckel) return c;
+  if (c && c.hr === hr && c.b === b && c.fl === fl) return c;
   const punkter: { x: number; y: number }[] = [], blod = new Set<number>();
   for (const g of b) {
-    const n = blodNu(g, s.now);
+    const n = blodNu(g, Math.max(h0, g.t));
     if (n <= 0) continue;
     blod.add(tileOf(g.x, g.y));
     if (n > SMUTS.blodSyns && byAvstand(s, Math.floor(g.x), Math.floor(g.y)) <= SMUTS.byn) punkter.push({ x: g.x, y: g.y });
   }
   for (const f of fl) {
     const x = f.i % W, y = Math.floor(f.i / W);
-    if (f.k === 'toa' && flackNu(f, s.now) > SMUTS.akel && byAvstand(s, x, y) <= SMUTS.byn) punkter.push({ x: x + 0.5, y: y + 0.5 });
+    if (f.k === 'toa' && flackNu(f, Math.max(h0, f.t)) > SMUTS.akel && byAvstand(s, x, y) <= SMUTS.byn) punkter.push({ x: x + 0.5, y: y + 0.5 });
   }
-  synCache.set(s, c = { nyckel, punkter, blod });
+  synCache.set(s, c = { hr, b, fl, punkter, blod });
   return c;
 }
 // maten på rutan (x, y) ruttnar fortare i en blodfläck eller på eller bredvid en toa-hög (steg 3.6.10): så här många gånger
