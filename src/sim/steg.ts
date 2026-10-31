@@ -536,7 +536,8 @@ const UTFALL: Partial<Record<Act, (s: State, p: Person, tk: Task, b: Arbetsbit) 
     const fart = ACTS[tk.act].fart ?? 1, got = forageItems(s, p, dtSec, fart) ?? {}, dt = dtSec * fart; // det som växer på platsen hittar man lika mycket fortare (steg 2.12.4)
     bar('svamp', pickMushrooms(s, p, tk.tx, tk.ty, dt, got));
     bar('mossa', mossaFynd(s, tk, dt)); // mossa till förband (steg 2.5.2)
-    bar('fron', froFynd(s, p, tk, dt)); // frön från de vilda grödorna (steg 2.10.2)
+    const vild = froFynd(s, p, tk, dt); // frön och lite mat från de vilda grödorna (steg 2.10.2, 3.10.23.8)
+    for (const k in vild) bar(k, vild[k]);
     for (const k in got) bar(k, got[k]);
     return true;
   },

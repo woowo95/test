@@ -22,9 +22,10 @@ import { iVattnetNu } from './sjo';
 import { ISTID, iIstiden, isLight, kalender } from './tid';
 
 // ---------- odling (steg 2.10.2–) ----------
-// Vilda grödor växer på kartan som andra växter: vildkorn på ängarna och vilda ärter i skogsbrynet (lagren i VILDA, rader i
-// FYND i fynd.ts). Den som samlar där de växer plockar frön (fron i saker.ts) och tar med sig dem tills byn har så många den
-// vill ha. Fröna kan inte ätas. Bara den som plockar vilda frön kommer på tekniken Odling (raden odling i teknik.ts, `nar`),
+// Vilda grödor växer på kartan som andra växter: vild rova på ängarna och vilda ärter i skogsbrynet (registret VILDA, lager i
+// FYND i fynd.ts). Den som samlar där de växer plockar frön till grödan (rovfrön och ärtfrön i saker.ts, steg 3.10.23.8) och tar
+// med sig dem tills byn har så många den vill ha, och får lite mat på köpet (små rötter och ärtor). Fröna kan inte ätas. Bara
+// den som plockar vilda frön kommer på tekniken Odling (raden odling i teknik.ts, `nar`),
 // och fortare ju fler byn plockat (statistiken vildgrodor, `okar`); det räknas också när byn redan har nog (steg 2.10.11).
 //
 // Fälten (steg 2.10.3, 2.10.13, 3.10.23): den som kan odla och har frön till ett minsta fält röjer ett fält på jord utanför
@@ -44,6 +45,7 @@ export const ODLING = balans('odling', {
   froTakt: 6, // frön per arbetstimme på en mycket rik plats (gånger kunnigheten och SNABBARE; 3 före balansen av fas 2, steg 2.12.2)
   froUttag: 0.1, // varje frö tar så här mycket ur platsen
   froLeta: 0.3, // den som samlar går till de vilda grödorna för att plocka frön med VAL.fronChans, om någon ruta har så här mycket (steg 2.10.11)
+  vildMat: 0.25, // mat per plockat frö (VILDA mat, steg 3.10.23.8), bara när fröna tas med: mindre per timme än bären
   // fälten (steg 2.10.3, 2.10.13, 3.10.23)
   rutorPerMun: 5, // ett fält ska ha så här många rutor per person i ägarens familj (3 före steg 3.10.23) ...
   faltMin: 16, faltMax: 64, // ... men minst och högst så här många (2 och 200 före steg 3.10.23); ett nytt fält läggs först när ägaren har frön till faltMin rutor
@@ -66,7 +68,7 @@ export const ODLING = balans('odling', {
   ruttDygn: 1.5, // ... och har sedan ruttnat helt efter så här många dygn till (skörden minskar under tiden)
   grasDygn: 3, // ett fält där ingen arbetat på så här många dygn och där inget växer blir gräs igen
   // på hösten blir nätterna kalla, och grödan hinner inte mogna innan frosten tar den (steg 2.12.2):
-  kornMarg: 5, // korn sås bara om det hinner mogna med så här många dygn tillgodo före istiden (1,5 före steg 2.12.2); annars rovor ...
+  artMarg: 5, // ärter (korn före steg 3.10.23.8) sås bara om de hinner mogna med så här många dygn tillgodo före istiden (1,5 före steg 2.12.2); annars rovor ...
   rovMarg: 3, // ... med så här många dygn tillgodo
 });
 
@@ -75,8 +77,9 @@ export const ODLING = balans('odling', {
 // frön, froTillbaka), frost = den dör när det blir kallare än så här
 export interface GrodaDef { namn: string; sak: string; fro: string; dygn: number; perRuta: number; fron: number; frost: number }
 export const GRODOR = {
-  rovor: { namn: 'Rovor', sak: 'rovor', fro: 'fron', dygn: 3, perRuta: 3, fron: 1.5, frost: -6 }, // snabba och härdiga; 1 eller 2 frön per ruta (steg 3.10.23.3); dygn 2 och perRuta 5 före steg 3.10.23.5; frost -3 före steg 2.12.2
-  korn: { namn: 'Korn', sak: 'korn', fro: 'fron', dygn: 4, perRuta: 3, fron: 2, frost: -4 }, // håller länge; dygn 3, perRuta 4 och fron 6 före steg 3.10.23; frost -1 före steg 2.12.2
+  rovor: { namn: 'Rovor', sak: 'rovor', fro: 'rovfron', dygn: 3, perRuta: 3, fron: 1.5, frost: -6 }, // snabba och härdiga; 1 eller 2 frön per ruta (steg 3.10.23.3); dygn 2 och perRuta 5 före steg 3.10.23.5; frost -3 före steg 2.12.2
+  // ärterna har kornets tal och plats (steg 3.10.23.8; korn kommer tillbaka som säd från handlarna i steg 11.4.2)
+  arter: { namn: 'Ärter', sak: 'arter', fro: 'artfron', dygn: 4, perRuta: 3, fron: 2, frost: -4 }, // håller länge; dygn 3, perRuta 4 och fron 6 före steg 3.10.23; frost -1 före steg 2.12.2
 } satisfies Record<string, GrodaDef>;
 export type GrodaSlag = keyof typeof GRODOR;
 
@@ -157,10 +160,10 @@ function dygnTillIstid(s: State) {
   if (iIstiden(k.ai)) return 0;
   return (k.slut - s.now) / DAY + ((ISTID - k.ai - 1 + 8) % 4) * 7;
 }
-// grödorna som kan sås nu, den bästa först: korn om det hinner mogna före istiden med marginal, och rovor om de hinner
+// grödorna som kan sås nu, den bästa först: ärter om de hinner mogna före istiden med marginal, och rovor om de hinner
 export function grodorNu(s: State): GrodaSlag[] {
   const d = dygnTillIstid(s), r: GrodaSlag[] = [];
-  if (d >= GRODOR.korn.dygn + ODLING.kornMarg) r.push('korn');
+  if (d >= GRODOR.arter.dygn + ODLING.artMarg) r.push('arter');
   if (d >= GRODOR.rovor.dygn + ODLING.rovMarg) r.push('rovor');
   return r;
 }
@@ -452,8 +455,12 @@ export function stepOdling(s: State) {
     }
   }
 }
-// lagren i FYND med vilda grödor, som ger frön
-export const VILDA = ['vildkorn', 'arter'] as const;
+// de vilda grödorna (lager i FYND, steg 3.10.23.8): grödan i GRODOR vars frön de ger, och maten man får när man plockar
+export const VILDA = {
+  vildrova: { groda: 'rovor', mat: 'rotter' }, // små rötter
+  arter: { groda: 'arter', mat: 'arter' }, // ärtor
+} satisfies Record<string, { groda: GrodaSlag; mat: string }>;
+const VILDA_IDS = Object.keys(VILDA) as (keyof typeof VILDA)[];
 // fröna grödorna sås med
 const FROSORTER = [...new Set(Object.values(GRODOR).map(g => g.fro))];
 
@@ -491,7 +498,7 @@ export function vildFronPlats(s: State) {
   let at: { x: number; y: number } | undefined, bs = 0;
   for (let y = Math.max(0, Math.floor(mid.y - PLATS.dagY)); y < Math.min(H, mid.y + PLATS.dagY); y++) for (let x = Math.max(0, Math.floor(mid.x - PLATS.dagX)); x < Math.min(W, mid.x + PLATS.dagX); x++) {
     let r = 0;
-    for (const k of VILDA) r += richness(s, k, x + 0.5, y + 0.5);
+    for (const k of VILDA_IDS) r += richness(s, k, x + 0.5, y + 0.5);
     if (r < ODLING.froLeta) continue;
     const sc = r / (1 + campDist(s, x, y) / 8);
     if (sc > bs) { bs = sc; at = { x: x + 0.5, y: y + 0.5 }; }
@@ -500,23 +507,26 @@ export function vildFronPlats(s: State) {
   return at;
 }
 
-// medan man samlar (UTFALL samla i steg.ts): frön från de vilda grödorna där man står, och platsen töms lite. Den som plockar
-// tänker på odling (steg 2.10.11). När byn har nog plockar man och tänker ändå, men tar inte med sig fler och lämnar platsen
+// medan man samlar (UTFALL samla i steg.ts): frön från de vilda grödorna där man står, var och en till sin gröda, och lite mat
+// (ODLING.vildMat per frö), och platsen töms lite. Den som plockar tänker på odling (steg 2.10.11). När byn har nog plockar man
+// och tänker ändå, men tar inte med sig fler och lämnar platsen. Svaret är det man tar med sig: frön och mat per sak
 export function froFynd(s: State, p: Person, tk: Task, dtSec: number) {
   const ta = !fronNog(s, tk.items);
-  const sk = kunnighet(p.skill.samla) * SNABBARE * dtSec / HOUR_S;
+  const sk = kunnighet(p.skill.samla) * SNABBARE * dtSec / HOUR_S, ut: Record<string, number> = {};
   let n = 0;
-  for (const k of VILDA) {
+  for (const k of VILDA_IDS) {
     const r = richness(s, k, tk.tx, tk.ty);
     if (r <= 0) continue;
     const g = ODLING.froTakt * r / FYND[k].topp * sk;
-    if (ta) takeFrom(s, k, tk.tx, tk.ty, g * ODLING.froUttag);
     n += g;
+    if (!ta) continue;
+    takeFrom(s, k, tk.tx, tk.ty, g * ODLING.froUttag);
+    const v = VILDA[k], fro = GRODOR[v.groda].fro;
+    ut[fro] = (ut[fro] ?? 0) + g; ut[v.mat] = (ut[v.mat] ?? 0) + g * ODLING.vildMat;
   }
-  if (n <= 0) return 0;
+  if (n <= 0) return ut;
   count(s, 'vildgrodor', n);
   tankePa(s, p, 'odling', dtSec);
-  if (!ta) return 0;
-  if (forstaGang(s, 'froForst')) log(s, `${p.name} tog med sig frön från de vilda grödorna. De går inte att äta.`, 'world', [p.id]);
-  return n;
+  if (ta && forstaGang(s, 'froForst')) log(s, `${p.name} tog med sig frön från de vilda grödorna. De går inte att äta.`, 'world', [p.id]);
+  return ut;
 }

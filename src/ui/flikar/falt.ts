@@ -55,7 +55,7 @@ function rutaHtml() {
       <dt>${mogen ? 'Mogen' : 'Växer'}</dt><dd>${bar(mogen ? 1 : f.vuxit ?? 0)}<span>${Math.round((mogen ? 1 : f.vuxit ?? 0) * 100)} %</span></dd>
       ${mogen ? `<dt>Skörda</dt><dd>${over > 0 ? `inom ${durTxt(over)}, sedan blir den övermogen` : `övermogen, ${Math.round(a * 100)} % kvar`}</dd>`
         : `<dt>Mogen</dt><dd>om ungefär ${durTxt((1 - (f.vuxit ?? 0)) * d.dygn * DAY)} när det är varmt</dd>`}
-      <dt>Ger</dt><dd>${iconImg(d.sak, 14)} ${fmtN(d.perRuta * a)} och ${iconImg('fron', 14)} ${fmtN(d.fron * a)} frön</dd>
+      <dt>Ger</dt><dd>${iconImg(d.sak, 14)} ${fmtN(d.perRuta * a)} och ${iconImg(d.fro, 14)} ${fmtN(d.fron * a)} frön</dd>
       <dt>Frosten</dt><dd>dör när det blir kallare än ${d.frost} grader, och i istiden</dd>
     </dl>${markHtml(f, k)}`;
 }

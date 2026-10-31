@@ -931,8 +931,6 @@ function forstorad(B, k, x0, y0) {
 // Varje version är en bild { w, h, rita(B, P) } på marken. När valet är inbyggt i spelet tas raden bort, och dess
 // dokument i databasens samling 'val' tas bort
 const VATTENSACK = { o: 'kol0', j: 'jord1', J: 'jord2', L: 'jord3', k: 'jord0', s: 'senap1', y: 'senap2', w: 'ben2', b: 'skiffer2', B: 'skiffer3' };
-const VILDKORN = { s: 'senap0', y: 'senap1', Y: 'senap2', L: 'senap3', o: 'oliv1', O: 'oliv2', G: 'oliv3' };
-const FRON = { k: 'jord0', j: 'jord1', J: 'jord2', B: 'jord3', y: 'senap1', Y: 'senap2', L: 'senap3', g: 'oliv2', G: 'oliv3', o: 'kol0' };
 const ODLING = { k: 'jord0', j: 'jord1', J: 'jord2', B: 'jord3', g: 'oliv1', G: 'oliv2', H: 'oliv3', y: 'senap2', Y: 'senap3' };
 const ROVOR = { o: 'oliv0', g: 'oliv1', G: 'oliv2', L: 'oliv3', r: 'rost1', R: 'rost2', b: 'ben1', B: 'ben2', W: 'ben3', k: 'jord0', j: 'jord1', J: 'jord2' };
 const KORN = { s: 'senap0', y: 'senap1', Y: 'senap2', L: 'senap3', k: 'jord0', j: 'jord1', J: 'jord2' };
@@ -1042,6 +1040,17 @@ const LED_STAV = UTB_KANT(['................', '.......ss.......', '......sSSs..
 const LED_KRONA = UTB_KANT(['................', '.......W........', '...W..wWw...W...', '..wWw.wWw..wWw..', '..wWw.wWw..wWw..', '..wWw.wWw..wWw..', '..rWw.wWw..wWr..', '...rr.wrw..rr...', '......rrr.......', '.ssssssssssssss.', '.sSySsSySsSySss.', '.ssssssssssssss.', '................', '................', '................', '................']);
 const LED_FOLK = UTB_KANT(['................', '......aaaa......', '......aaaa......', '......aaaa......', '...a...aa...a...', '....aaaaaaaa....', '......aaaa......', '......aaaa......', '......aaaa......', '..bb..a..a..bb..', '.bbbb.a..a.bbbb.', '..bb..a..a..bb..', '.bbbb.a..a.bbbb.', '.bbbb......bbbb.', '.b..b......b..b.', '................']);
 // en symbol i rätt storlek och tre gånger större bredvid
+// spelets symbol k i rätt storlek och tre gånger större bredvid, som LED_M
+const IKON_M = k => ({ w: 74, h: 52, kol: true, rita: (B, P) => {
+  ritaIkon(B, k, 3, 3);
+  const rows = IKONER.PIX[k]; if (!rows) return;
+  const L = Bild(rows[0].length, rows.length, B.P); ritaIkon(L, k, 0, 0);
+  for (let y = 0; y < L.h * 3; y++) for (let x = 0; x < L.w * 3; x++) {
+    const v = L.px[Math.floor(y / 3) * L.w + Math.floor(x / 3)];
+    if (v >= 0) B.satt(22 + x, 2 + y, v);
+    else if (IKONER.PAL[k]?.[rows[Math.floor(y / 3)][Math.floor(x / 3)]]?.startsWith('rgba')) B.morka(22 + x, 2 + y);
+  }
+} });
 const LED_M = (p, l) => ({ w: 74, h: 52, kol: true, rita: (B, P) => { ritaSprite(B, p, { o: 'kol0', ...l }, 3, 3); ritaSprite(B, p.flatMap(r => { const rr = [...r].map(c => c.repeat(3)).join(''); return [rr, rr, rr]; }), { o: 'kol0', ...l }, 22, 2); } });
 // grillen omritad (steg 3.6.7): kartbilden förstorad till 16 punkter per ruta, med en mörk kant runt klykorna och spettet
 // och en skugga under klykorna, så att den syns mot marken
@@ -1827,6 +1836,14 @@ const VAL = [
     idag: { text: '⚖️ 🙅 🥊 🐔 🐺' },
     versioner: [{ text: 'En vågskål i jämvikt (rättvis), en som väger snett (orättvis), en knytnäve (stark), en vit flagga (feg) och ett varghuvud (vargdödare).', w: 92, h: 20, kol: true,
       rita: B => ['i_rattvis', 'i_orattvis', 'i_stark', 'i_feg', 'i_vargdodare'].forEach((k, i) => ritaIkon(B, k, 2 + i * 18, 2)) }] },
+  { id: 'g_vildrova', namn: 'Vild rova', vad: 'Ny symbol (steg 3.10.23.8), 16 × 16 punkter: den vilda rovan (åkerkål) som växer på ängarna i stället för vildkornet, på kartan och i teckenförklaringen. Till vänster i rätt storlek, till höger tre gånger större. I spelet nu: den här (platshållare).', typ: 'janej',
+    versioner: [{ text: 'Tre stjälkar med små gula blommor, blad nertill och en liten blek rot.', ...IKON_M('vildrova') }] },
+  { id: 'g_arter', namn: 'Ärter', vad: 'Ny symbol (steg 3.10.23.8), 16 × 16 punkter: ärterna som skördas på fälten och plockas vilda, i förrådet och det man bär. De vilda ärterna på kartan har kvar sin symbol. Till vänster i rätt storlek, till höger tre gånger större. I spelet nu: den här (platshållare).', typ: 'janej',
+    versioner: [{ text: 'En sluten ärtskida snett över bilden och en öppen skida med fyra ärtor.', ...IKON_M('arter') }] },
+  { id: 'g_rovfron', namn: 'Rovfrön', vad: 'Ny symbol (steg 3.10.23.8), 16 × 16 punkter: fröna från rovorna, i förrådet och det man bär. Till vänster i rätt storlek, till höger tre gånger större. I spelet nu: den här (platshållare).', typ: 'janej',
+    versioner: [{ text: 'Sju små rödbruna frön med mörk kant.', ...IKON_M('rovfron') }] },
+  { id: 'g_artfron', namn: 'Ärtfrön', vad: 'Ny symbol (steg 3.10.23.8), 16 × 16 punkter: fröna från ärterna: torkade ärtor att så. Till vänster i rätt storlek, till höger tre gånger större. I spelet nu: den här (platshållare).', typ: 'janej',
+    versioner: [{ text: 'Fyra torkade ärtor med mörk kant.', ...IKON_M('artfron') }] },
   VRID_VAL('v_slaktbank', 'Slaktbänken', ['slaktbank_karta'], 'Stocken går uppifrån och ner, stockänden med de två främre benen syns längst ner och blodet rinner över den ner i pölen.'),
   VRID_VAL('v_slojdbank', 'Slöjdbänken', ['flatarbank_karta'], 'Plankorna uppifrån och ner, stolparna med repet längs högra kanten och skåran för bensylen på skivan.'),
   VRID_VAL('v_halmbadd', 'Halmbädden', ['halmbadd_karta', 'skinnfall_karta'], 'Höet med huvudänden uppåt, och skinnfällen över resten (här med fällen, som när den är gjord).'),

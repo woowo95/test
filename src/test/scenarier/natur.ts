@@ -1156,62 +1156,65 @@ SCENARIER.brasa = {
 };
 
 SCENARIER.odling = {
-  text: 'Steg 2.10.2: vilda grödor växer på kartan, vildkorn på ängarna och vilda ärter i skogsbrynet, men inte i istiden, nära byn eller där folk nött marken (steg 2.10.12). Den som samlar där plockar frön, som inte går att äta, och tar med sig dem tills byn har nog. Tekniken Odling kommer man bara på när man plockar vilda frön (steg 2.10.11), fortare ju fler byn plockat, och plockandet räknas också när byn har nog',
+  text: 'Steg 2.10.2 och 3.10.23.8: vilda grödor växer på kartan, vild rova på ängarna och vilda ärter i skogsbrynet, men inte i istiden, nära byn eller där folk nött marken (steg 2.10.12). Den som samlar där plockar frön, som inte går att äta, rovfrön av rovan och ärtfrön av ärterna, och tar med sig dem tills byn har nog, och får lite mat (små rötter och ärtor). Tekniken Odling kommer man bara på när man plockar vilda frön (steg 2.10.11), fortare ju fler byn plockat, och plockandet räknas också när byn har nog',
   kor: () => {
     const s = createState(7, START);
     s.kal = nyKalender(s.now, 3); klockan(s);
     const g = groundOf(s), host = SIM.ageIndex(s);
-    // var de växer: vildkornet bara i högt gräs och ärterna bara i ungskogen
-    let korn = 0, arter = 0, fel = 0, kornI = -1;
+    // var de växer: rovan bara i högt gräs och ärterna bara i ungskogen
+    let rova = 0, arter = 0, fel = 0, rovI = -1, artI = -1;
     for (let i = 0; i < W * H; i++) {
-      const k = vaxerAt(s, 'vildkorn', i), a = vaxerAt(s, 'arter', i);
-      if (k > 0) { korn++; if (SIM.markslag(g, i) !== 'hog') fel++; if (kornI < 0 || k > vaxerAt(s, 'vildkorn', kornI)) kornI = i; }
+      const k = vaxerAt(s, 'vildrova', i), a = vaxerAt(s, 'arter', i);
+      if (k > 0) { rova++; if (SIM.markslag(g, i) !== 'hog') fel++; if (rovI < 0 || k > vaxerAt(s, 'vildrova', rovI)) rovI = i; }
       const sk = (j: number) => j >= 0 && j < W * H && g.trees[j] >= FOREST;
-      if (a > 0) { arter++; if (SIM.markslag(g, i) === 'skog' || !(sk(i - 1) || sk(i + 1) || sk(i - W) || sk(i + W))) fel++; }
+      if (a > 0) { arter++; if (SIM.markslag(g, i) === 'skog' || !(sk(i - 1) || sk(i + 1) || sk(i - W) || sk(i + W))) fel++; if (artI < 0 || a > vaxerAt(s, 'arter', artI)) artI = i; }
     }
     // inte nära byn (steg 2.10.12): inget närmare lägret än FANGST.vildIn, och nött mark runt omkring tar bort det mesta
     let naraByn = 0;
-    for (let i = 0; i < W * H; i++) if (campDist(s, i % W, Math.floor(i / W)) < FANGST.vildIn) naraByn += vaxerAt(s, 'vildkorn', i) + vaxerAt(s, 'arter', i);
+    for (let i = 0; i < W * H; i++) if (campDist(s, i % W, Math.floor(i / W)) < FANGST.vildIn) naraByn += vaxerAt(s, 'vildrova', i) + vaxerAt(s, 'arter', i);
     const trampad = createState(7, START); trampad.kal = nyKalender(trampad.now, 3); klockan(trampad);
-    const tg = groundOf(trampad), kx = kornI % W, ky = Math.floor(kornI / W);
+    const tg = groundOf(trampad), kx = rovI % W, ky = Math.floor(rovI / W);
     for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) if ((dx || dy) && SIM.inMap(kx + dx, ky + dy)) { const j = (ky + dy) * W + kx + dx; tg.cover[j] = 0; tg.trees[j] = 0; }
-    const orord = vaxerAt(s, 'vildkorn', kornI), nott = vaxerAt(trampad, 'vildkorn', kornI);
+    const orord = vaxerAt(s, 'vildrova', rovI), nott = vaxerAt(trampad, 'vildrova', rovI);
     const vinter = createState(7, START); vinter.kal = nyKalender(vinter.now, 0);
     let iIstid = 0;
-    for (let i = 0; i < W * H; i++) iIstid += vaxerAt(vinter, 'vildkorn', i) + vaxerAt(vinter, 'arter', i);
-    // den som samlar på den rikaste vildkornsrutan tar med sig frön, och platsen töms lite
-    const p = living(s).find(q => ageOf(q, s.now) >= 18)!, x = kornI % W + 0.5, y = Math.floor(kornI / W) + 0.5;
-    const tk = { act: 'samla', tx: x, ty: y } as unknown as SIM.Task;
-    const fore = fyndAt(s, 'vildkorn', kornI);
-    let fron = 0;
-    for (let i = 0; i < 60; i++) fron += SIM.froFynd(s, p, tk, 60);
-    const efter = fyndAt(s, 'vildkorn', kornI), vild = s.stat?.vildgrodor ?? 0;
+    for (let i = 0; i < W * H; i++) iIstid += vaxerAt(vinter, 'vildrova', i) + vaxerAt(vinter, 'arter', i);
+    // den som samlar på den rikaste rovrutan tar med sig rovfrön och små rötter, och platsen töms lite. På ärterna blir det
+    // ärtfrön och ärtor
+    const p = living(s).find(q => ageOf(q, s.now) >= 18)!, plats = (i: number) => ({ act: 'samla', tx: i % W + 0.5, ty: Math.floor(i / W) + 0.5 } as unknown as SIM.Task);
+    const tk = plats(rovI), summa = (ut: Record<string, number>, ks: string[]) => ks.reduce((a, k) => a + (ut[k] ?? 0), 0);
+    const fore = fyndAt(s, 'vildrova', rovI), ut: Record<string, number> = {};
+    for (let i = 0; i < 60; i++) for (const [k, n] of Object.entries(SIM.froFynd(s, p, tk, 60))) ut[k] = (ut[k] ?? 0) + n;
+    const efter = fyndAt(s, 'vildrova', rovI), vild = s.stat?.vildgrodor ?? 0, fron = summa(ut, ['rovfron', 'artfron']), rot = ut.rotter ?? 0;
+    const art = artI >= 0 ? SIM.froFynd(s, p, plats(artI), 3600) : {};
     // byn vill ha frön till ett minsta fält för varje familj som kan odla och saknar fält (steg 3.10.23.3; innan någon kan odla
     // alla familjer). När byn har nog tar man inga fler, men plockandet räknas och man tänker på odling
     const fam = SIM.fronFamiljer(s), vill = SIM.ODLING.froPerRuta * SIM.ODLING.faltMin * fam;
-    setAmount(s, 'fron', vill - 1);
-    const fattas = SIM.froFynd(s, p, tk, 600) > 0;
-    setAmount(s, 'fron', vill);
+    setAmount(s, 'rovfron', vill - 1);
+    const fattas = summa(SIM.froFynd(s, p, tk, 600), ['rovfron', 'artfron']) > 0;
+    setAmount(s, 'rovfron', vill);
     p.tek = {};
-    const vild0 = s.stat?.vildgrodor ?? 0, nog = SIM.froFynd(s, p, tk, 3600), raknat = (s.stat?.vildgrodor ?? 0) > vild0, tankt = (p.tek?.odling ?? 0) > 0;
+    const vild0 = s.stat?.vildgrodor ?? 0, nog = Object.keys(SIM.froFynd(s, p, tk, 3600)).length, raknat = (s.stat?.vildgrodor ?? 0) > vild0, tankt = (p.tek?.odling ?? 0) > 0;
     // tekniken: vanligt samlande ger ingen tanke på odling, bara plockandet, och ju fler frön byn plockat, desto fortare
     const tek = SIM.TEK.odling, tank = (stat: number, plocka: boolean) => {
       const t = createState(7, START), q = living(t).find(r => ageOf(r, t.now) >= 18)!;
-      q.tek = {}; setAmount(t, 'fron', 5); (t.stat ??= {}).vildgrodor = stat;
+      q.tek = {}; setAmount(t, 'rovfron', 5); (t.stat ??= {}).vildgrodor = stat;
       for (let i = 0; i < 60; i++) plocka ? SIM.tankePa(t, q, 'odling', 1) : SIM.thinkWhileWorking(t, q, 'samla', 1);
       return q.tek.odling ?? 0;
     };
     const samlar = tank(400, false), lite = tank(0, true), mycket = tank(400, true);
     return [
-      [`på hösten växer vildkorn (${korn} rutor) och vilda ärter (${arter} rutor) (tidsålder ${host})`, host === 3 && korn > 0 && arter > 0],
-      [`vildkornet bara i högt gräs och ärterna bara i skogsbrynet (${fel} fel)`, fel === 0],
+      [`på hösten växer vild rova (${rova} rutor) och vilda ärter (${arter} rutor) (tidsålder ${host})`, host === 3 && rova > 0 && arter > 0],
+      [`rovan bara i högt gräs och ärterna bara i skogsbrynet (${fel} fel)`, fel === 0],
       [`inga vilda grödor närmare lägret än ${FANGST.vildIn} rutor (${naraByn.toFixed(3)})`, naraByn === 0],
       [`där marken runt omkring är nött av folk växer de knappt (${orord.toFixed(2)} → ${nott.toFixed(2)})`, orord > 0 && nott < orord * 0.3],
       [`i istiden växer inga vilda grödor (${iIstid.toFixed(3)})`, iIstid === 0],
-      [`en timmes samlande på en rik vildkornsruta ger frön (${fron.toFixed(1)}) och tömmer platsen lite (${fore.toFixed(2)} → ${efter.toFixed(2)})`, fron > 0.5 && efter < fore],
+      [`en timmes samlande på en rik rovruta ger rovfrön (${(ut.rovfron ?? 0).toFixed(1)}) och tömmer platsen lite (${fore.toFixed(2)} → ${efter.toFixed(2)})`, (ut.rovfron ?? 0) > 0.5 && efter < fore],
+      [`och lite mat: små rötter (${rot.toFixed(2)}), ${SIM.ODLING.vildMat} per frö`, rot > 0 && Math.abs(rot - (ut.rovfron ?? 0) * SIM.ODLING.vildMat) < 1e-9],
+      [`på de vilda ärterna blir det ärtfrön (${(art.artfron ?? 0).toFixed(1)}) och ärtor (${(art.arter ?? 0).toFixed(2)})`, (art.artfron ?? 0) > (art.rovfron ?? 0) && (art.arter ?? 0) > 0],
       [`byn räknar det som samlats av de vilda grödorna (${vild.toFixed(1)})`, Math.abs(vild - fron) < 1e-9],
       [`byn plockar frön till ett minsta fält för var och en av familjerna (${fam}): med ${vill - 1} frön tar man fler, med ${vill} inga (${nog}), men plockandet räknas och ger tankar på odling`, fam > 0 && fattas && nog === 0 && raknat && tankt],
-      ['fröna kan inte ätas', !SIM.isFood('fron')],
+      ['fröna kan inte ätas', !SIM.isFood('rovfron') && !SIM.isFood('artfron')],
       [`Odling kommer man bara på när man ${tek?.nar}`, !!tek?.nar],
       [`vanligt samlande ger ingen tanke på odling (${samlar})`, samlar === 0],
       [`plockandet ger tankar redan från början, och fortare ju fler frön byn plockat (${lite.toFixed(4)} mot ${mycket.toFixed(4)})`, mycket > lite * 2 && lite > 0],
@@ -1226,7 +1229,7 @@ SCENARIER.falt = {
     const s = createState(6, START); // by 6: röjer fält med och utan hela saker (by 7 gjorde det inte efter steg 2.10.7, slumpen)
     s.kal = nyKalender(s.now, 1); klockan(s, 7); tandEld(s);
     for (const q of living(s)) q.tek = { ...q.tek, odling: 1 };
-    setAmount(s, 'fron', 30);
+    setAmount(s, 'rovfron', 30);
     const m = getMap(s.seed), g = groundOf(s);
     kor(s, 48);
     const fs = SIM.faltOf(s), f = fs[0];
@@ -1247,28 +1250,28 @@ SCENARIER.falt = {
     const { sidaMin, sidaMax } = SIM.ODLING;
     const formOk = fs.every(q => q.w >= sidaMin && q.w <= sidaMax && Math.ceil(q.n / q.w) <= sidaMax);
     const former = new Set(Array.from({ length: 12 }, (_, i) => SIM.bredder(s, i + 1, 25)[0]));
-    // fröna tillbaka (steg 3.10.23.3): rovorna 1 eller 2 per ruta, ungefär hälften av vardera, och kornet 2
+    // fröna tillbaka (steg 3.10.23.3): rovorna 1 eller 2 per ruta, ungefär hälften av vardera, och ärterna 2
     const rovFron = f ? Array.from({ length: 60 }, (_, k) => SIM.froTillbaka(s, { ...f, mogen: s.now }, k, SIM.GRODOR.rovor)) : [];
     const rovSnitt = rovFron.reduce((a, b) => a + b, 0) / (rovFron.length || 1);
-    const kornFron = f ? Array.from({ length: 20 }, (_, k) => SIM.froTillbaka(s, { ...f, mogen: s.now }, k, SIM.GRODOR.korn)) : [];
+    const artFron = f ? Array.from({ length: 20 }, (_, k) => SIM.froTillbaka(s, { ...f, mogen: s.now }, k, SIM.GRODOR.arter)) : [];
     const perRuta = SIM.ODLING.rojaMin + SIM.ODLING.beredaMin + SIM.ODLING.saMin + SIM.ODLING.skordaMin;
     // skörden ruta för ruta: två rutors arbete ger två rutors gröda, och steget är inte klart förrän hela fältet är skördat.
     // Sedan växer fältet om ägaren behöver fler rutor och har frön, och annars grävs jorden upp igen
-    let skord = false, delvis = false, tva = 0, korn = 0, fronSkord = 0;
+    let skord = false, delvis = false, tva = 0, arter = 0, fronSkord = 0;
     if (f) {
-      setAmount(s, 'fron', 200);
-      Object.assign(f, { steg: 'mogen', groda: 'korn', mogen: s.now, klara: 0, kvar: SIM.ODLING.skordaMin * 60000, sadda: f.n });
+      setAmount(s, 'rovfron', 200);
+      Object.assign(f, { steg: 'mogen', groda: 'arter', mogen: s.now, klara: 0, kvar: SIM.ODLING.skordaMin * 60000, sadda: f.n });
       const tk = { act: 'odla', tool: 'mogen', ref: f.id, until: s.now + HOUR } as unknown as SIM.Task;
-      const k0 = amountOf(s, 'korn'), r0 = amountOf(s, 'fron'), n0 = f.n;
+      const k0 = amountOf(s, 'arter'), r0 = amountOf(s, 'artfron'), n0 = f.n;
       SIM.workOdla(s, p, tk, SIM.ODLING.skordaMin * 60 * 2);
       tva = f.klara;
       SIM.finishOdla(s, p, tk);
       delvis = f.steg === 'mogen' && tva === 2;
       SIM.workOdla(s, p, tk, SIM.ODLING.skordaMin * 60 * f.n);
       SIM.finishOdla(s, p, tk);
-      korn = amountOf(s, 'korn') - k0; fronSkord = amountOf(s, 'fron') - r0;
+      arter = amountOf(s, 'arter') - k0; fronSkord = amountOf(s, 'artfron') - r0;
       const vaxte = f.n > n0 ? f.steg === 'roja' && f.klara === n0 : f.steg === 'bereda';
-      skord = vaxte && korn > 0 && fronSkord > 0 && tk.until === s.now;
+      skord = vaxte && arter > 0 && fronSkord > 0 && tk.until === s.now;
     }
     // rötan: den mogna grödan som ingen skördar
     let rutten = false;
@@ -1313,6 +1316,17 @@ SCENARIER.falt = {
     gm.falt = [{ id: 1, x: 10, y: 10, agare: 0, steg: 'vaxer', groda: 'rovor', vuxit: 0.5, rord: gm.now } as unknown as SIM.Falt];
     gm.v = 8; SIM.migrate(gm);
     const gf = gm.falt[0], gammalt = gf.w === 2 && gf.n === 4 && gf.sadda === 4 && SIM.faltRutor(gf).length === 4;
+    // en sparad by från före steg 3.10.23.8: kornet blir ärter, också på fältet, och fröna delas lika på rovfrön och ärtfrön
+    // (det udda till rovfröna), också vems de är och det som bärs
+    const gk = cloneState(s), gp = living(gk)[0], gc = campCenter(gk);
+    gk.stackar = (gk.stackar ?? []).filter(a => !['rovfron', 'artfron', 'arter'].includes(a.k));
+    gk.stackar.push({ k: 'fron', n: 9, c: 0.8, x: Math.floor(gc.x) + 1, y: Math.floor(gc.y), ag: { [gp.id]: 5 } }, { k: 'korn', n: 4, c: 1, x: Math.floor(gc.x) + 1, y: Math.floor(gc.y) + 1 });
+    gp.task = { act: 'samla', items: { fron: 7, korn: 2 }, ag: { fron: { [gp.id]: 3 } } } as unknown as SIM.Task;
+    gk.falt = [{ ...gk.falt?.[0] ?? gf, groda: 'korn' as SIM.GrodaSlag }];
+    gk.v = 15; SIM.migrate(gk);
+    const gs1 = (k: string) => (gk.stackar ?? []).filter(a => a.k === k).reduce((a, b) => a + b.n, 0), gt = gp.task!;
+    const kornFron = gs1('rovfron') === 5 && gs1('artfron') === 4 && gs1('arter') === 4 && !gs1('fron') && !gs1('korn') && amountOf(gk, 'artfron') === 4 &&
+      gt.items?.rovfron === 4 && gt.items?.artfron === 3 && gt.items?.arter === 2 && gt.ag?.artfron?.[gp.id] === 1 && gt.ag?.rovfron?.[gp.id] === 2 && gk.falt?.[0]?.groda === 'arter';
     return [
       [`byn röjer ett fält när den kan odla och har frön (${fs.length} fält, ${f ? SIM.FALT_STEG[f.steg].namn.toLowerCase() : '-'})`, fs.length > 0],
       [`fälten ligger på jord utan stora träd, inte på varandra och inte på lagret (${fel} fel)`, fel === 0],
@@ -1320,15 +1334,16 @@ SCENARIER.falt = {
       [`fältet har ${SIM.ODLING.rutorPerMun} rutor per person i familjen, mellan ${SIM.ODLING.faltMin} och ${SIM.ODLING.faltMax}, och inte fler än det finns frön till (${fs.map(q => q.n).join(', ')} rutor)`, storlekOk && fs.length > 0],
       ['en familj har ett fält', enPerFamilj],
       [`fältets sidor är ${sidaMin}–${sidaMax} rutor (${fs.map(q => `${q.w} × ${Math.ceil(q.n / q.w)}`).join(', ')}), och bredden skiljer sig mellan fälten (${[...former].join(', ')} för 25 rutor)`, formOk && fs.length > 0 && former.size >= 3],
-      [`rovorna ger 1 eller 2 frön per ruta, i snitt ${rovSnitt.toFixed(2)}, och kornet ${kornFron[0]}`, rovFron.every(n => n === 1 || n === 2) && rovSnitt > 1.3 && rovSnitt < 1.7 && kornFron.every(n => n === 2)],
+      [`rovorna ger 1 eller 2 frön per ruta, i snitt ${rovSnitt.toFixed(2)}, och ärterna ${artFron[0]}`, rovFron.every(n => n === 1 || n === 2) && rovSnitt > 1.3 && rovSnitt < 1.7 && artFron.every(n => n === 2)],
       ['varje ruta på kartan hittar sin plats i fältet, så att ett tryck på den markerar rätt gröda', index && fs.length > 0],
       [`arbetet går ruta för ruta, och steget blir inte klart förrän hela fältet är gjort (${tva} rutor skördade efter två rutors arbete)`, delvis],
       [`en ruta tar kort tid: ${perRuta} minuter att röja, gräva, så och skörda`, perRuta <= 20],
-      [`den mogna grödan skördas: korn (${korn.toFixed(1)}) och nya frön (${fronSkord.toFixed(1)}); sedan växer fältet eller grävs upp igen`, skord],
+      [`den mogna grödan skördas: ärter (${arter.toFixed(1)}) och nya ärtfrön (${fronSkord.toFixed(1)}); sedan växer fältet eller grävs upp igen`, skord],
       ['den mogna grödan som ingen skördar ruttnar, och fältet ska sås igen', rutten],
       ['frosten i istiden dödar grödan, och ingen sår något nytt förrän det hinner mogna', frost && ingenSadd],
       ['ett fält som ingen skött på länge blir gräs igen', gras],
       ['ett fält i en sparad by från före steget blir 2 × 2 rutor när byn laddas', gammalt],
+      ['i en sparad by från före steg 3.10.23.8 blir kornet ärter, också på fältet, och fröna delas lika på rovfrön och ärtfrön, också det som bärs och vems de är', kornFron],
       [`ett nytt fält ligger utanför byns hus, stationer och lagerplatser med minst ${stig} rutor fritt emellan (${inpa} rutor för nära, ${innanfor} innanför något, ${narmast.toFixed(1)} rutor från byn)`, !!site && inpa === 0 && innanfor === 0 && narmast <= stig + 1 + SIM.ODLING.faltUtom && gr.ut.some(u => u > 0)],
     ];
   },

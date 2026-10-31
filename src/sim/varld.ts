@@ -1,6 +1,6 @@
 import { migrateTek } from './teknik';
 import { stepDelning } from './delning';
-import { setStock, storeFromSums } from './lager';
+import { put, setStock, storeFromSums } from './lager';
 import { isTool } from './saker';
 import { migrateTools, toolsFromItems } from './agande';
 import { migrateFalt } from './odling';
@@ -41,6 +41,8 @@ function newFire(): Fire {
 // ---------- uppgradering av sparade byar ----------
 // Varje ändring av hur en by sparas får en rad här, med nästa nummer. s.v är numret på den senaste uppgraderingen
 // byn fått; migrate kör de som är nyare, i nummerordning. En ny by får det senaste numret och behöver inga.
+// en post med nya nycklar (ny), när något byter namn i en uppgradering
+const nycklar = <T>(r: Record<string, T> | undefined, ny: (k: string) => string) => r && Object.fromEntries(Object.entries(r).map(([k, v]) => [ny(k), v]));
 const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
   [2, 'allt före v40: äldre fält, sammanslagna saker, redskap som ting och en brinnande eld i de allra första byarna', s => {
     for (const p of s.people) {
@@ -133,7 +135,6 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
     const ACT: Record<string, string> = { skinnrock: 'rock', skinnskor: 'skor' };
     const STAT: Record<string, string> = { skinnrockar: 'rock_kaninskinn', vargpalsar: 'rock_vargskinn', skinnskor: 'skor_kaninskinn', balten: 'balte_rep' };
     const sak = (k: string) => SAK[k] ?? k;
-    const nycklar = <T>(r: Record<string, T> | undefined, ny: (k: string) => string) => r && Object.fromEntries(Object.entries(r).map(([k, v]) => [ny(k), v]));
     for (const t of s.ting ?? []) { t.k = sak(t.k); if (t.halv) t.halv.gor = sak(t.halv.gor); }
     for (const p of s.people) {
       if (p.task) { if (ACT[p.task.act]) p.task.act = ACT[p.task.act] as Act; if (p.task.tool) p.task.tool = sak(p.task.tool); }
@@ -147,6 +148,54 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
     // tek_balte och tekTim_balte är tekniken, som heter som förut
     const efter: [string, Record<string, string>][] = [['stold_', SAK], ['utb_sonder_', SAK], ['prod_', ACT]];
     s.stat = nycklar(s.stat, k => STAT[k] ?? efter.map(([f, r]) => k.startsWith(f) && r[k.slice(f.length)] ? f + r[k.slice(f.length)] : '').find(x => x) ?? k);
+  }],
+  [16, 'v207: ärter i stället för korn och två sorters frön (steg 3.10.23.8). Kornet blir ärter, också på fälten, och fröna delas lika på rovfrön och ärtfrön (det udda till rovfröna)', s => {
+    const sak = (k: string) => k === 'korn' ? 'arter' : k === 'fron' ? 'rovfron' : k;
+    // hälften av n hela saker där ag är vems de är (resten är byns): ärtfröna av var och ens del och av byns, och ag minskas
+    // med dem. Svaret är hur många som blir ärtfrön och vems de är
+    const halften = (n: number, ag?: Record<string, number>) => {
+      const agA: Record<string, number> = {};
+      let egna = 0, m = 0;
+      for (const o in ag ?? {}) { egna += ag![o]; agA[o] = Math.floor(ag![o] / 2); ag![o] -= agA[o]; m += agA[o]; }
+      m += Math.floor(Math.max(0, n - egna) / 2);
+      return { m, ag: ag ? agA : undefined };
+    };
+    // det som räknas i delar (arbetet mot nästa sak, det som försvunnit och det som blivit över) delas exakt
+    const delar = (r: Record<string, number> | undefined) => {
+      if (!r) return;
+      if (r.korn !== undefined) { r.arter = (r.arter ?? 0) + r.korn; delete r.korn; }
+      if (r.fron !== undefined) { r.rovfron = (r.rovfron ?? 0) + r.fron / 2; r.artfron = (r.artfron ?? 0) + r.fron / 2; delete r.fron; }
+    };
+    for (const o in s.delar ?? {}) delar(s.delar![o]);
+    delar(s.forlust); delar(s.andelRest);
+    for (const p of s.people) {
+      delar(p.delar);
+      const t = p.task;
+      if (t) {
+        // det som bärs: kornet byter namn, och av fröna blir hälften ärtfrön, med samma skick
+        const n = t.items?.fron;
+        if (n !== undefined) {
+          const h = halften(n, t.ag?.fron);
+          t.items!.fron = n - h.m;
+          if (h.m > 0) { t.items!.artfron = h.m; if (h.ag) t.ag!.artfron = h.ag; if (t.cond?.fron !== undefined) t.cond.artfron = t.cond.fron; }
+        }
+        for (const r of [t.items, t.cond, t.ag, t.kom] as (Record<string, unknown> | undefined)[]) if (r) for (const k of ['korn', 'fron']) if (k in r) { r[sak(k)] = r[k]; delete r[k]; }
+        if (t.tool) t.tool = sak(t.tool);
+      }
+      p.smak = nycklar(p.smak, k => k === 'm:korn' ? 'm:arter' : k);
+      for (const st of p.stulet ?? []) st.k = sak(st.k);
+      for (const e of p.intryck ?? []) for (const b of e.bev ?? []) if (b.sak) b.sak = sak(b.sak);
+    }
+    for (const f of s.falt ?? []) if ((f.groda as string | undefined) === 'korn') f.groda = 'arter';
+    // stackarna: kornet byter namn, och av varje stack med frön läggs hälften av var och ens (och byns) som ärtfrön i förrådet
+    const nya: [number, Record<string, number> | undefined, number][] = [];
+    for (const a of s.stackar ?? []) {
+      if (a.k !== 'korn' && a.k !== 'fron') continue;
+      if (a.k === 'fron') { const h = halften(a.n, a.ag); a.n -= h.m; if (h.m > 0) nya.push([h.m, h.ag, a.c]); }
+      a.k = sak(a.k);
+    }
+    for (const [n, ag, c] of nya) put(s, 'artfron', n, ag, c);
+    s.stat = nycklar(s.stat, k => k === 'stold_korn' ? 'stold_arter' : k === 'stold_fron' ? 'stold_rovfron' : k);
   }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];

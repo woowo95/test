@@ -620,7 +620,7 @@ function utanLager(s: State) {
   if (!borta.length) return;
   s.stationer = stationerOf(s).filter(t => !borta.includes(t));
   s.byggV = (s.byggV ?? 0) + 1;
-  for (const t of borta) if (stationDef(t.k)!.forvar!.redskap) stallBorta(s, t.x, t.y);
+  tomt(s, borta);
   for (const t of borta) log(s, `${stationDef(t.k)!.namn} togs isär ${zoneAt(s, t.x, t.y) < 0 ? 'när lagret flyttades' : utom(t) ? 'eftersom ingen kom åt den' : iVag(t) ? 'eftersom den stod där man arbetar vid en bänk' : 'eftersom den stängde in en del av lagret'}.`, 'world');
 }
 
@@ -883,11 +883,16 @@ function flytta(s: State, t: Station, at: { x: number; y: number; rot?: 1; inne?
   for (const k of tingOf(s)) if (k.vid === t.id && k.hos === undefined && k.lass === undefined) { k.x = t.x; k.y = t.y; }
   s.byggV = (s.byggV ?? 0) + 1; // stationen står på ett nytt ställe: vägarna och platserna räknas om
 }
-// stationen t tas bort: det som låg i den läggs på marken
+// stationerna som tagits bort: det som låg i dem (en kista, ett redskapsställ, stationens kniv) får en ny plats var, ett på
+// varje ruta, av placeTools i slutet av steget, så att inte flera saker blir liggande på samma ruta (vakten i kor.ts)
+function tomt(s: State, borta: Station[]) {
+  for (const k of tingOf(s)) if (borta.some(t => t.id === k.vid)) { k.vid = undefined; if (k.hos === undefined && k.lass === undefined) k.x = k.y = undefined; }
+  for (const t of borta) if (stationDef(t.k)?.forvar?.redskap) stallBorta(s, t.x, t.y);
+}
+// stationen t tas bort
 function taBort(s: State, t: Station) {
   s.stationer = stationerOf(s).filter(q => q !== t);
-  for (const k of tingOf(s)) if (k.vid === t.id) k.vid = undefined;
-  if (stationDef(t.k)?.forvar?.redskap) stallBorta(s, t.x, t.y);
+  tomt(s, [t]);
   touch(s);
 }
 // En möbel eller station som står framför en arbetsstation (på rutan där man står och arbetar), eller en bädd i ett hus
@@ -1000,8 +1005,7 @@ export function stepStationer(s: State) {
   const borta = s.stationer.filter(t => t.inne && iRivetHus(s, t));
   if (!borta.length) return;
   s.stationer = s.stationer.filter(t => !borta.includes(t));
-  for (const k of tingOf(s)) if (borta.some(t => t.id === k.vid)) k.vid = undefined;
-  for (const t of borta) if (stationDef(t.k)?.forvar?.redskap) stallBorta(s, t.x, t.y); // redskapen i ett ställ läggs om, ett per ruta
+  tomt(s, borta);
   touch(s);
   for (const t of borta) log(s, `${stationDef(t.k)?.namn ?? 'En station'} försvann när huset revs.`, 'world');
 }

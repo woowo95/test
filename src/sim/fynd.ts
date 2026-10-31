@@ -179,17 +179,19 @@ const DEF = {
     },
     uttag: { full: 0.35, reach: 1, regrow: [1 / 600, 1 / 180, 1 / 180, 1 / 240] },
   },
-  // de vilda grödorna (steg 2.10.2, odling.ts): vildkorn i fläckar på ängarna (högt gräs) och vilda ärter i skogsbrynet
-  // (gräs eller ungskog intill skogen). Inget i istiden; de växer under sommaren och mognar på hösten. Den som samlar där tar med sig frön.
-  // De växer inte nära byn eller där folk går och nöter marken (steg 2.10.12, orortOf)
-  vildkorn: {
-    namn: 'Vildkorn', grupp: 'vaxter', ikon: 'vildkorn', farg: 0xe8c040, topp: 1, arstid: [0, 0.3, 0.9, 1.2], torka: 0.6,
+  // de vilda grödorna (steg 2.10.2, odling.ts): vild rova (åkerkål) i fläckar på ängarna (högt gräs) och vilda ärter i
+  // skogsbrynet (gräs eller ungskog intill skogen). Inget i istiden; de växer under sommaren och mognar på hösten. Den som samlar
+  // där tar med sig frön till sin egen gröda (VILDA i odling.ts). De växer inte nära byn eller där folk går och nöter marken
+  // (steg 2.10.12, orortOf). Den vilda rovan har vildkornets plats och mönster (steg 3.10.23.8; lagret hette vildkorn förut och
+  // har samma plats i sparfilen)
+  vildrova: {
+    namn: 'Vild rova', grupp: 'vaxter', ikon: 'vildrova', farg: 0xe8c040, topp: 1, arstid: [0, 0.3, 0.9, 1.2], torka: 0.6,
     monster: { salt: 101, skala: 4, period: 56, troskel: 0.59 }, // en fjärdedel färre rutor (0,55 före steg 3.10.23.7)
     bas: (s, i, m) => land(s, i) && markslag(groundOf(s), i) === 'hog' ? m * orortOf(s)[i] : 0,
     uttag: { full: 1, reach: 1, regrow: [0, 1 / 240, 1 / 96, 1 / 120] },
   },
   arter: {
-    namn: 'Vilda ärter', grupp: 'vaxter', ikon: 'arter', farg: 0x6fcf4f, topp: 1, arstid: [0, 0.3, 1, 1.1], torka: 0.6,
+    namn: 'Vilda ärter', grupp: 'vaxter', ikon: 'vildarter', farg: 0x6fcf4f, topp: 1, arstid: [0, 0.3, 1, 1.1], torka: 0.6,
     monster: { salt: 103, skala: 3, period: 56, troskel: 0.595 }, // en fjärdedel färre rutor (0,55 före steg 3.10.23.7)
     bas: (s, i, m) => land(s, i) && BRYN.has(markslag(groundOf(s), i)) && intillSkog(groundOf(s), i) ? m * orortOf(s)[i] : 0,
     uttag: { full: 1, reach: 1, regrow: [0, 1 / 240, 1 / 96, 1 / 120] },

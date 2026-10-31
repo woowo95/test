@@ -1540,7 +1540,7 @@ SCENARIER.gjort = {
     const s = createState(6, START);
     s.kal = SIM.nyKalender(s.now, 1); klockan(s, 7); tandEld(s);
     for (const q of living(s)) q.tek = { ...q.tek, odling: 1 };
-    SIM.setAmount(s, 'fron', 30);
+    SIM.setAmount(s, 'rovfron', 30);
     kor(s, 4 * 24);
     const nycklar = new Set(s.people.flatMap(q => Object.keys(q.gjort?.n ?? {})));
     const kanda = new Set(SIM.SKILLS.flatMap(k => SIM.SKILL_STAT[k].map(r => r.k)));

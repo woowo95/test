@@ -14,7 +14,7 @@ import { torkBrist } from './matlagning';
 import { brasaBrist, brasaLeta, kanLetaBrasaSten } from './brasor';
 import { DORRAR, DORR_LIST, DorrDef, DorrSlag } from './byggnad';
 import { dorrOppningar, dorrSpot, kanHangaDorr, utanDorr } from './bygg';
-import { ODLING, faltBrist, faltUppgift } from './odling';
+import { GRODOR, ODLING, faltBrist, faltUppgift } from './odling';
 import { SKOG, fallTid, rojSpot, skaRojas } from './skog';
 import { freeTools } from './agande';
 
@@ -130,7 +130,7 @@ export const PROJEKT: Record<string, ProjektDef> = {
   falt: {
     namn: 'Fält', vikt: PROJEKT_TAL.falt,
     brist: s => faltBrist(s),
-    kostnad: () => varuVarde({ fron: ODLING.froPerRuta * ODLING.rutorPerMun }, (ODLING.beredaMin + ODLING.saMin) * ODLING.rutorPerMun / 60 * ARBETE), // ett fält för en person
+    kostnad: () => varuVarde({ [GRODOR.rovor.fro]: ODLING.froPerRuta * ODLING.rutorPerMun }, (ODLING.beredaMin + ODLING.saMin) * ODLING.rutorPerMun / 60 * ARBETE), // ett fält för en person
     kan: (s, p, f) => !f.kyla && !!faltUppgift(s, p),
     uppgift: (s, p) => { const u = faltUppgift(s, p); return u && { act: 'odla', text: u.text, min: u.min, tool: u.tool, spot: u.spot, ref: u.ref }; },
   },

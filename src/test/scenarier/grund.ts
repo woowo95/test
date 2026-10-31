@@ -473,12 +473,12 @@ SCENARIER.torka = {
     const s = v, m = SIM.motgangNu(s)!;
     tandEld(s); setMat(s, { bar: 40, torkat: 40 });
     const vatten0 = SIM.vattenNu(s).filter(t => t === T.Vatten).length;
-    // två fält med växande korn: det ena hos en med vattensäck, det andra utan ägare som vattnar
+    // två fält med växande ärter: det ena hos en med vattensäck, det andra utan ägare som vattnar
     const vuxna = living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen), c = SIM.campCenter(s), g = getMap(s.seed).tiles;
     const ledigt = (x0: number, y0: number) => { for (let k = 0; k < 6; k++) { const x = x0 + k % 3, y = y0 + Math.floor(k / 3); if (g[y * W + x] !== T.Gras) return false; } return true; };
     const platser: { x: number; y: number }[] = [];
     for (let r = 4; r < 20 && platser.length < 2; r++) for (const [dx, dy] of [[r, 0], [-r, 0], [0, r], [0, -r]]) { const x = Math.floor(c.x) + dx, y = Math.floor(c.y) + dy; if (platser.length < 2 && ledigt(x, y) && !platser.some(q => Math.abs(q.x - x) < 5 && Math.abs(q.y - y) < 5)) platser.push({ x, y }); }
-    s.falt = platser.map((at, i) => ({ id: i + 1, x: at.x, y: at.y, w: 3, dir: 1, n: 6, agare: i ? -1 : vuxna[0].id, steg: 'vaxer', klara: 0, kvar: 0, sadda: 6, groda: 'korn', vuxit: 0, rord: s.now } as SIM.Falt));
+    s.falt = platser.map((at, i) => ({ id: i + 1, x: at.x, y: at.y, w: 3, dir: 1, n: 6, agare: i ? -1 : vuxna[0].id, steg: 'vaxer', klara: 0, kvar: 0, sadda: 6, groda: 'arter', vuxit: 0, rord: s.now } as SIM.Falt));
     s.nextFalt = 2; s.byggV = (s.byggV ?? 0) + 1;
     SIM.addTool(s, 'vattensack', vuxna[0]);
     // torkan: fyra och ett halvt dygn (år i spelet)
@@ -563,7 +563,7 @@ SCENARIER.oversvamning = {
     // fram till timmen innan vattnet börjar stiga
     let b0 = m.start; while (!SIM.flodNiva(s, b0 + HOUR)) b0 += HOUR;
     kor(s, (b0 - s.now) / HOUR);
-    // på stranden närmast byn (en ruta från vattnet): en hög bär, en hög grenar och en hög sten, och ett fält med korn
+    // på stranden närmast byn (en ruta från vattnet): en hög bär, en hög grenar och en hög sten, och ett fält med ärter
     const { land } = SIM.djupOf(s.seed), g = getMap(s.seed).tiles, c = SIM.campCenter(s);
     const strand: { x: number; y: number }[] = [];
     for (let i = 0; i < W * W; i++) if (land[i] === 1 && g[i] !== T.Sten) strand.push({ x: i % W, y: Math.floor(i / W) });
@@ -572,7 +572,7 @@ SCENARIER.oversvamning = {
     s.stackar!.push({ k: 'rotter', n: 30, c: 1, x: pb.x, y: pb.y }, { k: 'grenar', n: 8, c: 1, x: pg.x, y: pg.y }, { k: 'sten', n: 3, c: 1, x: ps.x, y: ps.y });
     SIM.tidy(s);
     const pf = strand.find(p => Math.hypot(p.x - strand[0].x, p.y - strand[0].y) >= 9)!;
-    s.falt = [{ id: 1, x: pf.x, y: pf.y, w: 1, dir: 1, n: 1, agare: -1, steg: 'vaxer', klara: 0, kvar: 0, sadda: 1, groda: 'korn', vuxit: 0, rord: s.now } as SIM.Falt];
+    s.falt = [{ id: 1, x: pf.x, y: pf.y, w: 1, dir: 1, n: 1, agare: -1, steg: 'vaxer', klara: 0, kvar: 0, sadda: 1, groda: 'arter', vuxit: 0, rord: s.now } as SIM.Falt];
     s.nextFalt = 1; s.byggV = (s.byggV ?? 0) + 1;
     const hog = (k: string, p: { x: number; y: number }) => (s.stackar ?? []).find(a => a.k === k && a.x === p.x && a.y === p.y);
     const slit0 = wearMult(s, ps.x, ps.y);
@@ -595,7 +595,7 @@ SCENARIER.oversvamning = {
       [`maten på stranden förstördes (${s.stat?.['flod mat'] ?? 0} rötter; resten bars in innan, ${barKvar} kvar av 30)`, barKvar === 0 && (s.stat?.['flod mat'] ?? 0) > 0],
       [`grenarna flöt bort (${grenKvar} kvar av 8)`, grenKvar === 0],
       [`stenen ligger kvar (${stenKvar} av 3) och slits fortare i vattnet (${slit0.toFixed(2)} → ${slit1.toFixed(2)})`, stenKvar === 3 && slit1 > slit0 * 2],
-      [`kornet på fältet under vatten dog${frost ? ` (frosten tog ${frost})` : ''}`, faltDog],
+      [`ärterna på fältet under vatten dog${frost ? ` (frosten tog ${frost})` : ''}`, faltDog],
       [`ingen står i vattnet (högst ${iVattnet})`, iVattnet === 0],
       [`vattnet är tillbaka vid stranden efteråt (${vatten2} rutor, ${s.flod ? 'nivå ' + s.flod.niva : 'ingen översvämning'})`, !s.flod && vatten2 === vatten0],
       [`översvämningen kom (${s.stat?.motgang_oversvamning ?? 0})`, (s.stat?.motgang_oversvamning ?? 0) === 1],
