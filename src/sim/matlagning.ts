@@ -1,5 +1,5 @@
 import { DAY, HOUR, MIN, Person, State } from './typer';
-import { alive, byId, count, doingAct, forstaGang, living, log, ovning, stat, think } from './folk';
+import { alive, byId, count, doingAct, forstaGang, gjort, living, log, ovning, stat, think } from './folk';
 import { clamp, rnd } from './slump';
 import { Del, addDel } from './egendom';
 import { amountOf, put, use } from './lager';
@@ -57,7 +57,7 @@ export function grilla(s: State, p: Person, hours: number) {
   if (n <= 0) return;
   const vems = use(s, p, r.ra, n), f = (1 - brannDel(p)) * r.per;
   put(s, r.blir, n * f, addDel({}, vems, f));
-  count(s, 'grillat', n); count(s, 'brant', n * brannDel(p));
+  count(s, 'grillat', n); count(s, 'brant', n * brannDel(p)); gjort(s, p, 'grillat', n);
   ovning(p, 'matlagning', hours * MATLAG.ovning * (0.4 + stat(p, 'intelligens', s.now) / 20));
   if (forstaGang(s, 'grillForsta')) log(s, `${p.name} grillade byns första ${SAKER[r.ra]!.namn.toLowerCase()} på spettet över elden.`, 'world', [p.id]);
 }

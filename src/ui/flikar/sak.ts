@@ -1,4 +1,4 @@
-import { klenod, sakBerattelse, kladSkydd, BYN, HOUR, W, kortTal, Pile, SAKER, Slitage, Ting, byId, condOf, halvKlar, sakNamn, slitageNu, stationById, stationDef, temperature, tingOf, toaAt, toaInfo, viktOf } from '../../sim';
+import { STUBBE_LIV, grundvarde, tingVarde, klenod, sakBerattelse, kladSkydd, BYN, HOUR, W, kortTal, Pile, SAKER, Slitage, Ting, byId, condOf, halvKlar, sakNamn, slitageNu, stationById, stationDef, temperature, tingOf, toaAt, toaInfo, viktOf } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { condBar, durTxt, esc, kvMark, kvText, pLink } from '../hjalp';
 import { piles, s, ui } from '../lage';
@@ -9,6 +9,7 @@ import type { Flik } from '../panel';
 // takten, vem som gjorde den och när, och kvaliteten (steg 2.2.2).
 // Det som går att trycka på har data-sak: "t:<tingets id>" för ett redskap eller plagg, "s:<x>,<y>,<slag>" för en stack.
 // En toa-hög på kartan (steg 2.10.5) öppnas som "f:<rutan>" och har en egen inforuta (toaHog)
+// En stubbe (steg 3.10.6) öppnas som "u:<rutan>" (stubbe)
 export const sakKey = (a: { id?: number; x?: number; y?: number; k: string }) => a.id !== undefined ? `t:${a.id}` : `s:${a.x},${a.y},${a.k}`;
 export const sakAttr = (a: { id?: number; x?: number; y?: number; k: string }) => `data-sak="${sakKey(a)}"`;
 // maten fryser i frost och ruttnar då nästan inte (LAGER.frost, steg 2.8.2): i lagret får symbolen en vit kant av rimfrost
@@ -49,11 +50,23 @@ function toaHog(i: number) {
       <dt>Gör</dt><dd>${gor.length ? gor.join('<br>') : 'Inget längre, den har nästan bleknat bort'}</dd>
     </dl>`;
 }
+// stubben efter ett fällt träd (steg 3.10.6): när trädet fälldes och hur länge det dröjer innan den ruttnat bort (STUBBE_LIV, skog.ts)
+function stubbe(i: number) {
+  const u = s.stubbar?.find(q => q.x === i % W && q.y === Math.floor(i / W));
+  if (!u) return '<p class="muted">Stubben har ruttnat bort.</p>';
+  return `
+    <div class="phead">${iconImg('sittplats', 32)}<div><h2>Stubbe</h2></div></div>
+    <dl class="kv">
+      <dt>Fälldes</dt><dd>för ${durTxt(s.now - u.t)} sedan</dd>
+      <dt>Ruttnar bort</dt><dd>om ${durTxt(Math.max(0, STUBBE_LIV - (s.now - u.t)))}</dd>
+    </dl>`;
+}
 export const sak: Flik = {
   namn: 'Saken',
   knapp: 'person',
   html() {
     if (ui.sak.startsWith('f:')) return toaHog(Number(ui.sak.slice(2)));
+    if (ui.sak.startsWith('u:')) return stubbe(Number(ui.sak.slice(2)));
     const { t, p } = hitta(), a = t ?? p;
     if (!a) return '<p class="muted">Den finns inte längre.</p>';
     const k = t?.halv?.gor ?? p?.gor ?? a.k, c = t ? t.c : condOf(p!), sl = slitageNu(s, { k: a.k, x: t ? t.x ?? p?.x : p!.x, y: t ? t.y ?? p?.y : p!.y }, t);
@@ -66,6 +79,8 @@ export const sak: Flik = {
     const orsak = sl.orsak === 'ruttnar' ? fryst() ? `❄ Fryst, ${Math.round(temperature(s))} grader: ruttnar nästan inte` : `Ruttnar${sl.smuts ? ' fortare i blod och smuts' : ''}, ${Math.round(temperature(s))} grader` : ORSAK[sl.orsak];
     const haller = sl.gang ? `<dt>Räcker till</dt><dd>${Math.max(0, Math.floor(c / sl.gang + 1e-9))} ${esc(sl.enhet!)} till</dd>` // per gång (steg 2.3.12)
       : sl.per > 0 ? `<dt>Håller</dt><dd>${durTxt(c / sl.per * HOUR)} till i den takten</dd>` : '';
+    // vad den är värd (steg 3.10.6, varde.ts): ungefär så många timmars arbete det tar att skaffa eller göra den, efter skick och kvalitet
+    const v1 = t ? tingVarde(t) : grundvarde(a.k) * c, varde = `<dt title="Ungefär i arbetstimmar: det det tar att skaffa eller göra den">Värde</dt><dd>${kortTal(v1)}${!t && p && p.n >= 2 ? `, ${kortTal(v1 * Math.round(p.n))} alla` : ''}</dd>`;
     const klad = SAKER[a.k]?.klad?.varme ? `<dt>Värme</dt><dd>Skyddar ${Math.round(kladSkydd(a.k, t) * 100)} % mot kylan</dd>` : '';
     const kv = t && !t.halv && t.q !== undefined ? `<dt>Kvalitet</dt><dd>${kvMark(t, 12)} ${esc(kvText(t))}</dd>` : ''; // (steg 2.2.2)
     const ber = t && !t.halv ? sakBerattelse(s, t, sakNamn(k)) : ''; // mästerverken och de usla sakerna (steg 3.9.4)
@@ -76,7 +91,7 @@ export const sak: Flik = {
       <dt>Skick</dt><dd>${condBar(c)}<span>${Math.round(c * 100)} %</span></dd>
       ${kv}
       <dt>Slitage</dt><dd>${esc(orsak)}${sl.per > 0 ? ` (${sl.per * 2400 < 0.1 ? 'under 0,1' : kortTal(sl.per * 2400)} % per dygn)` : ''}</dd>
-      ${haller}${mangd}<dt>Vikt</dt><dd>${kortTal(viktOf(k))} kg${!t && p && p.n >= 2 ? `, ${kortTal(viktOf(k) * Math.round(p.n))} kg alla` : ''}</dd>${klad}
+      ${haller}${mangd}${varde}<dt>Vikt</dt><dd>${kortTal(viktOf(k))} kg${!t && p && p.n >= 2 ? `, ${kortTal(viktOf(k) * Math.round(p.n))} kg alla` : ''}</dd>${klad}
       ${t ? `<dt>Var</dt><dd>${var_(t, p)}</dd><dt>Ägare</dt><dd>${agare}</dd>` : ''}
       ${gjord}${klen}
     </dl>`;

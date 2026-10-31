@@ -1382,6 +1382,40 @@ SCENARIER.merliv = {
   },
 };
 
+SCENARIER.gjort = {
+  text: 'Steg 3.10.6: det var och en gjort räknas per färdighet (SKILL_STAT), det senaste dygnet och totalt (fisk av försöken, träd fällda, saker gjorda), och fältets rutor minns vad som växte där innan, när de bereddes och när de sist sköttes',
+  kor: () => {
+    // räknaren: timme för timme det senaste dygnet (24 timmar), och totalt
+    const t = createState(13, START);
+    const [p] = living(t);
+    SIM.gjort(t, p, 'trad'); t.now += HOUR; SIM.gjort(t, p, 'trad', 2);
+    const tre = SIM.gjortDygn(t, p, 'trad');
+    t.now += 23 * HOUR; const tva = SIM.gjortDygn(t, p, 'trad'); // den första timmen är nu ett dygn sedan
+    t.now += 2 * DAY; const noll = SIM.gjortDygn(t, p, 'trad');
+    SIM.gjort(t, p, 'trad'); const ett = SIM.gjortDygn(t, p, 'trad'), tot = p.gjort!.n.trad;
+    // en vanlig by som kan odla
+    const s = createState(6, START);
+    s.kal = SIM.nyKalender(s.now, 1); klockan(s, 7); tandEld(s);
+    for (const q of living(s)) q.tek = { ...q.tek, odling: 1 };
+    SIM.setAmount(s, 'fron', 30);
+    kor(s, 4 * 24);
+    const nycklar = new Set(s.people.flatMap(q => Object.keys(q.gjort?.n ?? {})));
+    const kanda = new Set(SIM.SKILLS.flatMap(k => SIM.SKILL_STAT[k].map(r => r.k)));
+    const delar = s.people.every(q => SIM.SKILLS.every(k => SIM.SKILL_STAT[k].every(r => !r.av || (q.gjort?.n[r.k] ?? 0) <= (q.gjort?.n[r.av] ?? 0) + 1e-9)));
+    const fs = SIM.faltOf(s);
+    const fore = fs.length > 0 && fs.every(f => f.fore?.length === f.n && f.fore.every(v => v >= 0 && v <= 2));
+    const skott = fs.some(f => (f.skott ?? []).some(x => x != null && x <= s.now)), bered = fs.some(f => (f.bered ?? []).some(x => x != null));
+    return [
+      [`räknaren: det senaste dygnet ${tre}, ett dygn senare ${tva}, efter tre dygn ${noll}, sedan ${ett}; totalt ${tot}`, tre === 3 && tva === 2 && noll === 0 && ett === 1 && tot === 4],
+      [`folket räknar det de gör (${[...nycklar].join(', ')})`, nycklar.size >= 4 && ['fiskeForsok', 'trad', 'samlat'].some(k => nycklar.has(k))],
+      ['alla nycklarna finns i SKILL_STAT', [...nycklar].every(k => kanda.has(k))],
+      ['en del är aldrig fler än det den är en del av (fisk av försöken)', delar],
+      [`fältens rutor minns vad som växte där innan (${fs.length} fält)`, fore],
+      ['och när de sköttes och bereddes', skott && bered],
+    ];
+  },
+};
+
 SCENARIER.kronika = {
   text: 'Steg 3.9.3: händelserna (födslar, dödsfall, första elden, uppfinningar, hus, ledare, strider och vargjakter) skrivs som små berättelser i krönikan ur mallarna k_* i BERATTELSER, med årstiden, vädret och natten; loggen behåller sin korta rad',
   kor: () => {

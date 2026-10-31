@@ -36,7 +36,7 @@ import { blodas } from './blod';
 import { DJUR } from './redskap';
 import { SAKER, sakNamn } from './saker';
 import { clamp, rnd } from './slump';
-import { ALDER, ageOf, byId, count, getRel, log, ovning, stat, think } from './folk';
+import { ALDER, ageOf, byId, count, getRel, gjort, log, ovning, stat, think } from './folk';
 import { minnsRel } from './relationer';
 import { ledareOf } from './styre';
 import { blodtorst } from './humor';
@@ -873,6 +873,10 @@ export function stridIByn(s: State, avsikt: Avsikt, sidor: [Person[], Person[]],
   for (const { k, p } of folk) {
     const mot = sidor[1 - k.sida];
     let dod = k.lage === 'dod';
+    // för färdigheterna i personrutan (steg 3.10.6): slagsmålet, om hen vann, och kasten och träffarna (vådaträffen räknas inte)
+    gjort(s, p, 'slagsmal'); if (vinnare === k.sida) gjort(s, p, 'vann');
+    const kast = st.logg.filter(r => r.a === k.id && r.kast), vada = st.logg.filter(r => r.a === k.id && r.h === 'vada').length;
+    if (kast.length) { gjort(s, p, 'kast', kast.length); const tr = kast.filter(r => r.h !== 'miss').length - vada; if (tr > 0) gjort(s, p, 'kastTraff', tr); }
     for (const w of k.skador) {
       if (!dod && skada(s, p, w.d, w.k, w.g, 'drap', `i ett ${lek ? 'lekslagsmål' : 'slagsmål'} med ${mot.map(q => q.name).join(' och ')}`)) dod = true;
       if (w.fast && p.skador?.length) p.skador[p.skador.length - 1].fast = 1; // spjutet sitter kvar till vården (steg 3.7.7)

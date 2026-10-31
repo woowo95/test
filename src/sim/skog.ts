@@ -1,6 +1,6 @@
 import { freeTools } from './agande';
 import { campCenter, campDist } from './plats';
-import { living, log, think } from './folk';
+import { gjort, living, log, think } from './folk';
 import { groundOf, isForest, tileOf } from './mark';
 import { FOREST } from './vag';
 import { pickNarmaste } from './slump';
@@ -89,7 +89,7 @@ export function fellTree(s: State, p: Person, x: number, y: number) {
   const k: Stock = { id: (s.nextStock = (s.nextStock ?? 0) + 1), x: Math.floor(x) + 0.5, y: Math.floor(y) + 0.5, ved: Math.round(SKOG.stamVed * size), grenar: Math.round(SKOG.stamGrenar * size) };
   stocks(s).push(k);
   if (!groundOf(s).built?.[i]) (s.stubbar ??= []).push({ x: Math.floor(x), y: Math.floor(y), t: s.now }); // där ett hus ska stå grävs stubben upp
-  s.fallda = (s.fallda ?? 0) + 1;
+  s.fallda = (s.fallda ?? 0) + 1; gjort(s, p, 'trad');
   if (s.fallda === 1) {
     log(s, `${p.name} fällde byns första träd med flintyxan.`, 'world', [p.id]);
     p.fame.push('Fällde byns första träd');

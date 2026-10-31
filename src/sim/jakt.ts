@@ -2,7 +2,7 @@ import { balans } from './balans';
 import { blodas } from './blod';
 import { blocked, freeNear } from './byggnad';
 import { KANINER, dodaDjur, djurOf, dragOf, halsaOf, satDjurHalsa } from './djur';
-import { count, forstaGang, log, ovning, stat } from './folk';
+import { count, forstaGang, gjort, log, ovning, stat } from './folk';
 import { skada } from './halsa';
 import { groundOf, markslag, tileOf } from './mark';
 import { KANIN } from './redskap';
@@ -90,7 +90,7 @@ export function jaktForsok(s: State, p: Person, tk: Task, t = s.now): number {
     return -2;
   }
   tk.leta = undefined;
-  count(s, 'jaktForsok');
+  count(s, 'jaktForsok'); gjort(s, p, 'jaktForsok');
   const drag = dragOf(m.art, m.id), h = halsaOf(s, m.id), now = s.now, jakt = p.skill.jakt ?? 0;
   const v: Vapen = tk.tool && tk.tool in VAPEN && (VAPEN as Record<string, { kast?: unknown }>)[tk.tool].kast ? tk.tool as Vapen : 'sten';
   const vader = vaderNu(s);
@@ -129,10 +129,10 @@ export function jaktForsok(s: State, p: Person, tk: Task, t = s.now): number {
     stopp = osedd ? kastD : sedd;
     if (!osedd) count(s, 'jaktSedd');
     if (kastD > 0) {
-      count(s, 'jaktKast');
+      count(s, 'jaktKast'); gjort(s, p, 'kast');
       const l = kastD / kv.rack;
       const c = chansMot(a, b, a.st.sikte!) * (1 - STRID.langt * l) * (1 - STRID.vind * st.vind * l) * (1 - STRID.dimma * st.dimma * l) * (osedd ? JAKT.smyg : JAKT.flyr) * (v === 'sten' ? JAKT.sten : 1);
-      if (r() < c) { traff = true; traffa(st, a, b, kv.skada, VAPEN[v].slag, true); }
+      if (r() < c) { traff = true; gjort(s, p, 'kastTraff'); traffa(st, a, b, kv.skada, VAPEN[v].slag, true); }
     }
   }
   const g = b.skador.reduce((x, w) => x + w.g, 0);
@@ -159,7 +159,7 @@ export function jaktKlar(s: State, p: Person, tk: Task) {
   const h = halsaOf(s, f.id);
   if (h.dod) return;
   if (f.ut === 'fangad') {
-    count(s, 'jaktFangst');
+    count(s, 'jaktFangst'); gjort(s, p, 'kanin');
     dodaDjur(s, f.id);
     if (forstaGang(s, 'kaniner')) log(s, `${p.name} fångade byns första kanin och bar hem den hel.`, 'world', [p.id]);
     tk.carry += KANIN;

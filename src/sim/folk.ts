@@ -1,7 +1,7 @@
 import { eldPlats } from './karta';
 import { freeNear } from './byggnad';
 import { Strom, clamp, gauss, pick, rnd } from './slump';
-import { Act, DAY, LogEntry, Person, Rel, SKILLS, STATS, Skill, Stat, State } from './typer';
+import { Act, DAY, HOUR, LogEntry, Person, Rel, SKILLS, STATS, Skill, Stat, State } from './typer';
 import { balans } from './balans';
 
 // ---------- balanstal (regel 8) ----------
@@ -292,6 +292,27 @@ export function log(s: State, text: string, kind: LogEntry['kind'], ids: number[
 }
 // räknar det som händer i byn (statistiken i s.stat)
 export const count = (s: State, k: string, n = 1) => { (s.stat ??= {})[k] = (s.stat[k] ?? 0) + n; };
+// det en person gjort (steg 3.10.6), för färdigheterna i personrutan (SKILL_STAT i typer.ts): totalt (n) och timme för timme
+// det senaste dygnet (t[k][timmen % 24]). Timmarna sparas bara för det hen gjort det senaste dygnet, så att sparfilen inte
+// växer, och de döda har inga (die i liv.ts). Drar ingen slump
+export function gjort(s: State, p: Person, k: string, n = 1) {
+  const h = Math.floor(s.now / HOUR), g = (p.gjort ??= { h, n: {}, t: {} });
+  if (h > g.h) for (const j in g.t) { // timmarna sedan sist är tomma, och det som är tomt hela dygnet tas bort
+    const t = g.t[j];
+    for (let x = Math.max(g.h + 1, h - 23); x <= h; x++) t[x % 24] = 0;
+    if (t.every(v => !v)) delete g.t[j];
+  }
+  g.h = Math.max(g.h, h);
+  (g.t[k] ??= Array(24).fill(0))[h % 24] += n; g.n[k] = (g.n[k] ?? 0) + n;
+}
+// hur mycket av k personen gjort det senaste dygnet (24 timmar)
+export function gjortDygn(s: State, p: Person, k: string) {
+  const g = p.gjort, t = g?.t[k], h = Math.floor(s.now / HOUR);
+  if (!g || !t) return 0;
+  let n = 0;
+  for (let x = Math.max(g.h - 23, h - 23); x <= g.h; x++) n += t[x % 24];
+  return n;
+}
 // räknar k och ger true första gången det händer i byn (för raderna om 'byns första …' i loggen)
 export const forstaGang = (s: State, k: string) => { count(s, k); return s.stat![k] === 1; };
 export function think(p: Person, text: string, v: number, now: number, dur: number) {

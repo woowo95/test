@@ -87,6 +87,21 @@ export const SKILL_GOR: Record<Skill, string[]> = {
   traff: ['Att träffa med ett kast eller skott', 'Växer av kastlek och jakt'],
 };
 
+// det personrutan visar när man trycker på en färdighet (steg 3.10.6): nycklarna i p.gjort (gjort i folk.ts), det senaste
+// dygnet och totalt. av = nyckeln det är en del av, så att andelen visas (hur stor del av försöken som gav fisk)
+export const SKILL_STAT: Record<Skill, { k: string; namn: string; av?: string }[]> = {
+  samla: [{ k: 'samlat', namn: 'Bär och rötter samlade' }],
+  jakt: [{ k: 'jaktForsok', namn: 'Försök' }, { k: 'kanin', namn: 'Kaniner fångade', av: 'jaktForsok' }],
+  fiske: [{ k: 'fiskeForsok', namn: 'Försök' }, { k: 'fisk', namn: 'Gav fisk', av: 'fiskeForsok' }],
+  ved: [{ k: 'trad', namn: 'Träd fällda' }],
+  hantverk: [{ k: 'gjort', namn: 'Saker gjorda' }, { k: 'mobel', namn: 'Möbler och stationer byggda' }],
+  berattande: [{ k: 'berattat', namn: 'Lärdomar berättade' }],
+  elda: [{ k: 'tandForsok', namn: 'Försök att tända' }, { k: 'tande', namn: 'Tände elden', av: 'tandForsok' }],
+  matlagning: [{ k: 'grillat', namn: 'Grillat' }],
+  narstrid: [{ k: 'slagsmal', namn: 'Slagsmål' }, { k: 'vann', namn: 'Vann', av: 'slagsmal' }],
+  traff: [{ k: 'kast', namn: 'Kast' }, { k: 'kastTraff', namn: 'Träffade', av: 'kast' }],
+};
+
 export const AGES = ['Istid', 'Vårtid', 'Sommartid', 'Hösttid'];
 // det som står i händelseloggen när tidsåldern börjar (steg.ts), i samma ordning
 export const AGES_BORJAR = ['Istiden har börjat. Sjön fryser och maten blir knapp.', 'Vårtiden har kommit. Isen släpper och marken tinar.', 'Sommartiden är här. Bär och fisk finns i överflöd.', 'Hösttiden har börjat. Nu gäller det att samla inför istiden.'];
@@ -162,6 +177,7 @@ export interface Person {
   habit: Record<string, number>; // timmar per aktivitet, bleknar med tiden (ger yrkestaggar)
   sickUntil?: number; sickWhy?: string; poisonUntil?: number; stulet?: { av: number; k: string; n: number; l?: boolean }[]; pregnantSince?: number; pregnantBy?: number; lastBirth?: number; guardDay?: number; // pregnantBy: barnets far; guardDay: dygnet hen valdes till nattens vakt
   fiske?: { f: number; n: number; k: number }; // fiske med händerna: försök, napp och fångade fiskar
+  gjort?: { h: number; n: Record<string, number>; t: Record<string, number[]> }; // det hen gjort, totalt (n) och per timme det senaste dygnet (t), h = timmen då något räknades sist (gjort i folk.ts, steg 3.10.6)
   tek?: Record<string, number>; // teknik: hur nära personen är att komma på något, 1 = kan det
   kunskap?: Record<string, { v: number; t: number }>; // det personen kan (alltid rätt), 0–1, och när det senast användes
   lardomar?: Lardom[]; // det personen tror om platser (kan vara fel, överdrivet eller inaktuellt)

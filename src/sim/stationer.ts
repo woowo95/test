@@ -1,7 +1,7 @@
 import { Act, H, HOUR, MIN, Person, SEC, State, T, Task, W, inMap } from './typer';
 import { eldPlats, getMap } from './karta';
 import { knows } from './teknik';
-import { ALDER, ageOf, alive, byId, count, doingAct, familjOf, forstaGang, living, log } from './folk';
+import { ALDER, ageOf, alive, byId, count, doingAct, familjOf, forstaGang, gjort, living, log } from './folk';
 import { getable, takeMaterial } from './behov';
 import { sparas } from './ekonomi';
 import { Ting, freeTools, tingOf, wearTool } from './agande';
@@ -684,7 +684,7 @@ export function workStation(s: State, _p: Person, tk: Task, dtSec: number) {
 export function finishStation(s: State, p: Person, tk: Task) {
   const t = stationById(s, tk.ref);
   if (!t || t.kvar > MIN) return;
-  t.kvar = 0; t.klar = s.now;
+  t.kvar = 0; t.klar = s.now; gjort(s, p, 'mobel');
   if (stationDef(t.k)?.sover) { touch(s); agaBadd(s, t); } // en ny sovplats: var man sover räknas om, och den som sover där äger bädden
   const d = stationDef(t.k)!;
   if (d.mobel) nyKvalitet(s, p, t, false, d.namn.toLowerCase()); // möblerna har kvalitet, stationerna inte (kvalitet.ts)

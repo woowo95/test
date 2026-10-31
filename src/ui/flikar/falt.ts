@@ -1,13 +1,14 @@
-import { DAY, FALT_STEG, GRODOR, ODLING, byId, faltById, faltKlar, grodaPa, living, skordAndel } from '../../sim';
+import { DAY, FALT_STEG, GRODOR, MARK_FORE, ODLING, byId, faltById, faltKlar, grodaPa, living, skordAndel } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { bar, durTxt, esc, fmtN, pLink } from '../hjalp';
 import { s, ui } from '../lage';
 import type { Flik } from '../panel';
 
-// ett fält (steg 2.10.14): öppnas genom att trycka på fältet på kartan. Ett tryck till på en gröda i fältet visar grödan.
-// Fältet: ägaren, storleken, steget och hur långt det kommit, grödan och vem som arbetar där. Grödan: hur långt den vuxit,
-// vad den ger vid skörden och när frosten tar den
-export const falt: Flik = { namn: 'Fältet', knapp: 'person', html: () => (ui.faltRuta >= 0 ? grodaHtml() : faltHtml()) };
+// ett fält (steg 2.10.14): öppnas genom att trycka på fältet på kartan. Ett tryck till på en ruta i fältet visar rutan.
+// Fältet: ägaren, storleken, steget och hur långt det kommit, grödan och vem som arbetar där. Rutan: grödan om något växer
+// där (hur långt den vuxit, vad den ger vid skörden och när frosten tar den) och marken (steg 3.10.6): vad som växte där
+// innan, när rutan bereddes och när den sist sköttes. Fukten (3.8.2) och bördigheten (8.3.1) kommer i samma ruta
+export const falt: Flik = { namn: 'Fältet', knapp: 'person', html: () => (ui.faltRuta >= 0 ? rutaHtml() : faltHtml()) };
 
 function faltHtml() {
   const f = faltById(s, ui.faltId);
@@ -25,22 +26,36 @@ function faltHtml() {
       ${arbetar.length ? `<dt>Arbetar</dt><dd>${arbetar.map(pLink).join(', ')}</dd>` : ''}
       <dt>Senast skött</dt><dd>för ${durTxt(s.now - f.rord)} sedan</dd>
     </dl>
-    ${vaxer ? '<p class="muted">Tryck på en gröda för att se den.</p>' : ''}`;
+    <p class="muted">Tryck på en ruta för att se ${vaxer ? 'grödan och ' : ''}marken.</p>`;
 }
 
-function grodaHtml() {
+// marken på ruta k (steg 3.10.6)
+function markHtml(f: NonNullable<ReturnType<typeof faltById>>, k: number) {
+  const fore = f.fore?.[k], bered = f.bered?.[k], skott = f.skott?.[k];
+  return `<h3>Marken</h3><dl class="kv">
+      ${fore != null ? `<dt>Växte innan</dt><dd>${MARK_FORE[fore]}</dd>` : ''}
+      <dt>Bereddes</dt><dd>${bered != null ? `för ${durTxt(s.now - bered)} sedan` : 'inte än'}</dd>
+      <dt>Senast skött</dt><dd>${skott != null ? `för ${durTxt(s.now - skott)} sedan` : 'inte än'}</dd>
+    </dl>`;
+}
+function rutaHtml() {
   const f = faltById(s, ui.faltId), k = ui.faltRuta;
-  if (!f || !f.groda || !grodaPa(f, k)) return '<p class="muted">Grödan är skördad eller borta.</p>';
-  const d = GRODOR[f.groda], mogen = f.steg === 'mogen', a = mogen ? skordAndel(s, f) : 1, ag = byId(s, f.agare);
+  if (!f || k >= f.n) return '<p class="muted">Fältet har vuxit igen med gräs.</p>';
+  const ag = byId(s, f.agare), vid = ag ? `På ${pLink(ag)}s fält` : 'På ett fält';
+  if (!f.groda || !grodaPa(f, k)) return `
+    <div class="phead">${iconImg('odling', 32)}<div><h2>Ruta på fältet</h2>
+    <p class="muted">${vid} · ruta ${k + 1} av ${f.n}</p></div></div>
+    <p class="muted">${f.groda ? 'Här växer inget.' : 'Inget är sått här.'}</p>${markHtml(f, k)}`;
+  const d = GRODOR[f.groda], mogen = f.steg === 'mogen', a = mogen ? skordAndel(s, f) : 1;
   const over = mogen && f.mogen !== undefined ? ODLING.overDygn * DAY - (s.now - f.mogen) : 0;
   return `
     <div class="phead">${iconImg(mogen ? d.sak : 'grodd', 32)}<div><h2>${esc(d.namn)}</h2>
-    <p class="muted">${ag ? `På ${pLink(ag)}s fält` : 'På ett fält'} · ruta ${k + 1} av ${f.sadda ?? 0}</p></div></div>
+    <p class="muted">${vid} · ruta ${k + 1} av ${f.sadda ?? 0}</p></div></div>
     <dl class="kv">
       <dt>${mogen ? 'Mogen' : 'Växer'}</dt><dd>${bar(mogen ? 1 : f.vuxit ?? 0)}<span>${Math.round((mogen ? 1 : f.vuxit ?? 0) * 100)} %</span></dd>
       ${mogen ? `<dt>Skörda</dt><dd>${over > 0 ? `inom ${durTxt(over)}, sedan blir den övermogen` : `övermogen, ${Math.round(a * 100)} % kvar`}</dd>`
         : `<dt>Mogen</dt><dd>om ungefär ${durTxt((1 - (f.vuxit ?? 0)) * d.dygn * DAY)} när det är varmt</dd>`}
       <dt>Ger</dt><dd>${iconImg(d.sak, 14)} ${fmtN(d.perRuta * a)} och ${iconImg('fron', 14)} ${fmtN(d.fron * a)} frön</dd>
       <dt>Frosten</dt><dd>dör när det blir kallare än ${d.frost} grader, och i istiden</dd>
-    </dl>`;
+    </dl>${markHtml(f, k)}`;
 }

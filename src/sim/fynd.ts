@@ -1,6 +1,6 @@
 import { upplev } from './uppvaxt';
 import { PLATS, campCenter, campDist, campGrid, rektAvstand } from './plats';
-import { count, forstaGang, franMitt, stat, log, think } from './folk';
+import { count, forstaGang, franMitt, gjort, stat, log, think } from './folk';
 import { getMap, hash, perKarta, vnoise } from './karta';
 import { Markslag, groundOf, markslag, startGround, tileOf } from './mark';
 import { sedEvent } from './seder';
@@ -597,13 +597,13 @@ type Fiskedon = 'hand' | 'spjut' | 'metspo';
 export function handFish(s: State, p: Person, x: number, y: number, ageF: number, rd?: RedskapDef) {
   const gear: Fiskedon = rd?.don ?? 'hand', hand = ACTS.fiske.hand!, napp = rd?.napp ?? hand.napp, hall = rd?.hall ?? hand.hall;
   const st = (p.fiske ??= { f: 0, n: 0, k: 0 }), spear = gear === 'spjut';
-  st.f++; count(s, 'fiskeForsok'); sjoRakna(s, x, y, 'forsok', p); if (spear) count(s, 'spjutForsok'); if (gear === 'metspo') count(s, 'metForsok');
+  st.f++; count(s, 'fiskeForsok'); gjort(s, p, 'fiskeForsok'); sjoRakna(s, x, y, 'forsok', p); if (spear) count(s, 'spjutForsok'); if (gear === 'metspo') count(s, 'metForsok');
   const season = ACTS.fiske.sasong![ageIndex(s)];
   if (rnd(s, 'arbete', p) >= napp * season * Math.min(FANGST.fiskRikMax, richness(s, 'fiske', x, y)) * ageF) return 0;
   st.n++; count(s, 'fiskeNapp'); sjoRakna(s, x, y, 'napp', p);
   const hold = hall + p.skill.fiske / FANGST.hallSkill + stat(p, 'uthallighet', s.now) / FANGST.hallUthall + FANGST.hallSmid * franMitt(p, 'smidighet', s.now);
   if (rnd(s, 'arbete', p) >= hold) return 0;
-  st.k++; sjoRakna(s, x, y, 'fisk', p); const forsta = forstaGang(s, 'fisk'); if (spear) count(s, 'spjutFisk'); if (gear === 'metspo') count(s, 'metFisk');
+  st.k++; gjort(s, p, 'fisk'); sjoRakna(s, x, y, 'fisk', p); const forsta = forstaGang(s, 'fisk'); if (spear) count(s, 'spjutFisk'); if (gear === 'metspo') count(s, 'metFisk');
   takeFrom(s, 'fiske', x, y, 1);
   if (forsta) log(s, `${p.name} fångade byns första abborre ${spear ? 'med spjut' : gear === 'metspo' ? 'med metspö' : 'med händerna'}, efter ${s.stat!.fiskeForsok} försök.`, 'world', [p.id]);
   return 1;

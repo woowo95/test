@@ -8,7 +8,7 @@ import { balans } from './balans';
 import { clamp } from './slump';
 import { eldPlats, getMap } from './karta';
 import { groundOf } from './mark';
-import { FOREST } from './vag';
+import { FOREST, VAG } from './vag';
 import { knows, tankePa } from './teknik';
 import { getable, takeMaterial } from './behov';
 import { freeTools, nTools, wearTool } from './agande';
@@ -89,7 +89,9 @@ export type FaltSteg = keyof typeof FALT_STEG;
 // ett fält: hörnet (x, y) av den första raden, närmast lägret, bredden w, åt vilket håll raderna växer (dir, 1 nedåt och -1
 // uppåt), antalet rutor n, ägaren, steget, hur många rutor som är klara i steget och arbetet som är kvar på nästa (ms), hur
 // många rutor som såddes, grödan, hur långt den vuxit (0–1), när den mognade och när någon senast arbetade där
-export interface Falt { id: number; x: number; y: number; w: number; dir: number; n: number; agare: number; steg: FaltSteg; klara: number; kvar: number; sadda?: number; groda?: GrodaSlag; vuxit?: number; mogen?: number; rord: number; vatten?: number } // vatten: hur länge grödan klarar sig under torkan (1 = nyss vattnad, torka.ts)
+export interface Falt { id: number; x: number; y: number; w: number; dir: number; n: number; agare: number; steg: FaltSteg; klara: number; kvar: number; sadda?: number; groda?: GrodaSlag; vuxit?: number; mogen?: number; rord: number; vatten?: number; fore?: number[]; bered?: number[]; skott?: number[] } // vatten: hur länge grödan klarar sig under torkan (1 = nyss vattnad, torka.ts)
+// fore, bered och skott (steg 3.10.6, rutan i panelen) per ruta k: vad som växte där innan fältet (MARK_FORE), när den bereddes och
+// när någon sist arbetade på den
 // arbetet per ruta i steget (ms)
 const minPer = (steg: FaltSteg) => (steg === 'roja' ? ODLING.rojaMin : steg === 'bereda' ? ODLING.beredaMin : steg === 'sa' ? ODLING.saMin : steg === 'mogen' ? ODLING.skordaMin : 0) * MIN;
 // så många rutor steget har: alla, utom skörden som bara har de sådda
@@ -100,6 +102,12 @@ export const faltById = (s: State, id?: number) => id === undefined ? undefined 
 // ruta nummer k på fältet (x, y): raderna fylls från lägret och utåt
 const rutaXY = (f: Falt, k: number) => ({ x: f.x + k % f.w, y: f.y + f.dir * Math.floor(k / f.w) });
 export const faltRuta = (f: Falt, k: number) => { const r = rutaXY(f, k); return r.y * W + r.x; };
+// vad som växte på rutan innan den blev fält (steg 3.10.6), efter trädet på den
+export const MARK_FORE = ['Gräs', 'Ungskog', 'Skog'];
+function noteraFore(s: State, f: Falt, fran: number) {
+  const g = groundOf(s), fore = (f.fore ??= []);
+  for (let k = fran; k < f.n; k++) { const tr = g.trees[faltRuta(f, k)]; fore[k] = tr >= FOREST ? 2 : tr >= VAG.ungskog ? 1 : 0; }
+}
 export const faltRutor = (f: Falt) => { const r: number[] = []; for (let k = 0; k < f.n; k++) r.push(faltRuta(f, k)); return r; };
 // fältet på rutan: rutorna sparas per by tills ett fält läggs till, växer eller försvinner (byggV)
 const rutCache = new WeakMap<State, { key: string; at: Map<number, Falt> }>();
@@ -258,6 +266,7 @@ export function startOdla(s: State, p: Person, tk: Task) {
     if (ok) {
       f = ny; f.id = s.nextFalt = (s.nextFalt ?? 0) + 1;
       (s.falt ??= []).push(f);
+      noteraFore(s, f, 0);
       s.byggV = (s.byggV ?? 0) + 1; // en ny sak på kartan: platserna räknas om
     }
   }
@@ -288,6 +297,7 @@ export function workOdla(s: State, p: Person, tk: Task, dtSec: number) {
 }
 // en ruta är klar i steget
 function rutaKlar(s: State, p: Person, f: Falt) {
+  const nu = Math.round(s.now); (f.skott ??= [])[f.klara] = nu; if (f.steg === 'bereda') (f.bered ??= [])[f.klara] = nu;
   if (f.steg === 'roja') { const i = faltRuta(f, f.klara), g = groundOf(s); g.trees[i] = 0; g.cover[i] = 0; } // gräs, buskar och ungskog är borta
   else if (f.steg === 'bereda') { if (freeTools(s, p, 'benspade') && wearTool(s, p, 'benspade', ODLING.spadeSlit)) { const tr = SAKER.benspade?.trasig; if (tr) count(s, tr.stat); } }
   else if (f.steg === 'sa') { takeMaterial(s, p, 'fron', ODLING.froPerRuta); count(s, 'fronSadda', ODLING.froPerRuta); } // fröna som såtts (scenariot falt)
@@ -327,6 +337,7 @@ function storre(s: State, p: Person, f: Falt) {
   if (n <= f.n) { nasta(f, 'bereda'); return; }
   const fore = f.n;
   f.n = n; s.byggV = (s.byggV ?? 0) + 1;
+  noteraFore(s, f, fore);
   nasta(f, 'roja'); f.klara = fore; // de gamla rutorna är redan röjda
 }
 // grödan är borta (frost eller röta): fröna måste sås igen

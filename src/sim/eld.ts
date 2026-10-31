@@ -6,7 +6,7 @@ import { Del, addDel } from './egendom';
 import { coldOf, hardVinter, temperature, vaderNu, VADER } from './vader';
 import { MOTGANG } from './motgang';
 import { roomAt } from './byggnad';
-import { ALDER, KROPP, ageOf, count, doingAct, isSick, living, log, ovning, stat, think } from './folk';
+import { ALDER, KROPP, ageOf, count, doingAct, gjort, isSick, living, log, ovning, stat, think } from './folk';
 import { halsa } from './halsa';
 import { flintFactor, flintorOchYxor, stoneDist, takeFrom } from './fynd';
 import { observe } from './minne';
@@ -167,11 +167,11 @@ export function tryLight(s: State, p: Person) {
   if (getable(s, p, 'grenar') >= ig.sticks) takeMaterial(s, p, 'grenar', ig.sticks, true);
   else takeMaterial(s, p, 'kol', 1, true); // lite kol kan ersätta grenarna
 
-  f.tries++; f.tryTotal++;
+  f.tries++; f.tryTotal++; gjort(s, p, 'tandForsok');
   ovning(p, 'elda', ELD.ovTand * (ELD.ovBas + p.pot.intelligens / ELD.ovInt));
   const c = ig.chance * (ELD.tandBas + p.skill.elda / ELD.tandSkill + stat(p, 'intelligens', s.now) / ELD.tandInt) * (iIstiden(ageIndex(s)) ? ARSTID.tandIstid : 1) * ((f.ash ?? 0) >= 1 ? ELD.tandKol : 1) // en gammal kolhög tar lättare fyr
     * (1 + (f.tries - 1) / ELD.forsokLara); // varje misslyckat försök sedan elden brann gör nästa lättare
-  if (rnd(s, 'eld', p) < c) { lightFire(s, p); return true; }
+  if (rnd(s, 'eld', p) < c) { gjort(s, p, 'tande'); lightFire(s, p); return true; }
   if (ig.id === 'flinta' && rnd(s, 'eld', p) < ELD.flintSprack) {
     use(s, p, 'flinta', 1, true); fireLog(s, { k: 'sprack', id: p.id });
     log(s, `Flintan som ${p.name} slog med sprack.`, 'world', [p.id]);

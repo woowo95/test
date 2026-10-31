@@ -92,6 +92,7 @@ export function die(s: State, p: Person, orsak: Dodsorsak) {
   const { text: cause, sed } = DODSORSAKER[orsak];
   avbryt(s, p); // bördan läggs ner medan hen ännu lever, så att den ärvs
   p.died = s.now; p.cause = cause;
+  if (p.gjort) p.gjort.t = {}; // de döda gör inget mer det senaste dygnet (steg 3.10.6)
   inherit(s, p); // arvingarna får det hen ägde (arv.ts)
   releaseOwner(s, p.id); // det som blev kvar blir byns
   const a = Math.floor(ageOf(p, s.now));

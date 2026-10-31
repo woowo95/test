@@ -1,5 +1,5 @@
 import { FORMAGOR, HALSA, Kroppsdel, KROPPSDELAR, NARING, NARINGAR, NARINGBAL, bristGrad, bristerNu, frysFaktor, naringNu, sjunker, skorbjugg, vilaTim, TORST, blodning, delSkada, halsa, skadeLista, skadeText, smarta, torstDelar } from '../../sim';
-import { pratText, relationText, beskrivning, binamnInfo, INTRYCK, Intryck, IntryckTyp, anseendeText, intryckOm, LARDOMAR, LKind, anseendeSym, dodSymbol, intryckText, samlatIntryck, ACTS, ALDER, Act, DAY, Lardom, HUMOR, SKILL_GOR, STAT_GOR, Skill, Stat, coldOf, halsaLage, hearthOf, living, roomAt, temperature, varmeDelar, viloSlag, viloTak, takEffekt, SLAG, SLAG_TECKEN, Person, KUNSKAPER, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, SEDER, SED_LIST, sedOppen, TEKNIK, BYN, formogenhetDelar, Ting, halvKlar, ageOf, alive, byId, childrenOf, drar, heldBy, ownedBy, PLATSER, PLATS_LIST, Plats, BORDA_KG, UTRUSTNING, bordOf, capacity, kvNamn, handerFor, homeKind, load, utrustning, viktOf, SAKER, ownedStock, sakNamn, slagIkon, tingNamn, STACK, describe, duty, habitShare, habitTotal, KROPP, kortTal, moodOf, num, REL, relKey, relTyper, stat, taskText, timeLabel, vidBordet, upplevelseText, uppEffekt } from '../../sim';
+import { pratText, relationText, beskrivning, binamnInfo, INTRYCK, Intryck, IntryckTyp, anseendeText, intryckOm, LARDOMAR, LKind, anseendeSym, dodSymbol, intryckText, samlatIntryck, SKILL_STAT, gjortDygn, ACTS, ALDER, Act, DAY, Lardom, HUMOR, SKILL_GOR, STAT_GOR, Skill, Stat, coldOf, halsaLage, hearthOf, living, roomAt, temperature, varmeDelar, viloSlag, viloTak, takEffekt, SLAG, SLAG_TECKEN, Person, KUNSKAPER, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, SEDER, SED_LIST, sedOppen, TEKNIK, BYN, formogenhetDelar, Ting, halvKlar, ageOf, alive, byId, childrenOf, drar, heldBy, ownedBy, PLATSER, PLATS_LIST, Plats, BORDA_KG, UTRUSTNING, bordOf, capacity, kvNamn, handerFor, homeKind, load, utrustning, viktOf, SAKER, ownedStock, sakNamn, slagIkon, tingNamn, STACK, describe, duty, habitShare, habitTotal, KROPP, kortTal, moodOf, num, REL, relKey, relTyper, stat, taskText, timeLabel, vidBordet, upplevelseText, uppEffekt } from '../../sim';
 import { framstegSvg, hasIcon, iconImg, kvSvg, tecknet } from '../../ikoner';
 import { LAG, ansStapel, ansTecken, fmtN, bar, cap, carryTxt, cssFarg, durTxt, esc, hex, hsl, hjalpOppen, hjalpText, moodWord, pLink, prickar, relWord, sickNow, tempBar, tempOrd, trend, trendD } from '../hjalp';
 import { s, ui } from '../lage';
@@ -179,8 +179,19 @@ function halsaHtml(p: Person) {
     <h3>Det som är fel</h3>${lista}<h3>Status</h3><dl class="kv">${formagor}</dl><h3>Näring</h3><dl class="kv">${vatska}${naring}</dl>`;
 }
 // det en egenskap eller färdighet gör: arbetena som går fortare (ACTS) och raderna i STAT_GOR och SKILL_GOR
-function gorHtml(rader: string[], nu: string) {
-  return `<dd class="forkl"><p class="muted">${esc(nu)}</p>${rader.length ? `<ul class="thoughts">${rader.map(r => `<li>${esc(r)}</li>`).join('')}</ul>` : ''}</dd>`;
+function gorHtml(rader: string[], nu: string, extra = '') {
+  return `<dd class="forkl"><p class="muted">${esc(nu)}</p>${extra}${rader.length ? `<ul class="thoughts">${rader.map(r => `<li>${esc(r)}</li>`).join('')}</ul>` : ''}</dd>`;
+}
+// det hen gjort med färdigheten (steg 3.10.6, SKILL_STAT): det senaste dygnet och totalt, och för en del av något
+// (fisk av försöken) hur stor del det var. Hela tal, så att 2,4 grillade portioner blir 2
+function gjortHtml(p: Person, k: Skill) {
+  const tal = (v: number) => String(Math.round(v)), rader = SKILL_STAT[k].filter(r => p.gjort?.n[r.k]);
+  if (!rader.length) return '';
+  return `<p class="muted">Det senaste dygnet (24 timmar, ett år i spelet) och totalt:</p><ul class="thoughts">${rader.map(r => {
+    const d = gjortDygn(s, p, r.k), n = p.gjort!.n[r.k], av = r.av ? gjortDygn(s, p, r.av) : 0, avN = r.av ? p.gjort!.n[r.av] ?? 0 : 0;
+    const del = (x: number, y: number) => y > 0 ? ` av ${tal(y)} (${Math.min(100, Math.round(100 * x / y))} %)` : '';
+    return `<li>${esc(r.namn)}: ${tal(d)}${del(d, av)}, totalt ${tal(n)}${del(n, avN)}</li>`;
+  }).join('')}</ul>`;
 }
 const arbetar = (sk: string[]) => sk.length ? [`Hur mycket hen får ut av arbetet: ${sk.map(k => SKILL_NAMES[k as Skill].toLowerCase()).join(', ')}`] : [];
 function ovarNu(p: Person, k: Skill) {
@@ -202,12 +213,11 @@ function egenHtml(p: Person) {
     const v = p.skill[k], id = `f-${k}-${p.id}`, tr = trend(p, 'sk_' + k, v), dd = trendD(p, 'sk_' + k);
     const nu = ovarNu(p, k) ? `Övar just nu${dd ? `: ${dd > 0 ? '+' : ''}${visa(dd, 2)} i timmen` : ''}.` : dd ? `Har ändrats ${visa(dd, 2)} i timmen den senaste stunden.` : 'Ändras inte just nu. Den växer när hen övar.';
     const rader = [...arbetar(ACTS[k as Act]?.arbete === k ? [k] : []), ...SKILL_GOR[k]];
-    return `<dt class="klick" data-hjalp="${id}" title="${esc(rader.join(', '))}">${SKILL_NAMES[k]}</dt><dd class="klick" data-hjalp="${id}" title="${esc(rader.join(', '))}">${bar(v / 20, 'skill', tr)}<span>${visa(v)}</span></dd>${hjalpText(id, gorHtml(rader, nu))}`;
+    return `<dt class="klick" data-hjalp="${id}" title="${esc(rader.join(', '))}">${SKILL_NAMES[k]}</dt><dd class="klick" data-hjalp="${id}" title="${esc(rader.join(', '))}">${bar(v / 20, 'skill', tr)}<span>${visa(v)}</span></dd>${hjalpText(id, gorHtml(rader, nu, gjortHtml(p, k)))}`;
   };
   return `<dl class="kv">${STATS.map(statRad).join('')}
       ${ageOf(p, now) >= ALDER.hjalper ? `<dt>Pliktkänsla</dt><dd>${bar(d, 'skill')}<span>${d > 0.75 ? 'Plikttrogen' : d > 0.5 ? 'Gör sin del' : d > 0.3 ? 'Bekväm' : 'Lat'}</span></dd>` : ''}</dl>
-      <h3>Färdigheter</h3><dl class="kv">${SKILLS.map(skillRad).join('')}</dl>
-      ${p.fiske ? `<h3>Fiske</h3><p class="muted">${p.fiske.f} försök, ${p.fiske.n} napp, ${p.fiske.k} ${p.fiske.k === 1 ? 'abborre' : 'abborrar'}</p>` : ''}`;
+      <h3>Färdigheter</h3><dl class="kv">${SKILLS.map(skillRad).join('')}</dl>`;
 }
 // relationerna med typerna som symboler (steg 3.1.1, RELATIONER i relationer.ts): ett tryck på symbolen visar varför.
 // De med en särskild typ (partner, bästa vän, ärkefiende, mentor, rival) först, sedan de starkaste

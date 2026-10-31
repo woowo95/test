@@ -1,6 +1,6 @@
 import { strandNu, vattenNu } from './sjo';
 import { PLATS, campCenter, campDist, campKey } from './plats';
-import { byId, count, forstaGang, isParent, living, log, stat } from './folk';
+import { byId, count, forstaGang, gjort, isParent, living, log, stat } from './folk';
 import { delade } from './berattelser';
 import { teach } from './teknik';
 import { FANGST, Kind, prospect, regrowOf, richness, shoreOf, standAt, stoneDist, synsOf, toppOf, vaxerAt } from './fynd';
@@ -349,7 +349,7 @@ function tell(s: State, a: Person, b: Person, l: Lardom, r: Rel) {
   }
   (b.lardomar ??= []).push({ k: l.k, a: l.a, v, ...(l.g !== undefined ? { g: l.g } : {}), c, t: l.t, src: a.id, led: (l.led ?? 0) + 1, ...(l.om ? { om: l.om } : {}), ...(nyhet(s, l) ? { ny: l.ny } : {}) });
   trim(s, b);
-  count(s, 'berattat');
+  count(s, 'berattat'); gjort(s, a, 'berattat');
   if (l.k === 'fara' && l.om && forstaGang(s, 'rykte' + l.a + ':' + l.om)) log(s, `Berättelsen om hur ${l.om.replace(' där', '')} sprids i byn. Fler blir rädda för ${placeName(s, l.a)}.`, 'world', [a.id, b.id]);
 }
 

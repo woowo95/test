@@ -22,7 +22,7 @@ import { TRY_SEC, growFynd, handFish, lagren, packFynd, pickMushrooms, richness,
 import { halMin, halVal, islagt, stepIs } from './is';
 import { blotSteg, coldOf, stepVader, temperature, VADER, vaderGrader, vaderNu, vaxtFaktor } from './vader';
 import { VED, addFuel, canLight, fireWant, forageItems, fuelFor, hearthOf, heatAt, igniterOf, stepFire, takeCoal, takeFuel, tinderShort, tryLight } from './eld';
-import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, franMitt, isSick, living, log, ovning, stat, think } from './folk';
+import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, franMitt, gjort, isSick, living, log, ovning, stat, think } from './folk';
 import { eldPlats } from './karta';
 import { ELDFLYTT, flyttaElden, stepEldFlytt } from './eldflytt';
 import { DODSORSAKER, barnMat, birth, birthWish, die, regulate } from './liv';
@@ -534,6 +534,7 @@ const UTFALL: Partial<Record<Act, (s: State, p: Person, tk: Task, b: Arbetsbit) 
       const r = rich > 0 ? y * Math.min(1, rot / rich) : 0;
       tk.carry += y - r; bar('rotter', r * (rd?.rotter ?? 1));
       count(s, 'samlat_bar', y - r); count(s, 'samlat_rotter', r); // vad som samlats av varje slag (scenariot rotter)
+      gjort(s, p, 'samlat', y);
     }
     const fart = ACTS[tk.act].fart ?? 1, got = forageItems(s, p, dtSec, fart) ?? {}, dt = dtSec * fart; // det som växer på platsen hittar man lika mycket fortare (steg 2.12.4)
     bar('svamp', pickMushrooms(s, p, tk.tx, tk.ty, dt, got));
