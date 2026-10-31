@@ -1,5 +1,5 @@
 import { upplev } from './uppvaxt';
-import { PLATS, campCenter, campDist, campGrid, rektAvstand } from './plats';
+import { PLATS, campCenter, campGrid, rektAvstand } from './plats';
 import { count, forstaGang, franMitt, gjort, stat, log, think } from './folk';
 import { getMap, hash, perKarta, vnoise } from './karta';
 import { Markslag, groundOf, markslag, startGround, tileOf } from './mark';
@@ -253,8 +253,9 @@ function bortaOf(s: State, c2: typeof skygghet, inne: number, r: number) {
   if (visning.pa) { c = c2.bild.get(s); if (c?.dag === dag) return c.v; }
   const g = groundOf(s), v = new Float32Array(W * H), nott = new Uint8Array(W * H);
   for (let i = 0; i < W * H; i++) nott[i] = isSoil(g.tiles[i]) && markslag(g, i) === 'bar' ? 1 : 0;
+  const lager = campGrid(s); // lägret ändras inte under slingan
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-    const d = clamp((campDist(s, x, y) - inne) / r, 0, 1);
+    const d = clamp((lager[y * W + x] - inne) / r, 0, 1);
     let n = 0;
     for (let dy = -FANGST.nottR; dy <= FANGST.nottR; dy++) for (let dx = -FANGST.nottR; dx <= FANGST.nottR; dx++) if (inMap(x + dx, y + dy)) n += nott[(y + dy) * W + x + dx];
     v[y * W + x] = d * d * (3 - 2 * d) * (1 - Math.min(FANGST.nottMax, n / FANGST.nottDiv));
@@ -503,9 +504,9 @@ export function prospect(s: State, k: Kind) {
   let c = prospects.get(s);
   if (!c || c.hr !== hr) { c = { hr, v: {} }; prospects.set(s, c); }
   if (c.v[k] === undefined) {
-    const f = campCenter(s), top: number[] = [];
+    const f = campCenter(s), top: number[] = [], lager = campGrid(s);
     for (let y = Math.max(0, f.y - PLATS.dagY); y < Math.min(H, f.y + PLATS.dagY + 1); y++) for (let x = Math.max(0, f.x - PLATS.dagX); x < Math.min(W, f.x + PLATS.dagX + 1); x++) {
-      const d = campDist(s, x, y);
+      const d = lager[y * W + x];
       if (d > FANGST.syn) continue;
       const v = richness(s, k, x + 0.5, y + 0.5) - d * PLATS.avstandPris;
       if (v > 0) top.push(v);
@@ -528,10 +529,10 @@ export const wantsFlint = (s: State) => amountOf(s, 'flinta') < FANGST.flintaMin
 // en plats att samla på nära stenarna, där flinta är vanlig. I lägret och där flintan redan plockats finns ingen.
 // q väljer med sin egen slumpföljd
 export function flintSpot(s: State, q: Person, area?: (x: number, y: number) => boolean): { x: number; y: number } | undefined {
-  const m = getMap(s.seed), sd = stoneDist(s.seed), c: { x: number; y: number; d: number }[] = [];
+  const m = getMap(s.seed), sd = stoneDist(s.seed), c: { x: number; y: number; d: number }[] = [], lager = campGrid(s);
   for (let i = 0; i < W * H; i++) {
     if (sd[i] < 1 || sd[i] > FANGST.stenNara || m.tiles[i] === T.Vatten || m.tiles[i] === T.Sten) continue;
-    const x = i % W, y = Math.floor(i / W), d = campDist(s, x, y);
+    const x = i % W, y = Math.floor(i / W), d = lager[i];
     if (d < FANGST.flintaAvstand && (!area || area(x, y)) && flintFactor(s, x, y) > FANGST.flintaRik) c.push({ x, y, d });
   }
   if (!c.length) return undefined;

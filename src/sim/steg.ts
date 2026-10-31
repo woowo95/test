@@ -337,8 +337,12 @@ function pregnancy(s: State, p: Person, a: number, pop: number, dtSec: number) {
   const now = s.now;
   if (p.pregnantSince !== undefined) { if (now - p.pregnantSince > STEG.dragtid * DAY) birth(s, p); }
   else if (p.sex === 'k' && p.partner !== undefined && a >= ALDER.gravFran && a <= ALDER.gravTill && (!p.lastBirth || now - p.lastBirth > STEG.mellanFodslar * DAY)) {
-    const f = birthWish(pop) * clamp(foodDays(s) / STEG.matDygn, STEG.matMin, 1) * barnMat(s, pop) * (1 + STEG.sedBarn * s.seder.v.barn);
-    if (chance(s, STEG.chans * f / 86400, dtSec, 'halsa', p)) { p.pregnantSince = now; p.pregnantBy = p.partner; }
+    // slumptalet först (som chance), och maten (foodDays, dyr) räknas bara när chansen med full mat hade räckt: maten gör den
+    // aldrig större (kodgenomgången 3.10.25)
+    const r = rnd(s, 'halsa', p), bw = birthWish(pop), bm = barnMat(s, pop), sed = 1 + STEG.sedBarn * s.seder.v.barn;
+    const ja = (f: number) => r < 1 - Math.exp(-(STEG.chans * f / 86400) * dtSec);
+    if (bw > 0 && bm > 0 && sed > 0 && !ja(bw * 1 * bm * sed)) return;
+    if (ja(bw * clamp(foodDays(s) / STEG.matDygn, STEG.matMin, 1) * bm * sed)) { p.pregnantSince = now; p.pregnantBy = p.partner; }
   }
 }
 

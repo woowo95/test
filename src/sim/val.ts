@@ -1,6 +1,6 @@
 import { strandNu, vattenNu } from './sjo';
 import { take } from './agande';
-import { PLATS, campCenter, campDist, campKey } from './plats';
+import { PLATS, campCenter, campDist, campGrid, campKey } from './plats';
 import { vargSkydd } from './varg';
 import { tornadoSkydd } from './tornado';
 import { brandVal } from './brand';
@@ -293,12 +293,12 @@ export function nastaBuske(s: State, k: Lager, x0: number, y0: number) {
 }
 // ingen plats hittades i närheten: den närmaste rutan som passar, var den än ligger
 function nearestWanted(s: State, want: (t: number, x: number, y: number) => boolean, min = 0) {
-  const m = getMap(s.seed);
+  const m = getMap(s.seed), lager = campGrid(s);
   let best: { x: number; y: number } | undefined, bd = Infinity;
   for (let i = 0; i < W * H; i++) {
     const x = i % W, y = Math.floor(i / W);
     if (!want(m.tiles[i], x, y)) continue;
-    const d = campDist(s, x, y);
+    const d = lager[i];
     if (d >= min && d < bd) { bd = d; best = { x, y }; } // inte närmare lägret än min (toa: inte mitt i byn, steg 3.10.3)
   }
   return best;
@@ -320,13 +320,13 @@ function strandOf(s: State) {
   const key = `${campKey(s)},${s.byggV ?? 0}`;
   let c = strandCache.get(s);
   if (c?.key !== key) {
-    const sh = strandNu(s), ok: number[] = [];
+    const sh = strandNu(s), ok: number[] = [], lager = campGrid(s);
     let bad: { x: number; y: number } | undefined, bd = VAL.strandNara;
     for (let i = 0; i < W * H; i++) {
       if (!sh[i]) continue;
       const x = i % W, y = Math.floor(i / W);
       if (bitAt(s, x, y)) continue;
-      const d = campDist(s, x, y);
+      const d = lager[i];
       if (d < VAL.strandNara) ok.push(i);
       if (d < bd) { bd = d; bad = { x: x + 0.5, y: y + 0.5 }; }
     }
