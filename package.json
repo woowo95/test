@@ -15,6 +15,7 @@
     "likhet": "bash src/test/likhet.sh",
     "koll": "tsx src/test/koll.ts",
     "snabbkoll": "tsx src/test/snabbkoll.ts",
+    "riktad": "tsx src/test/riktad.ts",
     "samma": "tsx src/test/samma.ts",
     "jamfor": "tsx src/test/jamfor.ts",
     "natur": "tsx src/test/natur.ts",
