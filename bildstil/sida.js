@@ -1853,13 +1853,13 @@ const VAL = [
   { id: 'v_dorrar', namn: 'Dörrarna', vad: 'Det som kan vridas (steg 3.10.7): dörren i en vägg som går uppåt får en egen bild i stället för att bilden vrids. Trädörren till vänster och skinndörren till höger, var och en i en vägg åt sidan och en uppåt. Väljer du en ny trädörr ritas den stående efter den.', typ: 'janej',
     idag: DORR_M(['tradorr_karta', 'skinndorr_karta'], vridenIkon), idagText: VRID_IDAG,
     versioner: [{ text: 'I väggen som går uppåt syns dörren från kanten: bräderna med repen på sidorna, och skinnet som hänger från stången.', ...DORR_M(['tradorr_karta', 'skinndorr_karta'], k => k + '_v') }] },
-  { id: 'a_smyga', namn: 'Att smyga', vad: 'Ny symbol över huvudet (Björn efter v159), 8 × 8 punkter som de andra handlingarna: jägaren smyger fram mot en kanin. Förra version 2 kvar som version 1, och två nya efter din kommentar. I spelet nu: förra version 1 (platshållare).', typ: 'tre',
+  { id: 'a_smyga', namn: 'Att smyga', vad: 'Ny symbol över huvudet (Björn efter v159), 8 × 8 punkter som de andra handlingarna: jägaren smyger fram mot en kanin. Förra version 2 kvar som version 1, och två nya efter din kommentar. Din kommentar förra gången: ”behåll version 2 och gör två helt nya alternativ”. I spelet nu: förra version 1 (platshållare).', typ: 'tre',
     versioner: [
       { text: 'En människa som hukar sig framåt (förra version 2).', ...SYM8_M(SMYG_HUK, AKT_L) },
       { text: 'Två ögon som tittar fram ur en buske.', ...SYM8_M(SMYG_BUSKE, AKT_L) },
       { text: 'Ett huvud som sticker upp över gräset.', ...SYM8_M(SMYG_GRAS, AKT_L) },
     ] },
-  { id: 'a_sikta', namn: 'Att sikta', vad: 'Ny symbol över huvudet (Björn efter v159), 8 × 8 punkter: jägaren har stannat och siktar innan hen kastar. Tre nya versioner efter din kommentar, en av dem med pilbåge. I spelet nu: förra version 1 (platshållare).', typ: 'tre',
+  { id: 'a_sikta', namn: 'Att sikta', vad: 'Ny symbol över huvudet (Björn efter v159), 8 × 8 punkter: jägaren har stannat och siktar innan hen kastar. Tre nya versioner efter din kommentar, en av dem med pilbåge. Din kommentar förra gången: ”Gör tre nya versioner. En pilbåge version”. I spelet nu: förra version 1 (platshållare).', typ: 'tre',
     versioner: [
       { text: 'En spänd pilbåge med pilen redo.', ...SYM8_M(SIKTA_BAGE, AKT_L) },
       { text: 'En måltavla: ringar runt en mörk mitt.', ...SYM8_M(SIKTA_MAL, AKT_L) },
