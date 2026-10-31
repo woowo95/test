@@ -292,12 +292,16 @@ SCENARIER.relationer = {
     const haller = SIM.skiljGrans(r) < SIM.skiljGrans(r2);
     // den bästa vännen räknas som familjen när man delar: man ger allt utom en portion och kan väcka hen (behov.ts)
     const somFamilj = SIM.isFamily(a, b) && !SIM.isFamily(j1, j2);
+    // den bästa vännen som fäller eller hugger räknas som vedarbete när man väljer arbete (kodgenomgången 3.10.25)
+    const vedVan = (['ved', 'falla', 'hugga'] as const).map(act => { b.task = { act, phase: 'do', tx: b.x, ty: b.y, until: s.now + HOUR, carry: 0 }; return SIM.bredvidVikt(s, a, 'ved', [a, b]); });
+    b.task = undefined;
     return [
       [`paret som varit tillsammans i 15 dygn och är goda vänner gifter sig (${typ(m, k).join(', ')})`, r.gift !== undefined && st('gift') === 1 && loggat(`${m.name} och ${k.name} har gift sig`)],
       ['paret som inte längre är goda vänner gifter sig inte', r2.gift === undefined],
       ['ett gift par håller mer än ett ogift', haller],
       [`två som tycker mycket om varandra blir bästa vänner (${typ(a, b).join(', ')})`, a.bast === b.id && b.bast === a.id && st('bastaVan') === 1 && loggat('bästa vänner')],
       ['den bästa vännen delar som släkt', somFamilj],
+      [`att den bästa vännen arbetar med trä lockar till vedarbetet, också när hen fäller eller hugger (${vedVan.map(x => x.toFixed(2)).join(', ')})`, vedVan.every(x => x === SIM.RELT.bastArbete)],
       [`den man hatar mest blir ärkefiende, och man ger hen aldrig något (${typ(c, d).join(', ')})`, c.arke === d.id && d.arke === c.id && st('arkefiende') === 2 && SIM.willing(s, c, d) === 0],
       [`två jägare som inte är vänner blir rivaler och jagar lite hårdare (${typ(j1, j2).join(', ')})`, !!j1.rivaler?.includes(j2.id) && j1.rivalom === 'Jägare' && SIM.workRate(s, j1, 'jakt') > rateFore && loggat('rivaler')],
       [`den vuxna som lärt den unga mycket blir mentor (${typ(lar, ung).join(', ')} / ${typ(ung, lar).join(', ')})`, ung.mentor === lar.id && ung.mentorSk === 'hantverk' && st('mentor') === 1],

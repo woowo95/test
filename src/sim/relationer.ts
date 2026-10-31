@@ -2,6 +2,7 @@ import { upplev } from './uppvaxt';
 import { ALDER, REL, ageOf, count, getRel, isParent, living, log, relKey, think } from './folk';
 import { DAY, Person, Rel, SKILLS, Skill, State } from './typer';
 import { balans } from './balans';
+import { ACTS } from './handlingar';
 
 // ---------- balanstal (regel 8) ----------
 // Relationstyperna (steg 3.1.1, "Relationstyper" i designdokumentet). Relationen (op) går från -100 till 100; vän, nära vän,
@@ -79,7 +80,7 @@ export function lartUt(s: State, a: Person, b: Person) { if (ageOf(a, s.now) > a
 export function bredvidVikt(s: State, p: Person, act: string, ppl: Person[]) {
   let f = 1;
   for (const q of ppl) {
-    if (q === p || q.task?.act !== act) continue;
+    if (q === p || !q.task || (ACTS[q.task.act].arbete ?? q.task.act) !== act) continue; // samma arbete: också fälla och hugga är vedarbete (workStep i steg.ts)
     if (p.bast === q.id) f *= RELT.bastArbete;
     if (p.mentor === q.id) f *= RELT.mentorArbete;
     if (p.arke === q.id || (s.rels[relKey(p.id, q.id)]?.op ?? 0) < REL.ovan) f *= RELT.ovanArbete;
