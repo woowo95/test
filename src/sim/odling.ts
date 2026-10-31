@@ -1,6 +1,5 @@
 import { ALDER, ageOf, alive, count, familjOf, forstaGang, living, log } from './folk';
 import { FYND, richness, takeFrom } from './fynd';
-import { amountOf, gain } from './lager';
 import { kunnighet } from './ekonomi';
 import { SNABBARE } from './handlingar';
 import { DAY, H, HOUR, HOUR_S, MIN, Person, SEC, State, T, Task, W, inMap } from './typer';
@@ -14,7 +13,9 @@ import { getable, takeMaterial } from './behov';
 import { freeTools, nTools, wearTool } from './agande';
 import { SAKER } from './saker';
 import { PLATS, campCenter, campDist } from './plats';
-import { ledig, lekplats, paLek } from './stationer';
+import { byAvstand, ledig, lekplats, paLek, stationDef, stationerOf, storlekAv } from './stationer';
+import { housesOf } from './byggnad';
+import { amountOf, gain, zonesOf } from './lager';
 import { temperature, vaxtFaktor } from './vader';
 import { TORKA } from './torka';
 import { iVattnetNu } from './sjo';
@@ -47,8 +48,9 @@ export const ODLING = balans('odling', {
   rutorPerMun: 3, // ett fält ska ha så här många rutor per person i ägarens familj ...
   faltMin: 2, faltMax: 200, // ... men minst och högst så här många
   faltBredd: 10, // ett fält är högst så här många rutor brett; det växer i rader bort från lägret
-  faltFran: 3, faltTill: 9, // fältets första rad ligger så här många rutor från byns läger ...
-  faltAvst: 5, // ... helst så här långt
+  faltStig: 3, // fältet ligger utanför byns yttersta hus, station och lagerplats, med så många rutor fritt emellan för en stig (steg 3.10.14) ...
+  faltTill: 15, // ... och dess första rad högst så här många rutor från elden (9 från lägret före steg 3.10.14, värdet från 3.10.23.6) ...
+  faltUtom: 4, // ... men alltid så här många rutor utanför byns gräns, också när byn är större än så (steg 3.10.14)
   skogKost: 2, // ett vuxet träd på platsen räknas som så många rutor längre bort: det fälls först (steg 3.6.9)
   // arbetet per ruta är kort, så att fälten kan bli stora (Björn efter v107, steg 2.10.13)
   rojaMin: 5, // minuters arbete per ruta att röja gräs, buskar och ungskog
@@ -177,16 +179,52 @@ const storlek = (s: State, p: Person) => Math.min(faltBehov(s, p), froRutor(s, p
 // ett nytt fält är så brett att det blir ungefär fyrkantigt när det har alla rutor det ska ha
 const bredd = (s: State, p: Person) => clamp(Math.ceil(Math.sqrt(faltBehov(s, p))), 1, ODLING.faltBredd);
 // åt vilket håll raderna växer från första raden y: bort från lägret
-const riktning = (s: State, y: number) => y + 0.5 >= campCenter(s).y ? 1 : -1;
-// kan rutan bli en del av ett fält: jord (inte sand eller sten) utan stora träd, ledig och inte på ett annat fält
-function rutaFri(s: State, x: number, y: number) {
+export const faltRiktning = (s: State, y: number) => y + 0.5 >= campCenter(s).y ? 1 : -1;
+// byns gräns (steg 3.10.14): hur långt från elden byns yttersta hus, station, lagerplats eller eld står åt varje håll (SEKTORER
+// väderstreck, och ett hus räknas också i de två närmaste åt varje sida, så att byn blir rund), och rutorna närmare än
+// faltStig + 1 rutor från något av dem (nara). Stationerna i utkanten (latrinen och slaktbänken) flyttar inte gränsen men får
+// inget fält inpå sig. Räknas om när något byggs eller lägret ändras
+const SEKTORER = 16;
+interface Grans { key: string; ut: Float64Array; nara: Uint8Array; fx: number; fy: number }
+const gransCache = new WeakMap<State, Grans>();
+const sektor = (dx: number, dy: number) => (Math.round(Math.atan2(dy, dx) / (2 * Math.PI) * SEKTORER) + SEKTORER) % SEKTORER;
+export function byGrans(s: State): Grans {
+  const f = eldPlats(s), hus = housesOf(s), st = stationerOf(s), zs = zonesOf(s);
+  const key = `${s.byggV ?? 0}:${f.x},${f.y}:${st.length}:${hus.map(h => `${h.x},${h.y},${h.w},${h.h}`).join(';')}:${zs.map(z => `${z.x},${z.y},${z.w},${z.h}`).join(';')}`;
+  const c = gransCache.get(s);
+  if (c && c.key === key) return c;
+  const ut = new Float64Array(SEKTORER), nara = new Uint8Array(W * H), M = ODLING.faltStig;
+  const rekt = (x0: number, y0: number, w: number, h: number, granser: boolean) => {
+    for (let y = y0; y < y0 + h; y++) for (let x = x0; x < x0 + w; x++) {
+      if (granser) {
+        const d = Math.hypot(x - f.x, y - f.y), k = sektor(x - f.x, y - f.y);
+        for (let j = -2; j <= 2; j++) { const q = (k + j + SEKTORER) % SEKTORER; if (d > ut[q]) ut[q] = d; }
+      }
+      for (let yy = Math.max(0, y - M); yy <= Math.min(H - 1, y + M); yy++) for (let xx = Math.max(0, x - M); xx <= Math.min(W - 1, x + M); xx++) nara[yy * W + xx] = 1;
+    }
+  };
+  rekt(f.x, f.y, 1, 1, true);
+  for (const z of zs) rekt(z.x, z.y, z.w, z.h, true);
+  for (const h of hus) rekt(h.x, h.y, h.w, h.h, true);
+  for (const t of st) { const { w, h } = storlekAv(t); rekt(t.x, t.y, w, h, !stationDef(t.k)?.utkant); }
+  const g: Grans = { key, ut, nara, fx: f.x, fy: f.y };
+  gransCache.set(s, g);
+  return g;
+}
+// ligger rutan utanför byns gräns, med plats för en stig emellan?
+const utanfor = (g: Grans, x: number, y: number) => !g.nara[y * W + x] && Math.hypot(x - g.fx, y - g.fy) > g.ut[sektor(x - g.fx, y - g.fy)];
+// så långt från elden som fältets första rad får ligga åt det hållet
+const tillAt = (g: Grans, x: number, y: number) => Math.max(ODLING.faltTill, g.ut[sektor(x - g.fx, y - g.fy)] + ODLING.faltStig + ODLING.faltUtom);
+// kan rutan bli en del av ett fält: jord (inte sand eller sten) utan stora träd, ledig, utanför byns gräns och inte på ett annat fält
+function rutaFri(s: State, g: Grans, x: number, y: number) {
   if (!inMap(x, y) || x < 1 || y < 1 || x >= W - 1 || y >= H - 1) return false;
   const i = y * W + x, t = getMap(s.seed).tiles[i];
-  return (t === T.Gras || t === T.Skog) && (groundOf(s).trees[i] < FOREST || nTools(s, 'yxa') > 0) && ledig(s, x, y) && !faltAt(s, x, y); // i skogen fälls träden först, med en yxa (steg 3.6.9)
+  return (t === T.Gras || t === T.Skog) && (groundOf(s).trees[i] < FOREST || nTools(s, 'yxa') > 0) && utanfor(g, x, y) && ledig(s, x, y) && !faltAt(s, x, y); // i skogen fälls träden först, med en yxa (steg 3.6.9)
 }
 
-// var ett nytt fält med n rutor och bredden w läggs: alla rutor fria, första raden faltFran–faltTill rutor från lägret,
-// helst faltAvst, lite ungskog och inte i lekplatsen. Samma plats varje gång (ingen slump). Sparas per by och timme (regel 4)
+// var ett nytt fält med n rutor och bredden w läggs: alla rutor fria och utanför byns gräns, första raden högst tillAt rutor
+// från elden och så nära byn som det går (byAvstand: lägret och husen, som för stationerna), lite ungskog och inte i
+// lekplatsen. Samma plats varje gång (ingen slump). Sparas per by och timme (regel 4)
 const siteCache = new WeakMap<State, { key: string; at?: { x: number; y: number } }>();
 export function faltSite(s: State, w: number, n: number) {
   const key = `${Math.floor(s.now / HOUR)}:${s.byggV ?? 0}:${faltOf(s).length}:${s.stackar?.length ?? 0}:${w}:${n}`;
@@ -197,17 +235,18 @@ export function faltSite(s: State, w: number, n: number) {
   return at;
 }
 function hittaSite(s: State, w: number, n: number) {
-  const f = eldPlats(s), R = ODLING.faltTill + 2, g = groundOf(s), lekR = lekplats(s), rader = Math.ceil(n / w), b = Math.min(w, n);
+  const f = eldPlats(s), gr = byGrans(s), g = groundOf(s), lekR = lekplats(s), rader = Math.ceil(n / w), b = Math.min(w, n);
+  const R = Math.ceil(Math.max(ODLING.faltTill, ...gr.ut.map(u => u + ODLING.faltStig + ODLING.faltUtom))) + 2;
   let best: { x: number; y: number } | undefined, bs = Infinity;
   for (let dy = -R; dy <= R; dy++) for (let dx = -R; dx <= R; dx++) {
-    const x = f.x + dx, y = f.y + dy, d = campDist(s, x + b / 2, y + 0.5);
-    if (d < ODLING.faltFran || d > ODLING.faltTill) continue;
-    const ny = { x, y, w, dir: riktning(s, y), n } as Falt;
+    const x = f.x + dx, y = f.y + dy, mx = x + b / 2, my = y + 0.5;
+    if (Math.hypot(mx - f.x, my - f.y) > tillAt(gr, mx, my)) continue;
+    const ny = { x, y, w, dir: faltRiktning(s, y), n } as Falt;
     let ok = true, unga = 0;
-    for (let k = 0; k < n && ok; k++) { const r = rutaXY(ny, k); if (!rutaFri(s, r.x, r.y)) ok = false; else { const tr = g.trees[r.y * W + r.x]; unga += tr >= FOREST ? ODLING.skogKost : tr; } }
+    for (let k = 0; k < n && ok; k++) { const r = rutaXY(ny, k); if (!rutaFri(s, gr, r.x, r.y)) ok = false; else { const tr = g.trees[r.y * W + r.x]; unga += tr >= FOREST ? ODLING.skogKost : tr; } }
     if (!ok) continue;
     const lek = paLek(lekR, x, ny.dir > 0 ? y : y - rader + 1, b, rader) ? 20 : 0;
-    const sc = Math.abs(d - ODLING.faltAvst) + lek + unga;
+    const sc = byAvstand(s, mx, my) + lek + unga;
     if (sc < bs) { bs = sc; best = { x, y }; }
   }
   return best;
@@ -260,9 +299,10 @@ export function startOdla(s: State, p: Person, tk: Task) {
   let f = faltById(s, tk.ref);
   if (!f && tk.tool === 'roja' && !faltOf(s).some(q => q.agare === p.id) && !familjFalt(s, p)) {
     const x = Math.floor(tk.tx), y = Math.floor(tk.ty), n = storlek(s, p);
-    const ny: Falt = { id: 0, x, y, w: bredd(s, p), dir: riktning(s, y), n, agare: p.id, steg: 'roja', klara: 0, kvar: minPer('roja'), rord: s.now };
+    const ny: Falt = { id: 0, x, y, w: bredd(s, p), dir: faltRiktning(s, y), n, agare: p.id, steg: 'roja', klara: 0, kvar: minPer('roja'), rord: s.now };
     let ok = n >= ODLING.faltMin;
-    for (let k = 0; k < n && ok; k++) { const r = rutaXY(ny, k); ok = rutaFri(s, r.x, r.y); }
+    const gr = byGrans(s);
+    for (let k = 0; k < n && ok; k++) { const r = rutaXY(ny, k); ok = rutaFri(s, gr, r.x, r.y); }
     if (ok) {
       f = ny; f.id = s.nextFalt = (s.nextFalt ?? 0) + 1;
       (s.falt ??= []).push(f);
@@ -333,7 +373,8 @@ function nasta(f: Falt, steg: FaltSteg) { f.steg = steg; f.klara = 0; f.kvar = m
 function storre(s: State, p: Person, f: Falt) {
   const mal = Math.min(ODLING.faltMax, storlek(s, p));
   let n = f.n;
-  while (n < mal) { const r = rutaXY(f, n); if (!rutaFri(s, r.x, r.y)) break; n++; }
+  const gr = byGrans(s);
+  while (n < mal) { const r = rutaXY(f, n); if (!rutaFri(s, gr, r.x, r.y)) break; n++; }
   if (n <= f.n) { nasta(f, 'bereda'); return; }
   const fore = f.n;
   f.n = n; s.byggV = (s.byggV ?? 0) + 1;

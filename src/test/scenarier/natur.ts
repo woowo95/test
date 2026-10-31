@@ -1213,7 +1213,7 @@ SCENARIER.odling = {
 };
 
 SCENARIER.falt = {
-  text: 'Steg 2.10.3 och 2.10.13: den som kan odla och har frön röjer ett fält på jorden nära byn, så stort som familjen behöver och fröna räcker till, och gräver upp det och sår ruta för ruta. Grödan växer när det är varmt, skördas när den är mogen och ger mat och nya frön. Frosten dödar den, den mogna ruttnar om ingen skördar, och ett fält som ingen sköter blir gräs igen',
+  text: 'Steg 2.10.3, 2.10.13 och 3.10.14: den som kan odla och har frön röjer ett fält på jorden utanför byn, så stort som familjen behöver och fröna räcker till, och gräver upp det och sår ruta för ruta. Grödan växer när det är varmt, skördas när den är mogen och ger mat och nya frön. Frosten dödar den, den mogna ruttnar om ingen skördar, och ett fält som ingen sköter blir gräs igen',
   kor: () => {
     const s = createState(6, START); // by 6: röjer fält med och utan hela saker (by 7 gjorde det inte efter steg 2.10.7, slumpen)
     s.kal = nyKalender(s.now, 1); klockan(s, 7); tandEld(s);
@@ -1278,6 +1278,20 @@ SCENARIER.falt = {
       SIM.stepOdling(s);
       gras = SIM.faltOf(s).length === n - 1 && (s.stat?.faltIgen ?? 0) === 1;
     }
+    // fälten utanför byn (steg 3.10.14): ett nytt fält ligger utanför byns yttersta hus, station och lagerplats, med
+    // faltStig rutor fritt emellan, och så nära byn som det går. Byn har ett hus så att gränsen ligger en bit ut
+    const gs = createState(6, START); gs.kal = nyKalender(gs.now, 1); klockan(gs, 7); tandEld(gs);
+    medHus(gs);
+    const site = SIM.faltSite(gs, 3, 9), gr = SIM.byGrans(gs), stig = SIM.ODLING.faltStig;
+    const delar = [...SIM.housesOf(gs), ...SIM.zonesOf(gs), ...SIM.stationerOf(gs).filter(t => !SIM.stationDef(t.k)?.utkant).map(t => ({ x: t.x, y: t.y, ...SIM.storlekAv(t) }))];
+    let inpa = 0, innanfor = 0;
+    if (site) for (const i of SIM.faltRutor({ x: site.x, y: site.y, w: 3, n: 9, dir: SIM.faltRiktning(gs, site.y) } as SIM.Falt)) {
+      const x = i % W, y = Math.floor(i / W);
+      if (delar.some(d => x >= d.x - stig && x < d.x + d.w + stig && y >= d.y - stig && y < d.y + d.h + stig)) inpa++;
+      const e = SIM.eldPlats(gs);
+      if (delar.some(d => Math.hypot(d.x - e.x, d.y - e.y) > Math.hypot(x - e.x, y - e.y) + 1.5 && Math.abs(Math.atan2(d.y - e.y, d.x - e.x) - Math.atan2(y - e.y, x - e.x)) < 0.2)) innanfor++;
+    }
+    const narmast = site ? SIM.byAvstand(gs, site.x + 1.5, site.y + 0.5) : Infinity;
     // en sparad by från före steg 2.10.13: fältet blir 2 × 2 rutor när byn laddas
     const gm = cloneState(s);
     gm.falt = [{ id: 1, x: 10, y: 10, agare: 0, steg: 'vaxer', groda: 'rovor', vuxit: 0.5, rord: gm.now } as unknown as SIM.Falt];
@@ -1297,6 +1311,7 @@ SCENARIER.falt = {
       ['frosten i istiden dödar grödan, och ingen sår något nytt förrän det hinner mogna', frost && ingenSadd],
       ['ett fält som ingen skött på länge blir gräs igen', gras],
       ['ett fält i en sparad by från före steget blir 2 × 2 rutor när byn laddas', gammalt],
+      [`ett nytt fält ligger utanför byns hus, stationer och lagerplatser med minst ${stig} rutor fritt emellan (${inpa} rutor för nära, ${innanfor} innanför något, ${narmast.toFixed(1)} rutor från byn)`, !!site && inpa === 0 && innanfor === 0 && narmast <= stig + 1 + SIM.ODLING.faltUtom && gr.ut.some(u => u > 0)],
     ];
   },
 };
