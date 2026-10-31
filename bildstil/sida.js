@@ -1474,6 +1474,19 @@ function tnKarta({ topp, fot, svaj, band, moln = 0, skrap = [] }) {
 const TN_KARTA2 = tnKarta({ topp: 30, fot: 4, svaj: 2, band: 0.7, moln: 7, skrap: [[3, 14, 'j'], [4, 15, 'j'], [27, 20, 'l'], [26, 26, 'J'], [27, 27, 'J'], [5, 30, 'l'], [24, 34, 'j']] });
 const TN_KARTA3 = tnKarta({ topp: 24, fot: 3, svaj: 6, band: 1.2, skrap: [[2, 8, 'l'], [29, 12, 'l'], [3, 22, 'J'], [4, 22, 'J'], [28, 30, 'j'], [27, 31, 'j'], [6, 38, 'l']] });
 const TN_KART_M = p => ({ w: 104, h: 100, rita: (B, P) => { ritaSprite(B, p, TN_L, 2, 50); ritaSprite(B, p.flatMap(r => { const rr = [...r].map(c => c.repeat(2)).join(''); return [rr, rr]; }), TN_L, 38, 2); } });
+// nya symboler för intrycken klåpare, fattig och rik (steg 3.10.5): bara fyllningen; kanten och skuggan snett nedanför läggs på
+// som för de andra intrycken (UTB_KANT och UTB_SKUGGA)
+const IK_NY = (rader, l) => LED_M(UTB_SKUGGA(UTB_KANT(rader)), { z: 'skugga', ...l });
+const IK_IDAG = namn => { const m = IK_MOTIV.find(x => x.namn === namn); return { ...LED_M(UTB_SKUGGA(m.p), { z: 'skugga', ...m.l }) }; };
+const KLA_KRUKA = ['................', '................', '.....aaaaaa.....', '......aaaa......', '.....aaaaaa.....', '....awaaaaaa....', '...awaaaoaa.....', '...awaaaao...ab.', '...aaaaaoa..abb.', '...aaaaaaoa..b..', '...baaaaoaaa....', '....baaaaaaa....', '.....bbbbbb.....', '................', '................', '................'];
+const KLA_YXA = ['................', '...........ss...', '..........sSss..', '..........sSss..', '...........ss...', '........w.......', '.......w..w.....', '......w..w......', '................', '.....hH.........', '....hH..........', '...hH...........', '..hH............', '.hH.............', '................', '................'];
+const KLA_REP = ['................', '................', '....aaaa........', '...a....a.aaa...', '..a..aa..a...a..', '..a.a..a.a.a.a..', '...a.aa.aa.a.a..', '..aa..aa..aa.a..', '.a..a....a..a...', '.a...aaaa.a.a...', '..a..a.....a....', '...aa.a..aa.....', '......aaa..a....', '...........aaa..', '..............a.', '................'];
+const FAT_PUNG = ['................', '................', '................', '................', '......a..a......', '.......aa.......', '......aaaa......', '.....aaaaaa.....', '....aaaaaaaa....', '...aawaaaaaaa...', '...awaaapppaa...', '...aaaaapppaa...', '...baaaaaaaab...', '....bbbbbbbb....', '................', '................'];
+const FAT_SKJORTA = ['................', '................', '....aaa..aaa....', '..aaaaaaaaaaaa..', '.aaaaaaaaaaaaaa.', '.aaaaaaaaaaaaaa.', '.aa.aaaaaapppaa.', '....aaaaaapppa..', '....aa.aaaaaaa..', '....aaaaaaaaaa..', '....aaaaaaaa.a..', '....aaapppaaaa..', '....aaapppaaaa..', '....a.aa.aa.aa..', '................', '................'];
+const FAT_KNYTE = ['................', '..........aaa...', '.........aaaaa..', '........aakaaaa.', '........aaaaaab.', '.........abbbb..', '........s.......', '.......s........', '......s.........', '.....s..........', '....s...........', '...s............', '..s.............', '................', '................', '................'];
+const RIK_PUNG = ['................', '................', '......c..c......', '.......cc.......', '......aaaa......', '.....aaaaaa.....', '....aaaaaaaa....', '...awaaaaaaaa...', '..awaaaaaaaaaa..', '..aaaaaaaaaaaa..', '..aaaaaaaaaaaa..', '..baaaaaaaaaab..', '...baaaaaaaab.y.', '....bbbbbbbb.yy.', '................', '................'];
+const RIK_SKINN = ['................', '................', '................', '...a........a...', '....aaaaaaaa....', '...aaaaaaaaaa...', '..bbbbbbbbbbbb..', '.b.bbbbbbbbbb.b.', '..cccccccccccc..', '.c.cccccccccc.c.', '..dddddddddddd..', '.dddddddddddddd.', '..eeeeeeeeeeee..', '................', '................', '................'];
+const RIK_HALSBAND = ['................', '..c..........c..', '..c..........c..', '...c........c...', '...y........y...', '...Y........Y...', '....y......y....', '....Y......Y....', '.....y....y.....', '......yYYy......', '.......ww.......', '.......ww.......', '.......w........', '................', '................', '................'];
 const VAL = [
   { id: 's_mat', namn: 'Samtal om mat', vad: 'Ny symbol (steg 3.9.5), 16 × 16 punkter, i pratbubblan och personrutan när två pratar om maten eller längtar efter något att äta. Till vänster i rätt storlek, till höger tre gånger större. I spelet nu: version 1 (platshållare).', typ: 'tre',
     versioner: [
@@ -1569,6 +1582,27 @@ const VAL = [
       { text: 'En blå droppe.', ...SYM8_M(TOA_DROPPE, AKT_L) },
       { text: 'En människa som sitter på huk.', ...SYM8_M(TOA_HUK, AKT_L) },
       { text: 'En människa vid en grop.', ...SYM8_M(TOA_GROP, AKT_L) },
+    ] },
+  { id: 'i_klapare', namn: 'Klåpare (intryck)', vad: 'Ny symbol (steg 3.10.5), 16 × 16 punkter, i personrutans Rykten när byn tycker att någon är en klåpare (gjort en usel sak eller träffat någon av misstag). Med mörk kant och skugga snett nedanför, som de andra intrycken. I spelet nu: den gamla symbolen (platshållare), längst till vänster.', typ: 'tre',
+    idag: IK_IDAG('klåpare'),
+    versioner: [
+      { text: 'En lerkruka som spricker, med en bit som lossnar.', ...IK_NY(KLA_KRUKA, { a: 'rost2', b: 'rost1', w: 'rost3' }) },
+      { text: 'En yxa där stenen flyger av skaftet.', ...IK_NY(KLA_YXA, { s: 'skiffer2', S: 'skiffer3', h: 'jord2', H: 'jord3', w: 'ben3' }) },
+      { text: 'Ett rep som trasslat ihop sig.', ...IK_NY(KLA_REP, { a: 'senap1' }) },
+    ] },
+  { id: 'i_fattig', namn: 'Fattig (intryck)', vad: 'Ny symbol (steg 3.10.5), 16 × 16 punkter, i personrutans Rykten när byn tycker att någon är fattig (äger mycket mindre än de andra). I spelet nu: den tomma skålen (platshållare), längst till vänster.', typ: 'tre',
+    idag: IK_IDAG('fattig'),
+    versioner: [
+      { text: 'En tom, slak skinnpung med en lapp.', ...IK_NY(FAT_PUNG, { a: 'jord2', b: 'jord1', w: 'jord3', p: 'oliv2' }) },
+      { text: 'En trasig skjorta med hål och lappar.', ...IK_NY(FAT_SKJORTA, { a: 'ben1', p: 'oliv2' }) },
+      { text: 'Ett litet knyte på en pinne: allt hen äger.', ...IK_NY(FAT_KNYTE, { a: 'ben2', b: 'ben1', k: 'jord1', s: 'jord2' }) },
+    ] },
+  { id: 'i_rik', namn: 'Rik (intryck)', vad: 'Ny symbol (steg 3.10.5), 16 × 16 punkter, i personrutans Rykten när byn tycker att någon är rik (äger mycket mer än de andra), och i invånarlistan bredvid förmögenheten. I spelet nu: korgen med varor (platshållare), längst till vänster.', typ: 'tre',
+    idag: IK_IDAG('rik'),
+    versioner: [
+      { text: 'En full skinnpung, knuten med ett snöre, och bärnsten som rullar ut.', ...IK_NY(RIK_PUNG, { a: 'jord2', b: 'jord1', w: 'jord3', c: 'senap2', y: 'senap3' }) },
+      { text: 'En hög med skinn i olika färger.', ...IK_NY(RIK_SKINN, { a: 'ben2', b: 'jord3', c: 'rost2', d: 'skiffer2', e: 'jord1' }) },
+      { text: 'Ett halsband av bärnsten med en tand i mitten.', ...IK_NY(RIK_HALSBAND, { c: 'jord1', y: 'senap3', Y: 'senap2', w: 'ben3' }) },
     ] },
   { id: 'a_smyga', namn: 'Att smyga', vad: 'Ny symbol över huvudet (Björn efter v159), 8 × 8 punkter som de andra handlingarna: jägaren smyger fram mot en kanin. I spelet nu: version 1 (platshållare).', typ: 'tre',
     versioner: [

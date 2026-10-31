@@ -1,7 +1,7 @@
 import { FORMAGOR, HALSA, Kroppsdel, KROPPSDELAR, NARING, NARINGAR, NARINGBAL, bristGrad, bristerNu, frysFaktor, naringNu, sjunker, skorbjugg, vilaTim, TORST, blodning, delSkada, halsa, skadeLista, skadeText, smarta, torstDelar } from '../../sim';
-import { pratText, relationText, beskrivning, binamnInfo, INTRYCK, Intryck, LARDOMAR, LKind, anseendeSym, dodSymbol, intryckText, samlatIntryck, ACTS, ALDER, Act, DAY, Lardom, HUMOR, SKILL_GOR, STAT_GOR, Skill, Stat, coldOf, halsaLage, hearthOf, living, roomAt, temperature, varmeDelar, viloSlag, viloTak, takEffekt, SLAG, SLAG_TECKEN, Person, KUNSKAPER, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, SEDER, SED_LIST, sedOppen, TEKNIK, BYN, formogenhetDelar, Ting, halvKlar, ageOf, alive, byId, childrenOf, drar, heldBy, ownedBy, PLATSER, PLATS_LIST, Plats, BORDA_KG, UTRUSTNING, bordOf, capacity, kvNamn, handerFor, homeKind, load, utrustning, viktOf, SAKER, ownedStock, sakNamn, slagIkon, tingNamn, STACK, describe, duty, habitShare, habitTotal, KROPP, kortTal, moodOf, num, REL, relKey, relTyper, stat, taskText, timeLabel, vidBordet, upplevelseText, uppEffekt } from '../../sim';
+import { pratText, relationText, beskrivning, binamnInfo, INTRYCK, Intryck, IntryckTyp, anseendeText, intryckOm, LARDOMAR, LKind, anseendeSym, dodSymbol, intryckText, samlatIntryck, ACTS, ALDER, Act, DAY, Lardom, HUMOR, SKILL_GOR, STAT_GOR, Skill, Stat, coldOf, halsaLage, hearthOf, living, roomAt, temperature, varmeDelar, viloSlag, viloTak, takEffekt, SLAG, SLAG_TECKEN, Person, KUNSKAPER, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, SEDER, SED_LIST, sedOppen, TEKNIK, BYN, formogenhetDelar, Ting, halvKlar, ageOf, alive, byId, childrenOf, drar, heldBy, ownedBy, PLATSER, PLATS_LIST, Plats, BORDA_KG, UTRUSTNING, bordOf, capacity, kvNamn, handerFor, homeKind, load, utrustning, viktOf, SAKER, ownedStock, sakNamn, slagIkon, tingNamn, STACK, describe, duty, habitShare, habitTotal, KROPP, kortTal, moodOf, num, REL, relKey, relTyper, stat, taskText, timeLabel, vidBordet, upplevelseText, uppEffekt } from '../../sim';
 import { framstegSvg, hasIcon, iconImg, kvSvg, tecknet } from '../../ikoner';
-import { LAG, fmtN, bar, cap, carryTxt, cssFarg, durTxt, esc, hex, hsl, hjalpOppen, hjalpText, moodWord, pLink, prickar, relWord, sickNow, tempBar, tempOrd, trend, trendD } from '../hjalp';
+import { LAG, ansStapel, ansTecken, fmtN, bar, cap, carryTxt, cssFarg, durTxt, esc, hex, hsl, hjalpOppen, hjalpText, moodWord, pLink, prickar, relWord, sickNow, tempBar, tempOrd, trend, trendD } from '../hjalp';
 import { s, ui } from '../lage';
 import { tekInfo } from './teknik';
 import type { Flik } from '../panel';
@@ -69,8 +69,11 @@ function formogenhetRad(p: Person) {
   return `<dt class="klick" data-hjalp="${id}" title="Värdet av allt hen äger">Förmögenhet</dt><dd class="klick" data-hjalp="${id}">${v(f.sum)}</dd>
     ${hjalpText(id, `<dd class="forkl"><ul class="thoughts">${delar.map(([n, x]) => `<li class="pos">${n} <span>${v(x)}</span></li>`).join('') || '<li>Äger inget</li>'}</ul><p class="muted">Ungefär i arbetstimmar: det det tar att skaffa eller göra sakerna.</p></dd>`)}`;
 }
-// det en upplevelse gjorde med egenskaperna (steg 3.1.2, uppvaxt.ts), till exempel "Mod −2, Uthållighet +1"
-const plusMinus = (v: number) => (v > 0 ? '+' : '−') + Math.abs(v);
+// egenskaper och färdigheter räknas 0–20 men visas på skalan 0–10 (steg 3.10.5): bara visningen ändras
+const SKALA = 2;
+const visa = (v: number, d = 1) => { const x = v / SKALA; return Number.isInteger(x) ? String(x) : num(x, d); };
+// det en upplevelse gjorde med egenskaperna (steg 3.1.2, uppvaxt.ts), till exempel "Mod −1, Uthållighet +0,5"
+const plusMinus = (v: number) => (v > 0 ? '+' : '−') + visa(Math.abs(v));
 const effektText = (e: Partial<Record<Stat, number>>) => (Object.entries(e) as [Stat, number][]).map(([k, v]) => `${STAT_NAMES[k]} ${plusMinus(v)}`).join(', ');
 // en rad med stapel som går att trycka på, eller hålla musen över: då syns vad som påverkar den just nu.
 // delar = det som ändrar värdet (per timme, eller i humörpoäng när enhet är tom), mer = det som inte är en jämn takt
@@ -188,18 +191,18 @@ function egenHtml(p: Person) {
   const now = s.now, d = duty(s, p);
   const statRad = (k: Stat) => {
     const v = stat(p, k, now), id = `e-${k}-${p.id}`, per = stat(p, k, now + DAY) - v; // ett dygn = ett år
-    const nu = Math.abs(per) < 0.005 ? 'Ändras inte med åldern just nu.' : `${per > 0 ? 'Växer' : 'Sjunker'} med åldern: ${per > 0 ? '+' : '−'}${num(Math.abs(per))} om året.`;
+    const nu = Math.abs(per) < 0.005 ? 'Ändras inte med åldern just nu.' : `${per > 0 ? 'Växer' : 'Sjunker'} med åldern: ${per > 0 ? '+' : '−'}${visa(Math.abs(per), 2)} om året.`;
     // det som format egenskapen i barndomen (steg 3.1.2): upplevelserna och anlagen hen föddes med
     const upp = (p.upp ?? []).filter(u => u.e[k]).map(u => `Minne från barndomen (${u.a} år): ${upplevelseText(u)}, ${plusMinus(u.e[k]!)}`);
-    const anlag = p.anlag && uppEffekt(p, k) ? ` Anlaget är ${num(p.anlag[k])}; upplevelserna flyttar det ${plusMinus(Math.round(uppEffekt(p, k)))}.` : '';
+    const anlag = p.anlag && uppEffekt(p, k) ? ` Anlaget är ${visa(p.anlag[k])}; upplevelserna flyttar det ${plusMinus(Math.round(uppEffekt(p, k)))}.` : '';
     const rader = [...upp, ...arbetar(SKILLS.filter(sk => ACTS[sk as Act]?.egenskap === k)), ...STAT_GOR[k]];
-    return `<dt class="klick" data-hjalp="${id}" title="${esc(rader.join(', '))}">${STAT_NAMES[k]}</dt><dd class="klick" data-hjalp="${id}" title="${esc(rader.join(', '))}">${bar(v / 20)}<span>${num(v)}</span></dd>${hjalpText(id, gorHtml(rader, nu + anlag))}`;
+    return `<dt class="klick" data-hjalp="${id}" title="${esc(rader.join(', '))}">${STAT_NAMES[k]}</dt><dd class="klick" data-hjalp="${id}" title="${esc(rader.join(', '))}">${bar(v / 20)}<span>${visa(v)}</span></dd>${hjalpText(id, gorHtml(rader, nu + anlag))}`;
   };
   const skillRad = (k: Skill) => {
     const v = p.skill[k], id = `f-${k}-${p.id}`, tr = trend(p, 'sk_' + k, v), dd = trendD(p, 'sk_' + k);
-    const nu = ovarNu(p, k) ? `Övar just nu${dd ? `: ${dd > 0 ? '+' : ''}${num(dd)} i timmen` : ''}.` : dd ? `Har ändrats ${num(dd)} i timmen den senaste stunden.` : 'Ändras inte just nu. Den växer när hen övar.';
+    const nu = ovarNu(p, k) ? `Övar just nu${dd ? `: ${dd > 0 ? '+' : ''}${visa(dd, 2)} i timmen` : ''}.` : dd ? `Har ändrats ${visa(dd, 2)} i timmen den senaste stunden.` : 'Ändras inte just nu. Den växer när hen övar.';
     const rader = [...arbetar(ACTS[k as Act]?.arbete === k ? [k] : []), ...SKILL_GOR[k]];
-    return `<dt class="klick" data-hjalp="${id}" title="${esc(rader.join(', '))}">${SKILL_NAMES[k]}</dt><dd class="klick" data-hjalp="${id}" title="${esc(rader.join(', '))}">${bar(v / 20, 'skill', tr)}<span>${num(v)}</span></dd>${hjalpText(id, gorHtml(rader, nu))}`;
+    return `<dt class="klick" data-hjalp="${id}" title="${esc(rader.join(', '))}">${SKILL_NAMES[k]}</dt><dd class="klick" data-hjalp="${id}" title="${esc(rader.join(', '))}">${bar(v / 20, 'skill', tr)}<span>${visa(v)}</span></dd>${hjalpText(id, gorHtml(rader, nu))}`;
   };
   return `<dl class="kv">${STATS.map(statRad).join('')}
       ${ageOf(p, now) >= ALDER.hjalper ? `<dt>Pliktkänsla</dt><dd>${bar(d, 'skill')}<span>${d > 0.75 ? 'Plikttrogen' : d > 0.5 ? 'Gör sin del' : d > 0.3 ? 'Bekväm' : 'Lat'}</span></dd>` : ''}</dl>
@@ -226,9 +229,6 @@ function relHtml(p: Person) {
 // rykten och intryck (steg 3.3, 3.4): vad byn tycker om hen, och vad hen tror om andra. Varje intryck är en symbol; ett
 // tryck visar hur säker hen är, varifrån det kommer, om det är överdrivet eller påhittat och händelserna bakom
 const ikTecken = (k: keyof typeof INTRYCK, px = 16) => tecknet('i_' + k, INTRYCK[k].sym, px);
-// anseendet och minnet efter döden som pixelsymboler (steg 3.6.11), med tecknet om bilden saknas
-const ANS_IKON: Record<string, string> = { '★': 'i_legend', '☠': 'i_okand', '😇': 'a_gott', '😐': 'a_blandat', '😈': 'a_daligt' };
-const ansTecken = (a: string, px = 16) => tecknet(ANS_IKON[a] ?? '', a, px);
 // öknamnet eller hedersnamnet (steg 3.9.1): namnet med symbolen; varför kommer fram när man trycker
 function binamnHtml(p: Person) {
   const b = binamnInfo(p);
@@ -244,9 +244,25 @@ function anseende(p: Person) {
   const a = alive(p) ? anseendeSym(s, p.id) : dodSymbol(s, p.id);
   return a ? ` <span class="anseende" title="${esc(alive(p) ? 'Vad byn tycker om hen' : a === '★' ? 'En legend i byn' : 'Ökänd i byn')}">${ansTecken(a)}</span>` : '';
 }
+// Vad byn tycker (steg 3.10.5): anseendet som en stapel med neutralt i mitten och en sammanfattning vid musen (eller ett
+// tryck); varje symbol har ett tecken för om den drar anseendet uppåt eller nedåt, och ett tryck visar vad den betyder och
+// vilka som tycker så
 function ryktenHtml(p: Person) {
-  const byn = samlatIntryck(s, p.id).slice(0, 6);
-  const omHen = byn.length ? `<div class="tekrad">${byn.map(([k]) => { const n = living(s).filter(q => q.intryck?.some(e => e.om === p.id && e.k === k)).length, title = `${n} i byn ser hen som ${INTRYCK[k].namn}`; return `<span class="tnod liten ${INTRYCK[k].tecken > 0 ? 'kan' : 'pa'}" tabindex="0" title="${esc(title)}" aria-label="${esc(title)}">${ikTecken(k)}<span class="antal">${n}</span></span>`; }).join('')}</div>` : '<p class="muted">Byn har ingen särskild bild av hen.</p>';
+  const byn = samlatIntryck(s, p.id).slice(0, 6), sam = anseendeText(s, p.id), hid = `ans-${p.id}`;
+  const huvud = `<div class="anshuvud klick" data-hjalp="${hid}" title="${esc(sam)}">${ansStapel(p.id)}<span class="ansskala"><span>Dåligt</span><span>Neutralt</span><span>Gott</span></span></div>${hjalpText(hid, `<p class="muted small">${esc(sam)}</p>`)}`;
+  const bid = (k: IntryckTyp) => `by-${p.id}-${k}`, upp = (k: IntryckTyp) => INTRYCK[k].tecken > 0;
+  const vem = (k: IntryckTyp) => living(s).flatMap(q => { const e = intryckOm(q, p.id, k); return e ? [{ q, e }] : []; }).sort((a, b) => b.e.v * b.e.c - a.e.v * a.e.c);
+  const syms = byn.map(([k]) => {
+    const title = `${cap(INTRYCK[k].namn)}: ${vem(k).length} i byn tycker så. Drar anseendet ${upp(k) ? 'uppåt' : 'nedåt'}`;
+    return `<button type="button" class="tnod liten ryk" data-hjalp="${bid(k)}" data-hjalp-grupp="by-${p.id}-" title="${esc(title)}" aria-label="${esc(title)}">${ikTecken(k)}<span class="riktn${upp(k) ? '' : ' ned'}">${upp(k) ? '▲' : '▼'}</span><span class="antal">${vem(k).length}</span></button>`;
+  });
+  const vald = byn.map(x => x[0]).find(k => hjalpOppen(bid(k)));
+  const forkl = vald ? (() => {
+    const L = vem(vald), MAX = 10;
+    const namn = L.slice(0, MAX).map(({ q, e }) => `${pLink(q)} <span class="muted">(${intryckText(s, e).sure}${e.src === undefined && !e.led ? ', såg det själv' : ''})</span>`).join(', ');
+    return `<p class="muted small relfork"><b>${esc(cap(INTRYCK[vald].namn))}</b>, drar anseendet ${upp(vald) ? 'uppåt' : 'nedåt'}. ${esc(INTRYCK[vald].betyder)}<br>Tycker så: ${namn}${L.length > MAX ? ` och ${L.length - MAX} till` : ''}.</p>`;
+  })() : '';
+  const omHen = byn.length ? `${huvud}<div class="tekrad">${syms.join('')}</div>${forkl}` : '<p class="muted">Byn har ingen särskild bild av hen.</p>';
   const per = new Map<number, Intryck[]>();
   for (const e of p.intryck ?? []) (per.get(e.om) ?? per.set(e.om, []).get(e.om)!).push(e);
   const rader = [...per.values()].sort((a, b) => sum(b) - sum(a)).slice(0, 12).map(L => {
@@ -386,8 +402,9 @@ const HABIT_GROUPS = (() => {
   // en egen färg per grupp, jämnt fördelad runt färghjulet, så att samma slag alltid har samma färg
   return [...m.values()].map((g, i, all) => ({ ...g, farg: cssFarg(hsl(i * 360 / all.length, 0.45, 0.55)) }));
 })();
-// tårtdiagram över den vakna tiden de senaste dygnen (vanorna bleknar, seder.ts). Små delar slås ihop till Annat
-const SMA = 0.04;
+// tårtdiagram över den vakna tiden de senaste dygnen (vanorna bleknar, seder.ts). Bara de allra minsta delarna slås ihop
+// till Annat (steg 3.10.5)
+const SMA = 0.01;
 let tidVald: string | undefined; // namnet på delen som är markerad med ett tryck
 function tidHtml(p: Person) {
   const tot = habitTotal(p) - (p.habit.sova ?? 0);

@@ -1,5 +1,5 @@
-import { framstegSvg, iconImg, kvSvg } from '../ikoner';
-import { NORMAL, kvEffekt, kvHaller, kvNamn, kvOf, kvVarde, BORDA_KG, bordOf, UTRUSTNING, HOUR, KROPP, LogEntry, MIN, Person, REL, byId, capacity, carryKind, clamp, isParent, isSick, load, num, sak, sakNamn, timeLabel } from '../sim';
+import { framstegSvg, iconImg, kvSvg, tecknet } from '../ikoner';
+import { NORMAL, kvEffekt, kvHaller, kvNamn, kvOf, kvVarde, BORDA_KG, bordOf, UTRUSTNING, HOUR, KROPP, LogEntry, MIN, Person, REL, byId, capacity, carryKind, clamp, isParent, isSick, ledareOf, load, num, ryktbarhet, sak, sakNamn, skadeLista, timeLabel } from '../sim';
 import { s, vidNyBy } from './lage';
 
 // små hjälpare för text, tal, färger och staplar som alla delar av gränssnittet använder
@@ -90,9 +90,27 @@ export const PRICKAR = {
   sjuk: { farg: 0x8fc46a, namn: 'Sjuk', har: sickNow },
   gravid: { farg: 0xf2c4d0, namn: 'Väntar barn', har: (p: Person) => p.pregnantSince !== undefined },
 };
-// prickarna som symboler med förklaringen vid musen; ord = ordet skrivs också ut (rutan i hörnet, som inte går att hålla musen över)
-export const prickar = (p: Person, ord = false) => Object.values(PRICKAR).filter(q => q.har(p))
-  .map(q => ` <span class="prick" style="background:${cssFarg(q.farg)}" title="${q.namn}" aria-label="${q.namn}"></span>${ord ? ' ' + q.namn.toLowerCase() : ''}`).join('');
+// de små symbolerna vid namnet utöver prickarna (steg 3.10.5): ledaren och den som är skadad, med symbolen för den
+// svåraste skadan. namn = det som står vid musen, ikon = bildens nyckel i ikoner.ts
+const MARKEN: { har: (p: Person) => boolean; namn: (p: Person) => string; ikon: (p: Person) => string }[] = [
+  { har: p => ledareOf(s)?.id === p.id, namn: () => 'Byns ledare', ikon: () => 'ledarskap' },
+  { har: p => !!p.skador?.length, namn: p => `Skadad: ${skadeLista(p, s.now).map(r => r.namn.toLowerCase()).join(', ')}`, ikon: p => skadeLista(p, s.now)[0].ikon },
+];
+// prickarna och märkena som symboler med förklaringen vid musen; ord = ordet skrivs också ut (rutan i hörnet, som inte går
+// att hålla musen över)
+export const prickar = (p: Person, ord = false) => MARKEN.filter(m => m.har(p)).map(m => { const n = m.namn(p); return ` <span class="mark" title="${esc(n)}" aria-label="${esc(n)}">${iconImg(m.ikon(p), 12)}</span>${ord ? ' ' + esc(n.toLowerCase()) : ''}`; }).join('')
+  + Object.values(PRICKAR).filter(q => q.har(p))
+    .map(q => ` <span class="prick" style="background:${cssFarg(q.farg)}" title="${q.namn}" aria-label="${q.namn}"></span>${ord ? ' ' + q.namn.toLowerCase() : ''}`).join('');
+// anseendet och minnet efter döden som pixelsymboler (steg 3.6.11, anseendeSym och dodSymbol i rykten.ts), med tecknet om bilden saknas
+const ANS_IKON: Record<string, string> = { '★': 'i_legend', '☠': 'i_okand', '😇': 'a_gott', '😐': 'a_blandat', '😈': 'a_daligt' };
+export const ansTecken = (a: string, px = 16) => tecknet(ANS_IKON[a] ?? '', a, px);
+// anseendet i byn som en stapel med neutralt i mitten (steg 3.10.5): gott minus ont delat med hur känd hen är, och den som
+// knappt är känd står nära mitten (ANS_KAND läggs till ryktbarheten)
+const ANS_KAND = 3;
+export function ansStapel(om: number) {
+  const { r, a } = ryktbarhet(s, om), v = clamp(a / (r + ANS_KAND), -1, 1), w = Math.round(Math.abs(v) * 50);
+  return `<span class="sbar ans${v < 0 ? ' neg' : ''}"><span style="${v >= 0 ? `left:50%;width:${w}%` : `left:${50 - w}%;width:${w}%`}"></span></span>`;
+}
 // en stack i en lista: symbolen och namnet. Ett påbörjat redskap har det det ska bli med timglaset bredvid
 // kvaliteten (steg 2.2.2): nivån och vad den gör jämfört med en normal sak, för texten när musen är över märket (kvSvg)
 const procent = (x: number) => `${x >= 1 ? '+' : '−'}${Math.round(Math.abs(x - 1) * 100)} %`;

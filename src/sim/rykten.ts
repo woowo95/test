@@ -70,26 +70,27 @@ export const RYKTE = balans('rykte', {
 });
 
 // ---------- registren ----------
-// intrycken: ordet, om det är gott (+1) eller ont (-1), hur mycket relationen ändras per styrka (op) och symbolen (platshållare)
-interface IntryckDef { namn: string; tecken: 1 | -1; op: number; sym: string }
+// intrycken: ordet, om det är gott (+1) eller ont (-1), hur mycket relationen ändras per styrka (op) och symbolen (platshållare).
+// Det som visas (steg 3.10.5): som = ordet i en mening när det är ett substantiv ("en tjuv"), och betyder = vad intrycket betyder
+interface IntryckDef { namn: string; tecken: 1 | -1; op: number; sym: string; som?: string; betyder: string }
 const IDEF = {
-  valdsam: { namn: 'våldsam', tecken: -1, op: -40, sym: '👊' },
-  tjuv: { namn: 'tjuv', tecken: -1, op: -30, sym: '🦝' },
-  elak: { namn: 'elak', tecken: -1, op: -20, sym: '😠' },
-  logn: { namn: 'lögnare', tecken: -1, op: -20, sym: '🤥' },
-  klapare: { namn: 'klåpare', tecken: -1, op: -6, sym: '🤡' },
-  lat: { namn: 'lat', tecken: -1, op: -8, sym: '💤' },
-  fattig: { namn: 'fattig', tecken: -1, op: 0, sym: '🪶' },
-  generos: { namn: 'generös', tecken: 1, op: 15, sym: '🎁' },
-  hjalpsam: { namn: 'hjälpsam', tecken: 1, op: 25, sym: '🤝' },
-  skicklig: { namn: 'skicklig', tecken: 1, op: 12, sym: '⭐' },
-  flitig: { namn: 'flitig', tecken: 1, op: 8, sym: '💪' },
-  rik: { namn: 'rik', tecken: 1, op: 0, sym: '💰' },
-  rattvis: { namn: 'rättvis', tecken: 1, op: 10, sym: '⚖️' }, // ledarens straff (steg 3.5.3, styre.ts)
-  orattvis: { namn: 'orättvis', tecken: -1, op: -15, sym: '🙅' },
-  stark: { namn: 'stark', tecken: 1, op: 4, sym: '🥊' }, // vann ett slagsmål (steg 3.7.2, strid.ts)
-  feg: { namn: 'feg', tecken: -1, op: -5, sym: '🐔' },
-  vargdodare: { namn: 'vargdödare', tecken: 1, op: 5, sym: '🐺' }, // dödade en varg (steg 3.7.1, varg.ts) // backade från en strid (steg 3.7.9, strid.ts)
+  valdsam: { namn: 'våldsam', tecken: -1, op: -40, sym: '👊', betyder: 'Har slagit, misshandlat eller dödat någon, eller gått på någon för att ta något.' },
+  tjuv: { namn: 'tjuv', tecken: -1, op: -30, sym: '🦝', som: 'en tjuv', betyder: 'Har tagit saker som var någon annans, i smyg eller med våld.' },
+  elak: { namn: 'elak', tecken: -1, op: -20, sym: '😠', betyder: 'Har varit elak mot någon.' },
+  logn: { namn: 'lögnare', tecken: -1, op: -20, sym: '🤥', som: 'en lögnare', betyder: 'Har ljugit eller överdrivit om någon. Man tror mindre på det hen berättar.' },
+  klapare: { namn: 'klåpare', tecken: -1, op: -6, sym: '🤡', som: 'en klåpare', betyder: 'Har gjort en usel sak, eller träffat någon av misstag i en strid.' },
+  lat: { namn: 'lat', tecken: -1, op: -8, sym: '💤', betyder: 'Arbetar mycket mindre än de andra i byn.' },
+  fattig: { namn: 'fattig', tecken: -1, op: 0, sym: '🪶', betyder: 'Äger mycket mindre än de andra i byn.' },
+  generos: { namn: 'generös', tecken: 1, op: 15, sym: '🎁', betyder: 'Ger bort saker till andra.' },
+  hjalpsam: { namn: 'hjälpsam', tecken: 1, op: 25, sym: '🤝', betyder: 'Har gett något till någon som höll på att dö.' },
+  skicklig: { namn: 'skicklig', tecken: 1, op: 12, sym: '⭐', betyder: 'Har gjort ett mästerverk.' },
+  flitig: { namn: 'flitig', tecken: 1, op: 8, sym: '💪', betyder: 'Arbetar mycket mer än de andra i byn.' },
+  rik: { namn: 'rik', tecken: 1, op: 0, sym: '💰', betyder: 'Äger mycket mer än de andra i byn.' },
+  rattvis: { namn: 'rättvis', tecken: 1, op: 10, sym: '⚖️', betyder: 'Har dömt rättvist som ledare.' }, // ledarens straff (steg 3.5.3, styre.ts)
+  orattvis: { namn: 'orättvis', tecken: -1, op: -15, sym: '🙅', betyder: 'Har dömt orättvist som ledare.' },
+  stark: { namn: 'stark', tecken: 1, op: 4, sym: '🥊', betyder: 'Har vunnit ett slagsmål.' }, // vann ett slagsmål (steg 3.7.2, strid.ts)
+  feg: { namn: 'feg', tecken: -1, op: -5, sym: '🐔', betyder: 'Har backat från en strid.' }, // backade från en strid (steg 3.7.9, strid.ts)
+  vargdodare: { namn: 'vargdödare', tecken: 1, op: 5, sym: '🐺', som: 'en vargdödare', betyder: 'Har dödat en varg.' }, // dödade en varg (steg 3.7.1, varg.ts)
 } satisfies Record<string, IntryckDef>;
 export type IntryckTyp = keyof typeof IDEF;
 export const INTRYCK: Record<IntryckTyp, IntryckDef> = IDEF;
@@ -446,6 +447,15 @@ export function dodSymbol(s: State, om: number) {
 export function anseendeSym(s: State, om: number) {
   const { r, a } = ryktbarhet(s, om);
   return r < 0.3 ? '' : a > r * 0.3 ? '😇' : a < -r * 0.3 ? '😈' : '😐';
+}
+// anseendet i ord och vad byn tycker (steg 3.10.5), till exempel "Dåligt anseende: byn tycker att hen är våldsam och en
+// lögnare". De intryck som är minst en fjärdedel så starka som det starkaste kommer med, högst tre
+export function anseendeText(s: State, om: number) {
+  const a = anseendeSym(s, om), top = samlatIntryck(s, om);
+  if (!a || !top.length) return 'Byn har ingen särskild bild av hen.';
+  const ord = top.filter(([, v]) => v >= top[0][1] / 4).slice(0, 3).map(([k]) => INTRYCK[k].som ?? INTRYCK[k].namn);
+  const lista = ord.length > 1 ? `${ord.slice(0, -1).join(', ')} och ${ord[ord.length - 1]}` : ord[0];
+  return `${a === '😇' ? 'Gott' : a === '😈' ? 'Dåligt' : 'Blandat'} anseende: byn tycker att hen är ${lista}.`;
 }
 
 // ---------- varningar och larm (steg 3.7.11) ----------
