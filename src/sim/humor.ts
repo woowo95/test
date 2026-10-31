@@ -230,7 +230,7 @@ export function flyttaUt(s: State, p: Person) {
   if (folk.some(q => q.id === p.partner) || folk.filter(q => q !== p && ageOf(q, now) >= ALDER.vuxen).length < HUMOR.flyttaVuxna) return false;
   const barn = folk.filter(c => isParent(p, c) && ageOf(c, now) < ALDER.vuxen && !folk.some(o => o !== p && isParent(o, c)));
   utbrottBorjar(s, p, 'flytta');
-  for (const g of [p, ...barn]) leave(s, g);
+  leave(s, p, ...barn);
   count(s, 'utvandrade', 1 + barn.length);
   return true;
 }

@@ -280,6 +280,7 @@ function doma(s: State, l: Person) {
     log(s, `${l.name} ${STRAFF[steg]} ${q.name} för att ${hon(q)} ${brottText(b)}.`, 'rel', [l.id, q.id]);
     allmant(s, q, b, STR.hord, sett); // de som ser straffet får höra om brottet
     think(q, `Straffades av ${l.name}`, -STR.tanke * (steg + 1), now, STR.tankeDygn * DAY);
+    const familj = living(s).filter(f => f !== l && (f === q || f.partner === id || isKin(f, q))); // innan den utvisade har lämnat byn och partnern
     if (steg === 1) q.skam = now + STR.skamDygn * DAY;
     if (steg === 2) { const dod = skada(s, q, 'bal', 'blamarke', STR.slagG, 'drap', `när ${l.name} straffade hen`); if (dod) { r.dog = true; die(s, q, dod); continue; } }
     if (steg === 3) { kronikaBer(s, 'k_utvisad', q.id, { ...personFalt(q), ledare: l.name, varfor: `för att ${hon(q)} ${brottText(b)}` }); count(s, 'utvisad'); leave(s, q); }
@@ -288,7 +289,7 @@ function doma(s: State, l: Person) {
       handelse(s, l, 'orattvisDom', q);
       st.oratt = legitimitet(s).oratt + STR.oratt; st.orattT = now;
       r.oratt = true; r.leg = STR.oratt; r.van = 0;
-      for (const f of living(s)) if (f !== l && (f === q || f.partner === id || isKin(f, q))) {
+      for (const f of familj) {
         const rel = s.rels[relKey(l.id, f.id)];
         if (rel) { rel.op = clamp(rel.op - (f === q ? STR.straffadOp : STR.familjOp), -100, 100); r.van++; }
       }

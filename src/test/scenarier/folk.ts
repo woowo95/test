@@ -226,12 +226,15 @@ SCENARIER.utflyttning = {
     flytta(e.s);
     const gick = e.s.people.filter(q => q.left !== undefined);
     const vuxna = gick.filter(q => ageOf(q, q.left!) >= SIM.ALDER.vuxen);
+    // den som utvisas lämnar ensam: partnern som blir kvar släpper hen, som när någon dör (kodgenomgången 3.10.25)
+    const u = ny(); SIM.leave(u.s, u.c);
     return [
       [`byn är trång (${pop0} invånare) och missnöjd, och efter ${((s.now - START) / HOUR).toFixed(0)} timmar flyttade ${s.stat?.utvandrade ?? 0}`, (s.stat?.utvandrade ?? 0) > 0],
       [`det unga paret flyttade med sina två barn under 14 år (${grupp.filter(q => q.left !== undefined).length} av 4), och barnet på 15,5 år och det äldre paret blev kvar`, grupp.every(q => q.left !== undefined && !kvar.includes(q)) && s.stat?.utvandrade === 4 && kvar.includes(stor) && kvar.includes(c) && kvar.includes(d) && kvar.length === pop0 - 4],
       [`de som flyttade har ingen uppgift kvar`, grupp.every(q => q.task === undefined)],
       [`de tog med sig ${tog.toFixed(1)} av sitt eget kött (de ägde 40), resten blev byns${agt.length ? ` (äger fortfarande: ${agt.join(', ')})` : ''}`, tog > 0 && tog <= 40 + 1e-6 && !agt.length && ownedSum(s, 'kott') < 1e-9 && ownedSum(s, 'bar') < 1e-9],
       [`utan ungt par gav sig en ensam ung vuxen av, med sina barn under 14 år (${gick.map(q => `${q.name}, ${ageOf(q, q.left!).toFixed(1)} år`).join('; ') || 'ingen'})`, vuxna.length === 1 && vuxna[0]!.partner === undefined && ageOf(vuxna[0]!, vuxna[0]!.left!) >= 16 && ageOf(vuxna[0]!, vuxna[0]!.left!) < 40 && gick.every(q => q === vuxna[0] || SIM.isParent(vuxna[0]!, q) && ageOf(q, q.left!) < SIM.ALDER.vuxen) && e.s.stat?.utvandrade === gick.length && !living(e.s).some(q => SIM.isParent(vuxna[0]!, q) && ageOf(q, e.s.now) < SIM.ALDER.vuxen)],
+      [`paret som flyttade tillsammans är fortfarande ett par, och den som blir kvar när partnern utvisas släpper hen (${u.d.partner === undefined ? 'släppte' : 'har kvar ' + u.c.name})`, a.partner === b.id && b.partner === a.id && u.d.partner === undefined],
     ];
   },
 };
