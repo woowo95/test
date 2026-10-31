@@ -1567,6 +1567,12 @@ SCENARIER.kallar = {
     const kan = living(b.s).filter(q => ageOf(q, b.s.now) >= SIM.ALDER.vaktFran && ageOf(q, b.s.now) < SIM.ALDER.vaktTill).length;
     while (b.f.vargar.length < Math.ceil(SIM.VARG.fler * kan / SIM.VARG.vagar)) b.f.vargar.push(10_000_008 + b.f.vargar.length); // så många att modet avgör
     const r2 = forsok(b.s, b.f);
+    // en jakt som avbryts (larm, toa, skada) är slut: flocken minns inga jägare, så att byn kan kalla igen (kodgenomgången 3.10.25)
+    const av = by(); av.vuxna[3].pot.mod = 16; av.f.sag = av.vuxna[3].id;
+    for (let i = 0; i < 40 && !av.f.jagare; i++) SIM.jaktBeslut(av.s, av.f, living(av.s));
+    const avJag = av.f.jagare?.length ?? 0;
+    for (const id of av.f.jagare ?? []) SIM.byId(av.s, id)!.task = undefined;
+    step(av.s, SIM.BEAT);
     // gehöret: samma by, en känd vargdödare med hög karisma mot en okänd med låg; antalet som följer i 20 jakter vardera
     let hog = 0, lag = 0, hogJ = 0, lagJ = 0;
     for (let i = 0; i < 20; i++) {
@@ -1576,6 +1582,7 @@ SCENARIER.kallar = {
       const y = forsok(l.s, l.f); if (y.k === kl) { lag += y.n - 1; lagJ++; }
     }
     return [
+      [`en avbruten vargjakt är slut: ${avJag} jägare slutade jaga, och flocken ${av.f.jagare ? 'väntar fortfarande på dem' : 'minns inga jägare'} efter ett slag`, avJag > 0 && !av.f.jagare],
       [`den som såg flocken kallar till vargjakt fast hen inte leder byn (${r1.k?.name ?? 'ingen'}, ${r1.n} gick)`, r1.k === sag],
       [`den som såg den men inte vågar kallar inte; ${r2.k?.name ?? 'ingen'} kallade i stället`, !!r2.k && r2.k !== rad],
       [`en känd vargdödare med hög karisma får fler med sig än en okänd med låg (${hog} följde i ${hogJ} jakter mot ${lag} i ${lagJ})`, hogJ > 0 && hog / Math.max(1, hogJ) > lag / Math.max(1, lagJ)],

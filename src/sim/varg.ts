@@ -257,10 +257,15 @@ function flockSteg(s: State, f: Vargflock, folk: Person[], dtSec: number) {
     if (ga(s, f, VARG.flyFart, dtSec) < 0.5) { f.vargar = []; count(s, 'vargflockBorta'); }
     return;
   }
-  // jägarna går mot flocken (som inte märker dem förrän de är nära)
-  if (f.jagare) for (const id of f.jagare) {
-    const q = byId(s, id), tk = q?.task;
-    if (tk?.act === 'vargjakt' && tk.phase === 'go' && Math.hypot(tk.tx - f.x, tk.ty - f.y) > 3) { const sp = freeNear(s, f.x, f.y); tk.tx = sp.x; tk.ty = sp.y; }
+  // jägarna går mot flocken (som inte märker dem förrän de är nära). Den som inte längre jagar (avbruten, larm, skadad) är inte
+  // med, och när ingen jagar är jakten slut: då kan byn kalla till en ny och flocken undviker grupper igen
+  if (f.jagare) {
+    f.jagare = f.jagare.filter(id => byId(s, id)?.task?.act === 'vargjakt');
+    if (!f.jagare.length) { f.jagare = undefined; f.samlas = undefined; }
+    for (const id of f.jagare ?? []) {
+      const tk = byId(s, id)!.task!;
+      if (tk.phase === 'go' && Math.hypot(tk.tx - f.x, tk.ty - f.y) > 3) { const sp = freeNear(s, f.x, f.y); tk.tx = sp.x; tk.ty = sp.y; }
+    }
   }
   if (f.gor === 'anfaller') {
     const p = f.byte !== undefined ? byId(s, f.byte) : undefined;
