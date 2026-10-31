@@ -11,7 +11,7 @@ import { ALDER, KROPP, REL, ageOf, count, isSick, living, relKey, stat } from '.
 import { RELT, bredvidVikt } from './relationer';
 import { onskan } from './naring';
 import { halsa, hemma, kanGa, vardVal, vilaHellre } from './halsa';
-import { harMat } from './behov';
+import { egnaMatDygn, harMat } from './behov';
 import { FANGST, Kind, Lager, flintSpot, richness, wantsFlint } from './fynd';
 import { coldOf, nederbord, temperature } from './vader';
 import { varselSamla } from './motgang';
@@ -96,6 +96,7 @@ const VAL = balans('val', {
   behovTomt: 3.2, behovMax: 3.5, // vikten av ett tomt förråd av mat eller ved, och den högsta vikten
   matDygn: 1.1, matMin: 0.4, // för mat: förrådets dygn dämpar vikten ner till Min, när förrådet räcker så länge byn vill (onskatLager) ...
   matMatt: 2, matMinMatt: 0.04, // ... och sedan vidare ner till MinMatt när det räcker Matt gånger så länge: då upphör matarbetet nästan (steg 3.10.9)
+  egenDygn: 1.5, // den som har mat för kortare tid än så själv (sin egen, byns och familjens) arbetar för maten, hur fullt byns förråd än är (steg 3.10.26)
   vedDygn: 2, vedMin: 0.15, // ... och för ved
   tandMin: 0.8, tandVikt: 3, // tändmaterial: årstiden räknas minst Min, gånger Vikt
   prospektMin: 0.05, prospektMax: 1.3, // hur mycket platserna ger just nu räknas mellan dessa
@@ -478,7 +479,7 @@ function day(s: State, p: Person, v: Val, a: number, lazy: number) {
   if (a >= ALDER.rensar && canProcess(s, p, DJUR.abborre) && rnd(s, 'val', p) < VAL.rensaChans) { processTask(s, v, DJUR.abborre, 'Det finns fisk att rensa innan den blir dålig'); return; }
   if (a >= ALDER.grillar && kanTorka(s, p) && rnd(s, 'val', p) < torkAndel(pabud(s, 'torkat'))) { torkVal(s, v, 'Det finns kött och fisk att torka'); return; }
   if (a >= ALDER.grillar && kanGrilla(s, p) && rnd(s, 'val', p) < VAL.grillaChans) { grillVal(s, v, 'Det finns rått kött och rå fisk att grilla'); return; }
-  let { best, bs, burg } = bestWork(s, p, fd, wd, ai, tot, fara);
+  let { best, bs, burg, egen } = bestWork(s, p, fd, wd, ai, tot, fara);
   // bygget: väger mer ju fler som saknar sovplats under tak, inför och under istiden, när en vägg behöver lagas och när huset inte är klart.
   // När kylan är en fara byggs inget: tiden går till värmen (steg 2.12.3)
   const job = fara.kyla ? undefined : buildJob(s, p), ppl = living(s);
@@ -506,7 +507,7 @@ function day(s: State, p: Person, v: Val, a: number, lazy: number) {
   const tandmat = !leta && !(build && job!.missing) && best === 'samla' && needTinder(s); // samlar tändmaterial åt en släckt eld
   // skälet "behöver mat" bara när förrådet räcker kortare än byn vill (steg 3.10.9)
   const what = leta ? `Byn behöver ${needStones(s) ? 'stenar' : 'flinta'}` : build && job!.missing ? `Bygget behöver ${job!.item === 'torrgras' ? 'hö' : job!.item === 'ved' ? 'trä' : 'grenar'}` : best === 'ved' ? `Byn behöver trä, förrådet räcker ${dygn(wd)}` : tandmat ? 'Byn behöver tändmaterial till elden'
-    : fd < matOnskat(s, p) ? `Byn behöver mat, förrådet räcker ${dygn(fd)}` : `Mer mat till förrådet, som räcker ${dygn(fd)}`;
+    : egen !== undefined && ACTS[best].behov === 'mat' ? `Behöver egen mat, har för ${dygn(egen)}` : fd < matOnskat(s, p) ? `Byn behöver mat, förrådet räcker ${dygn(fd)}` : `Mer mat till förrådet, som räcker ${dygn(fd)}`;
   let works = false;
   if (a >= ALDER.ansvar && (s.fire.ash ?? 0) >= 1 && !s.fire.lit && !emberOn(s) && fireWant(s) < VAL.kolEld && rnd(s, 'val', p) < VAL.kolChans && !ppl.some(q => q.task?.act === 'kol')) {
     set(v, 'kol', 'Det ligger kol kvar i den slocknade elden');
@@ -545,8 +546,10 @@ function bestWork(s: State, p: Person, fd: number, wd: number, ai: number, tot: 
   const mer = p.varsel ? varselSamla(s, p) : 0;
   const fs = 1 + VAL.forsiktig * pabud(s, 'matlager') + mer, vs = 1 + VAL.forsiktig * pabud(s, 'vedlager') + mer;
   const onskat = matOnskat(s, p);
-  const wFood = fd < onskat ? clamp(VAL.behovTomt - fd / (VAL.matDygn * fs), VAL.matMin, VAL.behovMax)
+  const wBy = fd < onskat ? clamp(VAL.behovTomt - fd / (VAL.matDygn * fs), VAL.matMin, VAL.behovMax)
     : Math.max(VAL.matMinMatt, VAL.matMin - (VAL.matMin - VAL.matMinMatt) * (fd - onskat) / (onskat * (VAL.matMatt - 1)));
+  const egen = egnaMatDygn(s, p), wEgen = egen < VAL.egenDygn ? VAL.behovTomt - egen / VAL.egenDygn * (VAL.behovTomt - VAL.matMin) : 0; // steg 3.10.26
+  const wFood = Math.max(wBy, wEgen);
   const wWood = clamp(VAL.behovTomt - wd / (VAL.vedDygn * vs), VAL.vedMin, VAL.behovMax) * (kallTid(ai) ? ARSTID.vedKall : 1); // inför och under istiden väger veden tyngre
   const vikt = { mat: wFood, ved: wWood };
   let best: Act = 'samla', bs = -1, burg = 0;
@@ -564,7 +567,7 @@ function bestWork(s: State, p: Person, fd: number, wd: number, ai: number, tot: 
     burg = Math.max(burg, col);
     if (sc > bs) { bs = sc; best = w; }
   }
-  return { best, bs, burg };
+  return { best, bs, burg, egen: wEgen > wBy ? egen : undefined };
 }
 
 // att bygga eller laga en del av ett hus. Saknas material hämtar man det först

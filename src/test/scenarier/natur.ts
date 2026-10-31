@@ -394,7 +394,7 @@ SCENARIER.natur = {
   text: 'Maten sätter taket (steg 1.7.2): byn minns hur gott om mat den haft det senaste året. Är maten knapp föds färre barn, fler flyttar och färre nybyggare stannar, men en liten by flyttar inte för maten',
   kor: () => {
     const s = createState(5, START), n0 = s.people.length, mat = () => setMat(s, { torrkott: living(s).reduce((t, p) => t + kroppensMat(p, s.now), 0) * 12 }); // torkat kött, som hinner ätas innan det ruttnar (steg 3.10.9)
-    mat(); s.matSnitt = 0.9; // tolv dygns mat i förrådet, men ett knappt år bakom sig
+    mat(); s.matSnitt = 0.5; // tolv dygns mat i förrådet, men ett knappt år bakom sig (0,9 före steg 3.10.26, när LIV.matGottFran var 1)
     const fore = barnMat(s, 12), flytt = flyttLitenBy(s);
     for (let t = 0; t < 3 * STEG_DYGN; t++) { regulate(s, BEAT); if (s.people.length !== n0) { s.people.length = n0; mat(); } } // (nybyggare skickas vidare)
     const efter = s.matSnitt!;
@@ -402,7 +402,7 @@ SCENARIER.natur = {
     mat(); const kropp = living(s).reduce((t, p) => t + kroppensMat(p, s.now), 0) / living(s).length, dagar = { kropp: foodDays(s), mer: 0, mindre: 0 };
     s.atTakt = kropp * 2; dagar.mer = foodDays(s); s.atTakt = kropp / 2; dagar.mindre = foodDays(s); s.atTakt = undefined;
     return [
-      [`ett knappt år: färre barn (${fore.toFixed(2)} av det vanliga) och fler flyttar (${hungerFlytt({ ...s, matSnitt: 0.9 } as State, 12).toFixed(2)} per dygn) i en by på 12`, fore < 0.5 && hungerFlytt({ ...s, matSnitt: 0.9 } as State, 12) > 0.5],
+      [`ett knappt år: färre barn (${fore.toFixed(2)} av det vanliga) och fler flyttar (${hungerFlytt({ ...s, matSnitt: 0.5 } as State, 12).toFixed(2)} per dygn) i en by på 12`, fore < 0.5 && hungerFlytt({ ...s, matSnitt: 0.5 } as State, 12) > 0.5],
       [`en by på sex flyttar inte för maten och får lika många barn (${flytt})`, flytt === 'ingen'],
       [`efter tre dygn (tre år i spelet) med tolv dygns mat har snittet nått dit (${efter.toFixed(1)})`, efter > 11 && efter < 12.1],
       [`gott om mat: inga färre barn, ingen flytt för maten (${matGott(s).toFixed(2)})`, matGott(s) === 1 && barnMat(s, 12) === 1 && hungerFlytt(s, 12) === 0],

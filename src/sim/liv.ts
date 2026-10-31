@@ -38,7 +38,7 @@ const LIV = balans('liv', {
   parChans: 0.35, // chansen att en nybyggare kommer med en partner
   medhavd: 2, // rötter nybyggaren har med sig från vandringen (MEDHAVT nedan)
   // hur gott om mat byn haft (matGott): 0 vid matGottFran dygns mat i snitt, 1 vid Fran + Spann eller mer
-  matGottFran: 1, matGottSpann: 2.5, matStart: 4, // (1,4 och 2,7 före steg 2.12.6: hela familjer flyttade fast maten räckte) // en by som ännu saknar snitt räknas som om den hade Start dygns mat
+  matGottFran: 0.6, matGottSpann: 1.5, matStart: 4, // (1 och 2,5 före steg 3.10.26, samma skäl som STEG.matDygn; 1,4 och 2,7 före steg 2.12.6: hela familjer flyttade fast maten räckte) // en by som ännu saknar snitt räknas som om den hade Start dygns mat
   matSnittDygn: 1, // snittet glider över så många dygn (ett år i spelet)
   barnMatTapp: 0.6, barnMatFran: 6, barnMatSpann: 4, // knapp mat ger så här mycket färre barn, från sju invånare (full effekt vid Fran + Spann)
   hungerTakt: 0.6, hungerFran: 7, hungerSpann: 4, // knapp mat får så här många att flytta per dygn, från åtta invånare
