@@ -27,7 +27,12 @@ export const LED = balans('ledare', {
   vuxna: 6, // en ledare väljs först när byn har minst så här många vuxna ...
   anseende: 0, // ... bland dem som kan ledarskap och inte har ett anseende under detta (rykten.ts)
   karisma: 2, // valet: stödet (relationen till de andra vuxna, -100 till 100) plus karisman gånger så här mycket
-  vis: 14, // titeln Den vise: intelligens minst så här
+  // titlarna (steg 3.10.18): Kung eller Drottning och Jarl från så här många invånare och så här mycket Envälde
+  kungFolk: 60, kungRang: 0.85, jarlFolk: 30, jarlRang: 0.6,
+  jarnHard: 1.6, jarnLeg: 0.3, // Järnhanden: hårdheten utan humöret (straff) minst så här, och legitimiteten under så här
+  krig: 3, // Krigshövding: vargjakter och strider med vargar under ledarens tid, minst så här många
+  vis: 14, // Den vise: intelligens minst så här
+  faderStod: 0.75, faderEmp: 14, // Byfader eller Bymoder: stödet (legitimiteten) och empatin minst så här
   hovding: 0.35, // styrelseformen är ett hövdingadöme från så här mycket Envälde
   // ledarens vikt i sederna: byns vikt gånger sedVikt × (1 + sedRang × Envälde) × (sedLegBas + legitimiteten)
   sedVikt: 0.5, sedRang: 1, sedLegBas: 0.5,
@@ -62,20 +67,29 @@ export const STR = balans('straff', {
 });
 
 // ---------- registren ----------
-// titlarna (bara text), i den ordning de prövas
-const TITLAR: { namn: string; passar: (s: State, p: Person, vuxna: Person[]) => boolean }[] = [
-  { namn: 'Storjägaren', passar: (_s, p) => p.tag === 'Jägare' },
-  { namn: 'Äldste', passar: (s, p, v) => ageOf(p, s.now) >= ALDER.aldre && v.every(q => ageOf(q, s.now) <= ageOf(p, s.now)) },
-  { namn: 'Den vise', passar: (_s, p) => p.pot.intelligens >= LED.vis },
-  { namn: 'Talesperson', passar: () => true },
+// titlarna (bara text, steg 3.10.18), i den ordning de prövas: den första som passar vinner. namn = [mannens, kvinnans].
+// Titeln väljs när ledaren väljs och ses över varje årstid när påbuden sätts. Präst och schaman hör till religionen
+interface TitelLage { vuxna: Person[]; folk: number; rang: number; leg: number; stod: number; hard: number; krig: number }
+const TITLAR: { namn: [string, string]; passar: (s: State, p: Person, x: TitelLage) => boolean }[] = [
+  { namn: ['Kung', 'Drottning'], passar: (_s, _p, x) => x.folk >= LED.kungFolk && x.rang >= LED.kungRang },
+  { namn: ['Jarl', 'Jarl'], passar: (_s, _p, x) => x.folk >= LED.jarlFolk && x.rang >= LED.jarlRang },
+  { namn: ['Järnhanden', 'Järnhanden'], passar: (_s, _p, x) => x.hard >= LED.jarnHard && x.leg < LED.jarnLeg }, // ett öknamn som folket använder
+  { namn: ['Krigshövding', 'Krigshövding'], passar: (_s, _p, x) => x.krig >= LED.krig }, // och seden Fejd när den finns (9.2.3)
+  { namn: ['Hövding', 'Hövding'], passar: (_s, _p, x) => x.rang >= LED.hovding },
+  { namn: ['Storjägare', 'Storjägare'], passar: (_s, p) => p.tag === 'Jägare' },
+  { namn: ['Den vise', 'Den visa'], passar: (_s, p) => p.pot.intelligens >= LED.vis },
+  { namn: ['Byfader', 'Bymoder'], passar: (s, p, x) => x.stod >= LED.faderStod && stat(p, 'empati', s.now) >= LED.faderEmp },
+  { namn: ['Äldste', 'Äldsta'], passar: (s, p, x) => ageOf(p, s.now) >= ALDER.aldre && x.vuxna.every(q => ageOf(q, s.now) <= ageOf(p, s.now)) },
+  { namn: ['Ålderman', 'Ålderman'], passar: () => true }, // byns valda förman
 ];
+const TITELNAMN = new Set(TITLAR.flatMap(t => t.namn));
 const hon = (p: Person) => p.sex === 'k' ? 'hon' : 'han', hennes = (p: Person) => p.sex === 'k' ? 'hennes' : 'hans';
 const stor = (t: string) => t[0].toUpperCase() + t.slice(1);
 // styrelseformerna: namnet och texten byggs ur sederna (fler former när de finns, 9.2), den första som passar
 const FORMER: { namn: string; passar: (s: State) => boolean; text: (l: Person, titel: string) => string }[] = [
   { namn: 'Hövdingadöme', passar: s => (s.seder.v.rang ?? 0) >= LED.hovding,
     text: (l, t) => `${l.name}, ${t.toLowerCase()}, bestämmer över byn. ${stor(hon(l))} dömer hårt, och byn gör som ${hon(l)} säger.` },
-  { namn: 'Talesperson', passar: () => true,
+  { namn: 'Folkting', passar: () => true,
     text: (l, t) => `Byn lyssnar på ${l.name}, ${t.toLowerCase()}. ${stor(hon(l))} bestämmer inte mycket själv, men ${hennes(l)} ord väger tungt. När ${hon(l)} dör väljer byn en ny bland dem som kan leda.` },
 ];
 // vågskålarna: sederna som låses upp av styret, i den ordning de visas. steg = när en låst vågskål byggs
@@ -100,10 +114,11 @@ function lagerAsikt(s: State, l: Person) {
 }
 
 // ---------- data ----------
-export interface Ledare { id: number; namn: string; titel: string; fran: number; till?: number; slut?: string }
+export interface Ledare { id: number; namn: string; titel: string; forr?: string[]; fran: number; till?: number; slut?: string } // forr: titlarna före den sista
 export interface Styre {
   ledare?: number; sedan?: number; titel?: string; // ledaren nu, när hen valdes och titeln
   vintrar?: number; // istider byn klarat under ledaren
+  krig0?: number; // byns vargjakter och strider med vargar när ledaren valdes (titeln Krigshövding)
   ai?: number; // årstiden förra timmen
   historia: Ledare[]; // alla ledare
   oppna: string[]; // vågskålarna som låsts upp
@@ -182,13 +197,30 @@ function valj(s: State) {
   }
   if (!best) return;
   const st = styreOf(s), forsta = !st.historia.length;
-  const titel = TITLAR.find(t => t.passar(s, best!, vuxna))!.namn;
-  st.ledare = best.id; st.sedan = s.now; st.titel = titel; st.vintrar = 0; st.pabud = undefined; st.oratt = 0;
+  st.ledare = best.id; st.sedan = s.now; st.vintrar = 0; st.pabud = undefined; st.oratt = 0; st.krig0 = krig(s);
+  const titel = st.titel = titelFor(s, best, vuxna);
   st.historia.push({ id: best.id, namn: best.name, titel, fran: s.now });
   count(s, 'ledare_vald');
   if (forsta) { st.oppna.push('rang'); best.fame.push('Byns första ledare'); kronikaBer(s, 'k_forstaLedare', best.id, { ...personFalt(best), titel: titel.toLowerCase() }); }
   else kronikaBer(s, 'k_ledare', best.id, { ...personFalt(best), titel: titel.toLowerCase() });
   log(s, forsta ? `Byn har fått sin första ledare: ${best.name}, ${titel.toLowerCase()}. Byn börjar fundera på om alla är lika mycket värda.` : `${best.name} är byns nya ledare, ${titel.toLowerCase()}.`, 'world', [best.id]);
+}
+// titeln (steg 3.10.18): den första raden i TITLAR som passar
+const krig = (s: State) => (s.stat?.vargjakt ?? 0) + (s.stat?.vargstrid ?? 0);
+function titelFor(s: State, l: Person, vuxna: Person[]) {
+  const lg = legitimitet(s), d = hardDelar(s, l);
+  const x: TitelLage = { vuxna, folk: living(s).length, rang: s.seder.v.rang ?? 0, leg: lg.v, stod: lg.stod, hard: 1 + d.rang + d.emp + d.agg, krig: krig(s) - (s.styre?.krig0 ?? krig(s)) };
+  return TITLAR.find(t => t.passar(s, l, x))!.namn[l.sex === 'k' ? 1 : 0];
+}
+export const ledarTitel = (s: State, l: Person) => titelFor(s, l, vuxnaOf(s));
+// titeln ses över varje årstid, och genast om den inte finns i TITLAR (en sparad by från före steg 3.10.18)
+function seOverTitel(s: State, l: Person) {
+  const st = s.styre!, ny = titelFor(s, l, vuxnaOf(s)), forr = st.titel;
+  if (ny === forr) return;
+  st.titel = ny;
+  const h = st.historia[st.historia.length - 1];
+  if (h?.id === l.id && h.till === undefined) { if (forr && TITELNAMN.has(forr)) (h.forr ??= []).push(forr); h.titel = ny; }
+  if (forr && TITELNAMN.has(forr)) { log(s, `Byn kallar nu ${l.name} för ${ny.toLowerCase()}.`, 'world', [l.id]); kronika(s, `Byn började kalla ${l.name} för ${ny.toLowerCase()}.`); }
 }
 function slutar(s: State, varfor: string) {
   const st = s.styre!, h = st.historia[st.historia.length - 1], l = byId(s, st.ledare!);
@@ -208,6 +240,10 @@ function stegOf(v: number, h: HandelseTyp, rang: number) {
   return v >= STR.skam ? 1 : 0;
 }
 const brottText = (b: Bevis) => HANDELSER[b.h].text.replace('{om}', b.motNamn ?? 'någon').replace('{sak}', b.sak ?? 'något');
+// hårdhetens delar (1 + delarna, mellan STR.min och STR.max): sederna och ledarens empati, humör och aggression
+function hardDelar(s: State, l: Person) {
+  return { rang: STR.rang * (s.seder.v.rang ?? 0), emp: STR.empati * (10 - stat(l, 'empati', s.now)) / 10, hum: STR.humor * (0.5 - moodOf(l, s.now)), agg: STR.agg * franMitt(l, 'aggression', s.now) };
+}
 function doma(s: State, l: Person) {
   const st = styreOf(s), now = s.now, rang = s.seder.v.rang ?? 0;
   const domt = (st.domt ??= []);
@@ -221,7 +257,7 @@ function doma(s: State, l: Person) {
     if (!f || HANDELSER[b.h].vikt > HANDELSER[f.h].vikt) fall.set(e.om, b);
   }
   if (!fall.size) return;
-  const delar = { rang: STR.rang * rang, emp: STR.empati * (10 - stat(l, 'empati', now)) / 10, hum: STR.humor * (0.5 - moodOf(l, now)), agg: STR.agg * franMitt(l, 'aggression', now) };
+  const delar = hardDelar(s, l);
   const hard0 = clamp(1 + delar.rang + delar.emp + delar.hum + delar.agg, STR.min, STR.max);
   const v = vaderNu(s), ratt = (st.ratt ??= []);
   for (const [id, b] of fall) {
@@ -304,6 +340,7 @@ export function stepStyre(s: State) {
   if (!l) return;
   s.styre!.ai = ai;
   think(l, 'Leder byn', LED.tanke, s.now, 2 * HOUR);
+  if (s.styre!.pabudAi !== ai || !TITELNAMN.has(s.styre!.titel ?? '')) seOverTitel(s, l);
   if (s.styre!.pabudAi !== ai) sattPabud(s, l, ai);
   if (Math.floor(hourOf(s.now)) === STR.timme) doma(s, l);
 }

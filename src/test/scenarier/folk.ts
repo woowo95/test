@@ -707,6 +707,57 @@ SCENARIER.rattegang = {
   },
 };
 
+SCENARIER.titel = {
+  text: 'Ledarens titel (steg 3.10.18): raderna i TITLAR prövas i ordning och den första som passar vinner (Kung, Jarl, Järnhanden, Krigshövding, Hövding, Storjägare, Den vise, Byfader, Äldste, Ålderman), titeln ses över varje årstid, och styrelseformen Talesperson heter Folkting',
+  kor: () => {
+    const t = createState(11, START);
+    klockan(t, 11);
+    for (const [x, a] of [['m', 33], ['k', 29], ['m', 26], ['k', 41]] as const) nyInvanare(t, x, a);
+    const vuxna = living(t).filter(p => ageOf(p, t.now) >= SIM.ALDER.vuxen), l = vuxna[0];
+    (l.tek ??= {}).ledarskap = 1;
+    for (const q of vuxna) if (q !== l) getRel(t, l, q).op = 40;
+    SIM.stepStyre(t);
+    const vald = SIM.ledareOf(t) === l, forsta = t.styre?.titel;
+    const ns = (m: string, k: string) => l.sex === 'k' ? k : m, titel = () => SIM.ledarTitel(t, l);
+    const op = (v: number) => { for (const q of living(t)) if (q !== l) getRel(t, l, q).op = v; };
+    // utgångsläget: ingenting särskilt
+    l.born = t.now - 30 * DAY; Object.assign(l.pot, { empati: 10, aggression: 10, intelligens: 8 }); l.tag = undefined; t.seder.v.rang = 0; op(0);
+    const fall: [string, string, string][] = [];
+    const prova = (vad: string, vant: string) => fall.push([vad, vant, titel()]);
+    prova('ingenting särskilt', 'Ålderman');
+    l.born = t.now - 70 * DAY; prova('äldst bland de vuxna och över 50 år', ns('Äldste', 'Äldsta')); l.born = t.now - 30 * DAY;
+    op(80); l.pot.empati = 16; prova('mycket omtyckt och hög empati', ns('Byfader', 'Bymoder'));
+    l.pot.intelligens = 16; prova('hög intelligens (före Byfader)', ns('Den vise', 'Den visa'));
+    l.tag = 'Jägare'; prova('jägare', 'Storjägare');
+    t.seder.v.rang = 0.4; prova('Envälde som ett hövdingadöme', 'Hövding');
+    (t.stat ??= {}).vargjakt = (t.stat.vargjakt ?? 0) + SIM.LED.krig; prova('vargjakter under ledarens tid', 'Krigshövding');
+    op(-60); Object.assign(l.pot, { empati: 2, aggression: 18 }); prova('dömer hårt och har låg legitimitet', 'Järnhanden');
+    while (living(t).length < SIM.LED.jarlFolk) nyInvanare(t, 'm', 25);
+    t.seder.v.rang = SIM.LED.jarlRang + 0.05; op(-60); prova('stor by och starkt Envälde', 'Jarl');
+    while (living(t).length < SIM.LED.kungFolk) nyInvanare(t, 'k', 25);
+    t.seder.v.rang = SIM.LED.kungRang + 0.05; op(-60); prova('mycket stor by och mycket starkt Envälde', ns('Kung', 'Drottning'));
+    // titeln ses över när årstiden byts (när påbuden sätts), och den gamla titeln finns kvar i historien
+    const fore = t.styre!.titel;
+    t.styre!.pabudAi = (SIM.ageIndex(t) + 1) % 4;
+    SIM.stepStyre(t);
+    const h = t.styre!.historia[t.styre!.historia.length - 1];
+    const byt = t.styre!.titel === ns('Kung', 'Drottning') && h.titel === t.styre!.titel && !!h.forr?.includes(fore!);
+    // en titel som inte längre finns (en sparad by) byts genast och läggs inte i historien
+    t.styre!.titel = 'Talesperson'; h.titel = 'Talesperson'; const nForr = h.forr!.length;
+    SIM.stepStyre(t);
+    const gammal = t.styre!.titel === ns('Kung', 'Drottning') && h.forr!.length === nForr;
+    t.seder.v.rang = 0;
+    const form = SIM.styrelseform(t).namn;
+    return [
+      [`den första ledaren får en titel (${forsta})`, vald && !!forsta],
+      ...fall.map(([vad, vant, fick]) => [`${vad}: ${vant} (${fick})`, fick === vant] as [string, boolean]),
+      [`titeln ses över när årstiden byts, och den gamla finns kvar i historien (${h.forr?.join(', ')} → ${h.titel})`, byt],
+      ['en titel från en äldre sparad by byts genast', gammal],
+      [`styrelseformen utan Envälde heter Folkting (${form})`, form === 'Folkting'],
+    ];
+  },
+};
+
 SCENARIER.blockera = {
   text: 'Fiender blockerar vägen (steg 3.7.20): i striden går man inte närmare än STRID.kropp en fiende som står, utan runt hen, och inte genom väggar. Den som står i en dörröppning stänger den; när hen fallit går de andra igenom öppningen. Vänner och de som ligger går man igenom',
   kor: () => {
