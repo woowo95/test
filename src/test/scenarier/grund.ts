@@ -505,6 +505,25 @@ SCENARIER.torka = {
     // ingen står i vattnet, och den torra sjöbotten går att gå på
     const iVattnet = living(s).filter(p => SIM.iVattnetNu(s, Math.floor(p.y) * W + Math.floor(p.x))).length;
     const gar = SIM.GANG.fartMark[T.Lera] > 0;
+    // den som fiskar från stranden tar fisken ur vattnet som finns kvar, inte ur den torra sjöbotten (takeFrom i fynd.ts, kodgenomgången 3.10.25)
+    let iTorr = 0, iVatten = 0;
+    {
+      const q = cloneState(s), vn = SIM.vattenNu(q), cq = SIM.campCenter(q);
+      let ruta: { x: number; y: number } | undefined, bd = Infinity;
+      for (let y = 3; y < SIM.H - 3; y++) for (let x = 3; x < W - 3; x++) {
+        if (vn[y * W + x] === T.Vatten || vn[y * W + x] === T.Lera) continue;
+        let v = false, l = false; // både vatten och torr sjöbotten framför
+        for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) { const j = (y + dy) * W + x + dx; if (vn[j] === T.Vatten) v = true; else if (vn[j] === T.Lera) l = true; }
+        const d = Math.hypot(x - cq.x, y - cq.y);
+        if (v && l && d < bd) { bd = d; ruta = { x, y }; }
+      }
+      if (ruta) {
+        const tagna = () => { const tk = SIM.takenOf(q); let a = 0, b = 0; for (const f of Object.values(tk)) if (f) for (let i = 0; i < W * SIM.H; i++) if (vn[i] === T.Lera) a += f[i]; else if (vn[i] === T.Vatten) b += f[i]; return [a, b]; };
+        const [a0, b0] = tagna();
+        for (let n = 0; n < 10; n++) SIM.takeFrom(q, 'fiske', ruta.x + 0.5, ruta.y + 0.5, 1);
+        const [a1, b1] = tagna(); iTorr = a1 - a0; iVatten = b1 - b0;
+      }
+    }
     // efter torkan: vattnet kommer tillbaka när det har regnat (högst sex dygn)
     kor(s, (m.slut - s.now) / HOUR + 1);
     const efter = s.sjoTorr ? 1 : 0;
@@ -517,6 +536,7 @@ SCENARIER.torka = {
       [`marken är torr (fukt ${torrMark.toFixed(2)})`, torrMark < 0.2],
       ['den torra sjöbotten går att gå på', gar],
       [`ingen står i vattnet (${iVattnet})`, iVattnet === 0],
+      [`fisket från stranden tar ur vattnet som finns kvar (${iVatten.toFixed(3)}) och inget ur den torra sjöbotten (${iTorr.toFixed(3)})`, iVatten > 0 && iTorr === 0],
       [`alla hittar vatten att dricka (${utanVatten} utan) och ingen dör av törst (${torstDoda})`, utanVatten === 0 && torstDoda === 0],
       [`ägaren med säck vattnar sitt fält (${vattnat} säckar), grödan på det andra vissnar (${vissnat})`, vattnat > 0 && vissnat === 1],
       [`vattnet kommer tillbaka efter torkan (${efter ? `tillbaka ${tillbaka} timmar efter torkan` : 'redan när torkan slutade'}, ${vatten2} rutor vatten)`, !s.sjoTorr && vatten2 === vatten0],

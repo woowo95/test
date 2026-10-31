@@ -467,7 +467,7 @@ export function takeFrom(s: State, k: Lager, x: number, y: number, amount: numbe
   plock.set(s, plockOf(s) + 1);
   const cx = Math.floor(x), cy = Math.floor(y), rv = FYND[k].vatten;
   if (rv) {
-    const tiles = getMap(s.seed).tiles, kv = karna(rv).v;
+    const tiles = vattenNu(s), kv = karna(rv).v; // vattnet som det är nu (torkan, istiden, översvämningen: flod.ts)
     let n = 0;
     for (const { dx, dy, w } of kv) if (iVattnet(tiles, cx, cy, dx, dy, w) >= 0) n += w;
     if (n) for (const { dx, dy, w } of kv) {
