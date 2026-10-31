@@ -76,7 +76,7 @@ const STEG = balans('steg', {
   // graviditet
   dragtid: 0.75, // dygn som en graviditet varar
   mellanFodslar: 1.6, // dygn som en kvinna väntar efter en födsel innan hon kan bli gravid igen
-  matDygn: 1.8, // så många dygns mat i förrådet ger full vilja att skaffa barn (mindre ger mindre) ...
+  matDygn: 1.1, // (1,8 före steg 3.10.26: förrådets dygn räknar sedan 3.10.9 bara den mat som håller och blev ungefär 0,6 av förut) så många dygns mat i förrådet ger full vilja att skaffa barn (mindre ger mindre) ...
   matMin: 0.15, // ... men aldrig mindre än denna del
   sedBarn: 0.2, // så mycket mer (eller mindre) vilja ger seden Barn fullt ut
   chans: 0.6, // chansen per dygn att bli gravid, gånger viljan (0,3 före steg 2.12.6: byarna stannade vid ca 9 invånare med gott om mat)

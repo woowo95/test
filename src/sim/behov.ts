@@ -54,6 +54,7 @@ export const DELA = balans('dela', {
   stoldVarde: 3, // ... annars mindre efter värdet (grundvarde): en näve hö till elden märks knappt (steg 2.12.6)
   stoldTanke: 0.25, // den bestulne tänker på en lindrig stöld först när den är värd minst så stor del av stoldVarde
   fragaR: 8, // så nära (rutor) måste man vara för att be någon om något
+  fragaFamilj: 30, // ... familjen (isFamily) så nära: den vet när någon av de egna saknar något (steg 3.10.26)
   fragaTakt: 1 / (30 * 60), // så ofta (per sekund) den som saknar något ber någon i närheten
   // viljan att ge (willing)
   overflodBas: 0.4, // viljan gånger overflodBas + overflodSteg * överflödet, mellan overflodMin och overflodMax
@@ -124,6 +125,13 @@ export function ownFor(s: State, p: Person, b: Behov) { let n = 0; for (const k 
 const lacksFor = (s: State, p: Person, b: Behov) => b.behover(s, p) && hasFor(s, p, b) < b.minst;
 // p har mat att äta, sin egen eller byns (för måltiden vid bordet, val.ts)
 export const harMat = (s: State, p: Person) => hasFor(s, p, MAT) >= MAT.minst;
+// hur många dygn p har mat (steg 3.10.26): sin egen, byns och det familjen äger (familjen ger, isFamily). I en rik by delas
+// inget (delning.ts) och den som inte äger något arbetar då för sin egen mat, också när byns förråd ser fullt ut (val.ts)
+export function egnaMatDygn(s: State, p: Person) {
+  let n = hasFor(s, p, MAT);
+  for (const q of living(s)) if (q !== p && isFamily(q, p)) n += ownFor(s, q, MAT);
+  return n / MAT.kvar;
+}
 
 // varje steg: den som behöver något tar av sitt eget och byns. Finns inget ber hen någon i närheten om det, och i
 // yttersta nöd stjäl hen
@@ -167,8 +175,8 @@ export const setRanStrid = (f: typeof ranStrid) => { ranStrid = f; };
 // p är så nära döden av bristen att hen stjäl (victimOf)
 const desperat = (s: State, p: Person, b: Behov) => { const emp = stat(p, 'empati', s.now); return emp < DELA.stjalAldrig && b.fara(s, p) > emp / DELA.stjalAldrig; };
 export const isFamily = (g: Person, m: Person) => isParent(g, m) || g.partner === m.id || isKin(g, m) || arBast(g, m); // den bästa vännen delar man med som med släkt (steg 3.1.1)
-// g är vaken (familjen kan man väcka) och så nära m att m kan be g om något
-const narvarande = (g: Person, m: Person) => (g.task?.act !== 'sova' || isFamily(g, m)) && Math.hypot(g.x - m.x, g.y - m.y) <= DELA.fragaR;
+// g är vaken (familjen kan man väcka) och så nära m att m kan be g om något (familjen längre bort)
+const narvarande = (g: Person, m: Person) => { const fam = isFamily(g, m); return (g.task?.act !== 'sova' || fam) && Math.hypot(g.x - m.x, g.y - m.y) <= (fam ? DELA.fragaFamilj : DELA.fragaR); };
 // det g har över att ge m. En förälder delar med sitt barn också det sista, partner och släkt behåller en portion
 // åt sig själva, andra så mycket de själva behöver (b.kvar)
 const overOf = (s: State, g: Person, b: Behov, m: Person) =>
