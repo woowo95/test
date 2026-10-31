@@ -213,6 +213,9 @@ function titelFor(s: State, l: Person, vuxna: Person[]) {
   return TITLAR.find(t => t.passar(s, l, x))!.namn[l.sex === 'k' ? 1 : 0];
 }
 export const ledarTitel = (s: State, l: Person) => titelFor(s, l, vuxnaOf(s));
+// yrket som visas (steg 3.10.19): ledarens titel så länge hen leder, annars yrket. p.tag räknas som förut under tiden och syns igen
+// när hen slutar leda
+export const yrkeNamn = (s: State, p: Person) => s.styre?.ledare === p.id && alive(p) && s.styre.titel ? s.styre.titel : p.tag;
 // titeln ses över varje årstid, och genast om den inte finns i TITLAR (en sparad by från före steg 3.10.18)
 function seOverTitel(s: State, l: Person) {
   const st = s.styre!, ny = titelFor(s, l, vuxnaOf(s)), forr = st.titel;

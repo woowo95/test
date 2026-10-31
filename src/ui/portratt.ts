@@ -1,4 +1,4 @@
-import { KROPP, Person, halsa, ageOf, alive, byId, living, moodOf, taskName } from '../sim';
+import { KROPP, Person, halsa, ageOf, alive, byId, living, moodOf, taskName, yrkeNamn } from '../sim';
 import { $, LAG, bar, esc, hex, tempBar, trend } from './hjalp';
 import { s, ui, vidNyBy } from './lage';
 
@@ -30,7 +30,7 @@ export function renderPorts() {
     el.setAttribute('aria-pressed', String(ui.selected === p.id));
     (el.children[0] as HTMLElement).style.background = hex(p);
     el.children[1].textContent = p.name;
-    el.children[2].textContent = p.tag ?? '';
+    el.children[2].textContent = yrkeNamn(s, p) ?? '';
     el.children[3].textContent = shortAct(p);
   });
   if (tipId !== undefined) showTip(tipId);
@@ -41,7 +41,7 @@ function showTip(id: number) {
   if (!p || !el || !alive(p)) { hideTip(); return; }
   tipId = id;
   const m = moodOf(p, s.now);
-  tip.innerHTML = `<h4>${esc(p.name)}</h4><p class="op">${p.sex === 'k' ? 'Kvinna' : 'Man'}, ${Math.floor(ageOf(p, s.now))} år${p.tag ? ' · ' + esc(p.tag) : ''}</p>
+  tip.innerHTML = `<h4>${esc(p.name)}</h4><p class="op">${p.sex === 'k' ? 'Kvinna' : 'Man'}, ${Math.floor(ageOf(p, s.now))} år${yrkeNamn(s, p) ? ' · ' + esc(yrkeNamn(s, p)!) : ''}</p>
     <p>${shortAct(p)}</p>${p.task?.why ? `<p class="op">${esc(p.task.why)}</p>` : ''}
     <dl><dt>Humör</dt><dd>${bar(m, m < LAG.humor ? 'low' : '', trend(p, 'humor', m))}</dd><dt>Mättnad</dt><dd>${bar(p.hunger, p.hunger < LAG.hunger ? 'low' : '', trend(p, 'hunger', p.hunger))}</dd>
     <dt>Vila</dt><dd>${bar(p.rest, '', trend(p, 'rest', p.rest))}</dd><dt>Hälsa</dt><dd>${bar(halsa(p), halsa(p) < LAG.halsa ? 'low' : '', trend(p, 'health', halsa(p)))}</dd><dt>Temperatur</dt><dd>${tempBar(p.warm, trend(p, 'warm', p.warm))}</dd></dl>

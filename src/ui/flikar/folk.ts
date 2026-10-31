@@ -1,4 +1,4 @@
-import { ageOf, anseendeSym, formogenheter, halsa, living, moodOf, taskName } from '../../sim';
+import { ageOf, anseendeSym, formogenheter, halsa, living, moodOf, taskName, yrkeNamn } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { LAG, ansTecken, bar, clockTxt, esc, hex, linkify, moodWord, num, prickar, trend } from '../hjalp';
 import { s } from '../lage';
@@ -14,7 +14,7 @@ export const folk: Flik = {
       const m = moodOf(p, s.now), h = halsa(p), f = Math.round(form.get(p.id) ?? 0), a = anseendeSym(s, p.id);
       const ans = a ? `<span class="ans" title="${a === '😇' ? 'Gott' : a === '😈' ? 'Dåligt' : 'Blandat'} anseende i byn">${ansTecken(a, 12)}</span>` : '';
       const matare = `<span class="matare"><span title="Humör: ${moodWord(m).toLowerCase()}">${bar(m, m < LAG.humor ? 'low' : '', trend(p, 'humor', m))}</span><span title="Hälsa: ${num(h * 100, 0)} %">${bar(h, h < LAG.halsa ? 'low' : 'halsa', trend(p, 'health', h))}</span></span>`;
-      return `<li><button class="row" data-id="${p.id}" type="button"><span class="dot" style="background:${hex(p)}"></span><span class="nm">${esc(p.name)}${p.tag ? ` <span class="tag">${esc(p.tag)}</span>` : ''}${prickar(p)}</span><span class="age">${Math.floor(ageOf(p, s.now))} år</span><span class="act">${p.task ? taskName(p.task) : '–'}</span><span class="rb"><span class="form" title="Förmögenhet: värdet av allt hen äger, ungefär i arbetstimmar">${iconImg('i_rik', 12)}${f}</span>${ans}${matare}</span></button></li>`;
+      return `<li><button class="row" data-id="${p.id}" type="button"><span class="dot" style="background:${hex(p)}"></span><span class="nm">${esc(p.name)}${yrkeNamn(s, p) ? ` <span class="tag">${esc(yrkeNamn(s, p)!)}</span>` : ''}${prickar(p)}</span><span class="age">${Math.floor(ageOf(p, s.now))} år</span><span class="act">${p.task ? taskName(p.task) : '–'}</span><span class="rb"><span class="form" title="Förmögenhet: värdet av allt hen äger, ungefär i arbetstimmar">${iconImg('i_rik', 12)}${f}</span>${ans}${matare}</span></button></li>`;
     }).join('')}</ul>`;
   },
 };

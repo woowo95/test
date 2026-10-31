@@ -708,7 +708,7 @@ SCENARIER.rattegang = {
 };
 
 SCENARIER.titel = {
-  text: 'Ledarens titel (steg 3.10.18): raderna i TITLAR prövas i ordning och den första som passar vinner (Kung, Jarl, Järnhanden, Krigshövding, Hövding, Storjägare, Den vise, Byfader, Äldste, Ålderman), titeln ses över varje årstid, och styrelseformen Talesperson heter Folkting',
+  text: 'Ledarens titel (steg 3.10.18): raderna i TITLAR prövas i ordning och den första som passar vinner (Kung, Jarl, Järnhanden, Krigshövding, Hövding, Storjägare, Den vise, Byfader, Äldste, Ålderman), titeln ses över varje årstid, ledarens yrke är titeln (steg 3.10.19), och styrelseformen Talesperson heter Folkting',
   kor: () => {
     const t = createState(11, START);
     klockan(t, 11);
@@ -746,10 +746,15 @@ SCENARIER.titel = {
     t.styre!.titel = 'Talesperson'; h.titel = 'Talesperson'; const nForr = h.forr!.length;
     SIM.stepStyre(t);
     const gammal = t.styre!.titel === ns('Kung', 'Drottning') && h.forr!.length === nForr;
+    // yrket som visas är titeln så länge hen leder, och det gamla yrket kommer tillbaka efteråt (steg 3.10.19)
+    const yrkeLed = SIM.yrkeNamn(t, l), annan = vuxna[1], yrkeAnnan = SIM.yrkeNamn(t, annan) === annan.tag;
     t.seder.v.rang = 0;
     const form = SIM.styrelseform(t).namn;
+    SIM.leave(t, l); SIM.stepStyre(t);
+    const yrkeEfter = SIM.yrkeNamn(t, l);
     return [
       [`den första ledaren får en titel (${forsta})`, vald && !!forsta],
+      [`ledarens yrke är titeln (${yrkeLed}), de andras som förut, och efteråt kommer det gamla tillbaka (${yrkeEfter})`, yrkeLed === ns('Kung', 'Drottning') && l.tag === 'Jägare' && yrkeAnnan && yrkeEfter === 'Jägare'],
       ...fall.map(([vad, vant, fick]) => [`${vad}: ${vant} (${fick})`, fick === vant] as [string, boolean]),
       [`titeln ses över när årstiden byts, och den gamla finns kvar i historien (${h.forr?.join(', ')} → ${h.titel})`, byt],
       ['en titel från en äldre sparad by byts genast', gammal],
