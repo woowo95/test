@@ -98,12 +98,12 @@ function mitt(s: State, k: number, t = s.now) {
 // varje steg: en grupp som får en ny tid väljer sin plats direkt, så att platsen blir densamma i båda lägena
 export function djurSteg(s: State) { for (let k = 0; k < KANINER.grupper; k++) mitt(s, k); }
 // grupperna vid tiden t (just nu om inget annat sägs). En grupp krymper där lagret är tömt (där man jagat), och är tom
-// när det jagats slut
-export function grupperOf(s: State, t = s.now): Kaningrupp[] {
+// när det jagats slut. Med bara (en fråga om gruppens mitt) räknas bara de grupper som den godtar
+export function grupperOf(s: State, t = s.now, bara?: (x: number, y: number) => boolean): Kaningrupp[] {
   const ut: Kaningrupp[] = [], tj = takenOf(s).jakt;
   for (let k = 0; k < KANINER.grupper; k++) {
     const c = mitt(s, k, t);
-    if (!c) continue;
+    if (!c || (bara && !bara(c.x, c.y))) continue;
     let har = 0, kan = 0;
     const cx = Math.floor(c.x), cy = Math.floor(c.y);
     for (let dy = -KANINER.kollR; dy <= KANINER.kollR; dy++) for (let dx = -KANINER.kollR; dx <= KANINER.kollR; dx++) {
@@ -142,10 +142,12 @@ function narvaroAt(s: State, i: number) {
 setNarvaro('jakt', narvaroAt);
 // var kaninerna är vid tiden t (gränssnittet ger tiden som visas): nära gruppens mitt, ett skutt i taget, och undan
 // från folk som kommer nära. Gränssnittet ger var folket syns (folk), eftersom simuleringen ligger före bilden
-export function djurOf(s: State, t = s.now, folk?: readonly { x: number; y: number }[]): Djur[] {
+// så långt (rutor) en kanin kan sitta från gruppens mitt: spridningen, skuttet, hoppen undan och vägen till land (landNara)
+export const KANIN_UT = KANINER.spridd + 0.6 * Math.SQRT2 + KANINER.hopp * KANINER.hoppMax + 5.5 * Math.SQRT2 + 1;
+export function djurOf(s: State, t = s.now, folk?: readonly { x: number; y: number }[], bara?: (x: number, y: number) => boolean): Djur[] {
   const ppl = folk ?? living(s), out: Djur[] = [], vt = vattenNu(s), torr = (q: { x: number; y: number }) => vt[Math.floor(q.y) * W + Math.floor(q.x)] !== T.Vatten;
   const doda = new Set(s.djurDoda?.map(d => d.id));
-  for (const g of grupperOf(s, t)) for (let j = 0, kvar = g.n; j < 8 && kvar > 0; j++) {
+  for (const g of grupperOf(s, t, bara)) for (let j = 0, kvar = g.n; j < 8 && kvar > 0; j++) {
     const id = g.id * 8 + j;
     if (doda.has(id)) continue; // en dödad kanin är borta, och nästa i gruppen syns i stället (steg 3.7.13)
     kvar--;
