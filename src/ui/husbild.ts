@@ -35,10 +35,12 @@ function vagg(n: string, lx: number, ly: number) {
   let h = l || r, v = u || d;
   if (!h && !v) h = o[0] || o[1] || !(o[2] || o[3]); // ensam vägg: stocken ligger längs öppningen
   // hörnet: stockändarna när väggen går åt två håll, också när en dörröppning ligger på ena sidan om hörnet (steg 3.6.7)
-  if ((h || o[0] || o[1]) && (v || o[2] || o[3]) && (h || v)) { const a = Math.hypot(lx - 3.5, ly - 3.5); if (a < 2.2) return Math.round(a * 2) % 2 ? 'e' : 'E'; if (a < 3.3) return 'd'; }
-  // dörrposterna: en stockände på var sida om öppningen
+  const horn = (h || o[0] || o[1]) && (v || o[2] || o[3]) && (h || v);
+  if (horn) { const a = Math.hypot(lx - 3.5, ly - 3.5); if (a < 2.2) return Math.round(a * 2) % 2 ? 'e' : 'E'; if (a < 3.3) return 'd'; }
+  // dörrposterna: en stockände på var sida om öppningen. Inte i ett hörn, där hörnets stockändar redan slutar väggen mot
+  // öppningen (steg 3.10.7: annars stack en bit av posten ut ovanför hörnet)
   const R = [1.3, 2.1, 2.6];
-  const post = o[0] && lx <= 2 ? ande(lx, ly, 1.5, 3.5, R) : o[1] && lx >= 5 ? ande(lx, ly, 5.5, 3.5, R)
+  const post = horn ? '' : o[0] && lx <= 2 ? ande(lx, ly, 1.5, 3.5, R) : o[1] && lx >= 5 ? ande(lx, ly, 5.5, 3.5, R)
     : o[2] && ly <= 2 ? ande(lx, ly, 3.5, 1.5, R) : o[3] && ly >= 5 ? ande(lx, ly, 3.5, 5.5, R) : '';
   if (post) return post;
   const inH = h && ly >= 1 && ly <= 6 && lx >= (l ? 0 : 1) && lx <= (r ? 7 : 6);

@@ -5,7 +5,7 @@
 const AKT = { w: '#f4efe0', a: '#9fc6e8' };
 // vädrets symboler (steg 2.11.1): samma färger för alla sex
 const VADER_PAL = { K: '#61767a', S: '#dad0bb', W: '#dad0bb', a: '#906f0f', b: '#b2921b', c: '#d8b25f', d: '#8a9c9e', k: '#3e5156', o: '#24201d', s: '#bdb39b', v: '#bdb39b', w: '#a0947d', y: '#d8b25f' };
-const PAL: Record<string, Record<string, string>> = {
+export const PAL: Record<string, Record<string, string>> = {
   bar: { r: '#8a4ad8', R: '#b88aff', d: '#4e2280', g: '#4f8a3a' },
   rotter: { o: '#9a6a3e', O: '#c99a62', d: '#5e3c20', g: '#5f9a44' },
   kott: { r: '#9c3328', R: '#d26a56', w: '#eee2c8' },
@@ -200,7 +200,7 @@ const PAL: Record<string, Record<string, string>> = {
   b_mineral: { D: '#52728a', a: '#9ab8cc' },
 };
 
-const PIX: Record<string, string[]> = {
+export const PIX: Record<string, string[]> = {
   // korgen visas över huvudet på den som plockar bär: flätad, med handtag
   korg: [
     '..tttt..',
@@ -499,6 +499,36 @@ const PIX: Record<string, string[]> = {
     '..wwRRRRRR....R....wwb..',
     '.xxrrrrrrrrRrxxxxxxxxxxx',
   ],
+  // slaktbänken vriden (steg 3.10.7): stocken går uppifrån och ner, stockänden med benen framtill och blodet rinner över den
+  slaktbank_karta_v: [
+    '.bbbbbb.',
+    'bHHHHLLb',
+    'bHLLLLWb',
+    'bHLWLLWb',
+    'bHLLLLWb',
+    'bHYYLLWb',
+    'bHYrrLWb',
+    'bHLrRLWb',
+    'bHLLrLWb',
+    'bHLLLLWb',
+    'bHLLLWWb',
+    'bHLLLLWb',
+    'bHLLrLWb',
+    'bHLLLLWb',
+    'bHWLLLWb',
+    'bHLLLLWb',
+    'bHLLLLWb',
+    'bHLLWLWb',
+    'bHLLLLWb',
+    'bHLLrLWb',
+    'bHHLrLLb',
+    'bbbbRbbb',
+    'BbbbRbbB',
+    '.BBBRBB.',
+    '.wb.R.wb',
+    '.wbRRRwb',
+    'xxrrrrxx',
+  ],
   // flätarbänken (slöjdbänken), två rutor bred (Björn valde nr 4a efter v55): två plankor på raka ben, två stolpar med ett
   // rep spänt emellan och en skåra framtill där bensylen ska ligga (den finns inte än, 2.3.2). 16 punkter hög
   flatarbank_karta: [
@@ -518,6 +548,36 @@ const PIX: Record<string, string[]> = {
     '.wd..........wd.',
     '.wd..........wd.',
     '.xxxxxxxxxxxxxxx',
+  ],
+  // slöjdbänken vriden (steg 3.10.7): plankorna uppifrån och ner, stolparna med repet längs högra kanten och skåran på
+  // skivan
+  flatarbank_karta_v: [
+    '.......D',
+    '.......w',
+    '.......O',
+    '.......o',
+    '.ddddd.o',
+    'dHHHHHdO',
+    'dLLWLLdo',
+    'dLLWLLdo',
+    'dLLWLLdO',
+    'dLLWLLdo',
+    'dLLWDLdo',
+    'dLLWDLdO',
+    'dLLWDLdo',
+    'dLLWLLdD',
+    'dLLWLLdw',
+    'dLLWLLdw',
+    'dLLWLLdw',
+    'dLLWLLdw',
+    'dLLWLLdw',
+    'dddddddd',
+    'wWWWWWWw',
+    '.wwwwwww',
+    '.DD..DDD',
+    '.wd..wdw',
+    '.wd..wdw',
+    '.xxxxxxx',
   ],
   // halmbädden i listorna: en ram av grenar med hö på
   halmbadd: [
@@ -542,6 +602,27 @@ const PIX: Record<string, string[]> = {
     '.qqqqtqqqqqqttt.',
     '.tt.t..t.....t..',
     '.xxxxxxxxxxxxxx.',
+  ],
+  // halmbädden vriden (steg 3.10.7): huvudänden uppåt
+  halmbadd_karta_v: [
+    '........',
+    '.qq.qqt.',
+    'qYYYYYYq',
+    'tYYYyYYq',
+    'qYyYYyYt',
+    'qyqYYYyq',
+    'tYyYyYqt',
+    'qYqyYyYq',
+    'qyYytYyq',
+    'tYyYyYqt',
+    'qYtyYyYq',
+    'qyYyqYyt',
+    'tYyYyYyq',
+    'qyYqyYtq',
+    'qtYyYyYt',
+    '.qqqtqq.',
+    '.t.tt.t.',
+    '.xxxxxx.',
   ],
   // hyllan i listorna: en ram av trä med två hyllplan och saker på (platshållare)
   hylla: [
@@ -680,6 +761,25 @@ const PIX: Record<string, string[]> = {
     '.bBbxxxxxxxxbBb.',
     '.dbdxxxxxxxxdbd.',
   ],
+  // det lilla bordet vriden (steg 3.10.7): plankorna uppifrån och ner, benen framtill
+  bord_karta_v: [
+    '.HLWHLW.',
+    '.HLWHLW.',
+    '.HLWHwW.',
+    '.HLWHLW.',
+    '.HwWHLW.',
+    '.HLWHLW.',
+    '.HLWHLW.',
+    '.HLWHLW.',
+    '.HLWwLW.',
+    '.HLWHLW.',
+    '.HLWHLW.',
+    '.wLWHLW.',
+    '.HLWHLW.',
+    '.wwwwww.',
+    '.bBxxBb.',
+    '.dbxxbd.',
+  ],
   // bordet uppifrån, 2 × 2 rutor (Björn valde 3 efter v89)
   bord2_karta: [
     '..HHHHHHHHHHHw..',
@@ -718,6 +818,33 @@ const PIX: Record<string, string[]> = {
     '.bBbxxxxxxxbBbxxxxxxbBb.',
     '.dbdxxxxxxxdbdxxxxxxdbd.',
   ],
+  // långbordet vriden (steg 3.10.7): 2 × 3 rutor, plankorna på längden
+  bord3_karta_v: [
+    '.HLWHLWHLWHLWHL.',
+    '.HLWHLWHLWHLWHL.',
+    '.HLWHLwHLWHLWHL.',
+    '.HLWHLWHLWHLWHL.',
+    '.HLWHLWHLWHLwHL.',
+    '.HLWHLWHLWHLWHL.',
+    '.HLWHLWHLWHLWHL.',
+    '.HLwHLWHLWHLWHL.',
+    '.HLWHLWHLWHLWHL.',
+    '.HLWHLWHLwHLWHL.',
+    '.HLWHLWHLWHLWHL.',
+    '.HLWHLWHLWHLWHL.',
+    '.HLWHLWHLWHLWHw.',
+    '.HLWHLWHLWHLWHL.',
+    '.HLWHLWHLWHLWHL.',
+    '.HLWHwWHLWHLWHL.',
+    '.HLWHLWHLWHLWHL.',
+    '.HLWHLWHLWHwWHL.',
+    '.HLWHLWHLWHLWHL.',
+    '.HwWHLWHLWHLWHL.',
+    '.HLWHLWHLWHLWHL.',
+    '.wwwwwwwwwwwwww.',
+    '.bBbxxxxxxxxbBb.',
+    '.dbdxxxxxxxxdbd.',
+  ],
   // skinnfällen över halmbädden på kartan (Björn valde 2 efter v89): täcker bädden utom huvudänden
   skinnfall_karta: [
     '................',
@@ -730,6 +857,27 @@ const PIX: Record<string, string[]> = {
     '................',
     '................',
     '................',
+  ],
+  // skinnfällen vriden (steg 3.10.7): över bädden utom huvudänden
+  skinnfall_karta_v: [
+    '........',
+    '........',
+    '........',
+    '........',
+    '........',
+    '........',
+    '.zzzzzz.',
+    'zSsffsSz',
+    'zssffssz',
+    'zSsffsSz',
+    'zssffSsz',
+    'zsSffssz',
+    'zSsffsSz',
+    'zssffssz',
+    'zsSffSsz',
+    '.zzzzzz.',
+    '........',
+    '........',
   ],
   // skinndörren i listorna: en hud som hänger från en stång (platshållare)
   skinndorr: [
@@ -764,6 +912,17 @@ const PIX: Record<string, string[]> = {
     'drrrrrrd',
     '.bBbBbB.',
   ],
+  // trädörren i en vägg som går uppåt (steg 3.10.7, platshållare): bräderna från kanten, med repen på sidorna
+  tradorr_karta_v: [
+    '..eEEe..',
+    '..rbBr..',
+    '..rBbr..',
+    '..rbBr..',
+    '..rBbr..',
+    '..rbBr..',
+    '..rBbr..',
+    '..dbBd..',
+  ],
   // skinndörren på kartan (Björn valde 3 efter v89, två flikar): huden hänger från en stång mellan dörrposterna, delad på mitten. I en vägg som går uppåt ritas den vriden
   skinndorr_karta: [
     '........',
@@ -774,6 +933,17 @@ const PIX: Record<string, string[]> = {
     'dSsSZsSd',
     '.sSZzSs.',
     '..zZzz..',
+  ],
+  // skinndörren i en vägg som går uppåt (steg 3.10.7, platshållare): stången uppifrån och ner, flikarna hänger från den
+  skinndorr_karta_v: [
+    '...eE...',
+    '..oOoO..',
+    '..sSZs..',
+    '..SsZS..',
+    '..sSzs..',
+    '..SZzS..',
+    '..sZZs..',
+    '...zZ...',
   ],
   // en stubbe att sitta på (Björn valde 1 efter v89, kort stock): vid slöjdbänken och runt borden, en ruta stor (skala 2)
   sittplats: [
@@ -909,6 +1079,33 @@ const PIX: Record<string, string[]> = {
     'w...w......w...w',
     'x...x......x...x',
     '................',
+  ],
+  // torkställningen vriden (steg 3.10.7): bockarna framifrån, den bakre högre upp, och slån mellan dem uppifrån och ner
+  tork_karta_v: [
+    '...w.w..',
+    '...wOw..',
+    '....w...',
+    '...wLw..',
+    '...wOw..',
+    '...WLW..',
+    '..w.O.w.',
+    '..w.L.w.',
+    '..W.L.W.',
+    '..w.O.w.',
+    '..x.L.x.',
+    '....L...',
+    '...wOw..',
+    '...wLw..',
+    '....w...',
+    '...w.w..',
+    '...w.w..',
+    '...W.W..',
+    '..w...w.',
+    '.w.....w',
+    '.w.....w',
+    '.W.....W',
+    '.w.....w',
+    '.x.....x',
   ],
   // torkat kött (Björn valde 1 efter v89): mörka, skrynkliga remsor
   torrkott: [
@@ -2669,6 +2866,10 @@ const PIX: Record<string, string[]> = {
     '........',
   ],
 };
+
+// det som kan vridas har en egen bild för varje håll (steg 3.10.7, regeln Det som kan vridas): _v är bilden när det står
+// vridet (bredd och djup byter plats), med samma färger som den liggande
+for (const k in PIX) if (k.endsWith('_v')) PAL[k] ??= PAL[k.slice(0, -2)];
 
 // ---------- lägerelden (Björn valde efter v92: nr 1, stor stenring med stjärnved, men enklare) ----------
 // Två rutor bred och två och en halv hög: raderna 4–19 är de två rutorna, 0–3 luften ovanför där lågorna sticker upp.

@@ -1,5 +1,5 @@
 import { MASTERVERK, PERFEKT, Act, DJUR, DJURARTER, HOUR, halvKlar, GRODOR, faltById, faltKlar, faltOf, faltRuta, faltRutor, grodaPa, brasaHeat, radieAv, W, bordPlatser, sjoarna, stationById, GORS, MATERIAL, Pile, STATION, STUBBE_LIV, Station, bitAt, bitsOf, clamp, dorrDef, condOf, emberOn, fireHeat, forvarAt, eldPlats, grillVara, heatRadius, TORK, torrDel, isKlar, living, stationDef, stationKlar, stationerOf, storlekAv, tillbehorDef, tingOf, vidStation, zonesOf } from '../sim';
-import { LagereldLage, iconCanvas, lagereldId } from '../ikoner';
+import { LagereldLage, hasIcon, iconCanvas, lagereldId } from '../ikoner';
 import { ritaHus } from './husbild';
 import { outPilesAt, piles, s, sakVar, ui } from './lage';
 import { Ikoner, TS, overG, pileLayer, structG } from './scen';
@@ -58,11 +58,14 @@ function framsteg(cx: number, cy: number, p: number) {
   if (f > 0) overG.beginFill(0xe0b050).moveTo(cx, cy).arc(cx, cy, r - 0.7, -Math.PI / 2, -Math.PI / 2 + f * 2 * Math.PI).lineTo(cx, cy).endFill();
   overG.lineStyle(0.5, 0xf2ece0).drawCircle(cx, cy, r).lineStyle(0);
 }
+// '_v' när stationen står vriden och har en stående bild (steg 3.10.7, regeln Det som kan vridas), annars ''
+const vriden = (st: Station) => st.rot && hasIcon((stationDef(st.k)?.ikon ?? '') + '_karta_v') ? '_v' : '';
 // stationens yta i bilden (världspixlar från bildens övre vänstra hörn): där saken som görs ligger, och redskapet som hör
-// till den (kniven, bensylen i skåran)
-const YTA: Record<string, { x: number; y: number; vid?: { x: number; y: number } }> = {
-  slaktbank: { x: 16, y: 0, vid: { x: 30, y: -1 } },
-  flatarbank: { x: 4, y: 10, vid: { x: 22, y: 9 } },
+// till den (kniven, bensylen i skåran). v = samma i den stående bilden, där sakerna ligger under varandra (steg 3.10.7)
+type Yta = { x: number; y: number; vid?: { x: number; y: number } };
+const YTA: Record<string, Yta & { v?: Yta }> = {
+  slaktbank: { x: 16, y: 0, vid: { x: 30, y: -1 }, v: { x: 4, y: 6, vid: { x: 4, y: 33 } } },
+  flatarbank: { x: 4, y: 10, vid: { x: 22, y: 9 }, v: { x: 1, y: 12, vid: { x: 5, y: 19 } } },
   grill: { x: 20, y: 0 }, // maten på spettet, till höger om elden
 };
 // det som görs vid en station syns på den (steg 2.2.12): sakens egen symbol medan någon arbetar där. Viltet och fisken ur
@@ -91,7 +94,7 @@ function hangande(st: Station, x0: number, y0: number) {
     const f = torrDel(s, q), n = Math.max(1, Math.round(q.n / per)), fisk = q.k !== 'kott' && q.k !== 'vargkott';
     const farg = mix(fisk ? 0xb87a5a : 0xb0342a, fisk ? 0x5a3a22 : 0x4a2416, f);
     for (let j = 0; j < n && i < platser; j++, i++) {
-      const x = x0 + 9 + i * 1.8, y = y0 + 3;
+      const x = st.rot ? x0 + 8.3 : x0 + 9 + i * 1.8, y = st.rot ? y0 + 4 + i * 3 : y0 + 3; // den stående: längs slån uppifrån och ner
       overG.beginFill(farg);
       if (fisk) overG.drawRect(x, y, 1, 1.5).drawEllipse(x + 0.5, y + 4.5, 0.9, 3).endFill(); // stjärten i slån och kroppen under
       else overG.drawRect(x, y, 1.4, 7 - (i % 3)).endFill(); // en köttremsa
@@ -136,10 +139,10 @@ export function drawStructures(t: number) {
   // stationerna (stationer.ts) i blandperspektiv över alla rutorna de tar: de som är högre än rutan sticker upp över rutan
   // ovanför. Den halvbyggda har framstegscirkeln överst i mitten; vid den färdiga ligger kniven och det som görs där
   for (const st of stationerOf(s)) {
-    const d = stationDef(st.k), ik = (d?.ikon ?? 'slaktbank') + '_karta', { w: bw, h: bh } = storlekAv(st), w = bw * TS, upp = (iconCanvas(ik).height - 8 * (st.rot ? bw : bh)) * 2;
-    // den vridna sticker ut åt vänster i stället för uppåt (platshållare tills Björn valt hur den ska se ut)
-    const x0 = st.x * TS - (st.rot ? upp : 0), y0 = st.y * TS - (st.rot ? 0 : upp); // bildens övre vänstra hörn
-    pileIcons.add(ik, x0, y0, 2, !!st.rot);
+    // den som står vriden har en egen bild (_v, steg 3.10.7): ingenting ritas genom att bilden vrids
+    const d = stationDef(st.k), v = vriden(st), ik = (d?.ikon ?? 'slaktbank') + '_karta' + v, { w: bw, h: bh } = storlekAv(st), w = bw * TS, upp = (iconCanvas(ik).height - 8 * bh) * 2;
+    const x0 = st.x * TS, y0 = st.y * TS - upp; // bildens övre vänstra hörn
+    pileIcons.add(ik, x0, y0, 2);
     if (!isKlar(st)) { framsteg(st.x * TS + w / 2, y0 + 3, stationKlar(st)); continue; }
     if (st.fyllt) overG.beginFill(0x24160a, 0.75 * clamp(st.fyllt, 0, 1)).drawEllipse(st.x * TS + TS / 2, st.y * TS + TS / 2 + 1, 5, 4).endFill(); // latrinen mörknar när den fylls (smuts.ts)
     if (d?.brasa) brasaBild(st, x0, y0, tab === 'eld');
@@ -147,16 +150,15 @@ export function drawStructures(t: number) {
     // stubbarna (Björn valde den korta stocken efter v89) är en ruta stora: framför bänken och runt bordet
     if (d?.sitt) pileIcons.add('sittplats', st.x * TS + w / 2 - TS / 2, (st.y + bh) * TS, 2);
     for (const q of bordPlatser(st)) pileIcons.add('sittplats', q.x * TS, q.y * TS, 2);
-    for (const k of st.med ?? []) pileIcons.add(tillbehorDef(k)?.ikon + '_karta', x0, y0, 2, !!st.rot); // tillbehören i den (skinnfällen i bädden)
-    if (st.rot) continue;
+    for (const k of st.med ?? []) pileIcons.add(tillbehorDef(k)?.ikon + '_karta' + v, x0, y0, 2); // tillbehören i den (skinnfällen i bädden)
     if (st.tork?.length) hangande(st, x0, y0);
-    const yta = YTA[st.k] ?? { x: 2, y: 2 };
-    (iBruk(st)?.saker ?? []).slice(0, 3).forEach((k, i) => pileIcons.add(k, x0 + yta.x + i * 6, y0 + yta.y, 1)); // sida vid sida
+    const yta = (v ? YTA[st.k]?.v : YTA[st.k]) ?? { x: 2, y: 2 };
+    (iBruk(st)?.saker ?? []).slice(0, 3).forEach((k, i) => pileIcons.add(k, x0 + yta.x + (v ? 0 : i * 6), y0 + yta.y + (v ? i * 7 : 0), 1)); // sida vid sida, i den stående under varandra
     const vid = yta.vid && tingOf(s).find(k => k.vid === st.id && k.hos === undefined && k.lass === undefined);
     if (vid) pileIcons.add(vid.k, x0 + yta.vid!.x, y0 + yta.vid!.y, 1);
   }
-  // dörrarna i öppningarna (DORRAR i byggnad.ts): vriden när väggen går uppåt (en vägg ovanför öppningen)
-  for (const b of bitsOf(s)) if (b.dorr) pileIcons.add(dorrDef(b.dorr)?.ikon + '_karta', b.x * TS, b.y * TS, 2, bitAt(s, b.x, b.y - 1)?.k === 'vagg');
+  // dörrarna i öppningarna (DORRAR i byggnad.ts): den stående bilden (_v) när väggen går uppåt (en vägg ovanför öppningen)
+  for (const b of bitsOf(s)) if (b.dorr) pileIcons.add(dorrDef(b.dorr)?.ikon + '_karta' + (bitAt(s, b.x, b.y - 1)?.k === 'vagg' ? '_v' : ''), b.x * TS, b.y * TS, 2);
   pileIcons.end();
   // markerad hög utanför lagret: vit kant runt rutan, som lagerplatsen får
   const h = ui.hogAt;

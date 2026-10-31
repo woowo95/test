@@ -49,6 +49,10 @@ SCENARIER.ikoner = {
       ['påbörjat redskap', saknas(['paborjat'])],
       ['stationer', saknas(SIM.STATION_LIST.map(k => SIM.STATIONER[k].ikon))],
       ['relationstyper', saknas(Object.values(SIM.RELATIONER).map(t => t.ikon))],
+      // det som kan stå vridet har en stående bild (steg 3.10.7): stationer som inte är kvadratiska (grillen och elden står
+      // alltid likadant), tillbehören till dem och dörrarna
+      ['stående bilder', saknas([...SIM.STATION_LIST.filter(k => SIM.STATIONER[k].w !== SIM.STATIONER[k].h && k !== 'grill' && !SIM.stationDef(k)?.eld).map(k => SIM.STATIONER[k].ikon + '_karta_v'),
+        ...Object.values(SIM.DORRAR).map(d => d.ikon + '_karta_v')])],
     ];
     // tårtdiagrammet i personrutan: varje handling (utom sömnen) har slagets pixelbild, slagets tecken eller ett eget tecken
     const utan = (Object.keys(ACTS) as SIM.Act[]).filter(a => {

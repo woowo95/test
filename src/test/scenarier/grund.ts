@@ -510,6 +510,7 @@ SCENARIER.torka = {
 };
 
 SCENARIER.oversvamning = {
+  lang: true,
   text: 'Steg 3.8.3: översvämningen kommer ibland på våren och hösten. Efter ett långt regn stiger sjön en ruta i taget en till tre rutor upp på land, står kvar ett par dygn och sjunker. Maten under vatten förstörs, lätta saker (grenar) flyter bort ute, tunga saker (sten) ligger kvar och slits fortare, fält under vatten dör och ingen står i vattnet. Efteråt är stranden som förut',
   kor: () => {
     // en by vars vårtid just börjat och har en översvämning som når minst två rutor upp på land

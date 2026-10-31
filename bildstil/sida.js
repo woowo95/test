@@ -1487,6 +1487,88 @@ const FAT_KNYTE = ['................', '..........aaa...', '.........aaaaa..', '
 const RIK_PUNG = ['................', '................', '......c..c......', '.......cc.......', '......aaaa......', '.....aaaaaa.....', '....aaaaaaaa....', '...awaaaaaaaa...', '..awaaaaaaaaaa..', '..aaaaaaaaaaaa..', '..aaaaaaaaaaaa..', '..baaaaaaaaaab..', '...baaaaaaaab.y.', '....bbbbbbbb.yy.', '................', '................'];
 const RIK_SKINN = ['................', '................', '................', '...a........a...', '....aaaaaaaa....', '...aaaaaaaaaa...', '..bbbbbbbbbbbb..', '.b.bbbbbbbbbb.b.', '..cccccccccccc..', '.c.cccccccccc.c.', '..dddddddddddd..', '.dddddddddddddd.', '..eeeeeeeeeeee..', '................', '................', '................'];
 const RIK_HALSBAND = ['................', '..c..........c..', '..c..........c..', '...c........c...', '...y........y...', '...Y........Y...', '....y......y....', '....Y......Y....', '.....y....y.....', '......yYYy......', '.......ww.......', '.......ww.......', '.......w........', '................', '................', '................'];
+// ---------- timmerväggen och det som kan vridas (steg 3.10.7) ----------
+// Väggen som husbild.ts ritar den i spelet, 8 × 8 punkter per ruta och här dubbelt så stor som forstorad. slut = hur väggen
+// slutar mot en öppning (HUS_SLUT): 0 är som i dag, 1–3 är förslagen
+const HUS_FARG = { k: '#5e3e22', b: '#8a5e34', B: '#b8885a', e: '#d8b480', E: '#efd3a0', d: '#4a3018', F: '#a27a4e', f: '#9a7248', D: '#86603c' };
+const HUS_STOCK = ['.', 'k', 'b', 'B', 'B', 'b', 'k', '.'];
+const HUS_GRANNAR = [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [1, -1], [-1, 1], [1, 1]];
+const husAnde = (lx, ly, cx, cy, r) => { const d = Math.hypot(lx - cx, ly - cy); return d < r[0] ? 'E' : d < r[1] ? 'e' : d < r[2] ? 'd' : ''; };
+function husPlanka(gx, gy) { const c = Math.floor(gx / 3), x = gx % 3, sy = (gy + c * 4) % 11; return x === 0 || sy === 0 || (sy === 1 && x === 2) ? 'D' : x === 1 ? 'F' : 'f'; }
+// avslutningen räknad som om öppningen ligger till höger: u = längs väggen mot öppningen, v = tvärs över väggen.
+// '' = stocken som vanligt, '.' = ingenting (marken eller golvet syns)
+const HUS_SLUT = [
+  (u, v) => u >= 5 ? husAnde(u, v, 5.5, 3.5, [1.3, 2.1, 2.6]) : '', // i dag: en halv stockände, avskuren vid rutans kant
+  (u, v) => v < 1 || v > 6 ? '' : u === 7 ? (v === 1 || v === 6 ? 'k' : v === 3 || v === 4 ? 'E' : 'e') : u === 6 ? 'd' : '', // rakt avsågad
+  (u, v) => husAnde(u, v, 4.5, 3.5, [1.2, 2, 2.8]) || (u >= 7 ? '.' : ''), // en hel rund stolpe
+  (u, v) => u < 4 ? '' : u === 4 || u === 7 || v === 0 || v === 7 ? 'd' : v === 3 || v === 4 ? 'b' : 'e', // en fyrkantig huggen stolpe
+];
+function husVagg(n, lx, ly, slut) {
+  const [l, r, up, dn] = [...n].map(c => c === 'W'), o = [...n].map(c => c === 'O' || c === 'P');
+  let h = l || r; const v = up || dn;
+  if (!h && !v) h = o[0] || o[1] || !(o[2] || o[3]);
+  const horn = (h || o[0] || o[1]) && (v || o[2] || o[3]) && (h || v);
+  if (horn) { const a = Math.hypot(lx - 3.5, ly - 3.5); if (a < 2.2) return Math.round(a * 2) % 2 ? 'e' : 'E'; if (a < 3.3) return 'd'; }
+  else {
+    const uv = o[1] ? [lx, ly] : o[0] ? [7 - lx, ly] : o[3] ? [ly, lx] : o[2] ? [7 - ly, lx] : null;
+    const p = uv ? HUS_SLUT[slut](uv[0], uv[1]) : '';
+    if (p) return p === '.' ? '' : p;
+  }
+  const inH = h && ly >= 1 && ly <= 6 && lx >= (l ? 0 : 1) && lx <= (r ? 7 : 6);
+  const inV = v && lx >= 1 && lx <= 6 && ly >= (up ? 0 : 1) && ly <= (dn ? 7 : 6);
+  const k = inV ? HUS_STOCK[lx] : inH ? HUS_STOCK[ly] : '.';
+  return k === '.' ? '' : k;
+}
+// ett hus efter en plan (W = vägg, G = trägolv, O = öppning, . = marken), dubbelt så stort som i spelet
+function ritaHusPlan(B, x0, y0, plan, slut) {
+  const at = (x, y) => plan[y]?.[x] ?? '.';
+  const golvO = (x, y) => at(x, y) === 'O' && HUS_GRANNAR.slice(0, 4).some(([dx, dy]) => at(x + dx, y + dy) === 'G');
+  for (let ty = 0; ty < plan.length; ty++) for (let tx = 0; tx < plan[0].length; tx++) {
+    const c = at(tx, ty), egen = c === 'O' ? (golvO(tx, ty) ? 'G' : '') : c;
+    if (egen !== 'W' && egen !== 'G') continue;
+    const n8 = HUS_GRANNAR.map(([dx, dy]) => golvO(tx + dx, ty + dy) ? 'P' : at(tx + dx, ty + dy)).join('');
+    for (let ly = 0; ly < 8; ly++) for (let lx = 0; lx < 8; lx++) {
+      const gx = tx * 8 + lx, gy = ty * 8 + ly;
+      let k = egen === 'G' ? husPlanka(gx, gy) : husVagg(n8, lx, ly, slut);
+      if (!k) { // golvet syns där stocken inte täcker rutan, om grannen åt det hållet är golv
+        const dx = lx <= 1 ? -1 : lx >= 6 ? 1 : 0, dy = ly <= 1 ? -1 : ly >= 6 ? 1 : 0;
+        for (const [ax, ay] of [[dx, 0], [0, dy], [dx, dy]]) {
+          if (!ax && !ay) continue;
+          const g = n8[HUS_GRANNAR.findIndex(([x, y]) => x === ax && y === ay)];
+          if (g === 'G' || g === 'P') { k = husPlanka(gx, gy); break; }
+        }
+      }
+      if (k) { const f = B.P.fran(HUS_FARG[k]); for (let j = 0; j < 4; j++) B.satt(x0 + gx * 2 + (j & 1), y0 + gy * 2 + (j >> 1), f); }
+    }
+  }
+}
+// huset i förslagen: öppningar i övre och vänstra väggen och en precis vid hörnet nere till höger, så att avslutningen syns
+// åt alla håll
+const HUS_PLAN = ['WWWOWW', 'WGGGGW', 'OGGGGW', 'WGGGGO', 'WWWWWW'];
+const HUS_SLUT_M = slut => ({ w: 100, h: 84, rita: (B, P) => ritaHusPlan(B, 2, 2, HUS_PLAN, slut) });
+// spelets bild vriden ett kvarts varv medsols, som spelet ritade det vridna före steg 3.10.7
+function vridenIkon(k) {
+  const n = k + '_vreds', r = IKONER.PIX[k];
+  IKONER.PIX[n] ??= [...r[0]].map((_, x) => r.map(row => row[x]).reverse().join(''));
+  IKONER.PAL[n] ??= IKONER.PAL[k];
+  return n;
+}
+// det som kan vridas: bilden som den står i registret och vriden, sida vid sida med nederkanterna i linje. lager = bilder som
+// ritas ovanpå varandra (skinnfällen i bädden); vrid ger den vridna bildens namn
+function vridPar(lager, vrid) {
+  const hor = k => IKONER.PIX[k], ver = k => IKONER.PIX[vrid(k)];
+  const W = hor(lager[0])[0].length * 2, H = Math.max(hor(lager[0]).length, ver(lager[0]).length) * 2;
+  return { w: W + ver(lager[0])[0].length * 2 + 10, h: H + 4, rita: (B, P) => { for (const k of lager) { forstorad(B, k, 2, 2 + H - hor(k).length * 2); forstorad(B, vrid(k), W + 8, 2 + H - ver(k).length * 2); } } };
+}
+const VRID_IDAG = 'Som spelet ritade den: samma bild vriden ett kvarts varv, så att benen och skuggan hamnade på sidan.';
+const VRID_VAL = (id, namn, lager, text) => ({ id, namn, vad: `Det som kan vridas (steg 3.10.7): ${namn.toLowerCase()} får en egen bild när den står vriden, i stället för att bilden vrids. Till vänster som den står i registret, till höger vriden.`, typ: 'janej',
+  idag: vridPar(lager, vridenIkon), idagText: VRID_IDAG, versioner: [{ text, ...vridPar(lager, k => k + '_v') }] });
+// dörrarna i en vägg åt båda hållen: en vägg som går åt sidan och en som går uppåt, med dörren i öppningen
+const DORR_PLAN = ['WOW.W', '....O', '....W'];
+const DORR_M = (dorrar, vrid) => ({ w: dorrar.length * 88 + 2, h: 52, rita: (B, P) => dorrar.forEach((k, i) => {
+  const x0 = 2 + i * 88; ritaHusPlan(B, x0, 2, DORR_PLAN, 0);
+  forstorad(B, k, x0 + 16, 2); forstorad(B, vrid(k), x0 + 64, 18);
+}) });
 const VAL = [
   { id: 's_mat', namn: 'Samtal om mat', vad: 'Ny symbol (steg 3.9.5), 16 × 16 punkter, i pratbubblan och personrutan när två pratar om maten eller längtar efter något att äta. Till vänster i rätt storlek, till höger tre gånger större. I spelet nu: version 1 (platshållare).', typ: 'tre',
     versioner: [
@@ -1604,6 +1686,22 @@ const VAL = [
       { text: 'En hög med skinn i olika färger.', ...IK_NY(RIK_SKINN, { a: 'ben2', b: 'jord3', c: 'rost2', d: 'skiffer2', e: 'jord1' }) },
       { text: 'Ett halsband av bärnsten med en tand i mitten.', ...IK_NY(RIK_HALSBAND, { c: 'jord1', y: 'senap3', Y: 'senap2', w: 'ben3' }) },
     ] },
+  { id: 'hus_slut', namn: 'Väggen mot en öppning', vad: 'Görs om (steg 3.10.7): hur timmerväggen slutar där en dörröppning börjar. I dag sitter en halv stockände vid rutans kant, avskuren mitt i. Huset har öppningar åt alla håll, och en precis vid hörnet nere till höger (där en bit av stockänden stack ut ovanför hörnet; det är rättat i spelet). 8 × 8 punkter per ruta som timmerväggen, här dubbelt så stort.', typ: 'tre',
+    idag: HUS_SLUT_M(0), idagText: 'Som spelet ritar det nu: en halv stockände vid kanten.',
+    versioner: [
+      { text: 'Rakt avsågad: stocken slutar med en mörk såglinje och den ljusa ändytan mot öppningen.', ...HUS_SLUT_M(1) },
+      { text: 'En hel rund stolpe som dörrpost, inne i väggrutan, med stockens ringar som i hörnen.', ...HUS_SLUT_M(2) },
+      { text: 'En fyrkantig huggen stolpe som dörrpost, lite bredare än stocken: mörk kant, ljus ändyta och en mörkare kärna.', ...HUS_SLUT_M(3) },
+    ] },
+  VRID_VAL('v_slaktbank', 'Slaktbänken', ['slaktbank_karta'], 'Stocken går uppifrån och ner, stockänden med de två främre benen syns längst ner och blodet rinner över den ner i pölen.'),
+  VRID_VAL('v_slojdbank', 'Slöjdbänken', ['flatarbank_karta'], 'Plankorna uppifrån och ner, stolparna med repet längs högra kanten och skåran för bensylen på skivan.'),
+  VRID_VAL('v_halmbadd', 'Halmbädden', ['halmbadd_karta', 'skinnfall_karta'], 'Höet med huvudänden uppåt, och skinnfällen över resten (här med fällen, som när den är gjord).'),
+  VRID_VAL('v_bord', 'Det lilla bordet', ['bord_karta'], 'Plankorna uppifrån och ner, och de två främre benen längst ner.'),
+  VRID_VAL('v_bord3', 'Långbordet', ['bord3_karta'], 'Plankorna på längden, uppifrån och ner, och de två främre benen längst ner.'),
+  VRID_VAL('v_tork', 'Torkställningen', ['tork_karta'], 'Bockarna framifrån som ett A, den bakre högre upp, och slån mellan dem uppifrån och ner; maten hänger längs slån.'),
+  { id: 'v_dorrar', namn: 'Dörrarna', vad: 'Det som kan vridas (steg 3.10.7): dörren i en vägg som går uppåt får en egen bild i stället för att bilden vrids. Trädörren till vänster och skinndörren till höger, var och en i en vägg åt sidan och en uppåt. Väljer du en ny trädörr ritas den stående efter den.', typ: 'janej',
+    idag: DORR_M(['tradorr_karta', 'skinndorr_karta'], vridenIkon), idagText: VRID_IDAG,
+    versioner: [{ text: 'I väggen som går uppåt syns dörren från kanten: bräderna med repen på sidorna, och skinnet som hänger från stången.', ...DORR_M(['tradorr_karta', 'skinndorr_karta'], k => k + '_v') }] },
   { id: 'a_smyga', namn: 'Att smyga', vad: 'Ny symbol över huvudet (Björn efter v159), 8 × 8 punkter som de andra handlingarna: jägaren smyger fram mot en kanin. I spelet nu: version 1 (platshållare).', typ: 'tre',
     versioner: [
       { text: 'En fot på tå med två tysta prickar.', ...SYM8_M(SMYG_TA, AKT_L) },
