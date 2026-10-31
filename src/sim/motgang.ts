@@ -2,7 +2,7 @@ import { balans } from './balans';
 import { ageOf, alive, count, livet, living, log, stat } from './folk';
 import { delade } from './berattelser';
 import { kronika } from './historik';
-import { clamp, rnd } from './slump';
+import { clamp, hash3, rnd } from './slump';
 import { kalender, yearNo } from './tid';
 import { DAY, HOUR, Person, Rel, State } from './typer';
 import { allaBarn } from './uppvaxt';
@@ -80,12 +80,8 @@ export type MotgangId = keyof typeof MOTGANGAR;
 const DEF: Record<MotgangId, MotgangDef> = MOTGANGAR;
 const IDS = Object.keys(DEF) as MotgangId[];
 
-// ett tal mellan 0 och 1 ur byns frö och tidsålderns början (samma sätt som vädret i vader.ts)
-function hash(a: number, b: number, c: number) {
-  let h = Math.imul(a ^ 0x9e3779b9, 0x85ebca6b) ^ Math.imul(b + 0x632be5ab, 0xc2b2ae35) ^ Math.imul(c + 1, 0x27d4eb2f);
-  h ^= h >>> 15; h = Math.imul(h, 0x2c1b3c6d); h ^= h >>> 12; h = Math.imul(h, 0x297a2d39); h ^= h >>> 15;
-  return (h >>> 0) / 4294967296;
-}
+// ett tal mellan 0 och 1 ur byns frö och tidsålderns början (som vädret, hash3 i slump.ts)
+const hash = hash3;
 const timNr = (start: number) => Math.round(start / HOUR);
 // ett tal mellan 0 och 1 för motgången som börjar vid start (salt skiljer talen åt): hur den blir (torka.ts, flod.ts)
 export const motgangTal = (s: State, start: number, salt: number) => hash(s.seed, timNr(start), salt);

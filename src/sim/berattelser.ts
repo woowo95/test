@@ -10,6 +10,7 @@ import { HOUR, MIN, Person, Rel, SKILLS, SKILL_NAMES, STATS, Skill, Stat, State,
 import { upplevelseText } from './uppvaxt';
 import { isLight, kalender } from './tid';
 import { temperature, vaderNu } from './vader';
+import { hash3 } from './slump';
 
 // Berättelserna (steg 3.9, "Berättelser" i designdokumentet): texterna om människorna, händelserna och sakerna. Varje
 // text är en mall i registret BERATTELSER med många varianter; varianten väljs ur byns frö, personen och tiden (hash),
@@ -1176,11 +1177,8 @@ export type MallId = keyof typeof MDEF;
 export const BERATTELSER: Record<MallId, Variant[]> = MDEF;
 
 // ---------- att välja och fylla i ----------
-function hash(a: number, b: number, c: number) {
-  let h = Math.imul(a ^ 0x5bd1e995, 0x85ebca6b) ^ Math.imul(b + 0x632be5ab, 0xc2b2ae35) ^ Math.imul(c + 7, 0x27d4eb2f);
-  h ^= h >>> 15; h = Math.imul(h, 0x2c1b3c6d); h ^= h >>> 12; h = Math.imul(h, 0x297a2d39); h ^= h >>> 15;
-  return (h >>> 0) / 4294967296;
-}
+// ett tal mellan 0 och 1 ur byns frö och två tal, med berättelsernas egna konstanter (hash3 i slump.ts)
+const hash = (a: number, b: number, c: number) => hash3(a, b, c, 0x5bd1e995, 7);
 // väljer en variant ur mallen: bara de vars villkor stämmer, och samma nyckel ger alltid samma text
 // t: tiden i timmar (en ny text varje timme), eller 0 för en text som står kvar (beskrivningen av en person)
 export function valjVariant(s: State, mall: MallId, nyckel: number, f: Fyllning = {}, t = Math.round(s.now / HOUR)) {

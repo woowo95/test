@@ -20,6 +20,7 @@ export const KLADER = balans('klader', {
   hotTim: 48, // vargar sedda nära byn eller en strid i byn för högst så här många timmar sedan: byn hotas (punkt 2)
   gottOm: 2, // det finns gott om ett material när det räcker till så här många plagg till, utöver det som behövs (punkt 4)
   dyrt: 1.5, // ett plagg som kostar så här många gånger det billigaste är dyrt och sparas (punkt 5)
+  skyddTak: 0.9, // ett plagg tar som mest så här stor del av en skada (kodgenomgången 3.10.25: talet stod löst)
 });
 
 export type MaterialSlag = 'skinn' | 'lader' | 'tyg' | 'flatat';
@@ -80,7 +81,7 @@ export function kladSkyddStrid(k: string) {
   const r = kladAv(k), sk = r && (PLAGG[r.plagg] as PlaggDef).skydd;
   if (!r || !sk) return undefined;
   const f = KLADMATERIAL[r.mat].skydd;
-  return { delar: sk.delar, tar: Object.fromEntries(Object.entries(sk.tar).map(([sl, v]) => [sl, Math.min(0.9, v! * f)])) as Partial<Record<Skadeslag, number>> };
+  return { delar: sk.delar, tar: Object.fromEntries(Object.entries(sk.tar).map(([sl, v]) => [sl, Math.min(KLADER.skyddTak, v! * f)])) as Partial<Record<Skadeslag, number>> };
 }
 // saken i förrådet som plagget k görs av (rocken av vargskinn: vargskinnet)
 export const materialSak = (k: string) => { const r = kladAv(k); return r && KLADMATERIAL[r.mat].sak; };

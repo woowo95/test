@@ -1,4 +1,4 @@
-import { clamp } from './slump';
+import { clamp, hash3 } from './slump';
 import { HOUR, Person, State } from './typer';
 import { hourOf, kalender, yearPos } from './tid';
 import { balans } from './balans';
@@ -121,13 +121,9 @@ export const VADERLAGE: Record<VaderId, { namn: string; ikon: string; text: stri
 export interface Vader { lage: VaderId; moln: number; nb: number; sno: boolean; vind: number; aska: boolean; dimma: number }
 export interface VaderMinne { fukt: number; sno: number; torr?: number } // torr = hur torr marken är, i timmar (torrTim, steg 3.8.5)
 
-// en jämn slumpvåg ur byns frö: 0 till 1, som ändrar sig under ungefär `tim` timmar. En egen blandning (inte hash i
-// karta.ts): att byta den skulle ge alla byar ett annat väder
-function hash(a: number, b: number, c: number) {
-  let h = Math.imul(a ^ 0x9e3779b9, 0x85ebca6b) ^ Math.imul(b + 0x632be5ab, 0xc2b2ae35) ^ Math.imul(c + 1, 0x27d4eb2f);
-  h ^= h >>> 15; h = Math.imul(h, 0x2c1b3c6d); h ^= h >>> 12; h = Math.imul(h, 0x297a2d39); h ^= h >>> 15;
-  return (h >>> 0) / 4294967296;
-}
+// en jämn slumpvåg ur byns frö: 0 till 1, som ändrar sig under ungefär `tim` timmar (hash3 i slump.ts: att byta den
+// skulle ge alla byar ett annat väder)
+const hash = hash3;
 function vag(s: State, t: number, tim: number, salt: number) {
   const x = t / (tim * HOUR), k = Math.floor(x), f = x - k, g = f * f * (3 - 2 * f);
   const a = hash(s.seed, k, salt), b = hash(s.seed, k + 1, salt);

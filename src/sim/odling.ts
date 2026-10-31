@@ -70,6 +70,9 @@ export const ODLING = balans('odling', {
   // på hösten blir nätterna kalla, och grödan hinner inte mogna innan frosten tar den (steg 2.12.2):
   artMarg: 5, // ärter (korn före steg 3.10.23.8) sås bara om de hinner mogna med så här många dygn tillgodo före istiden (1,5 före steg 2.12.2); annars rovor ...
   rovMarg: 3, // ... med så här många dygn tillgodo
+  // talen som stod lösa (kodgenomgången 3.10.25), med samma värden
+  lekStraff: 20, // ett fält på lekplatsen får så här många poäng till (färre är bättre)
+  vildAvst: 8, // platsen för vilda frön är värd hälften så här många rutor från byn
 });
 
 // grödorna (steg 2.10.3): sak = det som skördas (saker.ts), fro = fröna den sås med, dygn = hur länge den växer innan den är
@@ -274,7 +277,7 @@ function hittaSite(s: State, w: number, n: number) {
     let ok = true, unga = 0;
     for (let k = 0; k < n && ok; k++) { const r = rutaXY(ny, k); if (!rutaFri(s, gr, r.x, r.y)) ok = false; else { const tr = g.trees[r.y * W + r.x]; unga += tr >= FOREST ? ODLING.skogKost : tr; } }
     if (!ok) continue;
-    const lek = paLek(lekR, x, ny.dir > 0 ? y : y - rader + 1, b, rader) ? 20 : 0;
+    const lek = paLek(lekR, x, ny.dir > 0 ? y : y - rader + 1, b, rader) ? ODLING.lekStraff : 0;
     const sc = byAvstand(s, mx, my) + lek + unga;
     if (sc < bs) { bs = sc; best = { x, y }; }
   }
@@ -501,7 +504,7 @@ export function vildFronPlats(s: State) {
     let r = 0;
     for (const k of VILDA_IDS) r += richness(s, k, x + 0.5, y + 0.5);
     if (r < ODLING.froLeta) continue;
-    const sc = r / (1 + campDist(s, x, y) / 8);
+    const sc = r / (1 + campDist(s, x, y) / ODLING.vildAvst);
     if (sc > bs) { bs = sc; at = { x: x + 0.5, y: y + 0.5 }; }
   }
   vildCache.set(s, { key, at });

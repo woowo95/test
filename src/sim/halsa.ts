@@ -147,7 +147,7 @@ export const rorlighetSkador = (p: Person) => forlust(p, 'rorlighet');
 export const rorlighet = (p: Person) => forlust(p, 'rorlighet') * yrselFaktor(p);
 // den som har ett ben eller en fot som är för skadad kan inte gå, utan kravlar (steg 2.5.2)
 export const GADELAR: readonly Kroppsdel[] = [...BEN, ...FOTTER]; // delarna man går med
-export const kanGa = (p: Person) => !p.skador?.length || ![...BEN, ...FOTTER].some(d => delFel(p, d) >= HALSA.krypFel);
+export const kanGa = (p: Person) => !p.skador?.length || !GADELAR.some(d => delFel(p, d) >= HALSA.krypFel);
 export const hemma = (s: State, p: Person) => campDist(s, Math.floor(p.x), Math.floor(p.y)) <= HALSA.hemma;
 const infektion = (p: Person) => { let v = 0; for (const w of p.skador ?? []) v = Math.max(v, w.inf ?? 0); return v; };
 // arbetet gånger detta (workRate i ekonomi.ts): skadorna och styrkan, som sjunker av brist på protein och mineraler (steg 2.6.2)

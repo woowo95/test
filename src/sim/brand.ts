@@ -21,6 +21,7 @@ import { DAY, H, HEARTHS, HOUR, HOUR_S, MIN, Person, SEC, State, Task, W, inMap 
 import { allaBarn } from './uppvaxt';
 import { FOREST, VAG, isSoil } from './vag';
 import { blixtNu, snoPaMarken, torrTim, vaderNu } from './vader';
+import { hash3 } from './slump';
 
 // Eldsvådor och skogsbrand (steg 3.8.5, "Motgångarna i spelet" och "Elden" i designdokumentet). Inte en rad i MOTGANGAR:
 // branden har ingen tid i kalendern utan börjar när en gnista eller blixten tänder något som brinner. Gnistor flyger från
@@ -74,6 +75,7 @@ export const BRAND = balans('brand', {
   brannHandGrad: [0.1, 0.4], // ... så här svår (slumpas mellan)
   iElden: 3, // den som står i en brinnande ruta bränns med den här takten (i timmen) ...
   iEldenGrad: [0.2, 0.7], // ... så här svårt (slumpas mellan)
+  slag: 300, // gnista och sprid gäller per så här många sekunder (ett slag, BEAT i steg.ts; kodgenomgången 3.10.25)
 });
 
 // en brinnande ruta: rutan, timmar den brunnit, timmar den kan brinna, hur långt den släckts (1 = släckt)
@@ -82,12 +84,9 @@ export type BrandRuta = [number, number, number, number];
 // hur många rutor som tagit eld, och vad den gjort
 export interface Brand { t: number; x: number; y: number; kalla: 'gnista' | 'blixt'; r: BrandRuta[]; ut: number[]; n: number; trad: number; vagg: number; saker: number; skadade: number; slackt: number; hot?: 1; sagd?: 1 }
 
-// ett tal mellan 0 och 1 ur byns frö, tiden (i steg), en ruta eller person och ett salt (drar inget ur slumpföljderna)
-function hash(a: number, b: number, c: number) {
-  let h = Math.imul(a ^ 0x9e3779b9, 0x85ebca6b) ^ Math.imul(b + 0x632be5ab, 0xc2b2ae35) ^ Math.imul(c + 1, 0x27d4eb2f);
-  h ^= h >>> 15; h = Math.imul(h, 0x2c1b3c6d); h ^= h >>> 12; h = Math.imul(h, 0x297a2d39); h ^= h >>> 15;
-  return (h >>> 0) / 4294967296;
-}
+// ett tal mellan 0 och 1 ur byns frö, tiden (i steg), en ruta eller person och ett salt (hash3 i slump.ts, drar inget ur
+// slumpföljderna)
+const hash = hash3;
 const ur = (s: State, a: number, salt: number) => hash(s.seed + salt * 7919, Math.round(s.now / SEC), a);
 const chans = (takt: number, dtSec: number) => 1 - Math.exp(-takt * dtSec / HOUR_S); // takt i timmen under dtSec sekunder
 
@@ -150,7 +149,7 @@ export function brandSteg(s: State, dtSec: number) {
   if (!b) return;
   const v = vaderNu(s), k = kartaOf(b), slag = Math.round(s.now / SEC);
   // elden tar sig till grannrutorna
-  const sprid = BRAND.sprid * dry * (1 + BRAND.vind * v.vind) * (1 - v.nb) * dtSec / 300, bransle = bransleAv(s);
+  const sprid = BRAND.sprid * dry * (1 + BRAND.vind * v.vind) * (1 - v.nb) * dtSec / BRAND.slag, bransle = bransleAv(s);
   const nya: number[] = [];
   if (sprid > 0) for (const [i] of b.r) {
     const x = i % W, y = Math.floor(i / W);
@@ -188,7 +187,7 @@ export function brandSteg(s: State, dtSec: number) {
 
 // gnistor från elden och brasorna, och blixten när den slår ner (en gång i timmen)
 function gnistor(s: State, dtSec: number, dry: number) {
-  const v = vaderNu(s), takt = BRAND.gnista * dry * (1 + BRAND.vind * v.vind) * (1 - v.nb) * dtSec / 300;
+  const v = vaderNu(s), takt = BRAND.gnista * dry * (1 + BRAND.vind * v.vind) * (1 - v.nb) * dtSec / BRAND.slag;
   const fran = (x: number, y: number, spread: number, salt: number) => {
     if (ur(s, salt, 3852) >= takt * spread) return;
     const R = BRAND.gnistaR, nx = x + Math.round((ur(s, salt, 3853) * 2 - 1) * R), ny = y + Math.round((ur(s, salt, 3854) * 2 - 1) * R);

@@ -39,7 +39,7 @@ export const RYKTE = balans('rykte', {
   ertappa: 0.6, // den som själv såg det (och är säker, minst ertappaSaker) märker överdriften eller underdriften när det
   ertappaSaker: 0.7, // berättade skiljer sig så här mycket från det hen vet ...
   ertappaOp: 8, // ... och relationen med berättaren sjunker så mycket
-  lognV: 0.35, // ett ertappat påhitt eller en överdrift ger intrycket lögnare med så här stor styrka
+  lognV: 0.35, overdrevV: 0.2, // ett ertappat påhitt (en överdrift) ger intrycket lögnare med så här stor styrka
   lognTro: 0.8, // tron på en lögnare sjunker med lognTro × lögnarintryckets styrka (minne.ts och här)
   glomDygn: 6, // intrycken bleknar med en tidskonstant på glomDygn + minne / glomMinne dygn ...
   glomMinne: 2,
@@ -122,8 +122,8 @@ const HDEF = {
   masterverk: { i: 'skicklig', vikt: 0.4, text: 'gjorde ett mästerverk: {sak}', prestation: true },
   perfekt: { i: 'skicklig', vikt: 0.8, text: 'gjorde ett perfekt mästerverk: {sak}', prestation: true },
   usel: { i: 'klapare', vikt: 0.3, text: 'gjorde en usel {sak}' },
-  logn: { i: 'logn', vikt: 0.35, text: 'ljög om {om}' },
-  overdrev: { i: 'logn', vikt: 0.2, text: 'överdrev om {om}' },
+  logn: { i: 'logn', vikt: RYKTE.lognV, text: 'ljög om {om}' },
+  overdrev: { i: 'logn', vikt: RYKTE.overdrevV, text: 'överdrev om {om}' },
   dom: { i: 'rattvis', vikt: 0.15, text: 'dömde {om} rättvist' },
   orattvisDom: { i: 'orattvis', vikt: 0.3, text: 'dömde {om} orättvist' },
   vadaskott: { i: 'klapare', vikt: 0.25, text: 'träffade {om} av misstag i en strid' }, // steg 3.7.7

@@ -49,7 +49,7 @@ export const STATION = balans('station', {
   slaktbankTra: 3, // en slaktbänk kräver så mycket trä ...
   slaktbankMin: 20, // ... och så många minuters arbete
   avstand: 2.5, // en station står helst så här många rutor från elden
-  norr: 0.5, // ... och får fyra gånger så här många poäng (färre är bättre) om den står på lekplatsen (plats.ts, steg 2.10.4)
+  norr: 0.5, // ... och får lekGanger gånger så här många poäng (färre är bättre) om den står på lekplatsen (plats.ts, steg 2.10.4)
   slaktTill: 9, slaktAvst: 6, // slaktbänken står högst och helst så här många rutor från byn, eftersom den är smutsig (steg 2.10.16)
   utkantMin: 2, // det som står i byns utkant står aldrig närmare byn än så här (om ingen plats längre bort är ledig, t.ex. för skogen)
   knivplatser: 1, // så många knivar som ligger kvar vid slaktbänken
@@ -97,6 +97,7 @@ export const STATION = balans('station', {
   brasaSten: 6, brasaMin: 15, // så många stenar (som lägereldens ring) och så många minuters arbete
   brasaFran: 2.5, // brasan ligger helst så här många rutor från mitten av sovplatserna den är till för ...
   brasaSok: 4, // ... och högst så här många rutor därifrån
+  lekGanger: 4, // norr gånger så här mycket för en station på lekplatsen (kodgenomgången 3.10.25: talet stod löst)
 });
 // trä till ett bord som tar w × h rutor, med stubbar på platserna runt det (platserAv nedan)
 const bordTra = (w: number, h: number) => w * h * STATION.bordTra + ((w >= 2 ? 2 * w : 0) + (h >= 2 ? 2 * h : 0)) * STATION.stubbeTra;
@@ -381,7 +382,7 @@ function siteUtkant(s: State, k: string) {
         d = Math.min(d, byAvstand(s, q.x, q.y));
       }
       if (!ok || d < STATION.utkantMin || d > u.till || !friRunt(s, rutor)) continue;
-      const lek = paLek(lekR, x, y, w, h) ? STATION.norr * 4 : 0;
+      const lek = paLek(lekR, x, y, w, h) ? STATION.norr * STATION.lekGanger : 0;
       const vatten = u.vatten && s.hygien ? s.hygien * STATION.latrinVattenPoang * Math.max(0, STATION.latrinVatten - tillVatten(s, x, y, STATION.latrinVatten)) : 0;
       const sc = Math.abs(d - u.avst) + lek + vatten + rot * STATION.vriden;
       if (sc < bs) { bs = sc; best = rot ? { x, y, rot } : { x, y }; }
@@ -444,7 +445,7 @@ function siteUte(s: State, k: string) {
       }
       if (!fri) continue;
       const mx = dx + (w - 1) / 2, my = dy + (h - 1) / 2;
-      const lek = paLek(lekR, x, y, w, h) ? STATION.norr * 4 : 0;
+      const lek = paLek(lekR, x, y, w, h) ? STATION.norr * STATION.lekGanger : 0;
       const sc = Math.abs(Math.hypot(mx, my) - STATION.avstand) + lek + rot * STATION.vriden - vagg * STATION.uteVagg;
       if (sc < bs) { bs = sc; best = rot ? { x, y, rot } : { x, y }; }
     }
