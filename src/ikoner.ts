@@ -1,5 +1,6 @@
 // ikoner för föremål: små pixelbilder (8×8) som används både på kartan och i listorna
 // varje tecken är en pixel, '.' är genomskinlig
+import { KLADER_AV } from './sim/klader';
 
 // slagen av arbete ritas ljust i en färg (vattnet blått)
 const AKT = { w: '#f4efe0', a: '#9fc6e8' };
@@ -29,9 +30,6 @@ export const PAL: Record<string, Record<string, string>> = {
   kniv: { h: '#7a5a36', H: '#9c7848', g: '#8f9396', G: '#c9cdd0' },
   // kläderna och bensylen (steg 2.3.2; Björn valde kläderna efter v89, bensylen är en platshållare)
   bensyl: { w: '#efe6cc', W: '#fff8e6', d: '#b8a882' },
-  skinnrock: { d: '#5e4026', w: '#d8c8a8', W: '#efe4cc', B: '#b48a5e', b: '#8a6440' },
-  skinnskor: { w: '#d8c8a8', d: '#5e4026', B: '#b48a5e', s: '#f2ead2' },
-  balte: { e: '#8a7448', Y: '#e8d4a0', y: '#c8b07a', d: '#5e4026' },
   mossa: { l: '#b4cc6a', G: '#7fa850', g: '#4f7a36', B: '#b48a5e', m: '#2f4a22' },
   // latrinen och benspaden (steg 2.7.2, Björn valde P6 och S1c/S1g efter v85)
   latrin: { o: '#8a6a40', O: '#b08a58', d: '#4a3018', k: '#24160a' },
@@ -103,7 +101,6 @@ export const PAL: Record<string, Record<string, string>> = {
   varg: { g: '#6e6a64', G: '#9c968c', d: '#45413c', w: '#d8d2c4', k: '#1a1a1a', r: '#9c3328' },
   vargkott: { r: '#86281f', R: '#c25a48', w: '#eee2c8' },
   vargskinn: { g: '#6e6a64', G: '#9c968c', d: '#45413c' },
-  vargpals: { g: '#6e6a64', G: '#9c968c', d: '#45413c', w: '#d8d2c4' },
   metspo: { h: '#8a6a40', y: '#c8b07a', w: '#e8e2d0' },
   korg: { t: '#6e4e2e', o: '#9a6a3e', O: '#c99a62', d: '#5e3c20' },
   risvagg: { p: '#5a3c22', b: '#8a6a40', B: '#b08a58' },
@@ -1697,17 +1694,6 @@ export const PIX: Record<string, string[]> = {
     '.dwd....',
     '.dd.....',
   ],
-  // skinnrocken (Björn valde 2 efter v89): en rock med pälskrage och fransar
-  skinnrock: [
-    '..dwwd..',
-    '.dwWWwd.',
-    '.dBbbBd.',
-    'dBBbBBBd',
-    'dBbBBbBd',
-    'BBBbBBbB',
-    'bBbBBbBb',
-    'd.d.d.d.',
-  ],
   // mossan (Björn valde M4 efter v89): en tuss mossa bunden med snöre
   mossa: [
     '........',
@@ -1718,28 +1704,6 @@ export const PIX: Record<string, string[]> = {
     'gGgBgGgm',
     '.mgBmgm.',
     '........',
-  ],
-  // bältet (Björn valde 1 efter v89): ett flätat rep i en ring med en knut
-  balte: [
-    '..eYeY..',
-    '.Ye..eY.',
-    'Ye....eY',
-    'y......y',
-    'Ye....eY',
-    '.eYeYey.',
-    '...dd...',
-    '...y.y..',
-  ],
-  // skinnskorna (Björn valde 1 efter v89): två skor med pälskant, den ena bakom den andra
-  skinnskor: [
-    '........',
-    '...ww...',
-    '...dBs..',
-    '...dBBBd',
-    'ww.ddddd',
-    'dBs.....',
-    'dBBBBd..',
-    'dddddd..',
   ],
   // skinnkläderna som teknik: rocken och skorna (platshållare)
   skinnklader: [
@@ -1794,16 +1758,6 @@ export const PIX: Record<string, string[]> = {
     '.GGGGG..',
     'ggGGGGgg',
     'g..gg..g',
-  ],
-  vargpals: [
-    '.dwwwwd.',
-    'dwGGGGwd',
-    'dGgggGGd',
-    'dGGgGGGd',
-    'dGgGGgGd',
-    'GGGgGGgG',
-    'gGgGGgGg',
-    'w.w.w.w.',
   ],
   skinn: [
     '...dd...',
@@ -2969,6 +2923,25 @@ export const PIX: Record<string, string[]> = {
 
 // det som kan vridas har en egen bild för varje håll (steg 3.10.7, regeln Det som kan vridas): _v är bilden när det står
 // vridet (bredd och djup byter plats), med samma färger som den liggande
+// kläderna (steg 3.10.12): varje plagg har en grundbild och varje material en palett, och varje plagg av ett material
+// (KLADER_AV i klader.ts) ritas med plaggets bild i materialets färger. Rocken, skorna och bältet är de Björn valde efter
+// v89 (av kaninskinn och rep); vargskinnets färger är en platshållare tills Björn valt i bildstilens valdel
+const PLAGG_BILD: Record<string, string[]> = {
+  // en rock med pälskrage och fransar
+  rock: ['..dwwd..', '.dwWWwd.', '.dBbbBd.', 'dBBbBBBd', 'dBbBBbBd', 'BBBbBBbB', 'bBbBBbBb', 'd.d.d.d.'],
+  // två skor med pälskant, den ena bakom den andra
+  skor: ['........', '...ww...', '...dBs..', '...dBBBd', 'ww.ddddd', 'dBs.....', 'dBBBBd..', 'dddddd..'],
+  // ett flätat rep i en ring med en knut
+  balte: ['..eYeY..', '.Ye..eY.', 'Ye....eY', 'y......y', 'Ye....eY', '.eYeYey.', '...dd...', '...y.y..'],
+};
+const MATERIAL_FARG: Record<string, Record<string, string>> = {
+  kaninskinn: { d: '#5e4026', w: '#d8c8a8', W: '#efe4cc', B: '#b48a5e', b: '#8a6440', s: '#f2ead2' },
+  vargskinn: { d: '#45413c', w: '#d8d2c4', W: '#ece8de', B: '#9c968c', b: '#6e6a64', s: '#eeeae0' },
+  rep: { e: '#8a7448', Y: '#e8d4a0', y: '#c8b07a', d: '#5e4026' },
+};
+for (const { k, plagg, mat } of KLADER_AV) { PIX[k] = PLAGG_BILD[plagg]; PAL[k] = MATERIAL_FARG[mat]; }
+// tekniken Bälte har bältets bild
+PIX.balte = PIX.balte_rep; PAL.balte = PAL.balte_rep;
 for (const k in PIX) if (k.endsWith('_v')) PAL[k] ??= PAL[k.slice(0, -2)];
 
 // ---------- lägerelden (Björn valde efter v92: nr 1, stor stenring med stjärnved, men enklare) ----------

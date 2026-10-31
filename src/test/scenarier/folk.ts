@@ -829,7 +829,7 @@ SCENARIER.strid = {
     const lekMedHand = SIM.nyStrid(u('lek', m(1, 0, 'yxa'), m(2, 1, 'yxa')), 1).kampar.every(k => k.vapen === 'hand');
     const doda = SIM.korManga(u('doda', m(1, 0, 'yxa'), m(2, 1, 'yxa')), 1, 100), skada = SIM.korManga(u('skada', m(1, 0, 'yxa'), m(2, 1, 'yxa')), 1, 100);
     const yxa = SIM.korManga(u('skada', m(1, 0, 'yxa'), m(2, 1, 'hand')), 1, 100);
-    const rock = SIM.korManga(u('skada', m(1, 0, 'kniv', ['skinnrock', 'skinnskor']), m(2, 1, 'kniv')), 1, 1000);
+    const rock = SIM.korManga(u('skada', m(1, 0, 'kniv', ['rock_kaninskinn', 'skor_kaninskinn']), m(2, 1, 'kniv')), 1, 1000);
     const stark = SIM.korManga(u('slagsmal', m(1, 0, 'hand', [], 16), m(2, 1, 'hand', [], 6)), 1, 100);
     const kanin = SIM.korManga({ avsikt: 'doda', w: 20, h: 14, kampar: [m(1, 0, 'kniv'), SIM.djurKampe('kanin', 2, 1, 12, 7)] }, 1, 50);
     const t = createState(11, START), p = living(t)[0];
@@ -842,7 +842,7 @@ SCENARIER.strid = {
       ['i lek och slagsmål slåss man med händerna', lekMedHand],
       [`med avsikten döda dör fler än med skada (${doda.slut.dod} mot ${skada.slut.dod} av 100)`, doda.slut.dod > skada.slut.dod],
       [`yxan vinner mot knytnävarna (${yxa.vann[0]} av 100)`, yxa.vann[0] >= 80],
-      [`skinnrock och skor hjälper (${rock.vann[0]} mot ${rock.vann[1]} av 1000)`, rock.vann[0] > rock.vann[1]],
+      [`rock och skor av kaninskinn hjälper (${rock.vann[0]} mot ${rock.vann[1]} av 1000)`, rock.vann[0] > rock.vann[1]],
       [`den starke vinner slagsmålet (${stark.vann[0]} av 100)`, stark.vann[0] >= 70],
       [`kaninen flyr eller dör, vinner aldrig (${kanin.vann[1]} vann)`, kanin.vann[1] === 0],
       [`personen ur byn tar med sin yxa (${fran.vapen}) och sitt namn`, fran.vapen === 'yxa' && fran.namn === p.name && fran.pid === p.id],
@@ -1506,8 +1506,8 @@ SCENARIER.masterverk = {
       [`texten står kvar när tiden går`, mt === mt2],
       [`det perfekta mästerverket har ett eget namn (${fore}: ${pt})`, !!fore && pt.includes(fore)],
       [`den usla saken beskrivs med lite hån (${ut})`, hel(ut) && ut !== mt],
-      [`bestämd form: ${SIM.bestamd('Flintkniv')[0]}, ${SIM.bestamd('Träspjut')[0]}, ${SIM.bestamd('Skinnskor')[0]}, ${SIM.bestamd('Bälte')[0]}, ${SIM.bestamd('Hylla')[0]}`,
-        SIM.bestamd('Flintkniv')[0] === 'flintkniven' && SIM.bestamd('Träspjut')[0] === 'träspjutet' && SIM.bestamd('Skinnskor')[0] === 'skinnskorna' && SIM.bestamd('Bälte')[0] === 'bältet' && SIM.bestamd('Hylla')[0] === 'hyllan'],
+      [`bestämd form: ${SIM.bestamd('Flintkniv')[0]}, ${SIM.bestamd('Träspjut')[0]}, ${SIM.bestamd('Skor av kaninskinn')[0]}, ${SIM.bestamd('Rock av vargskinn')[0]}, ${SIM.bestamd('Bälte')[0]}, ${SIM.bestamd('Hylla')[0]}`,
+        SIM.bestamd('Flintkniv')[0] === 'flintkniven' && SIM.bestamd('Träspjut')[0] === 'träspjutet' && SIM.bestamd('Skor av kaninskinn')[0] === 'skorna av kaninskinn' && SIM.bestamd('Rock av vargskinn')[0] === 'rocken av vargskinn' && SIM.bestamd('Bälte')[0] === 'bältet' && SIM.bestamd('Hylla')[0] === 'hyllan'],
       [`ett perfekt vapen som fäller en varg heter Vargdräparen (${vt})`, pf.ber?.namn === 'Vargdräparen' && vt.includes('varg')],
       [`i byn har varje mästerverk och usel sak en hel berättelse (${alla.length} st, t.ex. ${alla[0] ?? '–'})`, gjorda.every(x => x.ber) && alla.every(hel)],
     ];

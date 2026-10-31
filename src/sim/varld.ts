@@ -9,7 +9,7 @@ import { VAR, inFas, nyKalender } from './tid';
 import { ageOf, alive, byId, getRel, log, newPerson, startSkills, stridSkills, think } from './folk';
 import { newSeder, sederTarget, TAGS } from './seder';
 import { clamp, gauss, rnd } from './slump';
-import { DAY, Fire, NEW_H, NEW_W, Person, SEC, State, simulera, useMap } from './typer';
+import { Act, DAY, Fire, NEW_H, NEW_W, Person, SEC, State, simulera, useMap } from './typer';
 import { startSmak } from './rykten';
 
 // ---------- skapa värld ----------
@@ -127,6 +127,26 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
       delete (p.skill as Record<string, number>).elda;
       if ((p.mentorSk as string | undefined) === 'elda') { p.mentor = undefined; p.mentorSk = undefined; }
     }
+  }],
+  [15, 'v194: kläderna är plagg av material (steg 3.10.12). Skinnrocken blir en rock av kaninskinn, vargpälsen en rock av vargskinn, skinnskorna skor av kaninskinn och bältet ett bälte av rep; att sy en skinnrock och skinnskor heter att sy en rock och skor', s => {
+    const SAK: Record<string, string> = { skinnrock: 'rock_kaninskinn', vargpals: 'rock_vargskinn', skinnskor: 'skor_kaninskinn', balte: 'balte_rep' };
+    const ACT: Record<string, string> = { skinnrock: 'rock', skinnskor: 'skor' };
+    const STAT: Record<string, string> = { skinnrockar: 'rock_kaninskinn', vargpalsar: 'rock_vargskinn', skinnskor: 'skor_kaninskinn', balten: 'balte_rep' };
+    const sak = (k: string) => SAK[k] ?? k;
+    const nycklar = <T>(r: Record<string, T> | undefined, ny: (k: string) => string) => r && Object.fromEntries(Object.entries(r).map(([k, v]) => [ny(k), v]));
+    for (const t of s.ting ?? []) { t.k = sak(t.k); if (t.halv) t.halv.gor = sak(t.halv.gor); }
+    for (const p of s.people) {
+      if (p.task) { if (ACT[p.task.act]) p.task.act = ACT[p.task.act] as Act; if (p.task.tool) p.task.tool = sak(p.task.tool); }
+      p.habit = nycklar(p.habit, k => ACT[k] ?? k)!;
+      p.smak = nycklar(p.smak, k => k.startsWith('a:') && ACT[k.slice(2)] ? 'a:' + ACT[k.slice(2)] : k);
+      for (const st of p.stulet ?? []) st.k = sak(st.k);
+      for (const e of p.intryck ?? []) for (const b of e.bev ?? []) if (b.sak) b.sak = sak(b.sak);
+    }
+    for (const m of s.strider ?? []) for (const k of m.u.kampar) k.klader = k.klader.map(sak);
+    // räknarna: det som gjorts av varje slag, och de som har ett slag (stold_, utb_sonder_) eller en handling (prod_) sist.
+    // tek_balte och tekTim_balte är tekniken, som heter som förut
+    const efter: [string, Record<string, string>][] = [['stold_', SAK], ['utb_sonder_', SAK], ['prod_', ACT]];
+    s.stat = nycklar(s.stat, k => STAT[k] ?? efter.map(([f, r]) => k.startsWith(f) && r[k.slice(f.length)] ? f + r[k.slice(f.length)] : '').find(x => x) ?? k);
   }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];

@@ -35,7 +35,8 @@ import { GANG } from './gang';
 import { GADELAR, HALSA, KROPPSDELAR, Kroppsdel, SKADOR, SkadaTyp, skada } from './halsa';
 import { blodas } from './blod';
 import { DJUR } from './redskap';
-import { SAKER, sakNamn } from './saker';
+import { KLAD_SLAG, SAKER, sakNamn } from './saker';
+import { kladSkyddStrid, kladTung } from './klader';
 import { clamp, rnd } from './slump';
 import { ALDER, ageOf, byId, count, getRel, gjort, log, ovning, stat, think } from './folk';
 import { minnsRel } from './relationer';
@@ -92,7 +93,7 @@ export const STRID = balans('strid', {
   pareraPer: 0.03, // ... och så här mycket mer per poäng skicklighet över den som slår
   duck: 0.15, // chansen att ducka ett slag som inte parerades, för den med smidighet 10 och full ork ...
   duckSmid: 0.06, // ... gånger 1 + duckSmid × (smidigheten − 10)
-  duckTung: 0.15, // ... och så här mycket mindre med skinnrock (tungt att röra sig i)
+  duckTung: 0.15, // ... och så här mycket mindre i ett tungt plagg (rocken, PLAGG i klader.ts: tungt att röra sig i)
   ringa: 1.5, // ett mål vars uppmärksamhet är på någon annan (inringat) väljs som om det stod så här många rutor närmare
   backa: 0.25, // den som har så lite ork backar undan om en vän står kvar i striden ...
   backaTill: 0.6, // ... tills orken är tillbaka till så här mycket
@@ -199,13 +200,10 @@ const skadaAv = (sl: Slag, g: number, d: Kroppsdel): SkadaTyp => {
 const TRAFFDEL: Record<Kroppsdel, number> = { huvud: 0.07, bal: 0.33, armV: 0.11, armH: 0.11, handV: 0.05, handH: 0.05, benV: 0.1, benH: 0.1, fotV: 0.04, fotH: 0.04 };
 const DELAR = Object.keys(TRAFFDEL) as Kroppsdel[];
 
-// ---------- det kläderna tar (registret) ----------
-// per klädesplagg i saker.ts: delarna det täcker och hur stor del av skadan det tar per slag. Rustningen kommer i 9.4.1
-export const SKYDD: Record<string, { delar: Kroppsdel[]; tar: Partial<Record<Slag, number>> }> = {
-  skinnrock: { delar: ['bal', 'armV', 'armH'], tar: { hugg: 0.25, stick: 0.15, slag: 0.2, bett: 0.3 } },
-  vargpals: { delar: ['bal', 'armV', 'armH'], tar: { hugg: 0.3, stick: 0.2, slag: 0.25, bett: 0.35 } }, // tjockare än skinnrocken (steg 3.7.14)
-  skinnskor: { delar: ['fotV', 'fotH'], tar: { hugg: 0.2, stick: 0.2, slag: 0.1, bett: 0.3 } },
-};
+// ---------- det kläderna tar ----------
+// per klädesplagg i saker.ts: delarna det täcker och hur stor del av skadan det tar per slag, plaggets skydd gånger
+// materialets (PLAGG och KLADMATERIAL i klader.ts, steg 3.10.12). Rustningen kommer i 9.4.1
+export const SKYDD: Record<string, { delar: Kroppsdel[]; tar: Partial<Record<Slag, number>> }> = Object.fromEntries(KLAD_SLAG.flatMap(k => { const sk = kladSkyddStrid(k); return sk ? [[k, sk]] : []; }));
 export const KLADER_STRID = Object.keys(SKYDD);
 
 // ---------- avsikten (registret) ----------
@@ -430,7 +428,7 @@ function falla(st: Strid, k: Kampe, h: 'nere' | 'dod' | 'ger' | 'flykt', rad: Ha
 
 const orkAv = (a: Kampe) => { a.slag++; a.ork = Math.max(0, a.ork - STRID.orkSlag * (1 - (a.st.uthallighet - 10) / 40)); };
 export const chansMot = (a: Kampe, b: Kampe, skick: number) => clamp((STRID.traffBas + (skick - b.st.skicklighet) * STRID.traffPer - (b.st.smidighet - 10) * STRID.smidUndan) * (1 - STRID.trott * (1 - a.ork)), STRID.traffMin, STRID.traffMax) * (b.lage === 'nere' || b.lage === 'flykt' || b.ligger || b.bocker ? STRID.utsatt : 1); // den som ligger, böjer sig ner eller vänt ryggen är lätt att träffa
-const duckar = (st: Strid, b: Kampe) => !b.ligger && !b.bocker && slump(st) < STRID.duck * Math.max(0, 1 + STRID.duckSmid * (b.st.smidighet - 10)) * rorlighet(b) * b.ork * (b.klader.some(k => k === 'skinnrock' || k === 'vargpals') ? 1 - STRID.duckTung : 1);
+const duckar = (st: Strid, b: Kampe) => !b.ligger && !b.bocker && slump(st) < STRID.duck * Math.max(0, 1 + STRID.duckSmid * (b.st.smidighet - 10)) * rorlighet(b) * b.ork * (b.klader.some(kladTung) ? 1 - STRID.duckTung : 1);
 function slaEtt(st: Strid, a: Kampe, b: Kampe) {
   const v = VAP[a.vapen];
   if (b.ledare) { // en vän som står nära ledaren kliver emellan och tar slaget (steg 3.7.12)

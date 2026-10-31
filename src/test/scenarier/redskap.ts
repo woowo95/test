@@ -378,7 +378,7 @@ SCENARIER.sak = {
     for (let yy = 0; yy < H && !ute; yy++) for (let x = 0; x < W; x++) if (mp.tiles[yy * W + x] !== T.Vatten && zoneOf(y) && SIM.zoneAt(y, x, yy) < 0 && !SIM.roofed(y, x, yy)) { ute = { x, y: yy }; break; }
     const vadret = SIM.slitageNu(y, { k: 'yxa', x: ute!.x, y: ute!.y }).orsak;
     // ett plagg på kroppen, maten som ruttnar, sten som inte slits
-    const rock = addTool(y, 'skinnrock', yp); rock.bar = yp.id;
+    const rock = addTool(y, 'rock_kaninskinn', yp); rock.bar = yp.id;
     const pa = SIM.slitageNu(y, rock, rock);
     setMat(y, { fisk: 5 });
     const fisk = pilesOf(y).find(q => q.k === 'fisk')!, rutt = SIM.slitageNu(y, fisk).orsak;
@@ -389,7 +389,7 @@ SCENARIER.sak = {
       [`i handen när man fäller slits yxan som slitaget räknar (${((iHand.gang ?? 0) * 100).toFixed(2)} % per ${iHand.enhet ?? '?'}, slitaget tog ${(used * 100).toFixed(2)} % för ett träd)`, iHand.orsak === 'anvands' && iHand.enhet === 'träd' && used > 0 && nara(iHand.gang ?? 0, used)],
       [`i lagret slits den som slitaget räknar (${(iLager.per * 100).toFixed(4)} % per timme)`, iLager.orsak === 'lagret' && nara(iLager.per, store)],
       ['utanför lagret slits den av vädret', vadret === 'vadret'],
-      ['ett plagg på kroppen slits av att bäras', pa.orsak === 'pasig' && nara(pa.per, 1 / (SIM.SAKER.skinnrock!.klad!.dygn * 24))],
+      ['ett plagg på kroppen slits av att bäras', pa.orsak === 'pasig' && nara(pa.per, 1 / (SIM.SAKER.rock_kaninskinn!.klad!.dygn * 24))],
       ['maten ruttnar', rutt === 'ruttnar'],
       ['sten slits inte', sten === 'inget'],
     ];
@@ -552,7 +552,7 @@ SCENARIER.kvalitet = {
     // värdet och värmen
     const v = (q?: number) => SIM.tingVarde({ id: 0, k: 'yxa', c: 1, agare: 0, q });
     const varde = v(0) < v(1) && v(1) < v(undefined) && v(undefined) < v(3) && v(3) < v(4) && v(4) < v(5);
-    const rock = addTool(s, 'skinnrock', p); rock.bar = p.id;
+    const rock = addTool(s, 'rock_kaninskinn', p); rock.bar = p.id;
     rock.q = 0; const kallUsel = SIM.kladVarme(s, p);
     rock.q = SIM.PERFEKT; const kallPerfekt = SIM.kladVarme(s, p);
     // en möbel som blir klar får kvalitet, en station inte

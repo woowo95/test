@@ -1,8 +1,9 @@
 import type { TidSlag } from './tider';
+import { kladSaker } from './klader';
 // ---------- saker ----------
 // Allt byn kan äga står här: mat, bränsle, sten och redskap. Lager, slitage, listorna i panelen och det som bärs hem
 // frågar registret. En ny sak läggs till här (och får en ikon i ikoner.ts).
-interface SakDef {
+export interface SakDef {
   namn: string;
   stack?: number; // en full börda: vad en normalstark vuxen bär. Saknas = ingen egen stack
   vikt?: number; // kg per styck (steg 2.3.1). Saknas = en full famn (BORDA_KG) delad med stacken
@@ -76,7 +77,7 @@ const DEF = {
     gors: { text: 'Gör en flintkniv.', stat: 'knivarGjorda', forsta: '{namn} gjorde byns första flintkniv. Nu kan viltet slaktas.' } },
   skinn: { namn: 'Kaninskinn', skaffa: { min: 5, slag: 'bearbeta', tek: 'kniv' }, stack: 10, mapp: 'Material', slits: 0.0006 }, // nyckeln skinn är kaninens (steg 3.7.14)
   // vargen (steg 3.7.14, vargen själv i 3.7.1): den fällda vargen bärs hem hel och slaktas med kniv till vargkött, ben och ett
-  // vargskinn. Den äts inte som den är. Vargskinnet är tjockare än kaninens och blir en vargpäls, som värmer mer än skinnrocken
+  // vargskinn. Den äts inte som den är. Vargskinnet är tjockare än kaninens och blir kläder av vargskinn (klader.ts), som värmer mer
   varg: { namn: 'Fälld varg', skaffa: { act: 'jakt' }, stack: 1, mapp: 'Material', haller: 3 }, // en varg är en full famn
   vargkott: { namn: 'Vargkött', skaffa: { min: 3, slag: 'bearbeta', tek: 'kniv' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 2, naring: { protein: 2, fett: 1.2, energi: 0.8, mineral: 0.6, vitamin: 0.3 }, ra: true, haller: 2 },
   vargskinn: { namn: 'Vargskinn', skaffa: { min: 5, slag: 'bearbeta', tek: 'kniv' }, stack: 5, mapp: 'Material', slits: 0.0006 },
@@ -88,16 +89,10 @@ const DEF = {
   // bensylen (steg 2.3.2): ett ben som slipas spetsigt mot en sten. Den ligger på slöjdbänken (stationer.ts), och med den sys kläderna
   bensyl: { namn: 'Bensyl', skaffa: { av: { ben: 1 }, min: 4, slag: 'liten', tek: 'bensyl', verktyg: { sten: 'en sten', flinta: 'en flinta' } }, vikt: 0.05, stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true, trasig: { stat: 'bensylTrasiga' },
     gors: { text: 'Slipar en bensyl av ett ben mot {verktyg}.', stat: 'bensylGjorda', forsta: '{namn} slipade byns första bensyl av ett ben. Med den kan man sy skinn.' } },
-  // kläderna (steg 2.3.2): sys vid slöjdbänken av skinn och rep av senor, med bensylen. Den som gjort dem äger dem och har dem på sig
-  skinnrock: { namn: 'Skinnrock', skaffa: { av: { skinn: 3, rep: 1 }, min: 5, slag: 'stor', tek: 'skinnklader' }, vikt: 2, stack: 1, mapp: 'Kläder', slits: 0.0003, redskap: true, klad: { plats: 'yttre', varme: 0.25, dygn: 4 },
-    gors: { text: 'Syr en skinnrock.', stat: 'skinnrockar', forsta: '{namn} sydde byns första skinnrock. Den som har den på sig fryser mindre.', fame: 'Sydde byns första skinnrock' } },
-  skinnskor: { namn: 'Skinnskor', skaffa: { av: { skinn: 1, rep: 1 }, min: 5, slag: 'stor', tek: 'skinnklader' }, vikt: 0.6, stack: 1, mapp: 'Kläder', slits: 0.0003, redskap: true, klad: { plats: 'fotter', varme: 0.1, dygn: 3 },
-    gors: { text: 'Syr ett par skinnskor.', stat: 'skinnskor', forsta: '{namn} sydde byns första par skinnskor.' } },
-  vargpals: { namn: 'Vargpäls', skaffa: { av: { vargskinn: 2, rep: 1 }, min: 5, slag: 'stor', tek: 'skinnklader' }, vikt: 3, stack: 1, mapp: 'Kläder', slits: 0.0003, redskap: true, grupp: 'skinnrock', klad: { plats: 'yttre', varme: 0.45, dygn: 4 },
-    gors: { text: 'Syr en vargpäls.', stat: 'vargpalsar', forsta: '{namn} sydde byns första vargpäls. Den värmer mer än en skinnrock.', fame: 'Sydde byns första vargpäls' } }, // av vargskinn (steg 3.7.14): vinterkläder. Samma grupp som skinnrocken (ett ytterplagg per person), och den sys först när det finns vargskinn
-  // bältet (steg 2.3.3): flätas av rep vid elden. Redskapet hänger i det när man bär hem, så båda händerna är fria
-  balte: { namn: 'Bälte', skaffa: { av: { rep: 2 }, min: 5, slag: 'stor', tek: 'balte' }, vikt: 0.2, stack: 1, mapp: 'Kläder', slits: 0.0003, redskap: true, klad: { plats: 'balte', varme: 0, dygn: 10, krok: true },
-    gors: { text: 'Flätar ett bälte av rep.', stat: 'balten', forsta: '{namn} flätade byns första bälte. Redskapet hänger i det, och båda händerna är fria att bära med.' } },
+  // kläderna (steg 2.3.2, plagg och material sedan steg 3.10.12): ett plagg av varje material som passar, till exempel
+  // rock_vargskinn, "Rock av vargskinn" (PLAGG och MATERIAL i klader.ts). De sys vid slöjdbänken med bensylen, eller flätas
+  // (bältet, steg 2.3.3). Den som gjort dem äger dem och har dem på sig
+  ...kladSaker(),
   // mossan (steg 2.5.2): hittas när man letar i naturen och ibland när ett träd fälls. Ett förband av mossa på ett sår (halsa.ts)
   mossa: { namn: 'Mossa', skaffa: { act: 'samla' }, stack: 50, mapp: 'Material', slits: 0.0006 },
   // benspaden (steg 2.7.2): tre ben som ett blad, surrade med rep vid en gren, görs vid slöjdbänken. Med den grävs latrinen

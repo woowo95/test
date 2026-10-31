@@ -242,7 +242,7 @@ SCENARIER.varm = {
     // över idealet svalnar man, aldrig under idealet
     const svalnar = nyVarme(1.5, { ...v0, eld: 0, kyla: 0, hetta: 0 }, 1) < 1.5 && nyVarme(1.05, { ...v0, eld: 0, kyla: 0, hetta: 0 }, 1) === 1;
     // för varm: kläderna tas av, bältet sitter kvar, och nya tas inte på i värmen
-    const rock = addTool(s, 'skinnrock', p), balte = addTool(s, 'balte', p);
+    const rock = addTool(s, 'rock_kaninskinn', p), balte = addTool(s, 'balte_rep', p);
     rock.bar = p.id; balte.bar = p.id; rock.x = rock.y = balte.x = balte.y = undefined;
     p.warm = 1.6; stepKlader(s);
     const avtagen = rock.bar === undefined && balte.bar === p.id;

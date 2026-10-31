@@ -3,6 +3,7 @@ export * from './sim/typer';
 export * from './sim/format';
 export * from './sim/handlingar';
 export * from './sim/saker';
+export * from './sim/klader';
 export * from './sim/slump';
 export * from './sim/kvalitet';
 export * from './sim/karta';

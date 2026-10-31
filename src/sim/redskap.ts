@@ -1,8 +1,8 @@
 import type { DjurStrid } from './strid';
-import { ALDER, ageOf, count, doingAct, forstaGang, gjort, living, log } from './folk';
+import { ALDER, KROPP, ageOf, count, doingAct, forstaGang, gjort, living, log } from './folk';
 import { knows } from './teknik';
 import { clamp, rnd } from './slump';
-import { Act, State, Person } from './typer';
+import { Act, HOUR, State, Person } from './typer';
 import { ACTS, ACT_LIST, toolRow } from './handlingar';
 import { SAKER, SAK_LIST, gruppOf, isTool, sakNamn } from './saker';
 import { nyKvalitet } from './kvalitet';
@@ -10,7 +10,13 @@ import { amountOf, gain, put, use } from './lager';
 import { getable, takeMaterial, takeRecipe } from './behov';
 import { addDel } from './egendom';
 import { RESERV } from './ekonomi';
-import { addTool, freeTools, halvOf, nTools, ownsFree, wearTool } from './agande';
+import { addTool, freeTools, halvOf, nTools, ownsFree, tingOf, wearTool } from './agande';
+import { KLADER, KLADMATERIAL, PLAGG, PLAGG_LIST, kladAv, materialTill, valMaterial } from './klader';
+import { ageIndex, kallTid } from './tid';
+import { grundvarde } from './varde';
+import { anseendeSym } from './rykten';
+import { DORRAR, DORR_LIST } from './byggnad';
+import { utanDorr } from './bygg';
 import { balans } from './balans';
 import { sedEvent } from './seder';
 import { fartVid, kanGoras, nyttVid, slitVid, tommaKnivplatser, tommaPlatser } from './stationer';
@@ -179,8 +185,8 @@ const VILL: Record<string, (s: State) => number> = {
   korg: basketsWanted,
   kniv: s => REDSKAP.knivar + tommaKnivplatser(s), // och en till för en tom knivplats vid slaktbänken
   bensyl: s => tommaPlatser(s, 'bensyl'), // en till slöjdbänken (steg 2.3.2)
-  skinnrock: s => living(s).length, // en per person (steg 2.3.2)
-  skinnskor: s => living(s).length,
+  rock: s => living(s).length, // en per person (steg 2.3.2), av vilket material som helst (klader.ts)
+  skor: s => living(s).length,
   balte: s => living(s).length, // ett per person (steg 2.3.3)
   benspade: () => REDSKAP.spadar, // till latrinen och rötterna (steg 2.7.2)
   vattensack: () => REDSKAP.vattensackar, // till den som inte kan gå (steg 2.10.1)
@@ -199,8 +205,35 @@ const hasRecipe = (s: State, p: Person, k: string) => (!SAKER[k]!.skaffa!.verkty
   && Object.entries(av(k)).every(([m, n]) => getable(s, p, m) >= n + (m === 'flinta' ? REDSKAP.flintaSparas : 0) - 1e-9); // 1e-9: avrundningen i förrådet
 // p kan tekniken och kan få tag i det som behövs
 export const canMake = (s: State, p: Person, k: string) => { const tek = SAKER[k]!.skaffa!.tek; return (!tek || knows(p, tek)) && hasRecipe(s, p, k); };
-// det slag i gruppen g som p gör: det hen redan har påbörjat, annars det bästa hen kan göra, annars det enklaste
-export const kindFor = (s: State, p: Person, g: string) => { const ks = GORS[g]; return halvOf(s, p, ks)?.halv!.gor ?? ks.find(k => canMake(s, p, k)) ?? ks[ks.length - 1]; };
+// det slag i gruppen g som p gör: det hen redan har påbörjat, annars det bästa hen kan göra (ett plagg: det material hen
+// väljer, materialVal), annars det enklaste
+export const kindFor = (s: State, p: Person, g: string) => {
+  const ks = GORS[g], halv = halvOf(s, p, ks)?.halv!.gor;
+  if (halv) return halv;
+  if (!(g in PLAGG)) return ks.find(k => canMake(s, p, k)) ?? ks[ks.length - 1];
+  const kan = ks.filter(k => canMake(s, p, k));
+  return materialVal(s, p, g, kan) ?? ks[ks.length - 1];
+};
+// ---------- kläderna: valet av material (steg 3.10.12, valMaterial i klader.ts) ----------
+// läget när p ska sy ett plagg i gruppen g av något av slagen ks (alla går att göra nu): kylan (hösten, istiden eller någon
+// som fryser), hotet (vargar sedda nära byn eller en strid i byn nyligen), vad varje material värmer och skyddar, hur mycket
+// som finns kvar, det som behövs till annat (plagg som andra saknar och dörrar som saknas, när någon kan göra dem) och
+// värdet. Den som syr åt sig själv (har inget plagg av slaget) och har gott anseende tar det finare (punkt 6)
+function materialVal(s: State, p: Person, g: string, ks: string[]) {
+  if (ks.length <= 1) return ks[0];
+  const ai = ageIndex(s), folk = living(s), nara = (t?: number) => t !== undefined && s.now - t < KLADER.hotTim * HOUR;
+  const kyla = kallTid(ai) || folk.some(q => q.warm < KROPP.fryser);
+  const hot = (s.vargar ?? []).some(f => nara(f.sedd)) || (s.strider ?? []).some(m => nara(m.t));
+  const lage = ks.map(k => {
+    const r = kladAv(k)!, M = KLADMATERIAL[r.mat], till = materialTill(r.plagg, r.mat);
+    let behovs = 0;
+    for (const q of PLAGG_LIST) if (PLAGG[q].slag.includes(M.slag)) behovs += Math.max(0, villAv(s, q) - harAv(s, q) - (q === g ? 1 : 0)) * materialTill(q, r.mat);
+    for (const d of DORR_LIST) { const n = (DORRAR[d].av as Record<string, number>)[M.sak]; if (n && folk.some(q => DORRAR[d].tek.every(t => knows(q, t)))) behovs += n * utanDorr(s, d).length; }
+    return { k, varme: SAKER[k]!.klad!.varme, skydd: M.skydd, kvar: amountOf(s, M.sak) - till, behovs, till, varde: grundvarde(k) };
+  });
+  const egen = !tingOf(s).some(t => (t.agare === p.id || t.bar === p.id) && gruppOf(t.k) === g);
+  return valMaterial(lage, { kyla, hot, fin: egen && anseendeSym(s, p.id) === '😇' });
+}
 // det slag p börjar göra när hen kommer fram, om hen kan (paborjat.ts)
 export const borjaTool = (s: State, p: Person, g: string) => { const k = kindFor(s, p, g); return canMake(s, p, k) ? k : undefined; };
 // p vill göra ett redskap i gruppen g: hen har påbörjat ett eller kan göra ett, byn har färre än den vill, och ingen

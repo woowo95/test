@@ -1475,9 +1475,12 @@ const sakGrupp = (k: string): SakGrupp => {
   const d = SAKER[k];
   return !d ? 'mobel' : d.klad ? 'klad' : d.grupp === 'spjut' ? 'vapen' : k === 'kniv' || k === 'yxa' ? 'egg' : 'redskap';
 };
-// sakens namn i bestämd form och pronomenet: flintkniven/den, träspjutet/det, skinnskorna/de
+// sakens namn i bestämd form och pronomenet: flintkniven/den, träspjutet/det, skorna av kaninskinn/de (ett plagg av ett
+// material, klader.ts: bara plagget får bestämd form)
 const NEUTRUM = ['spjut', 'spö', 'bord', 'ställ', 'bälte'];
 export function bestamd(namn: string): [string, string] {
+  const av = namn.indexOf(' av ');
+  if (av > 0) { const [b, h] = bestamd(namn.slice(0, av)); return [b + namn.slice(av).toLowerCase(), h]; }
   const n = namn.toLowerCase();
   if (n === 'litet bord') return ['det lilla bordet', 'det'];
   if (n.endsWith('skor')) return [n + 'na', 'de'];

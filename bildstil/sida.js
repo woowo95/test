@@ -884,7 +884,7 @@ function ritaPanel(P) {
 // paletten: ramperna, byn på dagen, natten och i istiden, och sakerna ur spelet
 function ritaPalett(P) {
   $('#ramp').innerHTML = RAMPER.map(([n, anv], ri) => `<div class="ramp" title="${n}: ${anv}"><span>${n}</span>${[0, 1, 2, 3].map(t => `<i style="background:${P.cols[ri * 4 + t].hex}" title="${n} ${t}: ${P.cols[ri * 4 + t].hex}"></i>`).join('')}</div>`).join('');
-  const saker = ['bar', 'rotter', 'kott', 'kanin', 'fisk', 'abborre', 'svamp', 'spindling', 'ved', 'grenar', 'torrgras', 'kol', 'flinta', 'sten', 'yxa', 'rep', 'ben', 'kniv', 'skinn', 'skinnrock', 'skinnskor', 'balte', 'grillfisk', 'torrkott', 'metspo', 'fiskespjut', 'bensyl', 'korg'].filter(k => IKONER.PIX[k]);
+  const saker = ['bar', 'rotter', 'kott', 'kanin', 'fisk', 'abborre', 'svamp', 'spindling', 'ved', 'grenar', 'torrgras', 'kol', 'flinta', 'sten', 'yxa', 'rep', 'ben', 'kniv', 'skinn', 'vargskinn', 'rock_kaninskinn', 'rock_vargskinn', 'skor_kaninskinn', 'skor_vargskinn', 'balte_rep', 'grillfisk', 'torrkott', 'metspo', 'fiskespjut', 'bensyl', 'korg'].filter(k => IKONER.PIX[k]);
   const kol = 7, S = kolBild(kol * 9 + 1, Math.ceil(saker.length / kol) * 9 + 1, P);
   saker.forEach((k, j) => ritaIkon(S, k, 1 + (j % kol) * 9, 1 + Math.floor(j / kol) * 9));
   tillCanvas(S, $('#pk'), 0);
@@ -1321,6 +1321,103 @@ const FALLD_BLOD = [
   '................',
 ];
 const VARG_L = { G: 'skiffer2', H: 'skiffer3', g: 'skiffer1', d: 'skiffer0', W: 'ben3', w: 'ben3', k: 'kol0', y: 'senap3', r: 'rost1', R: 'rost2', q: 'rost0', j: 'jord1', J: 'jord2', x: 'kol1', O: 'jord2' }, VARG_M = { d: 'kol2', D: 'kol3', W: 'ben2', w: 'ben2', k: 'kol0', y: 'senap3' }, KOTT_L = { R: 'rost2', r: 'rost1', q: 'rost0', w: 'ben3', W: 'ben3', j: 'jord1', J: 'jord2' };
+// kläderna av vargskinn (steg 3.10.12): formen är plagget och färgerna materialet. Varje förslag ritas av kaninskinn och av
+// vargskinn, i rätt storlek till vänster och tre gånger större till höger
+const ROCK16 = [
+  '.....oWWWWo.....',
+  '...ooWWHHWWoo...',
+  '..oWWHo..oHWWo..',
+  '.oGGWo....oWGGo.',
+  '.oGHGGo..oGGHGo.',
+  'oGHHGGGooGGGHHGo',
+  'oGHGGgGGGGgGGHGo',
+  'oGHGoGGgGGGoGHGo',
+  'oGGGoGGgGGGoGGGo',
+  'oWWoGGGgGGGGoWWo',
+  '.oooGHGgGGHGooo.',
+  '...oGHGgGGHGo...',
+  '...oGGGgGGGGo...',
+  '...oGgGgGgGgo...',
+  '...oGoGoGoGoo...',
+  '...o.o.o.o.o....',
+];
+const ROCK_BALTE = [
+  '.....oooooo.....',
+  '....oWWWWWWo....',
+  '...oGWWooWWGo...',
+  '..oGGGo..oGGGo..',
+  '.oGHGGGooGGGHGo.',
+  'oGHHGGGgGGGGHHGo',
+  'oGHGGGGgGGGGGHGo',
+  'oGHGoGGgGGGoGHGo',
+  'oWWoyYyYyYyYoWWo',
+  '.oooGGGgGyGGooo.',
+  '...oGHGgGYGGo...',
+  '...oGHGgGGHGo...',
+  '..oGGHGgGGHGGo..',
+  '..oGGGGgGGGGGo..',
+  '..oWWWWWWWWWWo..',
+  '..oooooooooooo..',
+];
+const SKOR16 = [
+  '................',
+  '................',
+  '........oooo....',
+  '.......oWWWWo...',
+  '.......oGHGGo...',
+  '.......oGHGGGoo.',
+  '.......oGGHGGGHo',
+  '.......odddddddo',
+  '..oooo..ooooooo.',
+  '.oWWWWo.........',
+  '.oGHGGo.........',
+  '.oGHGGGoo.......',
+  '.oGGHGGGHoo.....',
+  '.oGGGHGGGGHo....',
+  '.oddddddddddo...',
+  '..oooooooooo....',
+];
+const STOVEL = [
+  '................',
+  '....oooooo......',
+  '...oWWWWWWo.....',
+  '...oWWWWWWo.....',
+  '...oGyGGHGo.....',
+  '...oGGyGHGo.....',
+  '...oGyGGHGo.....',
+  '...oGGyGHGo.....',
+  '...oGyGGHGo.....',
+  '...oGGGGHGooo...',
+  '...oGGGGGHHGGoo.',
+  '...oGGGGGGGHHGGo',
+  '...oGGGGGGGGGHGo',
+  '...oddddddddddGo',
+  '....ooooooooooo.',
+  '................',
+];
+const MOCKASIN = [
+  '................',
+  '..oooo....oooo..',
+  '.oWWWWo..oWWWWo.',
+  '.oWddWo..oWddWo.',
+  '.oGddGo..oGddGo.',
+  '.oGddGo..oGddGo.',
+  'oGGGGGGooGGGGGGo',
+  'oGHGGHGooGHGGHGo',
+  'oGHGGHGooGHGGHGo',
+  'oGGHHGGooGGHHGGo',
+  'oGgGGgGooGgGGgGo',
+  'oGGgGgGooGgGgGGo',
+  '.oGGgGo..oGgGGo.',
+  '.oGGGGo..oGGGGo.',
+  '..oooo....oooo..',
+  '................',
+];
+const KSKINN_L = { G: 'jord2', H: 'jord3', g: 'jord1', d: 'jord0', W: 'ben3', w: 'ben2', O: 'senap1', y: 'senap3', Y: 'senap2', k: 'kol0' }, VSKINN_L = { ...VARG_L, Y: 'senap2' };
+const PAR_M = p => ({ w: 124, h: 52, kol: true, rita: (B, P) => {
+  const stor = p.flatMap(r => { const rr = [...r].map(c => c.repeat(3)).join(''); return [rr, rr, rr]; });
+  [KSKINN_L, VSKINN_L].forEach((l, i) => { ritaSprite(B, p, { o: 'kol0', ...l }, 2, 8 + i * 20); ritaSprite(B, stor, { o: 'kol0', ...l }, 21 + i * 52, 2); });
+} });
 // jaktens och kaninernas nya symboler (Björn efter v159), 8 × 8 punkter som de andra symbolerna i spelet: till vänster i rätt
 // storlek, till höger fyra gånger större
 const SYM8_M = (p, l) => ({ w: 48, h: 38, kol: true, rita: (B, P) => { ritaSprite(B, p, l, 2, 2); ritaSprite(B, p.flatMap(r => { const rr = [...r].map(c => c.repeat(4)).join(''); return [rr, rr, rr, rr]; }), l, 13, 3); } });
@@ -1753,6 +1850,18 @@ const VAL = [
       { text: 'En päls med huva av vargens huvud, med öron och ögon.', ...LED_M(PALS_HUVA, VARG_L) },
       { text: 'En grå pälsrock med ljus krage och ljusa ärmslut.', ...LED_M(PALS_ROCK, VARG_L) },
       { text: 'En kappa över axlarna med ett rött spänne och tassarna som hänger ner.', ...LED_M(PALS_KAPPA, VARG_L) },
+    ] },
+  { id: 'rock_vargskinn', namn: 'Rocken av vargskinn', vad: 'Kläderna görs om (steg 3.10.12): ett plagg av ett material. 16 × 16 punkter, i utrustningen och förrådet. Formen är plagget och färgerna materialet, så varje förslag visas av kaninskinn (överst och till vänster) och av vargskinn (nederst och till höger), i rätt storlek och tre gånger större. Den valda formen får båda rockarna. I spelet nu: vargpälsen du valde (förslag 1) och rocken av kaninskinn i 8 × 8 punkter.', typ: 'tre',
+    versioner: [
+      { text: 'Pälsrocken med ljus krage och ljusa ärmslut: vargpälsen du valde (version 2).', ...PAR_M(PALS_ROCK) },
+      { text: 'Rocken av kaninskinn i spelet nu, större: pälskrage och fransar nertill.', ...PAR_M(ROCK16) },
+      { text: 'En lång rock med ett flätat bälte i midjan och pälskant nertill.', ...PAR_M(ROCK_BALTE) },
+    ] },
+  { id: 'skor_vargskinn', namn: 'Skorna av vargskinn', vad: 'Kläderna görs om (steg 3.10.12): ett plagg av ett material. 16 × 16 punkter, i utrustningen och förrådet. Varje förslag visas av kaninskinn (överst och till vänster) och av vargskinn (nederst och till höger), i rätt storlek och tre gånger större. Den valda formen får båda paren. I spelet nu: skorna med pälskant (8 × 8 punkter) i vargens färger (platshållare).', typ: 'tre',
+    versioner: [
+      { text: 'Skorna i spelet nu, större: två skor med pälskant, den ena bakom den andra.', ...PAR_M(SKOR16) },
+      { text: 'En hög stövel med pälskant upptill och ett rep som snörning.', ...PAR_M(STOVEL) },
+      { text: 'Två mockasiner ovanifrån, med söm över tårna och pälskant runt öppningen.', ...PAR_M(MOCKASIN) },
     ] },
   { id: 'falldvarg', namn: 'Den fällda vargen', vad: 'Ny sak (steg 3.7.14), 16 × 16 punkter: vargen som byn fällt och bär hem för slakt. I spelet nu: en liten grå varg på sidan (platshållare, 8 × 8 punkter).', typ: 'tre',
     versioner: [

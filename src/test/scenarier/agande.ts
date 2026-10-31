@@ -473,19 +473,19 @@ SCENARIER.utrustning = {
 };
 
 SCENARIER.klader = {
-  text: 'Steg 2.3.2: bensylen slipas av ett ben mot en sten och läggs vid slöjdbänken. Med den sys skinnrockar och skinnskor av skinn och rep vid bänken, och bensylen slits för varje plagg. Utan bensylen sys inga kläder. Den som saknar ett plagg tar på sig ett, kläderna skyddar mot kylan, väger något och slits ut, och den dödes kläder kan någon annan ta på sig',
+  text: 'Steg 2.3.2: bensylen slipas av ett ben mot en sten och läggs vid slöjdbänken. Med den sys rockar och skor av skinn och rep vid bänken (steg 3.10.12: plagg av ett material), och bensylen slits för varje plagg. Utan bensylen sys inga kläder. Den som saknar ett plagg tar på sig ett, kläderna skyddar mot kylan, väger något och slits ut, och den dödes kläder kan någon annan ta på sig',
   kor: () => {
     const s = createState(2, START); tandEld(s);
     const st = medBank(s, 'flatarbank');
     for (const r of s.people) r.tek = { ...r.tek, kniv: 1, flatarbank: 1, bensyl: 1, skinnklader: 1 };
     setMat(s, { bar: 300 }); setAmount(s, 'ved', 60); setAmount(s, 'ben', 3); setAmount(s, 'sten', 6); setAmount(s, 'skinn', 30); setAmount(s, 'rep', 12);
     // utan bensylen vid bänken sys inga kläder
-    const utan = !SIM.kanGoras(s, 'skinnrock') && !SIM.kanGoras(s, 'skinnskor');
+    const utan = !SIM.kanGoras(s, 'rock') && !SIM.kanGoras(s, 'skor');
     let h = 0;
     const bensyl = () => tingOf(s).find(t => t.k === 'bensyl' && t.vid === st.id);
     while (!bensyl() && h < 72) { kor(s, 1); h++; }
     const slipad = !!bensyl(), timBensyl = h;
-    const kan = SIM.kanGoras(s, 'skinnrock');
+    const kan = SIM.kanGoras(s, 'rock');
     // kläderna sys och tas på
     const paSig = () => tingOf(s).filter(t => SAKER[t.k]?.klad && t.bar !== undefined);
     while (paSig().length < 2 && h < 240) { kor(s, 1); h++; }
@@ -534,11 +534,11 @@ SCENARIER.balte = {
     const s = createState(2, START); tandEld(s);
     for (const r of s.people) r.tek = { ...r.tek, rep: 1, balte: 1 };
     setMat(s, { bar: 300 }); setAmount(s, 'ved', 60); setAmount(s, 'rep', 12);
-    const balte = () => tingOf(s).find(t => t.k === 'balte' && t.bar !== undefined);
+    const balte = () => tingOf(s).find(t => t.k === 'balte_rep' && t.bar !== undefined);
     let h = 0;
     while (!balte() && h < 120) { kor(s, 1); h++; }
     const b = balte(), p = b && byId(s, b.bar!);
-    const flatat = (s.stat?.balten ?? 0) > 0;
+    const flatat = (s.stat?.balte_rep ?? 0) > 0;
     let lika = false, mindreUtan = false, iKroken = false, korgEj = false;
     if (p) {
       for (const t of tingOf(s)) if (t.hos === p.id) t.hos = undefined;
@@ -557,6 +557,68 @@ SCENARIER.balte = {
       ['utan bältet bär man mindre med yxan i handen', mindreUtan],
       ['yxan hänger i bältet och bördan är i båda händerna', iKroken],
       ['korgen hänger inte i bältet', korgEj],
+    ];
+  },
+};
+
+SCENARIER.plagg = {
+  text: 'Steg 3.10.12: kläderna är plagg av ett material. Varje plagg och material som går ihop är en sak (en rock och skor av kaninskinn eller vargskinn, ett bälte av rep), med värmen, vikten, hållbarheten och skyddet räknade ur båda. Den som syr väljer materialet: det varma inför och under istiden, det som skyddar mest efter en strid, inte det som behövs till annat, annars det billigaste. Sparade byar läses in med de nya namnen',
+  kor: () => {
+    const K = SIM.SAKER;
+    // registret: varje par är en sak i plaggets grupp, och vargskinnet värmer och skyddar mer
+    const alla = SIM.KLADER_AV.every(({ k, plagg }) => !!K[k]?.klad && K[k]!.grupp === plagg && SIM.GORS[plagg].includes(k));
+    const varmare = K.rock_vargskinn!.klad!.varme > K.rock_kaninskinn!.klad!.varme && K.skor_vargskinn!.klad!.varme > K.skor_kaninskinn!.klad!.varme;
+    const skyddar = (SIM.SKYDD.rock_vargskinn?.tar.bett ?? 0) > (SIM.SKYDD.rock_kaninskinn?.tar.bett ?? 0);
+    const namn = K.rock_vargskinn!.namn === 'Rock av vargskinn' && K.rock_vargskinn!.gors!.text === 'Syr en rock av vargskinn.' && SIM.bestamd(K.skor_kaninskinn!.namn)[0] === 'skorna av kaninskinn';
+    const recept = SIM.receptAv('rock', 'vargskinn').vargskinn === 2 && SIM.receptAv('rock', 'kaninskinn').skinn === 3 && SIM.receptAv('skor', 'vargskinn').vargskinn === 1;
+    // valet av material i en by som har båda skinnen
+    const by = (ai: number) => {
+      const s = createState(2, START); tandEld(s);
+      s.now = SIM.ageStart(s, ai) + 30 * HOUR;
+      for (const r of s.people) { r.tek = { ...r.tek, kniv: 1, flatarbank: 1, bensyl: 1, skinnklader: 1 }; r.warm = 1; }
+      setAmount(s, 'skinn', 30); setAmount(s, 'vargskinn', 6); setAmount(s, 'rep', 12);
+      return s;
+    };
+    const val = (s: State) => SIM.kindFor(s, living(s)[0], 'rock');
+    const sommar = by(2), host = by(3), istid = by(0), strid = by(2), behovs = by(2);
+    const kallt = val(host) === 'rock_vargskinn' && val(istid) === 'rock_vargskinn';
+    const varmt = val(sommar) === 'rock_kaninskinn';
+    (strid.strider ??= []).push({ t: strid.now - HOUR, orsak: 'test', u: { avsikt: 'skada', w: 10, h: 10, kampar: [] }, fro: 1, vinnare: 0 } as SIM.StridMinne);
+    const hot = val(strid) === 'rock_vargskinn';
+    setAmount(behovs, 'skinn', 3); // tre kaninskinn: en rock, men skorna som alla saknar behöver dem, och vargskinnet räcker till båda
+    const sparas = val(behovs) === 'rock_vargskinn';
+    setAmount(sommar, 'skinn', 0);
+    const barafinns = val(sommar) === 'rock_vargskinn';
+    // en gammal sparfil: skinnrocken, vargpälsen, skinnskorna och bältet får de nya namnen, och det som räknats följer med
+    const g = by(2), [a, b] = living(g);
+    const gammal = (k: string, p: Person) => { const t = addTool(g, 'yxa', p); t.k = k; t.bar = p.id; return t; };
+    const tr = gammal('skinnrock', a), tv = gammal('vargpals', b), ts = gammal('skinnskor', a), tb = gammal('balte', b);
+    const th = addTool(g, 'yxa', a); th.k = 'bensyl'; th.halv = { gor: 'skinnskor', ag: a.id, kvar: 60000 } as typeof th.halv;
+    a.task = { act: 'skinnrock' as Act, phase: 'do', tx: a.x, ty: a.y, until: g.now + HOUR, carry: 0, tool: 'skinnrock' };
+    a.habit = { ...a.habit, skinnrock: 5, skinnskor: 2, balte: 1 }; a.smak = { 'a:skinnskor': 0.5 };
+    (b.stulet ??= []).push({ av: a.id, k: 'vargpals', n: 1 });
+    g.stat = { ...g.stat, skinnrockar: 2, vargpalsar: 1, skinnskor: 3, balten: 4, stold_vargpals: 1, prod_skinnrock: 1, tek_balte: 1, tekTim_balte: 7 };
+    g.v = 14; SIM.migrate(g);
+    const sakerNya = tr.k === 'rock_kaninskinn' && tv.k === 'rock_vargskinn' && ts.k === 'skor_kaninskinn' && tb.k === 'balte_rep' && th.halv?.gor === 'skor_kaninskinn';
+    const arbetet = a.task?.act === 'rock' && a.task.tool === 'rock_kaninskinn' && a.habit.rock === 5 && a.habit.skor === 2 && a.habit.balte === 1 && a.smak?.['a:skor'] === 0.5 && b.stulet![0].k === 'rock_vargskinn';
+    const st = g.stat!;
+    const rakna = st.rock_kaninskinn === 2 && st.rock_vargskinn === 1 && st.skor_kaninskinn === 3 && st.balte_rep === 4 && st.stold_rock_vargskinn === 1 && st.prod_rock === 1 && st.tek_balte === 1 && st.tekTim_balte === 7
+      && st.skinnrockar === undefined && st.vargpalsar === undefined;
+    const pa = SIM.paSig(g, a).map(t => K[t.k]?.namn).join(', ');
+    return [
+      ['varje plagg av ett material är en sak i plaggets grupp', alla],
+      ['rock och skor av vargskinn värmer mer än av kaninskinn', varmare],
+      ['rocken av vargskinn skyddar mer mot bett', skyddar],
+      [`namnen: ${K.rock_vargskinn!.namn}, "${K.rock_vargskinn!.gors!.text}", ${SIM.bestamd(K.skor_kaninskinn!.namn)[0]}`, namn],
+      ['receptet: en rock tar tre kaninskinn eller två vargskinn, skorna ett vargskinn', recept],
+      ['inför och under istiden sys rocken av vargskinn, som värmer nog', kallt],
+      ['på sommaren sys den av kaninskinn, som är billigare och finns gott om', varmt],
+      ['efter en strid i byn sys den av vargskinn, som skyddar mer', hot],
+      ['på sommaren sparas kaninskinnet när det behövs till skorna som alla saknar', sparas],
+      ['finns bara vargskinn sys rocken av det', barafinns],
+      ['en gammal sparfil: skinnrocken, vargpälsen, skinnskorna, bältet och det påbörjade får de nya namnen', sakerNya],
+      ['... och arbetet, vanorna, smaken och det stulna', arbetet],
+      [`... och räknarna; tekniken Bälte heter som förut (${pa})`, rakna],
     ];
   },
 };
