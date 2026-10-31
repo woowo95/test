@@ -724,6 +724,43 @@ const MDEF = {
     { t: 'I kylan fick {namn} lämna byn. {ledare} drev ut {honom} {varfor}.', om: f => f.kallt === true },
     { t: 'I snön syntes spåren efter {namn} länge sedan {ledare} drivit ut {honom} {varfor}.', om: f => f.sno === true },
   ],
+  // rättegångarna (steg 3.10.17): domen vid elden och hur folket tog den. {ledare} och {lhen} = ledaren, {namn} och {hen} = den
+  // dömda, {brott} = "stal en kniv av Ask", {straff} = "skämde ut", {straffInf} = "skämmas ut inför alla"
+  r_ratt: [
+    'På kvällen samlades byn vid elden. {ledare} {straff} {namn} för att {hen} {brott}.',
+    '{ledare} lät {namn} stå fram vid elden och {straff} {honom} för att {hen} {brott}.',
+    'Det var {arstid} när {namn} fick svara för att {hen} {brott}. {ledare} {straff} {honom}.',
+    '{ledare} satt länge tyst vid elden och tänkte på det {namn} gjort. Till sist bestämde {lhen} sig: {namn} skulle {straffInf}.',
+    'Frågan om {namn} togs upp vid elden: {hen} {brott}. {ledare} {straff} {honom}.',
+    '{ledare} kallade {namn} till elden. {Hen} {brott}, och {ledare} {straff} {honom} inför byn.',
+    'Den kvällen fick {namn} svara inför {ledare} för att {hen} {brott}. Domen blev att {hen} skulle {straffInf}.',
+    { t: 'Ryktet hade gått att {namn} {brott}. På kvällen tog {ledare} upp saken, och domen blev att {namn} skulle {straffInf}.', om: f => !f.sjalv },
+    { t: '{ledare} hade själv sett när {namn} {brott}. Vid elden fick {namn} sitt straff: {ledare} {straff} {honom}.', om: f => f.sjalv === true },
+    { t: 'Regnet föll över elden när {ledare} dömde {namn}. {Hen} {brott}, och {ledare} {straff} {honom}.', om: f => f.regn === true },
+    { t: 'Snön föll tyst när {ledare} dömde {namn} för att {hen} {brott}. Domen blev att {hen} skulle {straffInf}.', om: f => f.sno === true },
+    { t: 'Det var kallt, och byn trängdes kring elden när {ledare} {straff} {namn} för att {hen} {brott}.', om: f => f.kallt === true && f.eld === true },
+    { t: 'Elden hade slocknat, men byn samlades ändå på platsen. {ledare} {straff} {namn} för att {hen} {brott}.', om: f => !f.eld },
+    { t: 'Elden sprakade i mörkret när {ledare} {straff} {namn}. {Hen} {brott}.', om: f => f.eld === true && f.natt === true },
+  ],
+  // varje rättegång är rättvis eller orättvis (falsk, för hård eller för mild mot ledarens nära), eller slutade med döden
+  r_folk: [
+    { t: 'De flesta tyckte att {namn} fick vad {hen} förtjänade.', om: f => !f.oratt && !f.dog },
+    { t: 'Ingen sade emot. Byn tyckte att domen var rättvis.', om: f => !f.oratt && !f.dog },
+    { t: 'Folket nickade. Så skulle det vara.', om: f => !f.oratt && !f.dog },
+    { t: 'Det blev tyst runt elden, men ingen tyckte att {ledare} hade gjort fel.', om: f => !f.oratt && !f.dog },
+    { t: 'Efteråt talade man om domen vid elden, och de flesta höll med {ledare}.', om: f => !f.oratt && !f.dog },
+    { t: 'Många hade kommit för att se, och de gick därifrån nöjda med domen.', om: f => !f.oratt && !f.dog && f.manga === true },
+    { t: 'Ingen följde {namn} till skogsbrynet. Byn tyckte att {ledare} hade gjort rätt.', om: f => !f.oratt && !f.dog && f.utvisad === true },
+    { t: 'Men det som sades om {namn} var inte sant. {Hen} hade inte gjort det, och de som visste det teg.', om: f => f.oratt === true && f.falsk === true && !f.dog },
+    { t: 'Senare visade det sig att ryktet om {namn} var falskt. Domen var orättvis, och det kostade {ledare} folkets förtroende.', om: f => f.oratt === true && f.falsk === true && !f.dog },
+    { t: 'Många tyckte att straffet var för hårt, och det mumlades om {ledare} länge efteråt.', om: f => f.oratt === true && !f.falsk && f.hard === true && !f.dog },
+    { t: 'Familjen till {namn} glömde inte hur hårt {ledare} hade dömt.', om: f => f.oratt === true && !f.falsk && f.hard === true && !f.dog },
+    { t: 'Det var för hårt, tyckte byn. Fler än en såg på {ledare} med andra ögon efter den kvällen.', om: f => f.oratt === true && !f.falsk && f.hard === true && !f.dog },
+    { t: 'Alla visste att {namn} stod {ledare} nära, och många tyckte att {hen} slapp för lätt undan.', om: f => f.oratt === true && !f.falsk && !f.hard && !f.dog },
+    { t: 'Byn mumlade: hade det varit någon annan hade straffet blivit hårdare.', om: f => f.oratt === true && !f.falsk && !f.hard && !f.dog },
+    { t: 'Slaget var för hårt. {namn} dog av det, och byn glömde aldrig den kvällen.', om: f => f.dog === true },
+    { t: '{namn} reste sig aldrig igen efter slaget. Det var en mörk kväll i byn.', om: f => f.dog === true },
+  ],
   k_skadad: [
     '{namn} skadades svårt i ett slagsmål med {mot}.',
     'Det blev slagsmål mellan {namn} och {mot}, och {namn} skadades svårt.',
@@ -1440,7 +1477,7 @@ export function beskrivning(s: State, p: Person) {
 }
 
 // ---------- krönikan (steg 3.9.3) ----------
-const ARSTIDER = ['istiden', 'våren', 'sommaren', 'hösten'];
+export const ARSTIDER = ['istiden', 'våren', 'sommaren', 'hösten'];
 const TAL = ['ingen', 'en', 'två', 'tre', 'fyra', 'fem', 'sex', 'sju', 'åtta', 'nio', 'tio'];
 export const talOrd = (n: number) => TAL[n] ?? String(n);
 export const och = (l: string[]) => l.length > 1 ? `${l.slice(0, -1).join(', ')} och ${l[l.length - 1]}` : l[0] ?? '';

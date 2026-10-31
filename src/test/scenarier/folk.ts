@@ -661,6 +661,52 @@ SCENARIER.ledare = {
   },
 };
 
+SCENARIER.rattegang = {
+  text: 'Rättegångarna (steg 3.10.17): varje dom sparas med brottet, de som såg det och de som hörde det som rykte, hårdheten och dess delar, straffet och vad byn tyckte var lagom, och vädret; berättelsen skrivs ur mallarna r_ratt och r_folk och har en variant för varje slags dom',
+  kor: () => {
+    const t = createState(11, START);
+    klockan(t, 11);
+    for (const [x, a] of [['m', 33], ['k', 29], ['m', 26], ['k', 31]] as const) nyInvanare(t, x, a);
+    const vuxna = living(t).filter(p => ageOf(p, t.now) >= SIM.ALDER.vuxen), [l, tjuv, offer, langt] = vuxna;
+    (l.tek ??= {}).ledarskap = 1;
+    for (const q of vuxna) if (q !== l) getRel(t, l, q).op = 40;
+    SIM.stepStyre(t);
+    // ledaren och de flesta ser stölden, en långt bort hör om den som rykte
+    for (const q of vuxna) { q.x = l.x + 1; q.y = l.y; }
+    langt.x = l.x + 40; langt.y = l.y;
+    const t0 = t.now;
+    SIM.handelse(t, tjuv, 'stold', offer, 'mat');
+    SIM.allmant(t, tjuv, { h: 'stold', t: t0, mot: offer.id, motNamn: offer.name, sak: 'mat' }, 0.5, [langt]);
+    klockan(t, SIM.STR.timme);
+    SIM.stepStyre(t);
+    const r = t.styre?.ratt?.[0], x = r && SIM.rattegang(t, r);
+    // varje slags dom och väder ger en text (inget villkor lämnar en mall tom)
+    let tomma = 0;
+    const ja = [false, true];
+    for (const oratt of ja) for (const falsk of ja) for (const hard of ja) for (const dog of ja) for (const sjalv of ja) for (const eld of ja) for (const natt of ja) for (const regn of ja) {
+      if (!oratt && (falsk || hard)) continue;
+      const f = { oratt, falsk, hard, dog, sjalv, eld, natt, regn, sno: !regn && natt, kallt: eld, utvisad: hard && dog, manga: natt };
+      for (const m of ['r_ratt', 'r_folk'] as const) if (!SIM.valjVariant(t, m, 3, f, 5)) tomma++;
+    }
+    // listan har ett tak
+    for (let i = 0; i < SIM.STR.sparas + 5; i++) t.styre!.ratt!.push({ ...r! });
+    const tak = t.styre!.ratt!.length;
+    klockan(t, SIM.STR.timme + 24);
+    SIM.handelse(t, tjuv, 'sla', offer);
+    klockan(t, SIM.STR.timme + 48);
+    SIM.stepStyre(t);
+    return [
+      [`domen sparas: ${r ? `${r.namn} ${x!.brott}, ${SIM.STRAFF_NAMN[r.steg].toLowerCase()}` : 'ingen'}`, !!r && r.om === tjuv.id && r.led === l.id && r.b.h === 'stold' && r.b.mot === offer.id],
+      [`ledaren såg det själv, och de som såg och hörde finns med (såg: ${x?.sett}; hörde: ${x?.hort})`, !!r && !!r.b.sett && r.sett.includes(offer.id) && r.hort.includes(langt.id) && !r.sett.includes(langt.id) && !r.sett.includes(l.id)],
+      [`hårdheten och dess delar sparas (${r?.hard.toFixed(2)}: ${[r?.rang, r?.emp, r?.hum, r?.agg].map(v => v?.toFixed(2)).join(', ')})`, !!r && Math.abs(Math.min(SIM.STR.max, Math.max(SIM.STR.min, 1 + r.rang + r.emp + r.hum + r.agg)) - r.hard) < 1e-9],
+      [`straffet och det lagom sparas, och om domen var orättvis (${r?.steg}, lagom ${r?.lagom}, ${r?.oratt ? 'orättvis' : 'rättvis'})`, !!r && r.steg >= 0 && r.steg <= 3 && r.lagom >= 0 && !!r.oratt === (r.steg > r.lagom || (!!r.nara && r.steg < r.lagom) || !!r.b.falsk)],
+      [`berättelsen nämner den dömda och ledaren: "${x?.berattelse}"`, !!x && x.berattelse.includes(tjuv.name) && x.berattelse.includes(l.name) && !x.berattelse.includes('{')],
+      ['varje slags dom och väder har en variant i mallarna', tomma === 0],
+      [`högst ${SIM.STR.sparas} rättegångar sparas (${t.styre!.ratt!.length} efter en ny dom, ${tak} före)`, t.styre!.ratt!.length === SIM.STR.sparas],
+    ];
+  },
+};
+
 SCENARIER.blockera = {
   text: 'Fiender blockerar vägen (steg 3.7.20): i striden går man inte närmare än STRID.kropp en fiende som står, utan runt hen, och inte genom väggar. Den som står i en dörröppning stänger den; när hen fallit går de andra igenom öppningen. Vänner och de som ligger går man igenom',
   kor: () => {

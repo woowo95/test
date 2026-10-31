@@ -1,5 +1,5 @@
 import { ALDER, REL, ageOf, alive, byId, count, franMitt, isKin, living, log, relKey, stat, think } from './folk';
-import { kronikaBer, personFalt } from './berattelser';
+import { ARSTIDER, Fyllning, fyll, kronikaBer, och, personFalt, valjVariant } from './berattelser';
 import { skada } from './halsa';
 import { die, leave } from './liv';
 import { moodOf } from './humor';
@@ -10,7 +10,8 @@ import { kronika } from './historik';
 import { Sed, drar, influence } from './seder';
 import { knows } from './teknik';
 import { Bevis, HANDELSER, HandelseTyp, allmant, handelse, ryktbarhet, vittnen } from './rykten';
-import { ISTID, ageIndex, hourOf, kallTid } from './tid';
+import { ISTID, ageIndex, hourOf, isLight, kallTid } from './tid';
+import { temperature, vaderNu } from './vader';
 
 // Styret (steg 3.5, "Ledarskap och makt" i designdokumentet).
 // Ledarskap är en teknik som man kommer på och lär ut i samtal (teknik.ts). Bara den som kan den kan bli ledare: när byn har
@@ -57,6 +58,7 @@ export const STR = balans('straff', {
   straffadOp: 8, // ... och den straffade så här mycket sämre
   oratt: 0.08, // ... och legitimiteten sjunker så här mycket (bleknar, LED.orattDygn)
   hord: 0.5, // de som ser straffet hör om brottet med så här stor del av händelsens vikt
+  sparas: 30, // så här många rättegångar sparas (steg 3.10.17), de äldsta glöms
 });
 
 // ---------- registren ----------
@@ -108,6 +110,18 @@ export interface Styre {
   pabud?: Partial<Record<Pabud, number>>; pabudAi?: number; // ledarens åsikt om påbuden, och årstiden de sattes
   oratt?: number; orattT?: number; // orättvisan och när den senast ökade
   domt?: string[]; // fallen som redan dömts
+  ratt?: Rattegang[]; // rättegångarna, de senaste STR.sparas (steg 3.10.17)
+}
+// en rättegång (steg 3.10.17): det som behövs för att visa den. Texten skrivs när den visas (rattegang nedan), med domens timme
+export interface Rattegang {
+  t: number; led: number; ledNamn: string; om: number; namn: string; // när, ledaren och den dömda
+  b: Bevis; // brottet (b.sett: ledaren såg det själv, annars hörde hen det som rykte; b.falsk: det var inte sant)
+  sett: number[]; hort: number[]; // de levande som själva sett brottet, och de som hört det som rykte
+  hard: number; rang: number; emp: number; hum: number; agg: number; // hårdheten och vad sederna och ledaren lade till
+  nara?: true; steg: number; lagom: number; // ledaren stod den dömda nära, straffet och det byn tyckte var lagom
+  oratt?: true; leg?: number; van?: number; // orättvis: legitimiteten den kostade och hur många som tyckte sämre om ledaren
+  publik: number; dog?: true; // hur många som såg straffet, och om den dömda dog av slaget
+  regn?: true; sno?: true; kallt?: true; eld?: true; natt?: true; // vädret och elden
 }
 const styreOf = (s: State) => s.styre ??= { historia: [], oppna: [] };
 export const ledareOf = (s: State) => { const id = s.styre?.ledare; const p = id === undefined ? undefined : byId(s, id); return p && alive(p) ? p : undefined; };
@@ -207,7 +221,9 @@ function doma(s: State, l: Person) {
     if (!f || HANDELSER[b.h].vikt > HANDELSER[f.h].vikt) fall.set(e.om, b);
   }
   if (!fall.size) return;
-  const hard0 = clamp(1 + STR.rang * rang + STR.empati * (10 - stat(l, 'empati', now)) / 10 + STR.humor * (0.5 - moodOf(l, now)) + STR.agg * franMitt(l, 'aggression', now), STR.min, STR.max);
+  const delar = { rang: STR.rang * rang, emp: STR.empati * (10 - stat(l, 'empati', now)) / 10, hum: STR.humor * (0.5 - moodOf(l, now)), agg: STR.agg * franMitt(l, 'aggression', now) };
+  const hard0 = clamp(1 + delar.rang + delar.emp + delar.hum + delar.agg, STR.min, STR.max);
+  const v = vaderNu(s), ratt = (st.ratt ??= []);
   for (const [id, b] of fall) {
     const q = byId(s, id)!;
     for (const e of l.intryck ?? []) if (e.om === id) for (const x of e.bev ?? []) if (BROTT.has(x.h)) domt.push(`${id}:${x.h}:${Math.round(x.t)}`);
@@ -217,24 +233,59 @@ function doma(s: State, l: Person) {
     const lagom = stegOf(vikt * clamp(1 + STR.rang * rang, STR.min, STR.max), b.h, rang);
     const orattvist = steg > lagom || (nara && steg < lagom) || !!b.falsk;
     const sett = vittnen(s, l).filter(x => x !== q);
+    const r: Rattegang = { t: now, led: l.id, ledNamn: l.name, om: id, namn: q.name, b: { ...b }, ...kanner(s, l, q, b), hard: hard0, ...delar,
+      ...(nara ? { nara: true } : {}), steg, lagom, publik: sett.length, ...(v.lage === 'regn' ? { regn: true } : {}), ...(v.sno ? { sno: true } : {}),
+      ...(temperature(s) < 0 ? { kallt: true } : {}), ...(s.fire.lit ? { eld: true } : {}), ...(!isLight(now) ? { natt: true } : {}) };
+    ratt.push(r);
     count(s, 'straff'); count(s, 'straff_' + steg);
     log(s, `${l.name} ${STRAFF[steg]} ${q.name} för att ${hon(q)} ${brottText(b)}.`, 'rel', [l.id, q.id]);
     allmant(s, q, b, STR.hord, sett); // de som ser straffet får höra om brottet
     think(q, `Straffades av ${l.name}`, -STR.tanke * (steg + 1), now, STR.tankeDygn * DAY);
     if (steg === 1) q.skam = now + STR.skamDygn * DAY;
-    if (steg === 2) { const dod = skada(s, q, 'bal', 'blamarke', STR.slagG, 'drap', `när ${l.name} straffade hen`); if (dod) { die(s, q, dod); continue; } }
+    if (steg === 2) { const dod = skada(s, q, 'bal', 'blamarke', STR.slagG, 'drap', `när ${l.name} straffade hen`); if (dod) { r.dog = true; die(s, q, dod); continue; } }
     if (steg === 3) { kronikaBer(s, 'k_utvisad', q.id, { ...personFalt(q), ledare: l.name, varfor: `för att ${hon(q)} ${brottText(b)}` }); count(s, 'utvisad'); leave(s, q); }
     if (orattvist) {
       count(s, 'straff_orattvist');
       handelse(s, l, 'orattvisDom', q);
       st.oratt = legitimitet(s).oratt + STR.oratt; st.orattT = now;
+      r.oratt = true; r.leg = STR.oratt; r.van = 0;
       for (const f of living(s)) if (f !== l && (f === q || f.partner === id || isKin(f, q))) {
-        const r = s.rels[relKey(l.id, f.id)];
-        if (r) r.op = clamp(r.op - (f === q ? STR.straffadOp : STR.familjOp), -100, 100);
+        const rel = s.rels[relKey(l.id, f.id)];
+        if (rel) { rel.op = clamp(rel.op - (f === q ? STR.straffadOp : STR.familjOp), -100, 100); r.van++; }
       }
     } else handelse(s, l, 'dom', q);
   }
   if (domt.length > 200) domt.splice(0, domt.length - 200);
+  if (ratt.length > STR.sparas) ratt.splice(0, ratt.length - STR.sparas);
+}
+// de levande (utom ledaren och den dömda) som har brottet b om q bland sina bevis: själva sett, eller hört som rykte
+function kanner(s: State, l: Person, q: Person, b: Bevis) {
+  const sett: number[] = [], hort: number[] = [];
+  for (const x of living(s)) {
+    if (x === l || x === q) continue;
+    const e = x.intryck?.find(e => e.om === q.id && e.bev?.some(y => y.h === b.h && y.t === b.t && y.mot === b.mot));
+    const y = e?.bev!.find(y => y.h === b.h && y.t === b.t && y.mot === b.mot);
+    if (y) (y.sett ? sett : hort).push(x.id);
+  }
+  return { sett, hort };
+}
+
+// ---------- rättegångarna i fliken Styre (steg 3.10.17) ----------
+const STRAFF_DA = ['tillrättavisade', 'skämde ut', 'slog', 'drev ut'];
+const STRAFF_INF = ['få höra hur fel det var', 'skämmas ut inför alla', 'få stryk', 'drivas ut ur byn'];
+export const STRAFF_NAMN = ['Tillrättavisning', 'Skam', 'Slag', 'Utvisning'];
+// texten om en rättegång: berättelsen ur mallarna r_ratt och r_folk (berattelser.ts), brottet och namnen på dem som visste
+export function rattegang(s: State, r: Rattegang) {
+  const q = byId(s, r.om), l = byId(s, r.led), namn = (ids: number[]) => och(ids.map(id => byId(s, id)?.name ?? 'någon som glömts'));
+  const f: Fyllning = { ...(q ? personFalt(q) : { namn: r.namn, hen: 'hen', honom: 'hen' }), ledare: r.ledNamn, lhen: l ? hon(l) : 'hen',
+    brott: brottText(r.b), straff: STRAFF_DA[r.steg], straffInf: STRAFF_INF[r.steg], arstid: ARSTIDER[ageIndex(s, r.t)],
+    regn: !!r.regn, sno: !!r.sno, kallt: !!r.kallt, eld: !!r.eld, natt: !!r.natt, sjalv: !!r.b.sett, falsk: !!r.b.falsk,
+    oratt: !!r.oratt, hard: r.steg > r.lagom, utvisad: r.steg === 3, dog: !!r.dog, manga: r.publik >= 5 };
+  const t = Math.round(r.t / HOUR), nyckel = r.om * 7919 + r.led;
+  return {
+    berattelse: `${fyll(valjVariant(s, 'r_ratt', nyckel, f, t), f)} ${fyll(valjVariant(s, 'r_folk', nyckel, f, t), f)}`,
+    brott: brottText(r.b), sett: r.sett.length ? namn(r.sett) : '', hort: r.hort.length ? namn(r.hort) : '',
+  };
 }
 
 // ---------- en gång i timmen ----------

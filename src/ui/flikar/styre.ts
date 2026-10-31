@@ -1,11 +1,11 @@
-import { DAY, LED, PABUD, PABUD_LIST, Pabud, SEDER, VAGSKALAR, byId, legitimitet, ledareOf, onskatLager, pabud, pabudAndel, styrelseform, timeLabel, torkAndel } from '../../sim';
+import { DAY, LED, PABUD, PABUD_LIST, Pabud, Rattegang, SEDER, STR, STRAFF_NAMN, VAGSKALAR, byId, legitimitet, ledareOf, onskatLager, pabud, pabudAndel, rattegang, styrelseform, timeLabel, torkAndel } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { bar, esc, hjalpKnapp, hjalpText, num, pLink } from '../hjalp';
 import { s } from '../lage';
 import { sedBar } from './seder';
 import type { Flik } from '../panel';
 
-// styret (steg 3.5.4, styre.ts): ledaren, styrelseformen, legitimiteten, påbuden, vågskålarna och de ledare byn haft.
+// styret (steg 3.5.4, styre.ts): ledaren, styrelseformen, legitimiteten, påbuden, vågskålarna, rättegångarna och de ledare byn haft.
 // Fliken syns först när byn fått sin första ledare
 const harHaft = () => !!s.styre?.historia.length;
 const dygnTxt = (ms: number) => { const d = ms / DAY; return d < 1 ? 'mindre än ett år' : `${Math.floor(d)} år`; };
@@ -31,7 +31,7 @@ export const styre: Flik = {
       return `<li title="${esc(d.effect)}"><div class="sedtop"><span>${esc(d.neg)}</span><span>${esc(d.pos)}</span></div>${sedBar(x)}</li>`;
     }).join('');
     const hist = st.historia.slice().reverse().map(h => `<li><span class="when">${timeLabel(s, h.fran)}</span>${pLink(byId(s, h.id)) === '–' ? esc(h.namn) : pLink(byId(s, h.id))}, ${esc(h.titel.toLowerCase())}${h.till !== undefined ? ` – ${dygnTxt(h.till - h.fran)}, ${esc(h.slut ?? '')}` : ''}</li>`).join('');
-    return `${ledare}<h3>Påbud</h3>${pabudDel()}<h3>Vågskålar</h3><ul class="seder">${skalar}</ul><h3>Byns ledare</h3><ol class="logg">${hist}</ol>`;
+    return `${ledare}<h3>Påbud</h3>${pabudDel()}<h3>Vågskålar</h3><ul class="seder">${skalar}</ul>${rattegangar()}<h3>Byns ledare</h3><ol class="logg">${hist}</ol>`;
   },
 };
 
@@ -49,4 +49,28 @@ function pabudDel() {
       const d = PABUD[k], egen = d.sed ? s.seder.v[d.sed] : 0, led = st.pabud![k] ?? egen;
       return `<dt title="${esc(d.text)}">${esc(d.namn)}</dt><dd title="${esc(`${l.name} vill ${varde(k, led)}, byn själv ${varde(k, egen)}`)}"><b>${varde(k, pabud(s, k))}</b><span class="muted">${led > egen + 0.02 ? '▲' : led < egen - 0.02 ? '▼' : ''}</span></dd>${hjalpText('pabud', `<dt></dt><dd class="small muted">${esc(d.text)}. ${esc(l.name)}: ${varde(k, led)}, byn: ${varde(k, egen)}</dd>`)}`;
     }).join('')}</dl>`;
+}
+
+// rättegångarna (steg 3.10.17): en rad per dom, nyast först. Ett tryck visar berättelsen och hur domen gick till
+const plus = (v: number) => `${v < 0 ? '−' : '+'}${num(Math.abs(v))}`;
+function rattegangar() {
+  const lista = s.styre?.ratt;
+  if (!lista?.length) return '';
+  return `<h3>Rättegångar</h3><ol class="logg">${lista.slice().reverse().map(r => {
+    const id = `ratt-${r.t}-${r.om}`, x = rattegang(s, r);
+    return `<li class="klick" data-hjalp="${id}" data-hjalp-grupp="ratt-" title="Tryck för hela rättegången"><span class="when">${timeLabel(s, r.t)}</span>${esc(r.namn)} ${esc(x.brott)}: ${esc(STRAFF_NAMN[r.steg].toLowerCase())}${r.oratt ? ' <span class="oratt">orättvis</span>' : ''}</li>${hjalpText(id, rattMer(r, x))}`;
+  }).join('')}</ol>`;
+}
+function rattMer(r: Rattegang, x: ReturnType<typeof rattegang>) {
+  return `<li class="small"><p>${esc(x.berattelse)}</p><dl class="kv">
+    <dt>Brottet</dt><dd>${esc(`${r.namn} ${x.brott}`)}${r.b.falsk ? ' (inte sant)' : ''}</dd>
+    <dt>${esc(r.ledNamn)}</dt><dd>${r.b.sett ? 'såg det själv' : 'hörde det som rykte'}</dd>
+    <dt>Såg det</dt><dd>${esc(x.sett || 'ingen annan')}</dd>
+    <dt>Hörde det</dt><dd>${esc(x.hort || 'ingen annan')}</dd>
+    <dt title="Hur hårt ledaren dömer: 1 plus det sederna och ledaren lägger till">Hårdheten</dt><dd>${num(r.hard)} (Envälde ${plus(r.rang)}, empati ${plus(r.emp)}, humör ${plus(r.hum)}, aggression ${plus(r.agg)})${r.nara ? `, mildare mot sina nära (× ${num(STR.nara)})` : ''}</dd>
+    <dt>Straffet</dt><dd>${STRAFF_NAMN[r.steg]}</dd>
+    <dt title="Det straff som sederna godtar">Lagom</dt><dd>${STRAFF_NAMN[r.lagom]}</dd>
+    ${r.oratt ? `<dt>Orättvist</dt><dd>legitimiteten −${Math.round((r.leg ?? 0) * 100)} %${r.van ? `, ${r.van} tyckte sämre om ${esc(r.ledNamn)}` : ''}</dd>` : ''}
+    <dt>Såg straffet</dt><dd>${r.publik}</dd>${r.dog ? '<dt>Döden</dt><dd>dog av slaget</dd>' : ''}
+  </dl></li>`;
 }
