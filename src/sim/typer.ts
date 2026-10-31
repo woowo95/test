@@ -285,9 +285,13 @@ export interface State {
   vargar?: Vargflock[]; vargNr?: number; // vargflockarna på kartan och hur många som kommit (steg 3.7.1, varg.ts)
   djurSkramd?: { g: number; t: number }[]; // kaningrupper som skrämts av en jägare, och när (steg 3.7.3, jakt.ts)
   strider?: import('./strid').StridMinne[]; // de senaste striderna i byn, så att arenan kan visa dem igen (steg 3.7.2, strid.ts)
+  borta?: Borta; // sammanfattningen efter bortavaron som spelaren inte stängt än (steg 3.10.22, ui/spara.ts); simuleringen rör den inte
 }
+// sammanfattningen efter bortavaron (steg 3.10.22): när den började, hur många som fötts och dött då, och vad var och en
+// kunde (kunskapen, 0–1) och trodde (lärdomarna som 'slag:plats') då. Sparas med byn tills spelaren stänger den
+export interface Borta { fran: number; fodda: number; doda: number; kan: Record<number, { k: Record<string, number>; l: string[] }> }
 // en vargflock (steg 3.7.1, varg.ts): vargarnas id (den första leder flocken), var den är och vart den går (mx, my), när den
-// kom och när den drar vidare, hungern (0–1), vad den gör, personen den anfaller, när den senast sågs och jägarna efter den.
+// kom och när den drar vidare, hungern (0–1), vad den gör, personen den anfaller, när den senast sågs och av vem (sag, steg 3.10.20) och jägarna efter den.
 // dorr = öppningen (rutan) där den väntar utanför en stängd dörr, och vantar = sedan när (steg 3.7.21)
 export interface Vargflock { id: number; vargar: number[]; x: number; y: number; mx: number; my: number; kom: number; gar: number; hunger: number; gor: 'stryker' | 'smyger' | 'anfaller' | 'vantar' | 'flyr'; byte?: number; sedd?: number; sag?: number; jagare?: number[]; samlas?: number; dorr?: { x: number; y: number }; vantar?: number; trottnat?: true }
 // ett fällt träd: ved och grenar som finns kvar att hugga ut
