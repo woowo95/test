@@ -13,7 +13,7 @@ import { punktIRuta } from './mark';
 import { addTo, amountOf, avbryt, foodOf, zoneOf } from './lager';
 import { die } from './liv';
 import { handelse, larma, larmNu, ryktbarhet } from './rykten';
-import { SAKER } from './saker';
+import { SAKER, SAK_LIST, isFood } from './saker';
 import { clamp, rnd } from './slump';
 import { STRID, SLAGSMAL, VAPEN, Avsikt, Strid, Uppstallning, djurKampe, foljet, nyStrid, personKampe, slitKastat, stridTillSlut, svartSkadad } from './strid';
 import { ledareOf } from './styre';
@@ -398,8 +398,9 @@ function vanta(s: State, f: Vargflock, folk: Person[], dtSec: number) {
   if (f.gor !== 'flyr') nyttMal(s, f, ut);
 }
 
-// flocken tar mat ur förrådet: köttet först, hela saker
-const STJALS = ['vilt', 'varg', 'kott', 'vargkott', 'fisk', 'abborre', 'grillkott', 'torrkott'];
+// flocken tar mat ur förrådet, hela saker: kött och fisk (det råa och det som lagats av det), i registrets ordning
+const kottEllerFisk = (k: string) => !!SAKER[k]?.ra || Object.keys(SAKER[k]?.skaffa?.av ?? {}).some(a => SAKER[a]?.ra);
+const STJALS: string[] = SAK_LIST.filter(k => isFood(k) && kottEllerFisk(k));
 function stjal(s: State, f: Vargflock) {
   let n = Math.max(1, Math.round(f.vargar.length * VARG.stjalPer)), tog = 0;
   for (const k of STJALS) while (n > 0 && SAKER[k] && amountOf(s, k) >= 1) { addTo(s, k, -1); n--; tog++; }

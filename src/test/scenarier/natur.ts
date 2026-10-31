@@ -1509,6 +1509,14 @@ SCENARIER.varg = {
       st.lastGuardDay = 1e9;
       flock(st, 3, 15, 0.9); kor(st, 4); stal += st.stat?.vargStal ?? 0;
     }
+    // de tar kött och fisk, också den torkade fisken, men inte en fälld varg som väntar på att slaktas (kodgenomgången 3.10.25)
+    let vargKvar = true, fiskTagen = 0;
+    for (const seed of [1, 2, 3]) {
+      const st = by(1, seed); st.fire.lit = false; setMat(st, { torrfisk: 6 }); SIM.addTo(st, 'varg', 2);
+      for (const q of living(st)) { q.guardDay = undefined; q.task = { act: 'sova', phase: 'do', tx: q.x, ty: q.y, until: st.now + 5 * HOUR, carry: 0 } as SIM.Task; }
+      st.lastGuardDay = 1e9;
+      flock(st, 3, 15, 0.9); kor(st, 4); vargKvar &&= amountOf(st, 'varg') === 2; fiskTagen += 6 - amountOf(st, 'torrfisk');
+    }
     // byn jagar en ensam varg i dagsljus när alla har spjut
     let jakt = 0, dodad = 0, hemma = 0, dodare = 0;
     for (const seed of [1, 2, 3, 4, 5, 6, 7, 8]) {
@@ -1530,6 +1538,7 @@ SCENARIER.varg = {
       [`vakten ser flocken på natten (${sedd} gånger) och väcker byn (${vakt} väckta, ${vaken} håller sig vakna vid elden)`, harVakt && sedd > 0 && vakt > 0 && vaken > 0],
       [`en hungrig flock anfaller den som är ensam (${anfall} anfall, ${stridAn} strider)`, anfall > 0 && stridAn > 0],
       [`på natten när alla sover och elden slocknat stjäl vargarna mat (${stal} saker i tre byar)`, stal > 0],
+      [`de tar den torkade fisken (${fiskTagen}) men inte de fällda vargarna (${vargKvar ? 'kvar' : 'tagna'})`, fiskTagen > 0 && vargKvar],
       [`byn jagar en ensam varg med spjut (${jakt} jakter, ${dodad} dödade vargar, ${hemma} hemburna, ${dodare} vargdödare)`, jakt > 0 && dodad > 0 && hemma > 0 && dodare > 0],
       [`under istiden kommer flockar (${kom} i tre byar på 120 timmar) och drar vidare (${borta})`, kom > 0 && borta > 0],
     ];
