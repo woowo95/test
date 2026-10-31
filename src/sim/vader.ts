@@ -28,6 +28,7 @@ export const VADER = balans('vader', {
   fuktTim: 16, fuktLitenTim: 5, // vågornas längd (timmar) ...
   fuktLiten: 0.35, // ... och hur mycket den korta väger
   regnFran: [0.62, 0.68, 0.72, 0.66], // över så här mycket fukt regnar eller snöar det, per tidsålder (istid, vår, sommar, höst) ...
+  regnTak: 0.99, // regngränsen når aldrig 1 (torkan och sommaren tillsammans), då delar nederbörden med noll eller blir ständigt regn
   molnSpann: 0.15, // ... och så här långt under det är det mulet
   snoGrad: 1, // under så här många grader faller det snö i stället för regn
   vindTim: 9, // blåsten: vågens längd (timmar) ...
@@ -133,13 +134,19 @@ function vag(s: State, t: number, tim: number, salt: number) {
   return a + (b - a) * g;
 }
 const vaderCache = new WeakMap<State, { t: number; v: Vader }>();
+// hur mycket det regnar eller snöar (0–1) vid fukten m och regngränsen g
+export function regnMangd(m: number, g: number) {
+  const r = Math.min(g, VADER.regnTak);
+  return clamp((m - r) / (1 - r), 0, 1);
+}
+
 // vädret nu (eller vid tiden t)
 export function vaderNu(s: State, t = s.now): Vader {
   const c = vaderCache.get(s);
   if (c && c.t === t) return c.v;
   const ai = kalender(s, t).ai;
   const m = (1 - VADER.fuktLiten) * vag(s, t, VADER.fuktTim, 1) + VADER.fuktLiten * vag(s, t, VADER.fuktLitenTim, 2);
-  const g = VADER.regnFran[ai] - MOTGANG.hardSno * hardVinter(s, t) + (torkaNu(s, t) ? TORKA.regn : 0) - (flodRegn(s, t) ? FLOD.regn : 0), nb = clamp((m - g) / (1 - g), 0, 1), moln = clamp((m - g + VADER.molnSpann) / VADER.molnSpann, 0, 1);
+  const g = VADER.regnFran[ai] - MOTGANG.hardSno * hardVinter(s, t) + (torkaNu(s, t) ? TORKA.regn : 0) - (flodRegn(s, t) ? FLOD.regn : 0), nb = regnMangd(m, g), moln = clamp((m - g + VADER.molnSpann) / VADER.molnSpann, 0, 1);
   const temp = temperature(s, t), sno = nb > 0 && temp < VADER.snoGrad;
   const vind = Math.max(tornadoNu(s, t) ? TORNADO.vind : 0, clamp((vag(s, t, VADER.vindTim, 3) - VADER.blastFran[ai]) / (1 - VADER.blastFran[ai]), 0, 1)); // det stormar medan tornadon drar fram (tornado.ts)
   const aska = nb > 0 && !sno && temp > VADER.askaGrad && vag(s, t, VADER.askaTim, 4) > VADER.askaFran;

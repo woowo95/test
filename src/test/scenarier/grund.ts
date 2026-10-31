@@ -288,7 +288,10 @@ SCENARIER.vader = {
     // en eld ute brinner fortare i regnet
     const e = cloneState(s); e.fire.lit = true; e.fire.fuel = 100;
     stepFire(e, 3600, []); const brann = 100 - e.fire.fuel, vanligt = hearthOf(e.fire).burn;
+    // en regngräns över 1 (ett annat balanstal för torkan eller sommaren) ger nästan inget regn, aldrig ständigt regn (kodgenomgången 3.10.25)
+    const nbHog = [0.3, 0.6, 0.9, 0.98].map(m => SIM.regnMangd(m, 1.1));
     return [
+      [`med regngränsen 1,1 regnar det inte vid vanlig fukt (${nbHog.join(', ')})`, nbHog.every(x => x === 0)],
       [`alla väder förekommer under ett år (${alla.join(', ')})`, ['klart', 'moln', 'regn', 'sno', 'blast'].every(k => alla.includes(k as VaderId))],
       [`det regnar oftare på våren och hösten än på sommaren (${(andel(1, 'regn', 'aska', 'sno') * 100).toFixed(0)} %, ${(andel(3, 'regn', 'aska', 'sno') * 100).toFixed(0)} % mot ${(andel(2, 'regn', 'aska', 'sno') * 100).toFixed(0)} %)`, andel(1, 'regn', 'aska', 'sno') > andel(2, 'regn', 'aska', 'sno') && andel(3, 'regn', 'aska', 'sno') > andel(2, 'regn', 'aska', 'sno')],
       ['det snöar bara när det är kallt, och regnar bara när det inte är det', snoVarmt === 0 && regnKallt === 0],
