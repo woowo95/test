@@ -722,7 +722,7 @@ SCENARIER.kryper = {
   kor: () => {
     const m = (id: number, sida: 0 | 1, vapen: SIM.Vapen, x: number, y: number) => ({ id, namn: `K${id}`, sida, st: { styrka: 10, uthallighet: 10, mod: 10, smidighet: 10, skicklighet: 10 }, vapen, klader: [] as string[], fart: 1, x, y });
     let kropp = 0, flyttade = 0, reste = 0, slog = 0, forFort = 0, nara = 0;
-    const fart = SIM.STRID.fart * SIM.HALSA.krypFart / SIM.STRID.tempo; // rutor per sekund på klockan
+    const fart = SIM.STRID.fart * SIM.GANG.krypFart / SIM.STRID.tempo; // rutor per sekund på klockan
     let sjalv = 0; // hur ofta det händer av sig självt, med yxor (bara information)
     for (let fro = 1; fro <= 200; fro++) sjalv += SIM.stridTillSlut(SIM.nyStrid({ avsikt: 'doda', w: 20, h: 14, kampar: [m(1, 0, 'yxa', 8, 6), m(2, 0, 'kniv', 7, 8), m(3, 1, 'yxa', 12, 7)] }, fro)).logg.filter(r => r.h === 'kryper').length;
     for (let fro = 1; fro <= 100; fro++) {
@@ -744,17 +744,58 @@ SCENARIER.kryper = {
     }
     // i byn: farten, bilden och släpspåret
     const s = createState(3, START), p = living(s).find(q => ageOf(q, s.now) >= 18)!;
+    const fore = SIM.kroppFaktor(p, s.now);
     SIM.skada(s, p, 'benH', 'benbrott', 0.9, 'olycka', ''); SIM.skada(s, p, 'armV', 'skarsar', 0.6, 'olycka', '');
-    const kravlar = !SIM.kanGa(p) && SIM.gangFart(p) === SIM.HALSA.krypFart;
+    const kravlar = !SIM.kanGa(p) && Math.abs(SIM.kroppFaktor(p, s.now) / fore - SIM.GANG.krypFart) < 1e-9;
     p.task = { act: 'samla', phase: 'go', tx: p.x + 6, ty: p.y, until: s.now + HOUR, carry: 0 } as SIM.Task;
     s.blod = []; for (let i = 0; i < 20; i++) SIM.halsaSteg(s, p, 60);
     const spar = SIM.blodOf(s).filter(b => b.f === 'spar').length, droppar = SIM.blodOf(s).filter(b => b.f === 'droppar').length;
     return [
-      [`krypfarten är ${SIM.HALSA.krypFart} av gångfarten (en ruta på ${(1 / (SIM.STRID.fart * SIM.HALSA.krypFart)).toFixed(0)} s för en frisk vuxen i striden)`, SIM.HALSA.krypFart >= 0.1 && SIM.HALSA.krypFart <= 0.15],
+      [`krypfarten är ${SIM.GANG.krypFart} av gångfarten (en ruta på ${(1 / (SIM.STRID.fart * SIM.GANG.krypFart)).toFixed(0)} s för en frisk vuxen i striden)`, SIM.GANG.krypFart >= 0.1 && SIM.GANG.krypFart <= 0.15],
       [`den som har ett brutet ben och fälls kryper i ${kropp} av 100 strider, och ${flyttade} av dem kom någonstans (av sig själv med yxor: ${sjalv} gånger i 200 strider till döden)`, kropp >= 90 && flyttade >= kropp * 0.5],
       [`den som kryper reser sig aldrig (${reste}) och slår aldrig mer (${slog})`, reste === 0 && slog === 0],
       [`hen kryper aldrig fortare än krypfarten (${forFort} för fort) och stannar en bit från vännen (${nara} för nära)`, forFort === 0 && nara === 0],
       [`i byn kravlar den som har ett skadat ben (${kravlar ? 'ja' : 'nej'}) och lämnar ett släpspår när såret blöder (${spar} spår, ${droppar} droppar)`, kravlar && spar > 0 && droppar === 0],
+    ];
+  },
+};
+
+SCENARIER.gangfart = {
+  text: 'Gångfarten i ett register (steg 3.10.10): åldern, skadade ben och fötter, yrseln, att kravla, att bära någon, marken, saker på golvet och smidigheten är rader i GANGFART som multipliceras. Ingen rad ger ensam en mycket låg fart (krypandet ungefär 0,12, skadade ben aldrig under GANG.rorGolv), och personrutan visar det som drar ner farten just nu',
+  kor: () => {
+    const { GANG, GANGFART, kroppFart, kroppFaktor, gangDelar, markFaktor, smidig, speedAt, rorlighetSkador, kanGa, groundOf, tileOf, FOREST, isSoil, skada, SKADOR, ALDER } = SIM;
+    const s = createState(3, START), vuxna = living(s).filter(q => ageOf(q, s.now) >= 18 && ageOf(q, s.now) <= ALDER.gangGammal);
+    const [p, q, r] = vuxna;
+    const nara = (a: number, b: number) => Math.abs(a - b) < 1e-9;
+    // en frisk vuxen, ett barn och en gammal (födelsen flyttas), och samma vuxna som bär någon
+    const frisk = kroppFart(p, s.now), bar = kroppFart(p, s.now, true);
+    const born = q.born; q.born = s.now - 4 * DAY; const barn = kroppFart(q, s.now); q.born = s.now - 70 * DAY; const gammal = kroppFart(q, s.now); q.born = born;
+    // svåra skador på båda benen och fötterna, men inte så svåra att hen kravlar: rörligheten stannar vid golvet
+    for (const d of ['benH', 'benV', 'fotH', 'fotV'] as SIM.Kroppsdel[]) skada(s, r, d, 'skarsar', 0.55 / SKADOR.skarsar.fel, 'olycka', '');
+    const skadad = kanGa(r) && nara(rorlighetSkador(r), GANG.rorGolv) && nara(kroppFaktor(r, s.now), GANG.rorGolv);
+    // den som kravlar: ett brutet ben
+    const k = vuxna[3] ?? q; skada(s, k, 'benH', 'benbrott', 0.9, 'olycka', '');
+    const kryper = !kanGa(k) && nara(kroppFaktor(k, s.now), GANG.krypFart);
+    // ingen enskild rad är långsammare än att kravla
+    const enskilda = [GANG.fartBarn / GANG.fart, GANG.fartGammal / GANG.fart, GANG.rorGolv, GANG.baraFart, ...GANG.fartMark.filter(v => v > 0), GANG.fartSkog, GANG.fartUng, GANG.fartHog, GANG.fartSaker];
+    const lagst = Math.min(...enskilda);
+    // personrutan: barnet i skogen. Raderna förklarar hela farten (gånger varandra), och åldern och marken syns
+    const g = groundOf(s);
+    let skog = -1;
+    for (let i = 0; i < g.tiles.length && skog < 0; i++) if (isSoil(g.tiles[i]) && g.trees[i] >= FOREST && !g.lost?.[i]) skog = i;
+    q.born = s.now - 4 * DAY; q.x = (skog % SIM.W) + 0.5; q.y = Math.floor(skog / SIM.W) + 0.5;
+    const gd = gangDelar(s, q), steg = kroppFaktor(q, s.now) * markFaktor(speedAt(g, tileOf(q.x, q.y)) || 1, smidig(q, s.now));
+    const visar = gd.delar.some(d => d.k === 'alder' && d.namn === 'Barn') && gd.delar.some(d => d.k === 'mark' && d.namn === 'Skog');
+    const forklarar = nara(gd.fart, gd.delar.reduce((a, d) => a * (1 + d.v), 1)) && nara(gd.fart, steg) && nara(gd.rutor, GANG.fart * gd.fart);
+    q.born = born;
+    return [
+      [`registret har ${Object.keys(GANGFART).length} rader`, Object.keys(GANGFART).length >= 8],
+      [`en frisk vuxen går ${frisk} rutor i sekunden, ett barn ${barn.toFixed(2)} och en gammal ${gammal.toFixed(2)}`, nara(frisk, GANG.fart) && nara(barn, GANG.fartBarn) && nara(gammal, GANG.fartGammal)],
+      [`den som bär någon går ${bar.toFixed(2)} (${GANG.baraFart} av farten)`, nara(bar, GANG.fart * GANG.baraFart)],
+      [`svåra skador på båda benen och fötterna ger aldrig mindre än ${GANG.rorGolv} av farten (${kroppFaktor(r, s.now).toFixed(2)})`, skadad],
+      [`den som inte kan gå kravlar med ${GANG.krypFart} av farten (${kroppFaktor(k, s.now).toFixed(3)})`, kryper && GANG.krypFart >= 0.1],
+      [`ingen enskild rad går under krypandet (lägst ${lagst.toFixed(2)})`, lagst >= GANG.krypFart],
+      [`personrutan visar barnet i skogen: ${gd.delar.map(d => `${d.namn} ${Math.round(d.v * 100)} %`).join(', ')}, ${Math.round(gd.fart * 100)} % av farten`, skog >= 0 && visar && forklarar],
     ];
   },
 };

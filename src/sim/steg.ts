@@ -22,7 +22,7 @@ import { TRY_SEC, growFynd, handFish, lagren, packFynd, pickMushrooms, richness,
 import { halMin, halVal, islagt, stepIs } from './is';
 import { blotSteg, coldOf, stepVader, temperature, VADER, vaderGrader, vaderNu, vaxtFaktor } from './vader';
 import { VED, addFuel, canLight, fireWant, forageItems, fuelFor, hearthOf, heatAt, igniterOf, stepFire, takeCoal, takeFuel, tinderShort, tryLight } from './eld';
-import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, franMitt, gjort, isSick, living, log, ovning, stat, think } from './folk';
+import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, gjort, isSick, living, log, ovning, stat, think } from './folk';
 import { eldPlats } from './karta';
 import { ELDFLYTT, flyttaElden, stepEldFlytt } from './eldflytt';
 import { DODSORSAKER, barnMat, birth, birthWish, die, regulate } from './liv';
@@ -37,6 +37,7 @@ import { ARSTID, ageIndex, iIstiden, isLight } from './tid';
 import { ACTS, toolRow } from './handlingar';
 import { AGES_BORJAR, Act, DAY, HOUR, HOUR_S, MIN, Person, SEC, SKILL_NAMES, State, Task, W, H, useMap, Historik, simulera } from './typer';
 import { findPath, speedAt, wear } from './vag';
+import { kroppFart, markFaktor, smidig } from './gang';
 import { chooseTask, dangers, nastaBuske, nastaRedskap, spotFor } from './val';
 import { djurSteg } from './djur';
 import { vargSteg, vargjaktSteg } from './varg';
@@ -57,7 +58,7 @@ import { addFuelBrasa, brasaFor, stepBrasor } from './brasor';
 import { sjoRakna } from './sjo';
 import { akel, toaBesok } from './smuts';
 import { DRICKA_ACTS, TORST, drick, torstSteg, vattenFram, vattenFylld } from './torst';
-import { HALSA, barMed, burenSteg, gangFart, halsaSteg, lakerFullt, lamnaAv, mossaFynd, mossaPaStam, vardKlar, vardMal } from './halsa';
+import { barMed, burenSteg, halsaSteg, lakerFullt, lamnaAv, mossaFynd, mossaPaStam, vardKlar, vardMal } from './halsa';
 import { bordPlats, kladVarme, stepKlader } from './utrustning';
 import { finishStation, finishTillbehor, stationRutor, stepStationer, tillbehorVarme, workStation } from './stationer';
 
@@ -68,11 +69,7 @@ export const BEAT = 300;
 const BIT = 60;
 // Balanstalen (regel 8). Kroppens gränser och takter (KROPP) och åldrarna (ALDER) står i folk.ts, eftersom val.ts och behov.ts läser dem
 const STEG = balans('steg', {
-  // att gå (rutor per sekund) och nöta marken
-  fart: 1.6, // i vanliga fall
-  smidTerr: 0.3, // i skog och snår (marken långsammare än 1) tar den smidiga igen så här stor del av det man förlorar, gånger (smidigheten − 10) / 10 (steg 3.7.6)
-  fartBarn: 0.9, // under ALDER.gangBarn
-  fartGammal: 1, // över ALDER.gangGammal
+  // att nöta marken (hur fort man går står i GANG, gang.ts)
   markNot: 0.03, // hur mycket ett steg nöter marken (MARK.nott per ruta)
   vandraNot: 0.08, // ... och när man rör sig på platsen (gånger vandra.v i handlingens rad och tiden)
   borda: 1 / 3, // man bär aldrig mer än så stor del av vad man orkar från arbetet
@@ -362,7 +359,7 @@ function taskStep(s: State, p: Person, a: number, t1: number, dtSec: number, lea
     let used: number;
     if (tk.phase === 'go' || tk.phase === 'back') {
       if ((tk.act === 'varda' && tk.phase === 'go') || (tk.act === 'vatten' && tk.phase === 'back' && !tk.falt)) vardMal(s, tk); // den skadade kan ha flyttat sig
-      const w = walk(s, p, tk, left, a);
+      const w = walk(s, p, tk, left);
       used = w.used;
       if (tk.bar !== undefined && !barMed(s, p, tk)) { left -= used; continue; } // den som bärs följer med
       if (w.framme) { s.now = t1 - (left - used) * SEC; arrive(s, p, tk, isLight(s.now)); }
@@ -405,7 +402,7 @@ function pathFor(s: State, g: ReturnType<typeof groundOf>, x0: number, y0: numbe
   return v ? v.slice() : null; // null = ingen väg dit
 }
 // att gå mot målet ruta för ruta runt vatten, gärna längs stigar. Ger tiden det tog och om man kom fram
-function walk(s: State, p: Person, tk: Task, left: number, a: number) {
+function walk(s: State, p: Person, tk: Task, left: number) {
   const g = groundOf(s);
   const key = `${tk.tx.toFixed(2)},${tk.ty.toFixed(2)},${s.byggV ?? 0}`; // en ny vägg kan stänga vägen
   if (tk.pk !== key) {
@@ -417,16 +414,16 @@ function walk(s: State, p: Person, tk: Task, left: number, a: number) {
     if (!v && (tk.phase === 'go' || bara) && pathFor(s, g, p.x, p.y, f.x + 0.5, f.y + 0.5)) { avbryt(s, p); return { used: Math.min(left, BIT), framme: false }; }
     tk.path = v ?? [];
   }
-  const off = sida(p, 0.18), fart = (a < ALDER.gangBarn ? STEG.fartBarn : a > ALDER.gangGammal ? STEG.fartGammal : STEG.fart) * gangFart(p) * (tk.bar !== undefined ? HALSA.baraFart : 1), t0 = s.now; // skadade ben och fötter går långsammare, och den som inte kan gå kravlar (halsa.ts)
+  const off = sida(p, 0.18), fart = kroppFart(p, s.now, tk.bar !== undefined), t0 = s.now; // åldern, skadorna, yrseln, att kravla och att bära någon (gångfartens register, gang.ts)
   let budget = fart * left;
-  const sm = STEG.smidTerr * franMitt(p, 'smidighet', s.now);
+  const sm = smidig(p, s.now);
   const klocka = () => t0 + (fart * left - budget) / fart * SEC;
   if (budget <= 0) return { used: left, framme: false };
   // punkt för punkt längs vägen (var och en lite vid sidan av) och sist till målet. Marken nöts där man går
   for (;;) {
     const sist = !tk.path?.length, i = sist ? 0 : tk.path![0];
     const wx = sist ? tk.tx : (i % W) + 0.5 + off, wy = sist ? tk.ty : Math.floor(i / W) + 0.5 - off;
-    const ci = tileOf(p.x, p.y), sp0 = speedAt(g, ci) || 1, sp = sp0 < 1 ? Math.min(1, sp0 + (1 - sp0) * sm) : sp0;
+    const ci = tileOf(p.x, p.y), sp = markFaktor(speedAt(g, ci) || 1, sm);
     const dx = wx - p.x, dy = wy - p.y, d = Math.hypot(dx, dy), can = budget * sp;
     wear(g, ci, MARK.nott * STEG.markNot * Math.min(d, can));
     if (d > can) { p.x += dx / d * can; p.y += dy / d * can; return { used: left, framme: false }; } // tiden räckte inte hela vägen

@@ -713,8 +713,8 @@ export function wearStore(s: State, dtSec: number) {
 }
 
 // ---------- saker på golvet (steg 2.3.6) ----------
-// Lösa saker och högar på marken (inte i en hylla, kista eller ett ställ) går att gå över, men långsamt (VAG.fartSaker i
-// vag.ts), så att folk hellre går runt. Rutorna räknas om en gång i timmen, i början av steget (steg.ts), så att alla lägen
+// Lösa saker och högar på marken (inte i en hylla, kista eller ett ställ) går att gå över, men långsamt (GANG.fartSaker i
+// gang.ts), så att folk hellre går runt. Rutorna räknas om en gång i timmen, i början av steget (steg.ts), så att alla lägen
 // räknar likadant
 const golvCache = new WeakMap<State, { h: number; g: object }>();
 export function sakerPaGolvet(s: State) {

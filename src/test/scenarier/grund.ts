@@ -1,6 +1,6 @@
 // Scenarier. Grunden: gläntan, yxan, vintern, knapphet, svamp och flinta, kunskap, temperatur och kalender.
 import { createState, growGround, step, living, temperature, coldOf, ageIndex, ageStart, kalender, yearNo, AGES, amountOf, groundOf, getMap, DAY, HOUR, W, tileOf, kn, fearPlace, findL, areaOf, describe, migrate, forget, stat, campDist, angOf, setAmount, BEAT, tingOf, eatPoison, HOST, vaderNu, VADER, VADERLAGE, VaderId, blotSteg, varmeDelar, stepVader, vaxtFaktor, stepFire, hearthOf, cloneState, wearMult, vaderSlit, NEW_W, NEW_H, allaTider, tiderUtanfor, skaRojas } from '../../sim';
-import { BAR, FOREST, HIGH, VAG, isSoil } from '../../sim/vag';
+import { BAR, FOREST, HIGH, isSoil } from '../../sim/vag';
 import { T } from '../../sim/typer';
 import * as SIM from '../../sim';
 import type { Person, State } from '../../sim';
@@ -489,7 +489,7 @@ SCENARIER.torka = {
     const vattnat = s.stat?.vattnat ?? 0, vissnat = s.stat?.vissnat ?? 0;
     // ingen står i vattnet, och den torra sjöbotten går att gå på
     const iVattnet = living(s).filter(p => SIM.iVattnetNu(s, Math.floor(p.y) * W + Math.floor(p.x))).length;
-    const gar = VAG.fartMark[T.Lera] > 0;
+    const gar = SIM.GANG.fartMark[T.Lera] > 0;
     // efter torkan: vattnet kommer tillbaka när det har regnat (högst sex dygn)
     kor(s, (m.slut - s.now) / HOUR + 1);
     const efter = s.sjoTorr ? 1 : 0;

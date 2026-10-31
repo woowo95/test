@@ -4,20 +4,16 @@
 import { clampI } from './slump';
 import { T, W, H, inMap } from './typer';
 import { balans } from './balans';
+import { GANG } from './gang';
 
-// Balanstal (regel 8): hur fort man går på olika mark, hur gärna man följer en stig och hur marken nöts. Hur fort marken
-// växer tillbaka och när den är skog står i MARK (mark.ts). Hur snabbt en människa går står i STEG.fart (steg.ts)
+// Balanstal (regel 8): hur gärna man följer en stig och hur marken nöts. Hur fort man går på olika mark står med resten av
+// gångfarten i GANG (gang.ts, steg 3.10.10), och hur fort marken växer tillbaka och när den är skog i MARK (mark.ts)
 export const VAG = balans('vag', {
-  fartMark: [0, 0.9, 1, 1, 0.8, 0.85], // fart (gånger gångfarten) på vatten, sand, de två jordslagen, sten och torr sjöbotten (steg 3.8.2)
-  fartSkog: 0.6, // ... på en ruta med skog
-  fartUng: 0.75, // ... med ungskog
-  fartHog: 0.8, // ... med högt gräs (kort gräs och stigar går man fortast på: 1)
   ungskog: 0.15, // träd från detta värde är en ungskog (under det är det plantor som ännu inte räknas)
   stigBas: 0.45, // kostnaden att gå in på en jordruta är stigBas + stigTacke * marktäcket: orörd mark kostar mer än en stig
   stigTacke: 0.55,
   trampHog: 0.75, // högt gräs trampas ner direkt till så här högt ...
   trampPlanta: 4, // ... och en liten planta (under skog) trampas ihjäl så här många gånger fortare än gräset nöts
-  fartSaker: 0.5, // fart (gånger farten på marken) över lösa saker och högar på golvet (steg 2.3.6)
   sokVikt: 0.52, // sökningen räknar så mycket per ruta som är kvar till målet: mer än den billigaste rutan (stigBas), så att den går fort och hellre tar den raka vägen
 });
 
@@ -29,15 +25,16 @@ export const FOREST = 0.5; // träd från detta värde räknas som skog
 export const isSoil = (t: number) => t === T.Gras || t === T.Skog;
 const SQ2 = Math.SQRT2;
 
-// fart på en ruta: skog långsammast, högt gräs medel, kort gräs och stig snabbast. Över saker på golvet långsammare
-export const speedAt = (g: Ground, i: number) => markFart(g, i) * (g.lost?.[i] ? VAG.fartSaker : 1);
-function markFart(g: Ground, i: number) {
+// fart på en ruta (raderna för marken i gångfartens register, gang.ts): skog långsammast, högt gräs medel, kort gräs och
+// stig snabbast. Över saker på golvet långsammare
+export const speedAt = (g: Ground, i: number) => markFart(g, i) * (g.lost?.[i] ? GANG.fartSaker : 1);
+export function markFart(g: Ground, i: number) {
   const t = g.tiles[i];
-  if (!isSoil(t)) return VAG.fartMark[t];
+  if (!isSoil(t)) return GANG.fartMark[t];
   const tr = g.trees[i];
-  if (tr >= FOREST) return VAG.fartSkog;
-  if (tr >= VAG.ungskog) return VAG.fartUng;
-  return g.cover[i] >= HIGH ? VAG.fartHog : 1;
+  if (tr >= FOREST) return GANG.fartSkog;
+  if (tr >= VAG.ungskog) return GANG.fartUng;
+  return g.cover[i] >= HIGH ? GANG.fartHog : 1;
 }
 // kostnad att gå in på en ruta: man följer hellre en upptrampad stig än går över orörd mark
 const stepCost = (g: Ground, i: number) => (isSoil(g.tiles[i]) ? VAG.stigBas + VAG.stigTacke * g.cover[i] : 1) / speedAt(g, i);

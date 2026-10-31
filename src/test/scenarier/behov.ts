@@ -1,5 +1,5 @@
 // Scenarier. Behov och val: behov, ved, aktivitet och fritid.
-import { Person, createState, getRel, step, living, temperature, nyKalender, amountOf, capacity, load, isLight, T, FOOD, ageOf, getMap, HOUR, W, tileOf, stat, campCenter, KANIN, gain, takeFuel, ownsAmount, addTo, setAmount, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, DELA, BEAT, spar, isWork, ACTS, groundOf, varmeDelar, nyVarme, addTool, stepKlader, chooseTask, iSkugga, KROPP, spotFor, shoreOf, torstDelar, drickPlats, areaOf, halsaLage, describe, halsaSteg, skada, blodning, halsa, rorlighet, workRate, OLYCKOR, Act, HALSA, kanGa, gangFart, hemma, mossaFynd, chopStock, skadeLista, skadeText, delSkada, FORMAGOR, smarta, handighet, NARINGAR, NARING, naringOf, naringNu, naringSjunker, mattnad, sjunker, bristGrad, bristSteg, berattaBrist, onskan, matOrdning, takeFood, vilaTim, skorbjugg, NARINGBAL, DODSORSAKER, converse, Naring, STATIONER, TEKNIK, tingOf, vaderNu } from '../../sim';
+import { Person, createState, getRel, step, living, temperature, nyKalender, amountOf, capacity, load, isLight, T, FOOD, ageOf, getMap, HOUR, W, tileOf, stat, campCenter, KANIN, gain, takeFuel, ownsAmount, addTo, setAmount, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, DELA, BEAT, spar, isWork, ACTS, groundOf, varmeDelar, nyVarme, addTool, stepKlader, chooseTask, iSkugga, KROPP, spotFor, shoreOf, torstDelar, drickPlats, areaOf, halsaLage, describe, halsaSteg, skada, blodning, halsa, rorlighet, workRate, OLYCKOR, Act, GANG, HALSA, kanGa, kroppFaktor, hemma, mossaFynd, chopStock, skadeLista, skadeText, delSkada, FORMAGOR, smarta, handighet, NARINGAR, NARING, naringOf, naringNu, naringSjunker, mattnad, sjunker, bristGrad, bristSteg, berattaBrist, onskan, matOrdning, takeFood, vilaTim, skorbjugg, NARINGBAL, DODSORSAKER, converse, Naring, STATIONER, TEKNIK, tingOf, vaderNu } from '../../sim';
 import { cloneState, stepIs, stepVader, isCm, vattenGrader, halVal, halMin, drickVal, iIstiden, ageIndex, tidyTools } from '../../sim';
 import * as SIM from '../../sim';
 import { START, STEG_DYGN, STEG_TIM } from '../kor';
@@ -545,7 +545,7 @@ SCENARIER.vard = {
     for (let i = 0; i < 40 * STEG_TIM && tk()?.act === 'varda'; i++) step(s, BEAT);
     const w = p.skador?.[0], trycktes = w?.b === 0, forband = w?.f === 1, mossa = amountOf(s, 'mossa'), lagda = (s.stat?.forband as number ?? 0) - forb0;
     // ett brutet ben: man kan inte gå, utan kravlar
-    fyll(p); skada(s, p, 'benH', 'benbrott', 0.9, 'olycka', ''); const kryp = gangFart(p), kravlar = !kanGa(p) && kryp === HALSA.krypFart;
+    fyll(p); const fore = kroppFaktor(p, s.now); skada(s, p, 'benH', 'benbrott', 0.9, 'olycka', ''); const kryp = kroppFaktor(p, s.now) / fore, kravlar = !kanGa(p) && Math.abs(kryp - GANG.krypFart) < 1e-9;
     // långt från lägret: en annan vuxen går dit och bär hem hen
     let lx = 0, ly = 0;
     for (let r = 14; r < 30 && !lx; r++) for (let a = 0; a < 16 && !lx; a++) {
@@ -574,7 +574,7 @@ SCENARIER.vard = {
       ['ett rengjort infekterat sår blir friskt', botad],
       ['den som blöder väljer att vårda sitt sår', sjalvVal],
       [`blödningen stannar och ett förband av mossa läggs på (${lagda} förband, mossa kvar ${mossa})`, trycktes && forband && lagda === 1],
-      [`den som har brutit benet kan inte gå och kravlar (${kryp} av farten)`, kravlar],
+      [`den som har brutit benet kan inte gå och kravlar (${kryp.toFixed(2)} av farten)`, kravlar],
       [`den som inte kan gå långt från lägret kravlar hem eller bärs hem av en annan (${langtBort ? 'långt bort' : 'inte långt bort'}, ${bars ? 'buren' : 'kravlade själv'}, hemma ${hem}); sedan steg 3.7.19 kravlar man en ruta på fem sekunder`, langtBort && hem],
       [`man läker fortare när man sover (${(0.5 - vaken).toFixed(3)} → ${(0.5 - sover).toFixed(3)} på fyra timmar)`, 0.5 - sover > 0.5 - vaken],
       [`mossa hittas när man letar (${fynd.toFixed(2)} i timmen) och när man hugger en fälld stam med mossa (${hugg})`, fynd > 0 && hugg === 2],

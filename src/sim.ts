@@ -34,6 +34,7 @@ export * from './sim/odling';
 export * from './sim/halsa';
 export * from './sim/naring';
 export * from './sim/vag';
+export * from './sim/gang';
 export * from './sim/skog';
 export * from './sim/fynd';
 export * from './sim/kunskap';

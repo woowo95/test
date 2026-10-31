@@ -1,4 +1,4 @@
-import { FORMAGOR, HALSA, Kroppsdel, KROPPSDELAR, NARING, NARINGAR, NARINGBAL, bristGrad, bristerNu, frysFaktor, naringNu, sjunker, skorbjugg, vilaTim, TORST, blodning, delSkada, halsa, skadeLista, skadeText, smarta, torstDelar } from '../../sim';
+import { FORMAGOR, gangDelar, HALSA, Kroppsdel, KROPPSDELAR, NARING, NARINGAR, NARINGBAL, bristGrad, bristerNu, frysFaktor, naringNu, sjunker, skorbjugg, vilaTim, TORST, blodning, delSkada, halsa, skadeLista, skadeText, smarta, torstDelar } from '../../sim';
 import { pratText, relationText, beskrivning, binamnInfo, INTRYCK, Intryck, IntryckTyp, anseendeText, intryckOm, LARDOMAR, LKind, anseendeSym, dodSymbol, intryckText, samlatIntryck, SKILL_STAT, gjortDygn, ACTS, ALDER, Act, DAY, Lardom, HUMOR, SKILL_GOR, STAT_GOR, Skill, Stat, coldOf, halsaLage, hearthOf, living, roomAt, temperature, varmeDelar, viloSlag, viloTak, takEffekt, SLAG, SLAG_TECKEN, Person, KUNSKAPER, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, SEDER, SED_LIST, sedOppen, TEKNIK, BYN, formogenhetDelar, Ting, halvKlar, ageOf, alive, byId, childrenOf, drar, heldBy, ownedBy, PLATSER, PLATS_LIST, Plats, BORDA_KG, UTRUSTNING, bordOf, capacity, kvNamn, handerFor, homeKind, load, utrustning, viktOf, SAKER, ownedStock, sakNamn, slagIkon, tingNamn, STACK, describe, duty, habitShare, habitTotal, KROPP, kortTal, moodOf, num, REL, relKey, relTyper, stat, taskText, timeLabel, vidBordet, upplevelseText, uppEffekt } from '../../sim';
 import { framstegSvg, hasIcon, iconImg, kvSvg, tecknet } from '../../ikoner';
 import { LAG, ansStapel, ansTecken, fmtN, bar, cap, carryTxt, cssFarg, durTxt, esc, hex, hsl, hjalpOppen, hjalpText, moodWord, pLink, prickar, relWord, sickNow, tempBar, tempOrd, trend, trendD } from '../hjalp';
@@ -137,7 +137,7 @@ function behovHtml(p: Person) {
 // fliken Hälsa (steg 2.5.3): kroppen som pixelgubbe nr 3 ("händer och fötter", Björn efter v55), ritad i rutor som
 // människorna på kartan, utan kontur. Bildens vänstra sida är personens högra. Varje del är grön när den är hel och går mot
 // gult och rött ju mer skadad den är (delSkada); ett tryck eller musen visar vad som är fel just där. Under kroppen listan
-// över skadorna (skadeLista) och förmågorna som staplar under rubriken Status (FORMAGOR). Saknade delar (grå) och proteser kommer senare
+// över skadorna (skadeLista) och förmågorna som staplar under rubriken Status (FORMAGOR, och gångfarten ur GANGFART). Saknade delar (grå) och proteser kommer senare
 const GUBBE = ['......hhhh......', ...Array(3).fill('.....hhhhhh.....'), '......hhhh......', '.......hh.......',
   ...Array(8).fill('..AA.bbbbbb.aa..'), '.DDD.bbbbbb.ddd.', '.DD..bbbbbb..dd.', '................',
   ...Array(8).fill('.....LL..ll.....'), '...FFFF..ffff...'];
@@ -167,6 +167,10 @@ function halsaHtml(p: Person) {
     const f = FORMAGOR[k], v = f.varde(p), ont = 'ont' in f;
     return rad(p, 'f_' + k, `${f.tecken} ${f.namn}`, `${bar(v, (ont ? v > 0.5 : v < LAG.halsa) ? 'low' : '')}<span>${Math.round(v * 100)} %</span>`, f.delar(p), '', `Påverkar: ${f.gor}`);
   }).join('');
+  // gångfarten (steg 3.10.10): som del av en frisk vuxens på en stig, och raderna i registret som ändrar den just nu (gangDelar)
+  const gf = gangDelar(s, p);
+  const gang = rad(p, 'gang', '🚶 Gångfart', `${bar(gf.fart, gf.fart < LAG.halsa ? 'low' : '')}<span>${Math.round(gf.fart * 100)} %</span>`, gf.delar.map(d => ({ namn: `${d.tecken} ${d.namn}`, v: d.v })), ' %',
+    'Hur fort hen går, mot en frisk vuxen på kort gräs eller en stig. Det som drar ner farten tas gånger varandra.');
   // näringen (steg 2.6.1): mättnaden är en sammanfattning av de fem värdena
   const n = naringNu(p), barn = ageOf(p, s.now) < ALDER.matBarn ? KROPP.hungerBarn : 1;
   const vs = viloSlag(p), svett = (k: (typeof NARINGAR)[number]) => k === 'mineral' && vs === 'restArbete' && p.warm > KROPP.forVarm ? NARINGBAL.svett : 0;
@@ -176,7 +180,7 @@ function halsaHtml(p: Person) {
   // vätskan står först under näringen (Björn efter v89): samma värde som törsten i simuleringen, fullt = otörstig
   const vatska = rad(p, 'torst', '💧 Vätska', `${bar(p.torst, p.torst < TORST.torstig ? 'low' : '', trend(p, 'torst', p.torst))}<span>${Math.round(p.torst * 100)} %</span>`, torstRad(p), ' i timmen', 'Att dricka fyller den. Vattnet är olika smutsigt på olika ställen, och i istiden smälter man snö vid elden.');
   return `<div class="kropp"><svg class="gubbe" viewBox="0 0 16 26" shape-rendering="crispEdges" role="img" aria-label="Kroppen">${gubbe}</svg>${oppen ? `<div class="kroppinfo">${oppen}</div>` : ''}</div>
-    <h3>Det som är fel</h3>${lista}<h3>Status</h3><dl class="kv">${formagor}</dl><h3>Näring</h3><dl class="kv">${vatska}${naring}</dl>`;
+    <h3>Det som är fel</h3>${lista}<h3>Status</h3><dl class="kv">${formagor}${gang}</dl><h3>Näring</h3><dl class="kv">${vatska}${naring}</dl>`;
 }
 // det en egenskap eller färdighet gör: arbetena som går fortare (ACTS) och raderna i STAT_GOR och SKILL_GOR
 function gorHtml(rader: string[], nu: string, extra = '') {

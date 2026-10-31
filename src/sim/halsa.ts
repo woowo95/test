@@ -25,6 +25,7 @@ import { eldPlats } from './karta';
 import { chance, clamp, pick, rnd } from './slump';
 import { Act, HOUR, HOUR_S, Person, Skill, State, Stock, Task } from './typer';
 import { balans } from './balans';
+import { GANG } from './gang';
 import { blodDroppar, blodas } from './blod';
 import { lakFaktor, styrkaFaktor, yrselFaktor } from './naring';
 import type { Dodsorsak } from './liv';
@@ -43,7 +44,7 @@ export const HALSA = balans('halsa', {
   smarta: 0.6, // hälsan som visas är högst 1 − smarta × smärtan ...
   smartaHumor: 0.2, // ... och smärtan sänker humöret så här mycket (gånger smärtan) ...
   ontGrans: 0.2, // ... från den här smärtan (tanken "Har ont", och texten i personrutan)
-  minst: 0.2, // rörligheten och händigheten går aldrig under detta
+  minst: 0.2, // händigheten går aldrig under detta (rörligheten aldrig under GANG.rorGolv, gang.ts)
   skicklig: 25, // risken för en olycka gånger 1 − färdigheten / skicklig ...
   smidig: 0.3, // ... och gånger 1 − smidig × (smidigheten − 10) / 10 (steg 3.7.6)
   // vården (steg 2.5.2)
@@ -60,9 +61,7 @@ export const HALSA = balans('halsa', {
   vardR: 30, // man går för att vårda den som är högst så här många rutor bort
   vardHand: 0.5, // den som vårdar någon annan har minst så här bra händer
   hemma: 6, // så nära lägret är man hemma (rutor): längre bort kravlar den som inte kan gå, eller bärs
-  krypFel: 0.6, // den som har ett ben eller en fot som är så här skadad kan inte gå, utan kravlar ...
-  krypFart: 0.12, // ... med den här farten jämfört med att gå (ungefär en ruta på fem sekunder), i byn och i striden (steg 3.7.19)
-  baraFart: 0.6, // den som bär någon går så här fort
+  krypFel: 0.6, // den som har ett ben eller en fot som är så här skadad kan inte gå, utan kravlar (med GANG.krypFart, gang.ts)
   buren: 6, // timmar som den skadade som mest väntar på att bäras hem
   vila: 1.5, // man läker så här mycket fortare när man sover eller vilar ...
   inne: 1.25, // ... och så här mycket fortare till inne i ett hus
@@ -140,14 +139,15 @@ function forlust(p: Person, vikt: 'rorlighet' | 'handighet') {
   if (!p.skador?.length) return 1;
   let v = 0;
   for (const d of Object.keys(DEL) as Kroppsdel[]) v += (DEL[d][vikt] ?? 0) * delFel(p, d);
-  return Math.max(HALSA.minst, 1 - v);
+  return Math.max(vikt === 'rorlighet' ? GANG.rorGolv : HALSA.minst, 1 - v);
 }
+// skadade ben och fötter: gången gånger detta, aldrig under GANG.rorGolv (steg 3.10.10)
+export const rorlighetSkador = (p: Person) => forlust(p, 'rorlighet');
 // gången gånger detta (steg.ts): skadorna och yrseln av brist på mineraler (steg 2.6.2)
 export const rorlighet = (p: Person) => forlust(p, 'rorlighet') * yrselFaktor(p);
 // den som har ett ben eller en fot som är för skadad kan inte gå, utan kravlar (steg 2.5.2)
 export const GADELAR: readonly Kroppsdel[] = [...BEN, ...FOTTER]; // delarna man går med
 export const kanGa = (p: Person) => !p.skador?.length || ![...BEN, ...FOTTER].some(d => delFel(p, d) >= HALSA.krypFel);
-export const gangFart = (p: Person) => kanGa(p) ? rorlighet(p) : HALSA.krypFart;
 export const hemma = (s: State, p: Person) => campDist(s, Math.floor(p.x), Math.floor(p.y)) <= HALSA.hemma;
 const infektion = (p: Person) => { let v = 0; for (const w of p.skador ?? []) v = Math.max(v, w.inf ?? 0); return v; };
 // arbetet gånger detta (workRate i ekonomi.ts): skadorna och styrkan, som sjunker av brist på protein och mineraler (steg 2.6.2)

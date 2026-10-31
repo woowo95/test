@@ -1,7 +1,7 @@
 import { allaBarn } from './uppvaxt';
 import { kronikaBer, personFalt } from './berattelser';
 import { addTo, amountOf, avbryt, fetchSpot, takeLimit, use } from './lager';
-import { Behov, addBehov, getable, takeMaterial } from './behov';
+import { Behov, getable, takeMaterial } from './behov';
 import { Del, addDel } from './egendom';
 import { coldOf, hardVinter, temperature, vaderNu, VADER } from './vader';
 import { MOTGANG } from './motgang';
@@ -309,4 +309,3 @@ export const VED: Behov = {
   // stölden: p hämtar den andras ved till elden (steg.ts räknar den när den tas). Annars hämtar den som väljs längre upp
   anvand: (s, p, fran) => { if (fran && ageOf(p, s.now) >= ALDER.hjalper && p.task?.act !== 'sova') fetchFuel(s, p, 'Fryser och tar någon annans ved till elden', fran); return 0; },
 };
-addBehov(VED);

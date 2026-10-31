@@ -15,7 +15,7 @@ const SMYG = 0.8, // så stor del av smygtiden går åt till att smyga fram, sed
   KAST_FART = 8, // rutor i sekunden som spjutet eller stenen flyger
   FLY = 6, FLY_S = 1.6, // kaninen flyr så här många rutor på så här många sekunder
   LARM_S = 2.5, // så länge utropstecknet syns
-  GA = 1.6; // rutor i sekunden jägaren går när hen hämtar och går tillbaka (som STEG.fart i steg.ts)
+  GA = 1.6; // rutor i sekunden jägaren går när hen hämtar och går tillbaka (som GANG.fart i gang.ts)
 
 // varje bildruta: de försök som pågår i simuleringen sparas, så att de finns kvar när tiden som visas kommer dit
 export function samlaJakt() {

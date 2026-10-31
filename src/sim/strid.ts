@@ -31,6 +31,7 @@ import { kronikaBer, och, personFalt } from './berattelser';
 // följer inte hotet. Ropen räknas med när larmen kommer (3.7.11), och behovet (hunger, att försvara hemmet) med rovdjuren
 // (3.7.1) och räderna (11.2.5).
 import { balans } from './balans';
+import { GANG } from './gang';
 import { GADELAR, HALSA, KROPPSDELAR, Kroppsdel, SKADOR, SkadaTyp, skada } from './halsa';
 import { blodas } from './blod';
 import { DJUR } from './redskap';
@@ -324,11 +325,11 @@ function rorlighet(k: Kampe) {
 // den som har ett ben eller en fot så skadad att hen inte kan gå (HALSA.krypFel, som kanGa i halsa.ts; djuren haltar bara)
 const kanGaK = (k: Kampe) => !!k.djur || !GADELAR.some(d => delFel(k, d) >= HALSA.krypFel);
 // den som inte kan gå kryper mot tryggheten (steg 3.7.19): till den närmaste vännen som står kvar, annars bort mot sin egen
-// sida av platsen. Lika långsamt som i byn (HALSA.krypFart)
+// sida av platsen. Lika långsamt som i byn (GANG.krypFart, gang.ts)
 function krypa(st: Strid, k: Kampe, dt: number) {
   let van: Kampe | undefined, vd = Infinity;
   for (const o of st.kampar) if (o.sida === k.sida && o !== k && iStrid(o) && dist(k, o) < vd) { vd = dist(k, o); van = o; }
-  const x0 = k.x, y0 = k.y, lang = STRID.fart * k.fart * HALSA.krypFart * dt;
+  const x0 = k.x, y0 = k.y, lang = STRID.fart * k.fart * GANG.krypFart * dt;
   if (van) { if (vd > STRID.krypNara) ga(st, k, van.x, van.y, Math.min(lang, vd - STRID.krypNara)); }
   else ga(st, k, k.sida === 0 ? 0 : st.w, k.y, lang);
   k.kryper! += Math.hypot(k.x - x0, k.y - y0);

@@ -19,6 +19,7 @@ import { EKONOMI } from './ekonomi';
 import { balans } from './balans';
 import { RELT, arBast, arRivaler, minnsGava } from './relationer';
 import { handelse, smakMat } from './rykten';
+import { VED } from './eld';
 
 // ---------- behovsstegen ----------
 // När någon behöver något går hen stegen i ordning: först sitt eget, sedan ett byte med någon i närheten (byten nedan),
@@ -27,7 +28,7 @@ import { handelse, smakMat } from './rykten';
 // hög empati stjäl aldrig. Man stjäl helst av den man inte tycker om. Den bestulne märker det nästa gång hen äter (maten:
 // needLadder anropar noticeTheft varje gång hen ätit, också när bara byns mat ätits), lägger sin egen ved på elden (steg.ts)
 // eller tar av sitt eget till ett arbete (takeMaterial), och relationen blir sämre.
-// Varje behov är en post i BEHOV (mat, och ved till elden från eld.ts). Material till ett arbete och redskap går samma steg, längre ner.
+// Varje behov är en post i BEHOV (mat, och ved till elden: VED i eld.ts). Material till ett arbete och redskap går samma steg, längre ner.
 export interface Behov {
   id: string;
   namn: string; // i loggen: "gav mat till", "stal mat av"
@@ -110,9 +111,10 @@ export const MAT: Behov = {
   anvand: eat,
 };
 
-// Behoven, i den ordning de prövas. Ett behov som hör till ett annat system läggs in av det systemet (ved till elden: eld.ts)
-const BEHOV: Behov[] = [MAT];
-export const addBehov = (b: Behov) => { BEHOV.push(b); };
+// Behoven, i den ordning de prövas: maten här och veden till elden (VED i eld.ts). Listan görs första gången den används,
+// eftersom eld.ts och den här filen laddar varandra och eld.ts kan laddas först (steg 3.10.10)
+let behovLista: Behov[] | undefined;
+const BEHOV = () => behovLista ??= [MAT, VED];
 
 // det p själv har och får ta av byns
 const perOf = (b: Behov, k: string) => b.per?.[k] ?? 1;
@@ -126,7 +128,7 @@ export const harMat = (s: State, p: Person) => hasFor(s, p, MAT) >= MAT.minst;
 // varje steg: den som behöver något tar av sitt eget och byns. Finns inget ber hen någon i närheten om det, och i
 // yttersta nöd stjäl hen
 export function needLadder(s: State, p: Person, dtSec: number) {
-  for (const b of BEHOV) {
+  for (const b of BEHOV()) {
     if (!b.behover(s, p)) continue;
     const byns = hasFor(s, p, b) >= b.minst, fraga = !byns && chance(s, DELA.fragaTakt, dtSec, 'dela', p);
     if (ownFor(s, p, b) < b.minst && (fraga || (byns && b.genast))) tradeAround(s, p, b); // ett byte, före byns förråd
@@ -224,14 +226,14 @@ function gift(s: State, m: Person, g: Person, n: Behov) {
 // a och b talar. Saknar någon av dem något som den andra har över? Då byter de, eller så ger den andra det. Ger true om
 // något bytte ägare
 export function askForGift(s: State, a: Person, b: Person) {
-  for (const n of BEHOV) for (const [m, g] of [[a, b], [b, a]]) if (lacksFor(s, m, n) && ((!osams(s, g, m) && tradeFor(s, m, g, n)) || gift(s, m, g, n))) return true;
+  for (const n of BEHOV()) for (const [m, g] of [[a, b], [b, a]]) if (lacksFor(s, m, n) && ((!osams(s, g, m) && tradeFor(s, m, g, n)) || gift(s, m, g, n))) return true;
   return !!askForTool(s, a, b) || eveningTrade(s, a, b);
 }
 // a och b talar, och ingen av dem saknar något just nu (steg 1.4.3). Har den ena mindre mat eller ved än hen vill ha kvar
 // (b.kvar) och den andra mer, byter de när båda tjänar på det: vinsten delas (delad i byte). Samtalen hålls mest vid
 // elden på kvällar och nätter (val.ts), så det är då de flesta sådana byten blir av
 function eveningTrade(s: State, a: Person, b: Person) {
-  for (const n of BEHOV) for (const [m, g] of [[a, b], [b, a]]) {
+  for (const n of BEHOV()) for (const [m, g] of [[a, b], [b, a]]) {
     const rest = Math.min(n.kvar - ownFor(s, m, n), ownFor(s, g, n) - n.kvar);
     if (rest < n.minst) continue;
     if (byte(s, m, g, delAv(s, g, n, rest), { behov: behovAv(s, m, n.slag[0]), minst: n.minst, fara: 0, typ: n.id, utom: n.slag, delad: true })) return true;
@@ -257,7 +259,7 @@ export function stole(s: State, tjuv: Person, offer: Person, key: string, n: num
   if (f) { f.n += n; if (!lindrig) delete f.l; } else st.push(lindrig ? { av: tjuv.id, k: key, n, l: true } : { av: tjuv.id, k: key, n });
   count(s, 'stold_' + (lindrig ? 'material' : key));
 }
-const namnOf = (key: string) => BEHOV.find(b => b.id === key)?.namn ?? (SAKER[key]?.namn ?? key).toLowerCase();
+const namnOf = (key: string) => BEHOV().find(b => b.id === key)?.namn ?? (SAKER[key]?.namn ?? key).toLowerCase();
 // p har tagit av sitt eget för behovet eller slaget key och märker om någon stulit av det
 export function noticeTheft(s: State, p: Person, key: string) {
   if (!p.stulet?.some(x => x.k === key)) return;
@@ -412,7 +414,7 @@ export function askForTool(s: State, a: Person, b: Person): 'gåva' | 'byte' | u
 // dö av bristen (fara i BEHOV) eller när de står varandra nära (willing minst DELA.nara). Mat, ved, material och redskap
 // byts här: i behovsstegen, när material tas till ett eget arbete, och när ett redskap saknas (i samtal).
 interface Vara { k: string; n: number; t?: Ting }
-const behovMed = (k: string) => BEHOV.find(b => b.slag.includes(k));
+const behovMed = (k: string) => BEHOV().find(b => b.slag.includes(k));
 const enheter = (v: Vara[]) => v.reduce((x, { k, n }) => x + n * (behovMed(k)?.per?.[k] ?? 1), 0);
 const vardeOf = (v: Vara) => grundvarde(v.k) * (v.t ? v.t.c * kvVarde(v.t) : 1);
 // hur mycket p behöver en till av slaget k, gånger grundvärdet: DELA.saknar för det p saknar för ett behov eller i sitt

@@ -408,7 +408,7 @@ function materialForrad(v: State) {
 SCENARIER.forvaring = {
   text: 'Förvaring (steg 2.3.6): hyllan, kistan och redskapsstället står i lagret, så att flera högar och redskap ryms på en ruta. De går inte att gå igenom, och lösa saker på golvet går man långsamt över. Hyllan och stället byggs bara inomhus, i förrådshuset, och kistan inte alls i byns lager (steg 2.10.18)',
   kor: () => {
-    const { STATION, PROJEKT, LAGER, VAG, stationerOf, isKlar, rymd, groundOf, findPath, speedAt, wearMult, slitageNu, zonesOf, inZone, placeTools, stationAt, newTing } = SIM;
+    const { STATION, PROJEKT, LAGER, stationerOf, isKlar, rymd, groundOf, findPath, speedAt, wearMult, slitageNu, zonesOf, inZone, placeTools, stationAt, newTing } = SIM;
     // en by där alla kan bygga förvaring, med lagret fullt av grenar och gott om trä och rep
     const s = createState(6, START); klockan(s); tandEld(s);
     for (const r of s.people) r.tek = { ...r.tek, hylla: 1 };
@@ -464,7 +464,7 @@ SCENARIER.forvaring = {
       [`på hyllans ruta ryms ${STATION.hyllaRymmer} högar (${ryms} grenar), och där ligger nu ${pa ? Math.round(pa.n) : 0} ${pa ? SIM.sakNamn(pa.k).toLowerCase() : ''} (en vanlig ruta rymmer ${pa ? SIM.rutaOf(pa.k) : 0})`, ryms === SIM.rutaOf('grenar') * STATION.hyllaRymmer && !!pa && pa.n > SIM.rutaOf(pa.k) + 1e-6], // (ibland är det trä som hamnar på hyllan)
       [`hyllan går inte att gå igenom (vägen förbi: ${forbi ? forbi.length + ' rutor' : 'ingen'})`, g.hinder?.[i] === 1 && !!forbi && !forbi.includes(i)],
       [`alla rutor i lagret nås fortfarande (${nas} av ${alla})`, alla > 0 && nas === alla],
-      [`över lösa saker på golvet går man med ${VAG.fartSaker} av farten (${med.toFixed(2)} mot ${utan.toFixed(2)})`, j >= 0 && Math.abs(med - utan * VAG.fartSaker) < 1e-9],
+      [`över lösa saker på golvet går man med ${SIM.GANG.fartSaker} av farten (${med.toFixed(2)} mot ${utan.toFixed(2)})`, j >= 0 && Math.abs(med - utan * SIM.GANG.fartSaker) < 1e-9],
       [`i kistan slits det som under tak (${kOrsak}, ${kMult} gånger)`, kOrsak === 'kista' && kMult === LAGER.inne],
       [`i stället står flera redskap på samma ruta (${iStall} av ${STATION.stallRymmer})`, iStall >= 2 && iStall <= STATION.stallRymmer],
     ];
