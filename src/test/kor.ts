@@ -1,6 +1,6 @@
 // Kör en by utan grafik och samlar nyckeltalen (registret NYCKELTAL i nyckeltal.ts säger vad de heter och betyder).
 // Vakterna larmar om något blir omöjligt (NaN, negativa förråd, folk i vattnet).
-import { BEAT, createState, step, living, DAY, groundOf, isSoil, markslag, Markslag, ageIndex, moodOf, serialize, serializeParts, vattenNu, fuelStock, ACT_NAMES, T, State, inMap, isWall, tileOf, foodOf, amountOf, sumOf, okandaBalans, alive, isCarrying, BYN, isStored, housesOf, bitsOf, Person, HOUR, W, KROPP, forvarAt, isTool, faltOf, faltRutor, faltAt, stationById, gridOf, getMap } from '../sim';
+import { BEAT, createState, step, living, DAY, groundOf, isSoil, markslag, Markslag, ageIndex, moodOf, serialize, serializeParts, vattenNu, fuelStock, ACT_NAMES, T, State, inMap, isWall, tileOf, foodOf, amountOf, sumOf, okandaBalans, alive, isCarrying, BYN, isStored, housesOf, bitsOf, Person, HOUR, W, KROPP, forvarAt, isTool, faltOf, faltRutor, faltAt, stationById, gridOf, getMap, djurOf, vargarOf } from '../sim';
 import { NYCKELTAL, Nyckeltal, tal } from './nyckeltal';
 
 // testbyarna grundas 08:00 svensk tid. Testerna körs i datorns tidszon (här UTC), så där är klockan 06:00 när byn grundas
@@ -55,7 +55,7 @@ export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => voi
     vakta(s, larm, i % STEG_TIM === 0);
     if (i % STEG_TIM === 0) { // en gång i timmen
       if (folk.some(p => p.hunger < 0.15)) hunger++;
-      for (const p of folk) { humor += moodOf(p, s.now); humorN++; }
+      for (const p of folk) { const m = moodOf(p, s.now); if (!Number.isFinite(m)) larm('humör', () => `${p.name} humör = ${m}`); humor += m; humorN++; }
     }
     const ai = ageIndex(s);
     if (forraAlder === 0 && ai === 1) { vintermat = Math.min(vintermat, foodOf(s)); vinterved = Math.min(vinterved, fuelStock(s)); }
@@ -150,6 +150,11 @@ function vakta(s: State, larm: Larm, timme: boolean) {
   for (const b of bitsOf(s)) {
     if (![b.b, b.mat, b.c].every(v => Number.isFinite(v)) || !fin(b.lp) || !fin(b.lm) || b.c < -1e-9 || b.c > 1 + 1e-9 || b.mat < -1e-9) larm('husdel', () => JSON.stringify(b));
     if (b.hus !== undefined && !hus.has(b.hus)) larm('husdel utan hus', () => `${b.m} ${b.id} på ${b.x},${b.y} hör till hus ${b.hus}`);
+  }
+  // djuren (kodgenomgången 3.10.25): kaniner och vargar har en plats på kartan, och kaninerna står aldrig i vattnet
+  for (const d of [...djurOf(s), ...vargarOf(s)]) {
+    if (!Number.isFinite(d.x) || !Number.isFinite(d.y) || !inMap(d.x, d.y)) larm('djurets plats', () => `${d.art} ${d.id} på ${d.x},${d.y}`);
+    else if (d.art === 'kanin' && tiles[tileOf(d.x, d.y)] === T.Vatten) larm('kanin i vattnet', () => `kanin ${d.id} på ${d.x.toFixed(1)},${d.y.toFixed(1)}`);
   }
   // varje rum har minst en dörr eller öppning, så att ingen behöver bryta en vägg (steg 3.7.21)
   for (const r of gridOf(s).rooms) if (r.tiles.length && !r.open) larm('rum utan öppning', () => `rummet vid ${r.tiles[0] % W},${Math.floor(r.tiles[0] / W)}${r.hus !== undefined ? ` (hus ${r.hus})` : ''}`);

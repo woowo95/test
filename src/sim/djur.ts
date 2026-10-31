@@ -3,7 +3,8 @@ import { hash } from './karta';
 import { clamp } from './slump';
 import { living } from './folk';
 import { motgangNu } from './motgang';
-import { H, HOUR, SEC, State, W, egen, inMap, mapKey, tvaDelar, visning } from './typer';
+import { H, HOUR, SEC, State, T, W, egen, inMap, mapKey, tvaDelar, visning } from './typer';
+import { vattenNu } from './sjo';
 import { balans } from './balans';
 import { DJUR } from './redskap';
 
@@ -142,7 +143,7 @@ setNarvaro('jakt', narvaroAt);
 // var kaninerna är vid tiden t (gränssnittet ger tiden som visas): nära gruppens mitt, ett skutt i taget, och undan
 // från folk som kommer nära. Gränssnittet ger var folket syns (folk), eftersom simuleringen ligger före bilden
 export function djurOf(s: State, t = s.now, folk?: readonly { x: number; y: number }[]): Djur[] {
-  const ppl = folk ?? living(s), out: Djur[] = [];
+  const ppl = folk ?? living(s), out: Djur[] = [], vt = vattenNu(s), torr = (q: { x: number; y: number }) => vt[Math.floor(q.y) * W + Math.floor(q.x)] !== T.Vatten;
   const doda = new Set(s.djurDoda?.map(d => d.id));
   for (const g of grupperOf(s, t)) for (let j = 0, kvar = g.n; j < 8 && kvar > 0; j++) {
     const id = g.id * 8 + j;
@@ -162,9 +163,24 @@ export function djurOf(s: State, t = s.now, folk?: readonly { x: number; y: numb
       const v = Math.round(Math.atan2(y - near.y, x - near.x) / (Math.PI / 4)) * (Math.PI / 4);
       x += Math.cos(v) * KANINER.hopp; y += Math.sin(v) * KANINER.hopp;
     }
-    out.push({ id, art: 'kanin', x: clamp(x, 0.2, W - 0.2), y: clamp(y, 0.2, H - 0.2), grupp: g.id });
+    // kaninen står aldrig i vattnet (kodgenomgången 3.10.25): den sitter kvar, går till sin plats i gruppen, till gruppens
+    // mitt eller till närmaste land
+    let q = { x: clamp(x, 0.2, W - 0.2), y: clamp(y, 0.2, H - 0.2) };
+    if (!torr(q)) q = [a, { x: hx, y: hy }, g].map(c => ({ x: clamp(c.x, 0.2, W - 0.2), y: clamp(c.y, 0.2, H - 0.2) })).find(torr) ?? landNara(vt, q);
+    out.push({ id, art: 'kanin', x: q.x, y: q.y, grupp: g.id });
   }
   return out;
+}
+
+// närmaste land i ringar kring punkten (som freeNear i byggnad.ts), annars punkten själv
+function landNara(vt: Uint8Array | number[], q: { x: number; y: number }) {
+  const x0 = Math.floor(q.x), y0 = Math.floor(q.y);
+  for (let r = 1; r < 6; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+    if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
+    const x = x0 + dx, y = y0 + dy;
+    if (inMap(x, y) && vt[y * W + x] !== T.Vatten) return { x: x + 0.5, y: y + 0.5 };
+  }
+  return q;
 }
 
 // vargarna (steg 3.7.1, varg.ts): flockarna är sparade i byn, och vargarna går tätt kring flockens mitt, ledaren först
