@@ -5,7 +5,7 @@ import { T } from '../../sim/typer';
 import * as SIM from '../../sim';
 import type { Person, State } from '../../sim';
 import { nyKalender } from '../../sim';
-import { START } from '../kor';
+import { START, STEG_TIM } from '../kor';
 import { setMat, Koll, kor, tandEld, logg, skogsandel, uttag, STOCKHOLM, SCENARIER, nyInvanare, klockan, medHus } from './hjalp';
 
 SCENARIER.glanta = {
@@ -591,10 +591,11 @@ SCENARIER.oversvamning = {
     const hog = (k: string, p: { x: number; y: number }) => (s.stackar ?? []).find(a => a.k === k && a.x === p.x && a.y === p.y);
     const slit0 = wearMult(s, ps.x, ps.y);
     // tills vattnet står som högst
-    let hogst = 0, iVattnet = 0, slit1 = 0;
+    let hogst = 0, iVattnet = 0, slit1 = 0, q2: State | undefined;
     for (let h = 0; h < 4 * 24 && !(hogst && (s.flod?.niva ?? 0) < hogst); h++) {
       kor(s, 1);
       if ((s.flod?.niva ?? 0) > hogst) { hogst = s.flod!.niva; slit1 = wearMult(s, ps.x, ps.y); }
+      if (!q2 && hogst >= 2) q2 = cloneState(s);
       iVattnet = Math.max(iVattnet, living(s).filter(p => SIM.iVattnetNu(s, Math.floor(p.y) * W + Math.floor(p.x))).length);
     }
     const vatten1 = SIM.vattenNu(s).filter(t => t === T.Vatten).length;
@@ -618,7 +619,34 @@ SCENARIER.oversvamning = {
       SIM.stepStationer(h);
       if (SIM.stationerOf(h).some(q => q.k === 'hylla')) hyllorKvar++;
     }
+    // mat som vattnet hotar men som ingen når (här en ö som vattnet och timmer stänger in) får de vuxna inte att stå utan något att göra (kodgenomgången 3.10.25)
+    let utan = 0, steg = 0, dodaQ = 0, inmurad = false;
+    if (q2) {
+      const q = q2, cq = SIM.campCenter(q), gq = getMap(q.seed).tiles;
+      let ruta: { x: number; y: number } | undefined, bd = Infinity;
+      for (let y = 2; y < SIM.H - 2; y++) for (let x = 2; x < W - 2; x++) {
+        const i = y * W + x, d = Math.hypot(x - cq.x, y - cq.y);
+        if (SIM.iVattnetNu(q, i) || !SIM.flodHotad(q, i) || gq[i] === T.Vatten || gq[i] === T.Sten || !SIM.ledig(q, x, y) || d <= 4) continue;
+        let fritt = true;
+        for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if ((dx || dy) && !SIM.iVattnetNu(q, (y + dy) * W + x + dx) && !SIM.ledig(q, x + dx, y + dy)) fritt = false;
+        if (fritt && d < bd) { bd = d; ruta = { x, y }; }
+      }
+      if (ruta) {
+        inmurad = true;
+        q.stackar!.push({ k: 'rotter', n: 6, c: 1, x: ruta.x, y: ruta.y }); SIM.tidy(q);
+        for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if ((dx || dy) && !SIM.iVattnetNu(q, (ruta.y + dy) * W + ruta.x + dx))
+          SIM.bitsOf(q).push({ id: q.nextBit = (q.nextBit ?? 0) + 1, x: ruta.x + dx, y: ruta.y + dy, k: SIM.MATERIAL.timmer.k, m: 'timmer', b: 1, mat: SIM.MATERIAL.timmer.n, c: 1 } as SIM.Bit);
+        SIM.touch(q);
+        const vuxna = living(q).filter(p => SIM.ageOf(p, q.now) >= SIM.ALDER.vuxen);
+        for (let k = 0; k < 6 * STEG_TIM; k++) {
+          step(q, BEAT);
+          for (const p of vuxna) if (SIM.alive(p)) { steg++; if (!p.task) utan++; }
+        }
+        dodaQ = vuxna.filter(p => !SIM.alive(p)).length;
+      }
+    }
     return [
+      [`mat som vattnet hotar men ingen når får inte de vuxna att stå utan något att göra (${utan} av ${steg} steg på 6 timmar, ${dodaQ} döda)`, inmurad && utan < steg / 4 && dodaQ === 0],
       [`det regnar mer innan och medan vattnet stiger (${regn} timmar mot ${regnUtan} utan översvämningen, av 48)`, regn > regnUtan],
       [`sjön svämmar över ${hogst} rutor upp på land (${vatten0} → ${vatten1} rutor vatten)`, hogst >= 2 && vatten1 > vatten0],
       [`maten på stranden förstördes (${s.stat?.['flod mat'] ?? 0} rötter; resten bars in innan, ${barKvar} kvar av 30)`, barKvar === 0 && (s.stat?.['flod mat'] ?? 0) > 0],

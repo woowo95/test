@@ -906,7 +906,7 @@ export function flodUndan(s: State) {
   let best: { x: number; y: number; why: string } | undefined, bs = Infinity;
   for (const a of things(s)) {
     const i = key(a.x, a.y);
-    if (!isFood(a.k) || !flodHotad(s, i) || iVattnetNu(s, i) || taken.has(i) || forvarAt(s, a.x, a.y)) continue;
+    if (!isFood(a.k) || !flodHotad(s, i) || iVattnetNu(s, i) || taken.has(i) || forvarAt(s, a.x, a.y) || !nasIFloden(s, i)) continue; // bara det man når
     const d = campDist(s, a.x, a.y);
     if (d < bs) { bs = d; best = { x: a.x + 0.5, y: a.y + 0.5, why: 'Vattnet stiger: bär undan maten' }; }
   }
