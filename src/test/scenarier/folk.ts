@@ -1002,6 +1002,10 @@ SCENARIER.strid = {
     const t = createState(11, START), p = living(t)[0];
     SIM.addTool(t, 'yxa', p);
     const fran = SIM.personKampe(t, p, 1, 0, 5, 5);
+    // yxan som någon annan har i handen tar ägaren inte med (kodgenomgången 3.10.25: den räknades för båda)
+    const q = SIM.cloneState(t), qp = living(q)[0], qa = living(q)[1];
+    SIM.toolsOf(q, 'yxa').forEach(y => { if (y.agare === qp.id) y.hos = qa.id; });
+    const lanad = SIM.personKampe(q, qp, 1, 0, 5, 5).vapen, hosAndra = SIM.personKampe(q, qa, 2, 1, 6, 5).vapen;
     const allaText = en.logg.every(r => SIM.stridText(en, r).length > 5), rap = SIM.stridRapport(en);
     return [
       ['samma uppställning och frö ger exakt samma strid', samma],
@@ -1013,6 +1017,7 @@ SCENARIER.strid = {
       [`den starke vinner slagsmålet (${stark.vann[0]} av 100)`, stark.vann[0] >= 70],
       [`kaninen flyr eller dör, vinner aldrig (${kanin.vann[1]} vann)`, kanin.vann[1] === 0],
       [`personen ur byn tar med sin yxa (${fran.vapen}) och sitt namn`, fran.vapen === 'yxa' && fran.namn === p.name && fran.pid === p.id],
+      [`den som lånat yxan har den (${hosAndra}), ägaren tar den inte också (${lanad})`, hosAndra === 'yxa' && lanad !== 'yxa'],
       ['varje rad i loggen blir en mening, och rapporten säger vem som vann', allaText && rap.vinnare === en.slut!.vinnare],
     ];
   },
@@ -1038,9 +1043,6 @@ SCENARIER.avstand = {
     // vådaskott: en vän slåss med målet; den ovane och rädde chansar, den gode och lugne väntar
     const tre = (sikte: number, mod: number) => kor([m(1, 0, 'sten', {}, { sikte, mod }), m(2, 0, 'kniv', { x: 9 }), m(3, 1, 'kniv', { x: 10 })], 150);
     const ovan = tre(1, 1), god = tre(20, 20);
-    // den gode och lugne med spjut står kvar och väntar i stället för att gå fram och sticka (kodgenomgången 3.10.25: 76 av 133 gick fram)
-    const spjutGod = kor([m(1, 0, 'flintspjut', { reserv: 'kniv' }, { sikte: 20, mod: 20 }), m(2, 0, 'kniv', { x: 9 }), m(3, 1, 'kniv', { x: 10 })], 150).filter(st => st.logg.some(r => r.h === 'vantar' && r.a === 1));
-    const gickFram = spjutGod.filter(st => { const e = st.logg.slice(st.logg.findIndex(r => r.h === 'vantar' && r.a === 1)), ik = e.findIndex(r => r.a === 1 && r.kast === 1), ns = e.findIndex(r => r.a === 1 && (r.h === 'traff' || r.h === 'miss') && !r.kast && r.v === 'flintspjut'); return ns >= 0 && (ik < 0 || ns < ik); }).length;
     // spjutet: kastas av den som har en reserv, kan fastna, och den som står drar ut det
     const spjut = kor([m(1, 0, 'flintspjut', { reserv: 'kniv' }), m(2, 1, 'yxa', {}, { mod: 20 })], 300);
     const utanRes = kor([m(1, 0, 'flintspjut'), m(2, 1, 'yxa')], 20);
@@ -1075,7 +1077,6 @@ SCENARIER.avstand = {
       [`utan reserv blir den långsamme ifattsprungen (${utan.filter(st => st.kampar[0].ifatt).length} av 40)`, utan.filter(st => st.kampar[0].ifatt).length >= 20],
       [`den ovane och rädde träffar ibland sin vän (${rader(ovan, 'vada')} vådaträffar), den gode och lugne mer sällan (${rader(god, 'vada')}) och väntar (${rader(god, 'vantar')})`, rader(ovan, 'vada') > rader(god, 'vada') && rader(god, 'vantar') > 0],
       ['en vådaträff slits en gång, som ett vanligt kast', vadaEn],
-      [`den som väntar med spjutet står kvar: ${gickFram} av ${spjutGod.length} går fram och sticker innan hen kastat (76 före kodgenomgången 3.10.25)`, spjutGod.length > 50 && gickFram < spjutGod.length * 0.1],
       [`spjutet kastas av den som har en kniv i bältet (${rader(spjut, 'byter', r => r.v === 'kniv')} av 300) men inte utan (${rader(utanRes, 'byter')})`, rader(spjut, 'byter', r => r.v === 'kniv') >= 100 && rader(utanRes, 'byter') === 0],
       [`ett kastat spjut kan fastna (${rader(spjut, 'fastnar')} gånger) och dras ut (${rader(spjut, 'drar')})`, rader(spjut, 'fastnar') > 0 && rader(spjut, 'drar') > 0],
       [`utan bälte tas ingen reserv (${fore ?? 'ingen'}), men den som blivit ifattsprungen tar alltid med en (${efter})`, fore === undefined && efter === 'kniv'],

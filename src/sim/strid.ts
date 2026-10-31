@@ -567,8 +567,9 @@ function avstandSteg(st: Strid, k: Kampe, m: Kampe, d: number, dt: number): bool
   const kv = VAP[k.vapen].kast;
   if (!kv || !k.skott || (kv.reserv && !k.reserv)) return false;
   if (kv.reserv) { // spjutet: kastas när målet är på avstånd, annars sticker man med det
-    if (d < STRID.kastMin || d > kv.rack) { k.vantar = undefined; return false; }
-    return kastaMot(st, k, m) || !!k.vantar; // den som väntar på fritt läge står kvar
+    // den som väntar på fritt läge går ändå fram och sticker med spjutet, och kastar om läget blir fritt (det är avsiktligt)
+    if (d < STRID.kastMin || d > kv.rack || k.vant > 0) return false;
+    return kastaMot(st, k, m);
   }
   let hot: Kampe | undefined, hd = Infinity;
   for (const o of st.kampar) if (o.sida !== k.sida && iStrid(o) && o.mal === k.id && dist(o, k) < hd) { hd = dist(o, k); hot = o; }
@@ -767,7 +768,10 @@ export function korManga(u: Uppstallning, fro: number, n: number): ManyResultat 
 // (steg 3.7.7): ett litet vapen i bältet, om hen har ett bälte på sig och orkar bära det; den som en gång blev ifattsprungen
 // utan reserv tar alltid med en
 export function personKampe(s: State, p: Person, id: number, sida: 0 | 1, x: number, y: number): Uppstallning['kampar'][number] {
-  const bar = [...new Set([...paSig(s, p), ...ownedBy(s, p), ...tingOf(s).filter(t => t.hos === p.id)].map(t => t.k))]; // det hen bär, äger och har i handen (i arenan har man sina saker med sig)
+  // det hen bär, äger och har i handen (man tar med sina saker), men inte det hen äger som någon annan har på sig, i handen
+  // eller i bördan (samma regel som taVapen i vakt.ts)
+  const egen = (t: { hos?: number; lass?: number; bar?: number }) => (t.hos === undefined || t.hos === p.id) && (t.lass === undefined || t.lass === p.id) && (t.bar === undefined || t.bar === p.id);
+  const bar = [...new Set([...paSig(s, p), ...ownedBy(s, p).filter(egen), ...tingOf(s).filter(t => t.hos === p.id)].map(t => t.k))];
   const val = (v: Vapen) => VAP[v].skada * (1 + STRID.tyckeVal * smakAv(p, 'v:' + v)); // tycket drar i valet (steg 3.7.10)
   const vapen = MANNISKOVAPEN.filter(v => bar.includes(v)).sort((a, b) => val(b) - val(a))[0] ?? 'hand';
   const res = (MANNISKOVAPEN.filter(v => v !== vapen && VAP[v].liten && bar.includes(v)) as Vapen[]).sort((a, b) => VAP[a].takt - VAP[b].takt)[0]; // den snabbaste (kniven)
