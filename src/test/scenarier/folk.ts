@@ -995,6 +995,14 @@ SCENARIER.avstand = {
       if (st.logg.some(r => r.h === 'fastnar' && r.a === st.kampar[1].id) && q.health > 0) fastIByn = !!q.skador?.some(w => w.fast) || st.logg.some(r => r.h === 'drar');
       p.skador = []; p.health = 1; p.blod = 1; p.task = undefined; q.task = undefined;
     }
+    // en vådaträff slits en gång, som ett vanligt kast (kodgenomgången 3.10.25: den slets och kunde försvinna två gånger)
+    const slit = (logg: SIM.StridRad[]) => {
+      const u = createState(11, START), [x] = living(u).filter(y => ageOf(y, u.now) >= SIM.ALDER.vuxen); SIM.addTool(u, 'flintspjut', x);
+      const st = SIM.nyStrid({ avsikt: 'skada', w: 20, h: 14, kampar: [m(1, 0, 'flintspjut', { reserv: 'kniv' }), m(2, 1, 'kniv')] }, 1);
+      st.logg = logg; SIM.slitKastat(u, x, st, st.kampar[0]); return SIM.serialize(u);
+    };
+    const kastRad = { t: 1, h: 'traff', a: 1, b: 2, v: 'flintspjut', kast: 1 } as SIM.StridRad, vadaRad = { t: 1, h: 'vada', a: 1, b: 3, v: 'flintspjut' } as SIM.StridRad;
+    const vadaEn = slit([vadaRad, kastRad]) === slit([kastRad]) && slit([kastRad]) !== slit([]);
     const texter = [...spjut, ...ovan, ...byter, ...snabb].every(st => st.logg.every(r => SIM.stridText(st, r).length > 5 && !SIM.stridText(st, r).includes('undefined')));
     return [
       [`stenen kastas innan någon slår (${forst} av 40)`, forst >= 35],
@@ -1003,6 +1011,7 @@ SCENARIER.avstand = {
       [`den långsamme skytten byter till kniven i bältet (${rader(byter, 'byter', r => r.v === 'kniv')} av 40)`, rader(byter, 'byter', r => r.v === 'kniv') >= 20],
       [`utan reserv blir den långsamme ifattsprungen (${utan.filter(st => st.kampar[0].ifatt).length} av 40)`, utan.filter(st => st.kampar[0].ifatt).length >= 20],
       [`den ovane och rädde träffar ibland sin vän (${rader(ovan, 'vada')} vådaträffar), den gode och lugne mer sällan (${rader(god, 'vada')}) och väntar (${rader(god, 'vantar')})`, rader(ovan, 'vada') > rader(god, 'vada') && rader(god, 'vantar') > 0],
+      ['en vådaträff slits en gång, som ett vanligt kast', vadaEn],
       [`den som väntar med spjutet står kvar: ${gickFram} av ${spjutGod.length} går fram och sticker innan hen kastat (76 före kodgenomgången 3.10.25)`, spjutGod.length > 50 && gickFram < spjutGod.length * 0.1],
       [`spjutet kastas av den som har en kniv i bältet (${rader(spjut, 'byter', r => r.v === 'kniv')} av 300) men inte utan (${rader(utanRes, 'byter')})`, rader(spjut, 'byter', r => r.v === 'kniv') >= 100 && rader(utanRes, 'byter') === 0],
       [`ett kastat spjut kan fastna (${rader(spjut, 'fastnar')} gånger) och dras ut (${rader(spjut, 'drar')})`, rader(spjut, 'fastnar') > 0 && rader(spjut, 'drar') > 0],

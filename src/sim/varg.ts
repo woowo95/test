@@ -15,7 +15,7 @@ import { die } from './liv';
 import { handelse, larma, larmNu, ryktbarhet } from './rykten';
 import { SAKER } from './saker';
 import { clamp, rnd } from './slump';
-import { STRID, SLAGSMAL, VAPEN, Avsikt, Strid, Uppstallning, djurKampe, foljet, kastat, nyStrid, personKampe, stridTillSlut, svartSkadad } from './strid';
+import { STRID, SLAGSMAL, VAPEN, Avsikt, Strid, Uppstallning, djurKampe, foljet, nyStrid, personKampe, slitKastat, stridTillSlut, svartSkadad } from './strid';
 import { ledareOf } from './styre';
 import { ageIndex, iIstiden, isLight } from './tid';
 import { hardVinter } from './vader';
@@ -501,7 +501,7 @@ export function vargStrid(s: State, f: Vargflock, folk: Person[], avsikt: Avsikt
       if (!dod && w.k === 'bett') livet(s, p, 'bett', true); // rädd för vargar efteråt (steg 3.9.8)
       if (!dod && sk && w.k === 'bett' && rnd(s, 'varg', p) < VARG.bettInf) { sk.inf ??= 0; count(s, 'vargbettInf'); }
     }
-    for (const r of st.logg) if (r.a === k.id && r.v && (r.kast || r.h === 'vada')) kastat(s, p, r.v, (VAPEN as Record<string, { kast?: { rack: number } }>)[r.v].kast!.rack / 2, p.x, p.y, () => rnd(s, 'strid'));
+    slitKastat(s, p, st, k);
     if (dod) { count(s, 'dodVarg'); die(s, p, 'varg'); return; }
     if (svartSkadad(k)) svara.push(p.name);
     p.blod = Math.min(p.blod ?? 1, Math.max(0, k.blod));

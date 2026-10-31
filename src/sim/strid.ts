@@ -824,6 +824,12 @@ export function kastat(s: State, p: Person, v: string, d: number, x: number, y: 
   return wearTool(s, p, v, r() * KAST.slit) ? 'trasig' : undefined;
 }
 
+// det kämpen k kastade i striden slits och kan ha försvunnit (steg 3.7.3). Varje kast har en rad med kast, också den som
+// blev en vådaträff (vada-raden före är bara för berättelsen)
+export function slitKastat(s: State, p: Person, st: Strid, k: Kampe) {
+  for (const r of st.logg) if (r.a === k.id && r.v && r.kast) kastat(s, p, r.v, VAP[r.v].kast!.rack / 2, p.x, p.y, () => rnd(s, 'strid'));
+}
+
 // ---------- striden i byn (steg 3.7.2) ----------
 // Ett gräl kan bli ett slagsmål, och barn som leker brottas ibland. Striden räknas färdigt på en gång (stridTillSlut, med
 // fröet ur byns följd 'strid'), så att den blir likadan i båda lägena; sedan står de som var med och slåss (handlingen
@@ -881,8 +887,7 @@ export function stridIByn(s: State, avsikt: Avsikt, sidor: [Person[], Person[]],
       if (!dod && skada(s, p, w.d, w.k, w.g, 'drap', `i ett ${lek ? 'lekslagsmål' : 'slagsmål'} med ${mot.map(q => q.name).join(' och ')}`)) dod = true;
       if (w.fast && p.skador?.length) p.skador[p.skador.length - 1].fast = 1; // spjutet sitter kvar till vården (steg 3.7.7)
     }
-    // det hen kastade slits och kan ha försvunnit (steg 3.7.3)
-    for (const r of st.logg) if (r.a === k.id && r.v && (r.kast || r.h === 'vada')) kastat(s, p, r.v, VAP[r.v].kast!.rack / 2, p.x, p.y, () => rnd(s, 'strid'));
+    slitKastat(s, p, st, k);
     if (k.kryper) blodas(s, p.x, p.y, 'kryp', k.kryper * STRID.krypBlod); // släpspåret efter den som kröp undan (steg 3.7.19)
     if (dod) { count(s, 'drap'); die(s, p, 'drap'); continue; }
     p.blod = Math.min(p.blod ?? 1, Math.max(HALSA.blodDod, k.blod));
