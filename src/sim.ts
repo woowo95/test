@@ -28,6 +28,7 @@ export * from './sim/humor';
 export * from './sim/rykten';
 export * from './sim/styre';
 export * from './sim/teknik';
+export * from './sim/sport';
 export * from './sim/liv';
 export * from './sim/steg';
 export * from './sim/sjo';

@@ -39,6 +39,7 @@ import { bordenOf, byInne, ledigPlats, lekplats, sittAt, stationAt, stationFor, 
 import { grillTid, kanGrilla, kanTorka, torkTid } from './matlagning';
 import { egenBrasa } from './brasor';
 import { TEK, forsokChans, forsokVal, laraVal } from './teknik';
+import { sportVal, sportVikt } from './sport';
 import { utbrottBorjar, utbrottNu } from './humor';
 import { smakDrag } from './rykten';
 import { pabud, skams } from './styre';
@@ -707,7 +708,13 @@ function leisure(s: State, p: Person, v: Val, u: number, lazy: number) {
   // sitta vid stranden och se ut över vattnet: lugnt, året om, mest för den som inte är så sällskaplig
   const ws = shore ? (VAL.strandBas + (20 - stat(p, 'empati', now)) / VAL.strandDiv) * calm : 0;
   if (gaILara(s, p, v, 'Har tid över')) return; // lärlingen går hellre till mästaren än vilar eller umgås
-  const r = rnd(s, 'val', p) * (wv + wh + wsoc + wp + wb + ws);
+  const wsp = sportVikt(s, p, calm); // sporten när byn har ett överskott (steg 4.3.1, sport.ts)
+  let r = rnd(s, 'val', p) * (wv + wh + wsoc + wp + wb + ws + wsp);
+  if (r >= wv + wh + wsoc + wp + wb + ws) {
+    const sp = sportVal(s, p);
+    if (sp) { set(v, 'sport', sp.why); v.spot = sp.spot; v.dur = sp.dur; v.ref = sp.ref; v.tool = sp.tool; return; }
+    r = (r - wv - wh - wsoc - wp - wb - ws) / wsp * (wv + wh + wsoc + wp + wb + ws); // följer ingen med: något annat på fritiden
+  }
   if (r < wv) set(v, 'vila', lazy > 0.5 ? 'Har det bra och tar det lugnt' : 'Tar en paus');
   else if (r < wv + wh) craft(s, p, v, u < VAL.hantLugn ? 'Byn har det gott ställt, det finns tid för hantverk' : 'Tycker om att göra handarbete');
   else if (r < wv + wh + wsoc) set(v, 'samtal', 'Vill umgås');

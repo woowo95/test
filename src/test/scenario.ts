@@ -13,6 +13,7 @@ import './scenarier/folk';
 import './scenarier/kontroll';
 import './scenarier/religion';
 import './scenarier/mastare';
+import './scenarier/kultur';
 import { LANG_S, SCENARIER } from './scenarier/hjalp';
 import { Utfall, korSkript, pool } from './pool';
 

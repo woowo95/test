@@ -27,6 +27,7 @@ export const STROMMAR = {
   varg: 'vargarna: när en flock kommer, hur stor den är, vad den gör och vargjakten (steg 3.7.1)',
   tro: 'religionen: andligheten, den första tron, hur den sprids, namnen och gudarna (steg 4.1, religion.ts)',
   vakt: 'vaktens runda runt byn: var hen börjar och hur länge hen stannar (steg 3.7.4)',
+  sport: 'sporten: vilken sport som spelas, var spelarna står och vem som vinner (steg 4.3.1, sport.ts)',
 } as const;
 export type Strom = keyof typeof STROMMAR;
 

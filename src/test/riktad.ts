@@ -23,6 +23,8 @@ import './scenarier/byggnader';
 import './scenarier/folk';
 import './scenarier/kontroll';
 import './scenarier/religion';
+import './scenarier/mastare';
+import './scenarier/kultur';
 import { SCENARIER } from './scenarier/hjalp';
 
 const ROT = fileURLToPath(new URL('../../', import.meta.url));
