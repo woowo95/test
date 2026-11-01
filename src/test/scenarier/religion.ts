@@ -237,3 +237,14 @@ SCENARIER.tronamn = {
     ];
   },
 };
+
+SCENARIER.trokategori = {
+  text: 'Kategorin Tro (steg 4.1.2.4): rädslorna (de farliga platserna) hör till tron och visas där, de andra lärdomarna står kvar bland lärdomarna',
+  kor: () => {
+    const tro = (Object.keys(SIM.LARDOMAR) as SIM.LKind[]).filter(k => SIM.LARDOMAR[k].kat === 'tro');
+    return [
+      [`rädslorna hör till tron (${tro.join(', ')})`, tro.includes('fara')],
+      ['platserna med mat, flinta och vatten är kvar bland lärdomarna', !['samla', 'jakt', 'fiske', 'flinta', 'vatten'].some(k => tro.includes(k as SIM.LKind))],
+    ];
+  },
+};

@@ -405,6 +405,8 @@ let kunTek: string | undefined; // tekniken vars ruta är öppen i kunskapen
 function knowledgeHtml(p: Person) {
   const ks = Object.entries(p.kunskap ?? {}).filter(([, e]) => e.v >= 0.05);
   const ls = (p.lardomar ?? []).slice().sort((a, b) => (b.k === 'fara' ? 1 : 0) - (a.k === 'fara' ? 1 : 0) || b.c - a.c);
+  // rädslor och föreställningar (kat 'tro' i LARDOMAR) står under Tro, de andra lärdomarna för sig (steg 4.1.2.4)
+  const lt = ls.filter(l => LARDOMAR[l.k].kat === 'tro'), lv = ls.filter(l => LARDOMAR[l.k].kat !== 'tro');
   // teknik som symboler: det hen kan fullt, det hen funderar på blekt med en ring som visar hur långt hen kommit.
   // Ett tryck visar samma ruta om tekniken som i teknikfliken (tekInfo), här under symbolerna
   const tk = TEKNIK.filter(x => (p.tek?.[x.id] ?? 0) > 0.01).map(x => {
@@ -413,7 +415,7 @@ function knowledgeHtml(p: Person) {
   });
   const rows = ks.map(([k, e]) => ({ n: KUNSKAPER[k]?.namn ?? k, v: e.v }));
   return `${tk.length ? `<h3>Teknik</h3><div class="tekrad">${tk.join('')}</div>${kunTek && (p.tek?.[kunTek] ?? 0) > 0.01 ? tekInfo(living(s), kunTek) : ''}` : ''}<h3>Kunskap</h3>${rows.length ? `<dl class="kv">${rows.map(r => `<dt>${esc(r.n)}</dt><dd>${bar(r.v, 'skill')}<span>${Math.round(r.v * 100)} %</span></dd>`).join('')}</dl>` : '<p class="muted">Ingen särskild kunskap ännu.</p>'}
-      <h3>Lärdomar</h3>${ls.length ? lardomHtml(p, ls) : '<p class="muted">Inga lärdomar ännu.</p>'}`;
+      <h3>Lärdomar</h3>${lv.length ? lardomHtml(p, lv) : '<p class="muted">Inga lärdomar ännu.</p>'}${lt.length ? `<h3>Tro</h3>${lardomHtml(p, lt)}` : ''}`;
 }
 // lärdomarna som en symbol per slag (steg 3.3.6) med antalet platser, och en varning när någon av dem inte stämmer.
 // Ett tryck visar platserna, vad hen tror, hur säker hen är, varifrån det kommer och om det är fel

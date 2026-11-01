@@ -257,7 +257,8 @@ SCENARIER.samlartur = {
           if (t.phase === 'go' && v.last === 'do') v.flytt++;
           // tom här: två som samlar vid samma buske märker det först i nästa steg när den andra tog det sista, så det räknas när man står kvar längre
           const tomNu = t.phase === 'do' && richness(s, 'samla', t.tx, t.ty) < PLATS.tomtGrans && !(t.tandmat && tinderShort(s, t)), plats = `${t.tx},${t.ty}`;
-          if (t.phase === 'do') { arbete++; if (tomNu && v.tom === plats) tomt++; }
+          // den som redan bestämt sig för att gå (until nu) står kvar till nästa steg; det räknas inte som att stanna
+          if (t.phase === 'do') { arbete++; if (tomNu && v.tom === plats && t.until > s.now) tomt++; }
           v.tom = tomNu ? plats : undefined;
           if (t.phase === 'back') v.lass = load(t, s) / Math.min(capacity(s, p) * borda, bordPlats(s, p));
           v.last = t.phase;

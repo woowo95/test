@@ -103,13 +103,14 @@ const areaCenter = (a: number) => ({ x: Math.min(W, (a % aw()) * AREA + AREA / 2
 // Flinta, rädslor (fara), vattnet och högvattnet (flod) har egna regler nedan. Vattnets värde är hur smutsigt det är (0 = rent, 1 = mycket
 // smutsigt, smutsOf i sjo.ts): man lär sig det där man dricker (steg 2.4.1, torst.ts). Ordningen är den i cachen nedan
 // ikon/tecken: symbolen för slaget av lärdom i personrutan (steg 3.3.6)
-interface LardomDef { vad: string; namn: string; inga?: string; fynd?: true; serOmFinns?: true; ikon: string; tecken: string }
+// kat 'tro': rädslor och föreställningar, som personrutan visar under Tro i stället för bland lärdomarna (steg 4.1.2.4)
+interface LardomDef { vad: string; namn: string; inga?: string; fynd?: true; serOmFinns?: true; ikon: string; tecken: string; kat?: 'tro' }
 const LDEF = {
   samla: { vad: 'bär och rötter', namn: 'bär och rötter', inga: 'Inga bär och rötter', fynd: true, ikon: 'bar', tecken: '🫐' },
   jakt: { vad: 'harar', namn: 'vilt', inga: 'Inga harar', fynd: true, ikon: 'kanin', tecken: '🐇' },
   fiske: { vad: 'fisk i vattnet', namn: 'abborre', inga: 'Ingen fisk', fynd: true, serOmFinns: true, ikon: 'abborre', tecken: '🐟' },
   flinta: { vad: 'flinta', namn: 'flinta', ikon: 'flinta', tecken: '🪨' },
-  fara: { vad: '', namn: 'farliga platser', ikon: 'l_fara', tecken: '⚠️' },
+  fara: { vad: '', namn: 'farliga platser', ikon: 'l_fara', tecken: '⚠️', kat: 'tro' },
   vatten: { vad: 'vatten', namn: 'rent och smutsigt vatten', ikon: 'a_vatten', tecken: '💧' },
   flod: { vad: 'högvattnet', namn: 'högvattnet', ikon: 'm_oversvamning', tecken: '🌊' }, // hur högt en översvämning nådde (steg 3.8.7, flod.ts): v = rutor upp på land
 } satisfies Record<string, LardomDef>;
