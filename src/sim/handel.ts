@@ -1,6 +1,6 @@
 import { DAY, H, HOUR, MIN, Person, SEC, State, T, Task, W } from './typer';
 import { balans } from './balans';
-import { ALDER, ageOf, alive, count, forstaGang, living, log, makeName } from './folk';
+import { ALDER, ageOf, alive, byId, count, forstaGang, living, log, makeName, think } from './folk';
 import { kronika } from './historik';
 import { eldPlats, getMap } from './karta';
 import { blocked } from './byggnad';
@@ -8,9 +8,10 @@ import { clamp, pick, rnd } from './slump';
 import { iIstiden, ageIndex } from './tid';
 import { grundvarde, rikedom } from './varde';
 import { SAKER, isTool, viktOf } from './saker';
-import { DELA, bynPart, bytaMed } from './behov';
-import { Part, Vara } from './byte';
-import { tingOf } from './agande';
+import { DELA, behovAv, bynPart, bytaMed, personPart } from './behov';
+import { Part, Vara, satPersonFlytt, vidByte, varorText } from './byte';
+import { newTing, tingOf } from './agande';
+import { put, use } from './lager';
 import { ledareOf } from './styre';
 import { kanterna } from './varg';
 
@@ -40,6 +41,14 @@ export const HANDEL = balans('handel', {
   handlaMin: 20, // så många minuter tar byns handel vid filten
   ensamTim: 2, // har den som handlar för byn inte kommit på så många timmar, går en annan vuxen
   bytenMax: 8, // så många byten gör byn med handlaren på ett besök
+  egenMin: 10, // så många minuter tar en bybos handel med sina egna saker (steg 4.4.1.5) ...
+  egnaMax: 3, // ... och så många byten högst
+  koMin: 10, // den som står i kö tittar efter så här många minuter om det är hens tur
+  koAvstand: 0.7, // rutor mellan dem som står i kön
+  nytta: 1, // en bybo vill köpa det hen värderar så här högt (behovAv: 1 = har nytta av, DELA.saknar = saknar) eller mer
+  tomTanke: -0.05, // den som gick tomhänt från handlaren ...
+  tomTim: 6, // ... i så många timmar
+  minnas: 20, // så många byten minns handlarens inforuta
 });
 
 // handlarens utrustning: det hen bär varorna i. Bara ryggsäcken nu; kärran (vägar, fas 7) och packdjuret (11.4.1.2) läggs till här
@@ -87,6 +96,9 @@ export interface Handlare {
   silver: number;
   handel: number; // färdigheten Handel
   bynKlar?: true; // byn har handlat med hen på det här besöket
+  ko?: number[]; // byborna som står i kö vid filten, först till kvarn (steg 4.4.1.5)
+  handlat?: number[]; // de som handlat med hen på det här besöket
+  bytt?: { vem: string; fick: string; gav: string }[]; // bytena under besöket, för inforutan
 }
 export const handlareOf = (s: State) => s.handlare;
 const mellan = (s: State, [a, b]: readonly [number, number] | number[]) => a + rnd(s, 'handel') * (b - a);
@@ -244,18 +256,65 @@ function forByn(s: State): Person | undefined {
   for (const q of living(s)) if (ageOf(q, s.now) >= ALDER.vuxen && (!b || q.skill.handel > b.skill.handel)) b = q;
   return b;
 }
-// valet på dagen (day i val.ts): den som handlar för byn går till filten. Kommer hen inte, går en annan vuxen efter ett tag
+// ---------- byborna vid filten (steg 4.4.1.5) ----------
+// Byn handlar först, genom den som handlar för byn. Sedan får byborna byta med sina egna saker: den som saknar något
+// handlaren har och har något att betala med ställer sig i kö vid filten, och det går efter först till kvarn. Ingen tränger
+// sig före (den som har nytta av något handlaren har och något över att betala med ställer sig i kön): den som står i kö tittar efter en stund om det är hens tur och flyttar fram när någon handlat klart. Det som en
+// person köpt är borta för nästa, och den som går tomhänt blir lite sämre till mods. Handlaren minns bytena under besöket
+// (inforutan) och krönikan skriver de stora (byteKlart i byte.ts)
+// en bybo lämnar till handlaren och tar emot av hen (byte.ts frågar hit): sakerna tas ur och läggs i förrådet som hens
+satPersonFlytt(
+  (s, P, w) => { if (!w.t && P.p) use(s, undefined, w.k, w.n, false, P.p.id); return w; },
+  (s, P, w) => {
+    if (!P.p) return;
+    if (w.t) { w.t.agare = P.p.id; w.t.hos = undefined; return; }
+    if (isTool(w.k)) { for (let i = 0; i < w.n; i++) { const t = newTing(s, w.k, 1, P.p.id); if (w.q !== undefined) t.q = w.q; } return; }
+    put(s, w.k, w.n, { [P.p.id]: w.n });
+  },
+);
+// handlaren minns bytena under besöket
+vidByte.push((s, m, g, fatt, betal) => {
+  const h = s.handlare;
+  if (!h || (m.id !== h.id && g.id !== h.id)) return;
+  const b = (h.bytt ??= []), kop = m.id === h.id; // kop = handlaren köpte
+  b.push({ vem: kop ? g.namn : m.namn, fick: varorText(kop ? fatt : betal), gav: varorText(kop ? betal : fatt) });
+  if (b.length > HANDEL.minnas) b.splice(0, b.length - HANDEL.minnas);
+});
+// bybon som part med handlaren: hen betalar också med sitt silver, och silvret är värt sitt grundvärde
+const bybonPart = (s: State, p: Person): Part => ({ ...personPart(s, p, true), varde: k => k === 'silver' ? 1 : behovAv(s, p, k) });
+// det p har nytta av av det handlaren har, det hen saknar först
+const vill = (s: State, h: Handlare, p: Person) => h.varor.map(w => ({ w, v: behovAv(s, p, w.k) })).filter(x => x.v >= HANDEL.nytta).sort((a, b) => b.v - a.v).map(x => x.w);
+// gör p något vid filten just nu (bilden ritar pratbubblor med varorna): den som handlar, inte den som väntar i kön
+export const handlarNu = (s: State, p: Person) => {
+  const h = s.handlare, t = p.task;
+  return !!h && t?.act === 'handla' && t.ref === h.id && t.phase === 'do' && (!h.bynKlar || h.ko?.[0] === p.id);
+};
+// valet på dagen (day i val.ts): den som handlar för byn går till filten. Kommer hen inte, går en annan vuxen efter ett tag.
+// När byn handlat ställer sig den som vill byta med sina egna saker i kön
 export function handlaVal(s: State, p: Person): { why: string; spot: { x: number; y: number }; dur: number; ref: number } | undefined {
   const h = s.handlare;
-  if (!h || h.fas !== 'handlar' || h.bynKlar || ageOf(p, s.now) < ALDER.vuxen) return undefined;
-  if (s.people.some(q => q !== p && alive(q) && q.task?.act === 'handla' && q.task.ref === h.id)) return undefined;
-  if (p !== forByn(s) && s.now < h.kom + HANDEL.ensamTim * HOUR) return undefined;
-  return { why: `Handlar för byn med ${h.namn}`, spot: { x: h.x - 1, y: h.y + 0.6 }, dur: HANDEL.handlaMin * MIN, ref: h.id };
+  if (!h || h.fas !== 'handlar' || ageOf(p, s.now) < ALDER.vuxen) return undefined;
+  if (!h.bynKlar) {
+    if (s.people.some(q => q !== p && alive(q) && q.task?.act === 'handla' && q.task.ref === h.id)) return undefined;
+    if (p !== forByn(s) && s.now < h.kom + HANDEL.ensamTim * HOUR) return undefined;
+    return { why: `Handlar för byn med ${h.namn}`, spot: { x: h.x - 1, y: h.y + 0.6 }, dur: HANDEL.handlaMin * MIN, ref: h.id };
+  }
+  if (h.handlat?.includes(p.id)) return undefined;
+  const ko = h.ko = (h.ko ?? []).filter(id => { const q = byId(s, id); return !!q && alive(q) && (q === p || (q.task?.act === 'handla' && q.task.ref === h.id)); });
+  if (!ko.includes(p.id)) {
+    if (!vill(s, h, p).length || !bybonPart(s, p).over([]).length) return undefined;
+    ko.push(p.id);
+  }
+  const i = ko.indexOf(p.id);
+  return i === 0
+    ? { why: `Handlar med ${h.namn}`, spot: { x: h.x - 1, y: h.y + 0.6 }, dur: HANDEL.egenMin * MIN, ref: h.id }
+    : { why: `Står i kö till ${h.namn}`, spot: { x: h.x - 1 - i * HANDEL.koAvstand, y: h.y + 1.2 }, dur: HANDEL.koMin * MIN, ref: h.id };
 }
-// handeln är klar (KLAR i steg.ts): byn säljer det den har gott om och köper det den saknar
+// handeln är klar (KLAR i steg.ts): byn säljer det den har gott om och köper det den saknar. En bybo köper det hen saknar
 export function handlaKlar(s: State, p: Person, t: Task) {
   const h = s.handlare;
-  if (!h || h.id !== t.ref || h.fas !== 'handlar' || h.bynKlar) return;
+  if (!h || h.id !== t.ref || h.fas !== 'handlar') return;
+  if (h.bynKlar) { egenHandel(s, h, p); return; }
   h.bynKlar = true;
   const B = bynPart(s, p.x, p.y, p), H_ = handlarPart(s, h);
   let n = 0;
@@ -272,5 +331,23 @@ export function handlaKlar(s: State, p: Person, t: Task) {
   }
   count(s, 'handelBesok');
   if (n) count(s, 'handelByten', n);
+  visaVaror(s, h);
+}
+
+// en bybo handlar med sina egna saker, när det är hens tur i kön
+function egenHandel(s: State, h: Handlare, p: Person) {
+  if (h.ko?.[0] !== p.id) return; // hen väntade bara i kön
+  h.ko.shift();
+  (h.handlat ??= []).push(p.id);
+  const M = bybonPart(s, p), H_ = handlarPart(s, h);
+  let n = 0;
+  for (const w of vill(s, h, p)) {
+    if (n >= HANDEL.egnaMax) break;
+    if (!h.varor.includes(w)) continue;
+    if (bytaMed(s, M, H_, [{ k: w.k, n: isTool(w.k) ? 1 : Math.min(w.n, 2), q: w.q }], { behov: M.varde(w.k), minst: 1, fara: 0, typ: 'handel', utom: [w.k], delad: true }) > 0) n++;
+  }
+  count(s, 'egenHandel');
+  if (n) count(s, 'egnaByten', n);
+  else { think(p, `Gick tomhänt från ${h.namn}`, HANDEL.tomTanke, s.now, HANDEL.tomTim * HOUR); count(s, 'tomhant'); }
   visaVaror(s, h);
 }

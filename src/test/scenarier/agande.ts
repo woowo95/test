@@ -814,3 +814,46 @@ SCENARIER.handelsfardighet = {
     ];
   },
 };
+
+SCENARIER.handelsko = {
+  text: 'Hur handeln syns (steg 4.4.1.5, handel.ts): byn handlar först, sedan ställer sig de bybor som har nytta av något handlaren har i kö vid filten, först till kvarn. Den första handlar med sina egna saker, den andra väntar. Det den första köpte är borta för nästa, som går tomhänt och blir lite sämre till mods. Handlaren minns bytena under besöket, och bilden visar pratbubblor bara för den som handlar.',
+  kor: () => {
+    const s = createState(6, START);
+    rikBy(s); s.nastaHandlare = s.now;
+    for (let i = 0; i < 40 && s.handlare?.fas !== 'handlar'; i++) step(s, BEAT);
+    const h = s.handlare!, [a, b] = living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen);
+    const fore = SIM.handlaVal(s, a); // byn har inte handlat: den som handlar för byn går först
+    h.bynKlar = true;
+    for (const p of living(s)) if (p.task?.act === 'handla') p.task = undefined;
+    // torkat kött som båda har nytta av, och något över att betala med
+    const k = 'torrkott';
+    h.varor = [{ k, n: 2 }]; h.silver = 20;
+    for (const p of [a, b]) { SIM.put(s, 'skinn', 6, { [p.id]: 6 }); SIM.put(s, 'silver', 20, { [p.id]: 20 }); }
+    const uppgift = (p: Person, v: NonNullable<ReturnType<typeof SIM.handlaVal>>) => { p.task = { act: 'handla', phase: 'do', tx: v.spot.x, ty: v.spot.y, until: s.now + v.dur, carry: 0, ref: v.ref, dark: false, why: v.why } as Task; };
+    const va = SIM.handlaVal(s, a)!; uppgift(a, va);
+    const vb = SIM.handlaVal(s, b)!; uppgift(b, vb);
+    const ko = h.ko?.[0] === a.id && h.ko?.[1] === b.id && va.why.startsWith('Handlar') && vb.why.startsWith('Står i kö');
+    const bubbla = SIM.handlarNu(s, a) && !SIM.handlarNu(s, b);
+    SIM.handlaKlar(s, b, b.task!); // b väntade bara: inget händer
+    const vantade = !h.handlat?.includes(b.id) && h.varor.length === 1;
+    SIM.handlaKlar(s, a, a.task!);
+    const kopte = ownsAmount(s, a, k) >= 2 && !h.varor.some(w => w.k === k);
+    const minns = (h.bytt ?? []).some(x => x.vem === a.name);
+    const vb2 = SIM.handlaVal(s, b);
+    const fram = !!vb2 && vb2.why.startsWith('Handlar');
+    if (vb2) uppgift(b, vb2);
+    SIM.handlaKlar(s, b, b.task!);
+    const tom = b.thoughts.some(t => t.text.startsWith('Gick tomhänt'));
+    return [
+      ['innan byn handlat går bara den som handlar för byn (eller ingen annan)', !fore || fore.why.includes('för byn')],
+      ['två som vill ha samma sak ställer sig i kö, först till kvarn', ko],
+      ['bara den som handlar har pratbubblor med varorna', bubbla],
+      ['den som står i kö väntar på sin tur', vantade],
+      [`den första köper (${k}) med sina egna saker`, kopte],
+      ['handlaren minns bytet (inforutan)', minns],
+      ['den andra flyttar fram i kön', fram],
+      ['det den första köpte är borta: den andra går tomhänt och blir lite sämre till mods', tom],
+      ['den som handlat ställer sig inte i kö igen', !SIM.handlaVal(s, a)],
+    ];
+  },
+};

@@ -88,6 +88,8 @@ export function stortByte(varor: Vara[]) {
   return varor.reduce((x, w) => x + w.n * vardeOf(w), 0) >= BYTE.stort;
 }
 
+// det andra system gör när ett byte är klart (handlarens minne av bytena, handel.ts)
+export const vidByte: ((s: State, m: Part, g: Part, fatt: Vara[], betal: Vara[]) => void)[] = [];
 // bytet är klart: m fick fatt av g och gav betal. Samma för alla byten. desperat = m höll på att dö av bristen
 export function byteKlart(s: State, m: Part, g: Part, fatt: Vara[], betal: Vara[], desperat = false) {
   const alla = [...fatt, ...betal], stort = stortByte(alla), bytt = (s.bytt ??= []);
@@ -100,6 +102,7 @@ export function byteKlart(s: State, m: Part, g: Part, fatt: Vara[], betal: Vara[
   const text = `${m.namn} och ${g.namn} bytte: ${varorText(fatt)} mot ${varorText(betal)}${desperat ? `. ${m.namn} höll på att dö` : ''}.`;
   log(s, text, 'rel', [m.id, g.id].filter(i => i > 0));
   if (stort) kronika(s, text, 'byte');
+  for (const f of vidByte) f(s, m, g, fatt, betal);
   return stort;
 }
 // en gåva: g ger varor till m, utan förhandling. Samma överlämning och samma rad; krönikan tar den om den betyder något:

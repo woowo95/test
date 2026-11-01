@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { ACTS, ALDER, Person, actIkon, utbIkon, SEC, TalkEvent, ageOf, SAMTAL, alive, bordVid, byId, clamp, homeKind, isSocial, kanGa, living, load, REL, relKey, spar, storlekAv, vidBordet } from '../sim';
+import { ACTS, ALDER, Person, actIkon, utbIkon, SEC, TalkEvent, ageOf, SAMTAL, alive, bordVid, byId, clamp, homeKind, isSocial, kanGa, living, load, REL, relKey, spar, storlekAv, vidBordet, handlarNu, handlarPlats } from '../sim';
 import { PRICKAR, personFarg } from './hjalp';
 import { s, sakVar, ui, vidNyBy } from './lage';
 import { Ikoner, TS, bubbleG, labels, markLayer, peopleG } from './scen';
@@ -145,6 +145,14 @@ export function drawPeople(t: number) {
       const rel = q && (p.partner === q.id || (r?.rom ?? 0) > 40) ? 'karlek' : (r?.op ?? 0) < REL.gral ? 'ovan' : (r?.op ?? 0) > REL.van ? 'van' : 'neutral';
       const ikon = flash.has(p.id) ? flashIkon.get(p.id) : q && p.prat?.m === q.id ? p.prat.i : undefined; // ämnet (steg 3.9.5)
       pratRuta(x, top, Math.sin(t / 500 + p.id) * 0.6, flash.get(p.id), rel, ikon);
+      continue;
+    }
+    // vid handlarens filt (steg 4.4.1.5): pratbubblor med varornas symboler, en i taget
+    if (handlarNu(s, p) && s.handlare?.varor.length) {
+      const v = s.handlare.varor, k = v[Math.floor(t / 1400 + p.id) % v.length].k;
+      pratRuta(x, top, Math.sin(t / 500 + p.id) * 0.6, undefined, 'neutral', k);
+      const hp = handlarPlats(s.handlare, ui.nu), svar = Math.floor(t / 1400 + p.id) % 2 ? 'silver' : k; // handlaren svarar: priset i silver
+      pratRuta(hp.x * TS, hp.y * TS - 13, Math.sin(t / 500) * 0.6, undefined, 'neutral', svar);
       continue;
     }
     const m = markOf(p);

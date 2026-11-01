@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { BAR, FALT_STEG, FOREST, GRODOR, Falt, byId, faltAt, faltIndex, faltKlar, HIGH, MATERIAL, Person, T, W, bitAt, campCenter, condOf, dorrDef, emberOn, eldPlats, getMap, groundOf, husById, inMap, insulation, isKlar, living, stationAt, stationDef, stationKlar, tingOf, toaAt, roomAt, rumsFunktioner, sakNamn, sjoarna, sovplatser, taskText, verbOf, zoneAt, zonesOf, Pile } from '../sim';
+import { BAR, FALT_STEG, FOREST, GRODOR, Falt, byId, faltAt, faltIndex, faltKlar, HIGH, MATERIAL, Person, T, W, bitAt, campCenter, condOf, dorrDef, emberOn, eldPlats, getMap, groundOf, husById, inMap, insulation, isKlar, living, stationAt, stationDef, stationKlar, handlarPlats, tingOf, toaAt, roomAt, rumsFunktioner, sakNamn, sjoarna, sovplatser, taskText, verbOf, zoneAt, zonesOf, Pile } from '../sim';
 import { iconImg, tecknet } from '../ikoner';
 import { $, esc, fmtN, prickar } from './hjalp';
 import { outPilesAt, piles, s, ui } from './lage';
@@ -26,6 +26,13 @@ function djurAt(gx: number, gy: number) {
   for (const d of djurSynliga()) { const dd = Math.hypot(d.x * TS - p.x, d.y * TS - 2 - p.y); if (dd < bd) { bd = dd; best = d.id; } }
   return best;
 }
+// handlaren under trycket (steg 4.4.1.5): där hen ritas vid tiden som visas
+function handlareAt(gx: number, gy: number) {
+  const h = s.handlare;
+  if (!h) return false;
+  const p = toWorld(gx, gy), q = handlarPlats(h, ui.nu);
+  return Math.hypot(q.x * TS - p.x, q.y * TS - TS / 2 - p.y) < 9;
+}
 function fireAt(gx: number, gy: number) {
   const p = toWorld(gx, gy), f = eldPlats(s);
   return Math.hypot(f.x * TS + TS / 2 - p.x, f.y * TS + TS / 2 - p.y) < 12;
@@ -47,6 +54,7 @@ app.stage.on('pointertap', e => {
   const dj = p ? undefined : djurAt(gx, gy);
   if (p) selectPerson(p.id);
   else if (dj !== undefined) { ui.djurId = dj; visa('djur'); }
+  else if (handlareAt(gx, gy)) visa('handlare');
   else if (!inMap(c.x, c.y)) avmarkera(); // utanför kartan finns inget att visa
   else if (fireAt(gx, gy)) visa('eld');
   else if (zi) valjLager(zi - 1, c);
@@ -98,7 +106,7 @@ app.stage.on('pointermove', e => {
   showHover(gx, gy);
   ui.hovered = personAt(gx, gy)?.id;
   const c = tileAt(gx, gy);
-  view.style.cursor = ui.hovered || djurAt(gx, gy) !== undefined || inMap(c.x, c.y) && (fireAt(gx, gy) || storeAt(gx, gy) || outPilesAt(c.x, c.y).length || toaAt(s, c.x, c.y) || faltAt(s, c.x, c.y) || stubbeAt(c.x, c.y) || husAt(c.x, c.y) !== undefined || stationAt(s, c.x, c.y)) ? 'pointer' : 'grab';
+  view.style.cursor = ui.hovered || djurAt(gx, gy) !== undefined || handlareAt(gx, gy) || inMap(c.x, c.y) && (fireAt(gx, gy) || storeAt(gx, gy) || outPilesAt(c.x, c.y).length || toaAt(s, c.x, c.y) || faltAt(s, c.x, c.y) || stubbeAt(c.x, c.y) || husAt(c.x, c.y) !== undefined || stationAt(s, c.x, c.y)) ? 'pointer' : 'grab';
 });
 view.addEventListener('wheel', e => { e.preventDefault(); const r = view.getBoundingClientRect(); zoomAt(e.deltaY < 0 ? 1.06 : 1 / 1.06, e.clientX - r.left, e.clientY - r.top); }, { passive: false });
 view.addEventListener('pointerleave', () => { $('hoverBox').hidden = true; ui.hovered = undefined; });
