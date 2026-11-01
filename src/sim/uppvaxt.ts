@@ -33,6 +33,8 @@ export const UPPV = balans('uppvaxt', {
   gammal: 60, // blev gammal och såg alla jämnåriga dö: från den här åldern (år) ...
   jamnarig: 5, // ... och jämnåriga är de som är födda högst så här många år ifrån
   manga: 5, // gjorde många usla eller fina saker: så många
+  blekna: 15, // en upplevelse från vuxenlivet bleknar ett steg per så här många dygn (år i spelet), en tung hälften så fort (steg 4.1.1.4) ...
+  bleknaAnde: 4, // ... och ett steg tar 1 från varje egenskap och så här mycket från andligheten; när inget är kvar är den glömd
 });
 
 // ---------- upplevelserna (registret) ----------
@@ -41,8 +43,9 @@ export const UPPV = balans('uppvaxt', {
 // den som är yngre än UPPV.fran. vem (steg 4.1.1.2): om raden gäller barn, vuxna eller båda. Talen gäller ett barn; en vuxen
 // får chansen gånger UPPV.vuxenChans och effekten gånger UPPV.vuxenEffekt (minst 1). vuxenTal: talen gäller i stället en
 // vuxen, och ett barn får tre gånger chansen och dubbla effekten (raderna som kom med steg 4.1.1.2)
-// ande (steg 4.1.1.3): upplevelsen flyttar också andligheten (religion.ts), uppåt eller nedåt
-interface UpplevelseDef { text: string; chans: number; e: Partial<Record<Stat, number>>[]; vem: 'barn' | 'vuxen' | 'bada'; tidig?: true; vuxenTal?: true; ande?: true }
+// ande (steg 4.1.1.3): upplevelsen flyttar också andligheten (religion.ts), uppåt eller nedåt. tung (steg 4.1.1.4): bleknar
+// hälften så fort i vuxenlivet
+interface UpplevelseDef { text: string; chans: number; e: Partial<Record<Stat, number>>[]; vem: 'barn' | 'vuxen' | 'bada'; tidig?: true; vuxenTal?: true; ande?: true; tung?: true }
 export const UPPLEVELSER = {
   skadad: { text: 'Skadades svårt: {om}', chans: 0.6, e: [{ mod: -2 }, { uthallighet: 2 }, { mod: -1, uthallighet: 1 }], vem: 'bada', ande: true },
   svalt: { text: 'Var nära att svälta ihjäl', chans: 0.3, e: [{ flit: 2 }, { flit: 1, empati: -1 }], vem: 'bada', ande: true },
@@ -72,7 +75,7 @@ export const UPPLEVELSER = {
   slagen: { text: 'Blev slagen av {om}', chans: 1, e: [{ mod: -3, empati: -2 }, { karisma: -3, mod: -2 }, { empati: -3, flit: -2 }, { aggression: 3, empati: -2 }], vem: 'barn' },
   slagenIgen: { text: 'Blev slagen igen av {om}', chans: 1, e: [{ mod: -2, karisma: -2 }, { empati: -2, nyfikenhet: -2 }, { flit: -2, karisma: -2 }, { aggression: 3, mod: -1 }], vem: 'barn' },
   // vuxenlivet och fler upplevelser (steg 4.1.1.2, "Fler upplevelser" i designdokumentet): talen gäller en vuxen
-  barnDod: { text: 'Miste sitt barn {om}', chans: 0.9, e: [{ empati: 1 }, { empati: -1 }, { flit: -1 }, { mod: -1 }], vem: 'vuxen', vuxenTal: true, ande: true },
+  barnDod: { text: 'Miste sitt barn {om}', chans: 0.9, e: [{ empati: 1 }, { empati: -1 }, { flit: -1 }, { mod: -1 }], vem: 'vuxen', vuxenTal: true, ande: true, tung: true },
   ledFramgang: { text: 'Ledde byn till framgång', chans: 0.7, e: [{ karisma: 1 }, { mod: 1 }, { empati: -1 }], vem: 'vuxen', vuxenTal: true },
   ledFordarv: { text: 'Ledde byn i fördärvet', chans: 0.7, e: [{ mod: -1 }, { empati: 1 }, { karisma: -1 }], vem: 'vuxen', vuxenTal: true, ande: true },
   drabbad: { text: 'Drabbades själv av {om}', chans: 0.5, e: [{ uthallighet: 1 }, { mod: -1 }], vem: 'bada', vuxenTal: true, ande: true },
@@ -83,7 +86,7 @@ export const UPPLEVELSER = {
   egenTeknik: { text: 'Kom själv på {om}', chans: 0.5, e: [{ nyfikenhet: 1 }, { intelligens: 1 }], vem: 'bada', vuxenTal: true },
   raddade: { text: 'Räddade {om} från döden', chans: 0.5, e: [{ empati: 1 }, { mod: 1 }], vem: 'bada', vuxenTal: true },
   raddad: { text: 'Räddades från döden av {om}', chans: 0.5, e: [{ empati: 1 }, { karisma: 1 }], vem: 'bada', vuxenTal: true, ande: true },
-  dodade: { text: 'Dödade {om}', chans: 0.8, e: [{ aggression: 1 }, { empati: -1 }], vem: 'bada', vuxenTal: true, ande: true },
+  dodade: { text: 'Dödade {om}', chans: 0.8, e: [{ aggression: 1 }, { empati: -1 }], vem: 'bada', vuxenTal: true, ande: true, tung: true },
   ranad: { text: 'Blev rånad av {om}', chans: 0.5, e: [{ mod: -1 }, { aggression: 1 }], vem: 'bada', vuxenTal: true },
   lamnad: { text: 'Blev lämnad av {om}', chans: 0.5, e: [{ empati: -1 }, { karisma: -1 }], vem: 'vuxen', vuxenTal: true },
   oknamn: { text: 'Fick öknamnet {om}', chans: 0.5, e: [{ karisma: -1 }, { aggression: 1 }], vem: 'bada', vuxenTal: true },
@@ -183,6 +186,25 @@ export function uppvaxtFodd(s: State, ch: Person) {
   for (const q of living(s)) if (q !== ch && q.mother !== undefined && q.mother === ch.mother && ageOf(q, s.now) >= UPPV.syskonFran) upplev(s, q, 'syskonFodd', ch.name);
 }
 
+// upplevelserna från vuxenlivet bleknar ett steg i taget och glöms till slut (steg 4.1.1.4); barndomen står kvar. u.b = stegen
+// som redan tagits
+function blekna(s: State, p: Person) {
+  let andrat = false;
+  for (const u of p.upp!) {
+    if (!vuxenUpp(u) || u.t === undefined) continue;
+    const steg = Math.floor((s.now - u.t) / (UPPV.blekna * DAY * (DEF[u.k].tung ? 2 : 1)));
+    while ((u.b ?? 0) < steg) {
+      u.b = (u.b ?? 0) + 1; andrat = true;
+      for (const k of Object.keys(u.e) as Stat[]) { const v = u.e[k]!, ny = Math.sign(v) * (Math.abs(v) - 1); if (ny) u.e[k] = ny; else delete u.e[k]; }
+      if (u.n) { const ny = Math.sign(u.n) * Math.max(0, Math.abs(u.n) - UPPV.bleknaAnde); if (ny) u.n = ny; else delete u.n; }
+    }
+  }
+  if (!andrat) return;
+  const kvar = p.upp!.filter(u => !vuxenUpp(u) || Object.keys(u.e).length || u.n);
+  if (kvar.length < p.upp!.length) count(s, 'upp_glomd', p.upp!.length - kvar.length);
+  p.upp = kvar;
+  raknaPot(p);
+}
 // en gång i timmen (steg.ts, utan att ändra någon annans slump): nära svält eller köld, svårt sjuk, lek och trygghet
 export function stepUppvaxt(s: State) {
   for (const p of s.people) {
@@ -192,6 +214,7 @@ export function stepUppvaxt(s: State) {
       if (isSick(p, s.now) && p.health < UPPV.sjukHalsa) livet(s, p, 'sjuk', true);
     }
     if (!alive(p) || ageOf(p, s.now) < UPPV.fran) continue;
+    if (p.upp?.some(vuxenUpp)) blekna(s, p);
     if (p.hunger <= 0 && p.health < UPPV.naraHalsa) upplev(s, p, 'svalt'); // barn och vuxna (steg 4.1.1.2)
     if (p.warm < KROPP.frysdod && p.health < UPPV.naraHalsa) upplev(s, p, 'frys');
     if (isSick(p, s.now) && p.health < UPPV.sjukHalsa) upplev(s, p, 'sjuk');

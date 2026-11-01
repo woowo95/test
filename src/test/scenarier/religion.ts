@@ -90,3 +90,29 @@ SCENARIER.andeupplevelse = {
     }
   },
 };
+
+SCENARIER.blekna = {
+  text: 'Vuxnas upplevelser bleknar (steg 4.1.1.4): ett steg per UPPV.blekna dygn och glöms till slut, de tunga hälften så fort, egenskaperna följer med, och barndomen står kvar',
+  kor: () => {
+    const s = createState(9, START);
+    const chans = Object.fromEntries(Object.entries(SIM.UPPLEVELSER).map(([k, d]) => [k, d.chans]));
+    for (const d of Object.values(SIM.UPPLEVELSER)) d.chans = 3;
+    try {
+      const v = nyInvanare(s, 'm', 30), b = nyInvanare(s, 'm', 8);
+      SIM.upplev(s, v, 'flyttade'); SIM.upplev(s, v, 'barnDod', 'x'); SIM.upplev(s, b, 'foralder', 'x');
+      const k = Object.keys(v.upp!.find(u => u.k === 'flyttade')!.e)[0] as SIM.Stat, fore = v.pot[k];
+      const dygn = (n: number) => { s.now += n * SIM.DAY; SIM.stepUppvaxt(s); };
+      dygn(SIM.UPPV.blekna + 1);
+      const glomd = !v.upp!.some(u => u.k === 'flyttade'), efter = v.pot[k], tungKvar = v.upp!.some(u => u.k === 'barnDod');
+      dygn(SIM.UPPV.blekna * 4);
+      return [
+        [`efter ${SIM.UPPV.blekna + 1} dygn är det som gav 1 glömt, och egenskapen tillbaka (${fore} → ${efter})`, glomd && efter === v.anlag![k]],
+        [`den tunga (miste sitt barn) finns kvar efter ${SIM.UPPV.blekna + 1} dygn, men är glömd efter ${SIM.UPPV.blekna * 5 + 1}`, tungKvar && !v.upp!.some(u => u.k === 'barnDod')],
+        ['barndomen står kvar', b.upp!.some(u => u.k === 'foralder') && JSON.stringify(b.upp![0].e) !== '{}'],
+        [`glömda räknas (${s.stat?.upp_glomd})`, (s.stat?.upp_glomd ?? 0) === 2],
+      ];
+    } finally {
+      for (const [k, d] of Object.entries(SIM.UPPLEVELSER)) d.chans = chans[k];
+    }
+  },
+};

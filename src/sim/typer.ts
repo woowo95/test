@@ -209,8 +209,8 @@ export interface Person {
 }
 // en upplevelse i barndomen eller vuxenlivet: slaget (UPPLEVELSER i uppvaxt.ts), åldern (år), vad den gjorde med egenskaperna och vem
 // eller vad den gällde
-// v = från vuxenlivet och t = när (steg 4.1.1.2), n = hur mycket den flyttade andligheten (steg 4.1.1.3)
-export interface Upplevelse { k: import('./uppvaxt').UpplevelseTyp; a: number; e: Partial<Record<Stat, number>>; om?: string; v?: 1; t?: number; n?: number }
+// v = från vuxenlivet och t = när (steg 4.1.1.2), n = hur mycket den flyttade andligheten (steg 4.1.1.3), b = hur många steg den bleknat (steg 4.1.1.4)
+export interface Upplevelse { k: import('./uppvaxt').UpplevelseTyp; a: number; e: Partial<Record<Stat, number>>; om?: string; v?: 1; t?: number; n?: number; b?: number }
 
 // En lärdom om en plats: k = vad, a = område (8×8 rutor), v = hur mycket (eller hur rädd), c = hur säker (0–1),
 // t = när platsen sågs (den som hör det får samma tid; återväxten räknas därifrån), src = vem den hördes av (saknas = egen upplevelse), led = hur många led från den som var där, om = vad som hände.
