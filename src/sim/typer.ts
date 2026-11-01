@@ -299,6 +299,7 @@ export interface State {
   motgang?: { varslad?: number; klok?: number; pagar?: { k: import('./motgang').MotgangId; t: number; dog: number } }; // motgången som byn varslats om (när den börjar), den som den klokaste anat (steg 3.8.6) och den som pågår (steg 3.8.1, motgang.ts)
   vargar?: Vargflock[]; vargNr?: number; // vargflockarna på kartan och hur många som kommit (steg 3.7.1, varg.ts)
   djurSkramd?: { g: number; t: number }[]; // kaningrupper som skrämts av en jägare, och när (steg 3.7.3, jakt.ts)
+  djurFlykt?: { g: number; t: number; dx: number; dy: number }[]; // kaningrupper som flytt från en jägare: från tiden t så här långt (steg 4.5.4.1, djur.ts)
   strider?: import('./strid').StridMinne[]; // de senaste striderna i byn, så att arenan kan visa dem igen (steg 3.7.2, strid.ts)
   sportBast?: Record<string, number>; // den bästa i varje sport (personens id, steg 4.3.1.2)
   fram?: import('./framtradande').Fram; framKvall?: number; // framträdandet som pågår och kvällen då det senaste hölls (steg 4.3.2.1)

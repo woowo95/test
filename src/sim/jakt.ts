@@ -1,7 +1,7 @@
 import { balans } from './balans';
 import { blodas } from './blod';
 import { blocked, freeNear } from './byggnad';
-import { KANINER, KANIN_UT, dodaDjur, djurOf, dragOf, halsaOf, satDjurHalsa } from './djur';
+import { KANINER, KANIN_UT, dodaDjur, djurOf, dragOf, gruppFlyr, halsaOf, satDjurHalsa } from './djur';
 import { count, forstaGang, gjort, log, ovning, stat } from './folk';
 import { skada } from './halsa';
 import { groundOf, markslag, tileOf } from './mark';
@@ -9,7 +9,7 @@ import { KANIN } from './redskap';
 import { clamp, rnd } from './slump';
 import { KAST, SLAGSMAL, STRID, VAPEN, Vapen, Uppstallning, chansMot, djurKampe, kastat, nyStrid, slump, traffa } from './strid';
 import { isLight } from './tid';
-import { HOUR, Person, State, T, Task, W, inMap } from './typer';
+import { HOUR, Jaktforsok, Person, SEC, State, T, Task, W, inMap } from './typer';
 import { viltStart } from './fynd';
 import { getMap, hash } from './karta';
 import { motgangNu } from './motgang';
@@ -49,7 +49,40 @@ export const JAKT = balans('jakt', {
   hamtaSek: 40, // att hämta det kastade spjutet
   dod: 0.2, // en kanin dör av träffar (och gamla sår) av den här graden sammanlagt; en svagare träff och den springer skadad
   bett: 0.15, bettGrad: 0.06, // den som griper en kanin med händerna blir biten med den här chansen och graden
+  fly: 6, // så långt (rutor) flyr gruppen bort från jägaren när den skräms (steg 4.5.4.1), och då får jägaren smyga sig nära igen
 });
+// ---------- försöket som det syns (steg 4.5.4.1) ----------
+// Försöket är lika långt som förut (smygSek och det kastade som hämtas), men det mesta av tiden letar jägaren efter
+// hararna. Sedan smyger hen jämnt fram i JAKTSYN.smyg sekunder, siktar 3–5 sekunder (kort efter en hare som redan flyr),
+// kastar (eller sticker eller griper), hämtar det kastade och går tillbaka. Tiderna räknas här, så att flocken flyr i
+// simuleringen när den flyr i bilden (gränssnittet visar det, ui/jakt.ts). Talen är bara hur det ser ut
+export const JAKTSYN = { smyg: 60, smygRutor: 5, sikta: 3, siktaSpann: 2, siktaSett: 1, kastFart: 8, ga: 1.6, flyS: 1.6, plocka: 3 };
+type P = { x: number; y: number };
+const mot = (a: P, b: P, k: number) => ({ x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k });
+const avst = (a: P, b: P) => Math.hypot(a.x - b.x, a.y - b.y);
+// hur försöket går, i sekunder från början: tS jägaren börjar smyga från Q, tA hen är framme vid P, tK hen kastar,
+// tI det slår till, tF haren flyr (och flocken med den, tFlock), tG jägaren har hämtat det som kastades i G, E slutet
+export function jaktForlopp(f: Jaktforsok) {
+  const E = JAKT.smygSek + f.extra, R = { x: f.x, y: f.y }, S = { x: f.sx, y: f.sy }, d0 = avst(R, S);
+  const P = d0 > f.stopp ? mot(R, S, f.stopp / d0) : S; // där jägaren stannar, på vägen mellan hen och haren
+  const dPS = avst(P, S), Q = dPS > JAKTSYN.smygRutor ? mot(P, S, JAKTSYN.smygRutor / dPS) : S; // där hen börjar smyga
+  const kast = f.kast > 0, sikta = kast ? (f.sett ? JAKTSYN.siktaSett : JAKTSYN.sikta + JAKTSYN.siktaSpann * hash(f.t % 100003, f.id, 41)) : 0.5;
+  const flyg = kast ? Math.max(0.6, f.kast / JAKTSYN.kastFart) : 0.5;
+  const dP = avst(R, P), ut = dP > 0.01 ? { x: (R.x - P.x) / dP, y: (R.y - P.y) / dP } : d0 > 0.01 ? { x: (R.x - S.x) / d0, y: (R.y - S.y) / d0 } : { x: 1, y: 0 }; // bort från jägaren
+  const tid = { tS: 0, tA: 0, tK: 0, tI: 0 };
+  const kanin = (u: number) => u < tF ? R : mot(R, { x: R.x + ut.x * JAKT.fly, y: R.y + ut.y * JAKT.fly }, Math.min(1, (u - tF) / JAKTSYN.flyS));
+  // det jägaren hämtar: det som kastades (en bit bortom haren om det missade) eller den fångade haren
+  const Gav = (traffad: P) => kast ? (f.ut === 'miss' || f.ut === 'flydde' ? { x: traffad.x + ut.x, y: traffad.y + ut.y } : traffad) : f.ut === 'fangad' ? traffad : undefined;
+  // bakifrån: hämtningen och vägen tillbaka slutar när försöket slutar
+  const ungefar = Gav(R), efter = (ungefar ? avst(P, ungefar) + avst(ungefar, S) : dPS) / JAKTSYN.ga + (ungefar ? JAKTSYN.plocka : 0) + 1;
+  tid.tI = Math.max(JAKTSYN.smyg + sikta + flyg + avst(S, Q) / JAKTSYN.ga, E - efter);
+  tid.tK = tid.tI - flyg; tid.tA = tid.tK - sikta; tid.tS = tid.tA - JAKTSYN.smyg;
+  const tF = f.sett ? tid.tA : f.ut === 'fangad' ? Infinity : tid.tI; // när haren flyr
+  const tFlock = Math.min(tF, tid.tI); // flocken flyr med haren, eller när den fångade griper eller sticks
+  const traffad = kanin(tid.tI), G = Gav(traffad);
+  const tG = G ? tid.tI + avst(P, G) / JAKTSYN.ga + JAKTSYN.plocka : tid.tI;
+  return { ...tid, tF, tFlock, tG, E, R, S, P, Q, G, ut, kast, kanin };
+}
 // gruppen skräms (s.djurSkramd: gruppens id och när)
 const skramd = (s: State, g: number) => !!s.djurSkramd?.some(x => x.g === g && s.now - x.t < JAKT.skramdTim * HOUR);
 function skram(s: State, g: number) {
@@ -148,6 +181,9 @@ export function jaktForsok(s: State, p: Person, tk: Task, t = s.now): number {
   // det kastade: stenen tappas oftast bort och då letar hen upp en ny, annars hämtas det som kastades
   const extra = kastD > 0 ? (v === 'sten' && r() < JAKT.stenBorta ? JAKT.stenSek : JAKT.hamtaSek) : 0;
   tk.jf = { t, id: m.id, x: m.x, y: m.y, sx: p.x, sy: p.y, v, stopp, kast: kastD, sett, ut: dog ? 'fangad' : traff && g > 0 ? 'skadad' : kastD > 0 || !sett ? 'miss' : 'flydde', ...(hand ? { hand: true as const } : {}), extra, g, blod: b.blod };
+  // flocken flyr bort från jägaren när haren flyr (eller fångas), och då får jägaren smyga sig nära igen (steg 4.5.4.1)
+  const o = jaktForlopp(tk.jf);
+  gruppFlyr(s, m.grupp, t + o.tFlock * SEC, o.ut.x * JAKT.fly, o.ut.y * JAKT.fly);
   return 0;
 }
 // när försöket är slut: spjutet som kastades hämtas (eller är borta), stacket sliter spjutet, och den fångade kaninen

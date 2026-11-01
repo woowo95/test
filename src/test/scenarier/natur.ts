@@ -1460,7 +1460,7 @@ SCENARIER.kaninjakt = {
       const ut = { fangst: 0, skadad: 0, borta: 0, skramd: 0, sar: 0, sett: 0, ratt: 0 };
       const s = cloneState(s0), p = SIM.byId(s, p0.id)!;
       for (let i = 0; i < n; i++) {
-        Object.assign(s, { djurDoda: undefined, djurHalsa: undefined, djurSkramd: undefined }); s.ting = (s.ting ?? []).filter(t => t.k !== 'flintspjut');
+        Object.assign(s, { djurDoda: undefined, djurHalsa: undefined, djurSkramd: undefined, djurFlykt: undefined }); s.ting = (s.ting ?? []).filter(t => t.k !== 'flintspjut');
         if (verktyg) { const t = SIM.addTool(s, verktyg, p); t.hos = p.id; }
         const k = djurOf(s).find(d => d.id === k0.id) ?? djurOf(s)[0];
         const tk = { act: 'jakt', phase: 'do', tx: k.x, ty: k.y, until: s.now + HOUR, carry: 0, tool: verktyg } as SIM.Task;
@@ -1944,6 +1944,53 @@ SCENARIER.arbete = {
       [`den som äter vid bordet har maten framför sig (${mal ?? 'ingen'})`, !!mal && FOOD.includes(mal) && !!bordVid(b, bp)],
       ['bänkarna har ett verb ("Arkiv rensar") och toa en egen symbol', verb && gor && ACTS.toa.ikon === 'a_toa'],
       ['jobben har en undertext ("Jagar: smyger på byte")', text],
+    ];
+  },
+};
+
+SCENARIER.harflykt = {
+  text: 'Steg 4.5.4.1: hararna flyr alltid bort från jägaren, aldrig mot eller förbi hen, och hela flocken följer med den som flyr, så att jägaren får smyga sig nära igen. Det synliga försöket: jägaren letar, smyger jämnt fram i en minut, siktar 3–5 sekunder och kastar',
+  kor: () => {
+    const s = createState(6, START);
+    klockan(s);
+    const p = living(s).find(q => ageOf(q, s.now) >= 16)!;
+    let n = 0, bort = 0, ihop = 0, stilla = 0, harBort = 0, sikta = 0, smyg = 0, kortast = Infinity, langst = 0;
+    for (let i = 0; i < 40; i++) {
+      Object.assign(s, { djurDoda: undefined, djurHalsa: undefined, djurSkramd: undefined, djurFlykt: undefined });
+      s.ting = (s.ting ?? []).filter(t => t.k !== 'flintspjut');
+      if (i % 2) { const t = SIM.addTool(s, 'flintspjut', p); t.hos = p.id; }
+      const k = djurOf(s, s.now, [])[i % 3] ?? djurOf(s, s.now, [])[0];
+      const tk = { act: 'jakt', phase: 'do', tx: k.x, ty: k.y, until: s.now + HOUR, carry: 0, tool: i % 2 ? 'flintspjut' : undefined } as SIM.Task;
+      SIM.jaktForsok(s, p, tk);
+      const f = tk.jf;
+      if (!f) continue;
+      n++;
+      const o = SIM.jaktForlopp(f), grupp = djurOf(s, s.now, []).find(d => d.id === f.id)!.grupp;
+      const vid = (u: number) => new Map(djurOf(s, f.t + u * SIM.SEC, []).filter(d => d.grupp === grupp).map(d => [d.id, d]));
+      const fore = vid(0), strax = vid(o.tFlock - 1), efter = vid(o.tFlock + 1);
+      // flockens mitt strax innan haren flyr är densamma som utan flykten
+      const mitt = (u: number) => grupperOf(s, f.t + u * SIM.SEC).find(g => g.id === grupp)!, fl = s.djurFlykt;
+      const med = mitt(o.tFlock - 1); s.djurFlykt = undefined; const utan = mitt(o.tFlock - 1); s.djurFlykt = fl;
+      if (strax.size === fore.size && med.x === utan.x && med.y === utan.y) stilla++;
+      const dP = (d: { x: number; y: number }) => Math.hypot(d.x - o.P.x, d.y - o.P.y);
+      if ([...fore].every(([id, d]) => { const e = efter.get(id); return !!e && dP(e) > dP(d); })) bort++;
+      if ([...fore].every(([id, d]) => { const e = efter.get(id); return !!e && Math.abs(Math.hypot(e.x - d.x, e.y - d.y) - SIM.JAKT.fly) < 1.5; })) ihop++;
+      let ok = true;
+      for (let u = 0; u < o.E; u += 0.5) if (dP(o.kanin(u)) < dP(o.R) - 1e-9) ok = false;
+      if (ok) harBort++;
+      if (!o.kast || f.sett || o.tK - o.tA >= 3 - 1e-9 && o.tK - o.tA <= 5 + 1e-9) sikta++;
+      if (Math.abs(o.tA - o.tS - 60) < 1e-9 && o.tS > 0) smyg++;
+      const syns = o.E - o.tS; kortast = Math.min(kortast, syns); langst = Math.max(langst, syns);
+      SIM.jaktKlar(s, p, tk);
+    }
+    return [
+      [`${n} försök`, n >= 30],
+      [`flocken står still tills haren flyr (${stilla} av ${n})`, stilla === n],
+      [`hela flocken flyr bort från jägaren (${bort} av ${n})`, bort === n],
+      [`flocken håller ihop: alla flyttar lika långt (${ihop} av ${n})`, ihop === n],
+      [`den jagade haren flyr aldrig mot jägaren (${harBort} av ${n})`, harBort === n],
+      [`jägaren smyger en minut (${smyg} av ${n}) och siktar 3–5 sekunder innan hen kastar (${sikta} av ${n})`, smyg === n && sikta === n],
+      [`det synliga försöket, från att hen börjar smyga, tar ${Math.round(kortast)}–${Math.round(langst)} sekunder`, kortast >= 60 && langst <= 200],
     ];
   },
 };

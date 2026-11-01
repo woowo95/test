@@ -1,5 +1,6 @@
 import * as PIXI from 'pixi.js';
-import { BAR, FALT_STEG, FOREST, GRODOR, Falt, byId, faltAt, faltIndex, faltKlar, HIGH, MATERIAL, Person, T, W, bitAt, campCenter, condOf, dorrDef, emberOn, eldPlats, getMap, groundOf, husById, inMap, insulation, isKlar, living, stationAt, stationDef, stationKlar, handlarPlats, tingOf, toaAt, roomAt, rumsFunktioner, sakNamn, sjoarna, sovplatser, taskText, verbOf, zoneAt, zonesOf, Pile } from '../sim';
+import { BAR, FALT_STEG, FOREST, GRODOR, Falt, byId, faltAt, faltIndex, faltKlar, HIGH, MATERIAL, Person, T, W, bitAt, campCenter, condOf, dorrDef, emberOn, eldPlats, getMap, groundOf, husById, inMap, insulation, isKlar, living, stationAt, stationDef, stationKlar, handlarPlats, tingOf, toaAt, roomAt, rumsFunktioner, sakNamn, sjoarna, sovplatser, verbOf, zoneAt, zonesOf, Pile } from '../sim';
+import { gorText } from './jakt';
 import { iconImg, tecknet } from '../ikoner';
 import { $, esc, fmtN, prickar } from './hjalp';
 import { outPilesAt, piles, s, ui } from './lage';
@@ -166,7 +167,7 @@ function showHover(gx: number, gy: number) {
     rows.push(`Under tak${hus ? ` (${esc(hus.namn)})` : ''}${fns ? ' ' + fns : ''} · ${n ? `${n} sovplatser · ` : ''}håller värmen ${Math.round(insulation(s, rum) * 100)} %`);
   }
   const here = living(s).filter(p => { const o = posOf(p); return Math.floor(o.x) === x && Math.floor(o.y) === y; });
-  if (here.length) rows.push(here.map(p => `${esc(p.name)}${prickar(p, true)} (${p.task ? taskText(p.task).toLowerCase() : 'vilar'})`).join(', '));
+  if (here.length) rows.push(here.map(p => `${esc(p.name)}${prickar(p, true)} (${p.task ? gorText(p, p.task).toLowerCase() : 'vilar'})`).join(', '));
   box.innerHTML = rows.map(r => `<p>${r}</p>`).join('');
   box.hidden = false;
 }

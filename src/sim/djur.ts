@@ -99,11 +99,28 @@ function mitt(s: State, k: number, t = s.now) {
 export function djurSteg(s: State) { for (let k = 0; k < KANINER.grupper; k++) mitt(s, k); }
 // grupperna vid tiden t (just nu om inget annat sägs). En grupp krymper där lagret är tömt (där man jagat), och är tom
 // när det jagats slut. Med bara (en fråga om gruppens mitt) räknas bara de grupper som den godtar
+// så långt gruppen flytt från jägare fram till tiden t (steg 4.5.4.1): hela gruppen följer med den som flyr
+function flyttAv(s: State, g: number, t: number) {
+  let dx = 0, dy = 0, har = false;
+  for (const f of s.djurFlykt ?? []) if (f.g === g && f.t <= t) { dx += f.dx; dy += f.dy; har = true; }
+  return har ? { dx, dy } : undefined;
+}
+// gruppen g flyr från tiden t så här långt; det som är äldre än en grupps tid i trakten glöms
+// Gruppen flyr aldrig ut i vattnet: vägen kortas tills den slutar på land med land omkring, annars flyr den inte
+export function gruppFlyr(s: State, g: number, t: number, dx: number, dy: number) {
+  const c = grupperOf(s, t).find(q => q.id === g), vt = vattenNu(s);
+  const land = (x: number, y: number) => { for (let j = -1; j <= 1; j++) for (let i = -1; i <= 1; i++) { const a = Math.floor(x) + i, b = Math.floor(y) + j; if (!inMap(a, b) || vt[b * W + a] === T.Vatten) return false; } return true; };
+  const f = c ? [1, 0.75, 0.5, 0.25].find(k => land(clamp(c.x + dx * k, 1, W - 1), clamp(c.y + dy * k, 1, H - 1))) : undefined;
+  if (f === undefined) return;
+  s.djurFlykt = [...(s.djurFlykt ?? []).filter(q => s.now - q.t < LIVSTID), { g, t, dx: dx * f, dy: dy * f }];
+}
 export function grupperOf(s: State, t = s.now, bara?: (x: number, y: number) => boolean): Kaningrupp[] {
   const ut: Kaningrupp[] = [], tj = takenOf(s).jakt;
   for (let k = 0; k < KANINER.grupper; k++) {
     const c = mitt(s, k, t);
-    if (!c || (bara && !bara(c.x, c.y))) continue;
+    if (!c) continue;
+    const id = c.e * KANINER.grupper + k, f = flyttAv(s, id, t), gx = f ? clamp(c.x + f.dx, 1, W - 1) : c.x, gy = f ? clamp(c.y + f.dy, 1, H - 1) : c.y;
+    if (bara && !bara(gx, gy)) continue;
     let har = 0, kan = 0;
     const cx = Math.floor(c.x), cy = Math.floor(c.y);
     for (let dy = -KANINER.kollR; dy <= KANINER.kollR; dy++) for (let dx = -KANINER.kollR; dx <= KANINER.kollR; dx++) {
@@ -113,7 +130,7 @@ export function grupperOf(s: State, t = s.now, bara?: (x: number, y: number) => 
       har += v * (tj ? 1 - tj[i] : 1); kan += v;
     }
     const n = kan > 0 ? Math.round(c.st.n0 * Math.min(1, har / kan)) : 0;
-    ut.push({ id: c.e * KANINER.grupper + k, x: c.x, y: c.y, n });
+    ut.push({ id, x: gx, y: gy, n });
   }
   return ut;
 }
