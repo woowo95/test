@@ -49,6 +49,7 @@ export const RYKTE = balans('rykte', {
   dodGlom: 2, // minnet av en död bleknar så här många gånger långsammare, och mer ju ryktbarare hen var: + ryktbarhet / dodRykte
   dodRykte: 3,
   dodSlakt: 2, // släkten minns sina egna så här många gånger längre
+  konstGlom: 3, // en död som en sak i byn visar (ristningar eller en målning, steg 4.3.3) minns så här många gånger längre
   avundEmp: 6, // den som har högst så här mycket empati, eller är rival, blir avundsjuk på en prestation i stället för imponerad
   avundTanke: 0.05, avundTim: 8,
   vardagTakt: 0.03, // flitig, lat, rik och fattig: intrycket närmar sig det man ser så här mycket per timme
@@ -364,6 +365,9 @@ export function rykteDod(s: State, p: Person) {
 export function glomRykten(s: State, hours: number) {
   const rykt = new Map<number, number>();
   const rOf = (om: number) => { let v = rykt.get(om); if (v === undefined) { v = ryktbarhet(s, om).r; rykt.set(om, v); } return v; };
+  const avbildad = new Set<number>(); // de som sakerna i byn visar (steg 4.3.3)
+  for (const t of s.ting ?? []) if (t.ber?.mo) avbildad.add(t.ber.mo.om);
+  for (const t of s.stationer ?? []) if (t.ber?.mo) avbildad.add(t.ber.mo.om);
   for (const p of s.people) {
     if (!p.intryck) continue;
     if (!alive(p)) { delete p.intryck; continue; }
@@ -374,6 +378,7 @@ export function glomRykten(s: State, hours: number) {
       let t = tau * ((e.bev?.[0] && HANDELSER[e.bev[0].h].vikt >= RYKTE.tungVikt) ? RYKTE.glomTung : 1);
       if (dod) t *= RYKTE.dodGlom + rOf(e.om) / RYKTE.dodRykte;
       if (dod && q && isKin(p, q)) t *= RYKTE.dodSlakt;
+      if (dod && avbildad.has(e.om)) t *= RYKTE.konstGlom;
       e.c *= Math.exp(-hours / t);
       return styrka(e) >= RYKTE.glomGrans;
     });

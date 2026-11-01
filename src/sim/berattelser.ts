@@ -3,7 +3,7 @@ import { ALDER, KROPP, REL, ageOf, alive, byId, count, isKin, isParent, living, 
 import { ACTS, Act, slagIkon } from './handlingar';
 import { TAGS } from './seder';
 import { kronika } from './historik';
-import { HANDELSER, INTRYCK, IntryckTyp, intryckOm, intryckText, samlatIntryck } from './rykten';
+import { Bevis, HANDELSER, INTRYCK, IntryckTyp, bevisText, intryckOm, intryckText, samlatIntryck } from './rykten';
 import { SAKER, sakNamn } from './saker';
 import { moodOf } from './humor';
 import { HOUR, MIN, Person, Rel, SKILLS, SKILL_NAMES, STATS, Skill, Stat, State, Upplevelse } from './typer';
@@ -49,6 +49,12 @@ export const BERATT = balans('beratt', {
   sorgDygn: 5, // en nära släkting som dog för högst så här många dygn sedan: göraren sörjde
   barnDygn: 3, // ett barn som föddes för högst så här många dygn sedan: göraren hade fått barn
   inskr: 0.6, // så stor del av mästerverken får en tillägnan, när det finns någon att tillägna dem
+  // konsten i sakerna (steg 4.3.3): ett mästerverk (inte kläderna) får ristningar eller en målning av det göraren minns starkast
+  // om en annan (helst en död), när intrycket är minst konstMin starkt. Det håller minnet av den döde vid liv (rykten.ts) och
+  // höjer värdet (varde.ts)
+  konst: 0.8, // så stor del av mästerverken får ett motiv, när göraren minns någon
+  konstMin: 0.2,
+  malning: 0.4, // så stor del av dem är målade; de andra är ristade
   dimma: 0.5, // dimman räknas från den här tätheten
   // samtalens ämnen (steg 3.9.5)
   dodDygn: 2, // man pratar om den som dog för högst så här många dygn sedan
@@ -887,6 +893,16 @@ const MDEF = {
     'Det var åt {at} som {saken} gjordes, och det står där: "Åt {at}{som}."',
     'Inristat finns {namn}s tecken och en tillägnan: "Åt {at}{som}."',
   ],
+  m_konst: [
+    '{Den} är smyckad med {konst} som visar {motiv}.',
+    '{namn} har {gjort} {motiv} på {saken}.',
+    'Den som tittar noga på {saken} ser {konst} som visar {motiv}.',
+    'På {saken} finns {konst} av {motiv}, så att ingen ska glömma.',
+    '{konst2} på {saken} visar {motiv}.',
+    '{namn} ville att byn skulle minnas, och {konst} på {saken} visar {motiv}.',
+    'Runt {saken} går {konst} som visar {motiv}.',
+    'Den som vill veta vad som hänt i byn kan se på {saken}: {konst} visar {motiv}.',
+  ],
   m_perfekt: [
     'Byn kallar {den} {egen}.',
     '{Den} har ett eget namn: {egen}.',
@@ -1496,7 +1512,9 @@ export const personFalt = (p: Person): Fyllning => ({ namn: p.name, helt: heltNa
 // inforuta), med tiden 0 så att den står kvar. Ett perfekt mästerverk (★) får ett eget namn, och ett vapen som fäller en
 // varg minns det (vargdöden i varg.ts); ett perfekt vapen heter sedan Vargdräparen.
 export type SakLiv = 'barn' | 'sorg' | 'sjuk' | 'gravid' | 'ledare';
-export interface SakMinne { g: number; h: number; ai: number; v?: string; natt?: 1; nara?: number; at?: number; l?: SakLiv; lo?: number; namn?: string; varg?: number }
+export interface SakMinne { g: number; h: number; ai: number; v?: string; natt?: 1; nara?: number; at?: number; l?: SakLiv; lo?: number; namn?: string; varg?: number; mo?: Motiv } // mo = konsten på saken (steg 4.3.3)
+// motivet på ett mästerverk (steg 4.3.3): personen (om, namnet, intrycket) och händelsen (b), om det fanns en; mal = målat
+export interface Motiv { om: number; namn: string; k: IntryckTyp; b?: Bevis; mal?: 1 }
 type SakGrupp = 'egg' | 'vapen' | 'klad' | 'mobel' | 'redskap';
 const PA = ['under istiden', 'på våren', 'på sommaren', 'på hösten'];
 const VADER_ORD: Record<string, string> = { regn: ' i regnet', sno: ' i snön', blast: ' i blåsten', dimma: ' i dimman' };
@@ -1543,12 +1561,33 @@ export function sakMinne(s: State, p: Person, t: { id: number; k: string; q?: nu
   const liv: [SakLiv, number?] | undefined = sorg ? ['sorg', sorg.id] : nytt ? ['barn', nytt.id] : p.sickUntil !== undefined && p.sickUntil > s.now ? ['sjuk']
     : p.pregnantSince !== undefined ? ['gravid'] : s.styre?.ledare === p.id ? ['ledare'] : undefined;
   if (liv) { m.l = liv[0]; if (liv[1] !== undefined) m.lo = liv[1]; }
+  const mo = (t.q ?? 0) >= 4 && sakGrupp(t.k) !== 'klad' && hash(s.seed, t.id, 6) < BERATT.konst ? motiv(s, p) : undefined;
+  if (mo) { if (hash(s.seed, t.id, 7) < BERATT.malning) mo.mal = 1; m.mo = mo; }
   if ((t.q ?? 0) >= 5) {
     const ef = EFTERLED[sakGrupp(t.k)], fore = liv?.[0] === 'sorg' || liv?.[0] === 'barn' ? FORLED[liv[0]] : vad ? FORLED[vad as 'sno'] : m.natt ? FORLED.natt
       : m.h >= BERATT.glad ? FORLED.glad : m.h <= BERATT.ledsen ? FORLED.ledsen : FORLED.ai[m.ai];
     m.namn = fore + ef[Math.floor(hash(s.seed, t.id, 4) * ef.length)];
   }
   t.ber = m;
+}
+// det göraren p minns starkast om en annan, helst en död (den räknas dubbelt): personen och händelsen bakom intrycket
+function motiv(s: State, p: Person): Motiv | undefined {
+  let bast, b = BERATT.konstMin;
+  for (const e of p.intryck ?? []) {
+    if (e.om === p.id) continue;
+    const q = byId(s, e.om), v = e.v * e.c * (!q || !alive(q) ? 2 : 1);
+    if (v > b) { b = v; bast = e; }
+  }
+  if (!bast) return undefined;
+  const mo: Motiv = { om: bast.om, namn: bast.namn, k: bast.k };
+  if (bast.bev?.[0]) mo.b = { ...bast.bev[0] };
+  return mo;
+}
+// vad motivet visar: händelsen ("Åsa när hon fällde vargen" blir "hur Åsa fällde en varg"), annars personen och vad hen var
+export function motivText(s: State, mo: Motiv) {
+  if (mo.b) return 'hur ' + bevisText(mo.b, mo.namn).replace(/\.$/, '');
+  const d = INTRYCK[mo.k], q = byId(s, mo.om);
+  return `${mo.namn}, som ${q && alive(q) ? 'är' : 'var'} ${d.som ?? d.namn.toLowerCase()}`;
 }
 // ett vapen med ett minne fällde en varg: det minns vem som gjorde det, och ett perfekt vapen döps om
 export function sakVarg(s: State, t: { id: number; k: string; q?: number; ber?: SakMinne } | undefined, vem: Person) {
@@ -1573,6 +1612,7 @@ export function sakBerattelse(s: State, t: { id: number; k: string; q?: number; 
   if (!usel && m.l && (lo || m.lo === undefined)) ut.push(del('m_liv', 1, { om: lo?.name }));
   if (nara) ut.push(del(usel ? 'u_nara' : 'm_nara', 2, { nara: nara.name }));
   if (!usel && at) ut.push(del('m_inskr', 3, { at: at.name, som: SOM[Math.floor(hash(s.seed, t.id, 5) * SOM.length)] }));
+  if (!usel && m.mo) ut.push(del('m_konst', 6, { konst: m.mo.mal ? 'en målning' : 'ristningar', konst2: m.mo.mal ? 'Målningen' : 'Ristningarna', gjort: m.mo.mal ? 'målat' : 'ristat', motiv: motivText(s, m.mo) }));
   if (vem) ut.push(del('m_varg', 4, { vem: vem === p ? p.name : vem.name, hen2: hen(vem) }));
   if (q >= 5 && m.namn) ut.push(del('m_perfekt', 5));
   return ut.join(' ');

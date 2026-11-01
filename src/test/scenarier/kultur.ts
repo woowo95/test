@@ -297,3 +297,36 @@ SCENARIER.skaldskap = {
     ];
   },
 };
+SCENARIER.konst = {
+  text: 'Konsten i sakerna (steg 4.3.3): ett mästerverk (inte kläderna) får ristningar eller en målning av en person eller händelse som göraren minns, helst en död. Motivet står i berättelsen om saken, höjer värdet och gör att byn minns den döde längre',
+  kor: () => {
+    const s = rikDag(3), [g, d, a] = vuxna(s) as [Person, Person, Person];
+    SIM.die(s, d, 'sjukdom');
+    g.intryck = [{ om: d.id, namn: d.name, k: 'vargdodare', v: 1, c: 1, t: s.now, bev: [{ h: 'vargdodare', t: s.now, sett: true }] }];
+    // mästerverk tills ett får ett motiv (det avgörs av sakens id)
+    let yxa: SIM.Ting | undefined, utan = 0;
+    for (let i = 0; i < 10 && !yxa; i++) { const t = SIM.newTing(s, 'yxa', 1, g.id); t.q = 4; SIM.sakMinne(s, g, t); if (t.ber?.mo) yxa = t; else utan++; }
+    const ber = yxa ? SIM.sakBerattelse(s, yxa, 'Yxa') : '';
+    const vanlig = SIM.newTing(s, 'yxa', 1, g.id); vanlig.q = 4;
+    const vMed = yxa ? SIM.tingVarde(yxa) : 0, vUtan = SIM.tingVarde(vanlig);
+    // kläderna får ingen konst, och ingen konst utan något att minnas
+    let klad = 0; for (let i = 0; i < 10; i++) { const t = SIM.newTing(s, 'rock_kaninskinn', 1, g.id); t.q = 4; SIM.sakMinne(s, g, t); if (t.ber?.mo) klad++; }
+    let tomt = 0; for (let i = 0; i < 10; i++) { const t = SIM.newTing(s, 'kniv', 1, a.id); t.q = 4; a.intryck = []; SIM.sakMinne(s, a, t); if (t.ber?.mo) tomt++; }
+    // minnet av den döde: med och utan saken som visar hen
+    const minns = (medSak: boolean) => {
+      const k = SIM.cloneState(s), p = k.people.find(q => q.id === a.id)!;
+      p.intryck = [{ om: d.id, namn: d.name, k: 'vargdodare', v: 1, c: 1, t: k.now }];
+      if (!medSak) for (const t of k.ting ?? []) if (t.ber) delete t.ber.mo;
+      SIM.glomRykten(k, 24 * 5);
+      return p.intryck?.[0]?.c ?? 0;
+    };
+    const med = minns(true), utanSak = minns(false);
+    return [
+      [`ett mästerverk får ett motiv (${utan} utan först): ${ber}`, !!yxa && /visar|ristat|målat/.test(ber) && ber.includes(d.name)],
+      [`motivet är händelsen (${yxa?.ber?.mo?.b?.h}) med den döde ${d.name}`, yxa?.ber?.mo?.om === d.id && yxa.ber.mo.b?.h === 'vargdodare'],
+      [`värdet ${vMed.toFixed(1)} mot ${vUtan.toFixed(1)} utan konst`, vMed > vUtan],
+      [`kläderna får ingen konst (${klad} av 10), och ingen konst när göraren inget minns (${tomt} av 10)`, klad === 0 && tomt === 0],
+      [`byn minns den döde längre med saken: säkerheten ${med.toFixed(2)} mot ${utanSak.toFixed(2)} efter fem dygn`, med > utanSak],
+    ];
+  },
+};

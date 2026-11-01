@@ -23,6 +23,7 @@ export const ARBETE = 1; // värdet av en arbetstimme
 const VARDE = balans('varde', {
   nivaPaslag: 0.25, // så mycket mer en sak är värd för varje teknisk nivå
   sallsynt: 1.5, // så mycket mer en sällsynt råvara är värd
+  konst: 0.5, // så mycket mer ett mästerverk med ristningar eller en målning är värt (steg 4.3.3)
 });
 
 // den tekniska nivån: en teknik utan krav är nivå 1, och varje teknik den bygger på lägger till en
@@ -89,7 +90,7 @@ export function varuVarde(o: Record<string, number>, start = 0) { let v = start;
 interface Rikedom { forrad: number; redskap: number; hus: number }
 // vad ett ting är värt: ett påbörjat redskap (paborjat.ts) är värt sitt material, ett redskap grundvärdet gånger skicket
 // och kvaliteten (kvalitet.ts)
-export const tingVarde = (t: Ting) => t.halv ? Object.entries(t.halv.av).reduce((a, [k, n]) => a + n * grundvarde(k), 0) : grundvarde(t.k) * t.c * kvVarde(t);
+export const tingVarde = (t: Ting) => t.halv ? Object.entries(t.halv.av).reduce((a, [k, n]) => a + n * grundvarde(k), 0) : grundvarde(t.k) * t.c * kvVarde(t) * (t.ber?.mo ? 1 + VARDE.konst : 1);
 export function rikedomDelar(s: State): Rikedom {
   let forrad = 0, redskap = 0, hus = 0;
   for (const k of SAK_LIST) if (!SAKER[k]!.redskap) forrad += wornOf(s, k) * grundvarde(k);
