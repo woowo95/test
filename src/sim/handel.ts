@@ -302,7 +302,11 @@ export function handlaVal(s: State, p: Person): { why: string; spot: { x: number
   if (h.handlat?.includes(p.id)) return undefined;
   const ko = h.ko = (h.ko ?? []).filter(id => { const q = byId(s, id); return !!q && alive(q) && (q === p || (q.task?.act === 'handla' && q.task.ref === h.id)); });
   if (!ko.includes(p.id)) {
-    if (!vill(s, h, p).length || !bybonPart(s, p).over([]).length) return undefined;
+    const v = vill(s, h, p);
+    if (!v.length) return undefined;
+    // hen ställer sig bara i kön om det hen kan betala med räcker till en av varorna, för handlaren
+    const kan = bybonPart(s, p).over([]).reduce((a, w) => a + w.n * grundvarde(w.k) * handlarVarde(s, h, w.k), 0);
+    if (kan < Math.min(...v.map(w => grundvarde(w.k) * handlarVarde(s, h, w.k)))) return undefined;
     ko.push(p.id);
   }
   const i = ko.indexOf(p.id);
