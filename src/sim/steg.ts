@@ -11,6 +11,7 @@ import { glomRykten, stepRykten } from './rykten';
 import { stepStyre } from './styre';
 import { gralBlirSlagsmal, lekSteg } from './strid';
 import { sportKlar, sportSteg } from './sport';
+import { lyssnaSteg, upptradaKlar, upptradaSteg } from './framtradande';
 import { redskapIHanden, tidyTools } from './agande';
 import { kvEffekt } from './kvalitet';
 import { chopStock, fellTree, rotStumps, stocks } from './skog';
@@ -145,6 +146,7 @@ MEDAN.vargjakt = (s, p, t) => vargjaktSteg(s, p, t); // jägarna anfaller flocke
 MEDAN.vakt = (s, p, t) => vaktSteg(s, p, t); // vakten går runt byn (vakt.ts, steg 3.7.4)
 MEDAN.leka = (s, p, _t, dtSec) => lekSteg(s, p, dtSec); // kastlek och brottning (strid.ts, steg 3.7.2)
 MEDAN.sport = sportSteg; KLAR.sport = sportKlar; // sporten (sport.ts, steg 4.3.1)
+MEDAN.upptrada = upptradaSteg; KLAR.upptrada = upptradaKlar; MEDAN.lyssna = lyssnaSteg; // framträdandena (framtradande.ts, steg 4.3.2)
 MEDAN.station = workStation; KLAR.station = finishStation; // en station som byggs (stationer.ts)
 KLAR.tillbehor = finishTillbehor; // ett tillbehör till en möbel (stationer.ts)
 KLAR.dorr = finishDorr; // en dörr i en öppning (bygg.ts)

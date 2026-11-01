@@ -42,6 +42,7 @@ import { grillTid, kanGrilla, kanTorka, torkTid } from './matlagning';
 import { egenBrasa } from './brasor';
 import { TEK, forsokChans, forsokVal, laraVal } from './teknik';
 import { sportVal, sportVikt } from './sport';
+import { framVal } from './framtradande';
 import { utbrottBorjar, utbrottNu } from './humor';
 import { smakDrag } from './rykten';
 import { pabud, skams } from './styre';
@@ -745,6 +746,9 @@ function night(s: State, p: Person, v: Val, a: number) {
     }
   }
   if (p.guardDay === guardDay && a >= ALDER.vaktFran) { set(v, 'vakt', 'Håller vakt i natt'); return; }
+  // ett framträdande vid elden (steg 4.3.2, framtradande.ts): uppträda eller lyssna
+  const fr = skams(p, now) ? undefined : framVal(s, p, q => spotFor(s, 'beratta', q));
+  if (fr) { set(v, fr.act, fr.why); v.spot = spotFor(s, 'beratta', p); v.dur = fr.dur; v.ref = fr.ref; v.tool = fr.tool; return; }
   const r = rnd(s, 'val', p);
   const story = (p.skill.berattande + (a > VAL.berattaAlder ? VAL.berattaBonus : 0)) / VAL.berattaDiv;
   const craftW = (p.skill.hantverk + stat(p, 'flit', now)) / VAL.nattHantDiv;

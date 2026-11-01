@@ -98,6 +98,9 @@ const DEF = {
   vila: { namn: 'Vilar', yrke: 'Dagdrivare', slag: 'vila', vila: true, dygn: true, plats: 'sang' },
   samtal: { namn: 'Samtalar vid elden', slag: 'prata', vila: true, social: true, dygn: true, plats: 'elden' },
   maltid: { namn: 'Äter vid bordet', tecken: '🍽️', vila: true, social: true, skamfri: true, dygn: true, stilla: true, plats: 'bord' }, // steg 2.2.15
+  // framträdandena (steg 4.3.2, framtradande.ts): på kvällen vid elden; task.tool är formen och task.ref när det började
+  upptrada: { namn: 'Uppträder', verktyg: { kvade: 'Kväder', tal: 'Håller tal', forelasning: 'Föreläser', teater: 'Spelar teater', sang: 'Sjunger', musik: 'Spelar musik' }, slag: 'prata', dygn: true, stilla: true, plats: 'elden' },
+  lyssna: { namn: 'Lyssnar', tecken: '👂', vila: true, dygn: true, stilla: true, plats: 'elden' },
   beratta: { namn: 'Berättar vid elden', yrke: 'Berättare', slag: 'prata', social: true, dygn: true, plats: 'elden' },
   hantverk: { namn: 'Gör handarbete', yrke: 'Hantverkare', slag: 'hantverk', verktyg: { rep: 'Tvinnar rep' }, vila: true, hantverk: true, social: true, dygn: true, stilla: true, plats: 'elden' },
   vakt: { namn: 'Håller vakt', yrke: 'Väktare', tecken: '👁️', social: true, skamfri: true, dygn: true, stilla: true, vapen: true, plats: 'elden', radie: 2.6, fortsatter: ['varg'] as const },

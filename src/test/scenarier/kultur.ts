@@ -2,7 +2,7 @@
 import { createState, Person, State } from '../../sim';
 import * as SIM from '../../sim';
 import { START } from '../kor';
-import { SCENARIER, klockan, kor, setFood } from './hjalp';
+import { SCENARIER, klockan, kor, setFood, tandEld } from './hjalp';
 
 // en by med ett stort överskott av mat och ved, på förmiddagen
 export function rikDag(seed = 3, mer: Record<string, number> = {}): State {
@@ -111,6 +111,48 @@ SCENARIER.snoboll = {
       [`i snön blev det snöbollskrig i ${sno} av 12 byar när någon började en match, utan snö i ${utan}`, sno >= 3 && utan === 0],
       [`${battre} av två blev bättre i träffsäkerhet av snöbollskriget`, battre === 2],
       [`${iSnon} av ${lekar.length} små barn leker i snön`, lekar.length > 0 && iSnon > 0],
+    ];
+  },
+};
+
+// en kväll vid elden: de vuxna utom den första sitter och samtalar vid elden (har fritid)
+export function kvall(seed = 3, timme = 20) {
+  const s = rikDag(seed); klockan(s, timme); tandEld(s);
+  const f = SIM.eldPlats(s), v = vuxna(s);
+  v.slice(1).forEach((q, i) => { q.x = f.x + 0.5 + Math.cos(i) * 2; q.y = f.y + 0.5 + Math.sin(i) * 2; q.task = { act: 'samtal', phase: 'do', tx: q.x, ty: q.y, until: s.now + SIM.HOUR, carry: 0, dark: true }; });
+  return { s, v };
+}
+// p försöker uppträda tills hen gör det (eller det inte går): som om hen valt vad hen gör på kvällen många gånger
+export function upptrad(s: State, p: Person, ganger = 300) {
+  for (let i = 0; i < ganger; i++) {
+    const fr = SIM.framVal(s, p, q => ({ x: q.x, y: q.y }));
+    if (fr?.act === 'upptrada') { p.task = { act: 'upptrada', phase: 'go', tx: p.x, ty: p.y, until: s.now + fr.dur, carry: 0, ref: fr.ref, tool: fr.tool, dark: true, why: fr.why }; return true; }
+  }
+  return false;
+}
+SCENARIER.framtradande = {
+  text: 'Framträdandena (steg 4.3.2.1): på kvällen uppträder någon vid elden för dem som sitter där, högst en gång per kväll. Ett kväde går från början; publiken blir glad, framträdandet får en kort text, och den som uppträder övar',
+  kor: () => {
+    const { s, v } = kvall(), p = v[0]!, fore = p.skill[SIM.FRAM_SKILL];
+    const borjar = upptrad(s, p), d = s.fram ? SIM.FRAM_AV[s.fram.k]!.namn : 'inget';
+    const lyss = v.slice(1).filter(q => q.task?.act === 'lyssna').length;
+    kor(s, 1.5);
+    const glad = v.slice(1).filter(q => q.thoughts.some(t => t.text.startsWith('Lyssnade på'))).length;
+    const minne = s.framtradanden?.[0];
+    // samma kväll blir det inget till, och inte heller på dagen eller utan publik
+    const igen = !upptrad(s, v[1]!);
+    const dag = kvall(3, 11), pDag = !upptrad(dag.s, dag.v[0]!);
+    const ensam = rikDag(3); klockan(ensam, 20); const pEnsam = !upptrad(ensam, vuxna(ensam)[0]!);
+    // en ny by kan bara kväda: ingen behöver något mer
+    const ny = createState(9, START), kan = SIM.FRAMTRADANDEN.filter(x => !x.instrument && !(x.min ?? 0)).map(x => x.id);
+    return [
+      [`${p.name} börjar ett framträdande (${d}), och ${lyss} av ${v.length - 1} vid elden lyssnar`, borjar && lyss === v.length - 1],
+      [`${glad} i publiken är glada efteråt`, glad >= 2],
+      [`texten: ${minne?.text ?? 'ingen'}`, !!minne && minne.n >= 2 && minne.text.includes(p.name)],
+      [`${p.name} övade ${SIM.FRAM_SKILL} (${fore.toFixed(2)} → ${p.skill[SIM.FRAM_SKILL].toFixed(2)})`, p.skill[SIM.FRAM_SKILL] > fore],
+      ['samma kväll blir det inget framträdande till', igen],
+      ['på dagen och utan publik blir det inget', pDag && pEnsam],
+      [`från början finns ${kan.join(', ')} (${ny.people.length} invånare)`, kan.includes('kvade')],
     ];
   },
 };
