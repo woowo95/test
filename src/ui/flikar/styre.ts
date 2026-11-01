@@ -37,7 +37,7 @@ export const styre: Flik = {
 
 // påbuden (steg 3.5.2): vad ledaren bestämt mot vad byn själv tycker, och hur mycket byn lyssnar. En del i Styre efter ledaren
 // och legitimiteten (steg 3.10.16; förr en egen flik). När lagarna kommer (9.2.6) blir delen Lagar
-const varde = (k: Pabud, v: number) => k === 'torkat' ? `${Math.round(torkAndel(v) * 100)} %` : `${num(onskatLager(k === 'vedlager', v))} dygn`;
+const varde = (k: Pabud, v: number) => k === 'han' ? (v < -0.33 ? 'förbjudet' : v > 0.33 ? 'tillåtet' : 'ogillas') : k === 'torkat' ? `${Math.round(torkAndel(v) * 100)} %` : `${num(onskatLager(k === 'vedlager', v))} dygn`;
 function pabudDel() {
   const st = s.styre, l = ledareOf(s);
   if (!l || !st?.pabud) return '<p class="muted">Inga påbud gäller. Utan ledare gör byn som den själv tycker.</p>';

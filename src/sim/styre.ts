@@ -46,6 +46,7 @@ export const LED = balans('ledare', {
 export const PAB = balans('pabud', {
   andel: 0.5, // ledarens del av påbuden: andel × (legBas + legitimiteten) × (1 + rang × Envälde), högst max
   legBas: 0.5, rang: 1, max: 0.8,
+  hanEmp: 10, hanDiv: 4, // hånet: ledarens åsikt är (empatin - hanEmp) / hanDiv, från -1 (förbjudet) till 1 (fritt)
   plan: 0.4, // inför och under istiden lägger en intelligent ledare (intelligens över 10) till så här mycket per steg (6) på lagren
 });
 export const STR = balans('straff', {
@@ -105,6 +106,8 @@ const PDEF = {
   matlager: { namn: 'Matlager', text: 'Hur många dygn mat byn ska ha i förrådet innan den slappnar av', sed: 'forsiktighet', asikt: (s, l) => lagerAsikt(s, l) },
   vedlager: { namn: 'Vedlager', text: 'Hur många dygn ved byn ska ha i förrådet', sed: 'forsiktighet', asikt: (s, l) => lagerAsikt(s, l) },
   torkat: { namn: 'Torkat', text: 'Hur mycket av köttet och fisken som torkas på torkställningen', asikt: (s, l) => lagerAsikt(s, l) },
+  // hånet (steg 4.3.2.3, framtradande.ts): en ledare med låg empati förbjuder att man hånar hen när man uppträder
+  han: { namn: 'Hån', text: 'Om den som uppträder får håna ledaren', asikt: (s, l) => clamp((stat(l, 'empati', s.now) - PAB.hanEmp) / PAB.hanDiv, -1, 1) },
 } satisfies Record<string, PabudDef>;
 export type Pabud = keyof typeof PDEF;
 export const PABUD: Record<Pabud, PabudDef> = PDEF;

@@ -201,3 +201,48 @@ SCENARIER.scen = {
     ];
   },
 };
+
+// p uppträder (med budskapet hen väljer) och framträdandet går till slut: texten och budskapet
+function framfor(s: State, p: Person) {
+  if (!upptrad(s, p)) return undefined;
+  const bud = s.fram!.bud, text = s.fram!.text;
+  kor(s, 1.5);
+  return { bud, text };
+}
+const snitt = (s: State, l: Person, qs: Person[]) => qs.reduce((a, q) => a + SIM.getRel(s, q, l).op, 0) / qs.length;
+SCENARIER.budskap = {
+  text: 'Budskapen (steg 4.3.2.3): den som uppträder väljer budskapet efter sina egna intryck och sin tro. Om en person sprids ryktet till publiken, en hyllning gör att publiken tycker bättre om ledaren och ett hån sämre, och ledaren tycker sämre om den som hånar. Ledaren kan förbjuda hån som påbud. Ett budskap om tron kan övertyga någon',
+  kor: () => {
+    // om en person: ett barn som inte sitter vid elden, och som den som uppträder tror är en tjuv
+    const a = kvall(), p = a.v[0]!, q = SIM.living(a.s).find(x => SIM.ageOf(x, a.s.now) < SIM.ALDER.vuxen) ?? a.v[a.v.length - 1]!;
+    if (q.task?.act === 'samtal') q.task = undefined;
+    p.intryck = [{ om: q.id, namn: q.name, k: 'tjuv', v: 1.5, c: 1, t: a.s.now }];
+    const pa = framfor(a.s, p), hort = a.v.slice(1).filter(b => b !== q && SIM.intryckOm(b, q.id, 'tjuv')).length;
+    // om ledaren: hyllning och hån
+    const styr = (op: number, ban = false) => {
+      const k = kvall(5), u = k.v[0]!, l = k.v[1]!, andra = k.v.slice(2);
+      k.s.styre = { ledare: l.id, historia: [], oppna: [], ...(ban ? { pabud: { matlager: 0, vedlager: 0, torkat: 0, han: -1 } } : {}) } as unknown as typeof k.s.styre;
+      SIM.getRel(k.s, u, l).op = op;
+      const tillat = SIM.hanTillat(k.s), fore = snitt(k.s, l, andra), r = framfor(k.s, u);
+      return { bud: r?.bud, text: r?.text ?? '', d: snitt(k.s, l, andra) - fore, led: SIM.getRel(k.s, u, l).op, tillat };
+    };
+    const hy = styr(60), ha = styr(-60), fri = styr(-60).tillat, ban = styr(-60, true).tillat;
+    // om tron: den som uppträder tror starkt, och de andra är andliga men tror inte på något
+    let tro = 0, overtygad = 0, troText = '';
+    for (let i = 0; i < 20; i++) {
+      const t = kvall(3 + i), u = t.v[0]!;
+      t.s.tron = [{ id: 1, grundare: u.id, gnamn: u.name, t: t.s.now, k: 'blixt', bakom: 'Den som bor i åskmolnen', vill: 'att man tystnar när det mullrar', svek: 'blixten slår ner', natur: 50, manga: 50, bekr: t.s.now, ar: 0 } as SIM.Tro];
+      u.tro = 1; u.troStyrka = 100; u.andlig = 100;
+      for (const b of t.v.slice(1)) { b.andlig = 100; b.tro = undefined; }
+      const r = framfor(t.s, u);
+      if (r?.bud === 'tro') { tro++; troText = r.text; overtygad += t.v.slice(1).filter(b => b.tro === 1).length; }
+    }
+    return [
+      [`om en person (${pa?.bud ?? 'inget'}): ${pa?.text ?? ''} ${hort} av ${a.v.length - 1} i publiken hörde ryktet`, pa?.bud === 'person' && hort >= 1],
+      [`hyllning (${hy.bud}): ${hy.text} Publiken tycker ${hy.d.toFixed(1)} bättre om ledaren`, hy.bud === 'hylla' && hy.d > 0],
+      [`hån (${ha.bud}): ${ha.text} Publiken tycker ${(-ha.d).toFixed(1)} sämre om ledaren, och ledaren och den som hånade har ${ha.led.toFixed(0)}`, ha.bud === 'hana' && ha.d < 0 && ha.led < -60],
+      [`när ledaren förbjudit hån är hånet tillåtet till ${ban.toFixed(2)} mot ${fri.toFixed(2)} utan förbud`, ban < fri],
+      [`om tron ${tro} av 20 gånger (${troText}), och ${overtygad} blev övertygade`, tro >= 10 && overtygad >= 1],
+    ];
+  },
+};

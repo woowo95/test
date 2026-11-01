@@ -368,12 +368,12 @@ const SPRID_SLAG: Record<string, number> = { 'djupt samtal': 2, 'berättelse': 1
 // a talar med b (steg 4.1.2.2): den som tror försöker övertyga den som inte tror på något. Chansen beror på talarens karisma och
 // andlighet, lyssnarens andlighet, hur mycket de tycker om varandra och om ett tecken nyss bekräftat tron. Två som tror
 // likadant stärker varandra. Byta tro kommer med steg 10.1.2.4. Drar ur talarens följd 'tro'
-export function predika(s: State, a: Person, b: Person, r: Rel, kind: string) {
+export function predika(s: State, a: Person, b: Person, r: Rel, kind: string, ganger = 1) { // ganger: ett framträdande väger som så många samtal (framtradande.ts)
   const tr = troOf(s, a.tro), f = SPRID_SLAG[kind];
   if (!tr || !f || !alive(b) || ageOf(b, s.now) < UPPV.fran) return;
   if (b.tro === tr.id) { b.troStyrka = Math.min(100, (b.troStyrka ?? 0) + TRO.samtalStyrka); return; }
   if (b.tro !== undefined || andlighet(s, b) < TRO.spridMin) return;
-  const chans = TRO.sprid * f * (stat(a, 'karisma', s.now) / TRO.spridKarisma) * (andlighet(s, a) / TRO.spridAnde) * (andlighet(s, b) / TRO.spridAnde) ** 2
+  const chans = TRO.sprid * f * ganger * (stat(a, 'karisma', s.now) / TRO.spridKarisma) * (andlighet(s, a) / TRO.spridAnde) * (andlighet(s, b) / TRO.spridAnde) ** 2
     * Math.max(0, 1 + r.op / TRO.spridRel) * (s.now - tr.bekr < TRO.bekrTid * DAY ? TRO.bekrFaktor : 1);
   if (rnd(s, 'tro', a) >= chans) return;
   b.tro = tr.id; b.troStyrka = TRO.styrkaNy;
