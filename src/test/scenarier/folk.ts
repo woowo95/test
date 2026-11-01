@@ -639,7 +639,11 @@ SCENARIER.rykten = {
     mor.task = { act: 'fiske', phase: 'do', tx: mor.x, ty: mor.y, until: en.t.now + HOUR, carry: 0 };
     SIM.stepRykten(en.t, () => 0.5);
     const barnSmak = SIM.smakAv(barn, 'a:fiske');
+    // fattigdom sänker anseendet bara lite (steg 4.5.3.7): ett lika starkt intryck fattig väger fattigVikt av lat
+    const fv = by(), sett = (k: SIM.IntryckTyp, om: Person) => { fv.w.intryck = [{ om: om.id, namn: om.name, k, v: 1, c: 1, t: fv.t.now }]; return SIM.ryktbarhet(fv.t, om.id).a; };
+    const aFattig = sett('fattig', fv.p), aLat = sett('lat', fv.r), fattigLite = aFattig < 0 && Math.abs(aFattig / aLat - SIM.RYKTE.fattigVikt) < 1e-9;
     return [
+      [`fattig sänker anseendet bara lite (${aFattig.toFixed(2)} mot lat ${aLat.toFixed(2)})`, fattigLite],
       [`den som såg slaget tycker att hen är våldsam (${bevis}), den som var långt bort vet inget`, !!e && e.c === 1 && bevis.includes(a.q.name) && !bort],
       [`ryktet sprids svagare och mindre säkert (säkerhet ${e?.c.toFixed(2)} → ${hort?.c.toFixed(2)}, led ${hort?.led})`, !!hort && hort.c < e!.c && hort.led === 1 && hort.src === a.w.id],
       ['partnern tiger om det dåliga', tiger],

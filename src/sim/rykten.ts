@@ -56,6 +56,7 @@ export const RYKTE = balans('rykte', {
   flitig: 1.4, lat: 0.6, // flitig när arbetstimmarna är så här många gånger snittet, lat under lat gånger snittet
   rik: 2, fattig: 0.4, // rik och fattig på samma sätt, mätt i förmögenheten (förväntningarna, humor.ts)
   rikMin: 2, // ... och bara när snittet är så här stort
+  fattigVikt: 0.1, // fattigdom väger så här mycket i anseendet och ryktbarheten mot andra intryck (steg 4.5.3.7)
   berattelseLed: 3, legendLed: 6, // ett minne av en död som berättats i så här många led är en berättelse och till sist en legend
   legend: 2, // en död med så här stor ryktbarhet är en legend (stjärna) med gott anseende eller ökänd (dödskalle) med ont
   dodLog: 1.5, // när någon med så här stor ryktbarhet dör står det i loggen hur byn minns hen
@@ -82,7 +83,8 @@ export const RYKTE = balans('rykte', {
 // ---------- registren ----------
 // intrycken: ordet, om det är gott (+1) eller ont (-1), hur mycket relationen ändras per styrka (op) och symbolen (platshållare).
 // Det som visas (steg 3.10.5): som = ordet i en mening när det är ett substantiv ("en tjuv"), och betyder = vad intrycket betyder
-interface IntryckDef { namn: string; tecken: 1 | -1; op: number; sym: string; som?: string; betyder: string }
+// vikt = hur mycket intrycket väger i anseendet och ryktbarheten (steg 4.5.3.7), 1 om inget står
+interface IntryckDef { namn: string; tecken: 1 | -1; op: number; sym: string; som?: string; betyder: string; vikt?: number }
 const IDEF = {
   valdsam: { namn: 'våldsam', tecken: -1, op: -40, sym: '👊', betyder: 'Har slagit, misshandlat eller dödat någon, eller gått på någon för att ta något.' },
   tjuv: { namn: 'tjuv', tecken: -1, op: -30, sym: '🦝', som: 'en tjuv', betyder: 'Har tagit saker som var någon annans, i smyg eller med våld.' },
@@ -90,7 +92,7 @@ const IDEF = {
   logn: { namn: 'lögnare', tecken: -1, op: -20, sym: '🤥', som: 'en lögnare', betyder: 'Har ljugit eller överdrivit om någon. Man tror mindre på det hen berättar.' },
   klapare: { namn: 'klåpare', tecken: -1, op: -6, sym: '🤡', som: 'en klåpare', betyder: 'Har gjort en usel sak, eller träffat någon av misstag i en strid.' },
   lat: { namn: 'lat', tecken: -1, op: -8, sym: '💤', betyder: 'Arbetar mycket mindre än de andra i byn.' },
-  fattig: { namn: 'fattig', tecken: -1, op: 0, sym: '🪶', betyder: 'Äger mycket mindre än de andra i byn.' },
+  fattig: { namn: 'fattig', tecken: -1, op: 0, vikt: RYKTE.fattigVikt, sym: '🪶', betyder: 'Äger mycket mindre än de andra i byn.' },
   generos: { namn: 'generös', tecken: 1, op: 15, sym: '🎁', betyder: 'Ger bort saker till andra.' },
   hjalpsam: { namn: 'hjälpsam', tecken: 1, op: 25, sym: '🤝', betyder: 'Har gett något till någon som höll på att dö.' },
   skicklig: { namn: 'skicklig', tecken: 1, op: 12, sym: '⭐', betyder: 'Har gjort ett mästerverk.' },
@@ -105,6 +107,8 @@ const IDEF = {
 } satisfies Record<string, IntryckDef>;
 export type IntryckTyp = keyof typeof IDEF;
 export const INTRYCK: Record<IntryckTyp, IntryckDef> = IDEF;
+// hur mycket ett intryck väger i det samlade (anseendet, ryktbarheten och det byn tycker)
+const vikt = (e: Intryck) => styrka(e) * (INTRYCK[e.k].vikt ?? 1);
 
 // händelserna: intrycket de ger och hur mycket (vikt), och texten i beviset ({om} = den det gällde, {sak} = saken).
 // `prestation` = man blir imponerad, eller avundsjuk (3.3.2)
@@ -231,7 +235,7 @@ function asikt(s: State, a: Person, om: number) {
   const q = byId(s, om);
   if (q && alive(q)) return s.rels[relKey(a.id, om)]?.op ?? 0;
   let v = 0;
-  for (const e of a.intryck ?? []) if (e.om === om) v += INTRYCK[e.k].tecken * styrka(e) * 50;
+  for (const e of a.intryck ?? []) if (e.om === om) v += INTRYCK[e.k].tecken * vikt(e) * 50;
   return clamp(v, -100, 100);
 }
 // hemligheter (steg 3.3.4): man berättar inte det dåliga om en vän, sin partner eller sin släkt
@@ -343,13 +347,13 @@ export function stepRykten(s: State, mood: (p: Person, now: number) => number) {
 // ryktbarheten (hur starka alla intryck i byn av personen är tillsammans) och anseendet (gott minus ont)
 export function ryktbarhet(s: State, om: number) {
   let r = 0, a = 0;
-  for (const q of living(s)) for (const e of q.intryck ?? []) if (e.om === om) { r += styrka(e); a += INTRYCK[e.k].tecken * styrka(e); }
+  for (const q of living(s)) for (const e of q.intryck ?? []) if (e.om === om) { r += vikt(e); a += INTRYCK[e.k].tecken * vikt(e); }
   return { r, a };
 }
 // de viktigaste intrycken av personen i byn (det samlade intrycket), starkast först
 export function samlatIntryck(s: State, om: number) {
   const m = new Map<IntryckTyp, number>();
-  for (const q of living(s)) for (const e of q.intryck ?? []) if (e.om === om) m.set(e.k, (m.get(e.k) ?? 0) + styrka(e));
+  for (const q of living(s)) for (const e of q.intryck ?? []) if (e.om === om) m.set(e.k, (m.get(e.k) ?? 0) + vikt(e));
   return [...m].sort((a, b) => b[1] - a[1]);
 }
 // när någon dör: de som minns hen behåller de viktigaste händelserna, och byn minns hen som det hen var känd för
