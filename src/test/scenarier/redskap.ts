@@ -327,6 +327,8 @@ SCENARIER.teknik = {
       if ((amountOf(s, 'rep')) > 0 && forst.rep === undefined) repInnan = true;
     });
     const kan = (id: string) => living(s).filter(p => knows(p, id)).length;
+    // spridningen i samtal mäts några dygn efter att repet kom på (det kan komma på sent i byn)
+    for (let h = 0; forst.rep !== undefined && kan('rep') < 3 && h < 6 * 24; h++) kor(s, 1);
     // nyfikna och intelligenta kommer på det fortare
     const q = createState(4, START), [a, b] = living(q).filter(p => ageOf(p, q.now) >= 20);
     a.pot.nyfikenhet = a.pot.intelligens = 16; b.pot.nyfikenhet = b.pot.intelligens = 6; a.tek = {}; b.tek = {};
