@@ -28,7 +28,7 @@ export const TRO = balans('tro', {
   bekrafta: 10, // ett nytt tecken gör tron så här mycket starkare hos den som redan tror
   drom: 0.004, // chansen per sovtimme att någon drömmer något hen inte kan förklara (bara den mycket andliga tolkar det)
   samma: 24, // den som var med om samma sak inom så här många timmar efter att någon tolkade den delar den tron
-  skalaSlump: 15,
+  skalaSlump: 15, // så mycket (gånger gauss) en ny tros skalor skiljer sig från tecknets
   // tron sprids i samtal (steg 4.1.2.2)
   sprid: 0.0001, // chansen att lyssnaren börjar tro i ett vanligt samtal (man talar med varandra hundratals gånger på några dygn), gånger det som följer:
   spridMin: 40, // den som har lägre andlighet än så här övertygas inte i samtal
@@ -38,7 +38,17 @@ export const TRO = balans('tro', {
   bekrTid: 3, // ... och gånger bekrFaktor om ett tecken bekräftat tron de senaste så här många dygnen (år i spelet)
   bekrFaktor: 2,
   styrkaNy: 40, // så stark är tron hos den som just börjat tro
-  samtalStyrka: 2, // ett samtal mellan två som tror likadant gör lyssnarens tro så här mycket starkare // så mycket (gånger gauss) en ny tros skalor skiljer sig från tecknets
+  samtalStyrka: 2, // ett samtal mellan två som tror likadant gör lyssnarens tro så här mycket starkare
+});
+// trons nivåer (steg 4.1.4, "Villkoren för nivåerna" i designdokumentet; startvärden)
+export const NIVA = balans('troniva', {
+  delad: 3, // delad tro: så här många tror (som när tron får sitt namn)
+  seder: 5, // seder: så här många tror ...
+  sederAndel: 0.5, // ... eller så här stor del av byn (men minst så många som en delad tro)
+  prast: 8, // präst: så här många tror, och en av dem är andlig och karismatisk:
+  prastAnde: 70, // andligheten hos den som kan bli präst ...
+  prastKarisma: 14, // ... och karisman (1–20)
+  kyrka: 15, // kyrka: så här många tror, en präst och en helig byggnad (hov, steg 7.2.10)
 });
 
 // en ny persons andlighet: grundarna och de som flyttar in slumpas jämnt över 0–100, ett barn får en del av föräldrarnas
@@ -64,6 +74,51 @@ export function andeRiktning(s: State, p: Person, vuxen: boolean) {
 }
 // andligheten syns i gränssnittet först när den första tron finns (steg 4.1.2.1)
 export const andligSyns = (s: State) => !!s.tron?.length;
+
+// ---------- nivåerna (registret, steg 4.1.4) ----------
+// en tro växer en nivå i taget och faller en nivå när villkoret inte längre uppfylls. Religionen är ingen teknik. Prästen,
+// buden och kyrkan i 10.1 väntar på nivåerna. krav: villkoret (n = antalet som tror, folk = de som tror); varje nivå kräver
+// också den förra
+interface NivaDef { namn: string; text: string; krav: (s: State, n: number, folk: Person[]) => boolean }
+export const NIVAER: NivaDef[] = [
+  { namn: 'Personlig tro', text: 'Bara några få tror.', krav: () => true },
+  { namn: 'Delad tro', text: `Minst ${NIVA.delad} tror.`, krav: (_s, n) => n >= NIVA.delad },
+  { namn: 'Seder', text: `Minst ${NIVA.seder} tror, eller hälften av byn. Bön, heliga platser och begravning kommer med 10.1.`, krav: (s, n) => n >= NIVA.seder || n >= living(s).length * NIVA.sederAndel },
+  { namn: 'Präst', text: `Minst ${NIVA.prast} tror, och en av dem är andlig och karismatisk nog att bli präst. Prästen och de svaga buden kommer med 10.1.`,
+    krav: (s, n, folk) => n >= NIVA.prast && folk.some(p => andlighet(s, p) >= NIVA.prastAnde && stat(p, 'karisma', s.now) >= NIVA.prastKarisma) },
+  { namn: 'Kyrka', text: `Minst ${NIVA.kyrka} tror, en präst och en helig byggnad (hov, steg 7.2.10). Starka bud, kyrkskatt och makt över styret kommer med 10.1.`,
+    krav: () => false }, // hovet finns inte än (steg 7.2.10)
+];
+export const PRAST_NIVA = 3; // nivån Präst: den första tron som når den ger den första schamanen (skalan Var och en – Präster)
+export const troNiva = (tr: Tro) => tr.niva ?? 0;
+
+// ---------- skalorna (registret) ----------
+// de nio skalorna ("Nio skalor" i designdokumentet), 0–100 från den ena sidan till den andra. En tro börjar med de två första
+// synliga; de andra låses upp för hela byn när det de styr dyker upp (oppnas). Då får varje tro ett värde på skalan. steg = där
+// villkoret kommer, när det inte finns än
+interface SkalaDef { namn: [string, string]; text: [string, string]; oppnas?: (s: State) => boolean; steg?: string }
+export const SKALOR = {
+  natur: { namn: ['Natur', 'Människa'], text: ['Andar i djur, träd, väder och platser', 'Förfäder, hjältar och helgon'] },
+  manga: { namn: ['Många', 'En'], text: ['Många andar eller gudar', 'En enda gud'] },
+  prast: { namn: ['Var och en', 'Präster'], text: ['Var och en möter det heliga själv', 'Präster förmedlar, regler och ordning'], oppnas: s => !!s.tron?.some(t => troNiva(t) >= PRAST_NIVA) },
+  livet: { namn: ['Nuet', 'Livet efter'], text: ['Hjälp nu: jaktlycka, hälsa, väder', 'Ett liv efter döden, lön eller straff där'], oppnas: () => false, steg: '10.1 (den första begravningsritualen)' },
+  forlat: { namn: ['Förlåtande', 'Straffande'], text: ['Bikt, bot och förlåtelse', 'Vrede, stränga bud, syndabockar'], oppnas: () => false, steg: '10.1.1.4' },
+  fest: { namn: ['Fest', 'Försakelse'], text: ['Fest, dans och rus', 'Fasta, askes, avstå'], oppnas: () => false, steg: '10.1.1.4' },
+  krig: { namn: ['Fridsam', 'Krigisk'], text: ['Inget våld, inga blodsoffer', 'Offer och heligt krig'], oppnas: () => false, steg: '10.1.1.4' },
+  oppen: { namn: ['Öppen', 'Sluten'], text: ['Välkomnar andra trosriktningar', 'Omvänder eller fördriver andra'], oppnas: s => (s.tron ?? []).filter(t => t.slut === undefined).length >= 2 },
+  sprid: { namn: ['Sprider sig', 'Ärvs'], text: ['Försöker vinna nya följare', 'Ärvs bara inom släkten eller hålls hemlig'], oppnas: () => false, steg: '10.1.1.4' },
+} satisfies Record<string, SkalaDef>;
+export type SkalaId = keyof typeof SKALOR;
+const SDEF: Record<SkalaId, SkalaDef> = SKALOR;
+export const SKALA_IDS = Object.keys(SKALOR) as SkalaId[];
+// skalans värde för tron (natur och manga har alla; de andra när de låsts upp)
+export const skalaV = (tr: Tro, k: SkalaId) => k === 'natur' ? tr.natur : k === 'manga' ? tr.manga : tr.sk?.[k];
+export const skalaSyns = (s: State, k: SkalaId) => !SDEF[k].oppnas || !!s.troSkalor?.includes(k);
+// skalan låses upp: varje tro får ett värde. Drar ur följden 'tro' hos grundaren eller den första som tror
+function satSkala(s: State, tr: Tro, k: SkalaId) {
+  const p = s.people.find(q => q.id === tr.grundare && alive(q)) ?? troende(s, tr)[0] ?? s.people.find(q => q.id === tr.grundare);
+  (tr.sk ??= {})[k] = p ? Math.round(rnd(s, 'tro', p) * 100) : 50;
+}
 
 // ---------- tecknen (registret) ----------
 // det oförklarliga som kan bli en tro (steg 4.1.2.1). text: vad hen var med om ({om} = vem eller vad), natur: var tron börjar på
@@ -112,8 +167,9 @@ export const teckenText = (k: TeckenTyp, om?: string) => TDEF[k].text.replace('{
 // ---------- tron ----------
 // en tro (steg 4.1.2): vem som grundade den (id och namn), när, tecknet den kom ur och tolkningen. natur och manga är de två
 // första skalorna (0–100: Natur – Människa och Många – En). bekr: när ett tecken senast bekräftade den. slut: när den sista
-// som trodde dog. ar: året den kom. namn, sym och ber (berättelsen om hur den började) får den när TRO.namn tror (steg 4.1.2.3)
-export interface Tro { id: number; grundare: number; gnamn: string; t: number; k: TeckenTyp; om?: string; bakom: string; vill: string; svek: string; natur: number; manga: number; bekr: number; slut?: number; ar: number; namn?: string; sym?: string; ber?: string }
+// som trodde dog. ar: året den kom. namn, sym och ber (berättelsen om hur den började) får den när TRO.namn tror (steg 4.1.2.3).
+// niva: index i NIVAER (steg 4.1.4), sk: värdet på de skalor som låsts upp efter de två första
+export interface Tro { id: number; grundare: number; gnamn: string; t: number; k: TeckenTyp; om?: string; bakom: string; vill: string; svek: string; natur: number; manga: number; bekr: number; slut?: number; ar: number; namn?: string; sym?: string; ber?: string; niva?: number; sk?: Partial<Record<SkalaId, number>> }
 export const troOf = (s: State, id: number | undefined) => id === undefined ? undefined : s.tron?.find(t => t.id === id);
 export const troende = (s: State, tr: Tro) => living(s).filter(p => p.tro === tr.id);
 // tolkningen som meningar: "Den som bor i åskmolnen vill att man tystnar när det mullrar. Om man sviker: blixten slår ner i ens hus."
@@ -141,6 +197,7 @@ function grunda(s: State, p: Person, k: TeckenTyp, om?: string) {
     natur: Math.round(clamp(d.natur + gauss(s, 'tro', p) * TRO.skalaSlump, 0, 100)), manga: Math.round(clamp(rnd(s, 'tro', p) * 100, 0, 100)), bekr: s.now,
   };
   tron.push(tr);
+  for (const sk of s.troSkalor ?? []) satSkala(s, tr, sk); // skalorna som redan låsts upp i byn
   p.tro = tr.id; p.troStyrka = TRO.styrka;
   count(s, 'tro_ny');
   log(s, `${p.name} tolkade ${teckenText(k, om)} som ett tecken. ${tolkning(tr)}`, 'rel', [p.id]);
@@ -207,7 +264,27 @@ export function stepReligion(s: State) {
   for (const tr of s.tron ?? []) {
     if (tr.slut !== undefined) continue;
     const folk = troende(s, tr);
-    if (!folk.length) { tr.slut = s.now; count(s, 'tro_slut'); }
-    else if (!tr.namn && folk.length >= TRO.namn) namnge(s, tr, folk);
+    if (!folk.length) { tr.slut = s.now; count(s, 'tro_slut'); continue; }
+    if (!tr.namn && folk.length >= TRO.namn) namnge(s, tr, folk);
+    nivaSteg(s, tr, folk);
+  }
+  // skalorna som låses upp när det de styr dyker upp
+  for (const k of SKALA_IDS) if (SDEF[k].oppnas && !s.troSkalor?.includes(k) && SDEF[k].oppnas!(s)) {
+    (s.troSkalor ??= []).push(k);
+    for (const tr of s.tron ?? []) if (tr.slut === undefined) satSkala(s, tr, k);
+    count(s, 'tro_skala');
+    log(s, `Tron i byn har fått en ny sida: ${SDEF[k].namn[0]} – ${SDEF[k].namn[1]}.`, 'rel', []);
+  }
+}
+// nivån (steg 4.1.4): faller en nivå om villkoret inte längre uppfylls, annars växer den en nivå om nästa villkor uppfylls
+function nivaSteg(s: State, tr: Tro, folk: Person[]) {
+  const n = troNiva(tr), namn = troNamn(tr);
+  if (n > 0 && !NIVAER[n].krav(s, folk.length, folk)) {
+    tr.niva = n - 1; count(s, 'tro_fall');
+    log(s, `${namn} har förlorat troende och är nu ${NIVAER[n - 1].namn.toLowerCase()}.`, 'rel', []);
+  } else if (n + 1 < NIVAER.length && NIVAER[n + 1].krav(s, folk.length, folk)) {
+    tr.niva = n + 1; count(s, 'tro_niva' + (n + 1));
+    log(s, `${namn} har vuxit och är nu ${NIVAER[n + 1].namn.toLowerCase()}.`, 'rel', folk.map(p => p.id));
+    if (n + 1 >= 2) kronika(s, `År ${yearNo(s)}: ${namn} blev ${NIVAER[n + 1].namn.toLowerCase()}.`);
   }
 }

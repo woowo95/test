@@ -252,12 +252,16 @@ SCENARIER.trokategori = {
   },
 };
 
+// symbolerna i flikarna ritas på en canvas; utan webbläsare räcker en låtsad som ger en tom bild
+function utanWebblasare() {
+  const g = globalThis as { document?: unknown };
+  g.document ??= { createElement: () => ({ getContext: () => ({ fillRect() {} }), toDataURL: () => 'data:,' }) };
+}
+
 SCENARIER.religionsflik = {
   text: 'Fliken Religion (steg 4.1.3): syns när den första tron finns och visar varje tro med symbol, namn, antal troende, skalorna, grundaren, de troende och upplevelserna som rör tron; de minsta under Övriga trosriktningar, och alla i byn med andlighet och tro',
   kor: () => {
-    // symbolerna ritas på en canvas; utan webbläsare räcker en låtsad som ger en tom bild
-    const g = globalThis as { document?: unknown };
-    g.document ??= { createElement: () => ({ getContext: () => ({ fillRect() {} }), toDataURL: () => 'data:,' }) };
+    utanWebblasare();
     const s = createState(9, START);
     setByn(s);
     const fore = religion.syns!();
@@ -284,6 +288,47 @@ SCENARIER.religionsflik = {
       ['upplevelsen som rör tron syns', html.includes('en blixt som slog ner i granen')],
       [`den minsta tron (${minst}) ligger under Övriga trosriktningar och syns när man öppnar dem`, html.includes('Övriga trosriktningar') && !tron(html).includes(minst) && tron(oppen).includes(minst)],
       ['alla i byn står med andlighet och tro', html.includes('<h3>Personer</h3>') && SIM.living(s).every(p => html.includes(`data-id="${p.id}"`))],
+    ];
+  },
+};
+
+SCENARIER.trosniva = {
+  text: 'Trons nivåer (steg 4.1.4): en tro växer en nivå i taget, personlig tro, delad tro (3), seder (5 eller halva byn), präst (8 och en andlig och karismatisk), och kyrkan väntar på hovet; den faller en nivå när villkoret inte längre uppfylls. Var och en – Präster låses upp med den första prästen, Öppen – Sluten när en andra tro finns',
+  kor: () => {
+    const s = createState(9, START);
+    for (let i = 0; i < 12; i++) nyInvanare(s, i % 2 ? 'k' : 'm', 30).andlig = 0; // byn är stor nog att hälften är mer än fem
+    const a = nyInvanare(s, 'k', 40); a.andlig = 100;
+    for (let i = 0; i < 50 && a.tro === undefined; i++) { s.now += 25 * SIM.HOUR; SIM.tecken(s, a, 'blixt'); }
+    const tr = SIM.troOf(s, a.tro)!, folk = [a];
+    const till = (n: number) => { while (folk.length < n) { const p = nyInvanare(s, 'm', 30); p.andlig = 50; p.pot.karisma = 5; p.tro = tr.id; folk.push(p); } };
+    const niva = (h = 1) => { for (let i = 0; i < h; i++) SIM.stepReligion(s); return SIM.troNiva(tr); };
+    a.pot.karisma = 5;
+    till(2); const n2 = niva(3);
+    till(3); const n3 = niva(3);
+    till(5); const n5 = niva(3);
+    till(8); const n8 = niva(3); // ingen kan bli präst
+    const prastFore = SIM.skalaSyns(s, 'prast');
+    a.pot.karisma = 20; const n8p = niva(), n8p2 = niva(3), prastEfter = SIM.skalaSyns(s, 'prast') && tr.sk?.prast !== undefined;
+    till(20); const n20 = niva(5); // kyrkan väntar på hovet
+    // de troende dör: tron faller en nivå i taget
+    for (const p of folk.slice(4)) p.died = s.now;
+    const f1 = niva(), f2 = niva(), f3 = niva(3);
+    // en andra tro: Öppen – Sluten
+    const oppenFore = SIM.skalaSyns(s, 'oppen');
+    const b = nyInvanare(s, 'm', 40); b.andlig = 100;
+    for (let i = 0; i < 50 && b.tro === undefined; i++) { s.now += 25 * SIM.HOUR; SIM.tecken(s, b, 'brand'); }
+    niva();
+    const tr2 = SIM.troOf(s, b.tro), oppen = SIM.skalaSyns(s, 'oppen') && tr.sk?.oppen !== undefined && tr2?.sk?.oppen !== undefined;
+    return [
+      [`två troende är en personlig tro, tre en delad tro (${n2}, ${n3})`, n2 === 0 && n3 === 1],
+      [`fem är seder (${n5})`, n5 === 2],
+      [`åtta utan någon som kan bli präst förblir seder (${n8})`, n8 === 2],
+      [`med en andlig och karismatisk får tron en präst (${n8p}, ${n8p2})`, n8p === 3 && n8p2 === 3],
+      [`Var och en – Präster låses upp med den första prästen (${prastFore} → ${prastEfter})`, !prastFore && prastEfter],
+      [`kyrkan väntar på hovet (${n20} med tjugo troende)`, n20 === 3],
+      [`tron faller en nivå i taget när de troende dör (${f1}, ${f2}, ${f3})`, f1 === 2 && f2 === 1 && f3 === 1],
+      [`Öppen – Sluten låses upp när en andra tro finns, och båda trosriktningarna får ett värde (${oppenFore} → ${oppen})`, !oppenFore && oppen],
+      ['nivån står i fliken', (() => { utanWebblasare(); setByn(s); return religion.html().includes('Nivå: <b>Delad tro</b>'); })()],
     ];
   },
 };

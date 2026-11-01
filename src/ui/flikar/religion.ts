@@ -1,21 +1,17 @@
-import { Person, Tro, UPPV, ageOf, alive, andlighet, andligSyns, byId, living, timeLabel, tolkning, troNamn, troende, upplevelseText } from '../../sim';
+import { NIVAER, Person, SKALA_IDS, SKALOR, Tro, UPPV, skalaSyns, skalaV, troNiva, ageOf, alive, andlighet, andligSyns, byId, living, timeLabel, tolkning, troNamn, troende, upplevelseText } from '../../sim';
 import { tecknet } from '../../ikoner';
 import { bar, esc, hjalpKnapp, hjalpText, pLink } from '../hjalp';
 import { s } from '../lage';
 import { sedBar } from './seder';
 import type { Flik } from '../panel';
 
-// religionen (steg 4.1.3, religion.ts): varje tro med symbol, namn, berättelse, antal troende, de synliga skalorna, grundaren,
+// religionen (steg 4.1.3, religion.ts): varje tro med symbol, namn, nivå (steg 4.1.4), berättelse, antal troende, de synliga skalorna, grundaren,
 // de troende och de upplevelser som rör tron; sist alla i byn med andlighet och tro. Fliken syns när den första tron finns
 const STORA = 3; // så många trosriktningar visas som egna, de andra under Övriga trosriktningar
 const UPP_MAX = 6; // så många upplevelser som rör tron visas per tro
 
-// skalorna som syns (0–100), som en stapel från mitten
-const SKALOR: { namn: [string, string]; v: (tr: Tro) => number }[] = [
-  { namn: ['Natur', 'Människa'], v: tr => tr.natur },
-  { namn: ['Många', 'En'], v: tr => tr.manga },
-];
-const skalaHtml = (tr: Tro) => `<ul class="seder">${SKALOR.map(k => `<li><div class="sedtop"><span>${k.namn[0]}</span><span>${k.namn[1]}</span></div>${sedBar((k.v(tr) - 50) / 50)}</li>`).join('')}</ul>`;
+// skalorna som syns i byn (de två första, och de som låsts upp, steg 4.1.4), som en stapel från mitten; texten när man håller över
+const skalaHtml = (tr: Tro) => `<ul class="seder">${SKALA_IDS.filter(k => skalaSyns(s, k) && skalaV(tr, k) !== undefined).map(k => { const d = SKALOR[k], v = skalaV(tr, k)!; return `<li title="${esc(`${d.namn[0]}: ${d.text[0]}. ${d.namn[1]}: ${d.text[1]}.`)}"><div class="sedtop"><span>${d.namn[0]}</span><span>${d.namn[1]}</span></div>${sedBar((v - 50) / 50)}</li>`; }).join('')}</ul>`;
 
 // de upplevelser som rör tron hos dem som tror (tecknen och det andra som flyttar andligheten), de senaste först
 function upplevHtml(folk: Person[]) {
@@ -27,6 +23,7 @@ function troHtml(tr: Tro) {
   const folk = troende(s, tr).sort((a, b) => (b.troStyrka ?? 0) - (a.troStyrka ?? 0)), g = byId(s, tr.grundare), id = `tro-${tr.id}`;
   const grundare = g && alive(g) ? pLink(g) : `${esc(tr.gnamn)} <small class="muted">(lever inte längre)</small>`;
   return `<div class="tekhead">${tr.sym ? tecknet(tr.sym, '✨', 24) : '✨'} <b>${esc(troNamn(tr))}</b> <span title="Så många tror">👥 ${folk.length}</span> ${hjalpKnapp(id, 'Berättelsen om tron')}</div>
+    <p class="small" title="${esc(NIVAER[troNiva(tr)].text + (NIVAER[troNiva(tr) + 1] ? ` Nästa nivå, ${NIVAER[troNiva(tr) + 1].namn.toLowerCase()}: ${NIVAER[troNiva(tr) + 1].text}` : ''))}">Nivå: <b>${esc(NIVAER[troNiva(tr)].namn)}</b></p>
     ${hjalpText(id, `<p class="muted">${esc(tr.ber ?? tolkning(tr))}</p>`)}
     <p class="small">Grundare: ${grundare}, år ${tr.ar}</p>
     ${skalaHtml(tr)}
