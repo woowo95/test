@@ -1,9 +1,9 @@
 import { barnTill, upplev } from './uppvaxt';
-import { ALDER, REL, ageOf, count, franMitt, getRel, isKin, log, similarity, stat, think } from './folk';
+import { ALDER, REL, ageOf, alive, count, franMitt, getRel, isKin, log, similarity, stat, think } from './folk';
 import { berattaBrist } from './naring';
 import { moodOf } from './humor';
 import { clamp, pickViktat, rnd } from './slump';
-import { DAY, HOUR, Person, Rel, State } from './typer';
+import { DAY, HOUR, Person, Rel, SEC, State } from './typer';
 import { pair } from './varld';
 import { share } from './minne';
 import { askForGift } from './behov';
@@ -97,6 +97,13 @@ export const SAMTALSSLAG: Record<Samtalsslag, SamtalDef> = SLAG;
 // ---------- samtal ----------
 // om p håller på med något socialt just nu (vid elden, i samtal); hur nära man ska vara för att prata står i SAMTAL.radie
 export const isSocial = (p: Person) => !!p.task && p.task.phase === 'do' && !!ACTS[p.task.act].social;
+// hur länge ett samtal syns efteråt: bubblan i byn och ämnet i personrutan (sekunder i spelet, steg 3.10.3 och 4.5.3.3)
+export const PRATAR_SEK = 20;
+// den som p pratar med just nu: båda gör något socialt, står nära och samtalet är färskt (bara för gränssnittet)
+export function pratarMed(s: State, p: Person) {
+  const m = p.prat?.m, q = m !== undefined ? s.people.find(x => x.id === m) : undefined;
+  return q && alive(q) && isSocial(p) && isSocial(q) && Math.hypot(q.x - p.x, q.y - p.y) < SAMTAL.radie && s.now - p.prat!.t < PRATAR_SEK * SEC ? q : undefined;
+}
 export interface TalkEvent { a: number; b: number; kind: Samtalsslag; good: boolean; t: number; i?: string } // i: ämnets symbol (steg 3.9.5)
 // ger den andra om samtalet blev ett gräl (steg 3.7.2: gräl kan bli slagsmål, strid.ts)
 export function converse(s: State, a: Person, others: Person[], events?: TalkEvent[]): Person | undefined {

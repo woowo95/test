@@ -1,5 +1,5 @@
 import { klanById, FORMAGOR, gangDelar, HALSA, Kroppsdel, KROPPSDELAR, NARING, NARINGAR, NARINGBAL, bristGrad, bristerNu, frysFaktor, naringNu, sjunker, skorbjugg, vilaTim, TORST, blodning, delSkada, halsa, skadeLista, skadeText, smarta, torstDelar } from '../../sim';
-import { pratText, relationText, beskrivning, binamnInfo, INTRYCK, Intryck, IntryckTyp, anseendeText, intryckOm, LARDOMAR, LKind, anseendeSym, dodSymbol, intryckText, samlatIntryck, SKILL_STAT, gjortDygn, ACTS, ALDER, Act, DAY, Lardom, HUMOR, SKILL_GOR, STAT_GOR, Skill, Stat, coldOf, halsaLage, hearthOf, living, roomAt, temperature, varmeDelar, varmeRaknas, viloSlag, viloTak, takEffekt, SLAG, SLAG_TECKEN, Person, KUNSKAPER, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, SEDER, SED_LIST, sedOppen, TEKNIK, BYN, formogenhetDelar, Ting, halvKlar, ageOf, alive, byId, childrenOf, drar, heldBy, ownedBy, PLATSER, PLATS_LIST, Plats, BORDA_KG, UTRUSTNING, bordOf, capacity, kvNamn, handerFor, homeKind, load, utrustning, viktOf, SAKER, ownedStock, sakNamn, slagIkon, tingNamn, STACK, describe, duty, habitShare, habitTotal, KROPP, kortTal, moodOf, num, REL, relKey, relTyper, stat, taskText, timeLabel, vidBordet, upplevelseText, uppEffekt, vuxenUpp, Upplevelse, yrkeNamn, andlighet, andligSyns, troOf, tolkning, teckenText, troNamn } from '../../sim';
+import { pratText, relationText, beskrivning, binamnInfo, INTRYCK, Intryck, IntryckTyp, anseendeText, intryckOm, LARDOMAR, LKind, anseendeSym, dodSymbol, intryckText, samlatIntryck, SKILL_STAT, gjortDygn, ACTS, ALDER, Act, DAY, Lardom, HUMOR, SKILL_GOR, STAT_GOR, Skill, Stat, coldOf, halsaLage, hearthOf, living, roomAt, temperature, varmeDelar, varmeRaknas, viloSlag, viloTak, takEffekt, SLAG, SLAG_TECKEN, Person, KUNSKAPER, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, SEDER, SED_LIST, sedOppen, TEKNIK, BYN, formogenhetDelar, Ting, halvKlar, ageOf, alive, byId, childrenOf, drar, heldBy, ownedBy, PLATSER, PLATS_LIST, Plats, BORDA_KG, UTRUSTNING, bordOf, capacity, kvNamn, handerFor, homeKind, load, utrustning, viktOf, SAKER, ownedStock, sakNamn, slagIkon, tingNamn, STACK, describe, duty, habitShare, habitTotal, KROPP, kortTal, moodOf, num, REL, relKey, relTyper, stat, taskText, timeLabel, vidBordet, upplevelseText, uppEffekt, vuxenUpp, Upplevelse, yrkeNamn, andlighet, troOf, tolkning, teckenText, troNamn, pratarMed } from '../../sim';
 import { framstegSvg, hasIcon, iconImg, kvSvg, tecknet } from '../../ikoner';
 import { LAG, ansStapel, ansTecken, fmtN, bar, cap, carryTxt, cssFarg, durTxt, esc, hex, hsl, hjalpOppen, hjalpText, moodWord, pLink, prickar, relWord, sickNow, tempBar, tempOrd, trend, trendD } from '../hjalp';
 import { s, ui } from '../lage';
@@ -14,7 +14,8 @@ export const person: Flik = {
     const p = byId(s, ui.selected);
     if (!p) return `<p class="muted">Klicka på en person på kartan eller i listan för att se allt om hen.</p>`;
     const delar = DELAR.filter(d => alive(p) || !d.levande), del = delar.find(d => d.id === ui.personDel) ?? delar[0];
-    const status = alive(p) ? (p.task ? taskText(p.task) : '–') : p.died !== undefined ? `Dog ${p.cause} (${timeLabel(s, p.died)})` : `Flyttade från byn (${timeLabel(s, p.left!)})`;
+    const med = alive(p) ? pratarMed(s, p) : undefined;
+    const status = alive(p) ? (p.task ? taskText(p.task) + (med ? ` och pratar med ${pLink(med)}` : '') : '–') : p.died !== undefined ? `Dog ${p.cause} (${timeLabel(s, p.died)})` : `Flyttade från byn (${timeLabel(s, p.left!)})`;
     return `
       <div class="phead"><span class="dot big" style="background:${hex(p)}"></span><div><h2>${esc(p.name)}${binamnHtml(p)}${alive(p) ? prickar(p) : ''}${anseende(p)}</h2>${binamnForkl(p)}
       <p class="status">${status}</p>${alive(p) && p.task?.why ? `<p class="why">Varför: ${esc(p.task.why)}</p>` : ''}${prat(p)}</div></div>
@@ -64,7 +65,7 @@ function presHtml(p: Person) {
 }
 // Livet (steg 4.1.1.2): upplevelserna från barndomen och från vuxenlivet, var för sig
 function livet(p: Person) {
-  const ande = (u: Upplevelse) => u.n && andligSyns(s) ? `${u.e && Object.keys(u.e).length ? ', ' : ''}Andlighet ${u.n > 0 ? '+' : '−'}${Math.abs(u.n)}` : ''; // syns när den första tron finns (steg 4.1.1.3)
+  const ande = (u: Upplevelse) => u.n ? `${u.e && Object.keys(u.e).length ? ', ' : ''}Andlighet ${u.n > 0 ? '+' : '−'}${Math.abs(u.n)}` : ''; // syns från början (steg 4.5.3.4)
   const rad = (u: Upplevelse) => `<li>${u.a} år: ${esc(upplevelseText(u))} <span class="muted">${esc(effektText(u.e) + ande(u))}</span></li>`;
   const barn = (p.upp ?? []).filter(u => !vuxenUpp(u)), vuxen = (p.upp ?? []).filter(vuxenUpp);
   if (!barn.length && !vuxen.length) return '';
@@ -232,11 +233,11 @@ function egenHtml(p: Person) {
     const rader = [...arbetar(ACTS[k as Act]?.arbete === k ? [k] : []), ...SKILL_GOR[k]];
     return `<dt class="klick" data-hjalp="${id}" title="${esc(rader.join(', '))}">${SKILL_NAMES[k]}</dt><dd class="klick" data-hjalp="${id}" title="${esc(rader.join(', '))}">${bar(v / 20, 'skill', tr)}<span>${visa(v)}</span></dd>${hjalpText(id, gorHtml(rader, nu, gjortHtml(p, k)))}`;
   };
-  // andligheten (steg 4.1.1.1) syns först när den första tron finns
-  const ande = andligSyns(s) ? (() => {
+  // andligheten (steg 4.1.1.1) syns från början, så att man ser den växa (steg 4.5.3.4)
+  const ande = (() => {
     const v = andlighet(s, p), id = `e-andlig-${p.id}`, rader = ['Hur viktigt det heliga är för hen, inte vad hen tror på', 'Ärvs delvis från föräldrarna och flyttas av det hen är med om', ...(p.upp ?? []).filter(u => u.n).map(u => `${upplevelseText(u)} (${u.a} år), ${u.n! > 0 ? '+' : '−'}${Math.abs(u.n!)}`)];
     return `<dt class="klick" data-hjalp="${id}" title="${esc(rader.join(', '))}">Andlighet</dt><dd class="klick" data-hjalp="${id}" title="${esc(rader.join(', '))}">${bar(v / 100)}<span>${Math.round(v)}</span></dd>${hjalpText(id, gorHtml(rader, 'Skalan går från 0 till 100.'))}`;
-  })() : '';
+  })();
   // tron hen har (steg 4.1.2.1): vem som står bakom, och vid tryck tolkningen och tecknet den kom ur
   const tr = troOf(s, p.tro), tro = tr ? (() => {
     const id = `e-tro-${p.id}`, rader = [...tr.ber ? [tr.ber] : [tolkning(tr)], `${tr.grundare === p.id ? 'Hen' : tr.gnamn} tolkade ${teckenText(tr.k, tr.om)} som ett tecken`, `Tron är ${Math.round(p.troStyrka ?? 0)} av 100 stark hos hen`];
@@ -467,8 +468,8 @@ function tidHtml(p: Person) {
     <p class="muted small">Den vakna tiden de senaste dygnen. Tryck på en del eller en rad, eller håll musen över den, så lyser båda.</p>`;
 }
 
-// det senaste samtalet, med ämnets symbol först (steg 3.9.5)
+// samtalet, med ämnets symbol först (steg 3.9.5), bara medan hen pratar (steg 4.5.3.3); efteråt finns det i loggen och relationerna
 function prat(p: Person) {
-  const t = alive(p) ? pratText(s, p) : '', i = p.prat?.i;
+  const t = alive(p) && pratarMed(s, p) ? pratText(s, p) : '', i = p.prat?.i;
   return t ? `<p class="why">${i && hasIcon(i) ? iconImg(i, 14) : '💬'} ${esc(t)}</p>` : '';
 }

@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { ACTS, ALDER, Person, actIkon, utbIkon, SEC, TalkEvent, ageOf, SAMTAL, alive, bordVid, byId, clamp, homeKind, isSocial, kanGa, living, load, REL, relKey, spar, storlekAv, vidBordet, handlarNu, handlarPlats } from '../sim';
+import { ACTS, ALDER, Person, actIkon, utbIkon, SEC, TalkEvent, ageOf, alive, bordVid, byId, clamp, homeKind, isSocial, pratarMed, kanGa, living, load, REL, relKey, spar, storlekAv, vidBordet, handlarNu, handlarPlats } from '../sim';
 import { PRICKAR, personFarg } from './hjalp';
 import { s, sakVar, ui, vidNyBy } from './lage';
 import { Ikoner, TS, bubbleG, labels, markLayer, peopleG } from './scen';
@@ -11,7 +11,6 @@ const bubbles: { id: number; kind: string; good: boolean; until: number; i?: str
 // vem var och en senast pratade med: bubblan står kvar så länge båda är kvar i samtalet, men bara PRATAR_SEK sekunder
 // (spelets tid) efter samtalet: sedan sitter de tysta tills nästa (steg 3.10.3)
 const talkWith = new Map<number, number>();
-const PRATAR_SEK = 20;
 vidNyBy.push(() => { bubbles.length = 0; talkWith.clear(); });
 // samtal som startat sedan förra bildrutan (vid tiden som visas, nu): en bubbla i samtalets färg en stund. Samtal som
 // hunnit bli gamla, när tiden spolas fram, visas inte
@@ -137,7 +136,7 @@ export function drawPeople(t: number) {
     const pp = pos.get(p.id)!, x = pp.x * TS, y = pp.y * TS, a = ageOf(p, s.now), top = y - (a < ALDER.smabarn ? 9 : a < ALDER.vuxen ? 11 : 13);
     const o = talkWith.get(p.id), q = o !== undefined ? byId(s, o) : undefined;
     // bara medan de pratar: en stund efter samtalet (steg 3.10.3), inte så länge de sitter nära varandra
-    const talking = q && alive(q) && isSocial(p) && isSocial(q) && Math.hypot(q.x - p.x, q.y - p.y) < SAMTAL.radie && p.prat?.m === q.id && s.now - p.prat.t < PRATAR_SEK * SEC;
+    const talking = !!q && pratarMed(s, p) === q;
     if (!talking && o !== undefined && !flash.has(p.id)) talkWith.delete(p.id);
     if (talking || flash.has(p.id) && isSocial(p)) { // bara den som gör något socialt just nu, som personrutan säger (steg 2.3.7)
       const r = q ? s.rels[relKey(p.id, q.id)] : undefined;
