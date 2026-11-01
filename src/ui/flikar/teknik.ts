@@ -1,4 +1,4 @@
-import { ACTS, MATERIAL, SKILL_ORD, SLAG, Person, SAKER, TEK, TEKNIK, Tek, amountOf, harSak, hasMaterial, knows, materialOf, living, sakNamn, stationDef } from '../../sim';
+import { ACTS, MATERIAL, SKILL_ORD, SLAG, Person, SAKER, TEK, TEKNIK, TEKTAL, Tek, amountOf, harSak, hasMaterial, knows, materialOf, living, sakNamn, stationDef } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { bar, esc, fmtN, hjalpKnapp, hjalpText, pLink } from '../hjalp';
 import { s } from '../lage';
@@ -40,19 +40,23 @@ function tekHtml() {
   // linjerna visar vad som är låst bakom vad: en teknik kräver en annan
   const lines = VIS.flatMap(t => t.krav.filter(k => pos[k]).map(k => `<line x1="${pos[k].x}" y1="${pos[k].y}" x2="${pos[t.id].x}" y2="${pos[t.id].y}"/>`));
   const nodes = VIS.map(t => {
-    const kan = ppl.filter(p => knows(p, t.id)).length, best = Math.max(0, ...ppl.map(p => p.tek?.[t.id] ?? 0));
+    const vem = ppl.filter(p => knows(p, t.id)), kan = vem.length, best = Math.max(0, ...ppl.map(p => p.tek?.[t.id] ?? 0));
     const ring = !kan && best > 0.01 ? `<svg class="ring" viewBox="0 0 36 36"><circle cx="18" cy="18" r="16" pathLength="100" stroke-dasharray="${Math.round(best * 100)} 100"/></svg>` : '';
     // ! bara när det spelar roll: ingen kan det och ingen kan komma på det, för det som behövs finns inte i byn
     const brist = !kan && !hasMaterial(s, t) ? `<span class="brist" title="${esc(`Ingen kan komma på det nu: ${saknas(t)} finns inte i byn.`)}">!</span>` : '';
-    const title = t.namn + (kan ? `: ${kan} kan det` : '');
-    return `<button type="button" class="tnod ${kan ? 'kan' : best > 0.01 ? 'pa' : 'ok'}${tekSel === t.id ? ' sel' : ''}" data-tek="${t.id}" style="left:${pos[t.id].x}%;top:${pos[t.id].y}%" title="${esc(title)}" aria-label="${esc(title)}">${iconImg(t.id, 24)}${ring}${kan ? `<span class="antal">${kan}</span>` : ''}${brist}</button>`;
+    // varning när bara en kan det: dör hen försvinner kunskapen (steg 4.2.3.4)
+    const title = t.namn + (kan === 1 ? `: bara ${vem[0].name} kan det` : kan ? `: ${kan} kan det` : '');
+    return `<button type="button" class="tnod ${kan ? 'kan' : best > 0.01 ? 'pa' : 'ok'}${tekSel === t.id ? ' sel' : ''}" data-tek="${t.id}" style="left:${pos[t.id].x}%;top:${pos[t.id].y}%" title="${esc(title)}" aria-label="${esc(title)}">${iconImg(t.id, 24)}${ring}${kan ? `<span class="antal${kan === 1 ? ' ensam' : ''}">${kan}</span>` : ''}${brist}</button>`;
   });
   const h = Math.max(150, Math.max(...Array.from({ length: cols }, (_, c) => VIS.filter(t => depth[t.id] === c).length)) * 64);
   return `<div class="tekhead">${hjalpKnapp('teknik', 'Hur fungerar teknik?')}</div>
-    ${hjalpText('teknik', `<p class="muted small">Den som arbetar med något kommer så småningom på hur det kan göras bättre. Nyfikenheten avgör hur ofta hen funderar och intelligensen hur fort det går. Det svåraste (nivå 4–5) kommer man bara på genom att pröva sig fram vid en station, när byn har mat och ved över. Det man kan lärs ut i samtal. Dör alla som kan något försvinner kunskapen. Ett sträck betyder att tekniken till höger kräver den till vänster. Siffran är hur många som kan tekniken och ringen hur långt den som funderat mest har kommit. Tryck på en teknik för att se vad den kräver och hur man kommer på den. Det som ligger längre fram syns först när någon i byn kan något av det som krävs.</p>`)}
+    ${hjalpText('teknik', `<p class="muted small">Den som arbetar med något kommer så småningom på hur det kan göras bättre. Nyfikenheten avgör hur ofta hen funderar och intelligensen hur fort det går. Det svåraste (nivå 4–5) kommer man bara på genom att pröva sig fram vid en station, när byn har mat och ved över. Grunden (nivå 1–2) lärs ut i samtal, nivå 3 genom att arbeta bredvid någon som kan och nivå 4–5 bara som lärling hos en mästare, en lärling i taget. Dör alla som kan något försvinner kunskapen, och en röd siffra betyder att bara en kan det. Ett sträck betyder att tekniken till höger kräver den till vänster. Siffran är hur många som kan tekniken och ringen hur långt den som funderat mest har kommit. Tryck på en teknik för att se vad den kräver och hur man kommer på den. Det som ligger längre fram syns först när någon i byn kan något av det som krävs.</p>`)}
     <div class="ttradram"><div class="ttrad" style="height:${h}px;width:${cols * KOLUMN}px"><svg class="tlinjer" viewBox="0 0 100 100" preserveAspectRatio="none">${lines.join('')}</svg>${nodes.join('')}</div></div>${dolda ? `<p class="muted small" title="${esc('Syns när någon i byn kan något av det som krävs.')}">+${dolda} okända</p>` : ''}
     ${tekInfo(ppl, tekSel)}`;
 }
+const namnAv = (ppl: Person[], id: number) => ppl.find(p => p.id === id)?.name ?? '';
+// hur kunskapen sprids, efter nivå (steg 4.2.3)
+const sprids = (t: Tek) => t.niva <= TEKTAL.larNiva ? 'Den som kan lär ut det i samtal.' : t.niva === 3 ? 'Man lär sig det genom att arbeta bredvid någon som kan.' : 'Man lär sig det bara som lärling hos en mästare, en lärling i taget.';
 const lista = (xs: string[], och = 'och') => xs.length > 1 ? xs.slice(0, -1).join(', ') + ` ${och} ` + xs[xs.length - 1] : xs[0] ?? '';
 // det som saknas i byn för att någon ska kunna komma på tekniken
 const saknas = (t: Tek) => lista(materialOf(t).filter(g => !g.some(k => harSak(s, k))).map(g => lista(g.map(k => sakNamn(k).toLowerCase()), 'eller')));
@@ -77,7 +81,7 @@ export function tekInfo(ppl: Person[], id: string | undefined) {
   const finns = lista(materialOf(t).map(g => lista(g.map(k => sakNamn(k).toLowerCase()), 'eller')));
   return `<div class="tinfo"><div class="tektop">${iconImg(t.id, 24)}<b>${esc(t.namn)}</b>${r.length ? `<span class="tmat" title="${esc(rtext)}">${mat}</span>` : ''}</div>
     <p class="small">${esc(t.text)} ${esc(t.effekt)}</p>
-    <p class="small muted">${t.forsok ? `Den som är skicklig i ${esc(SKILL_ORD[t.forsok.skill])} kan pröva sig fram till det vid ${esc(t.forsok.vid.length ? lista([...new Set(t.forsok.vid.map(k => stationDef(k)?.namn.toLowerCase() ?? k))], 'eller') : 'elden')}${esc(krav)}${finns ? `, när det finns ${esc(finns)} i byn` : ''}. Varje försök tar en sak av materialet.` : `Den som ${esc(t.nar ?? arb)} kan komma på det${esc(krav)}${finns ? `, när det finns ${esc(finns)} i byn` : ''}.`}</p>
-    ${kan.length ? `<p class="kan">${kan.map(pLink).join(', ')}</p>` : '<p class="muted small">Ingen kan det.</p>'}
-    ${pa.length ? `<div class="tank">${pa.map(p => `${pLink(p)}${bar(p.tek![t.id], 'skill')}`).join('')}</div>` : ''}</div>`;
+    <p class="small muted">${t.forsok ? `Den som är skicklig i ${esc(SKILL_ORD[t.forsok.skill])} kan pröva sig fram till det vid ${esc(t.forsok.vid.length ? lista([...new Set(t.forsok.vid.map(k => stationDef(k)?.namn.toLowerCase() ?? k))], 'eller') : 'elden')}${esc(krav)}${finns ? `, när det finns ${esc(finns)} i byn` : ''}. Varje försök tar en sak av materialet.` : `Den som ${esc(t.nar ?? arb)} kan komma på det${esc(krav)}${finns ? `, när det finns ${esc(finns)} i byn` : ''}.`} ${esc(sprids(t))}</p>
+    ${kan.length ? `<p class="kan">${kan.map(pLink).join(', ')}</p>` : '<p class="muted small">Ingen kan det.</p>'}${kan.length === 1 ? `<p class="small fel">⚠ Bara ${esc(kan[0].name)} kan det.</p>` : ''}
+    ${pa.length ? `<div class="tank">${pa.map(p => `${pLink(p)}${bar(p.tek![t.id], 'skill')}${p.lar?.tek === t.id ? `<small class="muted">lärling hos ${esc(namnAv(ppl, p.lar.av))}</small>` : p.halvminne?.includes(t.id) ? '<small class="muted">halvminne</small>' : ''}`).join('')}</div>` : ''}</div>`;
 }

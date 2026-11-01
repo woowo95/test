@@ -38,7 +38,7 @@ import { forSmutsigt, latrinFor } from './smuts';
 import { bordenOf, byInne, ledigPlats, lekplats, sittAt, stationAt, stationFor, storlekAv, vidStation } from './stationer';
 import { grillTid, kanGrilla, kanTorka, torkTid } from './matlagning';
 import { egenBrasa } from './brasor';
-import { TEK, forsokChans, forsokVal } from './teknik';
+import { TEK, forsokChans, forsokVal, laraVal } from './teknik';
 import { utbrottBorjar, utbrottNu } from './humor';
 import { smakDrag } from './rykten';
 import { pabud, skams } from './styre';
@@ -653,6 +653,7 @@ function craft(s: State, p: Person, v: Val, why: string) {
   if (canProcess(s, p, DJUR.abborre)) { processTask(s, v, DJUR.abborre, `${why}. Rensar fisken.`); return; }
   if (ageOf(p, s.now) >= ALDER.grillar && kanTorka(s, p)) { torkVal(s, v, `${why}. Torkar kött och fisk.`); return; }
   if (ageOf(p, s.now) >= ALDER.grillar && kanGrilla(s, p)) { grillVal(s, v, `${why}. Grillar maten.`); return; }
+  if (gaILara(s, p, v, why)) return;
   const fara = dangers(s), fv = !fara.kyla && !fara.svalt && rnd(s, 'kunskap', p) < forsokChans(s, p, foodDays(s), woodDays(s)) ? forsokVal(s, p) : undefined;
   if (fv) { // den skicklige prövar sig fram mot en teknik på nivå 4–5 (teknik.ts, steg 4.2.1.1), när ingen fara går före och byn har ett överskott (4.2.1.2)
     set(v, 'forsok', `${why}. Prövar sig fram till ${TEK[fv.id].namn.toLowerCase()}.`);
@@ -662,6 +663,13 @@ function craft(s: State, p: Person, v: Val, why: string) {
   const pr = bastaProjekt(s, p, fara);
   if (pr) { projektVal(v, pr.u, why); return; }
   set(v, 'samtal', 'Har inget handarbete att göra och sitter med de andra vid elden');
+}
+// lärlingen går till sin mästare när hen arbetar med det lärlingen ska lära sig (teknik.ts, steg 4.2.3.3)
+function gaILara(s: State, p: Person, v: Val, why: string) {
+  const lv = laraVal(s, p);
+  if (!lv) return false;
+  set(v, 'lara', `${why}. Går i lära hos ${lv.m.name}.`); v.spot = lv.spot; v.dur = lv.min * MIN;
+  return true;
 }
 // ett pass med redskap delas inte upp (steg 2.3.8): när ett är klart och passet inte är slut gör man ett till i samma grupp,
 // om byn vill ha fler och ingen fara går före. Annars väljer man något annat (steg.ts)
@@ -698,6 +706,7 @@ function leisure(s: State, p: Person, v: Val, u: number, lazy: number) {
   const wb = temp >= VAL.badTemp && shore ? (clamp((temp - VAL.badNoll) / VAL.badSpann, 0, VAL.badMax) + varm) * calm : 0;
   // sitta vid stranden och se ut över vattnet: lugnt, året om, mest för den som inte är så sällskaplig
   const ws = shore ? (VAL.strandBas + (20 - stat(p, 'empati', now)) / VAL.strandDiv) * calm : 0;
+  if (gaILara(s, p, v, 'Har tid över')) return; // lärlingen går hellre till mästaren än vilar eller umgås
   const r = rnd(s, 'val', p) * (wv + wh + wsoc + wp + wb + ws);
   if (r < wv) set(v, 'vila', lazy > 0.5 ? 'Har det bra och tar det lugnt' : 'Tar en paus');
   else if (r < wv + wh) craft(s, p, v, u < VAL.hantLugn ? 'Byn har det gott ställt, det finns tid för hantverk' : 'Tycker om att göra handarbete');

@@ -1,7 +1,7 @@
 import { allaBarn, upplev } from './uppvaxt';
 import { delade, fyll, kronikaBer, personFalt } from './berattelser';
 import { kronika } from './historik';
-import { ALDER, ageOf, count, log, stat, think } from './folk';
+import { ALDER, ageOf, alive, byId, count, living, log, stat, think } from './folk';
 import { sedEvent } from './seder';
 import { rnd } from './slump';
 import { amountOf, use } from './lager';
@@ -9,7 +9,7 @@ import { SAKER, isTool } from './saker';
 import { STATIONER, TILLBEHOR, framFri, isKlar, stationerOf, vidStation } from './stationer';
 import { DORRAR, MATERIAL } from './byggnad';
 import { tingOf } from './agande';
-import { Act, HOUR, HOUR_S, Person, Skill, State, Task } from './typer';
+import { Act, HOUR, HOUR_S, MIN, Person, Skill, State, Task } from './typer';
 import { balans } from './balans';
 import { ACTS, ACT_LIST } from './handlingar';
 import type { SamtalDef } from './samtal';
@@ -139,6 +139,16 @@ export const TEKTAL = balans('teknik', {
   forsokSed: 0.5, // ... gånger 1 + seden Förnyelse – Tradition (-1 till 1) gånger så här mycket, och gånger nyfikenheten / 10 (steg 4.2.1.2)
   forsokMat: 1.1, // bara när maten räcker minst så här många dygn ...
   forsokVed: 2, // ... och veden så här många (byn har ett överskott)
+  // spridningen efter nivå (steg 4.2.3): i samtal lärs bara det upp till den här nivån ...
+  larNiva: 2,
+  bredvidAvst: 3, // ... nivå 3 lär man sig av den som arbetar med samma sak inom så här många rutor ...
+  bredvidTim: 8, // ... efter så här många timmar bredvid (gånger larBas + intelligens / 20, som i samtal) ...
+  laraMin: 15, // lärlingen går till mästaren när hen arbetar med tekniken och har minst så här många minuter kvar ...
+  laraMax: 120, // ... och stannar högst så här många minuter
+  laraSida: 0.6, // ... och sitter så här många rutor vid sidan av hen
+  // ... och nivå 4–5 bara som lärling: lärlingen kan det efter så här många timmar av sitt eget arbete med det tekniken hör till,
+  // medan mästaren lever i byn (gånger larBas + intelligens / 20). Ungefär 4 dygn (förslag 3–5 dygn, mäts och balanseras i 4.5)
+  larlingTim: 10,
 });
 
 export const knows = (p: Person, id: string) => (p.tek?.[id] ?? 0) >= 1;
@@ -163,6 +173,8 @@ export const canThink = (p: Person, t: Tek) => !knows(p, t.id) && t.krav.every(k
 // den som kommer på eller lär sig något
 function learn(s: State, p: Person, t: Tek, from?: Person) {
   p.tek![t.id] = 1;
+  if (p.lar?.tek === t.id) p.lar = undefined; // lärlingen har lärt sig klart och kan själv bli mästare
+  if (p.halvminne) { p.halvminne = p.halvminne.filter(k => k !== t.id); if (!p.halvminne.length) p.halvminne = undefined; }
   if (from) { log(s, `${p.name} har lärt sig av ${from.name} att göra ${t.namn.toLowerCase()}.`, 'skill', [p.id, from.id]); return; }
   const first = !s.people.some(q => q !== p && knows(q, t.id)) && !(s.stat?.['tek_' + t.id]);
   count(s, 'tek_' + t.id);
@@ -239,7 +251,7 @@ export function forsokKlar(s: State, p: Person, tk: Task) {
 export function teach(s: State, a: Person, b: Person, slag: SamtalDef, mer = 1) { // mer: mentorn lär ut mer (relationer.ts)
   if (!a.tek || ageOf(b, s.now) < ALDER.lar) return;
   for (const t of TEKNIK) {
-    if (!knows(a, t.id) || knows(b, t.id) || !t.krav.every(k => knows(b, k))) continue;
+    if (t.niva > TEKTAL.larNiva || !knows(a, t.id) || knows(b, t.id) || !t.krav.every(k => knows(b, k))) continue; // nivå 3 och uppåt lärs inte i prat (steg 4.2.3.1)
     if (rnd(s, 'kunskap', a) > TEKTAL[slag.lar ?? 'larChans'] * mer) continue;
     lartUt(s, a, b);
     delade('teknik', t.id, t.namn.toLowerCase()); // samtalets ämne (steg 3.9.5)
@@ -248,6 +260,75 @@ export function teach(s: State, a: Person, b: Person, slag: SamtalDef, mer = 1) 
     b.tek[t.id] = (b.tek[t.id] ?? 0) + d; count(s, 'tekLart', d);
     if (b.tek[t.id] >= 1) learn(s, b, t, a);
   }
+}
+
+// ---------- att arbeta bredvid och lärlingen (steg 4.2.3.2–4.2.3.4) ----------
+// Nivå 3 lär man sig av den som kan och arbetar med samma sak nära en. Nivå 4–5 bara som lärling hos en mästare: den som kan
+// tekniken (den som kom på den är den första) har en lärling i taget. Lärlingen lär sig i sitt arbete med det tekniken hör till
+// så länge mästaren lever i byn, och går till mästaren och arbetar bredvid när hen arbetar med det (laraVal)
+const BREDVID = TEKNIK.filter(t => t.niva >= 3 && !t.nar);
+const arbetarMed = (q: Person, t: Tek) => q.task?.phase === 'do' && t.omr.includes(omrAv(q.task.act));
+const nara = (p: Person, q: Person) => Math.hypot(p.x - q.x, p.y - q.y) <= TEKTAL.bredvidAvst;
+export function arbetaBredvid(s: State, p: Person, tk: Task, dtSec: number) {
+  if (tk.phase !== 'do' || ageOf(p, s.now) < ALDER.lar) return;
+  const act = OMR.has(tk.act) ? tk.act : omrAv(tk.act);
+  for (const t of BREDVID) {
+    if (!t.omr.includes(act) || !canThink(p, t)) continue;
+    const mastare = t.niva >= 4;
+    if (mastare && p.lar?.tek !== t.id) continue;
+    const m = mastare ? byId(s, p.lar!.av) : undefined;
+    const vid = mastare ? (m && alive(m) ? m : undefined)
+      : s.people.find(q => q !== p && alive(q) && knows(q, t.id) && arbetarMed(q, t) && nara(p, q));
+    if (!vid) continue;
+    p.tek ??= {};
+    const d = Math.min(1 - (p.tek[t.id] ?? 0), dtSec / HOUR_S / (mastare ? TEKTAL.larlingTim : TEKTAL.bredvidTim) * (TEKTAL.larBas + stat(p, 'intelligens', s.now) / 20));
+    p.tek[t.id] = (p.tek[t.id] ?? 0) + d; count(s, mastare ? 'tekLarling' : 'tekBredvid', d);
+    if (p.tek[t.id] >= 1) { learn(s, p, t, vid); if (mastare) count(s, 'larlingKlar'); }
+  }
+}
+// lärlingen går till mästaren när hen arbetar med tekniken (valet i val.ts) och arbetar bredvid så länge mästaren håller på
+export function laraVal(s: State, p: Person): { m: Person; spot: { x: number; y: number }; min: number } | undefined {
+  if (!p.lar) return undefined;
+  const m = byId(s, p.lar.av), t = TEK[p.lar.tek];
+  if (!m || !alive(m) || !m.task || !arbetarMed(m, t)) return undefined;
+  const kvar = (m.task.until - s.now) / MIN;
+  if (kvar < TEKTAL.laraMin) return undefined;
+  return { m, spot: { x: m.x + TEKTAL.laraSida, y: m.y }, min: Math.min(kvar, TEKTAL.laraMax) };
+}
+// varje timme: en mästare utan lärling tar sig en. Hen lär ut den av sina tekniker som färst kan, till den som är skickligast
+// i färdigheten och har kommit längst (kraven ska hen kunna). Den som redan är lärling hos någon väljs inte
+export function stepLarlingar(s: State) {
+  const ppl = living(s);
+  for (const p of ppl) if (p.lar && !ppl.some(m => m.id === p.lar!.av)) halvminne(s, p); // mästaren har flyttat
+  for (const m of ppl) {
+    if (ageOf(m, s.now) < ALDER.uppfinner || ppl.some(q => q.lar?.av === m.id)) continue;
+    const tek = TEKNIK.filter(t => t.niva >= 4 && knows(m, t.id)).sort((a, b) => ppl.filter(q => knows(q, a.id)).length - ppl.filter(q => knows(q, b.id)).length);
+    for (const t of tek) {
+      const sk = t.forsok?.skill ?? 'hantverk', poang = (q: Person) => q.skill[sk] + (q.tek?.[t.id] ?? 0) * 10;
+      const c = ppl.filter(q => q !== m && !q.lar && ageOf(q, s.now) >= ALDER.uppfinner && canThink(q, t)).sort((a, b) => poang(b) - poang(a) || a.id - b.id)[0];
+      if (!c) continue;
+      c.lar = { av: m.id, tek: t.id }; count(s, 'larling');
+      log(s, `${c.name} blev lärling hos ${m.name} för att lära sig göra ${t.namn.toLowerCase()}.`, 'skill', [c.id, m.id]);
+      break;
+    }
+  }
+}
+// lärlingen som miste sin mästare innan hen lärt sig klart: det hen hunnit lära sig blir ett halvminne, som gör det lättare att
+// komma på det igen genom försök eller att lära sig klart hos en annan mästare
+function halvminne(s: State, p: Person) {
+  const id = p.lar!.tek; p.lar = undefined;
+  if ((p.tek?.[id] ?? 0) > 0) { (p.halvminne ??= []).includes(id) || p.halvminne.push(id); count(s, 'halvminne'); }
+}
+// när någon dör (die i liv.ts): lärlingen får ett halvminne, och det som ingen annan i byn kan nu skrivs i krönikan som förlorat
+export function kunskapDod(s: State, p: Person) {
+  const ppl = living(s);
+  const larling = ppl.filter(q => q.lar?.av === p.id), borta = TEKNIK.filter(t => knows(p, t.id) && !ppl.some(q => knows(q, t.id)));
+  const halv = larling.filter(q => borta.some(t => t.id === q.lar!.tek) && (q.tek?.[q.lar!.tek] ?? 0) > 0);
+  for (const q of larling) halvminne(s, q);
+  if (!ppl.length || !borta.length) return; // byn dör ut, eller någon annan kan det
+  count(s, 'tekForlorad', borta.length);
+  const namn = borta.map(t => t.namn.toLowerCase()), lista = namn.length > 1 ? namn.slice(0, -1).join(', ') + ' och ' + namn[namn.length - 1] : namn[0];
+  kronika(s, `Med ${p.name} dog konsten att göra ${lista}.${halv.length ? ` ${halv.map(q => q.name).join(' och ')} hade inte lärt sig klart och minns det bara till hälften.` : ''}`, 'forlust');
 }
 
 // äldre sparfiler: den som redan gjort yxor eller spjut kan det

@@ -17,7 +17,7 @@ import { needLadder, noticeTheft, stole } from './behov';
 import { avbryt, capacity, dropSpot, fetchSpot, helaIBordan, homeKind, isCarrying, load, pickUp, placeTools, sakerPaGolvet, storeLoad, tidyStore, wearStore } from './lager';
 import { DJURARTER, REDSKAP, bearbeta, djurKvar, twineRope, wearUsed } from './redskap';
 import { GOR_ACTS, finishHalf, startWork, stepPaborjat, workHalf } from './paborjat';
-import { forsokKlar, forsokSteg, thinkWhileWorking } from './teknik';
+import { arbetaBredvid, forsokKlar, forsokSteg, stepLarlingar, thinkWhileWorking } from './teknik';
 import { arbetsformaga, atSteg, foodDays, workRate } from './ekonomi';
 import { TRY_SEC, growFynd, handFish, lagren, packFynd, pickMushrooms, richness, richnessDelar, sankning, takeFrom } from './fynd';
 import { halMin, halVal, islagt, stepIs } from './is';
@@ -182,7 +182,7 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
   const fh = hearthOf(s.fire), temp = temperature(s), coldRate = coldOf(temp);
   const learn = 1 + 0.1 * s.seder.v.nyfikenhet; // en nyfiken by lär sig snabbare
   if (Math.floor(now / HOUR) !== Math.floor((now - dtSec * SEC) / HOUR)) {
-    atSteg(s); stepSeder(s); updateTags(s); stepRelationer(s); stepUppvaxt(s); stepReligion(s); stepHumor(s); stepDelning(s);
+    atSteg(s); stepSeder(s); updateTags(s); stepRelationer(s); stepUppvaxt(s); stepReligion(s); stepHumor(s); stepDelning(s); stepLarlingar(s);
     stepVader(s); stepMotgang(s); stepTorka(s); stepFlod(s); stepIs(s); growGround(s, 1, ai); growFynd(s, 1, ai, vaxtFaktor(s)); forget(s, 1); stepRykten(s, moodOf); glomRykten(s, 1); stepBerattelser(s); stepStyre(s); rotStumps(s); tidyStore(s);
     wearBuild(s, 1, ai); stepByggnader(s); planBuild(s); stepEldFlytt(s); stepPaborjat(s); stepStationer(s); stepBrasor(s); stepKlader(s); stepOdling(s);
     askaSteg(s); // det svarta efter en eldsvåda försvinner (brand.ts)
@@ -396,6 +396,7 @@ function taskStep(s: State, p: Person, a: number, t1: number, dtSec: number, lea
     addHabit(p, tk.act, Math.exp(-used * SEC / HABIT_FADE), used / HOUR_S);
     // den som arbetar kommer så småningom på hur det kan göras bättre; man funderar också på vägen dit och hem
     thinkWhileWorking(s, p, tk.act, used);
+    arbetaBredvid(s, p, tk, used); // nivå 3 och lärlingen lär sig av den som kan och arbetar nära (steg 4.2.3.2–4.2.3.3)
     left -= used;
   }
   s.now = t1;

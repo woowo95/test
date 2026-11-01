@@ -13,6 +13,7 @@ import { balans } from './balans';
 import { RELT } from './relationer';
 import { rykteDod, startSmak } from './rykten';
 import { GudOmr, gudHandelse } from './religion';
+import { kunskapDod } from './teknik';
 
 // ---------- balanstal (regel 8) ----------
 // Befolkningen regleras av naturen, inte av ett fast tak: en trång by får färre barn och fler som flyttar, en liten by lockar
@@ -106,6 +107,7 @@ export function die(s: State, p: Person, orsak: Dodsorsak) {
   if (a >= ALDER.hogAlder) p.fame.push(`Blev ${a} år gammal`);
   uppvaxtDod(s, p); // barnen som miste hen eller såg det (steg 3.1.2)
   rykteDod(s, p); // byn minns hen (steg 3.4.1)
+  kunskapDod(s, p); // lärlingen och det som ingen annan kan (steg 4.2.3.4)
   for (const q of living(s)) {
     // den som var gift sörjer mer, den bästa vännen länge och en nära vän lite mer än en vän (steg 3.1.1)
     const r = s.rels[relKey(p.id, q.id)];
