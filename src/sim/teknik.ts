@@ -132,7 +132,10 @@ export const TEKTAL = balans('teknik', {
   // experimenten (steg 4.2.1.1): den som prövar sig fram har minst så här mycket i färdigheten (forsok i raden) ...
   forsokSkill: 4,
   forsokMin: 90, // ... ett försök tar så här många minuter och tar en hel sak av materialet
-  forsokChans: 0.3, // chansen att den skicklige prövar sig fram i stället för annat handarbete
+  forsokChans: 0.3, // chansen att den skicklige prövar sig fram i stället för annat handarbete, för en medelmåttigt nyfiken i en by utan sed åt något håll ...
+  forsokSed: 0.5, // ... gånger 1 + seden Förnyelse – Tradition (-1 till 1) gånger så här mycket, och gånger nyfikenheten / 10 (steg 4.2.1.2)
+  forsokMat: 1.1, // bara när maten räcker minst så här många dygn ...
+  forsokVed: 2, // ... och veden så här många (byn har ett överskott)
 });
 
 export const knows = (p: Person, id: string) => (p.tek?.[id] ?? 0) >= 1;
@@ -201,6 +204,10 @@ const stationForsok = (s: State, t: Tek) => stationerOf(s).find(q => t.forsok!.v
 const forbrukas = (t: Tek) => Object.keys(recept(t.id)?.av ?? {}).filter(k => !isTool(k));
 const kanForsoka = (s: State, p: Person, t: Tek) => !!t.forsok && ageOf(p, s.now) >= ALDER.uppfinner && canThink(p, t) && hasMaterial(s, t)
   && p.skill[t.forsok.skill] >= TEKTAL.forsokSkill && (r => !r.length || r.some(k => amountOf(s, k) >= 1))(forbrukas(t)) && (!t.forsok.vid.length || !!stationForsok(s, t));
+// hur ofta (steg 4.2.1.2): sedvanan mot nya sätt (seden nyfikenhet, Förnyelse – Tradition) och personens nyfikenhet. Bara när
+// byn har ett överskott av mat och ved (matDygn, vedDygn); farorna avgörs i valet (val.ts), där de går före
+export const forsokChans = (s: State, p: Person, matDygn: number, vedDygn: number) => matDygn < TEKTAL.forsokMat || vedDygn < TEKTAL.forsokVed ? 0
+  : TEKTAL.forsokChans * Math.max(0, 1 + (s.seder?.v.nyfikenhet ?? 0) * TEKTAL.forsokSed) * stat(p, 'nyfikenhet', s.now) / 10;
 // vad p kan pröva sig fram till nu, och var: den teknik hen kommit längst mot (så att försöken samlas på en sak)
 export function forsokVal(s: State, p: Person): { id: string; spot?: { x: number; y: number }; min: number } | undefined {
   let bast: Tek | undefined;

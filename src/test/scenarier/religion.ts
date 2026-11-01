@@ -2,7 +2,7 @@
 import { createState, Person } from '../../sim';
 import * as SIM from '../../sim';
 import { START } from '../kor';
-import { SCENARIER, nyInvanare } from './hjalp';
+import { SCENARIER, nyInvanare, utanWebblasare } from './hjalp';
 import { hasIcon } from '../../ikoner';
 import { setByn } from '../../ui/lage';
 import { religion } from '../../ui/flikar/religion';
@@ -252,11 +252,6 @@ SCENARIER.trokategori = {
   },
 };
 
-// symbolerna i flikarna ritas på en canvas; utan webbläsare räcker en låtsad som ger en tom bild
-function utanWebblasare() {
-  const g = globalThis as { document?: unknown };
-  g.document ??= { createElement: () => ({ getContext: () => ({ fillRect() {} }), toDataURL: () => 'data:,' }) };
-}
 
 SCENARIER.religionsflik = {
   text: 'Fliken Religion (steg 4.1.3): syns när den första tron finns och visar varje tro med symbol, namn, antal troende, skalorna, grundaren, de troende och upplevelserna som rör tron; de minsta under Övriga trosriktningar, och alla i byn med andlighet och tro',

@@ -1,4 +1,4 @@
-import { ACTS, MATERIAL, SLAG, Person, SAKER, TEK, TEKNIK, Tek, amountOf, harSak, hasMaterial, knows, materialOf, living, sakNamn, stationDef } from '../../sim';
+import { ACTS, MATERIAL, SKILL_ORD, SLAG, Person, SAKER, TEK, TEKNIK, Tek, amountOf, harSak, hasMaterial, knows, materialOf, living, sakNamn, stationDef } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { bar, esc, fmtN, hjalpKnapp, hjalpText, pLink } from '../hjalp';
 import { s } from '../lage';
@@ -45,7 +45,7 @@ function tekHtml() {
   });
   const h = Math.max(150, Math.max(...Array.from({ length: cols }, (_, c) => TEKNIK.filter(t => depth[t.id] === c).length)) * 64);
   return `<div class="tekhead">${hjalpKnapp('teknik', 'Hur fungerar teknik?')}</div>
-    ${hjalpText('teknik', `<p class="muted small">Den som arbetar med något kommer så småningom på hur det kan göras bättre. Nyfikenheten avgör hur ofta hen funderar och intelligensen hur fort det går. Det man kan lärs ut i samtal. Dör alla som kan något försvinner kunskapen. Ett sträck betyder att tekniken till höger kräver den till vänster. Siffran är hur många som kan tekniken och ringen hur långt den som funderat mest har kommit. Tryck på en teknik för att se vad den kräver och hur man kommer på den.</p>`)}
+    ${hjalpText('teknik', `<p class="muted small">Den som arbetar med något kommer så småningom på hur det kan göras bättre. Nyfikenheten avgör hur ofta hen funderar och intelligensen hur fort det går. Det svåraste (nivå 4–5) kommer man bara på genom att pröva sig fram vid en station, när byn har mat och ved över. Det man kan lärs ut i samtal. Dör alla som kan något försvinner kunskapen. Ett sträck betyder att tekniken till höger kräver den till vänster. Siffran är hur många som kan tekniken och ringen hur långt den som funderat mest har kommit. Tryck på en teknik för att se vad den kräver och hur man kommer på den.</p>`)}
     <div class="ttradram"><div class="ttrad" style="height:${h}px;width:${cols * KOLUMN}px"><svg class="tlinjer" viewBox="0 0 100 100" preserveAspectRatio="none">${lines.join('')}</svg>${nodes.join('')}</div></div>
     ${tekInfo(ppl, tekSel)}`;
 }
@@ -73,7 +73,7 @@ export function tekInfo(ppl: Person[], id: string | undefined) {
   const finns = lista(materialOf(t).map(g => lista(g.map(k => sakNamn(k).toLowerCase()), 'eller')));
   return `<div class="tinfo"><div class="tektop">${iconImg(t.id, 24)}<b>${esc(t.namn)}</b>${r.length ? `<span class="tmat" title="${esc(rtext)}">${mat}</span>` : ''}</div>
     <p class="small">${esc(t.text)} ${esc(t.effekt)}</p>
-    <p class="small muted">Den som ${esc(t.nar ?? arb)} kan komma på det${esc(krav)}${finns ? `, när det finns ${esc(finns)} i byn` : ''}.</p>
+    <p class="small muted">${t.forsok ? `Den som är skicklig i ${esc(SKILL_ORD[t.forsok.skill])} kan pröva sig fram till det vid ${esc(t.forsok.vid.length ? lista([...new Set(t.forsok.vid.map(k => stationDef(k)?.namn.toLowerCase() ?? k))], 'eller') : 'elden')}${esc(krav)}${finns ? `, när det finns ${esc(finns)} i byn` : ''}. Varje försök tar en sak av materialet.` : `Den som ${esc(t.nar ?? arb)} kan komma på det${esc(krav)}${finns ? `, när det finns ${esc(finns)} i byn` : ''}.`}</p>
     ${kan.length ? `<p class="kan">${kan.map(pLink).join(', ')}</p>` : '<p class="muted small">Ingen kan det.</p>'}
     ${pa.length ? `<div class="tank">${pa.map(p => `${pLink(p)}${bar(p.tek![t.id], 'skill')}`).join('')}</div>` : ''}</div>`;
 }

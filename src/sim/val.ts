@@ -38,7 +38,7 @@ import { forSmutsigt, latrinFor } from './smuts';
 import { bordenOf, byInne, ledigPlats, lekplats, sittAt, stationAt, stationFor, storlekAv, vidStation } from './stationer';
 import { grillTid, kanGrilla, kanTorka, torkTid } from './matlagning';
 import { egenBrasa } from './brasor';
-import { TEK, TEKTAL, forsokVal } from './teknik';
+import { TEK, forsokChans, forsokVal } from './teknik';
 import { utbrottBorjar, utbrottNu } from './humor';
 import { smakDrag } from './rykten';
 import { pabud, skams } from './styre';
@@ -653,8 +653,8 @@ function craft(s: State, p: Person, v: Val, why: string) {
   if (canProcess(s, p, DJUR.abborre)) { processTask(s, v, DJUR.abborre, `${why}. Rensar fisken.`); return; }
   if (ageOf(p, s.now) >= ALDER.grillar && kanTorka(s, p)) { torkVal(s, v, `${why}. Torkar kött och fisk.`); return; }
   if (ageOf(p, s.now) >= ALDER.grillar && kanGrilla(s, p)) { grillVal(s, v, `${why}. Grillar maten.`); return; }
-  const fara = dangers(s), fv = !fara.kyla && !fara.svalt && rnd(s, 'kunskap', p) < TEKTAL.forsokChans ? forsokVal(s, p) : undefined;
-  if (fv) { // den skicklige prövar sig fram mot en teknik på nivå 4–5 (teknik.ts, steg 4.2.1.1)
+  const fara = dangers(s), fv = !fara.kyla && !fara.svalt && rnd(s, 'kunskap', p) < forsokChans(s, p, foodDays(s), woodDays(s)) ? forsokVal(s, p) : undefined;
+  if (fv) { // den skicklige prövar sig fram mot en teknik på nivå 4–5 (teknik.ts, steg 4.2.1.1), när ingen fara går före och byn har ett överskott (4.2.1.2)
     set(v, 'forsok', `${why}. Prövar sig fram till ${TEK[fv.id].namn.toLowerCase()}.`);
     v.tool = fv.id; v.dur = fv.min * MIN; if (fv.spot) v.spot = fv.spot;
     return;

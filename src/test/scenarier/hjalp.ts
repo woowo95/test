@@ -186,3 +186,9 @@ export const FORBATTRING = ['bygga', 'hantverk', 'kniv', 'promenad', 'bada', 'st
 export const MATMEDREDSKAP = [...MATARBETE, 'korg', 'spjut', 'metspo'];
 // en by så rik att folk behåller allt de skaffar (delning.ts), så att ägandet kan provas
 export const rikBy = (s: State) => { s.delning = { andel: 0 }; };
+
+// symbolerna i flikarna ritas på en canvas; utan webbläsare räcker en låtsad som ger en tom bild
+export function utanWebblasare() {
+  const g = globalThis as { document?: unknown };
+  g.document ??= { createElement: () => ({ getContext: () => ({ fillRect() {} }), toDataURL: () => 'data:,' }) };
+}

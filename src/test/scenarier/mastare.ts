@@ -2,7 +2,9 @@
 import { createState, Person, State, Task } from '../../sim';
 import * as SIM from '../../sim';
 import { START } from '../kor';
-import { SCENARIER, medBank } from './hjalp';
+import { SCENARIER, medBank, utanWebblasare } from './hjalp';
+import { setByn } from '../../ui/lage';
+import { tekInfo } from '../../ui/flikar/teknik';
 
 // en vuxen som kan kraven till skinnkläderna (bensylen och det före), med skickligheten i hantverk h, och en slöjdbänk med skinn och rep i lagret
 export function experten(seed = 3, h = 6): { s: State; p: Person } {
@@ -38,7 +40,10 @@ SCENARIER.forsok = {
     const ovan = experten(3, SIM.TEKTAL.forsokSkill - 1), utanSkill = !SIM.forsokVal(ovan.s, ovan.p);
     const tom = experten(); SIM.setAmount(tom.s, 'skinn', 0); const utanMat = !SIM.forsokVal(tom.s, tom.p);
     const ingen = experten(); ingen.s.stationer = []; SIM.touch(ingen.s); const utanBank = !SIM.forsokVal(ingen.s, ingen.p);
+    utanWebblasare(); setByn(s);
+    const info = tekInfo(SIM.living(s), 'skinnklader'), vanlig = tekInfo(SIM.living(s), 'yxa');
     return [
+      ['teknikträdet säger att man prövar sig fram vid slöjdbänken, och för yxan som förut', info.includes('pröva sig fram till det vid slöjdbänk') && !vanlig.includes('pröva sig fram')],
       [`alla ${alla.length} tekniker på nivå 4–5 har en försöksplats, och inga lägre`, medPlats && lagre],
       ['vanligt hantverk för inte närmare skinnkläderna', vanligt],
       [`den skicklige prövar sig fram till ${v ? SIM.TEK[v.id].namn.toLowerCase() : 'ingenting'} vid slöjdbänken`, v?.id === 'skinnklader' && vidBank],
@@ -47,6 +52,26 @@ SCENARIER.forsok = {
       ['den som inte är skicklig nog prövar inte', utanSkill],
       ['utan skinn prövar ingen', utanMat],
       ['utan slöjdbänken prövar ingen', utanBank],
+    ];
+  },
+};
+
+SCENARIER.forsoklust = {
+  text: 'Hur ofta experten prövar sig fram (steg 4.2.1.2): seden Förnyelse – Tradition och personens nyfikenhet, och bara när byn har ett överskott av mat och ved',
+  kor: () => {
+    const { s, p } = experten(), T = SIM.TEKTAL;
+    const c = () => SIM.forsokChans(s, p, T.forsokMat + 1, T.forsokVed + 1);
+    s.seder.v.nyfikenhet = 0; p.pot.nyfikenhet = 10; const mitt = c();
+    p.pot.nyfikenhet = 18; const nyfiken = c();
+    p.pot.nyfikenhet = 10; s.seder.v.nyfikenhet = 1; const fornyelse = c();
+    s.seder.v.nyfikenhet = -1; const tradition = c();
+    s.seder.v.nyfikenhet = 0;
+    const utanMat = SIM.forsokChans(s, p, T.forsokMat - 0.1, T.forsokVed + 1), utanVed = SIM.forsokChans(s, p, T.forsokMat + 1, T.forsokVed - 0.1);
+    const f = (x: number) => x.toFixed(2);
+    return [
+      [`den nyfikne prövar oftare (${f(nyfiken)} mot ${f(mitt)})`, nyfiken > mitt * 1.5],
+      [`i en by med Förnyelse oftare, med Tradition mer sällan (${f(fornyelse)}, ${f(mitt)}, ${f(tradition)})`, fornyelse > mitt && tradition < mitt],
+      ['ingen prövar när maten eller veden inte räcker till ett överskott', utanMat === 0 && utanVed === 0],
     ];
   },
 };
