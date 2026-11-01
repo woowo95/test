@@ -1768,3 +1768,34 @@ SCENARIER.relationstext = {
     ];
   },
 };
+
+SCENARIER.utbrytning = {
+  text: 'Utbrytningar (steg 4.4.4.1, klaner.ts): när en familj flyttar ur en mycket stor by (KLAN.utbrytFran invånare eller fler) blir den en ny grannklan, uppkallad efter grundaren. De som flyttade är klanens namngivna personer, klanen tycker om byn och syns i fliken Grannar. Ur en mindre by flyttar familjen som förut, utan att bli en klan.',
+  kor: () => {
+    const ny = (fler: number) => {
+      const s = createState(6, START); rikBy(s); setFood(s, 300); s.ting = [];
+      for (const q of living(s)) { q.mother = q.father = q.partner = undefined; q.born = s.now - 52 * DAY; }
+      for (let i = 0; i < fler; i++) nyInvanare(s, i % 2 ? 'm' : 'k', 50 + (i % 7));
+      const a = nyInvanare(s, 'm', 26), b = nyInvanare(s, 'k', 25); a.partner = b.id; b.partner = a.id;
+      const c = nyInvanare(s, 'k', 5); c.mother = b.id; c.father = a.id;
+      for (const q of living(s)) SIM.think(q, 'Trångt', -0.6, s.now, 30 * DAY);
+      for (let i = 0; i < 500 && !s.stat?.utvandrade; i++) { regulate(s, 3600); tidyTools(s); s.now += HOUR; }
+      return { s, a, b, c, pop: living(s).length + (s.stat?.utvandrade ?? 0) };
+    };
+    const { s, a, b, c, pop } = ny(SIM.KLAN.utbrytFran);
+    const k = SIM.klanerOf(s).find(x => x.utbrytare);
+    const namn = !!k && [a, b].some(p => k.namn.startsWith(p.name)) && k.namn.endsWith(' folk');
+    const personer = !!k && [a, b, c].every(p => k.personer.some(x => x.id === p.id && x.namn === p.name)) && k.personer.find(x => x.id === c.id)?.roll === 'barn';
+    const van = !!k && k.inst === SIM.KLAN.utbrytInst && k.folk === 3 && k.styrka === 2 && k.grundad === s.now - HOUR;
+    const liten = ny(10);
+    const ingen = !!liten.s.stat?.utvandrade && !SIM.klanerOf(liten.s).some(x => x.utbrytare) && SIM.klanerOf(liten.s).length === SIM.KLAN.antal;
+    return [
+      [`familjen flyttade ur en by på ${pop} (${s.stat?.utvandrade ?? 0} flyttade)`, (s.stat?.utvandrade ?? 0) === 3 && pop >= SIM.KLAN.utbrytFran],
+      [`de blir en ny grannklan, uppkallad efter grundaren (${k?.namn})`, namn],
+      ['de som flyttade är klanens namngivna personer (grundare och barn)', personer],
+      ['klanen tycker om byn, är tre och har två som kan slåss', van],
+      ['det står i loggen och krönikan', s.stat?.utbrytning === 1],
+      ['ur en mindre by blir ingen klan', ingen],
+    ];
+  },
+};

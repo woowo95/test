@@ -14,6 +14,7 @@ import { RELT } from './relationer';
 import { rykteDod, startSmak } from './rykten';
 import { GudOmr, gudHandelse } from './religion';
 import { kunskapDod } from './teknik';
+import { utbrytning } from './klaner';
 
 // ---------- balanstal (regel 8) ----------
 // Befolkningen regleras av naturen, inte av ett fast tak: en trång by får färre barn och fler som flyttar, en liten by lockar
@@ -215,10 +216,11 @@ function emigrate(s: State) {
   }
   const a = pick(s, cands, 'flytt'), b = byId(s, a.partner);
   if (!b) return;
-  const group = [a, b, ...barn(a, b)];
+  const group = [a, b, ...barn(a, b)], pop = living(s).length;
   leave(s, ...group);
   const n = group.length - 2;
   count(s, 'utvandrade', group.length);
   log(s, `Byn blev trång. ${a.name} och ${b.name} lämnade byn${n ? ` med ${n} barn` : ''} för att grunda en egen boplats.`, 'move', group.map(g => g.id));
   for (const q of living(s)) for (const g of group) { const r = s.rels[relKey(q.id, g.id)]; if (r && r.op > REL.saknar) { think(q, `Saknar ${g.name}`, LIV.saknarFlytt, now, LIV.saknarFlyttDygn * DAY); break; } }
+  utbrytning(s, group, pop); // ur en mycket stor by blir de en ny grannklan (steg 4.4.4.1)
 }

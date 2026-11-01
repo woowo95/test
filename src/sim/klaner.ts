@@ -1,7 +1,8 @@
-import { DAY, SEC, State } from './typer';
+import { DAY, Person, SEC, State } from './typer';
 import { balans } from './balans';
 import { clamp, pick, rnd } from './slump';
-import { makeName } from './folk';
+import { ALDER, ageOf, count, log, makeName } from './folk';
+import { kronika } from './historik';
 
 // ---------- grannklanerna (steg 4.4.3) ----------
 // Byn är inte ensam i världen. Grannklanerna finns ännu inte på någon karta (den utzoomade världskartan är steg 11.1.3): de är
@@ -25,6 +26,8 @@ export const KLAN = balans('klan', {
   lurad: 10, // så mycket mindre vänlig blir klanen när handlaren märker att byn lurat hen ...
   marka: 0.03, // ... och chansen att hen märker det, per poäng i handlarens Handel
   handlarePer: 2, // så många handlare har en klan som mest (namngivna personer), sedan kommer samma igen
+  utbrytFran: 30, // en familj som flyttar ur en by med så många invånare eller fler blir en ny grannklan (steg 4.4.4.1) ...
+  utbrytInst: 50, // ... som tycker så här om byn från början
 });
 
 // klanernas namn: ett register, så att fler är en rad till
@@ -36,11 +39,12 @@ export const KLAN_ROLLER: Record<string, { namn: string }> = {
   jagare: { namn: 'Jägare' },
   handlare: { namn: 'Handlare' },
   grundare: { namn: 'Grundare' },
+  barn: { namn: 'Barn' },
 };
 // var klanerna bor (handel.ts har vad som är sällsynt där, HEM)
 export const KLAN_HEM = ['kusten i söder', 'fjällen i norr', 'skogarna i öster', 'sjöarna i väster', 'älvdalen', 'byarna vid havet'];
 
-export interface KlanPerson { namn: string; sex: 'm' | 'k'; roll: string }
+export interface KlanPerson { namn: string; sex: 'm' | 'k'; roll: string; id?: number } // id = personens id i byn, för den som kom därifrån
 export interface Klan {
   id: number; namn: string; hem: string;
   folk: number; styrka: number; resurser: number; // hur många, hur många som kan slåss och hur mycket de har (hela tal)
@@ -55,10 +59,10 @@ const mellan = (s: State, [a, b]: readonly number[]) => a + rnd(s, 'klan') * (b 
 export const instText = (v: number) => v >= 50 ? 'vänner' : v >= 15 ? 'vänliga' : v > -15 ? 'neutrala' : v > -50 ? 'misstänksamma' : 'fientliga';
 
 // en ny klan: namnet som ingen annan klan har, och en hövding och en äldste med namn
-export function nyKlan(s: State, folk: number, inst: number, personer?: KlanPerson[]): Klan {
+export function nyKlan(s: State, folk: number, inst: number, personer?: KlanPerson[], egetNamn?: string): Klan {
   const upptagna = new Set(klanerOf(s).map(k => k.namn)), fria = KLAN_NAMN.filter(n => !upptagna.has(n));
   const id = (s.klanNr = (s.klanNr ?? 0) + 1);
-  const namn = fria.length ? pick(s, fria, 'klan') : `${pick(s, KLAN_NAMN, 'klan')} ${id}`;
+  const namn = egetNamn ?? (fria.length ? pick(s, fria, 'klan') : `${pick(s, KLAN_NAMN, 'klan')} ${id}`);
   const per = (r: string): KlanPerson => { const sex = rnd(s, 'klan') < 0.5 ? 'm' : 'k'; return { namn: makeName(s, sex, 'klan'), sex, roll: r }; };
   const k: Klan = {
     id, namn, hem: pick(s, KLAN_HEM, 'klan'), folk: Math.round(folk), styrka: 0, resurser: 0, inst: Math.round(inst),
@@ -97,4 +101,21 @@ export function handlarKlan(s: State): { klan: Klan; person: KlanPerson } | unde
   const sex = rnd(s, 'klan') < 0.5 ? 'm' : 'k', person = { namn: makeName(s, sex, 'klan'), sex, roll: 'handlare' } as KlanPerson;
   klan.personer.push(person);
   return { klan, person };
+}
+
+// en familj flyttar ur en mycket stor by (emigrate i liv.ts, steg 4.4.4.1): de blir en ny grannklan, uppkallad efter den
+// första av grundarna, som tycker om byn de kom ifrån. De som flyttade är klanens namngivna personer
+export function utbrytning(s: State, grupp: Person[], pop: number) {
+  if (pop < KLAN.utbrytFran || grupp.length < 2) return undefined;
+  const vuxna = grupp.filter(p => ageOf(p, s.now) >= ALDER.vuxen), forst = vuxna[0] ?? grupp[0];
+  const namn = `${forst.name}${/[sxz]$/.test(forst.name) ? '' : 's'} folk`;
+  const per = grupp.map(p => ({ namn: p.name, sex: p.sex, roll: vuxna.includes(p) ? 'grundare' : 'barn', id: p.id } as KlanPerson));
+  const k = nyKlan(s, grupp.length, KLAN.utbrytInst, per, namn);
+  k.utbrytare = true; k.grundad = s.now;
+  k.styrka = Math.max(1, vuxna.length);
+  count(s, 'utbrytning');
+  const text = `${namn} är en ny grannklan vid ${k.hem}: ${grupp.map(p => p.name).join(', ')} som lämnade byn.`;
+  log(s, text, 'world', grupp.map(p => p.id));
+  kronika(s, text, 'flytt');
+  return k;
 }
