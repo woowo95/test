@@ -121,7 +121,7 @@ const bordTra = (w: number, h: number) => w * h * STATION.bordTra + ((w >= 2 ? 2
 // brasa = en extra eld (steg 2.9.1, brasor.ts): står nära sovplatserna den är till för (siteBrasa), och alla vuxna kan bygga den (tek är tom: den som är gammal nog att ta ansvar, ALDER.ansvar)
 export interface Utkant { till: number; avst: number; vatten?: true }
 export interface Forvar { rymmer: number; redskap?: true; tak?: true; stangd?: true; privat?: true }
-export interface StationDef { namn: string; ikon: string; w: number; h: number; tek: string[]; av: Record<string, number>; min: number; gor: Act[]; bara?: Act[]; vid?: Record<string, number>; verktyg?: string; utkant?: Utkant; eld?: true; kraver?: Partial<Record<Act, string>>; smutsar?: Partial<Record<Act, string>>; bygger: string; forsta: string; inne?: true; mobel?: true; flera?: true; fart?: Partial<Record<Act, number>>; brasa?: true; sover?: true; sitt?: true; platser?: true; forvar?: Forvar; pynt?: true }
+export interface StationDef { namn: string; ett?: true; ikon: string; w: number; h: number; tek: string[]; av: Record<string, number>; min: number; gor: Act[]; bara?: Act[]; vid?: Record<string, number>; verktyg?: string; utkant?: Utkant; eld?: true; kraver?: Partial<Record<Act, string>>; smutsar?: Partial<Record<Act, string>>; bygger: string; forsta: string; inne?: true; mobel?: true; flera?: true; fart?: Partial<Record<Act, number>>; brasa?: true; sover?: true; sitt?: true; platser?: true; forvar?: Forvar; pynt?: true }
 // de enkla redskapen: görs vid slöjdbänken om byn har en, lite fortare där (fart), annars vid elden som förut (Björn, efter v90)
 const ENKLA: Act[] = ['yxa', 'spjut', 'metspo', 'kniv', 'bensyl', 'balte', 'boll', 'slagtra', 'mal', 'trumma', 'benflojt', 'lyra'];
 export const STATIONER = {
@@ -142,17 +142,17 @@ export const STATIONER = {
   },
   // borden (steg 2.2.15): tre storlekar av samma möbel och teknik. Byn bygger den storlek som räcker åt dem som saknar en plats
   bord: {
-    namn: 'Litet bord', ikon: 'bord', w: 2, h: 1, tek: ['bord'], av: { ved: bordTra(2, 1) }, min: STATION.bordMin, gor: [], mobel: true, flera: true, platser: true,
+    namn: 'Litet bord', ett: true, ikon: 'bord', w: 2, h: 1, tek: ['bord'], av: { ved: bordTra(2, 1) }, min: STATION.bordMin, gor: [], mobel: true, flera: true, platser: true,
     bygger: 'Bygger ett bord med stubbar att sitta på.',
     forsta: '{namn} byggde byns första bord, med stubbar att sitta på. Där äter man tillsammans och samtalar.',
   },
   bord2: {
-    namn: 'Bord', ikon: 'bord2', w: 2, h: 2, tek: ['bord'], av: { ved: bordTra(2, 2) }, min: STATION.bord2Min, gor: [], mobel: true, flera: true, platser: true,
+    namn: 'Bord', ett: true, ikon: 'bord2', w: 2, h: 2, tek: ['bord'], av: { ved: bordTra(2, 2) }, min: STATION.bord2Min, gor: [], mobel: true, flera: true, platser: true,
     bygger: 'Bygger ett bord med åtta stubbar runt.',
     forsta: '{namn} byggde byns första fyrkantiga bord, med plats för åtta.',
   },
   bord3: {
-    namn: 'Långbord', ikon: 'bord3', w: 3, h: 2, tek: ['bord'], av: { ved: bordTra(3, 2) }, min: STATION.bord3Min, gor: [], mobel: true, flera: true, platser: true,
+    namn: 'Långbord', ett: true, ikon: 'bord3', w: 3, h: 2, tek: ['bord'], av: { ved: bordTra(3, 2) }, min: STATION.bord3Min, gor: [], mobel: true, flera: true, platser: true,
     bygger: 'Bygger ett långbord med tio stubbar runt.',
     forsta: '{namn} byggde byns första långbord, med plats för tio.',
   },
@@ -168,7 +168,7 @@ export const STATIONER = {
     forsta: '{namn} byggde byns första kista, i rummet där hen sover. Där ligger hens redskap och kläder när hen inte använder dem, och de slits som under tak.',
   },
   stall: {
-    namn: 'Redskapsställ', ikon: 'stall', w: 1, h: 1, tek: ['hylla'], av: { ved: STATION.stallTra, rep: STATION.stallRep }, min: STATION.stallMin, gor: [], mobel: true, flera: true, forvar: { rymmer: STATION.stallRymmer, redskap: true },
+    namn: 'Redskapsställ', ett: true, ikon: 'stall', w: 1, h: 1, tek: ['hylla'], av: { ved: STATION.stallTra, rep: STATION.stallRep }, min: STATION.stallMin, gor: [], mobel: true, flera: true, forvar: { rymmer: STATION.stallRymmer, redskap: true },
     bygger: 'Bygger ett ställ för redskap och vapen i lagret.',
     forsta: '{namn} byggde byns första ställ för redskap och vapen. Där står flera redskap på samma plats.',
   },
@@ -216,7 +216,7 @@ export const STATIONER = {
     forsta: '{namn} hängde upp byns första bonad där hen sover, ett skinn med ett mönster på. Den är bara till för att vara vacker.',
   },
   vaggbrade: {
-    namn: 'Snidat väggbräde', ikon: 'vaggbrade', w: 1, h: 1, tek: ['vaggbrade'], av: { ved: STATION.bradeTra }, min: STATION.bradeMin, gor: [], inne: true, mobel: true, flera: true, pynt: true,
+    namn: 'Snidat väggbräde', ett: true, ikon: 'vaggbrade', w: 1, h: 1, tek: ['vaggbrade'], av: { ved: STATION.bradeTra }, min: STATION.bradeMin, gor: [], inne: true, mobel: true, flera: true, pynt: true,
     bygger: 'Snidar mönster i ett bräde och sätter upp det på väggen.',
     forsta: '{namn} snidade byns första väggbräde och satte upp det där hen sover. Det är bara till för att vara vackert.',
   },

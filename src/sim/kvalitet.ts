@@ -6,6 +6,10 @@ import { HOUR, Person, State } from './typer';
 import { handelse } from './rykten';
 import { SakMinne, sakMinne } from './berattelser';
 import { gudHandelse } from './religion';
+import { SAKER } from './saker';
+import { STATIONER } from './stationer';
+// ett-ord (ett rep, ett bord) bland sakerna och möblerna
+const arEtt = (k: string) => !!(SAKER[k]?.ett ?? (STATIONER as Record<string, { ett?: true }>)[k]?.ett);
 
 // ---------- kvaliteten (steg 2.2.2) ----------
 // Det någon gör blir olika bra: usel, slarvig, normal, fin, mästerverk eller ett perfekt mästerverk (★). Kvaliteten följer
@@ -69,7 +73,7 @@ export function nyKvalitet(s: State, p: Person, t: { id: number; k: string; q?: 
   if (q === 0) { livet(s, p, 'usla'); if (p.liv!.usla >= UPPV.manga) upplev(s, p, 'usla'); }
   if (q >= MASTERVERK) upplev(s, p, 'perfekta', q === PERFEKT ? 'ett perfekt mästerverk' : 'ett mästerverk');
   else if (q > NORMAL) { livet(s, p, 'fina'); if (p.liv!.fina >= UPPV.manga) upplev(s, p, 'perfekta', 'många fina saker'); }
-  else if (q === 0) handelse(s, p, 'usel', undefined, namn.toLowerCase());
+  else if (q === 0) handelse(s, p, 'usel', undefined, (arEtt(t.k) ? 'ett uselt ' : 'en usel ') + namn.toLowerCase()); // rätt genus (steg 4.5.1.2)
 }
 // ett mästerverk vars görare är död blir en klenod: byn minns hen genom saken (steg 3.4.3). Ger den döda göraren, annars inget
 export function klenod(s: State, t: { q?: number; av?: number }) {

@@ -1202,12 +1202,13 @@ export function valjVariant(s: State, mall: MallId, nyckel: number, f: Fyllning 
   const v = BERATTELSER[mall].filter(x => typeof x === 'string' || x.om(f));
   const x = v[Math.floor(hash(s.seed, nyckel, t) * v.length)];
   const text = typeof x === 'string' ? x : x.t;
-  if (textLyssnare) textLyssnare(mall, BERATTELSER[mall].indexOf(x), fyll(text, f));
+  if (textLyssnare) textLyssnare(mall, BERATTELSER[mall].indexOf(x), fyll(text, f), f);
   return text;
 }
 // verktyget som samlar texterna (npm run texter, steg 4.5.1.1): får varje vald variant (mallen, variantens plats i mallen och
-// texten ifylld) och varje del av en beskrivning (mallen 'del:<id>', plats -1). Bara i verktyget; spelet sätter den aldrig
-let textLyssnare: ((mall: string, i: number, text: string) => void) | undefined;
+// texten ifylld, och fälten), varje del av en beskrivning (mallen 'del:<id>', plats -1) och hela beskrivningen ('beskrivning').
+// Bara i verktyget och testernas vakt (steg 4.5.1.2); spelet sätter den aldrig
+let textLyssnare: ((mall: string, i: number, text: string, f: Fyllning) => void) | undefined;
 export function lyssnaPaTexter(f: typeof textLyssnare) { textLyssnare = f; }
 export function fyll(text: string, f: Fyllning) {
   return text.replace(/\{(\w+)\}/g, (_, k: string) => {
@@ -1493,8 +1494,9 @@ export function beskrivning(s: State, p: Person) {
   const fasta = delar.filter(x => x.d.fast), andra = delar.filter(x => !x.d.fast).sort((x, y) => y.v - x.v || x.i - y.i);
   const max = Math.max(fasta.length, delar.filter(x => x.v >= BERATT.mycket).length >= 5 ? 4 : 3);
   const valda = [...fasta, ...andra].slice(0, max).sort((x, y) => x.i - y.i);
-  const ut = [mening(b, drag.length >= 2 ? 'besk_drag2' : drag.length ? 'besk_drag1' : 'besk_drag0', 0), ...valda.map(x => { const t = x.d.text(b); textLyssnare?.('del:' + x.d.id, -1, t); return t; })];
+  const ut = [mening(b, drag.length >= 2 ? 'besk_drag2' : drag.length ? 'besk_drag1' : 'besk_drag0', 0), ...valda.map(x => { const t = x.d.text(b); textLyssnare?.('del:' + x.d.id, -1, t, b.f); return t; })];
   if (ut.length < 2) ut.push(mening(b, 'besk_inget', 6));
+  textLyssnare?.('beskrivning', -1, ut.join(' '), f);
   return ut.join(' ');
 }
 

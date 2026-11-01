@@ -123,7 +123,7 @@ const HDEF = {
   hjalp: { i: 'hjalpsam', vikt: 0.5, text: 'gav {sak} till {om}, som höll på att dö' },
   masterverk: { i: 'skicklig', vikt: 0.4, text: 'gjorde ett mästerverk: {sak}', prestation: true },
   perfekt: { i: 'skicklig', vikt: 0.8, text: 'gjorde ett perfekt mästerverk: {sak}', prestation: true },
-  usel: { i: 'klapare', vikt: 0.3, text: 'gjorde en usel {sak}' },
+  usel: { i: 'klapare', vikt: 0.3, text: 'gjorde {sak}' }, // {sak} med artikel och adjektiv i rätt genus (steg 4.5.1.2)
   logn: { i: 'logn', vikt: RYKTE.lognV, text: 'ljög om {om}' },
   overdrev: { i: 'logn', vikt: RYKTE.overdrevV, text: 'överdrev om {om}' },
   dom: { i: 'rattvis', vikt: 0.15, text: 'dömde {om} rättvist' },

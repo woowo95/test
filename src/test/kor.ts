@@ -2,6 +2,8 @@
 // Vakterna larmar om något blir omöjligt (NaN, negativa förråd, folk i vattnet).
 import { BEAT, createState, step, living, DAY, groundOf, isSoil, markslag, Markslag, ageIndex, moodOf, serialize, serializeParts, vattenNu, fuelStock, ACT_NAMES, T, State, inMap, isWall, tileOf, foodOf, amountOf, sumOf, okandaBalans, alive, isCarrying, BYN, isStored, housesOf, bitsOf, Person, HOUR, W, KROPP, forvarAt, isTool, faltOf, faltRutor, faltAt, stationById, gridOf, getMap, djurOf, vargarOf, MATERIAL } from '../sim';
 import { NYCKELTAL, Nyckeltal, tal } from './nyckeltal';
+import { lyssnaPaTexter } from '../sim/berattelser';
+import { kollaText, konI, titta } from './textkoll';
 
 // testbyarna grundas 08:00 svensk tid. Testerna körs i datorns tidszon (här UTC), så där är klockan 06:00 när byn grundas
 export const START = Date.parse('2026-10-20T08:00:00+02:00');
@@ -25,6 +27,9 @@ export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => voi
   let hunger = 0, humor = 0, humorN = 0, lit = 0, steg = 0, vintermat = Infinity, vinterved = Infinity, forraAlder = ageIndex(s);
   const ok01 = (v: number) => Number.isFinite(v) && v >= -1e-6 && v <= 1 + 1e-6;
   const dag = () => ((s.now - START) / DAY).toFixed(1);
+  // texterna som skrivs går genom kontrollerna (steg 4.5.1.2), och en gång per dygn skrivs de som bara visas när man trycker
+  const kon = konI(s);
+  lyssnaPaTexter((mall, _i, text, f) => { for (const k of kollaText(text, f, kon, false, mall === 'beskrivning')) larm('text ' + k.id, () => `${mall}: ${k.vad} i "${text}"`); });
   for (let i = 0; i < dagar * STEG_DYGN; i++) {
     step(s, BEAT);
     varjeSteg?.(s);
@@ -53,6 +58,7 @@ export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => voi
       if (p.task && !(p.task.act in ACT_NAMES)) larm('jobb', () => `${p.name} har okänt jobb ${p.task?.act}`);
     }
     vakta(s, larm, i % STEG_TIM === 0);
+    if (i % STEG_DYGN === STEG_DYGN - 1) titta(s);
     if (i % STEG_TIM === 0) { // en gång i timmen
       if (folk.some(p => p.hunger < 0.15)) hunger++;
       for (const p of folk) { const m = moodOf(p, s.now); if (!Number.isFinite(m)) larm('humör', () => `${p.name} humör = ${m}`); humor += m; humorN++; }
@@ -61,6 +67,7 @@ export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => voi
     if (forraAlder === 0 && ai === 1) { vintermat = Math.min(vintermat, foodOf(s)); vinterved = Math.min(vinterved, fuelStock(s)); }
     forraAlder = ai;
   }
+  lyssnaPaTexter(undefined);
   const st = s.stat ?? {};
   const n: Nyckeltal = {
     pop: living(s).length,

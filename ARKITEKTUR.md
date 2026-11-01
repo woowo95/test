@@ -171,6 +171,7 @@ Allt i `src/test/` körs med tsx i Node och ingår inte i spelet. Filer som hete
 | `balans.ts` | `npm run balans`: många byar, median, sämsta och bästa (riktningen ur NYCKELTAL; det som bara är information med lägsta och högsta) |
 | `natur.ts`, `natur-en.ts` | `npm run natur` (steg 1.7.2); natur-en.ts kör en by med eller utan redskap |
 | `texter.ts`, `texter-en.ts` | `npm run texter` (steg 4.5.1.1): alla texter som skrivs, sorterade efter mall och variant, i texter.txt (och texter.json, som inte committas). texter-en.ts kör en by med `lyssnaPaTexter` (berattelser.ts), som får varje vald variant ifylld, och skriver beskrivningar, samtal, relationer och sakernas berättelser en gång per dygn som om någon tittade |
+| `textkoll.ts` | Kontrollerna av texterna (steg 4.5.1.2): registret `KONTROLLER` (tomma luckor, stor och liten bokstav, samma ord två gånger, fel pronomen, en/ett efter `ett` i SAKER och STATIONER, nya ord) och `STIL` (upprepningar, långa meningar), `kollaText` och `titta` (skriver texterna som bara visas när man trycker). Används av `npm run texter` och som vakt i korBy: en text som är fel larmar `text <kontroll>` |
 | `takt.ts`, `teknik.ts`, `detaljer.ts`, `talen.ts` | Undersökning: vad en arbetstimme ger, när teknikerna kommer, den långa utskriften och balanstalen, alla eller de som matchar ett filter (se CLAUDE.md) |
 
 ## Tester: vilket när

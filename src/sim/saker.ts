@@ -5,6 +5,7 @@ import { kladSaker } from './klader';
 // frågar registret. En ny sak läggs till här (och får en ikon i ikoner.ts).
 export interface SakDef {
   namn: string;
+  ett?: true; // ett ett-ord (ett rep, ett bär); annars ett en-ord. För kontrollen av texterna (steg 4.5.1.2)
   stack?: number; // en full börda: vad en normalstark vuxen bär. Saknas = ingen egen stack
   vikt?: number; // kg per styck (steg 2.3.1). Saknas = en full famn (BORDA_KG) delad med stacken
   hander?: 1 | 2; // låst till så många händer (som pilbågen); annars räknas det fram ur vikten och styrkan (utrustning.ts)
@@ -47,46 +48,46 @@ interface Skaffa { act?: string; tid?: number; av?: Record<string, number>; min?
 // hur gamla sparfiler läggs ut (storeFromSums i lager.ts, STACK_ORDER), i vilken ordning mapparna visas (FOLDERS) och vilket av två
 // matslag med samma `mat` som äts först (FOOD). Var en ny stack hamnar i förrådet avgörs inte av ordningen (zoneSpot i lager.ts)
 const DEF = {
-  bar: { namn: 'Bär', skaffa: { act: 'samla' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 4, naring: { energi: 0.8, vitamin: 2, mineral: 0.3, protein: 0.1, fett: 0.1 }, haller: 3 },
+  bar: { namn: 'Bär', ett: true, skaffa: { act: 'samla' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 4, naring: { energi: 0.8, vitamin: 2, mineral: 0.3, protein: 0.1, fett: 0.1 }, haller: 3 },
   rotter: { namn: 'Rötter', skaffa: { act: 'samla' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 5, naring: { energi: 1.4, mineral: 0.6, vitamin: 0.8, protein: 0.3, fett: 0.1 }, haller: 6 },
-  kott: { namn: 'Harkött', skaffa: { min: 3, slag: 'bearbeta', tek: 'kniv' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 2, naring: { protein: 2, fett: 1, energi: 0.8, mineral: 0.6, vitamin: 0.3 }, ra: true, haller: 2 }, // slaktat vilt (en kanin, 2 fällt vilt i hela saker sedan steg 2.10.7, ger 3 kött, ett ben och ett skinn; värdet är golvet för nivån, varde.ts); köttet håller ett par dygn, fisken ett (steg 2.2.9). Köttet är eget för varje art (steg 3.7.14): nyckeln kott är kaninens, så att sparade byar behåller det
-  fisk: { namn: 'Fiskkött', skaffa: { av: { abborre: 1 }, min: 2, slag: 'bearbeta' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 1, naring: { protein: 2, fett: 0.8, mineral: 0.7, energi: 0.6, vitamin: 0.3 }, ra: true, haller: 1 },
+  kott: { namn: 'Harkött', ett: true, skaffa: { min: 3, slag: 'bearbeta', tek: 'kniv' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 2, naring: { protein: 2, fett: 1, energi: 0.8, mineral: 0.6, vitamin: 0.3 }, ra: true, haller: 2 }, // slaktat vilt (en kanin, 2 fällt vilt i hela saker sedan steg 2.10.7, ger 3 kött, ett ben och ett skinn; värdet är golvet för nivån, varde.ts); köttet håller ett par dygn, fisken ett (steg 2.2.9). Köttet är eget för varje art (steg 3.7.14): nyckeln kott är kaninens, så att sparade byar behåller det
+  fisk: { namn: 'Fiskkött', ett: true, skaffa: { av: { abborre: 1 }, min: 2, slag: 'bearbeta' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 1, naring: { protein: 2, fett: 0.8, mineral: 0.7, energi: 0.6, vitamin: 0.3 }, ra: true, haller: 1 },
   svamp: { namn: 'Svamp', skaffa: { act: 'samla' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 3, naring: { protein: 0.6, mineral: 0.8, vitamin: 1, energi: 0.5, fett: 0.1 }, haller: 2 },
-  ved: { namn: 'Trä', skaffa: { act: 'hugga', tek: 'yxa' }, stack: 25, mapp: 'Bränsle', slits: 0.0004, blir: { k: 'grenar', per: 2 } },
+  ved: { namn: 'Trä', ett: true, skaffa: { act: 'hugga', tek: 'yxa' }, stack: 25, mapp: 'Bränsle', slits: 0.0004, blir: { k: 'grenar', per: 2 } },
   grenar: { namn: 'Grenar', skaffa: { act: 'ved' }, stack: 50, mapp: 'Bränsle', slits: 0.0006 },
-  torrgras: { namn: 'Hö', skaffa: { tid: 0.4 }, stack: 50, mapp: 'Bränsle', slits: 0.006 }, // hö ruttnar på ett par dygn när det ligger utanför lagret (steg 2.2.9)
-  kol: { namn: 'Kol', skaffa: { tid: 0.3 }, stack: 25, mapp: 'Bränsle' },
+  torrgras: { namn: 'Hö', ett: true, skaffa: { tid: 0.4 }, stack: 50, mapp: 'Bränsle', slits: 0.006 }, // hö ruttnar på ett par dygn när det ligger utanför lagret (steg 2.2.9)
+  kol: { namn: 'Kol', ett: true, skaffa: { tid: 0.3 }, stack: 25, mapp: 'Bränsle' },
   flinta: { namn: 'Flinta', skaffa: { tid: 8, sallsynt: true }, stack: 10, mapp: 'Sten', brinnerInte: true },
   yxa: { namn: 'Flintyxa', skaffa: { av: { flinta: 1, grenar: 1 }, min: 5, slag: 'stor', tek: 'yxa' }, vikt: 1.5, stack: 1, mapp: 'Redskap', slits: 0.0004, redskap: true, trasig: { stat: 'yxorTrasiga', text: '{namn}s yxa gick sönder.' },
     gors: { text: 'Gör en flintyxa.', stat: 'yxa1', forsta: '{namn} gjorde byns första yxa av en pinne och en flintsten. Nu kan byn fälla träd.', fame: 'Gjorde byns första yxa', igen: '{namn} gjorde en flintyxa.', nyfiken: 'Flintyxan har gjort byn nyfiken på vad mer som går att tillverka.' } },
-  fiskespjut: { namn: 'Träspjut', skaffa: { av: { grenar: 1 }, min: 4, slag: 'liten', tek: 'fiskespjut', verktyg: { yxa: 'yxan', flinta: 'en flintsten' } }, vikt: 1, stack: 1, mapp: 'Redskap', slits: 0.001, redskap: true, grupp: 'spjut', trasig: { stat: 'spjutTrasiga', text: '{namn}s träspjut gick sönder. Träspjuten håller inte länge.' },
+  fiskespjut: { namn: 'Träspjut', ett: true, skaffa: { av: { grenar: 1 }, min: 4, slag: 'liten', tek: 'fiskespjut', verktyg: { yxa: 'yxan', flinta: 'en flintsten' } }, vikt: 1, stack: 1, mapp: 'Redskap', slits: 0.001, redskap: true, grupp: 'spjut', trasig: { stat: 'spjutTrasiga', text: '{namn}s träspjut gick sönder. Träspjuten håller inte länge.' },
     gors: { text: 'Täljer ett träspjut med {verktyg}.', stat: 'spjutGjorda', forsta: '{namn} täljde byns första träspjut med {verktyg}. Nu går fisket lättare.' } },
   korg: { namn: 'Korg', skaffa: { av: { torrgras: 3 }, min: 5, slag: 'stor', tek: 'korg' }, vikt: 0.5, rymmer: 0.8, stack: 1, mapp: 'Redskap', slits: 0.001, redskap: true, trasig: { stat: 'korgarTrasiga', text: '{namn}s korg gick sönder.' },
     gors: { text: 'Flätar en korg av hö.', stat: 'korgarGjorda', forsta: '{namn} flätade byns första korg av hö.' } },
   // giftig svamp som av misstag hamnat i förrådet bland den ätliga (fynd.ts). Den ligger i svampstacken och syns inte
   giftsvamp: { namn: 'Giftig svamp', haller: 2, dold: true, i: 'svamp' },
   sten: { namn: 'Sten', skaffa: { tid: 0.8 }, stack: 10, mapp: 'Sten', brinnerInte: true },
-  rep: { namn: 'Rep', skaffa: { av: { torrgras: 2 }, min: 4, slag: 'liten', tek: 'rep' }, stack: 20, mapp: 'Material', slits: 0.0003 },
-  ben: { namn: 'Ben', skaffa: { min: 3, slag: 'bearbeta', tek: 'kniv' }, stack: 20, mapp: 'Material', brinnerInte: true },
-  flintspjut: { namn: 'Flintspjut', skaffa: { av: { flinta: 1, rep: 1, grenar: 1 }, min: 4, slag: 'liten', tek: 'flintspjut' }, vikt: 1.2, stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true, grupp: 'spjut', trasig: { stat: 'spjutTrasiga', text: '{namn}s flintspjut gick sönder.' },
+  rep: { namn: 'Rep', ett: true, skaffa: { av: { torrgras: 2 }, min: 4, slag: 'liten', tek: 'rep' }, stack: 20, mapp: 'Material', slits: 0.0003 },
+  ben: { namn: 'Ben', ett: true, skaffa: { min: 3, slag: 'bearbeta', tek: 'kniv' }, stack: 20, mapp: 'Material', brinnerInte: true },
+  flintspjut: { namn: 'Flintspjut', ett: true, skaffa: { av: { flinta: 1, rep: 1, grenar: 1 }, min: 4, slag: 'liten', tek: 'flintspjut' }, vikt: 1.2, stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true, grupp: 'spjut', trasig: { stat: 'spjutTrasiga', text: '{namn}s flintspjut gick sönder.' },
     gors: { text: 'Gör ett flintspjut med flinta och rep.', stat: 'flintspjutGjorda', forsta: '{namn} gjorde byns första flintspjut: en flintspets surrad med rep vid en pinne. Det håller mycket längre än ett träspjut.' } },
-  metspo: { namn: 'Metspö', skaffa: { av: { rep: 1, ben: 1, grenar: 1 }, min: 4, slag: 'liten', tek: 'metspo' }, vikt: 0.6, stack: 1, mapp: 'Redskap', slits: 0.0005, redskap: true, trasig: { stat: 'metspoTrasiga' },
+  metspo: { namn: 'Metspö', ett: true, skaffa: { av: { rep: 1, ben: 1, grenar: 1 }, min: 4, slag: 'liten', tek: 'metspo' }, vikt: 0.6, stack: 1, mapp: 'Redskap', slits: 0.0005, redskap: true, trasig: { stat: 'metspoTrasiga' },
     gors: { text: 'Gör ett metspö med en krok av ben.', stat: 'metspoGjorda', forsta: '{namn} gjorde byns första metspö, med en krok av ben.' } },
   // ett fällt djur, helt som det är (vilket djur det än är). En kanin fyller famnen, så stacken är en kanin
-  vilt: { namn: 'Fällt vilt', skaffa: { act: 'jakt' }, stack: 2, ruta: 20, mapp: 'Mat', mat: 1.5, naring: { protein: 2, fett: 1, energi: 0.8, mineral: 0.6, vitamin: 0.3 }, ra: true, haller: 2 },
+  vilt: { namn: 'Fällt vilt', ett: true, skaffa: { act: 'jakt' }, stack: 2, ruta: 20, mapp: 'Mat', mat: 1.5, naring: { protein: 2, fett: 1, energi: 0.8, mineral: 0.6, vitamin: 0.3 }, ra: true, haller: 2 },
   kniv: { namn: 'Flintkniv', skaffa: { av: { flinta: 1, grenar: 1 }, min: 4, slag: 'liten', tek: 'kniv' }, vikt: 0.3, stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true, trasig: { stat: 'knivarTrasiga', text: '{namn}s flintkniv gick sönder.' },
     gors: { text: 'Gör en flintkniv.', stat: 'knivarGjorda', forsta: '{namn} gjorde byns första flintkniv. Nu kan viltet slaktas.' } },
-  skinn: { namn: 'Harskinn', skaffa: { min: 5, slag: 'bearbeta', tek: 'kniv' }, stack: 10, mapp: 'Material', slits: 0.0006 }, // nyckeln skinn är kaninens (steg 3.7.14)
+  skinn: { namn: 'Harskinn', ett: true, skaffa: { min: 5, slag: 'bearbeta', tek: 'kniv' }, stack: 10, mapp: 'Material', slits: 0.0006 }, // nyckeln skinn är kaninens (steg 3.7.14)
   // vargen (steg 3.7.14, vargen själv i 3.7.1): den fällda vargen bärs hem hel och slaktas med kniv till vargkött, ben och ett
   // vargskinn. Den äts inte som den är. Vargskinnet är tjockare än kaninens och blir kläder av vargskinn (klader.ts), som värmer mer
   varg: { namn: 'Fälld varg', skaffa: { act: 'jakt' }, stack: 1, mapp: 'Material', haller: 3 }, // en varg är en full famn
-  vargkott: { namn: 'Vargkött', skaffa: { min: 3, slag: 'bearbeta', tek: 'kniv' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 2, naring: { protein: 2, fett: 1.2, energi: 0.8, mineral: 0.6, vitamin: 0.3 }, ra: true, haller: 2 },
-  vargskinn: { namn: 'Vargskinn', skaffa: { min: 5, slag: 'bearbeta', tek: 'kniv' }, stack: 5, mapp: 'Material', slits: 0.0006 },
+  vargkott: { namn: 'Vargkött', ett: true, skaffa: { min: 3, slag: 'bearbeta', tek: 'kniv' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 2, naring: { protein: 2, fett: 1.2, energi: 0.8, mineral: 0.6, vitamin: 0.3 }, ra: true, haller: 2 },
+  vargskinn: { namn: 'Vargskinn', ett: true, skaffa: { min: 5, slag: 'bearbeta', tek: 'kniv' }, stack: 5, mapp: 'Material', slits: 0.0006 },
   // en hel fisk som den fångats (DJUR i redskap.ts). Den rensas vid elden till fiskkött (fisk), som är det man äter;
   // bara när inget annat finns äts den som den är
   abborre: { namn: 'Abborre', skaffa: { act: 'fiske' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 1.2, naring: { protein: 2, fett: 0.8, mineral: 0.7, energi: 0.6, vitamin: 0.3 }, ra: true, haller: 1 }, // den hela fisken äts strax efter fiskköttet: innan byn har en slaktbänk rensas den inte (steg 2.2.8)
   // ett redskap som någon har börjat göra men inte gjort klart (paborjat.ts). Det slits och värderas där, inte här
-  paborjat: { namn: 'Påbörjat', vikt: 0.5, stack: 1, mapp: 'Redskap', redskap: true },
+  paborjat: { namn: 'Påbörjat', ett: true, vikt: 0.5, stack: 1, mapp: 'Redskap', redskap: true },
   // bensylen (steg 2.3.2): ett ben som slipas spetsigt mot en sten. Den ligger på slöjdbänken (stationer.ts), och med den sys kläderna
   bensyl: { namn: 'Bensyl', skaffa: { av: { ben: 1 }, min: 4, slag: 'liten', tek: 'bensyl', verktyg: { sten: 'en sten', flinta: 'en flinta' } }, vikt: 0.05, stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true, trasig: { stat: 'bensylTrasiga' },
     gors: { text: 'Slipar en bensyl av ett ben mot {verktyg}.', stat: 'bensylGjorda', forsta: '{namn} slipade byns första bensyl av ett ben. Med den kan man sy skinn.' } },
@@ -100,9 +101,9 @@ const DEF = {
   // en ring av grenar med rep. De är byns och slits när man spelar
   boll: { namn: 'Boll', skaffa: { av: { skinn: 1, torrgras: 1 }, min: 4, slag: 'liten', tek: 'boll' }, vikt: 0.2, stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true, trasig: { stat: 'bollarTrasiga', text: 'Bollen gick sönder i spelet.' },
     gors: { text: 'Syr ihop ett skinn fyllt med hö till en boll.', stat: 'bollarGjorda', forsta: '{namn} sydde byns första boll. Nu kan man spela bollspel.' } },
-  slagtra: { namn: 'Slagträ', skaffa: { av: { ved: 1 }, min: 4, slag: 'liten', tek: 'slagtra', verktyg: { kniv: 'kniven', flinta: 'en flinta' } }, vikt: 0.6, stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true, trasig: { stat: 'slagtraTrasiga', text: 'Slagträet gick av i spelet.' },
+  slagtra: { namn: 'Slagträ', ett: true, skaffa: { av: { ved: 1 }, min: 4, slag: 'liten', tek: 'slagtra', verktyg: { kniv: 'kniven', flinta: 'en flinta' } }, vikt: 0.6, stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true, trasig: { stat: 'slagtraTrasiga', text: 'Slagträet gick av i spelet.' },
     gors: { text: 'Täljer ett slagträ av ett stycke trä med {verktyg}.', stat: 'slagtraGjorda', forsta: '{namn} täljde byns första slagträ. Med det slår man bollen.' } },
-  mal: { namn: 'Mål', skaffa: { av: { grenar: 2, rep: 1 }, min: 3, slag: 'liten', tek: 'mal' }, vikt: 1, stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true, trasig: { stat: 'malTrasiga', text: 'Målet föll isär.' },
+  mal: { namn: 'Mål', ett: true, skaffa: { av: { grenar: 2, rep: 1 }, min: 3, slag: 'liten', tek: 'mal' }, vikt: 1, stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true, trasig: { stat: 'malTrasiga', text: 'Målet föll isär.' },
     gors: { text: 'Binder en ring av grenar med rep till ett mål att kasta mot.', stat: 'malGjorda', forsta: '{namn} band byns första mål av grenar. Nu tävlar man i att kasta.' } },
   // instrumenten (steg 4.3.2.2, framtradande.ts): trumman spänns av ett skinn över en ring av trä, benflöjten skärs av ett ben
   // och lyran av trä med strängar av rep. De är byns och ligger vid scenen (stationer.ts); med dem blir det sång och musik
@@ -118,10 +119,10 @@ const DEF = {
     gors: { text: 'Surrar ihop en benspade av ben, rep och en gren.', stat: 'benspadarGjorda', forsta: '{namn} gjorde byns första benspade av tre ben. Med den gräver man fram rötter fortare, och gropar.' } },
   // maten som grillats (steg 2.8.1, RATTER i matlagning.ts): en enkel rätt som håller längre än den råa och äts först
   grillfisk: { namn: 'Grillad fisk', skaffa: { av: { fisk: 1 }, min: 7.5, slag: 'bearbeta', tek: 'grill' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 0.5, naring: { protein: 2, fett: 0.8, mineral: 0.7, energi: 0.6, vitamin: 0.3 }, haller: 2 },
-  grillkott: { namn: 'Grillat kött', skaffa: { av: { kott: 1 }, min: 7.5, slag: 'bearbeta', tek: 'grill' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 0.6, naring: { protein: 2, fett: 1, energi: 0.8, mineral: 0.6, vitamin: 0.3 }, haller: 3 },
+  grillkott: { namn: 'Grillat kött', ett: true, skaffa: { av: { kott: 1 }, min: 7.5, slag: 'bearbeta', tek: 'grill' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 0.6, naring: { protein: 2, fett: 1, energi: 0.8, mineral: 0.6, vitamin: 0.3 }, haller: 3 },
   // det torkade köttet och den torkade fisken (steg 2.8.2, TORKAS i matlagning.ts): håller så länge något får hålla i lagret
   // (LAGER.maxDygn) och äts sist
-  torrkott: { namn: 'Torkat kött', skaffa: { av: { kott: 1 }, min: 5, slag: 'bearbeta', tek: 'tork' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 8, naring: { protein: 2, fett: 1, energi: 0.8, mineral: 0.6, vitamin: 0.2 }, haller: 20 },
+  torrkott: { namn: 'Torkat kött', ett: true, skaffa: { av: { kott: 1 }, min: 5, slag: 'bearbeta', tek: 'tork' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 8, naring: { protein: 2, fett: 1, energi: 0.8, mineral: 0.6, vitamin: 0.2 }, haller: 20 },
   torrfisk: { namn: 'Torkad fisk', skaffa: { av: { fisk: 1 }, min: 5, slag: 'bearbeta', tek: 'tork' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 7, naring: { protein: 2, fett: 0.8, mineral: 0.7, energi: 0.6, vitamin: 0.2 }, haller: 20 },
   // vattensäcken (steg 2.10.1): ett skinn som sys ihop till en säck vid slöjdbänken med bensylen. Med den hämtar man vatten
   // åt den som inte kan gå (torst.ts), och senare till fälten. Den tar en hand
@@ -140,7 +141,7 @@ const DEF = {
   artfron: { namn: 'Ärtfrön', skaffa: { act: 'samla' }, stack: 50, mapp: 'Material', haller: 20 }, // fröna från de vilda ärterna (steg 3.10.23.8), som rovfröna
   // silvret (steg 4.4.1.3, handel.ts): det enda som är pengar. Det kommer med handlarna och är värt en arbetstimme styck. Det
   // byts bara med handlaren än; silver mellan byborna kommer i steg 9.5.1.2
-  silver: { namn: 'Silver', varde: 1, stack: 200, mapp: 'Silver', brinnerInte: true },
+  silver: { namn: 'Silver', ett: true, varde: 1, stack: 200, mapp: 'Silver', brinnerInte: true },
 } satisfies Record<string, SakDef>;
 
 type Sak = keyof typeof DEF;

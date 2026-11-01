@@ -6,11 +6,12 @@
 import { writeFileSync } from 'node:fs';
 import { BERATTELSER, BESK_DELAR } from '../sim/berattelser';
 import { korJson, pool, seedAv, sek } from './pool';
-import type { Samlat } from './texter-en';
+import type { Fel, Samlat } from './texter-en';
+import { KONTROLLER, STIL } from './textkoll';
 
 const [byar = 8, dagar = 45] = process.argv.slice(2).map(Number);
 const t0 = Date.now();
-const res = await pool(Array.from({ length: byar }, (_, i) => seedAv(i)).map(seed => () => korJson<{ seed: number; ut: Samlat }>('texter-en.ts', [String(seed), String(dagar)], `by ${seed}`)));
+const res = await pool(Array.from({ length: byar }, (_, i) => seedAv(i)).map(seed => () => korJson<{ seed: number; ut: Samlat; fel: Fel }>('texter-en.ts', [String(seed), String(dagar)], `by ${seed}`)));
 
 // alla byarnas texter i ett
 const alla: Samlat = {};
@@ -19,7 +20,13 @@ for (const r of res) for (const m in r.ut) for (const i in r.ut[m]) {
   v.n += w.n;
   for (const e of w.ex) if (v.ex.length < 6 && !v.ex.includes(e)) v.ex.push(e);
 }
-writeFileSync('texter.json', JSON.stringify(alla));
+const fel: Fel = {};
+for (const r of res) for (const k in r.fel) {
+  const x = (fel[k] ??= { n: 0, ex: [] });
+  x.n += r.fel[k].n;
+  for (const e of r.fel[k].ex) if (x.ex.length < 12 && !x.ex.some(y => y.text === e.text)) x.ex.push(e);
+}
+writeFileSync('texter.json', JSON.stringify({ alla, fel }));
 
 const rader: string[] = [`Texterna i ${byar} byar under ${dagar} dygn (${dagar} år i spelet). Beskrivningar, samtal, relationer och sakernas berättelser skrivs en gång per dygn för alla, som om någon tittade.`, ''];
 const raw = (x: (typeof BERATTELSER)[keyof typeof BERATTELSER][number]) => typeof x === 'string' ? x : `(villkor) ${x.t}`;
@@ -47,7 +54,15 @@ for (const d of BESK_DELAR) {
 }
 rader.push(`${mallar.length} mallar med ${varianter} varianter; ${aldrig} varianter valdes aldrig.`);
 rader.push(`Mallar som aldrig användes (${oanvanda.length}): ${oanvanda.join(', ') || 'inga'}`);
+const felRader: string[] = ['== Fel som kontrollerna hittade (steg 4.5.1.2)'];
+for (const k of [...KONTROLLER, ...STIL]) {
+  const x = fel[k.id];
+  felRader.push(`  ${k.namn}: ${x ? `${x.n} gånger` : 'inga'}${STIL.includes(k) ? ' (stilen, i beskrivningarna)' : ''}`);
+  for (const e of x?.ex ?? []) felRader.push(`           – ${e.mall} (${e.vad}): ${e.text}`);
+}
+felRader.push('');
+rader.push(`Fel: ${[...KONTROLLER, ...STIL].map(k => `${k.id} ${fel[k.id]?.n ?? 0}`).join(', ')} (se nedan)`);
 rader.push(`Beskrivningens delar som aldrig användes: ${BESK_DELAR.filter(d => !alla['del:' + d.id]).map(d => d.id).join(', ') || 'inga'}`, '');
-writeFileSync('texter.txt', [...rader, ...del].join('\n') + '\n');
+writeFileSync('texter.txt', [...rader, ...felRader, ...del].join('\n') + '\n');
 console.log(rader.join('\n'));
 console.log(`Allt står i texter.txt (och texter.json). (${sek(t0)} s, datorns tid)`);
