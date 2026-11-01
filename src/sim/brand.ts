@@ -23,6 +23,7 @@ import { FOREST, VAG, isSoil } from './vag';
 import { blixtNu, snoPaMarken, torrTim, vaderNu } from './vader';
 import { hash3 } from './slump';
 import { larmAvbryter } from './handlingar';
+import { tecken } from './religion';
 
 // Eldsvådor och skogsbrand (steg 3.8.5, "Motgångarna i spelet" och "Elden" i designdokumentet). Inte en rad i MOTGANGAR:
 // branden har ingen tid i kalendern utan börjar när en gnista eller blixten tänder något som brinner. Gnistor flyger från
@@ -268,6 +269,7 @@ function ser(s: State, b: Brand) {
   if (!ser.length) return;
   if (!living(s).some(p => larmNu(s, p)?.vad === 'brand')) count(s, 'brand sedd');
   larma(s, 'brand', 1, ser);
+  for (const p of ser) tecken(s, p, b.kalla === 'blixt' ? 'blixt' : 'brand'); // det oförklarliga (steg 4.1.2.1)
 }
 // den som vet om elden avbryter det hen gör när hen ska släcka eller gå undan (inte den som slåss, vårdar eller bärs)
 function soker(s: State, b: Brand, hot: boolean) {

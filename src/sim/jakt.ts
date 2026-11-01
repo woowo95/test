@@ -16,6 +16,7 @@ import { motgangNu } from './motgang';
 import { campDist } from './plats';
 import { snoPaMarken, vaderNu } from './vader';
 import { wearTool } from './agande';
+import { tecken } from './religion';
 
 // ---------- jakten som strid (steg 3.7.3) ----------
 // Jägaren letar upp en kanin nära jaktplatsen och smyger sig fram. Kaninen ser hen på ett avstånd som beror på kaninens
@@ -167,6 +168,7 @@ export function jaktKlar(s: State, p: Person, tk: Task) {
   if (h.dod) return;
   if (f.ut === 'fangad') {
     count(s, 'jaktFangst'); gjort(s, p, 'kanin');
+    if (f.hand) tecken(s, p, 'jakt'); // en hare med bara händerna: det oförklarliga (steg 4.1.2.1)
     dodaDjur(s, f.id);
     if (forstaGang(s, 'kaniner')) log(s, `${p.name} fångade byns första hare och bar hem den hel.`, 'world', [p.id]);
     tk.carry += KANIN;

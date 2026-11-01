@@ -7,6 +7,7 @@ import { kalender, yearNo } from './tid';
 import { DAY, HOUR, Person, Rel, State } from './typer';
 import { allaBarn, formas, upplev } from './uppvaxt';
 import { tornadoTid } from './tornado';
+import { TeckenTyp, tecken } from './religion';
 
 // Motgångarna (steg 3.8, "Motgångarna i spelet" i designdokumentet): en hård vinter, torka, översvämning och tornado.
 // Varje motgång är en rad i registret MOTGANGAR och räknas ur byns frö och tiden, precis som vädret (vader.ts), så att
@@ -158,6 +159,7 @@ export const varslade = (s: State, start: number) => living(s).filter(p => p.var
 // ---------- varje timme (steg.ts) ----------
 // en förälder vars barn alla levde genom svälten (steg 4.1.1.2): hen har barn som fortfarande formas och inget av hens barn dog
 // sedan motgången började (t)
+const SLUT_TECKEN: Partial<Record<string, TeckenTyp>> = { hardVinter: 'vinterSlut', torka: 'torkaSlut', oversvamning: 'flodSlut' };
 function holdBarn(s: State, t: number, om: string) {
   for (const p of living(s)) {
     if (!living(s).some(q => isParent(p, q) && formas(s, q))) continue;
@@ -187,6 +189,8 @@ export function stepMotgang(s: State) {
     kronika(s, `${d.namn} tog slut${dog ? `. ${dog} dog under den` : ' och alla klarade sig'}.`);
     for (const p of living(s)) if (p.born < m.pagar.t) livet(s, p, 'mg:' + m.pagar.k); // de som klarade den (steg 3.9.8)
     if (m.pagar.k === 'hardVinter' || m.pagar.k === 'torka') holdBarn(s, m.pagar.t, m.pagar.k === 'torka' ? 'torkan' : 'den hårda vintern');
+    const tk = SLUT_TECKEN[m.pagar.k]; // det oförklarliga (steg 4.1.2.1): motgången tog slut
+    if (tk) for (const p of living(s)) if (p.born < m.pagar.t) tecken(s, p, tk);
     delete m.pagar;
   }
   if (nu && m.pagar?.t !== nu.start) {

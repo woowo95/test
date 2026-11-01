@@ -193,6 +193,8 @@ export interface Person {
   // p.pot är anlagen plus upplevelserna; anlag saknas så länge hen inte har någon upplevelse
   upp?: Upplevelse[]; anlag?: Record<Stat, number>;
   andlig?: number; // andligheten, 0–100: hur viktigt det heliga är för hen (steg 4.1.1.1, religion.ts)
+  tro?: number; troStyrka?: number; // tron hen har (id i s.tron) och hur stark den är, 0–100 (steg 4.1.2, religion.ts)
+  svartSjuk?: 1; // är svårt sjuk just nu: när hen blir frisk är det ett tecken för föräldrarna (steg 4.1.2.1)
   prat?: import('./berattelser').Prat; // det senaste samtalet: med vem och om vad (steg 3.9.5, berattelser.ts)
   binamn?: import('./berattelser').Binamn; // öknamnet eller hedersnamnet byn gav (steg 3.9.1, berattelser.ts)
   varsel?: { k: import('./motgang').MotgangId; t: number; c: number; src?: number }; // en motgång som personen anar eller hört om: när den börjar och hur säker (steg 3.8.1, motgang.ts)

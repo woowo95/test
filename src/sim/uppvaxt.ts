@@ -95,6 +95,8 @@ export const UPPLEVELSER = {
   flyttade: { text: 'Flyttade till en ny by', chans: 0.5, e: [{ nyfikenhet: 1 }, { mod: 1 }], vem: 'bada', vuxenTal: true },
   barnFott: { text: 'Fick ett barn, {om}', chans: 0.4, e: [{ empati: 1 }, { flit: 1 }, { uthallighet: 1 }], vem: 'vuxen', vuxenTal: true, ande: true },
   gammal: { text: 'Blev gammal och såg alla jämnåriga dö', chans: 0.6, e: [{ empati: 1 }], vem: 'vuxen', vuxenTal: true, ande: true },
+  // det oförklarliga (steg 4.1.2.1, TECKEN i religion.ts): om = vad det var
+  tecken: { text: 'Var med om något oförklarligt: {om}', chans: 0.5, e: [{ nyfikenhet: 1 }, { mod: -1 }, { minne: 1 }], vem: 'bada', vuxenTal: true, ande: true },
 } satisfies Record<string, UpplevelseDef>;
 export type UpplevelseTyp = keyof typeof UPPLEVELSER;
 const DEF: Record<UpplevelseTyp, UpplevelseDef> = UPPLEVELSER;

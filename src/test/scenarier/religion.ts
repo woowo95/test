@@ -116,3 +116,53 @@ SCENARIER.blekna = {
     }
   },
 };
+
+SCENARIER.tecken = {
+  text: 'Den första tron (steg 4.1.2.1): den som är mycket andlig kan tolka något oförklarligt (blixten, en hård vinter som tar slut, ett barn som blir friskt) till en egen tro med vem som står bakom, vad den vill och vad som händer om man sviker den; den världsliga gör det aldrig, ett nytt tecken stärker tron, och tron dör med sin sista troende',
+  kor: () => {
+    const s = createState(9, START);
+    const chans = SIM.UPPLEVELSER.tecken.chans;
+    SIM.UPPLEVELSER.tecken.chans = 3;
+    try {
+      // var och en med sin egen blixt, mer än ett dygn mellan dem
+      const grupp = (v: number) => Array.from({ length: 60 }, () => { s.now += 25 * SIM.HOUR; const p = nyInvanare(s, 'k', 30); p.andlig = v; SIM.tecken(s, p, 'blixt'); return p; });
+      const varldslig = grupp(0), andlig = grupp(100);
+      const grundare = andlig.filter(p => p.tro !== undefined);
+      const tr = SIM.troOf(s, grundare[0]?.tro);
+      const helt = !!tr && tr.grundare === grundare[0].id && !!tr.bakom && !!tr.vill && !!tr.svek && tr.k === 'blixt' && tr.natur >= 0 && tr.natur <= 100;
+      // ett nytt tecken bekräftar tron och ger ingen ny
+      const g = grundare[0], fore = g?.troStyrka ?? 0, antal = s.tron?.length ?? 0;
+      if (g) SIM.tecken(s, g, 'brand');
+      const efter = s.tron?.length ?? 0;
+      // ett svårt sjukt barn som blir friskt är ett tecken för föräldrarna
+      const mo = nyInvanare(s, 'k', 30), fa = nyInvanare(s, 'm', 30); mo.andlig = 100;
+      const barn = SIM.newPerson(s, 'k', s.now - 8 * SIM.DAY, mo, fa); s.people.push(barn); Object.assign(barn, { x: mo.x, y: mo.y, health: 1 });
+      barn.svartSjuk = 1; barn.sickUntil = s.now - 1;
+      SIM.stepReligion(s);
+      const sag = !!mo.upp?.some(u => u.k === 'tecken' && u.om?.includes(barn.name));
+      // den som var med om samma sak delar tron som just uppstod
+      const vittnen = Array.from({ length: 30 }, () => { const p = nyInvanare(s, 'm', 40); p.andlig = 100; return p; });
+      const fore2 = s.tron?.length ?? 0;
+      for (const p of vittnen) SIM.tecken(s, p, 'torkaSlut');
+      const nya = (s.tron?.length ?? 0) - fore2, delar = vittnen.filter(p => p.tro !== undefined).length;
+      // tron dör med den sista troende
+      for (const p of grundare.slice(1)) { const t = SIM.troOf(s, p.tro)!; for (const q of s.people) if (q.tro === t.id && q !== p) q.tro = undefined; }
+      const sista = grundare[1]; if (sista) sista.died = s.now;
+      SIM.stepReligion(s);
+      const dog = !sista || SIM.troOf(s, sista.tro)?.slut === s.now;
+      return [
+        [`den världsliga (andlighet 0) tolkar inte blixten som en tro (${varldslig.filter(p => p.tro !== undefined).length} av 60)`, varldslig.every(p => p.tro === undefined)],
+        [`den mycket andliga gör det ibland (${grundare.length} av 20)`, grundare.length >= 2 && grundare.length < 20],
+        [`tron har grundare, tecken och tolkning (${tr ? SIM.tolkning(tr) : 'ingen'})`, helt],
+        ['alla minns blixten som något oförklarligt', andlig.every(p => p.upp?.some(u => u.k === 'tecken'))],
+        [`ett nytt tecken stärker tron (${fore} → ${g?.troStyrka}) utan att ge en ny`, !!g && g.troStyrka! > fore && efter === antal],
+        ['barnet som blev friskt är ett tecken för föräldern', sag && barn.svartSjuk === undefined],
+        [`de som var med om samma sak delar en tro (${nya} ny, ${delar} av 30 tror)`, nya === 1 && delar > 2],
+        ['tron dör med sin sista troende', dog],
+        ['andligheten syns när den första tron finns', SIM.andligSyns(s)],
+      ];
+    } finally {
+      SIM.UPPLEVELSER.tecken.chans = chans;
+    }
+  },
+};
