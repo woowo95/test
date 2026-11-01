@@ -101,6 +101,15 @@ export const TEKNIK: Tek[] = [
     omr: ['sport', 'hantverk'], krav: ['kniv'], niva: 2, tid: 4 },
   { id: 'slagtra', namn: 'Slagträ', text: 'Ett stycke trä som täljs till ett grepp och en bred ände.', effekt: 'Med slagträet och en boll spelar man bollspel.',
     omr: ['sport', 'hantverk'], krav: ['kniv'], niva: 2, tid: 3 },
+  // scenen och instrumenten (steg 4.3.2.2, framtradande.ts): man kommer på dem när man uppträder
+  { id: 'scen', namn: 'Scen', text: 'Ett golv av kluvna stockar en bit från elden, där den som uppträder syns för alla.', effekt: 'Vid scenen ligger byns instrument, och där blir det sång och musik.',
+    omr: ['upptrada'], krav: ['rep'], niva: 2, tid: 4 },
+  { id: 'trumma', namn: 'Trumma', text: 'Ett skinn som spänns över en ring av trä.', effekt: 'Med trumman vid scenen kan man sjunga och spela.',
+    omr: ['upptrada', 'hantverk'], krav: ['kniv'], niva: 2, tid: 4 },
+  { id: 'benflojt', namn: 'Benflöjt', text: 'Ett ihåligt ben med hål att blåsa och sätta fingrarna på.', effekt: 'Med benflöjten vid scenen kan man spela.',
+    omr: ['upptrada', 'hantverk'], krav: ['kniv'], niva: 2, tid: 4 },
+  { id: 'lyra', namn: 'Lyra', text: 'En ram av trä med strängar av rep som man knäpper på.', effekt: 'Sången och musiken till lyran gör publiken gladare än med andra instrument.',
+    omr: ['upptrada', 'hantverk'], krav: ['scen', 'rep'], niva: 3, tid: 6 },
   // latrinen och benspaden (steg 2.7.2): spaden görs av ben, rep och en gren vid slöjdbänken, och med den grävs latrinen
   // (LATRIN i STATIONER, samma id) och rötterna fortare
   { id: 'benspade', namn: 'Benspade', text: 'Tre ben bredvid varandra som ett blad, surrade med rep vid en gren som skaft.', effekt: 'Med spaden gräver man fram rötter fortare, och gropar.',

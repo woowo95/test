@@ -48,6 +48,7 @@ import { underMinnet } from './sjo';
 export const STATION = balans('station', {
   slaktbankTra: 3, // en slaktbänk kräver så mycket trä ...
   slaktbankMin: 20, // ... och så många minuters arbete
+  scenTra: 6, scenMin: 20, // scenen (steg 4.3.2.2): så mycket trä och så många minuters arbete
   avstand: 2.5, // en station står helst så här många rutor från elden
   lek: 2, // ... och får så här många poäng till (färre är bättre) om den står på lekplatsen (plats.ts, steg 2.10.4; förut norr × 4)
   slaktTill: 9, slaktAvst: 6, // slaktbänken står högst och helst så här många rutor från byn, eftersom den är smutsig (steg 2.10.16)
@@ -116,7 +117,7 @@ export interface Utkant { till: number; avst: number; vatten?: true }
 export interface Forvar { rymmer: number; redskap?: true; tak?: true; stangd?: true; privat?: true }
 export interface StationDef { namn: string; ikon: string; w: number; h: number; tek: string[]; av: Record<string, number>; min: number; gor: Act[]; bara?: Act[]; vid?: Record<string, number>; verktyg?: string; utkant?: Utkant; eld?: true; kraver?: Partial<Record<Act, string>>; smutsar?: Partial<Record<Act, string>>; bygger: string; forsta: string; inne?: true; mobel?: true; flera?: true; fart?: Partial<Record<Act, number>>; brasa?: true; sover?: true; sitt?: true; platser?: true; forvar?: Forvar }
 // de enkla redskapen: görs vid slöjdbänken om byn har en, lite fortare där (fart), annars vid elden som förut (Björn, efter v90)
-const ENKLA: Act[] = ['yxa', 'spjut', 'metspo', 'kniv', 'bensyl', 'balte', 'boll', 'slagtra', 'mal'];
+const ENKLA: Act[] = ['yxa', 'spjut', 'metspo', 'kniv', 'bensyl', 'balte', 'boll', 'slagtra', 'mal', 'trumma', 'benflojt', 'lyra'];
 export const STATIONER = {
   slaktbank: {
     namn: 'Slaktbänk', ikon: 'slaktbank', w: 3, h: 1, tek: ['slaktbank'], av: { ved: STATION.slaktbankTra }, min: STATION.slaktbankMin, gor: ['slakta', 'rensa'], bara: ['slakta', 'rensa'], vid: { kniv: STATION.knivplatser }, smutsar: { slakta: 'blod' }, utkant: { till: STATION.slaktTill, avst: STATION.slaktAvst }, // står en bit från byn (steg 2.10.16) // blir blodig när det slaktas (blod.ts)
@@ -188,6 +189,13 @@ export const STATIONER = {
     namn: 'Brasa', ikon: 'brasa', w: 1, h: 1, tek: [], av: { sten: STATION.brasaSten }, min: STATION.brasaMin, gor: [], flera: true, brasa: true,
     bygger: 'Lägger en ring av stenar till en brasa nära sovplatserna.',
     forsta: '{namn} lade en ring av stenar till byns första brasa, långt från lägerelden och nära sovplatserna.',
+  },
+  // scenen (steg 4.3.2.2, framtradande.ts): ett golv av kluvna stockar ute i byn. Där uppträder man på kvällen när det
+  // inte är kallt eller regnar, och där ligger byns instrument (vid), en plats för varje sort
+  scen: {
+    namn: 'Scen', ikon: 'scen', w: 3, h: 2, tek: ['scen'], av: { ved: STATION.scenTra }, min: STATION.scenMin, gor: [], vid: { trumma: 1, benflojt: 1, lyra: 1 },
+    bygger: 'Lägger kluvna stockar till en scen.',
+    forsta: '{namn} byggde byns första scen. Där uppträder man på kvällen, och där ligger instrumenten.',
   },
 } satisfies Record<string, StationDef>;
 export type StationSlag = keyof typeof STATIONER;
@@ -818,7 +826,12 @@ const VID_SLAG = [...new Set(STATION_LIST.flatMap(k => Object.keys((STATIONER[k]
 // ett redskap blir stationens: det är byns och ligger vid stationen när ingen använder det
 function tillStation(k: Ting, t: Station) {
   k.vid = t.id; k.agare = BYN;
-  if (k.hos === undefined && k.lass === undefined) { k.x = t.x; k.y = t.y; }
+  if (k.hos === undefined && k.lass === undefined) Object.assign(k, vidRuta(t, k.k));
+}
+// rutan där redskapet av slaget k ligger vid stationen: varje slag på en egen ruta av stationens (scenens instrument, steg 4.3.2.2)
+function vidRuta(t: Station, k: string) {
+  const i = Math.max(0, Object.keys(stationDef(t.k)?.vid ?? {}).indexOf(k)), { w, h } = storlekAv(t);
+  return { x: t.x + i % w, y: t.y + Math.min(h - 1, Math.floor(i / w)) };
 }
 // ett nytt redskap läggs vid stationen om en plats för det står tom (redskap.ts, toolDone). true = det lades där
 export function nyttVid(s: State, k: Ting) {
@@ -841,7 +854,7 @@ export function tillbakaVid(s: State, k: Ting) {
   if (k.vid === undefined) return false;
   const t = stationById(s, k.vid);
   if (!t) { k.vid = undefined; return false; }
-  k.x = t.x; k.y = t.y;
+  Object.assign(k, vidRuta(t, k.k));
   return true;
 }
 // handlingen act är gjord en gång vid stationen: redskapet den kräver (kraver) slits så mycket. true = det gick sönder

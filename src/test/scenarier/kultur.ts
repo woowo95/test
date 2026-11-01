@@ -2,7 +2,7 @@
 import { createState, Person, State } from '../../sim';
 import * as SIM from '../../sim';
 import { START } from '../kor';
-import { SCENARIER, klockan, kor, setFood, tandEld } from './hjalp';
+import { SCENARIER, klockan, kor, medBank, setFood, tandEld } from './hjalp';
 
 // en by med ett stort överskott av mat och ved, på förmiddagen
 export function rikDag(seed = 3, mer: Record<string, number> = {}): State {
@@ -126,7 +126,7 @@ export function kvall(seed = 3, timme = 20) {
 export function upptrad(s: State, p: Person, ganger = 300) {
   for (let i = 0; i < ganger; i++) {
     const fr = SIM.framVal(s, p, q => ({ x: q.x, y: q.y }));
-    if (fr?.act === 'upptrada') { p.task = { act: 'upptrada', phase: 'go', tx: p.x, ty: p.y, until: s.now + fr.dur, carry: 0, ref: fr.ref, tool: fr.tool, dark: true, why: fr.why }; return true; }
+    if (fr?.act === 'upptrada') { p.task = { act: 'upptrada', phase: 'go', tx: fr.spot?.x ?? p.x, ty: fr.spot?.y ?? p.y, until: s.now + fr.dur, carry: 0, ref: fr.ref, tool: fr.tool, dark: true, why: fr.why }; return true; }
   }
   return false;
 }
@@ -153,6 +153,51 @@ SCENARIER.framtradande = {
       ['samma kväll blir det inget framträdande till', igen],
       ['på dagen och utan publik blir det inget', pDag && pEnsam],
       [`från början finns ${kan.join(', ')} (${ny.people.length} invånare)`, kan.includes('kvade')],
+    ];
+  },
+};
+
+// en kväll vid elden med en färdig scen och instrumenten ks vid den (byns)
+function medScen(seed: number, ks: string[]) {
+  const k = kvall(seed);
+  const sc = medBank(k.s, 'scen');
+  for (const i of ks) SIM.nyttVid(k.s, SIM.newTing(k.s, i, 1, SIM.BYN));
+  return { ...k, sc };
+}
+SCENARIER.scen = {
+  text: 'Scenen och instrumenten (steg 4.3.2.2): byn vill ha en trumma, en benflöjt och en lyra till scenen när den finns. Med ett instrument vid scenen blir det sång och musik där, lyran ger mest glädje, och utan scen bara kväden, tal, föreläsningar och teater',
+  kor: () => {
+    const utan = kvall(), villUtan = ['trumma', 'benflojt', 'lyra'].map(k => SIM.villAv(utan.s, k));
+    const med = medScen(3, []), vill = ['trumma', 'benflojt', 'lyra'].map(k => SIM.villAv(med.s, k));
+    // utan instrument blir det aldrig sång eller musik, med lyran ofta, och på scenen
+    let utanInst = 0, medLyra = 0, paScen = 0, sangFlojt = 0, flojt = 0;
+    for (let i = 0; i < 30; i++) {
+      const a = kvall(3 + i); a.v[0]!.skill[SIM.FRAM_SKILL] = 8;
+      if (upptrad(a.s, a.v[0]!) && SIM.FRAM_AV[a.s.fram!.k]!.instrument) utanInst++;
+      const b = medScen(3 + i, ['lyra']); b.v[0]!.skill[SIM.FRAM_SKILL] = 8;
+      if (upptrad(b.s, b.v[0]!) && b.s.fram!.inst === 'lyra') { medLyra++; const t = b.v[0]!.task!; if (Math.abs(t.tx - SIM.vidStation(b.sc).x) < 0.01) paScen++; }
+      const c = medScen(3 + i, ['benflojt']); c.v[0]!.skill[SIM.FRAM_SKILL] = 8;
+      if (upptrad(c.s, c.v[0]!) && c.s.fram!.inst) { flojt++; if (c.s.fram!.k === 'sang') sangFlojt++; }
+    }
+    // ett framträdande med lyran: glädjen är större och lyran slits
+    let n = 0, q = 0, kval = 0, slits = 1, text = '';
+    for (let i = 0; i < 30 && !n; i++) {
+      const b = medScen(3 + i, ['lyra']), p = b.v[0]!; p.skill[SIM.FRAM_SKILL] = 8;
+      if (!upptrad(b.s, p) || b.s.fram!.inst !== 'lyra') continue;
+      kval = SIM.framKval(b.s, p);
+      kor(b.s, 1.5);
+      const m = b.s.framtradanden?.[0];
+      if (!m) continue;
+      n = m.n; q = m.q; text = m.text; slits = (b.s.ting ?? []).find(t => t.k === 'lyra')?.c ?? 0;
+    }
+    const tek = ['scen', 'trumma', 'benflojt', 'lyra'].map(k => `${k} ${SIM.TEK[k]!.niva}`);
+    return [
+      [`utan scen vill byn ha ${villUtan.join(', ')} trummor, benflöjter och lyror; med scenen ${vill.join(', ')}`, villUtan.every(x => x === 0) && vill.every(x => x === 1)],
+      [`utan instrument ${utanInst} gånger sång eller musik av 30, med lyran vid scenen ${medLyra}, ${paScen} av dem på scenen`, utanInst === 0 && medLyra >= 3 && paScen === medLyra],
+      [`med bara benflöjten ${flojt} gånger musik och ${sangFlojt} sång (till flöjten kan man inte sjunga)`, flojt >= 2 && sangFlojt === 0],
+      [`med lyran är kvaliteten ${q} mot ${kval.toFixed(2)} utan, för ${n} som lyssnar: ${text}`, n >= 2 && q > kval * 1.2 && text.includes('lyran')],
+      [`lyran slits (${slits.toFixed(2)} kvar)`, slits < 1 && slits > 0],
+      [`nivåerna: ${tek.join(', ')}`, tek.join() === 'scen 2,trumma 2,benflojt 2,lyra 3'],
     ];
   },
 };

@@ -143,9 +143,9 @@ export function drawStructures(t: number) {
   // ovanför. Den halvbyggda har framstegscirkeln överst i mitten; vid den färdiga ligger kniven och det som görs där
   for (const st of stationerOf(s)) {
     // den som står vriden har en egen bild (_v, steg 3.10.7): ingenting ritas genom att bilden vrids
-    const d = stationDef(st.k), v = vriden(st), ik = (d?.ikon ?? 'slaktbank') + '_karta' + v, { w: bw, h: bh } = storlekAv(st), w = bw * TS, upp = (iconCanvas(ik).height - 8 * bh) * 2;
+    const d = stationDef(st.k), v = vriden(st), ik = (d?.ikon ?? 'slaktbank') + '_karta' + v, { w: bw, h: bh } = storlekAv(st), w = bw * TS, sk = iconCanvas(ik).width > 8 * bw ? 1 : 2, upp = iconCanvas(ik).height * sk - bh * TS; // sk: 16 punkter per ruta (steg 4.3.2.2) eller 8 som förut
     const x0 = st.x * TS, y0 = st.y * TS - upp; // bildens övre vänstra hörn
-    pileIcons.add(ik, x0, y0, 2);
+    pileIcons.add(ik, x0, y0, sk);
     if (!isKlar(st)) { framsteg(st.x * TS + w / 2, y0 + 3, stationKlar(st)); continue; }
     if (st.fyllt) overG.beginFill(0x24160a, 0.75 * clamp(st.fyllt, 0, 1)).drawEllipse(st.x * TS + TS / 2, st.y * TS + TS / 2 + 1, 5, 4).endFill(); // latrinen mörknar när den fylls (smuts.ts)
     if (d?.brasa) brasaBild(st, x0, y0, tab === 'eld');

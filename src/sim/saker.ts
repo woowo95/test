@@ -103,6 +103,14 @@ const DEF = {
     gors: { text: 'Täljer ett slagträ av ett stycke trä med {verktyg}.', stat: 'slagtraGjorda', forsta: '{namn} täljde byns första slagträ. Med det slår man bollen.' } },
   mal: { namn: 'Mål', skaffa: { av: { grenar: 2, rep: 1 }, min: 3, slag: 'liten', tek: 'mal' }, vikt: 1, stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true, trasig: { stat: 'malTrasiga', text: 'Målet föll isär.' },
     gors: { text: 'Binder en ring av grenar med rep till ett mål att kasta mot.', stat: 'malGjorda', forsta: '{namn} band byns första mål av grenar. Nu tävlar man i att kasta.' } },
+  // instrumenten (steg 4.3.2.2, framtradande.ts): trumman spänns av ett skinn över en ring av trä, benflöjten skärs av ett ben
+  // och lyran av trä med strängar av rep. De är byns och ligger vid scenen (stationer.ts); med dem blir det sång och musik
+  trumma: { namn: 'Trumma', skaffa: { av: { skinn: 1, ved: 1 }, min: 4, slag: 'liten', tek: 'trumma' }, vikt: 0.8, stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true, trasig: { stat: 'trummorTrasiga', text: 'Trumman sprack.' },
+    gors: { text: 'Spänner ett skinn över en ring av trä till en trumma.', stat: 'trummorGjorda', forsta: '{namn} spände byns första trumma. Nu kan man sjunga och spela till den vid scenen.' } },
+  benflojt: { namn: 'Benflöjt', skaffa: { av: { ben: 1 }, min: 4, slag: 'liten', tek: 'benflojt', verktyg: { kniv: 'kniven', flinta: 'en flinta' } }, vikt: 0.1, stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true, trasig: { stat: 'benflojterTrasiga', text: 'Benflöjten sprack.' },
+    gors: { text: 'Skär hål i ett ben till en flöjt med {verktyg}.', stat: 'benflojterGjorda', forsta: '{namn} skar byns första benflöjt. Nu kan man spela vid scenen.' } },
+  lyra: { namn: 'Lyra', skaffa: { av: { ved: 1, rep: 1 }, min: 5, slag: 'stor', tek: 'lyra', verktyg: { kniv: 'kniven', flinta: 'en flinta' } }, vikt: 0.7, stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true, trasig: { stat: 'lyrorTrasiga', text: 'Lyrans ram sprack.' },
+    gors: { text: 'Täljer en lyra av trä med {verktyg} och spänner strängar av rep.', stat: 'lyrorGjorda', forsta: '{namn} gjorde byns första lyra. Sången till den gör de som lyssnar gladare än något annat.' } },
   // benspaden (steg 2.7.2): tre ben som ett blad, surrade med rep vid en gren, görs vid slöjdbänken. Med den grävs latrinen
   // (stationer.ts) och rötterna fortare (samla i handlingar.ts)
   benspade: { namn: 'Benspade', skaffa: { av: { ben: 3, rep: 1, grenar: 1 }, min: 5, slag: 'stor', tek: 'benspade' }, vikt: 0.8, stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true, trasig: { stat: 'benspadarTrasiga', text: '{namn}s benspade gick sönder.' },

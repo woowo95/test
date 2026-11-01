@@ -11,6 +11,10 @@ import { share } from './minne';
 import { SAMTALSSLAG } from './samtal';
 import { rnd } from './slump';
 import { hourOf } from './tid';
+import { coldOf, nederbord, temperature } from './vader';
+import { Station, isKlar, redskapVid, stationById, stationerOf, vidStation } from './stationer';
+import { kvHaller } from './kvalitet';
+import { SAKER } from './saker';
 import { balans } from './balans';
 import { DAY, HOUR, HOUR_S, MIN, Person, Skill, State, Task } from './typer';
 
@@ -34,9 +38,17 @@ export const FRAMTRADANDEN: FramDef[] = [
   { id: 'tal', namn: 'Tal', text: '{namn} håller ett tal om {amne}.', min: 2, kval: 0.8, amne: 'byn' },
   { id: 'forelasning', namn: 'Föreläsning', text: '{namn} lär de andra vad {hen} vet om {amne}.', min: 4, kval: 0.6, amne: 'kunskap' },
   { id: 'teater', namn: 'Teater', text: '{namn} spelar upp en berättelse för de andra om {amne}, med röster och rörelser.', min: 6, kval: 1.3, amne: 'handelse' },
-  { id: 'sang', namn: 'Sång', text: '{namn} sjunger vid elden om {amne}.', instrument: true, kval: 1.2, amne: 'minne' },
-  { id: 'musik', namn: 'Musik', text: '{namn} spelar för de andra vid elden.', instrument: true, kval: 1.2, amne: 'minne' },
+  { id: 'sang', namn: 'Sång', text: '{namn} sjunger om {amne} till {inst}.', instrument: true, kval: 1.2, amne: 'minne' },
+  { id: 'musik', namn: 'Musik', text: '{namn} spelar på {inst} för de andra.', instrument: true, kval: 1.2, amne: 'minne' },
 ];
+// instrumenten (steg 4.3.2.2): saker (saker.ts) som ligger vid scenen. kval gånger formens, ord = i texten, sang = man kan
+// sjunga till det (till flöjten kan man bara spela). Lyran är svårast att göra och ger mest glädje
+export interface InstrumentDef { kval: number; ord: string; sang?: true }
+export const INSTRUMENT: Record<string, InstrumentDef> = {
+  trumma: { kval: 1, ord: 'trumman', sang: true },
+  benflojt: { kval: 1, ord: 'benflöjten' },
+  lyra: { kval: 1.4, ord: 'lyran', sang: true },
+};
 export const FRAM_AV: Record<string, FramDef> = Object.fromEntries(FRAMTRADANDEN.map(d => [d.id, d]));
 // färdigheten som gör framträdandet bättre och som övas när man uppträder
 export const FRAM_SKILL: Skill = 'berattande';
@@ -54,11 +66,12 @@ export const FRAM = balans('framtradande', {
   op: 3, // publiken tycker så här mycket bättre om den som uppträder, gånger (kvaliteten − 0,5)
   ovning: 0.3, // övning i färdigheten per timme man uppträder
   sparas: 20, // så här många framträdanden sparas i s.framtradanden
+  slit: 0.03, // instrumentet slits så här mycket per framträdande (steg 4.3.2.2)
 });
 
 // framträdandet som pågår: formen, den som uppträder, när det började (task.ref) och slutar, publiken som varit där och texten
-export interface Fram { k: string; p: number; start: number; slut: number; publik: number[]; text: string }
-export interface FramMinne { t: number; k: string; p: number; namn: string; text: string; n: number; q: number }
+export interface Fram { k: string; p: number; start: number; slut: number; publik: number[]; text: string; inst?: string; scen?: number } // inst = instrumentet, scen = stationen där det sker
+export interface FramMinne { t: number; k: string; p: number; namn: string; text: string; n: number; q: number; inst?: string }
 
 // kvällen: tolv timmar bakåt, så att kvällen och natten efter hör till samma dygn
 const kvall = (t: number) => Math.floor((t - 12 * HOUR) / DAY);
@@ -86,11 +99,20 @@ function publik(s: State, p: Person) {
   const f = eldPlats(s);
   return living(s).filter(q => q !== p && !!q.task && PUBLIK.has(q.task.act) && q.task.phase === 'do' && Math.hypot(q.x - f.x, q.y - f.y) <= FRAM.nara);
 }
-// formerna den som uppträder kan: färdigheten räcker, och inget instrument behövs (steg 4.3.2.2)
-const kan = (p: Person) => FRAMTRADANDEN.filter(d => !d.instrument && (d.min ?? 0) <= p.skill[FRAM_SKILL]);
+// scenen (steg 4.3.2.2): en färdig scen, när det inte är kallt eller regnar (då är man vid elden eller inne som förut)
+export function scenen(s: State) {
+  if (nederbord(s) || coldOf(temperature(s)) > 0) return undefined;
+  return stationerOf(s).find(t => t.k === 'scen' && isKlar(t));
+}
+// instrumenten som ligger vid scenen, det som ger mest glädje först
+const instrumentVid = (s: State, sc: Station) => Object.keys(INSTRUMENT).filter(k => redskapVid(s, sc, k).length).sort((a, b) => INSTRUMENT[b].kval - INSTRUMENT[a].kval);
+// instrumentet till formen d: sången behöver ett man kan sjunga till
+const instrumentFor = (d: FramDef, inst: string[]) => inst.find(k => d.id !== 'sang' || INSTRUMENT[k].sang);
+// formerna den som uppträder kan: färdigheten räcker, och ett instrument finns vid scenen när formen behöver ett
+const kan = (p: Person, inst: string[]) => FRAMTRADANDEN.filter(d => (d.min ?? 0) <= p.skill[FRAM_SKILL] && (!d.instrument || !!instrumentFor(d, inst)));
 
 // på kvällen (night i val.ts): p uppträder, eller lyssnar på det som pågår. plats ger var man sitter vid elden (spotFor i val.ts)
-export function framVal(s: State, p: Person, plats: (q: Person) => { x: number; y: number }): { act: 'upptrada' | 'lyssna'; why: string; dur: number; ref: number; tool: string } | undefined {
+export function framVal(s: State, p: Person, plats: (q: Person) => { x: number; y: number }): { act: 'upptrada' | 'lyssna'; why: string; dur: number; ref: number; tool: string; spot?: { x: number; y: number } } | undefined {
   const a = ageOf(p, s.now), f = framOppen(s);
   if (f) {
     if (f.p === p.id || a < ALDER.hjalper || rnd(s, 'fram', p) >= FRAM.med) return undefined; // de minsta barnen sover
@@ -100,12 +122,13 @@ export function framVal(s: State, p: Person, plats: (q: Person) => { x: number; 
   const h = hourOf(s.now);
   if (a < ALDER.vuxen || h < FRAM.fran || h >= FRAM.till || s.framKvall === kvall(s.now) || isSick(p, s.now)) return undefined;
   if (rnd(s, 'fram', p) >= FRAM.vilja * framKval(s, p)) return undefined;
-  const pub = publik(s, p), former = kan(p);
+  const sc = scenen(s), inst = sc ? instrumentVid(s, sc) : [];
+  const pub = publik(s, p), former = kan(p, inst);
   if (pub.length < FRAM.publik || !former.length) return undefined;
-  const d = former[Math.floor(rnd(s, 'fram', p) * former.length)];
+  const d = former[Math.floor(rnd(s, 'fram', p) * former.length)], i = d.instrument ? instrumentFor(d, inst) : undefined;
   const start = s.now, slut = start + (FRAM.minuter + rnd(s, 'fram', p) * FRAM.spann) * MIN;
-  const text = d.text.replace('{namn}', p.name).replace('{hen}', p.sex === 'k' ? 'hon' : 'han').replace('{amne}', AMNE[d.amne](s, p));
-  s.fram = { k: d.id, p: p.id, start, slut, publik: [], text };
+  const text = d.text.replace('{namn}', p.name).replace('{hen}', p.sex === 'k' ? 'hon' : 'han').replace('{amne}', AMNE[d.amne](s, p)).replace('{inst}', i ? INSTRUMENT[i].ord : '');
+  s.fram = { k: d.id, p: p.id, start, slut, publik: [], text, inst: i, scen: sc?.id };
   s.framKvall = kvall(start);
   count(s, 'framtradanden');
   for (const q of pub) {
@@ -113,7 +136,7 @@ export function framVal(s: State, p: Person, plats: (q: Person) => { x: number; 
     const u = plats(q);
     q.task = { act: 'lyssna', phase: 'go', tx: u.x, ty: u.y, until: slut, carry: 0, ref: start, tool: d.id, dark: true, why: `Lyssnar på ${p.name}s ${d.namn.toLowerCase()}` };
   }
-  return { act: 'upptrada', why: `${d.namn}: ${text}`, dur: slut - start, ref: start, tool: d.id };
+  return { act: 'upptrada', why: `${d.namn}: ${text}`, dur: slut - start, ref: start, tool: d.id, spot: sc && vidStation(sc) }; // på scenen när byn har en
 }
 // medan man uppträder (MEDAN i steg.ts): övning, och de som lyssnar räknas till publiken
 export function upptradaSteg(s: State, p: Person, t: Task, dtSec: number) {
@@ -133,8 +156,9 @@ export function lyssnaSteg(s: State, _p: Person, t: Task) {
 export function upptradaKlar(s: State, p: Person, t: Task) {
   const f = s.fram;
   if (!f || f.start !== t.ref || f.p !== p.id) return;
-  const d = FRAM_AV[f.k], q = framKval(s, p), pub = f.publik.map(id => s.people.find(x => x.id === id)).filter((x): x is Person => !!x && alive(x));
+  const d = FRAM_AV[f.k], q = framKval(s, p) * (f.inst ? INSTRUMENT[f.inst].kval : 1), pub = f.publik.map(id => s.people.find(x => x.id === id)).filter((x): x is Person => !!x && alive(x));
   s.fram = undefined;
+  if (f.inst) slitInstrument(s, f);
   if (!pub.length) return;
   for (const b of pub) {
     think(b, `Lyssnade på ${p.name}s ${d.namn.toLowerCase()}`, FRAM.gladje * d.kval * q, s.now, FRAM.gladjeTim * HOUR);
@@ -145,6 +169,16 @@ export function upptradaKlar(s: State, p: Person, t: Task) {
   if (pub.length >= FRAM.publik) think(p, `Uppträdde för ${pub.length} vid elden`, FRAM.egen, s.now, FRAM.gladjeTim * HOUR);
   count(s, 'framPublik', pub.length);
   log(s, f.text, 'world', [p.id]);
-  (s.framtradanden ??= []).push({ t: f.start, k: f.k, p: p.id, namn: p.name, text: f.text, n: pub.length, q: Math.round(q * 100) / 100 });
+  (s.framtradanden ??= []).push({ t: f.start, k: f.k, p: p.id, namn: p.name, text: f.text, n: pub.length, q: Math.round(q * 100) / 100, inst: f.inst });
   if (s.framtradanden.length > FRAM.sparas) s.framtradanden.splice(0, s.framtradanden.length - FRAM.sparas);
+}
+// instrumentet slits en gång per framträdande, och går det sönder står det i loggen
+function slitInstrument(s: State, f: Fram) {
+  const sc = f.scen !== undefined ? stationById(s, f.scen) : undefined, r = sc && redskapVid(s, sc, f.inst!).sort((a, b) => a.c - b.c)[0];
+  if (!r) return;
+  r.c -= FRAM.slit / kvHaller(r);
+  if (r.c > 1e-9) return;
+  s.ting = (s.ting ?? []).filter(x => x !== r);
+  const tr = SAKER[r.k]?.trasig;
+  if (tr) { count(s, tr.stat); if (tr.text) log(s, tr.text, 'world'); }
 }

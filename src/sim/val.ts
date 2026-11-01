@@ -748,7 +748,7 @@ function night(s: State, p: Person, v: Val, a: number) {
   if (p.guardDay === guardDay && a >= ALDER.vaktFran) { set(v, 'vakt', 'Håller vakt i natt'); return; }
   // ett framträdande vid elden (steg 4.3.2, framtradande.ts): uppträda eller lyssna
   const fr = skams(p, now) ? undefined : framVal(s, p, q => spotFor(s, 'beratta', q));
-  if (fr) { set(v, fr.act, fr.why); v.spot = spotFor(s, 'beratta', p); v.dur = fr.dur; v.ref = fr.ref; v.tool = fr.tool; return; }
+  if (fr) { set(v, fr.act, fr.why); v.spot = fr.spot ?? spotFor(s, 'beratta', p); v.dur = fr.dur; v.ref = fr.ref; v.tool = fr.tool; return; }
   const r = rnd(s, 'val', p);
   const story = (p.skill.berattande + (a > VAL.berattaAlder ? VAL.berattaBonus : 0)) / VAL.berattaDiv;
   const craftW = (p.skill.hantverk + stat(p, 'flit', now)) / VAL.nattHantDiv;

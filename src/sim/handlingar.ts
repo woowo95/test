@@ -141,6 +141,9 @@ const DEF = {
   balte: { namn: 'Flätar ett bälte', slag: 'hantverk', hantverk: true, verb: 'flätar', plats: 'station' }, // steg 2.3.3
   boll: { namn: 'Syr en boll', slag: 'hantverk', hantverk: true, verb: 'syr', plats: 'station' }, // sportens föremål (steg 4.3.1.2, sport.ts)
   slagtra: { namn: 'Täljer ett slagträ', slag: 'hantverk', hantverk: true, verb: 'täljer', plats: 'station' },
+  trumma: { namn: 'Gör en trumma', slag: 'hantverk', hantverk: true, verb: 'spänner', plats: 'station' },
+  benflojt: { namn: 'Skär en benflöjt', slag: 'hantverk', hantverk: true, verb: 'skär', plats: 'station' },
+  lyra: { namn: 'Gör en lyra', slag: 'hantverk', hantverk: true, verb: 'täljer', plats: 'station' },
   mal: { namn: 'Binder ett mål', slag: 'hantverk', hantverk: true, verb: 'binder', plats: 'station' },
   benspade: { namn: 'Gör en benspade', slag: 'hantverk', hantverk: true, plats: 'station' }, // bara vid slöjdbänken (steg 2.7.2)
   vattensack: { namn: 'Syr en vattensäck', slag: 'hantverk', hantverk: true, stilla: true, verb: 'syr', plats: 'station' }, // bara vid slöjdbänken med bensylen (steg 2.10.1)

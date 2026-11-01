@@ -192,6 +192,7 @@ const VILL: Record<string, (s: State) => number> = {
   benspade: () => REDSKAP.spadar, // till latrinen och rötterna (steg 2.7.2)
   vattensack: () => REDSKAP.vattensackar,
   boll: s => sportFor(s, 'boll'), slagtra: s => sportFor(s, 'slagtra'), mal: s => sportFor(s, 'mal'), // en av varje när byn har vuxna nog till sporten (sport.ts, steg 4.3.1.2) // till den som inte kan gå (steg 2.10.1)
+  trumma: s => tommaPlatser(s, 'trumma'), benflojt: s => tommaPlatser(s, 'benflojt'), lyra: s => tommaPlatser(s, 'lyra'), // ett av varje till scenen (steg 4.3.2.2)
   // en yxa per fyra över yxaFran år, och en till medan ett hus byggs (för träden där det ska stå)
   yxa: s => clamp(Math.floor(living(s).filter(q => ageOf(q, s.now) >= REDSKAP.yxaFran).length / REDSKAP.yxaPerVuxna), REDSKAP.yxaMin, REDSKAP.yxaMax) + (s.hus?.some(h => !h.klar) ? REDSKAP.yxaBygge : 0),
 };
