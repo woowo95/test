@@ -136,6 +136,7 @@ const DEF = {
   balte: { namn: 'Flätar ett bälte', slag: 'hantverk', hantverk: true, verb: 'flätar', plats: 'station' }, // steg 2.3.3
   benspade: { namn: 'Gör en benspade', slag: 'hantverk', hantverk: true, plats: 'station' }, // bara vid slöjdbänken (steg 2.7.2)
   vattensack: { namn: 'Syr en vattensäck', slag: 'hantverk', hantverk: true, stilla: true, verb: 'syr', plats: 'station' }, // bara vid slöjdbänken med bensylen (steg 2.10.1)
+  forsok: { namn: 'Prövar sig fram', slag: 'hantverk', hantverk: true, stilla: true, verb: 'prövar', plats: 'elden' }, // vid försöksplatsen för en teknik på nivå 4–5 (teknik.ts, steg 4.2.1.1); stationen sätts i valet
   tvinna: { namn: 'Tvinnar rep', yrke: 'Hantverkare', slag: 'hantverk', vila: true, hantverk: true, social: true, dygn: true, stilla: true, verb: 'tvinnar', plats: 'station' }, // vid slöjdbänken, annars för hand inne i byn (vid elden när det är kallt, steg 2.10.6)
   rensa: { namn: 'Rensar fisk', slag: 'hantverk', hantverk: true, social: true, stilla: true, verb: 'rensar', plats: 'station' },
   grilla: { namn: 'Grillar mat över elden', slag: 'hantverk', hantverk: true, ovar: 'matlagning', social: true, stilla: true, verb: 'grillar', plats: 'station' }, // bara på grillställningen när elden brinner (matlagning.ts, steg 2.8.1)

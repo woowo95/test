@@ -3,12 +3,12 @@ import { delade, kronikaBer, personFalt } from './berattelser';
 import { ALDER, ageOf, count, log, stat, think } from './folk';
 import { sedEvent } from './seder';
 import { rnd } from './slump';
-import { amountOf } from './lager';
+import { amountOf, use } from './lager';
 import { SAKER, isTool } from './saker';
-import { STATIONER, TILLBEHOR } from './stationer';
+import { STATIONER, TILLBEHOR, framFri, isKlar, stationerOf, vidStation } from './stationer';
 import { DORRAR, MATERIAL } from './byggnad';
 import { tingOf } from './agande';
-import { Act, HOUR, HOUR_S, Person, State } from './typer';
+import { Act, HOUR, HOUR_S, Person, Skill, State, Task } from './typer';
 import { balans } from './balans';
 import { ACTS, ACT_LIST } from './handlingar';
 import type { SamtalDef } from './samtal';
@@ -34,6 +34,10 @@ export interface Tek {
   // det enda tillfälle då man kommer på den, i stället för arbetet i omr: systemet som har det tillfället anropar tankePa
   // (odlingen kommer man bara på när man plockar vilda frön, steg 2.10.11). Texten visas i teknikträdet
   nar?: string;
+  // försöksplatsen (steg 4.2.1.1): nivå 4–5 kommer man bara på genom att pröva sig fram vid en station som redan finns
+  // tidigare i kedjan (stationernas sorter i STATIONER; tom lista = elden). Den som prövar kan kraven och är skicklig i
+  // färdigheten skill. Varje försök tar en hel sak av materialet och ger ingenting
+  forsok?: { vid: string[]; skill: Skill };
 }
 // trädet på bredden (steg 2.12.7, Björn efter v115): grillen efter slaktbänken, torkställningen efter grillen, hyllor och
 // kistor efter bordet, metspöet efter träspjutet, skinndörren och skinnfällen efter skinnkläderna
@@ -67,23 +71,23 @@ export const TEKNIK: Tek[] = [
     omr: ['hantverk', 'bygga'], krav: ['timmervagg'], niva: 3, tid: 4 },
   // förvaringen (steg 2.3.6): en teknik för hyllan, kistan och redskapsstället, med samma id som hyllan
   { id: 'hylla', namn: 'Hyllor och kistor', text: 'Hyllor och ställ av trä och rep i förrådshuset, och kistor i sovrummet för egna redskap och kläder.', effekt: 'Flera högar ryms på samma plats, så att lagret tar mindre plats. I kistan slits det som under tak.',
-    omr: ['hantverk'], krav: ['rep', 'bord'], niva: 4, tid: 3.3 },
+    omr: ['hantverk'], krav: ['rep', 'bord'], niva: 4, tid: 3.3, forsok: { vid: ['bord', 'bord2', 'bord3', 'flatarbank'], skill: 'hantverk' } },
   // tillbehören till möblerna (TILLBEHOR i stationer.ts, steg 2.2.14) har också samma id som raden där
   { id: 'skinnfall', namn: 'Skinnfäll', text: 'Skinn som sys ihop till ett täcke och läggs i halmbädden.', effekt: 'Den som sover under en skinnfäll fryser mindre.',
-    omr: ['hantverk', 'jakt'], krav: ['halmbadd', 'skinnklader'], niva: 5, tid: 16 },
+    omr: ['hantverk', 'jakt'], krav: ['halmbadd', 'skinnklader'], niva: 5, tid: 16, forsok: { vid: ['halmbadd', 'flatarbank'], skill: 'hantverk' } },
   // dörrarna (DORRAR i byggnad.ts, steg 2.2.16) har också samma id som raden där
   { id: 'skinndorr', namn: 'Skinndörr', text: 'En hud som hängs i dörröppningen.', effekt: 'Huset släpper ut mindre värme genom dörren.',
-    omr: ['bygga', 'hantverk'], krav: ['timmervagg', 'skinnklader'], niva: 5, tid: 6.7 },
+    omr: ['bygga', 'hantverk'], krav: ['timmervagg', 'skinnklader'], niva: 5, tid: 6.7, forsok: { vid: ['flatarbank'], skill: 'hantverk' } },
   { id: 'tradorr', namn: 'Trädörr', text: 'Kluvna bräder som surras ihop med rep och hängs i dörröppningen.', effekt: 'Huset håller värmen bättre, och dörren stängs när någon gömmer sig för vargarna.',
     omr: ['bygga', 'hantverk'], krav: ['timmervagg', 'rep'], niva: 3, tid: 4 },
   // kläderna (steg 2.3.2): bensylen slipas av ett ben och läggs vid slöjdbänken, och med den sys kläderna där
   { id: 'bensyl', namn: 'Bensyl', text: 'Ett vasst ben som slipas mot en sten eller en flinta.', effekt: 'Med bensylen vid slöjdbänken kan man sy skinn.',
     omr: ['hantverk'], krav: ['flatarbank', 'kniv'], niva: 3, tid: 4.2 },
   { id: 'skinnklader', namn: 'Skinnkläder', text: 'Skinn som sys ihop med rep av senor till en rock och ett par skor.', effekt: 'Den som har kläderna på sig fryser mindre.',
-    omr: ['hantverk', 'jakt'], krav: ['bensyl'], niva: 4, tid: 14 },
+    omr: ['hantverk', 'jakt'], krav: ['bensyl'], niva: 4, tid: 14, forsok: { vid: ['flatarbank'], skill: 'hantverk' } },
   // vattensäcken (steg 2.10.1): sys av skinn som kläderna. Man kommer på den när man ger vatten åt den som inte kan gå
   { id: 'vattensack', namn: 'Vattensäck', text: 'Ett skinn som sys ihop till en säck och knyts med rep.', effekt: 'Man kan bära vatten till den som inte kan gå till vattnet.',
-    omr: ['hantverk', 'dricka', 'varda'], krav: ['skinnklader'], niva: 5, tid: 5.4 },
+    omr: ['hantverk', 'dricka', 'varda'], krav: ['skinnklader'], niva: 5, tid: 5.4, forsok: { vid: ['flatarbank'], skill: 'hantverk' } },
   // bältet (steg 2.3.3): kommer man på när man bär hem både redskap och börda, ganska tidigt
   { id: 'balte', namn: 'Bälte', text: 'Ett rep som flätas till ett bälte runt midjan.', effekt: 'Redskapet hänger i bältet när man bär hem, så båda händerna är fria och man bär mer.',
     omr: ['ved', 'samla', 'fiske', 'hantverk'], krav: ['rep'], niva: 2, tid: 11 },
@@ -92,13 +96,13 @@ export const TEKNIK: Tek[] = [
   { id: 'benspade', namn: 'Benspade', text: 'Tre ben bredvid varandra som ett blad, surrade med rep vid en gren som skaft.', effekt: 'Med spaden gräver man fram rötter fortare, och gropar.',
     omr: ['hantverk', 'samla'], krav: ['slaktbank', 'rep'], niva: 3, tid: 5 },
   { id: 'latrin', namn: 'Latrin', text: 'En grop i byns utkant, grävd med benspaden.', effekt: 'Man går på toa på ett ställe, närmare än förut, och lämnar ingen smuts efter sig. Gropen fylls och måste ersättas.',
-    omr: ['toa', 'hantverk', 'bygga'], krav: ['benspade'], niva: 4, tid: 9 },
+    omr: ['toa', 'hantverk', 'bygga'], krav: ['benspade'], niva: 4, tid: 9, forsok: { vid: ['flatarbank'], skill: 'hantverk' } },
   // grillställningen (steg 2.8.1, matlagning.ts; grill i STATIONER, samma id)
   { id: 'grill', namn: 'Grillställning', text: 'Två grenar med en klyka var på var sin sida om elden, och ett spett med vev som vilar i klykorna, surrat med rep.', effekt: 'Kött och fisk grillas över elden. Den grillade maten håller längre, och den som äter den blir inte sjuk av rått kött.',
     omr: ['hantverk', 'slakta', 'rensa', 'fiske'], krav: ['rep', 'slaktbank'], niva: 3, tid: 5.4 },
   // torkställningen (steg 2.8.2, matlagning.ts; tork i STATIONER, samma id)
   { id: 'tork', namn: 'Torkställning', text: 'Två A av korsade grenar som bär en lång slå, surrade med rep. På slån hänger köttet i remsor och fisken i stjärten.', effekt: 'Det kött och den fisk som byn inte hinner äta torkar på fem dygn och håller sedan länge i lagret.',
-    omr: ['hantverk', 'slakta', 'rensa', 'fiske'], krav: ['rep', 'grill'], niva: 4, tid: 14 },
+    omr: ['hantverk', 'slakta', 'rensa', 'fiske'], krav: ['rep', 'grill'], niva: 4, tid: 14, forsok: { vid: ['grill'], skill: 'matlagning' } },
   // odlingen (steg 2.10.2, odling.ts): kommer man bara på när man plockar vilda frön (froFynd), fortare ju fler vilda frön
   // byn plockat; det krävs inte så många (Björn efter v107, steg 2.10.11)
   { id: 'odling', namn: 'Odling', text: 'Frön som sätts i jorden blir nya grödor.', effekt: 'Man kan så frön på ett fält och skörda grödorna.',
@@ -125,6 +129,10 @@ export const TEKTAL = balans('teknik', {
   // vanligt kommer på den, för nivå 1, 2, 3 …: grundnivån inom ett par dygn och senare nivåer några dygn till (Björn efter
   // v115, steg 2.12.9). Tiderna (tid i raderna) mäts fram mot dem med npm run teknik
   nivaDygn: [2, 3, 4, 5, 6],
+  // experimenten (steg 4.2.1.1): den som prövar sig fram har minst så här mycket i färdigheten (forsok i raden) ...
+  forsokSkill: 4,
+  forsokMin: 90, // ... ett försök tar så här många minuter och tar en hel sak av materialet
+  forsokChans: 0.3, // chansen att den skicklige prövar sig fram i stället för annat handarbete
 });
 
 export const knows = (p: Person, id: string) => (p.tek?.[id] ?? 0) >= 1;
@@ -133,7 +141,7 @@ export const harSak = (s: State, k: string) => isTool(k) ? tingOf(s).some(q => q
 // det som måste finnas i byn för att man ska komma på tekniken: en av sakerna i varje grupp. Det räknas ur receptet
 // (steg 2.12.5): det som har samma id som tekniken (en sak, station, ett tillbehör eller en dörr), annars det första
 // redskapet eller väggmaterialet som tekniken ger. Varje sak i receptet är en grupp, och verktygen (ett av dem räcker) en
-const recept = (id: string): { av: Record<string, number>; verktyg: string[] } | undefined => {
+export const recept = (id: string): { av: Record<string, number>; verktyg: string[] } | undefined => {
   const sak = SAKER[id]?.skaffa ?? Object.values(SAKER).find(d => d?.redskap && d.skaffa?.tek === id)?.skaffa;
   if (sak?.av) return { av: sak.av, verktyg: Object.keys(sak.verktyg ?? {}) };
   const st = (STATIONER as Record<string, { av: Record<string, number>; verktyg?: string }>)[id] ?? (TILLBEHOR as Record<string, { av: Record<string, number> }>)[id] ?? (DORRAR as Record<string, { av: Record<string, number> }>)[id];
@@ -167,7 +175,7 @@ const omrAv = (act: Act): Act => HANTVERK.has(act) ? 'hantverk' : act;
 export function thinkWhileWorking(s: State, p: Person, act0: Act, dtSec: number) {
   const act = OMR.has(act0) ? act0 : omrAv(act0);
   if (!OMR.has(act) || ageOf(p, s.now) < ALDER.uppfinner) return;
-  for (const t of TEKNIK) if (!t.nar && t.omr.includes(act)) framat(s, p, t, dtSec);
+  for (const t of TEKNIK) if (!t.nar && !t.forsok && t.omr.includes(act)) framat(s, p, t, dtSec); // nivå 4–5 bara genom försök (steg 4.2.1.1)
 }
 // tillfället i nar (raden i TEKNIK): p tänker på tekniken id i dtSec sekunder
 export function tankePa(s: State, p: Person, id: string, dtSec: number) {
@@ -183,6 +191,36 @@ function framat(s: State, p: Person, t: Tek, dtSec: number) {
   const d = Math.min(1 - (p.tek[t.id] ?? 0), dtSec / HOUR_S / t.tid * nyf * intel * okar);
   p.tek[t.id] = (p.tek[t.id] ?? 0) + d; count(s, 'tekTankt', d);
   if (p.tek[t.id] >= 1) learn(s, p, t);
+}
+
+// ---------- experimenten (steg 4.2.1.1) ----------
+// Det nya kommer man inte på av sig själv i det vanliga arbetet: den skicklige prövar sig fram vid en station som redan finns.
+// Försöket tar en hel sak av materialet och ger ingenting, men för hen närmare tekniken (som framat, räknat i försökstimmar)
+const stationForsok = (s: State, t: Tek) => stationerOf(s).find(q => t.forsok!.vid.includes(q.k) && isKlar(q) && framFri(s, q));
+// det i receptet som går åt i ett försök: sakerna, inte verktygen
+const forbrukas = (t: Tek) => Object.keys(recept(t.id)?.av ?? {}).filter(k => !isTool(k));
+const kanForsoka = (s: State, p: Person, t: Tek) => !!t.forsok && ageOf(p, s.now) >= ALDER.uppfinner && canThink(p, t) && hasMaterial(s, t)
+  && p.skill[t.forsok.skill] >= TEKTAL.forsokSkill && (r => !r.length || r.some(k => amountOf(s, k) >= 1))(forbrukas(t)) && (!t.forsok.vid.length || !!stationForsok(s, t));
+// vad p kan pröva sig fram till nu, och var: den teknik hen kommit längst mot (så att försöken samlas på en sak)
+export function forsokVal(s: State, p: Person): { id: string; spot?: { x: number; y: number }; min: number } | undefined {
+  let bast: Tek | undefined;
+  for (const t of TEKNIK) if (kanForsoka(s, p, t) && (!bast || (p.tek?.[t.id] ?? 0) > (p.tek?.[bast.id] ?? 0))) bast = t;
+  if (!bast) return undefined;
+  const st = bast.forsok!.vid.length ? stationForsok(s, bast) : undefined;
+  return { id: bast.id, spot: st && vidStation(st), min: TEKTAL.forsokMin };
+}
+export function forsokSteg(s: State, p: Person, tk: Task, dtSec: number) {
+  const t = tk.tool ? TEK[tk.tool] : undefined;
+  if (!t?.forsok || !canThink(p, t)) return;
+  count(s, 'forsokTim', dtSec / HOUR_S);
+  framat(s, p, t, dtSec);
+}
+export function forsokKlar(s: State, p: Person, tk: Task) {
+  const t = tk.tool ? TEK[tk.tool] : undefined;
+  if (!t?.forsok) return;
+  const kan = forbrukas(t).filter(k => amountOf(s, k) >= 1);
+  if (kan.length) use(s, p, kan[Math.floor(rnd(s, 'kunskap', p) * kan.length)], 1); // materialet går åt, och inget blir kvar (latrinen tar inget: en grop som grävs igen)
+  count(s, 'forsok'); count(s, 'forsok_' + t.id);
 }
 
 // i samtal lär den som kan något ut det, och den som lyssnar lär sig fortare ju intelligentare hen är
