@@ -189,12 +189,15 @@ export const franMitt = (p: Person, k: Stat, now: number) => (stat(p, k, now) - 
 // färdigheterna en nykomling har efter sin ålder (en dragning ur 'folk' per färdighet, i SKILLS ordning). Matlagningen
 // (steg 2.8.1) börjar av samlingen, utan en egen dragning (steg 3.10.8: eldkonsten är ingen färdighet längre)
 export function startSkills(s: State, p: Person, age: number) {
-  for (const k of SKILLS) if (k !== 'matlagning' && k !== 'narstrid' && k !== 'traff' && k !== 'skaldskap') p.skill[k] = clamp((age - ALDER.skickFran) * 0.25 * (0.4 + rnd(s, 'folk')) * (p.pot.intelligens / 12), 0, 12);
+  for (const k of SKILLS) if (k !== 'matlagning' && k !== 'narstrid' && k !== 'traff' && k !== 'skaldskap' && k !== 'handel') p.skill[k] = clamp((age - ALDER.skickFran) * 0.25 * (0.4 + rnd(s, 'folk')) * (p.pot.intelligens / 12), 0, 12);
   p.skill.matlagning = p.skill.samla;
   p.skill.skaldskap = p.skill.berattande * SKALD_START; // skaldskapen (steg 4.3.2.5) börjar av berättandet, utan en egen dragning
+  p.skill.handel = handelStart(p); // handeln (steg 4.4.1.4) börjar av berättandet och hantverket, utan en egen dragning
   stridSkills(s, p, age);
 }
 export const SKALD_START = 0.5;
+// den som kan tala för sig och vet vad saker är värda har lite handel i sig från början
+export const handelStart = (p: Person) => ((p.skill.berattande ?? 0) + (p.skill.hantverk ?? 0)) / 4;
 // närstriden och träffsäkerheten (steg 3.7.2) efter ålder, ur följden 'anlag' så att de andra dragningarna blir som förut
 export function stridSkills(s: State, p: Person, age: number) {
   for (const k of ['narstrid', 'traff'] as const) p.skill[k] = clamp((age - ALDER.skickFran) * 0.1 * (0.4 + rnd(s, 'anlag')) * (p.pot.smidighet ?? 10) / 10, 0, 6);

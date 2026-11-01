@@ -2,7 +2,7 @@ import { upplev } from './uppvaxt';
 import { State, Person, HOUR, DAY } from './typer';
 import { FOOD, REDSKAP_SLAG, SAKER, SAK_LIST, isTool, viktOf } from './saker';
 import { actsOf, usesTool } from './handlingar';
-import { ALDER, KROPP, REL, ageOf, alive, byId, count, getRel, isKin, isParent, livet, living, log, relKey, stat, think } from './folk';
+import { ALDER, KROPP, REL, ageOf, alive, byId, count, getRel, gjort, isKin, isParent, livet, living, log, ovning, relKey, stat, think } from './folk';
 import { kanGa } from './halsa';
 import { chance, clamp, pickViktat, rnd } from './slump';
 import { Ting, newTing, tingOf } from './agande';
@@ -453,7 +453,7 @@ function payable(s: State, p: Person, utom: readonly string[]): Vara[] {
 }
 // bybon p som part i ett byte (byte.ts). Silver byts bara med handlaren (steg 4.4.1.3); silver inom byn kommer i steg 9.5.1.2
 export function personPart(s: State, p: Person, silver = false): Part {
-  return { id: p.id, namn: p.name, p, x: p.x, y: p.y, varde: k => behovAv(s, p, k), over: utom => payable(s, p, silver ? utom : [...utom, 'silver']) };
+  return { id: p.id, namn: p.name, p, x: p.x, y: p.y, handel: p.skill.handel ?? 0, varde: k => behovAv(s, p, k), over: utom => payable(s, p, silver ? utom : [...utom, 'silver']) };
 }
 // byn (det gemensamma förrådet) som part i ett byte med handlaren (steg 4.4.1.3). Byn värderar efter knappheten i hela byn:
 // mat och ved som inte räcker till alla (b.kvar var) saknas, det som räcker gånger BYTE_BYN.gott är över; ett redskap som byn
@@ -487,13 +487,31 @@ function bynOver(s: State, utom: readonly string[]): Vara[] {
   }
   return ut;
 }
-export function bynPart(s: State, x: number, y: number): Part {
+// bud = den som handlar för byn: hen förhandlar med sin färdighet i Handel, och övar och minns som i ett eget byte
+export function bynPart(s: State, x: number, y: number, bud?: Person): Part {
   return {
-    id: BYN, namn: 'Byn', x, y, varde: k => bynBehov(s, k), over: utom => bynOver(s, utom),
+    id: BYN, namn: bud ? `${bud.name} för byn` : 'Byn', p: bud, x, y, handel: bud?.skill.handel ?? 0, varde: k => bynBehov(s, k), over: utom => bynOver(s, utom),
     lamna: w => { if (w.t) { w.t.agare = BYN; return w; } use(s, undefined, w.k, w.n, true); return w; },
     ta: w => { if (w.t) { w.t.agare = BYN; w.t.hos = undefined; } else if (isTool(w.k)) for (let i = 0; i < w.n; i++) { const t = newTing(s, w.k, 1, BYN); if (w.q !== undefined) t.q = w.q; } else put(s, w.k, w.n); },
   };
 }
+// färdigheten Handel i bytet (steg 4.4.1.4): den skickligare får en större del av vinsten när båda ska tjäna på bytet
+// (v.delad), och den som är mycket skickligare kan lura den ovane: den ovane betalar mer, eller får mindre betalt, än bytet
+// var värt. Den som blev lurad märker det ibland (mer ju skickligare och klokare hen är), blir sur och tycker sämre om den
+// som lurade. Båda övar Handel i varje byte
+export const HANDLA = balans('handla', {
+  andel: 0.03, // så mycket större del av vinsten (av hela) per poäng i Handel man är skickligare än motparten ...
+  andelMin: 0.1, andelMax: 0.9, // ... men aldrig mindre eller mer än så här av den
+  lura: 6, // så många poäng skickligare kan lura den andra ...
+  luraChans: 0.4, // ... och gör det så här ofta ...
+  luraAndel: 0.15, // ... och tar så stor del av bytets värde extra
+  marka: 0.04, // chansen att märka att man blivit lurad, per poäng i Handel och halv poäng i intelligens
+  ovning: 0.05, // så mycket växer Handel av ett byte (gånger 0,5 + intelligensen / 20)
+  surTanke: -0.12, // tanken hos den som märkte att hen blev lurad ...
+  surTim: 48, // ... och så många timmar
+  surRel: 8, // så mycket sämre tycker hen om den som lurade
+});
+const andelAv = (M: Part, G: Part) => clamp(0.5 + HANDLA.andel * ((G.handel ?? 0) - (M.handel ?? 0)), HANDLA.andelMin, HANDLA.andelMax);
 export interface Villkor { behov: number; minst: number; fara: number; typ: string; utom: readonly string[]; delad?: true }
 // m byter till sig vill (det g har över) av g, och betalar med det m har över som är värt mest för g och minst för m.
 // v.behov = hur mycket m behöver det (gånger grundvärdet), v.minst = minsta mängd som hjälper, v.fara = hur nära döden
@@ -504,6 +522,44 @@ export interface Villkor { behov: number; minst: number; fara: number; typ: stri
 function byte(s: State, m: Person, g: Person, vill: Vara[], v: Villkor): number {
   if (osams(s, g, m)) return 0;
   return bytaMed(s, personPart(s, m), personPart(s, g), vill, v);
+}
+// den som är mycket skickligare i Handel lurar ibland den andra: G tar mer betalt (M lägger till det som är värt mest för G),
+// eller M betalar mindre (det sista M lägger fram tas bort). Ger den som lurade
+function lura(s: State, M: Part, G: Part, betal: Vara[], varor: (Vara & { ut: number })[], ger: number): Part | undefined {
+  const d = (G.handel ?? 0) - (M.handel ?? 0);
+  if (Math.abs(d) < HANDLA.lura || rnd(s, 'handel') >= HANDLA.luraChans) return undefined;
+  let mer = ger * HANDLA.luraAndel;
+  if (d > 0) { // G lurar M
+    for (const w of varor) {
+      if (mer <= 1e-9 || w.t) continue;
+      const i = betal.findIndex(x => x.k === w.k && !x.t), fore = i >= 0 ? betal[i].n : 0, n = Math.min(w.n - fore, Math.ceil(mer / w.ut - 1e-6));
+      if (n < 1) continue;
+      if (i >= 0) betal[i].n += n; else betal.push({ k: w.k, n });
+      mer -= n * w.ut;
+    }
+    return mer < ger * HANDLA.luraAndel ? G : undefined;
+  }
+  for (let i = betal.length - 1; i >= 0 && mer > 1e-9; i--) { // M lurar G
+    const b = betal[i], w = varor.find(x => x.k === b.k);
+    if (b.t || !w) continue;
+    const n = Math.min(b.n - (i === 0 ? 1 : 0), Math.floor(mer / w.ut + 1e-9));
+    if (n < 1) continue;
+    b.n -= n; mer -= n * w.ut;
+  }
+  for (let i = betal.length - 1; i >= 0; i--) if (betal[i].n <= 0) betal.splice(i, 1);
+  return mer < ger * HANDLA.luraAndel ? M : undefined;
+}
+// den som blev lurad märker det ibland: tanken, och sämre om den som lurade
+function lurad(s: State, X: Part, L: Part) {
+  count(s, 'lurat');
+  if (L.p) gjort(s, L.p, 'lurade');
+  const p = X.p;
+  if (!p || rnd(s, 'handel') >= HANDLA.marka * ((p.skill.handel ?? 0) + p.pot.intelligens / 2)) return;
+  count(s, 'lurad');
+  gjort(s, p, 'lurad');
+  think(p, `Blev lurad av ${L.namn}`, HANDLA.surTanke, s.now, HANDLA.surTim * HOUR);
+  if (L.p) { const r = getRel(s, p, L.p); r.op = clamp(r.op - HANDLA.surRel, -100, 100); }
+  log(s, `${p.name} märkte att ${L.namn} hade lurat hen i ett byte.`, 'rel', [p.id, ...(L.p ? [L.p.id] : [])]);
 }
 // växeln: G ger tillbaka så mycket silver som M betalat för mycket (for, för G), i hela silver. Betalar M med silver blir det
 // mindre silver i stället
@@ -553,7 +609,7 @@ export function bytaMed(s: State, M: Part, G: Part, vill: Vara[], v: Villkor): n
   // silver, om G har silver att ge (handlaren och byn; bybor byter inte silver än)
   const vaxel = vaxelSilver(G, M, fick - ger * del, betal);
   if (v.delad && del === 1) { // M betalar hälften av sin vinst till G, med det som är värt mest för G
-    let extra = (far - kost) / 2;
+    let extra = (far - kost) * andelAv(M, G); // hälften när båda är lika skickliga i Handel (steg 4.4.1.4)
     for (const w of varor) {
       if (extra <= 1e-9) break;
       const i = betal.findIndex(x => x.k === w.k && x.t === w.t), fore = i >= 0 ? betal[i].n : 0;
@@ -566,11 +622,14 @@ export function bytaMed(s: State, M: Part, G: Part, vill: Vara[], v: Villkor): n
   if (vill.reduce((x, w) => x + w.n * vardeOf(w), 0) * del < DELA.byteMinst) return 0;
   const fatt = vill.map(w => ({ ...w, n: w.t ? 1 : helt(w.n * del) })).filter(w => w.n > 0);
   if (vaxel > 0) fatt.push({ k: 'silver', n: vaxel });
+  const lurare = lura(s, M, G, betal, varor, ger * del);
   for (const w of fatt) flytta(s, w, G, M);
   for (const w of betal) flytta(s, w, M, G);
   if (M.p && G.p) { const r = getRel(s, M.p, G.p); r.op = clamp(r.op + 2, -100, 100); }
   if (M.p) think(M.p, `Bytte till sig ${varorText(fatt)} av ${G.namn}`, 0.06, s.now, 6 * HOUR);
   if (G.p) think(G.p, `Bytte till sig ${varorText(betal)} av ${M.namn}`, 0.06, s.now, 6 * HOUR);
+  for (const X of [M, G]) if (X.p) { ovning(X.p, 'handel', HANDLA.ovning * (0.5 + X.p.pot.intelligens / 20)); gjort(s, X.p, 'bytt'); }
+  if (lurare) lurad(s, lurare === M ? G : M, lurare);
   const n = enheter(fatt);
   count(s, 'byten'); count(s, 'byte_' + v.typ, n); if (v.delad) count(s, 'kvallsbyten');
   if (byteKlart(s, M, G, fatt, betal, desperat)) count(s, 'storaByten'); // samma rad i loggen och krönikan, vem motparten än är

@@ -218,7 +218,7 @@ function taBort(h: Handlare, w: Vara) {
 // handlaren som part i ett byte (byte.ts)
 export function handlarPart(s: State, h: Handlare): Part {
   return {
-    id: h.id, namn: h.namn, x: h.x, y: h.y,
+    id: h.id, namn: h.namn, x: h.x, y: h.y, handel: h.handel,
     varde: k => handlarVarde(s, h, k),
     over: utom => [...h.varor.filter(w => !utom.includes(w.k)).map(w => ({ k: w.k, n: w.n, q: w.q })), ...(h.silver >= 1 && !utom.includes('silver') ? [{ k: 'silver', n: h.silver }] : [])],
     lamna: w => { if (w.k === 'silver') h.silver -= w.n; else taBort(h, w); return w; },
@@ -236,12 +236,12 @@ function visaVaror(s: State, h: Handlare) {
   const f = s.filtar?.find(x => x.handlare === h.id);
   if (f) f.varor = h.varor.map(w => ({ k: w.k, n: w.n, fran: h.id }));
 }
-// den som handlar för byn: ledaren, annars den äldsta vuxna
+// den som handlar för byn: ledaren, annars den vuxna som är skickligast i Handel (steg 4.4.1.4)
 function forByn(s: State): Person | undefined {
   const l = ledareOf(s);
   if (l) return l;
   let b: Person | undefined;
-  for (const q of living(s)) if (ageOf(q, s.now) >= ALDER.vuxen && (!b || ageOf(q, s.now) > ageOf(b, s.now))) b = q;
+  for (const q of living(s)) if (ageOf(q, s.now) >= ALDER.vuxen && (!b || q.skill.handel > b.skill.handel)) b = q;
   return b;
 }
 // valet på dagen (day i val.ts): den som handlar för byn går till filten. Kommer hen inte, går en annan vuxen efter ett tag
@@ -257,8 +257,7 @@ export function handlaKlar(s: State, p: Person, t: Task) {
   const h = s.handlare;
   if (!h || h.id !== t.ref || h.fas !== 'handlar' || h.bynKlar) return;
   h.bynKlar = true;
-  const B = bynPart(s, p.x, p.y), H_ = handlarPart(s, h);
-  B.namn = `${p.name} för byn`;
+  const B = bynPart(s, p.x, p.y, p), H_ = handlarPart(s, h);
   let n = 0;
   for (const w of B.over(['silver'])) { // byn säljer: handlaren köper det hen kan bära och tjänar på
     if (n >= HANDEL.bytenMax) break;

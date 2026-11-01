@@ -35,6 +35,7 @@ export interface Part {
   over(utom: readonly string[]): Vara[]; // det parten kan byta bort, utom slagen i utom
   lamna?(w: Vara): Vara; // saken lämnar parten (handlarens packning, byns förråd): ger det som lämnade
   ta?(w: Vara, fran: Part): void; // saken kommer till parten
+  handel?: number; // färdigheten Handel hos den som förhandlar (steg 4.4.1.4; bybon, den som handlar för byn, handlaren)
   rymmer?(): number; // så många kg till kan parten ta emot (handlarens packning); saknas = hur mycket som helst
 }
 export const vardeOf = (v: Vara) => grundvarde(v.k) * (v.t ? v.t.c * kvVarde(v.t) : 1);

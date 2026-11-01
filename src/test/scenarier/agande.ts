@@ -776,3 +776,41 @@ SCENARIER.silver = {
     ];
   },
 };
+
+SCENARIER.handelsfardighet = {
+  text: 'Färdigheten Handel (steg 4.4.1.4, behov.ts): den skickligare i ett byte får en större del av vinsten, den som är mycket skickligare kan lura en ovan, och den lurade märker det ibland och minns det (en sur tanke). Båda övar Handel i varje byte. Byn handlar genom ledaren, och utan ledare genom den som är skickligast i Handel. En nykomling har lite handel från början, av berättandet och hantverket.',
+  kor: () => {
+    const fram = (s: State) => { rikBy(s); s.nastaHandlare = s.now; for (let i = 0; i < 40 && s.handlare?.fas !== 'handlar'; i++) step(s, BEAT); return s.handlare!; };
+    const vuxna = (s: State) => living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen);
+    const bas = createState(6, START), h0 = fram(bas);
+    setAmount(bas, 'torrfisk', 120); setAmount(bas, 'silver', 0); h0.varor = []; h0.silver = 60; h0.handel = 10;
+    if (bas.styre) bas.styre.ledare = undefined;
+    // byn säljer fisk för silver med en ovan och en skicklig i Handel
+    const salj = (skill: number, i = 0) => {
+      const s = cloneState(bas), h = s.handlare!, p = vuxna(s)[0];
+      s.stat = { ...s.stat }; const l0 = s.stat.lurat ?? 0;
+      s.seed = bas.seed; for (let j = 0; j < i; j++) SIM.rnd(s, 'handel');
+      p.skill.handel = skill; p.x = h.x - 1; p.y = h.y;
+      const fore = p.skill.handel;
+      SIM.handlaKlar(s, p, { act: 'handla', phase: 'do', tx: p.x, ty: p.y, until: s.now, carry: 0, ref: h.id, dark: false, why: '' } as Task);
+      return { silver: amountOf(s, 'silver'), ovat: p.skill.handel > fore, lurad: p.thoughts?.some(t => t.text.startsWith('Blev lurad')) ?? false, lurat: (s.stat?.lurat ?? 0) > l0 };
+    };
+    const ovan = salj(0), skicklig = salj(20);
+    let lurat = 0, markt = 0;
+    for (let i = 0; i < 60; i++) { const r = salj(0, i); if (r.lurat) lurat++; if (r.lurad) markt++; }
+    // utan ledare handlar den skickligaste
+    const t = cloneState(bas), v = vuxna(t);
+    for (const p of t.people) if (p.task?.act === 'handla') p.task = undefined;
+    for (const p of v) p.skill.handel = 2;
+    v[v.length - 1].skill.handel = 15;
+    const bast = !!SIM.handlaVal(t, v[v.length - 1]) && !SIM.handlaVal(t, v[0]);
+    const ny = vuxna(createState(9, START))[0];
+    return [
+      [`den skickliga får mer betalt än den ovana (silver ${Math.round(skicklig.silver)} mot ${Math.round(ovan.silver)})`, skicklig.silver > ovan.silver],
+      [`en skicklig handlare lurar ibland en ovan (${lurat} av 60 gånger), och den lurade märker det ibland (${markt})`, lurat > 0 && markt > 0 && markt <= lurat],
+      ['den som handlar övar Handel', ovan.ovat],
+      ['utan ledare handlar den som är skickligast i Handel', bast],
+      [`en nykomling har lite Handel från början (${ny.skill.handel.toFixed(1)})`, Math.abs(ny.skill.handel - SIM.handelStart(ny)) < 1e-9 && ny.skill.handel > 0],
+    ];
+  },
+};
