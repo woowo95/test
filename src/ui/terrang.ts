@@ -2,6 +2,7 @@ import * as PIXI from 'pixi.js';
 import { BRAND, DAY, H, HOUR, T, W, ageIndex, emberOn, fireHeat, eldPlats, getMap, groundOf, isCm, lightLevel } from '../sim';
 import { s } from './lage';
 import { TS, glowG, nightG, terrainG, world } from './scen';
+import { PAL as IKON_PAL, PIX } from '../ikoner';
 
 // marken: vatten, sand, gräs som trampas ner till stigar, skog som växer, och natten med eldens sken
 const PAL = [
@@ -117,10 +118,25 @@ export function drawTerrain(force = false) {
     } else if (t === T.Sten) {
       terrainG.beginFill(shadeCol(pal[t], 0.78)).drawCircle(x * TS + 5 + sh * 6, y * TS + 6 + sh * 4, 2.2).drawCircle(x * TS + 11, y * TS + 11 - sh * 3, 1.6).endFill();
     } else if (t === T.Lera) {
-      // torr sjöbotten: sprickor i leran (platshållare, steg 3.8.2)
-      terrainG.lineStyle(1, shadeCol(pal[t], 0.7), 0.9).moveTo(x * TS + 2, y * TS + 4 + sh * 6).lineTo(x * TS + 8, y * TS + 8).lineTo(x * TS + 14, y * TS + 5 + sh * 4).moveTo(x * TS + 8, y * TS + 8).lineTo(x * TS + 7 + sh * 3, y * TS + 14).lineStyle(0);
+      // torr sjöbotten (Björn valde version 1 och 3 efter v245, steg 4.5.2): rutan målas punkt för punkt, oftast sprickorna och
+      // ibland den fuktiga fläcken, och vänd åt olika håll så att det inte blir repetitivt
+      ritaLera(x, y, hash(x, y, 7), hash(x, y, 9));
     } else if (t === T.Vatten && !is && sh > 0.82) {
       terrainG.lineStyle(1, 0xffffff, 0.25).moveTo(x * TS + 3, y * TS + 8).lineTo(x * TS + 9, y * TS + 8).lineStyle(0);
+    }
+  }
+}
+// en ruta torr sjöbotten, en punkt per bildpunkt (TS = 16) och samma färg i följd som en rektangel
+const LERA = (['lera_spricka', 'lera_fukt'] as const).map(k => ({ rader: PIX[k], pal: Object.fromEntries(Object.entries(IKON_PAL[k]).map(([c, h]) => [c, parseInt(h.slice(1), 16)])) }));
+function ritaLera(x: number, y: number, a: number, b: number) {
+  const L = LERA[a < 0.8 ? 0 : 1], vx = b < 0.5, vy = (b * 4) % 1 < 0.5;
+  for (let py = 0; py < 16; py++) {
+    const rad = L.rader[vy ? 15 - py : py];
+    for (let px = 0; px < 16;) {
+      const c = rad[vx ? 15 - px : px]; let n = 1;
+      while (px + n < 16 && rad[vx ? 15 - px - n : px + n] === c) n++;
+      terrainG.beginFill(L.pal[c]).drawRect(x * TS + px, y * TS + py, n, 1).endFill();
+      px += n;
     }
   }
 }

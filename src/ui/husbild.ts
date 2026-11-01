@@ -4,7 +4,7 @@ import { TS, husLayer } from './scen';
 
 // ---------- husets utseende: timmerväggen och trägolvet som pixelbilder (steg 2.2.13) ----------
 // Varje ruta är 8 × 8 punkter (2 världspixlar per punkt). Timmerväggen (Björn valde V3f efter v55) är en stock längs
-// väggen, med stockändarna i hörnen som i en knuttimrad stuga och en stockände på var sida om dörröppningen. Trägolvet
+// väggen, med stockändarna i hörnen som i en knuttimrad stuga och rakt avsågade stockar mot dörröppningen (steg 4.5.2). Trägolvet
 // (Gd) är plankor uppifrån och ner med förskjutna skarvar och låg kontrast; plankorna går ut i dörröppningen. Huset slutar
 // med timret (Gd3): där stockarna inte täcker väggrutan syns gräset utanför och golvet innanför. Bilden för en ruta beror på
 // grannarna och görs en gång (en cache); ris- och jordgolv, risväggar och det som inte är påbörjat ritas som förut (foremal.ts).
@@ -24,11 +24,6 @@ function planka(gx: number, gy: number) {
 }
 // stocken tvärs över: mörk kant, ljus mitt
 const STOCK = ['.', 'k', 'b', 'B', 'B', 'b', 'k', '.'];
-// stockänden: ringar runt mitten (cx, cy), r = hur stor
-function ande(lx: number, ly: number, cx: number, cy: number, r: number[]) {
-  const d = Math.hypot(lx - cx, ly - cy);
-  return d < r[0] ? 'E' : d < r[1] ? 'e' : d < r[2] ? 'd' : '';
-}
 // väggen V3f: n = grannarnas slag i ordningen vänster, höger, upp, ner
 function vagg(n: string, lx: number, ly: number) {
   const [l, r, u, d] = [...n].map(c => c === 'W'), o = [...n].map(c => c === 'O' || c === 'P');
@@ -37,12 +32,15 @@ function vagg(n: string, lx: number, ly: number) {
   // hörnet: stockändarna när väggen går åt två håll, också när en dörröppning ligger på ena sidan om hörnet (steg 3.6.7)
   const horn = (h || o[0] || o[1]) && (v || o[2] || o[3]) && (h || v);
   if (horn) { const a = Math.hypot(lx - 3.5, ly - 3.5); if (a < 2.2) return Math.round(a * 2) % 2 ? 'e' : 'E'; if (a < 3.3) return 'd'; }
-  // dörrposterna: en stockände på var sida om öppningen. Inte i ett hörn, där hörnets stockändar redan slutar väggen mot
-  // öppningen (steg 3.10.7: annars stack en bit av posten ut ovanför hörnet)
-  const R = [1.3, 2.1, 2.6];
-  const post = horn ? '' : o[0] && lx <= 2 ? ande(lx, ly, 1.5, 3.5, R) : o[1] && lx >= 5 ? ande(lx, ly, 5.5, 3.5, R)
-    : o[2] && ly <= 2 ? ande(lx, ly, 3.5, 1.5, R) : o[3] && ly >= 5 ? ande(lx, ly, 3.5, 5.5, R) : '';
-  if (post) return post;
+  // mot en öppning slutar stocken rakt avsågad (Björn valde version 1 efter v245, steg 4.5.2): en mörk såglinje och den ljusa
+  // ändytan mot öppningen. Inte i ett hörn, där hörnets stockändar redan slutar väggen (steg 3.10.7). Räknat som om öppningen
+  // ligger till höger: u = längs väggen mot öppningen, v = tvärs över väggen
+  const uv = horn ? null : o[1] ? [lx, ly] : o[0] ? [7 - lx, ly] : o[3] ? [ly, lx] : o[2] ? [7 - ly, lx] : null;
+  if (uv && uv[1] >= 1 && uv[1] <= 6) {
+    const [uu, vv] = uv;
+    if (uu === 7) return vv === 1 || vv === 6 ? 'k' : vv === 3 || vv === 4 ? 'E' : 'e';
+    if (uu === 6) return 'd';
+  }
   const inH = h && ly >= 1 && ly <= 6 && lx >= (l ? 0 : 1) && lx <= (r ? 7 : 6);
   const inV = v && lx >= 1 && lx <= 6 && ly >= (u ? 0 : 1) && ly <= (d ? 7 : 6);
   const k = inV ? STOCK[lx] : inH ? STOCK[ly] : '.';

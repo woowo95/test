@@ -1062,7 +1062,7 @@ function grillNy() {
   return ut.map(r => r.join(''));
 }
 // grillen i fler varianter (Björn efter v193: "Prova fler varianter", steg 3.10.13): 48 × 32 punkter (tre rutor), mörk kant och skugga under fötterna
-function grillStil(stil) {
+function grillStil(stil, kontur = true) {
   const W = 48, H = 32, fot = 27, sy = stil === 'kors' ? 6 : 4, g = Array.from({ length: H }, () => Array(W).fill('.'));
   const satt = (x, y, c) => { if (x >= 0 && x < W && y >= 0 && y < H) g[y][x] = c; };
   const fotter = [];
@@ -1082,7 +1082,7 @@ function grillStil(stil) {
   if (stil === 'rep') { for (let y = sy + 2; y <= sy + 5; y++) satt(23, y, 'q'); satt(24, sy + 5, 'q'); satt(25, sy + 4, 'q'); }
   if (stil === 'kors') { satt(44, sy + 1, 'w'); satt(44, sy + 2, 'w'); satt(45, sy + 2, 'q'); }
   const ut = g.map(r => [...r]);
-  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (g[y][x] === '.' && [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => (g[y + dy]?.[x + dx] ?? '.') !== '.')) ut[y][x] = 'o';
+  if (kontur) for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (g[y][x] === '.' && [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => (g[y + dy]?.[x + dx] ?? '.') !== '.')) ut[y][x] = 'o';
   for (const fx of fotter) for (let dx = -3; dx <= 4; dx++) for (const y of [fot + 1, fot + 2]) if (ut[y][fx + dx] === '.') ut[y][fx + dx] = 'z';
   return ut.map(r => r.join(''));
 }
@@ -1768,146 +1768,159 @@ const VARLD = {"filt": [{"text": "En vävd filt i ränder av rött och gult, med
 const VARLD_VAL = (id, namn, vad) => ({ id, namn, typ: 'tre', vad: vad + ' Till vänster i rätt storlek, till höger tre gånger större. I spelet nu: platshållaren överst.',
   idag: { w: 36, h: 36, rita: (B, P) => forstorad(B, id, 2, 2) }, idagText: 'Platshållaren i spelet nu.',
   versioner: VARLD[id].map(v => ({ text: v.text, ...LED_M(v.rader, KULT_L) })) });
+// ---------- Björns önskemål efter v245 (steg 4.5.2): nya versioner räknade punkt för punkt ----------
+// figur(f) ger rader W × H: f(satt) fyller, och med kant läggs en mörk kontur ('o') runt det som fyllts; efter(satt) ritas ovanpå
+function punkter(f, { kant = true, W = 16, H = 16, efter } = {}) {
+  const g = Array.from({ length: H }, () => Array(W).fill('.'));
+  const satt = (x, y, c) => { x = Math.round(x); y = Math.round(y); if (x >= 0 && x < W && y >= 0 && y < H) g[y][x] = c; };
+  f(satt);
+  const ut = g.map(r => [...r]);
+  if (kant) for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (g[y][x] === '.' && [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => { const c = g[y + dy]?.[x + dx]; return c && c !== '.' && c !== 'z'; })) ut[y][x] = 'o';
+  if (efter) efter((x, y, c) => { x = Math.round(x); y = Math.round(y); if (x >= 0 && x < W && y >= 0 && y < H) ut[y][x] = c; });
+  return ut.map(r => r.join(''));
+}
+// en rund sak: ljus uppe till vänster och mörk nere till höger
+function klot(satt, cx, cy, r, [mork, mitt, ljus], ry = r) {
+  for (let y = Math.floor(cy - ry); y <= Math.ceil(cy + ry); y++) for (let x = Math.floor(cx - r); x <= Math.ceil(cx + r); x++) {
+    const u = (x - cx) / r, v = (y - cy) / ry; if (u * u + v * v > 1.05) continue;
+    satt(x, y, u + v < -0.7 ? ljus : u + v > 0.6 ? mork : mitt);
+  }
+}
+// ett mynt framifrån: mörk kant, ljus kant uppe till vänster och ett kors präglat i mitten
+function mynt(satt, cx, cy, r, [kant, yta, ljus, marke], ry = r, kors = true) {
+  for (let y = Math.floor(cy - ry); y <= Math.ceil(cy + ry); y++) for (let x = Math.floor(cx - r); x <= Math.ceil(cx + r); x++) {
+    const u = (x - cx) / r, v = (y - cy) / ry, d = u * u + v * v; if (d > 1.05) continue;
+    satt(x, y, d > 0.55 ? (u + v < -0.4 ? ljus : kant) : yta);
+  }
+  if (kors && ry > 2) for (const [dx, dy] of [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]]) satt(cx + dx, cy + dy, marke);
+}
+const skuggaUnder = (satt, a, b, y) => { for (let x = a; x <= b; x++) { satt(x, y, 'z'); if (x > a && x < b) satt(x, y + 1, 'z'); } };
+const linje = (satt, pts, c) => { for (let i = 1; i < pts.length; i++) { const [a, b] = [pts[i - 1], pts[i]], n = Math.max(Math.abs(b[0] - a[0]), Math.abs(b[1] - a[1])); for (let k = 0; k <= n; k++) satt(a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n, c); } };
+const SILVER = ['g', 'h', 'v', 'G'];
+// silvret som mynt (Björn: "Gör mynt")
+const SILV_MYNT = punkter(s => { mynt(s, 8, 7, 5.4, SILVER); skuggaUnder(s, 4, 12, 13); });
+const SILV_STAPEL = punkter(s => { for (let i = 0; i < 5; i++) { const cy = 13 - i * 2; for (let x = 2; x <= 9; x++) s(x, cy + 1, x === 2 ? 'h' : 'g'); mynt(s, 5.5, cy, 3.6, SILVER, 1.2, false); } mynt(s, 12.5, 13, 2.6, SILVER, 1.3, false); skuggaUnder(s, 2, 15, 15); });
+const SILV_TRE = punkter(s => { mynt(s, 5, 6, 3.6, SILVER); mynt(s, 11, 8, 3.6, SILVER); mynt(s, 7, 11.5, 3.4, SILVER, 2.2, false); skuggaUnder(s, 3, 13, 14); });
+// fattig och rik som mynt: bara fyllningen (kanten och skuggan läggs på som för de andra intrycken)
+const MYNT_L = { g: 'skiffer1', h: 'skiffer3', v: 'ben3', G: 'skiffer2', r: 'rost2', R: 'rost3' };
+const FAT_KRYSS = punkter(s => { mynt(s, 7.5, 7.5, 5.6, SILVER); for (let i = 2; i <= 13; i++) { s(i, i, 'r'); s(i + 1, i, 'R'); s(15 - i, i, 'r'); s(16 - i, i, 'R'); } }, { kant: false });
+const FAT_FORBUD = punkter(s => { for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) { const d = Math.hypot(x - 7.5, y - 7.5); if (d > 5.1 && d < 6.9) s(x, y, d < 6 ? 'r' : 'R'); } mynt(s, 7.5, 7.5, 3.9, SILVER); for (let i = 3; i <= 12; i++) { s(i, i, 'r'); s(i + 1, i, 'r'); } }, { kant: false });
+const FAT_KLUVET = punkter(s => mynt(s, 7.5, 8, 5.2, SILVER), { kant: false }).map((rad, y) => { const c = 7 + ((y >> 1) % 2), t = [...rad], R = t.slice(c + 1); return [...t.slice(1, c + 1), '.', '.', ...R.slice(0, R.length - 1)].join(''); });
+const RIK_HOG = punkter(s => { for (const [x, y] of [[3, 12], [7, 12.5], [11, 12], [14, 13], [5, 10], [9, 10], [12, 9.5], [7, 7.5], [10, 7], [8.5, 4.8]]) mynt(s, x, y, 2.6, SILVER, 1.5, false); }, { kant: false });
+const RIK_STAPLAR = punkter(s => { for (const [x0, n] of [[3, 3], [8, 5], [13, 2]]) for (let i = 0; i < n; i++) { const cy = 13 - i * 2; for (let x = x0 - 2; x <= x0 + 2; x++) { s(x, cy + 1, x === x0 - 2 ? 'h' : 'g'); } mynt(s, x0, cy, 2.5, SILVER, 1.2, false); } }, { kant: false });
+const RIK_PUNG_SILVER = punkter(s => { klot(s, 7, 9, 5.2, ['b', 'a', 'w'], 4.6); for (const [x, y] of [[6, 4], [7, 4], [8, 4], [7, 3]]) s(x, y, 'a'); for (let x = 5; x <= 9; x++) s(x, 5, 'c'); s(5, 2, 'c'); s(9, 2, 'c'); mynt(s, 13, 13, 2.4, SILVER, 1.4, false); mynt(s, 10.5, 14.5, 2.2, SILVER, 1.1, false); }, { kant: false });
+// ärterna (Björn: "Prova tre nya symboler")
+const ART_L = { g: 'oliv1', G: 'oliv2', L: 'oliv3', w: 'ben2', b: 'jord1', z: 'skugga' };
+const ART_HOG = punkter(s => { for (const [x, y] of [[3, 12], [6.5, 12.3], [10, 12], [13.2, 12.3], [4.8, 9.2], [8.3, 9], [11.8, 9.3], [6.5, 6.2], [10, 6.2], [8.2, 3.4]]) klot(s, x, y, 1.75, ['g', 'G', 'L']); skuggaUnder(s, 2, 14, 14); });
+const ART_SKIDA = punkter(s => { klot(s, 8, 8.5, 6.6, ['g', 'g', 'G'], 3.3); klot(s, 8.3, 8.2, 5.4, ['w', 'w', 'w'], 2.1); for (const x of [3.8, 6.3, 8.8, 11.3]) klot(s, x, 8.3, 1.25, ['g', 'G', 'L']); s(0, 8, 'b'); s(1, 8, 'b'); s(0, 7, 'b'); skuggaUnder(s, 3, 13, 13); });
+const ART_KVIST = punkter(s => { linje(s, [[2, 15], [5, 10], [8, 6], [11, 2]], 'g'); klot(s, 4, 7, 2.6, ['g', 'G', 'L'], 1.5); klot(s, 11, 7, 2.4, ['g', 'G', 'L'], 1.4); klot(s, 7.5, 12, 1.5, ['g', 'G', 'L'], 3.2); klot(s, 12.3, 11.8, 1.4, ['g', 'G', 'L'], 3); s(7, 8, 'g'); s(12, 8, 'g'); s(11, 1, 'G'); s(12, 1, 'G'); s(13, 2, 'G'); s(13, 3, 'G'); s(12, 3, 'G'); });
+// torkan efter version 1 (Björn: "Gör tre nya versioner baserat på 1"): en het sol över sprucken mark
+function torka({ sol, varme = false, tuva = false, sprickor }) {
+  return punkter(s => {
+    klot(s, sol[0], sol[1], sol[2], ['y', 'Y', 'Y']);
+    for (let y = 11; y < 16; y++) for (let x = 0; x < 16; x++) s(x, y, hash(x, y, 31) < 0.3 ? 'J' : 'j');
+    for (const l of sprickor) linje(s, l, 'k');
+    if (tuva) { linje(s, [[3, 10], [2, 7], [1, 6], [0, 7]], 'b'); linje(s, [[4, 10], [5, 6], [7, 5], [8, 6]], 'G'); linje(s, [[5, 10], [6, 8], [8, 8]], 'b'); }
+  }, { efter: s => {
+    const [cx, cy, r] = sol; for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4; s(cx + Math.cos(a) * (r + 2), cy + Math.sin(a) * (r + 2), 'o'); }
+    if (varme) for (const y0 of [5, 8]) for (let x = 8; x <= 14; x++) s(x, y0 + [0, 1, 1, 0][x % 4] - (x % 4 === 2 ? 0 : 0), 'r');
+  } });
+}
+const TK_SOL2 = torka({ sol: [6, 4.5, 3.4], sprickor: [[[1, 11], [3, 13], [2, 15]], [[3, 13], [7, 12], [9, 14], [8, 15]], [[7, 12], [8, 11]], [[9, 14], [13, 13], [15, 14]], [[13, 13], [12, 11]]] });
+const TK_VARME = torka({ sol: [4, 4, 2.8], varme: true, sprickor: [[[0, 13], [4, 12], [6, 14], [5, 15]], [[6, 14], [10, 12], [11, 11]], [[10, 12], [14, 14], [15, 12]]] });
+const TK_TUVA = torka({ sol: [11, 4.5, 3.4], tuva: true, sprickor: [[[2, 11], [4, 13], [3, 15]], [[4, 13], [8, 12], [10, 15]], [[8, 12], [9, 11]], [[10, 13], [14, 12], [15, 15]]] });
+// tornadon lite mer uppifrån (Björn: "Gör den lite mer i ett ovanför perspektiv"), 32 × 48 punkter
+const virvel = (x, y, cx, cy, a, b, vrid) => { const u = (x - cx) / a, v = (y - cy) / b, rr = Math.hypot(u, v), ang = Math.atan2(v, u); return { rr, band: ((ang / (2 * Math.PI) * 3 + rr * vrid) % 1 + 1) % 1 < 0.5 ? 'g' : 'G' }; };
+function tnUppifran(stil) {
+  return punkter(s => {
+    const damm = (cy, a, b) => { for (let y = 0; y < 48; y++) for (let x = 0; x < 32; x++) { const e = ((x - 15.5) / a) ** 2 + ((y - cy) / b) ** 2; if (e < 1) s(x, y, hash(x, y, 5) < 0.35 ? 'D' : 'd'); } };
+    if (stil === 'moln') {
+      damm(43, 13, 4);
+      for (let y = 14; y < 43; y++) { const u = (y - 14) / 28, w = 9 - 6 * u, cx = 15.5 + Math.sin(u * 4) * 1.5; for (let x = Math.round(cx - w / 2); x <= Math.round(cx + w / 2); x++) s(x, y, ((x + y) % 5) < 2 ? 'g' : 'G'); }
+      for (let y = 0; y < 20; y++) for (let x = 0; x < 32; x++) { const { rr, band } = virvel(x, y, 15.5, 9, 15, 8.5, 2.2); if (rr < 1) s(x, y, rr < 0.18 ? 'k' : rr > 0.85 ? 'K' : band); }
+    } else if (stil === 'ovan') {
+      damm(34, 15.5, 11);
+      for (let y = 0; y < 48; y++) for (let x = 0; x < 32; x++) { const { rr, band } = virvel(x, y, 15.5, 30, 13, 10, 2.8); if (rr < 1 && hash(x, y, 8) < 1.25 - rr) s(x, y, rr < 0.14 ? 'k' : rr < 0.25 ? 'K' : band); }
+    } else {
+      damm(44, 12, 3.6);
+      const ringar = [[9, 14, 5.5], [18, 10, 4], [26, 7, 3], [33, 4.6, 2.2], [39, 3, 1.6]];
+      for (let i = 0; i < ringar.length - 1; i++) { const [y0, a0] = ringar[i], [y1, a1] = ringar[i + 1]; for (let y = y0; y <= y1; y++) { const w = a0 + (a1 - a0) * (y - y0) / (y1 - y0); for (let x = Math.round(15.5 - w * 0.8); x <= Math.round(15.5 + w * 0.8); x++) s(x, y, 'G'); } }
+      for (const [cy, a, b] of ringar) for (let y = Math.floor(cy - b); y <= Math.ceil(cy + b); y++) for (let x = 0; x < 32; x++) { const { rr, band } = virvel(x, y, 15.5, cy, a, b, 1.5); if (rr < 1) s(x, y, rr > 0.8 ? 'g' : band); }
+      for (let y = 39; y < 43; y++) { s(15, y, 'g'); s(16, y, 'G'); }
+    }
+    for (const [x, y, c] of [[2, 30, 'l'], [3, 30, 'l'], [28, 22, 'j'], [29, 23, 'j'], [5, 40, 'J'], [27, 38, 'l'], [24, 44, 'j']]) s(x, y, c);
+  }, { W: 32, H: 48 });
+}
+const TN_UPP1 = tnUppifran('moln'), TN_UPP2 = tnUppifran('ovan'), TN_UPP3 = tnUppifran('ringar');
+// att gå på toa (Björn: "Gör 3 nya versioner. Gör en bajshög"), 8 × 8 punkter
+const TOA_L = { w: 'ben3', a: 'skiffer3', b: 'jord1', B: 'jord2', c: 'jord3' };
+const TOA_HOG = ['........', '....b...', '...bBb..', '...bcb..', '..bBBbb.', '..bcBBb.', '.bBcBBbb', '.bbbbbbb'];
+const TOA_STANK = ['.w....w.', 'w....w..', '.w....w.', '...bb...', '..bcBb..', '.bBcBbb.', '.bcBBBb.', 'bbbbbbbb'];
+const TOA_HUKHOG = ['...ww...', '...ww...', '..www...', '.www....', 'ww.w....', 'w..w....', '.....bc.', '....bBbb'];
+// eldsvådan i ett sammanhang (Björn: "Jag måste se elden i ett sammanhang"): sex × tre rutor gräs, två granar och en
+// timmervägg; lågorna på fem av rutorna, de andra brinner inte
+function ritaBrandSammanhang(B, P, rader) {
+  for (let y = 32; y < 48; y++) for (let x = 0; x < 32; x++) { const r = (y - 32) % 4; B.satt(x, y, P.i('jord', r === 0 ? 0 : r === 1 ? 3 : 2)); }
+  ritaGran(B, 72, 31, 26, P, { tid: 'dag' }); ritaGran(B, 88, 22, 20, P, { tid: 'dag' });
+  for (const [tx, ty] of [[16, 32], [32, 16], [32, 32], [48, 32], [64, 16]]) ritaSprite(B, rader, { o: 'kol0', ...BR_L }, tx, ty);
+}
+const BRAND_M = rader => ({ w: 96, h: 48, rita: (B, P) => ritaBrandSammanhang(B, P, rader) });
+const vrid90 = r => [...r[0]].map((_, x) => r.map(rad => rad[x]).reverse().join(''));
 const VAL = [
-  VARLD_VAL('filt', 'Filten', 'Ny sak (steg 4.4.1.1), 16 × 16 punkter (på kartan två rutor bred), där ett stort byte görs och där handlaren lägger fram sina varor.'),
-  VARLD_VAL('handlare', 'Handlaren', 'Ny människa (steg 4.4.1.2), 16 × 16 punkter, på väg in från kanten, vid filten och på väg hem.'),
-  VARLD_VAL('silver', 'Silvret', 'Ny sak (steg 4.4.1.3), 16 × 16 punkter, i förrådet, i handlarens packning och i pratbubblan när handlaren säger sitt pris.'),
-  VARLD_VAL('rovare', 'Rövaren', 'Ny människa (steg 4.4.5), 16 × 16 punkter, en för varje rövare i flocken: i kanten där de samlas, på väg mot förrådet och när de flyr.'),
-  KULT_VAL('boll', 'Bollen', 'Ny sak (steg 4.3.1), 16 × 16 punkter, i förrådet och i handen på lekplatsen när man spelar boll.', 'boll'),
-  KULT_VAL('slagtra', 'Slagträet', 'Ny sak (steg 4.3.1), 16 × 16 punkter, i förrådet och i handen när man slår till bollen.', 'slagtra'),
-  KULT_VAL('mal', 'Målet', 'Ny sak (steg 4.3.1), 16 × 16 punkter, i förrådet och uppställt på lekplatsen när man tävlar i att kasta mot det.', 'mal'),
-  KULT_VAL('trumma', 'Trumman', 'Nytt instrument (steg 4.3.2), 16 × 16 punkter, vid scenen och i handen på den som spelar.', 'trumma'),
-  KULT_VAL('benflojt', 'Benflöjten', 'Nytt instrument (steg 4.3.2), 16 × 16 punkter, vid scenen och i handen på den som spelar.', 'benflojt'),
-  KULT_VAL('lyra', 'Lyran', 'Nytt instrument (steg 4.3.2), 16 × 16 punkter, vid scenen och i handen på den som spelar.', 'lyra'),
+  { ...VARLD_VAL('silver', 'Silvret', 'Ny sak (steg 4.4.1.3), 16 × 16 punkter, i förrådet, i handlarens packning och i pratbubblan när handlaren säger sitt pris. Tre nya versioner: mynt. Din kommentar förra gången: ”Gör mynt”.'),
+    versioner: [
+      { text: 'Ett stort silvermynt med ett kors präglat i mitten.', ...LED_M(SILV_MYNT, KULT_L) },
+      { text: 'En stapel med fem mynt och ett mynt bredvid.', ...LED_M(SILV_STAPEL, KULT_L) },
+      { text: 'Tre mynt huller om buller, ett av dem på snedden.', ...LED_M(SILV_TRE, KULT_L) },
+    ] },
   KULT_VAL('kruka', 'Lerkrukan', 'Ny pyntmöbel (steg 4.3.4), en ruta med 16 punkter, i rummet där ägaren sover. Samma bild blir symbolen för intrycket smakfull.', 'kruka'),
-  KULT_VAL('bonad', 'Bonaden', 'Ny pyntmöbel (steg 4.3.4), en ruta med 16 punkter, på väggen i rummet där ägaren sover.', 'bonad'),
-  KULT_VAL('vaggbrade', 'Det snidade väggbrädet', 'Ny pyntmöbel (steg 4.3.4), en ruta med 16 punkter, på väggen i rummet där ägaren sover.', 'vaggbrade'),
-  KULT_VAL('scen', 'Scenen', 'Ny station (steg 4.3.2), tre rutor bred och två djup med 16 punkter per ruta, på kartan en bit från elden.', 'scen_karta'),
-  HELIG_VAL('tro_symboler', 'Trons symboler', 'Nya symboler (steg 4.1.2.3), 16 × 16 punkter, i fliken Religion bredvid trons namn, en för varje tecken som en tro kan börja med: blixten, elden, den hårda vintern, regnet efter torkan, vattnet som drog sig tillbaka, haren, barnet som blev friskt och drömmen. Samma figurer i tre stilar; du väljer stilen för alla. I spelet nu: platshållarna överst.', TRO_SYM),
-  HELIG_VAL('gud_symboler', 'Gudarnas symboler', 'Nya symboler (steg 4.1.5), 16 × 16 punkter, i fliken Religion bredvid varje gud, en för varje område: åska och himmel, sjön, skörden, döden, jakten, elden, vintern, solen, ätten, kriget och hantverket. Samma figurer i tre stilar; du väljer stilen för alla. I spelet nu: platshållarna överst.', GUD_SYM),
-  { id: 's_mat', namn: 'Samtal om mat', vad: 'Ny symbol (steg 3.9.5), 16 × 16 punkter, i pratbubblan och personrutan när två pratar om maten eller längtar efter något att äta. Ny version efter din kommentar: ettans värmestreck över tvåans skål. Till vänster i rätt storlek, till höger tre gånger större. I spelet nu: version 1 (platshållare).', typ: 'janej',
-    idag: LED_M(AM_MAT1, AM_L), idagText: 'Version 1, som i spelet nu.',
-    versioner: [{ text: 'Värmestrecken från version 1 över skålen med gryta från version 2, utan sleven.', ...LED_M(AM_MAT4, AM_L) }] },
-  { id: 's_trost', namn: 'Samtal som tröstar', vad: 'Ny symbol (steg 3.9.5), 16 × 16 punkter, när någon tröstar någon annan. Nya versioner efter din kommentar: version 1 med tydligare händer och två nya. I spelet nu: förra version 1 (platshållare).', typ: 'tre',
+  { id: 'brand', namn: 'Elden som brinner', vad: 'Ny bild (steg 3.8.5), 16 × 16 punkter (en ruta), på varje ruta som brinner i en eldsvåda eller skogsbrand. Nu i ett sammanhang: sex × tre rutor med gräs, två granar och en timmervägg nere till vänster. Fem rutor brinner: en av väggens rutor, tre rutor gräs och den nedre delen av den första granen; resten brinner inte. I spelet nu: version 1 (platshållare). Din kommentar förra gången: ”Jag måste se elden i ett sammanhang för att kunna avgöra”.', typ: 'tre',
     versioner: [
-      { text: 'Två händer som håller om varandra med fingrarna flätade, och ärmarna nertill.', ...LED_M(AM_TROST4, AM_L) },
-      { text: 'Två människor som kramas, med en hand på den andras rygg.', ...LED_M(AM_TROST5, AM_L) },
-      { text: 'Ett hjärta med ett plåster på.', ...LED_M(AM_TROST6, AM_L) },
+      { text: 'Tre lågor med gula kärnor över en svart, förkolnad botten.', ...BRAND_M(BR_TUNGOR) },
+      { text: 'En stor låga med en mindre bredvid och grå rök som stiger.', ...BRAND_M(BR_ROK) },
+      { text: 'Låga lågor som kryper fram i gräset, med glöd i den svarta marken bakom.', ...BRAND_M(BR_GRAS) },
     ] },
-  { id: 's_barn', namn: 'Samtal om barnen', vad: 'Ny symbol (steg 3.9.5), 16 × 16 punkter, när två pratar om barnen. Tre nya versioner efter din kommentar. I spelet nu: förra version 1 (platshållare).', typ: 'tre',
+  { id: 'tornado', namn: 'Tornadon på kartan', vad: 'Ny bild (steg 3.8.4), 32 × 48 punkter (2 × 3 rutor), på kartan där tornadon är medan den drar fram, med foten mitt på banan. Tre nya versioner, mer uppifrån som resten av kartan. Till vänster i rätt storlek, till höger dubbelt så stor. I spelet nu: version 1 från förra gången (platshållare). Din kommentar förra gången: ”Gör den lite mer i ett ovanför perspektiv”.', typ: 'tre',
     versioner: [
-      { text: 'Ett spädbarn i en vagga på medar.', ...LED_M(AM_BARN4, AM_L) },
-      { text: 'En vuxen och ett barn som går hand i hand.', ...LED_M(AM_BARN5, AM_L) },
-      { text: 'En liten hand i en stor hand.', ...LED_M(AM_BARN6, { ...AM_L, y: 'rost3' }) },
+      { text: 'Molnet som en virvel sedd snett uppifrån, en kort tratt under och damm i en oval vid foten.', ...TN_KART_M(TN_UPP1) },
+      { text: 'Rakt uppifrån: en stor snurrande virvel med ett mörkt öga i mitten och damm runt om.', ...TN_KART_M(TN_UPP2) },
+      { text: 'Snurrande ringar som blir mindre nedåt, sedda snett uppifrån, med damm vid foten.', ...TN_KART_M(TN_UPP3) },
     ] },
-
-
-  { id: 'm_hardVinter', namn: 'Den hårda vintern', vad: 'Ny symbol (steg 3.8.1), 16 × 16 punkter, i kalendern bredvid temperaturen när en hård vinter pågår (blek när de äldsta i byn bara anar den). Nya versioner efter din kommentar, med istapparna kvar som version 1. I spelet nu: förra version 1 (platshållare).', typ: 'tre',
+  { id: 'm_torka', namn: 'Torkan', vad: 'Ny symbol (steg 3.8.2), 16 × 16 punkter, i kalendern bredvid temperaturen när en torka pågår (blek när de äldsta i byn bara anar den). Tre nya versioner efter version 1, solen över sprucken mark. I spelet nu: version 1 (platshållare). Din kommentar förra gången: ”Gör tre nya versioner baserat på 1”.', typ: 'tre',
     versioner: [
-      { text: 'Istappar som hänger från en takkant, med snöflingor under (förra version 3).', ...LED_M(HV_ISTAPP, HV_L) },
-      { text: 'Ett kalt träd i en snöstorm, med snö som yr runt grenarna.', ...LED_M(HV_TRAD, HV_L) },
-      { text: 'Ett hus som snöat igen till fönstret, med rök ur skorstenen och ett tänt fönster.', ...LED_M(HV_STUGA, { ...HV_L, b: 'jord1', r: 'senap3' }) },
+      { text: 'En större sol, och marken sprucken i flak.', ...LED_M(TK_SOL2, TK_L) },
+      { text: 'En mindre sol, och värmen som dallrar i röda vågor ovanför den spruckna marken.', ...LED_M(TK_VARME, TK_L) },
+      { text: 'Solen till höger, och en vissen tuva som hänger över den spruckna marken.', ...LED_M(TK_TUVA, TK_L) },
     ] },
-
-  { id: 'm_oversvamning', namn: 'Översvämningen', vad: 'Ny symbol (steg 3.8.3), 16 × 16 punkter, i kalendern bredvid temperaturen när en översvämning pågår. I spelet nu: version 1 (platshållare).', typ: 'tre',
+  { id: 'a_toa', namn: 'Att gå på toa', vad: 'Ny symbol över huvudet (steg 3.10.3), 8 × 8 punkter som de andra handlingarna: den som gått avsides eller sitter i latrinen. Tre nya versioner, alla med en bajshög. I spelet nu: version 1 (platshållare). Din kommentar förra gången: ”Gör 3 nya versinner. Gör en bajshög”.', typ: 'tre',
     versioner: [
-      { text: 'Vågor som stiger över en grässtrand, med ett grässtrå som sticker upp ur vattnet.', ...LED_M(FL_STRAND, FL_L) },
-      { text: 'Ett hus som står till hälften i vatten.', ...LED_M(FL_HUS, FL_L) },
-      { text: 'En märkt påle i vattnet och en pil uppåt: vattnet stiger.', ...LED_M(FL_STOLPE, FL_L) },
+      { text: 'En brun bajshög i varv.', ...SYM8_M(TOA_HOG, TOA_L) },
+      { text: 'En bajshög med stanken som stiger.', ...SYM8_M(TOA_STANK, TOA_L) },
+      { text: 'En människa på huk med en liten hög bakom sig.', ...SYM8_M(TOA_HUKHOG, TOA_L) },
     ] },
-  { id: 'brand', namn: 'Elden som brinner', vad: 'Ny bild (steg 3.8.5), 16 × 16 punkter (en ruta), på varje ruta som brinner i en eldsvåda eller skogsbrand: i skogen, i gräset, på en vägg eller en hög i förrådet. I spelet nu: version 1 (platshållare).', typ: 'tre',
-    versioner: [
-      { text: 'Tre lågor med gula kärnor över en svart, förkolnad botten.', ...LED_M(BR_TUNGOR, BR_L) },
-      { text: 'En stor låga med en mindre bredvid och grå rök som stiger.', ...LED_M(BR_ROK, BR_L) },
-      { text: 'Låga lågor som kryper fram i gräset, med glöd i den svarta marken bakom.', ...LED_M(BR_GRAS, BR_L) },
-    ] },
-  { id: 'm_tornado', namn: 'Tornadon', vad: 'Ny symbol (steg 3.8.4), 16 × 16 punkter, i kalendern bredvid temperaturen medan en tornado drar fram (blek när de äldsta i byn bara anar den). I spelet nu: version 1 (platshållare).', typ: 'tre',
-    versioner: [
-      { text: 'En grå tratt som snurrar ner mot marken och river upp damm.', ...LED_M(TN_TRATT, TN_L) },
-      { text: 'Ett mörkt moln med en tratt ner till marken, och löv och en gren som flyger.', ...LED_M(TN_MOLN, TN_L) },
-      { text: 'En ljus tratt med bräder och grenar som snurrar runt den.', ...LED_M(TN_SKRAP, TN_L) },
-    ] },
-  { id: 'tornado', namn: 'Tornadon på kartan', vad: 'Ny bild (steg 3.8.4), 32 × 48 punkter (2 × 3 rutor), på kartan där tornadon är medan den drar fram, med foten mitt på banan. Till vänster i rätt storlek, till höger dubbelt så stor. I spelet nu: version 1 (platshållare).', typ: 'tre',
-    versioner: [
-      { text: 'En grå och ljus tratt som smalnar nedåt och svajar lite, med damm vid foten.', ...TN_KART_M(TN_KARTA1) },
-      { text: 'En bred tratt som hänger ur ett mörkt moln, med grenar och löv som flyger runt.', ...TN_KART_M(TN_KARTA2) },
-      { text: 'En smal tratt som slingrar sig som ett rep, med ett stort dammoln vid foten.', ...TN_KART_M(TN_KARTA3) },
-    ] },
-  { id: 'm_torka', namn: 'Torkan', vad: 'Ny symbol (steg 3.8.2), 16 × 16 punkter, i kalendern bredvid temperaturen när en torka pågår (blek när de äldsta i byn bara anar den). I spelet nu: version 1 (platshållare).', typ: 'tre',
-    versioner: [
-      { text: 'En het sol över sprucken mark.', ...LED_M(TK_SOL, TK_L) },
-      { text: 'En uttorkad sjö med en sista liten pöl i mitten, under solen.', ...LED_M(TK_SJO, TK_L) },
-      { text: 'En vissen växt som hänger med bladen i torr jord.', ...LED_M(TK_VISSEN, TK_L) },
-    ] },
-  { id: 'lera', namn: 'Torr sjöbotten', vad: 'Ny mark (steg 3.8.2), 16 × 16 punkter per ruta, där sjön dragit sig tillbaka under torkan. Det går att gå på den, och vattnet kommer tillbaka när det regnar. I spelet nu: en grå-brun ruta (platshållare).', typ: 'tre',
-    versioner: [
-      { text: 'Brun lera med mörka sprickor i ett nät.', ...LED_M(LE_SPRICK, LE_L) },
-      { text: 'Slät lera med småsten och torra fläckar.', ...LED_M(LE_STEN, LE_L) },
-      { text: 'Lera med en sista fuktig, blågrå fläck.', ...LED_M(LE_FUKT, LE_L) },
-    ] },
-
-
-  { id: 'a_prata', namn: 'Att prata', vad: 'Ny symbol över huvudet (steg 3.10.3), 8 × 8 punkter i samma mörka ruta som arbetssymbolerna: pratbubblan visas bara medan två pratar, och kanten får samtalets färg (rött gräl, rosa kärlek, guld berättelse). Har samtalet ett ämne visas ämnets symbol i stället. I spelet nu: version 1 (platshållare).', typ: 'tre',
-    versioner: [
-      { text: 'En pratbubbla med tre prickar.', ...SYM8_M(PRATA_PRICK, AKT_L) },
-      { text: 'Två små bubblor som svarar varandra.', ...SYM8_M(PRATA_TVA, AKT_L) },
-      { text: 'Ett huvud med öppen mun.', ...SYM8_M(PRATA_MUN, AKT_L) },
-    ] },
-  { id: 'a_toa', namn: 'Att gå på toa', vad: 'Ny symbol över huvudet (steg 3.10.3), 8 × 8 punkter som de andra handlingarna: den som gått avsides eller sitter i latrinen. I spelet nu: version 1 (platshållare).', typ: 'tre',
-    versioner: [
-      { text: 'En blå droppe.', ...SYM8_M(TOA_DROPPE, AKT_L) },
-      { text: 'En människa som sitter på huk.', ...SYM8_M(TOA_HUK, AKT_L) },
-      { text: 'En människa vid en grop.', ...SYM8_M(TOA_GROP, AKT_L) },
-    ] },
-  { id: 'i_klapare', namn: 'Klåpare (intryck)', vad: 'Ny symbol (steg 3.10.5), 16 × 16 punkter, i personrutans Rykten när byn tycker att någon är en klåpare (gjort en usel sak eller träffat någon av misstag). Med mörk kant och skugga snett nedanför, som de andra intrycken. I spelet nu: den gamla symbolen (platshållare), längst till vänster.', typ: 'tre',
-    idag: IK_IDAG('klåpare'),
-    versioner: [
-      { text: 'En lerkruka som spricker, med en bit som lossnar.', ...IK_NY(KLA_KRUKA, { a: 'rost2', b: 'rost1', w: 'rost3' }) },
-      { text: 'En yxa där stenen flyger av skaftet.', ...IK_NY(KLA_YXA, { s: 'skiffer2', S: 'skiffer3', h: 'jord2', H: 'jord3', w: 'ben3' }) },
-      { text: 'Ett rep som trasslat ihop sig.', ...IK_NY(KLA_REP, { a: 'senap1' }) },
-    ] },
-  { id: 'i_fattig', namn: 'Fattig (intryck)', vad: 'Ny symbol (steg 3.10.5), 16 × 16 punkter, i personrutans Rykten när byn tycker att någon är fattig (äger mycket mindre än de andra). I spelet nu: den tomma skålen (platshållare), längst till vänster.', typ: 'tre',
+  { id: 'i_fattig', namn: 'Fattig (intryck)', vad: 'Ny symbol (steg 3.10.5), 16 × 16 punkter, i personrutans Rykten när byn tycker att någon är fattig (äger mycket mindre än de andra). Tre nya versioner med mynt. Till vänster i rätt storlek, till höger tre gånger större. I spelet nu: den tomma skålen (platshållare), längst till vänster. Din kommentar förra gången: ”Gör tre nya versioner. Prova ett överstruket mynt”.', typ: 'tre',
     idag: IK_IDAG('fattig'),
     versioner: [
-      { text: 'En tom, slak skinnpung med en lapp.', ...IK_NY(FAT_PUNG, { a: 'jord2', b: 'jord1', w: 'jord3', p: 'oliv2' }) },
-      { text: 'En trasig skjorta med hål och lappar.', ...IK_NY(FAT_SKJORTA, { a: 'ben1', p: 'oliv2' }) },
-      { text: 'Ett litet knyte på en pinne: allt hen äger.', ...IK_NY(FAT_KNYTE, { a: 'ben2', b: 'ben1', k: 'jord1', s: 'jord2' }) },
+      { text: 'Ett silvermynt med ett rött kryss över.', ...IK_NY(FAT_KRYSS, MYNT_L) },
+      { text: 'Ett silvermynt i en röd ring med ett streck över, som ett förbud.', ...IK_NY(FAT_FORBUD, MYNT_L) },
+      { text: 'Ett mynt som är kluvet i två halvor.', ...IK_NY(FAT_KLUVET, MYNT_L) },
     ] },
-  { id: 'i_rik', namn: 'Rik (intryck)', vad: 'Ny symbol (steg 3.10.5), 16 × 16 punkter, i personrutans Rykten när byn tycker att någon är rik (äger mycket mer än de andra), och i invånarlistan bredvid förmögenheten. I spelet nu: korgen med varor (platshållare), längst till vänster.', typ: 'tre',
+  { id: 'i_rik', namn: 'Rik (intryck)', vad: 'Ny symbol (steg 3.10.5), 16 × 16 punkter, i personrutans Rykten när byn tycker att någon är rik (äger mycket mer än de andra), och i invånarlistan bredvid förmögenheten. Dina tre förra versioner är kvar som 1–3, och tre med mynt har kommit till som 4–6. I spelet nu: korgen med varor (platshållare), längst till vänster. Din kommentar förra gången: ”Prova ett mynt. Eller flera mynt. Men behåll dessa tre också”.', typ: 'tre',
     idag: IK_IDAG('rik'),
     versioner: [
       { text: 'En full skinnpung, knuten med ett snöre, och bärnsten som rullar ut.', ...IK_NY(RIK_PUNG, { a: 'jord2', b: 'jord1', w: 'jord3', c: 'senap2', y: 'senap3' }) },
       { text: 'En hög med skinn i olika färger.', ...IK_NY(RIK_SKINN, { a: 'ben2', b: 'jord3', c: 'rost2', d: 'skiffer2', e: 'jord1' }) },
       { text: 'Ett halsband av bärnsten med en tand i mitten.', ...IK_NY(RIK_HALSBAND, { c: 'jord1', y: 'senap3', Y: 'senap2', w: 'ben3' }) },
+      { text: 'En hög med silvermynt.', ...IK_NY(RIK_HOG, MYNT_L) },
+      { text: 'Tre staplar med mynt, den mittersta högst.', ...IK_NY(RIK_STAPLAR, MYNT_L) },
+      { text: 'En full skinnpung med två silvermynt som rullat ut.', ...IK_NY(RIK_PUNG_SILVER, { ...MYNT_L, a: 'jord2', b: 'jord1', w: 'jord3', c: 'senap2' }) },
     ] },
-  { id: 'hus_slut', namn: 'Väggen mot en öppning', vad: 'Görs om (steg 3.10.7): hur timmerväggen slutar där en dörröppning börjar. I dag sitter en halv stockände vid rutans kant, avskuren mitt i. Huset har öppningar åt alla håll, och en precis vid hörnet nere till höger (där en bit av stockänden stack ut ovanför hörnet; det är rättat i spelet). 8 × 8 punkter per ruta som timmerväggen, här dubbelt så stort.', typ: 'tre',
-    idag: HUS_SLUT_M(0), idagText: 'Som spelet ritar det nu: en halv stockände vid kanten.',
+  { id: 'g_arter', namn: 'Ärter', vad: 'Ny symbol (steg 3.10.23.8), 16 × 16 punkter: ärterna som skördas på fälten och plockas vilda, i förrådet och det man bär. De vilda ärterna på kartan har kvar sin symbol. Tre nya symboler. Till vänster i rätt storlek, till höger tre gånger större. I spelet nu: skidorna (platshållare). Din kommentar förra gången: ”Prova tre nya symboler”.', typ: 'tre',
     versioner: [
-      { text: 'Rakt avsågad: stocken slutar med en mörk såglinje och den ljusa ändytan mot öppningen.', ...HUS_SLUT_M(1) },
-      { text: 'En hel rund stolpe som dörrpost, inne i väggrutan, med stockens ringar som i hörnen.', ...HUS_SLUT_M(2) },
-      { text: 'En fyrkantig huggen stolpe som dörrpost, lite bredare än stocken: mörk kant, ljus ändyta och en mörkare kärna.', ...HUS_SLUT_M(3) },
+      { text: 'En hög med runda gröna ärtor.', ...LED_M(ART_HOG, ART_L) },
+      { text: 'En öppen skida på tvären med fyra ärtor i.', ...LED_M(ART_SKIDA, ART_L) },
+      { text: 'En kvist med två blad, en klänge och två skidor som hänger.', ...LED_M(ART_KVIST, ART_L) },
     ] },
-  { id: 'i_fem', namn: 'Fem intryck', vad: 'Görs om (steg 3.10.8): fem intryck hade bara en emoji, och pratbubblan kunde inte visa dem. Nu pixelsymboler, 16 × 16 punkter med mörk kant och skugga snett nedanför som de andra intrycken: rättvis, orättvis, stark, feg och vargdödare.', typ: 'janej',
-    idag: { text: '⚖️ 🙅 🥊 🐔 🐺' },
-    versioner: [{ text: 'En vågskål i jämvikt (rättvis), en som väger snett (orättvis), en knytnäve (stark), en vit flagga (feg) och ett varghuvud (vargdödare).', w: 92, h: 20, kol: true,
-      rita: B => ['i_rattvis', 'i_orattvis', 'i_stark', 'i_feg', 'i_vargdodare'].forEach((k, i) => ritaIkon(B, k, 2 + i * 18, 2)) }] },
-  { id: 'g_vildrova', namn: 'Vild rova', vad: 'Ny symbol (steg 3.10.23.8), 16 × 16 punkter: den vilda rovan (åkerkål) som växer på ängarna i stället för vildkornet, på kartan och i teckenförklaringen. Till vänster i rätt storlek, till höger tre gånger större. I spelet nu: den här (platshållare).', typ: 'janej',
-    versioner: [{ text: 'Tre stjälkar med små gula blommor, blad nertill och en liten blek rot.', ...IKON_M('vildrova') }] },
-  { id: 'g_arter', namn: 'Ärter', vad: 'Ny symbol (steg 3.10.23.8), 16 × 16 punkter: ärterna som skördas på fälten och plockas vilda, i förrådet och det man bär. De vilda ärterna på kartan har kvar sin symbol. Till vänster i rätt storlek, till höger tre gånger större. I spelet nu: den här (platshållare).', typ: 'janej',
-    versioner: [{ text: 'En sluten ärtskida snett över bilden och en öppen skida med fyra ärtor.', ...IKON_M('arter') }] },
-  { id: 'g_rovfron', namn: 'Rovfrön', vad: 'Ny symbol (steg 3.10.23.8), 16 × 16 punkter: fröna från rovorna, i förrådet och det man bär. Till vänster i rätt storlek, till höger tre gånger större. I spelet nu: den här (platshållare).', typ: 'janej',
-    versioner: [{ text: 'Sju små rödbruna frön med mörk kant.', ...IKON_M('rovfron') }] },
-  { id: 'g_artfron', namn: 'Ärtfrön', vad: 'Ny symbol (steg 3.10.23.8), 16 × 16 punkter: fröna från ärterna: torkade ärtor att så. Till vänster i rätt storlek, till höger tre gånger större. I spelet nu: den här (platshållare).', typ: 'janej',
-    versioner: [{ text: 'Fyra torkade ärtor med mörk kant.', ...IKON_M('artfron') }] },
-  VRID_VAL('v_slaktbank', 'Slaktbänken', ['slaktbank_karta'], 'Stocken går uppifrån och ner, stockänden med de två främre benen syns längst ner och blodet rinner över den ner i pölen.'),
-  VRID_VAL('v_slojdbank', 'Slöjdbänken', ['flatarbank_karta'], 'Plankorna uppifrån och ner, stolparna med repet längs högra kanten och skåran för bensylen på skivan.'),
-  VRID_VAL('v_halmbadd', 'Halmbädden', ['halmbadd_karta', 'skinnfall_karta'], 'Höet med huvudänden uppåt, och skinnfällen över resten (här med fällen, som när den är gjord).'),
-  VRID_VAL('v_bord', 'Det lilla bordet', ['bord_karta'], 'Plankorna uppifrån och ner, och de två främre benen längst ner.'),
-  VRID_VAL('v_bord3', 'Långbordet', ['bord3_karta'], 'Plankorna på längden, uppifrån och ner, och de två främre benen längst ner.'),
-  VRID_VAL('v_tork', 'Torkställningen', ['tork_karta'], 'Bockarna framifrån som ett A, den bakre högre upp, och slån mellan dem uppifrån och ner; maten hänger längs slån.'),
-  { id: 'v_dorrar', namn: 'Dörrarna', vad: 'Det som kan vridas (steg 3.10.7): dörren i en vägg som går uppåt får en egen bild i stället för att bilden vrids. Trädörren till vänster och skinndörren till höger, var och en i en vägg åt sidan och en uppåt. Väljer du en ny trädörr ritas den stående efter den.', typ: 'janej',
-    idag: DORR_M(['tradorr_karta', 'skinndorr_karta'], vridenIkon), idagText: VRID_IDAG,
-    versioner: [{ text: 'I väggen som går uppåt syns dörren från kanten: bräderna med repen på sidorna, och skinnet som hänger från stången.', ...DORR_M(['tradorr_karta', 'skinndorr_karta'], k => k + '_v') }] },
   { id: 'a_smyga', namn: 'Att smyga', vad: 'Ny symbol över huvudet (Björn efter v159), 8 × 8 punkter som de andra handlingarna: jägaren smyger fram mot en kanin. Förra version 2 kvar som version 1, och två nya efter din kommentar. Din kommentar förra gången: ”behåll version 2 och gör två helt nya alternativ”. I spelet nu: förra version 1 (platshållare).', typ: 'tre',
     versioner: [
       { text: 'En människa som hukar sig framåt (förra version 2).', ...SYM8_M(SMYG_HUK, AKT_L) },
@@ -1920,37 +1933,16 @@ const VAL = [
       { text: 'En måltavla: ringar runt en mörk mitt.', ...SYM8_M(SIKTA_MAL, AKT_L) },
       { text: 'En människa på knä med spjutet framåt.', ...SYM8_M(SIKTA_KNA, AKT_L) },
     ] },
-  { id: 'varg', namn: 'Vargen', vad: 'Nytt djur (steg 3.7.1), 16 × 16 punkter, på kartan när en flock stryker runt byn. Förra version 1 och 3 kvar, och fyra nya från sidan som ser farligare ut, efter din kommentar. Till vänster i rätt storlek, till höger tre gånger större. I spelet nu: den fällda vargens platshållare.', typ: 'tre',
-    versioner: [
-      { text: 'En grå varg från sidan med spetsiga öron, ljus nos och bröst och en buskig svans (förra version 1).', ...LED_M(VARG_STAR, VARG_L) },
-      { text: 'En mörk varg från sidan med gula ögon och ljust bröst, som syns bra mot snön (förra version 3).', ...LED_M(VARG_MORK, VARG_M) },
-      { text: 'En grå varg som visar tänderna med gapet öppet och huvudet sänkt.', ...LED_M(VARG_GAP, VARG_L) },
-      { text: 'En mörk varg som sitter och ylar mot månen.', ...LED_M(VARG_YL, VARG_M) },
-      { text: 'En grå varg mitt i ett språng, med öronen bakåt och gapet öppet.', ...LED_M(VARG_SPRANG, VARG_L) },
-      { text: 'En grå varg med borst på ryggen, rött öga och tänderna synliga, redo att anfalla.', ...LED_M(VARG_BORST, VARG_L) },
-    ] },
-  { id: 'rock_vargskinn', namn: 'Rocken av vargskinn', vad: 'Kläderna görs om (steg 3.10.12): ett plagg av ett material. 16 × 16 punkter, i utrustningen och förrådet. Formen är plagget och färgerna materialet, så varje förslag visas av kaninskinn (överst och till vänster) och av vargskinn (nederst och till höger), i rätt storlek och tre gånger större. Den valda formen får båda rockarna. I spelet nu: vargpälsen du valde (förslag 1) och rocken av kaninskinn i 8 × 8 punkter.', typ: 'tre',
-    versioner: [
-      { text: 'Pälsrocken med ljus krage och ljusa ärmslut: vargpälsen du valde (version 2).', ...PAR_M(PALS_ROCK) },
-      { text: 'Rocken av kaninskinn i spelet nu, större: pälskrage och fransar nertill.', ...PAR_M(ROCK16) },
-      { text: 'En lång rock med ett flätat bälte i midjan och pälskant nertill.', ...PAR_M(ROCK_BALTE) },
-    ] },
-  { id: 'skor_vargskinn', namn: 'Skorna av vargskinn', vad: 'Kläderna görs om (steg 3.10.12): ett plagg av ett material. 16 × 16 punkter, i utrustningen och förrådet. Varje förslag visas av kaninskinn (överst och till vänster) och av vargskinn (nederst och till höger), i rätt storlek och tre gånger större. Den valda formen får båda paren. I spelet nu: skorna med pälskant (8 × 8 punkter) i vargens färger (platshållare).', typ: 'tre',
-    versioner: [
-      { text: 'Skorna i spelet nu, större: två skor med pälskant, den ena bakom den andra.', ...PAR_M(SKOR16) },
-      { text: 'En hög stövel med pälskant upptill och ett rep som snörning.', ...PAR_M(STOVEL) },
-      { text: 'Två mockasiner ovanifrån, med söm över tårna och pälskant runt öppningen.', ...PAR_M(MOCKASIN) },
-    ] },
-  { id: 'utbrott', namn: 'Utbrottens symboler', vad: 'Symbolerna för utbrotten (steg 3.2.2–3.2.4), 16 × 16 punkter. Efter din kommentar blir grad 1–4 ansikten som blir argare och argare: grad 1 och 2 och dödskallen är kvar från version 1, grad 3 (ligga kvar i bädden, göra slut, slå) och grad 4 (misshandla, lämna byn) är nya ansikten. I spelet nu: version 1 som du valde, och symbolen syns över huvudet medan utbrottet pågår.', typ: 'janej',
-    idag: UTB5_M('skugga'), idagText: 'Version 1 som du valde.',
-    versioner: [{ text: 'Grad 3: ett argt ansikte med rynkad panna och tänderna synliga. Grad 4: ett rasande ansikte med tänderna i ett vrål och ånga från öronen.', ...UTB5_M('arg') }] },
-  { id: 'grill', namn: 'Grillen', vad: 'Station, tre rutor (steg 3.6.7). Fler varianter efter din kommentar, alla med mörk kant och skugga på marken. I spelet nu: grillen till vänster.', typ: 'tre',
+  { id: 'grill', namn: 'Grillen', vad: 'Station, tre rutor (steg 3.6.7). Samma tre varianter utan mörk kant, bara med skuggan på marken. I spelet nu: grillen till vänster. Din kommentar förra gången: ”Jag vill inte att den har konturer”.', typ: 'tre',
     idag: { w: 52, h: 36, rita: (B, P) => forstorad(B, 'grill_karta', 2, 2) }, idagText: 'Grillen som den ser ut i spelet nu.',
     versioner: [
-      { text: 'Två klykor med spettet i gaffeln och en vev i änden.', w: 52, h: 36, rita: (B, P) => ritaSprite(B, grillStil('klyka'), GRILL_L, 2, 2) },
-      { text: 'Två kryss av käppar som står i stenar, med spettet i krysset.', w: 52, h: 36, rita: (B, P) => ritaSprite(B, grillStil('kors'), GRILL_L, 2, 2) },
-      { text: 'Två raka stolpar i stenhögar, med spettet surrat med rep och en krok för grytan.', w: 52, h: 36, rita: (B, P) => ritaSprite(B, grillStil('rep'), GRILL_L, 2, 2) },
+      { text: 'Två klykor med spettet i gaffeln och en vev i änden.', w: 52, h: 36, rita: (B, P) => ritaSprite(B, grillStil('klyka', false), GRILL_L, 2, 2) },
+      { text: 'Två kryss av käppar som står i stenar, med spettet i krysset.', w: 52, h: 36, rita: (B, P) => ritaSprite(B, grillStil('kors', false), GRILL_L, 2, 2) },
+      { text: 'Två raka stolpar i stenhögar, med spettet surrat med rep och en krok för grytan.', w: 52, h: 36, rita: (B, P) => ritaSprite(B, grillStil('rep', false), GRILL_L, 2, 2) },
     ] },
+  { id: 'scen_v', namn: 'Scenen vriden', vad: 'Scenen du valde (version 1), vriden ett kvarts varv medurs, för när scenen står på höjden: 48 × 32 punkter blir 32 × 48.', typ: 'janej',
+    idag: { w: 52, h: 36, rita: (B, P) => ritaSprite(B, KULT.scen[0].rader, KULT_L, 2, 2) }, idagText: 'Scenen som du valde, på bredden.',
+    versioner: [{ text: 'Samma scen på höjden: trappstegen till vänster.', w: 36, h: 52, rita: (B, P) => ritaSprite(B, vrid90(KULT.scen[0].rader), KULT_L, 2, 2) }] },
   { id: 'slaktbank', namn: 'Slaktbänken', vad: 'Station, tre rutor. Version 1 som du valde, med benen flyttade efter din kommentar.', typ: 'janej',
     idag: { w: 52, h: 28, rita: (B, P) => ritaSlakt(B, 2, 2, P, 1) }, idagText: 'Version 1 som du valde.',
     versioner: [{ text: 'Benen står i bordets fyra hörn: de främre längst ut i ändarna, de bakre lite innanför och kortare, som om de står längre bort.', w: 52, h: 28, rita: (B, P) => ritaSlakt(B, 2, 2, P, 1, true) }] },
@@ -1968,12 +1960,13 @@ const VAL = [
   { id: 'symboler', namn: 'Symbolerna', vad: 'De första åtta pixelsymbolerna, 8 × 8 punkter, i stället för emojier.', typ: 'janej',
     idag: { text: SYMBOLER.map(s => s.ers).join(' ') },
     versioner: [{ text: SYMBOLER.map(s => s.namn).join(', ') + '.', w: SYMBOLER.length * 10 + 2, h: 12, kol: true, rita: (B, P) => SYMBOLER.forEach((s, i) => ritaSprite(B, s.p, s.l, 2 + i * 10, 2)) }] },
+
 ];
 // Björns val som är bestämda men inte inbyggda i spelet: de visas under Valt med den valda versionen (0 = förut-versionen
 // behålls) och steget där de byggs in. När saken är inbyggd tas raden bort här och ur VAL, och dess dokument i samlingen 'val'
 const BESLUT = {
   kista: { val: 1, steg: '5.1.8' }, lagereld: { val: 1, steg: '5.1.8' }, symboler: { val: 1, steg: '5.1.8' }, slojdbank: { val: 1, steg: '5.1.8' },
-  slaktbank: { val: 1, steg: '5.1.8' }, portratt: { val: 1, steg: '5.2.3', text: 'Sparas som förebild till karaktärsgeneratorn.' },
+  slaktbank: { val: 1, steg: '5.1.8' }, kruka: { val: 1, text: 'Inbyggd i spelet (v249). Alla fyra bilderna sparas till ett annat sammanhang.' }, portratt: { val: 1, steg: '5.2.3', text: 'Sparas som förebild till karaktärsgeneratorn.' },
 };
 const VALT = VAL.filter(s => BESLUT[s.id]);
 for (const s of VALT) VAL.splice(VAL.indexOf(s), 1);

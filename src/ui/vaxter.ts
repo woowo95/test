@@ -85,7 +85,7 @@ export function drawAnimals() {
     ut.push({ ...d, x, y });
   }
   for (const id of visad.keys()) if (!sedda.has(id)) visad.delete(id);
-  for (const d of vargarOf(s)) { djurIkoner.add(d.art, d.x * TS - 4, d.y * TS - 6, 1); ut.push(d); } // vargarna med den fällda vargens symbol tills vidare (steg 3.7.1)
+  for (const d of vargarOf(s)) { djurIkoner.add(d.art, d.x * TS - 8, d.y * TS - 12, 1); ut.push(d); } // vargarna, 16 × 16 punkter (Björn valde version 1 efter v245, steg 4.5.2)
   if (s.tornado) { const p = tornadoPos(s.tornado, tornadoAndel(s.tornado, ui.nu)); djurIkoner.add('tornado', p.x * TS - 16, p.y * TS - 44, 1); } // tornadon där den är (steg 3.8.4), foten mitt på banan
   for (const [i] of brinnande(s)) djurIkoner.add('brand', (i % W) * TS, Math.floor(i / W) * TS, 1); // lågorna där det brinner (steg 3.8.5)
   for (const k of jagas.kast) { // spjutet eller stenen i luften, i en låg båge
