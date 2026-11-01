@@ -26,6 +26,7 @@ export interface SakDef {
   gors?: Gors; // ett redskap som görs i ett eget arbete (redskap.ts): texterna och vad som räknas
   klad?: Klad; // ett klädesplagg (steg 2.3.2, utrustning.ts)
   mark?: true; // ligger kvar på marken där den hamnade: ingen bär, äger eller lagrar den (toa-högen, smuts.ts)
+  varde?: number; // ett fast grundvärde, när saken inte skaffas i byn (silvret, steg 4.4.1.3)
   brinnerInte?: true; // brinner inte upp i en eldsvåda (brand.ts, steg 3.8.5); allt annat i förrådet gör det
 }
 // ett klädesplagg: platsen på kroppen (PLATSER i utrustning.ts), så stor del mindre kyla för den som har det på sig, och hur
@@ -137,6 +138,9 @@ const DEF = {
   // toa-högen (steg 2.10.5): en toa-fläck på marken (FLACKAR i smuts.ts), som går att trycka på. Den bleknar bort av sig själv
   toa: { namn: 'Toa-hög', mark: true },
   artfron: { namn: 'Ärtfrön', skaffa: { act: 'samla' }, stack: 50, mapp: 'Material', haller: 20 }, // fröna från de vilda ärterna (steg 3.10.23.8), som rovfröna
+  // silvret (steg 4.4.1.3, handel.ts): det enda som är pengar. Det kommer med handlarna och är värt en arbetstimme styck. Det
+  // byts bara med handlaren än; silver mellan byborna kommer i steg 9.5.1.2
+  silver: { namn: 'Silver', varde: 1, stack: 200, mapp: 'Silver', brinnerInte: true },
 } satisfies Record<string, SakDef>;
 
 type Sak = keyof typeof DEF;

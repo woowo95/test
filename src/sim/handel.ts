@@ -1,13 +1,17 @@
-import { DAY, H, HOUR, SEC, State, T, W } from './typer';
+import { DAY, H, HOUR, MIN, Person, SEC, State, T, Task, W } from './typer';
 import { balans } from './balans';
-import { count, forstaGang, log, makeName } from './folk';
+import { ALDER, ageOf, alive, count, forstaGang, living, log, makeName } from './folk';
 import { kronika } from './historik';
 import { eldPlats, getMap } from './karta';
 import { blocked } from './byggnad';
 import { clamp, pick, rnd } from './slump';
 import { iIstiden, ageIndex } from './tid';
 import { grundvarde, rikedom } from './varde';
-import { SAKER, viktOf } from './saker';
+import { SAKER, isTool, viktOf } from './saker';
+import { DELA, bynPart, bytaMed } from './behov';
+import { Part, Vara } from './byte';
+import { tingOf } from './agande';
+import { ledareOf } from './styre';
 import { kanterna } from './varg';
 
 // ---------- handlarna (steg 4.4.1) ----------
@@ -31,6 +35,11 @@ export const HANDEL = balans('handel', {
   silver: [10, 30], // silvret hen har med sig (används i handeln, steg 4.4.1.3)
   fylla: 0.7, // packningen fylls till så här stor del av det utrustningen rymmer, så att hen kan köpa något
   handel: [6, 14], // handlarens färdighet i Handel (0–20, steg 4.4.1.4)
+  vinst: 0.25, // handlaren värderar sina egna varor så mycket över grundvärdet, och det byn har gott om så mycket under (steg 4.4.1.3)
+  hemPaslag: 0.5, // det som är sällsynt där handlaren kommer ifrån är värt så mycket mer för hen
+  handlaMin: 20, // så många minuter tar byns handel vid filten
+  ensamTim: 2, // har den som handlar för byn inte kommit på så många timmar, går en annan vuxen
+  bytenMax: 8, // så många byten gör byn med handlaren på ett besök
 });
 
 // handlarens utrustning: det hen bär varorna i. Bara ryggsäcken nu; kärran (vägar, fas 7) och packdjuret (11.4.1.2) läggs till här
@@ -53,8 +62,15 @@ export const HANDLARVAROR: { k: string; n: [number, number]; vikt: number }[] = 
   { k: 'yxa', n: [1, 1], vikt: 1 },
   { k: 'benflojt', n: [1, 1], vikt: 1 },
 ];
-// var handlarna kommer ifrån
-const HEM = ['kusten i söder', 'fjällen i norr', 'skogarna i öster', 'sjöarna i väster', 'älvdalen', 'byarna vid havet'];
+// var handlarna kommer ifrån, och vad som är sällsynt där (det är värt mer för handlaren, HANDEL.hemPaslag)
+export const HEM: { namn: string; sallsynt: string[] }[] = [
+  { namn: 'kusten i söder', sallsynt: ['skinn', 'vargskinn', 'ved'] },
+  { namn: 'fjällen i norr', sallsynt: ['rovfron', 'artfron', 'bar'] },
+  { namn: 'skogarna i öster', sallsynt: ['fisk', 'torrfisk', 'flinta'] },
+  { namn: 'sjöarna i väster', sallsynt: ['flinta', 'sten', 'kott'] },
+  { namn: 'älvdalen', sallsynt: ['skinn', 'ben', 'torrkott'] },
+  { namn: 'byarna vid havet', sallsynt: ['ved', 'rep', 'torrkott'] },
+];
 
 export interface HVara { k: string; n: number; q?: number }
 export interface Handlare {
@@ -70,6 +86,7 @@ export interface Handlare {
   varor: HVara[];
   silver: number;
   handel: number; // färdigheten Handel
+  bynKlar?: true; // byn har handlat med hen på det här besöket
 }
 export const handlareOf = (s: State) => s.handlare;
 const mellan = (s: State, [a, b]: readonly [number, number] | number[]) => a + rnd(s, 'handel') * (b - a);
@@ -120,7 +137,7 @@ function kommer(s: State) {
   const sex = rnd(s, 'handel') < 0.5 ? 'm' : 'k', utr = 'ryggsack';
   const nr = s.handlarNr = (s.handlarNr ?? 0) + 1;
   const h: Handlare = {
-    id: -nr, namn: makeName(s, sex, 'handel'), hem: pick(s, HEM, 'handel'), sex, x: ut.x, y: ut.y, mx: mal.x, my: mal.y, fran: { x: ut.x, y: ut.y, t: s.now }, framme: s.now + Math.hypot(mal.x - ut.x, mal.y - ut.y) / HANDEL.fart * SEC,
+    id: -nr, namn: makeName(s, sex, 'handel'), hem: pick(s, HEM, 'handel').namn, sex, x: ut.x, y: ut.y, mx: mal.x, my: mal.y, fran: { x: ut.x, y: ut.y, t: s.now }, framme: s.now + Math.hypot(mal.x - ut.x, mal.y - ut.y) / HANDEL.fart * SEC,
     fas: 'kommer', kom: 0, gar: 0, ut: { x: ut.x, y: ut.y }, utr, varor: [], silver: heltMellan(s, HANDEL.silver), handel: heltMellan(s, HANDEL.handel),
   };
   h.varor = packa(s, rymmer(h));
@@ -173,4 +190,88 @@ export function handelSteg(s: State, dtSec: number) {
     s.handlare = undefined;
     s.nastaHandlare = s.now + intervall(s) * DAY * (0.7 + 0.6 * rnd(s, 'handel'));
   }
+}
+
+// ---------- handeln (steg 4.4.1.3) ----------
+// Handeln är ett byte som alla andra (bytaMed i behov.ts): båda lägger fram varor, var och en värderar efter sitt eget behov,
+// och silvret jämnar ut skillnaden (växeln). Handlaren går med på ojämna byten till sin fördel, aldrig till sin nackdel: hen
+// värderar sina egna varor högre än grundvärdet (HANDEL.vinst), det byn har gott om lägre, och det som är sällsynt där hen
+// kommer ifrån högre (HEM). Silvret är värt sitt grundvärde för alla. Hen köper aldrig mer än hen kan bära: när ryggsäcken är
+// full tar hen bara emot silver, och då blir det vara mot vara eller silver. Byn handlar med det gemensamma förrådet genom
+// ledaren (eller den äldsta vuxna), en gång per besök: först säljer byn det den har gott om, sedan köper den det den saknar.
+// Byborna handlar med sina egna saker i steg 4.4.1.5, färdigheten Handel kommer i steg 4.4.1.4
+const hemOf = (h: Handlare) => HEM.find(x => x.namn === h.hem);
+export const ledigt = (h: Handlare) => rymmer(h) - kgOf(h.varor);
+// hur mycket handlaren värderar en till av slaget k, gånger grundvärdet
+export function handlarVarde(s: State, h: Handlare, k: string) {
+  if (k === 'silver') return 1;
+  if (h.varor.some(w => w.k === k)) return 1 + HANDEL.vinst;
+  if (ledigt(h) < viktOf(k)) return 0; // ryggsäcken är full
+  const gott = bynPart(s, h.x, h.y).varde(k) <= DELA.over; // byn har gott om det
+  return (gott ? 1 - HANDEL.vinst : 1) * (hemOf(h)?.sallsynt.includes(k) ? 1 + HANDEL.hemPaslag : 1);
+}
+function taBort(h: Handlare, w: Vara) {
+  if (isTool(w.k)) { const i = h.varor.findIndex(x => x.k === w.k && (w.q === undefined || x.q === w.q)); if (i >= 0) h.varor.splice(i, 1); return; }
+  const f = h.varor.find(x => x.k === w.k);
+  if (f) { f.n -= w.n; if (f.n <= 0) h.varor.splice(h.varor.indexOf(f), 1); }
+}
+// handlaren som part i ett byte (byte.ts)
+export function handlarPart(s: State, h: Handlare): Part {
+  return {
+    id: h.id, namn: h.namn, x: h.x, y: h.y,
+    varde: k => handlarVarde(s, h, k),
+    over: utom => [...h.varor.filter(w => !utom.includes(w.k)).map(w => ({ k: w.k, n: w.n, q: w.q })), ...(h.silver >= 1 && !utom.includes('silver') ? [{ k: 'silver', n: h.silver }] : [])],
+    lamna: w => { if (w.k === 'silver') h.silver -= w.n; else taBort(h, w); return w; },
+    ta: w => {
+      if (w.k === 'silver') { h.silver += w.n; return; }
+      if (isTool(w.k)) { const q = w.t?.q ?? w.q; if (w.t) s.ting = tingOf(s).filter(t => t !== w.t); for (let i = 0; i < (w.t ? 1 : w.n); i++) h.varor.push({ k: w.k, n: 1, q }); return; }
+      const f = h.varor.find(x => x.k === w.k);
+      if (f) f.n += w.n; else h.varor.push({ k: w.k, n: w.n });
+    },
+    rymmer: () => ledigt(h),
+  };
+}
+// filten visar det handlaren har nu
+function visaVaror(s: State, h: Handlare) {
+  const f = s.filtar?.find(x => x.handlare === h.id);
+  if (f) f.varor = h.varor.map(w => ({ k: w.k, n: w.n, fran: h.id }));
+}
+// den som handlar för byn: ledaren, annars den äldsta vuxna
+function forByn(s: State): Person | undefined {
+  const l = ledareOf(s);
+  if (l) return l;
+  let b: Person | undefined;
+  for (const q of living(s)) if (ageOf(q, s.now) >= ALDER.vuxen && (!b || ageOf(q, s.now) > ageOf(b, s.now))) b = q;
+  return b;
+}
+// valet på dagen (day i val.ts): den som handlar för byn går till filten. Kommer hen inte, går en annan vuxen efter ett tag
+export function handlaVal(s: State, p: Person): { why: string; spot: { x: number; y: number }; dur: number; ref: number } | undefined {
+  const h = s.handlare;
+  if (!h || h.fas !== 'handlar' || h.bynKlar || ageOf(p, s.now) < ALDER.vuxen) return undefined;
+  if (s.people.some(q => q !== p && alive(q) && q.task?.act === 'handla' && q.task.ref === h.id)) return undefined;
+  if (p !== forByn(s) && s.now < h.kom + HANDEL.ensamTim * HOUR) return undefined;
+  return { why: `Handlar för byn med ${h.namn}`, spot: { x: h.x - 1, y: h.y + 0.6 }, dur: HANDEL.handlaMin * MIN, ref: h.id };
+}
+// handeln är klar (KLAR i steg.ts): byn säljer det den har gott om och köper det den saknar
+export function handlaKlar(s: State, p: Person, t: Task) {
+  const h = s.handlare;
+  if (!h || h.id !== t.ref || h.fas !== 'handlar' || h.bynKlar) return;
+  h.bynKlar = true;
+  const B = bynPart(s, p.x, p.y), H_ = handlarPart(s, h);
+  B.namn = `${p.name} för byn`;
+  let n = 0;
+  for (const w of B.over(['silver'])) { // byn säljer: handlaren köper det hen kan bära och tjänar på
+    if (n >= HANDEL.bytenMax) break;
+    const m = Math.min(w.n, Math.floor(ledigt(h) / viktOf(w.k) + 1e-9)), v = H_.varde(w.k);
+    if (m < 1 || v <= 0) continue;
+    if (bytaMed(s, H_, B, [{ k: w.k, n: m }], { behov: v, minst: 1, fara: 0, typ: 'handel', utom: [w.k], delad: true }) > 0) n++;
+  }
+  for (const w of [...h.varor]) { // byn köper det den saknar
+    if (n >= HANDEL.bytenMax) break;
+    if (!h.varor.includes(w) || B.varde(w.k) < DELA.saknar) continue;
+    if (bytaMed(s, B, H_, [{ k: w.k, n: w.n, q: w.q }], { behov: B.varde(w.k), minst: 1, fara: 0, typ: 'handel', utom: [w.k], delad: true }) > 0) n++;
+  }
+  count(s, 'handelBesok');
+  if (n) count(s, 'handelByten', n);
+  visaVaror(s, h);
 }

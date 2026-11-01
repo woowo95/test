@@ -42,6 +42,7 @@ import { grillTid, kanGrilla, kanTorka, torkTid } from './matlagning';
 import { egenBrasa } from './brasor';
 import { TEK, forsokChans, forsokVal, laraVal } from './teknik';
 import { sportVal, sportVikt } from './sport';
+import { handlaVal } from './handel';
 import { framVal } from './framtradande';
 import { utbrottBorjar, utbrottNu } from './humor';
 import { smakDrag } from './rykten';
@@ -473,6 +474,8 @@ function day(s: State, p: Person, v: Val, a: number, lazy: number) {
   v.dur *= VAL.pass;
   if (a < ALDER.hjalper) { set(v, 'leka', lekText(s)); return; }
   const fd = foodDays(s), wd = woodDays(s), ai = ageIndex(s), tot = habitTotal(p), fara = dangers(s); // farorna räknas en gång och gäller hela valet
+  const hv = handlaVal(s, p); // handlaren är här och byn har inte handlat (steg 4.4.1.3, handel.ts)
+  if (hv) { set(v, 'handla', hv.why); v.spot = hv.spot; v.dur = hv.dur; v.ref = hv.ref; return; }
   // att bära in är en förbättring: inte när byn fryser (talet dras ändå, så att personens följd är som förut). När byn svälter
   // bärs bara maten in, så att den inte blir liggande ute (steg 2.12.3)
   if (s.stackar?.length && rnd(s, 'val', p) < VAL.baraChans && !fara.kyla && (gt = haulJob(s, undefined, fara.svalt))) { set(v, 'bara', gt.why); v.spot = gt; v.dur = VAL.baraTim * HOUR; return; }

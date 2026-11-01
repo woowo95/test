@@ -24,7 +24,7 @@ export const BYTE = balans('byte', {
   tillbakaTim: 1, // så många timmar köper ingen tillbaka ett slag av saker av den hen just bytt bort det till
 });
 
-export interface Vara { k: string; n: number; t?: Ting }
+export interface Vara { k: string; n: number; t?: Ting; q?: number } // q = kvaliteten på handlarens redskap, som inte är ett ting i byn än
 // en part i ett byte. id = personens id, BYN för byn och ett negativt tal för handlaren. p = personen (bybon eller ingen)
 export interface Part {
   id: number;
@@ -35,6 +35,7 @@ export interface Part {
   over(utom: readonly string[]): Vara[]; // det parten kan byta bort, utom slagen i utom
   lamna?(w: Vara): Vara; // saken lämnar parten (handlarens packning, byns förråd): ger det som lämnade
   ta?(w: Vara, fran: Part): void; // saken kommer till parten
+  rymmer?(): number; // så många kg till kan parten ta emot (handlarens packning); saknas = hur mycket som helst
 }
 export const vardeOf = (v: Vara) => grundvarde(v.k) * (v.t ? v.t.c * kvVarde(v.t) : 1);
 const tal = (n: number) => n >= 0.5 ? String(Math.round(n)) : 'lite'; // saker i hela tal (Björn efter v89)

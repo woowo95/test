@@ -1,15 +1,15 @@
 import { upplev } from './uppvaxt';
 import { State, Person, HOUR, DAY } from './typer';
-import { FOOD, REDSKAP_SLAG, SAKER, SAK_LIST, isTool } from './saker';
+import { FOOD, REDSKAP_SLAG, SAKER, SAK_LIST, isTool, viktOf } from './saker';
 import { actsOf, usesTool } from './handlingar';
 import { ALDER, KROPP, REL, ageOf, alive, byId, count, getRel, isKin, isParent, livet, living, log, relKey, stat, think } from './folk';
 import { kanGa } from './halsa';
 import { chance, clamp, pickViktat, rnd } from './slump';
-import { Ting, tingOf } from './agande';
+import { Ting, newTing, tingOf } from './agande';
 import { kvEffekt } from './kvalitet';
 import { bordVid } from './stationer';
 import { BYN, Del, addDel, sumOf } from './egendom';
-import { amountOf, helt, mayTake, ownMove, ownsAmount, takeFood, use } from './lager';
+import { amountOf, helt, mayTake, ownMove, ownsAmount, put, takeFood, use } from './lager';
 import { eatPoison } from './fynd';
 import { ata } from './naring';
 import { ratt } from './matlagning';
@@ -455,6 +455,45 @@ function payable(s: State, p: Person, utom: readonly string[]): Vara[] {
 export function personPart(s: State, p: Person, silver = false): Part {
   return { id: p.id, namn: p.name, p, x: p.x, y: p.y, varde: k => behovAv(s, p, k), over: utom => payable(s, p, silver ? utom : [...utom, 'silver']) };
 }
+// byn (det gemensamma förrådet) som part i ett byte med handlaren (steg 4.4.1.3). Byn värderar efter knappheten i hela byn:
+// mat och ved som inte räcker till alla (b.kvar var) saknas, det som räcker gånger BYTE_BYN.gott är över; ett redskap som byn
+// inte har något av och ett material som är slut saknas. Byn byter bara bort sin egen del (inte det byborna äger): maten och
+// veden över det som räcker gånger gott, materialet över BYTE_BYN.material, och silvret. Redskapen byts inte bort: de används.
+// x, y = där den som handlar för byn står
+export const BYTE_BYN = balans('bytebyn', {
+  gott: 3, // så många gånger det alla behöver behålla (b.kvar) har byn gott om, och kan byta bort det som är över
+  material: 10, // så många av varje material behåller byn
+});
+const bynsDel = (s: State, k: string) => { let n = amountOf(s, k); for (const p of living(s)) n -= ownsAmount(s, p, k); return Math.max(0, helt(n)); };
+function bynNod(s: State, b: Behov) { let n = 0; for (const j of b.slag) n += amountOf(s, j) * perOf(b, j); return { har: n, behover: living(s).length * b.kvar }; }
+export function bynBehov(s: State, k: string) {
+  if (k === 'silver') return 1;
+  if (isTool(k)) return amountOf(s, k) < 1 ? DELA.saknar : DELA.over;
+  const b = behovMed(k);
+  if (!b) { const n = amountOf(s, k); return n < 1 ? DELA.saknar : n < BYTE_BYN.material ? 1 : DELA.over; }
+  const { har, behover } = bynNod(s, b);
+  return har < behover ? DELA.saknar : har < behover * BYTE_BYN.gott ? 1 : DELA.over;
+}
+function bynOver(s: State, utom: readonly string[]): Vara[] {
+  const ut: Vara[] = [];
+  for (const k of SAK_LIST) {
+    if (utom.includes(k) || isTool(k) || !grundvarde(k)) continue;
+    let n = bynsDel(s, k);
+    if (n < 1) continue;
+    const b = behovMed(k);
+    if (b) { const { har, behover } = bynNod(s, b); n = Math.min(n, helt((har - behover * BYTE_BYN.gott) / perOf(b, k))); }
+    else if (k !== 'silver') n = Math.min(n, helt(amountOf(s, k) - BYTE_BYN.material));
+    if (n >= 1) ut.push({ k, n });
+  }
+  return ut;
+}
+export function bynPart(s: State, x: number, y: number): Part {
+  return {
+    id: BYN, namn: 'Byn', x, y, varde: k => bynBehov(s, k), over: utom => bynOver(s, utom),
+    lamna: w => { if (w.t) { w.t.agare = BYN; return w; } use(s, undefined, w.k, w.n, true); return w; },
+    ta: w => { if (w.t) { w.t.agare = BYN; w.t.hos = undefined; } else if (isTool(w.k)) for (let i = 0; i < w.n; i++) { const t = newTing(s, w.k, 1, BYN); if (w.q !== undefined) t.q = w.q; } else put(s, w.k, w.n); },
+  };
+}
 export interface Villkor { behov: number; minst: number; fara: number; typ: string; utom: readonly string[]; delad?: true }
 // m byter till sig vill (det g har över) av g, och betalar med det m har över som är värt mest för g och minst för m.
 // v.behov = hur mycket m behöver det (gånger grundvärdet), v.minst = minsta mängd som hjälper, v.fara = hur nära döden
@@ -465,6 +504,17 @@ export interface Villkor { behov: number; minst: number; fara: number; typ: stri
 function byte(s: State, m: Person, g: Person, vill: Vara[], v: Villkor): number {
   if (osams(s, g, m)) return 0;
   return bytaMed(s, personPart(s, m), personPart(s, g), vill, v);
+}
+// växeln: G ger tillbaka så mycket silver som M betalat för mycket (for, för G), i hela silver. Betalar M med silver blir det
+// mindre silver i stället
+function vaxelSilver(G: Part, M: Part, for_: number, betal: Vara[]) {
+  const per = grundvarde('silver') * G.varde('silver');
+  if (G.id > 0 || for_ < per || M.varde('silver') <= 0) return 0; // bara byn och handlaren har silver att ge
+  let n = Math.floor(for_ / per + 1e-9);
+  const b = betal.find(w => w.k === 'silver');
+  if (b) { const m = Math.min(n, b.n - 1); b.n -= m; n -= m; if (n <= 0) return 0; }
+  const har = G.over([]).find(w => w.k === 'silver')?.n ?? 0;
+  return Math.min(n, Math.floor(har));
 }
 // samma byte för alla parter (steg 4.4.1.1): M byter till sig vill av G. Bybor, byn och handlaren (handel.ts) går hit
 export function bytaMed(s: State, M: Part, G: Part, vill: Vara[], v: Villkor): number {
@@ -478,10 +528,13 @@ export function bytaMed(s: State, M: Part, G: Part, vill: Vara[], v: Villkor): n
   // det M betalar för att G ska få mal (för G), i hela saker: man betalar hellre lite för mycket (steg 2.10.7)
   const betala = (mal: number) => {
     const ut: Vara[] = [];
-    let f = 0, k = 0; // det G får, för G, och det M ger, för M
+    let f = 0, k = 0, rum = G.rymmer?.() ?? Infinity; // det G får, för G, och det M ger, för M, och hur mycket mer G kan bära (kg)
     for (const w of varor) {
       if (f >= mal - 1e-9) break;
-      const n = w.t ? 1 : Math.min(w.n, Math.ceil((mal - f) / w.ut - 1e-6));
+      let n = w.t ? 1 : Math.min(w.n, Math.ceil((mal - f) / w.ut - 1e-6));
+      if (n * viktOf(w.k) > rum + 1e-9) n = w.t ? 0 : Math.floor((rum + 1e-9) / viktOf(w.k)); // handlaren tar inte emot mer än hen kan bära (steg 4.4.1.3)
+      if (n <= 0) continue;
+      rum -= n * viktOf(w.k);
       ut.push({ k: w.k, n, t: w.t }); f += n * w.ut; k += n * w.in;
     }
     return { betal: ut, fick: f, kost: k };
@@ -496,6 +549,9 @@ export function bytaMed(s: State, M: Part, G: Part, vill: Vara[], v: Villkor): n
     else if (!desperat && !nara(G, M)) return 0;
   }
   if (v.delad ? far * del <= kost : far * del < (1 - DELA.ojamn) * kost && !desperat && !nara(M, G)) return 0;
+  // silvret jämnar ut skillnaden (steg 4.4.1.3): betalade M mer än det G gav (man betalar med hela saker), ger G tillbaka
+  // silver, om G har silver att ge (handlaren och byn; bybor byter inte silver än)
+  const vaxel = vaxelSilver(G, M, fick - ger * del, betal);
   if (v.delad && del === 1) { // M betalar hälften av sin vinst till G, med det som är värt mest för G
     let extra = (far - kost) / 2;
     for (const w of varor) {
@@ -509,6 +565,7 @@ export function bytaMed(s: State, M: Part, G: Part, vill: Vara[], v: Villkor): n
   }
   if (vill.reduce((x, w) => x + w.n * vardeOf(w), 0) * del < DELA.byteMinst) return 0;
   const fatt = vill.map(w => ({ ...w, n: w.t ? 1 : helt(w.n * del) })).filter(w => w.n > 0);
+  if (vaxel > 0) fatt.push({ k: 'silver', n: vaxel });
   for (const w of fatt) flytta(s, w, G, M);
   for (const w of betal) flytta(s, w, M, G);
   if (M.p && G.p) { const r = getRel(s, M.p, G.p); r.op = clamp(r.op + 2, -100, 100); }

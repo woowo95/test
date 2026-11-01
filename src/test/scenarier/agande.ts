@@ -409,7 +409,7 @@ SCENARIER.varde = {
     const v = grundvarde, s = createState(5, START);
     tomtForrad(s); s.ting = [];
     // registret: det som har ett sätt att skaffas (skaffa i saker.ts) har ett värde, det andra (giftsvamp, paborjat) inget
-    const utanVarde = SAK_LIST.filter(k => SAKER[k]!.skaffa && !(v(k) > 0 && isFinite(v(k)))), medVarde = SAK_LIST.filter(k => !SAKER[k]!.skaffa && v(k) !== 0);
+    const utanVarde = SAK_LIST.filter(k => SAKER[k]!.skaffa && !(v(k) > 0 && isFinite(v(k)))), medVarde = SAK_LIST.filter(k => !SAKER[k]!.skaffa && SAKER[k]!.varde === undefined && v(k) !== 0);
     const tom = rikedom(s);
     setAmount(s, 'ved', 10); const tra = rikedom(s) - tom;
     addTool(s, 'yxa', living(s)[0]!); const yxa = rikedomDelar(s).redskap;
@@ -724,6 +724,55 @@ SCENARIER.handlare = {
       ['den första handlaren står i krönikan', kron],
       ['handlaren går hem efter några timmar och nästa besök bestäms', gick],
       ['under istiden kommer ingen handlare', istid],
+    ];
+  },
+};
+
+SCENARIER.silver = {
+  text: 'Handeln med silver (steg 4.4.1.3, handel.ts): byn handlar med handlaren genom ledaren eller den äldsta vuxna, som går till filten. Byn säljer det den har gott om och köper det den saknar, i samma byte som alla andra (bytaMed), och silvret jämnar ut skillnaden. Handlaren går aldrig med på ett byte till sin nackdel och köper aldrig mer än hen kan bära: är ryggsäcken full blir det vara mot vara eller silver.',
+  kor: () => {
+    const fram = (s: State) => { rikBy(s); s.nastaHandlare = s.now; for (let i = 0; i < 40 && s.handlare?.fas !== 'handlar'; i++) step(s, BEAT); return s.handlare!; };
+    const varde = (h: SIM.Handlare) => h.varor.reduce((a, w) => a + w.n * grundvarde(w.k), 0) + h.silver * grundvarde('silver');
+    const vuxen = (s: State) => living(s).find(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen)!;
+    const handla = (s: State, h: SIM.Handlare) => { const p = vuxen(s); p.x = h.x - 1; p.y = h.y; SIM.handlaKlar(s, p, { act: 'handla', phase: 'do', tx: p.x, ty: p.y, until: s.now, carry: 0, ref: h.id, dark: false, why: '' } as Task); };
+    // byn har gott om torkad fisk och saknar rep; handlaren har rep
+    let s = createState(6, START);
+    const h = fram(s);
+    setAmount(s, 'torrfisk', 120); setAmount(s, 'rep', 0); setAmount(s, 'silver', 0);
+    h.varor = [{ k: 'rep', n: 6 }, { k: 'flinta', n: 2 }]; h.silver = 30;
+    const fore = varde(h), fisk0 = amountOf(s, 'torrfisk');
+    handla(s, h);
+    const salde = amountOf(s, 'torrfisk') < fisk0 && h.varor.some(w => w.k === 'torrfisk');
+    const kopte = amountOf(s, 'rep') >= 1;
+    // har handlaren inget byn vill ha, betalar hen med silver
+    const s2 = createState(6, START), h2 = fram(s2);
+    setAmount(s2, 'torrfisk', 120); setAmount(s2, 'silver', 0);
+    h2.varor = []; h2.silver = 30;
+    handla(s2, h2);
+    const silver = amountOf(s2, 'silver') >= 1 && h2.silver === 30 - Math.round(amountOf(s2, 'silver')) && h2.varor.some(w => w.k === 'torrfisk');
+    const vinst = varde(h) >= fore - 1e-9;
+    const bara = SIM.kgOf(h.varor) <= SIM.rymmer(h) + 1e-9;
+    const filt = (s.filtar ?? []).some(f => f.handlare === h.id && f.varor.length === h.varor.length);
+    // ryggsäcken är full: handlaren köper inget som väger, men byn kan ändå köpa (vara mot vara eller silver)
+    const t = createState(6, START), g = fram(t);
+    setAmount(t, 'torrfisk', 120); setAmount(t, 'rep', 0);
+    g.varor = [{ k: 'rep', n: 4 }, { k: 'sten', n: Math.floor((SIM.rymmer(g) - 4 * viktOf('rep')) / viktOf('sten')) }]; g.silver = 5;
+    const kg0 = SIM.kgOf(g.varor);
+    handla(t, g);
+    const full = SIM.kgOf(g.varor) <= Math.max(kg0, SIM.rymmer(g)) + 1e-9 && !g.varor.some(w => w.k === 'torrfisk');
+    // ledaren (eller den äldsta vuxna) går till filten på dagen och handlar
+    const u = createState(6, START), k = fram(u);
+    let gick = false;
+    for (let i = 0; i < 12 * 3600 / BEAT && !k.bynKlar && u.handlare; i++) { step(u, BEAT); if (u.people.some(p => p.task?.act === 'handla')) gick = true; }
+    return [
+      [`byn säljer det den har gott om (torkad fisk ${fisk0} → ${Math.round(amountOf(s, 'torrfisk'))})`, salde],
+      [`byn köper det den saknar (rep ${Math.round(amountOf(s, 'rep'))})`, kopte],
+      [`har handlaren inget byn vill ha betalar hen med silver (byns silver ${Math.round(amountOf(s2, 'silver'))}, handlarens ${h2.silver})`, silver],
+      [`handlaren förlorar inget på handeln (grundvärde ${fore.toFixed(1)} → ${varde(h).toFixed(1)})`, vinst],
+      [`handlaren bär inte mer än ryggsäcken rymmer (${SIM.kgOf(h.varor).toFixed(1)} av ${SIM.rymmer(h)} kg)`, bara],
+      ['filten visar handlarens varor efter handeln', filt],
+      [`med full ryggsäck köper handlaren inget som väger (${SIM.kgOf(g.varor).toFixed(1)} kg)`, full],
+      ['någon går till filten och handlar för byn', gick && !!k.bynKlar],
     ];
   },
 };

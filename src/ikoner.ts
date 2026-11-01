@@ -65,6 +65,7 @@ export const PAL: Record<string, Record<string, string>> = {
   bonad: { w: '#5a3a1e', s: '#e0cfa4', S: '#c4ad7c', r: '#9c3328', k: '#4a3018' },
   vaggbrade: { w: '#5a3a1e', W: '#8b5a2b', L: '#b07a45', H: '#d0a26a' },
   // filten där stora byten görs (steg 4.4.1.1, platshållare, 16 punkter)
+  silver: { o: '#3a3e44', S: '#c8ccd2', W: '#f4f6f8', s: '#8a9098' },
   handlare: { h: '#e0b88a', H: '#3a2418', c: '#4e6a8a', C: '#2e4460', b: '#8a6a40', B: '#5a3a1e', s: '#24160a' },
   filt: { d: '#5a2a1e', r: '#9c3328', R: '#c4583a', y: '#e8c890', k: '#3a2418' },
   mossa: { l: '#b4cc6a', G: '#7fa850', g: '#4f7a36', B: '#b48a5e', m: '#2f4a22' },
@@ -2306,6 +2307,11 @@ export const PIX: Record<string, string[]> = {
   ],
   // filten (steg 4.4.1.1, platshållare, 16 punkter): en vävd filt sedd uppifrån, med ränder och fransar i kortändarna
   // handlaren (steg 4.4.1.2, platshållare, 16 punkter): en vandrare i blå kappa med en stor ryggsäck och en stav
+  // silvret (steg 4.4.1.3, platshållare, 16 punkter): tre runda silverbitar i en liten hög
+  silver: [
+    '................', '................', '................', '.....oooo.......', '....oWSSSo......', '....oSSSso......', '.....ossoooo....', '......ooWSSSo...',
+    '..oooo.oSSSso...', '.oWSSSo.ossso...', '.oSSSso..oooo...', '..ossso.........', '...oooo.........', '................', '................', '................',
+  ],
   handlare: [
     '......HHH.......', '.....HhhhH......', '.....hhhhh..bbb.', '......hhh..bBBBb', '.....CcccC.bBbBb', '....CcccccCbBBBb', '...s.cccccCbBbBb', '...s.cccccCbBBBb',
     '...s.cccccC.bbb.', '...s.CcccC......', '...s.cc.cc......', '...s.cc.cc......', '...s.cc.cc......', '...s.BB.BB......', '................', '................',

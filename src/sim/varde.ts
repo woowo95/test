@@ -59,7 +59,8 @@ function rakna(k: string): number {
   let v = raVarde.get(k);
   if (v !== undefined) return v;
   const f = SAKER[k]?.skaffa;
-  if (!f) v = 0;
+  if (SAKER[k]?.varde !== undefined) v = SAKER[k]!.varde!; // silvret
+  else if (!f) v = 0;
   else {
     let x = (f.tid ?? 0) / SNABBARE + (f.act ? actTid(f.act) : 0) + (f.min ?? 0) / 60 * ARBETE;
     for (const j in f.av ?? {}) x += f.av![j] * grundvarde(j);
