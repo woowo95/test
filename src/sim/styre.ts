@@ -82,7 +82,7 @@ const TITLAR: { namn: [string, string]; passar: (s: State, p: Person, x: TitelLa
   { namn: ['Den vise', 'Den visa'], passar: (_s, p) => p.pot.intelligens >= LED.vis },
   { namn: ['Byfader', 'Bymoder'], passar: (s, p, x) => x.stod >= LED.faderStod && stat(p, 'empati', s.now) >= LED.faderEmp },
   { namn: ['Äldste', 'Äldsta'], passar: (s, p, x) => ageOf(p, s.now) >= ALDER.aldre && x.vuxna.every(q => ageOf(q, s.now) <= ageOf(p, s.now)) },
-  { namn: ['Ålderman', 'Ålderman'], passar: () => true }, // byns valda förman
+  { namn: ['Ålderman', 'Ålderkvinna'], passar: () => true }, // byns valda förman (Ålderkvinna för en kvinna, steg 4.5.3.2)
 ];
 const TITELNAMN = new Set(TITLAR.flatMap(t => t.namn));
 const hon = (p: Person) => p.sex === 'k' ? 'hon' : 'han', hennes = (p: Person) => p.sex === 'k' ? 'hennes' : 'hans';

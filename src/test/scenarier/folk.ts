@@ -796,7 +796,7 @@ SCENARIER.titel = {
     l.born = t.now - 30 * DAY; Object.assign(l.pot, { empati: 10, aggression: 10, intelligens: 8 }); l.tag = undefined; t.seder.v.rang = 0; op(0);
     const fall: [string, string, string][] = [];
     const prova = (vad: string, vant: string) => fall.push([vad, vant, titel()]);
-    prova('ingenting särskilt', 'Ålderman');
+    prova('ingenting särskilt', ns('Ålderman', 'Ålderkvinna'));
     l.born = t.now - 70 * DAY; prova('äldst bland de vuxna och över 50 år', ns('Äldste', 'Äldsta')); l.born = t.now - 30 * DAY;
     op(80); l.pot.empati = 16; prova('mycket omtyckt och hög empati', ns('Byfader', 'Bymoder'));
     l.pot.intelligens = 16; prova('hög intelligens (före Byfader)', ns('Den vise', 'Den visa'));
