@@ -24,18 +24,22 @@ function tekHtml() {
   const depth: Record<string, number> = {};
   const dep = (id: string): number => depth[id] ??= TEK[id].krav.length ? 1 + Math.max(...TEK[id].krav.map(dep)) : 0;
   TEKNIK.forEach(t => dep(t.id));
-  const cols = Math.max(...Object.values(depth)) + 1;
+  // delar av trädet göms tills byn är nära (steg 4.2.2.2): det som inte kräver något, det någon kan eller funderat på, och det
+  // som kräver något som någon i byn kan
+  const syns = new Set(TEKNIK.filter(t => !t.krav.length || t.krav.some(k => ppl.some(p => knows(p, k))) || ppl.some(p => (p.tek?.[t.id] ?? 0) > 0.01)).map(t => t.id));
+  const VIS = TEKNIK.filter(t => syns.has(t.id)), dolda = TEKNIK.length - VIS.length;
+  const cols = Math.max(...VIS.map(t => depth[t.id])) + 1;
   // plats för varje nod i procent: kolumn efter djup, jämnt fördelat i höjdled
   const pos: Record<string, { x: number; y: number }> = {};
   for (let c = 0; c < cols; c++) {
     // i höjdled nära det de kräver, så att sträcken korsar varandra så lite som möjligt
-    const mitt = (id: string) => TEK[id].krav.reduce((a, k) => a + pos[k].y, 0) / Math.max(1, TEK[id].krav.length);
-    const ids = TEKNIK.filter(t => depth[t.id] === c).map(t => t.id).sort((a, b) => mitt(a) - mitt(b));
+    const mitt = (id: string) => { const kr = TEK[id].krav.filter(k => pos[k]); return kr.reduce((a, k) => a + pos[k].y, 0) / Math.max(1, kr.length); };
+    const ids = VIS.filter(t => depth[t.id] === c).map(t => t.id).sort((a, b) => mitt(a) - mitt(b));
     ids.forEach((id, i) => { pos[id] = { x: (c + 0.5) / cols * 100, y: (i + 0.5) / ids.length * 100 }; });
   }
   // linjerna visar vad som är låst bakom vad: en teknik kräver en annan
-  const lines = TEKNIK.flatMap(t => t.krav.map(k => `<line x1="${pos[k].x}" y1="${pos[k].y}" x2="${pos[t.id].x}" y2="${pos[t.id].y}"/>`));
-  const nodes = TEKNIK.map(t => {
+  const lines = VIS.flatMap(t => t.krav.filter(k => pos[k]).map(k => `<line x1="${pos[k].x}" y1="${pos[k].y}" x2="${pos[t.id].x}" y2="${pos[t.id].y}"/>`));
+  const nodes = VIS.map(t => {
     const kan = ppl.filter(p => knows(p, t.id)).length, best = Math.max(0, ...ppl.map(p => p.tek?.[t.id] ?? 0));
     const ring = !kan && best > 0.01 ? `<svg class="ring" viewBox="0 0 36 36"><circle cx="18" cy="18" r="16" pathLength="100" stroke-dasharray="${Math.round(best * 100)} 100"/></svg>` : '';
     // ! bara när det spelar roll: ingen kan det och ingen kan komma på det, för det som behövs finns inte i byn
@@ -43,10 +47,10 @@ function tekHtml() {
     const title = t.namn + (kan ? `: ${kan} kan det` : '');
     return `<button type="button" class="tnod ${kan ? 'kan' : best > 0.01 ? 'pa' : 'ok'}${tekSel === t.id ? ' sel' : ''}" data-tek="${t.id}" style="left:${pos[t.id].x}%;top:${pos[t.id].y}%" title="${esc(title)}" aria-label="${esc(title)}">${iconImg(t.id, 24)}${ring}${kan ? `<span class="antal">${kan}</span>` : ''}${brist}</button>`;
   });
-  const h = Math.max(150, Math.max(...Array.from({ length: cols }, (_, c) => TEKNIK.filter(t => depth[t.id] === c).length)) * 64);
+  const h = Math.max(150, Math.max(...Array.from({ length: cols }, (_, c) => VIS.filter(t => depth[t.id] === c).length)) * 64);
   return `<div class="tekhead">${hjalpKnapp('teknik', 'Hur fungerar teknik?')}</div>
-    ${hjalpText('teknik', `<p class="muted small">Den som arbetar med något kommer så småningom på hur det kan göras bättre. Nyfikenheten avgör hur ofta hen funderar och intelligensen hur fort det går. Det svåraste (nivå 4–5) kommer man bara på genom att pröva sig fram vid en station, när byn har mat och ved över. Det man kan lärs ut i samtal. Dör alla som kan något försvinner kunskapen. Ett sträck betyder att tekniken till höger kräver den till vänster. Siffran är hur många som kan tekniken och ringen hur långt den som funderat mest har kommit. Tryck på en teknik för att se vad den kräver och hur man kommer på den.</p>`)}
-    <div class="ttradram"><div class="ttrad" style="height:${h}px;width:${cols * KOLUMN}px"><svg class="tlinjer" viewBox="0 0 100 100" preserveAspectRatio="none">${lines.join('')}</svg>${nodes.join('')}</div></div>
+    ${hjalpText('teknik', `<p class="muted small">Den som arbetar med något kommer så småningom på hur det kan göras bättre. Nyfikenheten avgör hur ofta hen funderar och intelligensen hur fort det går. Det svåraste (nivå 4–5) kommer man bara på genom att pröva sig fram vid en station, när byn har mat och ved över. Det man kan lärs ut i samtal. Dör alla som kan något försvinner kunskapen. Ett sträck betyder att tekniken till höger kräver den till vänster. Siffran är hur många som kan tekniken och ringen hur långt den som funderat mest har kommit. Tryck på en teknik för att se vad den kräver och hur man kommer på den. Det som ligger längre fram syns först när någon i byn kan något av det som krävs.</p>`)}
+    <div class="ttradram"><div class="ttrad" style="height:${h}px;width:${cols * KOLUMN}px"><svg class="tlinjer" viewBox="0 0 100 100" preserveAspectRatio="none">${lines.join('')}</svg>${nodes.join('')}</div></div>${dolda ? `<p class="muted small" title="${esc('Syns när någon i byn kan något av det som krävs.')}">+${dolda} okända</p>` : ''}
     ${tekInfo(ppl, tekSel)}`;
 }
 const lista = (xs: string[], och = 'och') => xs.length > 1 ? xs.slice(0, -1).join(', ') + ` ${och} ` + xs[xs.length - 1] : xs[0] ?? '';

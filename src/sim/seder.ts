@@ -149,6 +149,7 @@ export function habitShare(p: Person, acts: readonly Act[], tot = habitTotal(p))
 // yrkestaggarna, i den ordning de prövas, med den minsta andel av tiden som ger taggen. Vilka handlingar som räknas till ett
 // yrke står i handlingens rad (yrke i handlingar.ts). Ett nytt yrke blir en rad här och ett yrke på handlingarna
 const YRKEN: Record<string, number> = {
+  Mästare: 0.04, // den som prövar sig fram mycket (handlingen forsok, steg 4.2.2.3): försöken är få, så en liten andel räcker
   Jägare: 0.2, Fiskare: 0.2, Samlare: 0.2, Trähuggare: 0.15, Hantverkare: 0.15, Byggare: 0.12, Berättare: 0.06, Eldvaktare: 0.02, Väktare: 0.08, Dagdrivare: 0.3,
 };
 export const TAGS = Object.entries(YRKEN).map(([tag, min]) => ({ tag, min, acts: ACT_LIST.filter(a => ACTS[a].yrke === tag) }));

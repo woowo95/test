@@ -4,7 +4,7 @@ import * as SIM from '../../sim';
 import { START } from '../kor';
 import { SCENARIER, medBank, utanWebblasare } from './hjalp';
 import { setByn } from '../../ui/lage';
-import { tekInfo } from '../../ui/flikar/teknik';
+import { tekInfo, teknik } from '../../ui/flikar/teknik';
 
 // en vuxen som kan kraven till skinnkläderna (bensylen och det före), med skickligheten i hantverk h, och en slöjdbänk med skinn och rep i lagret
 export function experten(seed = 3, h = 6): { s: State; p: Person } {
@@ -91,6 +91,37 @@ SCENARIER.episk = {
       ['varje teknik på nivå 4–5 har en egen rad med uppfinnarens namn', alla],
       [`krönikan: "${rad}"`, rader.length === 1 && rad.includes(p.name) && !rad.includes('{')],
       ['den som kommer på det sedan får ingen ny rad', SIM.knows(q, 'skinnklader') && enRad],
+    ];
+  },
+};
+
+SCENARIER.doltrad = {
+  text: 'Teknikträdet (steg 4.2.2.2): det som ligger längre fram syns först när någon i byn kan något av det som krävs; resten räknas som okända',
+  kor: () => {
+    utanWebblasare();
+    const s = createState(3, START); for (const q of SIM.living(s)) q.tek = {};
+    setByn(s);
+    const fore = teknik.html(), syns = (h: string, id: string) => h.includes(`data-tek="${id}"`);
+    const p = SIM.living(s)[0]; p.tek = { rep: 1, kniv: 1, flatarbank: 1, bensyl: 1 };
+    const efter = teknik.html();
+    return [
+      ['i en ny by syns grunden (yxan, repet) men inte skinnkläderna eller bensylen', syns(fore, 'yxa') && syns(fore, 'rep') && !syns(fore, 'skinnklader') && !syns(fore, 'bensyl') && /\+\d+ okända/.test(fore)],
+      ['när någon kan bensylen syns skinnkläderna, men inte vattensäcken som kräver dem', syns(efter, 'skinnklader') && !syns(efter, 'vattensack')],
+    ];
+  },
+};
+
+SCENARIER.mastartitel = {
+  text: 'Mästaren (steg 4.2.2.3–4.2.2.4): den som prövar sig fram mycket kallas mästare; yrket växer fram ur vanorna som de andra',
+  kor: () => {
+    const { s, p } = experten();
+    for (const q of SIM.living(s)) { q.habit = { samla: 30, hantverk: 10 }; q.tag = undefined; }
+    p.habit = { hantverk: 30, forsok: 6 };
+    SIM.updateTags(s);
+    const ingen = SIM.living(s).filter(q => q !== p).every(q => q.tag !== 'Mästare');
+    return [
+      [`den som prövat sig fram mycket kallas ${p.tag?.toLowerCase() ?? 'ingenting'}`, p.tag === 'Mästare'],
+      ['de andra kallas inte mästare', ingen],
     ];
   },
 };
