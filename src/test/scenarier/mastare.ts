@@ -75,3 +75,22 @@ SCENARIER.forsoklust = {
     ];
   },
 };
+
+SCENARIER.episk = {
+  text: 'Det episka ögonblicket (steg 4.2.1.3): när den första i byn kommer på en teknik på nivå 4–5 skrivs teknikens egen rad i krönikan, med uppfinnarens namn',
+  kor: () => {
+    const alla = SIM.TEKNIK.filter(t => t.niva >= 4).every(t => t.episk && t.episk.toLowerCase().includes('{namn}'));
+    const { s, p } = experten(), tk = forsokTask(s, 'skinnklader', 90);
+    for (let n = 0; n < 200 && !SIM.knows(p, 'skinnklader'); n++) { SIM.forsokSteg(s, p, tk, 3600); SIM.forsokKlar(s, p, tk); }
+    const rader = (s.hist?.kronika ?? []).filter(r => r[2] === 'episk'), rad = rader[0]?.[1] ?? '';
+    // den andra som kommer på det får ingen ny rad
+    const q = SIM.living(s).find(x => x !== p && SIM.ageOf(x, s.now) >= 20)!; q.tek = { ...p.tek, skinnklader: 0 }; q.skill.hantverk = 6; q.pot.nyfikenhet = q.pot.intelligens = 12;
+    for (let n = 0; n < 200 && !SIM.knows(q, 'skinnklader'); n++) { SIM.forsokSteg(s, q, tk, 3600); SIM.forsokKlar(s, q, tk); }
+    const enRad = (s.hist?.kronika ?? []).filter(r => r[2] === 'episk').length === 1;
+    return [
+      ['varje teknik på nivå 4–5 har en egen rad med uppfinnarens namn', alla],
+      [`krönikan: "${rad}"`, rader.length === 1 && rad.includes(p.name) && !rad.includes('{')],
+      ['den som kommer på det sedan får ingen ny rad', SIM.knows(q, 'skinnklader') && enRad],
+    ];
+  },
+};
