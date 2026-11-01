@@ -300,7 +300,7 @@ export function workOn(s: State, p: Person, b: Bit, dtSec: number, har = 0) {
     livet(s, p, 'hus'); // satte sista biten (steg 3.9.8)
     const n = gridOf(s).rooms.filter(r => r.hus === h.id).reduce((a, r) => a + r.tiles.length, 0);
     if (fnOf(h).sover) log(s, `${h.namn} är färdigt. Nu kan ${n} sova under tak.`, 'world', [p.id]);
-    kronikaBer(s, 'k_husKlar', h.id, { ...personFalt(p), hus: h.namn }); husKlar(s, h);
+    kronikaBer(s, 'k_husKlar', h.id, { ...personFalt(p), ...husFalt(h.namn) }); husKlar(s, h);
     sedEvent(s, 'gemenskap', BYGG.klartGemenskap);
   }
   return true;
@@ -379,3 +379,5 @@ export function finishDorr(s: State, p: Person, tk: Task) {
   b.dorr = k; touch(s);
   if (forstaGang(s, 'dorr_' + k)) { log(s, d.forsta.replace('{namn}', p.name), 'world', [p.id]); p.fame.push(`Hängde byns första ${d.namn.toLowerCase()}`); }
 }
+// husets namn mitt i en mening ('långhuset', 'Stevids hus') och färdig eller färdigt efter genus (steg 4.5.1.4)
+const husFalt = (namn: string) => ({ hus: / hus$/.test(namn) ? namn : namn.charAt(0).toLowerCase() + namn.slice(1), klart: /(et|hus)$/.test(namn) ? 'färdigt' : 'färdig' });

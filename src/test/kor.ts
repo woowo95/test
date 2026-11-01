@@ -27,9 +27,9 @@ export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => voi
   let hunger = 0, humor = 0, humorN = 0, lit = 0, steg = 0, vintermat = Infinity, vinterved = Infinity, forraAlder = ageIndex(s);
   const ok01 = (v: number) => Number.isFinite(v) && v >= -1e-6 && v <= 1 + 1e-6;
   const dag = () => ((s.now - START) / DAY).toFixed(1);
-  // texterna som skrivs går genom kontrollerna (steg 4.5.1.2), och en gång per dygn skrivs de som bara visas när man trycker
+  // texterna som skrivs går genom kontrollerna (steg 4.5.1.2), beskrivningarna också genom stilen (steg 4.5.1.4), och en gång per dygn skrivs de som bara visas när man trycker
   const kon = konI(s);
-  lyssnaPaTexter((mall, _i, text, f) => { for (const k of kollaText(text, f, kon, false, mall === 'beskrivning')) larm('text ' + k.id, () => `${mall}: ${k.vad} i "${text}"`); });
+  lyssnaPaTexter((mall, _i, text, f) => { for (const k of kollaText(text, f, kon, mall === 'beskrivning', mall === 'beskrivning')) larm('text ' + k.id, () => `${mall}: ${k.vad} i "${text}"`); });
   for (let i = 0; i < dagar * STEG_DYGN; i++) {
     step(s, BEAT);
     varjeSteg?.(s);

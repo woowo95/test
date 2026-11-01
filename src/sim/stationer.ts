@@ -731,7 +731,7 @@ export function finishStation(s: State, p: Person, tk: Task) {
   const d = stationDef(t.k)!;
   if (d.mobel) nyKvalitet(s, p, t, false, d.namn.toLowerCase()); // möblerna har kvalitet, stationerna inte (kvalitet.ts)
   if (d.verktyg && wearTool(s, p, d.verktyg, STATION.latrinSpade)) { const tr = SAKER[d.verktyg]?.trasig; if (tr) count(s, tr.stat); } // benspaden slits för varje grop
-  if (forstaGang(s, 'station_' + t.k)) { log(s, d.forsta.replace('{namn}', p.name), 'world', [p.id]); p.fame.push(`Byggde byns första ${d.namn.toLowerCase()}`); }
+  if (forstaGang(s, 'station_' + t.k)) { log(s, d.forsta.replace('{namn}', p.name), 'world', [p.id]); p.fame.push(`Byggde byns första ${forstaForm(d.namn)}`); }
   fyllPlatser(s);
 }
 
@@ -1056,3 +1056,5 @@ export function stepStationer(s: State) {
   touch(s);
   for (const t of borta) log(s, `${stationDef(t.k)?.namn ?? 'En station'} försvann när huset revs.`, 'world');
 }
+// namnet efter 'byns första': adjektivet i bestämd form ('lilla bord', 'snidade väggbräde'; steg 4.5.1.4)
+const forstaForm = (namn: string) => namn.toLowerCase().replace(/^litet /, 'lilla ').replace(/^(\p{L}+)at /u, '$1ade ');

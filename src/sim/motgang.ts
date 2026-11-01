@@ -140,7 +140,7 @@ const mellan = (v: number[], f: number) => v[0] + f * (v[1] - v[0]);
 export function delaVarsel(s: State, a: Person, b: Person, r: Rel) {
   const v = vetOm(s, a);
   if (!v || v.t <= s.now || v.c < MOTGANG.glomGrans || rnd(s, 'minne', a) >= MOTGANG.berattar) return;
-  delade('varsel', DEF[v.k].ikon, DEF[v.k].namn.toLowerCase()); // samtalets ämne (steg 3.9.5)
+  delade('varsel', DEF[v.k].ikon, 'en ' + DEF[v.k].namn.toLowerCase()); // 'en torka' (steg 4.5.1.4) // samtalets ämne (steg 3.9.5)
   const c = v.c * clamp(MOTGANG.troBas + r.op / MOTGANG.troDiv, MOTGANG.troMin, MOTGANG.troMax);
   const e = vetOm(s, b);
   if (e && e.t === v.t && e.c >= c) return;

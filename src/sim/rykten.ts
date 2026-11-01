@@ -359,7 +359,7 @@ export function rykteDod(s: State, p: Person) {
   if (r >= RYKTE.dodLog) {
     const top = samlatIntryck(s, p.id)[0];
     if (top) { log(s, `Byn minns ${p.name} som ${INTRYCK[top[0]].namn}.`, 'death', [p.id]); count(s, 'rykte_minns'); }
-    if (r >= RYKTE.legend) p.fame.push(a >= 0 ? 'Blev en legend i byn' : 'Blev ökänd i byn');
+    if (r >= RYKTE.legend) p.fame.push(a >= 0 ? 'Blev en legend i byn' : 'Blev ökänd');
   }
 }
 // en gång i timmen: intrycken bleknar, de allvarliga långsammare, och minnet av en död långsammare ju ryktbarare hen var.
