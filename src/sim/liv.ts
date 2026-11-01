@@ -1,5 +1,6 @@
 import { upplev, uppvaxtDod, uppvaxtFodd } from './uppvaxt';
 import { kronikaBer, personFalt } from './berattelser';
+import { kronika } from './historik';
 import { ALDER, REL, ageOf, alive, byId, count, isParent, living, log, newPerson, relKey, startSkills, think } from './folk';
 import { Sed, sedEvent } from './seder';
 import { pair } from './varld';
@@ -13,8 +14,8 @@ import { balans } from './balans';
 import { RELT } from './relationer';
 import { rykteDod, startSmak } from './rykten';
 import { GudOmr, gudHandelse } from './religion';
-import { kunskapDod } from './teknik';
-import { utbrytning } from './klaner';
+import { TEK, TEKNIK, knows, kunskapDod } from './teknik';
+import { KLAN, andraInst, klanerOf, utbrytning } from './klaner';
 
 // ---------- balanstal (regel 8) ----------
 // Befolkningen regleras av naturen, inte av ett fast tak: en trång by får färre barn och fler som flyttar, en liten by lockar
@@ -164,6 +165,40 @@ export function regulate(s: State, dtSec: number) {
     if (chance(s, rate / 86400, HOUR_S, 'flytt')) emigrate(s);
   }
   if (chance(s, immigrationRate(pop) * (LIV.nybyggareMatMin + LIV.nybyggareMat * matGott(s)) / 86400, dtSec, 'flytt')) immigrate(s, false);
+  if (s.klaner?.length && chance(s, KLAN.framling / 86400, dtSec, 'klan')) framling(s);
+}
+// en främling från en grannklan som inte tycker illa om byn (steg 4.4.4.2). Hen kan ofta en teknik som ingen i byn kan, men
+// vars krav byn kan, och tekniken under den. Byn avgör om hen får stanna: ledaren, eller de vuxna om byn saknar ledare. Det
+// väger tekniken, klanens inställning, seden Förnyelse – Tradition, trängseln och maten. Klanen minns hur det gick
+export function framling(s: State, tvinga?: { tek?: string; ja?: boolean }) {
+  const kan = klanerOf(s).filter(k => k.inst > KLAN.handelMin);
+  if (!kan.length) return undefined;
+  const k = pick(s, kan, 'klan'), folk = living(s), pop = folk.length;
+  const kunnat = new Set(folk.flatMap(p => Object.keys(p.tek ?? {}).filter(id => knows(p, id))));
+  const nya = TEKNIK.filter(t => !kunnat.has(t.id) && t.krav.every(id => kunnat.has(id)));
+  const tek = tvinga ? tvinga.tek : nya.length && rnd(s, 'klan') < KLAN.framlingTek ? pick(s, nya, 'klan').id : undefined;
+  const v = KLAN.taEmot + (tek ? KLAN.taEmotTek : 0) + k.inst / 100 * KLAN.taEmotInst + (s.seder.v.nyfikenhet ?? 0) * KLAN.taEmotSed
+    - Math.min(1, crowd(pop)) * KLAN.taEmotTrang - (1 - matGott(s)) * KLAN.taEmotMat;
+  const ja = tvinga?.ja ?? rnd(s, 'klan') < v;
+  const lid = s.styre?.ledare, l = lid === undefined ? undefined : byId(s, lid), vem = l && alive(l) ? l.name : 'Byn';
+  const sex = rnd(s, 'klan') < 0.5 ? 'm' : 'k', tekNamn = tek ? TEK[tek]?.namn.toLowerCase() : '';
+  if (!ja) {
+    andraInst(k, -KLAN.nejInst); count(s, 'framlingNej');
+    log(s, `En främling från ${k.namn} kom till byn${tek ? ` och kunde ${tekNamn}` : ''}. ${vem} ville inte att hen skulle stanna, och hen gick vidare.`, 'move');
+    return undefined;
+  }
+  const age = LIV.nybyggareAlder + rnd(s, 'folk') * LIV.nybyggareAlderSpann, p = newPerson(s, sex, s.now - age * DAY);
+  startSkills(s, p, age); startSmak(s, p);
+  p.fran = k.id;
+  if (tek) { const lar = (id: string) => { if (knows(p, id)) return; (p.tek ??= {})[id] = 1; for (const x of TEK[id]?.krav ?? []) lar(x); }; lar(tek); }
+  s.people.push(p);
+  upplev(s, p, 'flyttade');
+  for (const m in MEDHAVT) put(s, m, MEDHAVT[m], { [p.id]: MEDHAVT[m] });
+  andraInst(k, KLAN.stannarInst); count(s, 'framling'); if (tek) count(s, 'framlingTek');
+  const text = `${p.name} från ${k.namn} kom till byn${tek ? ` och kunde ${tekNamn}, som ingen i byn kunde` : ''}. ${vem} lät hen stanna.`;
+  log(s, text, 'move', [p.id]);
+  if (tek) kronika(s, text, 'flytt');
+  return p;
 }
 // en nybyggare (ibland ett par) kommer vandrande och slår sig ner, med lite rötter (ungefär ett dygns mat, ett år i spelet)
 function immigrate(s: State, alone: boolean) {

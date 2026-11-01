@@ -1799,3 +1799,36 @@ SCENARIER.utbrytning = {
     ];
   },
 };
+
+SCENARIER.framling = {
+  text: 'Invandring (steg 4.4.4.2, framling i liv.ts): en sällsynt främling kommer från en grannklan som inte tycker illa om byn. Hen kan ofta en teknik som ingen i byn kan, men vars krav byn kan. Byn (ledaren, annars de vuxna) avgör om hen får stanna; klanen blir vänligare om hen får det och mindre vänlig om hen visas bort. En fientlig klan skickar ingen.',
+  kor: () => {
+    const s = createState(6, START); rikBy(s); setFood(s, 300);
+    const folk = living(s), kunnat = new Set(folk.flatMap(p => Object.keys(p.tek ?? {}).filter(id => SIM.knows(p, id))));
+    const ny = SIM.TEKNIK.find(t => !kunnat.has(t.id) && t.krav.length && t.krav.every(id => kunnat.has(id))) ?? SIM.TEKNIK.find(t => !kunnat.has(t.id) && t.krav.every(id => kunnat.has(id)))!;
+    const inst = () => SIM.klanerOf(s).map(k => k.inst);
+    const i0 = inst();
+    const p = SIM.framling(s, { tek: ny.id, ja: true });
+    const k = p ? SIM.klanById(s, p.fran) : undefined;
+    const stannar = !!p && living(s).includes(p) && !!k && s.stat?.framling === 1;
+    const kan = !!p && SIM.knows(p, ny.id) && ny.krav.every(id => SIM.knows(p, id));
+    const vanligare = !!k && k.inst > i0[SIM.klanerOf(s).indexOf(k)];
+    const pop1 = living(s).length, i1 = inst();
+    SIM.framling(s, { ja: false });
+    const bort = living(s).length === pop1 && s.stat?.framlingNej === 1 && inst().some((v, i) => v < i1[i]);
+    for (const c of SIM.klanerOf(s)) c.inst = -80;
+    const fientlig = SIM.framling(s) === undefined && living(s).length === pop1 && s.stat?.framlingNej === 1;
+    for (const c of SIM.klanerOf(s)) c.inst = 20;
+    let ja = 0, nej = 0;
+    for (let i = 0; i < 40; i++) { const n0 = s.stat?.framlingNej ?? 0; if (SIM.framling(s)) ja++; else if ((s.stat?.framlingNej ?? 0) > n0) nej++; }
+    return [
+      [`främlingen får stanna och kommer från en grannklan (${k?.namn})`, stannar],
+      [`hen kan det ingen i byn kunde (${ny.namn}) och kraven under det`, kan],
+      ['klanen blir vänligare när byn tar emot hen', vanligare],
+      ['visar byn bort hen stannar hen inte, och klanen blir mindre vänlig', bort],
+      ['en fientlig klan skickar ingen', fientlig],
+      [`byn avgör själv: av 40 främlingar fick ${ja} stanna och ${nej} visades bort`, ja > 0 && nej > 0],
+      ['främlingar är sällsynta: de flesta i byn är barn till dem som redan bor där', SIM.KLAN.framling <= 0.1],
+    ];
+  },
+};
