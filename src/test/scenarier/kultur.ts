@@ -81,3 +81,36 @@ SCENARIER.sportsaker = {
     ];
   },
 };
+
+SCENARIER.snoboll = {
+  text: 'Lek i snön (steg 4.3.1.3): när snön ligger har de vuxna snöbollskrig på lekplatsen, och barnen leker i snön. Utan snö blir det inget snöbollskrig',
+  kor: () => {
+    let sno = 0, utan = 0;
+    for (let i = 0; i < 12; i++) {
+      for (const snoar of [true, false]) {
+        const s = rikDag(3 + i); (s.vader ??= { fukt: 0, sno: 0 }).sno = snoar ? 5 : 0;
+        const v = vuxna(s);
+        fritid(s, v[1]!); fritid(s, v[2]!);
+        if (spela(s, v[0]!) && s.sport?.k === 'snoboll') { if (snoar) sno++; else utan++; }
+      }
+    }
+    const s = rikDag(3); (s.vader ??= { fukt: 0, sno: 0 }).sno = 5;
+    const v = vuxna(s);
+    fritid(s, v[1]!);
+    const l = SIM.lekplats(s);
+    s.sport = { k: 'snoboll', x: l.x + l.w / 2, y: l.y + l.h / 2, start: s.now, slut: s.now + SIM.HOUR };
+    const fore = v.slice(0, 2).map(q => q.skill.traff);
+    spela(s, v[0]!); spela(s, v[1]!);
+    kor(s, 2);
+    const battre = v.slice(0, 2).filter((q, i) => q.skill.traff > fore[i]!).length;
+    const b = rikDag(3); (b.vader ??= { fukt: 0, sno: 0 }).sno = 5;
+    const lekar = SIM.living(b).filter(x => SIM.ageOf(x, b.now) < SIM.ALDER.hjalper);
+    for (const q of lekar) { q.task = undefined; SIM.chooseTask(b, q); }
+    const iSnon = lekar.filter(q => q.task?.why === 'Är barn och leker i snön').length;
+    return [
+      [`i snön blev det snöbollskrig i ${sno} av 12 byar när någon började en match, utan snö i ${utan}`, sno >= 3 && utan === 0],
+      [`${battre} av två blev bättre i träffsäkerhet av snöbollskriget`, battre === 2],
+      [`${iSnon} av ${lekar.length} små barn leker i snön`, lekar.length > 0 && iSnon > 0],
+    ];
+  },
+};

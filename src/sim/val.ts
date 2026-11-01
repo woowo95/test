@@ -13,7 +13,9 @@ import { onskan } from './naring';
 import { halsa, hemma, kanGa, vardVal, vilaHellre } from './halsa';
 import { egnaMatDygn, harMat } from './behov';
 import { FANGST, Kind, Lager, flintSpot, richness, wantsFlint } from './fynd';
-import { coldOf, nederbord, temperature } from './vader';
+import { coldOf, nederbord, snoPaMarken, temperature } from './vader';
+// barnen leker i snön när den ligger, som de vuxna har snöbollskrig (steg 4.3.1.3, sport.ts)
+const lekText = (s: State) => snoPaMarken(s) > 0 ? 'Är barn och leker i snön' : 'Är barn och leker';
 import { varselSamla } from './motgang';
 import { DJUR, DJURARTER, Djurart, GORS, canProcess, djurKvar, freeOfKinds, makeTask, toolGroups, wantsTool } from './redskap';
 import { PROJEKT, Uppgift, bastaProjekt } from './projekt';
@@ -468,7 +470,7 @@ function day(s: State, p: Person, v: Val, a: number, lazy: number) {
   const sd = s.seder.v;
   let gt: ReturnType<typeof haulJob>;
   v.dur *= VAL.pass;
-  if (a < ALDER.hjalper) { set(v, 'leka', 'Är barn och leker'); return; }
+  if (a < ALDER.hjalper) { set(v, 'leka', lekText(s)); return; }
   const fd = foodDays(s), wd = woodDays(s), ai = ageIndex(s), tot = habitTotal(p), fara = dangers(s); // farorna räknas en gång och gäller hela valet
   // att bära in är en förbättring: inte när byn fryser (talet dras ändå, så att personens följd är som förut). När byn svälter
   // bärs bara maten in, så att den inte blir liggande ute (steg 2.12.3)
@@ -515,7 +517,7 @@ function day(s: State, p: Person, v: Val, a: number, lazy: number) {
     set(v, 'kol', 'Det ligger kol kvar i den slocknade elden');
     v.dur = VAL.kolMin * MIN;
   } else if (a < ALDER.vuxen) {
-    if (rnd(s, 'val', p) < VAL.lekBas + VAL.lekSed * sd.barn) set(v, 'leka', 'Är barn och leker');
+    if (rnd(s, 'val', p) < VAL.lekBas + VAL.lekSed * sd.barn) set(v, 'leka', lekText(s));
     else { set(v, best, `Hjälper till. ${what}.`); if (tandmat) v.tandmat = true; }
   } else if ((works = rnd(s, 'val', p) < (1 - lazy) * (VAL.flitigBas + VAL.flitigAkut * u) + lazy * sat * (VAL.latBas + VAL.latAkut * u)) && build && !job!.missing) {
     building(s, p, v, job!);

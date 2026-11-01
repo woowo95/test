@@ -94,7 +94,7 @@ const DEF = {
   ved: { namn: 'Samlar grenar', yrke: 'Trähuggare', slag: 'tra', arbete: 'ved', behov: 'ved', bas: 1.3, sasong: [0.9, 1, 1, 1], egenskap: 'styrka', ger: 'grenar', takt: 2, tur: 40, vandra: { r: 2, h0: 3, h1: 10, v: 0.6 }, tungt: true, dygn: true, plats: 'skog' },
   leka: { namn: 'Leker', slag: 'leka', vandra: { r: 2, h0: 2, h1: 6, v: 1.3 }, social: true, dygn: true, plats: 'lek' },
   // sporten (steg 4.3.1, sport.ts): på lekplatsen under fritiden; task.tool är sporten och task.ref matchens start
-  sport: { namn: 'Spelar', verktyg: { brottning: 'Brottas', dragkamp: 'Drar i dragkampen', kast: 'Kastar mot målet', bollspel: 'Spelar bollspel' }, slag: 'leka', vandra: { r: 2, h0: 2, h1: 6, v: 1.3 }, social: true, dygn: true, plats: 'lek' },
+  sport: { namn: 'Spelar', verktyg: { brottning: 'Brottas', dragkamp: 'Drar i dragkampen', kast: 'Kastar mot målet', bollspel: 'Spelar bollspel', snoboll: 'Kastar snöboll' }, slag: 'leka', vandra: { r: 2, h0: 2, h1: 6, v: 1.3 }, social: true, dygn: true, plats: 'lek' },
   vila: { namn: 'Vilar', yrke: 'Dagdrivare', slag: 'vila', vila: true, dygn: true, plats: 'sang' },
   samtal: { namn: 'Samtalar vid elden', slag: 'prata', vila: true, social: true, dygn: true, plats: 'elden' },
   maltid: { namn: 'Äter vid bordet', tecken: '🍽️', vila: true, social: true, skamfri: true, dygn: true, stilla: true, plats: 'bord' }, // steg 2.2.15

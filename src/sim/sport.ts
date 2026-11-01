@@ -14,6 +14,7 @@ import { lekplats } from './stationer';
 import { freeNear } from './byggnad';
 import { rnd } from './slump';
 import { hourOf } from './tid';
+import { snoPaMarken } from './vader';
 import { balans } from './balans';
 import { HOUR, HOUR_S, MIN, Person, Skill, State, Task } from './typer';
 
@@ -23,11 +24,15 @@ export interface SportDef {
   foremal: string[]; // sakerna byn måste ha (saker.ts)
   skill: Skill; // färdigheten den tränar
   min: number; max: number; // så många spelare som behövs och som får vara med
+  nar?: keyof typeof NAR; // spelas bara då (steg 4.3.1.3): sno = när det ligger snö på marken
 }
+// när en sport kan spelas (SportDef.nar)
+const NAR = { sno: (s: State) => snoPaMarken(s) > 0 };
 export const SPORTER: SportDef[] = [
   { id: 'brottning', namn: 'Brottning', text: 'Två brottas i gräset tills den ena ligger på rygg, och de andra står runt om och hejar.', foremal: [], skill: 'narstrid', min: 2, max: 6 },
   { id: 'dragkamp', namn: 'Dragkamp', text: 'Två lag drar i var sin ände av ett rep, tills det ena laget dras över strecket.', foremal: ['rep'], skill: 'narstrid', min: 4, max: 10 },
   { id: 'kast', namn: 'Kast mot mål', text: 'De kastar stenar och pinnar mot målet i tur och ordning, och den som träffar flest vinner.', foremal: ['mal'], skill: 'traff', min: 2, max: 6 },
+  { id: 'snoboll', namn: 'Snöbollskrig', text: 'Två lag kastar snöbollar på varandra bakom vallar av snö, och den som träffas är ute.', foremal: [], skill: 'traff', min: 2, max: 10, nar: 'sno' },
   { id: 'bollspel', namn: 'Bollspel', text: 'Två lag slår bollen med slagträet och springer efter den, som i knattleikr.', foremal: ['boll', 'slagtra'], skill: 'traff', min: 4, max: 10 },
 ];
 export const SPORT_AV: Record<string, SportDef> = Object.fromEntries(SPORTER.map(d => [d.id, d]));
@@ -47,6 +52,7 @@ export const SPORT = balans('sport', {
   gladjeMin: 0.25,
   slit: 0.05, // föremålen som är redskap (bollen, slagträet, målet) slits så här mycket per match (steg 4.3.1.2)
   vinnSkill: 10, // den som vinner en match: färdigheten i sporten (0–20) plus en slump upp till så här mycket
+  snoVal: 0.5, // när en sport som bara går i snön kan spelas (nar) väljs den så här ofta (steg 4.3.1.3)
   bastMin: 5, // den som har vunnit så här många matcher i en sport, och fler än någon annan, är den bästa i den (eftermälet)
 });
 
@@ -56,7 +62,7 @@ export interface Match { k: string; x: number; y: number; start: number; slut: n
 // de som spelar i matchen (framme = de som kommit fram)
 const spelare = (s: State, m: Match, framme: boolean) => s.people.filter(q => alive(q) && q.task?.act === 'sport' && q.task.ref === m.start && (!framme || q.task.phase === 'do'));
 // sporter byn kan spela nu: föremålen finns, och det finns vuxna nog
-const kanSpela = (s: State, d: SportDef, vuxna: number) => vuxna >= d.min && d.foremal.every(k => isTool(k) ? nTools(s, k) >= 1 : amountOf(s, k) >= 1); // ett slitet redskap är fortfarande ett
+const kanSpela = (s: State, d: SportDef, vuxna: number) => vuxna >= d.min && (!d.nar || NAR[d.nar](s)) && d.foremal.every(k => isTool(k) ? nTools(s, k) >= 1 : amountOf(s, k) >= 1); // ett slitet redskap är fortfarande ett
 // matchen som går att gå med i (den som är slut glöms)
 function oppen(s: State) {
   const m = s.sport;
@@ -86,7 +92,8 @@ export function sportVal(s: State, p: Person): { why: string; spot: { x: number;
     const kan = SPORTER.filter(d => d.min <= folj.length + 1 + SPORT.fler && kanSpela(s, d, n));
     const morkt = s.now + (19 - hourOf(s.now)) * HOUR; // sporten spelas på dagen (isLight i tid.ts): matchen slutar när det blir mörkt
     if (!kan.length || !folj.length || morkt - s.now < SPORT.minuter * MIN) return undefined;
-    const d = kan[Math.floor(rnd(s, 'sport', p) * kan.length)], l = lekplats(s);
+    const sno = kan.filter(d => d.nar), val = sno.length && rnd(s, 'sport', p) < SPORT.snoVal ? sno : kan; // i snön blir det oftast snöbollskrig
+    const d = val[Math.floor(rnd(s, 'sport', p) * val.length)], l = lekplats(s);
     m = s.sport = { k: d.id, x: l.x + l.w / 2, y: l.y + l.h / 2, start: s.now, slut: Math.min(morkt, s.now + (SPORT.minuter + rnd(s, 'sport', p) * SPORT.spann) * MIN) };
     count(s, 'sportMatcher');
     for (const q of folj.slice(0, d.max - 1)) {
