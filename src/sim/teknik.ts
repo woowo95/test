@@ -94,6 +94,13 @@ export const TEKNIK: Tek[] = [
   // bältet (steg 2.3.3): kommer man på när man bär hem både redskap och börda, ganska tidigt
   { id: 'balte', namn: 'Bälte', text: 'Ett rep som flätas till ett bälte runt midjan.', effekt: 'Redskapet hänger i bältet när man bär hem, så båda händerna är fria och man bär mer.',
     omr: ['ved', 'samla', 'fiske', 'hantverk'], krav: ['rep'], niva: 2, tid: 11 },
+  // sportens föremål (steg 4.3.1.2, sport.ts): man kommer på dem när man spelar
+  { id: 'mal', namn: 'Mål', text: 'En ring av grenar som binds med rep och ställs upp på lekplatsen.', effekt: 'Man tävlar i att kasta mot målet.',
+    omr: ['sport', 'hantverk'], krav: ['rep'], niva: 2, tid: 4 },
+  { id: 'boll', namn: 'Boll', text: 'Ett skinn som sys ihop runt en näve hö.', effekt: 'Med bollen och ett slagträ spelar man bollspel.',
+    omr: ['sport', 'hantverk'], krav: ['kniv'], niva: 2, tid: 4 },
+  { id: 'slagtra', namn: 'Slagträ', text: 'Ett stycke trä som täljs till ett grepp och en bred ände.', effekt: 'Med slagträet och en boll spelar man bollspel.',
+    omr: ['sport', 'hantverk'], krav: ['kniv'], niva: 2, tid: 3 },
   // latrinen och benspaden (steg 2.7.2): spaden görs av ben, rep och en gren vid slöjdbänken, och med den grävs latrinen
   // (LATRIN i STATIONER, samma id) och rötterna fortare
   { id: 'benspade', namn: 'Benspade', text: 'Tre ben bredvid varandra som ett blad, surrade med rep vid en gren som skaft.', effekt: 'Med spaden gräver man fram rötter fortare, och gropar.',

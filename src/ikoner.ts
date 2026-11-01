@@ -49,6 +49,10 @@ export const PAL: Record<string, Record<string, string>> = {
   kniv: { h: '#7a5a36', H: '#9c7848', g: '#8f9396', G: '#c9cdd0' },
   // kläderna och bensylen (steg 2.3.2; Björn valde kläderna efter v89, bensylen är en platshållare)
   bensyl: { w: '#efe6cc', W: '#fff8e6', d: '#b8a882' },
+  // sportens föremål (steg 4.3.1.2, platshållare)
+  boll: { b: '#9a7650', B: '#c8a478', d: '#5a3e22', y: '#e8d4a0' },
+  slagtra: { h: '#7a5a36', H: '#b08a58', d: '#4a3018' },
+  mal: { h: '#7a5a36', H: '#9c7848', y: '#c8b07a' },
   mossa: { l: '#b4cc6a', G: '#7fa850', g: '#4f7a36', B: '#b48a5e', m: '#2f4a22' },
   // latrinen och benspaden (steg 2.7.2, Björn valde P6 och S1c/S1g efter v85)
   latrin: { o: '#8a6a40', O: '#b08a58', d: '#4a3018', k: '#24160a' },
@@ -2181,6 +2185,19 @@ export const PIX: Record<string, string[]> = {
     '.d....d.',
     '.d....d.',
     '.d....d.',
+  ],
+  // sportens föremål (steg 4.3.1.2): platshållare med 16 punkter per ruta
+  boll: [
+    '................', '................', '................', '......dddd......', '....ddBBBBdd....', '...dBBByBBBbd...', '...dBByBBBBbd...', '..dBBBBBBBBbbd..',
+    '..dBBBBBBBBbbd..', '..dbBBBBBBbbbd..', '...dbBBBBbbbd...', '...dbbbbbbbbd...', '....ddbbbbdd....', '......dddd......', '................', '................',
+  ],
+  slagtra: [
+    '................', '...........dd...', '..........dHHd..', '.........dHHHHd.', '........dHHHHHd.', '.......dHHHHHd..', '......dHHHHHd...', '.....dHHHHd.....',
+    '....dHHHd.......', '...dHHd.........', '..dhhd..........', '.dhhd...........', '.dhd............', '..d.............', '................', '................',
+  ],
+  mal: [
+    '................', '.....hhhhhh.....', '....h......h....', '...h........h...', '..hy........yh..', '..h..........h..', '..h..........h..', '..h..........h..',
+    '..hy........yh..', '...h........h...', '....hhhhhhhh....', '.......HH.......', '.......HH.......', '.......HH.......', '......HHHH......', '.....HH..HH.....',
   ],
   // en bensyl: ett smalt ben, slipat till en spets (platshållare)
   bensyl: [

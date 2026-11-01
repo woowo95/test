@@ -49,3 +49,35 @@ SCENARIER.sport = {
     ];
   },
 };
+
+// en match i sporten k som börjar nu på lekplatsen, och de som går med i den
+function match(s: State, k: string, med: Person[]) {
+  const l = SIM.lekplats(s);
+  s.sport = { k, x: l.x + l.w / 2, y: l.y + l.h / 2, start: s.now, slut: s.now + SIM.HOUR };
+  for (const q of med) spela(s, q);
+}
+SCENARIER.sportsaker = {
+  text: 'Sportens föremål (steg 4.3.1.2): byn gör ett mål, en boll och ett slagträ när den har vuxna nog, föremålen slits när man spelar, och den som vunnit flest matcher i en sport får det i sitt eftermäle',
+  kor: () => {
+    const s = rikDag(3, { rep: 4 });
+    const vill = ['mal', 'boll', 'slagtra'].map(k => SIM.villAv(s, k));
+    const utan = SIM.SPORTER.filter(d => d.foremal.length && !d.foremal.every(k => SIM.amountOf(s, k) >= 1)).map(d => d.id);
+    const v = vuxna(s), a = v[0]!, b = v[1]!;
+    a.skill.traff = 20; b.skill.traff = 0;
+    SIM.newTing(s, 'mal', 1, a.id);
+    let matcher = 0;
+    for (let i = 0; i < 6; i++) {
+      klockan(s, 10);
+      match(s, 'kast', [a, b]); kor(s, 2); matcher++;
+      if (i < 5) s.now += 20 * SIM.HOUR;
+    }
+    const mal = (s.ting ?? []).find(t => t.k === 'mal');
+    return [
+      [`byn vill ha ${vill.join(', ')} av målet, bollen och slagträet`, vill.every(n => n === 1)],
+      [`utan föremålen kan byn inte spela ${utan.join(' och ')}`, utan.includes('kast') && utan.includes('bollspel')],
+      [`${a.name} vann ${a.sportVinst?.kast ?? 0} av ${matcher} matcher i kast, ${b.name} ${b.sportVinst?.kast ?? 0}`, (a.sportVinst?.kast ?? 0) >= 5 && (a.sportVinst?.kast ?? 0) > (b.sportVinst?.kast ?? 0)],
+      [`${a.name}s eftermäle: ${a.fame.join(', ') || 'inget'}`, a.fame.includes('Den bästa i kast mot mål') && s.sportBast?.kast === a.id],
+      [`målet har slitits till ${mal ? mal.c.toFixed(2) : 'inget'}`, !!mal && mal.c < 1],
+    ];
+  },
+};

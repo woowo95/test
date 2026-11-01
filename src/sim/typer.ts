@@ -185,6 +185,7 @@ export interface Person {
   thoughts: Thought[];
   x: number; y: number; task?: Task;
   fame: string[];
+  sportVinst?: Record<string, number>; // matcher personen vunnit i varje sport (steg 4.3.1.2, sport.ts)
   kallad?: string[]; // yrkestaggar personen redan fått, så att det bara står i loggen första gången
   hue: number;
   tag?: string; // yrkestagg efter vad personen ägnar mest tid åt
@@ -294,6 +295,7 @@ export interface State {
   vargar?: Vargflock[]; vargNr?: number; // vargflockarna på kartan och hur många som kommit (steg 3.7.1, varg.ts)
   djurSkramd?: { g: number; t: number }[]; // kaningrupper som skrämts av en jägare, och när (steg 3.7.3, jakt.ts)
   strider?: import('./strid').StridMinne[]; // de senaste striderna i byn, så att arenan kan visa dem igen (steg 3.7.2, strid.ts)
+  sportBast?: Record<string, number>; // den bästa i varje sport (personens id, steg 4.3.1.2)
   sport?: import('./sport').Match; // matchen som pågår eller väntar på spelare (steg 4.3.1, sport.ts)
   borta?: Borta; // sammanfattningen efter bortavaron som spelaren inte stängt än (steg 3.10.22, ui/spara.ts); simuleringen rör den inte
 }

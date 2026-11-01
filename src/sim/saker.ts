@@ -95,6 +95,14 @@ const DEF = {
   ...kladSaker(),
   // mossan (steg 2.5.2): hittas när man letar i naturen och ibland när ett träd fälls. Ett förband av mossa på ett sår (halsa.ts)
   mossa: { namn: 'Mossa', skaffa: { act: 'samla' }, stack: 50, mapp: 'Material', slits: 0.0006 },
+  // sportens föremål (steg 4.3.1.2, sport.ts): bollen sys av ett skinn fyllt med hö, slagträet täljs av trä och målet är
+  // en ring av grenar med rep. De är byns och slits när man spelar
+  boll: { namn: 'Boll', skaffa: { av: { skinn: 1, torrgras: 1 }, min: 4, slag: 'liten', tek: 'boll' }, vikt: 0.2, stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true, trasig: { stat: 'bollarTrasiga', text: 'Bollen gick sönder i spelet.' },
+    gors: { text: 'Syr ihop ett skinn fyllt med hö till en boll.', stat: 'bollarGjorda', forsta: '{namn} sydde byns första boll. Nu kan man spela bollspel.' } },
+  slagtra: { namn: 'Slagträ', skaffa: { av: { ved: 1 }, min: 4, slag: 'liten', tek: 'slagtra', verktyg: { kniv: 'kniven', flinta: 'en flinta' } }, vikt: 0.6, stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true, trasig: { stat: 'slagtraTrasiga', text: 'Slagträet gick av i spelet.' },
+    gors: { text: 'Täljer ett slagträ av ett stycke trä med {verktyg}.', stat: 'slagtraGjorda', forsta: '{namn} täljde byns första slagträ. Med det slår man bollen.' } },
+  mal: { namn: 'Mål', skaffa: { av: { grenar: 2, rep: 1 }, min: 3, slag: 'liten', tek: 'mal' }, vikt: 1, stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true, trasig: { stat: 'malTrasiga', text: 'Målet föll isär.' },
+    gors: { text: 'Binder en ring av grenar med rep till ett mål att kasta mot.', stat: 'malGjorda', forsta: '{namn} band byns första mål av grenar. Nu tävlar man i att kasta.' } },
   // benspaden (steg 2.7.2): tre ben som ett blad, surrade med rep vid en gren, görs vid slöjdbänken. Med den grävs latrinen
   // (stationer.ts) och rötterna fortare (samla i handlingar.ts)
   benspade: { namn: 'Benspade', skaffa: { av: { ben: 3, rep: 1, grenar: 1 }, min: 5, slag: 'stor', tek: 'benspade' }, vikt: 0.8, stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true, trasig: { stat: 'benspadarTrasiga', text: '{namn}s benspade gick sönder.' },

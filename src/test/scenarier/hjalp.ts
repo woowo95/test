@@ -182,7 +182,7 @@ export const MATARBETE = ['samla', 'jakt', 'fiske', 'slakta', 'rensa'], TRAARBET
 export const REDSKAPSARBETE = ['korg', 'spjut', 'metspo', 'yxa', 'kniv'];
 // bygge, hantverk och fritid (kniven görs i handarbetet på fritiden, craft i val.ts). Korgen, spjutet och metspöet görs i
 // stället för maten när de saknas (withTools), så de räknas till matarbetet
-export const FORBATTRING = ['bygga', 'hantverk', 'kniv', 'promenad', 'bada', 'strand', 'samtal', 'vila', 'beratta', 'sport'];
+export const FORBATTRING = ['bygga', 'hantverk', 'kniv', 'promenad', 'bada', 'strand', 'samtal', 'vila', 'beratta', 'sport', 'sportsaker'];
 export const MATMEDREDSKAP = [...MATARBETE, 'korg', 'spjut', 'metspo'];
 // en by så rik att folk behåller allt de skaffar (delning.ts), så att ägandet kan provas
 export const rikBy = (s: State) => { s.delning = { andel: 0 }; };

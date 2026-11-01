@@ -1,4 +1,5 @@
 import type { DjurStrid } from './strid';
+import { sportFor } from './sport';
 import { ALDER, KROPP, ageOf, count, doingAct, forstaGang, gjort, living, log } from './folk';
 import { knows } from './teknik';
 import { clamp, rnd } from './slump';
@@ -189,7 +190,8 @@ const VILL: Record<string, (s: State) => number> = {
   skor: s => living(s).length,
   balte: s => living(s).length, // ett per person (steg 2.3.3)
   benspade: () => REDSKAP.spadar, // till latrinen och rötterna (steg 2.7.2)
-  vattensack: () => REDSKAP.vattensackar, // till den som inte kan gå (steg 2.10.1)
+  vattensack: () => REDSKAP.vattensackar,
+  boll: s => sportFor(s, 'boll'), slagtra: s => sportFor(s, 'slagtra'), mal: s => sportFor(s, 'mal'), // en av varje när byn har vuxna nog till sporten (sport.ts, steg 4.3.1.2) // till den som inte kan gå (steg 2.10.1)
   // en yxa per fyra över yxaFran år, och en till medan ett hus byggs (för träden där det ska stå)
   yxa: s => clamp(Math.floor(living(s).filter(q => ageOf(q, s.now) >= REDSKAP.yxaFran).length / REDSKAP.yxaPerVuxna), REDSKAP.yxaMin, REDSKAP.yxaMax) + (s.hus?.some(h => !h.klar) ? REDSKAP.yxaBygge : 0),
 };
