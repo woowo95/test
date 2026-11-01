@@ -3,7 +3,7 @@
 // finns från början, så att även en liten by har framträdanden. Formerna är rader i registret FRAMTRADANDEN. Framträdandet
 // ger publiken glädje (mer ju skickligare och mer karismatisk den som uppträder är) och får en kort text som beskriver det.
 // Ett framträdande i taget, i s.fram; de senaste står i s.framtradanden.
-import { ALDER, ageOf, alive, byId, count, getRel, isSick, living, log, ovning, stat, think } from './folk';
+import { ALDER, ageOf, alive, byId, count, getRel, gjort, isSick, living, log, ovning, stat, think } from './folk';
 import { avbryt } from './lager';
 import { eldPlats } from './karta';
 import { INTRYCK, Intryck, IntryckTyp, beratta, intryckOm } from './rykten';
@@ -57,7 +57,7 @@ export const INSTRUMENT: Record<string, InstrumentDef> = {
 };
 export const FRAM_AV: Record<string, FramDef> = Object.fromEntries(FRAMTRADANDEN.map(d => [d.id, d]));
 // färdigheten som gör framträdandet bättre och som övas när man uppträder
-export const FRAM_SKILL: Skill = 'berattande';
+export const FRAM_SKILL: Skill = 'skaldskap'; // steg 4.3.2.5; övas också av berättelser i samtalen (samtal.ts)
 
 export const FRAM = balans('framtradande', {
   fran: 18, till: 23, // ett framträdande börjar på kvällen mellan dessa timmar, när det är mörkt
@@ -265,6 +265,7 @@ export function upptradaKlar(s: State, p: Person, t: Task) {
   if (l && alive(l)) { const r = getRel(s, l, p); r.op = clamp(r.op - FRAM.hanOp, -100, 100); }
   if (pub.length >= FRAM.publik) think(p, `Uppträdde för ${pub.length} vid elden`, FRAM.egen, s.now, FRAM.gladjeTim * HOUR);
   count(s, 'framPublik', pub.length);
+  gjort(s, p, 'upptradt');
   log(s, f.text, 'world', [p.id]);
   (s.framtradanden ??= []).push({ t: f.start, k: f.k, p: p.id, namn: p.name, text: f.text, n: pub.length, q: Math.round(q * 100) / 100, inst: f.inst, bud: f.bud, betalt: f.betalt });
   if (s.framtradanden.length > FRAM.sparas) s.framtradanden.splice(0, s.framtradanden.length - FRAM.sparas);

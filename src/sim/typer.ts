@@ -69,10 +69,10 @@ export const STAT_GOR: Record<Stat, string[]> = {
   smidighet: ['Att inte råka ut för olyckor i arbetet', 'Att fånga harar', 'Att fisken sitter kvar när den nappat', 'Hur fort hen tar sig fram i skog och snår', 'Hur fint det blir som hen tillverkar', 'Hur snabb hen är och hur bra hen duckar i en strid'],
   aggression: ['Att slå i stället för att gråta när hen mår dåligt', 'Att gräla', 'Hur hårt hen straffar som ledare', 'Blodtörsten: att vilja döda, med låg empati och dåligt humör', 'Att inte ge sig i en strid'],
 };
-export const SKILLS = ['samla', 'jakt', 'fiske', 'ved', 'hantverk', 'berattande', 'matlagning', 'narstrid', 'traff'] as const; // matlagning: steg 2.8.1 (matlagning.ts); narstrid, traff: steg 3.7.2 (strid.ts). Eldkonsten togs bort i steg 3.10.8
+export const SKILLS = ['samla', 'jakt', 'fiske', 'ved', 'hantverk', 'berattande', 'matlagning', 'narstrid', 'traff', 'skaldskap'] as const; // skaldskap: steg 4.3.2.5 (framtradande.ts); matlagning: steg 2.8.1 (matlagning.ts); narstrid, traff: steg 3.7.2 (strid.ts). Eldkonsten togs bort i steg 3.10.8
 export type Skill = typeof SKILLS[number];
 export const SKILL_NAMES: Record<Skill, string> = {
-  samla: 'Samling', jakt: 'Jakt', fiske: 'Fiske', ved: 'Trähuggning', hantverk: 'Hantverk', berattande: 'Berättande', matlagning: 'Matlagning', narstrid: 'Närstrid', traff: 'Träffsäkerhet',
+  samla: 'Samling', jakt: 'Jakt', fiske: 'Fiske', ved: 'Trähuggning', hantverk: 'Hantverk', berattande: 'Berättande', matlagning: 'Matlagning', narstrid: 'Närstrid', traff: 'Träffsäkerhet', skaldskap: 'Skaldskap',
 };
 // vad varje färdighet påverkar utöver arbetena som övar den (ACTS arbete), och hur den växer
 export const SKILL_GOR: Record<Skill, string[]> = {
@@ -85,6 +85,7 @@ export const SKILL_GOR: Record<Skill, string[]> = {
   matlagning: ['Att inte bränna maten vid grillen'],
   narstrid: ['Att träffa, parera och slå hårt i en strid', 'Växer av slagsmål och brottning på lek'],
   traff: ['Att träffa med ett kast eller skott', 'Växer av kastlek och jakt'],
+  skaldskap: ['Hur bra framträdandena blir och vilka former hen kan', 'Att vilja uppträda på kvällen', 'Växer när hen berättar, sjunger, spelar eller talar'],
 };
 
 // det personrutan visar när man trycker på en färdighet (steg 3.10.6): nycklarna i p.gjort (gjort i folk.ts), det senaste
@@ -99,6 +100,7 @@ export const SKILL_STAT: Record<Skill, { k: string; namn: string; av?: string }[
   matlagning: [{ k: 'grillat', namn: 'Grillat' }],
   narstrid: [{ k: 'slagsmal', namn: 'Slagsmål' }, { k: 'vann', namn: 'Vann', av: 'slagsmal' }],
   traff: [{ k: 'kast', namn: 'Kast' }, { k: 'kastTraff', namn: 'Träffade', av: 'kast' }],
+  skaldskap: [{ k: 'upptradt', namn: 'Framträdanden' }],
 };
 
 export const AGES = ['Istid', 'Vårtid', 'Sommartid', 'Hösttid'];

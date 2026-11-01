@@ -63,6 +63,7 @@ export const SAMTAL = balans('samtal', {
   trostMin: -0.3, // en tröst där ut + like (like: charmen, ovan) är över detta gör den tröstade gladare ...
   trostTanke: 0.08, // ... så här mycket i trostTim timmar
   trostTim: 4,
+  skaldLar: 0.5, // ... och skaldskapen (steg 4.3.2.5) med skaldLar gånger lika mycket
   berattaLar: 0.04, // en berättelse övar berättande med berattaLar * (berattaInt + intelligens / berattaDiv)
   berattaInt: 0.5,
   berattaDiv: 20,
@@ -140,7 +141,7 @@ export function converse(s: State, a: Person, others: Person[], events?: TalkEve
     const d = SAMTALSSLAG[kind].v * (out + like) * (kind === 'skämt' && out < 0 ? SAMTAL.skamtOvan : 1);
     r.op += d;
     if (kind === 'tröst' && out + like > SAMTAL.trostMin) think(b, `Tröstades av ${a.name}`, SAMTAL.trostTanke, now, SAMTAL.trostTim * HOUR);
-    if (kind === 'berättelse') { a.skill.berattande = clamp(a.skill.berattande + SAMTAL.berattaLar * (SAMTAL.berattaInt + a.pot.intelligens / SAMTAL.berattaDiv), 0, 20); }
+    if (kind === 'berättelse') { a.skill.berattande = clamp(a.skill.berattande + SAMTAL.berattaLar * (SAMTAL.berattaInt + a.pot.intelligens / SAMTAL.berattaDiv), 0, 20); a.skill.skaldskap = clamp(a.skill.skaldskap + SAMTAL.skaldLar * SAMTAL.berattaLar * (SAMTAL.berattaInt + a.pot.intelligens / SAMTAL.berattaDiv), 0, 20); }
     if (kind === 'flirt') {
       const att = (stat(b, 'skonhet', now) + stat(b, 'karisma', now)) / SAMTAL.flirtAtt;
       r.rom = clamp(r.rom + (out + att) * SAMTAL.flirtRomOk, 0, 100);

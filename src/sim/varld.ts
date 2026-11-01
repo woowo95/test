@@ -6,7 +6,7 @@ import { migrateTools, toolsFromItems } from './agande';
 import { migrateFalt } from './odling';
 import { behoverStorreKarta, storreKarta } from './kartflytt';
 import { VAR, inFas, nyKalender } from './tid';
-import { ageOf, alive, byId, getRel, log, newPerson, startSkills, stridSkills, think } from './folk';
+import { ageOf, alive, byId, getRel, log, newPerson, startSkills, stridSkills, think, SKALD_START } from './folk';
 import { newSeder, sederTarget, TAGS } from './seder';
 import { clamp, gauss, rnd } from './slump';
 import { Act, DAY, Fire, NEW_H, NEW_W, Person, SEC, State, simulera, useMap } from './typer';
@@ -200,6 +200,9 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
   }],
   [17, 'v211: andligheten (steg 4.1.1.1). De som redan finns får sin ur sin egen följd, barnen delvis efter föräldrarna', s => {
     for (const p of [...s.people].sort((a, b) => a.born - b.born)) if (p.andlig === undefined) p.andlig = nyAndlighet(s, p, byId(s, p.mother), byId(s, p.father));
+  }],
+  [18, 'v234: färdigheten Skaldskap (steg 4.3.2.5) börjar av berättandet för dem som redan finns', s => {
+    for (const p of s.people) if (p.skill.skaldskap === undefined) p.skill.skaldskap = (p.skill.berattande ?? 0) * SKALD_START;
   }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];
