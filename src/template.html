@@ -268,7 +268,8 @@ button.rw { border: none; background: none; padding: 0; font: inherit; color: in
 .tidlista .tecken { width: 16px; text-align: center; font-size: 13px; line-height: 16px; }
 .controls { border-top: 1px solid var(--line); padding: 10px 14px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
 .switch { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
-#speeds { display: flex; gap: 4px; flex-wrap: wrap; }
+#speeds, #testSkicka { display: flex; gap: 4px; flex-wrap: wrap; }
+#testSkicka button { font: inherit; font-size: 13px; border-radius: 4px; padding: 3px 7px; cursor: pointer; border: 1px solid var(--line); background: transparent; color: var(--fg); display: inline-flex; align-items: center; gap: 3px; }
 #speeds button, .ghost, .primary { font: inherit; font-size: 13px; border-radius: 4px; padding: 4px 9px; cursor: pointer; border: 1px solid var(--line); background: transparent; color: var(--fg); }
 #speeds button[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
 .primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); font-weight: 700; padding: 7px 14px; font-size: 15px; }
@@ -354,6 +355,7 @@ body.testing .mapwrap { box-shadow: 0 0 0 3px var(--accent); }
           <button type="button" data-v="3600">1 tim/s</button>
           <button type="button" data-v="86400">1 år/s</button>
         </div>
+        <div id="testSkicka" hidden></div>
         <button type="button" class="ghost" id="arenaKnapp" title="Arenan: prova strider utan att byn påverkas">⚔️</button>
         <span class="spacer"></span>
         <button type="button" class="ghost" id="newVillage">Ny by</button>

@@ -104,8 +104,9 @@ export function klanSteg(s: State, dtSec: number) {
 export function andraInst(k: Klan, d: number) { k.inst = clamp(Math.round(k.inst + d), -100, 100); }
 
 // klanen en handlare kommer ifrån (handel.ts): bland dem som inte tycker illa om byn, och vem av klanens handlare
-export function handlarKlan(s: State): { klan: Klan; person: KlanPerson } | undefined {
-  const kan = klanerOf(s).filter(k => k.inst > KLAN.handelMin);
+// alla = testläget (steg 4.5.4.4): vilken klan som helst, också en som inte tycker om byn
+export function handlarKlan(s: State, alla?: boolean): { klan: Klan; person: KlanPerson } | undefined {
+  const kan = klanerOf(s).filter(k => alla || k.inst > KLAN.handelMin);
   if (!kan.length) return undefined;
   const klan = pick(s, kan, 'klan'), har = klan.personer.filter(p => p.roll === 'handlare');
   if (har.length >= KLAN.handlarePer || (har.length && rnd(s, 'klan') < 0.5)) return { klan, person: pick(s, har, 'klan') };

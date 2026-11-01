@@ -1,6 +1,6 @@
-import { AGES, BEAT, DAY, HOUR, MIN, SEC, TalkEvent, VADERLAGE, vaderNu, kalender, alive, byId, cloneState, coverOf, createState, getMap, groundOf, isLight, rikedomDelar, spar, step, temperature, visning, yearNo, State, motgangNu, motgangNasta, motgangDef, varslade } from './sim';
+import { AGES, BEAT, DAY, HOUR, MIN, SEC, TalkEvent, VADERLAGE, vaderNu, kalender, alive, byId, cloneState, coverOf, createState, getMap, groundOf, isLight, rikedomDelar, spar, step, temperature, visning, yearNo, State, motgangNu, motgangNasta, motgangDef, varslade, ROVARFLOCK, skickaRovare, skickaHandlare } from './sim';
 import { $ } from './ui/hjalp';
-import { tecknet } from './ikoner';
+import { iconImg, tecknet } from './ikoner';
 import { s, setByn, ui, nyBild, vidNyBy } from './ui/lage';
 import { TS, app, cam, layout, view, world } from './ui/scen';
 import { drawNight, drawTerrain } from './ui/terrang';
@@ -59,7 +59,7 @@ function setSpeed(v: number) {
   speed = v;
   for (const b of document.querySelectorAll<HTMLButtonElement>('#speeds button')) b.setAttribute('aria-pressed', String(Number(b.dataset.v) === v));
 }
-function leaveTest() { ui.testMode = false; $('arena').hidden = true; $('speeds').hidden = true; document.body.classList.remove('testing'); setSpeed(1); }
+function leaveTest() { ui.testMode = false; $('arena').hidden = true; $('speeds').hidden = true; $('testSkicka').hidden = true; document.body.classList.remove('testing'); setSpeed(1); }
 // testläget stängs utan att den verkliga byn kommer tillbaka (en annan by tar dess plats)
 function dropTest() { if (ui.testMode) { ($('testToggle') as HTMLInputElement).checked = false; realState = null; leaveTest(); } }
 // en ny by med slumpat frö, sparad direkt
@@ -95,7 +95,7 @@ $('testToggle').addEventListener('change', async e => {
     realState = s;
     bytBy(cloneState(s));
     spar.v = new WeakMap();
-    ui.testMode = true; $('speeds').hidden = false; document.body.classList.add('testing'); setSpeed(1);
+    ui.testMode = true; $('speeds').hidden = false; $('testSkicka').hidden = false; document.body.classList.add('testing'); setSpeed(1);
   } else {
     leaveTest();
     if (realState) { bytBy(realState); realState = null; }
@@ -106,6 +106,19 @@ $('testToggle').addEventListener('change', async e => {
 });
 for (const b of document.querySelectorAll<HTMLButtonElement>('#speeds button')) b.addEventListener('click', () => setSpeed(Number(b.dataset.v)));
 $('arenaKnapp').addEventListener('click', oppnaArena);
+// testläget (steg 4.5.4.4): en rövarflock (liten, mellan, stor) eller en handlare kommer nu. Bara i kopian av byn
+{
+  const flock: [keyof typeof ROVARFLOCK, string][] = [['liten', 'En liten rövarflock'], ['mellan', 'En mellanstor rövarflock'], ['stor', 'En stor rövarflock']];
+  $('testSkicka').innerHTML = flock.map(([k, t]) => `<button type="button" data-flock="${k}" title="${t} (${ROVARFLOCK[k]} rövare) kommer nu">${iconImg('rovare', 14)}${ROVARFLOCK[k]}</button>`).join('')
+    + `<button type="button" data-handlare="1" title="En handlare kommer nu">${iconImg('handlare', 14)}</button>`;
+  $('testSkicka').addEventListener('click', e => {
+    const b = (e.target as HTMLElement).closest<HTMLButtonElement>('button');
+    if (!b || !ui.testMode || !s) return;
+    const ok = b.dataset.flock ? skickaRovare(s, ROVARFLOCK[b.dataset.flock as keyof typeof ROVARFLOCK]) : skickaHandlare(s);
+    b.title = ok ? b.title.replace(/ \(.*finns.*\)$/, '') : `${b.title.replace(/ \(.*finns.*\)$/, '')} (det finns redan en här, eller inga grannar)`;
+    renderPanel(true);
+  });
+}
 $('newVillage').addEventListener('click', () => { $('confirmNew').hidden = false; });
 $('cancelNew').addEventListener('click', () => { $('confirmNew').hidden = true; });
 $('okNew').addEventListener('click', () => {

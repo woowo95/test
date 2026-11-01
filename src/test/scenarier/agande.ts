@@ -919,6 +919,10 @@ SCENARIER.rovare = {
     // flocken kommer från den fientliga klanen och samlas i kanten
     const k0 = SIM.klanerOf(s)[0]; for (const c of SIM.klanerOf(s)) c.inst = 10; k0.inst = -60;
     const bas = cloneState(s);
+    // testläget (steg 4.5.4.4): knapparna skickar en liten, mellanstor eller stor flock, och en handlare, också när ingen klan tycker om byn
+    const tl = (['liten', 'mellan', 'stor'] as const).map(k => { const q = cloneState(bas); const ok = SIM.skickaRovare(q, SIM.ROVARFLOCK[k]); return ok && q.rovare?.folk.length === SIM.ROVARFLOCK[k] && !SIM.skickaRovare(q, 2) ? SIM.ROVARFLOCK[k] : 0; });
+    const th = cloneState(bas); for (const c of SIM.klanerOf(th)) c.inst = -60;
+    const testHandlare = SIM.skickaHandlare(th) && !!th.handlare && th.handlare.fas === 'kommer' && !SIM.skickaHandlare(th);
     SIM.rovarnaKommer(s, 4);
     const f = s.rovare!;
     const kommer = !!f && f.folk.length === 4 && f.klan === k0.id && f.gor === 'samlas' && f.folk.every(x => x.namn && x.vapen) && (f.x < 1 || f.y < 1 || f.x > SIM.W - 1 || f.y > SIM.H - 1);
@@ -960,6 +964,7 @@ SCENARIER.rovare = {
     // en ny flock kommer inte förrän vilan är slut
     const vila = (d.rovarVila ?? 0) > d.now;
     return [
+      [`testläget skickar en liten, mellanstor och stor flock (${tl.join(', ')} rövare) och en handlare`, tl[0] > 0 && tl[0] < tl[1] && tl[1] < tl[2] && testHandlare],
       ['en ny och fattig by lockar inga rövare', fattig],
       ['en rik by lockar rövare', rik],
       ['försvaret räknas emot rikedomen', forsvar],

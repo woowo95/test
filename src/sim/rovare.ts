@@ -75,7 +75,10 @@ export function forsvaret(s: State) {
 // hur mycket byn lockar rövare (0–1): rikedomen minus försvaret
 export const lockar = (s: State) => clamp((rikedom(s) - forsvaret(s) - ROVARE.rikFran) / ROVARE.rikSpann, 0, 1);
 
-// en flock kommer till en punkt i kanten som inte är vatten. tvinga = ett scenario (antalet)
+// testläget (steg 4.5.4.4): en liten, mellanstor eller stor flock kommer nu (så många rövare). false = det finns redan en flock
+export const ROVARFLOCK = { liten: ROVARE.antal[0], mellan: ROVARE.antal[1], stor: 2 * ROVARE.antal[1] } as const;
+export function skickaRovare(s: State, n: number) { if (s.rovare) return false; rovarnaKommer(s, n); return true; }
+// en flock kommer till en punkt i kanten som inte är vatten. tvinga = ett scenario eller testläget (antalet)
 export function rovarnaKommer(s: State, tvinga?: number) {
   if (!tvinga && (s.rovare || (s.rovarVila ?? 0) > s.now || rnd(s, 'rovare') >= ROVARE.kommer * lockar(s))) return;
   const m = getMap(s.seed);

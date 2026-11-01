@@ -144,8 +144,8 @@ function filtPlats(s: State) {
 }
 
 // en handlare kommer in från kanten närmast byn (en av de två närmaste, slumpat), på land
-function kommer(s: State) {
-  const kh = handlarKlan(s); // ingen klan som tycker om byn nog: ingen handlare den här gången
+function kommer(s: State, tvinga?: boolean) {
+  const kh = handlarKlan(s, tvinga); // ingen klan som tycker om byn nog: ingen handlare den här gången
   if (!kh) return false;
   const e = eldPlats(s), m = getMap(s.seed), mal = filtPlats(s);
   const k = kanterna(e.x, e.y).filter(p => m.tiles[Math.floor(p.y) * W + Math.floor(p.x)] !== T.Vatten);
@@ -162,6 +162,10 @@ function kommer(s: State) {
   log(s, `En handlare, ${h.namn} från ${kh.klan.namn} vid ${h.hem}, kommer gående mot byn.`, 'world');
   return true;
 }
+
+// testläget (steg 4.5.4.4): en handlare skickas till byn nu, från vilken grannklan som helst. false = det finns redan en
+// handlare i byn, eller inga grannklaner
+export const skickaHandlare = (s: State) => !s.handlare && kommer(s, true);
 
 // framme: filten breds ut med varorna
 function framme(s: State, h: Handlare) {
