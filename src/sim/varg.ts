@@ -5,6 +5,7 @@ import { blodas } from './blod';
 import { bedFor } from './bygg';
 import { Bit, Rum, bitAt, blocked, dorrDef, roomAt, freeNear, gridOf } from './byggnad';
 import { dodaDjur, dragOf, djurOf, grupperOf, halsaOf, satDjurHalsa } from './djur';
+import { upplev } from './uppvaxt';
 import { ALDER, KROPP, ageOf, byId, count, forstaGang, franMitt, getRel, isSick, livet, living, log, ovning, stat, think } from './folk';
 import { halsa, kanGa, skada } from './halsa';
 import { Act, larmAvbryter } from './handlingar';
@@ -508,7 +509,7 @@ export function vargStrid(s: State, f: Vargflock, folk: Person[], avsikt: Avsikt
       dodaDjur(s, id);
       const forsta = forstaGang(s, 'vargDodad'); // räknar också
       const r = [...st.logg].reverse().find(x => x.h === 'traff' && x.b === k.id), fallde = r && folk[r.a! - 1];
-      if (fallde) { handelse(s, fallde, 'vargdodare'); livet(s, fallde, 'vargar'); if (r.v) sakVarg(s, redskapIHanden(s, fallde, r.v), fallde); // vapnet minns vargen (steg 3.9.4)
+      if (fallde) { handelse(s, fallde, 'vargdodare'); livet(s, fallde, 'vargar'); upplev(s, fallde, 'fallde'); if (r.v) sakVarg(s, redskapIHanden(s, fallde, r.v), fallde); // vapnet minns vargen (steg 3.9.4)
          if (forsta) { log(s, `${fallde.name} dödade byns första varg.`, 'world', [fallde.id]); kronikaBer(s, 'k_forstaVarg', fallde.id, personFalt(fallde)); } }
       doda.push(fallde ?? folk[0]);
     } else { kvar.push(id); satDjurHalsa(s, id, k.blod, halsaOf(s, id).sar + k.skador.reduce((a, w) => a + w.g, 0)); }
@@ -523,7 +524,7 @@ export function vargStrid(s: State, f: Vargflock, folk: Person[], avsikt: Avsikt
       if (!dod && skada(s, p, w.d, w.k, w.g, 'varg', `i en strid med vargar`)) dod = true;
       const sk = p.skador?.[p.skador.length - 1];
       if (!dod && sk && w.fast) sk.fast = 1;
-      if (!dod && w.k === 'bett') livet(s, p, 'bett', true); // rädd för vargar efteråt (steg 3.9.8)
+      if (!dod && w.k === 'bett') { livet(s, p, 'bett', true); upplev(s, p, 'vargbett'); } // rädd för vargar efteråt (steg 3.9.8, 4.1.1.2)
       if (!dod && sk && w.k === 'bett' && rnd(s, 'varg', p) < VARG.bettInf) { sk.inf ??= 0; count(s, 'vargbettInf'); }
     }
     slitKastat(s, p, st, k);

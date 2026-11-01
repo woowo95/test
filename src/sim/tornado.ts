@@ -2,6 +2,7 @@ import { balans } from './balans';
 import { rasar } from './bygg';
 import { MATERIAL, bitAt, blocked, roofed, touch } from './byggnad';
 import { alive, count, living, log } from './folk';
+import { drabbadHus, upplev } from './uppvaxt';
 import { kanGa, skada, Kroppsdel } from './halsa';
 import { eldPlats } from './karta';
 import { avbryt, minska, nagotPa, stacksOf, tidy } from './lager';
@@ -120,7 +121,7 @@ function svep(s: State, t: Tornado, a: number, b: number) {
     const v = bitAt(s, i % W, Math.floor(i / W));
     if (!v || v.k !== 'vagg' || v.b < 1) continue;
     v.c -= (MATERIAL[v.m]?.storm ?? 1) * (TORNADO.storm[0] + ur(s, t, i, 3826) * (TORNADO.storm[1] - TORNADO.storm[0]));
-    if (v.c <= 0) { rasar(s, v); t.vagg++; count(s, 'tornado vagg'); }
+    if (v.c <= 0) { const h = rasar(s, v); t.vagg++; count(s, 'tornado vagg'); drabbadHus(s, h, 'tornadon som förstörde huset'); }
     rev = true;
   }
   if (rev) touch(s);
@@ -154,7 +155,7 @@ function svep(s: State, t: Tornado, a: number, b: number) {
     const grad = TORNADO.skadaGrad[0] + ur(s, t, pp.id, 3844) * (TORNADO.skadaGrad[1] - TORNADO.skadaGrad[0]);
     t.skadade++; count(s, 'tornado skadad');
     const dod = skada(s, pp, d, k, grad, 'tornado', 'i tornadon');
-    if (dod) die(s, pp, dod);
+    if (dod) die(s, pp, dod); else upplev(s, pp, 'drabbad', 'tornadon'); // steg 4.1.1.2
   }
 }
 // avståndet från punkten (x, y) till sträckan p–q

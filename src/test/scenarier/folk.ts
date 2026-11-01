@@ -310,11 +310,11 @@ SCENARIER.relationer = {
 };
 
 SCENARIER.uppvaxt = {
-  text: 'Uppväxten (steg 3.1.2): ett barn som mister sina föräldrar minns det och blir föräldralöst, en vuxen formas inte, samma slag fastnar bara en gång, högst UPPV.max upplevelser och högst UPPV.tak åt varje håll, nära svält blir ett minne, egenskaperna är anlagen plus upplevelserna, och barnen ärver anlagen, inte det föräldrarna varit med om',
+  text: 'Uppväxten (steg 3.1.2): ett barn som mister sina föräldrar minns det och blir föräldralöst, en vuxen minns det också men blir inte föräldralös (steg 4.1.1.2), samma slag fastnar bara en gång, högst UPPV.max upplevelser och högst UPPV.tak åt varje håll, nära svält blir ett minne, egenskaperna är anlagen plus upplevelserna, och barnen ärver anlagen, inte det föräldrarna varit med om',
   kor: () => {
     const s = createState(9, START);
     const chans = Object.fromEntries(Object.entries(SIM.UPPLEVELSER).map(([k, d]) => [k, d.chans]));
-    for (const d of Object.values(SIM.UPPLEVELSER)) d.chans = 1; // allt fastnar, så att provet inte beror på slumpen
+    for (const d of Object.values(SIM.UPPLEVELSER)) d.chans = 3; // allt fastnar, också för en vuxen (en tredjedel av chansen), så att provet inte beror på slumpen
     try {
       const mor = nyInvanare(s, 'k', 35), far = nyInvanare(s, 'm', 37), barn = nyInvanare(s, 'm', 8), vuxen = nyInvanare(s, 'k', 20);
       barn.mother = mor.id; barn.father = far.id; vuxen.mother = mor.id; vuxen.father = far.id;
@@ -333,6 +333,13 @@ SCENARIER.uppvaxt = {
       const manga = nyInvanare(s, 'm', 10);
       for (const k of Object.keys(SIM.UPPLEVELSER) as SIM.UpplevelseTyp[]) SIM.upplev(s, manga, k, 'någon');
       const tak = SIM.STATS.every(k => Math.abs(SIM.uppEffekt(manga, k)) <= SIM.UPPV.tak);
+      // en vuxen (steg 4.1.1.2): bara raderna för vuxna och båda, högst UPPV.vuxenMax och UPPV.vuxenTak, och mindre effekt
+      const mangaV = nyInvanare(s, 'k', 30);
+      for (const k of Object.keys(SIM.UPPLEVELSER) as SIM.UpplevelseTyp[]) SIM.upplev(s, mangaV, k, 'någon');
+      const vuxenRader = (mangaV.upp ?? []).every(u => u.v === 1 && SIM.UPPLEVELSER[u.k].vem !== 'barn');
+      const takV = SIM.STATS.every(k => Math.abs(SIM.uppEffekt(mangaV, k)) <= SIM.UPPV.vuxenTak);
+      const sv = nyInvanare(s, 'm', 30), sb = nyInvanare(s, 'm', 9); SIM.upplev(s, sv, 'foralder', 'x'); SIM.upplev(s, sb, 'foralder', 'x');
+      const mindre = (u?: SIM.Upplevelse) => Object.values(u?.e ?? {}).reduce((a, v) => a + Math.abs(v ?? 0), 0);
       // barnen ärver anlagen: föräldrar med anlagen 10 som upplevelserna flyttat till 20
       const fa = nyInvanare(s, 'm', 30), mo = nyInvanare(s, 'k', 30);
       for (const p of [fa, mo]) { p.anlag = {} as Record<SIM.Stat, number>; for (const k of SIM.STATS) { p.anlag[k] = 10; p.pot[k] = 20; } }
@@ -342,10 +349,12 @@ SCENARIER.uppvaxt = {
       return [
         [`barnet (8 år) som miste sina föräldrar minns det och blev föräldralöst (${(barn.upp ?? []).map(SIM.upplevelseText).join('; ')})`, har(barn, 'foralder') && har(barn, 'foraldralos') && s.log.some(l => l.text.includes('Blev föräldralös'))],
         [`egenskaperna är anlagen plus upplevelserna, och anlagen sparas (${!!barn.anlag})`, flyttad && !!barn.anlag],
-        [`den vuxna (20 år) formas inte (${vuxen.upp?.length ?? 0} upplevelser)`, !vuxen.upp],
+        [`den vuxna (20 år) minns föräldrarnas död men blev inte föräldralös (${(vuxen.upp ?? []).map(SIM.upplevelseText).join('; ')})`, har(vuxen, 'foralder') && !har(vuxen, 'foraldralos') && !!vuxen.upp?.every(u => u.v === 1)],
         [`två svåra skador ger ett minne (${skador}): ${SIM.upplevelseText(barn.upp!.find(u => u.k === 'skadad')!)}`, skador === 1],
         [`ett barn nära svält minns det (${(hungrig.upp ?? []).map(u => u.k).join(', ')})`, har(hungrig, 'svalt')],
         [`högst ${SIM.UPPV.max} upplevelser (${manga.upp?.length}) och högst ${SIM.UPPV.tak} åt varje håll`, manga.upp?.length === SIM.UPPV.max && tak],
+        [`en vuxen: bara rader för vuxna och båda, högst ${SIM.UPPV.vuxenMax} (${mangaV.upp?.length}) och högst ${SIM.UPPV.vuxenTak} åt varje håll`, vuxenRader && mangaV.upp?.length === SIM.UPPV.vuxenMax && takV],
+        [`att mista en förälder formar en vuxen mindre än ett barn (${mindre(sv.upp?.[0])} mot ${mindre(sb.upp?.[0])})`, mindre(sv.upp?.[0]) > 0 && mindre(sv.upp?.[0]) < mindre(sb.upp?.[0])],
         [`barnen ärver anlagen (10), inte det upplevelserna gjort (20): medel ${medel.toFixed(1)}`, medel < 13],
       ];
     } finally {

@@ -207,9 +207,10 @@ export interface Person {
   liv?: Record<string, number>; // det hen varit med om och gjort, i tal: vargar hen dödat, folk hen vårdat, hus, svält hen överlevt … och 't:' + slaget = när det senast räknades (steg 3.9.8, folk.ts livet)
   skam?: number; // straffad med skam av ledaren: håller sig undan elden och samtalen till dess (steg 3.5.3, styre.ts)
 }
-// en upplevelse i barndomen: slaget (UPPLEVELSER i uppvaxt.ts), åldern (år), vad den gjorde med egenskaperna och vem
+// en upplevelse i barndomen eller vuxenlivet: slaget (UPPLEVELSER i uppvaxt.ts), åldern (år), vad den gjorde med egenskaperna och vem
 // eller vad den gällde
-export interface Upplevelse { k: import('./uppvaxt').UpplevelseTyp; a: number; e: Partial<Record<Stat, number>>; om?: string }
+// v = från vuxenlivet och t = när (steg 4.1.1.2)
+export interface Upplevelse { k: import('./uppvaxt').UpplevelseTyp; a: number; e: Partial<Record<Stat, number>>; om?: string; v?: 1; t?: number }
 
 // En lärdom om en plats: k = vad, a = område (8×8 rutor), v = hur mycket (eller hur rädd), c = hur säker (0–1),
 // t = när platsen sågs (den som hör det får samma tid; återväxten räknas därifrån), src = vem den hördes av (saknas = egen upplevelse), led = hur många led från den som var där, om = vad som hände.

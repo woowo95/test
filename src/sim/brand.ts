@@ -18,7 +18,7 @@ import { SAKER } from './saker';
 import { isLight, kalender } from './tid';
 import { drickPlats } from './torst';
 import { DAY, H, HEARTHS, HOUR, HOUR_S, MIN, Person, SEC, State, Task, W, inMap } from './typer';
-import { allaBarn } from './uppvaxt';
+import { allaBarn, drabbadHus, upplev } from './uppvaxt';
 import { FOREST, VAG, isSoil } from './vag';
 import { blixtNu, snoPaMarken, torrTim, vaderNu } from './vader';
 import { hash3 } from './slump';
@@ -229,7 +229,7 @@ function slocknar(s: State, b: Brand) {
     const v = bitAt(s, x, y), br = v && v.b >= 1 ? MATERIAL[v.m]?.brinner : undefined;
     if (v && br) {
       v.c -= a * BRAND.vaggSkick; rev = true;
-      if (v.c <= 0) { rasar(s, v); b.vagg++; count(s, 'brand vagg'); }
+      if (v.c <= 0) { const h = rasar(s, v); b.vagg++; count(s, 'brand vagg'); drabbadHus(s, h, 'eldsvådan som förstörde huset'); }
     }
     // sakerna brinner upp, och grödan
     for (const st of stacksOf(s)) {
@@ -285,7 +285,7 @@ function iElden(s: State, b: Brand, dtSec: number) {
     const d = DELAR[Math.floor(ur(s, p.id, 3861) * DELAR.length)], g = BRAND.iEldenGrad[0] + ur(s, p.id, 3862) * (BRAND.iEldenGrad[1] - BRAND.iEldenGrad[0]);
     b.skadade++; count(s, 'brand skadad');
     const dod = skada(s, p, d, 'brannskada', g, 'brand', 'i elden');
-    if (dod) die(s, p, dod);
+    if (dod) die(s, p, dod); else upplev(s, p, 'drabbad', 'eldsvådan'); // steg 4.1.1.2
   }
 }
 

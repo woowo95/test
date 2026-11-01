@@ -1,4 +1,4 @@
-import { allaBarn } from './uppvaxt';
+import { allaBarn, upplev } from './uppvaxt';
 import { delade, kronikaBer, personFalt } from './berattelser';
 import { ALDER, ageOf, count, log, stat, think } from './folk';
 import { sedEvent } from './seder';
@@ -154,7 +154,7 @@ function learn(s: State, p: Person, t: Tek, from?: Person) {
   if (first) kronikaBer(s, 'k_uppfann', p.id, { ...personFalt(p), teknik: t.namn.toLowerCase() });
   log(s, `${p.name} kom på hur man gör ${t.namn.toLowerCase()}. ${t.effekt}`, 'skill', [p.id]);
   think(p, `Kom på hur man gör ${t.namn.toLowerCase()}`, TEKTAL.kommaPa, s.now, TEKTAL.kommaPaTim * HOUR);
-  if (first) { p.fame.push(`Uppfann ${t.namn.toLowerCase()}`); sedEvent(s, 'nyfikenhet', TEKTAL.forstaNyfiken); allaBarn(s, 'uppfinning', `uppfann ${t.namn.toLowerCase()}`); }
+  if (first) { p.fame.push(`Uppfann ${t.namn.toLowerCase()}`); sedEvent(s, 'nyfikenhet', TEKTAL.forstaNyfiken); allaBarn(s, 'uppfinning', `uppfann ${t.namn.toLowerCase()}`); upplev(s, p, 'egenTeknik', t.namn.toLowerCase()); }
 }
 
 // arbete för tankarna framåt mot det som hör till arbetet (omr). Hantverk (slag hantverk i handlingar.ts: att tvinna rep,

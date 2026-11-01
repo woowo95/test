@@ -7,7 +7,7 @@ import { HANDELSER, INTRYCK, IntryckTyp, intryckOm, intryckText, samlatIntryck }
 import { SAKER, sakNamn } from './saker';
 import { moodOf } from './humor';
 import { HOUR, MIN, Person, Rel, SKILLS, SKILL_NAMES, STATS, Skill, Stat, State, Upplevelse } from './typer';
-import { upplevelseText } from './uppvaxt';
+import { upplev, upplevelseText } from './uppvaxt';
 import { isLight, kalender } from './tid';
 import { temperature, vaderNu } from './vader';
 import { hash3 } from './slump';
@@ -1238,6 +1238,7 @@ function gebinamn(s: State, p: Person, k: IntryckTyp, v: number) {
   const skal = skalTill(s, p, k), fore = p.binamn;
   p.binamn = { k, namn: namnet, v, t: s.now, skal };
   const heder = INTRYCK[k].tecken > 0;
+  upplev(s, p, heder ? 'hedersnamn' : 'oknamn', namnet); // steg 4.1.1.2
   const f: Fyllning = { namn: p.name, binamn: namnet, helt: heltNamn(p), hen: hen(p), skal, kallt: temperature(s) < 0, gamla: living(s).filter(q => ageOf(q, s.now) >= ALDER.gammal).length, arg: !heder && hash(s.seed, p.id, 3) < 0.5 };
   const text = berattelse(s, heder ? 'hedersnamn' : 'oknamn', p.id, f);
   log(s, `${heder ? '🏅' : '🗯️'} ${text}`, 'rel', [p.id]);

@@ -1,5 +1,6 @@
 import { balans } from './balans';
-import { alive, byId, count, franMitt, log, think } from './folk';
+import { alive, byId, count, franMitt, livet, log, think } from './folk';
+import { UPPV, upplev } from './uppvaxt';
 import { gauss } from './slump';
 import { HOUR, Person, State } from './typer';
 import { handelse } from './rykten';
@@ -63,6 +64,10 @@ export function nyKvalitet(s: State, p: Person, t: { id: number; k: string; q?: 
   if (q >= MASTERVERK) log(s, `${p.name} gjorde ${q === PERFEKT ? 'ett perfekt mästerverk' : 'ett mästerverk'}: ${namn}${t.ber?.namn ? `, som byn kallar ${t.ber.namn}` : ''}.`, 'world', [p.id]);
   // de som ser det blir imponerade (eller avundsjuka) och skrattar åt det usla (steg 3.3.1, 3.4.3)
   if (q >= MASTERVERK) handelse(s, p, q === PERFEKT ? 'perfekt' : 'masterverk', undefined, namn.toLowerCase());
+  // många usla eller fina saker, eller ett mästerverk, formar den som gjorde dem (steg 4.1.1.2)
+  if (q === 0) { livet(s, p, 'usla'); if (p.liv!.usla >= UPPV.manga) upplev(s, p, 'usla'); }
+  if (q >= MASTERVERK) upplev(s, p, 'perfekta', q === PERFEKT ? 'ett perfekt mästerverk' : 'ett mästerverk');
+  else if (q > NORMAL) { livet(s, p, 'fina'); if (p.liv!.fina >= UPPV.manga) upplev(s, p, 'perfekta', 'många fina saker'); }
   else if (q === 0) handelse(s, p, 'usel', undefined, namn.toLowerCase());
 }
 // ett mästerverk vars görare är död blir en klenod: byn minns hen genom saken (steg 3.4.3). Ger den döda göraren, annars inget

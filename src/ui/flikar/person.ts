@@ -1,5 +1,5 @@
 import { FORMAGOR, gangDelar, HALSA, Kroppsdel, KROPPSDELAR, NARING, NARINGAR, NARINGBAL, bristGrad, bristerNu, frysFaktor, naringNu, sjunker, skorbjugg, vilaTim, TORST, blodning, delSkada, halsa, skadeLista, skadeText, smarta, torstDelar } from '../../sim';
-import { pratText, relationText, beskrivning, binamnInfo, INTRYCK, Intryck, IntryckTyp, anseendeText, intryckOm, LARDOMAR, LKind, anseendeSym, dodSymbol, intryckText, samlatIntryck, SKILL_STAT, gjortDygn, ACTS, ALDER, Act, DAY, Lardom, HUMOR, SKILL_GOR, STAT_GOR, Skill, Stat, coldOf, halsaLage, hearthOf, living, roomAt, temperature, varmeDelar, varmeRaknas, viloSlag, viloTak, takEffekt, SLAG, SLAG_TECKEN, Person, KUNSKAPER, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, SEDER, SED_LIST, sedOppen, TEKNIK, BYN, formogenhetDelar, Ting, halvKlar, ageOf, alive, byId, childrenOf, drar, heldBy, ownedBy, PLATSER, PLATS_LIST, Plats, BORDA_KG, UTRUSTNING, bordOf, capacity, kvNamn, handerFor, homeKind, load, utrustning, viktOf, SAKER, ownedStock, sakNamn, slagIkon, tingNamn, STACK, describe, duty, habitShare, habitTotal, KROPP, kortTal, moodOf, num, REL, relKey, relTyper, stat, taskText, timeLabel, vidBordet, upplevelseText, uppEffekt, yrkeNamn, andlighet, andligSyns } from '../../sim';
+import { pratText, relationText, beskrivning, binamnInfo, INTRYCK, Intryck, IntryckTyp, anseendeText, intryckOm, LARDOMAR, LKind, anseendeSym, dodSymbol, intryckText, samlatIntryck, SKILL_STAT, gjortDygn, ACTS, ALDER, Act, DAY, Lardom, HUMOR, SKILL_GOR, STAT_GOR, Skill, Stat, coldOf, halsaLage, hearthOf, living, roomAt, temperature, varmeDelar, varmeRaknas, viloSlag, viloTak, takEffekt, SLAG, SLAG_TECKEN, Person, KUNSKAPER, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, SEDER, SED_LIST, sedOppen, TEKNIK, BYN, formogenhetDelar, Ting, halvKlar, ageOf, alive, byId, childrenOf, drar, heldBy, ownedBy, PLATSER, PLATS_LIST, Plats, BORDA_KG, UTRUSTNING, bordOf, capacity, kvNamn, handerFor, homeKind, load, utrustning, viktOf, SAKER, ownedStock, sakNamn, slagIkon, tingNamn, STACK, describe, duty, habitShare, habitTotal, KROPP, kortTal, moodOf, num, REL, relKey, relTyper, stat, taskText, timeLabel, vidBordet, upplevelseText, uppEffekt, vuxenUpp, Upplevelse, yrkeNamn, andlighet, andligSyns } from '../../sim';
 import { framstegSvg, hasIcon, iconImg, kvSvg, tecknet } from '../../ikoner';
 import { LAG, ansStapel, ansTecken, fmtN, bar, cap, carryTxt, cssFarg, durTxt, esc, hex, hsl, hjalpOppen, hjalpText, moodWord, pLink, prickar, relWord, sickNow, tempBar, tempOrd, trend, trendD } from '../hjalp';
 import { s, ui } from '../lage';
@@ -60,7 +60,14 @@ function presHtml(p: Person) {
       <dt>Partner</dt><dd>${pLink(byId(s, p.partner))}</dd><dt>Barn</dt><dd>${kids.length ? kids.map(pLink).join(', ') : '–'}</dd>
       <dt>Övertygelser</dt><dd>${tro.length ? tro.join(' ') : '–'}</dd>${formogenhetRad(p)}</dl>
       <h3>Viktiga händelser</h3>${p.fame.length ? `<ul class="fame">${p.fame.map(f => `<li>${esc(f.replace(/^Kom på /, 'Uppfann '))}</li>`).join('')}</ul>` : '<p class="muted">Inget som minns ännu.</p>'}
-      ${p.upp?.length ? `<h3>Upplevelser</h3><ul class="fame">${p.upp.map(u => `<li>${u.a} år: ${esc(upplevelseText(u))} <span class="muted">${esc(effektText(u.e))}</span></li>`).join('')}</ul>` : ''}`;
+      ${livet(p)}`;
+}
+// Livet (steg 4.1.1.2): upplevelserna från barndomen och från vuxenlivet, var för sig
+function livet(p: Person) {
+  const rad = (u: Upplevelse) => `<li>${u.a} år: ${esc(upplevelseText(u))} <span class="muted">${esc(effektText(u.e))}</span></li>`;
+  const barn = (p.upp ?? []).filter(u => !vuxenUpp(u)), vuxen = (p.upp ?? []).filter(vuxenUpp);
+  if (!barn.length && !vuxen.length) return '';
+  return `<h3>Livet</h3>${barn.length ? `<p class="muted">Barndomen</p><ul class="fame">${barn.map(rad).join('')}</ul>` : ''}${vuxen.length ? `<p class="muted">Vuxenlivet</p><ul class="fame">${vuxen.map(rad).join('')}</ul>` : ''}`;
 }
 // förmögenheten (steg 3.6.4): värdet av allt hen äger, ungefär i arbetstimmar (varde.ts); delarna när man trycker
 function formogenhetRad(p: Person) {
@@ -213,7 +220,7 @@ function egenHtml(p: Person) {
     const v = stat(p, k, now), id = `e-${k}-${p.id}`, per = stat(p, k, now + DAY) - v; // ett dygn = ett år
     const nu = Math.abs(per) < 0.005 ? 'Ändras inte med åldern just nu.' : `${per > 0 ? 'Växer' : 'Sjunker'} med åldern: ${per > 0 ? '+' : '−'}${visa(Math.abs(per), 2)} om året.`;
     // det som format egenskapen i barndomen (steg 3.1.2): upplevelserna och anlagen hen föddes med
-    const upp = (p.upp ?? []).filter(u => u.e[k]).map(u => `Minne från barndomen (${u.a} år): ${upplevelseText(u)}, ${plusMinus(u.e[k]!)}`);
+    const upp = (p.upp ?? []).filter(u => u.e[k]).map(u => `${vuxenUpp(u) ? 'Minne' : 'Minne från barndomen'} (${u.a} år): ${upplevelseText(u)}, ${plusMinus(u.e[k]!)}`);
     const anlag = p.anlag && uppEffekt(p, k) ? ` Anlaget är ${visa(p.anlag[k])}; upplevelserna flyttar det ${plusMinus(Math.round(uppEffekt(p, k)))}.` : '';
     const rader = [...upp, ...arbetar(SKILLS.filter(sk => ACTS[sk as Act]?.egenskap === k)), ...STAT_GOR[k]];
     return `<dt class="klick" data-hjalp="${id}" title="${esc(rader.join(', '))}">${STAT_NAMES[k]}</dt><dd class="klick" data-hjalp="${id}" title="${esc(rader.join(', '))}">${bar(v / 20)}<span>${visa(v)}</span></dd>${hjalpText(id, gorHtml(rader, nu + anlag))}`;

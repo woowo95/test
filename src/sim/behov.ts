@@ -166,7 +166,7 @@ function ran(s: State, p: Person, b: Behov, dtSec: number) {
   count(s, 'ranVann'); livet(s, p, 'ran');
   b.anvand(s, p, offer);
   log(s, `${p.name} tog ${b.namn} av ${offer.name} med våld.`, 'rel', [p.id, offer.id]);
-  upplev(s, offer, 'bestulen', p.name);
+  upplev(s, offer, 'ranad', p.name); // steg 4.1.1.2: ett rån formar mer än en stöld
   return true;
 }
 // slagsmålet i rånet: strid.ts lägger in det (behov.ts laddas före striden), ger true om rånaren vann

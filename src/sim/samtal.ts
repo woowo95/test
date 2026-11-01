@@ -1,4 +1,4 @@
-import { barnTill } from './uppvaxt';
+import { barnTill, upplev } from './uppvaxt';
 import { ALDER, REL, ageOf, count, franMitt, getRel, isKin, log, similarity, stat, think } from './folk';
 import { berattaBrist } from './naring';
 import { moodOf } from './humor';
@@ -169,5 +169,6 @@ export function skiljas(s: State, a: Person, b: Person, r: Rel) {
   log(s, gift ? `${a.name} och ${b.name} skilde sig.` : `${a.name} och ${b.name} gick skilda vägar.`, 'rel', [a.id, b.id]);
   if (gift) count(s, 'skilsmassa');
   barnTill(s, a, b, 'skilsmassa'); // barnen minns det (steg 3.1.2)
+  upplev(s, b, 'lamnad', a.name); // den som blev lämnad (steg 4.1.1.2)
   think(a, `${ord} från ${b.name}`, -SAMTAL.skiltTanke * f, now, SAMTAL.skiltDygn * f * DAY); think(b, `${ord} från ${a.name}`, -SAMTAL.skiltTanke * f, now, SAMTAL.skiltDygn * f * DAY);
 }

@@ -1,4 +1,4 @@
-import { uppvaxtDod, uppvaxtFodd } from './uppvaxt';
+import { upplev, uppvaxtDod, uppvaxtFodd } from './uppvaxt';
 import { kronikaBer, personFalt } from './berattelser';
 import { ALDER, REL, ageOf, alive, byId, count, isParent, living, log, newPerson, relKey, startSkills, think } from './folk';
 import { Sed, sedEvent } from './seder';
@@ -164,6 +164,7 @@ function immigrate(s: State, alone: boolean) {
     const age = LIV.nybyggareAlder + rnd(s, 'folk') * LIV.nybyggareAlderSpann, p = newPerson(s, sex, s.now - age * DAY);
     startSkills(s, p, age); startSmak(s, p);
     s.people.push(p);
+    upplev(s, p, 'flyttade'); // steg 4.1.1.2
     for (const k in MEDHAVT) put(s, k, MEDHAVT[k], { [p.id]: MEDHAVT[k] }); // lite mat från vandringen, så att man hinner samla innan man svälter
     return p;
   };

@@ -29,3 +29,34 @@ SCENARIER.andlighet = {
     ];
   },
 };
+
+SCENARIER.vuxenliv = {
+  text: 'Upplevelser hela livet (steg 4.1.1.2): en förälder som mister sitt barn minns det, likaså den som mister sin partner, den som blir lämnad och den gamla som ser alla jämnåriga dö; upplevelserna från vuxenlivet står för sig i Livet',
+  kor: () => {
+    const s = createState(9, START);
+    const chans = Object.fromEntries(Object.entries(SIM.UPPLEVELSER).map(([k, d]) => [k, d.chans]));
+    for (const d of Object.values(SIM.UPPLEVELSER)) d.chans = 3; // allt fastnar, så att provet inte beror på slumpen
+    try {
+      const har = (p: Person, k: string) => !!p.upp?.some(u => u.k === k && u.v === 1);
+      const mor = nyInvanare(s, 'k', 30), far = nyInvanare(s, 'm', 32), barn = nyInvanare(s, 'm', 2);
+      barn.mother = mor.id; barn.father = far.id; SIM.pair(s, mor, far, true);
+      SIM.die(s, barn, 'olycka');
+      const a = nyInvanare(s, 'k', 40), b = nyInvanare(s, 'm', 41); SIM.pair(s, a, b, true);
+      SIM.die(s, a, 'olycka');
+      const c = nyInvanare(s, 'k', 30), d = nyInvanare(s, 'm', 30); SIM.pair(s, c, d, true);
+      SIM.skiljas(s, c, d, SIM.getRel(s, c, d));
+      const g1 = nyInvanare(s, 'k', 70), g2 = nyInvanare(s, 'm', 71);
+      for (const q of SIM.living(s)) if (q !== g1 && q !== g2 && Math.abs(q.born - g1.born) <= SIM.UPPV.jamnarig * SIM.DAY) SIM.die(s, q, 'olycka');
+      SIM.die(s, g2, 'olycka');
+      return [
+        [`föräldrarna minns att de miste sitt barn (${(mor.upp ?? []).map(SIM.upplevelseText).join('; ')})`, har(mor, 'barnDod') && har(far, 'barnDod')],
+        [`den som miste sin partner minns det (${(b.upp ?? []).map(SIM.upplevelseText).join('; ')})`, !!b.upp?.some(u => u.v === 1 && SIM.upplevelseText(u).includes('sin partner'))],
+        [`den som blev lämnad minns det (${(d.upp ?? []).map(SIM.upplevelseText).join('; ')}), inte den som lämnade`, har(d, 'lamnad') && !har(c, 'lamnad')],
+        [`den gamla som såg alla jämnåriga dö (${(g1.upp ?? []).map(SIM.upplevelseText).join('; ')})`, har(g1, 'gammal')],
+        ['de vuxnas upplevelser har en tid och räknas', mor.upp!.every(u => u.t !== undefined) && (s.stat?.upp_vuxen ?? 0) >= 4],
+      ];
+    } finally {
+      for (const [k, d] of Object.entries(SIM.UPPLEVELSER)) d.chans = chans[k];
+    }
+  },
+};

@@ -1,11 +1,11 @@
 import { balans } from './balans';
-import { ageOf, alive, count, livet, living, log, stat } from './folk';
+import { ageOf, alive, count, isParent, livet, living, log, stat } from './folk';
 import { delade } from './berattelser';
 import { kronika } from './historik';
 import { clamp, hash3, rnd } from './slump';
 import { kalender, yearNo } from './tid';
 import { DAY, HOUR, Person, Rel, State } from './typer';
-import { allaBarn } from './uppvaxt';
+import { allaBarn, formas, upplev } from './uppvaxt';
 import { tornadoTid } from './tornado';
 
 // Motgångarna (steg 3.8, "Motgångarna i spelet" i designdokumentet): en hård vinter, torka, översvämning och tornado.
@@ -156,6 +156,14 @@ export function varselSamla(s: State, p: Person) {
 export const varslade = (s: State, start: number) => living(s).filter(p => p.varsel?.t === start).length;
 
 // ---------- varje timme (steg.ts) ----------
+// en förälder vars barn alla levde genom svälten (steg 4.1.1.2): hen har barn som fortfarande formas och inget av hens barn dog
+// sedan motgången började (t)
+function holdBarn(s: State, t: number, om: string) {
+  for (const p of living(s)) {
+    if (!living(s).some(q => isParent(p, q) && formas(s, q))) continue;
+    if (!s.people.some(q => isParent(p, q) && q.died !== undefined && q.died >= t)) upplev(s, p, 'holdBarn', om);
+  }
+}
 // varslet några dygn innan, och när motgången börjar och slutar: händelseloggen, byns krönika och barnens upplevelser
 export function stepMotgang(s: State) {
   const m = (s.motgang ??= {});
@@ -178,6 +186,7 @@ export function stepMotgang(s: State) {
     log(s, `${d.slutar}${dog ? ` ${dog} dog under den.` : ' Alla klarade sig.'}`, 'world');
     kronika(s, `${d.namn} tog slut${dog ? `. ${dog} dog under den` : ' och alla klarade sig'}.`);
     for (const p of living(s)) if (p.born < m.pagar.t) livet(s, p, 'mg:' + m.pagar.k); // de som klarade den (steg 3.9.8)
+    if (m.pagar.k === 'hardVinter' || m.pagar.k === 'torka') holdBarn(s, m.pagar.t, m.pagar.k === 'torka' ? 'torkan' : 'den hårda vintern');
     delete m.pagar;
   }
   if (nu && m.pagar?.t !== nu.start) {

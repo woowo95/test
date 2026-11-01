@@ -39,6 +39,7 @@ import { KLAD_SLAG, SAKER, sakNamn } from './saker';
 import { kladSkyddStrid, kladTung } from './klader';
 import { clamp, rnd } from './slump';
 import { ALDER, ageOf, byId, count, getRel, gjort, log, ovning, relKey, stat, think } from './folk';
+import { upplev } from './uppvaxt';
 import { minnsRel } from './relationer';
 import { ledareOf } from './styre';
 import { blodtorst } from './humor';
@@ -902,7 +903,7 @@ export function stridIByn(s: State, avsikt: Avsikt, sidor: [Person[], Person[]],
     }
     slitKastat(s, p, st, k);
     if (k.kryper) blodas(s, p.x, p.y, 'kryp', k.kryper * STRID.krypBlod); // släpspåret efter den som kröp undan (steg 3.7.19)
-    if (dod) { count(s, 'drap'); die(s, p, 'drap'); continue; }
+    if (dod) { count(s, 'drap'); die(s, p, 'drap'); for (const q of mot) upplev(s, q, 'dodade', p.name); continue; } // den som dödade minns det (steg 4.1.1.2)
     p.blod = Math.min(p.blod ?? 1, Math.max(HALSA.blodDod, k.blod));
     ovning(p, 'narstrid', lek ? SLAGSMAL.ovningLek : SLAGSMAL.ovning);
     // tycket för vapnet (steg 3.7.10): den som vann eller övade med det gillar det, en svår förlust ger ogillande

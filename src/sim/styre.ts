@@ -6,6 +6,7 @@ import { moodOf } from './humor';
 import { clamp } from './slump';
 import { DAY, HOUR, Person, State } from './typer';
 import { balans } from './balans';
+import { UPPV, upplev } from './uppvaxt';
 import { kronika } from './historik';
 import { Sed, drar, influence } from './seder';
 import { knows } from './teknik';
@@ -118,6 +119,7 @@ export interface Ledare { id: number; namn: string; titel: string; forr?: string
 export interface Styre {
   ledare?: number; sedan?: number; titel?: string; // ledaren nu, när hen valdes och titeln
   vintrar?: number; // istider byn klarat under ledaren
+  folk0?: number; dog0?: number; // invånarna och de som svalt eller frusit ihjäl när ledaren valdes (steg 4.1.1.2)
   krig0?: number; // byns vargjakter och strider med vargar när ledaren valdes (titeln Krigshövding)
   ai?: number; // årstiden förra timmen
   historia: Ledare[]; // alla ledare
@@ -197,13 +199,21 @@ function valj(s: State) {
   }
   if (!best) return;
   const st = styreOf(s), forsta = !st.historia.length;
-  st.ledare = best.id; st.sedan = s.now; st.vintrar = 0; st.pabud = undefined; st.oratt = 0; st.krig0 = krig(s);
+  st.ledare = best.id; st.sedan = s.now; st.vintrar = 0; st.pabud = undefined; st.oratt = 0; st.krig0 = krig(s); st.folk0 = living(s).length; st.dog0 = nodDod(s);
   const titel = st.titel = titelFor(s, best, vuxna);
   st.historia.push({ id: best.id, namn: best.name, titel, fran: s.now });
   count(s, 'ledare_vald');
   if (forsta) { st.oppna.push('rang'); best.fame.push('Byns första ledare'); kronikaBer(s, 'k_forstaLedare', best.id, { ...personFalt(best), titel: titel.toLowerCase() }); }
   else kronikaBer(s, 'k_ledare', best.id, { ...personFalt(best), titel: titel.toLowerCase() });
   log(s, forsta ? `Byn har fått sin första ledare: ${best.name}, ${titel.toLowerCase()}. Byn börjar fundera på om alla är lika mycket värda.` : `${best.name} är byns nya ledare, ${titel.toLowerCase()}.`, 'world', [best.id]);
+}
+// de som svalt eller frusit ihjäl i byn
+const nodDod = (s: State) => (s.stat?.['dog av svält'] ?? 0) + (s.stat?.['dog av kyla'] ?? 0);
+// efter varje vinter (steg 4.1.1.2): ledde ledaren byn till framgång (byn växte och ingen svalt eller frös ihjäl) eller i fördärvet
+function ledarensVinter(s: State, l: Person, st: Styre) {
+  const folk = living(s).length, folk0 = st.folk0 ?? folk, dog = nodDod(s) - (st.dog0 ?? nodDod(s));
+  if (folk > folk0 && dog === 0) upplev(s, l, 'ledFramgang');
+  else if (dog >= UPPV.fordarvDod || folk < folk0 * UPPV.fordarvKrymp) upplev(s, l, 'ledFordarv');
 }
 // titeln (steg 3.10.18): den första raden i TITLAR som passar
 const krig = (s: State) => (s.stat?.vargjakt ?? 0) + (s.stat?.vargstrid ?? 0);
@@ -336,7 +346,7 @@ export function stepStyre(s: State) {
   if (st?.ledare !== undefined) {
     const l = byId(s, st.ledare);
     if (!l || !alive(l)) slutar(s, l?.left !== undefined ? 'lämnade byn' : 'dog');
-    else if (st.ai === ISTID && ai !== ISTID) st.vintrar = (st.vintrar ?? 0) + 1;
+    else if (st.ai === ISTID && ai !== ISTID) { st.vintrar = (st.vintrar ?? 0) + 1; ledarensVinter(s, l, st); }
   }
   if (st) st.ai = ai;
   if (s.styre?.ledare === undefined) valj(s);
