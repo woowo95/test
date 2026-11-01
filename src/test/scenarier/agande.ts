@@ -974,3 +974,37 @@ SCENARIER.rovare = {
     ];
   },
 };
+
+SCENARIER.entitag = {
+  text: 'Steg 4.5.3.6: vid en arbetsbänk arbetar en i taget (STATIONER `samtidigt`, annars 1). Står någon redan vid bänken väljer en annan en annan bänk av samma sort eller ett annat arbete, och i en by som arbetar står aldrig två vid samma bänk',
+  kor: () => {
+    const s = createState(2, START); tandEld(s);
+    const st = medBank(s, 'flatarbank');
+    for (const r of s.people) r.tek = { ...r.tek, kniv: 1, flatarbank: 1, korg: 1 };
+    const [a, b] = living(s);
+    const at = SIM.vidStation(st);
+    a.task = { act: 'korg', phase: 'do', tx: at.x, ty: at.y, until: s.now + HOUR, carry: 0 } as Task;
+    const ledigForA = SIM.stationFor(s, 'korg', a) === st && SIM.kanGoras(s, 'korg', a);
+    const fullForB = SIM.upptagen(s, st, b) && !SIM.stationFor(s, 'korg', b) && !SIM.kanGoras(s, 'korg', b) && SIM.kanGoras(s, 'korg');
+    const st2: SIM.Station = { ...st, id: s.nextStation = (s.nextStation ?? 0) + 1, x: st.x + 3 }; // en bänk till bredvid
+    s.stationer!.push(st2); SIM.touch(s);
+    const andra = SIM.stationFor(s, 'korg', b) === st2;
+    a.task = undefined;
+    // i en by med två vuxna som arbetar: aldrig två vid samma bänk
+    setMat(s, { bar: 300 }); setAmount(s, 'ved', 60); setAmount(s, 'grenar', 60); setAmount(s, 'rep', 20);
+    let dubbel = 0, vid = 0;
+    for (let h = 0; h < 72 * 6; h++) {
+      kor(s, 1 / 6);
+      for (const t of [st, st2]) {
+        const n = living(s).filter(q => q.task?.phase === 'do' && SIM.stationDef(t.k)!.gor.includes(q.task.act) && (p => Math.abs(q.task!.ty - p.y) < 0.3 && Math.abs(q.task!.tx - p.x) < 1)(SIM.vidStation(t))).length;
+        if (n > 1) dubbel++; if (n) vid++;
+      }
+    }
+    return [
+      ['den som redan står vid bänken kan arbeta vidare där', ledigForA],
+      ['en annan får inte plats vid den upptagna bänken', fullForB],
+      ['hen väljer den andra bänken av samma sort', andra],
+      [`aldrig två vid samma bänk (${dubbel} gånger av ${vid} med någon vid en bänk)`, dubbel === 0],
+    ];
+  },
+};

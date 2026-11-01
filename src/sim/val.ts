@@ -203,7 +203,7 @@ export function spotFor(s: State, act: Act, p: Person): { x: number; y: number }
   const m = getMap(s.seed), d = ACTS[act], plats = d.plats ?? 'skog';
   const f = plats === 'elden' ? egenBrasa(s, p) ?? eldPlats(s) : eldPlats(s); // vid elden: vid den brinnande brasa man hör till (steg 2.9.1), annars lägerelden
   // det som görs utan bänk görs inne i byn och inte vid elden (steg 2.10.6); när det är kallt sätter man sig vid elden som förut, för värmens skull
-  const iByn = d.slag === 'hantverk' && (plats === 'elden' || plats === 'station' && !stationFor(s, act)) && coldOf(temperature(s)) === 0;
+  const iByn = d.slag === 'hantverk' && (plats === 'elden' || plats === 'station' && !stationFor(s, act, p)) && coldOf(temperature(s)) === 0;
   if (iByn && nederbord(s)) { const sal = samlingRum(s); if (sal) return punktIRuta(s, pick(s, sal.tiles, 'val', p), p); } // i regnet under tak (steg 2.11.1)
   if (iByn) return hantverkIByn(s, p);
   if (plats === 'skugga') return skuggaHar(s, p) ?? { x: p.x, y: p.y };
@@ -213,7 +213,7 @@ export function spotFor(s: State, act: Act, p: Person): { x: number; y: number }
     if (bed && roomAt(s, bed.x, bed.y)) return bed;
     const sk = skuggaNara(s, p, f.x + 0.5, f.y + 0.5); if (sk) return sk;
   }
-  if (plats === 'station') { const st = stationFor(s, act); if (st) { const at = vidStation(st); return { x: at.x + (rnd(s, 'val', p) - 0.5) * 0.6 * storlekAv(st).w, y: at.y }; } } // vid stationen, längs hela dess bredd, annars i byn (eller vid elden när det är kallt)
+  if (plats === 'station') { const st = stationFor(s, act, p); if (st) { const at = vidStation(st); return { x: at.x + (rnd(s, 'val', p) - 0.5) * 0.6 * storlekAv(st).w, y: at.y }; } } // vid stationen, längs hela dess bredd, annars i byn (eller vid elden när det är kallt)
   if (plats === 'bord') { const at = ledigPlats(s, p); if (at) return at; } // vid ett bord, annars vid elden
   if (plats === 'elden' || plats === 'station' || plats === 'bord') {
     // när det är kallt samtalar och berättar man i samlingshuset, om det är varmare där än vid elden (byggnader.ts)

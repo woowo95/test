@@ -43,7 +43,7 @@ export const RATTER: readonly Ratt[] = [
 // det som grillas nu: den första råvaran det finns tillräckligt av (gränssnittet visar den på spettet)
 export const grillVara = (s: State) => RATTER.find(r => amountOf(s, r.ra) >= MATLAG.min);
 // p kan grilla: byn har grillen, elden brinner, det finns något att grilla och ingen annan grillar
-export const kanGrilla = (s: State, p: Person) => kanGoras(s, 'grilla') && s.fire.lit && !!grillVara(s) && !doingAct(s, 'grilla', p);
+export const kanGrilla = (s: State, p: Person) => kanGoras(s, 'grilla', p) && s.fire.lit && !!grillVara(s) && !doingAct(s, 'grilla', p);
 // hur länge ett pass vid grillen varar
 export const grillTid = (s: State) => { const r = grillVara(s); return Math.min(MATLAG.maxTim * HOUR, (r ? amountOf(s, r.ra) / MATLAG.timme : 0) * HOUR + 5 * MIN); };
 // så stor del av maten p bränner
@@ -141,7 +141,7 @@ export function torkBrist(s: State) {
 }
 // p kan torka: byn har ställningen, något är klart att ta ner eller det finns rått över och plats, och ingen annan gör det
 export function kanTorka(s: State, p: Person) {
-  if (!kanGoras(s, 'torka') || doingAct(s, 'torka', p)) return false;
+  if (!kanGoras(s, 'torka', p) || doingAct(s, 'torka', p)) return false;
   const a = torkArbete(s);
   return a.ner > 1e-6 || a.upp >= TORK.min;
 }

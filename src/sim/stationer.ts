@@ -121,7 +121,7 @@ const bordTra = (w: number, h: number) => w * h * STATION.bordTra + ((w >= 2 ? 2
 // brasa = en extra eld (steg 2.9.1, brasor.ts): står nära sovplatserna den är till för (siteBrasa), och alla vuxna kan bygga den (tek är tom: den som är gammal nog att ta ansvar, ALDER.ansvar)
 export interface Utkant { till: number; avst: number; vatten?: true }
 export interface Forvar { rymmer: number; redskap?: true; tak?: true; stangd?: true; privat?: true }
-export interface StationDef { namn: string; ett?: true; ikon: string; w: number; h: number; tek: string[]; av: Record<string, number>; min: number; gor: Act[]; bara?: Act[]; vid?: Record<string, number>; verktyg?: string; utkant?: Utkant; eld?: true; kraver?: Partial<Record<Act, string>>; smutsar?: Partial<Record<Act, string>>; bygger: string; forsta: string; inne?: true; mobel?: true; flera?: true; fart?: Partial<Record<Act, number>>; brasa?: true; sover?: true; sitt?: true; platser?: true; forvar?: Forvar; pynt?: true }
+export interface StationDef { namn: string; ett?: true; ikon: string; w: number; h: number; tek: string[]; av: Record<string, number>; min: number; gor: Act[]; bara?: Act[]; vid?: Record<string, number>; verktyg?: string; utkant?: Utkant; eld?: true; kraver?: Partial<Record<Act, string>>; smutsar?: Partial<Record<Act, string>>; bygger: string; forsta: string; inne?: true; mobel?: true; flera?: true; fart?: Partial<Record<Act, number>>; brasa?: true; sover?: true; sitt?: true; platser?: true; forvar?: Forvar; pynt?: true; samtidigt?: number }
 // de enkla redskapen: görs vid slöjdbänken om byn har en, lite fortare där (fart), annars vid elden som förut (Björn, efter v90)
 const ENKLA: Act[] = ['yxa', 'spjut', 'metspo', 'kniv', 'bensyl', 'balte', 'boll', 'slagtra', 'mal', 'trumma', 'benflojt', 'lyra'];
 export const STATIONER = {
@@ -273,8 +273,20 @@ export function stationAt(s: State, x: number, y: number) {
 }
 // är rutan en plats vid ett bord (en stubbe)?
 export const sittAt = (s: State, x: number, y: number) => !!s.stationer?.length && x >= 0 && y >= 0 && x < W && stationRutor(s).sitt.has(Math.floor(y) * W + Math.floor(x));
-// den färdiga station där handlingen görs, om byn har en
-export const stationFor = (s: State, act: Act) => stationerOf(s).find(t => isKlar(t) && stationDef(t.k)?.gor.includes(act) && framFri(s, t));
+// den färdiga station där handlingen görs, om byn har en. Med p: bara en station där det finns plats åt p (steg 4.5.3.6)
+export const stationFor = (s: State, act: Act, p?: Person) => stationerOf(s).find(t => isKlar(t) && stationDef(t.k)?.gor.includes(act) && framFri(s, t) && (!p || !upptagen(s, t, p)));
+// hur många som kan arbeta vid stationen samtidigt (steg 4.5.3.6): registrets `samtidigt`, annars en vid en arbetsstation
+// (arbetsbänkarna) och hur många som helst vid de andra
+const samtidigt = (d?: StationDef) => d?.samtidigt ?? (arbetar(d) ? 1 : Infinity);
+// arbetar q vid stationen t, eller är på väg dit för att arbeta där?
+function arbetarVid(t: Station, q: Person) {
+  const k = q.task;
+  if (!k || k.phase === 'back' || !stationDef(t.k)?.gor.includes(k.act)) return false;
+  const at = vidStation(t);
+  return Math.abs(k.ty - at.y) < 0.3 && Math.abs(k.tx - at.x) <= 0.3 * storlekAv(t).w + 0.05; // platsen spotFor ger vid stationen (val.ts)
+}
+// är stationen full för p: arbetar så många andra där som får plats?
+export const upptagen = (s: State, t: Station, p?: Person) => living(s).filter(q => q !== p && arbetarVid(t, q)).length >= samtidigt(stationDef(t.k));
 // rutorna framför en arbetsstation (steg 3.6.6): där står den som arbetar, och där får inget annat stå än sittplatsen.
 // Inte förvaringen, sängarna, borden (stubbarna runt), grillen över elden eller brasan
 const arbetar = (d?: StationDef) => !!d && d.gor.length > 0 && !d.forvar && !d.sover && !d.platser && !d.eld && !d.brasa;
@@ -289,19 +301,19 @@ export const framFri = (s: State, t: Station) => framfor(t).every(q => !(s.stack
 // handlingen görs bara vid en station (bara i registret)
 const BARA = new Set<Act>(STATION_LIST.flatMap(k => (STATIONER[k] as StationDef).bara ?? []));
 // handlingen kan göras: den kräver ingen station, eller byn har en färdig (och redskapet som handlingen kräver ligger där)
-export function kanGoras(s: State, act: Act) {
+// (med p: och det finns plats åt p vid en av stationerna, steg 4.5.3.6)
+export function kanGoras(s: State, act: Act, p?: Person) {
   if (!BARA.has(act)) return true;
-  const t = stationFor(s, act), k = t && stationDef(t.k)?.kraver?.[act];
+  const t = stationFor(s, act, p), k = t && stationDef(t.k)?.kraver?.[act];
   return !!t && (!k || redskapVid(s, t, k).length > 0);
 }
 // platsen där man står och arbetar vid stationen: mitt för den på rutan söder om den
 export const vidStation = (t: Station) => { const { w, h } = storlekAv(t); return { x: t.x + w / 2, y: t.y + h + 0.1 }; };
 // hur många gånger fortare p gör act just där hen står: stationens fart för den som står vid den, annars 1
 export const fartVid = (s: State, p: { x: number; y: number }, act: Act) => {
-  const st = stationFor(s, act), f = st && stationDef(st.k)?.fart?.[act];
-  if (!f) return 1;
-  const at = vidStation(st);
-  return Math.hypot(p.x - at.x, p.y - at.y) < STATION.vidBank ? f : 1;
+  // vid den station p står vid (det kan finnas flera av samma sort, steg 4.5.3.6)
+  const st = stationerOf(s).find(t => isKlar(t) && stationDef(t.k)?.fart?.[act] && (at => Math.hypot(p.x - at.x, p.y - at.y) < STATION.vidBank)(vidStation(t)));
+  return st ? stationDef(st.k)!.fart![act]! : 1;
 };
 
 // ---------- var den står ----------
