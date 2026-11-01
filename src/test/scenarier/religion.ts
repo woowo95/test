@@ -4,6 +4,9 @@ import * as SIM from '../../sim';
 import { START } from '../kor';
 import { SCENARIER, nyInvanare } from './hjalp';
 import { hasIcon } from '../../ikoner';
+import { setByn } from '../../ui/lage';
+import { religion } from '../../ui/flikar/religion';
+import { hjalpKlick } from '../../ui/hjalp';
 
 SCENARIER.andlighet = {
   text: 'Andligheten (steg 4.1.1.1): alla har en mellan 0 och 100, grundarna spridda över hela skalan, barnen delvis som föräldrarna, och den syns först när den första tron finns',
@@ -245,6 +248,42 @@ SCENARIER.trokategori = {
     return [
       [`rädslorna hör till tron (${tro.join(', ')})`, tro.includes('fara')],
       ['platserna med mat, flinta och vatten är kvar bland lärdomarna', !['samla', 'jakt', 'fiske', 'flinta', 'vatten'].some(k => tro.includes(k as SIM.LKind))],
+    ];
+  },
+};
+
+SCENARIER.religionsflik = {
+  text: 'Fliken Religion (steg 4.1.3): syns när den första tron finns och visar varje tro med symbol, namn, antal troende, skalorna, grundaren, de troende och upplevelserna som rör tron; de minsta under Övriga trosriktningar, och alla i byn med andlighet och tro',
+  kor: () => {
+    // symbolerna ritas på en canvas; utan webbläsare räcker en låtsad som ger en tom bild
+    const g = globalThis as { document?: unknown };
+    g.document ??= { createElement: () => ({ getContext: () => ({ fillRect() {} }), toDataURL: () => 'data:,' }) };
+    const s = createState(9, START);
+    setByn(s);
+    const fore = religion.syns!();
+    const ny = (k: SIM.TeckenTyp, n: number) => {
+      const a = nyInvanare(s, 'k', 40); a.andlig = 100;
+      for (let i = 0; i < 50 && a.tro === undefined; i++) { s.now += 25 * SIM.HOUR; SIM.tecken(s, a, k); }
+      const tr = SIM.troOf(s, a.tro)!;
+      for (let j = 1; j < n; j++) nyInvanare(s, 'm', 30).tro = tr.id;
+      SIM.stepReligion(s);
+      return { a, tr };
+    };
+    const stor = ny('blixt', 5), andra = [ny('brand', 4), ny('vinterSlut', 3), ny('drom', 1)];
+    const u = { k: 'tecken' as const, a: 40, e: {}, om: 'en blixt som slog ner i granen', v: 1 as const, t: s.now, n: 1 };
+    stor.a.upp = [...stor.a.upp ?? [], u];
+    const html = religion.html();
+    hjalpKlick({ closest: () => ({ dataset: { hjalp: 'tro-ovriga' } }) } as unknown as HTMLElement); // som ett tryck på knappen
+    const oppen = religion.html();
+    const minst = SIM.troNamn(andra[2].tr), tron = (h: string) => h.split('<h3>Personer</h3>')[0]; // trosriktningarna, utan listan över personer
+    return [
+      ['fliken syns inte innan någon tror, sedan syns den', !fore && religion.syns!()],
+      [`den största tron står med namn och antal troende (${stor.tr.namn})`, html.includes(stor.tr.namn!) && html.includes('👥 5')],
+      ['grundaren står med', html.includes(`data-id="${stor.a.id}"`) && html.includes('Grundare')],
+      ['skalorna Natur – Människa och Många – En syns', html.includes('Natur') && html.includes('Människa') && html.includes('Många')],
+      ['upplevelsen som rör tron syns', html.includes('en blixt som slog ner i granen')],
+      [`den minsta tron (${minst}) ligger under Övriga trosriktningar och syns när man öppnar dem`, html.includes('Övriga trosriktningar') && !tron(html).includes(minst) && tron(oppen).includes(minst)],
+      ['alla i byn står med andlighet och tro', html.includes('<h3>Personer</h3>') && SIM.living(s).every(p => html.includes(`data-id="${p.id}"`))],
     ];
   },
 };
