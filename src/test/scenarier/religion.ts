@@ -60,3 +60,33 @@ SCENARIER.vuxenliv = {
     }
   },
 };
+
+SCENARIER.andeupplevelse = {
+  text: 'Upplevelser som flyttar andligheten (steg 4.1.1.3): åt ett håll som lottas, oftare uppåt ju andligare hen redan är, mer hos ett barn än hos en vuxen, och andligheten är den medfödda plus upplevelserna inom 0–100',
+  kor: () => {
+    const s = createState(9, START);
+    const chans = Object.fromEntries(Object.entries(SIM.UPPLEVELSER).map(([k, d]) => [k, d.chans]));
+    for (const d of Object.values(SIM.UPPLEVELSER)) d.chans = 3;
+    try {
+      const andel = (v: number) => {
+        let upp = 0;
+        for (let i = 0; i < 100; i++) { const p = nyInvanare(s, 'k', 30); p.andlig = v; SIM.upplev(s, p, 'hardVinter'); if ((p.upp?.[0]?.n ?? 0) > 0) upp++; }
+        return upp;
+      };
+      const hog = andel(90), lag = andel(10);
+      const v = nyInvanare(s, 'm', 30), b = nyInvanare(s, 'm', 8);
+      SIM.upplev(s, v, 'skadad', 'x'); SIM.upplev(s, b, 'skadad', 'x');
+      const vn = Math.abs(v.upp?.[0]?.n ?? 0), bn = Math.abs(b.upp?.[0]?.n ?? 0);
+      const t = nyInvanare(s, 'k', 30); t.andlig = 98; SIM.upplev(s, t, 'svalt'); SIM.upplev(s, t, 'frys');
+      const ingen = nyInvanare(s, 'k', 30); SIM.upplev(s, ingen, 'flyttade');
+      return [
+        [`den andliga (90) ser oftare ett tecken: uppåt ${hog} av 100, den världsliga (10) ${lag} av 100`, hog > 60 && lag < 40],
+        [`ett barn flyttas mer än en vuxen (${bn} mot ${vn})`, vn > 0 && bn > vn],
+        [`andligheten är den medfödda plus upplevelserna, inom 0–100 (${SIM.andlighet(s, t)})`, SIM.andlighet(s, t) >= 0 && SIM.andlighet(s, t) <= 100 && SIM.andlighet(s, t) === Math.max(0, Math.min(100, 98 + t.upp!.reduce((a, u) => a + (u.n ?? 0), 0)))],
+        ['en rad utan ande flyttar inte andligheten', !!ingen.upp?.length && ingen.upp.every(u => u.n === undefined)],
+      ];
+    } finally {
+      for (const [k, d] of Object.entries(SIM.UPPLEVELSER)) d.chans = chans[k];
+    }
+  },
+};
