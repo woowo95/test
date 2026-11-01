@@ -12,6 +12,7 @@ import { inherit, packUp } from './arv';
 import { balans } from './balans';
 import { RELT } from './relationer';
 import { rykteDod, startSmak } from './rykten';
+import { GudOmr, gudHandelse } from './religion';
 
 // ---------- balanstal (regel 8) ----------
 // Befolkningen regleras av naturen, inte av ett fast tak: en trång by får färre barn och fler som flyttar, en liten by lockar
@@ -64,11 +65,12 @@ const MEDHAVT: Record<string, number> = { rotter: LIV.medhavd };
 // ---------- dödsorsakerna (registret) ----------
 // text = det som står efter namnet ("dog av svält"), i loggen, krönikan och byns räknare ('dog av svält', som testerna läser).
 // sed = seden som ändras, hur mycket, och texten efter namnet i sedernas logg. En olycka i ett farligt arbete (OLYCKOR i halsa.ts) pekar hit
-interface DodDef { text: string; sed?: { k: Sed; d: number; text: string } }
+// gud = gudens område som döden hör till (steg 4.1.5); de andra dödsfallen hör till Döden
+interface DodDef { text: string; sed?: { k: Sed; d: number; text: string }; gud?: GudOmr }
 const DOD = {
-  svalt: { text: 'av svält', sed: { k: 'forsiktighet', d: LIV.sedSvalt, text: 'svalt ihjäl. Byn har blivit mer försiktig.' } },
-  kyla: { text: 'av kyla', sed: { k: 'forsiktighet', d: LIV.sedKyla, text: 'frös ihjäl. Byn har blivit mer försiktig.' } },
-  jakt: { text: 'under en jakt', sed: { k: 'forsiktighet', d: LIV.sedJakt, text: 'dog under en jakt. Byn blev lite försiktigare.' } },
+  svalt: { text: 'av svält', gud: 'skord', sed: { k: 'forsiktighet', d: LIV.sedSvalt, text: 'svalt ihjäl. Byn har blivit mer försiktig.' } },
+  kyla: { text: 'av kyla', gud: 'vintern', sed: { k: 'forsiktighet', d: LIV.sedKyla, text: 'frös ihjäl. Byn har blivit mer försiktig.' } },
+  jakt: { text: 'under en jakt', gud: 'jakt', sed: { k: 'forsiktighet', d: LIV.sedJakt, text: 'dog under en jakt. Byn blev lite försiktigare.' } },
   torst: { text: 'av törst' }, // steg 2.4.1
   blod: { text: 'av blodförlust', sed: { k: 'forsiktighet', d: LIV.sedJakt, text: 'förblödde. Byn blev lite försiktigare.' } }, // steg 2.5.1
   kallbrand: { text: 'av kallbrand', sed: { k: 'forsiktighet', d: LIV.sedJakt, text: 'dog av kallbrand. Byn blev lite försiktigare.' } }, // steg 2.5.2
@@ -78,11 +80,11 @@ const DOD = {
   alderdom: { text: 'av ålderdom' },
   barnsjukdom: { text: 'av en barnsjukdom' },
   olycka: { text: 'i en olycka' },
-  barnsang: { text: 'i barnsäng' },
-  varg: { text: 'av vargar', sed: { k: 'forsiktighet', d: LIV.sedJakt, text: 'dödades av vargar. Byn blev lite försiktigare.' } }, // steg 3.7.1 (varg.ts)
-  tornado: { text: 'i en tornado', sed: { k: 'forsiktighet', d: LIV.sedJakt, text: 'dog i tornadon. Byn blev lite försiktigare.' } }, // steg 3.8.4 (tornado.ts)
-  brand: { text: 'i en eldsvåda', sed: { k: 'forsiktighet', d: LIV.sedJakt, text: 'dog i en eldsvåda. Byn blev lite försiktigare.' } }, // steg 3.8.5 (brand.ts)
-  drap: { text: 'av våld' }, // slagen till döds i ett utbrott (steg 3.2.3, humor.ts)
+  barnsang: { text: 'i barnsäng', gud: 'atten' },
+  varg: { text: 'av vargar', gud: 'jakt', sed: { k: 'forsiktighet', d: LIV.sedJakt, text: 'dödades av vargar. Byn blev lite försiktigare.' } }, // steg 3.7.1 (varg.ts)
+  tornado: { text: 'i en tornado', gud: 'aska', sed: { k: 'forsiktighet', d: LIV.sedJakt, text: 'dog i tornadon. Byn blev lite försiktigare.' } }, // steg 3.8.4 (tornado.ts)
+  brand: { text: 'i en eldsvåda', gud: 'elden', sed: { k: 'forsiktighet', d: LIV.sedJakt, text: 'dog i en eldsvåda. Byn blev lite försiktigare.' } }, // steg 3.8.5 (brand.ts)
+  drap: { text: 'av våld', gud: 'kriget' }, // slagen till döds i ett utbrott (steg 3.2.3, humor.ts)
 } satisfies Record<string, DodDef>;
 export type Dodsorsak = keyof typeof DOD;
 export const DODSORSAKER: Record<Dodsorsak, DodDef> = DOD;
@@ -99,6 +101,7 @@ export function die(s: State, p: Person, orsak: Dodsorsak) {
   log(s, `${p.name} dog ${cause}, ${a} år gammal.`, 'death', [p.id]);
   count(s, 'doda'); count(s, 'dog ' + cause); kronikaBer(s, 'k_dog', p.id, { ...personFalt(p), orsak: cause, alder: a, partner: (q => q && alive(q) ? q.name : undefined)(byId(s, p.partner)), barn: s.people.filter(q => (q.mother === p.id || q.father === p.id) && alive(q)).length });
   if (sed) sedEvent(s, sed.k, sed.d, `${p.name} ${sed.text}`);
+  gudHandelse(s, DODSORSAKER[orsak].gud ?? 'doden', `döden som tog ${p.name}`); // tron söker en gud för det (steg 4.1.5)
   if (a < LIV.barnDod) sedEvent(s, 'barn', LIV.sedBarn, `Byn sörjer barnet ${p.name} och värnar mer om sina barn.`);
   if (a >= ALDER.hogAlder) p.fame.push(`Blev ${a} år gammal`);
   uppvaxtDod(s, p); // barnen som miste hen eller såg det (steg 3.1.2)
@@ -122,6 +125,7 @@ export function birth(s: State, mother: Person) {
   log(s, `${ch.name} föddes, ${ch.sex === 'k' ? 'dotter' : 'son'} till ${mother.name}${father ? ' och ' + father.name : ''}.`, 'birth', [ch.id, mother.id, ...(father ? [father.id] : [])]);
   count(s, 'fodda'); kronikaBer(s, 'k_fodd', ch.id, { namn: ch.name, barnet: ch.sex === 'k' ? 'dotter' : 'son', mor: mother.name, foraldrar: mother.name + (father ? ' och ' + father.name : ''), syskon: s.people.filter(q => q !== ch && q.mother === mother.id).length });
   uppvaxtFodd(s, ch); startSmak(s, ch);
+  gudHandelse(s, 'atten', `barnet ${ch.name} som föddes`); // steg 4.1.5
   think(mother, `Fick barnet ${ch.name}`, LIV.fodMor, s.now, LIV.fodDygn * DAY);
   if (father && alive(father)) think(father, `Fick barnet ${ch.name}`, LIV.fodFar, s.now, LIV.fodDygn * DAY);
   const kids = s.people.filter(q => q.mother === mother.id).length;

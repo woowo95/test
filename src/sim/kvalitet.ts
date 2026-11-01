@@ -5,6 +5,7 @@ import { gauss } from './slump';
 import { HOUR, Person, State } from './typer';
 import { handelse } from './rykten';
 import { SakMinne, sakMinne } from './berattelser';
+import { gudHandelse } from './religion';
 
 // ---------- kvaliteten (steg 2.2.2) ----------
 // Det någon gör blir olika bra: usel, slarvig, normal, fin, mästerverk eller ett perfekt mästerverk (★). Kvaliteten följer
@@ -63,7 +64,7 @@ export function nyKvalitet(s: State, p: Person, t: { id: number; k: string; q?: 
   if (KV.glad[q]) think(p, k.tanke, KV.glad[q], s.now, KV.gladTim * HOUR);
   if (q >= MASTERVERK) log(s, `${p.name} gjorde ${q === PERFEKT ? 'ett perfekt mästerverk' : 'ett mästerverk'}: ${namn}${t.ber?.namn ? `, som byn kallar ${t.ber.namn}` : ''}.`, 'world', [p.id]);
   // de som ser det blir imponerade (eller avundsjuka) och skrattar åt det usla (steg 3.3.1, 3.4.3)
-  if (q >= MASTERVERK) handelse(s, p, q === PERFEKT ? 'perfekt' : 'masterverk', undefined, namn.toLowerCase());
+  if (q >= MASTERVERK) { handelse(s, p, q === PERFEKT ? 'perfekt' : 'masterverk', undefined, namn.toLowerCase()); gudHandelse(s, 'hantverk', `mästerverket som ${p.name} gjorde`); } // steg 4.1.5
   // många usla eller fina saker, eller ett mästerverk, formar den som gjorde dem (steg 4.1.1.2)
   if (q === 0) { livet(s, p, 'usla'); if (p.liv!.usla >= UPPV.manga) upplev(s, p, 'usla'); }
   if (q >= MASTERVERK) upplev(s, p, 'perfekta', q === PERFEKT ? 'ett perfekt mästerverk' : 'ett mästerverk');

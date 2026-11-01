@@ -13,6 +13,7 @@ import { balans } from './balans';
 import { ACTS, ACT_LIST } from './handlingar';
 import type { SamtalDef } from './samtal';
 import { lartUt } from './relationer';
+import { gudHandelse } from './religion';
 
 // ---------- teknik ----------
 // Ingen föds med kunskapen om hur man gör en yxa. Den som arbetar med något kommer så småningom på hur det kan göras
@@ -154,7 +155,7 @@ function learn(s: State, p: Person, t: Tek, from?: Person) {
   if (first) kronikaBer(s, 'k_uppfann', p.id, { ...personFalt(p), teknik: t.namn.toLowerCase() });
   log(s, `${p.name} kom på hur man gör ${t.namn.toLowerCase()}. ${t.effekt}`, 'skill', [p.id]);
   think(p, `Kom på hur man gör ${t.namn.toLowerCase()}`, TEKTAL.kommaPa, s.now, TEKTAL.kommaPaTim * HOUR);
-  if (first) { p.fame.push(`Uppfann ${t.namn.toLowerCase()}`); sedEvent(s, 'nyfikenhet', TEKTAL.forstaNyfiken); allaBarn(s, 'uppfinning', `uppfann ${t.namn.toLowerCase()}`); upplev(s, p, 'egenTeknik', t.namn.toLowerCase()); }
+  if (first) { p.fame.push(`Uppfann ${t.namn.toLowerCase()}`); sedEvent(s, 'nyfikenhet', TEKTAL.forstaNyfiken); allaBarn(s, 'uppfinning', `uppfann ${t.namn.toLowerCase()}`); upplev(s, p, 'egenTeknik', t.namn.toLowerCase()); gudHandelse(s, 'hantverk', `${t.namn.toLowerCase()} som ${p.name} kom på`); }
 }
 
 // arbete för tankarna framåt mot det som hör till arbetet (omr). Hantverk (slag hantverk i handlingar.ts: att tvinna rep,

@@ -5,6 +5,7 @@ import { ageOf, alive, count, isParent, living, log, stat } from './folk';
 import { UPPV, formas, upplev } from './uppvaxt';
 import { yearNo } from './tid';
 import { kronika } from './historik';
+import type { IntryckTyp } from './rykten';
 
 // Religionen (fas 4.1, "Religion" i designdokumentet). Andligheten (steg 4.1.1.1) är en egenskap hos varje person, 0–100:
 // hur viktigt det heliga är för hen, inte vad hen tror på. Den ärvs delvis och flyttas av upplevelserna (uppvaxt.ts, steg
@@ -49,6 +50,16 @@ export const NIVA = balans('troniva', {
   prastAnde: 70, // andligheten hos den som kan bli präst ...
   prastKarisma: 14, // ... och karisman (1–20)
   kyrka: 15, // kyrka: så här många tror, en präst och en helig byggnad (hov, steg 7.2.10)
+});
+// gudarna (steg 4.1.5, "Gudarna" i designdokumentet; startvärden)
+export const GUD = balans('gudar', {
+  ande: 35, // en tro under så här på skalan Natur – Människa ser sina gudar som andar i djur, träd och platser ...
+  forfader: 65, // ... och en tro över så här ser dem som förfäder: döda bybor som blivit heliga. Mellan dem gudar i människoform
+  en: 70, // en tro över så här på skalan Många – En har bara en gud, som tar över de nya områdena
+  fod: 0.15, // chansen att en stor händelse i ett område som tron saknar en gud för föder en ny gud
+  forfaderChans: 0.005, // chansen per timme att en död bybo som byn berättar om blir förfader i en tro på Människa-sidan
+  generation: 20, // tidigast så här många dygn (år i spelet) efter döden, och när ingen som kände hen lever
+  glom: 10, // en gud som inget i hens område bekräftat på så här många dygn (år i spelet) bleknar och glöms, om tron har fler gudar
 });
 
 // en ny persons andlighet: grundarna och de som flyttar in slumpas jämnt över 0–100, ett barn får en del av föräldrarnas
@@ -120,42 +131,75 @@ function satSkala(s: State, tr: Tro, k: SkalaId) {
   (tr.sk ??= {})[k] = p ? Math.round(rnd(s, 'tro', p) * 100) : 50;
 }
 
+// ---------- gudarna (registret, steg 4.1.5) ----------
+// ett område som en gud råder över: namn (i listor och fliken), om (i meningar: "råder över åskan och himlen"), forled: ordleden
+// som namnet börjar med (Is-grim, Eld-vald), i: var anden bor på Natur-sidan, heder: hedersnamnen (rykten.ts) som knyter en död
+// bybo till området, och symbolen (ikoner.ts). Händelserna som föder området står där de händer (gudHandelse)
+interface GudDef { namn: string; om: string; forled: string[]; i: string[]; heder: IntryckTyp[]; sym: string }
+export const GUDAR = {
+  aska: { namn: 'Åska och himmel', om: 'åskan och himlen', forled: ['Dun', 'Blix', 'Sky', 'Ås'], i: ['åskmolnen', 'den stora örnen', 'den höga eken'], heder: [], sym: 'gud_aska' },
+  sjon: { namn: 'Sjön och vattnet', om: 'sjön och vattnet', forled: ['Djup', 'Våg', 'Sjö', 'Strand'], i: ['den stora gäddan', 'djupet', 'forsen'], heder: [], sym: 'gud_sjon' },
+  skord: { namn: 'Skörd och jord', om: 'skörden och jorden', forled: ['Ax', 'Korn', 'Mull', 'Fröd'], i: ['den första tuvan', 'det gamla äppelträdet', 'åkerns sten'], heder: ['generos', 'flitig', 'rattvis'], sym: 'gud_skord' },
+  doden: { namn: 'Döden', om: 'döden', forled: ['Grav', 'Mörk', 'Natt', 'Skugg'], i: ['korpen', 'den döda granen', 'mossen'], heder: [], sym: 'gud_doden' },
+  jakt: { namn: 'Jakt och skog', om: 'jakten och skogen', forled: ['Varg', 'Hjort', 'Skog', 'Björk'], i: ['den vita hjorten', 'den gamla vargen', 'den stora granen'], heder: ['vargdodare'], sym: 'gud_jakt' },
+  elden: { namn: 'Elden', om: 'elden', forled: ['Eld', 'Glöd', 'Brand', 'Bål'], i: ['glöden', 'den svarta stenen vid elden', 'röken'], heder: [], sym: 'gud_elden' },
+  vintern: { namn: 'Vintern och isen', om: 'vintern och isen', forled: ['Is', 'Frost', 'Snö', 'Rim'], i: ['isen på sjön', 'snöugglan', 'den frusna forsen'], heder: [], sym: 'gud_vintern' },
+  solen: { namn: 'Solen', om: 'solen', forled: ['Sol', 'Ljus', 'Dag', 'Glans'], i: ['solstenen', 'lärkan', 'kullen i öster'], heder: [], sym: 'gud_solen' },
+  atten: { namn: 'Ätten', om: 'ätten och barnen', forled: ['Ätt', 'Ung', 'Barn', 'Stam'], i: ['den gamla linden', 'källan', 'björnmodern'], heder: ['hjalpsam'], sym: 'gud_atten' },
+  kriget: { namn: 'Kriget', om: 'kriget och striden', forled: ['Sköld', 'Spjut', 'Strid', 'Hugg'], i: ['vildsvinet', 'den kluvna stenen', 'korpen'], heder: ['stark'], sym: 'gud_kriget' },
+  hantverk: { namn: 'Hantverket', om: 'hantverket', forled: ['Smid', 'Sten', 'Hamr', 'Tälj'], i: ['flintberget', 'bävern', 'den gamla stubben'], heder: ['skicklig', 'rik'], sym: 'gud_hantverk' },
+} satisfies Record<string, GudDef>;
+export type GudOmr = keyof typeof GUDAR;
+export const GUD_OMR: Record<GudOmr, GudDef> = GUDAR;
+// namnets slut (Is-grim, Eld-vald, Djup-hild), och namnen på verkliga gudar som aldrig får bli ett namn
+const EFTERLED = ['grim', 'vald', 'hild', 'mund', 'gerd', 'run', 'ulf', 'björn', 'dis', 'vi', 'stav', 'frid'];
+const VERKLIGA = new Set(['tor', 'oden', 'odin', 'frej', 'frey', 'freja', 'freyja', 'loke', 'loki', 'balder', 'baldr', 'tyr', 'njord', 'heimdall', 'brage', 'idun', 'frigg', 'ull', 'vidar', 'vale', 'hod', 'höder', 'sif', 'skade', 'hel', 'ran', 'ägir', 'aegir', 'forsete', 'mimer', 'gefjon', 'eir', 'nanna', 'gerd', 'magne', 'mode', 'ymer', 'surt', 'sol', 'mane', 'jord', 'saga']);
+const FORMER = { ande: ['ande', 'Anden'], gud: ['gud', 'Guden'], forfader: ['förfader', 'Förfadern'] } as const; // obestämd och bestämd form
+export type GudForm = keyof typeof FORMER;
+export const formNamn = (f: GudForm, bestamd = false) => FORMER[f][bestamd ? 1 : 0];
+// en gud i en tro: områdena den råder över, namnet, formen, var anden bor (i) eller vem förfadern var (pid), när den kom
+// (t och året ar), när något i dess område senast bekräftade den (bekr), berättelsen om hur den kom till och när den glömdes
+export interface Gud { omr: GudOmr[]; namn: string; form: GudForm; i?: string; pid?: number; t: number; ar: number; bekr: number; ber: string; slut?: number }
+export const gudarOf = (tr: Tro) => (tr.gudar ?? []).filter(g => g.slut === undefined);
+const stor = (t: string) => t[0].toUpperCase() + t.slice(1);
+const gudPerson = (s: State, tr: Tro) => s.people.find(q => q.id === tr.grundare && alive(q)) ?? troende(s, tr)[0];
+
 // ---------- tecknen (registret) ----------
 // det oförklarliga som kan bli en tro (steg 4.1.2.1). text: vad hen var med om ({om} = vem eller vad), natur: var tron börjar på
 // skalan Natur – Människa (0 = andar i djur, väder och platser, 100 = förfäder och helgon). bakom, vill och svek: tolkningen,
 // en av varje slumpas: vem eller vad som står bakom, vad den vill och vad som händer om man sviker den. sym: symbolen (ikoner.ts) och
-// namn: namnen tron kan få när den delas av TRO.namn (steg 4.1.2.3)
-interface TeckenDef { text: string; natur: number; sym: string; namn: string[]; bakom: string[]; vill: string[]; svek: string[] }
+// namn: namnen tron kan få när den delas av TRO.namn (steg 4.1.2.3). omr: gudens område (steg 4.1.5)
+interface TeckenDef { text: string; natur: number; omr: GudOmr; sym: string; namn: string[]; bakom: string[]; vill: string[]; svek: string[] }
 export const TECKEN = {
-  blixt: { text: 'blixten som slog ner', natur: 15, sym: 'tro_blixt', namn: ['Åskans tro', 'Hammarens folk', 'Tordönets väg'],
+  blixt: { text: 'blixten som slog ner', natur: 15, omr: 'aska', sym: 'tro_blixt', namn: ['Åskans tro', 'Hammarens folk', 'Tordönets väg'],
     bakom: ['Den som bor i åskmolnen', 'Himlens hammare', 'Den stora fågeln vars vingar dånar'],
     vill: ['att man tystnar när det mullrar', 'en bit av varje byte på den höga stenen', 'att elden i byn aldrig får slockna'],
     svek: ['blixten slår ner i ens hus', 'skogen brinner', 'barnen blir döva'] },
-  brand: { text: 'elden som spred sig i skogen', natur: 20, sym: 'tro_brand', namn: ['Eldens tro', 'Lågans folk', 'Askans väg'],
+  brand: { text: 'elden som spred sig i skogen', natur: 20, omr: 'elden', sym: 'tro_brand', namn: ['Eldens tro', 'Lågans folk', 'Askans väg'],
     bakom: ['Den röda som äter skogen', 'Eldens moder', 'Den hungriga i lågorna'],
     vill: ['ved i elden varje kväll innan man äter själv', 'att ingen spottar i elden', 'att askan bärs ut till skogen'],
     svek: ['elden tar huset', 'lågorna kommer om natten', 'man fryser ihjäl'] },
-  vinterSlut: { text: 'den hårda vintern som tog slut', natur: 25, sym: 'tro_vinter', namn: ['Vinterns tro', 'Isens folk', 'Den långa nattens väg'],
+  vinterSlut: { text: 'den hårda vintern som tog slut', natur: 25, omr: 'vintern', sym: 'tro_vinter', namn: ['Vinterns tro', 'Isens folk', 'Den långa nattens väg'],
     bakom: ['Den vita som sover under isen', 'Vinterns gamle', 'Solen som kom tillbaka'],
     vill: ['att man delar maten när det är kallt', 'att den första snön hälsas med tystnad', 'att man tänder eld i mörkret'],
     svek: ['vintern kommer tillbaka och stannar', 'isen tar barnen', 'kölden kryper in i husen'] },
-  torkaSlut: { text: 'regnet som kom efter torkan', natur: 20, sym: 'tro_regn', namn: ['Regnets tro', 'Källans folk', 'Molnens väg'],
+  torkaSlut: { text: 'regnet som kom efter torkan', natur: 20, omr: 'solen', sym: 'tro_regn', namn: ['Regnets tro', 'Källans folk', 'Molnens väg'],
     bakom: ['Den som bär regnet', 'Molnens moder', 'Källans ande'],
     vill: ['att det första vattnet hälls ut på marken', 'att ingen slösar med vatten', 'att man sjunger när det regnar'],
     svek: ['regnet uteblir', 'sjön torkar ut', 'grödorna vissnar'] },
-  flodSlut: { text: 'vattnet som drog sig tillbaka', natur: 15, sym: 'tro_flod', namn: ['Djupets tro', 'Sjöns folk', 'Vågornas väg'],
+  flodSlut: { text: 'vattnet som drog sig tillbaka', natur: 15, omr: 'sjon', sym: 'tro_flod', namn: ['Djupets tro', 'Sjöns folk', 'Vågornas väg'],
     bakom: ['Den som bor i djupet', 'Sjöns herre', 'Vattnets vrede'],
     vill: ['en fisk tillbaka i vattnet för varje fångst', 'att man inte bygger för nära stranden', 'att man är tyst vid strandkanten'],
     svek: ['vattnet stiger igen', 'fisken försvinner', 'någon drunknar'] },
-  jakt: { text: 'haren som gick att fånga med bara händerna', natur: 15, sym: 'tro_hare', namn: ['Bytets tro', 'Skogens folk', 'Jägarens väg'],
+  jakt: { text: 'haren som gick att fånga med bara händerna', natur: 15, omr: 'jakt', sym: 'tro_hare', namn: ['Bytets tro', 'Skogens folk', 'Jägarens väg'],
     bakom: ['Harens moder', 'Skogens herre', 'Den gröna som ger bytet'],
     vill: ['att den första biten lämnas i skogen', 'att man tackar bytet', 'att ingen jagar mer än man behöver'],
     svek: ['djuren flyr', 'spjuten missar', 'jägaren blir själv jagad'] },
-  barnFrisk: { text: 'att {om} överlevde en svår sjukdom', natur: 75, sym: 'tro_barn', namn: ['Förfädernas tro', 'De dödas folk', 'Minnets väg'],
+  barnFrisk: { text: 'att {om} överlevde en svår sjukdom', natur: 75, omr: 'atten', sym: 'tro_barn', namn: ['Förfädernas tro', 'De dödas folk', 'Minnets väg'],
     bakom: ['De döda som vakar över barnen', 'Den gamla modern', 'Förfäderna'],
     vill: ['att man talar om de döda vid elden', 'att barnen får äta först', 'att ingen glöms'],
     svek: ['sjukdomen kommer tillbaka', 'barnen blir sjuka', 'de döda vänder sig bort'] },
-  drom: { text: 'en dröm', natur: 65, sym: 'tro_drom', namn: ['Drömmarnas tro', 'Nattens folk', 'Rösternas väg'],
+  drom: { text: 'en dröm', natur: 65, omr: 'doden', sym: 'tro_drom', namn: ['Drömmarnas tro', 'Nattens folk', 'Rösternas väg'],
     bakom: ['Den som talar i sömnen', 'Förfäderna', 'Rösten i mörkret'],
     vill: ['att man berättar sina drömmar', 'att man sover med huvudet mot elden', 'att man lyssnar på de gamla'],
     svek: ['drömmarna blir mardrömmar', 'man går vilse i skogen', 'de döda kommer tillbaka'] },
@@ -168,8 +212,8 @@ export const teckenText = (k: TeckenTyp, om?: string) => TDEF[k].text.replace('{
 // en tro (steg 4.1.2): vem som grundade den (id och namn), när, tecknet den kom ur och tolkningen. natur och manga är de två
 // första skalorna (0–100: Natur – Människa och Många – En). bekr: när ett tecken senast bekräftade den. slut: när den sista
 // som trodde dog. ar: året den kom. namn, sym och ber (berättelsen om hur den började) får den när TRO.namn tror (steg 4.1.2.3).
-// niva: index i NIVAER (steg 4.1.4), sk: värdet på de skalor som låsts upp efter de två första
-export interface Tro { id: number; grundare: number; gnamn: string; t: number; k: TeckenTyp; om?: string; bakom: string; vill: string; svek: string; natur: number; manga: number; bekr: number; slut?: number; ar: number; namn?: string; sym?: string; ber?: string; niva?: number; sk?: Partial<Record<SkalaId, number>> }
+// niva: index i NIVAER (steg 4.1.4), sk: värdet på de skalor som låsts upp efter de två första, gudar: trons gudar (steg 4.1.5)
+export interface Tro { id: number; grundare: number; gnamn: string; t: number; k: TeckenTyp; om?: string; bakom: string; vill: string; svek: string; natur: number; manga: number; bekr: number; slut?: number; ar: number; namn?: string; sym?: string; ber?: string; niva?: number; sk?: Partial<Record<SkalaId, number>>; gudar?: Gud[] }
 export const troOf = (s: State, id: number | undefined) => id === undefined ? undefined : s.tron?.find(t => t.id === id);
 export const troende = (s: State, tr: Tro) => living(s).filter(p => p.tro === tr.id);
 // tolkningen som meningar: "Den som bor i åskmolnen vill att man tystnar när det mullrar. Om man sviker: blixten slår ner i ens hus."
@@ -182,7 +226,7 @@ export function tecken(s: State, p: Person, k: TeckenTyp, om?: string) {
   const text = teckenText(k, om);
   upplev(s, p, 'tecken', text);
   const egen = troOf(s, p.tro);
-  if (egen) { egen.bekr = s.now; p.troStyrka = Math.min(100, (p.troStyrka ?? 0) + TRO.bekrafta); count(s, 'tro_bekr'); return; }
+  if (egen) { egen.bekr = s.now; p.troStyrka = Math.min(100, (p.troStyrka ?? 0) + TRO.bekrafta); count(s, 'tro_bekr'); if (egen.namn) gudFor(s, egen, TDEF[k].omr, text); return; }
   if (formas(s, p) || andlighet(s, p) < TRO.grunda || rnd(s, 'tro', p) >= TRO.grundaChans) return;
   // var någon annan med om samma sak och tolkade den nyss, delar hen den tron i stället för att grunda en egen
   const samma = s.tron?.find(t => t.k === k && t.om === om && t.slut === undefined && s.now - t.t <= TRO.samma * HOUR);
@@ -227,9 +271,95 @@ function namnge(s: State, tr: Tro, folk: Person[]) {
   const fria = d.namn.filter(n => !tagna.has(n));
   tr.namn = fria.length ? pick(s, fria, 'tro', p) : `Den nya ${liten(pick(s, d.namn, 'tro', p))}`;
   tr.sym = d.sym; tr.ber = berattelse(s, tr, p);
+  nyGud(s, tr, d.omr, teckenText(tr.k, tr.om), p); // den första guden kommer ur tecknet
   count(s, 'tro_namn');
   log(s, `${folk.length} tror nu på ${liten(tr.bakom)}. Tron har fått ett namn: ${tr.namn}.`, 'rel', folk.map(q => q.id));
   kronika(s, `År ${yearNo(s)}: ${tr.namn} fick sitt namn. ${tr.ber}`);
+}
+
+// ---------- gudarna (steg 4.1.5) ----------
+// en död bybo som byn fortfarande berättar om (ett hedersnamn), eller trons grundare, kan bli förfader: tidigast GUD.generation
+// dygn efter döden och när ingen som var gammal nog att minnas hen lever. omr: det område hen hör till (hedersnamnet), eller
+// för grundaren trons första gud. Den som redan är förfader i tron blir det inte igen
+function forfaderOmr(s: State, tr: Tro, p: Person): GudOmr | undefined {
+  if (p.died === undefined || s.now - p.died < GUD.generation * DAY || tr.gudar?.some(g => g.pid === p.id)) return;
+  if (living(s).some(q => ageOf(q, p.died!) >= UPPV.fran)) return;
+  const h = p.binamn && (Object.keys(GUDAR) as GudOmr[]).find(o => (GUD_OMR[o].heder as string[]).includes(p.binamn!.k));
+  return h || (p.id === tr.grundare ? tr.gudar?.[0]?.omr[0] : undefined);
+}
+const forfaderNamn = (p: Person) => p.binamn ? `${p.name} ${p.binamn.namn}` : p.name; // som heltNamn (berattelser.ts)
+// ett nytt namn av ordled: forleden ur området och ett efterled, aldrig en verklig gud och aldrig ett namn en annan gud i byn har
+function gudNamn(s: State, omr: GudOmr, p: Person | undefined) {
+  const tagna = new Set((s.tron ?? []).flatMap(t => (t.gudar ?? []).map(g => g.namn)));
+  let n = '';
+  for (let i = 0; i < 8; i++) {
+    n = stor(pick(s, GUD_OMR[omr].forled, 'tro', p).toLowerCase() + pick(s, EFTERLED, 'tro', p));
+    if (!VERKLIGA.has(n.toLowerCase()) && !tagna.has(n)) break;
+  }
+  return n;
+}
+// en ny gud i området omr, född ur händelsen h (en fras: "blixten som slog ner"). Formen följer Natur – Människa; på Människa-sidan
+// blir den en förfader om det finns en död bybo som hör till området, annars en gud i människoform. Drar ur följden 'tro' hos p
+function nyGud(s: State, tr: Tro, omr: GudOmr, h: string, p: Person | undefined) {
+  const d = GUD_OMR[omr], ar = yearNo(s), tro = troNamn(tr);
+  const fp = tr.natur > GUD.forfader ? s.people.find(q => !alive(q) && forfaderOmr(s, tr, q) === omr) : undefined;
+  let g: Gud;
+  if (fp) g = forfader(s, tr, fp, omr);
+  else if (tr.natur < GUD.ande) {
+    const i = pick(s, d.i, 'tro', p), namn = gudNamn(s, omr, p);
+    g = { omr: [omr], namn, form: 'ande', i, t: s.now, ar, bekr: s.now, ber: `Det började med ${h}, år ${ar}. De som tror på ${liten(tro)} förstod att det var anden i ${i} som visat sig. Anden heter ${namn} och råder över ${d.om}.` };
+  } else {
+    const namn = gudNamn(s, omr, p);
+    g = { omr: [omr], namn, form: 'gud', t: s.now, ar, bekr: s.now, ber: `År ${ar}, med ${h}, visade sig ${namn} för dem som tror på ${liten(tro)}. ${namn} ser ut som en människa och råder över ${d.om}.` };
+  }
+  (tr.gudar ??= []).push(g);
+  count(s, 'gud_ny'); count(s, 'gud_' + g.form);
+  log(s, `${tro} har fått en ${formNamn(g.form)}: ${g.namn}, som råder över ${d.om}.`, 'rel', troende(s, tr).map(q => q.id));
+  kronika(s, `År ${ar}: ${g.ber}`);
+}
+function forfader(s: State, tr: Tro, p: Person, omr: GudOmr): Gud {
+  const namn = forfaderNamn(p), ar = yearNo(s), dar = yearNo(s, p.died!);
+  return { omr: [omr], namn, form: 'forfader', pid: p.id, t: s.now, ar, bekr: s.now, ber: `${namn} levde i byn och dog år ${dar}. Ingen som kände ${p.sex === 'k' ? 'henne' : 'honom'} lever längre, men byn berättar fortfarande om ${p.sex === 'k' ? 'henne' : 'honom'}, och de som tror på ${liten(troNamn(tr))} säger att ${p.name} vakar över ${GUD_OMR[omr].om}.` };
+}
+// något i området omr hände i tron tr (h: händelsen som en fras): guden för området bekräftas, och finns ingen kan en ny födas
+// (GUD.fod). En tro långt åt En har bara en gud, som tar över området i stället
+function gudFor(s: State, tr: Tro, omr: GudOmr, h: string) {
+  const gudar = gudarOf(tr), g = gudar.find(x => x.omr.includes(omr));
+  if (g) { g.bekr = s.now; count(s, 'gud_bekr'); return; }
+  const p = gudPerson(s, tr);
+  if (!p || rnd(s, 'tro', p) >= GUD.fod) return;
+  if (tr.manga > GUD.en && gudar.length) {
+    const en = gudar[0]; en.omr.push(omr); en.bekr = s.now; count(s, 'gud_omr');
+    log(s, `${en.namn} råder nu också över ${GUD_OMR[omr].om}, säger de som tror på ${liten(troNamn(tr))}.`, 'rel', troende(s, tr).map(q => q.id));
+    return;
+  }
+  nyGud(s, tr, omr, h, p);
+}
+// en stor händelse i byn (steg 4.1.5): varje tro som har ett namn och troende hör om den
+export function gudHandelse(s: State, omr: GudOmr, h: string) {
+  for (const tr of s.tron ?? []) if (tr.namn && tr.slut === undefined && tr.gudar?.length) gudFor(s, tr, omr, h);
+}
+// varje timme: en tro på Människa-sidan kan göra en död bybo till förfader, och en gud som inget bekräftat på länge glöms
+function gudSteg(s: State, tr: Tro) {
+  const gudar = gudarOf(tr);
+  if (!gudar.length) return;
+  if (tr.natur > GUD.forfader && tr.manga <= GUD.en) {
+    const p = gudPerson(s, tr);
+    if (p && rnd(s, 'tro', p) < GUD.forfaderChans) {
+      const fp = s.people.find(q => !alive(q) && forfaderOmr(s, tr, q));
+      if (fp) {
+        const g = forfader(s, tr, fp, forfaderOmr(s, tr, fp)!);
+        tr.gudar!.push(g); count(s, 'gud_ny'); count(s, 'gud_forfader');
+        log(s, `${troNamn(tr)} har fått en förfader: ${g.namn}, som vakar över ${GUD_OMR[g.omr[0]].om}.`, 'rel', troende(s, tr).map(q => q.id));
+        kronika(s, `År ${yearNo(s)}: ${g.ber}`);
+      }
+    }
+  }
+  if (gudar.length < 2) return;
+  for (const g of gudar) if (s.now - g.bekr > GUD.glom * DAY && gudarOf(tr).length > 1) {
+    g.slut = s.now; count(s, 'gud_glomd');
+    log(s, `Ingen ber längre till ${g.namn}. ${formNamn(g.form, true)} bleknar och glöms.`, 'rel', []);
+  }
 }
 
 // ---------- samtalen (samtal.ts) ----------
@@ -267,6 +397,7 @@ export function stepReligion(s: State) {
     if (!folk.length) { tr.slut = s.now; count(s, 'tro_slut'); continue; }
     if (!tr.namn && folk.length >= TRO.namn) namnge(s, tr, folk);
     nivaSteg(s, tr, folk);
+    gudSteg(s, tr);
   }
   // skalorna som låses upp när det de styr dyker upp
   for (const k of SKALA_IDS) if (SDEF[k].oppnas && !s.troSkalor?.includes(k) && SDEF[k].oppnas!(s)) {

@@ -1729,7 +1729,34 @@ const DORR_M = (dorrar, vrid) => ({ w: dorrar.length * 88 + 2, h: 52, rita: (B, 
   const x0 = 2 + i * 88; ritaHusPlan(B, x0, 2, DORR_PLAN, 0);
   forstorad(B, k, x0 + 16, 2); forstorad(B, vrid(k), x0 + 64, 18);
 }) });
+// trons och gudarnas symboler (steg 4.1.2.3 och 4.1.5): spelets platshållare, 16 × 16 punkter, i en rund bricka. Figurens
+// kant blir 'o', resten av figuren 'f', brickan 'd' och brickans kant 'e'; stilen (legenden) ger färgerna
+function heligRad(k) {
+  return IKONER.PIX[k].map((row, y) => [...row].map((c, x) => {
+    const d = Math.hypot(x - 7.5, y - 7.5);
+    if (c === '.') return d <= 7.6 ? (d > 6.6 ? 'e' : 'd') : '.';
+    return c === 'o' ? 'o' : 'f';
+  }).join(''));
+}
+// alla symbolerna i ett rutnät, fyra i bredd och två skärmpunkter per punkt
+const HELIG_M = (keys, L) => ({ w: 4 * 36 + 4, h: Math.ceil(keys.length / 4) * 36 + 4, kol: true, rita: (B, P) => keys.forEach((k, i) =>
+  ritaSprite(B, heligRad(k).flatMap(r => { const rr = [...r].map(c => c + c).join(''); return [rr, rr]; }), L, 2 + (i % 4) * 36, 2 + Math.floor(i / 4) * 36)) });
+const HELIG_STEN = { d: 'skiffer2', e: 'skiffer1', f: 'kol1', o: 'kol0' };
+const HELIG_OCKRA = { d: 'ben2', e: 'jord2', f: 'rost1', o: 'jord1' };
+const HELIG_GULD = { d: 'jord1', e: 'senap2', f: 'senap3', o: 'kol0' };
+const TRO_SYM = ['tro_blixt', 'tro_brand', 'tro_vinter', 'tro_regn', 'tro_flod', 'tro_hare', 'tro_barn', 'tro_drom'];
+const GUD_SYM = ['gud_aska', 'gud_sjon', 'gud_skord', 'gud_doden', 'gud_jakt', 'gud_elden', 'gud_vintern', 'gud_solen', 'gud_atten', 'gud_kriget', 'gud_hantverk'];
+const HELIG_VAL = (id, namn, vad, keys) => ({ id, namn, vad, typ: 'tre',
+  idag: { w: 4 * 36 + 4, h: Math.ceil(keys.length / 4) * 36 + 4, rita: (B, P) => keys.forEach((k, i) => forstorad(B, k, 2 + (i % 4) * 36, 2 + Math.floor(i / 4) * 36)) },
+  idagText: 'Platshållarna i spelet nu.',
+  versioner: [
+    { text: 'Ristade i en grå sten: figuren mörk i en rund stenbricka.', ...HELIG_M(keys, HELIG_STEN) },
+    { text: 'Målade med rödockra på ett ljust skinn med brun kant.', ...HELIG_M(keys, HELIG_OCKRA) },
+    { text: 'Ett amulett: figuren i guld på en mörk bricka med guldkant.', ...HELIG_M(keys, HELIG_GULD) },
+  ] });
 const VAL = [
+  HELIG_VAL('tro_symboler', 'Trons symboler', 'Nya symboler (steg 4.1.2.3), 16 × 16 punkter, i fliken Religion bredvid trons namn, en för varje tecken som en tro kan börja med: blixten, elden, den hårda vintern, regnet efter torkan, vattnet som drog sig tillbaka, haren, barnet som blev friskt och drömmen. Samma figurer i tre stilar; du väljer stilen för alla. I spelet nu: platshållarna överst.', TRO_SYM),
+  HELIG_VAL('gud_symboler', 'Gudarnas symboler', 'Nya symboler (steg 4.1.5), 16 × 16 punkter, i fliken Religion bredvid varje gud, en för varje område: åska och himmel, sjön, skörden, döden, jakten, elden, vintern, solen, ätten, kriget och hantverket. Samma figurer i tre stilar; du väljer stilen för alla. I spelet nu: platshållarna överst.', GUD_SYM),
   { id: 's_mat', namn: 'Samtal om mat', vad: 'Ny symbol (steg 3.9.5), 16 × 16 punkter, i pratbubblan och personrutan när två pratar om maten eller längtar efter något att äta. Ny version efter din kommentar: ettans värmestreck över tvåans skål. Till vänster i rätt storlek, till höger tre gånger större. I spelet nu: version 1 (platshållare).', typ: 'janej',
     idag: LED_M(AM_MAT1, AM_L), idagText: 'Version 1, som i spelet nu.',
     versioner: [{ text: 'Värmestrecken från version 1 över skålen med gryta från version 2, utan sleven.', ...LED_M(AM_MAT4, AM_L) }] },

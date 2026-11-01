@@ -6,7 +6,7 @@ import { SCENARIER, nyInvanare } from './hjalp';
 import { hasIcon } from '../../ikoner';
 import { setByn } from '../../ui/lage';
 import { religion } from '../../ui/flikar/religion';
-import { hjalpKlick } from '../../ui/hjalp';
+import { esc, hjalpKlick } from '../../ui/hjalp';
 
 SCENARIER.andlighet = {
   text: 'Andligheten (steg 4.1.1.1): alla har en mellan 0 och 100, grundarna spridda över hela skalan, barnen delvis som föräldrarna, och den syns först när den första tron finns',
@@ -329,6 +329,71 @@ SCENARIER.trosniva = {
       [`tron faller en nivå i taget när de troende dör (${f1}, ${f2}, ${f3})`, f1 === 2 && f2 === 1 && f3 === 1],
       [`Öppen – Sluten låses upp när en andra tro finns, och båda trosriktningarna får ett värde (${oppenFore} → ${oppen})`, !oppenFore && oppen],
       ['nivån står i fliken', (() => { utanWebblasare(); setByn(s); return religion.html().includes('Nivå: <b>Delad tro</b>'); })()],
+    ];
+  },
+};
+
+SCENARIER.gudar = {
+  text: 'Gudarna (steg 4.1.5): en tro som får sitt namn får en gud ur tecknet, en ande på Natur-sidan och en gud i människoform i mitten, med ett namn av ordled och aldrig en verklig gud; stora händelser föder nya gudar (Många) eller ger den enda guden ett nytt område (En); en gud som inget bekräftar glöms men aldrig den sista; på Människa-sidan blir en död bybo som byn berättar om förfader, tidigast en generation efter döden; fliken visar gudarna',
+  kor: () => {
+    const s = createState(9, START);
+    // en tro ur tecknet k med skalorna natur och manga, och tre som tror
+    const nyTro = (k: SIM.TeckenTyp, natur: number, manga: number) => {
+      const a = nyInvanare(s, 'k', 30); a.andlig = 100;
+      for (let i = 0; i < 50 && a.tro === undefined; i++) { s.now += 25 * SIM.HOUR; SIM.tecken(s, a, k); }
+      const tr = SIM.troOf(s, a.tro)!; tr.natur = natur; tr.manga = manga;
+      for (let i = 0; i < 2; i++) { const p = nyInvanare(s, 'm', 30); p.andlig = 50; p.tro = tr.id; }
+      SIM.stepReligion(s);
+      return tr;
+    };
+    const ande = nyTro('blixt', 10, 20), gud = nyTro('blixt', 50, 80);
+    const g1 = ande.gudar?.[0], g2 = gud.gudar?.[0];
+    const forled = (o: SIM.GudOmr, n: string) => SIM.GUD_OMR[o].forled.some(f => n.startsWith(f));
+    // många namn: av ordled och aldrig en verklig gud
+    const namn: string[] = [];
+    for (let i = 0; i < 40; i++) { const t = nyTro('brand', 50, 20); namn.push(t.gudar?.[0]?.namn ?? '?'); }
+    const verkliga = ['Tor', 'Oden', 'Frej', 'Freja', 'Loke', 'Balder'];
+    // stora händelser: Många får en ny gud, En ger den enda guden området
+    for (let i = 0; i < 200 && !(ande.gudar ?? []).some(g => g.omr.includes('elden')); i++) SIM.gudHandelse(s, 'elden', 'elden som spred sig');
+    for (let i = 0; i < 200 && !(gud.gudar?.[0]?.omr ?? []).includes('elden'); i++) SIM.gudHandelse(s, 'elden', 'elden som spred sig');
+    const mangaN = SIM.gudarOf(ande).length, enN = SIM.gudarOf(gud).length, enOmr = gud.gudar?.[0]?.omr.join(',');
+    // glömskan: bara åskan bekräftas
+    const elden = (ande.gudar ?? []).find(g => g.omr.includes('elden'));
+    for (let d = 0; d <= SIM.GUD.glom + 1; d++) { s.now += SIM.DAY; SIM.gudHandelse(s, 'aska', 'åskan'); SIM.stepReligion(s); }
+    const glomd = elden?.slut !== undefined, askaKvar = g1?.slut === undefined;
+    for (let d = 0; d <= SIM.GUD.glom + 1; d++) { s.now += SIM.DAY; SIM.stepReligion(s); }
+    const sista = SIM.gudarOf(ande).length;
+    // förfäderna: alla som levde förr är döda; en vargdödare som dog nyss blir inte förfader, en som dog för länge sedan blir det
+    s.now += 200 * SIM.DAY;
+    const bebis = nyInvanare(s, 'k', 0); // föds nu: kände ingen av de döda
+    for (const p of SIM.living(s)) if (p !== bebis) p.died = s.now - 150 * SIM.DAY;
+    const fader = nyTro('blixt', 90, 20);
+    const v = nyInvanare(s, 'm', 30); v.died = s.now - 2 * SIM.DAY; v.binamn = { k: 'vargdodare', namn: 'Vargdödaren', v: 1, t: s.now };
+    for (let i = 0; i < 2000; i++) SIM.stepReligion(s);
+    const forTidigt = (fader.gudar ?? []).some(g => g.pid === v.id);
+    v.died = s.now - 100 * SIM.DAY;
+    for (let i = 0; i < 3000 && !(fader.gudar ?? []).some(g => g.pid === v.id); i++) SIM.stepReligion(s);
+    const ff = (fader.gudar ?? []).find(g => g.pid === v.id);
+    // en ny tro på Människa-sidan ur jakten får förfadern som sin första gud
+    const jakt = nyTro('jakt', 90, 20), jf = jakt.gudar?.[0];
+    utanWebblasare(); setByn(s);
+    const gid = `gud-${fader.id}-${(fader.gudar ?? []).findIndex(g => g === ff)}`, html = religion.html();
+    for (const id of ['tro-ovriga', gid]) hjalpKlick({ closest: () => ({ dataset: { hjalp: id } }) } as unknown as HTMLElement); // som ett tryck på knapparna
+    const oppen = religion.html();
+    return [
+      [`Natur-sidan får en ande som bor någonstans (${g1?.form}, ${g1?.namn}, i ${g1?.i})`, g1?.form === 'ande' && !!g1.i && g1.omr[0] === 'aska'],
+      [`mitten får en gud i människoform (${g2?.form}, ${g2?.namn})`, g2?.form === 'gud' && g2.omr[0] === 'aska'],
+      [`namnen sätts ihop av ordled (${namn.slice(0, 8).join(', ')})`, namn.every(n => forled('elden', n)) && new Set(namn).size === namn.length],
+      ['aldrig en verklig gud', !namn.some(n => verkliga.includes(n))],
+      [`en tro med många gudar får en ny gud för elden (${mangaN} gudar)`, mangaN === 2],
+      [`en tro med en gud låter guden ta över elden (${enN} gud, ${enOmr})`, enN === 1 && enOmr === 'aska,elden'],
+      [`en gud som inget bekräftar glöms (${glomd}), den som bekräftas finns kvar (${askaKvar})`, glomd && askaKvar],
+      [`den sista guden glöms aldrig (${sista})`, sista === 1],
+      [`en död bybo blir inte förfader för tidigt (${forTidigt})`, !forTidigt],
+      [`en generation senare blir vargdödaren förfader för jakten (${ff?.namn}, ${ff?.omr.join(',')})`, ff?.form === 'forfader' && ff.omr[0] === 'jakt' && ff.namn === `${v.name} Vargdödaren`],
+      [`en ny tro ur jakten får förfadern som första gud (${jf?.form} ${jf?.namn})`, jf?.form === 'forfader' && jf.pid === v.id],
+      ['symbolerna finns', (Object.keys(SIM.GUDAR) as SIM.GudOmr[]).every(o => hasIcon(SIM.GUD_OMR[o].sym))],
+      [`fliken visar gudarna med område och berättelse (${html.includes('<h3>Gudar</h3>')}, ${html.includes(SIM.GUD_OMR.jakt.namn)}, ${!html.includes(esc(ff?.ber ?? 'x'))} → ${oppen.includes(esc(ff?.ber ?? 'x'))})`, html.includes('<h3>Gudar</h3>') && html.includes(SIM.GUD_OMR.jakt.namn) && !html.includes(esc(ff?.ber ?? 'x')) && oppen.includes(esc(ff?.ber ?? 'x'))],
     ];
   },
 };
