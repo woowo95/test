@@ -66,6 +66,7 @@ export const PAL: Record<string, Record<string, string>> = {
   vaggbrade: { w: '#5a3a1e', W: '#8b5a2b', L: '#b07a45', H: '#d0a26a' },
   // filten där stora byten görs (steg 4.4.1.1, platshållare, 16 punkter)
   silver: { o: '#3a3e44', S: '#c8ccd2', W: '#f4f6f8', s: '#8a9098' },
+  rovare: { h: '#c9a07a', H: '#2a2420', c: '#5a5040', C: '#3a3228', s: '#8a7a60', S: '#d8d0c0', o: '#1a1410' },
   handlare: { h: '#e0b88a', H: '#3a2418', c: '#4e6a8a', C: '#2e4460', b: '#8a6a40', B: '#5a3a1e', s: '#24160a' },
   filt: { d: '#5a2a1e', r: '#9c3328', R: '#c4583a', y: '#e8c890', k: '#3a2418' },
   mossa: { l: '#b4cc6a', G: '#7fa850', g: '#4f7a36', B: '#b48a5e', m: '#2f4a22' },
@@ -2311,6 +2312,11 @@ export const PIX: Record<string, string[]> = {
   silver: [
     '................', '................', '................', '.....oooo.......', '....oWSSSo......', '....oSSSso......', '.....ossoooo....', '......ooWSSSo...',
     '..oooo.oSSSso...', '.oWSSSo.ossso...', '.oSSSso..oooo...', '..ossso.........', '...oooo.........', '................', '................', '................',
+  ],
+  // rövaren (steg 4.4.5, platshållare, 16 punkter): en gestalt i mörk huva och slitna skinn, med ett spjut
+  rovare: [
+    '...........S....', '......HHH..S....', '.....HHhHH.s....', '.....HhhhH.s....', '......hhh..s....', '.....CccccCs....', '....CccccccC....', '...Cc.cccccsC...',
+    '.....cccccs.....', '.....CcccCs.....', '.....cc.ccs.....', '.....cc.cc......', '.....cc.cc......', '.....oo.oo......', '................', '................',
   ],
   handlare: [
     '......HHH.......', '.....HhhhH......', '.....hhhhh..bbb.', '......hhh..bBBBb', '.....CcccC.bBbBb', '....CcccccCbBBBb', '...s.cccccCbBbBb', '...s.cccccCbBBBb',

@@ -907,3 +907,70 @@ SCENARIER.grannklaner = {
     ];
   },
 };
+
+SCENARIER.rovare = {
+  text: 'Rövarflocken (steg 4.4.5, rovare.ts): en rik by lockar rövare, mindre ju bättre försvar den har. Flocken kommer från en grannklan som inte tycker om byn och samlas i kartans kant. Vakten ser den, gissar hur många de är och ropar, och byn skyddar sig som mot vargar. Ett tyst anfall (alla sover) plundrar förrådet osett; står de vuxna emot blir det en strid; väntar byn med många fler än rövarna vänder de om. Sedan flyr flocken ut ur kartan.',
+  kor: () => {
+    const s = createState(6, START), dt = BEAT / SIM.SEC;
+    const fattig = SIM.lockar(s) === 0;
+    const r = cloneState(s); setAmount(r, 'skinn', 400);
+    const utan = Math.min(1, Math.max(0, (rikedom(r) - SIM.ROVARE.rikFran) / SIM.ROVARE.rikSpann));
+    const rik = SIM.lockar(r) > 0, forsvar = SIM.forsvaret(r) > 0 && SIM.lockar(r) < utan;
+    // flocken kommer från den fientliga klanen och samlas i kanten
+    const k0 = SIM.klanerOf(s)[0]; for (const c of SIM.klanerOf(s)) c.inst = 10; k0.inst = -60;
+    const bas = cloneState(s);
+    SIM.rovarnaKommer(s, 4);
+    const f = s.rovare!;
+    const kommer = !!f && f.folk.length === 4 && f.klan === k0.id && f.gor === 'samlas' && f.folk.every(x => x.namn && x.vapen) && (f.x < 1 || f.y < 1 || f.x > SIM.W - 1 || f.y > SIM.H - 1);
+    // vakten ser den, gissar och ropar; den som hör det skyddar sig
+    const [a, b] = living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vaktFran);
+    a.x = f.x + (f.x < 1 ? 6 : f.x > SIM.W - 1 ? -6 : 0); a.y = f.y + (f.y < 1 ? 6 : f.y > SIM.H - 1 ? -6 : 0);
+    b.x = a.x + 1; b.y = a.y;
+    a.task = { act: 'vakt', phase: 'do', tx: a.x, ty: a.y, until: s.now + HOUR, carry: 0 };
+    b.task = { act: 'samtal', phase: 'do', tx: b.x, ty: b.y, until: s.now + HOUR, carry: 0 };
+    SIM.rovarSteg(s, dt);
+    const sedd = f.sedd !== undefined && (f.gissning ?? 0) >= 1 && a.larm?.vad === 'rovare' && b.larm?.vad === 'rovare';
+    const skydd = /Rövare/.test(SIM.vargSkydd(s, b)?.why ?? '');
+    // ett tyst anfall: alla sover, flocken går fram till förrådet och tar det mest värda
+    const forrad = (x: State) => SIM.SAK_LIST.filter(k => !SAKER[k]!.redskap).reduce((n, k) => n + amountOf(x, k), 0);
+    const malet = (x: State) => { const z = SIM.zoneOf(x)!; return { x: z.x + z.w / 2, y: z.y + z.h / 2 }; };
+    const flock = (x: State, n: number, d: number) => { SIM.rovarnaKommer(x, n); const m = malet(x); Object.assign(x.rovare!, { gor: 'kommer', x: m.x + d, y: m.y }); return x.rovare!; };
+    const t = cloneState(bas); setAmount(t, 'skinn', 20);
+    for (const p of living(t)) p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: t.now + 8 * HOUR, carry: 0 };
+    const t0 = forrad(t); flock(t, 3, 3);
+    for (let i = 0; i < 400 && t.rovare?.gor !== 'flyr'; i++) SIM.rovarSteg(t, dt);
+    const tyst = (t.stat?.rovarTyst ?? 0) === 1 && forrad(t) < t0 && (t.stat?.rovat ?? 0) >= 1 && (t.hist?.kronika ?? []).some(x => x[2] === 'rovare');
+    // de vuxna står emot: en strid
+    const c = cloneState(bas), fc = flock(c, 3, 3); fc.sedd = c.now;
+    const vuxna = living(c).filter(p => SIM.ageOf(p, c.now) >= SIM.ALDER.vaktFran && SIM.ageOf(p, c.now) < SIM.ALDER.vaktTill).slice(0, 2);
+    for (const p of living(c)) p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: c.now + 8 * HOUR, carry: 0 };
+    const m = malet(c);
+    for (const p of vuxna) { p.x = m.x; p.y = m.y; p.task = { act: 'forsvar', phase: 'do', tx: p.x, ty: p.y, until: c.now + HOUR, carry: 0 }; }
+    for (let i = 0; i < 400 && c.rovare?.gor !== 'flyr'; i++) SIM.rovarSteg(c, dt);
+    const strid = (c.stat?.rovarStrid ?? 0) === 1 && !!c.strider?.some(x => /rövare/.test(x.orsak));
+    // byn väntar med många fler: rövarna vänder om, och flyr sedan ut ur kartan
+    const d = cloneState(bas), fd = flock(d, 2, 8); fd.sedd = d.now;
+    const md = malet(d);
+    for (const p of living(d)) p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: d.now + 8 * HOUR, carry: 0 };
+    for (const p of living(d).filter(p => SIM.ageOf(p, d.now) >= SIM.ALDER.vaktFran).slice(0, 4)) { p.x = md.x; p.y = md.y; p.task = { act: 'forsvar', phase: 'do', tx: p.x, ty: p.y, until: d.now + HOUR, carry: 0 }; }
+    SIM.rovarSteg(d, dt);
+    const vande = d.rovare?.gor === 'flyr' && (d.stat?.rovarVande ?? 0) === 1;
+    for (let i = 0; i < 3000 && d.rovare; i++) SIM.rovarSteg(d, dt);
+    const borta = !d.rovare && (d.stat?.rovarBorta ?? 0) === 1;
+    // en ny flock kommer inte förrän vilan är slut
+    const vila = (d.rovarVila ?? 0) > d.now;
+    return [
+      ['en ny och fattig by lockar inga rövare', fattig],
+      ['en rik by lockar rövare', rik],
+      ['försvaret räknas emot rikedomen', forsvar],
+      ['flocken kommer från den fientliga klanen och samlas i kartans kant', kommer],
+      ['vakten ser flocken, gissar hur många och ropar', sedd],
+      ['den som hört ropet skyddar sig som mot vargar', skydd],
+      ['ett tyst anfall plundrar förrådet osett och skrivs i krönikan', tyst],
+      ['de vuxna som står emot slåss med rövarna', strid],
+      ['väntar byn med många fler vänder rövarna om', vande],
+      ['flocken flyr ut ur kartan', borta],
+      ['en ny flock kommer inte förrän vilan är slut', vila],
+    ];
+  },
+};

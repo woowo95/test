@@ -44,6 +44,7 @@ import { kroppFart, markFaktor, smidig } from './gang';
 import { chooseTask, dangers, nastaBuske, nastaRedskap, spotFor } from './val';
 import { djurSteg } from './djur';
 import { vargSteg, vargjaktSteg } from './varg';
+import { rovarSteg } from './rovare';
 import { handelSteg, handlaKlar } from './handel';
 import { klanSteg } from './klaner';
 import { vaktSteg } from './vakt';
@@ -185,6 +186,7 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
   klanSteg(s, dtSec); // grannklanerna växer och glömmer (klaner.ts, steg 4.4.3)
   handelSteg(s, dtSec); // handlaren kommer, handlar och går (handel.ts, steg 4.4.1)
   vargSteg(s, dtSec); // vargarna under istiden (varg.ts, steg 3.7.1)
+  rovarSteg(s, dtSec); // rövarflocken (rovare.ts, steg 4.4.5)
   tornadoSteg(s); // tornadon drar fram (tornado.ts, steg 3.8.4)
   brandSteg(s, dtSec); // gnistor, blixten och elden som sprider sig (brand.ts, steg 3.8.5)
   // förråd: ruttning och ved

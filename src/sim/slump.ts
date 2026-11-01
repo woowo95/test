@@ -30,6 +30,7 @@ export const STROMMAR = {
   sport: 'sporten: vilken sport som spelas, var spelarna står och vem som vinner (steg 4.3.1, sport.ts)',
   handel: 'handlarna: när de kommer, vem de är, vad de har med sig och var de slår upp filten (steg 4.4.1, handel.ts)',
   klan: 'grannklanerna: deras namn, folk, hur de växer och vilken klan en handlare kommer ifrån (steg 4.4.3, klaner.ts)',
+  rovare: 'rövarflocken: när den kommer, vilka rövarna är, vad de bär och vad vakten gissar (steg 4.4.5, rovare.ts)',
   fram: 'framträdandena: vem som uppträder, vilken form och hur länge (steg 4.3.2, framtradande.ts)',
 } as const;
 export type Strom = keyof typeof STROMMAR;

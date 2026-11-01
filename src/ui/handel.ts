@@ -23,6 +23,9 @@ export function drawHandel() {
   // handlaren (steg 4.4.1.2): på väg in, vid filten eller på väg hem
   const h = s.handlare;
   if (h) { const p = handlarPlats(h, ui.nu); handIkoner.add('handlare', p.x * TS - TS / 2, p.y * TS - TS, TS / iconCanvas('handlare').width); }
+  // rövarflocken (steg 4.4.5): rövarna i en klunga där flocken står
+  const r = s.rovare;
+  if (r) r.folk.forEach((_, i) => handIkoner.add('rovare', (r.x + (i % 3) * 0.7 - 0.7) * TS - TS / 2, (r.y + Math.floor(i / 3) * 0.7) * TS - TS, TS / iconCanvas('rovare').width));
   for (const f of s.filtar ?? []) {
     if (!f.handlare && f.slut <= ui.nu) continue;
     const x0 = f.x * TS - TS, y0 = f.y * TS - TS / 2, sc = (2 * TS) / iconCanvas('filt').width;

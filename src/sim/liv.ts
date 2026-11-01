@@ -87,6 +87,7 @@ const DOD = {
   varg: { text: 'av vargar', gud: 'jakt', sed: { k: 'forsiktighet', d: LIV.sedJakt, text: 'dödades av vargar. Byn blev lite försiktigare.' } }, // steg 3.7.1 (varg.ts)
   tornado: { text: 'i en tornado', gud: 'aska', sed: { k: 'forsiktighet', d: LIV.sedJakt, text: 'dog i tornadon. Byn blev lite försiktigare.' } }, // steg 3.8.4 (tornado.ts)
   brand: { text: 'i en eldsvåda', gud: 'elden', sed: { k: 'forsiktighet', d: LIV.sedJakt, text: 'dog i en eldsvåda. Byn blev lite försiktigare.' } }, // steg 3.8.5 (brand.ts)
+  rovare: { text: 'av rövare', gud: 'kriget', sed: { k: 'forsiktighet', d: LIV.sedJakt, text: 'dödades av rövare. Byn blev lite försiktigare.' } }, // steg 4.4.5 (rovare.ts)
   drap: { text: 'av våld', gud: 'kriget' }, // slagen till döds i ett utbrott (steg 3.2.3, humor.ts)
 } satisfies Record<string, DodDef>;
 export type Dodsorsak = keyof typeof DOD;

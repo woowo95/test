@@ -304,6 +304,7 @@ export interface State {
   fram?: import('./framtradande').Fram; framKvall?: number; // framträdandet som pågår och kvällen då det senaste hölls (steg 4.3.2.1)
   framtradanden?: import('./framtradande').FramMinne[]; // de senaste framträdandena
   overl?: import('./byte').Overl[]; filtar?: import('./byte').Filt[]; bytt?: import('./byte').Bytt[];
+  rovare?: import('./rovare').Rovarflock; rovarNr?: number; rovarVila?: number; // rövarflocken på kartan, hur många som kommit och när nästa tidigast kommer (steg 4.4.5, rovare.ts)
   klaner?: import('./klaner').Klan[]; klanNr?: number; // grannklanerna (steg 4.4.3, klaner.ts)
   handlare?: import('./handel').Handlare; nastaHandlare?: number; handlarNr?: number; // handlaren som är på besök, när nästa kommer och hur många som kommit (steg 4.4.1.2, handel.ts) // det som syns gå från hand till hand och filtarna med det som byts (bara för bilden), och det som nyss bytts bort (steg 4.4.1.1, byte.ts)
   sport?: import('./sport').Match; // matchen som pågår eller väntar på spelare (steg 4.3.1, sport.ts)
