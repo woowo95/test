@@ -1,5 +1,5 @@
 import { FORMAGOR, gangDelar, HALSA, Kroppsdel, KROPPSDELAR, NARING, NARINGAR, NARINGBAL, bristGrad, bristerNu, frysFaktor, naringNu, sjunker, skorbjugg, vilaTim, TORST, blodning, delSkada, halsa, skadeLista, skadeText, smarta, torstDelar } from '../../sim';
-import { pratText, relationText, beskrivning, binamnInfo, INTRYCK, Intryck, IntryckTyp, anseendeText, intryckOm, LARDOMAR, LKind, anseendeSym, dodSymbol, intryckText, samlatIntryck, SKILL_STAT, gjortDygn, ACTS, ALDER, Act, DAY, Lardom, HUMOR, SKILL_GOR, STAT_GOR, Skill, Stat, coldOf, halsaLage, hearthOf, living, roomAt, temperature, varmeDelar, varmeRaknas, viloSlag, viloTak, takEffekt, SLAG, SLAG_TECKEN, Person, KUNSKAPER, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, SEDER, SED_LIST, sedOppen, TEKNIK, BYN, formogenhetDelar, Ting, halvKlar, ageOf, alive, byId, childrenOf, drar, heldBy, ownedBy, PLATSER, PLATS_LIST, Plats, BORDA_KG, UTRUSTNING, bordOf, capacity, kvNamn, handerFor, homeKind, load, utrustning, viktOf, SAKER, ownedStock, sakNamn, slagIkon, tingNamn, STACK, describe, duty, habitShare, habitTotal, KROPP, kortTal, moodOf, num, REL, relKey, relTyper, stat, taskText, timeLabel, vidBordet, upplevelseText, uppEffekt, yrkeNamn } from '../../sim';
+import { pratText, relationText, beskrivning, binamnInfo, INTRYCK, Intryck, IntryckTyp, anseendeText, intryckOm, LARDOMAR, LKind, anseendeSym, dodSymbol, intryckText, samlatIntryck, SKILL_STAT, gjortDygn, ACTS, ALDER, Act, DAY, Lardom, HUMOR, SKILL_GOR, STAT_GOR, Skill, Stat, coldOf, halsaLage, hearthOf, living, roomAt, temperature, varmeDelar, varmeRaknas, viloSlag, viloTak, takEffekt, SLAG, SLAG_TECKEN, Person, KUNSKAPER, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, SEDER, SED_LIST, sedOppen, TEKNIK, BYN, formogenhetDelar, Ting, halvKlar, ageOf, alive, byId, childrenOf, drar, heldBy, ownedBy, PLATSER, PLATS_LIST, Plats, BORDA_KG, UTRUSTNING, bordOf, capacity, kvNamn, handerFor, homeKind, load, utrustning, viktOf, SAKER, ownedStock, sakNamn, slagIkon, tingNamn, STACK, describe, duty, habitShare, habitTotal, KROPP, kortTal, moodOf, num, REL, relKey, relTyper, stat, taskText, timeLabel, vidBordet, upplevelseText, uppEffekt, yrkeNamn, andlighet, andligSyns } from '../../sim';
 import { framstegSvg, hasIcon, iconImg, kvSvg, tecknet } from '../../ikoner';
 import { LAG, ansStapel, ansTecken, fmtN, bar, cap, carryTxt, cssFarg, durTxt, esc, hex, hsl, hjalpOppen, hjalpText, moodWord, pLink, prickar, relWord, sickNow, tempBar, tempOrd, trend, trendD } from '../hjalp';
 import { s, ui } from '../lage';
@@ -224,7 +224,12 @@ function egenHtml(p: Person) {
     const rader = [...arbetar(ACTS[k as Act]?.arbete === k ? [k] : []), ...SKILL_GOR[k]];
     return `<dt class="klick" data-hjalp="${id}" title="${esc(rader.join(', '))}">${SKILL_NAMES[k]}</dt><dd class="klick" data-hjalp="${id}" title="${esc(rader.join(', '))}">${bar(v / 20, 'skill', tr)}<span>${visa(v)}</span></dd>${hjalpText(id, gorHtml(rader, nu, gjortHtml(p, k)))}`;
   };
-  return `<dl class="kv">${STATS.map(statRad).join('')}
+  // andligheten (steg 4.1.1.1) syns först när den första tron finns
+  const ande = andligSyns(s) ? (() => {
+    const v = andlighet(s, p), id = `e-andlig-${p.id}`, rader = ['Hur viktigt det heliga är för hen, inte vad hen tror på', 'Ärvs delvis från föräldrarna och flyttas av det hen är med om'];
+    return `<dt class="klick" data-hjalp="${id}" title="${esc(rader.join(', '))}">Andlighet</dt><dd class="klick" data-hjalp="${id}" title="${esc(rader.join(', '))}">${bar(v / 100)}<span>${Math.round(v)}</span></dd>${hjalpText(id, gorHtml(rader, 'Skalan går från 0 till 100.'))}`;
+  })() : '';
+  return `<dl class="kv">${STATS.map(statRad).join('')}${ande}
       ${ageOf(p, now) >= ALDER.hjalper ? `<dt>Pliktkänsla</dt><dd>${bar(d, 'skill')}<span>${d > 0.75 ? 'Plikttrogen' : d > 0.5 ? 'Gör sin del' : d > 0.3 ? 'Bekväm' : 'Lat'}</span></dd>` : ''}</dl>
       <h3>Färdigheter</h3><dl class="kv">${SKILLS.map(skillRad).join('')}</dl>`;
 }

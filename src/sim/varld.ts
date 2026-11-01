@@ -11,6 +11,7 @@ import { newSeder, sederTarget, TAGS } from './seder';
 import { clamp, gauss, rnd } from './slump';
 import { Act, DAY, Fire, NEW_H, NEW_W, Person, SEC, State, simulera, useMap } from './typer';
 import { startSmak } from './rykten';
+import { nyAndlighet } from './religion';
 
 // ---------- skapa värld ----------
 // storlek: kartans storlek, för testerna av äldre byar (en ny by får alltid NEW_W × NEW_H)
@@ -196,6 +197,9 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
     }
     for (const [n, ag, c] of nya) put(s, 'artfron', n, ag, c);
     s.stat = nycklar(s.stat, k => k === 'stold_korn' ? 'stold_arter' : k === 'stold_fron' ? 'stold_rovfron' : k);
+  }],
+  [17, 'v211: andligheten (steg 4.1.1.1). De som redan finns får sin ur sin egen följd, barnen delvis efter föräldrarna', s => {
+    for (const p of [...s.people].sort((a, b) => a.born - b.born)) if (p.andlig === undefined) p.andlig = nyAndlighet(s, p, byId(s, p.mother), byId(s, p.father));
   }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];

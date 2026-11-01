@@ -3,6 +3,7 @@ import { freeNear } from './byggnad';
 import { Strom, clamp, gauss, pick, rnd } from './slump';
 import { Act, DAY, HOUR, LogEntry, Person, Rel, SKILLS, STATS, Skill, Stat, State } from './typer';
 import { balans } from './balans';
+import { nyAndlighet } from './religion';
 
 // ---------- balanstal (regel 8) ----------
 // Kroppen: mätarna hunger, rest, warm, social, toa och health går från 0 (slut) till 1 (full). Här står gränserna där folk
@@ -249,6 +250,7 @@ export function newPerson(s: State, sex: 'm' | 'k', born: number, mother?: Perso
     hue: Math.floor(rnd(s, 'folk') * 360),
   };
   p.name = makeName(s, sex);
+  p.andlig = nyAndlighet(s, p, mother, father); // ur personens egen följd (steg 4.1.1.1)
   const at = freeNear(s, p.x, p.y); p.x = at.x; p.y = at.y; // inte i en husvägg
   return p;
 }

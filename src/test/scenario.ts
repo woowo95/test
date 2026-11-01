@@ -11,6 +11,7 @@ import './scenarier/natur';
 import './scenarier/byggnader';
 import './scenarier/folk';
 import './scenarier/kontroll';
+import './scenarier/religion';
 import { LANG_S, SCENARIER } from './scenarier/hjalp';
 import { Utfall, korSkript, pool } from './pool';
 
