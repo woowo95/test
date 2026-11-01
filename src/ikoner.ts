@@ -64,6 +64,8 @@ export const PAL: Record<string, Record<string, string>> = {
   kruka: { d: '#6a3418', o: '#a0522d', O: '#c8743c', y: '#e8c890' },
   bonad: { w: '#5a3a1e', s: '#e0cfa4', S: '#c4ad7c', r: '#9c3328', k: '#4a3018' },
   vaggbrade: { w: '#5a3a1e', W: '#8b5a2b', L: '#b07a45', H: '#d0a26a' },
+  // filten där stora byten görs (steg 4.4.1.1, platshållare, 16 punkter)
+  filt: { d: '#5a2a1e', r: '#9c3328', R: '#c4583a', y: '#e8c890', k: '#3a2418' },
   mossa: { l: '#b4cc6a', G: '#7fa850', g: '#4f7a36', B: '#b48a5e', m: '#2f4a22' },
   // latrinen och benspaden (steg 2.7.2, Björn valde P6 och S1c/S1g efter v85)
   latrin: { o: '#8a6a40', O: '#b08a58', d: '#4a3018', k: '#24160a' },
@@ -2300,6 +2302,11 @@ export const PIX: Record<string, string[]> = {
     'WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW',
     '.w............................w.',
     'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+  ],
+  // filten (steg 4.4.1.1, platshållare, 16 punkter): en vävd filt sedd uppifrån, med ränder och fransar i kortändarna
+  filt: [
+    '................', '................', '.y.y.y.y.y.y.y..', 'dddddddddddddd..', 'dRRRRRRRRRRRRd..', 'dRyyyyyyyyyyRd..', 'dRrrrrrrrrrrRd..', 'dRRRRRRRRRRRRd..',
+    'dRrrrrrrrrrrRd..', 'dRyyyyyyyyyyRd..', 'dRRRRRRRRRRRRd..', 'dddddddddddddd..', '.y.y.y.y.y.y.y..', '................', '................', '................',
   ],
   // lerkrukan (steg 4.3.4, platshållare, 16 punkter): en bränd kruka med ett band av prickar
   kruka: [

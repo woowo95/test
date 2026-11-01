@@ -637,3 +637,51 @@ SCENARIER.plagg = {
     ];
   },
 };
+
+SCENARIER.bytessystem = {
+  text: 'Ett bytessystem för alla byten (steg 4.4.1.1): ett byte mellan bybor går genom samma kod som handeln med handlaren sedan gör (parter i byte.ts). Ett stort byte (ett redskap) görs på en filt där sakerna ligger en stund och skrivs i krönikan; ett litet vardagsbyte är en överlämning från hand till hand och skrivs bara i loggen. En gåva av ett redskap till ett barn och mat till den som höll på att dö skrivs i krönikan.',
+  kor: () => {
+    const ny = () => {
+      const s = createState(6, START);
+      rikBy(s); tomtForrad(s); s.ting = [];
+      const [a, b, c] = treVuxna(s, 1, q => { q.warm = 1; q.pot.empati = 10; q.habit = {}; });
+      for (const q of [a, b, c]) for (const r of [a, b, c]) if (q !== r) getRel(s, q, r).op = 0;
+      s.people = [a, b, c]; c.x = 90;
+      return { s, a, b, c };
+    };
+    const kron = (s: State, t: string) => (s.hist?.kronika ?? []).filter(k => k[1].includes(t)).length;
+    const logg = (s: State, t: string) => s.log.filter(l => l.text.includes(t)).length;
+    // ett redskap mot mat: ett stort byte på en filt, i loggen och i krönikan
+    let { s, a, b } = ny();
+    a.habit = { samla: 10 }; addTool(s, 'korg', b); addTool(s, 'korg', b); gain(s, a, 'bar', 20);
+    const korg = askForTool(s, a, b) === 'byte';
+    const filt = s.filtar?.length === 1 && s.filtar[0].varor.some(v => v.k === 'korg' && v.fran === b.id) && s.filtar[0].varor.some(v => v.fran === a.id);
+    const stort = korg && logg(s, 'bytte:') === 1 && kron(s, 'bytte:') === 1 && (s.stat?.storaByten ?? 0) === 1;
+    // filten plockas ihop efter en stund
+    s.now += 2 * HOUR; SIM.stadaByten(s);
+    const ihop = !s.filtar?.length;
+    // ett litet byte (mat mot trä): en överlämning, i loggen men inte i krönikan
+    ({ s, a, b } = ny());
+    a.hunger = 0.3; addTo(s, 'bar', 5); gain(s, b, 'bar', 6); gain(s, a, 'ved', 6);
+    needLadder(s, a, 1);
+    const litet = (s.stat?.byten ?? 0) === 1 && logg(s, 'bytte:') === 1 && kron(s, 'bytte:') === 0 && !s.filtar?.length
+      && (s.overl ?? []).some(o => o.a === b.id && o.b === a.id && o.k === 'bar') && (s.overl ?? []).some(o => o.a === a.id && o.b === b.id && o.k === 'ved');
+    // en förälder ger ett redskap till sitt barn: i krönikan
+    ({ s, a, b } = ny());
+    addTool(s, 'fiskespjut', a); addTool(s, 'fiskespjut', a); b.habit = { fiske: 10 }; b.mother = a.id; b.born = s.now - (SIM.ALDER.vuxen - 4) * SIM.DAY; // b är ett barn
+    let gav = false; for (let i = 0; i < 30 && !gav; i++) gav = askForTool(s, a, b) === 'gåva';
+    const barnGava = gav && kron(s, ' gav en ') === 1;
+    // mat till den som håller på att dö: i krönikan
+    ({ s, a, b } = ny());
+    a.hunger = 0; a.health = 0.5; gain(s, b, 'bar', 6); getRel(s, b, a).op = 80; getRel(s, a, b).op = 80; b.pot.empati = 20;
+    let dor = 0; for (let i = 0; i < 20 && !dor; i++) { askForGift(s, a, b); dor = kron(s, 'som höll på att dö'); }
+    return [
+      [`ett redskap byts på en filt med sakerna från båda (${korg ? 'bytte' : 'inget byte'})`, korg && filt],
+      ['det stora bytet står i loggen och i krönikan', stort],
+      ['filten plockas ihop efter en stund', ihop],
+      ['ett litet byte är en överlämning från hand till hand, i loggen men inte i krönikan', litet],
+      ['ett redskap som ges till ett barn står i krönikan', barnGava],
+      [`mat till den som håller på att dö står i krönikan (${dor})`, dor > 0],
+    ];
+  },
+};

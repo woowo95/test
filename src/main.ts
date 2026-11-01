@@ -10,6 +10,7 @@ import { drawFilter } from './ui/filter';
 import { drawAnimals, drawPlants } from './ui/vaxter';
 import { drawFlackar } from './ui/smuts';
 import { addTalks, drawPeople, posOf } from './ui/manniskor';
+import { drawHandel } from './ui/handel';
 import { renderPanel } from './ui/panel';
 import { renderPorts, stopFollow } from './ui/portratt';
 import { catchUp, loadSaves, nyByVald, saveDb, saveLocal } from './ui/spara';
@@ -149,7 +150,7 @@ function tick() {
   drawTerrain();
   drawPlants(); drawFlackar(); drawAnimals();
   drawStructures(now);
-  drawPeople(now); drawArena();
+  drawPeople(now); drawHandel(); drawArena();
   drawNight(ui.nu);
   drawFilter();
   drawVader(now);

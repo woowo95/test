@@ -300,6 +300,7 @@ export interface State {
   sportBast?: Record<string, number>; // den bästa i varje sport (personens id, steg 4.3.1.2)
   fram?: import('./framtradande').Fram; framKvall?: number; // framträdandet som pågår och kvällen då det senaste hölls (steg 4.3.2.1)
   framtradanden?: import('./framtradande').FramMinne[]; // de senaste framträdandena
+  overl?: import('./byte').Overl[]; filtar?: import('./byte').Filt[]; bytt?: import('./byte').Bytt[]; // det som syns gå från hand till hand och filtarna med det som byts (bara för bilden), och det som nyss bytts bort (steg 4.4.1.1, byte.ts)
   sport?: import('./sport').Match; // matchen som pågår eller väntar på spelare (steg 4.3.1, sport.ts)
   borta?: Borta; // sammanfattningen efter bortavaron som spelaren inte stängt än (steg 3.10.22, ui/spara.ts); simuleringen rör den inte
 }

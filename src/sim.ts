@@ -31,6 +31,7 @@ export * from './sim/teknik';
 export * from './sim/sport';
 export * from './sim/framtradande';
 export * from './sim/pynt';
+export * from './sim/byte';
 export * from './sim/liv';
 export * from './sim/steg';
 export * from './sim/sjo';

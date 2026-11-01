@@ -6,7 +6,7 @@ import { ALDER, KROPP, REL, ageOf, alive, byId, count, getRel, isKin, isParent, 
 import { kanGa } from './halsa';
 import { chance, clamp, pickViktat, rnd } from './slump';
 import { Ting, tingOf } from './agande';
-import { kvEffekt, kvVarde } from './kvalitet';
+import { kvEffekt } from './kvalitet';
 import { bordVid } from './stationer';
 import { BYN, Del, addDel, sumOf } from './egendom';
 import { amountOf, helt, mayTake, ownMove, ownsAmount, takeFood, use } from './lager';
@@ -20,6 +20,7 @@ import { balans } from './balans';
 import { RELT, arBast, arRivaler, minnsGava } from './relationer';
 import { handelse, smakMat } from './rykten';
 import { VED } from './eld';
+import { Part, Vara, byteKlart, nyssBytt, flytta, gavaKlar, varorText, vardeOf } from './byte';
 
 // ---------- behovsstegen ----------
 // När någon behöver något går hen stegen i ordning: först sitt eget, sedan ett byte med någon i närheten (byten nedan),
@@ -221,12 +222,13 @@ function gift(s: State, m: Person, g: Person, n: Behov) {
   if (over < n.minst || rnd(s, 'dela', g) >= willing(s, g, m, ownFor(s, g, n) / n.kvar)) return false;
   let rest = Math.min(over, n.mangd(m, s.now));
   const want = rest;
-  for (const k of n.slag) { if (rest <= 1e-9) break; rest -= ownMove(s, k, rest / perOf(n, k), g.id, m.id) * perOf(n, k); }
+  const gavs: Vara[] = [];
+  for (const k of n.slag) { if (rest <= 1e-9) break; const v = ownMove(s, k, rest / perOf(n, k), g.id, m.id); if (v > 0) gavs.push({ k, n: v }); rest -= v * perOf(n, k); }
   const r = getRel(s, m, g);
   r.op = clamp(r.op + 3, -100, 100);
   think(m, `Fick ${n.namn} av ${g.name}`, 0.1, s.now, 12 * HOUR);
   think(g, `Gav ${n.namn} till ${m.name}`, 0.05, s.now, 6 * HOUR); minnsGava(s, g, m);
-  if (n.fara(s, m) > 0) log(s, `${g.name} gav ${n.namn} till ${m.name}, som höll på att dö.`, 'rel', [g.id, m.id]); // vardagens gåvor fyller inte loggen
+  gavaKlar(s, personPart(s, g), personPart(s, m), gavs, n.fara(s, m) > 0); // samma överlämning och rad som ett byte (steg 4.4.1.1)
   handelse(s, g, n.fara(s, m) > 0 ? 'hjalp' : 'gava', m, n.namn); // de som ser det tycker bättre om den som ger (steg 3.3.1)
   count(s, 'gava_' + n.id, want - rest);
   return true;
@@ -407,7 +409,7 @@ export function askForTool(s: State, a: Person, b: Person): 'gåva' | 'byte' | u
       think(m, `Fick en ${namn} av ${g.name}`, 0.1, s.now, 12 * HOUR);
       think(g, `Gav en ${namn} till ${m.name}`, 0.05, s.now, 6 * HOUR); minnsGava(s, g, m);
       count(s, 'gavor');
-      log(s, `${g.name} gav en ${namn} till ${m.name}.`, 'rel', [g.id, m.id]);
+      gavaKlar(s, personPart(s, g), personPart(s, m), [{ k, n: 1, t }], false);
       handelse(s, g, 'gava', m, 'en ' + namn);
       return 'gåva';
     }
@@ -421,10 +423,8 @@ export function askForTool(s: State, a: Person, b: Person): 'gåva' | 'byte' | u
 // på det. Ojämna byten går när den ena får högst en femtedel mindre än hen ger (DELA.ojamn), när den som frågar håller på att
 // dö av bristen (fara i BEHOV) eller när de står varandra nära (willing minst DELA.nara). Mat, ved, material och redskap
 // byts här: i behovsstegen, när material tas till ett eget arbete, och när ett redskap saknas (i samtal).
-interface Vara { k: string; n: number; t?: Ting }
 const behovMed = (k: string) => BEHOV().find(b => b.slag.includes(k));
 const enheter = (v: Vara[]) => v.reduce((x, { k, n }) => x + n * (behovMed(k)?.per?.[k] ?? 1), 0);
-const vardeOf = (v: Vara) => grundvarde(v.k) * (v.t ? v.t.c * kvVarde(v.t) : 1);
 // hur mycket p behöver en till av slaget k, gånger grundvärdet: DELA.saknar för det p saknar för ett behov eller i sitt
 // arbete, 1 för det p behöver behålla (mat och ved upp till b.kvar, redskapet hen arbetar med) och DELA.over för resten.
 // Material som p saknar till ett arbete räknas där det tas (tradeMaterial)
@@ -451,9 +451,11 @@ function payable(s: State, p: Person, utom: readonly string[]): Vara[] {
   }
   return ut;
 }
-const tal = (n: number) => n >= 0.5 ? String(Math.round(n)) : 'lite'; // saker i hela tal (Björn efter v89)
-const varorText = (v: Vara[]) => v.map(x => `${x.t ? 'en' : tal(x.n)} ${(SAKER[x.k]?.namn ?? x.k).toLowerCase()}`).join(' och ');
-interface Villkor { behov: number; minst: number; fara: number; typ: string; utom: readonly string[]; delad?: true }
+// bybon p som part i ett byte (byte.ts). Silver byts bara med handlaren (steg 4.4.1.3); silver inom byn kommer i steg 9.5.1.2
+export function personPart(s: State, p: Person, silver = false): Part {
+  return { id: p.id, namn: p.name, p, x: p.x, y: p.y, varde: k => behovAv(s, p, k), over: utom => payable(s, p, silver ? utom : [...utom, 'silver']) };
+}
+export interface Villkor { behov: number; minst: number; fara: number; typ: string; utom: readonly string[]; delad?: true }
 // m byter till sig vill (det g har över) av g, och betalar med det m har över som är värt mest för g och minst för m.
 // v.behov = hur mycket m behöver det (gånger grundvärdet), v.minst = minsta mängd som hjälper, v.fara = hur nära döden
 // m är av bristen, v.typ = vad som räknas i statistiken (byte_mat …). Räcker inte det m har byter man mindre, om det
@@ -461,16 +463,22 @@ interface Villkor { behov: number; minst: number; fara: number; typ: string; uto
 // mer än det g ger: hälften av det hen själv vinner, så att båda tjänar på bytet. Ger hur mycket m fick, 0 om det inte blev
 // något byte
 function byte(s: State, m: Person, g: Person, vill: Vara[], v: Villkor): number {
-  vill = vill.map(w => w.t ? w : { ...w, n: Math.ceil(w.n - 1e-6) }).filter(w => w.n > 0); // hela saker (steg 2.10.7)
-  const ger = vill.reduce((x, w) => x + w.n * vardeOf(w) * behovAv(s, g, w.k), 0); // det g ger, för g
-  const far = vill.reduce((x, w) => x + w.n * vardeOf(w), 0) * v.behov; // det m får, för m
-  if (ger <= 1e-9 || osams(s, g, m)) return 0;
-  const varor = payable(s, m, v.utom).map(w => ({ ...w, ut: vardeOf(w) * behovAv(s, g, w.k), in: Math.max(1e-9, vardeOf(w) * behovAv(s, m, w.k)) }))
+  if (osams(s, g, m)) return 0;
+  return bytaMed(s, personPart(s, m), personPart(s, g), vill, v);
+}
+// samma byte för alla parter (steg 4.4.1.1): M byter till sig vill av G. Bybor, byn och handlaren (handel.ts) går hit
+export function bytaMed(s: State, M: Part, G: Part, vill: Vara[], v: Villkor): number {
+  vill = vill.map(w => w.t ? w : { ...w, n: Math.ceil(w.n - 1e-6) }).filter(w => w.n > 0 && !nyssBytt(s, w.k, M.id, G.id)); // hela saker (steg 2.10.7), och inte tillbaka det M nyss bytte bort till G
+  if (!vill.length) return 0;
+  const ger = vill.reduce((x, w) => x + w.n * vardeOf(w) * G.varde(w.k), 0); // det G ger, för G
+  const far = vill.reduce((x, w) => x + w.n * vardeOf(w), 0) * v.behov; // det M får, för M
+  if (ger <= 1e-9) return 0;
+  const varor = M.over(v.utom).map(w => ({ ...w, ut: vardeOf(w) * G.varde(w.k), in: Math.max(1e-9, vardeOf(w) * M.varde(w.k)) }))
     .filter(w => w.ut > 1e-9).sort((a, b) => b.ut / b.in - a.ut / a.in || +!!a.t - +!!b.t);
-  // det m betalar för att g ska få mal (för g), i hela saker: man betalar hellre lite för mycket (steg 2.10.7)
+  // det M betalar för att G ska få mal (för G), i hela saker: man betalar hellre lite för mycket (steg 2.10.7)
   const betala = (mal: number) => {
     const ut: Vara[] = [];
-    let f = 0, k = 0; // det g får, för g, och det m ger, för m
+    let f = 0, k = 0; // det G får, för G, och det M ger, för M
     for (const w of varor) {
       if (f >= mal - 1e-9) break;
       const n = w.t ? 1 : Math.min(w.n, Math.ceil((mal - f) / w.ut - 1e-6));
@@ -480,15 +488,15 @@ function byte(s: State, m: Person, g: Person, vill: Vara[], v: Villkor): number 
   };
   let { betal, fick, kost } = betala(ger);
   if (!betal.length) return 0;
-  const desperat = v.fara > 0, nara = (a: Person, b: Person) => willing(s, a, b) >= DELA.nara;
+  const desperat = v.fara > 0, nara = (a: Part, b: Part) => !!a.p && !!b.p && willing(s, a.p, b.p) >= DELA.nara;
   let del = 1; // så stor del av vill som byts
   if (fick < (1 - DELA.ojamn) * ger) {
-    const kan = vill.some(w => w.t) ? 0 : fick / ger, hela = vill.reduce((x, w) => x + helt(w.n * kan) * vardeOf(w) * behovAv(s, g, w.k), 0) / ger;
-    if (hela * enheter(vill) >= v.minst && hela > 0) { del = hela; ({ betal, fick, kost } = betala(ger * del)); } // m får det m kan betala, i hela saker
-    else if (!desperat && !nara(g, m)) return 0;
+    const kan = vill.some(w => w.t) ? 0 : fick / ger, hela = vill.reduce((x, w) => x + helt(w.n * kan) * vardeOf(w) * G.varde(w.k), 0) / ger;
+    if (hela * enheter(vill) >= v.minst && hela > 0) { del = hela; ({ betal, fick, kost } = betala(ger * del)); } // M får det M kan betala, i hela saker
+    else if (!desperat && !nara(G, M)) return 0;
   }
-  if (v.delad ? far * del <= kost : far * del < (1 - DELA.ojamn) * kost && !desperat && !nara(m, g)) return 0;
-  if (v.delad && del === 1) { // m betalar hälften av sin vinst till g, med det som är värt mest för g
+  if (v.delad ? far * del <= kost : far * del < (1 - DELA.ojamn) * kost && !desperat && !nara(M, G)) return 0;
+  if (v.delad && del === 1) { // M betalar hälften av sin vinst till G, med det som är värt mest för G
     let extra = (far - kost) / 2;
     for (const w of varor) {
       if (extra <= 1e-9) break;
@@ -501,15 +509,13 @@ function byte(s: State, m: Person, g: Person, vill: Vara[], v: Villkor): number 
   }
   if (vill.reduce((x, w) => x + w.n * vardeOf(w), 0) * del < DELA.byteMinst) return 0;
   const fatt = vill.map(w => ({ ...w, n: w.t ? 1 : helt(w.n * del) })).filter(w => w.n > 0);
-  for (const w of fatt) if (w.t) give(w.t, g, m); else ownMove(s, w.k, w.n, g.id, m.id);
-  for (const w of betal) if (w.t) give(w.t, m, g); else ownMove(s, w.k, w.n, m.id, g.id);
-  const r = getRel(s, m, g);
-  r.op = clamp(r.op + 2, -100, 100);
-  think(m, `Bytte till sig ${varorText(fatt)} av ${g.name}`, 0.06, s.now, 6 * HOUR);
-  think(g, `Bytte till sig ${varorText(betal)} av ${m.name}`, 0.06, s.now, 6 * HOUR);
+  for (const w of fatt) flytta(s, w, G, M);
+  for (const w of betal) flytta(s, w, M, G);
+  if (M.p && G.p) { const r = getRel(s, M.p, G.p); r.op = clamp(r.op + 2, -100, 100); }
+  if (M.p) think(M.p, `Bytte till sig ${varorText(fatt)} av ${G.namn}`, 0.06, s.now, 6 * HOUR);
+  if (G.p) think(G.p, `Bytte till sig ${varorText(betal)} av ${M.namn}`, 0.06, s.now, 6 * HOUR);
   const n = enheter(fatt);
   count(s, 'byten'); count(s, 'byte_' + v.typ, n); if (v.delad) count(s, 'kvallsbyten');
-  // vardagens byten fyller inte loggen, bara redskapen och den som höll på att dö
-  if (vill.some(w => w.t) || desperat) log(s, `${m.name} och ${g.name} bytte: ${varorText(fatt)} mot ${varorText(betal)}${desperat ? `. ${m.name} höll på att dö` : ''}.`, 'rel', [m.id, g.id]);
+  if (byteKlart(s, M, G, fatt, betal, desperat)) count(s, 'storaByten'); // samma rad i loggen och krönikan, vem motparten än är
   return n;
 }
