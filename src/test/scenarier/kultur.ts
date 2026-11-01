@@ -246,3 +246,33 @@ SCENARIER.budskap = {
     ];
   },
 };
+SCENARIER.bestalld = {
+  text: 'Beställda framträdanden (steg 4.3.2.4): ledaren betalar den som ska uppträda med en hel sak ur sin egen egendom, och framträdandet hyllar då ledaren. Ledaren ger den minst värda lediga saken, inget när hen inget har, och den som avskyr ledaren tackar nej',
+  kor: () => {
+    // vid: om ledaren har något att betala med; op: vad den som uppträder tycker om ledaren
+    const forsok = (seed: number, vid: boolean, op: number) => {
+      const k = kvall(seed), u = k.v[0]!, l = k.v[1]!;
+      k.s.styre = { ledare: l.id, historia: [], oppna: [] } as unknown as typeof k.s.styre;
+      for (const t of SIM.tingOf(k.s)) if (t.agare === l.id) t.agare = SIM.BYN;
+      const kniv = vid ? SIM.newTing(k.s, 'kniv', 1, l.id) : undefined, yxa = vid ? SIM.newTing(k.s, 'yxa', 1, l.id) : undefined;
+      SIM.getRel(k.s, u, l).op = op;
+      const fore = k.s.stat?.framBestalld ?? 0, r = framfor(k.s, u), betalt = (k.s.stat?.framBestalld ?? 0) > fore;
+      return { r, betalt, kniv: kniv?.agare === u.id, yxa: yxa?.agare === u.id, minne: k.s.framtradanden?.at(-1)?.betalt };
+    };
+    let ja: ReturnType<typeof forsok> | undefined, n = 0, tomt = 0, nej = 0;
+    for (let i = 0; i < 30; i++) {
+      const f = forsok(3 + i, true, 0);
+      if (f.r) n++;
+      if (f.betalt && !ja) ja = f;
+      if (forsok(3 + i, false, 0).betalt) tomt++;
+      if (forsok(3 + i, true, -60).betalt) nej++;
+    }
+    return [
+      [`ledaren beställer ibland (${ja ? 'ja' : 'aldrig'} på ${n} framträdanden): ${ja?.r?.text ?? ''}`, !!ja],
+      [`det beställda hyllar ledaren (${ja?.r?.bud})`, ja?.r?.bud === 'hylla'],
+      [`ledaren betalar med kniven, den minst värda, och behåller yxan (minnet säger ${ja?.minne})`, !!ja?.kniv && !ja.yxa && ja.minne === 'kniv'],
+      [`en ledare utan egendom beställer inget (${tomt} gånger)`, tomt === 0],
+      [`den som avskyr ledaren tackar nej (${nej} gånger)`, nej === 0],
+    ];
+  },
+};

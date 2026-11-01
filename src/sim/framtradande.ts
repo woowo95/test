@@ -7,7 +7,9 @@ import { ALDER, ageOf, alive, byId, count, getRel, isSick, living, log, ovning, 
 import { avbryt } from './lager';
 import { eldPlats } from './karta';
 import { INTRYCK, Intryck, IntryckTyp, beratta, intryckOm } from './rykten';
-import { ledareOf, pabud } from './styre';
+import { ledareOf, legitimitet, pabud } from './styre';
+import { Ting, tingOf } from './agande';
+import { tingVarde } from './varde';
 import { predika, troOf } from './religion';
 import { clamp } from './slump';
 import { share } from './minne';
@@ -77,12 +79,16 @@ export const FRAM = balans('framtradande', {
   rykte: 0.8, // ... om en person: var och en som lyssnar hör ryktet med chansen rykte × kvaliteten (rykten.ts)
   styre: 4, // ... om ledaren: publiken tycker så här mycket bättre (hyllning) eller sämre (hån) om ledaren, gånger kvaliteten
   hanOp: 10, // den som hånar ledaren: ledaren tycker så här mycket sämre om hen
+  // beställda framträdanden (steg 4.3.2.4): ledaren betalar den som ska uppträda med en hel sak ur sin egen egendom för att
+  // framträdandet hyllar hen. Chansen är bestall × (1 − legitimiteten); den som uppträder tackar ja om hen tycker minst
+  // bestallOp om ledaren, och tycker sedan bestallTack bättre om hen
+  bestall: 0.5, bestallOp: -20, bestallTack: 3,
   tro: 40, // ... om tron: framträdandet övertygar som så här många samtal, gånger kvaliteten (predika i religion.ts)
 });
 
 // framträdandet som pågår: formen, den som uppträder, när det började (task.ref) och slutar, publiken som varit där och texten
-export interface Fram { k: string; p: number; start: number; slut: number; publik: number[]; text: string; inst?: string; scen?: number; bud?: Bud; om?: number; ik?: IntryckTyp } // bud = budskapet, om = vem det handlar om (personen eller ledaren), ik = intrycket // inst = instrumentet, scen = stationen där det sker
-export interface FramMinne { t: number; k: string; p: number; namn: string; text: string; n: number; q: number; inst?: string; bud?: Bud }
+export interface Fram { k: string; p: number; start: number; slut: number; publik: number[]; text: string; inst?: string; scen?: number; bud?: Bud; om?: number; ik?: IntryckTyp; betalt?: string } // betalt = saken ledaren betalade med (steg 4.3.2.4) // bud = budskapet, om = vem det handlar om (personen eller ledaren), ik = intrycket // inst = instrumentet, scen = stationen där det sker
+export interface FramMinne { t: number; k: string; p: number; namn: string; text: string; n: number; q: number; inst?: string; bud?: Bud; betalt?: string }
 
 // kvällen: tolv timmar bakåt, så att kvällen och natten efter hör till samma dygn
 const kvall = (t: number) => Math.floor((t - 12 * HOUR) / DAY);
@@ -145,6 +151,34 @@ function budVal(s: State, p: Person, d: FramDef) {
   const k = BUD_LIST[i]!;
   return { k, amne: BUDSKAP[k].amne(s, p, x), om: k === 'person' ? x.e!.om : k === 'tro' ? undefined : x.l!.id, ik: k === 'person' ? x.e!.k : undefined };
 }
+// ---------- beställda framträdanden (steg 4.3.2.4) ----------
+// saken ledaren l kan betala med: hel, ledig (ingen har den i handen eller bär den, den står inte vid en station) och den
+// minst värda av dem, så att ledaren inte ger bort det bästa
+function betalning(s: State, l: Person): Ting | undefined {
+  let best: Ting | undefined, bv = Infinity;
+  for (const t of tingOf(s)) {
+    if (t.agare !== l.id || t.halv || t.hos !== undefined || t.lass !== undefined || t.vid !== undefined || t.bar !== undefined || t.c < 1) continue;
+    const v = tingVarde(t);
+    if (v > 0 && v < bv) { bv = v; best = t; }
+  }
+  return best;
+}
+// ledaren beställer framträdandet av p (formen d bär ett budskap): ger saken och budskapet blir en hyllning
+function bestall(s: State, p: Person, d: FramDef) {
+  const l = ledareOf(s);
+  if (!d.bud || !l || l === p || isSick(l, s.now) || getRel(s, p, l).op < FRAM.bestallOp) return undefined;
+  if (rnd(s, 'fram', l) >= FRAM.bestall * (1 - legitimitet(s).v)) return undefined;
+  const t = betalning(s, l);
+  if (!t) return undefined;
+  t.agare = p.id;
+  const namn = (SAKER[t.k]?.namn ?? t.k).toLowerCase(), r = getRel(s, p, l);
+  r.op = clamp(r.op + FRAM.bestallTack, -100, 100);
+  think(p, `Fick en ${namn} av ${l.name} för att hylla hen`, 0.05, s.now, 6 * HOUR);
+  count(s, 'framBestalld');
+  log(s, `${l.name} gav ${p.name} en ${namn} för ett framträdande som hyllar ${l.name}.`, 'rel', [l.id, p.id]);
+  const x: BudLage = { ev: 0, l, op: r.op };
+  return { k: 'hylla' as Bud, amne: BUDSKAP.hylla.amne(s, p, x), om: l.id, ik: undefined, betalt: t.k };
+}
 // framträdandet som går att lyssna på
 export function framOppen(s: State) {
   const f = s.fram; // det som är slut ligger kvar tills den som uppträdde är klar (upptradaKlar), eller nästa kväll
@@ -184,9 +218,9 @@ export function framVal(s: State, p: Person, plats: (q: Person) => { x: number; 
   if (pub.length < FRAM.publik || !former.length) return undefined;
   const d = former[Math.floor(rnd(s, 'fram', p) * former.length)], i = d.instrument ? instrumentFor(d, inst) : undefined;
   const start = s.now, slut = start + (FRAM.minuter + rnd(s, 'fram', p) * FRAM.spann) * MIN;
-  const bud = budVal(s, p, d);
+  const bud = bestall(s, p, d) ?? budVal(s, p, d);
   const text = d.text.replace('{namn}', p.name).replace('{hen}', p.sex === 'k' ? 'hon' : 'han').replace('{amne}', bud?.amne ?? AMNE[d.amne](s, p)).replace('{inst}', i ? INSTRUMENT[i].ord : '');
-  s.fram = { k: d.id, p: p.id, start, slut, publik: [], text, inst: i, scen: sc?.id, ...(bud ? { bud: bud.k, om: bud.om, ik: bud.ik } : {}) };
+  s.fram = { k: d.id, p: p.id, start, slut, publik: [], text, inst: i, scen: sc?.id, ...(bud ? { bud: bud.k, om: bud.om, ik: bud.ik, ...('betalt' in bud ? { betalt: bud.betalt as string } : {}) } : {}) };
   s.framKvall = kvall(start);
   count(s, 'framtradanden');
   for (const q of pub) {
@@ -232,7 +266,7 @@ export function upptradaKlar(s: State, p: Person, t: Task) {
   if (pub.length >= FRAM.publik) think(p, `Uppträdde för ${pub.length} vid elden`, FRAM.egen, s.now, FRAM.gladjeTim * HOUR);
   count(s, 'framPublik', pub.length);
   log(s, f.text, 'world', [p.id]);
-  (s.framtradanden ??= []).push({ t: f.start, k: f.k, p: p.id, namn: p.name, text: f.text, n: pub.length, q: Math.round(q * 100) / 100, inst: f.inst, bud: f.bud });
+  (s.framtradanden ??= []).push({ t: f.start, k: f.k, p: p.id, namn: p.name, text: f.text, n: pub.length, q: Math.round(q * 100) / 100, inst: f.inst, bud: f.bud, betalt: f.betalt });
   if (s.framtradanden.length > FRAM.sparas) s.framtradanden.splice(0, s.framtradanden.length - FRAM.sparas);
 }
 // instrumentet slits en gång per framträdande, och går det sönder står det i loggen
