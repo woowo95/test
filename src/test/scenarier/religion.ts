@@ -152,7 +152,7 @@ SCENARIER.tecken = {
       const dog = !sista || SIM.troOf(s, sista.tro)?.slut === s.now;
       return [
         [`den världsliga (andlighet 0) tolkar inte blixten som en tro (${varldslig.filter(p => p.tro !== undefined).length} av 60)`, varldslig.every(p => p.tro === undefined)],
-        [`den mycket andliga gör det ibland (${grundare.length} av 20)`, grundare.length >= 2 && grundare.length < 20],
+        [`den mycket andliga gör det ibland (${grundare.length} av 60)`, grundare.length >= 5 && grundare.length < 40],
         [`tron har grundare, tecken och tolkning (${tr ? SIM.tolkning(tr) : 'ingen'})`, helt],
         ['alla minns blixten som något oförklarligt', andlig.every(p => p.upp?.some(u => u.k === 'tecken'))],
         [`ett nytt tecken stärker tron (${fore} → ${g?.troStyrka}) utan att ge en ny`, !!g && g.troStyrka! > fore && efter === antal],
@@ -164,5 +164,41 @@ SCENARIER.tecken = {
     } finally {
       SIM.UPPLEVELSER.tecken.chans = chans;
     }
+  },
+};
+
+SCENARIER.sprida = {
+  text: 'Tron sprids (steg 4.1.2.2): den som tror övertygar den andliga men inte den världsliga, oftare om de tycker om varandra, och oftare när ett tecken nyss bekräftat tron; den som redan har en annan tro byter inte, och två som tror likadant stärker varandra',
+  kor: () => {
+    const s = createState(9, START);
+    const a = nyInvanare(s, 'k', 40); a.andlig = 95; a.pot.karisma = 16;
+    s.tron = []; a.tro = 1; a.troStyrka = 60;
+    s.tron.push({ id: 1, grundare: a.id, gnamn: a.name, t: s.now, k: 'blixt', bakom: 'Himlens hammare', vill: 'att man tystnar när det mullrar', svek: 'skogen brinner', natur: 15, manga: 50, bekr: s.now - 30 * SIM.DAY });
+    const tr = s.tron[0];
+    // hur många av 40 som börjar tro efter 300 samtal var (man talar med varandra hundratals gånger på några dygn)
+    const prov = (ande: number, op: number) => {
+      let n = 0;
+      for (let i = 0; i < 40; i++) {
+        const b = nyInvanare(s, 'm', 30); b.andlig = ande; const r = SIM.getRel(s, a, b); r.op = op;
+        for (let j = 0; j < 300 && b.tro === undefined; j++) SIM.predika(s, a, b, r, 'djupt samtal');
+        if (b.tro === 1) n++;
+      }
+      return n;
+    };
+    const andlig = prov(90, 30), varldslig = prov(10, 30), ovan = prov(90, -80);
+    tr.bekr = s.now; const bekr = prov(90, 30);
+    const annan = nyInvanare(s, 'm', 30); annan.andlig = 100; annan.tro = 2; const ra = SIM.getRel(s, a, annan); ra.op = 80;
+    for (let j = 0; j < 50; j++) SIM.predika(s, a, annan, ra, 'djupt samtal');
+    const med = nyInvanare(s, 'm', 30); med.tro = 1; med.troStyrka = 40; SIM.predika(s, a, med, SIM.getRel(s, a, med), 'småprat');
+    const gral = nyInvanare(s, 'm', 30); gral.andlig = 100; const rg = SIM.getRel(s, a, gral); rg.op = 80;
+    for (let j = 0; j < 50; j++) SIM.predika(s, a, gral, rg, 'gräl');
+    return [
+      [`den andliga övertygas, den världsliga inte (${andlig} mot ${varldslig} av 40)`, andlig > 5 && varldslig === 0],
+      [`vänner oftare än ovänner (${andlig} mot ${ovan} av 40)`, andlig > ovan + 5],
+      [`ett tecken nyss gör tron mer övertygande (${bekr} mot ${andlig} av 40)`, bekr > andlig + 3],
+      ['den som har en annan tro byter inte', annan.tro === 2],
+      [`två som tror likadant stärker varandra (40 → ${med.troStyrka})`, med.troStyrka! > 40],
+      ['ett gräl för inte tron vidare', gral.tro === undefined],
+    ];
   },
 };

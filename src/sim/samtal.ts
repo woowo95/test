@@ -12,6 +12,7 @@ import { balans } from './balans';
 import { RELT, arArke, arBast, arMentor, arRivaler, minnsRel, skiljGrans } from './relationer';
 import { tankePa } from './teknik';
 import { samtalAmne, samtalBorjar } from './berattelser';
+import { predika } from './religion';
 
 // ---------- balanstal (regel 8) ----------
 // Samtalen: vem man pratar med, vilket slags samtal det blir, hur det går och vad det ger, och humöret. Relationen (op) går från
@@ -146,6 +147,7 @@ export function converse(s: State, a: Person, others: Person[], events?: TalkEve
     }
     samtalBorjar(); // det som delas nu blir samtalets ämne (steg 3.9.5, berattelser.ts)
     share(s, a, b, r, SAMTALSSLAG[kind]); // man berättar vad man vet och lär ut vad man kan
+    predika(s, a, b, r, kind); // och den som tror försöker övertyga (steg 4.1.2.2, religion.ts)
     tankePa(s, a, 'ledarskap', SAMTAL.ledTanke); // och kommer på vad som krävs för att leda (steg 3.5.1)
     berattaBrist(a, b, now); // och vad man längtar efter ("jag längtar efter kött", steg 2.6.2)
     samtalAmne(s, a, b, kind);

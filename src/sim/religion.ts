@@ -1,7 +1,7 @@
 import { clamp, gauss, pick, rnd } from './slump';
-import { HOUR, Person, State } from './typer';
+import { DAY, HOUR, Person, Rel, State } from './typer';
 import { balans } from './balans';
-import { ageOf, alive, count, isParent, living, log } from './folk';
+import { ageOf, alive, count, isParent, living, log, stat } from './folk';
 import { UPPV, formas, upplev } from './uppvaxt';
 
 // Religionen (fas 4.1, "Religion" i designdokumentet). Andligheten (steg 4.1.1.1) är en egenskap hos varje person, 0–100:
@@ -25,7 +25,17 @@ export const TRO = balans('tro', {
   bekrafta: 10, // ett nytt tecken gör tron så här mycket starkare hos den som redan tror
   drom: 0.004, // chansen per sovtimme att någon drömmer något hen inte kan förklara (bara den mycket andliga tolkar det)
   samma: 24, // den som var med om samma sak inom så här många timmar efter att någon tolkade den delar den tron
-  skalaSlump: 15, // så mycket (gånger gauss) en ny tros skalor skiljer sig från tecknets
+  skalaSlump: 15,
+  // tron sprids i samtal (steg 4.1.2.2)
+  sprid: 0.0001, // chansen att lyssnaren börjar tro i ett vanligt samtal (man talar med varandra hundratals gånger på några dygn), gånger det som följer:
+  spridMin: 40, // den som har lägre andlighet än så här övertygas inte i samtal
+  spridKarisma: 10, // talarens karisma (1–20) delad med detta ...
+  spridAnde: 50, // ... talarens andlighet delad med detta, och lyssnarens delad med detta i kvadrat (den världsliga övertygas nästan aldrig) ...
+  spridRel: 100, // ... 1 plus relationen (−100 till 100) delad med detta ...
+  bekrTid: 3, // ... och gånger bekrFaktor om ett tecken bekräftat tron de senaste så här många dygnen (år i spelet)
+  bekrFaktor: 2,
+  styrkaNy: 40, // så stark är tron hos den som just börjat tro
+  samtalStyrka: 2, // ett samtal mellan två som tror likadant gör lyssnarens tro så här mycket starkare // så mycket (gånger gauss) en ny tros skalor skiljer sig från tecknets
 });
 
 // en ny persons andlighet: grundarna och de som flyttar in slumpas jämnt över 0–100, ett barn får en del av föräldrarnas
@@ -130,6 +140,25 @@ function grunda(s: State, p: Person, k: TeckenTyp, om?: string) {
   p.tro = tr.id; p.troStyrka = TRO.styrka;
   count(s, 'tro_ny');
   log(s, `${p.name} tolkade ${teckenText(k, om)} som ett tecken. ${tolkning(tr)}`, 'rel', [p.id]);
+}
+
+// ---------- samtalen (samtal.ts) ----------
+// samtalsslagen som för tron vidare och hur mycket (ett djupt samtal mest, ett gräl inte alls)
+const SPRID_SLAG: Record<string, number> = { 'djupt samtal': 2, 'berättelse': 1.5, 'tröst': 1.5, 'småprat': 1, 'skämt': 0.5, 'flirt': 0.5 };
+// a talar med b (steg 4.1.2.2): den som tror försöker övertyga den som inte tror på något. Chansen beror på talarens karisma och
+// andlighet, lyssnarens andlighet, hur mycket de tycker om varandra och om ett tecken nyss bekräftat tron. Två som tror
+// likadant stärker varandra. Byta tro kommer med steg 10.1.2.4. Drar ur talarens följd 'tro'
+export function predika(s: State, a: Person, b: Person, r: Rel, kind: string) {
+  const tr = troOf(s, a.tro), f = SPRID_SLAG[kind];
+  if (!tr || !f || !alive(b) || ageOf(b, s.now) < UPPV.fran) return;
+  if (b.tro === tr.id) { b.troStyrka = Math.min(100, (b.troStyrka ?? 0) + TRO.samtalStyrka); return; }
+  if (b.tro !== undefined || andlighet(s, b) < TRO.spridMin) return;
+  const chans = TRO.sprid * f * (stat(a, 'karisma', s.now) / TRO.spridKarisma) * (andlighet(s, a) / TRO.spridAnde) * (andlighet(s, b) / TRO.spridAnde) ** 2
+    * Math.max(0, 1 + r.op / TRO.spridRel) * (s.now - tr.bekr < TRO.bekrTid * DAY ? TRO.bekrFaktor : 1);
+  if (rnd(s, 'tro', a) >= chans) return;
+  b.tro = tr.id; b.troStyrka = TRO.styrkaNy;
+  count(s, 'tro_sprid');
+  log(s, `${a.name} har övertygat ${b.name}: ${tr.bakom} vill ${tr.vill}.`, 'rel', [a.id, b.id]);
 }
 
 // ---------- varje timme (steg.ts) ----------
