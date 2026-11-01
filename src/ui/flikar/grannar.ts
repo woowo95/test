@@ -10,17 +10,18 @@ const ROLL_IKON: Record<string, string> = { hovding: 'ledarskap', handlare: 'han
 function grannarHtml() {
   const k = klanerOf(s);
   if (!k.length) return '<p class="muted">Byn känner inga grannar.</p>';
-  return k.map(c => {
+  // en ruta per klan med namnet överst i mitten, som påbuden i Styre (steg 4.5.4.2)
+  return `<div class="rutor">${k.map(c => {
     const t = instText(c.inst), cls = c.inst <= -15 ? 'low' : '';
     const per = c.personer.map(p => `<li title="${esc(`${KLAN_ROLLER[p.roll]?.namn ?? p.roll}: ${p.namn}`)}">${iconImg(ROLL_IKON[p.roll] ?? '', 12)} ${esc(p.namn)}</li>`).join('');
-    return `<div class="tekhead"><b title="${esc(`${c.namn} bor vid ${c.hem}${c.utbrytare ? '. Grundad av några som lämnade byn' : ''}`)}">${esc(c.namn)}</b> <span class="muted">${esc(c.hem)}</span></div>
-    <dl class="kv">
+    return `<div class="ruta"><div class="rutnamn" title="${esc(`${c.namn} bor vid ${c.hem}${c.utbrytare ? '. Grundad av några som lämnade byn' : ''}`)}"><b>${esc(c.namn)}</b><div class="small muted">${esc(c.hem)}</div></div>
+    <dl class="kv smal">
       <dt title="Så många är de">👥</dt><dd title="Så många är de"><span>${c.folk}</span></dd>
       <dt title="Så många kan slåss">⚔️</dt><dd title="Så många kan slåss"><span>${c.styrka}</span></dd>
       <dt title="Så mycket har de (ungefär arbetstimmar)">${iconImg('i_rik', 12)}</dt><dd title="Så mycket har de (ungefär arbetstimmar)"><span>${c.resurser}</span></dd>
       <dt title="${esc(`Hur de ser på byn: ${t} (${c.inst} av −100 till 100)`)}">♥</dt><dd title="${esc(`Hur de ser på byn: ${t} (${c.inst} av −100 till 100)`)}">${bar((c.inst + 100) / 200, cls)}<span>${esc(t)}</span></dd>
     </dl>
-    <ul class="bytt">${per}</ul>`;
-  }).join('');
+    <ul class="bytt">${per}</ul></div>`;
+  }).join('')}</div>`;
 }
 export const grannar: Flik = { namn: 'Grannar', syns: () => !!s.klaner?.length, html: grannarHtml };

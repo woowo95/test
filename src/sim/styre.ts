@@ -100,12 +100,13 @@ export const VAGSKALAR: { id: string; sed?: Sed; namn: string; steg?: string }[]
   { id: 'fortjanst', namn: 'Förtjänst – Härkomst', steg: '9.2.1' },
 ];
 // påbuden: vad ledaren tycker (åt vilket håll från byns egen sed, som en sed från -1 till 1). sed = byns egen sed som påbudet
-// blandas med (saknas: 0). Hur påbudet används står i val.ts
-interface PabudDef { namn: string; text: string; sed?: Sed; asikt: (s: State, l: Person) => number }
+// blandas med (saknas: 0). ruta = påbuden som visas tillsammans i en ruta i Styre (steg 4.5.4.2; saknas: en egen ruta).
+// Hur påbudet används står i val.ts
+interface PabudDef { namn: string; text: string; sed?: Sed; ruta?: string; asikt: (s: State, l: Person) => number }
 const PDEF = {
-  matlager: { namn: 'Matlager', text: 'Hur många dygn mat byn ska ha i förrådet innan den slappnar av', sed: 'forsiktighet', asikt: (s, l) => lagerAsikt(s, l) },
-  vedlager: { namn: 'Vedlager', text: 'Hur många dygn ved byn ska ha i förrådet', sed: 'forsiktighet', asikt: (s, l) => lagerAsikt(s, l) },
-  torkat: { namn: 'Torkat', text: 'Hur mycket av köttet och fisken som torkas på torkställningen', asikt: (s, l) => lagerAsikt(s, l) },
+  matlager: { ruta: 'Lagret', namn: 'Matlager', text: 'Hur många dygn mat byn ska ha i förrådet innan den slappnar av', sed: 'forsiktighet', asikt: (s, l) => lagerAsikt(s, l) },
+  vedlager: { ruta: 'Lagret', namn: 'Vedlager', text: 'Hur många dygn ved byn ska ha i förrådet', sed: 'forsiktighet', asikt: (s, l) => lagerAsikt(s, l) },
+  torkat: { ruta: 'Lagret', namn: 'Torkat', text: 'Hur mycket av köttet och fisken som torkas på torkställningen', asikt: (s, l) => lagerAsikt(s, l) },
   // hånet (steg 4.3.2.3, framtradande.ts): en ledare med låg empati förbjuder att man hånar hen när man uppträder
   han: { namn: 'Hån', text: 'Om den som uppträder får håna ledaren', asikt: (s, l) => clamp((stat(l, 'empati', s.now) - PAB.hanEmp) / PAB.hanDiv, -1, 1) },
 } satisfies Record<string, PabudDef>;

@@ -601,7 +601,7 @@ SCENARIER.oversvamning = {
     for (let i = 0; i < W * W; i++) if (land[i] === 1 && g[i] !== T.Sten) strand.push({ x: i % W, y: Math.floor(i / W) });
     strand.sort((a, b) => Math.hypot(a.x - c.x, a.y - c.y) - Math.hypot(b.x - c.x, b.y - c.y));
     const [pb, pg, ps] = [strand[0], strand.find(p => Math.hypot(p.x - strand[0].x, p.y - strand[0].y) >= 3)!, strand.find(p => Math.hypot(p.x - strand[0].x, p.y - strand[0].y) >= 6)!];
-    s.stackar!.push({ k: 'rotter', n: 30, c: 1, x: pb.x, y: pb.y }, { k: 'grenar', n: 8, c: 1, x: pg.x, y: pg.y }, { k: 'sten', n: 3, c: 1, x: ps.x, y: ps.y });
+    s.stackar!.push({ k: 'rotter', n: 200, c: 1, x: pb.x, y: pb.y }, { k: 'grenar', n: 8, c: 1, x: pg.x, y: pg.y }, { k: 'sten', n: 3, c: 1, x: ps.x, y: ps.y });
     SIM.tidy(s);
     const pf = strand.find(p => Math.hypot(p.x - strand[0].x, p.y - strand[0].y) >= 9)!;
     s.falt = [{ id: 1, x: pf.x, y: pf.y, w: 1, dir: 1, n: 1, agare: -1, steg: 'vaxer', klara: 0, kvar: 0, sadda: 1, groda: 'arter', vuxit: 0, rord: s.now } as SIM.Falt];
@@ -683,7 +683,7 @@ SCENARIER.oversvamning = {
       [`mat som vattnet hotar men ingen når får inte de vuxna att stå utan något att göra (${utan} av ${steg} steg på 6 timmar, ${dodaQ} döda)`, inmurad && utan < steg / 4 && dodaQ === 0],
       [`det regnar mer innan och medan vattnet stiger (${regn} timmar mot ${regnUtan} utan översvämningen, av 48)`, regn > regnUtan],
       [`sjön svämmar över ${hogst} rutor upp på land (${vatten0} → ${vatten1} rutor vatten)`, hogst >= 2 && vatten1 > vatten0],
-      [`maten på stranden förstördes (${s.stat?.['flod mat'] ?? 0} rötter; resten bars in innan, ${barKvar} kvar av 30)`, barKvar === 0 && (s.stat?.['flod mat'] ?? 0) > 0],
+      [`maten på stranden förstördes (${s.stat?.['flod mat'] ?? 0} rötter; resten bars in innan, ${barKvar} kvar av 200)`, barKvar === 0 && (s.stat?.['flod mat'] ?? 0) > 0],
       [`grenarna flöt bort (${grenKvar} kvar av 8)`, grenKvar === 0],
       [`stenen ligger kvar (${stenKvar} av 3) och slits fortare i vattnet (${slit0.toFixed(2)} → ${slit1.toFixed(2)})`, stenKvar === 3 && slit1 > slit0 * 2],
       [`ärterna på fältet under vatten dog${frost ? ` (frosten tog ${frost})` : ''}`, faltDog],

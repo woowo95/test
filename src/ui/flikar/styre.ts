@@ -18,11 +18,14 @@ export const styre: Flik = {
     if (!st) return '<p class="muted">Byn har ingen ledare.</p>';
     const f = styrelseform(s), lg = legitimitet(s);
     const delar: [string, number, number][] = [['Folkets stöd', lg.stod, LED.wStod], ['Tiden vid makten', lg.tid, LED.wTid], ['Vintrar byn klarat', lg.vint, LED.wVint]];
-    const ledare = l ? `<div class="tekhead">${iconImg('ledarskap', 24)} <b>${esc(f.namn)}</b> ${hjalpKnapp('styre', 'Vad är styret?')}</div>
+    const lyss = st.pabud ? pabudAndel(s) : undefined;
+    // formens namn överst i mitten, ledaren under, och legitimiteten och hur många som lyssnar på påbuden bredvid varandra (steg 4.5.4.2)
+    const ledare = l ? `<div class="formnamn">${iconImg('ledarskap', 24)} <b>${esc(f.namn)}</b> ${hjalpKnapp('styre', 'Vad är styret?')}</div>
       ${hjalpText('styre', `<p class="muted">${esc(f.text(l, st.titel ?? ''))} Bara den som kan ledarskap kan bli ledare. Ledaren drar byns seder åt sitt håll, bestämmer påbuden och straffar det hen sett eller hört om.</p>`)}
       <ul class="rels"><li>${pLink(l)}<span></span><span></span><span class="muted">${esc(st.titel ?? '')}, ${dygnTxt(s.now - (st.sedan ?? s.now))}</span></li></ul>
-      <dl class="kv"><dt title="Hur mycket byn godtar ledaren">⚖️ Legitimitet</dt><dd>${bar(lg.v, lg.v < 0.3 ? 'low' : '')}<span>${Math.round(lg.v * 100)} %</span></dd>
-      ${hjalpText('styre', delar.map(([n, v, w]) => `<dt class="small">${n}</dt><dd class="small">${bar(v)}<span>${Math.round(v * 100)} % · väger ${num(w)}</span></dd>`).join('') + (lg.oratt > 0.005 ? `<dt class="small">Orättvisa straff</dt><dd class="small">−${Math.round(lg.oratt * 100)} %</dd>` : ''))}</dl>`
+      <div class="rutor"><div class="ruta" title="Hur mycket byn godtar ledaren"><div class="rutnamn">⚖️ Legitimitet</div><div class="rutbar">${bar(lg.v, lg.v < 0.3 ? 'low' : '')}<span>${Math.round(lg.v * 100)} %</span></div>
+      ${hjalpText('styre', `<dl class="kv smal">${delar.map(([n, v, w]) => `<dt class="small">${n}</dt><dd class="small">${bar(v)}<span>${Math.round(v * 100)} % · väger ${num(w)}</span></dd>`).join('') + (lg.oratt > 0.005 ? `<dt class="small">Orättvisa straff</dt><dd class="small">−${Math.round(lg.oratt * 100)} %</dd>` : '')}</dl>`)}</div>
+      ${lyss !== undefined ? `<div class="ruta" title="Hur mycket byn rättar sig efter påbuden"><div class="rutnamn">📜 Lyssnar</div><div class="rutbar">${bar(lyss)}<span>${Math.round(lyss * 100)} %</span></div></div>` : ''}</div>`
       : '<p class="muted">Byn har ingen ledare just nu. Ingen vuxen som kan ledarskap är vald ännu.</p>';
     const skalar = VAGSKALAR.map(v => {
       const oppen = v.sed ? st.oppna.includes(v.id) : false;
@@ -41,14 +44,19 @@ const varde = (k: Pabud, v: number) => k === 'han' ? (v < -0.33 ? 'förbjudet' :
 function pabudDel() {
   const st = s.styre, l = ledareOf(s);
   if (!l || !st?.pabud) return '<p class="muted">Inga påbud gäller. Utan ledare gör byn som den själv tycker.</p>';
-  const a = pabudAndel(s);
+  // en ruta per påbud, och påbuden med samma ruta (lagret) tillsammans i en
+  const rutor = new Map<string, Pabud[]>();
+  for (const k of PABUD_LIST) { const r = PABUD[k].ruta ?? PABUD[k].namn; rutor.set(r, [...(rutor.get(r) ?? []), k]); }
+  const rad = (k: Pabud, ensam: boolean) => {
+    const d = PABUD[k], egen = d.sed ? s.seder.v[d.sed] : 0, led = st.pabud![k] ?? egen;
+    const pil = `<span class="muted">${led > egen + 0.02 ? '▲' : led < egen - 0.02 ? '▼' : ''}</span>`;
+    return `${ensam ? '' : `<dt title="${esc(d.text)}">${esc(d.namn)}</dt>`}<dd title="${esc(`${l.name} vill ${varde(k, led)}, byn själv ${varde(k, egen)}`)}"><b>${varde(k, pabud(s, k))}</b>${pil}</dd>${hjalpText('pabud', `<dd class="small muted helrad">${esc(d.text)}. ${esc(l.name)}: ${varde(k, led)}, byn: ${varde(k, egen)}</dd>`)}`;
+  };
   return `<div class="tekhead">${hjalpKnapp('pabud', 'Vad är påbud?')}</div>
-    <dl class="kv"><dt title="Hur mycket byn rättar sig efter påbuden">📜 Lyssnar</dt><dd>${bar(a)}<span>${Math.round(a * 100)} %</span></dd></dl>
     ${hjalpText('pabud', `<p class="muted">${esc(l.name)} bestämmer påbuden efter sin personlighet och ser över dem varje årstid. Byn blandar påbudet med sin egen sed: ju högre legitimitet och rangordning, desto mer lyssnar byn.</p>`)}
-    <dl class="kv">${PABUD_LIST.map(k => {
-      const d = PABUD[k], egen = d.sed ? s.seder.v[d.sed] : 0, led = st.pabud![k] ?? egen;
-      return `<dt title="${esc(d.text)}">${esc(d.namn)}</dt><dd title="${esc(`${l.name} vill ${varde(k, led)}, byn själv ${varde(k, egen)}`)}"><b>${varde(k, pabud(s, k))}</b><span class="muted">${led > egen + 0.02 ? '▲' : led < egen - 0.02 ? '▼' : ''}</span></dd>${hjalpText('pabud', `<dt></dt><dd class="small muted">${esc(d.text)}. ${esc(l.name)}: ${varde(k, led)}, byn: ${varde(k, egen)}</dd>`)}`;
-    }).join('')}</dl>`;
+    <div class="rutor">${[...rutor].map(([namn, ks]) => ks.length === 1
+      ? `<div class="ruta" title="${esc(PABUD[ks[0]].text)}"><div class="rutnamn">${esc(namn)}</div><dl class="kv ensam">${rad(ks[0], true)}</dl></div>`
+      : `<div class="ruta bred"><div class="rutnamn">${esc(namn)}</div><dl class="kv smal">${ks.map(k => rad(k, false)).join('')}</dl></div>`).join('')}</div>`;
 }
 
 // rättegångarna (steg 3.10.17): en rad per dom, nyast först. Ett tryck visar berättelsen och hur domen gick till

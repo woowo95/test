@@ -82,7 +82,7 @@ SCENARIER.gava = {
     for (let i = 0; i < 20; i++) { if (askForTool(s, a, b) === 'gåva') barn++; if (har(b, 'fiskespjut')) ownedBy(s, b).forEach(t => { if (t.k === 'fiskespjut') t.agare = a.id; }); }
     // tankarna efter gåvan finns kvar efter en timme (12 och 6 timmar)
     const tanke = (p: Person, t: string) => p.thoughts.some(q => q.text.startsWith(t) && q.until > s.now + HOUR);
-    const tankar = barn > 0 && tanke(b, 'Fick en ') && tanke(a, 'Gav en ');
+    const tankar = barn > 0 && tanke(b, 'Fick ett träspjut') && tanke(a, 'Gav ett träspjut');
     // ovän: c och a är osams
     b.mother = undefined; getRel(s, a, c).op = -40;
     let ovan = 0; for (let i = 0; i < 20; i++) if (askForTool(s, a, c)) ovan++;

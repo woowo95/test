@@ -404,13 +404,13 @@ export function askForTool(s: State, a: Person, b: Person): 'gåva' | 'byte' | u
       if (!osams(s, g, m) && byte(s, m, g, [{ k, n: 1, t }], { behov: DELA.saknar, minst: 1, fara: 0, typ: 'redskap', utom: [k] })) return 'byte';
       if (rnd(s, 'dela', g) >= willing(s, g, m, ownedKind(s, g, k))) continue;
       give(t, g, m);
-      const namn = (SAKER[k]?.namn ?? k).toLowerCase(), r = getRel(s, a, b);
+      const namn = `${SAKER[k]?.ett ? 'ett' : 'en'} ${(SAKER[k]?.namn ?? k).toLowerCase()}`, r = getRel(s, a, b); // rätt genus (ett träspjut)
       r.op = clamp(r.op + 4, -100, 100);
-      think(m, `Fick en ${namn} av ${g.name}`, 0.1, s.now, 12 * HOUR);
-      think(g, `Gav en ${namn} till ${m.name}`, 0.05, s.now, 6 * HOUR); minnsGava(s, g, m);
+      think(m, `Fick ${namn} av ${g.name}`, 0.1, s.now, 12 * HOUR);
+      think(g, `Gav ${namn} till ${m.name}`, 0.05, s.now, 6 * HOUR); minnsGava(s, g, m);
       count(s, 'gavor');
       gavaKlar(s, personPart(s, g), personPart(s, m), [{ k, n: 1, t }], false);
-      handelse(s, g, 'gava', m, 'en ' + namn);
+      handelse(s, g, 'gava', m, namn);
       return 'gåva';
     }
   }
