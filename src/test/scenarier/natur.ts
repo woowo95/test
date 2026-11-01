@@ -445,6 +445,25 @@ SCENARIER.slaktbank = {
     // slakten och rensningen görs vid bänken. Utan bänk slaktas och rensas inget (viltet och abborren ligger kvar och äts som de är)
     const vid = st ? vidStation(st) : { x: 0, y: 0 };
     const vidBank = (['slakta', 'rensa'] as const).every(a => { const o = spotFor(s, a, p); return stationFor(s, a) === st && Math.abs(o.y - vid.y) < 1e-9 && Math.abs(o.x - vid.x) <= 0.3 * bredd + 1e-9; }); // längs bänkens bredd
+    // en bänk med rutan framför i vattnet används inte (man skulle stå bredvid den) och flyttas till en plats där man står på land (steg 4.5.4.3)
+    let iVattnet = false, flyttad = false, vattenPlats = '';
+    if (st) {
+      const q = cloneState(s), qb = stationerOf(q).find(t => t.id === st.id)!, tl = getMap(q.seed).tiles, c = campCenter(q);
+      let bd = Infinity, plats: { x: number; y: number } | undefined;
+      for (let y = 2; y < SIM.H - 3; y++) for (let x = 2; x < W - 2 - sz.w; x++) {
+        const d = Math.hypot(x - c.x, y - c.y);
+        if (d >= bd || !Array.from({ length: sz.w }, (_, i) => i).every(i => usable(q, x + i, y) && tl[(y + 1) * W + x + i] === T.Vatten)) continue;
+        bd = d; plats = { x, y };
+      }
+      if (plats) {
+        qb.x = plats.x; qb.y = plats.y; qb.rot = undefined; SIM.touch(q); vattenPlats = `${plats.x},${plats.y}`;
+        iVattnet = !SIM.framFri(q, qb) && stationFor(q, 'slakta') !== qb;
+        for (const r of living(q)) r.task = undefined;
+        stepStationer(q);
+        const nu = stationerOf(q).find(t => t.k === 'slaktbank');
+        flyttad = !!nu && (nu.x !== plats.x || nu.y !== plats.y) && SIM.framfor(nu).every(f => tl[f.y * W + f.x] !== T.Vatten) && SIM.framFri(q, nu);
+      }
+    }
     const u = createState(1, START), uq = living(u).find(r => ageOf(r, u.now) >= 18)!;
     for (const r of u.people) r.tek = { ...r.tek, kniv: 1 };
     setAmount(u, 'kniv', 1); tidyTools(u); setMat(u, { vilt: 3 * KANIN, abborre: 3 });
@@ -468,6 +487,7 @@ SCENARIER.slaktbank = {
       [`en kniv hör till bänken, är byns och ligger kvar där (${tomma ? 'en ny kniv lades där' : 'en kniv ur förrådet flyttades dit när bänken blev klar'})`, ligger],
       ['den som slaktar utan egen kniv tar bänkens, och den läggs tillbaka vid bänken', tog && tillbaka],
       ['viltet slaktas och fisken rensas vid bänken', vidBank],
+      [`en bänk med vatten framför (${vattenPlats || 'ingen plats hittades'}) används inte och flyttas dit man står på land`, iVattnet && flyttad],
       ['utan bänk slaktas och rensas inget: viltet och abborren ligger kvar att ätas som de är', ingenSlakt && kvar],
       [`en fälld varg slaktas till ${varg.kott} vargkött, ${varg.skinn} vargskinn och ${varg.ben} ben (benen är samma sak som kaninens; steg 3.7.14)`, vargOk],
       [`jaktfärdigheten avgör köttet: ${ny.toFixed(2)} kött av tre kaniner för den ovane, ${van.toFixed(2)} för den vane`, kottOk && van > ny],

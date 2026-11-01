@@ -10,7 +10,7 @@ import { BYN } from './egendom';
 import { Zone, inZone, pilesOf, stallBorta, usable, zoneAt, zonesOf } from './lager';
 import { PLATS, campDist, campKey, rektAvstand } from './plats';
 import { balans } from './balans';
-import { Hus, Rum, bitAt, bitsOf, gridOf, housesOf, husById, roomAt, touch } from './byggnad';
+import { Hus, Rum, bitAt, bitsOf, blocked, gridOf, housesOf, husById, roomAt, touch } from './byggnad';
 import { bedTile, fnOf, sovHus, sovKvar, sovPlats } from './byggnader';
 import { ACTS } from './handlingar';
 import { SAKER, isTool } from './saker';
@@ -297,7 +297,10 @@ export function framfor(t: Station) {
 }
 // står något framför stationen (en hög, ett redskap på marken eller en annan station)? Då kan den inte användas
 export const framFri = (s: State, t: Station) => framfor(t).every(q => !(s.stackar ?? []).some(a => a.x === q.x && a.y === q.y)
-  && !tingOf(s).some(k => k.x === q.x && k.y === q.y && k.hos === undefined && k.lass === undefined && k.bar === undefined && k.vid === undefined) && !stationAt(s, q.x, q.y));
+  && !tingOf(s).some(k => k.x === q.x && k.y === q.y && k.hos === undefined && k.lass === undefined && k.bar === undefined && k.vid === undefined) && !stationAt(s, q.x, q.y)
+  && inMap(q.x, q.y) && !blocked(s, q.x + 0.5, q.y + 0.5)); // inte i vattnet (eller översvämningen): då står man bredvid stationen (steg 4.5.4.3)
+// står man framför stationen på land? Rutan där man arbetar får inte vara vatten (steg 4.5.4.3)
+const framLand = (s: State, x: number, y: number, w: number, h: number) => Array.from({ length: w }, (_, i) => i).every(i => inMap(x + i, y + h) && getMap(s.seed).tiles[(y + h) * W + x + i] !== T.Vatten);
 // handlingen görs bara vid en station (bara i registret)
 const BARA = new Set<Act>(STATION_LIST.flatMap(k => (STATIONER[k] as StationDef).bara ?? []));
 // handlingen kan göras: den kräver ingen station, eller byn har en färdig (och redskapet som handlingen kräver ligger där)
@@ -423,7 +426,7 @@ function siteUtkant(s: State, k: string) {
         if (t !== T.Gras && t !== T.Sand && t !== T.Skog || g.trees[q.y * W + q.x] >= FOREST || !ledig(s, q.x, q.y)) { ok = false; break; }
         d = Math.min(d, byAvstand(s, q.x, q.y));
       }
-      if (!ok || d < STATION.utkantMin || d > u.till || !friRunt(s, rutor)) continue;
+      if (!ok || d < STATION.utkantMin || d > u.till || !friRunt(s, rutor) || arbetar(stationDef(k)) && !framLand(s, x, y, w, h)) continue;
       const lek = paLek(lekR, x, y, w, h) ? STATION.lek : 0;
       const vatten = u.vatten && s.hygien ? s.hygien * STATION.latrinVattenPoang * Math.max(0, STATION.latrinVatten - tillVatten(s, x, y, STATION.latrinVatten)) : 0;
       const sc = Math.abs(d - u.avst) + lek + vatten + rot * STATION.vriden;
@@ -482,6 +485,7 @@ function siteUte(s: State, k: string) {
       if (fri && stationDef(k)?.platser) fri = bordPlatser({ k, x, y, rot }).every(q => ledig(s, q.x, q.y)); // stubbarna runt bordet
       if (fri) fri = friRunt(s, [...rutorAv(x, y, w, h), ...(stationDef(k)?.platser ? bordPlatser({ k, x, y, rot }) : [])], true); // plats för en stig runt (steg 2.10.8)
       for (let i = 0; i < w && fri; i++) fri = !gridOf(s).at.has((y + h) * W + x + i) && !stationAt(s, x + i, y + h); // man står framför den, inte i en vägg eller en annan station
+      if (fri && arbetar(stationDef(k))) fri = framLand(s, x, y, w, h); // och inte i vattnet (steg 4.5.4.3)
       if (!fri) continue;
       // helst mot en vägg, men inte vid en öppning där man går in (Björn efter v101)
       let vagg = 0;
@@ -964,12 +968,12 @@ function iVagen(s: State) {
     const d = stationDef(t.k);
     if (!d || !isKlar(t) || d.forvar || d.eld || d.brasa) return false;
     const { w, h } = storlekAv(t), rutor = rutorAv(t.x, t.y, w, h);
-    if (!rutor.some(q => fram.has(q.y * W + q.x)) && !(d.sover && t.inne && iIngang(s, t.x, t.y, w, h))) return false;
+    if (!rutor.some(q => fram.has(q.y * W + q.x)) && !(d.sover && t.inne && iIngang(s, t.x, t.y, w, h)) && !(arbetar(d) && !framLand(s, t.x, t.y, w, h))) return false;
     return !d.gor.some(a => doingAct(s, a)) && !living(s).some(p => rutor.some(q => q.x === Math.floor(p.x) && q.y === Math.floor(p.y)));
   });
   if (!t) return;
   const d = stationDef(t.k)!, { w, h } = storlekAv(t);
-  const var_ = rutorAv(t.x, t.y, w, h).some(q => fram.has(q.y * W + q.x)) ? 'där man arbetar vid en bänk' : 'i ingången';
+  const var_ = rutorAv(t.x, t.y, w, h).some(q => fram.has(q.y * W + q.x)) ? 'där man arbetar vid en bänk' : arbetar(d) && !framLand(s, t.x, t.y, w, h) ? 'så att man fick stå i vattnet' : 'i ingången';
   const at = utan(s, t, () => stationSite(s, t.k, byId(s, t.ag)));
   count(s, 'station i vägen');
   if (at) { flytta(s, t, at); log(s, `${d.namn} flyttades eftersom den stod ${var_}.`, 'world'); return; }
