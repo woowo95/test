@@ -685,3 +685,45 @@ SCENARIER.bytessystem = {
     ];
   },
 };
+
+SCENARIER.handlare = {
+  text: 'Handlare som kommer när byns rikedom passerat en gräns (steg 4.4.1.2, handel.ts): en fattig by får ingen handlare; när rikedomen passerat HANDEL.rik bestäms när den första kommer. Handlaren kommer gående från kartans kant, breder ut en filt med sina varor nära elden, stannar några timmar och går hem igen, och nästa besök bestäms. Varorna ryms i ryggsäcken, den första handlaren står i krönikan, och under istiden kommer ingen.',
+  kor: () => {
+    const timmar = (s: State, n: number) => { for (let i = 0; i < n * 3600 / BEAT; i++) step(s, BEAT); };
+    // en fattig by: ingen handlare bestäms
+    let s = createState(6, START);
+    timmar(s, 3);
+    const fattig = s.nastaHandlare === undefined && !s.handlare && rikedom(s) < SIM.HANDEL.rik;
+    // en rik by: den första handlaren bestäms
+    rikBy(s); for (let i = 0; i < 40; i++) addTo(s, 'flinta', 10);
+    timmar(s, 2);
+    const bestamd = rikedom(s) >= SIM.HANDEL.rik && s.nastaHandlare !== undefined && s.nastaHandlare <= s.now + SIM.HANDEL.forsta[1] * SIM.DAY;
+    // handlaren kommer: från kanten, med varor som ryms i ryggsäcken
+    s.nastaHandlare = s.now;
+    for (let i = 0; i < 30 && s.handlare?.fas !== 'handlar'; i++) step(s, BEAT);
+    const h = s.handlare, e = SIM.eldPlats(s);
+    const kom = !!h && h.id < 0 && h.varor.length > 0 && SIM.kgOf(h.varor) <= SIM.rymmer(h) && h.silver >= SIM.HANDEL.silver[0]
+      && (h.ut.x < 1 || h.ut.y < 1 || h.ut.x > SIM.W - 1 || h.ut.y > SIM.H - 1);
+    const filt = !!h && h.fas === 'handlar' && Math.hypot(h.x - e.x - 0.5, h.y - e.y - 0.5) <= SIM.HANDEL.avstand + 1
+      && (s.filtar ?? []).some(f => f.handlare === h.id && f.varor.length === h.varor.length);
+    const kron = (s.hist?.kronika ?? []).filter(k => k[1].includes('första handlaren')).length === 1;
+    // hen går hem efter några timmar, filten plockas ihop och nästa besök bestäms
+    timmar(s, SIM.HANDEL.stannarTim[1] + 1);
+    const gick = !s.handlare && !(s.filtar ?? []).some(f => f.handlare !== undefined) && (s.nastaHandlare ?? 0) > s.now + SIM.HANDEL.dygnMin * 0.7 * SIM.DAY - 2 * HOUR
+      && s.log.some(l => l.text.includes('gick hemåt'));
+    // under istiden kommer ingen
+    const t = createState(6, START); rikBy(t);
+    t.kal = SIM.nyKalender(t.now, SIM.ISTID); t.nastaHandlare = t.now;
+    timmar(t, 3);
+    const istid = SIM.iIstiden(SIM.ageIndex(t)) && !t.handlare;
+    return [
+      [`en fattig by får ingen handlare (rikedom ${Math.round(rikedom(createState(6, START)))})`, fattig],
+      [`när byn är rik nog bestäms den första handlaren (rikedom ${Math.round(rikedom(s))})`, bestamd],
+      [`handlaren kommer från kanten med varor som ryms i ryggsäcken (${h ? `${h.namn}, ${SIM.kgOf(h.varor).toFixed(1)} kg av ${SIM.rymmer(h)}` : 'ingen'})`, kom],
+      ['handlaren breder ut en filt med varorna nära elden', filt],
+      ['den första handlaren står i krönikan', kron],
+      ['handlaren går hem efter några timmar och nästa besök bestäms', gick],
+      ['under istiden kommer ingen handlare', istid],
+    ];
+  },
+};

@@ -142,13 +142,14 @@ const N1 = ['A', 'Bo', 'Da', 'E', 'Fa', 'Gu', 'Ha', 'I', 'Ka', 'Lo', 'Ma', 'Ny',
 const N2 = ['r', 'n', 'l', 'rk', 'nd', 'st', 'g', 'v', 'm', 'sk', 'lv', 'rn', 'k', 'd'];
 const NK = ['a', 'e', 'ja', 'ra', 'dis', 'run', 'hild', 'frid', 'ny', 'vi', 'ka'];
 const NM = ['e', 'o', 'ar', 'ik', 'ulf', 'mund', 'björn', 'vid', 'stig', 'ger', 'an'];
-function makeName(s: State, sex: 'm' | 'k') {
+// ett nytt namn, med följden strom (handlaren tar sitt ur handel, så att följden folk inte ändras)
+export function makeName(s: State, sex: 'm' | 'k', strom: Strom = 'folk') {
   for (let i = 0; i < 20; i++) {
-    const n = pick(s, N1, 'folk') + (rnd(s, 'folk') < 0.7 ? pick(s, N2, 'folk') : '') + pick(s, sex === 'k' ? NK : NM, 'folk');
+    const n = pick(s, N1, strom) + (rnd(s, strom) < 0.7 ? pick(s, N2, strom) : '') + pick(s, sex === 'k' ? NK : NM, strom);
     const nn = n.charAt(0).toUpperCase() + n.slice(1).toLowerCase();
     if (nn.length >= 3 && nn.length <= 9 && !s.people.some(p => p.name === nn && alive(p))) return nn;
   }
-  return pick(s, N1, 'folk') + pick(s, sex === 'k' ? NK : NM, 'folk');
+  return pick(s, N1, strom) + pick(s, sex === 'k' ? NK : NM, strom);
 }
 
 // ---------- personer ----------

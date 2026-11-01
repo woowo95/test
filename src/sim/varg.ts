@@ -116,7 +116,7 @@ function flockMod(f: Vargflock) {
   return m / Math.max(1, f.vargar.length) * (1 + VARG.flockMod * (f.vargar.length - 1));
 }
 // den närmaste punkten på var och en av kartans fyra kanter, den närmaste först
-function kanterna(x: number, y: number) {
+export function kanterna(x: number, y: number) {
   const ut = [x, W - x, y, H - y];
   return [0, 1, 2, 3].sort((a, b) => ut[a] - ut[b]).map(i => ({ x: i === 0 ? 0.3 : i === 1 ? W - 0.3 : x, y: i === 2 ? 0.3 : i === 3 ? H - 0.3 : y }));
 }

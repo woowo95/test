@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { BYTE, SEC, byId, clamp } from '../sim';
+import { BYTE, SEC, byId, clamp, handlarPlats } from '../sim';
 import { iconCanvas } from '../ikoner';
 import { s, ui } from './lage';
 import { Ikoner, TS, peopleG, pileLayer, world } from './scen';
@@ -17,8 +17,12 @@ function platsAvPart(id: number) {
   if (p) return posOf(p);
   for (const f of partPlats.fler) { const q = f(id); if (q) return q; }
 }
+partPlats.fler.push(id => s.handlare && s.handlare.id === id ? handlarPlats(s.handlare, ui.nu) : undefined);
 export function drawHandel() {
   filtIkoner.start(); handIkoner.start();
+  // handlaren (steg 4.4.1.2): på väg in, vid filten eller på väg hem
+  const h = s.handlare;
+  if (h) { const p = handlarPlats(h, ui.nu); handIkoner.add('handlare', p.x * TS - TS / 2, p.y * TS - TS, TS / iconCanvas('handlare').width); }
   for (const f of s.filtar ?? []) {
     if (!f.handlare && f.slut <= ui.nu) continue;
     const x0 = f.x * TS - TS, y0 = f.y * TS - TS / 2, sc = (2 * TS) / iconCanvas('filt').width;

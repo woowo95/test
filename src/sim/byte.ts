@@ -62,7 +62,7 @@ export function satPersonFlytt(l: typeof lamnaPerson, t: typeof taPerson) { lamn
 // en överlämning: saken k går från a till b (personernas id eller handlarens), med start t. Bara för bilden
 export interface Overl { k: string; a: number; b: number; t: number }
 // en filt med det som byts: platsen, när den plockas ihop och sakerna (vems de var, fran)
-export interface Filt { x: number; y: number; slut: number; varor: { k: string; n: number; fran: number }[]; handlare?: true }
+export interface Filt { x: number; y: number; slut: number; varor: { k: string; n: number; fran: number }[]; handlare?: number } // handlare: handlarens id, när det är handlarens filt (ligger tills hen går)
 const filtarOf = (s: State) => (s.filtar ??= []);
 // vad som nyss bytts bort: slaget k gick från a till b vid t. Så att två inte byter samma sak fram och tillbaka
 export interface Bytt { k: string; a: number; b: number; t: number }

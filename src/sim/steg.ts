@@ -44,6 +44,7 @@ import { kroppFart, markFaktor, smidig } from './gang';
 import { chooseTask, dangers, nastaBuske, nastaRedskap, spotFor } from './val';
 import { djurSteg } from './djur';
 import { vargSteg, vargjaktSteg } from './varg';
+import { handelSteg } from './handel';
 import { vaktSteg } from './vakt';
 import { JAKT, jaktForsok, jaktKlar } from './jakt';
 import { bristSteg, frysFaktor, naringSjunker, skorbjugg, trottFaktor } from './naring';
@@ -179,6 +180,7 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
   gridOf(s); // väggarna och rummen, så att vägsökningen vet var väggarna står
   stationRutor(s); sakerPaGolvet(s); // ... och var hyllorna står och sakerna ligger på golvet (steg 2.3.6)
   djurSteg(s); // kaningrupperna väljer plats när deras tid börjar
+  handelSteg(s, dtSec); // handlaren kommer, handlar och går (handel.ts, steg 4.4.1)
   vargSteg(s, dtSec); // vargarna under istiden (varg.ts, steg 3.7.1)
   tornadoSteg(s); // tornadon drar fram (tornado.ts, steg 3.8.4)
   brandSteg(s, dtSec); // gnistor, blixten och elden som sprider sig (brand.ts, steg 3.8.5)
