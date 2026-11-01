@@ -170,6 +170,7 @@ Allt i `src/test/` körs med tsx i Node och ingår inte i spelet. Filer som hete
 | `jamfor.ts` | `npm run jamfor`: by för by mot en äldre version (i en egen git-worktree), med och utan balanstal (`--satt`) eller för flera värden på ett balanstal (`--svep`). Cachen (node_modules/.cache/jamfor) har en fil per kod och balanstal: en äldre version per commit, koden nu per innehållet i en.ts och allt den importerar (följt import för import, plus tsconfig.json och node-versionen), så att en ändring i scenarierna eller gränssnittet inte kör om något |
 | `balans.ts` | `npm run balans`: många byar, median, sämsta och bästa (riktningen ur NYCKELTAL; det som bara är information med lägsta och högsta) |
 | `natur.ts`, `natur-en.ts` | `npm run natur` (steg 1.7.2); natur-en.ts kör en by med eller utan redskap |
+| `texter.ts`, `texter-en.ts` | `npm run texter` (steg 4.5.1.1): alla texter som skrivs, sorterade efter mall och variant, i texter.txt (och texter.json, som inte committas). texter-en.ts kör en by med `lyssnaPaTexter` (berattelser.ts), som får varje vald variant ifylld, och skriver beskrivningar, samtal, relationer och sakernas berättelser en gång per dygn som om någon tittade |
 | `takt.ts`, `teknik.ts`, `detaljer.ts`, `talen.ts` | Undersökning: vad en arbetstimme ger, när teknikerna kommer, den långa utskriften och balanstalen, alla eller de som matchar ett filter (se CLAUDE.md) |
 
 ## Tester: vilket när
