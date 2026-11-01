@@ -3,6 +3,7 @@ import { createState, Person } from '../../sim';
 import * as SIM from '../../sim';
 import { START } from '../kor';
 import { SCENARIER, nyInvanare } from './hjalp';
+import { hasIcon } from '../../ikoner';
 
 SCENARIER.andlighet = {
   text: 'Andligheten (steg 4.1.1.1): alla har en mellan 0 och 100, grundarna spridda över hela skalan, barnen delvis som föräldrarna, och den syns först när den första tron finns',
@@ -173,7 +174,7 @@ SCENARIER.sprida = {
     const s = createState(9, START);
     const a = nyInvanare(s, 'k', 40); a.andlig = 95; a.pot.karisma = 16;
     s.tron = []; a.tro = 1; a.troStyrka = 60;
-    s.tron.push({ id: 1, grundare: a.id, gnamn: a.name, t: s.now, k: 'blixt', bakom: 'Himlens hammare', vill: 'att man tystnar när det mullrar', svek: 'skogen brinner', natur: 15, manga: 50, bekr: s.now - 30 * SIM.DAY });
+    s.tron.push({ id: 1, grundare: a.id, gnamn: a.name, t: s.now, k: 'blixt', ar: 1, bakom: 'Himlens hammare', vill: 'att man tystnar när det mullrar', svek: 'skogen brinner', natur: 15, manga: 50, bekr: s.now - 30 * SIM.DAY });
     const tr = s.tron[0];
     // hur många av 40 som börjar tro efter 300 samtal var (man talar med varandra hundratals gånger på några dygn)
     const prov = (ande: number, op: number) => {
@@ -199,6 +200,40 @@ SCENARIER.sprida = {
       ['den som har en annan tro byter inte', annan.tro === 2],
       [`två som tror likadant stärker varandra (40 → ${med.troStyrka})`, med.troStyrka! > 40],
       ['ett gräl för inte tron vidare', gral.tro === undefined],
+    ];
+  },
+};
+
+SCENARIER.tronamn = {
+  text: 'Namn och berättelse (steg 4.1.2.3): när tre tror får tron ett namn som ingen annan tro har, tecknets symbol och en berättelse om hur den började, och det står i krönikan',
+  kor: () => {
+    const s = createState(9, START);
+    const ny = (k: SIM.TeckenTyp) => {
+      const a = nyInvanare(s, 'k', 40); a.andlig = 100;
+      for (let i = 0; i < 50 && a.tro === undefined; i++) { s.now += 25 * SIM.HOUR; SIM.tecken(s, a, k); }
+      return a;
+    };
+    const a = ny('blixt'), tr = SIM.troOf(s, a.tro)!;
+    const b = nyInvanare(s, 'm', 30); b.tro = tr.id;
+    SIM.stepReligion(s);
+    const fore = tr.namn;
+    const c = nyInvanare(s, 'm', 30); c.tro = tr.id;
+    SIM.stepReligion(s);
+    // fler tror från blixten: de får andra namn
+    const namn = [tr.namn];
+    for (let i = 0; i < 3; i++) {
+      const g = ny('blixt'), t2 = SIM.troOf(s, g.tro)!;
+      for (let j = 0; j < 2; j++) nyInvanare(s, 'm', 30).tro = t2.id;
+      SIM.stepReligion(s); namn.push(t2.namn);
+    }
+    const kron = (s.hist?.kronika ?? []).some(k => k[1].includes(`${tr.namn} fick sitt namn`));
+    return [
+      [`tron har inget namn med två troende (${fore ?? 'inget'})`, fore === undefined],
+      [`med tre troende får den ett namn (${tr.namn})`, !!tr.namn],
+      [`och tecknets symbol (${tr.sym})`, tr.sym === 'tro_blixt' && hasIcon(tr.sym)],
+      [`och en berättelse där grundaren och tecknet står (${tr.ber})`, !!tr.ber && tr.ber.includes(a.name) && tr.ber.includes('blixten') && !tr.ber.includes('{')],
+      [`ingen annan tro har samma namn (${namn.join(', ')})`, new Set(namn).size === namn.length && namn.every(Boolean)],
+      ['krönikan berättar det', kron],
     ];
   },
 };

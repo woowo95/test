@@ -3,6 +3,8 @@ import { DAY, HOUR, Person, Rel, State } from './typer';
 import { balans } from './balans';
 import { ageOf, alive, count, isParent, living, log, stat } from './folk';
 import { UPPV, formas, upplev } from './uppvaxt';
+import { yearNo } from './tid';
+import { kronika } from './historik';
 
 // Religionen (fas 4.1, "Religion" i designdokumentet). Andligheten (steg 4.1.1.1) är en egenskap hos varje person, 0–100:
 // hur viktigt det heliga är för hen, inte vad hen tror på. Den ärvs delvis och flyttas av upplevelserna (uppvaxt.ts, steg
@@ -21,6 +23,7 @@ export const TRO = balans('tro', {
   // den första tron (steg 4.1.2.1, "Den första tron" i designdokumentet)
   grunda: 70, // så andlig måste den vara som tolkar ett tecken till en egen tro ...
   grundaChans: 0.3, // ... och chansen att hen gör det när hen är med om tecknet
+  namn: 3, // när så här många tror får tron ett namn, en symbol och en berättelse (steg 4.1.2.3)
   styrka: 60, // så stark är tron hos den som grundar den (0–100)
   bekrafta: 10, // ett nytt tecken gör tron så här mycket starkare hos den som redan tror
   drom: 0.004, // chansen per sovtimme att någon drömmer något hen inte kan förklara (bara den mycket andliga tolkar det)
@@ -65,38 +68,39 @@ export const andligSyns = (s: State) => !!s.tron?.length;
 // ---------- tecknen (registret) ----------
 // det oförklarliga som kan bli en tro (steg 4.1.2.1). text: vad hen var med om ({om} = vem eller vad), natur: var tron börjar på
 // skalan Natur – Människa (0 = andar i djur, väder och platser, 100 = förfäder och helgon). bakom, vill och svek: tolkningen,
-// en av varje slumpas: vem eller vad som står bakom, vad den vill och vad som händer om man sviker den
-interface TeckenDef { text: string; natur: number; bakom: string[]; vill: string[]; svek: string[] }
+// en av varje slumpas: vem eller vad som står bakom, vad den vill och vad som händer om man sviker den. sym: symbolen (ikoner.ts) och
+// namn: namnen tron kan få när den delas av TRO.namn (steg 4.1.2.3)
+interface TeckenDef { text: string; natur: number; sym: string; namn: string[]; bakom: string[]; vill: string[]; svek: string[] }
 export const TECKEN = {
-  blixt: { text: 'blixten som slog ner', natur: 15,
+  blixt: { text: 'blixten som slog ner', natur: 15, sym: 'tro_blixt', namn: ['Åskans tro', 'Hammarens folk', 'Tordönets väg'],
     bakom: ['Den som bor i åskmolnen', 'Himlens hammare', 'Den stora fågeln vars vingar dånar'],
     vill: ['att man tystnar när det mullrar', 'en bit av varje byte på den höga stenen', 'att elden i byn aldrig får slockna'],
     svek: ['blixten slår ner i ens hus', 'skogen brinner', 'barnen blir döva'] },
-  brand: { text: 'elden som spred sig i skogen', natur: 20,
+  brand: { text: 'elden som spred sig i skogen', natur: 20, sym: 'tro_brand', namn: ['Eldens tro', 'Lågans folk', 'Askans väg'],
     bakom: ['Den röda som äter skogen', 'Eldens moder', 'Den hungriga i lågorna'],
     vill: ['ved i elden varje kväll innan man äter själv', 'att ingen spottar i elden', 'att askan bärs ut till skogen'],
     svek: ['elden tar huset', 'lågorna kommer om natten', 'man fryser ihjäl'] },
-  vinterSlut: { text: 'den hårda vintern som tog slut', natur: 25,
+  vinterSlut: { text: 'den hårda vintern som tog slut', natur: 25, sym: 'tro_vinter', namn: ['Vinterns tro', 'Isens folk', 'Den långa nattens väg'],
     bakom: ['Den vita som sover under isen', 'Vinterns gamle', 'Solen som kom tillbaka'],
     vill: ['att man delar maten när det är kallt', 'att den första snön hälsas med tystnad', 'att man tänder eld i mörkret'],
     svek: ['vintern kommer tillbaka och stannar', 'isen tar barnen', 'kölden kryper in i husen'] },
-  torkaSlut: { text: 'regnet som kom efter torkan', natur: 20,
+  torkaSlut: { text: 'regnet som kom efter torkan', natur: 20, sym: 'tro_regn', namn: ['Regnets tro', 'Källans folk', 'Molnens väg'],
     bakom: ['Den som bär regnet', 'Molnens moder', 'Källans ande'],
     vill: ['att det första vattnet hälls ut på marken', 'att ingen slösar med vatten', 'att man sjunger när det regnar'],
     svek: ['regnet uteblir', 'sjön torkar ut', 'grödorna vissnar'] },
-  flodSlut: { text: 'vattnet som drog sig tillbaka', natur: 15,
+  flodSlut: { text: 'vattnet som drog sig tillbaka', natur: 15, sym: 'tro_flod', namn: ['Djupets tro', 'Sjöns folk', 'Vågornas väg'],
     bakom: ['Den som bor i djupet', 'Sjöns herre', 'Vattnets vrede'],
     vill: ['en fisk tillbaka i vattnet för varje fångst', 'att man inte bygger för nära stranden', 'att man är tyst vid strandkanten'],
     svek: ['vattnet stiger igen', 'fisken försvinner', 'någon drunknar'] },
-  jakt: { text: 'haren som gick att fånga med bara händerna', natur: 15,
+  jakt: { text: 'haren som gick att fånga med bara händerna', natur: 15, sym: 'tro_hare', namn: ['Bytets tro', 'Skogens folk', 'Jägarens väg'],
     bakom: ['Harens moder', 'Skogens herre', 'Den gröna som ger bytet'],
     vill: ['att den första biten lämnas i skogen', 'att man tackar bytet', 'att ingen jagar mer än man behöver'],
     svek: ['djuren flyr', 'spjuten missar', 'jägaren blir själv jagad'] },
-  barnFrisk: { text: 'att {om} överlevde en svår sjukdom', natur: 75,
+  barnFrisk: { text: 'att {om} överlevde en svår sjukdom', natur: 75, sym: 'tro_barn', namn: ['Förfädernas tro', 'De dödas folk', 'Minnets väg'],
     bakom: ['De döda som vakar över barnen', 'Den gamla modern', 'Förfäderna'],
     vill: ['att man talar om de döda vid elden', 'att barnen får äta först', 'att ingen glöms'],
     svek: ['sjukdomen kommer tillbaka', 'barnen blir sjuka', 'de döda vänder sig bort'] },
-  drom: { text: 'en dröm', natur: 65,
+  drom: { text: 'en dröm', natur: 65, sym: 'tro_drom', namn: ['Drömmarnas tro', 'Nattens folk', 'Rösternas väg'],
     bakom: ['Den som talar i sömnen', 'Förfäderna', 'Rösten i mörkret'],
     vill: ['att man berättar sina drömmar', 'att man sover med huvudet mot elden', 'att man lyssnar på de gamla'],
     svek: ['drömmarna blir mardrömmar', 'man går vilse i skogen', 'de döda kommer tillbaka'] },
@@ -108,8 +112,8 @@ export const teckenText = (k: TeckenTyp, om?: string) => TDEF[k].text.replace('{
 // ---------- tron ----------
 // en tro (steg 4.1.2): vem som grundade den (id och namn), när, tecknet den kom ur och tolkningen. natur och manga är de två
 // första skalorna (0–100: Natur – Människa och Många – En). bekr: när ett tecken senast bekräftade den. slut: när den sista
-// som trodde dog
-export interface Tro { id: number; grundare: number; gnamn: string; t: number; k: TeckenTyp; om?: string; bakom: string; vill: string; svek: string; natur: number; manga: number; bekr: number; slut?: number }
+// som trodde dog. ar: året den kom. namn, sym och ber (berättelsen om hur den började) får den när TRO.namn tror (steg 4.1.2.3)
+export interface Tro { id: number; grundare: number; gnamn: string; t: number; k: TeckenTyp; om?: string; bakom: string; vill: string; svek: string; natur: number; manga: number; bekr: number; slut?: number; ar: number; namn?: string; sym?: string; ber?: string }
 export const troOf = (s: State, id: number | undefined) => id === undefined ? undefined : s.tron?.find(t => t.id === id);
 export const troende = (s: State, tr: Tro) => living(s).filter(p => p.tro === tr.id);
 // tolkningen som meningar: "Den som bor i åskmolnen vill att man tystnar när det mullrar. Om man sviker: blixten slår ner i ens hus."
@@ -132,7 +136,7 @@ export function tecken(s: State, p: Person, k: TeckenTyp, om?: string) {
 function grunda(s: State, p: Person, k: TeckenTyp, om?: string) {
   const d = TDEF[k], tron = (s.tron ??= []);
   const tr: Tro = {
-    id: tron.length + 1, grundare: p.id, gnamn: p.name, t: s.now, k, ...om ? { om } : {},
+    id: tron.length + 1, grundare: p.id, gnamn: p.name, t: s.now, ar: yearNo(s), k, ...om ? { om } : {},
     bakom: pick(s, d.bakom, 'tro', p), vill: pick(s, d.vill, 'tro', p), svek: pick(s, d.svek, 'tro', p),
     natur: Math.round(clamp(d.natur + gauss(s, 'tro', p) * TRO.skalaSlump, 0, 100)), manga: Math.round(clamp(rnd(s, 'tro', p) * 100, 0, 100)), bekr: s.now,
   };
@@ -140,6 +144,35 @@ function grunda(s: State, p: Person, k: TeckenTyp, om?: string) {
   p.tro = tr.id; p.troStyrka = TRO.styrka;
   count(s, 'tro_ny');
   log(s, `${p.name} tolkade ${teckenText(k, om)} som ett tecken. ${tolkning(tr)}`, 'rel', [p.id]);
+}
+
+// ---------- namnet och berättelsen (steg 4.1.2.3) ----------
+// berättelserna om hur tron började. {grundare}, {tecken}, {ar}, {Bakom} och {bakom} (med liten bokstav), {vill} och {svek}
+const BERATTELSE = [
+  'Allt började med {tecken}, år {ar}. {grundare} förstod att det var {bakom} som visat sig. Sedan dess vet de troende att {bakom} vill {vill}. De säger att {svek} om man sviker.',
+  '{grundare} var med om {tecken} och tolkade det som ett tecken: {Bakom} vill {vill}. Den som sviker får se hur {svek}.',
+  'De troende berättar om {tecken} år {ar}. Det var då {bakom} talade till {grundare}. {Bakom} vill {vill}, och de säger att {svek} om man sviker.',
+  'Sedan {tecken} år {ar} vet de som tror att {bakom} finns. {grundare} såg det först. {Bakom} vill {vill}. Den som sviker får se hur {svek}.',
+  'Ingen kunde förklara {tecken}, utom {grundare}: {bakom} hade visat sig. Därför vet de troende att {bakom} vill {vill}, och att {svek} om man sviker.',
+  '{grundare} säger att {bakom} låg bakom {tecken} år {ar}. {Bakom} vill {vill}. Sviker man, får man se hur {svek}.',
+];
+const liten = (t: string) => t[0].toLowerCase() + t.slice(1);
+export const troNamn = (tr: Tro) => tr.namn ?? `Tron på ${liten(tr.bakom)}`;
+function berattelse(s: State, tr: Tro, p: Person) {
+  return pick(s, BERATTELSE, 'tro', p).replace(/\{grundare\}/g, tr.gnamn).replace(/\{tecken\}/g, teckenText(tr.k, tr.om)).replace(/\{ar\}/g, String(tr.ar))
+    .replace(/\{Bakom\}/g, tr.bakom).replace(/\{bakom\}/g, liten(tr.bakom)).replace(/\{vill\}/g, tr.vill).replace(/\{svek\}/g, tr.svek);
+}
+// tron delas av TRO.namn: den får ett namn som ingen annan tro har, tecknets symbol och berättelsen. Drar ur följden 'tro' hos den
+// som grundade den (eller den första som tror, om grundaren är död)
+function namnge(s: State, tr: Tro, folk: Person[]) {
+  const p = s.people.find(q => q.id === tr.grundare && alive(q)) ?? folk[0], d = TDEF[tr.k];
+  const tagna = new Set((s.tron ?? []).map(t => t.namn));
+  const fria = d.namn.filter(n => !tagna.has(n));
+  tr.namn = fria.length ? pick(s, fria, 'tro', p) : `Den nya ${liten(pick(s, d.namn, 'tro', p))}`;
+  tr.sym = d.sym; tr.ber = berattelse(s, tr, p);
+  count(s, 'tro_namn');
+  log(s, `${folk.length} tror nu på ${liten(tr.bakom)}. Tron har fått ett namn: ${tr.namn}.`, 'rel', folk.map(q => q.id));
+  kronika(s, `År ${yearNo(s)}: ${tr.namn} fick sitt namn. ${tr.ber}`);
 }
 
 // ---------- samtalen (samtal.ts) ----------
@@ -162,7 +195,7 @@ export function predika(s: State, a: Person, b: Person, r: Rel, kind: string) {
 }
 
 // ---------- varje timme (steg.ts) ----------
-// drömmarna, barnet som blev friskt och tron som dog med sin sista troende
+// drömmarna, barnet som blev friskt, tron som fick sitt namn och tron som dog med sin sista troende
 export function stepReligion(s: State) {
   for (const p of living(s)) {
     if (p.task?.act === 'sova' && rnd(s, 'tro', p) < TRO.drom) tecken(s, p, 'drom');
@@ -171,5 +204,10 @@ export function stepReligion(s: State) {
       if (formas(s, p)) for (const q of living(s)) if (isParent(q, p)) tecken(s, q, 'barnFrisk', p.name);
     }
   }
-  for (const tr of s.tron ?? []) if (tr.slut === undefined && !living(s).some(p => p.tro === tr.id)) { tr.slut = s.now; count(s, 'tro_slut'); }
+  for (const tr of s.tron ?? []) {
+    if (tr.slut !== undefined) continue;
+    const folk = troende(s, tr);
+    if (!folk.length) { tr.slut = s.now; count(s, 'tro_slut'); }
+    else if (!tr.namn && folk.length >= TRO.namn) namnge(s, tr, folk);
+  }
 }
