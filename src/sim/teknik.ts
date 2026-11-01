@@ -110,6 +110,13 @@ export const TEKNIK: Tek[] = [
     omr: ['upptrada', 'hantverk'], krav: ['kniv'], niva: 2, tid: 4 },
   { id: 'lyra', namn: 'Lyra', text: 'En ram av trä med strängar av rep som man knäpper på.', effekt: 'Sången och musiken till lyran gör publiken gladare än med andra instrument.',
     omr: ['upptrada', 'hantverk'], krav: ['scen', 'rep'], niva: 3, tid: 6 },
+  // pyntet (steg 4.3.4, pynt.ts): lerkrukan, bonaden och det snidade väggbrädet i rummet där man sover; varje möbel är sin egen teknik
+  { id: 'kruka', namn: 'Lerkruka', text: 'En kruka av lera från stranden, formad för hand och bränd i elden, bara för att vara vacker.', effekt: 'Den som tycker om krukor ställer en där hen sover: hen trivs där, och de som ser den tycker bättre om hen.',
+    omr: ['hantverk', 'bygga'], krav: ['timmervagg'], niva: 3, tid: 4 },
+  { id: 'bonad', namn: 'Bonad', text: 'Ett skinn som hängs på väggen, med mönster och fransar av rep.', effekt: 'Den som tycker om bonader hänger en där hen sover: hen trivs där, och de som ser den tycker bättre om hen.',
+    omr: ['hantverk', 'bygga'], krav: ['timmervagg', 'rep'], niva: 3, tid: 4 },
+  { id: 'vaggbrade', namn: 'Snidat väggbräde', text: 'Ett bräde med snidade mönster som sätts upp på väggen.', effekt: 'Den som tycker om väggbräden sätter upp ett där hen sover: hen trivs där, och de som ser det tycker bättre om hen.',
+    omr: ['hantverk', 'bygga'], krav: ['timmervagg', 'kniv'], niva: 3, tid: 4 },
   // latrinen och benspaden (steg 2.7.2): spaden görs av ben, rep och en gren vid slöjdbänken, och med den grävs latrinen
   // (LATRIN i STATIONER, samma id) och rötterna fortare
   { id: 'benspade', namn: 'Benspade', text: 'Tre ben bredvid varandra som ett blad, surrade med rep vid en gren som skaft.', effekt: 'Med spaden gräver man fram rötter fortare, och gropar.',

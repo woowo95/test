@@ -60,6 +60,10 @@ export const PAL: Record<string, Record<string, string>> = {
   trumma: { w: '#5a3a1e', W: '#8b5a2b', s: '#e0cfa4', S: '#c4ad7c', r: '#9c3328' },
   benflojt: { w: '#efe6cc', W: '#fff8e6', d: '#b8a882', k: '#4a3018' },
   lyra: { w: '#5a3a1e', W: '#8b5a2b', L: '#b07a45', y: '#e8d4a0' },
+  // pyntet (steg 4.3.4, platshållare i bildstilens palett, 16 punkter per ruta)
+  kruka: { d: '#6a3418', o: '#a0522d', O: '#c8743c', y: '#e8c890' },
+  bonad: { w: '#5a3a1e', s: '#e0cfa4', S: '#c4ad7c', r: '#9c3328', k: '#4a3018' },
+  vaggbrade: { w: '#5a3a1e', W: '#8b5a2b', L: '#b07a45', H: '#d0a26a' },
   mossa: { l: '#b4cc6a', G: '#7fa850', g: '#4f7a36', B: '#b48a5e', m: '#2f4a22' },
   // latrinen och benspaden (steg 2.7.2, Björn valde P6 och S1c/S1g efter v85)
   latrin: { o: '#8a6a40', O: '#b08a58', d: '#4a3018', k: '#24160a' },
@@ -2297,6 +2301,21 @@ export const PIX: Record<string, string[]> = {
     '.w............................w.',
     'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
   ],
+  // lerkrukan (steg 4.3.4, platshållare, 16 punkter): en bränd kruka med ett band av prickar
+  kruka: [
+    '................', '................', '.....dddddd.....', '.....oOOOOd.....', '......oOOd......', '.....oOOOOd.....', '....oOOOOOOd....', '...oOyOyOyOOd...',
+    '...oOOOOOOOOd...', '...oyOyOyOyOd...', '...oOOOOOOOOd...', '....oOOOOOOd....', '....doOOOOdd....', '.....dddddd.....', '................', '................',
+  ],
+  // bonaden (platshållare): ett ljust skinn med ett rött mönster, upphängt i en käpp, med fransar
+  bonad: [
+    '................', '..wwwwwwwwwwww..', '...SssssssssS...', '...SsrsssssrS...', '...SssrsssrsS...', '...SsssrsrssS...', '...SssssrsssS...', '...SsssrsrssS...',
+    '...SssrsssrsS...', '...SsrsssssrS...', '...SssssssssS...', '...SkSkSkSkSS...', '...k.k.k.k.k....', '................', '................', '................',
+  ],
+  // det snidade väggbrädet (platshållare): ett bräde med inristade mönster och en uddig kant, på två konsoler
+  vaggbrade: [
+    '................', '................', '................', '.HHHHHHHHHHHHHH.', 'wLLWLLLWWLLLWLLw', 'wLWLWLWLLWLWLWLw', 'wLLWLLLWWLLLWLLw', 'wwwwwwwwwwwwwwww',
+    '.w.ww.ww.ww.ww..', '..w..........w..', '..ww........ww..', '..www......www..', '................', '................', '................', '................',
+  ],
   // trumman (platshållare, 16 punkter): ett ljust skinn spänt över en ring av trä, med snören
   trumma: [
     '................', '................', '....SSSSSSSS....', '...SssssssssS...', '..SssssssssssS..', '..rSSSSSSSSSSr..', '..wWWWWWWWWWWw..', '..wWrWWWWWWrWw..',
@@ -3592,6 +3611,10 @@ PIX.balte = PIX.balte_rep; PAL.balte = PAL.balte_rep;
 // Björns val efter v193 (steg 3.10.13): den fångade kaninen på kartan ser ut som viltet i förrådet, och rocken av vargskinn är
 // vargpälsen Björn valde (version 2) tills formen för båda rockarna är vald i bildstilens valdel
 PIX.kanin_dod = PIX.vilt; PAL.kanin_dod = PAL.vilt;
+// pyntet (steg 4.3.4): samma bild på kartan och i listorna, och lerkrukan för intrycket smakfull
+for (const k of ['kruka', 'bonad', 'vaggbrade']) { PIX[k + '_karta'] = PIX[k]; PAL[k + '_karta'] = PAL[k]; }
+
+PIX.i_smakfull = PIX.kruka; PAL.i_smakfull = PAL.kruka; // intrycket smakfull (steg 4.3.4), platshållare
 PIX.rock_vargskinn = [
   '....oooooooo....',
   '..ooWWWWWWWWoo..',

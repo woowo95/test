@@ -1,3 +1,4 @@
+import { hash3 } from './slump';
 import { Act, GRANNAR4, H, HOUR, MIN, Person, SEC, State, T, Task, W, inMap } from './typer';
 import { eldPlats, getMap } from './karta';
 import { knows } from './teknik';
@@ -98,6 +99,10 @@ export const STATION = balans('station', {
   brasaSten: 6, brasaMin: 15, // så många stenar (som lägereldens ring) och så många minuters arbete
   brasaFran: 2.5, // brasan ligger helst så här många rutor från mitten av sovplatserna den är till för ...
   brasaSok: 4, // ... och högst så här många rutor därifrån
+  // pyntet (steg 4.3.4, pynt.ts): möbler som bara är till för att pynta, i rummet där ägaren sover
+  krukaMin: 15, // lerkrukan: lera från stranden (ingen resurs), formad och bränd i elden på så många minuter
+  bonadSkinn: 1, bonadRep: 1, bonadMin: 12, // bonaden: ett skinn med mönster, upphängt i ett rep
+  bradeTra: 1, bradeMin: 15, // det snidade väggbrädet: ett trästycke
 });
 // trä till ett bord som tar w × h rutor, med stubbar på platserna runt det (platserAv nedan)
 const bordTra = (w: number, h: number) => w * h * STATION.bordTra + ((w >= 2 ? 2 * w : 0) + (h >= 2 ? 2 * h : 0)) * STATION.stubbeTra;
@@ -112,10 +117,11 @@ const bordTra = (w: number, h: number) => w * h * STATION.bordTra + ((w >= 2 ? 2
 // rutas stack) eller, för redskap, så många redskap; tak = det som ligger där slits som under tak,
 // stangd = det som ligger där syns inte på kartan, bara när man trycker på möbeln (kistan, Björn efter v92), privat = bara för
 // privata saker (kistan, steg 2.10.18): byggs inte i byns lager utan av var och en i rummet där hen sover (kistorna nedan)
+// pynt = bara till för att pynta (steg 4.3.4, pynt.ts): var och en bygger ett åt sig själv i rummet där hen sover, som kistan
 // brasa = en extra eld (steg 2.9.1, brasor.ts): står nära sovplatserna den är till för (siteBrasa), och alla vuxna kan bygga den (tek är tom: den som är gammal nog att ta ansvar, ALDER.ansvar)
 export interface Utkant { till: number; avst: number; vatten?: true }
 export interface Forvar { rymmer: number; redskap?: true; tak?: true; stangd?: true; privat?: true }
-export interface StationDef { namn: string; ikon: string; w: number; h: number; tek: string[]; av: Record<string, number>; min: number; gor: Act[]; bara?: Act[]; vid?: Record<string, number>; verktyg?: string; utkant?: Utkant; eld?: true; kraver?: Partial<Record<Act, string>>; smutsar?: Partial<Record<Act, string>>; bygger: string; forsta: string; inne?: true; mobel?: true; flera?: true; fart?: Partial<Record<Act, number>>; brasa?: true; sover?: true; sitt?: true; platser?: true; forvar?: Forvar }
+export interface StationDef { namn: string; ikon: string; w: number; h: number; tek: string[]; av: Record<string, number>; min: number; gor: Act[]; bara?: Act[]; vid?: Record<string, number>; verktyg?: string; utkant?: Utkant; eld?: true; kraver?: Partial<Record<Act, string>>; smutsar?: Partial<Record<Act, string>>; bygger: string; forsta: string; inne?: true; mobel?: true; flera?: true; fart?: Partial<Record<Act, number>>; brasa?: true; sover?: true; sitt?: true; platser?: true; forvar?: Forvar; pynt?: true }
 // de enkla redskapen: görs vid slöjdbänken om byn har en, lite fortare där (fart), annars vid elden som förut (Björn, efter v90)
 const ENKLA: Act[] = ['yxa', 'spjut', 'metspo', 'kniv', 'bensyl', 'balte', 'boll', 'slagtra', 'mal', 'trumma', 'benflojt', 'lyra'];
 export const STATIONER = {
@@ -196,6 +202,23 @@ export const STATIONER = {
     namn: 'Scen', ikon: 'scen', w: 3, h: 2, tek: ['scen'], av: { ved: STATION.scenTra }, min: STATION.scenMin, gor: [], vid: { trumma: 1, benflojt: 1, lyra: 1 },
     bygger: 'Lägger kluvna stockar till en scen.',
     forsta: '{namn} byggde byns första scen. Där uppträder man på kvällen, och där ligger instrumenten.',
+  },
+  // pyntet (steg 4.3.4, pynt.ts): var och en bygger ett åt sig själv, i rummet där hen sover, och sorten följer smaken
+  // (pyntSort). Ägaren trivs där, och de som ser det tycker bättre om hen, mer ju finare det är
+  kruka: {
+    namn: 'Lerkruka', ikon: 'kruka', w: 1, h: 1, tek: ['kruka'], av: {}, min: STATION.krukaMin, gor: [], inne: true, mobel: true, flera: true, pynt: true,
+    bygger: 'Formar en lerkruka av lera från stranden och bränner den i elden.',
+    forsta: '{namn} formade byns första lerkruka och ställde den där hen sover. Den är bara till för att vara vacker.',
+  },
+  bonad: {
+    namn: 'Bonad', ikon: 'bonad', w: 1, h: 1, tek: ['bonad'], av: { skinn: STATION.bonadSkinn, rep: STATION.bonadRep }, min: STATION.bonadMin, gor: [], inne: true, mobel: true, flera: true, pynt: true,
+    bygger: 'Ritar ett mönster på ett skinn och hänger upp det som en bonad.',
+    forsta: '{namn} hängde upp byns första bonad där hen sover, ett skinn med ett mönster på. Den är bara till för att vara vacker.',
+  },
+  vaggbrade: {
+    namn: 'Snidat väggbräde', ikon: 'vaggbrade', w: 1, h: 1, tek: ['vaggbrade'], av: { ved: STATION.bradeTra }, min: STATION.bradeMin, gor: [], inne: true, mobel: true, flera: true, pynt: true,
+    bygger: 'Snidar mönster i ett bräde och sätter upp det på väggen.',
+    forsta: '{namn} snidade byns första väggbräde och satte upp det där hen sover. Det är bara till för att vara vackert.',
   },
 } satisfies Record<string, StationDef>;
 export type StationSlag = keyof typeof STATIONER;
@@ -361,7 +384,7 @@ function hittaLek(s: State): Rekt {
 export const paLek = (l: Rekt, x: number, y: number, w = 1, h = 1) => x < l.x + l.w && x + w > l.x && y < l.y + l.h && y + h > l.y;
 
 // platsen för en station av sorten k: inne i ett hus om registret säger det, annars nära elden. Samma plats varje gång (ingen slump)
-export const stationSite = (s: State, k: string, p?: Person) => stationDef(k)?.forvar?.privat ? p && siteKista(s, k, p) : stationDef(k)?.brasa ? siteBrasa(s) : stationDef(k)?.eld ? siteEld(s) : stationDef(k)?.forvar ? siteForvar(s, k) : stationDef(k)?.utkant ? siteUtkant(s, k) : stationDef(k)?.inne ? siteInne(s, k, undefined, h => farBygga(s, h, p)) : siteUte(s, k);
+export const stationSite = (s: State, k: string, p?: Person) => stationDef(k)?.forvar?.privat || stationDef(k)?.pynt ? p && siteKista(s, k, p) : stationDef(k)?.brasa ? siteBrasa(s) : stationDef(k)?.eld ? siteEld(s) : stationDef(k)?.forvar ? siteForvar(s, k) : stationDef(k)?.utkant ? siteUtkant(s, k) : stationDef(k)?.inne ? siteInne(s, k, undefined, h => farBygga(s, h, p)) : siteUte(s, k);
 // avståndet från rutan (x, y) till byn: lägret (elden och lagerplatserna, campDist) och husen
 export function byAvstand(s: State, x: number, y: number) {
   let d = campDist(s, x, y);
@@ -528,8 +551,21 @@ export const kistaOf = (s: State, p: Person) => stationerOf(s).find(t => t.ag ==
 const egnaLediga = (s: State, p: Person) => tingOf(s).filter(t => t.agare === p.id && isTool(t.k) && !t.halv && t.hos === undefined && t.lass === undefined && t.bar === undefined);
 // p vill ha en kista: hen sover inne, har ingen och har minst kistaVill egna saker som ingen använder
 export const villKista = (s: State, p: Person) => !kistaOf(s, p) && bedTile(s, p) !== undefined && egnaLediga(s, p).length >= STATION.kistaVill;
+// ---------- pyntet (steg 4.3.4, pynt.ts) ----------
+// p:s pynt, färdigt eller halvbyggt. Var och en har högst ett, så att byn inte fylls av små saker
+export const PYNT_LIST = STATION_LIST.filter(k => (STATIONER[k] as StationDef).pynt);
+export const pyntOf = (s: State, p: Person) => stationerOf(s).find(t => t.ag === p.id && !!stationDef(t.k)?.pynt);
+// sorten p vill ha: smaken, fast för var och en (ingen slump)
+export const pyntSort = (s: State, p: Person) => PYNT_LIST[Math.floor(hash3(s.seed, p.id, 43) * PYNT_LIST.length)];
+// p vill ha pyntet k: hen är vuxen, sover inne, har inget och k är hens sort
+export const villPynt = (s: State, p: Person, k: string) => ageOf(p, s.now) >= ALDER.vuxen && !pyntOf(s, p) && pyntSort(s, p) === k && bedTile(s, p) !== undefined;
+// hur stor del av de vuxna som sover inne som vill ha pyntet k (projektets brist)
+export function pyntBrist(s: State, k: string) {
+  const v = living(s).filter(p => ageOf(p, s.now) >= ALDER.vuxen && bedTile(s, p) !== undefined);
+  return v.length ? v.filter(p => villPynt(s, p, k)).length / v.length : 0;
+}
 // rummet där p sover
-const sovrum = (s: State, p: Person) => { const b = bedTile(s, p); return b === undefined ? undefined : roomAt(s, b % W, Math.floor(b / W)); };
+export const sovrum = (s: State, p: Person) => { const b = bedTile(s, p); return b === undefined ? undefined : roomAt(s, b % W, Math.floor(b / W)); };
 // platsen för p:s kista: en ledig golvruta i rummet där hen sover (siteInne)
 function siteKista(s: State, k: string, p: Person) { const r = sovrum(s, p); return r && siteInne(s, k, r); }
 // varje timme: en kista (färdig eller halvbyggd) vars ägare är borta tas över av någon som sover i samma rum och inte har en.
@@ -537,6 +573,7 @@ function siteKista(s: State, k: string, p: Person) { const r = sovrum(s, p); ret
 // som ingen använder läggs i den färdiga kistan tills den är full
 function kistorna(s: State) {
   for (const t of stationerOf(s)) {
+    if (t.ag !== undefined && stationDef(t.k)?.pynt) { const o = byId(s, t.ag); if (!o || !alive(o)) { const rum = stationRum(s, t), q = living(s).find(q => !pyntOf(s, q) && sovrum(s, q) === rum); if (q) t.ag = q.id; } continue; } // pyntet tas över som kistan (steg 4.3.4)
     if (t.ag === undefined || !stationDef(t.k)?.forvar?.privat) continue;
     let o = byId(s, t.ag);
     if (!o || !alive(o)) { const rum = stationRum(s, t), q = living(s).find(q => !kistaOf(s, q) && sovrum(s, q) === rum); if (q) t.ag = (o = q).id; }
@@ -650,7 +687,7 @@ export function kanBygga(s: State, p: Person, k: StationSlag) {
   const d: StationDef = STATIONER[k];
   if (doingAct(s, 'station', p) || (d.brasa ? ageOf(p, s.now) < ALDER.ansvar : !d.tek.some(k => knows(p, k))) || !d.flera && harStation(s, k) || d.verktyg && !freeTools(s, p, d.verktyg)) return false;
   if (halvbyggd(s, k, p)) return true;
-  return (!d.forvar?.privat || villKista(s, p)) && Object.entries(d.av).every(([m, n]) => getable(s, p, m) >= n + sparas(m)) && !!stationSite(s, k, p);
+  return (!d.forvar?.privat || villKista(s, p)) && (!d.pynt || villPynt(s, p, k)) && Object.entries(d.av).every(([m, n]) => getable(s, p, m) >= n + sparas(m)) && !!stationSite(s, k, p);
 }
 // byn har en färdig station av sorten k
 export const harStation = (s: State, k: string) => stationerOf(s).some(t => t.k === k && isKlar(t));
@@ -671,7 +708,7 @@ export function startStation(s: State, p: Person, tk: Task) {
       t = { id: s.nextStation = (s.nextStation ?? 0) + 1, k, x: at.x, y: at.y, kvar: d.min * MIN };
       if (at.rot) t.rot = 1;
       if ('inne' in at) t.inne = 1;
-      if (d.forvar?.privat) t.ag = p.id; // kistan är hens (steg 2.10.18)
+      if (d.forvar?.privat || d.pynt) t.ag = p.id; // kistan och pyntet är hens (steg 2.10.18, 4.3.4)
       (s.stationer ??= []).push(t);
       s.byggV = (s.byggV ?? 0) + 1; // en ny sak på kartan: vägarna och platserna räknas om
     }
@@ -974,7 +1011,7 @@ export const baddOf = (s: State, p: Person) => stationerOf(s).find(t => t.ag ===
 function inredningen(s: State) {
   for (const t of [...stationerOf(s)]) {
     const d = stationDef(t.k);
-    if (!d || !t.inne || !isKlar(t) || !d.sover && !d.forvar?.privat) continue;
+    if (!d || !t.inne || !isKlar(t) || !d.sover && !d.forvar?.privat && !d.pynt) continue;
     const o = byId(s, t.ag);
     if (!o || !alive(o) || !living(s).includes(o)) continue;
     const h = husAv(s, t), annans = h?.ag !== undefined && !familjOf(s, h.ag).includes(o);

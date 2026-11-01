@@ -100,6 +100,7 @@ const IDEF = {
   orattvis: { namn: 'orättvis', tecken: -1, op: -15, sym: '🙅', betyder: 'Har dömt orättvist som ledare.' },
   stark: { namn: 'stark', tecken: 1, op: 4, sym: '🥊', betyder: 'Har vunnit ett slagsmål.' }, // vann ett slagsmål (steg 3.7.2, strid.ts)
   feg: { namn: 'feg', tecken: -1, op: -5, sym: '🐔', betyder: 'Har backat från en strid.' }, // backade från en strid (steg 3.7.9, strid.ts)
+  smakfull: { namn: 'smakfull', tecken: 1, op: 5, sym: '🏺', betyder: 'Har ett vackert pynt där hen sover.' }, // pyntet (steg 4.3.4, pynt.ts)
   vargdodare: { namn: 'vargdödare', tecken: 1, op: 5, sym: '🐺', som: 'en vargdödare', betyder: 'Har dödat en varg.' }, // dödade en varg (steg 3.7.1, varg.ts)
 } satisfies Record<string, IntryckDef>;
 export type IntryckTyp = keyof typeof IDEF;
@@ -131,6 +132,7 @@ const HDEF = {
   vannSlagsmal: { i: 'stark', vikt: 0.3, text: 'vann ett slagsmål mot {om}', prestation: true },
   backade: { i: 'feg', vikt: 0.2, text: 'backade från en strid med {om}' }, // steg 3.7.9
   vargdodare: { i: 'vargdodare', vikt: 0.5, text: 'dödade en varg', prestation: true }, // steg 3.7.1
+  pynt: { i: 'smakfull', vikt: 1, text: 'har pyntat där hen sover med {sak}' }, // steg 4.3.4: vikten gånger pyntets (PYNT.syn i pynt.ts)
 } satisfies Record<string, HandelseDef>;
 export type HandelseTyp = keyof typeof HDEF;
 export const HANDELSER: Record<HandelseTyp, HandelseDef> = HDEF;
@@ -204,12 +206,12 @@ export function vittnen(s: State, p: Person, offer?: Person) {
   return living(s).filter(q => q !== p && (q === offer || (q.task?.act !== 'sova' && Math.hypot(q.x - p.x, q.y - p.y) < syn)));
 }
 // p gjorde händelsen h mot offer (eller med saken sak): de som såg det får intrycket. Den det gällde har redan fått sin ändring
-// i relationen (utanOp), och en rival eller den med låg empati blir avundsjuk på en prestation
-export function handelse(s: State, p: Person, h: HandelseTyp, offer?: Person, sak?: string, bara?: Person) {
+// i relationen (utanOp), och en rival eller den med låg empati blir avundsjuk på en prestation. ganger = vikten gånger så mycket
+export function handelse(s: State, p: Person, h: HandelseTyp, offer?: Person, sak?: string, bara?: Person, ganger = 1) {
   const d = HANDELSER[h];
   const b: Bevis = { h, t: s.now, ...(offer ? { mot: offer.id, motNamn: offer.name } : {}), ...(sak ? { sak } : {}), sett: true };
   count(s, 'rykte_' + h);
-  for (const q of bara ? [bara] : vittnen(s, p, offer)) intryck(s, q, p, d.i, d.vikt, q === offer ? RYKTE.offerSaker : RYKTE.sjalvSaker, { ...b }, undefined, 0, q === offer, !!d.prestation);
+  for (const q of bara ? [bara] : vittnen(s, p, offer)) intryck(s, q, p, d.i, d.vikt * ganger, q === offer ? RYKTE.offerSaker : RYKTE.sjalvSaker, { ...b }, undefined, 0, q === offer, !!d.prestation);
 }
 
 // det som p gjort (beviset b) blir känt för alla i till (när ledaren straffar p, styre.ts): de hör det med del av vikten

@@ -2,7 +2,7 @@
 import { createState, Person, State } from '../../sim';
 import * as SIM from '../../sim';
 import { START } from '../kor';
-import { SCENARIER, klockan, kor, medBank, setFood, tandEld } from './hjalp';
+import { SCENARIER, klockan, kor, medBank, medHus, setFood, tandEld } from './hjalp';
 
 // en by med ett stort överskott av mat och ved, på förmiddagen
 export function rikDag(seed = 3, mer: Record<string, number> = {}): State {
@@ -327,6 +327,44 @@ SCENARIER.konst = {
       [`värdet ${vMed.toFixed(1)} mot ${vUtan.toFixed(1)} utan konst`, vMed > vUtan],
       [`kläderna får ingen konst (${klad} av 10), och ingen konst när göraren inget minns (${tomt} av 10)`, klad === 0 && tomt === 0],
       [`byn minns den döde längre med saken: säkerheten ${med.toFixed(2)} mot ${utanSak.toFixed(2)} efter fem dygn`, med > utanSak],
+    ];
+  },
+};
+
+SCENARIER.pynt = {
+  text: 'Pynt i hemmen (steg 4.3.4): var och en som är vuxen och sover inne bygger ett pynt åt sig själv (en lerkruka, en bonad eller ett snidat väggbräde, efter smaken), högst ett, i rummet där hen sover. Ägaren trivs där, och de som ser det får ett bättre intryck av ägaren, mer ju finare det är',
+  kor: () => {
+    const { PROJEKT, PYNT_LIST, isKlar, pyntOf, pyntSort, villPynt, bedTile, stationRum, stepPynt, intryckOm } = SIM;
+    const s = createState(6, START); klockan(s); tandEld(s); medHus(s);
+    for (const r of s.people) r.tek = { ...r.tek, kruka: 1, bonad: 1, vaggbrade: 1 };
+    setFood(s, 300); SIM.setAmount(s, 'ved', 40); SIM.setAmount(s, 'skinn', 4); SIM.setAmount(s, 'rep', 4);
+    const p = vuxna(s).find(q => bedTile(s, q) !== undefined)!, k = pyntSort(s, p);
+    const vill = villPynt(s, p, k), bara = PYNT_LIST.filter(j => villPynt(s, p, j)).length, brist = PROJEKT[k]!.brist(s);
+    const sorter = new Set(Array.from({ length: 12 }, (_, i) => pyntSort(s, { id: i } as Person))).size; // smaken skiljer sig mellan människor
+    // pyntet väger lite mot arbetet om maten; här väger det mer, så att p bygger sitt snart
+    let h = 0; const vikt = PYNT_LIST.map(j => PROJEKT[j]!.vikt); for (const j of PYNT_LIST) PROJEKT[j]!.vikt = 20;
+    try { while (!(pyntOf(s, p) && isKlar(pyntOf(s, p)!)) && h < 72) { kor(s, 1); h++; } } finally { PYNT_LIST.forEach((j, i) => { PROJEKT[j]!.vikt = vikt[i]; }); }
+    const t = pyntOf(s, p), b = bedTile(s, p), rum = t && stationRum(s, t);
+    const byggd = !!t && isKlar(t) && t.k === k && t.ag === p.id && !!t.inne && b !== undefined && !!rum?.tiles.includes(b) && t.q !== undefined;
+    const mer = PYNT_LIST.some(j => villPynt(s, p, j));
+    // i rummet: ägaren trivs, och den som är vaken där får ett bättre intryck av ägaren. Ett uselt pynt ger inget
+    const v = SIM.living(s).find(q => q !== p)!, ruta = rum?.tiles[0] ?? 0;
+    const prova = (q: number) => {
+      const k2 = SIM.cloneState(s), p2 = k2.people.find(r => r.id === p.id)!, v2 = k2.people.find(r => r.id === v.id)!, t2 = pyntOf(k2, p2)!;
+      t2.q = q; p2.thoughts = []; v2.intryck = [];
+      for (const r of [p2, v2]) { r.x = ruta % SIM.W + 0.5; r.y = Math.floor(ruta / SIM.W) + 0.5; r.task = undefined; } // SIM.W: W sätts när kartan skapas
+      stepPynt(k2);
+      const e = intryckOm(v2, p2.id, 'smakfull');
+      return { glad: p2.thoughts.find(x => x.text === SIM.PYNT_TANKE)?.v ?? 0, syn: e ? e.v * e.c : 0 };
+    };
+    const fin = prova(4), normal = prova(2), usel = prova(0);
+    return [
+      [`p vill ha ett pynt av sin sort (${k}) och bara den (${bara}), byn vill bygga det (brist ${brist.toFixed(2)}), och smaken skiljer sig (${sorter} sorter hos tolv)`, vill && bara === 1 && brist > 0 && sorter === PYNT_LIST.length],
+      [`p bygger sitt pynt på ${h} timmar (ungefär ${h / 2} månader i spelet), inne i rummet där p sover, med en kvalitet`, byggd],
+      ['högst ett pynt var', !!t && !mer],
+      [`ägaren trivs i rummet: humör +${(fin.glad * 100).toFixed(0)} % med ett mästerverk, +${(normal.glad * 100).toFixed(0)} % med ett normalt`, fin.glad > normal.glad && normal.glad > 0],
+      [`den som ser det får intrycket smakfull: ${fin.syn.toFixed(3)} med ett mästerverk, ${normal.syn.toFixed(3)} med ett normalt`, fin.syn > normal.syn && normal.syn > 0],
+      [`ett uselt pynt ger ingenting (${usel.glad}, ${usel.syn})`, usel.glad === 0 && usel.syn === 0],
     ];
   },
 };
