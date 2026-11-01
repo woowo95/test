@@ -857,3 +857,53 @@ SCENARIER.handelsko = {
     ];
   },
 };
+
+SCENARIER.grannklaner = {
+  text: 'Grannklanerna (steg 4.4.3, klaner.ts): en ny by har några grannklaner med namn, folk, styrka, resurser, inställning till byn och namngivna personer, och en sparad by från före v242 får dem. Klanerna växer och krymper en gång om dygnet (ett år i spelet), och inställningen glöms mot det neutrala. Handlaren kommer från en klan som inte tycker illa om byn; en fientlig klan skickar ingen. Ett byte med handlaren gör klanen vänligare, och märker hen att byn lurat hen blir den mindre vänlig.',
+  kor: () => {
+    const s = createState(6, START), k = SIM.klanerOf(s);
+    const finns = k.length === SIM.KLAN.antal && k.every(c => c.folk > 0 && c.styrka > 0 && c.personer.some(p => p.roll === 'hovding'));
+    const unika = new Set(k.map(c => c.namn)).size === k.length;
+    const g = cloneState(s); delete g.klaner; g.v = 19; SIM.migrate(g);
+    const migr = SIM.klanerOf(g).length === SIM.KLAN.antal;
+    // alla tycker illa om byn: ingen handlare
+    const f = cloneState(s); rikBy(f);
+    for (const c of SIM.klanerOf(f)) c.inst = -80;
+    f.nastaHandlare = f.now;
+    for (let i = 0; i < 40; i++) step(f, BEAT);
+    const ingen = !f.handlare && f.nastaHandlare > f.now;
+    // en klan är vänlig: handlaren kommer därifrån
+    rikBy(s); k[0].inst = 40; for (const c of k.slice(1)) c.inst = -80;
+    s.nastaHandlare = s.now;
+    for (let i = 0; i < 40 && s.handlare?.fas !== 'handlar'; i++) step(s, BEAT);
+    const h = s.handlare, fran = !!h && h.klan === k[0].id && h.hem === k[0].hem && k[0].personer.some(p => p.roll === 'handlare' && p.namn === h.namn);
+    // ett byte gör klanen vänligare, en upptäckt lurendrejeri mindre vänlig
+    const [a] = living(s), pa = { id: a.id, namn: a.name, x: a.x, y: a.y, varde: () => 0, over: () => [] } as SIM.Part;
+    const ph = { ...pa, id: h?.id ?? -1, namn: h?.namn ?? '' } as SIM.Part;
+    const i0 = k[0].inst;
+    for (const fn of SIM.vidByte) fn(s, pa, ph, [], []);
+    const vanligare = k[0].inst === i0 + SIM.KLAN.handel;
+    if (h) h.handel = 1000; // märker det säkert
+    const i1 = k[0].inst;
+    for (const fn of SIM.vidLura) fn(s, pa, ph);
+    const lurad = k[0].inst === i1 - SIM.KLAN.lurad;
+    // dygnen går: folket ändras, inställningen glöms
+    const folk0 = k.map(c => c.folk).join(), inst0 = k[0].inst;
+    for (let d = 0; d < 3; d++) { s.now += SIM.DAY; SIM.klanSteg(s, SIM.DAY / SIM.SEC); }
+    const andras = k.map(c => c.folk).join() !== folk0;
+    const glomt = Math.abs(k[0].inst) < Math.abs(inst0);
+    const ui = SIM.instText(60) === 'vänner' && SIM.instText(-80) === 'fientliga';
+    return [
+      [`en ny by har ${SIM.KLAN.antal} grannklaner med folk, styrka och en hövding`, finns],
+      ['klanerna har olika namn', unika],
+      ['en sparad by från före v242 får grannklaner', migr],
+      ['en klan som tycker illa om byn skickar ingen handlare', ingen],
+      ['handlaren kommer från en vänlig klan och är en av dess namngivna personer', fran],
+      ['ett byte med handlaren gör klanen vänligare', vanligare],
+      ['märker handlaren att byn lurat hen blir klanen mindre vänlig', lurad],
+      ['klanerna växer eller krymper med dygnen', andras],
+      ['inställningen glöms mot det neutrala', glomt],
+      ['inställningen har ord (vänner … fientliga)', ui],
+    ];
+  },
+};

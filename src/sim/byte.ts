@@ -89,6 +89,8 @@ export function stortByte(varor: Vara[]) {
 }
 
 // det andra system gör när ett byte är klart (handlarens minne av bytena, handel.ts)
+// när någon lurat i ett byte (behov.ts): lurare lurade lurad (grannklanerna, klaner.ts)
+export const vidLura: ((s: State, lurare: Part, lurad: Part) => void)[] = [];
 export const vidByte: ((s: State, m: Part, g: Part, fatt: Vara[], betal: Vara[]) => void)[] = [];
 // bytet är klart: m fick fatt av g och gav betal. Samma för alla byten. desperat = m höll på att dö av bristen
 export function byteKlart(s: State, m: Part, g: Part, fatt: Vara[], betal: Vara[], desperat = false) {

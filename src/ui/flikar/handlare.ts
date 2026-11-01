@@ -1,4 +1,4 @@
-import { HANDEL, HANDLAR_UTR, grundvarde, handlarVarde, kgOf, kortTal, rymmer, sakNamn } from '../../sim';
+import { HANDEL, HANDLAR_UTR, klanById, grundvarde, handlarVarde, kgOf, kortTal, rymmer, sakNamn } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { esc } from '../hjalp';
 import { s } from '../lage';
@@ -15,7 +15,7 @@ function handlarHtml() {
   const bytt = (h.bytt ?? []).slice().reverse().map(b => `<li>${esc(`${b.vem}: ${b.fick} mot ${b.gav}`)}</li>`).join('');
   const ko = h.ko?.length ?? 0;
   return `
-    <div class="phead">${iconImg('handlare', 32)}<div><h2>${esc(h.namn)}</h2><p class="muted" title="${esc(`Handlare från ${h.hem}`)}">${esc(fas)}</p></div></div>
+    <div class="phead">${iconImg('handlare', 32)}<div><h2>${esc(h.namn)}</h2><p class="muted" title="${esc(`Handlare från ${klanById(s, h.klan)?.namn ?? h.hem} vid ${h.hem}`)}">${esc(fas)}</p></div></div>
     <dl class="kv">
       <dt title="Silvret handlaren har med sig">${iconImg('silver', 12)}</dt><dd title="Silvret handlaren har med sig"><span>${Math.round(h.silver)}</span></dd>
       <dt title="${esc(`${HANDLAR_UTR[h.utr]?.namn ?? h.utr}: så mycket bär hen och så mycket rymmer den`)}">kg</dt><dd title="${esc(`${HANDLAR_UTR[h.utr]?.namn ?? h.utr}: så mycket bär hen och så mycket rymmer den`)}"><span>${kortTal(kgOf(h.varor))} / ${rymmer(h)}</span></dd>

@@ -1,3 +1,4 @@
+import { nyaKlaner } from './klaner';
 import { migrateTek } from './teknik';
 import { stepDelning } from './delning';
 import { put, setStock, storeFromSums } from './lager';
@@ -31,6 +32,7 @@ function skapaBy(seed: number, now: number, storlek: { W: number; H: number }): 
   for (const p of s.people) { startSkills(s, p, ageOf(p, now)); startSmak(s, p); }
   s.seder.v = sederTarget(s);
   stepDelning(s); // en ny by är fattig och delar nästan allt
+  nyaKlaner(s); // grannklanerna (steg 4.4.3)
   log(s, `${s.people.length} människor slog sig ner vid sjön. De har ingen eld ännu.`, 'world');
   return s;
 }
@@ -207,6 +209,7 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
   [19, 'v240: färdigheten Handel (steg 4.4.1.4) börjar av berättandet och hantverket för dem som redan finns', s => {
     for (const p of s.people) if (p.skill.handel === undefined) p.skill.handel = handelStart(p);
   }],
+  [20, 'v242: grannklanerna (steg 4.4.3)', s => { if (!s.klaner) nyaKlaner(s); }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];
 export function migrate(s: State) { return simulera(() => uppgradera(s)); }

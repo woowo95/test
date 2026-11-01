@@ -1,19 +1,20 @@
 import { DAY, H, HOUR, MIN, Person, SEC, State, T, Task, W } from './typer';
 import { balans } from './balans';
-import { ALDER, ageOf, alive, byId, count, forstaGang, living, log, makeName, think } from './folk';
+import { ALDER, ageOf, alive, byId, count, forstaGang, living, log, think } from './folk';
 import { kronika } from './historik';
 import { eldPlats, getMap } from './karta';
 import { blocked } from './byggnad';
-import { clamp, pick, rnd } from './slump';
+import { clamp, rnd } from './slump';
 import { iIstiden, ageIndex } from './tid';
 import { grundvarde, rikedom } from './varde';
 import { SAKER, isTool, viktOf } from './saker';
 import { DELA, behovAv, bynPart, bytaMed, personPart } from './behov';
-import { Part, Vara, satPersonFlytt, vidByte, varorText } from './byte';
+import { Part, Vara, satPersonFlytt, vidByte, vidLura, varorText } from './byte';
 import { newTing, tingOf } from './agande';
 import { put, use } from './lager';
 import { ledareOf } from './styre';
 import { kanterna } from './varg';
+import { KLAN, andraInst, handlarKlan, klanById } from './klaner';
 
 // ---------- handlarna (steg 4.4.1) ----------
 // När byns rikedom (varde.ts) passerat en gräns (HANDEL.rik) kommer en handlare gående från kartans kant, ungefär en gång per
@@ -85,6 +86,7 @@ export interface HVara { k: string; n: number; q?: number }
 export interface Handlare {
   id: number; // negativt, så att det aldrig är en bybos id (en part i ett byte, byte.ts)
   namn: string; hem: string; sex: 'm' | 'k';
+  klan?: number; // grannklanen hen kommer ifrån (steg 4.4.3, klaner.ts)
   x: number; y: number; mx: number; my: number; // var hen är och vart hen går
   fran: { x: number; y: number; t: number }; framme: number; // varifrån och när hen började gå, och när hen är framme (bilden ritar hen på vägen)
   fas: 'kommer' | 'handlar' | 'gar';
@@ -143,19 +145,22 @@ function filtPlats(s: State) {
 
 // en handlare kommer in från kanten närmast byn (en av de två närmaste, slumpat), på land
 function kommer(s: State) {
+  const kh = handlarKlan(s); // ingen klan som tycker om byn nog: ingen handlare den här gången
+  if (!kh) return false;
   const e = eldPlats(s), m = getMap(s.seed), mal = filtPlats(s);
   const k = kanterna(e.x, e.y).filter(p => m.tiles[Math.floor(p.y) * W + Math.floor(p.x)] !== T.Vatten);
   const ut = k.length ? k[Math.floor(rnd(s, 'handel') * Math.min(2, k.length))] : { x: 0.5, y: e.y + 0.5 };
-  const sex = rnd(s, 'handel') < 0.5 ? 'm' : 'k', utr = 'ryggsack';
+  const sex = kh.person.sex, utr = 'ryggsack';
   const nr = s.handlarNr = (s.handlarNr ?? 0) + 1;
   const h: Handlare = {
-    id: -nr, namn: makeName(s, sex, 'handel'), hem: pick(s, HEM, 'handel').namn, sex, x: ut.x, y: ut.y, mx: mal.x, my: mal.y, fran: { x: ut.x, y: ut.y, t: s.now }, framme: s.now + Math.hypot(mal.x - ut.x, mal.y - ut.y) / HANDEL.fart * SEC,
+    id: -nr, namn: kh.person.namn, hem: kh.klan.hem, klan: kh.klan.id, sex, x: ut.x, y: ut.y, mx: mal.x, my: mal.y, fran: { x: ut.x, y: ut.y, t: s.now }, framme: s.now + Math.hypot(mal.x - ut.x, mal.y - ut.y) / HANDEL.fart * SEC,
     fas: 'kommer', kom: 0, gar: 0, ut: { x: ut.x, y: ut.y }, utr, varor: [], silver: heltMellan(s, HANDEL.silver), handel: heltMellan(s, HANDEL.handel),
   };
   h.varor = packa(s, rymmer(h));
   s.handlare = h;
   count(s, 'handlare');
-  log(s, `En handlare, ${h.namn} från ${h.hem}, kommer gående mot byn.`, 'world');
+  log(s, `En handlare, ${h.namn} från ${kh.klan.namn} vid ${h.hem}, kommer gående mot byn.`, 'world');
+  return true;
 }
 
 // framme: filten breds ut med varorna
@@ -192,7 +197,7 @@ export function handelSteg(s: State, dtSec: number) {
   const nyTimme = Math.floor(s.now / HOUR) !== Math.floor((s.now - dtSec * SEC) / HOUR);
   if (nyTimme && !s.handlare) {
     if (s.nastaHandlare === undefined) { if (rikedom(s) >= HANDEL.rik) s.nastaHandlare = s.now + mellan(s, HANDEL.forsta) * DAY; }
-    else if (s.now >= s.nastaHandlare && !iIstiden(ageIndex(s))) kommer(s);
+    else if (s.now >= s.nastaHandlare && !iIstiden(ageIndex(s)) && !kommer(s)) s.nastaHandlare = s.now + intervall(s) * DAY;
   }
   const h = s.handlare;
   if (!h) return;
@@ -279,6 +284,16 @@ vidByte.push((s, m, g, fatt, betal) => {
   const b = (h.bytt ??= []), kop = m.id === h.id; // kop = handlaren köpte
   b.push({ vem: kop ? g.namn : m.namn, fick: varorText(kop ? fatt : betal), gav: varorText(kop ? betal : fatt) });
   if (b.length > HANDEL.minnas) b.splice(0, b.length - HANDEL.minnas);
+  const k = klanById(s, h.klan); // ett byte gör klanen lite vänligare (steg 4.4.3)
+  if (k) andraInst(k, KLAN.handel);
+});
+// märker handlaren att byn lurat hen, blir klanen mindre vänlig mot byn (byns anseende, steg 4.4.3)
+vidLura.push((s, L, X) => {
+  const h = s.handlare, k = klanById(s, h?.klan);
+  if (!h || !k || X.id !== h.id || rnd(s, 'klan') >= KLAN.marka * h.handel) return;
+  andraInst(k, -KLAN.lurad);
+  count(s, 'klanLurad');
+  log(s, `${h.namn} märkte att ${L.namn} hade lurat hen. ${k.namn} kommer att höra om det.`, 'world');
 });
 // bybon som part med handlaren: hen betalar också med sitt silver, och silvret är värt sitt grundvärde
 const bybonPart = (s: State, p: Person): Part => ({ ...personPart(s, p, true), varde: k => k === 'silver' ? 1 : behovAv(s, p, k) });

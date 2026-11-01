@@ -20,7 +20,7 @@ import { balans } from './balans';
 import { RELT, arBast, arRivaler, minnsGava } from './relationer';
 import { handelse, smakMat } from './rykten';
 import { VED } from './eld';
-import { Part, Vara, byteKlart, nyssBytt, flytta, gavaKlar, varorText, vardeOf } from './byte';
+import { Part, Vara, vidLura, byteKlart, nyssBytt, flytta, gavaKlar, varorText, vardeOf } from './byte';
 
 // ---------- behovsstegen ----------
 // När någon behöver något går hen stegen i ordning: först sitt eget, sedan ett byte med någon i närheten (byten nedan),
@@ -629,7 +629,7 @@ export function bytaMed(s: State, M: Part, G: Part, vill: Vara[], v: Villkor): n
   if (M.p) think(M.p, `Bytte till sig ${varorText(fatt)} av ${G.namn}`, 0.06, s.now, 6 * HOUR);
   if (G.p) think(G.p, `Bytte till sig ${varorText(betal)} av ${M.namn}`, 0.06, s.now, 6 * HOUR);
   for (const X of [M, G]) if (X.p) { ovning(X.p, 'handel', HANDLA.ovning * (0.5 + X.p.pot.intelligens / 20)); gjort(s, X.p, 'bytt'); }
-  if (lurare) lurad(s, lurare === M ? G : M, lurare);
+  if (lurare) { lurad(s, lurare === M ? G : M, lurare); for (const f of vidLura) f(s, lurare, lurare === M ? G : M); }
   const n = enheter(fatt);
   count(s, 'byten'); count(s, 'byte_' + v.typ, n); if (v.delad) count(s, 'kvallsbyten');
   if (byteKlart(s, M, G, fatt, betal, desperat)) count(s, 'storaByten'); // samma rad i loggen och krönikan, vem motparten än är
