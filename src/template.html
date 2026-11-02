@@ -272,7 +272,12 @@ button.rw { border: none; background: none; padding: 0; font: inherit; color: in
 .controls { border-top: 1px solid var(--line); padding: 10px 14px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
 .switch { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
 #speeds, #testSkicka { display: flex; gap: 4px; flex-wrap: wrap; }
-#testSkicka button { font: inherit; font-size: 13px; border-radius: 4px; padding: 3px 7px; cursor: pointer; border: 1px solid var(--line); background: transparent; color: var(--fg); display: inline-flex; align-items: center; gap: 3px; }
+#testSkicka button { font: inherit; font-size: 13px; border-radius: 4px; padding: 3px 7px; cursor: pointer; border: 1px solid var(--line); background: transparent; color: var(--fg); display: inline-flex; align-items: center; gap: 3px; min-height: 32px; min-width: 36px; justify-content: center; touch-action: manipulation; }
+#testSkicka button.ej { opacity: 0.4; }
+#testSkicka button.tryckt { animation: tryckt 0.6s ease-out; }
+@keyframes tryckt { from { background: var(--accent); color: var(--accent-fg); } to { background: transparent; } }
+#testSvar { flex-basis: 100%; font-size: 12px; color: var(--muted); }
+#testSvar:empty { display: none; }
 #speeds button, .ghost, .primary { font: inherit; font-size: 13px; border-radius: 4px; padding: 4px 9px; cursor: pointer; border: 1px solid var(--line); background: transparent; color: var(--fg); }
 #speeds button[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
 .primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); font-weight: 700; padding: 7px 14px; font-size: 15px; }

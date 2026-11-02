@@ -3,7 +3,7 @@ import { balans } from './balans';
 import { ALDER, ageOf, alive, byId, count, forstaGang, living, log, stat, think } from './folk';
 import { SAMTAL, TalkEvent, isSocial } from './samtal';
 import { kronika } from './historik';
-import { eldPlats, getMap } from './karta';
+import { eldPlats, getMap, vaderstreck } from './karta';
 import { blocked } from './byggnad';
 import { clamp, rnd } from './slump';
 import { iIstiden, ageIndex, hourOf } from './tid';
@@ -16,7 +16,7 @@ import { knows } from './teknik';
 import { put, use } from './lager';
 import { ledareOf } from './styre';
 import { kanterna } from './varg';
-import { KLAN, andraInst, handlarKlan, klanById } from './klaner';
+import { KLAN, andraInst, handlarKlan, klanById, klanerOf } from './klaner';
 
 // ---------- handlarna (steg 4.4.1) ----------
 // När byns rikedom (varde.ts) passerat en gräns (HANDEL.rik) kommer en handlare gående från kartans kant, ungefär en gång per
@@ -193,9 +193,17 @@ function kommer(s: State, tvinga?: boolean) {
   return true;
 }
 
-// testläget (steg 4.5.4.4): en handlare skickas till byn nu, från vilken grannklan som helst. false = det finns redan en
-// handlare i byn, eller inga grannklaner
-export const skickaHandlare = (s: State) => !s.handlare && kommer(s, true);
+// testläget (steg 4.5.4.4): en handlare skickas till byn nu, från vilken grannklan som helst, och en rad i Händelser säger
+// varifrån (steg 4.5.6.4). Svarar med raden, eller skälet till att ingen kan komma just nu (handlarHinder)
+export const handlarHinder = (s: State) => s.handlare ? 'Det finns redan en handlare i byn' : !klanerOf(s).length ? 'Byn har inga grannklaner än' : undefined;
+export function skickaHandlare(s: State): { ok: boolean; text: string } {
+  const h = handlarHinder(s);
+  if (h) return { ok: false, text: h };
+  if (!kommer(s, true)) return { ok: false, text: 'Ingen handlare kunde komma' };
+  const t = s.handlare!, text = `Testläget: handlaren ${t.namn} kommer från ${vaderstreck(s, t.x, t.y)}.`;
+  log(s, text, 'world');
+  return { ok: true, text };
+}
 
 // nästa gång klockan är kl (timmar), efter t
 function nastaKl(t: number, kl: number) {

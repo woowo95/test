@@ -3,7 +3,7 @@ import { blodas } from './blod';
 import { ALDER, KROPP, ageOf, count, isSick, living, log, makeName, ovning, stat, think } from './folk';
 import { halsa, kanGa, skada } from './halsa';
 import { kronika } from './historik';
-import { eldPlats, getMap } from './karta';
+import { eldPlats, getMap, vaderstreck } from './karta';
 import { Klan, andraInst, klanById, klanerOf } from './klaner';
 import { addTo, amountOf, avbryt, zoneOf } from './lager';
 import { die } from './liv';
@@ -75,11 +75,22 @@ export function forsvaret(s: State) {
 // hur mycket byn lockar rövare (0–1): rikedomen minus försvaret
 export const lockar = (s: State) => clamp((rikedom(s) - forsvaret(s) - ROVARE.rikFran) / ROVARE.rikSpann, 0, 1);
 
-// testläget (steg 4.5.4.4): en liten, mellanstor eller stor flock kommer nu (så många rövare). false = det finns redan en flock
+// testläget (steg 4.5.4.4): en liten, mellanstor eller stor flock kommer nu (så många rövare). Flocken samlas inte i kanten
+// utan går direkt mot byn, och en rad i Händelser säger varifrån (steg 4.5.6.4). Svarar med raden, eller skälet till att
+// ingen flock kan komma just nu (rovarHinder)
 export const ROVARFLOCK = { liten: ROVARE.antal[0], mellan: ROVARE.antal[1], stor: 2 * ROVARE.antal[1] } as const;
-export function skickaRovare(s: State, n: number) { if (s.rovare) return false; rovarnaKommer(s, n); return true; }
-// en flock kommer till en punkt i kanten som inte är vatten. tvinga = ett scenario eller testläget (antalet)
-export function rovarnaKommer(s: State, tvinga?: number) {
+export const rovarHinder = (s: State) => s.rovare ? 'Det finns redan en rövarflock vid byn' : undefined;
+export function skickaRovare(s: State, n: number): { ok: boolean; text: string } {
+  const h = rovarHinder(s);
+  if (h) return { ok: false, text: h };
+  rovarnaKommer(s, n, true);
+  const f = s.rovare!, text = `Testläget: ${n} rövare kommer från ${vaderstreck(s, f.x, f.y)} och går direkt mot byn.`;
+  log(s, text, 'world');
+  return { ok: true, text };
+}
+// en flock kommer till en punkt i kanten som inte är vatten. tvinga = ett scenario eller testläget (antalet); direkt = flocken
+// samlas inte i kanten först (testläget)
+export function rovarnaKommer(s: State, tvinga?: number, direkt?: boolean) {
   if (!tvinga && (s.rovare || (s.rovarVila ?? 0) > s.now || rnd(s, 'rovare') >= ROVARE.kommer * lockar(s))) return;
   const m = getMap(s.seed);
   let x = 0, y = 0;
@@ -99,7 +110,7 @@ export function rovarnaKommer(s: State, tvinga?: number) {
     };
   });
   const nr = s.rovarNr = (s.rovarNr ?? 0) + 1;
-  s.rovare = { id: nr, klan: k?.id, folk, x, y, mx: x, my: y, gor: 'samlas', till: s.now + mellan(s, ROVARE.samlasTim) * HOUR };
+  s.rovare = { id: nr, klan: k?.id, folk, x, y, mx: x, my: y, gor: direkt ? 'kommer' : 'samlas', till: direkt ? s.now : s.now + mellan(s, ROVARE.samlasTim) * HOUR };
   s.rovarVila = s.now + ROVARE.vilaDygn * 24 * HOUR;
   count(s, 'rovarflockar'); count(s, 'rovare', n);
 }
