@@ -1,0 +1,37 @@
+{
+ "id": "skagg-11",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 2",
+ "om": "Jag valde version 1. Den följer förebildens helskägg bäst: den har jämna, breda tonfält från h på vänster sida (mot ljuset) via g och f till e på höger sida, och strån i samma tjocklek som i förebilden. Kluvningen under hakan syns tydligt och är symmetrisk kring mittlinjen (x = -15 till 14). Delen ligger inom rutan (y = -7 till 15) och lämnar fritt kring munnen. Version 3 har mer brus, med inströdda e-punkter i växelmönster (fefefe) som gör ytan prickig. Den har också raka h-ränder och är lite osymmetrisk på en rad. Jag ändrade ingenting, eftersom version 1 redan stämmer med reglerna och bara använder tecknen efgh.",
+ "bilder": {
+  "standard": {
+   "x": -15,
+   "y": -7,
+   "rader": [
+    "hhhhgg..................fffeee",
+    "hhhhgg..................ffffee",
+    ".hhhhg..................fffee.",
+    ".hhhhgg.hhhgggggfffeee.ffffee.",
+    ".hhhhgghhhhgggggfffeeeffffffe.",
+    "..hhhghhhgggggggffffeeefffee..",
+    "..hhhhhgghgggggggfffffefffee..",
+    "...hhhhgghgggggggffffgfffee...",
+    "...ghhhggghggggggffffgffeee...",
+    "...gghgggghgggggfffffgfffee...",
+    "....ggggghgggggffffgfffeee....",
+    "....gggggghggggffffgffffee....",
+    ".....ggggghgggffffgfffeee.....",
+    ".....gggghgggfffggfffeeee.....",
+    "......ggghggff..ffgfeeee......",
+    "......gghgggff..fffgeeee......",
+    "......ghggggf....ffgfeee......",
+    ".......hgggff....fgfeee.......",
+    ".......gggff......ffeee.......",
+    "........ggff......ffee........",
+    "........gff........fee........",
+    ".........ff........ee.........",
+    ".........f..........e........."
+   ]
+  }
+ }
+}

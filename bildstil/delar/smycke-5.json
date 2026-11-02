@@ -1,0 +1,25 @@
+{
+ "id": "smycke-5",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 2",
+ "om": "Jag valde version 2. Bandet ligger som ett pannband över håret och följer huvudets rundning, så det ser ut som en hårprydnad på kvinnan och barnet. Version 3 sitter så högt att den liknar en krona som vilar ovanpå hjässan, och hängbanden blir för långa i förhållande till förebildens små detaljer. Version 2 har samma linjetjocklek och detaljstorlek som benhalsbandet. Ljuset kommer uppifrån vänster: rost3 och senap ligger på vänster sida och rost0 på höger. Delen håller sig inom rutan (x -16 till 15, y 4 till 14). Enda ändringen: hängbandets nedersta punkt är mörkare (rs i stället för ss), så att skuggan följer bandet nedåt och slutet inte ser platt ut.",
+ "bilder": {
+  "standard": {
+   "x": -16,
+   "y": 4,
+   "rader": [
+    "...........tttttttttt...........",
+    ".......uuutsKKsKJsJJstsss.......",
+    "....uuuKsKKsssssrrrrrJJsJsss....",
+    "..uuKsKssss..........rrrrJsJss..",
+    "uusKsss..................rrrJsss",
+    "KKss........................rrJJ",
+    "ss............................rr",
+    "tssr............................",
+    "ts.sr...........................",
+    "ts..sr..........................",
+    "rs.............................."
+   ]
+  }
+ }
+}

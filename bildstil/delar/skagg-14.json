@@ -1,0 +1,41 @@
+{
+ "id": "skagg-14",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 2",
+ "om": "Jag valde version 1. Flätorna ligger symmetriskt kring mittlinjen (x = -6 till -3 och x = 2 till 5) och har ett jämnt, upprepat flätmönster med ett band (ffee) där de är knutna. Skuggningen följer ljuset uppifrån vänster: vänster sida och vänster fläta är ljusare, höger sida mörkare. Stråkornet och tjockleken stämmer med helskägget i förebilden. Version 2 har lösa punkter mellan flätorna (rad 17, 'ff' mitt emellan dem) och en något grövre, mindre jämn mönstring, så den hör sämre ihop med förebilden. Delen håller sig inom rutan (x -15 till 14, y -7 till 19) och använder bara efgh. Jag har inte ändrat något, eftersom jag inte hittade några fel som behövde rättas.",
+ "bilder": {
+  "standard": {
+   "x": -15,
+   "y": -7,
+   "rader": [
+    "hhhhggg................gffffee",
+    "hhhhhgg................gfffffe",
+    ".hhhhhg................gffffe.",
+    ".hhhhhgg.hhhhggggfffg.ggfffff.",
+    ".hhhhhgghhhhhggggffffgggffffe.",
+    "..hhhhhghhhhggggggfffgggfffe..",
+    "..hhhhhhghhgggggggffgfffgffe..",
+    "...hhhhgghhggggggfgggfffgfe...",
+    "...ghhhggghhggggggfggfffgfe...",
+    "...gghhgggghgggggffgfffffgfe..",
+    "....gghggggghggggfgfffffgfe...",
+    "....gggggggghgggfgffffffefe...",
+    ".....ggggggghgggffgffffefe....",
+    "......gghhggghggfgfggfeee.....",
+    ".......ghhgggggffgggffe.......",
+    ".........hhgggffeggfe.........",
+    ".........ghff....gffe.........",
+    ".........fgge....efge.........",
+    ".........hhgf....ggfe.........",
+    ".........ghff....gffe.........",
+    ".........fgge....efge.........",
+    ".........hhgf....ggfe.........",
+    ".........ghff....gffe.........",
+    ".........ffee....feee.........",
+    ".........hhgf....ggfe.........",
+    ".........hgff....gffe.........",
+    "..........gf......fe.........."
+   ]
+  }
+ }
+}

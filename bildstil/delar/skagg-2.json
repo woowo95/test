@@ -1,0 +1,28 @@
+{
+ "id": "skagg-2",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den ligger närmast förebilden: kort och tät skäggväxt längs käken med smala polisonger, en mustasch ovanför munnens ruta och en rundad haka som inte går lika långt ner som helskägget. Skuggningen följer ljuset från vänster, med h och g på vänster sida och f och e mot höger och under hakan. Delen är symmetrisk kring mittlinjen (x = -15 till 14) och håller sig inom rutan. Version 2 blir för gles på hakan, och version 3 blir för fyllig för att räknas som ett kort skägg. Enda ändringen: en ensam f-punkt bland g på rad 11 har blivit g, så att det inte står en lös prick där.",
+ "bilder": {
+  "standard": {
+   "x": -15,
+   "y": -7,
+   "rader": [
+    ".ggh......................ffe.",
+    ".ghh......................ffe.",
+    ".ghhg....................fffe.",
+    ".hhhg...ghhhgghgffgfff...fffe.",
+    ".hhhgg.ghhhhgghgfgfffff.fffee.",
+    "..hghhhghhggggghgfgffgfffffe..",
+    "..gghhggghgggggghfgfgfffffef..",
+    "...ghhgggghggggghfgfgffffef...",
+    "...ggghggghgggggfgffgfffeef...",
+    "....gggggghggggffgfgfffeee....",
+    ".....gggggggggfffgffffeee.....",
+    "......gffggfgffffffffeee......",
+    "........ffffgfffffffeee.......",
+    "..........feffffeeee.........."
+   ]
+  }
+ }
+}

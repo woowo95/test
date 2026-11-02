@@ -1,0 +1,22 @@
+{
+ "id": "smycke-1",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den har samma form som förebilden: 24 punkter bred, börjar på y = -4 och går i ett V runt halsen med ett litet hänge i mitten, precis som tänderna i benhalsbandet. Pärlorna växlar mellan rost, senap och skiffer, vilket passar för glas- och bärnstenspärlor under järnåldern. Varje pärla är två punkter med den ljusare tonen åt vänster, mot ljuset, så den skuggas på samma sätt som förebilden. Hänget av senap har mörkare tonen nedtill, så det ser runt och matt ut, utan glans. Version 1 har fått ben och barr och liknar mest en kopia av benhalsbandet. Den har också glesa luckor i mitten. Version 2 är bredare och saknar hänge, så den skiljer sig mer från förebilden. Jag ändrade inget i version 3. Den är symmetrisk kring mittlinjen (x = -1/0), håller sig inom rutan och använder bara tillåtna tecken. Det finns inga ensamma prickar: pärlan högst upp i hänget ligger an mot pärlorna under. En sak jag inte kunde rätta: på mannens ansikte syns halsbandet nästan inte i någon av de tre versionerna, fast benhalsbandet i förebilden syns där. Det beror troligen på mallen och inte på själva delen, och det gick inte att avgöra hur det ska åtgärdas utifrån bilderna.",
+ "bilder": {
+  "standard": {
+   "x": -12,
+   "y": -4,
+   "rader": [
+    "ts....................ts",
+    "srKJ................KJsr",
+    "..JISR............SRJI..",
+    "....RQKJ........KJRQ....",
+    "......JIts.KJ.tsJI......",
+    "........srKJJIsr........",
+    "..........JJII..........",
+    "...........II..........."
+   ]
+  }
+ }
+}

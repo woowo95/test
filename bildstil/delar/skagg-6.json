@@ -1,0 +1,26 @@
+{
+ "id": "skagg-6",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den är centrerad kring mittlinjen (x = -7 till 6) och ligger inom rutan. Den har förebildens skuggning: ljust h uppe till vänster och mörkt e nere till höger. Hårslingorna går som korta diagonala stråk, samma struktur som i helskägget. Formen är bred under munnen och smalnar av till en spets under hakan, och det passar ett hakskägg bäst. Version 1 blev en rund och slät klump. Version 2 var för bred upptill och såg trubbigare ut. Ändring: på näst sista raden byttes den ensamma mörka e-punkten på vänsterkanten mot f. Den vänstra sidan vänder sig mot ljuset, och kanten blir då jämnare.",
+ "bilder": {
+  "standard": {
+   "x": -7,
+   "y": 1,
+   "rader": [
+    "...ghhhgggf...",
+    "..ghhhhgggff..",
+    ".gghhhgghgfff.",
+    ".ghhhgghggffe.",
+    ".gghhggghgffe.",
+    "..ghggghggfe..",
+    "..gggghgfffe..",
+    "...gghgffee...",
+    "...fgggffee...",
+    "....fgffee....",
+    "....fffeee....",
+    ".....feee....."
+   ]
+  }
+ }
+}

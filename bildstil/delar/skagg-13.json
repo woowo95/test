@@ -1,0 +1,32 @@
+{
+ "id": "skagg-13",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 2. Den är det som bäst ser ut som ett glest skägg: hår i små klungor som följer käken från polisongerna ner under hakan, och huden syns mellan klungorna. Skuggningen följer förebilden. Vänster sida, som vänder sig mot ljuset, är ljusare (h och g) och höger sida mörkare (f och e). Delen håller sig inom rutan och ligger symmetriskt kring mittlinjen. Version 1 har ensamma prickar (enstaka g och f vid munnen) och ser mer ut som tunna strån än ett glest skägg. Version 3 är för kortklippt och sammanhängande och har en rak mustaschlinje, så den är inte gles. Jag ändrade ingenting: punkterna ligger i par eller små klungor, utan ensamma prickar, och använder bara tecknen e, f, g och h.",
+ "bilder": {
+  "standard": {
+   "x": -15,
+   "y": -7,
+   "rader": [
+    "ghg........................gfe",
+    ".hgg......................gff.",
+    ".gh.......................fe..",
+    ".hg.....ghhg......gfff.....fe.",
+    "..hg..hg..gh......fg..gf..fe..",
+    "..gh...ggg..........ffe...ef..",
+    "...hg...ghg........fgf...ff...",
+    "...gh....gg...hg.ff...ff..fe..",
+    "....gg..hgg..ghgf..fgf..ef....",
+    "....gh..ggh.gg..ff.gff..fe....",
+    ".....gg..gghg..gff.ff...ef....",
+    ".....gg.ggg.ghgf.gff..fe......",
+    "......gg..ggfg.gff.ffe.ee.....",
+    ".......gg.gfgf..ffgf.fee......",
+    "........gffg.gfff.ffe.ee......",
+    ".........ff..gffgf.fee........",
+    "..........fe.ffffe..ee........",
+    "...........ee.ffee............"
+   ]
+  }
+ }
+}

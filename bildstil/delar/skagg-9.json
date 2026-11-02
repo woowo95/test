@@ -1,0 +1,29 @@
+{
+ "id": "skagg-9",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 2. Den ger tydliga polisonger som går från tinningen ner längs kinden och böjer in mot käken utan att nå hakan, så munnen och hakan förblir fria. Tjockleken och tonerna stämmer med förebildens helskägg: den vänstra sidan är ljusare (h och g) mot ljuset, och den högra är mörkare (f och e). Den sitter bra på alla tre ansiktena. Version 1 är för smal och kort, så den läses mer som hårslingor. Version 3 har lösa, hängande spetsar nedtill som ser ut som örhängen. Rättat: två ensamma prickar är borttagna. På rad 2 till höger blev ffefe till fffee. På rad 12 fick tonövergångarna sammanhängande klungor: gfgggff blev ggggfff och feffeee blev fffeeee.",
+ "bilder": {
+  "standard": {
+   "x": -15,
+   "y": -10,
+   "rader": [
+    ".hhg......................ffe.",
+    "ghhhg....................fffee",
+    "ghhhg....................fffee",
+    "gghhhg..................fffffe",
+    "ghhhgg..................ffgffe",
+    ".ghhhgg................fffffe.",
+    ".hhghgg................fgfffe.",
+    ".ghhhggg..............fffgffe.",
+    "..ghhggg..............ffgffe..",
+    "..gghgggg............fffgffe..",
+    "..ghgggggg..........ffffgfee..",
+    "...ggggggg..........fffffee...",
+    "...ggggfff..........fffeeee...",
+    "....gffff............effee....",
+    ".....fff..............eee....."
+   ]
+  }
+ }
+}

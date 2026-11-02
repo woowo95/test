@@ -1,0 +1,42 @@
+{
+ "id": "skagg-4",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 2",
+ "om": "Jag valde version 1. Den har samma oregelbundna, korniga hårstruktur som helskägget i förebilden. Ljuset kommer uppifrån vänster: vänster sida är ljusare (h/g) och den högra går mot det mörka (f/e). Skägget smalnar av mjukt till en lång spets under hakan, och det stämmer med beskrivningen \"Långt skägg\". Version 3 är byggd av raka, likadana lodräta ränder som upprepas rad för rad. Den ser mekanisk och slät ut och följer inte formen, så den passar sämre ihop med förebilden. Jag kontrollerade att alla rader i version 1 är 30 tecken breda och att delen går från x -15 till 14 och från y -7 till 20. Den ligger alltså symmetriskt kring mittlinjen och inom rutan, och den använder bara e, f, g och h. Inga ändringar behövdes.",
+ "bilder": {
+  "standard": {
+   "x": -15,
+   "y": -7,
+   "rader": [
+    "hhhhgg..................ffffee",
+    "hhhhgg..................fffeee",
+    ".hhhgg..................ffffe.",
+    ".hhhhg..hhhhhggggfffff..ffffe.",
+    ".hhhhgghhhhhhggggfffffgfffffe.",
+    "..hhhhghhhhggghgfgggfffffffe..",
+    "..hghhhhhghgggghhfggfffffgfe..",
+    "..ghhhhgghghgghhfgggfffgfffe..",
+    "..gghhgggghghgghhghggfffgffe..",
+    "..gghggggghghgghhggfgfffgffe..",
+    "...hgggggggghgghggffffffgfe...",
+    "...hgggggggghgggggfgffffgfe...",
+    "....hggggggghggggffgfffefe....",
+    "....gggggggghgggfffgfffefe....",
+    ".....ggggggghggfffgfffefe.....",
+    ".....gghgggghgffgfffgfeee.....",
+    "......ghggghgffgffgfefee......",
+    "......gggghgfgffgffefeee......",
+    ".......ggghgfgffgfeefee.......",
+    ".......gghgffgffgfeefee.......",
+    "........ghgffgffgfefee........",
+    "........ggffgfffgfeefe........",
+    ".........gfgffgffefee.........",
+    ".........gffgfffeefee.........",
+    "..........ffgffeefee..........",
+    "..........fgffefeeee..........",
+    "...........ffefeeee...........",
+    ".............feee............."
+   ]
+  }
+ }
+}

@@ -1,0 +1,42 @@
+{
+ "id": "skagg-5",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Valde version 1. Den följer förebilden bäst: samma bredd över käken och kinderna, ljusare toner (h/g) på vänster sida och mörkare (f/e) på höger, i linje med ljuset uppifrån vänster. Mustaschen lämnar munnen fri. Flätan är tydligast av de tre, med läsbara segment, ett band (eeee) och en liten tofs längst ner. Delen ligger symmetriskt kring mittlinjen: x från -15 till 14, och flätan från -3 till 2. Den håller sig inom rutan, eftersom y går från -7 till 20. Version 2 har en rörigare fläta med en bred tofs, och version 3 har en smalare, mindre tydlig fläta som ser glesare ut mot förebildens helskägg. Inga ändringar behövdes: alla rader är 30 tecken, bara tecknen efgh används och delen är inom rutan.",
+ "bilder": {
+  "standard": {
+   "x": -15,
+   "y": -7,
+   "rader": [
+    "gghhhg..................gffffe",
+    ".ghhhg..................gfffe.",
+    ".ghhhhg................gffffe.",
+    ".ghhhhg.hhhhggghgfgggf.gffffe.",
+    ".ghhhhgghhhhggghgfggggffgfffe.",
+    "..ghhhhghhhgggghgfgggfffgffe..",
+    "..ghhhhhgghgggghhfggfffgfffe..",
+    "...ghhhggghgggghhfgggffgffe...",
+    "...gghhgggghggghhgggfffgfe....",
+    "....gghggggghgghhggffffgfe....",
+    ".....ggggggghgghgfffffgfe.....",
+    "......gggggghgghgffffgfe......",
+    ".......ggggghgghgfffgfe.......",
+    "........ggggghghgffffe........",
+    ".........gggghghffffe.........",
+    "..........ggghhgfffe..........",
+    "............ghhgfe............",
+    "............hhgfef............",
+    "............egffee............",
+    "............ghhgfe............",
+    "............hhgfef............",
+    "............egffee............",
+    ".............hgfe.............",
+    ".............hgfe.............",
+    ".............eeee.............",
+    ".............ghgf.............",
+    "............ghhgfe............",
+    ".............ggfe............."
+   ]
+  }
+ }
+}

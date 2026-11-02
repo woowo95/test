@@ -1,0 +1,24 @@
+{
+ "id": "smycke-6",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den har samma tunna linjer och samma små, rundade benbitar som halsbandet. Knoppen är ljus mot ljuset uppe till vänster och skuggad med jord nere till höger, precis som benbitarna i förebilden. Pinnen går i en jämn diagonal och sitter snyggt i håret på alla tre ansiktena. Version 2 är för tjock och bruten av en tom rad mitt i pinnen. Version 3 har en lös punkt och ett ojämnt fäste. Ändring: lindningen under knoppen var i rost (s, r) och såg ut som ett glödande tändstickshuvud. Jag har gjort om den till ett läderband i jord (G, F), med samma form och samma skuggkant.",
+ "bilder": {
+  "standard": {
+   "x": -16,
+   "y": -6,
+   "rader": [
+    ".wq.........",
+    "wqqp........",
+    "qqppE.......",
+    "..GFE.......",
+    "...GFE......",
+    "....wpE.....",
+    ".....wpE....",
+    "......qpE...",
+    ".......qpE..",
+    "........pE.."
+   ]
+  }
+ }
+}

@@ -1,0 +1,41 @@
+{
+ "id": "skagg-10",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 2",
+ "om": "Jag valde version 3. Den är fylligare och yvigare än version 2: kinderna är bredare och går lite utanför käken, och nederkanten hänger längre ner under hakan. Det stämmer bättre med namnet \"Yvigt skägg\". Den hör ändå ihop med förebilden. Ljuset faller uppifrån vänster, med h och g på vänster sida och f och e på höger. Stråna är ritade som korta diagonala drag i samma tjocklek som i helskägget. Mustaschen lämnar munnens ruta fri, och delen håller sig inom rutan (y -8 till 18, x -18 till 17). Jag ändrade en sak: i näst nedersta raden fyllde jag två ensamma genomskinliga hål, så att nederkanten inte får prickar.",
+ "bilder": {
+  "standard": {
+   "x": -18,
+   "y": -8,
+   "rader": [
+    "..ghhhhg....................gffffe..",
+    ".ghhhhggg..................ggfffffe.",
+    "ghhhhhggg..................gggfffffe",
+    "hghhhhhgg..................ggffffffe",
+    "ghhhhhhgg.hhhhhggghgfggfff.gffffffee",
+    "hhhhhghhhhhhhgggghgffgggffffgfffffee",
+    "ghhhhhhghhhhggghhgffgggffffgffffffee",
+    "hhhhhghhhgghggggghgfgggfffgfffffffee",
+    "hhhhghhggghggggghgfggffgffgfffffeffe",
+    ".hhhgghgggghgggghggfgfgffffgfffeffe.",
+    "ghhggghggggghggggfgfgfffffgffefffee.",
+    ".hhgggggghggggghgffgffffgfffeffeefe.",
+    "..hgggggghgggggggfgfffffgfffefffeee.",
+    ".gggghggghggggggffgfffffgffefffeeef.",
+    "..ggggggghgggggfffgffffgfffeffeeee..",
+    "...gggggghggggffffgfffffgffeffeeee..",
+    "..fggggggggggffffgffffffgfeefeeeef..",
+    "...gfgggggfgfffffgffffffffeefeeee...",
+    "....ffggggffgffffgffffffeeefeeee....",
+    "...fffgfgfffffffgfffffeeeefeeeef....",
+    "....ffffgfffffffgffffeeeeeeeeee.....",
+    ".....fffffgffffffffeeeeeefeeeee.....",
+    "......effffgfffffeeeeeeefeeeee......",
+    ".......eefffffeffeeeeeeeeeeee.......",
+    "........eeeffeeeeeeeeeeeeeee........",
+    ".........eeeeeeeeeeeeeeeeee.........",
+    "...........eeeeeeeeeeeeee..........."
+   ]
+  }
+ }
+}

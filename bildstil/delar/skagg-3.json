@@ -1,0 +1,19 @@
+{
+ "id": "skagg-3",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Valde version 2. Den är symmetrisk kring mittlinjen (x -7 till 6) och har samma tjocklek och korn som helskägget i förebilden. Ljuset faller rätt: h och g till vänster, f och e till höger. Mungipornas hängande spetsar ger en tydlig mustasch som lämnar munnens ruta fri och sitter bra på alla tre ansiktena. Version 1 är högre och når upp mot näsan. Version 3 blir för tunn och spretig i överkanten. Ändring: sista punkten i tredje raden är nu e i stället för f, så att högerkanten som vänder sig från ljuset blir jämnt mörk.",
+ "bilder": {
+  "standard": {
+   "x": -7,
+   "y": -4,
+   "rader": [
+    "...ghhgfgff...",
+    ".ghhhggfgfffe.",
+    "ghhgggffgffeee",
+    "hgg........fee",
+    "gf..........ee"
+   ]
+  }
+ }
+}
