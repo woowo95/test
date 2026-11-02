@@ -47,6 +47,7 @@ export const PAL: Record<string, Record<string, string>> = {
   kruka: { o: '#24201d', r: '#521100', R: '#742a01', T: '#bd753e', k: '#2f261d', z: 'rgba(0,0,0,.30)' }, // (Björn valde version 1 efter v245, steg 4.5.2)
   bonad: { o: '#24201d', b: '#5e3c24', c: '#7d5b40', r: '#521100', R: '#742a01', s: '#906f0f', S: '#b2921b', w: '#a0947d', W: '#bdb39b' }, // (Björn valde version 3 efter v245, steg 4.5.2)
   vaggbrade: { o: '#24201d', a: '#3f2415', b: '#5e3c24', c: '#7d5b40', e: '#987e62', k: '#2f261d', z: 'rgba(0,0,0,.30)' }, // (Björn valde version 3 efter v245, steg 4.5.2)
+  virke: { o: '#24201d', a: '#3f2415', b: '#5e3c24', c: '#7d5b40', e: '#bdb39b', E: '#dad0bb', z: 'rgba(0,0,0,.30)' }, // kluvna stockar (steg 4.5.5.2, platshållare, 16 punkter)
   // filten där stora byten görs (steg 4.4.1.1, platshållare, 16 punkter)
   silver: { o: '#3a3e44', S: '#c8ccd2', W: '#f4f6f8', s: '#8a9098' },
   handslag: { a: '#bd753e', b: '#7d5b40', c: '#647025', o: '#24201d', z: 'rgba(0,0,0,.30)' }, // (steg 4.5.4.17: platshållare; Björn väljer i bildstilen)
@@ -2409,6 +2410,24 @@ export const PIX: Record<string, string[]> = {
     '................',
   ],
   // trumman (platshållare, 16 punkter): ett ljust skinn spänt över en ring av trä, med snören
+  virke: [ // platshållare (steg 4.5.5.2): ett kluvet virke med ljus klyvyta
+    '................',
+    '................',
+    '................',
+    '..oooooooooooo..',
+    '.oEEEEEEEEEEEEo.',
+    'oEeEEeEEEEeEEEbo',
+    'oEEEEEEeEEEEEcbo',
+    'oeEEEeEEEEEEEcbo',
+    '.oooooooooooocbo',
+    '..obbcbbbcbbbbbo',
+    '.oabbbbcbbbbbbo.',
+    'oaabbbbbbcbbbo..',
+    'oabbcbbbbbbbbo..',
+    '.oooooooooooo...',
+    '..zzzzzzzzzzzz..',
+    '................',
+  ],
   trumma: [ // (Björn valde version 2 efter v245, steg 4.5.2)
     '................',
     '....oooooo......',

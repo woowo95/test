@@ -53,7 +53,7 @@ const DEF = {
   kott: { namn: 'Harkött', ett: true, skaffa: { min: 3, slag: 'bearbeta', tek: 'kniv' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 2, naring: { protein: 2, fett: 1, energi: 0.8, mineral: 0.6, vitamin: 0.3 }, ra: true, haller: 2 }, // slaktat vilt (en kanin, 2 fällt vilt i hela saker sedan steg 2.10.7, ger 3 kött, ett ben och ett skinn; värdet är golvet för nivån, varde.ts); köttet håller ett par dygn, fisken ett (steg 2.2.9). Köttet är eget för varje art (steg 3.7.14): nyckeln kott är kaninens, så att sparade byar behåller det
   fisk: { namn: 'Fiskkött', ett: true, skaffa: { av: { abborre: 1 }, min: 2, slag: 'bearbeta' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 1, naring: { protein: 2, fett: 0.8, mineral: 0.7, energi: 0.6, vitamin: 0.3 }, ra: true, haller: 1 },
   svamp: { namn: 'Svamp', skaffa: { act: 'samla' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 3, naring: { protein: 0.6, mineral: 0.8, vitamin: 1, energi: 0.5, fett: 0.1 }, haller: 2 },
-  ved: { namn: 'Trä', ett: true, skaffa: { act: 'hugga', tek: 'yxa' }, stack: 25, mapp: 'Bränsle', slits: 0.0004, blir: { k: 'grenar', per: 2 } },
+  ved: { namn: 'Ved', skaffa: { act: 'hugga', tek: 'yxa' }, stack: 20, mapp: 'Bränsle', slits: 0.0004, blir: { k: 'grenar', per: 2 } },
   grenar: { namn: 'Grenar', skaffa: { act: 'ved' }, stack: 50, mapp: 'Bränsle', slits: 0.0006 },
   torrgras: { namn: 'Hö', ett: true, skaffa: { tid: 0.4 }, stack: 50, mapp: 'Bränsle', slits: 0.006 }, // hö ruttnar på ett par dygn när det ligger utanför lagret (steg 2.2.9)
   kol: { namn: 'Kol', ett: true, skaffa: { tid: 0.3 }, stack: 25, mapp: 'Bränsle' },
@@ -142,6 +142,9 @@ const DEF = {
   // silvret (steg 4.4.1.3, handel.ts): det enda som är pengar. Det kommer med handlarna och är värt en arbetstimme styck. Det
   // byts bara med handlaren än; silver mellan byborna kommer i steg 9.5.1.2
   silver: { namn: 'Silver', ett: true, varde: 1, stack: 200, mapp: 'Silver', brinnerInte: true },
+  // virket (steg 4.5.5.2): kluvna stockar som klyvs ur de fällda stammarna med yxa (klyva i handlingar.ts). Stationerna och
+  // möblerna byggs av virke; veden är bränsle och små saker
+  virke: { namn: 'Virke', ett: true, skaffa: { act: 'klyva', tek: 'yxa' }, stack: 2, vikt: 10, mapp: 'Material', slits: 0.0002, blir: { k: 'ved', per: 5 } },
 } satisfies Record<string, SakDef>;
 
 type Sak = keyof typeof DEF;

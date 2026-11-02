@@ -14,7 +14,7 @@ import { sportKlar, sportSteg } from './sport';
 import { lyssnaSteg, upptradaKlar, upptradaSteg } from './framtradande';
 import { redskapIHanden, tidyTools } from './agande';
 import { kvEffekt } from './kvalitet';
-import { chopStock, fellTree, rotStumps, stocks } from './skog';
+import { SKOG, chopStock, fellTree, rotStumps, stocks } from './skog';
 import { needLadder, noticeTheft, stole } from './behov';
 import { avbryt, capacity, dropSpot, fetchSpot, helaIBordan, homeKind, isCarrying, load, pickUp, placeTools, sakerPaGolvet, storeLoad, tidyStore, wearStore } from './lager';
 import { DJURARTER, REDSKAP, bearbeta, djurKvar, twineRope, wearUsed } from './redskap';
@@ -550,6 +550,13 @@ const UTFALL: Partial<Record<Act, (s: State, p: Person, tk: Task, b: Arbetsbit) 
       tk.carry += got.ved; bar('grenar', got.grenar); bar('mossa', got.mossa);
       if (got.done) tk.until = s.now;
     }
+    return true;
+  },
+  // virket (steg 4.5.5.2): varje virke tar SKOG.virkeVed av stammens trä, och grenarna följer med som när man hugger
+  klyva: (s, _p, tk, { y, bar }) => {
+    const got = chopStock(s, tk.ref, y * SKOG.virkeVed);
+    if (!got) tk.until = s.now;
+    else { tk.carry += got.ved / SKOG.virkeVed; bar('grenar', got.grenar); bar('mossa', got.mossa); if (got.done) tk.until = s.now; }
     return true;
   },
   samla: (s, p, tk, { y, rich, delar, rd, dtSec, bar }) => {

@@ -15,7 +15,8 @@ import { brasaBrist, brasaLeta, kanLetaBrasaSten } from './brasor';
 import { DORRAR, DORR_LIST, DorrDef, DorrSlag } from './byggnad';
 import { dorrOppningar, dorrSpot, kanHangaDorr, utanDorr } from './bygg';
 import { GRODOR, ODLING, faltBrist, faltUppgift } from './odling';
-import { SKOG, fallTid, rojSpot, skaRojas } from './skog';
+import { SKOG, fallTid, klyvStam, rojSpot, skaRojas } from './skog';
+import { knows } from './teknik';
 import { freeTools } from './agande';
 
 // ---------- byns projekt: vad den bygger och gör (steg 2.2.7) ----------
@@ -44,6 +45,7 @@ export const PROJEKT_TAL = balans('projekt', {
   skinndorr: 0.6, // ... skinndörrarna när alla hus där man bor eller umgås har en öppen dörröppning (steg 2.2.16)
   tradorr: 0.6, // ... trädörrarna när alla sådana hus saknar en (steg 3.7.21)
   rep: 0.5, // ... repet när förrådet är tomt
+  virke: 0.8, // ... virket när förrådet saknar det byn vill bygga av (steg 4.5.5.2)
   rojning: 1, // ... att fälla träden på en lagerplats eller ett fält i skogen (steg 3.6.9)
   falt: 1, // ... arbetet på fälten när ett fält har arbete att göra, eller någon som kan odla har frön men inget fält (steg 2.10.3)
   minKostnad: 0.25, // kostnaden räknas aldrig under så här många arbetstimmar
@@ -119,6 +121,14 @@ export const PROJEKT: Record<string, ProjektDef> = {
     kan: (s, p) => wantsRope(s, p),
     uppgift: () => ({ act: 'tvinna', text: 'Tvinnar rep av hö.' }),
   },
+  // virket (steg 4.5.5.2): kluvet ur en fälld stam med yxa, när byn vill bygga en station, möbel eller dörr av virke
+  virke: {
+    namn: SAKER.virke!.namn, vikt: PROJEKT_TAL.virke,
+    brist: s => { const n = virkeBehov(s); return n > 0 ? clamp(1 - amountOf(s, 'virke') / n, 0, 1) : 0; },
+    kostnad: () => grundvarde('virke'),
+    kan: (s, p, f) => !f.kyla && freeTools(s, p, 'yxa') > 0 && !!klyvStam(s),
+    uppgift: s => { const k = klyvStam(s); return k && { act: 'klyva', text: 'Klyver virke ur en fälld stam.', tool: 'yxa', spot: { x: k.x + 0.3, y: k.y + 0.2 }, ref: k.id }; },
+  },
   // träden på en lagerplats eller ett fält i skogen fälls först (steg 3.6.9, skog.ts), med en yxa; de blir trä
   rojning: {
     namn: 'Röjning', vikt: PROJEKT_TAL.rojning,
@@ -137,6 +147,15 @@ export const PROJEKT: Record<string, ProjektDef> = {
   },
 };
 export const PROJEKT_LIST = Object.keys(PROJEKT);
+// hur mycket virke byn vill ha: så mycket som den dyraste station, möbel eller dörr av virke som byn saknar och någon kan
+// bygga, och minst SKOG.virkeVill när det finns något sådant (steg 4.5.5.2)
+function virkeBehov(s: State) {
+  let n = 0;
+  const pr = (k: string, av: Record<string, number>, tek: string[]) => { const v = av.virke ?? 0; if (v > n && living(s).some(p => tek.some(t => knows(p, t))) && PROJEKT[k].brist(s) > 0) n = v; };
+  for (const k of STATION_LIST) pr(k, STATIONER[k].av, STATIONER[k].tek);
+  for (const k of DORR_LIST) pr(k, DORRAR[k].av ?? {}, DORRAR[k].tek);
+  return n > 0 ? Math.max(n, SKOG.virkeVill) : 0;
+}
 
 // värdet av projektet just nu: vikten gånger bristen, delat med kostnaden
 export const projektVarde = (s: State, k: string) => { const d = PROJEKT[k]; return d.vikt * d.brist(s) / Math.max(PROJEKT_TAL.minKostnad, d.kostnad()); };

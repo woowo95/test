@@ -494,7 +494,7 @@ SCENARIER.kista = {
     // en by med ett hus, där alla kan bygga förvaring och har gott om trä. p äger en yxa och en kniv som ingen använder
     const s = createState(6, START); klockan(s); tandEld(s); medHus(s);
     for (const r of s.people) r.tek = { ...r.tek, hylla: 1 };
-    setMat(s, { bar: 300 }); setAmount(s, 'ved', 40);
+    setMat(s, { bar: 300 }); setAmount(s, 'ved', 40); setAmount(s, 'virke', 10);
     const p = living(s)[0], q = living(s)[1];
     const egna = [newTing(s, 'yxa', 1, p.id), newTing(s, 'kniv', 1, p.id)], byns = newTing(s, 'spjut', 1, BYN);
     placeTools(s);

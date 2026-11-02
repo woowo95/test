@@ -48,15 +48,15 @@ import { ODLING } from './odling';
 
 // ---------- balanstal (regel 8) ----------
 export const STATION = balans('station', {
-  slaktbankTra: 3, // en slaktbänk kräver så mycket trä ...
+  slaktbankVirke: 3, // en slaktbänk kräver så mycket virke (steg 4.5.5.2) ...
   slaktbankMin: 20, // ... och så många minuters arbete
-  scenTra: 6, scenMin: 20, // scenen (steg 4.3.2.2): så mycket trä och så många minuters arbete
+  scenVirke: 6, scenMin: 20, // scenen (steg 4.3.2.2): så mycket virke och så många minuters arbete
   avstand: 2.5, // en station står helst så här många rutor från elden
   lek: 2, // ... och får så här många poäng till (färre är bättre) om den står på lekplatsen (plats.ts, steg 2.10.4; förut norr × 4)
   slaktTill: 9, slaktAvst: 6, // slaktbänken står högst och helst så här många rutor från byn, eftersom den är smutsig (steg 2.10.16)
   utkantMin: 2, // det som står i byns utkant står aldrig närmare byn än så här (om ingen plats längre bort är ledig, t.ex. för skogen)
   knivplatser: 1, // så många knivar som ligger kvar vid slaktbänken
-  flatarbankTra: 2, // en flätarbänk kräver så mycket trä ...
+  flatarbankVirke: 2, // en flätarbänk kräver så mycket virke ...
   flatarbankGrenar: 3, // ... och så många grenar ...
   flatarbankMin: 20, // ... och så många minuters arbete
   repFart: 2, // rep tvinnas så här många gånger fortare vid slöjdbänken än för hand ...
@@ -74,14 +74,13 @@ export const STATION = balans('station', {
   fallSkinn: 2, // en skinnfäll kräver så många skinn ... (steg 2.2.14)
   fallMin: 20, // ... och så många minuters arbete
   fallVarme: 0.5, // den som sover under en skinnfäll kyls så här mycket mindre (av det som når in i huset)
-  bordTra: 1, // ett bord kräver så mycket trä för varje ruta det tar ... (steg 2.2.15)
-  stubbeTra: 0.5, // ... och så mycket för varje stubbe att sitta på runt det
+  bordVirke: 1, // ett bord kräver så mycket virke för varje två rutor det tar, och ett till för stubbarna att sitta på runt det (steg 2.2.15, 4.5.5.2)
   bordMin: 15, bord2Min: 18, bord3Min: 20, // så många minuters arbete för det lilla bordet, bordet och långbordet
   // förvaringen (steg 2.3.6): hyllan, kistan och redskapsstället
-  hyllaTra: 2, hyllaRep: 1, hyllaMin: 20, hyllaRymmer: 3, // en hylla kräver så mycket trä och rep och så många minuter, och rymmer så många högar av ett slag
-  kistaTra: 3, kistaMin: 20, kistaRymmer: 2, // en kista: trä och minuter, och så många högar (en gammal kista i lagret). Det som ligger i den slits som under tak
+  hyllaVirke: 1, hyllaRep: 1, hyllaMin: 20, hyllaRymmer: 3, // en hylla kräver så mycket virke och rep och så många minuter, och rymmer så många högar av ett slag
+  kistaVirke: 2, kistaMin: 20, kistaRymmer: 2, // en kista: virke och minuter, och så många högar (en gammal kista i lagret). Det som ligger i den slits som under tak
   kistaVill: 2, kistaTing: 6, // den som har så många egna redskap och kläder som ingen använder vill ha en kista, och den rymmer så många (steg 2.10.18)
-  stallTra: 1, stallRep: 1, stallMin: 15, stallRymmer: 4, // ett ställ för redskap och vapen: trä, rep och minuter, och så många redskap
+  stallVirke: 1, stallRep: 1, stallMin: 15, stallRymmer: 4, // ett ställ för redskap och vapen: virke, rep och minuter, och så många redskap
   forvarFulla: 6, // byn vill ha en hylla eller kista fullt ut när så många fulla högar ligger på golvet i lagren ...
   forvarLosa: 4, // ... och ett ställ när så många redskap ligger på golvet ...
   forvarAndel: 0.5, forvarAndelFull: 0.9, // ... och en hylla redan när golvet i förrådshusen börjar bli fullt: från så stor andel av golvet med högar, fullt ut vid den andra (steg 4.5.4.6)
@@ -105,10 +104,10 @@ export const STATION = balans('station', {
   // pyntet (steg 4.3.4, pynt.ts): möbler som bara är till för att pynta, i rummet där ägaren sover
   krukaMin: 15, // lerkrukan: lera från stranden (ingen resurs), formad och bränd i elden på så många minuter
   bonadSkinn: 1, bonadRep: 1, bonadMin: 12, // bonaden: ett skinn med mönster, upphängt i ett rep
-  bradeTra: 1, bradeMin: 15, // det snidade väggbrädet: ett trästycke
+  bradeVirke: 1, bradeMin: 15, // det snidade väggbrädet: ett virke
 });
 // trä till ett bord som tar w × h rutor, med stubbar på platserna runt det (platserAv nedan)
-const bordTra = (w: number, h: number) => w * h * STATION.bordTra + ((w >= 2 ? 2 * w : 0) + (h >= 2 ? 2 * h : 0)) * STATION.stubbeTra;
+const bordVirke = (w: number, h: number) => Math.ceil(w * h / 2) * STATION.bordVirke + STATION.bordVirke; // hela virken (litet bord 2, bord 3, långbord 4)
 
 // namn och ikon (ikoner.ts; kartans bild uppifrån heter ikon_karta), w och h = rutorna den tar (bredd och djup), tek = teknikerna, och den som kan någon av dem bygger den, av = materialet, min = minuters arbete,
 // gor = handlingarna som görs vid den, bara = de av dem som inte görs alls utan stationen, vid = redskapen som hör till den
@@ -129,12 +128,12 @@ export interface StationDef { namn: string; ett?: true; ikon: string; w: number;
 const ENKLA: Act[] = ['yxa', 'spjut', 'metspo', 'kniv', 'bensyl', 'balte', 'boll', 'slagtra', 'mal', 'trumma', 'benflojt', 'lyra'];
 export const STATIONER = {
   slaktbank: {
-    namn: 'Slaktbänk', ikon: 'slaktbank', w: 3, h: 1, tek: ['slaktbank'], av: { ved: STATION.slaktbankTra }, min: STATION.slaktbankMin, gor: ['slakta', 'rensa'], bara: ['slakta', 'rensa'], vid: { kniv: STATION.knivplatser }, smutsar: { slakta: 'blod' }, utkant: { till: STATION.slaktTill, avst: STATION.slaktAvst }, // står en bit från byn (steg 2.10.16) // blir blodig när det slaktas (blod.ts)
+    namn: 'Slaktbänk', ikon: 'slaktbank', w: 3, h: 1, tek: ['slaktbank'], av: { virke: STATION.slaktbankVirke }, min: STATION.slaktbankMin, gor: ['slakta', 'rensa'], bara: ['slakta', 'rensa'], vid: { kniv: STATION.knivplatser }, smutsar: { slakta: 'blod' }, utkant: { till: STATION.slaktTill, avst: STATION.slaktAvst }, // står en bit från byn (steg 2.10.16) // blir blodig när det slaktas (blod.ts)
     bygger: 'Bygger en slaktbänk av trä.',
     forsta: '{namn} byggde byns första slaktbänk av trä. Där slaktas viltet och rensas fisken, och en kniv ligger kvar vid bänken.',
   },
   flatarbank: { // slöjdbänken: id:t är kvar från när den hette flätarbänken, så att sparade byar fungerar
-    namn: 'Slöjdbänk', ikon: 'flatarbank', w: 2, h: 1, tek: ['flatarbank'], av: { ved: STATION.flatarbankTra, grenar: STATION.flatarbankGrenar }, min: STATION.flatarbankMin, gor: ['tvinna', 'korg', 'rock', 'skor', 'benspade', 'vattensack', ...ENKLA], fart: { tvinna: STATION.repFart, ...Object.fromEntries(ENKLA.map(a => [a, STATION.redskapFart])) }, bara: ['korg', 'rock', 'skor', 'benspade', 'vattensack'], vid: { bensyl: 1 }, kraver: { rock: 'bensyl', skor: 'bensyl', vattensack: 'bensyl' }, inne: true, sitt: true,
+    namn: 'Slöjdbänk', ikon: 'flatarbank', w: 2, h: 1, tek: ['flatarbank'], av: { virke: STATION.flatarbankVirke, grenar: STATION.flatarbankGrenar }, min: STATION.flatarbankMin, gor: ['tvinna', 'korg', 'rock', 'skor', 'benspade', 'vattensack', ...ENKLA], fart: { tvinna: STATION.repFart, ...Object.fromEntries(ENKLA.map(a => [a, STATION.redskapFart])) }, bara: ['korg', 'rock', 'skor', 'benspade', 'vattensack'], vid: { bensyl: 1 }, kraver: { rock: 'bensyl', skor: 'bensyl', vattensack: 'bensyl' }, inne: true, sitt: true,
     bygger: 'Bygger en slöjdbänk av trä och grenar.',
     forsta: '{namn} byggde byns första slöjdbänk. Där tvinnas rep fortare än för hand och flätas korgar.', // och sys kläder med bensylen (steg 2.3.2)
   },
@@ -145,33 +144,33 @@ export const STATIONER = {
   },
   // borden (steg 2.2.15): tre storlekar av samma möbel och teknik. Byn bygger den storlek som räcker åt dem som saknar en plats
   bord: {
-    namn: 'Litet bord', ett: true, ikon: 'bord', w: 2, h: 1, tek: ['bord'], av: { ved: bordTra(2, 1) }, min: STATION.bordMin, gor: [], mobel: true, flera: true, platser: true,
+    namn: 'Litet bord', ett: true, ikon: 'bord', w: 2, h: 1, tek: ['bord'], av: { virke: bordVirke(2, 1) }, min: STATION.bordMin, gor: [], mobel: true, flera: true, platser: true,
     bygger: 'Bygger ett bord med stubbar att sitta på.',
     forsta: '{namn} byggde byns första bord, med stubbar att sitta på. Där äter man tillsammans och samtalar.',
   },
   bord2: {
-    namn: 'Bord', ett: true, ikon: 'bord2', w: 2, h: 2, tek: ['bord'], av: { ved: bordTra(2, 2) }, min: STATION.bord2Min, gor: [], mobel: true, flera: true, platser: true,
+    namn: 'Bord', ett: true, ikon: 'bord2', w: 2, h: 2, tek: ['bord'], av: { virke: bordVirke(2, 2) }, min: STATION.bord2Min, gor: [], mobel: true, flera: true, platser: true,
     bygger: 'Bygger ett bord med åtta stubbar runt.',
     forsta: '{namn} byggde byns första fyrkantiga bord, med plats för åtta.',
   },
   bord3: {
-    namn: 'Långbord', ett: true, ikon: 'bord3', w: 3, h: 2, tek: ['bord'], av: { ved: bordTra(3, 2) }, min: STATION.bord3Min, gor: [], mobel: true, flera: true, platser: true,
+    namn: 'Långbord', ett: true, ikon: 'bord3', w: 3, h: 2, tek: ['bord'], av: { virke: bordVirke(3, 2) }, min: STATION.bord3Min, gor: [], mobel: true, flera: true, platser: true,
     bygger: 'Bygger ett långbord med tio stubbar runt.',
     forsta: '{namn} byggde byns första långbord, med plats för tio.',
   },
   // förvaringen (steg 2.3.6): står i en lagerplats, på en ruta där något redan ligger, och går inte att gå igenom
   hylla: {
-    namn: 'Hylla', ikon: 'hylla', w: 1, h: 1, tek: ['hylla'], av: { ved: STATION.hyllaTra, rep: STATION.hyllaRep }, min: STATION.hyllaMin, gor: [], mobel: true, flera: true, forvar: { rymmer: STATION.hyllaRymmer },
+    namn: 'Hylla', ikon: 'hylla', w: 1, h: 1, tek: ['hylla'], av: { virke: STATION.hyllaVirke, rep: STATION.hyllaRep }, min: STATION.hyllaMin, gor: [], mobel: true, flera: true, forvar: { rymmer: STATION.hyllaRymmer },
     bygger: 'Bygger en hylla av trä och rep i lagret.',
     forsta: '{namn} byggde byns första hylla. På den ryms flera högar på samma plats, så att lagret tar mindre plats.',
   },
   kista: {
-    namn: 'Kista', ikon: 'kista', w: 1, h: 1, tek: ['hylla'], av: { ved: STATION.kistaTra }, min: STATION.kistaMin, gor: [], mobel: true, flera: true, forvar: { rymmer: STATION.kistaRymmer, tak: true, stangd: true, privat: true },
+    namn: 'Kista', ikon: 'kista', w: 1, h: 1, tek: ['hylla'], av: { virke: STATION.kistaVirke }, min: STATION.kistaMin, gor: [], mobel: true, flera: true, forvar: { rymmer: STATION.kistaRymmer, tak: true, stangd: true, privat: true },
     bygger: 'Bygger en kista åt sig själv, i rummet där hen sover.',
     forsta: '{namn} byggde byns första kista, i rummet där hen sover. Där ligger hens redskap och kläder när hen inte använder dem, och de slits som under tak.',
   },
   stall: {
-    namn: 'Redskapsställ', ett: true, ikon: 'stall', w: 1, h: 1, tek: ['hylla'], av: { ved: STATION.stallTra, rep: STATION.stallRep }, min: STATION.stallMin, gor: [], mobel: true, flera: true, forvar: { rymmer: STATION.stallRymmer, redskap: true },
+    namn: 'Redskapsställ', ett: true, ikon: 'stall', w: 1, h: 1, tek: ['hylla'], av: { virke: STATION.stallVirke, rep: STATION.stallRep }, min: STATION.stallMin, gor: [], mobel: true, flera: true, forvar: { rymmer: STATION.stallRymmer, redskap: true },
     bygger: 'Bygger ett ställ för redskap och vapen i lagret.',
     forsta: '{namn} byggde byns första ställ för redskap och vapen. Där står flera redskap på samma plats.',
   },
@@ -202,7 +201,7 @@ export const STATIONER = {
   // scenen (steg 4.3.2.2, framtradande.ts): ett golv av kluvna stockar ute i byn. Där uppträder man på kvällen när det
   // inte är kallt eller regnar, och där ligger byns instrument (vid), en plats för varje sort
   scen: {
-    namn: 'Scen', ikon: 'scen', w: 3, h: 2, tek: ['scen'], av: { ved: STATION.scenTra }, min: STATION.scenMin, gor: [], vid: { trumma: 1, benflojt: 1, lyra: 1 },
+    namn: 'Scen', ikon: 'scen', w: 3, h: 2, tek: ['scen'], av: { virke: STATION.scenVirke }, min: STATION.scenMin, gor: [], vid: { trumma: 1, benflojt: 1, lyra: 1 },
     bygger: 'Lägger kluvna stockar till en scen.',
     forsta: '{namn} byggde byns första scen. Där uppträder man på kvällen, och där ligger instrumenten.',
   },
@@ -219,7 +218,7 @@ export const STATIONER = {
     forsta: '{namn} hängde upp byns första bonad där hen sover, ett skinn med ett mönster på. Den är bara till för att vara vacker.',
   },
   vaggbrade: {
-    namn: 'Snidat väggbräde', ett: true, ikon: 'vaggbrade', w: 1, h: 1, tek: ['vaggbrade'], av: { ved: STATION.bradeTra }, min: STATION.bradeMin, gor: [], inne: true, mobel: true, flera: true, pynt: true,
+    namn: 'Snidat väggbräde', ett: true, ikon: 'vaggbrade', w: 1, h: 1, tek: ['vaggbrade'], av: { virke: STATION.bradeVirke }, min: STATION.bradeMin, gor: [], inne: true, mobel: true, flera: true, pynt: true,
     bygger: 'Snidar mönster i ett bräde och sätter upp det på väggen.',
     forsta: '{namn} snidade byns första väggbräde och satte upp det där hen sover. Det är bara till för att vara vackert.',
   },

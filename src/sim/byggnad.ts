@@ -13,7 +13,7 @@ export const BYGGNAD = balans('byggnad', {
   skinndorrSkinn: 2, // ... görs av så många skinn ...
   skinndorrMin: 20, // ... och så många minuters arbete
   tradorrTat: 0.85, // en trädörr släpper ut så här mycket mindre värme än en öppen dörröppning (steg 3.7.21) ...
-  tradorrVed: 4, tradorrRep: 1, // ... görs av så mycket trä och rep ...
+  tradorrVirke: 2, tradorrRep: 1, // ... görs av så mycket virke (steg 4.5.5.2) och rep ...
   tradorrMin: 20, // ... och så många minuters arbete
 });
 
@@ -60,7 +60,7 @@ export const DORRAR = {
     forsta: '{namn} hängde byns första skinndörr i en dörröppning. Huset håller värmen bättre.',
   },
   tradorr: {
-    namn: 'Trädörr', ikon: 'tradorr', tek: ['tradorr'], av: { ved: BYGGNAD.tradorrVed, rep: BYGGNAD.tradorrRep }, min: BYGGNAD.tradorrMin, tat: BYGGNAD.tradorrTat, stanger: true,
+    namn: 'Trädörr', ikon: 'tradorr', tek: ['tradorr'], av: { virke: BYGGNAD.tradorrVirke, rep: BYGGNAD.tradorrRep }, min: BYGGNAD.tradorrMin, tat: BYGGNAD.tradorrTat, stanger: true,
     gor: 'Hänger en dörr av trä i dörröppningen.',
     forsta: '{namn} hängde byns första trädörr. Den håller värmen inne och kan stängas mot vargarna.',
   },

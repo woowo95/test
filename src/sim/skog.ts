@@ -18,6 +18,8 @@ import { faltOf, faltRuta } from './odling';
 export const SKOG = balans('skog', {
   stamVed: 8, // ett vuxet träd ger så här mycket trä ...
   stamGrenar: 5, // ... och så här många grenar
+  virkeVed: 2, // ett virke (steg 4.5.5.2) tar så här mycket av stammens trä
+  virkeVill: 4, // byn klyver virke tills förrådet har så här många, eller så många som det dyraste den vill bygga
   fallTim: 0.1, // så många timmar tar det att fälla ett träd, delat med SNABBARE: fyra minuter (steg 2.3.8; 48 minuter förut)
   fallMin: 0.5, // ett litet träd fälls fortare, men aldrig på mindre än så här stor del av tiden
   stubbeDygn: 8, // en stubbe ruttnar bort efter så här många dygn (år i spelet)
@@ -112,6 +114,8 @@ export function chopStock(s: State, ref: number | undefined, amount: number) {
   return { ved, grenar: gr, mossa, done: k.ved <= 1e-6 };
 }
 
+// den fällda stam närmast byn som räcker till ett virke (steg 4.5.5.2)
+export const klyvStam = (s: State) => stocks(s).filter(k => k.ved >= SKOG.virkeVed).sort((a, c) => campDist(s, a.x, a.y) - campDist(s, c.x, c.y))[0];
 // en vuxen som ska skaffa ved: hugga en fälld stam, fälla ett träd, göra en yxa eller (annars) samla grenar
 // kyla: kylan är en fara (dangers i val.ts). Då görs ingen ny yxa, för ett nytt redskap är en förbättring
 export function axeTask(s: State, p: Person, kyla = false): { act: Act; x: number; y: number; ref?: number; dur?: number; why: string } | undefined {
