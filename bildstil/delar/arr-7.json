@@ -1,0 +1,29 @@
+{
+ "id": "arr-7",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Valde version 1. Den går som en sammanhängande diagonal från pannan, över ögonbrynet och förbi ögat ner på kinden, med ett glapp där ögat sitter. Det stämmer bäst med 'Över ögat'. Den har samma två punkter breda linje som förebilden: ljus d med mörk skugga b mot nedre högra sidan, alltså bort från ljuset. Lite rost vid ögonbrynet visar att ärret är färskt, som i förebilden. Version 2 lägger rost och linjer tätt under ögat, så det ser ut som en blödande tår. Version 3 är för svag och har ensamma c-prickar i ändarna. Ändringar: i rad 6 var 'ba' fel ordning på tonerna, nu 'db' så att den ljusa sidan ligger mot ljuset som i resten av linjen. Den sista ensamma b-punkten blev c, så att linjen tonar ut mjukt i stället för att sluta i en mörk prick. Allt håller sig inom rutan (x -10 till -5, y -10 till 4).",
+ "bilder": {
+  "standard": {
+   "x": -10,
+   "y": -10,
+   "rader": [
+    "....d.",
+    "....db",
+    "...db.",
+    "...ds.",
+    "...db.",
+    "..db..",
+    "..db..",
+    "......",
+    "......",
+    "......",
+    ".db...",
+    ".db...",
+    ".da...",
+    "db....",
+    "c....."
+   ]
+  }
+ }
+}

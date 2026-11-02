@@ -1,0 +1,21 @@
+{
+ "id": "arr-4",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den ligger tvärs över munnen nära mittlinjen (x -3 till -1, y 9 till 15) och går därför verkligen genom läppen. Den är byggd som förebilden: en ljus linje (d) med en mörkare skugga (b) på sidan bort från ljuset, lika tunn och i samma storlek, med lite rost (s) precis där den skär läppen. Version 2 är för lång och har rosten ovanför munnen, så den ser ut som ett sår under näsan. Version 3 sitter i höger mungipa och inte genom läppen. Ändring: raden 'ads' blev 'dsb'. Den mörkaste hudtonen (a) låg på ljussidan till vänster, vilket gick emot ljuset uppifrån vänster. Nu ligger skuggan (b) till höger, som i resten av linjen.",
+ "bilder": {
+  "standard": {
+   "x": -3,
+   "y": 9,
+   "rader": [
+    ".d.",
+    ".db",
+    ".db",
+    "dsb",
+    "db.",
+    "db.",
+    "b.."
+   ]
+  }
+ }
+}

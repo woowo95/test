@@ -1,0 +1,38 @@
+{
+ "id": "rynkor-2",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den är spegelvänd kring mittlinjen mellan x = -1 och 0. Den följer ljuset uppifrån vänster: b på den belysta vänstra sidan och a på den skuggade högra. Den har tydligt fler och djupare rynkor än steg 1: dubbla pannlinjer, lodräta linjer mellan ögonbrynen, längre kråkfötter och längre linjer under ögonen. Linjerna är en punkt tunna som i förebilden och har lite korn mellan a och b där tonerna möts. Version 1 skuggar likadant på båda sidorna och följer inte ljuset. Version 2 är ren men har för få rynkor för att vara steg 2. Ändring: de inåtböjda krokarna längst ner på linjerna från näsvingarna (x = -4 och 3 på y = 12) låg vid mungiporna och kunde krocka med munnen. Jag tog bort dem och lät i stället linjerna fortsätta ett steg nedåt och inåt till x = -6 och 5 på y = 13, så att de slutar vid mungiporna utan lösa prickar. Delen ligger inom rutan: x från -13 till 12 och y från -10 till 13.",
+ "bilder": {
+  "standard": {
+   "x": -13,
+   "y": -10,
+   "rader": [
+    "........bbbb..aaaa........",
+    ".......b..........a.......",
+    "..........................",
+    ".........bbb..aaa.........",
+    "........b........a........",
+    "..........................",
+    "...........b..a...........",
+    "...........b..a...........",
+    "b........................a",
+    ".b......................a.",
+    "ba......................aa",
+    ".b......................a.",
+    "b...b................a...a",
+    ".....bbbb........aaaa.....",
+    "..........................",
+    "..........................",
+    ".........b......a.........",
+    "........b........a........",
+    "........a........a........",
+    ".......b..........a.......",
+    ".......a..........a.......",
+    "......b............a......",
+    "......b............a......",
+    ".......b..........a......."
+   ]
+  }
+ }
+}

@@ -1,0 +1,19 @@
+{
+ "id": "arr-5",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den ritar ärret på samma sätt som förebilden: en sammanhängande ljus linje i hud3 som går snett ner åt höger, med en mörkare skugga i hud1 och hud0 direkt under varje ljus punkt. Det ger samma upphöjda, matta känsla och samma linjetjocklek som ärret över ögonbrynet. Den sitter på hakan, under munnen (y 43–47 i porträttet), på alla tre mallarna och håller sig gott inom rutan. Version 2 har skuggan bredvid den ljusa linjen i stället för under den, så ärret ser platt och brutet ut. Version 3 har mörka b-punkter och rost mitt i den ljusa linjen och en ensam punkt längst till vänster, vilket ger en rörig och fläckig form. Ingen ändring behövdes i version 1.",
+ "bilder": {
+  "standard": {
+   "x": -3,
+   "y": 13,
+   "rader": [
+    "dd.....",
+    "bdd....",
+    ".bbdd..",
+    "...abdd",
+    ".....ab"
+   ]
+  }
+ }
+}

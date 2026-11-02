@@ -1,0 +1,19 @@
+{
+ "id": "skon-lappar",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den är liten och precis i samma skala som förebildens fransar och håller sig inom rutan (x -4 till 3, y -2 till 2). Den ligger symmetriskt kring mittlinjen och använder kindtonerna på ett dämpat sätt, så den fungerar på kvinna, man och barn. Läppformen läses tydligt: en båge i överläppen och en ljusare underläpp som vänder sig mot ljuset. Version 2 lämnar en genomskinlig rad som munlinje, och formen blir splittrad. Version 3 är för mättad i rost och ser ut som läppstift, vilket inte passar mannen eller barnet. Ändring: underläppen och skuggan under den har förskjutits så att den ljusaste delen ligger åt vänster och den högra sidan är mörkare, eftersom ljuset kommer uppifrån vänster.",
+ "bilder": {
+  "standard": {
+   "x": -4,
+   "y": -2,
+   "rader": [
+    ".BB..BB.",
+    "ABBBBBBA",
+    "AsrrrrsA",
+    ".BCCCBB.",
+    "..ABAA.."
+   ]
+  }
+ }
+}

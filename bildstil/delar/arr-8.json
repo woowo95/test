@@ -1,0 +1,24 @@
+{
+ "id": "arr-8",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den följer förebildens byggsätt: en ljus, upphöjd linje i d med skuggan i b/a hela vägen på undersidan (nedåt vänster, bort från ljuset). Linjen är en punkt tjock och slutar i ett mjukt utdraget slut, precis som ärret över ögonbrynet. Version 2 lägger skuggan växelvis ovanför och under linjen, så formen blir oklar. Version 3 lägger skuggan på ovansidan, alltså mot ljuset, och är dessutom två punkter tjock. Min enda ändring är att jag flyttade version 1 två punkter nedåt (y 2 → 4). Då följer ärret käklinjen från under kindbenet ner mot hakan, i stället för att ligga uppe på kinden, och det hamnar fortfarande inom rutan och innanför ansiktet på kvinna, man och barn.",
+ "bilder": {
+  "standard": {
+   "x": -13,
+   "y": 4,
+   "rader": [
+    "d........",
+    "bd.......",
+    "ad.......",
+    ".bd......",
+    ".ad......",
+    "..bd.....",
+    "...ad....",
+    "....bdd..",
+    ".....abdd",
+    "......ab."
+   ]
+  }
+ }
+}

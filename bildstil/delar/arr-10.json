@@ -1,0 +1,23 @@
+{
+ "id": "arr-10",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 2",
+ "om": "Jag valde version 3. Ärret går tvärs över ansiktet, från vänster kind under ögat, över näsan och till höger kind. Det rör inte ögat, vilket version 2 gör i början. Ärret är byggt som i förebilden. Den ljusa upphöjda linjen i hud3 har en mörk skugga under sig i hud0 och hud1, så att ljuset kommer uppifrån. Skuggan blandar a och b i små klungor, så att ytan blir matt med korn. Ändarna tonar ut med hud2. Linjen är lika tjock och lika långa steg hela vägen, och den håller sig inom rutan (x -12 till 11, y 2 till 10). Jag behövde inte ändra något.",
+ "bilder": {
+  "standard": {
+   "x": -12,
+   "y": 2,
+   "rader": [
+    "ccd.....................",
+    "bbbddd..................",
+    "...baaddd...............",
+    "......aabddd............",
+    ".........abaddd.........",
+    "............baaddd......",
+    "...............aabddd...",
+    "..................abadcc",
+    ".....................bbb"
+   ]
+  }
+ }
+}

@@ -1,0 +1,19 @@
+{
+ "id": "skon-glans",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den är ett smalt, sammanhängande diagonalt band i hårets egna toner (g och h) som ligger på hårets övre vänstra del, där ljuset från uppe till vänster faller. Den är lika liten och precis som förebildens fransar och har inga ensamma prickar. Version 2 hamnar för högt, delvis ovanför håret (y = -8), och ser ut som lösa fläckar. Version 3 har en ensam prick i översta raden och en mörk f-kant som når ända in till mittlinjen, vilket gör den rörigare. Jag ändrade ingenting, eftersom banden redan håller sig inom rutan och följer formen.",
+ "bilder": {
+  "standard": {
+   "x": -13,
+   "y": -2,
+   "rader": [
+    "......gghgg.",
+    "...gghhhgg..",
+    ".gghhgg.....",
+    "gghgg.......",
+    "gg.........."
+   ]
+  }
+ }
+}

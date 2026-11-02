@@ -1,0 +1,20 @@
+{
+ "id": "arr-2",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den hör bäst ihop med förebilden: en smal diagonal linje i samma storlek och tjocklek som ärret över ögonbrynet. Den ljusa upphöjda linjen (d) går snett från övre höger till nedre vänster, och skuggan (a/b) ligger hela tiden direkt under den, alltså på den sida som vänder sig bort från ljuset uppifrån vänster. En enda rostpunkt (s) visar att ärret är ganska färskt utan att bli en blank fläck. Ärret sitter tydligt på kinden mellan ögat och munnen på alla tre ansiktena och håller sig inom rutan. Version 2 är lång och lodrät och ser mer ut som tårstrimmor än som ett ärr. Version 3 är bred och taggig och har mycket rost, så den ser ut som ett sytt sår och passar sämre med förebildens stil. Jag ändrade ingenting, eftersom formen, skuggningen och tecknen redan följer reglerna.",
+ "bilder": {
+  "standard": {
+   "x": -11,
+   "y": 1,
+   "rader": [
+    "....d",
+    "...da",
+    "..db.",
+    ".ds..",
+    "db...",
+    "a...."
+   ]
+  }
+ }
+}

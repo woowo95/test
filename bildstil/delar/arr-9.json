@@ -1,0 +1,22 @@
+{
+ "id": "arr-9",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Korset sitter mitt på kinden, under ögat och en bit från näsan och munnen, på alla tre ansiktena. Det är symmetriskt, och den ljusa linjen (d) har genomgående sin skugga (b) på undersidan, som i förebilden. Version 1 sitter för lågt och för nära näsan, och dess nedersta rad är ojämn: den högra armen saknar slut. Version 2 sitter lite högt mot ögat och blandar in a i armarna, så att skuggan blir ojämn. Ändring: i version 3 var mitten av korsets nedre halva a, en ensam mörkare punkt. Jag bytte den mot b (raden blir ..dbd..), så att skuggan i korsningen har samma ton som i resten av ärret.",
+ "bilder": {
+  "standard": {
+   "x": -13,
+   "y": 2,
+   "rader": [
+    "d.....d",
+    "bd...db",
+    ".bd.db.",
+    "..bdb..",
+    "..dbd..",
+    ".db.bd.",
+    "db...bd",
+    "b.....b"
+   ]
+  }
+ }
+}

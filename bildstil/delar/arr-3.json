@@ -1,0 +1,19 @@
+{
+ "id": "arr-3",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den är den enda som verkligen går snett över näsryggen, från x = -5 till 4, alltså lika långt åt båda hållen från mittlinjen och på näsans höjd (y = 1–5). Linjen är en punkt tjock med ljus upphöjd kant (d) och mörk skugga under (b, och a där näsryggen vänder bort från ljuset). Det följer förebildens sätt att skugga och storleken på detaljerna. Version 2 är för kort och syns mest som en fläck på näsan. Version 3 sitter för högt, mellan ögonen, och dess rost (t, s) läser som en röd prick i stället för ett ärr över näsan. Jag har inte ändrat något: formen, tonerna och placeringen stämmer redan och ser lika bra ut på alla tre ansiktena.",
+ "bilder": {
+  "standard": {
+   "x": -5,
+   "y": 1,
+   "rader": [
+    "dd........",
+    "bbdd......",
+    "..bbddd...",
+    "....abbdd.",
+    ".......bbd"
+   ]
+  }
+ }
+}

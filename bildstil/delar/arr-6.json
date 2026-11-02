@@ -1,0 +1,18 @@
+{
+ "id": "arr-6",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 2. Den är byggd som förebilden: en smal ljus linje i d och c med en mörk skugga i a och b direkt under. Varje ljus punkt har sin skugga under sig, så linjen ser upphöjd ut och skuggan följer ljuset från vänster uppifrån. Den sitter mitt på pannan (y = -11 till -8), korsar mittlinjen lätt och håller sig fri från hårfästet och ögonbrynen på alla tre ansiktena. Version 1 ligger för högt och hamnar under håret. Den saknar också en riktig mörk skugga, eftersom b ligger under d, så den ser platt ut. Version 3 är för tjock och för brant, och tonerna ligger i fel ordning i raderna, med mörkt före ljust på samma rad. Därför ser den mer ut som en rand än som en upphöjd linje. Jag behövde inte ändra något i version 2. Den håller sig inom rutan och använder bara tillåtna tecken.",
+ "bilder": {
+  "standard": {
+   "x": -7,
+   "y": -11,
+   "rader": [
+    "........ddc.",
+    "....dddcaab.",
+    ".ddcaab.....",
+    "cab........."
+   ]
+  }
+ }
+}
