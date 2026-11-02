@@ -1,27 +1,27 @@
 {
  "id": "skagg-2",
- "ritad": 1,
- "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 1. Den ligger närmast förebilden: kort och tät skäggväxt längs käken med smala polisonger, en mustasch ovanför munnens ruta och en rundad haka som inte går lika långt ner som helskägget. Skuggningen följer ljuset från vänster, med h och g på vänster sida och f och e mot höger och under hakan. Delen är symmetrisk kring mittlinjen (x = -15 till 14) och håller sig inom rutan. Version 2 blir för gles på hakan, och version 3 blir för fyllig för att räknas som ett kort skägg. Enda ändringen: en ensam f-punkt bland g på rad 11 har blivit g, så att det inte står en lös prick där.",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Valde version 3: jämnast och mattast skuggning och närmast förebildens stil, utan version 2:s lodräta ränder och version 1:s spräckliga fläckar. Formen var redan spegelsymmetrisk kring mittlinjen, så det sneda intrycket kom från skuggningen: gränsen mellan ljus och skugga gick snett över hakan, så att vänstra halvan blev mycket ljusare. Jag har flyttat gränsen så att den följer formen nära mittlinjen med en mjuk övergång med korn i små klungor, och mildrat kontrasten mellan sidorna (vänster kant h/g, höger f/e). Ljuset kommer fortfarande uppifrån vänster och undersidan mörknar mot e, men skägget läses nu som symmetriskt. Hålen för munnen och konturen är oförändrade.",
  "bilder": {
   "standard": {
    "x": -15,
    "y": -7,
    "rader": [
-    ".ggh......................ffe.",
-    ".ghh......................ffe.",
-    ".ghhg....................fffe.",
-    ".hhhg...ghhhgghgffgfff...fffe.",
-    ".hhhgg.ghhhhgghgfgfffff.fffee.",
-    "..hghhhghhggggghgfgffgfffffe..",
-    "..gghhggghgggggghfgfgfffffef..",
-    "...ghhgggghggggghfgfgffffef...",
-    "...ggghggghgggggfgffgfffeef...",
-    "....gggggghggggffgfgfffeee....",
-    ".....gggggggggfffgffffeee.....",
-    "......gffggfgffffffffeee......",
-    "........ffffgfffffffeee.......",
-    "..........feffffeeee.........."
+    ".hgg......................gff.",
+    ".hgg......................gff.",
+    ".hggg....................gfff.",
+    ".hggg...hggggggggfffff...gffe.",
+    ".hgggg.hgggggggggfffffe.gfffe.",
+    "..hhggggggggggggggfgffffffee..",
+    "..hggggggggggggggggfgffffeee..",
+    "...hggggggggggggggfgfffffee...",
+    "...gggggggggggggfgffffffeee...",
+    "....ggggggggggggfgfffffeee....",
+    ".....ggggggggggfgfffffeee.....",
+    "......fggggggggffffffeee......",
+    "........fgggfffffffeee........",
+    "..........effffffeee.........."
    ]
   }
  }

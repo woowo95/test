@@ -1,28 +1,26 @@
 {
  "id": "skagg-9",
- "ritad": 1,
- "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 2. Den ger tydliga polisonger som går från tinningen ner längs kinden och böjer in mot käken utan att nå hakan, så munnen och hakan förblir fria. Tjockleken och tonerna stämmer med förebildens helskägg: den vänstra sidan är ljusare (h och g) mot ljuset, och den högra är mörkare (f och e). Den sitter bra på alla tre ansiktena. Version 1 är för smal och kort, så den läses mer som hårslingor. Version 3 har lösa, hängande spetsar nedtill som ser ut som örhängen. Rättat: två ensamma prickar är borttagna. På rad 2 till höger blev ffefe till fffee. På rad 12 fick tonövergångarna sammanhängande klungor: gfgggff blev ggggfff och feffeee blev fffeeee.",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 3. Den är den enda som följer Björns kommentar fullt ut: smala remsor från tinningen ner längs käken som böjer in mot hakan men slutar före den, så hakan är fri. Den är 30 punkter bred (x -15 till 14) och därmed symmetrisk kring mittlinjen. Version 1 är 29 punkter bred och sned, och dess breda band läser som klumpar på kinderna. Version 2 är raka lodräta block som inte följer käken. Skuggningen följer ljuset: ljusa toner (g, h) på vänster sida och mörka (e, f) på höger sida, som i förebilden. Ändringar: Jag har smalnat av den nedre delen längs käken till 3–4 punkter (tidigare 5), så att det blir remsor och inte klumpar. Jag har tagit bort de ensamma g-prickarna i den mörka högra remsan (fgfe, ffge, ffgfe), eftersom de gav glansfläckar. Tonen går nu i klungor från f till e.",
  "bilder": {
   "standard": {
    "x": -15,
    "y": -10,
    "rader": [
-    ".hhg......................ffe.",
-    "ghhhg....................fffee",
-    "ghhhg....................fffee",
-    "gghhhg..................fffffe",
-    "ghhhgg..................ffgffe",
-    ".ghhhgg................fffffe.",
-    ".hhghgg................fgfffe.",
-    ".ghhhggg..............fffgffe.",
-    "..ghhggg..............ffgffe..",
-    "..gghgggg............fffgffe..",
-    "..ghgggggg..........ffffgfee..",
-    "...ggggggg..........fffffee...",
-    "...ggggfff..........fffeeee...",
-    "....gffff............effee....",
-    ".....fff..............eee....."
+    "hhg........................ffe",
+    "hhg........................ffe",
+    "ghhg......................fffe",
+    "ghhg......................ffee",
+    "ghhg......................fffe",
+    ".ghhg....................fffe.",
+    ".gghg....................ffee.",
+    "..ghgg..................fffe..",
+    "..gghg..................ffee..",
+    "...gghg................fffe...",
+    "....gggf..............ffee....",
+    ".....ggf..............fee.....",
+    "......ff..............ee......"
    ]
   }
  }

@@ -1,23 +1,20 @@
 {
  "id": "smycke-6",
- "ritad": 1,
- "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 1. Den har samma tunna linjer och samma små, rundade benbitar som halsbandet. Knoppen är ljus mot ljuset uppe till vänster och skuggad med jord nere till höger, precis som benbitarna i förebilden. Pinnen går i en jämn diagonal och sitter snyggt i håret på alla tre ansiktena. Version 2 är för tjock och bruten av en tom rad mitt i pinnen. Version 3 har en lös punkt och ett ojämnt fäste. Ändring: lindningen under knoppen var i rost (s, r) och såg ut som ett glödande tändstickshuvud. Jag har gjort om den till ett läderband i jord (G, F), med samma form och samma skuggkant.",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 2. Den sitter längre in och lägre (x=-14, y=1), så pinnen ligger inne i håret på alla tre ansiktena. Bara den korta knoppen syns vid hårets kant, vilket följer Björns kommentar om att den inte ska sticka upp som en antenn. Version 1 sticker fortfarande upp ovanför huvudet. Version 3 hamnar vid hårkanten och har en udda rad (GF) som bryter pinnens linje. Version 2 har samma ljussättning som förebildens benbitar: w och q är ljusa mot ljuset uppe till vänster, p är mellanton och E är skuggan nedåt höger. Linjen är en punkt tjock, som i benhalsbandet. Jag ändrade inget, eftersom formen och placeringen redan stämmer.",
  "bilder": {
   "standard": {
-   "x": -16,
-   "y": -6,
+   "x": -14,
+   "y": 1,
    "rader": [
-    ".wq.........",
-    "wqqp........",
-    "qqppE.......",
-    "..GFE.......",
-    "...GFE......",
-    "....wpE.....",
-    ".....wpE....",
-    "......qpE...",
-    ".......qpE..",
-    "........pE.."
+    ".wq......",
+    "wqqp.....",
+    "qppE.....",
+    ".EEwpE...",
+    "....wpE..",
+    ".....qpE.",
+    "......pE."
    ]
   }
  }

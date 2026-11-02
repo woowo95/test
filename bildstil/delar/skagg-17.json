@@ -1,0 +1,33 @@
+{
+ "id": "skagg-17",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den är den enda där mustaschändarna verkligen ser flätade ut: de tre punkter breda flätorna har ett återkommande mönster (hhg/hgf/fef) som läser som flätade led. De hänger tydligt ner förbi mungiporna och slutar i små tofsar. Mitt på hakan sitter ett kort skägg. Den följer förebilden: samma toner e–h, ljuset kommer från vänster (ljusare h på vänster sida och mörkare f/e åt höger), det finns ingen kontur och ingen glans. Den är symmetrisk kring mittlinjen (x -8 till 7) och håller sig inom rutan (y -4 till 14). Mitt i mustaschen finns en lucka över munnen, så munnen syns. Version 1 läste mer som ett kort ramskägg utan synliga flätor. Version 2 var för bred och tung, mer som ett helskägg. Jag hittade inget som behövde rättas, så punkterna är oförändrade.",
+ "bilder": {
+  "standard": {
+   "x": -8,
+   "y": -4,
+   "rader": [
+    ".....hhgggf.....",
+    "...hhhhggggff...",
+    "..hhgg....gfff..",
+    "..hhg......gff..",
+    "..hgf......gfe..",
+    "..fef......efe..",
+    "..hhg.hggf.ggf..",
+    "..hgf.hggf.gfe..",
+    "..fef.gggf.efe..",
+    "..hhg.ggff.ggf..",
+    "..hgf.gffe.gfe..",
+    "..fef..fe..efe..",
+    "..hhg......ggf..",
+    "..hgf......gfe..",
+    "..fef......efe..",
+    "..hhg......ggf..",
+    ".hhgf......gffe.",
+    ".hgff......ffee.",
+    "..gf........fe.."
+   ]
+  }
+ }
+}

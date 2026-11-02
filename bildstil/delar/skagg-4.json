@@ -1,8 +1,8 @@
 {
  "id": "skagg-4",
- "ritad": 1,
- "av": "API:t (claude-opus-5-5), bästa av 2",
- "om": "Jag valde version 1. Den har samma oregelbundna, korniga hårstruktur som helskägget i förebilden. Ljuset kommer uppifrån vänster: vänster sida är ljusare (h/g) och den högra går mot det mörka (f/e). Skägget smalnar av mjukt till en lång spets under hakan, och det stämmer med beskrivningen \"Långt skägg\". Version 3 är byggd av raka, likadana lodräta ränder som upprepas rad för rad. Den ser mekanisk och slät ut och följer inte formen, så den passar sämre ihop med förebilden. Jag kontrollerade att alla rader i version 1 är 30 tecken breda och att delen går från x -15 till 14 och från y -7 till 20. Den ligger alltså symmetriskt kring mittlinjen och inom rutan, och den använder bara e, f, g och h. Inga ändringar behövdes.",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Version 3 vald. Den hör ihop med helskägget i stilen och skuggar likadant: ljust (h) på vänster sida mot ljuset och mörkt (e) åt höger, med korniga strån i små klungor. Den följer Björns kommentar bäst. Version 1 och 2 smalnar av till en spetsig V-form med glesa, trasiga punkter längst ner. Version 3 smalnar jämnt och slutar i en trubbig, bred botten med 14 punkter, så skägget blir långt utan att bli spetsigt. Jag har kontrollerat måtten: 30 kolumner och 28 rader, från x = -15 till 14 och y = -7 till 20. Delen ligger alltså inom rutan och symmetriskt kring mittlinjen. Munnens ruta lämnas fri av programmet, och kinderna når lite utanför käken. Inga ändringar behövdes.",
  "bilder": {
   "standard": {
    "x": -15,
@@ -20,22 +20,22 @@
     "..gghggggghghgghhggfgfffgffe..",
     "...hgggggggghgghggffffffgfe...",
     "...hgggggggghgggggfgffffgfe...",
-    "....hggggggghggggffgfffefe....",
-    "....gggggggghgggfffgfffefe....",
-    ".....ggggggghggfffgfffefe.....",
-    ".....gghgggghgffgfffgfeee.....",
-    "......ghggghgffgffgfefee......",
-    "......gggghgfgffgffefeee......",
-    ".......ggghgfgffgfeefee.......",
-    ".......gghgffgffgfeefee.......",
-    "........ghgffgffgfefee........",
-    "........ggffgfffgfeefe........",
-    ".........gfgffgffefee.........",
-    ".........gffgfffeefee.........",
-    "..........ffgffeefee..........",
-    "..........fgffefeeee..........",
-    "...........ffefeeee...........",
-    ".............feee............."
+    "...hgggggggghggggffgfffefee...",
+    "...ggghggggghgggfffgfffefee...",
+    "...gghgggghgggfgfffgffefeee...",
+    "...ghgggghggghgffgffgfefeee...",
+    "....hggghgggghfgfgffgfeefe....",
+    "....gghgghggghgffgffgfeefe....",
+    "....ghgggghgghffgfgffefeee....",
+    "....gghggghgghgfgffgfeefee....",
+    "....ghgghgghgffgffgffefeee....",
+    "....gghgghgghgfgffgfeefeee....",
+    ".....ghgghggfgffgffefeeee.....",
+    ".....gghgghgffgfgfeefeeee.....",
+    "......ghgghgfgffgfeefeee......",
+    "......gghggffgfgfeefeeee......",
+    ".......gghgfgffgfeefeee.......",
+    "........gfgffgfeefeeee........"
    ]
   }
  }

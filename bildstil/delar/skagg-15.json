@@ -1,0 +1,42 @@
+{
+ "id": "skagg-15",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 1",
+ "om": "Version 1 är den enda och den passar. Skägget är kort längs käken som i förebilden, och från hakan hänger en enda tjock fläta. Flätan är centrerad på mittlinjen (x -3 till 2), har ett snodd mönster och slutar i ett band och en liten tofs. Ljuset faller från vänster med h/g på vänster sida och f/e på höger. Den använder bara tecknen efgh, har ingen kontur och håller sig inom rutan (x -15 till 14, y -7 till 20). Mitten är öppen där munnen sitter. Alla rader är 30 tecken långa. Jag behövde inte ändra något.",
+ "bilder": {
+  "standard": {
+   "x": -15,
+   "y": -7,
+   "rader": [
+    "gghhg....................fgffe",
+    "ghhhg....................ffffe",
+    ".ghhg....................ffff.",
+    ".ghhgg..................gfffe.",
+    ".ghhhg..hhhhggghgffgff..gfffe.",
+    "..ghhhghhhgggghgfggffffgfffe..",
+    "..ghhhhgghhgggghgfgfgfffgffe..",
+    "...ghhgggghgggghgfgffffgffe...",
+    "...gghggggggghghffgfffgffe....",
+    "....gggggggghgggfgffffffe.....",
+    "......gggggghggfgffffef.......",
+    ".......ggggghgfgfffeef........",
+    "........gggghgffffeee.........",
+    "..........gghgffgfee..........",
+    "............ghgffe............",
+    "............hhgfge............",
+    "............ghhfee............",
+    "............fgghfe............",
+    "............hhgffe............",
+    "............ghhfee............",
+    "............fgghfe............",
+    "............hhgffe............",
+    "............ghhfee............",
+    "............fgfffe............",
+    ".............eeee.............",
+    ".............gfff.............",
+    "............ghgffe............",
+    ".............gffe............."
+   ]
+  }
+ }
+}

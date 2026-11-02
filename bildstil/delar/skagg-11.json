@@ -1,8 +1,8 @@
 {
  "id": "skagg-11",
- "ritad": 1,
- "av": "API:t (claude-opus-5-5), bästa av 2",
- "om": "Jag valde version 1. Den följer förebildens helskägg bäst: den har jämna, breda tonfält från h på vänster sida (mot ljuset) via g och f till e på höger sida, och strån i samma tjocklek som i förebilden. Kluvningen under hakan syns tydligt och är symmetrisk kring mittlinjen (x = -15 till 14). Delen ligger inom rutan (y = -7 till 15) och lämnar fritt kring munnen. Version 3 har mer brus, med inströdda e-punkter i växelmönster (fefefe) som gör ytan prickig. Den har också raka h-ränder och är lite osymmetrisk på en rad. Jag ändrade ingenting, eftersom version 1 redan stämmer med reglerna och bara använder tecknen efgh.",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 1. Den ligger närmast förebildens helskägg i längd och massa. Ljuset faller uppifrån vänster, med h och g till vänster och f och e till höger, och hårstråna är strimmor i samma tjocklek som i förebilden. Klyftan under hakan öppnar sig stegvis till två lika stora lober, vilket svarar på Björns kommentar. Version 2 blev lång och tung. Version 3 blev ännu längre, och dess lober slutar i smala spetsar som återigen liknar pilar. Min ändring: jag lade till en sista rad med två punkter under varje lob (x 8–9 och 20–21 i bilden, spegelvänt kring mittlinjen). Loberna smalnar nu av från 8 till 6, 4 och 2 punkter och får två rundade toppar i stället för trubbiga avslut. Allt håller sig inom rutan (x -15 till 14, y -7 till 13), och raden över munnen lämnas öppen.",
  "bilder": {
   "standard": {
    "x": -15,
@@ -22,15 +22,13 @@
     "....gggggghggggffffgffffee....",
     ".....ggggghgggffffgfffeee.....",
     ".....gggghgggfffggfffeeee.....",
-    "......ggghggff..ffgfeeee......",
-    "......gghgggff..fffgeeee......",
-    "......ghggggf....ffgfeee......",
-    ".......hgggff....fgfeee.......",
-    ".......gggff......ffeee.......",
-    "........ggff......ffee........",
-    "........gff........fee........",
-    ".........ff........ee.........",
-    ".........f..........e........."
+    "......ggghgggf..ffgfeeee......",
+    ".....gghggggff..ffgffeeee.....",
+    ".....ghgggggf....fgffeeee.....",
+    ".....hggggfff....ffgfeeee.....",
+    "......ggffff......fffeee......",
+    ".......gfff........feee.......",
+    "........ff..........ee........"
    ]
   }
  }

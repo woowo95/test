@@ -1,31 +1,29 @@
 {
  "id": "bonad-6",
- "ritad": 1,
- "av": "API:t (claude-opus-5-5), bästa av 2",
- "om": "Valde version 1: den läses tydligast som pälsmössa, med en tjock och ljus pälskant i ben (q/w ljusast till vänster, o och jord mörkare åt höger och nedåt) under en kulle i rost. Den följer ljuset uppifrån vänster och har samma breda, matta skuggning med korn i små klungor som förebilden. Den sitter lågt över pannan så att håret döljs på alla tre mallarna och håller sig inom rutan (x -19 till 18, y -6 till 11). Version 2 har en brun pälskant som inte skiljer sig lika tydligt från kullen, så den blir mer en vanlig mössa. Ändring: i sista raden flyttade jag en lös F-punkt (x 15) som bara satt fast diagonalt. Den sitter nu på x 16, direkt under pälsen, så att det inte blir någon ensam prick i fransen.",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 1. Den följer Björns krav: en dämpad mössa i jord (E–H) med en pälskant i ben (o–w), och inget orange. Ljuset faller från vänster, så kullen går från H till E och pälsen från w till o. Kanten har korn i små klungor, precis som förebildens mössa, och den sitter med samma bredd och höjd över pannan på alla tre ansiktena. Version 2 och 3 har bruna fläckar av E och F nere i pälskanten. På ansiktena syns de som smutsiga eller gröna prickar, och de bryter mot den matta, enhetliga pälsen. Jag ändrade inget, eftersom raderna håller sig inom rutan (x -19 till 18, y -6 till 9), alla är lika långa och bara tillåtna tecken används.",
  "bilder": {
   "standard": {
    "x": -19,
    "y": -6,
    "rader": [
-    "............tuuuttttttssss............",
-    ".........ttuuuttuttttttttssss.........",
-    ".......ttuuuttuuttttttttssstsss.......",
-    ".....sttuuttuuttttttttttsssstssrs.....",
-    "....sttuutttutttttttttsssssssrssrr....",
-    "...sstttuttttttttttsssssssssrsssrrr...",
-    "...ssttttttttttttsssssssssssrssrrrr...",
-    "..rssstttttttttssssssssssssrssrrrrrr..",
-    "..rsssssttsssssssssssssrrssrrrrrrrrr..",
+    "............GHHHGGGGGFFFFF............",
+    ".........GGHHHGGHGGGGGGGFFFFF.........",
+    ".......GGHHHGGHHGGGGGGGGFFFGFFF.......",
+    ".....FGGHHGGHHGGGGGGGGGGFFFFGFFEF.....",
+    "....FGGHHGGGHGGGGGGGGGFFFFFFFEFFEE....",
+    "...FFGGHGGGGGGGGGGGGFFFFFFFFFEFFEEE...",
+    "...FFGGGGGGGGGGGGGFFFFFFFFFFEFFEEEE...",
+    "..EFFGGGGGGGGGGGFFFFFFFFFFFFEFFEEEEE..",
+    "..EFFFFGGGGGFFFFFFFFFFFFFEEFFEEEEEEE..",
     ".qwwqwwwqqwwqwqqqwqqqqpqqpqqppqpppqpp.",
     "qwwwqwwqwwwqqwqqwqqqqpqqqpqqpppqppoppo",
     "qqwqqqqwqqqqpqqqpqqppqpppqpppoppopooop",
     "pqqpqqqpqqppqppqpppopppoppopooopoooooo",
-    "ppqppqpppoppoppooopoooGoooGoooGooGoooo",
-    "oppoppooppooopooGoooGooGGoooGooGGoGGoG",
-    "ooGooGooGoooGoGGooGGoGoGGGoGGGoGGGFGGF",
-    ".GoG.GooGGoGGo.GGoGGGFoGGGFGGFGFGF.GF.",
-    "..G..GG.oG...GG..GF..GG...FG..GF...F.."
+    "ppqppqpppoppoppooopooopooopoooooopoooo",
+    "oppoppoo.oppoo.ppoo.oopoo.oooo.oopoo.o",
+    ".po.....op....po.....oo.....o....oo..."
    ]
   }
  }

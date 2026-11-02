@@ -1,0 +1,42 @@
+{
+ "id": "skagg-16",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 2",
+ "om": "Jag valde version 3. Den har en tät och hel skäggmassa över kinder och haka som liknar förebildens helskägg, med tonerna ljusa (h) till vänster och mörka (e) till höger enligt ljuset uppifrån vänster. Under hakan mörknar skägget, så att formen syns. Version 1 blir för gles och tunn på ansiktet: munnen hamnar i en ram, och skäggkroppen slutar för tidigt innan flätorna tar vid. I version 3 sitter de tre flätorna symmetriskt kring mittlinjen: den mittersta på x -2..1 och de yttre på x -8..-5 och x 4..7. Flätornas mönster växlar, så att de ser flätade ut, och de slutar med mörkare band och spetsar. Delen håller sig inom rutan (x -15..14, y -7..20) och använder bara efgh. Jag kontrollerade radlängder och symmetri och behövde inte ändra något.",
+ "bilder": {
+  "standard": {
+   "x": -15,
+   "y": -7,
+   "rader": [
+    "ghhhh....................ffffe",
+    "ghhhhg..................gffffe",
+    ".hhhhg..................gfffe.",
+    ".hhhhgghhhhggghggfgggffgffffe.",
+    ".hhhhghhhhhgghhgfggggfffgfffe.",
+    "..hhhhghhhgggghgfgggfffffffe..",
+    "..hghhhhhghgggghgfggffffgffe..",
+    "...ghhhhgghghgghgfgggfffgfe...",
+    "...ghhgggghghgghgfggffffgfe...",
+    "...gghggggghghgghgfgfffgffe...",
+    "....ggggggggghgghgffffffgfe...",
+    ".....gggggggghgggfgffffgfe....",
+    ".....ggggggghgggffgfffefe.....",
+    ".....gfggggghggffffgffeefe....",
+    "......ffgggggfffffgffeeef.....",
+    "......fffffgffffffgfeeeef.....",
+    ".......feffffffffffeeeee......",
+    ".......hhgf..hggf..ggfe.......",
+    ".......gffe..fgfe..ffee.......",
+    ".......hhgf..hggf..ggfe.......",
+    ".......gffe..fgfe..ffee.......",
+    ".......hhgf..hggf..ggfe.......",
+    ".......gffe..fgfe..ffee.......",
+    ".......feee..hggf..feee.......",
+    ".......hgfe..fgfe..gfee.......",
+    "........ff...feee...fe........",
+    ".............gffe.............",
+    "..............fe.............."
+   ]
+  }
+ }
+}
