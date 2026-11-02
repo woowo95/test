@@ -254,3 +254,52 @@ spara({ id: 'skon-fransar', ritad: 1, av: 'programmeringschatten, förebild', om
   spara({ id: 'forband-huvud', ritad: 1, av: 'programmeringschatten, förebild', om: 'Förband runt huvudet: ett linneband över pannan som följer huvudets rundning, ljust upptill och skuggat nedåt, med en liten blodfläck till vänster.',
     bilder: { standard: bild(C) } });
 }
+
+// ---- plagget Rock (steg 5.2.2.7), förebild: en skinnrock över axlarna och bröstet med en V-ringning och en lurvig krage.
+// Ritas i materialkanalen (x, y, z, Z = mat0–mat3), som får personens material (harskinn, vargskinn). En bild per mall, efter
+// mallens axlar och hals. Från fästpunkten halsband (32, 57).
+{
+  const MALLAR = JSON.parse(fs.readFileSync('bildstil/portratt.json', 'utf8')).mallar;
+  const rock = K => {
+    const s0 = K.axel0, inne = (x, y) => {
+      const dx = Math.abs(x + 0.5 - 32);
+      if (y >= 36 && y < s0 + 2 && dx <= K.hals) return true;
+      if (y < s0) return false;
+      const t = Math.min(1, (y + 0.5 - s0) / (K.axel1 - s0));
+      return dx <= K.hals + (K.bredd - K.hals) * (1 - (1 - t) ** 2.2);
+    };
+    const ringning = (x, y) => y < s0 + 8 && Math.abs(x + 0.5 - 32) < 2 + (y - s0 + 1) * 0.6;
+    const P = {};
+    for (let y = s0 - 1; y <= 63; y++) for (let x = 0; x <= 63; x++) {
+      if (!inne(x, y) || ringning(x, y)) continue;
+      let t = ton(ljushet(x, y, 32, s0 + 8, K.bredd, 9), x, y);
+      const kant = ringning(x - 1, y) || ringning(x + 1, y) || ringning(x, y - 1);                // kanten mot ringningen: mörk
+      const krage = !kant && (ringning(x - 2, y) || ringning(x + 2, y) || ringning(x, y - 2) || y <= s0); // en ljus lurvig krage innanför
+      if (kant) t = 0;
+      else if (krage) t = Math.min(3, Math.max(2, t) + (hash(x, y, 2) < 0.5 ? 1 : 0));
+      else { t = Math.min(t, 2); if (vn(x * 1.3, y * 0.9, 1.6, 5) > 0.82) t = Math.max(0, t - 1); } // skinnet slätare, få tovor
+      if (x + 0.5 - 32 > -0.5 && x + 0.5 - 32 < 1.5 && y >= s0 + 8) t = Math.max(0, t - 1);     // sömmen mitt fram
+      P[x + ',' + y] = 'xyzZ'[Math.max(0, Math.min(3, t))];
+    }
+    const b = lagerRader((x, y) => P[x + ',' + y] || null, 0, 0, 63, 63);
+    return { standard: { x: b.x, y: b.y + 10 - 57, rader: b.rader } };
+  };
+  const K = id => MALLAR.find(m => m.id === id).kropp;
+  spara({ id: 'plagg-rock', ritad: 1, av: 'programmeringschatten, förebild', om: 'Skinnrock över axlarna och bröstet med en V-ringning, en lurvig krage och en söm mitt fram; i materialkanalen, så att den blir harskinn eller vargskinn efter personen. En bild per mall.',
+    bilder: rock(K('kvinna')), man: rock(K('man')), barn: rock(K('barn')) });
+}
+
+// ---- redskapet Flintyxa (steg 5.2.2.7), förebild i porträttet: ett skaft i jord snett upp från nedre högra hörnet, ett
+// flinthuvud i skiffer och en surrning av rep. Från fästpunkten redskap (54, 52).
+{
+  const P = {};
+  const satt = (x, y, v) => { P[x + ',' + y] = v; };
+  for (let i = 0; i <= 19; i++) { const x = 51 + Math.round(i * 0.3), y = 63 - i; satt(x, y, 'G'); satt(x + 1, y, 'F'); }   // skaftet, ljust till vänster
+  // flinthuvudet: en kil som sticker ut åt höger från skaftet, smal vid skaftet och bred ut mot den ljusa eggen
+  for (let x = 54; x <= 61; x++) { const halv = 1.5 + (x - 54) * 0.55, mitt = 45 - (x - 54) * 0.25;
+    for (let y = Math.round(mitt - halv); y <= Math.round(mitt + halv); y++) satt(x, y, x === 61 ? 'T' : y <= mitt - halv + 1 ? 'S' : y >= mitt + halv - 1 ? 'Q' : 'R'); }
+  for (const y of [46, 48]) { satt(56, y, 'I'); satt(57, y, 'J'); }                                              // surrningen
+  const b = lagerRader((x, y) => P[x + ',' + y] || null, 0, 0, 63, 63);
+  spara({ id: 'redskap-yxa', ritad: 1, av: 'programmeringschatten, förebild', om: 'Flintyxa i handen: ett skaft i jord snett upp från nedre högra hörnet, ett flinthuvud i skiffer skuggat med ljus uppifrån vänster och en surrning av rep.',
+    bilder: { standard: { x: b.x - 54 + 32, y: b.y + 10 - 52, rader: b.rader } } });
+}

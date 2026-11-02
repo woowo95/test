@@ -1,0 +1,70 @@
+{
+ "id": "plagg-rock",
+ "ritad": 1,
+ "av": "programmeringschatten, förebild",
+ "om": "Skinnrock över axlarna och bröstet med en V-ringning, en lurvig krage och en söm mitt fram; i materialkanalen, så att den blir harskinn eller vargskinn efter personen. En bild per mall.",
+ "bilder": {
+  "standard": {
+   "x": -27,
+   "y": -4,
+   "rader": [
+    "......................Zzx....xzz......................",
+    "...................zzzZx......xzzzZ...................",
+    ".............zzzyzyyzyzx......xZzzzzzyyyy.............",
+    ".........zzzzzzzzzzzzzx........xZzzzzzzyyyyyy.........",
+    ".....zzzzzzzyzzzzyzzzzx........xZzzzyzzzzyyyyxyyx.....",
+    "...zzzzzzzzzzzzzzzzzZx..........xzzzyzzzyyyyyyyyxxx...",
+    ".zzzzzzzzzzzzzzzzzzZx............xZzzzxyyyyyyyyyxxxxx.",
+    ".zzzzzzzzzzzzzzzzzzZx............xzzzzxyyyyyyyyyxxxxx.",
+    "zzzzzzzzzzzzzzzzzzZx..............xzzzyyyyyyyyyyyxxxxx",
+    "zzzzzzzzzzzzzzyzzzzzxxxxxxxxxxxxxxzzzyyyyyyyyyxyyxxxxx",
+    "zzzzzzzzzzzzzzzzzzzzzZzzZzZyZZzZZzyyyyyyyyyyyxxxxxxxxx"
+   ]
+  }
+ },
+ "man": {
+  "standard": {
+   "x": -31,
+   "y": -6,
+   "rader": [
+    "........................ZZZzx....xZzzZ........................",
+    ".....................zzzZZZx......xZZZZzz.....................",
+    "..............zyzyzzzzzzzyZx......xzzzzzzzyyyyyy..............",
+    ".........zzzzzzzzzzzzzzzzzx........xzzzzzzzzzzyyyyyyy.........",
+    ".....zzzyyzzzzzzzzzzyzyyzzx........xZzzzzzzyzzzzyyyyxyyyy.....",
+    "...zzzzyzzzzzzzzzzzzzzzzZx..........xzzzzzzzzzzyyyyyyyyyyxx...",
+    ".zzzzzyyzzzzzzzzyzzzzyzZx............xzzyzzzzzyyyxyyyyyyxxxxx.",
+    "zzzzzzzzzzzzzzzzzzzzzzzZx............xzzyzzzzyyyyyyyyyyyxxxxxx",
+    "zzzzzzzzzzzzzzzzzzzzzzzx..............xzzzxyyyyyyyyyyyyyxxxxxx",
+    "zzzzzzzzzzzzzzzzzzzzzzzzxxxxxxxxxxxxxxzzzzxyyyyyyyyyyyyxxxxxxx",
+    "zzzzzzzzzzzzzzzzzzzzzzzzzzZZZzzzzzZzZzzzzyyyyyyyyyyyyyxxxxxxxx",
+    "zzzzzzzzzzzzzzzzzzyzzzzzzyzzzzzyyzzzzzyyyyyyyyyyyyxyyxxxxxxxxx",
+    "zyzzzzzzzzzzzzzzzzzzzzzzzyzzzzyxyyzzyxyyyyyyyyyyyxxxxxxxxxxxxx"
+   ]
+  }
+ },
+ "barn": {
+  "standard": {
+   "x": -21,
+   "y": -9,
+   "rader": [
+    "................zzx....xzZ................",
+    "..............ZzZx......xzzZ..............",
+    ".........zzzzzzzZx......xZzzzzyyy.........",
+    ".....zzzzzzzzzzZx........xzzzzzyyxyyy.....",
+    "...zyzzzzzzzzzzZx........xZzzzzyyxyyyxx...",
+    ".zzzzyzyzzzzzzZx..........xZzyzyxxyyyxxxx.",
+    ".zzzzzzzzzzzzZx............xZzyyyyyyyyxxx.",
+    "zzzzzzzzzzyzyZx............xzzyyyyyyyyyxxx",
+    "zzzzzzzzzzzzZx..............xZyyyyyyyyxxxx",
+    "zzzzzzyzzzzyzzxxxxxxxxxxxxxxzyxyyyyyyxxxxx",
+    "zzzzzzzzzzzzzzzZZZZzZzZzzzzzyyxyyyyyxxxxxx",
+    "zzzzzzzzzzzzzzzzzzzzzxyzzzyyyyyyxyxxxxxxxx",
+    "zzzzzzzzzzzzzzzzzzzzzyzzyyyyyyyyxxxxxxxxxx",
+    "zzyzzzzzzzzzzzzzzzyyyxyyyyyyyyyyyxxxxxxxxx",
+    "yyyyyyyzyzzzzyyxyyyyyxyyyyyyyyyxxxxxxxxxxx",
+    "yyyyyyyyyzyyyyyxyyyyyxyyyyyxxxxxxxxxxxxxxx"
+   ]
+  }
+ }
+}

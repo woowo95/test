@@ -59,7 +59,7 @@
 
   // ---------- färgbytet ----------
   // en punkt är en kanal och en ton (hud2, har0, oga1, kind, vit, ett material som harskinn3) eller en fast färg (ben2)
-  const KANALER = new Set(['hud', 'kind', 'har', 'oga', 'vit', ...PR.material.map(m => m.id)]);
+  const KANALER = new Set(['hud', 'kind', 'har', 'oga', 'vit', 'mat', ...PR.material.map(m => m.id)]);
   const ref = s => P.i(s.slice(0, -1), +s.slice(-1));
   function fargerFor(p, gratt) {
     const hud = PR.farger.hud[p.hud], har = ALDER[p.alder].grattHar && mallAv(p) !== 'barn' ? PR.farger.grattHar : PR.farger.har[p.har], oga = PR.farger.oga[p.ogon];
@@ -78,6 +78,7 @@
       else if (k === 'oga') i = ref(oga.toner[Math.min(t, 1)]);
       else if (k === 'vit') i = ref('ben2');
       else if (MATERIAL[k]) i = ref(MATERIAL[k].toner[t]);
+      else if (k === 'mat') i = ref((MATERIAL[p.klader.rock] || MATERIAL.harskinn).toner[t]); // plaggets material (5.2.2.7)
       else i = ref(kt);
       cache.set(kt, i); return i;
     };
@@ -460,7 +461,7 @@
     lagg('huvud', dk => RITA.skalle(dk, G));
     lagg('huvud', dk => delen(dk, G, hf, p, 'huvudform'));
     if (opt.bara) return B;
-    lagg('klader', dk => RITA.klader(dk, G, p));
+    lagg('klader', dk => p.klader.rock && DELAR['plagg-rock'] ? delen(dk, G, DEL['plagg-rock'], p, 'klader') : RITA.klader(dk, G, p));
     lagg('oron', dk => delen(dk, G, D('ora'), p, 'ora'), { maskbar: true });
     const rs = rynkSteg(p); if (rs > 0) lagg('rynkor', dk => DELAR['rynkor-' + rs] ? delen(dk, G, DEL['rynkor-' + rs], p, 'rynkor') : RITA.rynkor(dk, G, rs));
     if (D('arr')) lagg('arr', dk => delen(dk, G, D('arr'), p, 'arr'));
@@ -494,7 +495,8 @@
     if (D('huvudbonad')) lagg('huvudbonad', dk => delen(dk, G, D('huvudbonad'), p, 'huvudbonad'));
     for (const id of p.forband) if (DEL[id]) lagg('forband', dk => delen(dk, G, DEL[id], p, 'forband'));
     if (p.ogonlapp) lagg('ogonlapp', dk => RITA.ogonlapp(dk));
-    if (D('redskap')) { lagg('redskapBak', dk => RITA.redskap(dk, G, D('redskap'), false)); lagg('redskapFram', dk => RITA.redskap(dk, G, D('redskap'), true)); }
+    if (D('redskap') && DELAR[del.redskap]) lagg(D('redskap').lang ? 'redskapBak' : 'redskapFram', dk => delen(dk, G, D('redskap'), p, 'redskap')); // ritat (5.2.2.7)
+    else if (D('redskap')) { lagg('redskapBak', dk => RITA.redskap(dk, G, D('redskap'), false)); lagg('redskapFram', dk => RITA.redskap(dk, G, D('redskap'), true)); }
     return B;
   }
 
