@@ -969,7 +969,9 @@
     k.kon = k.rad.sort ? t : null; k.barn = barn;
     k.vem = [...(t === 'bada' ? ['kvinna', 'man'] : [t]).map(m => ({ mall: m, kon: m })), ...(barn ? [{ mall: 'barn', kon: t === 'man' ? 'man' : 'kvinna' }] : [])];
   });
-  let grFilter = lagra.las('granskning-filter') || 'obesvarade', grId = lagra.las('granskning-kort') || KORT[0].id, grVantar = null;
+  // granskningen visar bara de ritade delarna (Björn efter 5.2.2.3: sidan var förvirrande); de grå platshållarna kommer dit när de ritas
+  const GKORT = KORT.filter(k => k.ritad > 0);
+  let grFilter = lagra.las('granskning-filter') || 'obesvarade', grId = lagra.las('granskning-kort') || GKORT[0]?.id, grVantar = null;
   const svarFor = k => { const s = SVARDEL[k.id]; return s && (s.ritad ?? 0) === k.ritad ? s : null; };
   const lage = k => { const s = svarFor(k); return !s ? 'obesvarad' : s.svar === 'ja' || s.svar === 'nej' ? s.svar : 'kommentar'; };
   const synlig = k => grFilter === 'alla' || lage(k) === 'obesvarad' || k.id === grId;
@@ -1041,37 +1043,39 @@
     return ut;
   }
   function flytta(steg, svarat = false) {
-    const i = KORT.findIndex(k => k.id === grId);
-    for (let n = 1; n <= KORT.length; n++) {
-      const k = KORT[(i + steg * n + KORT.length * n) % KORT.length];
+    const i = GKORT.findIndex(k => k.id === grId);
+    for (let n = 1; n <= GKORT.length; n++) {
+      const k = GKORT[(i + steg * n + GKORT.length * n) % GKORT.length];
       if (grFilter === 'alla' || lage(k) === 'obesvarad') { grId = k.id; break; }
-      if (svarat && n === KORT.length) break;
+      if (svarat && n === GKORT.length) break;
     }
     lagra.skriv('granskning-kort', grId); visaGranskning(true);
   }
   let senastVisad = null;
   function visaGranskning(nyttKort = false) {
     if (!$('#grkort')) return;
-    const alla = KORT.length, obesv = KORT.filter(k => lage(k) === 'obesvarad').length;
+    const alla = GKORT.length, obesv = GKORT.filter(k => lage(k) === 'obesvarad').length;
     document.querySelectorAll('[data-grfilter]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.grfilter === grFilter)));
     $('#gr-antal-obesvarade').textContent = obesv; $('#gr-antal-alla').textContent = alla;
     // sorterna med hur många som är godkända
     const sorter = $('#gr-sorter'); sorter.textContent = '';
     for (const s of PR.sorter) {
-      const ks = KORT.filter(k => k.sort === s), ja = ks.filter(k => lage(k) === 'ja').length, kom = ks.filter(k => ['kommentar', 'nej'].includes(lage(k))).length;
+      const ks = GKORT.filter(k => k.sort === s); if (!ks.length) continue;
+      const ja = ks.filter(k => lage(k) === 'ja').length, kom = ks.filter(k => ['kommentar', 'nej'].includes(lage(k))).length;
       const b = document.createElement('button'); b.type = 'button'; b.dataset.grsort = s.id;
       b.className = ja === ks.length ? 'klar' : kom ? 'kommenterad' : '';
       b.innerHTML = `${s.namn} <small>${ja}/${ks.length}</small>`;
-      if (KORT.find(k => k.id === grId)?.sort === s) b.setAttribute('aria-current', 'true');
+      if (GKORT.find(k => k.id === grId)?.sort === s) b.setAttribute('aria-current', 'true');
       sorter.append(b);
     }
-    let k = KORT.find(x => x.id === grId) || KORT[0];
+    let k = GKORT.find(x => x.id === grId) || GKORT[0];
     const kort = $('#grkort');
+    if (!k) { kort.className = 'grkort'; kort.innerHTML = '<p>Inget att granska just nu.</p>'; senastVisad = null; return; }
     if (grFilter === 'obesvarade' && !obesv && lage(k) !== 'obesvarad') {
       kort.className = 'grkort'; kort.innerHTML = '<p>Alla kort är besvarade.</p><p><button type="button" class="gr-knapp" data-grfilter="alla">Visa alla kort</button></p>'; senastVisad = null; return;
     }
     const st = lage(k), s = SVARDEL[k.id], forra = !svarFor(k) && s && s.kommentar ? s.kommentar : k.rad.forra || null;
-    const synliga = KORT.filter(synlig), pos = synliga.indexOf(k) + 1;
+    const synliga = GKORT.filter(synlig), pos = synliga.indexOf(k) + 1;
     const nav = `<nav class="gr-nav" aria-label="Bläddra bland korten"><button type="button" class="gr-knapp" data-grsteg="-1">‹ Förra</button><span>${pos} av ${synliga.length}</span><button type="button" class="gr-knapp" data-grsteg="1">Nästa ›</button></nav>`;
     if (nyttKort || senastVisad !== k.id || !kort.querySelector('.gr-bilder')) {
       const vad = k.sort.id === 'mall' ? k.rad.vad + ' Mallen är kroppen, halsen, axlarna och skallen, med fästpunkterna där delarna sitter och zonerna som maskerna döljer.'
@@ -1124,13 +1128,13 @@
       else if (t.id === 'sk-nyabarn') { barnFro++; ritaFamilj(); }
       else if (t.id === 'sk-somunga') { somUnga = !somUnga; ritaFamilj(); }
       else if (t.id === 'sk-nyaby') { byFro++; ritaByn(); }
-      else if (t.dataset.grfilter) { grFilter = t.dataset.grfilter; lagra.skriv('granskning-filter', grFilter); if (grFilter === 'obesvarade' && lage(KORT.find(k => k.id === grId)) !== 'obesvarad') flytta(1, true); else visaGranskning(true); }
-      else if (t.dataset.grsort) { grId = KORT.find(k => k.sort.id === t.dataset.grsort && (grFilter === 'alla' || lage(k) === 'obesvarad'))?.id || KORT.find(k => k.sort.id === t.dataset.grsort).id; lagra.skriv('granskning-kort', grId); visaGranskning(true); $('#grkort').scrollIntoView({ block: 'start' }); }
+      else if (t.dataset.grfilter) { grFilter = t.dataset.grfilter; lagra.skriv('granskning-filter', grFilter); if (grFilter === 'obesvarade' && GKORT.length && lage(GKORT.find(k => k.id === grId) || GKORT[0]) !== 'obesvarad') flytta(1, true); else visaGranskning(true); }
+      else if (t.dataset.grsort) { grId = GKORT.find(k => k.sort.id === t.dataset.grsort && (grFilter === 'alla' || lage(k) === 'obesvarad'))?.id || GKORT.find(k => k.sort.id === t.dataset.grsort).id; lagra.skriv('granskning-kort', grId); visaGranskning(true); $('#grkort').scrollIntoView({ block: 'start' }); }
       else if (t.dataset.grsteg) { flytta(+t.dataset.grsteg); if (t.closest('.gr-nav:last-child')) $('#grkort').scrollIntoView({ block: 'start' }); }
       else if (t.dataset.grsvar) svara(t.dataset.grsvar);
     });
     ritaSkaparen(); ritaFamilj(); ritaByn(); spela();
-    if (!KORT.some(k => k.id === grId)) grId = KORT[0].id;
+    if (!GKORT.some(k => k.id === grId)) grId = GKORT[0]?.id;
     visaGranskning(true);
     anslut();
   }

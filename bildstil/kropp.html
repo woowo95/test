@@ -2,9 +2,40 @@
   <header>
     <span class="ogon">Samhällssimulatorn · bildstil</span>
     <h1>Samhällssimulatorns <span>bildstil</span></h1>
-    <p class="lede">Guiden för allt som ritas i spelet. Allt på kartan har 16 punkter per ruta. Alla färger kommer ur palett B, Avokado och rost, som har 32 färger. Ytan har korn men inga fläckar (smuts 1), stora ytor har låg kontrast och inget är fulltonssvart. Längst ner väljer Björn bland nya versioner.</p>
-    <nav class="hopp" aria-label="Genvägar"><a href="#skapare">Karaktärsskaparen</a><a href="#granskning">Granskningen av delarna</a><a href="#val">Björn väljer</a></nav>
   </header>
+
+  <section id="granskning" aria-labelledby="h-granskning">
+    <div class="rubrik">
+      <span class="ogon">Att svara på · porträttens delar</span>
+      <h2 id="h-granskning">Granskningen</h2>
+      <p>Ja om delen är bra, Nej om den ska ritas om. Skriv gärna vad som ska ändras.</p>
+      <details class="mer"><summary>Mer om korten</summary><p>Här visas bara de delar som är ritade; de grå platshållarna kommer hit först när de ritas. Varje kort visar delen på ett helt ansikte för varje mall den passar, i alla sina lägen, och på kartan. En kommentar går också att skicka för sig. Svaret sparas direkt och nästa kort visas. En del som ritas om står obesvarad igen, med din förra kommentar överst.</p></details>
+    </div>
+    <div class="gr-topp">
+      <div class="gr-filter" role="group" aria-label="Vilka kort"><button type="button" class="gr-knapp" data-grfilter="obesvarade">Obesvarade <b id="gr-antal-obesvarade">0</b></button><button type="button" class="gr-knapp" data-grfilter="alla">Alla <b id="gr-antal-alla">0</b></button></div>
+      <div class="gr-sorter" id="gr-sorter" aria-label="Sorterna, med hur många som är godkända"></div>
+      <p class="not" id="gr-status" aria-live="polite"></p>
+    </div>
+    <article class="grkort" id="grkort" aria-live="polite"></article>
+  </section>
+
+  <section id="val" aria-labelledby="h-val">
+    <div class="rubrik">
+      <span class="ogon">Att svara på · nya bilder</span>
+      <h2 id="h-val">Björn väljer</h2>
+      <p>Tryck på den version du vill ha, eller Ja eller Nej, och skriv gärna varför.</p>
+      <details class="mer"><summary>Mer om valen</summary><p>Varje sak visas i dag eller förut (om den finns) och som den nya versionen, stor och i kartans storlek. Valet sparas direkt. När det valda är inbyggt i spelet tas saken bort härifrån.</p></details>
+    </div>
+    <p class="not" id="valstatus"></p>
+    <div class="vallista" id="vallista"></div>
+  </section>
+
+  <div class="resten">
+    <span class="ogon">Under strecket</span>
+    <h2>Guiden och allt annat</h2>
+    <p class="lede">Guiden för allt som ritas i spelet. Allt på kartan har 16 punkter per ruta. Alla färger kommer ur palett B, Avokado och rost, som har 32 färger. Ytan har korn men inga fläckar (smuts 1), stora ytor har låg kontrast och inget är fulltonssvart.</p>
+    <nav class="hopp" aria-label="Genvägar"><a href="#skapare">Karaktärsskaparen</a><a href="#guide">Guiden</a><a href="#h-regler">Reglerna</a><a href="#h-beslut">Björns beslut</a></nav>
+  </div>
 
   <section id="guide" aria-labelledby="h-guide">
     <div class="rubrik">
@@ -15,7 +46,7 @@
     <ol class="steg">
       <li><b>Läs reglerna och paletten.</b> Reglerna står i avsnittet Riktlinjerna nedan. Varje material har en ramp med fyra toner: kol, jord, senap, rost, oliv, barr, skiffer eller ben. Använd bara de 32 färgerna.</li>
       <li><b>Gör en platshållare.</b> Medan steget programmeras ritas en enkel platshållare i paletten, med 16 punkter per ruta, så att spelet går att köra.</li>
-      <li><b>Gör tre versioner av något nytt.</b> När steget är klart ritas tre olika versioner. De läggs i registret <code>VAL</code> i <code>bildstil/sida.js</code> med <code>typ: 'tre'</code> och visas längst ner på den här sidan, stora och i kartans storlek.</li>
+      <li><b>Gör tre versioner av något nytt.</b> När steget är klart ritas tre olika versioner. De läggs i registret <code>VAL</code> i <code>bildstil/sida.js</code> med <code>typ: 'tre'</code> och visas överst på den här sidan, stora och i kartans storlek.</li>
       <li><b>Gör en version när något gammalt görs om.</b> När en bild som redan finns skalas upp till 16 punkter per ruta, eller en emoji byts mot en pixelsymbol, räcker en version (<code>typ: 'janej'</code>). Bilden som den ser ut i dag visas bredvid.</li>
       <li><b>Publicera sidan</b> till samma adress (källor nedan), så att Björns val finns kvar.</li>
       <li><b>Björn väljer på sidan.</b> Valet sparas i sidans databas, i samlingen <code>val</code>, ett dokument per sak: <code>svar</code> är 1, 2, 3, ja eller nej, och <code>kommentar</code> är det Björn skrev. Läs dem med ArtifactData (<code>list</code>, samlingen <code>val</code>).</li>
@@ -105,20 +136,6 @@
       <div class="sk-byn" id="sk-byn"></div>
       <div class="knappar"><button type="button" id="sk-nyaby">Tjugo nya</button></div>
     </div>
-  </section>
-
-  <section id="granskning" aria-labelledby="h-granskning">
-    <div class="rubrik">
-      <span class="ogon">Granskningen · steg 5.2.2</span>
-      <h2 id="h-granskning">Ett kort per del</h2>
-      <p>Korten kommer i den ordning delarna ritas. Varje kort visar delen på ett helt ansikte för varje mall den passar, i alla sina lägen, och på kartan. Tryck Ja om delen är bra och Nej om den ska ritas om, och skriv gärna vad som ska ändras; en kommentar går också att skicka för sig. Svaret sparas direkt och nästa kort visas. En del som ritas om står obesvarad igen, med din förra kommentar överst.</p>
-    </div>
-    <div class="gr-topp">
-      <div class="gr-filter" role="group" aria-label="Vilka kort"><button type="button" class="gr-knapp" data-grfilter="obesvarade">Obesvarade <b id="gr-antal-obesvarade">0</b></button><button type="button" class="gr-knapp" data-grfilter="alla">Alla <b id="gr-antal-alla">0</b></button></div>
-      <div class="gr-sorter" id="gr-sorter" aria-label="Sorterna, med hur många som är godkända"></div>
-      <p class="not" id="gr-status" aria-live="polite"></p>
-    </div>
-    <article class="grkort" id="grkort" aria-live="polite"></article>
   </section>
 
   <section aria-labelledby="h-tat">
@@ -255,20 +272,11 @@
       <div class="fraga"><h3>16 punkter per ruta på allt</h3><p>Sakerna är redan rätt. Stationerna, möblerna, elden, väggarna och golven ritas om. Till dess visas de förstorade två gånger.</p></div>
       <div class="fraga"><h3>Smuts 1</h3><p>Korn i stället för fläckar, och lägre kontrast på stora ytor. Inget fulltonssvart: det mörkaste är #24201d.</p></div>
       <div class="fraga"><h3>Pixeltypsnitt överallt</h3><p>Silkscreen i rubriker och underrubriker, Pixelify Sans i all annan text, och stapelmätare i rutor.</p></div>
-      <div class="fraga"><h3>Nya saker: tre versioner att välja mellan</h3><p>När något nytt ska synas görs tre versioner. När något som redan finns görs om räcker en, som Björn säger ja eller nej till. Valet görs längst ner på den här sidan.</p></div>
+      <div class="fraga"><h3>Nya saker: tre versioner att välja mellan</h3><p>När något nytt ska synas görs tre versioner. När något som redan finns görs om räcker en, som Björn säger ja eller nej till. Valet görs överst på den här sidan.</p></div>
     </div>
     <h3 class="valtrubrik">Valt: byggs in i spelet</h3>
-    <p class="not">Det Björn valt längst ner på sidan och som inte är inbyggt i spelet än. Steget säger när det byggs in; då försvinner det härifrån.</p>
+    <p class="not">Det Björn valt överst på sidan och som inte är inbyggt i spelet än. Steget säger när det byggs in; då försvinner det härifrån.</p>
     <div class="alternativ" id="valt"></div>
   </section>
 
-  <section id="val" aria-labelledby="h-val">
-    <div class="rubrik">
-      <span class="ogon">Att välja</span>
-      <h2 id="h-val">Björn väljer</h2>
-      <p>Varje sak visas i dag eller förut (om den finns) och som den nya versionen, stor och i kartans storlek. Tryck på Ja eller Nej, eller på den version du vill ha, och skriv gärna varför. Valet sparas direkt. När det valda är inbyggt i spelet tas saken bort härifrån.</p>
-    </div>
-    <p class="not" id="valstatus"></p>
-    <div class="vallista" id="vallista"></div>
-  </section>
 </div>
