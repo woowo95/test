@@ -754,8 +754,8 @@ SCENARIER.flodrest = {
     const lagt = [pj, pv, pw].map((p, n) => { const mt = n ? 'timmer' : 'jord', b: SIM.Bit = { id: s.nextBit!++, x: p.x, y: p.y, k: SIM.MATERIAL[mt].k, m: mt, b: 1, mat: SIM.MATERIAL[mt].n, c: 1 }; SIM.bitsOf(s).push(b); return b; });
     SIM.touch(s);
     const [jord, vNara, vLangt] = lagt;
-    (s.stationer ??= []).push({ id: (s.nextStation ??= 1), k: 'brasa', x: pb.x, y: pb.y, kvar: 0, eld: { fuel: 6, lit: 1 } } as SIM.Station);
-    const brasa = s.stationer[s.stationer.length - 1]; s.nextStation = (s.nextStation ?? 1) + 1;
+    const brasa = Object.assign(SIM.newFire(), { id: (s.nextStation ??= 1), at: { x: pb.x, y: pb.y }, ring: true, lit: true, fuel: 6, folk: [] as number[] }); // en lägereld till (steg 4.5.6.8)
+    (s.eldar ??= []).push(brasa); s.nextStation = (s.nextStation ?? 1) + 1;
     const sang0 = new Map(living(s).map(p => [p.id, SIM.bedTile(s, p)])), sangar0 = [...sang0.values()].filter(t => t !== undefined && golv.includes(t)).length;
     const minnesRuta = nara(i => land[i] === 1, [...rekt, pj, pv, pb, pm]);
     // tills vattnet sjunkit undan, och två dygn till
@@ -768,7 +768,7 @@ SCENARIER.flodrest = {
       hogst = Math.max(hogst, niva);
       if (niva === 1 && hogst === 1) { if (rotterKvarVid1 < 0) { s.stackar!.push({ k: 'rotter', n: 12, c: 1, x: pm.x, y: pm.y }); SIM.tidy(s); } rotterKvarVid1 = rotter(); }
       if (jord.m === 'lera') lera = true;
-      if (niva && !brasa.eld?.lit) brasaUt = true;
+      if (niva && !brasa.lit) brasaUt = true;
       for (const p of living(s)) {
         const t = SIM.bedTile(s, p);
         if (t !== undefined && SIM.flodBlot(s, t)) blotSang++;

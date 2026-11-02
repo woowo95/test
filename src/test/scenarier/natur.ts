@@ -1253,13 +1253,13 @@ SCENARIER.tork = {
   },
 };
 SCENARIER.brasa = {
-  text: 'Flera brasor (steg 2.9.1): när två eller fler sover långt från elden och det är kallt vill byn ha en brasa nära dem. Fattas stenarna letar en i taget efter dem vid stenarna; sedan byggs brasan av sex stenar. Den tänds med en brand från lägerelden och värmer dem som sover nära. En släckt brasa som ingen sover nära tas isär, och stenarna läggs i en hög som används igen',
+  text: 'Flera lägereldar (steg 2.9.1, 4.5.6.8): när två eller fler sover långt från elden och det är kallt vill byn ha en lägereld till nära dem. Fattas stenarna letar en i taget efter dem vid stenarna; sedan läggs ringen av sex stenar. När den är klar är den en lägereld som den första: den tänds med flintan, värmer dem som sover nära och glöder. En släckt lägereld som ingen sover nära tas isär, och stenarna läggs i en hög som används igen',
   env: { BALANS: 'brasa.langt=0,brasa.kyla=-99' }, // alla sovplatser räknas som långt från elden, och det är alltid kallt nog
   kor: () => {
-    const { STATION, BRASA, stepBrasor, brasaSten, brasorOf, brasaHeat, heatAt, PROJEKT, dangers, isKlar, stationerOf } = SIM;
+    const { STATION, BRASA, stepBrasor, brasaSten, brasorOf, fireHeat, heatAt, PROJEKT, dangers, stationerOf } = SIM;
     const b = createState(1, START); klockan(b); tandEld(b);
     setMat(b, { bar: 80, fisk: 30 }); setAmount(b, 'ved', 200); setAmount(b, 'sten', 0);
-    // utan hus sover man vid elden: byn vill inte ha någon brasa
+    // utan hus sover man vid elden: byn vill inte ha någon lägereld till
     stepBrasor(b); const ingen = !b.brasa;
     medHus(b);
     stepBrasor(b);
@@ -1269,35 +1269,43 @@ SCENARIER.brasa = {
     const leta = brasaSten(b) && PROJEKT.brasa.kan(b, vuxen, f) && u0?.act === 'samla' && !!u0.sok;
     setAmount(b, 'sten', STATION.brasaSten);
     const bygga = !brasaSten(b) && PROJEKT.brasa.uppgift(b, vuxen)?.act === 'station';
-    // i byn: brasan byggs och tänds
-    let h = 0, t = brasorOf(b)[0];
-    while (!(t && t.eld?.lit) && h < 96) { kor(b, 1); b.fire.lit = true; b.fire.fuel = Math.max(b.fire.fuel, 3); setAmount(b, 'ved', Math.max(amountOf(b, 'ved'), 150)); h++; t = brasorOf(b)[0]; }
+    // i byn: ringen läggs och blir en lägereld, som tänds
+    let h = 0, e = brasorOf(b)[0];
+    while (!(e && e.lit) && h < 96) { kor(b, 1); b.fire.lit = true; b.fire.fuel = Math.max(b.fire.fuel, 3); setAmount(b, 'ved', Math.max(amountOf(b, 'ved'), 150)); setAmount(b, 'torrgras', Math.max(amountOf(b, 'torrgras'), 10)); h++; e = brasorOf(b)[0]; }
     const fire = getMap(b.seed).fire;
-    const byggd = !!t && isKlar(t), tand = !!t?.eld?.lit && ((b.stat?.brasaTand as number) ?? 0) > 0;
-    const flyttad = !!t && Math.hypot(t.x - fire.x, t.y - fire.y) >= STATION.brasaFran;
-    // värmen: vid brasan är det varmare än lägerelden ensam ger
+    const byggd = !!e && !stationerOf(b).some(t => t.k === 'brasa' && t.id === e!.id), tand = !!e?.lit && ((b.stat?.brasaTand as number) ?? 0) > 0;
+    const flyttad = !!e && Math.hypot(e.at!.x - fire.x, e.at!.y - fire.y) >= STATION.brasaFran;
+    const lika = !!e && !!e.ring && e.lightings >= 1 && Array.isArray(e.log); // en lägereld som den första
+    // värmen: vid den är det varmare än den första elden ensam ger
     let varm = false;
-    if (t?.eld?.lit) { const med = heatAt(b, t.x + 0.5, t.y + 1.5); t.eld.lit = undefined; const utan = heatAt(b, t.x + 0.5, t.y + 1.5); t.eld.lit = 1; varm = brasaHeat(t) > 0 && med > utan; }
-    // isär: en släckt brasa som ingen sover nära tas isär, och stenarna blir en hög
+    if (e?.lit) { const med = heatAt(b, e.at!.x + 0.5, e.at!.y + 1.5); e.lit = false; const utan = heatAt(b, e.at!.x + 0.5, e.at!.y + 1.5); e.lit = true; varm = fireHeat(b, e) > 0 && med > utan; }
+    // isär: en släckt lägereld som ingen sover nära tas isär, och stenarna blir en hög
     let isar = false, hog = false, ateranv = false;
-    if (t) {
-      t.eld!.lit = undefined; t.eld!.fuel = 0; t.eld!.ut = b.now - (BRASA.tomDygn * DAY + HOUR);
-      t.x = 1; t.y = 1; // ingen sover närmast den här
+    if (e) {
+      e.lit = false; e.fuel = 0; e.emberUntil = undefined; e.ut = b.now - (BRASA.tomDygn * DAY + HOUR);
+      e.at = { x: 1, y: 1 }; // ingen sover närmast den här
       setAmount(b, 'sten', 0);
       stepBrasor(b);
-      isar = !stationerOf(b).includes(t) && ((b.stat?.brasaIsar as number) ?? 0) > 0;
+      isar = !brasorOf(b).includes(e) && ((b.stat?.brasaIsar as number) ?? 0) > 0;
       hog = (b.stackar ?? []).some(a => a.k === 'sten' && a.x === 1 && a.y === 1 && a.n >= STATION.brasaSten);
-      ateranv = !!b.brasa && !brasaSten(b); // stenarna i högen räcker till nästa brasa: ingen behöver leta
+      ateranv = !!b.brasa && !brasaSten(b); // stenarna i högen räcker till nästa: ingen behöver leta
     }
+    // en sparad by från före v284: en färdig brasa (en station med en egen eld) blir en lägereld på samma plats
+    const g = createState(1, START); klockan(g); tandEld(g);
+    (g.stationer ??= []).push({ id: 77, k: 'brasa', x: 9, y: 11, kvar: 0, eld: { fuel: 3, lit: 1, folk: [1] } } as unknown as SIM.Station);
+    g.v = 21; delete g.eldar; SIM.migrate(g);
+    const ge = brasorOf(g)[0], sparad = !!ge && ge.id === 77 && ge.at!.x === 9 && ge.at!.y === 11 && ge.lit && ge.fuel === 3 && !!ge.ring && !stationerOf(g).some(t => t.k === 'brasa');
     return [
-      ['utan hus sover man vid elden, och byn vill inte ha någon brasa', ingen],
-      ['de sover långt bort och det är kallt: byn vill ha en brasa', vill],
+      ['utan hus sover man vid elden, och byn vill inte ha någon lägereld till', ingen],
+      ['de sover långt bort och det är kallt: byn vill ha en lägereld till', vill],
       ['utan stenar letar en vuxen efter dem vid stenarna', leta],
-      ['med sex stenar byggs brasan i stället', bygga],
-      [`brasan byggs (efter ${h} timmar) en bit från lägerelden och tänds med en brand från den`, byggd && flyttad && tand],
-      ['vid den brinnande brasan är det varmare än lägerelden ensam ger', varm],
-      ['en släckt brasa som ingen sover nära tas isär, och stenarna läggs i en hög', isar && hog],
-      ['stenarna i högen används till nästa brasa', ateranv],
+      ['med sex stenar läggs ringen i stället', bygga],
+      [`ringen läggs (efter ${h} timmar) en bit från den första elden, blir en lägereld och tänds`, byggd && flyttad && tand],
+      ['den är en lägereld som den första: stenring, tändningar och historik', lika],
+      ['vid den brinnande lägerelden är det varmare än den första elden ensam ger', varm],
+      ['en släckt lägereld som ingen sover nära tas isär, och stenarna läggs i en hög', isar && hog],
+      ['stenarna i högen används till nästa lägereld', ateranv],
+      ['en sparad by: varje färdig brasa blir en lägereld på samma plats', sparad],
     ];
   },
 };

@@ -10,9 +10,10 @@ import { VAR, inFas, nyKalender } from './tid';
 import { ageOf, alive, byId, getRel, log, newPerson, startSkills, stridSkills, think, SKALD_START, handelStart } from './folk';
 import { newSeder, sederTarget, TAGS } from './seder';
 import { clamp, gauss, rnd } from './slump';
-import { Act, DAY, Fire, NEW_H, NEW_W, Person, SEC, State, simulera, useMap } from './typer';
+import { Act, DAY, NEW_H, NEW_W, Person, SEC, State, simulera, useMap } from './typer';
 import { startSmak } from './rykten';
 import { nyAndlighet } from './religion';
+import { newFire } from './eld';
 
 // ---------- skapa värld ----------
 // storlek: kartans storlek, för testerna av äldre byar (en ny by får alltid NEW_W × NEW_H)
@@ -37,9 +38,6 @@ function skapaBy(seed: number, now: number, storlek: { W: number; H: number }): 
   return s;
 }
 
-function newFire(): Fire {
-  return { hearth: 'lagereld', fuel: 0, lit: false, burned: 0, totalBurned: 0, litSec: 0, lightings: 0, outs: 0, tries: 0, tryTotal: 0, tryProg: 0, fills: {}, log: [] };
-}
 
 // ---------- uppgradering av sparade byar ----------
 // Varje ändring av hur en by sparas får en rad här, med nästa nummer. s.v är numret på den senaste uppgraderingen
@@ -211,6 +209,18 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
   }],
   [20, 'v242: grannklanerna (steg 4.4.3)', s => { if (!s.klaner) nyaKlaner(s); }],
   [21, 'v263: sederna formas bara av personerna (steg 4.5.4.9): händelsernas egna drag tas bort', s => { const sd = s.seder as { ev?: unknown; log?: unknown }; delete sd.ev; delete sd.log; }],
+  [22, 'v284: varje färdig brasa blir en lägereld på samma plats (steg 4.5.6.8, eld.ts), med samma nummer så att den som bär ved dit fortsätter', s => {
+    type Gammal = { id: number; k: string; x: number; y: number; kvar: number; klar?: number; eld?: { fuel: number; lit?: 1; litAt?: number; ut?: number; folk?: number[] } };
+    const br = ((s.stationer ?? []) as Gammal[]).filter(t => t.k === 'brasa' && t.kvar <= 0);
+    if (!br.length) return;
+    s.stationer = s.stationer!.filter(t => !br.includes(t as Gammal));
+    for (const t of br) {
+      const f = newFire(), e = t.eld;
+      Object.assign(f, { id: t.id, at: { x: t.x, y: t.y }, ring: true, klar: t.klar ?? s.now, folk: e?.folk ?? [], fuel: e?.fuel ?? 0, lit: !!e?.lit, litAt: e?.litAt, ut: e?.ut, lightings: e?.lit || e?.litAt !== undefined ? 1 : 0 });
+      (s.eldar ??= []).push(f);
+    }
+    s.byggV = (s.byggV ?? 0) + 1;
+  }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];
 export function migrate(s: State) { return simulera(() => uppgradera(s)); }

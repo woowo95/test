@@ -294,7 +294,8 @@ export interface State {
   falt?: import('./odling').Falt[]; nextFalt?: number; // fälten (steg 2.10.3, odling.ts)
   vader?: import('./vader').VaderMinne; // fukten och snön på marken (steg 2.11.1, vader.ts)
   is?: import('./is').IsMinne; // vattnets temperatur och isens tjocklek (steg 2.11.3, is.ts)
-  brasa?: { vill: number; x: number; y: number }; // byn vill ha en brasa (0 till 1) nära mitten av sovplatserna x, y (brasor.ts, räknas varje timme)
+  brasa?: { vill: number; x: number; y: number }; // byn vill ha en lägereld till (0 till 1) nära mitten av sovplatserna x, y (brasor.ts, räknas varje timme)
+  eldar?: Fire[]; // lägereldarna efter den första (s.fire), med plats (at) och nummer (id), steg 4.5.6.8 (eld.ts, brasor.ts)
   flackar?: import('./smuts').Flack[]; // fläckar på marken som bleknar: toa-smutsen (smuts.ts)
   blod?: import('./blod').Blodflack[]; // blodet på marken (bara utseende, blod.ts)
   hygien?: number; // hur mycket byn vet om att toa-smutsen gör vattnet sjukt (0–1, smuts.ts, steg 2.7.2)
@@ -369,4 +370,7 @@ export interface Fire {
   ash?: number; ashUntil?: number; // kolhög efter en utbrunnen eld
   at?: { x: number; y: number }; // var elden står om den flyttats (steg 2.10.4); annars där kartan lade den (getMap(seed).fire)
   flytt?: { x: number; y: number; varfor: 'plats' | 'vuxit' }; // elden ska flyttas hit (eldflytt.ts)
+  // en lägereld till (steg 4.5.6.8, s.eldar): numret (task.ref för den som eldar, tänder eller hämtar kol vid den), de som har
+  // sin sovplats närmast den (räknas varje timme i brasor.ts), när den slocknade och när ringen lades
+  id?: number; folk?: number[]; ut?: number; klar?: number;
 }

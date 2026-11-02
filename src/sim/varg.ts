@@ -9,6 +9,7 @@ import { upplev } from './uppvaxt';
 import { ALDER, KROPP, ageOf, byId, count, forstaGang, franMitt, getRel, isSick, livet, living, log, ovning, stat, think } from './folk';
 import { halsa, kanGa, skada } from './halsa';
 import { Act, larmAvbryter } from './handlingar';
+import { brinnerNara, eldXY, eldarOf } from './eld';
 import { eldPlats, getMap } from './karta';
 import { punktIRuta } from './mark';
 import { addTo, amountOf, avbryt, foodOf, zoneOf } from './lager';
@@ -108,6 +109,12 @@ export const VARG = balans('varg', {
 
 const flockarna = (s: State) => s.vargar ?? [];
 const avst = (a: { x: number; y: number }, b: { x: number; y: number }) => Math.hypot(a.x - b.x, a.y - b.y);
+// den brinnande lägereld som är närmast flocken, inom VARG.eldR (mitten av rutan, som nyttMal)
+function narmasteEld(s: State, f: Vargflock) {
+  let b: { x: number; y: number } | undefined, bd = VARG.eldR;
+  for (const e of eldarOf(s)) if (e.lit) { const p = eldXY(s, e), m = { x: p.x + 0.5, y: p.y + 0.5 }, d = avst(f, m); if (d < bd) { bd = d; b = m; } }
+  return b;
+}
 const vaken = (p: Person) => p.task?.act !== 'sova';
 // flockens mod: vargarnas medelmod (0–1) gånger storleken
 function flockMod(f: Vargflock) {
@@ -257,8 +264,7 @@ export function soker(s: State, folk: Person[]) {
 // den som är ensam: ingen annan nära, inte bakom en stängd dörr och inte vid en brinnande eld (steg 3.7.21: en skinndörr
 // stoppar ingen)
 function ensam(s: State, p: Person, folk: Person[]) {
-  const e = eldPlats(s);
-  if (iStangt(s, p) || (s.fire.lit && Math.hypot(p.x - e.x - 0.5, p.y - e.y - 0.5) < VARG.eldR)) return false;
+  if (iStangt(s, p) || brinnerNara(s, p.x, p.y, VARG.eldR)) return false;
   return !folk.some(q => q !== p && avst(q, p) < VARG.grupp);
 }
 
@@ -306,7 +312,8 @@ function flockSteg(s: State, f: Vargflock, folk: Person[], dtSec: number) {
     const grupp = ute.find(q => avst(q, f) < VARG.undvik && ute.some(o => o !== q && avst(o, q) < VARG.grupp));
     if (grupp) { slutaVanta(f); nyttMal(s, f, grupp); ga(s, f, VARG.flyFart, dtSec); return; }
   }
-  if (s.fire.lit && avst(f, eld) < VARG.eldR && f.hunger < VARG.eldHunger) { slutaVanta(f); nyttMal(s, f, eld); ga(s, f, VARG.flyFart, dtSec); return; }
+  const nara = f.hunger < VARG.eldHunger ? narmasteEld(s, f) : undefined; // undan från varje brinnande lägereld
+  if (nara) { slutaVanta(f); nyttMal(s, f, nara); ga(s, f, VARG.flyFart, dtSec); return; }
   if (f.gor === 'vantar') { vanta(s, f, folk, dtSec); return; }
   if (n >= 2 && f.hunger * (0.5 + mod) > VARG.anfall) {
     const p = bytet(s, f, folk);

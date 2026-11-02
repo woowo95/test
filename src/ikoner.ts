@@ -60,9 +60,6 @@ export const PAL: Record<string, Record<string, string>> = {
   latrin_karta: { o: '#8a6a40', O: '#b08a58', d: '#4a3018', k: '#24160a' },
   // grillställningen och den grillade maten (steg 2.8.1; Björn valde 1b för kartan och symbolerna efter v89)
   grill: { w: '#5a3a1e', O: '#d0aa70', L: '#b07a45', W: '#8b5a2b', q: '#5e4226', f: '#e8862a', F: '#f6c24a', g: '#8a8f94', G: '#5e6266' },
-  // brasan (steg 2.9.1; Björn valde symbolen och kartbilden efter v89)
-  brasa: { w: '#5a3a1e', W: '#8b5a2b', Y: '#c9a46a', f: '#e2702e', F: '#ffd36b', V: '#fff2c0', h: '#b0b5b8', g: '#8a8f94', G: '#5e6266' },
-  brasa_karta: { h: '#d6dadc', g: '#9a9fa4', G: '#4e5256', a: '#3a352f', b: '#1e1915', N: '#34383c' },
   grill_karta: { w: '#5a3a1e', W: '#8b5a2b', L: '#b07a45', O: '#d0aa70', q: '#5e4226', D: '#2a1c12', x: 'rgba(0,0,0,.30)' },
   grillfisk: { o: '#6e3418', B: '#dc9a52', c: '#3c2010', b: '#b8682e' },
   grillkott: { o: '#4a1c10', R: '#a85a32', c: '#2c140a', r: '#7e3a1e', w: '#e8d2a8' },
@@ -149,9 +146,6 @@ export const PAL: Record<string, Record<string, string>> = {
   a_elda: AKT,
   a_leka: AKT,
   // Björns valda symboler efter v89 (steg v91): handlingar (a_), skador (s_), näring (n_) och brister (b_)
-  brasa_ved_karta: { Y: '#c9a46a', w: '#5a3a1e', W: '#8b5a2b', b: '#1e1915' },
-  brasa_eld_karta: { f: '#e2702e', F: '#ffd36b', V: '#fff2c0', W: '#8b5a2b', w: '#5a3a1e', b: '#1e1915' },
-  brasa_glod_karta: { u: 'rgba(225,225,225,.30)', E: '#e8582a', k: '#1a1714', e: '#b3361e' },
   a_svalka: { w: '#f4efe0', a: '#9fc6e8', y: '#f2d27a', r: '#e0604e' },
   a_dricka: { w: '#f4efe0', a: '#9fc6e8', y: '#f2d27a', r: '#e0604e' },
   a_fatt: { w: '#f4efe0', a: '#9fc6e8', y: '#f2d27a', r: '#e0604e' },
@@ -1359,30 +1353,6 @@ export const PIX: Record<string, string[]> = {
     '.oddddo.',
     '..oooo..',
     '........',
-  ],
-  // brasan (Björn valde symbol 2, kåtan, efter v89): ved rest som en kåta med elden i, stenar runt
-  brasa: [
-    '..w..W..',
-    '...wY...',
-    '..wfFW..',
-    '..wFFW..',
-    '.wfFVfW.',
-    '.wffFfW.',
-    'hgwffWgh',
-    'GG.GG.GG',
-  ],
-  // kartbilden (Björn valde 4, härd av hällar, med tydligare stenar efter v89): veden, elden och glöden ritas ovanpå (foremal.ts)
-  brasa_karta: [
-    '........',
-    '........',
-    '.hggghg.',
-    'hgGGGGgh',
-    'gGabbaGg',
-    'Gabbbbag',
-    'gabbbbaG',
-    'hgabbagh',
-    '.gghggg.',
-    '.NNGNNN.',
   ],
   // grillställningen (Björn valde 1 efter v89): spettet med vev över elden mellan två klykor
   grill: [
@@ -2793,45 +2763,6 @@ export const PIX: Record<string, string[]> = {
     '..www...',
     '........',
   ],
-  // veden i brasan när den inte brinner
-  brasa_ved_karta: [
-    '........',
-    '........',
-    '........',
-    '........',
-    '........',
-    '..Yw.W..',
-    '...WWw..',
-    '..W.....',
-    '........',
-    '........',
-  ],
-  // lågorna när brasan brinner
-  brasa_eld_karta: [
-    '........',
-    '....f...',
-    '...fF...',
-    '...fFf..',
-    '..fFVf..',
-    '..fFFf..',
-    '...WWw..',
-    '..W.....',
-    '........',
-    '........',
-  ],
-  // glöden när brasan nästan brunnit ut
-  brasa_glod_karta: [
-    '........',
-    '........',
-    '....u...',
-    '...u....',
-    '........',
-    '...EE...',
-    '..keeE..',
-    '........',
-    '........',
-    '........',
-  ],
   // svalkar sig (Björn valde 2 efter v89): solen bakom en trädkrona
   a_svalka: [
     'y.y.....',
@@ -3979,6 +3910,8 @@ function lagereldRader(l: LagereldLage, ring: boolean) {
   return g.map(r => r.join(''));
 }
 for (const l of LAGERELD_LAGEN) for (const ring of [true, false]) { PIX[lagereldId(l, ring)] = lagereldRader(l, ring); PAL[lagereldId(l, ring)] = ELD_PAL; }
+// symbolen för en lägereld (stationen som lägger ringen till en lägereld till, steg 4.5.6.8): den nylagda med ring
+PIX.lagereld = lagereldRader('ny', true); PAL.lagereld = ELD_PAL;
 
 const canvases: Record<string, HTMLCanvasElement> = {};
 const urls: Record<string, string> = {};

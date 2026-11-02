@@ -1,6 +1,7 @@
 import { freeTools } from './agande';
 import { balans } from './balans';
 import { brasorOf } from './brasor';
+import { hearthOf } from './eld';
 import { rasar } from './bygg';
 import { MATERIAL, bitAt, touch } from './byggnad';
 import { ALDER, ageOf, alive, count, livet, living, log } from './folk';
@@ -219,8 +220,7 @@ function gnistor(s: State, dtSec: number, dry: number) {
     if (inMap(nx, ny) && (nx !== x || ny !== y)) tand(s, ny * W + nx, 'gnista', ur(s, salt, 3855));
   };
   if (s.fire.lit) { const e = eldPlats(s); fran(e.x, e.y, (HEARTHS.find(h => h.id === s.fire.hearth) ?? HEARTHS[0]).spread, 0); }
-  const ring = HEARTHS.find(h => h.id === 'stenring')!.spread; // brasan är en stenring (brasor.ts)
-  for (const t of brasorOf(s)) if (t.eld?.lit) fran(t.x, t.y, ring, t.id + 1);
+  for (const f of brasorOf(s)) if (f.lit) fran(f.at!.x, f.at!.y, hearthOf(f).spread, f.id! + 1); // de andra lägereldarna gnistrar som den första (steg 4.5.6.8)
   if (Math.floor(s.now / HOUR) !== Math.floor((s.now - dtSec * SEC) / HOUR) && blixtNu(s) && ur(s, 0, 3856) < BRAND.blixt) {
     const e = eldPlats(s), R = BRAND.blixtR, nx = e.x + Math.round((ur(s, 0, 3857) * 2 - 1) * R), ny = e.y + Math.round((ur(s, 0, 3858) * 2 - 1) * R);
     if (inMap(nx, ny)) { count(s, 'blixt nara'); tand(s, ny * W + nx, 'blixt', ur(s, 0, 3859) / dry); }

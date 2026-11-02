@@ -17,7 +17,7 @@ import { SAKER, isTool } from './saker';
 import { kvHaller, nyKvalitet } from './kvalitet';
 import { groundOf, tileOf } from './mark';
 import { FOREST } from './vag';
-import { BrasaEld, brasaMal } from './brasor';
+import { brasaMal, nyEld } from './brasor';
 import { underMinnet } from './sjo';
 import { ODLING } from './odling';
 
@@ -97,9 +97,9 @@ export const STATION = balans('station', {
   grillGrenar: 3, grillRep: 1, grillMin: 15, // så många grenar och rep och så många minuters arbete
   // torkställningen (steg 2.8.2, matlagning.ts): två A av grenar och en slå, surrade med rep
   torkGrenar: 5, torkRep: 1, torkMin: 20, // så många grenar och rep och så många minuters arbete
-  // brasan (steg 2.9.1, brasor.ts): en ring av stenar för en extra eld
+  // en lägereld till (steg 2.9.1, 4.5.6.8, brasor.ts): en ring av stenar
   brasaSten: 6, brasaMin: 15, // så många stenar (som lägereldens ring) och så många minuters arbete
-  brasaFran: 2.5, // brasan ligger helst så här många rutor från mitten av sovplatserna den är till för ...
+  brasaFran: 2.5, // lägerelden ligger helst så här många rutor från mitten av sovplatserna den är till för ...
   brasaSok: 4, // ... och högst så här många rutor därifrån
   // pyntet (steg 4.3.4, pynt.ts): möbler som bara är till för att pynta, i rummet där ägaren sover
   krukaMin: 15, // lerkrukan: lera från stranden (ingen resurs), formad och bränd i elden på så många minuter
@@ -120,7 +120,7 @@ const bordVirke = (w: number, h: number) => Math.ceil(w * h / 2) * STATION.bordV
 // stangd = det som ligger där syns inte på kartan, bara när man trycker på möbeln (kistan, Björn efter v92), privat = bara för
 // privata saker (kistan, steg 2.10.18): byggs inte i byns lager utan av var och en i rummet där hen sover (kistorna nedan)
 // pynt = bara till för att pynta (steg 4.3.4, pynt.ts): var och en bygger ett åt sig själv i rummet där hen sover, som kistan
-// brasa = en extra eld (steg 2.9.1, brasor.ts): står nära sovplatserna den är till för (siteBrasa), och alla vuxna kan bygga den (tek är tom: den som är gammal nog att ta ansvar, ALDER.ansvar)
+// brasa = ringen till en lägereld till medan den läggs (steg 2.9.1, 4.5.6.8, brasor.ts): står nära sovplatserna den är till för (siteBrasa), och alla vuxna kan bygga den (tek är tom: den som är gammal nog att ta ansvar, ALDER.ansvar). När den är klar blir den en lägereld (nyEld) och ingen station
 export interface Utkant { till: number; avst: number; vatten?: true; eld?: true }
 export interface Forvar { rymmer: number; redskap?: true; tak?: true; stangd?: true; privat?: true }
 export interface StationDef { namn: string; ett?: true; ikon: string; w: number; h: number; tek: string[]; av: Record<string, number>; min: number; gor: Act[]; bara?: Act[]; vid?: Record<string, number>; verktyg?: string; utkant?: Utkant; eld?: true; kraver?: Partial<Record<Act, string>>; smutsar?: Partial<Record<Act, string>>; bygger: string; forsta: string; inne?: true; mobel?: true; flera?: true; fart?: Partial<Record<Act, number>>; brasa?: true; sover?: true; sitt?: true; platser?: true; forvar?: Forvar; pynt?: true; samtidigt?: number }
@@ -192,11 +192,12 @@ export const STATIONER = {
     bygger: 'Sätter upp en torkställning av grenar och rep.',
     forsta: '{namn} satte upp byns första torkställning. Där torkar köttet och fisken som byn inte hinner äta, och det torkade håller länge.',
   },
-  // brasan (steg 2.9.1, brasor.ts): en ring av stenar där en extra eld brinner, nära hyddorna som ligger långt från lägerelden
+  // en lägereld till (steg 2.9.1, 4.5.6.8, brasor.ts): ringen av stenar medan den läggs, nära hyddorna som ligger långt från
+  // lägerelden. Klar är den en lägereld som den första (eld.ts) och ingen station
   brasa: {
-    namn: 'Brasa', ikon: 'brasa', w: 1, h: 1, tek: [], av: { sten: STATION.brasaSten }, min: STATION.brasaMin, gor: [], flera: true, brasa: true,
-    bygger: 'Lägger en ring av stenar till en brasa nära sovplatserna.',
-    forsta: '{namn} lade en ring av stenar till byns första brasa, långt från lägerelden och nära sovplatserna.',
+    namn: 'Lägereld', ikon: 'lagereld', w: 1, h: 1, tek: [], av: { sten: STATION.brasaSten }, min: STATION.brasaMin, gor: [], flera: true, brasa: true,
+    bygger: 'Lägger en ring av stenar till en lägereld nära sovplatserna.',
+    forsta: '{namn} lade en ring av stenar till en lägereld till, långt från den första och nära sovplatserna.',
   },
   // scenen (steg 4.3.2.2, framtradande.ts): ett golv av kluvna stockar ute i byn. Där uppträder man på kvällen när det
   // inte är kallt eller regnar, och där ligger byns instrument (vid), en plats för varje sort
@@ -232,8 +233,8 @@ export const stationDef = (k: string): StationDef | undefined => (STATIONER as R
 // rot = vriden (bredd och djup byter plats), inne = byggd inne i ett hus (den försvinner om huset rivs)
 // med = tillbehören som ligger i den (TILLBEHOR, t.ex. skinnfällen i bädden), fyllt = hur full latrinen är (0–1, smuts.ts)
 // tork = det som hänger på torkställningen (matlagning.ts): råvaran, hur mycket, när det hängdes upp och vems det är
-// eld = brasans eld (steg 2.9.1, brasor.ts), ag = ägaren till en kista i sovrummet (steg 2.10.18)
-export interface Station { id: number; k: string; x: number; y: number; kvar: number; vem?: number[]; klar?: number; rot?: 1; inne?: 1; med?: string[]; fyllt?: number; q?: number; ber?: import('./berattelser').SakMinne; tork?: { k: string; n: number; t: number; ag?: Record<string, number> }[]; eld?: BrasaEld; ag?: number }
+// ag = ägaren till en kista i sovrummet (steg 2.10.18)
+export interface Station { id: number; k: string; x: number; y: number; kvar: number; vem?: number[]; klar?: number; rot?: 1; inne?: 1; med?: string[]; fyllt?: number; q?: number; ber?: import('./berattelser').SakMinne; tork?: { k: string; n: number; t: number; ag?: Record<string, number> }[]; ag?: number }
 const NONE: Station[] = [];
 export const stationerOf = (s: State) => s.stationer ?? NONE;
 export const stationById = (s: State, id?: number) => id === undefined ? undefined : stationerOf(s).find(t => t.id === id);
@@ -290,7 +291,7 @@ function arbetarVid(t: Station, q: Person) {
 // är stationen full för p: arbetar så många andra där som får plats?
 export const upptagen = (s: State, t: Station, p?: Person) => living(s).filter(q => q !== p && arbetarVid(t, q)).length >= samtidigt(stationDef(t.k));
 // rutorna framför en arbetsstation (steg 3.6.6): där står den som arbetar, och där får inget annat stå än sittplatsen.
-// Inte förvaringen, sängarna, borden (stubbarna runt), grillen över elden eller brasan
+// Inte förvaringen, sängarna, borden (stubbarna runt), grillen över elden eller en lägereld som läggs
 const arbetar = (d?: StationDef) => !!d && d.gor.length > 0 && !d.forvar && !d.sover && !d.platser && !d.eld && !d.brasa;
 export function framfor(t: Station) {
   if (!arbetar(stationDef(t.k))) return [];
@@ -789,8 +790,13 @@ export function finishStation(s: State, p: Person, tk: Task) {
   const t = stationById(s, tk.ref);
   if (!t || t.kvar > MIN) return;
   t.kvar = 0; t.klar = s.now; gjort(s, p, 'mobel');
-  if (stationDef(t.k)?.sover) { touch(s); agaBadd(s, t); } // en ny sovplats: var man sover räknas om, och den som sover där äger bädden
   const d = stationDef(t.k)!;
+  if (d.brasa) { // ringen till en lägereld till är lagd: den blir en lägereld (brasor.ts)
+    nyEld(s, t);
+    if (forstaGang(s, 'station_' + t.k)) { log(s, d.forsta.replace('{namn}', p.name), 'world', [p.id]); p.fame.push('Lade byns andra lägereld'); }
+    return;
+  }
+  if (d.sover) { touch(s); agaBadd(s, t); } // en ny sovplats: var man sover räknas om, och den som sover där äger bädden
   if (d.mobel) nyKvalitet(s, p, t, false, d.namn.toLowerCase()); // möblerna har kvalitet, stationerna inte (kvalitet.ts)
   if (d.verktyg && wearTool(s, p, d.verktyg, STATION.latrinSpade)) { const tr = SAKER[d.verktyg]?.trasig; if (tr) count(s, tr.stat); } // benspaden slits för varje grop
   if (forstaGang(s, 'station_' + t.k)) { log(s, d.forsta.replace('{namn}', p.name), 'world', [p.id]); p.fame.push(`Byggde byns första ${forstaForm(d.namn)}`); }

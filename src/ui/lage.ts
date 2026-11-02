@@ -16,6 +16,7 @@ export const ui = {
   selected: undefined as number | undefined, // personen som visas i panelen
   personDel: 'pres', // underfliken i personrutan (DELAR i flikar/person.ts)
   hovered: undefined as number | undefined, // personen under musen
+  eld: undefined as number | undefined, // lägerelden som eldens flik visar: undefined = den första, annars en till (Fire.id, steg 4.5.6.8)
   follow: undefined as number | undefined, // personen kameran följer
   busy: false, // ikappräkning pågår
   nu: 0, // tiden som visas (byn är räknad ett slag längre, main.ts)
