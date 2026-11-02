@@ -19,7 +19,6 @@ import { anseendeSym } from './rykten';
 import { DORRAR, DORR_LIST } from './byggnad';
 import { utanDorr } from './bygg';
 import { balans } from './balans';
-import { sedEvent } from './seder';
 import { fartVid, kanGoras, nyttVid, slitVid, tommaKnivplatser, tommaPlatser } from './stationer';
 import { smutsa } from './smuts';
 
@@ -40,7 +39,6 @@ export const REDSKAP = balans('redskap', {
   spadar: 1, // så många benspadar byn vill ha (steg 2.7.2)
   vattensackar: 1, // så många vattensäckar byn vill ha (steg 2.10.1)
   bensylSlits: 0.1, // ett plagg som sys slits bensylen vid slöjdbänken så här mycket (tio plagg per bensyl, steg 2.3.2)
-  nyfiken: 0.08, // ett redskap med nyfiken i saker.ts (yxan) gör sedernas nyfikenhet så här mycket större första gången
 });
 // vad ett slag kräver, ur receptet (skaffa.av i saker.ts)
 const av = (k: string) => SAKER[k]!.skaffa!.av!;
@@ -264,7 +262,6 @@ export function toolDone(s: State, p: Person, k: string) {
   if (forstaGang(s, g.stat)) {
     log(s, text(g.forsta), 'world', [p.id]);
     if (g.fame) p.fame.push(g.fame);
-    if (g.nyfiken) sedEvent(s, 'nyfikenhet', REDSKAP.nyfiken, g.nyfiken);
   } else if (g.igen) log(s, text(g.igen), 'world', [p.id]);
 }
 // ett redskap görs på en gång (i testerna)

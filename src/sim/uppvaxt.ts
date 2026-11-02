@@ -4,6 +4,8 @@ import { DAY, Person, STATS, Stat, State, Upplevelse } from './typer';
 import { roomAt } from './byggnad';
 import { balans } from './balans';
 import { andeRiktning } from './religion';
+import { foodDays } from './ekonomi';
+import type { Sed } from './seder';
 
 // Uppväxten (steg 3.1.2, "Uppväxt" i designdokumentet): det ett barn är med om blir en upplevelse som det minns hela livet,
 // och upplevelserna flyttar egenskaperna. Det man föds med är anlagen (p.anlag, ärvs av barnen); p.pot är anlagen plus det
@@ -35,6 +37,7 @@ export const UPPV = balans('uppvaxt', {
   manga: 5, // gjorde många usla eller fina saker: så många
   blekna: 15, // en upplevelse från vuxenlivet bleknar ett steg per så här många dygn (år i spelet), en tung hälften så fort (steg 4.1.1.4) ...
   bleknaAnde: 4, // ... och ett steg tar 1 från varje egenskap och så här mycket från andligheten; när inget är kvar är den glömd
+  overflodDygn: 9, // levde i överflöd: maten i förrådet räcker fler dygn än så här (steg 4.5.4.9; chansen per timme står på raden)
 });
 
 // ---------- upplevelserna (registret) ----------
@@ -45,61 +48,71 @@ export const UPPV = balans('uppvaxt', {
 // vuxen, och ett barn får tre gånger chansen och dubbla effekten (raderna som kom med steg 4.1.1.2)
 // ande (steg 4.1.1.3): upplevelsen flyttar också andligheten (religion.ts), uppåt eller nedåt. tung (steg 4.1.1.4): bleknar
 // hälften så fort i vuxenlivet
-interface UpplevelseDef { text: string; chans: number; e: Partial<Record<Stat, number>>[]; vem: 'barn' | 'vuxen' | 'bada'; tidig?: true; vuxenTal?: true; ande?: true; tung?: true }
+// sed (steg 4.5.4.9): åt vilket håll upplevelsen drar personens hållning i sederna, 1 = lite, 2 = tydligt, 3 = mycket (negativt =
+// sedens andra sida); ett steg är SED.uppSteg (seder.ts). kort: namnet på upplevelsen utan {om} (fliken Seder)
+interface UpplevelseDef { text: string; chans: number; e: Partial<Record<Stat, number>>[]; vem: 'barn' | 'vuxen' | 'bada'; tidig?: true; vuxenTal?: true; ande?: true; tung?: true; sed?: Partial<Record<Sed, number>>; kort?: string }
 export const UPPLEVELSER = {
-  skadad: { text: 'Skadades svårt: {om}', chans: 0.6, e: [{ mod: -2 }, { uthallighet: 2 }, { mod: -1, uthallighet: 1 }], vem: 'bada', ande: true },
-  svalt: { text: 'Var nära att svälta ihjäl', chans: 0.3, e: [{ flit: 2 }, { flit: 1, empati: -1 }], vem: 'bada', ande: true },
-  frys: { text: 'Var nära att frysa ihjäl', chans: 0.3, e: [{ flit: 1, mod: -1 }, { uthallighet: 2 }], vem: 'bada', ande: true },
-  svamp: { text: 'Blev förgiftad av svamp', chans: 0.6, e: [{ nyfikenhet: -2 }, { nyfikenhet: -1, minne: 1 }], vem: 'bada' },
-  sjuk: { text: 'Var svårt sjuk', chans: 0.05, e: [{ styrka: -1, empati: 2 }, { styrka: -2 }], vem: 'bada', ande: true },
-  foralder: { text: 'Miste sin förälder {om}', chans: 0.9, e: [{ empati: 2 }, { empati: -2 }, { flit: 2 }], vem: 'bada', ande: true },
-  syskon: { text: 'Miste {om}', chans: 0.7, e: [{ empati: 2 }, { karisma: -2 }], vem: 'bada', ande: true },
-  sagDod: { text: 'Såg {om} dö', chans: 0.4, e: [{ mod: -2 }, { mod: -1, empati: 1 }], vem: 'bada' },
-  foraldralos: { text: 'Blev föräldralös och växte upp hos andra', chans: 0.9, e: [{ flit: 2, karisma: -1 }, { mod: 2, empati: -1 }], tidig: true, vem: 'barn' },
-  skilsmassa: { text: 'Föräldrarna gick isär', chans: 0.7, e: [{ karisma: -2 }, { empati: -1, flit: 1 }], vem: 'barn' },
-  gral: { text: 'Föräldrarna grälade ofta', chans: 0.04, e: [{ empati: -2 }, { karisma: -1 }, { aggression: 2 }], vem: 'barn' },
-  syskonFodd: { text: 'Fick ett småsyskon, {om}', chans: 0.2, e: [{ empati: 2 }, { flit: 1 }], vem: 'barn' },
-  bestulen: { text: 'Blev bestulen av {om}', chans: 0.5, e: [{ empati: -1 }, { flit: 1 }, { aggression: 1, empati: -1 }], vem: 'bada' },
+  skadad: { text: 'Skadades svårt: {om}', chans: 0.6, e: [{ mod: -2 }, { uthallighet: 2 }, { mod: -1, uthallighet: 1 }], vem: 'bada', sed: { forsiktighet: 1 }, ande: true },
+  svalt: { text: 'Var nära att svälta ihjäl', chans: 0.3, e: [{ flit: 2 }, { flit: 1, empati: -1 }], vem: 'bada', sed: { forsiktighet: 2, arbete: 1 }, ande: true },
+  frys: { text: 'Var nära att frysa ihjäl', chans: 0.3, e: [{ flit: 1, mod: -1 }, { uthallighet: 2 }], vem: 'bada', sed: { forsiktighet: 2 }, ande: true },
+  svamp: { text: 'Blev förgiftad av svamp', chans: 0.6, e: [{ nyfikenhet: -2 }, { nyfikenhet: -1, minne: 1 }], vem: 'bada', sed: { nyfikenhet: -2, forsiktighet: 1 } },
+  sjuk: { text: 'Var svårt sjuk', chans: 0.05, e: [{ styrka: -1, empati: 2 }, { styrka: -2 }], vem: 'bada', sed: { gemenskap: 1 }, ande: true },
+  foralder: { text: 'Miste sin förälder {om}', chans: 0.9, e: [{ empati: 2 }, { empati: -2 }, { flit: 2 }], vem: 'bada', sed: { gemenskap: 1 }, ande: true },
+  syskon: { text: 'Miste {om}', chans: 0.7, e: [{ empati: 2 }, { karisma: -2 }], vem: 'bada', sed: { gemenskap: 1 }, kort: 'Miste någon nära', ande: true },
+  sagDod: { text: 'Såg {om} dö', chans: 0.4, e: [{ mod: -2 }, { mod: -1, empati: 1 }], vem: 'bada', sed: { forsiktighet: 1 }, kort: 'Såg någon dö' },
+  foraldralos: { text: 'Blev föräldralös och växte upp hos andra', chans: 0.9, e: [{ flit: 2, karisma: -1 }, { mod: 2, empati: -1 }], tidig: true, vem: 'barn', sed: { gemenskap: 2 } },
+  skilsmassa: { text: 'Föräldrarna gick isär', chans: 0.7, e: [{ karisma: -2 }, { empati: -1, flit: 1 }], vem: 'barn', sed: { barn: -1 } },
+  gral: { text: 'Föräldrarna grälade ofta', chans: 0.04, e: [{ empati: -2 }, { karisma: -1 }, { aggression: 2 }], vem: 'barn', sed: { barn: -1 } },
+  syskonFodd: { text: 'Fick ett småsyskon, {om}', chans: 0.2, e: [{ empati: 2 }, { flit: 1 }], vem: 'barn', sed: { barn: 1 } },
+  bestulen: { text: 'Blev bestulen av {om}', chans: 0.5, e: [{ empati: -1 }, { flit: 1 }, { aggression: 1, empati: -1 }], vem: 'bada', sed: { gemenskap: -1, rang: 1 } },
   tjuv: { text: 'Blev påkommen med att stjäla av {om}', chans: 0.5, e: [{ empati: 2 }, { karisma: -2 }], vem: 'bada' },
-  hardVinter: { text: 'Var med om en hård vinter', chans: 0.5, e: [{ uthallighet: 2 }, { flit: 1, mod: -1 }, { empati: 1, flit: 1 }, { flit: 2 }], vem: 'bada', ande: true }, // motgångarna (steg 3.8.1, motgang.ts)
-  torka: { text: 'Var med om en torka', chans: 0.5, e: [{ uthallighet: 1, flit: 1 }, { empati: 1 }, { flit: 1, mod: -1 }, { uthallighet: 2 }], vem: 'bada' }, // steg 3.8.2, torka.ts
-  tornado: { text: 'Var med om en tornado', chans: 0.6, e: [{ mod: 1, flit: 1 }, { minne: 1 }, { mod: -2 }, { uthallighet: 1, flit: 1 }], vem: 'bada' }, // steg 3.8.4, tornado.ts
-  brand: { text: 'Var med om en eldsvåda', chans: 0.5, e: [{ mod: 1, flit: 1 }, { minne: 1 }, { mod: -2 }, { empati: 1, flit: 1 }], vem: 'bada' }, // steg 3.8.5, brand.ts
-  oversvamning: { text: 'Var med om en översvämning', chans: 0.5, e: [{ uthallighet: 1, flit: 1 }, { minne: 1 }, { mod: -1, flit: 1 }, { flit: 2 }], vem: 'bada' }, // steg 3.8.3, flod.ts
-  lek: { text: 'Lekte mycket på lekplatsen', chans: 0.003, e: [{ karisma: 2 }, { nyfikenhet: 2 }, { smidighet: 2 }, { karisma: 1, smidighet: 1 }], vem: 'barn' }, // barn som tumlar blir smidigare (steg 3.7.6)
+  hardVinter: { text: 'Var med om en hård vinter', chans: 0.5, e: [{ uthallighet: 2 }, { flit: 1, mod: -1 }, { empati: 1, flit: 1 }, { flit: 2 }], vem: 'bada', sed: { forsiktighet: 2, gemenskap: 1 }, ande: true }, // motgångarna (steg 3.8.1, motgang.ts)
+  torka: { text: 'Var med om en torka', chans: 0.5, e: [{ uthallighet: 1, flit: 1 }, { empati: 1 }, { flit: 1, mod: -1 }, { uthallighet: 2 }], vem: 'bada', sed: { forsiktighet: 1 } }, // steg 3.8.2, torka.ts
+  tornado: { text: 'Var med om en tornado', chans: 0.6, e: [{ mod: 1, flit: 1 }, { minne: 1 }, { mod: -2 }, { uthallighet: 1, flit: 1 }], vem: 'bada', sed: { gemenskap: 1, forsiktighet: 1 } }, // steg 3.8.4, tornado.ts
+  brand: { text: 'Var med om en eldsvåda', chans: 0.5, e: [{ mod: 1, flit: 1 }, { minne: 1 }, { mod: -2 }, { empati: 1, flit: 1 }], vem: 'bada', sed: { gemenskap: 1, forsiktighet: 1 } }, // steg 3.8.5, brand.ts
+  oversvamning: { text: 'Var med om en översvämning', chans: 0.5, e: [{ uthallighet: 1, flit: 1 }, { minne: 1 }, { mod: -1, flit: 1 }, { flit: 2 }], vem: 'bada', sed: { forsiktighet: 1 } }, // steg 3.8.3, flod.ts
+  lek: { text: 'Lekte mycket på lekplatsen', chans: 0.003, e: [{ karisma: 2 }, { nyfikenhet: 2 }, { smidighet: 2 }, { karisma: 1, smidighet: 1 }], vem: 'barn', sed: { barn: 1 } }, // barn som tumlar blir smidigare (steg 3.7.6)
   bastaVan: { text: 'Hade en bästa vän, {om}', chans: 0.35, e: [{ karisma: 1, empati: 1 }, { karisma: 2 }], vem: 'barn' },
-  mentor: { text: 'Fick lära sig av {om}', chans: 0.25, e: [{ intelligens: 1, minne: 1 }, { intelligens: 2 }, { nyfikenhet: 2 }], vem: 'barn' },
-  uppfinning: { text: 'Var med när byn {om}', chans: 0.06, e: [{ nyfikenhet: 2 }, { intelligens: 1, nyfikenhet: 1 }], vem: 'bada' },
-  trygg: { text: 'Växte upp tryggt i ett varmt hus', chans: 0.005, e: [{ mod: 1, karisma: 1 }, { nyfikenhet: 1, empati: 1 }, { aggression: -2 }], vem: 'barn' },
+  mentor: { text: 'Fick lära sig av {om}', chans: 0.25, e: [{ intelligens: 1, minne: 1 }, { intelligens: 2 }, { nyfikenhet: 2 }], vem: 'barn', sed: { nyfikenhet: 1 }, kort: 'Fick lära sig av någon' },
+  uppfinning: { text: 'Var med när byn {om}', chans: 0.06, e: [{ nyfikenhet: 2 }, { intelligens: 1, nyfikenhet: 1 }], vem: 'bada', sed: { nyfikenhet: 2 }, kort: 'Var med när byn kom på något' },
+  trygg: { text: 'Växte upp tryggt i ett varmt hus', chans: 0.005, e: [{ mod: 1, karisma: 1 }, { nyfikenhet: 1, empati: 1 }, { aggression: -2 }], vem: 'barn', sed: { barn: 1 } },
   // en förälder som slår sitt barn (steg 3.2.3): det fastnar alltid och formar mycket, och mer om det händer igen
   slagen: { text: 'Blev slagen av {om}', chans: 1, e: [{ mod: -3, empati: -2 }, { karisma: -3, mod: -2 }, { empati: -3, flit: -2 }, { aggression: 3, empati: -2 }], vem: 'barn' },
   slagenIgen: { text: 'Blev slagen igen av {om}', chans: 1, e: [{ mod: -2, karisma: -2 }, { empati: -2, nyfikenhet: -2 }, { flit: -2, karisma: -2 }, { aggression: 3, mod: -1 }], vem: 'barn' },
   // vuxenlivet och fler upplevelser (steg 4.1.1.2, "Fler upplevelser" i designdokumentet): talen gäller en vuxen
-  barnDod: { text: 'Miste sitt barn {om}', chans: 0.9, e: [{ empati: 1 }, { empati: -1 }, { flit: -1 }, { mod: -1 }], vem: 'vuxen', vuxenTal: true, ande: true, tung: true },
-  ledFramgang: { text: 'Ledde byn till framgång', chans: 0.7, e: [{ karisma: 1 }, { mod: 1 }, { empati: -1 }], vem: 'vuxen', vuxenTal: true },
-  ledFordarv: { text: 'Ledde byn i fördärvet', chans: 0.7, e: [{ mod: -1 }, { empati: 1 }, { karisma: -1 }], vem: 'vuxen', vuxenTal: true, ande: true },
-  drabbad: { text: 'Drabbades själv av {om}', chans: 0.5, e: [{ uthallighet: 1 }, { mod: -1 }], vem: 'bada', vuxenTal: true, ande: true },
-  vargbett: { text: 'Överlevde ett vargbett', chans: 0.5, e: [{ mod: -1 }, { uthallighet: 1 }], vem: 'bada', vuxenTal: true, ande: true },
-  fallde: { text: 'Fällde en varg', chans: 0.5, e: [{ mod: 1 }, { aggression: 1 }], vem: 'bada', vuxenTal: true },
-  usla: { text: 'Gjorde många usla saker', chans: 0.5, e: [{ flit: -1 }, { nyfikenhet: 1 }, { mod: -1 }], vem: 'bada', vuxenTal: true },
-  perfekta: { text: 'Gjorde {om}', chans: 0.5, e: [{ flit: 1 }, { karisma: 1 }, { nyfikenhet: -1 }], vem: 'bada', vuxenTal: true },
-  egenTeknik: { text: 'Kom själv på {om}', chans: 0.5, e: [{ nyfikenhet: 1 }, { intelligens: 1 }], vem: 'bada', vuxenTal: true },
-  raddade: { text: 'Räddade {om} från döden', chans: 0.5, e: [{ empati: 1 }, { mod: 1 }], vem: 'bada', vuxenTal: true },
-  raddad: { text: 'Räddades från döden av {om}', chans: 0.5, e: [{ empati: 1 }, { karisma: 1 }], vem: 'bada', vuxenTal: true, ande: true },
-  dodade: { text: 'Dödade {om}', chans: 0.8, e: [{ aggression: 1 }, { empati: -1 }], vem: 'bada', vuxenTal: true, ande: true, tung: true },
-  ranad: { text: 'Blev rånad av {om}', chans: 0.5, e: [{ mod: -1 }, { aggression: 1 }], vem: 'bada', vuxenTal: true },
-  lamnad: { text: 'Blev lämnad av {om}', chans: 0.5, e: [{ empati: -1 }, { karisma: -1 }], vem: 'vuxen', vuxenTal: true },
+  barnDod: { text: 'Miste sitt barn {om}', chans: 0.9, e: [{ empati: 1 }, { empati: -1 }, { flit: -1 }, { mod: -1 }], vem: 'vuxen', sed: { barn: 2 }, vuxenTal: true, ande: true, tung: true },
+  ledFramgang: { text: 'Ledde byn till framgång', chans: 0.7, e: [{ karisma: 1 }, { mod: 1 }, { empati: -1 }], vem: 'vuxen', sed: { rang: 2 }, vuxenTal: true },
+  ledFordarv: { text: 'Ledde byn i fördärvet', chans: 0.7, e: [{ mod: -1 }, { empati: 1 }, { karisma: -1 }], vem: 'vuxen', sed: { rang: -2 }, vuxenTal: true, ande: true },
+  drabbad: { text: 'Drabbades själv av {om}', chans: 0.5, e: [{ uthallighet: 1 }, { mod: -1 }], vem: 'bada', sed: { forsiktighet: 1 }, vuxenTal: true, ande: true },
+  vargbett: { text: 'Överlevde ett vargbett', chans: 0.5, e: [{ mod: -1 }, { uthallighet: 1 }], vem: 'bada', sed: { forsiktighet: 1 }, vuxenTal: true, ande: true },
+  fallde: { text: 'Fällde en varg', chans: 0.5, e: [{ mod: 1 }, { aggression: 1 }], vem: 'bada', sed: { forsiktighet: -1 }, vuxenTal: true },
+  usla: { text: 'Gjorde många usla saker', chans: 0.5, e: [{ flit: -1 }, { nyfikenhet: 1 }, { mod: -1 }], vem: 'bada', sed: { arbete: -1 }, vuxenTal: true },
+  perfekta: { text: 'Gjorde {om}', chans: 0.5, e: [{ flit: 1 }, { karisma: 1 }, { nyfikenhet: -1 }], vem: 'bada', sed: { arbete: 1 }, kort: 'Gjorde fina saker', vuxenTal: true },
+  egenTeknik: { text: 'Kom själv på {om}', chans: 0.5, e: [{ nyfikenhet: 1 }, { intelligens: 1 }], vem: 'bada', sed: { nyfikenhet: 2 }, kort: 'Kom själv på något', vuxenTal: true },
+  raddade: { text: 'Räddade {om} från döden', chans: 0.5, e: [{ empati: 1 }, { mod: 1 }], vem: 'bada', sed: { gemenskap: 2 }, kort: 'Räddade någon från döden', vuxenTal: true },
+  raddad: { text: 'Räddades från döden av {om}', chans: 0.5, e: [{ empati: 1 }, { karisma: 1 }], vem: 'bada', sed: { gemenskap: 2 }, vuxenTal: true, ande: true },
+  dodade: { text: 'Dödade {om}', chans: 0.8, e: [{ aggression: 1 }, { empati: -1 }], vem: 'bada', sed: { rang: 1 }, kort: 'Dödade någon', vuxenTal: true, ande: true, tung: true },
+  ranad: { text: 'Blev rånad av {om}', chans: 0.5, e: [{ mod: -1 }, { aggression: 1 }], vem: 'bada', sed: { rang: 1, forsiktighet: 1 }, vuxenTal: true },
+  lamnad: { text: 'Blev lämnad av {om}', chans: 0.5, e: [{ empati: -1 }, { karisma: -1 }], vem: 'vuxen', sed: { gemenskap: -1 }, vuxenTal: true },
   oknamn: { text: 'Fick öknamnet {om}', chans: 0.5, e: [{ karisma: -1 }, { aggression: 1 }], vem: 'bada', vuxenTal: true },
   hedersnamn: { text: 'Fick hedersnamnet {om}', chans: 0.5, e: [{ mod: 1 }, { karisma: 1 }], vem: 'bada', vuxenTal: true },
-  holdBarn: { text: 'Höll sina barn vid liv genom {om}', chans: 0.6, e: [{ flit: 1 }, { uthallighet: 1 }], vem: 'vuxen', vuxenTal: true },
-  flyttade: { text: 'Flyttade till en ny by', chans: 0.5, e: [{ nyfikenhet: 1 }, { mod: 1 }], vem: 'bada', vuxenTal: true },
-  barnFott: { text: 'Fick ett barn, {om}', chans: 0.4, e: [{ empati: 1 }, { flit: 1 }, { uthallighet: 1 }], vem: 'vuxen', vuxenTal: true, ande: true },
-  gammal: { text: 'Blev gammal och såg alla jämnåriga dö', chans: 0.6, e: [{ empati: 1 }], vem: 'vuxen', vuxenTal: true, ande: true },
+  holdBarn: { text: 'Höll sina barn vid liv genom {om}', chans: 0.6, e: [{ flit: 1 }, { uthallighet: 1 }], vem: 'vuxen', sed: { barn: 1, arbete: 1 }, vuxenTal: true },
+  flyttade: { text: 'Flyttade till en ny by', chans: 0.5, e: [{ nyfikenhet: 1 }, { mod: 1 }], vem: 'bada', sed: { nyfikenhet: 1 }, vuxenTal: true },
+  barnFott: { text: 'Fick ett barn, {om}', chans: 0.4, e: [{ empati: 1 }, { flit: 1 }, { uthallighet: 1 }], vem: 'vuxen', sed: { barn: 1 }, vuxenTal: true, ande: true },
+  gammal: { text: 'Blev gammal och såg alla jämnåriga dö', chans: 0.6, e: [{ empati: 1 }], vem: 'vuxen', sed: { nyfikenhet: -1 }, vuxenTal: true, ande: true },
   // det oförklarliga (steg 4.1.2.1, TECKEN i religion.ts): om = vad det var
-  tecken: { text: 'Var med om något oförklarligt: {om}', chans: 0.5, e: [{ nyfikenhet: 1 }, { mod: -1 }, { minne: 1 }], vem: 'bada', vuxenTal: true, ande: true },
+  tecken: { text: 'Var med om något oförklarligt: {om}', chans: 0.5, e: [{ nyfikenhet: 1 }, { mod: -1 }, { minne: 1 }], vem: 'bada', sed: { forsiktighet: 1, nyfikenhet: -1 }, vuxenTal: true, ande: true },
+  // de som formar sederna i stället för de gamla händelserna (steg 4.5.4.9)
+  byggdeHus: { text: 'Byggde {om} tillsammans med andra', chans: 0.5, e: [{ empati: 1 }, { flit: 1 }], vem: 'bada', vuxenTal: true, sed: { gemenskap: 1 }, kort: 'Byggde ett hus tillsammans med andra' },
+  forstaMastare: { text: 'Såg {om} bli byns första mästare', chans: 0.3, e: [{ nyfikenhet: 1 }, { flit: 1 }], vem: 'bada', vuxenTal: true, sed: { nyfikenhet: 1 }, kort: 'Såg någon bli byns första mästare' },
+  overflod: { text: 'Levde i överflöd', chans: 0.01, e: [{ flit: -1 }, { karisma: 1 }], vem: 'bada', vuxenTal: true, sed: { arbete: -1 } },
+  sorjde: { text: 'Sörjde {om}', chans: 0.5, e: [{ empati: 1 }, { mod: -1 }], vem: 'bada', vuxenTal: true, ande: true, sed: { forsiktighet: 1 }, kort: 'Sörjde någon' },
 } satisfies Record<string, UpplevelseDef>;
 export type UpplevelseTyp = keyof typeof UPPLEVELSER;
 const DEF: Record<UpplevelseTyp, UpplevelseDef> = UPPLEVELSER;
+// vilka seder upplevelsen drar åt och namnet utan {om} (fliken Seder, steg 4.5.4.9)
+export const upplevelseSed = (k: UpplevelseTyp) => DEF[k].sed;
+export const upplevelseKort = (k: UpplevelseTyp) => DEF[k].kort ?? DEF[k].text.replace(/[,:]? (av |genom )?\{om\}/, '');
 
 // hur mycket en upplevelse formade (den svagaste trängs undan när listan är full)
 const styrka = (u: Upplevelse) => Object.values(u.e).reduce((a, v) => a + Math.abs(v ?? 0), 0);
@@ -209,6 +222,7 @@ function blekna(s: State, p: Person) {
 }
 // en gång i timmen (steg.ts, utan att ändra någon annans slump): nära svält eller köld, svårt sjuk, lek och trygghet
 export function stepUppvaxt(s: State) {
+  const overflod = foodDays(s) > UPPV.overflodDygn;
   for (const p of s.people) {
     if (alive(p)) { // det hen överlevt, i alla åldrar (steg 3.9.8)
       if (p.hunger <= 0 && p.health < UPPV.naraHalsa) livet(s, p, 'svalt', true);
@@ -220,6 +234,7 @@ export function stepUppvaxt(s: State) {
     if (p.hunger <= 0 && p.health < UPPV.naraHalsa) upplev(s, p, 'svalt'); // barn och vuxna (steg 4.1.1.2)
     if (p.warm < KROPP.frysdod && p.health < UPPV.naraHalsa) upplev(s, p, 'frys');
     if (isSick(p, s.now) && p.health < UPPV.sjukHalsa) upplev(s, p, 'sjuk');
+    if (overflod) upplev(s, p, 'overflod');
     if (!formas(s, p)) continue;
     if (p.task?.act === 'leka' && p.task.phase === 'do') upplev(s, p, 'lek');
     if (p.hunger > UPPV.tryggMatt && p.warm > UPPV.tryggVarm && roomAt(s, p.x, p.y) && !p.upp?.some(u => u.k === 'svalt' || u.k === 'frys')) upplev(s, p, 'trygg');

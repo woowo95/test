@@ -471,6 +471,7 @@ SCENARIER.kloka = {
 };
 
 SCENARIER.torka = {
+  lang: true,
   text: 'Steg 3.8.2: torkan kommer ibland på sommaren. Nästan inget regn, marken torkar, sjöarna drar sig tillbaka till torr sjöbotten som går att gå på och små tjärnar torkar ut. Folk kan ändå dricka, grödor som inte vattnas vissnar och ägaren vattnar sitt fält med vattensäcken. När torkan är över och det har regnat kommer vattnet tillbaka',
   kor: () => {
     // en by med en tjärn, mitt i en torka som just börjat (sommaren slutar om sju dygn)

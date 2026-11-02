@@ -2,7 +2,6 @@ import { allaBarn, upplev } from './uppvaxt';
 import { delade, fyll, kronikaBer, personFalt } from './berattelser';
 import { kronika } from './historik';
 import { ALDER, ageOf, alive, byId, count, living, log, stat, think } from './folk';
-import { sedEvent } from './seder';
 import { rnd } from './slump';
 import { amountOf, use } from './lager';
 import { SAKER, isTool } from './saker';
@@ -145,7 +144,6 @@ export const TEKTAL = balans('teknik', {
   materialMin: 1, // materialet till en teknik räknas finnas i byn när det är minst så här mycket (ett redskap räknas om det finns)
   kommaPa: 0.15, // den som kommer på något mår så här mycket bättre ...
   kommaPaTim: 12, // ... i så här många timmar
-  forstaNyfiken: 0.04, // byns första som kommer på något gör sedernas nyfikenhet så här mycket större
   larChansBra: 0.5, // chansen att den som kan något lär ut det i ett samtal: i en berättelse eller ett djupt samtal (lar i SAMTALSSLAG, samtal.ts) ...
   larChans: 0.2, // ... och i andra samtal
   larFramsteg: 0.2, // den som lyssnar kommer så här långt (av 1) mot tekniken i ett samtal, gånger larBas + intelligens / 20
@@ -206,7 +204,7 @@ function learn(s: State, p: Person, t: Tek, from?: Person) {
   else if (first) kronikaBer(s, 'k_uppfann', p.id, { ...personFalt(p), teknik: t.namn.toLowerCase() });
   log(s, `${p.name} kom på hur man gör ${t.namn.toLowerCase()}. ${t.effekt}`, 'skill', [p.id]);
   think(p, `Kom på hur man gör ${t.namn.toLowerCase()}`, TEKTAL.kommaPa, s.now, TEKTAL.kommaPaTim * HOUR);
-  if (first) { p.fame.push(`Uppfann ${t.namn.toLowerCase()}`); sedEvent(s, 'nyfikenhet', TEKTAL.forstaNyfiken); allaBarn(s, 'uppfinning', `uppfann ${t.namn.toLowerCase()}`); upplev(s, p, 'egenTeknik', t.namn.toLowerCase()); gudHandelse(s, 'hantverk', `${t.namn.toLowerCase()} som ${p.name} kom på`); }
+  if (first) { p.fame.push(`Uppfann ${t.namn.toLowerCase()}`); allaBarn(s, 'uppfinning', `uppfann ${t.namn.toLowerCase()}`); upplev(s, p, 'egenTeknik', t.namn.toLowerCase()); gudHandelse(s, 'hantverk', `${t.namn.toLowerCase()} som ${p.name} kom på`); }
 }
 
 // arbete för tankarna framåt mot det som hör till arbetet (omr). Hantverk (slag hantverk i handlingar.ts: att tvinna rep,

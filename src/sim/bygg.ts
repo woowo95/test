@@ -1,3 +1,4 @@
+import { upplev } from './uppvaxt';
 import { ALDER, ageOf, count, doingAct, forstaGang, livet, living, log, stat } from './folk';
 import { kronikaBer, personFalt } from './berattelser';
 import { Bit, DORRAR, DorrDef, DorrSlag, Hus, MATERIAL, bitById, dorrDef, dorrRang, bitsOf, blocked, freeNear, gridOf, housesOf, husById, touch } from './byggnad';
@@ -6,7 +7,6 @@ import { vaderSlit } from './vader';
 import { groundOf, punktIRuta } from './mark';
 import { PLATS, campCenter, rektAvstand } from './plats';
 import { lekplats, paLek, stangerIn, uteStation } from './stationer';
-import { sedEvent } from './seder';
 import { kunnighet, sparas } from './ekonomi';
 import { ARSTID, iIstiden } from './tid';
 import { knows } from './teknik';
@@ -46,7 +46,6 @@ const BYGG = balans('bygg', {
   lagFart: 2, // lagning går så här många gånger fortare än att bygga ...
   lagMatDiv: 2, // ... och kräver materialet delat med så mycket
   ungFart: 0.6, // en ung byggare (yngre än ALDER.byggFullt) bygger med så här stor del av takten
-  klartGemenskap: 0.03, // när ett hus blir färdigt stärks seden Sammanhållning så här mycket
 });
 
 // ---------- att bygga ----------
@@ -292,6 +291,7 @@ export function workOn(s: State, p: Person, b: Bit, dtSec: number, har = 0) {
   b.c = 1; count(s, 'byggt_' + b.m); touch(s);
   if (b.k === 'vagg') clearTile(s, b);
   const h = husById(s, b.hus);
+  if (h && !h.klar && h.varKlar === undefined && !h.byggare?.includes(p.id)) (h.byggare ??= []).push(p.id); // de som byggde (steg 4.5.4.9)
   // huset är färdigt först när alla dess bitar är byggda: väggarna, öppningen och golvet (inte bara väggarna). Första gången
   // loggas det och skrivs i krönikan, och husKlar körs; efter en rasad vägg (varKlar) blir det bara klart igen
   if (h && !h.klar && bitsOf(s).every(q => q.hus !== h.id || q.b >= 1)) {
@@ -301,7 +301,8 @@ export function workOn(s: State, p: Person, b: Bit, dtSec: number, har = 0) {
     const n = gridOf(s).rooms.filter(r => r.hus === h.id).reduce((a, r) => a + r.tiles.length, 0);
     if (fnOf(h).sover) log(s, `${h.namn} är färdigt. Nu kan ${n} sova under tak.`, 'world', [p.id]);
     kronikaBer(s, 'k_husKlar', h.id, { ...personFalt(p), ...husFalt(h.namn) }); husKlar(s, h);
-    sedEvent(s, 'gemenskap', BYGG.klartGemenskap);
+    if ((h.byggare?.length ?? 0) > 1) for (const q of living(s)) if (h.byggare!.includes(q.id)) upplev(s, q, 'byggdeHus', h.namn.toLowerCase()); // de byggde tillsammans (steg 4.5.4.9)
+    h.byggare = undefined;
   }
   return true;
 }

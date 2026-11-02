@@ -1,15 +1,15 @@
-import { foodDays } from './ekonomi';
 import { ALDER, ageOf, isParent, living, log } from './folk';
 import { clamp } from './slump';
-import { Act, DAY, HOUR, Person, Seder, State } from './typer';
+import { Act, DAY, Person, Seder, State } from './typer';
 import { balans } from './balans';
 import { kortTal } from './format';
 import { ACTS, ACT_LIST } from './handlingar';
 import { ledarVikt, sedOppen } from './styre';
+import { UpplevelseTyp, upplevelseSed } from './uppvaxt';
 
 // ---------- balanstal (regel 8) ----------
-// Sederna (arbete, gemenskap, barn, nyfikenhet, försiktighet, från -1 till 1) rör sig långsamt mot det invånarna drar åt och
-// händelserna formar. Åldrarna för rösten i sederna och för yrkestaggarna står i ALDER (folk.ts)
+// Sederna (arbete, gemenskap, barn, nyfikenhet, försiktighet, rang, från -1 till 1) rör sig långsamt mot det invånarna drar åt:
+// var och en efter sin personlighet och de upplevelser hen minns (steg 4.5.4.9). Åldrarna för rösten i sederna och för yrkestaggarna står i ALDER (folk.ts)
 export const SED = balans('seder', {
   mitt: 10, // en vanlig människas egenskap (egenskaper går från 1 till 20) ...
   spann: 6, // ... och så mycket över eller under är ett helt steg åt ena hållet
@@ -24,12 +24,9 @@ export const SED = balans('seder', {
   rostAldre: 1.5, // över ALDER.aldre
   rostBas: 0.5,
   rostKarisma: 20,
-  snittVikt: 1.8, // målet för en sed är byns snitt gånger så här mycket plus händelserna, från -1 till 1
-  evMax: 0.4, // händelserna formar en sed högst så här mycket åt vardera hållet ...
-  evDygn: 6, // ... och effekten bleknar med en tidskonstant på så här många dygn
+  uppSteg: 0.1, // en upplevelse drar personens hållning så här mycket per steg i sedkolumnen (UPPLEVELSER i uppvaxt.ts, steg 4.5.4.9)
+  snittVikt: 1.8, // målet för en sed är byns snitt gånger så här mycket, från -1 till 1
   rorDygn: 2, // sederna rör sig mot målet med en tidskonstant på så här många dygn
-  overflodDygn: 9, // är maten i förrådet fler dygn än så här blir byn lugnare: arbetsseden minskar ...
-  overflod: 0.0005, // ... med så här mycket per timme
   // pliktkänslan (0 till 1): bas + (flit - mitt) * pliktFlit + (empati - mitt) * pliktEmpati + arbetsseden * pliktSed
   pliktBas: 0.6,
   pliktFlit: 0.035,
@@ -68,18 +65,39 @@ export const SED_LIST = Object.keys(DEF) as Sed[];
 const nollor = () => Object.fromEntries(SED_LIST.map(k => [k, 0])) as Record<Sed, number>;
 
 export function newSeder(): Seder {
-  return { v: nollor(), ev: nollor(), log: [] };
+  return { v: nollor() };
 }
 // inflytande över sederna: vuxna och äldre väger mest, karismatiska hörs mer
 export function influence(s: State, p: Person) {
   const a = ageOf(p, s.now);
   return (a < ALDER.vuxen ? 0 : a < ALDER.fullvuxen ? SED.rostUng : a > ALDER.aldre ? SED.rostAldre : 1) * (SED.rostBas + p.pot.karisma / SED.rostKarisma);
 }
-// åt vilket håll personen drar varje sed efter sin personlighet: byns mål och personens övertygelser i personrutan
+// åt vilket håll personen drar varje sed: personligheten plus de upplevelser hen minns (steg 4.5.4.9). Byns mål och personens
+// övertygelser i personrutan
 export function drar(s: State, p: Person) {
   const barn = s.people.some(c => isParent(p, c)), d = nollor();
   for (const k of SED_LIST) d[k] = SEDER[k].dra(p.pot, barn);
+  for (const u of p.upp ?? []) {
+    const e = upplevelseSed(u.k);
+    if (e) for (const k in e) d[k as Sed] += e[k as Sed]! * SED.uppSteg;
+  }
   return d;
+}
+// det som format sederna (fliken Seder): hur mycket varje slags upplevelse drar byns mål, vägt efter inflytandet som i
+// sederTarget, och hur många som minns den. Störst först
+export function sedDrag(s: State) {
+  const ppl = living(s).map(p => ({ p, w: influence(s, p) })).filter(x => x.w), l = ledarVikt(s);
+  let tw = ppl.reduce((a, x) => a + x.w, 0);
+  if (l && tw) { ppl.push({ p: l.p, w: tw * l.w }); tw += tw * l.w; } // ledaren drar med sin extra vikt, som i sederTarget
+  const m = new Map<UpplevelseTyp, { k: UpplevelseTyp; n: Set<number>; d: Record<Sed, number> }>();
+  for (const { p, w } of ppl) for (const u of p.upp ?? []) {
+    const e = upplevelseSed(u.k); if (!e) continue;
+    let r = m.get(u.k); if (!r) m.set(u.k, r = { k: u.k, n: new Set(), d: nollor() });
+    r.n.add(p.id);
+    for (const k in e) if (sedOppen(s, k as Sed)) r.d[k as Sed] += e[k as Sed]! * SED.uppSteg * w / tw * SED.snittVikt;
+  }
+  const storst = (r: { d: Record<Sed, number> }) => Math.max(...SED_LIST.map(k => Math.abs(r.d[k])));
+  return [...m.values()].map(r => ({ k: r.k, n: r.n.size, d: r.d })).filter(r => storst(r) > 0).sort((a, b) => storst(b) - storst(a));
 }
 export function sederTarget(s: State): Record<Sed, number> {
   const t = nollor();
@@ -92,22 +110,14 @@ export function sederTarget(s: State): Record<Sed, number> {
   // ledaren drar med en del av byns samlade vikt (steg 3.5.1, styre.ts)
   const l = tw ? ledarVikt(s) : undefined;
   if (l) { const d = drar(s, l.p), w = tw * l.w; for (const k of SED_LIST) t[k] += d[k] * w; tw += w; }
-  for (const k of SED_LIST) t[k] = sedOppen(s, k) ? clamp((tw ? t[k] / tw : 0) * SED.snittVikt + s.seder.ev[k], -1, 1) : 0;
+  for (const k of SED_LIST) t[k] = sedOppen(s, k) ? clamp((tw ? t[k] / tw : 0) * SED.snittVikt, -1, 1) : 0;
   return t;
 }
-// händelser som formar sederna; effekten bleknar under några veckor
-export function sedEvent(s: State, k: Sed, d: number, text?: string) {
-  s.seder.ev[k] = clamp(s.seder.ev[k] + d, -SED.evMax, SED.evMax);
-  if (text) { s.seder.log.push({ t: s.now, text }); if (s.seder.log.length > 30) s.seder.log.splice(0, s.seder.log.length - 30); }
-}
-// sederna rör sig långsamt mot det invånarna och händelserna drar mot
+// sederna rör sig långsamt mot det invånarna drar mot
 export function stepSeder(s: State) {
   const sd = s.seder, dt = s.now - (sd.at ?? s.now);
   sd.at = s.now;
   if (dt <= 0) return;
-  const kd = Math.exp(-dt / (SED.evDygn * DAY));
-  for (const k of SED_LIST) sd.ev[k] *= kd;
-  if (foodDays(s) > SED.overflodDygn) sedEvent(s, 'arbete', -SED.overflod * dt / HOUR); // långt överflöd gör byn lugnare
   const t = sederTarget(s), f = 1 - Math.exp(-dt / (SED.rorDygn * DAY));
   for (const k of SED_LIST) sd.v[k] += (t[k] - sd.v[k]) * f;
 }

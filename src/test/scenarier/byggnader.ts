@@ -416,11 +416,11 @@ SCENARIER.bygg = {
     if (h?.klar) {
       const fardigt = () => (q.hist?.kronika ?? []).filter(k => k[2] === 'k_husKlar').length; // huset kan ha bytt namn med funktionen (steg 1.6.4)
       const vg = bitsOf(q).find(b => b.hus === h.id && b.k === 'vagg')!, by = living(q)[0];
-      kronikaFore = fardigt(); gemFore = q.seder.ev.gemenskap;
+      kronikaFore = fardigt(); gemFore = q.stat?.upp_byggdeHus ?? 0;
       vg.c = 1e-6; wearBuild(q, 1, ageIndex(q));
       vg.mat = MATERIAL[vg.m].n;
       for (let n = 0; n < 100 && vg.b < 1; n++) workOn(q, by, vg, 600);
-      omKlar = !!h.klar; kronikaEfter = fardigt(); gemEfter = q.seder.ev.gemenskap;
+      omKlar = !!h.klar; kronikaEfter = fardigt(); gemEfter = q.stat?.upp_byggdeHus ?? 0;
     }
     // stockar läggs i väggen (toWalls: ett träd fälldes på husplatsen) medan byggaren håller materialet till den: väggen får
     // det den behöver och byggaren behåller resten (buildStep i steg.ts, kodgenomgången 3.10.25)
@@ -451,7 +451,7 @@ SCENARIER.bygg = {
       ['slitna väggar lagas', lagat],
       [`ett långhus räknas när det planeras (${langhus} långhus, ${langRaknat} räknade)`, langhus > 0 && langRaknat === langhus],
       [`en lagning kostar hälften av det nya, i hela saker och minst en (trägolv ${golvLag} av ${MATERIAL.tra.n}, timmervägg ${vaggLag} av ${MATERIAL.timmer.n})`, golvLag === Math.max(1, Math.floor(MATERIAL.tra.n / 2)) && vaggLag === Math.max(1, Math.floor(MATERIAL.timmer.n / 2))],
-      [`en rasad vägg som byggts om gör huset klart igen men inte färdigt en gång till (krönikan ${kronikaFore} → ${kronikaEfter}, Sammanhållning ${gemFore.toFixed(3)} → ${gemEfter.toFixed(3)})`, omKlar && kronikaFore >= 1 && kronikaEfter === kronikaFore && gemEfter === gemFore],
+      [`en rasad vägg som byggts om gör huset klart igen men inte färdigt en gång till (krönikan ${kronikaFore} → ${kronikaEfter}, de som byggde minns det ${gemFore} → ${gemEfter} gånger)`, omKlar && kronikaFore >= 1 && kronikaEfter === kronikaFore && gemEfter === gemFore],
       [`stockar som läggs i väggen medan någon bär material dit försvinner inte (väggen ${iVaggen} av ${behov}, ${iHanden} kvar i händerna)`, behov > 0 && iVaggen === behov && iHanden === 1],
       [`huset minns var materialet kom ifrån (${Math.round(minns)} av ${Math.round(lagt)}: ${satt})`, lagt > 0 && Math.abs(minns - lagt) < 0.01 * lagt + 0.01],
     ];

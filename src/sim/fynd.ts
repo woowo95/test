@@ -3,7 +3,6 @@ import { PLATS, campCenter, campGrid, rektAvstand } from './plats';
 import { count, forstaGang, franMitt, gjort, stat, log, think } from './folk';
 import { getMap, hash, perKarta, vnoise } from './karta';
 import { Markslag, groundOf, markslag, startGround, tileOf } from './mark';
-import { sedEvent } from './seder';
 import { chance, clamp, clampI, pickNarmaste, rnd } from './slump';
 import { kn, learnK, useK } from './kunskap';
 import { ageIndex } from './tid';
@@ -57,7 +56,6 @@ export const FANGST = balans('fangst', {
   giftHalsa: 0.25, // ... och tar så här mycket hälsa
   giftTanke: -0.3, giftTankeDygn: 0.5, // tanken efter förgiftningen och hur länge den varar (dygn)
   giftLar: 0.4, giftKand: 0.75, // hur mycket den förgiftade lär sig om svamp, och kunskapen över vilken hen kan skilja kantarellen från spindlingen
-  giftSed: 0.05, // den första förgiftningen gör byn försiktigare
 });
 
 // ---------- fynd: mat och saker finns på olika platser ----------
@@ -581,7 +579,6 @@ export function eatPoison(s: State, p: Person) {
   log(s, `${p.name} blev förgiftad av svamp ur förrådet.`, 'world', [p.id]);
   if ((s.stat!.forgiftad ?? 0) <= 1) {
     log(s, 'Byn misstänker att en av svamparna är giftig.', 'world');
-    sedEvent(s, 'forsiktighet', FANGST.giftSed, 'Någon blev förgiftad av svamp. Byn har blivit försiktigare med vad den äter.');
   }
   if (before < FANGST.giftKand && v >= FANGST.giftKand) log(s, `${p.name} har lärt sig skilja kantarellen från den giftiga orangea spindlingen.`, 'skill', [p.id]);
   // det hen nu vet: den giftiga svampen sorteras bort ur förrådet, och då är den inte längre svamp att äta

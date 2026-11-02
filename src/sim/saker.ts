@@ -35,9 +35,9 @@ export interface SakDef {
 // krok = redskapet hänger i plagget när man bär (bältet, steg 2.3.3): det tar inga händer och väger inget för bördan
 interface Klad { plats: string; varme: number; dygn: number; krok?: true }
 // ett redskap som görs: text = vad den som gör det gör, stat = räknas varje gång ett blir klart, forsta = loggen första
-// gången, fame = det den som gjorde det blir ihågkommen för, igen = loggen de andra gångerna, nyfiken = byn blir nyfiknare
-// första gången (REDSKAP.nyfiken), med den texten. {namn} = den som gjorde det, {verktyg} = verktyget (skaffa.verktyg)
-interface Gors { text: string; stat: string; forsta: string; fame?: string; igen?: string; nyfiken?: string }
+// gången, fame = det den som gjorde det blir ihågkommen för, igen = loggen de andra gångerna
+// {namn} = den som gjorde det, {verktyg} = verktyget (skaffa.verktyg)
+interface Gors { text: string; stat: string; forsta: string; fame?: string; igen?: string }
 // hur en sak skaffas: samlas i ett arbete (act, takten i handlingar.ts) eller på annat sätt (tid = arbetstimmar för en),
 // eller görs av andra saker (av = så många av varje, min = minuters arbete; det är också så lång tid det tar att göra ett redskap
 // eller ett rep; slag = vilket slag av arbete tiden hör till, med minuterna i TIDSLAG i tider.ts, steg 2.12.8). tek = tekniken som behövs, sallsynt = svår att hitta,
@@ -59,7 +59,7 @@ const DEF = {
   kol: { namn: 'Kol', ett: true, skaffa: { tid: 0.3 }, stack: 25, mapp: 'Bränsle' },
   flinta: { namn: 'Flinta', skaffa: { tid: 8, sallsynt: true }, stack: 10, mapp: 'Sten', brinnerInte: true },
   yxa: { namn: 'Flintyxa', skaffa: { av: { flinta: 1, grenar: 1 }, min: 5, slag: 'stor', tek: 'yxa' }, vikt: 1.5, stack: 1, mapp: 'Redskap', slits: 0.0004, redskap: true, trasig: { stat: 'yxorTrasiga', text: '{namn}s yxa gick sönder.' },
-    gors: { text: 'Gör en flintyxa.', stat: 'yxa1', forsta: '{namn} gjorde byns första yxa av en pinne och en flintsten. Nu kan byn fälla träd.', fame: 'Gjorde byns första yxa', igen: '{namn} gjorde en flintyxa.', nyfiken: 'Flintyxan har gjort byn nyfiken på vad mer som går att tillverka.' } },
+    gors: { text: 'Gör en flintyxa.', stat: 'yxa1', forsta: '{namn} gjorde byns första yxa av en pinne och en flintsten. Nu kan byn fälla träd.', fame: 'Gjorde byns första yxa', igen: '{namn} gjorde en flintyxa.' } },
   fiskespjut: { namn: 'Träspjut', ett: true, skaffa: { av: { grenar: 1 }, min: 4, slag: 'liten', tek: 'fiskespjut', verktyg: { yxa: 'yxan', flinta: 'en flintsten' } }, vikt: 1, stack: 1, mapp: 'Redskap', slits: 0.001, redskap: true, grupp: 'spjut', trasig: { stat: 'spjutTrasiga', text: '{namn}s träspjut gick sönder. Träspjuten håller inte länge.' },
     gors: { text: 'Täljer ett träspjut med {verktyg}.', stat: 'spjutGjorda', forsta: '{namn} täljde byns första träspjut med {verktyg}. Nu går fisket lättare.' } },
   korg: { namn: 'Korg', skaffa: { av: { torrgras: 3 }, min: 5, slag: 'stor', tek: 'korg' }, vikt: 0.5, rymmer: 0.8, stack: 1, mapp: 'Redskap', slits: 0.001, redskap: true, trasig: { stat: 'korgarTrasiga', text: '{namn}s korg gick sönder.' },

@@ -85,7 +85,7 @@ SCENARIER.seder = {
   kor: () => {
     const s = createState(4, START);
     kor(s, 3 * 24);
-    const inom = (q: State) => [...Object.values(q.seder.v), ...Object.values(q.seder.ev)].every(v => v >= -1 && v <= 1);
+    const inom = (q: State) => Object.values(q.seder.v).every(v => v >= -1 && v <= 1);
     const vuxna = (q: State) => living(q).filter(p => ageOf(p, q.now) >= SIM.ALDER.vuxen);
     // två kopior av byn där alla är flitiga (flit 20) eller lata (1). Sederna rör sig i två dygn (två år i spelet)
     const med = (flit: number) => { const q = SIM.cloneState(s); for (const p of living(q)) p.pot.flit = flit; return q; };
@@ -102,8 +102,15 @@ SCENARIER.seder = {
     for (const x of vuxna(t)) { x.tag = undefined; x.kallad = undefined; x.habit = { samla: 6, ved: 4, vila: 2 }; }
     j.habit = { jakt: 20, samla: 2 }; h.habit = { hugga: 12, falla: 8, samla: 2 };
     SIM.updateTags(t);
+    // sederna formas av upplevelserna (steg 4.5.4.9): alla vuxna minns att de var nära att svälta, och när de dör är det borta
+    const svalt = SIM.cloneState(s), svaltFore = SIM.sederTarget(svalt).forsiktighet;
+    for (const x of vuxna(svalt)) x.upp = [...x.upp ?? [], { k: 'svalt', a: 20, e: {}, v: 1, t: svalt.now }];
+    const svaltEfter = SIM.sederTarget(svalt), drag = SIM.sedDrag(svalt)[0];
+    for (const x of vuxna(svalt)) x.died = svalt.now;
+    const ingaKvar = !SIM.sedDrag(svalt).some(r => r.k === 'svalt');
     const okanda = [...SIM.TAGS.flatMap(g => g.acts).filter(a => !(a in ACTS)), ...SIM.TAGS.filter(g => !g.acts.length).map(g => g.tag)];
     return [
+      [`de som var nära att svälta drar Förutseende från ${svaltFore.toFixed(2)} till ${svaltEfter.forsiktighet.toFixed(2)} (och Plikt), det som format sederna visar det först (${drag?.k}), och när de dött är det borta`, svaltEfter.forsiktighet > svaltFore + 0.2 && drag?.k === 'svalt' && drag.n === vuxna(s).length && ingaKvar],
       [`sederna ligger mellan -1 och 1 efter tre dygn (tre år i spelet) och efter 40 dygn i ett svep`, inom(s) && inom(fl) && inom(la) && inom(lang)],
       [`en flitig by drar Plikt mot ${fore[0].mal.toFixed(2)} och en lat mot ${fore[1].mal.toFixed(2)}`, fore[0].mal > 0.5 && fore[1].mal < -0.5],
       [`efter två dygn har Plikt rört sig mot målet: flitig ${fore[0].v.toFixed(2)} → ${fl.seder.v.arbete.toFixed(2)}, lat ${fore[1].v.toFixed(2)} → ${la.seder.v.arbete.toFixed(2)}`, narmare && fl.seder.v.arbete > la.seder.v.arbete + 0.5],

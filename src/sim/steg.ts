@@ -1,4 +1,4 @@
-import { stepUppvaxt } from './uppvaxt';
+import { stepUppvaxt, upplev } from './uppvaxt';
 import { stepReligion } from './religion';
 import { stepMotgang } from './motgang';
 import { stepTorka } from './torka';
@@ -31,7 +31,7 @@ import { ELDFLYTT, flyttaElden, stepEldFlytt } from './eldflytt';
 import { DODSORSAKER, barnMat, birth, birthWish, die, regulate } from './liv';
 import { MARK, groundOf, growGround, packGround, tileOf } from './mark';
 import { SAMTAL, TalkEvent, converse, isSocial } from './samtal';
-import { HABIT_FADE, addHabit, sedEvent, stepSeder, updateTags } from './seder';
+import { HABIT_FADE, addHabit, stepSeder, updateTags } from './seder';
 import { RELT, stepRelationer } from './relationer';
 import { fearPlace, forget, lookAround } from './minne';
 import { PLATS } from './plats';
@@ -624,7 +624,7 @@ function workStep(s: State, p: Person, tk: Task, dtSec: number, a: number, learn
   if (before < 16 && p.skill[sk] >= 16) {
     const title = `Mästare i ${SKILL_NAMES[sk].toLowerCase()}`, first = !s.people.some(q => q.fame.includes(title));
     p.fame.push(title); log(s, `${p.name} har blivit en mästare i ${SKILL_NAMES[sk].toLowerCase()}.`, 'skill', [p.id]);
-    sedEvent(s, 'nyfikenhet', first ? 0.06 : 0.01, first ? `${p.name} blev byns första mästare i ${SKILL_NAMES[sk].toLowerCase()}. Byn ser vad kunskap kan ge.` : undefined);
+    if (first) for (const q of living(s)) if (q !== p) upplev(s, q, 'forstaMastare', p.name); // de andra såg det (steg 4.5.4.9)
   }
   // arbetet sker i turer: efter en stunds arbete (tur), en fångst eller när bördan är full bärs det hem, sedan fortsätter man
   tk.tur = (tk.tur ?? 0) + dtSec;

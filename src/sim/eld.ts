@@ -13,7 +13,7 @@ import { observe } from './minne';
 import { eldPlats } from './karta';
 import { tileOf } from './mark';
 import { moodOf } from './humor';
-import { duty, sedEvent } from './seder';
+import { duty } from './seder';
 import { RESERV, kunnighet } from './ekonomi';
 import { chance, clamp, rnd } from './slump';
 import { ARSTID, ageIndex, iIstiden, isLight } from './tid';
@@ -58,7 +58,6 @@ export const ELD = balans('eld', {
   forsokLara: 10, // efter så här många misslyckade försök sedan elden brann är chansen dubbelt så stor
   flintSprack: 0.004, // chansen att flintan spricker vid ett misslyckat försök
   tandGlad: 0.15, tandGladDygn: 0.5, // glädjen över att tända elden och hur länge den varar (dygn)
-  sedNyfiken: 0.1, // den första elden gör byn nyfiken
   // samla tändmaterial, stenar och flinta (forageItems): per arbetstimme gånger kunnigheten
   hoTakt: 3, // hö (gånger tidsålderns ARSTID.hoPerTid)
   grenarTakt: 3, // grenar (gånger ARSTID.grenarIstid i istiden)
@@ -153,7 +152,7 @@ function lightFire(s: State, p: Person) {
   fireLog(s, { k: 'tänd', id: p.id, n: f.tries });
   log(s, `${p.name} lyckades tända elden${onCoal ? ' på den gamla kolhögen' : ''}${f.tries > 1 ? ` efter ${f.tries} försök` : ''}.`, 'world', [p.id]);
   think(p, 'Tände elden', ELD.tandGlad, s.now, ELD.tandGladDygn * DAY);
-  if (f.lightings === 1) { p.fame.push('Tände byns första eld'); allaBarn(s, 'uppfinning', 'tände sin första eld'); kronikaBer(s, 'k_forstaEld', p.id, personFalt(p)); sedEvent(s, 'nyfikenhet', ELD.sedNyfiken, 'Elden har gjort byn nyfiken på vad mer som går att lära sig.'); }
+  if (f.lightings === 1) { p.fame.push('Tände byns första eld'); allaBarn(s, 'uppfinning', 'tände sin första eld'); kronikaBer(s, 'k_forstaEld', p.id, personFalt(p)); }
   f.tries = 0;
 }
 // Varje misslyckat försök sedan elden senast brann gör nästa lättare: man får kläm på det och tändmaterialet blir

@@ -324,7 +324,7 @@ export interface Stock { id: number; x: number; y: number; ved: number; grenar: 
 // ---------- seder ----------
 // Byns gemensamma värderingar, -1..1. Registret (SEDER) står i seder.ts.
 // v = sederna nu, ev = tillskott från händelser (bleknar), at = senaste omräkning
-export interface Seder { v: Record<import('./seder').Sed, number>; ev: Record<import('./seder').Sed, number>; log: { t: number; text: string }[]; at?: number }
+export interface Seder { v: Record<import('./seder').Sed, number>; at?: number } // händelserna som flyttade byns seder direkt (ev, log) togs bort i steg 4.5.4.9
 
 // ---------- eldstäder och tänddon ----------
 // Bara lägerelden går att ha i dag. De andra är förberedda och byggs när bygg- och teknikträdet finns.
