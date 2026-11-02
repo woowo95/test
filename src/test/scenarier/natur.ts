@@ -295,6 +295,42 @@ SCENARIER.samlarrunda = {
     ];
   },
 };
+SCENARIER.grenrunda = {
+  text: 'Steg 4.5.6.3: den som samlar grenar går samma runda i skogen, från ruta till ruta med korta stopp, och den som letar stenar eller flinta går runt bland stenarna och finner dem. Gör just nu säger vad hen letar efter',
+  kor: () => {
+    // två byar med ont om ved följs i steg om två sekunder i åtta timmar: var grenplockarna och de som letar stannar
+    let vedStopp = 0, vedSkog = 0, vedFlytt = 0, sokStopp = 0, sokNara = 0, stenar = 0;
+    const texter = new Set<string>();
+    for (const seed of [1, 42]) {
+      const s = createState(seed, START), forra = new Map<number, string>(), sd = SIM.stoneDist(s.seed), tr = groundOf(s).trees;
+      setAmount(s, 'ved', 0); setAmount(s, 'grenar', 0);
+      const sten0 = amountOf(s, 'sten');
+      for (let i = 0; i < 8 * 1800; i++) {
+        step(s, 2);
+        for (const p of living(s)) {
+          const t = p.task;
+          if (!t || t.phase !== 'do' || !(t.act === 'ved' || t.sok)) { forra.delete(p.id); continue; }
+          texter.add(SIM.taskText(t));
+          const plats = `${t.tx},${t.ty}`, j = tileOf(t.tx, t.ty);
+          if (t.hopp || forra.get(p.id) === plats) { forra.set(p.id, plats); continue; }
+          if (forra.has(p.id) && t.act === 'ved') vedFlytt++;
+          forra.set(p.id, plats);
+          if (t.act === 'ved') { vedStopp++; if (tr[j] >= FOREST) vedSkog++; }
+          else { sokStopp++; if (sd[j] <= SIM.ELD.stenMedel || SIM.flintFactor(s, t.tx, t.ty) > SIM.ELD.flintaSand) sokNara++; }
+        }
+      }
+      stenar += amountOf(s, 'sten') - sten0 + (s.fire.ring ? SIM.ELD.ring : 0);
+    }
+    const tx = [...texter];
+    return [
+      [`grenplockarna går från ruta till ruta (${vedStopp} stopp, ${vedFlytt} gånger vidare)`, vedStopp > 50 && vedFlytt > 40],
+      [`grenplockarna stannar i skogen (${(vedSkog / Math.max(1, vedStopp) * 100).toFixed(0)} % av stoppen)`, vedSkog > 0.8 * vedStopp],
+      [`den som letar stenar eller flinta stannar vid stenarna eller i sanden (${sokNara} av ${sokStopp} stopp)`, sokStopp === 0 || sokNara > 0.8 * sokStopp],
+      [`stenarna hittades (${stenar} stenar, eller ringen)`, stenar > 0],
+      [`Gör just nu säger letar efter grenar och plockar grenar (${tx.filter(x => x.includes('gren') || x.includes('sten')).join(', ')})`, tx.some(x => x.endsWith('letar efter grenar')) && tx.some(x => x.endsWith('plockar grenar'))],
+    ];
+  },
+};
 SCENARIER.samlartur = {
   lang: true,
   text: 'En samlare fyller en full börda på 10–20 minuter, gången inräknad, och går vidare till nästa buske när den man står vid är tom (steg 2.12.4)',
@@ -1832,7 +1868,7 @@ SCENARIER.tradorr = {
       p.task = { act: 'gomma', phase: 'do', tx: inneX, ty: inneY, until: q.now + 20 * HOUR, carry: 0, why: 'Vargar är nära, gömmer sig i huset', dark: !isLight(q.now) };
       const id = q.vargNr = (q.vargNr ?? 0) + 1;
       (q.vargar ??= []).push({ id, vargar: [0, 1, 2].map(j => 10_000_000 + id * 8 + j), x: inneX + 8, y: inneY, mx: inneX + 8, my: inneY, gar: q.now + 48 * HOUR, hunger: 1, gor: 'stryker' });
-      let inne = 0, vantade = 0, gomde = 0, anfoll = false, stangd = false;
+      let inne = 0, vantade = 0, gomde = 0, stangd = false;
       const seen = new Set<string>();
       kor(q, 4, q => {
         const f = q.vargar?.[0]; if (!f) return;
@@ -1840,7 +1876,7 @@ SCENARIER.tradorr = {
         const nu = stangt(q, roomAt(q, inneX, inneY)!); // (vargen får gå in när dörren öppnats)
         if (nu) stangd = true;
         if (nu && (roomAt(q, f.x, f.y) === roomAt(q, inneX, inneY) || bitAt(q, f.x, f.y))) inne++;
-        if (f.gor === 'vantar') { vantade++; if (p.task?.act === 'gomma') gomde++; if (ensam && ute && !anfoll) { ute.x = f.x + 6; ute.y = f.y + 4; ute.task = { act: 'vila', phase: 'do', tx: ute.x, ty: ute.y, until: q.now + 5 * HOUR, carry: 0, why: 'ensam ute' }; anfoll = true; } }
+        if (f.gor === 'vantar') { vantade++; if (p.task?.act === 'gomma') gomde++; if (ensam && ute) { /* (står kvar ensam ute tills flocken anfaller) */ const dx = f.x - p.x, dy = f.y - p.y, d = Math.hypot(dx, dy) || 1; ute.x = Math.min(W - 1, Math.max(1, f.x + dx / d * 9)); ute.y = Math.min(H - 1, Math.max(1, f.y + dy / d * 9)); /* bort från huset, så att den som gömmer sig inte räknas som sällskap */ ute.task = { act: 'vila', phase: 'do', tx: ute.x, ty: ute.y, until: q.now + 5 * HOUR, carry: 0, why: 'ensam ute' }; } }
       });
       const strider = (q.strider ?? []).map(x => x.orsak);
       return { inne, vantade, gomde, seen, strider, st: q.stat ?? {}, stangd, byte: q.vargar?.[0]?.byte, ute: ute.id };

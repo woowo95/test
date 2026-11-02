@@ -449,7 +449,9 @@ SCENARIER.forvaring = {
     const med = j >= 0 ? speedAt(g, j) : 0, lost = g.lost!; g.lost = undefined; const utan = j >= 0 ? speedAt(g, j) : 0; g.lost = lost;
     // kistan är för privata saker och byggs inte i byns lager (steg 2.10.18). En kista som redan står på en full hög: det som
     // ligger i den slits som under tak
-    const ingenKista = PROJEKT.kista!.brist(s) === 0 && !SIM.stationSite(s, 'kista');
+    // (bristen är 1 när någon som sover inne vill ha en egen kista: den byggs i sovrummet, inte i lagret)
+    const kBrist = PROJEKT.kista!.brist(s), kPlats = SIM.stationSite(s, 'kista'), kLager = stationerOf(s).filter(t => t.k === 'kista' && zonesOf(s).some(q => inZone(q, t.x, t.y)));
+    const ingenKista = !kLager.length && (!kPlats || !zonesOf(s).some(q => inZone(q, kPlats.x, kPlats.y)));
     const hog = pilesOf(s).find(a => a.k === 'grenar' && !stationAt(s, a.x, a.y))!;
     const ki: SIM.Station = { id: s.nextStation = (s.nextStation ?? 0) + 1, k: 'kista', x: hog.x, y: hog.y, kvar: 0 };
     (s.stationer ??= []).push(ki); SIM.touch(s);
@@ -477,7 +479,7 @@ SCENARIER.forvaring = {
       [`hyllan byggs på ${h} timmar, i förrådshuset`, !!hy && !!z && !!hy.inne],
       ['hyllan står mot en vägg', motVagg],
       [`golvet i förrådshuset är till ${Math.round(andel * 100)} % täckt av små högar, ingen full: byn vill ha en hylla (brist ${brist3.toFixed(2)})`, andel > STATION.forvarAndelFull && ingenFull && brist3 === 1],
-      ['ingen kista byggs i byns lager', ingenKista],
+      [`ingen kista byggs i byns lager (brist ${kBrist.toFixed(2)}${kPlats ? `, plats ${kPlats.x},${kPlats.y}` : ''}, ${kLager.length} i lagret)`, ingenKista],
       [`på hyllans ruta ryms ${STATION.hyllaRymmer} högar (${ryms} grenar), och där ligger nu ${pa ? Math.round(pa.n) : 0} ${pa ? SIM.sakNamn(pa.k).toLowerCase() : ''} (en vanlig ruta rymmer ${pa ? SIM.rutaOf(pa.k) : 0})`, ryms === SIM.rutaOf('grenar') * STATION.hyllaRymmer && !!pa && pa.n > SIM.rutaOf(pa.k) + 1e-6], // (ibland är det trä som hamnar på hyllan)
       [`hyllan går inte att gå igenom (vägen förbi: ${forbi ? forbi.length + ' rutor' : 'ingen'})`, g.hinder?.[i] === 1 && !!forbi && !forbi.includes(i)],
       [`alla rutor i lagret nås fortfarande (${nas} av ${alla})`, alla > 0 && nas === alla],
