@@ -1,23 +1,23 @@
 {
  "id": "nasa-11",
- "ritad": 1,
- "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 1 eftersom den är den enda som visar en riktig örnnäsa. Näsryggen börjar vid ögonlinjen (y = 0) på x = -1 och 0. Den har en tydlig puckel som breder ut sig lika mycket åt båda hållen (x = -2 till 1) och smalnar sedan av igen. Den slutar i en spets som hänger nedåt som en krok, på rad 8–9 under näsborrarna. Skuggningen följer förebilden: den ljusa sidan ligger till vänster mot ljuset och den mörkare till höger. Bredden och linjetjockleken är desamma som i förebilden, och delen håller sig inom rutan (x = -4 till 2, y = 0 till 9). Version 2 och 3 har puckeln och nederdelen förskjutna åt höger, så näsan blir osymmetrisk sedd rakt framifrån. De saknar också en tydlig krok och liknar mest en rak näsa. Barnversionen i version 1 är kortare och mindre men har kvar puckeln och den nedåthängande spetsen. Den ligger symmetriskt kring mittlinjen. Inga ändringar behövdes.",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 3. Den är den enda där näsryggen följer en jämn båge. Den ljusa sidan mot vänster växer i jämna steg (db, ddcb, dccb) utan sicksack. Spetsen hänger ner under näsvingarna (bccb över abba) och ger den krok nedåt som Björns kommentar och beskrivningen efterfrågar. Version 1 har just den växlande skuggningen (cdcb, cddb) som gav sicksackformen. Version 2 bryter skuggningen i mitten och har ingen krok. Version 3 ligger också på mittlinjen: näsryggen på x = -1 och 0, och vingarna symmetriska från -3 till 2. Den håller sig inom rutan och har samma bredd och skuggning som förebilden. Jag ändrade bara barnbildens nedersta rad från bb till ba, så att kroken får en mörkare undersida på skuggsidan, likt den vuxna näsan.",
  "bilder": {
   "standard": {
    "x": -4,
    "y": 0,
    "rader": [
-    "...cb..",
+    "...db..",
     "...db..",
     "..ddcb.",
+    "..ddcb.",
     "..dccb.",
-    "...dcb.",
-    "...db..",
     "..dccb.",
+    ".bdccbb",
     ".adccba",
-    "..acba.",
-    "...ba.."
+    "..bccb.",
+    "..abba."
    ]
   }
  },
@@ -28,7 +28,6 @@
    "rader": [
     "..db.",
     ".ddcb",
-    "..cb.",
     ".dccb",
     ".abba",
     "..ba."

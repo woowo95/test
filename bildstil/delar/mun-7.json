@@ -1,74 +1,74 @@
 {
  "id": "mun-7",
- "ritad": 1,
- "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 2. Den har samma ruta (x -5 till 4) och samma bågar på överläppen (x -3/-2 och 1/2) i alla lägen, så att det är samma mun där bara humöret ändras. Den är symmetrisk kring mittlinjen och håller sig inom rutan. Skuggningen följer ljuset från vänster: t åt vänster och r åt höger på både över- och underläppen. Det passar förebildens sätt att skugga bättre än version 1, där läpparna är platta s. Version 3 föll bort: den har tomma rader, ett bredare lugn-läge och bågar av enstaka punkter i öppen, så den hänger inte ihop. Rättelse: den högra bågen var ritad som 'st', alltså spegelvänd med den ljusa tonen mot skuggsidan. Jag ändrade den till 'ts' i alla lägen, så att båda bågarna är ljusa på vänstersidan som ljuset kräver. I övrigt är punkterna oförändrade.",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Valde version 3. Läpplinjen ritas med rost0 (r), den mörkaste och mest dämpade rödbruna tonen, så de ljust orange läpparna från förra ritningen är borta. Hjärtformen syns tydligt: två toppar (..rr..rr..) och en sänka mitt på överläppen (rr i mitten av raden under). Version 3 skuggar som förebilden med ljuset uppifrån vänster: överläppens fyllning är b till vänster och a till höger, och underläppens kant går från b till a. Den är symmetrisk kring mittlinjen mellan x=-1 och 0 och håller sig inom rutan (x -5..4, y -2..3). Alla lägen är samma mun där bara mungiporna, tänderna och öppningen ändras. Version 1 hade en skev underläpp och för många rader hud, och version 2 saknade ljussidan. Inga ändringar behövdes.",
  "bilder": {
   "glad": {
    "x": -5,
    "y": -2,
    "rader": [
-    "..ts..ts..",
-    "rtssssssrr",
+    "..rr..rr..",
+    "rrbarraarr",
     ".rqqqqqqr.",
-    "..tssssr..",
-    "...bbbb..."
+    "..rrrrrr..",
+    "..bbbbba.."
    ]
   },
   "nojd": {
    "x": -5,
    "y": -2,
    "rader": [
-    "..ts..ts..",
-    "rtssssssrr",
+    "..rr..rr..",
+    "rrbarraarr",
     ".rrrrrrrr.",
-    "..tssssr..",
-    "...bbbb..."
+    "..bbbbba..",
+    ".........."
    ]
   },
   "lugn": {
    "x": -5,
    "y": -2,
    "rader": [
-    "..ts..ts..",
-    ".tssssssr.",
+    "..rr..rr..",
+    ".rbarraar.",
     ".rrrrrrrr.",
-    "..tssssr..",
-    "...bbbb..."
+    "..bbbbba..",
+    ".........."
    ]
   },
   "ledsen": {
    "x": -5,
    "y": -2,
    "rader": [
-    "..ts..ts..",
-    ".tssssssr.",
+    "..rr..rr..",
+    ".rbarraar.",
     "..rrrrrr..",
-    ".r.tssr.r.",
-    "...bbbb..."
+    ".r.bbba.r.",
+    ".........."
    ]
   },
   "arg": {
    "x": -5,
    "y": -2,
    "rader": [
-    "..ts..ts..",
-    ".tssssssr.",
+    "..rr..rr..",
+    ".rbarraar.",
     ".rkkkkkkr.",
-    "r.tssssr.r",
-    "...bbbb..."
+    "r..bbba..r",
+    ".........."
    ]
   },
   "oppen": {
    "x": -5,
    "y": -2,
    "rader": [
-    "..ts..ts..",
-    "..tssssr..",
+    "..rr..rr..",
+    ".rbarraar.",
     "..rkkkkr..",
     "..rkkkkr..",
-    "...tssr...",
-    "...bbbb..."
+    "...rrrr...",
+    "...bbba..."
    ]
   }
  }

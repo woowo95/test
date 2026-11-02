@@ -1,31 +1,26 @@
 {
  "id": "mun-2",
- "ritad": 1,
- "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 1. Den ligger närmast förebilden: samma tunna läpplinje i rost, samma skugga i hud1 under underläppen och samma små mungipor. Den är bredare, som beskrivningen säger, och sitter symmetriskt kring mittlinjen (kolumn 5 och 6) inom rutan -6..5, -2..3. Alla lägen är samma mun med samma bredd, och bara gipor, tänder och öppning ändras med humöret. Version 2 gör lugn läget en hel rad bredare än de andra lägena (s i ytterkanterna), så munnen byter storlek mellan lägena. Version 3 lägger en ljusare s-fläck mitt på läppen, vilket ger glans och ett ensamt avbrott. Den gör också den öppna munnen för stor och slår i rutans överkant, och den lägger till extra gipor i arg. Jag ändrade ingenting i version 1.",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 3. Den har samma former som version 1 och 2 (de två är identiska), men den saknar de tomma raderna längst ner, så delen blir kompakt och slutar direkt under underläppens skugga. Linjen är en punkt tjock i r som i förebilden, med en mjuk b-skugga under läppen. Munnen är centrerad över mittlinjen (x -5 till 4 för linjen), och den håller sig inom rutan. Om placeringen: munlinjen ligger redan på y = -1, och glad behöver raden ovanför (y = -2) till de uppåtvända mungiporna. Därför går den inte att flytta högre utan att lägena hoppar i höjd mot varandra. Jag har inte flyttat den, eftersom den ser rimligt placerad ut i bilderna, men det bör kontrolleras mot Björns kommentar om att den sitter för lågt. Ändring: den ledsna var för överdriven, så jag tonade ner de nedåtböjda mungiporna från s till den ljusare t. Böjen blir en svag antydan i stället för en tydlig sur båge. Formen och linjen är oförändrade, så munnen är samma del i alla lägen.",
  "bilder": {
   "glad": {
    "x": -6,
    "y": -2,
    "rader": [
-    "............",
     "r..........r",
     ".rqqqqqqqqr.",
     "..rrrrrrrr..",
-    "...bbbbbb...",
-    "............"
+    "...bbbbbb..."
    ]
   },
   "nojd": {
    "x": -6,
    "y": -2,
    "rader": [
-    "............",
     "r..........r",
     ".rrrrrrrrrr.",
-    "...bbbbbb...",
-    "............",
-    "............"
+    "...bbbbbb..."
    ]
   },
   "lugn": {
@@ -33,11 +28,8 @@
    "y": -2,
    "rader": [
     "............",
-    "............",
     ".rrrrrrrrrr.",
-    "...bbbbbb...",
-    "............",
-    "............"
+    "...bbbbbb..."
    ]
   },
   "ledsen": {
@@ -45,11 +37,8 @@
    "y": -2,
    "rader": [
     "............",
-    "............",
     "..rrrrrrrr..",
-    ".s.bbbbbb.s.",
-    "s..........s",
-    "............"
+    ".t.bbbbbb.t."
    ]
   },
   "arg": {
@@ -57,23 +46,18 @@
    "y": -2,
    "rader": [
     "............",
-    "............",
     ".rkkkkkkkkr.",
-    ".r.bbbbbb.r.",
-    "............",
-    "............"
+    ".r.bbbbbb.r."
    ]
   },
   "oppen": {
    "x": -6,
    "y": -2,
    "rader": [
-    "............",
     "....rrrr....",
     "...rkkkkr...",
     "...rkkkkr...",
-    "....bbbb....",
-    "............"
+    "....bbbb...."
    ]
   }
  }

@@ -1,12 +1,12 @@
 {
  "id": "oga-7",
- "ritad": 1,
- "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 3. Alla tre versionerna har samma öppna form, där ögat sluttar ner mot ytterhörnet. Version 3 håller ihop bäst i alla lägen. Det slutna läget fyller samma yta som det öppna ögat, med en sluten lockkant som följer den sneda formen och samma undre lock (.bcccb..). Därför sitter det slutna ögat på samma plats som det öppna på alla tre ansiktena. I version 1 och 2 krymper det slutna ögat i stället till lösa streck med en ljus c-linje, och där hänger raden aaacb... som en lös stump. Jag ändrade ledsna. Där flyttades iris och pupill ner en rad, men humöret ska bara ändra ögonlocket. Därför ligger iris och pupill nu kvar på samma plats som i oppna (bavikkvb och bvvjiib.). Det sänkta locket med skuggan ovanför (..bbaaa. och .baaaava) täcker nu irisens överkant. Övriga lägen är oförändrade.",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 3. Läget Öppna, Glada och Ledsna är lika i alla tre versionerna. Där ser ögat snett nedåt ut, med det yttre hörnet (till vänster) lägre, och det stämmer med beskrivningen. Skillnaden finns bara i läget Slutna. I version 3 går ögonlockets mörka linje (a) i en ren och sammanhängande diagonal från det inre hörnet ner mot det yttre. Den följer alltså samma lutning som det öppna ögat. Version 1 har en mer spretig linje och version 2 ritar linjen ljust med c, vilket ser blankt ut. Ändring: enligt Björns kommentar satt delen för högt, så jag flyttade alla lägen en punkt nedåt (y från -2 till -1). Delen håller sig fortfarande inom rutan -4..3, -3..3.",
  "bilder": {
   "oppna": {
    "x": -4,
-   "y": -3,
+   "y": -1,
    "rader": [
     "...aaaa.",
     ".bajjiva",
@@ -17,7 +17,7 @@
   },
   "glada": {
    "x": -4,
-   "y": -3,
+   "y": -1,
    "rader": [
     "...aaaa.",
     ".bajjiva",
@@ -28,7 +28,7 @@
   },
   "ledsna": {
    "x": -4,
-   "y": -3,
+   "y": -1,
    "rader": [
     "..bbaaa.",
     ".baaaava",
@@ -39,12 +39,12 @@
   },
   "slutna": {
    "x": -4,
-   "y": -3,
+   "y": -1,
    "rader": [
     "...aaaa.",
-    ".aabbcca",
-    "abbccaab",
-    "bccaaab.",
+    ".abbccca",
+    "abbcaaaa",
+    "aaaabcb.",
     ".bcccb.."
    ]
   }

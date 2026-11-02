@@ -1,51 +1,51 @@
 {
  "id": "oga-2",
- "ritad": 1,
- "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 2. Den har tydligt spetsiga ögonvrår (a till vänster, b till höger), vilket ger mandelformen. Ögonlocket är mörkt upptill och huden ljusnar nedåt (c, d), så skuggningen stämmer med ljus uppifrån vänster. Det slutna läget är ett lugnt, välvt lock som passar förebilden. Version 1 omger hela iris med vitt, så ögat ser stirrande ut, och dess ledsna läge har en ensam prick. Version 3:s slutna läge ser ut som runda ringar eller glasögon. Ändringar i det ledsna läget: iris i rad 2 låg förskjuten (j och i i kolumn 5–6, utanför iris i kolumn 3–5). Den är rättad till 'aaaajia.', så att locket täcker iris yttre del och den synliga delen ligger rätt. Den vänstra ögonvrån i rad 3 och det undre locket i rad 5 är satta lika med det öppna läget ('avvikkvb', '..cddc..'), så att bara det som humöret ändrar skiljer lägena åt.",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 1. Den har förebildens storlek: 7 punkter bred och tre rader öppet öga. Ögat är bredast på mittraden och smalnar av uppåt och nedåt, så hörnen blir spetsiga och formen läses som mandel. Det vita sitter innanför delens kant, så programmets kontur får plats. Den slutna ögonlocksraden ligger på samma rad som ögats mittlinje, och delen står kvar på samma plats i alla lägen. I glada och ledsna ändras bara det som humöret styr: kinden trycker upp underkanten, och det yttre ögonlocket sjunker. Version 2 valdes bort eftersom det vita når ut till delens kant, så hörnen blir trubbiga och inte spetsiga. Där flyttas också det slutna ögat en rad ner, och glada ändrar hörnen. Version 3 valdes bort eftersom den har en vit punkt uppe till höger som snedvrider formen. Där ligger också det slutna ögats linje en rad under det öppna ögats mitt. Jag ändrade inget, eftersom version 1 redan följer reglerna: tillåtna tecken, inom rutan, ingen glans och skugga som följer ljuset uppifrån vänster.",
  "bilder": {
   "oppna": {
    "x": -4,
    "y": -3,
    "rader": [
-    "..aaaa..",
-    ".aajjia.",
-    "avvikkvb",
-    ".bcjiic.",
-    "..cddc.."
+    ".baaab.",
+    ".ajjia.",
+    "avikkvb",
+    ".bjiic.",
+    ".bcddc."
    ]
   },
   "glada": {
    "x": -4,
    "y": -3,
    "rader": [
-    "..aaaa..",
-    ".aajjia.",
-    "avvikkvb",
-    ".ccddcc.",
-    "........"
+    ".baaab.",
+    ".ajjia.",
+    "avikkvb",
+    ".cdddc.",
+    "......."
    ]
   },
   "ledsna": {
    "x": -4,
    "y": -3,
    "rader": [
-    "bbaaa...",
-    "aaaajia.",
-    "avvikkvb",
-    ".bcjiic.",
-    "..cddc.."
+    "bbbaa..",
+    "aaajia.",
+    "avikkvb",
+    ".bjiic.",
+    ".bcddc."
    ]
   },
   "slutna": {
    "x": -4,
    "y": -3,
    "rader": [
-    "........",
-    "..bbbb..",
-    ".bccccb.",
-    "aaaaaaab",
-    "..cddc.."
+    "..bbb..",
+    ".bcccb.",
+    "aaaaaab",
+    ".bcccc.",
+    ".bcddc."
    ]
   }
  }

@@ -1,24 +1,21 @@
 {
  "id": "ora-5",
- "ritad": 1,
- "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 3. Version 1 är sex punkter bred från x -3 och går därför utanför rutan (x1 = 2). Dess spets är dessutom en tunn linje på en punkt, och det passar inte förebildens fylligare form. Version 2 fungerar men slutar lite tvärt nertill. Version 3 har samma storlek och skuggning som förebilden: ljus kant (d/c) mot ljuset uppe till vänster, mörk ingång i örat (a) och b mot kinden. Den har en liten men tydlig spets upptill och en mjukare örsnibb, så den smälter in på alla tre ansiktena. Den håller sig inom rutan och använder bara abcd. Jag ändrade ingenting.",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 2. Den är kortast, tio rader från y -5 till 4, och är inte längre någon lång remsa längs huvudets sida. Den sitter ungefär lika högt som förebildens öra och håller sig inom rutan. Spetsen upptill är smal och sitter en kolumn in från ytterkanten, så den läses som en liten spets och inte som en rak kant. Version 1 har en rak d-kolumn ända upp och ser därför ut som en remsa. Version 3 är längre och har en utdragen skål. I version 2 finns förebildens form kvar: en rundad ytterkant med ljus ton d upptill mot ljuset och c längre ner, en skål i a och b med mörkast ton i mitten, och en örsnibb som smalnar av nertill. Inga punkter är ändrade, eftersom formen, tonerna och storleken redan stämmer med förebilden och med reglerna.",
  "bilder": {
   "standard": {
-   "x": -3,
-   "y": -7,
+   "x": -2,
+   "y": -5,
    "rader": [
-    "d....",
-    "dc...",
-    "dcc..",
+    ".d...",
+    ".dc..",
     "dccb.",
     "dcbbb",
     "dbabb",
     "dbaab",
-    "cbaab",
     "cbabb",
     "cbbb.",
-    ".ccb.",
     ".ccb.",
     "..cb."
    ]

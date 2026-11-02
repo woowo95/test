@@ -1,47 +1,51 @@
 {
  "id": "oga-3",
- "ritad": 1,
- "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 3. Den ger tydligast ett smalt öga: en enda rad ögonspringa direkt under en mörk lockrad, och de mörka hörnen sluter mandelformen. Vitan sitter på båda sidor om iris och pupill. Det ser jämnt och rent ut på alla tre ansiktena och stämmer i linjetjocklek och skuggning med förebilden. Lägena är samma del: Glada byter bara vitan mot hud och lyfter den nedre kanten med ljusare kind. Ledsna sänker lockets yttre hörn över vitan och lägger en skuggrad ovanför. Slutna lägger lockfransen i ögonradens höjd med ett ljust lock ovanför. Version 1 har vita bara på ena sidan och ett pupillpar som blir för tungt i en så smal springa. Version 2 får för tunga lock med en extra ljus rad, så ögonen ser sömniga ut redan i läget Öppna, och Slutna saknar en tydlig fransrad. Jag ändrade inget, eftersom punkterna redan håller sig inom rutan och bara använder tillåtna tecken.",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 1. Den använder hela rutans bredd på 8 punkter och är därför den enda som faktiskt följer Björns kommentar att göra ögonen lite större. Versionerna 2 och 3 är bara 7 punkter breda. Ögat är ändå smalt på höjden, med två rader iris, som beskrivningen Smala säger. Linjerna och skuggningen stämmer med förebilden: överlocket ligger i hud0, under ögat och på kinden blir det ljusare, och pupillen i k sitter mitt i irisen. Alla lägen har samma form, och bara locken och nedre kanten ändras med humöret. Jag ändrade en sak: i slutna förlängde jag fransraden till aaaaaaaa, så att det slutna ögat blir lika brett som det öppna ögonspringan och inte ser avhugget ut i ena hörnet.",
  "bilder": {
   "oppna": {
    "x": -4,
    "y": -3,
    "rader": [
-    ".......",
-    ".aaaaa.",
-    "avjkiva",
-    ".bcccb."
+    "........",
+    ".aaaaaa.",
+    "avvjkiva",
+    ".bvjiib.",
+    "..bccb.."
    ]
   },
   "glada": {
    "x": -4,
    "y": -3,
    "rader": [
-    ".......",
-    ".aaaaa.",
-    "acjkica",
-    ".cdddc."
+    "........",
+    ".aaaaaa.",
+    "acvjkica",
+    ".cddddc.",
+    "........"
    ]
   },
   "ledsna": {
    "x": -4,
    "y": -3,
    "rader": [
-    "bbb....",
-    "aaaaaa.",
-    "aajkiva",
-    ".bcccb."
+    "bbbb....",
+    "aaaaaaa.",
+    "aavjkiva",
+    ".bvjiib.",
+    "..bccb.."
    ]
   },
   "slutna": {
    "x": -4,
    "y": -3,
    "rader": [
-    ".......",
-    ".bbbbb.",
-    "aaaaaaa",
-    ".bcccb."
+    "........",
+    ".bbbbbb.",
+    ".cccccc.",
+    "aaaaaaaa",
+    "..bccb.."
    ]
   }
  }

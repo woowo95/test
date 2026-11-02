@@ -1,79 +1,79 @@
 {
  "id": "mun-3",
- "ritad": 1,
- "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 3. Den är den enda där läpparna, munlinjen och hakskuggan ligger symmetriskt kring mittlinjen. Version 1 och 2 har underläppar som sticker ut en punkt till höger, så munnen blir sned. Version 3 skuggar också som förebilden: munlinjen i r, en överläpp i s och en underläpp i t som mörknar mot höger och nedåt, bort från ljuset. Enligt Björns kommentar har jag gjort munnen bredare. Överläppen är nu tio punkter bred och munlinjen tolv, så den fyller rutans bredd. Underläppen och läppskuggen under den har också blivit en punkt bredare på varje sida. I glad och nöjd sitter mungiporna intill överläppen, eftersom rutan inte räcker längre ut. I ledsen och arg är giporna flyttade ut till kanten. Den öppna munnen är vidgad från åtta till tio punkter (x = -5) med två punkter bredare mörk öppning. Allt är kvar inom rutan och centrerat kring x = -1 och 0.",
  "bilder": {
   "glad": {
-   "x": -5,
+   "x": -6,
    "y": -2,
    "rader": [
-    "..........",
-    "r.ssssss.r",
-    ".rqqqqqqr.",
-    "..ttttts..",
-    "...ssss...",
-    "...bbbb..."
+    "............",
+    "rssssssssssr",
+    ".rqqqqqqqqr.",
+    "..ttttttts..",
+    "...ssssss...",
+    "...bbbbbb..."
    ]
   },
   "nojd": {
-   "x": -5,
+   "x": -6,
    "y": -2,
    "rader": [
-    "..........",
-    "r.ssssss.r",
-    ".rrrrrrrr.",
-    "..ttttts..",
-    "...ssss...",
-    "...bbbb..."
+    "............",
+    "rssssssssssr",
+    ".rrrrrrrrrr.",
+    ".ttttttttts.",
+    "..ssssssss..",
+    "...bbbbbb..."
    ]
   },
   "lugn": {
-   "x": -5,
+   "x": -6,
    "y": -2,
    "rader": [
-    "..........",
-    "..ssssss..",
-    ".rrrrrrrr.",
-    "..ttttts..",
-    "...ssss...",
-    "...bbbb..."
+    "............",
+    ".ssssssssss.",
+    "rrrrrrrrrrrr",
+    ".ttttttttts.",
+    "..ssssssss..",
+    "...bbbbbb..."
    ]
   },
   "ledsen": {
-   "x": -5,
+   "x": -6,
    "y": -2,
    "rader": [
-    "..........",
-    "..ssssss..",
-    "..rrrrrr..",
-    ".r.ttts.r.",
-    "...ssss...",
-    "...bbbb..."
+    "............",
+    "..ssssssss..",
+    ".rrrrrrrrrr.",
+    "r.ttttttts.r",
+    "..ssssssss..",
+    "...bbbbbb..."
    ]
   },
   "arg": {
-   "x": -5,
+   "x": -6,
    "y": -2,
    "rader": [
-    "..........",
-    "..ssssss..",
-    ".rkkkkkkr.",
-    ".rtttttsr.",
-    "...ssss...",
-    "...bbbb..."
+    "............",
+    ".ssssssssss.",
+    "rkkkkkkkkkkr",
+    "rttttttttssr",
+    "..ssssssss..",
+    "...bbbbbb..."
    ]
   },
   "oppen": {
-   "x": -3,
+   "x": -5,
    "y": -2,
    "rader": [
-    "..ss..",
-    ".srrs.",
-    "trkkrs",
-    "trkkrs",
-    ".ttts.",
-    "..bb.."
+    "..ssssss..",
+    ".srrrrrrs.",
+    "trkkkkkkrs",
+    "trkkkkkkrs",
+    ".ttttttts.",
+    "..bbbbbb.."
    ]
   }
  }

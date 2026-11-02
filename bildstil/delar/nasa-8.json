@@ -1,22 +1,22 @@
 {
  "id": "nasa-8",
- "ritad": 2,
+ "ritad": 3,
  "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
- "om": "Valde version 1: den har den tydligaste stora, runda knölen och samma smala näsrygg på x = -1 och 0 som förebilden, och den läses som en komisk storäsa på alla tre ansiktena. Björn tyckte att den förra satt helt fel. Version 1 började på y = 1 och låg därför lite under ögonlinjen, och den ljusa d-ytan stack ut som en lös triangel. Jag har ändrat fyra saker. Näsan börjar nu på y = 0, så att roten möter ögonlinjen. Översta delen av näsryggen är c/b, så att den smälter in i huden, och d sparas till ryggen och knölens ljusa vänstra sida. Varje rad är nu lika bred på båda sidor om mittlinjen, så att näsan sitter mitt i ansiktet. Nederkanten har näsborrar i a på sidorna och en ljusare b-mellanvägg, i stället för en jämn mörk rand. Barnets näsa följer samma ändringar men är kortare och har en mindre knöl.",
+ "om": "Jag valde version 3. Den ser mest ut som en näsa, vilket var Björns och chattens krav. Näsryggen cb/db ligger på x = -1 och 0 och fortsätter obruten, precis som i förebilden. Sedan vidgas näsan gradvis till en tung, lite komisk knöl. Den ljusa sidan (d) ligger till vänster mot ljuset och skuggan (b/a) till höger. Näsborrarna i nedersta raden (.aabbbbaa.) är symmetriska kring mittlinjen, och de genomskinliga hörnen ger rundade näsvingar i stället för en rak kloss som i version 1 och 2. Spetsen syns tydligt som knölen ovanför näsborrarna. Barnversionen är samma form i mindre skala, med kortare rygg och smalare näsvingar, och följer barnansiktets rundare drag. Jag ändrade ingenting. Delen håller sig inom rutan och använder bara a–d, och den har inga ensamma ljusa prickar och ingen glans.",
  "bilder": {
   "standard": {
    "x": -5,
    "y": 0,
    "rader": [
     "....cb....",
-    "....cb....",
     "....db....",
-    "...dcbb...",
-    "...dcbba..",
-    "..dccbba..",
-    ".dcccbbba.",
-    ".dcccbbba.",
-    "bdccbbbaaa",
+    "....db....",
+    "...cdbb...",
+    "...cdcb...",
+    "..bcdccb..",
+    "..cddccb..",
+    ".bdddccbb.",
+    "adddcccbba",
     ".aabbbbaa."
    ]
   }
@@ -28,9 +28,9 @@
    "rader": [
     "...cb...",
     "...db...",
-    "..dcbb..",
-    ".dccbba.",
-    "bdccbbaa",
+    "..cdbb..",
+    ".cddcbb.",
+    "addccbba",
     ".aabbaa."
    ]
   }

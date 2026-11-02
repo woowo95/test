@@ -1,17 +1,16 @@
 {
  "id": "oga-4",
- "ritad": 1,
- "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 1. Den fyller hela rutan på 8 × 7 och har en iris på 4 × 3 med vita på båda sidor, så ögonen läses tydligt som stora. Ögonlocket är en mörk linje i en punkts tjocklek, som i förebilden. Alla lägen har samma höjd och bygger på samma rader, och det sorgsna locket sluttar ner mot ytterkanten. Version 2 har ett ögonlock i två mörka rader, alltså tjockare linjer än förebilden. Version 3 kortar ögat till sex rader och trycker ihop det glada läget så att det blir för litet. Ändringar: I det slutna läget var den slutna ögonlocket ljust med d och såg ut som en blank fläck, nästan som glasögon, på alla ansikten. Jag tonade ner det till b och c, med det ljusa uppåt vänster och en mörkare a i ytterhörnet, så att locket smälter in i huden och följer formen. I det sorgsna läget lade jag tillbaka a i ögonvrån på rad 4, så att bara det som humöret ändrar skiljer sig från det öppna läget.",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 2. Den har den tydligaste stora, runda formen och ett jämnt övre ögonlock i hud0, och de slutna och ledsna lägena läser bra på alla tre ansiktena. Den håller sig också inom rutan (-4..3, -3..3).\n\nDet öppna läget såg konstigt ut, som Björn skrev, eftersom iristonerna låg huller om buller: ljus oga1 överst, mörk oga0 nederst och en osymmetrisk rad (vjjji). Jag ritade om iris så att den är rund och symmetrisk och skuggas som förebilden:\n- Den mörka tonen ligger överst under locket (iiii).\n- En pupill på 2×2 i k sitter i mitten.\n- Den ljusare tonen ligger nedtill (jkkj, jj), och den nedersta raden rundar av iris.\n\nDet glada och det ledsna läget fick samma iris och pupill, så att delen är densamma i alla lägen och bara locken och kinden ändras. Det slutna läget är oförändrat.",
  "bilder": {
   "oppna": {
    "x": -4,
    "y": -3,
    "rader": [
-    "..bbbb..",
     ".aaaaaa.",
     "aviiiiva",
-    "avikkjva",
+    "avikkiva",
     "bvjkkjvb",
     ".bvjjvb.",
     "..cccc.."
@@ -21,10 +20,9 @@
    "x": -4,
    "y": -3,
    "rader": [
-    "..bbbb..",
     ".aaaaaa.",
     "aviiiiva",
-    "avikkjva",
+    "avikkiva",
     "bcjkkjcb",
     ".cddddc.",
     "........"
@@ -34,10 +32,9 @@
    "x": -4,
    "y": -3,
    "rader": [
-    "bbbbbb..",
-    "aaaaaaa.",
+    "bbbbbaa.",
     "aaaaaiva",
-    "avikkjva",
+    "avikkiva",
     "bvjkkjvb",
     ".bvjjvb.",
     "..cccc.."
@@ -47,10 +44,9 @@
    "x": -4,
    "y": -3,
    "rader": [
-    "..bbbb..",
     ".bbbbbb.",
-    "bcccbbbb",
-    "bbccbbba",
+    "bccccbbb",
+    "bcccbbba",
     "aaaaaaaa",
     ".bccccb.",
     "..cccc.."
