@@ -56,6 +56,25 @@ function match(s: State, k: string, med: Person[]) {
   s.sport = { k, x: l.x + l.w / 2, y: l.y + l.h / 2, start: s.now, slut: s.now + SIM.HOUR };
   for (const q of med) spela(s, q);
 }
+SCENARIER.sportplats = {
+  text: 'Platserna i sporterna (steg 4.5.6.10–11): i dragkampen och snöbollskriget två lag på var sin sida om mitten, i brottningen två i mitten och de andra i en ring, i kast på en rad framför målet och i bollspelet den som slår i ena änden',
+  kor: () => {
+    const rader: [string, boolean][] = [];
+    for (const k of ['dragkamp', 'brottning', 'kast', 'snoboll', 'bollspel']) {
+      const s = rikDag(3), med = vuxna(s).slice(0, 4), l = SIM.lekplats(s), mx = l.x + l.w / 2, my = l.y + l.h / 2;
+      match(s, k, med);
+      const p = med.map(q => ({ x: q.task!.tx - mx, y: q.task!.ty - my })), d = p.map(o => Math.hypot(o.x, o.y));
+      const f = (o: { x: number; y: number }) => `${o.x.toFixed(1)},${o.y.toFixed(1)}`;
+      const ok = k === 'dragkamp' ? p.filter(o => o.x < 0).length === 2 && p.filter(o => o.x > 0).length === 2
+        : k === 'brottning' ? d[0]! < 0.8 && d[1]! < 0.8 && d[2]! > 1.2 && d[3]! > 1.2
+        : k === 'kast' ? p.every(o => Math.abs(o.x - p[0]!.x) < 0.6) && new Set(p.map(o => Math.round(o.y * 2))).size === 4 && SIM.kastMal(s.sport!).x - mx > 1
+        : k === 'snoboll' ? p.filter(o => o.x < -1.5).length === 2 && p.filter(o => o.x > 1.5).length === 2
+        : p[0]!.x < -2 && p.slice(1).every(o => o.x > p[0]!.x + 1);
+      rader.push([`${SIM.SPORT_AV[k]!.namn}: ${p.map(f).join('  ')} (rutor från mitten)`, ok]);
+    }
+    return rader;
+  },
+};
 SCENARIER.sportsaker = {
   text: 'Sportens föremål (steg 4.3.1.2): byn gör ett mål, en boll och ett slagträ när den har vuxna nog, föremålen slits när man spelar, och den som vunnit flest matcher i en sport får det i sitt eftermäle',
   kor: () => {

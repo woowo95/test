@@ -8,7 +8,7 @@ import { SAKER, isTool } from './saker';
 import { STATIONER, TILLBEHOR, framFri, isKlar, stationerOf, vidStation } from './stationer';
 import { DORRAR, MATERIAL } from './byggnad';
 import { tingOf } from './agande';
-import { Act, HOUR, HOUR_S, MIN, Person, Skill, State, Task } from './typer';
+import { Act, HOUR, HOUR_S, MIN, Person, Skill, State, Task, inMap } from './typer';
 import { balans } from './balans';
 import { klyvStam } from './skog';
 import { ACTS, ACT_LIST } from './handlingar';
@@ -316,7 +316,8 @@ export function laraVal(s: State, p: Person): { m: Person; spot: { x: number; y:
   if (!m || !alive(m) || !m.task || !arbetarMed(m, t)) return undefined;
   const kvar = (m.task.until - s.now) / MIN;
   if (kvar < TEKTAL.laraMin) return undefined;
-  return { m, spot: { x: m.x + TEKTAL.laraSida, y: m.y }, min: Math.min(kvar, TEKTAL.laraMax) };
+  const x = inMap(m.x + TEKTAL.laraSida, m.y) ? m.x + TEKTAL.laraSida : m.x - TEKTAL.laraSida; // bredvid mästaren, på andra sidan vid kartans kant
+  return { m, spot: { x, y: m.y }, min: Math.min(kvar, TEKTAL.laraMax) };
 }
 // varje timme: en mästare utan lärling tar sig en. Hen lär ut den av sina tekniker som färst kan, till den som är skickligast
 // i färdigheten och har kommit längst (kraven ska hen kunna). Den som redan är lärling hos någon väljs inte

@@ -1914,7 +1914,81 @@ function ritaDragkamp(B, v) {
   });
 }
 const DRAG_BILD = (v) => ({ w: 128, h: 40, rita: (B) => ritaDragkamp(B, v) });
+// de andra sporterna (steg 4.5.6.11), som dragkampen: gräs eller snö, figurer på en rad sedda från sidan, och det som kastas
+// i en båge. k är sporten och v förslaget
+function spelare(B, x, fot, luta, lag) {
+  const P = B.P, hy = fot - 17, kx = x + luta;
+  for (let y = 0; y < 12; y++) for (let dx = -3; dx <= 3; dx++) { const fx = Math.round(x + luta * (1 - y / 12) + dx); B.satt(fx, hy + 5 + y, dx === -3 || dx === 3 ? P.i('kol', 0) : P.i(lag, dx < 0 ? 1 : 2)); }
+  for (let dy = 0; dy < 5; dy++) for (let dx = -2; dx <= 2; dx++) B.satt(kx + dx, hy + dy, Math.abs(dx) === 2 ? P.i('kol', 0) : P.i('senap', dy === 0 ? 1 : 2));
+  for (let dx = -2; dx <= 2; dx++) B.satt(kx + dx, hy - 1, P.i('kol', 0));
+  for (let dx = -2; dx <= 2; dx++) if (dx) B.satt(x + dx, fot, P.i('kol', 1));
+  for (let dx = -3; dx <= 3; dx++) B.morka(x + dx, fot + 1);
+}
+function bage(B, ax, ay, bx, by, h, n, ramp, ton) { // det som flyger, n prickar längs bågen (den sista störst)
+  const P = B.P;
+  for (let i = 1; i <= n; i++) { const f = i / (n + 1) + 0.15, x = Math.round(ax + (bx - ax) * f), y = Math.round(ay + (by - ay) * f - h * 4 * f * (1 - f));
+    if (i < n) { B.morka(x, y); continue; } // spåret
+    for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) { const r = Math.abs(dx) + Math.abs(dy); if (r <= 2 || (Math.abs(dx) < 2 && Math.abs(dy) < 2)) B.satt(x + dx, y + dy, r >= 2 && !(Math.abs(dx) === 1 && Math.abs(dy) === 1) ? P.i('kol', 0) : P.i(ramp, dx + dy < 0 ? ton : Math.max(0, ton - 1))); }
+  }
+}
+function ritaSporten(B, k, v) {
+  const P = B.P, W = B.w, H = B.h, fot = 32, mx = W >> 1, sno = k === 'snoboll';
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) B.satt(x, y, sno ? P.i('ben', ((x * 7 + y * 13) % 9 === 0) ? 2 : 3) : P.i('oliv', ((x * 7 + y * 13) % 11 === 0) ? 1 : 2));
+  if (k === 'brottning') {
+    if (v === 1) for (let a = 0; a < 20; a++) { const x = Math.round(mx + Math.cos(a / 20 * 6.28) * 30), y = Math.round(fot + Math.sin(a / 20 * 6.28) * 6); B.satt(x, y, P.i('skiffer', 2)); B.satt(x + 1, y, P.i('skiffer', 1)); } // en ring av stenar
+    if (v === 2) for (let y = -6; y <= 6; y++) for (let x = -30; x <= 30; x++) if ((x / 30) ** 2 + (y / 6) ** 2 <= 1) B.satt(mx + x, fot + y, P.i('jord', ((x + y) % 5) ? 3 : 2)); // en trampad plan
+    [14, 30, 98, 114].forEach((x, i) => spelare(B, x, fot - (i % 2 ? 3 : 0), 0, v === 1 ? 'skiffer' : 'jord')); // de som hejar
+    spelare(B, mx - 5, fot + 2, 3, v === 0 ? 'jord' : 'rost'); spelare(B, mx + 5, fot + 2, -3, v === 0 ? 'jord' : 'skiffer'); // brottarna trycker mot varandra
+    if (v === 0) for (const x of [14, 114]) { B.satt(x - 4, fot - 13, P.i('senap', 2)); B.satt(x + 4, fot - 13, P.i('senap', 2)); } // armarna i luften
+  } else if (k === 'kast') {
+    const mal = W - 18;
+    if (v === 2) for (let y = fot - 8; y <= fot + 4; y++) B.satt(34, y, P.i('jord', 0)); // strecket man kastar från
+    ritaIkon(B, 'mal', mal - 8, fot - 14);
+    [14, 26].forEach(x => spelare(B, x, fot, 0, 'jord')); spelare(B, 40, fot, -2, 'jord'); // den som kastar lutar sig bakåt
+    bage(B, 44, fot - 14, mal, fot - 8, 10, 6, v === 1 ? 'jord' : 'skiffer', v === 1 ? 2 : 3);
+    if (v === 1) for (const x of [mal - 14, mal + 6, mal - 9]) { B.satt(x, fot + 2, P.i('jord', 2)); B.satt(x + 1, fot + 2, P.i('jord', 1)); B.satt(x + 2, fot + 2, P.i('jord', 2)); } // pinnar som missat
+    if (v === 0) for (const x of [mal - 12, mal + 8]) { B.satt(x, fot + 1, P.i('skiffer', 2)); B.satt(x + 1, fot + 1, P.i('skiffer', 1)); }
+  } else if (k === 'snoboll') {
+    for (const sida of [-1, 1]) {
+      const vx = mx + sida * 24;
+      for (let y = fot - (v === 1 ? 10 : 6); y <= fot + 2; y++) for (let dx = -3; dx <= 3; dx++) {
+        if (v === 2 && Math.abs(dx) + (fot + 2 - y) * 0.6 > 6) continue; // en rundad hög
+        const kant = Math.abs(dx) === 3 || y === fot - (v === 1 ? 10 : 6) || (v === 2 && Math.abs(dx) + (fot + 2 - y) * 0.6 > 5);
+        B.satt(vx + dx, y, kant ? P.i('skiffer', 1) : v === 1 && (y % 3 === 0 || (dx + (y % 6 < 3 ? 0 : 2)) % 4 === 0) ? P.i('skiffer', 2) : P.i('ben', dx < 0 ? 2 : 3)); // block eller vall
+      }
+      for (let dx = -3; dx <= 3; dx++) B.morka(vx + dx, fot + 3);
+      [36, 52].forEach((d, i) => spelare(B, mx + sida * d, fot - i * 2, i ? sida * -1 : 0, sida < 0 ? 'rost' : 'skiffer'));
+    }
+    bage(B, mx - 34, fot - 15, mx + 34, fot - 12, 8, 5, 'ben', 3);
+    bage(B, mx + 50, fot - 16, mx - 50, fot - 14, 6, 4, 'ben', 3);
+  } else if (k === 'bollspel') {
+    if (v === 1) for (const x of [10, 60, 108]) { B.satt(x, fot + 1, P.i('skiffer', 2)); B.satt(x + 1, fot + 1, P.i('skiffer', 1)); B.satt(x, fot + 2, P.i('skiffer', 1)); } // stenar som mål
+    if (v === 2) for (let x = 0; x < W; x += 3) B.satt(x, fot + 4, P.i('jord', 1)); // en linje på planen
+    spelare(B, 16, fot, -1, 'rost'); ritaIkon(B, 'slagtra', 18, fot - 20); // den som slår
+    [64, 88, 110].forEach((x, i) => spelare(B, x, fot - (i % 2 ? 3 : 0), i ? -3 : 3, 'skiffer')); // de som springer efter bollen
+    bage(B, 26, fot - 16, 78, fot - 4, 14, 7, 'jord', 2);
+  }
+}
+const SPORT_BILD = (k, v) => ({ w: 128, h: 40, rita: (B) => ritaSporten(B, k, v) });
+const SPORT_VAL = (k, namn, vad, idag, texter) => ({ id: 'sport_' + k, namn, typ: 'tre', vad: 'Steg 4.5.6.11: ' + vad + ' Sedd från sidan i rätt storlek. I spelet nu: ' + idag,
+  idag: SPORT_BILD(k, 0), idagText: 'Platshållaren i spelet är enklare: ' + idag, versioner: texter.map((text, v) => ({ text, ...SPORT_BILD(k, v) })) });
 const VAL = [
+  SPORT_VAL('brottning', 'Brottningen', 'två brottas i mitten och trycker mot varandra, och de andra står i en ring runt om och hejar. Ingen hamnar på marken.', 'två trycker mot varandra i mitten och de andra står runt om.', [
+    'Bara folket: brottarna i mitten och de som hejar med armarna i luften.',
+    'En ring av stenar på marken, och brottarna i var sin färg.',
+    'En trampad plan av jord där de brottas.']),
+  SPORT_VAL('kast', 'Kast mot målet', 'de står på en rad och kastar i tur och ordning mot målet en bit bort; det som kastas flyger i en båge och träffar eller missar.', 'målet (symbolen) och en grå prick som flyger i en båge.', [
+    'En sten flyger mot målet, och några stenar som missat ligger i gräset.',
+    'En pinne flyger, och pinnar som missat ligger runt målet.',
+    'Ett streck i marken som de kastar ifrån.']),
+  SPORT_VAL('snoboll', 'Snöbollskriget', 'två lag bakom var sin snövall kastar snöbollar på varandra.', 'två ljusa vallar och vita snöbollar som flyger mellan lagen.', [
+    'Låga vallar av snö.',
+    'Höga vallar av snöblock.',
+    'Rundade snöhögar.']),
+  SPORT_VAL('bollspel', 'Bollspelet', 'den som slår står i ena änden med slagträet, bollen flyger ut på planen och de andra springer efter den.', 'slagträet vid den som slår, en brun prick som flyger och bollen som ligger kvar där den landat.', [
+    'Bara slagträet, bollen i luften och de som springer.',
+    'Stenar på planen som mål.',
+    'En linje på planen.']),
   { id: 'dragkamp', namn: 'Dragkampen', typ: 'tre', vad: 'Steg 4.5.6.10: dragkampen syns. Två lag står på en rad på var sin sida om ett streck med repet mellan sig och lutar sig bakåt, och hela raden glider fram och tillbaka med repet tills det ena laget dras över strecket. Sex spelare, en ruta mellan dem, i rätt storlek. I spelet nu: ett brunt rep spänt mellan lagen, ett mörkt streck i mitten och en röd tofs mitt på repet.',
     idag: DRAG_BILD(0), idagText: 'Platshållaren i spelet nu (repet, strecket och tofsen).',
     versioner: [
