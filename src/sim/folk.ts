@@ -312,8 +312,10 @@ export function similarity(a: Person, b: Person) {
 }
 
 export function log(s: State, text: string, kind: LogEntry['kind'], ids: number[] = []) {
-  s.log.push({ t: s.now, text, kind, ids });
+  const e: LogEntry = { t: s.now, text, kind, ids };
+  s.log.push(e);
   if (s.log.length > 400) s.log.splice(0, s.log.length - 400);
+  return e;
 }
 // räknar det som händer i byn (statistiken i s.stat)
 export const count = (s: State, k: string, n = 1) => { (s.stat ??= {})[k] = (s.stat[k] ?? 0) + n; };

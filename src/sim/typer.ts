@@ -183,6 +183,7 @@ export interface Person {
   fiske?: { f: number; n: number; k: number }; // fiske med händerna: försök, napp och fångade fiskar
   gjort?: { h: number; n: Record<string, number>; t: Record<string, number[]> }; // det hen gjort, totalt (n) och per timme det senaste dygnet (t), h = timmen då något räknades sist (gjort i folk.ts, steg 3.10.6)
   tek?: Record<string, number>; // teknik: hur nära personen är att komma på något, 1 = kan det
+  byten?: ByteMinne[]; // de senaste bytena hen var med i (BYTE.minnas, steg 4.5.4.17)
   hopp?: string[]; // teknikerna hen kommit närmare genom ett köpt redskap (steg 4.5.4.16), en gång per teknik
   lar?: { av: number; tek: string }; // lärling hos mästaren av i tekniken tek (nivå 4–5, steg 4.2.3.3)
   halvminne?: string[]; // tekniker hen var lärling i när mästaren dog: det hen hunnit lära sig finns kvar i tek (steg 4.2.3.4)
@@ -237,7 +238,12 @@ export interface Rel { chem: number; op: number; rom: number; talks: number; fla
 // hållen (gav[0] är gåvorna från den med lägst id)
 export interface RelMinne { gral?: number; slag?: number; lek?: number; sida?: number; gav?: [number, number] }
 
-export interface LogEntry { t: number; text: string; kind: 'birth' | 'death' | 'rel' | 'skill' | 'world' | 'move'; ids: number[] }
+export interface LogEntry { t: number; text: string; kind: 'birth' | 'death' | 'rel' | 'skill' | 'world' | 'move'; ids: number[]; byte?: ByteMinne } // byte = bytet raden handlar om (steg 4.5.4.17)
+// ett byte som det minns (steg 4.5.4.17): med raden i loggen, hos bybor som var med (p.byten) och hos handlaren. a köpte (m i
+// byteKlart) och gav ag, b gav bg; p = priset i silver styck när bytet gjordes. fa/fb = var a:s och b:s filt låg (där sakerna
+// syns gå från den ena filten till den andra), saknas när bytet gjordes från hand till hand
+export interface ByteVara { k: string; n: number; p: number }
+export interface ByteMinne { nr: number; t: number; a: number; an: string; b: number; bn: string; ag: ByteVara[]; bg: ByteVara[]; fa?: { x: number; y: number }; fb?: { x: number; y: number } }
 
 export interface State {
   v: number; // numret på den senaste uppgraderingen av sparfilen (UPPGRADERINGAR i varld.ts)
@@ -305,7 +311,7 @@ export interface State {
   sportBast?: Record<string, number>; // den bästa i varje sport (personens id, steg 4.3.1.2)
   fram?: import('./framtradande').Fram; framKvall?: number; // framträdandet som pågår och kvällen då det senaste hölls (steg 4.3.2.1)
   framtradanden?: import('./framtradande').FramMinne[]; // de senaste framträdandena
-  overl?: import('./byte').Overl[]; filtar?: import('./byte').Filt[]; filtNr?: number; bytt?: import('./byte').Bytt[];
+  overl?: import('./byte').Overl[]; filtar?: import('./byte').Filt[]; filtNr?: number; byteNr?: number; bytt?: import('./byte').Bytt[];
   rovare?: import('./rovare').Rovarflock; rovarNr?: number; rovarVila?: number; // rövarflocken på kartan, hur många som kommit och när nästa tidigast kommer (steg 4.4.5, rovare.ts)
   klaner?: import('./klaner').Klan[]; klanNr?: number; // grannklanerna (steg 4.4.3, klaner.ts)
   handlare?: import('./handel').Handlare; nastaHandlare?: number; handlarNr?: number; // handlaren som är på besök, när nästa kommer och hur många som kommit (steg 4.4.1.2, handel.ts) // det som syns gå från hand till hand och filtarna med det som byts (bara för bilden), och det som nyss bytts bort (steg 4.4.1.1, byte.ts)

@@ -49,6 +49,7 @@ export const PAL: Record<string, Record<string, string>> = {
   vaggbrade: { o: '#24201d', a: '#3f2415', b: '#5e3c24', c: '#7d5b40', e: '#987e62', k: '#2f261d', z: 'rgba(0,0,0,.30)' }, // (Björn valde version 3 efter v245, steg 4.5.2)
   // filten där stora byten görs (steg 4.4.1.1, platshållare, 16 punkter)
   silver: { o: '#3a3e44', S: '#c8ccd2', W: '#f4f6f8', s: '#8a9098' },
+  handslag: { a: '#bd753e', b: '#7d5b40', c: '#647025', o: '#24201d', z: 'rgba(0,0,0,.30)' }, // (steg 4.5.4.17: platshållare; Björn väljer i bildstilen)
   rovare: { h: '#c9a07a', H: '#2a2420', c: '#5a5040', C: '#3a3228', s: '#8a7a60', S: '#d8d0c0', o: '#1a1410' },
   handlare: { h: '#e0b88a', H: '#3a2418', c: '#4e6a8a', C: '#2e4460', b: '#8a6a40', B: '#5a3a1e', s: '#24160a' },
   filt: { d: '#5a2a1e', r: '#9c3328', R: '#c4583a', y: '#e8c890', k: '#3a2418' },
@@ -2314,6 +2315,25 @@ export const PIX: Record<string, string[]> = {
   // filten (steg 4.4.1.1, platshållare, 16 punkter): en vävd filt sedd uppifrån, med ränder och fransar i kortändarna
   // handlaren (steg 4.4.1.2, platshållare, 16 punkter): en vandrare i blå kappa med en stor ryggsäck och en stav
   // silvret (steg 4.4.1.3, platshållare, 16 punkter): tre runda silverbitar i en liten hög
+  // handslaget när ett byte är godkänt (steg 4.5.4.17: platshållare i paletten, två händer som möts; Björn väljer i bildstilen)
+  handslag: [
+    '................',
+    '................',
+    '................',
+    '................',
+    '................',
+    'oo....oooo....oo',
+    'bbo..oaaaao..occ',
+    'bbboaaaoaaaaoccc',
+    'bbbaaaoaoaaaaccc',
+    'bbboaaaaoaaaoccc',
+    'bbo.oaaaaaaoz.cc',
+    'oo...ooooooozzoo',
+    '.......zzzzz....',
+    '................',
+    '................',
+    '................',
+  ],
   silver: [
     '................', '................', '................', '.....oooo.......', '....oWSSSo......', '....oSSSso......', '.....ossoooo....', '......ooWSSSo...',
     '..oooo.oSSSso...', '.oWSSSo.ossso...', '.oSSSso..oooo...', '..ossso.........', '...oooo.........', '................', '................', '................',

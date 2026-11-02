@@ -9,6 +9,7 @@ import { setByn, ui } from '../../ui/lage';
 import { person } from '../../ui/flikar/person';
 import { gaster } from '../../ui/gaster';
 import { filt as filtFlik } from '../../ui/flikar/filt';
+import { linkify } from '../../ui/hjalp';
 // handlaren väntar på kvällen innan filten läggs ut (steg 4.5.4.11): testerna som handlar på dagen hoppar över väntan
 const utanVantan = (s: State) => { if (s.handlare?.fas === 'vantar') s.handlare.kvall = s.now; };
 
@@ -1056,6 +1057,56 @@ SCENARIER.kopta = {
   },
 };
 
+SCENARIER.handslag = {
+  text: 'Bytet syns och minns (steg 4.5.4.17, byte.ts, ui/handel.ts, ui/flikar/filt.ts): när ett byte är godkänt syns ett handslag över båda i några sekunder, sakerna går från den ena filten till den andra och filtarna plockas ihop strax efter. Bytet minns med raden i loggen, hos byborna som var med och hos handlaren: vem, vad var och en gav och priserna i silver. Ett tryck på handslaget vid raden eller bland en persons byten visar hela bytet som rutan på filten.',
+  kor: () => {
+    utanWebblasare();
+    // ett stort byte mellan två bybor
+    const t = createState(6, START);
+    rikBy(t); tomtForrad(t); t.ting = []; setByn(t);
+    const [a, b] = treVuxna(t, 1, q => { q.warm = 1; q.pot.empati = 10; q.habit = {}; });
+    a.habit = { samla: 10 }; addTool(t, 'korg', b); addTool(t, 'korg', b); gain(t, a, 'bar', 20);
+    const bytte = askForTool(t, a, b) === 'byte';
+    const e = t.log.slice().reverse().find(l => l.byte), m = e?.byte;
+    const hel = (v: SIM.ByteVara[]) => v.length > 0 && v.every(w => Number.isInteger(w.n) && w.n >= 1 && Number.isInteger(w.p) && w.p >= 1);
+    const minns = !!m && [m.a, m.b].sort().join() === [a.id, b.id].sort().join() && hel(m.ag) && hel(m.bg) && !!m.fa && !!m.fb
+      && !!a.byten?.some(x => x.nr === m.nr) && !!b.byten?.some(x => x.nr === m.nr);
+    const [f1] = t.filtar ?? [];
+    const kort = !!f1 && f1.byt === t.now && f1.slut - t.now === (SIM.BYTE.handslagSek + SIM.BYTE.flyttSek) * SIM.SEC + SIM.BYTE.packaMin * SIM.MIN;
+    // gränssnittet: handslaget vid raden i loggen och bland personens byten, och rutan med hela bytet
+    ui.nu = t.now; ui.selected = a.id;
+    const rad = !!e && linkify(e).includes(`data-byte="${m?.nr}"`), sida = person.html(), visas = sida.includes('<h3>Byten</h3>') && sida.includes(`data-byte="${m?.nr}"`);
+    const klickat = filtFlik.klick!({ closest: () => ({ dataset: { byte: String(m?.nr) } }) } as unknown as HTMLElement) && ui.byteNr === m?.nr && ui.tab === 'filt';
+    const ruta = filtFlik.html(), helRuta = ruta.includes('<h2>Bytet</h2>') && ruta.includes(a.name) && ruta.includes(b.name) && ruta.includes('Värt') && /silver/.test(ruta);
+    ui.byteNr = -1;
+    // filtarna plockas ihop strax efter
+    for (let i = 0; i < 40 && (t.filtar?.length ?? 0) > 0; i++) { t.now += SIM.MIN; SIM.stadaByten(t); }
+    const ihop = !(t.filtar?.length) && t.now - (e?.t ?? 0) <= (SIM.BYTE.packaMin + 1) * SIM.MIN + (SIM.BYTE.handslagSek + SIM.BYTE.flyttSek) * SIM.SEC;
+    // ett byte med handlaren: sakerna går mellan hens filt och den som handlar, och hen minns bytet
+    const s = createState(6, START);
+    rikBy(s); s.nastaHandlare = s.now;
+    for (let i = 0; i < 40 && s.handlare?.fas !== 'handlar'; i++) { step(s, BEAT); utanVantan(s); }
+    const h = s.handlare!, [c] = living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen);
+    h.bynKlar = true; h.varor = []; h.silver = 100;
+    for (const p of living(s)) if (p.task?.act === 'handla') p.task = undefined;
+    SIM.put(s, 'skinn', 12, { [c.id]: 12 });
+    const vc = SIM.handlaVal(s, c);
+    if (vc) { c.task = { act: 'handla', phase: 'do', tx: vc.spot.x, ty: vc.spot.y, until: s.now + vc.dur, carry: 0, ref: vc.ref, dark: false, why: vc.why } as Task; SIM.handlaKlar(s, c, c.task); }
+    const hm = s.log.slice().reverse().find(l => l.byte)?.byte, hf = s.filtar?.find(f => f.handlare === h.id);
+    const hand = !!hm && hm.a === h.id && hm.b === c.id && !!hf && hm.fa?.x === hf.x && hm.fa?.y === hf.y && h.bytt?.at(-1)?.m?.nr === hm.nr
+      && hm.ag.every(w => w.k === 'silver' && w.p === 1) && hel(hm.bg) && !!c.byten?.some(x => x.nr === hm.nr);
+    return [
+      [`ett stort byte mellan två bybor blir av`, bytte],
+      ['bytet minns med raden i loggen och hos båda: vem, vad var och en gav och priserna i hela silver', minns],
+      ['filtarna ligger bara medan handslaget syns, sakerna går över och strax efter', kort],
+      ['raden i loggen och personens byten har handslaget, som öppnar bytet', rad && visas && klickat],
+      ['rutan visar hela bytet: båda namnen, vad var och en gav, priserna i silver och vad det är värt', helRuta],
+      ['filtarna plockas ihop strax efter bytet', ihop],
+      ['ett byte med handlaren går mellan hens filt och den som handlar, med hens priser, och hen och bybon minns det', hand],
+    ];
+  },
+};
+
 SCENARIER.grannklaner = {
   text: 'Grannklanerna (steg 4.4.3, klaner.ts): en ny by har några grannklaner med namn, folk, styrka, resurser, inställning till byn och namngivna personer, och en sparad by från före v242 får dem. Klanerna växer och krymper en gång om dygnet (ett år i spelet), och inställningen glöms mot det neutrala. Handlaren kommer från en klan som inte tycker illa om byn; en fientlig klan skickar ingen. Ett byte med handlaren gör klanen vänligare, och märker hen att byn lurat hen blir den mindre vänlig.',
   kor: () => {
@@ -1079,7 +1130,7 @@ SCENARIER.grannklaner = {
     const [a] = living(s), pa = { id: a.id, namn: a.name, x: a.x, y: a.y, varde: () => 0, over: () => [] } as SIM.Part;
     const ph = { ...pa, id: h?.id ?? -1, namn: h?.namn ?? '' } as SIM.Part;
     const i0 = k[0].inst;
-    for (const fn of SIM.vidByte) fn(s, pa, ph, [], []);
+    for (const fn of SIM.vidByte) fn(s, pa, ph, [], [], { nr: 0, t: s.now, a: pa.id, an: pa.namn, b: ph.id, bn: ph.namn, ag: [], bg: [] });
     const vanligare = k[0].inst === i0 + SIM.KLAN.handel;
     if (h) h.handel = 1000; // märker det säkert
     const i1 = k[0].inst;

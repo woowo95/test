@@ -1,4 +1,4 @@
-import { DAY, H, HOUR, MIN, Person, SEC, State, T, Task, W } from './typer';
+import { ByteMinne, DAY, H, HOUR, MIN, Person, SEC, State, T, Task, W } from './typer';
 import { balans } from './balans';
 import { ALDER, ageOf, alive, byId, count, forstaGang, living, log, stat, think } from './folk';
 import { SAMTAL, TalkEvent, isSocial } from './samtal';
@@ -10,7 +10,7 @@ import { iIstiden, ageIndex, hourOf } from './tid';
 import { grundvarde, rikedom } from './varde';
 import { SAKER, isTool, viktOf } from './saker';
 import { DELA, behovAv, bynPart, bytaMed, personPart } from './behov';
-import { FILT_MOT, Part, Vara, filtMot, nyttPar, satPersonFlytt, vidByte, vidLura, varorText } from './byte';
+import { BYTESPRIS, FILT_MOT, Part, Vara, filtMot, nyttPar, satPersonFlytt, vidByte, vidLura, varorText } from './byte';
 import { newTing, tingOf } from './agande';
 import { knows } from './teknik';
 import { put, use } from './lager';
@@ -122,7 +122,7 @@ export interface Handlare {
   bynKlar?: true; // byn har handlat med hen på det här besöket
   ko?: number[]; // byborna som står i kö vid filten, först till kvarn (steg 4.4.1.5)
   handlat?: number[]; // de som handlat med hen på det här besöket
-  bytt?: { vem: string; fick: string; gav: string }[]; // bytena under besöket, för inforutan
+  bytt?: { vem: string; fick: string; gav: string; m?: ByteMinne }[]; // bytena under besöket, för inforutan (m = hela bytet, steg 4.5.4.17)
 }
 export const handlareOf = (s: State) => s.handlare;
 // vad handlaren gör just nu (inforutan)
@@ -358,11 +358,11 @@ satPersonFlytt(
   },
 );
 // handlaren minns bytena under besöket
-vidByte.push((s, m, g, fatt, betal) => {
+vidByte.push((s, m, g, fatt, betal, minne) => {
   const h = s.handlare;
   if (!h || (m.id !== h.id && g.id !== h.id)) return;
   const b = (h.bytt ??= []), kop = m.id === h.id; // kop = handlaren köpte
-  b.push({ vem: kop ? g.namn : m.namn, fick: varorText(kop ? fatt : betal), gav: varorText(kop ? betal : fatt) });
+  b.push({ vem: kop ? g.namn : m.namn, fick: varorText(kop ? fatt : betal), gav: varorText(kop ? betal : fatt), m: minne });
   if (b.length > HANDEL.minnas) b.splice(0, b.length - HANDEL.minnas);
   const k = klanById(s, h.klan); // ett byte gör klanen lite vänligare (steg 4.4.3)
   if (k) andraInst(k, KLAN.handel);
@@ -480,3 +480,9 @@ function egenHandel(s: State, h: Handlare, p: Person) {
   else { think(p, `Gick tomhänt från ${h.namn}`, HANDEL.tomTanke, s.now, HANDEL.tomTim * HOUR); count(s, 'tomhant'); }
   visaVaror(s, h);
 }
+// priserna i ett byte med handlaren (steg 4.5.4.17): det hen tar för sina varor och det hen ger för det en bybo säljer, som på filten
+BYTESPRIS.push((s, fran, till, k) => {
+  const h = s.handlare;
+  if (!h || (fran.id !== h.id && till.id !== h.id) || k === 'silver') return;
+  return grundvarde(k) * handlarVarde(s, h, k);
+});

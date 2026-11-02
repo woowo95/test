@@ -1,5 +1,5 @@
 import { HANDEL, HANDLAR_UTR, VAPEN, handlarFas, handlarPlats, klanById, grundvarde, handlarVarde, kgOf, kortTal, rymmer, sakNamn } from '../sim';
-import type { Skill, Stat, State } from '../sim';
+import type { ByteMinne, Skill, Stat, State } from '../sim';
 import { iconImg } from '../ikoner';
 import { esc } from './hjalp';
 import { s, ui } from './lage';
@@ -19,6 +19,7 @@ export interface Gast {
   stats: Partial<Record<Stat, number>>; skills: Partial<Record<Skill, number>>; // det man vet om hen (0–20)
   bar: { ikon: string; text: string; title: string }[]; // det hen bär (utrustningen)
   handelser: string[]; // som en bybos viktiga händelser
+  byten?: ByteMinne[]; // bytena hen gjort med byn (steg 4.5.4.17)
 }
 // handlarens pris i silver för en vara (det hen värderar den till, handlarVarde i handel.ts)
 export const handlarPris = (k: string, q?: number) => Math.max(1, Math.round(grundvarde(k) * handlarVarde(s, s.handlare!, k) * (q === undefined ? 1 : 0.6 + 0.2 * q)));
@@ -41,7 +42,8 @@ export const GASTER: ((s: State, t: number) => Gast[])[] = [
       stats: {}, skills: { handel: h.handel },
       bar: [{ ikon: 'ryggsack', text: utr, title: `${utr}, rymmer ${rymmer(h)} kg` },
         ...h.varor.map(w => ({ ikon: w.k, text: `${w.n > 1 ? `${w.n} ` : ''}${handlarPris(w.k, w.q)}${iconImg('silver', 12)}`, title: `${sakNamn(w.k)}: ungefär ${handlarPris(w.k, w.q)} silver styck (hen tar ${Math.round(HANDEL.vinst * 100)} % över värdet)` }))],
-      handelser: (h.bytt ?? []).slice().reverse().map(b => `Bytte med ${b.vem}: ${b.fick} mot ${b.gav}`),
+      handelser: (h.bytt ?? []).filter(b => !b.m).reverse().map(b => `Bytte med ${b.vem}: ${b.fick} mot ${b.gav}`), // från före v271
+      byten: (h.bytt ?? []).flatMap(b => b.m ? [b.m] : []),
     }];
   },
   // rövarflocken (steg 4.4.5): rövarna i en klunga där flocken står

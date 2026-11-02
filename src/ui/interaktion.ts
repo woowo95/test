@@ -64,7 +64,7 @@ app.stage.on('pointertap', e => {
   else if (g !== undefined) selectPerson(g); // handlaren och rövarna får samma sida som en bybo (steg 4.5.4.12)
   else if (dj !== undefined) { ui.djurId = dj; visa('djur'); }
   else if (!inMap(c.x, c.y)) avmarkera(); // utanför kartan finns inget att visa
-  else if (filtAt(gx, gy)) { ui.filtAt = filtAt(gx, gy)!; if (valdFilt()) visa('filt'); }
+  else if (filtAt(gx, gy)) { ui.filtAt = filtAt(gx, gy)!; ui.byteNr = -1; if (valdFilt()) visa('filt'); }
   else if (fireAt(gx, gy)) visa('eld');
   else if (zi) valjLager(zi - 1, c);
   else if (stationAt(s, c.x, c.y)) { ui.stationId = stationAt(s, c.x, c.y)!.id; visa('station'); }

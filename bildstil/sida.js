@@ -1866,6 +1866,14 @@ function ritaBrandSammanhang(B, P, rader) {
 }
 const BRAND_M = rader => ({ w: 96, h: 48, rita: (B, P) => ritaBrandSammanhang(B, P, rader) });
 const vrid90 = r => [...r[0]].map((_, x) => r.map(rad => rad[x]).reverse().join(''));
+// steg 4.5.4.7 och 4.5.4.17: välbärgad (intryck) och handslaget när ett byte är godkänt, tre versioner var
+const BYTE_L = { o: 'kol0', e: 'jord3', c: 'jord2', b: 'jord1', R: 'rost1', L: 'oliv2', G: 'skiffer2', h: 'skiffer3', v: 'ben3', z: 'skugga' };
+const HS_RAKT = ["................", "................", "................", "................", "......oooo......", "oo...oeeeeo...oo", "RRo.oeececeo.oLL", "RRRoeeeeeceeoLLL", "RRRReeceeeeeLLLL", "RRRoeeeeeeeeoLLL", "RRo.oeeeeeeo.oLL", "oo...oooooo..zoo", "......zzzzzz....", "................", "................", "................"];
+const HS_SNETT = ["................", "................", "................", ".....oooooo.....", "....oeeeeeeo....", "...oeecececeo...", "...oeeeeeeeeo...", "..oReeeeeeeeLo..", ".oRRoeeeeeeoLLo.", ".oRRRooooooLLLo.", "oRRRo.zzzz.oLLLo", "oRRo........oLLo", "oRo..........oLo", ".o............o.", "................", "................"];
+const HS_MYNT = [".......oo.......", "......oGho......", "......ohvo......", ".......oo.......", "................", "oo...oooooo...oo", "RRo.oeeceeeo.oLL", "RRRoeeeeeceeoLLL", "RRRReeceeeeeLLLL", "RRRoeeeeeeeeoLLL", "RRo.oeeeeeeo.oLL", "oo...oooooo..zoo", "......zzzzzz....", "................", "................", "................"];
+const VB_PUNG = ["................", "................", "......oo........", ".....oLLo.......", "....oobboo......", "...occccccoo....", "..occcbcccco....", "..occccccbco....", ".occbccccccco...", ".occccccbccco...", ".occcccccccco.oo", "..occccccccooGho", "...oooooooooGhho", "....zzzzzzz.oooz", "............zzz.", "................"];
+const VB_STAPEL = ["................", "................", "................", "................", ".....oooooo.....", "....oGhhhhGo....", "....oooooooo....", "....oGhhhhGo....", "....oooooooo....", "....oGhhhhGoz...", "....oooooooo....", "....oGhhhhGoz...", ".....oooooooz...", "......zzzzzz....", "................", "................"];
+const VB_MYNT = ["................", "......oooo......", ".....oGhhGo.....", ".....oohhoo.....", ".....oLLLLo.....", "....obbbbbbo....", "...obbcbbbbbo...", "..obbbbbbcbbbo..", "..obcbbbbbbbbo..", "..obbbbbcbbbbo..", "..obbbbbbbbcbo..", "...obbbbbbbbo...", "....oooooooozz..", ".....zzzzzzzz...", "................", "................"];
 const VAL = [
   { ...VARLD_VAL('silver', 'Silvret', 'Ny sak (steg 4.4.1.3), 16 × 16 punkter, i förrådet, i handlarens packning och i pratbubblan när handlaren säger sitt pris. Tre nya versioner: mynt. Din kommentar förra gången: ”Gör mynt”.'),
     versioner: [
@@ -1961,6 +1969,20 @@ const VAL = [
     idag: { text: SYMBOLER.map(s => s.ers).join(' ') },
     versioner: [{ text: SYMBOLER.map(s => s.namn).join(', ') + '.', w: SYMBOLER.length * 10 + 2, h: 12, kol: true, rita: (B, P) => SYMBOLER.forEach((s, i) => ritaSprite(B, s.p, s.l, 2 + i * 10, 2)) }] },
 
+  { id: 'handslag', namn: 'Handslaget', vad: 'Ny symbol (steg 4.5.4.17), 16 × 16 punkter: syns ett par sekunder över båda när ett byte är godkänt, och är knappen vid raden i loggen och bland en persons byten som visar hela bytet. Till vänster i rätt storlek, till höger tre gånger större. I spelet nu: platshållaren överst (två händer som möts).', typ: 'tre',
+    idag: { w: 36, h: 36, rita: (B, P) => forstorad(B, 'handslag', 2, 2) }, idagText: 'Platshållaren i spelet nu.',
+    versioner: [
+      { text: 'Två händer som möts rakt framifrån, med en rostfärgad ärm till vänster och en olivgrön till höger.', ...LED_M(HS_RAKT, BYTE_L) },
+      { text: 'Två armar som kommer snett nedifrån och möts i ett handslag.', ...LED_M(HS_SNETT, BYTE_L) },
+      { text: 'Handslaget med ett silvermynt ovanför: ett byte.', ...LED_M(HS_MYNT, BYTE_L) },
+    ] },
+  { id: 'i_valbargad', namn: 'Välbärgad (intryck)', vad: 'Ny symbol (steg 4.5.4.7), 16 × 16 punkter, i personrutans Rykten när byn tycker att någon har det gott ställt (mellan rik och fattig). Till vänster i rätt storlek, till höger tre gånger större. I spelet nu: platshållaren överst (en pung med lite i).', typ: 'tre',
+    idag: { w: 36, h: 36, rita: (B, P) => forstorad(B, 'i_valbargad', 2, 2) }, idagText: 'Platshållaren i spelet nu.',
+    versioner: [
+      { text: 'En knuten pung med två silvermynt bredvid.', ...LED_M(VB_PUNG, BYTE_L) },
+      { text: 'En liten stapel med fyra silvermynt.', ...LED_M(VB_STAPEL, BYTE_L) },
+      { text: 'En pung med ett silvermynt som sticker upp ur öppningen.', ...LED_M(VB_MYNT, BYTE_L) },
+    ] },
 ];
 // Björns val som är bestämda men inte inbyggda i spelet: de visas under Valt med den valda versionen (0 = förut-versionen
 // behålls) och steget där de byggs in. När saken är inbyggd tas raden bort här och ur VAL, och dess dokument i samlingen 'val'

@@ -1,4 +1,4 @@
-import { HOUR, MIN, SEC, Person, State } from './typer';
+import { ByteMinne, ByteVara, HOUR, MIN, SEC, Person, State } from './typer';
 import { SAKER, isTool } from './saker';
 import { Ting } from './agande';
 import { ALDER, ageOf, log } from './folk';
@@ -13,13 +13,17 @@ import { balans } from './balans';
 // en efter sitt eget behov, `varde`), samma gång i bytet (byte i behov.ts) och samma rad i loggen och krönikan. En part är en
 // bybo, byn (det gemensamma förrådet) eller handlaren; parten säger själv vad den behöver, vad den kan byta bort och hur en
 // sak lämnar och kommer till den. Ett stort byte (ett redskap, flera saker åt gången eller mycket värt, BYTE.stort) görs på
-// en filt: båda lägger fram bara det som förhandlas om, och sakerna ligger där en stund (BYTE.filtMin) medan bytet görs.
+// en filt: båda lägger fram bara det som förhandlas om. När bytet är godkänt syns ett handslag över båda (BYTE.handslagSek),
+// sakerna går från den ena filten till den andra (BYTE.flyttSek) och filtarna plockas ihop strax efter (BYTE.packaMin).
 // Små vardagsbyten och gåvor är snabba överlämningar: saken syns gå från hand till hand (s.overl). Loggen tar alla byten;
 // krönikan bara de stora och de gåvor som betyder något (ett redskap till ett barn, mat till den som höll på att dö).
 export const BYTE = balans('byte', {
   stort: 15, // ett byte värt så mycket (grundvärdet av det som byts, ungefär arbetstimmar) eller mer är ett stort byte ...
   stortSlag: 4, // ... och så också ett byte med så många slag av saker eller fler (ett redskap är alltid ett stort byte)
-  filtMin: 15, // så många minuter ligger sakerna på filten
+  handslagSek: 3, // så många sekunder syns handslaget över båda när ett byte är godkänt (steg 4.5.4.17) ...
+  flyttSek: 3, // ... sedan går sakerna från den ena filten till den andra på så många sekunder ...
+  packaMin: 1, // ... och filtarna plockas ihop så här många minuter efter det
+  minnas: 10, // så många byten minns en bybo (p.byten)
   overlSek: 40, // så många sekunder (spelets tid) tar det för saken att gå från hand till hand
   tillbakaTim: 1, // så många timmar köper ingen tillbaka ett slag av saker av den hen just bytt bort det till
 });
@@ -66,7 +70,7 @@ export interface Overl { k: string; a: number; b: number; t: number }
 // en filt med det som byts: platsen, när den plockas ihop och sakerna (vems de var, fran). Var part i ett byte lägger ut sin
 // egen filt mitt emot den andras (steg 4.5.4.13): vem = vems filten är, par = samma tal på de två filtarna i ett byte,
 // byn = det som ligger där är byns (den som handlar för byn)
-export interface Filt { x: number; y: number; slut: number; varor: { k: string; n: number; fran: number }[]; handlare?: number; vem?: number; par?: number; byn?: true } // handlare: handlarens id, när det är handlarens filt (ligger tills hen går)
+export interface Filt { x: number; y: number; slut: number; varor: { k: string; n: number; fran: number }[]; handlare?: number; vem?: number; par?: number; byn?: true; byt?: number } // byt = när bytet på filten godkändes (steg 4.5.4.17) // handlare: handlarens id, när det är handlarens filt (ligger tills hen går)
 const filtarOf = (s: State) => (s.filtar ??= []);
 // så långt isär (i rutor) ligger två filtar mitt emot varandra
 export const FILT_MOT = 1.3;
@@ -98,7 +102,14 @@ export function stortByte(varor: Vara[]) {
 // det andra system gör när ett byte är klart (handlarens minne av bytena, handel.ts)
 // när någon lurat i ett byte (behov.ts): lurare lurade lurad (grannklanerna, klaner.ts)
 export const vidLura: ((s: State, lurare: Part, lurad: Part) => void)[] = [];
-export const vidByte: ((s: State, m: Part, g: Part, fatt: Vara[], betal: Vara[]) => void)[] = [];
+export const vidByte: ((s: State, m: Part, g: Part, fatt: Vara[], betal: Vara[], minne: ByteMinne) => void)[] = [];
+// priset i silver styck för slaget k som fran ger till till (handlarens priser, handel.ts); annars grundvärdet. Hela silver, minst ett
+export const BYTESPRIS: ((s: State, fran: Part, till: Part, k: string) => number | undefined)[] = [];
+function prisAv(s: State, fran: Part, till: Part, k: string) {
+  for (const f of BYTESPRIS) { const p = f(s, fran, till, k); if (p !== undefined) return Math.max(1, Math.round(p)); }
+  return Math.max(1, Math.round(grundvarde(k)));
+}
+const byteVaror = (s: State, varor: Vara[], fran: Part, till: Part): ByteVara[] => varor.map(w => ({ k: w.k, n: w.t ? 1 : Math.round(w.n), p: prisAv(s, fran, till, w.k) }));
 // bytet är klart: m fick fatt av g och gav betal. Samma för alla byten. desperat = m höll på att dö av bristen
 export function byteKlart(s: State, m: Part, g: Part, fatt: Vara[], betal: Vara[], desperat = false) {
   const alla = [...fatt, ...betal], stort = stortByte(alla), bytt = (s.bytt ??= []);
@@ -106,16 +117,23 @@ export function byteKlart(s: State, m: Part, g: Part, fatt: Vara[], betal: Vara[
   for (const w of betal) bytt.push({ k: w.k, a: m.id, b: g.id, t: s.now });
   // ett stort byte: var och en lägger det hen ger på sin egen filt, mitt emot den andras. Med handlaren ligger filtarna
   // redan ute (handel.ts)
-  const handlarFilt = s.filtar?.some(f => f.handlare !== undefined && (f.handlare === m.id || f.handlare === g.id));
-  if (stort && !handlarFilt) {
-    const x = (m.x + g.x) / 2, y = (m.y + g.y) / 2, par = nyttPar(s), slut = s.now + BYTE.filtMin * MIN;
-    filtarOf(s).push({ x, y: y - FILT_MOT / 2, slut, varor: fatt.map(w => ({ k: w.k, n: w.t ? 1 : w.n, fran: g.id })), vem: g.id, par },
-      { x, y: y + FILT_MOT / 2, slut, varor: betal.map(w => ({ k: w.k, n: w.t ? 1 : w.n, fran: m.id })), vem: m.id, par });
-  } else if (!stort) { overlamna(s, fatt, g, m); overlamna(s, betal, m, g); }
+  const minne: ByteMinne = { nr: (s.byteNr = (s.byteNr ?? 0) + 1), t: s.now, a: m.id, an: m.namn, b: g.id, bn: g.namn, ag: byteVaror(s, betal, m, g), bg: byteVaror(s, fatt, g, m) };
+  const hf = s.filtar?.find(f => f.handlare !== undefined && (f.handlare === m.id || f.handlare === g.id));
+  if (hf) { // sakerna går mellan handlarens filt och den som ligger mitt emot (eller den som handlar)
+    const mot = filtMot(s, hf), ena = mot ?? (hf.handlare === m.id ? g : m), xy = (f: { x: number; y: number }) => ({ x: f.x, y: f.y });
+    [minne.fa, minne.fb] = hf.handlare === m.id ? [xy(hf), xy(ena)] : [xy(ena), xy(hf)];
+  } else if (stort) {
+    // sakerna ligger på filtarna medan handslaget syns, går sedan över till den andra filten, och filtarna plockas ihop strax efter
+    const x = (m.x + g.x) / 2, y = (m.y + g.y) / 2, par = nyttPar(s), slut = s.now + (BYTE.handslagSek + BYTE.flyttSek) * SEC + BYTE.packaMin * MIN;
+    filtarOf(s).push({ x, y: y - FILT_MOT / 2, slut, varor: fatt.map(w => ({ k: w.k, n: w.t ? 1 : w.n, fran: g.id })), vem: g.id, par, byt: s.now },
+      { x, y: y + FILT_MOT / 2, slut, varor: betal.map(w => ({ k: w.k, n: w.t ? 1 : w.n, fran: m.id })), vem: m.id, par, byt: s.now });
+    minne.fa = { x, y: y + FILT_MOT / 2 }; minne.fb = { x, y: y - FILT_MOT / 2 };
+  } else { overlamna(s, fatt, g, m); overlamna(s, betal, m, g); }
   const text = `${m.namn} och ${g.namn} bytte: ${varorText(fatt)} mot ${varorText(betal)}${desperat ? `. ${m.namn} höll på att dö` : ''}.`;
-  log(s, text, 'rel', [m.id, g.id].filter(i => i > 0));
+  log(s, text, 'rel', [m.id, g.id].filter(i => i > 0)).byte = minne;
+  for (const P of [m, g]) if (P.p) { const b = (P.p.byten ??= []); b.push(minne); if (b.length > BYTE.minnas) b.splice(0, b.length - BYTE.minnas); }
   if (stort) kronika(s, text, 'byte');
-  for (const f of vidByte) f(s, m, g, fatt, betal);
+  for (const f of vidByte) f(s, m, g, fatt, betal, minne);
   return stort;
 }
 // en gåva: g ger varor till m, utan förhandling. Samma överlämning och samma rad; krönikan tar den om den betyder något:

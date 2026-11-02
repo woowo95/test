@@ -138,5 +138,7 @@ export function linkify(l: LogEntry) {
   }
   let ut = '', fran = 0;
   for (const b of bitar.sort((a, b) => a.i - b.i)) { ut += esc(txt.slice(fran, b.i)) + pLink(b.p); fran = b.i + b.n; }
-  return ut + esc(txt.slice(fran));
+  return ut + esc(txt.slice(fran)) + (l.byte ? byteKnapp(l.byte.nr) : '');
 }
+// knappen som visar hela bytet (steg 4.5.4.17): i loggen och bland en persons byten. Trycket tas om hand i flikar/filt.ts
+export const byteKnapp = (nr: number) => ` <button type="button" class="byteknapp" data-byte="${nr}" title="Visa hela bytet" aria-label="Visa hela bytet">${iconImg('handslag', 14)}</button>`;

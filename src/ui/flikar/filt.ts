@@ -1,14 +1,43 @@
-import { Filt, byId, filtMot, grundvarde, handlarVarde, sakNamn } from '../../sim';
+import { ByteMinne, ByteVara, Filt, byId, filtMot, grundvarde, handlarVarde, sakNamn } from '../../sim';
 import { iconImg } from '../../ikoner';
-import { esc, pLink } from '../hjalp';
+import { clockTxt, esc, pLink } from '../hjalp';
 import { s, ui } from '../lage';
 import { gastById, handlarPris } from '../gaster';
 import type { Flik } from '../panel';
 
 // filten (steg 4.5.4.13): öppnas genom att trycka på en filt på kartan. En filt ensam visar vad som ligger på den och vems
 // det är. Två filtar mitt emot varandra (samma par) visas alltid tillsammans, vilken av dem man än tryckt på: vad var och en
-// erbjuder och priserna i silver
-export const filt: Flik = { namn: 'Filten', knapp: 'person', html: filtHtml };
+// erbjuder och priserna i silver. Ett byte som är gjort (steg 4.5.4.17) visas på samma sätt när man trycker på handslaget vid
+// raden i loggen eller bland en persons byten: vem, vad var och en gav och fick och priserna i silver när bytet gjordes
+export const filt: Flik = {
+  namn: 'Filten', knapp: 'person', html: () => ui.byteNr >= 0 ? minneHtml() : filtHtml(),
+  klick(el) {
+    const b = el.closest<HTMLElement>('[data-byte]');
+    if (!b) return false;
+    ui.byteNr = Number(b.dataset.byte); ui.tab = 'filt';
+    return true;
+  },
+};
+// bytet med numret nr: med raden i loggen, hos en bybo eller hos handlaren
+export function byteMinne(nr: number): ByteMinne | undefined {
+  return s.log.find(l => l.byte?.nr === nr)?.byte ?? s.people.flatMap(p => p.byten ?? []).find(b => b.nr === nr) ?? s.handlare?.bytt?.find(b => b.m?.nr === nr)?.m;
+}
+// en sida av ett gjort byte: vem och det hen gav, med priserna
+function minneSida(id: number, namn: string, varor: ByteVara[]) {
+  let sum = 0;
+  const rader = varor.map(v => {
+    sum += v.n * v.p;
+    const t = `${sakNamn(v.k)}${v.n > 1 ? `, ${v.n} st` : ''}: ${v.p} silver styck`;
+    return `<li title="${esc(t)}">${iconImg(v.k, 16)} ${v.n > 1 ? `${v.n} ` : ''}${esc(sakNamn(v.k))} <span class="muted">${v.p}</span>${iconImg('silver', 12)}</li>`;
+  }).join('');
+  const p = id > 0 ? byId(s, id) : undefined;
+  return `<div class="filtsida"><p>${p ? pLink(p) : esc(namn)} <span class="muted">gav</span></p><ul class="fame">${rader || '<li class="muted">Inget</li>'}</ul>${varor.length ? `<p class="muted" title="Det hen gav, värt i silver">Värt ${sum} ${iconImg('silver', 12)}</p>` : ''}</div>`;
+}
+function minneHtml() {
+  const b = byteMinne(ui.byteNr);
+  if (!b) return '<p class="muted">Bytet är glömt.</p>';
+  return `<h2>Bytet</h2><p class="muted">${esc(clockTxt(b.t))}</p><div class="filtpar">${minneSida(b.a, b.an, b.ag)}${minneSida(b.b, b.bn, b.bg)}</div>`;
+}
 
 // filten som visas: den som ligger närmast platsen man tryckte på
 export function valdFilt() {

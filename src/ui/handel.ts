@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { BYTE, SEC, byId, clamp } from '../sim';
+import { BYTE, SEC, byId, clamp, filtMot } from '../sim';
 import { gaster } from './gaster';
 import { iconCanvas } from '../ikoner';
 import { s, ui } from './lage';
@@ -25,8 +25,30 @@ function platsAvPart(id: number) {
   const p = id > 0 ? byId(s, id) : undefined;
   return p ? posOf(p) : gaster().find(g => g.id === id);
 }
+// ett godkänt byte (steg 4.5.4.17): handslaget över båda medan BYTE.handslagSek går, sedan sakerna som går från den enas filt
+// till den andras (BYTE.flyttSek). Bytena läses ur loggen, där raden har bytet med sig
+function drawGodkant() {
+  const H = BYTE.handslagSek * SEC, F = BYTE.flyttSek * SEC, hs = 10 / (iconCanvas('handslag').width || 16);
+  for (let i = s.log.length - 1; i >= 0; i--) {
+    const e = s.log[i], d = ui.nu - e.t;
+    if (d > H + F) break;
+    const b = e.byte;
+    if (!b || d < 0) continue;
+    if (d < H) {
+      for (const id of [b.a, b.b]) { const q = platsAvPart(id); if (q) handIkoner.add('handslag', q.x * TS - 5, q.y * TS - 18, hs); }
+      continue;
+    }
+    if (!b.fa || !b.fb) continue;
+    const k = clamp((d - H) / F, 0, 1);
+    for (const [varor, a, c] of [[b.ag, b.fa, b.fb], [b.bg, b.fb, b.fa]] as const) varor.forEach((v, j) => {
+      const x = (a.x + (c.x - a.x) * k) * TS + (j % 4) * 5 - 8, y = (a.y + (c.y - a.y) * k) * TS - TS / 2 - Math.sin(k * Math.PI) * 6 + Math.floor(j / 4) * 5;
+      handIkoner.add(v.k, x, y, 6 / (iconCanvas(v.k).width || 8));
+    });
+  }
+}
 export function drawHandel() {
   filtIkoner.start(); handIkoner.start(); framlingG.clear();
+  drawGodkant();
   for (const g of gaster()) cirkel(g.x * TS, g.y * TS, g.farg, g.id === ui.selected);
   for (const f of s.filtar ?? []) {
     if (!f.handlare && f.slut <= ui.nu) continue;
@@ -34,9 +56,13 @@ export function drawHandel() {
     const fk = f.handlare ? 'filt' : 'filt_by', x0 = f.x * TS - TS, y0 = f.y * TS - TS / 2, sc = (2 * TS) / iconCanvas(fk).width;
     filtIkoner.add(fk, x0, y0 - TS / 2, sc);
     // sakerna på filten: en part per filt (steg 4.5.4.13) över hela filten; en filt från före v267 har var partens på sin halva
-    const vems = [...new Set(f.varor.map(v => v.fran))], kol = vems.length > 1 ? 2 : 4;
-    f.varor.forEach((v, i) => {
-      const sida = vems.indexOf(v.fran), n = f.varor.filter((w, j) => j < i && w.fran === v.fran).length;
+    // ett godkänt byte (steg 4.5.4.17): sakerna ligger kvar under handslaget, är i luften medan de går över (drawGodkant) och
+    // ligger sedan på den andra filten tills filtarna plockas ihop
+    const d = f.byt === undefined ? 0 : ui.nu - f.byt, H = BYTE.handslagSek * SEC;
+    const varor = d < H ? f.varor : d < H + BYTE.flyttSek * SEC ? [] : filtMot(s, f)?.varor ?? [];
+    const vems = [...new Set(varor.map(v => v.fran))], kol = vems.length > 1 ? 2 : 4;
+    varor.forEach((v, i) => {
+      const sida = vems.indexOf(v.fran), n = varor.filter((w, j) => j < i && w.fran === v.fran).length;
       filtIkoner.add(v.k, x0 + 2 + sida * TS + (n % kol) * 6, y0 - 4 + Math.floor(n / kol) * 5, 6 / (iconCanvas(v.k).width || 8));
     });
   }
