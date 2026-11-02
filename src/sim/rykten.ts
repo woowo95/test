@@ -52,10 +52,12 @@ export const RYKTE = balans('rykte', {
   konstGlom: 3, // en död som en sak i byn visar (ristningar eller en målning, steg 4.3.3) minns så här många gånger längre
   avundEmp: 6, // den som har högst så här mycket empati, eller är rival, blir avundsjuk på en prestation i stället för imponerad
   avundTanke: 0.05, avundTim: 8,
-  vardagTakt: 0.03, // flitig, lat, rik och fattig: intrycket närmar sig det man ser så här mycket per timme
+  vardagTakt: 0.03, // flitig, lat, välbärgad, rik och fattig: intrycket närmar sig det man ser så här mycket per timme
   flitig: 1.4, lat: 0.6, // flitig när arbetstimmarna är så här många gånger snittet, lat under lat gånger snittet
-  rik: 2, fattig: 0.4, // rik och fattig på samma sätt, mätt i förmögenheten (förväntningarna, humor.ts)
-  rikMin: 2, // ... och bara när snittet är så här stort
+  // välbärgad, rik och fattig på samma sätt, mätt i förmögenheten (förväntningarna, humor.ts) mot den mittersta i byn:
+  // välbärgad över valbargad gånger den, rik över rik gånger och fattig bara under fattig gånger (steg 4.5.4.7)
+  valbargad: 1.5, rik: 2.5, fattig: 0.3,
+  rikMin: 2, // ... och bara när snittet är så här stort (den mittersta räknas som minst så här mycket)
   fattigVikt: 0.1, // fattigdom väger så här mycket i anseendet och ryktbarheten mot andra intryck (steg 4.5.3.7)
   berattelseLed: 3, legendLed: 6, // ett minne av en död som berättats i så här många led är en berättelse och till sist en legend
   legend: 2, // en död med så här stor ryktbarhet är en legend (stjärna) med gott anseende eller ökänd (dödskalle) med ont
@@ -97,6 +99,7 @@ const IDEF = {
   hjalpsam: { namn: 'hjälpsam', tecken: 1, op: 25, sym: '🤝', betyder: 'Har gett något till någon som höll på att dö.' },
   skicklig: { namn: 'skicklig', tecken: 1, op: 12, sym: '⭐', betyder: 'Har gjort ett mästerverk.' },
   flitig: { namn: 'flitig', tecken: 1, op: 8, sym: '💪', betyder: 'Arbetar mycket mer än de andra i byn.' },
+  valbargad: { namn: 'välbärgad', tecken: 1, op: 0, sym: '👛', betyder: 'Äger mer än de flesta i byn.' }, // steg 4.5.4.7
   rik: { namn: 'rik', tecken: 1, op: 0, sym: '💰', betyder: 'Äger mycket mer än de andra i byn.' },
   rattvis: { namn: 'rättvis', tecken: 1, op: 10, sym: '⚖️', betyder: 'Har dömt rättvist som ledare.' }, // ledarens straff (steg 3.5.3, styre.ts)
   orattvis: { namn: 'orättvis', tecken: -1, op: -15, sym: '🙅', betyder: 'Har dömt orättvist som ledare.' },
@@ -316,7 +319,7 @@ function arbetstimmar(p: Person) {
   for (const k in p.habit) if (arArbete(k)) t += p.habit[k];
   return t;
 }
-// en gång i timmen: de som är nära varandra ser om den andra är flitig eller lat och rik eller fattig. Intrycket närmar sig
+// en gång i timmen: de som är nära varandra ser om den andra är flitig eller lat och välbärgad, rik eller fattig. Intrycket närmar sig
 // det man ser; det som inte stämmer längre bleknar bort
 export function stepRykten(s: State, mood: (p: Person, now: number) => number) {
   stepSmak(s, mood); // tycke och smak, också när bara en vuxen är kvar
@@ -325,15 +328,17 @@ export function stepRykten(s: State, mood: (p: Person, now: number) => number) {
   let ht = 0, wt = 0;
   const h = folk.map(p => { const v = arbetstimmar(p); ht += v; return v; }), w = folk.map(p => { const v = p.forv?.w ?? 0; wt += v; return v; });
   const hm = ht / folk.length, wm = wt / folk.length;
+  // förmögenheten jämförs med den mittersta i byn, så att en enda rik inte gör alla andra fattiga (steg 4.5.4.7)
+  const ws = [...w].sort((a, b) => a - b), mitt = Math.max(RYKTE.rikMin, ws.length % 2 ? ws[ws.length >> 1] : (ws[ws.length / 2 - 1] + ws[ws.length / 2]) / 2);
   for (let i = 0; i < folk.length; i++) {
     const p = folk[i];
     const flit = hm > 0 ? (h[i] > hm * RYKTE.flitig ? 'flitig' : h[i] < hm * RYKTE.lat ? 'lat' : undefined) : undefined;
-    const rik = wm >= RYKTE.rikMin ? (w[i] > wm * RYKTE.rik ? 'rik' : w[i] < wm * RYKTE.fattig ? 'fattig' : undefined) : undefined;
+    const rik = wm >= RYKTE.rikMin ? (w[i] > mitt * RYKTE.rik ? 'rik' : w[i] > mitt * RYKTE.valbargad ? 'valbargad' : w[i] < mitt * RYKTE.fattig ? 'fattig' : undefined) : undefined;
     for (const q of folk) {
       if (q === p || Math.hypot(q.x - p.x, q.y - p.y) >= RYKTE.syn) continue;
-      for (const [a, b] of [['flitig', 'lat'], ['rik', 'fattig']] as [IntryckTyp, IntryckTyp][]) {
-        const mal = a === 'flitig' ? flit : rik;
-        for (const k of [a, b]) {
+      for (const grupp of [['flitig', 'lat'], ['valbargad', 'rik', 'fattig']] as IntryckTyp[][]) {
+        const mal = grupp[0] === 'flitig' ? flit : rik;
+        for (const k of grupp) {
           const e = intryckOm(q, p.id, k);
           if (k === mal) intryck(s, q, p, k, RYKTE.vardagTakt * (1 - (e?.v ?? 0)), 1);
           else if (e) { const f = styrka(e); e.v *= 1 - RYKTE.vardagTakt; relEffekt(s, q, p.id, k, styrka(e) - f); }
@@ -380,7 +385,7 @@ export function glomRykten(s: State, hours: number) {
     const tau = 24 * (RYKTE.glomDygn + stat(p, 'minne', s.now) / RYKTE.glomMinne);
     p.intryck = p.intryck.filter(e => {
       const q = byId(s, e.om), dod = !q || !alive(q);
-      if (e.k === 'flitig' || e.k === 'lat' || e.k === 'rik' || e.k === 'fattig') { if (dod) return false; return e.t >= s.now - hours * HOUR || styrka(e) >= RYKTE.glomGrans; } // det som ses nu glöms inte
+      if (e.k === 'flitig' || e.k === 'lat' || e.k === 'valbargad' || e.k === 'rik' || e.k === 'fattig') { if (dod) return false; return e.t >= s.now - hours * HOUR || styrka(e) >= RYKTE.glomGrans; } // det som ses nu glöms inte
       let t = tau * ((e.bev?.[0] && HANDELSER[e.bev[0].h].vikt >= RYKTE.tungVikt) ? RYKTE.glomTung : 1);
       if (dod) t *= RYKTE.dodGlom + rOf(e.om) / RYKTE.dodRykte;
       if (dod && q && isKin(p, q)) t *= RYKTE.dodSlakt;

@@ -86,7 +86,8 @@ const BDEF: Record<IntryckTyp, BinamnDef> = {
   hjalpsam: { namn: [['Hjälparen', 'Hjälperskan'], ['den gode', 'den goda'], ['Räddaren', 'Räddarinnan'], ['den trofaste', 'den trofasta']] },
   skicklig: { namn: [['Mästaren', 'Mästarinnan'], ['den skicklige', 'den skickliga'], ['Guldhand', 'Guldhand'], ['den kloke', 'den kloka']] },
   flitig: { namn: [['den flitige', 'den flitiga'], ['Myran', 'Myran'], ['den outtröttlige', 'den outtröttliga'], ['Morgonstjärnan', 'Morgonstjärnan']] },
-  rik: { namn: [['den rike', 'den rika'], ['Förrådet', 'Förrådet'], ['den välbärgade', 'den välbärgade'], ['Fullkistan', 'Fullkistan']] },
+  valbargad: { namn: [['den välbärgade', 'den välbärgade'], ['Smörbyttan', 'Smörbyttan'], ['den välförsedde', 'den välförsedda'], ['Mjölsäcken', 'Mjölsäcken']] }, // steg 4.5.4.7
+  rik: { namn: [['den rike', 'den rika'], ['Förrådet', 'Förrådet'], ['Guldpungen', 'Guldpungen'], ['Fullkistan', 'Fullkistan']] },
   rattvis: { namn: [['den rättvise', 'den rättvisa'], ['Vågen', 'Vågen'], ['den vise', 'den visa'], ['Domaren', 'Domarinnan']] },
   orattvis: { namn: [['den orättvise', 'den orättvisa'], ['den hårde', 'den hårda'], ['Snedvågen', 'Snedvågen'], ['den stränge', 'den stränga']] },
   stark: { namn: [['den starke', 'den starka'], ['Björnen', 'Björnen'], ['Järnarmen', 'Järnarmen'], ['Eken', 'Eken']] },

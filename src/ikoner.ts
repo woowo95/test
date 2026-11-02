@@ -200,6 +200,7 @@ export const PAL: Record<string, Record<string, string>> = {
   i_hjalpsam: { a: '#bdb39b', b: '#a0947d', c: '#b2921b', o: '#24201d', z: 'rgba(0,0,0,.30)' },
   i_skicklig: { a: '#d8b25f', b: '#b2921b', o: '#24201d', w: '#dad0bb', z: 'rgba(0,0,0,.30)' },
   i_flitig: { a: '#8a9c9e', b: '#61767a', d: '#7d5b40', h: '#987e62', o: '#24201d', t: '#8a9c9e', z: 'rgba(0,0,0,.30)' },
+  i_valbargad: { a: '#987e62', b: '#7d5b40', g: '#647025', o: '#24201d', z: 'rgba(0,0,0,.30)' },
   i_rik: { R: '#bd753e', a: '#987e62', b: '#7d5b40', g: '#647025', o: '#24201d', r: '#a14808', z: 'rgba(0,0,0,.30)' },
   i_rattvis: { a: '#d8b25f', b: '#b2921b', c: '#7d5b40', o: '#24201d', z: 'rgba(0,0,0,.30)' },
   i_orattvis: { a: '#bd753e', b: '#a14808', c: '#7d5b40', o: '#24201d', z: 'rgba(0,0,0,.30)' },
@@ -3313,6 +3314,25 @@ export const PIX: Record<string, string[]> = {
     '......zz........',
   ],
   // rik (steg 3.6.11, Björn valde version 2 i bildstilen: mörk kant och skugga snett nedanför)
+  // välbärgad (steg 4.5.4.7: platshållare i paletten, en pung med lite i; Björn väljer i bildstilen)
+  i_valbargad: [
+    '................',
+    '................',
+    '................',
+    '.......oo.......',
+    '......oggo......',
+    '.....oobboo.....',
+    '....oaaaaaao....',
+    '...oaaabaaaao...',
+    '...oaababaaaoz..',
+    '..oaaaaaaabaaoz.',
+    '..oabaaaaaaaaoz.',
+    '..oaaaabaaaabozz',
+    '...oaaaaaaaaoz..',
+    '....oooooooozz..',
+    '.....zzzzzzzz...',
+    '................',
+  ],
   i_rik: [
     '................',
     '.....o..o.......',

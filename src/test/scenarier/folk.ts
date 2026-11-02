@@ -642,7 +642,16 @@ SCENARIER.rykten = {
     // fattigdom sänker anseendet bara lite (steg 4.5.3.7): ett lika starkt intryck fattig väger fattigVikt av lat
     const fv = by(), sett = (k: SIM.IntryckTyp, om: Person) => { fv.w.intryck = [{ om: om.id, namn: om.name, k, v: 1, c: 1, t: fv.t.now }]; return SIM.ryktbarhet(fv.t, om.id).a; };
     const aFattig = sett('fattig', fv.p), aLat = sett('lat', fv.r), fattigLite = aFattig < 0 && Math.abs(aFattig / aLat - SIM.RYKTE.fattigVikt) < 1e-9;
+    // välbärgad, rik och fattig mot den mittersta i byn (steg 4.5.4.7): alla står tätt, förmögenheten 10 för de flesta
+    const rf = by(), vuxna = living(rf.t).filter(x => ageOf(x, rf.t.now) >= SIM.ALDER.vuxen);
+    for (const x of vuxna) { x.forv = { f: 0, w: 10 }; x.x = rf.w.x; x.y = rf.w.y; x.intryck = []; }
+    const [pv, pr, pl, pf] = vuxna.filter(x => x !== rf.w);
+    pv.forv!.w = 20; pr.forv!.w = 40; pl.forv!.w = 5; pf.forv!.w = 2;
+    for (let n = 0; n < 60; n++) SIM.stepRykten(rf.t, () => 0.5);
+    const ses = (x: Person) => (['valbargad', 'rik', 'fattig'] as SIM.IntryckTyp[]).filter(k => (SIM.intryckOm(rf.w, x.id, k)?.v ?? 0) > 0.1).join(',') || 'inget';
+    const rikNivaer = ses(pv) === 'valbargad' && ses(pr) === 'rik' && ses(pl) === 'inget' && ses(pf) === 'fattig';
     return [
+      [`förmögenheten 20, 40, 5 och 2 när de flesta har 10: ${ses(pv)}, ${ses(pr)}, ${ses(pl)} och ${ses(pf)}`, rikNivaer],
       [`fattig sänker anseendet bara lite (${aFattig.toFixed(2)} mot lat ${aLat.toFixed(2)})`, fattigLite],
       [`den som såg slaget tycker att hen är våldsam (${bevis}), den som var långt bort vet inget`, !!e && e.c === 1 && bevis.includes(a.q.name) && !bort],
       [`ryktet sprids svagare och mindre säkert (säkerhet ${e?.c.toFixed(2)} → ${hort?.c.toFixed(2)}, led ${hort?.led})`, !!hort && hort.c < e!.c && hort.led === 1 && hort.src === a.w.id],
