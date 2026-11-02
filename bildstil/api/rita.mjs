@@ -236,16 +236,18 @@ function delarSomSkaRitas(args, allaRitade = false, baraOmritning = false) {
   return ut;
 }
 // ---------- kostnaden ----------
-// Uppskattningen bygger på första körningen (2026-11-02, 9 näsor och 4 ögonbryn med en version och granskning): en ritning
-// gav ungefär 550 + 225 tokens ut per bild som ritas (ett läge för kvinnan, mannen eller barnet), och granskningen
-// 470 + 490. Valet bland tre antas ge 30 % mer än granskningen. En bild till API:t är ungefär bredd × höjd / 750 tokens,
-// högst 1 600. Lågt och högt är 0,8 och 1,5 gånger det väntade: modellen tänker olika länge, och några delar tas om.
+// Uppskattningen bygger på de tre första körningarna (2026-11-02, 46 delar). Det som styr är hur stor delen är: tecknen i
+// förebildens punkter (bilderna, mannens och barnets) och antalet lägen. En ritning gav ungefär 500 + 2,4 tokens ut per
+// tecken + 150 per läge, och valet 800 + 1,45 per tecken + 150 per läge. Valet läser ritfrågan och dessutom varje version
+// som punkter (ungefär ett token per 2,5 tecken) och som bild. En bild till API:t är ungefär bredd × höjd / 750 tokens,
+// högst 1 600. Lågt och högt är 0,85 och 1,3 gånger det väntade. Prövat mot körningarna: öronen, munnarna, näsorna och
+// ögonbrynen väntat 2,38 (kostade 2,02), huvudformerna och ögonen väntat 1,78 (kostade 1,78).
 const bildTokens = sort => Math.min(1600, Math.round(lagenFor(sort).length * (64 * 4 + 8) * 3 * (64 * 4 + 8) / 750));
-const bilderSomRitas = sort => lagenFor(sort).length * (1 + (SORT[sort].ritas.manbild ? 1 : 0) + (SORT[sort].ritas.barnbild ? 1 : 0));
+const forebildTecken = sort => { const fb = lasDel(delarAv(sort)[0].id); return fb ? JSON.stringify({ bilder: fb.bilder, man: fb.man, barn: fb.barn }).length : 300; };
 const textTokens = f => Math.round((JSON.stringify(f.params.system).length + f.params.messages[0].content.filter(c => c.type === 'text').map(c => c.text).join('').length) / 3);
 function delKostnad(d, ritIn) { // ritIn: tokens in i en ritfråga, bilden inräknad
-  const I = bilderSomRitas(d.sort), B = bildTokens(d.sort);
-  const ritUt = 550 + 225 * I, valIn = ritIn + B * VERSIONER + VERSIONER * 60 * I, valUt = 1.3 * (470 + 490 * I);
+  const T = forebildTecken(d.sort), L = lagenFor(d.sort).length, B = bildTokens(d.sort);
+  const ritUt = 500 + 2.4 * T + 150 * L, valIn = ritIn + VERSIONER * (T / 2.5 + B), valUt = 800 + 1.45 * T + 150 * L;
   return (VERSIONER * (ritIn * PRIS.in + ritUt * PRIS.ut) + valIn * PRIS.in + valUt * PRIS.ut) / 1e6;
 }
 async function uppskattning(delar, client = null) {
@@ -256,7 +258,7 @@ async function uppskattning(delar, client = null) {
     const k = delKostnad(d, ritIn); summa += k;
     per[d.sort] = per[d.sort] || { n: 0, k: 0 }; per[d.sort].n++; per[d.sort].k += k;
   }
-  const lag = summa * 0.8, hog = summa * 1.5;
+  const lag = summa * 0.85, hog = summa * 1.3;
   const rader = Object.entries(per).map(([sort, p]) => `  ${SORT[sort].namn}: ${p.n} delar, ungefär ${p.k.toFixed(2)} dollar`);
   return { lag, hog, vantat: summa, text: `${delar.length} delar, bästa av ${VERSIONER}: ungefär ${lag.toFixed(2)}–${hog.toFixed(2)} dollar med batch (väntat ${summa.toFixed(2)})\n${rader.join('\n')}` };
 }
@@ -319,7 +321,7 @@ try {
     for (const d of delar) {
       const ok = versioner[d.id].filter(x => !x.fel.length), g = r3.ut[d.id]?.svar;
       let slut = null, hur = '';
-      if (g && !kontrollera(d.sort, g).length) { slut = g; hur = g.val > 0 ? `version ${g.val} av ${ok.length} vald` : `ingen av ${ok.length} passade, en ny ritad i valet`; }
+      if (g && !kontrollera(d.sort, g).length) { slut = g; hur = (g.val > 0 ? `version ${g.val} vald` : 'ingen passade, en ny ritad i valet') + (ok.length < VERSIONER ? ` (${ok.length} av ${VERSIONER} versioner gick igenom koden)` : ''); }
       else if (ok.length) { const v = ok.find(x => x.nr === g?.val) || ok[0]; slut = v.svar; hur = `version ${v.nr} av ${ok.length} (valet ${g ? 'gick inte igenom koden' : 'saknas: ' + (r3.ut[d.id]?.fel || '')})`; }
       if (!slut) { rapport.push(`${d.id}: inte ritad (${[...new Set(versioner[d.id].flatMap(x => x.fel))].slice(0, 3).join('; ')})`); continue; }
       spara(d, slut, `API:t (${MODELL}), bästa av ${ok.length}${kommentarer[d.id] ? ', omritad efter Björns svar' : ''}`);

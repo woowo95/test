@@ -1,0 +1,76 @@
+{
+ "id": "huvud-bred",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Valde version 2. Den är bred och full i kinderna men smalnar mjukt mot hakan, och den skuggas som förebilden: ljust uppe till vänster (c/d) och mörkare åt höger (a). Kinderna (C mot B/A) ligger symmetriskt kring mittlinjen, och hakan är centrerad mellan x=-1 och 0. Version 1 och 3 har en ensam a-prick i hakraden, och den bryter mot regeln om ensamma prickar. Version 3 har dessutom smalare sidor som inte känns breda. Mannen i version 2 har rakare sidor, bredare käke och plattare haka, och barnet är kortare och rundare. Alla rader är 34 tecken breda och ryms i rutan. Jag ändrade ingenting, eftersom inga fel hittades.",
+ "bilder": {
+  "standard": {
+   "x": -17,
+   "y": 1,
+   "rader": [
+    "ccdddddcccccccccccccccbbbbbbaaaaaa",
+    "cccccccccccccccccccccbbbbbbbaaaaaa",
+    "ccccccccccccccccccccbbbbbbbbaaaaaa",
+    "ccccccccccccccccccccbbbbbbbbaaaaaa",
+    "cccccccccccccccccccbbbbbbbbbaaaaaa",
+    "ccccccCCcccccccccccbbbbbbbBAaaaaaa",
+    "ccccccCCCcccccccccbbbbbbbBAAaaaaaa",
+    ".cccccCCCccccccccbbbbbbbbAAAaaaaa.",
+    ".cccccCCccccccccbbbbbbbbbbAAaaaaa.",
+    ".ccccccccccccccbbbbbbbbbbbaaaaaaa.",
+    "..bcccccccccccbbbbbbbbbbbbaaaaaa..",
+    "..bbcccccccccbbbbbbbbbbbbbaaaaaa..",
+    "...bbccccccbbbbbbbbbbbbbbaaaaaa...",
+    "....bbbcccbbbbbbbbbbbbbbbaaaaa....",
+    ".....bbbbbbbbbbbbbbbbbbbaaaaa.....",
+    ".......bbbbbbbbbbbbbbbbaaaa.......",
+    "..........bbbbbbbbbbbaaa.........."
+   ]
+  }
+ },
+ "man": {
+  "standard": {
+   "x": -17,
+   "y": 1,
+   "rader": [
+    "ccdddddcccccccccccccccbbbbbbaaaaaa",
+    "cccccccccccccccccccccbbbbbbbaaaaaa",
+    "ccccccccccccccccccccbbbbbbbbaaaaaa",
+    "ccccccccccccccccccccbbbbbbbbaaaaaa",
+    "cccccccccccccccccccbbbbbbbbbaaaaaa",
+    "ccccccCCcccccccccccbbbbbbbBAaaaaaa",
+    "ccccccCCCcccccccccbbbbbbbBAAaaaaaa",
+    "ccccccCCCccccccccbbbbbbbbAAAaaaaaa",
+    "ccccccCCccccccccbbbbbbbbbbAAaaaaaa",
+    ".ccccccccccccccbbbbbbbbbbbaaaaaaa.",
+    ".bccccccccccccbbbbbbbbbbbbaaaaaaa.",
+    ".bbccccccccccbbbbbbbbbbbbbaaaaaaa.",
+    "..bbbccccccbbbbbbbbbbbbbbbaaaaaa..",
+    "..bbbbcccbbbbbbbbbbbbbbbbbaaaaaa..",
+    "...bbbbbbbbbbbbbbbbbbbbbbaaaaaa...",
+    ".....bbbbbbbbbbbbbbbbbbbaaaaa.....",
+    ".......bbbbbbbbbbbbbbbaaaaa......."
+   ]
+  }
+ },
+ "barn": {
+  "standard": {
+   "x": -17,
+   "y": 1,
+   "rader": [
+    "ccdddddcccccccccccccccbbbbbbaaaaaa",
+    "cccccccccccccccccccccbbbbbbbaaaaaa",
+    "ccccccccccccccccccccbbbbbbbbaaaaaa",
+    "cccccccccccccccccccbbbbbbbbbaaaaaa",
+    "ccccccCCcccccccccccbbbbbbbBAaaaaaa",
+    ".cccccCCCccccccccbbbbbbbbAAAaaaaa.",
+    ".cccccCCccccccccbbbbbbbbbbAAaaaaa.",
+    "..ccccccccccccbbbbbbbbbbbbaaaaaa..",
+    "...bcccccccccbbbbbbbbbbbbaaaaaa...",
+    ".....bbccccbbbbbbbbbbbbbaaaaa.....",
+    ".......bbbbbbbbbbbbbbbbaaaa.......",
+    "...........bbbbbbbbbbaa..........."
+   ]
+  }
+ }
+}

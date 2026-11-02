@@ -1,0 +1,56 @@
+{
+ "id": "oga-8",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Det är den enda versionen där det tunga ögonlocket skuggas efter ljuset uppifrån vänster: c på den belysta vänstra sidan och a längst ut till höger. Version 1 har ett platt, symmetriskt lock, och dess ledsna läge har en förskjuten översta rad. Version 2 gör locket för ljust och svullet, och i glada och ledsna ändras ögonvitan på ett osammanhängande sätt. Storleken (7×6 inom rutan), linjetjockleken och den mörka veckraden (a) under locket stämmer med förebilden. Jag rättade det ledsna läget. Pupillen hoppade ner en rad och bytte plats med irisen, och raden 'cbbbbbb' bröt mot de andra lägena. Nu är pupil, iris och undre lock desamma som i öppna, och det enda humöret ändrar är att locket hänger ner över ögats yttre (vänstra) hörn ('bajkkvb'). Övriga lägen är oförändrade.",
+ "bilder": {
+  "oppna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    ".bcccb.",
+    "cbbbbba",
+    "aaaaaaa",
+    "bvjkkvb",
+    ".vjiiv.",
+    ".bcccb."
+   ]
+  },
+  "glada": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    ".bcccb.",
+    "cbbbbba",
+    "aaaaaaa",
+    "bvjkkvb",
+    ".cdddc.",
+    "......."
+   ]
+  },
+  "ledsna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    ".bcccb.",
+    "cbbbbba",
+    "aaaaaaa",
+    "bajkkvb",
+    ".vjiiv.",
+    ".bcccb."
+   ]
+  },
+  "slutna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    ".bcccb.",
+    "cbbbbba",
+    "bbbbbbb",
+    "aaaaaaa",
+    ".bcccb.",
+    "......."
+   ]
+  }
+ }
+}

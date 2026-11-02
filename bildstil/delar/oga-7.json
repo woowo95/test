@@ -1,0 +1,52 @@
+{
+ "id": "oga-7",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Alla tre versionerna har samma öppna form, där ögat sluttar ner mot ytterhörnet. Version 3 håller ihop bäst i alla lägen. Det slutna läget fyller samma yta som det öppna ögat, med en sluten lockkant som följer den sneda formen och samma undre lock (.bcccb..). Därför sitter det slutna ögat på samma plats som det öppna på alla tre ansiktena. I version 1 och 2 krymper det slutna ögat i stället till lösa streck med en ljus c-linje, och där hänger raden aaacb... som en lös stump. Jag ändrade ledsna. Där flyttades iris och pupill ner en rad, men humöret ska bara ändra ögonlocket. Därför ligger iris och pupill nu kvar på samma plats som i oppna (bavikkvb och bvvjiib.). Det sänkta locket med skuggan ovanför (..bbaaa. och .baaaava) täcker nu irisens överkant. Övriga lägen är oförändrade.",
+ "bilder": {
+  "oppna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    "...aaaa.",
+    ".bajjiva",
+    "bavikkvb",
+    "bvvjiib.",
+    ".bcccb.."
+   ]
+  },
+  "glada": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    "...aaaa.",
+    ".bajjiva",
+    "bacikkcb",
+    "bcdddcb.",
+    "........"
+   ]
+  },
+  "ledsna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    "..bbaaa.",
+    ".baaaava",
+    "bavikkvb",
+    "bvvjiib.",
+    ".bcccb.."
+   ]
+  },
+  "slutna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    "...aaaa.",
+    ".aabbcca",
+    "abbccaab",
+    "bccaaab.",
+    ".bcccb.."
+   ]
+  }
+ }
+}

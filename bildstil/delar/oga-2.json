@@ -1,0 +1,52 @@
+{
+ "id": "oga-2",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 2. Den har tydligt spetsiga ögonvrår (a till vänster, b till höger), vilket ger mandelformen. Ögonlocket är mörkt upptill och huden ljusnar nedåt (c, d), så skuggningen stämmer med ljus uppifrån vänster. Det slutna läget är ett lugnt, välvt lock som passar förebilden. Version 1 omger hela iris med vitt, så ögat ser stirrande ut, och dess ledsna läge har en ensam prick. Version 3:s slutna läge ser ut som runda ringar eller glasögon. Ändringar i det ledsna läget: iris i rad 2 låg förskjuten (j och i i kolumn 5–6, utanför iris i kolumn 3–5). Den är rättad till 'aaaajia.', så att locket täcker iris yttre del och den synliga delen ligger rätt. Den vänstra ögonvrån i rad 3 och det undre locket i rad 5 är satta lika med det öppna läget ('avvikkvb', '..cddc..'), så att bara det som humöret ändrar skiljer lägena åt.",
+ "bilder": {
+  "oppna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    "..aaaa..",
+    ".aajjia.",
+    "avvikkvb",
+    ".bcjiic.",
+    "..cddc.."
+   ]
+  },
+  "glada": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    "..aaaa..",
+    ".aajjia.",
+    "avvikkvb",
+    ".ccddcc.",
+    "........"
+   ]
+  },
+  "ledsna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    "bbaaa...",
+    "aaaajia.",
+    "avvikkvb",
+    ".bcjiic.",
+    "..cddc.."
+   ]
+  },
+  "slutna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    "........",
+    "..bbbb..",
+    ".bccccb.",
+    "aaaaaaab",
+    "..cddc.."
+   ]
+  }
+ }
+}

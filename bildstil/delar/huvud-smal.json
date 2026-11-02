@@ -1,0 +1,84 @@
+{
+ "id": "huvud-smal",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den har samma bredd upptill som förebilden, så den möter mallens skalle utan något steg. Därefter smalnar den jämnt mot en smal, spetsig haka, vilket ger formen 'Smal'. Skuggningen följer förebilden: ljust (c/d) på vänster sida mot ljuset, b i mitten och mörkt (a) på höger sida. Kinderna är ljusare till vänster (C) och mörkare till höger (B/A). Alla rader är symmetriska kring mittlinjen och håller sig inom rutan. Version 2 är smalare upptill än skallen och har ensamma a-prickar i hakan (babbaa, bbbabbaaaa). Version 3 är godtagbar men har en längre och mindre ren ljusdiagonal. Mannens bild har bredare käke och plattare haka, och barnets är kortare med rundad avslutning. Jag ändrade ingenting i den valda versionen: raderna har rätt längd, tonerna övergår utan glans och det finns inga ensamma punkter.",
+ "bilder": {
+  "standard": {
+   "x": -16,
+   "y": 1,
+   "rader": [
+    ".ccddddcccccccccccccbbbbbbaaaaa.",
+    ".cccccccccccccccccccbbbbbbaaaaa.",
+    "..cccccccccccccccccbbbbbbaaaaa..",
+    "..cccccccccccccccccbbbbbbaaaaa..",
+    "...cccccccccccccccbbbbbbbaaaa...",
+    "...cccCCccccccccccbbbbbbBAaaa...",
+    "....ccCCcccccccccbbbbbbbAAaa....",
+    "....ccccccccccccbbbbbbbaaaaa....",
+    ".....cccccccccccbbbbbbaaaaa.....",
+    ".....ccccccccccbbbbbbbaaaaa.....",
+    "......bccccccccbbbbbbaaaaa......",
+    "......bbcccccbbbbbbbbaaaaa......",
+    ".......bbbbbbbbbbbbbaaaaa.......",
+    ".......bbbbbbbbbbbbbaaaaa.......",
+    "........bbbbbbbbbbbaaaaa........",
+    ".........bbbbbbbbbbaaaa.........",
+    "..........bbbbbbbbaaaa..........",
+    "...........bbbbbbbaaa...........",
+    "............bbbbbaaa............",
+    "..............bbaa.............."
+   ]
+  }
+ },
+ "man": {
+  "standard": {
+   "x": -16,
+   "y": 1,
+   "rader": [
+    ".ccddddcccccccccccccbbbbbbaaaaa.",
+    ".cccccccccccccccccccbbbbbbaaaaa.",
+    "..cccccccccccccccccbbbbbbaaaaa..",
+    "..cccccccccccccccccbbbbbbaaaaa..",
+    "...cccccccccccccccbbbbbbbaaaa...",
+    "...cccCCccccccccccbbbbbbBAaaa...",
+    "....ccCCcccccccccbbbbbbbAAaa....",
+    "....ccccccccccccbbbbbbbaaaaa....",
+    "....cccccccccccbbbbbbbbaaaaa....",
+    "....bcccccccccbbbbbbbbbaaaaa....",
+    "....bbccccccbbbbbbbbbbbaaaaa....",
+    ".....bbcccbbbbbbbbbbbbaaaaa.....",
+    ".....bbbbbbbbbbbbbbbbbaaaaa.....",
+    "......bbbbbbbbbbbbbbbaaaaa......",
+    ".......bbbbbbbbbbbbbaaaaa.......",
+    "........bbbbbbbbbbbaaaaa........",
+    ".........bbbbbbbbbbaaaa.........",
+    "..........bbbbbbbbaaaa..........",
+    "...........bbbbbbbaaa...........",
+    "............bbbbbaaa............"
+   ]
+  }
+ },
+ "barn": {
+  "standard": {
+   "x": -16,
+   "y": 1,
+   "rader": [
+    ".ccddddcccccccccccccbbbbbbaaaaa.",
+    ".cccccccccccccccccccbbbbbbaaaaa.",
+    "..cccccccccccccccccbbbbbbaaaaa..",
+    "..cccccccccccccccccbbbbbbaaaaa..",
+    "...cccccccccccccccbbbbbbbaaaa...",
+    "...cccCCccccccccccbbbbbbBAaaa...",
+    "....ccCCcccccccccbbbbbbbAAaa....",
+    ".....ccccccccccbbbbbbbaaaaa.....",
+    "......ccccccccbbbbbbbaaaaa......",
+    ".......bcccccbbbbbbbaaaaa.......",
+    "........bbccbbbbbbbaaaaa........",
+    ".........bbbbbbbbbbaaaa.........",
+    "...........bbbbbbbaaa...........",
+    ".............bbbbaa............."
+   ]
+  }
+ }
+}

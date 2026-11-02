@@ -1,0 +1,60 @@
+{
+ "id": "oga-4",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den fyller hela rutan på 8 × 7 och har en iris på 4 × 3 med vita på båda sidor, så ögonen läses tydligt som stora. Ögonlocket är en mörk linje i en punkts tjocklek, som i förebilden. Alla lägen har samma höjd och bygger på samma rader, och det sorgsna locket sluttar ner mot ytterkanten. Version 2 har ett ögonlock i två mörka rader, alltså tjockare linjer än förebilden. Version 3 kortar ögat till sex rader och trycker ihop det glada läget så att det blir för litet. Ändringar: I det slutna läget var den slutna ögonlocket ljust med d och såg ut som en blank fläck, nästan som glasögon, på alla ansikten. Jag tonade ner det till b och c, med det ljusa uppåt vänster och en mörkare a i ytterhörnet, så att locket smälter in i huden och följer formen. I det sorgsna läget lade jag tillbaka a i ögonvrån på rad 4, så att bara det som humöret ändrar skiljer sig från det öppna läget.",
+ "bilder": {
+  "oppna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    "..bbbb..",
+    ".aaaaaa.",
+    "aviiiiva",
+    "avikkjva",
+    "bvjkkjvb",
+    ".bvjjvb.",
+    "..cccc.."
+   ]
+  },
+  "glada": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    "..bbbb..",
+    ".aaaaaa.",
+    "aviiiiva",
+    "avikkjva",
+    "bcjkkjcb",
+    ".cddddc.",
+    "........"
+   ]
+  },
+  "ledsna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    "bbbbbb..",
+    "aaaaaaa.",
+    "aaaaaiva",
+    "avikkjva",
+    "bvjkkjvb",
+    ".bvjjvb.",
+    "..cccc.."
+   ]
+  },
+  "slutna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    "..bbbb..",
+    ".bbbbbb.",
+    "bcccbbbb",
+    "bbccbbba",
+    "aaaaaaaa",
+    ".bccccb.",
+    "..cccc.."
+   ]
+  }
+ }
+}

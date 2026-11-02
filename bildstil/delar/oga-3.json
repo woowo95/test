@@ -1,0 +1,48 @@
+{
+ "id": "oga-3",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den ger tydligast ett smalt öga: en enda rad ögonspringa direkt under en mörk lockrad, och de mörka hörnen sluter mandelformen. Vitan sitter på båda sidor om iris och pupill. Det ser jämnt och rent ut på alla tre ansiktena och stämmer i linjetjocklek och skuggning med förebilden. Lägena är samma del: Glada byter bara vitan mot hud och lyfter den nedre kanten med ljusare kind. Ledsna sänker lockets yttre hörn över vitan och lägger en skuggrad ovanför. Slutna lägger lockfransen i ögonradens höjd med ett ljust lock ovanför. Version 1 har vita bara på ena sidan och ett pupillpar som blir för tungt i en så smal springa. Version 2 får för tunga lock med en extra ljus rad, så ögonen ser sömniga ut redan i läget Öppna, och Slutna saknar en tydlig fransrad. Jag ändrade inget, eftersom punkterna redan håller sig inom rutan och bara använder tillåtna tecken.",
+ "bilder": {
+  "oppna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    ".......",
+    ".aaaaa.",
+    "avjkiva",
+    ".bcccb."
+   ]
+  },
+  "glada": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    ".......",
+    ".aaaaa.",
+    "acjkica",
+    ".cdddc."
+   ]
+  },
+  "ledsna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    "bbb....",
+    "aaaaaa.",
+    "aajkiva",
+    ".bcccb."
+   ]
+  },
+  "slutna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    ".......",
+    ".bbbbb.",
+    "aaaaaaa",
+    ".bcccb."
+   ]
+  }
+ }
+}
