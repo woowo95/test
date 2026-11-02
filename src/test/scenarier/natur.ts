@@ -1956,7 +1956,7 @@ SCENARIER.arbete = {
     // verben vid bänkarna och undertexterna
     const verb = verbOf('rensa') === 'rensar' && verbOf('slakta') === 'slaktar' && verbOf('yxa') === 'gör' && verbOf('grilla') === 'grillar';
     const gor = Object.values(STATIONER).flatMap(d => d.gor).every(a => verbOf(a).length > 0);
-    const text = taskText(nara) === 'Jagar: smyger på byte' && taskText({ act: 'elda', phase: 'back', tx: 0, ty: 0, until: 0, carry: 1 }) === 'Lägger trä på elden: bär trä till elden';
+    const text = taskText(nara) === 'Jagar: smyger på byte' && taskText({ act: 'elda', phase: 'back', tx: 0, ty: 0, until: 0, carry: 1 }) === 'Lägger ved på elden: bär ved till elden';
     return [
       [`nära en kanin smyger jägaren (${r1}, ${underText(nara)})`, r1 === 0 && !!nara.jf && nara.leta === undefined && underText(nara) === 'smyger på byte'],
       [`ser hen en grupp längre bort går hen dit (${r2}, ${underText(bort)})`, gx >= 0 && r2 === -2 && bort.leta === 'grupp' && bort.phase === 'go' && underText(bort) === 'går mot hararna'],

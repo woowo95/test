@@ -15,7 +15,7 @@ import { TORST } from './torst';
 const HISTORIK_TAL: { id: string; namn: string; hur: 'snitt' | 'sist'; varde: (s: State) => number }[] = [
   { id: 'folk', namn: 'Invånare', hur: 'snitt', varde: s => living(s).length },
   { id: 'mat', namn: 'Mat i förrådet', hur: 'snitt', varde: s => foodOf(s) },
-  { id: 'tra', namn: 'Trä i förrådet', hur: 'snitt', varde: s => amountOf(s, 'ved') },
+  { id: 'tra', namn: 'Ved i förrådet', hur: 'snitt', varde: s => amountOf(s, 'ved') },
   { id: 'humor', namn: 'Humör', hur: 'snitt', varde: s => avgMood(s, 0) },
   { id: 'hunger', namn: 'Mycket hungriga', hur: 'snitt', varde: s => living(s).filter(p => p.hunger < 0.15).length },
   { id: 'torst', namn: 'Mycket törstiga', hur: 'snitt', varde: s => living(s).filter(p => p.torst < TORST.farligt).length }, // steg 2.4.1

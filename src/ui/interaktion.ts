@@ -145,7 +145,7 @@ function showHover(gx: number, gy: number) {
   const ute = outPilesAt(x, y);
   if (ute.length) rows.push(`<b>${ute.some(q => !q.stored) ? 'På marken' : 'Bredvid lagret'}</b> · ${ute.map(stackTxt).join(', ')}`);
   const log = (s.stockar ?? []).find(k => Math.floor(k.x) === x && Math.floor(k.y) === y);
-  if (log) rows.push(`Fällt träd, ca ${Math.ceil(log.ved)} trä kvar`);
+  if (log) rows.push(`Fällt träd, ca ${Math.ceil(log.ved)} ved kvar`);
   if ((s.stubbar ?? []).some(k => k.x === x && k.y === y)) rows.push('Stubbe efter ett fällt träd');
   const falt = faltAt(s, x, y); // fältet (steg 2.10.3): ägaren, grödan och hur långt det kommit
   if (falt) {

@@ -10,16 +10,16 @@ function spreadWord(v: number) { return v >= 0.8 ? 'Hög' : v >= 0.3 ? 'Måttlig
 function fireEntry(e: FireLog) {
   const who = pLink(byId(s, e.id));
   const txt = e.k === 'tänd' ? (e.id ? `${who} tände elden${e.n && e.n > 1 ? ` efter ${e.n} försök` : ''}.` : 'Byns grundare tände elden.')
-    : e.k === 'fyll' ? `${who} lade på ${fmtN(e.n ?? 0)} trä.`
+    : e.k === 'fyll' ? `${who} lade på ${fmtN(e.n ?? 0)} ved.`
     : e.k === 'glöd' ? `${who} blåste liv i glöden.`
     : e.k === 'sprack' ? `Flintan som ${who} slog med sprack.`
-    : `Elden slocknade. Den hade bränt ${fmtN(e.n ?? 0)} trä.`;
+    : `Elden slocknade. Den hade bränt ${fmtN(e.n ?? 0)} ved.`;
   return `<li><span class="when">${clockTxt(e.t)}</span>${txt}</li>`;
 }
 function fireHtml() {
   const f = s.fire, h = hearthOf(f), now = s.now, ig = igniterOf(s);
   const [fr, fv] = eldFaktor(s), takt = h.burn * fr * fv; // som stepFire i eld.ts: regnet och den hårda vintern
-  const status = f.lit ? 'Brinner' : emberOn(s) ? `Glöder. Nytt trä får den att brinna igen (${durTxt(f.emberUntil! - now)} kvar).` : (f.ash ?? 0) >= 1 ? 'Utbrunnen. Kvar ligger en svart hög med kol.' : 'Släckt. Den måste tändas på nytt.';
+  const status = f.lit ? 'Brinner' : emberOn(s) ? `Glöder. Ny ved får den att brinna igen (${durTxt(f.emberUntil! - now)} kvar).` : (f.ash ?? 0) >= 1 ? 'Utbrunnen. Kvar ligger en svart hög med kol.' : 'Släckt. Den måste tändas på nytt.';
   const tender = living(s).find(p => p.task?.act === 'elda'), lighter = living(s).find(p => p.task?.act === 'tanda');
   const fills = Object.entries(f.fills).map(([id, n]) => ({ p: byId(s, Number(id)), n })).filter(x => x.p).sort((a, b) => b.n - a.n).slice(0, 6);
   const tgt = fireWant(s);
@@ -29,9 +29,9 @@ function fireHtml() {
     <h3>Just nu</h3><dl class="kv">
       <dt>Trä på elden</dt><dd>${bar(f.fuel / h.maxFuel)}<span>${fmtN(f.fuel)} av ${h.maxFuel}</span></dd>
       <dt>Värme</dt><dd>${bar(fireHeat(s))}<span>${f.lit ? `${num(heatRadius(s))} rutor ut` : '–'}</span></dd>
-      <dt>Förbrukning</dt><dd>${num(takt)} trä i timmen${fr > 1 || fv > 1 ? ` <span class="muted">(${[fr > 1 ? 'regnet' : '', fv > 1 ? 'den hårda vintern' : ''].filter(Boolean).join(' och ')})</span>` : ''}</dd>
+      <dt>Förbrukning</dt><dd>${num(takt)} ved i timmen${fr > 1 || fv > 1 ? ` <span class="muted">(${[fr > 1 ? 'regnet' : '', fv > 1 ? 'den hårda vintern' : ''].filter(Boolean).join(' och ')})</span>` : ''}</dd>
       <dt>Räcker</dt><dd>${f.lit ? `ca ${durTxt(f.fuel / takt * HOUR)}` : '–'}</dd>
-      <dt>Önskat</dt><dd>${fmtN(tgt)} trä på elden</dd>
+      <dt>Önskat</dt><dd>${fmtN(tgt)} ved på elden</dd>
       ${f.wantWhy && byId(s, f.wantBy) ? `<dt>Önskas av</dt><dd>${pLink(byId(s, f.wantBy))}: ${esc(f.wantWhy).toLowerCase()}</dd>` : ''}
       ${tender ? `<dt>Hämtar trä</dt><dd>${pLink(tender)}</dd>` : ''}
     </dl>
@@ -44,7 +44,7 @@ function fireHtml() {
       <dt>Tänddon</dt><dd>${ig ? `${esc(ig.name)} (${fmtN(amountOf(s, ig.id))} i förrådet)` : 'Inget. Någon måste hitta en flinta.'}</dd>
       <dt>Stenring</dt><dd>${f.ring ? 'Ligger runt eldplatsen' : `Behövs till den första elden: ${fmtN(amountOf(s, 'sten'))} av ${ELD.ring} stenar`}</dd>
       <dt>Hö</dt><dd>${fmtN(amountOf(s, 'torrgras'))} i förrådet</dd>
-      <dt>Bränsle</dt><dd>${fmtN(amountOf(s, 'ved'))} trä och ${fmtN(amountOf(s, 'grenar'))} grenar i förrådet (grenar brinner fort)</dd>
+      <dt>Bränsle</dt><dd>${fmtN(amountOf(s, 'ved'))} ved och ${fmtN(amountOf(s, 'grenar'))} grenar i förrådet (grenar brinner fort)</dd>
       ${(f.ash ?? 0) >= 1 ? `<dt>Kolhög</dt><dd>${f.ash} kol i den gamla elden, ligger kvar ca ${durTxt((f.ashUntil ?? now) - now)}</dd>` : ''}
       ${amountOf(s, 'kol') >= 1 ? `<dt>Kol</dt><dd>${fmtN(amountOf(s, 'kol'))} i förrådet</dd>` : ''}
       ${ig ? `<dt>Per försök</dt><dd>${ig.grass} hö och ${ig.sticks} grenar (eller 1 kol), ca ${ig.minutes} minuter${(f.ash ?? 0) >= 1 ? '. Kolhögen tar lättare fyr.' : ''}</dd>` : ''}
