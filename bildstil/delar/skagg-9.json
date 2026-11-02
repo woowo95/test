@@ -1,26 +1,28 @@
 {
  "id": "skagg-9",
- "ritad": 2,
- "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
- "om": "Jag valde version 3. Den är den enda som följer Björns kommentar fullt ut: smala remsor från tinningen ner längs käken som böjer in mot hakan men slutar före den, så hakan är fri. Den är 30 punkter bred (x -15 till 14) och därmed symmetrisk kring mittlinjen. Version 1 är 29 punkter bred och sned, och dess breda band läser som klumpar på kinderna. Version 2 är raka lodräta block som inte följer käken. Skuggningen följer ljuset: ljusa toner (g, h) på vänster sida och mörka (e, f) på höger sida, som i förebilden. Ändringar: Jag har smalnat av den nedre delen längs käken till 3–4 punkter (tidigare 5), så att det blir remsor och inte klumpar. Jag har tagit bort de ensamma g-prickarna i den mörka högra remsan (fgfe, ffge, ffgfe), eftersom de gav glansfläckar. Tonen går nu i klungor från f till e.",
+ "ritad": 3,
+ "av": "API:t (claude-opus-5-5), bästa av 2, omritad efter Björns svar",
+ "om": "Jag valde version 3. Version 1 är fyra till fem punkter bred upptill och täcker örat och kindens yta som en kloss. Den följer alltså inte kinden, och det var just det Björn påpekade. Version 3 är smal, tre punkter, och ligger tätt längs kindens kontur från tinningen. Från ungefär käkvinkeln (y = -3) böjer den in längs käken. Ljuset stämmer också: den vänstra sidan är ljusare (g/h) och den högra mörkare (e/f), med korn i gränsen. Den är symmetrisk kring mittlinjen, från x = -15 till 14. Jag ändrade en sak: den sista raden med ensamma punkter (f och e) är borttagen. Spetsen slutar nu i två punkter per sida i stället för en lös prick, som skulle se ut som en fläck.",
  "bilder": {
   "standard": {
    "x": -15,
-   "y": -10,
+   "y": -12,
    "rader": [
-    "hhg........................ffe",
-    "hhg........................ffe",
-    "ghhg......................fffe",
-    "ghhg......................ffee",
-    "ghhg......................fffe",
-    ".ghhg....................fffe.",
-    ".gghg....................ffee.",
-    "..ghgg..................fffe..",
-    "..gghg..................ffee..",
-    "...gghg................fffe...",
-    "....gggf..............ffee....",
-    ".....ggf..............fee.....",
-    "......ff..............ee......"
+    "ghh........................ffe",
+    "ghh........................ffe",
+    "ggh........................fee",
+    "ghh........................fee",
+    "ghh........................ffe",
+    "ggh........................fee",
+    "ggh........................ffe",
+    "ggh........................fee",
+    "ggh........................fee",
+    ".ggh......................fee.",
+    ".ggg......................fee.",
+    "..ggf....................fee..",
+    "..gff....................fee..",
+    "...gf....................ee...",
+    "...ff....................ee..."
    ]
   }
  }
