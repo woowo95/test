@@ -130,7 +130,7 @@
   const S = (x, y) => [32 + (x - 32) * 15 / 13, 30 + (y - 30) * 1.25];
 
   // ---------- porträttet: geometrin ur mallen ----------
-  const FORM = { smal: [0.86, 1.05, 1.7], bred: [1.05, 0.95, 3], rund: [1, 0.95, 2.2] };
+  const FORM = { smal: [0.86, 1.05, 1.7], bred: [1.05, 0.95, 3], rund: [1, 0.95, 2.2], kantig: [1.03, 0.95, 3.6], lang: [0.9, 1.05, 2] };
   function geo(m, p) {
     const H = m.huvud, f = m.fast, sned = skonLager(p).includes('skon-sned');
     const flytt = (pt, k) => sned && k === 1 ? [pt[0], pt[1] + 1] : pt;
@@ -193,7 +193,7 @@
       for (const [x, y] of [[22, 37], [23, 37], [22, 38], [23, 38], [40, 37], [41, 37], [40, 38], [41, 38]]) { const v = dk.get(x, y); if (v) dk.satt(x, y, 'kind' + v.slice(-1)); }
     },
     ora(dk, G, d) {
-      const v = nr(d), [rx, ry] = [[2.4, 4.2], [2.9, 5], [3.8, 5.4]][v];
+      const v = nr(d) % 3, [rx, ry] = [[2.4, 4.2], [2.9, 5], [3.8, 5.4]][v];
       G.ora.forEach(([ex, ey], s) => {
         const cx = ex + (v === 2 ? (s ? 1 : -1) : 0), inne = (x, y) => ellips(cx, ey, rx, ry)(x, y) && (s ? x + 0.5 >= 45 : x + 0.5 <= 19);
         fyll(dk, inne, 'hud', [cx - 5, ey - 6, cx + 5, ey + 6], { mitt: [cx, ey - 1, rx, ry], forskj: s ? -1 : 0 });
@@ -201,7 +201,7 @@
       });
     },
     nasa(dk, G, d) {
-      const v = nr(d), barn = G.barn;
+      const v = nr(d) % 10, barn = G.barn;
       const len = [6, 6, 6, 5, 8, 5, 7, 8, 5, 7][v] - (barn ? 2 : 0), b = Math.max(1, [2, 1, 3, 2, 2, 2, 2, 3, 3, 1][v] - (barn ? 1 : 0));
       const top = G.nasa[1], yb = top + len;
       linje(dk, 33, top + 1, 33 + (v === 6 ? 1 : 0), yb - 1, 'hud1');
@@ -213,7 +213,7 @@
       if (v === 7) { dk.satt(30, yb - 1, 'hud3'); dk.satt(34, yb - 1, 'hud1'); }
     },
     oga(dk, G, d, p) {
-      const v = nr(d), lage = lageAv(p, 'oga');
+      const v = nr(d) % 6, lage = lageAv(p, 'oga');
       const w = [6, 6, 5, 7, 6, 6][v], h = [4, 3, 2, 4, 3, 3][v];
       G.oga.forEach(([ex, ey], s) => {
         const x0 = ex - Math.floor(w / 2), x1 = x0 + w - 1, yt = ey - Math.ceil(h / 2), yb = yt + h - 1;
@@ -238,7 +238,7 @@
       });
     },
     ogonbryn(dk, G, d, p) {
-      const v = nr(d), lage = lageAv(p, 'ogonbryn');
+      const v = nr(d) % 5, lage = lageAv(p, 'ogonbryn');
       const len = [7, 7, 8, 6, 8][v], tjock = [1, 1, 2, 1, 2][v], bage = [0, 1, 0, 0, 1][v];
       G.bryn.forEach(([bx, by], s) => {
         const x0 = bx - Math.floor(len / 2);
@@ -253,7 +253,7 @@
       });
     },
     mun(dk, G, d, p) {
-      const v = nr(d), lage = lageAv(p, 'mun'), base = G.mun[1];
+      const v = nr(d) % 6, lage = lageAv(p, 'mun'), base = G.mun[1];
       const w = [8, 10, 8, 8, 6, 8][v] - (G.barn ? 2 : 0), tjock = [1, 1, 2, 0, 1, 1][v];
       const x0 = 32 - w / 2, x1 = 31 + w / 2;
       if (lage === 'oppen') {
