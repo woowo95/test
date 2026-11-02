@@ -989,6 +989,34 @@ SCENARIER.overflod = {
   },
 };
 
+SCENARIER.handlarprat = {
+  text: 'Småprat med handlaren (steg 4.5.4.15, handel.ts): medan handlaren är i byn småpratar byborna som är nära med hen, som med en bybo (samtalen, symbolen och pratbubblan), också de som inte handlar. Ingen kunskap byts och relationerna ändras inte: samtalet påverkar bara humöret.',
+  kor: () => {
+    const s = createState(6, START);
+    rikBy(s); s.nastaHandlare = s.now;
+    for (let i = 0; i < 40 && s.handlare?.fas !== 'handlar'; i++) { step(s, BEAT); utanVantan(s); }
+    const h = s.handlare!, [a, b] = living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen);
+    const social = (p: Person, x: number, y: number) => { p.x = x; p.y = y; p.task = { act: 'samtal', phase: 'do', tx: x, ty: y, until: s.now + HOUR, carry: 0, dark: false, why: '' } as Task; };
+    social(a, h.x + 1, h.y + 1); social(b, h.x + 30, h.y); // a är nära handlaren, b långt borta
+    const rels = JSON.stringify(s.rels), kan = JSON.stringify(a.tek ?? null), skill = JSON.stringify(a.skill);
+    const ev: SIM.TalkEvent[] = [];
+    SIM.pratMedHandlare(s, SIM.HANDEL.pratSek * 2, ev); // så lång tid att hen säkert pratar
+    const tanke = a.thoughts.some(x => x.text.includes(h.namn) && x.text.startsWith('Småprat')), ingenB = !b.thoughts.some(x => x.text.includes(h.namn));
+    const handelse = ev.some(e => e.a === a.id && e.b === h.id && e.kind === 'småprat') && !ev.some(e => e.a === b.id);
+    const bara = JSON.stringify(s.rels) === rels && JSON.stringify(a.tek ?? null) === kan && JSON.stringify(a.skill) === skill;
+    // i spelet: medan handlaren är kvar pratar någon med hen
+    const t = createState(6, START);
+    rikBy(t); t.nastaHandlare = t.now;
+    for (let i = 0; i < 24 * 12 && !(t.stat?.handlarPrat); i++) { step(t, BEAT); utanVantan(t); }
+    return [
+      ['den som sitter vid elden nära handlaren småpratar med hen och får en tanke om det', tanke],
+      ['samtalet blir ett småprat med handlaren (bubblan), den som är långt borta pratar inte', handelse && ingenB],
+      ['ingen kunskap, färdighet eller relation ändras', bara],
+      [`i spelet småpratar byborna med handlaren medan hen är i byn (${t.stat?.handlarPrat ?? 0} gånger)`, (t.stat?.handlarPrat ?? 0) > 0],
+    ];
+  },
+};
+
 SCENARIER.grannklaner = {
   text: 'Grannklanerna (steg 4.4.3, klaner.ts): en ny by har några grannklaner med namn, folk, styrka, resurser, inställning till byn och namngivna personer, och en sparad by från före v242 får dem. Klanerna växer och krymper en gång om dygnet (ett år i spelet), och inställningen glöms mot det neutrala. Handlaren kommer från en klan som inte tycker illa om byn; en fientlig klan skickar ingen. Ett byte med handlaren gör klanen vänligare, och märker hen att byn lurat hen blir den mindre vänlig.',
   kor: () => {

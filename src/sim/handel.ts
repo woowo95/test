@@ -1,6 +1,7 @@
 import { DAY, H, HOUR, MIN, Person, SEC, State, T, Task, W } from './typer';
 import { balans } from './balans';
-import { ALDER, ageOf, alive, byId, count, forstaGang, living, log, think } from './folk';
+import { ALDER, ageOf, alive, byId, count, forstaGang, living, log, stat, think } from './folk';
+import { SAMTAL, TalkEvent, isSocial } from './samtal';
 import { kronika } from './historik';
 import { eldPlats, getMap } from './karta';
 import { blocked } from './byggnad';
@@ -50,6 +51,12 @@ export const HANDEL = balans('handel', {
   koAvstand: 0.7, // rutor mellan dem som står i kön
   nytta: 1, // en bybo vill köpa det hen värderar så här högt (behovAv: 1 = har nytta av, DELA.saknar = saknar) eller mer
   salja: 6, // en bybo går till handlaren för att sälja det hen har över av ett slag om det är värt så mycket silver för handlaren (steg 4.5.4.14)
+  // småpratet med handlaren (steg 4.5.4.15): den som är nära (SAMTAL.radie) och gör något socialt eller handlar pratar med hen
+  // ungefär en gång per pratSek sekunder. Det går bra (samma uträkning som för ett samtal med en bybo, med hens Handel som
+  // charm) och ger en glad tanke på pratTanke i pratTim timmar, eller går dåligt och ger en lika ledsen. Inget annat
+  pratSek: 1200,
+  pratTanke: 0.04,
+  pratTim: 3,
   tomTanke: -0.05, // den som gick tomhänt från handlaren ...
   tomTim: 6, // ... i så många timmar
   minnas: 20, // så många byten minns handlarens inforuta
@@ -246,6 +253,23 @@ function bybonsFilt(s: State, h: Handlare) {
   if (!p) return;
   const over = (byn ? bynPart(s, p.x, p.y, p) : bybonPart(s, p)).over(['silver']).slice(0, FILT_VAROR);
   s.filtar!.push({ x: hf.x, y: hf.y + FILT_MOT, slut: p.task!.until, varor: over.map(w => ({ k: w.k, n: w.t ? 1 : w.n, fran: p.id })), vem: p.id, par: hf.par, ...byn ? { byn: true as const } : {} });
+}
+
+// småprat med handlaren (steg 4.5.4.15): medan hen är i byn kan byborna som är nära småprata med hen, som med en bybo
+// (samtalen i steg.ts, bubblan i ui/manniskor.ts), också de som inte handlar. Ingen kunskap eller information byts och
+// relationerna ändras inte: samtalet påverkar bara humöret (en tanke). Kunskap om världen kommer i steg 11.1.4
+export function pratMedHandlare(s: State, dtSec: number, events?: TalkEvent[]) {
+  const h = s.handlare;
+  if (!h || (h.fas !== 'vantar' && h.fas !== 'handlar')) return;
+  for (const p of s.people) {
+    if (!alive(p) || ageOf(p, s.now) < ALDER.smabarn || Math.hypot(p.x - h.x, p.y - h.y) >= SAMTAL.radie) continue;
+    if (!isSocial(p) && !(p.task?.act === 'handla' && p.task.ref === h.id && p.task.phase === 'do')) continue;
+    if (rnd(s, 'handel', p) >= dtSec / HANDEL.pratSek) continue;
+    const out = (stat(p, 'empati', s.now) + h.handel) / SAMTAL.utEmpati - SAMTAL.utAvdrag + (rnd(s, 'handel', p) - 0.5) * SAMTAL.utBrus + (stat(p, 'karisma', s.now) - 8) / SAMTAL.charmDiv;
+    think(p, out > 0 ? `Småpratade med ${h.namn}` : `Småpratet med ${h.namn} gick trögt`, out > 0 ? HANDEL.pratTanke : -HANDEL.pratTanke, s.now, HANDEL.pratTim * HOUR);
+    events?.push({ a: p.id, b: h.id, kind: 'småprat', good: out > 0, t: s.now });
+    count(s, 'handlarPrat');
+  }
 }
 
 // ---------- handeln (steg 4.4.1.3) ----------

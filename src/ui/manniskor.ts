@@ -138,12 +138,14 @@ export function drawPeople(t: number) {
     // bara medan de pratar: en stund efter samtalet (steg 3.10.3), inte så länge de sitter nära varandra
     const talking = !!q && pratarMed(s, p) === q;
     if (!talking && o !== undefined && !flash.has(p.id)) talkWith.delete(p.id);
-    if (talking || flash.has(p.id) && isSocial(p)) { // bara den som gör något socialt just nu, som personrutan säger (steg 2.3.7)
+    const medGast = o !== undefined && o < 0 && flash.has(p.id); // småprat med handlaren (steg 4.5.4.15)
+    if (talking || flash.has(p.id) && (isSocial(p) || medGast)) { // bara den som gör något socialt just nu, som personrutan säger (steg 2.3.7)
       const r = q ? s.rels[relKey(p.id, q.id)] : undefined;
       // bubblans färg: kär (partnern eller mycket romans), grälar (som i folk.ts), goda vänner eller annars
       const rel = q && (p.partner === q.id || (r?.rom ?? 0) > 40) ? 'karlek' : (r?.op ?? 0) < REL.gral ? 'ovan' : (r?.op ?? 0) > REL.van ? 'van' : 'neutral';
       const ikon = flash.has(p.id) ? flashIkon.get(p.id) : q && p.prat?.m === q.id ? p.prat.i : undefined; // ämnet (steg 3.9.5)
       pratRuta(x, top, Math.sin(t / 500 + p.id) * 0.6, flash.get(p.id), rel, ikon);
+      if (medGast && s.handlare?.id === o) { const hp = handlarPlats(s.handlare, ui.nu); pratRuta(hp.x * TS, hp.y * TS - 13, Math.sin(t / 500) * 0.6, flash.get(p.id), 'neutral'); } // handlaren pratar också
       continue;
     }
     // vid handlarens filt (steg 4.4.1.5): pratbubblor med varornas symboler, en i taget

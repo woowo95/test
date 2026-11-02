@@ -45,7 +45,7 @@ import { chooseTask, dangers, nastaBuske, nastaRedskap, spotFor } from './val';
 import { djurSteg } from './djur';
 import { vargSteg, vargjaktSteg } from './varg';
 import { rovarSteg } from './rovare';
-import { handelSteg, handlaKlar } from './handel';
+import { handelSteg, handlaKlar, pratMedHandlare } from './handel';
 import { klanSteg } from './klaner';
 import { vaktSteg } from './vakt';
 import { JAKT, jaktForsok, jaktKlar } from './jakt';
@@ -231,6 +231,7 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
       if (n && others.length) count(s, 'samtal', n);
     }
   }
+  pratMedHandlare(s, dtSec, events); // småprat med handlaren (steg 4.5.4.15, handel.ts)
   // samtalen visas utspridda över slaget
   if (events) for (let i = e0; i < events.length; i++) events[i].t = t0 + (i - e0 + 0.5) / (events.length - e0) * dtSec * SEC;
   // relationer bleknar långsamt utan umgänge
