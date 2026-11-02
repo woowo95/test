@@ -155,7 +155,7 @@
       if (y >= 36 && y < K.axel0 + 2 && dx <= K.hals) return true;
       if (y < K.axel0) return false;
       const t = Math.min(1, (y + 0.5 - K.axel0) / (K.axel1 - K.axel0));
-      return dx <= K.hals + (K.bredd - K.hals) * (1 - (1 - t) ** 2.2);
+      return dx <= K.hals + (K.bredd - K.hals) * (1 - (1 - t) ** (K.lutning || 2.2));
     };
   };
 
@@ -549,17 +549,24 @@
     const bal = [];
     if (rikt === 'sida') { for (let y = b0; y <= b1; y++) for (let x = barn ? 6 : 5; x <= 8; x++) bal.push([x, y]); if (kvinna) bal.push([4, b1], [4, b1 - 1]); }
     else {
-      for (let y = b0; y <= b1; y++) for (let x = x0; x <= x1; x++) bal.push([x, y]);
+      const inom = (rr, y) => rr && y - sitt >= rr.rader[0] && y - sitt <= rr.rader[1];
+      for (let y = b0; y <= b1; y++) {
+        const [a, c] = inom(K.hofter, y) ? K.hofter.bredd : inom(K.midja, y) ? K.midja.bredd : [x0, x1];
+        for (let x = a; x <= c; x++) bal.push([x, y]);
+      }
       if (K.axlar) for (let y = b0; y <= b0 + 1; y++) bal.push([x0 - 1, y], [x1 + 1, y]);
-      if (kvinna) for (let y = b1 - 1; y <= b1; y++) bal.push([x0 - 1, y], [x1 + 1, y]);
     }
     zon(bal, 'bal');
     if (rock && DEL['plagg-rock'].lang) zon(rikt === 'sida' ? [5, 6, 7, 8, 9].flatMap(x => [[x, l0], [x, l0 + 1]]) : [...Array(x1 - x0 + 3)].flatMap((_, i) => [[x0 - 1 + i, l0], [x0 - 1 + i, l0 + 1], ...(ben === 'sitta' ? [] : [[x0 - 1 + i, l0 + 2]])]).filter(([, y]) => y <= 18), 'bal');
     // armarna: kvinnans händer når höfterna
-    const kort = kvinna ? 1 : 0;
+    const kort = 0;
     const armLista = (x, s) => {
       const in1 = s ? -1 : 1, ut = [];
-      const rak = (n = 0) => { for (let y = b0; y <= b1 - n - kort; y++) ut.push([x, y]); ut.push([x, b1 + 1 - n - kort, 1]); };
+      // en hängande arm: rakt ner, eller längs registrets armbana (kvinnans arm följer höften utåt); sista punkten är handen
+      const rak = (n = 0) => {
+        if (K.armbana) { const b = K.armbana.slice(0, K.armbana.length - n); b.forEach(([bx, by], i) => ut.push([s ? W - 1 - bx : bx, by + sitt, i === b.length - 1 ? 1 : 0])); return; }
+        for (let y = b0; y <= b1 - n; y++) ut.push([x, y]); ut.push([x, b1 + 1 - n, 1]);
+      };
       if (s === 1 && arm === 'lyfta') { for (let y = b0; y >= h; y--) ut.push([x, y]); ut.push([x, h - 1, 1]); }
       else if (s === 1 && arm === 'sla') ut.push([x, b0], [x, b0 + 1], [x + 1, b0 + 2], [x + 1, b0 + 3], [x + 2, b0 + 4, 1]);
       else if (arm === 'bara') ut.push([x, b0], [x, b0 + 1], [x, b0 + 2], [x + in1, b0 + 3, 1]);
@@ -592,14 +599,19 @@
       if (y === h + 5 && rikt !== 'sida' && form !== 'bred' && (x === 4 || x === 9)) continue;
       if (y === h + 4 && rikt !== 'sida' && form === 'smal' && (x === 4 || x === 9)) continue;
       if (y === h + 5 && rikt === 'sida' && (x === 4 || (form === 'smal' && x === 5))) continue;
+      if (rikt === 'sida' && !K.nasa && y >= h + 4 && x === 9) continue;
       satt(xx, y, 'hud', 'huvud');
     }
-    if (rikt === 'sida') satt(11, h + 3, 'hud', 'huvud');
+    if (rikt === 'sida' && K.nasa) satt(11, h + 3, 'hud', 'huvud');
     // tonerna: ljus till vänster i varje zon, skugga till höger
     for (let i = 0; i < kt.length; i++) {
       if (!kt[i] || /\d$/.test(kt[i])) continue;
       const x = i % W, z = zn[i], same = j => j >= 0 && j < kt.length && zn[j] === z && kt[j];
       kt[i] = kt[i] + (x > 0 && !same(i - 1) ? 3 : x < W - 1 && !same(i + 1) ? 1 : 2);
+    }
+    if (rikt !== 'sida' && K.armlinje) for (let i = 0; i < kt.length; i++) {
+      const x = i % W, y = (i / W) | 0;
+      if (zn[i] === 'bal' && y > b0 && ((x > 0 && zn[i - 1] === 'armar') || (x < W - 1 && zn[i + 1] === 'armar'))) kt[i] = kt[i].slice(0, -1) + '0';
     }
     const slutna = opt.slutna || ['sover', 'dod'].includes(p.humor);
     if (rikt === 'fram') { satt(5, h + 2, slutna ? 'hud1' : 'oga0'); satt(8, h + 2, slutna ? 'hud1' : 'oga0'); }
