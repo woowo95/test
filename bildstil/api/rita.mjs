@@ -9,7 +9,7 @@
 //
 // Utan sort ritas ansiktets sorter (5.2.2.3): huvudformer, öron, näsor, ögon, ögonbryn och munnar. Förebilden i varje
 // sort är den första raden i registret och ritas av programmeringschatten (bildstil/api/forebilder.mjs); skriptet ritar
-// resten efter den. Nyckeln läses ur ANTHROPIC_API_KEY och skrivs aldrig ut. Det som ritas sparas i bildstil/delar/<id>.json,
+// resten efter den. Nyckeln läses ur BJORN_API_NYCKEL och skrivs aldrig ut, och frågorna går direkt till https://api.anthropic.com. Det som ritas sparas i bildstil/delar/<id>.json,
 // och radens ritad i bildstil/portratt.json höjs, så att kortet står obesvarat i granskningen. Spelet behöver aldrig API:t.
 import fs from 'fs';
 import path from 'path';
@@ -166,9 +166,13 @@ function kontrollera(sort, svar) {
 }
 
 // ---------- API:t ----------
+// Nyckeln är Björns och ligger i miljön som BJORN_API_NYCKEL (miljön släpper inte igenom ANTHROPIC_API_KEY). Adressen anges
+// här, eftersom ANTHROPIC_BASE_URL i miljön pekar någon annanstans (steg 5.2.2).
+const ADRESS = 'https://api.anthropic.com';
 function klient() {
-  if (!process.env.ANTHROPIC_API_KEY) { console.error('ANTHROPIC_API_KEY saknas i miljön. Lägg in den som en hemlighet i miljöns inställningar och starta en ny chatt.'); process.exit(1); }
-  return new Anthropic();
+  const nyckel = process.env.BJORN_API_NYCKEL;
+  if (!nyckel) { console.error('BJORN_API_NYCKEL saknas i miljön. Lägg in den som en hemlighet i miljöns inställningar och starta en ny chatt.'); process.exit(1); }
+  return new Anthropic({ apiKey: nyckel, baseURL: ADRESS });
 }
 const svarText = m => m.content.filter(b => b.type === 'text').map(b => b.text).join('');
 const kostnad = u => ((u.input_tokens || 0) * PRIS.in + (u.output_tokens || 0) * PRIS.ut + (u.cache_read_input_tokens || 0) * PRIS.cacheLas + (u.cache_creation_input_tokens || 0) * PRIS.cacheSkriv) / 1e6;
