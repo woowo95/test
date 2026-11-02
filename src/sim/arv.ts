@@ -13,7 +13,7 @@ import { tingOf } from './agande';
 import { count, isKin, isParent, living, log } from './folk';
 import { kronika } from './historik';
 import { capacity, carryOff, helt, ownedAll, passOn } from './lager';
-import { bordOf, sakNamn, stackOf, tingNamn } from './saker';
+import { bordOf, famnOf, sakNamn, tingNamn } from './saker';
 import { grundvarde, husVarde, tingVarde, varuVarde } from './varde';
 import { housesOf } from './byggnad';
 import { husNamn } from './byggnader';
@@ -74,7 +74,7 @@ export function packUp(s: State, p: Person) {
   const eget = ownedAll(s, p.id);
   const saker = [
     ...tingOf(s).filter(t => t.agare === p.id).map(t => ({ k: t.k, ting: t.id, n: 1, per: tingVarde(t) / bordOf(t.k), bord: bordOf(t.k) })),
-    ...Object.keys(eget).map(k => ({ k, ting: undefined, n: eget[k], per: grundvarde(k) * stackOf(k), bord: 1 / stackOf(k) })),
+    ...Object.keys(eget).map(k => ({ k, ting: undefined, n: eget[k], per: grundvarde(k) / famnOf(k), bord: famnOf(k) })),
   ].sort((a, b) => b.per - a.per || (a.k < b.k ? -1 : a.k > b.k ? 1 : 0)); // inte localeCompare: ordningen får inte bero på språket
   for (const x of saker) {
     if (kvar <= 1e-9) break;

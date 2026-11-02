@@ -854,3 +854,31 @@ SCENARIER.skogsrojning = {
     ];
   },
 };
+
+SCENARIER.stackar = {
+  text: 'Stacken efter vikt eller volym (steg 4.5.5.1): en stack är det som ryms i en börda, efter vikten eller volymen, det som tar slut först. Harskinnen är lätta men skrymmande, och en full famn harskinn väger mindre än en full famn sten',
+  kor: () => {
+    const ny: Record<string, [number, number]> = { skinn: [30, 0.3], vilt: [5, 4], flinta: [20, 1], rep: [40, 0.5], ben: [40, 0.5] };
+    const fel = Object.entries(ny).filter(([k, [n, kg]]) => STACK[k] !== n || SIM.viktOf(k) !== kg).map(([k]) => k);
+    const lika = ['vargskinn', 'sten', 'grenar', 'torrgras', 'mossa', 'kol', 'silver', 'bar'].filter(k => STACK[k] !== { vargskinn: 5, sten: 10, grenar: 50, torrgras: 50, mossa: 50, kol: 25, silver: 200, bar: 25 }[k]);
+    // en full stack av vad som helst är en full famn; harskinnen fyller famnen av sin volym, inte sin vikt
+    const s = createState(1, START);
+    const famn = (k: string) => load({ act: 'bara', phase: 'back', tx: 0, ty: 0, until: s.now, carry: 0, items: { [k]: STACK[k] } } as Task, s);
+    const fulla = [...Object.keys(ny), 'sten', 'grenar'].filter(k => Math.abs(famn(k) - 1) > 1e-9);
+    const skinnKg = STACK.skinn * SIM.viktOf('skinn'), stenKg = STACK.sten * SIM.viktOf('sten');
+    // den som plockar upp harskinn tar inte fler än en stack i en full famn
+    const p = living(s).find(q => ageOf(q, s.now) >= 18)!;
+    put(s, 'skinn', 60);
+    const g = (s.stackar ?? []).find(x => x.k === 'skinn')!;
+    const t: Task = { act: 'bara', phase: 'go', tx: g.x + 0.5, ty: g.y + 0.5, until: s.now + HOUR, carry: 0, why: 'test', dark: false };
+    SIM.pickUp(s, p, t, 1);
+    const tog = t.items?.skinn ?? 0;
+    return [
+      [`de nya stackarna och vikterna: harskinn 30 à 0,3 kg, fällt vilt 5 à 4 kg, flinta 20 à 1 kg, rep och ben 40 à 0,5 kg${fel.length ? ` (fel: ${fel.join(', ')})` : ''}`, fel.length === 0],
+      [`vargskinn, sten, grenar, hö, mossa, kol, silver och mat är som förut${lika.length ? ` (fel: ${lika.join(', ')})` : ''}`, lika.length === 0],
+      [`en full stack är en full famn${fulla.length ? ` (fel: ${fulla.join(', ')})` : ''}`, fulla.length === 0],
+      [`en famn harskinn väger mindre än en famn sten (${skinnKg} kg mot ${stenKg} kg)`, skinnKg < stenKg],
+      [`en full famn ur en hög med 60 harskinn är en stack (${tog})`, tog === 30],
+    ];
+  },
+};

@@ -14,7 +14,7 @@ import { bitAt, roofed } from './byggnad';
 import { ACTS, toolRow, usesTool } from './handlingar';
 import { temperature, vaderSlit } from './vader';
 import { BYN, Del, addDel, sumOf, takeOrder } from './egendom';
-import { FOOD, SAKER, SAK_LIST, STACK, STACK_ORDER, bordOf, isFood, isTool, rutaOf, sakNamn, stackOf } from './saker';
+import { FOOD, SAKER, SAK_LIST, STACK_ORDER, bordOf, famnOf, isFood, isTool, rutaOf, sakNamn } from './saker';
 import { balans } from './balans';
 import { flodHotad, iVattnetNu, underMinnet } from './sjo';
 import { FLOD } from './flod';
@@ -825,8 +825,8 @@ export function capacity(s: State, p: Person) {
 // hur full bördan är, i fulla famnar (en stack av vad som helst är en famn). Redskapen i bördan väger det de väger
 // (bordOf, steg 2.3.1); förut var ett redskap en full börda
 export function load(t: Task, s: State) {
-  let l = t.carry / STACK[carryKind(t.act)];
-  for (const k in t.items ?? {}) l += t.items![k] / stackOf(k);
+  let l = t.carry * famnOf(carryKind(t.act));
+  for (const k in t.items ?? {}) l += t.items![k] * famnOf(k);
   for (const id of t.ting ?? []) l += bordOf(tingOf(s).find(g => g.id === id)?.k ?? '');
   return l;
 }
@@ -941,7 +941,7 @@ export function pickUp(s: State, p: Person, t: Task, plats = capacity(s, p)) {
   let room = plats - load(t, s);
   for (const g of stacksOf(s)) {
     if (g.x !== x || g.y !== y || room <= 1e-9) continue;
-    const st = stackOf(g.k), v = Math.min(g.n, helt(room * st)), f = g.n > 0 ? v / g.n : 1; // hela saker (steg 2.10.7)
+    const v = Math.min(g.n, helt(room / famnOf(g.k))), f = g.n > 0 ? v / g.n : 1; // hela saker (steg 2.10.7)
     const had = t.items?.[g.k] ?? 0;
     if (g.dold) { const d = DOLD_I[g.k], m = f >= 1 ? g.dold : helt(g.dold * f); if (m > 0) { (t.items ??= {})[d] = (t.items[d] ?? 0) + m; g.dold -= m; } }
     if (v > 0) {
@@ -950,7 +950,7 @@ export function pickUp(s: State, p: Person, t: Task, plats = capacity(s, p)) {
       const m = minska(s, g, v);
       if (Object.keys(m).length) { const ag = (t.ag ??= {})[g.k] ??= {}; for (const o in m) if (m[o] > 0) ag[+o] = (ag[+o] ?? 0) + m[o]; }
     }
-    room -= v / st;
+    room -= v * famnOf(g.k);
   }
   // redskapen på rutan tas med, hur full bördan än är
   for (const g of lying(s)) if (g.x === x && g.y === y) { g.x = g.y = undefined; g.lass = p.id; (t.ting ??= []).push(g.id); }

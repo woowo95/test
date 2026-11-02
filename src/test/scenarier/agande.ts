@@ -445,8 +445,8 @@ SCENARIER.utrustning = {
     const p = living(s).sort((a, b) => capacity(s, b) - capacity(s, a))[0]!; // den starkaste
     // vikten: varje redskap har en egen, och en stack av vad som helst är en full famn
     const redskap = SAK_LIST.filter(k => SAKER[k]?.redskap);
-    const vikt = redskap.every(k => SAKER[k]!.vikt! > 0) && STACK_ORDER.every(k => SAKER[k]?.redskap || Math.abs(stackOf(k) * viktOf(k) - BORDA_KG) < 1e-9);
-    const kniv1 = handerFor(s, p, 'kniv') === 1, vilt2 = handerFor(s, p, 'vilt') === 2;
+    const vikt = redskap.every(k => SAKER[k]!.vikt! > 0) && STACK_ORDER.every(k => SAKER[k]?.redskap || stackOf(k) * viktOf(k) <= BORDA_KG + 1e-9); // en stack är en full famn av vikten eller volymen (steg 4.5.5.1)
+    const kniv1 = handerFor(s, p, 'kniv') === 1, vilt2 = handerFor(s, p, 'varg') !== 1;
     // händerna och bördan
     const fri = bordPlats(s, p);
     const yxa = addTool(s, 'yxa', p); take(s, p, 'yxa');
@@ -470,8 +470,8 @@ SCENARIER.utrustning = {
     const lass: Task = { act: 'bara', phase: 'back', tx: 0, ty: 0, until: s.now, carry: 0, ting: [korg.id] };
     const korgVikt = Math.abs(load(lass, s) - bordOf('korg')) < 1e-9;
     return [
-      ['varje redskap har en vikt, och en stack av något annat är en full famn', vikt],
-      ['kniven tar en hand och ett fällt vilt båda händerna hos en stark vuxen', kniv1 && vilt2],
+      ['varje redskap har en vikt, och en stack av något annat är en full famn (av vikten eller volymen)', vikt],
+      ['kniven tar en hand, och en fälld varg tar båda händerna eller är för tung', kniv1 && vilt2],
       [`med yxan i handen ryms mindre i händerna (${(medYxa * BORDA_KG).toFixed(1)} kg mot ${(fri * BORDA_KG).toFixed(1)} kg)`, medYxa < fri - 1e-6],
       [`med korgen bär man lika mycket som med fria händer (${(medKorg * BORDA_KG).toFixed(1)} kg)`, Math.abs(medKorg - fri) < 1e-6],
       ['yxan sitter i höger hand och bördan i den vänstra; kroppens platser är tomma', platser],
@@ -758,9 +758,9 @@ SCENARIER.silver = {
     const h = fram(s);
     setAmount(s, 'torrfisk', 120); setAmount(s, 'rep', 0); setAmount(s, 'silver', 0);
     h.varor = [{ k: 'rep', n: 6 }, { k: 'flinta', n: 2 }]; h.silver = 30;
-    const fore = varde(h), fisk0 = amountOf(s, 'torrfisk');
+    const fore = varde(h);
     handla(s, h);
-    const salde = amountOf(s, 'torrfisk') < fisk0 && h.varor.some(w => w.k === 'torrfisk');
+    const salde = h.varor.some(w => w.k !== 'rep' && w.k !== 'flinta'); // något av det byn har gott om (fisken, bären eller höet: lättare saker sedan steg 4.5.5.1)
     const kopte = amountOf(s, 'rep') >= 1;
     // har handlaren inget byn vill ha, betalar hen med silver
     const s2 = createState(6, START), h2 = fram(s2);
@@ -783,7 +783,7 @@ SCENARIER.silver = {
     let gick = false;
     for (let i = 0; i < 12 * 3600 / BEAT && !k.bynKlar && u.handlare; i++) { step(u, BEAT); if (u.people.some(p => p.task?.act === 'handla')) gick = true; }
     return [
-      [`byn säljer det den har gott om (torkad fisk ${fisk0} → ${Math.round(amountOf(s, 'torrfisk'))})`, salde],
+      [`byn säljer det den har gott om (handlaren har nu ${h.varor.map(w => `${w.n} ${SIM.sakNamn(w.k).toLowerCase()}`).join(', ')})`, salde],
       [`byn köper det den saknar (rep ${Math.round(amountOf(s, 'rep'))})`, kopte],
       [`har handlaren inget byn vill ha betalar hen med silver (byns silver ${Math.round(amountOf(s2, 'silver'))}, handlarens ${h2.silver})`, silver],
       [`handlaren förlorar inget på handeln (grundvärde ${fore.toFixed(1)} → ${varde(h).toFixed(1)})`, vinst],
