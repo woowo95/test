@@ -1,5 +1,6 @@
 import * as PIXI from 'pixi.js';
-import { BYTE, SEC, byId, clamp, handlarPlats } from '../sim';
+import { BYTE, SEC, byId, clamp } from '../sim';
+import { gaster } from './gaster';
 import { iconCanvas } from '../ikoner';
 import { s, ui } from './lage';
 import { Ikoner, TS, peopleG, pileLayer, world } from './scen';
@@ -10,31 +11,23 @@ const filtLayer = new PIXI.Container(), handLayer = new PIXI.Container();
 world.addChildAt(filtLayer, world.getChildIndex(pileLayer) + 1);
 world.addChildAt(handLayer, world.getChildIndex(peopleG) + 1);
 const filtIkoner = new Ikoner(filtLayer), handIkoner = new Ikoner(handLayer);
-// handlaren och rövarna ritas som byborna, en cirkel med skugga och mörk kant (Björn efter v245, steg 4.5.2), i en egen färg
+// gästerna (handlaren och rövarna, gaster.ts) ritas som byborna, en cirkel med skugga och mörk kant (Björn efter v245, steg
+// 4.5.2 och 4.5.4.12), i sin egen färg. Den valda får en vit ring som en vald bybo
 const framlingG = new PIXI.Graphics();
 handLayer.addChild(framlingG);
-const FRAMLING = { handlare: 0x4e6a8a, rovare: 0x5a5040 };
-function cirkel(x: number, y: number, col: number) {
+function cirkel(x: number, y: number, col: number, vald: boolean) {
   const r = 5;
   framlingG.beginFill(0x000000, 0.25).drawEllipse(x, y + r * 0.9, r * 0.9, r * 0.35).endFill();
-  framlingG.lineStyle(1.2, 0x1a1a1a, 0.8).beginFill(col).drawCircle(x, y, r).endFill().lineStyle(0);
+  framlingG.lineStyle(vald ? 2.5 : 1.2, vald ? 0xffffff : 0x1a1a1a, vald ? 1 : 0.8).beginFill(col).drawCircle(x, y, r).endFill().lineStyle(0);
 }
-// var en part i ett byte står: en bybo (posOf) eller handlaren (handel.ts, steg 4.4.1.2)
-export const partPlats: { fler: ((id: number) => { x: number; y: number } | undefined)[] } = { fler: [] };
+// var en part i ett byte står: en bybo (posOf) eller en gäst, som handlaren (gaster.ts)
 function platsAvPart(id: number) {
   const p = id > 0 ? byId(s, id) : undefined;
-  if (p) return posOf(p);
-  for (const f of partPlats.fler) { const q = f(id); if (q) return q; }
+  return p ? posOf(p) : gaster().find(g => g.id === id);
 }
-partPlats.fler.push(id => s.handlare && s.handlare.id === id ? handlarPlats(s.handlare, ui.nu) : undefined);
 export function drawHandel() {
   filtIkoner.start(); handIkoner.start(); framlingG.clear();
-  // handlaren (steg 4.4.1.2): på väg in, vid filten eller på väg hem
-  const h = s.handlare;
-  if (h) { const p = handlarPlats(h, ui.nu); cirkel(p.x * TS, p.y * TS, FRAMLING.handlare); }
-  // rövarflocken (steg 4.4.5): rövarna i en klunga där flocken står
-  const r = s.rovare;
-  if (r) r.folk.forEach((_, i) => cirkel((r.x + (i % 3) * 0.7 - 0.7) * TS, (r.y + Math.floor(i / 3) * 0.7) * TS, FRAMLING.rovare));
+  for (const g of gaster()) cirkel(g.x * TS, g.y * TS, g.farg, g.id === ui.selected);
   for (const f of s.filtar ?? []) {
     if (!f.handlare && f.slut <= ui.nu) continue;
     // handlarens filt och bybornas (Björn valde efter v245: den förra för handlaren och version 1 för byborna, steg 4.5.2)

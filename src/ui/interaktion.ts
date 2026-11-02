@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { BAR, FALT_STEG, FOREST, GRODOR, Falt, byId, faltAt, faltIndex, faltKlar, HIGH, MATERIAL, Person, T, W, bitAt, campCenter, condOf, dorrDef, emberOn, eldPlats, getMap, groundOf, husById, inMap, insulation, isKlar, living, stationAt, stationDef, stationKlar, handlarPlats, tingOf, toaAt, roomAt, rumsFunktioner, sakNamn, sjoarna, sovplatser, verbOf, zoneAt, zonesOf, Pile } from '../sim';
+import { BAR, FALT_STEG, FOREST, GRODOR, Falt, byId, faltAt, faltIndex, faltKlar, HIGH, MATERIAL, Person, T, W, bitAt, campCenter, condOf, dorrDef, emberOn, eldPlats, getMap, groundOf, husById, inMap, insulation, isKlar, living, stationAt, stationDef, stationKlar, tingOf, toaAt, roomAt, rumsFunktioner, sakNamn, sjoarna, sovplatser, verbOf, zoneAt, zonesOf, Pile } from '../sim';
 import { gorText } from './jakt';
 import { iconImg, tecknet } from '../ikoner';
 import { $, esc, fmtN, prickar } from './hjalp';
@@ -7,6 +7,7 @@ import { outPilesAt, piles, s, ui } from './lage';
 import { posOf } from './manniskor';
 import { iBruk } from './foremal';
 import { djurSynliga } from './vaxter';
+import { gaster } from './gaster';
 import { sakKey } from './flikar/sak';
 import { flyttaHit } from './flikar/station';
 import { renderPanel, selectPerson, visa, ärPersonflik } from './panel';
@@ -27,12 +28,12 @@ function djurAt(gx: number, gy: number) {
   for (const d of djurSynliga()) { const dd = Math.hypot(d.x * TS - p.x, d.y * TS - 2 - p.y); if (dd < bd) { bd = dd; best = d.id; } }
   return best;
 }
-// handlaren under trycket (steg 4.4.1.5): där hen ritas vid tiden som visas
-function handlareAt(gx: number, gy: number) {
-  const h = s.handlare;
-  if (!h) return false;
-  const p = toWorld(gx, gy), q = handlarPlats(h, ui.nu);
-  return Math.hypot(q.x * TS - p.x, q.y * TS - TS / 2 - p.y) < 9;
+// en gäst under trycket (handlaren, en rövare, gaster.ts, steg 4.5.4.12): där hen ritas vid tiden som visas
+function gastAt(gx: number, gy: number) {
+  const p = toWorld(gx, gy);
+  let best: number | undefined, bd = 9;
+  for (const g of gaster()) { const d = Math.hypot(g.x * TS - p.x, g.y * TS - p.y); if (d < bd) { bd = d; best = g.id; } }
+  return best;
 }
 function fireAt(gx: number, gy: number) {
   const p = toWorld(gx, gy), f = eldPlats(s);
@@ -52,10 +53,10 @@ app.stage.on('pointertap', e => {
   if (drag && drag.moved > 6) return;
   const gx = e.global.x, gy = e.global.y, p = personAt(gx, gy), zi = storeAt(gx, gy), c = tileAt(gx, gy);
   if (ui.testMode && ui.flytta >= 0) { flyttaHit(c.x, c.y); renderPanel(true); return; } // stationen som flyttas i testläget (steg 3.10.1)
-  const dj = p ? undefined : djurAt(gx, gy);
+  const g = p ? undefined : gastAt(gx, gy), dj = p || g !== undefined ? undefined : djurAt(gx, gy);
   if (p) selectPerson(p.id);
+  else if (g !== undefined) selectPerson(g); // handlaren och rövarna får samma sida som en bybo (steg 4.5.4.12)
   else if (dj !== undefined) { ui.djurId = dj; visa('djur'); }
-  else if (handlareAt(gx, gy)) visa('handlare');
   else if (!inMap(c.x, c.y)) avmarkera(); // utanför kartan finns inget att visa
   else if (fireAt(gx, gy)) visa('eld');
   else if (zi) valjLager(zi - 1, c);
@@ -107,7 +108,7 @@ app.stage.on('pointermove', e => {
   showHover(gx, gy);
   ui.hovered = personAt(gx, gy)?.id;
   const c = tileAt(gx, gy);
-  view.style.cursor = ui.hovered || djurAt(gx, gy) !== undefined || handlareAt(gx, gy) || inMap(c.x, c.y) && (fireAt(gx, gy) || storeAt(gx, gy) || outPilesAt(c.x, c.y).length || toaAt(s, c.x, c.y) || faltAt(s, c.x, c.y) || stubbeAt(c.x, c.y) || husAt(c.x, c.y) !== undefined || stationAt(s, c.x, c.y)) ? 'pointer' : 'grab';
+  view.style.cursor = ui.hovered || djurAt(gx, gy) !== undefined || gastAt(gx, gy) !== undefined || inMap(c.x, c.y) && (fireAt(gx, gy) || storeAt(gx, gy) || outPilesAt(c.x, c.y).length || toaAt(s, c.x, c.y) || faltAt(s, c.x, c.y) || stubbeAt(c.x, c.y) || husAt(c.x, c.y) !== undefined || stationAt(s, c.x, c.y)) ? 'pointer' : 'grab';
 });
 view.addEventListener('wheel', e => { e.preventDefault(); const r = view.getBoundingClientRect(); zoomAt(e.deltaY < 0 ? 1.06 : 1 / 1.06, e.clientX - r.left, e.clientY - r.top); }, { passive: false });
 view.addEventListener('pointerleave', () => { $('hoverBox').hidden = true; ui.hovered = undefined; });

@@ -1,9 +1,13 @@
+import { existsSync } from 'node:fs';
 // Scenarier. Ägande och ekonomi: ägande, gåvor, byte, egendom, delning, arv och värde.
 import { isDeepStrictEqual } from 'node:util';
 import { Person, Act, Task, createState, bearbeta, ownedBy, tidyTools, addTool, toolsOf, heldBy, take, usesTool, wearTool, freeSpear, getRel, isTool, BYN, makeTool, step, living, pilesOf, amountOf, capacity, isLight, isStored, spears, HOUR, State, migrate, die, bitsOf, KANIN, DJUR, askForTool, askForGift, gain, takeFood, takeFuel, ownsAmount, ownedStock, ownedSum, sumOf, addTo, setAmount, foodOf, STACK_ORDER, needLadder, takeMaterial, BEAT, stepDelning, rikedom, rikedomDelar, grundvarde, nivaOf, DELNING, packUp, releaseOwner, willing, tingOf, EKONOMI, SAK_LIST, ownedAll, leave, chooseTask, stackOf, birth, SAKER, viktOf, bordOf, BORDA_KG, handerFor, bordPlats, utrustning, PLATS_LIST, cloneState, pickUp, load, byId } from '../../sim';
 import * as SIM from '../../sim';
 import { START, STEG_DYGN, STEG_TIM } from '../kor';
-import { setItems, setMat, setFood, kor, tandEld, tomtForrad, treVuxna, SCENARIER, rikBy, medBank } from './hjalp';
+import { setItems, setMat, setFood, kor, tandEld, tomtForrad, treVuxna, SCENARIER, rikBy, medBank, utanWebblasare } from './hjalp';
+import { setByn, ui } from '../../ui/lage';
+import { person } from '../../ui/flikar/person';
+import { gaster } from '../../ui/gaster';
 // handlaren väntar på kvällen innan filten läggs ut (steg 4.5.4.11): testerna som handlar på dagen hoppar över väntan
 const utanVantan = (s: State) => { if (s.handlare?.fas === 'vantar') s.handlare.kvall = s.now; };
 
@@ -869,6 +873,36 @@ SCENARIER.handelsko = {
   },
 };
 
+SCENARIER.gastsida = {
+  text: 'Alla personer har samma sida (steg 4.5.4.12, ui/gaster.ts): handlaren och rövarna är gäster i registret GASTER. De ritas som byborna och väljs som en bybo, och personsidan visar dem med samma flikrad: presentationen med det som är särskilt för sorten (handlarens klan, silver och packning, rövarens flock), egenskaperna och färdigheterna man vet och det hen bär. Fliken Handlaren finns inte längre.',
+  kor: () => {
+    utanWebblasare();
+    const s = createState(6, START);
+    rikBy(s); setByn(s);
+    SIM.skickaHandlare(s); SIM.skickaRovare(s, 2);
+    const g = gaster(s.now), h = g.find(x => x.id === s.handlare?.id), r = g.filter(x => x.sort === 'Rövare');
+    ui.selected = h?.id; ui.personDel = 'pres';
+    const pres = person.html();
+    ui.personDel = 'egen'; const egen = person.html();
+    ui.personDel = 'utr'; const utr = person.html();
+    ui.selected = r[0]?.id; ui.personDel = 'pres'; const rp = person.html();
+    ui.personDel = 'egen'; const re = person.html();
+    const knappar = (x: string) => [...x.matchAll(/data-pdel="(\w+)"/g)].map(m => m[1]).join(',');
+    const by = living(s)[0]!; ui.selected = by.id; const bybo = person.html();
+    s.handlare = undefined; ui.selected = h?.id; const borta = person.html();
+    return [
+      [`handlaren och ${r.length} rövare är gäster med var sitt negativa id`, !!h && r.length === 2 && g.every(x => x.id < 0) && new Set(g.map(x => x.id)).size === g.length],
+      [`handlarens sida har namnet, vad hen gör och flikarna ${knappar(pres)}`, !!h && pres.includes(h.namn) && pres.includes(h.gor)],
+      ['samma flikknappar som för en bybo, de som finns för en gäst', knappar(pres) === 'pres,egen,utr' && knappar(bybo).startsWith('pres,') && knappar(pres).split(',').every(k => knappar(bybo).includes(k))],
+      ['presentationen har handlarens klan, silver och packning som rader', /Från .+ vid /.test(pres) && pres.includes('Silver') && pres.includes('Packning') && pres.includes('Handlare')],
+      ['egenskaperna visar färdigheten Handel', egen.includes('Handel') && egen.includes('Byn vet inget')],
+      ['utrustningen visar ryggsäcken och varorna med priset i silver', utr.includes('Ryggsäck') && /silver styck/.test(utr)],
+      ['en rövare har flocken som rad och sina egenskaper', rp.includes('Rövare') && rp.includes('Flocken') && re.includes('Styrka') && re.includes('Närstrid')],
+      ['när handlaren gått står det att hen lämnat byn', borta.includes('lämnat byn')],
+      ['fliken Handlaren finns inte längre', !existsSync('src/ui/flikar/handlare.ts')],
+    ];
+  },
+};
 SCENARIER.grannklaner = {
   text: 'Grannklanerna (steg 4.4.3, klaner.ts): en ny by har några grannklaner med namn, folk, styrka, resurser, inställning till byn och namngivna personer, och en sparad by från före v242 får dem. Klanerna växer och krymper en gång om dygnet (ett år i spelet), och inställningen glöms mot det neutrala. Handlaren kommer från en klan som inte tycker illa om byn; en fientlig klan skickar ingen. Ett byte med handlaren gör klanen vänligare, och märker hen att byn lurat hen blir den mindre vänlig.',
   kor: () => {
