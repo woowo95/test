@@ -23,9 +23,9 @@
       {"id": "vaderbiten", "namn": "Väderbiten", "toner": ["jord0", "jord1", "jord2", "jord3"], "kyla": "rost2", "ritad": 1}
     ],
     "har": [
-      {"id": "linblont", "namn": "Linblont", "toner": ["senap1", "senap2", "senap3", "ben3"], "ritad": 1},
-      {"id": "ljusblont", "namn": "Ljusblont", "toner": ["senap0", "senap1", "senap2", "senap3"], "ritad": 1},
-      {"id": "ljusbrunt", "namn": "Ljusbrunt", "toner": ["jord0", "jord1", "jord2", "jord3"], "ritad": 1},
+      {"id": "linblont", "namn": "Linblont", "toner": ["jord2", "jord3", "ben2", "senap3"], "ritad": 2},
+      {"id": "ljusblont", "namn": "Ljusblont", "toner": ["jord1", "jord2", "senap1", "senap2"], "ritad": 2},
+      {"id": "ljusbrunt", "namn": "Ljusbrunt", "toner": ["jord0", "jord1", "senap0", "jord2"], "ritad": 2},
       {"id": "brunt", "namn": "Brunt", "toner": ["kol1", "jord0", "jord1", "jord2"], "ritad": 1},
       {"id": "morkbrunt", "namn": "Mörkbrunt", "toner": ["kol0", "kol2", "jord0", "jord1"], "ritad": 1},
       {"id": "rott", "namn": "Rött", "toner": ["rost0", "rost1", "rost2", "rost3"], "sallsynt": true, "ritad": 1}
@@ -234,7 +234,7 @@
     {"id": "har-28", "sort": "frisyr", "namn": "Snaggat med fläta i nacken", "karta": "flata", "ritad": 0, "kon": "man"},
     {"id": "har-29", "sort": "frisyr", "namn": "Tovigt", "karta": "halvlangt", "ritad": 0, "kon": "bada"},
     {"id": "har-30", "sort": "frisyr", "namn": "Axellångt med små flätor", "karta": "halvlangt", "ritad": 0, "kon": "bada"},
-    {"id": "skagg-1", "sort": "skagg", "namn": "Helskägg", "karta": "helskagg", "ritad": 1},
+    {"id": "skagg-1", "sort": "skagg", "namn": "Helskägg", "karta": "helskagg", "ritad": 2},
     {"id": "skagg-2", "sort": "skagg", "namn": "Kort skägg", "karta": "kort", "ritad": 0},
     {"id": "skagg-3", "sort": "skagg", "namn": "Mustasch", "karta": "mustasch", "ritad": 0},
     {"id": "skagg-4", "sort": "skagg", "namn": "Långt skägg", "karta": "helskagg", "ritad": 0},
@@ -256,7 +256,7 @@
     {"id": "bonad-6", "sort": "huvudbonad", "namn": "Pälsmössa", "karta": "mossa", "maskar": ["skalle", "lugg", "oron"], "ritad": 0, "kon": "bada"},
     {"id": "bonad-7", "sort": "huvudbonad", "namn": "Huvudduk", "karta": "huva", "maskar": ["skalle", "lugg", "sidor"], "ritad": 0, "kon": "kvinna"},
     {"id": "bonad-8", "sort": "huvudbonad", "namn": "Krans", "karta": "band", "maskar": [], "ritad": 0, "kon": "kvinna"},
-    {"id": "smycke-2", "sort": "smycke", "namn": "Benhalsband", "plats": "hals", "ritad": 1, "kon": "bada"},
+    {"id": "smycke-2", "sort": "smycke", "namn": "Benhalsband", "plats": "hals", "ritad": 2, "kon": "bada"},
     {"id": "smycke-1", "sort": "smycke", "namn": "Pärlhalsband", "plats": "hals", "ritad": 0, "kon": "kvinna"},
     {"id": "smycke-3", "sort": "smycke", "namn": "Tandhalsband", "plats": "hals", "ritad": 0, "kon": "man"},
     {"id": "smycke-4", "sort": "smycke", "namn": "Pärlor i håret", "plats": "har", "maskbar": true, "ritad": 0, "kon": "kvinna"},

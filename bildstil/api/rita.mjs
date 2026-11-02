@@ -138,7 +138,7 @@ async function fraga(d, { kommentar = null, forra = null, version = null } = {})
     sortText(sort, d),
     `Förebilden (${forebild.id}, ${forebild.namn}), ritad av programmeringschatten: ${JSON.stringify({ bilder: fb.bilder, ...(fb.man ? { man: fb.man } : {}), ...(fb.barn ? { barn: fb.barn } : {}) })}`,
     'Bilden visar förebilden på det neutrala ansiktet: raderna är kvinna, man och barn, och kolumnerna är lägena i ordning.',
-    `Rita delen ${d.id}: ${SORT[sort].en.toLowerCase()} "${d.namn}"${d.vad ? ` (${d.vad})` : ''}${d.ful ? ', en ful variant som får vara lite komisk' : ''}. Den ska skilja sig tydligt från förebilden och de andra i sorten: ${delarAv(sort).filter(x => x.id !== d.id).map(x => x.namn.toLowerCase()).join(', ')}.`,
+    `Rita delen ${d.id}: ${SORT[sort].en.toLowerCase()} "${d.namn}"${d.vad ? ` (${d.vad})` : ''}${d.ful ? ', en ful variant som får vara lite komisk' : ''}.${d.kon && d.kon !== 'bada' ? ` Den finns bara på ${d.kon === 'man' ? 'män' : 'kvinnor'}${d.barn === false ? ' och inte på barn' : ''}.` : ''}${d.plats ? ` Platsen: ${d.plats}.` : ''} Den ska skilja sig tydligt från förebilden och de andra i sorten: ${delarAv(sort).filter(x => x.id !== d.id).map(x => x.namn.toLowerCase()).join(', ')}.`,
     forra ? `Förra ritningen av delen: ${JSON.stringify(forra)}` : '',
     kommentar ? `Björns kommentar om förra ritningen, som ska följas: ${kommentar}` : '',
     version ? `Det här är version ${version} av ${VERSIONER}, som ritas var för sig; sedan väljs den som passar bäst. Rita den på ditt eget sätt inom reglerna.` : '',

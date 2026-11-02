@@ -159,11 +159,14 @@ function harTon2(x, y, cx, cy, rx, ry, forskj = 0) {
     const kind = kaken(x, y) && y >= 36 && (dx > 7.5 || y >= 40);         // kinderna och runt munnen
     const under = y >= hake - 3 && y <= 55 && dx <= 12.5 - (y - hake + 3) * 0.42 + (vn(x, y, 1.5, 7) - 0.5) * 1.2; // under hakan, lite ojämnt
     const kant = kaken(x, y) && !kaken(x + (x < 32 ? 2 : -2), y - 2) && y >= 34;  // en tunn rand längs käken upp mot örat
-    return kind || under || kant;
+    // mustaschen (Björn efter förebilden i 5.2.2.4: skäggigare på överläppen): tre rader under näsan och mungipor som går
+    // ner bredvid munnen; munnens ruta lämnas fri av programmet
+    const mustasch = (y >= 39 && y <= 41 && dx <= 7.5 - (y === 39 ? 1 : 0)) || (dx >= 5.5 && dx <= 8.5 && y >= 41 && y <= 45);
+    return kind || under || kant || mustasch;
   };
   const skagg = (x, y) => inne(x, y) ? harTon(x, y, 32, 44, 15, 12) : null;
   const b = lagerRader(skagg, 0, 0, 63, 63);
-  spara({ id: 'skagg-1', ritad: 1, av: 'programmeringschatten, förebild', om: 'Helskägg på mannens käke: kinderna, mustaschen och skägget under hakan, lite ojämnt nertill. Matt skuggning med ljus uppifrån vänster och slingor som håret.',
+  spara({ id: 'skagg-1', ritad: 2, av: 'programmeringschatten, förebild', om: 'Helskägg på mannens käke: kinderna, en tjock mustasch under näsan med mungipor som går ner, och skägget under hakan, lite ojämnt nertill. Matt skuggning med ljus uppifrån vänster och slingor som håret.',
     bilder: { standard: { x: b.x, y: b.y + 10 - 43, rader: b.rader } } });
 }
 
@@ -180,17 +183,22 @@ function harTon2(x, y, cx, cy, rx, ry, forskj = 0) {
     bilder: { standard: b } });
 }
 
-// ---- smycket Benhalsband (steg 5.2.2.4): ett snöre i jord med benbitar i ben, i en båge runt halsen. Punkterna räknas
-// från fästpunkten halsband (32, 57).
+// ---- smycket Benhalsband (steg 5.2.2.4): ett mörkt snöre med benbitar i en båge runt halsen, lägst mitt på bröstet.
+// Omritat (Björn efter förebilden: "man ser inte benen"): benet har samma toner som huden, så bitarna är nu större (två
+// punkter breda och tre till fyra höga) och har mörk skugga till höger och under. Punkterna räknas från fästpunkten
+// halsband (32, 57).
 {
   const punkter = {};
   const satt = (x, y, v) => { punkter[x + ',' + y] = v; };
-  for (let x = 20; x <= 43; x++) { const y = 57 - Math.round(((x + 0.5 - 32) / 11) ** 2 * 4); satt(x, y, x < 32 ? 'F' : 'E'); } // lägst mitt på bröstet
-  for (let i = 0; i < 7; i++) { // benbitarna: små avlånga bitar som hänger från snöret, ljusa uppåt vänster
-    const x = 22 + i * 3 + (i > 3 ? 1 : 0), y = 57 - Math.round(((x + 0.5 - 32) / 11) ** 2 * 4);
-    satt(x, y + 1, x < 32 ? 'w' : 'q'); satt(x, y + 2, 'p'); if (i === 3) { satt(x, y + 3, 'o'); satt(x + 1, y + 1, 'p'); }
+  const bage = x => 57 - Math.round(((x + 0.5 - 32) / 11) ** 2 * 4);
+  for (let x = 20; x <= 43; x++) satt(x, bage(x), x < 32 ? 'E' : 'k');
+  for (const [x, lang] of [[22, 3], [26, 3], [30, 4], [34, 3], [38, 3]]) { // fem benbitar som hänger från snöret
+    const y = bage(x) + 1;
+    for (let j = 0; j < lang; j++) { satt(x, y + j, j === 0 ? 'w' : j === lang - 1 ? 'p' : 'q'); satt(x + 1, y + j, j === 0 ? 'q' : 'p'); }
+    for (let j = 1; j <= lang; j++) satt(x + 2, y + j - 1, 'E');           // skuggan till höger
+    satt(x, y + lang, 'E'); satt(x + 1, y + lang, 'E');                    // och under
   }
   const b = lagerRader((x, y) => punkter[x + ',' + y] || null, 0, 0, 63, 63);
-  spara({ id: 'smycke-2', ritad: 1, av: 'programmeringschatten, förebild', om: 'Benhalsband: ett snöre i jord i en båge runt halsen med sju små benbitar, ljusa uppåt vänster och mörkare nedåt, och en lite längre bit i mitten.',
+  spara({ id: 'smycke-2', ritad: 2, av: 'programmeringschatten, förebild', om: 'Benhalsband: ett mörkt snöre i en båge runt halsen med fem benbitar, ljusa uppåt vänster och med mörk skugga till höger och under så att de syns mot huden, och en lite längre bit i mitten.',
     bilder: { standard: { x: b.x, y: b.y + 10 - 57, rader: b.rader } } });
 }
