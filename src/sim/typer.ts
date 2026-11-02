@@ -125,6 +125,8 @@ export interface Task {
   ting?: number[]; // redskapen i bördan (agande.ts)
   why?: string; // varför personen valde uppgiften
   dark?: boolean; // påbörjad under mörk tid
+  med?: number; // den man samtalar med och står bredvid (steg 4.5.6.7, samtalMed i samtal.ts)
+  skiljs?: 1; // samtalet är slut och man går ifrån varandra en bit (steg 4.5.6.7)
   path?: number[]; // rutorna kvar att gå längs vägen (steg.ts, walk)
   runda?: number; varv?: number; stopp?: number; vidEld?: boolean; // vaktens runda: stoppet hen är vid, antal stopp sedan elden, när stoppet är slut, om hen står vid elden (vakt.ts)
   hopp?: boolean; plock?: number; sett?: number[]; // rundan (steg 4.5.6.1, steg.ts): på väg till nästa ruta, sekunder kvar av stoppet, rutorna man nyss plockat på

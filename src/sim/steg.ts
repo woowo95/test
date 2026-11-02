@@ -30,7 +30,7 @@ import { eldPlats } from './karta';
 import { ELDFLYTT, flyttaElden, stepEldFlytt } from './eldflytt';
 import { DODSORSAKER, barnMat, birth, birthWish, die, regulate } from './liv';
 import { MARK, groundOf, growGround, packGround, tileOf } from './mark';
-import { SAMTAL, TalkEvent, converse, isSocial } from './samtal';
+import { SAMTAL, TalkEvent, converse, isSocial, skiljsAt } from './samtal';
 import { HABIT_FADE, addHabit, stepSeder, updateTags } from './seder';
 import { RELT, stepRelationer } from './relationer';
 import { MINNE, areaOf, fearPlace, forget, lookAround, radslaVid, trorOm } from './minne';
@@ -257,7 +257,8 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
       const expect = dtSec / STEG.samtalSek * (STEG.samtalBas + stat(p, 'empati', now) / STEG.samtalEmpati);
       let n = Math.floor(expect); if (rnd(s, 'samtal', p) < expect - n) n++;
       // bara med dem som är nära när slaget slutar
-      const others = social.filter(q => q !== p && alive(q) && Math.hypot(q.x - p.x, q.y - p.y) < SAMTAL.radie);
+      const nara = social.filter(q => q !== p && alive(q) && Math.hypot(q.x - p.x, q.y - p.y) < SAMTAL.radie);
+      const med = p.task?.med !== undefined ? nara.find(q => q.id === p.task!.med) : undefined, others = med ? [med] : nara; // den man står bredvid (steg 4.5.6.7)
       for (let i = 0; i < n; i++) { const g = converse(s, p, others, events); if (g) gralBlirSlagsmal(s, p, g); } // ett gräl kan bli ett slagsmål (strid.ts)
       if (n && others.length) count(s, 'samtal', n);
     }
@@ -413,7 +414,7 @@ function taskStep(s: State, p: Person, a: number, t1: number, dtSec: number, lea
     const mustGo = t && p.toa < KROPP.toaAvbryt && !ACTS[t.act].nodFri && a >= ALDER.smabarn; // nöden avbryter det man håller på med (inte den som bärs eller den som slåss)
     if (!t || (t.until <= now && t.phase !== 'back') || ((phaseFlip || mustGo) && t.phase !== 'back') || lightDone) {
       if (t && isCarrying(t) && t.act !== 'elda') { t.phase = 'back'; const d = dropSpot(s, homeKind(t)); t.tx = d.x + sida(p, 0.2); t.ty = d.y + sida(p, -0.2); }
-      else chooseTask(s, p);
+      else if (!(t?.med !== undefined && t.phase === 'do' && !phaseFlip && !mustGo && t.until <= now && skiljsAt(s, p))) chooseTask(s, p); // efter samtalet går man isär en bit (steg 4.5.6.7)
     }
     if (spar.pa) sparaUppgift(p, now); // (bara för att visa)
     const tk = p.task!, d = ACTS[tk.act];

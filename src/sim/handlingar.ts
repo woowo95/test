@@ -200,6 +200,7 @@ export function underText(t: Task): string | undefined {
   const rd = ACTS[t.act].runda;
   // rundan (steg 4.5.6.1), också när man letar stenar och flinta (steg 4.5.6.3)
   if (rd && t.phase === 'do') return t.sok ? t.hopp ? 'letar efter stenar och flinta' : 'letar bland stenarna' : t.hopp ? rd.leta : rd.plock;
+  if (t.skiljs && t.phase === 'go') return 'går ifrån samtalet'; // steg 4.5.6.7
   const u = ACTS[t.act].under?.[t.phase];
   if (u) return u;
   const bar = t.carry > 0 || Object.values(t.items ?? {}).some(n => n > 0);

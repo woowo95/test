@@ -1,6 +1,7 @@
 // Scenarier. Folket: befolkning, faror, seder, samtal, liv och utflyttning.
 import { Person, createState, tidyTools, addTool, getRel, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, ageStart, amountOf, isLight, ageOf, DAY, HOUR, State, findL, areaOf, stat, hoped, gain, ownedSum, setAmount, setStock, BEAT, tingOf, planBuild, regulate, ACTS } from '../../sim';
 import * as SIM from '../../sim';
+import { byId, isSocial, TalkEvent } from '../../sim';
 import { START, STEG_DYGN } from '../kor';
 import { hasIcon } from '../../ikoner';
 import { setFood, kor, klockan, tandEld, byggare, SCENARIER, pct, grenarUte, barGrenar, nyInvanare, valjer, MATARBETE, TRAARBETE, REDSKAPSARBETE, FORBATTRING, MATMEDREDSKAP, rikBy } from './hjalp';
@@ -1865,6 +1866,41 @@ SCENARIER.framling = {
       ['en fientlig klan skickar ingen', fientlig],
       [`byn avgör själv: av 40 främlingar fick ${ja} stanna och ${nej} visades bort`, ja > 0 && nej > 0],
       ['främlingar är sällsynta: de flesta i byn är barn till dem som redan bor där', SIM.KLAN.framling <= 0.1],
+    ];
+  },
+};
+
+SCENARIER.samtalpar = {
+  lang: true,
+  text: 'De som pratar står bredvid varandra (steg 4.5.6.7, samtalMed i samtal.ts): den som väljer att samtala går fram till någon som gör något socialt och ställer sig ungefär en ruta från hen, samtalar med hen under samtalet, och när det är slut går de ifrån varandra ett par rutor innan de gör något annat. Den som arbetar och pratar (tvinnar, vaktar) flyttar sig inte.',
+  kor: () => {
+    let par = 0, nara = 0, medSamma = 0, samtalMedPar = 0, flyttad = 0, arbeteFore = 0;
+    let bredvid = 0, isar = 0;
+    const flyttAkt: Record<string, number> = {};
+    for (const seed of [3, 8]) {
+      const s = createState(seed, START);
+      for (let i = 0; i < 4 * 24 * 3600 / BEAT; i++) {
+        const fore = new Map(living(s).filter(p => p.task?.phase === 'do' && p.task.act !== 'samtal' && isSocial(p)).map(p => [p.id, { x: p.x, y: p.y, act: p.task!.act }]));
+        const ev: TalkEvent[] = [];
+        step(s, BEAT, ev);
+        for (const p of living(s)) {
+          const f = fore.get(p.id);
+          if (f && p.task?.act === f.act && p.task.phase === 'do' && (ACTS[f.act].hantverk || ACTS[f.act].arbete)) { arbeteFore++; if (Math.hypot(p.x - f.x, p.y - f.y) > 0.01 && !ACTS[f.act].vandra) { flyttad++; flyttAkt[f.act] = (flyttAkt[f.act] ?? 0) + 1; } }
+          const t = p.task, q = t?.med !== undefined ? byId(s, t.med) : undefined;
+          if (t?.act !== 'samtal' || t.phase !== 'do' || !q || !isSocial(q) || q.task!.act === 'samtal' && q.task!.med !== p.id) continue; // (den andra kan ha gått vidare)
+          par++;
+          if (Math.hypot(p.x - q.x, p.y - q.y) < 1.6) nara++;;
+        }
+        for (const e of ev) { const a = byId(s, e.a); if (a?.task?.med !== undefined) { samtalMedPar++; if (a.task.med === e.b) medSamma++; } }
+      }
+      bredvid += s.stat?.['samtal bredvid'] ?? 0; isar += s.stat?.['samtal isar'] ?? 0;
+    }
+    return [
+      [`den som samtalar går fram till någon (${bredvid} gånger i två byar under fyra dygn, fyra år i spelet)`, bredvid > 50],
+      [`och står ungefär en ruta från hen (${nara} av ${par} prov närmare än 1,6 rutor)`, par > 100 && nara >= par * 0.9],
+      [`och samtalar med den hen står bredvid (${medSamma} av ${samtalMedPar} samtal)`, samtalMedPar > 50 && medSamma >= samtalMedPar * 0.9],
+      [`efter samtalet går de ifrån varandra (${isar} gånger)`, isar > 20],
+      [`den som arbetar och pratar flyttar sig inte (${flyttad} av ${arbeteFore} slag: ${JSON.stringify(flyttAkt)})`, flyttad <= arbeteFore * 0.02],
     ];
   },
 };

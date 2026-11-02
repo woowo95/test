@@ -1,5 +1,7 @@
 import { barnTill, upplev } from './uppvaxt';
-import { ALDER, REL, ageOf, alive, count, franMitt, getRel, isKin, log, similarity, stat, think } from './folk';
+import { ALDER, REL, ageOf, alive, byId, count, franMitt, getRel, isKin, living, log, similarity, stat, think } from './folk';
+import { blocked } from './byggnad';
+import { sittAt, stationAt } from './stationer';
 import { berattaBrist } from './naring';
 import { moodOf } from './humor';
 import { clamp, pickViktat, rnd } from './slump';
@@ -19,6 +21,13 @@ import { predika } from './religion';
 // -100 till 100 och humöret från 0 till 1 (gränserna för relationen, REL, står i folk.ts, åldern för flirt i ALDER)
 export const SAMTAL = balans('samtal', {
   radie: 4, // så nära (rutor) måste två vara för att prata
+  // den som väljer att samtala går fram till någon (steg 4.5.6.7): bland dem som gör något socialt inom sokR rutor från platsen
+  // man skulle gått till, och ställer sig isar rutor från hen; när samtalet är slut går man isarGa rutor åt andra hållet och
+  // står där isarTid sekunder innan man gör något annat
+  sokR: 10,
+  isar: 1,
+  isarGa: 2,
+  isarTid: 60,
   // vem man pratar med: vikten är 1 + op / valOp + kemi * valKemi + valPartner för partnern, minst valMin
   valMin: 0.1,
   valOp: 40,
@@ -95,6 +104,47 @@ export type Samtalsslag = keyof typeof SLAG;
 export const SAMTALSSLAG: Record<Samtalsslag, SamtalDef> = SLAG;
 
 // ---------- samtal ----------
+// vikten för att välja b att samtala med: relationen, kemin, partnern, bästa vännen och mentorn
+const valVikt = (s: State, a: Person, b: Person) => { const r = getRel(s, a, b); return Math.max(SAMTAL.valMin, 1 + r.op / SAMTAL.valOp + r.chem * SAMTAL.valKemi + (b.partner === a.id ? SAMTAL.valPartner : 0)
+  + (arBast(a, b) ? RELT.valBast : 0) + (arMentor(a, b) || arMentor(b, a) ? RELT.valMentor : 0)); };
+// den som väljer att samtala (handlingen samtal, val.ts) går fram till någon och ställer sig bredvid hen, ungefär en ruta
+// isär (steg 4.5.6.7): bland dem som redan gör något socialt nära platsen, viktat som samtalen. Den andra blir kvar där
+// hen är (den som tvinnar, rensar eller vaktar flyttar sig inte), och samtalar hen också vänder hen sig mot den som kom.
+// Finns ingen, eller ingen plats bredvid, går man till platsen vid elden som förut
+export function samtalMed(s: State, p: Person) {
+  const t = p.task!, now = s.now;
+  const kand = living(s).filter(q => q !== p && q.task?.phase === 'do' && isSocial(q) && q.task.med === undefined && !ACTS[q.task.act].vandra && !ACTS[q.task.act].radie && ageOf(q, now) >= ALDER.smabarn
+    && Math.hypot(q.x - t.tx, q.y - t.ty) < SAMTAL.sokR);
+  if (!kand.length) return;
+  const q = pickViktat(s, kand, kand.map(b => valVikt(s, p, b)), 'samtal', p);
+  const upptagen = (x: number, y: number) => living(s).some(o => o !== p && o !== q && Math.hypot(o.x - x, o.y - y) < SAMTAL.isar * 0.6);
+  const a0 = Math.atan2(p.y - q.y, p.x - q.x);
+  for (let k = 0; k < 8; k++) {
+    const ang = a0 + (k % 2 ? -1 : 1) * Math.ceil(k / 2) * Math.PI / 4, x = q.x + Math.cos(ang) * SAMTAL.isar, y = q.y + Math.sin(ang) * SAMTAL.isar;
+    if (blocked(s, x, y) || stationAt(s, x, y) || sittAt(s, x, y) || upptagen(x, y)) continue;
+    t.tx = x; t.ty = y; t.med = q.id;
+    if (q.task!.act === 'samtal') q.task!.med = p.id;
+    count(s, 'samtal bredvid');
+    return;
+  }
+}
+// samtalet är slut (steg 4.5.6.7): man går ett par rutor bort från den man pratat med, åt var sitt håll, och står där en stund
+// innan man väljer något annat. true = så blev det
+export function skiljsAt(s: State, p: Person) {
+  const t = p.task!, q = t.med !== undefined ? byId(s, t.med) : undefined;
+  if (q?.task?.med === p.id) q.task.med = undefined;
+  t.med = undefined;
+  if (!q || !alive(q)) return false;
+  const ang = Math.atan2(p.y - q.y, p.x - q.x);
+  for (let k = 0; k < 6; k++) {
+    const v = ang + (k % 2 ? -1 : 1) * Math.ceil(k / 2) * Math.PI / 5, x = p.x + Math.cos(v) * SAMTAL.isarGa, y = p.y + Math.sin(v) * SAMTAL.isarGa;
+    if (blocked(s, x, y) || stationAt(s, x, y)) continue;
+    t.tx = x; t.ty = y; t.phase = 'go'; t.skiljs = 1; t.until = s.now + SAMTAL.isarTid * SEC; t.path = undefined; t.pk = undefined;
+    count(s, 'samtal isar');
+    return true;
+  }
+  return false;
+}
 // om p håller på med något socialt just nu (vid elden, i samtal); hur nära man ska vara för att prata står i SAMTAL.radie
 export const isSocial = (p: Person) => !!p.task && p.task.phase === 'do' && !!ACTS[p.task.act].social;
 // hur länge ett samtal syns efteråt: bubblan i byn och ämnet i personrutan (sekunder i spelet, steg 3.10.3 och 4.5.3.3)
@@ -110,9 +160,7 @@ export function converse(s: State, a: Person, others: Person[], events?: TalkEve
   const now = s.now;
   if (!others.length) return;
   // välj samtalspartner viktad efter relation
-  const w = others.map(b => { const r = getRel(s, a, b); return Math.max(SAMTAL.valMin, 1 + r.op / SAMTAL.valOp + r.chem * SAMTAL.valKemi + (b.partner === a.id ? SAMTAL.valPartner : 0)
-    + (arBast(a, b) ? RELT.valBast : 0) + (arMentor(a, b) || arMentor(b, a) ? RELT.valMentor : 0)); }); // bästa vänner och mentorer (steg 3.1.1)
-  const b = pickViktat(s, others, w, 'samtal', a);
+  const b = pickViktat(s, others, others.map(o => valVikt(s, a, o)), 'samtal', a); // bästa vänner och mentorer (steg 3.1.1)
   const r = getRel(s, a, b);
   const aa = ageOf(a, now), ba = ageOf(b, now);
   const mood = moodOf(a, now);

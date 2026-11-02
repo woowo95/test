@@ -31,6 +31,7 @@ import { axeTask, fallTid } from './skog';
 import { GA_TID, startWork, startsOnArrival } from './paborjat';
 import { duty, dygn, habitShare, habitTotal } from './seder';
 import { clamp, hash3, pick, pickNarmaste, rnd } from './slump';
+import { samtalMed } from './samtal';
 import { ARSTID, ageIndex, isLight, kallTid, yearNo } from './tid';
 import { Act, H, HOUR, MIN, Person, Skill, Stat, State, T, Task, W, inMap } from './typer';
 import { balans } from './balans';
@@ -410,6 +411,7 @@ export function chooseTask(s: State, p: Person) {
   }
   const sp0 = v.spot ?? spotFor(s, v.act, p), sp = freeNear(s, sp0.x, sp0.y); // aldrig i en husvägg
   p.task = { act: v.act, phase: 'go', tx: sp.x, ty: sp.y, until: s.now + v.dur + (startsOnArrival(v.act) ? GA_TID : 0), carry: 0, why: v.why, dark: !light, ref: v.ref, tool: v.tool, site: v.site, sok: v.sok, tandmat: v.tandmat, falt: v.falt, pass: v.pass !== undefined ? s.now + v.pass : undefined };
+  if (v.act === 'samtal' && !v.spot) samtalMed(s, p); // fram till den man vill prata med (steg 4.5.6.7)
   const k = usesTool(p.task);
   if (k && !take(s, p, k)) p.task.tool = undefined; // redskapet tas i handen: det egna först (agande.ts)
 }
