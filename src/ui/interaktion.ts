@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { BAR, FALT_STEG, FOREST, GRODOR, Falt, byId, faltAt, faltIndex, faltKlar, HIGH, MATERIAL, Person, T, W, bitAt, campCenter, condOf, dorrDef, emberOn, eldPlats, getMap, groundOf, husById, inMap, insulation, isKlar, living, stationAt, stationDef, stationKlar, tingOf, toaAt, roomAt, rumsFunktioner, sakNamn, sjoarna, sovplatser, verbOf, zoneAt, zonesOf, Pile } from '../sim';
+import { BAR, FALT_STEG, FOREST, GRODOR, Falt, byId, faltAt, faltIndex, faltKlar, HIGH, MATERIAL, Person, T, W, bitAt, campCenter, condOf, dorrDef, emberOn, eldPlats, getMap, groundOf, husById, inMap, insulation, isKlar, living, stationAt, stationDef, stationKlar, tingOf, toaAt, tandTest, roomAt, rumsFunktioner, sakNamn, sjoarna, sovplatser, verbOf, zoneAt, zonesOf, Pile } from '../sim';
 import { gorText } from './jakt';
 import { iconImg, tecknet } from '../ikoner';
 import { $, esc, fmtN, prickar } from './hjalp';
@@ -59,6 +59,12 @@ app.stage.on('pointertap', e => {
   if (drag && drag.moved > 6) return;
   const gx = e.global.x, gy = e.global.y, p = personAt(gx, gy), zi = storeAt(gx, gy), c = tileAt(gx, gy);
   if (ui.testMode && ui.flytta >= 0) { flyttaHit(c.x, c.y); renderPanel(true); return; } // stationen som flyttas i testläget (steg 3.10.1)
+  if (ui.testMode && ui.brandTest) { // branden börjar där man trycker (steg 4.5.6.6); trycket väljer ingen person eller sak
+    const r = tandTest(s, c.x, c.y);
+    testSvara(r.text);
+    if (r.ok) { ui.brandTest = false; brandKnapp(); renderPanel(true); } // brinner inget där är knappen kvar aktiv
+    return;
+  }
   const g = p ? undefined : gastAt(gx, gy), dj = p || g !== undefined ? undefined : djurAt(gx, gy);
   if (p) selectPerson(p.id);
   else if (g !== undefined) selectPerson(g); // handlaren och rövarna får samma sida som en bybo (steg 4.5.4.12)
@@ -76,6 +82,15 @@ app.stage.on('pointertap', e => {
   else if (sjoAt(c.x, c.y) >= 0) { ui.sjoNr = sjoAt(c.x, c.y); visa('sjo'); }
   else avmarkera();
 });
+// raden under testknapparna (steg 4.5.6.4): vad som hände, utan ordet Testläget, med stor bokstav först
+export function testSvara(text: string) {
+  const el = document.getElementById('testSvar');
+  if (!el) return;
+  const t = text.replace(/^Testläget: /, '');
+  el.textContent = t.charAt(0).toUpperCase() + t.slice(1);
+}
+// brandknappen lyser medan den är aktiv
+export function brandKnapp() { document.querySelector('#testSkicka button[data-brand]')?.classList.toggle('aktiv', ui.testMode && ui.brandTest); }
 // ett tryck där inget finns: personen släpps och personrutan stängs
 function avmarkera() {
   if (ui.selected === undefined && !ärPersonflik(ui.tab)) return;

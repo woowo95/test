@@ -1,4 +1,5 @@
 import { AGES, BEAT, DAY, HOUR, MIN, SEC, TalkEvent, VADERLAGE, vaderNu, kalender, alive, byId, cloneState, coverOf, createState, getMap, groundOf, isLight, rikedomDelar, spar, step, temperature, visning, yearNo, State, motgangNu, motgangNasta, motgangDef, varslade, ROVARFLOCK, skickaRovare, skickaHandlare, rovarHinder, handlarHinder } from './sim';
+import { brandKnapp, testSvara } from './ui/interaktion';
 import { $ } from './ui/hjalp';
 import { iconImg, tecknet } from './ikoner';
 import { s, setByn, ui, nyBild, vidNyBy } from './ui/lage';
@@ -59,7 +60,7 @@ function setSpeed(v: number) {
   speed = v;
   for (const b of document.querySelectorAll<HTMLButtonElement>('#speeds button')) b.setAttribute('aria-pressed', String(Number(b.dataset.v) === v));
 }
-function leaveTest() { const ts = document.getElementById('testSvar'); if (ts) ts.textContent = ''; ui.testMode = false; $('arena').hidden = true; $('speeds').hidden = true; $('testSkicka').hidden = true; document.body.classList.remove('testing'); setSpeed(1); }
+function leaveTest() { testSvara(''); ui.brandTest = false; brandKnapp(); ui.testMode = false; $('arena').hidden = true; $('speeds').hidden = true; $('testSkicka').hidden = true; document.body.classList.remove('testing'); setSpeed(1); }
 // testläget stängs utan att den verkliga byn kommer tillbaka (en annan by tar dess plats)
 function dropTest() { if (ui.testMode) { ($('testToggle') as HTMLInputElement).checked = false; realState = null; leaveTest(); } }
 // en ny by med slumpat frö, sparad direkt
@@ -110,14 +111,17 @@ $('arenaKnapp').addEventListener('click', oppnaArena);
 {
   const flock: [keyof typeof ROVARFLOCK, string][] = [['liten', 'En liten rövarflock'], ['mellan', 'En mellanstor rövarflock'], ['stor', 'En stor rövarflock']];
   $('testSkicka').innerHTML = flock.map(([k, t]) => `<button type="button" data-flock="${k}" title="${t} (${ROVARFLOCK[k]} rövare) kommer nu">${iconImg('rovare', 14)}${ROVARFLOCK[k]}</button>`).join('')
-    + `<button type="button" data-handlare="1" title="En handlare kommer nu">${iconImg('handlare', 14)}</button><span id="testSvar"></span>`;
+    + `<button type="button" data-handlare="1" title="En handlare kommer nu">${iconImg('handlare', 14)}</button>`
+    + `<button type="button" data-brand="1" title="Tänd en brand: tryck sedan på kartan där den ska börja">${iconImg('brand', 14)}</button><span id="testSvar"></span>`;
   // knappen svarar direkt (steg 4.5.6.4): den lyser upp, och raden under knapparna säger vad som skickats och varifrån, eller
   // varför det inte går just nu. En knapp som inte kan användas är grå (testKnappar)
   $('testSkicka').addEventListener('click', e => {
     const b = (e.target as HTMLElement).closest<HTMLButtonElement>('button');
     if (!b || !ui.testMode || !s) return;
+    // brandknappen (steg 4.5.6.6): ett tryck gör den aktiv, och nästa tryck på kartan tänder rutan där (interaktion.ts); ett nytt tryck avbryter
+    if (b.dataset.brand) { ui.brandTest = !ui.brandTest; brandKnapp(); testSvara(ui.brandTest ? 'Tryck på kartan där branden ska börja' : ''); return; }
     const r = b.dataset.flock ? skickaRovare(s, ROVARFLOCK[b.dataset.flock as keyof typeof ROVARFLOCK]) : skickaHandlare(s);
-    const svar = r.text.replace(/^Testläget: /, ''); $('testSvar').textContent = svar.charAt(0).toUpperCase() + svar.slice(1);
+    testSvara(r.text);
     b.classList.remove('tryckt'); void b.offsetWidth; b.classList.add('tryckt');
     testKnappar(); renderPanel(true);
   });
@@ -125,7 +129,7 @@ $('arenaKnapp').addEventListener('click', oppnaArena);
 // knapparna som inte kan användas just nu är grå
 function testKnappar() {
   if (!ui.testMode || !s) return;
-  for (const b of document.querySelectorAll<HTMLButtonElement>('#testSkicka button')) b.classList.toggle('ej', !!(b.dataset.flock ? rovarHinder(s) : handlarHinder(s)));
+  for (const b of document.querySelectorAll<HTMLButtonElement>('#testSkicka button')) b.classList.toggle('ej', !!(b.dataset.flock ? rovarHinder(s) : b.dataset.handlare ? handlarHinder(s) : undefined));
 }
 $('newVillage').addEventListener('click', () => { $('confirmNew').hidden = false; });
 $('cancelNew').addEventListener('click', () => { $('confirmNew').hidden = true; });

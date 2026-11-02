@@ -903,7 +903,17 @@ SCENARIER.brand = {
       let mitt = -1;
       for (let i = 0; i < W * W && mitt < 0; i++) { const d = Math.hypot(i % W - e.x, Math.floor(i / W) - e.y); if (d >= 25 && d <= 35 && g.trees[i] >= FOREST && tat(i) >= 24) mitt = i; }
       if (mitt < 0) return [['tät skog 25 till 35 rutor från elden', false]];
-      const vat = cloneState(s), by = cloneState(s);
+      const vat = cloneState(s), by = cloneState(s), tb = cloneState(s);
+      // testläget (steg 4.5.6.6): branden tänds där man trycker; på vatten tänds inget, och en andra brand långt från den första sprids också
+      const vattenRuta = [...g.tiles.keys()].find(i => g.tiles[i] === T.Vatten) ?? 0;
+      const tv = SIM.tandTest(tb, vattenRuta % W, Math.floor(vattenRuta / W));
+      const t1 = SIM.tandTest(tb, mitt % W, Math.floor(mitt / W)), tIgen = SIM.tandTest(tb, mitt % W, Math.floor(mitt / W));
+      let andra = -1;
+      for (let i = 0; i < W * W && andra < 0; i++) { const d = Math.hypot(i % W - e.x, Math.floor(i / W) - e.y); if (d >= 20 && d <= 60 && Math.hypot(i % W - mitt % W, Math.floor(i / W) - Math.floor(mitt / W)) > SIM.BRAND.maxR + 5 && g.trees[i] >= FOREST && tat(i) >= 24) andra = i; }
+      const t2 = andra >= 0 ? SIM.tandTest(tb, andra % W, Math.floor(andra / W)) : { ok: false, text: 'ingen andra skog' };
+      kor(tb, 6, torr);
+      const vidAndra = andra < 0 ? 0 : (tb.brand?.r ?? []).filter(r => Math.hypot(r[0] % W - andra % W, Math.floor(r[0] / W) - Math.floor(andra / W)) <= 6).length + (tb.aska ?? []).filter(a => Math.hypot(a[0] % W - andra % W, Math.floor(a[0] / W) - Math.floor(andra / W)) <= 6).length;
+      const testRad = tb.log.filter(l => l.text.startsWith('Testläget: en brand tändes')).length;
       const skog0 = new Set<number>(); for (let i = 0; i < W * W; i++) if (g.trees[i] >= FOREST) skog0.add(i);
       SIM.tand(s, mitt, 'blixt', 0);
       kor(s, 18, torr);
@@ -948,6 +958,8 @@ SCENARIER.brand = {
       const svart0 = (by.aska ?? []).length, sv = cloneState(by);
       sv.now += (SIM.BRAND.svart * DAY) + HOUR; SIM.askaSteg(sv);
       return [
+        [`testläget: på vatten tänds inget (${tv.text}), i skogen tänds en brand (${t1.text}), där det brinner tänds inget igen (${tIgen.text})`, !tv.ok && t1.ok && !tIgen.ok && /vatten/.test(tv.text)],
+        [`testläget: en andra brand långt från den första sprids också (${t2.text}, ${vidAndra} rutor brann där efter 6 timmar), och Händelser säger var (${testRad} rader)`, t2.ok && vidAndra >= 3 && testRad === 2],
         [`gnistor från lägerelden tände marken efter ${gnistTim} timmar med torr mark`, (gn.stat?.['brand gnista'] ?? 0) >= 1],
         [`skogsbranden spred sig i torr skog (${rutor} rutor på 18 timmar, ${trad} träd dog)`, rutor >= 8 && trad >= 5],
         [`när marken är blöt tar den sig inte vidare (${vatRutor} ruta)`, vatRutor <= 2],

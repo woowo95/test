@@ -7,7 +7,7 @@ import { ALDER, ageOf, alive, count, livet, living, log } from './folk';
 import { Kroppsdel, kanGa, skada } from './halsa';
 import { kronika } from './historik';
 import { naVattnet } from './is';
-import { eldPlats } from './karta';
+import { eldPlats, vaderstreck } from './karta';
 import { avbryt, minska, stacksOf, tidy } from './lager';
 import { die } from './liv';
 import { MARK, groundOf, markslag } from './mark';
@@ -17,7 +17,7 @@ import { larma, larmNu } from './rykten';
 import { SAKER } from './saker';
 import { isLight, kalender } from './tid';
 import { drickPlats } from './torst';
-import { DAY, H, HEARTHS, HOUR, HOUR_S, MIN, Person, SEC, State, Task, W, inMap } from './typer';
+import { DAY, H, HEARTHS, HOUR, HOUR_S, MIN, Person, SEC, State, T, Task, W, inMap } from './typer';
 import { allaBarn, drabbadHus, upplev } from './uppvaxt';
 import { FOREST, VAG, isSoil } from './vag';
 import { blixtNu, snoPaMarken, torrTim, vaderNu } from './vader';
@@ -86,7 +86,7 @@ export const BRAND = balans('brand', {
 export type BrandRuta = [number, number, number, number];
 // branden som pågår: när och var den började (kalla = gnistor eller blixten), rutorna som brinner och de som brunnit klart,
 // hur många rutor som tagit eld, och vad den gjort
-export interface Brand { t: number; x: number; y: number; kalla: 'gnista' | 'blixt'; r: BrandRuta[]; ut: number[]; n: number; trad: number; vagg: number; saker: number; skadade: number; slackt: number; hot?: 1; sagd?: 1 }
+export interface Brand { t: number; x: number; y: number; kalla: 'gnista' | 'blixt'; r: BrandRuta[]; ut: number[]; n: number; trad: number; vagg: number; saker: number; skadade: number; slackt: number; hot?: 1; sagd?: 1; kallor?: number[] }
 
 // ett tal mellan 0 och 1 ur byns frö, tiden (i steg), en ruta eller person och ett salt (hash3 i slump.ts, drar inget ur
 // slumpföljderna)
@@ -94,6 +94,8 @@ const hash = hash3;
 const ur = (s: State, a: number, salt: number) => hash(s.seed + salt * 7919, Math.round(s.now / SEC), a);
 const chans = (takt: number, dtSec: number) => 1 - Math.exp(-takt * dtSec / HOUR_S); // takt i timmen under dtSec sekunder
 
+// branden sprids högst BRAND.maxR rutor från där den började, eller från en ruta som tänts i testläget (kallor, steg 4.5.6.6)
+const nara = (b: Brand, x: number, y: number) => Math.hypot(x - b.x, y - b.y) <= BRAND.maxR || !!b.kallor?.some(i => Math.hypot(x - i % W, y - Math.floor(i / W)) <= BRAND.maxR);
 // hur torr marken är (0 till 1): torra timmar, tidsåldern, och ingenting under snön
 export function torrhet(s: State) {
   if (snoPaMarken(s) > BRAND.sno) return 0;
@@ -145,6 +147,25 @@ export function tand(s: State, i: number, kalla: Brand['kalla'], u: number, bran
   }
 }
 
+// testläget (steg 4.5.6.6): rutan (x, y) tar eld, med tand som en blixt, och sedan sprids branden efter de vanliga reglerna.
+// Brinner inget på rutan (vatten, sten, bar jord, snö) tänds inget, och svaret säger varför. Bara i kopian av byn
+export function tandTest(s: State, x: number, y: number): { ok: boolean; text: string } {
+  if (!inMap(x, y)) return { ok: false, text: 'Rutan är utanför kartan' };
+  const i = y * W + x, k = s.brand && kartaOf(s.brand)[i];
+  if (k === 1) return { ok: false, text: 'Det brinner redan där' };
+  if (k === 2) return { ok: false, text: 'Rutan har redan brunnit' };
+  const g = groundOf(s), vad = g.tiles[i] === T.Vatten ? 'vatten' : !isSoil(g.tiles[i]) ? 'sten' : markslag(g, i) === 'bar' ? 'bar jord' : 'inget som brinner';
+  if (snoPaMarken(s) > BRAND.sno) return { ok: false, text: 'Snön ligger på marken, och inget brinner där' };
+  if (!bransleAv(s)(i)) return { ok: false, text: `Inget brinner där (${vad})` };
+  const ny = !s.brand;
+  tand(s, i, 'blixt', 0);
+  if (!ny) (s.brand!.kallor ??= []).push(i);
+  const e = eldPlats(s), d = Math.round(Math.hypot(x - e.x, y - e.y));
+  const text = `Testläget: en brand tändes ${d ? `${d} ${d === 1 ? 'ruta' : 'rutor'} ${vaderstreck(s, x, y)} om elden` : 'vid elden'}.` + (torrhet(s) <= 0 ? ' Marken är för blöt för att den ska sprida sig.' : '');
+  log(s, text, 'world');
+  return { ok: true, text };
+}
+
 // ---------- varje steg (steg.ts) ----------
 export function brandSteg(s: State, dtSec: number) {
   const dry = torrhet(s);
@@ -159,7 +180,7 @@ export function brandSteg(s: State, dtSec: number) {
     const x = i % W, y = Math.floor(i / W);
     for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
       const nx = x + dx, ny = y + dy, j = ny * W + nx, c = sprid * (dx && dy ? BRAND.hornet : 1);
-      if ((!dx && !dy) || !inMap(nx, ny) || k[j] || Math.hypot(nx - b.x, ny - b.y) > BRAND.maxR) continue;
+      if ((!dx && !dy) || !inMap(nx, ny) || k[j] || !nara(b, nx, ny)) continue;
       const u = hash(s.seed + 3851, slag, i * 9 + (dy + 1) * 3 + dx + 1);
       if (u >= c) continue; // antändningen är högst 1: slå bara upp det som brinner när det kan behövas
       const fu = bransle(j);

@@ -28,6 +28,7 @@ export const ui = {
   stationId: -1, // stationen som visas i panelen
   flytta: -1, // testläget (steg 3.10.1): stationen som flyttas till rutan man trycker på härnäst ...
   flyttFel: false, // ... och om den inte fick plats där
+  brandTest: false, // testläget (steg 4.5.6.6): nästa tryck på kartan tänder en brand där
   sjoNr: 0, // sjön som visas i panelen
   faltId: -1, // fältet som visas i panelen (flikar/falt.ts) ...
   faltRuta: -1, // ... och rutan med grödan som visas, eller -1 för hela fältet
