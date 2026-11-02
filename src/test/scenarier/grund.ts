@@ -57,7 +57,8 @@ SCENARIER['ingen-yxa'] = {
     const s = createState(13, START); // by 12 dör ut tidigt av svält sedan kaninerna håller sig längre från byn (1.5.5), och saknar sedan torrt gräs att tända med
     setAmount(s, 'flinta', 1);
     // flintan i en påbörjad yxa räknas inte i förrådet (materialet tas när arbetet börjar, 1.5.14), så den tas bort också
-    kor(s, 30 * 24, s => { if (amountOf(s, 'flinta') > 1) setAmount(s, 'flinta', 1); if (tingOf(s).some(t => t.halv?.gor === 'yxa')) s.ting = tingOf(s).filter(t => t.halv?.gor !== 'yxa'); });
+    // handlaren säljer ingen yxa här: sedan steg 4.5.4.16 köper byn ett redskap den saknar
+    kor(s, 30 * 24, s => { if (amountOf(s, 'flinta') > 1) setAmount(s, 'flinta', 1); if (tingOf(s).some(t => t.halv?.gor === 'yxa')) s.ting = tingOf(s).filter(t => t.halv?.gor !== 'yxa'); if (s.handlare) s.handlare.varor = s.handlare.varor.filter(w => w.k !== 'yxa'); });
     return [
       ['ingen yxa', !(amountOf(s, 'yxa'))],
       ['inga träd fällda', !(s.fallda ?? 0)],

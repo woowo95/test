@@ -1,4 +1,4 @@
-import { strandNu, vattenNu } from './sjo';
+import { iVattnetNu, strandNu, vattenNu } from './sjo';
 import { take } from './agande';
 import { PLATS, campCenter, campDist, campGrid, campKey } from './plats';
 import { vargSkydd } from './varg';
@@ -199,7 +199,13 @@ function isarIRum(s: State, p: Person, tiles: number[]) {
   return at;
 }
 // var en handling görs, efter platsen i handlingar.ts
+// platsen för act; under en översvämning aldrig i vattnet: ett rum eller en säng kan stå under vatten (vaktlarmet i by 42
+// efter v271: en som lyssnade på musik i regnet satt i samlingshuset, där golvet stod under vatten), så då den närmaste torra rutan
 export function spotFor(s: State, act: Act, p: Person): { x: number; y: number } {
+  const u = platsFor(s, act, p);
+  return s.flod && inMap(u.x, u.y) && iVattnetNu(s, tileOf(u.x, u.y)) ? freeNear(s, u.x, u.y) : u;
+}
+function platsFor(s: State, act: Act, p: Person): { x: number; y: number } {
   const m = getMap(s.seed), d = ACTS[act], plats = d.plats ?? 'skog';
   const f = plats === 'elden' ? egenBrasa(s, p) ?? eldPlats(s) : eldPlats(s); // vid elden: vid den brinnande brasa man hör till (steg 2.9.1), annars lägerelden
   // det som görs utan bänk görs inne i byn och inte vid elden (steg 2.10.6); när det är kallt sätter man sig vid elden som förut, för värmens skull
