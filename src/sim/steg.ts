@@ -33,10 +33,10 @@ import { MARK, groundOf, growGround, packGround, tileOf } from './mark';
 import { SAMTAL, TalkEvent, converse, isSocial } from './samtal';
 import { HABIT_FADE, addHabit, stepSeder, updateTags } from './seder';
 import { RELT, stepRelationer } from './relationer';
-import { MINNE, fearPlace, forget, lookAround } from './minne';
+import { MINNE, areaOf, fearPlace, forget, lookAround, radslaVid, trorOm } from './minne';
 import { PLATS } from './plats';
 import { chance, clamp, hash3, rnd } from './slump';
-import { ARSTID, ageIndex, iIstiden, isLight } from './tid';
+import { ARSTID, ageIndex, hourOf, iIstiden, isLight } from './tid';
 import { ACTS, toolRow } from './handlingar';
 import { AGES_BORJAR, Act, DAY, HOUR, HOUR_S, MIN, Person, SEC, SKILL_NAMES, State, Task, W, H, useMap, Historik, simulera } from './typer';
 import { findPath, speedAt, wear } from './vag';
@@ -64,7 +64,7 @@ import { addFuelBrasa, brasaFor, stepBrasor } from './brasor';
 import { sjoRakna } from './sjo';
 import { akel, toaBesok } from './smuts';
 import { DRICKA_ACTS, TORST, drick, torstSteg, vattenFram, vattenFylld } from './torst';
-import { barMed, burenSteg, halsaSteg, lakerFullt, lamnaAv, mossaFynd, mossaPaStam, vardKlar, vardMal } from './halsa';
+import { barMed, burenSteg, halsa, halsaSteg, lakerFullt, lamnaAv, mossaFynd, mossaPaStam, vardKlar, vardMal } from './halsa';
 import { bordPlats, kladVarme, stepKlader } from './utrustning';
 import { stepPynt } from './pynt';
 import { stadaByten } from './byte';
@@ -613,7 +613,51 @@ function tidTillTom(s: State, p: Person, tk: Task) {
 // rundan (steg 4.5.6.1): samlaren går i full fart från ruta till ruta och stannar en kort stund där det finns något att
 // plocka. Gången räknas som arbete på rutan man går till, så att en arbetstimme ger ungefär lika mycket som när man stod
 // vid busken. Hittar man ingen ruta nära går man till nästa buske (nastaBuske) eller hem. Ger tiden som gått
-const RUNDA_SETT = 12; // så många rutor minns man att man nyss plockat på
+// Rundan söker sig utåt (steg 4.5.6.2): varje ruta längre från lägret är värd drag() mer. Nyfikenheten och modet drar ut;
+// bördan, hungern, törsten, tröttheten, mörkret som kommer, kylan och rädslan drar hem. Det finns inget tak: den som dras
+// utåt kan gå ända till kartans kant. Barn, gamla och skadade dras mindre ut
+export const RUNDA = balans('runda', {
+  sett: 12, // så många rutor minns man att man nyss plockat på
+  ut: 0.01, // dragets bas per ruta, och så här mycket till gånger nyfikenheten / 20 och modet / 20
+  nyfiken: 0.04,
+  mod: 0.03,
+  borda: 0.06, // hemåt: gånger hur full bördan är
+  behov: 0.06, // hemåt: för hunger, törst och trötthet, gånger hur långt under hälften behovet är (0–1)
+  morkTim: 2, // de sista så här många timmarna före mörkret drar det hemåt, mest när det är mörkt
+  mork: 0.06,
+  kyla: 0.05, // hemåt i kylan, och mer för den som fryser
+  svag: 0.5, // barn, gamla och skadade (hälsan under svagHalsa) dras så här mycket ut
+  svagHalsa: 0.7,
+  langtR: 10, // finns inget att plocka inom MINNE.sokR letar den som dras utåt så här långt bort
+  vargR: 12, // vargar och rövare så här nära en ruta skrämmer: vargRadsla vid dem, mindre längre bort och för den modige
+  vargRadsla: 0.6,
+});
+function drag(s: State, p: Person, tk: Task) {
+  const now = s.now, a = ageOf(p, now), h = hourOf(now);
+  let ut = RUNDA.ut + RUNDA.nyfiken * stat(p, 'nyfikenhet', now) / 20 + RUNDA.mod * stat(p, 'mod', now) / 20;
+  if (a < ALDER.vuxen || a >= ALDER.gammal || halsa(p) < RUNDA.svagHalsa) ut *= RUNDA.svag;
+  const under = (v: number) => Math.max(0, 0.5 - v) * 2;
+  ut -= RUNDA.borda * load(tk, s) / Math.max(1, capacity(s, p)) + RUNDA.behov * (under(p.hunger) + under(p.torst) + under(p.rest));
+  ut -= RUNDA.mork * (isLight(now) ? clamp(1 - (19 - h) / RUNDA.morkTim, 0, 1) : 1);
+  ut -= RUNDA.kyla * (Math.min(1, coldOf(temperature(s))) + (p.warm < KROPP.kallt ? 1 : 0));
+  const mod = clamp(MINNE.radslaMax - stat(p, 'mod', now) / 20, MINNE.radslaMin, MINNE.radslaMax);
+  const hot = [...(s.vargar ?? []), ...(s.rovare ? [s.rovare] : [])];
+  const fara = (x: number, y: number) => {
+    let v = 0;
+    for (const f of hot) { const d = Math.hypot(f.x - x - 0.5, f.y - y - 0.5); if (d < RUNDA.vargR) v += RUNDA.vargRadsla * (1 - d / RUNDA.vargR) * mod; }
+    return v;
+  };
+  const omr = new Map<number, number>(); // rädslan per område räknas en gång
+  const radsla = (x: number, y: number) => {
+    const a = areaOf(x, y);
+    let v = omr.get(a);
+    if (v === undefined) omr.set(a, v = radslaVid(s, p, x, y));
+    return hot.length ? v + fara(x, y) : v;
+  };
+  // nära: rutorna man ser, utan drag. Längre bort drar det utåt, och längst bort gäller det man tror om rutan
+  const tror = trorOm(s, p, ACTS[tk.act].resurs!);
+  return { nara: { ut: 0, radsla }, bort: { ut, radsla }, langt: { ut, radsla, tror: (x: number, y: number) => tror(x, y) - fara(x, y) }, ut };
+}
 function rundaSteg(s: State, p: Person, tk: Task, left: number, a: number, learn: number) {
   const d = ACTS[tk.act], r = d.runda!, now = s.now, slut = Math.max(0, (tk.until - now) / SEC);
   if (tk.hopp) {
@@ -621,7 +665,12 @@ function rundaSteg(s: State, p: Person, tk: Task, left: number, a: number, learn
     if (p.task !== tk) return used;
     s.now = now + used * SEC;
     workStep(s, p, tk, used, a, learn, false, true);
-    if (w.framme && p.task === tk && tk.phase === 'do') tk.hopp = undefined;
+    if (w.framme && p.task === tk && tk.phase === 'do') {
+      tk.hopp = undefined;
+      // i ett nytt område ser hen sig omkring: det blir platslärdomar (steg 4.5.6.2)
+      const f = tk.sett?.[tk.sett.length - 1];
+      if (f === undefined || areaOf(f % W, Math.floor(f / W)) !== areaOf(tk.tx, tk.ty)) lookAround(s, p, tk.tx, tk.ty);
+    }
     return used;
   }
   const i = tileOf(tk.tx, tk.ty);
@@ -637,16 +686,18 @@ function rundaSteg(s: State, p: Person, tk: Task, left: number, a: number, learn
   if (p.task !== tk || tk.phase !== 'do' || tk.until <= s.now || (tk.plock > 1e-6 && !tom)) return used;
   // stoppet är slut: vidare till nästa ruta
   tk.plock = undefined;
-  tk.sett = [...(tk.sett ?? []), i].slice(-RUNDA_SETT);
+  tk.sett = [...(tk.sett ?? []), i].slice(-RUNDA.sett);
   // nästa ruta i närheten som man inte nyss plockat på; finns ingen går man längre bort, sedan till en man plockat på förut
   // (men aldrig samma igen: då står man still). Står man vid den enda busken går man ett steg åt sidan och tillbaka. Den som
   // samlar tändmaterial och inte har nog går runt på marken omkring, där det ligger överallt
   const full = load(tk, s) >= Math.min(capacity(s, p) * STEG.borda, bordPlats(s, p)), sett = tk.sett;
-  const ner = (rr: number, ...krav: { sett: readonly number[]; minst: number }[]) => nastaRuta(s, d.resurs!, tk.tx, tk.ty, rr, p.id, krav);
-  let n = ner(r.r, { sett, minst: PLATS.vidare });
-  if (!n && !full && tk.until > s.now + 2 * MIN) n = ner(MINNE.sokR, { sett, minst: PLATS.vidare }, { sett: sett.slice(-1), minst: PLATS.tomtGrans })
-    ?? (arbetsTakt(s, p, tk).rich >= PLATS.tomtGrans ? ner(1, { sett: [i], minst: 0 }) : undefined);
-  if (!n && tk.tandmat && tinderShort(s, tk)) n = ner(r.r, { sett: [i], minst: 0 });
+  const dr = drag(s, p, tk);
+  const ner = (rr: number, g: Parameters<typeof nastaRuta>[7], ...krav: { sett: readonly number[]; minst: number }[]) => nastaRuta(s, d.resurs!, tk.tx, tk.ty, rr, p.id, krav, g);
+  let n = ner(r.r, dr.nara, { sett, minst: PLATS.vidare });
+  if (!n && !full && tk.until > s.now + 2 * MIN) n = ner(MINNE.sokR, dr.bort, { sett, minst: PLATS.vidare }, { sett: sett.slice(-1), minst: PLATS.tomtGrans })
+    ?? (dr.ut > 0 ? ner(RUNDA.langtR, dr.langt, { sett, minst: PLATS.vidare }) : undefined)
+    ?? (arbetsTakt(s, p, tk).rich >= PLATS.tomtGrans ? ner(1, dr.nara, { sett: [i], minst: 0 }) : undefined);
+  if (!n && tk.tandmat && tinderShort(s, tk)) n = ner(r.r, dr.nara, { sett: [i], minst: 0 });
   if (n) { tk.tx = n.x; tk.ty = n.y; tk.hopp = true; } else tk.until = s.now;
   return used;
 }

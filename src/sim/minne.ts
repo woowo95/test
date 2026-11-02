@@ -3,7 +3,7 @@ import { PLATS, campCenter, campDist, campKey } from './plats';
 import { byId, count, forstaGang, gjort, isParent, living, log, stat } from './folk';
 import { delade } from './berattelser';
 import { teach } from './teknik';
-import { FANGST, Kind, prospect, regrowOf, richness, shoreOf, standAt, stoneDist, synsOf, toppOf, vaxerAt } from './fynd';
+import { FANGST, Kind, type Lager, prospect, regrowOf, richness, shoreOf, standAt, stoneDist, synsOf, toppOf, vaxerAt } from './fynd';
 import { getMap } from './karta';
 import { groundOf, tileOf } from './mark';
 import { KUNSKAPER, kn, learnK } from './kunskap';
@@ -216,6 +216,14 @@ function perceive(s: State, p: Person, k: Kind, x: number, y: number, sight: num
 function fear(s: State, p: Person, a: number) {
   const l = findL(p, 'fara', a);
   return l ? l.v * l.c * clamp(MINNE.radslaMax - stat(p, 'mod', s.now) / 20, MINNE.radslaMin, MINNE.radslaMax) : 0;
+}
+// rundan (steg 4.5.6.2): vad personen tror att rutan (x, y) ger, med rädslan för området dragen ifrån. Rutorna hen ser
+// räknas som de är; längre bort gäller minnet, det hen hört och det marken lovar (den nyfikne tror mer på det okända)
+export const radslaVid = (s: State, p: Person, x: number, y: number) => fear(s, p, areaOf(x, y));
+export function trorOm(s: State, p: Person, k: Lager) {
+  const sight = sightOf(s, p), u = trustUnknown(s, p), syns = (i: number) => synsOf(s, k, i);
+  const kind = k === 'samla' || k === 'jakt' || k === 'fiske' ? k : undefined;
+  return (x: number, y: number) => kind ? perceive(s, p, kind, x, y, sight, u, syns) : richness(s, k, x + 0.5, y + 0.5) - fear(s, p, areaOf(x, y));
 }
 // det man ser: rutorna runt där man står just nu.
 // Synvidden beror på var man står: kort i skogen, längre i öppen terräng, och kortare i mörker

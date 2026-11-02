@@ -209,6 +209,7 @@ SCENARIER.kaniner = {
 };
 
 SCENARIER.rotter = {
+  lang: true,
   text: 'Bär och rötter är olika slag i egna stackar; på sommaren samlar man mycket bär, i istiden bara rötter',
   kor: () => {
     // det som samlats av varje slag (byns statistik), i fyra byar: det som bärs hem äts snart upp, så förrådet säger lite (steg 2.12.9)
@@ -236,7 +237,8 @@ SCENARIER.rotter = {
 
 // rundan (steg 4.5.6.1): samlaren går i full fart från ruta till ruta och stannar 2–5 sekunder där det finns något
 SCENARIER.samlarrunda = {
-  text: 'Steg 4.5.6.1: samlaren går hela tiden i full gångfart från ruta till ruta och stannar 2–5 sekunder där det finns något att plocka. Hen står aldrig still längre än så medan hen samlar (mindre än en tiondel av arbetstiden), och Gör just nu säger Letar efter bär och Plockar bär',
+  lang: true,
+  text: 'Steg 4.5.6.1–4.5.6.2: samlaren går hela tiden i full gångfart från ruta till ruta och stannar 2–5 sekunder där det finns något att plocka. Hen står aldrig still längre än så medan hen samlar (mindre än en tiondel av arbetstiden), och Gör just nu säger Letar efter bär och Plockar bär. Rundan når längre bort än lägerzonen, och den nyfikne och modige går längre än den försiktige när maten nära byn är slut',
   kor: () => {
     // två byar utan mat följs sekund för sekund i sex timmar: var samlarna står och hur fort de går
     let arbete = 0, langeStill = 0, gang = 0, sekGang = 0, stopp = 0, langstStopp = 0;
@@ -260,7 +262,31 @@ SCENARIER.samlarrunda = {
       }
     }
     const fart = sekGang ? gang / sekGang : 0, GANG = balansTal().gang as Record<string, number>;
+    // längre ut (steg 4.5.6.2): maten nära byn är slut (allt inom 14 rutor från lägret plockat). Samma byar två gånger i sex
+    // timmar, med alla nyfikna och modiga och med alla försiktiga: hur långt från lägret varje runda når som längst
+    const ut = (pot: number) => {
+      const langst: number[] = [];
+      for (const seed of [42, 7]) {
+        const s = createState(seed, START), tagit = SIM.takenOf(s), nar = new Map<number, number>();
+        setMat(s, {}); setAmount(s, 'ved', 300);
+        for (const k of SIM.lagren('samla')) { const a = tagit[k as keyof typeof tagit]; if (a) for (let i = 0; i < W * H; i++) if (campDist(s, i % W, Math.floor(i / W)) < 14) a[i] = 1; }
+        for (const p of living(s)) { p.pot.nyfikenhet = pot; p.pot.mod = pot; }
+        for (let i = 0; i < 6 * 360; i++) {
+          step(s, 10);
+          for (const p of living(s)) {
+            const t = p.task, runda = t?.act === 'samla' && t.phase === 'do' && !t.sok;
+            if (runda) nar.set(p.id, Math.max(nar.get(p.id) ?? 0, campDist(s, p.x, p.y)));
+            else if (nar.has(p.id)) { langst.push(nar.get(p.id)!); nar.delete(p.id); }
+          }
+        }
+      }
+      return langst;
+    };
+    const modig = ut(20), forsiktig = ut(1), snitt = (a: number[]) => a.reduce((x, y) => x + y, 0) / Math.max(1, a.length);
+    const zon = SIM.FANGST.lagerR, bortom = modig.concat(forsiktig).filter(d => d > zon + 2).length / Math.max(1, modig.length + forsiktig.length);
     return [
+      [`samlarna når längre bort än lägerzonen (${(bortom * 100).toFixed(0)} % av ${modig.length + forsiktig.length} rundor kom mer än ${zon + 2} rutor från lägret)`, bortom > 0.5],
+      [`en nyfiken och modig samlare går längre än en försiktig när maten nära byn är slut (som längst i snitt ${snitt(modig).toFixed(1)} mot ${snitt(forsiktig).toFixed(1)} rutor från lägret, ${modig.length} och ${forsiktig.length} rundor)`, modig.length >= 5 && forsiktig.length >= 5 && snitt(modig) > snitt(forsiktig) + 1],
       [`samlarna samlade (${arbete} sekunder arbete)`, arbete > 3600],
       [`de står still längre än 5 sekunder mindre än en tiondel av arbetstiden (${(langeStill / Math.max(1, arbete) * 100).toFixed(1)} %)`, arbete > 0 && langeStill < arbete / 10],
       [`de stannar ofta (${stopp} stopp, det längsta ${langstStopp} sekunder)`, stopp > 100],
