@@ -244,7 +244,12 @@ td.tal { white-space: nowrap; }
 .gr-svar label { color: var(--dim); }
 .gr-ja { min-height: 52px; font-size: 20px; background: var(--panel2); border: 2px solid var(--gron); color: var(--ink); cursor: pointer; }
 .gr-ja[aria-pressed="true"] { background: var(--gron); color: var(--bg); }
+.gr-svarknappar { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.gr-nej { min-height: 52px; font-size: 20px; background: var(--panel2); border: 2px solid var(--rost); color: var(--ink); cursor: pointer; }
+.gr-nej[aria-pressed="true"] { background: var(--rost); color: var(--ink); }
+.grkort.nej { border-color: var(--rost); }
 .gr-svar .gr-knapp { justify-self: start; }
 .gr-sparat { color: var(--dim); min-height: 1.5em; }
 .grkort button:disabled, .grkort textarea:disabled { opacity: 0.5; cursor: not-allowed; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
+.grkort > *, .gr-bilder > *, .gr-mall > *, .sk-avsnitt > * { min-width: 0; }
