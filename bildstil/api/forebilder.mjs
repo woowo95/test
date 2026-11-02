@@ -99,3 +99,34 @@ spara({ id: 'mun-1', ritad: 2, av: 'programmeringschatten, förebild', om: 'Smal
     oppen: { x: -4, y: -2, rader: ['........', '...rr...', '..rkkr..', '..rkkr..', '...bb...'] },
   } });
 console.log('ok', fs.readdirSync('bildstil/delar'));
+
+// ---- frisyren Halvlångt (steg 5.2.2.4) i två lager: bakhåret bakom huvudet och kroppen, framhåret med hjässan, luggen
+// och sidorna framför öronen ner till käken. Formen är platshållarens; skuggningen är den matta från huvudet (ljus uppifrån
+// vänster), och slingor i små lodräta klungor ger håret struktur utan glans. Punkterna räknas från fästpunkten har (32, 10).
+function harTon(x, y, cx, cy, rx, ry, forskj = 0) {
+  let t = ton(ljushet(x, y, cx, cy, rx, ry), x, y);
+  const slinga = vn(x * 1.6, y * 0.32, 1.4, 31); // lodräta slingor: långsträckta klungor
+  if (slinga > 0.74) t += 1; else if (slinga < 0.2 && t > 1) t -= 1; // få och mjuka: inga mörka prickar i det ljusa
+  return 'efgh'[Math.max(0, Math.min(3, t + forskj))];
+}
+function lagerRader(punkt, x0, y0, x1, y1) {
+  const rader = [];
+  let minX = 99, maxX = -99, minY = 99, maxY = -99;
+  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (punkt(x, y)) { minX = Math.min(minX, x); maxX = Math.max(maxX, x); minY = Math.min(minY, y); maxY = Math.max(maxY, y); }
+  for (let y = minY; y <= maxY; y++) { let r = ''; for (let x = minX; x <= maxX; x++) r += punkt(x, y) || '.'; rader.push(r); }
+  return { x: minX - 32, y: minY - 10, rader };
+}
+{
+  const ell = (cx, cy, rx, ry) => (x, y) => ((x + 0.5 - cx) / rx) ** 2 + ((y + 0.5 - cy) / ry) ** 2 <= 1;
+  // bakhåret: en rundad massa bakom huvudet som når ner till hakan, mörkare än framhåret
+  const bakInne = (x, y) => y >= 20 && y <= 51 && ell(32, 35, 19.5, 18.5)(x, y);
+  const bak = (x, y) => bakInne(x, y) ? harTon(x, y, 32, 30, 19, 22, -1) : null;
+  // framhåret: hjässan ner till hårfästet (luggen sveper snett åt höger), och sidorna framför öronen ner mot käken
+  const harfaste = x => { const dx = Math.abs(x + 0.5 - 32); return dx >= 13.5 ? 32 : dx >= 10.5 ? 23 : Math.min(23, 19 + Math.max(0, x - 20) * 0.25); };
+  const kapa = (x, y) => y < harfaste(x) && ell(32, 29.5, 16.5, 21.5)(x, y);
+  const slut = 48;
+  const sida = (x, y) => { const dx = Math.abs(x + 0.5 - 32); return y >= 19 && y <= slut - Math.max(0, dx - 15) && dx >= 12 && dx <= 18.5 - Math.max(0, y - slut + 3); };
+  const fram = (x, y) => kapa(x, y) ? harTon(x, y, 32, 22, 17, 14) : sida(x, y) ? harTon(x, y, 32, 30, 18, 24) : null;
+  spara({ id: 'har-5', ritad: 1, av: 'programmeringschatten, förebild', om: 'Halvlångt hår för båda: framhåret täcker hjässan och går ner framför öronen till käken, luggen sveper lite snett, och bakhåret syns bakom huvudet ner till hakan. Matt skuggning med ljus uppifrån vänster och slingor i små lodräta klungor.',
+    bilder: { bakhar: lagerRader(bak, 0, 0, 63, 63), framhar: lagerRader(fram, 0, 0, 63, 63) } });
+}

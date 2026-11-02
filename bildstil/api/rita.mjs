@@ -36,6 +36,8 @@ const SORT = Object.fromEntries(PR.sorter.map(s => [s.id, s]));
 const delarAv = s => PR.delar.filter(d => d.sort === s);
 const lasDel = id => { const f = path.join(DELAR, id + '.json'); return fs.existsSync(f) ? JSON.parse(fs.readFileSync(f, 'utf8')) : null; };
 const lagenFor = s => SORT[s].lagen ? PR.lagen[SORT[s].lagen].map(l => l.id) : ['standard'];
+// bilderna en del består av: lägena, eller lagren för en sort som ritas i lager (frisyrerna: bakhar och framhar, 5.2.2.4)
+const nycklarFor = s => SORT[s].ritas?.lager || lagenFor(s);
 
 // ---------- registret skrivs med en rad per del, som förut ----------
 function skrivRegister() {
@@ -112,7 +114,7 @@ Svara bara med JSON enligt schemat.`;
 // schemat för svaret: punkterna i alla lägen (och mannens och barnets bilder när sorten har dem); i valet också vilken version
 function schema(sort, valet = false) {
   const bild = { type: 'object', properties: { x: { type: 'integer' }, y: { type: 'integer' }, rader: { type: 'array', items: { type: 'string' } } }, required: ['x', 'y', 'rader'], additionalProperties: false };
-  const lagen = lagenFor(sort), bilder = { type: 'object', properties: Object.fromEntries(lagen.map(l => [l, bild])), required: lagen, additionalProperties: false };
+  const lagen = nycklarFor(sort), bilder = { type: 'object', properties: Object.fromEntries(lagen.map(l => [l, bild])), required: lagen, additionalProperties: false };
   const props = { bilder, anteckning: { type: 'string' } }, req = ['bilder', 'anteckning'];
   if (SORT[sort].ritas.manbild) { props.man = bilder; req.push('man'); }
   if (SORT[sort].ritas.barnbild) { props.barn = bilder; req.push('barn'); }
@@ -121,7 +123,7 @@ function schema(sort, valet = false) {
 }
 function sortText(sort) {
   const S = SORT[sort], R = S.ritas, f = PR.mallar.map(m => `${m.namn}: ${R.fast === 'huvud' ? `huvudets mitt (${m.huvud.cx}, ${m.huvud.cy})` : JSON.stringify(m.fast[R.fast])}`).join('; ');
-  const lagen = S.lagen ? `Lägen: ${PR.lagen[S.lagen].map(l => `${l.id} (${l.namn})`).join(', ')}. Humöret väljer dem: ${PR.humor.map(h => `${h.namn.toLowerCase()} = ${h[sort] || '–'}`).join(', ')}.` : 'Ett läge: standard.';
+  const lagen = S.lagen ? `Lägen: ${PR.lagen[S.lagen].map(l => `${l.id} (${l.namn})`).join(', ')}. Humöret väljer dem: ${PR.humor.map(h => `${h.namn.toLowerCase()} = ${h[sort] || '–'}`).join(', ')}.` : R.lager ? `Bilderna är lagren ${R.lager.join(' och ')}, som ritas i var sitt lager i porträttet (se sortens beskrivning).` : 'Ett läge: standard.';
   const mitt = R.par ? '' : ' Ansiktets mittlinje går mellan x = -1 och x = 0 räknat från fästpunkten. Det som ska sitta mitt i ansiktet sträcker sig därför lika långt åt vänster som åt höger om den linjen, till exempel från x = -3 till x = 2, och en näsrygg ligger på x = -1 och 0.';
   return `Sort: ${S.namn} (${R.om}). Fästpunkten i porträttet: ${f}. Ruta från fästpunkten (x0, y0, x1, y1): ${R.ruta.join(', ')}.${mitt} Tecken som sorten får använda: ${R.tecken}. ${lagen}${R.manbild ? ' Rita också en egen bild för mannen (man), som för förebilden: mannens huvudform är lite fyrkantigare, med rakare sidor, bredare käke och plattare haka (Björn efter 5.2.2.3).' : ''}${R.barnbild ? ' Rita också en egen bild för barnmallen (barn), som för förebilden: barnet har kortare och rundare nedre ansikte och mindre drag.' : ''}`;
 }
@@ -178,9 +180,9 @@ function kontrollera(sort, svar) {
     }));
     if (!punkter) fel.push(`${namn}: bilden är tom`);
   };
-  for (const l of lagenFor(sort)) bild(svar.bilder?.[l], l);
-  if (R.manbild) for (const l of lagenFor(sort)) bild(svar.man?.[l], 'man ' + l);
-  if (R.barnbild) for (const l of lagenFor(sort)) bild(svar.barn?.[l], 'barn ' + l);
+  for (const l of nycklarFor(sort)) bild(svar.bilder?.[l], l);
+  if (R.manbild) for (const l of nycklarFor(sort)) bild(svar.man?.[l], 'man ' + l);
+  if (R.barnbild) for (const l of nycklarFor(sort)) bild(svar.barn?.[l], 'barn ' + l);
   return [...new Set(fel)].slice(0, 12);
 }
 
@@ -246,7 +248,7 @@ const bildTokens = sort => Math.min(1600, Math.round(lagenFor(sort).length * (64
 const forebildTecken = sort => { const fb = lasDel(delarAv(sort)[0].id); return fb ? JSON.stringify({ bilder: fb.bilder, man: fb.man, barn: fb.barn }).length : 300; };
 const textTokens = f => Math.round((JSON.stringify(f.params.system).length + f.params.messages[0].content.filter(c => c.type === 'text').map(c => c.text).join('').length) / 3);
 function delKostnad(d, ritIn) { // ritIn: tokens in i en ritfråga, bilden inräknad
-  const T = forebildTecken(d.sort), L = lagenFor(d.sort).length, B = bildTokens(d.sort);
+  const T = forebildTecken(d.sort), L = nycklarFor(d.sort).length, B = bildTokens(d.sort);
   const ritUt = 500 + 2.4 * T + 150 * L, valIn = ritIn + VERSIONER * (T / 2.5 + B), valUt = 800 + 1.45 * T + 150 * L;
   return (VERSIONER * (ritIn * PRIS.in + ritUt * PRIS.ut) + valIn * PRIS.in + valUt * PRIS.ut) / 1e6;
 }

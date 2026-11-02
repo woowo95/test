@@ -23,12 +23,12 @@
       {"id": "vaderbiten", "namn": "Väderbiten", "toner": ["jord0", "jord1", "jord2", "jord3"], "kyla": "rost2", "ritad": 1}
     ],
     "har": [
-      {"id": "linblont", "namn": "Linblont", "toner": ["senap1", "senap2", "senap3", "ben3"], "ritad": 0},
-      {"id": "ljusblont", "namn": "Ljusblont", "toner": ["senap0", "senap1", "senap2", "senap3"], "ritad": 0},
-      {"id": "ljusbrunt", "namn": "Ljusbrunt", "toner": ["jord0", "jord1", "jord2", "jord3"], "ritad": 0},
-      {"id": "brunt", "namn": "Brunt", "toner": ["kol1", "jord0", "jord1", "jord2"], "ritad": 0},
-      {"id": "morkbrunt", "namn": "Mörkbrunt", "toner": ["kol0", "kol2", "jord0", "jord1"], "ritad": 0},
-      {"id": "rott", "namn": "Rött", "toner": ["rost0", "rost1", "rost2", "rost3"], "sallsynt": true, "ritad": 0}
+      {"id": "linblont", "namn": "Linblont", "toner": ["senap1", "senap2", "senap3", "ben3"], "ritad": 1},
+      {"id": "ljusblont", "namn": "Ljusblont", "toner": ["senap0", "senap1", "senap2", "senap3"], "ritad": 1},
+      {"id": "ljusbrunt", "namn": "Ljusbrunt", "toner": ["jord0", "jord1", "jord2", "jord3"], "ritad": 1},
+      {"id": "brunt", "namn": "Brunt", "toner": ["kol1", "jord0", "jord1", "jord2"], "ritad": 1},
+      {"id": "morkbrunt", "namn": "Mörkbrunt", "toner": ["kol0", "kol2", "jord0", "jord1"], "ritad": 1},
+      {"id": "rott", "namn": "Rött", "toner": ["rost0", "rost1", "rost2", "rost3"], "sallsynt": true, "ritad": 1}
     ],
     "grattHar": {"id": "gratt", "namn": "Grått", "toner": ["kol3", "skiffer2", "ben1", "ben2"]},
     "oga": [
@@ -133,7 +133,7 @@
     ],
     "om": "Sju armlägen (beslut, Björn efter 5.2.2.1): hänga, två gångsteg, bära, lyfta, slå och framför kroppen; lyfta och slå är två lägen."
   },
-  "neutral": {"huvudform": "huvud-rund", "ora": "ora-2", "nasa": "nasa-1", "oga": "oga-1", "ogonbryn": "bryn-1", "mun": "mun-1", "frisyr": "har-1", "hud": 1, "har": 3, "ogon": 0, "humor": "lugn"},
+  "neutral": {"huvudform": "huvud-rund", "ora": "ora-2", "nasa": "nasa-1", "oga": "oga-1", "ogonbryn": "bryn-1", "mun": "mun-1", "frisyr": "har-5", "hud": 1, "har": 3, "ogon": 0, "humor": "lugn"},
   "sorter": [
     {"id": "mall", "namn": "Mallarna", "en": "Mall", "steg": "5.2.2.2", "rader": "mallar", "karta": true, "kon": "bada"},
     {"id": "huvudform", "namn": "Huvudformer", "en": "Huvudform", "steg": "5.2.2.3", "lager": ["huvud"], "karta": true, "kon": "bada", "ritas": {"fast": "huvud", "ruta": [-17, 1, 16, 22], "tecken": "abcdABCD", "om": "nedre ansiktet under ögonlinjen: käken, kinderna (A–D) och hakan; skallen ovanför ritas av mallen", "manbild": true, "barnbild": true}, "kartbild": {"om": "huvudets två nedersta rader på kartan (X = huden), framifrån och bakifrån (fram) och från sidan; bredare eller smalare käke"}},
@@ -144,7 +144,7 @@
     {"id": "mun", "namn": "Munnar", "en": "Mun", "steg": "5.2.2.3", "lager": ["mun"], "lagen": "mun", "kon": "bada", "ritas": {"fast": "mun", "ruta": [-6, -2, 5, 3], "tecken": "abcdrstuklmnopqw", "om": "munnen inom munnens fasta ruta, så att skägget har ett hål för den"}},
     {"id": "ogonfarg", "namn": "Ögonfärger", "en": "Ögonfärg", "steg": "5.2.2.3", "rader": "farger.oga", "kon": "bada"},
     {"id": "hudton", "namn": "Hudtoner", "en": "Hudton", "steg": "5.2.2.3", "rader": "farger.hud", "karta": true, "kon": "bada"},
-    {"id": "frisyr", "namn": "Frisyrer", "en": "Frisyr", "steg": "5.2.2.4", "lager": ["bakhar", "framhar"], "maskbar": true, "karta": true, "harfarger": true, "kon": "bada"},
+    {"id": "frisyr", "namn": "Frisyrer", "en": "Frisyr", "steg": "5.2.2.4", "lager": ["bakhar", "framhar"], "maskbar": true, "karta": true, "harfarger": true, "kon": "bada", "ritas": {"fast": "har", "ruta": [-32, -10, 31, 53], "tecken": "efgh", "lager": ["bakhar", "framhar"], "om": "frisyren i två lager: bakhar är håret bakom huvudet och kroppen (det som syns runt huvudet och nedanför det), framhar är hjässan, luggen och sidorna framför öronen och lockar framöver axlarna; skallen täcks ovanför hårfästet, och samma frisyr passar alla tre mallar"}},
     {"id": "skagg", "namn": "Skägg", "en": "Skägg", "steg": "5.2.2.4", "lager": ["skagg"], "valfri": "Inget skägg", "utom": ["mun"], "karta": true, "kon": "man", "barn": false},
     {"id": "harfarg", "namn": "Hårfärger", "en": "Hårfärg", "steg": "5.2.2.4", "rader": "farger.har", "karta": true, "granskaMed": {"frisyr": "har-5"}, "kon": "bada"},
     {"id": "huvudbonad", "namn": "Huvudbonader", "en": "Huvudbonad", "steg": "5.2.2.4", "lager": ["huvudbonad"], "valfri": "Ingen huvudbonad", "karta": true, "harfarger": true, "granskaMed": {"frisyr": "har-9"}, "kon": "bada"},
@@ -204,11 +204,11 @@
     {"id": "mun-6", "sort": "mun", "namn": "Sned", "ritad": 1},
     {"id": "mun-7", "sort": "mun", "namn": "Hjärtformad", "vad": "tydlig båge mitt på överläppen; en ful mun för personer med låg skönhet (Björn efter 5.2.2.3)", "ritad": 3, "ful": true},
     {"id": "mun-8", "sort": "mun", "namn": "Med tandlucka", "ful": true, "vad": "en framtand saknas, och luckan syns när munnen är glad eller öppen", "ritad": 1},
+    {"id": "har-5", "sort": "frisyr", "namn": "Halvlångt", "karta": "halvlangt", "ritad": 1, "kon": "bada"},
     {"id": "har-1", "sort": "frisyr", "namn": "Kort", "karta": "kort", "aldre": "har-21", "ritad": 0, "kon": "bada"},
     {"id": "har-2", "sort": "frisyr", "namn": "Kort med lugg", "karta": "kort", "ritad": 0, "kon": "man"},
     {"id": "har-3", "sort": "frisyr", "namn": "Snaggat", "karta": "kort", "aldre": "har-24", "ritad": 0, "kon": "man"},
     {"id": "har-4", "sort": "frisyr", "namn": "Lockigt kort", "karta": "kort", "ritad": 0, "kon": "bada"},
-    {"id": "har-5", "sort": "frisyr", "namn": "Halvlångt", "karta": "halvlangt", "ritad": 0, "kon": "bada"},
     {"id": "har-6", "sort": "frisyr", "namn": "Halvlångt med mittbena", "karta": "halvlangt", "ritad": 0, "kon": "kvinna"},
     {"id": "har-7", "sort": "frisyr", "namn": "Rufsigt", "karta": "halvlangt", "ritad": 0, "kon": "bada"},
     {"id": "har-8", "sort": "frisyr", "namn": "Lockigt halvlångt", "karta": "halvlangt", "ritad": 0, "kon": "bada"},

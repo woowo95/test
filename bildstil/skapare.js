@@ -470,7 +470,10 @@
     if (D('skagg')) lagg('skagg', dk => RITA.skagg(dk, G, D('skagg')), { utom: SORT.skagg.utom });
     lagg('mun', dk => delen(dk, G, D('mun'), p, 'mun'));
     const fr = D('frisyr');
-    if (fr) { lagg('bakhar', dk => RITA.bakhar(dk, G, fr), { maskbar: true }); lagg('framhar', dk => RITA.framhar(dk, G, fr), { maskbar: true }); }
+    // en ritad frisyr har två lager (bilder.bakhar och bilder.framhar, steg 5.2.2.4) från fästpunkten har; annars platshållaren
+    const frD = fr && SORT.frisyr.ritas ? DELAR[fr.id] : null;
+    if (frD) { lagg('bakhar', dk => ritaBild(dk, frD.bilder.bakhar, G.m.fast.har), { maskbar: true }); lagg('framhar', dk => ritaBild(dk, frD.bilder.framhar, G.m.fast.har), { maskbar: true }); }
+    else if (fr) { lagg('bakhar', dk => RITA.bakhar(dk, G, fr), { maskbar: true }); lagg('framhar', dk => RITA.framhar(dk, G, fr), { maskbar: true }); }
     for (const id of skonLager(p)) {
       const d = DEL[id]; if (!d.lager || (id === 'skon-glans' && (!fr || fr.karta === 'flint'))) continue;
       lagg(d.lager, dk => RITA.skonhet(dk, G, d, p), { maskbar: !!d.maskbar });
