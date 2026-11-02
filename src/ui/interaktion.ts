@@ -8,6 +8,7 @@ import { posOf } from './manniskor';
 import { iBruk } from './foremal';
 import { djurSynliga } from './vaxter';
 import { gaster } from './gaster';
+import { valdFilt } from './flikar/filt';
 import { sakKey } from './flikar/sak';
 import { flyttaHit } from './flikar/station';
 import { renderPanel, selectPerson, visa, ärPersonflik } from './panel';
@@ -35,6 +36,11 @@ function gastAt(gx: number, gy: number) {
   for (const g of gaster()) { const d = Math.hypot(g.x * TS - p.x, g.y * TS - p.y); if (d < bd) { bd = d; best = g.id; } }
   return best;
 }
+// en filt under trycket (steg 4.5.4.13): filten är två rutor bred och ritas lite ovanför sin plats (ui/handel.ts)
+function filtAt(gx: number, gy: number) {
+  const p = toWorld(gx, gy), x = p.x / TS, y = p.y / TS + 0.5;
+  return (s.filtar ?? []).some(f => (f.handlare !== undefined || f.slut > ui.nu) && Math.abs(f.x - x) < 1 && Math.abs(f.y - y) < 0.6) ? { x, y } : undefined;
+}
 function fireAt(gx: number, gy: number) {
   const p = toWorld(gx, gy), f = eldPlats(s);
   return Math.hypot(f.x * TS + TS / 2 - p.x, f.y * TS + TS / 2 - p.y) < 12;
@@ -58,6 +64,7 @@ app.stage.on('pointertap', e => {
   else if (g !== undefined) selectPerson(g); // handlaren och rövarna får samma sida som en bybo (steg 4.5.4.12)
   else if (dj !== undefined) { ui.djurId = dj; visa('djur'); }
   else if (!inMap(c.x, c.y)) avmarkera(); // utanför kartan finns inget att visa
+  else if (filtAt(gx, gy)) { ui.filtAt = filtAt(gx, gy)!; if (valdFilt()) visa('filt'); }
   else if (fireAt(gx, gy)) visa('eld');
   else if (zi) valjLager(zi - 1, c);
   else if (stationAt(s, c.x, c.y)) { ui.stationId = stationAt(s, c.x, c.y)!.id; visa('station'); }
@@ -108,7 +115,7 @@ app.stage.on('pointermove', e => {
   showHover(gx, gy);
   ui.hovered = personAt(gx, gy)?.id;
   const c = tileAt(gx, gy);
-  view.style.cursor = ui.hovered || djurAt(gx, gy) !== undefined || gastAt(gx, gy) !== undefined || inMap(c.x, c.y) && (fireAt(gx, gy) || storeAt(gx, gy) || outPilesAt(c.x, c.y).length || toaAt(s, c.x, c.y) || faltAt(s, c.x, c.y) || stubbeAt(c.x, c.y) || husAt(c.x, c.y) !== undefined || stationAt(s, c.x, c.y)) ? 'pointer' : 'grab';
+  view.style.cursor = ui.hovered || djurAt(gx, gy) !== undefined || gastAt(gx, gy) !== undefined || !!filtAt(gx, gy) || inMap(c.x, c.y) && (fireAt(gx, gy) || storeAt(gx, gy) || outPilesAt(c.x, c.y).length || toaAt(s, c.x, c.y) || faltAt(s, c.x, c.y) || stubbeAt(c.x, c.y) || husAt(c.x, c.y) !== undefined || stationAt(s, c.x, c.y)) ? 'pointer' : 'grab';
 });
 view.addEventListener('wheel', e => { e.preventDefault(); const r = view.getBoundingClientRect(); zoomAt(e.deltaY < 0 ? 1.06 : 1 / 1.06, e.clientX - r.left, e.clientY - r.top); }, { passive: false });
 view.addEventListener('pointerleave', () => { $('hoverBox').hidden = true; ui.hovered = undefined; });

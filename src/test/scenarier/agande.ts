@@ -8,6 +8,7 @@ import { setItems, setMat, setFood, kor, tandEld, tomtForrad, treVuxna, SCENARIE
 import { setByn, ui } from '../../ui/lage';
 import { person } from '../../ui/flikar/person';
 import { gaster } from '../../ui/gaster';
+import { filt as filtFlik } from '../../ui/flikar/filt';
 // handlaren väntar på kvällen innan filten läggs ut (steg 4.5.4.11): testerna som handlar på dagen hoppar över väntan
 const utanVantan = (s: State) => { if (s.handlare?.fas === 'vantar') s.handlare.kvall = s.now; };
 
@@ -661,7 +662,8 @@ SCENARIER.bytessystem = {
     let { s, a, b } = ny();
     a.habit = { samla: 10 }; addTool(s, 'korg', b); addTool(s, 'korg', b); gain(s, a, 'bar', 20);
     const korg = askForTool(s, a, b) === 'byte';
-    const filt = s.filtar?.length === 1 && s.filtar[0].varor.some(v => v.k === 'korg' && v.fran === b.id) && s.filtar[0].varor.some(v => v.fran === a.id);
+    const fb = s.filtar?.find(f => f.vem === b.id), fa = s.filtar?.find(f => f.vem === a.id);
+    const filt = s.filtar?.length === 2 && !!fa && !!fb && fa.par === fb.par && fb.varor.some(v => v.k === 'korg' && v.fran === b.id) && fa.varor.length > 0 && fa.varor.every(v => v.fran === a.id);
     const stort = korg && logg(s, 'bytte:') === 1 && kron(s, 'bytte:') === 1 && (s.stat?.storaByten ?? 0) === 1;
     // filten plockas ihop efter en stund
     s.now += 2 * HOUR; SIM.stadaByten(s);
@@ -903,6 +905,54 @@ SCENARIER.gastsida = {
     ];
   },
 };
+SCENARIER.filtar = {
+  text: 'Filtarna mitt emot varandra (steg 4.5.4.13, byte.ts och handel.ts): den som byter, också en bybo som handlar med handlaren, lägger ut sin egen filt mitt emot den andras, och plockar ihop den när bytet är klart eller hen gått. Trycker man på en filt visas en enkel lista med vad som ligger på den och vems den är; två filtar mitt emot varandra visas alltid som en ruta, vilken av dem man än trycker på: vad var och en erbjuder och priserna i silver.',
+  kor: () => {
+    utanWebblasare();
+    const s = createState(6, START);
+    rikBy(s); setByn(s); s.nastaHandlare = s.now;
+    for (let i = 0; i < 40 && s.handlare?.fas !== 'handlar'; i++) { step(s, BEAT); utanVantan(s); }
+    const h = s.handlare!, hf = s.filtar?.find(f => f.handlare === h.id);
+    // byn handlar först: den som handlar för byn lägger ut byns saker mitt emot handlaren
+    let forByn: Person | undefined;
+    for (let i = 0; i < 60 && !forByn; i++) { step(s, BEAT); forByn = living(s).find(p => p.task?.act === 'handla' && p.task.phase === 'do' && !h.bynKlar); }
+    step(s, BEAT); // handlaren ser den som kommit fram
+    const mot = hf && SIM.filtMot(s, hf);
+    const motBy = !!forByn && !!mot && mot.vem === forByn.id && !!mot.byn && mot.par === hf!.par && mot.varor.length > 0 && Math.abs(mot.y - hf!.y - SIM.FILT_MOT) < 1e-9;
+    // rutan: samma byte vilken filt man än trycker på
+    ui.nu = s.now;
+    ui.filtAt = { x: hf?.x ?? 0, y: hf?.y ?? 0 }; const r1 = filtFlik.html();
+    ui.filtAt = { x: mot?.x ?? 0, y: mot?.y ?? 0 }; const r2 = filtFlik.html();
+    const ruta = r1 === r2 && r1.includes('Bytet') && r1.includes('filtpar') && r1.includes(h.namn) && !!forByn && r1.includes(forByn.name) && r1.includes('för byn') && /silver/.test(r1) && r1.includes('Värt');
+    // när bytet är klart plockas bybons filt ihop
+    if (forByn) { SIM.handlaKlar(s, forByn, forByn.task!); forByn.task = undefined; }
+    for (let i = 0; i < 3; i++) step(s, BEAT);
+    const ihop = !!hf && !(s.filtar ?? []).some(f => f.par === hf.par && f.handlare === undefined && f.vem === forByn?.id && f.byn);
+    // ett byte mellan två bybor: två filtar med samma par, och en filt ensam (den andra hopplockad) visar en enkel lista
+    const t = createState(6, START);
+    rikBy(t); tomtForrad(t); t.ting = []; setByn(t);
+    const [a, b] = treVuxna(t, 1, q => { q.warm = 1; q.pot.empati = 10; q.habit = {}; });
+    a.habit = { samla: 10 }; addTool(t, 'korg', b); addTool(t, 'korg', b); gain(t, a, 'bar', 20);
+    const bytte = askForTool(t, a, b) === 'byte';
+    const [f1, f2] = t.filtar ?? [];
+    const par = bytte && t.filtar?.length === 2 && f1.par === f2.par && f1.vem !== f2.vem && Math.abs(Math.abs(f1.y - f2.y) - SIM.FILT_MOT) < 1e-9;
+    ui.nu = t.now; ui.filtAt = { x: f1.x, y: f1.y };
+    const parRuta = filtFlik.html();
+    t.filtar = [f1]; f1.par = undefined;
+    const ensam = filtFlik.html();
+    const lista = !parRuta.includes('Filten<') && parRuta.includes('Bytet') && parRuta.includes(a.name) && parRuta.includes(b.name)
+      && ensam.includes('<h2>Filten</h2>') && !ensam.includes('Värt') && ensam.includes(byId(t, f1.vem!)!.name);
+    return [
+      ['handlaren har sin filt ute', !!hf && hf.vem === h.id && hf.par !== undefined],
+      [`den som handlar för byn (${forByn?.name ?? 'ingen'}) lägger ut byns saker på en filt mitt emot handlarens`, motBy],
+      ['trycker man på någon av de två filtarna visas samma ruta: båda sidorna och priserna i silver', ruta],
+      ['bybons filt plockas ihop när bytet är klart', ihop],
+      ['ett stort byte mellan två bybor: var sin filt mitt emot varandra', par],
+      ['två filtar visas som ett byte med båda namnen; en filt ensam som en enkel lista med vems den är', lista],
+    ];
+  },
+};
+
 SCENARIER.grannklaner = {
   text: 'Grannklanerna (steg 4.4.3, klaner.ts): en ny by har några grannklaner med namn, folk, styrka, resurser, inställning till byn och namngivna personer, och en sparad by från före v242 får dem. Klanerna växer och krymper en gång om dygnet (ett år i spelet), och inställningen glöms mot det neutrala. Handlaren kommer från en klan som inte tycker illa om byn; en fientlig klan skickar ingen. Ett byte med handlaren gör klanen vänligare, och märker hen att byn lurat hen blir den mindre vänlig.',
   kor: () => {

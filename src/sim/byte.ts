@@ -63,9 +63,16 @@ export function satPersonFlytt(l: typeof lamnaPerson, t: typeof taPerson) { lamn
 // ---------- hur bytet syns ----------
 // en överlämning: saken k går från a till b (personernas id eller handlarens), med start t. Bara för bilden
 export interface Overl { k: string; a: number; b: number; t: number }
-// en filt med det som byts: platsen, när den plockas ihop och sakerna (vems de var, fran)
-export interface Filt { x: number; y: number; slut: number; varor: { k: string; n: number; fran: number }[]; handlare?: number } // handlare: handlarens id, när det är handlarens filt (ligger tills hen går)
+// en filt med det som byts: platsen, när den plockas ihop och sakerna (vems de var, fran). Var part i ett byte lägger ut sin
+// egen filt mitt emot den andras (steg 4.5.4.13): vem = vems filten är, par = samma tal på de två filtarna i ett byte,
+// byn = det som ligger där är byns (den som handlar för byn)
+export interface Filt { x: number; y: number; slut: number; varor: { k: string; n: number; fran: number }[]; handlare?: number; vem?: number; par?: number; byn?: true } // handlare: handlarens id, när det är handlarens filt (ligger tills hen går)
 const filtarOf = (s: State) => (s.filtar ??= []);
+// så långt isär (i rutor) ligger två filtar mitt emot varandra
+export const FILT_MOT = 1.3;
+export const nyttPar = (s: State) => (s.filtNr = (s.filtNr ?? 0) + 1);
+// filten mitt emot f, om det finns en
+export const filtMot = (s: State, f: Filt) => f.par === undefined ? undefined : s.filtar?.find(g => g !== f && g.par === f.par);
 // vad som nyss bytts bort: slaget k gick från a till b vid t. Så att två inte byter samma sak fram och tillbaka
 export interface Bytt { k: string; a: number; b: number; t: number }
 export const nyssBytt = (s: State, k: string, a: number, b: number) => !!s.bytt?.some(x => x.k === k && x.a === a && x.b === b && s.now - x.t < BYTE.tillbakaTim * HOUR);
@@ -97,10 +104,14 @@ export function byteKlart(s: State, m: Part, g: Part, fatt: Vara[], betal: Vara[
   const alla = [...fatt, ...betal], stort = stortByte(alla), bytt = (s.bytt ??= []);
   for (const w of fatt) bytt.push({ k: w.k, a: g.id, b: m.id, t: s.now });
   for (const w of betal) bytt.push({ k: w.k, a: m.id, b: g.id, t: s.now });
-  if (stort) {
-    const x = (m.x + g.x) / 2, y = (m.y + g.y) / 2;
-    filtarOf(s).push({ x, y, slut: s.now + BYTE.filtMin * MIN, varor: [...fatt.map(w => ({ k: w.k, n: w.t ? 1 : w.n, fran: g.id })), ...betal.map(w => ({ k: w.k, n: w.t ? 1 : w.n, fran: m.id }))] });
-  } else { overlamna(s, fatt, g, m); overlamna(s, betal, m, g); }
+  // ett stort byte: var och en lägger det hen ger på sin egen filt, mitt emot den andras. Med handlaren ligger filtarna
+  // redan ute (handel.ts)
+  const handlarFilt = s.filtar?.some(f => f.handlare !== undefined && (f.handlare === m.id || f.handlare === g.id));
+  if (stort && !handlarFilt) {
+    const x = (m.x + g.x) / 2, y = (m.y + g.y) / 2, par = nyttPar(s), slut = s.now + BYTE.filtMin * MIN;
+    filtarOf(s).push({ x, y: y - FILT_MOT / 2, slut, varor: fatt.map(w => ({ k: w.k, n: w.t ? 1 : w.n, fran: g.id })), vem: g.id, par },
+      { x, y: y + FILT_MOT / 2, slut, varor: betal.map(w => ({ k: w.k, n: w.t ? 1 : w.n, fran: m.id })), vem: m.id, par });
+  } else if (!stort) { overlamna(s, fatt, g, m); overlamna(s, betal, m, g); }
   const text = `${m.namn} och ${g.namn} bytte: ${varorText(fatt)} mot ${varorText(betal)}${desperat ? `. ${m.namn} höll på att dö` : ''}.`;
   log(s, text, 'rel', [m.id, g.id].filter(i => i > 0));
   if (stort) kronika(s, text, 'byte');

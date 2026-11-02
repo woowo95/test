@@ -9,7 +9,7 @@ import { iIstiden, ageIndex, hourOf } from './tid';
 import { grundvarde, rikedom } from './varde';
 import { SAKER, isTool, viktOf } from './saker';
 import { DELA, behovAv, bynPart, bytaMed, personPart } from './behov';
-import { Part, Vara, satPersonFlytt, vidByte, vidLura, varorText } from './byte';
+import { FILT_MOT, Part, Vara, filtMot, nyttPar, satPersonFlytt, vidByte, vidLura, varorText } from './byte';
 import { newTing, tingOf } from './agande';
 import { put, use } from './lager';
 import { ledareOf } from './styre';
@@ -188,7 +188,7 @@ function framme(s: State, h: Handlare) {
 // filten breds ut med varorna, och handlaren går på morgonen
 function lagUt(s: State, h: Handlare) {
   h.fas = 'handlar'; h.kom = s.now; h.gar = nastaKl(s.now, HANDEL.morgon); h.kvall = undefined;
-  (s.filtar ??= []).push({ x: h.x + 1, y: h.y, slut: h.gar, varor: h.varor.map(w => ({ k: w.k, n: w.n, fran: h.id })), handlare: h.id });
+  (s.filtar ??= []).push({ x: h.x + 1, y: h.y, slut: h.gar, varor: h.varor.map(w => ({ k: w.k, n: w.n, fran: h.id })), handlare: h.id, vem: h.id, par: nyttPar(s) });
   log(s, `${h.namn} har brett ut en filt nära elden och lagt fram sina varor.`, 'world');
   if (forstaGang(s, 'handlareFramme')) kronika(s, `Den första handlaren kom till byn: ${h.namn} från ${h.hem}, med ${HANDLAR_UTR[h.utr].namn.toLowerCase()}en full av varor.`, 'handel');
 }
@@ -224,11 +224,27 @@ export function handelSteg(s: State, dtSec: number) {
   if (!h) return;
   if (h.fas === 'kommer') { if (gaSteg(s, h)) framme(s, h); }
   else if (h.fas === 'vantar') { if (s.now >= h.kvall!) lagUt(s, h); }
-  else if (h.fas === 'handlar') { if (s.now >= h.gar) gar(s, h); }
+  else if (h.fas === 'handlar') { if (s.now >= h.gar) gar(s, h); else bybonsFilt(s, h); }
   else if (gaSteg(s, h)) {
     s.handlare = undefined;
     s.nastaHandlare = s.now + intervall(s) * DAY * (0.7 + 0.6 * rnd(s, 'handel'));
   }
+}
+
+// filtarna mitt emot varandra (steg 4.5.4.13): den som handlar med handlaren (för byn, eller den första i kön) lägger ut det
+// hen kan erbjuda på en egen filt mitt emot handlarens, och plockar ihop den när hen handlat klart eller gått. Bara för bilden
+const FILT_VAROR = 8; // så många slag av saker får plats på filten
+function bybonsFilt(s: State, h: Handlare) {
+  const hf = s.filtar?.find(f => f.handlare === h.id);
+  if (!hf) return;
+  if (hf.par === undefined) { hf.par = nyttPar(s); hf.vem = h.id; } // en sparad by från före v267
+  const vid = (q?: Person) => !!q && alive(q) && q.task?.act === 'handla' && q.task.ref === h.id && q.task.phase === 'do';
+  const p = !h.bynKlar ? s.people.find(vid) : vid(byId(s, h.ko?.[0])) ? byId(s, h.ko![0]) : undefined;
+  const byn = !h.bynKlar, mot = filtMot(s, hf);
+  if (mot) { if (mot.vem === p?.id && !!mot.byn === byn) return; s.filtar = s.filtar!.filter(f => f !== mot); }
+  if (!p) return;
+  const over = (byn ? bynPart(s, p.x, p.y, p) : bybonPart(s, p)).over(['silver']).slice(0, FILT_VAROR);
+  s.filtar!.push({ x: hf.x, y: hf.y + FILT_MOT, slut: p.task!.until, varor: over.map(w => ({ k: w.k, n: w.t ? 1 : w.n, fran: p.id })), vem: p.id, par: hf.par, ...byn ? { byn: true as const } : {} });
 }
 
 // ---------- handeln (steg 4.4.1.3) ----------

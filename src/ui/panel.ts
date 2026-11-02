@@ -11,6 +11,7 @@ import { person } from './flikar/person';
 import { seder } from './flikar/seder';
 import { teknik } from './flikar/teknik';
 import { sak } from './flikar/sak';
+import { filt } from './flikar/filt';
 import { djur } from './flikar/djur';
 import { grannar } from './flikar/grannar';
 import { styre } from './flikar/styre';
@@ -28,7 +29,7 @@ export interface Flik {
   klick?(el: HTMLElement): boolean; // tryck i sidan som fliken tar hand om, även när den inte är öppen; true = klart
   syns?(): boolean; // knappen visas bara när detta är sant (styret när byn haft en ledare, steg 3.5.4)
 }
-const FLIKAR = { folk, logg, person, eld, lager, hog, hus, station, sjo, falt, seder, styre, religion, grannar, teknik, sak, djur } satisfies Record<string, Flik>;
+const FLIKAR = { folk, logg, person, eld, lager, hog, hus, station, sjo, falt, seder, styre, religion, grannar, teknik, sak, djur, filt } satisfies Record<string, Flik>;
 export type FlikId = keyof typeof FLIKAR;
 const ALLA: Record<FlikId, Flik> = FLIKAR;
 const IDS = Object.keys(FLIKAR) as FlikId[];

@@ -33,11 +33,11 @@ export function drawHandel() {
     // handlarens filt och bybornas (Björn valde efter v245: den förra för handlaren och version 1 för byborna, steg 4.5.2)
     const fk = f.handlare ? 'filt' : 'filt_by', x0 = f.x * TS - TS, y0 = f.y * TS - TS / 2, sc = (2 * TS) / iconCanvas(fk).width;
     filtIkoner.add(fk, x0, y0 - TS / 2, sc);
-    // sakerna på filten: var partens på sin halva
-    const vems = [...new Set(f.varor.map(v => v.fran))];
+    // sakerna på filten: en part per filt (steg 4.5.4.13) över hela filten; en filt från före v267 har var partens på sin halva
+    const vems = [...new Set(f.varor.map(v => v.fran))], kol = vems.length > 1 ? 2 : 4;
     f.varor.forEach((v, i) => {
       const sida = vems.indexOf(v.fran), n = f.varor.filter((w, j) => j < i && w.fran === v.fran).length;
-      filtIkoner.add(v.k, x0 + 2 + sida * TS + (n % 2) * 6, y0 - 4 + Math.floor(n / 2) * 5, 6 / (iconCanvas(v.k).width || 8));
+      filtIkoner.add(v.k, x0 + 2 + sida * TS + (n % kol) * 6, y0 - 4 + Math.floor(n / kol) * 5, 6 / (iconCanvas(v.k).width || 8));
     });
   }
   for (const o of s.overl ?? []) {
