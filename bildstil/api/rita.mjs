@@ -170,8 +170,10 @@ function kontrollera(sort, d, svar) {
   const fel = [], R = ritasFor(sort, d), tillatna = new Set(['.', ...R.tecken]);
   const bild = (b, namn) => {
     if (!b || !Array.isArray(b.rader) || !b.rader.length) { fel.push(`${namn}: inga rader`); return; }
-    const w = b.rader[0].length;
-    if (b.rader.some(r => r.length !== w)) fel.push(`${namn}: raderna är olika långa`);
+    // korta rader fylls ut med genomskinligt i slutet (API:t tappar ibland punkter längst ut i stora delar som håret)
+    const w = Math.max(...b.rader.map(r => (typeof r === 'string' ? r.length : 0)));
+    b.rader = b.rader.map(r => typeof r === 'string' ? r.padEnd(w, '.') : r);
+    if (b.rader.some(r => typeof r !== 'string')) fel.push(`${namn}: en rad är inte text`);
     let punkter = 0;
     b.rader.forEach((r, j) => [...r].forEach((ch, i) => {
       if (!tillatna.has(ch)) fel.push(`${namn}: tecknet "${ch}" får inte användas i sorten`);
