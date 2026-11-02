@@ -1888,7 +1888,41 @@ function ritaPrat(B, x0, y0, rader, ikon) {
 const PRAT_PAR = (bubbla) => ({ w: 3 * 64 + 4, h: 34, rita: (B, P) => ['a_prata', 'a_tra', 'a_fiska'].forEach((k, i) => {
   ritaPrat(B, 2 + i * 64, 2, bubbla ? PRAT_RAD : RUTA_RAD, k); ritaPrat(B, 30 + i * 64, 2, RUTA_RAD, k);
 }) });
-const VAL = [  { id: 'pratbubbla', namn: 'Pratbubblan', typ: 'janej', vad: 'Steg 4.5.6.9: symbolen för vad man pratar om står i en pratbubbla, så att den inte ser ut som symbolen för vad någon arbetar med. Tre par: att prata, att prata om skogen och att prata om fisket. I varje par till vänster pratet, till höger arbetet. Dubbelt så stort som i spelet. I spelet nu: den nya bubblan.',
+// dragkampen (steg 4.5.6.10): två lag på en rad på var sin sida om ett streck med repet mellan sig, 16 punkter per ruta,
+// en ruta mellan spelarna. v väljer hur repet, strecket och lagen ser ut
+function ritaDragkamp(B, v) {
+  const P = B.P, W = B.w, H = B.h, my = 30, mx = W >> 1;
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) B.satt(x, y, P.i('oliv', ((x * 7 + y * 13) % 11 === 0) ? 1 : 2)); // gräset
+  if (v === 0) for (let y = my - 9; y <= my + 9; y++) { B.satt(mx, y, P.i('jord', 0)); B.satt(mx + 1, y, P.i('jord', 1)); } // ett ristat streck
+  if (v === 1) for (let y = my - 10; y <= my + 10; y += 4) { B.satt(mx, y, P.i('skiffer', 3)); B.satt(mx + 1, y, P.i('skiffer', 2)); B.satt(mx, y + 1, P.i('skiffer', 1)); B.satt(mx + 1, y + 1, P.i('skiffer', 0)); } // stenar på rad
+  if (v === 2) for (let y = my - 10; y <= my + 10; y++) { B.satt(mx - 1, y, P.i('jord', 2)); B.satt(mx, y, P.i('jord', 0)); B.satt(mx + 1, y, P.i('jord', 0)); B.satt(mx + 2, y, P.i('jord', 2)); } // en fåra
+  const glid = 3, xs = [-1, -2, -3].map(i => mx + glid + i * 16 - 2).concat([1, 2, 3].map(i => mx + glid + i * 16 + 2));
+  const ry = (x) => v === 2 ? my - 6 + Math.round(Math.abs(x - mx) < 40 ? (1 - ((x - mx) / 40) ** 2) * 1.5 : 0) : my - 6;
+  for (let x = Math.min(...xs) - 3; x <= Math.max(...xs) + 3; x++) { B.satt(x, ry(x), P.i('jord', 2)); B.satt(x, ry(x) + 1, P.i('jord', 1)); } // repet
+  const tx = mx + glid;
+  if (v === 2) { B.satt(tx, ry(tx) - 1, P.i('jord', 3)); B.satt(tx - 1, ry(tx), P.i('jord', 3)); B.satt(tx + 1, ry(tx), P.i('jord', 3)); B.satt(tx, ry(tx) + 2, P.i('jord', 1)); } // en knut
+  else for (let y = -1; y <= 3; y++) { B.satt(tx, ry(tx) + y, P.i('rost', 2)); B.satt(tx + 1, ry(tx) + y, P.i('rost', 1)); } // tofsen
+  xs.forEach((x, i) => {
+    const vanster = i < 3, luta = vanster ? -2 : 2, lag = v === 1 ? (vanster ? 'rost' : 'skiffer') : 'jord';
+    const hy = my - 16, kx = x + luta; // huvudet lutar bakåt, fötterna framåt
+    for (let y = 0; y < 12; y++) for (let dx = -3; dx <= 3; dx++) { const fx = Math.round(x + luta * (1 - y / 12) + dx); B.satt(fx, hy + 5 + y, y < 12 && (dx === -3 || dx === 3) ? P.i('kol', 0) : P.i(lag, dx < 0 ? 1 : 2)); } // kroppen
+    for (let dy = 0; dy < 5; dy++) for (let dx = -2; dx <= 2; dx++) B.satt(kx + dx, hy + dy, Math.abs(dx) === 2 ? P.i('kol', 0) : P.i('senap', dy === 0 ? 1 : 2)); // huvudet
+    for (let dx = -2; dx <= 2; dx++) B.satt(kx + dx, hy - 1, P.i('kol', 0)); // håret
+    for (let dx = -2; dx <= 2; dx++) if (dx) B.satt(x + dx, my + 1, P.i('kol', 1)); // fötterna
+    for (let dx = -1; dx <= 1; dx++) B.satt(x + luta / 2 + dx + (vanster ? 3 : -3), ry(x), P.i('senap', 1)); // händerna på repet
+    for (let dx = -3; dx <= 3; dx++) B.morka(x + dx, my + 2); // skuggan
+  });
+}
+const DRAG_BILD = (v) => ({ w: 128, h: 40, rita: (B) => ritaDragkamp(B, v) });
+const VAL = [
+  { id: 'dragkamp', namn: 'Dragkampen', typ: 'tre', vad: 'Steg 4.5.6.10: dragkampen syns. Två lag står på en rad på var sin sida om ett streck med repet mellan sig och lutar sig bakåt, och hela raden glider fram och tillbaka med repet tills det ena laget dras över strecket. Sex spelare, en ruta mellan dem, i rätt storlek. I spelet nu: ett brunt rep spänt mellan lagen, ett mörkt streck i mitten och en röd tofs mitt på repet.',
+    idag: DRAG_BILD(0), idagText: 'Platshållaren i spelet nu (repet, strecket och tofsen).',
+    versioner: [
+      { text: 'Ett streck ristat i marken och en röd tofs mitt på repet, som visar vem som vinner.', ...DRAG_BILD(0) },
+      { text: 'Strecket är en rad stenar, och lagen har var sin färg på kläderna, rött och grått.', ...DRAG_BILD(1) },
+      { text: 'En fåra i marken som streck, repet hänger lite i mitten och har en knut i stället för tofsen.', ...DRAG_BILD(2) },
+    ] },
+  { id: 'pratbubbla', namn: 'Pratbubblan', typ: 'janej', vad: 'Steg 4.5.6.9: symbolen för vad man pratar om står i en pratbubbla, så att den inte ser ut som symbolen för vad någon arbetar med. Tre par: att prata, att prata om skogen och att prata om fisket. I varje par till vänster pratet, till höger arbetet. Dubbelt så stort som i spelet. I spelet nu: den nya bubblan.',
     idag: PRAT_PAR(false), idagText: 'Förut: samma mörka ruta för pratet och arbetet.',
     versioner: [{ text: 'En ljus, rundad bubbla med mörk kant och en spets ner mot den som pratar, och symbolen mörk i den. Kanten får relationens färg som förut (röd vid gräl, rosa vid kärlek).', ...PRAT_PAR(true) }] },
 

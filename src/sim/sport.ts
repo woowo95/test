@@ -53,11 +53,12 @@ export const SPORT = balans('sport', {
   slit: 0.05, // föremålen som är redskap (bollen, slagträet, målet) slits så här mycket per match (steg 4.3.1.2)
   vinnSkill: 10, // den som vinner en match: färdigheten i sporten (0–20) plus en slump upp till så här mycket
   snoVal: 0.5, // när en sport som bara går i snön kan spelas (nar) väljs den så här ofta (steg 4.3.1.3)
+  dragMitt: 1, dragAvst: 0.7, // dragkampen: den första i varje lag står så här många rutor från strecket, och var och en efter så här mycket längre ut
   bastMin: 5, // den som har vunnit så här många matcher i en sport, och fler än någon annan, är den bästa i den (eftermälet)
 });
 
 // matchen som pågår eller väntar på spelare: sporten, platsen, när den började (spelarnas task.ref) och slutar
-export interface Match { k: string; x: number; y: number; start: number; slut: number; spelat?: true; avgjord?: true }
+export interface Match { k: string; x: number; y: number; start: number; slut: number; spelat?: true; avgjord?: true; n?: number } // n: så många som gått med (platsen i laget)
 
 // de som spelar i matchen (framme = de som kommit fram)
 const spelare = (s: State, m: Match, framme: boolean) => s.people.filter(q => alive(q) && q.task?.act === 'sport' && q.task.ref === m.start && (!framme || q.task.phase === 'do'));
@@ -105,7 +106,16 @@ export function sportVal(s: State, p: Person): { why: string; spot: { x: number;
   const d = SPORT_AV[m.k];
   return { why: ny ? `Vill ha ${d.namn.toLowerCase()} och samlar folk` : `Går med i ${d.namn.toLowerCase()}en`, spot: plats(s, p, m), dur: m.slut - s.now, ref: m.start, tool: d.id };
 }
-const plats = (s: State, p: Person, m: Match) => freeNear(s, m.x + (rnd(s, 'sport', p) - 0.5) * 2, m.y + (rnd(s, 'sport', p) - 0.5) * 2); // aldrig i en vägg
+// var den som går med ställer sig, aldrig i en vägg. I dragkampen (steg 4.5.6.10) två lag på en rad på var sin sida om
+// strecket i mitten: varannan till vänster och varannan till höger, de senare längre ut. Annars någonstans nära mitten
+function plats(s: State, p: Person, m: Match) {
+  const i = m.n ?? 0;
+  m.n = i + 1;
+  if (m.k === 'dragkamp') { const sida = i % 2 ? 1 : -1, nr = Math.floor(i / 2); return freeNear(s, m.x + sida * (SPORT.dragMitt + nr * SPORT.dragAvst), m.y); }
+  return freeNear(s, m.x + (rnd(s, 'sport', p) - 0.5) * 2, m.y + (rnd(s, 'sport', p) - 0.5) * 2);
+}
+// i dragkampen: vilket lag p drar i (-1 till vänster om strecket, 1 till höger), efter var hen står (gränssnittet ritar repet)
+export const dragLag = (m: Match, x: number) => x < m.x ? -1 : 1;
 // de som följer med den som börjar en match: de vuxna som har fritid (vilar på dagen, samtalar, sitter vid stranden,
 // promenerar), de starka och smidiga oftare
 const FRITID = new Set<string>(['vila', 'samtal', 'strand', 'promenad']);
