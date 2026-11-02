@@ -133,7 +133,7 @@
     ],
     "om": "Sju armlägen (beslut, Björn efter 5.2.2.1): hänga, två gångsteg, bära, lyfta, slå och framför kroppen; lyfta och slå är två lägen."
   },
-  "neutral": {"huvudform": "huvud-rund", "ora": "ora-2", "nasa": "nasa-1", "oga": "oga-1", "ogonbryn": "bryn-1", "mun": "mun-1", "frisyr": "har-5", "hud": 1, "har": 3, "ogon": 0, "humor": "lugn"},
+  "neutral": {"huvudform": "huvud-rund", "ora": "ora-2", "nasa": "nasa-1", "oga": "oga-1", "ogonbryn": "bryn-1", "mun": "mun-1", "frisyr": "har-1", "hud": 1, "har": 3, "ogon": 0, "humor": "lugn"},
   "sorter": [
     {"id": "mall", "namn": "Mallarna", "en": "Mall", "steg": "5.2.2.2", "rader": "mallar", "karta": true, "kon": "bada"},
     {"id": "huvudform", "namn": "Huvudformer", "en": "Huvudform", "steg": "5.2.2.3", "lager": ["huvud"], "karta": true, "kon": "bada", "ritas": {"fast": "huvud", "ruta": [-17, 1, 16, 22], "tecken": "abcdABCD", "om": "nedre ansiktet under ögonlinjen: käken, kinderna (A–D) och hakan; skallen ovanför ritas av mallen", "manbild": true, "barnbild": true}, "kartbild": {"om": "huvudets två nedersta rader på kartan (X = huden), framifrån och bakifrån (fram) och från sidan; bredare eller smalare käke"}},
@@ -204,7 +204,7 @@
     {"id": "mun-6", "sort": "mun", "namn": "Sned", "ritad": 1},
     {"id": "mun-7", "sort": "mun", "namn": "Hjärtformad", "vad": "tydlig båge mitt på överläppen; en ful mun för personer med låg skönhet (Björn efter 5.2.2.3)", "ritad": 3, "ful": true},
     {"id": "mun-8", "sort": "mun", "namn": "Med tandlucka", "ful": true, "vad": "en framtand saknas, och luckan syns när munnen är glad eller öppen", "ritad": 1},
-    {"id": "har-5", "sort": "frisyr", "namn": "Halvlångt", "karta": "halvlangt", "ritad": 1, "kon": "bada"},
+    {"id": "har-5", "sort": "frisyr", "namn": "Halvlångt", "karta": "halvlangt", "ritad": 2, "kon": "bada"},
     {"id": "har-1", "sort": "frisyr", "namn": "Kort", "karta": "kort", "aldre": "har-21", "ritad": 0, "kon": "bada"},
     {"id": "har-2", "sort": "frisyr", "namn": "Kort med lugg", "karta": "kort", "ritad": 0, "kon": "man"},
     {"id": "har-3", "sort": "frisyr", "namn": "Snaggat", "karta": "kort", "aldre": "har-24", "ritad": 0, "kon": "man"},

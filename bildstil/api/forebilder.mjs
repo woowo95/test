@@ -117,18 +117,35 @@ function lagerRader(punkt, x0, y0, x1, y1) {
   return { x: minX - 32, y: minY - 10, rader };
 }
 {
-  const ell = (cx, cy, rx, ry) => (x, y) => ((x + 0.5 - cx) / rx) ** 2 + ((y + 0.5 - cy) / ry) ** 2 <= 1;
-  // bakhåret: en rundad massa bakom huvudet som når ner till hakan, mörkare än framhåret
-  const bakInne = (x, y) => y >= 20 && y <= 51 && ell(32, 35, 19.5, 18.5)(x, y);
-  const bak = (x, y) => bakInne(x, y) ? harTon(x, y, 32, 30, 19, 22, -1) : null;
-  // framhåret: hjässan ner till hårfästet (luggen sveper snett åt höger), och sidorna framför öronen ner mot käken
-  const harfaste = x => { const dx = Math.abs(x + 0.5 - 32); return dx >= 13.5 ? 32 : dx >= 10.5 ? 23 : Math.min(23, 19 + Math.max(0, x - 20) * 0.25); };
-  const kapa = (x, y) => y < harfaste(x) && ell(32, 29.5, 16.5, 21.5)(x, y);
-  const slut = 48;
-  const sida = (x, y) => { const dx = Math.abs(x + 0.5 - 32); return y >= 19 && y <= slut - Math.max(0, dx - 15) && dx >= 12 && dx <= 18.5 - Math.max(0, y - slut + 3); };
-  const fram = (x, y) => kapa(x, y) ? harTon(x, y, 32, 22, 17, 14) : sida(x, y) ? harTon(x, y, 32, 30, 18, 24) : null;
-  spara({ id: 'har-5', ritad: 1, av: 'programmeringschatten, förebild', om: 'Halvlångt hår för båda: framhåret täcker hjässan och går ner framför öronen till käken, luggen sveper lite snett, och bakhåret syns bakom huvudet ner till hakan. Matt skuggning med ljus uppifrån vänster och slingor i små lodräta klungor.',
+  // Omritad (Björn efter förebilden i 5.2.2.4: "ser konstig ut"): förut var sidorna raka plattor med en platt axel vid
+  // tinningarna och en rak lugg, som en hjälm. Nu en sammanhängande rundad form från hjässan ner till käken som vidgar sig
+  // lite nertill, en lugg med mjuk kant som sveper åt höger, och slingorna bara ljusa (inga mörka ränder).
+  const dX = x => Math.abs(x + 0.5 - 32);
+  const yttre = (x, y) => {                                       // hårets ytterform runt huvudet
+    if (y + 0.5 <= 31) return ((x + 0.5 - 32) / 19) ** 2 + ((y + 0.5 - 31) / 23) ** 2 <= 1;
+    const ned = 46 + Math.round((vn(x, 0, 2, 41) - 0.5) * 2);       // nederkanten lite ojämn
+    return dX(x) <= 19 + (y - 31) * 0.1 && y <= ned - Math.max(0, dX(x) - 17.5) * 1.2;
+  };
+  const harfaste = x => {                                          // luggens nederkant: sveper från vänster till höger
+    const t = Math.max(0, Math.min(1, (x - 19) / 26));
+    return Math.round(18.5 + t * 3.5 + (vn(x, 3, 1.6, 17) - 0.5) * 2.2);
+  };
+  const sida = (x, y) => y >= 19 && dX(x) >= 12.5 - Math.min(1, (y - 19) * 0.15) && yttre(x, y);
+  const fram = (x, y) => {
+    if (!yttre(x, y)) return null;
+    if (y < harfaste(x) && dX(x) < 14) return harTon2(x, y, 32, 20, 18, 14);
+    if (y < 20 || sida(x, y)) return harTon2(x, y, 32, 30, 19, 23);
+    return null;
+  };
+  const bak = (x, y) => yttre(x, y) ? harTon2(x, y, 32, 31, 19, 23, -1) : null;
+  spara({ id: 'har-5', ritad: 2, av: 'programmeringschatten, förebild', om: 'Halvlångt hår för båda: en rundad form från hjässan ner till käken som vidgar sig lite nertill, framhåret täcker hjässan och går ner framför öronen, luggen har en mjuk kant och sveper lite åt höger, och bakhåret syns bakom huvudet. Matt skuggning med ljus uppifrån vänster och några ljusa slingor. Omritad efter Björn (5.2.2.4: förra såg ut som en hjälm).',
     bilder: { bakhar: lagerRader(bak, 0, 0, 63, 63), framhar: lagerRader(fram, 0, 0, 63, 63) } });
+}
+// slingorna i den omritade frisyren: bara ljusa klungor, aldrig mörka ränder
+function harTon2(x, y, cx, cy, rx, ry, forskj = 0) {
+  let t = ton(ljushet(x, y, cx, cy, rx, ry), x, y);
+  if (vn(x * 1.6, y * 0.32, 1.4, 31) > 0.76 && t < 3) t += 1;
+  return 'efgh'[Math.max(0, Math.min(3, t + forskj))];
 }
 
 // ---- skägget Helskägg (steg 5.2.2.4), på mannens käke: kinderna nedanför kindbenen, mustaschen över munnen och skägget
