@@ -916,17 +916,17 @@ SCENARIER.utkant = {
       const b = stationSite(s, 'slaktbank'), l = stationSite(s, 'latrin');
       const db = b ? byAvstand(s, b.x, b.y) : -1, dl = l ? byAvstand(s, l.x, l.y) : -1;
       slakt &&= db >= STATION.slaktAvst - 1 && db <= STATION.slaktTill;
-      latrin &&= dl >= STATION.latrinAvst - 1 && dl <= STATION.latrinTill;
+      latrin &&= dl >= STATION.latrinAvst && dl <= STATION.latrinTill;
       langre &&= dl > 5; // förr låg gropen 3–5 rutor från lägret
       // ett hus där latrinen skulle ha legat: den flyttar så att den står lika långt från huset
       if (l) {
         (s.hus ??= []).push({ id: 99, namn: 'Hus', x: l.x - 1, y: l.y - 1, w: 3, h: 3 });
         const l2 = stationSite(s, 'latrin');
-        hus &&= !!l2 && byAvstand(s, l2.x, l2.y) >= STATION.latrinAvst - 1 && Math.max(Math.abs(l2.x - l.x), Math.abs(l2.y - l.y)) > 2;
+        hus &&= !!l2 && byAvstand(s, l2.x, l2.y) >= STATION.latrinAvst && Math.max(Math.abs(l2.x - l.x), Math.abs(l2.y - l.y)) > 2;
       }
     }
     rader.push([`slaktbänken står ${STATION.slaktAvst - 1}–${STATION.slaktTill} rutor från byn`, slakt]);
-    rader.push([`latringropen står ${STATION.latrinAvst - 1}–${STATION.latrinTill} rutor från byn, längre bort än förr`, latrin && langre]);
+    rader.push([`latringropen står ${STATION.latrinAvst}–${STATION.latrinTill} rutor från byn, längre bort än förr`, latrin && langre]);
     rader.push(['avståndet räknas också till husen: ett hus där gropen skulle ligga flyttar ut den', hus]);
     return rader;
   },
@@ -962,7 +962,10 @@ SCENARIER.latrin = {
     const hygien = (s.hygien ?? 0) > 0 && s.stat?.['magont av toa-smuts'] === 1;
     // när byn kan hygien läggs latrinen längre från vattnet
     const tillVatten = (b: SIM.State, at?: { x: number; y: number }) => { if (!at) return -1; const m = getMap(b.seed); let d = 99; for (let j = 0; j < W * H; j++) if (m.tiles[j] === T.Vatten) d = Math.min(d, Math.hypot(j % W - at.x, Math.floor(j / W) - at.y)); return d; };
-    const u0 = createState(3, START), u1 = cloneState(u0); u1.hygien = 1;
+    // (en by där latrinen annars hamnar nära vattnet)
+    let u0 = createState(3, START);
+    for (let seed = 1; seed < 40; seed++) { const q = createState(seed, START), at = stationSite(q, 'latrin'); if (at && tillVatten(q, at) < STATION.latrinVatten) { u0 = q; break; } }
+    const u1 = cloneState(u0); u1.hygien = 1;
     const d0 = tillVatten(u0, stationSite(u0, 'latrin')), d1 = tillVatten(u1, stationSite(u1, 'latrin'));
     const at = stationSite(u0, 'latrin'), utkant = !!at && byAvstand(u0, at.x, at.y) >= STATION.utkantMin && byAvstand(u0, at.x, at.y) <= STATION.latrinTill;
     // latrinen: man går dit, lämnar ingen fläck, gropen fylls och fylls igen
@@ -2011,6 +2014,44 @@ SCENARIER.harflykt = {
       [`den jagade haren flyr aldrig mot jägaren (${harBort} av ${n})`, harBort === n],
       [`jägaren smyger en minut (${smyg} av ${n}) och siktar 3–5 sekunder innan hen kastar (${sikta} av ${n})`, smyg === n && sikta === n],
       [`det synliga försöket, från att hen börjar smyga, tar ${Math.round(kortast)}–${Math.round(langst)} sekunder`, kortast >= 60 && langst <= 200],
+    ];
+  },
+};
+
+SCENARIER.gangar = {
+  text: 'Avstånd i byn (steg 4.5.4.5): minst 2 rutor mellan två hus, latrinen lika långt från elden som fälten (15 rutor), och en station ute (bord, torkställning) står i en gång mellan husen bara om gången är minst 3 rutor bred, och då mot husväggen så att gången är fri',
+  kor: () => {
+    const { gangFri, stationSite, eldPlats, housesOf, bitsOf, touch, PLATS, ODLING } = SIM;
+    // latrinen: 15 rutor från elden (som fältens första rad), inte närmare byn än utkantMin
+    const s = createState(3, START); klockan(s); tandEld(s);
+    const f = eldPlats(s), lp = stationSite(s, 'latrin');
+    const latrin = lp ? Math.hypot(lp.x - f.x, lp.y - f.y) : -1;
+    // husen: minst husMellan fritt emellan i en by som byggt flera hus
+    const b = createState(5, START);
+    let minst = Infinity;
+    for (let d = 0; d < 12; d++) {
+      kor(b, 24);
+      const h = housesOf(b);
+      for (let i = 0; i < h.length; i++) for (let j = i + 1; j < h.length; j++) { const p = h[i], q = h[j]; minst = Math.min(minst, Math.max(p.x - (q.x + q.w), q.x - (p.x + p.w), p.y - (q.y + q.h), q.y - (p.y + p.h))); }
+    }
+    const antalHus = housesOf(b).length;
+    // gången: ett hus och en låtsad vägg (ett annat hus) väster om det, med 2, 3 eller 4 rutor emellan
+    const gang = (bredd: number, x: (hx: number) => number) => {
+      const q = createState(1, START); klockan(q); tandEld(q); medHus(q);
+      const h = housesOf(q)[0];
+      if (!h) return undefined;
+      const vx = h.x - 1 - bredd;
+      for (let y = h.y; y < h.y + h.h; y++) bitsOf(q).push({ id: 90000 + y, x: vx, y, k: 'vagg', m: 'timmer', b: 1, mat: 2, c: 1 } as SIM.Bit);
+      touch(q);
+      return gangFri(q, [{ x: x(h.x), y: h.y + 1 }]);
+    };
+    const smal = gang(2, hx => hx - 1), mot = gang(3, hx => hx - 1), mitt = gang(3, hx => hx - 2), bred = gang(4, hx => hx - 1), annan = gang(3, hx => hx - 3);
+    return [
+      [`latrinen ligger ${latrin.toFixed(1)} rutor från elden (fälten högst ${ODLING.faltTill})`, Math.abs(latrin - ODLING.faltTill) <= 1.5],
+      [`minst ${PLATS.husMellan} rutor mellan två hus (minst ${minst} bland ${antalHus} hus på 12 dygn)`, antalHus >= 2 && minst >= PLATS.husMellan],
+      ['ingen station i en gång som är 2 rutor bred', smal === false],
+      ['i en gång som är 3 rutor bred står den mot husväggen (vilken som helst av dem), inte mitt i', mot === true && annan === true && mitt === false],
+      ['i en bredare gång står den mot väggen', bred === true],
     ];
   },
 };

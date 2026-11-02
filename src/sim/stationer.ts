@@ -19,6 +19,7 @@ import { groundOf, tileOf } from './mark';
 import { FOREST } from './vag';
 import { BrasaEld, brasaMal } from './brasor';
 import { underMinnet } from './sjo';
+import { ODLING } from './odling';
 
 // ---------- arbetsstationer och möbler (steg 2.2.3, 2.2.5) ----------
 // En station är en plats i byn där ett visst arbete görs: vid slaktbänken slaktas viltet och fisken rensas, vid slöjdbänken
@@ -64,6 +65,7 @@ export const STATION = balans('station', {
   vriden: 0.5, // en station som står vriden får så här många poäng (färre är bättre), så att den helst står som i registret
   badd: 0.1, // inne: så här många poäng mindre för varje sida som står mot en vägg ...
   dorr: 1, // ... och så här många fler för varje ruta bredvid en öppning, där man går in
+  gangMin: 3, gangSok: 6, // en station ute får stå i en gång mellan husen (väggar på båda sidor, högst gangSok rutor bort) bara om gången är minst gangMin bred, och då mot en vägg med husMellan fritt bredvid (steg 4.5.4.5)
   uteVagg: 0.6, // ute: så här många poäng mindre för varje ruta som står mot en husvägg (Björn efter v101: stationerna står snyggt mot väggarna)
   samling: 1, // ... och så här många mindre i ett hus där ingen sover (samlingshuset), för det som inte är en bädd
   halmbaddHo: 4, // en halmbädd kräver så mycket hö ...
@@ -88,7 +90,7 @@ export const STATION = balans('station', {
   latrinRymmer: 150, // så många toabesök ryms i gropen innan den är full och fylls igen
   latrinNy: 0.85, // byn gräver en ny när den den har är så här full
   latrinTill: 10, // gropen ligger högst så här många rutor från byn (lägret och husen) ... (Björn efter v107: alltid ganska långt bort, steg 2.10.21)
-  latrinAvst: 8, // ... helst så här långt ...
+  latrinAvst: 5, // ... och minst så här långt; helst ligger den lika långt från elden som fälten (ODLING.faltTill, steg 4.5.4.5) ...
   latrinVatten: 8, // ... och, när byn lärt sig att smutsen når vattnet (s.hygien), helst så här många rutor från vattnet ...
   latrinVattenPoang: 1, // ... med så här många poäng (färre är bättre) för varje ruta för nära, gånger s.hygien
   // grillställningen (steg 2.8.1, matlagning.ts): grenar och rep över elden
@@ -119,7 +121,7 @@ const bordTra = (w: number, h: number) => w * h * STATION.bordTra + ((w >= 2 ? 2
 // privata saker (kistan, steg 2.10.18): byggs inte i byns lager utan av var och en i rummet där hen sover (kistorna nedan)
 // pynt = bara till för att pynta (steg 4.3.4, pynt.ts): var och en bygger ett åt sig själv i rummet där hen sover, som kistan
 // brasa = en extra eld (steg 2.9.1, brasor.ts): står nära sovplatserna den är till för (siteBrasa), och alla vuxna kan bygga den (tek är tom: den som är gammal nog att ta ansvar, ALDER.ansvar)
-export interface Utkant { till: number; avst: number; vatten?: true }
+export interface Utkant { till: number; avst: number; vatten?: true; eld?: true }
 export interface Forvar { rymmer: number; redskap?: true; tak?: true; stangd?: true; privat?: true }
 export interface StationDef { namn: string; ett?: true; ikon: string; w: number; h: number; tek: string[]; av: Record<string, number>; min: number; gor: Act[]; bara?: Act[]; vid?: Record<string, number>; verktyg?: string; utkant?: Utkant; eld?: true; kraver?: Partial<Record<Act, string>>; smutsar?: Partial<Record<Act, string>>; bygger: string; forsta: string; inne?: true; mobel?: true; flera?: true; fart?: Partial<Record<Act, number>>; brasa?: true; sover?: true; sitt?: true; platser?: true; forvar?: Forvar; pynt?: true; samtidigt?: number }
 // de enkla redskapen: görs vid slöjdbänken om byn har en, lite fortare där (fart), annars vid elden som förut (Björn, efter v90)
@@ -174,7 +176,7 @@ export const STATIONER = {
   },
   // latrinen (steg 2.7.2, smuts.ts): en grop som grävs med benspaden i byns utkant. Där går man på toa, och när den är full fylls den igen
   latrin: {
-    namn: 'Latrin', ikon: 'latrin', w: 1, h: 1, tek: ['latrin'], av: {}, min: STATION.latrinMin, gor: ['toa'], verktyg: 'benspade', utkant: { till: STATION.latrinTill, avst: STATION.latrinAvst, vatten: true }, flera: true,
+    namn: 'Latrin', ikon: 'latrin', w: 1, h: 1, tek: ['latrin'], av: {}, min: STATION.latrinMin, gor: ['toa'], verktyg: 'benspade', utkant: { till: STATION.latrinTill, avst: STATION.latrinAvst, vatten: true, eld: true }, flera: true,
     bygger: 'Gräver en latrin med benspaden.',
     forsta: '{namn} grävde byns första latrin. Där går man på toa, så att smutsen hamnar på ett ställe.',
   },
@@ -429,7 +431,9 @@ function siteUtkant(s: State, k: string) {
       if (!ok || d < STATION.utkantMin || d > u.till || !friRunt(s, rutor) || arbetar(stationDef(k)) && !framLand(s, x, y, w, h)) continue;
       const lek = paLek(lekR, x, y, w, h) ? STATION.lek : 0;
       const vatten = u.vatten && s.hygien ? s.hygien * STATION.latrinVattenPoang * Math.max(0, STATION.latrinVatten - tillVatten(s, x, y, STATION.latrinVatten)) : 0;
-      const sc = Math.abs(d - u.avst) + lek + vatten + rot * STATION.vriden;
+      if (u.eld && d < u.avst) continue;
+      const fran = u.eld ? Math.min(...rutor.map(q => Math.hypot(q.x - f.x, q.y - f.y))) : d; // latrinen: lika långt från elden som fälten (steg 4.5.4.5)
+      const sc = Math.abs(fran - (u.eld ? ODLING.faltTill : u.avst)) + lek + vatten + rot * STATION.vriden;
       if (sc < bs) { bs = sc; best = rot ? { x, y, rot } : { x, y }; }
     }
   }
@@ -472,6 +476,18 @@ function runtOm(s: State, x: number, y: number, w: number, h: number, f: (k: str
   for (let j = -1; j <= h; j++) for (let i = -1; i <= w; i++) if ((i === -1 || i === w) !== (j === -1 || j === h)) f(bitAt(s, x + i, y + j)?.k);
 }
 
+// står rutorna i en gång mellan husen (en vägg på båda sidor, högst gangSok rutor bort), så är gången minst gangMin bred,
+// och de står mot den ena väggen med minst husMellan fritt mot den andra, så att gången är fri (steg 4.5.4.5)
+export function gangFri(s: State, rutor: { x: number; y: number }[]) {
+  const g = gridOf(s), x0 = Math.min(...rutor.map(q => q.x)), x1 = Math.max(...rutor.map(q => q.x)), y0 = Math.min(...rutor.map(q => q.y)), y1 = Math.max(...rutor.map(q => q.y));
+  const vagg = (x: number, y: number) => inMap(x, y) && g.at.has(y * W + x);
+  // fritt från kanten (a) i riktningen d tills en vägg, eller undefined om ingen vägg finns inom gangSok
+  const fritt = (ax: number, ay: number, dx: number, dy: number) => { for (let k = 0; k < STATION.gangSok; k++) if (vagg(ax + dx * (k + 1), ay + dy * (k + 1))) return k; return undefined; };
+  const ok = (a?: number, b?: number) => a === undefined || b === undefined || a + b + 1 >= STATION.gangMin && Math.min(a, b) === 0 && Math.max(a, b) >= PLATS.husMellan;
+  for (let y = y0; y <= y1; y++) if (!ok(fritt(x0, y, -1, 0), fritt(x1, y, 1, 0))) return false;
+  for (let x = x0; x <= x1; x++) if (!ok(fritt(x, y0, 0, -1), fritt(x, y1, 0, 1))) return false;
+  return true;
+}
 // ute: alla rutorna den tar är lediga, ingenting utom ett hus står inpå (friRunt), helst mot en vägg och inte där barnen leker. Avståndet räknas från stationens mitt
 function siteUte(s: State, k: string) {
   const f = eldPlats(s), lekR = lekplats(s);
@@ -485,6 +501,7 @@ function siteUte(s: State, k: string) {
       if (fri && stationDef(k)?.platser) fri = bordPlatser({ k, x, y, rot }).every(q => ledig(s, q.x, q.y)); // stubbarna runt bordet
       if (fri) fri = friRunt(s, [...rutorAv(x, y, w, h), ...(stationDef(k)?.platser ? bordPlatser({ k, x, y, rot }) : [])], true); // plats för en stig runt (steg 2.10.8)
       for (let i = 0; i < w && fri; i++) fri = !gridOf(s).at.has((y + h) * W + x + i) && !stationAt(s, x + i, y + h); // man står framför den, inte i en vägg eller en annan station
+      if (fri) fri = gangFri(s, [...rutorAv(x, y, w, h), ...(stationDef(k)?.platser ? bordPlatser({ k, x, y, rot }) : [])]);
       if (fri && arbetar(stationDef(k))) fri = framLand(s, x, y, w, h); // och inte i vattnet (steg 4.5.4.3)
       if (!fri) continue;
       // helst mot en vägg, men inte vid en öppning där man går in (Björn efter v101)
