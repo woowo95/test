@@ -439,8 +439,10 @@
   }
   // en sorts del: den ritade bilden om den finns, annars platshållaren
   function delen(dk, G, d, p, sort) {
-    const R2 = SORT[sort].ritas, f = G.m.fast, mall = G.m.id;
-    if (!DELAR[d.id] || !R2) return RITA[sort](dk, G, d, p);
+    const R0 = SORT[sort].ritas, f = G.m.fast, mall = G.m.id;
+    if (!DELAR[d.id] || !R0) return RITA[sort](dk, G, d, p);
+    // smyckena sitter på olika platser (hals, hår, öra) med egen fästpunkt (5.2.2.4)
+    const R2 = R0.plats?.[d.plats] ? { ...R0, ...R0.plats[d.plats] } : R0;
     const lage = SORT[sort].lagen ? lageAv(p, sort) : null, bild = ritadBild(d.id, mall, lage);
     const fast = R2.fast === 'huvud' ? [G.H.cx, G.H.cy] : f[R2.fast];
     if (!R2.par) return ritaBild(dk, bild, fast);
@@ -467,7 +469,7 @@
     lagg('ogon', dk => delen(dk, G, D('oga'), p, 'oga'), { maskbar: true });
     lagg('ogonbryn', dk => delen(dk, G, D('ogonbryn'), p, 'ogonbryn'));
     lagg('nasa', dk => delen(dk, G, D('nasa'), p, 'nasa'));
-    if (D('skagg')) lagg('skagg', dk => RITA.skagg(dk, G, D('skagg')), { utom: SORT.skagg.utom });
+    if (D('skagg')) lagg('skagg', dk => delen(dk, G, D('skagg'), p, 'skagg'), { utom: SORT.skagg.utom });
     lagg('mun', dk => delen(dk, G, D('mun'), p, 'mun'));
     const fr = D('frisyr');
     // en ritad frisyr har två lager (bilder.bakhar och bilder.framhar, steg 5.2.2.4) från fästpunkten har; annars platshållaren
@@ -478,8 +480,8 @@
       const d = DEL[id]; if (!d.lager || (id === 'skon-glans' && (!fr || fr.karta === 'flint'))) continue;
       lagg(d.lager, dk => RITA.skonhet(dk, G, d, p), { maskbar: !!d.maskbar });
     }
-    if (D('smycke')) lagg('smycke', dk => RITA.smycke(dk, G, D('smycke')), { maskbar: !!D('smycke').maskbar });
-    if (D('huvudbonad')) lagg('huvudbonad', dk => RITA.huvudbonad(dk, G, D('huvudbonad')));
+    if (D('smycke')) lagg('smycke', dk => delen(dk, G, D('smycke'), p, 'smycke'), { maskbar: !!D('smycke').maskbar });
+    if (D('huvudbonad')) lagg('huvudbonad', dk => delen(dk, G, D('huvudbonad'), p, 'huvudbonad'));
     for (const id of p.forband) if (DEL[id]) lagg('forband', dk => RITA.forband(dk, G, DEL[id]));
     if (p.ogonlapp) lagg('ogonlapp', dk => RITA.ogonlapp(dk));
     if (D('redskap')) { lagg('redskapBak', dk => RITA.redskap(dk, G, D('redskap'), false)); lagg('redskapFram', dk => RITA.redskap(dk, G, D('redskap'), true)); }

@@ -1,0 +1,27 @@
+{
+ "id": "bonad-1",
+ "ritad": 1,
+ "av": "programmeringschatten, förebild",
+ "om": "Stickad mössa i skiffer med en uppvikt kant i jord. Matt skuggning med ljus uppifrån vänster och ett glest stickmönster i snedrader. Döljer håret på skallen och luggen (maskerna).",
+ "bilder": {
+  "standard": {
+   "x": -17,
+   "y": -1,
+   "rader": [
+    "...........RSTTTSSSSSSS...........",
+    "........TTTSSTTSSSSRSSRSSQ........",
+    ".......TTTTSSSSSSSSSSSRSSRR.......",
+    ".....TTTTTSSSSSRSSRSSSSRQRRRR.....",
+    "....TTRSSRSSRSSRSSSSSRRRRRRQRR....",
+    "...SSRSSRSSRSSSSSRSSRRRRRRRRRQQ...",
+    "..SSSRSSRSSRSSSSSSSSSRRQRRQRQQQQ..",
+    "..SSSSSSSSRSSSSSSSSRRRQRRQRQQQQQ..",
+    "GHHHHHHHHHHGGGGGFGGFGGGGFEFFEFFEEE",
+    "GGGGGHHHHHGGGGGFGGFGFEFFEFFEFFEEEE",
+    "GGGFGGGGGFGGFGGFGGFFFEFFFFFEEEEEEE",
+    "FFEFFFGGGGGFFFFFFEFFEFFEFEEEEEEEEE",
+    "FFFFFEFFEFFEFFEFFEEEEEEEEEEEEEEEEE"
+   ]
+  }
+ }
+}

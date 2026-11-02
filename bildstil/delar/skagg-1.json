@@ -1,0 +1,34 @@
+{
+ "id": "skagg-1",
+ "ritad": 1,
+ "av": "programmeringschatten, förebild",
+ "om": "Helskägg på mannens käke: kinderna, mustaschen och skägget under hakan, lite ojämnt nertill. Matt skuggning med ljus uppifrån vänster och slingor som håret.",
+ "bilder": {
+  "standard": {
+   "x": -15,
+   "y": -7,
+   "rader": [
+    "gggghhh................ffgeffe",
+    "ggghhhh................ffffffe",
+    ".ghhhhg................ffffff.",
+    ".hhhhhg................ffffff.",
+    ".hhhhhgghhhhhgghgffgggfffffff.",
+    "..hhhhghhhhgggghgfgggffffffe..",
+    "..hghhhhhghgggghhfggffffgffe..",
+    "...ghhhhgghghgghhfgggfffgff...",
+    "...ghhgggghghgghhghggfffgfe...",
+    "..gghggggghghgghhggfgfffgfe...",
+    "...ggggggggghgghggffffffgfe...",
+    "...ggggggggghgggggfgffffgf....",
+    "....gggggggghggggffgfffefe....",
+    ".....ggggggghgggfffgfffefe....",
+    ".....ggggggggffffffffffefe....",
+    ".....gfffgggfffffffffeeef.....",
+    ".....fffffgfffffgfgfeeeef.....",
+    "......ffffffffffgfgeeeee......",
+    "......feffffffffeeeeeeee......",
+    "......feeeeffeeeeeeeeee......."
+   ]
+  }
+ }
+}

@@ -145,10 +145,10 @@
     {"id": "ogonfarg", "namn": "Ögonfärger", "en": "Ögonfärg", "steg": "5.2.2.3", "rader": "farger.oga", "kon": "bada"},
     {"id": "hudton", "namn": "Hudtoner", "en": "Hudton", "steg": "5.2.2.3", "rader": "farger.hud", "karta": true, "kon": "bada"},
     {"id": "frisyr", "namn": "Frisyrer", "en": "Frisyr", "steg": "5.2.2.4", "lager": ["bakhar", "framhar"], "maskbar": true, "karta": true, "harfarger": true, "kon": "bada", "ritas": {"fast": "har", "ruta": [-32, -10, 31, 53], "tecken": "efgh", "lager": ["bakhar", "framhar"], "om": "frisyren i två lager: bakhar är håret bakom huvudet och kroppen (det som syns runt huvudet och nedanför det), framhar är hjässan, luggen och sidorna framför öronen och lockar framöver axlarna; skallen täcks ovanför hårfästet, och samma frisyr passar alla tre mallar"}},
-    {"id": "skagg", "namn": "Skägg", "en": "Skägg", "steg": "5.2.2.4", "lager": ["skagg"], "valfri": "Inget skägg", "utom": ["mun"], "karta": true, "kon": "man", "barn": false},
+    {"id": "skagg", "namn": "Skägg", "en": "Skägg", "steg": "5.2.2.4", "lager": ["skagg"], "valfri": "Inget skägg", "utom": ["mun"], "karta": true, "kon": "man", "barn": false, "ritas": {"fast": "skagg", "ruta": [-18, -12, 17, 20], "tecken": "efgh", "om": "skägget på mannens käke, från kinderna ner under hakan; munnens ruta lämnas fri av programmet, så att munnen syns; skägget får gärna gå lite utanför käken"}},
     {"id": "harfarg", "namn": "Hårfärger", "en": "Hårfärg", "steg": "5.2.2.4", "rader": "farger.har", "karta": true, "granskaMed": {"frisyr": "har-5"}, "kon": "bada"},
-    {"id": "huvudbonad", "namn": "Huvudbonader", "en": "Huvudbonad", "steg": "5.2.2.4", "lager": ["huvudbonad"], "valfri": "Ingen huvudbonad", "karta": true, "harfarger": true, "granskaMed": {"frisyr": "har-9"}, "kon": "bada"},
-    {"id": "smycke", "namn": "Smycken och hårprydnader", "en": "Smycke", "steg": "5.2.2.4", "lager": ["smycke"], "valfri": "Inget smycke", "granskaMed": {"frisyr": "har-5"}, "kon": "bada"},
+    {"id": "huvudbonad", "namn": "Huvudbonader", "en": "Huvudbonad", "steg": "5.2.2.4", "lager": ["huvudbonad"], "valfri": "Ingen huvudbonad", "karta": true, "harfarger": true, "granskaMed": {"frisyr": "har-9"}, "kon": "bada", "ritas": {"fast": "huvudbonad", "ruta": [-22, -10, 21, 48], "tecken": "abcdkmnloqpwrstuEFGHIJKLMNOPQRSTUVWX", "om": "huvudbonaden över skallen; den täcker zonerna i radens maskar (håret där döljs), och material i palettens fasta färger: jord E–H, senap I–L, oliv M–P, skiffer Q–T, barr U–X, kol k–n, rost r–u och ben o, p, q, w (mörkast först)"}},
+    {"id": "smycke", "namn": "Smycken och hårprydnader", "en": "Smycke", "steg": "5.2.2.4", "lager": ["smycke"], "valfri": "Inget smycke", "granskaMed": {"frisyr": "har-5"}, "kon": "bada", "ritas": {"fast": "halsband", "ruta": [-14, -4, 13, 7], "tecken": "kmnlrstuopqwEFGHIJKLMNOPQRSTUVWX", "om": "smycket på sin plats (radens plats): ett halsband runt halsen, en hårprydnad i håret eller ett örhänge i örat; i palettens fasta färger: jord E–H, senap I–L, oliv M–P, skiffer Q–T, barr U–X, kol k–n, rost r–u och ben o, p, q, w (mörkast först)", "plats": {"hals": {"fast": "halsband", "ruta": [-14, -4, 13, 7]}, "har": {"fast": "har", "ruta": [-22, -8, 21, 30]}, "ora": {"fast": "ora", "ruta": [-3, 0, 2, 9], "par": "spegel"}}}},
     {"id": "skonhet", "namn": "Skönhetens lager", "en": "Skönhetslager", "steg": "5.2.2.5", "styrs": "skönheten väljer lagren: en rad gäller från sin nivå (vackra uppåt, fula nedåt)", "granskaMed": {"frisyr": "har-5"}, "kon": "bada"},
     {"id": "rynkor", "namn": "Rynkor", "en": "Rynkor", "steg": "5.2.2.5", "lager": ["rynkor"], "styrs": "åldern väljer steget", "kon": "bada", "barn": false},
     {"id": "arr", "namn": "Ärr", "en": "Ärr", "steg": "5.2.2.6", "lager": ["arr"], "valfri": "Inget ärr", "kon": "bada"},
@@ -234,7 +234,7 @@
     {"id": "har-28", "sort": "frisyr", "namn": "Snaggat med fläta i nacken", "karta": "flata", "ritad": 0, "kon": "man"},
     {"id": "har-29", "sort": "frisyr", "namn": "Tovigt", "karta": "halvlangt", "ritad": 0, "kon": "bada"},
     {"id": "har-30", "sort": "frisyr", "namn": "Axellångt med små flätor", "karta": "halvlangt", "ritad": 0, "kon": "bada"},
-    {"id": "skagg-1", "sort": "skagg", "namn": "Helskägg", "karta": "helskagg", "ritad": 0},
+    {"id": "skagg-1", "sort": "skagg", "namn": "Helskägg", "karta": "helskagg", "ritad": 1},
     {"id": "skagg-2", "sort": "skagg", "namn": "Kort skägg", "karta": "kort", "ritad": 0},
     {"id": "skagg-3", "sort": "skagg", "namn": "Mustasch", "karta": "mustasch", "ritad": 0},
     {"id": "skagg-4", "sort": "skagg", "namn": "Långt skägg", "karta": "helskagg", "ritad": 0},
@@ -248,7 +248,7 @@
     {"id": "skagg-12", "sort": "skagg", "namn": "Hängmustasch", "karta": "mustasch", "ritad": 0},
     {"id": "skagg-13", "sort": "skagg", "namn": "Glest skägg", "karta": "kort", "ritad": 0},
     {"id": "skagg-14", "sort": "skagg", "namn": "Skägg med två flätor", "karta": "helskagg", "ritad": 0},
-    {"id": "bonad-1", "sort": "huvudbonad", "namn": "Mössa", "karta": "mossa", "maskar": ["skalle", "lugg"], "ritad": 0, "kon": "bada"},
+    {"id": "bonad-1", "sort": "huvudbonad", "namn": "Mössa", "karta": "mossa", "maskar": ["skalle", "lugg"], "ritad": 1, "kon": "bada"},
     {"id": "bonad-2", "sort": "huvudbonad", "namn": "Hatt", "karta": "hatt", "maskar": ["skalle", "lugg"], "ritad": 0, "kon": "man"},
     {"id": "bonad-3", "sort": "huvudbonad", "namn": "Huva", "karta": "huva", "maskar": ["skalle", "lugg", "sidor", "oron"], "ritad": 0, "kon": "bada"},
     {"id": "bonad-4", "sort": "huvudbonad", "namn": "Pannband", "karta": "band", "maskar": [], "ritad": 0, "kon": "bada"},
@@ -256,8 +256,8 @@
     {"id": "bonad-6", "sort": "huvudbonad", "namn": "Pälsmössa", "karta": "mossa", "maskar": ["skalle", "lugg", "oron"], "ritad": 0, "kon": "bada"},
     {"id": "bonad-7", "sort": "huvudbonad", "namn": "Huvudduk", "karta": "huva", "maskar": ["skalle", "lugg", "sidor"], "ritad": 0, "kon": "kvinna"},
     {"id": "bonad-8", "sort": "huvudbonad", "namn": "Krans", "karta": "band", "maskar": [], "ritad": 0, "kon": "kvinna"},
+    {"id": "smycke-2", "sort": "smycke", "namn": "Benhalsband", "plats": "hals", "ritad": 1, "kon": "bada"},
     {"id": "smycke-1", "sort": "smycke", "namn": "Pärlhalsband", "plats": "hals", "ritad": 0, "kon": "kvinna"},
-    {"id": "smycke-2", "sort": "smycke", "namn": "Benhalsband", "plats": "hals", "ritad": 0, "kon": "bada"},
     {"id": "smycke-3", "sort": "smycke", "namn": "Tandhalsband", "plats": "hals", "ritad": 0, "kon": "man"},
     {"id": "smycke-4", "sort": "smycke", "namn": "Pärlor i håret", "plats": "har", "maskbar": true, "ritad": 0, "kon": "kvinna"},
     {"id": "smycke-5", "sort": "smycke", "namn": "Band i håret", "plats": "har", "maskbar": true, "ritad": 0, "kon": "kvinna"},
@@ -305,5 +305,5 @@
     "om": "Varje rad har en tagg för vem delen finns på: kvinna, man eller bada (båda). Barnmallen är gemensam, men ett barn får bara delar som är taggade för sitt kön eller för båda. barn: false betyder att delen inte finns på barn (t.ex. skägg, rynkor). Taggen kan stå på sorten (gäller alla rader) och skrivas över på raden.",
     "varden": ["kvinna", "man", "bada"]
   },
-  "tecken": {"om": "Tecknen i en ritad dels rader (bildstil/delar/<id>.json). En punkt är ett tecken; . är genomskinligt. Tonerna går från mörkast (0) till ljusast (3).", ".": null, "a": "hud0", "b": "hud1", "c": "hud2", "d": "hud3", "A": "kind0", "B": "kind1", "C": "kind2", "D": "kind3", "e": "har0", "f": "har1", "g": "har2", "h": "har3", "i": "oga0", "j": "oga1", "v": "vit", "k": "kol0", "l": "kol1", "m": "kol2", "n": "kol3", "r": "rost0", "s": "rost1", "t": "rost2", "u": "rost3", "o": "ben0", "p": "ben1", "q": "ben2", "w": "ben3"}
+  "tecken": {"om": "Tecknen i en ritad dels rader (bildstil/delar/<id>.json). En punkt är ett tecken; . är genomskinligt. Tonerna går från mörkast (0) till ljusast (3).", ".": null, "a": "hud0", "b": "hud1", "c": "hud2", "d": "hud3", "A": "kind0", "B": "kind1", "C": "kind2", "D": "kind3", "e": "har0", "f": "har1", "g": "har2", "h": "har3", "i": "oga0", "j": "oga1", "v": "vit", "k": "kol0", "l": "kol1", "m": "kol2", "n": "kol3", "r": "rost0", "s": "rost1", "t": "rost2", "u": "rost3", "o": "ben0", "p": "ben1", "q": "ben2", "w": "ben3", "E": "jord0", "F": "jord1", "G": "jord2", "H": "jord3", "I": "senap0", "J": "senap1", "K": "senap2", "L": "senap3", "M": "oliv0", "N": "oliv1", "O": "oliv2", "P": "oliv3", "Q": "skiffer0", "R": "skiffer1", "S": "skiffer2", "T": "skiffer3", "U": "barr0", "V": "barr1", "W": "barr2", "X": "barr3"}
 }

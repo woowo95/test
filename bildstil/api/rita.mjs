@@ -38,6 +38,8 @@ const lasDel = id => { const f = path.join(DELAR, id + '.json'); return fs.exist
 const lagenFor = s => SORT[s].lagen ? PR.lagen[SORT[s].lagen].map(l => l.id) : ['standard'];
 // bilderna en del består av: lägena, eller lagren för en sort som ritas i lager (frisyrerna: bakhar och framhar, 5.2.2.4)
 const nycklarFor = s => SORT[s].ritas?.lager || lagenFor(s);
+// hur en del ritas: sortens ritas, med platsens fästpunkt och ruta för en del som har en plats (smyckena, 5.2.2.4)
+const ritasFor = (sort, d = null) => { const R = SORT[sort].ritas; return d && R.plats?.[d.plats] ? { ...R, ...R.plats[d.plats] } : R; };
 
 // ---------- registret skrivs med en rad per del, som förut ----------
 function skrivRegister() {
@@ -121,8 +123,8 @@ function schema(sort, valet = false) {
   if (valet) { props.val = { type: 'integer' }; req.unshift('val'); }
   return { type: 'object', properties: props, required: req, additionalProperties: false };
 }
-function sortText(sort) {
-  const S = SORT[sort], R = S.ritas, f = PR.mallar.map(m => `${m.namn}: ${R.fast === 'huvud' ? `huvudets mitt (${m.huvud.cx}, ${m.huvud.cy})` : JSON.stringify(m.fast[R.fast])}`).join('; ');
+function sortText(sort, d = null) {
+  const S = SORT[sort], R = ritasFor(sort, d), f = PR.mallar.map(m => `${m.namn}: ${R.fast === 'huvud' ? `huvudets mitt (${m.huvud.cx}, ${m.huvud.cy})` : JSON.stringify(m.fast[R.fast])}`).join('; ');
   const lagen = S.lagen ? `Lägen: ${PR.lagen[S.lagen].map(l => `${l.id} (${l.namn})`).join(', ')}. Humöret väljer dem: ${PR.humor.map(h => `${h.namn.toLowerCase()} = ${h[sort] || '–'}`).join(', ')}.` : R.lager ? `Bilderna är lagren ${R.lager.join(' och ')}, som ritas i var sitt lager i porträttet (se sortens beskrivning).` : 'Ett läge: standard.';
   const mitt = R.par ? '' : ' Ansiktets mittlinje går mellan x = -1 och x = 0 räknat från fästpunkten. Det som ska sitta mitt i ansiktet sträcker sig därför lika långt åt vänster som åt höger om den linjen, till exempel från x = -3 till x = 2, och en näsrygg ligger på x = -1 och 0.';
   return `Sort: ${S.namn} (${R.om}). Fästpunkten i porträttet: ${f}. Ruta från fästpunkten (x0, y0, x1, y1): ${R.ruta.join(', ')}.${mitt} Tecken som sorten får använda: ${R.tecken}. ${lagen}${R.manbild ? ' Rita också en egen bild för mannen (man), som för förebilden: mannens huvudform är lite fyrkantigare, med rakare sidor, bredare käke och plattare haka (Björn efter 5.2.2.3).' : ''}${R.barnbild ? ' Rita också en egen bild för barnmallen (barn), som för förebilden: barnet har kortare och rundare nedre ansikte och mindre drag.' : ''}`;
@@ -133,7 +135,7 @@ async function fraga(d, { kommentar = null, forra = null, version = null } = {})
   if (!fb) throw new Error(`Förebilden ${forebild.id} är inte ritad än.`);
   const bild = await bildAvDel(forebild.id, sort, null);
   const text = [
-    sortText(sort),
+    sortText(sort, d),
     `Förebilden (${forebild.id}, ${forebild.namn}), ritad av programmeringschatten: ${JSON.stringify({ bilder: fb.bilder, ...(fb.man ? { man: fb.man } : {}), ...(fb.barn ? { barn: fb.barn } : {}) })}`,
     'Bilden visar förebilden på det neutrala ansiktet: raderna är kvinna, man och barn, och kolumnerna är lägena i ordning.',
     `Rita delen ${d.id}: ${SORT[sort].en.toLowerCase()} "${d.namn}"${d.vad ? ` (${d.vad})` : ''}${d.ful ? ', en ful variant som får vara lite komisk' : ''}. Den ska skilja sig tydligt från förebilden och de andra i sorten: ${delarAv(sort).filter(x => x.id !== d.id).map(x => x.namn.toLowerCase()).join(', ')}.`,
@@ -152,7 +154,7 @@ async function valet(d, versioner, { kommentar = null } = {}) {
   const bilder = [await bildAvDel(forebild.id, sort, null)];
   for (const v of versioner) bilder.push(await bildAvDel(d.id, sort, { id: d.id, ...v.svar }));
   const text = [
-    sortText(sort),
+    sortText(sort, d),
     `Den första bilden är förebilden (${forebild.id}, ${forebild.namn}). Sedan kommer ${versioner.length === 1 ? 'den enda versionen' : versioner.length + ' versioner'} av den nya delen ${d.id}, ${SORT[sort].en.toLowerCase()} "${d.namn}"${d.vad ? ` (${d.vad})` : ''}${d.ful ? ', en ful variant som får vara lite komisk' : ''}, i den här ordningen: ${versioner.map(v => 'version ' + v.nr).join(', ')}. Alla visas på det neutrala ansiktet: raderna är kvinna, man och barn, och kolumnerna är lägena.`,
     ...versioner.map(v => `Version ${v.nr}: ${JSON.stringify({ bilder: v.svar.bilder, ...(v.svar.man ? { man: v.svar.man } : {}), ...(v.svar.barn ? { barn: v.svar.barn } : {}) })}`),
     kommentar ? `Björns kommentar om förra ritningen, som ska följas: ${kommentar}` : '',
@@ -164,8 +166,8 @@ async function valet(d, versioner, { kommentar = null } = {}) {
 }
 
 // ---------- koden kontrollerar varje ritning först: lägena, tecknen, raderna och rutan ----------
-function kontrollera(sort, svar) {
-  const fel = [], R = SORT[sort].ritas, tillatna = new Set(['.', ...R.tecken]);
+function kontrollera(sort, d, svar) {
+  const fel = [], R = ritasFor(sort, d), tillatna = new Set(['.', ...R.tecken]);
   const bild = (b, namn) => {
     if (!b || !Array.isArray(b.rader) || !b.rader.length) { fel.push(`${namn}: inga rader`); return; }
     const w = b.rader[0].length;
@@ -300,7 +302,7 @@ try {
     const fragor = []; for (const d of delar) for (let v = 1; v <= VERSIONER; v++) fragor.push(await fraga(d, { ...opts(d), version: v }));
     const r1 = await batch(client, fragor, 'ritningen'); let summa = r1.summa; plus(r1.tokens);
     const versioner = {};
-    for (const d of delar) versioner[d.id] = [...Array(VERSIONER)].map((_, i) => { const r = r1.ut[`${d.id}__v${i + 1}`]; return { nr: i + 1, svar: r?.svar, fel: r?.svar ? kontrollera(d.sort, r.svar) : [r?.fel || 'inget svar'] }; });
+    for (const d of delar) versioner[d.id] = [...Array(VERSIONER)].map((_, i) => { const r = r1.ut[`${d.id}__v${i + 1}`]; return { nr: i + 1, svar: r?.svar, fel: r?.svar ? kontrollera(d.sort, d, r.svar) : [r?.fel || 'inget svar'] }; });
     // 2. koden kontrollerar; gick ingen version igenom ritas en till med felen
     const omtag = [];
     for (const d of delar) {
@@ -311,7 +313,7 @@ try {
     }
     if (omtag.length) {
       const o = await batch(client, omtag, 'omtagen'); summa += o.summa; plus(o.tokens);
-      for (const d of delar) { const r = o.ut[`${d.id}__v${VERSIONER + 1}`]; if (r) versioner[d.id].push({ nr: VERSIONER + 1, svar: r.svar, fel: r.svar ? kontrollera(d.sort, r.svar) : [r.fel] }); }
+      for (const d of delar) { const r = o.ut[`${d.id}__v${VERSIONER + 1}`]; if (r) versioner[d.id].push({ nr: VERSIONER + 1, svar: r.svar, fel: r.svar ? kontrollera(d.sort, d, r.svar) : [r.fel] }); }
     }
     // 3. API:t väljer den bästa av versionerna som gick igenom koden, på ansiktena och mot förebilden
     const valfragor = [];
@@ -323,7 +325,7 @@ try {
     for (const d of delar) {
       const ok = versioner[d.id].filter(x => !x.fel.length), g = r3.ut[d.id]?.svar;
       let slut = null, hur = '';
-      if (g && !kontrollera(d.sort, g).length) { slut = g; hur = (g.val > 0 ? `version ${g.val} vald` : 'ingen passade, en ny ritad i valet') + (ok.length < VERSIONER ? ` (${ok.length} av ${VERSIONER} versioner gick igenom koden)` : ''); }
+      if (g && !kontrollera(d.sort, d, g).length) { slut = g; hur = (g.val > 0 ? `version ${g.val} vald` : 'ingen passade, en ny ritad i valet') + (ok.length < VERSIONER ? ` (${ok.length} av ${VERSIONER} versioner gick igenom koden)` : ''); }
       else if (ok.length) { const v = ok.find(x => x.nr === g?.val) || ok[0]; slut = v.svar; hur = `version ${v.nr} av ${ok.length} (valet ${g ? 'gick inte igenom koden' : 'saknas: ' + (r3.ut[d.id]?.fel || '')})`; }
       if (!slut) { rapport.push(`${d.id}: inte ritad (${[...new Set(versioner[d.id].flatMap(x => x.fel))].slice(0, 3).join('; ')})`); continue; }
       spara(d, slut, `API:t (${MODELL}), bästa av ${ok.length}${kommentarer[d.id] ? ', omritad efter Björns svar' : ''}`);

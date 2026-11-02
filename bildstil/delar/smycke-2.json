@@ -1,0 +1,22 @@
+{
+ "id": "smycke-2",
+ "ritad": 1,
+ "av": "programmeringschatten, förebild",
+ "om": "Benhalsband: ett snöre i jord i en båge runt halsen med sju små benbitar, ljusa uppåt vänster och mörkare nedåt, och en lite längre bit i mitten.",
+ "bilder": {
+  "standard": {
+   "x": -12,
+   "y": -4,
+   "rader": [
+    "FF....................EE",
+    "..F..................E..",
+    "..wFF..............EEq..",
+    "..p..FFF........EEE..p..",
+    ".....w..FFFFEEEE..q.....",
+    ".....p..w..wp..q..p.....",
+    "........p..p...p........",
+    "...........o............"
+   ]
+  }
+ }
+}

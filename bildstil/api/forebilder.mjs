@@ -130,3 +130,50 @@ function lagerRader(punkt, x0, y0, x1, y1) {
   spara({ id: 'har-5', ritad: 1, av: 'programmeringschatten, förebild', om: 'Halvlångt hår för båda: framhåret täcker hjässan och går ner framför öronen till käken, luggen sveper lite snett, och bakhåret syns bakom huvudet ner till hakan. Matt skuggning med ljus uppifrån vänster och slingor i små lodräta klungor.',
     bilder: { bakhar: lagerRader(bak, 0, 0, 63, 63), framhar: lagerRader(fram, 0, 0, 63, 63) } });
 }
+
+// ---- skägget Helskägg (steg 5.2.2.4), på mannens käke: kinderna nedanför kindbenen, mustaschen över munnen och skägget
+// under hakan. Munnens ruta lämnas fri av programmet (utom: mun). Punkterna räknas från fästpunkten skagg (32, 43).
+{
+  const H = { cx: 32, cy: 30, rx: 15, ry: 20 }, U = [1.01, 0.95], ex = 2.7, ey = 2.6; // mannens runda huvudform
+  const kaken = (x, y) => { const u = (x + 0.5 - H.cx) / H.rx, v = (y + 0.5 - H.cy) / H.ry; return v > 0 && (Math.abs(u) / U[0]) ** ex + (v / U[1]) ** ey <= 1; };
+  const hake = Math.floor(H.cy + H.ry * U[1] - 0.5);
+  const inne = (x, y) => {
+    const dx = Math.abs(x + 0.5 - 32);
+    const kind = kaken(x, y) && y >= 36 && (dx > 7.5 || y >= 40);         // kinderna och runt munnen
+    const under = y >= hake - 3 && y <= 55 && dx <= 12.5 - (y - hake + 3) * 0.42 + (vn(x, y, 1.5, 7) - 0.5) * 1.2; // under hakan, lite ojämnt
+    const kant = kaken(x, y) && !kaken(x + (x < 32 ? 2 : -2), y - 2) && y >= 34;  // en tunn rand längs käken upp mot örat
+    return kind || under || kant;
+  };
+  const skagg = (x, y) => inne(x, y) ? harTon(x, y, 32, 44, 15, 12) : null;
+  const b = lagerRader(skagg, 0, 0, 63, 63);
+  spara({ id: 'skagg-1', ritad: 1, av: 'programmeringschatten, förebild', om: 'Helskägg på mannens käke: kinderna, mustaschen och skägget under hakan, lite ojämnt nertill. Matt skuggning med ljus uppifrån vänster och slingor som håret.',
+    bilder: { standard: { x: b.x, y: b.y + 10 - 43, rader: b.rader } } });
+}
+
+// ---- huvudbonaden Mössa (steg 5.2.2.4): en stickad mössa i skiffer över skallen med en uppvikt kant i jord. Maskerna
+// (skalle, lugg) döljer håret under. Punkterna räknas från fästpunkten huvudbonad (32, 10).
+{
+  const ell = (cx, cy, rx, ry) => (x, y) => ((x + 0.5 - cx) / rx) ** 2 + ((y + 0.5 - cy) / ry) ** 2 <= 1;
+  const kropp = (x, y) => y <= 18 && ell(32, 24, 17.5, 15.5)(x, y);
+  const kant = (x, y) => y >= 17 && y <= 21 && Math.abs(x + 0.5 - 32) <= 17.4 - (y === 21 ? 0.6 : 0);
+  const tonPa = (x, y, cx, cy, rx, ry, ramp) => { let t = ton(ljushet(x, y, cx, cy, rx, ry), x, y); if ((x + (y >> 1)) % 3 === 0 && t > 0 && t < 3) t -= hash(x, y, 4) < 0.5 ? 1 : 0; return ramp[Math.max(0, Math.min(3, t))]; };
+  const mossa = (x, y) => kant(x, y) ? tonPa(x, y, 32, 18, 18, 4, 'EFGH') : kropp(x, y) ? tonPa(x, y, 32, 12, 17, 12, 'QRST') : null;
+  const b = lagerRader(mossa, 0, 0, 63, 63);
+  spara({ id: 'bonad-1', ritad: 1, av: 'programmeringschatten, förebild', om: 'Stickad mössa i skiffer med en uppvikt kant i jord. Matt skuggning med ljus uppifrån vänster och ett glest stickmönster i snedrader. Döljer håret på skallen och luggen (maskerna).',
+    bilder: { standard: b } });
+}
+
+// ---- smycket Benhalsband (steg 5.2.2.4): ett snöre i jord med benbitar i ben, i en båge runt halsen. Punkterna räknas
+// från fästpunkten halsband (32, 57).
+{
+  const punkter = {};
+  const satt = (x, y, v) => { punkter[x + ',' + y] = v; };
+  for (let x = 20; x <= 43; x++) { const y = 57 - Math.round(((x + 0.5 - 32) / 11) ** 2 * 4); satt(x, y, x < 32 ? 'F' : 'E'); } // lägst mitt på bröstet
+  for (let i = 0; i < 7; i++) { // benbitarna: små avlånga bitar som hänger från snöret, ljusa uppåt vänster
+    const x = 22 + i * 3 + (i > 3 ? 1 : 0), y = 57 - Math.round(((x + 0.5 - 32) / 11) ** 2 * 4);
+    satt(x, y + 1, x < 32 ? 'w' : 'q'); satt(x, y + 2, 'p'); if (i === 3) { satt(x, y + 3, 'o'); satt(x + 1, y + 1, 'p'); }
+  }
+  const b = lagerRader((x, y) => punkter[x + ',' + y] || null, 0, 0, 63, 63);
+  spara({ id: 'smycke-2', ritad: 1, av: 'programmeringschatten, förebild', om: 'Benhalsband: ett snöre i jord i en båge runt halsen med sju små benbitar, ljusa uppåt vänster och mörkare nedåt, och en lite längre bit i mitten.',
+    bilder: { standard: { x: b.x, y: b.y + 10 - 57, rader: b.rader } } });
+}
