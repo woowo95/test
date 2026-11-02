@@ -235,15 +235,16 @@ spara({ id: 'skon-fransar', ritad: 1, av: 'programmeringschatten, förebild', om
   // blåmärket Runt ögat: en matt ring i skiffer och mörk rost runt vänster öga, mörkast närmast ögat
   const B = {};
   for (let y = 25; y <= 35; y++) for (let x = 19; x <= 33; x++) {
-    const u = (x + 0.5 - 26) / 5.8, v = (y + 0.5 - 30.5) / 4.4, r = u * u + v * v;
+    const u = (x + 0.5 - 26) / 5.2, v = (y + 0.5 - 30.5) / 4.9, r = u * u + v * v; // rundare efter Björn (5.2.2.6, version 4)
     if (r > 1) continue;
     // matt och dämpat: mörk rost och hudens mörkaste ton, med lite skiffer närmast ögat (förra blev en blå ring)
     // blåare efter Björn (5.2.2.6): mörkt blått (skiffer) närmast ögat, blått och mörk rost utåt, glest i kanten
     // mer subtilt efter Björn (5.2.2.6): blått närmast ögat, glest och blandat med hudens mörka toner utåt
-    const h = hash(x, y, 3), t = r < 0.4 ? (h < 0.55 ? 'R' : 'a') : r < 0.75 ? (h < 0.3 ? 'R' : h < 0.55 ? 'a' : null) : (h < 0.2 ? 'b' : null);
+    // ännu mer subtilt (version 4): glesare, mer av hudens egna mörka toner och mindre blått
+    const h = hash(x, y, 3), t = r < 0.35 ? (h < 0.5 ? 'R' : h < 0.85 ? 'b' : null) : r < 0.7 ? (h < 0.25 ? 'R' : h < 0.55 ? 'b' : null) : (h < 0.2 ? 'b' : null);
     if (t) B[x + ',' + y] = t;
   }
-  spara({ id: 'blamarke-1', ritad: 3, av: 'programmeringschatten, förebild', om: 'Blåmärke runt ögat: subtilt, blått i skiffer närmast ögat och glest blandat med hudens mörka toner utåt. Ögat ritas ovanpå.',
+  spara({ id: 'blamarke-1', ritad: 4, av: 'programmeringschatten, förebild', om: 'Blåmärke runt ögat: runt och subtilt, blått i skiffer närmast ögat och glest blandat med hudens mörka toner utåt. Ögat ritas ovanpå.',
     bilder: { standard: bild(B) } });
   // förbandet Runt huvudet: ett linneband över pannan som följer huvudets rundning, skuggat nedåt, med en liten blodfläck
   const C = {};
@@ -304,16 +305,21 @@ spara({ id: 'skon-fransar', ritad: 1, av: 'programmeringschatten, förebild', om
 {
   const P = {};
   const satt = (x, y, v) => { P[x + ',' + y] = v; };
-  for (let i = 0; i <= 48; i++) { const x = 40 + Math.round(i * 0.3), y = 63 - i; satt(x - 1, y, 'H'); satt(x, y, 'G'); satt(x + 1, y, 'E'); } // skaftet bakom ryggen
-  const hx = 54, hy = 15; // där huvudet sitter på skaftet, uppe bakom axeln
-  for (let x = hx; x <= hx + 8; x++) { const halv = 2.5 + (x - hx) * 0.6, mitt = hy + 1;
-    for (let y = Math.round(mitt - halv); y <= Math.round(mitt + halv); y++) {
-      const kant = y === Math.round(mitt - halv) || y === Math.round(mitt + halv), ovre = y < mitt - halv * 0.3, nedre = y > mitt + halv * 0.4;
-      satt(x, y, x >= hx + 8 ? 'T' : kant ? (y < mitt ? 'S' : 'Q') : ovre ? (hash(x, y, 8) < 0.15 ? 'R' : 'S') : nedre ? 'Q' : (hash(x, y, 9) < 0.15 ? 'S' : 'R'));
-    } }
-  for (const [x, y] of [[hx - 1, hy - 1], [hx, hy], [hx - 1, hy + 1], [hx, hy + 2], [hx - 1, hy + 3], [hx - 2, hy], [hx - 2, hy + 2]]) satt(x, y, (x + y) % 2 ? 'J' : 'K'); // surrningen
+  for (let i = 0; i <= 56; i++) { const x = 40 + Math.round(i * 0.22), y = 63 - i; satt(x - 1, y, 'H'); satt(x, y, 'G'); satt(x + 1, y, 'E'); } // skaftet bakom ryggen
+  // omritad efter Björn (5.2.2.7, version 4: "ser fortfarande konstigt ut"): huvudet sitter nu tvärs över skaftets topp,
+  // som en riktig skaftad yxa, med en kort nacke på ena sidan och ett blad som vidgas mot eggen på den andra
+  const sy = 8, sx = 40 + Math.round((63 - sy) * 0.22); // högre upp, så att bladet ryms innanför porträttets kant // skaftets topp
+  for (const k of Object.keys(P)) { const [x, y] = k.split(',').map(Number); if (y < sy - 2) delete P[k]; } // skaftet slutar strax ovanför huvudet
+  for (let k = -3; k <= 8; k++) {
+    const cx = sx + k, cy = sy + 2 + Math.round(k * 0.22), h = k < 0 ? 1.5 : 1.5 + k * 0.45;
+    for (let y = Math.round(cy - h); y <= Math.round(cy + h); y++) {
+      const v = (y - cy) / h; // -1 överst, 1 nederst
+      satt(cx, y, k === 8 ? (v < 0.3 ? 'T' : 'S') : k === 7 ? (v < -0.3 ? 'T' : 'S') : k === -3 ? 'Q' : v < -0.45 ? 'S' : v > 0.45 ? 'Q' : (hash(cx, y, 9) < 0.18 ? 'S' : 'R'));
+    }
+  }
+  for (let y = sy; y <= sy + 5; y++) for (let x = sx - 1; x <= sx + 1; x++) if ((x + y) % 2 === 0 || x === sx) satt(x, y, (x + y) % 3 ? 'L' : 'K'); // surrningen, i mörkt rep runt skaftet och huvudet
   const b = lagerRader((x, y) => P[x + ',' + y] || null, 0, 0, 63, 63);
-  spara({ id: 'redskap-yxa', ritad: 3, av: 'programmeringschatten, förebild', om: 'Flintyxa på ryggen: ett tjockt skaft i jord snett bakom ryggen, och ett stort kilformat flinthuvud i skiffer med ljus egg och korsad surrning som sticker upp bakom axeln bredvid huvudet. Omritad efter Björn (5.2.2.7: större, på ryggen).',
+  spara({ id: 'redskap-yxa', ritad: 4, av: 'programmeringschatten, förebild', om: 'Flintyxa på ryggen: ett tjockt skaft i jord snett bakom ryggen, och ett stort kilformat flinthuvud i skiffer med ljus egg och korsad surrning som sticker upp bakom axeln bredvid huvudet. Huvudet sitter tvärs över skaftets topp, med kort nacke och ett blad som vidgas mot eggen. Omritad efter Björn (5.2.2.7: större, på ryggen; sedan: ser fortfarande konstigt ut).',
     bilder: { standard: { x: b.x - 22, y: b.y + 10 - 52, rader: b.rader } } });
 }
 

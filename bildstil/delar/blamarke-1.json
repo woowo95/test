@@ -1,20 +1,21 @@
 {
  "id": "blamarke-1",
- "ritad": 3,
+ "ritad": 4,
  "av": "programmeringschatten, förebild",
- "om": "Blåmärke runt ögat: subtilt, blått i skiffer närmast ögat och glest blandat med hudens mörka toner utåt. Ögat ritas ovanpå.",
+ "om": "Blåmärke runt ögat: runt och subtilt, blått i skiffer närmast ögat och glest blandat med hudens mörka toner utåt. Ögat ritas ovanpå.",
  "bilder": {
   "standard": {
    "x": -11,
    "y": -3,
    "rader": [
-    ".....aRRb..",
-    ".RaRRRaa...",
-    "RaRaRRaaaa.",
-    "RaaRaaRaRR.",
-    "R.RRaRaa..b",
-    ".aaRRRaa...",
-    ".....R.a..."
+    ".....bRRb.",
+    ".R.RRRb...",
+    "bbRbRRbbb.",
+    "b..RbbRbRb",
+    "b.RbbRbb..",
+    ".b.bRRb...",
+    ".....R.b..",
+    "..b.b....."
    ]
   }
  }
