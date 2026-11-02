@@ -834,7 +834,7 @@ export function ledigPlats(s: State, p: Person) {
 // sitter p vid bordet och äter (handlingen maltid, framme)?
 export const vidBordet = (p: Person) => p.task?.act === 'maltid' && p.task.phase === 'do';
 // bordet som den som äter sitter vid (ett finare bord gör måltiden trevligare, kvalitet.ts)
-export function bordVid(s: State, p: Person) {
+export function bordVid(s: State, p: { x: number; y: number }) {
   for (const [dx, dy] of GRANNAR4) { const t = stationAt(s, p.x + dx, p.y + dy); if (t && stationDef(t.k)?.platser) return t; }
   return undefined;
 }

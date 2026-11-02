@@ -1,7 +1,7 @@
 import * as PIXI from 'pixi.js';
-import { ACTS, ALDER, Person, actIkon, utbIkon, SEC, TalkEvent, ageOf, alive, bordVid, byId, clamp, homeKind, isSocial, pratarMed, kanGa, living, load, REL, relKey, spar, storlekAv, vidBordet, handlarNu, handlarPlats } from '../sim';
+import { ACTS, ALDER, Person, actIkon, utbIkon, SEC, TalkEvent, ageOf, alive, bordVid, byId, homeKind, isSocial, pratarMed, kanGa, living, load, REL, relKey, sparPlats, storlekAv, handlarNu, handlarPlats } from '../sim';
 import { PRICKAR, personFarg } from './hjalp';
-import { s, sakVar, ui, vidNyBy } from './lage';
+import { s, sakVar, ui, uppgiftVid, vidNyBy } from './lage';
 import { Ikoner, TS, bubbleG, labels, markLayer, peopleG } from './scen';
 import { jaktPlats } from './jakt';
 import { hasIcon, iconCanvas } from '../ikoner';
@@ -28,16 +28,10 @@ export function addTalks(events: TalkEvent[], now: number, nu: number) {
 function platsAv(p: Person) {
   const j = jaktPlats(p); // jägaren som smyger, siktar och hämtar (jakt.ts)
   if (j) return { x: j.x, y: j.y, still: false };
-  const v = spar.v.get(p), t = ui.nu;
-  let x = p.x, y = p.y, still = true;
-  if (v && v.length >= 6 && t < v[v.length - 3]) {
-    let i = 0;
-    while (i + 3 < v.length - 3 && v[i + 3] <= t) i += 3;
-    const t0 = v[i], t1 = v[i + 3], f = t1 > t0 ? clamp((t - t0) / (t1 - t0), 0, 1) : 1;
-    x = v[i + 1] + (v[i + 4] - v[i + 1]) * f; y = v[i + 2] + (v[i + 5] - v[i + 2]) * f;
-    still = v[i + 1] === v[i + 4] && v[i + 2] === v[i + 5];
-  }
-  const tk = p.task, d = tk && ACTS[tk.act];
+  const t = ui.nu, sp = sparPlats(p, t);
+  let x = sp?.x ?? p.x, y = sp?.y ?? p.y;
+  const still = sp?.still ?? true;
+  const tk = uppgiftVid(p), d = tk && ACTS[tk.act];
   if (still && tk?.phase === 'do' && d && !d.stilla) {
     const w = d.vandra, k = t / SEC, r = w ? w.r * 0.6 : 0.12, f = w ? w.v / (w.r * 6) : 0.05;
     x += Math.sin(k * f + p.id * 1.7) * r * Math.sin(k * f * 0.37 + p.id);
@@ -80,7 +74,7 @@ export function posOf(p: Person) {
 function markOf(p: Person): string | undefined {
   const j = jaktPlats(p);
   if (j) return j.mark ?? 'a_jaga'; // smyger, siktar eller jagar (jakt.ts)
-  const t = p.task;
+  const t = uppgiftVid(p);
   return t?.phase === 'do' ? utbIkon(t) ?? actIkon(t.act) : undefined;
 }
 // pratbubblan (steg 3.10.3): samma ruta som arbetssymbolerna, med pratbubblan i pixlar eller ämnets symbol (ikon, steg 3.9.5).
@@ -110,7 +104,7 @@ export function drawPeople(t: number) {
     const r = a < ALDER.smabarn ? 2.8 : a < ALDER.vuxen ? 3.8 : 5;
     const q = posOf(p), x = q.x * TS, y = q.y * TS;
     pos.set(p.id, q);
-    const sleeping = p.task?.act === 'sova';
+    const tk = uppgiftVid(p), sleeping = tk?.act === 'sova';
     const col = personFarg(p, sleeping);
     peopleG.beginFill(0x000000, 0.25).drawEllipse(x, y + r * 0.9, r * 0.9, r * 0.35).endFill();
     if (p.id === ui.selected || p.id === harSaken) peopleG.lineStyle(2.5, 0xffffff, 1);
@@ -120,8 +114,8 @@ export function drawPeople(t: number) {
     peopleG.lineStyle(0);
     if (PRICKAR.sjuk.har(p)) peopleG.beginFill(PRICKAR.sjuk.farg).drawCircle(x + r * 0.7, y - r * 0.7, 1.8).endFill();
     if (PRICKAR.gravid.har(p)) peopleG.beginFill(PRICKAR.gravid.farg).drawCircle(x - r * 0.7, y - r * 0.7, 1.6).endFill();
-    if (p.task && load(p.task, s) > 0) markIcons.add(homeKind(p.task), x + r - 2.5, y - 1, 4.8 / iconCanvas(homeKind(p.task)).width); // det man bär syns på figuren, hur lite det än är (steg 3.6.5)
-    const mal = vidBordet(p) && p.task!.mal, bord = mal && hasIcon(mal) ? bordVid(s, p) : undefined;
+    if (tk && load(tk, s) > 0) markIcons.add(homeKind(tk), x + r - 2.5, y - 1, 4.8 / iconCanvas(homeKind(tk)).width); // det man bär syns på figuren, hur lite det än är (steg 3.6.5)
+    const mal = tk?.act === 'maltid' && tk.phase === 'do' && tk.mal, bord = mal && hasIcon(mal) ? bordVid(s, q) : undefined; // (vid bordet där hen syns sitta)
     if (mal && bord) { // den som äter vid bordet har maten i händerna och framför sig på bordet (steg 3.10.3)
       const { w, h } = storlekAv(bord), dx = (bord.x + w / 2) * TS - x, dy = (bord.y + h / 2) * TS - y, d = Math.hypot(dx, dy) || 1, f = Math.min(1, TS * 0.7 / d);
       markIcons.add(mal, x + r - 2.5, y - 1, 0.6);

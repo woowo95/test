@@ -1,6 +1,6 @@
 import { KROPP, Person, halsa, ageOf, alive, byId, living, moodOf, taskName, yrkeNamn } from '../sim';
 import { $, LAG, bar, esc, hex, tempBar, trend } from './hjalp';
-import { s, ui, vidNyBy } from './lage';
+import { s, ui, uppgiftVid, vidNyBy } from './lage';
 
 // porträttraden överst på kartan: en knapp per invånare, med mer om personen när musen är över den.
 // Ett tryck väljer personen (data-id, fångas i panel.ts), ett dubbeltryck följer hen med kameran
@@ -12,7 +12,7 @@ function startFollow(id: number) {
 $('followChip').addEventListener('click', stopFollow);
 vidNyBy.push(stopFollow);
 const portEls = new Map<number, HTMLButtonElement>();
-const shortAct = (p: Person) => p.task ? taskName(p.task) : '–';
+const shortAct = (p: Person) => { const t = uppgiftVid(p); return t ? taskName(t) : '–'; }; // vid tiden som visas (steg 4.5.6.5)
 export function renderPorts() {
   const row = $('ports'), ppl = living(s).sort((a, b) => a.born - b.born);
   const ids = new Set(ppl.map(p => p.id));

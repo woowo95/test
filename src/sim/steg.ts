@@ -99,9 +99,40 @@ const STEG = balans('steg', {
 });
 
 // spelet ritar folk där de är medan slaget visas: var och ens väg under det senaste slaget, som
-// [tid, x, y, tid, x, y, ...]. Bara för att visa; simuleringen läser det aldrig
-export const spar = { pa: false, v: new WeakMap<Person, number[]>() };
-function spara(s: State, p: Person, t = s.now) { if (spar.pa) spar.v.get(p)?.push(t, p.x, p.y); }
+// [tid, x, y, tid, x, y, ...]. Bara för att visa; simuleringen läser det aldrig. Uppgiften sparas också med tiden varje
+// gång den eller dess fas byts (u, steg 4.5.6.5), så att det som visar vad någon gör (Gör just nu, raden överst på kartan,
+// symbolen över huvudet, listan över invånare) frågar vad hen gör vid tiden som visas (uppgiftVid i ui/lage.ts)
+export const spar = { pa: false, v: new WeakMap<Person, number[]>(), u: new WeakMap<Person, [number, Task | undefined][]>() };
+const uppgiftNyckel = (t?: Task) => t ? `${t.act}|${t.phase}|${t.tool ?? ''}|${t.hopp ? 1 : 0}|${t.carry > 0 ? 1 : 0}|${t.jf ? 1 : 0}|${t.leta ?? ''}|${t.sok ? 1 : 0}` : '';
+const kopia = (t?: Task): Task | undefined => t && { ...t, path: undefined, items: t.items && { ...t.items } };
+function sparaUppgift(p: Person, t: number) {
+  const u = spar.u.get(p);
+  if (!u) return;
+  const sist = u[u.length - 1]?.[1];
+  if (uppgiftNyckel(sist) === uppgiftNyckel(p.task)) return;
+  u.push([t, kopia(p.task)]);
+  const v = spar.v.get(p); // platsen när uppgiften byts, så att bilden inte börjar gå förrän hen går (den som äter sitter kvar tills måltiden är slut)
+  if (v && v[v.length - 3] < t) v.push(t, p.x, p.y);
+}
+// var p syns vid tiden t under slaget (vägen i spar.v, rakt mellan de sparade punkterna), och om hen står still där.
+// undefined när inget sparats eller t är efter slaget. Bara för att visa (ui/manniskor.ts och scenariot gorjustnu)
+export function sparPlats(p: Person, t: number) {
+  const v = spar.v.get(p);
+  if (!v || v.length < 6 || t >= v[v.length - 3]) return undefined;
+  let i = 0;
+  while (i + 3 < v.length - 3 && v[i + 3] <= t) i += 3;
+  const t0 = v[i], t1 = v[i + 3], f = t1 > t0 ? Math.min(1, Math.max(0, (t - t0) / (t1 - t0))) : 1;
+  return { x: v[i + 1] + (v[i + 4] - v[i + 1]) * f, y: v[i + 2] + (v[i + 5] - v[i + 2]) * f, still: v[i + 1] === v[i + 4] && v[i + 2] === v[i + 5] };
+}
+// vad p gör vid tiden t under slaget som slutar vid nu (spar.u); före slagets början, efter det eller när inget sparats: uppgiften nu
+export function sparUppgift(p: Person, t: number, nu: number): Task | undefined {
+  const u = spar.u.get(p);
+  if (!u?.length || t >= nu) return p.task;
+  let i = 0;
+  while (i + 1 < u.length && u[i + 1][0] <= t) i++;
+  return u[i][1];
+}
+function spara(s: State, p: Person, t = s.now) { if (spar.pa) { spar.v.get(p)?.push(t, p.x, p.y); sparaUppgift(p, t); } }
 
 type Krok = (s: State, p: Person, t: Task, dtSec: number) => void;
 // det som händer medan man gör något (efter att ha kommit fram). Arbete för byn sköts av workStep
@@ -214,7 +245,7 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
     if (healthStep(s, p, a, ai, dtSec)) continue; // dog
     pregnancy(s, p, a, ppl.length, dtSec);
     if (!alive(p)) continue; // dog i barnsäng
-    if (spar.pa) spar.v.set(p, [t0, p.x, p.y]);
+    if (spar.pa) { spar.v.set(p, [t0, p.x, p.y]); spar.u.set(p, [[t0, kopia(p.task)]]); }
     taskStep(s, p, a, now, dtSec, learn, social);
     if (p.thoughts.some(x => x.until <= now)) p.thoughts = p.thoughts.filter(x => x.until > now);
   }
@@ -384,6 +415,7 @@ function taskStep(s: State, p: Person, a: number, t1: number, dtSec: number, lea
       if (t && isCarrying(t) && t.act !== 'elda') { t.phase = 'back'; const d = dropSpot(s, homeKind(t)); t.tx = d.x + sida(p, 0.2); t.ty = d.y + sida(p, -0.2); }
       else chooseTask(s, p);
     }
+    if (spar.pa) sparaUppgift(p, now); // (bara för att visa)
     const tk = p.task!, d = ACTS[tk.act];
     let used: number;
     if (tk.phase === 'go' || tk.phase === 'back') {

@@ -3,7 +3,7 @@ import { pratText, relationText, beskrivning, binamnInfo, INTRYCK, Intryck, Intr
 import { gorText } from '../jakt';
 import { framstegSvg, hasIcon, iconImg, kvSvg, tecknet } from '../../ikoner';
 import { LAG, byteKnapp, clockTxt, ansStapel, ansTecken, fmtN, bar, cap, carryTxt, cssFarg, durTxt, esc, hex, hsl, hjalpOppen, hjalpText, moodWord, pLink, prickar, relWord, sickNow, tempBar, tempOrd, trend, trendD } from '../hjalp';
-import { s, ui } from '../lage';
+import { s, ui, uppgiftVid } from '../lage';
 import { tekInfo } from './teknik';
 import { gastById, gastRad, type Gast } from '../gaster';
 import type { Flik } from '../panel';
@@ -20,7 +20,7 @@ export const person: Flik = {
     if (!p) return `<p class="muted">Klicka på en person på kartan eller i listan för att se allt om hen.</p>`;
     const delar = DELAR.filter(d => alive(p) || !d.levande), del = delar.find(d => d.id === ui.personDel) ?? delar[0];
     const med = alive(p) ? pratarMed(s, p) : undefined;
-    const status = alive(p) ? (p.task ? gorText(p, p.task) + (med ? ` och pratar med ${pLink(med)}` : '') : '–') : p.died !== undefined ? `Dog ${p.cause} (${timeLabel(s, p.died)})` : `Flyttade från byn (${timeLabel(s, p.left!)})`;
+    const tNu = uppgiftVid(p), status = alive(p) ? (tNu ? gorText(p, tNu) + (med ? ` och pratar med ${pLink(med)}` : '') : '–') : p.died !== undefined ? `Dog ${p.cause} (${timeLabel(s, p.died)})` : `Flyttade från byn (${timeLabel(s, p.left!)})`;
     return `
       <div class="phead"><span class="dot big" style="background:${hex(p)}"></span><div><h2>${esc(p.name)}${binamnHtml(p)}${alive(p) ? prickar(p) : ''}${anseende(p)}</h2>${binamnForkl(p)}
       <p class="status">${status}</p>${alive(p) && p.task?.why ? `<p class="why">Varför: ${esc(p.task.why)}</p>` : ''}${prat(p)}</div></div>

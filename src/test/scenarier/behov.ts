@@ -785,3 +785,38 @@ SCENARIER.matdygn = {
     ];
   },
 };
+
+SCENARIER.gorjustnu = {
+  lang: true,
+  text: 'Gör just nu stämmer med bilden (steg 4.5.6.5): byn räknas ett slag före klockan som visas, och det som visar vad någon gör frågar vad hen gör vid tiden som visas (sparUppgift i steg.ts). Den som visas dricka, äta vid bordet, fiska, samla eller bygga står vid platsen i bilden, den som äter vid bordet sitter vid ett bord, och den som står still visas inte som på väg.',
+  kor: () => {
+    const AKT = new Set<Act>(['dricka', 'maltid', 'fiske', 'samla', 'ved', 'bygga']);
+    let prov = 0, langtBort = 0, stillaGar = 0, utanBord = 0, maltider = 0, vidPlats = 0;
+    const ex: string[] = [];
+    spar.pa = true;
+    for (const seed of [3, 11, 42]) {
+      const s = createState(seed, START);
+      for (let i = 0; i < 6 * 24 * 3600 / BEAT; i++) {
+        const t0 = s.now;
+        step(s, BEAT);
+        for (const p of living(s)) for (let k = 0; k < 10; k++) {
+          const t = t0 + (s.now - t0) * (k + 0.5) / 10, tk = SIM.sparUppgift(p, t, s.now), sp = SIM.sparPlats(p, t);
+          const x = sp?.x ?? p.x, y = sp?.y ?? p.y;
+          prov++;
+          if (sp?.still && tk?.phase === 'go' && tk.path?.length !== 0) stillaGar++;
+          if (!tk || tk.phase !== 'do' || !AKT.has(tk.act)) continue;
+          const d = ACTS[tk.act], r = (d.runda?.r ?? d.vandra?.r ?? 0) + 1.5, avst = Math.hypot(x - tk.tx, y - tk.ty);
+          vidPlats++;
+          if (avst > r) { langtBort++; if (ex.length < 4) ex.push(`${p.name} ${tk.act} ${avst.toFixed(1)} rutor från platsen`); }
+          if (tk.act === 'maltid' && tk.mal) { maltider++; if (!SIM.bordVid(s, { x: Math.floor(x), y: Math.floor(y) })) utanBord++; }
+        }
+      }
+    }
+    spar.pa = false; spar.v = new WeakMap(); spar.u = new WeakMap();
+    return [
+      [`den som visas göra något på en plats står vid platsen (${langtBort} av ${vidPlats} prov långt bort${ex.length ? ': ' + ex.join('; ') : ''})`, vidPlats > 1000 && langtBort <= vidPlats * 0.005],
+      [`den som äter vid bordet sitter vid ett bord (${utanBord} av ${maltider})`, maltider > 50 && utanBord === 0],
+      [`den som står still visas inte som på väg (${stillaGar} av ${prov} prov)`, stillaGar <= prov * 0.002],
+    ];
+  },
+};

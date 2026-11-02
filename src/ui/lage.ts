@@ -1,4 +1,4 @@
-import { FyndId, Grupp, Pile, State, W, pilesOf, tingOf, useMap } from '../sim';
+import { FyndId, Grupp, Person, Pile, State, Task, W, pilesOf, sparUppgift, tingOf, useMap } from '../sim';
 import type { FlikId } from './panel';
 
 // det hela gränssnittet delar: byn som visas och vad spelaren har valt.
@@ -61,3 +61,7 @@ export function sakVar(): { x: number; y: number } | { station: number } | { per
   const p = piles().find(q => q.id === t.id);
   return p && { x: p.x, y: p.y };
 }
+
+// vad p gör vid tiden som visas (steg 4.5.6.5): byn är räknad ett slag före klockan som visas, och uppgiften sparas med tiden
+// varje gång den eller dess fas byts under slaget (spar.u, steg.ts). Före slagets början, eller när inget sparats: uppgiften nu
+export const uppgiftVid = (p: Person, t = ui.nu): Task | undefined => sparUppgift(p, t, s.now);
