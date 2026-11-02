@@ -14,10 +14,12 @@ function vn(x, y, sk, s) {
 const LJUSET = [-0.62, -0.42, 0.66], NIVA = [-0.08, 0.4, 0.86];
 const ljushet = (x, y, cx, cy, rx, ry) => { const u = (x + 0.5 - cx) / rx, v = (y + 0.5 - cy) / ry, nz = Math.sqrt(Math.max(0, 1 - Math.min(1, u * u + v * v))); return LJUSET[0] * u + LJUSET[1] * v + LJUSET[2] * nz; };
 const ton = (l, x, y) => { const k = l + (vn(x, y, 2.2, 21) - 0.5) * 0.2; return k < NIVA[0] ? 0 : k < NIVA[1] ? 1 : k < NIVA[2] ? 2 : 3; };
-// ---- huvudformen Rund: nedre ansiktet under ögonlinjen, för vuxna och för barn ----
-function huvud(under) {
-  const H = { cx: 32, cy: 30, rx: 15, ry: 20 }, U = [1, 0.95, 2.2];
-  const inne = (x, y) => { const u = (x + 0.5 - H.cx) / H.rx, v = (y + 0.5 - H.cy) / H.ry; return v > 0 && (Math.abs(u) / (U[0] * under[0])) ** U[2] + (v / (U[1] * under[1])) ** 2 <= 1; };
+// ---- huvudformen Rund: nedre ansiktet under ögonlinjen, för kvinnan, mannen och barnet ----
+// kanten är en superellips: exponenten ex styr hur raka sidorna är och ey hur platt hakan är. Mannens är lite fyrkantigare
+// (Björn efter 5.2.2.3: "alla mannens huvudformer ska vara lite mer fyrkantiga"): rakare sidor, bredare käke och plattare haka
+function huvud(under, { ex = 2.2, ey = 2 } = {}) {
+  const H = { cx: 32, cy: 30, rx: 15, ry: 20 }, U = [1, 0.95];
+  const inne = (x, y) => { const u = (x + 0.5 - H.cx) / H.rx, v = (y + 0.5 - H.cy) / H.ry; return v > 0 && (Math.abs(u) / (U[0] * under[0])) ** ex + (v / (U[1] * under[1])) ** ey <= 1; };
   const kind = new Set(['22,37', '23,37', '22,38', '23,38', '40,37', '41,37', '40,38', '41,38']);
   const rader = [];
   for (let y = 31; y <= 51; y++) {
@@ -32,21 +34,23 @@ function huvud(under) {
   while (rader.length && /^\.+$/.test(rader[rader.length - 1])) rader.pop();
   return { x: -16, y: 1, rader };
 }
-spara({ id: 'huvud-rund', ritad: 1, av: 'programmeringschatten, förebild', om: 'Det nedre ansiktet under ögonlinjen, med kinderna (A–D, röda i kylan). Skuggningen följer formen som mallens skalle.',
-  bilder: { standard: huvud([1, 1]) }, barn: { standard: huvud([1.04, 0.78]) } });
+spara({ id: 'huvud-rund', ritad: 2, av: 'programmeringschatten, förebild', om: 'Det nedre ansiktet under ögonlinjen, med kinderna (A–D, röda i kylan). Skuggningen följer formen som mallens skalle. Mannen har en egen bild (man), lite fyrkantigare: rakare sidor, bredare käke och plattare haka.',
+  bilder: { standard: huvud([1, 1]) }, man: { standard: huvud([1.02, 1], { ex: 3.4, ey: 2.8 }) }, barn: { standard: huvud([1.04, 0.78]) } });
 // ---- örat (vänster på bilden; det högra är det speglade, en ton mörkare) ----
-spara({ id: 'ora-2', ritad: 1, av: 'programmeringschatten, förebild', om: 'Mellanstort öra: ytterkanten i ljuset, en mörk båge i örat och en rund örsnibb.',
+// Omritat (Björn sa nej efter 5.2.2.3): förut en platt flik med en rak mörk rand; nu en rundad ytterkant i ljuset, en skål
+// som böjer sig in mot huvudet, en tydlig örsnibb och mjukare skugga där örat möter huvudet
+spara({ id: 'ora-2', ritad: 2, av: 'programmeringschatten, förebild', om: 'Mellanstort öra: en rundad ytterkant i ljuset, skålen i en båge in mot huvudet, en rund örsnibb och en mjuk skugga där örat möter huvudet.',
   bilder: { standard: { x: -2, y: -5, rader: [
-    '..cc.',
-    '.dcbb',
-    'dcaab',
-    'dcab.',
-    'dcab.',
-    'dbab.',
-    'cbab.',
-    'cbbc.',
-    '.cbc.',
-    '.cc..',
+    '.cd..',
+    'dccb.',
+    'dcbbb',
+    'dbabb',
+    'dbaab',
+    'cbabb',
+    'cbbb.',
+    '.ccb.',
+    '.ccb.',
+    '..cb.',
   ] } } });
 // ---- näsan Rak: näsryggen ljus till vänster och skuggad till höger, spetsen och näsborrarna ----
 spara({ id: 'nasa-1', ritad: 1, av: 'programmeringschatten, förebild', om: 'Rak näsa: ljus näsrygg till vänster, skuggad sida till höger, ljus spets och mörka näsborrar med en skugga under.',
@@ -66,10 +70,10 @@ spara({ id: 'nasa-1', ritad: 1, av: 'programmeringschatten, förebild', om: 'Rak
     '.abba',
   ] } } });
 // ---- ögat Runda i fyra lägen (vänster på bilden; det högra är det speglade) ----
-spara({ id: 'oga-1', ritad: 1, av: 'programmeringschatten, förebild', om: 'Runda ögon: mörkt övre ögonlock, vitan, iris i två toner och pupillen, och undre locket i huden.',
+spara({ id: 'oga-1', ritad: 2, av: 'programmeringschatten, förebild', om: 'Runda ögon: mörkt övre ögonlock, vitan, iris i två toner och pupillen, och undre locket i huden. De glada är öppna som de öppna, men kinden trycker upp undre locket i hörnen (Björn efter 5.2.2.3: mer öppna).',
   bilder: {
     oppna: { x: -3, y: -2, rader: ['.aaaa.', 'avjiva', 'bvikvb', '.bccb.'] },
-    glada: { x: -3, y: -2, rader: ['......', '.aaaa.', 'abjiba', '.cccc.'] },
+    glada: { x: -3, y: -2, rader: ['.aaaa.', 'avjiva', 'bcikcb', '.cddc.'] },
     ledsna: { x: -3, y: -2, rader: ['bbb.a.', 'aaaava', 'bvikvb', '.bccb.'] },
     slutna: { x: -3, y: -2, rader: ['.bbbb.', '.cccc.', 'aaaaaa', '.bccb.'] },
   } });
@@ -82,12 +86,12 @@ spara({ id: 'bryn-1', ritad: 1, av: 'programmeringschatten, förebild', om: 'Rak
     forvanade: { x: -3, y: -3, rader: ['..ggg..', '.gfffg.', 'ff...ff', '.......', '.......', '.......'] },
   } });
 // ---- munnen Smal i sex lägen ----
-spara({ id: 'mun-1', ritad: 1, av: 'programmeringschatten, förebild', om: 'Smal mun: en mörk rödbrun läpplinje (rost0) och underläppen i skugga; tänderna syns när den är glad, och den öppna munnen är mörk inuti.',
+spara({ id: 'mun-1', ritad: 2, av: 'programmeringschatten, förebild', om: 'Smal mun: en mörk rödbrun läpplinje (rost0) och underläppen i skugga; tänderna syns när den är glad, och den öppna munnen är mörk inuti. Omritad efter Björn (5.2.2.3): den glada, nöjda, lugna och ledsna är bredare, den lugna är rak och den ledsna sänker bara mungiporna lite.',
   bilder: {
-    glad: { x: -4, y: -2, rader: ['........', 'r......r', '.rqqqqr.', '..rrrr..', '...bb...'] },
-    nojd: { x: -4, y: -2, rader: ['........', 'r......r', '.rrrrrr.', '..bbbb..', '........'] },
-    lugn: { x: -4, y: -2, rader: ['........', '........', '.arrrra.', '..bbbb..', '........'] },
-    ledsen: { x: -4, y: -2, rader: ['........', '........', '..rrrr..', '.r.bb.r.', '........'] },
+    glad: { x: -5, y: -2, rader: ['..........', 'r........r', '.rqqqqqqr.', '..rrrrrr..', '...bbbb...'] },
+    nojd: { x: -5, y: -2, rader: ['..........', 'r........r', '.rrrrrrrr.', '...bbbb...', '..........'] },
+    lugn: { x: -5, y: -2, rader: ['..........', '..........', '.rrrrrrrr.', '...bbbb...', '..........'] },
+    ledsen: { x: -5, y: -2, rader: ['..........', '..........', '..rrrrrr..', '.s.bbbb.s.', '..........'] },
     arg: { x: -4, y: -2, rader: ['........', '........', 'rkkkkkkr', 'r.bbbb.r', '........'] },
     oppen: { x: -4, y: -2, rader: ['........', '...rr...', '..rkkr..', '..rkkr..', '...bb...'] },
   } });

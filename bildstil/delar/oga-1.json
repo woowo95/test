@@ -1,8 +1,8 @@
 {
  "id": "oga-1",
- "ritad": 1,
+ "ritad": 2,
  "av": "programmeringschatten, förebild",
- "om": "Runda ögon: mörkt övre ögonlock, vitan, iris i två toner och pupillen, och undre locket i huden.",
+ "om": "Runda ögon: mörkt övre ögonlock, vitan, iris i två toner och pupillen, och undre locket i huden. De glada är öppna som de öppna, men kinden trycker upp undre locket i hörnen (Björn efter 5.2.2.3: mer öppna).",
  "bilder": {
   "oppna": {
    "x": -3,
@@ -18,10 +18,10 @@
    "x": -3,
    "y": -2,
    "rader": [
-    "......",
     ".aaaa.",
-    "abjiba",
-    ".cccc."
+    "avjiva",
+    "bcikcb",
+    ".cddc."
    ]
   },
   "ledsna": {

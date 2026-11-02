@@ -1,51 +1,51 @@
 {
  "id": "mun-1",
- "ritad": 1,
+ "ritad": 2,
  "av": "programmeringschatten, förebild",
- "om": "Smal mun: en mörk rödbrun läpplinje (rost0) och underläppen i skugga; tänderna syns när den är glad, och den öppna munnen är mörk inuti.",
+ "om": "Smal mun: en mörk rödbrun läpplinje (rost0) och underläppen i skugga; tänderna syns när den är glad, och den öppna munnen är mörk inuti. Omritad efter Björn (5.2.2.3): den glada, nöjda, lugna och ledsna är bredare, den lugna är rak och den ledsna sänker bara mungiporna lite.",
  "bilder": {
   "glad": {
-   "x": -4,
+   "x": -5,
    "y": -2,
    "rader": [
-    "........",
-    "r......r",
-    ".rqqqqr.",
-    "..rrrr..",
-    "...bb..."
+    "..........",
+    "r........r",
+    ".rqqqqqqr.",
+    "..rrrrrr..",
+    "...bbbb..."
    ]
   },
   "nojd": {
-   "x": -4,
+   "x": -5,
    "y": -2,
    "rader": [
-    "........",
-    "r......r",
-    ".rrrrrr.",
-    "..bbbb..",
-    "........"
+    "..........",
+    "r........r",
+    ".rrrrrrrr.",
+    "...bbbb...",
+    ".........."
    ]
   },
   "lugn": {
-   "x": -4,
+   "x": -5,
    "y": -2,
    "rader": [
-    "........",
-    "........",
-    ".arrrra.",
-    "..bbbb..",
-    "........"
+    "..........",
+    "..........",
+    ".rrrrrrrr.",
+    "...bbbb...",
+    ".........."
    ]
   },
   "ledsen": {
-   "x": -4,
+   "x": -5,
    "y": -2,
    "rader": [
-    "........",
-    "........",
-    "..rrrr..",
-    ".r.bb.r.",
-    "........"
+    "..........",
+    "..........",
+    "..rrrrrr..",
+    ".s.bbbb.s.",
+    ".........."
    ]
   },
   "arg": {

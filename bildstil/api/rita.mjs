@@ -104,6 +104,7 @@ function schema(sort, granska) {
   const bild = { type: 'object', properties: { x: { type: 'integer' }, y: { type: 'integer' }, rader: { type: 'array', items: { type: 'string' } } }, required: ['x', 'y', 'rader'], additionalProperties: false };
   const lagen = lagenFor(sort), bilder = { type: 'object', properties: Object.fromEntries(lagen.map(l => [l, bild])), required: lagen, additionalProperties: false };
   const props = { bilder, anteckning: { type: 'string' } }, req = ['bilder', 'anteckning'];
+  if (SORT[sort].ritas.manbild) { props.man = bilder; req.push('man'); }
   if (SORT[sort].ritas.barnbild) { props.barn = bilder; req.push('barn'); }
   if (granska) { props.godkand = { type: 'boolean' }; req.push('godkand'); }
   return { type: 'object', properties: props, required: req, additionalProperties: false };
@@ -111,7 +112,7 @@ function schema(sort, granska) {
 function sortText(sort) {
   const S = SORT[sort], R = S.ritas, f = PR.mallar.map(m => `${m.namn}: ${R.fast === 'huvud' ? `huvudets mitt (${m.huvud.cx}, ${m.huvud.cy})` : JSON.stringify(m.fast[R.fast])}`).join('; ');
   const lagen = S.lagen ? `Lägen: ${PR.lagen[S.lagen].map(l => `${l.id} (${l.namn})`).join(', ')}. Humöret väljer dem: ${PR.humor.map(h => `${h.namn.toLowerCase()} = ${h[sort] || '–'}`).join(', ')}.` : 'Ett läge: standard.';
-  return `Sort: ${S.namn} (${R.om}). Fästpunkten i porträttet: ${f}. Ruta från fästpunkten (x0, y0, x1, y1): ${R.ruta.join(', ')}. Tecken som sorten får använda: ${R.tecken}. ${lagen}${R.barnbild ? ' Rita också en egen bild för barnmallen (barn), som för förebilden: barnet har kortare och rundare nedre ansikte och mindre drag.' : ''}`;
+  return `Sort: ${S.namn} (${R.om}). Fästpunkten i porträttet: ${f}. Ruta från fästpunkten (x0, y0, x1, y1): ${R.ruta.join(', ')}. Tecken som sorten får använda: ${R.tecken}. ${lagen}${R.manbild ? ' Rita också en egen bild för mannen (man), som för förebilden: mannens huvudform är lite fyrkantigare, med rakare sidor, bredare käke och plattare haka (Björn efter 5.2.2.3).' : ''}${R.barnbild ? ' Rita också en egen bild för barnmallen (barn), som för förebilden: barnet har kortare och rundare nedre ansikte och mindre drag.' : ''}`;
 }
 async function fraga(d, { kommentar = null, forra = null } = {}) {
   const sort = d.sort, forebild = delarAv(sort)[0], fb = lasDel(forebild.id);
@@ -119,7 +120,7 @@ async function fraga(d, { kommentar = null, forra = null } = {}) {
   const bild = await bildAvDel(forebild.id, sort, null);
   const text = [
     sortText(sort),
-    `Förebilden (${forebild.id}, ${forebild.namn}), ritad av programmeringschatten: ${JSON.stringify({ bilder: fb.bilder, ...(fb.barn ? { barn: fb.barn } : {}) })}`,
+    `Förebilden (${forebild.id}, ${forebild.namn}), ritad av programmeringschatten: ${JSON.stringify({ bilder: fb.bilder, ...(fb.man ? { man: fb.man } : {}), ...(fb.barn ? { barn: fb.barn } : {}) })}`,
     'Bilden visar förebilden på det neutrala ansiktet: raderna är kvinna, man och barn, och kolumnerna är lägena i ordning.',
     `Rita delen ${d.id}: ${SORT[sort].en.toLowerCase()} "${d.namn}"${d.vad ? ` (${d.vad})` : ''}${d.ful ? ', en ful variant som får vara lite komisk' : ''}. Den ska skilja sig tydligt från förebilden och de andra i sorten: ${delarAv(sort).filter(x => x.id !== d.id).map(x => x.namn.toLowerCase()).join(', ')}.`,
     forra ? `Förra ritningen av delen: ${JSON.stringify(forra)}` : '',
@@ -161,6 +162,7 @@ function kontrollera(sort, svar) {
     if (!punkter) fel.push(`${namn}: bilden är tom`);
   };
   for (const l of lagenFor(sort)) bild(svar.bilder?.[l], l);
+  if (R.manbild) for (const l of lagenFor(sort)) bild(svar.man?.[l], 'man ' + l);
   if (R.barnbild) for (const l of lagenFor(sort)) bild(svar.barn?.[l], 'barn ' + l);
   return [...new Set(fel)].slice(0, 12);
 }
@@ -199,7 +201,7 @@ async function batch(client, fragor, namn) {
 }
 function spara(d, ritning, av) {
   const ritad = (d.ritad || 0) + 1;
-  const o = { id: d.id, ritad, av, om: ritning.anteckning || '', bilder: ritning.bilder, ...(ritning.barn ? { barn: ritning.barn } : {}) };
+  const o = { id: d.id, ritad, av, om: ritning.anteckning || '', bilder: ritning.bilder, ...(ritning.man ? { man: ritning.man } : {}), ...(ritning.barn ? { barn: ritning.barn } : {}) };
   fs.writeFileSync(path.join(DELAR, d.id + '.json'), JSON.stringify(o, null, 1) + '\n');
   d.ritad = ritad;
 }

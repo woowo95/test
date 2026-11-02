@@ -423,10 +423,11 @@
   };
 
   // ---------- ritade delar (bildstil/delar/<id>.json, steg 5.2.2.3) ----------
-  // en ritad del har en bild per läge (standard när delen bara har ett), och en egen bild för barnmallen när den behövs.
+  // en ritad del har en bild per läge (standard när delen bara har ett), och en egen bild för barnmallen när den behövs
+  // (barn) och för mannen (man: huvudformerna är lite fyrkantigare, Björn efter 5.2.2.3).
   // Bildens x och y räknas från fästpunkten; delar som finns i par (öron, ögon, ögonbryn) ritas för vänster sida på bilden,
   // och den högra är den speglade (kring ansiktets mitt), för öronen en ton mörkare
-  const ritadBild = (id, mall, lage) => { const D = DELAR[id]; if (!D) return null; const b = (mall === 'barn' && D.barn) || D.bilder; return b[lage || 'standard'] || b.standard || Object.values(b)[0]; };
+  const ritadBild = (id, mall, lage) => { const D = DELAR[id]; if (!D) return null; const b = (mall === 'barn' && D.barn) || (mall === 'man' && D.man) || D.bilder; return b[lage || 'standard'] || b.standard || Object.values(b)[0]; };
   const skifta = (v, n) => n ? v.slice(0, -1) + Math.max(0, Math.min(3, +v.slice(-1) + n)) : v;
   function ritaBild(dk, bild, [ax, ay], { spegel = false, forskj = 0, dy = 0 } = {}) {
     bild.rader.forEach((rad, j) => [...rad].forEach((ch, i) => {

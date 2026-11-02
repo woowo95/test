@@ -1,8 +1,8 @@
 {
  "id": "huvud-rund",
- "ritad": 1,
+ "ritad": 2,
  "av": "programmeringschatten, förebild",
- "om": "Det nedre ansiktet under ögonlinjen, med kinderna (A–D, röda i kylan). Skuggningen följer formen som mallens skalle.",
+ "om": "Det nedre ansiktet under ögonlinjen, med kinderna (A–D, röda i kylan). Skuggningen följer formen som mallens skalle. Mannen har en egen bild (man), lite fyrkantigare: rakare sidor, bredare käke och plattare haka.",
  "bilder": {
   "standard": {
    "x": -16,
@@ -26,6 +26,32 @@
     "........bbbbbbbbbbbaaaaa........",
     "..........bbbbbbbbaaaa..........",
     "............babbaaaa............"
+   ]
+  }
+ },
+ "man": {
+  "standard": {
+   "x": -16,
+   "y": 1,
+   "rader": [
+    ".ccddddccccccccccccccbbbbbaaaaa.",
+    ".cccccccccccccccccccbbbbbbaaaaa.",
+    ".ccccccccccccccccccbbbbbbbaaaaa.",
+    ".ccccccccccccccccccbbbbbbbaaaaa.",
+    ".ccccccccccccccccccbbbbbbbaaaaa.",
+    ".ccccccccccccccccccbbbbbbbaaaaa.",
+    ".cccccCCccccccccccbbbbbbBAaaaaa.",
+    ".cccccCCcccccccbbbbbbbbbAAaaaaa.",
+    ".ccccccccccccccbbbbbbbbbaaaaaaa.",
+    "..bcccccccccccbbbbbbbbbbaaaaaa..",
+    "..bbbccccccccbbbbbbbbbbaaaaaaa..",
+    "..bbbbccccbbbbbbbbbbbbaaaaaaaa..",
+    "...bbbbbbbbbbbbbbbbbbaaaaaaaa...",
+    "...bbbbbbbbbbbbbbbbbbaaaaaaaa...",
+    "....bbbbbbbbbbbbbbbbaaaaaaaa....",
+    ".....bbbbbbbbbbbbbbaaaaaaaa.....",
+    "......bbbbbbbbbbbbaaaaaaaa......",
+    ".........abbbabbaaaaaaa........."
    ]
   }
  },
