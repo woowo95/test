@@ -1,69 +1,72 @@
 {
  "id": "plagg-rock",
- "ritad": 1,
+ "ritad": 2,
  "av": "programmeringschatten, förebild",
- "om": "Skinnrock över axlarna och bröstet med en V-ringning, en lurvig krage och en söm mitt fram; i materialkanalen, så att den blir harskinn eller vargskinn efter personen. En bild per mall.",
+ "om": "Skinntunika med en bred lurvig pälskrage runt halsen och ner längs V-ringningen, snörd mitt fram med rep, och korta pälsstrån i skinnet; i materialkanalen, så att den blir harskinn eller vargskinn efter personen. En bild per mall. Omritad efter Björns nej (den första såg ut som en slät tröja).",
  "bilder": {
   "standard": {
    "x": -27,
-   "y": -4,
+   "y": -5,
    "rader": [
-    "......................Zzx....xzz......................",
-    "...................zzzZx......xzzzZ...................",
-    ".............zzzyzyyzyzx......xZzzzzzyyyy.............",
-    ".........zzzzzzzzzzzzzx........xZzzzzzzyyyyyy.........",
-    ".....zzzzzzzyzzzzyzzzzx........xZzzzyzzzzyyyyxyyx.....",
-    "...zzzzzzzzzzzzzzzzzZx..........xzzzyzzzyyyyyyyyxxx...",
-    ".zzzzzzzzzzzzzzzzzzZx............xZzzzxyyyyyyyyyxxxxx.",
-    ".zzzzzzzzzzzzzzzzzzZx............xzzzzxyyyyyyyyyxxxxx.",
-    "zzzzzzzzzzzzzzzzzzZx..............xzzzyyyyyyyyyyyxxxxx",
-    "zzzzzzzzzzzzzzyzzzzzxxxxxxxxxxxxxxzzzyyyyyyyyyxyyxxxxx",
-    "zzzzzzzzzzzzzzzzzzzzzZzzZzZyZZzZZzyyyyyyyyyyyxxxxxxxxx"
+    ".....................yyyyyyyyyyyy.....................",
+    ".....................yyyyy..yyyyy.....................",
+    "..................zzzzZzy....yzzzzZz..................",
+    "............zzzzyzzzzyzy......yZyzyzyyyyyy............",
+    "........zzzyzzzzzzzzzyZy..J.I.yzyzzyzzzyyyyyyy........",
+    ".....zzzzzzzzzzyzzzzZzy..I.J...yZzzyzzzyzyyyyyyyx.....",
+    "..yzzzzzzzyzzzzzzzzzyZy........yzyzzzzzzyyyyyyyyxxxx..",
+    ".zyzzzyzzzyzzzzzzzyyzy....J.I...yzZzzzyyyyyyyyyyxxxxx.",
+    "zzzzzyzzzzzzzzzzzyzzZy...I.J....yZzzzyyyyyyyyxyyxxxxxx",
+    "zyzzzyzzzzzzzyzzzyzZy............yzzzzyyyyyyyyyyyxxxxx",
+    "zzzzyzzzzzzzyzzzyzZZy.....J.I....yZyyyyyxyyyxyxyxxxxxx",
+    "yzzzzzzzzzzzzzzzyzzzzyyyyIyJyyyyyzyyxyyyxyyyyxxxxxxxxx"
    ]
   }
  },
  "man": {
   "standard": {
-   "x": -31,
-   "y": -6,
+   "x": -32,
+   "y": -7,
    "rader": [
-    "........................ZZZzx....xZzzZ........................",
-    ".....................zzzZZZx......xZZZZzz.....................",
-    "..............zyzyzzzzzzzyZx......xzzzzzzzyyyyyy..............",
-    ".........zzzzzzzzzzzzzzzzzx........xzzzzzzzzzzyyyyyyy.........",
-    ".....zzzyyzzzzzzzzzzyzyyzzx........xZzzzzzzyzzzzyyyyxyyyy.....",
-    "...zzzzyzzzzzzzzzzzzzzzzZx..........xzzzzzzzzzzyyyyyyyyyyxx...",
-    ".zzzzzyyzzzzzzzzyzzzzyzZx............xzzyzzzzzyyyxyyyyyyxxxxx.",
-    "zzzzzzzzzzzzzzzzzzzzzzzZx............xzzyzzzzyyyyyyyyyyyxxxxxx",
-    "zzzzzzzzzzzzzzzzzzzzzzzx..............xzzzxyyyyyyyyyyyyyxxxxxx",
-    "zzzzzzzzzzzzzzzzzzzzzzzzxxxxxxxxxxxxxxzzzzxyyyyyyyyyyyyxxxxxxx",
-    "zzzzzzzzzzzzzzzzzzzzzzzzzzZZZzzzzzZzZzzzzyyyyyyyyyyyyyxxxxxxxx",
-    "zzzzzzzzzzzzzzzzzzyzzzzzzyzzzzzyyzzzzzyyyyyyyyyyyyxyyxxxxxxxxx",
-    "zyzzzzzzzzzzzzzzzzzzzzzzzyzzzzyxyyzzyxyyyyyyyyyyyxxxxxxxxxxxxx"
+    "........................yyyyyyyyyyyyyyyy........................",
+    "........................yyyyyyy..yyyyyyy........................",
+    ".....................zzzzZZZZy....yZZZZZzzz.....................",
+    "...............zzzzzzzZzZyzZy......yzzZyZZzzzyyyy...............",
+    "..........zzzyzzzzzzzzzzzyzZy..J.I.yzyzzzyzzzzzyyyyyyx..........",
+    "......zzzzzzzyzzzzzzzyzzzzzy..I.J...yZzzzyzzyzzzzyyyyyyyyy......",
+    "...zyzzzyzzzzzzzyzzzzzzzzyzy........yZzzyzzzzzzzyyyyxyyyyyxxx...",
+    ".zzzyzzzzzzzzzzzzzzzyzzzzZy....J.I...yzyyzzzyzzyyyyyyyyyyxxxxxx.",
+    ".zzzzzzyzzzzzzzyzzzzzzzzzzy...I.J....yzzzzzzzzyyyyyyyyyyyxxxxxx.",
+    "zzzyzzzyzzzyzzzyzzzzzzzyzy............yZzzzyyyyyyyyyyyyxyxxxxxxx",
+    "zzyzzzzzzzyzzzzzzzzzzzyZzy.....J.I....yzzzyyyyyyyyxyyyyyxxxxxxxx",
+    "zzyzzzyzzzyzzzzzzzyzzzyzzzyyyyIyJyyyyyzzzzyyyyyyyyyyyyyxxxxxxxxx",
+    "zzzzzzzzzyzzzzzzzyzzzyzzzyzZzZzzzZZzZzzyyxyyyxyyyxyxyxxxxxxxxxxx",
+    "zyyzzyzzzzzzzzzzzzzzzyzzzzZzyyzZyZyzZZyyyxyyyxyyyyxxxxxxxxxxxxxx"
    ]
   }
  },
  "barn": {
   "standard": {
    "x": -21,
-   "y": -9,
+   "y": -10,
    "rader": [
-    "................zzx....xzZ................",
-    "..............ZzZx......xzzZ..............",
-    ".........zzzzzzzZx......xZzzzzyyy.........",
-    ".....zzzzzzzzzzZx........xzzzzzyyxyyy.....",
-    "...zyzzzzzzzzzzZx........xZzzzzyyxyyyxx...",
-    ".zzzzyzyzzzzzzZx..........xZzyzyxxyyyxxxx.",
-    ".zzzzzzzzzzzzZx............xZzyyyyyyyyxxx.",
-    "zzzzzzzzzzyzyZx............xzzyyyyyyyyyxxx",
-    "zzzzzzzzzzzzZx..............xZyyyyyyyyxxxx",
-    "zzzzzzyzzzzyzzxxxxxxxxxxxxxxzyxyyyyyyxxxxx",
-    "zzzzzzzzzzzzzzzZZZZzZzZzzzzzyyxyyyyyxxxxxx",
-    "zzzzzzzzzzzzzzzzzzzzzxyzzzyyyyyyxyxxxxxxxx",
-    "zzzzzzzzzzzzzzzzzzzzzyzzyyyyyyyyxxxxxxxxxx",
-    "zzyzzzzzzzzzzzzzzzyyyxyyyyyyyyyyyxxxxxxxxx",
-    "yyyyyyyzyzzzzyyxyyyyyxyyyyyyyyyxxxxxxxxxxx",
-    "yyyyyyyyyzyyyyyxyyyyyxyyyyyxxxxxxxxxxxxxxx"
+    "...............yyyyyyyyyyyy...............",
+    "...............yyyyy..yyyyy...............",
+    ".............ZZzZzy....yzzzZZ.............",
+    "........zzzzyzZZzy......yZZzzzyyxy........",
+    ".....zzzzzzzyzzZZy..J.I.yzyzyzzyxyyyy.....",
+    "..zyzzzyzzzyzzZZy..I.J...yZZzzzyyyyyyxxx..",
+    ".zzzzzzzzzzzzzyzy........yzZzyzyyyyyyxxxx.",
+    "zzyzzzzzzzzzzzzy....J.I...yzZzxyyyyyyyxxxx",
+    "zzyzzzzzzzyzzzzy...I.J....yzyzxyyyyyyyyxxx",
+    "zzzzzyzzzzzzzzy............yZZyyyyyyyyxxxx",
+    "zzzzzzzzzyzzyzy.....J.I....yzzyyyxyyyxxxxx",
+    "zzzzyzzzzzzzzzzyyyyIyJyyyyyyyyyyyyyyxxxxxx",
+    "yzzzyzzzzzzzyzzzZzzZZzzzZZzyxyyyyyxxxxxxxx",
+    "zzzzzzzzzzzyzzzyZyZZzyyZyzyyyyyxyxxxxxxxxx",
+    "zzyzzzzyzzzyzzzyzzyyyyyyyyyyyyyyyxxxxxxxxx",
+    "yyyyyyxzzzyzzyxyyyxyyyyyyyxyyyxxxxxxxxxxxx",
+    "yyyyyyyyyzxyyyyyyyxyyyxyyyyyxxxxxxxxxxxxxx"
    ]
   }
  }

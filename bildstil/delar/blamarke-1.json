@@ -1,21 +1,22 @@
 {
  "id": "blamarke-1",
- "ritad": 1,
+ "ritad": 2,
  "av": "programmeringschatten, förebild",
- "om": "Blåmärke runt ögat: en matt ring i skiffer och mörk rost runt vänster öga, mörkast närmast ögat och glesare ut mot kanten. Ögat ritas ovanpå.",
+ "om": "Blåmärke runt ögat: matt och blått, mörkt blått i skiffer närmast ögat, blått och mörk rost utåt och glest i kanten. Ögat ritas ovanpå.",
  "bilder": {
   "standard": {
    "x": -13,
-   "y": -3,
+   "y": -4,
    "rader": [
-    "....rrrrRaab.",
-    "..rRrRrRraarb",
-    ".rarrrRrrrraa",
-    "baRaarrrRaRR.",
-    ".raaRraRrra.a",
-    "..ararrrrraab",
-    "..br.raRaaa..",
-    "....aaa.aa..."
+    "....SSSSSS...",
+    "...SrQQRRRRS.",
+    "..rRQRRRQQQrS",
+    ".rRRRRRRQRRRR",
+    "SRRQQRQQRQRRS",
+    ".rRQRRQRRQQSR",
+    "..RRQRRRQQQRS",
+    "..SrSQQRQRR..",
+    "....RRRSRR..."
    ]
   }
  }
