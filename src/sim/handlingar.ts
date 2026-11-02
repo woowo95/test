@@ -129,7 +129,7 @@ const DEF = {
   spjut: { namn: 'Täljer ett spjut', verktyg: { flintspjut: 'Gör ett flintspjut' }, slag: 'hantverk', hantverk: true, verb: 'täljer', plats: 'station' },
   metspo: { namn: 'Gör ett metspö', slag: 'hantverk', hantverk: true, plats: 'station' },
   kniv: { namn: 'Gör en flintkniv', slag: 'hantverk', hantverk: true, plats: 'station' },
-  slakta: { namn: 'Slaktar vilt med kniven', slag: 'hantverk', redskap: { kniv: { haller: 250 } }, slits: { enhet: 'djur', per: 'gang' }, hantverk: true, social: true, stilla: true, verb: 'slaktar', plats: 'station' },
+  slakta: { namn: 'Slaktar vilt med kniven', slag: 'hantverk', redskap: { kniv: { haller: 250, kravs: true } }, slits: { enhet: 'djur', per: 'gang' }, hantverk: true, social: true, stilla: true, verb: 'slaktar', plats: 'station' },
   promenad: { namn: 'Tar en promenad', tecken: '🚶', vandra: { r: 4, h0: 1, h1: 4, v: 0.8 }, dygn: true },
   bada: { namn: 'Badar i sjön', tecken: '🏊', dygn: true },
   bara: { namn: 'Bär in saker till lagret', slag: 'bara' },

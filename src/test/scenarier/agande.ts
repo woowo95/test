@@ -1017,6 +1017,45 @@ SCENARIER.handlarprat = {
   },
 };
 
+SCENARIER.kopta = {
+  text: 'Köpta redskap (steg 4.5.4.16, handel.ts, behov.ts, redskap.ts): finns inget redskap av ett slag i byn som ett arbete inte går utan (yxan för att fälla träd), vill byborna köpa ett av handlaren, också om de inte arbetar med det. Den som köpt det kan använda det men inte göra ett förrän byn kan tekniken, och kommer en fast bit närmare tekniken, en gång. Handlarens sort följer byns rikedom, inte byns tekniker, och hen har bara varor som sorten kan ha.',
+  kor: () => {
+    const s = createState(6, START);
+    rikBy(s); s.nastaHandlare = s.now;
+    for (let i = 0; i < 40 && s.handlare?.fas !== 'handlar'; i++) { step(s, BEAT); utanVantan(s); }
+    const h = s.handlare!, [a, b] = living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen);
+    const sort = h.sort === 'vandrande' && h.varor.every(w => SIM.HANDLARVAROR.some(v => v.k === w.k && v.sort.includes('vandrande')));
+    h.bynKlar = true; h.silver = 0;
+    s.ting = tingOf(s).filter(q => q.k !== 'yxa' && q.k !== 'kniv'); // byn har ingen yxa eller kniv och kan inte göra dem
+    for (const p of living(s)) { if (p.task?.act === 'handla') p.task = undefined; p.tek = { ...p.tek, yxa: 0, kniv: 0 }; delete p.hopp; }
+    const saknar = SIM.behovAv(s, a, 'yxa') === SIM.DELA.saknar;
+    h.varor = [{ k: 'yxa', n: 1, q: 1 }, { k: 'kniv', n: 1, q: 1 }];
+    SIM.put(s, 'silver', 300, { [a.id]: 300 });
+    const va = SIM.handlaVal(s, a);
+    if (va) { a.task = { act: 'handla', phase: 'do', tx: va.spot.x, ty: va.spot.y, until: s.now + va.dur, carry: 0, ref: va.ref, dark: false, why: va.why } as Task; SIM.handlaKlar(s, a, a.task); }
+    const har = (p: Person, k: string) => tingOf(s).some(q => q.agare === p.id && q.k === k);
+    const kopte = har(a, 'yxa'), kniv = har(a, 'kniv');
+    const hopp = (a.tek?.yxa ?? 0), kan = SIM.knows(a, 'yxa'), gora = SIM.canMake(s, a, 'yxa');
+    // det köpta används: den som äger kniven kan slakta (utan att kunna göra en kniv), den andra inte
+    const art = SIM.DJURARTER.find(d => d.kniv)!;
+    SIM.put(s, art.sak, art.mat * 3, { [a.id]: art.mat * 3 });
+    const slakt = !kniv || SIM.canProcess(s, a, art) || !SIM.kanGoras(s, art.act, a), inteB = !SIM.canProcess(s, b, art);
+    // en till yxa ger ingen ny knuff mot tekniken
+    h.varor = [{ k: 'yxa', n: 1, q: 1 }]; SIM.put(s, 'silver', 60, { [b.id]: 60 });
+    const bytt = (s.stat?.redskapHopp ?? 0), vb = SIM.handlaVal(s, b);
+    if (vb) { b.task = { act: 'handla', phase: 'do', tx: vb.spot.x, ty: vb.spot.y, until: s.now + vb.dur, carry: 0, ref: vb.ref, dark: false, why: vb.why } as Task; SIM.handlaKlar(s, b, b.task); }
+    const ingenNy = !vb && (s.stat?.redskapHopp ?? 0) === bytt;
+    return [
+      [`handlaren är en vandrande handlare med varor som den sorten kan ha`, sort],
+      ['finns ingen yxa i byn saknar man en, också den som inte fäller träd', saknar],
+      [`den som saknar en yxa går till handlaren och köper den (${va?.why ?? 'gick inte'})`, kopte],
+      [`hen kommer en fast bit närmare tekniken (${hopp.toFixed(2)}), men kan inte göra en yxa`, Math.abs(hopp - SIM.HANDEL.redskapHopp) < 1e-9 && !kan && !gora && (a.hopp ?? []).includes('yxa')],
+      [`den som köpt en kniv kan slakta med den, den som inte äger någon kan inte`, kniv && slakt && inteB],
+      ['när byn redan har en yxa vill ingen köpa en till för att den saknas, och ingen ny knuff ges', ingenNy],
+    ];
+  },
+};
+
 SCENARIER.grannklaner = {
   text: 'Grannklanerna (steg 4.4.3, klaner.ts): en ny by har några grannklaner med namn, folk, styrka, resurser, inställning till byn och namngivna personer, och en sparad by från före v242 får dem. Klanerna växer och krymper en gång om dygnet (ett år i spelet), och inställningen glöms mot det neutrala. Handlaren kommer från en klan som inte tycker illa om byn; en fientlig klan skickar ingen. Ett byte med handlaren gör klanen vänligare, och märker hen att byn lurat hen blir den mindre vänlig.',
   kor: () => {

@@ -183,6 +183,7 @@ export interface Person {
   fiske?: { f: number; n: number; k: number }; // fiske med händerna: försök, napp och fångade fiskar
   gjort?: { h: number; n: Record<string, number>; t: Record<string, number[]> }; // det hen gjort, totalt (n) och per timme det senaste dygnet (t), h = timmen då något räknades sist (gjort i folk.ts, steg 3.10.6)
   tek?: Record<string, number>; // teknik: hur nära personen är att komma på något, 1 = kan det
+  hopp?: string[]; // teknikerna hen kommit närmare genom ett köpt redskap (steg 4.5.4.16), en gång per teknik
   lar?: { av: number; tek: string }; // lärling hos mästaren av i tekniken tek (nivå 4–5, steg 4.2.3.3)
   halvminne?: string[]; // tekniker hen var lärling i när mästaren dog: det hen hunnit lära sig finns kvar i tek (steg 4.2.3.4)
   kunskap?: Record<string, { v: number; t: number }>; // det personen kan (alltid rätt), 0–1, och när det senast användes

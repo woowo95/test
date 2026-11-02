@@ -1,7 +1,7 @@
 import { upplev } from './uppvaxt';
 import { State, Person, HOUR, DAY } from './typer';
 import { FOOD, REDSKAP_SLAG, SAKER, SAK_LIST, isTool, viktOf } from './saker';
-import { actsOf, usesTool } from './handlingar';
+import { ACTS, actsOf, usesTool } from './handlingar';
 import { ALDER, KROPP, REL, ageOf, alive, byId, count, getRel, gjort, isKin, isParent, livet, living, log, ovning, relKey, stat, think } from './folk';
 import { kanGa } from './halsa';
 import { chance, clamp, pickViktat, rnd } from './slump';
@@ -378,11 +378,16 @@ function ownedKind(s: State, p: Person, k: string) {
   return n;
 }
 // tot = habitTotal(p), som räknas en gång när samma person frågas om flera slag
-const needsTool = (s: State, p: Person, k: string, tot = habitTotal(p)) => habitShare(p, actsOf(k), tot) > 0.1 && ownedKind(s, p, k) === 0;
-// ett redskap p har över: hen har fler av slaget, eller arbetar knappt med det. Inte det hen arbetar med just nu eller har på sig.
+// p saknar redskapet: hen arbetar med det och äger inget, eller byn har inget av slaget och det behövs i ett arbete som inte
+// går utan det (yxan för att fälla träd, steg 4.5.4.16), så att man vill köpa det av handlaren
+const needsTool = (s: State, p: Person, k: string, tot = habitTotal(p)) => ownedKind(s, p, k) === 0 && (habitShare(p, actsOf(k), tot) > 0.1 || kravs(k) && !tingOf(s).some(t => t.k === k));
+const kravs = (k: string) => actsOf(k).some(a => ACTS[a].redskap?.[k]?.kravs);
+const ensam = (s: State, k: string) => kravs(k) && tingOf(s).filter(t => t.k === k).length <= 1;
+// ett redskap p har över: hen har fler av slaget, eller arbetar knappt med det och det är inte byns enda av ett slag som ett
+// arbete inte går utan (steg 4.5.4.16). Inte det hen arbetar med just nu eller har på sig.
 // Det i bäst skick, och av dem det första bland tingen
 function spare(s: State, p: Person, k: string, tot = habitTotal(p)) {
-  if (habitShare(p, actsOf(k), tot) >= 0.03 && ownedKind(s, p, k) < 2) return;
+  if ((habitShare(p, actsOf(k), tot) >= 0.03 || ensam(s, k)) && ownedKind(s, p, k) < 2) return;
   const iHanden = usesTool(p.task) === k;
   let best: Ting | undefined;
   for (const t of tingOf(s)) if (t.agare === p.id && t.k === k && !(t.hos === p.id && iHanden) && t.bar === undefined && (!best || t.c > best.c)) best = t;

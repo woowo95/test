@@ -12,6 +12,7 @@ import { SAKER, isTool, viktOf } from './saker';
 import { DELA, behovAv, bynPart, bytaMed, personPart } from './behov';
 import { FILT_MOT, Part, Vara, filtMot, nyttPar, satPersonFlytt, vidByte, vidLura, varorText } from './byte';
 import { newTing, tingOf } from './agande';
+import { knows } from './teknik';
 import { put, use } from './lager';
 import { ledareOf } from './styre';
 import { kanterna } from './varg';
@@ -60,6 +61,7 @@ export const HANDEL = balans('handel', {
   tomTanke: -0.05, // den som gick tomhänt från handlaren ...
   tomTim: 6, // ... i så många timmar
   minnas: 20, // så många byten minns handlarens inforuta
+  redskapHopp: 0.1, // ett köpt redskap byn inte kan göra tar ägaren så långt mot tekniken, en gång per teknik (steg 4.5.4.16)
 });
 
 // handlarens utrustning: det hen bär varorna i. Bara ryggsäcken nu; kärran (vägar, fas 7) och packdjuret (11.4.1.2) läggs till här
@@ -67,20 +69,28 @@ export const HANDLAR_UTR: Record<string, { namn: string; kg: number }> = {
   ryggsack: { namn: 'Ryggsäck', kg: 25 },
 };
 
-// varorna handlarna har med sig: slaget, hur många åt gången och hur ofta (vikt). Hela saker
-export const HANDLARVAROR: { k: string; n: [number, number]; vikt: number }[] = [
-  { k: 'flinta', n: [1, 3], vikt: 3 },
-  { k: 'rep', n: [2, 5], vikt: 3 },
-  { k: 'skinn', n: [1, 3], vikt: 2 },
-  { k: 'vargskinn', n: [1, 2], vikt: 1 },
-  { k: 'torrkott', n: [2, 5], vikt: 2 },
-  { k: 'torrfisk', n: [2, 5], vikt: 2 },
-  { k: 'ben', n: [2, 4], vikt: 1 },
-  { k: 'rovfron', n: [2, 5], vikt: 1 },
-  { k: 'artfron', n: [2, 5], vikt: 1 },
-  { k: 'kniv', n: [1, 1], vikt: 2 },
-  { k: 'yxa', n: [1, 1], vikt: 1 },
-  { k: 'benflojt', n: [1, 1], vikt: 1 },
+// sorterna av handlare (steg 4.5.4.16): vilken som kommer styrs av hur rik byn är (rik = gånger HANDEL.rik), inte av byns
+// tekniker; finns flera som byn är rik nog för väljs en på måfå. Sorten bestämmer utrustningen (HANDLAR_UTR) och varorna
+// (kolumnen sort i HANDLARVAROR). I dag finns bara den vandrande med ryggsäck; den med bärdjur (steg 11.4.1.2) och med kärra
+// (vägarna, fas 7) läggs till här, med sina finare varor i HANDLARVAROR
+export const HANDLARSORTER: Record<string, { namn: string; utr: string; rik: number }> = {
+  vandrande: { namn: 'Vandrande handlare', utr: 'ryggsack', rik: 0 },
+};
+const V = ['vandrande']; // de sorter av handlare som kan ha varan
+// varorna handlarna har med sig: slaget, hur många åt gången, hur ofta (vikt) och vilka sorter av handlare som kan ha dem. Hela saker
+export const HANDLARVAROR: { k: string; n: [number, number]; vikt: number; sort: readonly string[] }[] = [
+  { k: 'flinta', n: [1, 3], vikt: 3, sort: V },
+  { k: 'rep', n: [2, 5], vikt: 3, sort: V },
+  { k: 'skinn', n: [1, 3], vikt: 2, sort: V },
+  { k: 'vargskinn', n: [1, 2], vikt: 1, sort: V },
+  { k: 'torrkott', n: [2, 5], vikt: 2, sort: V },
+  { k: 'torrfisk', n: [2, 5], vikt: 2, sort: V },
+  { k: 'ben', n: [2, 4], vikt: 1, sort: V },
+  { k: 'rovfron', n: [2, 5], vikt: 1, sort: V },
+  { k: 'artfron', n: [2, 5], vikt: 1, sort: V },
+  { k: 'kniv', n: [1, 1], vikt: 2, sort: V },
+  { k: 'yxa', n: [1, 1], vikt: 1, sort: V },
+  { k: 'benflojt', n: [1, 1], vikt: 1, sort: V },
 ];
 // var handlarna kommer ifrån, och vad som är sällsynt där (det är värt mer för handlaren, HANDEL.hemPaslag)
 export const HEM: { namn: string; sallsynt: string[] }[] = [
@@ -105,6 +115,7 @@ export interface Handlare {
   gar: number; // när hen går hem igen
   ut: { x: number; y: number }; // där hen kom in på kartan och går ut igen
   utr: string; // utrustningen (HANDLAR_UTR)
+  sort?: string; // vilken sorts handlare (HANDLARSORTER); saknas i sparade byar från före v270: vandrande
   varor: HVara[];
   silver: number;
   handel: number; // färdigheten Handel
@@ -127,14 +138,19 @@ function intervall(s: State) {
   return clamp(HANDEL.dygn / Math.max(0.1, 1 + HANDEL.rikOftare * (r - 1)), HANDEL.dygnMin, HANDEL.dygnMax);
 }
 
+// vilken sorts handlare som kommer: en av dem byn är rik nog för (bara en finns i dag, och då dras ingen slump)
+function sortFor(s: State) {
+  const r = rikedom(s) / HANDEL.rik, kan = Object.keys(HANDLARSORTER).filter(k => HANDLARSORTER[k].rik <= r);
+  return kan.length > 1 ? kan[Math.floor(rnd(s, 'handel') * kan.length)] : kan[0] ?? 'vandrande';
+}
 // varorna en handlare har med sig: dragna ur HANDLARVAROR tills de är värda nog eller packningen är full
-function packa(s: State, kg: number): HVara[] {
-  const mal = mellan(s, HANDEL.vardeVaror), ut: HVara[] = [];
+function packa(s: State, kg: number, sort: string): HVara[] {
+  const mal = mellan(s, HANDEL.vardeVaror), ut: HVara[] = [], rader = HANDLARVAROR.filter(v => v.sort.includes(sort));
   let varde = 0;
   for (let i = 0; i < 30 && varde < mal; i++) {
-    const tot = HANDLARVAROR.reduce((a, v) => a + v.vikt, 0);
-    let x = rnd(s, 'handel') * tot, rad = HANDLARVAROR[0];
-    for (const v of HANDLARVAROR) { x -= v.vikt; if (x < 0) { rad = v; break; } }
+    const tot = rader.reduce((a, v) => a + v.vikt, 0);
+    let x = rnd(s, 'handel') * tot, rad = rader[0];
+    for (const v of rader) { x -= v.vikt; if (x < 0) { rad = v; break; } }
     if (!SAKER[rad.k]) continue;
     const n = heltMellan(s, rad.n);
     if (kgOf(ut) + n * viktOf(rad.k) > kg * HANDEL.fylla) continue;
@@ -163,13 +179,14 @@ function kommer(s: State, tvinga?: boolean) {
   const e = eldPlats(s), m = getMap(s.seed), mal = filtPlats(s);
   const k = kanterna(e.x, e.y).filter(p => m.tiles[Math.floor(p.y) * W + Math.floor(p.x)] !== T.Vatten);
   const ut = k.length ? k[Math.floor(rnd(s, 'handel') * Math.min(2, k.length))] : { x: 0.5, y: e.y + 0.5 };
-  const sex = kh.person.sex, utr = 'ryggsack';
+  const sex = kh.person.sex, sort = sortFor(s), utr = HANDLARSORTER[sort].utr;
   const nr = s.handlarNr = (s.handlarNr ?? 0) + 1;
   const h: Handlare = {
     id: -nr, namn: kh.person.namn, hem: kh.klan.hem, klan: kh.klan.id, sex, x: ut.x, y: ut.y, mx: mal.x, my: mal.y, fran: { x: ut.x, y: ut.y, t: s.now }, framme: s.now + Math.hypot(mal.x - ut.x, mal.y - ut.y) / HANDEL.fart * SEC,
     fas: 'kommer', kom: 0, gar: 0, ut: { x: ut.x, y: ut.y }, utr, varor: [], silver: heltMellan(s, HANDEL.silver), handel: heltMellan(s, HANDEL.handel),
   };
-  h.varor = packa(s, rymmer(h));
+  h.sort = sort;
+  h.varor = packa(s, rymmer(h), sort);
   s.handlare = h;
   count(s, 'handlare');
   log(s, `En handlare, ${h.namn} från ${kh.klan.namn} vid ${h.hem}, kommer gående mot byn.`, 'world');
@@ -349,6 +366,19 @@ vidByte.push((s, m, g, fatt, betal) => {
   if (b.length > HANDEL.minnas) b.splice(0, b.length - HANDEL.minnas);
   const k = klanById(s, h.klan); // ett byte gör klanen lite vänligare (steg 4.4.3)
   if (k) andraInst(k, KLAN.handel);
+});
+// ett redskap köpt av handlaren som ingen i byn kan göra: ägaren kan använda det men inte göra eller laga ett, och kommer en bit
+// närmare tekniken (HANDEL.redskapHopp), en gång per person och teknik (steg 4.5.4.16)
+vidByte.push((s, m, g, fatt, betal) => {
+  const h = s.handlare, p = !h ? undefined : g.id === h.id ? m.p : m.id === h.id ? g.p : undefined;
+  if (!p) return;
+  for (const w of g.id === h!.id ? fatt : betal) {
+    const tek = isTool(w.k) ? SAKER[w.k]?.skaffa?.tek : undefined;
+    if (!tek || knows(p, tek) || (p.hopp ??= []).includes(tek) || living(s).some(q => knows(q, tek))) continue;
+    p.hopp!.push(tek);
+    (p.tek ??= {})[tek] = Math.min(0.99, (p.tek[tek] ?? 0) + HANDEL.redskapHopp);
+    count(s, 'redskapHopp');
+  }
 });
 // märker handlaren att byn lurat hen, blir klanen mindre vänlig mot byn (byns anseende, steg 4.4.3)
 vidLura.push((s, L, X) => {

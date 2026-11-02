@@ -134,9 +134,9 @@ const knives = (s: State) => nTools(s, 'kniv');
 // så många djur av arten som finns i förrådet
 export const djurKvar = (s: State, art: Djurart) => amountOf(s, art.sak) / art.mat;
 // p kan slakta eller rensa arten: byn har stationen om det bara görs där (viltet och fisken vid slaktbänken), det finns
-// tillräckligt, en kniv som ingen annan slaktar med (om det behövs), och ingen
+// tillräckligt, en kniv som ingen annan slaktar med (om det behövs; hen kan kniven eller äger en köpt, steg 4.5.4.16), och ingen
 // annan gör det redan
-export const canProcess = (s: State, p: Person, art: Djurart) => kanGoras(s, art.act, p) && (!art.kniv || knows(p, 'kniv') && freeTools(s, p, 'kniv') >= 1) && djurKvar(s, art) >= 1 / art.minDel && !doingAct(s, art.act, p);
+export const canProcess = (s: State, p: Person, art: Djurart) => kanGoras(s, art.act, p) && (!art.kniv || (knows(p, 'kniv') || tingOf(s).some(t => t.agare === p.id && t.k === 'kniv')) && freeTools(s, p, 'kniv') >= 1) && djurKvar(s, art) >= 1 / art.minDel && !doingAct(s, art.act, p);
 // slakta eller rensa i hours timmar. Köttet, benet, skinnet och senorna är deras som ägde djuren, inte den som gör det
 export function bearbeta(s: State, p: Person, art: Djurart, hours: number) {
   const n = Math.min(hours * art.timme, djurKvar(s, art));
