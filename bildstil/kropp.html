@@ -3,6 +3,7 @@
     <span class="ogon">Samhällssimulatorn · bildstil</span>
     <h1>Samhällssimulatorns <span>bildstil</span></h1>
     <p class="lede">Guiden för allt som ritas i spelet. Allt på kartan har 16 punkter per ruta. Alla färger kommer ur palett B, Avokado och rost, som har 32 färger. Ytan har korn men inga fläckar (smuts 1), stora ytor har låg kontrast och inget är fulltonssvart. Längst ner väljer Björn bland nya versioner.</p>
+    <nav class="hopp" aria-label="Genvägar"><a href="#skapare">Karaktärsskaparen</a><a href="#granskning">Granskningen av delarna</a><a href="#val">Björn väljer</a></nav>
   </header>
 
   <section id="guide" aria-labelledby="h-guide">
@@ -48,6 +49,76 @@
       <p>Samma fem personer som i Porträttstilar. Porträttet har 64 × 64 punkter och visas i personrutan. Det har hårt ljus uppifrån vänster, varmt sken från elden på vänstra kanten och en rostig ram. Figuren på kartan har 14 × 20 punkter, ungefär en ruta bred. Alla färger byts mot närmaste färg i paletten, och konturen är den mörkaste färgen, #24201d. Ärr, förband, skägg och verktyg syns i båda storlekarna. Ljuset ligger i hela band utan rutmönster, och håret och skägget har strån i klungor (Björn efter v95). Figurerna sparas som referens; människornas slutliga utseende kommer med karaktärsgeneratorn (steg 5.2.3).</p>
     </div>
     <div class="folk" id="folk"></div>
+  </section>
+
+  <section id="skapare" aria-labelledby="h-skapare">
+    <div class="rubrik">
+      <span class="ogon">Karaktärsskaparen · steg 5.2.2</span>
+      <h2 id="h-skapare">En person av delar i lager</h2>
+      <p>Porträttet (64 × 64 punkter) och figuren på kartan (14 × 20) byggs av samma delar, som är rader i registret <code>PORTRATT</code>. Delarna ritas i lager i en fast ordning, maskerna döljer det som en huvudbonad eller en ögonlapp täcker, och hud, hår, ögon och kläder ritas med färgnummer som får sin färg först här. Inga delar är ritade än: allt är grå platshållare, enkla former som bara visar var delen sitter och hur lagren, maskerna och färgbytet fungerar. Tryck på Grått för att se platshållarna utan färgbytet.</p>
+    </div>
+    <div class="skapare">
+      <div class="sk-scen">
+        <div class="sk-bilder">
+          <figure><canvas id="sk-portratt" role="img" aria-label="Porträttet"></canvas><figcaption>Porträttet, fyra gånger större</figcaption></figure>
+          <figure><canvas id="sk-figur" role="img" aria-label="Figuren på kartan"></canvas><figcaption>På kartan, åtta gånger</figcaption></figure>
+        </div>
+        <p class="not" id="sk-text" aria-live="polite"></p>
+        <div class="sk-knapprad">
+          <button type="button" id="sk-slumpa" class="gr-knapp">Slumpa en person</button>
+          <button type="button" id="sk-gratt" class="gr-knapp" aria-pressed="false">Grått</button>
+        </div>
+        <div class="sk-rorelse">
+          <canvas id="sk-gang" role="img" aria-label="Figuren som går"></canvas>
+          <div class="grupp"><span>Gången</span><div class="knappar" id="sk-riktning"></div><div class="knappar"><button type="button" id="sk-spela" aria-pressed="true">Stanna</button></div></div>
+        </div>
+      </div>
+      <div class="sk-val" id="sk-val"></div>
+    </div>
+    <div class="sk-avsnitt">
+      <h3>Kartfiguren i alla riktningar och lägen</h3>
+      <p class="not">Kroppen är delad i huvud, bål, armar, ben och fötter. Kläderna målar sina zoner, så varje läge får kläderna på köpet. Västerut är österut speglad. Bakifrån sitter ingen.</p>
+      <div class="sk-tabell"><div class="sk-lagen" id="sk-lagen"></div></div>
+      <div class="sk-ligga" id="sk-ligga"></div>
+    </div>
+    <div class="sk-avsnitt">
+      <h3>Spara kombinationen</h3>
+      <p class="not">Sparas i sidans databas (samlingen <code>kombinationer</code>) med din kommentar, så att Claude kan läsa den.</p>
+      <label for="sk-kommentar">Kommentar</label>
+      <textarea id="sk-kommentar" rows="2" placeholder="Till exempel: så här ska en gammal jägare se ut"></textarea>
+      <div class="sk-knapprad"><button type="button" id="sk-spara" class="gr-knapp">Spara kombinationen</button><span class="not" id="sk-sparstatus" aria-live="polite"></span></div>
+      <div class="sk-sparade" id="sk-sparade"></div>
+    </div>
+    <div class="sk-avsnitt">
+      <h3>Föräldrar och fem barn</h3>
+      <p class="not">Varje del och färg kommer från den ena eller den andra föräldern, och en gång på tio blir det en annan rad. Frisyren ärvs inte. Tryck på en person för att visa den i skaparen.</p>
+      <div class="sk-familj">
+        <div class="sk-forelder"><div id="sk-mor"></div><div class="knappar"><button type="button" data-forelder="0" data-hur="ta">Ta personen ovanför</button><button type="button" data-forelder="0" data-hur="slumpa">Slumpa</button></div></div>
+        <div class="sk-forelder"><div id="sk-far"></div><div class="knappar"><button type="button" data-forelder="1" data-hur="ta">Ta personen ovanför</button><button type="button" data-forelder="1" data-hur="slumpa">Slumpa</button></div></div>
+      </div>
+      <div class="sk-barn" id="sk-barn"></div>
+      <div class="knappar"><button type="button" id="sk-nyabarn">Fem nya barn</button><button type="button" id="sk-somunga" aria-pressed="false">Visa barnen som unga</button></div>
+    </div>
+    <div class="sk-avsnitt">
+      <h3>Tjugo bybor</h3>
+      <p class="not">Slumpade efter samma regler som spelet ska använda, för att se att de blir olika.</p>
+      <div class="sk-byn" id="sk-byn"></div>
+      <div class="knappar"><button type="button" id="sk-nyaby">Tjugo nya</button></div>
+    </div>
+  </section>
+
+  <section id="granskning" aria-labelledby="h-granskning">
+    <div class="rubrik">
+      <span class="ogon">Granskningen · steg 5.2.2</span>
+      <h2 id="h-granskning">Ett kort per del</h2>
+      <p>Korten kommer i den ordning delarna ritas. Varje kort visar delen på ett helt ansikte för varje mall den passar, i alla sina lägen, och på kartan. Tryck Ja om delen är bra, eller skriv vad som ska ändras och skicka kommentaren. Svaret sparas direkt och nästa kort visas. En del som ritas om står obesvarad igen, med din förra kommentar överst.</p>
+    </div>
+    <div class="gr-topp">
+      <div class="gr-filter" role="group" aria-label="Vilka kort"><button type="button" class="gr-knapp" data-grfilter="obesvarade">Obesvarade <b id="gr-antal-obesvarade">0</b></button><button type="button" class="gr-knapp" data-grfilter="alla">Alla <b id="gr-antal-alla">0</b></button></div>
+      <div class="gr-sorter" id="gr-sorter" aria-label="Sorterna, med hur många som är godkända"></div>
+      <p class="not" id="gr-status" aria-live="polite"></p>
+    </div>
+    <article class="grkort" id="grkort" aria-live="polite"></article>
   </section>
 
   <section aria-labelledby="h-tat">

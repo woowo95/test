@@ -11,6 +11,8 @@
   --mustard: #c8993c;
   --rost: #b0532f;
   --oliv: #7d8346;
+  --gron: #a9b45e;
+  --gronbg: #2f3222;
   --body: "Pixelify Sans", system-ui, sans-serif;
   --pixel: "Silkscreen", "Pixelify Sans", ui-monospace, monospace;
 }
@@ -37,6 +39,7 @@ h3 { font-size: 16px; line-height: 1.4; margin: 0; }
 p { margin: 0; max-width: 66ch; }
 .lede { color: var(--dim); max-width: 62ch; }
 section { display: grid; gap: 20px; }
+section > * { min-width: 0; }
 .rubrik { display: grid; gap: 8px; border-top: 2px solid var(--line); padding-top: 18px; }
 .rubrik .ogon { color: var(--dim); }
 small, .not { color: var(--dim); }
@@ -159,4 +162,89 @@ td.tal { white-space: nowrap; }
 .valkort textarea { background: var(--bg); border: 1px solid var(--line); padding: 8px 10px; min-height: 4.5em; resize: vertical; width: 100%; color: var(--ink); }
 .valkort .sparat { color: var(--dim); min-height: 1.5em; }
 .valkort button:disabled, .valkort textarea:disabled { opacity: 0.5; cursor: not-allowed; }
-@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+/* genvägar överst */
+.hopp { display: flex; flex-wrap: wrap; gap: 6px; }
+.hopp a { color: var(--ink); text-decoration: none; background: var(--panel); border: 1px solid var(--line); padding: 8px 12px; min-height: 40px; display: inline-flex; align-items: center; }
+.hopp a:hover { border-color: var(--dim); }
+
+/* karaktärsskaparen: bilderna till vänster, väljarna till höger; en spalt på mobilen */
+.skapare { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 780px) { .skapare { grid-template-columns: minmax(0, 1fr); } }
+.sk-scen { background: var(--panel); border: 1px solid var(--line); padding: 14px; display: grid; gap: 14px; min-width: 0; }
+.sk-bilder { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; }
+.sk-bilder figure, .sk-ligga figure, .gr-rad figure { margin: 0; display: grid; gap: 6px; align-content: start; }
+.sk-bilder figcaption, .sk-ligga figcaption, .gr-rad figcaption { font-size: 14px; line-height: 1.3; }
+.sk-knapprad { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.sk-rorelse { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-start; }
+.sk-val { display: grid; gap: 18px; min-width: 0; }
+.sk-grupp { display: grid; gap: 6px; }
+.sk-grupp h3 { font: 400 8px/1.2 var(--pixel); letter-spacing: 0.04em; text-transform: uppercase; color: var(--mustard); margin-bottom: 2px; }
+.sk-steg { display: grid; grid-template-columns: 6.6em 44px minmax(0, 1fr) 44px; gap: 6px; align-items: center; }
+.sk-steg output { background: var(--panel); border: 1px solid var(--line); min-height: 44px; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 2px 8px; text-align: center; overflow-wrap: anywhere; line-height: 1.2; }
+.sk-steg output small { color: var(--dim); font-variant-numeric: tabular-nums; }
+.sk-namn { color: var(--dim); line-height: 1.2; }
+.sk-steg button { min-height: 44px; background: var(--panel2); border: 1px solid var(--line); cursor: pointer; font-size: 20px; line-height: 1; }
+.sk-steg button:hover, .sk-chips button:hover, .gr-knapp:hover { border-color: var(--dim); }
+.sk-rad { display: grid; grid-template-columns: 6.6em minmax(0, 1fr); gap: 6px; align-items: start; }
+.sk-rad .sk-namn { padding-top: 10px; }
+.sk-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.sk-chips button { min-height: 40px; padding: 4px 10px; background: var(--panel); border: 1px solid var(--line); cursor: pointer; }
+.sk-chips button[aria-pressed="true"], .gr-knapp[aria-pressed="true"], .knappar button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+@media (max-width: 420px) { .sk-steg, .sk-rad { grid-template-columns: 5.4em 44px minmax(0, 1fr) 44px; } .sk-rad { grid-template-columns: minmax(0, 1fr); } .sk-rad .sk-namn { padding-top: 0; } }
+.sk-avsnitt { display: grid; gap: 10px; border-top: 1px solid var(--line); padding-top: 16px; }
+.sk-avsnitt label { color: var(--dim); }
+.sk-avsnitt textarea, .grkort textarea { background: var(--bg); border: 1px solid var(--line); padding: 8px 10px; resize: vertical; width: 100%; color: var(--ink); font-size: 16px; }
+.sk-tabell { overflow-x: auto; }
+.sk-lagen { display: grid; gap: 6px; width: max-content; }
+.sk-lrad { display: grid; grid-template-columns: 7em repeat(8, 54px); gap: 6px; align-items: center; }
+.sk-lrad > span { color: var(--dim); font-size: 14px; line-height: 1.2; }
+.sk-lrad > span small { display: block; font-size: 12px; }
+.sk-lhuvud > span { font: 400 8px/1.2 var(--pixel); letter-spacing: 0.04em; text-transform: uppercase; align-self: end; }
+.sk-tom { color: var(--line); text-align: center; }
+.sk-ligga { display: flex; flex-wrap: wrap; gap: 14px; }
+.sk-familj { display: flex; flex-wrap: wrap; gap: 14px; }
+.sk-forelder { display: grid; gap: 6px; justify-items: start; }
+.sk-barn, .sk-byn { display: flex; flex-wrap: wrap; gap: 8px; }
+.sk-person { padding: 0; border: 1px solid var(--line); background: var(--bg); cursor: pointer; line-height: 0; }
+.sk-person:hover { border-color: var(--mustard); }
+.sk-sparade { display: grid; gap: 8px; }
+.sk-kombo { display: flex; gap: 10px; align-items: flex-start; }
+.sk-kombo p { min-width: 0; overflow-wrap: anywhere; }
+.sk-kombo p b { display: block; color: var(--dim); font-weight: 400; }
+.knappar button { min-height: 40px; }
+
+/* granskningen: ett kort i taget, stora knappar för fingret */
+.gr-topp { display: grid; gap: 10px; }
+.gr-filter { display: flex; flex-wrap: wrap; gap: 6px; }
+.gr-knapp { min-height: 44px; padding: 6px 14px; background: var(--panel2); border: 1px solid var(--line); cursor: pointer; }
+.gr-knapp b { color: inherit; font-variant-numeric: tabular-nums; }
+.gr-sorter { display: flex; flex-wrap: wrap; gap: 4px; }
+.gr-sorter button { min-height: 36px; padding: 3px 9px; background: var(--panel); border: 1px solid var(--line); cursor: pointer; font-size: 14px; }
+.gr-sorter button small { color: var(--dim); font-variant-numeric: tabular-nums; }
+.gr-sorter button.klar { border-color: var(--gron); }
+.gr-sorter button.klar small { color: var(--gron); }
+.gr-sorter button.kommenterad { border-color: var(--mustard); }
+.gr-sorter button[aria-current="true"] { background: var(--panel2); outline: 2px solid var(--dim); outline-offset: -2px; }
+.grkort { background: var(--panel); border: 2px solid var(--line); padding: 14px 16px; display: grid; gap: 14px; min-width: 0; scroll-margin-top: 12px; }
+.grkort.ja { border-color: var(--gron); background: var(--gronbg); }
+.grkort.kommentar { border-color: var(--mustard); }
+.grkort header { display: grid; gap: 4px; }
+.grkort .typ { font: 400 8px/1.2 var(--pixel); letter-spacing: 0.04em; text-transform: uppercase; color: var(--dim); }
+.grkort .forra { color: var(--mustard); }
+.gr-nav { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; align-items: center; }
+.gr-nav span { color: var(--dim); font-variant-numeric: tabular-nums; text-align: center; }
+.gr-nav button:last-child { justify-self: end; }
+.gr-nav button:first-child { justify-self: start; }
+.gr-bilder { display: grid; gap: 14px; }
+.gr-mall { display: grid; gap: 6px; }
+.gr-mall > b { font-weight: 400; color: var(--dim); }
+.gr-rad { display: flex; flex-wrap: wrap; gap: 10px; }
+.gr-svar { display: grid; gap: 8px; }
+.gr-svar label { color: var(--dim); }
+.gr-ja { min-height: 52px; font-size: 20px; background: var(--panel2); border: 2px solid var(--gron); color: var(--ink); cursor: pointer; }
+.gr-ja[aria-pressed="true"] { background: var(--gron); color: var(--bg); }
+.gr-svar .gr-knapp { justify-self: start; }
+.gr-sparat { color: var(--dim); min-height: 1.5em; }
+.grkort button:disabled, .grkort textarea:disabled { opacity: 0.5; cursor: not-allowed; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }

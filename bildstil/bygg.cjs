@@ -8,5 +8,7 @@ const html = `<title>Samhällssimulatorns bildstil</title>
 <style>${fs.readFileSync(d + '/stil.css', 'utf8')}</style>
 ${fs.readFileSync(d + '/kropp.html', 'utf8').replace('<section aria-labelledby="h-beslut">', granssnitt + '<section aria-labelledby="h-beslut">')}
 <script>const IKONER = ${fs.readFileSync(d + '/ikoner.json', 'utf8')};</script>
-<script>${fs.readFileSync(d + '/sida.js', 'utf8')}</script>`;
+<script>${fs.readFileSync(d + '/sida.js', 'utf8')}</script>
+<script>const PORTRATT = ${fs.readFileSync(d + '/portratt.json', 'utf8')};</script>
+<script>${fs.readFileSync(d + '/skapare.js', 'utf8')}</script>`;
 fs.writeFileSync(d + '/bildstil.html', html); console.log('ok', html.length);
