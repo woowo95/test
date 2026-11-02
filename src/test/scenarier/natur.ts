@@ -234,6 +234,41 @@ SCENARIER.rotter = {
   },
 };
 
+// rundan (steg 4.5.6.1): samlaren går i full fart från ruta till ruta och stannar 2–5 sekunder där det finns något
+SCENARIER.samlarrunda = {
+  text: 'Steg 4.5.6.1: samlaren går hela tiden i full gångfart från ruta till ruta och stannar 2–5 sekunder där det finns något att plocka. Hen står aldrig still längre än så medan hen samlar (mindre än en tiondel av arbetstiden), och Gör just nu säger Letar efter bär och Plockar bär',
+  kor: () => {
+    // två byar utan mat följs sekund för sekund i sex timmar: var samlarna står och hur fort de går
+    let arbete = 0, langeStill = 0, gang = 0, sekGang = 0, stopp = 0, langstStopp = 0;
+    const texter = new Set<string>();
+    for (const seed of [42, 7]) {
+      const s = createState(seed, START), forra = new Map<number, { x: number; y: number; still: number; hopp: boolean }>();
+      setMat(s, {}); setAmount(s, 'ved', 300);
+      for (let i = 0; i < 6 * 3600; i++) {
+        step(s, 1);
+        for (const p of living(s)) {
+          const t = p.task, f = forra.get(p.id);
+          if (t?.act !== 'samla' || t.phase !== 'do' || t.sok) { if (f && f.still > 0) { stopp++; langstStopp = Math.max(langstStopp, f.still); } forra.delete(p.id); continue; }
+          texter.add(SIM.taskText(t));
+          arbete++;
+          const d = f ? Math.hypot(p.x - f.x, p.y - f.y) : 0, still = f && d < 1e-6 ? f.still + 1 : 0;
+          if (f && d >= 1e-6 && f.hopp && t.hopp) { gang += d; sekGang++; } // farten bara under hela sekunder på väg mellan två rutor
+          if (f && d >= 1e-6) { if (f.still > 0) { stopp++; langstStopp = Math.max(langstStopp, f.still); } }
+          if (still > 5) langeStill++;
+          forra.set(p.id, { x: p.x, y: p.y, still, hopp: !!t.hopp });
+        }
+      }
+    }
+    const fart = sekGang ? gang / sekGang : 0, GANG = balansTal().gang as Record<string, number>;
+    return [
+      [`samlarna samlade (${arbete} sekunder arbete)`, arbete > 3600],
+      [`de står still längre än 5 sekunder mindre än en tiondel av arbetstiden (${(langeStill / Math.max(1, arbete) * 100).toFixed(1)} %)`, arbete > 0 && langeStill < arbete / 10],
+      [`de stannar ofta (${stopp} stopp, det längsta ${langstStopp} sekunder)`, stopp > 100],
+      [`de går nästan i full fart mellan stoppen (${fart.toFixed(2)} rutor i sekunden, full fart ${GANG.fart})`, fart >= GANG.fart * 0.6],
+      [`Gör just nu säger Letar efter bär och Plockar bär (${[...texter].join(', ')})`, [...texter].some(x => x.endsWith('letar efter bär')) && [...texter].some(x => x.endsWith('plockar bär'))],
+    ];
+  },
+};
 SCENARIER.samlartur = {
   lang: true,
   text: 'En samlare fyller en full börda på 10–20 minuter, gången inräknad, och går vidare till nästa buske när den man står vid är tom (steg 2.12.4)',
@@ -244,7 +279,7 @@ SCENARIER.samlartur = {
     const borda = balansTal().steg.borda as number, turer: { min: number; lass: number; flytt: number }[] = [];
     let tomt = 0, arbete = 0;
     for (const seed of [42, 7, 3]) {
-      const s = createState(seed, START), pagar = new Map<number, { t0: number; last: string; lass: number; flytt: number; tom?: string }>();
+      const s = createState(seed, START), pagar = new Map<number, { t0: number; last: string; lass: number; flytt: number; tom?: string; tx?: string }>();
       setMat(s, {}); setAmount(s, 'ved', 300);
       for (let i = 0; i < 48 * 360; i++) {
         step(s, 10);
@@ -254,9 +289,10 @@ SCENARIER.samlartur = {
           if (!samla) continue;
           const v = u && pagar.has(p.id) ? u : { t0: s.now, last: t.phase, lass: 0, flytt: 0 };
           pagar.set(p.id, v);
-          if (t.phase === 'go' && v.last === 'do') v.flytt++;
+          if ((t.phase === 'go' && v.last === 'do') || (t.phase === 'do' && v.last === 'do' && t.hopp && v.tx !== `${t.tx},${t.ty}`)) v.flytt++; // till nästa buske, också på rundan (steg 4.5.6.1)
+          v.tx = `${t.tx},${t.ty}`;
           // tom här: två som samlar vid samma buske märker det först i nästa steg när den andra tog det sista, så det räknas när man står kvar längre
-          const tomNu = t.phase === 'do' && richness(s, 'samla', t.tx, t.ty) < PLATS.tomtGrans && !(t.tandmat && tinderShort(s, t)), plats = `${t.tx},${t.ty}`;
+          const tomNu = t.phase === 'do' && !t.hopp && richness(s, 'samla', t.tx, t.ty) < PLATS.tomtGrans && !(t.tandmat && tinderShort(s, t)), plats = `${t.tx},${t.ty}`;
           // den som redan bestämt sig för att gå (until nu) står kvar till nästa steg; det räknas inte som att stanna
           if (t.phase === 'do') { arbete++; if (tomNu && v.tom === plats && t.until > s.now) tomt++; }
           v.tom = tomNu ? plats : undefined;

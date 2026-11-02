@@ -437,6 +437,7 @@ SCENARIER.is = {
 };
 
 SCENARIER.kropp = {
+  lang: true,
   text: 'Steg 2.5.1: kroppen har tio delar. Olyckor i farliga arbeten (jakt, trädfällning, huggning, slakt, rensning, flintslagning) ger skador i en del. Ett sår blöder tills det levrat sig, och ett mycket svårt sår kan förblöda; blodet kommer tillbaka. Skadade ben går långsammare och skadade händer arbetar långsammare. Skadorna läker, och hälsan som visas är en sammanfattning av kroppen',
   kor: () => {
     const s = createState(5, START);
@@ -472,10 +473,13 @@ SCENARIER.kropp = {
     // en by i tio dygn (tio år i spelet, knappt en och en halv vecka i verkligheten): olyckor händer
     // olyckorna är sällsynta (ett par på tio dygn), så kontrollen gäller att byn gör farligt arbete där risken räknas, och att
     // skadorna inte blir många fler än risken säger
-    const b = createState(1, START);
-    let vantat = 0;
-    kor(b, 240, v => { for (const q of living(v)) { const t = q.task, o = t?.phase === 'do' ? OLYCKOR[t.act] : undefined; if (!o) continue; const pd = ACTS[t!.act], sk = pd.arbete ?? (pd.hantverk ? 'hantverk' : undefined); vantat += o.risk * (1 - (sk ? q.skill[sk] : 0) / HALSA.skicklig) * BEAT / 3600; } });
-    const skador = b.stat?.olyckor as number ?? 0, blod = b.stat?.['dog av blodförlust'] as number ?? 0;
+    // två byar (steg 4.5.6.1): en enda by gör ibland för lite farligt arbete för att risken ska märkas
+    let vantat = 0, skador = 0, blod = 0;
+    for (const seed of [1, 2]) {
+      const b = createState(seed, START);
+      kor(b, 240, v => { for (const q of living(v)) { const t = q.task, o = t?.phase === 'do' ? OLYCKOR[t.act] : undefined; if (!o) continue; const pd = ACTS[t!.act], sk = pd.arbete ?? (pd.hantverk ? 'hantverk' : undefined); vantat += o.risk * (1 - (sk ? q.skill[sk] : 0) / HALSA.skicklig) * BEAT / 3600; } });
+      skador += b.stat?.olyckor as number ?? 0; blod += b.stat?.['dog av blodförlust'] as number ?? 0;
+    }
     return [
       ['en olycka under jakten ger en skada', olycka],
       [`ett lätt skärsår blöder (${blodNy.toFixed(2)} i timmen), levrar sig och tar ${Math.round((1 - blodLatt) * 100)} % av blodet`, blodNy > 0 && !dogLatt && levrat && blodLatt < 1 && blodLatt > 0.6],
@@ -485,7 +489,7 @@ SCENARIER.kropp = {
       [`ett brutet ben går långsammare (${fart0.toFixed(2)} → ${fart1.toFixed(2)}), och ett skärsår i handen arbetar långsammare (${(arb1 / arb0).toFixed(2)} av farten)`, fart1 < fart0 && arb1 < arb0],
       [`en svår skada avbryter arbetet, och hälsan blir ${halsa1.toFixed(2)}`, avbrot && halsa1 < KROPP.svag + 0.2],
       [`olyckorna i ${Object.keys(OLYCKOR).join(', ')} ger sina skador i sina delar${fel.length ? ` (fel: ${fel.join(', ')})` : ''}`, !fel.length],
-      [`på tio dygn i en by: ${skador} olyckor (risken säger ${vantat.toFixed(1)}), ${blod} förblödde`, vantat > 0.5 && skador <= 3 * vantat + 3],
+      [`på tio dygn i två byar: ${skador} olyckor (risken säger ${vantat.toFixed(1)}), ${blod} förblödde`, vantat > 1 && skador <= 3 * vantat + 3],
     ];
   },
 };

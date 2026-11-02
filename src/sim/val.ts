@@ -30,7 +30,7 @@ import { groundOf, isForest, punktIRuta, tileOf } from './mark';
 import { axeTask, fallTid } from './skog';
 import { GA_TID, startWork, startsOnArrival } from './paborjat';
 import { duty, dygn, habitShare, habitTotal } from './seder';
-import { clamp, pick, pickNarmaste, rnd } from './slump';
+import { clamp, hash3, pick, pickNarmaste, rnd } from './slump';
 import { ARSTID, ageIndex, isLight, kallTid, yearNo } from './tid';
 import { Act, H, HOUR, MIN, Person, Skill, Stat, State, T, Task, W, inMap } from './typer';
 import { balans } from './balans';
@@ -303,6 +303,21 @@ export function nastaBuske(s: State, k: Lager, x0: number, y0: number) {
     if (v > bv) { bv = v; best = { x: x + 0.5, y: y + 0.5 }; }
   }
   return best;
+}
+// rundan (steg 4.5.6.1): nästa ruta inom r rutor, den rikaste med lite avdrag för avståndet och lite slump efter personen
+// (id), så att samlarna inte går likadant. Kraven prövas i ordning (rutorna man inte får gå till och det minsta en ruta ska
+// ge) i en och samma genomgång av rutorna; minst 0 räknar inte rikedomen alls
+export function nastaRuta(s: State, k: Lager, x0: number, y0: number, r: number, id: number, krav: readonly { sett: readonly number[]; minst: number }[]) {
+  const cx = Math.floor(x0), cy = Math.floor(y0), tiles = vattenNu(s), best: ({ x: number; y: number } | undefined)[] = [], bv = krav.map(() => -Infinity);
+  const n = krav[0]?.sett.length ?? 0, utan = krav.every(q => q.minst <= 0);
+  for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+    const x = cx + dx, y = cy + dy, d = Math.hypot(dx, dy), i = y * W + x;
+    if (d < 0.5 || d > r + 0.01 || x < 0 || y < 0 || x >= W || y >= H) continue;
+    if (tiles[i] === T.Vatten || bitAt(s, x, y) || forSmutsigt(s, x, y)) continue;
+    const v0 = utan ? 0 : richness(s, k, x + 0.5, y + 0.5), v = v0 - d * MINNE.sokPris + hash3(id, i, n) * 0.1;
+    for (let j = 0; j < krav.length; j++) if (v0 >= krav[j].minst && v > bv[j] && !krav[j].sett.includes(i)) { bv[j] = v; best[j] = { x: x + 0.5, y: y + 0.5 }; }
+  }
+  return best.find(b => b);
 }
 // ingen plats hittades i närheten: den närmaste rutan som passar, var den än ligger
 function nearestWanted(s: State, want: (t: number, x: number, y: number) => boolean, min = 0) {

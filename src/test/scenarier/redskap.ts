@@ -67,9 +67,10 @@ SCENARIER.stenring = {
     const valt = th.task?.act === 'samla' && !!th.task.tandmat;
     Object.assign(th.task!, { tx: tom.x, ty: tom.y, phase: 'do', until: r.now + 3 * HOUR }); th.x = tom.x; th.y = tom.y;
     kor(r, 1 / 60); // ett slag (fem minuter): tändmaterialet hittas lika fort som bären (steg 2.12.4), så det räcker snart
-    const fortsatt = th.task?.act === 'samla' && th.task.phase === 'do' && th.task.tx === tom.x && th.task.ty === tom.y && (th.task.items?.torrgras ?? 0) > 0;
+    const nara = () => th.task?.act === 'samla' && th.task.phase === 'do' && Math.hypot(th.task.tx - tom.x, th.task.ty - tom.y) <= 6; // rundan (steg 4.5.6.1): hen går omkring på platsen
+    const fortsatt = nara() && (th.task!.items?.torrgras ?? 0) > 0;
     setItems(r, { flinta: 1, torrgras: 50, grenar: 50 }); kor(r, 0.25);
-    const slutat = !(th.task?.act === 'samla' && th.task.phase === 'do' && th.task.tx === tom.x && th.task.ty === tom.y);
+    const slutat = !nara();
     // elden tänds bara om det finns bränsle kvar sedan grenarna till tändningen tagits (flintan tar 3 grenar)
     const bransle = (grenar: number) => { const b = createState(2, START); setItems(b, { flinta: 1, torrgras: 6, grenar }); setAmount(b, 'ved', 0); b.fire.ring = true; return canLight(b); };
     const tand5 = bransle(5), tand6 = bransle(6);

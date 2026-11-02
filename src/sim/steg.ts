@@ -33,15 +33,15 @@ import { MARK, groundOf, growGround, packGround, tileOf } from './mark';
 import { SAMTAL, TalkEvent, converse, isSocial } from './samtal';
 import { HABIT_FADE, addHabit, stepSeder, updateTags } from './seder';
 import { RELT, stepRelationer } from './relationer';
-import { fearPlace, forget, lookAround } from './minne';
+import { MINNE, fearPlace, forget, lookAround } from './minne';
 import { PLATS } from './plats';
-import { chance, clamp, rnd } from './slump';
+import { chance, clamp, hash3, rnd } from './slump';
 import { ARSTID, ageIndex, iIstiden, isLight } from './tid';
 import { ACTS, toolRow } from './handlingar';
 import { AGES_BORJAR, Act, DAY, HOUR, HOUR_S, MIN, Person, SEC, SKILL_NAMES, State, Task, W, H, useMap, Historik, simulera } from './typer';
 import { findPath, speedAt, wear } from './vag';
 import { kroppFart, markFaktor, smidig } from './gang';
-import { chooseTask, dangers, nastaBuske, nastaRedskap, spotFor } from './val';
+import { chooseTask, dangers, nastaBuske, nastaRedskap, nastaRuta, spotFor } from './val';
 import { djurSteg } from './djur';
 import { vargSteg, vargjaktSteg } from './varg';
 import { rovarSteg } from './rovare';
@@ -392,7 +392,8 @@ function taskStep(s: State, p: Person, a: number, t1: number, dtSec: number, lea
       used = w.used;
       if (tk.bar !== undefined && !barMed(s, p, tk)) { left -= used; continue; } // den som bärs följer med
       if (w.framme) { s.now = t1 - (left - used) * SEC; arrive(s, p, tk, isLight(s.now)); }
-    } else {
+    } else if (d.runda && tk.phase === 'do' && !tk.sok) used = rundaSteg(s, p, tk, left, a, learn); // den som letar flinta eller stenar stannar där de finns
+    else {
       // arbetet i bitar: till uppgiftens slut, till dess bördan bärs hem, men aldrig längre än BIT sekunder åt gången
       used = Math.min(left, Math.max(0, (tk.until - now) / SEC), BIT);
       if (tk.lim !== undefined) used = Math.min(used, Math.max(1, tk.lim - (tk.tur ?? 0)));
@@ -502,7 +503,7 @@ function arrive(s: State, p: Person, tk: Task, light: boolean) {
     if (r && r.until > now + 2 * MIN && tk.dark === !light) { tk.phase = 'go'; tk.tx = r.x; tk.ty = r.y; tk.until = r.until; tk.res = undefined; }
     else p.task = undefined;
   } else {
-    tk.phase = 'do'; if (tk.act === 'bara') { pickUp(s, p, tk, bordPlats(s, p)); tk.until = now; }
+    tk.phase = 'do'; tk.hopp = undefined; tk.plock = undefined; if (tk.act === 'bara') { pickUp(s, p, tk, bordPlats(s, p)); tk.until = now; }
     if (tk.act === 'flyttaeld') tk.until = now + ELDFLYTT.tim * HOUR; // vid elden: släcka den och bära stenarna (eldflytt.ts)
     startWork(s, p, tk); // ett redskap eller ett träd: arbetet räknas härifrån, och det påbörjade fortsätter
     tk.tur = 0; tk.lim = ACTS[tk.act].tur;
@@ -609,7 +610,47 @@ function tidTillTom(s: State, p: Person, tk: Task) {
 }
 // arbete för byn (handlingar med arbete): det man får och bär, det platsen har kvar, redskapen som slits och det man lär sig.
 // tom = biten tömde platsen (tidTillTom)
-function workStep(s: State, p: Person, tk: Task, dtSec: number, a: number, learn: number, tom = false) {
+// rundan (steg 4.5.6.1): samlaren går i full fart från ruta till ruta och stannar en kort stund där det finns något att
+// plocka. Gången räknas som arbete på rutan man går till, så att en arbetstimme ger ungefär lika mycket som när man stod
+// vid busken. Hittar man ingen ruta nära går man till nästa buske (nastaBuske) eller hem. Ger tiden som gått
+const RUNDA_SETT = 12; // så många rutor minns man att man nyss plockat på
+function rundaSteg(s: State, p: Person, tk: Task, left: number, a: number, learn: number) {
+  const d = ACTS[tk.act], r = d.runda!, now = s.now, slut = Math.max(0, (tk.until - now) / SEC);
+  if (tk.hopp) {
+    const w = walk(s, p, tk, Math.min(left, Math.max(slut, 1e-3))), used = Math.max(w.used, 1e-3);
+    if (p.task !== tk) return used;
+    s.now = now + used * SEC;
+    workStep(s, p, tk, used, a, learn, false, true);
+    if (w.framme && p.task === tk && tk.phase === 'do') tk.hopp = undefined;
+    return used;
+  }
+  const i = tileOf(tk.tx, tk.ty);
+  // där det inte finns något att plocka (steget åt sidan från den enda busken) stannar man inte
+  tk.plock ??= arbetsTakt(s, p, tk).rich < PLATS.tomtGrans ? 0 : r.stopp[0] + hash3(p.id, i, Math.floor(now / SEC)) * (r.stopp[1] - r.stopp[0]);
+  let used = Math.min(left, tk.plock, slut, BIT);
+  const kvar = tidTillTom(s, p, tk), tom = kvar > 0 && kvar <= used;
+  if (tom) used = Math.max(1e-3, kvar);
+  used = Math.max(used, 1e-3);
+  s.now = now + used * SEC;
+  workStep(s, p, tk, used, a, learn, tom, true);
+  tk.plock -= used;
+  if (p.task !== tk || tk.phase !== 'do' || tk.until <= s.now || (tk.plock > 1e-6 && !tom)) return used;
+  // stoppet är slut: vidare till nästa ruta
+  tk.plock = undefined;
+  tk.sett = [...(tk.sett ?? []), i].slice(-RUNDA_SETT);
+  // nästa ruta i närheten som man inte nyss plockat på; finns ingen går man längre bort, sedan till en man plockat på förut
+  // (men aldrig samma igen: då står man still). Står man vid den enda busken går man ett steg åt sidan och tillbaka. Den som
+  // samlar tändmaterial och inte har nog går runt på marken omkring, där det ligger överallt
+  const full = load(tk, s) >= Math.min(capacity(s, p) * STEG.borda, bordPlats(s, p)), sett = tk.sett;
+  const ner = (rr: number, ...krav: { sett: readonly number[]; minst: number }[]) => nastaRuta(s, d.resurs!, tk.tx, tk.ty, rr, p.id, krav);
+  let n = ner(r.r, { sett, minst: PLATS.vidare });
+  if (!n && !full && tk.until > s.now + 2 * MIN) n = ner(MINNE.sokR, { sett, minst: PLATS.vidare }, { sett: sett.slice(-1), minst: PLATS.tomtGrans })
+    ?? (arbetsTakt(s, p, tk).rich >= PLATS.tomtGrans ? ner(1, { sett: [i], minst: 0 }) : undefined);
+  if (!n && tk.tandmat && tinderShort(s, tk)) n = ner(r.r, { sett: [i], minst: 0 });
+  if (n) { tk.tx = n.x; tk.ty = n.y; tk.hopp = true; } else tk.until = s.now;
+  return used;
+}
+function workStep(s: State, p: Person, tk: Task, dtSec: number, a: number, learn: number, tom = false, runda = false) {
   const now = s.now, d = ACTS[tk.act], res = d.resurs;
   const { takt, del, rich, rd } = arbetsTakt(s, p, tk), y = takt * dtSec;
   if (y > 0) count(s, 'prod_' + tk.act, y);
@@ -639,7 +680,7 @@ function workStep(s: State, p: Person, tk: Task, dtSec: number, a: number, learn
   const full = load(tk, s) >= Math.min(capacity(s, p) * STEG.borda, bordPlats(s, p)), has = isCarrying(tk);
   // busken är tom: den som samlar går vidare till nästa i närheten tills famnen är full (steg 2.12.4), annars hem.
   // Den som samlar tändmaterial stannar tills det räcker. Jägaren som redan gått vidare för att leta (jakt.ts) fortsätter
-  if (tomt && tk.phase === 'do') {
+  if (tomt && tk.phase === 'do' && !runda) {
     const n = d.fart && !full && tk.until > now + 2 * MIN ? nastaBuske(s, res!, tk.tx, tk.ty) : undefined;
     if (n) { tk.phase = 'go'; tk.tx = n.x; tk.ty = n.y; } else if (!(tk.tandmat && tinderShort(s, tk))) tk.until = now;
   }
