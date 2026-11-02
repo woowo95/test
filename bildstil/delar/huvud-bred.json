@@ -1,8 +1,8 @@
 {
  "id": "huvud-bred",
- "ritad": 2,
+ "ritad": 3,
  "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
- "om": "Jag valde version 1. Den översta raderna (y 1–6) har exakt förebildens bredd och kant, så delen möter skallen utan steg, som Björn och programmeringschatten bad om. Formen breddas först nedåt: käken går rakare och smalnar senare av än hos Rund och slutar i en bred, platt haka som är 16 punkter bred. Det är det som gör formen Bred. Version 2 har för små kinder och en mjukare käke. Version 3 har en smal, spetsig haka och läses därför inte som bred. Kinderna i version 1 har samma storlek och trappform som förebilden, och de ligger spegelvänt kring mittlinjen (C på den ljusa sidan, B/A på skuggsidan). Skuggningen följer ljuset uppifrån vänster: c åt vänster, b i mitten, a åt höger, och under käken ligger en b-skugga. Mannens version har rakare sidor ner till y 15 och en 20 punkter bred, platt haka. Barnets version är kortare och rundare med samma överkant som barnmallen. Jag gick igenom bredd, symmetri och ruta och behövde inte ändra något: alla rader är 32 tecken, från x −16 till 15, och delen slutar på y 18 eller tidigare.",
+ "om": "Jag valde version 2. Den breda formen har en jämn käklinje och en tydlig skillnad mellan kvinnan och mannen: mannens sidor är rakare och käken bredare, med en plattare haka som är 14 punkter bred mot kvinnans 12. Ljus och skugga följer förebilden, ljust till vänster och mörkt till höger, och kinderna är lite fylligare. Kvinnan och mannen har jag inte ändrat. Barnet har jag rättat efter Björns kommentar. Översta raden gick ut över hela bredden utan genomskinliga kanter, så den stack ut som en list under skallen. Den börjar nu med samma indrag som de vuxna (.cc…aaaaa.). Sidorna smalnade tidigare av med ett plötsligt hopp på rad 6. Nu följer de en jämn rund kurva med indragen 1,1,1,1,1,1,1,2,2,3,4,5,7,10, så att det korta nedre ansiktet blir runt och mjukt. Hakan på 12 punkter ligger mitt på mittlinjen. Barnets kindrodnad är mindre (2×2) som tidigare.",
  "bilder": {
   "standard": {
    "x": -16,
@@ -60,20 +60,20 @@
    "x": -16,
    "y": 1,
    "rader": [
-    "cccddddccccccccccccccbbbbbaaaaaa",
+    ".ccddddccccccccccccccbbbbbaaaaa.",
     ".cccccccccccccccccccbbbbbbaaaaa.",
     ".ccccccccccccccccccbbbbbbbaaaaa.",
     ".ccccccccccccccccccbbbbbbbaaaaa.",
     ".ccccccccccccccccccbbbbbbbaaaaa.",
-    ".ccccCCCcccccccccbbbbbbbBAAaaaa.",
-    ".ccccCCCccccccccbbbbbbbbBAAaaaa.",
-    ".cccccCCcccccccbbbbbbbbbAAaaaaa.",
-    "..cccccccccccccbbbbbbbbbbaaaaa..",
-    "..bccccccccccbbbbbbbbbbbbaaaaa..",
-    "...bbcccccccbbbbbbbbbbbbaaaaa...",
-    "....bbbccccbbbbbbbbbbbbaaaaa....",
-    "......bbbbbbbbbbbbbbbaaaaa......",
-    "........bbbbbbbbbbbaaaaa........"
+    ".ccccccccccccccccccbbbbbbbaaaaa.",
+    ".cccccCCccccccccccbbbbbbBAaaaaa.",
+    "..ccccCCcccccccbbbbbbbbbAAaaaa..",
+    "..ccccccccccccbbbbbbbbbbbaaaaa..",
+    "...bccccccccccbbbbbbbbbbaaaaa...",
+    "....bbccccccccbbbbbbbbbaaaaa....",
+    ".....bbbcccccbbbbbbbbbaaaaa.....",
+    ".......bbbbbbbbbbbbbbaaaa.......",
+    "..........bbbbbbbbaaaa.........."
    ]
   }
  }

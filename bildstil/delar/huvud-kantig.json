@@ -1,8 +1,8 @@
 {
  "id": "huvud-kantig",
- "ritad": 2,
+ "ritad": 3,
  "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
- "om": "Jag valde version 1. De översta raderna har samma bredd och kant som förebilden, så delen möter skallen vid öronen utan steg, vilket var Björns kommentar. Längre ner har den tydligast kantig form: sidorna går raka ner till ett käkhörn och sedan kommer en rak, bred haka med lodräta sidor, i stället för version 2:s jämna avsmalning och version 3:s spetsigare haka. Skuggningen följer förebilden: ljust c åt vänster mot ljuset, b i mitten och a på den bortvända högra sidan, med kindfärgen på samma ställen. Mannen har en bredare käke och en plattare, bredare haka, och barnet ett kortare och rundare nedre ansikte. Jag kontrollerade att varje rad är 32 tecken, att formen är symmetrisk kring mittlinjen mellan x = -1 och 0 och att allt ligger inom rutan. Jag har inte ändrat något.",
+ "om": "Valde version 1. Den följer Björns kommentar bäst: käken har ett tydligt men måttligt hörn (rad 10–12) och hakan är rak och bred i de nedersta raderna, utan att ansiktet blir överdrivet fyrkantigt. Version 2 och 3 smalnar av i en jämn diagonal och ser nästan ut som en spetsig rund form. Skuggningen följer förebilden: ljust c åt vänster mot ljuset, b i mitten och a på den bortvända högra sidan. Kinderna (C och B/A) sitter på samma ställe och i samma storlek som i förebilden. Alla rader är 32 tecken och symmetriska kring mittlinjen mellan x = -1 och 0, och delen håller sig inom rutan. Mannen har rakare sidor ända ner till rad 6, en bredare käke och en plattare haka (18 punkter bred). Barnet har ett kortare och rundare nedre ansikte på 14 rader. Jag behöll versionen utan ändringar, eftersom den redan stämmer med beskrivningen och med kommentaren.",
  "bilder": {
   "standard": {
    "x": -16,
@@ -20,9 +20,9 @@
     "..ccccccccccccbbbbbbbbbbaaaaaa..",
     "..bcccccccccccbbbbbbbbbbaaaaaa..",
     "...bbcccccccbbbbbbbbbbbaaaaaa...",
-    ".....bbbcccbbbbbbbbbbaaaaaa.....",
-    ".......bbbbbbbbbbbbbaaaaa.......",
-    "........bbbbbbbbbbbaaaaa........",
+    ".....bbbcccccbbbbbbbbaaaaaa.....",
+    "......bbbbcccbbbbbbbaaaaaa......",
+    ".......bbbbbbbbbbbbaaaaaa.......",
     "........bbbbbbbbbbbaaaaa........",
     "........bbbbbbbbbbaaaaaa........",
     ".........bbbbbbbbaaaaaa........."
@@ -46,12 +46,12 @@
     "..bcccccccccccbbbbbbbbbbaaaaaa..",
     "..bccccccccccbbbbbbbbbbbaaaaaa..",
     "..bbcccccccccbbbbbbbbbbbaaaaaa..",
-    "...bbbccccccbbbbbbbbbbaaaaaaa...",
-    ".....bbbbcccbbbbbbbbbaaaaaa.....",
-    "......bbbbbbbbbbbbbaaaaaaa......",
+    "...bbbcccccccbbbbbbbbbbaaaaaa...",
+    "....bbbbcccccbbbbbbbbbaaaaaa....",
+    ".....bbbbbccbbbbbbbbaaaaaaa.....",
     "......bbbbbbbbbbbbbaaaaaaa......",
     "......bbbbbbbbbbbbaaaaaaaa......",
-    ".......bbbbbbbbbbaaaaaaaa......."
+    ".......bbbbbbbbbbbaaaaaaa......."
    ]
   }
  },
@@ -69,11 +69,11 @@
     "..ccccCCccccccccccbbbbbbBAaaaa..",
     "..ccccCCcccccccbbbbbbbbbAAaaaa..",
     "...bccccccccccbbbbbbbbbbaaaaa...",
-    ".....bbcccccbbbbbbbbbbaaaaa.....",
-    ".......bbbbbbbbbbbbbaaaaa.......",
-    ".......bbbbbbbbbbbbbaaaaa.......",
+    "....bbcccccccbbbbbbbbbaaaaaa....",
+    ".....bbbcccccbbbbbbbbaaaaaa.....",
+    "......bbbbcccbbbbbbbaaaaaa......",
     ".......bbbbbbbbbbbbaaaaaa.......",
-    "........bbbbbbbbbaaaaaaa........"
+    "........bbbbbbbbbbbaaaaa........"
    ]
   }
  }

@@ -1,17 +1,17 @@
 {
  "id": "mun-5",
- "ritad": 2,
+ "ritad": 3,
  "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
- "om": "Jag valde version 2. Den har samma linjer som förebilden: en munlinje i rost som är en punkt tjock och en underläpp i hud1 (bb) mitt på mittlinjen, x = -1 och 0. Alla lägen är centrerade från x = -3 till 2 och håller sig inom rutan -6..5 och -2..3. Version 1 ger samma bild, men lugn har en annan bredd på raderna. Därför är version 2 renare och stämmer med de andra lägena. Version 3:s öppna mun har bara en rad kol och blir för liten för att läsas som en mun hos rädd. Det strider mot kommentaren att munnen ska vara liten men tydlig. I version 2 är öppningen 2×2 kol, och den syns på alla tre ansiktena. Jag ändrade inget, eftersom alla lägen redan använder tillåtna tecken, och kol finns bara i munnar som är öppna (arg och öppen).",
+ "om": "Jag valde version 1. Version 1 och 2 är likadana. I version 3 sitter den glada munnen en rad högre än de andra lägena, så munnen hoppar uppåt när humöret byts. Version 1 håller alla lägen på samma höjd, mitt kring linjen mellan x = -1 och 0 och inom rutan. Ändring enligt Björns kommentar: i den glada munnen bildade de mörka r-punkterna vid sidan av tänderna och i mungiporna två stående parenteser. Nu är mungiporna och sidorna om tänderna den ljusare rost1 (s). Det mörka ligger bara i underläppens båge (rrrr), och kinden ligger under med b. Då går mungiporna mjukt snett uppåt som i förebildens glada mun, bara mindre. Övriga lägen är oförändrade, så det är samma del i alla lägen.",
  "bilder": {
   "glad": {
-   "x": -3,
+   "x": -4,
    "y": -1,
    "rader": [
-    "r....r",
-    "rqqqqr",
-    ".rrrr.",
-    "..bb.."
+    "s......s",
+    ".sqqqqs.",
+    "..rrrr..",
+    "...bb..."
    ]
   },
   "nojd": {

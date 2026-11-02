@@ -1,24 +1,24 @@
 {
  "id": "ora-4",
- "ritad": 2,
+ "ritad": 3,
  "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
- "om": "Jag valde version 1 eftersom den har förebildens form, bara större: en rundad ytterkant som ljusnar mot ljuset uppifrån vänster (d till c), en mörk skål (a) med b runt om och en tydlig örsnibb som smalnar av och hänger fritt nedanför fästet. Örat sitter lika högt som förebildens, från y -6, och håller sig inom rutan. Det blir alltså inte en lång remsa längs huvudet. Version 2 har en snedare och mindre tydlig snibb. Version 3 har en ljus fläck (d) inne i kanten uppe till höger, vilket ser blankt ut, och den saknar en riktig snibb. Ändring: i rad 3 bytte jag 'dddccb' mot 'ddcccb'. Då följer övergången mellan d och c den rundade kanten, i stället för att bli en rak ljus kil mot huvudet. I övrigt är version 1 oförändrad.",
+ "om": "Jag valde version 2. Den är den enda som håller sig inom rutan: x -4 och bredden 6 ger -4 till 2. Version 1 och 3 börjar på x -3 och går därför en punkt utanför x1 = 2. Formen följer förebilden och det godkända ora-3. Ytterkanten är rundad och vänd mot ljuset med d och c. Skålen är en smal, kort rand av a i stället för en stor mörk fläck. Mot huvudet ligger en mörkare b-ton. Nederst smalnar örsnibben av. Örat är bara en eller två punkter högre och bredare än det mellanstora. Det ser lika bra ut på kvinnan, mannen och barnet. Inga ändringar behövdes.",
  "bilder": {
   "standard": {
    "x": -4,
    "y": -6,
    "rader": [
-    "..ddc.",
-    ".dddcb",
-    "ddcccb",
+    "..cd..",
+    ".dccb.",
     "dccbbb",
-    "dcbaab",
-    "dcbaab",
-    "dbaaab",
-    "cbaabb",
+    "dcbbbb",
+    "dcbabb",
+    "dbaabb",
+    "dbaabb",
     "cbbabb",
-    ".cbbb.",
+    "cbbbb.",
     ".ccbb.",
+    ".ccb..",
     "..cb.."
    ]
   }

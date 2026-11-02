@@ -1,28 +1,28 @@
 {
  "id": "mun-7",
- "ritad": 2,
+ "ritad": 3,
  "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
- "om": "Valde version 3. Läpplinjen ritas med rost0 (r), den mörkaste och mest dämpade rödbruna tonen, så de ljust orange läpparna från förra ritningen är borta. Hjärtformen syns tydligt: två toppar (..rr..rr..) och en sänka mitt på överläppen (rr i mitten av raden under). Version 3 skuggar som förebilden med ljuset uppifrån vänster: överläppens fyllning är b till vänster och a till höger, och underläppens kant går från b till a. Den är symmetrisk kring mittlinjen mellan x=-1 och 0 och håller sig inom rutan (x -5..4, y -2..3). Alla lägen är samma mun där bara mungiporna, tänderna och öppningen ändras. Version 1 hade en skev underläpp och för många rader hud, och version 2 saknade ljussidan. Inga ändringar behövdes.",
+ "om": "Valde version 3 eftersom den ligger närmast förebilden: en sammanhängande läpplinje i r med två bågar och en punkt nedåt i mitten, och en ljus skugga (bbba, mörkare åt höger bort från ljuset) under underläppen. Ändrat: tog bort raden 'ba..aa' ovanför läpparna, som gav prickar runt munnen och gjorde att den såg ut som en mustasch eller krabba. Hjärtformen är nu bara en liten båge på överläppen: läpplinjen '.rrr..rrr.' med mittpunkterna 'rr' en rad ner. Arg har inte längre några k runt läpparna, utan en bredare, spänd linje med nedåtvända mungipor i s. Ledsen har mjuka mungipor i s. Öppen är en liten rund mun med bågen ovanpå och k bara inuti. Alla lägen är centrerade kring mittlinjen (x -5 till 4) och håller sig inom rutan.",
  "bilder": {
   "glad": {
    "x": -5,
    "y": -2,
    "rader": [
-    "..rr..rr..",
-    "rrbarraarr",
-    ".rqqqqqqr.",
+    "r........r",
+    ".rrr..rrr.",
+    ".rqqrrqqr.",
     "..rrrrrr..",
-    "..bbbbba.."
+    "...bbba..."
    ]
   },
   "nojd": {
    "x": -5,
    "y": -2,
    "rader": [
-    "..rr..rr..",
-    "rrbarraarr",
-    ".rrrrrrrr.",
-    "..bbbbba..",
+    "r........r",
+    ".rrr..rrr.",
+    "....rr....",
+    "...bbba...",
     ".........."
    ]
   },
@@ -30,10 +30,10 @@
    "x": -5,
    "y": -2,
    "rader": [
-    "..rr..rr..",
-    ".rbarraar.",
-    ".rrrrrrrr.",
-    "..bbbbba..",
+    "..........",
+    ".rrr..rrr.",
+    "....rr....",
+    "...bbba...",
     ".........."
    ]
   },
@@ -41,10 +41,10 @@
    "x": -5,
    "y": -2,
    "rader": [
-    "..rr..rr..",
-    ".rbarraar.",
-    "..rrrrrr..",
-    ".r.bbba.r.",
+    "..........",
+    ".rrr..rrr.",
+    "s...rr...s",
+    "...bbba...",
     ".........."
    ]
   },
@@ -52,10 +52,10 @@
    "x": -5,
    "y": -2,
    "rader": [
-    "..rr..rr..",
-    ".rbarraar.",
-    ".rkkkkkkr.",
-    "r..bbba..r",
+    "..........",
+    "rrrr..rrrr",
+    "s...rr...s",
+    "...bbba...",
     ".........."
    ]
   },
@@ -63,9 +63,9 @@
    "x": -5,
    "y": -2,
    "rader": [
+    "..........",
     "..rr..rr..",
-    ".rbarraar.",
-    "..rkkkkr..",
+    "..rkrrkr..",
     "..rkkkkr..",
     "...rrrr...",
     "...bbba..."
