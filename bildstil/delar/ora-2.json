@@ -1,0 +1,24 @@
+{
+ "id": "ora-2",
+ "ritad": 1,
+ "av": "programmeringschatten, förebild",
+ "om": "Mellanstort öra: ytterkanten i ljuset, en mörk båge i örat och en rund örsnibb.",
+ "bilder": {
+  "standard": {
+   "x": -2,
+   "y": -5,
+   "rader": [
+    "..cc.",
+    ".dcbb",
+    "dcaab",
+    "dcab.",
+    "dcab.",
+    "dbab.",
+    "cbab.",
+    "cbbc.",
+    ".cbc.",
+    ".cc.."
+   ]
+  }
+ }
+}

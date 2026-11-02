@@ -1,0 +1,54 @@
+{
+ "id": "huvud-rund",
+ "ritad": 1,
+ "av": "programmeringschatten, förebild",
+ "om": "Det nedre ansiktet under ögonlinjen, med kinderna (A–D, röda i kylan). Skuggningen följer formen som mallens skalle.",
+ "bilder": {
+  "standard": {
+   "x": -16,
+   "y": 1,
+   "rader": [
+    ".ccddddccccccccccccccbbbbbaaaaa.",
+    ".cccccccccccccccccccbbbbbbaaaaa.",
+    ".ccccccccccccccccccbbbbbbbaaaaa.",
+    ".ccccccccccccccccccbbbbbbbaaaaa.",
+    "..cccccccccccccccccbbbbbbbaaaa..",
+    "..cccccccccccccccccbbbbbbbaaaa..",
+    "..ccccCCccccccccccbbbbbbBAaaaa..",
+    "..ccccCCcccccccbbbbbbbbbAAaaaa..",
+    "...ccccccccccccbbbbbbbbbaaaaa...",
+    "...cccccccccccbbbbbbbbbbaaaaa...",
+    "....bccccccccbbbbbbbbbbaaaaa....",
+    "....bbccccbbbbbbbbbbbbaaaaaa....",
+    ".....bbbbbbbbbbbbbbbbaaaaaa.....",
+    "......bbbbbbbbbbbbbbbaaaaa......",
+    ".......bbbbbbbbbbbbbaaaaa.......",
+    "........bbbbbbbbbbbaaaaa........",
+    "..........bbbbbbbbaaaa..........",
+    "............babbaaaa............"
+   ]
+  }
+ },
+ "barn": {
+  "standard": {
+   "x": -16,
+   "y": 1,
+   "rader": [
+    "cccddddccccccccccccccbbbbbaaaaaa",
+    ".cccccccccccccccccccbbbbbbaaaaa.",
+    ".ccccccccccccccccccbbbbbbbaaaaa.",
+    ".ccccccccccccccccccbbbbbbbaaaaa.",
+    ".ccccccccccccccccccbbbbbbbaaaaa.",
+    "..cccccccccccccccccbbbbbbbaaaa..",
+    "..ccccCCccccccccccbbbbbbBAaaaa..",
+    "...cccCCcccccccbbbbbbbbbAAaaa...",
+    "....cccccccccccbbbbbbbbbaaaa....",
+    ".....cccccccccbbbbbbbbbbaaa.....",
+    "......cccccccbbbbbbbbbbaaa......",
+    ".......cccbbbbbbbbbbbbaaa.......",
+    ".........bbbbbbbbbbbbaa.........",
+    "............bbbbbbbb............"
+   ]
+  }
+ }
+}

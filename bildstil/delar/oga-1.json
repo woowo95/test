@@ -1,0 +1,48 @@
+{
+ "id": "oga-1",
+ "ritad": 1,
+ "av": "programmeringschatten, förebild",
+ "om": "Runda ögon: mörkt övre ögonlock, vitan, iris i två toner och pupillen, och undre locket i huden.",
+ "bilder": {
+  "oppna": {
+   "x": -3,
+   "y": -2,
+   "rader": [
+    ".aaaa.",
+    "avjiva",
+    "bvikvb",
+    ".bccb."
+   ]
+  },
+  "glada": {
+   "x": -3,
+   "y": -2,
+   "rader": [
+    "......",
+    ".aaaa.",
+    "abjiba",
+    ".cccc."
+   ]
+  },
+  "ledsna": {
+   "x": -3,
+   "y": -2,
+   "rader": [
+    "bbb.a.",
+    "aaaava",
+    "bvikvb",
+    ".bccb."
+   ]
+  },
+  "slutna": {
+   "x": -3,
+   "y": -2,
+   "rader": [
+    ".bbbb.",
+    ".cccc.",
+    "aaaaaa",
+    ".bccb."
+   ]
+  }
+ }
+}

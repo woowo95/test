@@ -1,0 +1,56 @@
+{
+ "id": "bryn-1",
+ "ritad": 1,
+ "av": "programmeringschatten, förebild",
+ "om": "Raka ögonbryn: tjockast inåt mot näsan, smalare ut mot tinningen, ljusare i överkanten.",
+ "bilder": {
+  "lugna": {
+   "x": -3,
+   "y": -3,
+   "rader": [
+    ".......",
+    ".......",
+    "..ggggf",
+    "ffffeee",
+    ".......",
+    "......."
+   ]
+  },
+  "arga": {
+   "x": -3,
+   "y": -3,
+   "rader": [
+    ".......",
+    "gg.....",
+    "ffgg...",
+    "..ffgf.",
+    "....eee",
+    "......."
+   ]
+  },
+  "ledsna": {
+   "x": -3,
+   "y": -3,
+   "rader": [
+    ".....gg",
+    "...ggff",
+    ".ggff..",
+    "ff.....",
+    ".......",
+    "......."
+   ]
+  },
+  "forvanade": {
+   "x": -3,
+   "y": -3,
+   "rader": [
+    "..ggg..",
+    ".gfffg.",
+    "ff...ff",
+    ".......",
+    ".......",
+    "......."
+   ]
+  }
+ }
+}

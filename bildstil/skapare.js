@@ -16,11 +16,17 @@
   const MATERIAL = Object.fromEntries(PR.material.map(m => [m.id, m]));
   const LAGEN = PR.lagen;
   const delarAv = sort => PR.delar.filter(d => d.sort === sort);
-  const passar = (d, mall) => (d.mallar || SORT[d.sort].mallar || ['kvinna', 'man', 'barn']).includes(mall);
-  const nr = d => delarAv(d.sort).indexOf(d);
+  // taggen kvinna, man eller båda (Porträttens byggsätt, beslut efter v281): en del passar en person när taggen är båda
+  // eller personens kön, och för barn bara om delen finns på barn (barn: false på raden eller sorten)
+  const konAv = d => d.kon || SORT[d.sort].kon || 'bada';
+  const barnOk = d => d.barn ?? SORT[d.sort].barn ?? true;
+  const passar = (d, mall, kon = mall === 'barn' ? null : mall) => (mall !== 'barn' || barnOk(d)) && (konAv(d) === 'bada' || !kon || konAv(d) === kon);
+  const KONTEXT = { bada: 'för båda', kvinna: 'bara kvinnor', man: 'bara män' };
+  // delens nummer i sin sort: talet i id:t (har-5 är nummer 5), så att ordningen i registret kan ändras
+  const nr = d => { const m = /-(\d+)$/.exec(d.id); return m ? +m[1] - 1 : delarAv(d.sort).indexOf(d); };
   const mallAv = p => p.alder === 'barn' ? 'barn' : p.kon;
   const VALJ = ['huvudform', 'ora', 'nasa', 'oga', 'ogonbryn', 'mun', 'frisyr', 'skagg', 'huvudbonad', 'smycke', 'arr', 'blamarke', 'redskap'];
-  const alternativ = (sort, mall) => [...(SORT[sort].valfri ? [null] : []), ...delarAv(sort).filter(d => passar(d, mall)).map(d => d.id)];
+  const alternativ = (sort, mall, kon) => [...(SORT[sort].valfri ? [null] : []), ...delarAv(sort).filter(d => passar(d, mall, kon)).map(d => d.id)];
   const lagra = { las(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }, skriv(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* utan lagring går det ändå */ } } };
 
   // ---------- personen ----------
@@ -40,10 +46,10 @@
     for (const s of VALJ) {
       let id = p.del[s];
       if (id && !DEL[id]) id = null;
-      if (id && !passar(DEL[id], m)) { const alt = alternativ(s, m).filter(Boolean); id = SORT[s].valfri ? null : alt[nr(DEL[id]) % alt.length] || null; }
+      if (id && !passar(DEL[id], m, p.kon)) { const alt = alternativ(s, m, p.kon).filter(Boolean); id = SORT[s].valfri ? null : alt[nr(DEL[id]) % alt.length] || null; }
       d[s] = id;
     }
-    if (ALDER[p.alder].aldreFrisyr && d.frisyr && DEL[d.frisyr].aldre && passar(DEL[DEL[d.frisyr].aldre], m)) d.frisyr = DEL[d.frisyr].aldre;
+    if (ALDER[p.alder].aldreFrisyr && d.frisyr && DEL[d.frisyr].aldre && passar(DEL[DEL[d.frisyr].aldre], m, p.kon)) d.frisyr = DEL[d.frisyr].aldre;
     if (m !== 'man') d.skagg = null;
     return d;
   }
@@ -129,7 +135,7 @@
     const H = m.huvud, f = m.fast, sned = skonLager(p).includes('skon-sned');
     const flytt = (pt, k) => sned && k === 1 ? [pt[0], pt[1] + 1] : pt;
     const G = {
-      m, H, ey: H.cy, topp: H.cy - H.ry, K: m.kropp, barn: m.id === 'barn',
+      m, H, ey: H.cy, topp: H.cy - H.ry, K: m.kropp, barn: m.id === 'barn', sned,
       oga: f.oga.map(flytt), bryn: f.ogonbryn.map(flytt), nasa: f.nasa, mun: f.mun, ora: f.ora, halsband: f.halsband[1],
       // huvudet: skallen ovanför ögonlinjen är lika i alla mallar och former; huvudformen ändrar käken och kinderna under den
       huvud(form) {
@@ -416,6 +422,31 @@
     },
   };
 
+  // ---------- ritade delar (bildstil/delar/<id>.json, steg 5.2.2.3) ----------
+  // en ritad del har en bild per läge (standard när delen bara har ett), och en egen bild för barnmallen när den behövs.
+  // Bildens x och y räknas från fästpunkten; delar som finns i par (öron, ögon, ögonbryn) ritas för vänster sida på bilden,
+  // och den högra är den speglade (kring ansiktets mitt), för öronen en ton mörkare
+  const ritadBild = (id, mall, lage) => { const D = DELAR[id]; if (!D) return null; const b = (mall === 'barn' && D.barn) || D.bilder; return b[lage || 'standard'] || b.standard || Object.values(b)[0]; };
+  const skifta = (v, n) => n ? v.slice(0, -1) + Math.max(0, Math.min(3, +v.slice(-1) + n)) : v;
+  function ritaBild(dk, bild, [ax, ay], { spegel = false, forskj = 0, dy = 0 } = {}) {
+    bild.rader.forEach((rad, j) => [...rad].forEach((ch, i) => {
+      const v = PR.tecken[ch]; if (!v) return;
+      let x = Math.floor(ax) + bild.x + i; const y = Math.floor(ay) + bild.y + j + dy;
+      if (spegel) x = 63 - x;
+      dk.satt(x, y, skifta(v, forskj));
+    }));
+  }
+  // en sorts del: den ritade bilden om den finns, annars platshållaren
+  function delen(dk, G, d, p, sort) {
+    const R2 = SORT[sort].ritas, f = G.m.fast, mall = G.m.id;
+    if (!DELAR[d.id] || !R2) return RITA[sort](dk, G, d, p);
+    const lage = SORT[sort].lagen ? lageAv(p, sort) : null, bild = ritadBild(d.id, mall, lage);
+    const fast = R2.fast === 'huvud' ? [G.H.cx, G.H.cy] : f[R2.fast];
+    if (!R2.par) return ritaBild(dk, bild, fast);
+    ritaBild(dk, bild, fast[0]);
+    ritaBild(dk, bild, fast[0], { spegel: true, forskj: R2.par === 'spegel-mork' ? -1 : 0, dy: G.sned ? 1 : 0 });
+  }
+
   // vilka delar som ritar i vilket lager, med maskbar (döljs av maskerna) och utom (zoner delen aldrig ritar i).
   // bara = 'mall' ritar bara mallen (skallen och kroppen) med den runda huvudformen
   function bidragen(p, del, G, opt = {}) {
@@ -424,19 +455,19 @@
     const hf = opt.bara ? DEL['huvud-rund'] : D('huvudform');
     lagg('kropp', dk => RITA.kropp(dk, G, G.hake(hf.form)));
     lagg('huvud', dk => RITA.skalle(dk, G));
-    lagg('huvud', dk => RITA.huvudform(dk, G, hf));
+    lagg('huvud', dk => delen(dk, G, hf, p, 'huvudform'));
     if (opt.bara) return B;
     lagg('klader', dk => RITA.klader(dk, G, p));
-    lagg('oron', dk => RITA.ora(dk, G, D('ora')), { maskbar: true });
+    lagg('oron', dk => delen(dk, G, D('ora'), p, 'ora'), { maskbar: true });
     const rs = rynkSteg(p); if (rs > 0) lagg('rynkor', dk => RITA.rynkor(dk, G, rs));
     if (D('arr')) lagg('arr', dk => RITA.arr(dk, G, D('arr')));
     if (D('blamarke')) lagg('blamarke', dk => RITA.blamarke(dk, G, D('blamarke')));
     if (p.blod) lagg('blod', dk => RITA.blod(dk, G));
-    lagg('ogon', dk => RITA.oga(dk, G, D('oga'), p), { maskbar: true });
-    lagg('ogonbryn', dk => RITA.ogonbryn(dk, G, D('ogonbryn'), p));
-    lagg('nasa', dk => RITA.nasa(dk, G, D('nasa')));
+    lagg('ogon', dk => delen(dk, G, D('oga'), p, 'oga'), { maskbar: true });
+    lagg('ogonbryn', dk => delen(dk, G, D('ogonbryn'), p, 'ogonbryn'));
+    lagg('nasa', dk => delen(dk, G, D('nasa'), p, 'nasa'));
     if (D('skagg')) lagg('skagg', dk => RITA.skagg(dk, G, D('skagg')), { utom: SORT.skagg.utom });
-    lagg('mun', dk => RITA.mun(dk, G, D('mun'), p));
+    lagg('mun', dk => delen(dk, G, D('mun'), p, 'mun'));
     const fr = D('frisyr');
     if (fr) { lagg('bakhar', dk => RITA.bakhar(dk, G, fr), { maskbar: true }); lagg('framhar', dk => RITA.framhar(dk, G, fr), { maskbar: true }); }
     for (const id of skonLager(p)) {
@@ -585,13 +616,11 @@
     }
     if (p.klader.balte) (rikt === 'sida' ? [5, 6, 7, 8] : [...Array(x1 - x0 + 1)].map((_, i) => x0 + i)).forEach(x => { if (zn[(b1 - 1) * W + x] === 'bal') satt(x, b1 - 1, 'rep', 'balte'); });
     // huvudet: skallen ur mallen, käken efter huvudformen, ögonen som en punkt var
-    const form = DEL[del.huvudform]?.form || 'rund';
+    const kak = (DEL[del.huvudform] || DEL['huvud-rund']).kartbild[rikt === 'sida' ? 'sida' : 'fram'];
     for (let y = h; y <= h + 5; y++) for (let x = 4; x <= 9; x++) {
       const xx = rikt === 'sida' ? x + 1 : x;
       if (y === h && (x === 4 || x === 9)) continue;
-      if (y === h + 5 && rikt !== 'sida' && form !== 'bred' && (x === 4 || x === 9)) continue;
-      if (y === h + 4 && rikt !== 'sida' && form === 'smal' && (x === 4 || x === 9)) continue;
-      if (y === h + 5 && rikt === 'sida' && (x === 4 || (form === 'smal' && x === 5))) continue;
+      if (y >= h + 4 && kak[y - h - 4][x - 4] !== 'X') continue;
       satt(xx, y, 'hud', 'huvud');
     }
     if (rikt === 'sida') satt(11, h + 3, 'hud', 'huvud');
@@ -602,8 +631,7 @@
       kt[i] = kt[i] + (x > 0 && !same(i - 1) ? 3 : x < W - 1 && !same(i + 1) ? 1 : 2);
     }
     const slutna = opt.slutna || ['sover', 'dod'].includes(p.humor);
-    if (rikt === 'fram') { satt(5, h + 2, slutna ? 'hud1' : 'oga0'); satt(8, h + 2, slutna ? 'hud1' : 'oga0'); }
-    if (rikt === 'sida') satt(9, h + 2, slutna ? 'hud1' : 'oga0');
+    if (rikt !== 'bak') for (const [ox, oy] of SORT.oga.kartbild[rikt]) satt((rikt === 'sida' ? 5 : 4) + ox, h + oy, slutna ? 'hud1' : 'oga0');
     if (opt.bara) return kartUt(p, kt, W, H, spegel, opt);
     // skägget
     const sk = del.skagg ? DEL[del.skagg].karta : null;
@@ -725,25 +753,25 @@
   const slumpFran = s => () => { s = (s + 0x6D2B79F5) | 0; let t = Math.imul(s ^ (s >>> 15), 1 | s); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
   const valj = (r, a) => a[Math.floor(r() * a.length)];
   const viktat = (r, par) => { const sum = par.reduce((s, [, v]) => s + v, 0); let x = r() * sum; for (const [k, v] of par) { x -= v; if (x < 0) return k; } return par[par.length - 1][0]; };
-  const radAv = (r, sort, mall) => { const a = alternativ(sort, mall).filter(Boolean); return a.length ? valj(r, a) : null; };
+  const radAv = (r, sort, mall, kon) => { const a = alternativ(sort, mall, kon).filter(Boolean); return a.length ? valj(r, a) : null; };
   function slumpPerson(r, o = {}) {
     const p = neutral('kvinna');
     p.kon = o.kon || (r() < 0.5 ? 'kvinna' : 'man');
     p.alder = o.alder || viktat(r, [['barn', 2], ['ung', 3], ['vuxen', 4], ['gammal', 2]]);
     const m = mallAv(p);
-    for (const s of ['huvudform', 'ora', 'nasa', 'oga', 'ogonbryn', 'mun', 'frisyr']) p.del[s] = radAv(r, s, m);
-    p.del.skagg = m === 'man' && r() < 0.65 ? radAv(r, 'skagg', m) : null;
-    p.del.huvudbonad = r() < 0.2 ? radAv(r, 'huvudbonad', m) : null;
-    p.del.smycke = r() < 0.25 ? radAv(r, 'smycke', m) : null;
-    p.del.arr = r() < 0.15 ? radAv(r, 'arr', m) : null;
-    p.del.blamarke = r() < 0.06 ? radAv(r, 'blamarke', m) : null;
-    p.del.redskap = r() < 0.35 ? radAv(r, 'redskap', m) : null;
+    for (const s of ['huvudform', 'ora', 'nasa', 'oga', 'ogonbryn', 'mun', 'frisyr']) p.del[s] = radAv(r, s, m, p.kon);
+    p.del.skagg = m === 'man' && r() < 0.65 ? radAv(r, 'skagg', m, p.kon) : null;
+    p.del.huvudbonad = r() < 0.2 ? radAv(r, 'huvudbonad', m, p.kon) : null;
+    p.del.smycke = r() < 0.25 ? radAv(r, 'smycke', m, p.kon) : null;
+    p.del.arr = r() < 0.15 ? radAv(r, 'arr', m, p.kon) : null;
+    p.del.blamarke = r() < 0.06 ? radAv(r, 'blamarke', m, p.kon) : null;
+    p.del.redskap = r() < 0.35 ? radAv(r, 'redskap', m, p.kon) : null;
     p.hud = Math.floor(r() * PR.farger.hud.length);
     p.har = viktat(r, PR.farger.har.map((f, i) => [i, f.sallsynt ? 0.6 : 2]));
     p.ogon = Math.floor(r() * PR.farger.oga.length);
     p.humor = viktat(r, [['glad', 2], ['nojd', 3], ['lugn', 4], ['ledsen', 1.5], ['arg', 1], ['radd', 0.5], ['sover', 0.4]]);
     p.skonhet = viktat(r, [[-2, 1], [-1, 2], [0, 6], [1, 2], [2, 1]]);
-    p.forband = r() < 0.06 ? [radAv(r, 'forband', m)] : [];
+    p.forband = r() < 0.06 ? [radAv(r, 'forband', m, p.kon)] : [];
     p.ogonlapp = r() < 0.03; p.sjuk = r() < 0.08; p.kyla = r() < 0.1; p.blod = r() < 0.05;
     p.klader = { rock: r() < 0.55 ? viktat(r, [['harskinn', 3], ['vargskinn', 1]]) : null, skor: r() < 0.5, balte: r() < 0.35 };
     return p;
@@ -753,14 +781,14 @@
   function barnAv(a, b, r) {
     const c = neutral('barn'), fran = (x, y) => r() < 0.5 ? x : y;
     c.kon = r() < 0.5 ? 'kvinna' : 'man';
-    for (const s of ['huvudform', 'ora', 'nasa', 'oga', 'ogonbryn', 'mun']) c.del[s] = r() < 0.1 ? radAv(r, s, 'barn') : fran(a.del[s], b.del[s]);
+    for (const s of ['huvudform', 'ora', 'nasa', 'oga', 'ogonbryn', 'mun']) c.del[s] = r() < 0.1 ? radAv(r, s, 'barn', c.kon) : fran(a.del[s], b.del[s]);
     const far = a.kon === 'man' ? a : b.kon === 'man' ? b : null;
-    c.anlag = { skagg: far && far.del.skagg && r() >= 0.1 ? far.del.skagg : radAv(r, 'skagg', 'man') };
+    c.anlag = { skagg: far && far.del.skagg && r() >= 0.1 ? far.del.skagg : radAv(r, 'skagg', 'man', 'man') };
     c.hud = r() < 0.1 ? Math.floor(r() * PR.farger.hud.length) : fran(a.hud, b.hud);
     c.har = r() < 0.1 ? Math.floor(r() * PR.farger.har.length) : fran(a.har, b.har);
     c.ogon = r() < 0.1 ? Math.floor(r() * PR.farger.oga.length) : fran(a.ogon, b.ogon);
-    c.del.frisyr = radAv(r, 'frisyr', 'barn');
-    c.anlag.frisyr = radAv(r, 'frisyr', c.kon);
+    c.del.frisyr = radAv(r, 'frisyr', 'barn', c.kon);
+    c.anlag.frisyr = radAv(r, 'frisyr', c.kon, c.kon);
     c.humor = viktat(r, [['glad', 3], ['nojd', 3], ['lugn', 3], ['ledsen', 1]]);
     return c;
   }
@@ -782,7 +810,7 @@
   function stegText(k) {
     if (k === 'mall') { const L = ['kvinna', 'man', 'barn']; return [MALL[mallAv(p)].namn, L.indexOf(mallAv(p)) + 1, 3]; }
     if (k === 'hud' || k === 'har' || k === 'ogon') { const lista = PR.farger[k === 'ogon' ? 'oga' : k]; const namn = k === 'har' && ALDER[p.alder].grattHar && mallAv(p) !== 'barn' ? lista[p[k]].namn + ' (grått nu)' : lista[p[k]].namn; return [namn, p[k] + 1, lista.length]; }
-    const lista = alternativ(k, mallAv(p)), id = effektiva(p)[k], i = lista.indexOf(id ?? null);
+    const lista = alternativ(k, mallAv(p), p.kon), id = effektiva(p)[k], i = lista.indexOf(id ?? null);
     return [id ? DEL[id].namn : SORT[k].valfri, i + 1, lista.length];
   }
   function stega(k, d) {
@@ -790,7 +818,7 @@
       const L = ['kvinna', 'man', 'barn'], m = L[(L.indexOf(mallAv(p)) + d + 3) % 3];
       if (m === 'barn') p.alder = 'barn'; else { p.kon = m; if (p.alder === 'barn') p.alder = 'ung'; }
     } else if (k === 'hud' || k === 'har' || k === 'ogon') { const n = PR.farger[k === 'ogon' ? 'oga' : k].length; p[k] = (p[k] + d + n) % n; }
-    else { const lista = alternativ(k, mallAv(p)), i = lista.indexOf(effektiva(p)[k] ?? null); p.del[k] = lista[(i + d + lista.length) % lista.length]; }
+    else { const lista = alternativ(k, mallAv(p), p.kon), i = lista.indexOf(effektiva(p)[k] ?? null); p.del[k] = lista[(i + d + lista.length) % lista.length]; }
     andrat();
   }
   const stegRad = (k, namn) => `<div class="sk-steg"><span class="sk-namn">${namn}</span><button type="button" data-steg="${k}" data-d="-1" aria-label="Föregående: ${namn}">‹</button><output id="sk-ut-${k}" aria-live="polite"></output><button type="button" data-steg="${k}" data-d="1" aria-label="Nästa: ${namn}">›</button></div>`;
@@ -800,6 +828,7 @@
     for (const [rubrik, nycklar] of GRUPPER) html += `<div class="sk-grupp"><h3>${rubrik}</h3>${nycklar.map(k => stegRad(k, STEGNAMN[k] || SORT[k].en)).join('')}</div>`;
     html += `<div class="sk-grupp"><h3>Läget</h3>
       ${chips('humor', 'Humör', PR.humor.map(h => [h.id, h.namn]))}
+      ${chips('kon', 'Kön', [['kvinna', 'Kvinna'], ['man', 'Man']])}
       ${chips('alder', 'Ålder', PR.aldrar.map(a => [a.id, a.namn]))}
       ${chips('skonhet', 'Skönhet', PR.skonhet.map(s => [s.niva, s.namn]))}</div>`;
     html += `<div class="sk-grupp"><h3>Skador och kropp</h3>${stegRad('arr', 'Ärr')}${stegRad('blamarke', 'Blåmärke')}
@@ -819,12 +848,13 @@
     }
     document.querySelectorAll('#sk-val [data-chip]').forEach(b => {
       const k = b.dataset.chip, v = b.dataset.v;
-      const pa = k === 'humor' ? p.humor === v : k === 'alder' ? p.alder === v : k === 'skonhet' ? String(p.skonhet) === v : k === 'forband' ? p.forband.includes(v)
+      const pa = k === 'kon' ? p.kon === v : k === 'humor' ? p.humor === v : k === 'alder' ? p.alder === v : k === 'skonhet' ? String(p.skonhet) === v : k === 'forband' ? p.forband.includes(v)
         : k === 'flagga' ? !!p[v] : k === 'rock' ? (p.klader.rock || '') === v : k === 'plagg' ? !!p.klader[v] : false;
       b.setAttribute('aria-pressed', String(pa));
     });
   }
   function chip(k, v) {
+    if (k === 'kon') p.kon = v;
     if (k === 'humor') p.humor = v;
     if (k === 'alder') p.alder = v;
     if (k === 'skonhet') p.skonhet = +v;
@@ -932,14 +962,20 @@
     else if (s.rader?.startsWith('farger.')) { const k = s.rader.split('.')[1]; PR.farger[k].forEach((f, i) => KORT.push({ id: 'farg-' + k + '-' + f.id, sort: s, rad: f, i, namn: f.namn, ritad: f.ritad || 0 })); }
     else delarAv(s.id).forEach(d => KORT.push({ id: d.id, sort: s, rad: d, namn: d.namn, ritad: d.ritad || 0 }));
   }
-  KORT.forEach((k, i) => { k.forebild = i === 0 || KORT[i - 1].sort !== k.sort; k.mallar = k.mallar || (k.rad.mallar || k.sort.mallar || ['kvinna', 'man', 'barn']); });
+  KORT.forEach((k, i) => {
+    k.forebild = i === 0 || KORT[i - 1].sort !== k.sort;
+    if (k.mallar) { k.vem = k.mallar.map(m => ({ mall: m, kon: m === 'man' ? 'man' : 'kvinna' })); return; }
+    const t = k.rad.sort ? konAv(k.rad) : 'bada', barn = k.rad.sort ? barnOk(k.rad) : true;
+    k.kon = k.rad.sort ? t : null; k.barn = barn;
+    k.vem = [...(t === 'bada' ? ['kvinna', 'man'] : [t]).map(m => ({ mall: m, kon: m })), ...(barn ? [{ mall: 'barn', kon: t === 'man' ? 'man' : 'kvinna' }] : [])];
+  });
   let grFilter = lagra.las('granskning-filter') || 'obesvarade', grId = lagra.las('granskning-kort') || KORT[0].id, grVantar = null;
   const svarFor = k => { const s = SVARDEL[k.id]; return s && (s.ritad ?? 0) === k.ritad ? s : null; };
   const lage = k => { const s = svarFor(k); return !s ? 'obesvarad' : s.svar === 'ja' || s.svar === 'nej' ? s.svar : 'kommentar'; };
   const synlig = k => grFilter === 'alla' || lage(k) === 'obesvarad' || k.id === grId;
-  function granskPerson(k, mall) {
-    const q = neutral(mall);
-    for (const [s, id] of Object.entries(k.sort.granskaMed || {})) if (DEL[id] && passar(DEL[id], mall)) q.del[s] = id;
+  function granskPerson(k, mall, kon = mall === 'man' ? 'man' : 'kvinna') {
+    const q = neutral(mall); q.kon = kon;
+    for (const [s, id] of Object.entries(k.sort.granskaMed || {})) if (DEL[id] && passar(DEL[id], mall, kon)) q.del[s] = id;
     switch (k.sort.id) {
       case 'mall': break;
       case 'hudton': q.hud = k.i; break;
@@ -976,30 +1012,31 @@
       ut.append(bildRad('Liggande', [[kartBild(q, 'fram', 'sta', 'hanga', { ligga: true, slutna: true, bara: 'mall' }), 3, 'Ligger'], [kartBild(q, 'fram', 'sta', 'hanga', { ligga: true, slutna: true, tacke: true, bara: 'mall' }), 3, 'Ligger under fällen']]));
       return ut;
     }
-    for (const mall of k.mallar) {
-      const bilder = [];
+    const vemNamn = v => v.mall === 'barn' && k.kon && k.kon !== 'bada' ? (v.kon === 'man' ? 'Barn (pojke)' : 'Barn (flicka)') : MALL[v.mall].namn;
+    for (const v of k.vem) {
+      const mall = v.mall, bilder = [];
       if (lagen) for (const l of lagen) {
-        const q = granskPerson(k, mall);
+        const q = granskPerson(k, mall, v.kon);
         q.lagen[k.sort.id] = l.id;
         if (k.sort.id === 'mun') { const h = PR.humor.find(x => x.mun === l.id); if (h) q.humor = h.id; }
         bilder.push([portratt(q), 2, l.namn]);
       }
-      else bilder.push([portratt(granskPerson(k, mall)), 2, MALL[mall].namn]);
-      ut.append(bildRad(lagen ? MALL[mall].namn + ': ' + (k.sort.id === 'mun' ? 'munnen i sina sex lägen, med ögonen och ögonbrynen i samma humör' : 'i alla fyra lägen') : MALL[mall].namn, bilder));
+      else bilder.push([portratt(granskPerson(k, mall, v.kon)), 2, vemNamn(v)]);
+      ut.append(bildRad(lagen ? vemNamn(v) + ': ' + (k.sort.id === 'mun' ? 'munnen i sina sex lägen, med ögonen och ögonbrynen i samma humör' : 'i alla fyra lägen') : vemNamn(v), bilder));
     }
     if (k.sort.harfarger) {
-      const mall = k.mallar[0], bilder = [0, 2, 4, 5].map(i => { const q = granskPerson(k, mall); q.har = i; return [portratt(q), 2, PR.farger.har[i].namn]; });
+      const v0 = k.vem[0], bilder = [0, 2, 4, 5].map(i => { const q = granskPerson(k, v0.mall, v0.kon); q.har = i; return [portratt(q), 2, PR.farger.har[i].namn]; });
       ut.append(bildRad('I fyra hårfärger', bilder));
     }
     if (k.sort.karta) {
-      const mall = k.mallar[0], q = granskPerson(k, mall);
+      const mall = k.vem[0].mall, q = granskPerson(k, mall, k.vem[0].kon);
       const lista = k.sort.id === 'redskap' ? [['fram', 'sta', 'hanga', 'Framifrån'], ['sida', 'sta', 'lyfta', 'Lyfter'], ['sida', 'sta', 'sla', 'Slår'], ['fram', 'sta', 'bara', 'Bär']]
         : k.sort.id === 'mall' ? [['fram', 'sta', 'hanga', 'Framifrån'], ['bak', 'sta', 'hanga', 'Bakifrån'], ['sida', 'sta', 'hanga', 'Från sidan'], ['sida', 'gang1', 'gang1', 'Går'], ['fram', 'sitta', 'hanga', 'Sitter']]
           : k.sort.id === 'klader' ? [['fram', 'sta', 'hanga', 'Framifrån'], ['bak', 'sta', 'hanga', 'Bakifrån'], ['sida', 'sta', 'hanga', 'Från sidan'], ['sida', 'gang1', 'gang1', 'Går']]
             : [['fram', 'sta', 'hanga', 'Framifrån'], ['bak', 'sta', 'hanga', 'Bakifrån'], ['sida', 'sta', 'hanga', 'Från sidan']];
       const bilder = lista.map(([r, b, a, t]) => [kartBild(q, r, b, a), 4, t]);
       if (k.sort.id === 'mall') bilder.push([kartBild(q, 'fram', 'sta', 'hanga', { ligga: true, slutna: true }), 4, 'Ligger']);
-      ut.append(bildRad('På kartan' + (MALL[mall] && k.mallar.length > 1 ? ' (' + MALL[mall].namn.toLowerCase() + ')' : ''), bilder));
+      ut.append(bildRad('På kartan' + (MALL[mall] && k.vem.length > 1 ? ' (' + MALL[mall].namn.toLowerCase() + ')' : ''), bilder));
     } else ut.insertAdjacentHTML('beforeend', '<p class="not">Syns inte på kartan.</p>');
     return ut;
   }
@@ -1040,7 +1077,7 @@
       const vad = k.sort.id === 'mall' ? k.rad.vad + ' Mallen är kroppen, halsen, axlarna och skallen, med fästpunkterna där delarna sitter och zonerna som maskerna döljer.'
         : k.rad.toner ? `Färgen ${k.namn.toLowerCase()}: tonerna ${k.rad.toner.join(', ')} ur paletten, på det neutrala ansiktet.`
           : `${k.sort.en} på ett helt ansikte, där resten är detsamma för alla delar av sorten.`;
-      kort.innerHTML = `${nav}<header><span class="typ">${k.sort.namn} · steg ${k.sort.steg}${k.forebild ? ' · förebild' : ''}${k.ritad ? '' : ' · grå platshållare'}</span>
+      kort.innerHTML = `${nav}<header><span class="typ">${k.sort.namn} · steg ${k.sort.steg}${k.kon ? ' · ' + KONTEXT[k.kon] + (k.barn ? '' : ', inte barn') : ''}${k.forebild ? ' · förebild' : ''}${k.ritad ? '' : ' · grå platshållare'}</span>
         <h3>${k.sort.en}: ${k.namn}</h3><p class="not">${vad}${k.ritad ? (k.sort.id === 'mall' ? ' Mallen är ritad; ansiktets delar och håret på bilderna är ännu grå platshållare.' : '') : ' Delen är inte ritad än: bilden är en platshållare, och ett svar nu gäller bara platshållaren.'}</p>
         ${forra ? `<p class="forra">Din kommentar förra gången: ${forra.replace(/</g, '&lt;')}</p>` : ''}</header>
         <div class="gr-svar"><div class="gr-svarknappar"><button type="button" class="gr-ja" data-grsvar="ja">Ja</button><button type="button" class="gr-nej" data-grsvar="nej">Nej</button></div>
@@ -1098,4 +1135,6 @@
     anslut();
   }
   starta();
+  // för skriptet som ritar med API:t (bildstil/api/rita.mjs): det öppnar sidan, lägger in en ny del och tar bilden
+  window.PORTRATTEN = { portratt, kartBild, neutral, granskPerson, KORT, provaDel(id, data) { DELAR[id] = data; }, png(B, skala = 4) { const c = document.createElement('canvas'); tillCanvas(B, c, 0); const s = document.createElement('canvas'); s.width = B.w * skala; s.height = B.h * skala; const g = s.getContext('2d'); g.imageSmoothingEnabled = false; g.drawImage(c, 0, 0, s.width, s.height); return s.toDataURL('image/png'); } };
 })();

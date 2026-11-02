@@ -1,0 +1,74 @@
+{
+ "id": "mun-1",
+ "ritad": 1,
+ "av": "programmeringschatten, förebild",
+ "om": "Smal mun: en mörk rödbrun läpplinje (rost0) och underläppen i skugga; tänderna syns när den är glad, och den öppna munnen är mörk inuti.",
+ "bilder": {
+  "glad": {
+   "x": -4,
+   "y": -2,
+   "rader": [
+    "........",
+    "r......r",
+    ".rqqqqr.",
+    "..rrrr..",
+    "...bb..."
+   ]
+  },
+  "nojd": {
+   "x": -4,
+   "y": -2,
+   "rader": [
+    "........",
+    "r......r",
+    ".rrrrrr.",
+    "..bbbb..",
+    "........"
+   ]
+  },
+  "lugn": {
+   "x": -4,
+   "y": -2,
+   "rader": [
+    "........",
+    "........",
+    ".arrrra.",
+    "..bbbb..",
+    "........"
+   ]
+  },
+  "ledsen": {
+   "x": -4,
+   "y": -2,
+   "rader": [
+    "........",
+    "........",
+    "..rrrr..",
+    ".r.bb.r.",
+    "........"
+   ]
+  },
+  "arg": {
+   "x": -4,
+   "y": -2,
+   "rader": [
+    "........",
+    "........",
+    "rkkkkkkr",
+    "r.bbbb.r",
+    "........"
+   ]
+  },
+  "oppen": {
+   "x": -4,
+   "y": -2,
+   "rader": [
+    "........",
+    "...rr...",
+    "..rkkr..",
+    "..rkkr..",
+    "...bb..."
+   ]
+  }
+ }
+}
