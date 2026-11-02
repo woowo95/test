@@ -460,10 +460,21 @@ SCENARIER.forvaring = {
     for (let n = 0; n < 3; n++) { newTing(s2, 'fiskespjut', 1, SIM.BYN); }
     placeTools(s2);
     const iStall = tingOf(s2).filter(t => t.x === st.x && t.y === st.y && t.hos === undefined && t.lass === undefined).length;
+    // golvet i förrådshuset fylls av små högar av många slag: byn vill ha en hylla fast ingen hög är full (steg 4.5.4.6)
+    const s3 = createState(6, START); klockan(s3); const z3 = materialForrad(s3);
+    for (const r of s3.people) r.tek = { ...r.tek, hylla: 1 };
+    const slag = SIM.SAK_LIST.filter(k => !SIM.isFood(k) && !SIM.isTool(k) && SIM.rutaOf(k) > 1);
+    for (const k of slag) { if (SIM.golvAndel(s3) > STATION.forvarAndelFull) break; setAmount(s3, k, 1); }
+    const andel = SIM.golvAndel(s3), ingenFull = !pilesOf(s3).some(a => z3 && inZone(z3, a.x, a.y) && a.n >= a.max - 1e-9);
+    const brist3 = SIM.forvarBrist(s3, 'hylla');
+    // hyllan ställs mot en vägg
+    const motVagg = !!hy && SIM.GRANNAR4.some(([dx, dy]) => SIM.bitAt(s, hy.x + dx, hy.y + dy)?.k === 'vagg');
     return [
       ['utan förrådshus byggs ingen hylla eller ställ i lagret ute', ute],
       [`byn vill ha en hylla när golvet i förrådshuset är fullt av högar (brist ${brist0.toFixed(2)}${fz ? '' : ', inget förrådshus'})`, brist0 > 0.5 && !!fz],
       [`hyllan byggs på ${h} timmar, i förrådshuset`, !!hy && !!z && !!hy.inne],
+      ['hyllan står mot en vägg', motVagg],
+      [`golvet i förrådshuset är till ${Math.round(andel * 100)} % täckt av små högar, ingen full: byn vill ha en hylla (brist ${brist3.toFixed(2)})`, andel > STATION.forvarAndelFull && ingenFull && brist3 === 1],
       ['ingen kista byggs i byns lager', ingenKista],
       [`på hyllans ruta ryms ${STATION.hyllaRymmer} högar (${ryms} grenar), och där ligger nu ${pa ? Math.round(pa.n) : 0} ${pa ? SIM.sakNamn(pa.k).toLowerCase() : ''} (en vanlig ruta rymmer ${pa ? SIM.rutaOf(pa.k) : 0})`, ryms === SIM.rutaOf('grenar') * STATION.hyllaRymmer && !!pa && pa.n > SIM.rutaOf(pa.k) + 1e-6], // (ibland är det trä som hamnar på hyllan)
       [`hyllan går inte att gå igenom (vägen förbi: ${forbi ? forbi.length + ' rutor' : 'ingen'})`, g.hinder?.[i] === 1 && !!forbi && !forbi.includes(i)],

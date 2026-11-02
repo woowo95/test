@@ -83,7 +83,8 @@ export const STATION = balans('station', {
   kistaVill: 2, kistaTing: 6, // den som har så många egna redskap och kläder som ingen använder vill ha en kista, och den rymmer så många (steg 2.10.18)
   stallTra: 1, stallRep: 1, stallMin: 15, stallRymmer: 4, // ett ställ för redskap och vapen: trä, rep och minuter, och så många redskap
   forvarFulla: 6, // byn vill ha en hylla eller kista fullt ut när så många fulla högar ligger på golvet i lagren ...
-  forvarLosa: 4, // ... och ett ställ när så många redskap ligger på golvet
+  forvarLosa: 4, // ... och ett ställ när så många redskap ligger på golvet ...
+  forvarAndel: 0.5, forvarAndelFull: 0.9, // ... och en hylla redan när golvet i förrådshusen börjar bli fullt: från så stor andel av golvet med högar, fullt ut vid den andra (steg 4.5.4.6)
   // latrinen (steg 2.7.2): en grävd grop i byns utkant
   latrinMin: 20, // så många minuters arbete att gräva gropen, med benspaden ...
   latrinSpade: 0.1, // ... som slits så här mycket för varje grop (tio gropar per spade)
@@ -561,19 +562,44 @@ function siteInne(s: State, k: string, bara?: Rum, far?: (h: Hus) => boolean) {
 // ligger på golvet i lagren: fulla högar för hyllan och kistan, redskap för stället
 export const forvarAt = (s: State, x: number, y: number) => { const t = stationAt(s, x, y); return t && isKlar(t) ? stationDef(t.k)?.forvar : undefined; };
 // det som ligger på golvet i en lagerplats (inte i en möbel) och som en möbel av sorten k är till för
-function golvet(s: State, k: string) {
-  const f = stationDef(k)?.forvar, ut: { x: number; y: number; z: Zone }[] = [];
+function golvet(s: State, k: string, alla = false) {
+  const f = stationDef(k)?.forvar, ut: { x: number; y: number; z: Zone; full: boolean }[] = [];
   if (!f || f.privat) return ut;
   for (const a of pilesOf(s)) {
     const z = zonesOf(s)[a.zone];
     if (!z || z.hus === undefined || stationAt(s, a.x, a.y)) continue; // bara inomhus (steg 2.10.18)
-    if (f.redskap ? isTool(a.k) : !isTool(a.k) && a.n >= a.max - 1e-9 && (!f.tak || SAKER[a.k]?.haller !== undefined || (SAKER[a.k]?.slits ?? 0) > 0)) ut.push({ x: a.x, y: a.y, z });
+    const full = a.n >= a.max - 1e-9;
+    // alla = också högar som inte är fulla (när golvet börjar bli fullt, steg 4.5.4.6)
+    if (f.redskap ? isTool(a.k) : !isTool(a.k) && (full || alla) && (!f.tak || SAKER[a.k]?.haller !== undefined || (SAKER[a.k]?.slits ?? 0) > 0)) ut.push({ x: a.x, y: a.y, z, full });
   }
   return ut;
 }
+// hur stor del av golvet i lagren inomhus som har högar eller möbler på sig (0 till 1, steg 4.5.4.6)
+export function golvAndel(s: State) {
+  const g = groundOf(s), upptagen = new Set<number>();
+  for (const a of pilesOf(s)) upptagen.add(a.y * W + a.x);
+  let n = 0, u = 0;
+  for (const z of zonesOf(s)) {
+    if (z.hus === undefined) continue;
+    for (let y = z.y; y < z.y + z.h; y++) for (let x = z.x; x < z.x + z.w; x++) {
+      const i = y * W + x;
+      if (!inZone(z, x, y) || g.solid?.[i]) continue;
+      n++; if (upptagen.has(i) || stationAt(s, x, y)) u++;
+    }
+  }
+  return n ? u / n : 0;
+}
+const golvFullt = (s: State) => Math.min(1, Math.max(0, (golvAndel(s) - STATION.forvarAndel) / (STATION.forvarAndelFull - STATION.forvarAndel)));
 // hur mycket byn vill ha en möbel av sorten k (0 till 1)
 // (kistan: 1 så länge någon vill ha en, villKista)
-export const forvarBrist = (s: State, k: string) => { const f = stationDef(k)?.forvar; return !f ? 0 : f.privat ? +living(s).some(p => villKista(s, p)) : Math.min(1, golvet(s, k).length / (f.redskap ? STATION.forvarLosa : STATION.forvarFulla)); };
+// (hyllan också när golvet i förrådshusen börjar bli fullt, inte först när högarna är fulla, steg 4.5.4.6)
+export const forvarBrist = (s: State, k: string) => {
+  const f = stationDef(k)?.forvar;
+  if (!f) return 0;
+  if (f.privat) return +living(s).some(p => villKista(s, p));
+  const fulla = Math.min(1, golvet(s, k).length / (f.redskap ? STATION.forvarLosa : STATION.forvarFulla));
+  return f.redskap || !golvet(s, k, true).length ? fulla : Math.max(fulla, golvFullt(s));
+};
 // ---------- kistan i sovrummet (steg 2.10.18) ----------
 // Den som sover inne och har minst kistaVill egna redskap och kläder som ingen använder bygger en kista åt sig själv, i
 // rummet där hen sover. Där ligger det egna som ingen använder (vid, som kniven vid slaktbänken), så många som kistan rymmer,
@@ -671,8 +697,12 @@ function nas(s: State, z: Zone, extra: number) {
   return true;
 }
 // platsen för en möbel av sorten k: i en lagerplats under tak, efter lagrets prioritet och närmast lagrets hörn
+// (steg 4.5.4.6: helst längs väggarna, så att gångarna i huset hålls fria, och helst på en full hög; när golvet börjar bli
+// fullt också på en hög som inte är full)
 function siteForvar(s: State, k: string) {
-  const zs = zonesOf(s), c = golvet(s, k).sort((a, b) => ((b.z.prio ?? 0) - (a.z.prio ?? 0)) || zs.indexOf(a.z) - zs.indexOf(b.z) || a.y - b.y || a.x - b.x);
+  const zs = zonesOf(s), mot = (q: { x: number; y: number }) => GRANNAR4.some(([dx, dy]) => bitAt(s, q.x + dx, q.y + dy)?.k === 'vagg') ? 0 : 1;
+  const c = golvet(s, k, !stationDef(k)?.forvar?.redskap && golvFullt(s) > 0)
+    .sort((a, b) => mot(a) - mot(b) || +b.full - +a.full || ((b.z.prio ?? 0) - (a.z.prio ?? 0)) || zs.indexOf(a.z) - zs.indexOf(b.z) || a.y - b.y || a.x - b.x);
   const at = c.find(q => nas(s, q.z, q.y * W + q.x));
   return at && { x: at.x, y: at.y, rot: undefined, inne: 1 as const };
 }
