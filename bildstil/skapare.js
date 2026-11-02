@@ -86,16 +86,29 @@
       get(x, y) { return x >= 0 && y >= 0 && x < w && y < h ? px[y * w + x] : null; },
     };
   }
-  // ljuset i hela band som i porträttstilen (5.2.1): ljus uppe till vänster, grundton, skugga och mörk skugga nere till höger
-  const ton = k => k < -0.6 ? 3 : k <= 0.1 ? 2 : k <= 0.62 ? 1 : 0;
-  // en form fylls med materialets fyra toner i band. mitt = [cx, cy, rx, ry] för banden (annars formens ruta), forskj flyttar
+  // matt skuggning (Björn efter 5.2.2.2: huvudena fick inte se glansiga ut). Formen räknas som en rundad kropp, och ljuset
+  // kommer uppifrån vänster och lite framifrån, så att skuggan följer formen i stället för att ligga i raka band. Ljuset tar
+  // nästan hela framsidan i grundtonen; den ljusaste tonen bara på det som vänder sig mot ljuset och den mörkaste bara längst
+  // ut i skuggan. Gränserna mellan tonerna är korniga (bildstilens korn: ingen yta är slät), så att inget ser blankt ut
+  const LJUSET = [-0.62, -0.42, 0.66];
+  function ljushet(x, y, cx, cy, rx, ry) {
+    const u = (x + 0.5 - cx) / rx, v = (y + 0.5 - cy) / ry, nz = Math.sqrt(Math.max(0, 1 - Math.min(1, u * u + v * v)));
+    return LJUSET[0] * u + LJUSET[1] * v + LJUSET[2] * nz;
+  }
+  const NIVA = [-0.08, 0.4, 0.86]; // gränserna mellan ton 0–1, 1–2 och 2–3
+  function ton(l, x, y) {
+    const korn = (vn(x, y, 2.2, 21) - 0.5) * 0.2;
+    const k = l + korn;
+    return k < NIVA[0] ? 0 : k < NIVA[1] ? 1 : k < NIVA[2] ? 2 : 3;
+  }
+  // en form fylls med materialets fyra toner. mitt = [cx, cy, rx, ry] för skuggningen (annars formens ruta), forskj flyttar
   // alla toner ett steg, kontur ger formen en egen kant i ton 0 (konturen mot bakgrunden läggs annars på av porträttet)
   function fyll(d, inne, kanal, [x0, y0, x1, y1], { kontur = false, mitt = null, forskj = 0 } = {}) {
     const [cx, cy, rx, ry] = mitt || [(x0 + x1 + 1) / 2, (y0 + y1 + 1) / 2, Math.max(1, (x1 - x0 + 1) / 2), Math.max(1, (y1 - y0 + 1) / 2)];
     const ute = (x, y) => x >= 0 && y >= 0 && x < d.w && y < d.h && !inne(x, y);
     for (let y = Math.max(0, Math.floor(y0)); y <= Math.min(d.h - 1, y1); y++) for (let x = Math.max(0, Math.floor(x0)); x <= Math.min(d.w - 1, x1); x++) {
       if (!inne(x, y)) continue;
-      let t = kontur && (ute(x - 1, y) || ute(x + 1, y) || ute(x, y - 1) || ute(x, y + 1)) ? 0 : ton((x + 0.5 - cx) / rx * 0.65 + (y + 0.5 - cy) / ry * 0.7);
+      const t = kontur && (ute(x - 1, y) || ute(x + 1, y) || ute(x, y - 1) || ute(x, y + 1)) ? 0 : ton(ljushet(x, y, cx, cy, rx, ry), x, y);
       d.satt(x, y, kanal + Math.max(0, Math.min(3, t + forskj)));
     }
   }
