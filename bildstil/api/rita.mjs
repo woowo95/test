@@ -325,6 +325,13 @@ try {
       spara(d, slut, `API:t (${MODELL}), bästa av ${ok.length}${kommentarer[d.id] ? ', omritad efter Björns svar' : ''}`);
       rapport.push(`${d.id}: ritad, ${hur}${g?.anteckning ? ': ' + g.anteckning : ''}`);
     }
+    // registret läses om från disken, och bara ritad för delarna som ritades ändras, så att en annan körning eller en
+    // ändring under tiden inte skrivs över
+    const ritade = Object.fromEntries(delar.map(d => [d.id, d.ritad]));
+    const nu = JSON.parse(fs.readFileSync(REGISTER, 'utf8'));
+    for (const k of Object.keys(PR)) delete PR[k];
+    Object.assign(PR, nu);
+    for (const d of PR.delar) if (d.id in ritade) d.ritad = ritade[d.id];
     skrivRegister();
     await stangSidan();
     fs.mkdirSync(path.join(HAR, 'logg'), { recursive: true });
