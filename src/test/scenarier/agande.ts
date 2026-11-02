@@ -845,7 +845,7 @@ SCENARIER.handelsko = {
     // torkat kött som båda har nytta av, och något över att betala med
     const k = 'torrkott';
     h.varor = [{ k, n: 2 }]; h.silver = 20;
-    for (const p of [a, b]) { SIM.put(s, 'skinn', 6, { [p.id]: 6 }); SIM.put(s, 'silver', 20, { [p.id]: 20 }); }
+    for (const [p, n] of [[a, 6], [b, 2]] as const) { SIM.put(s, 'skinn', n, { [p.id]: n }); SIM.put(s, 'silver', 20, { [p.id]: 20 }); } // b har för lite skinn för att sälja dem (steg 4.5.4.14)
     const uppgift = (p: Person, v: NonNullable<ReturnType<typeof SIM.handlaVal>>) => { p.task = { act: 'handla', phase: 'do', tx: v.spot.x, ty: v.spot.y, until: s.now + v.dur, carry: 0, ref: v.ref, dark: false, why: v.why } as Task; };
     const va = SIM.handlaVal(s, a)!; uppgift(a, va);
     const vb = SIM.handlaVal(s, b)!; uppgift(b, vb);
@@ -949,6 +949,42 @@ SCENARIER.filtar = {
       ['bybons filt plockas ihop när bytet är klart', ihop],
       ['ett stort byte mellan två bybor: var sin filt mitt emot varandra', par],
       ['två filtar visas som ett byte med båda namnen; en filt ensam som en enkel lista med vems den är', lista],
+    ];
+  },
+};
+
+SCENARIER.overflod = {
+  text: 'Byborna säljer sitt överflöd för silver (steg 4.5.4.14, handel.ts): den som har mycket mer av något än hen behöver går till handlaren för att sälja det mot silver, när handlaren vill ha det, också om hen inte vill köpa något. Silvret sparas till nästa handlare eller byte. Den som bara har lite över går inte.',
+  kor: () => {
+    const s = createState(6, START);
+    rikBy(s); s.nastaHandlare = s.now;
+    for (let i = 0; i < 40 && s.handlare?.fas !== 'handlar'; i++) { step(s, BEAT); utanVantan(s); }
+    const h = s.handlare!, [a, b] = living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen);
+    h.bynKlar = true; h.varor = []; h.silver = 100;
+    for (const p of living(s)) if (p.task?.act === 'handla') p.task = undefined;
+    const k = 'skinn';
+    SIM.put(s, k, 12, { [a.id]: 12 }); // a har mycket mer än hen behöver
+    const fore = ownsAmount(s, a, k), silver0 = ownsAmount(s, a, 'silver'), vill = SIM.handlarVarde(s, h, k) > 0;
+    const va = SIM.handlaVal(s, a);
+    if (va) a.task = { act: 'handla', phase: 'do', tx: va.spot.x, ty: va.spot.y, until: s.now + va.dur, carry: 0, ref: va.ref, dark: false, why: va.why } as Task;
+    const vb = SIM.handlaVal(s, b);
+    if (va) SIM.handlaKlar(s, a, a.task!);
+    const silver = ownsAmount(s, a, 'silver') - silver0, salt = fore - ownsAmount(s, a, k);
+    const hanFick = h.varor.some(w => w.k === k);
+    // handlaren vill inte ha det (ryggsäcken full): ingen går dit för att sälja
+    const t = createState(6, START);
+    rikBy(t); t.nastaHandlare = t.now;
+    for (let i = 0; i < 40 && t.handlare?.fas !== 'handlar'; i++) { step(t, BEAT); utanVantan(t); }
+    const h2 = t.handlare!, [c] = living(t).filter(p => SIM.ageOf(p, t.now) >= SIM.ALDER.vuxen);
+    h2.bynKlar = true; h2.varor = [{ k: 'sten', n: 999 }];
+    SIM.put(t, k, 12, { [c.id]: 12 });
+    const full = SIM.handlarVarde(t, h2, k) === 0 && !SIM.handlaVal(t, c);
+    return [
+      [`handlaren vill ha ${k}`, vill],
+      [`den som har mycket över (${fore} ${k}) går till handlaren för att sälja, utan att vilja köpa något`, !!va && va.why.startsWith('Handlar med')],
+      [`hen säljer (${salt}) och får silver (${silver}), som hen äger efteråt`, salt >= 1 && silver >= 1 && hanFick && (s.stat?.saltOver ?? 0) >= 1],
+      ['den som inte har något över går inte', !vb],
+      ['när handlaren inte kan bära mer går ingen dit för att sälja', full],
     ];
   },
 };

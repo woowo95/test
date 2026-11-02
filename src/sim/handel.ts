@@ -49,6 +49,7 @@ export const HANDEL = balans('handel', {
   koMin: 10, // den som står i kö tittar efter så här många minuter om det är hens tur
   koAvstand: 0.7, // rutor mellan dem som står i kön
   nytta: 1, // en bybo vill köpa det hen värderar så här högt (behovAv: 1 = har nytta av, DELA.saknar = saknar) eller mer
+  salja: 6, // en bybo går till handlaren för att sälja det hen har över av ett slag om det är värt så mycket silver för handlaren (steg 4.5.4.14)
   tomTanke: -0.05, // den som gick tomhänt från handlaren ...
   tomTim: 6, // ... i så många timmar
   minnas: 20, // så många byten minns handlarens inforuta
@@ -337,6 +338,18 @@ vidLura.push((s, L, X) => {
 const bybonPart = (s: State, p: Person): Part => ({ ...personPart(s, p, true), varde: k => k === 'silver' ? 1 : behovAv(s, p, k) });
 // det p har nytta av av det handlaren har, det hen saknar först
 const vill = (s: State, h: Handlare, p: Person) => h.varor.map(w => ({ w, v: behovAv(s, p, w.k) })).filter(x => x.v >= HANDEL.nytta).sort((a, b) => b.v - a.v).map(x => x.w);
+// det p har mycket mer av än hen behöver och handlaren vill ha, för silver (steg 4.5.4.14): det p har över av ett slag (det hen
+// inte behöver själv, payable i behov.ts) som är värt minst HANDEL.salja silver för handlaren, så mycket som hen kan bära
+function salja(s: State, h: Handlare, p: Person) {
+  const ut: Vara[] = [];
+  let plats = ledigt(h);
+  for (const w of bybonPart(s, p).over(['silver'])) {
+    const v = handlarVarde(s, h, w.k), n = Math.min(w.n, Math.floor(plats / viktOf(w.k) + 1e-9));
+    if (v <= 0 || n < 1 || n * grundvarde(w.k) * v < HANDEL.salja) continue;
+    ut.push({ ...w, n }); plats -= n * viktOf(w.k);
+  }
+  return ut;
+}
 // gör p något vid filten just nu (bilden ritar pratbubblor med varorna): den som handlar, inte den som väntar i kön
 export const handlarNu = (s: State, p: Person) => {
   const h = s.handlare, t = p.task;
@@ -355,11 +368,11 @@ export function handlaVal(s: State, p: Person): { why: string; spot: { x: number
   if (h.handlat?.includes(p.id)) return undefined;
   const ko = h.ko = (h.ko ?? []).filter(id => { const q = byId(s, id); return !!q && alive(q) && (q === p || (q.task?.act === 'handla' && q.task.ref === h.id)); });
   if (!ko.includes(p.id)) {
+    // hen ställer sig i kön om det hen kan betala med räcker till en av varorna hen vill ha, för handlaren, eller om hen har
+    // något att sälja (steg 4.5.4.14)
     const v = vill(s, h, p);
-    if (!v.length) return undefined;
-    // hen ställer sig bara i kön om det hen kan betala med räcker till en av varorna, för handlaren
-    const kan = bybonPart(s, p).over([]).reduce((a, w) => a + w.n * grundvarde(w.k) * handlarVarde(s, h, w.k), 0);
-    if (kan < Math.min(...v.map(w => grundvarde(w.k) * handlarVarde(s, h, w.k)))) return undefined;
+    const kan = v.length ? bybonPart(s, p).over([]).reduce((a, w) => a + w.n * grundvarde(w.k) * handlarVarde(s, h, w.k), 0) : 0;
+    if (!(v.length && kan >= Math.min(...v.map(w => grundvarde(w.k) * handlarVarde(s, h, w.k)))) && !salja(s, h, p).length) return undefined;
     ko.push(p.id);
   }
   const i = ko.indexOf(p.id);
@@ -402,6 +415,11 @@ function egenHandel(s: State, h: Handlare, p: Person) {
     if (n >= HANDEL.egnaMax) break;
     if (!h.varor.includes(w)) continue;
     if (bytaMed(s, M, H_, [{ k: w.k, n: isTool(w.k) ? 1 : Math.min(w.n, 2), q: w.q }], { behov: M.varde(w.k), minst: 1, fara: 0, typ: 'handel', utom: [w.k], delad: true }) > 0) n++;
+  }
+  // ... och säljer det hen har mycket mer av än hen behöver, för silver som hen sparar (steg 4.5.4.14)
+  for (const w of salja(s, h, p)) {
+    if (n >= HANDEL.egnaMax) break;
+    if (bytaMed(s, H_, M, [w], { behov: H_.varde(w.k), minst: 1, fara: 0, typ: 'handel', utom: [w.k], delad: true }) > 0) { n++; count(s, 'saltOver'); }
   }
   count(s, 'egenHandel');
   if (n) count(s, 'egnaByten', n);
