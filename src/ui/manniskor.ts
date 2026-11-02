@@ -4,7 +4,7 @@ import { PRICKAR, personFarg } from './hjalp';
 import { s, sakVar, ui, uppgiftVid, vidNyBy } from './lage';
 import { Ikoner, TS, bubbleG, labels, markLayer, peopleG } from './scen';
 import { jaktPlats } from './jakt';
-import { hasIcon, iconCanvas } from '../ikoner';
+import { hasIcon, iconCanvas, ljusSymbol } from '../ikoner';
 
 // människorna på kartan: kroppen, det de bär, pratbubblor, symbolen för vad de gör och namnet
 const bubbles: { id: number; kind: string; good: boolean; until: number; i?: string }[] = [];
@@ -79,13 +79,17 @@ function markOf(p: Person): string | undefined {
 }
 // pratbubblan (steg 3.10.3): samma ruta som arbetssymbolerna, med pratbubblan i pixlar eller ämnets symbol (ikon, steg 3.9.5).
 // Kanten följer samtalet och relationen: rött gräl, rosa flirt eller kärlek, guld berättelse, grönt vänner, mörkrött ovänner
+const PRAT_FARG = 0xf3ead2, PRAT_KANT = 0x3b2f25; // pratbubblans ljusa botten och mörka kant
 function pratRuta(x: number, top: number, bob: number, kind: string | undefined, rel: 'karlek' | 'van' | 'ovan' | 'neutral', ikon?: string) {
   const kant = kind === 'gräl' ? 0xd9534f : kind === 'flirt' ? 0xf0a3bd : kind === 'berättelse' ? 0xf2d27a
     : rel === 'karlek' ? 0xf0a3bd : rel === 'ovan' ? 0x8a2a22 : rel === 'van' ? 0x7fbf5a : undefined;
-  if (kant !== undefined) bubbleG.lineStyle(1, kant, 0.95);
-  bubbleG.beginFill(0x111111, 0.35).drawRoundedRect(x - 5, top - 5 + bob, 10, 10, 3).endFill().lineStyle(0);
+  // en ljus, rundad pratbubbla med en spets ner mot den som pratar, så att den inte ser ut som arbetets mörka ruta (steg 4.5.6.9)
+  const y0 = top + bob, linje = kant ?? PRAT_KANT, b = kant !== undefined ? 1.2 : 0.8;
+  bubbleG.lineStyle(b, linje, 0.95).beginFill(PRAT_FARG, 0.94).drawRoundedRect(x - 6, y0 - 6, 12, 11, 4).endFill();
+  bubbleG.lineStyle(0).beginFill(PRAT_FARG, 0.94).drawPolygon([x - 2.6, y0 + 4.4, x + 1.4, y0 + 4.4, x - 1.8, y0 + 8.2]).endFill();
+  bubbleG.lineStyle(b, linje, 0.95).moveTo(x - 2.6, y0 + 5).lineTo(x - 1.8, y0 + 8.2).lineTo(x + 1.4, y0 + 5).lineStyle(0);
   const k = ikon && hasIcon(ikon) ? ikon : 'a_prata';
-  markIcons.add(k, x - 4, top - 4 + bob, 8 / iconCanvas(k).width);
+  markIcons.add(k, x - 4, top - 4.5 + bob, 8 / iconCanvas(k).width, ljusSymbol(k) ? PRAT_KANT : 0xffffff);
 }
 const markIcons = new Ikoner(markLayer);
 // namnet över den valda och den under musen. Två texter som återanvänds: att skapa en text varje bildruta är dyrt

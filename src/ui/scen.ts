@@ -38,12 +38,12 @@ export class Ikoner {
   constructor(readonly layer: PIXI.Container) {}
   start() { this.n = 0; }
   // x, y = bildens övre vänstra hörn. Ingen bild vrids: det som står vridet har en egen bild (steg 3.10.7)
-  add(k: string, x: number, y: number, sc: number) {
+  add(k: string, x: number, y: number, sc: number, tint = 0xffffff) {
     if (!hasIcon(k)) return;
     textures[k] ??= PIXI.Texture.from(iconCanvas(k), { scaleMode: PIXI.SCALE_MODES.NEAREST });
     let sp = this.layer.children[this.n++] as PIXI.Sprite | undefined;
     if (!sp) { sp = new PIXI.Sprite(); this.layer.addChild(sp); }
-    sp.texture = textures[k]; sp.scale.set(sc); sp.visible = true;
+    sp.texture = textures[k]; sp.scale.set(sc); sp.tint = tint; sp.visible = true;
     sp.position.set(x, y);
   }
   end() { for (let i = this.n; i < this.layer.children.length; i++) this.layer.children[i].visible = false; }

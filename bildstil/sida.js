@@ -1874,7 +1874,24 @@ const HS_MYNT = [".......oo.......", "......oGho......", "......ohvo......", "..
 const VB_PUNG = ["................", "................", "......oo........", ".....oLLo.......", "....oobboo......", "...occccccoo....", "..occcbcccco....", "..occccccbco....", ".occbccccccco...", ".occccccbccco...", ".occcccccccco.oo", "..occccccccooGho", "...oooooooooGhho", "....zzzzzzz.oooz", "............zzz.", "................"];
 const VB_STAPEL = ["................", "................", "................", "................", ".....oooooo.....", "....oGhhhhGo....", "....oooooooo....", "....oGhhhhGo....", "....oooooooo....", "....oGhhhhGoz...", "....oooooooo....", "....oGhhhhGoz...", ".....oooooooz...", "......zzzzzz....", "................", "................"];
 const VB_MYNT = ["................", "......oooo......", ".....oGhhGo.....", ".....oohhoo.....", ".....oLLLLo.....", "....obbbbbbo....", "...obbcbbbbbo...", "..obbbbbbcbbbo..", "..obcbbbbbbbbo..", "..obbbbbcbbbbo..", "..obbbbbbbbcbo..", "...obbbbbbbbo...", "....oooooooozz..", ".....zzzzzzzz...", "................", "................"];
-const VAL = [
+// pratbubblan (steg 4.5.6.9): ljus och rundad med en spets ner mot den som pratar, 12 × 15 punkter med symbolen (8 × 8) i
+// mitten. Bredvid för jämförelse arbetets mörka ruta. Varje bild dubbelt så stor
+const PRAT_RAD = ['..oooooooo..', '.owwwwwwwwo.', 'owwwwwwwwwwo', 'owwwwwwwwwwo', 'owwwwwwwwwwo', 'owwwwwwwwwwo', 'owwwwwwwwwwo', 'owwwwwwwwwwo',
+  'owwwwwwwwwwo', 'owwwwwwwwwwo', '.owwwwwwwwo.', '..oowwoooo..', '...owo......', '...oo.......', '...o........'];
+const RUTA_RAD = ['.kkkkkkkkkk.', 'kkkkkkkkkkkk', 'kkkkkkkkkkkk', 'kkkkkkkkkkkk', 'kkkkkkkkkkkk', 'kkkkkkkkkkkk', 'kkkkkkkkkkkk', 'kkkkkkkkkkkk', 'kkkkkkkkkkkk', 'kkkkkkkkkkkk', 'kkkkkkkkkkkk', '.kkkkkkkkkk.'];
+const PRAT_L = { o: 'kol0', w: 'ben3', k: 'kol1' };
+function ritaPrat(B, x0, y0, rader, ikon) {
+  const L = Bild(12, 15, B.P); ritaSprite(L, rader, PRAT_L, 0, 0);
+  if (rader === PRAT_RAD) ritaSprite(L, IKONER.PIX[ikon], { w: 'kol0', a: 'skiffer1' }, 2, 2); else ritaIkon(L, ikon, 2, 2); // i bubblan ritas symbolen mörk
+  for (let y = 0; y < 30; y++) for (let x = 0; x < 24; x++) { const v = L.px[(y >> 1) * 12 + (x >> 1)]; if (v >= 0) B.satt(x0 + x, y0 + y, v); }
+}
+const PRAT_PAR = (bubbla) => ({ w: 3 * 64 + 4, h: 34, rita: (B, P) => ['a_prata', 'a_tra', 'a_fiska'].forEach((k, i) => {
+  ritaPrat(B, 2 + i * 64, 2, bubbla ? PRAT_RAD : RUTA_RAD, k); ritaPrat(B, 30 + i * 64, 2, RUTA_RAD, k);
+}) });
+const VAL = [  { id: 'pratbubbla', namn: 'Pratbubblan', typ: 'janej', vad: 'Steg 4.5.6.9: symbolen för vad man pratar om står i en pratbubbla, så att den inte ser ut som symbolen för vad någon arbetar med. Tre par: att prata, att prata om skogen och att prata om fisket. I varje par till vänster pratet, till höger arbetet. Dubbelt så stort som i spelet. I spelet nu: den nya bubblan.',
+    idag: PRAT_PAR(false), idagText: 'Förut: samma mörka ruta för pratet och arbetet.',
+    versioner: [{ text: 'En ljus, rundad bubbla med mörk kant och en spets ner mot den som pratar, och symbolen mörk i den. Kanten får relationens färg som förut (röd vid gräl, rosa vid kärlek).', ...PRAT_PAR(true) }] },
+
   { id: 'ved', namn: 'Veden', typ: 'tre', vad: 'Ny symbol (steg 4.5.5.3), 16 × 16 punkter: veden är bränslet, vedträn som elden bränner (20 i en stack, 1 kg styck), i förrådet och lagret. Den ska synas skild från virket. Till vänster i rätt storlek, till höger tre gånger större. I spelet nu: platshållaren överst.',
     idag: { w: 36, h: 36, rita: (B, P) => forstorad(B, 'ved', 2, 2) }, idagText: 'Platshållaren i spelet nu.',
     versioner: [

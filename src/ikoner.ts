@@ -3925,6 +3925,8 @@ export function iconCanvas(k: string) {
   return (canvases[k] = c);
 }
 export const hasIcon = (k: string) => !!PIX[k];
+// en ljus symbol utan kant (de för arbetet, ritade för en mörk ruta): i den ljusa pratbubblan ritas den mörk (steg 4.5.6.9)
+export const ljusSymbol = (k: string) => !!PIX[k] && !PAL[k]?.o && ['#f4efe0', '#dad0bb'].includes(PAL[k]?.w ?? '');
 // framstegscirkeln för det som inte är klart (Björn valde A2 efter v55): en mörk bricka med vit kant som fylls med gult,
 // medsols från klockan tolv, ju längre arbetet kommit (p från 0 till 1)
 export function framstegSvg(p: number, size = 10) {
