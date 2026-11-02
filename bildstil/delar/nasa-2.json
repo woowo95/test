@@ -1,0 +1,33 @@
+{
+ "id": "nasa-2",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5)",
+ "om": "Godkänd utan ändringar. Den smala näsan håller sig inom rutan och följer förebildens stil. Ryggen är två punkter bred, ljus d till vänster och skugga b till höger, så ljuset kommer från vänster som i förebilden. Näsvingarna är fyra punkter breda och har mörka näsborrar (a) längst ner. Ryggen och basen ligger på samma mittlinje. Det finns inga ensamma prickar och ingen glans. Barnets näsa är kortare, har samma rygg och en liten bas, och sitter i samma kolumner som de vuxnas.",
+ "bilder": {
+  "standard": {
+   "x": -2,
+   "y": 1,
+   "rader": [
+    "..db.",
+    "..db.",
+    "..db.",
+    "..cb.",
+    "..cb.",
+    ".dcbb",
+    ".abba"
+   ]
+  }
+ },
+ "barn": {
+  "standard": {
+   "x": -1,
+   "y": 1,
+   "rader": [
+    ".db.",
+    ".db.",
+    ".cb.",
+    "acba"
+   ]
+  }
+ }
+}

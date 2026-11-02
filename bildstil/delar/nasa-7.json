@@ -1,0 +1,35 @@
+{
+ "id": "nasa-7",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5)",
+ "om": "Godkänd utan ändringar. Delen ryms i rutan: vuxenbilden täcker x −3..4 och y 1..8, barnbilden x −2..3 och y 1..5. Den följer förebildens stil med en smal näsrygg och samma toner. Den ljusa sidan (d) ligger mot ljuset uppe till vänster och skuggan (b) till höger längs hela kröken. Näsryggen börjar rakt vid näsroten, viker av åt höger i en knöl och böjer sedan tillbaka, så spetsen hänger lite snett, precis som beskrivningen säger. De ojämna näsborrarna i a ger den avsedda lite fula verkan utan glans eller ensamma ljusa prickar. Barnets näsa har samma knyck men är kortare och mindre, vilket passar barnets mindre drag. Krokigheten syns tydligt men stör inte på något av de tre ansiktena.",
+ "bilder": {
+  "standard": {
+   "x": -3,
+   "y": 1,
+   "rader": [
+    "..db....",
+    "..dcb...",
+    "...dcb..",
+    "....db..",
+    "...dcb..",
+    "..dccbb.",
+    ".bdcccba",
+    "..abbaa."
+   ]
+  }
+ },
+ "barn": {
+  "standard": {
+   "x": -2,
+   "y": 1,
+   "rader": [
+    "..db..",
+    "..dcb.",
+    "...db.",
+    "..dccb",
+    ".abbaa"
+   ]
+  }
+ }
+}

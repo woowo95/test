@@ -1,0 +1,36 @@
+{
+ "id": "nasa-5",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5)",
+ "om": "Godkänd utan ändringar. Den långa näsan har samma stil, linjetjocklek och skuggning som förebilden. Ryggen är smal och rak, med ljus vänstersida (d) och skuggad högersida (b), och den går två rader längre ner än förebilden. Tonen mörknar mot spetsen och näsborrarna ligger i mörkaste ton (a). Delen håller sig inom rutan (-4..4, 0..9) och använder bara abcd. Barnets version är mindre och kortare men behåller den långa, raka ryggen i förhållande till det rundare barnansiktet.",
+ "bilder": {
+  "standard": {
+   "x": -3,
+   "y": 0,
+   "rader": [
+    "...db..",
+    "...db..",
+    "...db..",
+    "...cb..",
+    "...cb..",
+    "..dcb..",
+    "..dccb.",
+    ".bdccba",
+    "..abba."
+   ]
+  }
+ },
+ "barn": {
+  "standard": {
+   "x": -2,
+   "y": 1,
+   "rader": [
+    "..db.",
+    "..db.",
+    "..cb.",
+    ".dccb",
+    ".abba"
+   ]
+  }
+ }
+}

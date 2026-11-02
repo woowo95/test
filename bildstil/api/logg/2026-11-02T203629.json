@@ -1,0 +1,25 @@
+{
+ "kommando": "rita",
+ "args": [
+  "nasa",
+  "ogonbryn"
+ ],
+ "modell": "claude-opus-5-5",
+ "insats": "high",
+ "dollar": 0.517,
+ "rapport": [
+  "nasa-2: ritad, godkänd i granskningen",
+  "nasa-3: ritad, godkänd i granskningen",
+  "nasa-4: ritad, ändrad i granskningen: Formen och storleken stämmer med beskrivningen: näsan är fem rader hög (rad 2 till 6), har en rundad spets och ligger inom rutan. Skuggningen följde dock inte ljuset uppifrån vänster. Den vänstra näsvingen var hud0, alltså mörkast på den sida som vänder sig mot ljuset. Jag ändrade den till hud2 överst och hud1 under, så att vingen är ljus på vänster sida och skuggas nedåt. Skuggan under näsborrarna går nu från hud1 till vänster mot hud0 till höger (..bbaa.), så att den följer formen och faller bort från ljuset. Barnets näsa hade samma fel med hud0 på den belysta vänstra sidan. Barnets näsa var också bara fyra punkter bred, eftersom första kolumnen var tom, fast anteckningen sa fem. Nu har den en ljus vinge i hud2 till vänster (cdcbb) och en skugga under som mörknar åt höger (.bbaa). Den är tre rader hög och fem punkter bred, med näsryggen i hud3 på samma plats som hos den vuxna.",
+  "nasa-5: ritad, godkänd i granskningen",
+  "nasa-6: ritad, ändrad i granskningen: Vuxennäsan stämmer med förebilden och beskrivningen. Den håller sig inom rutan, är skuggad med ljus från vänster och har synliga näsborrar på en rund, uppåtvänd spets, så den är oförändrad. I barnets näsa stod det ljusaste tonet d som en ensam punkt mitt bland c (.dccb). Det läste som en liten ljusfläck eller glans. Jag ändrade raden till .ddcb, så att ljuset på spetsens vänstra sida blir en liten klunga som i vuxennäsan. Barnnäsan är fortfarande kortare och mindre, med samma uppåtvända spets och samma näsborrar.",
+  "nasa-7: ritad, godkänd i granskningen",
+  "nasa-8: ritad, godkänd i granskningen",
+  "nasa-9: ritad, ändrad i granskningen: Vuxenbilden är oförändrad. Den låga, mjuka näsryggen börjar längre ner än förebilden och breder ut sig till en platt, bred näsbotten med lågt sittande näsborrar åt sidorna, och den stämmer med beskrivningen och ljuset. Jag rättade anteckningen: ljuset kommer uppifrån vänster, så vänster sida av ryggen och näsvingen är ljusast (c och d) och skuggan ligger på höger sida (b). Näsbotten är mörkare och näsborrarna har mörkaste tonen (a) ytterst. I barnbilden var näsbotten sned, med två mörka punkter till vänster och en till höger, fast barnets näsrygg står på samma kolumner som vuxnas. Jag gjorde näsbotten en punkt bredare (aabbaa) så att den ligger jämnt under ryggen och blir lika platt och bred som hos den vuxna, i mindre skala. Barnbilden ryms fortfarande i rutan (x -2 till 3, y 3 till 5).",
+  "nasa-10: ritad, godkänd i granskningen",
+  "bryn-2: ritad, godkänd i granskningen",
+  "bryn-3: ritad, ändrad i granskningen: Formen, storleken och lutningarna stämmer med beskrivningen. Alla h är borttagna. I lugna och förvånade blev hh-klungan mitt i g-ytan en ljus fläck som såg ut som glans. I arga satt ett ensamt h som en prick i ytterkanten, och i ledsna fanns inget h alls, så brynet var inte heller detsamma i alla lägen. Nu har alla lägen samma uppbyggnad: g på ovansidan mot ljuset och f och e på undersidan, med korn i små klungor där tonerna möts. Inga andra punkter är ändrade.",
+  "bryn-4: ritad, godkänd i granskningen",
+  "bryn-5: ritad, ändrad i granskningen: Formen och lägena stämmer med beskrivningen, men två saker ändrades. 1) De ljusa h-klungorna i överkanten (hh) läste som glans mot hårfästet på alla tre ansiktena. Jag har brutit upp dem till enstaka h intill g, så att överkanten blir matt och lurvig och ljuset ändå kommer uppifrån vänster. 2) I arga låg ljusa g under mörka f i nedre högra delen, så skuggningen gick emot formen. Jag har ritat om det arga brynet som ett nedåtlutande band: ljust (g) i överkanten, f i mitten och e i underkanten hela vägen till den sänkta inre änden. I ledsna och förvånade minskade jag h på samma sätt. Storlek, tjocklek och fästläge är oförändrade i alla lägen."
+ ]
+}

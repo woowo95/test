@@ -32,7 +32,9 @@ const lagenFor = s => SORT[s].lagen ? PR.lagen[SORT[s].lagen].map(l => l.id) : [
 
 // ---------- registret skrivs med en rad per del, som förut ----------
 function skrivRegister() {
-  const rad = o => JSON.stringify(o), L = ['{'], nycklar = Object.keys(PR);
+  // samma format som registret har: ", " och ": " mellan delarna, så att bara det som ändrats syns i git
+  const rad = v => Array.isArray(v) ? '[' + v.map(rad).join(', ') + ']' : v && typeof v === 'object' ? '{' + Object.entries(v).map(([k, x]) => JSON.stringify(k) + ': ' + rad(x)).join(', ') + '}' : JSON.stringify(v);
+  const L = ['{'], nycklar = Object.keys(PR);
   nycklar.forEach((k, i) => {
     const v = PR[k], sep = i < nycklar.length - 1 ? ',' : '';
     const lista = (namn, arr, ind) => { L.push(`${ind}"${namn}": [`); arr.forEach((x, j) => L.push(`${ind}  ${rad(x)}${j < arr.length - 1 ? ',' : ''}`)); };

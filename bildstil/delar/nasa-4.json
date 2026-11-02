@@ -1,0 +1,30 @@
+{
+ "id": "nasa-4",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5)",
+ "om": "Formen och storleken stämmer med beskrivningen: näsan är fem rader hög (rad 2 till 6), har en rundad spets och ligger inom rutan. Skuggningen följde dock inte ljuset uppifrån vänster. Den vänstra näsvingen var hud0, alltså mörkast på den sida som vänder sig mot ljuset. Jag ändrade den till hud2 överst och hud1 under, så att vingen är ljus på vänster sida och skuggas nedåt. Skuggan under näsborrarna går nu från hud1 till vänster mot hud0 till höger (..bbaa.), så att den följer formen och faller bort från ljuset. Barnets näsa hade samma fel med hud0 på den belysta vänstra sidan. Barnets näsa var också bara fyra punkter bred, eftersom första kolumnen var tom, fast anteckningen sa fem. Nu har den en ljus vinge i hud2 till vänster (cdcbb) och en skugga under som mörknar åt höger (.bbaa). Den är tre rader hög och fem punkter bred, med näsryggen i hud3 på samma plats som hos den vuxna.",
+ "bilder": {
+  "standard": {
+   "x": -3,
+   "y": 2,
+   "rader": [
+    "...db..",
+    "..dcb..",
+    ".cdccbb",
+    ".bdcbba",
+    "..bbaa."
+   ]
+  }
+ },
+ "barn": {
+  "standard": {
+   "x": -2,
+   "y": 2,
+   "rader": [
+    "..db.",
+    "cdcbb",
+    ".bbaa"
+   ]
+  }
+ }
+}

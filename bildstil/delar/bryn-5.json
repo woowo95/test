@@ -1,0 +1,56 @@
+{
+ "id": "bryn-5",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5)",
+ "om": "Formen och lägena stämmer med beskrivningen, men två saker ändrades. 1) De ljusa h-klungorna i överkanten (hh) läste som glans mot hårfästet på alla tre ansiktena. Jag har brutit upp dem till enstaka h intill g, så att överkanten blir matt och lurvig och ljuset ändå kommer uppifrån vänster. 2) I arga låg ljusa g under mörka f i nedre högra delen, så skuggningen gick emot formen. Jag har ritat om det arga brynet som ett nedåtlutande band: ljust (g) i överkanten, f i mitten och e i underkanten hela vägen till den sänkta inre änden. I ledsna och förvånade minskade jag h på samma sätt. Storlek, tjocklek och fästläge är oförändrade i alla lägen.",
+ "bilder": {
+  "lugna": {
+   "x": -4,
+   "y": -4,
+   "rader": [
+    "........",
+    "..gh.gg.",
+    ".hggggff",
+    "ggfgffee",
+    ".ffeeee.",
+    "........"
+   ]
+  },
+  "arga": {
+   "x": -4,
+   "y": -4,
+   "rader": [
+    ".hg.....",
+    "hgggg...",
+    "gfgfggg.",
+    ".ffeffgg",
+    "...eeeff",
+    ".....eee"
+   ]
+  },
+  "ledsna": {
+   "x": -4,
+   "y": -4,
+   "rader": [
+    ".....gh.",
+    "...hgggg",
+    ".hgggggf",
+    "ggfgffee",
+    "fffeee..",
+    "ee......"
+   ]
+  },
+  "forvanade": {
+   "x": -4,
+   "y": -4,
+   "rader": [
+    "..hggg..",
+    ".hggggf.",
+    "hggffggf",
+    "gff..ffe",
+    "fe....ee",
+    "........"
+   ]
+  }
+ }
+}

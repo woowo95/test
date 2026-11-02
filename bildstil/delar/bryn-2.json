@@ -1,0 +1,60 @@
+{
+ "id": "bryn-2",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5)",
+ "om": "Godkänd utan ändringar. Alla lägen är 8 × 7 punkter och håller sig inom rutan. De använder bara e, f, g och hör ihop med förebilden: ungefär lika breda, två till tre punkter tjocka, ljus ovansida (g) och mörkare undersida (f, e), utan glans och utan ensamma prickar. Lugna är en tydlig båge där ytteränden sjunker längre ner än den inre. Arga drar ner den inre änden ett steg mot näsan. Ledsna lyfter den inre änden och låter den yttre hänga. Förvånade lyfter bågen och gör den högre. Brynen ser rimliga ut på alla tre ansiktena.",
+ "bilder": {
+  "lugna": {
+   "x": -4,
+   "y": -4,
+   "rader": [
+    "........",
+    "........",
+    "..gggg..",
+    ".gffffgg",
+    "gfe...ef",
+    "fe......",
+    "........"
+   ]
+  },
+  "arga": {
+   "x": -4,
+   "y": -4,
+   "rader": [
+    "........",
+    "........",
+    "..ggg...",
+    ".gfffgg.",
+    "gfe.effg",
+    "fe....ef",
+    "........"
+   ]
+  },
+  "ledsna": {
+   "x": -4,
+   "y": -4,
+   "rader": [
+    "........",
+    ".....ggg",
+    "...ggffe",
+    ".ggffe..",
+    "gffe....",
+    "fe......",
+    "........"
+   ]
+  },
+  "forvanade": {
+   "x": -4,
+   "y": -4,
+   "rader": [
+    "...ggg..",
+    "..gfffg.",
+    ".gfe..fg",
+    "gfe....f",
+    "fe......",
+    "........",
+    "........"
+   ]
+  }
+ }
+}
