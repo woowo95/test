@@ -85,10 +85,18 @@ export function drar(s: State, p: Person) {
 }
 // det som format sederna (fliken Seder): hur mycket varje slags upplevelse drar byns mål, vägt efter inflytandet som i
 // sederTarget, och hur många som minns den. Störst först
-export function sedDrag(s: State) {
-  const ppl = living(s).map(p => ({ p, w: influence(s, p) })).filter(x => x.w), l = ledarVikt(s);
+// rösterna i sederna: varje persons inflytande plus ledarens extra vikt (som i sederTarget), och andelen av hela byns röst
+// (Tyngsta röster i fliken Seder, steg 4.5.4.10). Störst först
+export function roster(s: State) {
+  const ppl = living(s).map(p => ({ p, w: influence(s, p), andel: 0 })).filter(x => x.w), l = ledarVikt(s);
   let tw = ppl.reduce((a, x) => a + x.w, 0);
-  if (l && tw) { ppl.push({ p: l.p, w: tw * l.w }); tw += tw * l.w; } // ledaren drar med sin extra vikt, som i sederTarget
+  const lx = l && tw ? ppl.find(x => x.p === l.p) : undefined, extra = l && tw ? tw * l.w : 0;
+  if (l && extra) { if (lx) lx.w += extra; else ppl.push({ p: l.p, w: extra, andel: 0 }); tw += extra; }
+  for (const x of ppl) x.andel = x.w / tw;
+  return ppl.sort((a, b) => b.w - a.w);
+}
+export function sedDrag(s: State) {
+  const ppl = roster(s), tw = ppl.reduce((a, x) => a + x.w, 0);
   const m = new Map<UpplevelseTyp, { k: UpplevelseTyp; n: Set<number>; d: Record<Sed, number> }>();
   for (const { p, w } of ppl) for (const u of p.upp ?? []) {
     const e = upplevelseSed(u.k); if (!e) continue;
