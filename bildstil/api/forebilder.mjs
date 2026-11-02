@@ -308,7 +308,7 @@ spara({ id: 'skon-fransar', ritad: 1, av: 'programmeringschatten, förebild', om
   // version 5 efter Björn (5.2.2.7): mer diagonalt över ryggen och lägre, så att det inte sticker upp lika långt.
   // Skaftet går från nere till vänster bakom ryggen upp mot höger axel; huvudet sitter tvärs över skaftets topp,
   // med en kort nacke och ett blad som vidgas mot eggen.
-  const sx = 47, sy = 28, lut = 0.5;                // skaftets topp och lutning (punkter åt höger per punkt uppåt)
+  const sx = 47, sy = 38, lut = 0.5;                // skaftets topp och lutning (punkter åt höger per punkt uppåt)
   for (let y = sy - 1; y <= 63; y++) { const x = Math.round(sx - (y - sy) * lut);
     for (let d = -1; d <= 2; d++) satt(x + d, y, d < 0 ? 'H' : d < 2 ? 'G' : 'E');
     if ((y - sy) % 4 === 0) satt(x + 2, y, 'H'); }    // tjockare där lutningen gör trappsteg
@@ -321,7 +321,7 @@ spara({ id: 'skon-fransar', ritad: 1, av: 'programmeringschatten, förebild', om
   }
   for (let y = sy - 1; y <= sy + 6; y++) { const x0 = Math.round(sx - (y - sy) * lut); for (let x = x0 - 1; x <= x0 + 2; x++) satt(x, y, y % 2 ? 'L' : 'K'); } // surrningen: ränder av mörkt rep runt skaftet
   const b = lagerRader((x, y) => P[x + ',' + y] || null, 0, 0, 63, 63);
-  spara({ id: 'redskap-yxa', ritad: 5, av: 'programmeringschatten, förebild', om: 'Flintyxa på ryggen: ett tjockt skaft i jord snett bakom ryggen, och ett stort kilformat flinthuvud i skiffer med ljus egg och korsad surrning som sticker upp bakom axeln bredvid huvudet. Huvudet sitter tvärs över skaftets topp, med kort nacke och ett blad som vidgas mot eggen. Omritad efter Björn (5.2.2.7: större, på ryggen; sedan: ser fortfarande konstigt ut; sedan: mer diagonalt och lägre; sedan: större och längre ner, får täckas av personen).',
+  spara({ id: 'redskap-yxa', ritad: 5, av: 'programmeringschatten, förebild', om: 'Flintyxa på ryggen: ett tjockt skaft i jord snett bakom ryggen, och ett stort kilformat flinthuvud i skiffer med ljus egg och korsad surrning som sticker upp bakom axeln bredvid huvudet. Huvudet sitter tvärs över skaftets topp, med kort nacke och ett blad som vidgas mot eggen. Omritad efter Björn (5.2.2.7: större, på ryggen; sedan: ser fortfarande konstigt ut; sedan: mer diagonalt och lägre; sedan: större och längre ner, får täckas av personen; sedan: ännu längre ner).',
     bilder: { standard: { x: b.x - 22, y: b.y + 10 - 52, rader: b.rader } } });
 }
 
