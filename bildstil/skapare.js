@@ -495,7 +495,7 @@
     if (D('huvudbonad')) lagg('huvudbonad', dk => delen(dk, G, D('huvudbonad'), p, 'huvudbonad'));
     for (const id of p.forband) if (DEL[id]) lagg('forband', dk => delen(dk, G, DEL[id], p, 'forband'));
     if (p.ogonlapp) lagg('ogonlapp', dk => RITA.ogonlapp(dk));
-    if (D('redskap') && DELAR[del.redskap]) lagg(D('redskap').lang ? 'redskapBak' : 'redskapFram', dk => delen(dk, G, D('redskap'), p, 'redskap')); // ritat (5.2.2.7)
+    if (D('redskap') && DELAR[del.redskap]) lagg('redskapBak', dk => delen(dk, G, D('redskap'), p, 'redskap')); // ritat: på ryggen, bakom personen (Björn efter 5.2.2.7)
     else if (D('redskap')) { lagg('redskapBak', dk => RITA.redskap(dk, G, D('redskap'), false)); lagg('redskapFram', dk => RITA.redskap(dk, G, D('redskap'), true)); }
     return B;
   }

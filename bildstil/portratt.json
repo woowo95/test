@@ -43,7 +43,7 @@
     "gratt": ["kol0", "skiffer1", "skiffer2", "skiffer3"]
   },
   "material": [
-    {"id": "harskinn", "namn": "Harskinn", "toner": ["jord1", "jord3", "ben0", "ben1"]},
+    {"id": "harskinn", "namn": "Harskinn", "toner": ["jord0", "jord1", "jord2", "ben0"]},
     {"id": "vargskinn", "namn": "Vargskinn", "toner": ["kol2", "kol3", "skiffer2", "skiffer3"]},
     {"id": "rep", "namn": "Rep", "toner": ["jord0", "senap0", "senap1", "senap2"]}
   ],
@@ -159,7 +159,7 @@
     {"id": "forband", "namn": "Förband", "en": "Förband", "steg": "5.2.2.6", "lager": ["forband"], "flera": true, "karta": "ljusa punkter där förbandet sitter", "kon": "bada", "ritas": {"fast": "huvud", "ruta": [-18, -14, 17, 24], "tecken": "abcdABCDklmnrstuopqwEFGHQRST", "om": "ett förband av linne (ben-tonerna) där radens namn säger, som följer huvudets eller käkens form, ljust upptill och skuggat nedåt, gärna med en liten blodfläck i rost"}},
     {"id": "ogonlapp", "namn": "Ögonlapp", "en": "Ögonlapp", "steg": "5.2.2.6", "lager": ["ogonlapp"], "valfri": "Ingen ögonlapp", "karta": true, "kon": "bada"},
     {"id": "klader", "namn": "Kläder", "en": "Plagg", "steg": "5.2.2.7", "lager": ["klader"], "flera": true, "karta": true, "kon": "bada", "ritas": {"fast": "halsband", "ruta": [-32, -8, 31, 6], "tecken": "xyzZEFGHIJKLopqwklmn", "manbild": true, "barnbild": true, "om": "plagget i porträttet över axlarna och bröstet, efter mallens axlar och hals (en bild för kvinnan, en för mannen, en för barnet); i materialkanalen x, y, z, Z (plaggets material efter personen), med detaljer i palettens fasta färger"}},
-    {"id": "redskap", "namn": "Redskap", "en": "Redskap", "steg": "5.2.2.7", "lager": ["redskapBak", "redskapFram"], "valfri": "Inget redskap", "karta": true, "kon": "bada", "ritas": {"fast": "redskap", "ruta": [-14, -52, 9, 11], "tecken": "EFGHIJKLQRSTopqwklmnrstu", "om": "redskapet i porträttet i nedre högra hörnet, som om personen håller det: ett skaft eller handtag från nederkanten och redskapets huvud; långa redskap (spjut, metspö) går upp genom bilden bakom personen; i palettens fasta färger (trä jord E–H, flinta och sten skiffer Q–T, ben o–w, rep senap I–L)"}}
+    {"id": "redskap", "namn": "Redskap", "en": "Redskap", "steg": "5.2.2.7", "lager": ["redskapBak", "redskapFram"], "valfri": "Inget redskap", "karta": true, "kon": "bada", "ritas": {"fast": "redskap", "ruta": [-16, -46, 9, 11], "tecken": "EFGHIJKLQRSTopqwklmnrstu", "om": "redskapet i porträttet bärs på ryggen (Björn efter 5.2.2.7): skaftet eller handtaget går snett bakom ryggen och redskapets huvud sticker upp bakom axeln bredvid huvudet, stort och tydligt; det ritas bakom personen; i palettens fasta färger (trä jord E–H, flinta och sten skiffer Q–T, ben o–w, rep senap I–L)"}}
   ],
   "delar": [
     {"id": "huvud-rund", "sort": "huvudform", "namn": "Rund", "form": "rund", "karta": "som mallen", "ritad": 3, "kartbild": {"fram": ["XXXXXX", ".XXXX."], "sida": ["XXXXX.", ".XXXX."]}},
@@ -289,16 +289,16 @@
     {"id": "arr-8", "sort": "arr", "namn": "Längs käken", "ritad": 0},
     {"id": "arr-9", "sort": "arr", "namn": "Kors på kinden", "ritad": 0},
     {"id": "arr-10", "sort": "arr", "namn": "Tvärs över ansiktet", "ritad": 0},
-    {"id": "blamarke-1", "sort": "blamarke", "namn": "Runt ögat", "ritad": 2},
+    {"id": "blamarke-1", "sort": "blamarke", "namn": "Runt ögat", "ritad": 3},
     {"id": "blamarke-2", "sort": "blamarke", "namn": "På kinden", "ritad": 0},
     {"id": "forband-huvud", "sort": "forband", "namn": "Runt huvudet", "karta": "huvud", "ritad": 2},
     {"id": "forband-oga", "sort": "forband", "namn": "Över ögat", "karta": "oga", "maskar": ["oga-h"], "ritad": 0},
     {"id": "forband-kake", "sort": "forband", "namn": "Om käken", "karta": "kake", "ritad": 0},
     {"id": "ogonlapp", "sort": "ogonlapp", "namn": "Ögonlapp", "maskar": ["oga-h"], "ritad": 0},
-    {"id": "plagg-rock", "sort": "klader", "namn": "Rock", "plagg": "rock", "material": ["harskinn", "vargskinn"], "zoner": ["bal", "armar"], "lang": true, "ritad": 2},
+    {"id": "plagg-rock", "sort": "klader", "namn": "Rock", "plagg": "rock", "material": ["harskinn", "vargskinn"], "zoner": ["bal", "armar"], "lang": true, "ritad": 3},
     {"id": "plagg-skor", "sort": "klader", "namn": "Skor", "plagg": "skor", "material": ["harskinn"], "zoner": ["fotter"], "ritad": 0},
     {"id": "plagg-balte", "sort": "klader", "namn": "Bälte", "plagg": "balte", "material": ["rep"], "zoner": ["midja"], "portratt": false, "ritad": 0},
-    {"id": "redskap-yxa", "sort": "redskap", "namn": "Flintyxa", "sak": "yxa", "form": "yxa", "ritad": 2},
+    {"id": "redskap-yxa", "sort": "redskap", "namn": "Flintyxa", "sak": "yxa", "form": "yxa", "ritad": 3},
     {"id": "redskap-kniv", "sort": "redskap", "namn": "Flintkniv", "sak": "kniv", "form": "kniv", "ritad": 0},
     {"id": "redskap-trasjut", "sort": "redskap", "namn": "Träspjut", "sak": "fiskespjut", "form": "spjut", "lang": true, "ritad": 0},
     {"id": "redskap-flintspjut", "sort": "redskap", "namn": "Flintspjut", "sak": "flintspjut", "form": "spjut", "lang": true, "ritad": 0},
