@@ -24,7 +24,7 @@
     ],
     "har": [
       {"id": "linblont", "namn": "Linblont", "toner": ["jord2", "jord3", "ben2", "senap3"], "ritad": 2},
-      {"id": "ljusblont", "namn": "Ljusblont", "toner": ["jord1", "jord2", "senap1", "senap2"], "ritad": 2},
+      {"id": "ljusblont", "namn": "Ljusblont", "toner": ["jord1", "jord2", "senap1", "jord3"], "ritad": 3},
       {"id": "ljusbrunt", "namn": "Ljusbrunt", "toner": ["jord0", "jord1", "senap0", "jord2"], "ritad": 2},
       {"id": "brunt", "namn": "Brunt", "toner": ["kol1", "jord0", "jord1", "jord2"], "ritad": 1},
       {"id": "morkbrunt", "namn": "Mörkbrunt", "toner": ["kol0", "kol2", "jord0", "jord1"], "ritad": 1},
