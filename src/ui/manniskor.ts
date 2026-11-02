@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { ACTS, ALDER, Person, actIkon, utbIkon, SEC, TalkEvent, ageOf, alive, bordVid, byId, homeKind, isSocial, pratarMed, kanGa, living, load, REL, relKey, sparPlats, storlekAv, handlarNu, handlarPlats, Match, Task, dragLag } from '../sim';
+import { ACTS, ALDER, Person, actIkon, utbIkon, SEC, TalkEvent, ageOf, alive, bordVid, byId, homeKind, isSocial, pratarMed, kanGa, living, load, REL, relKey, sparPlats, storlekAv, handlarNu, handlarPlats, Match, Task, dragLag, kastMal, SPORT } from '../sim';
 import { PRICKAR, personFarg } from './hjalp';
 import { s, sakVar, ui, uppgiftVid, vidNyBy } from './lage';
 import { Ikoner, TS, bubbleG, labels, markLayer, peopleG } from './scen';
@@ -32,8 +32,8 @@ function platsAv(p: Person) {
   let x = sp?.x ?? p.x, y = sp?.y ?? p.y;
   const still = sp?.still ?? true;
   const tk = uppgiftVid(p), d = tk && ACTS[tk.act];
-  const drag = tk && dragkampen(tk);
-  if (still && drag) return { x: x + dragGlid(drag, t) + dragLag(drag, x) * DRAG.luta, y, still }; // drar och lutar sig bakåt (steg 4.5.6.10)
+  const m = tk && iMatchen(tk), sp2 = still && m ? sportPlats(m, p, x, y, t) : undefined;
+  if (sp2) return { ...sp2, still }; // sporten (steg 4.5.6.10–11)
   if (still && tk?.phase === 'do' && d && !d.stilla) {
     const w = d.vandra, k = t / SEC, r = w ? w.r * 0.6 : 0.12, f = w ? w.v / (w.r * 6) : 0.05;
     x += Math.sin(k * f + p.id * 1.7) * r * Math.sin(k * f * 0.37 + p.id);
@@ -44,15 +44,66 @@ function platsAv(p: Person) {
 // dragkampen (steg 4.5.6.10), bara i bilden: lagen står på sina platser (sport.ts), hela raden glider fram och tillbaka med
 // repet och lutar sig bakåt. Repet ligger på marken medan de samlas och spänns mellan lagen när de drar; strecket i mitten
 const DRAG = { glid: 0.3, takt: 0.5, luta: 0.12, rep: 0x9c7a45, tofs: 0xc0432f, streck: 0x3b2f25 };
-const dragkampen = (tk: Task) => { const m = s.sport; return tk.act === 'sport' && tk.phase === 'do' && m?.k === 'dragkamp' && m.start === tk.ref ? m : undefined; };
+const iMatchen = (tk: Task) => { const m = s.sport; return tk.act === 'sport' && tk.phase === 'do' && m && m.start === tk.ref ? m : undefined; };
 const dragGlid = (m: Match, t: number) => m.spelat ? DRAG.glid * Math.sin(t / SEC * DRAG.takt + m.start % 7) * Math.sin(t / SEC * DRAG.takt * 0.31 + 1) : 0;
-function ritaDragkamp(t: number) {
+// var spelaren syns (steg 4.5.6.11), med de rörelser som redan finns: i dragkampen lutar de och glider med repet, brottarna
+// i mitten trycker mot varandra och ringen runt om hejar, i kast och snöbollskriget står de på sina platser, och i bollspelet
+// står den som slår still medan de andra springer på planen (vandra i ACTS, undefined här). Ingen hamnar på marken
+function sportPlats(m: Match, p: Person, x: number, y: number, t: number): { x: number; y: number } | undefined {
+  const k = t / SEC;
+  switch (m.k) {
+    case 'dragkamp': return { x: x + dragGlid(m, t) + dragLag(m, x) * DRAG.luta, y };
+    case 'brottning': {
+      if (Math.abs(x - m.x) < 0.7 && Math.abs(y - m.y) < 0.7) { const tryck = Math.sin(k * 0.9 + m.start % 5) * 0.15; return { x: m.x + Math.sign(x - m.x || 1) * (0.22 + Math.abs(Math.sin(k * 2.1)) * 0.08) + tryck, y: y + Math.sin(k * 1.7 + p.id) * 0.06 }; }
+      return { x, y: y + Math.abs(Math.sin(k * 3 + p.id)) * -0.06 }; // hejar
+    }
+    case 'kast': case 'snoboll': return { x, y };
+    case 'bollspel': return x < m.x - 1.5 ? { x, y } : undefined;
+  }
+  return undefined;
+}
+// något som flyger i en båge från a till b, f = 0–1 av vägen: en prick och dess skugga på marken
+function flyg(ax: number, ay: number, bx: number, by: number, f: number, farg: number, h: number) {
+  const x = ax + (bx - ax) * f, y = ay + (by - ay) * f;
+  peopleG.beginFill(0x000000, 0.2).drawEllipse(x, y + 2, 1.4, 0.6).endFill();
+  peopleG.lineStyle(0.6, 0x1a1a1a, 0.8).beginFill(farg).drawCircle(x, y - h * 4 * f * (1 - f), 1.3).endFill().lineStyle(0);
+}
+const hash = (n: number) => { const v = Math.sin(n * 12.9898) * 43758.5453; return v - Math.floor(v); };
+// det som syns runt matchen, bara i bilden: repet och strecket, målet, snövallarna, bollen och det som kastas
+function ritaSport(t: number) {
   const m = s.sport;
-  if (m?.k !== 'dragkamp' || s.now >= m.slut) return;
+  if (!m || s.now >= m.slut) return;
+  if (m.k === 'dragkamp') { ritaDragkamp(m, t); return; }
+  const g = peopleG, k = t / SEC, med: { x: number; y: number }[] = [];
+  for (const p of living(s)) { const tk = uppgiftVid(p); if (tk && iMatchen(tk)) { const q = synlig.get(p.id); if (q) med.push({ x: q.x * TS, y: q.y * TS }); } }
+  const mx = m.x * TS, my = m.y * TS;
+  if (m.k === 'kast') {
+    const mal = kastMal(m), ax = mal.x * TS, ay = mal.y * TS;
+    markIcons.add('mal', ax - 4, ay - 6, 8 / iconCanvas('mal').width);
+    if (!m.spelat || !med.length) return;
+    med.sort((a, b) => a.y - b.y);
+    const P = 2.2, n = Math.floor(k / P), f = k / P - n, v = med[n % med.length], miss = hash(n + m.start % 97) < 0.4;
+    if (f < 0.6) flyg(v.x + 3, v.y - 3, ax + (miss ? (hash(n) - 0.5) * 18 : 0), ay + (miss ? 5 : -2), f / 0.6, 0x8a8178, 10); // i tur och ordning: träff eller miss
+  } else if (m.k === 'snoboll') {
+    for (const sida of [-1, 1]) { const vx = mx + sida * (SPORT.snoAvst - 0.8) * TS; g.lineStyle(0.8, 0x9fb3c2, 0.9).beginFill(0xf2f6f8).drawRoundedRect(vx - 2.5, my - TS * 1.8, 5, TS * 3.6, 2).endFill().lineStyle(0); } // vallarna
+    if (!m.spelat) return;
+    const v = med.filter(q => q.x < mx), h = med.filter(q => q.x >= mx);
+    if (!v.length || !h.length) return;
+    for (let j = 0; j < 2; j++) { const P = 1.6, n = Math.floor(k / P + j * 0.5), f = k / P + j * 0.5 - n, fr = (n % 2 ? v : h), till = (n % 2 ? h : v), a = fr[Math.floor(hash(n) * fr.length)], b = till[Math.floor(hash(n + 7) * till.length)]; flyg(a.x, a.y - 3, b.x, b.y - 3, f, 0xffffff, 6); }
+  } else if (m.k === 'bollspel') {
+    const slag = med.length ? med.reduce((a, b) => (a.x < b.x ? a : b)) : { x: mx - SPORT.slagAvst * TS, y: my };
+    markIcons.add('slagtra', slag.x + 1, slag.y - 7, 7 / iconCanvas('slagtra').width);
+    const P = 4, n = Math.floor(k / P), f = k / P - n, bx = mx + (hash(n) * 3) * TS, by = my + (hash(n + 3) - 0.5) * 4 * TS;
+    if (!m.spelat) { markIcons.add('boll', mx - 3, my - 3, 6 / iconCanvas('boll').width); return; }
+    if (f < 0.5) flyg(slag.x + 3, slag.y - 3, bx, by, f / 0.5, 0x7d5b40, 14); // slaget flyger ut på planen ...
+    else markIcons.add('boll', bx - 3, by - 3, 6 / iconCanvas('boll').width); // ... och ligger där tills någon hinner fram
+  }
+}
+function ritaDragkamp(m: Match, t: number) {
   const g = peopleG, mx = m.x * TS, my = m.y * TS;
   g.lineStyle(1.2, DRAG.streck, 0.7).moveTo(mx, my - TS * 0.6).lineTo(mx, my + TS * 0.6).lineStyle(0); // strecket på marken
   const xs: number[] = [];
-  for (const p of living(s)) { const tk = uppgiftVid(p); if (tk && dragkampen(tk)) { const q = synlig.get(p.id); if (q) xs.push(q.x * TS); } }
+  for (const p of living(s)) { const tk = uppgiftVid(p); if (tk && iMatchen(tk)) { const q = synlig.get(p.id); if (q) xs.push(q.x * TS); } }
   if (!m.spelat || xs.length < 2) { // repet ligger hoprullat på marken medan de samlas
     g.lineStyle(1.2, DRAG.rep, 1).moveTo(mx - TS * 1.4, my + 2);
     for (let i = 1; i <= 8; i++) g.lineTo(mx - TS * 1.4 + i * TS * 0.35, my + 2 + (i % 2 ? 1.2 : -0.6));
@@ -124,8 +175,8 @@ export function drawPeople(t: number) {
   peopleG.clear(); bubbleG.clear();
   const ppl = dolda.size ? living(s).filter(p => !dolda.has(p.id)) : living(s), pos = new Map<number, { x: number; y: number }>();
   synlig = sprid(ppl); synligNu = ui.nu;
-  ritaDragkamp(t);
   markIcons.start();
+  ritaSport(t);
   const sv = ui.tab === 'sak' ? sakVar() : undefined, harSaken = sv && 'person' in sv ? sv.person : undefined; // den som har den markerade saken (steg 3.10.4)
   for (const p of ppl) {
     const a = ageOf(p, s.now);
