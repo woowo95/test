@@ -983,7 +983,9 @@
   const synlig = k => grFilter === 'alla' || lage(k) === 'obesvarad' || k.id === grId;
   function granskPerson(k, mall, kon = mall === 'man' ? 'man' : 'kvinna') {
     const q = neutral(mall); q.kon = kon;
-    for (const [s, id] of Object.entries(k.sort.granskaMed || {})) if (DEL[id] && passar(DEL[id], mall, kon)) q.del[s] = id;
+    // delarna kortet visas med; ett smycke kan ha egna efter sin plats (örhängen med kort hår så att öronen syns, 5.2.2.4)
+    const med = { ...(k.sort.granskaMed || {}), ...(k.rad.plats && k.sort.granskaMedPlats?.[k.rad.plats] || {}) };
+    for (const [s, id] of Object.entries(med)) if (DEL[id] && passar(DEL[id], mall, kon)) q.del[s] = id;
     switch (k.sort.id) {
       case 'mall': break;
       case 'hudton': q.hud = k.i; break;
