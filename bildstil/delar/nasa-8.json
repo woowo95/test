@@ -2,10 +2,10 @@
  "id": "nasa-8",
  "ritad": 1,
  "av": "API:t (claude-opus-5-5)",
- "om": "Godkänd utan ändringar. Formen stämmer med beskrivningen: en smal näsrygg som vidgar sig till en tung, rund knöl med breda näsborrar, klart större än förebilden. Skuggningen följer förebilden med ljus från vänster ovanifrån. Den ljusa sidan (d, c) ligger till vänster, den mörka (b, a) till höger och på undersidan, och näsborrarna är mörka med en ljusare mellanvägg. Delen håller sig inom rutan (x -4 till 4, y 1 till 9) och använder bara abcd. Barnets näsa har samma form men är kortare och mindre, och den ryms också i rutan.",
+ "om": "Godkänd utan ändringar. Formen stämmer med beskrivningen: en smal näsrygg som vidgar sig till en tung, rund knöl med breda näsborrar, klart större än förebilden. Skuggningen följer förebilden med ljus från vänster ovanifrån. Den ljusa sidan (d, c) ligger till vänster, den mörka (b, a) till höger och på undersidan, och näsborrarna är mörka med en ljusare mellanvägg. Delen håller sig inom rutan (x -4 till 4, y 1 till 9) och använder bara abcd. Barnets näsa har samma form men är kortare och mindre, och den ryms också i rutan. Flyttad en punkt åt vänster så att den sitter mitt i ansiktet (Björn efter 5.2.2.3).",
  "bilder": {
   "standard": {
-   "x": -4,
+   "x": -5,
    "y": 1,
    "rader": [
     "....db...",
@@ -22,7 +22,7 @@
  },
  "barn": {
   "standard": {
-   "x": -3,
+   "x": -4,
    "y": 1,
    "rader": [
     "...db..",

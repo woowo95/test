@@ -2,10 +2,10 @@
  "id": "nasa-10",
  "ritad": 1,
  "av": "API:t (claude-opus-5-5)",
- "om": "Godkänd utan ändringar. Delen håller sig inom rutan för både vuxen och barn och använder bara tillåtna tecken (a–d). Ryggen är smal och rak som i förebilden och har samma linjetjocklek. Ljuset faller från vänster med d på den belysta sidan och b i skuggan. De mörka näsvingarna och den nedhängande spetsen (a, b) ger den spetsiga formen som beskrivningen säger. Det finns inga ensamma ljusa prickar och ingen kontur. Barnets näsa är kortare och mindre men behåller samma spetsiga avslutning.",
+ "om": "Godkänd utan ändringar. Delen håller sig inom rutan för både vuxen och barn och använder bara tillåtna tecken (a–d). Ryggen är smal och rak som i förebilden och har samma linjetjocklek. Ljuset faller från vänster med d på den belysta sidan och b i skuggan. De mörka näsvingarna och den nedhängande spetsen (a, b) ger den spetsiga formen som beskrivningen säger. Det finns inga ensamma ljusa prickar och ingen kontur. Barnets näsa är kortare och mindre men behåller samma spetsiga avslutning. Flyttad en punkt åt vänster så att den sitter mitt i ansiktet (Björn efter 5.2.2.3).",
  "bilder": {
   "standard": {
-   "x": -3,
+   "x": -4,
    "y": 1,
    "rader": [
     "...db..",
@@ -22,7 +22,7 @@
  },
  "barn": {
   "standard": {
-   "x": -2,
+   "x": -3,
    "y": 1,
    "rader": [
     "..db.",

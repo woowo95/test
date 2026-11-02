@@ -1,47 +1,51 @@
 {
  "id": "oga-1",
- "ritad": 2,
+ "ritad": 3,
  "av": "programmeringschatten, förebild",
- "om": "Runda ögon: mörkt övre ögonlock, vitan, iris i två toner och pupillen, och undre locket i huden. De glada är öppna som de öppna, men kinden trycker upp undre locket i hörnen (Björn efter 5.2.2.3: mer öppna).",
+ "om": "Runda ögon: mörkt övre ögonlock, vitan, iris i två toner och pupillen, och undre locket i huden. De glada är öppna som de öppna, men kinden trycker upp undre locket i hörnen (Björn efter 5.2.2.3: mer öppna). Lite större efter Björn (5.2.2.3): 7 punkter brett och tre rader öppet.",
  "bilder": {
   "oppna": {
-   "x": -3,
-   "y": -2,
+   "x": -4,
+   "y": -3,
    "rader": [
-    ".aaaa.",
-    "avjiva",
-    "bvikvb",
-    ".bccb."
+    ".aaaaa.",
+    "avjjiva",
+    "bvikkvb",
+    ".vjiiv.",
+    ".bcccb."
    ]
   },
   "glada": {
-   "x": -3,
-   "y": -2,
+   "x": -4,
+   "y": -3,
    "rader": [
-    ".aaaa.",
-    "avjiva",
-    "bcikcb",
-    ".cddc."
+    ".aaaaa.",
+    "avjjiva",
+    "bcikkcb",
+    ".cdddc.",
+    "......."
    ]
   },
   "ledsna": {
-   "x": -3,
-   "y": -2,
+   "x": -4,
+   "y": -3,
    "rader": [
-    "bbb.a.",
-    "aaaava",
-    "bvikvb",
-    ".bccb."
+    "bbbb.a.",
+    "aaaaava",
+    "bvjjivb",
+    ".vikkv.",
+    ".bcccb."
    ]
   },
   "slutna": {
-   "x": -3,
-   "y": -2,
+   "x": -4,
+   "y": -3,
    "rader": [
-    ".bbbb.",
-    ".cccc.",
-    "aaaaaa",
-    ".bccb."
+    ".......",
+    ".bbbbb.",
+    ".ccccc.",
+    "aaaaaaa",
+    ".bcccb."
    ]
   }
  }

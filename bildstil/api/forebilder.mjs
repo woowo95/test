@@ -16,7 +16,8 @@ const ljushet = (x, y, cx, cy, rx, ry) => { const u = (x + 0.5 - cx) / rx, v = (
 const ton = (l, x, y) => { const k = l + (vn(x, y, 2.2, 21) - 0.5) * 0.2; return k < NIVA[0] ? 0 : k < NIVA[1] ? 1 : k < NIVA[2] ? 2 : 3; };
 // ---- huvudformen Rund: nedre ansiktet under ögonlinjen, för kvinnan, mannen och barnet ----
 // kanten är en superellips: exponenten ex styr hur raka sidorna är och ey hur platt hakan är. Mannens är lite fyrkantigare
-// (Björn efter 5.2.2.3: "alla mannens huvudformer ska vara lite mer fyrkantiga"): rakare sidor, bredare käke och plattare haka
+// (Björn efter 5.2.2.3: "alla mannens huvudformer ska vara lite mer fyrkantiga"): rakare sidor, bredare käke och plattare haka.
+// Första försöket (ex 3,4, ey 2,8) var för kantigt ("ser konstig ut"): huvudet blev bredare vid käken än vid tinningarna
 function huvud(under, { ex = 2.2, ey = 2 } = {}) {
   const H = { cx: 32, cy: 30, rx: 15, ry: 20 }, U = [1, 0.95];
   const inne = (x, y) => { const u = (x + 0.5 - H.cx) / H.rx, v = (y + 0.5 - H.cy) / H.ry; return v > 0 && (Math.abs(u) / (U[0] * under[0])) ** ex + (v / (U[1] * under[1])) ** ey <= 1; };
@@ -34,8 +35,8 @@ function huvud(under, { ex = 2.2, ey = 2 } = {}) {
   while (rader.length && /^\.+$/.test(rader[rader.length - 1])) rader.pop();
   return { x: -16, y: 1, rader };
 }
-spara({ id: 'huvud-rund', ritad: 2, av: 'programmeringschatten, förebild', om: 'Det nedre ansiktet under ögonlinjen, med kinderna (A–D, röda i kylan). Skuggningen följer formen som mallens skalle. Mannen har en egen bild (man), lite fyrkantigare: rakare sidor, bredare käke och plattare haka.',
-  bilder: { standard: huvud([1, 1]) }, man: { standard: huvud([1.02, 1], { ex: 3.4, ey: 2.8 }) }, barn: { standard: huvud([1.04, 0.78]) } });
+spara({ id: 'huvud-rund', ritad: 3, av: 'programmeringschatten, förebild', om: 'Det nedre ansiktet under ögonlinjen, med kinderna (A–D, röda i kylan). Skuggningen följer formen som mallens skalle. Mannen har en egen bild (man), lite fyrkantigare: lite rakare sidor, en aning bredare käke och plattare haka.',
+  bilder: { standard: huvud([1, 1]) }, man: { standard: huvud([1.01, 1], { ex: 2.7, ey: 2.6 }) }, barn: { standard: huvud([1.04, 0.78]) } });
 // ---- örat (vänster på bilden; det högra är det speglade, en ton mörkare) ----
 // Omritat (Björn sa nej efter 5.2.2.3): förut en platt flik med en rak mörk rand; nu en rundad ytterkant i ljuset, en skål
 // som böjer sig in mot huvudet, en tydlig örsnibb och mjukare skugga där örat möter huvudet
@@ -53,8 +54,10 @@ spara({ id: 'ora-2', ritad: 2, av: 'programmeringschatten, förebild', om: 'Mell
     '..cb.',
   ] } } });
 // ---- näsan Rak: näsryggen ljus till vänster och skuggad till höger, spetsen och näsborrarna ----
-spara({ id: 'nasa-1', ritad: 1, av: 'programmeringschatten, förebild', om: 'Rak näsa: ljus näsrygg till vänster, skuggad sida till höger, ljus spets och mörka näsborrar med en skugga under.',
-  bilder: { standard: { x: -3, y: 1, rader: [
+// En punkt åt vänster (Björn efter 5.2.2.3: näsorna satt inte mitt i ansiktet): ansiktets mitt ligger mellan x 31 och 32,
+// alltså en halv punkt till vänster om fästpunkten, och förut låg näsryggen på 32–33
+spara({ id: 'nasa-1', ritad: 2, av: 'programmeringschatten, förebild', om: 'Rak näsa: ljus näsrygg till vänster, skuggad sida till höger, ljus spets och mörka näsborrar med en skugga under.',
+  bilder: { standard: { x: -4, y: 1, rader: [
     '...db..',
     '...db..',
     '...cb..',
@@ -63,19 +66,19 @@ spara({ id: 'nasa-1', ritad: 1, av: 'programmeringschatten, förebild', om: 'Rak
     '.adccba',
     '..abba.',
   ] } },
-  barn: { standard: { x: -2, y: 1, rader: [
+  barn: { standard: { x: -3, y: 1, rader: [
     '..db.',
     '..cb.',
     '.dccb',
     '.abba',
   ] } } });
 // ---- ögat Runda i fyra lägen (vänster på bilden; det högra är det speglade) ----
-spara({ id: 'oga-1', ritad: 2, av: 'programmeringschatten, förebild', om: 'Runda ögon: mörkt övre ögonlock, vitan, iris i två toner och pupillen, och undre locket i huden. De glada är öppna som de öppna, men kinden trycker upp undre locket i hörnen (Björn efter 5.2.2.3: mer öppna).',
+spara({ id: 'oga-1', ritad: 3, av: 'programmeringschatten, förebild', om: 'Runda ögon: mörkt övre ögonlock, vitan, iris i två toner och pupillen, och undre locket i huden. De glada är öppna som de öppna, men kinden trycker upp undre locket i hörnen (Björn efter 5.2.2.3: mer öppna). Lite större efter Björn (5.2.2.3): 7 punkter brett och tre rader öppet.',
   bilder: {
-    oppna: { x: -3, y: -2, rader: ['.aaaa.', 'avjiva', 'bvikvb', '.bccb.'] },
-    glada: { x: -3, y: -2, rader: ['.aaaa.', 'avjiva', 'bcikcb', '.cddc.'] },
-    ledsna: { x: -3, y: -2, rader: ['bbb.a.', 'aaaava', 'bvikvb', '.bccb.'] },
-    slutna: { x: -3, y: -2, rader: ['.bbbb.', '.cccc.', 'aaaaaa', '.bccb.'] },
+    oppna: { x: -4, y: -3, rader: ['.aaaaa.', 'avjjiva', 'bvikkvb', '.vjiiv.', '.bcccb.'] },
+    glada: { x: -4, y: -3, rader: ['.aaaaa.', 'avjjiva', 'bcikkcb', '.cdddc.', '.......'] },
+    ledsna: { x: -4, y: -3, rader: ['bbbb.a.', 'aaaaava', 'bvjjivb', '.vikkv.', '.bcccb.'] },
+    slutna: { x: -4, y: -3, rader: ['.......', '.bbbbb.', '.ccccc.', 'aaaaaaa', '.bcccb.'] },
   } });
 // ---- ögonbrynet Raka i fyra lägen (vänster på bilden; tjockt inåt mot näsan, tunt utåt) ----
 spara({ id: 'bryn-1', ritad: 1, av: 'programmeringschatten, förebild', om: 'Raka ögonbryn: tjockast inåt mot näsan, smalare ut mot tinningen, ljusare i överkanten.',

@@ -1,11 +1,11 @@
 {
  "id": "nasa-9",
- "ritad": 1,
+ "ritad": 2,
  "av": "API:t (claude-opus-5-5)",
- "om": "Vuxenbilden är oförändrad. Den låga, mjuka näsryggen börjar längre ner än förebilden och breder ut sig till en platt, bred näsbotten med lågt sittande näsborrar åt sidorna, och den stämmer med beskrivningen och ljuset. Jag rättade anteckningen: ljuset kommer uppifrån vänster, så vänster sida av ryggen och näsvingen är ljusast (c och d) och skuggan ligger på höger sida (b). Näsbotten är mörkare och näsborrarna har mörkaste tonen (a) ytterst. I barnbilden var näsbotten sned, med två mörka punkter till vänster och en till höger, fast barnets näsrygg står på samma kolumner som vuxnas. Jag gjorde näsbotten en punkt bredare (aabbaa) så att den ligger jämnt under ryggen och blir lika platt och bred som hos den vuxna, i mindre skala. Barnbilden ryms fortfarande i rutan (x -2 till 3, y 3 till 5).",
+ "om": "Vuxenbilden är oförändrad. Den låga, mjuka näsryggen börjar längre ner än förebilden och breder ut sig till en platt, bred näsbotten med lågt sittande näsborrar åt sidorna, och den stämmer med beskrivningen och ljuset. Jag rättade anteckningen: ljuset kommer uppifrån vänster, så vänster sida av ryggen och näsvingen är ljusast (c och d) och skuggan ligger på höger sida (b). Näsbotten är mörkare och näsborrarna har mörkaste tonen (a) ytterst. I barnbilden var näsbotten sned, med två mörka punkter till vänster och en till höger, fast barnets näsrygg står på samma kolumner som vuxnas. Jag gjorde näsbotten en punkt bredare (aabbaa) så att den ligger jämnt under ryggen och blir lika platt och bred som hos den vuxna, i mindre skala. Barnbilden ryms fortfarande i rutan (x -2 till 3, y 3 till 5). Flyttad en punkt åt vänster så att den sitter mitt i ansiktet (Björn efter 5.2.2.3).",
  "bilder": {
   "standard": {
-   "x": -3,
+   "x": -4,
    "y": 3,
    "rader": [
     "...cb..",
@@ -18,7 +18,7 @@
  },
  "barn": {
   "standard": {
-   "x": -2,
+   "x": -3,
    "y": 3,
    "rader": [
     "..cb..",
