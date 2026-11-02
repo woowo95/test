@@ -308,20 +308,20 @@ spara({ id: 'skon-fransar', ritad: 1, av: 'programmeringschatten, förebild', om
   // version 5 efter Björn (5.2.2.7): mer diagonalt över ryggen och lägre, så att det inte sticker upp lika långt.
   // Skaftet går från nere till vänster bakom ryggen upp mot höger axel; huvudet sitter tvärs över skaftets topp,
   // med en kort nacke och ett blad som vidgas mot eggen.
-  const sx = 54, sy = 20, lut = 0.5;                // skaftets topp och lutning (punkter åt höger per punkt uppåt)
+  const sx = 47, sy = 28, lut = 0.5;                // skaftets topp och lutning (punkter åt höger per punkt uppåt)
   for (let y = sy - 1; y <= 63; y++) { const x = Math.round(sx - (y - sy) * lut);
-    for (let d = -1; d <= 1; d++) satt(x + d, y, d < 0 ? 'H' : d === 0 ? 'G' : 'E');
+    for (let d = -1; d <= 2; d++) satt(x + d, y, d < 0 ? 'H' : d < 2 ? 'G' : 'E');
     if ((y - sy) % 4 === 0) satt(x + 2, y, 'H'); }    // tjockare där lutningen gör trappsteg
   const L = Math.hypot(lut, 1), ax = 1 / L * 1, ay = lut / L; // huvudets axel, vinkelrät mot skaftet: åt höger och lite nedåt
-  for (let y = sy - 8; y <= sy + 12; y++) for (let x = sx - 6; x <= 63; x++) {
+  for (let y = sy - 12; y <= sy + 16; y++) for (let x = sx - 8; x <= 63; x++) {
     const dx = x + 0.5 - (sx + 0.5), dy = y + 0.5 - (sy + 1.5), u = dx * ax + dy * ay, v = -dx * ay + dy * ax; // u längs huvudet, v tvärs
-    if (u < -2.5 || u > 6.5) continue; const h = u < 0 ? 1.6 : 1.6 + u * 0.55; if (Math.abs(v) > h) continue;
+    if (u < -3.5 || u > 11) continue; const h = u < 0 ? 2.4 : 2.4 + u * 0.5; if (Math.abs(v) > h) continue; // större och längre ner efter Björn (version 5)
     const vv = v / h;
-    satt(x, y, u > 5.4 ? (vv < 0.2 ? 'T' : 'S') : u < -1.6 ? 'Q' : vv < -0.45 ? 'S' : vv > 0.45 ? 'Q' : (hash(x, y, 9) < 0.18 ? 'S' : 'R'));
+    satt(x, y, u > 9.6 ? (vv < 0.2 ? 'T' : 'S') : u < -2.5 ? 'Q' : vv < -0.45 ? 'S' : vv > 0.45 ? 'Q' : (hash(x, y, 9) < 0.18 ? 'S' : 'R'));
   }
-  for (let y = sy; y <= sy + 4; y++) { const x0 = Math.round(sx - (y - sy) * lut); for (let x = x0 - 1; x <= x0 + 1; x++) satt(x, y, y % 2 ? 'L' : 'K'); } // surrningen: ränder av mörkt rep runt skaftet
+  for (let y = sy - 1; y <= sy + 6; y++) { const x0 = Math.round(sx - (y - sy) * lut); for (let x = x0 - 1; x <= x0 + 2; x++) satt(x, y, y % 2 ? 'L' : 'K'); } // surrningen: ränder av mörkt rep runt skaftet
   const b = lagerRader((x, y) => P[x + ',' + y] || null, 0, 0, 63, 63);
-  spara({ id: 'redskap-yxa', ritad: 5, av: 'programmeringschatten, förebild', om: 'Flintyxa på ryggen: ett tjockt skaft i jord snett bakom ryggen, och ett stort kilformat flinthuvud i skiffer med ljus egg och korsad surrning som sticker upp bakom axeln bredvid huvudet. Huvudet sitter tvärs över skaftets topp, med kort nacke och ett blad som vidgas mot eggen. Omritad efter Björn (5.2.2.7: större, på ryggen; sedan: ser fortfarande konstigt ut; sedan: mer diagonalt och lägre).',
+  spara({ id: 'redskap-yxa', ritad: 5, av: 'programmeringschatten, förebild', om: 'Flintyxa på ryggen: ett tjockt skaft i jord snett bakom ryggen, och ett stort kilformat flinthuvud i skiffer med ljus egg och korsad surrning som sticker upp bakom axeln bredvid huvudet. Huvudet sitter tvärs över skaftets topp, med kort nacke och ett blad som vidgas mot eggen. Omritad efter Björn (5.2.2.7: större, på ryggen; sedan: ser fortfarande konstigt ut; sedan: mer diagonalt och lägre; sedan: större och längre ner, får täckas av personen).',
     bilder: { standard: { x: b.x - 22, y: b.y + 10 - 52, rader: b.rader } } });
 }
 
