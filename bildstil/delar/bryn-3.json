@@ -1,8 +1,8 @@
 {
  "id": "bryn-3",
- "ritad": 1,
- "av": "API:t (claude-opus-5-5)",
- "om": "Formen, storleken och lutningarna stämmer med beskrivningen. Alla h är borttagna. I lugna och förvånade blev hh-klungan mitt i g-ytan en ljus fläck som såg ut som glans. I arga satt ett ensamt h som en prick i ytterkanten, och i ledsna fanns inget h alls, så brynet var inte heller detsamma i alla lägen. Nu har alla lägen samma uppbyggnad: g på ovansidan mot ljuset och f och e på undersidan, med korn i små klungor där tonerna möts. Inga andra punkter är ändrade.",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 3. Den har samma tjocka form som de andra och tonerna går från g överst till e nederst, alltså ljust uppifrån vänster och mörkt nedtill, så som i förebilden. Brynen lutar rätt i alla lägen: inre änden går ner i arga och upp i ledsna, och i förvånade är bågen höjd med korta, nedåtvända ändar. Version 1 har ett glest och hackigt förvånat läge (ffe...ffe). Version 2:s lugna läge är smalare i nederkanten. Ändringar: i lugna läget gick nederkanten ut till hela bredden (ffffeeeee), så att brynet blir lite bredare som Björn bad om. Delen fyller nu nästan hela rutans bredd på 9 punkter, och bredare än så går inte inom rutan. Överkanten lade jag lite mörkare åt höger (f i stället för g längst in) i lugna och arga, så att den ljusa randen inte ser blank ut på det mörka håret. Formen är i övrigt oförändrad mellan lägena.",
  "bilder": {
   "lugna": {
    "x": -4,
@@ -10,10 +10,10 @@
    "rader": [
     ".........",
     ".........",
-    "..gggg...",
-    ".ggggggff",
-    "ffggfffee",
-    "ffffeeee.",
+    ".ggggggf.",
+    "gggggffff",
+    "ffggffeee",
+    "ffffeeeee",
     "........."
    ]
   },
@@ -21,13 +21,13 @@
    "x": -4,
    "y": -4,
    "rader": [
-    ".........",
     "gg.......",
-    "gggg.....",
-    "ffgggg...",
-    ".fffggff.",
-    "...ffeeee",
-    ".....eee."
+    "ggggg....",
+    "fgggggff.",
+    ".ffffgggf",
+    "...fffeee",
+    ".....eeee",
+    "........."
    ]
   },
   "ledsna": {
@@ -35,11 +35,11 @@
    "y": -4,
    "rader": [
     "......ggg",
-    "....ggggf",
-    "..gggffff",
-    "ggggffee.",
-    "fffeee...",
-    "ee.......",
+    "...ggggff",
+    ".gggggfff",
+    "gggffffee",
+    "fffeeee..",
+    "eee......",
     "........."
    ]
   },
@@ -47,10 +47,10 @@
    "x": -4,
    "y": -4,
    "rader": [
-    "..ggggg..",
-    ".gggggggf",
-    "ggfffffff",
-    "fe.....fe",
+    ".ggggggg.",
+    "gggggggff",
+    "ggfffffee",
+    "ff.....ee",
     ".........",
     ".........",
     "........."

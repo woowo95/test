@@ -1,0 +1,27 @@
+{
+ "id": "ora-3",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 2. Den är störst och bredast av de tre och står tydligast ut från huvudet, vilket passar 'Utåtstående' och den lite komiska fula varianten. Stilen följer ändå förebilden: ytterkanten uppe till vänster är ljusast (d), skålen är mörk (a) och skuggas mot huvudet, och gränserna har korn i små klungor utan ensamma ljusa prickar. Örat ser rimligt ut på kvinnan, mannen och barnet. Den håller sig inom rutan (x -4 till 1, y -6 till 6) och använder bara abcd. Jag ändrade ingenting, eftersom formen, skuggningen och rutan redan stämde.",
+ "bilder": {
+  "standard": {
+   "x": -4,
+   "y": -6,
+   "rader": [
+    ".cdd..",
+    "cdddcb",
+    "dddcbb",
+    "dccbbb",
+    "dcbabb",
+    "cbaabb",
+    "cbaaab",
+    "cbaabb",
+    ".cbabb",
+    ".cbbb.",
+    "..cbb.",
+    "..ccb.",
+    "...cb."
+   ]
+  }
+ }
+}

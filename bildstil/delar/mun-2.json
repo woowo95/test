@@ -1,0 +1,80 @@
+{
+ "id": "mun-2",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den ligger närmast förebilden: samma tunna läpplinje i rost, samma skugga i hud1 under underläppen och samma små mungipor. Den är bredare, som beskrivningen säger, och sitter symmetriskt kring mittlinjen (kolumn 5 och 6) inom rutan -6..5, -2..3. Alla lägen är samma mun med samma bredd, och bara gipor, tänder och öppning ändras med humöret. Version 2 gör lugn läget en hel rad bredare än de andra lägena (s i ytterkanterna), så munnen byter storlek mellan lägena. Version 3 lägger en ljusare s-fläck mitt på läppen, vilket ger glans och ett ensamt avbrott. Den gör också den öppna munnen för stor och slår i rutans överkant, och den lägger till extra gipor i arg. Jag ändrade ingenting i version 1.",
+ "bilder": {
+  "glad": {
+   "x": -6,
+   "y": -2,
+   "rader": [
+    "............",
+    "r..........r",
+    ".rqqqqqqqqr.",
+    "..rrrrrrrr..",
+    "...bbbbbb...",
+    "............"
+   ]
+  },
+  "nojd": {
+   "x": -6,
+   "y": -2,
+   "rader": [
+    "............",
+    "r..........r",
+    ".rrrrrrrrrr.",
+    "...bbbbbb...",
+    "............",
+    "............"
+   ]
+  },
+  "lugn": {
+   "x": -6,
+   "y": -2,
+   "rader": [
+    "............",
+    "............",
+    ".rrrrrrrrrr.",
+    "...bbbbbb...",
+    "............",
+    "............"
+   ]
+  },
+  "ledsen": {
+   "x": -6,
+   "y": -2,
+   "rader": [
+    "............",
+    "............",
+    "..rrrrrrrr..",
+    ".s.bbbbbb.s.",
+    "s..........s",
+    "............"
+   ]
+  },
+  "arg": {
+   "x": -6,
+   "y": -2,
+   "rader": [
+    "............",
+    "............",
+    ".rkkkkkkkkr.",
+    ".r.bbbbbb.r.",
+    "............",
+    "............"
+   ]
+  },
+  "oppen": {
+   "x": -6,
+   "y": -2,
+   "rader": [
+    "............",
+    "....rrrr....",
+    "...rkkkkr...",
+    "...rkkkkr...",
+    "....bbbb....",
+    "............"
+   ]
+  }
+ }
+}

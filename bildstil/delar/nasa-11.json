@@ -1,0 +1,38 @@
+{
+ "id": "nasa-11",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1 eftersom den är den enda som visar en riktig örnnäsa. Näsryggen börjar vid ögonlinjen (y = 0) på x = -1 och 0. Den har en tydlig puckel som breder ut sig lika mycket åt båda hållen (x = -2 till 1) och smalnar sedan av igen. Den slutar i en spets som hänger nedåt som en krok, på rad 8–9 under näsborrarna. Skuggningen följer förebilden: den ljusa sidan ligger till vänster mot ljuset och den mörkare till höger. Bredden och linjetjockleken är desamma som i förebilden, och delen håller sig inom rutan (x = -4 till 2, y = 0 till 9). Version 2 och 3 har puckeln och nederdelen förskjutna åt höger, så näsan blir osymmetrisk sedd rakt framifrån. De saknar också en tydlig krok och liknar mest en rak näsa. Barnversionen i version 1 är kortare och mindre men har kvar puckeln och den nedåthängande spetsen. Den ligger symmetriskt kring mittlinjen. Inga ändringar behövdes.",
+ "bilder": {
+  "standard": {
+   "x": -4,
+   "y": 0,
+   "rader": [
+    "...cb..",
+    "...db..",
+    "..ddcb.",
+    "..dccb.",
+    "...dcb.",
+    "...db..",
+    "..dccb.",
+    ".adccba",
+    "..acba.",
+    "...ba.."
+   ]
+  }
+ },
+ "barn": {
+  "standard": {
+   "x": -3,
+   "y": 1,
+   "rader": [
+    "..db.",
+    ".ddcb",
+    "..cb.",
+    ".dccb",
+    ".abba",
+    "..ba."
+   ]
+  }
+ }
+}

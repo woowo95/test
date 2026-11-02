@@ -1,35 +1,37 @@
 {
  "id": "nasa-8",
- "ritad": 1,
- "av": "API:t (claude-opus-5-5)",
- "om": "Godkänd utan ändringar. Formen stämmer med beskrivningen: en smal näsrygg som vidgar sig till en tung, rund knöl med breda näsborrar, klart större än förebilden. Skuggningen följer förebilden med ljus från vänster ovanifrån. Den ljusa sidan (d, c) ligger till vänster, den mörka (b, a) till höger och på undersidan, och näsborrarna är mörka med en ljusare mellanvägg. Delen håller sig inom rutan (x -4 till 4, y 1 till 9) och använder bara abcd. Barnets näsa har samma form men är kortare och mindre, och den ryms också i rutan. Flyttad en punkt åt vänster så att den sitter mitt i ansiktet (Björn efter 5.2.2.3).",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Valde version 1: den har den tydligaste stora, runda knölen och samma smala näsrygg på x = -1 och 0 som förebilden, och den läses som en komisk storäsa på alla tre ansiktena. Björn tyckte att den förra satt helt fel. Version 1 började på y = 1 och låg därför lite under ögonlinjen, och den ljusa d-ytan stack ut som en lös triangel. Jag har ändrat fyra saker. Näsan börjar nu på y = 0, så att roten möter ögonlinjen. Översta delen av näsryggen är c/b, så att den smälter in i huden, och d sparas till ryggen och knölens ljusa vänstra sida. Varje rad är nu lika bred på båda sidor om mittlinjen, så att näsan sitter mitt i ansiktet. Nederkanten har näsborrar i a på sidorna och en ljusare b-mellanvägg, i stället för en jämn mörk rand. Barnets näsa följer samma ändringar men är kortare och har en mindre knöl.",
  "bilder": {
   "standard": {
    "x": -5,
-   "y": 1,
+   "y": 0,
    "rader": [
-    "....db...",
-    "....dcb..",
-    "...dcb...",
-    "...dccb..",
-    "..dccbb..",
-    ".ddccbba.",
-    ".dcccbba.",
-    "adcccbbba",
-    ".aabbbaa."
+    "....cb....",
+    "....cb....",
+    "....db....",
+    "...dcbb...",
+    "...dcbba..",
+    "..dccbba..",
+    ".dcccbbba.",
+    ".dcccbbba.",
+    "bdccbbbaaa",
+    ".aabbbbaa."
    ]
   }
  },
  "barn": {
   "standard": {
    "x": -4,
-   "y": 1,
+   "y": 0,
    "rader": [
-    "...db..",
-    "..dcb..",
-    ".dccbb.",
-    "adccbba",
-    ".abbba."
+    "...cb...",
+    "...db...",
+    "..dcbb..",
+    ".dccbba.",
+    "bdccbbaa",
+    ".aabbaa."
    ]
   }
  }

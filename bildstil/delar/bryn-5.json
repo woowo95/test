@@ -1,55 +1,55 @@
 {
  "id": "bryn-5",
- "ritad": 1,
- "av": "API:t (claude-opus-5-5)",
- "om": "Formen och lägena stämmer med beskrivningen, men två saker ändrades. 1) De ljusa h-klungorna i överkanten (hh) läste som glans mot hårfästet på alla tre ansiktena. Jag har brutit upp dem till enstaka h intill g, så att överkanten blir matt och lurvig och ljuset ändå kommer uppifrån vänster. 2) I arga låg ljusa g under mörka f i nedre högra delen, så skuggningen gick emot formen. Jag har ritat om det arga brynet som ett nedåtlutande band: ljust (g) i överkanten, f i mitten och e i underkanten hela vägen till den sänkta inre änden. I ledsna och förvånade minskade jag h på samma sätt. Storlek, tjocklek och fästläge är oförändrade i alla lägen.",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 1. Den har tätast och buskigast form och skuggas som förebilden: ljust (g, h) uppåt mot ljuset och mörkt (f, e) längs underkanten. Den har inga lösa punkter. Version 2 och 3 har hål och ensamma prickar i översta raden, och det bryter mot regeln om inga ensamma prickar. Lägena stämmer: arga sänker den inre änden mot näsan, ledsna höjer den, och förvånade lyfter brynet till en båge. Björn ville ha bredare bryn. Brynen fyller redan rutans hela bredd på 9 punkter, så jag gjorde dem fylligare i stället: i lugna drog jag ut den översta raden och den ljusa kanten åt vänster, och i förvånade breddade jag den översta raden åt vänster. Det är samma del i alla lägen, och bara vinkeln och höjden ändras med humöret.",
  "bilder": {
   "lugna": {
    "x": -4,
    "y": -4,
    "rader": [
-    "........",
-    "..gh.gg.",
-    ".hggggff",
-    "ggfgffee",
-    ".ffeeee.",
-    "........"
+    ".........",
+    ".hggggg..",
+    "hggfgggff",
+    "gggffgffe",
+    "ffffeeeee",
+    ".ee......"
    ]
   },
   "arga": {
    "x": -4,
    "y": -4,
    "rader": [
-    ".hg.....",
-    "hgggg...",
-    "gfgfggg.",
-    ".ffeffgg",
-    "...eeeff",
-    ".....eee"
+    "hgg......",
+    "gggggh...",
+    "fgfggggg.",
+    ".ffffgggg",
+    "...eeffff",
+    ".....eeee"
    ]
   },
   "ledsna": {
    "x": -4,
    "y": -4,
    "rader": [
-    ".....gh.",
-    "...hgggg",
-    ".hgggggf",
-    "ggfgffee",
-    "fffeee..",
-    "ee......"
+    "......hgg",
+    "....hgggg",
+    "..hgggfgf",
+    "hgggfffee",
+    "gffeeee..",
+    "fee......"
    ]
   },
   "forvanade": {
    "x": -4,
    "y": -4,
    "rader": [
-    "..hggg..",
-    ".hggggf.",
-    "hggffggf",
-    "gff..ffe",
-    "fe....ee",
-    "........"
+    ".hggggg..",
+    ".hggfgggf",
+    "hgfeeeffe",
+    "gfe....ee",
+    "fe.......",
+    "........."
    ]
   }
  }

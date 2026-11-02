@@ -1,0 +1,27 @@
+{
+ "id": "ora-5",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Version 1 är sex punkter bred från x -3 och går därför utanför rutan (x1 = 2). Dess spets är dessutom en tunn linje på en punkt, och det passar inte förebildens fylligare form. Version 2 fungerar men slutar lite tvärt nertill. Version 3 har samma storlek och skuggning som förebilden: ljus kant (d/c) mot ljuset uppe till vänster, mörk ingång i örat (a) och b mot kinden. Den har en liten men tydlig spets upptill och en mjukare örsnibb, så den smälter in på alla tre ansiktena. Den håller sig inom rutan och använder bara abcd. Jag ändrade ingenting.",
+ "bilder": {
+  "standard": {
+   "x": -3,
+   "y": -7,
+   "rader": [
+    "d....",
+    "dc...",
+    "dcc..",
+    "dccb.",
+    "dcbbb",
+    "dbabb",
+    "dbaab",
+    "cbaab",
+    "cbabb",
+    "cbbb.",
+    ".ccb.",
+    ".ccb.",
+    "..cb."
+   ]
+  }
+ }
+}

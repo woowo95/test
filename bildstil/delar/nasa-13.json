@@ -1,0 +1,37 @@
+{
+ "id": "nasa-13",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den ligger rätt i rutan (x -5 till 4, y 0 till 9) och näsryggen sitter på x -1 och 0. Ryggen har samma smala d/b-linje som förebilden, och den stora, runda spetsen är ljus uppe till vänster och mörk nere till höger, så den stämmer bäst med 'Knölig'. Version 2 har mörka b-punkter på den belysta vänsterkanten. Version 3 har en sned rygg och ensamma prickar i a b a längst ner. Ändringar: ett ensamt ljust d i spetsens c-yta såg ut som en glansfläck och blev c (rad 7, nu .dddccbba.). På rad 3 tog jag bort d-pricken i den mörka sidan och gjorde raden smalare (....dcb...), så att knölen syns i formens kontur i stället för som en prick. I barnbilden blev den ensamma d-pricken i ddcdcb till dddccb.",
+ "bilder": {
+  "standard": {
+   "x": -5,
+   "y": 0,
+   "rader": [
+    "....db....",
+    "....db....",
+    "...cdcb...",
+    "....dcb...",
+    "...ddcb...",
+    "..dddccb..",
+    ".cdddccbb.",
+    ".dddccbba.",
+    ".cdccbbba.",
+    "..aabbaa.."
+   ]
+  }
+ },
+ "barn": {
+  "standard": {
+   "x": -3,
+   "y": 1,
+   "rader": [
+    "..db..",
+    ".ddcb.",
+    "dddccb",
+    "cdccba",
+    ".abba."
+   ]
+  }
+ }
+}

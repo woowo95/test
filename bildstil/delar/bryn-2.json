@@ -1,59 +1,48 @@
 {
  "id": "bryn-2",
- "ritad": 1,
- "av": "API:t (claude-opus-5-5)",
- "om": "Godkänd utan ändringar. Alla lägen är 8 × 7 punkter och håller sig inom rutan. De använder bara e, f, g och hör ihop med förebilden: ungefär lika breda, två till tre punkter tjocka, ljus ovansida (g) och mörkare undersida (f, e), utan glans och utan ensamma prickar. Lugna är en tydlig båge där ytteränden sjunker längre ner än den inre. Arga drar ner den inre änden ett steg mot näsan. Ledsna lyfter den inre änden och låter den yttre hänga. Förvånade lyfter bågen och gör den högre. Brynen ser rimliga ut på alla tre ansiktena.",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 3. Den ger den renaste bågen och ligger närmast förebilden i storlek och linjetjocklek: en jämn linje två punkter tjock, med g överst mot ljuset uppifrån vänster och f och e nedåt och inåt. Den har inga hål mitt i linjen och inga ensamma punkter, vilket version 1 och 2 har (till exempel 'gfe.feee' och 'ff.effgg'). Humöret läses tydligt i alla lägen: i arga sänks den inre änden, i ledsna höjs den inre änden och i forvanade lyfts hela bågen. Det jag ändrade: alla lägen är smalnade från 9 till 8 punkter (x -4 till 3), så att delen säkert håller sig inom rutan -4..4 även om den högra gränsen inte räknas med. Den yttersta punkten i den inre änden togs bort och skuggan e behölls. Forvanade ritades om som samma båge som lugna men en rad högre och med den mörkare inre änden ('fee'), så att det tydligare blir samma del i alla lägen.",
  "bilder": {
   "lugna": {
    "x": -4,
-   "y": -4,
+   "y": -3,
    "rader": [
-    "........",
-    "........",
     "..gggg..",
     ".gffffgg",
-    "gfe...ef",
-    "fe......",
-    "........"
+    "gf....fe",
+    "f......."
    ]
   },
   "arga": {
    "x": -4,
-   "y": -4,
+   "y": -3,
    "rader": [
-    "........",
-    "........",
     "..ggg...",
     ".gfffgg.",
-    "gfe.effg",
-    "fe....ef",
-    "........"
+    "gf...ffg",
+    "f.....ee"
    ]
   },
   "ledsna": {
    "x": -4,
    "y": -4,
    "rader": [
-    "........",
     ".....ggg",
-    "...ggffe",
-    ".ggffe..",
-    "gffe....",
-    "fe......",
-    "........"
+    "..gggffe",
+    ".gffff..",
+    "gf......",
+    "f......."
    ]
   },
   "forvanade": {
    "x": -4,
    "y": -4,
    "rader": [
-    "...ggg..",
-    "..gfffg.",
-    ".gfe..fg",
-    "gfe....f",
-    "fe......",
-    "........",
-    "........"
+    "..ggg...",
+    ".gfffggg",
+    "gf...fee",
+    "f......."
    ]
   }
  }

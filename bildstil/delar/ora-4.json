@@ -1,0 +1,28 @@
+{
+ "id": "ora-4",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 2. Den fyller rutan, 6 × 14 punkter från (-4,-7) till (2,7), så örat blir tydligt större än förebilden, som beskrivningen kräver. Version 1 börjar vid x=-3 och sticker då ut en punkt till höger om rutan (x1=2). Den är också kortare. I version 2 tar ovankanten (ddd) och den vänstra ytterkanten (d) emot ljuset uppifrån vänster. Örats skål (a) bildar en sammanhängande och jämn form som följer brosket nedåt, och den smala örsnibben avslutar örat. Version 3 har en ojämn förskjutning av skålen på rad 5 (dcbaab) som bryter formen, och dess ovankant är mörkare trots att den vetter mot ljuset. Jag har inte ändrat något: alla tecken är tillåtna (abcd), det finns inga ensamma prickar eller glans, och örat har ingen kontur.",
+ "bilder": {
+  "standard": {
+   "x": -4,
+   "y": -7,
+   "rader": [
+    "..cd..",
+    ".dddc.",
+    "dccccb",
+    "dcbbbb",
+    "dcbabb",
+    "dbaabb",
+    "dbaabb",
+    "cbaabb",
+    "cbaabb",
+    "cbbabb",
+    ".cbbb.",
+    ".ccbb.",
+    "..cbb.",
+    "..cb.."
+   ]
+  }
+ }
+}

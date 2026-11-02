@@ -1,0 +1,61 @@
+{
+ "id": "mun-5",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Version 1 och 2 har samma punkter i alla lägen utom arg. Version 1 har bara tomma rader i onödan. Arg i version 1 och 2 (rkkr över rbbr) blir en liten fyrkant som läses som förvånad och liknar öppen-läget för mycket. I version 3 har arg en bredare, sammanbiten mun med mungiporna dragna nedåt. Det stämmer med förebildens arga grimas men är fortfarande litet. Alla lägen ligger centrerade kring mittlinjen, från x -3 till 2 eller från -2 till 1, och håller sig inom rutan. Linjerna är en punkt tjocka och läppen har en ljus b-ton under, som i förebilden. Inget behövde rättas.",
+ "bilder": {
+  "glad": {
+   "x": -3,
+   "y": -2,
+   "rader": [
+    "r....r",
+    ".rqqr.",
+    "..rr..",
+    "..bb.."
+   ]
+  },
+  "nojd": {
+   "x": -3,
+   "y": -1,
+   "rader": [
+    "r....r",
+    ".rrrr.",
+    "..bb.."
+   ]
+  },
+  "lugn": {
+   "x": -2,
+   "y": 0,
+   "rader": [
+    "rrrr",
+    ".bb."
+   ]
+  },
+  "ledsen": {
+   "x": -3,
+   "y": 0,
+   "rader": [
+    ".rrrr.",
+    "s.bb.s"
+   ]
+  },
+  "arg": {
+   "x": -3,
+   "y": 0,
+   "rader": [
+    "rkkkkr",
+    "r.bb.r"
+   ]
+  },
+  "oppen": {
+   "x": -2,
+   "y": -1,
+   "rader": [
+    ".rr.",
+    "rkkr",
+    ".rr.",
+    ".bb."
+   ]
+  }
+ }
+}

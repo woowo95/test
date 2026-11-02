@@ -1,0 +1,80 @@
+{
+ "id": "mun-3",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "",
+ "bilder": {
+  "glad": {
+   "x": -5,
+   "y": -2,
+   "rader": [
+    "..........",
+    "r.ssssss.r",
+    ".rqqqqqqr.",
+    "..ttttts..",
+    "...ssss...",
+    "...bbbb..."
+   ]
+  },
+  "nojd": {
+   "x": -5,
+   "y": -2,
+   "rader": [
+    "..........",
+    "r.ssssss.r",
+    ".rrrrrrrr.",
+    "..ttttts..",
+    "...ssss...",
+    "...bbbb..."
+   ]
+  },
+  "lugn": {
+   "x": -5,
+   "y": -2,
+   "rader": [
+    "..........",
+    "..ssssss..",
+    ".rrrrrrrr.",
+    "..ttttts..",
+    "...ssss...",
+    "...bbbb..."
+   ]
+  },
+  "ledsen": {
+   "x": -5,
+   "y": -2,
+   "rader": [
+    "..........",
+    "..ssssss..",
+    "..rrrrrr..",
+    ".r.ttts.r.",
+    "...ssss...",
+    "...bbbb..."
+   ]
+  },
+  "arg": {
+   "x": -5,
+   "y": -2,
+   "rader": [
+    "..........",
+    "..ssssss..",
+    ".rkkkkkkr.",
+    ".rtttttsr.",
+    "...ssss...",
+    "...bbbb..."
+   ]
+  },
+  "oppen": {
+   "x": -3,
+   "y": -2,
+   "rader": [
+    "..ss..",
+    ".srrs.",
+    "trkkrs",
+    "trkkrs",
+    ".ttts.",
+    "..bb.."
+   ]
+  }
+ }
+}

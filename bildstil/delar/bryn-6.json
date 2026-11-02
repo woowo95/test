@@ -1,0 +1,56 @@
+{
+ "id": "bryn-6",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "",
+ "bilder": {
+  "lugna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    ".........",
+    "..gggg...",
+    ".ggffggg.",
+    "ffffeffgg",
+    "eeeeeeeff",
+    "........."
+   ]
+  },
+  "arga": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    "gg.......",
+    "fggg.....",
+    "effggg...",
+    ".eeffggg.",
+    "...eeffgg",
+    ".....eeff"
+   ]
+  },
+  "ledsna": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    ".....gggg",
+    "...ggffgg",
+    ".ggffeeff",
+    "gffeeeeee",
+    "fee......",
+    "........."
+   ]
+  },
+  "forvanade": {
+   "x": -4,
+   "y": -3,
+   "rader": [
+    "..gggg...",
+    ".gffffggg",
+    "gffeeffff",
+    "fee..eeee",
+    ".........",
+    "........."
+   ]
+  }
+ }
+}

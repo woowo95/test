@@ -1,0 +1,75 @@
+{
+ "id": "mun-8",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Valde version 3. Den håller samma smala bredd som förebilden (x -4..3, symmetrisk kring mittlinjen) och visar luckan bara när munnen är glad eller öppen, precis som beskrivningen säger. Lucka och tänder sitter på samma plats (x = 0) i båda lägena. Version 1 har en ensam tandprick under läppen i nöjd, lugn och ledsen, och dess glada mun är bredare än förebildens. Version 2 visar tänder under läppen även i neutrala lägen och har en platt, bred arg mun. Ändringar: Den ljusaste tandpunkten w i glad var en ensam ljus prick och blev q. Tanden längst till höger blev p, så att tänderna mörknar bort från ljuset. Arg och öppen hade x = -4 med 8 punkters bredd och fick samma bild som de andra lägena (x = -5, 10 punkter breda). Punkterna ligger kvar på samma plats i ansiktet, så delen är densamma i alla lägen. Allt håller sig inom rutan -6,-2 till 5,3.",
+ "bilder": {
+  "glad": {
+   "x": -5,
+   "y": -2,
+   "rader": [
+    "r........r",
+    ".rqqqkqpr.",
+    "..rpqkpr..",
+    "...rrrr...",
+    "...bbbb..."
+   ]
+  },
+  "nojd": {
+   "x": -5,
+   "y": -2,
+   "rader": [
+    "..........",
+    "r........r",
+    ".rrrrrrrr.",
+    "..bccccb..",
+    ".........."
+   ]
+  },
+  "lugn": {
+   "x": -5,
+   "y": -2,
+   "rader": [
+    "..........",
+    "..........",
+    ".rrrrrrrr.",
+    "..bccccb..",
+    ".........."
+   ]
+  },
+  "ledsen": {
+   "x": -5,
+   "y": -2,
+   "rader": [
+    "..........",
+    "..........",
+    "..rrrrrr..",
+    ".r.bccb.r.",
+    ".........."
+   ]
+  },
+  "arg": {
+   "x": -5,
+   "y": -2,
+   "rader": [
+    "..........",
+    "..........",
+    ".rrrrrrrr.",
+    ".r.bccb.r.",
+    ".........."
+   ]
+  },
+  "oppen": {
+   "x": -5,
+   "y": -2,
+   "rader": [
+    "..........",
+    "...rrrr...",
+    "..rqqkpr..",
+    "..rkkkkr..",
+    "...rrrr...",
+    "....bb...."
+   ]
+  }
+ }
+}
