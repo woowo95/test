@@ -1,18 +1,16 @@
 {
  "id": "arr-5",
- "ritad": 1,
- "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 1. Den ritar ärret på samma sätt som förebilden: en sammanhängande ljus linje i hud3 som går snett ner åt höger, med en mörkare skugga i hud1 och hud0 direkt under varje ljus punkt. Det ger samma upphöjda, matta känsla och samma linjetjocklek som ärret över ögonbrynet. Den sitter på hakan, under munnen (y 43–47 i porträttet), på alla tre mallarna och håller sig gott inom rutan. Version 2 har skuggan bredvid den ljusa linjen i stället för under den, så ärret ser platt och brutet ut. Version 3 har mörka b-punkter och rost mitt i den ljusa linjen och en ensam punkt längst till vänster, vilket ger en rörig och fläckig form. Ingen ändring behövdes i version 1.",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 2. Den följer förebilden bäst: en tunn diagonal linje i den ljusaste hudtonen (d) och bara en enstaka mörkare punkt (b) under som skugga. Det stämmer med beskrivningen om en ljus upphöjd linje med en mörk skugga under. Kontrasten blir ändå låg, så ärret syns men tar inte över hakan. Version 1 bygger mest på c och b, vilket ger en tydligare och hårdare linje som blir för stark på barnet. Version 3 saknar helt den mörka skuggan och blir därför bara en ljus fläck. Ändring: jag tog bort sista raden (en ensam c-punkt längst ner till höger). Den förlängde ärret utan att tillföra något och kunde se ut som en ensam prick. Nu är ärret kortare och mer subtilt, vilket följer Björns kommentar om att det ska vara mindre och svagare, särskilt på barnet. Delen ligger inom rutan på hakan under munnen.",
  "bilder": {
   "standard": {
-   "x": -3,
-   "y": 13,
+   "x": -2,
+   "y": 14,
    "rader": [
-    "dd.....",
-    "bdd....",
-    ".bbdd..",
-    "...abdd",
-    ".....ab"
+    "dd...",
+    "cbdd.",
+    "..ccd"
    ]
   }
  }

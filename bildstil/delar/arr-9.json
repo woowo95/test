@@ -1,21 +1,18 @@
 {
  "id": "arr-9",
- "ritad": 1,
- "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 3. Korset sitter mitt på kinden, under ögat och en bit från näsan och munnen, på alla tre ansiktena. Det är symmetriskt, och den ljusa linjen (d) har genomgående sin skugga (b) på undersidan, som i förebilden. Version 1 sitter för lågt och för nära näsan, och dess nedersta rad är ojämn: den högra armen saknar slut. Version 2 sitter lite högt mot ögat och blandar in a i armarna, så att skuggan blir ojämn. Ändring: i version 3 var mitten av korsets nedre halva a, en ensam mörkare punkt. Jag bytte den mot b (raden blir ..dbd..), så att skuggan i korsningen har samma ton som i resten av ärret.",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 3. Den är minst (4 × 5 punkter) och följer därmed bäst Björns kommentar om att göra ärret mindre och mer subtilt. Korset ritas bara med hudens egna toner b och c. Den ljusa linjen c bär formen och den mörkare b ligger under som skugga, på samma sätt som i förebilden. På alla tre ansiktena syns ärret när man tittar efter, men det tar inte över kinden. Version 1 och 2 är större och starkare i kontrast. Version 2 sticker dessutom ut nedåt med en extra rad. Ärret sitter på vänster kind och håller sig inom rutan. Jag ändrade ingenting: punkterna har redan rätt tecken, och linjerna är lika tunna (en punkt) som i förebilden.",
  "bilder": {
   "standard": {
-   "x": -13,
-   "y": 2,
+   "x": -11,
+   "y": 3,
    "rader": [
-    "d.....d",
-    "bd...db",
-    ".bd.db.",
-    "..bdb..",
-    "..dbd..",
-    ".db.bd.",
-    "db...bd",
-    "b.....b"
+    "c..c",
+    "bccb",
+    ".cc.",
+    "cbbc",
+    "b..b"
    ]
   }
  }

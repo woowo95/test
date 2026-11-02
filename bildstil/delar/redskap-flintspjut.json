@@ -1,0 +1,46 @@
+{
+ "id": "redskap-flintspjut",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Skaftet går tydligt diagonalt bakom ryggen, från nere till vänster upp mot höger axel, i ungefär samma vinkel och med samma smala linjetjocklek som yxskaftet i förebilden. Flintspetsen sticker upp bredvid huvudet utan att gå för högt och syns stor och hel på alla tre mallarna. Spetsen är ljusast på sidan mot ljuset uppe till vänster och mörknar mot höger, i skiffer T–Q. Skaftet är i jord och surrningen i senap, och delen ryms inom rutan. Version 2 är brantare och har ett bredare skaft. I version 3 försvinner spetsen delvis bakom huvudet och kanten. Ändring: på surrningens nedre varv lade jag en mörkare ton (J–I) på högra sidan, så att repet skuggas mot ljuset på samma sätt som spetsen.",
+ "bilder": {
+  "standard": {
+   "x": -26,
+   "y": -20,
+   "rader": [
+    "................................S",
+    ".............................TSR.",
+    "...........................TTSSR.",
+    ".........................STTSSRR.",
+    "........................STTSSRQ..",
+    "........................TTSSRRQ..",
+    ".......................TSRSSRQ...",
+    ".......................SRSSRQQ...",
+    "......................TSSRRQQ....",
+    "......................SSRRQ......",
+    ".....................SSRQ........",
+    ".....................RQ..........",
+    "...................LLLK..........",
+    "..................KKJI...........",
+    ".................LLLK............",
+    "................KKJI.............",
+    "...............HGF...............",
+    "..............HGE................",
+    ".............HGF.................",
+    "............HGE..................",
+    "...........HGF...................",
+    "..........HGE....................",
+    ".........HGF.....................",
+    "........HGE......................",
+    ".......HGF.......................",
+    "......HGE........................",
+    ".....HGF.........................",
+    "....HGE..........................",
+    "...HGF...........................",
+    "..HGE............................",
+    ".HGF.............................",
+    "HGE.............................."
+   ]
+  }
+ }
+}

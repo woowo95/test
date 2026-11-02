@@ -1,18 +1,17 @@
 {
  "id": "skon-lappar",
- "ritad": 1,
- "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 1. Den är liten och precis i samma skala som förebildens fransar och håller sig inom rutan (x -4 till 3, y -2 till 2). Den ligger symmetriskt kring mittlinjen och använder kindtonerna på ett dämpat sätt, så den fungerar på kvinna, man och barn. Läppformen läses tydligt: en båge i överläppen och en ljusare underläpp som vänder sig mot ljuset. Version 2 lämnar en genomskinlig rad som munlinje, och formen blir splittrad. Version 3 är för mättad i rost och ser ut som läppstift, vilket inte passar mannen eller barnet. Ändring: underläppen och skuggan under den har förskjutits så att den ljusaste delen ligger åt vänster och den högra sidan är mörkare, eftersom ljuset kommer uppifrån vänster.",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 3. Den håller sig närmast mallens mun. Läpparna är bara fyra punkter breda (x -2 till 1) och ligger lika långt åt båda hållen från mittlinjen. Mallens munlinje på y=0 lämnas orörd. Skuggan under underläppen är ritad i hudtoner (b, a) och inte i kindtoner. Därför ser det ut som att den egna underläppen kastar en skugga på hakan, inte som en färgad fläck eller en andra mun. Version 2 valdes bort: den breda underläppen på sex punkter går ut över mungiporna och ger just det Björn sa nej till, en egen mun ovanpå munnen. Version 1 valdes bort: skuggan i kindton gör läppområdet för stort och för rött. Jag ändrade en sak i version 3. Överläppen fick samma skuggning som i version 1 (.BBAA.), så att den mörknar åt höger, bort från ljuset uppe till vänster. Underläppen vänder sig mot ljuset och är därför ljusast (C) till vänster. Allt är matt med dämpade kindtoner, utan glans och utan kontur.",
  "bilder": {
   "standard": {
-   "x": -4,
-   "y": -2,
+   "x": -3,
+   "y": -1,
    "rader": [
-    ".BB..BB.",
-    "ABBBBBBA",
-    "AsrrrrsA",
-    ".BCCCBB.",
-    "..ABAA.."
+    ".BBAA.",
+    "......",
+    ".CCBA.",
+    "..ba.."
    ]
   }
  }

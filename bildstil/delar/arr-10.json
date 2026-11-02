@@ -1,22 +1,19 @@
 {
  "id": "arr-10",
- "ritad": 1,
- "av": "API:t (claude-opus-5-5), bästa av 2",
- "om": "Jag valde version 3. Ärret går tvärs över ansiktet, från vänster kind under ögat, över näsan och till höger kind. Det rör inte ögat, vilket version 2 gör i början. Ärret är byggt som i förebilden. Den ljusa upphöjda linjen i hud3 har en mörk skugga under sig i hud0 och hud1, så att ljuset kommer uppifrån. Skuggan blandar a och b i små klungor, så att ytan blir matt med korn. Ändarna tonar ut med hud2. Linjen är lika tjock och lika långa steg hela vägen, och den håller sig inom rutan (x -12 till 11, y 2 till 10). Jag behövde inte ändra något.",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 1. Den följer förebilden bäst: ett smalt ljust streck i d med skuggan i b och c direkt under, och samma tunna linje som ärret över ögonbrynet. Version 2 blir streckad och skuggan hamnar bredvid strecket i stället för under det. Version 3 är för tjock och tar över ansiktet. Ändringar efter Björns kommentar: ärret är kortare, 14 punkter brett i stället för 18 och 6 rader högt, och flyttat till x -8, y 4. Det går fortfarande snett över näsryggen men slutar tidigare på kinden. Det är högst en punkt tjockt överallt. Skuggan är mjukare: blandad b och c i stället för ren b, så att kontrasten mot huden blir lägre. Ändarna tonar ut med c, så att ärret syns när man tittar men inte drar blicken. Ärret håller sig inom rutan.",
  "bilder": {
   "standard": {
-   "x": -12,
-   "y": 2,
+   "x": -8,
+   "y": 4,
    "rader": [
-    "ccd.....................",
-    "bbbddd..................",
-    "...baaddd...............",
-    "......aabddd............",
-    ".........abaddd.........",
-    "............baaddd......",
-    "...............aabddd...",
-    "..................abadcc",
-    ".....................bbb"
+    "cd............",
+    "bddd..........",
+    "..bcddd.......",
+    ".....bbddd....",
+    "........cbddd.",
+    "...........bc."
    ]
   }
  }

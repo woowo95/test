@@ -1,20 +1,17 @@
 {
  "id": "arr-4",
- "ritad": 1,
- "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 1. Den ligger tvärs över munnen nära mittlinjen (x -3 till -1, y 9 till 15) och går därför verkligen genom läppen. Den är byggd som förebilden: en ljus linje (d) med en mörkare skugga (b) på sidan bort från ljuset, lika tunn och i samma storlek, med lite rost (s) precis där den skär läppen. Version 2 är för lång och har rosten ovanför munnen, så den ser ut som ett sår under näsan. Version 3 sitter i höger mungipa och inte genom läppen. Ändring: raden 'ads' blev 'dsb'. Den mörkaste hudtonen (a) låg på ljussidan till vänster, vilket gick emot ljuset uppifrån vänster. Nu ligger skuggan (b) till höger, som i resten av linjen.",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 2. Den är kortast och tunnast och ritas helt i hudens egna toner. Den ljusa linjen är c och skuggan b, så kontrasten blir låg, och det följer Björns kommentar om att ärren ska vara mer subtila. Ärret går genom läppen strax vänster om mittlinjen, på x = -2 och -1, och ser lika diskret ut på kvinnan, mannen och barnet. Version 1 är längre och har en rostpunkt mitt i munnen som drar blicken till sig. Version 3 använder den ljusaste tonen d och rost, vilket ger för hög kontrast. Min ändring: i version 2 var två rader likadana, så ärret blev ett rakt lodrätt streck som kunde se ut som en del av munnen. Jag flyttade den nedre halvan en punkt åt höger så att linjen blir lätt snedställd, som ett riktigt ärr över läppen. Ljuset kommer uppifrån vänster, så den ljusa sidan ligger upptill och till vänster och den mörka b-skuggan under och till höger. Storleken och antalet tecken är oförändrade.",
  "bilder": {
   "standard": {
-   "x": -3,
-   "y": 9,
+   "x": -2,
+   "y": 10,
    "rader": [
-    ".d.",
-    ".db",
-    ".db",
-    "dsb",
-    "db.",
-    "db.",
-    "b.."
+    "c.",
+    "cb",
+    ".c",
+    ".b"
    ]
   }
  }

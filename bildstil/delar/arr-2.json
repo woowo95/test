@@ -1,19 +1,16 @@
 {
  "id": "arr-2",
- "ritad": 1,
- "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 1. Den hör bäst ihop med förebilden: en smal diagonal linje i samma storlek och tjocklek som ärret över ögonbrynet. Den ljusa upphöjda linjen (d) går snett från övre höger till nedre vänster, och skuggan (a/b) ligger hela tiden direkt under den, alltså på den sida som vänder sig bort från ljuset uppifrån vänster. En enda rostpunkt (s) visar att ärret är ganska färskt utan att bli en blank fläck. Ärret sitter tydligt på kinden mellan ögat och munnen på alla tre ansiktena och håller sig inom rutan. Version 2 är lång och lodrät och ser mer ut som tårstrimmor än som ett ärr. Version 3 är bred och taggig och har mycket rost, så den ser ut som ett sytt sår och passar sämre med förebildens stil. Jag ändrade ingenting, eftersom formen, skuggningen och tecknen redan följer reglerna.",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 2 eftersom den bäst följer Björns kommentar. Den är minst av de tre, bara fyra punkter bred och tre rader hög. Den har samma linjetjocklek som förebilden: en punkt tjock ljus linje (hud3) med en mörkare skugga (hud1) direkt under. Båda tonerna ligger bara ett steg från hudens mellanton, så kontrasten blir låg och ärret smälter in i kinden men syns när man tittar. Version 1 är längre och har en extra skuggpunkt, så den blir tydligare. Version 3 är för stor och lång för en liten skada och tar över kinden. Placeringen x -10, y 2 lägger ärret på vänster kind under ögat. Den håller sig inom rutan på kvinna, man och barn och krockar inte med ögat eller näsan. Jag ändrade ingenting: formen är redan kort och diagonal, skuggan följer linjen nedåt mot ljuset uppifrån vänster, och det finns inga ensamma ljusa prickar eller rost, eftersom ärret ska vara läkt och subtilt.",
  "bilder": {
   "standard": {
-   "x": -11,
-   "y": 1,
+   "x": -10,
+   "y": 2,
    "rader": [
-    "....d",
-    "...da",
-    "..db.",
-    ".ds..",
-    "db...",
-    "a...."
+    "..dd",
+    "ddb.",
+    "bb.."
    ]
   }
  }

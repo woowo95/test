@@ -1,18 +1,17 @@
 {
  "id": "arr-3",
- "ritad": 1,
- "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 1. Den är den enda som verkligen går snett över näsryggen, från x = -5 till 4, alltså lika långt åt båda hållen från mittlinjen och på näsans höjd (y = 1–5). Linjen är en punkt tjock med ljus upphöjd kant (d) och mörk skugga under (b, och a där näsryggen vänder bort från ljuset). Det följer förebildens sätt att skugga och storleken på detaljerna. Version 2 är för kort och syns mest som en fläck på näsan. Version 3 sitter för högt, mellan ögonen, och dess rost (t, s) läser som en röd prick i stället för ett ärr över näsan. Jag har inte ändrat något: formen, tonerna och placeringen stämmer redan och ser lika bra ut på alla tre ansiktena.",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 3. Den har lägst kontrast och ligger närmast huden, vilket stämmer med Björns kommentar om att ärren ska vara subtila. Den följer också förebildens byggsätt: en ljus linje (d) en punkt bred med skuggan direkt under. Ärret sitter centrerat över näsan, från x = -3 till x = 2, och lika långt åt båda hållen från mittlinjen. Version 1 och 2 har mörkare b-skugga och därmed hårdare kontrast. Version 2 är dessutom ojämn, med skuggan på fel sida i tredje raden. Det jag ändrade: de ensamma b-punkterna i rad 3 och 4 är nu c, så att skuggan genomgående är en jämn c under den ljusa d-linjen. Det tar bort de mörka prickarna och ger lägre, jämnare kontrast på alla tre ansiktena.",
  "bilder": {
   "standard": {
-   "x": -5,
-   "y": 1,
+   "x": -3,
+   "y": 2,
    "rader": [
-    "dd........",
-    "bbdd......",
-    "..bbddd...",
-    "....abbdd.",
-    ".......bbd"
+    "dd....",
+    "ccdd..",
+    "..ccdd",
+    "....cc"
    ]
   }
  }

@@ -1,0 +1,43 @@
+{
+ "id": "redskap-kniv",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 2. Flintbladet är brett och sticker upp tydligt bredvid huvudet ovanför höger axel utan att gå för högt. Skaftet går diagonalt från nere till vänster upp mot axeln, som beskrivningen säger. Bladets storlek och tjocklek ligger närmast yxhuvudet i förebilden och läses tydligt på kvinnan, mannen och barnet. Skuggningen följer ljuset uppifrån vänster: ljusare T och S till vänster, mörkare R och Q till höger. Lindningen i senap växlar mellan ljust och mörkt som repet på yxan. Version 1 är för smal och liten, och i version 3 hamnar bladet lågt och flackt och ser ut som en fjäder. Jag ändrade en sak: rad 5 i bladet fick tonföljden TSRRQ i stället för STRRQ, så att den ljusa kanten ligger kvar till vänster och övergången blir jämn. Allt annat behöll jag. Delen håller sig inom rutan och använder bara tillåtna tecken.",
+ "bilder": {
+  "standard": {
+   "x": -12,
+   "y": -18,
+   "rader": [
+    "..............SR.",
+    "..............TR.",
+    ".............TSQ.",
+    ".............TSRQ",
+    "............TSSRQ",
+    "............TSRRQ",
+    "...........TSSRRQ",
+    "...........STSRQQ",
+    "..........TSSRRQ.",
+    "..........STRSRQ.",
+    ".........TSSRRQ..",
+    ".........SSRRQQ..",
+    "........TSRRQQ...",
+    "........SSRQQ....",
+    "........SRRQQ....",
+    ".......LLLLK.....",
+    ".......KKKKJ.....",
+    "......LLLLK......",
+    "......KKKKJ......",
+    ".....LLLLK.......",
+    ".....HGGE........",
+    "....HGGE.........",
+    "....HGFE.........",
+    "...HGGE..........",
+    "...HGFE..........",
+    "..HGGE...........",
+    "..HGGE...........",
+    ".wqpo............",
+    ".qppo............"
+   ]
+  }
+ }
+}

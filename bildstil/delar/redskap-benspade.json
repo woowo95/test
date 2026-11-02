@@ -1,0 +1,42 @@
+{
+ "id": "redskap-benspade",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Version 2 valdes. Den har det bredaste och rundaste bladet och läses tydligast som en spade av skulderblad. Version 1 ser mer ut som en fjäder och version 3 som en benklubba. Bladet är stort och sitter bredvid huvudet på ungefär samma höjd som flintyxans huvud, inte för högt. Ljuset kommer uppifrån vänster: kanten till vänster är ljus (w) och den högra sidan mörkare (p/o). Den diagonala åsen i bladet är skulderbladets kam. Repbindningen i senap är randig som på yxan, och skaftet i jord går diagonalt ned åt vänster bakom ryggen. Allt håller sig inom rutan: x från -16 till 9 och y från -16 till 11. Ändring: jag tog bort den ensamma ben-punkten (o) i slutet av den första repraden, eftersom den bröt mot regeln om ensamma prickar.",
+ "bilder": {
+  "standard": {
+   "x": -16,
+   "y": -16,
+   "rader": [
+    "............wwqqqp........",
+    "..........wwwqqqqqpp......",
+    ".........wwqqqqqqqppo.....",
+    ".........wqqqqqpqqppo.....",
+    "........wwqqqqpqqppo......",
+    "........wqqqqpqqqpoo......",
+    "........wqqqqpqqppo.......",
+    "........wqqqpqqppo........",
+    "........wqqpqqppo.........",
+    "........wqpqqppo..........",
+    "........qqpqppo...........",
+    "........LLLL..............",
+    ".......KKKK...............",
+    ".......LLLL...............",
+    "......KKKK................",
+    "......HGGE................",
+    ".....HGGH.................",
+    ".....HGGE.................",
+    "....HGGH..................",
+    "....HGGE..................",
+    "...HGGH...................",
+    "...HGGE...................",
+    "..HGGH....................",
+    "..HGGE....................",
+    ".HGGH.....................",
+    ".HGGE.....................",
+    "HGGH......................",
+    "HGGE......................"
+   ]
+  }
+ }
+}
