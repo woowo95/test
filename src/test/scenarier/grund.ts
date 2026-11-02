@@ -831,6 +831,8 @@ SCENARIER.tornado = {
     // vänta tills tornadon nästan är framme, så att ingen hinner bära in högen innan
     let vantat = 0;
     while (t.u < ph.u - 5 / L && vantat++ < 12 * 10) kor(s, 1 / 12);
+    // och sedan tio sekunder i taget tills den är framme: på fem minuter hinner vem som helst i byn gå dit och bära in högen
+    while (t.u < ph.u - 1.5 / L && vantat++ < 12 * 10 + 400) kor(s, 1 / 360);
     s.stackar!.push({ k: 'grenar', n: 10, c: 1, x: ph.x, y: ph.y }); SIM.tidy(s);
     const bits = SIM.bitsOf(s), id = Math.max(0, ...bits.map(b => b.id)) + 1;
     bits.push({ id, x: pr.x, y: pr.y, k: 'vagg', m: 'ris', b: 1, mat: 5, c: 1 }, { id: id + 1, x: pt.x, y: pt.y, k: 'vagg', m: 'timmer', b: 1, mat: 5, c: 1 });

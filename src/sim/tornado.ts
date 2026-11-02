@@ -71,7 +71,7 @@ function nyBana(s: State, start: number): Tornado {
   const { fran, till } = tornadoTid(s, start);
   return { start, fran, till, x0: cx + dx * u0, y0: cy + dy * u0, x1: cx + dx * u1, y1: cy + dy * u1, u: 0, trad: 0, vagg: 0, lyft: 0, sonder: 0, skadade: 0 };
 }
-export interface Tornado { start: number; fran: number; till: number; x0: number; y0: number; x1: number; y1: number; u: number; trad: number; vagg: number; lyft: number; sonder: number; skadade: number; traff?: number[] }
+export interface Tornado { start: number; fran: number; till: number; x0: number; y0: number; x1: number; y1: number; u: number; trad: number; vagg: number; lyft: number; sonder: number; skadade: number; traff?: number[]; lyftRutor?: number[] }
 // hur långt längs banan tornadon har kommit vid tiden t (0 till 1), och var den är
 export const tornadoAndel = (t: Tornado, nu: number) => Math.min(1, Math.max(0, (nu - t.fran) / (t.till - t.fran)));
 export const tornadoPos = (t: Tornado, u: number) => ({ x: t.x0 + (t.x1 - t.x0) * u, y: t.y0 + (t.y1 - t.y0) * u });
@@ -129,7 +129,8 @@ function svep(s: State, t: Tornado, a: number, b: number) {
   const dx = t.x1 - t.x0, dy = t.y1 - t.y0;
   let flytt = false;
   for (const st of stacksOf(s)) {
-    if (st.n < 1 || st.gor || SAKER[st.k]?.mark || !nar(st.x + 0.5, st.y + 0.5) || forvarAt(s, st.x, st.y) || roofed(s, st.x, st.y)) continue;
+    // en hög lyfts en gång: den som inte hittar en fri ruta blir liggande på banan och lyfts inte igen och igen
+    if (st.n < 1 || st.gor || SAKER[st.k]?.mark || !nar(st.x + 0.5, st.y + 0.5) || forvarAt(s, st.x, st.y) || roofed(s, st.x, st.y) || t.lyftRutor?.includes(st.y * W + st.x)) continue;
     const i = st.y * W + st.x, n = Math.floor(st.n), sonder = Math.min(n, Math.floor(n * TORNADO.sonder + ur(s, t, i, 3827)));
     if (sonder) { minska(s, st, sonder); t.sonder += sonder; count(s, 'tornado sonder', sonder); }
     t.lyft += n; count(s, 'tornado lyft', n);
@@ -143,6 +144,7 @@ function svep(s: State, t: Tornado, a: number, b: number) {
       if (!inMap(nx, ny) || blocked(s, nx, ny) || stationAt(s, nx, ny) || nagotPa(s, nx, ny)) continue;
       st.x = nx; st.y = ny; break;
     }
+    (t.lyftRutor ??= []).push(st.y * W + st.x);
   }
   if (flytt) tidy(s);
   // den som är i vägen (nära tornadon nu)

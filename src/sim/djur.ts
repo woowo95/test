@@ -194,7 +194,7 @@ export function djurOf(s: State, t = s.now, folk?: readonly { x: number; y: numb
 // närmaste land i ringar kring punkten (som freeNear i byggnad.ts), annars punkten själv
 function landNara(vt: Uint8Array | number[], q: { x: number; y: number }) {
   const x0 = Math.floor(q.x), y0 = Math.floor(q.y);
-  for (let r = 1; r < 6; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+  for (let r = 1; r < 40; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) { // långt ut: en grupp som flytt ut på torr sjöbotten kan stå mitt i sjön när vattnet kommer tillbaka
     if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
     const x = x0 + dx, y = y0 + dy;
     if (inMap(x, y) && vt[y * W + x] !== T.Vatten) return { x: x + 0.5, y: y + 0.5 };

@@ -115,7 +115,7 @@ export function chopStock(s: State, ref: number | undefined, amount: number) {
 }
 
 // den fällda stam närmast byn som räcker till ett virke (steg 4.5.5.2)
-export const klyvStam = (s: State) => stocks(s).filter(k => k.ved >= SKOG.virkeVed).sort((a, c) => campDist(s, a.x, a.y) - campDist(s, c.x, c.y))[0];
+export const klyvStam = (s: State) => (s.stockar ?? []).filter(k => k.ved >= SKOG.virkeVed).sort((a, c) => campDist(s, a.x, a.y) - campDist(s, c.x, c.y))[0];
 // en vuxen som ska skaffa ved: hugga en fälld stam, fälla ett träd, göra en yxa eller (annars) samla grenar
 // kyla: kylan är en fara (dangers i val.ts). Då görs ingen ny yxa, för ett nytt redskap är en förbättring
 export function axeTask(s: State, p: Person, kyla = false): { act: Act; x: number; y: number; ref?: number; dur?: number; why: string } | undefined {
