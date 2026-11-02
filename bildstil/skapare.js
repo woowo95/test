@@ -1043,13 +1043,18 @@
     } else ut.insertAdjacentHTML('beforeend', '<p class="not">Syns inte på kartan.</p>');
     return ut;
   }
+  // korten man har sett, så att Förra går tillbaka till kortet man nyss var på, också när det är besvarat
+  // (Björn efter 5.2.2.3: förut hoppade Förra över det besvarade kortet till ett helt annat)
+  const grSett = [];
   function flytta(steg, svarat = false) {
-    const i = GKORT.findIndex(k => k.id === grId);
+    if (steg < 0 && grSett.length) { grId = grSett.pop(); lagra.skriv('granskning-kort', grId); visaGranskning(true); return; }
+    const fran = grId, i = GKORT.findIndex(k => k.id === grId);
     for (let n = 1; n <= GKORT.length; n++) {
       const k = GKORT[(i + steg * n + GKORT.length * n) % GKORT.length];
       if (grFilter === 'alla' || lage(k) === 'obesvarad') { grId = k.id; break; }
       if (svarat && n === GKORT.length) break;
     }
+    if (steg > 0 && grId !== fran) grSett.push(fran);
     lagra.skriv('granskning-kort', grId); visaGranskning(true);
   }
   let senastVisad = null;
@@ -1130,7 +1135,7 @@
       else if (t.id === 'sk-somunga') { somUnga = !somUnga; ritaFamilj(); }
       else if (t.id === 'sk-nyaby') { byFro++; ritaByn(); }
       else if (t.dataset.grfilter) { grFilter = t.dataset.grfilter; lagra.skriv('granskning-filter', grFilter); if (grFilter === 'obesvarade' && GKORT.length && lage(GKORT.find(k => k.id === grId) || GKORT[0]) !== 'obesvarad') flytta(1, true); else visaGranskning(true); }
-      else if (t.dataset.grsort) { grId = GKORT.find(k => k.sort.id === t.dataset.grsort && (grFilter === 'alla' || lage(k) === 'obesvarad'))?.id || GKORT.find(k => k.sort.id === t.dataset.grsort).id; lagra.skriv('granskning-kort', grId); visaGranskning(true); $('#grkort').scrollIntoView({ block: 'start' }); }
+      else if (t.dataset.grsort) { if (grId) grSett.push(grId); grId = GKORT.find(k => k.sort.id === t.dataset.grsort && (grFilter === 'alla' || lage(k) === 'obesvarad'))?.id || GKORT.find(k => k.sort.id === t.dataset.grsort).id; lagra.skriv('granskning-kort', grId); visaGranskning(true); $('#grkort').scrollIntoView({ block: 'start' }); }
       else if (t.dataset.grsteg) { flytta(+t.dataset.grsteg); if (t.closest('.gr-nav:last-child')) $('#grkort').scrollIntoView({ block: 'start' }); }
       else if (t.dataset.grsvar) svara(t.dataset.grsvar);
     });
