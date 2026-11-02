@@ -749,6 +749,9 @@ function night(s: State, p: Person, v: Val, a: number) {
     }
   }
   if (p.guardDay === guardDay && a >= ALDER.vaktFran) { set(v, 'vakt', 'Håller vakt i natt'); return; }
+  // kvällsmarknaden (steg 4.5.4.11, handel.ts): handlarens filt ligger ute på kvällen
+  const hv = skams(p, now) ? undefined : handlaVal(s, p);
+  if (hv) { set(v, 'handla', hv.why); v.spot = hv.spot; v.dur = hv.dur; v.ref = hv.ref; return; }
   // ett framträdande vid elden (steg 4.3.2, framtradande.ts): uppträda eller lyssna
   const fr = skams(p, now) ? undefined : framVal(s, p, q => spotFor(s, 'beratta', q));
   if (fr) { set(v, fr.act, fr.why); v.spot = fr.spot ?? spotFor(s, 'beratta', p); v.dur = fr.dur; v.ref = fr.ref; v.tool = fr.tool; return; }

@@ -1,4 +1,4 @@
-import { HANDEL, HANDLAR_UTR, klanById, grundvarde, handlarVarde, kgOf, kortTal, rymmer, sakNamn } from '../../sim';
+import { HANDEL, HANDLAR_UTR, handlarFas, klanById, grundvarde, handlarVarde, kgOf, kortTal, rymmer, sakNamn } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { esc } from '../hjalp';
 import { s } from '../lage';
@@ -10,7 +10,7 @@ const pris = (k: string, q?: number) => Math.max(1, Math.round(grundvarde(k) * h
 function handlarHtml() {
   const h = s.handlare;
   if (!h) return '<p class="muted">Handlaren har gått hem.</p>';
-  const fas = h.fas === 'kommer' ? 'På väg till byn' : h.fas === 'handlar' ? 'Vid filten' : 'På väg hem';
+  const fas = handlarFas(h);
   const varor = h.varor.map(w => `<li title="${esc(`${sakNamn(w.k)}: ungefär ${pris(w.k, w.q)} silver styck`)}">${iconImg(w.k, 16)} ${w.n > 1 ? `${w.n} ` : ''}<span>${pris(w.k, w.q)}</span>${iconImg('silver', 12)}</li>`).join('');
   const bytt = (h.bytt ?? []).slice().reverse().map(b => `<li>${esc(`${b.vem}: ${b.fick} mot ${b.gav}`)}</li>`).join('');
   const ko = h.ko?.length ?? 0;

@@ -5,7 +5,7 @@ import { kronika } from './historik';
 import { eldPlats, getMap } from './karta';
 import { blocked } from './byggnad';
 import { clamp, rnd } from './slump';
-import { iIstiden, ageIndex } from './tid';
+import { iIstiden, ageIndex, hourOf } from './tid';
 import { grundvarde, rikedom } from './varde';
 import { SAKER, isTool, viktOf } from './saker';
 import { DELA, behovAv, bynPart, bytaMed, personPart } from './behov';
@@ -30,7 +30,9 @@ export const HANDEL = balans('handel', {
   dygnMin: 2, // ... men aldrig oftare än så här
   dygnMax: 14, // ... och aldrig mer sällan (en by som blivit fattigare)
   forsta: [0.2, 1], // den första kommer så här många dygn efter att byn blivit rik nog
-  stannarTim: [6, 10], // timmar som handlaren stannar vid filten
+  // kvällsmarknaden (steg 4.5.4.11): filten läggs ut på kvällen, efter arbetet, och handlaren går på morgonen (klockslag). Den
+  // som kommer fram efter sentKvall, på natten eller på dagen väntar vid filtens plats till nästa kväll
+  kvall: 19, sentKvall: 23, morgon: 7,
   fart: 1.2, // rutor i sekunden när handlaren går (en bybo går 1,6 utan börda)
   avstand: 4, // filten ligger så här många rutor från elden
   vardeVaror: [25, 45], // grundvärdet av varorna hen har med sig (ungefär arbetstimmar)
@@ -89,7 +91,8 @@ export interface Handlare {
   klan?: number; // grannklanen hen kommer ifrån (steg 4.4.3, klaner.ts)
   x: number; y: number; mx: number; my: number; // var hen är och vart hen går
   fran: { x: number; y: number; t: number }; framme: number; // varifrån och när hen började gå, och när hen är framme (bilden ritar hen på vägen)
-  fas: 'kommer' | 'handlar' | 'gar';
+  fas: 'kommer' | 'vantar' | 'handlar' | 'gar'; // vantar: framme, väntar på kvällen (steg 4.5.4.11)
+  kvall?: number; // när hen lägger ut filten (vantar)
   kom: number; // när hen kom fram till filten
   gar: number; // när hen går hem igen
   ut: { x: number; y: number }; // där hen kom in på kartan och går ut igen
@@ -103,6 +106,8 @@ export interface Handlare {
   bytt?: { vem: string; fick: string; gav: string }[]; // bytena under besöket, för inforutan
 }
 export const handlareOf = (s: State) => s.handlare;
+// vad handlaren gör just nu (inforutan)
+export const handlarFas = (h: Handlare) => h.fas === 'kommer' ? 'På väg till byn' : h.fas === 'vantar' ? 'Väntar på kvällen' : h.fas === 'handlar' ? 'Vid filten' : 'På väg hem';
 const mellan = (s: State, [a, b]: readonly [number, number] | number[]) => a + rnd(s, 'handel') * (b - a);
 const heltMellan = (s: State, [a, b]: readonly [number, number] | number[]) => a + Math.floor(rnd(s, 'handel') * (b - a + 1));
 export const kgOf = (v: HVara[]) => v.reduce((a, w) => a + w.n * viktOf(w.k), 0);
@@ -167,10 +172,22 @@ function kommer(s: State, tvinga?: boolean) {
 // handlare i byn, eller inga grannklaner
 export const skickaHandlare = (s: State) => !s.handlare && kommer(s, true);
 
-// framme: filten breds ut med varorna
+// nästa gång klockan är kl (timmar), efter t
+function nastaKl(t: number, kl: number) {
+  const d = (kl - hourOf(t) + 24) % 24;
+  return t + (d > 1 / 60 ? d : 24) * HOUR;
+}
+const kvallNu = (t: number) => hourOf(t) >= HANDEL.kvall && hourOf(t) < HANDEL.sentKvall;
+// framme vid filtens plats: på kvällen breds filten ut, annars väntar hen på kvällen (steg 4.5.4.11)
 function framme(s: State, h: Handlare) {
-  h.fas = 'handlar'; h.kom = s.now; h.gar = s.now + mellan(s, HANDEL.stannarTim) * HOUR;
   h.x = h.mx; h.y = h.my;
+  if (kvallNu(s.now)) { lagUt(s, h); return; }
+  h.fas = 'vantar'; h.kvall = nastaKl(s.now, HANDEL.kvall);
+  log(s, `${h.namn} har kommit fram och väntar på kvällen, när byn har arbetat klart.`, 'world');
+}
+// filten breds ut med varorna, och handlaren går på morgonen
+function lagUt(s: State, h: Handlare) {
+  h.fas = 'handlar'; h.kom = s.now; h.gar = nastaKl(s.now, HANDEL.morgon); h.kvall = undefined;
   (s.filtar ??= []).push({ x: h.x + 1, y: h.y, slut: h.gar, varor: h.varor.map(w => ({ k: w.k, n: w.n, fran: h.id })), handlare: h.id });
   log(s, `${h.namn} har brett ut en filt nära elden och lagt fram sina varor.`, 'world');
   if (forstaGang(s, 'handlareFramme')) kronika(s, `Den första handlaren kom till byn: ${h.namn} från ${h.hem}, med ${HANDLAR_UTR[h.utr].namn.toLowerCase()}en full av varor.`, 'handel');
@@ -186,7 +203,7 @@ function gar(s: State, h: Handlare) {
 // var handlaren är vid tiden t när hen går: rakt från där hen började mot målet (hen går runt det som är i vägen, men det
 // syns inte i byn). Bilden frågar samma sak med sin tid
 export function handlarPlats(h: Handlare, t: number) {
-  if (h.fas === 'handlar') return { x: h.x, y: h.y };
+  if (h.fas === 'handlar' || h.fas === 'vantar') return { x: h.x, y: h.y };
   const f = clamp((t - h.fran.t) / Math.max(1, h.framme - h.fran.t), 0, 1);
   return { x: h.fran.x + (h.mx - h.fran.x) * f, y: h.fran.y + (h.my - h.fran.y) * f };
 }
@@ -206,6 +223,7 @@ export function handelSteg(s: State, dtSec: number) {
   const h = s.handlare;
   if (!h) return;
   if (h.fas === 'kommer') { if (gaSteg(s, h)) framme(s, h); }
+  else if (h.fas === 'vantar') { if (s.now >= h.kvall!) lagUt(s, h); }
   else if (h.fas === 'handlar') { if (s.now >= h.gar) gar(s, h); }
   else if (gaSteg(s, h)) {
     s.handlare = undefined;
@@ -308,7 +326,7 @@ export const handlarNu = (s: State, p: Person) => {
   const h = s.handlare, t = p.task;
   return !!h && t?.act === 'handla' && t.ref === h.id && t.phase === 'do' && (!h.bynKlar || h.ko?.[0] === p.id);
 };
-// valet på dagen (day i val.ts): den som handlar för byn går till filten. Kommer hen inte, går en annan vuxen efter ett tag.
+// valet på kvällen (night i val.ts, steg 4.5.4.11; och på dagen, day): den som handlar för byn går till filten. Kommer hen inte, går en annan vuxen efter ett tag.
 // När byn handlat ställer sig den som vill byta med sina egna saker i kön
 export function handlaVal(s: State, p: Person): { why: string; spot: { x: number; y: number }; dur: number; ref: number } | undefined {
   const h = s.handlare;

@@ -285,15 +285,18 @@ SCENARIER.skaldskap = {
     p.skill.skaldskap = 10; const hog = SIM.framKval(s, p), kanHog = SIM.FRAMTRADANDEN.filter(d => (d.min ?? 0) <= p.skill.skaldskap).length;
     p.skill.skaldskap = 3; upptrad(s, p); kor(s, 1.5); const efter = p.skill.skaldskap, ggr = p.gjort?.t.upptradt ? 1 : 0;
     // i samtalen: de som berättar men aldrig uppträder blir också bättre
-    const d = rikDag(5), fore = new Map(SIM.living(d).map(q => [q.id, q.skill.skaldskap]));
-    kor(d, 48);
-    const vaxte = SIM.living(d).filter(q => !q.gjort?.t.upptradt && (q.skill.skaldskap ?? 0) > (fore.get(q.id) ?? Infinity)).length;
+    let vaxte = 0;
+    for (const seed of [5, 6, 7]) { // tre byar: i en enda by kan några berättelser avgöra
+      const d = rikDag(seed), fore = new Map(SIM.living(d).map(q => [q.id, q.skill.skaldskap]));
+      kor(d, 48);
+      vaxte += SIM.living(d).filter(q => !q.gjort?.t.upptradt && (q.skill.skaldskap ?? 0) > (fore.get(q.id) ?? Infinity)).length;
+    }
     return [
       [`färdigheten heter ${SIM.SKILL_NAMES[SIM.FRAM_SKILL]}`, SIM.FRAM_SKILL === 'skaldskap' && SIM.SKILL_NAMES.skaldskap === 'Skaldskap'],
       ['de nya i byn börjar med hälften av sitt berättande', start],
       [`skaldskap 0 ger kvaliteten ${lag.toFixed(2)} och ${kanLag} former, skaldskap 10 ger ${hog.toFixed(2)} och ${kanHog}`, hog > lag && kanHog > kanLag],
       [`den som uppträder övar (3 → ${efter.toFixed(2)}, räknat ${ggr})`, efter > 3 && ggr === 1],
-      [`${vaxte} som aldrig uppträtt blev bättre av att berätta i samtalen på två dygn`, vaxte >= 1],
+      [`${vaxte} som aldrig uppträtt blev bättre av att berätta i samtalen på två dygn i tre byar`, vaxte >= 1],
     ];
   },
 };
