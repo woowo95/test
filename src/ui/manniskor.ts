@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { ACTS, ALDER, Person, actIkon, utbIkon, SEC, TalkEvent, ageOf, alive, bordVid, byId, homeKind, isSocial, pratarMed, kanGa, living, load, REL, relKey, sparPlats, storlekAv, handlarNu, handlarPlats } from '../sim';
+import { ACTS, ALDER, Person, actIkon, utbIkon, SEC, TalkEvent, ageOf, alive, bordVid, byId, homeKind, isSocial, pratarMed, kanGa, living, load, REL, relKey, sparPlats, storlekAv, handlarNu, handlarPlats, Match, Task, dragLag } from '../sim';
 import { PRICKAR, personFarg } from './hjalp';
 import { s, sakVar, ui, uppgiftVid, vidNyBy } from './lage';
 import { Ikoner, TS, bubbleG, labels, markLayer, peopleG } from './scen';
@@ -32,12 +32,35 @@ function platsAv(p: Person) {
   let x = sp?.x ?? p.x, y = sp?.y ?? p.y;
   const still = sp?.still ?? true;
   const tk = uppgiftVid(p), d = tk && ACTS[tk.act];
+  const drag = tk && dragkampen(tk);
+  if (still && drag) return { x: x + dragGlid(drag, t) + dragLag(drag, x) * DRAG.luta, y, still }; // drar och lutar sig bakåt (steg 4.5.6.10)
   if (still && tk?.phase === 'do' && d && !d.stilla) {
     const w = d.vandra, k = t / SEC, r = w ? w.r * 0.6 : 0.12, f = w ? w.v / (w.r * 6) : 0.05;
     x += Math.sin(k * f + p.id * 1.7) * r * Math.sin(k * f * 0.37 + p.id);
     y += Math.cos(k * f * 0.83 + p.id * 2.3) * r * Math.sin(k * f * 0.29 + p.id * 0.5);
   }
   return { x, y, still };
+}
+// dragkampen (steg 4.5.6.10), bara i bilden: lagen står på sina platser (sport.ts), hela raden glider fram och tillbaka med
+// repet och lutar sig bakåt. Repet ligger på marken medan de samlas och spänns mellan lagen när de drar; strecket i mitten
+const DRAG = { glid: 0.3, takt: 0.5, luta: 0.12, rep: 0x9c7a45, tofs: 0xc0432f, streck: 0x3b2f25 };
+const dragkampen = (tk: Task) => { const m = s.sport; return tk.act === 'sport' && tk.phase === 'do' && m?.k === 'dragkamp' && m.start === tk.ref ? m : undefined; };
+const dragGlid = (m: Match, t: number) => m.spelat ? DRAG.glid * Math.sin(t / SEC * DRAG.takt + m.start % 7) * Math.sin(t / SEC * DRAG.takt * 0.31 + 1) : 0;
+function ritaDragkamp(t: number) {
+  const m = s.sport;
+  if (m?.k !== 'dragkamp' || s.now >= m.slut) return;
+  const g = peopleG, mx = m.x * TS, my = m.y * TS;
+  g.lineStyle(1.2, DRAG.streck, 0.7).moveTo(mx, my - TS * 0.6).lineTo(mx, my + TS * 0.6).lineStyle(0); // strecket på marken
+  const xs: number[] = [];
+  for (const p of living(s)) { const tk = uppgiftVid(p); if (tk && dragkampen(tk)) { const q = synlig.get(p.id); if (q) xs.push(q.x * TS); } }
+  if (!m.spelat || xs.length < 2) { // repet ligger hoprullat på marken medan de samlas
+    g.lineStyle(1.2, DRAG.rep, 1).moveTo(mx - TS * 1.4, my + 2);
+    for (let i = 1; i <= 8; i++) g.lineTo(mx - TS * 1.4 + i * TS * 0.35, my + 2 + (i % 2 ? 1.2 : -0.6));
+    g.lineStyle(0); return;
+  }
+  const glid = dragGlid(m, t) * TS, a = Math.min(...xs) - 3, b = Math.max(...xs) + 3, ry = my - 1;
+  g.lineStyle(1.4, DRAG.rep, 1).moveTo(a, ry).lineTo(b, ry).lineStyle(0); // repet spänt mellan lagen
+  g.beginFill(DRAG.tofs).drawRect(mx + glid - 1, ry - 1, 2, 3).endFill(); // tofsen mitt på repet, som ska dras över strecket
 }
 // de som står still sprider ut sig lite så att de inte står i varandra (Björn efter v89), bara i bilden. Den som går rör
 // sig inte undan och knuffar ingen, så att man kan mötas i en smal gång. SPRID = avståndet de vill ha (rutor), NARMRE = hur
@@ -101,6 +124,7 @@ export function drawPeople(t: number) {
   peopleG.clear(); bubbleG.clear();
   const ppl = dolda.size ? living(s).filter(p => !dolda.has(p.id)) : living(s), pos = new Map<number, { x: number; y: number }>();
   synlig = sprid(ppl); synligNu = ui.nu;
+  ritaDragkamp(t);
   markIcons.start();
   const sv = ui.tab === 'sak' ? sakVar() : undefined, harSaken = sv && 'person' in sv ? sv.person : undefined; // den som har den markerade saken (steg 3.10.4)
   for (const p of ppl) {
