@@ -1,0 +1,44 @@
+{
+ "id": "har-22",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 2",
+ "om": "Valde version 2. Den stämmer bäst med 'Rakat på sidorna': håret är högre och fylligare på hjässan, sidorna är bara korta, mörka stråk framför öronen, och bakhåret är bara en liten bit bakom hjässan. Version 1 har däremot ett stort block bakhår, 40 punkter brett och 19 rader högt, som ger volym runt huvudet och motsäger de rakade sidorna. Skuggningen i version 2 följer ljuset från vänster: h och g till vänster på hjässan, f och e åt höger. Hårstråken i g ger korn utan glans, i samma stil som förebilden. Ändring: tog bort en ljus f-fläck (ff) i den mörka högra sidan på rad 12 och gjorde den till e, så att skuggsidan inte får en glansig prick.",
+ "bilder": {
+  "bakhar": {
+   "x": -7,
+   "y": -5,
+   "rader": [
+    "...ffffeeee...",
+    "effffffffeeeee",
+    "eeffffffffeeee"
+   ]
+  },
+  "framhar": {
+   "x": -20,
+   "y": -4,
+   "rader": [
+    "..............ghhhhhgggfff..............",
+    "............ghhhhghhhgggffff............",
+    "...........ghhhhhghhhgggfgffe...........",
+    "...........gghhhhghhhggffgffe...........",
+    "...........ghhhhhghhgggffgfee...........",
+    "..........fghhhhghhhggfffgfeee..........",
+    ".........ffghhhhghhggffffgfeeee.........",
+    "........effghhhghhhggfffgffeeeee........",
+    ".......eeffgghhhghhggffgfffeeeeee.......",
+    "......ffeefghhhhghhgggffgffeeeeeee......",
+    ".....effeefghhhghhhggfffgffeeeeeeee.....",
+    ".....ffeeffgghhhghhggffgfffeeeeeeee.....",
+    "....effeeffghhhhghhgggffgffeeeeeeeee....",
+    "....ffeefffgghhhhgggggfffffeeeeeeeee....",
+    "....ffee....ghg........gff......eeee....",
+    "....effe........................eeee....",
+    "....ffee........................eeee....",
+    ".....fee........................eee.....",
+    ".....ffe........................eee.....",
+    "......fe........................ee......",
+    "......ee........................ee......"
+   ]
+  }
+ }
+}

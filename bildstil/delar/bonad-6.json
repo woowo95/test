@@ -1,0 +1,32 @@
+{
+ "id": "bonad-6",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 2",
+ "om": "Valde version 1: den läses tydligast som pälsmössa, med en tjock och ljus pälskant i ben (q/w ljusast till vänster, o och jord mörkare åt höger och nedåt) under en kulle i rost. Den följer ljuset uppifrån vänster och har samma breda, matta skuggning med korn i små klungor som förebilden. Den sitter lågt över pannan så att håret döljs på alla tre mallarna och håller sig inom rutan (x -19 till 18, y -6 till 11). Version 2 har en brun pälskant som inte skiljer sig lika tydligt från kullen, så den blir mer en vanlig mössa. Ändring: i sista raden flyttade jag en lös F-punkt (x 15) som bara satt fast diagonalt. Den sitter nu på x 16, direkt under pälsen, så att det inte blir någon ensam prick i fransen.",
+ "bilder": {
+  "standard": {
+   "x": -19,
+   "y": -6,
+   "rader": [
+    "............tuuuttttttssss............",
+    ".........ttuuuttuttttttttssss.........",
+    ".......ttuuuttuuttttttttssstsss.......",
+    ".....sttuuttuuttttttttttsssstssrs.....",
+    "....sttuutttutttttttttsssssssrssrr....",
+    "...sstttuttttttttttsssssssssrsssrrr...",
+    "...ssttttttttttttsssssssssssrssrrrr...",
+    "..rssstttttttttssssssssssssrssrrrrrr..",
+    "..rsssssttsssssssssssssrrssrrrrrrrrr..",
+    ".qwwqwwwqqwwqwqqqwqqqqpqqpqqppqpppqpp.",
+    "qwwwqwwqwwwqqwqqwqqqqpqqqpqqpppqppoppo",
+    "qqwqqqqwqqqqpqqqpqqppqpppqpppoppopooop",
+    "pqqpqqqpqqppqppqpppopppoppopooopoooooo",
+    "ppqppqpppoppoppooopoooGoooGoooGooGoooo",
+    "oppoppooppooopooGoooGooGGoooGooGGoGGoG",
+    "ooGooGooGoooGoGGooGGoGoGGGoGGGoGGGFGGF",
+    ".GoG.GooGGoGGo.GGoGGGFoGGGFGGFGFGF.GF.",
+    "..G..GG.oG...GG..GF..GG...FG..GF...F.."
+   ]
+  }
+ }
+}

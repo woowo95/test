@@ -1,0 +1,60 @@
+{
+ "id": "har-2",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Valde version 1. Bakhåret (x -16 till 15) är bara lite bredare än skallen och slutar vid öronhöjd, så frisyren blir kort på alla tre mallarna, medan version 3 är 40 punkter bred och blir en hjälm, och version 2:s bakhår (x -13 till 12) är smalare än huvudet och har ett mekaniskt rutmönster. Version 1 skuggar som förebilden: h och g mot ljuset till vänster, f och e på den bortvända högra sidan. Luggen har ett trasigt nederkant med strån i samma tjocklek som förebildens, och sidorna går ned framför öronen. Delen är centrerad kring mittlinjen (översta raden x -6 till 5). Jag har inte ändrat något. Spetsarna i luggens nederkant hänger alla ihop med raden ovanför och är därför inga ensamma prickar. Bakhårets upprepade strimmor ligger nästan helt dolda bakom huvudet och fick vara kvar.",
+ "bilder": {
+  "bakhar": {
+   "x": -16,
+   "y": -2,
+   "rader": [
+    ".........ggggffffffffee.........",
+    "......ggggfgffffgffffffeee......",
+    "....gggggfgffffgfffffffeefee....",
+    "...ggggggfgfffffgffffffeefeee...",
+    "..gggggggfgffffffgfffffffeefee..",
+    "..fggggggfgffffffgffffffeeefee..",
+    ".fgggggggfgffffffgffffffeeeefee.",
+    "fggggggfgffffffgffffffeeeefeeeee",
+    "ffgggggfffffffffgfffffeeeeefeeee",
+    "efggggffgfffffffgffffeeeeeefeeee",
+    "fggggggfgffffffgffffffeeeefeeeee",
+    "ffgggggfffffffffgfffffeeeeefeeee",
+    "efggggffgfffffffgffffeeeeeefeeee",
+    "fggggggfgffffffgffffffeeeefeeeee",
+    "ffgggggfffffffffgfffffeeeeefeeee",
+    "efggggffgfffffffgffffeeeeeefeeee",
+    "fggggggfgffffffgffffffeeeefeeeee",
+    "ffgggggfffffffffgfffffeeeeefeeee",
+    "efggggffgfffffffgffffeeeeeefeeee",
+    ".efgggfffffffffffffffeeeeeefeee.",
+    "..eefgffffffffffffffeeeeeeeeee..",
+    "...eefff.................eeee..."
+   ]
+  },
+  "framhar": {
+   "x": -16,
+   "y": -2,
+   "rader": [
+    "..........hhhhgggggfff..........",
+    ".......hhhhhhhgggggggffff.......",
+    ".....hhhhhhhhhggggggggfffff.....",
+    "....hhhhhhhhhhgggggggggffffe....",
+    "...hhhhhhhghhhgggggfggggffffe...",
+    "..hhhhhhhhghhhggggggfggggffffe..",
+    "..hhhhhhhghhhhgggggfgggggfffee..",
+    ".ghhhhhhghhhhgggggfggggffffffee.",
+    ".ghhhhhghhhhgggghgggfgggfffefee.",
+    ".ghhhhhghhhghgggghggfggfgfffefe.",
+    ".ghhhghhhhghggghgggfggfgffefefe.",
+    ".ghhhgh.hhg..ggh.gg..gf.fgf.fee.",
+    ".ghh.g...h....g...g......f..fee.",
+    ".ghh........................fee.",
+    ".ghg........................fef.",
+    "..hg........................fe..",
+    "..gg........................ee..",
+    "..g..........................e.."
+   ]
+  }
+ }
+}

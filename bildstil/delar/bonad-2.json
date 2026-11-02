@@ -1,0 +1,34 @@
+{
+ "id": "bonad-2",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den rundade filthatten i jord med ett vävt rostband passar järnåldersbyn och förebildens mössa bäst. Den har samma kornade, matta skuggning med ljus från övre vänster och mörkare tоner mot höger och nedåt. Storleken och placeringen stämmer, och den täcker skallen på alla tre mallarna. Version 1 ser ut som en modern kubb, och den diagonala ljusa randen ger glans. Version 2 har en platt kulle och ett randigt mönster som inte följer formen lika väl. Jag har inte ändrat något: raderna är 42 tecken breda, ligger inom rutan (x −21 till 20, y −8 till 11) och använder bara tillåtna tecken.",
+ "bilder": {
+  "standard": {
+   "x": -21,
+   "y": -8,
+   "rader": [
+    ".................GHHGGGFF.................",
+    "..............GHHHHGGGGGGFFF..............",
+    "............GHHHHHGGGGGGGGFFFE............",
+    "..........GHHHHHHGGHGGGGGGFGFFFE..........",
+    ".........GGHHHHHGHHGGGGGGGFGFFFEE.........",
+    "........GGHHHHGHHGGGGGGGGFGGFFEFEE........",
+    ".......FGGHHHHHGGGGGGGGGGFGFFFEFFEE.......",
+    "......FGGGHHGHHGGGGGGGGGGFGFFEFFEFEE......",
+    "......FGGGGHGGGGGGGGGGGGFGGFFFEFFEEE......",
+    ".....FFGGGGGGGGGGGGGGGFGGFFFFEFFEFEEE.....",
+    ".....FFGGGGGGGGGGGGGGFGGFGFFFFEFFEEEE.....",
+    ".....FFFGGGGGGGGGGGGFGGFFGFFEFFEFEEEE.....",
+    ".....EFFGGGGGGGGGGGFFGFFFFFEFFEEEEEEE.....",
+    ".....EFFFGGGGGGFGGFFFFFFEFFEEEEEEEEEE.....",
+    ".....EEFFFFFFFFFFFFFFFEFFEEFEEEEEEEEE.....",
+    "....ttuuuuttttttttttsttstssstssrsssrrr....",
+    "....sttttttsttttsttssstsssssrssrsrrrrr....",
+    ".FGGHHGGGGGGGGGGGGGGGGGGGGGGFGGFFFFEFFEEE.",
+    "EFFGGFGGFFGGFFFGGFFFFFFFFFFEFFEFFEEEEEEEEE",
+    ".EEFEEEEFEEEEEEEEFEEEEEEEEEEEEEEEEEEEEEEE."
+   ]
+  }
+ }
+}

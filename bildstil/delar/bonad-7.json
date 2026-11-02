@@ -1,0 +1,51 @@
+{
+ "id": "bonad-7",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 2. Den ser ut som en riktig huvudduk: oliv duk över skallen med en invikt fåll i senap över pannan och längs kinderna. Ljuset faller från vänster, så duken är ljusare åt vänster och mörkare åt höger, och den matta, korniga skuggningen liknar mössan i förebilden. Delen ligger symmetriskt kring mittlinjen (x -19 till 18) och håller sig inom rutan. Den täcker hår och öron på alla tre ansiktena utan att se ut som hår. Version 1 har lösa sidoflikar som liknar flätor. Version 3 är en enfärgad rostbrun form som läses som en page-frisyr, inte som en duk. Ändringar: den vänstra kanten på rad 9 är ändrad från M till N, så att den ljusa vänstersidan inte får en mörk punkt. Rad 33 vänster är ändrad från NOKJJ till ONKJJ, så att sidokanten följer samma mönster som raderna ovanför.",
+ "bilder": {
+  "standard": {
+   "x": -19,
+   "y": -2,
+   "rader": [
+    "............OPPPPPOOOONONN............",
+    ".........OPPPPPPOPPOOOOONONNN.........",
+    ".......OOPPPPPPPOPOOOOOOONONNNN.......",
+    ".....OOPPPPPPOPPOOOOOOOONOONNNNNM.....",
+    "....OOOPPPPPOPPOOOOOOOONONNNNNNNNM....",
+    "...NOOOPPPOOPOOOOOOOOONOONNNNNNNNMM...",
+    "..NOOOOPOOOOOOOOOOONOOONNNNNNNNNNMMM..",
+    ".NNOOOOOOOOOOOOONOONNONNNNNNNNNNNMNMM.",
+    ".NNOOOOOOOONOOONONNNNNNNNNNNNNMNMMMMM.",
+    "NNNNOOONONNONNNNNNNNNNNNNNNNMNMMMMMMMM",
+    "ONKKKKKKKKKKKKKKKKKKKKJKKJKJJJJJJJJIMM",
+    "ONJKJJKJJJJKJJJJJJJJJJJJIJJJIJIIIIIIMM",
+    "ONJJIJJIJIIJIIIIIIIIIIIIIIIIIIIIIIIIMM",
+    "ONKJJ............................JIIMM",
+    "ONKJI............................JIIMM",
+    "OOKJJ............................IJIMM",
+    "ONKJJ............................JIIMM",
+    "ONKJJ............................JIIMM",
+    "OOKJI............................JIINM",
+    "ONKJJ............................JIIMM",
+    "ONKJJ............................IJIMM",
+    "OOKJJ............................JIIMM",
+    "ONKJI............................JIIMM",
+    "ONKJJ............................JIINM",
+    "OOKJJ............................JIIMM",
+    "ONKJJ............................IJIMM",
+    "ONKJI............................JIIMM",
+    "OOKJJ............................JIIMM",
+    "ONKJJ............................JIINM",
+    "ONKJJ............................IJIMM",
+    "OOKJI............................JIIMM",
+    "ONKJJ............................JIIMM",
+    "ONKJJ............................JIIMM",
+    "ONKJJ............................IJIMM",
+    "ONKJ..............................JIMM",
+    "NNK................................IMM",
+    "NN..................................MM"
+   ]
+  }
+ }
+}

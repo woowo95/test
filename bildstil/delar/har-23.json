@@ -1,0 +1,71 @@
+{
+ "id": "har-23",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "",
+ "bilder": {
+  "bakhar": {
+   "x": -20,
+   "y": -4,
+   "rader": [
+    "........ggggggggffffffffffffeeee........",
+    "......gggggggggfffffffffffffeeeeee......",
+    ".....ggggggggggfffffffffffffffeeeee.....",
+    "....fggggggggggffffffffffffffeeeeeee....",
+    "...fgggggggggfffffffffffffffeeeeeeeee...",
+    "..fggggggggffffffffffffffffeeeeeeeeeee..",
+    "..ffgggggggfffgfffffffffffeeeefeeeeeee..",
+    "..fgggggggffffffffgffffffffeeeeeefeeee..",
+    "..fggggggggffffffffffffffffeeeeeeeeeee..",
+    "..ffgggggggfffgfffffffffffeeeefeeeeeee..",
+    "..fgggggggffffffffgffffffffeeeeeefeeee..",
+    "..ffggggggfffffffffffffffeeeeeeeeeeeee..",
+    "..ffgggggggfffgfffffffffffeeeefeeeeeee..",
+    "..fffggggffffffffffffffeeeeeeeeeefeeee..",
+    "..ffggggggfffffffffffffffeeeeeeeeeeeee..",
+    "..fgggggggffffffffgffffffffeeeeeefeeee..",
+    "..fffggggffffffffffffffeeeeeeeeeefeeee..",
+    "..ffggggggfffffffffffffffeeeeeeeeeeeee..",
+    "..fffggggffffffffffffffeeeeeeeeeefeeee..",
+    ".effgggffffffffffffffffeeeeeeeeeeeeeeee.",
+    ".efffggfffffffffgffffffeeeeeefeeeeeeeee.",
+    ".effgggffffffffffffffffeeeeeeeeeeeeeeee.",
+    ".efffggfffffffffgffffffeeeeeefeeeeeeeee.",
+    "..eefffffffffffffffffeeeeeeeeeeeeeeeee..",
+    "....eeffffffffffffffeeeeeeeeeeeeeeee...."
+   ]
+  },
+  "framhar": {
+   "x": -22,
+   "y": -8,
+   "rader": [
+    "................hhhhgghgggf.................",
+    ".............hhhhhhhgghggggfff..............",
+    "...........ghhhhhhhhgghgggggffff............",
+    ".........gghhhhhhhhhgghggggggfffff..........",
+    "........gghhhhhhhhhhgghgggggggffffe.........",
+    ".......ggghhhhhhhhhhgghggggggggfffee........",
+    "......gggghhhhhhhhhggghhggggggggffeee.......",
+    "......fgggghhhhhhhgggghhgggggggfffefee......",
+    ".....ffggghhhhhhggggghhggggggfffffefee......",
+    ".....fgggghhhhhggggghhggggggffffffeefee.....",
+    ".....fggghhhhhgggggghggggggfffffffeefee.....",
+    ".....ffgghhhhgggggggghgggggffffffeeefee.....",
+    ".....fgghhhgggggggfgggggggfffffffeeefee.....",
+    ".....ffgghhggggggffgggggffffffffeeeefee.....",
+    ".....fggghgggggffgggggffffffffeeeeefeee.....",
+    ".....ffgghggggffgggggfffffffeeeeeefeefe.....",
+    ".....fgghgggffggggffffffffeeeeeeefeeefe.....",
+    "....fgghggff...........gggffffffeeeeefee....",
+    "....fghggf...............ggfffee..feeefe....",
+    "....fgggff.................gffe...eeefee....",
+    "....ffggff...................fe...feeefe....",
+    "....ffgfff........................eeefee....",
+    "....fgfgff........................efeeee....",
+    "....ffgff..........................eefee....",
+    ".....fgff..........................eeee.....",
+    "......eff..........................eee......"
+   ]
+  }
+ }
+}

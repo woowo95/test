@@ -1,0 +1,73 @@
+{
+ "id": "har-4",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 2",
+ "om": "Valde version 2: den läses tydligt som korta lockar (runda klungor med ljus topp och mörk undersida), ljuset kommer från vänster med h/g på vänster sida och e/f på höger, skuggningen är matt och kornig som i förebilden, och den är symmetrisk kring mittlinjen (framhar x -17..16, bakhar x -18..17). Luggen slutar ovanför ögonbrynen och sidorna lämnar öronen fria, så den passar kvinna, man och barn. Version 3 ser mer ut som diagonalt randigt, vågigt hår än lockar och har en stor ljus h-yta som blir nästan blank. Kontrollerade radlängder och ruta; inga ändringar behövdes.",
+ "bilder": {
+  "bakhar": {
+   "x": -18,
+   "y": -4,
+   "rader": [
+    ".......gggffg..gfffgg..efggfe.......",
+    ".....fggggfeggggfeggffeeggffeeg.....",
+    "...ffegggffegggffefffeeefffeeefff...",
+    "..feeffffeeffffeefeffeeeeffeeeeffe..",
+    ".ffggggffggggffgggfeefggfeefggfeefg.",
+    "gfeggggfeggggfegggfeeggffeeggffeeggf",
+    "ffegggffegggffegggeeefffeeefffeeefff",
+    "ffffffeeffffeeffffeeffeeeeffeeeeffee",
+    ".gggffggggffggggfffggfeefggfeefggfe.",
+    "ggggfeggggfeggggfeggffeeggffeeggffee",
+    "gggffegggffegggffefffeeefffeeefffeee",
+    "fffeeffffeeffffeefeffeeeeffeeeeffeee",
+    ".ffggggffggggffgggfeefggfeefggfeefg.",
+    "gfeggggfeggggfegggfeeggffeeggffeeggf",
+    "ffegggffegggffegggeeefffeeefffeeefff",
+    "ffffffeeffffeeffffeeffeeeeffeeeeffee",
+    ".gggffggggffggggfffggfeefggfeefggfe.",
+    "ggggfeggggfeggggfeggffeeggffeeggffee",
+    "gggffegggffegggffefffeeefffeeefffeee",
+    "fffeeffffeeffffeefeffeeeeffeeeeffeee",
+    "gffggggffggggffgggfeefggfeefggfeefgg",
+    ".feggggfeggggfegggfeeggffeeggffeegg.",
+    ".fegggffegggffegggeeefffeeefffeeeff.",
+    "..ffffeeffffeeffffeeffeeeeffeeeeff..",
+    "..ggffggggffggggfffggfeefggfeefggf..",
+    "...gfeggggfeggggfeggffeeggffeeggf...",
+    "....fegggffegggffefffeeefffeeeff....",
+    ".....ffffeeff..eefeff..eeffeeee.....",
+    "......fffe.....fffeee.....feee......"
+   ]
+  },
+  "framhar": {
+   "x": -17,
+   "y": -5,
+   "rader": [
+    ".........hhgg..hhgf..ggff.........",
+    "......hhggfehhggfehhggeeggff......",
+    "....fegggffegggffegggfeefffeee....",
+    "...gfffffeeffffeeffffeeeffeeeef...",
+    "..fghhgffghhgffghhgffgggfeefggfe..",
+    ".gfhhggfehhggfehhggfehgffeeggffee.",
+    ".gfgggffegggffegggffegffeeefffeee.",
+    "ffffffeeffffeeffffeeffeeffeeeeffee",
+    "ghhgffghhgffghhgffghhgeefggfeefggf",
+    "hhggfehhggfehhggfehhggeeggffeeggff",
+    "gggffegggffegggffegggfeefffeeefffe",
+    "fffeeffffeeffffeeffffeeeffeeeeeffe",
+    "gffghhgffghhgffghhgffgggfeefggfeef",
+    "gfehhggfehhggfehhggfehgffeeggffeeg",
+    "ffegggffegggffegggffegffeeefffeeef",
+    "fggff..fgff...fggffe...ffee..feffe",
+    "ghhgf...ff......fe......fe...ffgfe",
+    "hggfe........................fgfee",
+    ".gffe........................ffee.",
+    ".ghgf........................fgfe.",
+    ".ggff........................effe.",
+    "..fff........................fee..",
+    "..gff........................fee..",
+    "...fe........................ee..."
+   ]
+  }
+ }
+}

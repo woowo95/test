@@ -1,0 +1,54 @@
+{
+ "id": "har-28",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den är den enda som verkligen ser snaggad ut: framhåret ligger som en tunn mössa tätt mot skallen, med samma tjocklek på sidorna och samma ljusa vänstersida (g) och mörka högersida (e) som förebilden. Flätan sitter i nacken och syns lite vid halsen på alla tre mallarna. Version 2 har en stor, rund massa bakhår runt hela huvudet. Det passar inte till snaggat hår, och toppen blir för ljus med h. Version 1 har ett platt block bakhår och en fläta som sneddar ut över axeln. Ändring: i version 3 tog jag bort de två ensamma lodräta linjerna på x = -15 och x = 14 i bakhåret. De bröt mot regeln om ensamma prickar och linjer och hörde inte till formen. Därför beskar jag bakhåret till flätan och flyttade hörnet till x = -11, y = 18, så att flätan ligger kvar på exakt samma ställe som förut. Framhåret är oförändrat.",
+ "bilder": {
+  "bakhar": {
+   "x": -11,
+   "y": 18,
+   "rader": [
+    "ggfe",
+    "fgfe",
+    "efgf",
+    "eefe",
+    "ggfe",
+    "fgfe",
+    "efgf",
+    "eefe",
+    "ggfe",
+    "fgfe",
+    "efgf",
+    "eefe",
+    "ggfe",
+    "fgfe",
+    "efgf",
+    "eefe",
+    "efee",
+    "gfe.",
+    "fge.",
+    "efe.",
+    ".e.."
+   ]
+  },
+  "framhar": {
+   "x": -14,
+   "y": 0,
+   "rader": [
+    ".........ggfgggffff.........",
+    "......gggfggggffffffef......",
+    "....ggggfgggggfffffffeff....",
+    "..gfgggggfgggfffffffefefee..",
+    ".ffggggfgggggfffffffffeefee.",
+    "fgggfgggggffffgffffffeefeeee",
+    "fggfgggfgfffffffffffefeeefee",
+    "fgfgffg....ffffff....efeefee",
+    "fgffg..................eefee",
+    "fgf......................efe",
+    "ffg......................eee",
+    "fgf......................efe",
+    "ff........................ee"
+   ]
+  }
+ }
+}

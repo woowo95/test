@@ -1,0 +1,68 @@
+{
+ "id": "har-26",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 2",
+ "om": "Valde version 1: framhåret har samma storlek, linjetjocklek och skuggning som förebilden, sidorna slutar vid örat så att håret ser uppsatt ut, och bakhåret har ett rutigt nätmönster med ljus uppifrån vänster (g/h till vänster, e till höger). Version 2 är bredare än förebilden, har sidor som hänger längre ner och ett stelt upprepat mönster i bakhåret som ser platt ut. Ändring: bakhåret i version 1 hängde ner till y=36 och såg ut som långt utslaget hår över axlarna. Jag kortade det till y=26 och rundade av underkanten, så att det blir en samlad knut i nät vid nacken. Det passar uppsatt hår och alla tre mallarna.",
+ "bilder": {
+  "bakhar": {
+   "x": -18,
+   "y": -4,
+   "rader": [
+    ".............gggggfgggf.............",
+    "..........gfgfgggfgfgffefe..........",
+    "........fgfgggfgfgggefefffef........",
+    "......gggfgggggfgggffefffffeff......",
+    ".....gggfgfgggfgfgffefefffefeff.....",
+    "....gfgfgggfgfgggefefffefefffefe....",
+    "...gggfgggggfgggffefffffefffffefe...",
+    "...ggfgfgggfgfgffefefffefefffefee...",
+    "..fgfgggfgfgggefefffefefffefefffee..",
+    "..gfgggggfgggffefffffefffffeffffee..",
+    "..fgfgggfgfgffefefffefefffefefffee..",
+    "..gggfgfgggefefffefefffefefffefeee..",
+    "..ggggfgggffefffffefffffefffffefee..",
+    "..gggfgfgffefefffefefffefefffefeee..",
+    "..fgfgggefefffefefffefefffefefffee..",
+    "..gfgggffefffffefffffefffffefffeee..",
+    "..fgfgffefefffefefffefefffefefeeee..",
+    "..gggefefffefefffefefffefefffeeeee..",
+    "..ggggfgggffefffffefffffefffffefee..",
+    ".fgggfgfgffefefffefefffefefffefeeee.",
+    ".gfgfgggefefffefefffefefffefefffeee.",
+    "gggfgggffefffffefffffefffffefffeeeee",
+    "ggfgfgffefefffefefffefefffefefeeeeee",
+    "gfgggefefffefefffefefffefefffeeeeeee",
+    "fgggffefffffefffffefffffefffeeeeeeee",
+    "gfgffefefffefefffefefffefefeeeeeeeee",
+    ".fffffefffffefffffefffeeeeeeeeeeeee.",
+    "..fffefefffefefffefefeeeeeeeeeeeee..",
+    "....efffefefffefefffeeeeeeeeeeee....",
+    ".......ffefffffefffeeeeeeeeee.......",
+    "...........feffeeeeeeeeee..........."
+   ]
+  },
+  "framhar": {
+   "x": -14,
+   "y": -3,
+   "rader": [
+    "........hhhhfgggggff........",
+    ".....ghghhhggfgggfgefff.....",
+    "...hghhhghghggfgfggfefeff...",
+    "..hghhhhhghhgggfgggffefffe..",
+    ".gggggggggggffffffffeeeeeee.",
+    ".ghhhhhhhhhhgggggffffffffee.",
+    "gghhhhhhhhhghggggfgffffffeee",
+    "ghhhhhhhhhghhgggggffgfffffee",
+    "ghhhhhhghh........ffgfffffee",
+    "ghhhhgh..............ffffeee",
+    "ghhhg..................fffee",
+    "ghhg....................ffee",
+    "ghg......................fee",
+    "ghg......................fee",
+    "ghg......................fee",
+    ".gg......................fe.",
+    ".gf......................ee."
+   ]
+  }
+ }
+}

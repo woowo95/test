@@ -1,0 +1,53 @@
+{
+ "id": "har-16",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 1",
+ "om": "Valde version 3 eftersom den är den enda och har rätt fästpunkt, bredd och ljusriktning (ljusare h/g till vänster, mörkare f/e till höger), men den liknade inte en krona av flätor: sidorna hängde ner som långt hår förbi hakan, och baksidan var två släta halvor med en hård lodrät skarv och randiga ff/fg-mönster längs kanten. Jag ändrade så att framhar har uppkammat hår på hjässan (rad y -5 till -2, samma siluett som förut), en fläta i fem rader tvärs över hårfästet (y -1 till 3) med lober som är ljusa uppe till vänster och skuggade nere till höger och mörknar mot höger, och flätan fortsätter ner längs sidorna fem punkter bred och slutar vid y 12, ovanför öronen, så att öronen syns på alla tre mallarna. Bakhar är nu bara den mörkare baksidan av flätkransen, från y -1 till 13. Där syns bara en smal kant runt huvudet, utan långt hår nedanför. Skarven i mitten är ersatt av korn i små klungor. Allt är symmetriskt kring mittlinjen och håller sig inom rutan, och bara tecknen efgh används.",
+ "bilder": {
+  "bakhar": {
+   "x": -18,
+   "y": -1,
+   "rader": [
+    "..gffffffffffffffefeeeeeeeeeeeeeee..",
+    "gffffffffffffffffeeeeeeeeeeeeeeeeeee",
+    "gffffffffffffffffeeeeeeeeeeeeeeeeeee",
+    "fgfffffffffffffffefeeeeeeeeeeeeeeeee",
+    "fgfffffffffffffffefeeeeeeeeeeeeeeeee",
+    "gffffffffffffffffeeeeeeeeeeeeeeeeeee",
+    "gffffffffffffffffeeeeeeeeeeeeeeeeeee",
+    "fgfffffffffffffffefeeeeeeeeeeeeeeeee",
+    "fgfffffffffffffffefeeeeeeeeeeeeeeeee",
+    "gffffffffffffffffeeeeeeeeeeeeeeeeeee",
+    "gffffffffffffffffeeeeeeeeeeeeeeeeeee",
+    "fgfffffffffffffffefeeeeeeeeeeeeeeeee",
+    "fgfffffffffffffffefeeeeeeeeeeeeeeeee",
+    ".fffffffffffffffffeeeeeeeeeeeeeeeee.",
+    "..ffffffffffffffffeeeeeeeeeeeeeeee.."
+   ]
+  },
+  "framhar": {
+   "x": -18,
+   "y": -5,
+   "rader": [
+    "............hhghgggfgffe............",
+    ".........hhhhghggggfgfffeee.........",
+    ".......hhhhhgghgggggfgffffeee.......",
+    ".....hhhhhhghhgggggggfggffffeee.....",
+    "...hhgghhgghhgghggfhggfggffggffgg...",
+    "..ghgffhgffhgffggfeggfegffegffegff..",
+    "..hgfhhgfhhgfhhffggffggeffgeffgeff..",
+    "..gfghgfghgfghgefgfefgfefffefffeff..",
+    ".fgeffgeffgeffgeeffeeffeeefeeefeeef.",
+    ".ghhgfgf....................effgfee.",
+    ".hggfef......................egffee.",
+    ".fghhg........................efgfe.",
+    ".efggf........................eeffe.",
+    ".ghhgf........................fggfe.",
+    ".hggfe........................gffee.",
+    ".fghhg........................efgfe.",
+    ".efggf........................eeffe.",
+    "..fgf..........................efe.."
+   ]
+  }
+ }
+}

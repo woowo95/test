@@ -1,0 +1,50 @@
+{
+ "id": "har-24",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 2",
+ "om": "Valde version 1. Den ger en flintskalle med en smal hårkrans på sidorna som sitter utanför ansiktet, vid tinningarna och öronen. Kransen är ljus till vänster (h/g) och mörk till höger (e/f), så ljuset kommer uppifrån vänster som i förebilden, och toppen lämnas kal som beskrivningen säger. Version 2 lägger framhåret för långt in, vid x -14. På mannen blir det mörka fläckar över kinder och ögon, vilket ser fel ut. Ändring: i bakhåret upprepades kornet i exakt samma mönster varannan rad. Jag har gjort kornet oregelbundnare i några rader (fler små klungor i stället för samma prickmönster), så att ytan inte ser randig eller slät ut. Mått och fästläge är oförändrade.",
+ "bilder": {
+  "bakhar": {
+   "x": -18,
+   "y": 10,
+   "rader": [
+    "...ggggggfffffffffffffffffffeeeee...",
+    "..gggggggffffffffffffffffffffeeeee..",
+    ".ggggggggffffffffffffffffffffeeeeee.",
+    ".ggggfgggffgfffffffffffffffefeefeee.",
+    ".ggggggggffffffffffffffffffffeeeeee.",
+    ".gggfggggfffffgffffffffffffeffeefee.",
+    ".ggggggggffffffffffffffffffffeeeeee.",
+    ".gggffgggffgfffffffffffffffefeefeee.",
+    ".ggggggggffffffffffffffffffffeeeeee.",
+    ".ggffggggfffffgffffffffffffeffeefee.",
+    ".ggggggggffffffffffffffffffffeeeeee.",
+    ".gggggfggffgfffffffffffffffefeefeee.",
+    ".ggggggggffffffffffffffffffffeeeeee.",
+    "..gggfgggffffffffffffffffffffeeeee..",
+    "...ggggggfffffffffffffffffffeeeee...",
+    ".....ggggffffffffffffffffffeeee....."
+   ]
+  },
+  "framhar": {
+   "x": -17,
+   "y": 8,
+   "rader": [
+    "...hg........................fe...",
+    "..hhg........................ffe..",
+    ".hhgg........................fefe.",
+    ".hhhg........................ffee.",
+    "hhghg........................fefee",
+    "hhhgg........................ffeee",
+    "hghhg........................feeee",
+    "hhhgf........................ffefe",
+    "hhggf........................efeee",
+    "ghggf........................feeee",
+    "gghgf........................eefee",
+    ".ggff........................eeee.",
+    ".gff..........................eee.",
+    "..ff..........................ee.."
+   ]
+  }
+ }
+}

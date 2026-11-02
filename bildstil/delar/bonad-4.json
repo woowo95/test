@@ -1,0 +1,26 @@
+{
+ "id": "bonad-4",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 2",
+ "om": "Jag valde version 2. Bandet är symmetriskt kring mittlinjen (x = -17 till 16) och sitter därför rakt på pannan på alla tre ansiktena. Version 1 sticker ut två punkter längre åt höger än åt vänster. Skuggningen i version 2 följer ljuset uppifrån vänster: överkanten är ljusast (u), mitten går från t till s och högersidan är mörkast (r). Mönstret i korsstygn tonar också från ljust till mörkt (L, K, J), och ändarna böjer ner längs skallens rundning, så bandet känns som tyg och inte som en platt remsa. Den hängande snibben på vänster sida är två punkter bred, vilket ger samma linjetjocklek och detaljstorlek som i mössan. Jag behövde inte ändra något: raderna är lika långa, bara tillåtna tecken används och hela delen ligger inom rutan.",
+ "bilder": {
+  "standard": {
+   "x": -17,
+   "y": 6,
+   "rader": [
+    "...uuuuuuuuuuuuuttttttttttttsss...",
+    "ttLtttttLtttttLttsssKsssssKssrrrJr",
+    "tLLLtttLLLtttLLLsssKKKsssKKKsrrJJJ",
+    "ttLtttttLtttttLsssssKsssssKsrrrrJr",
+    "sssssssssssssssrsrrrrrrrrrrrrrrrrr",
+    "sss............................rrr",
+    "ts................................",
+    "ts................................",
+    "ts................................",
+    "ts................................",
+    "ts................................",
+    "sr................................"
+   ]
+  }
+ }
+}

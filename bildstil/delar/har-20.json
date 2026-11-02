@@ -1,0 +1,61 @@
+{
+ "id": "har-20",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 2",
+ "om": "Valde version 3. Den är symmetrisk kring mittlinjen (x = -18 till 17), har ljuset från vänster med ljusa toner på vänster sida och mörka på höger, och kornet ligger i små klungor som i förebilden. Bandet syns tydligt som ett mörkt fält över hjässan i både framhar och bakhar. Version 1 har lösa slingor och ensamma punkter utanför vänsterkanten och en ojämn bakdel. Ändring: bakhåret i version 3 hängde ner till käkhöjd och såg ut som en page snarare än uppsatt hår. Jag kortade det till y = 13 och rundade av nederkanten mot nacken, så att håret sluter tätt om skallen och slutar bakom sidopartierna i framhåret. Det passar då alla tre mallarna.",
+ "bilder": {
+  "bakhar": {
+   "x": -18,
+   "y": -9,
+   "rader": [
+    "............gggggfffffee............",
+    ".........gghgggfgfffffffeee.........",
+    ".......gghhgggggffgffffffeeee.......",
+    ".....ghhhggggggfffgfffffffeeeee.....",
+    "....ghhgggggggffffgffffffeeeeefe....",
+    "...gggggggffgggffffgfffffeeeeeeee...",
+    "..fggggggffgggfffffgffffffeeeeefee..",
+    "..fgggggffggggffffgfffffffeeeeeeee..",
+    ".ffggggffgggfffffgffffffeeeeeeeeeee.",
+    ".fggggfffggffffffffffffeeeeeeeeeeee.",
+    ".fffffffffffffffffeeeeeeeeeeeeeeeee.",
+    ".eefeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee.",
+    ".ggfffffffffffffffeeeeeeeeeeeeeefee.",
+    ".gfgffffffffffffffeeeeeeeeeeeeeeeee.",
+    ".ggfffffffffffffffeeeeeeeeeeeeeeefe.",
+    ".fgfffffffffffffffeeeeeeeeeeeeeeeee.",
+    ".fggffffffffffffffeeeeeeeeeeeeeefee.",
+    ".ggfffffffffffffffeeeeeeeeeeeeeeeee.",
+    ".fgfffffffffffffffeeeeeeeeeeeeeeefe.",
+    ".fggffffffffffffffeeeeeeeeeeeeeeeee.",
+    "..ffgfffffffffffffeeeeeeeeeeeeeeee..",
+    "...eefffffffffffffeeeeeeeeeeeeeee...",
+    ".....eeeffffffffffeeeeeeeeeeeee....."
+   ]
+  },
+  "framhar": {
+   "x": -18,
+   "y": -2,
+   "rader": [
+    "........hhhhhhhhhggggggfffff........",
+    "......hhhhhhghhhhgggggggffffff......",
+    ".....hhhhhghhhhhgggggggfgffffff.....",
+    "....fffffffffffffeefeeeeeeeeeeee....",
+    "....eeffeffffeeeeeeeeeeeeeeeeeee....",
+    "...hhhhhhghhhhhgghggggggfgffffffe...",
+    "...ghhhhhghhhhgghhgggggggfgfffffe...",
+    "...ghhhhghhhhhghhgggggggfggffffee...",
+    "...gghhhghhhhghhgggggggffgfffffee...",
+    "...ghhhgh..................ffgfee...",
+    "...ghhg......................ffee...",
+    "...ghh........................fee...",
+    "...ghg........................fee...",
+    "...ggh........................ffe...",
+    "...ghg........................fee...",
+    "...ggg........................fee...",
+    "...fgg........................eee...",
+    "....gg........................ee...."
+   ]
+  }
+ }
+}
