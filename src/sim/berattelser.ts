@@ -1,5 +1,5 @@
 import { balans } from './balans';
-import { ALDER, KROPP, REL, ageOf, alive, byId, count, isKin, isParent, living, log, relKey } from './folk';
+import { ALDER, KROPP, REL, ageOf, alive, byId, count, isKin, isParent, living, log, namnSlut, relKey } from './folk';
 import { ACTS, Act, slagIkon } from './handlingar';
 import { TAGS } from './seder';
 import { kronika } from './historik';
@@ -42,6 +42,7 @@ export const BERATT = balans('beratt', {
   rik: 2, // rik med så här många gånger byns median (rikedomen i humor.ts), fattig med den här delen eller mindre:
   fattig: 0.4,
   langtan: 50, // längtan efter någon med så här mycket romans (rom, 0–100) eller mer, när hen inte har någon partner
+  lekNamn: 0.5, // så ofta får den som har samma namnslut som en förälder eller ett barn i livet binamnet Lill- eller Stor- (steg 4.5.4.8)
   // mästerverken och de usla sakerna (steg 3.9.4)
   glad: 0.7, // göraren var glad med humöret så här högt ...
   ledsen: 0.35, // ... och nedstämd så här lågt
@@ -1293,9 +1294,17 @@ export function stepBerattelser(s: State) {
     gebinamn(s, p, k, v);
   }
 }
+// har en förälder eller ett barn i livet samma namnslut (Torbjörn och Tuskbjörn) kallas ibland den yngre Lill- och den
+// äldre Stor- (Lillbjörn, Storbjörn, steg 4.5.4.8). Drar ingen slump
+export function lekNamn(s: State, p: Person) {
+  const slut = namnSlut(p.name);
+  if (!slut || slut.length < 3 || hash(s.seed, p.id, 11) >= BERATT.lekNamn) return undefined;
+  const q = living(s).find(x => x !== p && (isParent(x, p) || isParent(p, x)) && namnSlut(x.name) === slut);
+  return q ? (p.born > q.born ? 'Lill' : 'Stor') + slut : undefined;
+}
 function gebinamn(s: State, p: Person, k: IntryckTyp, v: number) {
   const val = BINAMN[k].namn, i = Math.floor(hash(s.seed, p.id, val.length + k.length) * val.length);
-  const namnet = val[i][p.sex === 'm' ? 0 : 1];
+  const namnet = lekNamn(s, p) ?? val[i][p.sex === 'm' ? 0 : 1];
   const skal = skalTill(s, p, k), fore = p.binamn;
   p.binamn = { k, namn: namnet, v, t: s.now, skal };
   const heder = INTRYCK[k].tecken > 0;

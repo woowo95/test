@@ -715,7 +715,7 @@ SCENARIER.ledare = {
       const natt = (skam?: number) => {
         const v = SIM.cloneState(b.t);
         v.now += n * DAY; v.lastGuardDay = undefined; klockan(v, 22);
-        for (const q of living(v)) { q.task = undefined; q.skam = undefined; q.warm = 0.9; }
+        for (const q of living(v)) { q.task = undefined; q.skam = undefined; q.warm = 0.9; q.guardDay = undefined; } // (också en vakt som valdes tidigare samma kväll)
         if (skam !== undefined) v.people.find(q => q.id === skam)!.skam = v.now + DAY;
         for (const q of living(v)) SIM.chooseTask(v, q);
         return { v, vakt: living(v).find(q => q.guardDay === v.lastGuardDay && q.task?.act === 'vakt') };
@@ -1483,7 +1483,19 @@ SCENARIER.berattelser = {
     const f = { namn: 'Ask', binamn: 'Tjuven', helt: 'Ask Tjuven', hen: 'han', skal: 'stal en yxa' };
     const lika = SIM.berattelse(t, 'oknamn', 7, f) === SIM.berattelse(t, 'oknamn', 7, f);
     const olika = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(i => SIM.berattelse(t, 'oknamn', i, f))).size;
+    // fler namn och ärvda namndelar (steg 4.5.4.8): ett barn får ibland början eller slutet av en förälders namn
+    const nt = createState(9, START), far = nyInvanare(nt, 'm', 30); far.name = 'Torbjörn';
+    let arvt = 0; const exempel: string[] = [];
+    for (let n = 0; n < 400; n++) { const nn = SIM.makeName(nt, 'm', 'folk', [undefined, far]); if (nn.endsWith('björn') || nn.startsWith('Tor')) { arvt++; if (exempel.length < 3 && !exempel.includes(nn)) exempel.push(nn); } }
+    const andelArv = arvt / 400;
+    // binamnet leker med namnet: sonen med samma slut kallas ibland Lillbjörn och fadern Storbjörn
+    let lill: string | undefined, storN: string | undefined;
+    for (let n = 0; n < 20 && !lill; n++) { const son = nyInvanare(nt, 'm', 5); son.father = far.id; son.name = 'Tuskbjörn'; lill = SIM.lekNamn(nt, son); if (!lill) son.died = nt.now; }
+    storN = SIM.lekNamn(nt, far);
+    for (let n = 0; n < 20 && !storN; n++) { const f2 = nyInvanare(nt, 'm', 40); f2.name = 'Arnbjörn'; const b2 = nyInvanare(nt, 'm', 5); b2.father = f2.id; b2.name = 'Gunbjörn'; storN = SIM.lekNamn(nt, f2); }
     return [
+      [`ett barn får ibland en del av en förälders namn (${Math.round(andelArv * 100)} % efter Torbjörn: ${exempel.join(', ')})`, andelArv > SIM.NAMN.arv * 0.6 && andelArv < SIM.NAMN.arv * 2.5],
+      [`binamnet leker med namnet: ${lill ?? 'inget'} och ${storN ?? 'inget'}`, lill === 'Lillbjörn' && storN === 'Storbjörn'],
       ['för få med samma intryck ger inget namn', forFa],
       [`hälften av de vuxna ger ett öknamn (${ok ? SIM.heltNamn({ ...p, binamn: ok }) : 'inget'})`, ok?.k === 'tjuv'],
       [`loggen berättar varför (${logRad})`, /yxa/.test(logRad)],

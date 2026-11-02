@@ -136,6 +136,7 @@ SCENARIER.redskap = {
     twineRope(s, p, 2 / 15); // femton rep i timmen sedan steg 2.3.8: två på åtta minuter
     const rep = amountOf(s, 'rep') === 2 && amountOf(s, 'torrgras') === 36;
     makeTool(s, p, 'spjut');
+    for (const x of tingOf(s)) if (x.k === 'flintspjut') x.q = undefined; // ett normalt spjut (kvaliteten slumpas, steg 2.2.2)
     const flint = amountOf(s, 'flintspjut') === 1 && amountOf(s, 'flinta') === 2 && amountOf(s, 'rep') === 1 && !amountOf(s, 'fiskespjut');
     p.task = { act: 'fiske', phase: 'do', tx: p.x, ty: p.y, until: s.now + HOUR, carry: 0, tool: 'flintspjut' };
     for (let i = 0; i < 60; i++) wearUsed(s, p, 1);

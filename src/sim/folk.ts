@@ -138,16 +138,33 @@ export const REL = balans('rel', {
 });
 
 // ---------- namn ----------
-const N1 = ['A', 'Bo', 'Da', 'E', 'Fa', 'Gu', 'Ha', 'I', 'Ka', 'Lo', 'Ma', 'Ny', 'O', 'Ra', 'Si', 'Tu', 'U', 'Ve', 'Y', 'Å', 'Ste', 'Tor', 'Al', 'Ger'];
-const N2 = ['r', 'n', 'l', 'rk', 'nd', 'st', 'g', 'v', 'm', 'sk', 'lv', 'rn', 'k', 'd'];
-const NK = ['a', 'e', 'ja', 'ra', 'dis', 'run', 'hild', 'frid', 'ny', 'vi', 'ka'];
-const NM = ['e', 'o', 'ar', 'ik', 'ulf', 'mund', 'björn', 'vid', 'stig', 'ger', 'an'];
-// ett nytt namn, med följden strom (handlaren tar sitt ur handel, så att följden folk inte ändras)
-export function makeName(s: State, sex: 'm' | 'k', strom: Strom = 'folk') {
+const N1 = ['A', 'Bo', 'Da', 'E', 'Fa', 'Gu', 'Ha', 'I', 'Ka', 'Lo', 'Ma', 'Ny', 'O', 'Ra', 'Si', 'Tu', 'U', 'Ve', 'Y', 'Å', 'Ste', 'Tor', 'Al', 'Ger',
+  'As', 'Bje', 'Eri', 'Gun', 'Hal', 'Ing', 'Os', 'Rag', 'Sig', 'Sva', 'Tus', 'Ulv', 'Vi', 'Hil', 'Ar', 'Frö', 'Kol', 'Ylv']; // fler från steg 4.5.4.8
+const N2 = ['r', 'n', 'l', 'rk', 'nd', 'st', 'g', 'v', 'm', 'sk', 'lv', 'rn', 'k', 'd', 'nn', 'll', 'rd', 'ns'];
+const NK = ['a', 'e', 'ja', 'ra', 'dis', 'run', 'hild', 'frid', 'ny', 'vi', 'ka', 'borg', 'gerd', 'veig', 'unn', 'laug', 've'];
+const NM = ['e', 'o', 'ar', 'ik', 'ulf', 'mund', 'björn', 'vid', 'stig', 'ger', 'an', 'kel', 'vald', 'gaut', 'fast', 'leif', 'orm'];
+export const NAMN = balans('namn', {
+  arv: 0.15, // så ofta får ett barn en del av en förälders namn: början eller slutet (Torbjörn → Tuskbjörn, steg 4.5.4.8)
+});
+const stor = (n: string) => n.charAt(0).toUpperCase() + n.slice(1).toLowerCase();
+const ledigt = (s: State, n: string) => n.length >= 3 && n.length <= 9 && !s.people.some(p => p.name === n && alive(p));
+// den längsta början (N1) och det längsta slutet (NM eller NK) som namnet har (steg 4.5.4.8)
+const langst = (del: string[], n: string, slut: boolean) => del.filter(d => slut ? n.endsWith(d.toLowerCase()) && d.length < n.length : n.startsWith(d)).sort((a, b) => b.length - a.length)[0];
+export const namnSlut = (n: string) => langst([...NM, ...NK], n.toLowerCase(), true);
+// ett nytt namn, med följden strom (handlaren tar sitt ur handel, så att följden folk inte ändras). Ett barn får ibland
+// början eller slutet av en förälders namn (slutet bara av föräldern med samma kön, steg 4.5.4.8)
+export function makeName(s: State, sex: 'm' | 'k', strom: Strom = 'folk', foraldrar: (Person | undefined)[] = []) {
+  const f = foraldrar.filter((q): q is Person => !!q);
+  if (f.length && rnd(s, strom) < NAMN.arv) {
+    const q = pick(s, f, strom), slut = q.sex === sex ? namnSlut(q.name) : undefined, borjan = langst(N1, q.name, false);
+    const n = slut && (!borjan || rnd(s, strom) < 0.5)
+      ? stor(pick(s, N1, strom) + (rnd(s, strom) < 0.7 ? pick(s, N2, strom) : '') + slut)
+      : borjan ? stor(borjan + (rnd(s, strom) < 0.7 ? pick(s, N2, strom) : '') + pick(s, sex === 'k' ? NK : NM, strom)) : '';
+    if (n && n !== q.name && ledigt(s, n)) return n;
+  }
   for (let i = 0; i < 20; i++) {
-    const n = pick(s, N1, strom) + (rnd(s, strom) < 0.7 ? pick(s, N2, strom) : '') + pick(s, sex === 'k' ? NK : NM, strom);
-    const nn = n.charAt(0).toUpperCase() + n.slice(1).toLowerCase();
-    if (nn.length >= 3 && nn.length <= 9 && !s.people.some(p => p.name === nn && alive(p))) return nn;
+    const nn = stor(pick(s, N1, strom) + (rnd(s, strom) < 0.7 ? pick(s, N2, strom) : '') + pick(s, sex === 'k' ? NK : NM, strom));
+    if (ledigt(s, nn)) return nn;
   }
   return pick(s, N1, strom) + pick(s, sex === 'k' ? NK : NM, strom);
 }
@@ -255,7 +272,7 @@ export function newPerson(s: State, sex: 'm' | 'k', born: number, mother?: Perso
     x: f.x + (rnd(s, 'folk') - 0.5) * 3, y: f.y + (rnd(s, 'folk') - 0.5) * 3, fame: [],
     hue: Math.floor(rnd(s, 'folk') * 360),
   };
-  p.name = makeName(s, sex);
+  p.name = makeName(s, sex, 'folk', [mother, father]);
   p.andlig = nyAndlighet(s, p, mother, father); // ur personens egen följd (steg 4.1.1.1)
   const at = freeNear(s, p.x, p.y); p.x = at.x; p.y = at.y; // inte i en husvägg
   return p;
