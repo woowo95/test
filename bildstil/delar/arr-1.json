@@ -1,0 +1,22 @@
+{
+ "id": "arr-1",
+ "ritad": 1,
+ "av": "programmeringschatten, förebild",
+ "om": "Ärr över ögonbrynet: en ljus upphöjd linje snett genom vänster ögonbryn, med en mörk skugga under som visar att den står upp.",
+ "bilder": {
+  "standard": {
+   "x": -10,
+   "y": -9,
+   "rader": [
+    "d.......",
+    "bd......",
+    ".ad.....",
+    "..bd....",
+    "...ad...",
+    "....bd..",
+    ".....ad.",
+    "......bd"
+   ]
+  }
+ }
+}

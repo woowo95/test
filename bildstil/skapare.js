@@ -462,10 +462,18 @@
     if (opt.bara) return B;
     lagg('klader', dk => RITA.klader(dk, G, p));
     lagg('oron', dk => delen(dk, G, D('ora'), p, 'ora'), { maskbar: true });
-    const rs = rynkSteg(p); if (rs > 0) lagg('rynkor', dk => RITA.rynkor(dk, G, rs));
-    if (D('arr')) lagg('arr', dk => RITA.arr(dk, G, D('arr')));
-    if (D('blamarke')) lagg('blamarke', dk => RITA.blamarke(dk, G, D('blamarke')));
+    const rs = rynkSteg(p); if (rs > 0) lagg('rynkor', dk => DELAR['rynkor-' + rs] ? delen(dk, G, DEL['rynkor-' + rs], p, 'rynkor') : RITA.rynkor(dk, G, rs));
+    if (D('arr')) lagg('arr', dk => delen(dk, G, D('arr'), p, 'arr'));
+    if (D('blamarke')) lagg('blamarke', dk => delen(dk, G, D('blamarke'), p, 'blamarke'));
     if (p.blod) lagg('blod', dk => RITA.blod(dk, G));
+    // kylan (5.2.2.6): mjukt röda kinder och nästipp i kindtonerna, som blir röda i kylan; utan kyla syns de inte
+    if (p.kyla) lagg('blamarke', dk => {
+      for (const [cx, cy] of [[23.5, 37.5], [40.5, 37.5]]) for (let y = 34; y <= 41; y++) for (let x = Math.floor(cx - 4); x <= cx + 4; x++) {
+        const r = ((x + 0.5 - cx) / 3) ** 2 + ((y + 0.5 - cy) / 1.8) ** 2; if (r > 1) continue;
+        if (hash(x, y, 12) < (r < 0.4 ? 0.7 : 0.35)) dk.satt(x, y, 'kind1');
+      }
+      dk.satt(32, 37, 'kind2'); dk.satt(33, 37, 'kind1');
+    });
     lagg('ogon', dk => delen(dk, G, D('oga'), p, 'oga'), { maskbar: true });
     lagg('ogonbryn', dk => delen(dk, G, D('ogonbryn'), p, 'ogonbryn'));
     lagg('nasa', dk => delen(dk, G, D('nasa'), p, 'nasa'));
@@ -478,11 +486,13 @@
     else if (fr) { lagg('bakhar', dk => RITA.bakhar(dk, G, fr), { maskbar: true }); lagg('framhar', dk => RITA.framhar(dk, G, fr), { maskbar: true }); }
     for (const id of skonLager(p)) {
       const d = DEL[id]; if (!d.lager || (id === 'skon-glans' && (!fr || fr.karta === 'flint'))) continue;
+      // ett ritat lager (5.2.2.5) ritas från sin plats; tänderna syns bara när munnen är glad eller öppen
+      if (DELAR[id] && d.plats) { if (id !== 'skon-tander' || ['glad', 'oppen'].includes(lageAv(p, 'mun'))) lagg(d.lager, dk => delen(dk, G, d, p, 'skonhet'), { maskbar: !!d.maskbar }); continue; }
       lagg(d.lager, dk => RITA.skonhet(dk, G, d, p), { maskbar: !!d.maskbar });
     }
     if (D('smycke')) lagg('smycke', dk => delen(dk, G, D('smycke'), p, 'smycke'), { maskbar: !!D('smycke').maskbar });
     if (D('huvudbonad')) lagg('huvudbonad', dk => delen(dk, G, D('huvudbonad'), p, 'huvudbonad'));
-    for (const id of p.forband) if (DEL[id]) lagg('forband', dk => RITA.forband(dk, G, DEL[id]));
+    for (const id of p.forband) if (DEL[id]) lagg('forband', dk => delen(dk, G, DEL[id], p, 'forband'));
     if (p.ogonlapp) lagg('ogonlapp', dk => RITA.ogonlapp(dk));
     if (D('redskap')) { lagg('redskapBak', dk => RITA.redskap(dk, G, D('redskap'), false)); lagg('redskapFram', dk => RITA.redskap(dk, G, D('redskap'), true)); }
     return B;
@@ -759,13 +769,20 @@
   const slumpFran = s => () => { s = (s + 0x6D2B79F5) | 0; let t = Math.imul(s ^ (s >>> 15), 1 | s); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
   const valj = (r, a) => a[Math.floor(r() * a.length)];
   const viktat = (r, par) => { const sum = par.reduce((s, [, v]) => s + v, 0); let x = r() * sum; for (const [k, v] of par) { x -= v; if (x < 0) return k; } return par[par.length - 1][0]; };
-  const radAv = (r, sort, mall, kon) => { const a = alternativ(sort, mall, kon).filter(Boolean); return a.length ? valj(r, a) : null; };
+  const radAv = (r, sort, mall, kon, skon = null) => {
+    let a = alternativ(sort, mall, kon).filter(Boolean);
+    // skönheten styr de fula delarna (ful i registret, Björn efter 5.2.2.3): de vanliga och vackra får aldrig en ful del, de
+    // fula får en ibland och de fulaste ofta
+    if (skon !== null) { const ful = a.filter(id => DEL[id]?.ful), fin = a.filter(id => !DEL[id]?.ful); a = skon < 0 && ful.length && r() < (skon <= -2 ? 0.6 : 0.3) ? ful : fin.length ? fin : a; }
+    return a.length ? valj(r, a) : null;
+  };
   function slumpPerson(r, o = {}) {
     const p = neutral('kvinna');
     p.kon = o.kon || (r() < 0.5 ? 'kvinna' : 'man');
     p.alder = o.alder || viktat(r, [['barn', 2], ['ung', 3], ['vuxen', 4], ['gammal', 2]]);
     const m = mallAv(p);
-    for (const s of ['huvudform', 'ora', 'nasa', 'oga', 'ogonbryn', 'mun', 'frisyr']) p.del[s] = radAv(r, s, m, p.kon);
+    p.skonhet = viktat(r, [[-2, 1], [-1, 2], [0, 6], [1, 2], [2, 1]]);
+    for (const s of ['huvudform', 'ora', 'nasa', 'oga', 'ogonbryn', 'mun', 'frisyr']) p.del[s] = radAv(r, s, m, p.kon, p.skonhet);
     p.del.skagg = m === 'man' && r() < 0.65 ? radAv(r, 'skagg', m, p.kon) : null;
     p.del.huvudbonad = r() < 0.2 ? radAv(r, 'huvudbonad', m, p.kon) : null;
     p.del.smycke = r() < 0.25 ? radAv(r, 'smycke', m, p.kon) : null;
@@ -776,7 +793,6 @@
     p.har = viktat(r, PR.farger.har.map((f, i) => [i, f.sallsynt ? 0.6 : 2]));
     p.ogon = Math.floor(r() * PR.farger.oga.length);
     p.humor = viktat(r, [['glad', 2], ['nojd', 3], ['lugn', 4], ['ledsen', 1.5], ['arg', 1], ['radd', 0.5], ['sover', 0.4]]);
-    p.skonhet = viktat(r, [[-2, 1], [-1, 2], [0, 6], [1, 2], [2, 1]]);
     p.forband = r() < 0.06 ? [radAv(r, 'forband', m, p.kon)] : [];
     p.ogonlapp = r() < 0.03; p.sjuk = r() < 0.08; p.kyla = r() < 0.1; p.blod = r() < 0.05;
     p.klader = { rock: r() < 0.55 ? viktat(r, [['harskinn', 3], ['vargskinn', 1]]) : null, skor: r() < 0.5, balte: r() < 0.35 };

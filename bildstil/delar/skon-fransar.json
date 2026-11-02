@@ -1,0 +1,17 @@
+{
+ "id": "skon-fransar",
+ "ritad": 1,
+ "av": "programmeringschatten, förebild",
+ "om": "Ögonfransar: tre små mörka fransar i kol som pekar ut och upp vid ögats yttre hörn ovanför locket. Ritas för vänster öga; det högra är det speglade.",
+ "bilder": {
+  "standard": {
+   "x": -6,
+   "y": -5,
+   "rader": [
+    "k.....",
+    ".k.k..",
+    "..l..."
+   ]
+  }
+ }
+}

@@ -202,3 +202,55 @@ function harTon2(x, y, cx, cy, rx, ry, forskj = 0) {
   spara({ id: 'smycke-2', ritad: 2, av: 'programmeringschatten, förebild', om: 'Benhalsband: ett mörkt snöre i en båge runt halsen med fem benbitar, ljusa uppåt vänster och med mörk skugga till höger och under så att de syns mot huden, och en lite längre bit i mitten.',
     bilder: { standard: { x: b.x, y: b.y + 10 - 57, rader: b.rader } } });
 }
+
+// ---- skönhetens lager: Ögonfransar (steg 5.2.2.5), förebild för lagren. Tre små mörka fransar som pekar ut och upp vid
+// ögats yttre hörn ovanför locket (vänster öga på bilden; det högra är det speglade). Från fästpunkten oga (26, 30).
+spara({ id: 'skon-fransar', ritad: 1, av: 'programmeringschatten, förebild', om: 'Ögonfransar: tre små mörka fransar i kol som pekar ut och upp vid ögats yttre hörn ovanför locket. Ritas för vänster öga; det högra är det speglade.',
+  bilder: { standard: { x: -6, y: -5, rader: ['k.....', '.k.k..', '..l...'] } } });
+
+// ---- rynkorna Steg 1 (steg 5.2.2.5), förebild: tunna linjer i hudens mörka toner. Kråkfötter vid ögonvrårna, en svag
+// linje i pannan och veck från näsvingarna mot mungiporna. Från fästpunkten huvud (32, 30); ljuset från vänster, så linjerna
+// till vänster är ljusare (b) och till höger mörkare (a).
+{
+  const P = {};
+  const satt = (x, y, v) => { P[x + ',' + y] = v; };
+  for (const [x, y] of [[20, 29], [19, 30], [20, 31]]) satt(x, y, 'b');           // kråkfötter vänster
+  for (const [x, y] of [[43, 29], [44, 30], [43, 31]]) satt(x, y, 'a');           // och höger
+  for (let x = 27; x <= 36; x++) if (x !== 31) satt(x, 21 + (x === 27 || x === 36 ? 1 : 0), x < 32 ? 'b' : 'a'); // pannan
+  for (const [x, y] of [[27, 38], [26, 39], [26, 40], [25, 41]]) satt(x, y, 'b'); // från näsvingen mot mungipan
+  for (const [x, y] of [[36, 38], [37, 39], [37, 40], [38, 41]]) satt(x, y, 'a');
+  const b = lagerRader((x, y) => P[x + ',' + y] || null, 0, 0, 63, 63);
+  spara({ id: 'rynkor-1', ritad: 1, av: 'programmeringschatten, förebild', om: 'Rynkor steg 1: kråkfötter vid ögonvrårna, en svag linje i pannan och veck från näsvingarna mot mungiporna, tunna linjer i hudens mörka toner (ljusare till vänster mot ljuset).',
+    bilder: { standard: { x: b.x, y: b.y + 10 - 30, rader: b.rader } } });
+}
+
+// ---- skadorna (steg 5.2.2.6), förebilder. Från fästpunkten huvud (32, 30).
+{
+  const bild = (P) => { const b = lagerRader((x, y) => P[x + ',' + y] || null, 0, 0, 63, 63); return { x: b.x, y: b.y + 10 - 30, rader: b.rader }; };
+  // ärret Över ögonbrynet: en ljus upphöjd linje snett genom vänster ögonbryn, med en mörk skugga under
+  const A = {};
+  for (let i = 0; i <= 7; i++) { const x = 22 + i, y = 21 + i; A[x + ',' + y] = 'd'; if (i < 7) A[x + ',' + (y + 1)] = i % 2 ? 'a' : 'b'; } // genom brynet, som får ett glapp
+  spara({ id: 'arr-1', ritad: 1, av: 'programmeringschatten, förebild', om: 'Ärr över ögonbrynet: en ljus upphöjd linje snett genom vänster ögonbryn, med en mörk skugga under som visar att den står upp.',
+    bilder: { standard: bild(A) } });
+  // blåmärket Runt ögat: en matt ring i skiffer och mörk rost runt vänster öga, mörkast närmast ögat
+  const B = {};
+  for (let y = 25; y <= 35; y++) for (let x = 19; x <= 33; x++) {
+    const u = (x + 0.5 - 26) / 6.5, v = (y + 0.5 - 30.5) / 5, r = u * u + v * v;
+    if (r > 1) continue;
+    // matt och dämpat: mörk rost och hudens mörkaste ton, med lite skiffer närmast ögat (förra blev en blå ring)
+    const h = hash(x, y, 3), t = r < 0.5 ? (h < 0.3 ? 'R' : h < 0.75 ? 'r' : 'a') : r < 0.8 ? (h < 0.5 ? 'a' : h < 0.75 ? 'r' : null) : (h < 0.35 ? 'b' : null);
+    if (t) B[x + ',' + y] = t;
+  }
+  spara({ id: 'blamarke-1', ritad: 1, av: 'programmeringschatten, förebild', om: 'Blåmärke runt ögat: en matt ring i skiffer och mörk rost runt vänster öga, mörkast närmast ögat och glesare ut mot kanten. Ögat ritas ovanpå.',
+    bilder: { standard: bild(B) } });
+  // förbandet Runt huvudet: ett linneband över pannan som följer huvudets rundning, skuggat nedåt, med en liten blodfläck
+  const C = {};
+  for (let x = 16; x <= 47; x++) {
+    const dx = (x + 0.5 - 32) / 16, ned = Math.round(dx * dx * 2.5), y0 = 18 + ned;
+    for (let j = 0; j <= 3; j++) C[x + ',' + (y0 + j)] = j === 0 ? (x < 32 ? 'w' : 'q') : j === 3 ? 'p' : (hash(x, j, 9) < 0.25 ? 'p' : (x < 32 ? 'q' : 'p'));
+  }
+  for (const [x, y] of [[22, 20], [23, 20], [22, 21], [23, 21], [24, 21]]) C[x + ',' + y] = 's';
+  C['22,21'] = 'r';
+  spara({ id: 'forband-huvud', ritad: 1, av: 'programmeringschatten, förebild', om: 'Förband runt huvudet: ett linneband över pannan som följer huvudets rundning, ljust upptill och skuggat nedåt, med en liten blodfläck till vänster.',
+    bilder: { standard: bild(C) } });
+}
