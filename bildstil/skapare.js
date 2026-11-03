@@ -1118,9 +1118,10 @@
     const ut = [];
     // ensam på marken, mitt i en ruta
     { const n = Math.max(16, S.w + 4, S.h + 4), M = markBild(n + 8, n + 8, P, 400, 420); rutHorn(M, 4 + ((n - 16) >> 1), 4 + ((n - 16) >> 1)); klistra(M, S, 4 + ((n - S.w) >> 1), 4 + ((n - S.h) >> 1)); ut.push(['Ensam på marken (hörnen visar en ruta)', M, 4]); }
-    // högen: en till fyra, efter hur full den är
+    // högen: en till fyra, efter hur full den är; det som bara läggs ett och ett på en ruta (redskapen och kläderna, stack 1
+    // i spelet) får ingen hög (Björn: de kan bara stackas en och en)
     const forsk = [[0, 0], [Math.max(2, S.w >> 1), -1], [-1, Math.max(2, S.h >> 1)], [Math.max(2, S.w >> 1) - 1, Math.max(2, S.h >> 1) + 1]];
-    for (let n = 1; n <= 4; n++) {
+    if (GAMLA[id]?.stack !== 1) for (let n = 1; n <= 4; n++) {
       const W = Math.max(20, S.w + (S.w >> 1) + 8), H = Math.max(20, S.h + (S.h >> 1) + 9), M = markBild(W, H, P, 430, 410);
       const bx = (W - S.w - (S.w >> 1)) >> 1, by = (H - S.h - (S.h >> 1)) >> 1;
       forsk.slice(0, n).sort((a, b) => a[1] - b[1]).forEach(([dx, dy]) => klistra(M, S, bx + dx, by + dy + 1));
