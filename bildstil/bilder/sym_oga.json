@@ -1,1 +1,23 @@
-{"id":"sym_oga","ritad":3,"av":"Claude","om":"Det gamla ögat (före v96) utan ögonfransarna, som Björn bad om.","w":16,"h":12,"rader":["................",".....EEEEEE.....","...EEqqqqppEE...","..EwqqRRRRppoE..",".EqqqRTwSSRppoE.","EqqqpRSkkSRppooE","EpqppRSkkRRpoooE",".EpppRSSRRQoooE.","..EppoRRQQoooE..","...EEpoooooEE...",".....EEEEEE.....","................"],"pal":{"E":"#3f2415","q":"#bdb39b","p":"#a0947d","w":"#dad0bb","R":"#3e5156","o":"#7e7362","T":"#8a9c9e","S":"#61767a","k":"#24201d","Q":"#233035"},"forra":{"ritad":1,"rader":["...E...EE...E...","....E..EE..E....",".....EEEEEE.....","...EEqqqqppEE...","..EwqqRRRRppoE..",".EqqqRTwSSRppoE.","EqqqpRSkkSRppooE","EpqppRSkkRRpoooE",".EpppRSSRRQoooE.","..EppoRRQQoooE..","...EEpoooooEE...",".....EEEEEE....."],"pal":{"Q":"#233035","R":"#3e5156","S":"#61767a","T":"#8a9c9e","k":"#24201d","o":"#7e7362","p":"#a0947d","q":"#bdb39b","w":"#dad0bb"}}}
+{
+ "id": "sym_oga",
+ "ritad": 3,
+ "av": "Claude",
+ "om": "Det gamla ögat (före v96) utan ögonfransarna, som Björn bad om.",
+ "w": 16,
+ "h": 12,
+ "rader": [
+  "................",
+  ".....EEEEEE.....",
+  "...EEqqqqppEE...",
+  "..EwqqRRRRppoE..",
+  ".EqqqRTwSSRppoE.",
+  "EqqqpRSkkSRppooE",
+  "EpqppRSkkRRpoooE",
+  ".EpppRSSRRQoooE.",
+  "..EppoRRQQoooE..",
+  "...EEpoooooEE...",
+  ".....EEEEEE.....",
+  "................"
+ ],
+ "pal": {"E":"#3f2415","q":"#bdb39b","p":"#a0947d","w":"#dad0bb","R":"#3e5156","o":"#7e7362","T":"#8a9c9e","S":"#61767a","k":"#24201d","Q":"#233035"}
+}

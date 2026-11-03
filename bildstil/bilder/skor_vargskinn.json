@@ -1,39 +1,16 @@
 {
-  "id": "skor_vargskinn",
-  "ritad": 5,
-  "av": "Claude",
-  "om": "Kaninskornas form (godkänd) i vargskinnets färger: samma plagg, en palett per material (Björn efter version 92 av bildstilen).",
-  "w": 10,
-  "h": 5,
-  "rader": [
-    ".....QwqQ.",
-    "QwqQ.QTSQ.",
-    "QTSQ.QTSTQ",
-    "QTSTQ.QQQQ",
-    ".QQQQ....."
-  ],
-  "pal": {
-    "Q": "#233035",
-    "w": "#dad0bb",
-    "q": "#bdb39b",
-    "T": "#8a9c9e",
-    "S": "#61767a"
-  },
-  "forra": {
-    "ritad": 4,
-    "rader": [
-      ".....QwQ..",
-      ".....QTSRQ",
-      "QwQ..QQQQQ",
-      "QTSRQ.....",
-      "QQQQQ....."
-    ],
-    "pal": {
-      "Q": "#233035",
-      "w": "#dad0bb",
-      "T": "#8a9c9e",
-      "S": "#61767a",
-      "R": "#3e5156"
-    }
-  }
+ "id": "skor_vargskinn",
+ "ritad": 5,
+ "av": "Claude",
+ "om": "Kaninskornas form (godkänd) i vargskinnets färger: samma plagg, en palett per material (Björn efter version 92 av bildstilen).",
+ "w": 10,
+ "h": 5,
+ "rader": [
+  ".....QwqQ.",
+  "QwqQ.QTSQ.",
+  "QTSQ.QTSTQ",
+  "QTSTQ.QQQQ",
+  ".QQQQ....."
+ ],
+ "pal": {"Q":"#233035","w":"#dad0bb","q":"#bdb39b","T":"#8a9c9e","S":"#61767a"}
 }

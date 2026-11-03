@@ -23,38 +23,5 @@
   "..EGGFEEEEFFFE..",
   "....EEEEEEEE...."
  ],
- "pal": {
-  "E": "#3f2415",
-  "F": "#5e3c24",
-  "G": "#7d5b40",
-  "H": "#987e62",
-  "k": "#24201d",
-  "l": "#2f261d",
-  "p": "#a0947d",
-  "q": "#bdb39b",
-  "r": "#521100",
-  "u": "#bd753e",
-  "w": "#dad0bb"
- },
- "forra": {
-  "ritad": 1,
-  "rader": [
-   ".....kkkkkk.....",
-   "...kkwwqqqqkk...",
-   "..kwwwqqqqqqpk..",
-   ".kwwqqqqqqqqqpk.",
-   ".kwqkkkqqkkkqpk.",
-   "kwqkwwqkkwwqkppk",
-   "kqqkwkqkkwkqkppk",
-   "kqqkqqpkkqqpkppk",
-   "kqqqkkkqqkkkqppk",
-   "EEEEqqkkkkqpEEEE",
-   "EHHEqklmmlkpEGGE",
-   "EHGEqklmmlkpEGFE",
-   "EHGEpklrrlkoEGFE",
-   "EGFEpqkkkkpoEFFE",
-   ".EEEkpoooookEEE.",
-   ".....kkkkkk....."
-  ]
- }
+ "pal": {"E":"#3f2415","F":"#5e3c24","G":"#7d5b40","H":"#987e62","k":"#24201d","l":"#2f261d","p":"#a0947d","q":"#bdb39b","r":"#521100","u":"#bd753e","w":"#dad0bb"}
 }

@@ -12,20 +12,5 @@
   "EHGHE.EEEE",
   ".EEEE....."
  ],
- "pal": {
-  "E": "#3f2415",
-  "G": "#7d5b40",
-  "H": "#987e62",
-  "q": "#bdb39b",
-  "w": "#dad0bb"
- },
- "forra": {
-  "ritad": 2,
-  "rader": [
-   "....EwqE",
-   "Ewq..HGE",
-   "EHGE.EEE",
-   "EEEE...."
-  ]
- }
+ "pal": {"E":"#3f2415","G":"#7d5b40","H":"#987e62","q":"#bdb39b","w":"#dad0bb"}
 }

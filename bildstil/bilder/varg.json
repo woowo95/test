@@ -17,27 +17,5 @@
   "..QSQ........QSRQ.....",
   ".QSQ..........QRQ....."
  ],
- "pal": {
-  "Q": "#233035",
-  "R": "#3e5156",
-  "S": "#61767a",
-  "T": "#8a9c9e",
-  "k": "#24201d",
-  "q": "#bdb39b",
-  "s": "#742a01",
-  "w": "#dad0bb"
- },
- "forra": {
-  "ritad": 1,
-  "rader": [
-   "..Q.Q...........",
-   ".QTQTQ..........",
-   "QTTkSSQQQQQQQ...",
-   "kwTSSTTTTTTTSQQQ",
-   "QwwSSTSTTSSSSRSQ",
-   ".QQwsSSSSSSRRQQ.",
-   "...QSQwwwwQRSQ..",
-   "...QRQQQQQ.QRQ.."
-  ]
- }
+ "pal": {"Q":"#233035","R":"#3e5156","S":"#61767a","T":"#8a9c9e","k":"#24201d","q":"#bdb39b","s":"#742a01","w":"#dad0bb"}
 }

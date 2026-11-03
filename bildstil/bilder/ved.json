@@ -12,31 +12,5 @@
   "EqppFFEFFE",
   ".EEEEEEEE."
  ],
- "pal": {
-  "E": "#3f2415",
-  "q": "#bdb39b",
-  "p": "#a0947d",
-  "H": "#987e62",
-  "G": "#7d5b40",
-  "F": "#5e3c24"
- },
- "forra": {
-  "ritad": 4,
-  "rader": [
-   ".EEEEEEEE.",
-   "ELKLHGHGGE",
-   "EKJKGFGFGE",
-   "ELKKFFEFFE",
-   ".EEEEEEEE."
-  ],
-  "pal": {
-   "E": "#3f2415",
-   "F": "#5e3c24",
-   "G": "#7d5b40",
-   "H": "#987e62",
-   "J": "#906f0f",
-   "K": "#b2921b",
-   "L": "#d8b25f"
-  }
- }
+ "pal": {"E":"#3f2415","q":"#bdb39b","p":"#a0947d","H":"#987e62","G":"#7d5b40","F":"#5e3c24"}
 }

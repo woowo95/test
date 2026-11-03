@@ -23,31 +23,5 @@
   ".oppppppppppppo.",
   "..oooooooooooo.."
  ],
- "pal": {
-  "o": "#7e7362",
-  "p": "#a0947d",
-  "q": "#bdb39b",
-  "w": "#dad0bb"
- },
- "forra": {
-  "ritad": 1,
-  "rader": [
-   ".kkkkkkkkkkkkkk.",
-   "kwwwwwqwwwqwwqpk",
-   "kwwqqqqwqqqqqqok",
-   "kwqqwqqqqqpqqpok",
-   "kwqqqqqqqqqqpqok",
-   "kwqwqqqqqqqqqpok",
-   "kqqqqqqpqqqqqqok",
-   "kwqqqqqqqqqpqpok",
-   "kwqqqpqqqqqqqqok",
-   "kqqqqqqqqqqqqpok",
-   "kwqqqqqqpqqpqqok",
-   "kwqpqqqqqqqqpqok",
-   "kqqqqqqqqpqqqpok",
-   "kqqpqqqqpqqqppok",
-   "kpoooooooooooook",
-   ".kkkkkkkkkkkkkk."
-  ]
- }
+ "pal": {"o":"#7e7362","p":"#a0947d","q":"#bdb39b","w":"#dad0bb"}
 }

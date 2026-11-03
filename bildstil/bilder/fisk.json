@@ -11,21 +11,5 @@
   "uqpqwqpts",
   ".tuuttts."
  ],
- "pal": {
-  "p": "#a0947d",
-  "q": "#bdb39b",
-  "s": "#742a01",
-  "t": "#a14808",
-  "u": "#bd753e",
-  "w": "#dad0bb"
- },
- "forra": {
-  "ritad": 2,
-  "rader": [
-   "..sssss..",
-   ".suqwqqus",
-   "suqquwqts",
-   ".stttssr."
-  ]
- }
+ "pal": {"p":"#a0947d","q":"#bdb39b","s":"#742a01","t":"#a14808","u":"#bd753e","w":"#dad0bb"}
 }

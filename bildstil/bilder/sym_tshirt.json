@@ -22,45 +22,5 @@
   "...rKLKKKJJIr...",
   "...rrrrrrrrrr..."
  ],
- "pal": {
-  "I": "#694902",
-  "J": "#906f0f",
-  "K": "#b2921b",
-  "L": "#d8b25f",
-  "r": "#521100",
-  "s": "#742a01",
-  "t": "#a14808",
-  "u": "#bd753e"
- },
- "forra": {
-  "ritad": 2,
-  "rader": [
-   "...rrrr..rrrr...",
-   "..ruutKrrKttsr..",
-   ".ruuttKLLKttssr.",
-   "ruuttutKKtuttssr",
-   "ruttuttttttuttsr",
-   "rutttuttttuttssr",
-   "rLKrutttuttsrKJr",
-   ".rrrtuttttusrrr.",
-   "...ruttutttsr...",
-   "...rtttuttusr...",
-   "...ruttttutsr...",
-   "...rttuttttsr...",
-   "...rutttuttsr...",
-   "...rKLKKKJJIr...",
-   "...rJKJJJJIIr...",
-   "...rrrrrrrrrr..."
-  ],
-  "pal": {
-   "I": "#694902",
-   "J": "#906f0f",
-   "K": "#b2921b",
-   "L": "#d8b25f",
-   "r": "#521100",
-   "s": "#742a01",
-   "t": "#a14808",
-   "u": "#bd753e"
-  }
- }
+ "pal": {"I":"#694902","J":"#906f0f","K":"#b2921b","L":"#d8b25f","r":"#521100","s":"#742a01","t":"#a14808","u":"#bd753e"}
 }

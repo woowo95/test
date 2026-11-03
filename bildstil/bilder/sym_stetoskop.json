@@ -1,1 +1,27 @@
-{"id":"sym_stetoskop","ritad":3,"av":"Claude","om":"Ett rött plustecken för fliken Hälsa, inte ett kristet kors, som Björn bad om. Ritat av Claude.","w":16,"h":16,"rader":["................",".....rrrrrr.....",".....ruuuur.....",".....ruttsr.....",".....ruttsr.....",".rrrrttttttrrrr.",".ruuuttttttuuur.",".ruttttttttttsr.",".ruttttttttttsr.",".russttttttsssr.",".rrrrttttttrrrr.",".....ruttsr.....",".....ruttsr.....",".....russsr.....",".....rrrrrr.....","................"],"pal":{"r":"#521100","s":"#742a01","t":"#a14808","u":"#bd753e"},"forra":{"ritad":2,"rader":["....EEEEEE....","...EHGGGGFE...","...EGqqqpFE...","...EqqqppoE...","...EqpppooE...","....EppooE....",".....EooE.....","..EEEEEEEMME..",".EHGGGMMPNMFE.","EHGHGMPPNOMFFE","EHGGMPPNOOMFFE","EGFGMPNOOMGFFE","EGFEMNOOMGGEFE","EpoNMMMGGFEpoE","EEEEGGFGFFEEEE","...EEEEEEEE..."],"pal":{"E":"#3f2415","F":"#5e3c24","G":"#7d5b40","H":"#987e62","M":"#353204","N":"#4b4f00","O":"#647025","P":"#898b4c","o":"#7e7362","p":"#a0947d","q":"#bdb39b"}}}
+{
+ "id": "sym_stetoskop",
+ "ritad": 3,
+ "av": "Claude",
+ "om": "Ett rött plustecken för fliken Hälsa, inte ett kristet kors, som Björn bad om. Ritat av Claude.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "................",
+  ".....rrrrrr.....",
+  ".....ruuuur.....",
+  ".....ruttsr.....",
+  ".....ruttsr.....",
+  ".rrrrttttttrrrr.",
+  ".ruuuttttttuuur.",
+  ".ruttttttttttsr.",
+  ".ruttttttttttsr.",
+  ".russttttttsssr.",
+  ".rrrrttttttrrrr.",
+  ".....ruttsr.....",
+  ".....ruttsr.....",
+  ".....russsr.....",
+  ".....rrrrrr.....",
+  "................"
+ ],
+ "pal": {"r":"#521100","s":"#742a01","t":"#a14808","u":"#bd753e"}
+}

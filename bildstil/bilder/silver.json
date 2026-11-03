@@ -1,40 +1,18 @@
 {
-  "id": "silver",
-  "ritad": 3,
-  "av": "Claude",
-  "om": "Claude: tre runda silvermynt sedda ovanifrån, lagda lite över varandra, med en glanspunkt uppe till vänster på vart och ett.",
-  "w": 9,
-  "h": 7,
-  "rader": [
-    ".....QQQ.",
-    ".QQQQwTTQ",
-    "QwTTQQQSQ",
-    "QTTQwTTQQ",
-    "QTSQTTSQ.",
-    ".QQQTSSQ.",
-    "....QQQ.."
-  ],
-  "pal": {
-    "Q": "#233035",
-    "S": "#61767a",
-    "T": "#8a9c9e",
-    "w": "#dad0bb"
-  },
-  "forra": {
-    "ritad": 2,
-    "rader": [
-      ".QQQ....",
-      "QwTSQQQ.",
-      ".QQQQqSQ",
-      "QqTSQQQ.",
-      ".QQQ...."
-    ],
-    "pal": {
-      "Q": "#233035",
-      "S": "#61767a",
-      "T": "#8a9c9e",
-      "q": "#bdb39b",
-      "w": "#dad0bb"
-    }
-  }
+ "id": "silver",
+ "ritad": 3,
+ "av": "Claude",
+ "om": "Claude: tre runda silvermynt sedda ovanifrån, lagda lite över varandra, med en glanspunkt uppe till vänster på vart och ett.",
+ "w": 9,
+ "h": 7,
+ "rader": [
+  ".....QQQ.",
+  ".QQQQwTTQ",
+  "QwTTQQQSQ",
+  "QTTQwTTQQ",
+  "QTSQTTSQ.",
+  ".QQQTSSQ.",
+  "....QQQ.."
+ ],
+ "pal": {"Q":"#233035","S":"#61767a","T":"#8a9c9e","w":"#dad0bb"}
 }

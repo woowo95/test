@@ -1,37 +1,15 @@
 {
-  "id": "balte_rep",
-  "ritad": 4,
-  "av": "Claude",
-  "om": "Claude: symmetrisk ring med knuten i mitten och två lika hängande ändar.",
-  "w": 8,
-  "h": 4,
-  "rader": [
-    ".owqwqo.",
-    "oq....po",
-    ".oqFFpo.",
-    "..p..p.."
-  ],
-  "pal": {
-    "o": "#7e7362",
-    "w": "#dad0bb",
-    "q": "#bdb39b",
-    "p": "#a0947d",
-    "F": "#5e3c24"
-  },
-  "forra": {
-    "ritad": 3,
-    "rader": [
-      ".owqwpo.",
-      "oq....po",
-      ".oqpFoo.",
-      "...p.o.."
-    ],
-    "pal": {
-      "F": "#5e3c24",
-      "o": "#7e7362",
-      "p": "#a0947d",
-      "q": "#bdb39b",
-      "w": "#dad0bb"
-    }
-  }
+ "id": "balte_rep",
+ "ritad": 4,
+ "av": "Claude",
+ "om": "Claude: symmetrisk ring med knuten i mitten och två lika hängande ändar.",
+ "w": 8,
+ "h": 4,
+ "rader": [
+  ".owqwqo.",
+  "oq....po",
+  ".oqFFpo.",
+  "..p..p.."
+ ],
+ "pal": {"o":"#7e7362","w":"#dad0bb","q":"#bdb39b","p":"#a0947d","F":"#5e3c24"}
 }

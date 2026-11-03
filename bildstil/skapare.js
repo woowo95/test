@@ -1105,7 +1105,7 @@
     data.rader.forEach((r, y) => [...r].forEach((ch, x) => { if (ch !== '.') B.satt(x, y, tonAv(ch)); }));
     return B;
   }
-  // spelets bild av saken nu (GAMLA, ur src/ikoner.ts via bildstil/gamla.ts), med varje färg till närmaste i paletten
+  // spelets bild av saken nu (GAMLA, ur src/ikoner.ts via bildstil/gamla.ts; körs när nya rader läggs till, de godkända tas bort ur gamla.json), med varje färg till närmaste i paletten
   function gammalBild(id) {
     const g = GAMLA[id]; if (!g) return null;
     const w = Math.max(...g.rader.map(r => r.length)), h = g.rader.length, B = Bild(w, h, P), f = {};
@@ -1148,7 +1148,8 @@
     // högen: en till fyra, efter hur full den är; det som bara läggs ett och ett på en ruta (redskapen och kläderna, stack 1
     // i spelet) får ingen hög (Björn: de kan bara stackas en och en)
     const forsk = [[0, 0], [Math.max(2, S.w >> 1), -1], [-1, Math.max(2, S.h >> 1)], [Math.max(2, S.w >> 1) - 1, Math.max(2, S.h >> 1) + 1]];
-    if (GAMLA[id]?.stack !== 1) for (let n = 1; n <= 4; n++) {
+    const rad = BILDER.bilder.find(b => b.id === id), ensam = rad?.ensam || BILDER.sorter.find(s => s.id === rad?.sort)?.ensam;
+    if (!ensam) for (let n = 1; n <= 4; n++) {
       const W = Math.max(20, S.w + (S.w >> 1) + 8), H = Math.max(20, S.h + (S.h >> 1) + 9), M = markBild(W, H, P, 430, 410);
       const bx = (W - S.w - (S.w >> 1)) >> 1, by = (H - S.h - (S.h >> 1)) >> 1;
       forsk.slice(0, n).sort((a, b) => a[1] - b[1]).forEach(([dx, dy]) => klistra(M, S, bx + dx, by + dy + 1));

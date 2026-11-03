@@ -13,27 +13,5 @@
   ".GpqpqpqpGp",
   "..GGGGGGG.q"
  ],
- "pal": {
-  "G": "#7d5b40",
-  "p": "#a0947d",
-  "q": "#bdb39b",
-  "H": "#987e62"
- },
- "forra": {
-  "ritad": 5,
-  "rader": [
-   "..IIIIIII..",
-   ".IKLKLKLKI.",
-   "IKJIIIIIJKI",
-   "ILJI...IJLI",
-   ".IKLKLKLKIK",
-   "..IIIIIII.L"
-  ],
-  "pal": {
-   "I": "#694902",
-   "K": "#b2921b",
-   "L": "#d8b25f",
-   "J": "#906f0f"
-  }
- }
+ "pal": {"G":"#7d5b40","p":"#a0947d","q":"#bdb39b","H":"#987e62"}
 }

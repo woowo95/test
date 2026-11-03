@@ -7,6 +7,7 @@ import { SAKER } from '../src/sim/saker';
 const B = JSON.parse(fs.readFileSync('bildstil/bilder.json', 'utf8'));
 const ut: Record<string, { rader: string[]; pal: Record<string, string>; stack?: number }> = {}, saknas: string[] = [];
 for (const b of B.bilder) {
+  if (b.godkand) continue; // de godkända är omritade och behöver ingen förlaga
   const r = PIX[b.id]; if (!r) { saknas.push(b.id); continue; }
   const pal: Record<string, string> = {};
   for (const [k, v] of Object.entries(PAL[b.id] || {})) if (/^#[0-9a-f]{6}$/i.test(v as string)) pal[k] = v as string;

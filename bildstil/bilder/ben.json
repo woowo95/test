@@ -11,19 +11,5 @@
   "qpqppoo",
   "po...oo"
  ],
- "pal": {
-  "o": "#7e7362",
-  "p": "#a0947d",
-  "q": "#bdb39b",
-  "w": "#dad0bb"
- },
- "forra": {
-  "ritad": 1,
-  "rader": [
-   "....owo",
-   "..owqpo",
-   "owqpo..",
-   "opo...."
-  ]
- }
+ "pal": {"o":"#7e7362","p":"#a0947d","q":"#bdb39b","w":"#dad0bb"}
 }

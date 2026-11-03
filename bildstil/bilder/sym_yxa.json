@@ -1,1 +1,27 @@
-{"id":"sym_yxa","ritad":3,"av":"Claude","om":"Samma flintyxa som på kartan, uppförstorad till symbolens storlek, som Björn bad om. Ritad av Claude.","w":16,"h":16,"rader":[".........QQQQ...","........QTTTSQ..",".......QTTSSSRQ.",".......QTSSSRRRQ","......EHQSSRRRQ.","......EGEQRRRQ..",".....EHE.QQRQ...",".....EGE...QQ...","....EHE.........","....EGE.........","...EHE..........","...EGE..........","..EHE...........","..EGE...........",".EHE............",".EEE............"],"pal":{"Q":"#233035","T":"#8a9c9e","S":"#61767a","R":"#3e5156","E":"#3f2415","H":"#987e62","G":"#7d5b40"},"forra":{"ritad":2,"rader":["........QQQ.....",".......QwTTQ....","......QTTSTSQ...",".....QTTSTSSSQ..","....QTTSTSSRSRQ.","...QTSTSSRSRSRSQ","...QQQQQEHQSRSRQ",".......EGFEQSRRQ","......EHFE..QQQ.",".....EGFE.......","....EHFE........","...EGFE.........","..EHFE..........",".EGFE...........","EHFE............",".EE............."],"pal":{"E":"#3f2415","F":"#5e3c24","G":"#7d5b40","H":"#987e62","Q":"#233035","R":"#3e5156","S":"#61767a","T":"#8a9c9e","w":"#dad0bb"}}}
+{
+ "id": "sym_yxa",
+ "ritad": 3,
+ "av": "Claude",
+ "om": "Samma flintyxa som på kartan, uppförstorad till symbolens storlek, som Björn bad om. Ritad av Claude.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  ".........QQQQ...",
+  "........QTTTSQ..",
+  ".......QTTSSSRQ.",
+  ".......QTSSSRRRQ",
+  "......EHQSSRRRQ.",
+  "......EGEQRRRQ..",
+  ".....EHE.QQRQ...",
+  ".....EGE...QQ...",
+  "....EHE.........",
+  "....EGE.........",
+  "...EHE..........",
+  "...EGE..........",
+  "..EHE...........",
+  "..EGE...........",
+  ".EHE............",
+  ".EEE............"
+ ],
+ "pal": {"Q":"#233035","T":"#8a9c9e","S":"#61767a","R":"#3e5156","E":"#3f2415","H":"#987e62","G":"#7d5b40"}
+}
