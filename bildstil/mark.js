@@ -350,8 +350,12 @@
   // ett kort streck i stället för en lös punkt: lodrätt (strån) eller vågrätt (jord, sten, barr), två punkter långt
   const strack = (x, y, s, p) => hash(x, y, s) < p ? 1 : hash(x, y - 1, s) < p ? 2 : 0;
   const vagstreck = (x, y, s, p) => hash(x, y, s) < p || hash(x - 1, y, s) < p;
-  function grasRen(x, y, P) { // gräset du valde (version 2): fält med ren men ojämn kant, och korta strån i stället för korn
+  function grasRen(x, y, P, niva = 1) { // gräset du valde (version 2): fält med ren men ojämn kant, och korta strån i stället för korn
     const lo = I(P, 'oliv', 1), mid = I(P, 'oliv', 2), hi = I(P, 'oliv', 3);
+    if (niva === 0) { // som i bildstil v112: nästan utan korn
+      if (flack(x, y, 44, 301, 0.64)) return hash(x, y, 303) < 0.004 ? mid : lo;
+      return hash(x, y, 303) < 0.004 ? hi : hash(x, y - 1, 303) < 0.004 ? lo : mid;
+    }
     const kant = (vn(x, y, 4, 305) - 0.5) * 0.05; // kanten fransar sig lite, utan lösa punkter
     if (flack(x, y, 44, 301, 0.64 + kant)) { // mörkare fält
       const st = strack(x, y, 306, 0.014); if (st) return st === 1 ? mid : I(P, 'oliv', 0);
@@ -361,10 +365,11 @@
     const st = strack(x, y, 303, tat); if (st) return st === 1 ? hi : lo;
     return mid;
   }
-  function tuvorRen(B, ok, tat = 1) { // klungor av högt gräs, ett och annat strå och en vit blomma
-    const P = B.P;
-    for (let cy = 0; cy * 10 < B.h + 10; cy++) for (let cx = 0; cx * 11 < B.w + 11; cx++) {
-      const x = cx * 11 + Math.floor(hash(cx, cy, 311) * 11), y = cy * 10 + Math.floor(hash(cx, cy, 312) * 10);
+  function tuvorRen(B, ok, tat = 1, niva = 1) { // klungor av högt gräs, ett och annat strå och en vit blomma
+    const P = B.P, gx = niva ? 11 : 12, gy = niva ? 10 : 11;
+    if (!niva) tat *= 0.8;
+    for (let cy = 0; cy * gy < B.h + gy; cy++) for (let cx = 0; cx * gx < B.w + gx; cx++) {
+      const x = cx * gx + Math.floor(hash(cx, cy, 311) * gx), y = cy * gy + Math.floor(hash(cx, cy, 312) * gy);
       if (!ok(x, y)) continue;
       const r = hash(cx, cy, 313);
       if (vn(x, y, 30, 314) > 0.62 && r < 0.75 * tat) { // klunga av högt gräs: fyra strån
@@ -473,9 +478,214 @@
   }
 
   const T = 'Steg 5.2.4.5, till ';
+  // ---------- fler träd (Björn efter bildstil v114): varianter, brända träd, stubbar och fallna träd ----------
+  // Ett träd ritas först i ett eget lager (en karta från punkt till färg) och läggs sedan ut med en ändring:
+  // bredare eller smalare, högre eller lägre, lutande, ljusare eller mörkare barr och blad, eller liggande.
+  function lager(B, rita) {
+    const M = new Map(), D = { ...B, satt: (x, y, i) => { if (i >= 0) M.set(Math.round(x) + ',' + Math.round(y), i); }, get: (x, y) => { const v = M.get(Math.round(x) + ',' + Math.round(y)); return v === undefined ? -1 : v; }, morka: () => {} };
+    rita(D);
+    let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
+    for (const k of M.keys()) { const [x, y] = k.split(',').map(Number); x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
+    return { M, x0, x1, y0, y1, get: (x, y) => { const v = M.get(Math.round(x) + ',' + Math.round(y)); return v === undefined ? -1 : v; } };
+  }
+  const rampAv = (P, i) => Math.floor(i / 4), tonAv = i => i % 4;
+  const somRamp = (P, i, namn) => rampAv(P, i) === rampAv(P, P.i(namn, 0));
+  // lägger ut ett lager: bred = bredden, hog = höjden, lut = punkter åt sidan i toppen, ton = ett steg ljusare eller mörkare (bara barr och blad)
+  function utLager(B, L, cx, by, o = {}) {
+    const P = B.P, bred = o.bred || 1, hog = o.hog || 1, lut = o.lut || 0, h = by - L.y0 + 1;
+    const yt0 = by - Math.ceil((by - L.y0) * hog) - 1;
+    for (let ty = yt0; ty <= L.y1 + 1; ty++) {
+      const upp = (by - ty) / hog, sy = by - upp, f = Math.max(0, upp / h), dx = lut * f * f;
+      for (let tx = cx - Math.ceil((cx - L.x0) * bred) - Math.abs(lut) - 2; tx <= cx + Math.ceil((L.x1 - cx) * bred) + Math.abs(lut) + 2; tx++) {
+        const sx = cx + (tx - cx - dx) / bred;
+        let c = L.get(sx, sy); if (c < 0) continue;
+        if (o.ton && (somRamp(P, c, 'barr') || somRamp(P, c, 'oliv'))) c = c - tonAv(c) + Math.max(0, Math.min(3, tonAv(c) + o.ton));
+        if (o.farg) { const n = o.farg(c, tx, ty, upp / h); if (n === null) continue; c = n; }
+        B.satt(tx, ty, c);
+      }
+    }
+  }
+  const skugga = (B, cx, by, w) => { for (let dy = -2; dy <= 2; dy++) for (let dx = -1; dx <= w * 2; dx++) if ((dx - w * 0.7) ** 2 / (w * w + 1) + dy * dy / 5 < 1) B.morka(cx + dx, by + dy); };
+
+  // ---------- varianter ----------
+  // niva 0: bara storleken, bredden och tonen; 1: dessutom lutning och kala nedre grenar (granen) eller en krona åt
+  // ena sidan (björken); 2: dessutom dubbeltopp, krokig topp, två eller tre stammar och hängande grenar.
+  function granVariant(B, cx, by, h, niva, s) {
+    const r = k => hash(s, k, 640 + niva);
+    const o = { bred: 0.82 + r(1) * 0.36, hog: 0.88 + r(2) * 0.24, ton: r(3) < 0.25 ? -1 : r(3) > 0.8 ? 1 : 0 };
+    if (niva >= 1) o.lut = (r(4) - 0.5) * (niva === 2 ? 9 : 5);
+    const kal = niva >= 1 && r(5) < 0.45 ? 0.12 + r(6) * 0.2 : 0; // de nedersta grenarna har dött
+    const dubbel = niva === 2 && r(7) < 0.3;
+    skugga(B, cx, by, Math.round(h * 0.28 * o.bred));
+    const L = lager(B, D => {
+      gran(D, cx, by, h, 3, 0, s);
+      if (dubbel) gran(D, cx + 2, by - Math.round(h * 0.62), Math.round(h * 0.4), 3, 0, s + 7); // en andra topp
+    });
+    if (kal) { // de döda grenarna: korta grå grenar där barren fallit
+      o.farg = (c, x, y, f) => f < kal && !somRamp(B.P, c, 'jord') ? null : c;
+      const P = B.P, n = Math.round(h * kal / 3);
+      for (let k = 0; k < n; k++) for (const sida of [-1, 1]) { const y = by - Math.round(h * 0.12) - k * 3, l = Math.round(h * 0.2 * (0.6 + hash(k, sida, s) * 0.6)); for (let i = 1; i <= l; i++) B.satt(cx + sida * i, y + Math.round(i * i / (l * 2.5)), i > l - 2 ? I(P, 'jord', 1) : I(P, 'kol', 3)); }
+    }
+    utLager(B, L, cx, by, o);
+  }
+  function bjorkVariant(B, cx, by, h, niva, s) {
+    const r = k => hash(s, k, 660 + niva);
+    const o = { bred: 0.82 + r(1) * 0.4, hog: 0.88 + r(2) * 0.24, ton: r(3) < 0.25 ? -1 : r(3) > 0.8 ? 1 : 0 };
+    if (niva >= 1) o.lut = (r(4) - 0.5) * (niva === 2 ? 14 : 8); // kronan åt ena sidan, mot ljuset
+    const stammar = niva === 2 && r(5) < 0.4 ? (r(6) < 0.5 ? 2 : 3) : 1;
+    skugga(B, cx, by, Math.round(h * 0.3 * o.bred));
+    const L = lager(B, D => {
+      if (stammar === 1) bjork(D, cx, by, h, 3, 'sommar', s);
+      else for (let k = stammar - 1; k >= 0; k--) bjork(D, cx + (k - (stammar - 1) / 2) * Math.max(3, h * 0.12), by, Math.round(h * (1 - k * 0.14)), 3, 'sommar', s + k * 5);
+    });
+    if (niva === 2 && r(8) < 0.5) { // hängande grenar: kronan dras ut nedåt i strängar
+      const P = B.P;
+      for (const [k, c] of [...L.M]) { const [x, y] = k.split(',').map(Number); if (y > L.y1 - (L.y1 - L.y0) * 0.45 && somRamp(P, c, 'oliv') && hash(x, 0, s + 671) < 0.35 && !L.M.has(x + ',' + (y + 1))) for (let j = 1; j <= 2 + Math.floor(hash(x, 1, s) * 4); j++) L.M.set(x + ',' + (y + j), I(P, 'oliv', j > 2 ? 0 : 1)); }
+      L.y1 += 6;
+    }
+    utLager(B, L, cx, by, o);
+  }
+  function lund(B, sort, niva) { // en dunge där inget träd är likt ett annat
+    const P = B.P;
+    fyll(B, (x, y) => grasRen(x, y, P)); tuvorRen(B, () => true, 0.6);
+    const ting = [];
+    const pl = [[16, 62, 30], [52, 70, 38], [92, 58, 28], [128, 74, 44], [170, 64, 32], [206, 76, 40], [244, 60, 30], [284, 72, 42], [30, 128, 46], [74, 134, 34], [118, 126, 30], [160, 138, 48], [204, 130, 36], [248, 136, 44], [296, 128, 32]];
+    pl.forEach(([x, y, h], i) => ting.push([y, () => sort === 'gran' ? granVariant(B, x, y, h, niva, i * 17 + 3) : bjorkVariant(B, x, y, Math.round(h * 0.9), niva, i * 17 + 3)]));
+    ting.push([100, () => spelare(B, 140, 100, 1, 'oliv')]);
+    ting.sort((a, b) => a[0] - b[0]).forEach(t => t[1]());
+  }
+
+  // ---------- efter en skogsbrand ----------
+  // marken: svart och grå aska i hela fläckar, förkolnade kvistar som korta streck, och bränt gult gräs i kanten
+  function brandMark(B, v) {
+    const P = B.P;
+    const brant = (x, y) => (x - 70) * 0.9 + (vn(x, y, 40, 680) - 0.5) * 90 + (vn(x, y, 9, 681) - 0.5) * 10; // över 0 är bränt
+    fyll(B, (x, y) => {
+      const b = brant(x, y);
+      if (b < -10) return grasRen(x, y, P);
+      if (b < 0) return flack(x, y, 10, 682, 0.5) ? I(P, 'senap', 0) : I(P, 'jord', 1); // svett gräs
+      if (vagstreck(x, y, 683, 0.012)) return I(P, 'kol', 0); // förkolnade kvistar
+      if (v === 2 && hash(x, y, 684) < 0.0015 && b > 30) return I(P, 'rost', 3); // glöd
+      return flack(x, y, 18, 685, 0.6) ? I(P, 'ben', 0) : flack(x, y, 26, 686, 0.6) ? I(P, 'kol', 2) : I(P, 'kol', 3); // grå aska och svart jord
+    });
+    return brant;
+  }
+  const svart = (P, c) => I(P, 'kol', tonAv(c) >= 3 ? 1 : 0);
+  function brandGran(B, cx, by, h, v, s) {
+    const P = B.P;
+    if (v === 0) { const L = lager(B, D => torraka(D, cx, by, h)); utLager(B, L, cx, by, { farg: c => svart(P, c) }); return; } // helt svart, alla grenar kvar
+    if (v === 1) { // svart nedtill, bruna döda barr kvar upptill
+      const L = lager(B, D => gran(D, cx, by, h, 3, 0, s)), T = lager(B, D => torraka(D, cx, by, h));
+      utLager(B, T, cx, by, { farg: (c, x, y, f) => f > 0.55 ? null : svart(P, c) });
+      utLager(B, L, cx, by, { farg: (c, x, y, f) => f < 0.5 ? (somRamp(P, c, 'jord') ? I(P, 'kol', 1) : null) : f < 0.6 ? (hash(x, y, 690) < 0.5 ? I(P, 'kol', 1) : I(P, 'jord', 0)) : somRamp(P, c, 'barr') ? I(P, tonAv(c) > 1 ? 'rost' : 'jord', tonAv(c) > 2 ? 1 : 0) : I(P, 'kol', 1) });
+      return;
+    }
+    // avbruten och svart, med glöd kvar vid foten
+    const kvar = 0.4 + hash(cx, s, 691) * 0.25, L = lager(B, D => torraka(D, cx, by, h));
+    utLager(B, L, cx, by, { farg: (c, x, y, f) => f > kvar + (hash(x, 0, 692) - 0.5) * 0.08 ? null : svart(P, c) });
+    B.satt(cx, by - Math.round(h * kvar) - 1, I(P, 'kol', 0));
+    for (const [dx, dy] of [[-1, 0], [1, -1], [0, -3]]) B.satt(cx + dx, by + dy, I(P, dy ? 'rost' : 'senap', 3));
+  }
+  function brandBjork(B, cx, by, h, v, s) {
+    const P = B.P;
+    if (v === 0) { const L = lager(B, D => torrBjork(D, cx, by, h)); utLager(B, L, cx, by, { farg: c => svart(P, c) }); return; }
+    if (v === 1) { // stammen svart nedtill och vit upptill, några bruna blad kvar
+      const T = lager(B, D => torrBjork(D, cx, by, h)), L = lager(B, D => bjork(D, cx, by, h, 3, 'sommar', s));
+      utLager(B, T, cx, by, { farg: (c, x, y, f) => f < 0.45 ? svart(P, c) : c });
+      utLager(B, L, cx, by, { farg: (c, x, y) => somRamp(P, c, 'oliv') && vn(x, y, 4, 693 + s) > 0.55 ? I(P, 'jord', tonAv(c) > 2 ? 2 : tonAv(c) > 1 ? 1 : 0) : null });
+      return;
+    }
+    const kvar = 0.45 + hash(cx, s, 694) * 0.2, L = lager(B, D => torrBjork(D, cx, by, h));
+    utLager(B, L, cx, by, { farg: (c, x, y, f) => f > kvar ? null : svart(P, c) });
+    for (const [dx, dy] of [[1, 0], [-1, -2]]) B.satt(cx + dx, by + dy, I(P, 'rost', 3));
+  }
+  function brand(B, v) {
+    const brant = brandMark(B, v), ting = [];
+    for (let cy = 0; cy < 8; cy++) for (let cx = 0; cx < 11; cx++) {
+      const x = cx * 30 + Math.floor(hash(cx, cy, 695) * 18), y = 30 + cy * 24 + Math.floor(hash(cx, cy, 696) * 10), b = brant(x, y);
+      if (hash(cx, cy, 697) > 0.55 || y > 196) continue;
+      const h = 26 + Math.floor(hash(cx, cy, 698) * 22), bj = hash(cx, cy, 699) < 0.35, s = cx * 11 + cy;
+      if (b > 4) ting.push([y, () => bj ? brandBjork(B, x, y, Math.round(h * 0.85), v, s) : brandGran(B, x, y, h, v, s)]);
+      else if (b < -14) ting.push([y, () => bj ? bjorkVariant(B, x, y, Math.round(h * 0.85), 0, s) : granVariant(B, x, y, h, 0, s)]);
+    }
+    ting.push([150, () => spelare(B, 190, 150, 1, 'oliv')]);
+    ting.sort((a, b) => a[0] - b[0]).forEach(t => t[1]());
+  }
+
+  // ---------- stubbar ----------
+  // d = stammens bredd. Granen har brun bark, björken vit med svarta märken; snittytan är gråbrun med årsringar
+  function stubbe(B, cx, by, d, sort, v) {
+    const P = B.P, r = d / 2, hh = Math.max(2, Math.round(d * (v === 1 ? 0.7 : 0.5))), ey = Math.max(1, d * 0.28);
+    for (let dx = -1; dx <= d + 1; dx++) B.morka(cx - r + dx + 2, by + 1);
+    const bark = (x, y, sida) => sort === 'gran' ? I(P, 'jord', sida < -0.3 ? 2 : sida > 0.4 ? 0 : 1) : hash(Math.floor(y / 2), x, 700) < 0.2 ? I(P, 'kol', 1) : I(P, 'ben', sida < -0.3 ? 3 : sida > 0.4 ? 1 : 2);
+    for (let x = Math.floor(cx - r); x <= Math.ceil(cx + r); x++) { // sidan med barken
+      const rel = (x - cx) / (r + 0.01); if (Math.abs(rel) > 1) continue;
+      const topp = by - hh - Math.round(ey * Math.sqrt(1 - rel * rel)) * 0 , botten = by + Math.round(ey * 0.6 * Math.sqrt(1 - rel * rel));
+      const sned = v === 1 ? Math.round(rel * d * 0.35) : 0; // yxhugget: snittytan lutar
+      for (let y = by - hh + sned; y <= botten; y++) B.satt(x, y, bark(x, y, rel));
+      if (sort === 'gran' && hash(x, by, 701) < 0.3) B.satt(x, botten, I(P, 'jord', 0));
+    }
+    // snittytan: en ellips ovanpå
+    for (let y = -Math.ceil(ey); y <= Math.ceil(ey); y++) for (let x = Math.floor(-r); x <= Math.ceil(r); x++) {
+      const e = (x / (r + 0.01)) ** 2 + (y / ey) ** 2; if (e > 1) continue;
+      const sned = v === 1 ? Math.round(x / (r + 0.01) * d * 0.35) : 0;
+      const ring = Math.sqrt((x / (r + 0.01)) ** 2 + (y / ey) ** 2);
+      let c = e > 0.75 ? (sort === 'gran' ? I(P, 'jord', 1) : I(P, 'ben', 1)) : (Math.round(ring * Math.max(2, d / 3)) % 2 ? I(P, 'jord', 2) : I(P, 'jord', 3));
+      if (v === 2) c = e > 0.75 ? I(P, 'oliv', 1) : (Math.round(ring * Math.max(2, d / 3)) % 2 ? I(P, 'kol', 3) : I(P, 'ben', 0)); // gammal: grå, mossa i kanten
+      B.satt(cx + x, by - hh + y + sned, c);
+    }
+    if (v === 1) { // flisor från yxan
+      for (const [dx, dy] of [[r + 2, 1], [r + 4, 0], [-r - 3, 1]]) { B.satt(cx + dx, by + dy, I(P, 'jord', 3)); B.satt(cx + dx + 1, by + dy, I(P, 'jord', 2)); }
+    }
+    if (v === 2 && d > 4) { B.satt(cx - r + 1, by - 1, I(P, 'oliv', 2)); B.satt(cx - r + 1, by, I(P, 'oliv', 1)); B.satt(cx + r - 1, by - hh + 1, I(P, 'oliv', 2)); } // mossa
+  }
+  const STUBBAR = [['ungträd', 3], ['vuxet', 5], ['gammalt', 8], ['jätteträd', 12]];
+  function stubbar(B, v) {
+    const P = B.P;
+    fyll(B, (x, y) => grasRen(x, y, P)); tuvorRen(B, () => true, 0.5);
+    STUBBAR.forEach(([, d], i) => { stubbe(B, 30 + i * 38, 50, d, 'gran', v); stubbe(B, 30 + i * 38, 100, d, 'bjork', v); stubbe(B, 220 + (i % 2) * 50, 50 + Math.floor(i / 2) * 50, d, i % 2 ? 'bjork' : 'gran', v); });
+    folk(B, [[180, 100, 0]]);
+  }
+
+  // ---------- fallna träd: samma bild om det huggits ner eller blåst omkull ----------
+  // Trädet ligger med foten vid stubben och toppen åt sidan. v 0: rakt åt sidan; 1: åt sidan och tillplattat (kronan
+  // pressad mot marken, lägre och bredare); 2: fallet snett bort från den som tittar (kortare, toppen längre bort)
+  function fallet(B, cx, by, h, sort, v, at, s) {
+    const P = B.P, L = lager(B, D => sort === 'gran' ? gran(D, cx, by, h, 3, 0, s) : bjork(D, cx, by, h, 3, 'sommar', s));
+    if (v === 2) { // bort från betraktaren: trädet blir kort i bilden, toppen längre bort och lite åt sidan
+      skugga(B, cx, by - Math.round(h * 0.2), Math.round(h * 0.25));
+      utLager(B, L, cx, by, { hog: 0.42, bred: 1.05, lut: at * 6 });
+      return;
+    }
+    const sq = v === 1 ? 0.7 : 1; // hur mycket kronans bredd trycks ihop när den ligger på marken
+    const ut = [];
+    for (let ty = by - Math.ceil(h * 0.35 * sq) - 2; ty <= by + Math.ceil(h * 0.35 * sq) + 2; ty++) for (let k = 0; k <= h + 2; k++) {
+      const c = L.get(cx - at * (ty - by) / sq, by - k); if (c >= 0) ut.push([cx + at * (k + 1), ty, c]);
+    }
+    const har = new Set(ut.map(([x, y]) => x + ',' + y));
+    for (const [x, y] of ut) if (!har.has(x + ',' + (y + 2))) { B.morka(x, y + 2); B.morka(x + 1, y + 2); } // skuggan under stocken och kronan
+    for (const [x, y, c] of ut) B.satt(x, y, c);
+  }
+  function fallna(B, v) {
+    const P = B.P;
+    fyll(B, (x, y) => grasRen(x, y, P)); tuvorRen(B, () => true, 0.6);
+    const ting = [];
+    ting.push([70, () => { stubbe(B, 40, 70, 7, 'gran', 0); fallet(B, 44, 66, 46, 'gran', v, 1, 2); }]);
+    ting.push([150, () => { stubbe(B, 170, 150, 5, 'bjork', 0); fallet(B, 174, 147, 40, 'bjork', v, 1, 4); }]);
+    ting.push([120, () => { stubbe(B, 300, 120, 4, 'gran', 0); fallet(B, 296, 117, 26, 'gran', v, -1, 5); }]);
+    ting.push([60, () => granVariant(B, 150, 60, 34, 0, 9)]);
+    ting.push([104, () => fram(B, 120, 104)]);
+    ting.push([176, () => spelare(B, 250, 176, 1, 'oliv')]);
+    ting.sort((a, b) => a[0] - b[0]).forEach(t => t[1]());
+  }
+
   VAL.push(
-    { id: 'm_gras', stor: true, namn: 'Gräset', typ: 'janej', vad: T + '5.1.3.1: gräset du valde (version 2), ritat renare efter din kommentar: inget raster mellan fälten och nästan inga lösa korn. Fälten har en ren kant, och det som syns i gräset är hela saker: klungor av högt gräs, tuvor och en och annan vit blomma. Din kommentar förra gången (om alla korten): ”mycket är lite för smutsigt eller pixligt eller för prickigt”.',
-      versioner: [{ text: 'Version 1: gräset renare.', ...SCEN(W, H, B => { fyll(B, (x, y) => grasRen(x, y, B.P)); tuvorRen(B, () => true); folk(B, [[70, 70, 0], [200, 120, 1], [250, 160, 0]]); }) }] },
+    { id: 'm_gras', stor: true, namn: 'Gräset', typ: 'tre', vad: T + '5.1.3.1: gräset i tre steg, så att du kan välja hur mycket som ska synas i det: det du valde först, det renare och mellantinget. Din kommentar förra gången: ”Gräset ser konstigt ut. jag gillade det förra bättre”.',
+      versioner: [
+        { text: 'Det du valde först (version 2 i bildstil v111): korn och raster mellan fälten.', ...SCEN(W, H, B => { fyll(B, (x, y) => grasPunkt(x, y, B.P, 1)); tuvor(B, 1, () => true); folk(B, [[70, 70, 0], [200, 120, 1], [250, 160, 0]]); }) },
+        { text: 'Det renare (bildstil v112): hela fält och nästan inga korn.', ...SCEN(W, H, B => { fyll(B, (x, y) => grasRen(x, y, B.P, 0)); tuvorRen(B, () => true, 1, 0); folk(B, [[70, 70, 0], [200, 120, 1], [250, 160, 0]]); }) },
+        { text: 'Mellantinget (bildstil v114): hela fält med korta strån.', ...SCEN(W, H, B => { fyll(B, (x, y) => grasRen(x, y, B.P)); tuvorRen(B, () => true); folk(B, [[70, 70, 0], [200, 120, 1], [250, 160, 0]]); }) },
+      ] },
     { id: 'm_stig', stor: true, namn: 'Stigarna', typ: 'janej', vad: T + '5.1.3.1: stigarna du valde (version 1), renare: jämn bar jord med en ren kant och en mörkare rand av nött gräs längs kanten, några stenar, och gräset som ovan. Din kommentar förra gången: ”Men bilden ser för prickig ut”.',
       versioner: [{ text: 'Version 1: stigarna renare.', ...SCEN(W, H, B => stigarRen(B)) }] },
     { id: 'm_sno', stor: true, namn: 'Snön', typ: 'janej', vad: T + '5.1.13: drivorna du valde (version 2), renare: skuggorna på läsidan är hela ytor i stället för prickar, isen är slät med några raka sprickor, och stigen och skuggan under granarna är jämna. Din kommentar förra gången: ”Men bilden ser för prickig ut”.',
@@ -491,6 +701,36 @@
         { text: 'Som i moodboarden, som du gillade: djupt mörkt vatten, ljusare mot stranden, glitter i rader och en sandstrand.', ...SCEN(W, H, B => vatten(B, 0)) },
         { text: 'Bredare stenstrand, stenar som syns genom det grunda vattnet och vass i klungor.', ...SCEN(W, H, B => vatten(B, 1)) },
         { text: 'Mörkare vatten, en ljus rand där vattnet möter en smal lerig strand, och vass med kaveldun.', ...SCEN(W, H, B => vatten(B, 2)) },
+      ] },
+    { id: 'm_granvar', stor: true, namn: 'Granar som inte är lika', typ: 'tre', vad: T + '5.1.4: granen du sa ja till, men varje gran blir lite olik de andra, så att skogen inte ser ut som kopior. Samma ritning läggs ut bredare eller smalare, högre eller lägre och med ljusare eller mörkare barr. Välj hur stora skillnaderna ska vara.',
+      versioner: [
+        { text: 'Små skillnader: bara höjd, bredd och barrens ton.', ...SCEN(W, H, B => lund(B, 'gran', 0)) },
+        { text: 'Mer: dessutom lutning och kala nedre grenar på en del granar, där barren dött i skuggan.', ...SCEN(W, H, B => lund(B, 'gran', 1)) },
+        { text: 'Stora: dessutom kraftig lutning och dubbeltoppar.', ...SCEN(W, H, B => lund(B, 'gran', 2)) },
+      ] },
+    { id: 'm_bjorkvar', stor: true, namn: 'Björkar som inte är lika', typ: 'tre', vad: T + '5.1.4: björken du sa ja till, men varje björk blir lite olik de andra. Välj hur stora skillnaderna ska vara.',
+      versioner: [
+        { text: 'Små skillnader: bara höjd, bredd och lövens ton.', ...SCEN(W, H, B => lund(B, 'bjork', 0)) },
+        { text: 'Mer: dessutom lutande björkar och kronor åt ena sidan.', ...SCEN(W, H, B => lund(B, 'bjork', 1)) },
+        { text: 'Stora: dessutom björkar med två eller tre stammar och hängande grenar.', ...SCEN(W, H, B => lund(B, 'bjork', 2)) },
+      ] },
+    { id: 'm_brand', stor: true, namn: 'Skogen efter en brand', typ: 'tre', vad: T + '5.1.4: brända träd och bränd mark efter en skogsbrand (motgången brand). Till vänster står skogen kvar, sedan en rand av svett gräs och sedan svart och grå aska med förkolnade kvistar.',
+      versioner: [
+        { text: 'Helt svarta torrakor och björkar, med alla grenar kvar.', ...SCEN(W, H, B => brand(B, 0)) },
+        { text: 'Svarta nedtill, med bruna döda barr och löv kvar upptill där elden inte nådde.', ...SCEN(W, H, B => brand(B, 1)) },
+        { text: 'Avbrutna svarta stammar med glöd kvar vid foten och i askan.', ...SCEN(W, H, B => brand(B, 2)) },
+      ] },
+    { id: 'm_stubbe', stor: true, namn: 'Stubbar', typ: 'tre', vad: T + '5.1.4: stubbar efter granar (överst) och björkar (nedanför), från vänster efter ungträd, vuxet, gammalt och jätteträd, med en människa för storleken. Snittytan är gråbrun med årsringar.',
+      versioner: [
+        { text: 'Rakt avsågad, med årsringar.', ...SCEN(W, 130, B => stubbar(B, 0)) },
+        { text: 'Yxhuggen: snittytan lutar och flisor ligger runt.', ...SCEN(W, 130, B => stubbar(B, 1)) },
+        { text: 'Gammal: grå snittyta och mossa.', ...SCEN(W, 130, B => stubbar(B, 2)) },
+      ] },
+    { id: 'm_falld', stor: true, namn: 'Fallna träd', typ: 'tre', vad: T + '5.1.4: ett fallet träd ser likadant ut om det huggits ner eller blåst omkull i en storm: stubben står kvar och trädet ligger med foten vid stubben.',
+      versioner: [
+        { text: 'Liggande rakt åt sidan, hela kronan syns.', ...SCEN(W, H, B => fallna(B, 0)) },
+        { text: 'Åt sidan och tillplattat: kronan pressad mot marken.', ...SCEN(W, H, B => fallna(B, 1)) },
+        { text: 'Fallet bort från den som tittar: trädet ser kort ut och toppen ligger längre bort.', ...SCEN(W, H, B => fallna(B, 2)) },
       ] },
   );
 })();
