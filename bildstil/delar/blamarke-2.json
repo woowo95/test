@@ -1,21 +1,41 @@
 {
  "id": "blamarke-2",
- "ritad": 1,
- "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 3. Den blandar skiffer och mörk rost jämnt, är mörkast i mitten (r och Q) och har en ojämn, kornig kant av R och hud1 som blir glesare utåt. Därför ser den matt ut och mer som ett blåmärke på alla tre ansiktena. Version 1 har en hel ring av ljusare skiffer2 som ger en blå gloria eller måltavla och ser nästan glänsande ut. Version 2 sitter lite för lågt och åt sidan och har en tunnare, mer prickig mitt. Ändring: på nedersta raden flyttade jag den ensamma hudpunkten (b), så att kanten hänger ihop med formen och ingen lös prick blir kvar. Delen håller sig inom rutan (x -12 till -4, y 3 till 9) på kinden.",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Valde version 1. Den har en jämn, nästan rund 9 × 9-form, ligger stilla på kinden på alla tre ansiktena och har samma storlek på detaljerna som förebilden. Version 2 och 3 är kantigare och mer sneda, vilket går emot Björns önskan om något mer runt. Ändringar: Jag gjorde fläcken rundare genom att bryta upp den jämna R-ringen med inslag av hud (b) i kanten, så att randen blir glesare och mjukare och inte ser ut som en fyrkantig ram. Det rutiga mönstret av r och Q i mitten bytte jag mot små klungor (rr, QQ), så att det blir matt korn i stället för ensamma prickar och tavelmönster. Den mörkaste kärnan med rost0 och skiffer0 ligger samlad i mitten. Däromkring ligger s och Q, och ytterst glesnar det ut i R och b. Läget är detsamma (x -12 till -4, y 2 till 10), så fläcken håller sig från näsryggen och inom rutan.",
  "bilder": {
   "standard": {
    "x": -12,
-   "y": 3,
+   "y": 2,
    "rader": [
-    "...bRRb..",
-    ".bRRsRbb.",
-    "bRsrQsRb.",
-    ".RQrrQsRb",
-    "bRsQrQsb.",
-    ".bRsRRb..",
-    "...bRbb.."
+    "..bbRRb..",
+    ".bRRsRRb.",
+    "bRsQQsRRb",
+    "RsQQrrQsR",
+    "RsQrrrQsR",
+    "RsrrQQrsb",
+    "bRsQssRRb",
+    ".bRRsRRb.",
+    "..bRRbb.."
    ]
+  }
+ },
+ "forra": {
+  "ritad": 1,
+  "bilder": {
+   "standard": {
+    "x": -12,
+    "y": 3,
+    "rader": [
+     "...bRRb..",
+     ".bRRsRbb.",
+     "bRsrQsRb.",
+     ".RQrrQsRb",
+     "bRsQrQsb.",
+     ".bRsRRb..",
+     "...bRbb.."
+    ]
+   }
   }
  }
 }

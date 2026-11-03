@@ -1,19 +1,35 @@
 {
  "id": "skon-kinder",
- "ritad": 1,
- "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Rosiga kinder",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "",
  "bilder": {
   "standard": {
-   "x": -12,
-   "y": 0,
+   "x": -11,
+   "y": 4,
    "rader": [
-    "..CC.............BB....",
-    ".CBBB............BBBA..",
-    "CBBsBB...........BBrAAA",
-    ".BBsB............ArAA..",
-    "..BB..............AA..."
+    "..DCD............DCD..",
+    ".DCBCD..........DCBCD.",
+    "DCBsBC..........CBsBCD",
+    ".CBsBD..........DBsBC.",
+    "..DCD............DCD.."
    ]
+  }
+ },
+ "forra": {
+  "ritad": 1,
+  "bilder": {
+   "standard": {
+    "x": -12,
+    "y": 0,
+    "rader": [
+     "..CC.............BB....",
+     ".CBBB............BBBA..",
+     "CBBsBB...........BBrAAA",
+     ".BBsB............ArAA..",
+     "..BB..............AA..."
+    ]
+   }
   }
  }
 }

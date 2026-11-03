@@ -1,0 +1,31 @@
+{
+ "kommando": "rita",
+ "args": [
+  "forband-kake=Björn sa nej utan kommentar. Min bedömning: banden går rakt upp längs kinderna som två stolpar och ser ut som en ställning runt ansiktet. Rita ett mjukt förband som går under hakan och upp över kinderna mot öronen, följer käkens rundning, och knyts eller slutar vid öronen; tunnare och tätt mot huden.",
+  "forband-oga=ögat som inte är förtäckt syns inte",
+  "blamarke-2=gör det mer runt",
+  "skon-glans=det ska inte lägga till hår. Det ska göra en glansig del i håret så det ser ut som att håret är rent och glänser i solen",
+  "skon-kinder=sätt dem lite längre ner, Gör det mer rosa.  och symmetriskt"
+ ],
+ "modell": "claude-opus-5-5",
+ "insats": "high",
+ "versioner": 3,
+ "uppskattat": {
+  "lag": 0.26,
+  "hog": 0.39
+ },
+ "dollar": 0.611,
+ "tokens": {
+  "in": 35383,
+  "ut": 51901,
+  "cacheLas": 22959,
+  "cacheSkriv": 7676
+ },
+ "rapport": [
+  "forband-kake: ritad, version 1 vald: Jag valde version 1. Den är smalast och ligger tätast mot huden: tre till fyra punkter breda band, ungefär som linjerna i förebildens huvudförband. Banden börjar vid öronen (y 0 till 4) och går lite brantare där. Sedan svänger de in över kinderna och möts i en rundad båge under hakan. Därför följer förbandet käkens rundning och ser inte ut som raka stolpar. Ljuset stämmer: vänster sida är ljusare (w och q) och höger sida mörkare (p och o). Undersidan under hakan är skuggad med p och o, och mitt i bågen finns ett ljusare band (w och q). Vid vänster öra sitter en liten knut med korta ändar, och på vänster kind finns en liten blodfläck i rost (s och r) som en klunga, inte som en ensam prick. Förbandet är symmetriskt kring mittlinjen (-14..-12 och 11..13) och håller sig inom rutan (x -16..15, y 0..18). Version 2 är bredare och har lösa punkter vid knuten. Version 3 blir för tjock och kantig nedtill. Jag har inte ändrat något, eftersom raderna redan stämmer med beskrivningen och reglerna.",
+  "forband-oga: ritad, version 1 vald: Jag valde version 1. Den hör bäst ihop med förebilden: bindan är lika tjock, är ljus (w/q) upptill och skuggas nedåt till p och o, och har en liten blodfläck i rost. Dynan ligger ungefär på x -9 till 0 och y -8 till 0 och täcker vänster öga. Bandet går snett upp åt höger ovanför höger ögonbryn (y -12 till -9), så det högra ögat syns, som Björn ville. Version 2 och 3 har ett tunnt band i trappsteg som inte stämmer med förebildens bredare linne, och i version 3 går dynan över mittlinjen vid brynet. Inga punkter är ändrade, eftersom delen redan håller sig inom rutan och bara använder tillåtna tecken.",
+  "blamarke-2: ritad, version 1 vald: Valde version 1. Den har en jämn, nästan rund 9 × 9-form, ligger stilla på kinden på alla tre ansiktena och har samma storlek på detaljerna som förebilden. Version 2 och 3 är kantigare och mer sneda, vilket går emot Björns önskan om något mer runt. Ändringar: Jag gjorde fläcken rundare genom att bryta upp den jämna R-ringen med inslag av hud (b) i kanten, så att randen blir glesare och mjukare och inte ser ut som en fyrkantig ram. Det rutiga mönstret av r och Q i mitten bytte jag mot små klungor (rr, QQ), så att det blir matt korn i stället för ensamma prickar och tavelmönster. Den mörkaste kärnan med rost0 och skiffer0 ligger samlad i mitten. Däromkring ligger s och Q, och ytterst glesnar det ut i R och b. Läget är detsamma (x -12 till -4, y 2 till 10), så fläcken håller sig från näsryggen och inom rutan.",
+  "skon-glans: ritad, version 2 vald: Jag valde version 2. Det avgör att den håller sig inne i hårmassan. Version 1 är för bred och kan sticka ut över hårkanten, och då ser den ut som extra hår. Version 3 börjar på y = -1 och riskerar att hamna ovanför hjässan, utanför håret. Version 2 är en smal, diagonal ljusstrimma i har2 och har3. Den följer luggens svep uppifrån vänster, där ljuset faller, och läser som rent hår som glänser i solen. Den lägger alltså inte till ny hårform. Övergången mellan g och h ligger i små klungor, som i förebildens fransar. Strimman har ingen kontur och inga ensamma prickar. Den ligger inom rutan och på vänster sida om mittlinjen, på samma plats i alla tre mallarna. Jag behöll punkterna oförändrade, eftersom formen och storleken redan stämmer med förebildens fina detaljnivå.",
+  "skon-kinder: ritad, version 2 vald"
+ ]
+}
