@@ -1,19 +1,21 @@
 {
  "id": "varg",
- "ritad": 1,
- "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Version 2 valdes eftersom den ligger närmast dagens bild. Den har två uppstående öron uppe till vänster och ett mörkt öga (kol0) bakom en svart nos. Nosen och bringan är ljusa (ben3) som W i originalet. Ryggen är ljusast i skiffer3, som H-raden i dag. Svansen sticker ut åt höger, och den ljusa buken ligger mellan två benpar i samma kolumner som originalets fram- och bakben (4–6 och 11–13). Konturen är skiffer0 runt pälsen, och ljuset faller uppifrån vänster: skiffer3 på ryggen och skiffer1 nere till höger. Den enda rostpunkten vid halsen läses som blod, vilket är en motiverad mättad ton som visar att vargen är fälld. Formen är 16 × 8 och läses tydligt på gräset och bredvid fiskköttet. Version 1 saknar öga och har vita tassar, och version 3 har tre benklumpar och en otydligare buk. Jag ändrade inget, eftersom bilden redan följer reglerna för kontur, ljus och storlek.",
- "w": 16,
- "h": 8,
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 1. Den ligger närmast dagens bild: samma spetsiga dubbelöron, svart nos och öga, ljus bringa och buklinje i ben (som dagens W), grå skifferkropp med ljusast rygg upptill (som dagens H) och mörkare skiffer1 nedtill och bakåt (som dagens g). Den har också fyra ben i två par och den yviga svansen bakåt. Kropp och huvud bildar en tydlig, långsträckt silhuett som fyller 22 × 10 punkter, och vargen blir därmed nästan lika lång som kartfiguren är hög, som Björn ville. Den lilla rostpunkten vid munnen är blod. Det mättade sparas alltså till det man ska se, och det passar förebildens sätt att framhäva bytet. Version 2 läses mer som en klumpig gnagare. I version 3 blir buken och benen röriga i liten storlek. Ljuset faller uppifrån vänster, och konturen är skiffer0 i stället för dagens kol0, som guiden kräver. Kol0 finns bara i nos och öga, som är svarta på riktigt. Jag ändrade inget, eftersom raderna redan följer storleken och paletten.",
+ "w": 22,
+ "h": 10,
  "rader": [
-  "..Q.Q...........",
-  ".QTQTQ..........",
-  "QTTkSSQQQQQQQ...",
-  "kwTSSTTTTTTTSQQQ",
-  "QwwSSTSTTSSSSRSQ",
-  ".QQwsSSSSSSRRQQ.",
-  "...QSQwwwwQRSQ..",
-  "...QRQQQQQ.QRQ.."
+  ".Q.Q..................",
+  "QTQTQ..QQQQQQQQQ......",
+  "QTTkSSQTTTTTTTTTTQ.QQQ",
+  "kwTSSTTTSTTTTTSTSSQQTQ",
+  "QwwSSTSSTSSSSSSSSRSTTQ",
+  ".QQwsSSSSSRSSSSRRRSSSQ",
+  "..QQwqwwqwqRRRRRQRRSQ.",
+  "...QRSQQQQQQQSRQQQRQ..",
+  "..QSQ........QSRQ.....",
+  ".QSQ..........QRQ....."
  ],
  "pal": {
   "Q": "#233035",
@@ -21,7 +23,21 @@
   "S": "#61767a",
   "T": "#8a9c9e",
   "k": "#24201d",
+  "q": "#bdb39b",
   "s": "#742a01",
   "w": "#dad0bb"
+ },
+ "forra": {
+  "ritad": 1,
+  "rader": [
+   "..Q.Q...........",
+   ".QTQTQ..........",
+   "QTTkSSQQQQQQQ...",
+   "kwTSSTTTTTTTSQQQ",
+   "QwwSSTSTTSSSSRSQ",
+   ".QQwsSSSSSSRRQQ.",
+   "...QSQwwwwQRSQ..",
+   "...QRQQQQQ.QRQ.."
+  ]
  }
 }

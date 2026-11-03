@@ -1,30 +1,32 @@
 {
  "id": "skor_vargskinn",
- "ritad": 2,
+ "ritad": 3,
  "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
- "om": "Jag valde version 2. Den ligger närmast dagens bild: den högra skon sitter högre upp och den vänstra lägre ner och lite större, båda med ljus benfärgad krage och grå skinnkropp med skifferkontur. Den har också renast toner och läses tydligast som två skor. Enligt Björns kommentar flyttade jag den högra skon en punkt åt höger, så att kolumn 5 (räknat från 1) nu är helt tom. Skorna rör inte längre vid varandra, inte ens snett i hörnen. Den högra skon blev tre punkter bred med kragen wqQ. Ljuset kommer fortfarande uppifrån till vänster: kragen w/q överst, T/S på skinnet och Q i konturen nere till höger.",
- "w": 8,
- "h": 4,
+ "om": "Jag valde version 1. Den följer dagens bild bäst: två skor från sidan som står isär, den bakre uppe till höger och den främre nere till vänster. Båda har ett ljust skaft av ben överst, grått skinn och en mörk sula av skiffer0. Den läses också som samma vargskinn som rocken. Ändringar för att tån och hälen ska synas, som Björn bad om: Den främre skon har nu ett smalt skaft (QTSQ) ovanför en bredare fot, så tån sticker ut ett steg åt höger. Hälen är rak bak till vänster. Sulan var kortare än foten och flyttad ett steg in; nu går den hela vägen under foten (QQQQQQ), så skon inte ser rund och fyrkantig ut. Den bakre skons sula var också indragen; nu sitter den under hela foten och ger en rak häl, medan foten sticker ut ett steg förbi skaftet som tå. Ljuset kommer uppifrån till vänster: skinnet går från skiffer3 till vänster till skiffer1 vid tån, med en ljus punkt mitt på foten som i förlagan. Konturen är skiffer0 och glansen på skaftet är ben3/ben2, aldrig ren vit.",
+ "w": 10,
+ "h": 5,
  "rader": [
-  ".....wqQ",
-  "QwqQ.TSQ",
-  "QTSQ.QQQ",
-  ".QQQ...."
+  ".....QwqQ.",
+  "QwqQ.QTSRQ",
+  "QTSQ.QQQQQ",
+  "QTSTRQ....",
+  "QQQQQQ...."
  ],
  "pal": {
   "Q": "#233035",
+  "R": "#3e5156",
   "S": "#61767a",
   "T": "#8a9c9e",
   "q": "#bdb39b",
   "w": "#dad0bb"
  },
  "forra": {
-  "ritad": 1,
+  "ritad": 2,
   "rader": [
-   "....wqQ.",
-   "QwqQTSSQ",
-   "QTSTSSRQ",
-   ".QQQQQQ."
+   ".....wqQ",
+   "QwqQ.TSQ",
+   "QTSQ.QQQ",
+   ".QQQ...."
   ]
  }
 }

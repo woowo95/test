@@ -1,21 +1,21 @@
 {
  "id": "lyra",
- "ritad": 2,
+ "ritad": 3,
  "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
- "om": "Jag valde version 1 eftersom den ligger närmast dagens bild. Den har en träram med ljus överliggare och en mörkare fot, sidostycken på båda sidor och strängar med luft emellan. Liksom i originalet sitter strängarna tätt mot vänster sidostycke och har en springa mot det högra. Version 2 och 3 lägger strängar eller senapsfärg direkt mot den högra ramen och tappar då det högra sidostycket. Version 3 har dessutom gult i foten, vilket originalet inte har. Ramen har jord0 som kontur, och ljuset kommer uppifrån vänster: jord3 till vänster och upptill, jord1 nere till höger. Strängarna går från senap3 upptill till senap2 nertill, så de syns tydligast, som det man ska se. Inom 8 punkters bredd får bara två strängar plats med luft mellan, och den bredare foten från originalet kan inte göras bredare än ramen. Därför behöll jag version 1 punkt för punkt. Den är redan ren och följer stilguiden.",
+ "om": "Jag valde version 1 eftersom den bäst följer Björns kommentar. Den har två armar som slutar i öppna horn och bara ett tvärstycke högst upp. Under tvärstycket är kroppen öppen ända ner till den rundade botten, så den läses som en lyra och inte som en träram runt hela bilden. Version 2 har en extra hel bjälke längst ner som stänger ramen igen. I version 3 ligger strängarna tätt intill varandra och flyter ihop till en klump i liten storlek. Version 1 behåller dagens bild: träkropp i jordtoner (H/G/F), mörk kontur i jord0 och ljusgula strängar (L, som dagens #d8b25f) med mellanrum, så att strängarna syns mot marken. Ljuset kommer uppifrån vänster: ljus vänsterarm i H och mörk högerarm i F. Strängarna går från L uppe till K nere. Det jag ändrade är botten, från EGHGFE till EHGHFE, så att den börjar ljusare till vänster och mörknar åt höger och stämmer med ljusriktningen. Jag behöll två strängar i stället för dagens tre. Med åtta punkters bredd skulle en tredje sträng hamna mot armen och smälta ihop med den.",
  "w": 8,
  "h": 10,
  "rader": [
-  ".EEEEEE.",
-  "EHHHGHGE",
-  "EGGFGFFE",
-  "EHL.L.GE",
-  "EHL.L.GE",
+  "EE....EE",
+  "EHE..EGE",
+  "EHEEEEGE",
+  "EHHGHGFE",
+  "EHL.L.FE",
+  "EHL.L.FE",
   "EGL.K.FE",
   "EGK.K.FE",
-  "EHHGHGGE",
-  "EGFGFFFE",
-  ".EEEEEE."
+  ".EHGHFE.",
+  "..EEEE.."
  ],
  "pal": {
   "E": "#3f2415",
@@ -26,16 +26,16 @@
   "L": "#d8b25f"
  },
  "forra": {
-  "ritad": 1,
+  "ritad": 2,
   "rader": [
    ".EEEEEE.",
+   "EHHHGHGE",
+   "EGGFGFFE",
+   "EHL.L.GE",
+   "EHL.L.GE",
+   "EGL.K.FE",
+   "EGK.K.FE",
    "EHHGHGGE",
-   "EGHGGFGE",
-   "EHLELELE",
-   "EHL.L.KE",
-   "EGL.K.KE",
-   "EGK.K.KE",
-   "EGKEKEKE",
    "EGFGFFFE",
    ".EEEEEE."
   ]

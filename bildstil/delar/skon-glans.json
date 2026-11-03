@@ -1,37 +1,40 @@
 {
  "id": "skon-glans",
- "ritad": 5,
+ "ritad": 6,
  "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
- "om": "Jag valde version 2. Den har två tydliga, böjda strimmor som följer hårets svep från vänster och ligger på den del av håret som vänder sig mot ljuset uppe till vänster. Den passar också bäst med förebildens fina linjer och små detaljer. Version 1 är för gles och tunn, och den smala strimman syntes inte. Version 3 har en övre strimma som slutar tvärt, och den undre strimman blir för kort. Efter Björns kommentar har jag gjort glansen tydligare. Kärnan i den översta strimman är bredare, med en rad på fem h-punkter, och båda strimmorna är nu två punkter tjocka i mitten. Varje strimma har en kant av g som går över i håret med korn i små klungor, så att glansen syns på alla hårfärger utan att bli ensamma prickar. Jag har flyttat lagret upp en rad (y=-2), så att den övre strimman ligger på hjässans ljusa sida och den undre slutar i luggen ovanför pannan. Allt ligger inom rutan, och jag har bara använt hårets toner g och h.",
+ "om": "Jag valde version 3. Den följer Björns önskan bäst: ett brett, skarpt och ljust glansband som en ring tvärs över hjässan, i mangastil. Bandet böjer sig med huvudets form och har en bena i mitten, så det ser ut som glans på håret och inte som en platt fläck. Version 1 är en stor, nästan slät klump av h som också täcker pannan. Version 2 börjar ovanför håret och är mest ett tunt streck. Ändringen: ljuset kommer uppifrån vänster, så jag lät bandets högra, nedre del gå över mer i g (rad 5–7). Då blir höger sida mörkare än vänster och skuggan följer formen. Delen håller sig inom rutan och använder bara de tillåtna hårtonerna g och h.",
  "bilder": {
   "standard": {
-   "x": -15,
-   "y": -2,
+   "x": -14,
+   "y": -1,
    "rader": [
-    "..........gghhg.",
-    ".......gghhhhhg.",
-    ".....ghhhhhgg...",
-    "...ghhhhgg...gg.",
-    "..ghhhg....ghhg.",
-    ".ghhg....ghhhg..",
-    ".ghg...ghhhg....",
-    ".gg...ghhg......",
-    "......gg........"
+    "......ghhhhh.ghhhhg.......",
+    "....ghhhhhhh.hhhhhhhg.....",
+    "...ghhhhhhhg.hhhhhhhhhg...",
+    "..ghhhhhgg...gghhhhhhhhg..",
+    ".ghhhhg.........gggghhhgg.",
+    ".ghhhg............ggghhgg.",
+    ".gghg...............gghgg.",
+    "..gg.................ggg.."
    ]
   }
  },
  "forra": {
-  "ritad": 4,
+  "ritad": 5,
   "bilder": {
    "standard": {
-    "x": -11,
-    "y": 0,
+    "x": -15,
+    "y": -2,
     "rader": [
-     "......gghhg.",
-     "....ghhhggg.",
-     "..gghhgg....",
-     ".ghhg.......",
-     ".gg........."
+     "..........gghhg.",
+     ".......gghhhhhg.",
+     ".....ghhhhhgg...",
+     "...ghhhhgg...gg.",
+     "..ghhhg....ghhg.",
+     ".ghhg....ghhhg..",
+     ".ghg...ghhhg....",
+     ".gg...ghhg......",
+     "......gg........"
     ]
    }
   }

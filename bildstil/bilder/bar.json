@@ -1,15 +1,15 @@
 {
  "id": "bar",
- "ritad": 1,
- "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 3. Den har kvar dagens form: en grön stjälk upptill och en klase runda bär under. Den följer också beskrivningen, med blåbär i skiffer, ett lingon i rost och ett blad i barr. Bären har ljuset uppe till vänster och sin mörkaste ton nere till höger som kontur. Glipan mellan bären håller dem isär, så klasen läses tydligt i liten storlek. Den dämpade blått och rosten passar förebildens dämpade ton, och den mättade rosten hamnar på det man ska se. Version 1 saknar lingon och blad. Version 2 saknar stjälken och blir en tät klump. Ändring: bladets vänstra punkt längst ner är nu barr3 (X) i stället för barr2, så att bladet också är ljusast till vänster och mörkare till höger.",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 3. Den ligger närmast dagens bild: en stjälk överst och tre blåbär i klase, två uppe och ett i mitten nedtill. Bladet syns som olivtoner runt det nedre bäret. Lingonet är borttaget som Björn ville, så det finns bara blåbär i skiffertoner och blad i oliv. Version 1 har en barrpunkt (W) i stjälken som bryter mot bladets toner. Version 2 har en udda, för mörk punkt nere till höger som gör silhuetten ojämn. Version 3 är jämnast och läses tydligast. Varje bär är ljust uppe till vänster (T, S) och mörkare nere till höger (R, Q), och skiffer0 fungerar som kontur. Bladets oliv i mellanton skiljer sig från gräset, så klasen syns på marken. Jag behövde inte ändra något: alla rader är högst 6 tecken, det är 4 rader och bara palettens tecken används.",
  "w": 6,
  "h": 4,
  "rader": [
   "...PO.",
-  "TS.Out",
-  "RQTSsr",
-  ".XRQW."
+  "TS.OTS",
+  "RQTSRQ",
+  ".PRQO."
  ],
  "pal": {
   "O": "#647025",
@@ -17,12 +17,15 @@
   "Q": "#233035",
   "R": "#3e5156",
   "S": "#61767a",
-  "T": "#8a9c9e",
-  "W": "#324726",
-  "X": "#505e3e",
-  "r": "#521100",
-  "s": "#742a01",
-  "t": "#a14808",
-  "u": "#bd753e"
+  "T": "#8a9c9e"
+ },
+ "forra": {
+  "ritad": 1,
+  "rader": [
+   "...PO.",
+   "TS.Out",
+   "RQTSsr",
+   ".XRQW."
+  ]
  }
 }

@@ -1,21 +1,32 @@
 {
  "id": "torrkott",
- "ritad": 1,
- "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 3. Den liknar dagens bild mest: tre förskjutna strimlor där den mittersta börjar en rad lägre, och ljusa feta fläckar högt upp i den vänstra strimlan och lågt ner i den mittersta, precis som i originalet. Ljuset faller från vänster, med den ljusare rosttonen till vänster och rost0 till höger och nederst som kontur. Rost och ben passar ihop med förebilden Fiskkött, och tre tydliga strimlor läses bra i liten storlek. En ändring: i dagens bild har den högra strimlan en varmbrun ljuspunkt (#9a6040), inte en benvit. Därför bytte jag dess q mot u (rost3). Nu finns bara två benljusa fläckar, som i originalet, och ytan blir mindre prickig.",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 2. Den läses tydligast som några tunna, sneda strimlor och har samma storlek och jord0-kontur som harköttet. Version 1 blir två runda klumpar. Version 3 har rost0 som kontur och mycket rost, så den ser ut som rått kött och inte som torkat. Ändring: i den översta strimlan byttes rost3 (u) mot ben0 (o), så att köttet blir mer gråbrunt och torrt. Den andra strimlan behåller en rost3-punkt, så att det fortfarande läses som mat. Ljuset kommer uppe till vänster (jord3) och det mörkaste ligger nere till höger (rost1, jord1).",
  "w": 8,
  "h": 4,
  "rader": [
-  "tr....ts",
-  "sr.tr.sr",
-  "qs.sr.ur",
-  "rr.qr.rr"
+  ".EEEE...",
+  "EHoGsEE.",
+  "EGsEHuGE",
+  ".EE.EsFE"
  ],
  "pal": {
-  "q": "#bdb39b",
-  "r": "#521100",
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "o": "#7e7362",
   "s": "#742a01",
-  "t": "#a14808",
   "u": "#bd753e"
+ },
+ "forra": {
+  "ritad": 1,
+  "rader": [
+   "tr....ts",
+   "sr.tr.sr",
+   "qs.sr.ur",
+   "rr.qr.rr"
+  ]
  }
 }
