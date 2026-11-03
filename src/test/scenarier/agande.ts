@@ -1350,7 +1350,12 @@ SCENARIER.rovare = {
     const tl = (['liten', 'mellan', 'stor'] as const).map(k => {
       const q = cloneState(bas); const r = SIM.skickaRovare(q, SIM.ROVARFLOCK[k]), r2 = SIM.skickaRovare(q, 2);
       const rad = q.log.find(e => e.text.startsWith('Testläget:'))?.text ?? ''; tlRad = rad; tlSkal = r2.text;
-      return r.ok && q.rovare?.folk.length === SIM.ROVARFLOCK[k] && q.rovare.gor === 'kommer' && /från (norr|söder|öster|väster|nord|syd)/.test(rad) && !r2.ok && !!r2.text && !!SIM.rovarHinder(q) ? SIM.ROVARFLOCK[k] : 0;
+      // steg 4.5.7.10: flocken dyker upp ungefär ROVARE.testNara rutor från elden, på land och utanför husen
+      const f = q.rovare, e = SIM.eldPlats(q), d = f ? Math.hypot(f.x - e.x - 0.5, f.y - e.y - 0.5) : 0, vt = SIM.vattenNu(q);
+      const nara = !!f && Math.abs(d - SIM.ROVARE.testNara) <= 7 && vt[Math.floor(f.y) * SIM.W + Math.floor(f.x)] !== SIM.T.Vatten && !SIM.bitAt(q, f.x, f.y);
+      const a = cloneState(q); for (let i = 0; i < 12 && a.rovare?.gor === 'kommer'; i++) SIM.rovarSteg(a, BEAT); // en timme i spelet, slag för slag
+      if (a.rovare?.gor === 'kommer') return 0; // den har inte nått byn på en timme
+      return r.ok && nara && q.rovare?.folk.length === SIM.ROVARFLOCK[k] && q.rovare.gor === 'kommer' && /dyker upp \d+ rutor .+ om elden och går till anfall/.test(rad) && !r2.ok && !!r2.text && !!SIM.rovarHinder(q) ? SIM.ROVARFLOCK[k] : 0;
     });
     const th = cloneState(bas); for (const c of SIM.klanerOf(th)) c.inst = -60;
     const th1 = SIM.skickaHandlare(th), th2 = SIM.skickaHandlare(th);
@@ -1396,7 +1401,7 @@ SCENARIER.rovare = {
     // en ny flock kommer inte förrän vilan är slut
     const vila = (d.rovarVila ?? 0) > d.now;
     return [
-      [`testläget skickar en liten, mellanstor och stor flock (${tl.join(', ')} rövare) direkt mot byn och en handlare, med en rad i Händelser (${tlRad}) och ett skäl när det inte går (${tlSkal})`, tl[0] > 0 && tl[0] < tl[1] && tl[1] < tl[2] && testHandlare],
+      [`testläget skickar en liten, mellanstor och stor flock (${tl.join(', ')} rövare) ungefär ${SIM.ROVARE.testNara} rutor från elden och når byn inom en timme (steg 4.5.7.10), och en handlare, med en rad i Händelser (${tlRad}) och ett skäl när det inte går (${tlSkal})`, tl[0] > 0 && tl[0] < tl[1] && tl[1] < tl[2] && testHandlare],
       ['en ny och fattig by lockar inga rövare', fattig],
       ['en rik by lockar rövare', rik],
       ['försvaret räknas emot rikedomen', forsvar],

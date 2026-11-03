@@ -7,6 +7,7 @@ import { eldPlats, getMap, vaderstreck } from './karta';
 import { Klan, andraInst, klanById, klanerOf } from './klaner';
 import { addTo, amountOf, avbryt, zoneOf } from './lager';
 import { die } from './liv';
+import { bitAt } from './byggnad';
 import { larma } from './rykten';
 import { SAKER, SAK_LIST } from './saker';
 import { vattenNu } from './sjo';
@@ -54,6 +55,7 @@ export const ROVARE = balans('rovare', {
   tar: 4, // så många saker tar varje rövare som står kvar
   styrka: [8, 14], mod: [8, 15], uthallighet: [9, 14], smidighet: [8, 14], skicklighet: [6, 11], // rövarnas kroppar (lägst, högst)
   fiende: 15, // när byn dödar rövare blir klanen så här mycket ovänligare för var och en
+  testNara: 12, // i testläget dyker flocken upp så här många rutor från elden (steg 4.5.7.10)
 });
 
 // rövarnas vapen (ett slumpas för var och en)
@@ -76,26 +78,28 @@ export function forsvaret(s: State) {
 // hur mycket byn lockar rövare (0–1): rikedomen minus försvaret
 export const lockar = (s: State) => clamp((rikedom(s) - forsvaret(s) - ROVARE.rikFran) / ROVARE.rikSpann, 0, 1);
 
-// testläget (steg 4.5.4.4): en liten, mellanstor eller stor flock kommer nu (så många rövare). Flocken samlas inte i kanten
-// utan går direkt mot byn, och en rad i Händelser säger varifrån (steg 4.5.6.4). Svarar med raden, eller skälet till att
-// ingen flock kan komma just nu (rovarHinder)
+// testläget (steg 4.5.4.4): en liten, mellanstor eller stor flock kommer nu (så många rövare). Flocken dyker upp en bit
+// utanför byn, ungefär ROVARE.testNara rutor från elden, och går direkt till anfall utan att vänta på mörkret (steg
+// 4.5.7.10); en rad i Händelser säger var (steg 4.5.6.4). Svarar med raden, eller skälet till att ingen flock kan komma
+// just nu (rovarHinder)
 export const ROVARFLOCK = { liten: ROVARE.antal[0], mellan: ROVARE.antal[1], stor: 2 * ROVARE.antal[1] } as const;
 export const rovarHinder = (s: State) => s.rovare ? 'Det finns redan en rövarflock vid byn' : undefined;
 export function skickaRovare(s: State, n: number): { ok: boolean; text: string } {
   const h = rovarHinder(s);
   if (h) return { ok: false, text: h };
   rovarnaKommer(s, n, true);
-  const f = s.rovare!, text = `Testläget: ${n} rövare kommer från ${vaderstreck(s, f.x, f.y)} och går direkt mot byn.`;
+  const f = s.rovare!, e = eldPlats(s), d = Math.round(Math.hypot(f.x - e.x - 0.5, f.y - e.y - 0.5));
+  const text = `Testläget: ${n} rövare dyker upp ${d} rutor ${vaderstreck(s, f.x, f.y)} om elden och går till anfall.`;
   log(s, text, 'world');
   return { ok: true, text };
 }
-// en flock kommer till en punkt i kanten som inte är vatten. tvinga = ett scenario eller testläget (antalet); direkt = flocken
-// samlas inte i kanten först (testläget)
+// en flock kommer till en punkt i kanten som inte är vatten. tvinga = ett scenario eller testläget (antalet); direkt = testläget:
+// flocken dyker upp nära byn (narByn) och samlas inte först
 export function rovarnaKommer(s: State, tvinga?: number, direkt?: boolean) {
   if (!tvinga && (s.rovare || (s.rovarVila ?? 0) > s.now || rnd(s, 'rovare') >= ROVARE.kommer * lockar(s))) return;
-  const m = getMap(s.seed);
-  let x = 0, y = 0;
-  for (let i = 0; i < 20; i++) {
+  const m = getMap(s.seed), nara = direkt ? narByn(s) : undefined;
+  let x = nara?.x ?? 0, y = nara?.y ?? 0;
+  for (let i = 0; !nara && i < 20; i++) {
     const sida = Math.floor(rnd(s, 'rovare') * 4), l = rnd(s, 'rovare');
     x = sida === 0 ? 0.5 : sida === 1 ? W - 0.5 : l * W; y = sida === 2 ? 0.5 : sida === 3 ? H - 0.5 : l * H;
     if (m.tiles[Math.floor(y) * W + Math.floor(x)] !== T.Vatten) break;
@@ -115,6 +119,17 @@ export function rovarnaKommer(s: State, tvinga?: number, direkt?: boolean) {
   s.rovare = { id: nr, klan: k?.id, folk, x, y, mx: x, my: y, gor: direkt ? 'kommer' : 'samlas', till: direkt ? s.now : s.now + mellan(s, ROVARE.samlasTim) * HOUR };
   s.rovarVila = s.now + ROVARE.vilaDygn * 24 * HOUR;
   count(s, 'rovarflockar'); count(s, 'rovare', n);
+}
+// en ruta ungefär ROVARE.testNara rutor från elden, på land och utanför husen (testläget, steg 4.5.7.10); undefined = ingen hittades
+function narByn(s: State) {
+  const e = eldPlats(s), vt = vattenNu(s);
+  for (let i = 0; i < 48; i++) {
+    const v = rnd(s, 'rovare') * 2 * Math.PI, r = ROVARE.testNara + (i >> 4) * 3 * (i % 2 ? 1 : -1);
+    const x = Math.floor(e.x + 0.5 + Math.cos(v) * r), y = Math.floor(e.y + 0.5 + Math.sin(v) * r);
+    if (x < 1 || y < 1 || x >= W - 1 || y >= H - 1 || vt[y * W + x] === T.Vatten || bitAt(s, x, y)) continue;
+    return { x: x + 0.5, y: y + 0.5 };
+  }
+  return undefined;
 }
 const fran = (s: State, f: Rovarflock) => { const k = klanById(s, f.klan); return k ? `från ${k.namn}` : 'utan klan'; };
 

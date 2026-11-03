@@ -123,6 +123,8 @@ $('arenaKnapp').addEventListener('click', oppnaArena);
     if (b.dataset.brand) { ui.brandTest = !ui.brandTest; brandKnapp(); testSvara(ui.brandTest ? 'Tryck på kartan där branden ska börja' : ''); return; }
     const r = b.dataset.flock ? skickaRovare(s, ROVARFLOCK[b.dataset.flock as keyof typeof ROVARFLOCK]) : skickaHandlare(s);
     testSvara(r.text);
+    // kameran visar var flocken dök upp (steg 4.5.7.10)
+    if (r.ok && b.dataset.flock && s.rovare) { stopFollow(); cam.x = s.rovare.x * TS; cam.y = s.rovare.y * TS; layout(); }
     b.classList.remove('tryckt'); void b.offsetWidth; b.classList.add('tryckt');
     testKnappar(); renderPanel(true);
   });
