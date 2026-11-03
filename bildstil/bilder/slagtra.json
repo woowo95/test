@@ -1,21 +1,19 @@
 {
  "id": "slagtra",
- "ritad": 1,
- "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 3. Den ligger närmast dagens bild: en benljus glanspunkt uppe till vänster, ett huvud i jord3 och jord2 med ljuset från vänster och skuggan till höger, rostränder som i originalet och ett skaft i senap. Den följer också stilguiden bäst, eftersom skaftet har sitt eget materials mörkaste ton (senap0) som kontur i stället för jord0. Version 1 har jordkontur runt senapsskaftet och en ensam punkt längst ner, och version 2 har en mattare glans än dagens bild. Silhuetten är bred upptill och smal nertill, så den läses tydligt som ett slagträ i 4×10 och hör ihop med flintyxans trä och kontur. Jag ändrade ingenting; versionen behövde inga rättelser.",
- "w": 4,
- "h": 10,
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 3. Den ligger snett från nedre vänstra till övre högra hörnet, som yxan och Björns kommentar kräver. Den har samma delar som dagens bild: ett ljust trähuvud med glans i ben3 uppe till vänster, en rostprick och ett senapsgult skaft. Bara version 3 ger skaftet materialets egen mörkaste ton (senap0) som kontur i stället för jord0, och därför läses skaftet som en egen del även i liten storlek. Jag gjorde en ändring: den översta raden fick en punkt till i hörnet, så att konturen runt huvudets topp sluter tätt, som i version 1.",
+ "w": 8,
+ "h": 8,
  "rader": [
-  ".EE.",
-  "EwHE",
-  "EHtE",
-  "EHGE",
-  "EtGE",
-  "EHGE",
-  ".EHE",
-  ".IKI",
-  ".IJI",
-  ".II."
+  ".....EEE",
+  "....EwHE",
+  "...EwHGE",
+  "..EHtGE.",
+  ".EHGE...",
+  ".IKI....",
+  "IJI.....",
+  "II......"
  ],
  "pal": {
   "E": "#3f2415",
@@ -26,5 +24,20 @@
   "K": "#b2921b",
   "t": "#a14808",
   "w": "#dad0bb"
+ },
+ "forra": {
+  "ritad": 1,
+  "rader": [
+   ".EE.",
+   "EwHE",
+   "EHtE",
+   "EHGE",
+   "EtGE",
+   "EHGE",
+   ".EHE",
+   ".IKI",
+   ".IJI",
+   ".II."
+  ]
  }
 }

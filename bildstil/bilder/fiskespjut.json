@@ -1,27 +1,23 @@
 {
  "id": "fiskespjut",
- "ritad": 1,
- "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 1. Den ligger närmast dagens bild: ett smalt träskaft i jordtoner med en ljus spets av ben (w, q, p) som ersätter dagens ljusa #e8d0a0, och den har jord0-kontur runt hela, precis som skaftet på flintyxan. Version 2 har en ojämn utbuktning vid övergången (EHGE) och nästan ingen ljus spets. Version 3 har en ljusgrå spets utan kontur, som läses mer som sten än som eldhärdat trä. Version 1 har rätt storlek (4 × 16) och en tydlig silhuett, och skaftet växlar mellan H och G så att ytan får korn, med F som mörkare nedre del. Det behövdes inga rättningar. Spjutet är snett genom förskjutningen i mitten, vilket är det närmaste dagens diagonal som går inom 4 punkters bredd.",
- "w": 4,
- "h": 16,
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 3. Den ligger närmast spelets bild i dag: ett tvåpunkters brett skaft på diagonalen från nedre vänstra till övre högra hörnet, med en ljus ände uppe till höger (w, sedan q och p). Inne i skaftet går två toner, ljusare H på vänstra sidan och mörkare G på högra, precis som H och h i dag. Det följer ljuset uppifrån vänster, och konturen i jord0 är materialets mörkaste ton, som skaftet på yxan. Version 2 har bara en punkt inne i skaftet och blir för tunn, så det läses sämre i liten storlek. Version 1 har en mindre jämn tonföljd. Snedheten följer Björns kommentar, och spjutet fyller 12 × 12-rutan. Jag ändrade inget, eftersom silhuett, toner och glans (en enda w-punkt) redan stämmer. Enstaka F-punkter i skaftet ger korn utan att bli mörka fläckar.",
+ "w": 12,
+ "h": 12,
  "rader": [
-  "..E.",
-  ".EwE",
-  ".EqE",
-  ".EpE",
-  ".EHE",
-  ".EHE",
-  ".EGE",
-  "EHE.",
-  "EHE.",
-  "EGE.",
-  "EHE.",
-  "EGE.",
-  "EHE.",
-  "EFE.",
-  "EFE.",
-  "EEE."
+  "..........EE",
+  ".........EwE",
+  "........EqpE",
+  ".......EHpE.",
+  "......EHGE..",
+  ".....EHGE...",
+  "....EHFE....",
+  "...EHGE.....",
+  "..EHGE......",
+  ".EHFE.......",
+  "EHGE........",
+  "EFE........."
  ],
  "pal": {
   "E": "#3f2415",
@@ -31,5 +27,26 @@
   "p": "#a0947d",
   "q": "#bdb39b",
   "w": "#dad0bb"
+ },
+ "forra": {
+  "ritad": 1,
+  "rader": [
+   "..E.",
+   ".EwE",
+   ".EqE",
+   ".EpE",
+   ".EHE",
+   ".EHE",
+   ".EGE",
+   "EHE.",
+   "EHE.",
+   "EGE.",
+   "EHE.",
+   "EGE.",
+   "EHE.",
+   "EFE.",
+   "EFE.",
+   "EEE."
+  ]
  }
 }

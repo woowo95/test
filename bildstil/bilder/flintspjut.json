@@ -1,27 +1,23 @@
 {
  "id": "flintspjut",
- "ritad": 1,
- "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 1. Den följer dagens bild bäst: en grå flintspets (skiffer, med ljuset uppe till vänster), en ljus surrning i senapston nära dagens #c8b07a och ett långt skaft i jord. Skaftet tar ett steg åt sidan nertill, så spjutet läses som snett, trots att bilden bara får vara 4 punkter bred. Den passar också förebilden Flintyxa, där samma skifferspets sitter på ett träskaft med jord0 som kontur. Version 2 har en för bred surrning och en spets som snörps av till en tom rad (.QQ.), så spetsen och skaftet hänger dåligt ihop. Version 3 har jord0 som kontur runt repet, vilket går emot regeln att konturen ska vara materialets egen mörkaste ton. I version 1 har repet senap0 som kontur, och surrningen syns tydligt som det man ska se. Jag ändrade inget, eftersom kontur, ljusriktning och korn redan stämmer.",
- "w": 4,
- "h": 16,
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 1. Den ligger närmast spelets bild i dag: ett smalt skaft i en ren diagonal från nedre vänstra till övre högra hörnet, en liten grå flintspets längst upp till höger och surrningen precis under spetsen. Den följer Björns önskan om att redskapet ska ligga snett, som yxan, och fyller den kvadratiska rutan på 12 × 12 punkter. Version 3 har ett tjockare skaft och en bredare spets, och version 2 har en klumpigare spets som buktar ut, så båda avviker mer från dagens tunna spjut. I version 1 har spetsen skiffer i tre toner med skiffer0 som kontur, ljusast uppe till vänster. Surrningen är senap, vilket ligger nära dagens ljusa repfärg. Skaftet är jord med jord0 som kontur och mörknar mot den nedre änden, och spjutet syns tydligt mot gräset. Jag ändrade inget, eftersom bilden redan följer formen, färgerna och stilreglerna.",
+ "w": 12,
+ "h": 12,
  "rader": [
-  "..Q.",
-  ".QTQ",
-  "QTSQ",
-  "QTRQ",
-  "QSRQ",
-  ".QRQ",
-  ".ILI",
-  ".IKI",
-  ".EHE",
-  ".EGE",
-  ".EHE",
-  "EHE.",
-  "EGE.",
-  "EHE.",
-  "EFE.",
-  "EE.."
+  "..........QQ",
+  "........QTSQ",
+  ".......QTSRQ",
+  "......QTSRQ.",
+  "......QRQ...",
+  ".....ILI....",
+  "....IKI.....",
+  "...EHE......",
+  "..EGE.......",
+  ".EHE........",
+  "EFE.........",
+  "EE.........."
  ],
  "pal": {
   "E": "#3f2415",
@@ -35,5 +31,26 @@
   "R": "#3e5156",
   "S": "#61767a",
   "T": "#8a9c9e"
+ },
+ "forra": {
+  "ritad": 1,
+  "rader": [
+   "..Q.",
+   ".QTQ",
+   "QTSQ",
+   "QTRQ",
+   "QSRQ",
+   ".QRQ",
+   ".ILI",
+   ".IKI",
+   ".EHE",
+   ".EGE",
+   ".EHE",
+   "EHE.",
+   "EGE.",
+   "EHE.",
+   "EFE.",
+   "EE.."
+  ]
  }
 }

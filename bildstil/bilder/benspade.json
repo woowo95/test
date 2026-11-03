@@ -1,24 +1,21 @@
 {
  "id": "benspade",
- "ritad": 1,
- "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 1. Den stämmer bäst med dagens bild: ett ljust benblad i ben-tonerna (w och q uppe till vänster, p nere till höger) med ett gulaktigt surrband under och ett brunt träskaft. Ljuset kommer från övre vänstra hörnet. Konturerna är materialens egna mörkaste toner: ben0 runt bladet, senap0 runt surrningen och jord0 runt skaftet. Silhuetten är tydlig och läsbar i liten storlek, likt flintyxans enkla form. Version 2 har ett onaturligt spetsigt skaftslut och en surrning som är lika bred som bladet. Version 3 har ett rutmönstrat korn i bladet som bryter ljusriktningen. Jag ändrade bara surrningens andra rad från senap1 till senap2, så att bandet blir ljusare. Det ligger då närmare de bleka gula tonerna i dagens bild och syns bättre mot skaftet.",
- "w": 5,
- "h": 13,
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 3. Den liknar spelets bild mest: surrningen sitter mot bladets nedre kant, som de gula punkterna i dagens bild, och ligger inte på en egen hals som i version 1 och 2. Bladet har benfärger med o som kontur och ljuset uppe till vänster (w, q och p). Det läses tydligt bredvid den mörkare yxan. En ändring: skaftet stod rakt i rad 6–7 och 8, så det bröt diagonalen som Björn vill ha. Nu flyttas det en punkt åt vänster för varje rad, från surrningen ner till nedre vänstra hörnet. Då går hela spaden snett från nedre vänstra till övre högra hörnet, i samma vinkel som spelets bild och yxan. Skaftet har jord0 som kontur och korn i jord2/jord3. Surrningen är i senap.",
+ "w": 10,
+ "h": 10,
  "rader": [
-  ".ooo.",
-  "owwqo",
-  "owqpo",
-  "oqqpo",
-  "oqppo",
-  ".oqo.",
-  ".ILI.",
-  ".IKI.",
-  ".EHE.",
-  ".EGE.",
-  ".EHE.",
-  ".EGE.",
-  ".EEE."
+  "......ooo.",
+  ".....owwqo",
+  "....owwqpo",
+  "....oqqppo",
+  "...ILqppo.",
+  "..IKIooo..",
+  ".EHE......",
+  "EGE.......",
+  "HE........",
+  "E........."
  ],
  "pal": {
   "E": "#3f2415",
@@ -31,5 +28,23 @@
   "p": "#a0947d",
   "q": "#bdb39b",
   "w": "#dad0bb"
+ },
+ "forra": {
+  "ritad": 1,
+  "rader": [
+   ".ooo.",
+   "owwqo",
+   "owqpo",
+   "oqqpo",
+   "oqppo",
+   ".oqo.",
+   ".ILI.",
+   ".IKI.",
+   ".EHE.",
+   ".EGE.",
+   ".EHE.",
+   ".EGE.",
+   ".EEE."
+  ]
  }
 }
