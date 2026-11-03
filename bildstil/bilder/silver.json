@@ -1,30 +1,40 @@
 {
- "id": "silver",
- "ritad": 2,
- "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 2. Den följer dagens bild närmast: ett mynt uppe till vänster, ett förskjutet åt höger och ett nere till vänster, i samma diagonala stapel. Konturen är skiffer0 och myntytan är matt ljusgrå i ben2 och skiffer3. Silhuetten är tydlig och sitter väl på det oliva gräset. Version 3 är tätare och grumligare, och version 1 ser mer ut som två avlånga tackor än som mynt. Det jag ändrade: översta myntet fick en gradient från glans till skugga (w, T, S i stället för w, q, T), så att det mörknar mot höger på samma sätt som det nedersta. Det högra myntet fick q, S i stället för q, T, så att ljuset faller från vänster. Glansen är kvar som en enda ben3-punkt uppe till vänster på översta myntet.",
- "w": 8,
- "h": 5,
- "rader": [
-  ".QQQ....",
-  "QwTSQQQ.",
-  ".QQQQqSQ",
-  "QqTSQQQ.",
-  ".QQQ...."
- ],
- "pal": {
-  "Q": "#233035",
-  "S": "#61767a",
-  "T": "#8a9c9e",
-  "q": "#bdb39b",
-  "w": "#dad0bb"
- },
- "forra": {
-  "ritad": 1,
+  "id": "silver",
+  "ritad": 3,
+  "av": "Claude",
+  "om": "Claude: tre runda silvermynt sedda ovanifrån, lagda lite över varandra, med en glanspunkt uppe till vänster på vart och ett.",
+  "w": 9,
+  "h": 7,
   "rader": [
-   "QQQQ.",
-   "QwTSQ",
-   ".QQQQ"
-  ]
- }
+    ".....QQQ.",
+    ".QQQQwTTQ",
+    "QwTTQQQSQ",
+    "QTTQwTTQQ",
+    "QTSQTTSQ.",
+    ".QQQTSSQ.",
+    "....QQQ.."
+  ],
+  "pal": {
+    "Q": "#233035",
+    "S": "#61767a",
+    "T": "#8a9c9e",
+    "w": "#dad0bb"
+  },
+  "forra": {
+    "ritad": 2,
+    "rader": [
+      ".QQQ....",
+      "QwTSQQQ.",
+      ".QQQQqSQ",
+      "QqTSQQQ.",
+      ".QQQ...."
+    ],
+    "pal": {
+      "Q": "#233035",
+      "S": "#61767a",
+      "T": "#8a9c9e",
+      "q": "#bdb39b",
+      "w": "#dad0bb"
+    }
+  }
 }

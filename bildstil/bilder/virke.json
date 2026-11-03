@@ -1,30 +1,40 @@
 {
- "id": "virke",
- "ritad": 2,
- "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 1. Den visar tydligast två bräder som ligger på varandra: den övre brädan är förskjuten åt vänster och den undre åt höger, så båda brädkanterna syns och silhuetten läses som två bräder även i liten storlek. Den har samma material och toner som förebilden Ved: jordramp med kontur i jord0, ljuset uppe till vänster (ben2 som enda glanspunkt i den övre brädans vänstra ände) och en mörkare undre bräda. Kornet växlar punkt för punkt utan ensamma mörka prickar. Version 2 läses mest som ett enda tjockt block med en stump vid sidan. Version 3 ser ut som två bräder bredvid varandra i höjdled, inte på varandra, och har en ensam ljus punkt mitt i den undre brädan. Storleken stämmer: 13 punkter bred och 4 hög. Jag behövde inte ändra något.",
- "w": 13,
- "h": 4,
- "rader": [
-  "EqHHGHGHGGE..",
-  "EEEEEEEEEEEEE",
-  "..EHGFGGFGFFE",
-  "..EEEEEEEEEEE"
- ],
- "pal": {
-  "E": "#3f2415",
-  "F": "#5e3c24",
-  "G": "#7d5b40",
-  "H": "#987e62",
-  "q": "#bdb39b"
- },
- "forra": {
-  "ritad": 1,
+  "id": "virke",
+  "ritad": 3,
+  "av": "Claude",
+  "om": "Claude: ny bild utan referens: tre hyvlade bräder staplade på varandra, ljusare än veden, med mörka fogar mellan.",
+  "w": 12,
+  "h": 7,
   "rader": [
-   "..EEEEEEEEEE.",
-   ".EwqwqqwqqpqE",
-   "EGHGFGGFGFFEE",
-   ".EEEEEEEEEE.."
-  ]
- }
+    ".EEEEEEEEEE.",
+    ".EpHpHHGHGE.",
+    "EEEEEEEEEEEE",
+    "EpHHpHGHGHGE",
+    "EEEEEEEEEEEE",
+    "EpHpHHGHGGFE",
+    "EEEEEEEEEEEE"
+  ],
+  "pal": {
+    "E": "#3f2415",
+    "F": "#5e3c24",
+    "G": "#7d5b40",
+    "H": "#987e62",
+    "p": "#a0947d"
+  },
+  "forra": {
+    "ritad": 2,
+    "rader": [
+      "EqHHGHGHGGE..",
+      "EEEEEEEEEEEEE",
+      "..EHGFGGFGFFE",
+      "..EEEEEEEEEEE"
+    ],
+    "pal": {
+      "E": "#3f2415",
+      "F": "#5e3c24",
+      "G": "#7d5b40",
+      "H": "#987e62",
+      "q": "#bdb39b"
+    }
+  }
 }

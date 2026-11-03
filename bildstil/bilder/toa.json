@@ -1,31 +1,38 @@
 {
- "id": "toa",
- "ritad": 2,
- "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 3. Den liknar dagens bild mest: en mörkbrun hög i jord1 och jord2 med jord0 som kontur och en liten ånga i senap3 och oliv3 rakt ovanför mitten, som den slingrande ångan i originalet. Version 2 saknar ångan helt. Version 1 har ångan delad i två prickar ovanför högens kanter och en jämnljus topp (EGGE), så att ljuset inte faller från vänster. I version 3 ligger de ljusa tonerna (H, G) uppe till vänster och de mörka (F) nere till höger. Ett ljust korn i mitten minner om originalets ljusa mittstrimma. Silhuetten är bred och tydlig, ljusare än gräset och läsbar i liten storlek. Den håller sig inom 8 × 5 och passar ihop med vedens bruna trätoner. Jag ändrade inget, eftersom formen, tonerna och konturen redan stämmer med bildstilen.",
- "w": 8,
- "h": 5,
- "rader": [
-  "...LP...",
-  "..EGFE..",
-  ".EHGFFE.",
-  "EGFGFFFE",
-  ".EEEEEE."
- ],
- "pal": {
-  "E": "#3f2415",
-  "F": "#5e3c24",
-  "G": "#7d5b40",
-  "H": "#987e62",
-  "L": "#d8b25f",
-  "P": "#898b4c"
- },
- "forra": {
-  "ritad": 1,
+  "id": "toa",
+  "ritad": 3,
+  "av": "Claude",
+  "om": "Claude: samma hög som Björn sett, utan det gula luktsträcket.",
+  "w": 8,
+  "h": 4,
   "rader": [
-   ".EGE.",
-   "EGFFE",
-   "EEEEE"
-  ]
- }
+    "..EGFE..",
+    ".EHGFFE.",
+    "EGFGFFFE",
+    ".EEEEEE."
+  ],
+  "pal": {
+    "E": "#3f2415",
+    "F": "#5e3c24",
+    "G": "#7d5b40",
+    "H": "#987e62"
+  },
+  "forra": {
+    "ritad": 2,
+    "rader": [
+      "...LP...",
+      "..EGFE..",
+      ".EHGFFE.",
+      "EGFGFFFE",
+      ".EEEEEE."
+    ],
+    "pal": {
+      "E": "#3f2415",
+      "F": "#5e3c24",
+      "G": "#7d5b40",
+      "H": "#987e62",
+      "L": "#d8b25f",
+      "P": "#898b4c"
+    }
+  }
 }

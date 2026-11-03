@@ -1,31 +1,38 @@
 {
- "id": "sten",
- "ritad": 2,
- "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 3. Den är den enda som behåller dagens bilds två delar: en större rundad sten och en liten sten nere till höger, med glipan i nedersta raden mellan dem. Version 2 är bara en enda klump och liknar inte förebilden. Version 1 saknar glipan, så den lilla stenen flyter ihop med den stora. Ljuset stämmer: skiffer3 uppe till vänster och skiffer1 nere till höger på den stora stenen. Konturen är skiffer0, kol0 används inte och tonerna växlar punkt för punkt utan mörka fläckar. Silhuetten är tydlig och ljusare än gräset, och storleken på 6 × 5 håller sig inom ramen. Jag ändrade ingenting, för versionen stämmer redan med reglerna och med dagens bild.",
- "w": 6,
- "h": 5,
- "rader": [
-  ".QQQ..",
-  "QTTSQ.",
-  "QTSRQQ",
-  "QSRQSQ",
-  ".QQ.Q."
- ],
- "pal": {
-  "Q": "#233035",
-  "R": "#3e5156",
-  "S": "#61767a",
-  "T": "#8a9c9e"
- },
- "forra": {
-  "ritad": 1,
+  "id": "sten",
+  "ritad": 3,
+  "av": "Claude",
+  "om": "Claude: samma form som förut men i kolets mörka gråbruna toner i stället för flintans blågrå, så att stenen inte liknar flintan.",
+  "w": 6,
+  "h": 5,
   "rader": [
-   ".QQQ..",
-   "QTTSQ.",
-   "QTSSQQ",
-   "QSRQSQ",
-   ".QQQQ."
-  ]
- }
+    ".kkk..",
+    "konmk.",
+    "knmlkk",
+    "kmlkmk",
+    ".kk.k."
+  ],
+  "pal": {
+    "k": "#24201d",
+    "l": "#2f261d",
+    "m": "#372f25",
+    "n": "#474138",
+    "o": "#7e7362"
+  },
+  "forra": {
+    "ritad": 2,
+    "rader": [
+      ".QQQ..",
+      "QTTSQ.",
+      "QTSRQQ",
+      "QSRQSQ",
+      ".QQ.Q."
+    ],
+    "pal": {
+      "Q": "#233035",
+      "R": "#3e5156",
+      "S": "#61767a",
+      "T": "#8a9c9e"
+    }
+  }
 }
