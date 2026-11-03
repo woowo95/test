@@ -1,16 +1,17 @@
-import { ByteMinne, DAY, H, HOUR, MIN, Person, SEC, State, T, Task, W } from './typer';
+import { ByteMinne, DAY, H, HOUR, MIN, Person, SEC, State, T, Task, W, inMap } from './typer';
 import { balans } from './balans';
 import { ALDER, ageOf, alive, byId, count, forstaGang, living, log, stat, think } from './folk';
 import { SAMTAL, TalkEvent, isSocial } from './samtal';
 import { kronika } from './historik';
 import { eldPlats, getMap, vaderstreck } from './karta';
-import { blocked } from './byggnad';
+import { bitAt, freeNear } from './byggnad';
+import { ledig } from './stationer';
 import { clamp, rnd } from './slump';
 import { iIstiden, ageIndex, hourOf } from './tid';
 import { grundvarde, rikedom } from './varde';
 import { SAKER, isTool, viktOf } from './saker';
 import { DELA, behovAv, bynPart, bytaMed, personPart } from './behov';
-import { BYTESPRIS, FILT_MOT, Part, Vara, filtMot, nyttPar, satPersonFlytt, vidByte, vidLura, varorText } from './byte';
+import { BYTE, BYTESPRIS, FILT_MOT, Part, Vara, filtMot, nyttPar, satPersonFlytt, vidByte, vidLura, varorText } from './byte';
 import { newTing, tingOf } from './agande';
 import { knows } from './teknik';
 import { put, use } from './lager';
@@ -36,7 +37,8 @@ export const HANDEL = balans('handel', {
   // som kommer fram efter sentKvall, på natten eller på dagen väntar vid filtens plats till nästa kväll
   kvall: 19, sentKvall: 23, morgon: 7,
   fart: 1.2, // rutor i sekunden när handlaren går (en bybo går 1,6 utan börda)
-  avstand: 4, // filten ligger så här många rutor från elden
+  avstand: 4, // filten ligger så här många rutor från elden ...
+  letaLangre: 8, // ... eller upp till så många rutor längre bort, om det inte finns fri mark där (steg 4.5.7.3)
   vardeVaror: [25, 45], // grundvärdet av varorna hen har med sig (ungefär arbetstimmar)
   silver: [10, 30], // silvret hen har med sig (används i handeln, steg 4.4.1.3)
   fylla: 0.7, // packningen fylls till så här stor del av det utrustningen rymmer, så att hen kan köpa något
@@ -161,15 +163,28 @@ function packa(s: State, kg: number, sort: string): HVara[] {
   return ut;
 }
 
-// en ruta för filten: så långt från elden, på torr mark och inte i ett hus
+// platsen för handeln (steg 4.5.7.3): där handlaren står, med hens filt framför sig, bybons filt mitt emot och den som handlar
+// bakom den (BYTE.bakom, FILT_MOT). Allt det ska ligga på fri mark: ingen byggnad, station, möbel, lagerplats, hög, fält, stock
+// eller annan filt (ledig i stationer.ts), och ingen husvägg alldeles intill, så att stigen till en dörr är fri. Platsen ligger
+// HANDEL.avstand rutor från elden, och finns ingen fri plats där letar den längre bort
+const FILT_BRED = 1; // filten räcker så här många rutor åt var sida om mitten
+export function handelFri(s: State, x: number, y: number) {
+  const X = Math.floor(x), Y = Math.floor(y), djup = Math.ceil(BYTE.bakom * 2 + FILT_MOT);
+  for (let dy = -1; dy <= djup + 1; dy++) for (let dx = -FILT_BRED - 1; dx <= FILT_BRED + 1; dx++) {
+    const tx = X + dx, ty = Y + dy, kant = dy < 0 || dy > djup || Math.abs(dx) > FILT_BRED;
+    if (!inMap(tx, ty)) return false;
+    if (kant ? !!bitAt(s, tx, ty) : !ledig(s, tx, ty)) return false;
+  }
+  return !(s.filtar ?? []).some(f => f.x > X - FILT_BRED - 2 && f.x < X + FILT_BRED + 3 && f.y > Y - 2 && f.y < Y + djup + 3);
+}
 function filtPlats(s: State) {
-  const e = eldPlats(s), m = getMap(s.seed);
-  for (let i = 0; i < 24; i++) {
-    const v = rnd(s, 'handel') * Math.PI * 2, x = Math.round(e.x + Math.cos(v) * HANDEL.avstand), y = Math.round(e.y + Math.sin(v) * HANDEL.avstand);
-    if (x < 1 || y < 1 || x >= W - 1 || y >= H - 1 || m.tiles[y * W + x] === T.Vatten || blocked(s, x, y)) continue;
+  const e = eldPlats(s);
+  for (let r = HANDEL.avstand; r <= HANDEL.avstand + HANDEL.letaLangre; r++) for (let i = 0; i < 24; i++) {
+    const v = rnd(s, 'handel') * Math.PI * 2, x = Math.round(e.x + Math.cos(v) * r), y = Math.round(e.y + Math.sin(v) * r);
+    if (x < 2 || y < 2 || x >= W - 2 || y >= H - 6 || !handelFri(s, x, y)) continue;
     return { x: x + 0.5, y: y + 0.5 };
   }
-  return { x: e.x + 0.5, y: e.y + 2.5 };
+  return freeNear(s, e.x + 0.5, e.y + 2.5);
 }
 
 // en handlare kommer in från kanten närmast byn (en av de två närmaste, slumpat), på land
@@ -221,7 +236,7 @@ function framme(s: State, h: Handlare) {
 // filten breds ut med varorna, och handlaren går på morgonen
 function lagUt(s: State, h: Handlare) {
   h.fas = 'handlar'; h.kom = s.now; h.gar = nastaKl(s.now, HANDEL.morgon); h.kvall = undefined;
-  (s.filtar ??= []).push({ x: h.x + 1, y: h.y, slut: h.gar, varor: h.varor.map(w => ({ k: w.k, n: w.n, fran: h.id })), handlare: h.id, vem: h.id, par: nyttPar(s) });
+  (s.filtar ??= []).push({ x: h.x, y: h.y + BYTE.bakom, slut: h.gar, varor: h.varor.map(w => ({ k: w.k, n: w.n, fran: h.id })), handlare: h.id, vem: h.id, par: nyttPar(s) });
   log(s, `${h.namn} har brett ut en filt nära elden och lagt fram sina varor.`, 'world');
   if (forstaGang(s, 'handlareFramme')) kronika(s, `Den första handlaren kom till byn: ${h.namn} från ${h.hem}, med ${HANDLAR_UTR[h.utr].namn.toLowerCase()}en full av varor.`, 'handel');
 }
@@ -417,6 +432,12 @@ export const handlarNu = (s: State, p: Person) => {
   const h = s.handlare, t = p.task;
   return !!h && t?.act === 'handla' && t.ref === h.id && t.phase === 'do' && (!h.bynKlar || h.ko?.[0] === p.id);
 };
+// var den som handlar står (steg 4.5.7.1): bakom bybons filt, som ligger mitt emot handlarens (FILT_MOT), på den sida som är
+// längst från handlaren. Kön (i = platsen i kön, 1 = den första som väntar) står bakom hen, på en rad bort från filtarna
+function kundPlats(s: State, h: Handlare, i = 0) {
+  const hf = s.filtar?.find(f => f.handlare === h.id) ?? { x: h.x, y: h.y + BYTE.bakom };
+  return { x: hf.x, y: hf.y + FILT_MOT + BYTE.bakom + i * HANDEL.koAvstand };
+}
 // valet på kvällen (night i val.ts, steg 4.5.4.11; och på dagen, day): den som handlar för byn går till filten. Kommer hen inte, går en annan vuxen efter ett tag.
 // När byn handlat ställer sig den som vill byta med sina egna saker i kön
 export function handlaVal(s: State, p: Person): { why: string; spot: { x: number; y: number }; dur: number; ref: number } | undefined {
@@ -425,7 +446,7 @@ export function handlaVal(s: State, p: Person): { why: string; spot: { x: number
   if (!h.bynKlar) {
     if (s.people.some(q => q !== p && alive(q) && q.task?.act === 'handla' && q.task.ref === h.id)) return undefined;
     if (p !== forByn(s) && s.now < h.kom + HANDEL.ensamTim * HOUR) return undefined;
-    return { why: `Handlar för byn med ${h.namn}`, spot: { x: h.x - 1, y: h.y + 0.6 }, dur: HANDEL.handlaMin * MIN, ref: h.id };
+    return { why: `Handlar för byn med ${h.namn}`, spot: kundPlats(s, h), dur: HANDEL.handlaMin * MIN, ref: h.id };
   }
   if (h.handlat?.includes(p.id)) return undefined;
   const ko = h.ko = (h.ko ?? []).filter(id => { const q = byId(s, id); return !!q && alive(q) && (q === p || (q.task?.act === 'handla' && q.task.ref === h.id)); });
@@ -439,8 +460,8 @@ export function handlaVal(s: State, p: Person): { why: string; spot: { x: number
   }
   const i = ko.indexOf(p.id);
   return i === 0
-    ? { why: `Handlar med ${h.namn}`, spot: { x: h.x - 1, y: h.y + 0.6 }, dur: HANDEL.egenMin * MIN, ref: h.id }
-    : { why: `Står i kö till ${h.namn}`, spot: { x: h.x - 1 - i * HANDEL.koAvstand, y: h.y + 1.2 }, dur: HANDEL.koMin * MIN, ref: h.id };
+    ? { why: `Handlar med ${h.namn}`, spot: kundPlats(s, h), dur: HANDEL.egenMin * MIN, ref: h.id }
+    : { why: `Står i kö till ${h.namn}`, spot: kundPlats(s, h, i), dur: HANDEL.koMin * MIN, ref: h.id };
 }
 // handeln är klar (KLAR i steg.ts): byn säljer det den har gott om och köper det den saknar. En bybo köper det hen saknar
 export function handlaKlar(s: State, p: Person, t: Task) {

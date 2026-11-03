@@ -954,6 +954,31 @@ SCENARIER.filtar = {
   },
 };
 
+SCENARIER.filtplats = {
+  text: 'Platsen för handeln (steg 4.5.7.1 och 4.5.7.3, handel.ts och byte.ts): filtarna ligger med ungefär en ruta fritt mellan sig, och var och en står bakom sin egen filt, på den sida som är längst från den andra. Filtarna och platserna där de står ligger på fri mark: ingen byggnad, station, möbel, lagerplats, hög eller fält.',
+  kor: () => {
+    utanWebblasare();
+    const s = createState(6, START);
+    rikBy(s); setByn(s); s.nastaHandlare = s.now;
+    for (let i = 0; i < 40 && s.handlare?.fas !== 'handlar'; i++) { step(s, BEAT); utanVantan(s); }
+    const h = s.handlare!, hf = s.filtar?.find(f => f.handlare === h.id);
+    let forByn: Person | undefined;
+    for (let i = 0; i < 60 && !forByn; i++) { step(s, BEAT); forByn = living(s).find(p => p.task?.act === 'handla' && p.task.phase === 'do' && !h.bynKlar); }
+    step(s, BEAT);
+    const mot = hf && SIM.filtMot(s, hf);
+    const isar = !!hf && !!mot && mot.y - hf.y >= 2.3;
+    const bakom = !!hf && !!mot && !!forByn && h.y < hf.y && forByn.task!.ty > mot.y && Math.abs(forByn.task!.ty - SIM.bakomFilt(s, mot).y) < 1e-9;
+    const fri = !!hf && !!mot && [hf, mot].every(f => [-1, 0, 1].every(dx => SIM.ledig(s, Math.floor(f.x) + dx, Math.floor(f.y))));
+    const z = SIM.zonesOf(s)[0], inteLager = !!z && !SIM.handelFri(s, z.x + 1, z.y - 1);
+    return [
+      [`filtarna ligger ${mot && hf ? (mot.y - hf.y).toFixed(1) : '?'} rutor isär, mitt till mitt (ungefär en ruta fritt mellan dem)`, isar],
+      [`handlaren står bakom sin filt och ${forByn?.name ?? 'ingen'} bakom byns filt, på var sin sida`, bakom],
+      ['filtarna ligger på fri mark', fri],
+      ['en plats där en lagerplats ligger är inte fri för handeln', inteLager],
+    ];
+  },
+};
+
 SCENARIER.overflod = {
   text: 'Byborna säljer sitt överflöd för silver (steg 4.5.4.14, handel.ts): den som har mycket mer av något än hen behöver går till handlaren för att sälja det mot silver, när handlaren vill ha det, också om hen inte vill köpa något. Silvret sparas till nästa handlare eller byte. Den som bara har lite över går inte.',
   kor: () => {
