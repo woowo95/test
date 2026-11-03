@@ -1,17 +1,16 @@
 {
  "id": "sym_svaghet",
- "ritad": 3,
+ "ritad": 4,
  "av": "Claude",
- "om": "Ritad av Claude efter Björns kommentar: gör så det inte är en skelett arm . handen och armbågen ser konstig ut",
+ "om": "Ritad av Claude efter Björns kommentar: ta bort den blåa punkten. Gör en \"inverterad bicep\" alltså att det hänger ner under armen.",
  "w": 16,
- "h": 14,
+ "h": 15,
  "rader": [
   ".........EEEE...",
   "........EqqqqE..",
-  "...Q....EwqqqpE.",
-  "..QTQ...EEEqqpE.",
-  "..QSQ....EqqpoE.",
-  "...Q......EqpE..",
+  "........EwqqqpE.",
+  "........EEEqqpE.",
+  ".........EqqpoE.",
   "..........EqpE..",
   "..........EqpE..",
   "..........EqpE..",
@@ -19,13 +18,12 @@
   "EEEEEEEEEEEqpoE.",
   "tusEqqqqqqqqppoE",
   "tssEpppppppppoE.",
-  "rrrEEEEEEEEEEE.."
+  "rrrEEppppppEEE..",
+  "....EEoooEE.....",
+  "......EEE......."
  ],
  "pal": {
   "E": "#3f2415",
-  "Q": "#233035",
-  "S": "#61767a",
-  "T": "#8a9c9e",
   "o": "#7e7362",
   "p": "#a0947d",
   "q": "#bdb39b",
@@ -36,36 +34,36 @@
   "w": "#dad0bb"
  },
  "forra": {
-  "ritad": 2,
+  "ritad": 3,
   "rader": [
-   "..........EEEE..",
-   "......Q..EqqpoE.",
-   ".....QTQ.EqppoE.",
-   ".....QSQ.EEpooE.",
-   "......Q...EqoE..",
-   "..........EqoE..",
+   ".........EEEE...",
+   "........EqqqqE..",
+   "...Q....EwqqqpE.",
+   "..QTQ...EEEqqpE.",
+   "..QSQ....EqqpoE.",
+   "...Q......EqpE..",
    "..........EqpE..",
-   "..........EqoE..",
-   "..........EqoE..",
    "..........EqpE..",
-   "EEEEEEEEEEEqoE..",
-   "EHGFEqqqqqqqpoE.",
-   "EGFFEpppppppppoE",
-   "EFFEEEEEEEEEEEE.",
-   "EFFE............",
-   "EEEE............"
+   "..........EqpE..",
+   "..........EqpE..",
+   "EEEEEEEEEEEqpoE.",
+   "tusEqqqqqqqqppoE",
+   "tssEpppppppppoE.",
+   "rrrEEEEEEEEEEE.."
   ],
   "pal": {
    "E": "#3f2415",
-   "F": "#5e3c24",
-   "G": "#7d5b40",
-   "H": "#987e62",
    "Q": "#233035",
    "S": "#61767a",
    "T": "#8a9c9e",
    "o": "#7e7362",
    "p": "#a0947d",
-   "q": "#bdb39b"
+   "q": "#bdb39b",
+   "r": "#521100",
+   "s": "#742a01",
+   "t": "#a14808",
+   "u": "#bd753e",
+   "w": "#dad0bb"
   }
  }
 }

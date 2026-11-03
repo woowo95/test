@@ -1,31 +1,30 @@
 {
  "id": "sym_kryp",
- "ritad": 4,
+ "ritad": 5,
  "av": "Claude",
- "om": "Ritad av Claude efter Björns kommentar: knäna ser konstiga ut. och benen ska lite längre bak.",
+ "om": "Ritad av Claude efter Björns kommentar: gör om hela symbolen utan förlaga. Den blir värre och värre",
  "w": 16,
  "h": 13,
  "rader": [
   "............EEE.",
-  "...........EFHHE",
-  "...........EHHkE",
-  "....MMMMMMMMEHHE",
-  "...MPPPPOPPPMEE.",
-  "...MPOPOOPOONM..",
-  "...MOONOONONNM..",
-  "...MMMMMMMMMMM..",
-  "....EHGE...EqpE.",
-  "....EHGE...EqpE.",
-  "EEEEHGGE...EqpE.",
-  "EHGGGGFE..EqqpE.",
-  "EEEEEEEE..EEEEE."
+  "...........EHHHE",
+  "...........EqqkE",
+  "...EEEEEEEEEqqpE",
+  "..EOPPOPOOPOEEE.",
+  "..EOOOOOOOOONE..",
+  "..EGGGEEEEEONE..",
+  "...EGGE...EqpE..",
+  "...EGGE...EqpE..",
+  "...EGFE...EqpE..",
+  "EEEEGFE..EqqpE..",
+  "EFFFFFE..EEEEE..",
+  "EEEEEEE........."
  ],
  "pal": {
   "E": "#3f2415",
   "F": "#5e3c24",
   "G": "#7d5b40",
   "H": "#987e62",
-  "M": "#353204",
   "N": "#4b4f00",
   "O": "#647025",
   "P": "#898b4c",
@@ -34,21 +33,21 @@
   "q": "#bdb39b"
  },
  "forra": {
-  "ritad": 3,
+  "ritad": 4,
   "rader": [
-   "...........EEEE.",
-   "..........EFFHHE",
-   "..........EFHHHE",
-   "...MMMMMMMEGHHkE",
-   "..MPPPPOPPPMEHHE",
-   "..MPOPOOPOONMEE.",
-   "..MOONOONONNM...",
-   "..MMMMMMMMMMM...",
-   "...EHGE..EHGE...",
-   "...EHGFE.EHGE...",
-   "EEEEHGGE.EHFE...",
-   "EHGGGGFE.EHGFE..",
-   "EEEEEEEE.EEEEEE."
+   "............EEE.",
+   "...........EFHHE",
+   "...........EHHkE",
+   "....MMMMMMMMEHHE",
+   "...MPPPPOPPPMEE.",
+   "...MPOPOOPOONM..",
+   "...MOONOONONNM..",
+   "...MMMMMMMMMMM..",
+   "....EHGE...EqpE.",
+   "....EHGE...EqpE.",
+   "EEEEHGGE...EqpE.",
+   "EHGGGGFE..EqqpE.",
+   "EEEEEEEE..EEEEE."
   ],
   "pal": {
    "E": "#3f2415",
@@ -59,7 +58,9 @@
    "N": "#4b4f00",
    "O": "#647025",
    "P": "#898b4c",
-   "k": "#24201d"
+   "k": "#24201d",
+   "p": "#a0947d",
+   "q": "#bdb39b"
   }
  }
 }
