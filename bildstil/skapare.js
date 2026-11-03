@@ -1076,6 +1076,14 @@
     data.rader.forEach((r, y) => [...r].forEach((ch, x) => { if (ch !== '.') B.satt(x, y, tonAv(ch)); }));
     return B;
   }
+  // spelets bild av saken nu (GAMLA, ur src/ikoner.ts via bildstil/gamla.ts), med varje färg till närmaste i paletten
+  function gammalBild(id) {
+    const g = GAMLA[id]; if (!g) return null;
+    const w = Math.max(...g.rader.map(r => r.length)), h = g.rader.length, B = Bild(w, h, P), f = {};
+    for (const [k, v] of Object.entries(g.pal)) f[k] = P.av(v);
+    g.rader.forEach((r, y) => [...r].forEach((ch, x) => { if (f[ch] !== undefined) B.satt(x, y, f[ch]); }));
+    return B;
+  }
   // klistrar in en bild; med skugga faller den snett nedåt till höger på marken (guiden)
   function klistra(M, S, x0, y0, skugga = true) {
     if (!S) return;
@@ -1109,7 +1117,9 @@
     ut.append(bildRad('Som i spelet', sakSammanhang(k.rad.id).map(([t, B, s]) => [B, s, t])));
     const stor = [[sakBild(k.rad.id), 10, 'Nu, tio gånger större']];
     if (data?.forra) stor.push([sakBild(k.rad.id, data.forra), 10, 'Förra versionen']);
-    ut.append(bildRad(data?.forra ? 'Nu och förra versionen' : 'Förstorad', stor));
+    const g = gammalBild(k.rad.id);
+    if (g) stor.push([g, 10, `I spelet i dag (${g.w} × ${g.h} punkter), som den nya ritas om efter`]);
+    ut.append(bildRad('Nu bredvid ' + (data?.forra ? 'förra versionen och ' : '') + 'bilden i spelet i dag', stor));
     if (data?.forra) ut.append(bildRad('Förra versionen som i spelet', sakSammanhang(k.rad.id, data.forra).map(([t, B, s]) => [B, s, t])));
     return ut;
   }
@@ -1289,6 +1299,8 @@
     },
     // scenen i dagsljus: de godkända bilderna (marken, granarna, slöjdbänken, kistan, lägerelden och sakerna i dag)
     scen() { return pngAv(ritaScen(P, { tid: 'dag' }), 3); },
+    // spelets bild av saken i dag, åtta gånger större (som den nya ritas om efter)
+    gammal(id) { const g = gammalBild(id); return g ? pngAv(g, 8) : null; },
     // tecknen som färger (för spelets PAL)
     hex() { return Object.fromEntries([...BILDER.tecken].map(ch => [ch, P.cols[tonAv(ch)].hex])); },
     prova(id, data) { BILDFILER[id] = data; },

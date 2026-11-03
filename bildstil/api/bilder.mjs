@@ -55,6 +55,12 @@ async function oppnaSidan() {
   return sida;
 }
 const sammanhang = async (id, data) => (await oppnaSidan()).evaluate(([i, d]) => window.BILDERNA.sammanhang(i, d), [id, data]);
+const gammal = async id => (await oppnaSidan()).evaluate(i => window.BILDERNA.gammal(i), id);
+// spelets bild i dag (bildstil/gamla.json, från npx tsx bildstil/gamla.ts): den nya ritas om efter den (Björn efter version 83
+// av bildstilen: alla nya symboler ska vara baserade på dem vi redan hade, bara omgjorda i sina nya pixelstorlekar)
+const GAMLA = fs.existsSync(path.join(BILDSTIL, 'gamla.json')) ? JSON.parse(fs.readFileSync(path.join(BILDSTIL, 'gamla.json'), 'utf8')) : {};
+const gammalText = b => { const g = GAMLA[b.id]; if (!g) return null;
+  return `Den sista bilden är ${b.namn} som den ser ut i spelet i dag, ${Math.max(...g.rader.map(r => r.length))} × ${g.rader.length} punkter, åtta gånger större. Den nya bilden ska vara den bilden omgjord: samma sak, samma form och delar, samma idé och samma färger så nära paletten tillåter, bara i den nya storleken och med bildstilens kontur, ljus och korn. Hitta inte på en ny bild. Punkterna i dag (punkt är genomskinlig): ${JSON.stringify(g.rader)}, färgerna: ${JSON.stringify(g.pal)}.`; };
 const scen = async () => (await oppnaSidan()).evaluate(() => window.BILDERNA.scen());
 const hexar = async () => (await oppnaSidan()).evaluate(() => window.BILDERNA.hex());
 async function stangSidan() { if (webblasare) await webblasare.close(); webblasare = sida = null; }
@@ -103,6 +109,7 @@ async function fraga(b, { kommentar = null, forra = null, version = null } = {})
     const andra = raderAv(b.sort).filter(x => x.id !== b.id && x.id !== fb.id && lasBild(x.id)).slice(0, 6);
     if (andra.length) text.push('Andra bilder i sorten som redan är ritade: ' + andra.map(x => `${x.namn}: ${JSON.stringify(lasBild(x.id).rader)}`).join('; '));
   }
+  const gt = gammalText(b); if (gt) { bilder.push(await gammal(b.id)); text.push(gt); }
   text.push(`Rita ${beskriv(b)}`);
   if (forra) text.push(`Förra ritningen: ${JSON.stringify(forra.rader)}`);
   if (kommentar) text.push(`Björns kommentar om förra ritningen, som ska följas: ${kommentar}`);
@@ -117,11 +124,13 @@ async function valet(b, versioner, { kommentar = null } = {}) {
   const fb = forebildAv(b.sort), arForebild = fb.id === b.id;
   const bilder = [arForebild ? await scen() : await sammanhang(fb.id, null)];
   for (const v of versioner) bilder.push(await sammanhang(b.id, { id: b.id, rader: v.svar.rader }));
+  const gt = gammalText(b); if (gt) bilder.push(await gammal(b.id));
   const text = [
     arForebild ? `Den första bilden är byns scen med de godkända bilderna i stilen. Du väljer förebilden för sorten ${sortAv(b.sort).namn}.` : `Den första bilden är sortens förebild, ${fb.namn}, som i spelet.`,
     `Sedan kommer ${versioner.length === 1 ? 'den enda versionen' : versioner.length + ' versioner'} av ${beskriv(b)} i ordningen ${versioner.map(v => 'version ' + v.nr).join(', ')}, var och en som i spelet: ensam på marken, på högen, på slöjdbänken och när den bärs, fyra gånger större.`,
     ...versioner.map(v => `Version ${v.nr}: ${JSON.stringify(v.svar.rader)}`),
     kommentar ? `Björns kommentar om förra ritningen, som ska följas: ${kommentar}` : '',
+    gt ? gt + ' Välj den version som är mest lik den bilden.' : '',
     `Välj den version som ${arForebild ? 'passar bäst i scenen' : 'hör bäst ihop med förebilden'}, stämmer bäst med beskrivningen och läses tydligast i spelets storlek. Svara med val (versionens nummer) och dess punkter. Rätta det som inte stämmer, och skriv i anteckningen varför du valde den och vad du ändrade. Passar ingen: svara val 0, rita en ny och förklara.`,
   ].filter(Boolean).join('\n\n');
   return { custom_id: b.id, params: { model: MODELL, max_tokens: MAXTOKENS, thinking: { type: 'adaptive' }, output_config: { effort: INSATS, format: { type: 'json_schema', schema: schema(true) } },
