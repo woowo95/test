@@ -347,27 +347,31 @@
   // Inga lösa punkter med slump i varje punkt: ytorna är hela och lugna, och skillnaderna kommer av stora fläckar med
   // en ren kant (en långsam våg som skärs av) och av små saker som ritas hela (tuvor, strån, blommor).
   const flack = (x, y, sk, s, grans) => vn(x, y, sk, s) * 0.75 + vn(x, y, sk / 3, s + 1) * 0.25 > grans;
-  function grasRen(x, y, P) { // gräset du valde (version 2), utan rastret och nästan utan korn
+  // ett kort streck i stället för en lös punkt: lodrätt (strån) eller vågrätt (jord, sten, barr), två punkter långt
+  const strack = (x, y, s, p) => hash(x, y, s) < p ? 1 : hash(x, y - 1, s) < p ? 2 : 0;
+  const vagstreck = (x, y, s, p) => hash(x, y, s) < p || hash(x - 1, y, s) < p;
+  function grasRen(x, y, P) { // gräset du valde (version 2): fält med ren men ojämn kant, och korta strån i stället för korn
     const lo = I(P, 'oliv', 1), mid = I(P, 'oliv', 2), hi = I(P, 'oliv', 3);
-    if (flack(x, y, 44, 301, 0.64)) { // mörkare fält med ren kant
-      if (hash(x, y, 303) < 0.004) return mid;
+    const kant = (vn(x, y, 4, 305) - 0.5) * 0.05; // kanten fransar sig lite, utan lösa punkter
+    if (flack(x, y, 44, 301, 0.64 + kant)) { // mörkare fält
+      const st = strack(x, y, 306, 0.014); if (st) return st === 1 ? mid : I(P, 'oliv', 0);
       return lo;
     }
-    if (hash(x, y, 303) < 0.004) return hi; // ett och annat strå
-    if (hash(x, y - 1, 303) < 0.004) return lo;
+    const tat = 0.008 + vn(x, y, 20, 307) * 0.02; // tätare strån på sina ställen
+    const st = strack(x, y, 303, tat); if (st) return st === 1 ? hi : lo;
     return mid;
   }
   function tuvorRen(B, ok, tat = 1) { // klungor av högt gräs, ett och annat strå och en vit blomma
     const P = B.P;
-    for (let cy = 0; cy * 11 < B.h + 11; cy++) for (let cx = 0; cx * 12 < B.w + 12; cx++) {
-      const x = cx * 12 + Math.floor(hash(cx, cy, 311) * 12), y = cy * 11 + Math.floor(hash(cx, cy, 312) * 11);
+    for (let cy = 0; cy * 10 < B.h + 10; cy++) for (let cx = 0; cx * 11 < B.w + 11; cx++) {
+      const x = cx * 11 + Math.floor(hash(cx, cy, 311) * 11), y = cy * 10 + Math.floor(hash(cx, cy, 312) * 10);
       if (!ok(x, y)) continue;
       const r = hash(cx, cy, 313);
       if (vn(x, y, 30, 314) > 0.62 && r < 0.75 * tat) { // klunga av högt gräs: fyra strån
         for (let k = 0; k < 4; k++) { const xx = x + k - 1, hh = 2 + ((k * 3 + cx) % 3 === 0 ? 2 : 1); for (let j = 0; j < hh; j++) B.satt(xx + (j === hh - 1 ? (k < 2 ? -1 : 1) * (hh > 3 ? 1 : 0) : 0), y - j, j === 0 ? I(P, 'oliv', 0) : j === hh - 1 ? I(P, 'oliv', 3) : I(P, 'oliv', 1)); }
-      } else if (r < 0.16 * tat) { // en tuva: två strån
+      } else if (r < 0.2 * tat) { // en tuva: två strån
         B.satt(x, y, I(P, 'oliv', 0)); B.satt(x, y - 1, I(P, 'oliv', 3)); B.satt(x + 1, y, I(P, 'oliv', 0)); B.satt(x + 1, y - 1, I(P, 'oliv', 1)); B.satt(x + 1, y - 2, I(P, 'oliv', 3));
-      } else if (r < 0.19 * tat) { // en vit blomma
+      } else if (r < 0.23 * tat) { // en vit blomma
         B.satt(x, y, I(P, 'oliv', 0)); B.satt(x, y - 1, I(P, 'ben', 3)); B.satt(x - 1, y - 1, I(P, 'ben', 2)); B.satt(x + 1, y - 1, I(P, 'ben', 2)); B.satt(x, y - 2, I(P, 'ben', 2));
       }
     }
@@ -377,7 +381,7 @@
     const P = B.P;
     fyll(B, (x, y) => {
       const sd = stigAvst2(x, y) - (vn(x, y, 10, 561) - 0.5) * 3 - (Math.hypot(x - 160, y - 96) < 20 ? 7 : 0);
-      if (sd < 3.5) return flack(x, y, 9, 562, 0.68) ? I(P, 'jord', 3) : I(P, 'jord', 2);
+      if (sd < 3.5) return vagstreck(x, y, 568, 0.02) ? I(P, 'jord', 1) : vagstreck(x, y, 569, 0.015) ? I(P, 'jord', 3) : flack(x, y, 9, 562, 0.68) ? I(P, 'jord', 3) : I(P, 'jord', 2);
       if (sd < 4.5) return I(P, 'jord', 1);
       return grasRen(x, y, P);
     });
@@ -408,6 +412,7 @@
       const driva = (x, y) => vn(x * 0.45, y, 18, 573) > 0.62; // drivorna: långa och smala, i blåstens riktning
       if (driva(x, y)) return I(P, 'ben', 3);
       if (driva(x, y - 1) || driva(x, y - 2)) return I(P, 'ben', 1); // skuggan under drivan
+      if (vagstreck(x, y, 574, 0.02)) return I(P, 'ben', 1); // små skavlar
       return I(P, 'ben', 2);
     });
     // sprickor i isen: få, raka och sammanhängande
@@ -425,8 +430,8 @@
     const P = B.P, steg = [10, 0, -12, -28];
     fyll(B, (x, y) => {
       const e = skogE(x, y) + (vn(x, y, 7, 590) - 0.5) * 8; // kanten mellan stegen slingrar sig i stora bågar
-      const skogsmark = () => flack(x, y, 14, 584, 0.62) ? I(P, 'oliv', 0) : I(P, 'barr', 1);
-      const mork = () => flack(x, y, 16, 585, 0.66) ? I(P, 'oliv', 2) : I(P, 'oliv', 1);
+      const skogsmark = () => vagstreck(x, y, 588, 0.02) ? I(P, 'jord', 0) : strack(x, y, 589, 0.012) === 1 ? I(P, 'oliv', 1) : flack(x, y, 14, 584, 0.62) ? I(P, 'oliv', 0) : I(P, 'barr', 1);
+      const mork = () => { const st = strack(x, y, 591, 0.015); return st === 1 ? I(P, 'oliv', 3) : st === 2 ? I(P, 'oliv', 0) : flack(x, y, 16, 585, 0.66) ? I(P, 'oliv', 2) : I(P, 'oliv', 1); };
       if (e > steg[0]) return skogsmark();
       if (e > steg[1]) return flack(x, y, 11, 586, 0.5) ? mork() : skogsmark(); // skogsmark med fläckar av gräs
       if (e > steg[2]) return mork();
