@@ -155,21 +155,26 @@
       B.satt(cx, topp, ton(3)); B.satt(cx, topp + 1, ton(2)); B.satt(cx - 1, topp + 2, ton(2)); B.satt(cx + 1, topp + 2, ton(1));
     }
   }
-  // torrakan: en död gran, grå stam med korta grenstumpar och avbruten topp
-  function torraka(B, cx, by, h, barr) {
-    const P = B.P;
-    for (let dx = 0; dx <= 6; dx++) B.morka(cx + dx, by + 1);
-    for (let y = 0; y < h; y++) {
-      const yy = by - y, w = y < h * 0.15 ? 1 : 0;
-      B.satt(cx - 1, yy, I(P, 'skiffer', y > h - 3 ? 1 : 2)); B.satt(cx, yy, I(P, 'kol', 3)); if (w) B.satt(cx + 1, yy, I(P, 'kol', 2));
-      if (hash(cx, yy, 420) < 0.12) B.satt(cx - 1, yy, I(P, 'ben', 0));
+  // torrakan: en död gran med alla grenar kvar men inga barr: grå stam, kransar av kala grenar som hänger ned
+  // mot spetsarna, kortare uppåt, och en avbruten topp (Björn efter bildstil v112)
+  function torraka(B, cx, by, h) {
+    const P = B.P, w2 = Math.round(h * 0.3);
+    for (let dx = 0; dx <= w2; dx++) B.morka(cx + dx, by + 1);
+    for (let y = 0; y < h; y++) { const yy = by - y; B.satt(cx - 1, yy, I(P, 'ben', 0)); B.satt(cx, yy, I(P, 'kol', 3)); }
+    B.satt(cx, by - h, I(P, 'ben', 0)); B.satt(cx + 1, by - h + 1, I(P, 'kol', 3)); // den avbrutna toppen
+    const n = Math.round(h / 4.5);
+    for (let k = 0; k < n; k++) {
+      const y = by - Math.round(h * 0.14) - Math.round(k * (h * 0.82) / n), f = 1 - k / n;
+      for (const sida of [-1, 1]) {
+        if (hash(k, sida + cx, 421) < 0.14) continue; // en gren som fallit av
+        const lang = Math.max(2, Math.round(w2 * (0.35 + f * 0.75) * (0.75 + hash(k, sida, 422) * 0.5)));
+        for (let i = 1; i <= lang; i++) {
+          const x = cx + (sida < 0 ? -1 : 0) + sida * i, yy = y + Math.round(i * i / (lang * 2.2)); // grenen böjer sig nedåt
+          B.satt(x, yy, i > lang - 2 ? I(P, 'jord', 1) : I(P, 'kol', 3));
+          if (i > 2 && i % 3 === 0 && i < lang - 1) { B.satt(x + sida, yy + 1, I(P, 'jord', 1)); } // små kvistar
+        }
+      }
     }
-    for (let k = 0; k < h * 0.7; k += 3) {
-      const y = by - h + 4 + k, l = 1 + Math.floor(hash(k, cx, 421) * (2 + k / 6));
-      for (const sida of [-1, 1]) if (hash(k, sida, 422) < 0.75) for (let i = 1; i <= l; i++) B.satt(cx + sida * i - (sida < 0 ? 1 : 0), y + Math.floor(i / 2), i === l ? I(P, 'kol', 2) : I(P, 'skiffer', 1));
-      if (barr && hash(k, 7, 423) < 0.25) B.satt(cx + 2, y + 1, I(P, 'jord', 1)); // några bruna barr kvar
-    }
-    B.satt(cx, by - h, I(P, 'skiffer', 3)); B.satt(cx - 1, by - h + 1, I(P, 'ben', 0));
   }
 
   // ---------- björken: vit stam med svarta märken, kronan på tre sätt ----------
@@ -265,15 +270,20 @@
     }
     for (const [k, c] of K) { const [x, y] = k.split(",").map(Number); const luft = !K.has(x + 1 + "," + y) || !K.has(x + "," + (y + 1)) || (!K.has(x - 1 + "," + y) && hash(x, y, 520) < 0.5); B.satt(x, y, luft ? L(0) : c); }
   }
-  // en torr björk: stammen avbruten, några grenstumpar
+  // en torr björk: stammen och alla grenar utan löv, toppen avbruten, några grenar brutna, barken flagnar och
+  // tickor på stammen (Björn efter bildstil v112)
   function torrBjork(B, cx, by, h) {
-    const P = B.P;
-    bjorkStam(B, cx, by, h, by - h);
-    for (let x = cx - 1; x <= cx + 1; x++) B.satt(x, by - h, hash(x, by, 520) < 0.5 ? I(P, 'jord', 1) : -1);
-    grenar(B, cx, by - h * 0.7, Math.PI / 2 + 0.7, h * 0.18, 1, 521);
-    grenar(B, cx + 1, by - h * 0.55, Math.PI / 2 - 0.8, h * 0.14, 1, 522);
-    for (let y = by - h * 0.4; y > by - h; y -= 4) B.satt(cx + 1, y, I(P, 'jord', 0)); // svamp och sprickor
+    const P = B.P, top = by - Math.round(h * 0.6);
+    for (let dx = 0; dx <= 8; dx++) B.morka(cx + dx, by + 1);
+    bjorkStam(B, cx, by, h, by - Math.round(h * 0.88));
+    for (let y = by - Math.round(h * 0.88); y < by; y += 3) if (hash(cx, y, 523) < 0.3) B.satt(cx, y, I(P, 'jord', 1)); // barken flagnar
+    for (const [dy, l] of [[0.3, 1], [0.42, 2]]) { const y = by - Math.round(h * dy); B.satt(cx + l % 2 + 1, y, I(P, 'jord', 2)); B.satt(cx + l % 2 + 2, y, I(P, 'jord', 1)); B.satt(cx + l % 2 + 1, y + 1, I(P, 'jord', 0)); } // tickor
+    grenar(B, cx, top, Math.PI / 2 + 0.3, h * 0.26, 3, 530);
+    grenar(B, cx, top, Math.PI / 2 - 0.4, h * 0.24, 3, 540);
+    grenar(B, cx, top + h * 0.14, Math.PI / 2 + 0.95, h * 0.14, 1, 550); // en bruten gren
+    grenar(B, cx, top + h * 0.1, Math.PI / 2 - 1.0, h * 0.18, 2, 560);
   }
+
 
   // ---------- en rad träd i alla stadier, med folk framför och bakom ----------
   const STADIER = [['planta', 6], ['ungträd', 15], ['vuxet', 31], ['gammalt', 46], ['jätteträd', 62]];
@@ -450,7 +460,7 @@
     tuvorRen(B, () => true, 0.6);
     const xs = [18, 46, 92, 156, 232], ting = [];
     STADIER.forEach(([, h], i) => { const x = xs[i], f = h > 40 ? 1 + hash(i, 3, 530) * 0.08 : 1; ting.push([fot, () => sort === 'gran' ? gran(B, x, fot, Math.round(h * f), 3, 0, i) : bjork(B, x, fot, Math.round(h * f), 3, 'sommar', i)]); });
-    ting.push([fot, () => sort === 'gran' ? torraka(B, 296, fot, 38, true) : torrBjork(B, 296, fot, 30)]);
+    ting.push([fot, () => sort === 'gran' ? torraka(B, 296, fot, 40) : torrBjork(B, 296, fot, 34)]);
     ting.push([fot + 10, () => fram(B, 100, fot + 10)]);
     ting.push([fot - 12, () => spelare(B, 162, fot - 12, 1, 'oliv')]);
     ting.push([fot + 2, () => spelare(B, 258, fot + 2, 1, 'oliv')]);
@@ -467,9 +477,9 @@
       versioner: [{ text: 'Version 1: snön renare.', ...SCEN(W, H, B => snoRen(B)) }] },
     { id: 'm_skogskant', stor: true, namn: 'Skogskanten i steg', typ: 'janej', vad: T + '5.1.3.2: stegen du valde (version 1), renare: varje steg är en hel yta med en slingrande kant i stället för prickar som blandas, och det höga gräset står i klungor. Din kommentar förra gången: ”Men bilden ser för prickig ut”.',
       versioner: [{ text: 'Version 1: skogskanten renare.', ...SCEN(W, H, B => skogskantRen(B)) }] },
-    { id: 'm_gran', stor: true, namn: 'Granen i alla stadier', typ: 'janej', vad: T + '5.1.4 och 5.1.6: våningarna du gillade (version 1), nu osymmetriska: varje våning är olika lång åt vänster och höger och lite förskjuten, så att ingen gran är spegelvänd. Mindre slump i barren. Från vänster planta, ungträd, vuxet, gammalt, jätteträd och torrakan. Din kommentar förra gången: ”Jag gillar version 1 bäst men den ser för perfekt ut. Gör det lite osymmetrisk”.',
+    { id: 'm_gran', stor: true, namn: 'Granen i alla stadier', typ: 'janej', vad: T + '5.1.4 och 5.1.6: våningarna du gillade (version 1), nu osymmetriska: varje våning är olika lång åt vänster och höger och lite förskjuten, så att ingen gran är spegelvänd. Mindre slump i barren. Från vänster planta, ungträd, vuxet, gammalt, jätteträd och torrakan, nu med alla grenar kvar men inga barr. Din kommentar förra gången: ”Jag gillar version 1 bäst men den ser för perfekt ut. Gör det lite osymmetrisk”.',
       versioner: [{ text: 'Version 1: granen osymmetrisk.', ...SCEN(W, 116, B => stadierRen(B, 'gran')) }] },
-    { id: 'm_bjork', stor: true, namn: 'Björken i alla stadier', typ: 'janej', vad: T + '5.1.4 och 5.1.6: klungorna du gillade (version 1), med en ren mörk kant bara nedtill och till höger, där skuggan är (ljuset från vänster ovanifrån), och inga mörka ringar inne i kronan. Från vänster planta, ungträd, vuxet, gammalt, jätteträd och en torr björk. Din kommentar förra gången: ”Jag gillar version 1 bäst men trädkronans mörka konturer ser slarviga ut”.',
+    { id: 'm_bjork', stor: true, namn: 'Björken i alla stadier', typ: 'janej', vad: T + '5.1.4 och 5.1.6: klungorna du gillade (version 1), med en ren mörk kant bara nedtill och till höger, där skuggan är (ljuset från vänster ovanifrån), och inga mörka ringar inne i kronan. Från vänster planta, ungträd, vuxet, gammalt, jätteträd och en torr björk med alla grenar men inga löv. Din kommentar förra gången: ”Jag gillar version 1 bäst men trädkronans mörka konturer ser slarviga ut”.',
       versioner: [{ text: 'Version 1: björken med ren kant.', ...SCEN(W, 116, B => stadierRen(B, 'bjork')) }] },
     { id: 'm_vatten', stor: true, namn: 'Vattnet och stranden', typ: 'tre', vad: T + '5.1.3.1: sjön och stranden, 20 × 12 rutor. Strandkanten slingrar sig tvärs över rutorna, räknad ur avståndet till vattnet.',
       versioner: [
