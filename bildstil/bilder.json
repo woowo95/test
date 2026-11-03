@@ -17,7 +17,7 @@
     {"id": "kol", "sort": "sak-material", "namn": "Kol", "w": 6, "h": 4, "vad": "några bitar träkol, matt svartgrått", "ritad": 1, "godkand": true},
     {"id": "flinta", "sort": "sak-material", "namn": "Flinta", "w": 5, "h": 4, "vad": "en knöl flinta med en slagen skarp yta", "ritad": 2, "godkand": true},
     {"id": "sten", "sort": "sak-material", "namn": "Sten", "w": 6, "h": 5, "vad": "en rundad gråsten", "ritad": 4, "forra": "nu blev den för svart som kål. gör den brun", "godkand": true},
-    {"id": "rep", "sort": "sak-material", "namn": "Rep", "w": 11, "h": 6, "vad": "en bunt hoprullat tvinnat rep av bast", "ritad": 6, "forra": "gör så det inte är gult"},
+    {"id": "rep", "sort": "sak-material", "namn": "Rep", "w": 11, "h": 6, "vad": "en bunt hoprullat tvinnat rep av bast", "ritad": 6, "forra": "gör så det inte är gult", "godkand": true},
     {"id": "ben", "sort": "sak-material", "namn": "Ben", "w": 7, "h": 4, "vad": "ett ljust djurben som ett klassiskt tecknat hundben: rakt skaft och två runda knölar i varje ände", "ritad": 2, "godkand": true},
     {"id": "skinn", "sort": "sak-material", "namn": "Harskinn", "w": 10, "h": 7, "vad": "ett utbrett harskinn, ljust gråbrunt med fyra små tassar", "ritad": 1, "godkand": true},
     {"id": "vargskinn", "sort": "sak-material", "namn": "Vargskinn", "w": 13, "h": 9, "vad": "ett stort grått vargskinn med svans, utbrett", "ritad": 1, "godkand": true},
