@@ -1,0 +1,19 @@
+{
+ "id": "skon-kinder",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Rosiga kinder",
+ "bilder": {
+  "standard": {
+   "x": -12,
+   "y": 0,
+   "rader": [
+    "..CC.............BB....",
+    ".CBBB............BBBA..",
+    "CBBsBB...........BBrAAA",
+    ".BBsB............ArAA..",
+    "..BB..............AA..."
+   ]
+  }
+ }
+}

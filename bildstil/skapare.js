@@ -466,13 +466,13 @@
     if (D('arr')) lagg('arr', dk => delen(dk, G, D('arr'), p, 'arr'));
     if (D('blamarke')) lagg('blamarke', dk => delen(dk, G, D('blamarke'), p, 'blamarke'));
     if (p.blod) lagg('blod', dk => RITA.blod(dk, G));
-    // kylan (5.2.2.6): mjukt röda kinder och nästipp i kindtonerna, som blir röda i kylan; utan kyla syns de inte
+    // kylan (5.2.2.6): en liten jämn rodnad på varje kind och nästippen i kindtonen, som blir röd i kylan.
+    // Inga spridda prickar (Björn: fläckarna var inte snygga): bara en sluten oval i en ton.
     if (p.kyla) lagg('blamarke', dk => {
-      for (const [cx, cy] of [[23.5, 37.5], [40.5, 37.5]]) for (let y = 34; y <= 41; y++) for (let x = Math.floor(cx - 4); x <= cx + 4; x++) {
-        const r = ((x + 0.5 - cx) / 3) ** 2 + ((y + 0.5 - cy) / 1.8) ** 2; if (r > 1) continue;
-        if (hash(x, y, 12) < (r < 0.4 ? 0.7 : 0.35)) dk.satt(x, y, 'kind1');
+      for (const [cx, cy] of [[23.5, 37.5], [40.5, 37.5]]) for (let y = 35; y <= 40; y++) for (let x = Math.floor(cx - 3); x <= cx + 3; x++) {
+        if (((x + 0.5 - cx) / 2.2) ** 2 + ((y + 0.5 - cy) / 1.2) ** 2 <= 1) dk.satt(x, y, 'kind2');
       }
-      dk.satt(32, 37, 'kind2'); dk.satt(33, 37, 'kind1');
+      dk.satt(32, 37, 'kind2');
     });
     lagg('ogon', dk => delen(dk, G, D('oga'), p, 'oga'), { maskbar: true });
     lagg('ogonbryn', dk => delen(dk, G, D('ogonbryn'), p, 'ogonbryn'));
@@ -482,8 +482,8 @@
     const fr = D('frisyr');
     // en ritad frisyr har två lager (bilder.bakhar och bilder.framhar, steg 5.2.2.4) från fästpunkten har; annars platshållaren
     const frD = fr && SORT.frisyr.ritas ? DELAR[fr.id] : null;
-    if (frD) { lagg('bakhar', dk => ritaBild(dk, frD.bilder.bakhar, G.m.fast.har), { maskbar: true }); lagg('framhar', dk => ritaBild(dk, frD.bilder.framhar, G.m.fast.har), { maskbar: true }); }
-    else if (fr) { lagg('bakhar', dk => RITA.bakhar(dk, G, fr), { maskbar: true }); lagg('framhar', dk => RITA.framhar(dk, G, fr), { maskbar: true }); }
+    if (frD) { lagg('bakhar', dk => ritaBild(dk, frD.bilder.bakhar, G.m.fast.har), { maskbar: true, har: true }); lagg('framhar', dk => ritaBild(dk, frD.bilder.framhar, G.m.fast.har), { maskbar: true, har: true }); }
+    else if (fr) { lagg('bakhar', dk => RITA.bakhar(dk, G, fr), { maskbar: true, har: true }); lagg('framhar', dk => RITA.framhar(dk, G, fr), { maskbar: true, har: true }); }
     for (const id of skonLager(p)) {
       const d = DEL[id]; if (!d.lager || (id === 'skon-glans' && (!fr || fr.karta === 'flint'))) continue;
       // ett ritat lager (5.2.2.5) ritas från sin plats; tänderna syns bara när munnen är glad eller öppen
@@ -515,7 +515,9 @@
       const dk = Duk(W, W); b.rita(dk);
       for (let i = 0; i < dk.px.length; i++) {
         const v = dk.px[i]; if (!v) continue;
-        const z = (b.maskbar || b.utom) ? G.zon(i % W, (i / W) | 0) : null;
+        let z = (b.maskbar || b.utom) ? G.zon(i % W, (i / W) | 0) : null;
+        // håret över örat hör till sidhåret: det döljs bara när huvudbonaden täcker sidorna, så att inga lösa testar blir kvar
+        if (b.har && z === 'oron') z = 'sidor';
         if (z && b.maskbar && masker.has(z)) continue;
         if (z && b.utom && b.utom.includes(z)) continue;
         kt[i] = v; ag[i] = L;
@@ -686,13 +688,23 @@
       }
     }
     if (bonad) {
-      const mat = { 'bonad-1': 'skiffer', 'bonad-2': 'jord', 'bonad-3': 'jord', 'bonad-4': 'rost', 'bonad-5': 'senap', 'bonad-6': 'ben', 'bonad-7': 'oliv', 'bonad-8': 'oliv' }[del.huvudbonad];
+      const mat = { 'bonad-1': 'skiffer', 'bonad-2': 'jord', 'bonad-3': 'oliv', 'bonad-4': 'rost', 'bonad-5': 'senap', 'bonad-6': 'ben', 'bonad-7': 'oliv', 'bonad-8': 'oliv' }[del.huvudbonad];
       const s = rikt === 'sida' ? 1 : 0, xa = 4 + s, xb = 9 + s;
       if (bonad === 'mossa') for (let y = h - 1; y <= h + 1; y++) for (let x = xa - (y === h + 1 ? 1 : 0); x <= xb + (y === h + 1 && !s ? 1 : 0); x++) satt(x, y, mat + (y === h - 1 ? 3 : 2));
       if (bonad === 'hatt') { for (let x = xa - 2; x <= xb + 2; x++) satt(x, h + 1, mat + 1); for (let y = h - 1; y <= h; y++) for (let x = xa; x <= xb; x++) satt(x, y, mat + 2); }
-      if (bonad === 'huva') for (let y = h - 1; y <= h + 6; y++) for (let x = xa - 1; x <= xb + 1; x++) {
-        const ansikte = rikt === 'fram' ? x >= 5 && x <= 8 && y >= h + 2 && y <= h + 5 : rikt === 'sida' ? x >= 8 && y >= h + 2 && y <= h + 5 : false;
-        if (!ansikte && !(rikt === 'sida' && x > 10)) satt(x, y, mat + (x === xa - 1 ? 3 : 2));
+      // huvan: rundad överst, en öppning för ansiktet med en kant (huvan har en senapsgul kant som i porträttet) och tyget ner över axlarna
+      if (bonad === 'huva') {
+        const kant = del.huvudbonad === 'bonad-3' ? 'senap2' : mat + 3;
+        const x1 = rikt === 'sida' ? 10 : 10, x0 = rikt === 'sida' ? 4 : 3;
+        for (let y = h - 1; y <= h + 7; y++) for (let x = x0; x <= x1; x++) {
+          if (y === h - 1 && (x === x0 || x === x1)) continue;
+          if (y === h + 7 && rikt === 'sida' && x > 8) continue;
+          const opp = rikt === 'fram' ? x >= 5 && x <= 8 && y >= h + 1 && y <= h + 5 : rikt === 'sida' ? x >= 8 && y >= h + 1 && y <= h + 5 : false;
+          if (opp) continue;
+          const runt = rikt === 'fram' ? ((x === 4 || x === 9) && y >= h + 1 && y <= h + 5) || (y === h && x >= 5 && x <= 8) || (y === h + 6 && x >= 5 && x <= 8)
+            : rikt === 'sida' ? (x === 7 && y >= h + 1 && y <= h + 5) || (y === h && x >= 8) || (y === h + 6 && x >= 8) : false;
+          satt(x, y, runt ? kant : mat + (x === x0 || y === h - 1 ? 3 : x === x1 ? 1 : 2));
+        }
       }
       if (bonad === 'band') for (let x = xa; x <= xb; x++) satt(x, h + 1, mat + 2);
     }
