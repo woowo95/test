@@ -14,7 +14,7 @@ import { vattenNu } from './sjo';
 import { clamp, rnd } from './slump';
 import { SLAGSMAL, VAPEN, Uppstallning, Vapen, foljet, nyStrid, personKampe, slitKastat, sparaStrid, stridTillSlut, svartSkadad, vadretIStriden } from './strid';
 import { isLight } from './tid';
-import { HOUR, Person, SEC, State, T, W, H } from './typer';
+import { DAY, HOUR, Person, SEC, State, T, W, H } from './typer';
 import { vaderNu } from './vader';
 import { grundvarde, rikedom } from './varde';
 import { kanterna, soker } from './varg';
@@ -61,13 +61,12 @@ export const ROVARE = balans('rovare', {
 // rövarnas vapen (ett slumpas för var och en)
 const ROVARVAPEN: Vapen[] = ['kniv', 'yxa', 'fiskespjut', 'flintspjut', 'sten'];
 export interface Rovare { namn: string; sex: 'm' | 'k'; st: { styrka: number; uthallighet: number; mod: number; smidighet: number; skicklighet: number }; vapen: Vapen; blod: number; fodd?: number } // fodd: gästens liv (steg 4.5.7.7, gastliv.ts)
-export interface Rovarflock { id: number; klan?: number; folk: Rovare[]; x: number; y: number; mx: number; my: number; gor: 'samlas' | 'kommer' | 'flyr'; till: number; sedd?: number; gissning?: number }
+export interface Rovarflock { id: number; klan?: number; folk: Rovare[]; x: number; y: number; mx: number; my: number; gor: 'samlas' | 'kommer' | 'flyr'; till: number; sedd?: number; gissning?: number; vackt?: boolean }
 
 const avst = (a: { x: number; y: number }, b: { x: number; y: number }) => Math.hypot(a.x - b.x, a.y - b.y);
 const vaken = (p: Person) => p.task?.act !== 'sova';
 const mellan = (s: State, [a, b]: readonly number[]) => a + rnd(s, 'rovare') * (b - a);
 const vuxenKan = (s: State, p: Person) => { const a = ageOf(p, s.now); return a >= ALDER.vaktFran && a < ALDER.vaktTill && !isSick(p, s.now) && halsa(p) >= KROPP.svag && kanGa(p); };
-export const rovareOf = (s: State) => s.rovare;
 
 // byns försvar: de vuxna som kan slåss, med sina vapen
 export function forsvaret(s: State) {
@@ -117,7 +116,7 @@ export function rovarnaKommer(s: State, tvinga?: number, direkt?: boolean) {
   for (const r of folk) r.fodd = foddNar(s.seed, gastNyckel(k?.id, r.namn), 'rovare', s.now); // drar ingen slump
   const nr = s.rovarNr = (s.rovarNr ?? 0) + 1;
   s.rovare = { id: nr, klan: k?.id, folk, x, y, mx: x, my: y, gor: direkt ? 'kommer' : 'samlas', till: direkt ? s.now : s.now + mellan(s, ROVARE.samlasTim) * HOUR };
-  s.rovarVila = s.now + ROVARE.vilaDygn * 24 * HOUR;
+  s.rovarVila = s.now + ROVARE.vilaDygn * DAY;
   count(s, 'rovarflockar'); count(s, 'rovare', n);
 }
 // en ruta ungefär ROVARE.testNara rutor från elden, på land och utanför husen (testläget, steg 4.5.7.10); undefined = ingen hittades
@@ -156,21 +155,24 @@ function malet(s: State) {
   return { x: e.x + 0.5, y: e.y + 0.5 };
 }
 
-// de som är vakna ser flocken: vakten ser längst, gissar hur många de är och väcker byn när de är nära
+// de som är vakna ser flocken: vakten ser längst, gissar hur många de är och väcker byn när de är nära (en gång, också om
+// flocken sågs långt bort först)
 function ses(s: State, f: Rovarflock, folk: Person[]) {
-  if (f.sedd !== undefined) return;
+  if (f.sedd !== undefined && f.vackt) return;
   const natt = isLight(s.now) ? 1 : ROVARE.nattSer, dimma = 1 - ROVARE.dimmaSer * vaderNu(s).dimma;
   const rad = (q: Person) => (q.task?.act === 'vakt' ? ROVARE.vaktSer : ROVARE.folkSer) * natt * dimma;
   const ser = (q: Person) => vaken(q) && avst(q, f) < rad(q);
-  const vakt = folk.find(q => q.task?.act === 'vakt' && ser(q)), p = vakt ?? folk.find(ser);
+  const vakt = folk.find(q => q.task?.act === 'vakt' && ser(q)), e = eldPlats(s);
+  const vack = () => { if (vakt && !f.vackt && Math.hypot(f.x - e.x - 0.5, f.y - e.y - 0.5) < ROVARE.vack) { f.vackt = true; vacka(s, f, vakt, folk); } };
+  if (f.sedd !== undefined) { vack(); return; }
+  const p = vakt ?? folk.find(ser);
   if (!p) return;
   const n = f.folk.length, fel = ROVARE.gissFel * (vakt ? avst(p, f) / rad(p) : 1) * (rnd(s, 'rovare') * 2 - 1);
   f.sedd = s.now; f.gissning = Math.max(1, Math.round(n * (1 + fel)));
   count(s, 'rovarSedda');
   log(s, `${p.name} såg rövare ${f.gor === 'samlas' ? 'samlas vid kartans kant' : 'på väg mot byn'}, ungefär ${f.gissning} (${fran(s, f)}).`, 'world', [p.id]);
   const hort = larma(s, 'rovare', f.gissning, [p]);
-  const e = eldPlats(s);
-  if (vakt && Math.hypot(f.x - e.x - 0.5, f.y - e.y - 0.5) < ROVARE.vack) vacka(s, f, vakt, folk);
+  vack();
   soker(s, [p, ...hort]);
 }
 // vakten väcker de vuxna som sover

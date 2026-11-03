@@ -115,6 +115,8 @@ export function chopStock(s: State, ref: number | undefined, amount: number) {
 }
 
 // den fällda stam närmast byn som räcker till ett virke (steg 4.5.5.2)
+// finns det en stam att klyva (utan att leta upp den närmaste)
+export const finnsKlyvStam = (s: State) => (s.stockar ?? []).some(k => k.ved >= SKOG.virkeVed);
 export const klyvStam = (s: State) => (s.stockar ?? []).filter(k => k.ved >= SKOG.virkeVed).sort((a, c) => campDist(s, a.x, a.y) - campDist(s, c.x, c.y))[0];
 // en vuxen som ska skaffa ved: hugga en fälld stam, fälla ett träd, göra en yxa eller (annars) samla grenar
 // kyla: kylan är en fara (dangers i val.ts). Då görs ingen ny yxa, för ett nytt redskap är en förbättring

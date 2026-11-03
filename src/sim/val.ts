@@ -312,7 +312,7 @@ export function nastaBuske(s: State, k: Lager, x0: number, y0: number) {
 // (med rädslan avdragen; utan tror gäller det rutan ger) och rädslan ensam
 export function nastaRuta(s: State, varde: (x: number, y: number) => number, x0: number, y0: number, r: number, id: number, krav: readonly { sett: readonly number[]; minst: number }[], drag?: { ut: number; tror?: (x: number, y: number) => number; radsla: (x: number, y: number) => number }) {
   const cx = Math.floor(x0), cy = Math.floor(y0), tiles = vattenNu(s), best: ({ x: number; y: number } | undefined)[] = [], bv = krav.map(() => -Infinity);
-  const n = krav[0]?.sett.length ?? 0, utan = krav.every(q => q.minst <= 0), lager = campGrid(s), d0 = campDist(s, x0, y0);
+  const n = krav[0]?.sett.length ?? 0, utan = krav.every(q => q.minst <= 0), minst = utan ? -Infinity : Math.min(...krav.map(q => q.minst)), lager = campGrid(s), d0 = campDist(s, x0, y0);
   // långt bort (bortom MINNE.sokR) prövas varannan ruta: det är bara riktningen som behövs, väl framme letar man nära
   const st = r > MINNE.sokR ? 2 : 1;
   for (let dy = -r; dy <= r; dy += st) for (let dx = -r; dx <= r; dx += st) {
@@ -320,6 +320,7 @@ export function nastaRuta(s: State, varde: (x: number, y: number) => number, x0:
     if (d < 0.5 || d > r + 0.01 || x < 0 || y < 0 || x >= W || y >= H) continue;
     if (tiles[i] === T.Vatten || bitAt(s, x, y) || forSmutsigt(s, x, y)) continue;
     const v0 = utan ? 0 : drag?.tror ? drag.tror(x, y) : varde(x, y);
+    if (v0 < minst) continue; // rutan ger för lite för alla kraven
     const v = v0 - d * MINNE.sokPris + hash3(id, i, n) * 0.1 + (drag ? drag.ut * (lager[i] - d0) - (drag.tror && !utan ? 0 : drag.radsla(x, y)) : 0);
     for (let j = 0; j < krav.length; j++) if (v0 >= krav[j].minst && v > bv[j] && !krav[j].sett.includes(i)) { bv[j] = v; best[j] = { x: x + 0.5, y: y + 0.5 }; }
   }

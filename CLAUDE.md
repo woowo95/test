@@ -40,17 +40,6 @@ Sök i dokumentet i stället för att läsa allt; det är långt.
 - Hela resurser (Björn, efter v143): inga resurser hanteras i decimaler. Inget recept, bygge, byte, pris eller utfall är mindre än en hel resurs; allt som går åt, ges, byts eller fås är hela saker. Slitage och arbetet mot nästa sak är inga resurser och får ha decimaler.
 - Elden är ett verktyg, inte ett mål. Att den brinner är inget mått på en lyckad by, och den får inte styra andra system. Faror som kyla går före förbättringar via prioriteringen i valet av aktivitet.
 
-## Nattkörning (Björn, efter v55)
-
-När Björn säger att Claude får programmera över natten:
-
-- Gå igenom stegen i Färdplanen ett i taget i den ordning "Nästa steg" säger, och sedan i nummerordning. Gå inte längre än Björn sagt (efter v55: inte efter 2.9).
-- Efter varje färdigt steg: testerna som vanligt (snabbkollen, och det stora testet efter ett systems sista steg), commit med versionen, publicera en ny version och uppdatera designdokumentet.
-- Behöver ett steg Björns svar ("Björn avgör" eller något som saknas): hoppa över det tills vidare, skriv frågan i steget och gå vidare. Stanna bara om något allvarligt gör att inget kan göras utan Björn.
-- Utseenden: platshållare under natten; de tre versionerna per sak läggs i bildstilens valdel till morgonen.
-- Fasens Balans (det stora testet och balanseringen) får byggas och balanseras under en nattkörning (Björn efter v178). I de andra stegen balanseras inget, varken på natten eller dagen; det görs i fasens Balans.
-- När Björn säger stopp: gör klart steget som pågår, publicera det och ge en rapport över allt som gjorts: steg och versioner, det som hoppades över och varför, frågorna, bilderna med förslag och testresultaten.
-
 ## Källor
 
 - Spelet (artefakt): https://claude.ai/artifact/TdCUKPj4wC55BVGq7db14n

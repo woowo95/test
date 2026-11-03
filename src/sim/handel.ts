@@ -18,7 +18,7 @@ import { dropSpot, put, stacksOf, use } from './lager';
 import { sumOf } from './egendom';
 import { ledareOf } from './styre';
 import { kanterna } from './varg';
-import { KLAN, andraInst, handlarKlan, klanById, klanerOf } from './klaner';
+import { KLAN, KLAN_HEM, andraInst, handlarKlan, klanById, klanerOf } from './klaner';
 import { foddNar, gastNyckel } from './gastliv';
 import { affarMed, glomIrritation, kravMax, kravRel, luradMed, nejTill } from './gastrel';
 
@@ -104,14 +104,15 @@ export const HANDLARVAROR: { k: string; n: [number, number]; vikt: number; sort:
   { k: 'benflojt', n: [1, 1], vikt: 1, sort: V },
 ];
 // var handlarna kommer ifrån, och vad som är sällsynt där (det är värt mer för handlaren, HANDEL.hemPaslag)
-export const HEM: { namn: string; sallsynt: string[] }[] = [
-  { namn: 'kusten i söder', sallsynt: ['skinn', 'vargskinn', 'ved'] },
-  { namn: 'fjällen i norr', sallsynt: ['rovfron', 'artfron', 'bar'] },
-  { namn: 'skogarna i öster', sallsynt: ['fisk', 'torrfisk', 'flinta'] },
-  { namn: 'sjöarna i väster', sallsynt: ['flinta', 'sten', 'kott'] },
-  { namn: 'älvdalen', sallsynt: ['skinn', 'ben', 'torrkott'] },
-  { namn: 'byarna vid havet', sallsynt: ['ved', 'rep', 'torrkott'] },
-];
+const SALLSYNT: Record<typeof KLAN_HEM[number], string[]> = {
+  'kusten i söder': ['skinn', 'vargskinn', 'ved'],
+  'fjällen i norr': ['rovfron', 'artfron', 'bar'],
+  'skogarna i öster': ['fisk', 'torrfisk', 'flinta'],
+  'sjöarna i väster': ['flinta', 'sten', 'kott'],
+  'älvdalen': ['skinn', 'ben', 'torrkott'],
+  'byarna vid havet': ['ved', 'rep', 'torrkott'],
+};
+const HEM = KLAN_HEM.map(namn => ({ namn, sallsynt: SALLSYNT[namn] })); // platserna står i klaner.ts
 
 export interface HVara { k: string; n: number; q?: number }
 export interface Handlare {
@@ -149,7 +150,6 @@ export interface Affar {
   hamta: { x: number; y: number; k: string[] }[]; framme: string[];
   nej: number; f: number; t: number; dur?: number; byt?: number; hem?: { x: number; y: number };
 }
-export const handlareOf = (s: State) => s.handlare;
 // vad handlaren gör just nu (inforutan, steg 4.5.7.4)
 export function handlarFas(h: Handlare) {
   if (h.fas !== 'handlar') return h.fas === 'kommer' ? 'På väg till byn' : h.fas === 'vantar' ? 'Väntar på kvällen' : 'På väg hem';
@@ -272,8 +272,10 @@ function lagUt(s: State, h: Handlare) {
 // handlaren går: filten plockas ihop och hen går tillbaka mot kanten
 function gar(s: State, h: Handlare) {
   glomIrritation(s, h);
+  if (h.affar) { const p = byId(s, h.affar.vem); slut(s, h, h.affar, p && alive(p) ? p : undefined); } // en affär som pågår slutar
   h.fas = 'gar'; h.affar = undefined; h.mx = h.ut.x; h.my = h.ut.y; h.fran = { x: h.x, y: h.y, t: s.now }; h.framme = s.now + Math.hypot(h.mx - h.x, h.my - h.y) / HANDEL.fart * SEC;
-  if (s.filtar) { s.filtar = s.filtar.filter(f => f.handlare !== h.id); if (!s.filtar.length) delete s.filtar; }
+  const par = s.filtar?.find(f => f.handlare === h.id)?.par;
+  if (s.filtar) { s.filtar = s.filtar.filter(f => f.handlare !== h.id && (par === undefined || f.par !== par)); if (!s.filtar.length) delete s.filtar; }
   log(s, `${h.namn} plockade ihop sin filt och gick hemåt.`, 'world');
 }
 
@@ -588,6 +590,7 @@ function glomAffar(s: State, h: Handlare) {
   const a = h.affar, p = a && byId(s, a.vem);
   if (!a || (p && alive(p) && s.now - a.t < HANDEL.glomMin * MIN)) return;
   if (p && alive(p)) slut(s, h, a, p);
+  else if (a.byn && a.byt !== undefined) slut(s, h, a, undefined); // byn hann byta innan den som handlade dog: byn har handlat
   else { h.affar = undefined; visaFiltar(s, h); }
 }
 

@@ -525,6 +525,7 @@ SCENARIER.vald = {
 };
 
 SCENARIER.barnutbrott = {
+  lang: true,
   text: 'Barnens utbrott (steg 3.2.4): barn som mår mycket dåligt skriker, trotsar, puttas med ett syskon eller springer iväg, mer sällan med en förälder nära och efter lek',
   kor: () => {
     // fem ledsna barn i en by där de vuxna mår bra, i tolv dygn (tolv år i spelet)

@@ -9,6 +9,7 @@ import { START, STEG_TIM } from '../kor';
 import { setMat, Koll, kor, tandEld, logg, skogsandel, uttag, STOCKHOLM, SCENARIER, nyInvanare, klockan, medHus } from './hjalp';
 
 SCENARIER.glanta = {
+  lang: true,
   text: 'Ny by: fem personer utan eld i en liten glänta på en större karta, skog och ängar med högt gräs står runt omkring och marken nöts till stigar',
   kor: () => {
     const s = createState(11, START), a = angOf(s.seed), g0 = groundOf(s);

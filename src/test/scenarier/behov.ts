@@ -185,6 +185,7 @@ SCENARIER.aktivitet = {
 };
 
 SCENARIER.fritid = {
+  lang: true,
   text: 'På fritiden tar folk promenader (de nyfikna och modiga längre bort), badar när det är varmt och sitter vid stranden. Man vilar ut när det är mörkt och på dagen bara när man är mycket trött (steg 2.3.10)',
   kor: () => {
     const folk: { d: number; v: number }[] = [];

@@ -1578,6 +1578,7 @@ SCENARIER.individer = {
 };
 
 SCENARIER.kaninjakt = {
+  lang: true,
   text: 'Kaninjakten som strid (steg 3.7.3): jägaren smyger sig fram till en kanin och sticker eller kastar. Stenen fångar sämre än spjutet och tappas oftast bort, det kastade spjutet slits och försvinner ibland (oftare i vattnet), gruppen skräms, en skadad kanin springer och bara den som griper en kanin med händerna kan bli biten. I byn ger jakten kaniner',
   kor: () => {
     const s0 = createState(6, START);
@@ -1636,6 +1637,7 @@ SCENARIER.kaninjakt = {
 };
 
 SCENARIER.varg = {
+  lang: true,
   text: 'Vargen och vakten (steg 3.7.1): vargar kommer under istiden, oftast i flock och ibland ensamma, och drar vidare efter en tid. Vakten ser dem och väcker byn, en flock anfaller den som är ensam, på natten stjäl de mat ur förrådet när ingen är vaken nära, och byn kan jaga dem i grupp. Svårigheten: en varg slår oftast en obeväpnad, med spjut klarar man sig oftast, och tre med spjut slår oftast fyra vargar men någon skadas',
   kor: () => {
     // svårigheten i testarenan
@@ -2125,6 +2127,7 @@ SCENARIER.harflykt = {
 };
 
 SCENARIER.gangar = {
+  lang: true,
   text: 'Avstånd i byn (steg 4.5.4.5): minst 2 rutor mellan två hus, latrinen lika långt från elden som fälten (15 rutor), och en station ute (bord, torkställning) står i en gång mellan husen bara om gången är minst 3 rutor bred, och då mot husväggen så att gången är fri',
   kor: () => {
     const { gangFri, stationSite, eldPlats, housesOf, bitsOf, touch, PLATS, ODLING } = SIM;

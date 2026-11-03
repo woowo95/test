@@ -7,6 +7,7 @@
 import { hash3 } from './slump';
 import { DAY } from './typer';
 import { N1, N2, NK, NM } from './folk';
+import { KLAN_HEM } from './klaner';
 
 export type Roll = 'handlare' | 'rovare' | 'gast';
 export interface Slakting { roll: 'mor' | 'far' | 'syskon' | 'partner' | 'barn'; namn: string; sex: 'm' | 'k'; ar: number; dog?: number } // ar = gästens ålder när hen föddes eller kom in i livet (föräldrarna: 0), dog = gästens ålder när hen dog
@@ -16,7 +17,7 @@ export interface GastLiv { alder: number; familj: Slakting[]; liv: LivRad[]; hum
 // åldern när gästen först kommer, efter rollen (år, ett dygn = ett år i spelet)
 const ALDRAR: Record<Roll, [number, number]> = { handlare: [24, 56], rovare: [18, 42], gast: [18, 60] };
 const HANTVERK = ['garva skinn', 'fläta korgar', 'tälja i trä', 'sy kläder', 'fiska med nät', 'spåra vilt', 'göra rep', 'slå flinta'];
-const PLATSER = ['fjällen i norr', 'kusten i väster', 'de stora sjöarna', 'skogarna i öster', 'slätten i söder', 'älvdalen'];
+const PLATSER = KLAN_HEM; // man reser till där klanerna bor (klaner.ts)
 const DELAR = ['armen', 'benet', 'handen', 'axeln', 'foten'];
 
 // sammanhanget medan livet räknas fram, år för år
@@ -88,7 +89,8 @@ export const forstaAlder = (seed: number, nyckel: number, roll: Roll) => { const
 // när gästen föddes: sparas hos den som kan komma igen (KlanPerson.fodd), annars räknat från när hen kom
 export const foddNar = (seed: number, nyckel: number, roll: Roll, nu: number) => nu - forstaAlder(seed, nyckel, roll) * DAY;
 
-const cache = new Map<string, GastLiv>();
+// livet är bara ur fröet, nyckeln och åldern (ingen spelstatus), så det sparas här; högst CACHE_MAX liv
+const cache = new Map<string, GastLiv>(), CACHE_MAX = 200;
 // hela livet fram till i dag. Rollen styr chanserna; klanen och hemmet står i texterna
 export function gastLiv(seed: number, nyckel: number, namn: string, sex: 'm' | 'k', roll: Roll, klan: string, hem: string, fodd: number, nu: number): GastLiv {
   const alder = Math.max(0, Math.floor((nu - fodd) / DAY)), id = `${seed}:${nyckel}:${roll}:${alder}`;
@@ -97,7 +99,7 @@ export function gastLiv(seed: number, nyckel: number, namn: string, sex: 'm' | '
   let ar = 0;
   const brukat = new Set<string>();
   const c: Liv = {
-    r: salt => tal(seed, nyckel, 1000 + ar * 64 + salt), ar, roll, sex, familj: [], liv: [], kan: [], klan, hem,
+    r: salt => hash3(seed, nyckel, ar * 1024 + salt, 0x5bd1e995, 11), ar, roll, sex, familj: [], liv: [], kan: [], klan, hem,
     namn: (sx, salt) => {
       for (let i = 0; i < 8; i++) {
         const t = (k: number) => tal(seed, nyckel, 50000 + ar * 512 + salt * 16 + i * 3 + k), slut = sx === 'k' ? NK : NM;
@@ -114,9 +116,9 @@ export function gastLiv(seed: number, nyckel: number, namn: string, sex: 'm' | '
   const gjort = new Set<string>();
   for (ar = 1; ar <= alder; ar++) {
     c.ar = ar;
-    for (const [k, h] of Object.entries(LIVSHANDELSER)) {
+    for (const [j, [k, h]] of Object.entries(LIVSHANDELSER).entries()) {
       if (ar < h.fran || ar > h.till || (h.en && gjort.has(k))) continue;
-      if (c.r(k.length * 7 + k.charCodeAt(0)) >= (h.chans[roll] ?? h.chans.annars)) continue;
+      if (c.r(100 + j) >= (h.chans[roll] ?? h.chans.annars)) continue;
       const text = h.gor(c);
       if (!text) continue;
       gjort.add(k);
@@ -135,7 +137,7 @@ export function gastLiv(seed: number, nyckel: number, namn: string, sex: 'm' | '
     forlust && alder - forlust.ar < 3 ? `${cap(hen(sex))} sörjer fortfarande.` : '',
   ];
   const liv: GastLiv = { alder, familj: c.familj, liv: c.liv, humor, kan: c.kan, beskrivning: delar.filter(Boolean).join(' ') };
-  if (cache.size > 200) cache.clear();
+  if (cache.size > CACHE_MAX) cache.clear();
   cache.set(id, liv);
   return liv;
 }
