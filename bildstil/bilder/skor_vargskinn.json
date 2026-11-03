@@ -1,32 +1,40 @@
 {
- "id": "skor_vargskinn",
- "ritad": 3,
- "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
- "om": "Jag valde version 1. Den följer dagens bild bäst: två skor från sidan som står isär, den bakre uppe till höger och den främre nere till vänster. Båda har ett ljust skaft av ben överst, grått skinn och en mörk sula av skiffer0. Den läses också som samma vargskinn som rocken. Ändringar för att tån och hälen ska synas, som Björn bad om: Den främre skon har nu ett smalt skaft (QTSQ) ovanför en bredare fot, så tån sticker ut ett steg åt höger. Hälen är rak bak till vänster. Sulan var kortare än foten och flyttad ett steg in; nu går den hela vägen under foten (QQQQQQ), så skon inte ser rund och fyrkantig ut. Den bakre skons sula var också indragen; nu sitter den under hela foten och ger en rak häl, medan foten sticker ut ett steg förbi skaftet som tå. Ljuset kommer uppifrån till vänster: skinnet går från skiffer3 till vänster till skiffer1 vid tån, med en ljus punkt mitt på foten som i förlagan. Konturen är skiffer0 och glansen på skaftet är ben3/ben2, aldrig ren vit.",
- "w": 10,
- "h": 5,
- "rader": [
-  ".....QwqQ.",
-  "QwqQ.QTSRQ",
-  "QTSQ.QQQQQ",
-  "QTSTRQ....",
-  "QQQQQQ...."
- ],
- "pal": {
-  "Q": "#233035",
-  "R": "#3e5156",
-  "S": "#61767a",
-  "T": "#8a9c9e",
-  "q": "#bdb39b",
-  "w": "#dad0bb"
- },
- "forra": {
-  "ritad": 2,
+  "id": "skor_vargskinn",
+  "ritad": 4,
+  "av": "Claude",
+  "om": "Claude: två exakt lika skor (5 × 3), den bakre uppe till höger; ljust skaft, tån åt höger, rak häl och mörk sula.",
+  "w": 10,
+  "h": 5,
   "rader": [
-   ".....wqQ",
-   "QwqQ.TSQ",
-   "QTSQ.QQQ",
-   ".QQQ...."
-  ]
- }
+    ".....QwQ..",
+    ".....QTSRQ",
+    "QwQ..QQQQQ",
+    "QTSRQ.....",
+    "QQQQQ....."
+  ],
+  "pal": {
+    "Q": "#233035",
+    "w": "#dad0bb",
+    "T": "#8a9c9e",
+    "S": "#61767a",
+    "R": "#3e5156"
+  },
+  "forra": {
+    "ritad": 3,
+    "rader": [
+      ".....QwqQ.",
+      "QwqQ.QTSRQ",
+      "QTSQ.QQQQQ",
+      "QTSTRQ....",
+      "QQQQQQ...."
+    ],
+    "pal": {
+      "Q": "#233035",
+      "R": "#3e5156",
+      "S": "#61767a",
+      "T": "#8a9c9e",
+      "q": "#bdb39b",
+      "w": "#dad0bb"
+    }
+  }
 }

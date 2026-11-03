@@ -1,32 +1,42 @@
 {
- "id": "torrkott",
- "ritad": 2,
- "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
- "om": "Jag valde version 2. Den läses tydligast som några tunna, sneda strimlor och har samma storlek och jord0-kontur som harköttet. Version 1 blir två runda klumpar. Version 3 har rost0 som kontur och mycket rost, så den ser ut som rått kött och inte som torkat. Ändring: i den översta strimlan byttes rost3 (u) mot ben0 (o), så att köttet blir mer gråbrunt och torrt. Den andra strimlan behåller en rost3-punkt, så att det fortfarande läses som mat. Ljuset kommer uppe till vänster (jord3) och det mörkaste ligger nere till höger (rost1, jord1).",
- "w": 8,
- "h": 4,
- "rader": [
-  ".EEEE...",
-  "EHoGsEE.",
-  "EGsEHuGE",
-  ".EE.EsFE"
- ],
- "pal": {
-  "E": "#3f2415",
-  "F": "#5e3c24",
-  "G": "#7d5b40",
-  "H": "#987e62",
-  "o": "#7e7362",
-  "s": "#742a01",
-  "u": "#bd753e"
- },
- "forra": {
-  "ritad": 1,
+  "id": "torrkott",
+  "ritad": 3,
+  "av": "Claude",
+  "om": "Claude: exakt harköttets bild med köttets rost bytt mot gråbrunt (rost0→jord0, rost1→jord1, rost2→jord2, rost3→ben0); benet är kvar.",
+  "w": 7,
+  "h": 5,
   "rader": [
-   "tr....ts",
-   "sr.tr.sr",
-   "qs.sr.ur",
-   "rr.qr.rr"
-  ]
- }
+    ".EEEE..",
+    "EoGGFE.",
+    "EGGFGFE",
+    ".EFFwqo",
+    "..EEqpo"
+  ],
+  "pal": {
+    "E": "#3f2415",
+    "o": "#7e7362",
+    "G": "#7d5b40",
+    "F": "#5e3c24",
+    "w": "#dad0bb",
+    "q": "#bdb39b",
+    "p": "#a0947d"
+  },
+  "forra": {
+    "ritad": 2,
+    "rader": [
+      ".EEEE...",
+      "EHoGsEE.",
+      "EGsEHuGE",
+      ".EE.EsFE"
+    ],
+    "pal": {
+      "E": "#3f2415",
+      "F": "#5e3c24",
+      "G": "#7d5b40",
+      "H": "#987e62",
+      "o": "#7e7362",
+      "s": "#742a01",
+      "u": "#bd753e"
+    }
+  }
 }

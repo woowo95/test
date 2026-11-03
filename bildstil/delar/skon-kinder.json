@@ -1,33 +1,33 @@
 {
  "id": "skon-kinder",
- "ritad": 4,
- "av": "Claude, efter Björns svar (utan förlaga)",
- "om": "Två enkla rosa cirklar på kindknotorna i rost3, utan kant och utan kindtonerna (de följer huden och gav de vita kanterna). Paletten har ingen renare rosa ton än rost3, som drar mot orange; ett rutmönster med huden prövades men såg ut som ett mönster.",
+ "ritad": 5,
+ "av": "Claude",
+ "om": "Två enkla, fyllda cirklar i rost3, två punkter närmare näsan än förra gången. Paletten har ingen rosa ton; rost3 är den närmaste och drar mot orange.",
  "bilder": {
   "standard": {
    "x": -12,
    "y": 1,
    "rader": [
     "........................",
-    ".uuu...............uuu..",
-    "uuuuu.............uuuuu.",
-    "uuuuu.............uuuuu.",
-    ".uuu...............uuu.."
+    "...uuu...........uuu....",
+    "..uuuuu.........uuuuu...",
+    "..uuuuu.........uuuuu...",
+    "...uuu...........uuu...."
    ]
   }
  },
  "forra": {
-  "ritad": 3,
+  "ritad": 4,
   "bilder": {
    "standard": {
     "x": -12,
-    "y": 2,
+    "y": 1,
     "rader": [
-     "..DDDD............DDDD..",
-     ".DDCCDD..........DDCCDD.",
-     "DDCCCCDD........DDCCCCDD",
-     ".DDCCDD..........DDCCDD.",
-     "..DDDD............DDDD.."
+     "........................",
+     ".uuu...............uuu..",
+     "uuuuu.............uuuuu.",
+     "uuuuu.............uuuuu.",
+     ".uuu...............uuu.."
     ]
    }
   }

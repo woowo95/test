@@ -1,27 +1,33 @@
 {
- "id": "arter",
- "ritad": 2,
- "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
- "om": "Version 1 passar bäst. Den är enklast, med en tydlig böjd skida och ljuset uppe till vänster (oliv3) som mörknar mot oliv0 nere till höger. Det följer Björns önskan och fiskköttets enkla, rundade form. Version 2 och 3 har fler tonbyten i mitten, och på så få punkter ser det mest ut som brus. Ändring: jag har lagt till en ljus oliv3-punkt i översta raden och en i mittraden, så att skidan blir ljusare än det olivgröna gräset och syns på marken. Den mörka underkanten i oliv1 och oliv0 får vara kvar som kontur.",
- "w": 6,
- "h": 3,
- "rader": [
-  "..PPOM",
-  "PPPONM",
-  ".NNNM."
- ],
- "pal": {
-  "M": "#353204",
-  "N": "#4b4f00",
-  "O": "#647025",
-  "P": "#898b4c"
- },
- "forra": {
-  "ritad": 1,
+  "id": "arter",
+  "ritad": 3,
+  "av": "Claude",
+  "om": "Claude: en smal skida som böjer sig uppåt i båda ändar, två punkter tjock i mitten, ljus uppe till vänster.",
+  "w": 6,
+  "h": 3,
   "rader": [
-   "...MPM",
-   "MqOqNM",
-   ".MONM."
-  ]
- }
+    "P....N",
+    "OPPPOM",
+    ".NNNM."
+  ],
+  "pal": {
+    "P": "#898b4c",
+    "N": "#4b4f00",
+    "O": "#647025",
+    "M": "#353204"
+  },
+  "forra": {
+    "ritad": 2,
+    "rader": [
+      "..PPOM",
+      "PPPONM",
+      ".NNNM."
+    ],
+    "pal": {
+      "M": "#353204",
+      "N": "#4b4f00",
+      "O": "#647025",
+      "P": "#898b4c"
+    }
+  }
 }

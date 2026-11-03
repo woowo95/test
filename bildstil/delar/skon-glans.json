@@ -1,17 +1,17 @@
 {
  "id": "skon-glans",
- "ritad": 6,
- "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
- "om": "Jag valde version 3. Den följer Björns önskan bäst: ett brett, skarpt och ljust glansband som en ring tvärs över hjässan, i mangastil. Bandet böjer sig med huvudets form och har en bena i mitten, så det ser ut som glans på håret och inte som en platt fläck. Version 1 är en stor, nästan slät klump av h som också täcker pannan. Version 2 börjar ovanför håret och är mest ett tunt streck. Ändringen: ljuset kommer uppifrån vänster, så jag lät bandets högra, nedre del gå över mer i g (rad 5–7). Då blir höger sida mörkare än vänster och skuggan följer formen. Delen håller sig inom rutan och använder bara de tillåtna hårtonerna g och h.",
+ "ritad": 7,
+ "av": "Claude",
+ "om": "Claude: samma glansband som förra gången, men inne i bandet är det nästan vitt (ben3) i stället för hårets ljusaste ton, så att glansen syns på alla hårfärger, överdrivet som i manga.",
  "bilder": {
   "standard": {
    "x": -14,
    "y": -1,
    "rader": [
-    "......ghhhhh.ghhhhg.......",
-    "....ghhhhhhh.hhhhhhhg.....",
-    "...ghhhhhhhg.hhhhhhhhhg...",
-    "..ghhhhhgg...gghhhhhhhhg..",
+    "......ghwwwh.ghwwhg.......",
+    "....ghwwwwwh.hwwwwwhg.....",
+    "...ghwwwwwhg.hwwwwwwwhg...",
+    "..ghwwwhgg...gghwwwwwwhg..",
     ".ghhhhg.........gggghhhgg.",
     ".ghhhg............ggghhgg.",
     ".gghg...............gghgg.",
@@ -20,21 +20,20 @@
   }
  },
  "forra": {
-  "ritad": 5,
+  "ritad": 6,
   "bilder": {
    "standard": {
-    "x": -15,
-    "y": -2,
+    "x": -14,
+    "y": -1,
     "rader": [
-     "..........gghhg.",
-     ".......gghhhhhg.",
-     ".....ghhhhhgg...",
-     "...ghhhhgg...gg.",
-     "..ghhhg....ghhg.",
-     ".ghhg....ghhhg..",
-     ".ghg...ghhhg....",
-     ".gg...ghhg......",
-     "......gg........"
+     "......ghhhhh.ghhhhg.......",
+     "....ghhhhhhh.hhhhhhhg.....",
+     "...ghhhhhhhg.hhhhhhhhhg...",
+     "..ghhhhhgg...gghhhhhhhhg..",
+     ".ghhhhg.........gggghhhgg.",
+     ".ghhhg............ggghhgg.",
+     ".gghg...............gghgg.",
+     "..gg.................ggg.."
     ]
    }
   }
