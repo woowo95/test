@@ -503,7 +503,7 @@ function day(s: State, p: Person, v: Val, a: number, lazy: number) {
   if (a < ALDER.hjalper) { set(v, 'leka', lekText(s)); return; }
   const fd = foodDays(s), wd = woodDays(s), ai = ageIndex(s), tot = habitTotal(p), fara = dangers(s); // farorna räknas en gång och gäller hela valet
   const hv = handlaVal(s, p); // handlaren är här och byn har inte handlat (steg 4.4.1.3, handel.ts)
-  if (hv) { set(v, 'handla', hv.why); v.spot = hv.spot; v.dur = hv.dur; v.ref = hv.ref; return; }
+  if (hv) { set(v, hv.act, hv.why); v.spot = hv.spot; v.dur = hv.dur; v.ref = hv.ref; return; }
   // att bära in är en förbättring: inte när byn fryser (talet dras ändå, så att personens följd är som förut). När byn svälter
   // bärs bara maten in, så att den inte blir liggande ute (steg 2.12.3)
   if (s.stackar?.length && rnd(s, 'val', p) < VAL.baraChans && !fara.kyla && (gt = haulJob(s, undefined, fara.svalt))) { set(v, 'bara', gt.why); v.spot = gt; v.dur = VAL.baraTim * HOUR; return; }
@@ -782,7 +782,7 @@ function night(s: State, p: Person, v: Val, a: number) {
   if (p.guardDay === guardDay && a >= ALDER.vaktFran) { set(v, 'vakt', 'Håller vakt i natt'); return; }
   // kvällsmarknaden (steg 4.5.4.11, handel.ts): handlarens filt ligger ute på kvällen
   const hv = skams(p, now) ? undefined : handlaVal(s, p);
-  if (hv) { set(v, 'handla', hv.why); v.spot = hv.spot; v.dur = hv.dur; v.ref = hv.ref; return; }
+  if (hv) { set(v, hv.act, hv.why); v.spot = hv.spot; v.dur = hv.dur; v.ref = hv.ref; return; }
   // ett framträdande vid elden (steg 4.3.2, framtradande.ts): uppträda eller lyssna
   const fr = skams(p, now) ? undefined : framVal(s, p, q => spotFor(s, 'beratta', q));
   if (fr) { set(v, fr.act, fr.why); v.spot = fr.spot ?? spotFor(s, 'beratta', p); v.dur = fr.dur; v.ref = fr.ref; v.tool = fr.tool; return; }

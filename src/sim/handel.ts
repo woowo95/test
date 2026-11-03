@@ -329,7 +329,7 @@ export function pratMedHandlare(s: State, dtSec: number, events?: TalkEvent[]) {
   if (!h || (h.fas !== 'vantar' && h.fas !== 'handlar')) return;
   for (const p of s.people) {
     if (!alive(p) || ageOf(p, s.now) < ALDER.smabarn || Math.hypot(p.x - h.x, p.y - h.y) >= SAMTAL.radie) continue;
-    if (!isSocial(p) && !(p.task?.act === 'handla' && p.task.ref === h.id && p.task.phase === 'do')) continue;
+    if (!isSocial(p) || h.affar) continue; // den som handlar och handlaren pratar bara om affären (steg 4.5.7.5)
     if (rnd(s, 'handel', p) >= dtSec / HANDEL.pratSek) continue;
     const out = (stat(p, 'empati', s.now) + h.handel) / SAMTAL.utEmpati - SAMTAL.utAvdrag + (rnd(s, 'handel', p) - 0.5) * SAMTAL.utBrus + (stat(p, 'karisma', s.now) - 8) / SAMTAL.charmDiv;
     think(p, out > 0 ? `Småpratade med ${h.namn}` : `Småpratet med ${h.namn} gick trögt`, out > 0 ? HANDEL.pratTanke : -HANDEL.pratTanke, s.now, HANDEL.pratTim * HOUR);
@@ -540,11 +540,11 @@ function affarSteg(s: State, h: Handlare, a: Affar) {
   a.t = s.now;
   const spot = kundPlats(s, h), ref = h.id;
   switch (a.fas) {
-    case 'fraga': return { why: `Frågar vad ${h.namn} har`, spot, dur: HANDEL.fragaSek * SEC, ref };
-    case 'hamta': return { why: a.byn ? 'Hämtar byns varor att sälja' : 'Hämtar varor att sälja', spot: { x: a.hamta[0].x, y: a.hamta[0].y }, dur: HANDEL.hamtaSek * SEC, ref };
-    case 'bud': return { why: `Förhandlar med ${h.namn}${a.byn ? ' för byn' : ''}`, spot, dur: a.dur ?? HANDEL.budSek[0] * SEC, ref };
-    case 'plocka': return { why: 'Hämtar det köpta', spot, dur: HANDEL.plockaSek * SEC, ref };
-    case 'hem': return { why: 'Bär hem det köpta', spot: a.hem ?? spot, dur: HANDEL.hemSek * SEC, ref };
+    case 'fraga': return { act: HANDLA, why: `Frågar vad ${h.namn} har`, spot, dur: HANDEL.fragaSek * SEC, ref };
+    case 'hamta': return { act: HANDLA, why: a.byn ? 'Hämtar byns varor att sälja' : 'Hämtar varor att sälja', spot: { x: a.hamta[0].x, y: a.hamta[0].y }, dur: HANDEL.hamtaSek * SEC, ref };
+    case 'bud': return { act: HANDLA, why: `Förhandlar med ${h.namn}${a.byn ? ' för byn' : ''}`, spot, dur: a.dur ?? HANDEL.budSek[0] * SEC, ref };
+    case 'plocka': return { act: HANDLA, why: 'Hämtar det köpta', spot, dur: HANDEL.plockaSek * SEC, ref };
+    case 'hem': return { act: HANDLA, why: 'Bär hem det köpta', spot: a.hem ?? spot, dur: HANDEL.hemSek * SEC, ref };
   }
 }
 // handlaren svarar på budet: ja om det är värt nog för hen (kravAv; steg 4.5.7.11 lägger till relationen), annars nej
@@ -584,7 +584,8 @@ function glomAffar(s: State, h: Handlare) {
 // valet på kvällen (night i val.ts, steg 4.5.4.11; och på dagen, day): den som handlar för byn går först. Kommer hen inte,
 // går en annan vuxen efter ett tag. När byn handlat ställer sig den som vill byta med sina egna saker i kö, och den första
 // i kön börjar sin affär när den före är helt klar. Den som har en affär går dit affären är (affarSteg)
-export function handlaVal(s: State, p: Person): { why: string; spot: { x: number; y: number }; dur: number; ref: number } | undefined {
+const HANDLA = 'handla' as const, KOA = 'koa' as const;
+export function handlaVal(s: State, p: Person): { act: typeof HANDLA | typeof KOA; why: string; spot: { x: number; y: number }; dur: number; ref: number } | undefined {
   const h = s.handlare;
   if (!h || h.fas !== 'handlar' || ageOf(p, s.now) < ALDER.vuxen) return undefined;
   const a = h.affar;
@@ -594,7 +595,7 @@ export function handlaVal(s: State, p: Person): { why: string; spot: { x: number
     return affarSteg(s, h, h.affar = nyAffar(p, true, s.now));
   }
   if (h.handlat?.includes(p.id)) return undefined;
-  const ko = h.ko = (h.ko ?? []).filter(id => { const q = byId(s, id); return !!q && alive(q) && (q === p || (q.task?.act === 'handla' && q.task.ref === h.id)); });
+  const ko = h.ko = (h.ko ?? []).filter(id => { const q = byId(s, id); return !!q && alive(q) && (q === p || ((q.task?.act === HANDLA || q.task?.act === KOA) && q.task.ref === h.id)); });
   if (!ko.includes(p.id)) {
     // hen ställer sig i kön om det hen kan betala med räcker till en av varorna hen vill ha, för handlaren, eller om hen har
     // något att sälja (steg 4.5.4.14)
@@ -604,7 +605,7 @@ export function handlaVal(s: State, p: Person): { why: string; spot: { x: number
     ko.push(p.id);
   }
   if (!a && ko[0] === p.id) { ko.shift(); return affarSteg(s, h, h.affar = nyAffar(p, false, s.now)); }
-  return { why: `Står i kö till ${h.namn}`, spot: kundPlats(s, h, ko.indexOf(p.id) + (a ? 1 : 0)), dur: HANDEL.koMin * MIN, ref: h.id };
+  return { act: KOA, why: `Står i kö till ${h.namn}`, spot: kundPlats(s, h, ko.indexOf(p.id) + (a ? 1 : 0)), dur: HANDEL.koMin * MIN, ref: h.id };
 }
 // ett steg i affären är klart (KLAR i steg.ts). Den som bara väntade i kön gör inget
 export function handlaKlar(s: State, p: Person, t: Task) {

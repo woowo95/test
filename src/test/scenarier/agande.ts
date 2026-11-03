@@ -1122,6 +1122,15 @@ SCENARIER.handlarprat = {
     const tanke = a.thoughts.some(x => x.text.includes(h.namn) && x.text.startsWith('Småprat')), ingenB = !b.thoughts.some(x => x.text.includes(h.namn));
     const handelse = ev.some(e => e.a === a.id && e.b === h.id && e.kind === 'småprat') && !ev.some(e => e.a === b.id);
     const bara = JSON.stringify(s.rels) === rels && JSON.stringify(a.tek ?? null) === kan && JSON.stringify(a.skill) === skill;
+    // medan någon handlar pratar varken hen eller handlaren med någon annan; den som står i kö får prata (steg 4.5.7.5)
+    const c = living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen)[2];
+    h.affar = { vem: b.id, namn: b.name, fas: 'bud', kop: [], bud: [], hamta: [], framme: [], nej: 0, f: SIM.HANDEL.forstaBud, t: s.now };
+    b.x = h.x + 1; b.y = h.y + 2; b.task = { act: 'handla', phase: 'do', tx: b.x, ty: b.y, until: s.now + HOUR, carry: 0, ref: h.id, dark: false, why: '' } as Task;
+    c.x = h.x + 1; c.y = h.y + 3; c.task = { act: 'koa', phase: 'do', tx: c.x, ty: c.y, until: s.now + HOUR, carry: 0, ref: h.id, dark: false, why: '' } as Task;
+    const ev2: SIM.TalkEvent[] = [];
+    SIM.pratMedHandlare(s, SIM.HANDEL.pratSek * 2, ev2);
+    const tyst = !ev2.length && !SIM.isSocial(b) && SIM.isSocial(c);
+    delete h.affar; b.task = undefined; c.task = undefined;
     // i spelet: medan handlaren är kvar pratar någon med hen
     const t = createState(6, START);
     rikBy(t); t.nastaHandlare = t.now;
@@ -1130,6 +1139,7 @@ SCENARIER.handlarprat = {
       ['den som sitter vid elden nära handlaren småpratar med hen och får en tanke om det', tanke],
       ['samtalet blir ett småprat med handlaren (bubblan), den som är långt borta pratar inte', handelse && ingenB],
       ['ingen kunskap, färdighet eller relation ändras', bara],
+      ['medan någon handlar pratar varken hen eller handlaren med någon annan, men den som står i kö får prata', tyst],
       [`i spelet småpratar byborna med handlaren medan hen är i byn (${t.stat?.handlarPrat ?? 0} gånger)`, (t.stat?.handlarPrat ?? 0) > 0],
     ];
   },
