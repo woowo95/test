@@ -1,0 +1,32 @@
+{
+ "id": "sym_tass",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 2. Den har fyra tydligt åtskilda, runda tår och en bred trampdyna, så tassen känns igen direkt som 🐾 även i liten storlek. Den fyller hela 16 × 16-rutan. Den passar förebilden: jord0-kontur runt hela, få stora former, tre jordtoner med ljuset uppe till vänster och mörkast nere till höger. Version 1 har avlånga tår som liknar klor eller fingrar. I version 3 kommer yttertårna nästan ihop med dynan, och den högra yttertån saknar ljuspunkten uppe till vänster. Ändring: rad 14, dynans undre del, var en slät yta av jord1. Där bytte jag in några punkter jord2, så att ytan får korn och ljuset fortsätter från vänster.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "...EEE....EEE...",
+  "..EHGGE..EHGGE..",
+  "..EGGFE..EGGFE..",
+  "..EGFFE..EGFFE..",
+  "...EEE....EEE...",
+  ".EE..........EE.",
+  "EHGE........EHGE",
+  "EGFE........EGFE",
+  "EGFE..EEEE..EGFE",
+  ".EE..EHGGGE..EE.",
+  "...EEHGGGGFEE...",
+  "..EHGGGGGGFFFE..",
+  "..EGGGGFGGFFFE..",
+  "..EGGFGFFFFFFE..",
+  "...EFFFEEFFFE...",
+  "....EEE..EEE...."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62"
+ }
+}

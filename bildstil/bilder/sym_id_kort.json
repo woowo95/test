@@ -1,0 +1,36 @@
+{
+ "id": "sym_id_kort",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den läses tydligast i liten storlek: ett ljust benfärgat kort med en tydlig porträttruta och textrader. Det känns direkt igen som 🪪 och syns både på mörk och ljus bakgrund. Kortet är 16 punkter brett, har jord0-kontur runt hela och ljuset uppe till vänster (w-glans i hörnet, p/o-skugga nere till höger). Det passar ihop med förebildens dämpade toner. Rostens värme används bara i ansiktet, där blicken ska hamna. Version 2 är för låg (12 rader) och lägger mättad senap på en namnrad som inte behöver framhävas. I version 3 flyter det bruna porträttet ihop och syns dåligt. Ändring: den rutiga raden nedtill (qpqpqp…) gav ett fläckigt mönster. Jag gjorde den lugnare (qpqqpqq…) så att den blir korn i stället för prickar.",
+ "w": 16,
+ "h": 14,
+ "rader": [
+  ".EEEEEEEEEEEEEE.",
+  "EwwqwqwqqwqqqqpE",
+  "EwQQQQQQqqqqqqpE",
+  "EqQSuuSQqoooooqE",
+  "EqQSutSQqqqqqqpE",
+  "EqQSSSSQqoooopqE",
+  "EqQtussQqqqqqqpE",
+  "EqQtsssQqooooqpE",
+  "EqQQQQQQqqqqqqpE",
+  "EqqqqqqqqoooopqE",
+  "EqqqqqqqqqqqqqpE",
+  "EqpqqpqqpqqpqppE",
+  "EppoppppopppppoE",
+  ".EEEEEEEEEEEEEE."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "Q": "#233035",
+  "S": "#61767a",
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "s": "#742a01",
+  "t": "#a14808",
+  "u": "#bd753e",
+  "w": "#dad0bb"
+ }
+}

@@ -1,0 +1,41 @@
+{
+ "id": "sym_gomma",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. De ljusa händerna i ben skiljer sig tydligt från det bruna ansiktet och det gula håret, och ögat sitter mitt i springan mellan händerna. Därför läses den direkt som 🫣, att titta mellan fingrarna, även i liten storlek. Hela symbolen har en sluten kontur i jord0, ljuset ligger uppe till vänster och den fyller 16×16 som förebilden. I version 1 och 2 smälter de bruna händerna ihop med ansiktet, och ögat syns där mest som en fläck på handen. Ändring: i rad 6 har jag ersatt de två konturpunkterna ovanför ögat med ansiktets hudtoner (H och G). Nu är springan mellan fingrarna öppen uppåt och ögat syns tittande mellan händerna i stället för instängt bakom en tvärslå.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "....EEEEEEEE....",
+  "..EEKLKKJKJJEE..",
+  ".EKLKJKJJJJIJIE.",
+  ".EKJHHHHHGHGJIE.",
+  "EJHHHHHHHHGHGGIE",
+  "EEEHEEHHHGEEGEEE",
+  "EwqEqqEHGEqpEqpE",
+  "EqqEqpEwkEqpEppE",
+  "EqpEqpEHGEqpEpoE",
+  "EqpEqpEGFEqpEpoE",
+  "EqpqqpEGFEqpqpoE",
+  "EqqqppoEEqqpppoE",
+  "EqqppooEEqpppooE",
+  ".EpppooEEppoooE.",
+  "..EpooE..EpooE..",
+  "..EEEE....EEEE.."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "I": "#694902",
+  "J": "#906f0f",
+  "K": "#b2921b",
+  "L": "#d8b25f",
+  "k": "#24201d",
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "w": "#dad0bb"
+ }
+}

@@ -1,0 +1,40 @@
+{
+ "id": "sym_salt",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 2. Den har den jämnaste saltkupolen: varje rad blir två punkter bredare, så silhuetten är ren och symmetrisk. I version 1 hackar kupolen i rad 3, och i version 3 smälter kupolen ihop med kanten på karet. Karet har en kraftig kant i två rader, smalnar av nedåt och har två skifferband. Det läses tydligt som en saltkar och fyller rutan, 16 × 16 punkter. Ljuset faller rätt: ben3 uppe till vänster och ben1 och jord1 nere till höger. Konturerna är materialens mörkaste toner (ben0, jord0, skiffer0), aldrig kol0. Det vita saltet är ljusast och syns först, på samma sätt som de ljusa klingorna i förebilden. Jag har inte ändrat något, eftersom versionen redan följer stilguiden.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "......oooo......",
+  ".....owwqqo.....",
+  "....owwqqpqo....",
+  "...owqqpqqppo...",
+  "..owqqpqpqpppo..",
+  ".owqpqqpqppqppo.",
+  "EEEEEEEEEEEEEEEE",
+  "EHHGHGGHGGFGGFFE",
+  ".EHGGFHGGFGGFFE.",
+  ".EHGGFGGGFGFFFE.",
+  ".QTSSRSSSRSRRRQ.",
+  "..EHGFGGFGGFFE..",
+  "..EHGFHGFGFFFE..",
+  "..EGGFGGFGFFFE..",
+  "..QSSRSSRSRRRQ..",
+  "...EEEEEEEEEE..."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e",
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "w": "#dad0bb"
+ }
+}

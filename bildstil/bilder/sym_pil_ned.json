@@ -1,0 +1,32 @@
+{
+ "id": "sym_pil_ned",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "rrrr............",
+  "rutsr...........",
+  ".rutsr..........",
+  "..rutsr.........",
+  "...ruusr.......r",
+  "....rutsr.....rr",
+  ".....rtusr...rur",
+  "......rutsr.rutr",
+  ".......rutttutsr",
+  "........rututtsr",
+  ".........rutttsr",
+  "........ruttttsr",
+  ".......ruttttssr",
+  "......ruttttsssr",
+  ".....ruttssssssr",
+  "....rrrrrrrrrrrr"
+ ],
+ "pal": {
+  "r": "#521100",
+  "s": "#742a01",
+  "t": "#a14808",
+  "u": "#bd753e"
+ }
+}

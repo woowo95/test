@@ -1,0 +1,33 @@
+{
+ "id": "sym_ben",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 2. Den visar tydligast ett böjt ben som i 🦵: låret uppifrån, ett knä som pekar ut åt vänster och en fot åt höger. Version 1 är en vågig klump och version 3 läses mer som en strumpa eller stövel. Silhuetten är stor och enkel och har en hel kontur i jord0, i samma stil som de korsade svärden. Den ljusa kanten i ben2 ligger till vänster, mot ljuset. Två ändringar: glanspunkten i ben2 vid tårna nere till höger blev jord3, eftersom ljuset kommer uppifrån vänster och glansen inte ska sitta i skuggsidan. Fotsulans högra ände fick jord1, så att materialet får en mörkare tredje ton nere till höger och benet inte blir platt.",
+ "w": 13,
+ "h": 16,
+ "rader": [
+  "....EEEEEE...",
+  "...EqHHHGE...",
+  "...EqHHGGE...",
+  "..EqHHHGE....",
+  "..EqqHGGE....",
+  ".EqHHHGE.....",
+  "EqqHHHGE.....",
+  "EqHHHGGE.....",
+  ".EqHHGGE.....",
+  "..EqHHGE.....",
+  "..EqHHGGE....",
+  "...EqHHGE....",
+  "...EqHHGEEEE.",
+  "...EqHHHHHHGE",
+  "...EHHGGGGFFE",
+  "....EEEEEEEEE"
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "q": "#bdb39b"
+ }
+}

@@ -1,0 +1,36 @@
+{
+ "id": "sym_mat_bord",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 2",
+ "om": "Jag valde version 3. Den har en hel skiffer0-kontur runt både gaffeln och kniven. I version 1 saknar gaffelns vänstra pinne kontur, och raderna börjar med T direkt mot kanten. Silhuetten i version 3 är tydlig: gaffel, rund trätallrik och kniv, som i emojin 🍽️. Metallen i skiffer och träet i jord stämmer med förebildens svärd. I version 1 läses tallriken med sina trästrimmor mer som en tunna eller sköld. Ändringen gäller tallriken: den har nu en ljusare kant av jord3 och jord2 och en mörkare mitt av jord1, så att den läses som en tallrik och inte som en platt bricka. Ljuset faller uppe till vänster och det mörka ligger nere till höger. Resten är oförändrat.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  ".Q.Q.........Q..",
+  "QTQTQ.......QTQ.",
+  "QTQTQ.......QTSQ",
+  "QTTSQ.......QTSQ",
+  "QTSQ..EEEE..QTRQ",
+  "QSRQ.EHHHGE.QTSQ",
+  "QTSQEHGFFGGEQTRQ",
+  "QSRQEHFGFFGEQSRQ",
+  "QTSQEGFFFFGEQQQQ",
+  "QSRQEGGFFGFEEHGE",
+  "QTSQ.EGGGFE.EGFE",
+  "QSRQ..EEEE..EHFE",
+  "QTSQ........EGFE",
+  "QSRQ........EGFE",
+  "QSRQ........EGFE",
+  ".QQ..........EE."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e"
+ }
+}

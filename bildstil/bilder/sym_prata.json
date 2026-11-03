@@ -1,0 +1,33 @@
+{
+ "id": "sym_prata",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den ljusa benfärgade bubblan med kol0-kontur liknar emojin 💬 mest och syns tydligt på både mörk och ljus bakgrund. Ljuset faller rätt, med w uppe till vänster och p nere till höger. De tre prickarna i skiffer (R med Q-skugga) knyter an till svärdsklingorna i förebilden och syns bättre än de mörka n-prickarna i version 2. Version 3 är helt i skiffer, så prickarna flyter ihop med konturen och bubblan blir mörkare och svårare att läsa. Bilden är 16 punkter bred och 15 hög, med en tydlig svans nere till vänster. Jag ändrade ingenting, eftersom formen, konturen och tonerna redan följer guiden.",
+ "w": 16,
+ "h": 15,
+ "rader": [
+  "...kkkkkkkkkk...",
+  ".kkwwwqwqqqqqkk.",
+  "kwwwqwqqqqqqqqpk",
+  "kwwqwqqqqqqqqqpk",
+  "kwqqqqqqqqqqqppk",
+  "kwqRRqqRRqqRRqpk",
+  "kqqRQqqRQqqRQppk",
+  "kqqqqqqqqqqqpqpk",
+  "kqqqqqqqqqqpqppk",
+  ".kkqqqqqqqpppkk.",
+  "...kqpkkkkkkk...",
+  "...kqpk.........",
+  "..kppk..........",
+  ".kpk............",
+  ".kk............."
+ ],
+ "pal": {
+  "Q": "#233035",
+  "R": "#3e5156",
+  "k": "#24201d",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "w": "#dad0bb"
+ }
+}

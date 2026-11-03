@@ -1,0 +1,39 @@
+{
+ "id": "sym_jordgubbe",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 2",
+ "om": "Jag valde version 1. Den har jordgubbens form med breda axlar som smalnar mot en spets, så den läses som 🍓 och inte som ett hjärta, vilket version 2 lätt gör. Fodret är ritat i oliv med oliv0 som kontur och syns tydligt mot den mörka panelen. Version 2 använder barrtonerna, och där blir bladen nästan osynliga på mörk bakgrund. Bäret har rost0 som kontur och är ljusast uppe till vänster (rost3 och en senap3-glans) och mörkast nere till höger (rost1). Fröna är glesa och i senap, vilket passar ihop med förebildens dämpade men tydliga stil. Bilden är 14 punkter bred och 16 hög och fyller rutan. Jag behövde inte ändra något.",
+ "w": 14,
+ "h": 16,
+ "rader": [
+  "......MM......",
+  ".....MPM......",
+  ".MMM.MONM.MMM.",
+  "MPOOMOONNMONNM",
+  ".rMOtMNsMtNMr.",
+  "ruuLttKtttKtsr",
+  "rutttttttttssr",
+  "rtKtttKtttKtsr",
+  "rtttttttttsssr",
+  ".rtLtttKttJsr.",
+  ".rtttttttsssr.",
+  "..rtKtttJssr..",
+  "..rtttttsssr..",
+  "...rtttJssr...",
+  "....rtsssr....",
+  ".....rrrr....."
+ ],
+ "pal": {
+  "J": "#906f0f",
+  "K": "#b2921b",
+  "L": "#d8b25f",
+  "M": "#353204",
+  "N": "#4b4f00",
+  "O": "#647025",
+  "P": "#898b4c",
+  "r": "#521100",
+  "s": "#742a01",
+  "t": "#a14808",
+  "u": "#bd753e"
+ }
+}

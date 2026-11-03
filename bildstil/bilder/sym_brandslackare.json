@@ -1,0 +1,38 @@
+{
+ "id": "sym_brandslackare",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1 eftersom den liknar förebilden mest. Den är bredast (13 × 15) och fyller rutan bäst. Den läses direkt som en brandsläckare: rostfärgad behållare, skifferfärgat handtag och ventil upptill och en slang som hänger ner på vänster sida. Konturerna har materialens mörkaste toner (rost0 runt behållaren, skiffer0 runt metallen), precis som svärden i förebilden. Ljuset faller uppifrån vänster med rost3 längs vänsterkanten, och etiketten i ben bryter behållaren tydligt. Version 2 och 3 är smalare, och deras slang är ritad i kol som försvinner mot mörk bakgrund. Jag behövde inte ändra något: alla rader är 13 tecken, bilden är 15 rader hög och bara palettens tecken används.",
+ "w": 13,
+ "h": 15,
+ "rader": [
+  ".....QQQQQQQQ",
+  "....QTSSSRRRQ",
+  ".....QTSRQQQQ",
+  ".QQQQQTSRQ...",
+  "QSRRRRTSRQ...",
+  "QRQ.rrrrrrr..",
+  "QRQrtuuttssr.",
+  "QSQruttttssr.",
+  "QRQrutttsssr.",
+  "QSQrtqqqppsr.",
+  "QRQrtpppoosr.",
+  "QSQrttttsssr.",
+  "QQQrsttsssrr.",
+  "...rstssssrr.",
+  "....rrrrrrr.."
+ ],
+ "pal": {
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e",
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "r": "#521100",
+  "s": "#742a01",
+  "t": "#a14808",
+  "u": "#bd753e"
+ }
+}

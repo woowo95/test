@@ -1,0 +1,39 @@
+{
+ "id": "sym_skriftrulle",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Skriftrulle framifrån, 16 × 16. Överst och nederst sitter en trärulle i jordtoner (jord3 i övre vänstra kanten, jord1 nertill). Mellan rullarna hänger pergamentet i ben3 till ben1, ljusast uppe till vänster och mörkast nere till höger. På det går tre textrader i jord1 och jord2. Ett rostrött vaxsigill nere till höger visar att det är ett påbud, och det är den enda mättade färgen. Konturen runt hela är jord0 och sigillets egen kontur är rost0.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  ".EEEEEEEEEEEEEE.",
+  "EHHGHGGHGGGGFGFE",
+  "EGFGFFGFFFFFFFFE",
+  ".EEEEEEEEEEEEEE.",
+  ".EwwqwqqqqqqqpE.",
+  ".EwqFGFFGFFqqpE.",
+  ".EqqqqqqqqqqppE.",
+  ".EqqFFGFFGFFqpE.",
+  ".EqqqqqqqqrrqpE.",
+  ".EqqFGFFqrutrpE.",
+  ".EqqqqqqqrtsrpE.",
+  ".EpqqqqqqqrrppE.",
+  ".EEEEEEEEEEEEEE.",
+  "EHHGHGGHGGGGFGFE",
+  "EGFGFFGFFFFFFFFE",
+  ".EEEEEEEEEEEEEE."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "r": "#521100",
+  "s": "#742a01",
+  "t": "#a14808",
+  "u": "#bd753e",
+  "w": "#dad0bb"
+ }
+}

@@ -1,0 +1,40 @@
+{
+ "id": "sym_lada",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den läses tydligast som en kista eller ett förråd. Den har ett eget lock med en mörk fog och ett guldlås mitt på, och därför känns den igen som 📦 på en blick. Den fyller 16 × 16 punkter, har en jord0-kontur runt hela och består av få, stora former, precis som de korsade svärden. Med sina mellantoner av trä och de dämpade skifferbanden hör den också ihop med förebilden. Version 2 och 3 har banden mitt på framsidan, och då flyter de ihop med låset och ser ut som en dörr. Version 3 är dessutom bara 15 rader hög. Ljuset kommer uppifrån vänster: glanspunkten (skiffer3) sitter överst på det vänstra bandet, och det högra bandet och höger kant är mörkare. Låset i senap är den enda mättade färgen, och den hör till det man kan ta. Jag ändrade bara den nedersta brädraden, så att kornet följer ljuset och blir mörkare åt höger utan att det bildas en fläck.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  ".EEEEEEEEEEEEEE.",
+  "EHHHGHHGHHHGHGGE",
+  "EHGGHGGGGHGGGGFE",
+  "EGGGGFGGGGGFGGFE",
+  "EEEEEEIIIIEEEEEE",
+  "ETSHGGILKIGHGRQE",
+  "ESRGGHIKJIGGGRQE",
+  "ESRGGGIIIIGGFRQE",
+  "ESRFFFFFFFFFFRQE",
+  "ESRHGGHGGGHGGRQE",
+  "ESRGGHGGGGGGFRQE",
+  "ESRGGGGFGGGGFRQE",
+  "ESRFFFFFFFFFFRQE",
+  "ESRGHGGGGHGGFRQE",
+  "ESRGGFGGGFGFFRQE",
+  ".EEEEEEEEEEEEEE."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "I": "#694902",
+  "J": "#906f0f",
+  "K": "#b2921b",
+  "L": "#d8b25f",
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e"
+ }
+}

@@ -1,20 +1,30 @@
 {
  "id": "flinta",
- "ritad": 1,
+ "ritad": 2,
  "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 1. Den är mest lik dagens bild: en rundad, spetsig knöl som är ljusast uppe till vänster (skiffer3, i dag den ljusa gråa) och mörkast nere till höger (skiffer1, i dag den mörka gråa). Den har kontur i skiffer0 och bara gråa skiffertoner, alltså samma färger som i dag. Den passar också vedens förebild med kontur, ljus från vänster och få toner. Versionerna 2 och 3 har en punkt ben2 (beige) som inte finns i dagens grå bild och som bryter mot regeln om två till tre toner per material. Version 2 är dessutom fylld ända ut i hörnet nere till höger, och version 3 är sned i botten. Den ljusa toppen i version 1 läses som den slagna skarpa ytan. Formen håller sig inom 5 × 4 punkter och syns tydligt mot det olivgröna gräset. Jag ändrade inget.",
+ "om": "Jag valde version 2. Dess bottenrad sträcker sig ut till höger, precis som dagens bild, där knölen är bredast och mörkast nere till höger. Version 1 kapar det hörnet, och version 3 har en glans i ben3, som ligger för nära vitt och sticker ut för mycket bredvid förebildens dämpade ved. Färgerna i version 2 motsvarar dagens: mellantonen g blir skiffer3 (T), den mörka d blir skiffer2 och skiffer1 (S, R), och konturen är skiffer0. Den ljusa punkten G blir en enda glanspunkt i ben2 uppe till vänster, som den slagna, ljusare ytan. Ljuset faller från övre vänstra hörnet mot mörkt nere till höger. Inget behövde ändras.",
  "w": 5,
  "h": 4,
  "rader": [
   "..QQ.",
-  ".QTSQ",
+  ".QqTQ",
   "QTSRQ",
-  ".QQQ."
+  ".QQQQ"
  ],
  "pal": {
   "Q": "#233035",
   "R": "#3e5156",
   "S": "#61767a",
-  "T": "#8a9c9e"
+  "T": "#8a9c9e",
+  "q": "#bdb39b"
+ },
+ "forra": {
+  "ritad": 1,
+  "rader": [
+   "..QQ.",
+   ".QTSQ",
+   "QTSRQ",
+   ".QQQ."
+  ]
  }
 }

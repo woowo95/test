@@ -1,0 +1,32 @@
+{
+ "id": "sym_blod",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den har en jämn, tydlig droppform med spetsig topp och rund botten. Den fyller 16 punkter i höjd och har en sammanhängande kontur i rost0, likt förebildens kontur i materialets mörkaste ton. Ljuset kommer från vänster och det mörkaste ligger nere till höger. Version 2 blir för ljus och platt, med mycket rost2 och svag skuggsida. Version 3 är bredare men får en klumpig, dubbel kontur nere till höger (rr och rrr) som läses som en buckla. Ändring: version 1 hade en lång strimma av rost3 längs vänsterkanten, som både gav en fjärde ton och bröt mot regeln om högst två glanspunkter. Jag behöll rost3 bara som en glans på två punkter, ovanför varandra mitt på droppens vänstra halva. Där strimman satt står nu rost2. Ytan har nu i praktiken rost1 och rost2 med kontur i rost0. Resten är oförändrat.",
+ "w": 12,
+ "h": 16,
+ "rader": [
+  ".....rr.....",
+  "....rtsr....",
+  "....rtsr....",
+  "...rttssr...",
+  "...rttssr...",
+  "..rtttsssr..",
+  "..rtuttssr..",
+  ".rttutstssr.",
+  ".rttttsstsr.",
+  "rtttttstsssr",
+  "rttttstssssr",
+  "rtttstsssssr",
+  "rststssssssr",
+  ".rsstsssssr.",
+  "..rssssssr..",
+  "...rrrrrr..."
+ ],
+ "pal": {
+  "r": "#521100",
+  "s": "#742a01",
+  "t": "#a14808",
+  "u": "#bd753e"
+ }
+}

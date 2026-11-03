@@ -1,0 +1,39 @@
+{
+ "id": "sym_smidig",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Val 0: alla tre versionerna bygger på förebildens korsade svärd. De visar två korsade stavar med en klump i mitten och böjda ben, så de läses som vapen, en hatt eller en säck och inte som en rörlig gestalt. Ingen av dem ersätter 🤸 på en blick.\n\nJag ritade en ny gestalt som slår hjula, sedd från sidan. Händerna står på marken nere till vänster, kroppen lutar diagonalt och benen spretar i ett V uppåt och åt höger. Den fyller 16 × 16 punkter.\n\nFå och stora former med jord0 (E) som kontur runt hela gestalten. Det är tre material med två till tre toner var:\n- huden i ben (q, p, o)\n- tunikan i rost (u, t, s), den enda starka färgen\n- byxorna i oliv (P, O) och skorna och håret i jord (G, F)\n\nLjuset kommer uppifrån vänster: de ljusa tonerna ligger till vänster och överst i varje form. Ingen bakgrund och ingen skugga.",
+ "w": 15,
+ "h": 16,
+ "rader": [
+  ".....EEEE......",
+  ".....EGFE......",
+  ".....EPOE...EE.",
+  ".....EPOE..EGFE",
+  ".....EPOE.EPOE.",
+  ".....EPOEEPOE..",
+  ".....EutssssE..",
+  "....EuttssE....",
+  "..EuttssE......",
+  "EuttssE.EEE....",
+  "EqpEEqpEGFFE...",
+  "EqpEEqpEqpoE...",
+  "EqpEEqpEEEE....",
+  "EqpEEqpE.......",
+  "EqpEEqpE.......",
+  ".EE..EE........"
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "O": "#647025",
+  "P": "#898b4c",
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "s": "#742a01",
+  "t": "#a14808",
+  "u": "#bd753e"
+ }
+}

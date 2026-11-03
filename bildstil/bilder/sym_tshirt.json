@@ -1,0 +1,35 @@
+{
+ "id": "sym_tshirt",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den liknar 👕 mest: korta, utstående ärmar, en tydlig halsringning och en rak kropp. Därför läses den som en tröja på en blick, både på mörk och ljus bakgrund. Version 1 har långa ärmar som når nästan ner till midjan och ser mer ut som en brynja eller tunika. Version 2 är tydlig men har tyngre ärmar och en dubbel fåll, och den ser något bredare och plumpare ut i liten storlek. Version 3 följer förebildens stil. Konturen är rost0 runt hela tröjan, och ljuset faller från övre vänster: rost3 till vänster och rost1 nere till höger. Små senapskanter vid hals, ärmslut och fåll fungerar som accent, och glansen är bara en punkt (senap3). Den är 16 punkter bred och 15 hög, alltså inom 14–16, och fyller rutan. Jag ändrade ingenting: alla rader är 16 tecken, alla tecken finns i paletten och formen är redan ren.",
+ "w": 16,
+ "h": 15,
+ "rader": [
+  "...rrrr..rrrr...",
+  "..ruutLrrKttsr..",
+  ".ruuttuKJttttssr",
+  "ruuttutttttttssr",
+  "rutttutttttttssr",
+  "rKJrtuttttttrJIr",
+  ".rrrttutttttsrr.",
+  "...rttttttssr...",
+  "...rutttttssr...",
+  "...rttutttssr...",
+  "...rtttttsssr...",
+  "...rttuttsssr...",
+  "...rKLKJKJIIr...",
+  "...rJKJJIJIIr...",
+  "...rrrrrrrrrr..."
+ ],
+ "pal": {
+  "I": "#694902",
+  "J": "#906f0f",
+  "K": "#b2921b",
+  "L": "#d8b25f",
+  "r": "#521100",
+  "s": "#742a01",
+  "t": "#a14808",
+  "u": "#bd753e"
+ }
+}

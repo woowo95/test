@@ -1,0 +1,36 @@
+{
+ "id": "sym_yrsel_stjarnor",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den har samma material som förebilden: en svans i skiffer som svärdsbladen och en stjärna i senap som fästena. Den läses tydligast som 💫, alltså en stjärna som snurrar i en båge och lämnar en svans efter sig. Stjärnan har sin egen kontur och syns mot både mörk och ljus bakgrund. Version 1 har en svans i ben som drunknar på ljus bakgrund. I version 2 är allt senap, så stjärna och båge flyter ihop till en klump. Det jag ändrade: det lilla glittret inne i bågen satt så att det rörde stjärnans nedre vänstra spets och smälte ihop med den. Jag flyttade det två rader ned, så att det står fritt i bågens mitt med en tom rad mellan sig och stjärnan. Allt annat är kvar som det var: ljuset kommer uppifrån vänster, konturen är i skiffer0 och senap0, och bilden är 16 × 16 och fyller rutan.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "..I........I....",
+  ".ILI......ILI...",
+  "..I....IIIILKIII",
+  ".....QQILLLKKKJI",
+  "....QTSQIKKKKJI.",
+  "...QTSQ..IKKJI..",
+  "..QTSQ..IKJIJJI.",
+  ".QTSQ..IKI...IJI",
+  "QTSQ...II.....II",
+  "QTSQ............",
+  "QTSQ....I.......",
+  "QSSQ...IKI......",
+  ".QTSQ...I..QQ...",
+  "..QSSQQQQQQTSQ..",
+  "...QSSSSSSSSRQ..",
+  "....QQQQQQQQQ..."
+ ],
+ "pal": {
+  "I": "#694902",
+  "J": "#906f0f",
+  "K": "#b2921b",
+  "L": "#d8b25f",
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e"
+ }
+}

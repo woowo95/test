@@ -1,0 +1,33 @@
+{
+ "id": "sym_blandat_rykte",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den är den rundaste och mest symmetriska och fyller 16 × 16 punkter. Konturen i senap0 går hela vägen runt, också längs nederkanten, som i förebilden. I version 1 slutar nederkanten i senap1 utan kontur. Version 2 blir kantig, och dess munstreck är för kort för att läsas som 😐. I version 3 har de raka ögonen och det långa, raka munstrecket i jord0 tydligast neutral min. Ljuset faller från övre vänstra hörnet med senap3, och skuggan ligger nere till höger i senap1. Ändringar: jag tog bort de ensamma senap1-prickarna på rad 8 (vid kolumn 3 och 12), som såg ut som mörka fläckar mitt i ansiktet. Jag förlängde också högdagern i senap3 ner längs vänsterkanten på rad 6, så att ljuset löper jämnt.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  ".....IIIIII.....",
+  "...IILLKKKJII...",
+  "..ILLKKKKKKJJI..",
+  ".ILLKKKKKKKKJJI.",
+  ".ILKKKKKKKKKKJI.",
+  "ILKKEEKKKKEEKJJI",
+  "ILKKEEKKKKEEKJJI",
+  "IKKKKKKKKKKKKJJI",
+  "IKKKKKKKKKKKKJJI",
+  "IKKKKKKKKKKKKJJI",
+  "IKKKEEEEEEEEKJJI",
+  ".IKKKKKKKKKKJJI.",
+  ".IJKKKKKKKKJJJI.",
+  "..IJJKKKKJJJJI..",
+  "...IIJJJJJJII...",
+  ".....IIIIII....."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "I": "#694902",
+  "J": "#906f0f",
+  "K": "#b2921b",
+  "L": "#d8b25f"
+ }
+}

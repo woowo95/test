@@ -1,0 +1,32 @@
+{
+ "id": "sym_stol",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Stolen från sidan har samma h-form som emojin 🪑 och känns igen direkt i liten storlek. Version 1 och 2 är ritade framifrån och liknar mer en bänk eller en stege. Version 3 följer också förebilden: få, stora former, trä i jord1–jord3 och kontur i jord0, det ljusa upptill till vänster och det mörkare nertill till höger. Ändringar: jag breddade sitsen, benen och stången mellan benen från 12 till 14 punkter, så att stolen fyller rutan bättre och väger jämnare mot de andra symbolerna. Formen är 16 punkter hög och 14 bred. Kornet på sitsen och stången följer samma tonbyten som förut, och utan nya färger.",
+ "w": 14,
+ "h": 16,
+ "rader": [
+  ".EE...........",
+  "EHGE..........",
+  "EHFE..........",
+  "EGGE..........",
+  "EHFE..........",
+  "EHGE..........",
+  "EGFE..........",
+  "EHGEEEEEEEEEEE",
+  "EHHHHGHGHGHGGE",
+  "EGFGFGFFGFGFFE",
+  "EEEEEEEEEEEEEE",
+  "EHFE......EHFE",
+  "EGFEEEEEEEEGFE",
+  "EGFHGHGGHGFGFE",
+  "EGFEEEEEEEEGFE",
+  "EEEE......EEEE"
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62"
+ }
+}

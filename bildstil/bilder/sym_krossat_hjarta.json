@@ -1,0 +1,31 @@
+{
+ "id": "sym_krossat_hjarta",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Version 3 valdes. Den har en sammanhängande sicksackspricka som går genom hela hjärtat och syns tydligt i liten storlek. Spetsen är hel och har en sluten rostkontur, så silhuetten läses direkt som 💔. Ljuset ligger uppe till vänster och skuggan nere till höger, med rost i tre toner, samma upplägg som de korsade svärden. Version 1 har en sönderfallande spets med lösa punkter. I version 2 är sprickan mer splittrad och svårare att läsa. Ändring: glanspunkten ben3 (w) var nästan vit, så jag bytte den mot ben2 (q) enligt regeln att glansen aldrig ska vara ren vit.",
+ "w": 16,
+ "h": 14,
+ "rader": [
+  "..rrrr....rrrr..",
+  ".rtuutr..rttttr.",
+  "rtuqutr.rtttttsr",
+  "rtuuttr.rtttttsr",
+  "rtuttr.rttttttsr",
+  "rtttr.rtttttttsr",
+  ".rtttr.rtttttsr.",
+  ".rttttr.rttttsr.",
+  "..rtttsr.rttsr..",
+  "...rttsr.rtsr...",
+  "....rtr.rtsr....",
+  ".....rr.rsr.....",
+  "......rssr......",
+  ".......rr......."
+ ],
+ "pal": {
+  "q": "#bdb39b",
+  "r": "#521100",
+  "s": "#742a01",
+  "t": "#a14808",
+  "u": "#bd753e"
+ }
+}

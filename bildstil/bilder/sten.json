@@ -1,21 +1,31 @@
 {
  "id": "sten",
- "ritad": 1,
+ "ritad": 2,
  "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 3. Den behåller dagens bild: en större sten till vänster och en mindre som ligger tätt intill nere till höger. Den har också en sluten nederkant, så silhuetten läses som en enda tydlig sak på gräset. Version 1 är bara en enda rund sten och har tappat den lilla stenen. Version 2 har ett hål i nederkanten som ser trasigt ut i liten storlek. Färgerna i version 3 följer ljuset uppe från vänster: skiffer3 uppe till vänster, skiffer2 i mitten och skiffer1 nere till höger. Konturen är skiffer0, och den gråa stenen syns ljus mot gräset, så som Ved gör. Jag ändrade ingenting, eftersom versionen redan stämmer med storleken (6×5), paletten och stilen.",
+ "om": "Jag valde version 3. Den är den enda som behåller dagens bilds två delar: en större rundad sten och en liten sten nere till höger, med glipan i nedersta raden mellan dem. Version 2 är bara en enda klump och liknar inte förebilden. Version 1 saknar glipan, så den lilla stenen flyter ihop med den stora. Ljuset stämmer: skiffer3 uppe till vänster och skiffer1 nere till höger på den stora stenen. Konturen är skiffer0, kol0 används inte och tonerna växlar punkt för punkt utan mörka fläckar. Silhuetten är tydlig och ljusare än gräset, och storleken på 6 × 5 håller sig inom ramen. Jag ändrade ingenting, för versionen stämmer redan med reglerna och med dagens bild.",
  "w": 6,
  "h": 5,
  "rader": [
   ".QQQ..",
   "QTTSQ.",
-  "QTSSQQ",
+  "QTSRQQ",
   "QSRQSQ",
-  ".QQQQ."
+  ".QQ.Q."
  ],
  "pal": {
   "Q": "#233035",
   "R": "#3e5156",
   "S": "#61767a",
   "T": "#8a9c9e"
+ },
+ "forra": {
+  "ritad": 1,
+  "rader": [
+   ".QQQ..",
+   "QTTSQ.",
+   "QTSSQQ",
+   "QSRQSQ",
+   ".QQQQ."
+  ]
  }
 }

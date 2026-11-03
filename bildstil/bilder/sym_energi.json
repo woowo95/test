@@ -1,0 +1,32 @@
+{
+ "id": "sym_energi",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 2. Den har den kraftigaste och jämnaste kroppen och läses därför tydligast som blixt i liten storlek, både i panelen och i textraderna. Den är 16 punkter hög, så den fyller rutan på höjden. Konturen är senap0, som är materialets mörkaste ton, och det matchar de korsade svärden. Version 1 är tunnare i nedre delen. Version 3 har så mycket ljus senap3 att den blir prickig. Ändringen: jag lade till senap3 på vänsterkanten i nedre delen (rad 10 och 12), så att ljuset kommer från övre vänstra hörnet genom hela blixten och inte bara i övre halvan.",
+ "w": 12,
+ "h": 16,
+ "rader": [
+  "....IIIIIII.",
+  "...ILLKKKJI.",
+  "...ILKKKJI..",
+  "..ILKKKJI...",
+  "..ILKKJI....",
+  ".ILKKKJIIII.",
+  ".ILLKKKKKKJI",
+  "ILKKKKKKKJI.",
+  "IIIIIKKKJI..",
+  "....ILKJI...",
+  "....IKJI....",
+  "...ILJI.....",
+  "...IKJI.....",
+  "..IKJI......",
+  "..IJI.......",
+  "..I........."
+ ],
+ "pal": {
+  "I": "#694902",
+  "J": "#906f0f",
+  "K": "#b2921b",
+  "L": "#d8b25f"
+ }
+}

@@ -1,0 +1,33 @@
+{
+ "id": "sym_varning",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 2 och lämnade den oförändrad. Utropstecknet har bäst proportioner: ett långt streck på sex rader, en tydlig lucka och en punkt på två rader, och det läses på en blick i liten storlek. I version 1 är strecket kortare, så tecknet blir litet i triangeln. I version 3 hamnar punkten nästan nere i bottenkanten, och de spridda senap3-prickarna inne i fältet bryter mot regeln om korn utan ensamma prickar. Version 2 matchar förebilden: senaptriangeln har en senap0-kontur runt hela och fyller 16 × 16 punkter. Den ljusa kanten senap3 ligger till vänster och den mörkare senap1 till höger, så ljuset kommer uppifrån vänster. Kornet består av senap2 och senap1 utan fläckar. Tecknet är ritat i kol1, som är nästan svart och kontrasterar tydligt mot den gula ytan, i stil med det ⚠-tecken spelet ersätter.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  ".......II.......",
+  "......ILKI......",
+  "......ILJI......",
+  ".....ILKKJI.....",
+  ".....ILllJI.....",
+  "....ILKllKJI....",
+  "....ILKllJJI....",
+  "...ILKKllKJJI...",
+  "...ILKJllKKJI...",
+  "..ILKKKllKJKJI..",
+  "..ILKJKKKKKJJI..",
+  ".ILKKJKllKKJKJI.",
+  ".ILKJKKllKJKJJI.",
+  "ILKKJKKKKJKKJKJI",
+  "IKKJKKJKKKJKJJJI",
+  "IIIIIIIIIIIIIIII"
+ ],
+ "pal": {
+  "I": "#694902",
+  "J": "#906f0f",
+  "K": "#b2921b",
+  "L": "#d8b25f",
+  "l": "#2f261d"
+ }
+}

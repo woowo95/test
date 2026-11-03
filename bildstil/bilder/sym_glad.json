@@ -1,0 +1,36 @@
+{
+ "id": "sym_glad",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 2. Den är den enda som har det som gör 😊 till 😊 och inte en vanlig smiley: hopknipna, glada ögon som bågar (^ ^) och rosiga kinder. Version 1 saknar kinder och har prickögon. Version 3 har prickögon och kinder i rost3, som knappt syns mot senapen. Ansiktet har samma senapsguld och samma ljus uppifrån vänster som fästet på svärden i förebilden. Konturen är senap0, och bara munnen och kinderna använder de starkare rosttonerna, så det läses tydligt i liten storlek. Jag ändrade en punkt: vänstra kanten på rad 10 blev K i stället för J, så att den belysta vänstra sidan hänger ihop med raden ovanför och ljuset faller jämnt mot nedre högra hörnet.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  ".....IIIIII.....",
+  "...IILLLKKKII...",
+  "..ILLLLKKKKKJI..",
+  ".ILLKKKKKKKKJJI.",
+  ".ILKKKKKKKKKKJI.",
+  "ILKKKlKKKKlKKKJI",
+  "ILKKlKlKKlKlKJJI",
+  "IKKKKKKKKKKKKJJI",
+  "IKttKKKKKKKKttJI",
+  "IKKlKKKKKKKKlJJI",
+  "IKKKlrssssrlJJJI",
+  ".IJKKllllllKJJI.",
+  ".IJJKKKKKKKJJJI.",
+  "..IJJJKKKJJJJI..",
+  "...IIJJJJJJII...",
+  ".....IIIIII....."
+ ],
+ "pal": {
+  "I": "#694902",
+  "J": "#906f0f",
+  "K": "#b2921b",
+  "L": "#d8b25f",
+  "l": "#2f261d",
+  "r": "#521100",
+  "s": "#742a01",
+  "t": "#a14808"
+ }
+}

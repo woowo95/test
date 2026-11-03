@@ -1,0 +1,34 @@
+{
+ "id": "sym_vag_vatten",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Det är den enda som läses som 🌊 på en blick. Den har en tydlig rullande vågkam med en genomskinlig spiral i mitten, en mindre våg nere till vänster och en bred bas som fyller rutan (16 × 16). Version 1 ser ut som en sten eller gravsten med ett öga. Version 2 ser ut som en huva eller hjälm. Version 3 hör också bäst ihop med förebilden: skiffertonerna (Q/R/S/T) har konturen Q, alltså materialets mörkaste ton, runt hela formen. Ljuset kommer uppifrån vänster, med q som skum på vänsterkanten och bara en glanspunkt w på kammen. Formerna är få och stora, så symbolen syns både på mörk och ljus bakgrund. Jag behövde inte ändra något: alla rader är 16 tecken, konturen är sluten och den ljusa punkten vid krullens spets sitter ihop med vågbandet under, så den räknas inte som en ensam prick.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "....QQQQQ.......",
+  "..QQqwqTTQQ.....",
+  ".QqqTTSTSSRQ....",
+  ".QqTSQQQSSSRQ...",
+  "QqTSQ...QSTSRQ..",
+  "QqTQ.QQ..QSTSRQ.",
+  "QTSQQqQ..QSSSRQ.",
+  "QTSSSRQ..QTSSRRQ",
+  ".QRSRQ...QSSSSRQ",
+  "..QQQ...QTSSSRRQ",
+  "QQQ....QTSSSSRRQ",
+  "QqTTQQQTSSSSRSRQ",
+  "QTSTTTTSSSSRSRRQ",
+  "QSSTSSSSSRSRRRRQ",
+  "QRSSRSSRSRRRRRRQ",
+  ".QQQQQQQQQQQQQQ."
+ ],
+ "pal": {
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e",
+  "q": "#bdb39b",
+  "w": "#dad0bb"
+ }
+}

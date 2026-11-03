@@ -1,0 +1,36 @@
+{
+ "id": "sym_ryggsack",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den fyller hela rutan (16 × 16), har en bärögla överst, ett lock med kant, ett spänne i senap och en framficka med remmar. Därför läses den som en ryggsäck (🎒) och inte som en kista. Version 1 ser ut som en låda med lås, och version 2 är en rund påse utan tydlig ficka. Formen och jordtonerna med en jord0-kontur och ljuset uppe till vänster passar förebilden med de korsade svärden, där bara metallen sticker ut i senap. Ändring: spännet hade en jordton (FF) mitt i mässingen, och glanspunkten L stod ensam. Jag ritade om det i senap (L K K J) så att det blir en sammanhängande mässingsform med glansen uppe till vänster. Resten behölls.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "......EEEE......",
+  ".....EH..FE.....",
+  "..EEEEEEEEEEEE..",
+  ".EHHGHGGGGGGGFE.",
+  "EHGGGGHGGGGGGFFE",
+  "EHGHGGGGGGGGFGFE",
+  "EGGGGGGGGGGGGFFE",
+  "EGGGGIIIIIIGGFFE",
+  "EEEEEILKKJIEEEEE",
+  "EGFFFIKJJJIFFFFE",
+  "EGFFFIIIIIIFFFFE",
+  "EGFGFFEGFEFFGFFE",
+  "EGFFFFEGFEFFFFEE",
+  "EFFGFFEFFEFGFFEE",
+  ".EFFFFEEEEFFFFE.",
+  "..EEEEEEEEEEEE.."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "I": "#694902",
+  "J": "#906f0f",
+  "K": "#b2921b",
+  "L": "#d8b25f"
+ }
+}

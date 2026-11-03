@@ -1,0 +1,32 @@
+{
+ "id": "sym_kors",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Det är ett rent latinskt kors som ✝, med samma enkla silhuett och tydliga jord0-kontur som de korsade svärden. Den fyller 16 punkter på höjden och 14 på bredden och läses tydligast i liten storlek. Version 1 och 2 har grästuva respektive sockel. Det ger en gravsten som är plottrigare och svagare som ✝, och gräset blandar in oliv som inte behövs. Min enda ändring gäller den övre kanten på armen, rad 5. De ljusa H-punkterna samlas nu åt vänster och tonen faller jämnt mot höger, så att ljuset kommer uppifrån vänster och den lösa ljusa fläcken till höger om mitten försvinner.",
+ "w": 14,
+ "h": 16,
+ "rader": [
+  "....EEEEEE....",
+  "....EHGGFE....",
+  "....EHGFFE....",
+  "EEEEEHGGFEEEEE",
+  "EHHHHHHGGHGGGE",
+  "EHGGHGGGFGGGFE",
+  "EGFGFFGFFFGFFE",
+  "EEEEEHGFFEEEEE",
+  "....EHGFFE....",
+  "....EHGGFE....",
+  "....EGHGFE....",
+  "....EHGFFE....",
+  "....EHGGFE....",
+  "....EGGFFE....",
+  "....EHGFFE....",
+  "....EEEEEE...."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62"
+ }
+}

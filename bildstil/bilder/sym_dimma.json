@@ -1,0 +1,33 @@
+{
+ "id": "sym_dimma",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 2. Den är den enda där ett moln ligger över dimstrecken, och det är så 🌫 ser ut, så den känns igen på en blick. Version 1 och 3 är bara strimmor och kan läsas som vågor, en meny eller staplad sten. Version 2 har dessutom få och stora former, skifferkontur runt hela och samma skiffertoner som svärdens blad i förebilden. Ljuset kommer från vänster uppåt: ljusast uppe till vänster och mörkast nere till höger. Glansen är en enda punkt i ben3, som inte är ren vit. Ändring: den nedersta dimstrimman är förlängd en punkt åt höger så att symbolen fyller hela 16 × 16 rutan. Resten är oförändrat.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "...QQQQ.........",
+  "..QTwTSQQQQQ....",
+  ".QTTTTSSTTTSQ...",
+  "QTTTSSTSSSSSRQ..",
+  "QTSSTSSSSRSRRQ..",
+  ".QQSRSSRSRRQQ...",
+  "...QQQQQQQQ.....",
+  "................",
+  ".QQQQQQQQQQQ....",
+  "QTTSTSSTSSSRQ...",
+  "QSSRSSRSRSRRQ...",
+  ".QQQQQQQQQQQ....",
+  "....QQQQQQQQQQQ.",
+  "...QTTSTSSTSSSRQ",
+  "...QSRSSRSRSRRRQ",
+  "....QQQQQQQQQQQ."
+ ],
+ "pal": {
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e",
+  "w": "#dad0bb"
+ }
+}

@@ -1,0 +1,38 @@
+{
+ "id": "sym_klocka",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den gula senapsringen har samma toner som svärdens fästen i förebilden, så symbolerna hör ihop. Konturen i jord0 är mörk runt hela ringen och syns både på mörk och ljus panel. I version 2 är konturen senap0, och den flyter ihop med den mörka bakgrunden. Version 1 har en brun träring som blir grumlig och skiljer sig från förebilden. Ljuset stämmer i version 3: senap3 sitter uppe till vänster och senap0 nere till höger. Visarna i kol1 och navet i senap läses tydligt som klockan fyra, alltså samma tid som emojin 🕓. Jag ändrade en sak: en w-punkt på rad 4 blev q, så att den ljusaste tonen på urtavlan blir en mjuk ljuszon och inte ser ut som glans. Allt annat är oförändrat.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  ".....EEEEEE.....",
+  "...EELKKKKJEE...",
+  "..ELKwwqqqqJIE..",
+  ".ELKwwqlqqqqJIE.",
+  ".EKwwqqlqqqqqJE.",
+  "EKwqqqqlqqqqqpJE",
+  "EKqwqqqlqqqqqpJE",
+  "EKqqqqqlqqqqqpIE",
+  "EKoqqqqKllqqqoIE",
+  "EJqqqqqqqqllqpIE",
+  "EJqqqqqqqqqqppIE",
+  ".EJqqqqqqqqppIE.",
+  ".EJJqqqoqpppIIE.",
+  "..EJIqqppppIIE..",
+  "...EEJJIIIIEE...",
+  ".....EEEEEE....."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "I": "#694902",
+  "J": "#906f0f",
+  "K": "#b2921b",
+  "L": "#d8b25f",
+  "l": "#2f261d",
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "w": "#dad0bb"
+ }
+}

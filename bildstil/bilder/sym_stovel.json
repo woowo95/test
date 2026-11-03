@@ -1,0 +1,38 @@
+{
+ "id": "sym_stovel",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den har den enklaste och tydligaste silhuetten: ett skaft med pälskant, en rundad tå och en mörk sula. Den känns igen som en känga direkt, ungefär som 🥾, och den hör ihop med förebildens få, stora former. Version 2 har snörning och version 3 har band och flera fält. De småbitarna smetar ihop i spelets storlek och gör kängan rörigare. I version 1 ligger ljuset rätt: den ljusa benfärgade pälsen och de ljusa jordtonerna sitter uppe till vänster, och de mörkare jordtonerna och sulan nere till höger. Konturen är jord0 runt lädret, och kol0 används bara under sulan. Ändring: jag förlängde skaftet med en rad så att bilden blir 16 punkter hög och fyller rutan bättre på höjden. Den är nu 14 × 16 punkter, och kängan får bättre proportioner mellan skaft och fot. Resten är oförändrat.",
+ "w": 14,
+ "h": 16,
+ "rader": [
+  "EEEEEEEE......",
+  "EqqpqpoE......",
+  "EpppoooE......",
+  "EHGGGFFE......",
+  "EHGHGGFE......",
+  "EHGGGFFE......",
+  "EHHGGGFE......",
+  "EHGGGGFE......",
+  "EHGHGGFE......",
+  "EHGGHGGFEEE...",
+  "EHGGGGHGGHFE..",
+  "EHGHGGGGHGGFE.",
+  "EGGGGGHGGGGGFE",
+  "EFGFFFGFFFFFFE",
+  "knnnnmnnnnnnmk",
+  ".kkkkkkkkkkkk."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "k": "#24201d",
+  "m": "#372f25",
+  "n": "#474138",
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "q": "#bdb39b"
+ }
+}

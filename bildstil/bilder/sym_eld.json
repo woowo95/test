@@ -1,0 +1,35 @@
+{
+ "id": "sym_eld",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den har den rundaste och tydligaste lågformen, med en stor kropp, en spets som lutar och små tungor på båda sidor. Därför känns den lättast igen som 🔥 i liten storlek. Den fyller rutan på höjden med 16 rader och är 14 punkter bred. Ljuset stämmer: rost3 ligger mot vänsterkanten, en senapskärna sitter något till vänster och rost1 ligger nere till höger. Den har samma kraftiga rostkontur och få, stora former som förebilden. Version 1 är 15 bred, men högertungan blir en egen liten bit. Version 2 har en tunnare och mer splittrad silhuett. Jag rättade två ställen där konturen var öppen. I rad 7 låg vänstertungans rost3-punkt mot genomskinligt, så jag stängde den med rost0 i rad 7 (.rrrutuKuttsr.). I botten låg rost1-punkterna längst ut i den näst sista raden öppna mot genomskinligt, så jag breddade den sista konturraden till ...rrrrrrrr... så att den stänger dem.",
+ "w": 14,
+ "h": 16,
+ "rader": [
+  "......r.......",
+  ".....rur......",
+  ".....rutr.....",
+  "....rutsr.....",
+  "....ruttsr.r..",
+  "...ruttutsrtr.",
+  ".rrrutuKuttsr.",
+  ".rutuKLKuttsr.",
+  "rutuKLLKKuttsr",
+  "rutKLLLLKKutsr",
+  "rutKLLLLLKJtsr",
+  "rtuKLLLLKJJtsr",
+  ".rtuKLLKJJtsr.",
+  ".rstuKKJJtssr.",
+  "..rsttJJtssr..",
+  "...rrrrrrrr..."
+ ],
+ "pal": {
+  "J": "#906f0f",
+  "K": "#b2921b",
+  "L": "#d8b25f",
+  "r": "#521100",
+  "s": "#742a01",
+  "t": "#a14808",
+  "u": "#bd753e"
+ }
+}

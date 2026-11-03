@@ -1,0 +1,36 @@
+{
+ "id": "sym_bada",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1 eftersom den läses tydligast som en simmare i liten storlek. Huvudet ligger i vattenytan och armen går i en båge över vattnet med handen på väg ner, vilket är just 🏊. Version 2 ser ut som en snäcka eller ett ringlat rör. Version 3 ser ut som en mortel eller ett badkar med ett skaft. Version 1 har också få, stora former, jordkontur runt kroppen och skifferkontur runt vattnet, som de korsade svärden. Ändringar: hjässan har fått ljusare toner (G) uppe till vänster i stället för bara mörk F, så att ljuset kommer från rätt håll. Ögat är nu kol0 (k) så att ansiktet syns direkt. I övrigt är bilden oförändrad: 16 punkter bred och 15 hög.",
+ "w": 16,
+ "h": 15,
+ "rader": [
+  "........EEEE....",
+  ".......EHHGGE...",
+  "......EHGE.EGGE.",
+  "..EEE.EHGE..EGGE",
+  ".EGGFEEHGE...EGE",
+  "EFHHGFEHGE...EE.",
+  "EHkGGGEHGE......",
+  ".EGGEEHGGE......",
+  "QTTQQQTTQQQTTQQQ",
+  "QSTTSSTTSSTTSSSQ",
+  "QRSSSRSSSRSSSRRQ",
+  ".QQRRQQRRQQRRQQ.",
+  ".QTTQQTTQQTTQQ..",
+  "QSSTSSSTSSSTSRQ.",
+  ".QQQQQQQQQQQQQ.."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e",
+  "k": "#24201d"
+ }
+}

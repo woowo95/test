@@ -1,0 +1,32 @@
+{
+ "id": "sym_balte",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den är en tjock, sluten ögla med en svans som korsar sig själv och går ut nedåt till höger. Därför läses den direkt som ➰, alltså ett lasso, och den har samma kraftiga och tydliga silhuett som de korsade svärden. Version 2 är ett bälte med spänne och betyder inte samma sak som emojin. Version 3 har ett tunnare rep som ser svagt ut i liten storlek. Version 1 fyller 16 × 16 punkter och har en kontur i jord0 runt hela formen. Den har tre tre jordtoner där ljuset faller uppe till vänster och skuggan ligger nere till höger. Jag ändrade bara rad 13 i svansen från EGFFE till EGGFE. Då följer svansens toner bättre det övriga repets toner, och mörkt och ljust växlar punkt för punkt utan någon mörk fläck.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "...EEEEEEEEEE...",
+  ".EEHHHHGHGGGFEE.",
+  "EHHHEEEEEEEEGFFE",
+  "EHHE........EGFE",
+  "EHGE........EGFE",
+  "EHGE........EGFE",
+  "EGGE........EFFE",
+  "EGFFE......EGFFE",
+  ".EGFFEE..EEGFFE.",
+  "..EEGFFEEGFFEE..",
+  "....EEGFHGFEE...",
+  ".....EHGGFE.....",
+  ".....EGGFE......",
+  "......EHGFE.....",
+  ".......EGFFE....",
+  "........EEEE...."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62"
+ }
+}

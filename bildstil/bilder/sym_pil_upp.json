@@ -1,0 +1,32 @@
+{
+ "id": "sym_pil_upp",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den har samma tydliga silhuett som förebilden, med ett brett pilhuvud och ett jämnt skaft som går snett uppåt åt höger. Pilen fyller rutan på 16 × 16 punkter och har en sluten oliv0-kontur runt hela formen. Skaftet har tre toner (P, O och N) med den ljusa sidan uppåt-vänster och den mörka nedåt-höger, så ljusriktningen stämmer. Tonerna byts punkt för punkt utan ensamma prickar. Version 2 saknar den mörkaste innertonen och blir slätare. Version 3 byter ljus och mörk sida i skaftet (MOPNM, MPOOM), så ljuset hoppar. Ändring: i rad 13 bytte jag MOONM mot MPONM, så att skaftets ljusa kant fortsätter obruten ner mot pilens slut.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  ".......MMMMMMMMM",
+  "........MPPOPONM",
+  ".........MPOPONM",
+  "..........MOPONM",
+  ".........MPOONNM",
+  "........MPONMONM",
+  ".......MPONM.MNM",
+  "......MPPNM...MM",
+  ".....MPONM.....M",
+  "....MPONM.......",
+  "...MPPNM........",
+  "..MPONM.........",
+  ".MPONM..........",
+  "MPONM...........",
+  "MONM............",
+  "MMM............."
+ ],
+ "pal": {
+  "M": "#353204",
+  "N": "#4b4f00",
+  "O": "#647025",
+  "P": "#898b4c"
+ }
+}

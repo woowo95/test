@@ -1,0 +1,33 @@
+{
+ "id": "sym_tand",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 2. Den har en helt sluten kontur i kol0, precis som förebilden med de korsade svärden, och syns därför lika tydligt på mörk som på ljus panel. Konturen i kol1 i version 1 flyter nästan ihop med den mörka bakgrunden. Den bruna jordkonturen i version 3 hör till trä och inte till ben, och de långa, raka rötterna gör att tanden ser ut som en stol. Version 2 har en tydlig tandkrona med två knölar och en skåra mellan dem, och benrampen går från ljusa ben2 och ben3 uppe till vänster till mörka ben0 nere till höger, så ljuset stämmer. Glansen är bara två punkter ben3. Jag ändrade en sak: den högra roten böjde sig inåt mot den vänstra (raderna 13–14). Nu smalnar den av från ytterkanten och speglar den vänstra roten, så att tanden ser symmetrisk och lugn ut i liten storlek.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "..kkkk....kkkk..",
+  ".kwqqqk..kqqppk.",
+  "kwqqqqqkkqqqppok",
+  "kqqqpqqqqqqqppok",
+  "kqqqqqqpqqqpppok",
+  "kqqpqqqqqqqppook",
+  "kqqqqqqqqpqppook",
+  "kqqqqpqqqppppook",
+  ".kqqqqqqqpppook.",
+  ".kqqqpppppppook.",
+  "..kqqpk..kppok..",
+  "..kqppk..kpook..",
+  "..kqpok..kpook..",
+  "..kqpok..kpok...",
+  "...kpok..kok....",
+  "....kk...kk....."
+ ],
+ "pal": {
+  "k": "#24201d",
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "w": "#dad0bb"
+ }
+}

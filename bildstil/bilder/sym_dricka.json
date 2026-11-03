@@ -1,0 +1,39 @@
+{
+ "id": "sym_dricka",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Det är den enda som läses som en bägare med sugrör, alltså 🥤. Den smalnar av nedåt och har en fot. Version 2 och 3 har breda metallband och raka sidor, så de ser ut som spannar eller hinkar. Version 1 fyller rutan på höjden med 16 punkter. Den har kontur i jord0 runt hela formen, och vattnet syns i skiffer vid kanten. Det sneda senapsgula sugröret går i samma diagonal som svärden i förebilden, och ljuset faller från vänster med jord3 mot jord1. Jag ändrade en sak: foten var helt mörk i jord1. Nu har den ljusare toner till vänster (jord3 och jord2) och mörkare till höger, så att den följer ljuset och inte blir en mörk fläck.",
+ "w": 12,
+ "h": 16,
+ "rader": [
+  ".........II.",
+  "........ILKI",
+  ".......ILKI.",
+  "......ILKI..",
+  "EEEEEILKIEEE",
+  "EHTSJISRSRGE",
+  "EHGHGGGGGFFE",
+  "EHHGGGGGGFFE",
+  "EFFGFFFFFFEE",
+  ".EHGGGGGGFE.",
+  ".EHGHGGGGFE.",
+  ".EGGGGGGFFE.",
+  ".EGGGGGGFFE.",
+  "..EGGGGFFE..",
+  ".EHGGFFFFFE.",
+  ".EEEEEEEEEE."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "I": "#694902",
+  "J": "#906f0f",
+  "K": "#b2921b",
+  "L": "#d8b25f",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e"
+ }
+}

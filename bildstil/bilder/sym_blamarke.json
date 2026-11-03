@@ -1,0 +1,34 @@
+{
+ "id": "sym_blamarke",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 2. Den oregelbundna, sneda fläcken läses bäst som ett blåmärke: en rödrost rand runt en blåaktig skiffermitt ger tillsammans det lila intrycket, eftersom paletten saknar lila. Konturen är rost0, materialets mörkaste ton, precis som förebildens hårda kontur. Ljuset kommer uppifrån vänster med glans på högst två punkter (skiffer3), och symbolen är 16 punkter bred och fyller rutan. Version 1 är mer symmetrisk och platt och ser ut som en sten i glöd. Version 3 har en guldkant (senap) och läses som en sköld. Ändring: de diagonala skiffer0-strecken i mitten av version 2 fick symbolen att se ut som ett speglande glas. Jag ersatte dem med en sammanhållen mörkare skugga nere till höger i mitten och lugnade nederkanten, så att fläcken läses som en mjuk, svullen blåmärkesfläck.",
+ "w": 16,
+ "h": 15,
+ "rader": [
+  ".....rrrr.......",
+  "...rrsstsrr.....",
+  "..rsttsssssrr...",
+  ".rstsRRRRsssr...",
+  ".rtsRSTSRRRssrr.",
+  "rstRSTSRRRRRsssr",
+  "rssRSSRRRRRRRssr",
+  "rtsRSRRRRRRQRssr",
+  ".rsRRRRRRRQQssr.",
+  ".rssRRRRRQQRsr..",
+  "..rsRRRRQQRsssr.",
+  "..rssRRRRsssssr.",
+  "...rsssssssssr..",
+  "....rrssssssr...",
+  ".....rrrrrrr...."
+ ],
+ "pal": {
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e",
+  "r": "#521100",
+  "s": "#742a01",
+  "t": "#a14808"
+ }
+}

@@ -1,0 +1,37 @@
+{
+ "id": "sym_stetoskop",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 2. Den är den enda som läses som ett stetoskop på en blick: två hörlurar i skiffer som möts i en bygel, en U-formad slang i jord och ett stort, runt bröststycke. Version 1 och 3 har en rostfärgad Y-form med ett litet fyrkantigt bröststycke och ser ut som en slangbella eller ett rör. Version 2 hör också bäst ihop med förebilden: den har metall i skiffer som svärden, en sammanhållen kontur i materialens mörkaste toner (skiffer0 och jord0), få stora former och ljuset uppe till vänster med en enda glanspunkt (ben3) på bröststycket. Den fyller hela rutan, 16 × 16. Rost undviks, så de mättade tonerna sparas till annat. Jag har inte ändrat något: raderna håller måtten, paletten och konturen stämmer, och slangen har korn i två till tre toner utan fläckar.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  ".QQ....QQ.......",
+  "QTSQ..QTSQ......",
+  ".QTQ..QTQ.......",
+  ".QTQ..QTQ.......",
+  "..QTQQTQ..QQQQ..",
+  "...QTSQ..QTTTSQ.",
+  "...QSRQ.QTwTTSRQ",
+  "...EHFE.QTTTSSRQ",
+  "...EHFE.QTSSSRRQ",
+  "...EGFE.QSSSRRRQ",
+  "...EHFE..QSRRRQ.",
+  "...EHGE...QRRQ..",
+  "...EHFE...EHFE..",
+  "...EHGHEEEHGFE..",
+  "....EGHHHHGFFE..",
+  ".....EEEEEEEE..."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e",
+  "w": "#dad0bb"
+ }
+}

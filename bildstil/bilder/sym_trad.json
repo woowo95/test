@@ -1,0 +1,36 @@
+{
+ "id": "sym_trad",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den olivgröna kronan i mellantoner är ljusast av de tre och syns bäst på den mörka panelen. Den har samma tydliga silhuett och samma ljusstyrka som de korsade svärden. Konturen är oliv0 runt kronan och jord0 runt stammen, ljuset faller uppifrån vänster och toningen går mot mörkt nere till höger. Bilden fyller 16 × 16 punkter. Version 2 är mörk barrgrön och försvinner på mörk bakgrund. Version 3 har en sned stam och glipor i kronans kontur. Ändring: jag tog bort en ensam mörk oliv1-prick på rad 3, i den ljusa delen av kronan, och ersatte den med oliv2, så att ytan får korn utan fläckar.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  ".....MMMMMM.....",
+  "...MMPPOOOOMM...",
+  "..MPPOPOOOOOOM..",
+  ".MPPOPOOOONONOM.",
+  ".MPOPOOONOONNNM.",
+  "MPOOPOONOONONNNM",
+  "MOPOOONOONONNNNM",
+  "MOOOONOONONNNNNM",
+  ".MOONONNONNNNNM.",
+  ".MMONNNNNNNNNMM.",
+  "...MMMEGFEMMM...",
+  "......EGFE......",
+  "......EGFE......",
+  ".....EGHFFE.....",
+  "....EGFEEFFE....",
+  "....EEE..EEE...."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "M": "#353204",
+  "N": "#4b4f00",
+  "O": "#647025",
+  "P": "#898b4c"
+ }
+}

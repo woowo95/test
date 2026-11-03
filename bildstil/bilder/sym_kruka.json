@@ -1,0 +1,36 @@
+{
+ "id": "sym_kruka",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 2",
+ "om": "Jag valde version 2. Den har en rund, symmetrisk buk med två tydliga senapsband och två öron, och den läses direkt som 🏺. Den har samma enkla, kraftiga silhuett som de korsade svärden. Version 3 har en sluten rostlinje under mynningen som ser ut som ett lock. Dess buk smalnar av för fort, och den mörka högersidan tar över så att formen blir grumligare i liten storlek. Ändringar: sista raden (foten) var bara 13 tecken och är nu 14, symmetrisk under kroppen. Det nedre bandet börjar med senap3 (L) på vänster kant, som det övre, så att ljuset från vänster hänger ihop. Kontur i rost0 runt hela krukan och ingen bakgrund.",
+ "w": 14,
+ "h": 16,
+ "rader": [
+  "...rrrrrrrr...",
+  "...ruutttsr...",
+  "....rutssr....",
+  ".rrrrutssrrrr.",
+  "rur.rutssr.rsr",
+  "rtruttttsssrsr",
+  "rruuttttttssrr",
+  "ruttttttttsssr",
+  "rLKKKKKKKKKJIr",
+  "rutJttJttJtssr",
+  "rLKKKKKKKKJJIr",
+  ".rtttttttsssr.",
+  "..rtttttsssr..",
+  "...rtttsssr...",
+  "....rtsssr....",
+  "...rrrrrrrr..."
+ ],
+ "pal": {
+  "I": "#694902",
+  "J": "#906f0f",
+  "K": "#b2921b",
+  "L": "#d8b25f",
+  "r": "#521100",
+  "s": "#742a01",
+  "t": "#a14808",
+  "u": "#bd753e"
+ }
+}

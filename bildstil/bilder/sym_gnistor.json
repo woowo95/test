@@ -1,0 +1,33 @@
+{
+ "id": "sym_gnistor",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den liknar ✨ mest: en stor fyruddig stjärna nere till vänster och två mindre uppe och nere till höger. Den stora stjärnan är symmetrisk kring mitten och har kraftiga armar, så silhuetten läses tydligt även i liten storlek. Den fyller hela rutan, 16 × 16 punkter. Ljuset faller rätt: senap3 uppe till vänster och senap1 nere till höger, och hela konturen är senap0, materialets mörkaste ton, som i förebildens tydliga stil. Glansen är en enda punkt ben2, så den blir inte nästan vit som ben3 i version 2. Version 3 har tunnare armar och blir svagare i liten storlek. Jag gjorde inga ändringar, eftersom alla rader är 16 tecken, bara paletten används och reglerna följs.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "............I...",
+  "...........ILI..",
+  "..........IKLJI.",
+  "......I..ILKLJJI",
+  ".....ILI..IJJJI.",
+  ".....ILI...IJI..",
+  "....ILKJI...I...",
+  "...IKLLKJI......",
+  ".IIKLLLKJJII....",
+  "ILLKKLqKJJJJI...",
+  ".IIJKKKJJJII....",
+  "...IJJKJJI...I..",
+  "....IJJJI...ILI.",
+  ".....IJI...ILKJI",
+  ".....IJI....IJI.",
+  "......I......I.."
+ ],
+ "pal": {
+  "I": "#694902",
+  "J": "#906f0f",
+  "K": "#b2921b",
+  "L": "#d8b25f",
+  "q": "#bdb39b"
+ }
+}

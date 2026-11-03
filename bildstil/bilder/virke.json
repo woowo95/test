@@ -1,23 +1,30 @@
 {
  "id": "virke",
- "ritad": 1,
+ "ritad": 2,
  "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 1. Den följer dagens bild närmast: en ljus bräda i ben ovanpå en brun bräda i jord, med jord0 som kontur och varma toner som passar Ved. Version 2 är ett nästan rakt block där brädorna inte syns som två. Version 3 har en dubbel konturpunkt (EE) i den bruna raden som ser ut som en mörk fläck. Det jag ändrade: i version 1 stack den nedre brädan ut åt höger, men i dagens bild ligger den övre brädan förskjuten åt höger och den nedre åt vänster. Jag flyttade därför den ljusa brädan en punkt åt höger och stängde dess nedre högra hörn med jord0. Den bruna brädan börjar nu längst ut till vänster, och dess underkant slutar före den övre brädans högerkant. Det ger två förskjutna, staplade brädor som i originalet. Övre hörnen är genomskinliga så att kanten blir lätt rundad. Tonerna går från ljust uppe till vänster till mörkt nere till höger, och storleken håller sig inom 13 × 4 punkter.",
+ "om": "Jag valde version 1. Den visar tydligast två bräder som ligger på varandra: den övre brädan är förskjuten åt vänster och den undre åt höger, så båda brädkanterna syns och silhuetten läses som två bräder även i liten storlek. Den har samma material och toner som förebilden Ved: jordramp med kontur i jord0, ljuset uppe till vänster (ben2 som enda glanspunkt i den övre brädans vänstra ände) och en mörkare undre bräda. Kornet växlar punkt för punkt utan ensamma mörka prickar. Version 2 läses mest som ett enda tjockt block med en stump vid sidan. Version 3 ser ut som två bräder bredvid varandra i höjdled, inte på varandra, och har en ensam ljus punkt mitt i den undre brädan. Storleken stämmer: 13 punkter bred och 4 hög. Jag behövde inte ändra något.",
  "w": 13,
  "h": 4,
  "rader": [
-  "..EEEEEEEEEE.",
-  ".EwqwqqwqqpqE",
-  "EGHGFGGFGFFEE",
-  ".EEEEEEEEEE.."
+  "EqHHGHGHGGE..",
+  "EEEEEEEEEEEEE",
+  "..EHGFGGFGFFE",
+  "..EEEEEEEEEEE"
  ],
  "pal": {
   "E": "#3f2415",
   "F": "#5e3c24",
   "G": "#7d5b40",
   "H": "#987e62",
-  "p": "#a0947d",
-  "q": "#bdb39b",
-  "w": "#dad0bb"
+  "q": "#bdb39b"
+ },
+ "forra": {
+  "ritad": 1,
+  "rader": [
+   "..EEEEEEEEEE.",
+   ".EwqwqqwqqpqE",
+   "EGHGFGGFGFFEE",
+   ".EEEEEEEEEE.."
+  ]
  }
 }

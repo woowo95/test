@@ -1,0 +1,33 @@
+{
+ "id": "sym_dodskalle",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den är det enda tydliga ☠ med dödskalle och korsade benknotor i ett X bakom käken, som i emojin. Skallen har två jämna ögonhålor på 3×3 punkter, en näsa mitt i och tänder, så den läses på en blick i 16 punkter. Konturen är kol0 runt hela, ljuset kommer uppifrån vänster (ben3 och ben2 till ben1 och ben0) och benfärgen är dämpad, vilket passar ihop med svärden i förebilden.\n\nVersion 2 föll bort eftersom den är en ren skalle (💀) utan korsade ben och har kol1 som kontur. Version 1 har oregelbundna ögonhålor och ett platt benparti som läses sämre.\n\nÄndringar: benändarna saknade kontur på ena sidan. I rad 10 stod ändarna uppe till vänster och höger utan kontur ovanför, och i rad 13 saknade de nedre ändarna kontur ovanför. Jag fyllde de genomskinliga punkterna i rad 10 och rad 13 med kol0 så att hela symbolen har en sluten mörk kontur.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "....kkkkkkkk....",
+  "...kwwqqqqqqk...",
+  "..kwwqqqqqqqpk..",
+  "..kwqqqqqqqqpk..",
+  "..kqqqqqqqqppk..",
+  "..kqkkkqqkkkpk..",
+  "..kqkkkqpkkkok..",
+  "..kpkkkqpkkkok..",
+  "..kqppqkkqppok..",
+  "kkkkppqkkqpokkkk",
+  "kwpkkpqpqppkkqpk",
+  "kqqpkpkpkpokpqok",
+  ".kkqppkkkkpqpkk.",
+  "kkkkkqpqqpqpkkkk",
+  "kqpqppk..kqppqpk",
+  "kkkkkk....kkkkkk"
+ ],
+ "pal": {
+  "k": "#24201d",
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "w": "#dad0bb"
+ }
+}

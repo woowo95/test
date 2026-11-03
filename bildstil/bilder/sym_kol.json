@@ -1,0 +1,34 @@
+{
+ "id": "sym_kol",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den fyller rutan med 16 × 16 punkter och har en ren, rund kontur i kol0. Kolet är kol1–kol3 med mjukt korn, ljust uppe till vänster och mörkt nere till höger, och glansen har en varm ton som passar förebildens jordnära palett. Version 1 är bara 14 × 14 och blir mindre än de andra symbolerna. Version 2 har en kall skiffer-glans och lösa kol0-prickar inne i kulans nedre högra del, vilket ger fläckar och en ojämn kontur. Ändringar: glansen i version 3 var en klump på sex ben-punkter och för stor. Jag minskade den till två punkter (ben0 och ben1) uppe till vänster och fyllde resten med kol3/kol2 så att ytan fortfarande har korn.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  ".....kkkkkk.....",
+  "...kknnnmmmkk...",
+  "..knnnnnnmmmmk..",
+  ".knnopnnnmnmmlk.",
+  ".knnnmnnmnmmmlk.",
+  "knnnmnnmnmmmmllk",
+  "knnnnnmnmmmmlmlk",
+  "knnnmnmmmmmlmllk",
+  "knmnmmmmmmlmmllk",
+  "kmnmmmmlmmllmllk",
+  "kmmmmmlmmllllllk",
+  ".kmmlmmllmllllk.",
+  ".kllmlllllllllk.",
+  "..kllllllllllk..",
+  "...kkllllllkk...",
+  ".....kkkkkk....."
+ ],
+ "pal": {
+  "k": "#24201d",
+  "l": "#2f261d",
+  "m": "#372f25",
+  "n": "#474138",
+  "o": "#7e7362",
+  "p": "#a0947d"
+ }
+}

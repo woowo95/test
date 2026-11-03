@@ -1,0 +1,30 @@
+{
+ "id": "sym_hjarta_rott",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den är 16 punkter bred och 14 hög, har en hel kontur i rost0 och tre rosttoner. Ljuset är rätt: rost3 sitter uppe till vänster och rost1 samlas nere till höger, på samma sätt som svärden i förebilden. Silhuetten är tydlig och läses direkt som ❤️ på både mörk och ljus bakgrund. Version 2 lägger in ben2 som glans. Det är en främmande ton i rostmaterialet, och glansen blir en ljus prick. Hjärtat blir dessutom bara 13 rader högt och spetsen blir trubbig. Version 3 har ett rutigt mönster av rost1 och rost2 i nedre högra delen. I liten storlek ser det ut som fläckar och brus, inte som korn. Ändring: jag förlängde högdagern i rost3 längs vänsterkanten med en punkt till, på rad 6. Då följer ljuset formen ner i vänstra loben och ytan blir mindre slät, utan nya mörka fläckar.",
+ "w": 16,
+ "h": 14,
+ "rader": [
+  "..rrrr....rrrr..",
+  ".rtuutr..rtttsr.",
+  "rtuuttsrrttttssr",
+  "rtuttttttttttssr",
+  "rtutttttttttsssr",
+  "rtutttttttttsssr",
+  "rttttttttttssssr",
+  ".rtttttttttsssr.",
+  "..rtttttttsssr..",
+  "...rttttttssr...",
+  "....rtttttsr....",
+  ".....rttssr.....",
+  "......rtsr......",
+  ".......rr......."
+ ],
+ "pal": {
+  "r": "#521100",
+  "s": "#742a01",
+  "t": "#a14808",
+  "u": "#bd753e"
+ }
+}

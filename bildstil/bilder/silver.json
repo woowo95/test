@@ -1,19 +1,30 @@
 {
  "id": "silver",
- "ritad": 1,
+ "ritad": 2,
  "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 1. Den sneda, förskjutna formen liknar mest bitarna i dagens bild, som är lutande klumpar med glans uppe till vänster. Den läses tydligt som en liten tacka både på marken, på högen och i handen, och den hör ihop med vedens liggande, avlånga form. Konturen är skiffer0 (Q), materialets mörkaste ton, och glansen är en enda punkt ben3 (w) uppe till vänster. Jag ändrade bara mittraden: q (ben2, beige) blev T (skiffer3), och det tidigare T blev S (skiffer2). Då håller sig silvret i grå toner som går från ljust till vänster till mörkare till höger, likt dagens S och s, och ytan blir matt ljusgrå utan den varma beige tonen. Version 2 är en symmetrisk oval som tappar den sneda klumpformen. Version 3 saknar kontur i överkanten och läses som en grumlig klump.",
- "w": 5,
- "h": 3,
+ "om": "Jag valde version 2. Den följer dagens bild närmast: ett mynt uppe till vänster, ett förskjutet åt höger och ett nere till vänster, i samma diagonala stapel. Konturen är skiffer0 och myntytan är matt ljusgrå i ben2 och skiffer3. Silhuetten är tydlig och sitter väl på det oliva gräset. Version 3 är tätare och grumligare, och version 1 ser mer ut som två avlånga tackor än som mynt. Det jag ändrade: översta myntet fick en gradient från glans till skugga (w, T, S i stället för w, q, T), så att det mörknar mot höger på samma sätt som det nedersta. Det högra myntet fick q, S i stället för q, T, så att ljuset faller från vänster. Glansen är kvar som en enda ben3-punkt uppe till vänster på översta myntet.",
+ "w": 8,
+ "h": 5,
  "rader": [
-  "QQQQ.",
-  "QwTSQ",
-  ".QQQQ"
+  ".QQQ....",
+  "QwTSQQQ.",
+  ".QQQQqSQ",
+  "QqTSQQQ.",
+  ".QQQ...."
  ],
  "pal": {
   "Q": "#233035",
   "S": "#61767a",
   "T": "#8a9c9e",
+  "q": "#bdb39b",
   "w": "#dad0bb"
+ },
+ "forra": {
+  "ritad": 1,
+  "rader": [
+   "QQQQ.",
+   "QwTSQ",
+   ".QQQQ"
+  ]
  }
 }

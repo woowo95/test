@@ -1,0 +1,37 @@
+{
+ "id": "sym_tjura",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 2. Det runda, breda ansiktet fyller rutan bäst, 16 punkter brett. De sneda ögonbrynen, de hopknipna ögonen och den nedåtböjda munnen läses tydligast som 😤. Färgerna senap med senap0-kontur och ångmolnen i ben stämmer med förebildens dämpade toner och ljuset uppifrån vänster. Version 1 är för smal och liten. Version 3 ritar ansiktsdragen i kol0, som enligt guiden bara ska användas för det som verkligen är svart. Det jag ändrade gäller underkanten. Den var rörig, med ensamma o-prickar och lösa q-punkter på rad 14 och 15. Ångmolnen är nu två rena, spegelvända moln i nedre hörnen, ljusast uppe till vänster. Hakan har fått en sluten senap0-kontur och munnens nedåtvända hörn sitter kvar under munlinjen.",
+ "w": 16,
+ "h": 15,
+ "rader": [
+  ".....IIIIII.....",
+  "...IILLLKKKII...",
+  "..ILLLKLKKKKJI..",
+  ".ILLKLKKKKKKKJI.",
+  ".ILEEKKKKKKEEJI.",
+  "ILKKKEEKKEEKKKJI",
+  "ILKKKKKKKKKKKKJI",
+  "IKKEEEKKKKEEEKJI",
+  "IKtKKKKKKKKKKtJI",
+  "IKKKKKIKKIKKKJJI",
+  "IJKKKKEEEEKKJJJI",
+  ".ooIKEKKKKEJIoo.",
+  "owqoIJJJJJJIowqo",
+  "oqpo.IIIIII.oqpo",
+  ".oo.........oo.."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "I": "#694902",
+  "J": "#906f0f",
+  "K": "#b2921b",
+  "L": "#d8b25f",
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "t": "#a14808",
+  "w": "#dad0bb"
+ }
+}

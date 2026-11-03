@@ -1,0 +1,33 @@
+{
+ "id": "sym_sova",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 2. Den följer 💤 bäst: ett stort Z nere till vänster och ett litet z uppe till höger, och den läses tydligt även i liten storlek. Den använder samma skiffertoner som svärdsbladen i förebilden, med skiffer0 som kontur runt hela symbolen. Ljuset faller rätt, med en glanspunkt (ben3) uppe till vänster i varje bokstav och rost-fri skiffer1 som mörkaste ton nere till höger. Ytorna har korn utan att bli fläckiga, och symbolen fyller hela 16 × 16. Version 1 har tre z, och det minsta är bara 3 punkter inuti, vilket blir grötigt. Bokstäverna stiger inte heller mot övre högra hörnet som i emojin. Version 3 har släta, kornlösa ytor, och det lilla z:et smälter ihop med det stora Z:ets övre stapel. Jag ändrade ingenting, eftersom version 2 redan stämmer med stilguiden.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "..........QQQQQQ",
+  "..........QwTTSQ",
+  "..........QQQTSQ",
+  "...........QTSQ.",
+  "..........QTSQQQ",
+  "..........QTSSRQ",
+  "QQQQQQQQQQQQQQQQ",
+  "QwTTTSTTSQ......",
+  "QSTSSSTSRQ......",
+  "QQQQQTSQQQ......",
+  "...QTSQ.........",
+  "..QTSQ..........",
+  ".QTSQ...........",
+  "QTTTSTTTSQ......",
+  "QSSSSSSSRQ......",
+  "QQQQQQQQQQ......"
+ ],
+ "pal": {
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e",
+  "w": "#dad0bb"
+ }
+}

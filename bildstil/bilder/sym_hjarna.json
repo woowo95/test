@@ -1,0 +1,34 @@
+{
+ "id": "sym_hjarna",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 2. Den har få, stora former: två rundade hjärnhalvor med en tydlig skåra, veck i rost1 och en kort stam nertill. Den läses som 🧠 på en blick och syns lika bra på mörk som på ljus bakgrund. Som i förebilden är den ljusast uppe till vänster och mörkast nere till höger, med konturen i rost0 runt hela. Version 1 och 3 blir prickiga och fläckiga av att tonerna växlar för tätt, och veckmönstret flyter ihop i liten storlek. Ändringen: glansen hade fyra punkter i ben (q och w), så jag tog bort q på rad 2 och rad 4 och bytte dem mot rost3. Kvar blir två glanspunkter, w och q, uppe till vänster.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "....rrrrr.rrrr..",
+  "..rruuuuurruuur.",
+  ".rwquusuuusuuutr",
+  "ruussuuussuuuutr",
+  "ruuuuusuuuussutr",
+  "rusuuuusssuuuttr",
+  "ruusssuuuuusuttr",
+  "ruuuusuuusssuttr",
+  "rtsuuuussuuuuttr",
+  "rtuussuuuuusttsr",
+  ".rtuuusssuttstsr",
+  "..rttuuuttssttr.",
+  "....rrrrrrsttsr.",
+  ".......rsrrsssr.",
+  ".......rsr.rrr..",
+  ".......rr......."
+ ],
+ "pal": {
+  "q": "#bdb39b",
+  "r": "#521100",
+  "s": "#742a01",
+  "t": "#a14808",
+  "u": "#bd753e",
+  "w": "#dad0bb"
+ }
+}

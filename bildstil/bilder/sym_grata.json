@@ -1,0 +1,36 @@
+{
+ "id": "sym_grata",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 2 eftersom den läses tydligast i liten storlek. De slutna ögonen är jord0-streck och ögonbrynen sluttar sorgset med de inre ändarna uppåt. Tåren rinner ner från vänster öga inne i ansiktet, och munnen är en tydlig nedåtböjd båge. Version 1 har en ren ljus glanspunkt (w) och en tår som sitter ute i konturen. Version 3 har för många toner och blir plottrig. Senapsrampen följer ljuset med L uppe till vänster och J nere till höger, och konturen är I, vilket passar ihop med förebildens svärd. Jag ändrade bara lite: två enstaka korn (L på rad 4 och 7, J på rad 9) så att ansiktets släta senapsyta inte blir platt.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  ".....IIIIII.....",
+  "...IILLLLKKII...",
+  "..ILLLKKKKKKJI..",
+  ".ILLKLKKKKKKKJI.",
+  ".ILKKKIKKIKKKJI.",
+  "ILKKIIKKKKIIKJJI",
+  "ILKLKKKKKKKKKJJI",
+  "ILKKEEKKKKEEKJJI",
+  "IKKKQKKKKKKJKJJI",
+  "IKKQTQKKKKKKKJJI",
+  "IKQTSQKKKKKKJJJI",
+  ".IQSSQEEEEKKJJI.",
+  ".IJQQEKKKKEKJJI.",
+  "..IJKKKKKKKJJI..",
+  "...IIJJJJJJII...",
+  ".....IIIIII....."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "I": "#694902",
+  "J": "#906f0f",
+  "K": "#b2921b",
+  "L": "#d8b25f",
+  "Q": "#233035",
+  "S": "#61767a",
+  "T": "#8a9c9e"
+ }
+}

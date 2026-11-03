@@ -1,0 +1,33 @@
+{
+ "id": "sym_ben_knota",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den har en tydlig knota med två knölar i varje ände och läses direkt som 🦴 även i liten storlek. Version 1 är för smal och knölarna syns knappt. Version 2 är klumpig och ser mer ut som en påle. Version 3 har samma tunna kol0-kontur och diagonala hållning som de korsade svärden i förebilden, så den hör bäst ihop med dem. Den fyller 16 × 16 punkter. Benet har tre toner (q, p, o), ljusast uppe till vänster och mörkast nere till höger, och glansen w är bara en punkt i varje knöl. Jag ändrade en sak: på rad 12 låg en mörk o-punkt på den belysta vänstra sidan av den nedre knölen. Den blev en ljus q-punkt, så att ljuset från övre vänstra hörnet stämmer och det inte blir någon mörk fläck.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  ".........kk.....",
+  "........kwqk....",
+  ".......kqqqpk...",
+  ".......kqqppkk..",
+  "........kqqpqqk.",
+  "........kqpqqppk",
+  ".......kqpopppok",
+  "..kk..kqpokkpok.",
+  ".kwqkkqpok..kk..",
+  "kqqpqqpok.......",
+  "kqpqppok........",
+  ".kqpqpok........",
+  "..kkqqpok.......",
+  "...kpppok.......",
+  "....kook........",
+  ".....kk........."
+ ],
+ "pal": {
+  "k": "#24201d",
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "w": "#dad0bb"
+ }
+}

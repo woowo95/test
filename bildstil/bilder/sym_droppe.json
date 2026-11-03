@@ -1,0 +1,33 @@
+{
+ "id": "sym_droppe",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Version 3 läses tydligast. Den har en ren droppsilhuett med spets uppe och rund botten. Konturen är skiffer0 runt hela droppen, och den fyller 16 punkter i höjd. Ljuset faller från övre vänster: skiffer3 och en enda glanspunkt i ben3, aldrig vit. Mot nedre höger mörknar den till skiffer1. Vattnet är dämpat i skiffer, vilket hör ihop med förebildens svärd. Version 1 har diagonala ränder som blir randigt brus i liten storlek. Version 2 är bredare och plattare och känns mindre som en droppe. Min enda ändring är att jag tog bort en ensam ljus prick (skiffer3) mitt i droppen på rad 10, så att den mellersta ytan inte får en lös fläck.",
+ "w": 12,
+ "h": 16,
+ "rader": [
+  ".....QQ.....",
+  "....QTSQ....",
+  "....QTSQ....",
+  "...QTSSRQ...",
+  "...QTSSRQ...",
+  "..QTTSSRRQ..",
+  ".QTTSSSSRRQ.",
+  ".QTwSSSSRRQ.",
+  "QTTTSSSSSRRQ",
+  "QTTSSSSSSRRQ",
+  "QTSSSSSSRSRQ",
+  "QTSSSSSSRRRQ",
+  "QSSSSSSRSRRQ",
+  ".QSSSSRRRRQ.",
+  "..QQRRRRQQ..",
+  "....QQQQ...."
+ ],
+ "pal": {
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e",
+  "w": "#dad0bb"
+ }
+}

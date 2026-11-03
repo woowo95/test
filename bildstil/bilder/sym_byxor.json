@@ -1,0 +1,37 @@
+{
+ "id": "sym_byxor",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Linda om benen och det smala bältet med ett litet senapsspänne gör att den läses som järnålderns byxor och passar byn bättre än version 1, som har ett brett platt linning-band. Version 2 har skifferfärgade stövlar som drar blicken och ser mer ut som stövlar än som byxor. Symbolen fyller 14 × 16 punkter, har en kontur i jord0 runt hela och ljuset faller från vänster med mörkare höger sida, som hos förebilden. Spännet är den enda starka färgen. Jag ändrade bara benlindorna: de oregelbundna ben-tonerna (poop, pooo) blev jämna växlande band (qqpo/oppo). Då läses de som lindor och inte som fläckar, och det ljusa ligger kvar till vänster.",
+ "w": 14,
+ "h": 16,
+ "rader": [
+  ".EEEEEEEEEEEE.",
+  ".EFFFFLKFFFFE.",
+  ".EHGHGGHGGGFE.",
+  "EHHGHGGGGGGFFE",
+  "EHGHGGGGHGGGFE",
+  "EHGGGGEEGGGGFE",
+  "EHGHGE..EHGGFE",
+  "EHGGFE..EHGGFE",
+  "EHGHFE..EHGHFE",
+  "EHGGFE..EGGGFE",
+  "EqqpoE..EqqpoE",
+  "EoppoE..EoppoE",
+  "EqqpoE..EqqpoE",
+  "EoppoE..EoppoE",
+  "EqqpoE..EqqpoE",
+  "EEEEEE..EEEEEE"
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "K": "#b2921b",
+  "L": "#d8b25f",
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "q": "#bdb39b"
+ }
+}

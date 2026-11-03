@@ -1,0 +1,34 @@
+{
+ "id": "sym_keps",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den har en sluten kontur i jord0 runt hela mössan, även runt brättet, och syns därför både på mörk och ljus bakgrund. Den dämpade jordtonen passar förebildens mid century-stil. Ljuset faller rätt: jord3 och ben3 sitter uppe till vänster och jord1 och ben0 nere till höger. Silhuetten är tydlig: en rundad kulle över ett ljust brätte. Versionerna 2 och 3 använder mättad rost, som ska sparas till eld, blod och mat. Deras brätte har dessutom en kontur i ben0, som är en mellanton och flyter ihop med den ljusa panelen. Symbolen är 16 punkter bred och fyller därmed rutan. Jag behövde inte ändra något; punkterna följer redan reglerna.",
+ "w": 16,
+ "h": 14,
+ "rader": [
+  ".......EE.......",
+  "......EHGE......",
+  "....EEEGFEEE....",
+  "...EHHGGGFFFE...",
+  "..EHHGHGGFGFFE..",
+  "..EHGHGGFGFFFE..",
+  ".EHHGGHGGFGFFFE.",
+  ".EHGHGGFGGFGFFE.",
+  ".EGHGGFGGFGFFFE.",
+  "EEGGGFGGFGFFFFEE",
+  "EwqqqqpqqpqpppoE",
+  "EqqpqpqqpqppopoE",
+  "EpqppqppoppopooE",
+  ".EEEEEEEEEEEEEE."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "w": "#dad0bb"
+ }
+}

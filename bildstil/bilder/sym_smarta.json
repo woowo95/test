@@ -1,0 +1,36 @@
+{
+ "id": "sym_smarta",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den har de tydligaste hopknipna ögonen i formen > <, som i 😣, en samlad mun med sammanbitna tänder och rostfärgade kinder. Ljuset faller från övre vänstra hörnet, med ben3 och ben2 uppe till vänster och ben0 nere till höger. Konturen är jord0 runt hela ansiktet, och ansiktet fyller 16 × 16 punkter. Det hör ihop med förebildens enkla och kraftiga former. I version 1 är ögonen ojämna och svåra att läsa. I version 2 blir ögonen ett sicksackmönster i stället för > <. Ändring: tandraden fick ben3 och ben1 omväxlande med mörkare ton åt höger (wpwpqp), så att tänderna syns tydligare mot ansiktet och följer ljuset.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  ".....EEEEEE.....",
+  "...EEqwqqqpEE...",
+  "..EqwqqqqqqqpE..",
+  ".EqwqqqqqqqqppE.",
+  ".EwqqqqqqqqqppE.",
+  "EqqEqqqqqqqqEppE",
+  "EqqqEEqqqqEEqppE",
+  "EqqEqqqqqqqqEppE",
+  "EqutqqqqqqqqtspE",
+  "EqqqqEEEEEEqppoE",
+  "EqqqEwpwpqpEppoE",
+  ".EqqqEEEEEEppoE.",
+  ".EqqqqqqqppppoE.",
+  "..EpqqqqpppooE..",
+  "...EEpppoooEE...",
+  ".....EEEEEE....."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "s": "#742a01",
+  "t": "#a14808",
+  "u": "#bd753e",
+  "w": "#dad0bb"
+ }
+}

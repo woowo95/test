@@ -1,18 +1,31 @@
 {
  "id": "toa",
- "ritad": 1,
+ "ritad": 2,
  "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "De tre versionerna är identiska, så jag valde version 1. Den följer dagens bild i liten skala: en låg kulle i jord1 med en ljusare strimma i jord2 uppe till vänster, där ljuset faller. Konturen och botten är i jord0, materialets mörkaste ton, så högen syns mot det olivgröna gräset. Formen är 5 × 3 punkter och fyller rutan. Brunt i två till tre toner passar vedens trästil och läses tydligt som en liten mörkbrun hög. De gula ångstrimmorna från dagens bild får inte plats i 3 punkters höjd och har tagits bort. Det håller också högen ren och inte äcklig. Inga andra ändringar behövdes.",
- "w": 5,
- "h": 3,
+ "om": "Jag valde version 3. Den liknar dagens bild mest: en mörkbrun hög i jord1 och jord2 med jord0 som kontur och en liten ånga i senap3 och oliv3 rakt ovanför mitten, som den slingrande ångan i originalet. Version 2 saknar ångan helt. Version 1 har ångan delad i två prickar ovanför högens kanter och en jämnljus topp (EGGE), så att ljuset inte faller från vänster. I version 3 ligger de ljusa tonerna (H, G) uppe till vänster och de mörka (F) nere till höger. Ett ljust korn i mitten minner om originalets ljusa mittstrimma. Silhuetten är bred och tydlig, ljusare än gräset och läsbar i liten storlek. Den håller sig inom 8 × 5 och passar ihop med vedens bruna trätoner. Jag ändrade inget, eftersom formen, tonerna och konturen redan stämmer med bildstilen.",
+ "w": 8,
+ "h": 5,
  "rader": [
-  ".EGE.",
-  "EGFFE",
-  "EEEEE"
+  "...LP...",
+  "..EGFE..",
+  ".EHGFFE.",
+  "EGFGFFFE",
+  ".EEEEEE."
  ],
  "pal": {
   "E": "#3f2415",
   "F": "#5e3c24",
-  "G": "#7d5b40"
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "L": "#d8b25f",
+  "P": "#898b4c"
+ },
+ "forra": {
+  "ritad": 1,
+  "rader": [
+   ".EGE.",
+   "EGFFE",
+   "EEEEE"
+  ]
  }
 }

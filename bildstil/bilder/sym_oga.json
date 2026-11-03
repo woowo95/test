@@ -1,0 +1,34 @@
+{
+ "id": "sym_oga",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den fyller hela bredden (16 punkter) och har en tydlig mandelform med jord0-kontur runt hela ögat, som de korsade svärden. De tre fransarna gör att ögat känns igen direkt som 👁 och inte som en ring eller en sten. Ljuset stämmer: ben3 och ben2 uppe till vänster går mot ben0 nere till höger. Iris är skiffer med en enda ljuspunkt, och pupillen i kol0 är det enda som verkligen är svart. Version 2 är nästan lika bra, men pupillen är grötig: en ljuspunkt mitt i det svarta gör den rörig i liten storlek. Version 3 saknar fransar, är förskjuten åt höger och är bara tio rader hög, så den läses sämre. Jag hittade inget att rätta i version 1: alla rader är 16 tecken, bara palettens tecken används och glansen är två punkter.",
+ "w": 16,
+ "h": 12,
+ "rader": [
+  "...E...EE...E...",
+  "....E..EE..E....",
+  ".....EEEEEE.....",
+  "...EEqqqqppEE...",
+  "..EwqqRRRRppoE..",
+  ".EqqqRTwSSRppoE.",
+  "EqqqpRSkkSRppooE",
+  "EpqppRSkkRRpoooE",
+  ".EpppRSSRRQoooE.",
+  "..EppoRRQQoooE..",
+  "...EEpoooooEE...",
+  ".....EEEEEE....."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e",
+  "k": "#24201d",
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "w": "#dad0bb"
+ }
+}

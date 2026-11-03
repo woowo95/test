@@ -1,23 +1,32 @@
 {
  "id": "rep",
- "ritad": 1,
+ "ritad": 2,
  "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 1. Bens och jordens ljusa halmtoner ligger närmast dagens färger (#e8d4a0, #c8b07a och #8a7448), och repet läses som bast, likt veden i förebilden. Version 2 och 3 är i senapsgult och ser ut som guldmynt på marken och i handen. De mättade tonerna tar dessutom fokus från det som betyder mer. Formen följer dagens ring: ett hål i mitten, en jordkontur runtom och ljuset uppe till vänster. Jag ändrade den nedre raden från FHpGHGF till FpHGHGF så att tonen går från ljus till vänster mot mörk till höger, i stället för att hoppa mellan ljust och mörkt. Då stämmer ljusriktningen, och vridningen syns fortfarande som korn.",
+ "om": "Jag valde version 2 eftersom den liknar dagens bild mest. Dagens rep är en ring med ett stort hål i mitten, och version 2 har ett öppet hål på tre punkter som gör ringen tydlig och lätt att läsa i liten storlek. Version 1 och 3 är likadana, och där är hålet bara en punkt omgiven av mörk kontur, så de läses mer som en klump. Det här ändrade jag: Version 2 hade tre glanspunkter i ben2 (q), och den nedersta satt nere till vänster. Jag behöll bara en glanspunkt uppe till vänster, så att glansen blir högst en punkt och ljuset kommer från övre vänstra hörnet. Den andra q:n i översta raden blev senap2 (K). Nedersta raden blev senap2/senap1 i växling (K och J), så att den undre och högra delen är mörkast. Tonbytena runt ringen ger fortfarande det tvinnade kornet från dagens bild, som växlar ljust, mellan och mörkt. Färgerna följer dagens halmgula ton så nära paletten tillåter: senap3 (L) som ljusast, senap2 (K) som mellanton och senap1 (J) som mörkast, med senap0 (I) som kontur. Repet är en sak man kan ta, så de mättade senapstonerna passar.",
  "w": 7,
  "h": 5,
  "rader": [
-  ".FFFFF.",
-  "FwqpqHF",
-  "FpF.FGF",
-  "FpHGHGF",
-  ".FFFFF."
+  ".IIIII.",
+  "ILqLKJI",
+  "IL...JI",
+  "IKJKJJI",
+  ".IIIII."
  ],
  "pal": {
-  "F": "#5e3c24",
-  "G": "#7d5b40",
-  "H": "#987e62",
-  "p": "#a0947d",
-  "q": "#bdb39b",
-  "w": "#dad0bb"
+  "I": "#694902",
+  "J": "#906f0f",
+  "K": "#b2921b",
+  "L": "#d8b25f",
+  "q": "#bdb39b"
+ },
+ "forra": {
+  "ritad": 1,
+  "rader": [
+   ".FFFFF.",
+   "FwqpqHF",
+   "FpF.FGF",
+   "FpHGHGF",
+   ".FFFFF."
+  ]
  }
 }

@@ -1,0 +1,34 @@
+{
+ "id": "sym_skvaller",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den ligger närmast emojin 🗣️: ett enfärgat huvud i profil med tre strålar ur munnen, och därför känns den igen direkt. Silhuetten är stor och enkel och fyller rutan (16 hög, 13 bred plus strålarna). Den har en jord0-kontur och ljus från övre vänstra hörnet, med jord3 uppe till vänster och jord1 nere till höger. Som i förebilden med svärden är de mättade rosttonerna sparade till det som ska synas, ljudet. Version 2 läses mer som ett porträtt med hår och ansikte, och dess bågar blir otydliga i liten storlek. Version 3 har senapsgula strålar som drunknar och en grötigare profil. Ändringar: jag tog bort de två ensamma jord1-fläckarna i kinden (rad 8 och rad 9 i bilden), eftersom de bröt mot regeln om inga mörka fläckar. Ögat (jord0) och munnens skåra behöll jag som enda detaljer.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "....EEEEE.......",
+  "..EEHHHHGE......",
+  ".EHHHHHGGGE.....",
+  ".EHHHHGHGGGE...u",
+  "EHHHHGGGGGGE..u.",
+  "EHHHGHGGGEGE.t..",
+  "EHHGGGGGGGGGE...",
+  "EHHGGGGGGGGGGE..",
+  "EHGGGGGGGGGFE...",
+  "EHGGGGGGGGFE.utt",
+  "EHGGGGGGGGGFE...",
+  ".EGGGGGGGFFE.t..",
+  "..EGGGGGFEE...t.",
+  "...EGGGFE......t",
+  "...EGGFFE.......",
+  "...EEEEEE......."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "t": "#a14808",
+  "u": "#bd753e"
+ }
+}

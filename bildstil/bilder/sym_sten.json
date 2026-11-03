@@ -1,0 +1,32 @@
+{
+ "id": "sym_sten",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den är 16 × 15 punkter och fyller rutan bäst. Den ojämna, kantiga silhuetten läses som en bruten sten (🪨) och inte som en slät kullersten. Den diagonala sprickan bär betydelsen av krossår och flinta utan att bli plottrig. Konturen i skiffer0 går runt hela stenen, och ljuset faller från övre vänstra hörnet: skiffer3 uppe till vänster, skiffer1 nere till höger. Det stämmer med förebildens tydliga form och dämpade toner. Version 1 är för låg (13 rader) och ser ut som en rund kiesel. Version 2 har en udda dubbelkontur till höger på rad 5. Min enda ändring är att jag lade till en ensam glanspunkt (w) uppe till vänster på rad 3, så att stenen får lite liv och läses tydligare på mörk bakgrund.",
+ "w": 16,
+ "h": 15,
+ "rader": [
+  "....QQQQQQ......",
+  "...QTTSTSSQQQ...",
+  "..QTwTSTSSRSRQ..",
+  ".QTTSTTSSRSRSRQ.",
+  ".QTSTSSTSSRSRRQ.",
+  "QTTSTSSRQSSRSRRQ",
+  "QTSTSSSSRQSRSRRQ",
+  "QSTSSTSSRSQRSRRQ",
+  "QTSSSSSRSRQRRSRQ",
+  "QSSTSSRSRSRQRRRQ",
+  "QSSSSRSRSRRRRRRQ",
+  "QRSRSRSRRSRRRRRQ",
+  ".QRRSRRRRRRRRRQ.",
+  "..QQRRRRRRRRQQ..",
+  "....QQQQQQQQ...."
+ ],
+ "pal": {
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e",
+  "w": "#dad0bb"
+ }
+}

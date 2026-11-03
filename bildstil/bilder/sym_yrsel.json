@@ -1,0 +1,34 @@
+{
+ "id": "sym_yrsel",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den är det tydligaste 😵: ett runt ansikte i bentoner med två symmetriska kryssögon och en liten öppen mun med rost i mitten. Den fyller hela rutan på 16 × 16 och har en jord0-kontur runt om, så den läses på både mörk och ljus bakgrund och passar ihop med svärdens tydliga silhuett. Version 2 är bara 14 punkter bred, och stjärnorna sticker ut och plottrar i liten storlek. Version 3 har spiralögon och en vågig mun, vilket läses mer som illamående än som yrsel. Det här ändrade jag: jag tog bort de ensamma p-prickarna på kinderna (rad 8), eftersom reglerna inte tillåter ensamma prickar. Jag minskade också de många w-punkterna uppe till vänster till två glanspunkter (rad 1 och 2), så att glansen följer regeln om högst en eller två punkter. Ljuset kommer fortfarande uppifrån vänster och skuggan med p ligger nere till höger. Ögonen, munnen och konturen är oförändrade.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "....EEEEEEEE....",
+  "..EEqwqqqqqqEE..",
+  ".EwqqqqqqqqqqpE.",
+  "EqqqqqqqqqqqqqpE",
+  "EqqlqlqqqqlqlqpE",
+  "EqqqlqqqqqqlqqpE",
+  "EqqlqlqqqqlqlppE",
+  "EqqqqqqqqqqqqppE",
+  "EqqqqqqqqqqqqppE",
+  "EqqqqqqllqqqqppE",
+  "EqqqqqlsslqqpppE",
+  "EpqqqqqllqqqpppE",
+  ".EpqqqqqqqqpppE.",
+  ".EppqqqqqqppppE.",
+  "..EEppppppppEE..",
+  "....EEEEEEEE...."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "l": "#2f261d",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "s": "#742a01",
+  "w": "#dad0bb"
+ }
+}

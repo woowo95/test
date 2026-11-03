@@ -1,0 +1,35 @@
+{
+ "id": "sym_trott",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den fyller hela rutan på 16 × 16 punkter, medan version 1 bara är 15 rader hög. Den läses tydligast som 😩: snedställda, bekymrade ögonbryn, hopknipna ögon som böjer nedåt och en öppen, stönande mun i rost. Det dämpade senapsgula ansiktet har en kontur i senap0, ljus uppe till vänster och skugga i senap1 nere till höger, vilket stämmer med förebildens ljus och tydliga silhuett. Version 2 har lösa senap1-prickar under ögonen som ser ut som fläckar. Ändring: den ensamma ljusa punkten (senap3) i rad 3 blev en sammanhängande ljusyta, så att det inte står en ensam prick bland senap2-punkterna.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  ".....IIIIII.....",
+  "...IILLLKKKII...",
+  "..ILLLLLKKKKJI..",
+  ".ILLKKKKKKKKKJI.",
+  ".ILKKEEKKEEKKJI.",
+  "ILKEEKKKKKKEEJJI",
+  "ILLKKKKKKKKKKJJI",
+  "ILKKEEEKKEEEKJJI",
+  "IKKEKKKKKKKKEJJI",
+  "IKKKKKKKKKKKJJJI",
+  "IKKKKKEEEEKKJJJI",
+  "IKKKKErrrrEJJJJI",
+  ".IKKKErssrEJJJI.",
+  ".IJKKKEEEEJJJJI.",
+  "..IIJJJJJJJJII..",
+  "....IIIIIIII...."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "I": "#694902",
+  "J": "#906f0f",
+  "K": "#b2921b",
+  "L": "#d8b25f",
+  "r": "#521100",
+  "s": "#742a01"
+ }
+}

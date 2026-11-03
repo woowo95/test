@@ -1,0 +1,32 @@
+{
+ "id": "sym_vind",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den har en tydlig ögla i övre högra hörnet och tre förskjutna streck, och det är den form som gör att 💨 känns igen som vindpust även i liten storlek. Version 1 är för klumpig och läses mer som rör eller en skiftnyckel. Version 2 har en svag krök som nästan försvinner, så den blir bara streck. Version 3 håller sig till skiffertonerna med skiffer0 som kontur, i samma sätt som svärdens metall i förebilden. Ljuset kommer uppifrån vänster: T överst och S och R underst i varje streck, och glansen är en enda w-punkt. Silhuetten är också läsbar på både mörk och ljus bakgrund. Jag ändrade ingenting. Bilden är 16 punkter bred och 15 hög, vilket räcker för att fylla rutan, och färgerna och konturen stämmer med guiden.",
+ "w": 16,
+ "h": 15,
+ "rader": [
+  ".........QQQQQ..",
+  "........QTTTTSQ.",
+  "........QTQQQTSQ",
+  ".QQQQQQQQQQ.QTSQ",
+  "QwTTTTTTTSTTTTSQ",
+  "QSSSSSSSSSRSRSQ.",
+  ".QQQQQQQQQQQQQ..",
+  ".....QQQQQQQQ...",
+  "....QTTTTTSTTQ..",
+  "....QSSSSSSRSQ..",
+  ".....QQQQQQQQ...",
+  ".QQQQQQQQQQ.....",
+  "QTTTTTTSTTTQ....",
+  "QSSSSSSSSRSQ....",
+  ".QQQQQQQQQQ....."
+ ],
+ "pal": {
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e",
+  "w": "#dad0bb"
+ }
+}

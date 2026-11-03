@@ -1,0 +1,35 @@
+{
+ "id": "sym_aska",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 2. Blixten har den tydligaste sicksackformen med en rak tvärbalk, så den läses som ⛈ på en blick både på mörk och ljus bakgrund. Molnet fyller hela bredden med ljuset uppe till vänster och skifferkontur, och den senapsgula blixten är det enda mättade, precis som det gula fästet på svärden i förebilden. Ändring: tvärbalkens högra del saknade kontur ovanför, så jag lade till tre punkter senap0 i rad 9 (kolumn 8–10). Då får blixten en sluten kontur runt om.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "......QQQ.......",
+  "....QQTTSQQQ....",
+  "...QTTSSSRTSQ...",
+  ".QQTTSSSRRSSSQQ.",
+  "QTTSSSSRRRSSRRRQ",
+  "QTSSSRSRRRRSRRRQ",
+  "QSRRRRRILKIRRRRQ",
+  ".QQQQQILKIQQQQQ.",
+  ".....ILKI...T...",
+  ".T..ILKIIII.S...",
+  ".S.ILKKKKLKI....",
+  "...IIIIILKI...T.",
+  "......ILKI....S.",
+  ".....ILKI.......",
+  "....IKI.........",
+  "....II.........."
+ ],
+ "pal": {
+  "I": "#694902",
+  "K": "#b2921b",
+  "L": "#d8b25f",
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e"
+ }
+}

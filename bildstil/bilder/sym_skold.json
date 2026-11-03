@@ -1,0 +1,36 @@
+{
+ "id": "sym_skold",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den runda träskölden med plankfogar, järnkant och en stor rundad buckla läses direkt som 🛡 och har samma dämpade trä- och järntoner som de korsade svärden. Bucklan är större och tydligare än i version 1, och glansen är bara en punkt (ben2) uppe till vänster. Version 2 lägger mättad rost över halva skölden, men den tonen ska sparas till det man ska se. Jag ändrade bara en punkt: kanten nere till vänster i rad 13 fortsätter nu plankfogen (F i stället för en dubbel skifferkant), så att fogen löper hela vägen ner. I övrigt är bilden oförändrad: 16×16 punkter med skiffer0 som kontur runt hela och ljus från övre vänstra hörnet.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  ".....QQQQQQ.....",
+  "...QQTTTTTSQQ...",
+  "..QTTHHGHGGSSQ..",
+  ".QTHFHHGHGGFGSQ.",
+  ".QTHFHGHGHGFGSQ.",
+  "QTHHFGQQQQGFGGSQ",
+  "QTHGFQqTSSQFGFSQ",
+  "QTGHFQTSSRQFGGRQ",
+  "QSHGFQSSRRQFFGRQ",
+  "QSGGFQSRRRQFGFRQ",
+  "QSGHFGQQQQGFFGRQ",
+  ".QSGFGHGGFGFFRQ.",
+  ".QSGFGGFGFGFFRQ.",
+  "..QSFGGFGFFRRQ..",
+  "...QQSSRRRRQQ...",
+  ".....QQQQQQ....."
+ ],
+ "pal": {
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e",
+  "q": "#bdb39b"
+ }
+}

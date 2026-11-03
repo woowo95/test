@@ -1,0 +1,36 @@
+{
+ "id": "sym_spring",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 2. Den har det tydligaste löpsteget: benen är brett utsträckta diagonalt och armarna svänger åt var sitt håll. Därför känns figuren igen som 🏃 på en blick och fyller hela rutan på 16 × 16 punkter. Silhuetten är stor och enkel, med kontur i materialets mörkaste ton (jord0 runt hud och ben, rost0 runt tröjan). Ljuset faller rätt, med ljusare ton uppe till vänster och mörkare nere till höger. Den varma rosten och jordtonerna hör ihop med de korsade svärdens kraftiga, enkla former. Version 1 är tunnare och fyller inte rutan lika väl. Version 3 har ett mättat senapsbälte utan betydelse och ett gröngrått plagg som läses sämre. Tänkt ändring: en enda glanspunkt i rost3 (u) på tröjans övre vänstra del, så att ytan får liv i ljusriktningen. Fel i den inskickade raden: där lades u till i stället för att byta ut en punkt. Rad 6 blev därför 17 tecken lång och bryter mot gränsen på 16. Rätt rad är '.....rutssrEHE.', där t byts mot u. Övriga 15 rader är oförändrade.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  ".........EEE....",
+  "........EFFFE...",
+  "........EFHHGE..",
+  "........EGHGE...",
+  "......rttsr.EEE.",
+  ".....rutttssrEHE",
+  "....rtsrtssrEGE.",
+  "..EHE.rtssrEE...",
+  "...E..rsssr.....",
+  ".....EGGFFE.....",
+  "....EGFE.EGFFE..",
+  "...EGFE...EEGFE.",
+  "..EGFE......EGE.",
+  ".EGFE.......EGE.",
+  "EFE........EFFFE",
+  "EE.........EEEEE"
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "r": "#521100",
+  "s": "#742a01",
+  "t": "#a14808",
+  "u": "#bd753e"
+ }
+}
