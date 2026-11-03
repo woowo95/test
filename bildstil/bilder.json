@@ -8,7 +8,7 @@
     {"id": "sak-klader", "namn": "Kläder", "en": "Plagget", "steg": "5.2.4.1", "om": "kläderna som de ligger hopvikta på högen innan någon tar dem på sig"}
   ],
   "bilder": [
-    {"id": "ved", "sort": "sak-material", "namn": "Ved", "w": 8, "h": 5, "vad": "två eller tre kluvna vedträn på varandra, ljus kluven yta och mörk bark", "ritad": 2},
+    {"id": "ved", "sort": "sak-material", "namn": "Ved", "w": 8, "h": 5, "vad": "två eller tre kluvna vedträn på varandra, ljus kluven yta och mörk bark", "ritad": 3},
     {"id": "grenar", "sort": "sak-material", "namn": "Grenar", "w": 11, "h": 5, "vad": "ett knippe tunna torra grenar med kvistar", "ritad": 0},
     {"id": "torrgras", "sort": "sak-material", "namn": "Hö", "w": 9, "h": 5, "vad": "en liten hög torrt gräs, blekt gult", "ritad": 0},
     {"id": "kol", "sort": "sak-material", "namn": "Kol", "w": 6, "h": 4, "vad": "några bitar träkol, matt svartgrått", "ritad": 0},
@@ -24,7 +24,7 @@
     {"id": "virke", "sort": "sak-material", "namn": "Virke", "w": 13, "h": 4, "vad": "två grovt tillyxade bräder på varandra", "ritad": 0},
     {"id": "silver", "sort": "sak-material", "namn": "Silver", "w": 5, "h": 3, "vad": "en liten tacka eller några klippta bitar silver, matt ljusgrått med en punkts glans", "ritad": 0},
     {"id": "toa", "sort": "sak-material", "namn": "Toa-hög", "w": 5, "h": 3, "vad": "en liten mörkbrun hög, inte äcklig i detalj", "ritad": 0},
-    {"id": "fisk", "sort": "sak-mat", "namn": "Fiskkött", "w": 9, "h": 4, "vad": "en rensad fisk från sidan, silvrig med rosa kött där den är öppnad", "ritad": 2},
+    {"id": "fisk", "sort": "sak-mat", "namn": "Fiskkött", "w": 9, "h": 4, "vad": "en rensad fisk från sidan, silvrig med rosa kött där den är öppnad", "ritad": 3},
     {"id": "bar", "sort": "sak-mat", "namn": "Bär", "w": 6, "h": 4, "vad": "en liten klase blåbär och lingon på ett blad", "ritad": 0},
     {"id": "rotter", "sort": "sak-mat", "namn": "Rötter", "w": 8, "h": 4, "vad": "ett par jordiga rötter med lite blast", "ritad": 0},
     {"id": "kott", "sort": "sak-mat", "namn": "Harkött", "w": 7, "h": 5, "vad": "en bit rått mörkrött kött med ljus kant av fett", "ritad": 0},

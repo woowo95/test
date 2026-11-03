@@ -1,32 +1,33 @@
 {
  "id": "ved",
- "ritad": 2,
+ "ritad": 3,
  "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
- "om": "Jag valde version 3. Den är den enda som behåller dagens form: en pyramid med ett vedträ överst, två i mitten och tre i botten. Jordbrun kontur hör till trä och syns mot gräset. Version 1 är en otydlig klump, och version 2 har två jämna rader i stället för pyramiden. Jag bytte ändytornas ben-toner (q och w) mot senap (L och K), som ligger närmast dagens #dcb87e. Ben läses som sten eller ben, medan veden är ett material som går att ta och får vara varm. Barken är jord1 och jord2 (F och G) som i originalet. Den ljusaste tonen, L, finns bara på de två översta ändarna uppe till vänster och blir glansen. De nedre ändarna har K, så ljuset faller från övre vänster. Konturen är jord0, inte kol.",
+ "om": "Jag valde version 1. Björns kommentar går före spelets bild i dag: han vill ha EN vedklabb sedd från sidan i stället för dagens hög. Version 1 läses tydligast som just det. Raden överst är den ljusa kluvna ytan i senap (L, K, J), och de undre raderna är mörk bark i jord (G, F). Det stämmer med vinkeln snett uppifrån och med färgerna i dagens bild: det ljusa Y och y blir L och K, B och b blir G och F. Ljuset faller från vänster med L och K längst till vänster, och nere till höger är det mörkast med F. Konturen är jord0 med avrundade hörn, och kornet byts punkt för punkt utan ensamma mörka prickar. Version 2 har ett avvikande H i den ljusa kanten, och i version 3 blandas tonerna så att den kluvna ytan inte läses som en sammanhängande yta. Jag ändrade ingenting: storleken 8 × 5 fyller rutan, och senaptonen gör att vedträt syns tydligt mot det olivgröna gräset.",
  "w": 8,
  "h": 5,
  "rader": [
-  "..EEEE..",
-  "..ELFE..",
-  ".ELFKGE.",
-  "EKFKGKFE",
-  "EEEEEEEE"
+  ".EEEEEE.",
+  "ELKLKKJE",
+  "EKJGFGFE",
+  "EGFGFFFE",
+  ".EEEEEE."
  ],
  "pal": {
   "E": "#3f2415",
   "F": "#5e3c24",
   "G": "#7d5b40",
+  "J": "#906f0f",
   "K": "#b2921b",
   "L": "#d8b25f"
  },
  "forra": {
-  "ritad": 1,
+  "ritad": 2,
   "rader": [
-   ".EEEEE..",
-   "EqqHHGE.",
-   "EFFFEEEE",
-   "EqqHGHGE",
-   ".EFFEFEE"
+   "..EEEE..",
+   "..ELFE..",
+   ".ELFKGE.",
+   "EKFKGKFE",
+   "EEEEEEEE"
   ]
  }
 }
