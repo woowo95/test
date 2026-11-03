@@ -1,0 +1,38 @@
+{
+ "id": "lagereld_ring",
+ "ritad": 1,
+ "av": "Claude",
+ "om": "stenringen ensam: den läggs under elden i alla lägen när byn har stenring, och syns ensam medan en ny lägereld läggs",
+ "w": 20,
+ "h": 20,
+ "rader": [
+  "....................",
+  "....................",
+  "....................",
+  "....................",
+  "....................",
+  "....................",
+  "......TSS.TSS.......",
+  "......SSR.SSR.TSS...",
+  "...TSSRRQ.RRQ.SSR...",
+  "...SSRlkk.lkk.RRQ...",
+  "...RRQ........lkTSS.",
+  "..Tlkk..........SSR.",
+  "..SSR...........RRQ.",
+  "..RRQ...........lkk.",
+  "..lkkS..........SSR.",
+  "...SSR........TSSRQ.",
+  "...RRQTSS.TSS.SSRkk.",
+  "...lkkSSR.SSR.RRQ...",
+  "......RRQ.RRQ.lkk...",
+  "......lkk.lkk......."
+ ],
+ "pal": {
+  "T": "#8a9c9e",
+  "S": "#61767a",
+  "R": "#3e5156",
+  "Q": "#233035",
+  "l": "#2f261d",
+  "k": "#24201d"
+ }
+}

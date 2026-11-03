@@ -1,0 +1,37 @@
+{
+ "id": "latrin",
+ "ritad": 1,
+ "av": "Claude",
+ "om": "latrinen: en grävd grop med en stock över att sitta på, och jorden som grävts upp i en hög bakom",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "................",
+  "...........GG...",
+  ".........GGGGGG.",
+  "........FFHHHHFF",
+  "........FFHHHHFF",
+  "......FFFFFFFFF.",
+  "...FFEEEEEEFF...",
+  "..FFEklklklEFF..",
+  "..FElkklkllkEF..",
+  ".GEkkklkkllkkEG.",
+  ".GElkkklkkklkEG.",
+  "..GEkkkklkkkEG..",
+  "qHGHHHGHHHGHHHGq",
+  "pGGGGGGGGGGGGGGp",
+  "oFFFFFFFFFFFFFFo",
+  "................"
+ ],
+ "pal": {
+  "G": "#7d5b40",
+  "F": "#5e3c24",
+  "H": "#987e62",
+  "E": "#3f2415",
+  "k": "#24201d",
+  "l": "#2f261d",
+  "q": "#bdb39b",
+  "p": "#a0947d",
+  "o": "#7e7362"
+ }
+}
