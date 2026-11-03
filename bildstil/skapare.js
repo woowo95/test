@@ -776,7 +776,9 @@
         if (d.form === 'spade') { satt(hx, hy - 4, 'ben2'); satt(hx + 1, hy - 4, 'ben1'); }
       }
     }
-    return kartUt(p, kt, W, H, spegel, opt);
+    const ut = kartUt(p, kt, W, H, spegel, opt);
+    ut.hand = hand && (spegel ? [W - 1 - hand[0], hand[1]] : hand); // handen, till det som hålls (animationerna i anim.js)
+    return ut;
   }
   // speglingen, den liggande figuren och täcket, konturen och färgerna
   function kartUt(p, kt, W, H, spegel, opt) {
@@ -1401,6 +1403,6 @@
     prova(id, data) { BILDFILER[id] = data; },
   };
   // en bybo på kartan till sidans bilder (sporterna och dragkampen i valdelen): samma person för samma frö
-  window.BYBO = (fro, rikt, ben, arm) => kartFigur(slumpPerson(slumpFran(fro), { alder: 'vuxen' }), rikt, ben, arm);
+  window.BYBO = (fro, rikt, ben, arm, redskap) => { const p = slumpPerson(slumpFran(fro), { alder: 'vuxen' }); if (redskap !== undefined) p.del.redskap = redskap; return kartFigur(p, rikt, ben, arm); }; // redskap: en del ur portratt.json (null = inget)
   window.PORTRATTEN = { portratt, kartBild, neutral, granskPerson, KORT, medForslag, provaDel(id, data) { DELAR[id] = data; }, png(B, skala = 4) { const c = document.createElement('canvas'); tillCanvas(B, c, 0); const s = document.createElement('canvas'); s.width = B.w * skala; s.height = B.h * skala; const g = s.getContext('2d'); g.imageSmoothingEnabled = false; g.drawImage(c, 0, 0, s.width, s.height); return s.toDataURL('image/png'); } };
 })();

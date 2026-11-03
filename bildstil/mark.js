@@ -770,5 +770,5 @@
     ting.sort((a, b) => a[0] - b[0]).forEach(t => t[1]());
   }
 
-  window.MARK = { grasPunkt, tuvor, tidMark, fram }; // marken och kartfiguren till djurens kort (djur.js)
+  window.MARK = { grasPunkt, tuvor, tidMark, fram, granVariant, stubbe }; // marken och kartfiguren till djurens kort (djur.js)
 })();

@@ -213,7 +213,7 @@ function ritaEld(B, cx, cy, P, opt) {
   }
   for (let i = -4; i <= 4; i++) { B.satt(cx + i, cy + Math.round(i * 0.5) + 1, P.i('jord', 1)); B.satt(cx + i, cy + Math.round(i * 0.5) + 2, P.i('jord', 0)); B.satt(cx + i, cy - Math.round(i * 0.4) + 1, P.i('jord', 2)); }
   // lågorna: höjd per kolumn, glöd längst ner
-  const H = [2, 4, 7, 9, 6, 4, 2];
+  const H = (opt && opt.lagor) || [2, 4, 7, 9, 6, 4, 2]; // lågornas höjd; animationerna (anim.js) ger andra per ruta
   H.forEach((hh, k) => {
     const x = cx - 3 + k;
     for (let j = 0; j < hh; j++) {
@@ -222,7 +222,7 @@ function ritaEld(B, cx, cy, P, opt) {
       B.satt(x, y, v, true);
     }
   });
-  B.satt(cx - 1, cy - 10, P.i('rost', 1), true); B.satt(cx + 2, cy - 8, P.i('rost', 2), true);
+  if (!(opt && opt.lagor)) { B.satt(cx - 1, cy - 10, P.i('rost', 1), true); B.satt(cx + 2, cy - 8, P.i('rost', 2), true); }
 }
 
 // ---------- kistan, 16 × 16 ----------
@@ -1045,18 +1045,34 @@ const BESLUT = {
 const VALT = [];
 function delaVal() { for (const s of VAL.filter(s => BESLUT[s.id])) { VALT.push(s); VAL.splice(VAL.indexOf(s), 1); } }
 // en version ritas stor och i kartans storlek (två skärmpunkter per punkt, som i spelet)
+// en animation (steg 5.2.4.8): rutor är hur många bilder, takt millisekunder per bild och rita(B, P, ruta) ritar en av dem.
+// En klocka för hela sidan byter bild på alla kort som syns; kort som byggts om (inte längre på sidan) släpps
+const ANIM = [];
+setInterval(() => {
+  const nu = performance.now();
+  for (let i = ANIM.length - 1; i >= 0; i--) {
+    const a = ANIM[i]; if (!a.c[0].isConnected) { if (a.sedd) ANIM.splice(i, 1); continue; }
+    a.sedd = true; if (nu - a.t < (a.v.takt || 250)) continue;
+    a.t = nu; a.ruta = (a.ruta + 1) % a.v.rutor; const B = a.ny(); a.v.rita(B, a.P, a.ruta); a.c.forEach(c => tillCanvas(B, c, 0));
+  }
+}, 40);
 function valBild(v, P) {
-  const B = v.kol ? kolBild(v.w, v.h, P) : markBild(v.w, v.h, P);
-  v.rita(B, P);
+  const ny = () => v.kol ? kolBild(v.w, v.h, P) : markBild(v.w, v.h, P), B = ny();
+  v.rita(B, P, 0);
+  const anim = c => { if (v.rutor > 1) ANIM.push({ v, P, ny, c, ruta: 0, t: performance.now() }); };
   if (v.stor) { // en stor scen (marken och träden, 5.2.4.5): en bild över hela kortets bredd, i jämna skalor
     const c = document.createElement('canvas'); tillCanvas(B, c, 0); c.className = 'scen'; c.style.width = v.w * 3 + 'px'; c.setAttribute('aria-label', 'Scenen');
-    const d = document.createElement('div'); d.className = 'bilder'; d.append(c); return d;
+    const d = document.createElement('div'); d.className = 'bilder'; d.append(c);
+    const ut = [c];
+    if (v.liten) { const l = document.createElement('canvas'); tillCanvas(B, l, 0); l.style.width = v.w + 'px'; l.setAttribute('aria-label', 'I kartans storlek'); d.append(l); ut.push(l); }
+    anim(ut); return d;
   }
   const stor = document.createElement('canvas'), liten = document.createElement('canvas');
   tillCanvas(B, stor, 0); tillCanvas(B, liten, 0);
   const s = Math.max(2, Math.min(8, Math.floor(260 / v.w)));
   stor.style.width = v.w * s + 'px'; liten.style.width = v.w * 2 + 'px';
   stor.setAttribute('aria-label', 'Stor'); liten.setAttribute('aria-label', 'I kartans storlek');
+  anim([stor, liten]);
   const d = document.createElement('div'); d.className = 'bilder'; d.append(stor, liten); return d;
 }
 // det valda, med versionen Björn valde och steget där det byggs in
