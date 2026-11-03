@@ -1,0 +1,35 @@
+{
+ "id": "fiskespjut",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den ligger närmast dagens bild: ett smalt träskaft i jordtoner med en ljus spets av ben (w, q, p) som ersätter dagens ljusa #e8d0a0, och den har jord0-kontur runt hela, precis som skaftet på flintyxan. Version 2 har en ojämn utbuktning vid övergången (EHGE) och nästan ingen ljus spets. Version 3 har en ljusgrå spets utan kontur, som läses mer som sten än som eldhärdat trä. Version 1 har rätt storlek (4 × 16) och en tydlig silhuett, och skaftet växlar mellan H och G så att ytan får korn, med F som mörkare nedre del. Det behövdes inga rättningar. Spjutet är snett genom förskjutningen i mitten, vilket är det närmaste dagens diagonal som går inom 4 punkters bredd.",
+ "w": 4,
+ "h": 16,
+ "rader": [
+  "..E.",
+  ".EwE",
+  ".EqE",
+  ".EpE",
+  ".EHE",
+  ".EHE",
+  ".EGE",
+  "EHE.",
+  "EHE.",
+  "EGE.",
+  "EHE.",
+  "EGE.",
+  "EHE.",
+  "EFE.",
+  "EFE.",
+  "EEE."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "w": "#dad0bb"
+ }
+}

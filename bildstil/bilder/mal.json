@@ -1,0 +1,27 @@
+{
+ "id": "mal",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3 eftersom den ligger närmast dagens bild. Den har en jämn ring med ett tre punkter brett hål, senapsgula prickar runt ringen som i originalet och ett skaft som löper ut till bildens nederkant utan avslut, precis som i dag. Version 1 har ett hål som bara är en punkt brett på två rader, så ringen blir ojämn och läses sämre. Version 2 avslutar skaftet med en extra jordkant som originalet saknar. I version 3 följer konturen materialet med jord0 runt trä och halm. Ljuset faller uppe till vänster (jord3) och skuggan ligger nere till höger (jord1). Ringen har korn i två till tre toner, och de mättade senapstonerna används bara till de små gula fästena, vilket passar förebildens dämpade stil. Mitten lämnade jag genomskinlig som i dagens bild i stället för att göra den mörk, så att jag inte hittar på något nytt. Jag har inte ändrat något, eftersom versionen redan uppfyller storleken (högst 9 × 9) och reglerna.",
+ "w": 9,
+ "h": 9,
+ "rader": [
+  "..EEEEE..",
+  ".EHKHGFE.",
+  "EHE...EFE",
+  "EKE...EJE",
+  "EGE...EFE",
+  ".EGFJFFE.",
+  "..EEGFEE.",
+  "...EGFE..",
+  "...EGFE.."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "J": "#906f0f",
+  "K": "#b2921b"
+ }
+}

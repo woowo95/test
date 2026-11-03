@@ -1,0 +1,22 @@
+{
+ "id": "bensyl",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den följer dagens bild bäst: en obruten diagonal från spetsen uppe till höger ner mot ett bredare och mörkare handtag nere till vänster. Ljuset faller från vänster med w och q på vänstersidan och ben0 som kontur på höger- och undersidan. Version 2 har ett hack i rad 4 som bryter linjen, och version 3 får en mörk prick på vänsterkanten mitt på, där ljuset borde ligga. Jag ändrade en sak: spetsen överst blev ben1 (p) i stället för ben0. Då läses den som vass och ljus, som den ljusaste punkten i dagens bild, i stället för att försvinna mot gräset.",
+ "w": 3,
+ "h": 6,
+ "rader": [
+  "..p",
+  ".wo",
+  ".qo",
+  "wqo",
+  "qpo",
+  "oo."
+ ],
+ "pal": {
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "w": "#dad0bb"
+ }
+}

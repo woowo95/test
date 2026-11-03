@@ -1,0 +1,22 @@
+{
+ "id": "skor_kaninskinn",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 2. Den har samma upplägg som dagens bild: två skor snett förskjutna, den bakre uppe till höger och den främre nere till vänster. Båda har ljust skaftkrage i ben3 och ben2, kropp i jord3 och jord2 och jordbrun kontur. Det mörkare jord1 nere till höger ger ljuset från övre vänstra hörnet och lite korn. Den hela sularaden i botten gör att paret står stadigt och läses som skor även i liten storlek. Version 1 har avskurna hörn på sulan och blir mer rundad och otydlig. Version 3 saknar kontur runt kragarna och smälter in i gräset. Jag behövde inte ändra något: bara palettens tecken används, storleken är 8 × 4, ljuset faller rätt och den ljusa kragen syns tydligt mot marken.",
+ "w": 8,
+ "h": 4,
+ "rader": [
+  "...EwqE.",
+  "EwqEHGGE",
+  "EHGHGFEE",
+  "EEEEEEE."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "q": "#bdb39b",
+  "w": "#dad0bb"
+ }
+}

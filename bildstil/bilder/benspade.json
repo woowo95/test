@@ -1,0 +1,35 @@
+{
+ "id": "benspade",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den stämmer bäst med dagens bild: ett ljust benblad i ben-tonerna (w och q uppe till vänster, p nere till höger) med ett gulaktigt surrband under och ett brunt träskaft. Ljuset kommer från övre vänstra hörnet. Konturerna är materialens egna mörkaste toner: ben0 runt bladet, senap0 runt surrningen och jord0 runt skaftet. Silhuetten är tydlig och läsbar i liten storlek, likt flintyxans enkla form. Version 2 har ett onaturligt spetsigt skaftslut och en surrning som är lika bred som bladet. Version 3 har ett rutmönstrat korn i bladet som bryter ljusriktningen. Jag ändrade bara surrningens andra rad från senap1 till senap2, så att bandet blir ljusare. Det ligger då närmare de bleka gula tonerna i dagens bild och syns bättre mot skaftet.",
+ "w": 5,
+ "h": 13,
+ "rader": [
+  ".ooo.",
+  "owwqo",
+  "owqpo",
+  "oqqpo",
+  "oqppo",
+  ".oqo.",
+  ".ILI.",
+  ".IKI.",
+  ".EHE.",
+  ".EGE.",
+  ".EHE.",
+  ".EGE.",
+  ".EEE."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "I": "#694902",
+  "K": "#b2921b",
+  "L": "#d8b25f",
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "w": "#dad0bb"
+ }
+}

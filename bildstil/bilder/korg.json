@@ -1,0 +1,26 @@
+{
+ "id": "korg",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 2. Den följer dagens korg bäst: ett bygelhandtag på två rader, en rundad korgkropp med ett schackrutat flätmönster på fyra rader och en sluten botten. Den har också tydligast ljus från övre vänstra hörnet. Handtaget är ljusast (H) till vänster och mörkast (F) till höger, och flätningen går från ljus senap (L, K) till mörkare (J) med jord (G, F) längst ner till höger, där kroppen böjer bort. Konturen är jord0 runt hela korgen och mot genomskinligheten inne i handtaget, så silhuetten syns bra mot gräset även i liten storlek. Den hör ihop med flintyxans jordbruna kontur och grovkorniga toner. Version 1 saknar skuggning åt höger och är platt. Version 3 har ett jordfärgat band överst som inte finns i förebilden och som gör flätningen kortare. Dagens färger är brunare än paletten, men senapstonerna är ett rimligt val: korgen är något man kan ta, och då får den vara lite starkare än marken. Jag behövde inte ändra något, eftersom formen, storleken (9 × 7), konturen och kornet redan stämmer med reglerna.",
+ "w": 9,
+ "h": 7,
+ "rader": [
+  "..EHGGE..",
+  ".EH...FE.",
+  "ELKLKLKJE",
+  "EKLKLKJGE",
+  ".EKLKJGE.",
+  ".EJKJGFE.",
+  "..EEEEE.."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "J": "#906f0f",
+  "K": "#b2921b",
+  "L": "#d8b25f"
+ }
+}

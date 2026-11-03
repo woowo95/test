@@ -1,0 +1,36 @@
+{
+ "id": "metspo",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3 eftersom den ligger närmast dagens bild. Spöt går upp längs vänsterkanten och böjer sig runt över toppen mot höger, och linan hänger från spetsen i högerkolumnen ner till en ljus krok längst ner. Den liknar också förebilden: trä i jordtoner med jord0 som kontur, ljuset från vänster (H och G på vänstersidan, F nertill) och tydlig silhuett. Version 1 och 2 har en mer kantig topp och mindre av dagens båge. Linan är i ben1 och ben2, närmast dagens beige, med korn och utan mörka prickar. Kroken är en enda ben3-punkt som glans. Bilden är 6 × 16 och fyller rutan. Jag behövde inte ändra något: konturen är redan materialets mörkaste ton, bara palettens tecken används och ingen skugga är ritad.",
+ "w": 6,
+ "h": 16,
+ "rader": [
+  "..EEEE",
+  ".EHGGE",
+  "EHEEEp",
+  "EGE..p",
+  "EHE..q",
+  "EGE..p",
+  "EHE..p",
+  "EGE..q",
+  "EHE..p",
+  "EGE..p",
+  "EHE..q",
+  "EGE..p",
+  "EHE..p",
+  "EGE.qw",
+  "EFE.oo",
+  "EEE..."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "w": "#dad0bb"
+ }
+}

@@ -1,0 +1,28 @@
+{
+ "id": "rock_kaninskinn",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 2. Den följer dagens bild närmast. Den ljusa kragen överst har ett mörkare ben0-öga i halsen i stället för version 1:s ljusa p-kant och jord0-punkt, och det motsvarar halsöppningen i originalet. Ärmarna, de ljusa ärmsluten, den mörka sömmen i mitten och fransarna i fållen finns kvar. Version 3 byter jord3 mot jord2 på vänster sida nere vid fållen. Det bryter ljuset från övre vänster, så version 2 läses bättre. Paletten stämmer med originalet: jord2 och jord3 för skinnet, jord1 för sömmarna, ben2 och ben3 för kragen och ärmsluten, och konturen i jord0 i stället för svart. Rocken ligger nära vargskinnsrocken i form men är ljusare. Inga ändringar behövdes.",
+ "w": 11,
+ "h": 8,
+ "rader": [
+  "...owwqo...",
+  ".EHwqoqpGE.",
+  "EHGHqFpGGFE",
+  "EHGEHFGEGFE",
+  "EwqEGFGEqoE",
+  ".EEEHFGEEE.",
+  "...EHFGE...",
+  "...E.E.E..."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "w": "#dad0bb"
+ }
+}

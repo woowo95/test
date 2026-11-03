@@ -1,0 +1,28 @@
+{
+ "id": "kniv",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Version 2 är identisk med den, så valet stod egentligen mot version 3. Version 1 följer dagens bild bäst: kniven ligger snett med bladet uppe till höger och skaftet nere till vänster, precis som förebilden Flintyxa. Version 3 står nästan rakt upp. Flintbladet har skiffertoner (T och S med R i skuggan) som motsvarar dagens grå blad. Skaftet har jordtoner (H och G) som motsvarar dagens bruna, med en punkt ben1 (p) som replindning. Konturen är skiffer0 runt bladet och jord0 runt skaftet. Ljuset kommer uppe från vänster med T överst. Den enda rättelsen: på rad 3 saknades kontur till vänster om bladet. Där låg den ljusa T-punkten direkt mot det genomskinliga. Jag lade till en skiffer0-kontur (QTSQ), så att bladet får en sluten silhuett och syns tydligt mot gräset.",
+ "w": 4,
+ "h": 8,
+ "rader": [
+  "..QQ",
+  ".QTQ",
+  "QTSQ",
+  "QSRQ",
+  "EHQ.",
+  "EpE.",
+  "EGE.",
+  "EE.."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e",
+  "p": "#a0947d"
+ }
+}

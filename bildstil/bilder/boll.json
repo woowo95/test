@@ -1,0 +1,21 @@
+{
+ "id": "boll",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den är identisk med version 2, så valet mellan dem spelar ingen roll. Den följer dagens bild bäst: ljus jord3 uppe till vänster, jord2 som mellanton och jord1 nere till höger. Mittpunkten i jord1 antyder sömmarnas kors, och konturen är jord0 i stället för den svarta konturen i dagens bild, som guiden kräver. Version 3 har en extra mörk punkt i mitten av rad 3. Den gör mittraden tung, bryter ljuset från övre vänstra hörnet och läses som en fläck i stället för en söm. Bollens runda silhuett med avskurna hörn syns tydligt på gräset och passar flintyxans jordtoner. Ingen ändring behövdes.",
+ "w": 5,
+ "h": 5,
+ "rader": [
+  ".EEE.",
+  "EHHGE",
+  "EHFGE",
+  "EGGFE",
+  ".EEE."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62"
+ }
+}

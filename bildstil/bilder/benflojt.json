@@ -1,0 +1,25 @@
+{
+ "id": "benflojt",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Version 2 är identisk med den. Version 1 är mer lik dagens bild än version 3, eftersom flöjten där har rundade ändar: hörnen är genomskinliga, precis som de avrundade ändarna på det diagonala benet. Version 3 har fyllda hörn och ser ut som en fyrkantig stav. Färgerna stämmer med dagens bild så nära paletten tillåter: benet går i ben3, ben2 och ben1 (w, q, p), de tre hålen är kol1 (l) som förut, och konturen är ben0 (o), materialets mörkaste ton, enligt stilguiden i stället för det gamla kol0. Benets ton blir mörkare uppifrån och ned, vilket följer ljuset uppifrån. Det ljusa benet med kontur syns tydligt mot det olivgröna gräset, och tre hål går att läsa även i liten storlek. Jag har inte ändrat något.",
+ "w": 3,
+ "h": 8,
+ "rader": [
+  ".o.",
+  "owo",
+  "olo",
+  "oqo",
+  "olo",
+  "opo",
+  "olo",
+  ".o."
+ ],
+ "pal": {
+  "l": "#2f261d",
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "w": "#dad0bb"
+ }
+}

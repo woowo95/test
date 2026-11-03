@@ -1,0 +1,39 @@
+{
+ "id": "flintspjut",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den följer dagens bild bäst: en grå flintspets (skiffer, med ljuset uppe till vänster), en ljus surrning i senapston nära dagens #c8b07a och ett långt skaft i jord. Skaftet tar ett steg åt sidan nertill, så spjutet läses som snett, trots att bilden bara får vara 4 punkter bred. Den passar också förebilden Flintyxa, där samma skifferspets sitter på ett träskaft med jord0 som kontur. Version 2 har en för bred surrning och en spets som snörps av till en tom rad (.QQ.), så spetsen och skaftet hänger dåligt ihop. Version 3 har jord0 som kontur runt repet, vilket går emot regeln att konturen ska vara materialets egen mörkaste ton. I version 1 har repet senap0 som kontur, och surrningen syns tydligt som det man ska se. Jag ändrade inget, eftersom kontur, ljusriktning och korn redan stämmer.",
+ "w": 4,
+ "h": 16,
+ "rader": [
+  "..Q.",
+  ".QTQ",
+  "QTSQ",
+  "QTRQ",
+  "QSRQ",
+  ".QRQ",
+  ".ILI",
+  ".IKI",
+  ".EHE",
+  ".EGE",
+  ".EHE",
+  "EHE.",
+  "EGE.",
+  "EHE.",
+  "EFE.",
+  "EE.."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "I": "#694902",
+  "K": "#b2921b",
+  "L": "#d8b25f",
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e"
+ }
+}
