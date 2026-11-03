@@ -1,24 +1,23 @@
 {
  "id": "sym_fjader",
- "ritad": 5,
+ "ritad": 6,
  "av": "Claude",
- "om": "Ritad av Claude efter Björns kommentar: gör den rosa. Otydligt att det är en gris",
+ "om": "Ritad av Claude: spargrisen ritad på nytt, större, med två sammanhängande sprickor.",
  "w": 16,
- "h": 13,
+ "h": 12,
  "rader": [
-  "................",
-  ".........r......",
-  "......kkkqr.....",
-  "....rrkqqqqr....",
-  ".r.rwqqkqqkprrr.",
-  "r.rwqqkqqqppusur",
-  ".rrqqqqkqpppusur",
-  "..rqqqkqppppprr.",
-  "...rqqqpppppr...",
-  "....rqpppppr....",
-  "....rprrrpr.....",
-  "....rr...rr.....",
-  "................"
+  ".........rr.....",
+  "....rrrrrwur....",
+  "...rwwqkkkqqr...",
+  "..rwqqqqkqqqqrr.",
+  "r.rwqqqkkqqkqrur",
+  ".rrqqqqkqqqqqrsr",
+  "..rqqqkkkkqqpqrr",
+  "..rqqqkqqkkpppr.",
+  "...rpqkqqpppppr.",
+  "....rpprrrppr...",
+  "....rpr...rpr...",
+  "....rrr...rrr..."
  ],
  "pal": {
   "k": "#24201d",
@@ -30,28 +29,30 @@
   "w": "#dad0bb"
  },
  "forra": {
-  "ritad": 4,
+  "ritad": 5,
   "rader": [
-   "....rr..........",
-   "....rukkk.......",
-   "...ruktttrrr....",
-   "..ruutktttttr...",
-   "..ruttkttttksrrr",
-   ".ruttkttttsssssr",
-   ".rtttktttssssssr",
-   "..rtttktsssssrrr",
-   "..rttttkssssr...",
-   "...rtrsssssr....",
-   "...rr.rrrsr.....",
-   "...rr....rr.....",
+   "................",
+   ".........r......",
+   "......kkkqr.....",
+   "....rrkqqqqr....",
+   ".r.rwqqkqqkprrr.",
+   "r.rwqqkqqqppusur",
+   ".rrqqqqkqpppusur",
+   "..rqqqkqppppprr.",
+   "...rqqqpppppr...",
+   "....rqpppppr....",
+   "....rprrrpr.....",
+   "....rr...rr.....",
    "................"
   ],
   "pal": {
    "k": "#24201d",
+   "p": "#a0947d",
+   "q": "#bdb39b",
    "r": "#521100",
    "s": "#742a01",
-   "t": "#a14808",
-   "u": "#bd753e"
+   "u": "#bd753e",
+   "w": "#dad0bb"
   }
  }
 }
