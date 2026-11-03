@@ -1036,8 +1036,8 @@ const BESLUT = {
   m_brand: { val: 1, text: 'Version 3 direkt efter skogsbranden, sedan version 1 när glöden slocknat. Byggs in i steg 5.1.4.' },
   m_stubbe: { val: 1, steg: '5.1.4' }, m_falld: { val: 2, steg: '5.1.4' },
   m_stig: { val: 1, steg: '5.1.3.1' }, m_sno: { val: 1, steg: '5.1.13' }, m_skogskant: { val: 1, steg: '5.1.3.2' },
-  grill: { val: 2, steg: '5.3.2.1' }, a_sikta: { val: 1, steg: '5.3.2.1' }, a_smyga: { val: 3, steg: '5.3.2.1' }, dragkamp: { val: 1, steg: '5.3.2.1' },
-  sport_brottning: { val: 1, steg: '5.3.2.1' }, sport_kast: { val: 1, steg: '5.3.2.1' }, sport_snoboll: { val: 1, steg: '5.3.2.1' }, sport_bollspel: { val: 1, steg: '5.3.2.1' },
+  grill: { val: 2, steg: '5.1.2.2' }, a_sikta: { val: 1, steg: '5.3.2.1' }, a_smyga: { val: 3, steg: '5.3.2.1' }, dragkamp: { val: 1, steg: '5.1.2' },
+  sport_brottning: { val: 1, steg: '5.1.2' }, sport_kast: { val: 1, steg: '5.1.2' }, sport_snoboll: { val: 1, steg: '5.1.2' }, sport_bollspel: { val: 1, steg: '5.1.2' },
 };
 const VALT = VAL.filter(s => BESLUT[s.id]);
 for (const s of VALT) VAL.splice(VAL.indexOf(s), 1);
