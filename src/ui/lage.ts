@@ -30,6 +30,7 @@ export const ui = {
   flytta: -1, // testläget (steg 3.10.1): stationen som flyttas till rutan man trycker på härnäst ...
   flyttFel: false, // ... och om den inte fick plats där
   brandTest: false, // testläget (steg 4.5.6.6): nästa tryck på kartan tänder en brand där
+  testBorta: { st: [] as number[], lager: [] as { x: number; y: number; w: number; h: number }[] }, // testläget (steg 4.5.7.8): det som tagits bort, och tas bort ur den riktiga byn när testläget slutar
   sjoNr: 0, // sjön som visas i panelen
   faltId: -1, // fältet som visas i panelen (flikar/falt.ts) ...
   faltRuta: -1, // ... och rutan med grödan som visas, eller -1 för hela fältet

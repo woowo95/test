@@ -1,13 +1,21 @@
-import { LAGER, condOf, living, sakNamn, zonesOf } from '../../sim';
+import { LAGER, condOf, lagerHinder, living, sakNamn, zonesOf } from '../../sim';
 import { carryTxt, condBar, esc, hjalpKnapp, hjalpText, pLink, pileTxt } from '../hjalp';
 import { outPilesAt, piles, s, ui } from '../lage';
 import type { Flik } from '../panel';
 import { frystAttr, sakAttr } from './sak';
+import { taBortLagerITest } from '../testborta';
 
 // en lagerplats: öppnas genom att trycka på den på kartan. Varje stack för sig, med sitt skick
 export const lager: Flik = {
   namn: 'Lagret',
   knapp: 'person',
+  // testläget (steg 4.5.7.8): Ta bort, som för en station; minns för den riktiga byn (ui/testborta.ts)
+  klick(el) {
+    const b = el.closest<HTMLElement>('[data-test="lagerbort"]'), zs = zonesOf(s), z = zs[Math.min(ui.lagerNr, zs.length - 1)];
+    if (!b || !ui.testMode || !z) return false;
+    if (taBortLagerITest(s, z)) ui.lagerNr = 0;
+    return true;
+  },
   html() {
     const zs = zonesOf(s), z = zs[Math.min(ui.lagerNr, zs.length - 1)], zi = zs.indexOf(z);
     const ps = piles().filter(p => p.zone === zi).sort((a, b) => sakNamn(a.k).localeCompare(sakNamn(b.k), 'sv') || b.n - a.n || condOf(b) - condOf(a));
@@ -20,7 +28,8 @@ export const lager: Flik = {
     <div class="phead"><div><h2>${esc(z.namn ?? 'Lagret')}</h2></div>${hjalpKnapp('lager', 'Hur fungerar lagret?')}</div>
     ${hjalpText('lager', `<p class="muted small">${what}${vaxer}${zs.length > 1 ? ` Byn lägger saker här som nummer ${nr} av ${zs.length} lagerplatser.` : ''}</p>`)}
     <h3>Stackar</h3>${ps.length ? `<dl class="kv stk">${ps.map(p => `<dt class="tryck${frystAttr(p.k)}" ${sakAttr(p)}>${pileTxt(p)}</dt><dd>${condBar(condOf(p))}<span>${Math.round(condOf(p) * 100)} %</span></dd>`).join('')}</dl>` : '<p class="muted">Lagret är tomt.</p>'}
-    <h3>På väg med saker</h3>${barare.length ? `<ul class="rels">${barare.map(p => `<li>${pLink(p)}<span></span><span></span><span class="muted">${esc(carryTxt(p))}</span></li>`).join('')}</ul>` : '<p class="muted">Ingen bär något just nu.</p>'}`;
+    <h3>På väg med saker</h3>${barare.length ? `<ul class="rels">${barare.map(p => `<li>${pLink(p)}<span></span><span></span><span class="muted">${esc(carryTxt(p))}</span></li>`).join('')}</ul>` : '<p class="muted">Ingen bär något just nu.</p>'}
+    ${ui.testMode ? `<h3>Testläget</h3><p><button type="button" class="ghost" data-test="lagerbort" title="Ta bort" aria-label="Ta bort"${lagerHinder(s) ? ' disabled' : ''}>🗑️</button>${lagerHinder(s) ? ` <span class="muted">${esc(lagerHinder(s)!)}.</span>` : ' <span class="muted">Det som ligger här blir kvar på marken.</span>'}</p>` : ''}`;
   },
 };
 

@@ -10,6 +10,8 @@ import { person } from '../../ui/flikar/person';
 import { gaster } from '../../ui/gaster';
 import { filt as filtFlik } from '../../ui/flikar/filt';
 import { linkify } from '../../ui/hjalp';
+import { taBortITest, testBortaIByn } from '../../ui/testborta';
+import { lager as lagerFlik } from '../../ui/flikar/lager';
 // handlaren väntar på kvällen innan filten läggs ut (steg 4.5.4.11): testerna som handlar på dagen hoppar över väntan
 const utanVantan = (s: State) => { if (s.handlare?.fas === 'vantar') s.handlare.kvall = s.now; };
 // p gör hela sin affär med handlaren (steg 4.5.7.4): hen får uppgiften handlaVal ger, står på platsen och gör klart den, steg för
@@ -1439,6 +1441,45 @@ SCENARIER.entitag = {
       ['en annan får inte plats vid den upptagna bänken', fullForB],
       ['hen väljer den andra bänken av samma sort', andra],
       [`aldrig två vid samma bänk (${dubbel} gånger av ${vid} med någon vid en bänk)`, dubbel === 0],
+    ];
+  },
+};
+
+SCENARIER.testborta = {
+  text: 'Ta bort i testläget (steg 4.5.7.8): möbler, stationer och lagerplatser kan tas bort i testläget, och det som togs bort tas bort ur den riktiga byn också när testläget slutar (ui/testborta.ts). Det som låg i en kista eller på en lagerplats blir liggande där på marken. Allt annat i testläget är en kopia, och byns sista lagerplats kan inte tas bort.',
+  kor: () => {
+    utanWebblasare();
+    const s = createState(6, START);
+    rikBy(s);
+    const z0 = SIM.zonesOf(s)[0], kista: SIM.Station = { id: s.nextStation = (s.nextStation ?? 0) + 1, k: 'kista', x: z0.x + z0.w + 1, y: z0.y, kvar: 0 };
+    (s.stationer ??= []).push(kista);
+    const yxa = SIM.newTing(s, 'yxa', 1, BYN);
+    yxa.vid = kista.id; yxa.x = kista.x; yxa.y = kista.y;
+    const z2 = { x: z0.x, y: z0.y + z0.h + 2, w: 2, h: 2, namn: 'Andra lagret' };
+    s.lagren = [...SIM.zonesOf(s), z2];
+    (s.stackar ??= []).push({ k: 'sten', n: 3, c: 1, x: z2.x, y: z2.y });
+    SIM.touch(s);
+    const antal = SIM.stationerOf(s).length, folk = s.people.length;
+    // testläget: en kopia av byn
+    const real = s, kopia = SIM.cloneState(s);
+    setByn(kopia); ui.testMode = true; ui.testBorta = { st: [], lager: [] };
+    const el = (test: string) => ({ closest: () => ({ dataset: { test } }) }) as unknown as HTMLElement;
+    taBortITest(kopia, SIM.stationById(kopia, kista.id)!); const st = true;
+    const kz = SIM.zonesOf(kopia), i2 = kz.findIndex(q => q.x === z2.x && q.y === z2.y);
+    ui.lagerNr = i2;
+    const lz = lagerFlik.klick!(el('lagerbort'));
+    kopia.people.pop(); // något annat som händer i testläget följer inte med
+    ui.testMode = false; testBortaIByn(real); setByn(real);
+    const ry = SIM.tingOf(real).find(k => k.id === yxa.id), sten = SIM.pilesOf(real).find(a => a.k === 'sten' && a.x === z2.x && a.y === z2.y);
+    const ensam = createState(6, START), enda = SIM.zonesOf(ensam)[0];
+    return [
+      ['i kopian togs kistan och lagerplatsen bort med knapparna', st && lz && !SIM.stationById(kopia, kista.id) && SIM.zonesOf(kopia).length === kz.length - 1],
+      ['den riktiga byn är utan kistan och den andra lagerplatsen', !SIM.stationById(real, kista.id) && SIM.stationerOf(real).length === antal - 1 && !SIM.zonesOf(real).some(q => q.x === z2.x && q.y === z2.y)],
+      ['yxan som låg i kistan ligger kvar på rutan', !!ry && ry.vid === undefined && ry.x === kista.x && ry.y === kista.y],
+      ['stenarna på lagerplatsen ligger kvar på marken', !!sten && sten.n === 3 && !sten.stored],
+      ['allt annat i testläget var en kopia', real.people.length === folk],
+      ['byns sista lagerplats kan inte tas bort', !!SIM.lagerHinder(ensam) && !SIM.taBortLager(ensam, enda) && SIM.zonesOf(ensam).length === 1],
+      ['listan över det borttagna töms', ui.testBorta.st.length === 0 && ui.testBorta.lager.length === 0],
     ];
   },
 };

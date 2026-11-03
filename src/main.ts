@@ -1,5 +1,6 @@
 import { AGES, BEAT, DAY, HOUR, MIN, SEC, TalkEvent, VADERLAGE, vaderNu, kalender, alive, byId, cloneState, coverOf, createState, getMap, groundOf, isLight, rikedomDelar, spar, step, temperature, visning, yearNo, State, motgangNu, motgangNasta, motgangDef, varslade, ROVARFLOCK, skickaRovare, skickaHandlare, rovarHinder, handlarHinder } from './sim';
 import { brandKnapp, testSvara } from './ui/interaktion';
+import { testBortaIByn } from './ui/testborta';
 import { $ } from './ui/hjalp';
 import { iconImg, tecknet } from './ikoner';
 import { s, setByn, ui, nyBild, vidNyBy } from './ui/lage';
@@ -62,7 +63,7 @@ function setSpeed(v: number) {
 }
 function leaveTest() { testSvara(''); ui.brandTest = false; brandKnapp(); ui.testMode = false; $('arena').hidden = true; $('speeds').hidden = true; $('testSkicka').hidden = true; document.body.classList.remove('testing'); setSpeed(1); }
 // testläget stängs utan att den verkliga byn kommer tillbaka (en annan by tar dess plats)
-function dropTest() { if (ui.testMode) { ($('testToggle') as HTMLInputElement).checked = false; realState = null; leaveTest(); } }
+function dropTest() { if (ui.testMode) { ($('testToggle') as HTMLInputElement).checked = false; realState = null; ui.testBorta = { st: [], lager: [] }; leaveTest(); } }
 // en ny by med slumpat frö, sparad direkt
 function nyBy() {
   setByn(createState(Math.floor(Math.random() * 2 ** 31), Date.now()));
@@ -93,13 +94,13 @@ $('testToggle').addEventListener('change', async e => {
   const on = (e.target as HTMLInputElement).checked;
   if (on) {
     saveLocal(); await saveDb();
-    realState = s;
+    realState = s; ui.testBorta = { st: [], lager: [] };
     bytBy(cloneState(s));
     spar.v = new WeakMap();
     ui.testMode = true; $('speeds').hidden = false; $('testSkicka').hidden = false; document.body.classList.add('testing'); setSpeed(1);
   } else {
     leaveTest();
-    if (realState) { bytBy(realState); realState = null; }
+    if (realState) { testBortaIByn(realState); bytBy(realState); realState = null; } // det som togs bort i testläget tas bort i byn (steg 4.5.7.8)
     drawTerrain(true); drawPlants(true);
     await catchUp(Date.now());
   }

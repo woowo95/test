@@ -119,6 +119,16 @@ export const tidy = (s: State) => { s.stackar = stacksOf(s).filter(a => a.n > 1e
 // Summorna räknas om när en stack ändrats. Allt som ändrar en stack anropar changed (bygg.ts när ett hus flyttar en stack),
 // som glömmer summorna
 export const changed = (s: State) => { summor.delete(s); };
+// testläget (steg 4.5.7.8): lagerplatsen tas bort. Det som låg där blir liggande som högar på marken, och byn bär det till
+// de andra lagerplatserna. Den sista lagerplatsen tas inte bort (lagerHinder). false = den togs inte bort
+export const lagerHinder = (s: State) => zonesOf(s).length <= 1 ? 'Byn har bara den här lagerplatsen' : undefined;
+export function taBortLager(s: State, z: Zone) {
+  if (lagerHinder(s) || !zonesOf(s).includes(z)) return false;
+  s.lagren = zonesOf(s).filter(q => q !== z);
+  changed(s);
+  log(s, `${z.namn ?? 'En lagerplats'} togs bort i testläget.`, 'world');
+  return true;
+}
 // ag: ägarnas delar per slag, räknade först när någon frågar efter slaget (undefined = ingen stack med ägare)
 interface Summa { st: Stack[]; n: Record<string, number>; w: Record<string, number>; ag: Map<string, Del | undefined> }
 const summor = new WeakMap<State, Summa>();

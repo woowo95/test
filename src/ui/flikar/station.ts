@@ -1,9 +1,10 @@
 import { PYNT } from '../../sim/pynt';
 import { kvOf } from '../../sim/kvalitet';
-import { flyttaStation, taBortStation, sakBerattelse, ACTS, DJURARTER, STATION, bordPlatser, pilesOf, living, TEKNIK, TILLBEHOR_LIST, byId, isKlar, sakNamn, actIkon, verbOf, stationById, stationDef, stationKlar, tillbehorDef, tingOf, timeLabel, isTool, FLACKAR, smutsVid, blodVid, storlekAv, TORK, torrDel } from '../../sim';
+import { flyttaStation, sakBerattelse, ACTS, DJURARTER, STATION, bordPlatser, pilesOf, living, TEKNIK, TILLBEHOR_LIST, byId, isKlar, sakNamn, actIkon, verbOf, stationById, stationDef, stationKlar, tillbehorDef, tingOf, timeLabel, isTool, FLACKAR, smutsVid, blodVid, storlekAv, TORK, torrDel } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { sakAttr } from './sak';
 import { iBruk } from '../foremal';
+import { taBortITest } from '../testborta';
 import { condBar, durTxt, esc, fmtN, kvMark, kvText, pLink } from '../hjalp';
 import { s, ui } from '../lage';
 import type { Flik } from '../panel';
@@ -35,10 +36,10 @@ export const station: Flik = {
   namn: 'Stationen',
   knapp: 'person',
   klick(el) {
-    const b = el.closest<HTMLElement>('[data-test]'), st = b && ui.testMode ? stationById(s, ui.stationId) : undefined;
+    const b = el.closest<HTMLElement>('[data-test="flytta"],[data-test="bort"]'), st = b && ui.testMode ? stationById(s, ui.stationId) : undefined;
     if (!b || !st) return false;
     ui.flyttFel = false;
-    if (b.dataset.test === 'bort') { taBortStation(s, st); ui.flytta = -1; } else ui.flytta = ui.flytta === st.id ? -1 : st.id;
+    if (b.dataset.test === 'bort') { taBortITest(s, st); ui.flytta = -1; } else ui.flytta = ui.flytta === st.id ? -1 : st.id;
     return true;
   },
   html() {
