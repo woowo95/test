@@ -559,12 +559,13 @@ function lurad(s: State, X: Part, L: Part) {
   count(s, 'lurat');
   if (L.p) gjort(s, L.p, 'lurade');
   const p = X.p;
-  if (!p || rnd(s, 'handel') >= HANDLA.marka * ((p.skill.handel ?? 0) + p.pot.intelligens / 2)) return;
+  if (!p || rnd(s, 'handel') >= HANDLA.marka * ((p.skill.handel ?? 0) + p.pot.intelligens / 2)) return false;
   count(s, 'lurad');
   gjort(s, p, 'lurad');
   think(p, `Blev lurad av ${L.namn}`, HANDLA.surTanke, s.now, HANDLA.surTim * HOUR);
   if (L.p) { const r = getRel(s, p, L.p); r.op = clamp(r.op - HANDLA.surRel, -100, 100); }
   log(s, `${p.name} märkte att ${L.namn} hade lurat hen i ett byte.`, 'rel', [p.id, ...(L.p ? [L.p.id] : [])]);
+  return true;
 }
 // växeln: G ger tillbaka så mycket silver som M betalat för mycket (for, för G), i hela silver. Betalar M med silver blir det
 // mindre silver i stället
@@ -643,7 +644,7 @@ export function genomfor(s: State, M: Part, G: Part, fatt: Vara[], betal: Vara[]
   if (M.p) think(M.p, `Bytte till sig ${varorText(fatt)} av ${G.namn}`, 0.06, s.now, 6 * HOUR);
   if (G.p) think(G.p, `Bytte till sig ${varorText(betal)} av ${M.namn}`, 0.06, s.now, 6 * HOUR);
   for (const X of [M, G]) if (X.p) { ovning(X.p, 'handel', HANDLA.ovning * (0.5 + X.p.pot.intelligens / 20)); gjort(s, X.p, 'bytt'); }
-  if (lurare) { lurad(s, lurare === M ? G : M, lurare); for (const f of vidLura) f(s, lurare, lurare === M ? G : M); }
+  if (lurare) { const X = lurare === M ? G : M, markt = lurad(s, X, lurare); for (const f of vidLura) f(s, lurare, X, markt); }
   const n = enheter(fatt);
   count(s, 'byten'); count(s, 'byte_' + typ, n); if (delad) count(s, 'kvallsbyten');
   if (byteKlart(s, M, G, fatt, betal, desperat)) count(s, 'storaByten'); // samma rad i loggen och krönikan, vem motparten än är

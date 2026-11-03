@@ -20,6 +20,7 @@ import { ledareOf } from './styre';
 import { kanterna } from './varg';
 import { KLAN, andraInst, handlarKlan, klanById, klanerOf } from './klaner';
 import { foddNar, gastNyckel } from './gastliv';
+import { affarMed, glomIrritation, kravMax, kravRel, luradMed, nejTill } from './gastrel';
 
 // ---------- handlarna (steg 4.4.1) ----------
 // När byns rikedom (varde.ts) passerat en gräns (HANDEL.rik) kommer en handlare gående från kartans kant, ungefär en gång per
@@ -53,7 +54,7 @@ export const HANDEL = balans('handel', {
   // man hämtar, att argumentera för ett bud (mellan de två talen), att plocka upp det köpta och att lägga det man köpt hemma
   fragaSek: 10, hamtaSek: 20, budSek: [5, 10], plockaSek: 15, hemSek: 20,
   forstaBud: 0.7, // bybon bjuder först så här mycket av vad det hen vill ha är värt för handlaren ...
-  hojaBud: 0.15, // ... och lägger till så mycket efter ett nej ...
+  // ... och höjer i lika steg efter varje nej, så att det sista budet är det mesta handlaren kan kräva (kravMax i gastrel.ts) ...
   nejMax: 3, // ... och ger upp efter så många nej i rad
   krav: 0.03, // handlaren går med på ett bud som är värt så här mycket mindre för hen per poäng bybon är skickligare i Handel ...
   kravMin: 0.7, // ... men aldrig under den här delen av det hen ger
@@ -270,6 +271,7 @@ function lagUt(s: State, h: Handlare) {
 
 // handlaren går: filten plockas ihop och hen går tillbaka mot kanten
 function gar(s: State, h: Handlare) {
+  glomIrritation(s, h);
   h.fas = 'gar'; h.affar = undefined; h.mx = h.ut.x; h.my = h.ut.y; h.fran = { x: h.x, y: h.y, t: s.now }; h.framme = s.now + Math.hypot(h.mx - h.x, h.my - h.y) / HANDEL.fart * SEC;
   if (s.filtar) { s.filtar = s.filtar.filter(f => f.handlare !== h.id); if (!s.filtar.length) delete s.filtar; }
   log(s, `${h.namn} plockade ihop sin filt och gick hemåt.`, 'world');
@@ -428,9 +430,11 @@ vidByte.push((s, m, g, fatt, betal) => {
   }
 });
 // märker handlaren att byn lurat hen, blir klanen mindre vänlig mot byn (byns anseende, steg 4.4.3)
-vidLura.push((s, L, X) => {
+vidLura.push((s, L, X, markt) => {
   const h = s.handlare, k = klanById(s, h?.klan);
+  if (h && L.id === h.id && markt && X.p) luradMed(s, h, X.p, false); // bybon minns att handlaren lurade hen (steg 4.5.7.11)
   if (!h || !k || X.id !== h.id || rnd(s, 'klan') >= KLAN.marka * h.handel) return;
+  if (L.p) luradMed(s, h, L.p, true); // och handlaren att bybon lurade hen
   andraInst(k, -KLAN.lurad);
   count(s, 'klanLurad');
   log(s, `${h.namn} märkte att ${L.namn} hade lurat hen. ${k.namn} kommer att höra om det.`, 'world');
@@ -550,10 +554,12 @@ function affarSteg(s: State, h: Handlare, a: Affar) {
     case 'hem': return { act: HANDLA, why: 'Bär hem det köpta', spot: a.hem ?? spot, dur: HANDEL.hemSek * SEC, ref };
   }
 }
-// handlaren svarar på budet: ja om det är värt nog för hen (kravAv; steg 4.5.7.11 lägger till relationen), annars nej
+// handlaren svarar på budet: ja om det är värt nog för hen (kravAv, och relationen till bybon: kravRel i gastrel.ts, steg
+// 4.5.7.11), annars nej. Ett alldeles för dåligt bud irriterar hen (nejTill)
 function svar(s: State, h: Handlare, a: Affar, p: Person, M: Part) {
-  const H_ = handlarPart(s, h), ger = vardFor(a.kop, H_.varde);
-  if (vardFor(a.bud, H_.varde) >= ger * kravAv(h, M) - 1e-9) {
+  const H_ = handlarPart(s, h), ger = vardFor(a.kop, H_.varde), krav = ger * Math.max(HANDEL.kravMin, kravAv(h, M) * kravRel(s, h, p)), bud = vardFor(a.bud, H_.varde);
+  if (bud >= krav - 1e-9) {
+    affarMed(s, h, p);
     const fatt: Vara[] = a.kop.map(w => ({ ...w })), betal = a.bud.map(w => ({ ...w }));
     const lurare = luraI(s, M, H_, betal, a.kop.map(w => w.k), ger);
     a.byt = s.now; a.fas = 'plocka';
@@ -562,7 +568,8 @@ function svar(s: State, h: Handlare, a: Affar, p: Person, M: Part) {
     a.bud = betal;
     return;
   }
-  if (++a.nej >= HANDEL.nejMax || (a.f = Math.min(1, a.f + HANDEL.hojaBud), !budNu(s, h, a, M))) { slut(s, h, a, p); return; }
+  nejTill(s, h, p, krav > 0 ? bud / krav : 1);
+  if (++a.nej >= HANDEL.nejMax || (a.f = Math.min(kravMax(), a.f + (kravMax() - HANDEL.forstaBud) / (HANDEL.nejMax - 1)), !budNu(s, h, a, M))) { slut(s, h, a, p); return; }
   nastaBud(s, h, a, p);
 }
 // affären är över: handlarens filt är tom igen och kundens plockas ihop. Den som inte fick något går tomhänt

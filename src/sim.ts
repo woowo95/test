@@ -82,3 +82,4 @@ export * from './sim/tider';
 export * from './sim/strid';
 export * from './sim/jakt';
 export * from './sim/gastliv';
+export * from './sim/gastrel';

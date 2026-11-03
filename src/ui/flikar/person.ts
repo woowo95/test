@@ -1,5 +1,5 @@
 import { klanById, FORMAGOR, gangDelar, HALSA, Kroppsdel, KROPPSDELAR, NARING, NARINGAR, NARINGBAL, bristGrad, bristerNu, frysFaktor, naringNu, sjunker, skorbjugg, vilaTim, TORST, blodning, delSkada, halsa, skadeLista, skadeText, smarta, torstDelar } from '../../sim';
-import { pratText, relationText, beskrivning, binamnInfo, INTRYCK, Intryck, IntryckTyp, anseendeText, intryckOm, LARDOMAR, LKind, anseendeSym, dodSymbol, intryckText, samlatIntryck, SKILL_STAT, gjortDygn, ACTS, ALDER, Act, DAY, Lardom, HUMOR, SKILL_GOR, STAT_GOR, Skill, Stat, coldOf, halsaLage, hearthOf, living, roomAt, temperature, varmeDelar, varmeRaknas, viloSlag, viloTak, takEffekt, SLAG, SLAG_TECKEN, Person, KUNSKAPER, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, SEDER, SED_LIST, sedOppen, TEKNIK, BYN, formogenhetDelar, Ting, halvKlar, ageOf, alive, byId, childrenOf, drar, heldBy, ownedBy, PLATSER, PLATS_LIST, Plats, BORDA_KG, UTRUSTNING, bordOf, capacity, kvNamn, handerFor, homeKind, load, utrustning, viktOf, SAKER, ownedStock, sakNamn, slagIkon, tingNamn, STACK, describe, duty, habitShare, habitTotal, KROPP, kortTal, moodOf, num, REL, relKey, relTyper, stat, timeLabel, vidBordet, upplevelseText, uppEffekt, vuxenUpp, Upplevelse, yrkeNamn, andlighet, troOf, tolkning, teckenText, troNamn, pratarMed, type ByteMinne, type Slakting } from '../../sim';
+import { pratText, relationText, beskrivning, binamnInfo, INTRYCK, Intryck, IntryckTyp, anseendeText, intryckOm, LARDOMAR, LKind, anseendeSym, dodSymbol, intryckText, samlatIntryck, SKILL_STAT, gjortDygn, ACTS, ALDER, Act, DAY, Lardom, HUMOR, SKILL_GOR, STAT_GOR, Skill, Stat, coldOf, halsaLage, hearthOf, living, roomAt, temperature, varmeDelar, varmeRaknas, viloSlag, viloTak, takEffekt, SLAG, SLAG_TECKEN, Person, KUNSKAPER, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, SEDER, SED_LIST, sedOppen, TEKNIK, BYN, formogenhetDelar, Ting, halvKlar, ageOf, alive, byId, childrenOf, drar, heldBy, ownedBy, PLATSER, PLATS_LIST, Plats, BORDA_KG, UTRUSTNING, bordOf, capacity, kvNamn, handerFor, homeKind, load, utrustning, viktOf, SAKER, ownedStock, sakNamn, slagIkon, tingNamn, STACK, describe, duty, habitShare, habitTotal, KROPP, kortTal, moodOf, num, REL, relKey, relTyper, stat, timeLabel, vidBordet, upplevelseText, uppEffekt, vuxenUpp, Upplevelse, yrkeNamn, andlighet, troOf, tolkning, teckenText, troNamn, pratarMed, gastRelationer, type ByteMinne, type GastRel, type Slakting } from '../../sim';
 import { gorText } from '../jakt';
 import { framstegSvg, hasIcon, iconImg, kvSvg, tecknet } from '../../ikoner';
 import { LAG, byteKnapp, clockTxt, ansStapel, ansTecken, fmtN, bar, cap, carryTxt, cssFarg, durTxt, esc, hex, hsl, hjalpOppen, hjalpText, moodWord, pLink, prickar, relWord, sickNow, tempBar, tempOrd, trend, trendD } from '../hjalp';
@@ -106,7 +106,16 @@ function gastKun(g: Gast) {
 function gastRel(g: Gast) {
   const ORD: Record<Slakting['roll'], [string, string]> = { mor: ['Mor', 'Mor'], far: ['Far', 'Far'], syskon: ['Syster', 'Bror'], partner: ['Hustru', 'Man'], barn: ['Dotter', 'Son'] };
   const f = g.liv.familj.slice().sort((a, b) => +(a.dog !== undefined) - +(b.dog !== undefined));
-  return `<h3>I ${esc(g.fran ?? 'hemklanen')}</h3><ul class="rels">${f.map(q => `<li><span>${esc(q.namn)}</span><span class="muted">${ORD[q.roll][q.sex === 'k' ? 0 : 1]}${q.dog !== undefined ? ', död' : ''}</span></li>`).join('')}</ul>`;
+  const byn = (g.rel ?? []).filter(x => alive(x.p)).sort((a, b) => b.r.n - a.r.n || Math.abs(b.r.op) - Math.abs(a.r.op)).slice(0, 10);
+  return `${byn.length ? `<h3>I byn</h3><ul class="rels">${byn.map(x => gastRelRad(pLink(x.p), x.r, x.g)).join('')}</ul>` : ''}<h3>I ${esc(g.fran ?? 'hemklanen')}</h3><ul class="rels">${f.map(q => `<li><span>${esc(q.namn)}</span><span class="muted">${ORD[q.roll][q.sex === 'k' ? 0 : 1]}${q.dog !== undefined ? ', död' : ''}</span></li>`).join('')}</ul>`;
+}
+// en relation mellan en gäst och en bybo (steg 4.5.7.11, gastrel.ts): ordet för vad de tycker, irritationen och lurendrejeriet,
+// och vid musen hur mycket handlaren gillar bybon
+const opOrd = (op: number) => op > REL.naraVan ? 'Nära vän' : op > REL.vanOrd ? 'Vän' : op > REL.osams ? 'Bekant' : op > REL.ovan ? 'Ogillar' : 'Ovän';
+function gastRelRad(namn: string, r: GastRel, g?: number, gast?: boolean, klan?: string) {
+  const mer = [r.irr > 0.05 ? 'irriterad' : '', r.lurad ? `lurade bybon ${r.lurad} ${r.lurad === 1 ? 'gång' : 'gånger'}` : '', r.lurat ? `blev lurad ${r.lurat} ${r.lurat === 1 ? 'gång' : 'gånger'}` : ''].filter(Boolean).join(', ');
+  const title = `${opOrd(r.op)}${g === undefined ? '' : `. Handlaren ${g > 0.25 ? 'gillar' : g < -0.25 ? 'ogillar' : 'har inget särskilt emot'} bybon${g > 0.25 ? ' och kräver lite mindre' : g < -0.25 ? ' och kräver mer' : ''}`}`;
+  return `<li>${namn}${gast ? ' <span class="muted small">gäst</span>' : ''}<span class="rw ${r.op < REL.osams || r.irr > 0.05 ? 'neg' : r.op > REL.vanOrd ? 'pos' : ''}" title="${esc(title)}">${opOrd(r.op)}</span><span class="muted">${r.n} ${r.n === 1 ? 'affär' : 'affärer'}${mer ? ` · ${esc(mer)}` : ''}</span>${klan ? `<span class="muted small">${esc(klan)}</span>` : ''}</li>`;
 }
 function gastRyk(g: Gast) {
   return `<p class="muted">Byn har inga rykten om ${esc(g.namn)}. Hen är ${g.sort === 'Rövare' ? 'en främling som kommer för att ta' : 'en gäst som kommer och går'}.</p>`;
@@ -316,10 +325,24 @@ function egenHtml(p: Person) {
 // relationerna med typerna som symboler (steg 3.1.1, RELATIONER i relationer.ts): ett tryck på symbolen visar varför.
 // De med en särskild typ (partner, bästa vän, ärkefiende, mentor, rival) först, sedan de starkaste
 function relHtml(p: Person) {
+  return relInne(p) + utanforHtml(p);
+}
+// gästerna bybon har en relation till (steg 4.5.7.11): handlaren som är i byn står också i listan ovanför, märkt gäst, och alla
+// under "Utanför byn" längst ner, hopfällt
+function utanforHtml(p: Person) {
+  const g = gastRelationer(s, p);
+  if (!g.length) return '';
+  const id = `utanfor-${p.id}`, h = s.handlare;
+  const rad = (x: (typeof g)[number]) => { const har = h && h.namn === x.q.namn && klanById(s, h.klan)?.namn === x.klan; return gastRelRad(har ? `<button class="plink" data-id="${h!.id}" type="button">${esc(x.q.namn)}</button>` : `<span>${esc(x.q.namn)}</span>`, x.r, undefined, false, x.klan); };
+  return `<h3 class="klick" data-hjalp="${id}" title="Gästerna hen känner">Utanför byn ${hjalpOppen(id) ? '▾' : '▸'}</h3>${hjalpOppen(id) ? `<ul class="rels">${g.map(rad).join('')}</ul>` : ''}`;
+}
+function relInne(p: Person) {
   const sarskild = (q: Person) => p.partner === q.id || p.bast === q.id || p.arke === q.id || p.mentor === q.id || q.mentor === p.id || !!p.rivaler?.includes(q.id);
   const rels = s.people.filter(q => q.id !== p.id && s.rels[relKey(p.id, q.id)] && alive(q)).map(q => ({ q, r: s.rels[relKey(p.id, q.id)], sv: sarskild(q) }))
     .sort((x, y) => +y.sv - +x.sv || Math.abs(y.r.op) - Math.abs(x.r.op)).slice(0, 10);
-  return rels.length ? `<ul class="rels">${rels.map(({ q, r }) => {
+  const h = s.handlare, hr = h ? gastRelationer(s, p).find(x => x.q.namn === h.namn && klanById(s, h.klan)?.namn === x.klan) : undefined;
+  const gast = h && hr ? gastRelRad(`<button class="plink" data-id="${h.id}" type="button">${esc(h.namn)}</button>`, hr.r, undefined, true) : '';
+  return rels.length || gast ? `<ul class="rels">${gast}${rels.map(({ q, r }) => {
     const typer = relTyper(s, p, q), id = (k: string) => `rt-${p.id}-${q.id}-${k}`;
     const sym = typer.map(t => `<button type="button" class="relsym" data-hjalp="${id(t.id)}" data-hjalp-grupp="rt-${p.id}-${q.id}-" title="${esc(t.namn)}" aria-label="${esc(t.namn)}">${iconImg(t.ikon)}</button>`).join('');
     const oppen = typer.find(t => hjalpOppen(id(t.id))), utf = hjalpOppen(id('mer'));

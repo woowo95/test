@@ -9,7 +9,7 @@ import { setByn, ui } from '../../ui/lage';
 import { person } from '../../ui/flikar/person';
 import { gaster } from '../../ui/gaster';
 import { filt as filtFlik } from '../../ui/flikar/filt';
-import { linkify } from '../../ui/hjalp';
+import { hjalpKlick, linkify } from '../../ui/hjalp';
 import { taBortITest, testBortaIByn } from '../../ui/testborta';
 import { station as stationFlik } from '../../ui/flikar/station';
 import { lager as lagerFlik } from '../../ui/flikar/lager';
@@ -1053,6 +1053,76 @@ SCENARIER.forhandling = {
   },
 };
 
+SCENARIER.handlarrel = {
+  text: 'Handlaren och relationen (steg 4.5.7.11, gastrel.ts): handlaren har en relation till varje bybo hen handlar med, sparad hos hen i grannklanen. Hur gärna hen går med på ett bud räknas som vänskapen i ett samtal: kemin (ur fröet, ingen slump dras), likheten, värmen och bybons charm, och dessutom det de varit med om. Ett alldeles för dåligt bud irriterar handlaren så att nästa bud blir svårare; irritationen varar besöket och en liten del finns kvar när hen kommer igen. Den som märkt att den andra lurat hen minns det. Relationen syns i bybons relationsflik (handlaren i listan, märkt gäst, och alla under Utanför byn) och på handlarens sida.',
+  kor: () => {
+    utanWebblasare();
+    const s = createState(6, START);
+    rikBy(s); setByn(s);
+    SIM.skickaHandlare(s);
+    const h = s.handlare!, [a, b] = living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen);
+    // kemin ur fröet: samma i en kopia, och ingen slump dras
+    const rng0 = JSON.stringify(s.rngs), c = cloneState(s);
+    const r = SIM.gastRel(s, h, a)!, rc = SIM.gastRel(c, c.handlare!, byId(c, a.id)!)!;
+    const fro = !!r && r.chem === rc.chem && JSON.stringify(s.rngs) === rng0 && Math.abs(r.chem) <= 1;
+    const kp = SIM.handlarPerson(s, h), sparad = kp?.rel?.[a.id] === r;
+    // samtalsdelarna: charmigare bybo gillas mer
+    const g0 = SIM.gillar(s, h, a), k0 = a.pot.karisma, s0 = a.pot.skonhet;
+    a.pot.karisma = 20; a.pot.skonhet = 20; const gCharm = SIM.gillar(s, h, a);
+    a.pot.karisma = 1; a.pot.skonhet = 1; const gFul = SIM.gillar(s, h, a);
+    a.pot.karisma = k0; a.pot.skonhet = s0;
+    const charm = gCharm > g0 && g0 > gFul && SIM.kravRel(s, h, a) === 1 - SIM.GASTREL.krav * g0;
+    // ett alldeles för dåligt bud irriterar, ett nästan bra gör det inte
+    SIM.nejTill(s, h, a, 0.95); const lugn = r.irr === 0;
+    SIM.nejTill(s, h, a, 0.5); const irr = r.irr === SIM.GASTREL.irr && SIM.gillar(s, h, a) < g0 && SIM.kravRel(s, h, a) > SIM.kravRel(s, h, b);
+    // en affär gör relationen bättre; den som märkt att hen blivit lurad minns det
+    SIM.affarMed(s, h, a); const affar = r.n === 1 && r.op === SIM.GASTREL.byteOp;
+    SIM.luradMed(s, h, a, false); const lurad = r.lurad === 1 && r.op === SIM.GASTREL.byteOp - SIM.GASTREL.luradOp;
+    // genom förhandlingen: ett dåligt bud från en bybo handlaren inte gillar ger nej och irritation
+    const d = cloneState(s), dh = d.handlare!, da = byId(d, a.id)!;
+    for (let i = 0; i < 40 && dh.fas !== 'handlar'; i++) { step(d, BEAT); utanVantan(d); }
+    let viaSvar = false;
+    if (dh.fas === 'handlar') {
+      dh.bynKlar = true; delete dh.affar;
+      for (const p of living(d)) if (p.task?.act === 'handla') p.task = undefined;
+      dh.varor = [{ k: 'torrkott', n: 2 }]; SIM.put(d, 'skinn', 6, { [da.id]: 6 });
+      const dr = SIM.gastRel(d, dh, da)!; dr.irr = 0; dr.op = -100;
+      const upp = (v: NonNullable<ReturnType<typeof SIM.handlaVal>>) => { da.x = v.spot.x; da.y = v.spot.y; da.task = { act: 'handla', phase: 'do', tx: v.spot.x, ty: v.spot.y, until: d.now + v.dur, carry: 0, ref: v.ref, dark: false, why: v.why } as Task; };
+      const n0 = d.stat?.handlarIrriterad ?? 0, aff = () => d.handlare?.affar;
+      for (let i = 0; i < 40; i++) {
+        const v = SIM.handlaVal(d, da); if (!v || aff()?.vem !== da.id) break; upp(v);
+        if (aff()!.fas === 'bud') aff()!.f = 0.3;
+        SIM.handlaKlar(d, da, da.task!);
+      }
+      viaSvar = dr.irr > 0 && (d.stat?.handlarIrriterad ?? 0) > n0;
+    }
+    // irritationen när hen går hem: en liten del finns kvar
+    const fore = r.irr; SIM.glomIrritation(s, h); const kvar = Math.abs(r.irr - fore * SIM.GASTREL.kvar) < 1e-9 && r.irr > 0;
+    // sparas med byn
+    const sp = JSON.parse(JSON.stringify(s)) as State, sparas = SIM.klanById(sp, h.klan)?.personer.find(q => q.namn === h.namn)?.rel?.[a.id]?.lurad === 1;
+    // flikarna
+    ui.selected = a.id; ui.personDel = 'rel'; const stangd = person.html();
+    hjalpKlick({ closest: () => ({ dataset: { hjalp: `utanfor-${a.id}` } }) } as unknown as HTMLElement);
+    const oppen = person.html();
+    ui.selected = h.id; const hos = person.html();
+    return [
+      [`kemin (${r?.chem.toFixed(2)}) räknas ur fröet, likadant i en kopia, och ingen slump dras`, fro],
+      ['relationen sparas hos handlaren i grannklanen', sparad],
+      [`charmigare bybo gillas mer (${gFul.toFixed(2)} < ${g0.toFixed(2)} < ${gCharm.toFixed(2)}), och den som gillas får lägre krav`, charm],
+      ['ett nästan bra bud irriterar inte', lugn],
+      ['ett alldeles för dåligt bud irriterar handlaren, så att nästa bud blir svårare', irr],
+      ['en affär gör relationen lite bättre', affar],
+      ['den som märkt att hen blivit lurad minns det, och relationen blir sämre', lurad],
+      ['i förhandlingen ger dåliga bud från en bybo hen inte gillar nej och irritation', viaSvar],
+      [`när handlaren går hem finns ${Math.round(SIM.GASTREL.kvar * 100)} % av irritationen kvar`, kvar],
+      ['relationen sparas med byn', sparas],
+      ['bybons relationsflik: handlaren i listan märkt gäst, och Utanför byn hopfällt', stangd.includes(h.namn) && stangd.includes('gäst') && stangd.includes('Utanför byn') && !/affär.*affär/.test(stangd.replace(/\n/g, ''))],
+      ['Utanför byn visar handlaren med klanen när man trycker', oppen.split(h.namn).length > stangd.split(h.namn).length && oppen.includes(SIM.klanById(s, h.klan)!.namn)],
+      ['handlarens relationsflik visar bybon under I byn', hos.includes('I byn') && hos.includes(a.name) && hos.includes('lurade bybon 1 gång')],
+    ];
+  },
+};
+
 SCENARIER.filtar = {
   text: 'Filtarna mitt emot varandra (steg 4.5.4.13, byte.ts och handel.ts): den som byter, också en bybo som handlar med handlaren, lägger ut sin egen filt mitt emot den andras, och plockar ihop den när bytet är klart eller hen gått. Trycker man på en filt visas en enkel lista med vad som ligger på den och vems den är; två filtar mitt emot varandra visas alltid som en ruta, vilken av dem man än trycker på: vad var och en erbjuder och priserna i silver.',
   kor: () => {
@@ -1310,7 +1380,7 @@ SCENARIER.grannklaner = {
     const vanligare = k[0].inst === i0 + SIM.KLAN.handel;
     if (h) h.handel = 1000; // märker det säkert
     const i1 = k[0].inst;
-    for (const fn of SIM.vidLura) fn(s, pa, ph);
+    for (const fn of SIM.vidLura) fn(s, pa, ph, false);
     const lurad = k[0].inst === i1 - SIM.KLAN.lurad;
     // dygnen går: folket ändras, inställningen glöms
     const folk0 = k.map(c => c.folk).join(), inst0 = k[0].inst;

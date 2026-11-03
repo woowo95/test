@@ -1,5 +1,5 @@
-import { HANDEL, HANDLAR_UTR, VAPEN, foddNar, gastLiv, gastNyckel, handlarFas, handlarPlats, klanById, grundvarde, handlarVarde, kgOf, kortTal, rymmer, sakNamn } from '../sim';
-import type { ByteMinne, GastLiv, Roll, Skill, Stat, State } from '../sim';
+import { HANDEL, HANDLAR_UTR, VAPEN, byId, gillar, handlarPerson, foddNar, gastLiv, gastNyckel, handlarFas, handlarPlats, klanById, grundvarde, handlarVarde, kgOf, kortTal, rymmer, sakNamn } from '../sim';
+import type { ByteMinne, GastLiv, GastRel, Person, Roll, Skill, Stat, State } from '../sim';
 import { iconImg } from '../ikoner';
 import { esc } from './hjalp';
 import { s, ui } from './lage';
@@ -22,6 +22,7 @@ export interface Gast {
   byten?: ByteMinne[]; // bytena hen gjort med byn (steg 4.5.4.17)
   liv: GastLiv; // livet i hemklanen (steg 4.5.7.7, gastliv.ts): familjen, händelserna, humöret och det hen kan
   blod?: number; // blodet kvar (rövarna, 0–1)
+  rel?: { p: Person; r: GastRel; g: number }[]; // relationerna till byborna (handlaren, steg 4.5.7.11): g = hur mycket hen gillar bybon, −1 till 1
 }
 // gästens liv, räknat ur byns frö och hens namn och klan (drar ingen slump)
 const livFor = (s: State, klan: number | undefined, namn: string, sex: 'm' | 'k', roll: Roll, fodd: number | undefined) => {
@@ -52,6 +53,7 @@ export const GASTER: ((s: State, t: number) => Gast[])[] = [
       handelser: (h.bytt ?? []).filter(b => !b.m).reverse().map(b => `Bytte med ${b.vem}: ${b.fick} mot ${b.gav}`), // från före v271
       byten: (h.bytt ?? []).flatMap(b => b.m ? [b.m] : []),
       liv: livFor(s, h.klan, h.namn, h.sex, 'handlare', h.fodd),
+      rel: Object.entries(handlarPerson(s, h)?.rel ?? {}).flatMap(([id, r]) => { const q = byId(s, Number(id)); return q ? [{ p: q, r, g: gillar(s, h, q) }] : []; }),
     }];
   },
   // rövarflocken (steg 4.4.5): rövarna i en klunga där flocken står

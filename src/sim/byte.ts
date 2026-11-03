@@ -111,7 +111,7 @@ export function stortByte(varor: Vara[]) {
 
 // det andra system gör när ett byte är klart (handlarens minne av bytena, handel.ts)
 // när någon lurat i ett byte (behov.ts): lurare lurade lurad (grannklanerna, klaner.ts)
-export const vidLura: ((s: State, lurare: Part, lurad: Part) => void)[] = [];
+export const vidLura: ((s: State, lurare: Part, lurad: Part, markt: boolean) => void)[] = []; // markt = den lurade bybon märkte det
 export const vidByte: ((s: State, m: Part, g: Part, fatt: Vara[], betal: Vara[], minne: ByteMinne) => void)[] = [];
 // priset i silver styck för slaget k som fran ger till till (handlarens priser, handel.ts); annars grundvärdet. Hela silver, minst ett
 export const BYTESPRIS: ((s: State, fran: Part, till: Part, k: string) => number | undefined)[] = [];
