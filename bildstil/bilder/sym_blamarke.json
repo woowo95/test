@@ -1,26 +1,27 @@
 {
  "id": "sym_blamarke",
- "ritad": 1,
+ "ritad": 2,
  "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 2. Den oregelbundna, sneda fläcken läses bäst som ett blåmärke: en rödrost rand runt en blåaktig skiffermitt ger tillsammans det lila intrycket, eftersom paletten saknar lila. Konturen är rost0, materialets mörkaste ton, precis som förebildens hårda kontur. Ljuset kommer uppifrån vänster med glans på högst två punkter (skiffer3), och symbolen är 16 punkter bred och fyller rutan. Version 1 är mer symmetrisk och platt och ser ut som en sten i glöd. Version 3 har en guldkant (senap) och läses som en sköld. Ändring: de diagonala skiffer0-strecken i mitten av version 2 fick symbolen att se ut som ett speglande glas. Jag ersatte dem med en sammanhållen mörkare skugga nere till höger i mitten och lugnade nederkanten, så att fläcken läses som en mjuk, svullen blåmärkesfläck.",
+ "om": "Jag valde version 3. Paletten har ingen lila, och blandningen av skiffer med en mörk rostkärna läses bäst som ett blåmärke. Den oregelbundna fläcken med flikar fyller hela 16 × 16-rutan och har en hel skiffer0-kontur, precis som förebilden. Version 2 har en ljus rostring runt en grå mitt och ser ut som en sköld eller ett klot, inte som ett blåmärke. Version 1 är bara 15 rader hög och rundare, så den läses mindre som en fläck. Ändringar: Ljusa skiffer2-punkter längs högerkanten (rad 2–5) och nertill till vänster (rad 13–15) var ljusare där skuggan borde ligga, så jag bytte dem mot skiffer1. Nu ligger ljuset bara uppe till vänster och det mörkaste nere till höger. Den lilla ljusa punkten i högra fliken överst tonade jag ner till skiffer1. Rostkärnan behöll jag som den var: den är den mättade delen man ska se.",
  "w": 16,
- "h": 15,
+ "h": 16,
  "rader": [
-  ".....rrrr.......",
-  "...rrsstsrr.....",
-  "..rsttsssssrr...",
-  ".rstsRRRRsssr...",
-  ".rtsRSTSRRRssrr.",
-  "rstRSTSRRRRRsssr",
-  "rssRSSRRRRRRRssr",
-  "rtsRSRRRRRRQRssr",
-  ".rsRRRRRRRQQssr.",
-  ".rssRRRRRQQRsr..",
-  "..rsRRRRQQRsssr.",
-  "..rssRRRRsssssr.",
-  "...rsssssssssr..",
-  "....rrssssssr...",
-  ".....rrrrrrr...."
+  ".....QQQ..QQ....",
+  "...QQTTSQQSRQ...",
+  "..QTTSSSSSRRRQ..",
+  ".QTSSRRRRRRRRRQ.",
+  ".QTSRRsRssRRRRQ.",
+  "QTSRRssrsrsRRRQ.",
+  "QSSRsssrrrssRRRQ",
+  "QTSRsrrrrrrsRRRQ",
+  ".QSRssrrrrsrsRRQ",
+  ".QSRRsrsrrssRRRQ",
+  "QSSRRRssssRRRRQ.",
+  "QSRRRRRsRRRRRRQ.",
+  ".QSRRRRRRRRRRQ..",
+  "..QQSRRRRRRQQ...",
+  "....QQRRRQQ.....",
+  "......QQQ......."
  ],
  "pal": {
   "Q": "#233035",
@@ -28,7 +29,26 @@
   "S": "#61767a",
   "T": "#8a9c9e",
   "r": "#521100",
-  "s": "#742a01",
-  "t": "#a14808"
+  "s": "#742a01"
+ },
+ "forra": {
+  "ritad": 1,
+  "rader": [
+   ".....rrrr.......",
+   "...rrsstsrr.....",
+   "..rsttsssssrr...",
+   ".rstsRRRRsssr...",
+   ".rtsRSTSRRRssrr.",
+   "rstRSTSRRRRRsssr",
+   "rssRSSRRRRRRRssr",
+   "rtsRSRRRRRRQRssr",
+   ".rsRRRRRRRQQssr.",
+   ".rssRRRRRQQRsr..",
+   "..rsRRRRQQRsssr.",
+   "..rssRRRRsssssr.",
+   "...rsssssssssr..",
+   "....rrssssssr...",
+   ".....rrrrrrr...."
+  ]
  }
 }

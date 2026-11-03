@@ -1,33 +1,54 @@
 {
  "id": "sym_gnistor",
- "ritad": 1,
+ "ritad": 2,
  "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 1. Den liknar ✨ mest: en stor fyruddig stjärna nere till vänster och två mindre uppe och nere till höger. Den stora stjärnan är symmetrisk kring mitten och har kraftiga armar, så silhuetten läses tydligt även i liten storlek. Den fyller hela rutan, 16 × 16 punkter. Ljuset faller rätt: senap3 uppe till vänster och senap1 nere till höger, och hela konturen är senap0, materialets mörkaste ton, som i förebildens tydliga stil. Glansen är en enda punkt ben2, så den blir inte nästan vit som ben3 i version 2. Version 3 har tunnare armar och blir svagare i liten storlek. Jag gjorde inga ändringar, eftersom alla rader är 16 tecken, bara paletten används och reglerna följs.",
+ "om": "Jag valde version 1. Den stora fyruddiga stjärnan är symmetrisk kring mitten (6 punkter åt varje håll) och fyller 13 × 13 punkter. De två mindre gnistorna uppe och nere till höger är tydligt olika stora, så att ✨ känns igen även i liten storlek. Ljuset faller uppifrån vänster, med senap3 uppe till vänster och senap1 nere till höger, och konturen är senap0 som i förebildens guld. Version 2 har en smalare stjärna och bara små gnistor, och den läses sämre i liten storlek. Version 3 har en grumligare skuggsida. Jag ändrade en punkt: en ljus senap3 mitt i den nedre, skuggade halvan (rad 10) blev senap2. Ljuset faller då konsekvent, och den ensamma glansen i mitten (ben3) får stå för sig själv.",
  "w": 16,
  "h": 16,
  "rader": [
   "............I...",
   "...........ILI..",
-  "..........IKLJI.",
-  "......I..ILKLJJI",
-  ".....ILI..IJJJI.",
+  "..........ILKJI.",
+  "......I..ILLKKJI",
+  ".....ILI..IKKJI.",
   ".....ILI...IJI..",
   "....ILKJI...I...",
-  "...IKLLKJI......",
-  ".IIKLLLKJJII....",
-  "ILLKKLqKJJJJI...",
-  ".IIJKKKJJJII....",
-  "...IJJKJJI...I..",
-  "....IJJJI...ILI.",
-  ".....IJI...ILKJI",
+  "...ILLKKJI......",
+  ".ILLLLKKKJJI....",
+  "ILLLKLwKKJJJI...",
+  ".IKKKKKKJJJI.I..",
+  "...IKKKJJI..ILI.",
+  "....IKJJI..ILKJI",
   ".....IJI....IJI.",
-  "......I......I.."
+  ".....IJI.....I..",
+  "......I........."
  ],
  "pal": {
   "I": "#694902",
   "J": "#906f0f",
   "K": "#b2921b",
   "L": "#d8b25f",
-  "q": "#bdb39b"
+  "w": "#dad0bb"
+ },
+ "forra": {
+  "ritad": 1,
+  "rader": [
+   "............I...",
+   "...........ILI..",
+   "..........IKLJI.",
+   "......I..ILKLJJI",
+   ".....ILI..IJJJI.",
+   ".....ILI...IJI..",
+   "....ILKJI...I...",
+   "...IKLLKJI......",
+   ".IIKLLLKJJII....",
+   "ILLKKLqKJJJJI...",
+   ".IIJKKKJJJII....",
+   "...IJJKJJI...I..",
+   "....IJJJI...ILI.",
+   ".....IJI...ILKJI",
+   ".....IJI....IJI.",
+   "......I......I.."
+  ]
  }
 }

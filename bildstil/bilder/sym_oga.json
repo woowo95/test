@@ -1,26 +1,25 @@
 {
  "id": "sym_oga",
- "ritad": 1,
+ "ritad": 2,
  "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 1. Den fyller hela bredden (16 punkter) och har en tydlig mandelform med jord0-kontur runt hela ögat, som de korsade svärden. De tre fransarna gör att ögat känns igen direkt som 👁 och inte som en ring eller en sten. Ljuset stämmer: ben3 och ben2 uppe till vänster går mot ben0 nere till höger. Iris är skiffer med en enda ljuspunkt, och pupillen i kol0 är det enda som verkligen är svart. Version 2 är nästan lika bra, men pupillen är grötig: en ljuspunkt mitt i det svarta gör den rörig i liten storlek. Version 3 saknar fransar, är förskjuten åt höger och är bara tio rader hög, så den läses sämre. Jag hittade inget att rätta i version 1: alla rader är 16 tecken, bara palettens tecken används och glansen är två punkter.",
+ "om": "Jag valde version 2. Den har samma kol0-kontur som de korsade svärden, till skillnad från version 3, som har en kontur i jord0 och därför inte hör ihop med de andra symbolerna. Den fyller rutan med 16 punkters bredd och 12 punkters höjd. Ögat läses direkt som ett öga. Irisen har en ring i skiffer0, så den svarta pupillen skiljs tydligt från irisen. I version 1 smälter pupill, iriskant och kontur ihop till en enda mörk klump. Fransarna gör symbolen tydligare som ett vakande öga i liten storlek. Ljuset faller rätt: ögonvitan är ljus (w och q) uppe till vänster och mörk (p och o) nere till höger. Irisen går från T och S uppe till vänster till R nere till höger. Glansen är en enda punkt i ben3 i pupillen och aldrig ren vit. Jag fann inget som behövde rättas: alla rader är 16 tecken, fransarna hänger ihop diagonalt med konturen och det finns inga ensamma prickar, så punkterna är oförändrade.",
  "w": 16,
  "h": 12,
  "rader": [
-  "...E...EE...E...",
-  "....E..EE..E....",
-  ".....EEEEEE.....",
-  "...EEqqqqppEE...",
-  "..EwqqRRRRppoE..",
-  ".EqqqRTwSSRppoE.",
-  "EqqqpRSkkSRppooE",
-  "EpqppRSkkRRpoooE",
-  ".EpppRSSRRQoooE.",
-  "..EppoRRQQoooE..",
-  "...EEpoooooEE...",
-  ".....EEEEEE....."
+  "..k...k..k...k..",
+  "...k..k..k..k...",
+  "....kkkkkkkk....",
+  "..kkwwQQQQqpkk..",
+  ".kwwwQTTSSQqppk.",
+  ".kwqQTSkkSRQpok.",
+  "kwqqQTkwkkRQppok",
+  "kqqpQSkkkkRQpook",
+  ".kqpQSSkkRRQpok.",
+  "..kppQSRRRQook..",
+  "...kkpQQQQokk...",
+  ".....kkkkkk....."
  ],
  "pal": {
-  "E": "#3f2415",
   "Q": "#233035",
   "R": "#3e5156",
   "S": "#61767a",
@@ -30,5 +29,22 @@
   "p": "#a0947d",
   "q": "#bdb39b",
   "w": "#dad0bb"
+ },
+ "forra": {
+  "ritad": 1,
+  "rader": [
+   "...E...EE...E...",
+   "....E..EE..E....",
+   ".....EEEEEE.....",
+   "...EEqqqqppEE...",
+   "..EwqqRRRRppoE..",
+   ".EqqqRTwSSRppoE.",
+   "EqqqpRSkkSRppooE",
+   "EpqppRSkkRRpoooE",
+   ".EpppRSSRRQoooE.",
+   "..EppoRRQQoooE..",
+   "...EEpoooooEE...",
+   ".....EEEEEE....."
+  ]
  }
 }

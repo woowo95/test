@@ -1,27 +1,27 @@
 {
  "id": "sym_pengasack",
- "ritad": 1,
+ "ritad": 2,
  "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 2. Den fyller hela rutan (16 × 16) precis som de korsade svärden. Säcken har en tydlig, rund silhuett med knuten hals och ett rostfärgat snöre. Myntstapeln är stor och tydligt randig, så den läses som pengar även i liten storlek. Version 1 och 3 är bara 14 punkter breda och har mindre mynt, så de syns sämre bredvid de andra symbolerna. Säcken har jordtoner med ljuset uppe till vänster och en jord0-kontur. Mynten är i senap, med senap0 som kontur och L som glans uppe till vänster. Det enda jag ändrade var myntstapelns överkant på rad 10: den slutade med en jordkontur (E) i myntets hörn och gick inte över hela stapelns bredd. Nu är den en hel senap0-kant över kolumn 9–15, så stapeln får en sluten kontur.",
+ "om": "Jag valde version 3. Den visar tre säckar i en hög, med guldmynt på den översta och en myntstapel som väller fram mellan de nedre. I spelets storlek läses den som mest pengar, alltså tydligt rikare än en ensam säck. Version 1 ser ut som en flaska med två små kärl och läses inte som pengasäckar. Version 2 är tydlig men visar bara ett mynt och känns mer välbärgad än rik. Silhuetten i version 3 fyller rutan (16 × 16). Den har jordkontur runt säckarna och senap bara på guldet, vilket stämmer med regeln att mättade toner sparas till det man kan ta, och den hör ihop med förebildens dämpade bruna och guldgula toner. Ändring: den översta säcken saknade glans, så jag lade en ben2-punkt uppe till vänster (rad 4). Nu har alla tre säckarna samma ljusriktning från övre vänstra hörnet.",
  "w": 16,
  "h": 16,
  "rader": [
-  ".....EEE.EEE....",
-  "....EHGHEGFFE...",
-  ".....EHGGFFE....",
-  "....rutttssr....",
-  ".....EGGFFE.....",
-  "...EEHGGGFFEE...",
-  "..EHHGHGFGFFFE..",
-  ".EHGHGGFGGFFFFE.",
-  "EHGGHGFGFGFFFFFE",
-  "EHGHGFGFFIIIIIII",
-  "EGHGGFGFFILLKKJI",
-  "EHGGFGFFFIKJJJII",
-  "EGGFGFFFFILKKKJI",
-  ".EGFGFFFFIKJJJII",
-  "..EFFFFFFILKKJJI",
-  "...EEEEEEIIIIII."
+  "......EEEE......",
+  ".....EHGGFE.....",
+  "......EHFE......",
+  ".....EEEEEE.....",
+  "....EHqGGFFE....",
+  "...EHGGIIGFFE...",
+  "...EHGILKIFFE...",
+  "..EEEGIKJIFEEE..",
+  ".EHGFEGIIFEHGFE.",
+  "..EEEGGGFFFEEE..",
+  ".EHGGFEFFFEHGGFE",
+  "EHqGGFEIIEHGGGFE",
+  "EHGHGFILKIHGHGFE",
+  "EHGGFFIKJIHGGFFE",
+  "EGGFFFILKIGGFFFE",
+  ".EEEEEIIIIEEEEE."
  ],
  "pal": {
   "E": "#3f2415",
@@ -32,9 +32,27 @@
   "J": "#906f0f",
   "K": "#b2921b",
   "L": "#d8b25f",
-  "r": "#521100",
-  "s": "#742a01",
-  "t": "#a14808",
-  "u": "#bd753e"
+  "q": "#bdb39b"
+ },
+ "forra": {
+  "ritad": 1,
+  "rader": [
+   ".....EEE.EEE....",
+   "....EHGHEGFFE...",
+   ".....EHGGFFE....",
+   "....rutttssr....",
+   ".....EGGFFE.....",
+   "...EEHGGGFFEE...",
+   "..EHHGHGFGFFFE..",
+   ".EHGHGGFGGFFFFE.",
+   "EHGGHGFGFGFFFFFE",
+   "EHGHGFGFFIIIIIII",
+   "EGHGGFGFFILLKKJI",
+   "EHGGFGFFFIKJJJII",
+   "EGGFGFFFFILKKKJI",
+   ".EGFGFFFFIKJJJII",
+   "..EFFFFFFILKKJJI",
+   "...EEEEEEIIIIII."
+  ]
  }
 }

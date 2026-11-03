@@ -1,27 +1,27 @@
 {
  "id": "sym_trad",
- "ritad": 1,
+ "ritad": 2,
  "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 1. Den olivgröna kronan i mellantoner är ljusast av de tre och syns bäst på den mörka panelen. Den har samma tydliga silhuett och samma ljusstyrka som de korsade svärden. Konturen är oliv0 runt kronan och jord0 runt stammen, ljuset faller uppifrån vänster och toningen går mot mörkt nere till höger. Bilden fyller 16 × 16 punkter. Version 2 är mörk barrgrön och försvinner på mörk bakgrund. Version 3 har en sned stam och glipor i kronans kontur. Ändring: jag tog bort en ensam mörk oliv1-prick på rad 3, i den ljusa delen av kronan, och ersatte den med oliv2, så att ytan får korn utan fläckar.",
+ "om": "Jag valde version 1. Den har den lugnaste och rundaste kronan, och den läses direkt som 🌳 i liten storlek. Den har få och stora former, precis som de korsade svärden. Ljuset kommer uppe från vänster (oliv3 går över i oliv1 nere till höger), och konturen är materialets mörkaste ton: oliv0 runt kronan och jord0 runt stammen. Version 2 har ett hack i kronans topp som ser ut som två klumpar i liten storlek. Version 3 har en kluven rotfot som blir plottrig och ger en ojämn kontur. Jag ändrade bara stammens fot: GG blev HG, så att kornet byts punkt för punkt och den ljusa sidan till vänster fortsätter ända ner.",
  "w": 16,
  "h": 16,
  "rader": [
   ".....MMMMMM.....",
-  "...MMPPOOOOMM...",
-  "..MPPOPOOOOOOM..",
-  ".MPPOPOOOONONOM.",
-  ".MPOPOOONOONNNM.",
-  "MPOOPOONOONONNNM",
-  "MOPOOONOONONNNNM",
-  "MOOOONOONONNNNNM",
-  ".MOONONNONNNNNM.",
-  ".MMONNNNNNNNNMM.",
-  "...MMMEGFEMMM...",
+  "...MMPPOOONMM...",
+  "..MPPPOOOONNNM..",
+  ".MPPPOPOOONONNM.",
+  ".MPPOOPOONONNNM.",
+  "MPPOPOOONOONNNNM",
+  "MPOPOOONOONNNNNM",
+  "MOOOONOONNNNNNNM",
+  ".MOONOONNNNNNNM.",
+  "..MMNNNNNNNNNM..",
+  "...MMMEHFEMMM...",
   "......EGFE......",
+  "......EHFE......",
   "......EGFE......",
-  ".....EGHFFE.....",
-  "....EGFEEFFE....",
-  "....EEE..EEE...."
+  ".....EHGFFE.....",
+  "....EEEEEEEE...."
  ],
  "pal": {
   "E": "#3f2415",
@@ -32,5 +32,26 @@
   "N": "#4b4f00",
   "O": "#647025",
   "P": "#898b4c"
+ },
+ "forra": {
+  "ritad": 1,
+  "rader": [
+   ".....MMMMMM.....",
+   "...MMPPOOOOMM...",
+   "..MPPOPOOOOOOM..",
+   ".MPPOPOOOONONOM.",
+   ".MPOPOOONOONNNM.",
+   "MPOOPOONOONONNNM",
+   "MOPOOONOONONNNNM",
+   "MOOOONOONONNNNNM",
+   ".MOONONNONNNNNM.",
+   ".MMONNNNNNNNNMM.",
+   "...MMMEGFEMMM...",
+   "......EGFE......",
+   "......EGFE......",
+   ".....EGHFFE.....",
+   "....EGFEEFFE....",
+   "....EEE..EEE...."
+  ]
  }
 }

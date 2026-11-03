@@ -1,26 +1,27 @@
 {
  "id": "sym_fett",
- "ritad": 1,
+ "ritad": 2,
  "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 1. Den fyller rutan bäst (16 bred, 15 hög), och den höga senapsgula klicken på ett jordbrunt fat läses tydligast som smör i liten storlek. Den har en hel kontur i senap0 och jord0, ljuset från övre vänster (senap3 och en glanspunkt i ben3 uppe till vänster, mörkare åt höger och nedåt) och få, stora former, precis som de korsade svärden. Version 2 har ben under fatet som gör det till en pall, och klicken blir för låg. Version 3 är nästan likadan men lägre och tyngre i nederdelen. Ändring: en ensam senap2-punkt i klickens nedersta, skuggade rad blev senap1, så att undersidan ligger jämnt mörk mot fatet.",
+ "om": "Jag valde version 2. Den är ett smörblock på ett fat, som emojin 🧈, och känns igen på en blick. Den ritas framifrån, fyller hela rutan på 16 × 16 och har få, stora former, precis som förebildens tydliga silhuett. Version 1 är en rund kulle som lika gärna kan läsas som bröd eller en hög säd. Version 3 ritas snett uppifrån, vilket beskrivningen inte vill ha, och är bara 13 punkter hög. Ljuset kommer från övre vänstra hörnet: ovansidan är senap3 och mörknar mot senap1 nere till höger. Glansen är en enda punkt ben2, och konturen är senap0 runt smöret och jord0 runt fatet. Jag ändrade två punkter i vänsterkanten (rad 10 och 11), där senap1 satt mot ljussidan, till senap2. Då hålls den vänstra sidan ljus och inga mörka fläckar hamnar på fel sida.",
  "w": 16,
- "h": 15,
+ "h": 16,
  "rader": [
-  ".......II.......",
-  "......ILKI......",
-  "....IILLKJII....",
-  "...ILLwLKKKJI...",
-  "..ILLLKKKKKJJI..",
-  "..ILLKKKJKKKJI..",
-  ".ILKKKKKKKJKJJI.",
-  ".ILKKJKKKKKJJJI.",
-  ".IKKKKKJKKKJKJI.",
+  "...IIIIIIIIII...",
+  "..ILLqLLLLLKKI..",
+  ".ILLLLLKLLKKKJI.",
+  ".IKKKKKKKKKKJJI.",
+  ".IKLKKKKKKJKJJI.",
+  ".IKKKKJKKKKJJJI.",
+  ".IKKKKKKJKJJJJI.",
   ".IKKJKKKKJKJJJI.",
+  ".IKKKKKJKKJJJJI.",
+  ".IKKKKKKJKJJJJI.",
+  ".IKKKJKKJJJJJII.",
   ".IIJJJJJJJJJIII.",
-  "EHHGHHGGGHGGGGFE",
-  "EGHGGGGFGGGGFGFE",
-  "EFGGFGGGGFGGFFFE",
-  ".EEEEEEEEEEEEEE."
+  "EHHHGGGGGGGGGGFE",
+  "EGHGGGFGGFGGFFFE",
+  ".EFGFFFFFFFFFFE.",
+  "..EEEEEEEEEEEE.."
  ],
  "pal": {
   "E": "#3f2415",
@@ -31,6 +32,26 @@
   "J": "#906f0f",
   "K": "#b2921b",
   "L": "#d8b25f",
-  "w": "#dad0bb"
+  "q": "#bdb39b"
+ },
+ "forra": {
+  "ritad": 1,
+  "rader": [
+   ".......II.......",
+   "......ILKI......",
+   "....IILLKJII....",
+   "...ILLwLKKKJI...",
+   "..ILLLKKKKKJJI..",
+   "..ILLKKKJKKKJI..",
+   ".ILKKKKKKKJKJJI.",
+   ".ILKKJKKKKKJJJI.",
+   ".IKKKKKJKKKJKJI.",
+   ".IKKJKKKKJKJJJI.",
+   ".IIJJJJJJJJJIII.",
+   "EHHGHHGGGHGGGGFE",
+   "EGHGGGGFGGGGFGFE",
+   "EFGGFGGGGFGGFFFE",
+   ".EEEEEEEEEEEEEE."
+  ]
  }
 }

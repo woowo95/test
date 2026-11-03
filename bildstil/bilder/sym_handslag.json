@@ -1,35 +1,51 @@
 {
  "id": "sym_handslag",
- "ritad": 1,
+ "ritad": 2,
  "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 3. Den är den enda som läses som ett handslag: två händer möts i mitten med en ärm från var sida, rost till vänster och oliv till höger. Version 1 och 2 ser ut som en enda knytnäve med ett föremål bredvid. Version 3 har samma tydliga silhuett och dämpade toner som de korsade svärden och en mörk kontur runt hela. Ljuset faller uppe till vänster på både händerna och ärmarna, och fingrarna skiljs åt av ben-tonerna utan små prickar. Den är 16 punkter bred, så den fyller rutan åt det hållet. Ändring: handen hade tre punkter glans i w, och regeln tillåter högst två. Jag bytte därför w på rad 4 mot q, så att glansen bara sitter på två punkter uppe till vänster.",
+ "om": "Jag valde version 3. Tummen som sticker upp över de knutna händerna gör att den läses som ett handslag och inte som en knytnäve. Den är också högst (16 × 11), så den fyller rutan bäst. Ärmarna i rost och skiffer visar tydligt att det är två personer. De är konturerade i materialets mörkaste ton, som svärdens metall och fästen i förebilden, och ljuset faller från vänster. Ändring: händerna hade fyra glanspunkter i ben2, och regeln tillåter högst en eller två. Jag behöll två, på tummens topp och på knogen uppe till vänster. De två andra bytte jag mot jord3 (H), så att handens hud stannar i två till tre jordtoner. Allt annat är oförändrat.",
  "w": 16,
- "h": 10,
+ "h": 11,
  "rader": [
-  "......EEEE......",
-  ".....EwqqpEEE...",
-  "rrrrEwqqqpqqEMMM",
-  "rutrqqqqpqqpMPOM",
-  "rtsrqqpqqpqpMONM",
-  "rtsrqoqpoqpoMONM",
-  "rtsrpoqpoqpoMONM",
-  "rssrpoppoppoMNNM",
-  "rrrrEpoooooEMMMM",
-  "....EEEEEEEE...."
+  "rrrr...EEE..QQQQ",
+  "ruts..EHqE..QTSQ",
+  "rutsEEHHGEEEQTSQ",
+  "rutsEqHHGHGGQTSQ",
+  "rutsEHEEEEEGQSRQ",
+  "rutsEHHHGGGFQSRQ",
+  "rutsEHEEEEEFQSRQ",
+  "rutsEHGGGGFFQSRQ",
+  "rutsEEFFFFFEQRRQ",
+  "rssr.EEEEEE.QRRQ",
+  "rrrr........QQQQ"
  ],
  "pal": {
   "E": "#3f2415",
-  "M": "#353204",
-  "N": "#4b4f00",
-  "O": "#647025",
-  "P": "#898b4c",
-  "o": "#7e7362",
-  "p": "#a0947d",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e",
   "q": "#bdb39b",
   "r": "#521100",
   "s": "#742a01",
   "t": "#a14808",
-  "u": "#bd753e",
-  "w": "#dad0bb"
+  "u": "#bd753e"
+ },
+ "forra": {
+  "ritad": 1,
+  "rader": [
+   "......EEEE......",
+   ".....EwqqpEEE...",
+   "rrrrEwqqqpqqEMMM",
+   "rutrqqqqpqqpMPOM",
+   "rtsrqqpqqpqpMONM",
+   "rtsrqoqpoqpoMONM",
+   "rtsrpoqpoqpoMONM",
+   "rssrpoppoppoMNNM",
+   "rrrrEpoooooEMMMM",
+   "....EEEEEEEE...."
+  ]
  }
 }

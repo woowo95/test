@@ -1,26 +1,26 @@
 {
  "id": "sym_ryggsack",
- "ritad": 1,
+ "ritad": 2,
  "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 3. Den fyller hela rutan (16 × 16), har en bärögla överst, ett lock med kant, ett spänne i senap och en framficka med remmar. Därför läses den som en ryggsäck (🎒) och inte som en kista. Version 1 ser ut som en låda med lås, och version 2 är en rund påse utan tydlig ficka. Formen och jordtonerna med en jord0-kontur och ljuset uppe till vänster passar förebilden med de korsade svärden, där bara metallen sticker ut i senap. Ändring: spännet hade en jordton (FF) mitt i mässingen, och glanspunkten L stod ensam. Jag ritade om det i senap (L K K J) så att det blir en sammanhängande mässingsform med glansen uppe till vänster. Resten behölls.",
+ "om": "Jag valde version 1. Den är den enda som läses som en ryggsäck på en blick. Den smala överdelen med lock, bärhandtaget överst och remmarna eller sidofickorna som sticker ut på båda sidor ger en tydlig ryggsäckssilhuett. Version 2 och 3 är lådformade, med raka sidor och en tvärgående fickkant, och ser mer ut som en portfölj eller väska. Version 1 fyller rutan, 16 × 16 punkter. Den har en sammanhängande kontur i jord0, som förebildens svärd har en mörk kontur, och tre trätoner (H, G, F) med ljuset uppe till vänster. Det enda mättade är senapsspännet, alltså det man ska se. Hålet i handtaget är genomskinligt, så bakgrunden syns igenom på både mörk och ljus panel. Jag hittade inget som bröt mot guiden, så punkterna är oförändrade.",
  "w": 16,
  "h": 16,
  "rader": [
   "......EEEE......",
   ".....EH..FE.....",
-  "..EEEEEEEEEEEE..",
-  ".EHHGHGGGGGGGFE.",
-  "EHGGGGHGGGGGGFFE",
-  "EHGHGGGGGGGGFGFE",
-  "EGGGGGGGGGGGGFFE",
-  "EGGGGIIIIIIGGFFE",
-  "EEEEEILKKJIEEEEE",
-  "EGFFFIKJJJIFFFFE",
-  "EGFFFIIIIIIFFFFE",
-  "EGFGFFEGFEFFGFFE",
-  "EGFFFFEGFEFFFFEE",
-  "EFFGFFEFFEFGFFEE",
-  ".EFFFFEEEEFFFFE.",
+  "...EEEEEEEEEE...",
+  "..EHHHGHGGGGFE..",
+  "..EHHGHGGGGGFE..",
+  "..EHGHGGGGGGFE..",
+  "..EHGGGGGGGFFE..",
+  "..EEEEILKIEEEE..",
+  "EEEGGGIJJIGFFEEE",
+  "EHEGHGGIIGGGFEFE",
+  "EGEGGHGGGGGGFEFE",
+  "EGEHGGGGGGGFFEFE",
+  "EGEGGGGGGGFGFEFE",
+  "EFEGGGGGGFGFFEFE",
+  "EEEGGGGGFGFFFEEE",
   "..EEEEEEEEEEEE.."
  ],
  "pal": {
@@ -32,5 +32,26 @@
   "J": "#906f0f",
   "K": "#b2921b",
   "L": "#d8b25f"
+ },
+ "forra": {
+  "ritad": 1,
+  "rader": [
+   "......EEEE......",
+   ".....EH..FE.....",
+   "..EEEEEEEEEEEE..",
+   ".EHHGHGGGGGGGFE.",
+   "EHGGGGHGGGGGGFFE",
+   "EHGHGGGGGGGGFGFE",
+   "EGGGGGGGGGGGGFFE",
+   "EGGGGIIIIIIGGFFE",
+   "EEEEEILKKJIEEEEE",
+   "EGFFFIKJJJIFFFFE",
+   "EGFFFIIIIIIFFFFE",
+   "EGFGFFEGFEFFGFFE",
+   "EGFFFFEGFEFFFFEE",
+   "EFFGFFEFFEFGFFEE",
+   ".EFFFFEEEEFFFFE.",
+   "..EEEEEEEEEEEE.."
+  ]
  }
 }

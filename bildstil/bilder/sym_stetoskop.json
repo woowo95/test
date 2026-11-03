@@ -1,27 +1,27 @@
 {
  "id": "sym_stetoskop",
- "ritad": 1,
+ "ritad": 2,
  "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 2. Den är den enda som läses som ett stetoskop på en blick: två hörlurar i skiffer som möts i en bygel, en U-formad slang i jord och ett stort, runt bröststycke. Version 1 och 3 har en rostfärgad Y-form med ett litet fyrkantigt bröststycke och ser ut som en slangbella eller ett rör. Version 2 hör också bäst ihop med förebilden: den har metall i skiffer som svärden, en sammanhållen kontur i materialens mörkaste toner (skiffer0 och jord0), få stora former och ljuset uppe till vänster med en enda glanspunkt (ben3) på bröststycket. Den fyller hela rutan, 16 × 16. Rost undviks, så de mättade tonerna sparas till annat. Jag har inte ändrat något: raderna håller måtten, paletten och konturen stämmer, och slangen har korn i två till tre toner utan fläckar.",
+ "om": "Jag valde version 1. Den har öronoliverna i trä, de två metallbågarna i skiffer som möts i ett tydligt Y, slangen i jord och bröststycket nere till höger. Den läses som ett stetoskop på en blick, både på mörk och ljus bakgrund. Den fyller rutan 16 × 16 och har kontur i materialens mörkaste toner, precis som förebilden med svärden. Version 2 har samma form men saknar öronoliverna, så toppen läses sämre. Version 3 med tjocka bruna armar ser mer ut som en stämgaffel eller ett U. Ändringen är liten: slangens nedre böj (rad 14) var en slät rad med samma ton. Jag gav den korn (G H G F) så att den är ljusare uppe till vänster och mörkare mot bröststycket. Glansen på bröststycket behölls som en enda punkt.",
  "w": 16,
  "h": 16,
  "rader": [
-  ".QQ....QQ.......",
-  "QTSQ..QTSQ......",
-  ".QTQ..QTQ.......",
-  ".QTQ..QTQ.......",
-  "..QTQQTQ..QQQQ..",
-  "...QTSQ..QTTTSQ.",
-  "...QSRQ.QTwTTSRQ",
-  "...EHFE.QTTTSSRQ",
-  "...EHFE.QTSSSRRQ",
-  "...EGFE.QSSSRRRQ",
-  "...EHFE..QSRRRQ.",
-  "...EHGE...QRRQ..",
-  "...EHFE...EHFE..",
-  "...EHGHEEEHGFE..",
-  "....EGHHHHGFFE..",
-  ".....EEEEEEEE..."
+  ".EE.......EE....",
+  "EHFE.....EHFE...",
+  ".QTSQ....QTSQ...",
+  ".QTSQ....QTSQ...",
+  ".QTSQ....QTSQ...",
+  "..QTSQ..QTSQ....",
+  "..QTSQ..QTSQ....",
+  "...QTSQQTSQ.....",
+  "....QTSTSQ......",
+  ".....QTSQ.......",
+  ".....EGFE..QQQQ.",
+  ".....EHFE.QTTSSQ",
+  ".....EGFEEQTwSRQ",
+  ".....EGHGFQSSRRQ",
+  ".....EFFFFQSRRRQ",
+  "......EEEE.QQQQ."
  ],
  "pal": {
   "E": "#3f2415",
@@ -33,5 +33,26 @@
   "S": "#61767a",
   "T": "#8a9c9e",
   "w": "#dad0bb"
+ },
+ "forra": {
+  "ritad": 1,
+  "rader": [
+   ".QQ....QQ.......",
+   "QTSQ..QTSQ......",
+   ".QTQ..QTQ.......",
+   ".QTQ..QTQ.......",
+   "..QTQQTQ..QQQQ..",
+   "...QTSQ..QTTTSQ.",
+   "...QSRQ.QTwTTSRQ",
+   "...EHFE.QTTTSSRQ",
+   "...EHFE.QTSSSRRQ",
+   "...EGFE.QSSSRRRQ",
+   "...EHFE..QSRRRQ.",
+   "...EHGE...QRRQ..",
+   "...EHFE...EHFE..",
+   "...EHGHEEEHGFE..",
+   "....EGHHHHGFFE..",
+   ".....EEEEEEEE..."
+  ]
  }
 }

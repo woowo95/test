@@ -1,26 +1,26 @@
 {
  "id": "sym_kors",
- "ritad": 1,
+ "ritad": 2,
  "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 3. Det är ett rent latinskt kors som ✝, med samma enkla silhuett och tydliga jord0-kontur som de korsade svärden. Den fyller 16 punkter på höjden och 14 på bredden och läses tydligast i liten storlek. Version 1 och 2 har grästuva respektive sockel. Det ger en gravsten som är plottrigare och svagare som ✝, och gräset blandar in oliv som inte behövs. Min enda ändring gäller den övre kanten på armen, rad 5. De ljusa H-punkterna samlas nu åt vänster och tonen faller jämnt mot höger, så att ljuset kommer uppifrån vänster och den lösa ljusa fläcken till höger om mitten försvinner.",
+ "om": "Jag valde version 1. Den är ett rent latinskt kors som ✝ och syns direkt. Den är 16 punkter hög och 14 bred, och stammen och armarna är symmetriska kring samma mittlinje. Tvärslån sitter i övre tredjedelen, och armarna är kortare än den nedre stammen. Konturen är jord0 runt hela. Det brungrå träet i jord1–jord3 har ljuset uppe till vänster, precis som de korsade svärden, och ger få, stora former som läses bra i liten storlek.\n\nVersion 2 fyller visserligen alla 16 punkter, men armarna blir långa och smala och korset ser mer brett än ✝-likt ut. Version 3 har en sockel som gör den till en gravsten. Den är också osymmetrisk, eftersom stammen och sockeln inte delar mittlinje, och den liknar emojin sämre.\n\nÄndring: på armens översta ljusa rad (rad 5) bytte jag det ljusa H i stammens högra halva mot G. Nu blir stammens högra sida inte ljusare än den vänstra, och ljusriktningen håller genom korsningen.",
  "w": 14,
  "h": 16,
  "rader": [
   "....EEEEEE....",
+  "....EHHGFE....",
   "....EHGGFE....",
-  "....EHGFFE....",
   "EEEEEHGGFEEEEE",
-  "EHHHHHHGGHGGGE",
-  "EHGGHGGGFGGGFE",
-  "EGFGFFGFFFGFFE",
-  "EEEEEHGFFEEEEE",
-  "....EHGFFE....",
+  "EHHHGHGGGGGGFE",
+  "EHGGGGGFGGGFFE",
+  "EGFGFFGFFFFFFE",
+  "EEEEEHGGFEEEEE",
   "....EHGGFE....",
-  "....EGHGFE....",
   "....EHGFFE....",
+  "....EGGGFE....",
   "....EHGGFE....",
+  "....EHGFFE....",
   "....EGGFFE....",
-  "....EHGFFE....",
+  "....EGFFFE....",
   "....EEEEEE...."
  ],
  "pal": {
@@ -28,5 +28,26 @@
   "F": "#5e3c24",
   "G": "#7d5b40",
   "H": "#987e62"
+ },
+ "forra": {
+  "ritad": 1,
+  "rader": [
+   "....EEEEEE....",
+   "....EHGGFE....",
+   "....EHGFFE....",
+   "EEEEEHGGFEEEEE",
+   "EHHHHHHGGHGGGE",
+   "EHGGHGGGFGGGFE",
+   "EGFGFFGFFFGFFE",
+   "EEEEEHGFFEEEEE",
+   "....EHGFFE....",
+   "....EHGGFE....",
+   "....EGHGFE....",
+   "....EHGFFE....",
+   "....EHGGFE....",
+   "....EGGFFE....",
+   "....EHGFFE....",
+   "....EEEEEE...."
+  ]
  }
 }

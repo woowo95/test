@@ -1,27 +1,27 @@
 {
  "id": "sym_ben_knota",
- "ritad": 1,
+ "ritad": 2,
  "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 3. Den har en tydlig knota med två knölar i varje ände och läses direkt som 🦴 även i liten storlek. Version 1 är för smal och knölarna syns knappt. Version 2 är klumpig och ser mer ut som en påle. Version 3 har samma tunna kol0-kontur och diagonala hållning som de korsade svärden i förebilden, så den hör bäst ihop med dem. Den fyller 16 × 16 punkter. Benet har tre toner (q, p, o), ljusast uppe till vänster och mörkast nere till höger, och glansen w är bara en punkt i varje knöl. Jag ändrade en sak: på rad 12 låg en mörk o-punkt på den belysta vänstra sidan av den nedre knölen. Den blev en ljus q-punkt, så att ljuset från övre vänstra hörnet stämmer och det inte blir någon mörk fläck.",
+ "om": "Jag valde version 2. Den ligger diagonalt som 🦴 och fyller 16 × 16 punkter. Benet syns tydligt som två delar med en sned glipa, alltså ett brott. Knotorna är runda och stora, så den läses bättre i liten storlek än version 1, där bitarna är tunnare. Version 3 är bara 10 punkter hög och liknar mer två lösa knotor än ett brutet ben. Ljuset faller rätt: ben2 och ben3 uppe till vänster och ben0 nere till höger. Det finns bara två glanspunkter, och tonerna håller sig dämpade som i förebilden. Det jag ändrade var konturen, från jord0 till kol0. Jord0 hör till trä, inte ben, och benets mörkaste ton ben0 är för ljus för en kontur. Med kol0 får symbolen samma mörka kontur som de korsade svärden och syns både på mörk och ljus bakgrund.",
  "w": 16,
  "h": 16,
  "rader": [
-  ".........kk.....",
-  "........kwqk....",
-  ".......kqqqpk...",
-  ".......kqqppkk..",
-  "........kqqpqqk.",
-  "........kqpqqppk",
-  ".......kqpopppok",
-  "..kk..kqpokkpok.",
-  ".kwqkkqpok..kk..",
-  "kqqpqqpok.......",
-  "kqpqppok........",
-  ".kqpqpok........",
-  "..kkqqpok.......",
-  "...kpppok.......",
-  "....kook........",
-  ".....kk........."
+  "..........kkk...",
+  ".........kwqqk..",
+  ".........kqqpkkk",
+  "........kqqqpwqk",
+  ".........kqqpqpk",
+  "........kqppook.",
+  ".......kqqpkkk..",
+  "......k.kpk.....",
+  ".....kqk.k......",
+  "..kkkqqpk.......",
+  ".kqqqqpk........",
+  "kqqpqpk.........",
+  "kqpqqqpk........",
+  "kkkqppk.........",
+  "..kppok.........",
+  "...kkk.........."
  ],
  "pal": {
   "k": "#24201d",
@@ -29,5 +29,26 @@
   "p": "#a0947d",
   "q": "#bdb39b",
   "w": "#dad0bb"
+ },
+ "forra": {
+  "ritad": 1,
+  "rader": [
+   ".........kk.....",
+   "........kwqk....",
+   ".......kqqqpk...",
+   ".......kqqppkk..",
+   "........kqqpqqk.",
+   "........kqpqqppk",
+   ".......kqpopppok",
+   "..kk..kqpokkpok.",
+   ".kwqkkqpok..kk..",
+   "kqqpqqpok.......",
+   "kqpqppok........",
+   ".kqpqpok........",
+   "..kkqqpok.......",
+   "...kpppok.......",
+   "....kook........",
+   ".....kk........."
+  ]
  }
 }

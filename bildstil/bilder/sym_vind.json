@@ -1,26 +1,26 @@
 {
  "id": "sym_vind",
- "ritad": 1,
+ "ritad": 2,
  "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 3. Den har en tydlig ögla i övre högra hörnet och tre förskjutna streck, och det är den form som gör att 💨 känns igen som vindpust även i liten storlek. Version 1 är för klumpig och läses mer som rör eller en skiftnyckel. Version 2 har en svag krök som nästan försvinner, så den blir bara streck. Version 3 håller sig till skiffertonerna med skiffer0 som kontur, i samma sätt som svärdens metall i förebilden. Ljuset kommer uppifrån vänster: T överst och S och R underst i varje streck, och glansen är en enda w-punkt. Silhuetten är också läsbar på både mörk och ljus bakgrund. Jag ändrade ingenting. Bilden är 16 punkter bred och 15 hög, vilket räcker för att fylla rutan, och färgerna och konturen stämmer med guiden.",
+ "om": "Jag valde version 3. Den liknar 💨 mest: två tydliga vindstrimmor med rundade krokar i ändarna, en uppåt och en nedåt. Silhuetten är enkel och läses direkt i liten storlek. Version 1 har kantiga, rektangulära krokar och ser mer ut som rör än vind. Version 2 har tre strimmor och blir plottrig och ojämn när den är liten. Version 3 hör också bäst ihop med förebilden, med samma skiffertoner, skifferkontur (skiffer0) och ljus uppe till vänster: den ljusa överkanten är skiffer3, underkanten skiffer2 och kroken nere till höger mörkast. Den är 16 punkter bred och 15 hög och fyller alltså rutan. Ändring: två ensamma mörka prickar av skiffer1 mitt i de skuggade underkanterna var fläckar. Jag bytte dem mot skiffer2 och lade in en punkt skiffer3 som korn, så att ytan inte blir slät. Skiffer1 finns kvar i den mörkaste kroken nere till höger. De två glanspunkterna av ben3 behölls, eftersom regeln tillåter högst två och tonen inte är ren vit.",
  "w": 16,
  "h": 15,
  "rader": [
-  ".........QQQQQ..",
-  "........QTTTTSQ.",
-  "........QTQQQTSQ",
-  ".QQQQQQQQQQ.QTSQ",
-  "QwTTTTTTTSTTTTSQ",
-  "QSSSSSSSSSRSRSQ.",
+  "..........QQQQ..",
+  ".........QTTTSQ.",
+  ".........QTQ.QSQ",
+  "...QQQQQQQQQQQSQ",
+  "..QTwTTSTTTTTTSQ",
+  "..QSSTSSSSTSSSQ.",
+  "...QQQQQQQQQQQ..",
+  "................",
   ".QQQQQQQQQQQQQ..",
-  ".....QQQQQQQQ...",
-  "....QTTTTTSTTQ..",
-  "....QSSSSSSRSQ..",
-  ".....QQQQQQQQ...",
-  ".QQQQQQQQQQ.....",
-  "QTTTTTTSTTTQ....",
-  "QSSSSSSSSRSQ....",
-  ".QQQQQQQQQQ....."
+  "QTwTTTTSTTTTTTQ.",
+  "QSSTSSSSSTSSSSSQ",
+  ".QQQQQQQQQQQQQSQ",
+  ".........QSQ.QSQ",
+  ".........QSSSRQ.",
+  "..........QQQQ.."
  ],
  "pal": {
   "Q": "#233035",
@@ -28,5 +28,25 @@
   "S": "#61767a",
   "T": "#8a9c9e",
   "w": "#dad0bb"
+ },
+ "forra": {
+  "ritad": 1,
+  "rader": [
+   ".........QQQQQ..",
+   "........QTTTTSQ.",
+   "........QTQQQTSQ",
+   ".QQQQQQQQQQ.QTSQ",
+   "QwTTTTTTTSTTTTSQ",
+   "QSSSSSSSSSRSRSQ.",
+   ".QQQQQQQQQQQQQ..",
+   ".....QQQQQQQQ...",
+   "....QTTTTTSTTQ..",
+   "....QSSSSSSRSQ..",
+   ".....QQQQQQQQ...",
+   ".QQQQQQQQQQ.....",
+   "QTTTTTTSTTTQ....",
+   "QSSSSSSSSRSQ....",
+   ".QQQQQQQQQQ....."
+  ]
  }
 }

@@ -1,29 +1,53 @@
 {
  "id": "sym_kryp",
- "ritad": 1,
+ "ritad": 2,
  "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 1. Den ligger närmast förebilden med en tydlig, kompakt silhuett och fyller hela bredden (16 punkter). Kroppen har tre rundade segment och ett lite högre huvud med antenner och ett kolsvart öga, så larven läses som 🐛 på en blick. Ljuset faller uppifrån vänster (oliv3 överst till vänster på varje segment, oliv1 nedåt höger) och konturen är oliv0 runt hela. Benen syns tydligt både på mörk och ljus bakgrund. Version 2 är nästan likvärdig, men ögat sitter tätt mot kanten och kroppen blir lägre. I version 3 är huvudet en smal pelare och segmenten åtskilda av hela mörka linjer, så den blir kantig och mindre larvlik. Ingen ändring behövdes: alla rader är högst 16 tecken och bara tecken ur paletten används.",
+ "om": "Jag valde version 3. Den gröna tunikan, det ljusa ansiktet och händerna mot marken gör att den läses som en människa på alla fyra, även i liten storlek. Version 1 ser mer ut som ett brunt djur. I version 2 blir det orange huvudet och den olivgröna benklumpen otydliga, och figuren liknar snarast en snigel. Version 3 har kontur i materialens mörkaste toner, oliv0 runt tunikan och jord0 runt ben och huvud. Ljuset faller uppe till vänster och de mättade tonerna är sparade. Den är 16 punkter bred och fyller därmed rutan åt ett håll. Jag ändrade bara en sak: i rad 7 bröt jag upp den mörka olivbandet i tunikans underkant med en oliv2-punkt, så att det inte blir en slät mörk fläck. Resten behölls som det var.",
  "w": 16,
- "h": 12,
+ "h": 13,
  "rader": [
-  "...........M...M",
-  "............M.M.",
-  "...........MMMM.",
-  "..........MPPOOM",
-  "..........MPkONM",
-  ".MMM.MMM.MMPOONM",
-  "MPPOMPPOMPOOONNM",
-  "MPOONPOONOOONNM.",
-  "MOONNOONNONNNNM.",
-  "MONNMONNMNNNNM..",
-  ".MMMMMMMMMMMMM..",
-  "..M.M..M.M..M..."
+  "............EEE.",
+  "...........EGGFE",
+  "....MMMMMM.EGFqE",
+  "...MPPPOPOMEFqkE",
+  "..MPPOPOOOOEqpqE",
+  "..MPOOONOONEppE.",
+  "..MOONONOONMEE..",
+  "..MNNOMNNNNM....",
+  "..EGFE.MNMPNM...",
+  ".EGGFE.EoEEqpE..",
+  "EGGFFE.EoEEqpE..",
+  "EFFFFE.EooEqppE.",
+  "EEEEEE.EEEEEEEE."
  ],
  "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
   "M": "#353204",
   "N": "#4b4f00",
   "O": "#647025",
   "P": "#898b4c",
-  "k": "#24201d"
+  "k": "#24201d",
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "q": "#bdb39b"
+ },
+ "forra": {
+  "ritad": 1,
+  "rader": [
+   "...........M...M",
+   "............M.M.",
+   "...........MMMM.",
+   "..........MPPOOM",
+   "..........MPkONM",
+   ".MMM.MMM.MMPOONM",
+   "MPPOMPPOMPOOONNM",
+   "MPOONPOONOOONNM.",
+   "MOONNOONNONNNNM.",
+   "MONNMONNMNNNNM..",
+   ".MMMMMMMMMMMMM..",
+   "..M.M..M.M..M..."
+  ]
  }
 }

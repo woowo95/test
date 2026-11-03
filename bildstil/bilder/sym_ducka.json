@@ -1,32 +1,52 @@
 {
  "id": "sym_ducka",
- "ritad": 1,
+ "ritad": 2,
  "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 2. Den är den enda som läses som en öppen virvel likt 🌀: ett band som löper runt och slutar i mitten. Version 1 ser ut som ett mynt med en präglad slinga, och version 3 är så kantig att den liknar en labyrint. Version 2 har samma skiffertoner, skifferkontur och ljus från övre vänstra hörnet som svärden i förebilden. Den fyller rutan med 16 punkters bredd och 15 punkters höjd. Jag ändrade två saker. De två ensamma genomskinliga punkterna i rad 5, mellan det yttre och det inre bandet, är fyllda med skiffer0, så att inga ljusa prickar syns igenom på ljus bakgrund. Det yttre bandets vänstra sida i rad 9 och 11 är jämnad till T/S, så att den ljusa sidan hänger ihop. Den genomskinliga kanalen nere till höger, virvelns öppning, är kvar.",
+ "om": "Jag valde version 3. Den är den enda som läses som en virvel (🌀). Bandet går i ett stycke från kroken i mitten, ner och åt höger, upp längs högerkanten, över toppen, ner längs vänsterkanten och ut i en svans längst ner. Version 1 och 2 läses som ett fyrkantigt G eller en meanderslinga och påminner mer om en grekisk bård än om att ducka. Den rundade silhuetten med avfasade hörn passar också förebildens få, stora former. Version 3 har samma stilmedel som förebilden: kontur i skiffer0, ljus från övre vänstra hörnet med skiffer3 uppe till vänster och skiffer1 nere till höger, och bara en glanspunkt (ben3) i toppen. Den är 16 punkter bred och 15 hög och fyller alltså rutan. Ändring: i rad 7 fanns tre genomskinliga hål mitt i virveln (två intill varandra och ett till). Där syntes bakgrunden som lösa prickar, som blev grällt ljusa på ljus bakgrund. Jag fyllde dem med skiffer0, så att mellanrummen mellan varven är mörk kontur som på resten av symbolen och kroken i mitten står tydligt.",
  "w": 16,
  "h": 15,
  "rader": [
   "....QQQQQQQQ....",
-  "..QQTqTTSTSSQQ..",
-  ".QTTSTSSSTSSSRQ.",
-  ".QTSQQQQQQQQSRQ.",
+  "..QQTTwTTTSSQQ..",
+  ".QTTSSSSSSSSRRQ.",
   "QTSQQQQQQQQQQSRQ",
-  "QTSQQTTSTSRQQSRQ",
-  "QTTQQTSSSRRQQSRQ",
-  "QTSQQTSQQSRQQSRQ",
-  "QTSQQTSQQSRQQRRQ",
-  "QTSQQSSQ.QQ.QSRQ",
-  "QSSQQTSQ....QSRQ",
-  ".QQQQTSQQQQQQSRQ",
-  "....QTSSTSSSSRRQ",
-  "....QSRSRRRRRRQ.",
-  ".....QQQQQQQQQ.."
+  "QTSQTTTTSSSQQSRQ",
+  "QTTQTSSSSSRQQSRQ",
+  "QTSQTSQQQSRQQSRQ",
+  "QTSQTSQQQQQQQSRQ",
+  "QTTQTSQQQQQQQSRQ",
+  "QTSQTSSSSSSSSRRQ",
+  "QTSQSSSRSRSRRQQ.",
+  "QTSSQQQQQQQQQQ..",
+  ".QSSTSSSSSSRSRQ.",
+  "..QSRSRRSRRRRQ..",
+  "...QQQQQQQQQQ..."
  ],
  "pal": {
   "Q": "#233035",
   "R": "#3e5156",
   "S": "#61767a",
   "T": "#8a9c9e",
-  "q": "#bdb39b"
+  "w": "#dad0bb"
+ },
+ "forra": {
+  "ritad": 1,
+  "rader": [
+   "....QQQQQQQQ....",
+   "..QQTqTTSTSSQQ..",
+   ".QTTSTSSSTSSSRQ.",
+   ".QTSQQQQQQQQSRQ.",
+   "QTSQQQQQQQQQQSRQ",
+   "QTSQQTTSTSRQQSRQ",
+   "QTTQQTSSSRRQQSRQ",
+   "QTSQQTSQQSRQQSRQ",
+   "QTSQQTSQQSRQQRRQ",
+   "QTSQQSSQ.QQ.QSRQ",
+   "QSSQQTSQ....QSRQ",
+   ".QQQQTSQQQQQQSRQ",
+   "....QTSSTSSSSRRQ",
+   "....QSRSRRRRRRQ.",
+   ".....QQQQQQQQQ.."
+  ]
  }
 }

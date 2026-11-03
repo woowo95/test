@@ -1,32 +1,52 @@
 {
- "id": "sym_pil_ned",
- "ritad": 1,
- "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "",
- "w": 16,
- "h": 16,
- "rader": [
-  "rrrr............",
-  "rutsr...........",
-  ".rutsr..........",
-  "..rutsr.........",
-  "...ruusr.......r",
-  "....rutsr.....rr",
-  ".....rtusr...rur",
-  "......rutsr.rutr",
-  ".......rutttutsr",
-  "........rututtsr",
-  ".........rutttsr",
-  "........ruttttsr",
-  ".......ruttttssr",
-  "......ruttttsssr",
-  ".....ruttssssssr",
-  "....rrrrrrrrrrrr"
- ],
- "pal": {
-  "r": "#521100",
-  "s": "#742a01",
-  "t": "#a14808",
-  "u": "#bd753e"
- }
+  "id": "sym_pil_ned",
+  "ritad": 3,
+  "av": "Claude",
+  "om": "Claude: en enkel pil rakt ner, bara spetsen, utan skaft (Björn: inte diagonal).",
+  "w": 15,
+  "h": 9,
+  "rader": [
+    "...............",
+    "rrrrrrrrrrrrrrr",
+    ".rttttttuuuuur.",
+    "..rtttttssssr..",
+    "...rttttsssr...",
+    "....rtttssr....",
+    ".....rttsr.....",
+    "......rtr......",
+    ".......r......."
+  ],
+  "pal": {
+    "r": "#521100",
+    "t": "#a14808",
+    "u": "#bd753e",
+    "s": "#742a01"
+  },
+  "forra": {
+    "ritad": 2,
+    "rader": [
+      "rrr.............",
+      "rutr............",
+      "rttsr...........",
+      ".rutsr..........",
+      "..rttsr.........",
+      "...rutsr.......r",
+      "....rttsr.....rr",
+      ".....rutsr...rtr",
+      "......rttsr.rtsr",
+      ".......ruttrttsr",
+      "........rutttssr",
+      ".........rttstsr",
+      "........rttstssr",
+      ".......rtttstssr",
+      "......rttstssssr",
+      ".....rrrrrrrrrrr"
+    ],
+    "pal": {
+      "r": "#521100",
+      "s": "#742a01",
+      "t": "#a14808",
+      "u": "#bd753e"
+    }
+  }
 }

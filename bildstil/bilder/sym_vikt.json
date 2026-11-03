@@ -1,0 +1,36 @@
+{
+ "id": "sym_vikt",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 2. Den har en kettlebellform med rundade axlar och en bred, tung botten, och den läses snabbast som en vikt. Version 1 är för kantig och ser ut som ett hänglås eller en väska. Version 3 har en knut i halsen och ser ut som en pung eller säck. Version 2 följer förebildens stil: få och stora former, en mörk kontur runt hela (skiffer0 runt stenen, jord0 runt rephandtaget) och ljus uppe till vänster (skiffer3) som mörknar mot nedre högra hörnet (skiffer1). Handtaget i jordtoner har en tydlig öppning och sitter fast på en krage ovanpå stenen, och det syns på både mörk och ljus bakgrund. Bilden är 16 × 16 och fyller rutan, och allt runt symbolen är genomskinligt. Jag ändrade ingenting. Den saknar vit glans (version 1 hade en punkt ben3), vilket stämmer med regeln om dämpad sten, och kornet är jämnt utan ensamma mörka prickar.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  ".....EEEEEE.....",
+  "....EHGHGGFE....",
+  "...EHGEEEEGFE...",
+  "...EGE....EFE...",
+  "...EHE....EFE...",
+  "....EHGGGGFE....",
+  "..QQEGFFFFFEQQ..",
+  ".QTTTSTSSSSSSRQ.",
+  ".QTTSTSSSSSRSRQ.",
+  "QTTSTSSSSRSSRRRQ",
+  "QTSTSSSSSRSRSRRQ",
+  "QTSSSSSRSSRSRRRQ",
+  "QSTSSSRSSRSRRRRQ",
+  "QSSSRSSRSRRRRRRQ",
+  ".QSSSRSRRRRRRRQ.",
+  "..QQQQQQQQQQQQ.."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e"
+ }
+}

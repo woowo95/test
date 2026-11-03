@@ -1,27 +1,27 @@
 {
  "id": "sym_nal",
- "ritad": 1,
+ "ritad": 2,
  "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 1. Det stora runda rosthuvudet och den raka nålen ger en tydlig silhuett som läses direkt som 📍, även i liten storlek i loggen. Symbolen fyller rutan på höjden (16 punkter) och har en tyngd som liknar de korsade svärden. Version 2 och 3 lutar som emojin, men huvudet blir litet och den tunna diagonala nålen blir rörig i spelets storlek. Ljuset stämmer redan: glansen (en punkt ben3) och rost3 sitter uppe till vänster, och rost1 ligger nere till höger. Konturen är rost0 runt huvudet och skiffer0 runt nålen. Den enda ändringen är att nålen mörknar till skiffer2 närmast spetsen, så att den känns spetsig och följer ljuset nedåt.",
- "w": 14,
+ "om": "Jag valde version 1. Den fyller hela rutan på 16 × 16 punkter, precis som de korsade svärden. Det stora, runda rosthuvudet ger nålen en tydlig silhuett som läses direkt som 📍 både i panelen och i textraderna. Ljuset faller uppe till vänster, med en enda glanspunkt i ben3, och skuggan ligger nere till höger. Konturen är rost0 runt huvudet och skiffer0 runt nålen. Skaftet är tre punkter brett med skiffer3 som ljus kant och syns därför på både mörk och ljus bakgrund. Version 2 har ett för litet och smalt huvud och blir otydlig i liten storlek. Version 3 är nästan likadan men något mindre och mer obalanserad. Jag ändrade bara en sak: en ensam mörkare prick (rost1 inne i rost2) på rad 7 mot huvudets högerkant. Nu går skuggan jämnt utan en enskild fläck.",
+ "w": 16,
  "h": 16,
  "rader": [
-  "....rrrrrr....",
-  "..rrtuutttrr..",
-  ".rtuuuttttssr.",
-  "rtuwuttttttssr",
-  "rtuuttttttsssr",
-  "rtttttttsssssr",
-  "rttttttssssssr",
-  ".rtttttsssssr.",
-  "..rrssssssrr..",
-  "....rrrrrr....",
-  ".....QTSQ.....",
-  ".....QTSQ.....",
-  ".....QTSQ.....",
-  ".....QTSQ.....",
-  ".....QSSQ.....",
-  "......QQ......"
+  "........rrrr....",
+  "......rtuuttsr..",
+  ".....rtuwuttssr.",
+  "....rtuuttttsssr",
+  "....rtutttttsssr",
+  "....rttttttssssr",
+  "....rtttttsssssr",
+  ".....rsttsssssr.",
+  ".....Qrssssssr..",
+  "....QTSQrrrr....",
+  "...QTSQ.........",
+  "..QTSQ..........",
+  ".QTSQ...........",
+  "QTSQ............",
+  "QSQ.............",
+  ".Q.............."
  ],
  "pal": {
   "Q": "#233035",
@@ -32,5 +32,26 @@
   "t": "#a14808",
   "u": "#bd753e",
   "w": "#dad0bb"
+ },
+ "forra": {
+  "ritad": 1,
+  "rader": [
+   "....rrrrrr....",
+   "..rrtuutttrr..",
+   ".rtuuuttttssr.",
+   "rtuwuttttttssr",
+   "rtuuttttttsssr",
+   "rtttttttsssssr",
+   "rttttttssssssr",
+   ".rtttttsssssr.",
+   "..rrssssssrr..",
+   "....rrrrrr....",
+   ".....QTSQ.....",
+   ".....QTSQ.....",
+   ".....QTSQ.....",
+   ".....QTSQ.....",
+   ".....QSSQ.....",
+   "......QQ......"
+  ]
  }
 }

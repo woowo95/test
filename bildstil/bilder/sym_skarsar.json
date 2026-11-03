@@ -1,0 +1,32 @@
+{
+ "id": "sym_skarsar",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den har det rakaste och tydligaste diagonala snittet, fyller rutan som de korsade svärden och följer ljuset med rost3 och rost2 uppe till vänster och rost1 nere till höger, inom en rost0-kontur. Version 2 och 3 läses mer som käppar eller grenar än som ett sår. Men även i version 1 såg den utstickande grenen vid raderna 8–11 ut som en kvist, och dropparna hängde inte ihop med snittet. Därför ändrade jag tre saker. Grenen är borta, så att snittet blir ett enda rakt band som är smalt i ändarna och bredare i mitten, som ett skärsår. I stället rinner en droppe ut från snittets underkant och sväller till en rund droppe. En fallande droppe står fristående under bladets nedre ände, utan ensamma prickar. Snittet går nu från hörn till hörn (16 × 16) och har få, stora former, så det läses som 🔪-skada på en blick, på både mörk och ljus bakgrund.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "..............rr",
+  ".............rur",
+  "............rtsr",
+  "...........rtsr.",
+  "..........rutsr.",
+  ".........rutsr..",
+  "........rutssr..",
+  ".......rutssr...",
+  "......rttssr....",
+  ".....rutsrsr....",
+  "....rtsr.rsr....",
+  "...rtsr..rtsr...",
+  "..rtsr...rssr...",
+  ".rsr......rr....",
+  "rr...r..........",
+  "....rtr........."
+ ],
+ "pal": {
+  "r": "#521100",
+  "s": "#742a01",
+  "t": "#a14808",
+  "u": "#bd753e"
+ }
+}

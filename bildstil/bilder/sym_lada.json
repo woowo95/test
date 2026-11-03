@@ -1,27 +1,27 @@
 {
  "id": "sym_lada",
- "ritad": 1,
+ "ritad": 2,
  "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 1. Den läses tydligast som en kista eller ett förråd. Den har ett eget lock med en mörk fog och ett guldlås mitt på, och därför känns den igen som 📦 på en blick. Den fyller 16 × 16 punkter, har en jord0-kontur runt hela och består av få, stora former, precis som de korsade svärden. Med sina mellantoner av trä och de dämpade skifferbanden hör den också ihop med förebilden. Version 2 och 3 har banden mitt på framsidan, och då flyter de ihop med låset och ser ut som en dörr. Version 3 är dessutom bara 15 rader hög. Ljuset kommer uppifrån vänster: glanspunkten (skiffer3) sitter överst på det vänstra bandet, och det högra bandet och höger kant är mörkare. Låset i senap är den enda mättade färgen, och den hör till det man kan ta. Jag ändrade bara den nedersta brädraden, så att kornet följer ljuset och blir mörkare åt höger utan att det bildas en fläck.",
+ "om": "Jag valde version 3. Den har två tydliga järnband och ett mässingslås på lockets fog, och det läses direkt som en låda eller kista även i liten storlek, både på mörk och ljus bakgrund. Den hör ihop med förebilden: svärdens skiffergrå metall och senapsgula detaljer kommer igen i banden och låset, och konturen är materialets mörkaste ton (jord0 runt träet, skiffer0 där banden möter kanten). Ljuset stämmer: banden är ljusa till vänster (skiffer2 och skiffer3) och mörka till höger (skiffer1), låset har sin glans uppe till vänster, och träet mörknar mot nedre högra hörnet. Version 1 blev en platt brun ruta med bara ett tunt band och läses sämre. Version 2 har för många små fält och plankfogar och blir rörig i spelets storlek. Jag behövde inte ändra något: alla rader är 16 tecken, bara paletten används, de avrundade hörnen är genomskinliga, och kol0 finns bara i nyckelhålet, som verkligen är svart.",
  "w": 16,
  "h": 16,
  "rader": [
-  ".EEEEEEEEEEEEEE.",
-  "EHHHGHHGHHHGHGGE",
-  "EHGGHGGGGHGGGGFE",
-  "EGGGGFGGGGGFGGFE",
-  "EEEEEEIIIIEEEEEE",
-  "ETSHGGILKIGHGRQE",
-  "ESRGGHIKJIGGGRQE",
-  "ESRGGGIIIIGGFRQE",
-  "ESRFFFFFFFFFFRQE",
-  "ESRHGGHGGGHGGRQE",
-  "ESRGGHGGGGGGFRQE",
-  "ESRGGGGFGGGGFRQE",
-  "ESRFFFFFFFFFFRQE",
-  "ESRGHGGGGHGGFRQE",
-  "ESRGGFGGGFGFFRQE",
-  ".EEEEEEEEEEEEEE."
+  ".EEQQEEEEEEQQEE.",
+  "EHHTRHGGHGGSRGFE",
+  "EHGSRGGHGGFSRGFE",
+  "EGGSRGFGGFGSRFFE",
+  "EEEQQEILKIEQQEEE",
+  "EHGSRGIKJIGSRGFE",
+  "EGGSRGIkJIFSRFFE",
+  "EGHSRGGIIGGSRGFE",
+  "EFFSRFFFFFFSRFFE",
+  "EHGSRGHGGHGSRGFE",
+  "EGGSRGGHGGFSRGFE",
+  "EGFSRGGGFGGSRFFE",
+  "EFFSRFFFFFFSRFFE",
+  "EGGSRGHGGGFSRFFE",
+  "EGFSRGGFGFFSRFFE",
+  ".EEQQEEEEEEQQEE."
  ],
  "pal": {
   "E": "#3f2415",
@@ -35,6 +35,28 @@
   "Q": "#233035",
   "R": "#3e5156",
   "S": "#61767a",
-  "T": "#8a9c9e"
+  "T": "#8a9c9e",
+  "k": "#24201d"
+ },
+ "forra": {
+  "ritad": 1,
+  "rader": [
+   ".EEEEEEEEEEEEEE.",
+   "EHHHGHHGHHHGHGGE",
+   "EHGGHGGGGHGGGGFE",
+   "EGGGGFGGGGGFGGFE",
+   "EEEEEEIIIIEEEEEE",
+   "ETSHGGILKIGHGRQE",
+   "ESRGGHIKJIGGGRQE",
+   "ESRGGGIIIIGGFRQE",
+   "ESRFFFFFFFFFFRQE",
+   "ESRHGGHGGGHGGRQE",
+   "ESRGGHGGGGGGFRQE",
+   "ESRGGGGFGGGGFRQE",
+   "ESRFFFFFFFFFFRQE",
+   "ESRGHGGGGHGGFRQE",
+   "ESRGGFGGGFGFFRQE",
+   ".EEEEEEEEEEEEEE."
+  ]
  }
 }

@@ -1,33 +1,54 @@
 {
  "id": "sym_regn",
- "ritad": 1,
+ "ritad": 2,
  "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 3. Den fyller hela rutan, 16 × 16 punkter, och har ett tydligt moln med två pucklar. De fyra sneda, förskjutna dropparna läses som regn även i liten storlek. Ljuset faller uppifrån vänster: skiffer3 och en enda glanspunkt i ben3 sitter uppe till vänster, och skiffer1 ligger nere till höger. Konturen är skiffer0 runt hela symbolen, precis som de mörka konturerna på förebildens svärd. Version 1 har för få droppar och når inte 16 rader, och i version 2 sitter dropparna för tätt mot molnets kant. Jag rättade ett fel på näst sista raden. Där var de två nedre dropparna förskjutna en punkt åt höger, så de kom isär från sina toppar och slutpunkter. Nu står de raka igen, med samma rad som i originalet: \"....QSQ.....QSQ.\".",
+ "om": "Jag valde version 2. Den fyller hela rutan på 16 × 16, och molnet har samma tydliga silhuett med skifferkontur som svärden i förebilden. De fem dropparna i två förskjutna rader gör att den läses som regn på en blick, både på mörk och ljus bakgrund. Version 1 har bara tre droppar och ser gles ut i liten storlek. I version 3 saknar regnstrecken kontur, vilket bryter mot regeln om mörk kontur runt hela symbolen. Ljuset faller rätt: skiffer3 uppe till vänster, skiffer1 nere till höger, och glansen är en enda punkt ben2. Jag ändrade bara molnets nedersta rad, där skiffer1 låg helt slätt. Nu bryts den av två punkter skiffer2 så att ytan får korn.",
  "w": 16,
  "h": 16,
  "rader": [
-  "....QQQQ........",
-  "...QTTTSQ.QQQ...",
-  "..QTwTTTSQTTSQ..",
-  ".QTTTTTSSTTSSSQ.",
-  "QTTTTSTSSSSSRSRQ",
-  "QTTSTSSSSSRSRSRQ",
-  "QSTSSSSRSSRSRRRQ",
-  ".QSSRSRSRRSRRRQ.",
+  "......QQQQ......",
+  ".....QTqTTQ.....",
+  "..QQQTTTTTSQQQ..",
+  ".QTTQTTTTTSQTSQ.",
+  "QTTTTTTTTSSSTSSQ",
+  "QTTTSTTTSTSSSSRQ",
+  "QTSTTSTSSSSSRSRQ",
+  "QSSSSSSSRSSRRRRQ",
+  ".QRSRRSRRRRRRRQ.",
   "..QQQQQQQQQQQQ..",
-  "................",
-  "..Q......Q......",
-  ".QTQ....QTQ.....",
-  ".QSQ.Q..QSQ..Q..",
-  "..Q.QTQ..Q..QTQ.",
-  ".....QSQ.....QSQ",
-  ".....Q.......Q.."
+  "..Q.....Q.....Q.",
+  ".QTQ...QTQ...QTQ",
+  ".QSQ.Q.QSQ.Q.QSQ",
+  "..Q.QTQ.Q.QTQ.Q.",
+  "....QSQ...QSQ...",
+  ".....Q.....Q...."
  ],
  "pal": {
   "Q": "#233035",
   "R": "#3e5156",
   "S": "#61767a",
   "T": "#8a9c9e",
-  "w": "#dad0bb"
+  "q": "#bdb39b"
+ },
+ "forra": {
+  "ritad": 1,
+  "rader": [
+   "....QQQQ........",
+   "...QTTTSQ.QQQ...",
+   "..QTwTTTSQTTSQ..",
+   ".QTTTTTSSTTSSSQ.",
+   "QTTTTSTSSSSSRSRQ",
+   "QTTSTSSSSSRSRSRQ",
+   "QSTSSSSRSSRSRRRQ",
+   ".QSSRSRSRRSRRRQ.",
+   "..QQQQQQQQQQQQ..",
+   "................",
+   "..Q......Q......",
+   ".QTQ....QTQ.....",
+   ".QSQ.Q..QSQ..Q..",
+   "..Q.QTQ..Q..QTQ.",
+   ".....QSQ.....QSQ",
+   ".....Q.......Q.."
+  ]
  }
 }
