@@ -1,32 +1,59 @@
 {
  "id": "sym_toa",
- "ritad": 1,
- "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 1. Dess tre tydligt avgränsade varv med mörka skåror och spetsen överst ger den klassiska silhuetten av en hög, och den känns igen direkt även i 16 punkter. Version 2 har ojämna, lutande skåror som flimrar i liten storlek. Version 3 saknar skåror och läses mer som en jordkon eller en droppe. Version 1 följer förebilden: en enda kontur i materialets mörkaste ton (jord0, inte svart), få och stora former, ljuset uppe till vänster med jord3 och mörkt nere till höger med jord1, samt två till tre toner med korn. Den fyller 16 × 16 punkter och har ingen bakgrund. Jag ändrade ingenting i punkterna.",
+ "ritad": 2,
+ "av": "API:t, vald av Claude",
+ "om": "API:t ritade tre versioner efter Björns kommentar; Claude valde version 3 (valet i API:t hann inte köras).",
  "w": 16,
  "h": 16,
  "rader": [
-  ".......EE.......",
-  "......EHGE......",
+  "................",
+  "................",
+  "................",
+  "................",
+  "......EEEE......",
   ".....EHGGFE.....",
-  "....EHGGFFFE....",
-  "....EEEEEEEE....",
-  "...EHGGGFGFFE...",
-  "..EHGHGGFGFFFE..",
-  "..EGGGFGFFFFFE..",
+  "....EHGGFGFE....",
   "...EEEEEEEEEE...",
-  ".EHGHGGGFGFFFFE.",
-  "EHGGHGGFGFFFFFFE",
-  "EGHGGGFGFGFFFFFE",
-  "EGGGFGFFFFFFFFFE",
-  "EGFGFFFFFFFFFFFE",
-  ".EFFFFFFFFFFFFE.",
-  "..EEEEEEEEEEEEEE"
+  "..EHGHGGFGFFFE..",
+  ".EHGGGFGFFFFFFE.",
+  ".EGGFGFFFFFFFFE.",
+  "..EEEEEEEEEEEE..",
+  "................",
+  "................",
+  "................",
+  "................"
  ],
  "pal": {
   "E": "#3f2415",
   "F": "#5e3c24",
   "G": "#7d5b40",
   "H": "#987e62"
+ },
+ "forra": {
+  "ritad": 1,
+  "rader": [
+   ".......EE.......",
+   "......EHGE......",
+   ".....EHGGFE.....",
+   "....EHGGFFFE....",
+   "....EEEEEEEE....",
+   "...EHGGGFGFFE...",
+   "..EHGHGGFGFFFE..",
+   "..EGGGFGFFFFFE..",
+   "...EEEEEEEEEE...",
+   ".EHGHGGGFGFFFFE.",
+   "EHGGHGGFGFFFFFFE",
+   "EGHGGGFGFGFFFFFE",
+   "EGGGFGFFFFFFFFFE",
+   "EGFGFFFFFFFFFFFE",
+   ".EFFFFFFFFFFFFE.",
+   "..EEEEEEEEEEEEEE"
+  ],
+  "pal": {
+   "E": "#3f2415",
+   "F": "#5e3c24",
+   "G": "#7d5b40",
+   "H": "#987e62"
+  }
  }
 }

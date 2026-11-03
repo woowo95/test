@@ -1,27 +1,27 @@
 {
  "id": "sym_regn",
- "ritad": 2,
- "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
- "om": "Jag valde version 3. Version 1 och 2 är likadana, och deras droppar är tunna streck som blir otydliga i liten storlek. I version 3 är dropparna raka, runda vattendroppar med spets upptill. Det följer Björns önskan att de sneda dropparna görs om. Dropparna har tydlig skiffer0-kontur och läses lätt på både mörk och ljus bakgrund. Molnet har samma kontur och samma ljus uppifrån vänster som förebilden. Med tre droppar under molnet känns symbolen igen som 🌧. Jag ändrade bara molnets nedre rader: det rutiga mönstret av skiffer1 och skiffer2 var för plottrigt, så jag lugnade det till ett jämnare korn som mörknar mot nedre högra hörnet.",
+ "ritad": 3,
+ "av": "API:t, vald av Claude",
+ "om": "API:t ritade tre versioner efter Björns kommentar; Claude valde version 2 (valet i API:t hann inte köras).",
  "w": 16,
  "h": 16,
  "rader": [
   "....QQQQ........",
-  "...QTTTSQ.QQQ...",
+  "...QTwTTQ.QQQ...",
   "..QTwTTTSQTTSQ..",
-  ".QTTTTTSSTTSSSQ.",
-  "QTTTTSTSSSSSSRRQ",
-  "QTTSTSSSSSSRSRRQ",
+  ".QQTTTTTSSTTTSQ.",
+  "QTTTTTSTSSSTSSSQ",
+  "QTTTSTSSSSSSSRSQ",
+  "QTSTSSSSSRSSRRRQ",
   ".QSSSRSSRRSRRRQ.",
   "..QQQQQQQQQQQQ..",
   "................",
-  "...Q.........Q..",
-  "..QTQ.......QTQ.",
-  ".QTTSQ..Q..QTTSQ",
-  ".QTSRQ.QTQ.QTSRQ",
-  "..QQQ.QTTSQ.QQQ.",
-  "......QTSRQ.....",
-  ".......QQQ......"
+  "..T....T....T...",
+  "..R....R....R...",
+  "....T....T....T.",
+  "....R....R....R.",
+  ".T....T....T....",
+  ".R....R....R...."
  ],
  "pal": {
   "Q": "#233035",
@@ -31,24 +31,31 @@
   "w": "#dad0bb"
  },
  "forra": {
-  "ritad": 1,
+  "ritad": 2,
   "rader": [
    "....QQQQ........",
    "...QTTTSQ.QQQ...",
    "..QTwTTTSQTTSQ..",
    ".QTTTTTSSTTSSSQ.",
-   "QTTTTSTSSSSSRSRQ",
-   "QTTSTSSSSSRSRSRQ",
-   "QSTSSSSRSSRSRRRQ",
-   ".QSSRSRSRRSRRRQ.",
+   "QTTTTSTSSSSSSRRQ",
+   "QTTSTSSSSSSRSRRQ",
+   ".QSSSRSSRRSRRRQ.",
    "..QQQQQQQQQQQQ..",
    "................",
-   "..Q......Q......",
-   ".QTQ....QTQ.....",
-   ".QSQ.Q..QSQ..Q..",
-   "..Q.QTQ..Q..QTQ.",
-   ".....QSQ.....QSQ",
-   ".....Q.......Q.."
-  ]
+   "...Q.........Q..",
+   "..QTQ.......QTQ.",
+   ".QTTSQ..Q..QTTSQ",
+   ".QTSRQ.QTQ.QTSRQ",
+   "..QQQ.QTTSQ.QQQ.",
+   "......QTSRQ.....",
+   ".......QQQ......"
+  ],
+  "pal": {
+   "Q": "#233035",
+   "R": "#3e5156",
+   "S": "#61767a",
+   "T": "#8a9c9e",
+   "w": "#dad0bb"
+  }
  }
 }
