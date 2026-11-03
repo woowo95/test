@@ -1182,6 +1182,12 @@
       klistra(M, sakBild(ref.id), 4, 5); klistra(M, sakBild(k.rad.id), Math.max(ref.w, k.rad.w) + 10, 5);
       ut.append(bildRad(`Bredvid ${ref.namn.toLowerCase()} (till vänster) som jämförelse`, [[M, 6, `${ref.namn} och ${k.rad.namn.toLowerCase()}`], [sakBild(ref.id), 10, ref.namn + ', tio gånger större'], [sakBild(k.rad.id), 10, k.rad.namn + ', tio gånger större']]));
     }
+    // alla varianter av plagget: samma form, en palett per material (variantAv på raden; Björn efter version 92 av bildstilen)
+    const grund = k.rad.variantAv || (BILDER.bilder.some(b => b.variantAv === k.rad.id) ? k.rad.id : null);
+    if (grund) {
+      const alla = BILDER.bilder.filter(b => (b.id === grund || b.variantAv === grund) && BILDFILER[b.id]);
+      ut.append(bildRad('Alla varianter av plagget: samma form, olika material', alla.map(b => [sakBild(b.id), 10, b.namn])));
+    }
     return ut;
   }
   function granskBilder(k) {

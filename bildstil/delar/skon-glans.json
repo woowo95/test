@@ -1,35 +1,32 @@
 {
  "id": "skon-glans",
- "ritad": 7,
+ "ritad": 8,
  "av": "Claude",
- "om": "Claude: samma glansband som förra gången, men inne i bandet är det nästan vitt (ben3) i stället för hårets ljusaste ton, så att glansen syns på alla hårfärger, överdrivet som i manga.",
+ "om": "Claude: ny från början, utan referens: en tydlig glansring över hjässan som i manga, bruten i fyra korta streck som följer huvudets rundning, nästan vit (ben3) med en mörkare kant under.",
  "bilder": {
   "standard": {
    "x": -14,
-   "y": -1,
+   "y": 1,
    "rader": [
-    "......ghwwwh.ghwwhg.......",
-    "....ghwwwwwh.hwwwwwhg.....",
-    "...ghwwwwwhg.hwwwwwwwhg...",
-    "..ghwwwhgg...gghwwwwwwhg..",
-    ".ghhhhg.........gggghhhgg.",
-    ".ghhhg............ggghhgg.",
-    ".gghg...............gghgg.",
-    "..gg.................ggg.."
+    ".........www..www.........",
+    "........wwww..wwww........",
+    "....www.hhhh..hhhh.www....",
+    "...wwww............wwww...",
+    "...hhhh............hhhh..."
    ]
   }
  },
  "forra": {
-  "ritad": 6,
+  "ritad": 7,
   "bilder": {
    "standard": {
     "x": -14,
     "y": -1,
     "rader": [
-     "......ghhhhh.ghhhhg.......",
-     "....ghhhhhhh.hhhhhhhg.....",
-     "...ghhhhhhhg.hhhhhhhhhg...",
-     "..ghhhhhgg...gghhhhhhhhg..",
+     "......ghwwwh.ghwwhg.......",
+     "....ghwwwwwh.hwwwwwhg.....",
+     "...ghwwwwwhg.hwwwwwwwhg...",
+     "..ghwwwhgg...gghwwwwwwhg..",
      ".ghhhhg.........gggghhhgg.",
      ".ghhhg............ggghhgg.",
      ".gghg...............gghgg.",

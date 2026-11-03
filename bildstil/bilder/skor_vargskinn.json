@@ -1,40 +1,39 @@
 {
   "id": "skor_vargskinn",
-  "ritad": 4,
+  "ritad": 5,
   "av": "Claude",
-  "om": "Claude: två exakt lika skor (5 × 3), den bakre uppe till höger; ljust skaft, tån åt höger, rak häl och mörk sula.",
+  "om": "Kaninskornas form (godkänd) i vargskinnets färger: samma plagg, en palett per material (Björn efter version 92 av bildstilen).",
   "w": 10,
   "h": 5,
   "rader": [
-    ".....QwQ..",
-    ".....QTSRQ",
-    "QwQ..QQQQQ",
-    "QTSRQ.....",
-    "QQQQQ....."
+    ".....QwqQ.",
+    "QwqQ.QTSQ.",
+    "QTSQ.QTSTQ",
+    "QTSTQ.QQQQ",
+    ".QQQQ....."
   ],
   "pal": {
     "Q": "#233035",
     "w": "#dad0bb",
+    "q": "#bdb39b",
     "T": "#8a9c9e",
-    "S": "#61767a",
-    "R": "#3e5156"
+    "S": "#61767a"
   },
   "forra": {
-    "ritad": 3,
+    "ritad": 4,
     "rader": [
-      ".....QwqQ.",
-      "QwqQ.QTSRQ",
-      "QTSQ.QQQQQ",
-      "QTSTRQ....",
-      "QQQQQQ...."
+      ".....QwQ..",
+      ".....QTSRQ",
+      "QwQ..QQQQQ",
+      "QTSRQ.....",
+      "QQQQQ....."
     ],
     "pal": {
       "Q": "#233035",
-      "R": "#3e5156",
-      "S": "#61767a",
+      "w": "#dad0bb",
       "T": "#8a9c9e",
-      "q": "#bdb39b",
-      "w": "#dad0bb"
+      "S": "#61767a",
+      "R": "#3e5156"
     }
   }
 }

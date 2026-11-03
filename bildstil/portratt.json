@@ -268,7 +268,7 @@
     {"id": "smycke-7", "sort": "smycke", "namn": "Örhänge av ben", "plats": "ora", "maskbar": true, "ritad": 1, "kon": "bada"},
     {"id": "smycke-8", "sort": "smycke", "namn": "Pärlörhänge", "plats": "ora", "maskbar": true, "ritad": 1, "kon": "kvinna"},
     {"id": "skon-fransar", "sort": "skonhet", "namn": "Ögonfransar", "niva": 1, "lager": "ogonfransar", "maskbar": true, "ritad": 1, "plats": "oga", "kon": "kvinna"},
-    {"id": "skon-glans", "sort": "skonhet", "namn": "Hårglans", "niva": 2, "lager": "harglans", "maskbar": true, "ritad": 7, "plats": "har", "forra": "hårglanset får vi kanske ta bort för du verkar inte kunna göra det jag ber om. Jag har sett minimal skillnad på alla versioner hittills och inte ens nu när jag bad dig överdriva ser jag så stor skillnad"},
+    {"id": "skon-glans", "sort": "skonhet", "namn": "Hårglans", "niva": 2, "lager": "harglans", "maskbar": true, "ritad": 8, "plats": "har", "forra": "nu syns det iallafall men det ser konstigt ut. Börja om utan referens och gör en tydlig reflektion i håret"},
     {"id": "skon-kinder", "sort": "skonhet", "namn": "Rosiga kinder", "niva": 1, "lager": "rynkor", "ritad": 5, "plats": "huvud", "vad": "rosa rouge på kindknotorna: en mjuk, jämn rosa ton i kindtonerna (A–D), glesare ut mot kanten, utan prickar, fläckar eller skarp kant (Björn: inte som skador)", "forra": "mycket bättre! Flytta in dom lite närmre näsan och gör dem mer rosa och mindre oranga"},
     {"id": "skon-varta", "sort": "skonhet", "namn": "Vårta", "niva": -1, "lager": "arr", "ritad": 1, "plats": "huvud"},
     {"id": "skon-tander", "sort": "skonhet", "namn": "Gles tandrad", "niva": -1, "lager": "lappar", "ritad": 1, "plats": "mun"},
