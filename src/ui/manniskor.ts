@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { ACTS, ALDER, Person, actIkon, utbIkon, SEC, TalkEvent, ageOf, alive, bordVid, byId, homeKind, isSocial, pratarMed, kanGa, living, load, REL, relKey, sparPlats, storlekAv, handlarNu, handlarPlats, Match, Task, dragLag, kastMal, SPORT } from '../sim';
+import { ACTS, ALDER, Person, actIkon, utbIkon, SEC, TalkEvent, ageOf, alive, bordVid, byId, homeKind, isSocial, pratarMed, kanGa, living, load, REL, relKey, sparPlats, storlekAv, handlarNu, handlarPlats, Match, Task, dragLag, kastMal, SPORT, bakomFilt } from '../sim';
 import { PRICKAR, personFarg } from './hjalp';
 import { s, sakVar, ui, uppgiftVid, vidNyBy } from './lage';
 import { Ikoner, TS, bubbleG, labels, markLayer, peopleG } from './scen';
@@ -34,6 +34,8 @@ function platsAv(p: Person) {
   const tk = uppgiftVid(p), d = tk && ACTS[tk.act];
   const m = tk && iMatchen(tk), sp2 = still && m ? sportPlats(m, p, x, y, t) : undefined;
   if (sp2) return { ...sp2, still }; // sporten (steg 4.5.6.10–11)
+  const f = still ? s.filtar?.find(g => g.vem === p.id && !g.handlare && g.slut > t) : undefined;
+  if (f) return { ...bakomFilt(s, f), still }; // bakom sin egen filt i ett byte (steg 4.5.7.1)
   if (still && tk?.phase === 'do' && d && !d.stilla) {
     const w = d.vandra, k = t / SEC, r = w ? w.r * 0.6 : 0.12, f = w ? w.v / (w.r * 6) : 0.05;
     x += Math.sin(k * f + p.id * 1.7) * r * Math.sin(k * f * 0.37 + p.id);
