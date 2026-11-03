@@ -1,40 +1,40 @@
 {
  "id": "rep",
- "ritad": 4,
+ "ritad": 5,
  "av": "Claude",
- "om": "helt ny utan förlaga: en bunt tvinnade rep, lagda på längden och lindade på två ställen",
+ "om": "helt ny utan förlaga: ett hoprullat tvinnat rep, en ring med hål i mitten och en lös ände",
  "w": 11,
  "h": 6,
  "rader": [
-  ".IIIIIIIII.",
-  "ILKEJLKEJLI",
-  "IKJEKJLEKJI",
-  "IJLELKJELKI",
-  "IKJEKJLEKJI",
-  ".IIIIIIIII."
+  "..IIIIIII..",
+  ".IKLKLKLKI.",
+  "IKJIIIIIJKI",
+  "ILJI...IJLI",
+  ".IKLKLKLKIK",
+  "..IIIIIII.L"
  ],
  "pal": {
   "I": "#694902",
-  "L": "#d8b25f",
   "K": "#b2921b",
-  "E": "#3f2415",
+  "L": "#d8b25f",
   "J": "#906f0f"
  },
  "forra": {
-  "ritad": 3,
+  "ritad": 4,
   "rader": [
-   "..IIIIIII..",
-   ".ILKLIKLKI.",
-   "IL..IJI..KI",
-   "IK..IJI..JI",
-   ".IKJKIKJJI.",
-   "..IIIIIII.."
+   ".IIIIIIIII.",
+   "ILKEJLKEJLI",
+   "IKJEKJLEKJI",
+   "IJLELKJELKI",
+   "IKJEKJLEKJI",
+   ".IIIIIIIII."
   ],
   "pal": {
    "I": "#694902",
-   "J": "#906f0f",
+   "L": "#d8b25f",
    "K": "#b2921b",
-   "L": "#d8b25f"
+   "E": "#3f2415",
+   "J": "#906f0f"
   }
  }
 }
