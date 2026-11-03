@@ -76,7 +76,8 @@
       let i;
       if (gratt && KANALER.has(k)) i = ref(PR.farger.gratt[k === 'vit' ? 3 : k === 'oga' ? t + 1 : t]);
       else if (k === 'hud') i = hudF(t);
-      else if (k === 'kind') i = p.kyla && !dod ? ref(t >= 2 ? hud.kyla : hud.kyla.slice(0, -1) + Math.max(0, +hud.kyla.slice(-1) - 1)) : hudF(t);
+      // kinderna är huden: kylan syns inte på kinderna utan i ramen (Björn efter version 85 av bildstilen)
+      else if (k === 'kind') i = hudF(t);
       else if (k === 'har') i = ref(har.toner[t]);
       else if (k === 'oga') i = ref(oga.toner[Math.min(t, 1)]);
       else if (k === 'vit') i = ref('ben2');
@@ -469,22 +470,6 @@
     if (D('arr')) lagg('arr', dk => delen(dk, G, D('arr'), p, 'arr'));
     if (D('blamarke')) lagg('blamarke', dk => delen(dk, G, D('blamarke'), p, 'blamarke'));
     if (p.blod) lagg('blod', dk => RITA.blod(dk, G));
-    // kylan (5.2.2.6): mjukt röda kinder och nästipp i kindtonerna, som blir röda i kylan; utan kyla syns de inte
-    if (p.kyla && !FORSLAG_PA.has('kyla-kinder')) lagg('blamarke', dk => {
-      for (const [cx, cy] of [[23.5, 37.5], [40.5, 37.5]]) for (let y = 34; y <= 41; y++) for (let x = Math.floor(cx - 4); x <= cx + 4; x++) {
-        const r = ((x + 0.5 - cx) / 3) ** 2 + ((y + 0.5 - cy) / 1.8) ** 2; if (r > 1) continue;
-        if (hash(x, y, 12) < (r < 0.4 ? 0.7 : 0.35)) dk.satt(x, y, 'kind1');
-      }
-      dk.satt(32, 37, 'kind2'); dk.satt(33, 37, 'kind1');
-    });
-    // förslaget kyla-kinder: en liten jämn rodnad på varje kind och nästippen i kindtonen, som blir röd i kylan.
-    // Inga spridda prickar (Björn: fläckarna var inte snygga): bara en sluten oval i en ton.
-    if (p.kyla && FORSLAG_PA.has('kyla-kinder')) lagg('blamarke', dk => {
-      for (const [cx, cy] of [[23.5, 37.5], [40.5, 37.5]]) for (let y = 35; y <= 40; y++) for (let x = Math.floor(cx - 3); x <= cx + 3; x++) {
-        if (((x + 0.5 - cx) / 2.2) ** 2 + ((y + 0.5 - cy) / 1.2) ** 2 <= 1) dk.satt(x, y, 'kind2');
-      }
-      dk.satt(32, 37, 'kind2');
-    });
     lagg('ogon', dk => delen(dk, G, D('oga'), p, 'oga'), { maskbar: true });
     lagg('ogonbryn', dk => delen(dk, G, D('ogonbryn'), p, 'ogonbryn'));
     lagg('nasa', dk => delen(dk, G, D('nasa'), p, 'nasa'));
@@ -527,8 +512,8 @@
       for (let i = 0; i < dk.px.length; i++) {
         const v = dk.px[i]; if (!v) continue;
         let z = (b.maskbar || b.utom) ? G.zon(i % W, (i / W) | 0) : null;
-        // håret över örat hör till sidhåret: det döljs bara när huvudbonaden täcker sidorna, så att inga lösa testar blir kvar
-        if (b.har && z === 'oron' && FORSLAG_PA.has('har-under-bonad')) z = 'sidor';
+        // håret över örat hör till sidhåret: det döljs bara när huvudbonaden täcker sidorna, så att inga lösa testar blir kvar (Björn: ja)
+        if (b.har && z === 'oron') z = 'sidor';
         if (z && b.maskbar && masker.has(z)) continue;
         if (z && b.utom && b.utom.includes(z)) continue;
         kt[i] = v; ag[i] = L;
@@ -559,8 +544,53 @@
     // rostig järnram med nitar
     for (let k = 0; k < W; k++) for (const [x, y] of [[k, 0], [k, 1], [k, W - 2], [k, W - 1], [0, k], [1, k], [W - 2, k], [W - 1, k]]) ut.satt(x, y, P.i('jord', 0));
     for (const [a, b] of [[0, 0], [W - 2, 0], [0, W - 2], [W - 2, W - 2]]) for (let k = 0; k < 4; k++) ut.satt(a + (k & 1), b + (k >> 1), P.i('rost', 1));
+    if (FORSLAG_PA.has('temperatur-ram')) tempRam(ut, temperatur(p));
     return ut;
   }
+
+  // temperaturen: -2 fryser mycket, -1 fryser, 0 lagom, 1 varm, 2 för varm (kyla utan tal är -1)
+  const temperatur = p => p.temp ?? (p.kyla ? -1 : 0);
+  // förslaget temperatur-ram (Björn efter version 85 av bildstilen: "Jag tycker inte vi visar kyla på kinderna. Vi gör istället
+  // en isig ram runt porträttet. Och gör en varm version också", två steg åt vardera hållet). Kylan: ramen blir is med istappar
+  // från överkanten och frost som kryper in från hörnen (mer och längre i steg två). Värmen: ramen glöder och värmen darrar i
+  // bakgrunden längs kanterna; i steg två slickar små lågor upp från underkanten.
+  function tempRam(ut, t) {
+    if (!t) return;
+    const W = ut.w, n = Math.abs(t), rand = (x, y) => kantRam(x, y, W);
+    if (t < 0) {
+      for (let y = 0; y < W; y++) for (let x = 0; x < W; x++) if (rand(x, y)) ut.satt(x, y, P.i((x + y) % 3 ? 'skiffer' : 'ben', (x + y) % 3 ? 3 : 3));
+      // frosten: från hörnen (steg ett) eller längs alla kanter (steg två), glesare inåt
+      const djup = n === 1 ? 7 : 9;
+      for (let y = 2; y < W - 2; y++) for (let x = 2; x < W - 2; x++) {
+        const dk = Math.min(x - 2, y - 2, W - 3 - x, W - 3 - y), hornet = Math.min(Math.hypot(x - 2, y - 2), Math.hypot(W - 3 - x, y - 2), Math.hypot(x - 2, W - 3 - y), Math.hypot(W - 3 - x, W - 3 - y));
+        const d = n === 1 ? hornet : Math.min(hornet * 0.8, dk * 1.6);
+        if (d > djup) continue;
+        const h = hash(x, y, 31 + n);
+        if (h < (1 - d / djup) * 0.75) ut.satt(x, y, P.i(h < 0.25 ? 'ben' : 'skiffer', 3));
+      }
+      // istapparna längs överkanten
+      for (let x = 4; x < W - 4; x += 3) {
+        const l = Math.floor(hash(x, 7, 5) * (n === 1 ? 3 : 6)) + n; if (hash(x, 3, 9) < (n === 1 ? 0.5 : 0.2)) continue;
+        for (let k = 0; k < l; k++) { ut.satt(x, 2 + k, P.i(k === l - 1 ? 'skiffer' : 'ben', k === l - 1 ? 2 : 3)); if (k < l / 2) ut.satt(x + 1, 2 + k, P.i('skiffer', 2)); }
+      }
+    } else {
+      for (let y = 0; y < W; y++) for (let x = 0; x < W; x++) if (rand(x, y)) ut.satt(x, y, P.i((x * 3 + y) % 4 ? 'rost' : 'senap', (x * 3 + y) % 4 ? 2 : 3));
+      // värmen darrar: bakgrunden närmast kanten får ett varmt sken (bara bakgrunden, inte personen)
+      const djup = n === 1 ? 6 : 9;
+      for (let y = 2; y < W - 2; y++) for (let x = 2; x < W - 2; x++) {
+        const d = Math.min(x - 2, y - 2, W - 3 - x, W - 3 - y), v = ut.px[y * W + x];
+        if (d > djup || !KOLEN.has(v)) continue;
+        if (hash(x, y, 41) < (1 - d / djup) * 0.8) ut.satt(x, y, P.i('rost', d < 2 ? 1 : 0));
+      }
+      // lågorna från underkanten i steg två
+      if (n === 2) for (let x = 3; x < W - 3; x += 4) {
+        const l = 3 + Math.floor(hash(x, 1, 13) * 5);
+        for (let k = 0; k < l; k++) { const y = W - 3 - k, b = k < l * 0.4 ? 1 : 0; for (let dx = -b; dx <= b; dx++) ut.satt(x + dx + (k > l * 0.6 && hash(x, k, 3) < 0.5 ? 1 : 0), y, P.i(k > l * 0.7 ? 'senap' : 'rost', k > l * 0.7 ? 3 : k > l * 0.4 ? 3 : 2)); }
+      }
+    }
+  }
+  const kantRam = (x, y, W) => x < 2 || y < 2 || x >= W - 2 || y >= W - 2;
+  const KOLEN = new Set([0, 1, 2, 3].map(t => P.i('kol', t)));
 
   // ---------- kartfiguren (14 × 20): mallarna ritade i steg 5.2.2.2 ----------
   // kroppen delas i zoner (huvud, bål, armar, händer, ben, fötter); kläderna målar sina zoner, och bara det som sticker ut
@@ -699,17 +729,12 @@
       }
     }
     if (bonad) {
-      const mat = { 'bonad-1': 'skiffer', 'bonad-2': 'jord', 'bonad-3': FORSLAG_PA.has('huva-karta') ? 'oliv' : 'jord', 'bonad-4': 'rost', 'bonad-5': 'senap', 'bonad-6': 'ben', 'bonad-7': 'oliv', 'bonad-8': 'oliv' }[del.huvudbonad];
+      const mat = { 'bonad-1': 'skiffer', 'bonad-2': 'jord', 'bonad-3': 'oliv', 'bonad-4': 'rost', 'bonad-5': 'senap', 'bonad-6': 'ben', 'bonad-7': 'oliv', 'bonad-8': 'oliv' }[del.huvudbonad];
       const s = rikt === 'sida' ? 1 : 0, xa = 4 + s, xb = 9 + s;
       if (bonad === 'mossa') for (let y = h - 1; y <= h + 1; y++) for (let x = xa - (y === h + 1 ? 1 : 0); x <= xb + (y === h + 1 && !s ? 1 : 0); x++) satt(x, y, mat + (y === h - 1 ? 3 : 2));
       if (bonad === 'hatt') { for (let x = xa - 2; x <= xb + 2; x++) satt(x, h + 1, mat + 1); for (let y = h - 1; y <= h; y++) for (let x = xa; x <= xb; x++) satt(x, y, mat + 2); }
       // huvan: rundad överst, en öppning för ansiktet med en kant (huvan har en senapsgul kant som i porträttet) och tyget ner över axlarna
-      if (bonad === 'huva' && !FORSLAG_PA.has('huva-karta')) for (let y = h - 1; y <= h + 6; y++) for (let x = xa - 1; x <= xb + 1; x++) {
-        const ansikte = rikt === 'fram' ? x >= 5 && x <= 8 && y >= h + 2 && y <= h + 5 : rikt === 'sida' ? x >= 8 && y >= h + 2 && y <= h + 5 : false;
-        if (!ansikte && !(rikt === 'sida' && x > 10)) satt(x, y, mat + (x === xa - 1 ? 3 : 2));
-      }
-      // förslaget huva-karta:
-      if (bonad === 'huva' && FORSLAG_PA.has('huva-karta')) {
+      if (bonad === 'huva') {
         const kant = del.huvudbonad === 'bonad-3' ? 'senap2' : mat + 3;
         const x1 = rikt === 'sida' ? 10 : 10, x0 = rikt === 'sida' ? 4 : 3;
         for (let y = h - 1; y <= h + 7; y++) for (let x = x0; x <= x1; x++) {
@@ -1019,12 +1044,8 @@
   const FORSLAG_SORT = { id: 'forslag', namn: 'Claudes förslag', en: 'Förslag', steg: '5.2.2', forslag: true };
   const medForslag = (id, f) => { FORSLAG_PA.add(id); try { return f(); } finally { FORSLAG_PA.delete(id); } };
   const FORSLAG = [
-    { id: 'huva-karta', namn: 'Huvan på kartan', ritad: 1, vad: 'Huvan på kartan ritad om efter porträttet (Björn: huvan ser bra ut i porträttet men gör en ny version för hur den ser ut på kartan): grön med en senapsgul kant runt ansiktet, rundad överst och med tyget ner mot axlarna. Huvudduken får samma form, utan den gula kanten. Överst förslaget, under hur det ser ut nu.',
-      bilder: nu => ['bonad-3', 'bonad-7'].map(b => { const q = neutral('kvinna'); q.del.huvudbonad = b; q.del.frisyr = 'har-5'; return [DEL[b].namn, ['fram', 'sida', 'bak'].map(r => [kartBild(q, r, 'sta', 'hanga'), 6, r === 'fram' ? 'Framifrån' : r === 'sida' ? 'Från sidan' : 'Bakifrån'])]; }) },
-    { id: 'kyla-kinder', namn: 'Kinderna i kylan', ritad: 1, vad: 'De röda fläckarna på kinderna kom från kylan, när någon fryser: spridda rostfärgade prickar i två toner (Björn: en grej som gör att dem får röda fläckar på kinderna som inte är så snygg). Förslaget: en liten jämn rodnad på varje kind och på nästippen, utan prickar. Överst förslaget, under hur det ser ut nu.',
-      bilder: nu => [[0, 'Blek'], [2, 'Mellan'], [3, 'Väderbiten']].map(([h, t]) => { const q = neutral('kvinna'); q.hud = h; q.kyla = true; return [t, [[portratt(q), 2, 'Fryser']]]; }) },
-    { id: 'har-under-bonad', namn: 'Halvlångt hår under huvudbonaden', ritad: 1, vad: 'Håret över öronen räknades för sig och blev kvar som lösa testar under pälsmössan och huvudduken (Björn: halvlångt hår ser konstigt ut när man sätter på en huvudbonad). Förslaget: håret över öronen följer sidhåret, så att det hänger ner obrutet under mössorna och döljs helt under huvan och huvudduken. Överst förslaget, under hur det ser ut nu.',
-      bilder: nu => ['bonad-1', 'bonad-6', 'bonad-7', 'bonad-3'].map(b => { const q = neutral('kvinna'); q.del.frisyr = 'har-5'; q.del.huvudbonad = b; return [DEL[b].namn, [[portratt(q), 2, DEL[b].namn]]]; }) },
+    { id: 'temperatur-ram', namn: 'Ramen när någon fryser eller är för varm', ritad: 1, vad: 'Björn: "Jag tycker inte vi visar kyla på kinderna. Vi gör istället en isig ram runt porträttet. Och gör en varm version också", två steg åt vardera hållet. Kylan syns inte längre på kinderna. Förslaget: när personen fryser blir ramen is, med frost som kryper in från hörnen och istappar från överkanten; fryser personen mycket täcker frosten alla kanter och istapparna blir fler och längre. När personen är varm glöder ramen och bakgrunden närmast kanten får ett varmt sken; är personen för varm slickar små lågor upp från underkanten. Överst förslaget, under hur det ser ut nu (en vanlig ram).',
+      bilder: nu => [[-2, 'Fryser mycket'], [-1, 'Fryser'], [1, 'Varm'], [2, 'För varm']].map(([t, namn]) => { const q = neutral('kvinna'); q.temp = t; return [namn, [[portratt(q), 2, namn]]]; }) },
   ];
   for (const f of FORSLAG) KORT.push({ id: 'forslag-' + f.id, sort: FORSLAG_SORT, rad: f, namn: f.namn, ritad: f.ritad });
   KORT.forEach((k, i) => {
@@ -1291,7 +1312,7 @@
   window.BILDERNA = {
     // sakens bild i sitt sammanhang: alla bilderna på en rad, fyra gånger större
     sammanhang(id, data) {
-      const l = sakSammanhang(id, data); if (!l.length) return null;
+      const l = sakSammanhang(id, data || undefined); if (!l.length) return null;
       const G = 6, W = l.reduce((s, [, B]) => s + B.w + G, 0), H = Math.max(...l.map(([, B]) => B.h)), A = Bild(W, H, P);
       for (let i = 0; i < A.px.length; i++) A.px[i] = P.i('kol', 0);
       let x = 0; for (const [, B] of l) { klistra(A, B, x, 0, false); x += B.w + G; }
