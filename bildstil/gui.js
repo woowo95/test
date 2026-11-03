@@ -164,7 +164,9 @@
     const P = B.P;
     for (let yy = 0; yy < 36; yy++) for (let xx = 0; xx < 152; xx++) B.satt(x + xx, y + yy, xx === 0 || yy === 0 || xx === 151 || yy === 35 ? P.i('kol', 0) : P.i('ben', 3));
     const M = MONSTER[monster], cy = y + 18, cx = x + 76;
-    for (const [a, b] of [[x + 8, cx - 15], [cx + 15, x + 144]]) for (let n = 0, xx = a; xx + M.steg <= b; xx += M.steg, n++) M.rita(B, xx, cy, hu, an, n);
+    // symmetriskt (Björn efter bildstil v125): vänster sida ritas från medaljongen och utåt, och höger sida är den speglad
+    const spegel = { ...B, satt: (xx, yy, c) => { B.satt(xx, yy, c); B.satt(2 * cx - xx, yy, c); } };
+    for (let n = 0, xx = cx - 15 - M.steg; xx >= x + 8; xx -= M.steg, n++) M.rita(spegel, xx, cy, hu, an, n);
     for (let j = -12; j <= 12; j++) for (let i = -12; i <= 12; i++) { const d = Math.hypot(i, j); if (d > 12.4) continue; B.satt(cx + i, cy + j, d > 11.4 ? P.i('kol', 0) : d > 9.6 ? P.i(hu, 2) : d > 8.8 ? P.i(an, 2) : P.i('ben', 3)); }
     const ew = E[0].length, eh = E.length;
     for (let j = 0; j < eh; j++) for (let i = 0; i < ew; i++) if (E[j][i] === '#') B.satt(cx - (ew >> 1) + i, cy - (eh >> 1) + j, P.i(hu, hu === 'senap' || hu === 'ben' ? 0 : 1));
@@ -174,19 +176,6 @@
     fyll(B, B.P.i('ben', 2)); const f = [id, '', hu, an, EMB[emb] || GUI.emblem[emb]];
     runsten(B, 5, 9, f, 'stangd'); runsten(B, 5 + SW + 4, 9, f, 'oppen'); nyttBand(B, 2 * (SW + 4) + 8, 5, hu, an, monster, f[4]);
   });
-  // Förråd: med egen runsten bland flikarna, eller bandet överst i lagret som öppnas från kartan, eller inget band
-  const RAD = (med) => FLIK.filter(f => med || f[0] !== 'forrad');
-  const LAGER = (band) => (B, x, y) => {
-    const P = B.P; for (let yy = 0; yy < 70; yy++) for (let xx = 0; xx < 152; xx++) B.satt(x + xx, y + yy, xx === 0 || yy === 0 || xx === 151 || yy === 69 ? P.i('kol', 0) : P.i('ben', 3));
-    if (band) { const b = GUI.band.forrad; bild(B, b, x + Math.round((152 - b.w) / 2), y + 5); }
-    const IK = ['ved', 'sten', 'flinta', 'skinn', 'svamp', 'fisk', 'bar', 'rotter'].filter(i => BILDFILER[i]);
-    IK.forEach((id, i) => { const o = BILDFILER[id]; const ox = x + 10 + (i % 4) * 36, oy = y + (band ? 34 : 10) + Math.floor(i / 4) * 18; o.rader.forEach((r, j) => [...r].forEach((ch, k) => { if (ch !== '.' && o.pal[ch]) B.satt(ox + k, oy + j, P.av(o.pal[ch])); })); });
-  };
-  const FORRAD = (v) => SCEN(FLIK.length * (SW + 4) + 8, SH + 90, B => {
-    fyll(B, B.P.i('ben', 2)); RAD(v === 1).forEach((f, i) => runsten(B, 5 + i * (SW + 4), 5, f, 'stangd'));
-    if (v < 3) LAGER(v === 2)(B, 5, SH + 14); else LAGER(false)(B, 5, SH + 14);
-  });
-
   const T = 'Steg 5.2.4.7: ', T2 = 'Steg 5.2.4.2, till 5.3.2.2: ';
   VAL.push(
     { id: 'g_runsten', stor: true, namn: 'Runstenarna', typ: 'janej', vad: T + 'flikarnas knappar (till 5.3.3.1) i hel skala, 22 × 28 punkter, efter skissen: en båge i flikens färg runt en grå sten med emblemet. Översta raden stängda, i mitten öppna (bågen i andrafärgen och stenen i huvudfärgen) och nederst bleka (fliken går inte att öppna än). Tros färger (senap och ben) är ett förslag. Person och Grannar har ingen sten än.',
@@ -206,25 +195,11 @@
       versioner: [{ text: 'Version 1: ringarna i pixlar.', ...RINGAR }] },
     { id: 'v_tart', stor: true, namn: 'Tårtan över den vakna tiden', typ: 'janej', vad: T2 + 'tårtan i personens tid, i pixlar: varje del i en färg ur paletten, med en tunn ljus linje mellan delarna och en mörk kant. Till höger med en del vald: den lyser och de andra bleknar.',
       versioner: [{ text: 'Version 1: tårtan i pixlar.', ...TARTA }] },
-    { id: 'q_tro', stor: true, namn: 'Fråga: Tros band och färger', typ: 'tre', vad: 'Fråga till dig (Björn avgör, 5.2.4.7): fliken Tro har ett emblem (solkorset) men inget band, och dess färger är bara mitt förslag. Tre förslag, var och en med färger, stängd och öppen runsten och bandet. Välj ett, eller skriv vad du vill ha i stället.',
-      versioner: [
-        { text: 'Version 1: senap och ben (mitt förra förslag), solar i rad.', ...FORSLAG('tro', 'senap', 'ben', 'sol', 'tro') },
-        { text: 'Version 2: barr och senap, en ranka med blad som livsträdets grenar.', ...FORSLAG('tro', 'barr', 'senap', 'ranka', 'tro') },
-        { text: 'Version 3: skiffer och ben, två band flätade om varandra.', ...FORSLAG('tro', 'skiffer', 'ben', 'flata', 'tro') }] },
-    { id: 'q_person', stor: true, namn: 'Fråga: Personfliken', typ: 'tre', vad: 'Fråga till dig (Björn avgör, 5.2.4.7): fliken Person (den valda människan) har en egen knapp i spelet men varken färger, band eller emblem. Tre förslag. Välj ett, eller skriv vad du vill ha i stället.',
-      versioner: [
-        { text: 'Version 1: jord och senap, ett huvud med axlar och fotspår i bandet.', ...FORSLAG('person', 'jord', 'senap', 'fot', 'huvud') },
-        { text: 'Version 2: rost och ben, en hand och ett pärlband.', ...FORSLAG('person', 'rost', 'ben', 'parlor', 'hand') },
-        { text: 'Version 3: skiffer och rost, ett öga och ett flätat band.', ...FORSLAG('person', 'skiffer', 'rost', 'flata', 'oga') }] },
-    { id: 'q_grannar', stor: true, namn: 'Fråga: Grannfliken', typ: 'tre', vad: 'Fråga till dig (Björn avgör, 5.2.4.7): fliken Grannar (de andra klanerna) har en egen knapp i spelet men varken färger, band eller emblem. Tre förslag. Välj ett, eller skriv vad du vill ha i stället.',
-      versioner: [
-        { text: 'Version 1: oliv och rost, två hus och en rad hyddor.', ...FORSLAG('grannar', 'oliv', 'rost', 'hyddor', 'hus') },
-        { text: 'Version 2: jord och skiffer, pilar åt båda hållen (besök och byte) och stenar längs en stig.', ...FORSLAG('grannar', 'jord', 'skiffer', 'stenar', 'pilar') },
-        { text: 'Version 3: barr och senap, en stig till en hydda och ett flätat band.', ...FORSLAG('grannar', 'barr', 'senap', 'flata', 'stig') }] },
-    { id: 'q_forrad', stor: true, namn: 'Fråga: Förrådets band', typ: 'tre', vad: 'Fråga till dig (Björn avgör, 5.2.4.7): Förråd har ett band från din skiss (sädesaxen) men ingen egen flik i spelet: lagret öppnas från kartan. Vad ska gälla?',
-      versioner: [
-        { text: 'Version 1: Förråd blir en egen flik med runsten bland de andra, och bandet står överst i den.', ...FORRAD(1) },
-        { text: 'Version 2: ingen egen flik, men bandet står överst i lagret som öppnas från kartan.', ...FORRAD(2) },
-        { text: 'Version 3: ingen egen flik och inget band; bandet tas bort.', ...FORRAD(3) }] },
+    { id: 'q_tro', stor: true, namn: 'Tros band och färger', typ: 'janej', vad: 'Steg 5.2.4.7: fliken Tro i barr och senap med en ranka med blad som livsträdets grenar, nu symmetrisk: höger sida är vänster sida speglad kring medaljongen. Din kommentar förra gången: \u201dMen gör den symmetrisk\u201d (du valde version 2).',
+      versioner: [{ text: 'Version 2, symmetrisk.', ...FORSLAG('tro', 'barr', 'senap', 'ranka', 'tro') }] },
+    { id: 'q_person', stor: true, namn: 'Personfliken', typ: 'janej', vad: 'Steg 5.2.4.7: fliken Person i rost och ben med en hand och ett pärlband, nu symmetriskt kring medaljongen. Handen själv har tummen åt ett håll; säg till om även den ska bli symmetrisk. Din kommentar förra gången: \u201dMen gör den symmetrisk\u201d (du valde version 2).',
+      versioner: [{ text: 'Version 2, symmetrisk.', ...FORSLAG('person', 'rost', 'ben', 'parlor', 'hand') }] },
+    { id: 'q_grannar', stor: true, namn: 'Grannfliken', typ: 'janej', vad: 'Steg 5.2.4.7: fliken Grannar i oliv och rost med två hus och en rad hyddor, nu symmetrisk kring medaljongen. Din kommentar förra gången: \u201dMen gör den symmetrisk\u201d (du valde version 1).',
+      versioner: [{ text: 'Version 1, symmetrisk.', ...FORSLAG('grannar', 'oliv', 'rost', 'hyddor', 'hus') }] },
   );
 })();
