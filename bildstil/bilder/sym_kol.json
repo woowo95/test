@@ -1,33 +1,54 @@
 {
-  "id": "sym_kol",
+ "id": "sym_kol",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 3. Den fyller hela rutan på 16 × 16 punkter och är en rundad kolklump som liknar kolet i inventariet, som Björn bad om. Ljuset kommer uppifrån till vänster: kol3 där och kol1 nere till höger. En glanspunkt i ben0 sitter högt upp till vänster. Konturen är kol0 runt hela klumpen, och några brottlinjer delar den i få, stora fasetter, så den läses tydligt både på mörk och ljus bakgrund. Version 1 är bara 13 rader hög och för platt. Version 2 har ett hack uppe till höger som gör silhuetten oklar. Jag behöll punkterna som de var. Färgerna håller sig till kolrampen och glansen är en enda dämpad punkt, så inget behövde rättas.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "......kkkk......",
+  ".....knnnnk.....",
+  "....knonnnmkk...",
+  "...knnnnnmkmmk..",
+  "..knnnnnnkmmmmk.",
+  ".knnnnnnkmmmmmk.",
+  ".knnnmnkmmmlmmmk",
+  "knnnnnnkmmmmmlmk",
+  "knnmnnkmmmlmmmlk",
+  "knnnnnkkmmmmlmlk",
+  "knmnnkllkmmlmllk",
+  ".knnkllllkkmlllk",
+  ".kmklllmlllllllk",
+  "..kllmlllllmlllk",
+  "...kkllllllllkk.",
+  ".....kkkkkkkk..."
+ ],
+ "pal": {
+  "k": "#24201d",
+  "l": "#2f261d",
+  "m": "#372f25",
+  "n": "#474138",
+  "o": "#7e7362"
+ },
+ "forra": {
   "ritad": 1,
-  "av": "API:t (claude-opus-5-5), bästa av 3",
-  "om": "Versionen Björn kommenterade (omritningen i v96 fick inte hans kommentar).",
-  "w": 16,
-  "h": 16,
   "rader": [
-    ".....kkkkkk.....",
-    "...kknnnmmmkk...",
-    "..knnnnnnmmmmk..",
-    ".knnopnnnmnmmlk.",
-    ".knnnmnnmnmmmlk.",
-    "knnnmnnmnmmmmllk",
-    "knnnnnmnmmmmlmlk",
-    "knnnmnmmmmmlmllk",
-    "knmnmmmmmmlmmllk",
-    "kmnmmmmlmmllmllk",
-    "kmmmmmlmmllllllk",
-    ".kmmlmmllmllllk.",
-    ".kllmlllllllllk.",
-    "..kllllllllllk..",
-    "...kkllllllkk...",
-    ".....kkkkkk....."
-  ],
-  "pal": {
-    "k": "#24201d",
-    "l": "#2f261d",
-    "m": "#372f25",
-    "n": "#474138",
-    "o": "#7e7362"
-  }
+   ".....kkkkkk.....",
+   "...kknnnmmmkk...",
+   "..knnnnnnmmmmk..",
+   ".knnopnnnmnmmlk.",
+   ".knnnmnnmnmmmlk.",
+   "knnnmnnmnmmmmllk",
+   "knnnnnmnmmmmlmlk",
+   "knnnmnmmmmmlmllk",
+   "knmnmmmmmmlmmllk",
+   "kmnmmmmlmmllmllk",
+   "kmmmmmlmmllllllk",
+   ".kmmlmmllmllllk.",
+   ".kllmlllllllllk.",
+   "..kllllllllllk..",
+   "...kkllllllkk...",
+   ".....kkkkkk....."
+  ]
+ }
 }

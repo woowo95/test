@@ -1,32 +1,49 @@
 {
-  "id": "sym_vind",
+ "id": "sym_vind",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Val 0. Alla tre versionerna har samma fel: en hel, slät och tung oval i skiffer med streck bakom. I spelets storlek ser den ut som en kastad sten eller ett ägg i fart, inte som vindpusten i 💨. Jag tror att det var därför Björn sa nej. I den nya ritningen är pusten ett moln av rundade bucklor: en hög buckla överst, en buckla till höger och två små nere. Mellan bucklorna går konturen in en bit, så att silhuetten blir mjuk och luftig och inte läses som en stenklump. Tre fartstreck av olika längd kommer in från vänster, och de två översta går in i molnet som virvellinjer. Så läses rörelsen åt höger direkt, som i emojin. Tonerna är skiffer3 överst till vänster, skiffer2 i mitten och skiffer1 nere till höger, med en enda punkt ben3 som glans. Konturen är skiffer0 runt hela symbolen, och allt runt den är genomskinligt. Den är 16 punkter bred och 12 hög, så den fyller rutan på bredden och har samma kraftiga kontur och få, stora former som de korsade svärden. Den kalla, dämpade gråblå tonen står ut både mot mörk och ljus panel utan att ta de mättade tonerna som är sparade för eld och mat.",
+ "w": 16,
+ "h": 12,
+ "rader": [
+  "........QQQQ....",
+  ".......QwTTTQ...",
+  "......QTTTTTSQQ.",
+  "QQQQQ.QTTTTSQTSQ",
+  "QTTTTQTTTSSSTSSQ",
+  "QQQQQQTTSSSSSSRQ",
+  "..QQQQTSSSSSRSRQ",
+  ".QTTTTQSSSSRSRRQ",
+  ".QQQQQQSSSRRRRQ.",
+  "QQQQQ.QSSRQRRQ..",
+  "QTTSQ..QQQ.QQ...",
+  ".QQQ............"
+ ],
+ "pal": {
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e",
+  "w": "#dad0bb"
+ },
+ "forra": {
   "ritad": 1,
-  "av": "API:t (claude-opus-5-5), bästa av 3",
-  "om": "Versionen Björn kommenterade (omritningen i v96 fick inte hans kommentar).",
-  "w": 16,
-  "h": 15,
   "rader": [
-    ".........QQQQQ..",
-    "........QTTTTSQ.",
-    "........QTQQQTSQ",
-    ".QQQQQQQQQQ.QTSQ",
-    "QwTTTTTTTSTTTTSQ",
-    "QSSSSSSSSSRSRSQ.",
-    ".QQQQQQQQQQQQQ..",
-    ".....QQQQQQQQ...",
-    "....QTTTTTSTTQ..",
-    "....QSSSSSSRSQ..",
-    ".....QQQQQQQQ...",
-    ".QQQQQQQQQQ.....",
-    "QTTTTTTSTTTQ....",
-    "QSSSSSSSSRSQ....",
-    ".QQQQQQQQQQ....."
-  ],
-  "pal": {
-    "Q": "#233035",
-    "R": "#3e5156",
-    "S": "#61767a",
-    "T": "#8a9c9e",
-    "w": "#dad0bb"
-  }
+   ".........QQQQQ..",
+   "........QTTTTSQ.",
+   "........QTQQQTSQ",
+   ".QQQQQQQQQQ.QTSQ",
+   "QwTTTTTTTSTTTTSQ",
+   "QSSSSSSSSSRSRSQ.",
+   ".QQQQQQQQQQQQQ..",
+   ".....QQQQQQQQ...",
+   "....QTTTTTSTTQ..",
+   "....QSSSSSSRSQ..",
+   ".....QQQQQQQQ...",
+   ".QQQQQQQQQQ.....",
+   "QTTTTTTSTTTQ....",
+   "QSSSSSSSSRSQ....",
+   ".QQQQQQQQQQ....."
+  ]
+ }
 }

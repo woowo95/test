@@ -1,33 +1,54 @@
 {
-  "id": "sym_hand",
+ "id": "sym_hand",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag väljer version 1. Den fyller rutan helt med 16 × 16 punkter, medan version 3 bara är 15 bred. Den läses direkt som en öppen hand framifrån, som ✋. Långfingret är högst, pekfinger och ringfinger är lika höga och lillfingret är lägst. Tummen står ut åt vänster och viker in mot handflatan. Fingrarna går ihop till en handflata och slutar i en rak handled. Konturen är jord0 hela vägen runt, så handen syns både på mörk och ljus panel, precis som de korsade svärden i förebilden. Huden har tre bentoner med korn och inga fläckar. Ljuset kommer uppifrån vänster: glansen (w) sitter i topparna på pekfingret, långfingret och tummen, och den mörkaste tonen (o) ligger längs högerkanten och nere till höger. Version 2 har mörkare, plattare fingrar och svagare glans. Version 3 är smalare och tummen syns sämre. Björn skrev inte vad som var fel med förra ritningen, så jag valde den version som har tydligast silhuett och följer guiden bäst. Punkterna är oförändrade, eftersom jag inte hittade något som bryter mot reglerna.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  ".......EE.......",
+  "....EEEwqEEE....",
+  "...EwqEqpEqpE...",
+  "...EqqEqpEqpEEE.",
+  "...EqpEqpEqpEqoE",
+  "...EqpEqqEqpEpoE",
+  "...EqpEqpEqpEqoE",
+  ".EEEqqEqpEqpEpoE",
+  "EwqEqpEqpEqpEqoE",
+  "EqpEqqpqppqppqoE",
+  ".EqpEqqqpqppppoE",
+  "..EpqqqqpqpppooE",
+  "...EpqqpqppppoE.",
+  "....EppqpppooE..",
+  "....EpppppooE...",
+  "....EEEEEEEEE..."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "w": "#dad0bb"
+ },
+ "forra": {
   "ritad": 1,
-  "av": "API:t (claude-opus-5-5), bästa av 3",
-  "om": "Versionen Björn kommenterade (omritningen i v96 fick inte hans kommentar).",
-  "w": 16,
-  "h": 16,
   "rader": [
-    ".......EE.......",
-    "....EEEHGEEE....",
-    "...EHGEHGEHGE...",
-    "...EHGEHGEHGEEE.",
-    "...EHGEGGEHGEHFE",
-    "...EGGEHGEGFEHFE",
-    "...EHGEHGEHGEGFE",
-    ".EEEGGEGGEGFEGFE",
-    "EHGEHGFHGFGFFGFE",
-    "EHGEHHGGHGGGGGFE",
-    "EHGGHGGHGGGGGFFE",
-    ".EHGGHGGGGGGGFFE",
-    "..EGHGGGGHGGGFE.",
-    "...EGGGGGGGGFFE.",
-    "....EGHGGGGFFE..",
-    "....EEEEEEEEEE.."
-  ],
-  "pal": {
-    "E": "#3f2415",
-    "o": "#7e7362",
-    "p": "#a0947d",
-    "q": "#bdb39b",
-    "w": "#dad0bb"
-  }
+   ".......EE.......",
+   "....EEEHGEEE....",
+   "...EHGEHGEHGE...",
+   "...EHGEHGEHGEEE.",
+   "...EHGEGGEHGEHFE",
+   "...EGGEHGEGFEHFE",
+   "...EHGEHGEHGEGFE",
+   ".EEEGGEGGEGFEGFE",
+   "EHGEHGFHGFGFFGFE",
+   "EHGEHHGGHGGGGGFE",
+   "EHGGHGGHGGGGGFFE",
+   ".EHGGHGGGGGGGFFE",
+   "..EGHGGGGHGGGFE.",
+   "...EGGGGGGGGFFE.",
+   "....EGHGGGGFFE..",
+   "....EEEEEEEEEE.."
+  ]
+ }
 }

@@ -1,33 +1,54 @@
 {
-  "id": "sym_dimma",
+ "id": "sym_dimma",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "....nnnn..nnn...",
+  "...nwwqqnnwqpn..",
+  ".nnwwqqqqwqqqpn.",
+  "nwwqqpqqqpqqpqon",
+  "nqqpqqqpqqpqpoon",
+  ".nnnnnnnnnnnnnn.",
+  "................",
+  "..nnnnnnnnnnnn..",
+  ".nwwqqpqqpqqppn.",
+  ".nqpqpqqpqppoon.",
+  "..nnnnnnnnnnnn..",
+  "................",
+  ".nnnnnnnnnnn....",
+  "nwwqpqqqpqqpn...",
+  "nqpqqpqpqppon...",
+  ".nnnnnnnnnnn...."
+ ],
+ "pal": {
+  "n": "#474138",
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "w": "#dad0bb"
+ },
+ "forra": {
   "ritad": 1,
-  "av": "API:t (claude-opus-5-5), bästa av 3",
-  "om": "Versionen Björn kommenterade (omritningen i v96 fick inte hans kommentar).",
-  "w": 16,
-  "h": 16,
   "rader": [
-    "...QQQQ.........",
-    "..QTwTSQQQQQ....",
-    ".QTTTTSSTTTSQ...",
-    "QTTTSSTSSSSSRQ..",
-    "QTSSTSSSSRSRRQ..",
-    ".QQSRSSRSRRQQ...",
-    "...QQQQQQQQ.....",
-    "................",
-    ".QQQQQQQQQQQ....",
-    "QTTSTSSTSSSRQ...",
-    "QSSRSSRSRSRRQ...",
-    ".QQQQQQQQQQQ....",
-    "....QQQQQQQQQQQ.",
-    "...QTTSTSSTSSSRQ",
-    "...QSRSSRSRSRRRQ",
-    "....QQQQQQQQQQQ."
-  ],
-  "pal": {
-    "Q": "#233035",
-    "R": "#3e5156",
-    "S": "#61767a",
-    "T": "#8a9c9e",
-    "q": "#bdb39b"
-  }
+   "...QQQQ.........",
+   "..QTwTSQQQQQ....",
+   ".QTTTTSSTTTSQ...",
+   "QTTTSSTSSSSSRQ..",
+   "QTSSTSSSSRSRRQ..",
+   ".QQSRSSRSRRQQ...",
+   "...QQQQQQQQ.....",
+   "................",
+   ".QQQQQQQQQQQ....",
+   "QTTSTSSTSSSRQ...",
+   "QSSRSSRSRSRRQ...",
+   ".QQQQQQQQQQQ....",
+   "....QQQQQQQQQQQ.",
+   "...QTTSTSSTSSSRQ",
+   "...QSRSSRSRSRRRQ",
+   "....QQQQQQQQQQQ."
+  ]
+ }
 }

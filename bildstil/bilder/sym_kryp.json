@@ -1,35 +1,51 @@
 {
-  "id": "sym_kryp",
+ "id": "sym_kryp",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 2. Den följer Björns kommentar bäst: den grönaktiga tunikan, de bruna byxorna och huvudet med öga läses som en människa på alla fyra, med knät i marken bak och handen fram. Version 1 och 3 är bruna rakt igenom med ett blekt huvud och liknar mer ett djur, som en hund eller en häst. Version 2 passar också förebilden: kontur i materialets mörkaste ton (jord0 och oliv0), få och stora former och ljuset uppe till vänster. Den är 16 punkter bred och fyller rutan. Jag ändrade bara en sak: överst på huvudet ritade jag hår i jord1 i stället för hud, så att huvudet läses som ett människohuvud och inte en nos. Ögat är kvar i kol0.",
+ "w": 16,
+ "h": 13,
+ "rader": [
+  "............EEE.",
+  "...........EFFFE",
+  "...MMMMMM..EFHHE",
+  "..MPPPOPOOEFHHkE",
+  ".MPPOPOOPONEGHHE",
+  ".MPOOONOONNEGGE.",
+  ".MOONONNONNMEE..",
+  ".EHGFEMMMMONM...",
+  ".EGGFE...MONM...",
+  "..EHGFE..MONM...",
+  "EGHGGGFE.EHGE...",
+  "EFFGFFFE.EGFFE..",
+  "EEEEEEEE.EEEEE.."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "M": "#353204",
+  "N": "#4b4f00",
+  "O": "#647025",
+  "P": "#898b4c",
+  "k": "#24201d"
+ },
+ "forra": {
   "ritad": 1,
-  "av": "API:t (claude-opus-5-5), bästa av 3",
-  "om": "Versionen Björn kommenterade (omritningen i v96 fick inte hans kommentar).",
-  "w": 16,
-  "h": 12,
   "rader": [
-    "...........M...M",
-    "............M.M.",
-    "...........MMMM.",
-    "..........MPPOOM",
-    "..........MPkONM",
-    ".MMM.MMM.MMPOONM",
-    "MPPOMPPOMPOOONNM",
-    "MPOONPOONOOONNM.",
-    "MOONNOONNONNNNM.",
-    "MONNMONNMNNNNM..",
-    ".MMMMMMMMMMMMM..",
-    "..M.M..M.M..M..."
-  ],
-  "pal": {
-    "E": "#3f2415",
-    "F": "#5e3c24",
-    "G": "#7d5b40",
-    "M": "#353204",
-    "N": "#4b4f00",
-    "O": "#647025",
-    "P": "#898b4c",
-    "k": "#24201d",
-    "o": "#7e7362",
-    "p": "#a0947d",
-    "q": "#bdb39b"
-  }
+   "...........M...M",
+   "............M.M.",
+   "...........MMMM.",
+   "..........MPPOOM",
+   "..........MPkONM",
+   ".MMM.MMM.MMPOONM",
+   "MPPOMPPOMPOOONNM",
+   "MPOONPOONOOONNM.",
+   "MOONNOONNONNNNM.",
+   "MONNMONNMNNNNM..",
+   ".MMMMMMMMMMMMM..",
+   "..M.M..M.M..M..."
+  ]
+ }
 }

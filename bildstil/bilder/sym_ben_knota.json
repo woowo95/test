@@ -1,33 +1,54 @@
 {
-  "id": "sym_ben_knota",
+ "id": "sym_ben_knota",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 1. Den är det enda tydligt brutna benet: ett diagonalt ben med knölar i båda ändarna och en synlig glipa i mitten. Lutningen och den mörka konturen hör ihop med de korsade svärden, och symbolen fyller hela rutan på 16 × 16 punkter. Version 2 och 3 liknar mest två vinkeltecken (> <) och läses inte som ett ben i liten storlek. Ändringar: Den övre delens brottkant (rad 7) fick ben1 i stället för ben0, så att splittret syns mot glipan i stället för att flyta ihop med konturen. Den mörka ben0-pricken på den nedre knölens vänstra, ljusa sida (rad 12) togs bort, eftersom den bröt mot ljuset uppifrån vänster och såg ut som en fläck.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "..........kkk...",
+  ".........kwqqk..",
+  ".........kqqpkk.",
+  ".........kqqpqpk",
+  ".........kqqppok",
+  "........kqpppok.",
+  ".......kqpokkk..",
+  "........kpk.....",
+  ".....kk..k......",
+  "..kkkqpk........",
+  ".kwqqpok........",
+  "kqqppok.........",
+  "kppppok.........",
+  ".kkqpok.........",
+  "..kpook.........",
+  "...kkk.........."
+ ],
+ "pal": {
+  "k": "#24201d",
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "w": "#dad0bb"
+ },
+ "forra": {
   "ritad": 1,
-  "av": "API:t (claude-opus-5-5), bästa av 3",
-  "om": "Versionen Björn kommenterade (omritningen i v96 fick inte hans kommentar).",
-  "w": 16,
-  "h": 16,
   "rader": [
-    ".........kk.....",
-    "........kwqk....",
-    ".......kqqqpk...",
-    ".......kqqppkk..",
-    "........kqqpqqk.",
-    "........kqpqqppk",
-    ".......kqpopppok",
-    "..kk..kqpokkpok.",
-    ".kwqkkqpok..kk..",
-    "kqqpqqpok.......",
-    "kqpqppok........",
-    ".kqpqpok........",
-    "..kkqqpok.......",
-    "...kpppok.......",
-    "....kook........",
-    ".....kk........."
-  ],
-  "pal": {
-    "k": "#24201d",
-    "o": "#7e7362",
-    "p": "#a0947d",
-    "q": "#bdb39b",
-    "w": "#dad0bb"
-  }
+   ".........kk.....",
+   "........kwqk....",
+   ".......kqqqpk...",
+   ".......kqqppkk..",
+   "........kqqpqqk.",
+   "........kqpqqppk",
+   ".......kqpopppok",
+   "..kk..kqpokkpok.",
+   ".kwqkkqpok..kk..",
+   "kqqpqqpok.......",
+   "kqpqppok........",
+   ".kqpqpok........",
+   "..kkqqpok.......",
+   "...kpppok.......",
+   "....kook........",
+   ".....kk........."
+  ]
+ }
 }

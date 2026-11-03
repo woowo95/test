@@ -1,35 +1,50 @@
 {
-  "id": "sym_handslag",
+ "id": "sym_handslag",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Val 0: ingen version läste tydligt som ett handslag. Version 1 liknar mest en knuten näve eller en kockmössa på två ben, och ärmarna hänger nedåt som byxben. Version 2 ser ut som en hjälm eller en bulle i en skål. Version 3 ser ut som en svamp eller öronskydd. Jag ritade därför ett nytt handslag som följer emojin 🤝 och läses från sidan. Två ärmar kommer in vågrätt från var sin kant: rost till vänster och oliv till höger, med rost0 och oliv0 som kontur. De möts i mitten i en knuten hand med lodräta fingerlinjer. Överst sitter en tydlig tumme med en ensam glanspunkt (ben3) uppe till vänster. Ljuset kommer uppifrån vänster: händerna går från ben2 till ben0, och konturen är jord0 som på trähandtagen i förebilden. Symbolen fyller hela bredden (16 punkter) och är 10 punkter hög, centrerad i rutan. Den har få, stora former och samma ärm- och tontänk som förebilden, så den syns på både mörk och ljus bakgrund.",
+ "w": 16,
+ "h": 10,
+ "rader": [
+  "......EEEE......",
+  "rrr..EwqqpE..MMM",
+  "rutrEqqqqqpEEMPM",
+  "rutEqqqpEqqqpEPM",
+  "rtsEqqpoEqppoEOM",
+  "rtsEqpooEppooEOM",
+  "rtsEppooEpoooEOM",
+  "rtsEpoooEpoooEOM",
+  "rssrEooEoooEEMNM",
+  "rrrr.EEEEEEE.MMM"
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "M": "#353204",
+  "N": "#4b4f00",
+  "O": "#647025",
+  "P": "#898b4c",
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "r": "#521100",
+  "s": "#742a01",
+  "t": "#a14808",
+  "u": "#bd753e",
+  "w": "#dad0bb"
+ },
+ "forra": {
   "ritad": 1,
-  "av": "API:t (claude-opus-5-5), bästa av 3",
-  "om": "Versionen Björn kommenterade (omritningen i v96 fick inte hans kommentar).",
-  "w": 16,
-  "h": 10,
   "rader": [
-    "......EEEE......",
-    ".....EwqqpEEE...",
-    "rrrrEwqqqpqqEMMM",
-    "rutrqqqqpqqpMPOM",
-    "rtsrqqpqqpqpMONM",
-    "rtsrqoqpoqpoMONM",
-    "rtsrpoqpoqpoMONM",
-    "rssrpoppoppoMNNM",
-    "rrrrEpoooooEMMMM",
-    "....EEEEEEEE...."
-  ],
-  "pal": {
-    "E": "#3f2415",
-    "F": "#5e3c24",
-    "G": "#7d5b40",
-    "H": "#987e62",
-    "Q": "#233035",
-    "R": "#3e5156",
-    "S": "#61767a",
-    "T": "#8a9c9e",
-    "q": "#bdb39b",
-    "r": "#521100",
-    "s": "#742a01",
-    "t": "#a14808",
-    "u": "#bd753e"
-  }
+   "......EEEE......",
+   ".....EwqqpEEE...",
+   "rrrrEwqqqpqqEMMM",
+   "rutrqqqqpqqpMPOM",
+   "rtsrqqpqqpqpMONM",
+   "rtsrqoqpoqpoMONM",
+   "rtsrpoqpoqpoMONM",
+   "rssrpoppoppoMNNM",
+   "rrrrEpoooooEMMMM",
+   "....EEEEEEEE...."
+  ]
+ }
 }

@@ -1,33 +1,52 @@
 {
-  "id": "sym_blamarke",
+ "id": "sym_blamarke",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 1. Den följer Björns kommentar om en enkel blå ring bäst: den är 16 × 16 och symmetrisk, med ett jämnt centrerat hål (kolumn 4–11 och rad 4–11). Den har en hel kontur i skiffer0, både utanpå och runt hålet, och ljuset faller rätt, från skiffer3 uppe till vänster till skiffer1 nere till höger, med lite korn utan fläckar. Den hör ihop med förebildens enkla form med kontur och läses tydligt på både mörk och ljus bakgrund. Version 2 är bara 15 rader hög och sned (rad 1 och raderna 10–13 är förskjutna), och den har mer brokigt korn. Version 3 har mörka R-punkter på den belysta vänstra sidan, vilket bryter ljusriktningen. Jag ändrade ingenting: version 1 har rätt storlek, bara paletten och ren kontur.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  ".....QQQQQQ.....",
+  "...QQTTTSSSQQ...",
+  "..QTTTSSSSSSRQ..",
+  ".QTTSSQQQQSSSRQ.",
+  ".QTSSQ....QSSRQ.",
+  "QTTSQ......QSSRQ",
+  "QTSSQ......QSRRQ",
+  "QTSQ........QSRQ",
+  "QSSQ........QRRQ",
+  "QSSRQ......QSRRQ",
+  "QSSRQ......QRRRQ",
+  ".QSSRQ....QRRRQ.",
+  ".QSSRRQQQQRRRRQ.",
+  "..QSRSRRRRRRRQ..",
+  "...QQRRRRRRQQ...",
+  ".....QQQQQQ....."
+ ],
+ "pal": {
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e"
+ },
+ "forra": {
   "ritad": 1,
-  "av": "API:t (claude-opus-5-5), bästa av 3",
-  "om": "Versionen Björn kommenterade (omritningen i v96 fick inte hans kommentar).",
-  "w": 16,
-  "h": 15,
   "rader": [
-    ".....rrrr.......",
-    "...rrsstsrr.....",
-    "..rsttsssssrr...",
-    ".rstsRRRRsssr...",
-    ".rtsRSTSRRRssrr.",
-    "rstRSTSRRRRRsssr",
-    "rssRSSRRRRRRRssr",
-    "rtsRSRRRRRRQRssr",
-    ".rsRRRRRRRQQssr.",
-    ".rssRRRRRQQRsr..",
-    "..rsRRRRQQRsssr.",
-    "..rssRRRRsssssr.",
-    "...rsssssssssr..",
-    "....rrssssssr...",
-    ".....rrrrrrr...."
-  ],
-  "pal": {
-    "Q": "#233035",
-    "R": "#3e5156",
-    "S": "#61767a",
-    "T": "#8a9c9e",
-    "r": "#521100",
-    "s": "#742a01"
-  }
+   ".....rrrr.......",
+   "...rrsstsrr.....",
+   "..rsttsssssrr...",
+   ".rstsRRRRsssr...",
+   ".rtsRSTSRRRssrr.",
+   "rstRSTSRRRRRsssr",
+   "rssRSSRRRRRRRssr",
+   "rtsRSRRRRRRQRssr",
+   ".rsRRRRRRRQQssr.",
+   ".rssRRRRRQQRsr..",
+   "..rsRRRRQQRsssr.",
+   "..rssRRRRsssssr.",
+   "...rsssssssssr..",
+   "....rrssssssr...",
+   ".....rrrrrrr...."
+  ]
+ }
 }
