@@ -1,38 +1,38 @@
 {
-  "id": "sten",
+ "id": "sten",
+ "ritad": 4,
+ "av": "Claude",
+ "om": "brun rundad sten i jordfärgerna i stället för kol",
+ "w": 6,
+ "h": 5,
+ "rader": [
+  "..EEE.",
+  ".EGHFE",
+  "EGHGFE",
+  "EFGFFE",
+  ".EEEE."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "F": "#5e3c24"
+ },
+ "forra": {
   "ritad": 3,
-  "av": "Claude",
-  "om": "Claude: samma form som förut men i kolets mörka gråbruna toner i stället för flintans blågrå, så att stenen inte liknar flintan.",
-  "w": 6,
-  "h": 5,
   "rader": [
-    ".kkk..",
-    "konmk.",
-    "knmlkk",
-    "kmlkmk",
-    ".kk.k."
+   ".kkk..",
+   "konmk.",
+   "knmlkk",
+   "kmlkmk",
+   ".kk.k."
   ],
   "pal": {
-    "k": "#24201d",
-    "l": "#2f261d",
-    "m": "#372f25",
-    "n": "#474138",
-    "o": "#7e7362"
-  },
-  "forra": {
-    "ritad": 2,
-    "rader": [
-      ".QQQ..",
-      "QTTSQ.",
-      "QTSRQQ",
-      "QSRQSQ",
-      ".QQ.Q."
-    ],
-    "pal": {
-      "Q": "#233035",
-      "R": "#3e5156",
-      "S": "#61767a",
-      "T": "#8a9c9e"
-    }
+   "k": "#24201d",
+   "l": "#2f261d",
+   "m": "#372f25",
+   "n": "#474138",
+   "o": "#7e7362"
   }
+ }
 }

@@ -1,40 +1,44 @@
 {
-  "id": "virke",
+ "id": "virke",
+ "ritad": 4,
+ "av": "Claude",
+ "om": "helt ny utan förlaga: två tillyxade bräder förskjutna på varandra med ljusa ändar",
+ "w": 12,
+ "h": 7,
+ "rader": [
+  "..EEEEEEEEEE",
+  "..EHGHHGHHqE",
+  "..EGFGGFGGpE",
+  "EEEEEEEEEEEE",
+  "EHGHHGHHqE..",
+  "EGFGGFGGpE..",
+  "EEEEEEEEEE.."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "H": "#987e62",
+  "G": "#7d5b40",
+  "q": "#bdb39b",
+  "F": "#5e3c24",
+  "p": "#a0947d"
+ },
+ "forra": {
   "ritad": 3,
-  "av": "Claude",
-  "om": "Claude: ny bild utan referens: tre hyvlade bräder staplade på varandra, ljusare än veden, med mörka fogar mellan.",
-  "w": 12,
-  "h": 7,
   "rader": [
-    ".EEEEEEEEEE.",
-    ".EpHpHHGHGE.",
-    "EEEEEEEEEEEE",
-    "EpHHpHGHGHGE",
-    "EEEEEEEEEEEE",
-    "EpHpHHGHGGFE",
-    "EEEEEEEEEEEE"
+   ".EEEEEEEEEE.",
+   ".EpHpHHGHGE.",
+   "EEEEEEEEEEEE",
+   "EpHHpHGHGHGE",
+   "EEEEEEEEEEEE",
+   "EpHpHHGHGGFE",
+   "EEEEEEEEEEEE"
   ],
   "pal": {
-    "E": "#3f2415",
-    "F": "#5e3c24",
-    "G": "#7d5b40",
-    "H": "#987e62",
-    "p": "#a0947d"
-  },
-  "forra": {
-    "ritad": 2,
-    "rader": [
-      "EqHHGHGHGGE..",
-      "EEEEEEEEEEEEE",
-      "..EHGFGGFGFFE",
-      "..EEEEEEEEEEE"
-    ],
-    "pal": {
-      "E": "#3f2415",
-      "F": "#5e3c24",
-      "G": "#7d5b40",
-      "H": "#987e62",
-      "q": "#bdb39b"
-    }
+   "E": "#3f2415",
+   "F": "#5e3c24",
+   "G": "#7d5b40",
+   "H": "#987e62",
+   "p": "#a0947d"
   }
+ }
 }
