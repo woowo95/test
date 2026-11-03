@@ -11,6 +11,7 @@ import { gaster } from '../../ui/gaster';
 import { filt as filtFlik } from '../../ui/flikar/filt';
 import { linkify } from '../../ui/hjalp';
 import { taBortITest, testBortaIByn } from '../../ui/testborta';
+import { station as stationFlik } from '../../ui/flikar/station';
 import { lager as lagerFlik } from '../../ui/flikar/lager';
 // handlaren väntar på kvällen innan filten läggs ut (steg 4.5.4.11): testerna som handlar på dagen hoppar över väntan
 const utanVantan = (s: State) => { if (s.handlare?.fas === 'vantar') s.handlare.kvall = s.now; };
@@ -1480,6 +1481,29 @@ SCENARIER.testborta = {
       ['allt annat i testläget var en kopia', real.people.length === folk],
       ['byns sista lagerplats kan inte tas bort', !!SIM.lagerHinder(ensam) && !SIM.taBortLager(ensam, enda) && SIM.zonesOf(ensam).length === 1],
       ['listan över det borttagna töms', ui.testBorta.st.length === 0 && ui.testBorta.lager.length === 0],
+    ];
+  },
+};
+
+SCENARIER.forvarlista = {
+  text: 'Det som förvaras i en kista eller på en hylla visas som i ett lager (steg 4.5.7.9): ett tryck på kistan eller hyllan visar innehållet i samma lista som lagret, med symbol, namn, antal, kvalitet och skick. Bara panelen.',
+  kor: () => {
+    utanWebblasare();
+    const s = createState(6, START);
+    rikBy(s); setByn(s);
+    const z0 = SIM.zonesOf(s)[0], ny = (k: string, x: number, y: number) => { const t: SIM.Station = { id: s.nextStation = (s.nextStation ?? 0) + 1, k, x, y, kvar: 0 }; (s.stationer ??= []).push(t); return t; };
+    const kista = ny('kista', z0.x + z0.w + 1, z0.y), hylla = ny('hylla', z0.x, z0.y);
+    kista.ag = living(s)[0].id;
+    const yxa = SIM.newTing(s, 'yxa', 1, kista.ag); yxa.vid = kista.id; yxa.x = kista.x; yxa.y = kista.y; yxa.c = 0.5;
+    (s.stackar ??= []).push({ k: 'sten', n: 3, c: 1, x: hylla.x, y: hylla.y });
+    SIM.touch(s);
+    ui.stationId = kista.id; const k = stationFlik.html();
+    ui.stationId = hylla.id; const h = stationFlik.html();
+    const tom = ny('kista', z0.x + z0.w + 2, z0.y); ui.stationId = tom.id; const t = stationFlik.html();
+    return [
+      ['kistan visar yxan i lagrets lista med skicket', /<dl class="kv stk">/.test(k) && k.includes(SIM.sakNamn('yxa')) && k.includes(`data-sak="t:${yxa.id}"`) && k.includes('50 %')],
+      ['hyllan visar stenarna med antalet, som i lagret', /<dl class="kv stk">/.test(h) && /Sten 3 st/.test(h) && h.includes('100 %')],
+      ['en tom kista säger att den är tom', t.includes('tom') && !/<dl class="kv stk">/.test(t)],
     ];
   },
 };

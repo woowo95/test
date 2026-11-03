@@ -5,7 +5,7 @@ import { iconImg, tecknet } from '../ikoner';
 import { $, esc, fmtN, prickar } from './hjalp';
 import { outPilesAt, piles, s, ui, uppgiftVid } from './lage';
 import { posOf } from './manniskor';
-import { iBruk } from './foremal';
+import { iBruk } from './ibruk';
 import { djurSynliga } from './vaxter';
 import { gaster } from './gaster';
 import { valdFilt } from './flikar/filt';
