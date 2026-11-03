@@ -1,8 +1,8 @@
 {
  "id": "sym_notis_dod",
- "ritad": 1,
+ "ritad": 2,
  "av": "Claude",
- "om": "ritad av Claude: samma brev för alla notiser, med sigill i kol och en dödskalle: någon har dött",
+ "om": "Sigillet mindre (6 × 6 punkter) efter Björns kommentar på det tomma brevet.",
  "w": 16,
  "h": 16,
  "rader": [
@@ -13,14 +13,14 @@
   "owpqqqqqqqqpqppo",
   "owqpqqqqqqqqpqpo",
   "owqppqqqqqqpqqpo",
-  "owqqqpkkkkpqqqpo",
+  "owqqqpqqqqpqqqpo",
+  "owqqqqkkkkqqqqpo",
   "owqqqkqqqqkqqqpo",
-  "owqqkqqqqqqkqqpo",
-  "owqqkqlqqlqkqqpo",
-  "owqqkqqqqqqkqqpo",
-  "opppklqqqqlkpppo",
-  ".ooookqllqkoooo.",
-  "......kkkk......",
+  "owqqpkkqqkkqqqpo",
+  "owqqqkqqqqkqqqpo",
+  "oppppklqqlkppppo",
+  ".oooookkkkooooo.",
+  "................",
   "................"
  ],
  "pal": {

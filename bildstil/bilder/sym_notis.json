@@ -1,8 +1,8 @@
 {
  "id": "sym_notis",
- "ritad": 1,
+ "ritad": 2,
  "av": "Claude",
- "om": "ritad av Claude: samma brev för alla notiser, med sigill i rost: raden överst med antalet olästa notiser",
+ "om": "Sigillet mindre (6 × 6 punkter) efter Björns kommentar på det tomma brevet.",
  "w": 16,
  "h": 16,
  "rader": [
@@ -13,14 +13,14 @@
   "owpqqqqqqqqpqppo",
   "owqpqqqqqqqqpqpo",
   "owqppqqqqqqpqqpo",
-  "owqqqprrrrpqqqpo",
-  "owqqqrttssrqqqpo",
-  "owqqrtsssssrqqpo",
-  "owqqrssttssrqqpo",
-  "owqqrssttssrqqpo",
-  "oppprssssssrpppo",
-  ".oooorssssroooo.",
-  "......rrrr......",
+  "owqqqpqqqqpqqqpo",
+  "owqqqqrrrrqqqqpo",
+  "owqqqrstssrqqqpo",
+  "owqqprtsssrqqqpo",
+  "owqqqrssssrqqqpo",
+  "opppprssssrppppo",
+  ".ooooorrrrooooo.",
+  "................",
   "................"
  ],
  "pal": {
@@ -29,7 +29,7 @@
   "w": "#dad0bb",
   "q": "#bdb39b",
   "r": "#521100",
-  "t": "#a14808",
-  "s": "#742a01"
+  "s": "#742a01",
+  "t": "#a14808"
  }
 }

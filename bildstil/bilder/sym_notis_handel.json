@@ -1,8 +1,8 @@
 {
  "id": "sym_notis_handel",
- "ritad": 1,
+ "ritad": 2,
  "av": "Claude",
- "om": "ritad av Claude: samma brev för alla notiser, med sigill i skiffer och två pilar: byte med handlaren, gäster",
+ "om": "Sigillet mindre (6 × 6 punkter) efter Björns kommentar på det tomma brevet.",
  "w": 16,
  "h": 16,
  "rader": [
@@ -13,14 +13,14 @@
   "owpqqqqqqqqpqppo",
   "owqpqqqqqqqqpqpo",
   "owqppqqqqqqpqqpo",
-  "owqqqpQQQQpqqqpo",
-  "owqqqQSSRwQqqqpo",
-  "owqqQwwwwwwQqqpo",
-  "owqqQRRRRwRQqqpo",
-  "owqqQRwRRRRQqqpo",
-  "opppQwwwwwwQpppo",
-  ".ooooQwRRRQoooo.",
-  "......QQQQ......",
+  "owqqqpqqqqpqqqpo",
+  "owqqqqQQQQqqqqpo",
+  "owqqqQwwwwQqqqpo",
+  "owqqpQSRwRQqqqpo",
+  "owqqqQRwRRQqqqpo",
+  "oppppQwwwwQppppo",
+  ".oooooQQQQooooo.",
+  "................",
   "................"
  ],
  "pal": {

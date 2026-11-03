@@ -1395,5 +1395,7 @@
     hex() { return Object.fromEntries([...BILDER.tecken].map(ch => [ch, P.cols[tonAv(ch)].hex])); },
     prova(id, data) { BILDFILER[id] = data; },
   };
+  // en bybo på kartan till sidans bilder (sporterna och dragkampen i valdelen): samma person för samma frö
+  window.BYBO = (fro, rikt, ben, arm) => kartFigur(slumpPerson(slumpFran(fro), { alder: 'vuxen' }), rikt, ben, arm);
   window.PORTRATTEN = { portratt, kartBild, neutral, granskPerson, KORT, medForslag, provaDel(id, data) { DELAR[id] = data; }, png(B, skala = 4) { const c = document.createElement('canvas'); tillCanvas(B, c, 0); const s = document.createElement('canvas'); s.width = B.w * skala; s.height = B.h * skala; const g = s.getContext('2d'); g.imageSmoothingEnabled = false; g.drawImage(c, 0, 0, s.width, s.height); return s.toDataURL('image/png'); } };
 })();

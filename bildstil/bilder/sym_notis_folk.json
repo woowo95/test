@@ -1,8 +1,8 @@
 {
  "id": "sym_notis_folk",
- "ritad": 1,
+ "ritad": 2,
  "av": "Claude",
- "om": "ritad av Claude: samma brev för alla notiser, med sigill i oliv och en person: födsel, in- och utflyttning, ny ledare",
+ "om": "Sigillet mindre (6 × 6 punkter) efter Björns kommentar på det tomma brevet.",
  "w": 16,
  "h": 16,
  "rader": [
@@ -13,14 +13,14 @@
   "owpqqqqqqqqpqppo",
   "owqpqqqqqqqqpqpo",
   "owqppqqqqqqpqqpo",
-  "owqqqpMMMMpqqqpo",
-  "owqqqMOwwNMqqqpo",
-  "owqqMONwwNNMqqpo",
-  "owqqMNNNNNNMqqpo",
-  "owqqMNwwwwNMqqpo",
-  "opppMwwwwwwMpppo",
-  ".oooowwwwwwoooo.",
-  "......MMMM......",
+  "owqqqpqqqqpqqqpo",
+  "owqqqqMMMMqqqqpo",
+  "owqqqMNwwNMqqqpo",
+  "owqqpMONNNMqqqpo",
+  "owqqqMwwwwMqqqpo",
+  "oppppMwwwwMppppo",
+  ".oooooMMMMooooo.",
+  "................",
   "................"
  ],
  "pal": {
@@ -29,7 +29,7 @@
   "w": "#dad0bb",
   "q": "#bdb39b",
   "M": "#353204",
-  "O": "#647025",
-  "N": "#4b4f00"
+  "N": "#4b4f00",
+  "O": "#647025"
  }
 }
