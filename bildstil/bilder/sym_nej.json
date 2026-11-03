@@ -1,0 +1,41 @@
+{
+ "id": "sym_nej",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 2. De korsade armarna i ljust ben bildar ett tydligt X mot den rostfärgade kroppen och läses direkt som 🙅, även i liten storlek och på både mörk och ljus bakgrund. Den har samma tydliga silhuett och dämpade palett som de korsade svärden. Rosten är en mättad ton, men den används där det betyder något: på själva stopptecknet. Ljuset faller från vänster: u och t till vänster, s till höger, och glansen är en enda w-punkt. Version 1 och 3 har armarna utsträckta åt sidorna. Deras gröna kropp smälter in i oliven och gräset, och X:et blir rörigt. Ändring: den nedersta raden av tröjan saknade kontur, så jag ersatte den med rost0 (r), materialets mörkaste ton. Nu sluter konturen runt hela kroppen. Symbolen är 14 × 16 punkter.",
+ "w": 14,
+ "h": 16,
+ "rader": [
+  ".....EEEE.....",
+  "....EGHGFE....",
+  "...EGqwqpFE...",
+  "...EqkqqkpE...",
+  "...EqqqppoE...",
+  "...EpqrrpoE...",
+  "....EoppoE....",
+  ".rruutoottssr.",
+  "rwqutttttssqpr",
+  "rutqqtttsqpssr",
+  "rutttqqqpssssr",
+  "ruttttqptssssr",
+  "ruttqqttqpsssr",
+  "ruqpttttssqpsr",
+  "rrrrrrrrrrrrrr",
+  "..EGFE..EGFE.."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "k": "#24201d",
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "r": "#521100",
+  "s": "#742a01",
+  "t": "#a14808",
+  "u": "#bd753e",
+  "w": "#dad0bb"
+ }
+}

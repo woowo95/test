@@ -1,0 +1,32 @@
+{
+ "id": "sym_ducka",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 2. Den är den enda som läses som en öppen virvel likt 🌀: ett band som löper runt och slutar i mitten. Version 1 ser ut som ett mynt med en präglad slinga, och version 3 är så kantig att den liknar en labyrint. Version 2 har samma skiffertoner, skifferkontur och ljus från övre vänstra hörnet som svärden i förebilden. Den fyller rutan med 16 punkters bredd och 15 punkters höjd. Jag ändrade två saker. De två ensamma genomskinliga punkterna i rad 5, mellan det yttre och det inre bandet, är fyllda med skiffer0, så att inga ljusa prickar syns igenom på ljus bakgrund. Det yttre bandets vänstra sida i rad 9 och 11 är jämnad till T/S, så att den ljusa sidan hänger ihop. Den genomskinliga kanalen nere till höger, virvelns öppning, är kvar.",
+ "w": 16,
+ "h": 15,
+ "rader": [
+  "....QQQQQQQQ....",
+  "..QQTqTTSTSSQQ..",
+  ".QTTSTSSSTSSSRQ.",
+  ".QTSQQQQQQQQSRQ.",
+  "QTSQQQQQQQQQQSRQ",
+  "QTSQQTTSTSRQQSRQ",
+  "QTTQQTSSSRRQQSRQ",
+  "QTSQQTSQQSRQQSRQ",
+  "QTSQQTSQQSRQQRRQ",
+  "QTSQQSSQ.QQ.QSRQ",
+  "QSSQQTSQ....QSRQ",
+  ".QQQQTSQQQQQQSRQ",
+  "....QTSSTSSSSRRQ",
+  "....QSRSRRRRRRQ.",
+  ".....QQQQQQQQQ.."
+ ],
+ "pal": {
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e",
+  "q": "#bdb39b"
+ }
+}

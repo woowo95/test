@@ -1,0 +1,32 @@
+{
+ "id": "sym_lat_resa",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  ".......EE.......",
+  "....EEEqpEEE....",
+  "...EqpEqpEqpE...",
+  "...EqpEqpEqpEEE.",
+  "...EqpEqpEqpEqpE",
+  "...EqpEqpEqpEpHE",
+  "...EqpEqpEqpEpHE",
+  ".EEEqpEqpEqpEpHE",
+  "EqpEqpHqpHqpHpHE",
+  "EqppqqpqpqppppHE",
+  ".EqpqpqpppHpppHE",
+  "..EpqpppHpppppHE",
+  "...EpqpppppHpHHE",
+  "....EppppppHHHE.",
+  ".....EpppHHHE...",
+  ".....EEEEEEEE..."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "H": "#987e62",
+  "p": "#a0947d",
+  "q": "#bdb39b"
+ }
+}

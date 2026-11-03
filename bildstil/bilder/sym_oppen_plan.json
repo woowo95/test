@@ -1,0 +1,33 @@
+{
+ "id": "sym_oppen_plan",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den har en hel kontur i kol0 och avrundade hörn, precis som förebildens tydliga silhuett. Ytan är ljus ben med ljuset uppe till vänster (w-kant) och skugga nere till höger (o-kant), så rutan läses som en upphöjd vit platta både på mörk och ljus bakgrund. Version 1 har diagonala ränder av w och q som ser ut som ett mönster i stället för korn och plattar ut formen i liten storlek. Version 2 har en kontur i ben0 som försvinner mot den ljusa panelen. Ändringen: jag glesade ut de jämnt utplacerade p-prickarna i näst nedersta raden, så att de inte bildar en regelbunden prickrad. Kornet blir då jämnare utan fläckar.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  ".kkkkkkkkkkkkkk.",
+  "kwwwwwqwwwqwwqpk",
+  "kwwqqqqwqqqqqqok",
+  "kwqqwqqqqqpqqpok",
+  "kwqqqqqqqqqqpqok",
+  "kwqwqqqqqqqqqpok",
+  "kqqqqqqpqqqqqqok",
+  "kwqqqqqqqqqpqpok",
+  "kwqqqpqqqqqqqqok",
+  "kqqqqqqqqqqqqpok",
+  "kwqqqqqqpqqpqqok",
+  "kwqpqqqqqqqqpqok",
+  "kqqqqqqqqpqqqpok",
+  "kqqpqqqqpqqqppok",
+  "kpoooooooooooook",
+  ".kkkkkkkkkkkkkk."
+ ],
+ "pal": {
+  "k": "#24201d",
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "w": "#dad0bb"
+ }
+}

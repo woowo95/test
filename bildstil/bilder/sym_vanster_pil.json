@@ -1,0 +1,32 @@
+{
+ "id": "sym_vanster_pil",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den fyller hela rutan (16 × 16) och har en jämn trappstegskontur i skiffer0 runt hela formen, så pilen läses tydligast i liten storlek och har samma tyngd som de korsade svärden. Skiffertonerna går från ljus (skiffer3) uppe till vänster till mörk (skiffer1) nere till höger och ger korn utan fläckar. Den har ingen ben3-glans, som version 1 och 2 har: den är ett främmande material i stenen och syns som en ensam prick. Version 2 är också för liten, bara 14 × 14 punkter. Ändring: rad 9 (den tionde raden) hade en ljus skiffer3-punkt mitt i den nedre halvan. Jag bytte den mot skiffer1-korn, så att den nedre, skuggade sidan blir jämnt mörkare och ljuset tydligt kommer uppifrån vänster.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "..............QQ",
+  "............QQTQ",
+  "..........QQTTSQ",
+  "........QQTTSSRQ",
+  "......QQTTSSTSRQ",
+  "....QQTTSSTSSSRQ",
+  "..QQTTSSTSSSTSRQ",
+  "QQTTSSTSSSSTSSRQ",
+  "QQSSTSSSSSTSSSRQ",
+  "..QQRSSSSRSSSSRQ",
+  "....QQRSSSSSSRRQ",
+  "......QQRSSSSRRQ",
+  "........QQRRSRRQ",
+  "..........QQRRRQ",
+  "............QQRQ",
+  "..............QQ"
+ ],
+ "pal": {
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e"
+ }
+}

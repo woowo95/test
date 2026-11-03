@@ -1,0 +1,35 @@
+{
+ "id": "sym_mal_skiva",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den är en ren måltavla med ringar i rost och ben och rostrött i mitten, och den känns igen som 🎯 på en blick. I version 2 och 3 sitter pilen uppe till höger och ser ut som en stubin, så i liten storlek läses tavlan som en bomb. Version 1 fyller hela rutan på 16 × 16. Konturen är rost0, materialets mörkaste ton, och ringarna är ljusast uppe till vänster och mörkast nere till höger, som ljuset kräver. Rosten är mättad men hör till det man ska se, precis som svärdens guld i förebilden. Bilden syns tydligt mot både mörk och ljus panel. Inga ändringar behövdes: raderna är 16 tecken eller kortare, alla tecken finns i paletten och det finns inga ensamma mörka prickar.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "......rrrr......",
+  "....rruuttrr....",
+  "...ruutututtr...",
+  "..rutwqwqwqttr..",
+  ".rutwqutttqqtsr.",
+  ".rtwqutwqttqpsr.",
+  "rtuqutwutqttptsr",
+  "rutwtqttttqtptsr",
+  "rttqtqtttspspssr",
+  "rttqttqtspstpssr",
+  ".rtqqttqpssppsr.",
+  ".rttqqtstsppssr.",
+  "..rttqpqpqpssr..",
+  "...rttststssr...",
+  "....rrstssrr....",
+  "......rrrr......"
+ ],
+ "pal": {
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "r": "#521100",
+  "s": "#742a01",
+  "t": "#a14808",
+  "u": "#bd753e",
+  "w": "#dad0bb"
+ }
+}

@@ -1,0 +1,29 @@
+{
+ "id": "sym_kryp",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den ligger närmast förebilden med en tydlig, kompakt silhuett och fyller hela bredden (16 punkter). Kroppen har tre rundade segment och ett lite högre huvud med antenner och ett kolsvart öga, så larven läses som 🐛 på en blick. Ljuset faller uppifrån vänster (oliv3 överst till vänster på varje segment, oliv1 nedåt höger) och konturen är oliv0 runt hela. Benen syns tydligt både på mörk och ljus bakgrund. Version 2 är nästan likvärdig, men ögat sitter tätt mot kanten och kroppen blir lägre. I version 3 är huvudet en smal pelare och segmenten åtskilda av hela mörka linjer, så den blir kantig och mindre larvlik. Ingen ändring behövdes: alla rader är högst 16 tecken och bara tecken ur paletten används.",
+ "w": 16,
+ "h": 12,
+ "rader": [
+  "...........M...M",
+  "............M.M.",
+  "...........MMMM.",
+  "..........MPPOOM",
+  "..........MPkONM",
+  ".MMM.MMM.MMPOONM",
+  "MPPOMPPOMPOOONNM",
+  "MPOONPOONOOONNM.",
+  "MOONNOONNONNNNM.",
+  "MONNMONNMNNNNM..",
+  ".MMMMMMMMMMMMM..",
+  "..M.M..M.M..M..."
+ ],
+ "pal": {
+  "M": "#353204",
+  "N": "#4b4f00",
+  "O": "#647025",
+  "P": "#898b4c",
+  "k": "#24201d"
+ }
+}

@@ -1,0 +1,33 @@
+{
+ "id": "sym_paus",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 2. Den har samma skifferstål som svärdsbladen i förebilden, en kontur i skiffer0 och avrundade hörn som gör strecken mjukare och tydligare. Ljuset faller rätt, med en glanspunkt i ben3 uppe till vänster och mörkare skiffer1 nere till höger. Kornet går i ett jämnt mönster, utan de lösa mörka prickarna i version 1. Version 3 saknar glans och ser plattare ut. Det enda felet var att glipan mellan strecken bara var 2 punkter, så strecken flöt nästan ihop i liten storlek. Jag breddade glipan till 4 punkter, så att symbolen nu är 16 × 16 och fyller rutan. Tvåstrecksformen läses då direkt som paus.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  ".QQQQ......QQQQ.",
+  "QwTTSQ....QwTTSQ",
+  "QTTSRQ....QTTSRQ",
+  "QTSTRQ....QTSTRQ",
+  "QTTSRQ....QTTSRQ",
+  "QTSSRQ....QTSSRQ",
+  "QTTSRQ....QTTSRQ",
+  "QTSTRQ....QTSTRQ",
+  "QTTSRQ....QTTSRQ",
+  "QTSSRQ....QTSSRQ",
+  "QTTSRQ....QTTSRQ",
+  "QTSTRQ....QTSTRQ",
+  "QTTSRQ....QTTSRQ",
+  "QSSRRQ....QSSRRQ",
+  "QSRRRQ....QSRRRQ",
+  ".QQQQ......QQQQ."
+ ],
+ "pal": {
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e",
+  "w": "#dad0bb"
+ }
+}

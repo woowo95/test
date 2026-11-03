@@ -1,0 +1,40 @@
+{
+ "id": "sym_chock",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den läses tydligast som 😱: stora uppspärrade ögon med pupiller, en öppen oval mun och händerna mot kinderna. Den har samma mörka kontur och samma täta, enkla former som de korsade svärden. Version 2 har för små ögon och ser mer förvånad än skräckslagen ut. Version 3 läses i liten storlek nästan som ett djurhuvud. Ändringen är liten: jag lade till mer ljus ben3 uppe till vänster i pannan, på raderna 2 och 3, så att ljuset tydligare kommer därifrån och den släta ben2-ytan får lite korn. Resten är kvar: konturen, munnen med det röda inuti, som är den enda mättade färgen, händerna i jord och storleken 16×16.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  ".....kkkkkk.....",
+  "...kkwwqqqqkk...",
+  "..kwwwqqqqqqpk..",
+  ".kwwqqqqqqqqqpk.",
+  ".kwqkkkqqkkkqpk.",
+  "kwqkwwqkkwwqkppk",
+  "kqqkwkqkkwkqkppk",
+  "kqqkqqpkkqqpkppk",
+  "kqqqkkkqqkkkqppk",
+  "EEEEqqkkkkqpEEEE",
+  "EHHEqklmmlkpEGGE",
+  "EHGEqklmmlkpEGFE",
+  "EHGEpklrrlkoEGFE",
+  "EGFEpqkkkkpoEFFE",
+  ".EEEkpoooookEEE.",
+  ".....kkkkkk....."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "k": "#24201d",
+  "l": "#2f261d",
+  "m": "#372f25",
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "r": "#521100",
+  "w": "#dad0bb"
+ }
+}

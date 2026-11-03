@@ -1,0 +1,36 @@
+{
+ "id": "sym_fisk",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den läses tydligast som abborre även i liten storlek: taggig rostfärgad ryggfena, mörka tvärband på den olivgröna kroppen, ljus benfärgad buk och rostfärgade fenor och stjärt. Formerna är få och stora, och konturen är mörk som hos de korsade svärden. Den är 16 punkter bred och fyller rutan. Version 2 har guld runt ögat och ser mer ut som en piraya. I version 3 är stjärten grön och klumpig, så fisken blir svårare att känna igen. Det enda jag ändrade: analfenan längst ner till höger satt bara fast i kroppen med ett hörn. Jag lade till en rostpunkt i rad 11 (\"...MMMMMMr....rr\"), så att fenan nu sitter ihop med kroppen. Ögat är kvar i kol0 eftersom det verkligen är svart.",
+ "w": 16,
+ "h": 13,
+ "rader": [
+  ".....r.r.r......",
+  "....rtrtrsr.....",
+  "....rttstsrr....",
+  "...MMMMMMMM...rr",
+  "..MPPONPONOM.rtr",
+  ".MPqkONPONOOMtsr",
+  "MPPkkONOONNOMtsr",
+  "MqpPtONOONNOMrsr",
+  ".MqqtpppopOMMtsr",
+  "..MqqppppMM..rtr",
+  "...MMMMMMr....rr",
+  ".....rtr.rtr....",
+  "......r...r....."
+ ],
+ "pal": {
+  "M": "#353204",
+  "N": "#4b4f00",
+  "O": "#647025",
+  "P": "#898b4c",
+  "k": "#24201d",
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "r": "#521100",
+  "s": "#742a01",
+  "t": "#a14808"
+ }
+}

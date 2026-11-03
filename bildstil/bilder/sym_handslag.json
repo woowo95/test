@@ -1,0 +1,35 @@
+{
+ "id": "sym_handslag",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den är den enda som läses som ett handslag: två händer möts i mitten med en ärm från var sida, rost till vänster och oliv till höger. Version 1 och 2 ser ut som en enda knytnäve med ett föremål bredvid. Version 3 har samma tydliga silhuett och dämpade toner som de korsade svärden och en mörk kontur runt hela. Ljuset faller uppe till vänster på både händerna och ärmarna, och fingrarna skiljs åt av ben-tonerna utan små prickar. Den är 16 punkter bred, så den fyller rutan åt det hållet. Ändring: handen hade tre punkter glans i w, och regeln tillåter högst två. Jag bytte därför w på rad 4 mot q, så att glansen bara sitter på två punkter uppe till vänster.",
+ "w": 16,
+ "h": 10,
+ "rader": [
+  "......EEEE......",
+  ".....EwqqpEEE...",
+  "rrrrEwqqqpqqEMMM",
+  "rutrqqqqpqqpMPOM",
+  "rtsrqqpqqpqpMONM",
+  "rtsrqoqpoqpoMONM",
+  "rtsrpoqpoqpoMONM",
+  "rssrpoppoppoMNNM",
+  "rrrrEpoooooEMMMM",
+  "....EEEEEEEE...."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "M": "#353204",
+  "N": "#4b4f00",
+  "O": "#647025",
+  "P": "#898b4c",
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "r": "#521100",
+  "s": "#742a01",
+  "t": "#a14808",
+  "u": "#bd753e",
+  "w": "#dad0bb"
+ }
+}

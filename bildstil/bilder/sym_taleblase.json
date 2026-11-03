@@ -1,0 +1,35 @@
+{
+ "id": "sym_taleblase",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den har den taggiga kanten och svansen nere till vänster som 🗯️, och sicksacken i rost läses som ilska och gnäll. Version 1 har ett utropstecken och liknar en stänk- eller smällfigur. Version 2 har öron och ser ut som ett kattansikte. Båda versionernas utropstecken krockar dessutom med varningstriangeln bredvid i panelen. Version 3 ligger närmast förebilden: kol0-kontur, ben i två till tre toner med ljuset uppe till vänster (w uppe till vänster, p nere till höger) och rost bara på det som ska synas. Den fyller 16 × 16 och syns på både mörk och ljus bakgrund. Jag kontrollerade alla rader (16 tecken, 16 rader). Sicksacklinjen är sammanhängande och svansen är ansluten till blåsan, så jag behövde inte ändra något och punkterna är som i version 3.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "...k......k.....",
+  "...kk....kk...k.",
+  ".k.kwk..kqk..kk.",
+  ".kkwwwkkqqqkkqk.",
+  "..kwwqqqqqqqqpk.",
+  "kkwwqqqqqqqqqqpk",
+  ".kwtqqqtqqqtqqpk",
+  "..kqtqtqtqtqtppk",
+  "kkqqqsqqqsqqqspk",
+  ".kqqqqqqqqqqqpkk",
+  "..kpqqqqqqqqppk.",
+  ".kkppqqqqqppopkk",
+  "..kpkkpppkkopk..",
+  ".kpk..kkk..kk...",
+  "kpk.............",
+  "kk.............."
+ ],
+ "pal": {
+  "k": "#24201d",
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "s": "#742a01",
+  "t": "#a14808",
+  "w": "#dad0bb"
+ }
+}

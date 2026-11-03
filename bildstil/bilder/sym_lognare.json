@@ -1,0 +1,37 @@
+{
+ "id": "sym_lognare",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den rostfärgade, långa näsan sticker ut ur ansiktet och läses direkt som 🤥, både på mörk och ljus bakgrund. Den mättade tonen ligger på det som betyder något, precis som det gula på svärdens fästen i förebilden. Ansiktet har få, stora former: en benvit oval med jord0-kontur, två tydliga ögon och en rak mun. Ljuset kommer från övre vänstra hörnet och bilden fyller 16 punkter på bredden. I version 2 har näsan samma benvita ton som ansiktet och smälter in. I version 3 syns bara näsans spets i rost, så den läses svagare. Jag ändrade bara näsans översida (uuutuu i stället för utuutu), så att den ljusa rosttonen ligger samlad mot vänster och ljuset och kornet stämmer bättre. Resten är oförändrat.",
+ "w": 16,
+ "h": 15,
+ "rader": [
+  "...EEEEE........",
+  "..EwwqqqE.......",
+  ".EwqqqqqpE......",
+  "EwqqqqqqqpE.....",
+  "EqqlqqqlqpE.....",
+  "EqqlqqqlqpE.....",
+  "EqqqqqqqqpEEEEE.",
+  "EqqqqqqqpuuutuuE",
+  "EqqqqqqqpttsttsE",
+  "EqqqqqqqqpEEEEE.",
+  "EqqFFFFqppE.....",
+  "EqpqqqqqppE.....",
+  ".EpqqqqpoE......",
+  "..EpppooE.......",
+  "...EEEEE........"
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "l": "#2f261d",
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "s": "#742a01",
+  "t": "#a14808",
+  "u": "#bd753e",
+  "w": "#dad0bb"
+ }
+}

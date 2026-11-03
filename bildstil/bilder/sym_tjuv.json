@@ -1,0 +1,37 @@
+{
+ "id": "sym_tjuv",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den är den enda som fyller hela rutan på 16 × 16 punkter. Huvudet med öron, den breda svarta rånarmasken med ögonglimt och den ljusa nosen med svart nos läses direkt som 🦝, också i liten storlek. Den följer förebilden: mörk kontur, få stora former och ljus från övre vänster. Version 1 är bara 13 punkter hög och ser tillplattad ut. Version 2 är bra, men lägre och mer plottrig i nosen. Ändringar: nospartiet var nästan helt ben3 och blev en slät, för ljus yta. Jag bytte en del w mot q och p, så att tonen byts punkt för punkt. Längst ned till höger lade jag in ben0 (o) som skuggsida, så att ljuset faller från övre vänster. Det vita ögonbrynet på vänster sida fick också lite korn (w och q), och brynet på höger sida fick en mörkare ton.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "..QQ........QQ..",
+  ".QTTQ......QTSQ.",
+  ".QTkSQQQQQQSkSQ.",
+  ".QTTTTTSTSSSSRQ.",
+  "QTwqwTTSSSqqpSRQ",
+  "QkkkkkkSSkkkkkkQ",
+  "kkkqkkkTSkkkqkkk",
+  "kkkkkkwTSwkkkkkk",
+  "QkkkkwwTSwqkkkkQ",
+  ".QkkwqwwqqqpkkQ.",
+  ".QSwqwqkkqqqpRQ.",
+  "..QSwqqkkqppRQ..",
+  "..QSqqqpqppoRQ..",
+  "...QSqpqppoRQ...",
+  "....QSRpooRQ....",
+  ".....QQQQQQ....."
+ ],
+ "pal": {
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e",
+  "k": "#24201d",
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "w": "#dad0bb"
+ }
+}

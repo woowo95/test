@@ -1,0 +1,32 @@
+{
+ "id": "sym_ned",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den fyller rutan (16 × 16), har en sluten rost0-kontur runt hela pilen och ljuset faller rätt: rost3 till vänster och rost1 till höger, så att både skaftet och spetsen ljusnar uppåt vänster. Version 3 har ensamma prickar (s mellan t, u mitt i spetsen) som bryter mot regeln om korn utan fläckar. Version 2 i skiffer är mindre (14 × 15) och dess skuggning hoppar mellan ljust och mörkt i spetsen. Den läses dessutom sämre på den mörka panelen än den rostfärgade pilen, som syns tydligt bredvid svärdens senap och skiffer. Jag ändrade en sak: rad 5 (\"rutusr\") hade en ensam ljus prick mitt i skaftet, och den har jag bytt mot \"ruutsr\" så att skaftets korn följer samma mönster som de andra raderna.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  ".....rrrrrr.....",
+  ".....ruutsr.....",
+  ".....rutssr.....",
+  ".....ruttsr.....",
+  ".....ruutsr.....",
+  ".....ruttsr.....",
+  ".....rutssr.....",
+  ".....ruttsr.....",
+  "rrrrrruttsrrrrrr",
+  ".ruuutttttttssr.",
+  "..ruuttttttssr..",
+  "...ruttttsssr...",
+  "....rutttssr....",
+  ".....rttssr.....",
+  "......rtsr......",
+  ".......rr......."
+ ],
+ "pal": {
+  "r": "#521100",
+  "s": "#742a01",
+  "t": "#a14808",
+  "u": "#bd753e"
+ }
+}

@@ -1,0 +1,31 @@
+{
+ "id": "sym_faller",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den skifferblå pilen har samma material som svärdsklingorna i förebilden, så den hör ihop med de andra symbolerna. Den blå tonen påminner också om emojin ⤵️, så den känns igen på en blick. Rost är en mättad ton som guiden sparar till eld, blod, mat och sådant som går att ta, och den passar inte en neutral rörelsepil. Version 1 är 16 punkter bred och 14 hög, vilket fyller rutan. Konturen är skiffer0 runt hela pilen. Ljuset faller uppifrån vänster med skiffer3 och en enda punkt ben3 som glans, och den högra och undre kanten är mörkare. Pilen är bara två stora former, en böjd stam och en spets, så den läses tydligt både på mörk och ljus bakgrund. Jag ändrade en sak: på rad 4 var den undre kanten fläckig. Jag jämnade ut kornet där så att den mörkas av mot höger utan ensamma prickar.",
+ "w": 16,
+ "h": 14,
+ "rader": [
+  "QQQQQQQQQ.......",
+  "QTwTTTTTTQQ.....",
+  "QSTSSTSSSSSQ....",
+  "QSRSSRSRRTSRQ...",
+  "QQQQQQQQQTSRQ...",
+  "........QTSRQ...",
+  "........QTSSQ...",
+  "........QTSRQ...",
+  ".....QQQQTSRQQQQ",
+  "......QTTSTSSRQ.",
+  ".......QTSSSRQ..",
+  "........QTSRQ...",
+  ".........QSQ....",
+  "..........Q....."
+ ],
+ "pal": {
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e",
+  "w": "#dad0bb"
+ }
+}

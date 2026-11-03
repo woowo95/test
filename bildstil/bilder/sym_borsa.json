@@ -1,0 +1,40 @@
+{
+ "id": "sym_borsa",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den passar bäst ihop med förebilden: symmetrisk och 16 × 16, med få och stora former och en jord0-kontur runt hela. Ljuset faller uppifrån vänster, från jord3 till jord1. Siluetten läses direkt som en knuten läderbörs: två snibbar, en snörd hals och en rund kropp. Snöret i rost skiljer halsen från kroppen och slutar i en hängande snodd, så att halsen syns även i liten storlek. Den mättade senapen sparas till ett enda ställe, beslaget eller myntet mitt på, med en punkt senap3 som glans. Det ger rätt fokus för ryktet välbärgad. Version 1 sprider guldet på både snöret och beslaget, och snibbarna blir rörigare. Version 2 är bara 14 punkter bred och sned, och myntet i hörnet ser mer ut som en penningsäck än som en börs. Jag har inte ändrat något: raderna är högst 16 tecken, bara palettens tecken används, konturen är materialets mörkaste ton utan kol0, och glansen är en enda punkt.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "....EE....EE....",
+  "...EHGE..EGFE...",
+  "....EHGEEGFE....",
+  ".....EHGGFE.....",
+  "....rutttsr.....",
+  "...EEHGGGFFEEt..",
+  "..EHHGGGGFFFFEs.",
+  ".EHHGGGGGGFFFFEr",
+  ".EHGHGGGGGGFGFE.",
+  "EHGHGGIIIIGGFFFE",
+  "EHGGGILKKJIGFGFE",
+  "EHHGGIKJJJIGGFFE",
+  "EHGGGGIIIIGGFGFE",
+  ".EGHGGGGGGGFGFE.",
+  "..EEGGGGGFFFEE..",
+  "....EEEEEEEE...."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "I": "#694902",
+  "J": "#906f0f",
+  "K": "#b2921b",
+  "L": "#d8b25f",
+  "r": "#521100",
+  "s": "#742a01",
+  "t": "#a14808",
+  "u": "#bd753e"
+ }
+}

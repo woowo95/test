@@ -1,0 +1,35 @@
+{
+ "id": "sym_krona",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den är den enda som fyller hela rutan, 16 × 16 punkter, och står därför lika stort som de korsade svärden i förebilden. De andra två är bara 14 punkter höga. Kronan har tre tydliga spetsar med kulor, ett skilt band med konturlinje och tre rostfärgade stenar. Stenarna är det enda mättade och syns först. Konturen är senap0 runt hela kronan. Ljuset kommer uppifrån vänster: senap3 till vänster och senap1 till höger. Det enda jag ändrade var nedersta raden i bandet. Den var helt slät senap1, och jag gav den korn med några senap2, som i version 1, så att ingen yta blir slät.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  ".II....II....II.",
+  "ILKI..ILKI..IKJI",
+  "IKJI..IKJI..IJJI",
+  ".II....II....II.",
+  ".IKI..IKKI..IKI.",
+  ".ILKI.ILJI.IKJI.",
+  ".ILKJIKLKJIKJJI.",
+  ".ILKKJLKKJKKJJI.",
+  ".ILKKKKKKKKKJJI.",
+  ".IKKKJKKKJKKJJI.",
+  "IIIIIIIIIIIIIIII",
+  "ILLKKKKKKKKKKJJI",
+  "ILKutKKutKKutJJI",
+  "IKJtsJJtsJJtsJJI",
+  "IJKJJKJJJJKJJJJI",
+  ".IIIIIIIIIIIIIII"
+ ],
+ "pal": {
+  "I": "#694902",
+  "J": "#906f0f",
+  "K": "#b2921b",
+  "L": "#d8b25f",
+  "s": "#742a01",
+  "t": "#a14808",
+  "u": "#bd753e"
+ }
+}

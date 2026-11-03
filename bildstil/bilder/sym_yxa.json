@@ -1,0 +1,41 @@
+{
+ "id": "sym_yxa",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 2. Det diagonala skaftet går från nedre vänstra hörnet upp mot övre högra, som svärden i förebilden. Bilden fyller rutan i båda riktningar. Huvudet sticker ut åt ett håll och har en bred, ljus egg, så det läses som en yxa och inte som en klubba eller hammare. Version 1 och 3 ser ut som slägga eller hammare i liten storlek. Ljuset stämmer: huvudets ljusaste skiffer och en enda glanspunkt i ben3 sitter uppe till vänster, och det mörka ligger nere till höger. Konturen är skiffer0 runt flintan och jord0 runt träet. Senapsbindningen är det enda starka, som parerstängerna i förebilden. Alla rader är 16 tecken och bara palettens tecken används. Jag kontrollerade raderna och behövde inte ändra något.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "..QQQQ..........",
+  ".QTTSSQQQ....EE.",
+  "QTwTSSSRRQQ.EHFE",
+  "QTTSTSSRSRIKLJE.",
+  "QTSTSSRSRRILKI..",
+  "QSTSSRSRQIKJI...",
+  "QSSSRSRQEHFE....",
+  ".QSRSRQEGFE.....",
+  ".QRQQ.EHFE......",
+  ".QQ..EHFE.......",
+  "....EGFE........",
+  "...EHFE.........",
+  "..EHFE..........",
+  ".EGFE...........",
+  "EHFE............",
+  ".EE............."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "I": "#694902",
+  "J": "#906f0f",
+  "K": "#b2921b",
+  "L": "#d8b25f",
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e",
+  "w": "#dad0bb"
+ }
+}

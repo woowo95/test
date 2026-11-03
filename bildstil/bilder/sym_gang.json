@@ -1,0 +1,35 @@
+{
+ "id": "sym_gang",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den är den enda som har samma bild som 🛤️: två räls som löper mot horisonten och sliprar emellan. Den har också genomskinligt runt sig, som de korsade svärden, och fyller rutan med 16 × 16 punkter. Version 2 och 3 är fyllda rektanglar med väggmönster. De blir tunga och plottriga i liten storlek och liknar mer en dörr eller en mur än ett spår. I version 1 följer ljuset reglerna: den vänstra rälsen har en ljus skiffer3-kant och den högra en mörkare skiffer2-kant. Sliprarna har jordtoner med en ljus överkant och en jord0-kontur. Jag rättade två saker. Jag stängde rälsens toppar med skiffer0 i översta raden, så att de inte slutar i en öppen ljus ton. Jag gav också rälsens ändar i nedersta raden skiffer0, så att konturen går runt hela symbolen. Luckorna mellan sliprarna har jag lämnat genomskinliga, så att spåret läses tydligt på både mörk och ljus bakgrund.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  ".....QQ..QQ.....",
+  ".....QT..SQ.....",
+  "...EQTHGGHSQE...",
+  "....QTEEEESQ....",
+  "....QT....SQ....",
+  "..EQTHGHGGHSQE..",
+  "..EQTGFGGFGSQE..",
+  "...QTEEEEEESQ...",
+  "..QT........SQ..",
+  ".EQTHGHHGGHGSQE.",
+  ".EQTGFGGFGFFSQE.",
+  ".QTEEEEEEEEEESQ.",
+  ".QT..........SQ.",
+  "EQTHGHGHHGGHGSQE",
+  "EQTGFGGFGFGFFSQE",
+  "EQQEEEEEEEEEEQQE"
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "Q": "#233035",
+  "S": "#61767a",
+  "T": "#8a9c9e"
+ }
+}

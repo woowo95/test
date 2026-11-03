@@ -1,0 +1,37 @@
+{
+ "id": "sym_byn",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Två hus står bredvid varandra, ett stort och ett litet, var och ett med eget halmtak och en tydlig mörk dörr. Det läses direkt som 🏘️, även i liten storlek och på både mörk och ljus bakgrund. Taken i senap och väggarna i jord har samma varma toner och mörka kontur som guldet på förebildens svärd. Ljuset faller rätt: taken är ljusa till vänster och mörka till höger. Version 1 blir en otydlig klump där det lilla huset försvinner bakom det stora. I version 2 smälter det olivgröna taket in i gräset, och dörrarna är målade i kol0. Bilden är 16 punkter bred och 15 hög. Jag ändrade en sak: raden under det stora husets takfot är nu mörkare (mest jord1), så att den bildar en skugga under taket och skiljer tak och vägg tydligare, på samma sätt som på det lilla huset.",
+ "w": 16,
+ "h": 15,
+ "rader": [
+  ".....I..........",
+  "....ILI.........",
+  "...ILKJI........",
+  "..ILKKJJI...I...",
+  ".ILKLKJKJI.ILI..",
+  "ILKLKKJKJJILKJI.",
+  "IIIIIIIIIIIKJJJI",
+  ".EFGFFFGFEIIIIII",
+  ".EHGHGGFGEFFGFE.",
+  ".EGHGFGGFEGHGFE.",
+  ".EHGEEEGFEGEEGE.",
+  ".EGHlmlGFEGlmFE.",
+  ".EHGlmlFGEHlmGE.",
+  ".EGHlmlGFEGlmFE.",
+  ".EEEEEEEEEEEEEE."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "I": "#694902",
+  "J": "#906f0f",
+  "K": "#b2921b",
+  "L": "#d8b25f",
+  "l": "#2f261d",
+  "m": "#372f25"
+ }
+}

@@ -1,0 +1,33 @@
+{
+ "id": "sym_is",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "....QQQQQQQQQQQQ",
+  "...QTwTTTTTSTTRQ",
+  "..QTTTSTTTTTTSRQ",
+  ".QTTTTTTSTTTSRRQ",
+  "QTTTTSTTTTTSRRRQ",
+  "QwTTTTTTTTTRRSRQ",
+  "QTSSSTSSSSSRRRRQ",
+  "QTSSTSSSSSSRRRRQ",
+  "QTSSSSSSTSSRRSRQ",
+  "QTSSSSSSSTSRRRRQ",
+  "QTSSSSSSSSSRRRRQ",
+  "QTSSTSSSSSSRRRRQ",
+  "QTSSSSSSSSSRRRQ.",
+  "QTSSSSSSSSSRRQ..",
+  "QSSSSSSSSSSRQ...",
+  "QQQQQQQQQQQQ...."
+ ],
+ "pal": {
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e",
+  "w": "#dad0bb"
+ }
+}

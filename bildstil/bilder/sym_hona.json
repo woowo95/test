@@ -1,0 +1,39 @@
+{
+ "id": "sym_hona",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den fyller rutan 16 × 16, har en tydlig sidosilhuett med kam, näbb, haklapp, uppåtriktad stjärt och två punkter breda ben som läses bäst i liten storlek. Brunt och jord med rost i kammen och senap i näbb och ben ligger nära förebildens dämpade toner. Ljuset faller uppe till vänster med rost3 i kammen och jord3 på huvud och bröst. Version 3 har tunna ben på en punkt och en glans som inte tillför något. Version 2 har en rörigare näbb och tunnare ben. Rättelse: konturen under kroppen saknade en punkt (rad 12, kolumn 11), så att en jord1-punkt låg öppen mot det genomskinliga. Jag förlängde den nedre jord0-konturen med en punkt så att konturen sluter runt hela kroppen.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "..r.r...........",
+  ".rtrtr.......EE.",
+  ".rutsr......EHFE",
+  "..EHHGE....EHGFE",
+  "KEHkGGFE..EHGFFE",
+  "IEHGGFFE.EHGFFE.",
+  ".tEGGFFEEHGGFFE.",
+  ".rEHHGGHGGGFFFE.",
+  "..EHHGFFFFGGFFE.",
+  "..EHGFHHGGFFFFE.",
+  "..EGGFGGGFFFFE..",
+  "...EGGFFFFFFE...",
+  "....EEEEEEEE....",
+  "......KI..KI....",
+  "......KI..KI....",
+  "....IKKI.IKKI..."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "I": "#694902",
+  "K": "#b2921b",
+  "k": "#24201d",
+  "r": "#521100",
+  "s": "#742a01",
+  "t": "#a14808",
+  "u": "#bd753e"
+ }
+}

@@ -1,0 +1,40 @@
+{
+ "id": "sym_pengasack",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 2. Den fyller hela rutan (16 × 16) precis som de korsade svärden. Säcken har en tydlig, rund silhuett med knuten hals och ett rostfärgat snöre. Myntstapeln är stor och tydligt randig, så den läses som pengar även i liten storlek. Version 1 och 3 är bara 14 punkter breda och har mindre mynt, så de syns sämre bredvid de andra symbolerna. Säcken har jordtoner med ljuset uppe till vänster och en jord0-kontur. Mynten är i senap, med senap0 som kontur och L som glans uppe till vänster. Det enda jag ändrade var myntstapelns överkant på rad 10: den slutade med en jordkontur (E) i myntets hörn och gick inte över hela stapelns bredd. Nu är den en hel senap0-kant över kolumn 9–15, så stapeln får en sluten kontur.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  ".....EEE.EEE....",
+  "....EHGHEGFFE...",
+  ".....EHGGFFE....",
+  "....rutttssr....",
+  ".....EGGFFE.....",
+  "...EEHGGGFFEE...",
+  "..EHHGHGFGFFFE..",
+  ".EHGHGGFGGFFFFE.",
+  "EHGGHGFGFGFFFFFE",
+  "EHGHGFGFFIIIIIII",
+  "EGHGGFGFFILLKKJI",
+  "EHGGFGFFFIKJJJII",
+  "EGGFGFFFFILKKKJI",
+  ".EGFGFFFFIKJJJII",
+  "..EFFFFFFILKKJJI",
+  "...EEEEEEIIIIII."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "I": "#694902",
+  "J": "#906f0f",
+  "K": "#b2921b",
+  "L": "#d8b25f",
+  "r": "#521100",
+  "s": "#742a01",
+  "t": "#a14808",
+  "u": "#bd753e"
+ }
+}

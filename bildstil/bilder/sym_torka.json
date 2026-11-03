@@ -1,0 +1,36 @@
+{
+ "id": "sym_torka",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 2. Den runda, gyllene solen uppe till vänster och de två sanddynerna läser tydligast som 🏜️ och som en het, torr öken. Solen i version 1 och 3 är fyrkantig och ser mer ut som ett mynt, och deras former liknar berg eller stenar mer än sand. Version 2 fyller rutan i 16 × 16 och har jord0 som kontur runt dynerna och senap0 runt solen. Ljuset kommer uppifrån vänster: senap3 och jord3 ligger på ovansidorna och jord1 i skuggan till höger. Det mättade gula sparas till solen, som är det man ska se. Jag ändrade en sak: tre ensamma mörka jord0-prickar inne i dynerna (rad 14 kolumn 5 samt rad 15 kolumn 4 och 11) blev jord1. Guiden förbjuder mörka fläckar, och nu är kornet jämnt i två till tre toner.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "...IIII.........",
+  "..ILKKKI........",
+  ".ILKKKKJI.......",
+  ".IKKKKJJI.......",
+  ".IKKKJJJI.......",
+  "..IKJJJI...EE...",
+  "...IIII...EHGE..",
+  "..........EGGFE.",
+  ".........EGGFFFE",
+  "...EEEE.EGGFGFFE",
+  ".EHHHHGGEEGFFFFE",
+  "EHHGHHGGGGEEFFFE",
+  "EHGHGGGGGFGGEEEE",
+  "EGGGFGGFGGFGFFFE",
+  "EGGFGGFGFGFFFFFE",
+  ".EEEEEEEEEEEEEE."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "I": "#694902",
+  "J": "#906f0f",
+  "K": "#b2921b",
+  "L": "#d8b25f"
+ }
+}

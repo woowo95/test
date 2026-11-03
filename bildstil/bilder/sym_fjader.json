@@ -1,0 +1,32 @@
+{
+ "id": "sym_fjader",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 2. Den har bredast fan och tydligast silhuett, och den läses som en fjäder även i liten storlek, på både mörk och ljus bakgrund. Den fyller rutan: 16 punkter bred och 15 hög. Den har få, stora former: fanen i ben-tonerna w, q och p och en diagonal spole i ben0. Ljuset kommer uppifrån vänster, så de ljusaste tonerna ligger till vänster och de mörkare till höger. Konturen är sluten och i jord0, likt förebildens mörka kontur. Version 1 är för smal och liknar en pinne. Version 3 är också tunn, och dess kontur i kol0 bryter mot regeln att konturen ska vara materialets mörkaste ton. Inga ändringar behövdes: raderna har rätt längd, bara palettens tecken används och allt runt fjädern är genomskinligt.",
+ "w": 16,
+ "h": 15,
+ "rader": [
+  "...........EEEE.",
+  ".........EEwqoE.",
+  ".......EEwwqoqpE",
+  ".....EEwwqqoqppE",
+  "....EwqwqqoqpppE",
+  "...EwwqwqoqpppE.",
+  "..EwqwqqoqppEE..",
+  ".EwqwqqoqpppE...",
+  ".EqwqqoqpppE....",
+  ".EqqqoqpppE.....",
+  ".EqpoqppEE......",
+  ".EpoppEE........",
+  ".EpEEE..........",
+  "EoE.............",
+  "EE.............."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "w": "#dad0bb"
+ }
+}

@@ -1,0 +1,36 @@
+{
+ "id": "sym_boxhandske",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den läses tydligast som 🥊: en rund rosthandske med tummen till vänster och en ljus manschett i ben, precis som emojin. Den fyller rutan (15 × 16) och har samma tydliga kontur och få, stora former som förebilden med de korsade svärden. Ljuset faller uppifrån vänster: rost3-glansen sitter uppe till vänster och rost1 nere till höger. Version 2 har en smalare manschett och läses svagare. Version 3 har en brun manschett som drunknar mot den mörka bakgrunden och påminner mindre om en boxhandske. Ändring: sömmen i manschetten var ritad i jord1 (F), som blev mörka fläckar av ett främmande material. Jag bytte den mot ben0 (o), så att manschetten håller sig till benets tre toner och sömmen syns diskret.",
+ "w": 15,
+ "h": 16,
+ "rader": [
+  ".....rrrrrr....",
+  "...rrtuuttssr..",
+  "..rtuuttttttsr.",
+  ".rtuttttttttssr",
+  ".rtutttttttttsr",
+  "rrrrrtttttttssr",
+  "ruttrtttttttssr",
+  "rtttrttttttsssr",
+  "rttsrtttttttssr",
+  "rsssrtttttttssr",
+  ".rrrrttttttsssr",
+  "..rsssssssssrr.",
+  "..oqwqqqqqppoo.",
+  "..oqqqqoqqppoo.",
+  "..oqqpqoqpppoo.",
+  "..oooooooooooo."
+ ],
+ "pal": {
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "r": "#521100",
+  "s": "#742a01",
+  "t": "#a14808",
+  "u": "#bd753e",
+  "w": "#dad0bb"
+ }
+}

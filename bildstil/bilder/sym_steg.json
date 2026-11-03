@@ -1,0 +1,35 @@
+{
+ "id": "sym_steg",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den har samma form som ⏭, två trianglar mot ett streck, och känns därför igen direkt. Den läses tydligast i liten storlek, både på mörk och ljus bakgrund. Den hör ihop med förebilden genom skiffertonerna (som svärdsklingorna) och det senapsgula strecket (som parerstängerna). Kontur och toner följer guiden: skiffer0 runt trianglarna och senap0 runt strecket, ljust uppe till vänster och mörkt nere till höger. Version 2 och 3 visar en pil och påminner mindre om ⏭. Ändring: jag jämnade ut strecket så att det mörknar nedåt (rad 7 blev K och rad 8 J), så att ljuset från övre vänstra hörnet stämmer bättre. Symbolen är 16 × 14 punkter och fyller rutan.",
+ "w": 16,
+ "h": 14,
+ "rader": [
+  ".............III",
+  "QQ....QQ.....ILI",
+  "QTQ...QTQ....IKI",
+  "QwTQ..QwTQ...IKI",
+  "QTTSQ.QTTSQ..IKI",
+  "QTTSSQQTTSSQ.IKI",
+  "QTSTSSQTSTSSQIKI",
+  "QSTSSRQSTSSRQIKI",
+  "QSSSRQQSSSRQ.IJI",
+  "QSSRQ.QSSRQ..IKI",
+  "QSRQ..QSRQ...IJI",
+  "QRQ...QRQ....IJI",
+  "QQ....QQ.....IJI",
+  ".............III"
+ ],
+ "pal": {
+  "I": "#694902",
+  "J": "#906f0f",
+  "K": "#b2921b",
+  "L": "#d8b25f",
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e",
+  "w": "#dad0bb"
+ }
+}

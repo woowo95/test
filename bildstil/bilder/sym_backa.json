@@ -1,0 +1,31 @@
+{
+ "id": "sym_backa",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den läses tydligast som ↩️: spetsen pekar åt vänster upptill och skaftet böjer ner till höger och slutar i en kort fot. Den är 15 × 15 punkter och fyller alltså rutan. Skiffertonerna och skifferkonturen hör ihop med svärdsbladen i förebilden. Ljuset faller uppifrån vänster: skiffer3 på den övre kanten och skiffer1 nertill och åt höger.\n\nVersion 2 slutar i en sluten fyrkantsform och liknar mer en ögla än en pil. Den har dessutom en ben3-glans som inte hör till metallens toner.\n\nVersion 3 är senapsgul. Det blir för starkt för en vanlig knapp, eftersom de mättade tonerna ska sparas till det man ska se.\n\nÄndringar: jag lade in korn i de släta raderna i skaftets vågräta del. På rad 6 är ett par S bytta mot T, och på rad 7 är ett R bytt mot S, så att ytan inte blir slät. Formen och konturen är oförändrade.",
+ "w": 15,
+ "h": 15,
+ "rader": [
+  ".....QQ........",
+  "....QTQ........",
+  "...QTSQ........",
+  "..QTTSQQQQQQ...",
+  ".QTTSSTTTTTTQQ.",
+  "QTSSTSSSSTSSTSQ",
+  ".QSRRRSRRRSTSRQ",
+  "..QSRRQQQQQTSRQ",
+  "...QSRQ...QTSRQ",
+  "....QRQ...QTSRQ",
+  ".....QQ.QQQTSRQ",
+  "........QTTSSRQ",
+  "........QSSSRRQ",
+  "........QRRRRQ.",
+  ".........QQQQ.."
+ ],
+ "pal": {
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e"
+ }
+}

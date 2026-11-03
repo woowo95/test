@@ -1,0 +1,42 @@
+{
+ "id": "sym_person",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 2. Den hör bäst ihop med förebilden: det senapsgula håret och spännet på bröstet tar upp guldet i svärdens fästen. Ljuset kommer uppifrån vänster, med L i håret och w på pannan, och mörknar mot N nere till höger. Konturen är materialets mörkaste ton: I runt håret och M runt kläderna. Ögonen och munnen ger ett ansikte som går att läsa på en blick, och figuren fyller 16 × 16 punkter med få, stora former. Version 1 har mörkt brunt hår som försvinner mot den mörka bakgrunden. Version 3 har en mössliknande frisyr och en otydlig hals. Ögonen behåller jord0 i stället för kol0, eftersom kol0 bara ska användas där något verkligen är svart. Jag har inte ändrat något i punkterna: storleken, paletten och konturen stämmer redan.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  ".....IIIIII.....",
+  "....IKLLKKJI....",
+  "...IKLKKJJJJI...",
+  "...IKwqqqqpJI...",
+  "...IKqwqqppJI...",
+  "...IJqEqqEpJI...",
+  "...IJqqpqpoJI...",
+  "...IIqpFFpoII...",
+  "....IEpppoEI....",
+  "......EpoE......",
+  "...MMMMEoEMMMM..",
+  "..MPPOOEEEOONM..",
+  ".MPPOOOOKOONNNM.",
+  "MPOPOOOKJOONNONM",
+  "MPOOOOOJIOONNNNM",
+  "MMMMMMMMMMMMMMMM"
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "I": "#694902",
+  "J": "#906f0f",
+  "K": "#b2921b",
+  "L": "#d8b25f",
+  "M": "#353204",
+  "N": "#4b4f00",
+  "O": "#647025",
+  "P": "#898b4c",
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "w": "#dad0bb"
+ }
+}

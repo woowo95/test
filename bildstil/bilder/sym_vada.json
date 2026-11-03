@@ -1,0 +1,38 @@
+{
+ "id": "sym_vada",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den gula senapsfärgen med kontur i senap0 känns direkt igen som 😬 och hör ihop med förebildens dämpade guldtoner. De snedställda ögonbrynen och de svarta ögonen gör grimasen tydligare än i version 1. Tänderna har en kontur i jord0, en ljus övre rad, en mörkare skiljelinje och en dämpad nedre rad, och läses därför som ett sammanbitet gap även i liten storlek. Ljuset faller uppe till vänster och skuggan ligger nere till höger. Version 2 är benvit med kontur i kol0 och liknar mer en dödskalle, så den kan förväxlas med dödssymbolen. Jag ändrade bara en sak: högerkanten på rad 7 (index 6) fick samma skugga (JJ) som raden ovanför, så att skuggningen blir jämn.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  ".....IIIIII.....",
+  "...IILLLLKKII...",
+  "..ILLLKLKKKKJI..",
+  ".ILLKLKKKKKKJJI.",
+  ".ILIIKKKKKKIIJI.",
+  "ILKKkkKKKKkkKJJI",
+  "ILKKkkKKKKkkKJJI",
+  "ILKKKKKKKKKKKJJI",
+  "IKKEEEEEEEEEEJJI",
+  "IKEwwpwwpwwpqEJI",
+  "IKEooooooooooEJI",
+  "IJEqqpqqpqqpoEJI",
+  ".IJEEEEEEEEEEJI.",
+  ".IJJKKKKKKKKJJI.",
+  "..IIJJJJJJJJII..",
+  "....IIIIIIII...."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "I": "#694902",
+  "J": "#906f0f",
+  "K": "#b2921b",
+  "L": "#d8b25f",
+  "k": "#24201d",
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "w": "#dad0bb"
+ }
+}

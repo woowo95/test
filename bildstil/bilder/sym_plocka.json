@@ -1,0 +1,37 @@
+{
+ "id": "sym_plocka",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den är den enda som tydligt läses som två uppåtvända händer som i 🤲: hudtonerna i ben med fingerlinjer och de skifferfärgade ärmarna ger en klar silhuett. Den fyller hela 16 × 16-rutan, har en mörk jordkontur som syns på både mörk och ljus bakgrund och passar förebildens tjocka, enkla stil. Version 1 och 2 är helt i jordtoner och ser ut som trä eller bröd, inte som händer. Ändring: på högra handens ytterkant (rad 7 och 8) bytte jag två ljusa ben1-punkter mot jord3, så att högersidan blir mörkare och ljuset faller från övre vänstra hörnet. Glansen är kvar som en enda ben3-punkt uppe till vänster.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "....EE....EE....",
+  "..EEqpE..EqpEE..",
+  ".EwHqHEEEEqHqHE.",
+  ".EqHqHpEEpqHqHE.",
+  ".EqHpHpEEpqHpHE.",
+  ".EqHqHHEEHqHqHE.",
+  "EEqHqHpEEpqHqHEE",
+  "EqHHqHpEEpqHqHHE",
+  "EqpqqpHEEpqqpHHE",
+  "EpqpqpHEEpqpHpHE",
+  ".EppHpHEEHpHpHE.",
+  "..EHpHGEEGHpHE..",
+  "...EHHGEEGHHE...",
+  "..QSSRRQQSRRRQ..",
+  "..QSRSRQQRSRRQ..",
+  "..QQQQQQQQQQQQ.."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "w": "#dad0bb"
+ }
+}

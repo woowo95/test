@@ -1,0 +1,32 @@
+{
+ "id": "sym_upp",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 2. Den fyller rutan helt, 16 × 16, och har en bred pilspets och ett kraftigt skaft (sex punkter inuti). Därför läses den tydligast i liten storlek och väger lika tungt som de korsade svärden bredvid. Version 1 har ett smalt skaft och ser spinkig ut. I version 3 är spetsens nedre kant bara kontur, så spetsen ser kantig och avhuggen ut. Version 2 följer reglerna: kontur i senap0 runt hela pilen, ljuset uppe till vänster med senap3 längs den vänstra kanten, senap1 åt höger och nedåt och ett jämnt korn i senap2 utan mörka fläckar. Senap passar, eftersom det är en stark och viktig signal. Jag hittade inget som behövde rättas, så punkterna är oförändrade.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  ".......II.......",
+  "......ILJI......",
+  ".....ILKKJI.....",
+  "....ILKKKJJI....",
+  "...ILKLKKKJJI...",
+  "..ILKKKKKJKJJI..",
+  ".ILKKLKKKKKKJJI.",
+  "ILKKKKKKKJKKJJJI",
+  "IIIIILKKKKJIIIII",
+  "....ILKKKJJI....",
+  "....ILKJKJJI....",
+  "....IKKKKJJI....",
+  "....ILKKJKJI....",
+  "....IKKKKJJI....",
+  "....IKKJKJJI....",
+  "....IIIIIIII...."
+ ],
+ "pal": {
+  "I": "#694902",
+  "J": "#906f0f",
+  "K": "#b2921b",
+  "L": "#d8b25f"
+ }
+}
