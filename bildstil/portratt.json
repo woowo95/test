@@ -271,6 +271,7 @@
     {"id": "smycke-8", "sort": "smycke", "namn": "Pärlörhänge", "plats": "ora", "maskbar": true, "ritad": 1, "kon": "kvinna"},
     {"id": "skon-fransar", "sort": "skonhet", "namn": "Ögonfransar", "niva": 1, "lager": "ogonfransar", "maskbar": true, "ritad": 1, "plats": "oga", "kon": "kvinna"},
     {"id": "skon-glans", "sort": "skonhet", "namn": "Hårglans", "niva": 2, "lager": "harglans", "maskbar": true, "ritad": 2, "plats": "har"},
+    {"id": "skon-kinder", "sort": "skonhet", "namn": "Rosiga kinder", "niva": 1, "lager": "rynkor", "ritad": 0, "plats": "huvud", "vad": "mjukt rosiga kinder: en matt rodnad på kindknotorna i kindtonerna (A–D) och lite rost, glesare ut mot kanten, utan skarp kant"},
     {"id": "skon-varta", "sort": "skonhet", "namn": "Vårta", "niva": -1, "lager": "arr", "ritad": 1, "plats": "huvud"},
     {"id": "skon-tander", "sort": "skonhet", "namn": "Gles tandrad", "niva": -1, "lager": "lappar", "ritad": 1, "plats": "mun"},
     {"id": "skon-sned", "sort": "skonhet", "namn": "Sneda drag", "niva": -2, "flytt": {"oga-h": [0, 1], "ogonbryn-h": [0, 1]}, "ritad": 0},

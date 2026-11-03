@@ -985,8 +985,11 @@
     else if (s.rader?.startsWith('farger.')) { const k = s.rader.split('.')[1]; PR.farger[k].forEach((f, i) => KORT.push({ id: 'farg-' + k + '-' + f.id, sort: s, rad: f, i, namn: f.namn, ritad: f.ritad || 0 })); }
     else delarAv(s.id).forEach(d => KORT.push({ id: d.id, sort: s, rad: d, namn: d.namn, ritad: d.ritad || 0 }));
   }
+  // fas 5:s bilder i förväg (steg 5.2.4): en sort per slag, ett kort per bild; kortens id är sak-<id>
+  for (const s of BILDER.sorter) BILDER.bilder.filter(b => b.sort === s.id).forEach(b => KORT.push({ id: 'sak-' + b.id, sort: { ...s, bild: true }, rad: b, namn: b.namn, ritad: b.ritad || 0 }));
   KORT.forEach((k, i) => {
-    k.forebild = i === 0 || KORT[i - 1].sort !== k.sort;
+    k.forebild = i === 0 || KORT[i - 1].sort.id !== k.sort.id;
+    if (k.sort.bild) { k.vem = []; return; }
     if (k.mallar) { k.vem = k.mallar.map(m => ({ mall: m, kon: m === 'man' ? 'man' : 'kvinna' })); return; }
     const t = k.rad.sort ? konAv(k.rad) : 'bada', barn = k.rad.sort ? barnOk(k.rad) : true;
     k.kon = k.rad.sort ? t : null; k.barn = barn;
@@ -1024,7 +1027,54 @@
     for (const [B, skala, text] of bilder) { const f = document.createElement('figure'); f.append(duk(B, skala, text)); f.insertAdjacentHTML('beforeend', `<figcaption>${text}</figcaption>`); r.append(f); }
     g.append(r); return g;
   }
+  // ---------- fas 5:s bilder (steg 5.2.4): sakens kartbild i sitt sammanhang, som den syns i spelet ----------
+  // tecknen är porträttens fasta färger (jord2, kol0 …); kontur och skuggning ritas i bilden, skuggan på marken av programmet
+  const tonAv = ch => { const t = PR.tecken[ch]; return t && /\d$/.test(t) ? P.i(t.slice(0, -1), +t.slice(-1)) : -1; };
+  function sakBild(id, data = BILDFILER[id]) {
+    if (!data?.rader) return null;
+    const w = Math.max(...data.rader.map(r => r.length)), h = data.rader.length, B = Bild(w, h, P);
+    data.rader.forEach((r, y) => [...r].forEach((ch, x) => { if (ch !== '.') B.satt(x, y, tonAv(ch)); }));
+    return B;
+  }
+  // klistrar in en bild; med skugga faller den snett nedåt till höger på marken (guiden)
+  function klistra(M, S, x0, y0, skugga = true) {
+    if (!S) return;
+    if (skugga) for (let y = 0; y < S.h; y++) for (let x = 0; x < S.w; x++) if (S.px[y * S.w + x] >= 0 && !(S.px[(y + 1) * S.w + x + 1] >= 0 && x + 1 < S.w && y + 1 < S.h)) M.morka(x0 + x + 1, y0 + y + 1);
+    for (let y = 0; y < S.h; y++) for (let x = 0; x < S.w; x++) { const v = S.px[y * S.w + x]; if (v >= 0) M.satt(x0 + x, y0 + y, v); }
+  }
+  // en ruta (16 × 16) markeras med ljusa hörn, så att storleken mot rutan syns
+  function rutHorn(M, x0, y0) { for (const [a, b] of [[0, 0], [15, 0], [0, 15], [15, 15]]) M.satt(x0 + a, y0 + b, P.i('ben', 2)); }
+  function sakSammanhang(id, data) {
+    const S = sakBild(id, data); if (!S) return [];
+    const ut = [];
+    // ensam på marken, mitt i en ruta
+    { const n = Math.max(16, S.w + 4, S.h + 4), M = markBild(n + 8, n + 8, P, 400, 420); rutHorn(M, 4 + ((n - 16) >> 1), 4 + ((n - 16) >> 1)); klistra(M, S, 4 + ((n - S.w) >> 1), 4 + ((n - S.h) >> 1)); ut.push(['Ensam på marken (hörnen visar en ruta)', M, 4]); }
+    // högen: en till fyra, efter hur full den är
+    const forsk = [[0, 0], [Math.max(2, S.w >> 1), -1], [-1, Math.max(2, S.h >> 1)], [Math.max(2, S.w >> 1) - 1, Math.max(2, S.h >> 1) + 1]];
+    for (let n = 1; n <= 4; n++) {
+      const W = Math.max(20, S.w + (S.w >> 1) + 8), H = Math.max(20, S.h + (S.h >> 1) + 9), M = markBild(W, H, P, 430, 410);
+      const bx = (W - S.w - (S.w >> 1)) >> 1, by = (H - S.h - (S.h >> 1)) >> 1;
+      forsk.slice(0, n).sort((a, b) => a[1] - b[1]).forEach(([dx, dy]) => klistra(M, S, bx + dx, by + dy + 1));
+      ut.push([`Högen, ${['en', 'två', 'tre', 'fyra'][n - 1]}`, M, 4]);
+    }
+    // i stationen: på slöjdbänken
+    { const M = markBild(40, 38, P, 380, 400); ritaSlojdbank(M, 4, 4, P, true); klistra(M, S, 27 - (S.w >> 1), Math.max(2, 21 - S.h), true); ut.push(['På slöjdbänken', M, 4]); }
+    // när den bärs: framför kroppen, i kartfigurens storlek
+    { const q = neutral('man'), F = kartFigur(q, 'fram', 'sta', 'bara'), W = Math.max(F.w, S.w) + 8, H = F.h + Math.max(0, S.h - 8) + 8, M = markBild(W, H, P, 420, 400);
+      const fx = (W - F.w) >> 1, fy = H - F.h - 3; klistra(M, F, fx, fy, false); klistra(M, S, fx + 7 - (S.w >> 1), fy + 12 - (S.h >> 1), false); ut.push(['Bärs', M, 4]); }
+    return ut;
+  }
+  function sakBilder(k) {
+    const ut = document.createElement('div'), data = BILDFILER[k.rad.id]; ut.className = 'gr-bilder';
+    ut.append(bildRad('Som i spelet', sakSammanhang(k.rad.id).map(([t, B, s]) => [B, s, t])));
+    const stor = [[sakBild(k.rad.id), 10, 'Nu, tio gånger större']];
+    if (data?.forra) stor.push([sakBild(k.rad.id, data.forra), 10, 'Förra versionen']);
+    ut.append(bildRad(data?.forra ? 'Nu och förra versionen' : 'Förstorad', stor));
+    if (data?.forra) ut.append(bildRad('Förra versionen som i spelet', sakSammanhang(k.rad.id, data.forra).map(([t, B, s]) => [B, s, t])));
+    return ut;
+  }
   function granskBilder(k) {
+    if (k.sort.bild) return sakBilder(k);
     const ut = document.createElement('div'); ut.className = 'gr-bilder';
     const lagen = k.sort.lagen ? LAGEN[k.sort.lagen] : null;
     if (k.sort.id === 'mall') {
@@ -1039,6 +1089,9 @@
       ut.append(bildRad('Liggande', [[kartBild(q, 'fram', 'sta', 'hanga', { ligga: true, slutna: true, bara: 'mall' }), 3, 'Ligger'], [kartBild(q, 'fram', 'sta', 'hanga', { ligga: true, slutna: true, tacke: true, bara: 'mall' }), 3, 'Ligger under fällen']]));
       return ut;
     }
+    // den förra ritningen (Björn efter 5.2.2.7: den gamla versionen ska alltid stå bredvid, så att det syns vad som ändrats)
+    const forra = DELAR[k.id]?.forra || null;
+    const medForra = f => { const nu = DELAR[k.id]; DELAR[k.id] = { ...nu, ...forra, man: forra.man, barn: forra.barn }; try { return f(); } finally { DELAR[k.id] = nu; } };
     const vemNamn = v => v.mall === 'barn' && k.kon && k.kon !== 'bada' ? (v.kon === 'man' ? 'Barn (pojke)' : 'Barn (flicka)') : MALL[v.mall].namn;
     for (const v of k.vem) {
       const mall = v.mall, bilder = [];
@@ -1048,8 +1101,13 @@
         if (k.sort.id === 'mun') { const h = PR.humor.find(x => x.mun === l.id); if (h) q.humor = h.id; }
         bilder.push([portratt(q), 2, l.namn]);
       }
-      else bilder.push([portratt(granskPerson(k, mall, v.kon)), 2, vemNamn(v)]);
+      else {
+        bilder.push([portratt(granskPerson(k, mall, v.kon)), 2, forra ? 'Nu' : vemNamn(v)]);
+        if (forra) bilder.push([medForra(() => portratt(granskPerson(k, mall, v.kon))), 2, 'Förra versionen']);
+      }
       ut.append(bildRad(lagen ? vemNamn(v) + ': ' + (k.sort.id === 'mun' ? 'munnen i sina sex lägen, med ögonen och ögonbrynen i samma humör' : 'i alla fyra lägen') : vemNamn(v), bilder));
+      // en del i flera lägen: den förra versionen i en rad direkt under, i samma lägen
+      if (lagen && forra) ut.append(bildRad(vemNamn(v) + ': förra versionen', lagen.map(l => { const q = granskPerson(k, mall, v.kon); q.lagen[k.sort.id] = l.id; if (k.sort.id === 'mun') { const h = PR.humor.find(x => x.mun === l.id); if (h) q.humor = h.id; } return [medForra(() => portratt(q)), 2, l.namn]; })));
     }
     if (k.sort.harfarger) {
       const v0 = k.vem[0], bilder = [0, 2, 4, 5].map(i => { const q = granskPerson(k, v0.mall, v0.kon); q.har = i; return [portratt(q), 2, PR.farger.har[i].namn]; });
@@ -1108,11 +1166,12 @@
     const synliga = GKORT.filter(synlig), pos = synliga.indexOf(k) + 1;
     const nav = `<nav class="gr-nav" aria-label="Bläddra bland korten"><button type="button" class="gr-knapp" data-grsteg="-1">‹ Förra</button><span>${pos} av ${synliga.length}</span><button type="button" class="gr-knapp" data-grsteg="1">Nästa ›</button></nav>`;
     if (nyttKort || senastVisad !== k.id || !kort.querySelector('.gr-bilder')) {
-      const vad = k.sort.id === 'mall' ? k.rad.vad + ' Mallen är kroppen, halsen, axlarna och skallen, med fästpunkterna där delarna sitter och zonerna som maskerna döljer.'
+      const vad = k.sort.bild ? `${k.namn}: ${k.rad.vad}. Kartbilden är ${k.rad.w} × ${k.rad.h} punkter i sin naturliga storlek mot rutan (16 punkter), och den ritas alltid i den storleken: på högen, i stationen, på marken och när den bärs (steg 5.1.2.1).`
+        : k.sort.id === 'mall' ? k.rad.vad + ' Mallen är kroppen, halsen, axlarna och skallen, med fästpunkterna där delarna sitter och zonerna som maskerna döljer.'
         : k.rad.toner ? `Färgen ${k.namn.toLowerCase()}: tonerna ${k.rad.toner.join(', ')} ur paletten, på det neutrala ansiktet.`
           : `${k.sort.en} på ett helt ansikte, där resten är detsamma för alla delar av sorten.`;
       kort.innerHTML = `${nav}<header><span class="typ">${k.sort.namn} · steg ${k.sort.steg}${k.kon ? ' · ' + KONTEXT[k.kon] + (k.barn ? '' : ', inte barn') : ''}${k.forebild ? ' · förebild' : ''}${k.ritad ? '' : ' · grå platshållare'}</span>
-        <h3>${k.sort.en}: ${k.namn}</h3><p class="not">${vad}${k.ritad ? (k.sort.id === 'mall' ? ' Mallen är ritad; ansiktets delar och håret på bilderna är ännu grå platshållare.' : '') : ' Delen är inte ritad än: bilden är en platshållare, och ett svar nu gäller bara platshållaren.'}</p>
+        <h3>${k.sort.bild ? k.namn : k.sort.en + ': ' + k.namn}</h3><p class="not">${vad}${k.ritad ? (k.sort.id === 'mall' ? ' Mallen är ritad; ansiktets delar och håret på bilderna är ännu grå platshållare.' : '') : ' Delen är inte ritad än: bilden är en platshållare, och ett svar nu gäller bara platshållaren.'}</p>
         ${forra ? `<p class="forra">Din kommentar förra gången: ${forra.replace(/</g, '&lt;')}</p>` : ''}</header>
         <div class="gr-svar"><div class="gr-svarknappar"><button type="button" class="gr-ja" data-grsvar="ja">Ja</button><button type="button" class="gr-nej" data-grsvar="nej">Nej</button></div>
         <label for="gr-kommentar">Kommentar: vad ska ändras?</label><textarea id="gr-kommentar" rows="3" placeholder="Skriv gärna vad som ska ändras, till exempel: munnen ska vara bredare när hon är glad"></textarea>
@@ -1170,5 +1229,22 @@
   }
   starta();
   // för skriptet som ritar med API:t (bildstil/api/rita.mjs): det öppnar sidan, lägger in en ny del och tar bilden
+  // för skriptet som ritar fas 5:s bilder (bildstil/api/bilder.mjs)
+  const pngAv = (B, skala) => { const c = document.createElement('canvas'); tillCanvas(B, c, 0); const s = document.createElement('canvas'); s.width = B.w * skala; s.height = B.h * skala; const g = s.getContext('2d'); g.imageSmoothingEnabled = false; g.drawImage(c, 0, 0, s.width, s.height); return s.toDataURL('image/png').split(',')[1]; };
+  window.BILDERNA = {
+    // sakens bild i sitt sammanhang: alla bilderna på en rad, fyra gånger större
+    sammanhang(id, data) {
+      const l = sakSammanhang(id, data); if (!l.length) return null;
+      const G = 6, W = l.reduce((s, [, B]) => s + B.w + G, 0), H = Math.max(...l.map(([, B]) => B.h)), A = Bild(W, H, P);
+      for (let i = 0; i < A.px.length; i++) A.px[i] = P.i('kol', 0);
+      let x = 0; for (const [, B] of l) { klistra(A, B, x, 0, false); x += B.w + G; }
+      return pngAv(A, 4);
+    },
+    // scenen i dagsljus: de godkända bilderna (marken, granarna, slöjdbänken, kistan, lägerelden och sakerna i dag)
+    scen() { return pngAv(ritaScen(P, { tid: 'dag' }), 3); },
+    // tecknen som färger (för spelets PAL)
+    hex() { return Object.fromEntries([...BILDER.tecken].map(ch => [ch, P.cols[tonAv(ch)].hex])); },
+    prova(id, data) { BILDFILER[id] = data; },
+  };
   window.PORTRATTEN = { portratt, kartBild, neutral, granskPerson, KORT, provaDel(id, data) { DELAR[id] = data; }, png(B, skala = 4) { const c = document.createElement('canvas'); tillCanvas(B, c, 0); const s = document.createElement('canvas'); s.width = B.w * skala; s.height = B.h * skala; const g = s.getContext('2d'); g.imageSmoothingEnabled = false; g.drawImage(c, 0, 0, s.width, s.height); return s.toDataURL('image/png'); } };
 })();

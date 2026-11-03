@@ -224,8 +224,10 @@ async function batch(client, fragor, namn) {
   return { ut, summa, tokens };
 }
 function spara(d, ritning, av) {
-  const ritad = (d.ritad || 0) + 1;
-  const o = { id: d.id, ritad, av, om: ritning.anteckning || '', bilder: ritning.bilder, ...(ritning.man ? { man: ritning.man } : {}), ...(ritning.barn ? { barn: ritning.barn } : {}) };
+  const ritad = (d.ritad || 0) + 1, gammal = lasDel(d.id);
+  // den förra ritningen sparas med, så att kortet visar den bredvid den nya (Björn efter 5.2.2.7)
+  const forra = gammal?.bilder ? { ritad: gammal.ritad, bilder: gammal.bilder, ...(gammal.man ? { man: gammal.man } : {}), ...(gammal.barn ? { barn: gammal.barn } : {}) } : null;
+  const o = { id: d.id, ritad, av, om: ritning.anteckning || '', bilder: ritning.bilder, ...(ritning.man ? { man: ritning.man } : {}), ...(ritning.barn ? { barn: ritning.barn } : {}), ...(forra ? { forra } : {}) };
   fs.writeFileSync(path.join(DELAR, d.id + '.json'), JSON.stringify(o, null, 1) + '\n');
   d.ritad = ritad;
 }
