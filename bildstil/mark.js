@@ -770,14 +770,4 @@
     ting.sort((a, b) => a[0] - b[0]).forEach(t => t[1]());
   }
 
-  VAL.push(
-    { id: 'm_falld_host', stor: true, namn: 'Fallna träd på hösten', typ: 'janej', vad: T + '5.1.4: de fallna träden du valde (version 2, åt sidan och tillplattat) och stubbarna du valde (version 1) på hösten: den fallna björken har gula löv, och gräset har vissnat i fläckar som på björken på hösten. Granen är som på sommaren.',
-      versioner: [{ text: 'Version 1: fallna träd och stubbar på hösten.', ...SCEN(W, H, B => fallnaTid(B, 'host')) }] },
-    { id: 'm_falld_vinter', stor: true, namn: 'Fallna träd och stubbar på vintern', typ: 'janej', vad: T + '5.1.4 och 5.1.13: de fallna träden och stubbarna du valde på vintern: snö ovanpå stockarna och grenarna, den fallna björken utan löv, och en mössa av snö på varje stubbe. Nederst stubbarna i fyra storlekar.',
-      versioner: [{ text: 'Version 1: fallna träd och stubbar på vintern.', ...SCEN(W, H, B => fallnaTid(B, 'vinter')) }] },
-    { id: 'm_brand_vinter', stor: true, namn: 'Skogen efter en brand på vintern', typ: 'janej', vad: T + '5.1.4 och 5.1.13: de svarta torrakorna du valde (version 1, när glöden slocknat) på vintern: snö över askan med förkolnade kvistar som sticker upp, och snö på grenarna. Till vänster den levande skogen på vintern.',
-      versioner: [{ text: 'Version 1: skogen efter branden på vintern.', ...SCEN(W, H, B => brandVinter(B)) }] },
-    { id: 'm_bjork_var', stor: true, namn: 'Björken på ' + TIDNAMN.var, typ: 'janej', vad: T + '5.1.4: björken du sa ja till, i alla stadier, på våren: ljusa nyutslagna löv, men nu med samma mörka skuggsida som på sommaren, så att kronan inte blir platt. Din kommentar förra gången: ”Den ser lite för platt ut”.',
-      versioner: [{ text: 'Version 1: björken på våren med skugga i kronan.', ...SCEN(W, 116, B => stadierTid(B, 'bjork', 'var')) }] },
-  );
 })();
