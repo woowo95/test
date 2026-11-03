@@ -1,22 +1,30 @@
 {
  "id": "skor_kaninskinn",
- "ritad": 1,
- "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 2. Den har samma upplägg som dagens bild: två skor snett förskjutna, den bakre uppe till höger och den främre nere till vänster. Båda har ljust skaftkrage i ben3 och ben2, kropp i jord3 och jord2 och jordbrun kontur. Det mörkare jord1 nere till höger ger ljuset från övre vänstra hörnet och lite korn. Den hela sularaden i botten gör att paret står stadigt och läses som skor även i liten storlek. Version 1 har avskurna hörn på sulan och blir mer rundad och otydlig. Version 3 saknar kontur runt kragarna och smälter in i gräset. Jag behövde inte ändra något: bara palettens tecken används, storleken är 8 × 4, ljuset faller rätt och den ljusa kragen syns tydligt mot marken.",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 1. Den följer dagens bild bäst: den bakre skon står uppe till höger och den främre nere till vänster, båda har ljus skinnkant (w, q) överst, kropp i jord2 och jord3 och en sula i jord0. Den bakre skon har också hel kontur, vilket version 2 saknar. Enligt Björns kommentar har jag skilt skorna åt. Punkten under den bakre skons vänstra kant (rad 2, kolumn 5) är borttagen, och den främre skons tå är nu kontur (jord0) i stället för jord1. Nu går en genomskinlig glipa mellan skorna utan att de möts ens diagonalt, så de läses som två separata skor i liten storlek.",
  "w": 8,
  "h": 4,
  "rader": [
-  "...EwqE.",
-  "EwqEHGGE",
-  "EHGHGFEE",
-  "EEEEEEE."
+  "....EwqE",
+  "Ewq..HGE",
+  "EHGE.EEE",
+  "EEEE...."
  ],
  "pal": {
   "E": "#3f2415",
-  "F": "#5e3c24",
   "G": "#7d5b40",
   "H": "#987e62",
   "q": "#bdb39b",
   "w": "#dad0bb"
+ },
+ "forra": {
+  "ritad": 1,
+  "rader": [
+   "...EwqE.",
+   "EwqEHGGE",
+   "EHGHGFEE",
+   "EEEEEEE."
+  ]
  }
 }

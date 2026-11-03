@@ -1,0 +1,24 @@
+{
+ "id": "giftsvamp",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den röda hatten har tre ljusa prickar i ett tydligt mönster (två uppe, en i mitten), så den läses som en giftsvamp även i liten storlek. Hatten är ljusast uppe till vänster och mörkast (rost0) nere till höger, och foten är tre punkter bred i benton, vilket ger samma ljusa och tydliga silhuett som förebilden. Version 1 har en smal fot omgiven av rost0 och läses sämre. Version 2 har en prick i ben3, som blir för ljus och nästan vit, och dess vänsterkant är mörkare än mitten trots att ljuset kommer från vänster. Ändring: fotens nedersta rad gick från .opo. till .ppo. så att foten inte blir mörkare på den belysta vänstra sidan.",
+ "w": 5,
+ "h": 5,
+ "rader": [
+  ".uts.",
+  "uqtqs",
+  "tsqsr",
+  ".qpo.",
+  ".ppo."
+ ],
+ "pal": {
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "r": "#521100",
+  "s": "#742a01",
+  "t": "#a14808",
+  "u": "#bd753e"
+ }
+}

@@ -1,19 +1,19 @@
 {
  "id": "lyra",
- "ritad": 1,
- "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 3. Den är den enda med tre strängar och genomskinliga mellanrum, precis som dagens bild. Den har också samma ram: ljus överkant, mellantonad sida och en mörkare fot, med jord0 som kontur. Strängarna är senap och går från ljust uppe till vänster mot mörkare nere till höger, och de syns tydligt mot träet. Det passar förebilden, där det man ska se är ljusare och mättat. Version 1 och 2 har bara två strängar och liknar originalet mindre. Med högst 8 punkters bredd ryms inte ramen på båda sidor och tre strängar med mellanrum samtidigt. Därför ligger den högra strängen direkt mot konturen. Den bredare foten från 16-bilden får inte heller plats, så den antyds av en mörkare bottenrad. Jag har inte ändrat några punkter.",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 1 eftersom den ligger närmast dagens bild. Den har en träram med ljus överliggare och en mörkare fot, sidostycken på båda sidor och strängar med luft emellan. Liksom i originalet sitter strängarna tätt mot vänster sidostycke och har en springa mot det högra. Version 2 och 3 lägger strängar eller senapsfärg direkt mot den högra ramen och tappar då det högra sidostycket. Version 3 har dessutom gult i foten, vilket originalet inte har. Ramen har jord0 som kontur, och ljuset kommer uppifrån vänster: jord3 till vänster och upptill, jord1 nere till höger. Strängarna går från senap3 upptill till senap2 nertill, så de syns tydligast, som det man ska se. Inom 8 punkters bredd får bara två strängar plats med luft mellan, och den bredare foten från originalet kan inte göras bredare än ramen. Därför behöll jag version 1 punkt för punkt. Den är redan ren och följer stilguiden.",
  "w": 8,
  "h": 10,
  "rader": [
   ".EEEEEE.",
+  "EHHHGHGE",
+  "EGGFGFFE",
+  "EHL.L.GE",
+  "EHL.L.GE",
+  "EGL.K.FE",
+  "EGK.K.FE",
   "EHHGHGGE",
-  "EGHGGFGE",
-  "EHLELELE",
-  "EHL.L.KE",
-  "EGL.K.KE",
-  "EGK.K.KE",
-  "EGKEKEKE",
   "EGFGFFFE",
   ".EEEEEE."
  ],
@@ -24,5 +24,20 @@
   "H": "#987e62",
   "K": "#b2921b",
   "L": "#d8b25f"
+ },
+ "forra": {
+  "ritad": 1,
+  "rader": [
+   ".EEEEEE.",
+   "EHHGHGGE",
+   "EGHGGFGE",
+   "EHLELELE",
+   "EHL.L.KE",
+   "EGL.K.KE",
+   "EGK.K.KE",
+   "EGKEKEKE",
+   "EGFGFFFE",
+   ".EEEEEE."
+  ]
  }
 }

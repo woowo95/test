@@ -1,0 +1,25 @@
+{
+ "id": "kott",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den ligger närmast dagens bild: en mörkröd köttklump med ljuskant uppe till vänster och en ljus bit fett eller ben nere till höger. Den har rost0 som kontur runt köttet och ben0 runt fettet, och ljuset faller rätt, med w och q uppe till vänster och o nere till höger på fettet. Version 2 har fettet ljusast åt höger, alltså fel ljusriktning. Version 3 är för ljus och orange med rost2 som kontur och läses inte som rått mörkrött kött. Jag ändrade en sak: den släta raden ttt på andra raden blev tts, så att köttet får korn och skuggar mot höger.",
+ "w": 7,
+ "h": 5,
+ "rader": [
+  ".rrrr..",
+  "ruttsr.",
+  "rttstsr",
+  ".rsswqo",
+  "..rrqpo"
+ ],
+ "pal": {
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "r": "#521100",
+  "s": "#742a01",
+  "t": "#a14808",
+  "u": "#bd753e",
+  "w": "#dad0bb"
+ }
+}

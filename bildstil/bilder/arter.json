@@ -1,0 +1,20 @@
+{
+ "id": "arter",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3 eftersom den ligger närmast dagens bild: en liggande skida med ljusa ärtor och en kort stjälk som går upp till höger. Stjälken sitter vid kolumn 4–5, alltså ungefär där den slutar i 16-punktsbilden, och den har en oliv0-kontur på båda sidor, så den syns mot gräset. Skidan följer ljuset: ärtorna i ben2 och oliv2 ligger mot vänster, oliv1 och konturen nere till höger. Ärtorna i ben2 ger den ljusa kontrast som behövs för att läsa den i liten storlek, på samma sätt som de ljusa partierna i förebilden Fiskkött. Version 1 har en dubbel mörk bas under stjälken och den ljusaste punkten ytterst till höger, vilket går emot ljusriktningen. Version 2 saknar stjälken och ser ut som en bred klump. Inga ändringar behövdes.",
+ "w": 6,
+ "h": 3,
+ "rader": [
+  "...MPM",
+  "MqOqNM",
+  ".MONM."
+ ],
+ "pal": {
+  "M": "#353204",
+  "N": "#4b4f00",
+  "O": "#647025",
+  "P": "#898b4c",
+  "q": "#bdb39b"
+ }
+}

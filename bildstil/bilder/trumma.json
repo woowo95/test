@@ -1,18 +1,18 @@
 {
  "id": "trumma",
- "ritad": 1,
- "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 3 eftersom den ligger närmast dagens bild. Den har samma runda trumma med ljust skinn och tre rostprickar i en lodrät rad mitt på. Den har också den lilla knutna snibben nere till höger. Ramen är i jordtoner med jord0 som kontur. Skinnet är ljusast uppe till vänster (ben3) och mörknar mot ben1 nere till höger, som ljusregeln kräver. Rostprickarna är det enda mättade och syns tydligt i liten storlek. Den passar flintyxans stil med tydlig kontur och få toner. Version 1 har bara två prickar. Version 2 är smalare och har en annan form än förebilden. Jag ändrade ingenting, eftersom formen, färgerna och storleken (8 × 7) redan stämmer.",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 2. Den är mest lik dagens bild: den har tre rostprickar i rad mitt på skinnet, i rost1, som stämmer med dagens färg. Skinnet är ljust uppe till vänster och mörknar nere till höger, och konturen är jord0 som på flintyxans skaft. Version 1 och 3 har bara två prickar. Jag ändrade två saker. Remmen nere till höger var ritad i ben (q och p), men den är jord i dagens bild, så nu är den jord1 med kontur i jord0. I andra raden är det vänstra w nu jord3, så att kanten ser ut som en ljus trärand och inte som skinn. Glansen är bara ett w på skinnet.",
  "w": 8,
  "h": 7,
  "rader": [
   "..EEEE..",
-  ".EHwqqE.",
-  "EHwqsqFE",
+  ".EHwsqE.",
+  "EHwqqqpE",
   "EGqqspFE",
-  "EGqpspFE",
-  ".EGpFEGE",
-  "..EEEGE."
+  "EGqqppFE",
+  ".EGpsFEF",
+  "..EEEEFE"
  ],
  "pal": {
   "E": "#3f2415",
@@ -23,5 +23,17 @@
   "q": "#bdb39b",
   "s": "#742a01",
   "w": "#dad0bb"
+ },
+ "forra": {
+  "ritad": 1,
+  "rader": [
+   "..EEEE..",
+   ".EHwqqE.",
+   "EHwqsqFE",
+   "EGqqspFE",
+   "EGqpspFE",
+   ".EGpFEGE",
+   "..EEEGE."
+  ]
  }
 }

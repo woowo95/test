@@ -1,33 +1,37 @@
 {
  "id": "skon-glans",
- "ritad": 4,
+ "ritad": 5,
  "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
- "om": "Jag valde version 2. Det avgör att den håller sig inne i hårmassan. Version 1 är för bred och kan sticka ut över hårkanten, och då ser den ut som extra hår. Version 3 börjar på y = -1 och riskerar att hamna ovanför hjässan, utanför håret. Version 2 är en smal, diagonal ljusstrimma i har2 och har3. Den följer luggens svep uppifrån vänster, där ljuset faller, och läser som rent hår som glänser i solen. Den lägger alltså inte till ny hårform. Övergången mellan g och h ligger i små klungor, som i förebildens fransar. Strimman har ingen kontur och inga ensamma prickar. Den ligger inom rutan och på vänster sida om mittlinjen, på samma plats i alla tre mallarna. Jag behöll punkterna oförändrade, eftersom formen och storleken redan stämmer med förebildens fina detaljnivå.",
+ "om": "Jag valde version 2. Den har två tydliga, böjda strimmor som följer hårets svep från vänster och ligger på den del av håret som vänder sig mot ljuset uppe till vänster. Den passar också bäst med förebildens fina linjer och små detaljer. Version 1 är för gles och tunn, och den smala strimman syntes inte. Version 3 har en övre strimma som slutar tvärt, och den undre strimman blir för kort. Efter Björns kommentar har jag gjort glansen tydligare. Kärnan i den översta strimman är bredare, med en rad på fem h-punkter, och båda strimmorna är nu två punkter tjocka i mitten. Varje strimma har en kant av g som går över i håret med korn i små klungor, så att glansen syns på alla hårfärger utan att bli ensamma prickar. Jag har flyttat lagret upp en rad (y=-2), så att den övre strimman ligger på hjässans ljusa sida och den undre slutar i luggen ovanför pannan. Allt ligger inom rutan, och jag har bara använt hårets toner g och h.",
  "bilder": {
   "standard": {
-   "x": -11,
-   "y": 0,
+   "x": -15,
+   "y": -2,
    "rader": [
-    "......gghhg.",
-    "....ghhhggg.",
-    "..gghhgg....",
-    ".ghhg.......",
-    ".gg........."
+    "..........gghhg.",
+    ".......gghhhhhg.",
+    ".....ghhhhhgg...",
+    "...ghhhhgg...gg.",
+    "..ghhhg....ghhg.",
+    ".ghhg....ghhhg..",
+    ".ghg...ghhhg....",
+    ".gg...ghhg......",
+    "......gg........"
    ]
   }
  },
  "forra": {
-  "ritad": 3,
+  "ritad": 4,
   "bilder": {
    "standard": {
-    "x": -15,
-    "y": -2,
+    "x": -11,
+    "y": 0,
     "rader": [
-     "........ggggg.....",
-     "....gghhhhhgggg...",
-     "..gghhhhgg........",
-     ".ghhg.............",
-     ".gg..............."
+     "......gghhg.",
+     "....ghhhggg.",
+     "..gghhgg....",
+     ".ghhg.......",
+     ".gg........."
     ]
    }
   }

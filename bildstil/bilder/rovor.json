@@ -1,0 +1,29 @@
+{
+ "id": "rovor",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den följer dagens bild bäst: en blast i V-form, ett rostfärgat band upptill och en benvit kropp som smalnar av nedåt till en liten rotspets. Version 2 är för bred och platt nedtill och har ingen spets. Version 1 är sned, eftersom det rostfärgade bandet är förskjutet åt höger. Version 3 har också en riktig kontur i materialens mörkaste toner: rost0 och rost1 runt det röda och ben0 runt det vita. Silhuetten är dessutom tydlig i liten storlek och passar ihop med fiskköttets enkla form med två till tre toner. Jag ändrade en sak: den ljusaste tonen (ben3) i den breda raden flyttades åt vänster, från oqwqpo till owqqpo, så att ljuset kommer uppifrån vänster och tonen mörknar mot höger. Färgerna är kvar som i dagens bild, alltså rost och ben, i stället för lila, så att den liknar originalet så nära som möjligt.",
+ "w": 6,
+ "h": 6,
+ "rader": [
+  ".P..O.",
+  "..PN..",
+  ".sutr.",
+  "owqqpo",
+  ".oqpo.",
+  "..o..."
+ ],
+ "pal": {
+  "N": "#4b4f00",
+  "O": "#647025",
+  "P": "#898b4c",
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "r": "#521100",
+  "s": "#742a01",
+  "t": "#a14808",
+  "u": "#bd753e",
+  "w": "#dad0bb"
+ }
+}

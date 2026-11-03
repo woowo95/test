@@ -1,0 +1,25 @@
+{
+ "id": "vargkott",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den liknar dagens bild mest: en klubbformad köttbit med benet uppe till höger och en mörk rostkant runt köttet, som i originalet. Den har en hel kontur i rost0 åt alla håll, så den syns tydligt på gräset och läses som en mörkare bit än fiskköttet. Ljuset stämmer: rost3 och rost2 sitter uppe till vänster och de mörkaste tonerna nere till höger. Version 1 saknar kontur på vänster sida. Version 2 har ingen sammanhängande kant och ser mer utsmetad ut. Det enda jag ändrade är den ljusa fettfläcken mitt i köttet från originalets vita fläck, som jag lade tillbaka i ben2 på fjärde raden (rtsstsr. blev rtssqsr.). Den gör att biten känns igen som samma kött som i dag. Benknölen uppe till höger behöll jag med ben3 som enda glanspunkt.",
+ "w": 8,
+ "h": 5,
+ "rader": [
+  "......wq",
+  "..rrrqpo",
+  ".rtussr.",
+  "rtssqsr.",
+  ".rrrrr.."
+ ],
+ "pal": {
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "r": "#521100",
+  "s": "#742a01",
+  "t": "#a14808",
+  "u": "#bd753e",
+  "w": "#dad0bb"
+ }
+}

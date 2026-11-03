@@ -1,0 +1,27 @@
+{
+ "id": "varg",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Version 2 valdes eftersom den ligger närmast dagens bild. Den har två uppstående öron uppe till vänster och ett mörkt öga (kol0) bakom en svart nos. Nosen och bringan är ljusa (ben3) som W i originalet. Ryggen är ljusast i skiffer3, som H-raden i dag. Svansen sticker ut åt höger, och den ljusa buken ligger mellan två benpar i samma kolumner som originalets fram- och bakben (4–6 och 11–13). Konturen är skiffer0 runt pälsen, och ljuset faller uppifrån vänster: skiffer3 på ryggen och skiffer1 nere till höger. Den enda rostpunkten vid halsen läses som blod, vilket är en motiverad mättad ton som visar att vargen är fälld. Formen är 16 × 8 och läses tydligt på gräset och bredvid fiskköttet. Version 1 saknar öga och har vita tassar, och version 3 har tre benklumpar och en otydligare buk. Jag ändrade inget, eftersom bilden redan följer reglerna för kontur, ljus och storlek.",
+ "w": 16,
+ "h": 8,
+ "rader": [
+  "..Q.Q...........",
+  ".QTQTQ..........",
+  "QTTkSSQQQQQQQ...",
+  "kwTSSTTTTTTTSQQQ",
+  "QwwSSTSTTSSSSRSQ",
+  ".QQwsSSSSSSRRQQ.",
+  "...QSQwwwwQRSQ..",
+  "...QRQQQQQ.QRQ.."
+ ],
+ "pal": {
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e",
+  "k": "#24201d",
+  "s": "#742a01",
+  "w": "#dad0bb"
+ }
+}

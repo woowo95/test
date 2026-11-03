@@ -1,22 +1,30 @@
 {
  "id": "skor_vargskinn",
- "ritad": 1,
- "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 2. Den följer dagens bild bäst: den bakre skon står uppe till höger och den främre nere till vänster, och båda har ljus benfärgad krage och grå kropp. Den har också skiffer0-kontur, inte svart, och läses tydligast mot gräset. Version 1 saknar kontur på vänster sida och flyter ihop. Version 3 har en benfärgad punkt (p) mitt i skinnet, och den ser ut som en fläck. Mina ändringar: den främre skons tå är förlängd med ett mörkare rost1-skiftat skifferparti (S, R) nere till höger, så att ljuset faller från övre vänster. Sulan är förlängd ett steg så att den bär hela tån och den bakre skons nederkant sluts med kontur, som sulan i dagens bild.",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 2. Den ligger närmast dagens bild: den högra skon sitter högre upp och den vänstra lägre ner och lite större, båda med ljus benfärgad krage och grå skinnkropp med skifferkontur. Den har också renast toner och läses tydligast som två skor. Enligt Björns kommentar flyttade jag den högra skon en punkt åt höger, så att kolumn 5 (räknat från 1) nu är helt tom. Skorna rör inte längre vid varandra, inte ens snett i hörnen. Den högra skon blev tre punkter bred med kragen wqQ. Ljuset kommer fortfarande uppifrån till vänster: kragen w/q överst, T/S på skinnet och Q i konturen nere till höger.",
  "w": 8,
  "h": 4,
  "rader": [
-  "....wqQ.",
-  "QwqQTSSQ",
-  "QTSTSSRQ",
-  ".QQQQQQ."
+  ".....wqQ",
+  "QwqQ.TSQ",
+  "QTSQ.QQQ",
+  ".QQQ...."
  ],
  "pal": {
   "Q": "#233035",
-  "R": "#3e5156",
   "S": "#61767a",
   "T": "#8a9c9e",
   "q": "#bdb39b",
   "w": "#dad0bb"
+ },
+ "forra": {
+  "ritad": 1,
+  "rader": [
+   "....wqQ.",
+   "QwqQTSSQ",
+   "QTSTSSRQ",
+   ".QQQQQQ."
+  ]
  }
 }

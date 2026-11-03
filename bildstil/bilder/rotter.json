@@ -1,0 +1,24 @@
+{
+ "id": "rotter",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den är mest lik dagens bild: en diagonal rot från nedre vänstra hörnet upp mot övre högra, med blasten längst upp till höger. Den har samma idé och samma toner som i dag. Rost3 ligger nära dagens ljusa #c99a62, jord3 och jord2 nära #9a6a3e och jord1 nära #5e3c20. Därför passar den också bäst ihop med förebilden Fiskkött, som har samma rostiga ljuspunkter. Ljuset faller rätt, ljust uppe till vänster och jord0 nere till höger, och silhuetten är tydlig i liten storlek. Version 2 får för mycket gul senap, och version 3 blir rörigare med två grenar och lösa blastprickar. Jag ändrade bara blasten, från OPO till PON. Nu går den från ljus till vänster till mörk till höger, och oliv1 ger en mörkare kant så att blasten inte flyter ihop med gräset.",
+ "w": 8,
+ "h": 4,
+ "rader": [
+  ".....PON",
+  "...FuHGE",
+  ".FuHGGE.",
+  "FHGE...."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "N": "#4b4f00",
+  "O": "#647025",
+  "P": "#898b4c",
+  "u": "#bd753e"
+ }
+}

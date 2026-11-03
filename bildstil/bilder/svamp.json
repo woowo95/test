@@ -1,0 +1,23 @@
+{
+ "id": "svamp",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1 eftersom den ligger närmast dagens bild. Hatten är tre rader rost med ljuset uppe till vänster (rost3) och mörknar mot rost1 nere till höger. Under den står en smal ljus fot, ljusast till vänster (ben3) och mörkare till höger (ben2), och den breddas till en fot i ben3, ben2 och ben0, ungefär som dagens ssSS. Formen följer förebilden Fiskkött: en mättad rostfärgad mat som syns tydligt mot det oliva gräset. Version 2 drar ner hatten i en fjärde rad över foten och blandar in rost0, så att foten blir otydlig. Version 3 är nästan likadan som 1, men foten med ben1 nere till höger får sämre skillnad mot hatten och ljuset. Jag har inte ändrat något, eftersom silhuett, ljusriktning och palett redan stämmer med bildstilen.",
+ "w": 5,
+ "h": 5,
+ "rader": [
+  ".uut.",
+  "uutts",
+  "tssss",
+  "..wq.",
+  ".wqo."
+ ],
+ "pal": {
+  "o": "#7e7362",
+  "q": "#bdb39b",
+  "s": "#742a01",
+  "t": "#a14808",
+  "u": "#bd753e",
+  "w": "#dad0bb"
+ }
+}

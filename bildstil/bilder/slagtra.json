@@ -1,22 +1,23 @@
 {
  "id": "slagtra",
- "ritad": 2,
+ "ritad": 3,
  "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
- "om": "Jag valde version 3. Den ligger snett från nedre vänstra till övre högra hörnet, som yxan och Björns kommentar kräver. Den har samma delar som dagens bild: ett ljust trähuvud med glans i ben3 uppe till vänster, en rostprick och ett senapsgult skaft. Bara version 3 ger skaftet materialets egen mörkaste ton (senap0) som kontur i stället för jord0, och därför läses skaftet som en egen del även i liten storlek. Jag gjorde en ändring: den översta raden fick en punkt till i hörnet, så att konturen runt huvudets topp sluter tätt, som i version 1.",
+ "om": "Jag valde version 2. Den ligger närmast dagens bild: klubban går snett från övre högra hörnet till nedre vänstra, med ett långt och tjockt huvud upptill och ett kort skaft i senap nertill. Den fyller hela rutan på 8 × 8 och har samma riktning och tyngd som flintyxan. Huvudet har den ljusa glansen i ben3 uppe till vänster och en rostfläck, precis som originalet. Jordtonerna går från ljust uppe till vänster till mörkt nere till höger, och konturen är jord0. Version 1 och 3 smalnar av och får ett hack där huvudet möter skaftet, så silhuetten läses sämre. Jag ändrade en sak: i rad 6 lade jag en konturpunkt i jord0 under jord1-punkten längst ner på huvudet. Där saknades konturen, så huvudet var öppet mot marken.",
  "w": 8,
  "h": 8,
  "rader": [
   ".....EEE",
-  "....EwHE",
-  "...EwHGE",
-  "..EHtGE.",
-  ".EHGE...",
-  ".IKI....",
+  "....EHwE",
+  "...EHHGE",
+  "..EHtGFE",
+  ".EHGGFE.",
+  "IKJIEE..",
   "IJI.....",
   "II......"
  ],
  "pal": {
   "E": "#3f2415",
+  "F": "#5e3c24",
   "G": "#7d5b40",
   "H": "#987e62",
   "I": "#694902",
@@ -26,18 +27,16 @@
   "w": "#dad0bb"
  },
  "forra": {
-  "ritad": 1,
+  "ritad": 2,
   "rader": [
-   ".EE.",
-   "EwHE",
-   "EHtE",
-   "EHGE",
-   "EtGE",
-   "EHGE",
-   ".EHE",
-   ".IKI",
-   ".IJI",
-   ".II."
+   ".....EEE",
+   "....EwHE",
+   "...EwHGE",
+   "..EHtGE.",
+   ".EHGE...",
+   ".IKI....",
+   "IJI.....",
+   "II......"
   ]
  }
 }

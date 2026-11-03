@@ -1,0 +1,21 @@
+{
+ "id": "torrkott",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den liknar dagens bild mest: tre förskjutna strimlor där den mittersta börjar en rad lägre, och ljusa feta fläckar högt upp i den vänstra strimlan och lågt ner i den mittersta, precis som i originalet. Ljuset faller från vänster, med den ljusare rosttonen till vänster och rost0 till höger och nederst som kontur. Rost och ben passar ihop med förebilden Fiskkött, och tre tydliga strimlor läses bra i liten storlek. En ändring: i dagens bild har den högra strimlan en varmbrun ljuspunkt (#9a6040), inte en benvit. Därför bytte jag dess q mot u (rost3). Nu finns bara två benljusa fläckar, som i originalet, och ytan blir mindre prickig.",
+ "w": 8,
+ "h": 4,
+ "rader": [
+  "tr....ts",
+  "sr.tr.sr",
+  "qs.sr.ur",
+  "rr.qr.rr"
+ ],
+ "pal": {
+  "q": "#bdb39b",
+  "r": "#521100",
+  "s": "#742a01",
+  "t": "#a14808",
+  "u": "#bd753e"
+ }
+}

@@ -1,0 +1,25 @@
+{
+ "kommando": "rita",
+ "args": [
+  "skon-glans=jag ser inte glansigheten: gör hårglansen tydligt synlig, ljusa blanka strimmor där ljuset träffar håret",
+  "skon-kinder=det ser ut som skador och inte rosiga kinder. Gör så det ser ut som att personen har rosa rouge: en mjuk, jämn rosa ton på kindknotorna, inga prickar eller fläckar"
+ ],
+ "modell": "claude-opus-5-5",
+ "insats": "high",
+ "versioner": 3,
+ "uppskattat": {
+  "lag": 0.08,
+  "hog": 0.13
+ },
+ "dollar": 0.195,
+ "tokens": {
+  "in": 13279,
+  "ut": 13788,
+  "cacheLas": 0,
+  "cacheSkriv": 12254
+ },
+ "rapport": [
+  "skon-glans: ritad, version 2 vald: Jag valde version 2. Den har två tydliga, böjda strimmor som följer hårets svep från vänster och ligger på den del av håret som vänder sig mot ljuset uppe till vänster. Den passar också bäst med förebildens fina linjer och små detaljer. Version 1 är för gles och tunn, och den smala strimman syntes inte. Version 3 har en övre strimma som slutar tvärt, och den undre strimman blir för kort. Efter Björns kommentar har jag gjort glansen tydligare. Kärnan i den översta strimman är bredare, med en rad på fem h-punkter, och båda strimmorna är nu två punkter tjocka i mitten. Varje strimma har en kant av g som går över i håret med korn i små klungor, så att glansen syns på alla hårfärger utan att bli ensamma prickar. Jag har flyttat lagret upp en rad (y=-2), så att den övre strimman ligger på hjässans ljusa sida och den undre slutar i luggen ovanför pannan. Allt ligger inom rutan, och jag har bara använt hårets toner g och h.",
+  "skon-kinder: ritad, version 1 vald: Jag valde version 1. Den har de mest sammanhållna, runda fläckarna på kindknotorna och ligger på en rimlig höjd under ögonen, så den hör bäst ihop med förebildens enkla och precisa stil. Version 2 har ojämna, ihopklumpade rader, och version 3 har kantiga hörn och en öppen sida. Ändringar: 1) Den mörka B-kärnan i mitten är borta. Den gav en mörk prick som såg ut som ett blåmärke, och Björn påpekade att det liknade skador. Nu är kinden en jämn och mjuk rodnad: kind2 (C) i mitten och kind3 (D) som en ljusare, tunnare ring utåt, utan skarp kant. 2) Delen sitter nu symmetriskt kring mittlinjen. Den är 24 punkter bred från x = -12 till 11, med vänster kind på x -12 till -5 och höger kind på x 4 till 11, så båda kinderna ligger lika långt från näsan. 3) Hela delen är flyttad ned en rad (y = 2) så att rodnaden hamnar på kindknotorna och inte direkt under ögonen. 4) Rost är medvetet utelämnat, trots att beskrivningen nämner lite rost: den fasta rosttonen blev för stark och fläckig, och utan den blir rougen mjuk och jämn som Björn ville. Inga ensamma prickar, ingen glans och ingen kontur."
+ ]
+}

@@ -1,15 +1,15 @@
 {
  "id": "balte_rep",
- "ritad": 1,
- "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 1. Den är närmast dagens bild: en ljus benfärgad repring med ett hål i mitten och en mörk knut av jord längst ner, med kontur i ben0. Den läses tydligt som en hoprullad ring i 8 × 4 punkter. Version 3 är i mättad senap, och de tonerna ska sparas till det man ska se, så den stämmer inte med dagens beige färger. Version 2 har med de hängande ändarna men tappar ringens form och blir otydlig. Ändringar: jag flyttade glansen så att det bara finns två ljusaste punkter (w), uppe till vänster. Jag mörkade högersidan till p, så att ljuset faller från övre vänstra hörnet och den mörkaste tonen hamnar nere till höger.",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Jag valde version 1. Den följer dagens bild mest troget: en ljus ring av rep med ett mörkt knutparti nere i mitten och ändar som hänger under knuten. Konturen är ben0, repets egen mörkaste ton, precis som skinnet i förebilden. Version 2 har jord0 som kontur runt repet, och det är fel material. Version 3 har knuten förskjuten åt höger och läses sämre. Två ändringar: på rad två är högersidan av ringen mörkare (ppo i stället för qpo), så att ljuset tydligare faller från vänster. På rad fyra är den högra repänden mörkare (p i stället för q), så att det nedre högra hörnet blir mörkast. Formen, knuten i jord och storleken 8 × 4 är oförändrade.",
  "w": 8,
  "h": 4,
  "rader": [
-  ".oqwqpo.",
-  "owo..opo",
-  "oqpGFppo",
-  ".ooFEoo."
+  ".owqwqo.",
+  "owq..ppo",
+  "oqpGFqpo",
+  ".ooqEpo."
  ],
  "pal": {
   "E": "#3f2415",
@@ -19,5 +19,14 @@
   "p": "#a0947d",
   "q": "#bdb39b",
   "w": "#dad0bb"
+ },
+ "forra": {
+  "ritad": 1,
+  "rader": [
+   ".oqwqpo.",
+   "owo..opo",
+   "oqpGFppo",
+   ".ooFEoo."
+  ]
  }
 }

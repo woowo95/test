@@ -1,0 +1,22 @@
+{
+ "id": "grillfisk",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den har samma rostiga och dämpade toner som förebilden Fiskkött (t, u, s), och de mörka strecken i jord0 (E) går snett som i dagens bild. Ljuset ligger uppe till vänster, med en enda glanspunkt i senap3, och ytan blir mörkare nedåt till höger. Version 2 använder för mycket senap (K), så fisken blir gulgrön och sticker ut från förebilden. Version 3 har en trasig överkant och en lös punkt (r) utanför formen, så silhuetten blir otydlig. Ändring: punkten näst längst till höger i nedersta raden är nu rost0 (r) i stället för rost1, så att konturen blir mörkast nere till höger. Ingen pinne syns, varken i versionerna eller i dagens bild; jag lade inte till någon för att hålla mig till dagens bild.",
+ "w": 10,
+ "h": 4,
+ "rader": [
+  "..tuuuts..",
+  ".tLuEuuEts",
+  "tuuEutEtss",
+  ".sEttEtsr."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "L": "#d8b25f",
+  "r": "#521100",
+  "s": "#742a01",
+  "t": "#a14808",
+  "u": "#bd753e"
+ }
+}
