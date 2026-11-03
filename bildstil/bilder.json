@@ -63,7 +63,7 @@
     {"id": "skor_vargskinn", "sort": "sak-klader", "namn": "Skor av vargskinn", "w": 10, "h": 5, "vad": "ett par skor av grått vargskinn med snören", "ritad": 4, "forra": "mycket bättre. Men gör skorna exakt kopior av varandra så båda är lika stora"},
     {"id": "skor_kaninskinn", "sort": "sak-klader", "namn": "Skor av harskinn", "w": 10, "h": 5, "vad": "ett par skor av ljust harskinn med snören", "ritad": 3, "godkand": true},
     {"id": "balte_rep", "sort": "sak-klader", "namn": "Bälte av rep", "w": 8, "h": 4, "vad": "ett hoprullat tunt bälte av tvinnat rep", "ritad": 4, "forra": "gör den symmetrisk"},
-    {"id": "sym_svard", "sort": "sym-panel", "namn": "Korsade svärd", "w": 16, "h": 16, "vad": "två korsade svärd: att slåss, striden börjar och arenan", "tecken": ["⚔️"]},
+    {"id": "sym_svard", "sort": "sym-panel", "namn": "Korsade svärd", "w": 16, "h": 16, "vad": "två korsade svärd: att slåss, striden börjar och arenan", "tecken": ["⚔️"], "ritad": 1},
     {"id": "sym_gott_rykte", "sort": "sym-panel", "namn": "Gott anseende", "w": 16, "h": 16, "vad": "ett snällt ansikte med gloria: gott anseende i byn", "tecken": ["😇"]},
     {"id": "sym_folk", "sort": "sym-panel", "namn": "Folk", "w": 16, "h": 16, "vad": "två människor: alla, relationer och så många är de", "tecken": ["👥"]},
     {"id": "sym_gnistor", "sort": "sym-panel", "namn": "Gnistor", "w": 16, "h": 16, "vad": "glittrande stjärnor: gudar och trosriktningar utan egen symbol", "tecken": ["✨"]},
