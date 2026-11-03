@@ -1031,11 +1031,6 @@ const BESLUT = {
   kista: { val: 1, steg: '5.1.2.2' }, lagereld: { val: 1, steg: '5.1.2.2' }, slojdbank: { val: 1, steg: '5.1.2.2' },
   slaktbank: { val: 1, steg: '5.1.2.2' }, brand: { val: 2, steg: '5.1.2.2' }, tornado: { val: 3, steg: '5.1.2.2' },
   m_torka: { val: 1, steg: '5.3.2.1' }, a_toa: { val: 2, steg: '5.3.2.1' },
-  m_gras: { val: 1, text: 'Referensen för hur marken ska ritas. Byggs in i steg 5.1.3.1.' }, m_vatten: { val: 1, steg: '5.1.3.1' },
-  m_gran: { val: 1, steg: '5.1.4' }, m_bjork: { val: 1, steg: '5.1.4' }, m_granvar: { val: 1, steg: '5.1.4' }, m_bjorkvar: { val: 1, steg: '5.1.4' },
-  m_brand: { val: 1, text: 'Version 3 direkt efter skogsbranden, sedan version 1 när glöden slocknat. Byggs in i steg 5.1.4.' },
-  m_stubbe: { val: 1, steg: '5.1.4' }, m_falld: { val: 2, steg: '5.1.4' },
-  m_stig: { val: 1, steg: '5.1.3.1' }, m_sno: { val: 1, steg: '5.1.13' }, m_skogskant: { val: 1, steg: '5.1.3.2' },
   grill: { val: 2, steg: '5.1.2.2' }, a_sikta: { val: 1, steg: '5.3.2.1' }, a_smyga: { val: 3, steg: '5.3.2.1' }, dragkamp: { val: 1, steg: '5.1.2' },
   sport_brottning: { val: 1, steg: '5.1.2' }, sport_kast: { val: 1, steg: '5.1.2' }, sport_snoboll: { val: 1, steg: '5.1.2' }, sport_bollspel: { val: 1, steg: '5.1.2' },
 };

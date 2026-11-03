@@ -201,7 +201,7 @@
   }
   // blad: färgen byts med årstiden (lov = ramp och toner)
   const LOV = {
-    var: ['oliv', [0, 2, 3, 3]], sommar: ['oliv', [0, 1, 2, 3]], host: ['senap', [0, 1, 2, 3]], hostrod: ['rost', [0, 1, 2, 3]],
+    var: ['oliv', [0, 1, 3, 3]], sommar: ['oliv', [0, 1, 2, 3]], host: ['senap', [0, 1, 2, 3]], hostrod: ['rost', [0, 1, 2, 3]],
   };
   function bjork(B, cx, by, h, v, tid = 'sommar', s = 0) {
     const P = B.P;
@@ -529,6 +529,45 @@
     gran: { var: 'Barren som på sommaren, med ljusa nya skott ytterst på grenarna. Marken med vårblommor.', host: 'Granen är som på sommaren; gräset har vissnat i fläckar.', vinter: 'Snö på våningarna och på torrakans grenar, och marken under snö.' },
     bjork: { var: 'Ljusa nyutslagna löv.', host: 'Gula löv och några röda björkar, löv som fallit under kronan, och vissnat gräs i fläckar.', vinter: 'Kala grenar med snö ovanpå, och marken under snö.' },
   };
+
+  // ---------- årstiderna för de fallna träden, stubbarna och skogen efter en brand (Björn efter bildstil v118) ----------
+  // Samma modeller som du valde (fallet träd version 2, stubbe version 1, brandens version 1); på hösten har den
+  // fallna björken gula löv, på vintern ligger snö ovanpå allt, och stubbarna får en mössa av snö.
+  function snoMossa(B, cx, by, d) { // snön på snittytan: samma ellips som ytan, lite större, ljus ovanpå och grå i kanten nedtill
+    const P = B.P, r = d / 2 + 0.6, hh = Math.max(2, Math.round(d * 0.5)), ey = Math.max(1, d * 0.28) + 0.6;
+    for (let y = -Math.ceil(ey) - 1; y <= Math.ceil(ey); y++) for (let x = Math.floor(-r); x <= Math.ceil(r); x++) {
+      const e = (x / r) ** 2 + ((y + 0.6) / (ey + 0.4)) ** 2; if (e > 1) continue;
+      B.satt(cx + x, by - hh + y, y > ey * 0.4 ? I(P, 'ben', 2) : I(P, 'ben', 3));
+    }
+  }
+  function fallnaTid(B, tid) {
+    const P = B.P;
+    tidMark(B, tid);
+    const st = (x, y, d, sort) => { stubbe(B, x, y, d, sort, 0); if (tid === 'vinter') snoMossa(B, x, y, d); };
+    const ting = [];
+    ting.push([70, () => { st(40, 70, 7, 'gran'); fallet(B, 44, 66, 46, 'gran', 1, 1, 2, tid); }]);
+    ting.push([150, () => { st(170, 150, 5, 'bjork'); fallet(B, 174, 147, 40, 'bjork', 1, 1, 4, tid); }]);
+    ting.push([120, () => { st(300, 120, 4, 'gran'); fallet(B, 296, 117, 26, 'gran', 1, -1, 5, tid); }]);
+    STUBBAR.forEach(([, d], i) => ting.push([176, () => st(30 + i * 22, 176, d, i % 2 ? 'bjork' : 'gran')]));
+    ting.push([104, () => fram(B, 120, 104)]);
+    ting.push([176, () => spelare(B, 250, 176, 1, 'oliv')]);
+    ting.sort((a, b) => a[0] - b[0]).forEach(t => t[1]());
+  }
+  function brandVinter(B) { // vintern efter branden: snö över askan, svarta torrakor med snö på grenarna, levande skog till vänster
+    const P = B.P, brant = (x, y) => (x - 70) * 0.9 + (vn(x, y, 40, 680) - 0.5) * 90 + (vn(x, y, 9, 681) - 0.5) * 10;
+    tidMark(B, 'vinter');
+    fyll(B, (x, y) => { const c = B.get(x, y); return brant(x, y) > 0 && vagstreck(x, y, 683, 0.01) && hash(x, y, 684) < 0.25 ? I(P, 'kol', hash(x, y, 686) < 0.5 ? 0 : 1) : c; }); // förkolnade kvistar som sticker upp ur snön
+    const ting = [];
+    for (let cy = 0; cy < 8; cy++) for (let cx = 0; cx < 11; cx++) {
+      const x = cx * 30 + Math.floor(hash(cx, cy, 695) * 18), y = 30 + cy * 24 + Math.floor(hash(cx, cy, 696) * 10), b = brant(x, y);
+      if (hash(cx, cy, 697) > 0.55 || y > 196) continue;
+      const h = 26 + Math.floor(hash(cx, cy, 698) * 22), bj = hash(cx, cy, 699) < 0.35, s = cx * 11 + cy;
+      if (b > 4) ting.push([y, () => tidTrad(B, D => bj ? brandBjork(D, x, y, Math.round(h * 0.85), 0, s) : brandGran(D, x, y, h, 0, s), 'vinter', 'bjork')]);
+      else if (b < -14) ting.push([y, () => bj ? tidTrad(B, D => bjork(D, x, y, Math.round(h * 0.85), 3, 'vinter', s), 'vinter', 'bjork') : gran(B, x, y, h, 3, 0.8, s)]);
+    }
+    ting.push([150, () => spelare(B, 190, 150, 1, 'oliv')]);
+    ting.sort((a, b) => a[0] - b[0]).forEach(t => t[1]());
+  }
   const T = 'Steg 5.2.4.5, till ';
   // ---------- fler träd (Björn efter bildstil v114): varianter, brända träd, stubbar och fallna träd ----------
   // Ett träd ritas först i ett eget lager (en karta från punkt till färg) och läggs sedan ut med en ändring:
@@ -702,8 +741,8 @@
   // ---------- fallna träd: samma bild om det huggits ner eller blåst omkull ----------
   // Trädet ligger med foten vid stubben och toppen åt sidan. v 0: rakt åt sidan; 1: åt sidan och tillplattat (kronan
   // pressad mot marken, lägre och bredare); 2: fallet snett bort från den som tittar (kortare, toppen längre bort)
-  function fallet(B, cx, by, h, sort, v, at, s) {
-    const P = B.P, L = lager(B, D => sort === 'gran' ? gran(D, cx, by, h, 3, 0, s) : bjork(D, cx, by, h, 3, 'sommar', s));
+  function fallet(B, cx, by, h, sort, v, at, s, tid = 'sommar') {
+    const P = B.P, L = lager(B, D => sort === 'gran' ? gran(D, cx, by, h, 3, 0, s) : bjork(D, cx, by, h, 3, tid, s));
     if (v === 2) { // bort från betraktaren: trädet blir kort i bilden, toppen längre bort och lite åt sidan
       skugga(B, cx, by - Math.round(h * 0.2), Math.round(h * 0.25));
       utLager(B, L, cx, by, { hog: 0.42, bred: 1.05, lut: at * 6 });
@@ -716,7 +755,7 @@
     }
     const har = new Set(ut.map(([x, y]) => x + ',' + y));
     for (const [x, y] of ut) if (!har.has(x + ',' + (y + 2))) { B.morka(x, y + 2); B.morka(x + 1, y + 2); } // skuggan under stocken och kronan
-    for (const [x, y, c] of ut) B.satt(x, y, c);
+    for (const [x, y, c] of ut) B.satt(x, y, tid === 'vinter' && !har.has(x + ',' + (y - 1)) && !somRamp(P, c, 'ben') && hash(x, y, 730) < 0.8 ? I(P, 'ben', 3) : c); // på vintern snö ovanpå stocken och grenarna
   }
   function fallna(B, v) {
     const P = B.P;
@@ -732,69 +771,13 @@
   }
 
   VAL.push(
-    { id: 'm_gras', stor: true, namn: 'Gräset', typ: 'tre', vad: T + '5.1.3.1: gräset i tre steg, så att du kan välja hur mycket som ska synas i det: det du valde först, det renare och mellantinget. Din kommentar förra gången: ”Gräset ser konstigt ut. jag gillade det förra bättre”.',
-      versioner: [
-        { text: 'Det du valde först (version 2 i bildstil v111): korn och raster mellan fälten.', ...SCEN(W, H, B => { fyll(B, (x, y) => grasPunkt(x, y, B.P, 1)); tuvor(B, 1, () => true); folk(B, [[70, 70, 0], [200, 120, 1], [250, 160, 0]]); }) },
-        { text: 'Det renare (bildstil v112): hela fält och nästan inga korn.', ...SCEN(W, H, B => { fyll(B, (x, y) => grasRen(x, y, B.P, 0)); tuvorRen(B, () => true, 1, 0); folk(B, [[70, 70, 0], [200, 120, 1], [250, 160, 0]]); }) },
-        { text: 'Mellantinget (bildstil v114): hela fält med korta strån.', ...SCEN(W, H, B => { fyll(B, (x, y) => grasRen(x, y, B.P)); tuvorRen(B, () => true); folk(B, [[70, 70, 0], [200, 120, 1], [250, 160, 0]]); }) },
-      ] },
-    { id: 'm_stig', stor: true, namn: 'Stigarna', typ: 'janej', vad: T + '5.1.3.1: stigarna du valde (version 1) med en ren kant och en mörkare rand av nött gräs längs kanten, nu på gräset du valde som referens (version 1 på kortet Gräset), och med korn i jorden lika tätt som i gräset, så att stigen och gräset hör ihop. Förra gången sa du nej utan kommentar till den renare stigen på det renare gräset.',
-      versioner: [{ text: 'Version 1: stigarna renare.', ...SCEN(W, H, B => stigarRen(B)) }] },
-    { id: 'm_sno', stor: true, namn: 'Snön', typ: 'janej', vad: T + '5.1.13: drivorna du valde (version 2) med skuggorna på läsidan som hela ytor, nu med korn i snön och isen lika tätt som i gräset du valde som referens, så att vintern hör ihop med sommaren. Förra gången sa du nej utan kommentar till den helt släta snön.',
-      versioner: [{ text: 'Version 1: snön renare.', ...SCEN(W, H, B => snoRen(B)) }] },
-    { id: 'm_skogskant', stor: true, namn: 'Skogskanten i steg Nu på gräset du valde som referens.', typ: 'janej', vad: T + '5.1.3.2: stegen du valde (version 1), renare: varje steg är en hel yta med en slingrande kant i stället för prickar som blandas, och det höga gräset står i klungor. Din kommentar förra gången: ”Men bilden ser för prickig ut”.',
-      versioner: [{ text: 'Version 1: skogskanten renare.', ...SCEN(W, H, B => skogskantRen(B)) }] },
-    { id: 'm_gran', stor: true, namn: 'Granen i alla stadier', typ: 'janej', vad: T + '5.1.4 och 5.1.6: våningarna du gillade (version 1), nu osymmetriska: varje våning är olika lång åt vänster och höger och lite förskjuten, så att ingen gran är spegelvänd. Mindre slump i barren. Från vänster planta, ungträd, vuxet, gammalt, jätteträd och torrakan, nu med alla grenar kvar men inga barr. Din kommentar förra gången: ”Jag gillar version 1 bäst men den ser för perfekt ut. Gör det lite osymmetrisk”.',
-      versioner: [{ text: 'Version 1: granen osymmetrisk.', ...SCEN(W, 116, B => stadierRen(B, 'gran')) }] },
-    { id: 'm_bjork', stor: true, namn: 'Björken i alla stadier', typ: 'janej', vad: T + '5.1.4 och 5.1.6: klungorna du gillade (version 1), med en ren mörk kant bara nedtill och till höger, där skuggan är (ljuset från vänster ovanifrån), och inga mörka ringar inne i kronan. Från vänster planta, ungträd, vuxet, gammalt, jätteträd och en torr björk med alla grenar men inga löv. Din kommentar förra gången: ”Jag gillar version 1 bäst men trädkronans mörka konturer ser slarviga ut”.',
-      versioner: [{ text: 'Version 1: björken med ren kant.', ...SCEN(W, 116, B => stadierRen(B, 'bjork')) }] },
-    { id: 'm_vatten', stor: true, namn: 'Vattnet och stranden', typ: 'tre', vad: T + '5.1.3.1: sjön och stranden, 20 × 12 rutor. Strandkanten slingrar sig tvärs över rutorna, räknad ur avståndet till vattnet.',
-      versioner: [
-        { text: 'Som i moodboarden, som du gillade: djupt mörkt vatten, ljusare mot stranden, glitter i rader och en sandstrand.', ...SCEN(W, H, B => vatten(B, 0)) },
-        { text: 'Bredare stenstrand, stenar som syns genom det grunda vattnet och vass i klungor.', ...SCEN(W, H, B => vatten(B, 1)) },
-        { text: 'Mörkare vatten, en ljus rand där vattnet möter en smal lerig strand, och vass med kaveldun.', ...SCEN(W, H, B => vatten(B, 2)) },
-      ] },
-    { id: 'm_granvar', stor: true, namn: 'Granar som inte är lika', typ: 'tre', vad: T + '5.1.4: granen du sa ja till, men varje gran blir lite olik de andra, så att skogen inte ser ut som kopior. Samma ritning läggs ut bredare eller smalare, högre eller lägre och med ljusare eller mörkare barr. Välj hur stora skillnaderna ska vara.',
-      versioner: [
-        { text: 'Små skillnader: bara höjd, bredd och barrens ton.', ...SCEN(W, H, B => lund(B, 'gran', 0)) },
-        { text: 'Mer: dessutom lutning och kala nedre grenar på en del granar, där barren dött i skuggan.', ...SCEN(W, H, B => lund(B, 'gran', 1)) },
-        { text: 'Stora: dessutom kraftig lutning och dubbeltoppar.', ...SCEN(W, H, B => lund(B, 'gran', 2)) },
-      ] },
-    { id: 'm_bjorkvar', stor: true, namn: 'Björkar som inte är lika', typ: 'tre', vad: T + '5.1.4: björken du sa ja till, men varje björk blir lite olik de andra. Välj hur stora skillnaderna ska vara.',
-      versioner: [
-        { text: 'Små skillnader: bara höjd, bredd och lövens ton.', ...SCEN(W, H, B => lund(B, 'bjork', 0)) },
-        { text: 'Mer: dessutom lutande björkar och kronor åt ena sidan.', ...SCEN(W, H, B => lund(B, 'bjork', 1)) },
-        { text: 'Stora: dessutom björkar med två eller tre stammar och hängande grenar.', ...SCEN(W, H, B => lund(B, 'bjork', 2)) },
-      ] },
-    { id: 'm_brand', stor: true, namn: 'Skogen efter en brand', typ: 'tre', vad: T + '5.1.4: brända träd och bränd mark efter en skogsbrand (motgången brand). Till vänster står skogen kvar, sedan en rand av svett gräs och sedan svart och grå aska med förkolnade kvistar.',
-      versioner: [
-        { text: 'Helt svarta torrakor och björkar, med alla grenar kvar.', ...SCEN(W, H, B => brand(B, 0)) },
-        { text: 'Svarta nedtill, med bruna döda barr och löv kvar upptill där elden inte nådde.', ...SCEN(W, H, B => brand(B, 1)) },
-        { text: 'Avbrutna svarta stammar med glöd kvar vid foten och i askan.', ...SCEN(W, H, B => brand(B, 2)) },
-      ] },
-    { id: 'm_stubbe', stor: true, namn: 'Stubbar', typ: 'tre', vad: T + '5.1.4: stubbar efter granar (överst) och björkar (nedanför), från vänster efter ungträd, vuxet, gammalt och jätteträd, med en människa för storleken. Snittytan är gråbrun med årsringar.',
-      versioner: [
-        { text: 'Rakt avsågad, med årsringar.', ...SCEN(W, 130, B => stubbar(B, 0)) },
-        { text: 'Yxhuggen: snittytan lutar och flisor ligger runt.', ...SCEN(W, 130, B => stubbar(B, 1)) },
-        { text: 'Gammal: grå snittyta och mossa.', ...SCEN(W, 130, B => stubbar(B, 2)) },
-      ] },
-    { id: 'm_falld', stor: true, namn: 'Fallna träd', typ: 'tre', vad: T + '5.1.4: ett fallet träd ser likadant ut om det huggits ner eller blåst omkull i en storm: stubben står kvar och trädet ligger med foten vid stubben.',
-      versioner: [
-        { text: 'Liggande rakt åt sidan, hela kronan syns.', ...SCEN(W, H, B => fallna(B, 0)) },
-        { text: 'Åt sidan och tillplattat: kronan pressad mot marken.', ...SCEN(W, H, B => fallna(B, 1)) },
-        { text: 'Fallet bort från den som tittar: trädet ser kort ut och toppen ligger längre bort.', ...SCEN(W, H, B => fallna(B, 2)) },
-      ] },
-    { id: 'm_gran_var', stor: true, namn: 'Granen på ' + TIDNAMN.var, typ: 'janej', vad: T + '5.1.4 och 5.1.13: granen du sa ja till, i alla stadier, på ' + TIDNAMN.var + '. Från vänster planta, ungträd, vuxet, gammalt, jätteträd och torrakan. ' + TIDTEXT.gran.var,
-      versioner: [{ text: 'Version 1: ' + TIDTEXT.gran.var, ...SCEN(W, 116, B => stadierTid(B, 'gran', 'var')) }] },
-    { id: 'm_gran_host', stor: true, namn: 'Granen på ' + TIDNAMN.host, typ: 'janej', vad: T + '5.1.4 och 5.1.13: granen du sa ja till, i alla stadier, på ' + TIDNAMN.host + '. Från vänster planta, ungträd, vuxet, gammalt, jätteträd och torrakan. ' + TIDTEXT.gran.host,
-      versioner: [{ text: 'Version 1: ' + TIDTEXT.gran.host, ...SCEN(W, 116, B => stadierTid(B, 'gran', 'host')) }] },
-    { id: 'm_gran_vinter', stor: true, namn: 'Granen på ' + TIDNAMN.vinter, typ: 'janej', vad: T + '5.1.4 och 5.1.13: granen du sa ja till, i alla stadier, på ' + TIDNAMN.vinter + '. Från vänster planta, ungträd, vuxet, gammalt, jätteträd och torrakan. ' + TIDTEXT.gran.vinter,
-      versioner: [{ text: 'Version 1: ' + TIDTEXT.gran.vinter, ...SCEN(W, 116, B => stadierTid(B, 'gran', 'vinter')) }] },
-    { id: 'm_bjork_var', stor: true, namn: 'Björken på ' + TIDNAMN.var, typ: 'janej', vad: T + '5.1.4 och 5.1.13: björken du sa ja till, i alla stadier, på ' + TIDNAMN.var + '. Från vänster planta, ungträd, vuxet, gammalt, jätteträd och den torra björken. ' + TIDTEXT.bjork.var,
-      versioner: [{ text: 'Version 1: ' + TIDTEXT.bjork.var, ...SCEN(W, 116, B => stadierTid(B, 'bjork', 'var')) }] },
-    { id: 'm_bjork_host', stor: true, namn: 'Björken på ' + TIDNAMN.host, typ: 'janej', vad: T + '5.1.4 och 5.1.13: björken du sa ja till, i alla stadier, på ' + TIDNAMN.host + '. Från vänster planta, ungträd, vuxet, gammalt, jätteträd och den torra björken. ' + TIDTEXT.bjork.host,
-      versioner: [{ text: 'Version 1: ' + TIDTEXT.bjork.host, ...SCEN(W, 116, B => stadierTid(B, 'bjork', 'host')) }] },
-    { id: 'm_bjork_vinter', stor: true, namn: 'Björken på ' + TIDNAMN.vinter, typ: 'janej', vad: T + '5.1.4 och 5.1.13: björken du sa ja till, i alla stadier, på ' + TIDNAMN.vinter + '. Från vänster planta, ungträd, vuxet, gammalt, jätteträd och den torra björken. ' + TIDTEXT.bjork.vinter,
-      versioner: [{ text: 'Version 1: ' + TIDTEXT.bjork.vinter, ...SCEN(W, 116, B => stadierTid(B, 'bjork', 'vinter')) }] },
+    { id: 'm_falld_host', stor: true, namn: 'Fallna träd på hösten', typ: 'janej', vad: T + '5.1.4: de fallna träden du valde (version 2, åt sidan och tillplattat) och stubbarna du valde (version 1) på hösten: den fallna björken har gula löv, och gräset har vissnat i fläckar som på björken på hösten. Granen är som på sommaren.',
+      versioner: [{ text: 'Version 1: fallna träd och stubbar på hösten.', ...SCEN(W, H, B => fallnaTid(B, 'host')) }] },
+    { id: 'm_falld_vinter', stor: true, namn: 'Fallna träd och stubbar på vintern', typ: 'janej', vad: T + '5.1.4 och 5.1.13: de fallna träden och stubbarna du valde på vintern: snö ovanpå stockarna och grenarna, den fallna björken utan löv, och en mössa av snö på varje stubbe. Nederst stubbarna i fyra storlekar.',
+      versioner: [{ text: 'Version 1: fallna träd och stubbar på vintern.', ...SCEN(W, H, B => fallnaTid(B, 'vinter')) }] },
+    { id: 'm_brand_vinter', stor: true, namn: 'Skogen efter en brand på vintern', typ: 'janej', vad: T + '5.1.4 och 5.1.13: de svarta torrakorna du valde (version 1, när glöden slocknat) på vintern: snö över askan med förkolnade kvistar som sticker upp, och snö på grenarna. Till vänster den levande skogen på vintern.',
+      versioner: [{ text: 'Version 1: skogen efter branden på vintern.', ...SCEN(W, H, B => brandVinter(B)) }] },
+    { id: 'm_bjork_var', stor: true, namn: 'Björken på ' + TIDNAMN.var, typ: 'janej', vad: T + '5.1.4: björken du sa ja till, i alla stadier, på våren: ljusa nyutslagna löv, men nu med samma mörka skuggsida som på sommaren, så att kronan inte blir platt. Din kommentar förra gången: ”Den ser lite för platt ut”.',
+      versioner: [{ text: 'Version 1: björken på våren med skugga i kronan.', ...SCEN(W, 116, B => stadierTid(B, 'bjork', 'var')) }] },
   );
 })();
