@@ -1,8 +1,8 @@
 {
  "id": "flintspjut",
- "ritad": 3,
- "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
- "om": "Jag valde version 1. Den ligger närmast dagens 8 × 8-bild. Där är spjutet ett tunt skaft som går diagonalt från nedre vänstra till övre högra hörnet, med en liten ljus surrning och en kort grå flintspets. Version 1 har samma smala spets och samma tunna skaft. Version 2 har en bredare och tyngre spets som skiljer sig mer från originalet. Version 3 är nästan lik men har en grövre spets. Spjutet fyller hela rutan från hörn till hörn, som Björn bad om. Konturen är materialets mörkaste ton: jord0 runt skaftet, skiffer0 runt flintan och senap0 runt repet. Skaftet växlar mellan jord2 och jord3 så att det får korn. Flintan är ljusast upptill till vänster med skiffer3 och mörkare nedåt höger. Repet i senap syns tydligt mot gräset och matchar den ljusa surrningen i originalet. Silhuetten passar ihop med flintyxan. Jag ändrade inget, eftersom raderna håller måtten, bara använder palettens tecken och följer ljuset och konturreglerna.",
+ "ritad": 4,
+ "av": "API:t, surrningen omfärgad av Claude efter Björns svar",
+ "om": "Längd och form som förra gången; surrningen är nu blekt bast i bentonerna i stället för gul, så att den inte ser ut som metall.",
  "w": 16,
  "h": 16,
  "rader": [
@@ -11,8 +11,8 @@
   "...........QTSRQ",
   "..........QTSRQ.",
   "..........QRQ...",
-  ".........ILI....",
-  "........IKI.....",
+  ".........oqo....",
+  "........opo.....",
   ".......EHE......",
   "......EGE.......",
   ".....EHE........",
@@ -24,33 +24,50 @@
   "EE.............."
  ],
  "pal": {
-  "E": "#3f2415",
-  "F": "#5e3c24",
-  "G": "#7d5b40",
-  "H": "#987e62",
-  "I": "#694902",
-  "K": "#b2921b",
-  "L": "#d8b25f",
   "Q": "#233035",
-  "R": "#3e5156",
+  "T": "#8a9c9e",
   "S": "#61767a",
-  "T": "#8a9c9e"
+  "R": "#3e5156",
+  "o": "#7e7362",
+  "q": "#bdb39b",
+  "p": "#a0947d",
+  "E": "#3f2415",
+  "H": "#987e62",
+  "G": "#7d5b40",
+  "F": "#5e3c24"
  },
  "forra": {
-  "ritad": 2,
+  "ritad": 3,
   "rader": [
-   "..........QQ",
-   "........QTSQ",
-   ".......QTSRQ",
-   "......QTSRQ.",
-   "......QRQ...",
-   ".....ILI....",
-   "....IKI.....",
-   "...EHE......",
-   "..EGE.......",
-   ".EHE........",
-   "EFE.........",
-   "EE.........."
-  ]
+   "..............QQ",
+   "............QTSQ",
+   "...........QTSRQ",
+   "..........QTSRQ.",
+   "..........QRQ...",
+   ".........ILI....",
+   "........IKI.....",
+   ".......EHE......",
+   "......EGE.......",
+   ".....EHE........",
+   "....EGE.........",
+   "...EHE..........",
+   "..EGE...........",
+   ".EHE............",
+   "EFE.............",
+   "EE.............."
+  ],
+  "pal": {
+   "E": "#3f2415",
+   "F": "#5e3c24",
+   "G": "#7d5b40",
+   "H": "#987e62",
+   "I": "#694902",
+   "K": "#b2921b",
+   "L": "#d8b25f",
+   "Q": "#233035",
+   "R": "#3e5156",
+   "S": "#61767a",
+   "T": "#8a9c9e"
+  }
  }
 }

@@ -1,23 +1,27 @@
 {
  "id": "fiskespjut",
- "ritad": 3,
- "av": "Claude, omfärgad efter Björns svar",
- "om": "Spetsen var ljus och såg ut som sten; nu är spjutet träfärgat hela vägen, lite mörkare i den eldhärdade spetsen.",
- "w": 12,
- "h": 12,
+ "ritad": 4,
+ "av": "Claude, förlängt efter Björns svar",
+ "om": "Samma träspjut, förlängt till hela rutan (16 × 16 punkter) som flintspjutet.",
+ "w": 16,
+ "h": 16,
  "rader": [
-  "..........EE",
-  ".........EHE",
-  "........EGFE",
-  ".......EHFE.",
-  "......EHGE..",
-  ".....EHGE...",
-  "....EHFE....",
-  "...EHGE.....",
-  "..EHGE......",
-  ".EHFE.......",
-  "EHGE........",
-  "EFE........."
+  "..............EE",
+  ".............EHE",
+  "............EGFE",
+  "...........EHFE.",
+  "..........EHGE..",
+  ".........EHGE...",
+  "........EHFE....",
+  ".......EHGE.....",
+  "......EHGE......",
+  ".....EHFE.......",
+  "....EHGE........",
+  "...EHGE.........",
+  "..EHFE..........",
+  ".EHGE...........",
+  "EHGE............",
+  "EFE............."
  ],
  "pal": {
   "E": "#3f2415",
@@ -26,12 +30,12 @@
   "F": "#5e3c24"
  },
  "forra": {
-  "ritad": 2,
+  "ritad": 3,
   "rader": [
    "..........EE",
-   ".........EwE",
-   "........EqpE",
-   ".......EHpE.",
+   ".........EHE",
+   "........EGFE",
+   ".......EHFE.",
    "......EHGE..",
    ".....EHGE...",
    "....EHFE....",
@@ -43,12 +47,9 @@
   ],
   "pal": {
    "E": "#3f2415",
-   "F": "#5e3c24",
-   "G": "#7d5b40",
    "H": "#987e62",
-   "p": "#a0947d",
-   "q": "#bdb39b",
-   "w": "#dad0bb"
+   "G": "#7d5b40",
+   "F": "#5e3c24"
   }
  }
 }

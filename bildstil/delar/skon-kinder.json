@@ -1,33 +1,33 @@
 {
  "id": "skon-kinder",
- "ritad": 3,
- "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
- "om": "Jag valde version 1. Den har de mest sammanhållna, runda fläckarna på kindknotorna och ligger på en rimlig höjd under ögonen, så den hör bäst ihop med förebildens enkla och precisa stil. Version 2 har ojämna, ihopklumpade rader, och version 3 har kantiga hörn och en öppen sida. Ändringar: 1) Den mörka B-kärnan i mitten är borta. Den gav en mörk prick som såg ut som ett blåmärke, och Björn påpekade att det liknade skador. Nu är kinden en jämn och mjuk rodnad: kind2 (C) i mitten och kind3 (D) som en ljusare, tunnare ring utåt, utan skarp kant. 2) Delen sitter nu symmetriskt kring mittlinjen. Den är 24 punkter bred från x = -12 till 11, med vänster kind på x -12 till -5 och höger kind på x 4 till 11, så båda kinderna ligger lika långt från näsan. 3) Hela delen är flyttad ned en rad (y = 2) så att rodnaden hamnar på kindknotorna och inte direkt under ögonen. 4) Rost är medvetet utelämnat, trots att beskrivningen nämner lite rost: den fasta rosttonen blev för stark och fläckig, och utan den blir rougen mjuk och jämn som Björn ville. Inga ensamma prickar, ingen glans och ingen kontur.",
+ "ritad": 4,
+ "av": "Claude, efter Björns svar (utan förlaga)",
+ "om": "Två enkla rosa cirklar på kindknotorna i rost3, utan kant och utan kindtonerna (de följer huden och gav de vita kanterna). Paletten har ingen renare rosa ton än rost3, som drar mot orange; ett rutmönster med huden prövades men såg ut som ett mönster.",
  "bilder": {
   "standard": {
    "x": -12,
-   "y": 2,
+   "y": 1,
    "rader": [
-    "..DDDD............DDDD..",
-    ".DDCCDD..........DDCCDD.",
-    "DDCCCCDD........DDCCCCDD",
-    ".DDCCDD..........DDCCDD.",
-    "..DDDD............DDDD.."
+    "........................",
+    ".uuu...............uuu..",
+    "uuuuu.............uuuuu.",
+    "uuuuu.............uuuuu.",
+    ".uuu...............uuu.."
    ]
   }
  },
  "forra": {
-  "ritad": 2,
+  "ritad": 3,
   "bilder": {
    "standard": {
-    "x": -11,
-    "y": 4,
+    "x": -12,
+    "y": 2,
     "rader": [
-     "..DCD............DCD..",
-     ".DCBCD..........DCBCD.",
-     "DCBsBC..........CBsBCD",
-     ".CBsBD..........DBsBC.",
-     "..DCD............DCD.."
+     "..DDDD............DDDD..",
+     ".DDCCDD..........DDCCDD.",
+     "DDCCCCDD........DDCCCCDD",
+     ".DDCCDD..........DDCCDD.",
+     "..DDDD............DDDD.."
     ]
    }
   }

@@ -111,6 +111,9 @@ async function fraga(b, { kommentar = null, forra = null, version = null } = {})
   }
   const gt = gammalText(b); if (gt) { bilder.push(await gammal(b.id)); text.push(gt); }
   text.push(`Rita ${beskriv(b)}`);
+  const ref = b.bredvid && BR.bilder.find(x => x.id === b.bredvid), refd = ref && lasBild(ref.id);
+  if (refd) text.push(`Björn jämför den med ${ref.namn} (${ref.id}), som visas bredvid den på kortet; den ska höra ihop med den och vara samma sak i ett annat tillstånd, eller ha den som förebild. Punkterna i ${ref.namn}: ${JSON.stringify(refd.rader)}`);
+  if (b.medManniska) text.push('Björn jämför storleken med en stående människa: kartfiguren är 14 punkter bred och 20 punkter hög. Storleken ska vara verklig mot den.');
   if (forra) text.push(`Förra ritningen: ${JSON.stringify(forra.rader)}`);
   if (kommentar) text.push(`Björns kommentar om förra ritningen, som ska följas: ${kommentar}`);
   if (version) text.push(`Det här är version ${version} av ${VERSIONER}, som ritas var för sig; sedan väljs den som passar bäst. Rita den på ditt eget sätt inom reglerna.`);

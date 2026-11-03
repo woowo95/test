@@ -543,13 +543,13 @@
     // rostig järnram med nitar
     for (let k = 0; k < W; k++) for (const [x, y] of [[k, 0], [k, 1], [k, W - 2], [k, W - 1], [0, k], [1, k], [W - 2, k], [W - 1, k]]) ut.satt(x, y, P.i('jord', 0));
     for (const [a, b] of [[0, 0], [W - 2, 0], [0, W - 2], [W - 2, W - 2]]) for (let k = 0; k < 4; k++) ut.satt(a + (k & 1), b + (k >> 1), P.i('rost', 1));
-    if (FORSLAG_PA.has('temperatur-ram')) tempRam(ut, temperatur(p), i => !fig(i));
+    tempRam(ut, temperatur(p), i => !fig(i));
     return ut;
   }
 
   // temperaturen: -2 fryser mycket, -1 fryser, 0 lagom, 1 varm, 2 för varm (kyla utan tal är -1)
   const temperatur = p => p.temp ?? (p.kyla ? -1 : 0);
-  // förslaget temperatur-ram (Björn efter version 85 av bildstilen: "Jag tycker inte vi visar kyla på kinderna. Vi gör istället
+  // temperaturramen (Björn godkände förslaget efter version 90 av bildstilen; förslaget kom efter version 85: "Jag tycker inte vi visar kyla på kinderna. Vi gör istället
   // en isig ram runt porträttet. Och gör en varm version också", två steg åt vardera hållet). Kylan: ramen blir is med istappar
   // från överkanten och frost som kryper in från hörnen (mer och längre i steg två). Värmen: ramen glöder och värmen darrar i
   // bakgrunden längs kanterna; i steg två slickar små lågor upp från underkanten.
@@ -1054,8 +1054,6 @@
   const FORSLAG_SORT = { id: 'forslag', namn: 'Claudes förslag', en: 'Förslag', steg: '5.2.2', forslag: true };
   const medForslag = (id, f) => { FORSLAG_PA.add(id); try { return f(); } finally { FORSLAG_PA.delete(id); } };
   const FORSLAG = [
-    { id: 'temperatur-ram', namn: 'Ramen när någon fryser eller är för varm', ritad: 2, vad: 'Björn: "Jag tycker inte vi visar kyla på kinderna. Vi gör istället en isig ram runt porträttet. Och gör en varm version också", två steg åt vardera hållet. Kylan syns inte längre på kinderna. Förslaget: hela bakgrunden blir lite blåare när personen fryser och lite rödare när hen är varm, mer i steg två. I första steget finns isen eller glöden bara i hörnen: blå frost och några korta istappar, eller glödande hörn med små lågor nertill. I andra steget blir hela ramen is med frost längs alla kanter och längre istappar, eller glöd med lågor längs hela underkanten. Isen har palettens blåaste toner (skiffer); blåare än så finns inte i paletten. Överst förslaget, under hur det ser ut nu (en vanlig ram).', forra: 'gör isen blåare och gör hela bakgrunden lite blåare/rödare i alla. Första graden behöver inte vara en ram runt hela porträttet det räcker med lite is/eld i hörnen',
-      bilder: nu => [[-2, 'Fryser mycket'], [-1, 'Fryser'], [1, 'Varm'], [2, 'För varm']].map(([t, namn]) => { const q = neutral('kvinna'); q.temp = t; return [namn, [[portratt(q), 2, namn]]]; }) },
   ];
   for (const f of FORSLAG) KORT.push({ id: 'forslag-' + f.id, sort: FORSLAG_SORT, rad: f, namn: f.namn, ritad: f.ritad });
   KORT.forEach((k, i) => {
@@ -1142,6 +1140,11 @@
     // när den bärs: framför kroppen, i kartfigurens storlek
     { const q = neutral('man'), F = kartFigur(q, 'fram', 'sta', 'bara'), W = Math.max(F.w, S.w) + 8, H = F.h + Math.max(0, S.h - 8) + 8, M = markBild(W, H, P, 420, 400);
       const fx = (W - F.w) >> 1, fy = H - F.h - 3; klistra(M, F, fx, fy, false); klistra(M, S, fx + 7 - (S.w >> 1), fy + 12 - (S.h >> 1), false); ut.push(['Bärs', M, 4]); }
+    // bredvid en stående människa, så att storleken kan jämföras (medManniska på raden; Björn efter version 90 av bildstilen)
+    if (BILDER.bilder.find(b => b.id === id)?.medManniska) {
+      const q = neutral('man'), F = kartFigur(q, 'fram', 'sta', 'hanga'), W = F.w + S.w + 14, H = Math.max(F.h, S.h) + 8, M = markBild(W, H, P, 410, 430);
+      klistra(M, F, 4, H - F.h - 3); klistra(M, S, F.w + 8, H - S.h - 4); ut.push(['Bredvid en människa', M, 4]);
+    }
     return ut;
   }
   function sakBilder(k) {
@@ -1153,6 +1156,13 @@
     if (g) stor.push([g, 10, `I spelet i dag (${g.w} × ${g.h} punkter), som den nya ritas om efter`]);
     ut.append(bildRad('Nu bredvid ' + (data?.forra ? 'förra versionen och ' : '') + 'bilden i spelet i dag', stor));
     if (data?.forra) ut.append(bildRad('Förra versionen som i spelet', sakSammanhang(k.rad.id, data.forra).map(([t, B, s]) => [B, s, t])));
+    // det tillagade bredvid det otillagade, eller en annan referens (bredvid på raden; Björn efter version 90 av bildstilen)
+    const ref = k.rad.bredvid && BILDER.bilder.find(b => b.id === k.rad.bredvid);
+    if (ref && BILDFILER[ref.id]) {
+      const M = markBild(Math.max(ref.w, k.rad.w) * 2 + 16, Math.max(ref.h, k.rad.h) + 10, P, 400, 420);
+      klistra(M, sakBild(ref.id), 4, 5); klistra(M, sakBild(k.rad.id), Math.max(ref.w, k.rad.w) + 10, 5);
+      ut.append(bildRad(`Bredvid ${ref.namn.toLowerCase()} (till vänster) som jämförelse`, [[M, 6, `${ref.namn} och ${k.rad.namn.toLowerCase()}`], [sakBild(ref.id), 10, ref.namn + ', tio gånger större'], [sakBild(k.rad.id), 10, k.rad.namn + ', tio gånger större']]));
+    }
     return ut;
   }
   function granskBilder(k) {

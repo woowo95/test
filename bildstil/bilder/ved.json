@@ -1,39 +1,39 @@
 {
  "id": "ved",
- "ritad": 4,
- "av": "Claude (förebilden, efter Björns tredje svar)",
- "om": "Ett enda vedträ som ligger ner, utan hänsyn till spelets gamla bild: den ljusa kluvna änden till vänster med en mörkare årsring i mitten, och bark längs resten, ljusare upptill där ljuset faller och mörkast nertill, med en spricka.",
+ "ritad": 5,
+ "av": "Claude (förebilden), efter Björns svar",
+ "om": "Samma vedträ, men den kluvna änden är ljust gråbeige trä i stället för gul, med årsringen i jord3.",
  "w": 10,
  "h": 5,
  "rader": [
   ".EEEEEEEE.",
-  "ELKLHGHGGE",
-  "EKJKGFGFGE",
-  "ELKKFFEFFE",
+  "EqpqHGHGGE",
+  "EpHpGFGFGE",
+  "EqppFFEFFE",
   ".EEEEEEEE."
  ],
  "pal": {
   "E": "#3f2415",
-  "F": "#5e3c24",
-  "G": "#7d5b40",
+  "q": "#bdb39b",
+  "p": "#a0947d",
   "H": "#987e62",
-  "J": "#906f0f",
-  "K": "#b2921b",
-  "L": "#d8b25f"
+  "G": "#7d5b40",
+  "F": "#5e3c24"
  },
  "forra": {
-  "ritad": 3,
+  "ritad": 4,
   "rader": [
-   ".EEEEEE.",
-   "ELKLKKJE",
-   "EKJGFGFE",
-   "EGFGFFFE",
-   ".EEEEEE."
+   ".EEEEEEEE.",
+   "ELKLHGHGGE",
+   "EKJKGFGFGE",
+   "ELKKFFEFFE",
+   ".EEEEEEEE."
   ],
   "pal": {
    "E": "#3f2415",
    "F": "#5e3c24",
    "G": "#7d5b40",
+   "H": "#987e62",
    "J": "#906f0f",
    "K": "#b2921b",
    "L": "#d8b25f"
