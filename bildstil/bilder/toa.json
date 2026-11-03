@@ -1,0 +1,18 @@
+{
+ "id": "toa",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "De tre versionerna är identiska, så jag valde version 1. Den följer dagens bild i liten skala: en låg kulle i jord1 med en ljusare strimma i jord2 uppe till vänster, där ljuset faller. Konturen och botten är i jord0, materialets mörkaste ton, så högen syns mot det olivgröna gräset. Formen är 5 × 3 punkter och fyller rutan. Brunt i två till tre toner passar vedens trästil och läses tydligt som en liten mörkbrun hög. De gula ångstrimmorna från dagens bild får inte plats i 3 punkters höjd och har tagits bort. Det håller också högen ren och inte äcklig. Inga andra ändringar behövdes.",
+ "w": 5,
+ "h": 3,
+ "rader": [
+  ".EGE.",
+  "EGFFE",
+  "EEEEE"
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40"
+ }
+}

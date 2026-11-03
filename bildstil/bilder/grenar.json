@@ -1,0 +1,22 @@
+{
+ "id": "grenar",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Version 3 valdes eftersom den är den enda som har dagens form: en gren som går snett från nedre vänstra till övre högra hörnet, med en kvist upp till vänster och gröna blad (oliv2) på samma ställen som i dag, ett uppe till vänster och ett till höger om mitten. Version 1 och 2 är liggande knippen som mer liknar vedträ och därför flyter ihop med förebilden Ved. Version 3 har jord0 som kontur, ljusare jord3 och jord2 uppe till vänster och mörkare jord1 nere till höger, och den läses tydligt som torra grenar på gräset. En ändring: den ljusa punkten (jord3) i den övre konturen vid grenens högra topp blev jord0, så att konturen är sluten och toppen inte smälter ut i marken. Det ljusa ligger kvar inne i grenen.",
+ "w": 11,
+ "h": 5,
+ "rader": [
+  ".O....EEEEE",
+  ".EHE.EHHGGE",
+  ".EEHHGGFEE.",
+  "EHHGGFFEO..",
+  "EGFEEEE...."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "O": "#647025"
+ }
+}

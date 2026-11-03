@@ -1,0 +1,25 @@
+{
+ "id": "vargskinn",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den har samma form som dagens bild: ett utbrett skinn med huvudet uppåt, fyra ben snett ut mot hörnen i ett X, en mörk fläck mitt på och svansen som en spets nedåt. Version 2 har nästan samma form, men benen sitter mer vågrätt. Version 3 är ett avlångt, liggande skinn och följer inte förebilden. Version 1 har skiffer0 som kontur och skiffer1–3 i kroppen, så den ligger nära dagens grå toner. Ljuset faller uppifrån vänster och benen nere till höger är mörkare (skiffer1). Skinnet syns tydligt mot gräset och passar bredvid veden i storlek och stil. Jag ändrade en sak: mittfläcken är nu två punkter hög i stället för en ensam prick, så den liknar dagens 2×2-fläck och inte ser ut som en lös mörk prick.",
+ "w": 13,
+ "h": 9,
+ "rader": [
+  "QQ...QQQ...QQ",
+  "QSQ.QTQSQ.QSQ",
+  ".QSQSTSSSQSQ.",
+  "..QSTTSTTSQ..",
+  "..QSTSQTTRQ..",
+  "..QSTTQSSRQ..",
+  ".QSQSSSSRQRQ.",
+  "QSQ.QSSRQ.QRQ",
+  "QQ...QRQ...QQ"
+ ],
+ "pal": {
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e"
+ }
+}

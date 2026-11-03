@@ -1,0 +1,20 @@
+{
+ "id": "ben",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den följer dagens bild närmast: ett enda smalt ben som går diagonalt från uppe till höger ner till vänster, med en lika stor knöl i varje ände, precis som de två 2×2-knölarna i originalet. Version 2 och 3 lägger till punkter i den nedre delen, så att benet blir tjockare och knölarna olika stora, och det stämmer sämre med förebilden. Färgerna följer originalets tre ljusa ben-toner: ben3 (w) som glans uppåt-vänster där originalets nästan vita låg, ben2 och ben1 (q, p) i kroppen och ben0 (o) som kontur nedåt-höger. Ljuset faller därmed från övre vänstra hörnet, och benet ligger ljust mot gräset som en samlingsbar sak. Formen fyller 7×4 och läses tydligt som ett knotigt ben bredvid veden. Jag ändrade ingenting, eftersom den stämmer med reglerna.",
+ "w": 7,
+ "h": 4,
+ "rader": [
+  "....owo",
+  "..owqpo",
+  "owqpo..",
+  "opo...."
+ ],
+ "pal": {
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "w": "#dad0bb"
+ }
+}

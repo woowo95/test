@@ -1,0 +1,21 @@
+{
+ "id": "sten",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den behåller dagens bild: en större sten till vänster och en mindre som ligger tätt intill nere till höger. Den har också en sluten nederkant, så silhuetten läses som en enda tydlig sak på gräset. Version 1 är bara en enda rund sten och har tappat den lilla stenen. Version 2 har ett hål i nederkanten som ser trasigt ut i liten storlek. Färgerna i version 3 följer ljuset uppe från vänster: skiffer3 uppe till vänster, skiffer2 i mitten och skiffer1 nere till höger. Konturen är skiffer0, och den gråa stenen syns ljus mot gräset, så som Ved gör. Jag ändrade ingenting, eftersom versionen redan stämmer med storleken (6×5), paletten och stilen.",
+ "w": 6,
+ "h": 5,
+ "rader": [
+  ".QQQ..",
+  "QTTSQ.",
+  "QTSSQQ",
+  "QSRQSQ",
+  ".QQQQ."
+ ],
+ "pal": {
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e"
+ }
+}

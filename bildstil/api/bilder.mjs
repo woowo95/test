@@ -27,7 +27,9 @@ const PT = JSON.parse(fs.readFileSync(path.join(BILDSTIL, 'portratt.json'), 'utf
 let BR = JSON.parse(fs.readFileSync(REGISTER, 'utf8'));
 const sortAv = id => BR.sorter.find(s => s.id === id);
 const raderAv = s => BR.bilder.filter(b => b.sort === s);
-const forebildAv = s => raderAv(s)[0];
+// en sort kan ha en annan sorts förebild (forebildFran): symbolerna i loggen och striden ritas efter panelens förebild
+const forebildAv = s => raderAv(sortAv(s)?.forebildFran || s)[0];
+const arSymbol = b => !!sortAv(b.sort)?.symbol;
 const lasBild = id => { const f = path.join(FILER, id + '.json'); return fs.existsSync(f) ? JSON.parse(fs.readFileSync(f, 'utf8')) : null; };
 
 // registret skrivs med en rad per bild, som det är skrivet
@@ -59,6 +61,9 @@ const gammal = async id => (await oppnaSidan()).evaluate(i => window.BILDERNA.ga
 // spelets bild i dag (bildstil/gamla.json, från npx tsx bildstil/gamla.ts): den nya ritas om efter den (Björn efter version 83
 // av bildstilen: alla nya symboler ska vara baserade på dem vi redan hade, bara omgjorda i sina nya pixelstorlekar)
 const GAMLA = fs.existsSync(path.join(BILDSTIL, 'gamla.json')) ? JSON.parse(fs.readFileSync(path.join(BILDSTIL, 'gamla.json'), 'utf8')) : {};
+// symbolerna (steg 5.2.4.2) ersätter en emoji och har ingen gammal bild: frågan säger vilken emoji den ersätter
+const symbolText = b => `Symbolen ersätter emojin ${(b.tecken || []).join(' eller ')} i spelet och ska betyda samma sak, så att den känns igen på en blick. Den är 16 × 16 punkter och står både i panelen (handlingarna, hälsan, flikarna) och i textraderna (loggen, ryktena), på mörk och ljus bakgrund. Rita den framifrån eller från sidan, inte snett uppifrån som kartan, så att den nästan fyller rutan (14–16 punkter åt minst ett håll), med en mörk kontur runt hela (kol0 eller materialets mörkaste ton) och få, stora former. Ingen bakgrund: allt runt symbolen är genomskinligt.`;
+const symboler = async () => (await oppnaSidan()).evaluate(() => window.BILDERNA.symboler());
 const gammalText = b => { const g = GAMLA[b.id]; if (!g || b.utanGammal) return null;
   return `Den sista bilden är ${b.namn} som den ser ut i spelet i dag, ${Math.max(...g.rader.map(r => r.length))} × ${g.rader.length} punkter, åtta gånger större. Den nya bilden ska vara den bilden omgjord: samma sak, samma form och delar, samma idé och samma färger så nära paletten tillåter, bara i den nya storleken och med bildstilens kontur, ljus och korn. Hitta inte på en ny bild. Punkterna i dag (punkt är genomskinlig): ${JSON.stringify(g.rader)}, färgerna: ${JSON.stringify(g.pal)}.`; };
 const scen = async () => (await oppnaSidan()).evaluate(() => window.BILDERNA.scen());
@@ -97,7 +102,11 @@ let SYS = null;
 async function fraga(b, { kommentar = null, forra = null, version = null } = {}) {
   const s = sortAv(b.sort), fb = forebildAv(b.sort), arForebild = fb.id === b.id;
   const bilder = [], text = [];
-  if (arForebild) {
+  if (arForebild && arSymbol(b)) {
+    bilder.push(await symboler());
+    text.push('Bilden visar spelets symboler som Björn redan valt, 16 × 16 punkter var, på panelens mörka bakgrund och fyra gånger större. De nya symbolerna ska höra ihop med dem: samma kontur, ljus och korn.');
+    text.push(`Du ritar förebilden för symbolerna (${s.om}): den första av spelets emojier som blir pixelsymboler, som de andra sedan ritas efter. Den ska visa stilen väl.`);
+  } else if (arForebild) {
     bilder.push(await scen());
     text.push(`Bilden är byns scen i dagsljus med de godkända bilderna i stilen: marken, granarna, lägerelden, slöjdbänken, kistan, slaktbänken och sakerna i förrådet (de små sakerna är gamla och ska ritas om nu). Den är tre gånger större än i spelet.`);
     text.push(`Du ritar förebilden för sorten ${s.namn} (${s.om}): den första bilden i sorten, som de andra sedan ritas efter. Den ska visa stilen väl: kontur, ljus, korn och storlek mot rutan.`);
@@ -105,11 +114,13 @@ async function fraga(b, { kommentar = null, forra = null, version = null } = {})
     const fd = lasBild(fb.id);
     bilder.push(await sammanhang(fb.id, null));
     text.push(`Sorten: ${s.namn} (${s.om}). Förebilden, godkänd av Björn: ${beskriv(fb)} Punkterna: ${JSON.stringify(fd.rader)}`);
-    text.push('Bilden visar förebilden som i spelet: ensam på marken (hörnen visar en ruta), på högen med en till fyra, på slöjdbänken och när den bärs, fyra gånger större. Rita den nya bilden i samma stil: samma kontur, ljus, korn och sätt att skugga, i sin egen storlek.');
+    text.push(arSymbol(b) ? 'Bilden visar förebilden som i spelet: i panelen på mörk bakgrund, på ljus bakgrund och bredvid symbolerna Björn redan valt, fyra och tre gånger större. Rita den nya symbolen i samma stil: samma kontur, ljus, korn och sätt att skugga.'
+      : 'Bilden visar förebilden som i spelet: ensam på marken (hörnen visar en ruta), på högen med en till fyra, på slöjdbänken och när den bärs, fyra gånger större. Rita den nya bilden i samma stil: samma kontur, ljus, korn och sätt att skugga, i sin egen storlek.');
     const andra = raderAv(b.sort).filter(x => x.id !== b.id && x.id !== fb.id && lasBild(x.id)).slice(0, 6);
     if (andra.length) text.push('Andra bilder i sorten som redan är ritade: ' + andra.map(x => `${x.namn}: ${JSON.stringify(lasBild(x.id).rader)}`).join('; '));
   }
   const gt = gammalText(b); if (gt) { bilder.push(await gammal(b.id)); text.push(gt); }
+  if (arSymbol(b)) text.push(symbolText(b));
   text.push(`Rita ${beskriv(b)}`);
   const ref = b.bredvid && BR.bilder.find(x => x.id === b.bredvid), refd = ref && lasBild(ref.id);
   if (refd) text.push(`Björn jämför den med ${ref.namn} (${ref.id}), som visas bredvid den på kortet; den ska höra ihop med den och vara samma sak i ett annat tillstånd, eller ha den som förebild. Punkterna i ${ref.namn}: ${JSON.stringify(refd.rader)}`);
@@ -125,12 +136,13 @@ async function fraga(b, { kommentar = null, forra = null, version = null } = {})
 // valet: API:t ser versionerna som i spelet (och förebilden, eller scenen för en förebild) och väljer den bästa
 async function valet(b, versioner, { kommentar = null } = {}) {
   const fb = forebildAv(b.sort), arForebild = fb.id === b.id;
-  const bilder = [arForebild ? await scen() : await sammanhang(fb.id, null)];
+  const bilder = [arForebild ? (arSymbol(b) ? await symboler() : await scen()) : await sammanhang(fb.id, null)];
   for (const v of versioner) bilder.push(await sammanhang(b.id, { id: b.id, rader: v.svar.rader }));
   const gt = gammalText(b); if (gt) bilder.push(await gammal(b.id));
   const text = [
-    arForebild ? `Den första bilden är byns scen med de godkända bilderna i stilen. Du väljer förebilden för sorten ${sortAv(b.sort).namn}.` : `Den första bilden är sortens förebild, ${fb.namn}, som i spelet.`,
-    `Sedan kommer ${versioner.length === 1 ? 'den enda versionen' : versioner.length + ' versioner'} av ${beskriv(b)} i ordningen ${versioner.map(v => 'version ' + v.nr).join(', ')}, var och en som i spelet: ensam på marken, på högen, på slöjdbänken och när den bärs, fyra gånger större.`,
+    arForebild ? (arSymbol(b) ? 'Den första bilden är spelets symboler som Björn redan valt. Du väljer förebilden för symbolerna.' : `Den första bilden är byns scen med de godkända bilderna i stilen. Du väljer förebilden för sorten ${sortAv(b.sort).namn}.`) : `Den första bilden är förebilden, ${fb.namn}, som i spelet.`,
+    `Sedan kommer ${versioner.length === 1 ? 'den enda versionen' : versioner.length + ' versioner'} av ${beskriv(b)} i ordningen ${versioner.map(v => 'version ' + v.nr).join(', ')}, var och en som i spelet: ${arSymbol(b) ? 'i panelen på mörk och ljus bakgrund och bredvid andra symboler' : 'ensam på marken, på högen, på slöjdbänken och när den bärs'}, fyra gånger större.`,
+    arSymbol(b) ? symbolText(b) : '',
     ...versioner.map(v => `Version ${v.nr}: ${JSON.stringify(v.svar.rader)}`),
     kommentar ? `Björns kommentar om förra ritningen, som ska följas: ${kommentar}` : '',
     gt ? gt + ' Välj den version som är mest lik den bilden.' : '',
@@ -158,7 +170,7 @@ function kontrollera(b, svar) {
   for (const x of r) for (const ch of x) if (!ok.has(ch)) fel.push(`tecknet "${ch}" finns inte i paletten`);
   if (w > b.w) fel.push(`bilden är ${w} punkter bred, högst ${b.w}`);
   if (r.length > b.h) fel.push(`bilden är ${r.length} punkter hög, högst ${b.h}`);
-  if (w < b.w * 0.6 || r.length < b.h * 0.6) fel.push(`bilden är för liten (${w} × ${r.length}, ska vara ungefär ${b.w} × ${b.h})`);
+  if (arSymbol(b) ? Math.max(w, r.length) < 13 : (w < b.w * 0.6 || r.length < b.h * 0.6)) fel.push(`bilden är för liten (${w} × ${r.length}, ska vara ungefär ${b.w} × ${b.h})`);
   return [...new Set(fel)].slice(0, 12);
 }
 

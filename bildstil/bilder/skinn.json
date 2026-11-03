@@ -1,0 +1,25 @@
+{
+ "id": "skinn",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den är mest lik dagens bild: en smal kropp i mitten med fyra utspärrade tassar i hörnen, huvudet uppe och det mörka diagonala strecket över ryggen. Version 1 och 2 har en bredare, rundare kropp som liknar en säck mer än ett utbrett skinn. Med kontur i jord0 och en ljus gråbrun kropp i ben och jord hör den ihop med vedens bruna trä och syns bra mot gräset. Ändringar: ljuset följer nu bättre övre vänstra hörnet. Den högra kanten är mörkare (p blev G i rad 2 och H blev G i rad 4), den högra tassen uppe och den högra tassen nere blev F, och den ljusa p:n nere till höger blev H. Det mörka strecket F går nu som en ren diagonal, som i originalet.",
+ "w": 10,
+ "h": 7,
+ "rader": [
+  "EE.EFFE.EE",
+  "EGEqpHGEFE",
+  "..EpqHFE..",
+  "..EqHFGE..",
+  "..EpFHGE..",
+  "EGEHHGGEFE",
+  "EE.EFFE.EE"
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "p": "#a0947d",
+  "q": "#bdb39b"
+ }
+}

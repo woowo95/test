@@ -1,0 +1,19 @@
+{
+ "id": "kol",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den följer dagens bild närmast: en hög som är smal upptill, bredast i mitten och smalnar av igen nertill (.kkkk.), precis som originalets nedersta rad .kkkkkk. Version 2 har en full bottenrad som gör högen till ett platt block, och version 1 har ljusare kärna med kol1 som gör den mer brun än matt svartgrå. Version 3 har dagens ljusa prickar (#4f4842) som kol3 (n), med kol2 (m) som mellanton och ljuset på vänster sida, så ljuset kommer uppifrån vänster. Den mörka punkten mitt i raden skiljer bitarna åt så att det läses som några bitar och inte en klump. Konturen är kol0, vilket stämmer eftersom kol verkligen är svart. Bilden är 6 × 4 och fyller rutan. Jag behövde inte ändra något.",
+ "w": 6,
+ "h": 4,
+ "rader": [
+  "..kk..",
+  ".knmk.",
+  "knmknk",
+  ".kkkk."
+ ],
+ "pal": {
+  "k": "#24201d",
+  "m": "#372f25",
+  "n": "#474138"
+ }
+}

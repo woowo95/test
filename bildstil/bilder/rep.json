@@ -1,0 +1,23 @@
+{
+ "id": "rep",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Bens och jordens ljusa halmtoner ligger närmast dagens färger (#e8d4a0, #c8b07a och #8a7448), och repet läses som bast, likt veden i förebilden. Version 2 och 3 är i senapsgult och ser ut som guldmynt på marken och i handen. De mättade tonerna tar dessutom fokus från det som betyder mer. Formen följer dagens ring: ett hål i mitten, en jordkontur runtom och ljuset uppe till vänster. Jag ändrade den nedre raden från FHpGHGF till FpHGHGF så att tonen går från ljus till vänster mot mörk till höger, i stället för att hoppa mellan ljust och mörkt. Då stämmer ljusriktningen, och vridningen syns fortfarande som korn.",
+ "w": 7,
+ "h": 5,
+ "rader": [
+  ".FFFFF.",
+  "FwqpqHF",
+  "FpF.FGF",
+  "FpHGHGF",
+  ".FFFFF."
+ ],
+ "pal": {
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "w": "#dad0bb"
+ }
+}

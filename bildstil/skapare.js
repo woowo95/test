@@ -1121,8 +1121,27 @@
   }
   // en ruta (16 × 16) markeras med ljusa hörn, så att storleken mot rutan syns
   function rutHorn(M, x0, y0) { for (const [a, b] of [[0, 0], [15, 0], [0, 15], [15, 15]]) M.satt(x0 + a, y0 + b, P.i('ben', 2)); }
+  // symbolerna (steg 5.2.4.2): panelens och textens symboler, 16 × 16 punkter både i panelen och i textraderna (Björn efter
+  // version 91 av bildstilen). De visas på panelens mörka och ljusa bakgrund och bredvid de symboler Björn redan valt
+  const SYM_REF = ['s_mat', 'a_vatten', 'l_fara', 'handslag', 'silver', 'i_stark', 'm_torka', 'r_fiende'];
+  const arSymbol = id => !!BILDER.sorter.find(s => s.id === BILDER.bilder.find(b => b.id === id)?.sort)?.symbol;
+  const fylld = (w, h, ramp, ton) => { const M = Bild(w, h, P); for (let i = 0; i < M.px.length; i++) M.px[i] = P.i(ramp, ton); return M; };
+  function symbolRad(lista, bg = ['kol', 1]) {
+    const M = fylld(lista.length * 20 + 4, 24, ...bg); lista.forEach((S, i) => klistra(M, S, 4 + i * 20 + ((16 - S.w) >> 1), 4 + ((16 - S.h) >> 1), false)); return M;
+  }
+  const refSymboler = () => SYM_REF.filter(k => IKONER.PIX[k]).map(k => { const r = IKONER.PIX[k], B = Bild(r[0].length, r.length, P); ritaIkon(B, k, 0, 0); return B; });
+  function symbolSammanhang(id, S) {
+    const ut = [];
+    ut.push(['I panelen (mörk bakgrund)', symbolRad([S]), 4]);
+    ut.push(['På ljus bakgrund', symbolRad([S], ['ben', 2]), 4]);
+    ut.push(['Bredvid symbolerna Björn redan valt', symbolRad([...refSymboler().slice(0, 4), S]), 3]);
+    const rad = BILDER.bilder.find(b => b.id === id), andra = BILDER.bilder.filter(b => b.id !== id && arSymbol(b.id) && BILDFILER[b.id]?.rader).slice(0, 6).map(b => sakBild(b.id));
+    if (andra.length) ut.push(['Bredvid de andra nya symbolerna', symbolRad([...andra, S]), 3]);
+    return ut;
+  }
   function sakSammanhang(id, data) {
     const S = sakBild(id, data); if (!S) return [];
+    if (arSymbol(id)) return symbolSammanhang(id, S);
     const ut = [];
     // ensam på marken, mitt i en ruta
     { const n = Math.max(16, S.w + 4, S.h + 4), M = markBild(n + 8, n + 8, P, 400, 420); rutHorn(M, 4 + ((n - 16) >> 1), 4 + ((n - 16) >> 1)); klistra(M, S, 4 + ((n - S.w) >> 1), 4 + ((n - S.h) >> 1)); ut.push(['Ensam på marken (hörnen visar en ruta)', M, 4]); }
@@ -1265,7 +1284,7 @@
     const synliga = GKORT.filter(synlig), pos = synliga.indexOf(k) + 1;
     const nav = `<nav class="gr-nav" aria-label="Bläddra bland korten"><button type="button" class="gr-knapp" data-grsteg="-1">‹ Förra</button><span>${pos} av ${synliga.length}</span><button type="button" class="gr-knapp" data-grsteg="1">Nästa ›</button></nav>`;
     if (nyttKort || senastVisad !== k.id || !kort.querySelector('.gr-bilder')) {
-      const vad = k.sort.forslag ? k.rad.vad : k.sort.bild ? `${k.namn}: ${k.rad.vad}. Kartbilden är ${k.rad.w} × ${k.rad.h} punkter i sin naturliga storlek mot rutan (16 punkter), och den ritas alltid i den storleken: på högen, i stationen, på marken och när den bärs (steg 5.1.2.1).`
+      const vad = k.sort.forslag ? k.rad.vad : k.sort.symbol ? `${k.namn} (ersätter ${(k.rad.tecken || []).join(' ')} i spelet): ${k.rad.vad}. Symbolen är 16 × 16 punkter, både i panelen och i textraderna (steg 5.2.4.2).` : k.sort.bild ? `${k.namn}: ${k.rad.vad}. Kartbilden är ${k.rad.w} × ${k.rad.h} punkter i sin naturliga storlek mot rutan (16 punkter), och den ritas alltid i den storleken: på högen, i stationen, på marken och när den bärs (steg 5.1.2.1).`
         : k.sort.id === 'mall' ? k.rad.vad + ' Mallen är kroppen, halsen, axlarna och skallen, med fästpunkterna där delarna sitter och zonerna som maskerna döljer.'
         : k.rad.toner ? `Färgen ${k.namn.toLowerCase()}: tonerna ${k.rad.toner.join(', ')} ur paletten, på det neutrala ansiktet.`
           : `${k.sort.en} på ett helt ansikte, där resten är detsamma för alla delar av sorten.`;
@@ -1343,6 +1362,8 @@
     scen() { return pngAv(ritaScen(P, { tid: 'dag' }), 3); },
     // spelets bild av saken i dag, åtta gånger större (som den nya ritas om efter)
     gammal(id) { const g = gammalBild(id); return g ? pngAv(g, 8) : null; },
+    // symbolerna Björn redan valt, fyra gånger större (underlag för symbolernas förebild)
+    symboler() { return pngAv(symbolRad(refSymboler()), 4); },
     // tecknen som färger (för spelets PAL)
     hex() { return Object.fromEntries([...BILDER.tecken].map(ch => [ch, P.cols[tonAv(ch)].hex])); },
     prova(id, data) { BILDFILER[id] = data; },

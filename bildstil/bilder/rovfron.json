@@ -1,0 +1,19 @@
+{
+ "id": "rovfron",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den är mest lik dagens bild, som består av små frön spridda över rutan, vart och ett med rost2 uppe till vänster, rost1 i mitten och jord0 nere till höger. Version 1 har samma spridda frön och läses som en handfull frön på marken, precis som Ved-förebildens lösa föremål. Version 3 smälter ihop till en enda klump med jord0-kant, och version 2 får kol1-prickar som ser ut som mörka fläckar. Ändringar: Jag bytte rost0 mot jord0 i varje fröns mörkaste punkt, så att färgerna stämmer exakt med dagens bild (#3f2415) och ljuset går från ljust uppe till vänster till mörkt nere till höger. Det fjärde fröet i nedersta raden hade bara ljusa punkter och fick därför en mörk jord0-punkt till höger, så att det inte blir en ensam ljus fläck. Silhuetten och placeringen av de fyra fröna är oförändrade, och bilden ryms inom 5 × 4 punkter.",
+ "w": 5,
+ "h": 4,
+ "rader": [
+  ".ts..",
+  ".sEts",
+  "ts.sE",
+  "sEtE."
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "s": "#742a01",
+  "t": "#a14808"
+ }
+}

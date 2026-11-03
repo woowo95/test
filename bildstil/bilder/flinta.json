@@ -1,0 +1,20 @@
+{
+ "id": "flinta",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Den är mest lik dagens bild: en rundad, spetsig knöl som är ljusast uppe till vänster (skiffer3, i dag den ljusa gråa) och mörkast nere till höger (skiffer1, i dag den mörka gråa). Den har kontur i skiffer0 och bara gråa skiffertoner, alltså samma färger som i dag. Den passar också vedens förebild med kontur, ljus från vänster och få toner. Versionerna 2 och 3 har en punkt ben2 (beige) som inte finns i dagens grå bild och som bryter mot regeln om två till tre toner per material. Version 2 är dessutom fylld ända ut i hörnet nere till höger, och version 3 är sned i botten. Den ljusa toppen i version 1 läses som den slagna skarpa ytan. Formen håller sig inom 5 × 4 punkter och syns tydligt mot det olivgröna gräset. Jag ändrade inget.",
+ "w": 5,
+ "h": 4,
+ "rader": [
+  "..QQ.",
+  ".QTSQ",
+  "QTSRQ",
+  ".QQQ."
+ ],
+ "pal": {
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e"
+ }
+}

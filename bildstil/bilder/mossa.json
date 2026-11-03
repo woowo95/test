@@ -1,0 +1,22 @@
+{
+ "id": "mossa",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 2. Den följer dagens bild bäst: grön tuva med ett brunt band i mitten och en brun rand som går lodrätt genom tuvan. Den har oliv0 som kontur, ljus oliv3 uppe till vänster och mörkare oliv1 nere till höger, vilket stämmer med ljuset. Silhuetten är rundad som vedens och syns tydligt mot gräset. Version 1 har en övre rad som nästan bara är kontur, så tuvan ser platt ut. Version 3 blandar in barr3 utan att det behövs. Jag ändrade en sak: det bruna bandet var fyra lika punkter i rad och blev därför slätt. Nu mörknar det åt höger (HHHGG), vilket ger korn och följer ljusriktningen.",
+ "w": 7,
+ "h": 4,
+ "rader": [
+  ".MPHPM.",
+  "MPOHONM",
+  "MHHHGGM",
+  ".MNGNM."
+ ],
+ "pal": {
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "M": "#353204",
+  "N": "#4b4f00",
+  "O": "#647025",
+  "P": "#898b4c"
+ }
+}
