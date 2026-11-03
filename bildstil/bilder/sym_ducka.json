@@ -1,52 +1,32 @@
 {
- "id": "sym_ducka",
- "ritad": 2,
- "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 3. Den är den enda som läses som en virvel (🌀). Bandet går i ett stycke från kroken i mitten, ner och åt höger, upp längs högerkanten, över toppen, ner längs vänsterkanten och ut i en svans längst ner. Version 1 och 2 läses som ett fyrkantigt G eller en meanderslinga och påminner mer om en grekisk bård än om att ducka. Den rundade silhuetten med avfasade hörn passar också förebildens få, stora former. Version 3 har samma stilmedel som förebilden: kontur i skiffer0, ljus från övre vänstra hörnet med skiffer3 uppe till vänster och skiffer1 nere till höger, och bara en glanspunkt (ben3) i toppen. Den är 16 punkter bred och 15 hög och fyller alltså rutan. Ändring: i rad 7 fanns tre genomskinliga hål mitt i virveln (två intill varandra och ett till). Där syntes bakgrunden som lösa prickar, som blev grällt ljusa på ljus bakgrund. Jag fyllde dem med skiffer0, så att mellanrummen mellan varven är mörk kontur som på resten av symbolen och kroken i mitten står tydligt.",
- "w": 16,
- "h": 15,
- "rader": [
-  "....QQQQQQQQ....",
-  "..QQTTwTTTSSQQ..",
-  ".QTTSSSSSSSSRRQ.",
-  "QTSQQQQQQQQQQSRQ",
-  "QTSQTTTTSSSQQSRQ",
-  "QTTQTSSSSSRQQSRQ",
-  "QTSQTSQQQSRQQSRQ",
-  "QTSQTSQQQQQQQSRQ",
-  "QTTQTSQQQQQQQSRQ",
-  "QTSQTSSSSSSSSRRQ",
-  "QTSQSSSRSRSRRQQ.",
-  "QTSSQQQQQQQQQQ..",
-  ".QSSTSSSSSSRSRQ.",
-  "..QSRSRRSRRRRQ..",
-  "...QQQQQQQQQQ..."
- ],
- "pal": {
-  "Q": "#233035",
-  "R": "#3e5156",
-  "S": "#61767a",
-  "T": "#8a9c9e",
-  "w": "#dad0bb"
- },
- "forra": {
+  "id": "sym_ducka",
   "ritad": 1,
+  "av": "API:t (claude-opus-5-5), bästa av 3",
+  "om": "Versionen Björn kommenterade (omritningen i v96 fick inte hans kommentar).",
+  "w": 16,
+  "h": 15,
   "rader": [
-   "....QQQQQQQQ....",
-   "..QQTqTTSTSSQQ..",
-   ".QTTSTSSSTSSSRQ.",
-   ".QTSQQQQQQQQSRQ.",
-   "QTSQQQQQQQQQQSRQ",
-   "QTSQQTTSTSRQQSRQ",
-   "QTTQQTSSSRRQQSRQ",
-   "QTSQQTSQQSRQQSRQ",
-   "QTSQQTSQQSRQQRRQ",
-   "QTSQQSSQ.QQ.QSRQ",
-   "QSSQQTSQ....QSRQ",
-   ".QQQQTSQQQQQQSRQ",
-   "....QTSSTSSSSRRQ",
-   "....QSRSRRRRRRQ.",
-   ".....QQQQQQQQQ.."
-  ]
- }
+    "....QQQQQQQQ....",
+    "..QQTqTTSTSSQQ..",
+    ".QTTSTSSSTSSSRQ.",
+    ".QTSQQQQQQQQSRQ.",
+    "QTSQQQQQQQQQQSRQ",
+    "QTSQQTTSTSRQQSRQ",
+    "QTTQQTSSSRRQQSRQ",
+    "QTSQQTSQQSRQQSRQ",
+    "QTSQQTSQQSRQQRRQ",
+    "QTSQQSSQ.QQ.QSRQ",
+    "QSSQQTSQ....QSRQ",
+    ".QQQQTSQQQQQQSRQ",
+    "....QTSSTSSSSRRQ",
+    "....QSRSRRRRRRQ.",
+    ".....QQQQQQQQQ.."
+  ],
+  "pal": {
+    "Q": "#233035",
+    "R": "#3e5156",
+    "S": "#61767a",
+    "T": "#8a9c9e",
+    "w": "#dad0bb"
+  }
 }

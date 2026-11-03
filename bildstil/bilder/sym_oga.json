@@ -1,50 +1,33 @@
 {
- "id": "sym_oga",
- "ritad": 2,
- "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 2. Den har samma kol0-kontur som de korsade svärden, till skillnad från version 3, som har en kontur i jord0 och därför inte hör ihop med de andra symbolerna. Den fyller rutan med 16 punkters bredd och 12 punkters höjd. Ögat läses direkt som ett öga. Irisen har en ring i skiffer0, så den svarta pupillen skiljs tydligt från irisen. I version 1 smälter pupill, iriskant och kontur ihop till en enda mörk klump. Fransarna gör symbolen tydligare som ett vakande öga i liten storlek. Ljuset faller rätt: ögonvitan är ljus (w och q) uppe till vänster och mörk (p och o) nere till höger. Irisen går från T och S uppe till vänster till R nere till höger. Glansen är en enda punkt i ben3 i pupillen och aldrig ren vit. Jag fann inget som behövde rättas: alla rader är 16 tecken, fransarna hänger ihop diagonalt med konturen och det finns inga ensamma prickar, så punkterna är oförändrade.",
- "w": 16,
- "h": 12,
- "rader": [
-  "..k...k..k...k..",
-  "...k..k..k..k...",
-  "....kkkkkkkk....",
-  "..kkwwQQQQqpkk..",
-  ".kwwwQTTSSQqppk.",
-  ".kwqQTSkkSRQpok.",
-  "kwqqQTkwkkRQppok",
-  "kqqpQSkkkkRQpook",
-  ".kqpQSSkkRRQpok.",
-  "..kppQSRRRQook..",
-  "...kkpQQQQokk...",
-  ".....kkkkkk....."
- ],
- "pal": {
-  "Q": "#233035",
-  "R": "#3e5156",
-  "S": "#61767a",
-  "T": "#8a9c9e",
-  "k": "#24201d",
-  "o": "#7e7362",
-  "p": "#a0947d",
-  "q": "#bdb39b",
-  "w": "#dad0bb"
- },
- "forra": {
+  "id": "sym_oga",
   "ritad": 1,
+  "av": "API:t (claude-opus-5-5), bästa av 3",
+  "om": "Versionen Björn kommenterade (omritningen i v96 fick inte hans kommentar).",
+  "w": 16,
+  "h": 12,
   "rader": [
-   "...E...EE...E...",
-   "....E..EE..E....",
-   ".....EEEEEE.....",
-   "...EEqqqqppEE...",
-   "..EwqqRRRRppoE..",
-   ".EqqqRTwSSRppoE.",
-   "EqqqpRSkkSRppooE",
-   "EpqppRSkkRRpoooE",
-   ".EpppRSSRRQoooE.",
-   "..EppoRRQQoooE..",
-   "...EEpoooooEE...",
-   ".....EEEEEE....."
-  ]
- }
+    "...E...EE...E...",
+    "....E..EE..E....",
+    ".....EEEEEE.....",
+    "...EEqqqqppEE...",
+    "..EwqqRRRRppoE..",
+    ".EqqqRTwSSRppoE.",
+    "EqqqpRSkkSRppooE",
+    "EpqppRSkkRRpoooE",
+    ".EpppRSSRRQoooE.",
+    "..EppoRRQQoooE..",
+    "...EEpoooooEE...",
+    ".....EEEEEE....."
+  ],
+  "pal": {
+    "Q": "#233035",
+    "R": "#3e5156",
+    "S": "#61767a",
+    "T": "#8a9c9e",
+    "k": "#24201d",
+    "o": "#7e7362",
+    "p": "#a0947d",
+    "q": "#bdb39b",
+    "w": "#dad0bb"
+  }
 }

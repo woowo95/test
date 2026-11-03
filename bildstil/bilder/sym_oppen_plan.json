@@ -1,54 +1,33 @@
 {
- "id": "sym_oppen_plan",
- "ritad": 2,
- "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 3. Den är den enda där ytan går stegvis från ben3 uppe till vänster till ben1 och ben0 nere till höger. Det följer ljusregeln och ger rutan samma volym som de belysta svärden i förebilden. Version 1 är jämnt kornig och nästan platt. Version 2 har bara en ljus kant och en mörk kant runt en jämn mitt. Alla tre har kontur i kol0, rundade hörn och fyller 16 × 16, så de läses tydligt som en vit ruta. Ändring: vänsterkanten i rad 4, 7 och 9 började med q, och jag gjorde den till w. Den belysta vänsterkanten blir då sammanhängande och bryts inte av mörkare prickar. Resten är oförändrat.",
- "w": 16,
- "h": 16,
- "rader": [
-  ".kkkkkkkkkkkkkk.",
-  "kwwqwwwqwwqwqqpk",
-  "kwqwwqwwqwqqqpok",
-  "kwwqwqqwqqwqqpok",
-  "kwwwqwqqwqqqppok",
-  "kwqwqqwqqqqpqpok",
-  "kwwqqwqqqpqqppok",
-  "kwwqwqqpqqpqppok",
-  "kwqqqqpqqpqpqpok",
-  "kwwqqpqqpqqpppok",
-  "kwqqpqqpqpqpppok",
-  "kqqpqqpqppqpppok",
-  "kqqqpqpqpppppook",
-  "kqpqppqpppppoook",
-  "kppooooooooooook",
-  ".kkkkkkkkkkkkkk."
- ],
- "pal": {
-  "k": "#24201d",
-  "o": "#7e7362",
-  "p": "#a0947d",
-  "q": "#bdb39b",
-  "w": "#dad0bb"
- },
- "forra": {
+  "id": "sym_oppen_plan",
   "ritad": 1,
+  "av": "API:t (claude-opus-5-5), bästa av 3",
+  "om": "Versionen Björn kommenterade (omritningen i v96 fick inte hans kommentar).",
+  "w": 16,
+  "h": 16,
   "rader": [
-   ".kkkkkkkkkkkkkk.",
-   "kwwwwwqwwwqwwqpk",
-   "kwwqqqqwqqqqqqok",
-   "kwqqwqqqqqpqqpok",
-   "kwqqqqqqqqqqpqok",
-   "kwqwqqqqqqqqqpok",
-   "kqqqqqqpqqqqqqok",
-   "kwqqqqqqqqqpqpok",
-   "kwqqqpqqqqqqqqok",
-   "kqqqqqqqqqqqqpok",
-   "kwqqqqqqpqqpqqok",
-   "kwqpqqqqqqqqpqok",
-   "kqqqqqqqqpqqqpok",
-   "kqqpqqqqpqqqppok",
-   "kpoooooooooooook",
-   ".kkkkkkkkkkkkkk."
-  ]
- }
+    ".kkkkkkkkkkkkkk.",
+    "kwwwwwqwwwqwwqpk",
+    "kwwqqqqwqqqqqqok",
+    "kwqqwqqqqqpqqpok",
+    "kwqqqqqqqqqqpqok",
+    "kwqwqqqqqqqqqpok",
+    "kqqqqqqpqqqqqqok",
+    "kwqqqqqqqqqpqpok",
+    "kwqqqpqqqqqqqqok",
+    "kqqqqqqqqqqqqpok",
+    "kwqqqqqqpqqpqqok",
+    "kwqpqqqqqqqqpqok",
+    "kqqqqqqqqpqqqpok",
+    "kqqpqqqqpqqqppok",
+    "kpoooooooooooook",
+    ".kkkkkkkkkkkkkk."
+  ],
+  "pal": {
+    "k": "#24201d",
+    "o": "#7e7362",
+    "p": "#a0947d",
+    "q": "#bdb39b",
+    "w": "#dad0bb"
+  }
 }

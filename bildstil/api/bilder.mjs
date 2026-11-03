@@ -126,7 +126,7 @@ async function fraga(b, { kommentar = null, forra = null, version = null } = {})
   if (refd) text.push(`Björn jämför den med ${ref.namn} (${ref.id}), som visas bredvid den på kortet; den ska höra ihop med den och vara samma sak i ett annat tillstånd, eller ha den som förebild. Punkterna i ${ref.namn}: ${JSON.stringify(refd.rader)}`);
   if (b.medManniska) text.push('Björn jämför storleken med en stående människa: kartfiguren är 14 punkter bred och 20 punkter hög. Storleken ska vara verklig mot den.');
   if (forra) text.push(`Förra ritningen: ${JSON.stringify(forra.rader)}`);
-  if (kommentar) text.push(`Björns kommentar om förra ritningen, som ska följas: ${kommentar}`);
+  if (kommentar) text.push(`Björns kommentar om förra ritningen, som ska följas och går före emojin och förra ritningen (ber han om en ny symbol eller ett annat sätt, rita något helt annat än emojin och förra ritningen; emojin säger då bara vad symbolen betyder): ${kommentar}`);
   if (version) text.push(`Det här är version ${version} av ${VERSIONER}, som ritas var för sig; sedan väljs den som passar bäst. Rita den på ditt eget sätt inom reglerna.`);
   SYS = SYS || await system();
   return { custom_id: version ? `${b.id}__v${version}` : b.id, params: { model: MODELL, max_tokens: MAXTOKENS, thinking: { type: 'adaptive' }, output_config: { effort: INSATS, format: { type: 'json_schema', schema: schema(false) } },
@@ -237,6 +237,10 @@ try {
     const { ut: bilder, vantar } = vanliga.length || !om.length ? attRita(vanliga) : { ut: [], vantar: [] };
     const kommentarer = {};
     for (const [id, k] of om) { const b = BR.bilder.find(x => x.id === id); if (!b) throw new Error('Okänd bild: ' + id); if (!bilder.includes(b)) bilder.push(b); kommentarer[id] = k.trim() || 'Björn sa nej till förra ritningen utan att skriva varför: rita en bättre.'; }
+    // en bild som redan är ritad och nämns vid namn ritas om: Björns kommentar på raden (forra) följer alltid med, och utan
+    // kommentar räknas det som ett nej (förut följde kommentaren bara med som id="kommentar", och glömdes annars; Björn efter bildstil v96)
+    for (const b of bilder) if (!kommentarer[b.id] && b.ritad > 0 && lasBild(b.id) && vanliga.includes(b.id)) kommentarer[b.id] = b.forra || 'Björn sa nej till förra ritningen utan att skriva varför: rita en bättre.';
+    for (const b of bilder) console.log(`${b.id}: ${kommentarer[b.id] ? 'kommentar: ' + kommentarer[b.id] : 'ny bild'}`);
     for (const v of vantar) console.log(v);
     if (!bilder.length) { console.log('Inget att rita.'); process.exit(0); }
     const fore = uppskattning(bilder.length);

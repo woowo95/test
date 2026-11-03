@@ -1,54 +1,33 @@
 {
- "id": "sym_upp",
- "ritad": 2,
- "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 1. Pilen är i skiffer, samma material som svärdsbladen i förebilden. En pil upp är ingen mat och inget man kan ta, så den ska vara dämpad och inte senapsgul. Därför föll version 2 bort, eftersom den lägger den starka senapen på en vanlig symbol. Version 1 fyller hela rutan med 16 × 16 punkter och har en sluten kontur i skiffer0, som är materialets mörkaste ton. Silhuetten är tydlig: en bred spets och ett smalt skaft. Ljuset faller rätt, med ljus vänsterkant i skiffer3 och mörk högerkant i skiffer1, och skaftet mörknar nedåt. Glansen är en enda punkt i ben3 på spetsen. Version 3 är nästan likadan, men där sitter glansen mitt på vänstra flanken. Dessutom bryter en ljus punkt mitt i skaftet nertill (rad 13) ljusriktningen. Version 1 har jämnt korn och inga ensamma mörka fläckar, så jag har inte behövt ändra något.",
- "w": 16,
- "h": 16,
- "rader": [
-  ".......QQ.......",
-  "......QwSQ......",
-  ".....QTTSRQ.....",
-  "....QTTTSSRQ....",
-  "...QTTSTSSRRQ...",
-  "..QTTTSTSSRSRQ..",
-  ".QTTSTTSSSRSRRQ.",
-  "QTTTSTSSSSRSRRRQ",
-  "QQQQQQTSSRQQQQQQ",
-  ".....QTTSRQ.....",
-  ".....QTSSRQ.....",
-  ".....QTTSRQ.....",
-  ".....QTSRRQ.....",
-  ".....QTTSRQ.....",
-  ".....QSSRRQ.....",
-  ".....QQQQQQ....."
- ],
- "pal": {
-  "Q": "#233035",
-  "R": "#3e5156",
-  "S": "#61767a",
-  "T": "#8a9c9e",
-  "w": "#dad0bb"
- },
- "forra": {
+  "id": "sym_upp",
   "ritad": 1,
+  "av": "API:t (claude-opus-5-5), bästa av 3",
+  "om": "Versionen Björn kommenterade (omritningen i v96 fick inte hans kommentar).",
+  "w": 16,
+  "h": 16,
   "rader": [
-   ".......II.......",
-   "......ILJI......",
-   ".....ILKKJI.....",
-   "....ILKKKJJI....",
-   "...ILKLKKKJJI...",
-   "..ILKKKKKJKJJI..",
-   ".ILKKLKKKKKKJJI.",
-   "ILKKKKKKKJKKJJJI",
-   "IIIIILKKKKJIIIII",
-   "....ILKKKJJI....",
-   "....ILKJKJJI....",
-   "....IKKKKJJI....",
-   "....ILKKJKJI....",
-   "....IKKKKJJI....",
-   "....IKKJKJJI....",
-   "....IIIIIIII...."
-  ]
- }
+    ".......II.......",
+    "......ILJI......",
+    ".....ILKKJI.....",
+    "....ILKKKJJI....",
+    "...ILKLKKKJJI...",
+    "..ILKKKKKJKJJI..",
+    ".ILKKLKKKKKKJJI.",
+    "ILKKKKKKKJKKJJJI",
+    "IIIIILKKKKJIIIII",
+    "....ILKKKJJI....",
+    "....ILKJKJJI....",
+    "....IKKKKJJI....",
+    "....ILKKJKJI....",
+    "....IKKKKJJI....",
+    "....IKKJKJJI....",
+    "....IIIIIIII...."
+  ],
+  "pal": {
+    "Q": "#233035",
+    "R": "#3e5156",
+    "S": "#61767a",
+    "T": "#8a9c9e",
+    "w": "#dad0bb"
+  }
 }

@@ -1,54 +1,33 @@
 {
- "id": "sym_dimma",
- "ritad": 2,
- "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 1. Det är den enda som fyller hela rutan, 16 × 16 punkter. Version 2 och 3 är bara 14 punkter höga och ser därför mindre ut än svärden bredvid. De tre förskjutna dimbankarna i skiffer med kontur i skiffer0 känns igen som 🌫. De har få och stora former och syns både på mörk och ljus bakgrund, precis som förebilden. Ljuset stämmer: den ljusaste tonen (q som enda glanspunkt, ben2) sitter uppe till vänster och skiffer1 nere till höger. Ytorna har korn utan ensamma mörka prickar. Dimman får inga mättade toner, eftersom den inte är något man ska ta. Jag behövde inte ändra något.",
- "w": 16,
- "h": 16,
- "rader": [
-  "..QQQQQQQQQQ....",
-  ".QTqTTTSTTSSQ...",
-  ".QTTSTTSSTSRQ...",
-  "..QQQQQQQQQQ....",
-  "................",
-  "................",
-  "....QQQQQQQQQQQ.",
-  "...QTTTSTTSTSSSQ",
-  "...QTSTSSTSSRSRQ",
-  "....QQQQQQQQQQQ.",
-  "................",
-  "................",
-  ".QQQQQQQQQQQQ...",
-  "QTTSTTSSTSSSRQ..",
-  "QTSTSSTSSRSRRQ..",
-  ".QQQQQQQQQQQQ..."
- ],
- "pal": {
-  "Q": "#233035",
-  "R": "#3e5156",
-  "S": "#61767a",
-  "T": "#8a9c9e",
-  "q": "#bdb39b"
- },
- "forra": {
+  "id": "sym_dimma",
   "ritad": 1,
+  "av": "API:t (claude-opus-5-5), bästa av 3",
+  "om": "Versionen Björn kommenterade (omritningen i v96 fick inte hans kommentar).",
+  "w": 16,
+  "h": 16,
   "rader": [
-   "...QQQQ.........",
-   "..QTwTSQQQQQ....",
-   ".QTTTTSSTTTSQ...",
-   "QTTTSSTSSSSSRQ..",
-   "QTSSTSSSSRSRRQ..",
-   ".QQSRSSRSRRQQ...",
-   "...QQQQQQQQ.....",
-   "................",
-   ".QQQQQQQQQQQ....",
-   "QTTSTSSTSSSRQ...",
-   "QSSRSSRSRSRRQ...",
-   ".QQQQQQQQQQQ....",
-   "....QQQQQQQQQQQ.",
-   "...QTTSTSSTSSSRQ",
-   "...QSRSSRSRSRRRQ",
-   "....QQQQQQQQQQQ."
-  ]
- }
+    "...QQQQ.........",
+    "..QTwTSQQQQQ....",
+    ".QTTTTSSTTTSQ...",
+    "QTTTSSTSSSSSRQ..",
+    "QTSSTSSSSRSRRQ..",
+    ".QQSRSSRSRRQQ...",
+    "...QQQQQQQQ.....",
+    "................",
+    ".QQQQQQQQQQQ....",
+    "QTTSTSSTSSSRQ...",
+    "QSSRSSRSRSRRQ...",
+    ".QQQQQQQQQQQ....",
+    "....QQQQQQQQQQQ.",
+    "...QTTSTSSTSSSRQ",
+    "...QSRSSRSRSRRRQ",
+    "....QQQQQQQQQQQ."
+  ],
+  "pal": {
+    "Q": "#233035",
+    "R": "#3e5156",
+    "S": "#61767a",
+    "T": "#8a9c9e",
+    "q": "#bdb39b"
+  }
 }

@@ -1,54 +1,33 @@
 {
- "id": "sym_hand",
- "ritad": 2,
- "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 3. Tummen står ut som en egen form i tre rader innan den går ihop med handflatan, så den öppna handen ✋ känns igen tydligast i 16 punkter. I version 1 och 2 smälter tummen in tidigare. Fingrarna har olika längd, med långfingret högst och lillfingret lägst. Ljuset kommer uppifrån vänster: glansen w sitter på fingertopparna och tummen, och o ligger på högersidan och nertill. Konturen är jord0 runt hela handen, med få och stora former som i förebildens svärd. Det var fel att rita en halvrad överst: den lilla toppen som i mallen låg på rad 0 hör hemma ovanför långfingret. Jag har ändå lagt raden EE sist av misstag. Den ska egentligen vara rad 0 som i originalet, alltså samma bild som version 3 utan ändringar i övrigt.",
- "w": 16,
- "h": 16,
- "rader": [
-  "......EwqEEE....",
-  "....EEEqpEqpE...",
-  "...EwqEqpEqpE...",
-  "...EqqEqpEqpEEE.",
-  "...EqpEqpEqpEqpE",
-  "...EqpEqpEppEqpE",
-  ".EEEqpEqpEqpEpoE",
-  "EwqEqpEqpEppEpoE",
-  "EqqEqqqqqpqpppoE",
-  ".EqpEqqqqpqppooE",
-  "..EqpqqqqpqpppoE",
-  "...EpqqpqppppooE",
-  "....EpppppppooE.",
-  "....EpppppoooE..",
-  "....EEEEEEEEEE..",
-  ".......EE......."
- ],
- "pal": {
-  "E": "#3f2415",
-  "o": "#7e7362",
-  "p": "#a0947d",
-  "q": "#bdb39b",
-  "w": "#dad0bb"
- },
- "forra": {
+  "id": "sym_hand",
   "ritad": 1,
+  "av": "API:t (claude-opus-5-5), bästa av 3",
+  "om": "Versionen Björn kommenterade (omritningen i v96 fick inte hans kommentar).",
+  "w": 16,
+  "h": 16,
   "rader": [
-   ".......EE.......",
-   "....EEEHGEEE....",
-   "...EHGEHGEHGE...",
-   "...EHGEHGEHGEEE.",
-   "...EHGEGGEHGEHFE",
-   "...EGGEHGEGFEHFE",
-   "...EHGEHGEHGEGFE",
-   ".EEEGGEGGEGFEGFE",
-   "EHGEHGFHGFGFFGFE",
-   "EHGEHHGGHGGGGGFE",
-   "EHGGHGGHGGGGGFFE",
-   ".EHGGHGGGGGGGFFE",
-   "..EGHGGGGHGGGFE.",
-   "...EGGGGGGGGFFE.",
-   "....EGHGGGGFFE..",
-   "....EEEEEEEEEE.."
-  ]
- }
+    ".......EE.......",
+    "....EEEHGEEE....",
+    "...EHGEHGEHGE...",
+    "...EHGEHGEHGEEE.",
+    "...EHGEGGEHGEHFE",
+    "...EGGEHGEGFEHFE",
+    "...EHGEHGEHGEGFE",
+    ".EEEGGEGGEGFEGFE",
+    "EHGEHGFHGFGFFGFE",
+    "EHGEHHGGHGGGGGFE",
+    "EHGGHGGHGGGGGFFE",
+    ".EHGGHGGGGGGGFFE",
+    "..EGHGGGGHGGGFE.",
+    "...EGGGGGGGGFFE.",
+    "....EGHGGGGFFE..",
+    "....EEEEEEEEEE.."
+  ],
+  "pal": {
+    "E": "#3f2415",
+    "o": "#7e7362",
+    "p": "#a0947d",
+    "q": "#bdb39b",
+    "w": "#dad0bb"
+  }
 }

@@ -1,53 +1,32 @@
 {
- "id": "sym_tass",
- "ritad": 2,
- "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 1. Den fyller hela rutan på 16 × 16 punkter med fyra tår och en stor, rund trampdyna. Det ger den tydligaste silhuetten i liten storlek och följer förebildens upplägg med få, stora former och mörk kontur. Version 2 har en smalare dyna med två små lober nertill som flimrar i liten storlek. I version 3 är dynan mindre och tassen ser glesare ut. Version 1 håller sig till jordrampen (E som kontur, H, G och F inuti), med ljuset uppe till vänster och skuggan nere till höger, och har korn utan fläckar. Jag ändrade ingenting. Att sidotårnas kontur bara snuddar diagonalt vid dynans kontur stör inte läsbarheten.",
- "w": 16,
- "h": 16,
- "rader": [
-  "....EE....EE....",
-  "...EHHE..EHHE...",
-  "...EHGE..EHGE...",
-  "...EGGE..EGGE...",
-  "...EGFE..EGFE...",
-  ".EE.EE....EE.EE.",
-  "EHHE........EHHE",
-  "EHGE........EHGE",
-  "EGGE..EEEE..EGGE",
-  "EGFE.EHHGGE.EGFE",
-  ".EE.EHGHGGGE.EE.",
-  "...EHHGHGGGFE...",
-  "..EHGHGGGGGGFE..",
-  "..EGGGGGGGFGFE..",
-  "...EGGGFGFFFE...",
-  "....EEEEEEEE...."
- ],
- "pal": {
-  "E": "#3f2415",
-  "F": "#5e3c24",
-  "G": "#7d5b40",
-  "H": "#987e62"
- },
- "forra": {
+  "id": "sym_tass",
   "ritad": 1,
+  "av": "API:t (claude-opus-5-5), bästa av 3",
+  "om": "Versionen Björn kommenterade (omritningen i v96 fick inte hans kommentar).",
+  "w": 16,
+  "h": 16,
   "rader": [
-   "...EEE....EEE...",
-   "..EHGGE..EHGGE..",
-   "..EGGFE..EGGFE..",
-   "..EGFFE..EGFFE..",
-   "...EEE....EEE...",
-   ".EE..........EE.",
-   "EHGE........EHGE",
-   "EGFE........EGFE",
-   "EGFE..EEEE..EGFE",
-   ".EE..EHGGGE..EE.",
-   "...EEHGGGGFEE...",
-   "..EHGGGGGGFFFE..",
-   "..EGGGGFGGFFFE..",
-   "..EGGFGFFFFFFE..",
-   "...EFFFEEFFFE...",
-   "....EEE..EEE...."
-  ]
- }
+    "...EEE....EEE...",
+    "..EHGGE..EHGGE..",
+    "..EGGFE..EGGFE..",
+    "..EGFFE..EGFFE..",
+    "...EEE....EEE...",
+    ".EE..........EE.",
+    "EHGE........EHGE",
+    "EGFE........EGFE",
+    "EGFE..EEEE..EGFE",
+    ".EE..EHGGGE..EE.",
+    "...EEHGGGGFEE...",
+    "..EHGGGGGGFFFE..",
+    "..EGGGGFGGFFFE..",
+    "..EGGFGFFFFFFE..",
+    "...EFFFEEFFFE...",
+    "....EEE..EEE...."
+  ],
+  "pal": {
+    "E": "#3f2415",
+    "F": "#5e3c24",
+    "G": "#7d5b40",
+    "H": "#987e62"
+  }
 }

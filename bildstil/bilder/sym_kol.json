@@ -1,54 +1,33 @@
 {
- "id": "sym_kol",
- "ritad": 2,
- "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 2. Den är en jämn, symmetrisk rund kula som liknar ⚫ mest och läses tydligt i 16 punkter. Konturen är kol0 och ljuset faller uppe till vänster, från kol3 över kol2 till kol1, precis som i förebildens ljusriktning. Version 1 ser mer ut som en rundad kvadrat och är sned nedtill. Version 3 har mörka sprickor som bildar något som liknar bokstaven K och stör formen. Ändring: jag tog bort de mörka kol0-punkterna inne i kulan. I spelets storlek såg de ut som en visare på en mätare, och reglerna förbjuder mörka fläckar. I stället lade jag in korn med växlande kol2 och kol1. Jag lade också till en ben0-punkt bredvid den som redan fanns, så att glansen blir två punkter uppe till vänster och kulan syns bättre mot mörk bakgrund.",
- "w": 16,
- "h": 16,
- "rader": [
-  ".....kkkkkk.....",
-  "...kknnnmmmkk...",
-  "..knnonmmmmmlk..",
-  ".knnonmmmmmmllk.",
-  ".knnnmmnmmmmllk.",
-  "knnnmnmmmmmlmllk",
-  "knnmnmmmmmlmmllk",
-  "knmmmmmmmlmmmllk",
-  "knmmmmmmmmlmlllk",
-  "kmmmmmmmmmmlmllk",
-  "kmmmmmmmmlmllllk",
-  ".kmmmmmmmlllllk.",
-  ".kmmmmmmllllllk.",
-  "..kmmmllllllkk..",
-  "...kkllllllkk...",
-  ".....kkkkkk....."
- ],
- "pal": {
-  "k": "#24201d",
-  "l": "#2f261d",
-  "m": "#372f25",
-  "n": "#474138",
-  "o": "#7e7362"
- },
- "forra": {
+  "id": "sym_kol",
   "ritad": 1,
+  "av": "API:t (claude-opus-5-5), bästa av 3",
+  "om": "Versionen Björn kommenterade (omritningen i v96 fick inte hans kommentar).",
+  "w": 16,
+  "h": 16,
   "rader": [
-   ".....kkkkkk.....",
-   "...kknnnmmmkk...",
-   "..knnnnnnmmmmk..",
-   ".knnopnnnmnmmlk.",
-   ".knnnmnnmnmmmlk.",
-   "knnnmnnmnmmmmllk",
-   "knnnnnmnmmmmlmlk",
-   "knnnmnmmmmmlmllk",
-   "knmnmmmmmmlmmllk",
-   "kmnmmmmlmmllmllk",
-   "kmmmmmlmmllllllk",
-   ".kmmlmmllmllllk.",
-   ".kllmlllllllllk.",
-   "..kllllllllllk..",
-   "...kkllllllkk...",
-   ".....kkkkkk....."
-  ]
- }
+    ".....kkkkkk.....",
+    "...kknnnmmmkk...",
+    "..knnnnnnmmmmk..",
+    ".knnopnnnmnmmlk.",
+    ".knnnmnnmnmmmlk.",
+    "knnnmnnmnmmmmllk",
+    "knnnnnmnmmmmlmlk",
+    "knnnmnmmmmmlmllk",
+    "knmnmmmmmmlmmllk",
+    "kmnmmmmlmmllmllk",
+    "kmmmmmlmmllllllk",
+    ".kmmlmmllmllllk.",
+    ".kllmlllllllllk.",
+    "..kllllllllllk..",
+    "...kkllllllkk...",
+    ".....kkkkkk....."
+  ],
+  "pal": {
+    "k": "#24201d",
+    "l": "#2f261d",
+    "m": "#372f25",
+    "n": "#474138",
+    "o": "#7e7362"
+  }
 }

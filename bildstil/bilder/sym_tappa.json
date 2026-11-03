@@ -1,53 +1,32 @@
 {
- "id": "sym_tappa",
- "ritad": 2,
- "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "",
- "w": 16,
- "h": 16,
- "rader": [
-  "...E........E...",
-  "..EHEE....EEHE..",
-  ".EEHEGE..EHEHEE.",
-  "EHEHEGE..EHEHEGE",
-  "EHEHEGE..EHEHEGE",
-  "EHEHEGE..EHEHEGE",
-  "EHHHGGE..EHHHGGE",
-  "EHHGHGEEEEHHGHGE",
-  "EHGHGGGEEHHGHGFE",
-  "EGHGGFGEEGHGGFFE",
-  "EHGGFGEEEEHGGFFE",
-  "EGGFGFE..EHGGFFE",
-  ".EGGFE....EHGFE.",
-  ".EGFFE....EHGFE.",
-  ".EGFFE....EGFFE.",
-  ".EEEEE....EEEEE."
- ],
- "pal": {
-  "E": "#3f2415",
-  "F": "#5e3c24",
-  "G": "#7d5b40",
-  "H": "#987e62"
- },
- "forra": {
+  "id": "sym_tappa",
   "ritad": 1,
+  "av": "API:t (claude-opus-5-5), bästa av 3",
+  "om": "Versionen Björn kommenterade (omritningen i v96 fick inte hans kommentar).",
+  "w": 16,
+  "h": 16,
   "rader": [
-   "..E.E.E..E.E.E..",
-   ".EqEHEHEEHEHEGE.",
-   ".EHEHEGEEHEHEGE.",
-   ".EHEGEGEEHEGEGE.",
-   ".EHEHEGEEHEHEGE.",
-   ".EHqHGGEEHqHGGE.",
-   "EEHHGHGEEHHGHGEE",
-   "EHEHHGGEEHHGHEGE",
-   "EHHHGGFEEHHGGGFE",
-   ".EHGHGFEEHGHGFE.",
-   "..EHGGFEEHGGFE..",
-   "..EGGFFEEGGFFE..",
-   "..MPOONMMPOONM..",
-   "..MPONNMMPONNM..",
-   "..MONONMMONONM..",
-   "..MMMMMMMMMMMM.."
-  ]
- }
+    "..E.E.E..E.E.E..",
+    ".EqEHEHEEHEHEGE.",
+    ".EHEHEGEEHEHEGE.",
+    ".EHEGEGEEHEGEGE.",
+    ".EHEHEGEEHEHEGE.",
+    ".EHqHGGEEHqHGGE.",
+    "EEHHGHGEEHHGHGEE",
+    "EHEHHGGEEHHGHEGE",
+    "EHHHGGFEEHHGGGFE",
+    ".EHGHGFEEHGHGFE.",
+    "..EHGGFEEHGGFE..",
+    "..EGGFFEEGGFFE..",
+    "..MPOONMMPOONM..",
+    "..MPONNMMPONNM..",
+    "..MONONMMONONM..",
+    "..MMMMMMMMMMMM.."
+  ],
+  "pal": {
+    "E": "#3f2415",
+    "F": "#5e3c24",
+    "G": "#7d5b40",
+    "H": "#987e62"
+  }
 }
