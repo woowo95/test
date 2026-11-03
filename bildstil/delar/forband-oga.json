@@ -1,50 +1,50 @@
 {
  "id": "forband-oga",
- "ritad": 2,
- "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
- "om": "Jag valde version 1. Den hör bäst ihop med förebilden: bindan är lika tjock, är ljus (w/q) upptill och skuggas nedåt till p och o, och har en liten blodfläck i rost. Dynan ligger ungefär på x -9 till 0 och y -8 till 0 och täcker vänster öga. Bandet går snett upp åt höger ovanför höger ögonbryn (y -12 till -9), så det högra ögat syns, som Björn ville. Version 2 och 3 har ett tunnt band i trappsteg som inte stämmer med förebildens bredare linne, och i version 3 går dynan över mittlinjen vid brynet. Inga punkter är ändrade, eftersom delen redan håller sig inom rutan och bara använder tillåtna tecken.",
+ "ritad": 3,
+ "av": "Förra ritningen (ritad 1) tillbaka efter Björns svar; masken döljer nu ögat under dynan",
+ "om": "Björn: bandaget var bättre förra gången, men ögat som inte är täckt syntes inte. Felet var masken: den dolde höger öga medan dynan låg över vänster. Nu döljer den vänster öga.",
  "bilder": {
   "standard": {
    "x": -16,
-   "y": -12,
+   "y": -10,
    "rader": [
-    "..........................wwwqqp",
-    ".....................wwwqqqqqppp",
-    "................wwwqqqqqppppppoo",
-    "................qqqqppppooo.....",
-    ".........wwwwwwqqppooo..........",
-    ".......wwqqqqqqqp...............",
-    ".......wqqqqqqqpp...............",
-    "qwwwwwwqqqqqqqppp...............",
-    "qqqqqqqqqqqqqpppo...............",
-    "pppppppqqqqqpppoo...............",
-    "ooooopppqqpprsooo...............",
-    "........pppstooo................",
-    ".........oooooo................."
+    "..............................qq",
+    "...........................qqqpp",
+    "........................wwwppppp",
+    ".....................wwwqqqpppoo",
+    "..................wwwqqqqqqooo..",
+    "........wwwwq..wwwqqqqqqppp.....",
+    "......wwqqqqwwwqqqqqqppp........",
+    ".....wqqqwwwqqqqqqppp...........",
+    ".....wwwwqqqqqqppp..............",
+    "...wwwqqqqqqpppo................",
+    "qqqqqqqqqpppooop................",
+    "pppqqqpppooostpo................",
+    "ppppppoooppprso.................",
+    "ooo....ooppooo.................."
    ]
   }
  },
  "forra": {
-  "ritad": 1,
+  "ritad": 2,
   "bilder": {
    "standard": {
     "x": -16,
-    "y": -10,
+    "y": -12,
     "rader": [
-     "..............................qq",
-     "...........................qqqpp",
-     "........................wwwppppp",
-     ".....................wwwqqqpppoo",
-     "..................wwwqqqqqqooo..",
-     "........wwwwq..wwwqqqqqqppp.....",
-     "......wwqqqqwwwqqqqqqppp........",
-     ".....wqqqwwwqqqqqqppp...........",
-     ".....wwwwqqqqqqppp..............",
-     "...wwwqqqqqqpppo................",
-     "qqqqqqqqqpppooop................",
-     "pppqqqpppooostpo................",
-     "ppppppoooppprso.................",
-     "ooo....ooppooo.................."
+     "..........................wwwqqp",
+     ".....................wwwqqqqqppp",
+     "................wwwqqqqqppppppoo",
+     "................qqqqppppooo.....",
+     ".........wwwwwwqqppooo..........",
+     ".......wwqqqqqqqp...............",
+     ".......wqqqqqqqpp...............",
+     "qwwwwwwqqqqqqqppp...............",
+     "qqqqqqqqqqqqqpppo...............",
+     "pppppppqqqqqpppoo...............",
+     "ooooopppqqpprsooo...............",
+     "........pppstooo................",
+     ".........oooooo................."
     ]
    }
   }

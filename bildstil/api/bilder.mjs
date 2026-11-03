@@ -59,7 +59,7 @@ const gammal = async id => (await oppnaSidan()).evaluate(i => window.BILDERNA.ga
 // spelets bild i dag (bildstil/gamla.json, från npx tsx bildstil/gamla.ts): den nya ritas om efter den (Björn efter version 83
 // av bildstilen: alla nya symboler ska vara baserade på dem vi redan hade, bara omgjorda i sina nya pixelstorlekar)
 const GAMLA = fs.existsSync(path.join(BILDSTIL, 'gamla.json')) ? JSON.parse(fs.readFileSync(path.join(BILDSTIL, 'gamla.json'), 'utf8')) : {};
-const gammalText = b => { const g = GAMLA[b.id]; if (!g) return null;
+const gammalText = b => { const g = GAMLA[b.id]; if (!g || b.utanGammal) return null;
   return `Den sista bilden är ${b.namn} som den ser ut i spelet i dag, ${Math.max(...g.rader.map(r => r.length))} × ${g.rader.length} punkter, åtta gånger större. Den nya bilden ska vara den bilden omgjord: samma sak, samma form och delar, samma idé och samma färger så nära paletten tillåter, bara i den nya storleken och med bildstilens kontur, ljus och korn. Hitta inte på en ny bild. Punkterna i dag (punkt är genomskinlig): ${JSON.stringify(g.rader)}, färgerna: ${JSON.stringify(g.pal)}.`; };
 const scen = async () => (await oppnaSidan()).evaluate(() => window.BILDERNA.scen());
 const hexar = async () => (await oppnaSidan()).evaluate(() => window.BILDERNA.hex());

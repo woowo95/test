@@ -395,7 +395,6 @@
       const hake = G.hake('rund');
       if (d.id === 'forband-huvud') { fyll(dk, (x, y) => y >= 18 && y <= 21 && ellips(32, 30, 16.5, 21.5)(x, y), 'ben', [14, 18, 50, 21]); punkter(dk, [[26, 19], [27, 19]], 'rost1'); }
       if (d.id === 'forband-oga') fyll(dk, (x, y) => { const ax = 33, ay = 18, bx = 46, by = 40, t = Math.max(0, Math.min(1, ((x - ax) * (bx - ax) + (y - ay) * (by - ay)) / ((bx - ax) ** 2 + (by - ay) ** 2))); return Math.hypot(x - (ax + (bx - ax) * t), y - (ay + (by - ay) * t)) <= 2.3 && ellips(32, 31, 16.5, 21)(x, y); }, 'ben', [28, 14, 50, 44]);
-      if (d.id === 'forband-kake') fyll(dk, (x, y) => { const dx = Math.abs(x + 0.5 - 32); return (dx >= 13.5 && dx <= 16.5 && y >= 14 && y <= hake - 2) || (y >= 8 && y <= 10 && dx <= 13) || (y >= hake - 1 && y <= hake + 2 && dx <= 12 - (y - hake + 1)); }, 'ben', [14, 7, 50, hake + 3]);
     },
     ogonlapp(dk) { linje(dk, 34, 28, 18, 21, 'jord0'); linje(dk, 42, 28, 47, 26, 'jord0'); fyll(dk, ellips(38, 30, 4.5, 3.5), 'kol', [33, 26, 44, 34], { forskj: -1 }); },
     klader(dk, G, p) {
@@ -544,7 +543,7 @@
     // rostig järnram med nitar
     for (let k = 0; k < W; k++) for (const [x, y] of [[k, 0], [k, 1], [k, W - 2], [k, W - 1], [0, k], [1, k], [W - 2, k], [W - 1, k]]) ut.satt(x, y, P.i('jord', 0));
     for (const [a, b] of [[0, 0], [W - 2, 0], [0, W - 2], [W - 2, W - 2]]) for (let k = 0; k < 4; k++) ut.satt(a + (k & 1), b + (k >> 1), P.i('rost', 1));
-    if (FORSLAG_PA.has('temperatur-ram')) tempRam(ut, temperatur(p));
+    if (FORSLAG_PA.has('temperatur-ram')) tempRam(ut, temperatur(p), i => !fig(i));
     return ut;
   }
 
@@ -554,43 +553,55 @@
   // en isig ram runt porträttet. Och gör en varm version också", två steg åt vardera hållet). Kylan: ramen blir is med istappar
   // från överkanten och frost som kryper in från hörnen (mer och längre i steg två). Värmen: ramen glöder och värmen darrar i
   // bakgrunden längs kanterna; i steg två slickar små lågor upp från underkanten.
-  function tempRam(ut, t) {
+  function tempRam(ut, t, bak) {
     if (!t) return;
-    const W = ut.w, n = Math.abs(t), rand = (x, y) => kantRam(x, y, W);
-    if (t < 0) {
-      for (let y = 0; y < W; y++) for (let x = 0; x < W; x++) if (rand(x, y)) ut.satt(x, y, P.i((x + y) % 3 ? 'skiffer' : 'ben', (x + y) % 3 ? 3 : 3));
-      // frosten: från hörnen (steg ett) eller längs alla kanter (steg två), glesare inåt
-      const djup = n === 1 ? 7 : 9;
+    const W = ut.w, n = Math.abs(t), kall = t < 0, rand = (x, y) => kantRam(x, y, W);
+    const horn = (x, y) => Math.min(Math.hypot(x, y), Math.hypot(W - 1 - x, y), Math.hypot(x, W - 1 - y), Math.hypot(W - 1 - x, W - 1 - y));
+    // hela bakgrunden tonas blåare (kyla) eller rödare (värme), mer i steg två (Björn efter version 89 av bildstilen)
+    const ton = kall ? 'skiffer' : 'rost';
+    for (let y = 2; y < W - 2; y++) for (let x = 2; x < W - 2; x++) {
+      const i = y * W + x; if (!bak(i)) continue;
+      const v = ut.px[i];
+      if (v === P.i('kol', 2) && (n === 2 || (x + y) % 2 === 0)) ut.px[i] = P.i(ton, 0);
+      else if (v === P.i('kol', 1) && n === 2 && (x + y) % 2 === 0) ut.px[i] = P.i(ton, 0);
+    }
+    // steg ett: bara hörnen; steg två: hela ramen
+    const iRam = (x, y) => rand(x, y) && (n === 2 || horn(x, y) < 12 + hash(x, y, 7) * 4);
+    if (kall) {
+      for (let y = 0; y < W; y++) for (let x = 0; x < W; x++) if (iRam(x, y)) { const h = hash(x, y, 11); ut.satt(x, y, P.i(h < 0.1 ? 'ben' : 'skiffer', h < 0.1 ? 3 : h < 0.55 ? 2 : 1)); }
+      // frosten kryper in från hörnen (steg ett) eller längs alla kanter (steg två), blå med vita kristaller, glesare inåt
+      const djup = n === 1 ? 8 : 9;
       for (let y = 2; y < W - 2; y++) for (let x = 2; x < W - 2; x++) {
-        const dk = Math.min(x - 2, y - 2, W - 3 - x, W - 3 - y), hornet = Math.min(Math.hypot(x - 2, y - 2), Math.hypot(W - 3 - x, y - 2), Math.hypot(x - 2, W - 3 - y), Math.hypot(W - 3 - x, W - 3 - y));
-        const d = n === 1 ? hornet : Math.min(hornet * 0.8, dk * 1.6);
+        const dk = Math.min(x - 2, y - 2, W - 3 - x, W - 3 - y), d = n === 1 ? horn(x, y) - 2 : Math.min((horn(x, y) - 2) * 0.8, dk * 1.6);
         if (d > djup) continue;
         const h = hash(x, y, 31 + n);
-        if (h < (1 - d / djup) * 0.75) ut.satt(x, y, P.i(h < 0.25 ? 'ben' : 'skiffer', 3));
+        if (h < (1 - d / djup) * 0.75) ut.satt(x, y, h < 0.06 ? P.i('ben', 3) : P.i('skiffer', h < 0.25 ? 3 : h < 0.55 ? 2 : 1));
       }
-      // istapparna längs överkanten
+      // istapparna: i hörnen i steg ett, längs hela överkanten i steg två
       for (let x = 4; x < W - 4; x += 3) {
-        const l = Math.floor(hash(x, 7, 5) * (n === 1 ? 3 : 6)) + n; if (hash(x, 3, 9) < (n === 1 ? 0.5 : 0.2)) continue;
-        for (let k = 0; k < l; k++) { ut.satt(x, 2 + k, P.i(k === l - 1 ? 'skiffer' : 'ben', k === l - 1 ? 2 : 3)); if (k < l / 2) ut.satt(x + 1, 2 + k, P.i('skiffer', 2)); }
+        if (n === 1 && Math.min(x, W - 1 - x) > 9) continue;
+        const l = Math.floor(hash(x, 7, 5) * (n === 1 ? 2 : 6)) + n; if (hash(x, 3, 9) < (n === 1 ? 0.3 : 0.2)) continue;
+        for (let k = 0; k < l; k++) { ut.satt(x, 2 + k, P.i(k === l - 1 ? 'ben' : 'skiffer', k === l - 1 ? 3 : 2)); if (k < l / 2) ut.satt(x + 1, 2 + k, P.i('skiffer', 1)); }
       }
     } else {
-      for (let y = 0; y < W; y++) for (let x = 0; x < W; x++) if (rand(x, y)) ut.satt(x, y, P.i((x * 3 + y) % 4 ? 'rost' : 'senap', (x * 3 + y) % 4 ? 2 : 3));
-      // värmen darrar: bakgrunden närmast kanten får ett varmt sken (bara bakgrunden, inte personen)
+      for (let y = 0; y < W; y++) for (let x = 0; x < W; x++) if (iRam(x, y)) ut.satt(x, y, P.i((x * 3 + y) % 4 ? 'rost' : 'senap', (x * 3 + y) % 4 ? 2 : 3));
+      // glöden: bakgrunden närmast hörnen (steg ett) eller kanterna (steg två) lyser
       const djup = n === 1 ? 6 : 9;
       for (let y = 2; y < W - 2; y++) for (let x = 2; x < W - 2; x++) {
-        const d = Math.min(x - 2, y - 2, W - 3 - x, W - 3 - y), v = ut.px[y * W + x];
-        if (d > djup || !KOLEN.has(v)) continue;
-        if (hash(x, y, 41) < (1 - d / djup) * 0.8) ut.satt(x, y, P.i('rost', d < 2 ? 1 : 0));
+        const i = y * W + x; if (!bak(i)) continue;
+        const d = n === 1 ? horn(x, y) - 2 : Math.min(x - 2, y - 2, W - 3 - x, W - 3 - y);
+        if (d > djup) continue;
+        if (hash(x, y, 41) < (1 - d / djup) * 0.8) ut.px[i] = P.i('rost', d < 2 ? 2 : 1);
       }
-      // lågorna från underkanten i steg två
-      if (n === 2) for (let x = 3; x < W - 3; x += 4) {
-        const l = 3 + Math.floor(hash(x, 1, 13) * 5);
+      // lågor: i de nedre hörnen i steg ett, längs hela underkanten i steg två
+      for (let x = 3; x < W - 3; x += 4) {
+        if (n === 1 && Math.min(x, W - 1 - x) > 8) continue;
+        const l = (n === 1 ? 2 : 3) + Math.floor(hash(x, 1, 13) * (n === 1 ? 3 : 5));
         for (let k = 0; k < l; k++) { const y = W - 3 - k, b = k < l * 0.4 ? 1 : 0; for (let dx = -b; dx <= b; dx++) ut.satt(x + dx + (k > l * 0.6 && hash(x, k, 3) < 0.5 ? 1 : 0), y, P.i(k > l * 0.7 ? 'senap' : 'rost', k > l * 0.7 ? 3 : k > l * 0.4 ? 3 : 2)); }
       }
     }
   }
   const kantRam = (x, y, W) => x < 2 || y < 2 || x >= W - 2 || y >= W - 2;
-  const KOLEN = new Set([0, 1, 2, 3].map(t => P.i('kol', t)));
 
   // ---------- kartfiguren (14 × 20): mallarna ritade i steg 5.2.2.2 ----------
   // kroppen delas i zoner (huvud, bål, armar, händer, ben, fötter); kläderna målar sina zoner, och bara det som sticker ut
@@ -753,7 +764,6 @@
       const k = DEL[id]?.karta;
       if (k === 'huvud') for (let x = rikt === 'sida' ? 5 : 4; x <= (rikt === 'sida' ? 10 : 9); x++) satt(x, h + 1, 'ben3');
       if (k === 'oga' && rikt !== 'bak') punkter({ satt }, rikt === 'sida' ? [[9, h + 2], [8, h + 1]] : [[8, h + 2], [7, h + 1], [9, h + 3]], 'ben3');
-      if (k === 'kake') punkter({ satt }, rikt === 'sida' ? [[8, h + 5], [9, h + 5], [10, h + 5]] : [[4, h + 4], [9, h + 4], [5, h + 5], [6, h + 5], [7, h + 5], [8, h + 5]], 'ben3');
     }
     if (p.ogonlapp && rikt !== 'bak') { if (rikt === 'fram') { satt(8, h + 2, 'kol0'); satt(7, h + 1, 'jord0'); } else satt(9, h + 2, 'kol0'); }
     if (arm === 'bara') for (let y = b0 + 1; y <= b0 + 3; y++) for (let x = rikt === 'sida' ? 9 : x0; x <= (rikt === 'sida' ? 12 : x1); x++) satt(x, y, 'jord' + (y === b0 + 1 ? 3 : 2));
@@ -1044,7 +1054,7 @@
   const FORSLAG_SORT = { id: 'forslag', namn: 'Claudes förslag', en: 'Förslag', steg: '5.2.2', forslag: true };
   const medForslag = (id, f) => { FORSLAG_PA.add(id); try { return f(); } finally { FORSLAG_PA.delete(id); } };
   const FORSLAG = [
-    { id: 'temperatur-ram', namn: 'Ramen när någon fryser eller är för varm', ritad: 1, vad: 'Björn: "Jag tycker inte vi visar kyla på kinderna. Vi gör istället en isig ram runt porträttet. Och gör en varm version också", två steg åt vardera hållet. Kylan syns inte längre på kinderna. Förslaget: när personen fryser blir ramen is, med frost som kryper in från hörnen och istappar från överkanten; fryser personen mycket täcker frosten alla kanter och istapparna blir fler och längre. När personen är varm glöder ramen och bakgrunden närmast kanten får ett varmt sken; är personen för varm slickar små lågor upp från underkanten. Överst förslaget, under hur det ser ut nu (en vanlig ram).',
+    { id: 'temperatur-ram', namn: 'Ramen när någon fryser eller är för varm', ritad: 2, vad: 'Björn: "Jag tycker inte vi visar kyla på kinderna. Vi gör istället en isig ram runt porträttet. Och gör en varm version också", två steg åt vardera hållet. Kylan syns inte längre på kinderna. Förslaget: hela bakgrunden blir lite blåare när personen fryser och lite rödare när hen är varm, mer i steg två. I första steget finns isen eller glöden bara i hörnen: blå frost och några korta istappar, eller glödande hörn med små lågor nertill. I andra steget blir hela ramen is med frost längs alla kanter och längre istappar, eller glöd med lågor längs hela underkanten. Isen har palettens blåaste toner (skiffer); blåare än så finns inte i paletten. Överst förslaget, under hur det ser ut nu (en vanlig ram).', forra: 'gör isen blåare och gör hela bakgrunden lite blåare/rödare i alla. Första graden behöver inte vara en ram runt hela porträttet det räcker med lite is/eld i hörnen',
       bilder: nu => [[-2, 'Fryser mycket'], [-1, 'Fryser'], [1, 'Varm'], [2, 'För varm']].map(([t, namn]) => { const q = neutral('kvinna'); q.temp = t; return [namn, [[portratt(q), 2, namn]]]; }) },
   ];
   for (const f of FORSLAG) KORT.push({ id: 'forslag-' + f.id, sort: FORSLAG_SORT, rad: f, namn: f.namn, ritad: f.ritad });
@@ -1327,5 +1337,5 @@
     hex() { return Object.fromEntries([...BILDER.tecken].map(ch => [ch, P.cols[tonAv(ch)].hex])); },
     prova(id, data) { BILDFILER[id] = data; },
   };
-  window.PORTRATTEN = { portratt, kartBild, neutral, granskPerson, KORT, provaDel(id, data) { DELAR[id] = data; }, png(B, skala = 4) { const c = document.createElement('canvas'); tillCanvas(B, c, 0); const s = document.createElement('canvas'); s.width = B.w * skala; s.height = B.h * skala; const g = s.getContext('2d'); g.imageSmoothingEnabled = false; g.drawImage(c, 0, 0, s.width, s.height); return s.toDataURL('image/png'); } };
+  window.PORTRATTEN = { portratt, kartBild, neutral, granskPerson, KORT, medForslag, provaDel(id, data) { DELAR[id] = data; }, png(B, skala = 4) { const c = document.createElement('canvas'); tillCanvas(B, c, 0); const s = document.createElement('canvas'); s.width = B.w * skala; s.height = B.h * skala; const g = s.getContext('2d'); g.imageSmoothingEnabled = false; g.drawImage(c, 0, 0, s.width, s.height); return s.toDataURL('image/png'); } };
 })();

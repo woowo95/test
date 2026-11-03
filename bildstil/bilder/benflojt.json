@@ -1,17 +1,19 @@
 {
  "id": "benflojt",
- "ritad": 2,
- "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
- "om": "Jag valde version 2. Den ligger snett från nedre vänstra till övre högra hörnet, som yxan och Björn ville, och fyller 6 × 6-rutan. Den har tre hål som i dagens bild, medan version 3 bara har två. Med tre punkters bredd rymmer den mer ljust ben än version 1, där hålen tar nästan halva kroppen. Därför läses den tydligast som en flöjt i liten storlek. Konturen är ben0, benets mörkaste ton, och inte kol0. Ljuset faller uppe till vänster med ben3, går över ben2 och slutar i ben1 nere till höger, vilket ger korn utan fläckar. Hålen är kol1, som de mörka hålen i originalet. Jag ändrade ingenting, eftersom den redan stämmer med förlagan och stilguiden.",
- "w": 6,
- "h": 6,
+ "ritad": 3,
+ "av": "Förra ritningen tillbaka (Björn: använd förra versionen)",
+ "om": "Björn valde förra versionen.",
+ "w": 3,
+ "h": 8,
  "rader": [
-  "...ooo",
-  "..owlo",
-  ".owqpo",
-  "owqlo.",
-  "olpo..",
-  "ooo..."
+  ".o.",
+  "owo",
+  "olo",
+  "oqo",
+  "olo",
+  "opo",
+  "olo",
+  ".o."
  ],
  "pal": {
   "l": "#2f261d",
@@ -21,16 +23,21 @@
   "w": "#dad0bb"
  },
  "forra": {
-  "ritad": 1,
+  "ritad": 2,
   "rader": [
-   ".o.",
-   "owo",
-   "olo",
-   "oqo",
-   "olo",
-   "opo",
-   "olo",
-   ".o."
-  ]
+   "...ooo",
+   "..owlo",
+   ".owqpo",
+   "owqlo.",
+   "olpo..",
+   "ooo..."
+  ],
+  "pal": {
+   "l": "#2f261d",
+   "o": "#7e7362",
+   "p": "#a0947d",
+   "q": "#bdb39b",
+   "w": "#dad0bb"
+  }
  }
 }
