@@ -59,6 +59,9 @@
 
   // ---------- färgbytet ----------
   // en punkt är en kanal och en ton (hud2, har0, oga1, kind, vit, ett material som harskinn3) eller en fast färg (ben2)
+  // Claudes egna ändringar ligger som förslag (Björn efter version 80 av bildstilen: "lägg in alla dina ritade grejer som förslag
+  // inte som godkända"): de syns bara på förslagets kort bredvid hur det ser ut nu, tills Björn sagt ja och Claude byggt in dem
+  const FORSLAG_PA = new Set();
   const KANALER = new Set(['hud', 'kind', 'har', 'oga', 'vit', 'mat', ...PR.material.map(m => m.id)]);
   const ref = s => P.i(s.slice(0, -1), +s.slice(-1));
   function fargerFor(p, gratt) {
@@ -466,9 +469,17 @@
     if (D('arr')) lagg('arr', dk => delen(dk, G, D('arr'), p, 'arr'));
     if (D('blamarke')) lagg('blamarke', dk => delen(dk, G, D('blamarke'), p, 'blamarke'));
     if (p.blod) lagg('blod', dk => RITA.blod(dk, G));
-    // kylan (5.2.2.6): en liten jämn rodnad på varje kind och nästippen i kindtonen, som blir röd i kylan.
+    // kylan (5.2.2.6): mjukt röda kinder och nästipp i kindtonerna, som blir röda i kylan; utan kyla syns de inte
+    if (p.kyla && !FORSLAG_PA.has('kyla-kinder')) lagg('blamarke', dk => {
+      for (const [cx, cy] of [[23.5, 37.5], [40.5, 37.5]]) for (let y = 34; y <= 41; y++) for (let x = Math.floor(cx - 4); x <= cx + 4; x++) {
+        const r = ((x + 0.5 - cx) / 3) ** 2 + ((y + 0.5 - cy) / 1.8) ** 2; if (r > 1) continue;
+        if (hash(x, y, 12) < (r < 0.4 ? 0.7 : 0.35)) dk.satt(x, y, 'kind1');
+      }
+      dk.satt(32, 37, 'kind2'); dk.satt(33, 37, 'kind1');
+    });
+    // förslaget kyla-kinder: en liten jämn rodnad på varje kind och nästippen i kindtonen, som blir röd i kylan.
     // Inga spridda prickar (Björn: fläckarna var inte snygga): bara en sluten oval i en ton.
-    if (p.kyla) lagg('blamarke', dk => {
+    if (p.kyla && FORSLAG_PA.has('kyla-kinder')) lagg('blamarke', dk => {
       for (const [cx, cy] of [[23.5, 37.5], [40.5, 37.5]]) for (let y = 35; y <= 40; y++) for (let x = Math.floor(cx - 3); x <= cx + 3; x++) {
         if (((x + 0.5 - cx) / 2.2) ** 2 + ((y + 0.5 - cy) / 1.2) ** 2 <= 1) dk.satt(x, y, 'kind2');
       }
@@ -517,7 +528,7 @@
         const v = dk.px[i]; if (!v) continue;
         let z = (b.maskbar || b.utom) ? G.zon(i % W, (i / W) | 0) : null;
         // håret över örat hör till sidhåret: det döljs bara när huvudbonaden täcker sidorna, så att inga lösa testar blir kvar
-        if (b.har && z === 'oron') z = 'sidor';
+        if (b.har && z === 'oron' && FORSLAG_PA.has('har-under-bonad')) z = 'sidor';
         if (z && b.maskbar && masker.has(z)) continue;
         if (z && b.utom && b.utom.includes(z)) continue;
         kt[i] = v; ag[i] = L;
@@ -688,12 +699,17 @@
       }
     }
     if (bonad) {
-      const mat = { 'bonad-1': 'skiffer', 'bonad-2': 'jord', 'bonad-3': 'oliv', 'bonad-4': 'rost', 'bonad-5': 'senap', 'bonad-6': 'ben', 'bonad-7': 'oliv', 'bonad-8': 'oliv' }[del.huvudbonad];
+      const mat = { 'bonad-1': 'skiffer', 'bonad-2': 'jord', 'bonad-3': FORSLAG_PA.has('huva-karta') ? 'oliv' : 'jord', 'bonad-4': 'rost', 'bonad-5': 'senap', 'bonad-6': 'ben', 'bonad-7': 'oliv', 'bonad-8': 'oliv' }[del.huvudbonad];
       const s = rikt === 'sida' ? 1 : 0, xa = 4 + s, xb = 9 + s;
       if (bonad === 'mossa') for (let y = h - 1; y <= h + 1; y++) for (let x = xa - (y === h + 1 ? 1 : 0); x <= xb + (y === h + 1 && !s ? 1 : 0); x++) satt(x, y, mat + (y === h - 1 ? 3 : 2));
       if (bonad === 'hatt') { for (let x = xa - 2; x <= xb + 2; x++) satt(x, h + 1, mat + 1); for (let y = h - 1; y <= h; y++) for (let x = xa; x <= xb; x++) satt(x, y, mat + 2); }
       // huvan: rundad överst, en öppning för ansiktet med en kant (huvan har en senapsgul kant som i porträttet) och tyget ner över axlarna
-      if (bonad === 'huva') {
+      if (bonad === 'huva' && !FORSLAG_PA.has('huva-karta')) for (let y = h - 1; y <= h + 6; y++) for (let x = xa - 1; x <= xb + 1; x++) {
+        const ansikte = rikt === 'fram' ? x >= 5 && x <= 8 && y >= h + 2 && y <= h + 5 : rikt === 'sida' ? x >= 8 && y >= h + 2 && y <= h + 5 : false;
+        if (!ansikte && !(rikt === 'sida' && x > 10)) satt(x, y, mat + (x === xa - 1 ? 3 : 2));
+      }
+      // förslaget huva-karta:
+      if (bonad === 'huva' && FORSLAG_PA.has('huva-karta')) {
         const kant = del.huvudbonad === 'bonad-3' ? 'senap2' : mat + 3;
         const x1 = rikt === 'sida' ? 10 : 10, x0 = rikt === 'sida' ? 4 : 3;
         for (let y = h - 1; y <= h + 7; y++) for (let x = x0; x <= x1; x++) {
@@ -998,10 +1014,22 @@
     else delarAv(s.id).forEach(d => KORT.push({ id: d.id, sort: s, rad: d, namn: d.namn, ritad: d.ritad || 0 }));
   }
   // fas 5:s bilder i förväg (steg 5.2.4): en sort per slag, ett kort per bild; kortens id är sak-<id>
-  for (const s of BILDER.sorter) BILDER.bilder.filter(b => b.sort === s.id).forEach(b => KORT.push({ id: 'sak-' + b.id, sort: { ...s, bild: true }, rad: b, namn: b.namn, ritad: b.ritad || 0 }));
+  for (const s of BILDER.sorter) { const so = { ...s, bild: true }; BILDER.bilder.filter(b => b.sort === s.id).forEach(b => KORT.push({ id: 'sak-' + b.id, sort: so, rad: b, namn: b.namn, ritad: b.ritad || 0 })); }
+  // Claudes förslag (se FORSLAG_PA): ett kort per förslag med förslaget bredvid hur det ser ut nu. ritad räknas upp när förslaget görs om.
+  const FORSLAG_SORT = { id: 'forslag', namn: 'Claudes förslag', en: 'Förslag', steg: '5.2.2', forslag: true };
+  const medForslag = (id, f) => { FORSLAG_PA.add(id); try { return f(); } finally { FORSLAG_PA.delete(id); } };
+  const FORSLAG = [
+    { id: 'huva-karta', namn: 'Huvan på kartan', ritad: 1, vad: 'Huvan på kartan ritad om efter porträttet (Björn: huvan ser bra ut i porträttet men gör en ny version för hur den ser ut på kartan): grön med en senapsgul kant runt ansiktet, rundad överst och med tyget ner mot axlarna. Huvudduken får samma form, utan den gula kanten. Överst förslaget, under hur det ser ut nu.',
+      bilder: nu => ['bonad-3', 'bonad-7'].map(b => { const q = neutral('kvinna'); q.del.huvudbonad = b; q.del.frisyr = 'har-5'; return [DEL[b].namn, ['fram', 'sida', 'bak'].map(r => [kartBild(q, r, 'sta', 'hanga'), 6, r === 'fram' ? 'Framifrån' : r === 'sida' ? 'Från sidan' : 'Bakifrån'])]; }) },
+    { id: 'kyla-kinder', namn: 'Kinderna i kylan', ritad: 1, vad: 'De röda fläckarna på kinderna kom från kylan, när någon fryser: spridda rostfärgade prickar i två toner (Björn: en grej som gör att dem får röda fläckar på kinderna som inte är så snygg). Förslaget: en liten jämn rodnad på varje kind och på nästippen, utan prickar. Överst förslaget, under hur det ser ut nu.',
+      bilder: nu => [[0, 'Blek'], [2, 'Mellan'], [3, 'Väderbiten']].map(([h, t]) => { const q = neutral('kvinna'); q.hud = h; q.kyla = true; return [t, [[portratt(q), 2, 'Fryser']]]; }) },
+    { id: 'har-under-bonad', namn: 'Halvlångt hår under huvudbonaden', ritad: 1, vad: 'Håret över öronen räknades för sig och blev kvar som lösa testar under pälsmössan och huvudduken (Björn: halvlångt hår ser konstigt ut när man sätter på en huvudbonad). Förslaget: håret över öronen följer sidhåret, så att det hänger ner obrutet under mössorna och döljs helt under huvan och huvudduken. Överst förslaget, under hur det ser ut nu.',
+      bilder: nu => ['bonad-1', 'bonad-6', 'bonad-7', 'bonad-3'].map(b => { const q = neutral('kvinna'); q.del.frisyr = 'har-5'; q.del.huvudbonad = b; return [DEL[b].namn, [[portratt(q), 2, DEL[b].namn]]]; }) },
+  ];
+  for (const f of FORSLAG) KORT.push({ id: 'forslag-' + f.id, sort: FORSLAG_SORT, rad: f, namn: f.namn, ritad: f.ritad });
   KORT.forEach((k, i) => {
-    k.forebild = i === 0 || KORT[i - 1].sort.id !== k.sort.id;
-    if (k.sort.bild) { k.vem = []; return; }
+    k.forebild = !k.sort.forslag && (i === 0 || KORT[i - 1].sort.id !== k.sort.id);
+    if (k.sort.bild || k.sort.forslag) { k.vem = []; return; }
     if (k.mallar) { k.vem = k.mallar.map(m => ({ mall: m, kon: m === 'man' ? 'man' : 'kvinna' })); return; }
     const t = k.rad.sort ? konAv(k.rad) : 'bada', barn = k.rad.sort ? barnOk(k.rad) : true;
     k.kon = k.rad.sort ? t : null; k.barn = barn;
@@ -1087,6 +1115,13 @@
   }
   function granskBilder(k) {
     if (k.sort.bild) return sakBilder(k);
+    if (k.sort.forslag) {
+      const ut = document.createElement('div'); ut.className = 'gr-bilder';
+      const forslag = medForslag(k.rad.id, () => k.rad.bilder()), nu = k.rad.bilder();
+      ut.append(bildRad('Förslaget', forslag.flatMap(([t, rad]) => rad.map(([B, sk, tt]) => [B, sk, rad.length > 1 ? t + ', ' + tt.toLowerCase() : t]))));
+      ut.append(bildRad('Som det ser ut nu', nu.flatMap(([t, rad]) => rad.map(([B, sk, tt]) => [B, sk, rad.length > 1 ? t + ', ' + tt.toLowerCase() : t]))));
+      return ut;
+    }
     const ut = document.createElement('div'); ut.className = 'gr-bilder';
     const lagen = k.sort.lagen ? LAGEN[k.sort.lagen] : null;
     if (k.sort.id === 'mall') {
@@ -1159,7 +1194,7 @@
     $('#gr-antal-obesvarade').textContent = obesv; $('#gr-antal-alla').textContent = alla;
     // sorterna med hur många som är godkända
     const sorter = $('#gr-sorter'); sorter.textContent = '';
-    for (const s of PR.sorter) {
+    for (const s of [...new Set(GKORT.map(k => k.sort))]) {
       const ks = GKORT.filter(k => k.sort === s); if (!ks.length) continue;
       const ja = ks.filter(k => lage(k) === 'ja').length, kom = ks.filter(k => ['kommentar', 'nej'].includes(lage(k))).length;
       const b = document.createElement('button'); b.type = 'button'; b.dataset.grsort = s.id;
@@ -1178,7 +1213,7 @@
     const synliga = GKORT.filter(synlig), pos = synliga.indexOf(k) + 1;
     const nav = `<nav class="gr-nav" aria-label="Bläddra bland korten"><button type="button" class="gr-knapp" data-grsteg="-1">‹ Förra</button><span>${pos} av ${synliga.length}</span><button type="button" class="gr-knapp" data-grsteg="1">Nästa ›</button></nav>`;
     if (nyttKort || senastVisad !== k.id || !kort.querySelector('.gr-bilder')) {
-      const vad = k.sort.bild ? `${k.namn}: ${k.rad.vad}. Kartbilden är ${k.rad.w} × ${k.rad.h} punkter i sin naturliga storlek mot rutan (16 punkter), och den ritas alltid i den storleken: på högen, i stationen, på marken och när den bärs (steg 5.1.2.1).`
+      const vad = k.sort.forslag ? k.rad.vad : k.sort.bild ? `${k.namn}: ${k.rad.vad}. Kartbilden är ${k.rad.w} × ${k.rad.h} punkter i sin naturliga storlek mot rutan (16 punkter), och den ritas alltid i den storleken: på högen, i stationen, på marken och när den bärs (steg 5.1.2.1).`
         : k.sort.id === 'mall' ? k.rad.vad + ' Mallen är kroppen, halsen, axlarna och skallen, med fästpunkterna där delarna sitter och zonerna som maskerna döljer.'
         : k.rad.toner ? `Färgen ${k.namn.toLowerCase()}: tonerna ${k.rad.toner.join(', ')} ur paletten, på det neutrala ansiktet.`
           : `${k.sort.en} på ett helt ansikte, där resten är detsamma för alla delar av sorten.`;
