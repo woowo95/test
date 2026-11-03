@@ -223,12 +223,14 @@ export function drawPeople(t: number) {
       if (medGast && s.handlare?.id === o) { const hp = handlarPlats(s.handlare, ui.nu); pratRuta(hp.x * TS, hp.y * TS - 13, Math.sin(t / 500) * 0.6, flash.get(p.id), 'neutral'); } // handlaren pratar också
       continue;
     }
-    // vid handlarens filt (steg 4.4.1.5): pratbubblor med varornas symboler, en i taget
-    if (handlarNu(s, p) && s.handlare?.varor.length) {
-      const v = s.handlare.varor, k = v[Math.floor(t / 1400 + p.id) % v.length].k;
-      pratRuta(x, top, Math.sin(t / 500 + p.id) * 0.6, undefined, 'neutral', k);
-      const hp = handlarPlats(s.handlare, ui.nu), svar = Math.floor(t / 1400 + p.id) % 2 ? 'silver' : k; // handlaren svarar: priset i silver
-      pratRuta(hp.x * TS, hp.y * TS - 13, Math.sin(t / 500) * 0.6, undefined, 'neutral', svar);
+    // vid handlarens filt (steg 4.4.1.5 och 4.5.7.4): bybon frågar vad handlaren har och hen svarar med varornas symboler, en i
+    // taget; sedan visar bybon sitt bud och handlaren det bybon vill köpa
+    const hn = handlarNu(s, p);
+    if (hn && s.handlare) {
+      const i = Math.floor(t / 1400 + p.id), en = (v: string[]) => v.length ? v[i % v.length] : undefined;
+      pratRuta(x, top, Math.sin(t / 500 + p.id) * 0.6, undefined, 'neutral', en(hn.bybo));
+      const hp = handlarPlats(s.handlare, ui.nu);
+      pratRuta(hp.x * TS, hp.y * TS - 13, Math.sin(t / 500) * 0.6, undefined, 'neutral', en(hn.handlare));
       continue;
     }
     const m = markOf(p);
