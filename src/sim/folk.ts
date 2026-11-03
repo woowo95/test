@@ -138,11 +138,11 @@ export const REL = balans('rel', {
 });
 
 // ---------- namn ----------
-const N1 = ['A', 'Bo', 'Da', 'E', 'Fa', 'Gu', 'Ha', 'I', 'Ka', 'Lo', 'Ma', 'Ny', 'O', 'Ra', 'Si', 'Tu', 'U', 'Ve', 'Y', 'Å', 'Ste', 'Tor', 'Al', 'Ger',
+export const N1 = ['A', 'Bo', 'Da', 'E', 'Fa', 'Gu', 'Ha', 'I', 'Ka', 'Lo', 'Ma', 'Ny', 'O', 'Ra', 'Si', 'Tu', 'U', 'Ve', 'Y', 'Å', 'Ste', 'Tor', 'Al', 'Ger',
   'As', 'Bje', 'Eri', 'Gun', 'Hal', 'Ing', 'Os', 'Rag', 'Sig', 'Sva', 'Tus', 'Ulv', 'Vi', 'Hil', 'Ar', 'Frö', 'Kol', 'Ylv']; // fler från steg 4.5.4.8
-const N2 = ['r', 'n', 'l', 'rk', 'nd', 'st', 'g', 'v', 'm', 'sk', 'lv', 'rn', 'k', 'd', 'nn', 'll', 'rd', 'ns'];
-const NK = ['a', 'e', 'ja', 'ra', 'dis', 'run', 'hild', 'frid', 'ny', 'vi', 'ka', 'borg', 'gerd', 'veig', 'unn', 'laug', 've'];
-const NM = ['e', 'o', 'ar', 'ik', 'ulf', 'mund', 'björn', 'vid', 'stig', 'ger', 'an', 'kel', 'vald', 'gaut', 'fast', 'leif', 'orm'];
+export const N2 = ['r', 'n', 'l', 'rk', 'nd', 'st', 'g', 'v', 'm', 'sk', 'lv', 'rn', 'k', 'd', 'nn', 'll', 'rd', 'ns'];
+export const NK = ['a', 'e', 'ja', 'ra', 'dis', 'run', 'hild', 'frid', 'ny', 'vi', 'ka', 'borg', 'gerd', 'veig', 'unn', 'laug', 've'];
+export const NM = ['e', 'o', 'ar', 'ik', 'ulf', 'mund', 'björn', 'vid', 'stig', 'ger', 'an', 'kel', 'vald', 'gaut', 'fast', 'leif', 'orm'];
 export const NAMN = balans('namn', {
   arv: 0.15, // så ofta får ett barn en del av en förälders namn: början eller slutet (Torbjörn → Tuskbjörn, steg 4.5.4.8)
 });

@@ -17,6 +17,7 @@ import { HOUR, Person, SEC, State, T, W, H } from './typer';
 import { vaderNu } from './vader';
 import { grundvarde, rikedom } from './varde';
 import { kanterna, soker } from './varg';
+import { foddNar, gastNyckel } from './gastliv';
 
 // ---------- rövarflocken (steg 4.4.5) ----------
 // En grundversion av anfallen (stora räder, krig, tribut och murar ligger i 11.2). När byn är rik (Byns rikedom, varde.ts, med
@@ -57,7 +58,7 @@ export const ROVARE = balans('rovare', {
 
 // rövarnas vapen (ett slumpas för var och en)
 const ROVARVAPEN: Vapen[] = ['kniv', 'yxa', 'fiskespjut', 'flintspjut', 'sten'];
-export interface Rovare { namn: string; sex: 'm' | 'k'; st: { styrka: number; uthallighet: number; mod: number; smidighet: number; skicklighet: number }; vapen: Vapen; blod: number }
+export interface Rovare { namn: string; sex: 'm' | 'k'; st: { styrka: number; uthallighet: number; mod: number; smidighet: number; skicklighet: number }; vapen: Vapen; blod: number; fodd?: number } // fodd: gästens liv (steg 4.5.7.7, gastliv.ts)
 export interface Rovarflock { id: number; klan?: number; folk: Rovare[]; x: number; y: number; mx: number; my: number; gor: 'samlas' | 'kommer' | 'flyr'; till: number; sedd?: number; gissning?: number }
 
 const avst = (a: { x: number; y: number }, b: { x: number; y: number }) => Math.hypot(a.x - b.x, a.y - b.y);
@@ -109,6 +110,7 @@ export function rovarnaKommer(s: State, tvinga?: number, direkt?: boolean) {
       st: { styrka: mellan(s, ROVARE.styrka), uthallighet: mellan(s, ROVARE.uthallighet), mod: mellan(s, ROVARE.mod), smidighet: mellan(s, ROVARE.smidighet), skicklighet: mellan(s, ROVARE.skicklighet) },
     };
   });
+  for (const r of folk) r.fodd = foddNar(s.seed, gastNyckel(k?.id, r.namn), 'rovare', s.now); // drar ingen slump
   const nr = s.rovarNr = (s.rovarNr ?? 0) + 1;
   s.rovare = { id: nr, klan: k?.id, folk, x, y, mx: x, my: y, gor: direkt ? 'kommer' : 'samlas', till: direkt ? s.now : s.now + mellan(s, ROVARE.samlasTim) * HOUR };
   s.rovarVila = s.now + ROVARE.vilaDygn * 24 * HOUR;

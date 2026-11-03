@@ -918,13 +918,62 @@ SCENARIER.gastsida = {
     return [
       [`handlaren och ${r.length} rövare är gäster med var sitt negativa id`, !!h && r.length === 2 && g.every(x => x.id < 0) && new Set(g.map(x => x.id)).size === g.length],
       [`handlarens sida har namnet, vad hen gör och flikarna ${knappar(pres)}`, !!h && pres.includes(h.namn) && pres.includes(h.gor)],
-      ['samma flikknappar som för en bybo, de som finns för en gäst', knappar(pres) === 'pres,egen,utr' && knappar(bybo).startsWith('pres,') && knappar(pres).split(',').every(k => knappar(bybo).includes(k))],
-      ['presentationen har handlarens klan, silver och packning som rader', /Från .+ vid /.test(pres) && pres.includes('Silver') && pres.includes('Packning') && pres.includes('Handlare')],
+      ['samma flikknappar som för en bybo, alla flikar (steg 4.5.7.6)', knappar(pres) === knappar(bybo) && knappar(pres).split(',').length === 9],
+      ['presentationen har handlarens klan, silver och packning som rader', /från .+ vid /.test(pres) && pres.includes('Silver') && pres.includes('Packning') && pres.includes('Handlare')],
       ['egenskaperna visar färdigheten Handel', egen.includes('Handel') && egen.includes('Byn vet inget')],
       ['utrustningen visar ryggsäcken och varorna med priset i silver', utr.includes('Ryggsäck') && /silver styck/.test(utr)],
       ['en rövare har flocken som rad och sina egenskaper', rp.includes('Rövare') && rp.includes('Flocken') && re.includes('Styrka') && re.includes('Närstrid')],
       ['när handlaren gått står det att hen lämnat byn', borta.includes('lämnat byn')],
       ['fliken Handlaren finns inte längre', !existsSync('src/ui/flikar/handlare.ts')],
+    ];
+  },
+};
+SCENARIER.gastliv = {
+  text: 'Gästerna har ett liv (steg 4.5.7.6, 4.5.7.7, gastliv.ts): handlaren och rövarna får alla flikar som en bybo, och ingen flik är tom. När en gäst skapas har hen ett liv bakåt i tiden i sin hemklan: föräldrar, partner, syskon och barn med namn, och händelser ur registret LIVSHANDELSER som passar åldern och stämmer med varandra (inget barn före giftermålet, den döda dör en gång). Livet räknas ur byns frö och gästens namn och klan, inte ur spelets slump: samma gäst får samma liv, och spelet utvecklas likadant. En handlare som kommer igen är samma person och har levt vidare.',
+  kor: () => {
+    utanWebblasare();
+    const s = createState(6, START);
+    rikBy(s); setByn(s);
+    const fore = SIM.cloneState(s);
+    SIM.skickaHandlare(s); SIM.skickaRovare(s, 3);
+    const g = gaster(s.now), h = g.find(x => x.id === s.handlare?.id)!, r = g.filter(x => x.sort === 'Rövare');
+    const delar = ['pres', 'behov', 'halsa', 'egen', 'tid', 'utr', 'kun', 'rel', 'ryk'];
+    const sidor = (x: typeof h) => delar.map(d => { ui.selected = x.id; ui.personDel = d; return person.html(); });
+    const hs = sidor(h), rs = sidor(r[0]);
+    const tomma = [...hs, ...rs].filter(x => !/<(li|dd|p)[ >]/.test(x)).length;
+    // livet stämmer med sig självt, för många gäster
+    const liv = Array.from({ length: 300 }, (_, i) => SIM.gastLiv(s.seed + i, i * 7919, 'Test', i % 2 ? 'k' : 'm', i % 3 === 0 ? 'rovare' : 'handlare', 'Klanen', 'sjön', s.now - (18 + i % 40) * SIM.DAY, s.now));
+    const stammer = liv.every(l => {
+      const gift = l.liv.find(x => x.k === 'gift'), barn = l.liv.filter(x => x.k === 'barn');
+      const dog = l.familj.filter(f => f.dog !== undefined), dodsfall = l.liv.filter(x => x.k === 'foralder' || x.k === 'partnerDog' || x.k === 'barnDog');
+      return l.liv[0].k === 'fodd' && (!barn.length || (!!gift && barn.every(b => b.ar >= gift.ar))) && dog.length === dodsfall.length
+        && l.liv.every((x, i) => i === 0 || x.ar >= l.liv[i - 1].ar) && l.liv.filter(x => x.k === 'gift').length <= 1 && l.liv.every(x => x.ar <= l.alder)
+        && new Set([...l.familj.map(f => f.namn), 'Test']).size === l.familj.length + 1;
+    });
+    const sorter = new Set(liv.flatMap(l => l.liv.map(x => x.k))), allaSorter = Object.keys(SIM.LIVSHANDELSER).every(k => sorter.has(k));
+    const familj = liv.filter(l => l.familj.some(f => f.roll === 'barn')).length > 50 && liv.every(l => l.familj.some(f => f.roll === 'mor') && l.familj.some(f => f.roll === 'far'));
+    // samma liv varje gång, utan spelets slump
+    const igen = gaster(s.now).find(x => x.id === h.id)!;
+    const samma = JSON.stringify(igen.liv) === JSON.stringify(h.liv);
+    const utanSlump = (() => { const x = SIM.cloneState(fore); SIM.gastLiv(x.seed, 1, 'A', 'm', 'handlare', 'K', 'h', x.now - 30 * SIM.DAY, x.now); return JSON.stringify(x.rngs) === JSON.stringify(fore.rngs) && !!x.rngs; })();
+    // handlaren kommer igen: samma person, äldre och med fler år bakom sig
+    const kp = SIM.klanById(s, s.handlare!.klan)!.personer.find(p => p.namn === h.namn)!;
+    const fodd = kp.fodd, alder0 = h.liv.alder, n0 = h.liv.liv.length;
+    s.handlare = undefined; s.now += 6 * SIM.DAY;
+    const kl = SIM.klanerOf(s).find(k => k.personer.includes(kp))!;
+    const vidare = SIM.gastLiv(s.seed, SIM.gastNyckel(kl.id, h.namn), h.namn, h.sex, 'handlare', kl.namn, kl.hem, fodd!, s.now);
+    const levt = vidare.alder === alder0 + 6 && vidare.liv.length >= n0 && JSON.stringify(vidare.liv.slice(0, n0).map(x => x.text)) === JSON.stringify(h.liv.liv.slice(0, n0).map(x => x.text));
+    return [
+      [`handlaren och rövaren har alla ${delar.length} flikar, och ingen är tom (${tomma} tomma)`, tomma === 0 && hs.every(x => x.includes(h.namn))],
+      [`presentationen beskriver hen: ${h.liv.beskrivning.slice(0, 60)}…`, hs[0].includes(h.liv.beskrivning.split('.')[0]) && hs[0].includes('Föräldrar')],
+      ['Tiden visar livet år för år och Relationer familjen i hemklanen', hs[4].includes('Föddes i') && h.liv.familj.every(f => hs[7].includes(f.namn))],
+      ['handlaren kan handla; Kunskap säger det', h.liv.kan.includes('handla') && hs[6].includes('Handla och värdera')],
+      ['livet stämmer med sig självt i 300 gäster: inget barn före giftermålet, ingen dör två gånger, inga dubbla namn', stammer],
+      [`alla ${Object.keys(SIM.LIVSHANDELSER).length} slag i LIVSHANDELSER händer någon gång`, allaSorter],
+      ['alla har mor och far, och många har barn', familj],
+      ['samma gäst får samma liv varje gång', samma],
+      ['livet drar ingen slump ur spelet', utanSlump],
+      [`handlaren som kommer igen är samma person och har levt vidare (${alder0} → ${vidare.alder} år)`, fodd !== undefined && levt],
     ];
   },
 };

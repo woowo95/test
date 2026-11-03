@@ -55,7 +55,7 @@ export const KLAN_ROLLER: Record<string, { namn: string }> = {
 // var klanerna bor (handel.ts har vad som är sällsynt där, HEM)
 export const KLAN_HEM = ['kusten i söder', 'fjällen i norr', 'skogarna i öster', 'sjöarna i väster', 'älvdalen', 'byarna vid havet'];
 
-export interface KlanPerson { namn: string; sex: 'm' | 'k'; roll: string; id?: number } // id = personens id i byn, för den som kom därifrån
+export interface KlanPerson { namn: string; sex: 'm' | 'k'; roll: string; id?: number; fodd?: number } // id = personens id i byn, för den som kom därifrån; fodd = när hen föddes (gästens liv, steg 4.5.7.7, gastliv.ts)
 export interface Klan {
   id: number; namn: string; hem: string;
   folk: number; styrka: number; resurser: number; // hur många, hur många som kan slåss och hur mycket de har (hela tal)

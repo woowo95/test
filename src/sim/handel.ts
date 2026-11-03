@@ -19,6 +19,7 @@ import { sumOf } from './egendom';
 import { ledareOf } from './styre';
 import { kanterna } from './varg';
 import { KLAN, andraInst, handlarKlan, klanById, klanerOf } from './klaner';
+import { foddNar, gastNyckel } from './gastliv';
 
 // ---------- handlarna (steg 4.4.1) ----------
 // När byns rikedom (varde.ts) passerat en gräns (HANDEL.rik) kommer en handlare gående från kartans kant, ungefär en gång per
@@ -128,6 +129,7 @@ export interface Handlare {
   varor: HVara[];
   silver: number;
   handel: number; // färdigheten Handel
+  fodd?: number; // när hen föddes (gästens liv, steg 4.5.7.7, gastliv.ts)
   bynKlar?: true; // byn har handlat med hen på det här besöket
   affar?: Affar; // affären som pågår (steg 4.5.7.4): en kund i taget
   ko?: number[]; // byborna som står i kö vid filten, först till kvarn (steg 4.4.1.5), utan den som handlar nu
@@ -225,6 +227,7 @@ function kommer(s: State, tvinga?: boolean) {
     fas: 'kommer', kom: 0, gar: 0, ut: { x: ut.x, y: ut.y }, utr, varor: [], silver: heltMellan(s, HANDEL.silver), handel: heltMellan(s, HANDEL.handel),
   };
   h.sort = sort;
+  h.fodd = kh.person.fodd ??= foddNar(s.seed, gastNyckel(kh.klan.id, kh.person.namn), 'handlare', s.now); // samma person varje gång, drar ingen slump
   h.varor = packa(s, rymmer(h), sort);
   s.handlare = h;
   count(s, 'handlare');
