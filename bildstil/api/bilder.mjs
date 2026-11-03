@@ -99,6 +99,7 @@ function schema(valet = false) {
 }
 const beskriv = b => `"${b.namn}" (${b.id}): ${b.vad}. Storlek: högst ${b.w} punkter bred och ${b.h} hög, och den ska fylla ungefär den rutan (raderna är ${b.h} eller färre, och ingen rad är längre än ${b.w} tecken).`;
 let SYS = null;
+const utanForlaga = k => !!k && /utan förlaga|utan att utgå|helt ny|från början|gör om (hela )?(symbolen |bilden )?helt/i.test(k);
 async function fraga(b, { kommentar = null, forra = null, version = null } = {}) {
   const s = sortAv(b.sort), fb = forebildAv(b.sort), arForebild = fb.id === b.id;
   const bilder = [], text = [];
@@ -119,13 +120,16 @@ async function fraga(b, { kommentar = null, forra = null, version = null } = {})
     const andra = raderAv(b.sort).filter(x => x.id !== b.id && x.id !== fb.id && lasBild(x.id)).slice(0, 6);
     if (andra.length) text.push('Andra bilder i sorten som redan är ritade: ' + andra.map(x => `${x.namn}: ${JSON.stringify(lasBild(x.id).rader)}`).join('; '));
   }
-  const gt = gammalText(b); if (gt) { bilder.push(await gammal(b.id)); text.push(gt); }
-  if (arSymbol(b)) text.push(symbolText(b));
+  // "gör om utan förlaga" (Björn efter bildstil v100): ritningen görs bara från texten; varken förra ritningen eller emojin visas
+  const utan = utanForlaga(kommentar);
+  const gt = !utan && gammalText(b); if (gt) { bilder.push(await gammal(b.id)); text.push(gt); }
+  if (arSymbol(b)) text.push(utan ? symbolText(b).replace(/^Symbolen ersätter emojin.*?en blick\. /, "") : symbolText(b));
   text.push(`Rita ${beskriv(b)}`);
   const ref = b.bredvid && BR.bilder.find(x => x.id === b.bredvid), refd = ref && lasBild(ref.id);
   if (refd) text.push(`Björn jämför den med ${ref.namn} (${ref.id}), som visas bredvid den på kortet; den ska höra ihop med den och vara samma sak i ett annat tillstånd, eller ha den som förebild. Punkterna i ${ref.namn}: ${JSON.stringify(refd.rader)}`);
   if (b.medManniska) text.push('Björn jämför storleken med en stående människa: kartfiguren är 14 punkter bred och 20 punkter hög. Storleken ska vara verklig mot den.');
-  if (forra) text.push(`Förra ritningen: ${JSON.stringify(forra.rader)}`);
+  if (forra && !utan) text.push(`Förra ritningen: ${JSON.stringify(forra.rader)}`);
+  if (utan) text.push('Björn vill ha en helt ny bild: de förra ritningarna kom längre och längre bort från det han vill ha. Rita den bara utifrån texten om vad den ska föreställa; du får inte se de förra ritningarna eller emojin, och ska inte försöka likna dem.');
   if (kommentar) text.push(`Björns kommentar om förra ritningen, som ska följas och går före emojin och förra ritningen (ber han om en ny symbol eller ett annat sätt, rita något helt annat än emojin och förra ritningen; emojin säger då bara vad symbolen betyder): ${kommentar}`);
   if (version) text.push(`Det här är version ${version} av ${VERSIONER}, som ritas var för sig; sedan väljs den som passar bäst. Rita den på ditt eget sätt inom reglerna.`);
   SYS = SYS || await system();
@@ -138,7 +142,7 @@ async function valet(b, versioner, { kommentar = null } = {}) {
   const fb = forebildAv(b.sort), arForebild = fb.id === b.id;
   const bilder = [arForebild ? (arSymbol(b) ? await symboler() : await scen()) : await sammanhang(fb.id, null)];
   for (const v of versioner) bilder.push(await sammanhang(b.id, { id: b.id, rader: v.svar.rader }));
-  const gt = gammalText(b); if (gt) bilder.push(await gammal(b.id));
+  const gt = !utanForlaga(kommentar) && gammalText(b); if (gt) bilder.push(await gammal(b.id));
   const text = [
     arForebild ? (arSymbol(b) ? 'Den första bilden är spelets symboler som Björn redan valt. Du väljer förebilden för symbolerna.' : `Den första bilden är byns scen med de godkända bilderna i stilen. Du väljer förebilden för sorten ${sortAv(b.sort).namn}.`) : `Den första bilden är förebilden, ${fb.namn}, som i spelet.`,
     `Sedan kommer ${versioner.length === 1 ? 'den enda versionen' : versioner.length + ' versioner'} av ${beskriv(b)} i ordningen ${versioner.map(v => 'version ' + v.nr).join(', ')}, var och en som i spelet: ${arSymbol(b) ? 'i panelen på mörk och ljus bakgrund och bredvid andra symboler' : 'ensam på marken, på högen, på slöjdbänken och när den bärs'}, fyra gånger större.`,
