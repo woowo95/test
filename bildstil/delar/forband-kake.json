@@ -1,0 +1,47 @@
+{
+ "id": "forband-kake",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den har ett jämnt, fyra punkter brett band längs käkens sidor, som förebildens linjetjocklek, och det smalnar mjukt in under hakan. Den vänstra sidan är ljus (w/q) och den högra mörkare (p/o), och undersidan skuggas nedåt till o. Blodfläcken i rost är liten och sitter som en klunga (ss/r). Version 2 buktar oregelbundet ut till kanten mitt på kinderna och har en spretig blodstrimma. Version 1 har mer spridda enstaka toner. Ändring: de vänstra ändpunkterna på raderna 30 och 31 under hakan var o, den mörkaste tonen, på den sida som vetter mot ljuset. Jag gjorde dem till p, så att ljuset från vänster följs.",
+ "bilder": {
+  "standard": {
+   "x": -18,
+   "y": -14,
+   "rader": [
+    ".qwwq..........................qqpp.",
+    ".wwwq..........................qqpp.",
+    ".qwwq..........................qppp.",
+    ".qwwp..........................qqpp.",
+    ".wwqq..........................pqpp.",
+    ".qwwq..........................qqpo.",
+    ".qwqq..........................qppp.",
+    ".qwwq..........................qqpp.",
+    ".qqwq..........................qpop.",
+    ".qwqq..........................qppp.",
+    ".qqwp..........................pqpp.",
+    ".qwqq..........................qppo.",
+    ".qwqp..........................qppp.",
+    ".qqqq..........................pqpo.",
+    ".qwqp..........................qppp.",
+    ".qqqp..........................ppop.",
+    ".pqqq..........................qppo.",
+    ".qqqp..........................pppo.",
+    ".qqpp..........................ppoo.",
+    "..qqqp........................pppo..",
+    "..qqpp........................ppoo..",
+    "..qqpp........................pppo..",
+    "...qssp......................pppo...",
+    "...qprp......................ppoo...",
+    "....qqppp..................ppppo....",
+    "....qpppp..................pppoo....",
+    ".....qqpppp..............ppppoo.....",
+    "......qqqpppp..........ppppppo......",
+    ".......pqqqqqqqqqqqqqqqqqqppo.......",
+    "........ppqqqqqqqqqqqqqqpppo........",
+    ".........ppppppppppppppppoo.........",
+    "...........pppppppppppppo...........",
+    ".............oooooooooo............."
+   ]
+  }
+ }
+}

@@ -1,0 +1,28 @@
+{
+ "id": "forband-oga",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 1. Bandet är ungefär tre rader brett och går snett över huvudet, ungefär lika tjockt som i förebilden 'Runt huvudet'. Version 2 har bara ett smalt streck. Version 3 har hål mitt i bandet och en svans som hänger ner över kinden. Kudden i version 1 täcker vänster öga (cirka x -7 till -3, y -2 till 0) på alla tre mallarna. Den viras om sidan vid örat och slutar inom huvudets bredd. Skuggningen följer förebilden: ljus ben3 och ben2 upptill och mot vänster, mörkare ben1 och ben0 nedåt. Blodfläcken i rost sitter i kuddens nedre del. Jag ändrade en sak: den vänstra kanten på rad 9 (y -2) var ett mörkt q mot ljuset, och den är nu ljus w så att kanten mot ljuset uppifrån vänster blir jämn.",
+ "bilder": {
+  "standard": {
+   "x": -16,
+   "y": -10,
+   "rader": [
+    "..............................qq",
+    "...........................qqqpp",
+    "........................wwwppppp",
+    ".....................wwwqqqpppoo",
+    "..................wwwqqqqqqooo..",
+    "........wwwwq..wwwqqqqqqppp.....",
+    "......wwqqqqwwwqqqqqqppp........",
+    ".....wqqqwwwqqqqqqppp...........",
+    ".....wwwwqqqqqqppp..............",
+    "...wwwqqqqqqpppo................",
+    "qqqqqqqqqpppooop................",
+    "pppqqqpppooostpo................",
+    "ppppppoooppprso.................",
+    "ooo....ooppooo.................."
+   ]
+  }
+ }
+}

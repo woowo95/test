@@ -1,17 +1,1 @@
-{
- "id": "arr-6",
- "ritad": 2,
- "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
- "om": "Jag valde version 3. Den är kortast och mest dämpad och följer Björns kommentar om ett subtilt ärr. Den ljusa upphöjda linjen (d och c) går snett uppåt höger, och skuggan i b ligger konsekvent under den. Det stämmer med ljuset uppifrån vänster och med förebildens sätt att skugga. Linjen är en punkt tjock, som i förebilden, och den håller sig i hudens egna toner utan rost. På alla tre ansiktena syns den på pannan när man tittar, men den tar inte över. Version 1 är längre och har ljust c på den nedersta raden, så skuggan hamnar inte under linjen. Version 2 är bredare och har en tjock skuggklump av bbb. Jag ändrade ingenting: placeringen ligger inom rutan och nära mittlinjen, och kontrasten är redan låg.",
- "bilder": {
-  "standard": {
-   "x": -2,
-   "y": -10,
-   "rader": [
-    "....dc",
-    ".dcbbb",
-    ".bb..."
-   ]
-  }
- }
-}
+{"id":"arr-6","ritad":3,"av":"API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar","om":"Jag valde version 3. Ärret sitter mitt på pannan, en bit ovanför brynen, och syns tydligt på alla tre ansiktena. Det är kort och snett, så det skiljs bra från förebildens ärr över ögonbrynet. Version 2 hamnar för nära brynet och liknar arr-1 för mycket. Version 1 är för lång, ser mer ut som en rynka och slutar oklart med en ljus punkt i nedre änden. Ändringar: tonerna i version 3 var ojämna (dc/ab överst och dd/aa i mitten). Jag ritade om dem till ett enda mönster i hela längden: ljus upphöjd linje (d) överst, mörk skugga under (b mot a) och en ljusare spets (c) i båda ändar. Det stämmer med ljuset uppifrån vänster och med förebildens sätt att skugga. Jag flyttade också delen en punkt åt vänster (x = -3) så att ärret sträcker sig över mittlinjen och ligger mer i mitten av pannan. Delen håller sig inom rutan.","bilder":{"standard":{"x":-3,"y":-12,"rader":["......cd","....ddba","..ddba..","cdba....","ba......"]}},"forra":{"ritad":2,"bilder":{"standard":{"x":-2,"y":-10,"rader":["....dc",".dcbbb",".bb..."]}}}}

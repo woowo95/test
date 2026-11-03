@@ -1,0 +1,21 @@
+{
+ "id": "blamarke-2",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3. Den blandar skiffer och mörk rost jämnt, är mörkast i mitten (r och Q) och har en ojämn, kornig kant av R och hud1 som blir glesare utåt. Därför ser den matt ut och mer som ett blåmärke på alla tre ansiktena. Version 1 har en hel ring av ljusare skiffer2 som ger en blå gloria eller måltavla och ser nästan glänsande ut. Version 2 sitter lite för lågt och åt sidan och har en tunnare, mer prickig mitt. Ändring: på nedersta raden flyttade jag den ensamma hudpunkten (b), så att kanten hänger ihop med formen och ingen lös prick blir kvar. Delen håller sig inom rutan (x -12 till -4, y 3 till 9) på kinden.",
+ "bilder": {
+  "standard": {
+   "x": -12,
+   "y": 3,
+   "rader": [
+    "...bRRb..",
+    ".bRRsRbb.",
+    "bRsrQsRb.",
+    ".RQrrQsRb",
+    "bRsQrQsb.",
+    ".bRsRRb..",
+    "...bRbb.."
+   ]
+  }
+ }
+}
