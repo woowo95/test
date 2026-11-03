@@ -1033,9 +1033,14 @@ const BESLUT = {
   m_torka: { val: 1, steg: '5.3.2.1' }, a_toa: { val: 2, steg: '5.3.2.1' },
   grill: { val: 2, steg: '5.1.2.2' }, a_sikta: { val: 1, steg: '5.3.2.1' }, a_smyga: { val: 3, steg: '5.3.2.1' }, dragkamp: { val: 1, steg: '5.1.2' },
   sport_brottning: { val: 1, steg: '5.1.2' }, sport_kast: { val: 1, steg: '5.1.2' }, sport_snoboll: { val: 1, steg: '5.1.2' }, sport_bollspel: { val: 1, steg: '5.1.2' },
+  djur_kanin: { val: 2, text: 'Version 2 och version 3 används båda: varje hare får den ena eller den andra, slumpat ur dess id. Byggs in i steg 5.1.11.' },
+  g_runsten: { val: 1, steg: '5.3.3.1' }, g_band: { val: 1, steg: '5.3.3.1' }, g_vag: { val: 1, steg: '5.3.1.2' },
+  g_horn: { val: 1, text: 'Ormen. Ring med blad och Dubbel ögla sparas (i gui.json) om du ångrar dig. Byggs in i steg 5.3.1.4.' },
+  v_framsteg: { val: 1, steg: '5.3.2.2' }, v_ring: { val: 1, steg: '5.3.2.2' }, v_tart: { val: 1, steg: '5.3.2.2' },
 };
-const VALT = VAL.filter(s => BESLUT[s.id]);
-for (const s of VALT) VAL.splice(VAL.indexOf(s), 1);
+// räknas när valdelen ritas, så att korten från filerna efter denna (mark.js, djur.js, gui.js) också kommer med
+const VALT = [];
+function delaVal() { for (const s of VAL.filter(s => BESLUT[s.id])) { VALT.push(s); VAL.splice(VAL.indexOf(s), 1); } }
 // en version ritas stor och i kartans storlek (två skärmpunkter per punkt, som i spelet)
 function valBild(v, P) {
   const B = v.kol ? kolBild(v.w, v.h, P) : markBild(v.w, v.h, P);
@@ -1137,7 +1142,7 @@ function bygg() {
   ritaPalett(PAL);
   ritaPanel(PAL);
   // valdelen ritas när skaparen laddats, så att folket på korten är de vanliga kartfigurerna (window.BYBO)
-  const val = () => { byggValt(PAL); byggVal(PAL); startaVal(); };
+  const val = () => { delaVal(); byggValt(PAL); byggVal(PAL); startaVal(); };
   if (document.readyState === 'loading') addEventListener('DOMContentLoaded', val); else val();
   addEventListener('resize', () => heltalsskala($('#huvud'), SC.W));
 }
