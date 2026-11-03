@@ -1,0 +1,35 @@
+{
+ "id": "sym_notis_handel",
+ "ritad": 1,
+ "av": "Claude",
+ "om": "ritad av Claude: samma brev för alla notiser, med sigill i skiffer och två pilar: byte med handlaren, gäster",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "................",
+  "................",
+  ".oooooooooooooo.",
+  "opwwwwwwwwwwwwpo",
+  "owpqqqqqqqqpqppo",
+  "owqpqqqqqqqqpqpo",
+  "owqppqqqqqqpqqpo",
+  "owqqqpQQQQpqqqpo",
+  "owqqqQSSRwQqqqpo",
+  "owqqQwwwwwwQqqpo",
+  "owqqQRRRRwRQqqpo",
+  "owqqQRwRRRRQqqpo",
+  "opppQwwwwwwQpppo",
+  ".ooooQwRRRQoooo.",
+  "......QQQQ......",
+  "................"
+ ],
+ "pal": {
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "w": "#dad0bb",
+  "q": "#bdb39b",
+  "Q": "#233035",
+  "S": "#61767a",
+  "R": "#3e5156"
+ }
+}

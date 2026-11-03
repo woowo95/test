@@ -8,7 +8,8 @@
     {"id": "sak-klader", "namn": "Kläder", "en": "Plagget", "steg": "5.2.4.1", "om": "kläderna som de ligger hopvikta på högen innan någon tar dem på sig"},
     {"id": "sym-panel", "namn": "Symboler i panelen", "en": "Symbolen", "steg": "5.2.4.2", "symbol": true, "om": "panelens och flikarnas symboler (handlingarna, hälsan, näringen, utrustningen, byggnaderna, personrutan), som ersätter emojierna; 16 × 16 punkter både i panelen och i textraderna"},
     {"id": "sym-logg", "namn": "Symboler i loggen och ryktena", "en": "Symbolen", "steg": "5.2.4.2", "symbol": true, "forebildFran": "sym-panel", "om": "loggens, ryktenas, minnenas och motgångarnas symboler, ritade efter panelens förebild"},
-    {"id": "sym-strid", "namn": "Symboler i striden", "en": "Symbolen", "steg": "5.2.4.2", "symbol": true, "forebildFran": "sym-panel", "om": "stridens och arenans symboler, ritade sist efter panelens förebild"}
+    {"id": "sym-strid", "namn": "Symboler i striden", "en": "Symbolen", "steg": "5.2.4.2", "symbol": true, "forebildFran": "sym-panel", "om": "stridens och arenans symboler, ritade sist efter panelens förebild"},
+    {"id": "sym-notis", "namn": "Notiserna", "en": "Notisen", "steg": "5.2.4.2", "symbol": true, "forebildFran": "sym-panel", "om": "notisernas fem slag och raden överst (beslut, Björn efter bildstil v105): alla är samma brev, och bara sigillets färg och den lilla symbolen i det skiljer dem åt"}
   ],
   "bilder": [
     {"id": "ved", "sort": "sak-material", "namn": "Ved", "w": 10, "h": 5, "vad": "ett enda kluvet vedträ som ligger ner: mörk bark runt om och en ljus kluven ände eller yta, enkelt och tydligt", "utanGammal": true, "ritad": 5, "godkand": true},
@@ -218,6 +219,12 @@
     {"id": "sym_lov", "sort": "sym-strid", "namn": "Löv", "w": 16, "h": 16, "vad": "ett löv: ingen blåst i arenan", "tecken": ["🍃"], "ritad": 1, "godkand": true},
     {"id": "sym_dis", "sort": "sym-strid", "namn": "Dis", "w": 16, "h": 16, "vad": "dis: lätt dimma i arenan", "tecken": ["🌁"], "ritad": 1, "godkand": true},
     {"id": "sym_jord", "sort": "sym-strid", "namn": "Torr jord", "w": 16, "h": 16, "vad": "en brun ruta: torr mark i arenan", "tecken": ["🟫"], "ritad": 1, "godkand": true},
-    {"id": "sym_is", "sort": "sym-strid", "namn": "Is", "w": 16, "h": 16, "vad": "en isbit: hal mark i arenan", "tecken": ["🧊"], "ritad": 1, "godkand": true}
+    {"id": "sym_is", "sort": "sym-strid", "namn": "Is", "w": 16, "h": 16, "vad": "en isbit: hal mark i arenan", "tecken": ["🧊"], "ritad": 1, "godkand": true},
+    {"id": "sym_notis", "sort": "sym-notis", "namn": "Notiser", "w": 16, "h": 16, "vad": "brevet med ett tomt sigill i rost: raden överst med antalet olästa notiser", "ritad": 1},
+    {"id": "sym_notis_fara", "sort": "sym-notis", "namn": "Notis: fara", "w": 16, "h": 16, "vad": "brevet med ett sigill i rost och ett utropstecken: en motgång, rövare eller vargar på väg, strid", "ritad": 1},
+    {"id": "sym_notis_dod", "sort": "sym-notis", "namn": "Notis: död", "w": 16, "h": 16, "vad": "brevet med ett sigill i kol och en dödskalle: någon har dött", "ritad": 1},
+    {"id": "sym_notis_folk", "sort": "sym-notis", "namn": "Notis: folket", "w": 16, "h": 16, "vad": "brevet med ett sigill i oliv och en person: födsel, in- och utflyttning, ny ledare", "ritad": 1},
+    {"id": "sym_notis_framsteg", "sort": "sym-notis", "namn": "Notis: framsteg", "w": 16, "h": 16, "vad": "brevet med ett sigill i senap och en stjärna: ny teknik, första mästaren, nytt hus", "ritad": 1},
+    {"id": "sym_notis_handel", "sort": "sym-notis", "namn": "Notis: handel", "w": 16, "h": 16, "vad": "brevet med ett sigill i skiffer och två pilar: byte med handlaren, gäster", "ritad": 1}
   ]
 }

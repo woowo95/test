@@ -1,0 +1,34 @@
+{
+ "id": "sym_notis_dod",
+ "ritad": 1,
+ "av": "Claude",
+ "om": "ritad av Claude: samma brev för alla notiser, med sigill i kol och en dödskalle: någon har dött",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "................",
+  "................",
+  ".oooooooooooooo.",
+  "opwwwwwwwwwwwwpo",
+  "owpqqqqqqqqpqppo",
+  "owqpqqqqqqqqpqpo",
+  "owqppqqqqqqpqqpo",
+  "owqqqpkkkkpqqqpo",
+  "owqqqkqqqqkqqqpo",
+  "owqqkqqqqqqkqqpo",
+  "owqqkqlqqlqkqqpo",
+  "owqqkqqqqqqkqqpo",
+  "opppklqqqqlkpppo",
+  ".ooookqllqkoooo.",
+  "......kkkk......",
+  "................"
+ ],
+ "pal": {
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "w": "#dad0bb",
+  "q": "#bdb39b",
+  "k": "#24201d",
+  "l": "#2f261d"
+ }
+}

@@ -1,0 +1,35 @@
+{
+ "id": "sym_notis_folk",
+ "ritad": 1,
+ "av": "Claude",
+ "om": "ritad av Claude: samma brev för alla notiser, med sigill i oliv och en person: födsel, in- och utflyttning, ny ledare",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "................",
+  "................",
+  ".oooooooooooooo.",
+  "opwwwwwwwwwwwwpo",
+  "owpqqqqqqqqpqppo",
+  "owqpqqqqqqqqpqpo",
+  "owqppqqqqqqpqqpo",
+  "owqqqpMMMMpqqqpo",
+  "owqqqMOwwNMqqqpo",
+  "owqqMONwwNNMqqpo",
+  "owqqMNNNNNNMqqpo",
+  "owqqMNwwwwNMqqpo",
+  "opppMwwwwwwMpppo",
+  ".oooowwwwwwoooo.",
+  "......MMMM......",
+  "................"
+ ],
+ "pal": {
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "w": "#dad0bb",
+  "q": "#bdb39b",
+  "M": "#353204",
+  "O": "#647025",
+  "N": "#4b4f00"
+ }
+}

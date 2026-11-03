@@ -1,0 +1,35 @@
+{
+ "id": "sym_notis_fara",
+ "ritad": 1,
+ "av": "Claude",
+ "om": "ritad av Claude: samma brev för alla notiser, med sigill i rost och ett utropstecken: en motgång, rövare eller vargar på väg, strid",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "................",
+  "................",
+  ".oooooooooooooo.",
+  "opwwwwwwwwwwwwpo",
+  "owpqqqqqqqqpqppo",
+  "owqpqqqqqqqqpqpo",
+  "owqppqqqqqqpqqpo",
+  "owqqqprrrrpqqqpo",
+  "owqqqrtwwsrqqqpo",
+  "owqqrtswwssrqqpo",
+  "owqqrsswwssrqqpo",
+  "owqqrsswwssrqqpo",
+  "oppprssssssrpppo",
+  ".oooorswwsroooo.",
+  "......rrrr......",
+  "................"
+ ],
+ "pal": {
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "w": "#dad0bb",
+  "q": "#bdb39b",
+  "r": "#521100",
+  "t": "#a14808",
+  "s": "#742a01"
+ }
+}

@@ -1,0 +1,35 @@
+{
+ "id": "sym_notis_framsteg",
+ "ritad": 1,
+ "av": "Claude",
+ "om": "ritad av Claude: samma brev för alla notiser, med sigill i senap och en stjärna: ny teknik, första mästaren, nytt hus",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "................",
+  "................",
+  ".oooooooooooooo.",
+  "opwwwwwwwwwwwwpo",
+  "owpqqqqqqqqpqppo",
+  "owqpqqqqqqqqpqpo",
+  "owqppqqqqqqpqqpo",
+  "owqqqpIIIIpqqqpo",
+  "owqqqIKwwJIqqqpo",
+  "owqqIKJwwJJIqqpo",
+  "owqqIwwwwwwIqqpo",
+  "owqqIJwwwwJIqqpo",
+  "opppIJwJJwJIpppo",
+  ".oooowJJJJwoooo.",
+  "......IIII......",
+  "................"
+ ],
+ "pal": {
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "w": "#dad0bb",
+  "q": "#bdb39b",
+  "I": "#694902",
+  "K": "#b2921b",
+  "J": "#906f0f"
+ }
+}
