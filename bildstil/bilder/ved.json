@@ -1,0 +1,22 @@
+{
+ "id": "ved",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Jag valde version 3 eftersom den tydligast visar två kluvna vedträn på varandra. Det övre ligger förskjutet mot vänster och det undre sticker ut till höger, så silhuetten läses som en liten trave även i spelets storlek. Den ljusa kluvna ytan och den mörka barken är tydligt åtskilda, och jord0 är konturen runt träet i stil med bänken och borden i scenen. Version 1 läses mest som en randig planka, och version 2 som ett enda block utan tydlig delning. Ändringar: Jag samlade de ljusaste tonerna (ben2) till vänster på båda kluvna ytorna så att ljuset faller från övre vänstra hörnet, i stället för det upprepade mönstret qHq. Det övre vedträets bark fick en jord1-punkt till, så att det skiljs från det undre utan att mörka fläckar uppstår. Det undre vedträets bark fick lite korn (jord0 inblandat) och är fortfarande mörkast nere till höger. Storleken är 8 × 5 och bara palettens tecken används.",
+ "w": 8,
+ "h": 5,
+ "rader": [
+  ".EEEEE..",
+  "EqqHHGE.",
+  "EFFFEEEE",
+  "EqqHGHGE",
+  ".EFFEFEE"
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "q": "#bdb39b"
+ }
+}

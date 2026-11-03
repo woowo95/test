@@ -1,0 +1,35 @@
+{
+ "id": "yxa",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Version 2 passar bäst. Yxan ligger tydligt snett: skaftet går obrutet från övre högra hörnet ner till nedre vänstra och fyller rutan på 10×12. Flinthuvudet är kilformat med skifferkontur (Q), ljuset uppe till vänster (T) och skugga nedåt höger (R). Surrningen i ben (p, q, o) sitter där huvudet möter skaftet, som yxan i porträttet. Skaftet har jord3 (H) som ljus kant, så det blir ljusare än gräset och syns även i liten storlek. Version 1 har ett mörkare skaft med nästan bara G och F, och det försvinner mot marken. I version 3 är surrningen stor och skaftet slutar under huvudet, så silhuetten liknar mer en klubba. Jag behövde inte ändra något: alla rader är 10 tecken, bara palettens tecken används och konturerna är materialens mörkaste toner.",
+ "w": 10,
+ "h": 12,
+ "rader": [
+  "...QQ...EE",
+  "..QTSQ.EHE",
+  ".QTSTRpqGE",
+  "QTSRSpqoE.",
+  ".QSRQopGE.",
+  "..QQ.EHFE.",
+  "....EHGE..",
+  "...EHFE...",
+  "..EHGE....",
+  ".EHFE.....",
+  "EHGE......",
+  "EE........"
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e",
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "q": "#bdb39b"
+ }
+}

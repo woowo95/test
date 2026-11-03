@@ -1,0 +1,23 @@
+{
+ "id": "fisk",
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), bästa av 3",
+ "om": "Version 3 passar bäst. Den silvriga ryggen (skiffer3 och skiffer2) ligger överst och det öppnade köttet (rost3 och rost2) under den, som en rensad fisk sedd från sidan. Köttet är mättat nog att synas som mat utan att ta över silvret. Huvudet med ett svart öga (kol0) och den kluvna stjärten ger en tydlig silhuett i liten storlek, och skiffer0 är konturen runt hela fisken. I version 1 fyller köttet hela mitten och fisken ser mer ut som en köttbit än som en fisk. I version 2 hänger köttet ut genom konturen på undersidan. Ändring: i stjärten bytte jag plats på tonerna, så att den ljusare skiffer2 ligger överst och skiffer1 nederst. Då kommer ljuset från övre vänstra hörnet även där. Storleken 9×4 är oförändrad.",
+ "w": 9,
+ "h": 4,
+ "rader": [
+  "Q..QQQQQ.",
+  "QSQTTSSkQ",
+  "QRQuuttRQ",
+  "Q..QQQQQ."
+ ],
+ "pal": {
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e",
+  "k": "#24201d",
+  "t": "#a14808",
+  "u": "#bd753e"
+ }
+}
