@@ -1,23 +1,21 @@
 {
  "id": "rock_vargskinn",
- "ritad": 1,
- "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 3. Pälskragen har en kontur i ben0, alltså kragmaterialets egen mörkaste ton. Version 1 använder kol3 där, och version 2 lägger skifferkontur över kragen. Den ljusa kragen av ben skiljer sig tydligt från det grå skinnet i skiffer, så det läses som en hopvikt rock med pälskrage. Träknebeln i jord (G över F) visar att det är ett plagg och ger en enda varm punkt som syns i liten storlek. Skinnet har korn med tre skiffertoner, ljust uppe till vänster och mörkt nere till höger. Glansen är en enda w-punkt på kragen. Jag ändrade bara en sak: på rad 5 bytte jag slutet 'RSQ' mot 'RRQ'. Då blir högerkanten mörkare än insidan, som ljuset från övre vänstra hörnet kräver, och den ensamma ljusa punkten vid konturen försvinner.",
+ "ritad": 2,
+ "av": "API:t (claude-opus-5-5), bästa av 3, omritad efter Björns svar",
+ "om": "Valde version 1 eftersom den följer dagens bild närmast. Den har samma ljusa pälskrage som en V-formad ring kring halsen. Ärmarna går ut i full bredd över axlarna, och de ljusa muddarna sitter i ärmarnas nedre kant på båda sidor. En mörk linje skiljer ärmarna från kroppen, och kroppen smalnar av nedåt med en mörkare mittsöm och en fransig nederkant. Färgerna motsvarar dagens: grått skinn i skiffer2/skiffer3 med skiffer1 i sömmen, kragen och muddarna i ben3/ben2, och konturen i skiffer0 i stället för svart. Ljuset faller uppifrån vänster: den vänstra ärmen och muddarna är ljusast. Version 2 tappar konturen i muddarna och har en ojämn krage. Version 3 har ringkragens hål men blir för bred och klumpig nedtill och har bara muddar halvvägs ner. Inga ändringar behövdes: storleken 11 × 8 stämmer och alla tecken finns i paletten.",
  "w": 11,
  "h": 8,
  "rader": [
-  ".ooooooooo.",
-  "oqwqqpqpqpo",
-  "opqpqppopoo",
-  "QTSTTSTSSRQ",
-  "QSTSSTSSRRQ",
-  "QRRSRGRRRRQ",
-  "QSRSRFRSRRQ",
-  ".QQQQQQQQQ."
+  "...owwqo...",
+  ".QTwqoqpSQ.",
+  "QTSTqRpSSRQ",
+  "QTSQTRSQSRQ",
+  "QwqQSRSQqoQ",
+  ".QQQTRSQQQ.",
+  "...QSRSQ...",
+  "...Q.Q.Q..."
  ],
  "pal": {
-  "F": "#5e3c24",
-  "G": "#7d5b40",
   "Q": "#233035",
   "R": "#3e5156",
   "S": "#61767a",
@@ -26,5 +24,18 @@
   "p": "#a0947d",
   "q": "#bdb39b",
   "w": "#dad0bb"
+ },
+ "forra": {
+  "ritad": 1,
+  "rader": [
+   ".ooooooooo.",
+   "oqwqqpqpqpo",
+   "opqpqppopoo",
+   "QTSTTSTSSRQ",
+   "QSTSSTSSRRQ",
+   "QRRSRGRRRRQ",
+   "QSRSRFRSRRQ",
+   ".QQQQQQQQQ."
+  ]
  }
 }
