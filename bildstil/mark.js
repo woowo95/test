@@ -477,6 +477,58 @@
     ting.sort((a, b) => a[0] - b[0]).forEach(t => t[1]());
   }
 
+
+  // ---------- årstiderna (Björn efter bildstil v116): varje godkänt träd på våren, hösten och vintern ----------
+  // Sommaren är det godkända. Marken följer gräset som är referensen; på hösten vissnar det i fläckar och löven
+  // ligger under björkarna, och på vintern ligger snön som på kortet Snön.
+  function tidMark(B, tid) {
+    const P = B.P;
+    if (tid === 'vinter') return fyll(B, (x, y) => { const driva = (x, y) => vn(x * 0.45, y, 18, 573) > 0.64; if (driva(x, y)) return I(P, 'ben', 3); if (driva(x, y - 1) || driva(x, y - 2)) return I(P, 'ben', 1); const r = hash(x, y, 575); return r < 0.08 ? I(P, 'ben', 1) : r > 0.95 ? I(P, 'ben', 3) : I(P, 'ben', 2); });
+    fyll(B, (x, y) => {
+      const c = grasPunkt(x, y, P, 1);
+      if (tid === 'host' && flack(x, y, 16, 720, 0.68)) return I(P, 'senap', Math.max(0, tonAv(c) - 1)); // vissnat gräs
+      return c;
+    });
+    tuvor(B, 1, () => true);
+    if (tid === 'var') for (let k = 0; k < 160; k++) { const x = Math.floor(hash(k, 1, 721) * B.w), y = Math.floor(hash(k, 2, 721) * B.h); B.satt(x, y, I(P, k % 3 ? 'senap' : 'ben', 3)); } // vårblommor
+  }
+  // snö på allt som vänder sig uppåt (grenar och kvistar), eller ljusa skott i spetsarna på granen
+  function tidTrad(B, rita, tid, sort) {
+    const L = lager({ ...B, morka: B.morka }, rita), P = B.P, M = L.M;
+    for (const [k, c] of M) {
+      const [x, y] = k.split(',').map(Number);
+      let n = c;
+      if (tid === 'vinter' && !M.has(x + ',' + (y - 1)) && !somRamp(P, c, 'ben') && hash(x, y, 722) < 0.75) n = I(P, 'ben', 3);
+      if (tid === 'var' && sort === 'gran' && somRamp(P, c, 'barr') && (!M.has((x - 1) + ',' + y) || !M.has((x + 1) + ',' + y)) && hash(x, y, 723) < 0.7) n = I(P, 'oliv', 3); // årets nya skott
+      B.satt(x, y, n);
+    }
+  }
+  function stadierTid(B, sort, tid) {
+    const P = B.P, fot = 100;
+    tidMark(B, tid);
+    const xs = [18, 46, 92, 156, 232], ting = [];
+    const lov = tid === 'vinter' ? 'vinter' : tid; // björkens löv: ljusa på våren, gula och några röda på hösten, inga på vintern
+    STADIER.forEach(([, h], i) => {
+      const x = xs[i], f = h > 40 ? 1 + hash(i, 3, 530) * 0.08 : 1, hh = Math.round(h * f);
+      ting.push([fot, () => {
+        if (sort === 'gran') tidTrad(B, D => gran(D, x, fot, hh, 3, tid === 'vinter' ? 0.8 : 0, i), tid, 'gran');
+        else {
+          tidTrad(B, D => bjork(D, x, fot, hh, 3, lov, i), tid, 'bjork');
+          if (tid === 'host' && hh > 8) for (let k = 0; k < hh * 1.5; k++) { const a = hash(k, i, 724) * 6.28, d = Math.sqrt(hash(k, i, 725)) * hh * 0.4; B.satt(Math.round(x + Math.cos(a) * d), Math.round(fot + 2 + Math.sin(a) * d * 0.35), I(P, hash(k, i, 726) < 0.25 ? 'rost' : 'senap', 2 + (k % 2))); } // fallna löv
+        }
+      }]);
+    });
+    ting.push([fot, () => tidTrad(B, D => sort === 'gran' ? torraka(D, 296, fot, 40) : torrBjork(D, 296, fot, 34), tid, sort)]);
+    ting.push([fot + 10, () => fram(B, 100, fot + 10)]);
+    ting.push([fot - 12, () => spelare(B, 162, fot - 12, 1, 'oliv')]);
+    ting.push([fot + 2, () => spelare(B, 258, fot + 2, 1, 'oliv')]);
+    ting.sort((a, b) => a[0] - b[0]).forEach(t => t[1]());
+  }
+  const TIDNAMN = { var: 'våren', host: 'hösten', vinter: 'vintern' };
+  const TIDTEXT = {
+    gran: { var: 'Barren som på sommaren, med ljusa nya skott ytterst på grenarna. Marken med vårblommor.', host: 'Granen är som på sommaren; gräset har vissnat i fläckar.', vinter: 'Snö på våningarna och på torrakans grenar, och marken under snö.' },
+    bjork: { var: 'Ljusa nyutslagna löv.', host: 'Gula löv och några röda björkar, löv som fallit under kronan, och vissnat gräs i fläckar.', vinter: 'Kala grenar med snö ovanpå, och marken under snö.' },
+  };
   const T = 'Steg 5.2.4.5, till ';
   // ---------- fler träd (Björn efter bildstil v114): varianter, brända träd, stubbar och fallna träd ----------
   // Ett träd ritas först i ett eget lager (en karta från punkt till färg) och läggs sedan ut med en ändring:
@@ -732,5 +784,17 @@
         { text: 'Åt sidan och tillplattat: kronan pressad mot marken.', ...SCEN(W, H, B => fallna(B, 1)) },
         { text: 'Fallet bort från den som tittar: trädet ser kort ut och toppen ligger längre bort.', ...SCEN(W, H, B => fallna(B, 2)) },
       ] },
+    { id: 'm_gran_var', stor: true, namn: 'Granen på ' + TIDNAMN.var, typ: 'janej', vad: T + '5.1.4 och 5.1.13: granen du sa ja till, i alla stadier, på ' + TIDNAMN.var + '. Från vänster planta, ungträd, vuxet, gammalt, jätteträd och torrakan. ' + TIDTEXT.gran.var,
+      versioner: [{ text: 'Version 1: ' + TIDTEXT.gran.var, ...SCEN(W, 116, B => stadierTid(B, 'gran', 'var')) }] },
+    { id: 'm_gran_host', stor: true, namn: 'Granen på ' + TIDNAMN.host, typ: 'janej', vad: T + '5.1.4 och 5.1.13: granen du sa ja till, i alla stadier, på ' + TIDNAMN.host + '. Från vänster planta, ungträd, vuxet, gammalt, jätteträd och torrakan. ' + TIDTEXT.gran.host,
+      versioner: [{ text: 'Version 1: ' + TIDTEXT.gran.host, ...SCEN(W, 116, B => stadierTid(B, 'gran', 'host')) }] },
+    { id: 'm_gran_vinter', stor: true, namn: 'Granen på ' + TIDNAMN.vinter, typ: 'janej', vad: T + '5.1.4 och 5.1.13: granen du sa ja till, i alla stadier, på ' + TIDNAMN.vinter + '. Från vänster planta, ungträd, vuxet, gammalt, jätteträd och torrakan. ' + TIDTEXT.gran.vinter,
+      versioner: [{ text: 'Version 1: ' + TIDTEXT.gran.vinter, ...SCEN(W, 116, B => stadierTid(B, 'gran', 'vinter')) }] },
+    { id: 'm_bjork_var', stor: true, namn: 'Björken på ' + TIDNAMN.var, typ: 'janej', vad: T + '5.1.4 och 5.1.13: björken du sa ja till, i alla stadier, på ' + TIDNAMN.var + '. Från vänster planta, ungträd, vuxet, gammalt, jätteträd och den torra björken. ' + TIDTEXT.bjork.var,
+      versioner: [{ text: 'Version 1: ' + TIDTEXT.bjork.var, ...SCEN(W, 116, B => stadierTid(B, 'bjork', 'var')) }] },
+    { id: 'm_bjork_host', stor: true, namn: 'Björken på ' + TIDNAMN.host, typ: 'janej', vad: T + '5.1.4 och 5.1.13: björken du sa ja till, i alla stadier, på ' + TIDNAMN.host + '. Från vänster planta, ungträd, vuxet, gammalt, jätteträd och den torra björken. ' + TIDTEXT.bjork.host,
+      versioner: [{ text: 'Version 1: ' + TIDTEXT.bjork.host, ...SCEN(W, 116, B => stadierTid(B, 'bjork', 'host')) }] },
+    { id: 'm_bjork_vinter', stor: true, namn: 'Björken på ' + TIDNAMN.vinter, typ: 'janej', vad: T + '5.1.4 och 5.1.13: björken du sa ja till, i alla stadier, på ' + TIDNAMN.vinter + '. Från vänster planta, ungträd, vuxet, gammalt, jätteträd och den torra björken. ' + TIDTEXT.bjork.vinter,
+      versioner: [{ text: 'Version 1: ' + TIDTEXT.bjork.vinter, ...SCEN(W, 116, B => stadierTid(B, 'bjork', 'vinter')) }] },
   );
 })();
