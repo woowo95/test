@@ -1,174 +1,179 @@
-// ---------- animationerna (steg 5.2.4.8, till 5.1.9.1, 5.1.9.4 och 5.1.9.5) ----------
-// Små rörelser i en fast takt, som inte ändrar spelets räkning: elden och röken, arbetena (hugga, gräva, slå flinta) och
-// striden. Folket är kartfiguren från 5.2.2 (window.BYBO i skapare.js), elden är lägerelden (ritaEld i sida.js) och marken
-// och stubbarna är marken från 5.2.4.5 (window.MARK i mark.js). Varje version är en scen med rutor: rita(B, P, ruta) ritar
-// en bild och sidans klocka (ANIM i sida.js) byter bild med versionens takt. Scenen visas tre gånger större och i kartans
-// storlek bredvid.
+// ---------- animationerna (steg 5.2.4.8, till 5.1.9) ----------
+// Få och generella delar som handlingarna pekar på (Björn 2026-11-04: inte en animation per sak). Tre register:
+//   RORELSER: kroppens rörelser, som följder av kartfigurens armlägen (skapare.js) i fyra bilder: slå, stöta, plocka,
+//             pyssla och kasta (gå och bära finns redan i kartfiguren)
+//   REDSKAP:  redskapet i handen som skaft och huvud, ritat i armens riktning, så att ett nytt redskap är en rad
+//   EFFEKTER: splitter (färgen efter materialet i MATERIAL), rök, gnistor, träffen, lågorna och glittret på vattnet
+// En handling (HANDLINGAR, här bara exemplen på kortet) är en rörelse, ett redskap, en effekt och ett material. Alla
+// rörelser har fyra bilder i samma takt, så att byn rör sig i samma rytm. Träd och gräs svajar inte: hela marken skulle
+// då ritas om hela tiden (Björn 2026-11-04). Varje version är en scen med rutor: rita(B, P, ruta), och sidans klocka
+// (ANIM i sida.js) byter bild.
 (() => {
-  const SCEN = (w, h, rutor, takt, rita) => ({ w, h, stor: true, liten: true, rutor, takt, rita });
-  const gras = B => { for (let y = 0; y < B.h; y++) for (let x = 0; x < B.w; x++) B.satt(x, y, MARK.grasPunkt(x, y, B.P, 1)); MARK.tuvor(B, 1, () => true); };
-  // redskapen i handen, ritade här i stället för i kartfiguren så att de inte klipps av när armen lyfts över huvudet:
-  // punkterna från handen [framåt, nedåt, ramp, ton] för varje arm. Saknas armen används hanga
-  const S = 'skiffer', J = 'jord';
-  const REDSKAP = {
-    yxa: { hanga: [[0, 1, J, 2], [0, 2, J, 2], [0, 3, J, 1], [1, 3, S, 2], [1, 2, S, 1]],
-      lyfta: [[0, -1, J, 2], [0, -2, J, 2], [0, -3, J, 2], [0, -4, J, 1], [-1, -4, S, 2], [-2, -4, S, 3], [-1, -3, S, 1], [-2, -3, S, 2]],
-      sla: [[1, 1, J, 2], [2, 2, J, 2], [3, 3, J, 1], [4, 3, S, 2], [4, 4, S, 3], [3, 4, S, 1], [5, 4, S, 2]],
-      framfor: [[1, -1, J, 2], [2, -2, J, 2], [3, -2, S, 2], [3, -3, S, 3], [2, -3, S, 1]] },
-    spade: { hanga: [[0, 1, J, 2], [0, 2, J, 2], [0, 3, J, 2], [0, 4, 'ben', 2], [1, 4, 'ben', 1]],
-      lyfta: [[1, -1, J, 2], [2, -2, J, 2], [3, -3, J, 2], [4, -4, 'ben', 2], [5, -4, 'ben', 1], [4, -5, 'ben', 2], [5, -5, J, 3], [4, -6, J, 2], [5, -6, J, 1]],
-      sla: [[1, 1, J, 2], [1, 2, J, 2], [2, 3, J, 2], [2, 4, J, 2], [2, 5, 'ben', 2], [3, 5, 'ben', 1], [2, 6, 'ben', 2], [3, 6, 'ben', 1]],
-      framfor: [[1, -1, J, 2], [2, -2, J, 2], [3, -3, 'ben', 2], [4, -3, 'ben', 1], [3, -4, J, 3]] },
-    sten: { hanga: [[0, 1, J, 1], [1, 1, J, 0]], lyfta: [[0, -1, J, 2], [1, -1, J, 1], [0, -2, J, 3], [1, -2, J, 2]], sla: [[0, 1, J, 2], [1, 1, J, 1], [0, 2, J, 1], [1, 2, J, 0]] },
-    tra: { hanga: [[0, 1, J, 2], [0, 2, J, 2], [0, 3, J, 3], [1, 3, J, 2]],
-      lyfta: [[0, -1, J, 2], [0, -2, J, 2], [0, -3, J, 3], [0, -4, J, 3], [-1, -4, J, 2], [-1, -3, J, 2]],
-      sla: [[1, 0, J, 2], [2, 0, J, 2], [3, 0, J, 3], [4, 0, J, 3], [4, -1, J, 2], [5, 0, J, 2]],
-      framfor: [[1, -1, J, 2], [2, -2, J, 2], [3, -3, J, 3], [3, -4, J, 2]] },
-    spjut: { hanga: [...[-7, -6, -5, -4, -3, -2, -1, 1, 2, 3, 4].map(d => [0, d, J, 2]), [0, -8, S, 3], [0, -9, S, 2]],
-      lyfta: [...[-4, -3, -2, -1, 1, 2, 3, 4, 5].map(d => [d, 0, J, 2]), [6, 0, S, 3], [7, 0, S, 2]],
-      framfor: [...[-4, -3, -2, -1, 1, 2, 3, 4, 5].map(d => [d, 1, J, 2]), [6, 1, S, 3], [7, 1, S, 2]],
-      sla: [...[-1, 1, 2, 3, 4, 5, 6, 7, 8].map(d => [d, 0, J, 2]), [9, 0, S, 3], [10, 0, S, 2]] },
-  };
-  // en bybo med fötterna på raden fot, mitt på x, med redskapet (REDSKAP) i handen; ger handens punkt på bilden
-  function figur(B, x, fot, fro, rikt, ben, arm, redskap = null) {
-    if (!window.BYBO) return null;
-    const F = window.BYBO(fro, rikt, ben, arm, null), x0 = Math.round(x) - (F.w >> 1), y0 = fot - F.h + 1;
-    for (let dx = -3; dx <= 3; dx++) B.morka(Math.round(x) + dx, fot + 1);
-    for (let y = 0; y < F.h; y++) for (let dx = 0; dx < F.w; dx++) { const v = F.px[y * F.w + dx]; if (v >= 0) B.satt(x0 + dx, y0 + y, v); }
-    if (!F.hand) return null;
-    const hx = x0 + F.hand[0], hy = y0 + F.hand[1], fram = rikt === 'vast' ? -1 : 1, R = REDSKAP[redskap];
-    if (R) for (const [dx, dy, ramp, ton] of R[arm] || R.hanga) B.satt(hx + dx * fram, hy + dy, B.P.i(ramp, ton));
-    return [hx, hy];
-  }
+  const RUTOR = 4, TAKT = 230;
+  const SCEN = (w, h, rita) => ({ w, h, stor: true, liten: true, rutor: RUTOR, takt: TAKT, rita });
   const prick = (B, x, y, ramp, ton) => B.satt(Math.round(x), Math.round(y), B.P.i(ramp, ton));
-  // en liten rökpuff: större och ljusare ju högre den kommit (f från 0 vid skorstenen till 1 där den är borta)
+  const gras = B => { for (let y = 0; y < B.h; y++) for (let x = 0; x < B.w; x++) B.satt(x, y, MARK.grasPunkt(x, y, B.P, 1)); MARK.tuvor(B, 1, () => true); };
+
+  // ---------- rörelserna ----------
+  // en bild: ben och arm i kartfiguren, riktningen redskapet pekar (r: framåt, nedåt), steg (1 träffen, 2 efteråt), ut
+  // (kroppen en punkt fram eller bak) och för plocka och kasta om saken är i handen (hand) eller i luften (flyg 1 eller 2)
+  const RORELSER = {
+    sla: { namn: 'Slå', bilder: [{ arm: 'lyfta', r: [0, -1] }, { arm: 'lyfta', r: [-1, -1] }, { arm: 'sla', r: [1, 1], steg: 1 }, { arm: 'sla', r: [1, 1], steg: 2 }] },
+    stota: { namn: 'Stöta', bilder: [{ arm: 'framfor', r: [1, 0] }, { arm: 'framfor', r: [1, 0], ut: -1 }, { arm: 'sla', r: [1, 0], ut: 1, steg: 1 }, { arm: 'sla', r: [1, 0], steg: 2 }] },
+    plocka: { namn: 'Plocka', bilder: [{ arm: 'hanga' }, { ben: 'sitta', arm: 'hanga' }, { ben: 'sitta', arm: 'framfor', hand: true }, { arm: 'framfor', hand: true }] },
+    pyssla: { namn: 'Pyssla', sitta: true, bilder: [{ arm: 'framfor', r: [1, 1] }, { arm: 'gang1', r: [1, 1], steg: 1 }, { arm: 'framfor', r: [1, 1] }, { arm: 'gang1', r: [1, 1], steg: 1 }] },
+    kasta: { namn: 'Kasta', bilder: [{ arm: 'framfor', r: [1, -1], hand: true }, { arm: 'lyfta', r: [-1, -1], hand: true }, { arm: 'sla', r: [1, 0], flyg: 1 }, { arm: 'hanga', flyg: 2 }] },
+  };
+
+  // ---------- redskapen ----------
+  // skaft: hur långt (punkter från handen), bak: hur långt bakom handen (spjutet hålls på mitten), huvud: formen i änden
+  const REDSKAP = {
+    yxa: { skaft: 3, huvud: 'blad' }, spade: { skaft: 5, huvud: 'spade' }, klubba: { skaft: 4, huvud: 'klubba' },
+    spjut: { skaft: 7, bak: 3, huvud: 'spets' }, kniv: { skaft: 1, huvud: 'egg' }, nal: { skaft: 0, huvud: 'nal' },
+    sten: { skaft: 0, huvud: 'sten' }, snoboll: { skaft: 0, huvud: 'snoboll' },
+  };
+  // huvudet i änden t, i riktningen r; m är dit slaget går (vinkelrätt mot skaftet)
+  function huvud(B, form, t, r, m) {
+    const at = (a, b, ramp, ton) => prick(B, t[0] + a, t[1] + b, ramp, ton);
+    if (form === 'blad') { at(0, 0, 'skiffer', 1); at(m[0], m[1], 'skiffer', 2); at(m[0] - r[0], m[1] - r[1], 'skiffer', 2); at(2 * m[0], 2 * m[1], 'skiffer', 3); }
+    if (form === 'spade') { at(0, 0, 'ben', 2); at(r[0], r[1], 'ben', 1); at(m[0], m[1], 'ben', 2); at(m[0] + r[0], m[1] + r[1], 'ben', 1); }
+    if (form === 'klubba') { at(0, 0, 'jord', 3); at(m[0], m[1], 'jord', 2); at(-m[0], -m[1], 'jord', 2); at(r[0], r[1], 'jord', 3); }
+    if (form === 'spets') { at(0, 0, 'skiffer', 3); at(r[0], r[1], 'skiffer', 2); }
+    if (form === 'egg') { at(0, 0, 'skiffer', 3); at(r[0], r[1], 'skiffer', 3); }
+    if (form === 'nal') at(0, 0, 'ben', 3);
+    if (form === 'sten' || form === 'snoboll') { const [rp, a, b] = form === 'sten' ? ['jord', 2, 0] : ['ben', 3, 2]; at(0, 0, rp, a); at(1, 0, rp, b); at(0, 1, rp, b); at(1, 1, rp, b); }
+  }
+  // redskapet ur handen h i riktningen r; ger änden
+  function redskap(B, id, h, r, fram) {
+    const R = REDSKAP[id]; if (!R) return h;
+    const rx = r[0] * fram, ry = r[1], n = R.skaft ? R.skaft + 1 : 0;
+    for (let k = -(R.bak || 0); k <= R.skaft; k++) if (k) prick(B, h[0] + rx * k, h[1] + ry * k, 'jord', 2);
+    const t = [h[0] + rx * n, h[1] + ry * n];
+    huvud(B, R.huvud, t, [rx, ry], [-ry * fram, rx * fram]);
+    return t;
+  }
+
+  // ---------- effekterna ----------
+  const MATERIAL = { tra: [['senap', 3], ['jord', 3]], sten: [['skiffer', 3], ['ben', 2]], jord: [['jord', 1], ['jord', 2]], blod: [['rost', 1], ['rost', 2]], vatten: [['ben', 3], ['skiffer', 3]], sno: [['ben', 3], ['ben', 2]] };
+  // splitter: steg 1 nära träffen, steg 2 längre bort och högre; liten: bara ett korn (det man pysslar med)
+  function splitter(B, t, steg, mat, liten = false) {
+    const M = MATERIAL[mat] || MATERIAL.tra, lista = liten ? [[1, -1]] : steg === 1 ? [[1, -2], [-1, -1], [2, 0]] : [[3, -4], [-2, -3], [4, -1]];
+    lista.forEach(([dx, dy], i) => { const [rp, tn] = M[i % 2]; prick(B, t[0] + dx, t[1] + dy, rp, tn); });
+  }
+  function traff(B, x, y) {
+    for (const [dx, dy, t] of [[0, 0, 3], [-1, 0, 3], [1, 0, 3], [0, -1, 3], [0, 1, 3], [-2, -2, 2], [2, -2, 2], [-2, 2, 2], [2, 2, 2]]) B.satt(x + dx, y + dy, B.P.i(t === 3 ? 'ben' : 'senap', 3), true);
+  }
   function puff(B, x, y, f) {
     const r = f < 0.25 ? 1.6 : f < 0.6 ? 2.5 : 3.2, ton = f < 0.35 ? 1 : f < 0.75 ? 2 : 3;
     for (let dy = -3; dy <= 3; dy++) for (let dx = -3; dx <= 3; dx++) {
       if (dx * dx + dy * dy > r * r) continue;
-      if (f > 0.8 && (dx + dy + Math.round(y)) % 2) continue; // glesnar innan den försvinner
-      prick(B, x + dx, y + dy, dy < 0 || dx < 0 ? 'skiffer' : 'kol', dy < 0 || dx < 0 ? ton : Math.min(3, ton + 1));
+      if (f > 0.8 && (dx + dy + Math.round(y)) % 2) continue;
+      const ljus = dy < 0 || dx < 0; prick(B, x + dx, y + dy, ljus ? 'skiffer' : 'kol', ljus ? ton : Math.min(3, ton + 1));
     }
   }
-  // röken: puffar med jämna mellanrum som stiger s punkter per ruta; efter n rutor har varje puff kommit dit nästa var,
-  // så att rörelsen går runt utan hack. vind flyttar den åt sidan högre upp
-  function rok(B, x, y, ruta, n, s, hojd, vind) {
-    const steg = n * s;
-    for (let k = 0; k * steg < hojd; k++) {
-      const upp = k * steg + ruta * s; if (upp > hojd) continue;
-      const f = upp / hojd; puff(B, x + Math.sin(f * 3 + 0.5) * 1.5 + vind * f * f * 10, y - upp, f);
+  // röken: en puff var åttonde punkt som stiger två punkter per bild, så att den går runt på fyra bilder
+  function rok(B, x, y, ruta, hojd) {
+    for (let k = 0; k * 8 < hojd; k++) { const upp = k * 8 + ruta * 2; if (upp > hojd) continue; const f = upp / hojd; puff(B, x + Math.sin(f * 3 + 0.5) * 1.5, y - upp, f); }
+  }
+  function gnistor(B, x, y, ruta) { for (let k = 0; k < 3; k++) { const upp = ((ruta + k * 2) % 4) * 3, gx = x + ((k * 5 + ruta) % 5) - 2; prick(B, gx, y - upp, upp > 6 ? 'rost' : 'senap', upp > 6 ? 1 : 3); } }
+  const LAGOR = [[2, 4, 7, 9, 6, 4, 2], [3, 6, 8, 6, 9, 3, 2], [2, 5, 10, 7, 6, 5, 3], [4, 3, 7, 10, 5, 6, 2]];
+  function glitter(B, cx, cy, rx, ry, ruta) {
+    for (let k = 0; k < 7; k++) {
+      const a = hash(k, ruta, 900) * 6.28, d = Math.sqrt(hash(k, ruta, 901)), x = Math.round(cx + Math.cos(a) * rx * d * 0.8), y = Math.round(cy + Math.sin(a) * ry * d * 0.7);
+      prick(B, x, y, 'ben', 3); if (k % 2) prick(B, x + 1, y, 'skiffer', 3);
     }
   }
-  // en hydda av timmer med torvtak och rökhål, 22 punkter bred; rökhålet på (x + 11, by - 17)
+
+  // ---------- det som står på marken i exemplen ----------
+  function vatten(B, cx, cy, rx, ry) { for (let y = -ry; y <= ry; y++) for (let x = -rx; x <= rx; x++) { const e = (x / rx) ** 2 + (y / ry) ** 2; if (e <= 1) B.satt(cx + x, cy + y, B.P.i('skiffer', e > 0.7 ? 1 : y < 0 ? 0 : 1)); } }
+  function knol(B, x, y) { for (const [dx, dy, t] of [[-1, 0, 1], [0, 0, 2], [1, 0, 1], [2, 0, 0], [-1, -1, 2], [0, -1, 3], [1, -1, 2], [0, -2, 2]]) B.satt(x + dx, y + dy, B.P.i('skiffer', t)); for (let dx = -1; dx <= 2; dx++) B.morka(x + dx, y + 1); }
+  function grop(B, x, y) { for (let j = -2; j <= 2; j++) for (let i = -5; i <= 5; i++) if (i * i / 25 + j * j / 4 <= 1) B.satt(x + i, y + j, B.P.i('jord', j < 0 ? 0 : 1)); }
+  function buske(B, x, y) {
+    for (let j = -6; j <= 0; j++) for (let i = -5; i <= 5; i++) { const e = (i / 5.5) ** 2 + ((j + 3) / 3.6) ** 2; if (e <= 1) B.satt(x + i, y + j, B.P.i(e > 0.75 ? 'kol' : 'barr', e > 0.75 ? 0 : (i + j) % 3 ? 2 : 1)); }
+    for (const [i, j] of [[-3, -3], [1, -4], [3, -2], [-1, -1]]) prick(B, x + i, y + j, 'rost', 2);
+  }
+  function svamp(B, x, y) { prick(B, x, y, 'ben', 3); prick(B, x, y - 1, 'ben', 2); for (let i = -1; i <= 1; i++) prick(B, x + i, y - 2, 'rost', i < 0 ? 2 : 1); prick(B, x, y - 3, 'rost', 2); B.morka(x - 1, y + 1); B.morka(x + 1, y + 1); }
+  function pinne(B, x, y) { for (let i = 0; i < 5; i++) prick(B, x + i, y - (i > 2 ? 1 : 0), 'jord', i % 2 ? 1 : 2); B.morka(x + 1, y + 1); B.morka(x + 3, y + 1); }
+  function skinn(B, x, y) { for (let j = 0; j < 2; j++) for (let i = 0; i < 4; i++) prick(B, x + i, y + j, 'senap', j ? 1 : 2); }
   function hydda(B, x, by) {
     const P = B.P;
     for (let y = by - 8; y <= by; y++) for (let i = 0; i < 22; i++) {
-      const kant = i === 0 || i === 21 || y === by, stock = (by - y) % 3;
-      let v = kant ? P.i('kol', 0) : stock === 0 ? P.i('jord', 0) : stock === 1 ? P.i('jord', 1) : P.i('jord', 2);
-      if (i >= 8 && i <= 12 && y >= by - 6 && !kant) v = i === 8 || i === 12 || y === by - 6 ? P.i('kol', 1) : P.i('kol', 0); // dörren
+      const kant = i === 0 || i === 21 || y === by, st = (by - y) % 3;
+      let v = kant ? P.i('kol', 0) : P.i('jord', st);
+      if (i >= 8 && i <= 12 && y >= by - 6 && !kant) v = i === 8 || i === 12 || y === by - 6 ? P.i('kol', 1) : P.i('kol', 0);
       B.satt(x + i, y, v);
     }
-    for (let j = 0; j <= 9; j++) for (let i = -2 + j; i <= 23 - j; i++) { // taket
-      const y = by - 9 - j, kant = i === -2 + j || i === 23 - j || j === 0;
-      if (j === 9 && i >= 10 && i <= 12) continue; // rökhålet
-      B.satt(x + i, y, kant ? P.i('kol', 0) : (i + j * 3) % 7 === 0 ? P.i('oliv', 1) : j < 3 ? P.i('oliv', 2) : P.i('oliv', 3));
+    for (let j = 0; j <= 9; j++) for (let i = -2 + j; i <= 23 - j; i++) {
+      if (j === 9 && i >= 10 && i <= 12) continue;
+      const kant = i === -2 + j || i === 23 - j || j === 0; B.satt(x + i, by - 9 - j, kant ? P.i('kol', 0) : (i + j * 3) % 7 === 0 ? P.i('oliv', 1) : P.i('oliv', j < 3 ? 2 : 3));
     }
     for (let i = 10; i <= 12; i++) B.satt(x + i, by - 18, P.i('kol', 0));
   }
 
-  // ---------- elden och röken (5.1.9.1) ----------
-  // lågornas höjd per ruta. Lugn: samma form som andas; livlig: kolumnerna byter plats; vind: lågorna lutar åt höger
-  const LAGOR = {
-    lugn: [[2, 4, 7, 9, 6, 4, 2], [2, 5, 7, 8, 7, 4, 2], [3, 4, 8, 9, 6, 5, 2], [2, 4, 6, 9, 7, 4, 3], [2, 5, 7, 10, 6, 4, 2], [3, 4, 7, 8, 7, 5, 2]],
-    livlig: [[2, 4, 7, 9, 6, 4, 2], [3, 6, 8, 6, 9, 3, 2], [2, 5, 10, 7, 6, 5, 3], [4, 3, 7, 10, 5, 6, 2], [2, 6, 6, 9, 8, 3, 3], [3, 4, 9, 7, 10, 4, 2]],
-  };
-  function eldScen(stil) {
-    return SCEN(112, 62, 6, stil === 'lugn' ? 220 : 150, (B, P, r) => {
-      gras(B);
-      hydda(B, 72, 54);
-      const cx = 32, cy = 46, vind = stil === 'vind';
-      ritaEld(B, cx, cy, P, { lagor: LAGOR[stil === 'lugn' ? 'lugn' : 'livlig'][r] });
-      if (vind) for (let k = 0; k < 7; k++) { const h = LAGOR.livlig[r][k]; for (let j = Math.floor(h / 2); j < h; j++) { const x = cx - 3 + k, y = cy - j, d = Math.round((j - h / 2) * 0.5); if (d > 0) { B.satt(x + d, y, B.P.i(j > h * 0.75 ? 'rost' : 'senap', 2), true); B.satt(x, y, B.P.i('senap', j > h * 0.75 ? 1 : 3), true); } } }
-      if (stil === 'livlig') for (let k = 0; k < 3; k++) { const upp = ((r + k * 2) % 6) * 3, x = cx - 1 + ((k * 5 + r) % 5) - 2; prick(B, x, cy - 10 - upp, upp > 9 ? 'rost' : 'senap', upp > 9 ? 1 : 3); } // gnistor
-      rok(B, cx + (vind ? 2 : 0), cy - 13, r, 6, stil === 'lugn' ? 1 : 2, stil === 'lugn' ? 24 : 34, vind ? 1.2 : 0.2);
-      rok(B, 83, 36, (r + 3) % 6, 6, 1, stil === 'lugn' ? 22 : 30, vind ? 1.2 : 0.2);
-    });
+  // ---------- en handling ----------
+  // en bybo i kartfigurens läge; ger handen
+  function figur(B, x, fot, fro, rikt, ben, arm) {
+    if (!window.BYBO) return null;
+    const F = window.BYBO(fro, rikt, ben, arm, null), x0 = Math.round(x) - (F.w >> 1), y0 = fot - F.h + 1;
+    for (let dx = -3; dx <= 3; dx++) B.morka(Math.round(x) + dx, fot + 1);
+    for (let y = 0; y < F.h; y++) for (let dx = 0; dx < F.w; dx++) { const v = F.px[y * F.w + dx]; if (v >= 0) B.satt(x0 + dx, y0 + y, v); }
+    return F.hand ? [x0 + F.hand[0], y0 + F.hand[1]] : null;
   }
+  // h: { rorelse, redskap, effekt, material, sak (det som plockas eller kastas), mal (det som står framför), rSla (en
+  // annan riktning vid slaget) }; x och fot är var personen står i scenen
+  function handling(B, h, x, fot, ruta, fro) {
+    const R = RORELSER[h.rorelse], b = R.bilder[ruta], ben = b.ben || (R.sitta ? 'sitta' : 'sta');
+    if (h.mal) h.mal(B, x, fot, b);
+    const hand = figur(B, x + (b.ut || 0), fot, fro, 'sida', ben, b.arm); if (!hand) return;
+    const r = (b.steg && h.rSla) || b.r || [0, 1], kastat = h.rorelse === 'kasta' && !b.hand;
+    const t = h.redskap && !kastat ? redskap(B, h.redskap, hand, r, 1) : hand;
+    if (b.hand && h.sak && !h.redskap) h.sak(B, hand[0], hand[1] + 1);
+    if (b.flyg && h.sak) { const f = b.flyg; h.sak(B, hand[0] + (f === 1 ? 5 : 13), hand[1] - (f === 1 ? 3 : 1)); for (let k = 1; k < (f === 1 ? 3 : 6); k++) B.morka(hand[0] + k * 2, hand[1] + 6); }
+    if (b.steg && h.effekt === 'splitter') splitter(B, t, b.steg, h.material, R.sitta);
+    if (b.steg === 1 && h.effekt === 'traff') traff(B, t[0] + 1, t[1]);
+  }
+  // en motståndare som tar emot slaget: skyddar sig och knuffas bakåt efter träffen
+  const motstandare = (avst, fro) => (B, x, fot, b) => { figur(B, x + avst + (b.steg === 2 ? 2 : 0), fot, fro, 'vast', 'sta', b.steg ? 'hanga' : 'framfor'); };
 
-  // ---------- arbetena (5.1.9.4) ----------
-  // tre arbeten bredvid varandra: hugga (yxan mot en stubbe), gräva (spaden mot en grop) och slå flinta (sittande, en
-  // slagsten mot en flintknöl på marken). Varje version är en följd av armens lägen; det som flyger syns vid slaget
-  const FOLJD = {
-    tva: [['lyfta', 0], ['sla', 1]],
-    fyra: [['lyfta', 0], ['lyfta', 0], ['sla', 1], ['sla', 2]],
-    svep: [['lyfta', 0], ['sla', 1], ['sla', 2], ['framfor', 0]],
+  const HANDLINGAR = { // exemplen på kortet: en rad per rörelse
+    sla: [
+      { namn: 'hugga', rorelse: 'sla', redskap: 'yxa', effekt: 'splitter', material: 'tra', mal: (B, x, fot) => MARK.stubbe(B, x + 9, fot, 7, 'gran', 0) },
+      { namn: 'slå flinta', rorelse: 'sla', redskap: 'sten', effekt: 'splitter', material: 'sten', mal: (B, x, fot) => knol(B, x + 5, fot) },
+      { namn: 'gräva', rorelse: 'sla', redskap: 'spade', effekt: 'splitter', material: 'jord', mal: (B, x, fot) => grop(B, x + 9, fot + 1) },
+      { namn: 'slåss', rorelse: 'sla', redskap: 'klubba', effekt: 'traff', rSla: [1, 0], mal: motstandare(15, 7211) }],
+    stota: [
+      { namn: 'fiska', rorelse: 'stota', redskap: 'spjut', effekt: 'splitter', material: 'vatten', rSla: [1, 1], mal: (B, x, fot) => vatten(B, x + 16, fot + 1, 8, 3) },
+      { namn: 'slåss med spjut', rorelse: 'stota', redskap: 'spjut', effekt: 'traff', mal: motstandare(19, 7311) },
+      { namn: 'slakta', rorelse: 'stota', redskap: 'kniv', effekt: 'splitter', material: 'blod', rSla: [1, 1], mal: (B, x, fot) => { for (let i = 0; i < 6; i++) for (let j = 0; j < 2; j++) prick(B, x + 6 + i, fot - j, j ? 'jord' : 'senap', j ? 2 : 1); } }],
+    plocka: [
+      { namn: 'plocka bär', rorelse: 'plocka', sak: (B, x, y) => prick(B, x, y, 'rost', 2), mal: (B, x, fot) => buske(B, x + 8, fot) },
+      { namn: 'plocka svamp', rorelse: 'plocka', sak: (B, x, y) => { prick(B, x, y, 'rost', 2); prick(B, x, y + 1, 'ben', 3); }, mal: (B, x, fot, b) => { if (!b.hand) svamp(B, x + 5, fot); } },
+      { namn: 'ta upp ved', rorelse: 'plocka', sak: (B, x, y) => { for (let i = -1; i <= 2; i++) prick(B, x + i, y, 'jord', 2); }, mal: (B, x, fot, b) => { if (!b.hand) pinne(B, x + 3, fot); } }],
+    pyssla: [
+      { namn: 'tälja', rorelse: 'pyssla', redskap: 'kniv', effekt: 'splitter', material: 'tra' },
+      { namn: 'sy', rorelse: 'pyssla', redskap: 'nal', mal: (B, x, fot) => skinn(B, x + 2, fot - 6) },
+      { namn: 'skrapa skinn', rorelse: 'pyssla', redskap: 'sten', effekt: 'splitter', material: 'blod', mal: (B, x, fot) => skinn(B, x + 5, fot - 1) }],
+    kasta: [
+      { namn: 'kasta sten', rorelse: 'kasta', redskap: 'sten', sak: (B, x, y) => huvud(B, 'sten', [x, y], [1, 0], [0, 1]) },
+      { namn: 'kasta spjut', rorelse: 'kasta', redskap: 'spjut', sak: (B, x, y) => { for (let i = -4; i <= 3; i++) prick(B, x + i, y, 'jord', 2); prick(B, x + 4, y, 'skiffer', 3); prick(B, x + 5, y, 'skiffer', 2); } },
+      { namn: 'kasta snöboll', rorelse: 'kasta', redskap: 'snoboll', sak: (B, x, y) => huvud(B, 'snoboll', [x, y], [1, 0], [0, 1]) }],
   };
-  function arbeteScen(stil) {
-    const F = FOLJD[stil];
-    return SCEN(176, 52, F.length, stil === 'tva' ? 420 : 200, (B, P, r) => {
-      gras(B);
-      const [arm, slag] = F[r], fot = 42;
-      // hugga: stubben framför figuren, där yxan träffar; flisor ljusa som det nya träet
-      MARK.stubbe(B, 38, fot, 7, 'gran', 0);
-      const h1 = figur(B, 28, fot, 5101, 'sida', 'sta', arm, 'yxa');
-      if (stil === 'svep' && slag === 1 && h1) for (const [dx, dy] of [[-1, -5], [0, -3], [2, -1]]) prick(B, h1[0] + dx, h1[1] + dy, 'ben', 3); // svepet
-      if (slag) for (const [dx, dy] of slag === 1 ? [[2, -3], [5, -5], [6, -2]] : [[4, -7], [8, -8], [9, -4]]) { prick(B, 38 + dx, fot - 5 + dy, 'senap', 3); prick(B, 39 + dx, fot - 5 + dy, 'jord', 3); }
-      // gräva: gropen där spaden går ner och högen bakom; jordklumpar flyger upp ur gropen vid slaget
-      for (let y = -2; y <= 2; y++) for (let x = -5; x <= 5; x++) if (x * x / 25 + y * y / 4 <= 1) B.satt(96 + x, fot + 1 + y, P.i('jord', y < 0 ? 0 : 1));
-      for (let y = -4; y <= 0; y++) for (let x = -5; x <= 5; x++) if (x * x / 25 + (y + 0.5) ** 2 / 16 <= 1) B.satt(108 + x, fot + 2 + y, P.i('jord', y === -4 ? 3 : x < 0 ? 2 : 1));
-      const h2 = figur(B, 88, fot, 5203, 'sida', 'sta', arm === 'framfor' ? 'hanga' : arm, 'spade');
-      if (slag) for (const [dx, dy] of slag === 1 ? [[2, -3], [5, -5]] : [[6, -8], [9, -6], [11, -3]]) { prick(B, 96 + dx, fot - 1 + dy, 'jord', 1); prick(B, 97 + dx, fot - 1 + dy, 'jord', 2); }
-      // slå flinta: sittande; flintknölen på marken framför och slagstenen i handen
-      const kx = 148, ky = fot - 1;
-      for (const [dx, dy, t] of [[-1, 0, 1], [0, 0, 2], [1, 0, 1], [2, 0, 0], [-1, -1, 2], [0, -1, 3], [1, -1, 2], [0, -2, 2]]) B.satt(kx + dx, ky + dy, P.i('skiffer', t));
-      for (let dx = -1; dx <= 2; dx++) B.morka(kx + dx, ky + 1);
-      figur(B, 140, fot, 5307, 'sida', 'sitta', arm === 'framfor' ? 'hanga' : arm, 'sten');
-      if (slag) for (const [dx, dy] of slag === 1 ? [[3, -3], [-2, -4]] : [[6, -5], [-4, -6], [5, 0]]) prick(B, kx + dx, ky - 2 + dy, 'skiffer', 3);
-      if (stil === 'svep' && slag === 1) for (const [dx, dy] of [[0, -4], [2, -3], [-2, -3]]) prick(B, kx + dx, ky - 1 + dy, 'ben', 3); // slaget lyser
-    });
-  }
+  const CW = 46, CH = 34, RADER = Object.keys(HANDLINGAR);
+  const RORELSEKORT = SCEN(CW * 4, CH * RADER.length + 2, (B, P, ruta) => {
+    gras(B);
+    RADER.forEach((rad, j) => HANDLINGAR[rad].forEach((h, i) => handling(B, h, i * CW + 12, j * CH + CH - 3, ruta, 5000 + j * 97 + i * 13)));
+  });
+  const EFFEKTKORT = SCEN(150, 60, (B, P, ruta) => {
+    gras(B);
+    const cx = 26, cy = 46; ritaEld(B, cx, cy, P, { lagor: LAGOR[ruta] }); gnistor(B, cx, cy - 10, ruta); rok(B, cx, cy - 13, ruta, 30);
+    hydda(B, 58, 54); rok(B, 69, 36, (ruta + 2) % 4, 28);
+    vatten(B, 124, 44, 20, 9); glitter(B, 124, 44, 20, 9, ruta);
+  });
 
-  // ---------- striden (5.1.9.5) ----------
-  // två bybor mot varandra, den till vänster med slagträ och den till höger med spjut. En följd av lägen för båda och
-  // var träffen syns: [vänsters arm, högers arm, träff (0, vänster träffar, höger träffar), vänsters steg, högers steg]
-  const STRID = {
-    tva: [['lyfta', 'framfor', 0, 0, 0], ['sla', 'hanga', 1, 0, 0]],
-    knuff: [['lyfta', 'framfor', 0, 0, 0], ['sla', 'hanga', 1, 2, 3], ['hanga', 'lyfta', 0, 0, 2], ['framfor', 'sla', 2, -2, 0]],
-    dans: [['hanga', 'hanga', 0, 0, 0, 'gang1'], ['lyfta', 'framfor', 0, 1, 0, 'gang2'], ['sla', 'hanga', 1, 3, 3, 'sta'], ['hanga', 'lyfta', 0, 0, 2, 'gang1'], ['framfor', 'sla', 2, -2, 0, 'sta'], ['hanga', 'hanga', 0, 0, 0, 'gang2']],
-  };
-  function blixt(B, x, y) { // träffen: en liten stjärna
-    for (const [dx, dy, t] of [[0, 0, 3], [-1, 0, 3], [1, 0, 3], [0, -1, 3], [0, 1, 3], [-2, -2, 2], [2, -2, 2], [-2, 2, 2], [2, 2, 2], [-3, 0, 2], [3, 0, 2]]) B.satt(x + dx, y + dy, B.P.i(t === 3 ? 'ben' : 'senap', 3), true);
-  }
-  function dammet(B, x, fot) { for (const [dx, dy] of [[-4, 0], [-2, -1], [3, -1], [5, 0]]) { B.morka(x + dx, fot + dy); prick(B, x + dx, fot + dy - 1, 'jord', 3); } }
-  function stridScen(stil) {
-    const F = STRID[stil];
-    return SCEN(96, 44, F.length, stil === 'tva' ? 400 : 230, (B, P, r) => {
-      gras(B);
-      const [aV, aH, traff, sV, sH, ben] = F[r], fot = 36, xv = 38 + sV, xh = 58 + sH;
-      figur(B, xv, fot, 6101, 'sida', ben || 'sta', aV, 'tra');
-      figur(B, xh, fot, 6211, 'vast', ben === 'gang1' ? 'gang2' : ben === 'gang2' ? 'gang1' : 'sta', aH, 'spjut');
-      if (traff === 1) blixt(B, xh - 3, fot - 14);
-      if (traff === 2) blixt(B, xv + 3, fot - 13);
-      if (stil === 'dans' && traff) dammet(B, traff === 1 ? xh : xv, fot);
-    });
-  }
-
-  const T = 'Steg 5.2.4.8 (till 5.1.9): ';
   VAL.push(
-    { id: 'a_eld', stor: true, namn: 'Elden och röken', typ: 'tre', vad: T + 'lägerelden fladdrar och röken stiger från elden och från rökhålet i en hydda (5.1.9.1). Sex bilder som går runt. Hyddan är en platshållare; husen ritas för sig.',
-      versioner: [
-        { text: 'Version 1: lugn. Lågorna andas lite, röken stiger långsamt och rakt.', ...eldScen('lugn') },
-        { text: 'Version 2: livlig. Lågorna byter höjd fortare, gnistor stiger och röken går högre.', ...eldScen('livlig') },
-        { text: 'Version 3: i vind. Lågorna och röken lutar åt höger.', ...eldScen('vind') }] },
-    { id: 'a_arbete', stor: true, namn: 'Arbetena', typ: 'tre', vad: T + 'hugga (yxan mot en stubbe), gräva (spaden vid en grop) och slå flinta (sittande, en slagsten mot flintknölen), med kartfiguren från 5.2.2 (5.1.9.4). Flisor, jord och flintsplitter flyger vid slaget.',
-      versioner: [
-        { text: 'Version 1: två bilder, upp och ner, långsamt.', ...arbeteScen('tva') },
-        { text: 'Version 2: fyra bilder: upp, håller kvar, slår och det flyger längre.', ...arbeteScen('fyra') },
-        { text: 'Version 3: fyra bilder med ett ljust svep vid slaget och armen tillbaka framför kroppen.', ...arbeteScen('svep') }] },
-    { id: 'a_strid', stor: true, namn: 'Striden', typ: 'tre', vad: T + 'två bybor mot varandra, med slagträ och spjut (5.1.9.5). En ljus stjärna där slaget träffar.',
-      versioner: [
-        { text: 'Version 1: två bilder: den till vänster lyfter och slår, den andra skyddar sig.', ...stridScen('tva') },
-        { text: 'Version 2: fyra bilder: de slår växelvis och den som träffas knuffas bakåt.', ...stridScen('knuff') },
-        { text: 'Version 3: sex bilder: de trampar, slår växelvis, knuffas bakåt och dammet yr.', ...stridScen('dans') }] },
+    { id: 'a_rorelser', stor: true, namn: 'Rörelserna', typ: 'janej', vad: 'Steg 5.2.4.8 (till 5.1.9.4 och 5.1.9.5): fem generella rörelser i fyra bilder, som alla handlingar använder. Varje rad är en rörelse och varje ruta en handling som använder den. Slå: hugga, slå flinta, gräva och slåss. Stöta: fiska, slåss med spjut och slakta. Plocka: bär, svamp och ved. Pyssla (sittande): tälja, sy och skrapa skinn. Kasta: sten, spjut och snöboll. Redskapet ritas ur handen som skaft och huvud, och splittret får materialets färg (trä, sten, jord, vatten, blod). En ny handling blir en rad: rörelse, redskap, effekt och material.',
+      versioner: [{ text: 'Version 1: de fem rörelserna med exempel.', ...RORELSEKORT }] },
+    { id: 'a_effekter', stor: true, namn: 'Effekterna', typ: 'janej', vad: 'Steg 5.2.4.8 (till 5.1.9.1 och 5.1.9.2): lågorna, gnistorna och röken från elden, röken från rökhålet i en hydda (hyddan är en platshållare) och glittret på vattnet, i samma fyra bilder och takt som rörelserna. Splittret och träffen syns på kortet Rörelserna. Träd och gräs svajar inte, för då skulle hela marken ritas om hela tiden.',
+      versioner: [{ text: 'Version 1: eld, rök och vatten.', ...EFFEKTKORT }] },
   );
 })();
