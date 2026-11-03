@@ -416,7 +416,6 @@
     skonhet(dk, G, d, p) {
       if (d.id === 'skon-fransar') G.oga.forEach(([ex, ey], s) => { const x = s ? ex + 3 : ex - 4; dk.satt(x, ey - 2, 'kol0'); dk.satt(x + (s ? 1 : -1), ey - 3, 'kol0'); });
       if (d.id === 'skon-glans') punkter(dk, [[24, 13], [25, 12], [26, 12]], 'ben3');
-      if (d.id === 'skon-lappar') { const b = G.mun[1]; for (let x = 30; x <= 33; x++) dk.satt(x, b + 2, 'hud1'); dk.satt(31, b + 1, 'rost3'); dk.satt(32, b + 1, 'rost3'); }
       if (d.id === 'skon-tander' && ['glad', 'oppen'].includes(lageAv(p, 'mun'))) { const b = G.mun[1]; dk.satt(31, b, 'kol0'); dk.satt(33, b + (lageAv(p, 'mun') === 'oppen' ? -1 : 0), 'kol0'); }
       if (d.id === 'skon-varta') { const [x, y] = S(39, 38).map(Math.round); dk.satt(x, y, 'jord1'); dk.satt(x + 1, y, 'jord0'); dk.satt(x, y - 1, 'jord2'); }
       if (d.id === 'skon-hud') punkter(dk, [[22, 34], [24, 38], [41, 33], [39, 37], [36, 22], [27, 21], [25, 40]].map(([x, y]) => S(x, y)), 'rost1');
