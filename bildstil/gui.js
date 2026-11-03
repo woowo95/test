@@ -42,7 +42,7 @@
       }
       B.satt(x0 + x, y0 + y, c);
     }
-    const E = GUI.emblem[id], ew = E[0].length, eh = E.length, ex = x0 + Math.round(cx - (ew - 1) / 2), ey = y0 + 9 + Math.round((14 - eh) / 2);
+    const E = flik[4] || GUI.emblem[id], ew = E[0].length, eh = E.length, ex = x0 + Math.round(cx - (ew - 1) / 2), ey = y0 + 9 + Math.round((14 - eh) / 2);
     const ef = bleck ? P.i('senap', 1) : oppen ? P.i('kol', 0) : P.i(hu, hu === 'kol' ? 0 : 0);
     for (let j = 0; j < eh; j++) for (let i = 0; i < ew; i++) if (E[j][i] === '#') B.satt(ex + i, ey + j, ef);
   }
@@ -137,6 +137,56 @@
     tart(B, 26, 25, 20, [40, 25, 15, 10, 6, 4]); tart(B, 72, 25, 20, [55, 30, 15]); tart(B, 118, 25, 20, [40, 25, 15, 10, 6, 4], 1);
   });
 
+
+  // ---------- frågorna till Björn (5.2.4.7, Saknas): Tro, Person, Grannar och Förråd ----------
+  // Förslag till band och emblem för flikarna som saknar dem. Ett band är en remsa på 140 × 26 punkter: ett mönster
+  // som upprepas på båda sidor och en medaljong i mitten med emblemet, i flikens två färger.
+  const mask = (w, h, rita) => { const g = Array.from({ length: h }, () => Array(w).fill('.')); rita((x, y) => { if (x >= 0 && y >= 0 && x < w && y < h) g[y][x] = '#'; }); return g.map(r => r.join('')); };
+  const EMB = {
+    huvud: ['....###....', '...#####...', '...#####...', '...#####...', '....###....', '...........', '..#######..', '.#########.', '.#########.', '.#########.'],
+    hand: ['...#.#.#...', '...#.#.#...', '.#.#.#.#...', '.#.#.#.#...', '.#######.#.', '.#######.#.', '.#########.', '..#######..', '...#####...', '...#####...'],
+    oga: ['...#####...', '.##.....##.', '#...###...#', '#..#####..#', '#..##.##..#', '#...###...#', '.##.....##.', '...#####...'],
+    hus: mask(13, 10, s => { for (const x0 of [0, 7]) { for (let y = 0; y < 3; y++) for (let x = 2 - y; x <= 3 + y; x++) s(x0 + x, y); for (let y = 3; y < 8; y++) for (let x = 1; x <= 4; x++) if (!(y > 4 && (x === 2 || x === 3))) s(x0 + x, y); } for (let x = 0; x < 13; x++) s(x, 9); }),
+    pilar: mask(13, 9, s => { for (let x = 1; x < 12; x++) { s(x, 2); s(x, 6); } for (let i = 0; i < 3; i++) { s(11 - i, 2 - i); s(11 - i, 2 + i); s(1 + i, 6 - i); s(1 + i, 6 + i); } }),
+    stig: mask(13, 10, s => { for (let y = 0; y < 3; y++) for (let x = 9 - y; x <= 10 + y; x++) s(x, y); for (let y = 3; y < 6; y++) for (let x = 8; x <= 11; x++) if (!(y > 3 && (x === 9 || x === 10))) s(x, y); [[7, 7], [5, 8], [3, 8], [1, 9], [6, 6]].forEach(([x, y]) => { s(x, y); s(x + 1, y); }); }),
+  };
+  // mönstren på sidorna: ritar en ruta med vänstra kanten i x och mittlinjen i cy
+  const MONSTER = {
+    sol: { steg: 12, rita: (B, x, cy, hu, an) => { const P = B.P; for (let y = -4; y <= 4; y++) for (let i = -4; i <= 4; i++) { const d = Math.hypot(i, y); if (d <= 2.4) B.satt(x + 6 + i, cy + y, P.i(hu, 3)); else if (d <= 3.3) B.satt(x + 6 + i, cy + y, P.i('kol', 0)); else if (d <= 4.4 && (i === 0 || y === 0 || Math.abs(i) === Math.abs(y))) B.satt(x + 6 + i, cy + y, P.i(an, 1)); } } },
+    ranka: { steg: 8, rita: (B, x, cy, hu, an, n) => { const P = B.P; for (let i = 0; i < 8; i++) B.satt(x + i, cy, P.i('kol', 0)); const upp = n % 2 ? -1 : 1; for (let k = 1; k <= 3; k++) { B.satt(x + 3 + k - 1, cy + upp * k, P.i(hu, 2)); B.satt(x + 4 + k - 1, cy + upp * k, P.i(hu, 3)); } B.satt(x + 1, cy - upp, P.i(an, 2)); } },
+    flata: { steg: 10, rita: (B, x, cy, hu, an) => { const P = B.P; for (let i = 0; i < 10; i++) { const a = Math.round(Math.sin(i / 10 * 2 * Math.PI) * 3.4), b = -a; B.satt(x + i, cy + a, P.i(hu, 2)); B.satt(x + i, cy + a + 1, P.i(hu, 3)); if (i < 4 || i > 6) { B.satt(x + i, cy + b, P.i(an, 2)); B.satt(x + i, cy + b + 1, P.i(an, 3)); } } } },
+    fot: { steg: 9, rita: (B, x, cy, hu, an, n) => { const P = B.P, y0 = cy + (n % 2 ? -3 : 1); for (let j = 0; j < 4; j++) for (let i = 0; i < 3; i++) if (!(j === 0 && i !== 1)) B.satt(x + 2 + i, y0 + j, P.i(hu, j === 0 ? 2 : 1)); [0, 2, 4].forEach(i => B.satt(x + 1 + i, y0 - 2, P.i(an, 2))); } },
+    parlor: { steg: 6, rita: (B, x, cy, hu, an, n) => { const P = B.P; for (let i = 0; i < 6; i++) B.satt(x + i, cy, P.i('kol', 0)); const r = n % 3 ? 1.6 : 2.4; for (let y = -3; y <= 3; y++) for (let i = -3; i <= 3; i++) if (Math.hypot(i, y) <= r) B.satt(x + 3 + i, cy + y, P.i(n % 3 ? an : hu, Math.hypot(i + 0.8, y + 0.8) < 1 ? 3 : 2)); } },
+    hyddor: { steg: 11, rita: (B, x, cy, hu, an) => { const P = B.P; for (let y = 0; y < 4; y++) for (let i = 3 - y; i <= 4 + y; i++) B.satt(x + 1 + i, cy - 4 + y, P.i(hu, 2)); for (let y = 0; y < 4; y++) for (let i = 1; i <= 6; i++) B.satt(x + 1 + i, cy + y, y > 0 && (i === 3 || i === 4) ? P.i('kol', 0) : P.i(an, 2)); for (let i = 0; i < 11; i++) B.satt(x + i, cy + 4, P.i('kol', 0)); } },
+    stenar: { steg: 7, rita: (B, x, cy, hu, an, n) => { const P = B.P; for (let i = 0; i < 7; i++) if (i % 2) B.satt(x + i, cy + 2, P.i(an, 1)); for (let y = -2; y <= 1; y++) for (let i = 0; i < 4; i++) if (!((y === -2 || y === 1) && (i === 0 || i === 3))) B.satt(x + 1 + i, cy + y - (n % 2), P.i(hu, y < 0 ? 3 : 2)); } },
+  };
+  function nyttBand(B, x, y, hu, an, monster, E) { // en panel på 152 × 36 med bandet i mitten
+    const P = B.P;
+    for (let yy = 0; yy < 36; yy++) for (let xx = 0; xx < 152; xx++) B.satt(x + xx, y + yy, xx === 0 || yy === 0 || xx === 151 || yy === 35 ? P.i('kol', 0) : P.i('ben', 3));
+    const M = MONSTER[monster], cy = y + 18, cx = x + 76;
+    for (const [a, b] of [[x + 8, cx - 15], [cx + 15, x + 144]]) for (let n = 0, xx = a; xx + M.steg <= b; xx += M.steg, n++) M.rita(B, xx, cy, hu, an, n);
+    for (let j = -12; j <= 12; j++) for (let i = -12; i <= 12; i++) { const d = Math.hypot(i, j); if (d > 12.4) continue; B.satt(cx + i, cy + j, d > 11.4 ? P.i('kol', 0) : d > 9.6 ? P.i(hu, 2) : d > 8.8 ? P.i(an, 2) : P.i('ben', 3)); }
+    const ew = E[0].length, eh = E.length;
+    for (let j = 0; j < eh; j++) for (let i = 0; i < ew; i++) if (E[j][i] === '#') B.satt(cx - (ew >> 1) + i, cy - (eh >> 1) + j, P.i(hu, hu === 'senap' || hu === 'ben' ? 0 : 1));
+  }
+  // ett förslag: stängd och öppen runsten och bandet
+  const FORSLAG = (id, hu, an, monster, emb) => SCEN(2 * (SW + 4) + 160 + 8, 46, B => {
+    fyll(B, B.P.i('ben', 2)); const f = [id, '', hu, an, EMB[emb] || GUI.emblem[emb]];
+    runsten(B, 5, 9, f, 'stangd'); runsten(B, 5 + SW + 4, 9, f, 'oppen'); nyttBand(B, 2 * (SW + 4) + 8, 5, hu, an, monster, f[4]);
+  });
+  // Förråd: med egen runsten bland flikarna, eller bandet överst i lagret som öppnas från kartan, eller inget band
+  const RAD = (med) => FLIK.filter(f => med || f[0] !== 'forrad');
+  const LAGER = (band) => (B, x, y) => {
+    const P = B.P; for (let yy = 0; yy < 70; yy++) for (let xx = 0; xx < 152; xx++) B.satt(x + xx, y + yy, xx === 0 || yy === 0 || xx === 151 || yy === 69 ? P.i('kol', 0) : P.i('ben', 3));
+    if (band) { const b = GUI.band.forrad; bild(B, b, x + Math.round((152 - b.w) / 2), y + 5); }
+    const IK = ['ved', 'sten', 'flinta', 'skinn', 'svamp', 'fisk', 'bar', 'rotter'].filter(i => BILDFILER[i]);
+    IK.forEach((id, i) => { const o = BILDFILER[id]; const ox = x + 10 + (i % 4) * 36, oy = y + (band ? 34 : 10) + Math.floor(i / 4) * 18; o.rader.forEach((r, j) => [...r].forEach((ch, k) => { if (ch !== '.' && o.pal[ch]) B.satt(ox + k, oy + j, P.av(o.pal[ch])); })); });
+  };
+  const FORRAD = (v) => SCEN(FLIK.length * (SW + 4) + 8, SH + 90, B => {
+    fyll(B, B.P.i('ben', 2)); RAD(v === 1).forEach((f, i) => runsten(B, 5 + i * (SW + 4), 5, f, 'stangd'));
+    if (v < 3) LAGER(v === 2)(B, 5, SH + 14); else LAGER(false)(B, 5, SH + 14);
+  });
+
   const T = 'Steg 5.2.4.7: ', T2 = 'Steg 5.2.4.2, till 5.3.2.2: ';
   VAL.push(
     { id: 'g_runsten', stor: true, namn: 'Runstenarna', typ: 'janej', vad: T + 'flikarnas knappar (till 5.3.3.1) i hel skala, 22 × 28 punkter, efter skissen: en båge i flikens färg runt en grå sten med emblemet. Översta raden stängda, i mitten öppna (bågen i andrafärgen och stenen i huvudfärgen) och nederst bleka (fliken går inte att öppna än). Tros färger (senap och ben) är ett förslag. Person och Grannar har ingen sten än.',
@@ -156,5 +206,25 @@
       versioner: [{ text: 'Version 1: ringarna i pixlar.', ...RINGAR }] },
     { id: 'v_tart', stor: true, namn: 'Tårtan över den vakna tiden', typ: 'janej', vad: T2 + 'tårtan i personens tid, i pixlar: varje del i en färg ur paletten, med en tunn ljus linje mellan delarna och en mörk kant. Till höger med en del vald: den lyser och de andra bleknar.',
       versioner: [{ text: 'Version 1: tårtan i pixlar.', ...TARTA }] },
+    { id: 'q_tro', stor: true, namn: 'Fråga: Tros band och färger', typ: 'tre', vad: 'Fråga till dig (Björn avgör, 5.2.4.7): fliken Tro har ett emblem (solkorset) men inget band, och dess färger är bara mitt förslag. Tre förslag, var och en med färger, stängd och öppen runsten och bandet. Välj ett, eller skriv vad du vill ha i stället.',
+      versioner: [
+        { text: 'Version 1: senap och ben (mitt förra förslag), solar i rad.', ...FORSLAG('tro', 'senap', 'ben', 'sol', 'tro') },
+        { text: 'Version 2: barr och senap, en ranka med blad som livsträdets grenar.', ...FORSLAG('tro', 'barr', 'senap', 'ranka', 'tro') },
+        { text: 'Version 3: skiffer och ben, två band flätade om varandra.', ...FORSLAG('tro', 'skiffer', 'ben', 'flata', 'tro') }] },
+    { id: 'q_person', stor: true, namn: 'Fråga: Personfliken', typ: 'tre', vad: 'Fråga till dig (Björn avgör, 5.2.4.7): fliken Person (den valda människan) har en egen knapp i spelet men varken färger, band eller emblem. Tre förslag. Välj ett, eller skriv vad du vill ha i stället.',
+      versioner: [
+        { text: 'Version 1: jord och senap, ett huvud med axlar och fotspår i bandet.', ...FORSLAG('person', 'jord', 'senap', 'fot', 'huvud') },
+        { text: 'Version 2: rost och ben, en hand och ett pärlband.', ...FORSLAG('person', 'rost', 'ben', 'parlor', 'hand') },
+        { text: 'Version 3: skiffer och rost, ett öga och ett flätat band.', ...FORSLAG('person', 'skiffer', 'rost', 'flata', 'oga') }] },
+    { id: 'q_grannar', stor: true, namn: 'Fråga: Grannfliken', typ: 'tre', vad: 'Fråga till dig (Björn avgör, 5.2.4.7): fliken Grannar (de andra klanerna) har en egen knapp i spelet men varken färger, band eller emblem. Tre förslag. Välj ett, eller skriv vad du vill ha i stället.',
+      versioner: [
+        { text: 'Version 1: oliv och rost, två hus och en rad hyddor.', ...FORSLAG('grannar', 'oliv', 'rost', 'hyddor', 'hus') },
+        { text: 'Version 2: jord och skiffer, pilar åt båda hållen (besök och byte) och stenar längs en stig.', ...FORSLAG('grannar', 'jord', 'skiffer', 'stenar', 'pilar') },
+        { text: 'Version 3: barr och senap, en stig till en hydda och ett flätat band.', ...FORSLAG('grannar', 'barr', 'senap', 'flata', 'stig') }] },
+    { id: 'q_forrad', stor: true, namn: 'Fråga: Förrådets band', typ: 'tre', vad: 'Fråga till dig (Björn avgör, 5.2.4.7): Förråd har ett band från din skiss (sädesaxen) men ingen egen flik i spelet: lagret öppnas från kartan. Vad ska gälla?',
+      versioner: [
+        { text: 'Version 1: Förråd blir en egen flik med runsten bland de andra, och bandet står överst i den.', ...FORRAD(1) },
+        { text: 'Version 2: ingen egen flik, men bandet står överst i lagret som öppnas från kartan.', ...FORRAD(2) },
+        { text: 'Version 3: ingen egen flik och inget band; bandet tas bort.', ...FORRAD(3) }] },
   );
 })();

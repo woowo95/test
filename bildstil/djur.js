@@ -20,7 +20,7 @@
       ['Gråare', { o: ['jord', 0], d: ['kol', 2], m: ['ben', 0], l: ['ben', 1], c: ['ben', 2], b: ['ben', 3] }],
     ],
   };
-  const FAST = { k: ['kol', 0], r: ['rost', 2] };
+  const FAST = { k: ['kol', 0], r: ['rost', 2], a: ['senap', 3] }; // a: vargens gula ögon
 
   // ---------- vargen (ritad på nytt utan förlaga efter Björns svar på bildstil v121) ----------
   // Vargen byggs av former i stället för att ritas punkt för punkt: ellipser för bröst, höft, hals och huvud, kilar för
@@ -56,7 +56,7 @@
 
   // de tre vargarna: mått i punkter, foten på raden h - 1
   const VARGTYP = [
-    { namn: 'smal', ben: 7.5, kropp: 3.1, ruff: 3.2, huvud: 2.8, nos: 4.4, svans: 1.8, sank: 0, mask: false },
+    { namn: 'smal', ben: 7.5, kropp: 3.1, ruff: 3.2, huvud: 2.8, nos: 4.4, svans: 1.8, sank: 0.6, mask: false, arg: true },
     { namn: 'tung', ben: 6, kropp: 3.8, ruff: 4.4, huvud: 3.1, nos: 3.6, svans: 2.6, sank: 0, mask: false },
     { namn: 'lag', ben: 7, kropp: 3.2, ruff: 3.4, huvud: 2.7, nos: 4.9, svans: 2, sank: 3, mask: true },
   ];
@@ -73,23 +73,33 @@
     const ora = (x0) => tri([x0 - 1.5, hy - t.huvud + 1], [x0 + 1.5, hy - t.huvud + 1], [x0 - 0.4, hy - t.huvud - 3.2]);
     const framBen = (x) => linje([[x, bot - 1], [x + 0.2, fot - 1.2], [x + 0.8, fot - 0.4]], 0.8, 0.65);
     const bakBen = (x) => linje([[x + 1.2, bot - 1.8], [x - 1.2, bot + ben * 0.55], [x - 0.6, fot - 1], [x + 0.2, fot - 0.4]], 1.5, 0.65);
-    const svansSpets = [1.4, fot - ben * 0.3];
-    const svans = linje([[4.5, rygg + 1], [2.2, rygg + 3.2], [1.4, rygg + 6], svansSpets], t.svans * 0.6, t.svans * 1.1);
+    const svansSpets = t.arg ? [-1.6, fot - ben * 0.4] : [1.4, fot - ben * 0.3];
+    // arg (Björn efter bildstil v122): en rak, yvig svans som hänger snett bakåt och är tjockast på mitten
+    const svans = t.arg ? och(linje([[4.2, rygg + 0.8], [1, rygg + 3.4]], 0.9, 1.7), linje([[1, rygg + 3.4], svansSpets], 1.7, 0.8))
+      : linje([[4.5, rygg + 1], [2.2, rygg + 3.2], [1.4, rygg + 6], svansSpets], t.svans * 0.6, t.svans * 1.1);
+    const ex = Math.floor(hx + 0.6), ey = Math.floor(hy - 0.3); // ögat
     const ton = (x, y) => { // pälsen: mörk rygg, mellan på sidorna, ljus undersida
       const u = (y - rygg) / (bot - rygg);
       return u < 0.3 ? 'd' : u < 0.72 ? 'm' : 'l';
     };
-    return former(W, H, [
+    const X = 3; // allt flyttas X punkter åt höger, så att svansen ryms bakom bakbenen
+    const lista = [
       [och(framBen(16.5), bakBen(6.2)), 'd'], // benen på andra sidan, i skugga
-      [svans, (x, y) => y > svansSpets[1] - 0.6 ? 'k' : x < 2.6 && y > rygg + 4 ? 'm' : 'd'],
+      [svans, t.arg ? (x, y) => y > svansSpets[1] - 1.2 ? 'k' : x > 2.6 - (y - rygg) * 0.4 ? 'd' : 'l' : (x, y) => y > svansSpets[1] - 0.6 ? 'k' : x < 2.6 && y > rygg + 4 ? 'm' : 'd'],
       [kropp, ton],
       [hals, (x, y) => (y > mitt - 0.5 || x > hx - 2.5 && y > hy + 1) ? 'c' : y < rygg + 1 + t.sank * 0.5 ? 'd' : 'm'],
       [och(framBen(19.5), bakBen(9)), (x, y) => y > fot - 1.6 ? 'l' : 'm'],
       [ora(hx - 1.6), 'd'], [ora(hx + 0.8), (x, y) => x > hx + 0.2 && x < hx + 1.2 && y > hy - t.huvud - 1.6 ? 'k' : 'm'],
       [huvud, (x, y) => y < hy - 0.6 ? 'm' : t.mask && y > hy - 0.4 ? 'c' : 'l'],
       [nos, (x, y) => x > nx - 1.4 && y < hy + 1.7 ? 'k' : y > hy + 0.8 ? 'c' : t.mask ? 'c' : 'l'],
-      [punkt(Math.floor(hx + 0.6), Math.floor(hy - 0.3)), 'k'],
-    ]);
+      ...(t.arg ? [
+        [och(punkt(18, Math.floor(rygg) - 1), punkt(20, Math.floor(rygg) - 1), punkt(22, Math.floor(rygg) - 1), punkt(21, Math.floor(rygg) - 2)), 'd'], // rest nackhår
+        [punkt(ex, ey), 'a'], [punkt(ex + 1, ey), 'k'], // gult öga med mörk ögonvrå, inga ögonbryn (Björn)
+        [(x, y) => Math.floor(y) === Math.floor(hy + 1.8) && x > hx + 0.4 && x < nx - 0.8, 'k'], // munnen
+        [punkt(Math.floor(nx - 1.6), Math.floor(hy + 2.8)), 'b'], // en tand
+      ] : [[punkt(ex, ey), 'k']]),
+    ];
+    return former(W + X, H, lista.map(([f, ton]) => [(x, y) => f(x - X, y), typeof ton === 'function' ? (x, y) => ton(x - X, y) : ton]));
   }
   function vargFram(t) {
     const W = 15, H = 26, fot = H - 1, c = 7.5, bot = fot - t.ben, hy = bot - t.kropp * 2 - 1.2 + t.sank, r = t.huvud + 0.5;
@@ -103,7 +113,12 @@
       [och(ora(-1), ora(1)), (x, y) => Math.abs(x - c) > 2.2 && Math.abs(x - c) < 3.4 && y > hy - r - 0.5 ? 'k' : 'm'],
       [ell(c, hy, r + 0.9, r), (x, y) => y < hy - 0.8 ? 'm' : Math.abs(x - c) > r - 0.6 ? 'l' : t.mask ? 'c' : 'l'],
       [ell(c, hy + r * 0.65, 1.7, 1.4), 'c'], // nosen
-      [och(punkt(Math.floor(c) - 2, Math.floor(hy)), punkt(Math.floor(c) + 2, Math.floor(hy)), punkt(Math.floor(c), Math.floor(hy + r * 0.45))), 'k'],
+      [och(punkt(Math.floor(c) - 2, Math.floor(hy)), punkt(Math.floor(c) + 2, Math.floor(hy)), punkt(Math.floor(c), Math.floor(hy + r * 0.45))), t.arg ? (x, y) => Math.abs(x - c) > 1 ? 'a' : 'k' : 'k'],
+      ...(t.arg ? [
+        [och(punkt(Math.floor(c) - 1, Math.floor(hy)), punkt(Math.floor(c) + 1, Math.floor(hy))), 'k'], // mörka ögonvrår, inga ögonbryn (Björn)
+        [(x, y) => Math.floor(y) === Math.floor(hy + r * 0.65 + 1.2) && Math.abs(x - c) < 1.8, 'k'], // munnen
+        [och(punkt(Math.floor(c) - 1, Math.floor(hy + r * 0.65 + 2.2)), punkt(Math.floor(c) + 1, Math.floor(hy + r * 0.65 + 2.2))), 'b'], // tänderna
+      ] : []),
     ]);
   }
   function vargBak(t) {
@@ -258,11 +273,8 @@
   const T = 'Steg 5.2.4.6, till 5.1.11: ';
   const OM = ' Överst: en vuxen människa framifrån för storleken, sedan djuret framifrån (söderut), bakifrån (norrut), från sidan (österut) och speglat (västerut). Nederst fyra pälsar, små skillnader i färgen som räknas ur djurets id: ';
   VAL.push(
-    { id: 'djur_varg', stor: true, namn: 'Vargen', typ: 'tre', vad: T + 'vargen ritad helt på nytt, utan förlaga (de förra ritningarna är borta). Den byggs av former: ellipser för bröst, höft, hals och huvud, kilar för nos och öron och tjocka linjer för ben och svans, så att den blir samma djur från alla håll. Mörk rygg, ljus undersida, gräddvitt bröst och svart nos, öronkant och svansspets. Din kommentar förra gången: \u201dJag gillar inte hur den ser ut. Gör ett helt nytt utseende utan förlaga\u201d.' + OM + PALS.varg.map(p => p[0].toLowerCase()).join(', ') + '.',
-      versioner: [
-        { text: 'Version 1: smal och högbent, som en skogsvarg om sommaren.', ...scen('varg', 0) },
-        { text: 'Version 2: tung vinterpäls, kortare ben, stor ruff och tjock svans.', ...scen('varg', 1) },
-        { text: 'Version 3: bär huvudet lågt i ryggens linje med lång nos och ljus mask, som en varg som går och vädrar.', ...scen('varg', 2) }] },
+    { id: 'djur_varg', stor: true, namn: 'Vargen', typ: 'janej', vad: T + 'vargen version 1 (smal och högbent) omritad efter din kommentar: en rak, yvig svans som hänger snett bakåt och är tjockast på mitten, med svart spets; och argare: huvudet lite sänkt, gula ögon med mörk ögonvrå (inga ögonbryn), rest nackhår och en mörk mun med en vit tand. Din kommentar förra gången: \u201dJag gillade vargen men inte svansen, och den såg för snäll ut\u201d (den kom inte fram i databasen, så jag skrev in den från chatten), och sedan \u201dinga ögonbryn\u201d.' + OM + PALS.varg.map(p => p[0].toLowerCase()).join(', ') + '.',
+      versioner: [{ text: 'Version 1 omritad: ny svans och argare.', ...scen('varg', 0) }] },
     { id: 'djur_kanin', stor: true, namn: 'Haren (kaninen)', typ: 'tre', vad: T + 'haren som springer på kartan (spelets kanin), i samma bruna toner som det fällda viltet du valt. I spelet nu 8 × 8 punkter, bara från sidan.' + OM + PALS.kanin.map(p => p[0].toLowerCase()).join(', ') + '.',
       versioner: [
         { text: 'Version 1: sitter med öronen rakt upp.', ...scen('kanin', 0) },

@@ -1034,7 +1034,6 @@ const BESLUT = {
   grill: { val: 2, steg: '5.1.2.2' }, a_sikta: { val: 1, steg: '5.3.2.1' }, a_smyga: { val: 3, steg: '5.3.2.1' }, dragkamp: { val: 1, steg: '5.1.2' },
   sport_brottning: { val: 1, steg: '5.1.2' }, sport_kast: { val: 1, steg: '5.1.2' }, sport_snoboll: { val: 1, steg: '5.1.2' }, sport_bollspel: { val: 1, steg: '5.1.2' },
   scen_v: { val: 1, steg: '5.1.2.2' },
-  djur_varg: { val: 1, text: 'Smal och högbent. Byggs in i steg 5.1.11.' },
   djur_kanin: { val: 2, text: 'Version 2 och version 3 används båda: varje hare får den ena eller den andra, slumpat ur dess id. Byggs in i steg 5.1.11.' },
   g_runsten: { val: 1, steg: '5.3.3.1' }, g_band: { val: 1, steg: '5.3.3.1' }, g_vag: { val: 1, steg: '5.3.1.2' },
   g_horn: { val: 1, text: 'Ormen. Ring med blad och Dubbel ögla sparas (i gui.json) om du ångrar dig. Byggs in i steg 5.3.1.4.' },
