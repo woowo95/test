@@ -1038,6 +1038,10 @@ for (const s of VALT) VAL.splice(VAL.indexOf(s), 1);
 function valBild(v, P) {
   const B = v.kol ? kolBild(v.w, v.h, P) : markBild(v.w, v.h, P);
   v.rita(B, P);
+  if (v.stor) { // en stor scen (marken och träden, 5.2.4.5): en bild över hela kortets bredd, i jämna skalor
+    const c = document.createElement('canvas'); tillCanvas(B, c, 0); c.className = 'scen'; c.style.width = v.w * 3 + 'px'; c.setAttribute('aria-label', 'Scenen');
+    const d = document.createElement('div'); d.className = 'bilder'; d.append(c); return d;
+  }
   const stor = document.createElement('canvas'), liten = document.createElement('canvas');
   tillCanvas(B, stor, 0); tillCanvas(B, liten, 0);
   const s = Math.max(2, Math.min(8, Math.floor(260 / v.w)));
@@ -1063,7 +1067,7 @@ function byggVal(P) {
   const lista = $('#vallista'); lista.textContent = '';
   if (!VAL.length) { lista.innerHTML = '<p class="not">Inget att välja just nu.</p>'; return; }
   for (const s of VAL) {
-    const kort = document.createElement('article'); kort.className = 'valkort'; kort.id = 'val-' + s.id;
+    const kort = document.createElement('article'); kort.className = 'valkort' + (s.stor ? ' stor' : ''); kort.id = 'val-' + s.id;
     kort.innerHTML = `<header><span class="typ">${s.typ === 'tre' ? 'Ny sak · välj en av ' + (['', 'en', 'två', 'tre', 'fyra', 'fem', 'sex', 'sju', 'åtta'][s.versioner.length] || s.versioner.length) : 'Görs om · ja eller nej'}</span><h3>${s.namn}</h3><p class="not">${s.vad}</p></header><div class="alternativ"></div><div class="svar" role="group" aria-label="Ditt val för ${s.namn}"></div><label>Kommentar: vad ska ändras?<textarea rows="3" placeholder="Till exempel: nej, gör locket mörkare och låset större"></textarea></label><div class="sparat" aria-live="polite"></div>`;
     const alt = kort.querySelector('.alternativ');
     if (s.idag) {

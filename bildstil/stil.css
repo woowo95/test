@@ -152,6 +152,8 @@ td.tal { white-space: nowrap; }
 .alt.idag { background: transparent; border: 1px dashed var(--line); }
 .alt .bilder { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
 .alt .bilder canvas { background: #24201d; }
+.valkort.stor .alternativ { grid-template-columns: 1fr; }
+.alt .bilder canvas.scen { max-width: 100%; height: auto; }
 .alt figcaption b { color: var(--mustard); }
 .svar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .svar button { background: var(--panel2); border: 1px solid var(--line); padding: 5px 14px; cursor: pointer; }

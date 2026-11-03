@@ -9,6 +9,7 @@ const html = `<title>Samhällssimulatorns bildstil</title>
 ${fs.readFileSync(d + '/kropp.html', 'utf8').replace('<section aria-labelledby="h-beslut">', granssnitt + '<section aria-labelledby="h-beslut">')}
 <script>const IKONER = ${fs.readFileSync(d + '/ikoner.json', 'utf8')};</script>
 <script>${fs.readFileSync(d + '/sida.js', 'utf8')}</script>
+<script>${fs.readFileSync(d + '/mark.js', 'utf8')}</script>
 <script>const PORTRATT = ${fs.readFileSync(d + '/portratt.json', 'utf8')};</script>
 <script>const DELAR = ${JSON.stringify(Object.fromEntries(fs.readdirSync(d + '/delar').filter(f => f.endsWith('.json')).sort().map(f => { const o = JSON.parse(fs.readFileSync(d + '/delar/' + f, 'utf8')); return [o.id, o]; })))};</script>
 <script>const BILDER = ${fs.readFileSync(d + '/bilder.json', 'utf8')};</script>
