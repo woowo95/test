@@ -1144,13 +1144,18 @@
   const arStation = id => !!BILDER.sorter.find(s => s.id === BILDER.bilder.find(b => b.id === id)?.sort)?.station;
   function stationSammanhang(id, S) {
     const rad = BILDER.bilder.find(b => b.id === id), U = rad?.under && BILDFILER[rad.under] ? sakBild(rad.under) : null, ut = [];
+    // möblerna står på trägolvet (inne), golven läggs bredvid sig själva (monster)
+    const golv = rad?.inne && BILDFILER.golv_tra ? sakBild('golv_tra') : null;
+    if (rad?.monster) { const M = markBild(56, 40, P, 400, 420); for (let x = 4; x < 52; x += 16) for (let y = 4; y < 36; y += 16) klistra(M, S, x, y); ut.push(['Lagt bredvid sig självt, tre × två rutor', M, 4]); return ut; }
     const pa = (lager, titel) => {
       const W = Math.max(...lager.map(B => B.w)), H = Math.max(...lager.map(B => B.h)), M = markBild(W + 8, H + 8, P, 400, 420);
+      if (golv) for (let x = 0; x < W + 8; x += 16) for (let y = 0; y < H + 8; y += 16) klistra(M, golv, x, y);
       for (let tx = 0; tx * 16 < W; tx++) for (let ty = 0; (ty + 1) * 16 <= H; ty++) rutHorn(M, 4 + tx * 16, 4 + H - 16 * (ty + 1));
       lager.forEach((B, i) => klistra(M, B, 4 + ((W - B.w) >> 1), 4 + H - B.h, i === lager.length - 1));
       ut.push([titel, M, 4]);
     };
-    if (U) { pa([U, S], 'Med stenring'); pa([S], 'Utan stenring'); } else pa([S], 'På marken');
+    const un = BILDER.bilder.find(b => b.id === rad?.under)?.namn?.toLowerCase();
+    if (U) { pa([U, S], rad.under === 'lagereld_ring' ? 'Med stenring' : 'På ' + un); pa([S], rad.under === 'lagereld_ring' ? 'Utan stenring' : 'Ensam'); } else pa([S], golv ? 'På trägolvet' : 'På marken');
     if (rad?.medManniska) {
       const q = neutral('man'), F = kartFigur(q, 'fram', 'sta', 'hanga'), lag = U ? [U, S] : [S], SW = Math.max(...lag.map(B => B.w)), SH = Math.max(...lag.map(B => B.h));
       const W = F.w + SW + 14, H = Math.max(F.h, SH) + 8, M = markBild(W, H, P, 410, 430);

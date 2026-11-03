@@ -1,0 +1,34 @@
+{
+ "id": "skinndorr",
+ "ritad": 1,
+ "av": "Claude",
+ "om": "skinndörren i en vägg på bredden: ett skinn som hänger från en stång i öppningen, med veck",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "................",
+  "FFFKFFFFKFFFKFFF",
+  "EEEEEEEEEEEEEEEE",
+  "..GHHGpHpHGppG..",
+  "..FGHGHHHGGHHG..",
+  "..FHGGHHpGGGGG..",
+  "..GGHGHHpHGHpF..",
+  "..GHHGHGHHGHHG..",
+  "..GpGGHpHpGHHF..",
+  "..GHHGGHppGHHG..",
+  "..GGHGGHpHGHHG..",
+  "..GHHGpHHGGpHG..",
+  "..GHHGpHHpGHGG..",
+  "..FHHGHpHpGHHG..",
+  "..FGGGHHHHGHHG..",
+  "..F.HG.Hp.GH.F.."
+ ],
+ "pal": {
+  "F": "#5e3c24",
+  "K": "#b2921b",
+  "E": "#3f2415",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "p": "#a0947d"
+ }
+}

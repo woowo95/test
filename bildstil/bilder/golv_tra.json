@@ -1,0 +1,31 @@
+{
+ "id": "golv_tra",
+ "ritad": 1,
+ "av": "Claude",
+ "om": "trägolvet, en ruta som går att lägga bredvid sig själv: plankor uppifrån och ner, fyra punkter breda, med förskjutna skarvar och låg kontrast",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "FFFFFHGGFHHHFHGG",
+  "FHHFFHGGFHHHFFFF",
+  "FHHHFHGGFHHHFHGF",
+  "FHHHFHGGFHHHFHGG",
+  "FHHHFHGGFHHHFHGG",
+  "FHHHFHGGFHHHFHGG",
+  "FHHHFHGGFFFFFHGG",
+  "FHHHFHGGFHHFFHGG",
+  "FHHHFHGGFHHHFHGG",
+  "FHHHFHGGFHHHFHGG",
+  "FHHHFHGGFHHHFHGG",
+  "FHHHFFFFFHHHFHGG",
+  "FHHHFHHFFHHHFHGG",
+  "FHHHFHHHFHHHFHGG",
+  "FHHHFHHHFHHHFHGG",
+  "FHHHFHHHFHHHFHGG"
+ ],
+ "pal": {
+  "F": "#5e3c24",
+  "H": "#987e62",
+  "G": "#7d5b40"
+ }
+}

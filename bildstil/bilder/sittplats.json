@@ -1,0 +1,34 @@
+{
+ "id": "sittplats",
+ "ritad": 1,
+ "av": "Claude",
+ "om": "stubben att sitta på vid bord och bänkar: ändytan med årsringar uppifrån och barken framtill",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "................",
+  "................",
+  "................",
+  "................",
+  "....GGKKKKGG....",
+  "...JKLLLLLLKG...",
+  "...GLLKKKKLLG...",
+  "...KLKKJJKKLK...",
+  "..GGLLKKKKLLGE..",
+  "...GKLLLLLLKG...",
+  "..GGGGKKKKGGEE..",
+  "..GGGFEFFFFEEE..",
+  "...GGFEFFFEEE...",
+  "................",
+  "................",
+  "................"
+ ],
+ "pal": {
+  "G": "#7d5b40",
+  "K": "#b2921b",
+  "J": "#906f0f",
+  "L": "#d8b25f",
+  "E": "#3f2415",
+  "F": "#5e3c24"
+ }
+}

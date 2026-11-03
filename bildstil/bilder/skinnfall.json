@@ -1,0 +1,37 @@
+{
+ "id": "skinnfall",
+ "ritad": 1,
+ "av": "Claude",
+ "om": "skinnfällen i halmbädden på bredden: två skinn sydda ihop, med pälsen uppåt, som täcker bädden utom vid huvudet; ett lager över halmbädden",
+ "w": 32,
+ "h": 20,
+ "rader": [
+  "................................",
+  "................................",
+  "................................",
+  "..........GHGH.HHHHG.HH..H.H.HH.",
+  "...........HHHFpHpHGFoGppHHpHpHG",
+  "..........HHHHGHGpHppGHGFHGFHFHG",
+  "..........HGpGHGHGGHpoGHHHHHHFFH",
+  "...........HHHHHHHHHFGHpHHHHHHHG",
+  "..........HHHHGHpHGpHoHHHHHpHpHH",
+  "..........HHHGGHpGHFHGpHpHpGHHHG",
+  "..........HGHHHpHGHppoHHpFHHHFpG",
+  "..........HHGHpHppHGHGGHpHHHGHHH",
+  "..........GHpppHHpHGGoHpGpGHGHHG",
+  "..........HHGGHHHpHHHGGHHGpHFppH",
+  "..........GHHHpHHHHGpoHGHpHpHHp.",
+  "..........GHGpHHHpHHHGGHHHHGppHG",
+  "..........HHGHHHHH.HGH.GGHHGHGHH",
+  "..........GGGGGGGGGGGGGGGGGGGGGG",
+  "..........HHGHHGHHGHHGHHGHHGHHGH",
+  "................................"
+ ],
+ "pal": {
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "F": "#5e3c24",
+  "p": "#a0947d",
+  "o": "#7e7362"
+ }
+}

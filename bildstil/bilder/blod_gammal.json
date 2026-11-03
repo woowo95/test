@@ -1,0 +1,31 @@
+{
+ "id": "blod_gammal",
+ "ritad": 1,
+ "av": "Claude",
+ "om": "en gammal blodpöl som torkat: brun med mörkare kant",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "................",
+  "................",
+  "................",
+  "...........FFF..",
+  ".....EEEE.EFFFE.",
+  "....EEFFFEFFFF..",
+  "...EFFFFFFFFE...",
+  "..EEFFFsFFFFFEE.",
+  "..EEFFFFFFFFFE..",
+  "...FFFFFFFFFE.E.",
+  "...EFFFFFFFEE...",
+  "...EEEFFFFFEEE..",
+  "....EEE.EEEE....",
+  "........E.......",
+  "................",
+  "................"
+ ],
+ "pal": {
+  "F": "#5e3c24",
+  "E": "#3f2415",
+  "s": "#742a01"
+ }
+}

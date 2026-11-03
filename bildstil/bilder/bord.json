@@ -1,0 +1,37 @@
+{
+ "id": "bord",
+ "ritad": 1,
+ "av": "Claude",
+ "om": "det lilla bordet på bredden, två rutor: skivan av kluvna stockar uppifrån, framkanten och benen nedtill (de bakre benen kortare innanför)",
+ "w": 32,
+ "h": 21,
+ "rader": [
+  "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+  "FHHGHHHHHHHHHHHHHHHHHGHFHHHHGHHG",
+  "FGGGGGGGHHHHGGGGHHHHHHHFHHHHHHHG",
+  "FGGGGGGGHHHHGGGGHHHHGHHFGHHHHHHG",
+  "FGGGGGGGGGGGGGGGGGGGGGGFGGGGGGGF",
+  "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+  "GHHHHHHHHHHHHHHHFHHGHHHHHHHHGGHF",
+  "GHHHGGGGGHHHHHHGFGGGHHHHHHHHGHHG",
+  "GHHHGGGGHGHHGHHHFGGGHHHHHHHHHHHG",
+  "FGGGGGGGGGGGGGGGFGGGGGGGGGGGGGGF",
+  "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+  "GHHHHHHHHFHHHHHHHHHHHHGHHHHHHHHG",
+  "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+  "FFEFFFFFEFFFFFEFFFFFEFFFFFEFFFFF",
+  "EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE",
+  ".GFEGFE..................GFEGFE.",
+  ".GFEGFE..................GFEGFE.",
+  ".GFEGFE..................GFEGFE.",
+  ".GFE........................GFE.",
+  ".GFE........................GFE.",
+  ".GFE........................GFE."
+ ],
+ "pal": {
+  "F": "#5e3c24",
+  "H": "#987e62",
+  "G": "#7d5b40",
+  "E": "#3f2415"
+ }
+}

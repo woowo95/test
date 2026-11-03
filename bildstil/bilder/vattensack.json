@@ -1,29 +1,28 @@
 {
  "id": "vattensack",
- "ritad": 1,
- "av": "API:t (claude-opus-5-5), bästa av 3",
- "om": "Jag valde version 1. Den liknar dagens bild mest: en bred och låg säck av skinn i jordtoner, en bärögla av senap ovanför, den snörda halsen i senap till höger och en vattendroppe i skiffer nere till höger. Version 2 och 3 gör säcken högre och rundare och tappar dagens platta form. Konturen är jord0 i stället för dagens svarta kol0, och ljuset kommer uppe från vänster: jord3 och jord2 i det övre vänstra hörnet, jord1 i det nedre högra. Jag ändrade en sak: droppen var skiffer2 över skiffer1 och blev för mörk för att synas mot gräset. Nu är den skiffer3 över skiffer2, alltså ljusare upptill och tydligare. Vattnet är det man ska se, så det ska läsas först.",
+ "ritad": 2,
+ "av": "Claude",
+ "om": "vattensäcken utan mörk kant (5.1.2.5): samma säck med snörd hals, skuggad med skinnets egna toner",
  "w": 7,
  "h": 8,
  "rader": [
   "..JKJ..",
   ".J...J.",
-  ".EEEEE.",
-  "EHHGGEK",
-  "EHGGFEI",
-  "EGGFFE.",
-  ".EEEE.T",
+  ".GHHG..",
+  "GHHGGFK",
+  "HHGGFFI",
+  "GGFFFF.",
+  ".FFFF.T",
   "......S"
  ],
  "pal": {
-  "E": "#3f2415",
-  "F": "#5e3c24",
-  "G": "#7d5b40",
-  "H": "#987e62",
-  "I": "#694902",
   "J": "#906f0f",
   "K": "#b2921b",
-  "S": "#61767a",
-  "T": "#8a9c9e"
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "F": "#5e3c24",
+  "I": "#694902",
+  "T": "#8a9c9e",
+  "S": "#61767a"
  }
 }
