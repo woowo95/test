@@ -207,16 +207,18 @@
     gras(B);
     RADER.forEach((rad, j) => HANDLINGAR[rad].forEach((h, i) => handling(B, h, i * CW + 12, j * CH + CH - 3, ruta, 5000 + j * 97 + i * 13)));
   });
-  const iSjo = (x, y) => ((x - 178) / 64) ** 2 + ((y - 44) / 30) ** 2 + 0.07 * Math.sin(x * 0.31) + 0.06 * Math.sin(y * 0.47 + x * 0.13) < 1;
-  let SJO = null;
+  // sjön på kortet: en form, och färgerna är spelets vatten och strand (MARK.spelVatten), så att bara animationerna är
+  // nya. Avståndet i punkter (strandAvst) blir rutor för färgerna och punkter för vågorna och skumranden.
+  const iSjo = (x, y) => ((x - 180) / 60) ** 2 + ((y - 44) / 28) ** 2 + 0.07 * Math.sin(x * 0.31) + 0.06 * Math.sin(y * 0.47 + x * 0.13) < 1;
+  let SJO = null, SJOAVST = null;
   const EFFEKTKORT = { ...SCEN(210, 72, null), rutor: SLAG, rita: (B, P, slag) => {
     gras(B);
-    if (!SJO) SJO = strandAvst(B, iSjo, 4);
-    for (let y = 0; y < B.h; y++) for (let x = 0; x < B.w; x++) {
-      const a = SJO[y * B.w + x];
-      if (a > 0) B.satt(x, y, a > 9 ? P.i(hash(x, y, 930) < 0.5 ? 'barr' : 'skiffer', 0) : a > 4 ? P.i('skiffer', 0) : P.i('skiffer', a > 2 ? 1 : 2));
-      else if (a >= -3) B.satt(x, y, P.i(hash(x, y, 931) < 0.25 ? 'jord' : 'senap', hash(x, y, 931) < 0.25 ? 2 : 0)); // sanden
+    if (!SJO) {
+      const geo = strandAvst(B, iSjo, 24);
+      SJOAVST = geo.map((a, k) => MARK.spelSd(k % B.w, Math.floor(k / B.w), (a > 0 ? a - 0.5 : a + 0.5) / 16));
+      SJO = strandAvst(B, (x, y) => SJOAVST[y * B.w + x] > 0, 4); // vågorna och skummet följer kanten som syns
     }
+    for (let y = 0; y < B.h; y++) for (let x = 0; x < B.w; x++) { const c = MARK.spelVatten(x, y, SJOAVST[y * B.w + x], P); if (c !== null) B.satt(x, y, c); }
     const cx = 26, cy = 50, rok1 = bild(slag, 'rok');
     ritaEld(B, cx, cy, P, { lagor: LAGOR[bild(slag, 'eld')] }); gnistor(B, cx, cy - 10, bild(slag, 'gnistor')); rok(B, cx, cy - 13, rok1, 30);
     hydda(B, 58, 58); rok(B, 69, 40, (rok1 + 2) % 4, 28);
