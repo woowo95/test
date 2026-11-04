@@ -17,7 +17,7 @@ import { drawHandel } from './ui/handel';
 import { renderPanel } from './ui/panel';
 import { renderRaden } from './ui/raden';
 import { renderPorts, stopFollow } from './ui/portratt';
-import { catchUp, loadSaves, nyByVald, saveDb, saveLocal } from './ui/spara';
+import { catchUp, ikapp, loadSaves, nyByVald, saveDb, saveLocal } from './ui/spara';
 import './ui/interaktion';
 import './ui/ram';
 import './ui/symboler'; // emojierna blir pixelsymboler (steg 5.3.2.1)
@@ -164,6 +164,19 @@ const MAX_SLAG = 300; // högst så här många slag per bildruta (25 timmar i s
 const RAKNA_MS = 40;
 const PANEL_MS = 600, LOKAL_MS = 20000, MOLN_MS = MIN; // hur ofta (datorns tid) panelen ritas om och byn sparas i webbläsaren och i molnet
 let lastUi = 0, lastLocal = 0, lastDb = 0;
+// kartan i den tid som visas (ui.nu): i varje bildruta, och under ikappräkningen när den visas som snabbspolning (steg 5.4.5.1)
+function ritaKartan(now: number) {
+  sattSkuggLangd(skuggLangdAv(lightLevel(ui.nu))); // skuggan blir längre i skymningen (steg 5.1.8.2)
+  drawTerrain();
+  drawPlants(); drawFlackar(); drawAnimals();
+  drawStructures(now);
+  drawPeople(now); drawHandel(); drawArena(); drawTona();
+  drawSkuggor();
+  drawNight(ui.nu);
+  drawFilter();
+  drawVader(now);
+}
+ikapp.rita = () => { ui.nu = s.now; nyBild(); ritaKartan(performance.now()); renderClock(); };
 function tick() {
   if (!s || ui.busy) return;
   const realDt = Math.min(0.25, app.ticker.deltaMS / 1000);
@@ -184,15 +197,7 @@ function tick() {
     const p = byId(s, ui.follow);
     if (p && alive(p)) { const q = posOf(p); cam.x = q.x * TS + TS / 2; cam.y = q.y * TS + TS / 2; layout(); } else stopFollow();
   }
-  sattSkuggLangd(skuggLangdAv(lightLevel(ui.nu))); // skuggan blir längre i skymningen (steg 5.1.8.2)
-  drawTerrain();
-  drawPlants(); drawFlackar(); drawAnimals();
-  drawStructures(now);
-  drawPeople(now); drawHandel(); drawArena(); drawTona();
-  drawSkuggor();
-  drawNight(ui.nu);
-  drawFilter();
-  drawVader(now);
+  ritaKartan(now);
   if (now - lastUi > PANEL_MS) { lastUi = now; renderClock(); renderPanel(); renderPorts(); testKnappar(); }
   if (!ui.testMode && now - lastLocal > LOKAL_MS) { lastLocal = now; saveLocal(); }
   if (!ui.testMode && now - lastDb > MOLN_MS) { lastDb = now; saveDb(); }

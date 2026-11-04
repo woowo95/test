@@ -1,6 +1,6 @@
 import { BEAT, Borta, MIN, State, joinParts, living, migrate, serialize, serializeParts, step, timeLabel } from '../sim';
 import { $, esc } from './hjalp';
-import { bortaHtml } from './borta';
+import { bortaHtml, ikappHtml, spolaText } from './borta';
 import { s, ui } from './lage';
 import { drawTerrain } from './terrang';
 import { drawPlants } from './vaxter';
@@ -136,6 +136,10 @@ function retry(nyare: (by: State) => void, ms: number) {
 // ---------- ikappräkning: byn lever vidare i samma takt som i spelet medan spelaren var borta ----------
 // Sammanställningen ligger kvar tills spelaren stänger den med "Till byn" (steg 3.10.22): den sparas med byn (s.borta) och
 // visas igen efter en omladdning, och en ny ikappräkning innan den stängts gäller hela tiden sedan den förra stängdes
+// snabbspolningen (steg 5.4.5.1): main.ts ger funktionen som ritar kartan; valet sparas i webbläsaren
+export const ikapp: { rita?: () => void } = {};
+const SPOLA_NYCKEL = 'samhallssimulatorn.spola';
+try { ui.spola = localStorage.getItem(SPOLA_NYCKEL) === '1'; } catch { /* utan webbläsarens lagring: av */ }
 export async function catchUp(target: number) {
   const span = target - s.now;
   if (span <= 0) { if (s.borta) { $('overlay').hidden = false; showSummary(s.borta); } return; }
@@ -144,7 +148,18 @@ export async function catchUp(target: number) {
   const from = s.now;
   if (showOverlay) s.borta ??= { fran: from, fodda: s.stat?.fodda ?? 0, doda: s.stat?.doda ?? 0, folk: living(s).length };
   const ov = $('overlay');
-  if (showOverlay) { ov.hidden = false; $('ovBody').innerHTML = `<p class="ovLead">Byn har levt vidare medan du var borta.</p><div class="prog"><div id="progBar"></div></div><p class="muted" id="progTxt"></p>`; }
+  let senastRitad = 0;
+  const rita = ikapp.rita, spolar = () => showOverlay && ui.spola && !!rita;
+  const visaSpola = () => {
+    ov.classList.toggle('spolar', spolar());
+    const k = document.getElementById('ovSpola'); if (k) { k.innerHTML = spolaText(ui.spola); k.setAttribute('aria-pressed', String(ui.spola)); }
+  };
+  if (showOverlay) {
+    ov.hidden = false; $('ovBody').innerHTML = ikappHtml(ui.spola, !!rita);
+    const k = document.getElementById('ovSpola');
+    if (k) k.onclick = () => { ui.spola = !ui.spola; try { localStorage.setItem(SPOLA_NYCKEL, ui.spola ? '1' : '0'); } catch { /* sparas inte */ } visaSpola(); };
+    visaSpola();
+  }
   await new Promise<void>((resolve, reject) => {
     const chunk = () => {
       const t0 = performance.now();
@@ -153,16 +168,19 @@ export async function catchUp(target: number) {
         const f = Math.min(1, (s.now - from) / span);
         const bar = document.getElementById('progBar'); if (bar) bar.style.width = (f * 100).toFixed(1) + '%';
         const pt = document.getElementById('progTxt'); if (pt) pt.textContent = `${timeLabel(s, s.now)} · ${Math.round(f * 100)} %`;
+        // kartan som den ser ut nu: byn spolas fram medan den räknas (högst åtta bilder i sekunden, så att räknandet går fort)
+        if (spolar() && performance.now() - senastRitad > 120) { rita!(); senastRitad = performance.now(); }
       }
       if (s.now < target) setTimeout(chunk, 0); else resolve();
     };
     chunk();
   }).catch(e => {
     // ett fel i simuleringen: spelet står still (det skulle bara hända igen), men spelaren får veta det
-    ov.hidden = false; $('ovBody').innerHTML = `<p class="ovLead">Något gick fel när byn räknades ikapp.</p><p class="muted">${esc(String(e))}</p>`;
+    ov.classList.remove('spolar'); ov.hidden = false; $('ovBody').innerHTML = `<p class="ovLead">Något gick fel när byn räknades ikapp.</p><p class="muted">${esc(String(e))}</p>`;
     throw e;
   });
   ui.busy = false; ui.nu = target;
+  ov.classList.remove('spolar');
   if (showOverlay && s.borta) showSummary(s.borta);
   saveLocal(); saveDb();
   drawTerrain(true); drawPlants(true);

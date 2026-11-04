@@ -26,6 +26,7 @@ export const ui = {
   eld: undefined as number | undefined, // lägerelden som eldens flik visar: undefined = den första, annars en till (Fire.id, steg 4.5.6.8)
   follow: undefined as number | undefined, // personen kameran följer
   busy: false, // ikappräkning pågår
+  spola: false, // ikappräkningen visas som en snabbspolning av kartan (steg 5.4.5.1; sparas i webbläsaren, ui/spara.ts)
   nu: 0, // tiden som visas (byn är räknad ett slag längre, main.ts)
   sparFel: false, // senaste sparningen i artefaktens databas misslyckades
   molnFel: false, // byn i artefaktens databas gick inte att läsa, och sparas därför inte där (spara.ts)

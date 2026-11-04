@@ -91,6 +91,13 @@ export function bortaBerattelse(st: State, b: Borta): string[] {
   return ut;
 }
 
+// rutan medan byn räknas ikapp (steg 5.4.5.1): förloppet, och en knapp som visar kartan under tiden som en snabbspolning
+// (rutan flyttas ner och bakgrunden blir genomskinlig; ui/spara.ts ritar kartan efter varje bit som räknats)
+export const spolaText = (pa: boolean) => pa ? '{sym_oga} Dölj byn' : '{sym_oga} Se byn under tiden';
+export function ikappHtml(spola: boolean, kanSpola = true) {
+  return `<p class="ovLead">Byn har levt vidare medan du var borta.</p><div class="prog"><div id="progBar"></div></div><p class="muted" id="progTxt"></p>${kanSpola ? `<div class="ovKnappar"><button id="ovSpola" type="button" aria-pressed="${spola}">${spolaText(spola)}</button></div>` : ''}`;
+}
+
 export function bortaHtml(b: Borta) {
   const years = (s.now - b.fran) / DAY;
   const fodda = (s.stat?.fodda ?? 0) - b.fodda, doda = (s.stat?.doda ?? 0) - b.doda;
