@@ -18,8 +18,17 @@
   --bg: #24201d; --panel: #2f261d; --fg: #dad0bb; --muted: #a0947d; --line: #474138; --inner: #474138;
   --accent: #d8b25f; --accent-fg: #24201d; --good: #898b4c; --bad: #bd753e; --barbg: #372f25; color-scheme: dark;
 }
-header, .panel, .tabs, .controls { box-shadow: inset 0 0 0 1px var(--inner); }
-.panel, .controls { box-shadow: inset 0 0 0 1px var(--inner), 0 6px 24px rgba(36, 32, 29, 0.35); }
+header, .tabs, .controls { box-shadow: inset 0 0 0 1px var(--inner); }
+.controls { box-shadow: inset 0 0 0 1px var(--inner), 0 6px 24px rgba(36, 32, 29, 0.35); }
+/* Ramen på panelerna (steg 5.3.1.4), som hörnet Ormen i bildstilen: kol, grått, grått, kol på sidorna och två punkter kol
+   överst och nederst. Hörnen (ui/ram.ts) ligger ovanpå och sticker ut utanför ramen */
+.panel { border: 2px solid #24201d; border-left-width: 1px; border-right-width: 1px; border-radius: 0;
+  box-shadow: inset 2px 0 0 #474138, inset -2px 0 0 #474138, inset 3px 0 0 #24201d, inset -3px 0 0 #24201d, 0 6px 24px rgba(36, 32, 29, 0.35); }
+.panel > .horn { position: absolute; z-index: 2; width: var(--horn-w); height: var(--horn-h); pointer-events: none; image-rendering: pixelated; background-repeat: no-repeat; }
+.panel > .horn.tv { left: calc(-1px - var(--horn-x)); top: calc(-2px - var(--horn-y)); background-image: var(--horn-tv); }
+.panel > .horn.th { right: calc(-1px - var(--horn-x)); top: calc(-2px - var(--horn-y)); background-image: var(--horn-th); }
+.panel > .horn.nv { left: calc(-1px - var(--horn-x)); bottom: calc(-2px - var(--horn-y)); background-image: var(--horn-nv); }
+.panel > .horn.nh { right: calc(-1px - var(--horn-x)); bottom: calc(-2px - var(--horn-y)); background-image: var(--horn-nh); }
 [hidden] { display: none !important; }
 html, body { height: 100%; }
 body { margin: 0; overflow: hidden; background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px; line-height: 1.4; box-sizing: border-box; --topp: 52px; --stenar: 64px; }
@@ -85,10 +94,10 @@ h1 { font-family: var(--display); font-weight: 700; font-size: 1.7rem; margin: 0
 .chip b { font-weight: 700; margin-right: 3px; }
 .chip span { opacity: 0.75; margin-left: 4px; }
 /* panelerna ovanpå kartan, med ett kryss som stänger dem */
-.panel { position: fixed; z-index: 2; top: calc(var(--topp) + 72px); bottom: 12px; width: 360px; max-width: calc(100vw - var(--stenar) - 24px); box-sizing: border-box; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; display: grid; grid-template-rows: minmax(0, 1fr); }
-.panel.vanster { left: 10px; }
-.panel.hoger { right: calc(var(--stenar) + 6px); }
-.panel > .stang { position: absolute; top: 6px; right: 6px; z-index: 1; width: 26px; height: 26px; border-radius: 4px; border: 1px solid var(--line); background: var(--panel); color: var(--muted); font: inherit; font-size: 14px; line-height: 1; cursor: pointer; padding: 0; }
+.panel { position: fixed; z-index: 2; top: calc(var(--topp) + 72px); bottom: 12px; width: 360px; max-width: calc(100vw - var(--stenar) - 24px); box-sizing: border-box; background: var(--panel); display: grid; grid-template-rows: minmax(0, 1fr); }
+.panel.vanster { left: 16px; }
+.panel.hoger { right: calc(var(--stenar) + 14px); }
+.panel > .stang { position: absolute; top: 14px; right: 12px; z-index: 1; width: 26px; height: 26px; border-radius: 4px; border: 1px solid var(--line); background: var(--panel); color: var(--muted); font: inherit; font-size: 14px; line-height: 1; cursor: pointer; padding: 0; }
 .panel > .stang:hover { color: var(--fg); }
 .panelkropp { overflow-y: auto; padding: 12px 14px 16px; min-width: 0; }
 .panelkropp > :first-child { margin-right: 30px; } /* plats för krysset */
@@ -344,7 +353,7 @@ body.testing .mapwrap { box-shadow: inset 0 0 0 3px var(--accent); }
   .chip { font-size: 12px; padding: 3px 7px; }
   .port { width: 78px; }
   .hoverBox, .owned { display: none; }
-  .panel { top: calc(var(--topp) + 64px); left: 6px; width: auto; right: calc(var(--stenar) + 6px); max-width: none; }
+  .panel { top: calc(var(--topp) + 64px); left: 14px; width: auto; right: calc(var(--stenar) + 14px); max-width: none; }
 }
 @media (prefers-reduced-motion: reduce) { #progBar { transition: none; } }
 </style>

@@ -71,11 +71,8 @@
     if (window.MARK) window.MARK.tuvor({ ...B, satt: (x, y, c) => y > 22 + t.h && B.satt(x, y, c) }, 1, () => true, 0.6);
   });
 
-  // ---------- hörnen: tre versioner (Ormen, Ring med blad, Dubbel ögla) ----------
-  const HORN = k => SCEN(350, 124, B => {
-    const P = B.P, h = GUI.horn[k]; fyll(B, P.i('ben', 2));
-    bild(B, h.grund, 8, Math.round((B.h - h.grund.h) / 2)); bild(B, h.seder, 8 + h.grund.w + 18, Math.round((B.h - h.seder.h) / 2));
-  });
+  // hörnen: Björn valde Ormen (inbyggd i spelet i steg 5.3.1.4, v333, via guitillspelet.cjs). Ring med blad och Dubbel
+  // ögla ligger kvar i gui.json (horn.ring, horn.ogla) om Björn ångrar sig.
 
   // ---------- vektorbilderna som pixelbilder (5.2.4.2, till 5.3.2.2) ----------
   // vinkeln medsols från klockan tolv, 0 till 1
@@ -184,11 +181,6 @@
       versioner: [{ text: 'Version 1: de sex banden.', ...BAND }] },
     { id: 'g_vag', stor: true, namn: 'Vågbandet', typ: 'janej', vad: T + 'vågbandet längst ner i raden överst (till 5.3.1.2), spiraler i kol på beige med en linje under som ligger mot kartan. En ruta på 8 × 7 punkter som upprepas över hela bredden.',
       versioner: [{ text: 'Version 1: vågbandet mot kartan.', ...VAG }] },
-    { id: 'g_horn', stor: true, namn: 'Hörnen på panelerna', typ: 'tre', vad: T + 'hörnen på panelerna (till 5.3.1.4), som sticker ut utanför ramen. De tre du sparade att fundera vidare på, i hel skala; till vänster i grundens färger och till höger i Seders färger.',
-      versioner: [
-        { text: 'Version 1: Ormen.', ...HORN('ormen') },
-        { text: 'Version 2: Ring med blad.', ...HORN('ring') },
-        { text: 'Version 3: Dubbel ögla.', ...HORN('ogla') }] },
     { id: 'v_framsteg', stor: true, namn: 'Framstegscirkeln', typ: 'janej', vad: T2 + 'cirkeln för det som inte är klart, i pixlar i stället för en vektorbild: en mörk bricka med ljus kant som fylls med gult medsols från klockan tolv. Överst på kartan (9 × 9 punkter), nederst i panelen (15 × 15), från tomt till fullt i åttondelar.',
       versioner: [{ text: 'Version 1: framstegscirkeln i pixlar.', ...FRAMSTEG }] },
     { id: 'v_ring', stor: true, namn: 'Ringen runt en teknik', typ: 'janej', vad: T2 + 'ringen runt en teknik i teknikträdet (hur nära den är) och runt ett redskap i handen (skicket), i pixlar: en linje i rost som växer medsols från toppen. Överst rund, nederst fyrkantig med rundade hörn som händernas rutor; 0, 20, 40, 60, 80 och 100 %.',

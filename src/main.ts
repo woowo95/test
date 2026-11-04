@@ -18,6 +18,7 @@ import { renderPanel } from './ui/panel';
 import { renderPorts, stopFollow } from './ui/portratt';
 import { catchUp, loadSaves, nyByVald, saveDb, saveLocal } from './ui/spara';
 import './ui/interaktion';
+import './ui/ram';
 import { drawArena, oppnaArena } from './ui/arena';
 import { drawTona } from './ui/tona';
 
