@@ -51,7 +51,7 @@ function showTip(id: number) {
     <p class="op">Klicka för att välja, dubbelklicka för att följa.</p>`;
   const wrap = $('ports').parentElement!.getBoundingClientRect(), r = el.getBoundingClientRect();
   tip.hidden = false;
-  tip.style.top = `${r.bottom - wrap.top + 6}px`;
+  tip.style.top = `${Math.max(8, r.top - wrap.top - tip.offsetHeight - 6)}px`; // ovanför raden, som står längst ner (steg 5.3.3.4)
   tip.style.left = `${Math.max(8, Math.min(wrap.width - tip.offsetWidth - 8, r.left - wrap.left))}px`;
 }
 function hideTip() { tipId = undefined; $('portTip').hidden = true; }

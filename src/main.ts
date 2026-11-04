@@ -50,7 +50,7 @@ function renderClock() {
   { // byns rikedom (varde.ts): talet, och vad den består av när musen är över
     const r = rikedomDelar(s), sum = r.forrad + r.redskap + r.hus, el = $('calRik'), a = s.delning?.andel ?? 0;
     el.textContent = `⚖ ${Math.round(sum)}`;
-    el.title = `Byns rikedom: ${Math.round(sum)} (ungefär arbetstimmar)\nFörrådet ${Math.round(r.forrad)} · redskapen ${Math.round(r.redskap)} · husen ${Math.round(r.hus)}\n${a > 0 ? `${Math.round(a * 100)} % av det folk skaffar går till byn` : 'Byn är så rik att folk behåller det de skaffar'}`;
+    el.title = `Byns rikedom: ${Math.round(sum)} (ungefär arbetstimmar). Tryck för att öppna förrådet\nFörrådet ${Math.round(r.forrad)} · redskapen ${Math.round(r.redskap)} · husen ${Math.round(r.hus)}\n${a > 0 ? `${Math.round(a * 100)} % av det folk skaffar går till byn` : 'Byn är så rik att folk behåller det de skaffar'}`;
   }
   $('sparFel').hidden = !ui.sparFel;
   $('molnFel').hidden = !ui.molnFel;

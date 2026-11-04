@@ -98,7 +98,13 @@ document.addEventListener('click', e => {
   if (tb) { const id = tb.dataset.tab as FlikId; if (ui.hoger === id) stang('h'); else visa(id); }
 });
 
-// listan till vänster över allt i förrådet, i mappar som kan fällas ihop: en sak per rad, symbolen och antalet, namnet när musen är över
+// listan till vänster över allt i förrådet, i mappar som kan fällas ihop: en sak per rad, symbolen och antalet, namnet när musen är över.
+// Förrådet har ingen egen runsten: rikedomen överst i sidhuvudet är knappen som öppnar och stänger det (steg 5.3.3.4)
+$('calRik').addEventListener('click', () => {
+  const oppna = !document.body.classList.contains('forradOppen');
+  document.body.classList.toggle('forradOppen', oppna); $('calRik').setAttribute('aria-expanded', String(oppna));
+  if (oppna && ui.tab) stang('v'); // listan står där personens panel står
+});
 const closed = new Set<string>();
 let ownedKey = '';
 // namnet, hur mycket som är byns och invånarnas egna (egendom.ts), och värdet (varde.ts)
