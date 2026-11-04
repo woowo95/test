@@ -4,13 +4,15 @@ import { s, ui } from './lage';
 import { TS } from './scen';
 
 // blodet på marken (blod.ts), utseende 3 som Björn valde efter v92: pölar med stänk runt om och släpspår. Alla fläckar ritas
-// i ett och samma fält med 8 × 8 punkter på rutan, så att pölar som ligger nära varandra flyter ihop till en större. Färsk är
-// pölen mörkröd med mörk kant och blank mitt, efter ett dygn brun och genomskinlig, och när den nästan är borta bara prickar.
-// På snö (istiden) blir det en rosa rand runt pölen. De minsta stänken och spårets ände försvinner först
-const P = TS / 8;
+// i ett och samma fält med 16 × 16 punkter på rutan (steg 5.1.2.4), så att pölar som ligger nära varandra flyter ihop till en
+// större. Färgerna är bildstilens godkända (blod_pol, blod_gammal, blod_stank, blod_droppar, blod_spar i 5.2.4.4): färsk är
+// pölen röd med mörkröd kant och en glans, efter ett dygn brun med mörkare kant, och när den nästan är borta bara prickar.
+// Dropparna är två punkter, en mörkare under. På snö (istiden) blir det en rosa rand runt pölen. De minsta stänken och spårets
+// ände försvinner först
+const P = TS / 16, Q = 2; // Q: punkter i dag per punkt förut (8 på rutan), så att fläckarna är lika stora som förut
 const FARG: Record<string, [number, number]> = {
-  1: [0x8a1212, 1], 2: [0xc8463a, 1], 3: [0x5a0c0c, 1],
-  5: [0x701a12, 0.66], 6: [0x460e08, 0.72], 7: [0x622819, 0.32], 0: [0x501e12, 0.22],
+  1: [0x742a01, 1], 2: [0xbd753e, 1], 4: [0xa14808, 1], 3: [0x521100, 1],
+  5: [0x5e3c24, 1], 6: [0x3f2415, 1], 7: [0x3f2415, 0.45], 0: [0x3f2415, 0.3],
   p: [0xd23c48, 0.45], q: [0xcd5a69, 0.22],
 };
 const hash = (a: number, b: number) => { const h = Math.sin(a * 12.9898 + b * 78.233) * 43758.5453; return h - Math.floor(h); };
@@ -42,7 +44,7 @@ export function ritaBlod(g: PIXI.Graphics) {
   for (const b of fl) {
     const v = blodNu(b, now);
     if (v <= 0) continue;
-    rita(b, v, b.x * 8, b.y * 8, klick, satt);
+    rita(b, v, b.x * 16, b.y * 16, klick, satt);
   }
   // vilka punkter som är pöl: fältet över 1, med lite brus i kanten
   const inn = new Map<number, number>();
@@ -73,9 +75,9 @@ export function ritaBlod(g: PIXI.Graphics) {
     else if (hash(x + 3, y) < 0.6) lagg(x, y, '7');
   }
   // glans: två ljusa punkter uppe till vänster i de stora färska pölarna
-  for (const b of klickar) if (b.mitt && b.v > 0.7 && b.r >= 3) {
+  for (const b of klickar) if (b.mitt && b.v > 0.7 && b.r >= 3 * Q) {
     const x = Math.round(b.x - b.r * 0.45), y = Math.round(b.y - b.r * 0.4);
-    if (ar(x, y) && ar(x + 1, y)) { lagg(x, y, '2'); lagg(x + 1, y, '2'); }
+    if (ar(x, y) && ar(x + 2, y + 1)) { lagg(x, y, '2'); lagg(x + 2, y + 1, '4'); }
   }
   for (const [k, l] of ut) {
     const f = FARG[k];
@@ -86,12 +88,14 @@ export function ritaBlod(g: PIXI.Graphics) {
   }
 }
 
-// en fläck: klickarna i pölens fält och punkterna för stänk, droppar och spår. Allt i punkter (8 på rutan), och bara efter
+// en fläck: klickarna i pölens fält och punkterna för stänk, droppar och spår. Allt i punkter (16 på rutan), och bara efter
 // fläckens plats, så att den ser likadan ut varje gång den ritas
 function rita(b: Blodflack, v: number, cx: number, cy: number, klick: (x: number, y: number, r: number, v: number, mitt?: boolean) => void, satt: (x: number, y: number, k: string) => void) {
   const h = (i: number, j: number) => hash(cx * 3.1 + i, cy * 1.7 + j), sq = Math.sqrt(b.m);
+  // en droppe: två punkter, den undre mörkare (blod_droppar); när den bleknat bara en
+  const droppe = (x: number, y: number, v: number) => { satt(x, y, droppFarg(v)); if (v > 0.3) satt(x, y + 1, v > 0.7 ? '3' : '6'); };
   if (b.f === 'pol') {
-    const r = 3 * sq * krymp(v);
+    const r = 3 * Q * sq * krymp(v);
     klick(cx, cy, r, v, true);
     const n = b.m > 1 ? 3 : 2; // klickar runt om gör pölen ojämn, fler i en stor
     for (let i = 0; i < n; i++) {
@@ -104,31 +108,31 @@ function rita(b: Blodflack, v: number, cx: number, cy: number, klick: (x: number
     // prickar runt platsen, några dubbla bort från mitten. Åt ett håll om fläcken har en riktning
     const n = Math.round(5 + 7 * b.m);
     for (let i = 0; i < n; i++) {
-      const vk = b.a !== undefined ? b.a + (h(i, 1) - 0.5) * 2.2 : h(i, 1) * Math.PI * 2, d = 1.5 + h(i, 2) * (3 + 3 * sq), t = h(i, 3);
+      const vk = b.a !== undefined ? b.a + (h(i, 1) - 0.5) * 2.2 : h(i, 1) * Math.PI * 2, d = Q * (1.5 + h(i, 2) * (3 + 3 * sq)), t = h(i, 3);
       if (!(v > 0.7 || (v > 0.3 && t > 0.55) || t > 0.85)) continue;
       const x = cx + Math.cos(vk) * d * 1.3, y = cy + Math.sin(vk) * d * 0.75;
-      satt(x, y, droppFarg(v));
-      if (t > 0.6 && v > 0.3) satt(x + Math.sign(Math.cos(vk)), y + (Math.abs(Math.sin(vk)) > 0.7 ? Math.sign(Math.sin(vk)) : 0), droppFarg(v * 0.7 + 0.05));
+      droppe(x, y, v);
+      if (t > 0.6 && v > 0.3) droppe(x + 2 * Math.sign(Math.cos(vk)), y + (Math.abs(Math.sin(vk)) > 0.7 ? 2 * Math.sign(Math.sin(vk)) : 0), v * 0.7 + 0.05);
     }
-    if (b.m > 1.5) klick(cx, cy, 1.2 * sq * krymp(v), v); // mycket stänk har en liten pöl i mitten
+    if (b.m > 1.5) klick(cx, cy, 1.2 * Q * sq * krymp(v), v); // mycket stänk har en liten pöl i mitten
     return;
   }
   if (b.f === 'droppar') {
     const n = Math.round(2 + 3 * b.m);
     for (let i = 0; i < n; i++) {
-      const vk = h(i, 1) * Math.PI * 2, d = h(i, 2) * (1.5 + 1.5 * sq), t = h(i, 3);
+      const vk = h(i, 1) * Math.PI * 2, d = Q * h(i, 2) * (1.5 + 1.5 * sq), t = h(i, 3);
       if (v < 0.3 && t < 0.5) continue;
-      satt(cx + Math.cos(vk) * d * 1.3, cy + Math.sin(vk) * d * 0.75, droppFarg(v));
+      droppe(cx + Math.cos(vk) * d * 1.3, cy + Math.sin(vk) * d * 0.75, v);
     }
     return;
   }
   // släpspåret: två strimmor där något dragits bort, glesare längre bort och kortare när det bleknar
-  const a = b.a ?? 0, L = 8 + 10 * sq, synlig = v > 0.7 ? 1 : v > 0.3 ? 0.6 : 0.35, nx = -Math.sin(a), ny = Math.cos(a);
+  const a = b.a ?? 0, L = Q * (8 + 10 * sq), synlig = v > 0.7 ? 1 : v > 0.3 ? 0.6 : 0.35, nx = -Math.sin(a), ny = Math.cos(a);
   for (let i = 0; i <= L; i++) {
     const f = i / L;
     if (f > synlig || h(i, 7) < f * 0.55) continue;
-    const w = Math.sin(f * 7) * 0.6, x = cx + Math.cos(a) * i * 1.1 + nx * w, y = cy + Math.sin(a) * i * 0.8 + ny * w;
+    const w = Math.sin(f * 7) * 0.6 * Q, x = cx + Math.cos(a) * i * 1.1 + nx * w, y = cy + Math.sin(a) * i * 0.8 + ny * w;
     satt(x, y, v > 0.7 ? (f < 0.4 ? '1' : '3') : v > 0.3 ? '6' : '7');
-    if (h(i, 9) > 0.35 + f * 0.4) satt(x + nx * 1.6, y + ny * 1.6, v > 0.7 ? '3' : v > 0.3 ? '5' : '0');
+    if (h(i, 9) > 0.35 + f * 0.4) satt(x + nx * 1.6 * Q, y + ny * 1.6 * Q, v > 0.7 ? '3' : v > 0.3 ? '5' : '0');
   }
 }

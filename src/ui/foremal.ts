@@ -208,7 +208,7 @@ const SITT = hasIcon('kb_sittplats') ? 'kb_sittplats' : 'sittplats';
 const stationBild = (ikon: string, v: string) => { const id = ikon + v, b = KARTBILDER[id]; return b && (b.sort === 'kar-station' || b.sort === 'kar-mobel') ? id : undefined; };
 // husen: golv, väggar av timmer (eller flätat ris i äldre byar) och öppningar. Det som är planerat syns som en svag kontur, det som byggs fylls i
 function drawBuild() {
-  const klara = ritaHus(s, bitsOf(s)); // timmerväggarna och trägolven (husbild.ts)
+  const klara = ritaHus(s, bitsOf(s)); // timmerväggarna, golven och öppningarna med golv (husbild.ts)
   for (const b of bitsOf(s)) {
     if (klara.has(b.id)) continue;
     const x = b.x * TS, y = b.y * TS;
@@ -218,7 +218,7 @@ function drawBuild() {
     } else if (b.k === 'vagg') {
       if (b.b <= 0 && b.mat <= 0) { structG.lineStyle(1, 0x5a3c22, 0.45).drawRect(x + 1.5, y + 1.5, TS - 3, TS - 3).lineStyle(0); continue; }
       const a = b.b >= 1 ? 0.55 + 0.45 * b.c : 0.25 + 0.5 * b.b;
-      // timmerväggarna och trägolven ritar ritaHus; här ritas risväggarna
+      // timmerväggarna ritar ritaHus; här ritas risväggarna
       structG.beginFill(MATERIAL.ris.farg, a).drawRect(x + 1, y + 1, TS - 2, TS - 2).endFill();
       // flätningen: vågiga streck, färre ju mer slitet
       const n = b.b >= 1 ? Math.max(1, Math.round(3 * b.c)) : Math.ceil(3 * b.b);
