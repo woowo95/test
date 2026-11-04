@@ -990,7 +990,6 @@ const BESLUT = {
   f6_fagel_hall: { val: 1, text: 'Ripan och skogsduvan från tre håll. Orren används bara från ett håll i spelet: den ritas bara från sidan (du sa nej till den omritade orren framifrån och bakifrån). Byggs in i steg 6.5.1.3.' },
   f6_radjur_hall: { val: 1, text: 'Din ritning: hinden och bocken från sidan, framifrån och bakifrån (version 1 med dina ändringar). Byggs in i steg 6.5.1.2.' },
   f6_tornado_storlek: { val: 1, steg: '6.3.5.8' },
-  f5_pratbubbla: { val: 1, steg: '5.5.5' }, f5_smabarn: { val: 1, steg: '5.5.5' }, f5_smatecken: { val: 1, steg: '5.5.5' },
   f6_rovare: { val: 1, text: 'Alla tre används: rövarluvan, rövarens duk, det mörka slitna skinnet och vargskinnet. Delarna är märkta rövare: byborna kan inte tillverka dem, men varje rövare har en chans att bära dem. Byggs in i steg 6.6.12.' },
   f6_styckdel: { val: 1, text: 'Version 1 och 2 används båda, som variationer (låret och högen), i djurets färger. Byggs in i steg 6.5.1.1.' },
 };
