@@ -1052,6 +1052,33 @@ function byggValt(P) {
     lista.append(f);
   }
 }
+// att rita på ett förslag (Björn 2026-11-04): versionen ritas utan bakgrund (bara det som är nytt; scenerna har sin mark
+// kvar) och öppnas i ritaren. Det sparade visas på kortet som Din ritning, och Claude läser det i samlingen ritningar
+function ritaKnapp(s, v, i, P) {
+  const b = document.createElement('button'); b.type = 'button'; b.className = 'rita-pa'; b.textContent = '✏️';
+  const namn = s.namn + (s.versioner.length > 1 ? ', version ' + (i + 1) : '');
+  b.title = 'Rita på ' + namn; b.setAttribute('aria-label', b.title);
+  b.onclick = () => {
+    if (!window.RITA_PA) return;
+    const B = Bild(Math.min(128, v.w), Math.min(128, v.h), P); v.rita(B, P, 0);
+    window.RITA_PA({ w: B.w, h: B.h, px: Array.from(B.px) }, 'val:' + s.id + ':' + (i + 1), namn);
+  };
+  return b;
+}
+let SISTA_RITNINGAR = null;
+window.VAL_RITNINGAR = ritningar => {
+  SISTA_RITNINGAR = ritningar;
+  document.querySelectorAll('#vallista figure.din').forEach(f => f.remove());
+  for (const [id, r] of Object.entries(ritningar)) {
+    const m = /^val:([^:]+):(\d+)$/.exec(r.fran || ''); if (!m || !window.RITA_BILD) continue;
+    const alt = document.querySelector('#val-' + m[1] + ' .alternativ'); if (!alt) continue;
+    const bild = window.RITA_BILD(r), B = Bild(bild.w, bild.h, PAL); bild.px.forEach((v, k) => { B.px[k] = v; });
+    const f = document.createElement('figure'); f.className = 'alt din';
+    f.append(valBild({ w: B.w, h: B.h, rita: (D) => { for (let k = 0; k < B.px.length; k++) if (B.px[k] >= 0) D.px[k] = B.px[k]; } }, PAL));
+    const cap = document.createElement('figcaption'); cap.innerHTML = '<b>Din ritning</b>'; cap.append('Efter version ' + m[2] + (r.kommentar ? ': ' + r.kommentar : '.'));
+    f.append(cap); alt.append(f);
+  }
+};
 const SVAR = {}; // det som finns sparat i databasen, per sak
 let DB = null;
 function byggVal(P) {
@@ -1070,7 +1097,8 @@ function byggVal(P) {
     s.versioner.forEach((v, i) => {
       const f = document.createElement('figure'); f.className = 'alt';
       f.append(valBild(v, P));
-      f.insertAdjacentHTML('beforeend', `<figcaption><b>${s.typ === 'tre' ? 'Version ' + (i + 1) : 'Ny'}</b>${v.text}</figcaption>`); alt.append(f);
+      f.insertAdjacentHTML('beforeend', `<figcaption><b>${s.typ === 'tre' ? 'Version ' + (i + 1) : 'Ny'}</b>${v.text}</figcaption>`);
+      f.append(ritaKnapp(s, v, i, P)); alt.append(f);
     });
     const knappar = s.typ === 'tre' ? s.versioner.map((_, i) => [String(i + 1), 'Version ' + (i + 1)]).concat([['nej', 'Ingen']]) : [['ja', 'Ja'], ['nej', 'Nej']];
     kort.querySelector('.svar').innerHTML = knappar.map(([v, t]) => `<button type="button" data-svar="${v}" data-sak="${s.id}"${v === 'nej' ? ' class="nej"' : ''}>${t}</button>`).join('');
@@ -1079,6 +1107,7 @@ function byggVal(P) {
     lista.append(kort);
   }
   visaSvar();
+  if (SISTA_RITNINGAR) window.VAL_RITNINGAR(SISTA_RITNINGAR);
 }
 function visaSvar() {
   for (const s of VAL) {

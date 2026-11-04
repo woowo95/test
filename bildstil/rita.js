@@ -164,8 +164,16 @@
     try { RDB = await window.claude?.use?.('db'); } catch (e) { RDB = null; }
     if (!RDB) { status.textContent = 'Du kan rita, men det går bara att spara när sidan är öppen i Claude och du är inloggad.'; return; }
     RDB.collection('ritningar').onSnapshot(snap => {
-      ritningar = {}; snap.docs.forEach(d => { if (d.exists) ritningar[d.id] = d.data(); }); visaRitningar();
+      ritningar = {}; snap.docs.forEach(d => { if (d.exists) ritningar[d.id] = d.data(); }); visaRitningar(); window.VAL_RITNINGAR?.(ritningar);
     }, () => { status.textContent = 'Kontakten med databasen bröts. Ladda om sidan.'; });
   }
+  // att rita på ett förslag i valdelen (Björn 2026-11-04): kortets knapp öppnar versionen här, med namnet ifyllt, och det
+  // sparade får fran 'val:<sak>:<version>', så att kortet visar ritningen och Claude vet vilket förslag den ändrar
+  window.RITA_PA = (bild, franId, namn) => {
+    nyBild(bild, franId); $r('#rita-namn').value = namn; $r('#rita-kommentar').value = '';
+    $r('#rita-status').textContent = 'Rita på förslaget och tryck Spara. Skriv gärna i kommentaren vad du ändrat.';
+    document.querySelector('#rita').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+  window.RITA_BILD = r => franRader(r.rader, r.pal);
   if (document.readyState === 'loading') addEventListener('DOMContentLoaded', bygg); else bygg();
 })();

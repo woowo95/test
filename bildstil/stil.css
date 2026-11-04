@@ -145,6 +145,8 @@ td.tal { white-space: nowrap; }
 .vallista { display: grid; gap: 18px; }
 .valkort { background: var(--panel); border: 1px solid var(--line); padding: 14px 16px; display: grid; gap: 12px; min-width: 0; }
 .valkort.svarat { border-color: var(--oliv); }
+.alt .rita-pa { justify-self: start; padding: 4px 8px; font-size: 14px; line-height: 1; }
+.alt.din { outline: 2px solid var(--oliv); outline-offset: -2px; }
 .valkort header { display: grid; gap: 4px; }
 .valkort .typ { font: 400 8px/1.2 var(--pixel); letter-spacing: 0.04em; text-transform: uppercase; color: var(--dim); }
 .alternativ { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
