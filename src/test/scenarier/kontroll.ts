@@ -215,7 +215,7 @@ SCENARIER.aldrig = {
 };
 
 SCENARIER.portratt = {
-  text: 'Porträtten (steg 5.2.3.1, 5.2.3.3, 5.2.3.4): varje person får sina delar ur registret PORTRATT, ett barn ärver dem från mamman och pappan, och samma person blir likadan varje gång, också i en sparad by (allt räknas ur numret och föräldrarna); skönheten väljer de fula delarna och lagren, och beskrivningens vackraste eller fulaste del tas ur ansiktet; humöret, sömnen, sjukdomen, kylan, förbandet och blodet följer spelet; porträttet och kartfiguren har bara färger ur paletten',
+  text: 'Porträtten (steg 5.2.3.1, 5.2.3.3–5.2.3.5): varje person får sina delar ur registret PORTRATT, ett barn ärver dem från mamman och pappan, och samma person blir likadan varje gång, också i en sparad by (allt räknas ur numret och föräldrarna); skönheten väljer de fula delarna och lagren, och beskrivningens vackraste eller fulaste del tas ur ansiktet; humöret, sömnen, sjukdomen, kylan, förbandet och blodet följer spelet, och kläderna och redskapet utrustningen; porträttet och kartfiguren har bara färger ur paletten',
   kor: () => {
     const s = createState(3, START), vuxna = living(s).filter(p => ageOf(p, s.now) >= 20);
     const mor = vuxna.find(p => p.sex === 'k')!, far = vuxna.find(p => p.sex === 'm')!;
@@ -255,7 +255,15 @@ SCENARIER.portratt = {
     const efter = skapad(s, kp);
     const kroppOk = fore.humor !== 'sover' && !fore.sjuk && !fore.blod && efter.humor === 'sover' && efter.sjuk && efter.kyla && efter.blod && efter.forband.includes('forband-huvud');
     kp.task = undefined; kp.sickUntil = undefined; kp.warm = 0.9; kp.skador = [];
+    // kläderna och redskapet följer utrustningen (steg 5.2.3.5): rocken av vargskinn, skorna, bältet och yxan i handen
+    for (const t of tingOf(s)) if (t.bar === kp.id || t.hos === kp.id) { t.bar = undefined; t.hos = undefined; }
+    const naken = skapad(s, kp);
+    for (const k of ['rock_vargskinn', 'skor_kaninskinn', 'balte_rep']) SIM.newTing(s, k, 0, kp.id).bar = kp.id;
+    SIM.newTing(s, 'yxa', 0, kp.id).hos = kp.id;
+    const kladd = skapad(s, kp);
+    const kladOk = !naken.klader.rock && !naken.klader.skor && !naken.del.redskap && kladd.klader.rock === 'vargskinn' && kladd.klader.skor && kladd.klader.balte && kladd.del.redskap === 'redskap-yxa';
     return [
+      [`kläderna och redskapet följer utrustningen (${kladd.klader.rock}, ${kladd.klader.skor}, ${kladd.klader.balte}, ${kladd.del.redskap})`, kladOk],
       ['samma person blir likadan igen, när allt räknas om', forst.every((v, i) => v === igen[i])],
       [`porträttet följer kroppen: sover, sjuk, fryser, förband och blod (${efter.humor}, ${efter.sjuk}, ${efter.kyla}, ${efter.forband.join('/')}, ${efter.blod})`, kroppOk],
       [`barnen ärver ansiktet: ${fran} av ${delar} delar från mamman eller pappan (minst 80 %)`, fran >= delar * 0.8],
