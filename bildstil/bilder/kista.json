@@ -1,0 +1,41 @@
+{
+ "id": "kista",
+ "ritad": 1,
+ "av": "Claude",
+ "om": "kistan: lock med ljus kant, järnband och lås i senap (VAL kista, steg 5.1.2.2)",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "................",
+  "................",
+  ".llllllllllllll.",
+  ".lHHHHHHHHHHHHl.",
+  ".lGGGFGGGFFGGFl.",
+  ".lGGFFGGGGFGGGl.",
+  ".lGGGFGGGGFGGGl.",
+  ".lTTRRRRRRRQRRl.",
+  ".lFFFnFKJFnFEEl.",
+  ".lFFEnFIlFnFEEl.",
+  ".lFFFnFFFFnFEEl.",
+  ".lFFFnFFFFnFEEl.",
+  ".lFFFnFFFFnFEEl.",
+  ".lFFFnFFFFnFEEl.",
+  ".llllllllllllll.",
+  "..~.~.~.~.~.~.~."
+ ],
+ "pal": {
+  "l": "#2f261d",
+  "H": "#987e62",
+  "G": "#7d5b40",
+  "F": "#5e3c24",
+  "T": "#8a9c9e",
+  "R": "#3e5156",
+  "Q": "#233035",
+  "n": "#474138",
+  "K": "#b2921b",
+  "J": "#906f0f",
+  "E": "#3f2415",
+  "I": "#694902",
+  "~": "rgba(36,32,29,.30)"
+ }
+}

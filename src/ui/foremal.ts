@@ -1,5 +1,5 @@
 import { clamp, MASTERVERK, PERFEKT, GRODOR, faltById, faltKlar, faltOf, faltRuta, faltRutor, grodaPa, W, bordPlatser, sjoarna, stationById, MATERIAL, Pile, STUBBE_LIV, Station, bitAt, bitsOf, dorrDef, condOf, emberOn, eldById, eldXY, eldarOf, fireHeat, forvarAt, Fire, heatRadius, TORK, torrDel, isKlar, stationDef, stationKlar, stationerOf, storlekAv, tillbehorDef, tingOf, zonesOf } from '../sim';
-import { LagereldLage, hasIcon, iconCanvas, kartbild, kartbildEnsam, lagereldId } from '../ikoner';
+import { hasIcon, iconCanvas, kartbild, kartbildEnsam } from '../ikoner';
 import { KARTBILDER } from '../kartbilder';
 import { ritaHus } from './husbild';
 import { outPilesAt, piles, s, sakVar, ui } from './lage';
@@ -89,7 +89,7 @@ const vriden = (st: Station) => st.rot && hasIcon((stationDef(st.k)?.ikon ?? '')
 // till den (kniven, bensylen i skåran). v = samma i den stående bilden, där sakerna ligger under varandra (steg 3.10.7)
 type Yta = { x: number; y: number; vid?: { x: number; y: number } };
 const YTA: Record<string, Yta & { v?: Yta }> = {
-  slaktbank: { x: 16, y: 0, vid: { x: 30, y: -1 }, v: { x: 4, y: 6, vid: { x: 4, y: 33 } } },
+  slaktbank: { x: 16, y: 4, vid: { x: 30, y: -1 }, v: { x: 4, y: 6, vid: { x: 4, y: 33 } } },
   flatarbank: { x: 4, y: 10, vid: { x: 22, y: 9 }, v: { x: 1, y: 12, vid: { x: 5, y: 19 } } },
   grill: { x: 20, y: 0 }, // maten på spettet, till höger om elden
 };
@@ -133,16 +133,17 @@ export function drawStructures(t: number) {
   drawBuild();
   pileIcons.start();
   drawFalt();
-  for (const f of eldarOf(s)) lagereld(f, t); // den första och lägereldarna till (steg 4.5.6.8)
+  for (const f of eldarOf(s)) lagereld(f); // den första och lägereldarna till (steg 4.5.6.8)
   for (const pl of piles()) if (!forvarAt(s, pl.x, pl.y)?.stangd) drawPile(pl, t); // det som ligger i en kista syns bara när man trycker på den
   // stationerna (stationer.ts) i blandperspektiv över alla rutorna de tar: de som är högre än rutan sticker upp över rutan
   // ovanför. Den halvbyggda har framstegscirkeln överst i mitten; vid den färdiga ligger kniven och det som görs där
   for (const st of stationerOf(s)) {
     // den som står vriden har en egen bild (_v, steg 3.10.7): ingenting ritas genom att bilden vrids
     const d = stationDef(st.k), v = vriden(st);
-    if (d?.brasa) { pileIcons.add(lagereldId('tom', true), st.x * TS + TS / 2 - 16, st.y * TS + TS / 2 - 24, 2); framsteg(st.x * TS + TS / 2, st.y * TS - 6, stationKlar(st)); continue; } // ringen till en lägereld till medan den läggs
-    const ik = (d?.ikon ?? 'slaktbank') + '_karta' + v, { w: bw, h: bh } = storlekAv(st), w = bw * TS, sk = iconCanvas(ik).width > 8 * bw ? 1 : 2, upp = iconCanvas(ik).height * sk - bh * TS; // sk: 16 punkter per ruta (steg 4.3.2.2) eller 8 som förut
-    const x0 = st.x * TS, y0 = st.y * TS - upp; // bildens övre vänstra hörn
+    if (d?.brasa) { pileIcons.add('kb_lagereld_ring', st.x * TS + TS / 2 - ELD.x, st.y * TS + TS / 2 - ELD.y, 1); framsteg(st.x * TS + TS / 2, st.y * TS - 6, stationKlar(st)); continue; } // ringen till en lägereld till medan den läggs
+    const kb = stationBild(d?.ikon ?? 'slaktbank', v), { w: bw, h: bh } = storlekAv(st), w = bw * TS;
+    const ik = kb ? 'kb_' + kb : (d?.ikon ?? 'slaktbank') + '_karta' + v, sk = kb ? 1 : iconCanvas(ik).width > 8 * bw ? 1 : 2, upp = iconCanvas(ik).height * sk - bh * TS; // sk: 16 punkter per ruta (steg 4.3.2.2) eller 8 som förut
+    const x0 = st.x * TS + (kb ? Math.round((w - iconCanvas(ik).width) / 2) : 0), y0 = st.y * TS - upp; // bildens övre vänstra hörn: bildstilens bild mitt över rutorna och med foten på den nedersta
     pileIcons.add(ik, x0, y0, sk);
     if (!isKlar(st)) { framsteg(st.x * TS + w / 2, y0 + 3, stationKlar(st)); continue; }
     if (st.fyllt) overG.beginFill(0x24160a, 0.75 * clamp(st.fyllt, 0, 1)).drawEllipse(st.x * TS + TS / 2, st.y * TS + TS / 2 + 1, 5, 4).endFill(); // latrinen mörknar när den fylls (smuts.ts)
@@ -192,14 +193,17 @@ export function drawStructures(t: number) {
     if (f === (eldById(s, ui.eld) ?? s.fire)) structG.lineStyle(1.5, 0xffffff, 0.9).drawCircle(cx, cy, 15).lineStyle(0);
   }
 }
-// lägerelden (Björn valde efter v92): en bild för varje läge (ikoner.ts), två rutor bred med elden mitt i.
-// En brinnande eld har två bilder som byts så att den fladdrar
-function lagereld(f: Fire, t: number) {
-  const fr = Math.floor(t / 220 + (f.id ?? 0) * 0.37) % 2 ? '2' : '', e = eldXY(s, f); // lägereldarna till fladdrar inte i takt med den första
-  const l: LagereldLage = f.lit ? (fireHeat(s, f) > 0.5 ? `stort${fr}` : `lite${fr}`) as LagereldLage
-    : emberOn(s, f) ? 'glod' : (f.ash ?? 0) >= 1 ? 'kol' : f.fuel > 0 ? 'ny' : 'tom';
-  pileIcons.add(lagereldId(l, !!f.ring), e.x * TS + TS / 2 - 16, e.y * TS + TS / 2 - 24, 2);
+// lägerelden (bildstilen, steg 5.2.4.3 och 5.1.2.2): en bild för varje läge, 20 × 20 punkter med gropen mitt på elden rutan,
+// och stenringen under när elden har en. Fladdret kommer med animationerna (5.1.9)
+const ELD = { x: 10, y: 12 }; // gropens mitt i bilden
+function lagereld(f: Fire) {
+  const e = eldXY(s, f), x = e.x * TS + TS / 2 - ELD.x, y = e.y * TS + TS / 2 - ELD.y;
+  const l = f.lit ? (fireHeat(s, f) > 0.5 ? 'stort' : 'lite') : emberOn(s, f) ? 'glod' : (f.ash ?? 0) >= 1 ? 'kol' : f.fuel > 0 ? 'ny' : 'tom';
+  if (f.ring) pileIcons.add('kb_lagereld_ring', x, y, 1);
+  pileIcons.add('kb_lagereld_' + l, x, y, 1);
 }
+// stationens bild ur bildstilen (kartbilder.ts, steg 5.1.2.2), den stående om stationen står vriden
+const stationBild = (ikon: string, v: string) => { const id = ikon + v, b = KARTBILDER[id]; return b && (b.sort === 'kar-station' || id === 'kista') ? id : undefined; };
 // husen: golv, väggar av timmer (eller flätat ris i äldre byar) och öppningar. Det som är planerat syns som en svag kontur, det som byggs fylls i
 function drawBuild() {
   const klara = ritaHus(s, bitsOf(s)); // timmerväggarna och trägolven (husbild.ts)

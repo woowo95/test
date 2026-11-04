@@ -167,8 +167,6 @@ export const PAL: Record<string, Record<string, string>> = {
   utb5: { o: '#24201d', z: 'rgba(36,32,29,.30)', a: '#dad0bb', b: '#a0947d', k: '#2f261d' },
   m_hardVinter: { o: '#24201d', s: '#bdb39b', S: '#dad0bb' }, // (Björn valde version 1 efter v245, steg 4.5.2)
   m_tornado: { o: '#24201d', g: '#61767a', G: '#bdb39b', d: '#5e3c24', D: '#dad0bb', k: '#2f261d', K: '#372f25', l: '#4b4f00', j: '#7d5b40' }, // (Björn valde version 2 efter v245, steg 4.5.2)
-  tornado: { o: '#24201d', g: '#61767a', G: '#a0947d', d: '#7d5b40', D: '#bdb39b' },
-  brand: { o: '#24201d', r: '#a14808', R: '#bd753e', y: '#d8b25f', Y: '#d8b25f', k: '#372f25' }, // eldsvådan (steg 3.8.5, platshållare)
   m_oversvamning: { o: '#24201d', b: '#3e5156', B: '#61767a', l: '#8a9c9e', k: '#3f2415', j: '#5e3c24', J: '#7d5b40' }, // (Björn valde version 2 efter v245, steg 4.5.2)
   m_torka: { o: '#24201d', y: '#d8b25f', Y: '#d8b25f', r: '#bd753e', j: '#987e62', J: '#a0947d', k: '#5e3c24' },
   i_legend: { a: '#d8b25f', b: '#b2921b', g: '#906f0f', o: '#24201d', w: '#dad0bb', z: 'rgba(36,32,29,.30)' },
@@ -2007,74 +2005,6 @@ export const PIX: Record<string, string[]> = {
     '..dDdDdDdDdD....',
     '................',
   ],
-  tornado: [ // platshållare (steg 3.8.4): tornadon på kartan, 2 × 3 rutor, ritad där den är (vaxter.ts)
-    '..oggggggGGGGGGGGGGGGGGGgggggo..',
-    '..oggggGGGGGGGGGGGGGGGGggggggo..',
-    '...ogGGGGGGGGGGGGGGGGgggggggo...',
-    '...oGGGGGGGGGGGGGGGggggggggGo...',
-    '...oGGGGGGGGGGGGGggggggggGGGo...',
-    '....oGGGGGGGGGGggggggggGGGGGo...',
-    '....oGGGGGGGGggggggggGGGGGGGo...',
-    '....ooGGGGGggggggggGGGGGGGGoo...',
-    '.....oGGGggggggggGGGGGGGGggo....',
-    '.....oGggggggggGGGGGGGGggggo....',
-    '.....ooggggggGGGGGGGGggggggo....',
-    '......oggggGGGGGGGGggggggggo....',
-    '......oggGGGGGGGGggggggggGo.....',
-    '......oGGGGGGGGggggggggGGGo.....',
-    '.......oGGGGGggggggggGGGGGo.....',
-    '.......oGGGggggggggGGGGGGoo.....',
-    '.......oGggggggggGGGGGGGGo......',
-    '.......ogggggggGGGGGGGGggo......',
-    '.......ogggggGGGGGGGGgggo.......',
-    '.......oggGGGGGGGGggggggo.......',
-    '.......oGGGGGGGGgggggggo........',
-    '.......oGGGGGGggggggggGo........',
-    '.......oGGGGggggggggGGo.........',
-    '.......oGggggggggGGGGGo.........',
-    '.......ooggggggGGGGGGo..........',
-    '.......ooggggGGGGGGGGo..........',
-    '.......ooggGGGGGGGGgo...........',
-    '........oGGGGGGGGgggo...........',
-    '........oGGGGGGggggo............',
-    '........oGGGGggggggo............',
-    '........oGGggggggggo............',
-    '.........ogggggggGoo............',
-    '.........ogggggGGGo.............',
-    '.........ooggGGGGGo.............',
-    '..........oGGGGGGGo.............',
-    '...........oGGGGGgo.............',
-    '...........oGGGGggo.............',
-    '............oGggggoo............',
-    '............oogggggo............',
-    '.............ogggggo............',
-    '..............ogggGo............',
-    '...............oGGGo............',
-    '..........ddDddooGGodD..........',
-    '.......dDddDddDdoGGooddDd.......',
-    '......dDddDddDddDddDddDddD......',
-    '......DddDddDddDddDddDddDd......',
-    '.......dDddDddDddDddDddDd.......',
-    '..........DddDddDddDdd..........',
-  ],
-  brand: [ // platshållare (steg 3.8.5): lågor på en ruta som brinner, ritade där elden är (vaxter.ts); version 1 i bildstilens val
-    '.......o........',
-    '......oRo.......',
-    '......oRo...o...',
-    '..o..oRYRo.oRo..',
-    '.oRo.oRYRo.oRo..',
-    '.oRRooRYYRooRRo.',
-    'oRYRooRYYRooRYRo',
-    'oRYRRoRYYYRoRYRo',
-    'oRYYRRYYYYRRYYRo',
-    'oRYYYRYYYYRYYYRo',
-    '.oRYYYYYYYYYYRo.',
-    '.orRYYYYYYYYRro.',
-    '..orRRYYYYRRro..',
-    '..okrrRRRRrrko..',
-    '.okkkkkkkkkkkko.',
-    '..oooooooooooo..',
-  ],
   m_oversvamning: [ // (Björn valde version 2 efter v245, steg 4.5.2)
     '................',
     '.......oo.......',
@@ -3838,85 +3768,15 @@ PIX.lera_fukt = [
 PAL.lera_fukt = { j: '#5e3c24', J: '#7d5b40', v: '#61767a', V: '#8a9c9e' };
 for (const k in PIX) if (k.endsWith('_v')) PAL[k] ??= PAL[k.slice(0, -2)];
 
-// ---------- lägerelden (Björn valde efter v92: nr 1, stor stenring med stjärnved, men enklare) ----------
-// Två rutor bred och två och en halv hög: raderna 4–19 är de två rutorna, 0–3 luften ovanför där lågorna sticker upp.
-// Tio stenar i en ring runt en askcirkel, och fyra vedträn som ligger in mot mitten som en stjärna, helt innanför stenarna.
-// Bilderna räknas fram här, en per läge: LAGERELD_LAGEN, med och utan stenringen (den läggs första gången elden tänds)
-export const LAGERELD_LAGEN = ['tom', 'ny', 'lite', 'lite2', 'stort', 'stort2', 'glod', 'kol'] as const;
-export type LagereldLage = typeof LAGERELD_LAGEN[number];
-export const lagereldId = (l: LagereldLage, ring: boolean) => `lagereld_${l}${ring ? '' : '_utan'}_karta`;
-const ELD_PAL = {
-  h: '#8a9c9e', g: '#987e62', G: '#3e5156', N: '#7d5b40', a: '#474138', A: '#3e5156', b: '#24201d', k: '#24201d', c: '#372f25', C: '#474138',
-  w: '#5e3c24', W: '#7d5b40', Y: '#a0947d', D: '#24201d', j: '#694902',
-  f: '#bd753e', F: '#d8b25f', V: '#dad0bb', e: '#a14808', E: '#bd753e',
-  u: 'rgba(218,208,187,.30)', U: 'rgba(218,208,187,.16)', o: 'rgba(216,178,95,.20)', O: 'rgba(216,178,95,.34)',
-};
-function lagereldRader(l: LagereldLage, ring: boolean) {
-  const G = 16, H = 20, CX = 8, CY = 12, g: string[][] = Array.from({ length: H }, () => Array(G).fill('.'));
-  const hs = (a: number, b: number) => { const h = Math.sin(a * 12.9898 + b * 78.233) * 43758.5453; return h - Math.floor(h); };
-  const set = (x: number, y: number, k: string) => { x = Math.round(x); y = Math.round(y); if (g[y] && x >= 0 && x < G) g[y][x] = k; };
-  const S = (x: number, y: number, rows: string[]) => rows.forEach((r, j) => [...r].forEach((k, i) => { if (k !== '.') set(x + i, y + j, k); }));
-  const ellips = (rx: number, ry: number, yo: number, f: (d: number, x: number, y: number) => string | undefined) => {
-    for (let y = 4; y < H; y++) for (let x = 0; x < G; x++) { const d = ((x + 0.5 - CX) / rx) ** 2 + ((y + 0.5 - CY - yo) / ry) ** 2; const k = d <= 1 ? f(d, x, y) : undefined; if (k) set(x, y, k); }
-  };
-  const brinner = l === 'lite' || l === 'lite2' || l === 'stort' || l === 'stort2', stor = l === 'stort' || l === 'stort2', fro = l.endsWith('2') ? 7 : 3;
-  // skenet på marken runt en eld som brinner
-  if (brinner) ellips(7.8, 7.6, 0, d => stor && d < 0.35 ? 'O' : 'o');
-  // askcirkeln och den mörka mitten
-  ellips(5.2, 4.4, 0, (d, x, y) => d <= 0.62 ? 'b' : hs(x, y) < 0.25 ? 'A' : 'a');
-  // stenarna: de bakom elden först, de framför sist
-  const STEN = [['hhg', 'gGN'], ['.hg', 'gGN'], ['hg.', 'GNN']];
-  const stenar = (bak: boolean) => {
-    if (!ring) return;
-    for (let i = 0; i < 10; i++) {
-      const a = 0.3 + i * 2 * Math.PI / 10, s = STEN[i % 3];
-      if ((Math.sin(a) < 0.05) !== bak) continue;
-      S(Math.round(CX + Math.cos(a) * 5.8 - s[0].length / 2 + 0.5), Math.round(CY + Math.sin(a) * 4.9 - 1), s);
-    }
-  };
-  stenar(true);
-  // veden: fyra vedträn två punkter tjocka, från mitten ut till strax innanför stenarna, med en ljus snittyta i änden.
-  // Den del som brunnit är svart
-  if (l !== 'tom' && l !== 'kol') {
-    const kol = l === 'glod' ? 0.75 : stor ? 0.45 : 0, r1 = l === 'glod' ? 3.2 : 4;
-    for (let i = 0; i < 4; i++) {
-      const a = -Math.PI / 4 + i * Math.PI / 2 + 0.2, x0 = CX - 0.5 + Math.cos(a) * 1.2, y0 = CY - 0.5 + Math.sin(a) * 1.0;
-      const x1 = CX - 0.5 + Math.cos(a) * r1, y1 = CY - 0.5 + Math.sin(a) * r1 * 0.8, ligg = Math.abs(x1 - x0) >= Math.abs(y1 - y0);
-      const n = Math.max(1, Math.round(Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0))));
-      for (let t = 0; t <= n; t++) {
-        const x = x0 + (x1 - x0) * t / n, y = y0 + (y1 - y0) * t / n, brand = t / n < kol;
-        set(x, y, brand ? 'D' : 'W'); set(x + (ligg ? 0 : 1), y + (ligg ? 1 : 0), brand ? 'k' : 'w');
-      }
-      set(x1, y1, 'Y'); set(x1 + (ligg ? 0 : 1), y1 + (ligg ? 1 : 0), 'j');
-    }
-  }
-  // lågan: bred w och hög h med foten på raden by. Två bilder per storlek, som byts så att elden fladdrar
-  const flamma = (by: number, w: number, h: number) => {
-    const hw = w / 2;
-    for (let x = Math.floor(CX - hw); x < Math.ceil(CX + hw); x++) {
-      const dx = (x + 0.5 - CX) / hw; if (Math.abs(dx) > 1) continue;
-      const top = Math.max(1, Math.round(h * (1 - dx * dx * 0.85) * (0.55 + 0.45 * hs(x + fro, fro * 3))));
-      for (let j = 0; j < top; j++) { const r = j / top; set(x, by - j, Math.abs(dx) < 0.25 && r < 0.35 ? 'V' : Math.abs(dx) < 0.5 && r < 0.65 ? 'F' : j === top - 1 && top > 3 ? 'E' : 'f'); }
-    }
-  };
-  if (brinner && !stor) { flamma(CY + 1, 5, 7); set(8, 4 + (fro & 1), 'u'); }
-  if (stor) { flamma(CY + 2, 8, 13); set(5, 1, 'u'); set(10, fro & 1, 'U'); set(11, 2, 'u'); }
-  if (l === 'glod') {
-    ellips(2.2, 2, -0.5, () => 'k');
-    for (let i = 0; i < 9; i++) { const a = i * 2.4, r = 0.4 + (i % 4) * 0.55; set(CX - 0.5 + Math.cos(a) * r * 1.5, CY - 0.5 + Math.sin(a) * r * 1.2, i % 2 ? 'e' : 'E'); }
-    set(CX - 1, CY - 5, 'u'); set(CX, CY - 7, 'U');
-  }
-  if (l === 'kol') { ellips(3.8, 3, 0.3, (d, x, y) => d < 0.7 ? (hs(x, y) < 0.3 ? 'C' : hs(x, y) < 0.6 ? 'c' : 'k') : 'k'); set(CX - 1, CY - 2, 'C'); }
-  stenar(false);
-  return g.map(r => r.join(''));
-}
-for (const l of LAGERELD_LAGEN) for (const ring of [true, false]) { PIX[lagereldId(l, ring)] = lagereldRader(l, ring); PAL[lagereldId(l, ring)] = ELD_PAL; }
-// symbolen för en lägereld (stationen som lägger ringen till en lägereld till, steg 4.5.6.8): den nylagda med ring
-PIX.lagereld = lagereldRader('ny', true); PAL.lagereld = ELD_PAL;
-
 // bildstilens godkända bilder (kartbilder.ts, steg 5.2.4) som PIX och PAL med id:t kb_<id>. kartbild(k) ger id:t för sakens
 // kartbild, som ritas i sin naturliga storlek, aldrig förstorad eller förminskad (steg 5.1.2.1)
 for (const [id, b] of Object.entries(KARTBILDER)) { PIX['kb_' + id] = b.rader; PAL['kb_' + id] = b.pal; }
+// lågorna där det brinner och tornadon (Björns val i bildstilen, steg 5.1.2.2) heter som förut, så att knappen i testläget hittar dem
+for (const k of ['brand', 'tornado']) { PIX[k] = KARTBILDER[k].rader; PAL[k] = KARTBILDER[k].pal; }
+// symbolen för en lägereld (stationen som lägger ringen till en lägereld till, steg 4.5.6.8): den nylagda med stenringen under
+// (bildstilens tecken har samma färg i alla bilder, så att två bilder kan läggas på varandra tecken för tecken)
+{ const ring = KARTBILDER.lagereld_ring, ny = KARTBILDER.lagereld_ny;
+  PIX.lagereld = ring.rader.map((r, y) => [...r].map((c, x) => ny.rader[y][x] !== '.' ? ny.rader[y][x] : c).join('')); PAL.lagereld = { ...ring.pal, ...ny.pal }; }
 export const kartbild = (k: string) => KARTBILDER[k] ? 'kb_' + k : undefined;
 export const kartbildEnsam = (k: string) => !!KARTBILDER[k]?.ensam;
 
