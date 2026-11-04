@@ -8,6 +8,7 @@ import { DAY, HOUR, Person, Rel, State } from './typer';
 import { allaBarn, formas, upplev } from './uppvaxt';
 import { tornadoTid } from './tornado';
 import { TeckenTyp, tecken } from './religion';
+import { notis } from './notiser';
 
 // Motgångarna (steg 3.8, "Motgångarna i spelet" i designdokumentet): en hård vinter, torka, översvämning och tornado.
 // Varje motgång är en rad i registret MOTGANGAR och räknas ur byns frö och tiden, precis som vädret (vader.ts), så att
@@ -125,7 +126,8 @@ function anar(s: State, p: Person, k: MotgangId, start: number, c: number, vem: 
   if (e && e.t === start && e.c >= c) return;
   p.varsel = { k, t: start, c };
   count(s, 'varsel');
-  log(s, `${p.name} ${vem} och ${DEF[k].anar.toLowerCase()}.`, 'world', [p.id]);
+  const vt = `${p.name} ${vem} och ${DEF[k].anar.toLowerCase()}.`;
+  log(s, vt, 'world', [p.id]); notis(s, 'varsel', vt, [p.id]);
 }
 // den äldsta i byn (om hen är gammal nog)
 const aldst = (s: State) => living(s).filter(p => ageOf(p, s.now) >= MOTGANG.gammal).sort((a, b) => ageOf(b, s.now) - ageOf(a, s.now))[0];
@@ -196,7 +198,7 @@ export function stepMotgang(s: State) {
   if (nu && m.pagar?.t !== nu.start) {
     m.pagar = { k: nu.id, t: nu.start, dog: deadCount(s) };
     count(s, 'motgang_' + nu.id);
-    log(s, DEF[nu.id].borjar, 'world');
+    log(s, DEF[nu.id].borjar, 'world'); notis(s, 'motgang', DEF[nu.id].borjar);
     kronika(s, `År ${yearNo(s)}: ${DEF[nu.id].borjar.split('.')[0]}.`);
     allaBarn(s, nu.id);
   }

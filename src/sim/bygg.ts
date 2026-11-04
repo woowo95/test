@@ -23,6 +23,7 @@ import { FLOD } from './flod';
 import { balans } from './balans';
 import { ELDFLYTT, nyEldplats, vidElden } from './eldflytt';
 import { canLight } from './eld';
+import { notis } from './notiser';
 
 // ---------- balanstal (regel 8) ----------
 // Planeringen (var ett nytt hus står) och arbetet (i vilken ordning och hur fort det byggs och lagas). Husens storlek och
@@ -300,6 +301,7 @@ export function workOn(s: State, p: Person, b: Bit, dtSec: number, har = 0) {
     livet(s, p, 'hus'); // satte sista biten (steg 3.9.8)
     const n = gridOf(s).rooms.filter(r => r.hus === h.id).reduce((a, r) => a + r.tiles.length, 0);
     if (fnOf(h).sover) log(s, `${h.namn} är färdigt. Nu kan ${n} sova under tak.`, 'world', [p.id]);
+    notis(s, 'hus', `${p.name} satte sista biten: ${h.namn} är färdigt.`, [p.id], { x: Math.floor(p.x), y: Math.floor(p.y) });
     kronikaBer(s, 'k_husKlar', h.id, { ...personFalt(p), ...husFalt(h.namn) }); husKlar(s, h);
     if ((h.byggare?.length ?? 0) > 1) for (const q of living(s)) if (h.byggare!.includes(q.id)) upplev(s, q, 'byggdeHus', h.namn.toLowerCase()); // de byggde tillsammans (steg 4.5.4.9)
     h.byggare = undefined;

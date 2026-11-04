@@ -7,6 +7,7 @@ import { grundvarde } from './varde';
 import { kvVarde } from './kvalitet';
 import { kronika } from './historik';
 import { balans } from './balans';
+import { notis } from './notiser';
 
 // ---------- ett bytessystem för alla byten (steg 4.4.1.1) ----------
 // Ett byte mellan två bybor och ett byte med handlaren (handel.ts) är samma byte: två parter (Part), samma värdering (var och
@@ -142,6 +143,7 @@ export function byteKlart(s: State, m: Part, g: Part, fatt: Vara[], betal: Vara[
   const text = `${m.namn} och ${g.namn} bytte: ${varorText(fatt)} mot ${varorText(betal)}${desperat ? `. ${m.namn} höll på att dö` : ''}.`;
   log(s, text, 'rel', [m.id, g.id].filter(i => i > 0)).byte = minne;
   for (const P of [m, g]) if (P.p) { const b = (P.p.byten ??= []); b.push(minne); if (b.length > BYTE.minnas) b.splice(0, b.length - BYTE.minnas); }
+  if (hf) notis(s, 'byte', text, [m.id, g.id].filter(i => i > 0));
   if (stort) kronika(s, text, 'byte');
   for (const f of vidByte) f(s, m, g, fatt, betal, minne);
   return stort;

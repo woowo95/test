@@ -3,6 +3,7 @@ import { ALDER, REL, ageOf, count, getRel, isParent, living, log, relKey, think 
 import { DAY, Person, Rel, SKILLS, Skill, State } from './typer';
 import { balans } from './balans';
 import { ACTS } from './handlingar';
+import { notis } from './notiser';
 
 // ---------- balanstal (regel 8) ----------
 // Relationstyperna (steg 3.1.1, "Relationstyper" i designdokumentet). Relationen (op) går från -100 till 100; vän, nära vän,
@@ -134,7 +135,7 @@ export function stepRelationer(s: State) {
     r.par ??= s.now; // par från äldre sparfiler räknas härifrån
     if (r.gift === undefined && s.now - r.par >= RELT.giftDygn * DAY && r.op > REL.van) {
       r.gift = s.now; count(s, 'gift');
-      log(s, `${p.name} och ${q.name} har gift sig.`, 'rel', [p.id, q.id]);
+      log(s, `${p.name} och ${q.name} har gift sig.`, 'rel', [p.id, q.id]); notis(s, 'par', `${p.name} och ${q.name} har gift sig.`, [p.id, q.id]);
       think(p, `Gifte sig med ${q.name}`, 0.15, s.now, DAY); think(q, `Gifte sig med ${p.name}`, 0.15, s.now, DAY);
     }
   }

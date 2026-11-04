@@ -27,7 +27,6 @@ export const NOTISER: Record<string, { slag: NotisSlag; rubrik: string; vikt: nu
   utflytt: { slag: 'folk', rubrik: 'Lämnade byn', vikt: 2 },
   ledare: { slag: 'folk', rubrik: 'Ny ledare', vikt: 3 },
   par: { slag: 'folk', rubrik: 'Ett nytt par', vikt: 1 },
-  sed: { slag: 'folk', rubrik: 'En ny sed', vikt: 1 },
   teknik: { slag: 'framsteg', rubrik: 'Ny kunskap', vikt: 2 },
   mastare: { slag: 'framsteg', rubrik: 'Byns första mästare', vikt: 2 },
   hus: { slag: 'framsteg', rubrik: 'Ett nytt hus', vikt: 2 },

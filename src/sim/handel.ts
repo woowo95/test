@@ -21,6 +21,7 @@ import { kanterna } from './varg';
 import { KLAN, KLAN_HEM, andraInst, handlarKlan, klanById, klanerOf } from './klaner';
 import { foddNar, gastNyckel } from './gastliv';
 import { affarMed, glomIrritation, kravMax, kravRel, luradMed, nejTill } from './gastrel';
+import { notis } from './notiser';
 
 // ---------- handlarna (steg 4.4.1) ----------
 // När byns rikedom (varde.ts) passerat en gräns (HANDEL.rik) kommer en handlare gående från kartans kant, ungefär en gång per
@@ -265,7 +266,7 @@ function framme(s: State, h: Handlare) {
 function lagUt(s: State, h: Handlare) {
   h.fas = 'handlar'; h.kom = s.now; h.gar = nastaKl(s.now, HANDEL.morgon); h.kvall = undefined;
   (s.filtar ??= []).push({ x: h.x, y: h.y + BYTE.bakom, slut: h.gar, varor: [], handlare: h.id, vem: h.id, par: nyttPar(s) }); // varorna ligger kvar i packningen (steg 4.5.7.4)
-  log(s, `${h.namn} har brett ut en filt nära elden och väntar på kunder.`, 'world');
+  log(s, `${h.namn} har brett ut en filt nära elden och väntar på kunder.`, 'world'); notis(s, 'gast', `${h.namn} från ${h.hem} har brett ut en filt nära elden och väntar på kunder.`, [], { x: Math.floor(h.x), y: Math.floor(h.y) });
   if (forstaGang(s, 'handlareFramme')) kronika(s, `Den första handlaren kom till byn: ${h.namn} från ${h.hem}, med ${HANDLAR_UTR[h.utr].namn.toLowerCase()}en full av varor.`, 'handel');
 }
 

@@ -44,11 +44,34 @@ SCENARIER.historik = {
   },
 };
 
+SCENARIER.notisispelet = {
+  text: 'Notiserna i spelet (steg 5.4.3.3): det som händer i byn (födslar, död, ny kunskap, nya hus, flyttar, ledare, faror) blir notiser, och de ligger kvar när byn laddas igen',
+  kor: () => {
+    const s = createState(3, START);
+    for (let i = 0; i < 8 * STEG_DYGN; i++) step(s, BEAT);
+    const L = s.notiser?.lista ?? [], st = s.stat ?? {}, har = (id: string) => L.some(n => n.id === id);
+    const rader = (id: string) => L.filter(n => n.id === id).reduce((a, n) => a + n.n, 0);
+    const tek = Object.keys(st).filter(k => k.startsWith('tek_')).length;
+    const delar = serializeParts(s), ater = migrate(JSON.parse(joinParts(Object.values(delar))));
+    const kvar = isDeepStrictEqual(ater.notiser, JSON.parse(serialize(s)).notiser);
+    return [
+      [`byn har fått notiser (${L.length} st: ${[...new Set(L.map(n => n.id))].join(', ')})`, L.length > 0],
+      [`varje födsel är en rad i en notis (${rader('fodd')} rader, ${st.fodda ?? 0} födda)`, rader('fodd') === (st.fodda ?? 0)],
+      [`varje död är en rad i en notis (${rader('dod')} rader, ${st.doda ?? 0} döda)`, rader('dod') === (st.doda ?? 0)],
+      [`ny kunskap blir en notis (${tek} tekniker)`, har('teknik') === tek > 0],
+      [`ett nytt hus blir en notis (${housesOf(s).filter(h => h.klar || h.varKlar).length} färdiga hus)`, har('hus') === housesOf(s).some(h => h.klar || h.varKlar)],
+      ['ingen notis har fler rader än den rymmer', L.every(n => n.rader.length <= SIM.NOTIS.rader && n.n >= n.rader.length)],
+      ['notiserna ligger kvar när byn laddas igen', !!delar.notiser && kvar],
+    ];
+  },
+};
+
 SCENARIER.notiser = {
   text: 'Notiserna (steg 5.4.3.1, sim/notiser.ts): samma sort samma dygn blir en notis med flera rader, en ny dygn eller sort blir en ny, de är olästa tills de läses, den viktigaste kommer först, och de sparas i en egen del och blir samma igen',
   kor: () => {
     const s = createState(3, START);
     for (let i = 0; i < STEG_DYGN / 4; i++) step(s, BEAT);
+    s.notiser = undefined; // byns egna notiser (steg 5.4.3.3) tas bort, så att bara scenariots räknas
     const [a, b] = living(s), utan = serialize(s);
     SIM.notis(s, 'fodd', `${a.name} fick ett barn.`, [a.id]);
     SIM.notis(s, 'fodd', `${b.name} fick ett barn.`, [b.id, a.id]);
