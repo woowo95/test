@@ -2,7 +2,8 @@ import { freeTools } from './agande';
 import { campCenter, campDist } from './plats';
 import { gjort, living, log, think } from './folk';
 import { groundOf, isForest, tileOf } from './mark';
-import { FOREST } from './vag';
+import { FOREST, Ground } from './vag';
+import { stadium, stadiumAv } from './trad';
 import { pickNarmaste } from './slump';
 import { Act, DAY, H, HOUR, MIN, Person, State, Stock, W } from './typer';
 import { SNABBARE } from './handlingar';
@@ -76,6 +77,11 @@ export function treeSpot(s: State, taken: Set<number>, p: Person): { x: number; 
   const i = pickNarmaste(s, c, SKOG.urval, 'val', p).i;
   return { x: (i % W) + 0.5, y: Math.floor(i / W) + 0.5 };
 }
+// stammen som ett träd på ruta i blir när det fälls: trä och grenar efter hur stort trädet är och dess stadium (steg 5.1.4.4)
+export function stamAv(g: Ground, i: number) {
+  const st = stadium(g, i), d = st ? stadiumAv(st) : { stam: 1, grenar: 1 }, size = g.trees[i];
+  return { ved: Math.round(SKOG.stamVed * size * d.stam), grenar: Math.round(SKOG.stamGrenar * size * d.grenar) };
+}
 const nearestStock = (s: State) => {
   const b = groundOf(s).built, onSite = (k: Stock) => b?.[tileOf(k.x, k.y)] ? 0 : 1; // stammarna där huset ska stå först
   return stocks(s).filter(k => k.ved > 0).sort((a, c) => onSite(a) - onSite(c) || campDist(s, a.x, a.y) - campDist(s, c.x, c.y))[0];
@@ -85,10 +91,10 @@ const nearestStock = (s: State) => {
 export function fellTree(s: State, p: Person, x: number, y: number) {
   const g = groundOf(s), i = tileOf(x, y);
   if (!isForest(s, i)) return;
-  const size = g.trees[i];
+  const stam = stamAv(g, i);
   g.trees[i] = 0; g.cover[i] = 1;
   if (s.halvfallt) delete s.halvfallt[i];
-  const k: Stock = { id: (s.nextStock = (s.nextStock ?? 0) + 1), x: Math.floor(x) + 0.5, y: Math.floor(y) + 0.5, ved: Math.round(SKOG.stamVed * size), grenar: Math.round(SKOG.stamGrenar * size) };
+  const k: Stock = { id: (s.nextStock = (s.nextStock ?? 0) + 1), x: Math.floor(x) + 0.5, y: Math.floor(y) + 0.5, ...stam };
   stocks(s).push(k);
   if (!groundOf(s).built?.[i]) (s.stubbar ??= []).push({ x: Math.floor(x), y: Math.floor(y), t: s.now }); // där ett hus ska stå grävs stubben upp
   s.fallda = (s.fallda ?? 0) + 1; gjort(s, p, 'trad');
@@ -115,6 +121,8 @@ export function chopStock(s: State, ref: number | undefined, amount: number) {
 }
 
 // den fällda stam närmast byn som räcker till ett virke (steg 4.5.5.2)
+// finns det en stam att klyva (utan att leta upp den närmaste)
+export const finnsKlyvStam = (s: State) => (s.stockar ?? []).some(k => k.ved >= SKOG.virkeVed);
 export const klyvStam = (s: State) => (s.stockar ?? []).filter(k => k.ved >= SKOG.virkeVed).sort((a, c) => campDist(s, a.x, a.y) - campDist(s, c.x, c.y))[0];
 // en vuxen som ska skaffa ved: hugga en fälld stam, fälla ett träd, göra en yxa eller (annars) samla grenar
 // kyla: kylan är en fara (dangers i val.ts). Då görs ingen ny yxa, för ett nytt redskap är en förbättring

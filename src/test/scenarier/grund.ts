@@ -9,17 +9,18 @@ import { START, STEG_TIM } from '../kor';
 import { setMat, Koll, kor, tandEld, logg, skogsandel, uttag, STOCKHOLM, SCENARIER, nyInvanare, klockan, medHus } from './hjalp';
 
 SCENARIER.glanta = {
+  lang: true,
   text: 'Ny by: fem personer utan eld i en liten glänta på en större karta, skog och ängar med högt gräs står runt omkring och marken nöts till stigar',
   kor: () => {
     const s = createState(11, START), a = angOf(s.seed), g0 = groundOf(s);
     let jord = 0, angar = 0; for (let i = 0; i < a.length; i++) if (isSoil(g0.tiles[i])) { jord++; angar += a[i]; }
-    const ang = angar / jord;
+    const ang = angar / jord, skog0 = skogsandel(s, 9, 99);
     const forst: Koll[] = [
       [`en liten koloni: ${s.people.length} personer, ingen eld`, s.people.length === 5 && !s.fire.lit],
       [`större karta (${s.W}×${s.H})`, s.W === NEW_W && s.H === NEW_H],
       ['gläntan är tom på träd', skogsandel(s, 0, 3) === 0],
       ['gläntan är liten: skog sex rutor från elden', skogsandel(s, 6, 9) > 0.8],
-      ['skog på nästan all jord utanför gläntan och ängarna', skogsandel(s, 9, 99) > 0.95],
+      [`skog på det mesta av jorden utanför gläntan och ängarna, i dungar med gläntor emellan (steg 5.1.4.1): ${(skog0 * 100).toFixed(0)} %`, skog0 > 0.65 && skog0 < 0.95],
       [`ängar med högt gräs på ${(ang * 100).toFixed(0)} % av jorden`, ang > 0.2 && ang < 0.55 && skogsandel(s, 9, 99, 1) === 0],
       ['ingen ved, bara grenar i förrådet', amountOf(s, 'ved') === 0 && (amountOf(s, 'grenar')) > 0],
     ];
@@ -28,7 +29,7 @@ SCENARIER.glanta = {
     let trampat = 0; for (let i = 0; i < g.cover.length; i++) if (isSoil(g.tiles[i]) && g.cover[i] < HIGH) trampat++;
     return [...forst,
       ['gräset har trampats ner till kort gräs eller stigar', trampat > 20],
-      ['skogen står kvar runt byn efter 10 dygn', skogsandel(s, 9, 99) > 0.85],
+      [`skogen står kvar runt byn efter 10 dygn (${(skogsandel(s, 9, 99) * 100).toFixed(0)} %, från början ${(skog0 * 100).toFixed(0)} %; torrakor faller, steg 5.1.4.2)`, skogsandel(s, 9, 99) > 0.85 * skog0],
       ['ängarna är mest gräs efter 10 dygn', skogsandel(s, 9, 99, 1) < 0.1],
       ['elden har tänts', s.fire.lightings > 0],
       ...stigLigger()];
@@ -502,7 +503,7 @@ SCENARIER.torka = {
     const lera = SIM.torrRutor(s), tomma = s.sjoTorr?.tomma ?? [], vatten1 = SIM.vattenNu(s).filter(t => t === T.Vatten).length;
     const tjarnTorr = tomma.length > 0 && tomma.every(n => SIM.sjoarna(s.seed).rutor[n].every(i => SIM.vattenNu(s)[i] === T.Lera));
     const torrMark = (s.vader?.fukt ?? 1);
-    const vattnat = s.stat?.vattnat ?? 0, vissnat = s.stat?.vissnat ?? 0;
+    const vattnat = s.stat?.vattnat ?? 0, vissnat = s.stat?.vissnat ?? 0, kvar = !!s.falt?.[0]?.groda; // det andra fältet kan tas och sås om av någon annan, och vissna igen
     // ingen står i vattnet, och den torra sjöbotten går att gå på
     const iVattnet = living(s).filter(p => SIM.iVattnetNu(s, Math.floor(p.y) * W + Math.floor(p.x))).length;
     const gar = SIM.GANG.fartMark[T.Lera] > 0;
@@ -539,7 +540,7 @@ SCENARIER.torka = {
       [`ingen står i vattnet (${iVattnet})`, iVattnet === 0],
       [`fisket från stranden tar ur vattnet som finns kvar (${iVatten.toFixed(3)}) och inget ur den torra sjöbotten (${iTorr.toFixed(3)})`, iVatten > 0 && iTorr === 0],
       [`alla hittar vatten att dricka (${utanVatten} utan) och ingen dör av törst (${torstDoda})`, utanVatten === 0 && torstDoda === 0],
-      [`ägaren med säck vattnar sitt fält (${vattnat} säckar), grödan på det andra vissnar (${vissnat})`, vattnat > 0 && vissnat === 1],
+      [`ägaren med säck vattnar sitt fält (${vattnat} säckar, grödan ${kvar ? 'står kvar' : 'vissnade'}), grödan på det andra vissnar (${vissnat})`, vattnat > 0 && kvar && vissnat >= 1],
       [`vattnet kommer tillbaka efter torkan (${efter ? `tillbaka ${tillbaka} timmar efter torkan` : 'redan när torkan slutade'}, ${vatten2} rutor vatten)`, !s.sjoTorr && vatten2 === vatten0],
       [`torkan kom (${s.stat?.motgang_torka ?? 0})`, (s.stat?.motgang_torka ?? 0) === 1],
     ];
@@ -945,7 +946,9 @@ SCENARIER.brand = {
       const t0 = by.now;
       let iVagg = 0, iVattnet = 0, sack = 0, hand = 0, risC = 1, tim = 0;
       const sedda = new Set<number>();
-      for (; tim < 12 * 12 && by.brand; tim++) {
+      // elden nära byn är släckt: inget brinner längre inom BRAND.hot rutor från byns eld (den som nått en dunge längre bort får brinna)
+      const naraByn = () => { const e2 = SIM.eldPlats(by); return SIM.brinnande(by).some(q => Math.hypot(q[0] % W - e2.x, Math.floor(q[0] / W) - e2.y) <= SIM.BRAND.hot); };
+      for (; tim < 12 * 12 && by.brand && naraByn(); tim++) {
         kor(by, 1 / 12, torr);
         risC = Math.min(risC, ris.b < 1 ? 0 : ris.c);
         for (const p of living(by)) {
@@ -964,13 +967,13 @@ SCENARIER.brand = {
         [`gnistor från lägerelden tände marken efter ${gnistTim} timmar med torr mark`, (gn.stat?.['brand gnista'] ?? 0) >= 1],
         [`skogsbranden spred sig i torr skog (${rutor} rutor på 18 timmar, ${trad} träd dog)`, rutor >= 8 && trad >= 5],
         [`när marken är blöt tar den sig inte vidare (${vatRutor} ruta)`, vatRutor <= 2],
-        [`där skogen brann står plantor (${plantor} av ${brunnen.length}) i aska (gräset högst ${askan.toFixed(2)})`, brunnen.length > 0 && plantor === brunnen.length && askan < HIGH],
+        [`där skogen brann står plantor (${plantor} av ${brunnen.length}; en torraka kan ha fallit av ålder) i aska (gräset högst ${askan.toFixed(2)})`, brunnen.length > 0 && plantor >= brunnen.length * 0.95 && askan < HIGH],
         [`plantorna växer när gräset kommit tillbaka (${vuxna} av ${brunnen.length} efter ${vaxtTim} timmar sommar)`, vuxna >= brunnen.length / 2],
         [`elden nära byn sågs (${st['brand sedd'] ?? 0}) och hotade byn (${st['brand hot'] ?? 0})`, (st['brand sedd'] ?? 0) >= 1 && (st['brand hot'] ?? 0) >= 1],
         [`de vuxna släckte: ${sack} med vattensäcken (${st['brand sack'] ?? 0} säckar), ${hand} med händerna, ${st['brand slackt'] ?? 0} rutor släckta, ${st['brand skadad'] ?? 0} brännskador`, sack >= 1 && hand >= 1 && (st['brand slackt'] ?? 0) >= 1],
         [`risväggen brann (skick ${risC.toFixed(2)}${ris.b < 1 ? ', rasade' : ''})`, risC < 1],
         [`ingen stod i en vägg (${iVagg}) eller i vattnet (${iVattnet})`, iVagg === 0 && iVattnet === 0],
-        [`elden slocknade efter ${(tim / 12).toFixed(1)} timmar`, !by.brand && slocknat],
+        [`elden nära byn slocknade efter ${(tim / 12).toFixed(1)} timmar${by.brand ? ` (${by.brand.r.length} rutor brinner längre bort)` : ''}`, by.brand ? !naraByn() : slocknat],
         [`marken var svart (${svart0} rutor) och det svarta är borta efter ${SIM.BRAND.svart} dygn`, svart0 > 0 && !sv.aska],
       ];
     }

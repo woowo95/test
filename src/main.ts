@@ -1,10 +1,12 @@
-import { AGES, BEAT, DAY, HOUR, MIN, SEC, TalkEvent, VADERLAGE, vaderNu, kalender, alive, byId, cloneState, coverOf, createState, getMap, groundOf, isLight, rikedomDelar, spar, step, temperature, visning, yearNo, State, motgangNu, motgangNasta, motgangDef, varslade, ROVARFLOCK, skickaRovare, skickaHandlare, rovarHinder, handlarHinder } from './sim';
+import { AGES, BEAT, DAY, HOUR, MIN, SEC, TalkEvent, VADERLAGE, vaderNu, kalender, alive, byId, cloneState, coverOf, createState, getMap, groundOf, isLight, rikedomDelar, spar, step, temperature, visning, yearNo, State, motgangNu, motgangNasta, motgangDef, varslade, ROVARFLOCK, skickaRovare, skickaHandlare, rovarHinder, handlarHinder, lightLevel } from './sim';
 import { brandKnapp, testSvara } from './ui/interaktion';
+import { testBortaIByn } from './ui/testborta';
 import { $ } from './ui/hjalp';
 import { iconImg, tecknet } from './ikoner';
 import { s, setByn, ui, nyBild, vidNyBy } from './ui/lage';
 import { TS, app, cam, layout, view, world } from './ui/scen';
-import { drawNight, drawTerrain } from './ui/terrang';
+import { drawNight, drawSkuggor, drawTerrain } from './ui/terrang';
+import { sattSkuggLangd, skuggLangdAv } from './ui/skugga';
 import { drawVader } from './ui/vaderbild';
 import { drawStructures } from './ui/foremal';
 import { drawFilter } from './ui/filter';
@@ -17,6 +19,7 @@ import { renderPorts, stopFollow } from './ui/portratt';
 import { catchUp, loadSaves, nyByVald, saveDb, saveLocal } from './ui/spara';
 import './ui/interaktion';
 import { drawArena, oppnaArena } from './ui/arena';
+import { drawTona } from './ui/tona';
 
 // startpunkten: klockan, kontrollerna, huvudloopen och uppstarten. Allt annat i gränssnittet ligger i ui/
 function renderClock() {
@@ -62,7 +65,7 @@ function setSpeed(v: number) {
 }
 function leaveTest() { testSvara(''); ui.brandTest = false; brandKnapp(); ui.testMode = false; $('arena').hidden = true; $('speeds').hidden = true; $('testSkicka').hidden = true; document.body.classList.remove('testing'); setSpeed(1); }
 // testläget stängs utan att den verkliga byn kommer tillbaka (en annan by tar dess plats)
-function dropTest() { if (ui.testMode) { ($('testToggle') as HTMLInputElement).checked = false; realState = null; leaveTest(); } }
+function dropTest() { if (ui.testMode) { ($('testToggle') as HTMLInputElement).checked = false; realState = null; ui.testBorta = { st: [], lager: [] }; leaveTest(); } }
 // en ny by med slumpat frö, sparad direkt
 function nyBy() {
   setByn(createState(Math.floor(Math.random() * 2 ** 31), Date.now()));
@@ -93,13 +96,13 @@ $('testToggle').addEventListener('change', async e => {
   const on = (e.target as HTMLInputElement).checked;
   if (on) {
     saveLocal(); await saveDb();
-    realState = s;
+    realState = s; ui.testBorta = { st: [], lager: [] };
     bytBy(cloneState(s));
     spar.v = new WeakMap();
     ui.testMode = true; $('speeds').hidden = false; $('testSkicka').hidden = false; document.body.classList.add('testing'); setSpeed(1);
   } else {
     leaveTest();
-    if (realState) { bytBy(realState); realState = null; }
+    if (realState) { testBortaIByn(realState); bytBy(realState); realState = null; } // det som togs bort i testläget tas bort i byn (steg 4.5.7.8)
     drawTerrain(true); drawPlants(true);
     await catchUp(Date.now());
   }
@@ -122,6 +125,8 @@ $('arenaKnapp').addEventListener('click', oppnaArena);
     if (b.dataset.brand) { ui.brandTest = !ui.brandTest; brandKnapp(); testSvara(ui.brandTest ? 'Tryck på kartan där branden ska börja' : ''); return; }
     const r = b.dataset.flock ? skickaRovare(s, ROVARFLOCK[b.dataset.flock as keyof typeof ROVARFLOCK]) : skickaHandlare(s);
     testSvara(r.text);
+    // kameran visar var flocken dök upp (steg 4.5.7.10)
+    if (r.ok && b.dataset.flock && s.rovare) { stopFollow(); cam.x = s.rovare.x * TS; cam.y = s.rovare.y * TS; layout(); }
     b.classList.remove('tryckt'); void b.offsetWidth; b.classList.add('tryckt');
     testKnappar(); renderPanel(true);
   });
@@ -172,10 +177,12 @@ function tick() {
     const p = byId(s, ui.follow);
     if (p && alive(p)) { const q = posOf(p); cam.x = q.x * TS + TS / 2; cam.y = q.y * TS + TS / 2; layout(); } else stopFollow();
   }
+  sattSkuggLangd(skuggLangdAv(lightLevel(ui.nu))); // skuggan blir längre i skymningen (steg 5.1.8.2)
   drawTerrain();
   drawPlants(); drawFlackar(); drawAnimals();
   drawStructures(now);
-  drawPeople(now); drawHandel(); drawArena();
+  drawPeople(now); drawHandel(); drawArena(); drawTona();
+  drawSkuggor();
   drawNight(ui.nu);
   drawFilter();
   drawVader(now);
@@ -202,4 +209,4 @@ async function boot() {
 }
 boot();
 // byn och kartan tillgängliga för felsökning i konsolen
-(window as any).__byn = { get s() { return s; }, DAY, HOUR, getMap, coverOf, groundOf, get world() { return world; } };
+(window as any).__byn = { get s() { return s; }, DAY, HOUR, getMap, coverOf, groundOf, get world() { return world; }, get app() { return app; } };

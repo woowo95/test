@@ -312,7 +312,7 @@ export function nastaBuske(s: State, k: Lager, x0: number, y0: number) {
 // (med rädslan avdragen; utan tror gäller det rutan ger) och rädslan ensam
 export function nastaRuta(s: State, varde: (x: number, y: number) => number, x0: number, y0: number, r: number, id: number, krav: readonly { sett: readonly number[]; minst: number }[], drag?: { ut: number; tror?: (x: number, y: number) => number; radsla: (x: number, y: number) => number }) {
   const cx = Math.floor(x0), cy = Math.floor(y0), tiles = vattenNu(s), best: ({ x: number; y: number } | undefined)[] = [], bv = krav.map(() => -Infinity);
-  const n = krav[0]?.sett.length ?? 0, utan = krav.every(q => q.minst <= 0), lager = campGrid(s), d0 = campDist(s, x0, y0);
+  const n = krav[0]?.sett.length ?? 0, utan = krav.every(q => q.minst <= 0), minst = utan ? -Infinity : Math.min(...krav.map(q => q.minst)), lager = campGrid(s), d0 = campDist(s, x0, y0);
   // långt bort (bortom MINNE.sokR) prövas varannan ruta: det är bara riktningen som behövs, väl framme letar man nära
   const st = r > MINNE.sokR ? 2 : 1;
   for (let dy = -r; dy <= r; dy += st) for (let dx = -r; dx <= r; dx += st) {
@@ -320,6 +320,7 @@ export function nastaRuta(s: State, varde: (x: number, y: number) => number, x0:
     if (d < 0.5 || d > r + 0.01 || x < 0 || y < 0 || x >= W || y >= H) continue;
     if (tiles[i] === T.Vatten || bitAt(s, x, y) || forSmutsigt(s, x, y)) continue;
     const v0 = utan ? 0 : drag?.tror ? drag.tror(x, y) : varde(x, y);
+    if (v0 < minst) continue; // rutan ger för lite för alla kraven
     const v = v0 - d * MINNE.sokPris + hash3(id, i, n) * 0.1 + (drag ? drag.ut * (lager[i] - d0) - (drag.tror && !utan ? 0 : drag.radsla(x, y)) : 0);
     for (let j = 0; j < krav.length; j++) if (v0 >= krav[j].minst && v > bv[j] && !krav[j].sett.includes(i)) { bv[j] = v; best[j] = { x: x + 0.5, y: y + 0.5 }; }
   }
@@ -503,7 +504,7 @@ function day(s: State, p: Person, v: Val, a: number, lazy: number) {
   if (a < ALDER.hjalper) { set(v, 'leka', lekText(s)); return; }
   const fd = foodDays(s), wd = woodDays(s), ai = ageIndex(s), tot = habitTotal(p), fara = dangers(s); // farorna räknas en gång och gäller hela valet
   const hv = handlaVal(s, p); // handlaren är här och byn har inte handlat (steg 4.4.1.3, handel.ts)
-  if (hv) { set(v, 'handla', hv.why); v.spot = hv.spot; v.dur = hv.dur; v.ref = hv.ref; return; }
+  if (hv) { set(v, hv.act, hv.why); v.spot = hv.spot; v.dur = hv.dur; v.ref = hv.ref; return; }
   // att bära in är en förbättring: inte när byn fryser (talet dras ändå, så att personens följd är som förut). När byn svälter
   // bärs bara maten in, så att den inte blir liggande ute (steg 2.12.3)
   if (s.stackar?.length && rnd(s, 'val', p) < VAL.baraChans && !fara.kyla && (gt = haulJob(s, undefined, fara.svalt))) { set(v, 'bara', gt.why); v.spot = gt; v.dur = VAL.baraTim * HOUR; return; }
@@ -782,7 +783,7 @@ function night(s: State, p: Person, v: Val, a: number) {
   if (p.guardDay === guardDay && a >= ALDER.vaktFran) { set(v, 'vakt', 'Håller vakt i natt'); return; }
   // kvällsmarknaden (steg 4.5.4.11, handel.ts): handlarens filt ligger ute på kvällen
   const hv = skams(p, now) ? undefined : handlaVal(s, p);
-  if (hv) { set(v, 'handla', hv.why); v.spot = hv.spot; v.dur = hv.dur; v.ref = hv.ref; return; }
+  if (hv) { set(v, hv.act, hv.why); v.spot = hv.spot; v.dur = hv.dur; v.ref = hv.ref; return; }
   // ett framträdande vid elden (steg 4.3.2, framtradande.ts): uppträda eller lyssna
   const fr = skams(p, now) ? undefined : framVal(s, p, q => spotFor(s, 'beratta', q));
   if (fr) { set(v, fr.act, fr.why); v.spot = fr.spot ?? spotFor(s, 'beratta', p); v.dur = fr.dur; v.ref = fr.ref; v.tool = fr.tool; return; }

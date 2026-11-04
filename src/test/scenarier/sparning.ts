@@ -42,6 +42,7 @@ SCENARIER.historik = {
 };
 
 SCENARIER.sparning = {
+  lang: true,
   text: 'Byn sparas i delar som var och en ryms i ett dokument i molnet, och delarna blir samma by igen',
   kor: () => {
     const s = createState(11, START); // by 7, 9 och 10 svälter ut efter några dygn (2.10.9, 2.12.4); byn ska inte vara på väg att dö

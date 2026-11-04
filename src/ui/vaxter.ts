@@ -1,9 +1,10 @@
 import { Djur, FYND, H, HOUR, SEC, W, ageIndex, brinnande, djurOf, fyndAt, getMap, living, plockOf, tornadoAndel, tornadoPos, vargarOf } from '../sim';
 import { s, ui, vidNyBy } from './lage';
-import { Ikoner, TS, djurFx, djurLayer, djurMarkLayer, plantG } from './scen';
+import { Ikoner, TS, djurFx, djurMarkLayer, figurLayer, plantG } from './scen'; // djuren står i figurLayer (steg 5.1.4.5)
 import { jagade, samlaJakt } from './jakt';
 import { posOf } from './manniskor';
 import { OMRITA_MS } from './terrang';
+import { type DjurHall, djurBild, iconCanvas } from '../ikoner';
 
 // det som växer just nu, diskret i vanliga vyn: små bärbuskar och svampar där det finns något att hämta.
 // Var det kan växa syns inte, inte heller rötterna under jorden. Ritas om varje timme och när någon tagit något. Kaninerna ritas varje
@@ -44,7 +45,7 @@ export function drawPlants(force = false) {
   }
 }
 
-const djurIkoner = new Ikoner(djurLayer), larmIkoner = new Ikoner(djurMarkLayer);
+const djurIkoner = new Ikoner(figurLayer, true), larmIkoner = new Ikoner(djurMarkLayer);
 // Kaninerna flyr synligt (Björn efter v159): i simuleringen hoppar en kanin undan på en gång när någon kommer nära. Här
 // springer den dit, och den som flyr har ett utropstecken och damm efter sig. Den hoppar undan från där folket syns
 // (posOf). Varje kanin som syns minns var den ritades senast
@@ -52,17 +53,29 @@ const FLYR = 5, ATER = 1.5, LANGT = 1.8, LARM = 2 * SEC; // rutor i sekunden nä
 const visad = new Map<number, { x: number; y: number; t: number; larm: number }>();
 vidNyBy.push(() => visad.clear());
 let synliga: Djur[] = [];
+// djuren ritas från det håll de rör sig åt (steg 5.1.11): från sidan österut och västerut (speglad), framifrån söderut och
+// bakifrån norrut. Ett djur som står still behåller sitt håll; ett nytt djur syns från sidan
+const hallar = new Map<number, { x: number; y: number; h: DjurHall }>();
+vidNyBy.push(() => hallar.clear());
+function ritaDjur(art: 'varg' | 'kanin', id: number, x: number, y: number, sedd: Set<number>) {
+  const e = hallar.get(id), dx = e ? x - e.x : 0, dy = e ? y - e.y : 0;
+  let h: DjurHall = e?.h ?? 'sida';
+  if (Math.hypot(dx, dy) > 0.01) h = Math.abs(dx) >= Math.abs(dy) * 0.8 ? (dx > 0 ? 'sida' : 'vast') : dy > 0 ? 'fram' : 'bak';
+  hallar.set(id, { x, y, h }); sedd.add(id);
+  const k = djurBild(art, id, h), c = iconCanvas(k); // foten nära rutans punkt, mitt under djuret
+  djurIkoner.add(k, Math.round(x * TS - c.width / 2), Math.round(y * TS + (art === 'varg' ? 4 : 2) - c.height), 1);
+}
 // djuren där de syns just nu (det man trycker på, interaktion.ts, och djurfliken)
 export const djurSynliga = () => synliga;
 export function drawAnimals() {
   samlaJakt();
   djurIkoner.start(); larmIkoner.start(); djurFx.clear();
   const folk = living(s).map(posOf), jagas = jagade(), sedda = new Set<number>(), ut: Djur[] = [];
-  const jagadId = new Set(jagas.kaniner.map(k => k.id));
+  const jagadId = new Set(jagas.kaniner.map(k => k.id)), riktade = new Set<number>();
   for (const k of jagas.kaniner) { // den som jagas just nu ritas som jakten går (jakt.ts)
     const e = { x: k.x, y: k.y, t: ui.nu, larm: k.larm ? ui.nu + LARM : visad.get(k.id)?.larm ?? 0 };
     visad.set(k.id, e); sedda.add(k.id);
-    djurIkoner.add(k.ligger ? 'kanin_dod' : 'kanin', k.x * TS - 4, k.y * TS - 6, 1);
+    if (k.ligger) djurIkoner.add('kanin_dod', k.x * TS - 4, k.y * TS - 6, 1); else ritaDjur('kanin', k.id, k.x, k.y, riktade);
     if (!k.ligger) ut.push({ id: k.id, art: 'kanin', x: k.x, y: k.y, grupp: -1 });
     if (e.larm > ui.nu) larm(k.x, k.y);
   }
@@ -80,12 +93,13 @@ export function drawAnimals() {
       }
     }
     visad.set(d.id, { x, y, t: ui.nu, larm: l }); sedda.add(d.id);
-    djurIkoner.add('kanin', x * TS - 4, y * TS - 6, 1);
+    ritaDjur('kanin', d.id, x, y, riktade);
     if (l > ui.nu) larm(x, y);
     ut.push({ ...d, x, y });
   }
   for (const id of visad.keys()) if (!sedda.has(id)) visad.delete(id);
-  for (const d of vargarOf(s)) { djurIkoner.add(d.art, d.x * TS - 8, d.y * TS - 12, 1); ut.push(d); } // vargarna, 16 × 16 punkter (Björn valde version 1 efter v245, steg 4.5.2)
+  for (const d of vargarOf(s)) { ritaDjur('varg', d.id, d.x, d.y, riktade); ut.push(d); } // vargarna i verklig storlek (Björns val i bildstilen, steg 5.2.4.6)
+  for (const id of hallar.keys()) if (!riktade.has(id)) hallar.delete(id);
   if (s.tornado) { const p = tornadoPos(s.tornado, tornadoAndel(s.tornado, ui.nu)); djurIkoner.add('tornado', p.x * TS - 16, p.y * TS - 44, 1); } // tornadon där den är (steg 3.8.4), foten mitt på banan
   for (const [i] of brinnande(s)) djurIkoner.add('brand', (i % W) * TS, Math.floor(i / W) * TS, 1); // lågorna där det brinner (steg 3.8.5)
   for (const k of jagas.kast) { // spjutet eller stenen i luften, i en låg båge
@@ -98,7 +112,8 @@ export function drawAnimals() {
   }
   // det markerade djuret (steg 3.10.4): en vit kant runt symbolen, som allt annat som är markerat
   const vald = ui.tab === 'djur' ? ut.find(d => d.id === ui.djurId) : undefined;
-  if (vald) djurFx.lineStyle(1, 0xffffff, 0.9).drawRoundedRect(vald.x * TS - 5.5, vald.y * TS - 7.5, 11, 11, 3).lineStyle(0);
+  if (vald) { const b = vald.art === 'varg' ? { w: 28, h: 19, fot: 5 } : { w: 14, h: 13, fot: 3 }; // runt djurets bild
+    djurFx.lineStyle(1, 0xffffff, 0.9).drawRoundedRect(vald.x * TS - b.w / 2, vald.y * TS + b.fot - b.h, b.w, b.h, 3).lineStyle(0); }
   djurIkoner.end(); larmIkoner.end();
   synliga = ut;
 }

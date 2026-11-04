@@ -19,7 +19,7 @@ export const VAG = balans('vag', {
 
 // solid = väggar, built = byggda eller planerade rutor, hinder = hyllor, kistor och ställ (går inte att gå igenom, stationer.ts),
 // lost = rutor med lösa saker på golvet (långsamma, lager.ts). Steg 2.3.6
-export interface Ground { tiles: Uint8Array; cover: Float32Array; trees: Float32Array; solid?: Uint8Array; built?: Uint8Array; hinder?: Uint8Array; lost?: Uint8Array }
+export interface Ground { tiles: Uint8Array; cover: Float32Array; trees: Float32Array; alder?: Float32Array; art?: Uint8Array; solid?: Uint8Array; built?: Uint8Array; hinder?: Uint8Array; lost?: Uint8Array }
 export const HIGH = 0.9, BAR = 0.3; // högt gräs över HIGH, bar jord under BAR
 export const FOREST = 0.5; // träd från detta värde räknas som skog
 export const isSoil = (t: number) => t === T.Gras || t === T.Skog;

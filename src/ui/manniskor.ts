@@ -1,10 +1,12 @@
 import * as PIXI from 'pixi.js';
-import { ACTS, ALDER, Person, actIkon, utbIkon, SEC, TalkEvent, ageOf, alive, bordVid, byId, homeKind, isSocial, pratarMed, kanGa, living, load, REL, relKey, sparPlats, storlekAv, handlarNu, handlarPlats, Match, Task, dragLag, kastMal, SPORT } from '../sim';
+import { ACTS, ALDER, Person, moodOf, actIkon, utbIkon, SEC, TalkEvent, ageOf, alive, bordVid, byId, homeKind, isSocial, pratarMed, kanGa, living, load, REL, relKey, sparPlats, storlekAv, handlarNu, handlarPlats, Match, Task, dragLag, kastMal, SPORT, bakomFilt } from '../sim';
 import { PRICKAR, personFarg } from './hjalp';
 import { s, sakVar, ui, uppgiftVid, vidNyBy } from './lage';
-import { Ikoner, TS, bubbleG, labels, markLayer, peopleG } from './scen';
+import { Ikoner, TS, bubbleG, figurLayer, labels, markLayer, peopleG } from './scen';
+import { BH, BW, Utseende, arv, figurTex } from './figur';
+import { fotSkugga, skuggFolk, skuggLangd } from './skugga';
 import { jaktPlats } from './jakt';
-import { hasIcon, iconCanvas, ljusSymbol } from '../ikoner';
+import { hasIcon, iconCanvas, kartbild, ljusSymbol } from '../ikoner';
 
 // människorna på kartan: kroppen, det de bär, pratbubblor, symbolen för vad de gör och namnet
 const bubbles: { id: number; kind: string; good: boolean; until: number; i?: string }[] = [];
@@ -34,6 +36,8 @@ function platsAv(p: Person) {
   const tk = uppgiftVid(p), d = tk && ACTS[tk.act];
   const m = tk && iMatchen(tk), sp2 = still && m ? sportPlats(m, p, x, y, t) : undefined;
   if (sp2) return { ...sp2, still }; // sporten (steg 4.5.6.10–11)
+  const f = still ? s.filtar?.find(g => g.vem === p.id && !g.handlare && g.slut > t) : undefined;
+  if (f) return { ...bakomFilt(s, f), still }; // bakom sin egen filt i ett byte (steg 4.5.7.1)
   if (still && tk?.phase === 'do' && d && !d.stilla) {
     const w = d.vandra, k = t / SEC, r = w ? w.r * 0.6 : 0.12, f = w ? w.v / (w.r * 6) : 0.05;
     x += Math.sin(k * f + p.id * 1.7) * r * Math.sin(k * f * 0.37 + p.id);
@@ -166,13 +170,39 @@ function pratRuta(x: number, top: number, bob: number, kind: string | undefined,
   markIcons.add(k, x - 4, top - 4.5 + bob, 8 / iconCanvas(k).width, ljusSymbol(k) ? PRAT_KANT : 0xffffff);
 }
 const markIcons = new Ikoner(markLayer);
+// en sak med mitten i (cx, cy): kartbilden i sin naturliga storlek, annars den gamla bilden storlek punkter stor
+function bar(k: string, cx: number, cy: number, storlek: number) {
+  const kb = kartbild(k), c = iconCanvas(kb ?? k), sc = kb ? 1 : storlek / (c.width || 8);
+  markIcons.add(kb ?? k, Math.round(cx - c.width * sc / 2), Math.round(cy - c.height * sc / 2), sc);
+}
 // namnet över den valda och den under musen. Två texter som återanvänds: att skapa en text varje bildruta är dyrt
 const nameStyle = new PIXI.TextStyle({ fontFamily: 'Alegreya Sans, system-ui, sans-serif', fontSize: 22, fill: 0xffffff, stroke: 0x111111, strokeThickness: 5, fontWeight: '700' });
 const nameTags = [0, 1].map(() => { const tx = new PIXI.Text('', nameStyle); tx.scale.set(0.5); tx.anchor.set(0.5, 1); tx.visible = false; labels.addChild(tx); return tx; });
 // de ur byn som slåss i testarenan: de syns bara i striden (ui/arena.ts)
 export const dolda = new Set<number>();
+// figurerna, en sprite per person som återanvänds
+const figurer = new Map<number, PIXI.Sprite>(), sedd = new Set<number>();
+function figurAv(id: number) {
+  let sp = figurer.get(id);
+  if (!sp) { sp = new PIXI.Sprite(); figurer.set(id, sp); figurLayer.addChild(sp); }
+  return sp;
+}
+const STARK = 15; // anlag (1–20) som syns på kroppen: breda axlar och bara armar, eller smal och seg
+function utseende(p: Person, a: number, col: number): Utseende {
+  const barn = a < ALDER.vuxen, gammal = a > 55, kvinna = p.sex === 'k', { hud, har } = arv(p.id, p.mother, p.father);
+  const h = (p.id * 2654435761 >>> 0) % 5;
+  const frisyr = gammal && !kvinna ? 'tunn' : kvinna ? (h < 3 ? 'lang' : 'lockig') : barn ? (h < 2 ? 'lockig' : 'kort') : h < 3 ? 'kort' : 'rufsig';
+  const skagg = kvinna || barn ? 'ingen' : gammal ? 'gra' : h === 0 || h === 3 ? 'hel' : h === 1 ? 'stubb' : 'ingen';
+  const kl = '#' + ((((col >> 16) & 255) * 0.7) << 16 | (((col >> 8) & 255) * 0.7) << 8 | (col & 255) * 0.7).toString(16).padStart(6, '0');
+  return {
+    barn, gammal, kvinna, stark: p.pot.styrka >= STARK, seg: p.pot.styrka < STARK && p.pot.uthallighet >= STARK,
+    ledsen: moodOf(p, s.now) < 0.35, bandage: !!p.skador?.length, hud, har: gammal ? '#cfcac1' : har, frisyr, skagg, klader: kl,
+  };
+}
 export function drawPeople(t: number) {
   peopleG.clear(); bubbleG.clear();
+  sedd.clear();
+  const skugga = skuggFolk().clear().beginFill(0xffffff); // skuggorna vid fötterna (steg 5.1.8, ui/skugga.ts)
   const ppl = dolda.size ? living(s).filter(p => !dolda.has(p.id)) : living(s), pos = new Map<number, { x: number; y: number }>();
   synlig = sprid(ppl); synligNu = ui.nu;
   markIcons.start();
@@ -185,22 +215,29 @@ export function drawPeople(t: number) {
     pos.set(p.id, q);
     const tk = uppgiftVid(p), sleeping = tk?.act === 'sova';
     const col = personFarg(p, sleeping);
-    peopleG.beginFill(0x000000, 0.25).drawEllipse(x, y + r * 0.9, r * 0.9, r * 0.35).endFill();
-    if (p.id === ui.selected || p.id === harSaken) peopleG.lineStyle(2.5, 0xffffff, 1);
-    else peopleG.lineStyle(1.2, 0x1a1a1a, 0.8);
-    if (!sleeping && !kanGa(p)) peopleG.beginFill(col).drawEllipse(x, y + r * 0.4, r * 1.3, r * 0.6).endFill(); // den som inte kan gå ligger och kravlar (steg 3.7.19)
-    else peopleG.beginFill(col).drawCircle(x, y, r).endFill();
-    peopleG.lineStyle(0);
+    // figuren i pixlar (steg 5.1.3.3, ui/figur.ts) med fötterna under punkten; den som sover eller inte kan gå ligger ner
+    // (steg 3.7.19), och de minsta barnen är mindre
+    const sp = figurAv(p.id), ligger = sleeping || !kanGa(p), k = a < ALDER.smabarn ? 0.75 : 1;
+    sp.texture = figurTex(utseende(p, a, col), p.id === ui.selected || p.id === harSaken);
+    sp.scale.set(k); sp.rotation = ligger ? -Math.PI / 2 : 0;
+    if (ligger) sp.position.set(x - BH * k * 0.5, y + BW * k * 0.5);
+    else sp.position.set(x - BW * k / 2, y + r * 0.9 - (BH - 1) * k);
+    sp.zIndex = y + r * 0.9; // fötterna (ordningen söderut, steg 5.1.4.5)
+    if (!ligger) fotSkugga(skugga, x - 4 * k, Math.round(sp.zIndex) - 1, 4 * k, 2, skuggLangd());
+    sp.visible = true; sedd.add(p.id);
     if (PRICKAR.sjuk.har(p)) peopleG.beginFill(PRICKAR.sjuk.farg).drawCircle(x + r * 0.7, y - r * 0.7, 1.8).endFill();
     if (PRICKAR.gravid.har(p)) peopleG.beginFill(PRICKAR.gravid.farg).drawCircle(x - r * 0.7, y - r * 0.7, 1.6).endFill();
-    if (tk && load(tk, s) > 0) markIcons.add(homeKind(tk), x + r - 2.5, y - 1, 4.8 / iconCanvas(homeKind(tk)).width); // det man bär syns på figuren, hur lite det än är (steg 3.6.5)
+    // det man bär syns på figuren, hur lite det än är (steg 3.6.5): framför kroppen, och med en kartbild ur bildstilen i sin
+    // naturliga storlek (steg 5.1.2.1)
+    if (tk && load(tk, s) > 0) bar(homeKind(tk), x + r - 0.1, y + 1.4, 4.8);
     const mal = tk?.act === 'maltid' && tk.phase === 'do' && tk.mal, bord = mal && hasIcon(mal) ? bordVid(s, q) : undefined; // (vid bordet där hen syns sitta)
     if (mal && bord) { // den som äter vid bordet har maten i händerna och framför sig på bordet (steg 3.10.3)
       const { w, h } = storlekAv(bord), dx = (bord.x + w / 2) * TS - x, dy = (bord.y + h / 2) * TS - y, d = Math.hypot(dx, dy) || 1, f = Math.min(1, TS * 0.7 / d);
-      markIcons.add(mal, x + r - 2.5, y - 1, 0.6);
-      markIcons.add(mal, x + dx * f - 2.4, y + dy * f - 2.4, 0.6);
+      bar(mal, x + r - 0.1, y + 1.4, 4.8);
+      bar(mal, x + dx * f, y + dy * f, 4.8);
     }
   }
+  for (const [id, sp] of figurer) if (!sedd.has(id)) { sp.destroy(); figurer.delete(id); }
   // pågående samtal och symboler
   const flash = new Map<number, string>();
   const flashIkon = new Map<number, string | undefined>();
@@ -221,12 +258,14 @@ export function drawPeople(t: number) {
       if (medGast && s.handlare?.id === o) { const hp = handlarPlats(s.handlare, ui.nu); pratRuta(hp.x * TS, hp.y * TS - 13, Math.sin(t / 500) * 0.6, flash.get(p.id), 'neutral'); } // handlaren pratar också
       continue;
     }
-    // vid handlarens filt (steg 4.4.1.5): pratbubblor med varornas symboler, en i taget
-    if (handlarNu(s, p) && s.handlare?.varor.length) {
-      const v = s.handlare.varor, k = v[Math.floor(t / 1400 + p.id) % v.length].k;
-      pratRuta(x, top, Math.sin(t / 500 + p.id) * 0.6, undefined, 'neutral', k);
-      const hp = handlarPlats(s.handlare, ui.nu), svar = Math.floor(t / 1400 + p.id) % 2 ? 'silver' : k; // handlaren svarar: priset i silver
-      pratRuta(hp.x * TS, hp.y * TS - 13, Math.sin(t / 500) * 0.6, undefined, 'neutral', svar);
+    // vid handlarens filt (steg 4.4.1.5 och 4.5.7.4): bybon frågar vad handlaren har och hen svarar med varornas symboler, en i
+    // taget; sedan visar bybon sitt bud och handlaren det bybon vill köpa
+    const hn = handlarNu(s, p);
+    if (hn && s.handlare) {
+      const i = Math.floor(t / 1400 + p.id), en = (v: string[]) => v.length ? v[i % v.length] : undefined;
+      pratRuta(x, top, Math.sin(t / 500 + p.id) * 0.6, undefined, 'neutral', en(hn.bybo));
+      const hp = handlarPlats(s.handlare, ui.nu);
+      pratRuta(hp.x * TS, hp.y * TS - 13, Math.sin(t / 500) * 0.6, undefined, 'neutral', en(hn.handlare));
       continue;
     }
     const m = markOf(p);

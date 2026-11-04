@@ -1,0 +1,35 @@
+{
+ "id": "brand",
+ "ritad": 1,
+ "av": "Claude",
+ "om": "lågorna på en ruta som brinner, version 2: en stor låga med en mindre bredvid och grå rök (VAL brand)",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  ".....SRS........",
+  "....SRRRS..S....",
+  ".....SRS..SRS...",
+  ".......k...S....",
+  "......ktk.......",
+  ".....ktttk......",
+  ".....ktLtk..k...",
+  "....ktLLtk.ktk..",
+  "...kttLLLtkktk..",
+  "...ktLLLLLtttk..",
+  "..ktLLLLLLLtLtk.",
+  "..ktLLLLLLLLLtk.",
+  "..kstLLLLLLLtsk.",
+  "...ksttLLLttsk..",
+  "...klsstttsslk..",
+  "....kkkkkkkkkk.."
+ ],
+ "pal": {
+  "S": "#61767a",
+  "R": "#3e5156",
+  "k": "#24201d",
+  "t": "#a14808",
+  "L": "#d8b25f",
+  "s": "#742a01",
+  "l": "#2f261d"
+ }
+}

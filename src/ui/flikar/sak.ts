@@ -1,15 +1,16 @@
-import { STUBBE_LIV, grundvarde, tingVarde, klenod, sakBerattelse, kladSkydd, BYN, HOUR, W, kortTal, Pile, SAKER, Slitage, Ting, byId, condOf, halvKlar, sakNamn, slitageNu, stationById, stationDef, temperature, tingOf, toaAt, toaInfo, viktOf } from '../../sim';
+import { FOREST, stamAv, MARK, STADIER, VAG, groundOf, stadium, tradAlder, tradArt, STUBBE_LIV, grundvarde, tingVarde, klenod, sakBerattelse, kladSkydd, BYN, HOUR, W, kortTal, Pile, SAKER, Slitage, Ting, byId, condOf, halvKlar, sakNamn, slitageNu, stationById, stationDef, temperature, tingOf, toaAt, toaInfo, viktOf } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { condBar, durTxt, esc, kvMark, kvText, pLink } from '../hjalp';
 import { piles, s, ui } from '../lage';
 import type { Flik } from '../panel';
+import { tradBild, tradBildUrl } from '../trad';
 
 // en sak eller en hög (steg 2.3.5): öppnas genom att trycka på den i lagret, en hög, personens utrustning eller en
 // stations redskapsplats. Symbolen och namnet, skicket, vad som sliter på den just nu och hur länge den håller i den
 // takten, vem som gjorde den och när, och kvaliteten (steg 2.2.2).
 // Det som går att trycka på har data-sak: "t:<tingets id>" för ett redskap eller plagg, "s:<x>,<y>,<slag>" för en stack.
 // En toa-hög på kartan (steg 2.10.5) öppnas som "f:<rutan>" och har en egen inforuta (toaHog)
-// En stubbe (steg 3.10.6) öppnas som "u:<rutan>" (stubbe)
+// En stubbe (steg 3.10.6) öppnas som "u:<rutan>" (stubbe) och ett träd (steg 5.1.4.3) som "r:<rutan>" (trad)
 export const sakKey = (a: { id?: number; x?: number; y?: number; k: string }) => a.id !== undefined ? `t:${a.id}` : `s:${a.x},${a.y},${a.k}`;
 export const sakAttr = (a: { id?: number; x?: number; y?: number; k: string }) => `data-sak="${sakKey(a)}"`;
 // maten fryser i frost och ruttnar då nästan inte (LAGER.frost, steg 2.8.2): i lagret får symbolen en vit kant av rimfrost
@@ -61,12 +62,28 @@ function stubbe(i: number) {
       <dt>Ruttnar bort</dt><dd>om ${durTxt(Math.max(0, STUBBE_LIV - (s.now - u.t)))}</dd>
     </dl>`;
 }
+// trädet på kartan (steg 5.1.4.3): bilden, arten, stadiet och åldern (sim/trad.ts)
+function trad(i: number) {
+  const g = groundOf(s), st = stadium(g, i);
+  if (!st) return '<p class="muted">Här står inget träd längre.</p>';
+  const x = i % W, y = Math.floor(i / W), b = tradBild(st, g.trees[i], x, y, VAG.ungskog, tradArt(g, i).id === 'bjork');
+  const namn = STADIER.find(d => d.id === st)!.namn, art = tradArt(g, i).namn;
+  const ar = Math.floor(tradAlder(g, i, MARK.tradDygn));
+  const alder = ar < 1 ? 'Under ett år' : `${ar} år`, stam = stamAv(g, i); // trä och grenar när det fälls (steg 5.1.4.4)
+  return `
+    <div class="phead"><img class="ikon" src="${tradBildUrl(b)}" width="${b.typ === 'torr' ? 32 : 28}" style="height:auto;image-rendering:pixelated" alt=""><div><h2>${esc(art)}</h2><span class="muted">${esc(namn)}</span></div></div>
+    <dl class="kv">
+      <dt>Ålder</dt><dd>${alder}</dd>
+      ${g.trees[i] >= FOREST ? `<dt>Fälls</dt><dd>${iconImg('ved', 14)} ${stam.ved} ${iconImg('grenar', 14)} ${stam.grenar}</dd>` : ''}
+    </dl>`;
+}
 export const sak: Flik = {
   namn: 'Saken',
   knapp: 'person',
   html() {
     if (ui.sak.startsWith('f:')) return toaHog(Number(ui.sak.slice(2)));
     if (ui.sak.startsWith('u:')) return stubbe(Number(ui.sak.slice(2)));
+    if (ui.sak.startsWith('r:')) return trad(Number(ui.sak.slice(2)));
     const { t, p } = hitta(), a = t ?? p;
     if (!a) return '<p class="muted">Den finns inte längre.</p>';
     const k = t?.halv?.gor ?? p?.gor ?? a.k, c = t ? t.c : condOf(p!), sl = slitageNu(s, { k: a.k, x: t ? t.x ?? p?.x : p!.x, y: t ? t.y ?? p?.y : p!.y }, t);

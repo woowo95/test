@@ -3,6 +3,7 @@ import '@pixi/unsafe-eval';
 import { H, W, clamp, eldPlats } from '../sim';
 import { hasIcon, iconCanvas } from '../ikoner';
 import { $ } from './hjalp';
+import { ikonUtanSkugga } from './skugga';
 import { s } from './lage';
 
 // kartans scen: lagren som ritas ovanpå varandra och kameran
@@ -13,7 +14,6 @@ export const world = new PIXI.Container();
 export const terrainG = new PIXI.Graphics();
 export const plantG = new PIXI.Graphics(); // bärbuskar och svampar som finns just nu
 export const flackG = new PIXI.Graphics(); // fläckarna på marken, som blodet vid slaktbänken (smuts.ts)
-export const djurLayer = new PIXI.Container(); // kaninerna
 export const djurFx = new PIXI.Graphics(); // det kastade i luften och dammet efter kaniner som flyr (jakt.ts, vaxter.ts)
 export const djurMarkLayer = new PIXI.Container(); // utropstecknet över kaninen som ser någon och flyr
 export const husLayer = new PIXI.Container(); // timmerväggarna och trägolven, som pixelbilder (husbild.ts)
@@ -21,32 +21,45 @@ export const structG = new PIXI.Graphics();
 export const pileLayer = new PIXI.Container();
 export const overG = new PIXI.Graphics(); // det som ritas ovanpå stackarna och stationerna: framstegscirkeln
 export const peopleG = new PIXI.Graphics();
+// folket i pixlar (steg 5.1.3.3, ui/figur.ts), och i samma lager träden (ui/trad.ts) och djuren (ui/vaxter.ts): allt som
+// står upp ritas i ordning efter hur långt söderut det står (zIndex = fötternas y i världens pixlar, steg 5.1.4.5), så att
+// det som står längre söderut skymmer det bakom. Golven, väggarna, stationerna och sakerna på marken ligger under
+export const figurLayer = new PIXI.Container();
+figurLayer.sortableChildren = true;
 export const bubbleG = new PIXI.Graphics();
 export const markLayer = new PIXI.Container(); // symboler över huvudet: vad var och en håller på med
-export const nightG = new PIXI.Graphics();
-export const glowG = new PIXI.Graphics();
-glowG.blendMode = PIXI.BLEND_MODES.ADD;
 export const filterG = new PIXI.Graphics(); // värmekartan när ett filter är på
 export const labels = new PIXI.Container();
-world.addChild(terrainG, plantG, flackG, djurLayer, husLayer, structG, pileLayer, overG, djurFx, peopleG, nightG, glowG, filterG, bubbleG, markLayer, djurMarkLayer, labels);
+// det som blir mörkt på natten (steg 5.1.1.4, ui/natt.ts): marken, naturen, husen, sakerna och folket; symbolerna, namnen
+// och värmekartan ovanpå syns som på dagen. Den som lägger till ett lager bredvid ett av dem lägger det i samma behållare
+// (lagerEfter)
+export const mork = new PIXI.Container();
+mork.addChild(terrainG, plantG, flackG, husLayer, structG, pileLayer, overG, djurFx, figurLayer, peopleG);
+world.addChild(mork, filterG, bubbleG, markLayer, djurMarkLayer, labels);
+// lägg ett lager direkt ovanför ett annat, i samma behållare
+export const lagerEfter = (nytt: PIXI.DisplayObject, fore: PIXI.DisplayObject) => fore.parent!.addChildAt(nytt, fore.parent!.getChildIndex(fore) + 1);
 app.stage.addChild(world);
 
 // ikoner som sprites i ett lager. Varje bildruta börjar från första spriten; de som blir över göms
 const textures: Record<string, PIXI.Texture> = {};
 export class Ikoner {
   private n = 0;
-  constructor(readonly layer: PIXI.Container) {}
+  private bilder: PIXI.Sprite[] = []; // egna bilder, så att lagret kan dela med annat (figurLayer)
+  // skugga: bilderna kastar en skugga på marken (steg 5.1.8, ui/skugga.ts): den ritade halvgenomskinliga skuggan tas ur bilden
+  // och läggs i skuggbilden, där marken blir ett steg mörkare i paletten
+  constructor(readonly layer: PIXI.Container, readonly skugga = false) {}
   start() { this.n = 0; }
   // x, y = bildens övre vänstra hörn. Ingen bild vrids: det som står vridet har en egen bild (steg 3.10.7)
   add(k: string, x: number, y: number, sc: number, tint = 0xffffff) {
     if (!hasIcon(k)) return;
     textures[k] ??= PIXI.Texture.from(iconCanvas(k), { scaleMode: PIXI.SCALE_MODES.NEAREST });
-    let sp = this.layer.children[this.n++] as PIXI.Sprite | undefined;
-    if (!sp) { sp = new PIXI.Sprite(); this.layer.addChild(sp); }
-    sp.texture = textures[k]; sp.scale.set(sc); sp.tint = tint; sp.visible = true;
-    sp.position.set(x, y);
+    let sp = this.bilder[this.n++];
+    if (!sp) { sp = new PIXI.Sprite(); this.bilder.push(sp); this.layer.addChild(sp); }
+    sp.texture = this.skugga ? ikonUtanSkugga(k) : textures[k]; sp.scale.set(sc);
+    (sp as PIXI.Sprite & { skuggIkon?: string }).skuggIkon = this.skugga ? k : undefined; sp.tint = tint; sp.visible = true;
+    sp.position.set(x, y); sp.zIndex = y + textures[k].height * sc; // bildens nederkant, i ett lager som sorteras
   }
-  end() { for (let i = this.n; i < this.layer.children.length; i++) this.layer.children[i].visible = false; }
+  end() { for (let i = this.n; i < this.bilder.length; i++) this.bilder[i].visible = false; }
 }
 
 // kameran: x och y är punkten mitt på skärmen i världens pixlar (-1 = börja vid elden)

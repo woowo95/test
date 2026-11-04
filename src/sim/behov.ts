@@ -511,6 +511,8 @@ export const HANDLA = balans('handla', {
   luraChans: 0.4, // ... och gör det så här ofta ...
   luraAndel: 0.15, // ... och tar så stor del av bytets värde extra
   marka: 0.04, // chansen att märka att man blivit lurad, per poäng i Handel och halv poäng i intelligens
+  byteRel: 2, // ett byte gör relationen så här mycket bättre ...
+  byteTanke: 0.06, byteTim: 6, // ... och båda tänker glatt på det så här mycket i så många timmar
   ovning: 0.05, // så mycket växer Handel av ett byte (gånger 0,5 + intelligensen / 20)
   surTanke: -0.12, // tanken hos den som märkte att hen blev lurad ...
   surTim: 48, // ... och så många timmar
@@ -534,13 +536,14 @@ function lura(s: State, M: Part, G: Part, betal: Vara[], varor: (Vara & { ut: nu
   const d = (G.handel ?? 0) - (M.handel ?? 0);
   if (Math.abs(d) < HANDLA.lura || rnd(s, 'handel') >= HANDLA.luraChans) return undefined;
   let mer = ger * HANDLA.luraAndel;
-  if (d > 0) { // G lurar M
+  if (d > 0) { // G lurar M, men tar inte mer än hen kan bära (som i betalaAv)
+    let rum = (G.rymmer?.() ?? Infinity) - betal.reduce((a, b) => a + b.n * viktOf(b.k), 0);
     for (const w of varor) {
       if (mer <= 1e-9 || w.t) continue;
-      const i = betal.findIndex(x => x.k === w.k && !x.t), fore = i >= 0 ? betal[i].n : 0, n = Math.min(w.n - fore, Math.ceil(mer / w.ut - 1e-6));
+      const i = betal.findIndex(x => x.k === w.k && !x.t), fore = i >= 0 ? betal[i].n : 0, n = Math.min(w.n - fore, Math.ceil(mer / w.ut - 1e-6), Math.floor((rum + 1e-9) / viktOf(w.k)));
       if (n < 1) continue;
       if (i >= 0) betal[i].n += n; else betal.push({ k: w.k, n });
-      mer -= n * w.ut;
+      mer -= n * w.ut; rum -= n * viktOf(w.k);
     }
     return mer < ger * HANDLA.luraAndel ? G : undefined;
   }
@@ -559,12 +562,13 @@ function lurad(s: State, X: Part, L: Part) {
   count(s, 'lurat');
   if (L.p) gjort(s, L.p, 'lurade');
   const p = X.p;
-  if (!p || rnd(s, 'handel') >= HANDLA.marka * ((p.skill.handel ?? 0) + p.pot.intelligens / 2)) return;
+  if (!p || rnd(s, 'handel') >= HANDLA.marka * ((p.skill.handel ?? 0) + p.pot.intelligens / 2)) return false;
   count(s, 'lurad');
   gjort(s, p, 'lurad');
   think(p, `Blev lurad av ${L.namn}`, HANDLA.surTanke, s.now, HANDLA.surTim * HOUR);
   if (L.p) { const r = getRel(s, p, L.p); r.op = clamp(r.op - HANDLA.surRel, -100, 100); }
   log(s, `${p.name} märkte att ${L.namn} hade lurat hen i ett byte.`, 'rel', [p.id, ...(L.p ? [L.p.id] : [])]);
+  return true;
 }
 // växeln: G ger tillbaka så mycket silver som M betalat för mycket (for, för G), i hela silver. Betalar M med silver blir det
 // mindre silver i stället
@@ -584,22 +588,7 @@ export function bytaMed(s: State, M: Part, G: Part, vill: Vara[], v: Villkor): n
   const ger = vill.reduce((x, w) => x + w.n * vardeOf(w) * G.varde(w.k), 0); // det G ger, för G
   const far = vill.reduce((x, w) => x + w.n * vardeOf(w), 0) * v.behov; // det M får, för M
   if (ger <= 1e-9) return 0;
-  const varor = M.over(v.utom).map(w => ({ ...w, ut: vardeOf(w) * G.varde(w.k), in: Math.max(1e-9, vardeOf(w) * M.varde(w.k)) }))
-    .filter(w => w.ut > 1e-9).sort((a, b) => b.ut / b.in - a.ut / a.in || +!!a.t - +!!b.t);
-  // det M betalar för att G ska få mal (för G), i hela saker: man betalar hellre lite för mycket (steg 2.10.7)
-  const betala = (mal: number) => {
-    const ut: Vara[] = [];
-    let f = 0, k = 0, rum = G.rymmer?.() ?? Infinity; // det G får, för G, och det M ger, för M, och hur mycket mer G kan bära (kg)
-    for (const w of varor) {
-      if (f >= mal - 1e-9) break;
-      let n = w.t ? 1 : Math.min(w.n, Math.ceil((mal - f) / w.ut - 1e-6));
-      if (n * viktOf(w.k) > rum + 1e-9) n = w.t ? 0 : Math.floor((rum + 1e-9) / viktOf(w.k)); // handlaren tar inte emot mer än hen kan bära (steg 4.4.1.3)
-      if (n <= 0) continue;
-      rum -= n * viktOf(w.k);
-      ut.push({ k: w.k, n, t: w.t }); f += n * w.ut; k += n * w.in;
-    }
-    return { betal: ut, fick: f, kost: k };
-  };
+  const varor = betalVaror(M, G, v.utom), betala = (mal: number) => betalaAv(varor, G, mal);
   let { betal, fick, kost } = betala(ger);
   if (!betal.length) return 0;
   const desperat = v.fara > 0, nara = (a: Part, b: Part) => !!a.p && !!b.p && willing(s, a.p, b.p) >= DELA.nara;
@@ -627,16 +616,42 @@ export function bytaMed(s: State, M: Part, G: Part, vill: Vara[], v: Villkor): n
   if (vill.reduce((x, w) => x + w.n * vardeOf(w), 0) * del < DELA.byteMinst) return 0;
   const fatt = vill.map(w => ({ ...w, n: w.t ? 1 : helt(w.n * del) })).filter(w => w.n > 0);
   if (vaxel > 0) fatt.push({ k: 'silver', n: vaxel });
-  const lurare = lura(s, M, G, betal, varor, ger * del);
+  return genomfor(s, M, G, fatt, betal, v.typ, desperat, !!v.delad, lura(s, M, G, betal, varor, ger * del));
+}
+// det M kan betala G med: det som är värt mest för G och minst för M först (ut = värt för G, in = värt för M)
+export function betalVaror(M: Part, G: Part, utom: readonly string[]) {
+  return M.over(utom).map(w => ({ ...w, ut: vardeOf(w) * G.varde(w.k), in: Math.max(1e-9, vardeOf(w) * M.varde(w.k)) }))
+    .filter(w => w.ut > 1e-9).sort((a, b) => b.ut / b.in - a.ut / a.in || +!!a.t - +!!b.t);
+}
+// det M betalar för att G ska få mal (för G), i hela saker: man betalar hellre lite för mycket (steg 2.10.7). fick = värt för G, kost = värt för M
+export function betalaAv(varor: ReturnType<typeof betalVaror>, G: Part, mal: number) {
+  const ut: Vara[] = [];
+  let f = 0, k = 0, rum = G.rymmer?.() ?? Infinity; // det G får, för G, och det M ger, för M, och hur mycket mer G kan bära (kg)
+  for (const w of varor) {
+    if (f >= mal - 1e-9) break;
+    let n = w.t ? 1 : Math.min(w.n, Math.ceil((mal - f) / w.ut - 1e-6));
+    if (n * viktOf(w.k) > rum + 1e-9) n = w.t ? 0 : Math.floor((rum + 1e-9) / viktOf(w.k)); // handlaren tar inte emot mer än hen kan bära (steg 4.4.1.3)
+    if (n <= 0) continue;
+    rum -= n * viktOf(w.k);
+    ut.push({ k: w.k, n, t: w.t }); f += n * w.ut; k += n * w.in;
+  }
+  return { betal: ut, fick: f, kost: k };
+}
+// ett byte som båda gått med på genomförs: M får fatt av G och betalar betal. Sakerna flyttas, båda är nöjda och övar Handel,
+// och bytet står i loggen (byteKlart). lurare = den som lurade den andra (lura). Samma för vardagens byten (bytaMed) och
+// förhandlingen med handlaren (steg 4.5.7.4, handel.ts)
+export function genomfor(s: State, M: Part, G: Part, fatt: Vara[], betal: Vara[], typ: string, desperat = false, delad = false, lurare?: Part) {
   for (const w of fatt) flytta(s, w, G, M);
   for (const w of betal) flytta(s, w, M, G);
-  if (M.p && G.p) { const r = getRel(s, M.p, G.p); r.op = clamp(r.op + 2, -100, 100); }
-  if (M.p) think(M.p, `Bytte till sig ${varorText(fatt)} av ${G.namn}`, 0.06, s.now, 6 * HOUR);
-  if (G.p) think(G.p, `Bytte till sig ${varorText(betal)} av ${M.namn}`, 0.06, s.now, 6 * HOUR);
+  if (M.p && G.p) { const r = getRel(s, M.p, G.p); r.op = clamp(r.op + HANDLA.byteRel, -100, 100); }
+  if (M.p) think(M.p, `Bytte till sig ${varorText(fatt)} av ${G.namn}`, HANDLA.byteTanke, s.now, HANDLA.byteTim * HOUR);
+  if (G.p) think(G.p, `Bytte till sig ${varorText(betal)} av ${M.namn}`, HANDLA.byteTanke, s.now, HANDLA.byteTim * HOUR);
   for (const X of [M, G]) if (X.p) { ovning(X.p, 'handel', HANDLA.ovning * (0.5 + X.p.pot.intelligens / 20)); gjort(s, X.p, 'bytt'); }
-  if (lurare) { lurad(s, lurare === M ? G : M, lurare); for (const f of vidLura) f(s, lurare, lurare === M ? G : M); }
+  if (lurare) { const X = lurare === M ? G : M, markt = lurad(s, X, lurare); for (const f of vidLura) f(s, lurare, X, markt); }
   const n = enheter(fatt);
-  count(s, 'byten'); count(s, 'byte_' + v.typ, n); if (v.delad) count(s, 'kvallsbyten');
+  count(s, 'byten'); count(s, 'byte_' + typ, n); if (delad) count(s, 'kvallsbyten');
   if (byteKlart(s, M, G, fatt, betal, desperat)) count(s, 'storaByten'); // samma rad i loggen och krönikan, vem motparten än är
   return n;
 }
+// den som är skickligare lurar ibland den andra i ett byte M och G gått med på (handlaren, steg 4.5.7.4): betal kan ändras
+export const luraI = (s: State, M: Part, G: Part, betal: Vara[], utom: readonly string[], ger: number) => lura(s, M, G, betal, betalVaror(M, G, utom), ger);

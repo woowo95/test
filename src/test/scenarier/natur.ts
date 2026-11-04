@@ -266,7 +266,7 @@ SCENARIER.samlarrunda = {
     // timmar, med alla nyfikna och modiga och med alla försiktiga: hur långt från lägret varje runda når som längst
     const ut = (pot: number) => {
       const langst: number[] = [];
-      for (const seed of [42, 7]) {
+      for (const seed of [42, 7, 3, 11]) {
         const s = createState(seed, START), tagit = SIM.takenOf(s), nar = new Map<number, number>();
         setMat(s, {}); setAmount(s, 'ved', 300);
         for (const k of SIM.lagren('samla')) { const a = tagit[k as keyof typeof tagit]; if (a) for (let i = 0; i < W * H; i++) if (campDist(s, i % W, Math.floor(i / W)) < 14) a[i] = 1; }
@@ -639,7 +639,7 @@ SCENARIER.flatarbank = {
     };
     const kElden = kniv(false), kBank = kniv(true);
     // en vanlig by tills någon tvinnar rep, högst tio dygn (tio år i spelet): inget handarbete utan sak, och rep tvinnas som en egen handling
-    const v = createState(3, START); // en by som kommer på repet tidigt (by 2 kom inte på det inom tio dygn i v75, by 3 inte i v156, by 5 inte i v159)
+    const v = createState(7, START); // en by som kommer på repet tidigt (by 2 kom inte på det inom tio dygn i v75, by 3 inte i v156 och v324, by 5 inte i v159)
     let dygn = 0;
     for (; dygn < 10 && !tvinnar; dygn++) kor(v, 24, w => { for (const r of living(w)) { if (r.task?.act === 'hantverk') hantverk++; if (r.task?.act === 'tvinna') tvinnar++; } });
     // att tvinna rep är hantverk: den som gör det kommer på det som hör till hantverket (kniven)
@@ -1508,6 +1508,39 @@ SCENARIER.falt = {
   },
 };
 
+SCENARIER.regntvatt = {
+  text: 'Regnet tvättar bort fläckarna (steg 5.1.12): blod och toa-fläckar som ligger ute bleknar mycket fortare när det regnar, så att några timmars regn tar bort det mesta; i husen påverkar regnet dem inte, och när det inte regnar bleknar de som förut',
+  kor: () => {
+    const { blodOf, blodNu, blodas, flackNu, flackarOf, regnetTvattar, vaderNu, roomAt, SMUTS } = SIM;
+    const s = createState(5, START); klockan(s); medHus(s);
+    let inne = -1;
+    for (let i = 0; i < W * H && inne < 0; i++) if (roomAt(s, (i % W) + 0.5, Math.floor(i / W) + 0.5)) inne = i;
+    const c = campCenter(s), ix = (inne % W) + 0.5, iy = Math.floor(inne / W) + 0.5;
+    // en timme med kraftigt regn (inte snö)
+    let t = Math.ceil(s.now / HOUR) * HOUR;
+    for (let k = 0; k < 24 * 400; k++, t += HOUR) { const v = vaderNu(s, t); if (v.nb > 0.5 && !v.sno && vaderNu(s, t + HOUR).nb > 0.5) break; }
+    s.now = t;
+    const nb = vaderNu(s).nb;
+    blodas(s, c.x + 3.5, c.y + 3.5, 'forblodning', 1); blodas(s, ix, iy, 'forblodning', 1);
+    s.flackar = [{ k: 'toa', i: Math.floor(c.y + 5) * W + Math.floor(c.x + 5), n: 1, t: s.now }, { k: 'toa', i: inne, n: 1, t: s.now }];
+    const ute = () => blodOf(s).find(b => !roomAt(s, b.x, b.y))!, inneB = () => blodOf(s).find(b => roomAt(s, b.x, b.y))!;
+    const fore = [blodNu(ute(), s.now), blodNu(inneB(), s.now)];
+    regnetTvattar(s); s.now += HOUR; regnetTvattar(s);
+    const efter = [blodNu(ute(), s.now), blodNu(inneB(), s.now)], toa = flackarOf(s).map(f => flackNu(f, s.now));
+    // utan regn: inget händer
+    const u = createState(5, START); klockan(u); let tu = Math.ceil(u.now / HOUR) * HOUR;
+    for (let k = 0; k < 24 * 400 && vaderNu(u, tu).nb > 0; k++) tu += HOUR;
+    u.now = tu; blodas(u, c.x + 3.5, c.y + 3.5, 'forblodning', 1); const t0 = blodOf(u)[0]!.t; regnetTvattar(u);
+    return [
+      [`det regnar (${nb.toFixed(2)})`, nb > 0.5],
+      [`blodet ute bleknar mycket fortare i regnet (${fore[0].toFixed(2)} → ${efter[0].toFixed(2)} på en timme)`, efter[0] < fore[0] - 2 * nb * SMUTS.regnTvatt * 0.9 + 1e-9 && efter[0] < 0.75],
+      [`blodet i huset bleknar som förut (${efter[1].toFixed(3)})`, efter[1] > 0.95],
+      [`toa-fläcken ute tvättas bort, den inne inte (${toa.map(v => v.toFixed(2)).join(', ')})`, toa[0]! < 0.75 && toa[1]! > 0.95],
+      ['utan regn händer inget', blodOf(u)[0]!.t === t0],
+    ];
+  },
+};
+
 SCENARIER.smutsibyn = {
   text: 'Steg 3.6.10: blod och toa-högar inne i byn ger en tanke som sänker humöret hos dem som ser dem, och mat som ligger i en blodfläck eller på eller bredvid en toa-hög ruttnar fortare',
   kor: () => {
@@ -1578,6 +1611,7 @@ SCENARIER.individer = {
 };
 
 SCENARIER.kaninjakt = {
+  lang: true,
   text: 'Kaninjakten som strid (steg 3.7.3): jägaren smyger sig fram till en kanin och sticker eller kastar. Stenen fångar sämre än spjutet och tappas oftast bort, det kastade spjutet slits och försvinner ibland (oftare i vattnet), gruppen skräms, en skadad kanin springer och bara den som griper en kanin med händerna kan bli biten. I byn ger jakten kaniner',
   kor: () => {
     const s0 = createState(6, START);
@@ -1636,6 +1670,7 @@ SCENARIER.kaninjakt = {
 };
 
 SCENARIER.varg = {
+  lang: true,
   text: 'Vargen och vakten (steg 3.7.1): vargar kommer under istiden, oftast i flock och ibland ensamma, och drar vidare efter en tid. Vakten ser dem och väcker byn, en flock anfaller den som är ensam, på natten stjäl de mat ur förrådet när ingen är vaken nära, och byn kan jaga dem i grupp. Svårigheten: en varg slår oftast en obeväpnad, med spjut klarar man sig oftast, och tre med spjut slår oftast fyra vargar men någon skadas',
   kor: () => {
     // svårigheten i testarenan
@@ -2125,6 +2160,7 @@ SCENARIER.harflykt = {
 };
 
 SCENARIER.gangar = {
+  lang: true,
   text: 'Avstånd i byn (steg 4.5.4.5): minst 2 rutor mellan två hus, latrinen lika långt från elden som fälten (15 rutor), och en station ute (bord, torkställning) står i en gång mellan husen bara om gången är minst 3 rutor bred, och då mot husväggen så att gången är fri',
   kor: () => {
     const { gangFri, stationSite, eldPlats, housesOf, bitsOf, touch, PLATS, ODLING } = SIM;
@@ -2190,6 +2226,77 @@ SCENARIER.virke = {
       ['slagträet, trumman och lyran görs av ved', sma],
       [`byn saknar virke när den vill bygga en slaktbänk (${brist0.toFixed(2)}) och har ${stocks(s).length} fällda stammar kvar`, brist0 > 0 && fallda > 0],
       [`någon klyver virke med yxan (${klov} gånger sett) och slaktbänken byggs av virket på ${h} timmar`, klov > 0 && klar],
+    ];
+  },
+};
+
+SCENARIER.trad = {
+  text: 'Träden (steg 5.1.4.1–5.1.4.2, 5.1.4.4, 5.1.4.5 och 5.1.6, gran och björk): urskogen står i dungar med gläntor på ungefär hälften av jorden, och varje träd har art, ålder och stadium: ett vuxet träd blir gammalt om det står fritt och torkar i en tät dunge, en torraka faller och lämnar en glänta, och åldern följer med i sparfilen; ett större träd ger mer trä när det fälls',
+  kor: () => {
+    const s = createState(3, START), g = groundOf(s);
+    let jord = 0, skog = 0;
+    for (let i = 0; i < g.tiles.length; i++) if (isSoil(g.tiles[i])) { jord++; if (g.trees[i] >= FOREST) skog++; }
+    const andel = skog / jord;
+    const st: Record<string, number> = {};
+    for (let i = 0; i < g.tiles.length; i++) { const k = SIM.stadium(g, i); if (k) st[k] = (st[k] ?? 0) + 1; }
+    // de gamla träden står fritt
+    const fri = (i: number) => { const x = i % W, y = Math.floor(i / W); for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if ((dx || dy) && g.trees[(y + dy) * W + x + dx] >= FOREST) return false; return true; };
+    const gamla = [...g.trees.keys()].filter(i => SIM.stadium(g, i) === 'gammalt'), gamlaFria = gamla.filter(fri).length;
+    // ett vuxet träd i en tät dunge som når slutet av sitt vuxna liv torkar; ett fritt blir gammalt
+    const tat = [...g.trees.keys()].find(i => SIM.stadium(g, i) === 'vuxet' && !fri(i))!;
+    const a = cloneState(s), ga = groundOf(a);
+    ga.alder![tat] = SIM.TRAD.vuxenDygn - 0.01; SIM.aldras(ga, tat, 1);
+    const torkade = SIM.stadium(ga, tat);
+    const x0 = tat % W, y0 = Math.floor(tat / W);
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (dx || dy) ga.trees[(y0 + dy) * W + x0 + dx] = 0;
+    ga.trees[tat] = 1; ga.alder![tat] = SIM.TRAD.vuxenDygn - 0.01; SIM.aldras(ga, tat, 1);
+    const blevGammalt = SIM.stadium(ga, tat);
+    // torrakan faller efter torrDygn och lämnar en glänta
+    ga.alder![tat] = SIM.TRAD.vuxenDygn + SIM.TRAD.gammalDygn + SIM.TRAD.torrDygn - 0.01; SIM.aldras(ga, tat, 1);
+    const fallen = ga.trees[tat] === 0 && !SIM.stadium(ga, tat);
+    // en planta som växer klart börjar sitt vuxna liv
+    const b = cloneState(s), gb = groundOf(b), pl = [...gb.trees.keys()].find(i => isSoil(gb.tiles[i]) && gb.trees[i] === 0 && gb.cover[i] >= SIM.HIGH && SIM.campDist(b, i % W, Math.floor(i / W)) > 8)!;
+    gb.trees[pl] = 0.9999; gb.alder![pl] = 77; SIM.growGround(b, 1, 1);
+    const ny = SIM.stadium(gb, pl), nyAlder = gb.alder![pl];
+    // åldern följer med i sparfilen (hela dygn)
+    const c = cloneState(s), gc = groundOf(c);
+    let lika = true; for (let i = 0; i < g.trees.length; i++) if (g.trees[i] >= 1 && Math.abs(gc.alder![i] - g.alder![i]) > 0.5) lika = false;
+    const arter = new Set([...g.trees.keys()].filter(i => g.trees[i] > 0).map(i => SIM.tradArt(g, i).id));
+    // trädsorterna (steg 5.1.6): björken helst i skogskanten och vid vattnet, områden med granskog och björkdungar, och
+    // sorten följer med i sparfilen
+    const bj = (i: number) => SIM.tradArt(g, i).id === 'bjork', vuxna = [...g.trees.keys()].filter(i => g.trees[i] >= FOREST);
+    const kanten = (i: number) => { const x = i % W, y = Math.floor(i / W); let n = 0; for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if ((dx || dy) && g.trees[(y + dy) * W + x + dx] >= FOREST) n++; return n < 5; };
+    const vatten = (i: number) => { const x = i % W, y = Math.floor(i / W); for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) if (SIM.inMap(x + dx, y + dy) && g.tiles[(y + dy) * W + x + dx] === SIM.T.Vatten) return true; return false; };
+    const del = (l: number[]) => l.length ? l.filter(bj).length / l.length : 0, pc = (v: number) => `${Math.round(v * 100)} %`;
+    const bjAlla = del(vuxna), bjKant = del(vuxna.filter(kanten)), bjInne = del(vuxna.filter(i => !kanten(i) && !vatten(i))), bjVatten = del(vuxna.filter(i => !kanten(i) && vatten(i)));
+    const block = new Map<number, number[]>(); for (const i of vuxna) { const k = Math.floor((i % W) / 16) * 100 + Math.floor(i / W / 16); block.set(k, [...(block.get(k) ?? []), i]); }
+    const blockDel = [...block.values()].filter(l => l.length >= 40).map(del), granBlock = blockDel.filter(v => v < 0.25).length, bjorkBlock = blockDel.filter(v => v > 0.5).length;
+    const artLika = vuxna.every(i => SIM.tradArt(gc, i).id === SIM.tradArt(g, i).id) && !!c.tradSort;
+    // efter en brand kommer björken: en ny planta där skogen brunnit
+    const nyBrand = vuxna.filter(i => !kanten(i) && !vatten(i)).map(i => SIM.valjArt(s.seed, g, i, true)).filter(a => a === SIM.BJORK).length / Math.max(1, vuxna.filter(i => !kanten(i) && !vatten(i)).length);
+    // ett större träd ger mer trä när det fälls (steg 5.1.4.4)
+    const forsta = (k: string) => [...g.trees.keys()].find(i => SIM.stadium(g, i) === k)!;
+    const u = cloneState(s), gu = groundOf(u), ung = forsta('vuxet'); gu.trees[ung] = 0.4;
+    const vedUng = SIM.stamAv(gu, ung).ved, vedVuxet = SIM.stamAv(g, forsta('vuxet')).ved, vedGammalt = SIM.stamAv(g, forsta('gammalt')).ved, torr = SIM.stamAv(g, forsta('torraka'));
+    // jätteträden (steg 5.1.4.5): ett gammalt träd på en jätteruta
+    const jr = [...g.trees.keys()].filter(i => SIM.arJatte(i)), jatteAndel = jr.length / g.trees.length;
+    const j = cloneState(s), gj = groundOf(j), ji = jr[0]; gj.trees[ji] = 1; gj.alder![ji] = SIM.TRAD.vuxenDygn + 1;
+    const jatteSt = SIM.stadium(gj, ji), vedJatte = SIM.stamAv(gj, ji).ved;
+    return [
+      [`urskogen har träd på ungefär hälften av jorden (${(andel * 100).toFixed(0)} %)`, andel > 0.38 && andel < 0.55],
+      [`vuxna, gamla och några torrakor står i urskogen (${Object.entries(st).map(([k, n]) => `${k} ${n}`).join(', ')})`, ['vuxet', 'gammalt', 'torraka'].every(k => (st[k] ?? 0) > 0) && (st.torraka ?? 0) < (st.vuxet ?? 0) / 4],
+      [`de gamla träden står fritt (${gamlaFria} av ${gamla.length})`, gamla.length > 0 && gamlaFria === gamla.length],
+      [`ett vuxet träd i en tät dunge torkar (${torkade}), ett som står fritt blir gammalt (${blevGammalt})`, torkade === 'torraka' && blevGammalt === 'gammalt'],
+      ['torrakan faller till sist och rutan blir en glänta', fallen],
+      [`en planta som växer klart blir ett vuxet träd med åldern noll (${ny}, ${nyAlder})`, ny === 'vuxet' && nyAlder === 0],
+      ['trädens åldrar följer med i sparfilen', lika && !!c.tradAlder],
+      [`varje träd har en sort, gran eller björk (${[...arter].join(', ')}; björk ${pc(bjAlla)} av de vuxna)`, arter.has('gran') && arter.has('bjork') && bjAlla > 0.15 && bjAlla < 0.6],
+      [`björken växer helst i skogskanten (${pc(bjKant)}) och vid vattnet (${pc(bjVatten)}) och mindre inne i skogen (${pc(bjInne)})`, bjKant > bjInne + 0.1 && bjVatten > bjInne + 0.1],
+      [`områden med granskog och björkdungar: av ${blockDel.length} delar av skogen har ${granBlock} mest gran och ${bjorkBlock} mest björk`, granBlock >= 1 && bjorkBlock >= 1],
+      [`där skogen kommer tillbaka efter en brand blir det mer björk (${pc(nyBrand)} mot ${pc(bjInne)})`, nyBrand > bjInne + 0.1],
+      ['trädens sorter följer med i sparfilen', artLika],
+      [`ett gammalt träd på var femtionde ruta är ett jätteträd (${jatteAndel.toFixed(3)}), som ger mest trä (${vedJatte} mot ${vedGammalt})`, jatteSt === 'jatte' && jatteAndel > 0.01 && jatteAndel < 0.04 && vedJatte > vedGammalt],
+      [`ett större träd ger mer trä: ungträd ${vedUng}, vuxet ${vedVuxet}, gammalt ${vedGammalt}, torraka ${torr.ved} med ${torr.grenar} grenar`, vedUng < vedVuxet && vedVuxet < vedGammalt && torr.ved > vedVuxet && Number.isInteger(vedUng) && torr.grenar < SIM.SKOG.stamGrenar],
     ];
   },
 };

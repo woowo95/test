@@ -3,14 +3,19 @@ import { BYTE, SEC, byId, clamp, filtMot } from '../sim';
 import { gaster } from './gaster';
 import { iconCanvas } from '../ikoner';
 import { s, ui } from './lage';
-import { Ikoner, TS, peopleG, pileLayer, world } from './scen';
+import { Ikoner, TS, lagerEfter, peopleG, pileLayer } from './scen';
 import { posOf } from './manniskor';
+import { valdFilt } from './flikar/filt';
 
 // bytena på kartan (steg 4.4.1.1): filtarna med det som byts, och saken som går från hand till hand i ett litet byte eller en gåva
 const filtLayer = new PIXI.Container(), handLayer = new PIXI.Container();
-world.addChildAt(filtLayer, world.getChildIndex(pileLayer) + 1);
-world.addChildAt(handLayer, world.getChildIndex(peopleG) + 1);
+lagerEfter(filtLayer, pileLayer);
+lagerEfter(handLayer, peopleG);
 const filtIkoner = new Ikoner(filtLayer), handIkoner = new Ikoner(handLayer);
+// en markerad filt får en vit kant, som en vald person en vit ring (steg 4.5.7.2); två filtar mitt emot varandra visas
+// tillsammans (flikar/filt.ts), så båda får kanten
+const kantG = new PIXI.Graphics();
+lagerEfter(kantG, filtLayer);
 // gästerna (handlaren och rövarna, gaster.ts) ritas som byborna, en cirkel med skugga och mörk kant (Björn efter v245, steg
 // 4.5.2 och 4.5.4.12), i sin egen färg. Den valda får en vit ring som en vald bybo
 const framlingG = new PIXI.Graphics();
@@ -47,7 +52,8 @@ function drawGodkant() {
   }
 }
 export function drawHandel() {
-  filtIkoner.start(); handIkoner.start(); framlingG.clear();
+  filtIkoner.start(); handIkoner.start(); framlingG.clear(); kantG.clear();
+  const vf = ui.tab === 'filt' ? valdFilt() : undefined, markerad = vf ? [vf, filtMot(s, vf)] : [];
   drawGodkant();
   for (const g of gaster()) cirkel(g.x * TS, g.y * TS, g.farg, g.id === ui.selected);
   for (const f of s.filtar ?? []) {
@@ -55,6 +61,10 @@ export function drawHandel() {
     // handlarens filt och bybornas (Björn valde efter v245: den förra för handlaren och version 1 för byborna, steg 4.5.2)
     const fk = f.handlare ? 'filt' : 'filt_by', x0 = f.x * TS - TS, y0 = f.y * TS - TS / 2, sc = (2 * TS) / iconCanvas(fk).width;
     filtIkoner.add(fk, x0, y0 - TS / 2, sc);
+    if (markerad.includes(f)) { // filtens synliga del: punkterna 2–12 uppifrån och 14 breda (ikoner.ts)
+      const p = (2 * TS) / 16;
+      kantG.lineStyle(1.5, 0xffffff, 1).drawRect(x0 + (f.handlare ? 0 : p) - 1, y0 - TS / 2 + 2 * p - 1, 14 * p + 2, 11 * p + 2).lineStyle(0);
+    }
     // sakerna på filten: en part per filt (steg 4.5.4.13) över hela filten; en filt från före v267 har var partens på sin halva
     // ett godkänt byte (steg 4.5.4.17): sakerna ligger kvar under handslaget, är i luften medan de går över (drawGodkant) och
     // ligger sedan på den andra filten tills filtarna plockas ihop

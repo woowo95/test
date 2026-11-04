@@ -404,7 +404,9 @@ SCENARIER.utbrott = {
   text: 'Utbrotten (steg 3.2.2): den som mår mycket dåligt brister ut, behoven går före, den som är elak sänker den andras humör, en sak slås sönder och efteråt mår man lite bättre',
   kor: () => {
     // en by där alla mår mycket dåligt i åtta dygn (åtta år i spelet)
+    // (med ved i förrådet: utan den frös två ihjäl första natten i den glesare skogen, steg 5.1.4.1, och då mäts inte utbrotten)
     const s = createState(9, START);
+    SIM.setAmount(s, 'ved', 40);
     for (const p of living(s)) SIM.think(p, 'Sorg', -0.6, s.now, 8 * DAY);
     kor(s, 8 * 24);
     const utb = (s.stat?.utbrott as number) ?? 0, slag = Object.keys(s.stat ?? {}).filter(k => k.startsWith('utb_') && !k.startsWith('utb_sonder')).map(k => k.slice(4));
@@ -525,6 +527,7 @@ SCENARIER.vald = {
 };
 
 SCENARIER.barnutbrott = {
+  lang: true,
   text: 'Barnens utbrott (steg 3.2.4): barn som mår mycket dåligt skriker, trotsar, puttas med ett syskon eller springer iväg, mer sällan med en förälder nära och efter lek',
   kor: () => {
     // fem ledsna barn i en by där de vuxna mår bra, i tolv dygn (tolv år i spelet)
@@ -1880,12 +1883,13 @@ SCENARIER.samtalpar = {
     for (const seed of [3, 8]) {
       const s = createState(seed, START);
       for (let i = 0; i < 4 * 24 * 3600 / BEAT; i++) {
-        const fore = new Map(living(s).filter(p => p.task?.phase === 'do' && p.task.act !== 'samtal' && isSocial(p)).map(p => [p.id, { x: p.x, y: p.y, act: p.task!.act }]));
+        const fore = new Map(living(s).filter(p => p.task?.phase === 'do' && p.task.act !== 'samtal' && isSocial(p)).map(p => [p.id, { x: p.x, y: p.y, act: p.task!.act, task: p.task }]));
         const ev: TalkEvent[] = [];
         step(s, BEAT, ev);
         for (const p of living(s)) {
           const f = fore.get(p.id);
-          if (f && p.task?.act === f.act && p.task.phase === 'do' && (ACTS[f.act].hantverk || ACTS[f.act].arbete)) { arbeteFore++; if (Math.hypot(p.x - f.x, p.y - f.y) > 0.01 && !ACTS[f.act].vandra) { flyttad++; flyttAkt[f.act] = (flyttAkt[f.act] ?? 0) + 1; } }
+          // samma uppgift (en ny av samma slag kan ha börjat och nåtts i samma steg)
+          if (f && p.task && p.task === f.task && p.task.phase === 'do' && (ACTS[f.act].hantverk || ACTS[f.act].arbete)) { arbeteFore++; if (Math.hypot(p.x - f.x, p.y - f.y) > 0.01 && !ACTS[f.act].vandra) { flyttad++; flyttAkt[f.act] = (flyttAkt[f.act] ?? 0) + 1; } }
           const t = p.task, q = t?.med !== undefined ? byId(s, t.med) : undefined;
           if (t?.act !== 'samtal' || t.phase !== 'do' || !q || !isSocial(q) || q.task!.act === 'samtal' && q.task!.med !== p.id) continue; // (den andra kan ha gått vidare)
           par++;

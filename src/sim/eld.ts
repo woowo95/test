@@ -5,7 +5,7 @@ import { Behov, getable, takeMaterial } from './behov';
 import { Del, addDel } from './egendom';
 import { coldOf, hardVinter, temperature, vaderNu, VADER } from './vader';
 import { MOTGANG } from './motgang';
-import { roomAt } from './byggnad';
+import { isWall, roomAt } from './byggnad';
 import { ALDER, KROPP, ageOf, count, doingAct, gjort, isSick, living, log, stat, think } from './folk';
 import { halsa } from './halsa';
 import { flintFactor, flintorOchYxor, stoneDist, takeFrom } from './fynd';
@@ -287,12 +287,12 @@ function tandare(s: State, f: Fire, cands: Kand[]) {
   }
   return c;
 }
-// där man sitter vid elden (för att tända den, hämta kolet): framför den, och står den vid vattnet bakom eller bredvid den
+// där man sitter vid elden (för att tända den, hämta kolet): framför den, och står den vid vattnet eller en vägg bakom eller bredvid den
 export function vidEld(s: State, f: Fire, dx: number, dy: number) {
   const e = eldXY(s, f);
   for (const [x, y] of [[e.x + 0.5 + dx, e.y + dy], [e.x + 0.5 + dx, e.y - 0.3], [e.x - 0.3, e.y + 0.5], [e.x + 1.3, e.y + 0.5]]) {
     const tx = Math.floor(x), ty = Math.floor(y);
-    if (tx >= 0 && ty >= 0 && tx < W && ty < H && !iVattnetNu(s, ty * W + tx)) return { x, y };
+    if (tx >= 0 && ty >= 0 && tx < W && ty < H && !iVattnetNu(s, ty * W + tx) && !isWall(s, x, y)) return { x, y };
   }
   return { x: e.x + 0.5 + dx, y: e.y + dy };
 }

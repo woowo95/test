@@ -1,5 +1,5 @@
-import { HANDEL, HANDLAR_UTR, VAPEN, handlarFas, handlarPlats, klanById, grundvarde, handlarVarde, kgOf, kortTal, rymmer, sakNamn } from '../sim';
-import type { ByteMinne, Skill, Stat, State } from '../sim';
+import { HANDEL, HANDLAR_UTR, VAPEN, byId, gillar, handlarPerson, foddNar, gastLiv, gastNyckel, handlarFas, handlarPlats, klanById, grundvarde, handlarVarde, kgOf, kortTal, rymmer, sakNamn } from '../sim';
+import type { ByteMinne, GastLiv, GastRel, Person, Roll, Skill, Stat, State } from '../sim';
 import { iconImg } from '../ikoner';
 import { esc } from './hjalp';
 import { s, ui } from './lage';
@@ -20,7 +20,15 @@ export interface Gast {
   bar: { ikon: string; text: string; title: string }[]; // det hen bär (utrustningen)
   handelser: string[]; // som en bybos viktiga händelser
   byten?: ByteMinne[]; // bytena hen gjort med byn (steg 4.5.4.17)
+  liv: GastLiv; // livet i hemklanen (steg 4.5.7.7, gastliv.ts): familjen, händelserna, humöret och det hen kan
+  blod?: number; // blodet kvar (rövarna, 0–1)
+  rel?: { p: Person; r: GastRel; g: number }[]; // relationerna till byborna (handlaren, steg 4.5.7.11): g = hur mycket hen gillar bybon, −1 till 1
 }
+// gästens liv, räknat ur byns frö och hens namn och klan (drar ingen slump)
+const livFor = (s: State, klan: number | undefined, namn: string, sex: 'm' | 'k', roll: Roll, fodd: number | undefined) => {
+  const k = klanById(s, klan), nyckel = gastNyckel(klan, namn);
+  return gastLiv(s.seed, nyckel, namn, sex, roll, k?.namn ?? (roll === 'rovare' ? 'en rövarflock' : 'en grannklan'), k?.hem ?? 'skogarna', fodd ?? foddNar(s.seed, nyckel, roll, s.now), s.now);
+};
 // handlarens pris i silver för en vara (det hen värderar den till, handlarVarde i handel.ts)
 export const handlarPris = (k: string, q?: number) => Math.max(1, Math.round(grundvarde(k) * handlarVarde(s, s.handlare!, k) * (q === undefined ? 1 : 0.6 + 0.2 * q)));
 // rövarnas id: under handlarnas (-1, -2 …), en plats per rövare i flocken
@@ -44,6 +52,8 @@ export const GASTER: ((s: State, t: number) => Gast[])[] = [
         ...h.varor.map(w => ({ ikon: w.k, text: `${w.n > 1 ? `${w.n} ` : ''}${handlarPris(w.k, w.q)}${iconImg('silver', 12)}`, title: `${sakNamn(w.k)}: ungefär ${handlarPris(w.k, w.q)} silver styck (hen tar ${Math.round(HANDEL.vinst * 100)} % över värdet)` }))],
       handelser: (h.bytt ?? []).filter(b => !b.m).reverse().map(b => `Bytte med ${b.vem}: ${b.fick} mot ${b.gav}`), // från före v271
       byten: (h.bytt ?? []).flatMap(b => b.m ? [b.m] : []),
+      liv: livFor(s, h.klan, h.namn, h.sex, 'handlare', h.fodd),
+      rel: Object.entries(handlarPerson(s, h)?.rel ?? {}).flatMap(([id, r]) => { const q = byId(s, Number(id)); return q ? [{ p: q, r, g: gillar(s, h, q) }] : []; }),
     }];
   },
   // rövarflocken (steg 4.4.5): rövarna i en klunga där flocken står
@@ -57,7 +67,7 @@ export const GASTER: ((s: State, t: number) => Gast[])[] = [
       rader: [{ namn: 'Flocken', varde: `${n} rövare`, title: `En av ${n} i flocken` }],
       stats: { styrka: q.st.styrka, uthallighet: q.st.uthallighet, mod: q.st.mod, smidighet: q.st.smidighet }, skills: { narstrid: q.st.skicklighet },
       bar: [{ ikon: q.vapen, text: VAPEN[q.vapen].namn, title: `Vapnet: ${VAPEN[q.vapen].namn.toLowerCase()}` }],
-      handelser: [],
+      handelser: [], liv: livFor(s, r.klan, q.namn, q.sex, 'rovare', q.fodd), blod: q.blod,
     }));
   },
 ];

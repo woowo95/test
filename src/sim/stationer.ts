@@ -1034,7 +1034,13 @@ function iVagen(s: State) {
 }
 // ---------- testläget (steg 3.10.1) ----------
 // spelaren tar bort en station eller möbel
-export function taBortStation(s: State, t: Station) { taBort(s, t); log(s, `${stationDef(t.k)?.namn ?? 'En station'} togs bort i testläget.`, 'world'); }
+export function taBortStation(s: State, t: Station) {
+  // det som låg i en kista eller på en hylla blir liggande på rutan (steg 4.5.7.8)
+  const kvar = tingOf(s).filter(k => k.vid === t.id && k.hos === undefined && k.lass === undefined && k.x !== undefined).map(k => [k, k.x, k.y] as const);
+  taBort(s, t);
+  for (const [k, x, y] of kvar) { k.x = x; k.y = y; }
+  log(s, `${stationDef(t.k)?.namn ?? 'En station'} togs bort i testläget.`, 'world');
+}
 // spelaren flyttar den så att hörnet uppe till vänster hamnar på rutan (x, y): på golv i ett hus eller på mark där saker
 // kan ligga (lager.ts), där ingen annan station och ingen sittplats står. Byns regler gäller sedan som vanligt (det som ska
 // stå inne bärs in, förvaringen utanför ett lager tas isär). false = den fick inte plats

@@ -12,6 +12,7 @@ import { eldPlats, vaderstreck } from './karta';
 import { avbryt, minska, stacksOf, tidy } from './lager';
 import { die } from './liv';
 import { MARK, groundOf, markslag } from './mark';
+import { valjArt } from './trad';
 import { faltAt, faltBrann, faltIndex, grodaPa } from './odling';
 import { wearUsed } from './redskap';
 import { larma, larmNu } from './rykten';
@@ -243,6 +244,7 @@ function slocknar(s: State, b: Brand) {
       if (g.trees[i] > 0 && a >= BRAND.trad) {
         if (g.trees[i] >= VAG.ungskog) { b.trad++; count(s, 'brand trad'); }
         g.trees[i] = g.trees[i] >= FOREST ? MARK.nyPlanta : 0;
+        if (g.trees[i] > 0 && g.art) g.art[i] = valjArt(s.seed, g, i, true); // efter branden kommer björken (steg 5.1.6)
         if (s.halvfallt) delete s.halvfallt[i];
       }
       (s.aska ??= []).push([i, Math.round(s.now)]);

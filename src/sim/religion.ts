@@ -94,7 +94,7 @@ interface NivaDef { namn: string; text: string; krav: (s: State, n: number, folk
 export const NIVAER: NivaDef[] = [
   { namn: 'Personlig tro', text: 'Bara några få tror.', krav: () => true },
   { namn: 'Delad tro', text: `Minst ${NIVA.delad} tror.`, krav: (_s, n) => n >= NIVA.delad },
-  { namn: 'Seder', text: `Minst ${NIVA.seder} tror, eller hälften av byn. Bön, heliga platser och begravning kommer med 10.1.`, krav: (s, n) => n >= NIVA.seder || n >= living(s).length * NIVA.sederAndel },
+  { namn: 'Seder', text: `Minst ${NIVA.seder} tror, eller hälften av byn. Bön, heliga platser och begravning kommer med 10.1.`, krav: (s, n) => n >= NIVA.delad && (n >= NIVA.seder || n >= living(s).length * NIVA.sederAndel) },
   { namn: 'Präst', text: `Minst ${NIVA.prast} tror, och en av dem är andlig och karismatisk nog att bli präst. Prästen och de svaga buden kommer med 10.1.`,
     krav: (s, n, folk) => n >= NIVA.prast && folk.some(p => andlighet(s, p) >= NIVA.prastAnde && stat(p, 'karisma', s.now) >= NIVA.prastKarisma) },
   { namn: 'Kyrka', text: `Minst ${NIVA.kyrka} tror, en präst och en helig byggnad (hov, steg 7.2.10). Starka bud, kyrkskatt och makt över styret kommer med 10.1.`,

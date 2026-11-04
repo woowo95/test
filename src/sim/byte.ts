@@ -26,6 +26,10 @@ export const BYTE = balans('byte', {
   minnas: 10, // så många byten minns en bybo (p.byten)
   overlSek: 40, // så många sekunder (spelets tid) tar det för saken att gå från hand till hand
   tillbakaTim: 1, // så många timmar köper ingen tillbaka ett slag av saker av den hen just bytt bort det till
+  // två filtar mitt emot varandra ligger så långt isär (rutor, mitt till mitt): filten är drygt en ruta djup, så det blir ungefär
+  // en ruta fritt mellan dem (steg 4.5.7.1), och var och en står bakom sin egen filt, BYTE.bakom rutor från filtens mitt
+  filtMot: 2.4,
+  bakom: 1,
 });
 
 export interface Vara { k: string; n: number; t?: Ting; q?: number } // q = kvaliteten på handlarens redskap, som inte är ett ting i byn än
@@ -72,8 +76,14 @@ export interface Overl { k: string; a: number; b: number; t: number }
 // byn = det som ligger där är byns (den som handlar för byn)
 export interface Filt { x: number; y: number; slut: number; varor: { k: string; n: number; fran: number }[]; handlare?: number; vem?: number; par?: number; byn?: true; byt?: number } // byt = när bytet på filten godkändes (steg 4.5.4.17) // handlare: handlarens id, när det är handlarens filt (ligger tills hen går)
 const filtarOf = (s: State) => (s.filtar ??= []);
-// så långt isär (i rutor) ligger två filtar mitt emot varandra
-export const FILT_MOT = 1.3;
+// så långt isär (i rutor) ligger två filtar mitt emot varandra (BYTE.filtMot)
+export const FILT_MOT = BYTE.filtMot;
+// var den som äger filten f står: bakom sin filt, på den sida som är längst från filten mitt emot (steg 4.5.7.1). Bilden frågar
+// samma sak för två bybor som byter (ui/manniskor.ts)
+export function bakomFilt(s: State, f: Filt) {
+  const mot = filtMot(s, f), sida = mot && mot.y < f.y ? 1 : -1;
+  return { x: f.x, y: f.y + sida * BYTE.bakom };
+}
 export const nyttPar = (s: State) => (s.filtNr = (s.filtNr ?? 0) + 1);
 // filten mitt emot f, om det finns en
 export const filtMot = (s: State, f: Filt) => f.par === undefined ? undefined : s.filtar?.find(g => g !== f && g.par === f.par);
@@ -101,7 +111,7 @@ export function stortByte(varor: Vara[]) {
 
 // det andra system gör när ett byte är klart (handlarens minne av bytena, handel.ts)
 // när någon lurat i ett byte (behov.ts): lurare lurade lurad (grannklanerna, klaner.ts)
-export const vidLura: ((s: State, lurare: Part, lurad: Part) => void)[] = [];
+export const vidLura: ((s: State, lurare: Part, lurad: Part, markt: boolean) => void)[] = []; // markt = den lurade bybon märkte det
 export const vidByte: ((s: State, m: Part, g: Part, fatt: Vara[], betal: Vara[], minne: ByteMinne) => void)[] = [];
 // priset i silver styck för slaget k som fran ger till till (handlarens priser, handel.ts); annars grundvärdet. Hela silver, minst ett
 export const BYTESPRIS: ((s: State, fran: Part, till: Part, k: string) => number | undefined)[] = [];

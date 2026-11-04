@@ -185,6 +185,7 @@ SCENARIER.aktivitet = {
 };
 
 SCENARIER.fritid = {
+  lang: true,
   text: 'På fritiden tar folk promenader (de nyfikna och modiga längre bort), badar när det är varmt och sitter vid stranden. Man vilar ut när det är mörkt och på dagen bara när man är mycket trött (steg 2.3.10)',
   kor: () => {
     const folk: { d: number; v: number }[] = [];
@@ -226,6 +227,7 @@ SCENARIER.fritid = {
 
 SCENARIER.varm = {
   text: 'Steg 2.3.4: kroppen kan bli varmare än idealet: av solen på sommaren (inte i skugga under ett träd eller i ett hus), av kläderna när det är milt och av att sitta tätt vid elden. Under idealet är det som förut. Den som är för varm svalnar, tar av sig de varma kläderna (bältet sitter kvar), tar inte på sig nya, lockas till bad, och badet kyler. Tröttare blir hen först när hen är extremt varm (steg 2.10.20)',
+  lang: true,
   kor: () => {
     const s = createState(5, START);
     s.kal = nyKalender(s.now, 2); klockan(s, 14); // sommar, mitt på dagen

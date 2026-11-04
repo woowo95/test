@@ -1,73 +1,76 @@
 // ikoner för föremål: små pixelbilder (8×8) som används både på kartan och i listorna
 // varje tecken är en pixel, '.' är genomskinlig
 import { KLADER_AV } from './sim/klader';
+import { KARTBILDER } from './kartbilder';
+import { DJURBILDER, type Hall } from './djurbilder';
+import { farg } from './palett';
 
 // slagen av arbete ritas ljust i en färg (vattnet blått)
-const AKT = { w: '#f4efe0', a: '#9fc6e8' };
+const AKT = { w: '#dad0bb', a: '#8a9c9e' };
 // vädrets symboler (steg 2.11.1): samma färger för alla sex
 const VADER_PAL = { K: '#61767a', S: '#dad0bb', W: '#dad0bb', a: '#906f0f', b: '#b2921b', c: '#d8b25f', d: '#8a9c9e', k: '#3e5156', o: '#24201d', s: '#bdb39b', v: '#bdb39b', w: '#a0947d', y: '#d8b25f' };
 export const PAL: Record<string, Record<string, string>> = {
   // trons och gudarnas symboler: amuletter i guld på en mörk bricka (Björn valde stil 3 efter v245, steg 4.5.2)
   ...Object.fromEntries(['tro_blixt', 'tro_brand', 'tro_vinter', 'tro_regn', 'tro_flod', 'tro_hare', 'tro_barn', 'tro_drom', 'gud_aska', 'gud_sjon', 'gud_skord', 'gud_doden', 'gud_jakt', 'gud_elden', 'gud_vintern', 'gud_solen', 'gud_atten', 'gud_kriget', 'gud_hantverk'].map(k => [k, { d: '#5e3c24', e: '#b2921b', f: '#d8b25f', o: '#24201d' }])),
-  bar: { r: '#8a4ad8', R: '#b88aff', d: '#4e2280', g: '#4f8a3a' },
-  rotter: { o: '#9a6a3e', O: '#c99a62', d: '#5e3c20', g: '#5f9a44' },
-  kott: { r: '#9c3328', R: '#d26a56', w: '#eee2c8' },
-  kanin: { b: '#9a7650', B: '#c8a478', w: '#f2ece0', k: '#1a1a1a', p: '#d88a8a' },
-  fisk: { p: '#e89a7a', P: '#f6c8b0', w: '#fff2e6', s: '#c06a4a' },
-  abborre: { g: '#6f7c34', G: '#a7b45a', k: '#2c3216', r: '#d4602c', w: '#e6dcae', e: '#111111' },
-  svamp: { c: '#a0502e', C: '#d99060', s: '#ebe0c6', S: '#c4b694' },
-  spindling: { c: '#c8361a', C: '#f07a44', s: '#e2c9a0', S: '#b8935e' },
-  ved: { o: '#24201d', b: '#6a4426', B: '#8f603a', Y: '#dcb87e', y: '#a07a46', z: 'rgba(0,0,0,.30)' }, // en hög kluvna vedträn (steg 4.5.5.3, platshållare, 16 punkter)
-  grenar: { b: '#7a5a36', B: '#9c7848', g: '#5f8a3e' },
-  torrgras: { y: '#d8c070', Y: '#f0dc94', t: '#8a6a3a' },
-  kol: { k: '#24201c', K: '#4f4842' },
-  flinta: { g: '#8f9396', G: '#c9cdd0', d: '#5f6366' },
-  sten: { k: '#6a6e72', K: '#a4a9ae', d: '#4a4e52' },
-  yxa: { h: '#7a5a36', g: '#8f9396', G: '#c9cdd0' },
-  fiskespjut: { h: '#8a6a40', H: '#b08a58', w: '#e8d0a0' },
-  flintspjut: { h: '#8a6a40', g: '#8f9396', G: '#c9cdd0', r: '#c8b07a' },
-  rep: { y: '#c8b07a', Y: '#e8d4a0', d: '#8a7448' },
-  ben: { w: '#e8e2d0', W: '#fffaf0', d: '#b8ae98' },
-  vilt: { b: '#9a7650', B: '#c8a478', w: '#f2ece0', k: '#1a1a1a', r: '#9c3328' },
-  kniv: { h: '#7a5a36', H: '#9c7848', g: '#8f9396', G: '#c9cdd0' },
+  bar: { r: '#61767a', R: '#8a9c9e', d: '#233035', g: '#647025' },
+  rotter: { o: '#7d5b40', O: '#a0947d', d: '#5e3c24', g: '#898b4c' },
+  kott: { r: '#742a01', R: '#bd753e', w: '#dad0bb' },
+  kanin: { b: '#7e7362', B: '#a0947d', w: '#dad0bb', k: '#24201d', p: '#a0947d' },
+  fisk: { p: '#a0947d', P: '#bdb39b', w: '#dad0bb', s: '#987e62' },
+  abborre: { g: '#647025', G: '#b2921b', k: '#21290d', r: '#bd753e', w: '#dad0bb', e: '#24201d' },
+  svamp: { c: '#7d5b40', C: '#bd753e', s: '#dad0bb', S: '#bdb39b' },
+  spindling: { c: '#a14808', C: '#bd753e', s: '#bdb39b', S: '#987e62' },
+  ved: { o: '#24201d', b: '#5e3c24', B: '#7d5b40', Y: '#bdb39b', y: '#7e7362', z: 'rgba(36,32,29,.30)' }, // en hög kluvna vedträn (steg 4.5.5.3, platshållare, 16 punkter)
+  grenar: { b: '#694902', B: '#7e7362', g: '#647025' },
+  torrgras: { y: '#d8b25f', Y: '#dad0bb', t: '#7d5b40' },
+  kol: { k: '#24201d', K: '#474138' },
+  flinta: { g: '#987e62', G: '#bdb39b', d: '#505e3e' },
+  sten: { k: '#7d5b40', K: '#8a9c9e', d: '#474138' },
+  yxa: { h: '#694902', g: '#987e62', G: '#bdb39b' },
+  fiskespjut: { h: '#7d5b40', H: '#987e62', w: '#bdb39b' },
+  flintspjut: { h: '#7d5b40', g: '#987e62', G: '#bdb39b', r: '#a0947d' },
+  rep: { y: '#a0947d', Y: '#bdb39b', d: '#7d5b40' },
+  ben: { w: '#dad0bb', W: '#dad0bb', d: '#a0947d' },
+  vilt: { b: '#7e7362', B: '#a0947d', w: '#dad0bb', k: '#24201d', r: '#742a01' },
+  kniv: { h: '#694902', H: '#7e7362', g: '#987e62', G: '#bdb39b' },
   // kläderna och bensylen (steg 2.3.2; Björn valde kläderna efter v89, bensylen är en platshållare)
-  bensyl: { w: '#efe6cc', W: '#fff8e6', d: '#b8a882' },
+  bensyl: { w: '#dad0bb', W: '#dad0bb', d: '#a0947d' },
   // sportens föremål (steg 4.3.1.2, platshållare)
-  boll: { o: '#24201d', a: '#3f2415', b: '#5e3c24', c: '#7d5b40', e: '#987e62', z: 'rgba(0,0,0,.30)' }, // (Björn valde version 1 efter v245, steg 4.5.2)
-  slagtra: { o: '#24201d', c: '#7d5b40', e: '#987e62', t: '#a14808', s: '#906f0f', S: '#b2921b', v: '#dad0bb', z: 'rgba(0,0,0,.30)' }, // (Björn valde version 3 efter v245, steg 4.5.2)
-  mal: { o: '#24201d', b: '#5e3c24', c: '#7d5b40', e: '#987e62', S: '#b2921b', z: 'rgba(0,0,0,.30)' }, // (Björn valde version 1 efter v245, steg 4.5.2)
+  boll: { o: '#24201d', a: '#3f2415', b: '#5e3c24', c: '#7d5b40', e: '#987e62', z: 'rgba(36,32,29,.30)' }, // (Björn valde version 1 efter v245, steg 4.5.2)
+  slagtra: { o: '#24201d', c: '#7d5b40', e: '#987e62', t: '#a14808', s: '#906f0f', S: '#b2921b', v: '#dad0bb', z: 'rgba(36,32,29,.30)' }, // (Björn valde version 3 efter v245, steg 4.5.2)
+  mal: { o: '#24201d', b: '#5e3c24', c: '#7d5b40', e: '#987e62', S: '#b2921b', z: 'rgba(36,32,29,.30)' }, // (Björn valde version 1 efter v245, steg 4.5.2)
   // scenen och instrumenten (steg 4.3.2.2, platshållare i bildstilens palett, 16 punkter per ruta)
-  scen: { w: '#5a3a1e', W: '#8b5a2b', L: '#b07a45', H: '#d0a26a' },
+  scen: { w: '#5e3c24', W: '#7d5b40', L: '#987e62', H: '#a0947d' },
   scen_karta_v: { o: '#24201d', a: '#3f2415', b: '#5e3c24', c: '#7d5b40', e: '#987e62' }, // scenen vriden: version 1 vriden ett kvarts varv (platshållare tills den stående bilden är ritad, steg 4.5.2)
   scen_karta: { o: '#24201d', a: '#3f2415', b: '#5e3c24', c: '#7d5b40', e: '#987e62' }, // (Björn valde version 1 efter v245, steg 4.5.2)
-  trumma: { o: '#24201d', b: '#5e3c24', c: '#7d5b40', R: '#742a01', w: '#a0947d', W: '#bdb39b', v: '#dad0bb', z: 'rgba(0,0,0,.30)' }, // (Björn valde version 2 efter v245, steg 4.5.2)
-  benflojt: { o: '#24201d', w: '#a0947d', W: '#bdb39b', v: '#dad0bb', k: '#2f261d', z: 'rgba(0,0,0,.30)' }, // (Björn valde version 1 efter v245, steg 4.5.2)
+  trumma: { o: '#24201d', b: '#5e3c24', c: '#7d5b40', R: '#742a01', w: '#a0947d', W: '#bdb39b', v: '#dad0bb', z: 'rgba(36,32,29,.30)' }, // (Björn valde version 2 efter v245, steg 4.5.2)
+  benflojt: { o: '#24201d', w: '#a0947d', W: '#bdb39b', v: '#dad0bb', k: '#2f261d', z: 'rgba(36,32,29,.30)' }, // (Björn valde version 1 efter v245, steg 4.5.2)
   lyra: { o: '#24201d', b: '#5e3c24', c: '#7d5b40', e: '#987e62', y: '#d8b25f' }, // (Björn valde version 1 efter v245, steg 4.5.2)
   // pyntet (steg 4.3.4, platshållare i bildstilens palett, 16 punkter per ruta)
-  kruka: { o: '#24201d', r: '#521100', R: '#742a01', T: '#bd753e', k: '#2f261d', z: 'rgba(0,0,0,.30)' }, // (Björn valde version 1 efter v245, steg 4.5.2)
+  kruka: { o: '#24201d', r: '#521100', R: '#742a01', T: '#bd753e', k: '#2f261d', z: 'rgba(36,32,29,.30)' }, // (Björn valde version 1 efter v245, steg 4.5.2)
   bonad: { o: '#24201d', b: '#5e3c24', c: '#7d5b40', r: '#521100', R: '#742a01', s: '#906f0f', S: '#b2921b', w: '#a0947d', W: '#bdb39b' }, // (Björn valde version 3 efter v245, steg 4.5.2)
-  vaggbrade: { o: '#24201d', a: '#3f2415', b: '#5e3c24', c: '#7d5b40', e: '#987e62', k: '#2f261d', z: 'rgba(0,0,0,.30)' }, // (Björn valde version 3 efter v245, steg 4.5.2)
-  virke: { o: '#24201d', a: '#3f2415', b: '#5e3c24', c: '#7d5b40', e: '#bdb39b', E: '#dad0bb', z: 'rgba(0,0,0,.30)' }, // kluvna stockar (steg 4.5.5.2, platshållare, 16 punkter)
+  vaggbrade: { o: '#24201d', a: '#3f2415', b: '#5e3c24', c: '#7d5b40', e: '#987e62', k: '#2f261d', z: 'rgba(36,32,29,.30)' }, // (Björn valde version 3 efter v245, steg 4.5.2)
+  virke: { o: '#24201d', a: '#3f2415', b: '#5e3c24', c: '#7d5b40', e: '#bdb39b', E: '#dad0bb', z: 'rgba(36,32,29,.30)' }, // kluvna stockar (steg 4.5.5.2, platshållare, 16 punkter)
   // filten där stora byten görs (steg 4.4.1.1, platshållare, 16 punkter)
-  silver: { o: '#3a3e44', S: '#c8ccd2', W: '#f4f6f8', s: '#8a9098' },
-  handslag: { a: '#bd753e', b: '#7d5b40', c: '#647025', o: '#24201d', z: 'rgba(0,0,0,.30)' }, // (steg 4.5.4.17: platshållare; Björn väljer i bildstilen)
-  rovare: { h: '#c9a07a', H: '#2a2420', c: '#5a5040', C: '#3a3228', s: '#8a7a60', S: '#d8d0c0', o: '#1a1410' },
-  handlare: { h: '#e0b88a', H: '#3a2418', c: '#4e6a8a', C: '#2e4460', b: '#8a6a40', B: '#5a3a1e', s: '#24160a' },
-  filt: { d: '#5a2a1e', r: '#9c3328', R: '#c4583a', y: '#e8c890', k: '#3a2418' },
-  mossa: { l: '#b4cc6a', G: '#7fa850', g: '#4f7a36', B: '#b48a5e', m: '#2f4a22' },
+  silver: { o: '#372f25', S: '#bdb39b', W: '#dad0bb', s: '#987e62' },
+  handslag: { a: '#bd753e', b: '#7d5b40', c: '#647025', o: '#24201d', z: 'rgba(36,32,29,.30)' }, // (steg 4.5.4.17: platshållare; Björn väljer i bildstilen)
+  rovare: { h: '#a0947d', H: '#24201d', c: '#474138', C: '#372f25', s: '#7e7362', S: '#bdb39b', o: '#24201d' },
+  handlare: { h: '#bdb39b', H: '#2f261d', c: '#3e5156', C: '#474138', b: '#7d5b40', B: '#5e3c24', s: '#24201d' },
+  filt: { d: '#3f2415', r: '#742a01', R: '#a14808', y: '#bdb39b', k: '#2f261d' },
+  mossa: { l: '#d8b25f', G: '#898b4c', g: '#647025', B: '#987e62', m: '#324726' },
   // latrinen och benspaden (steg 2.7.2, Björn valde P6 och S1c/S1g efter v85)
-  latrin: { o: '#8a6a40', O: '#b08a58', d: '#4a3018', k: '#24160a' },
-  latrin_karta: { o: '#8a6a40', O: '#b08a58', d: '#4a3018', k: '#24160a' },
+  latrin: { o: '#7d5b40', O: '#987e62', d: '#372f25', k: '#24201d' },
+  latrin_karta: { o: '#7d5b40', O: '#987e62', d: '#372f25', k: '#24201d' },
   // grillställningen och den grillade maten (steg 2.8.1; Björn valde 1b för kartan och symbolerna efter v89)
-  grill: { w: '#5a3a1e', O: '#d0aa70', L: '#b07a45', W: '#8b5a2b', q: '#5e4226', f: '#e8862a', F: '#f6c24a', g: '#8a8f94', G: '#5e6266' },
-  grill_karta: { w: '#5a3a1e', W: '#8b5a2b', L: '#b07a45', O: '#d0aa70', q: '#5e4226', D: '#2a1c12', x: 'rgba(0,0,0,.30)' },
-  grillfisk: { o: '#6e3418', B: '#dc9a52', c: '#3c2010', b: '#b8682e' },
-  grillkott: { o: '#4a1c10', R: '#a85a32', c: '#2c140a', r: '#7e3a1e', w: '#e8d2a8' },
+  grill: { w: '#5e3c24', O: '#a0947d', L: '#987e62', W: '#7d5b40', q: '#5e3c24', f: '#bd753e', F: '#d8b25f', g: '#987e62', G: '#3e5156' },
+  grill_karta: { w: '#5e3c24', W: '#7d5b40', L: '#987e62', O: '#a0947d', q: '#5e3c24', D: '#24201d', x: 'rgba(36,32,29,.30)' },
+  grillfisk: { o: '#5e3c24', B: '#b2921b', c: '#2f261d', b: '#906f0f' },
+  grillkott: { o: '#3f2415', R: '#7d5b40', c: '#24201d', r: '#5e3c24', w: '#bdb39b' },
   // torkställningen och den torkade maten (steg 2.8.2; Björn valde 4a, fiskhäck med A-ramar, för kartan, och symbolerna efter v89; torkad fisk väntar på Björns val)
-  tork: { w: '#5a3a1e', O: '#d0aa70', L: '#b07a45', M: '#cf5e48', m: '#9b3428', c: '#4e2418', W: '#8b5a2b' },
-  tork_karta: { w: '#5a3a1e', W: '#8b5a2b', L: '#b07a45', O: '#d0aa70', x: 'rgba(0,0,0,.30)' },
-  torrkott: { r: '#4e2418', R: '#6e3a26', w: '#cbb48e', o: '#24100a', h: '#9a6040' },
-  torrfisk: { p: '#7a5030', P: '#a07048', w: '#d8c098', s: '#583820' },
+  tork: { w: '#5e3c24', O: '#a0947d', L: '#987e62', M: '#bd753e', m: '#742a01', c: '#3f2415', W: '#7d5b40' },
+  tork_karta: { w: '#5e3c24', W: '#7d5b40', L: '#987e62', O: '#a0947d', x: 'rgba(36,32,29,.30)' },
+  torrkott: { r: '#3f2415', R: '#5e3c24', w: '#bdb39b', o: '#24201d', h: '#7d5b40' },
+  torrfisk: { p: '#694902', P: '#7e7362', w: '#bdb39b', s: '#474138' },
   // de vilda grödorna, fröna och odlingen (steg 2.10.2, platshållare i bildstilens palett; den vilda rovan, rovfröna och
   // ärtfröna i steg 3.10.23.8, platshållare)
   vildarter: { o: '#353204', g: '#4b4f00', G: '#647025', L: '#898b4c', y: '#b2921b' },
@@ -84,53 +87,52 @@ export const PAL: Record<string, Record<string, string>> = {
   toa: { C: '#7d5b40', V: '#898b4c', c: '#5e3c24', k: '#3f2415', v: '#d8b25f' },
   grodd: { G: '#647025', L: '#898b4c', g: '#4b4f00' },
   ...Object.fromEntries(['klart', 'moln', 'regn', 'sno', 'blast', 'aska', 'dimma'].map(k => ['vader_' + k, VADER_PAL])),
-  vattensack: { B: '#8a9c9e', J: '#7d5b40', L: '#987e62', b: '#61767a', j: '#5e3c24', o: '#24201d', s: '#906f0f', y: '#b2921b' },
-  benspade: { h: '#7a5a36', H: '#9c7848', y: '#c8b07a', Y: '#e8d4a0', w: '#e8e2d0', W: '#fffaf0', d: '#b8ae98', R: '#d8d0bc' },
-  skinnklader: { b: '#8a6440', B: '#b48a5e', d: '#5e4026', w: '#d8c8a8' },
-  slaktbank: { b: '#7a5a36', B: '#a8824e', d: '#4e3420', r: '#9c3328' },
-  flatarbank: { b: '#7a5a36', B: '#a8824e', d: '#4e3420', y: '#c8ac5c', Y: '#ecd890', o: '#9a7444', O: '#d0aa70' },
+  benspade: { h: '#694902', H: '#7e7362', y: '#a0947d', Y: '#bdb39b', w: '#dad0bb', W: '#dad0bb', d: '#a0947d', R: '#bdb39b' },
+  skinnklader: { b: '#7d5b40', B: '#987e62', d: '#5e3c24', w: '#bdb39b' },
+  slaktbank: { b: '#694902', B: '#987e62', d: '#372f25', r: '#742a01' },
+  flatarbank: { b: '#694902', B: '#987e62', d: '#372f25', y: '#b2921b', Y: '#d8b25f', o: '#7e7362', O: '#a0947d' },
   // stationerna på kartan i blandperspektiv (ovansidan och framsidan): lika breda som rutorna de tar (8 punkter per ruta,
   // stationer.ts); de som är högre än rutan sticker upp över rutan ovanför (foremal.ts)
-  slaktbank_karta: { b: '#4a3320', B: '#33231a', w: '#5a3a1e', W: '#8b5a2b', L: '#b07a45', H: '#d0a26a', r: '#9a1f1f', R: '#5e1010', Y: '#c02a2a', x: 'rgba(0,0,0,0.30)' },
-  flatarbank_karta: { D: '#2a1c12', d: '#4a3320', w: '#5a3a1e', W: '#8b5a2b', L: '#b07a45', H: '#d0a26a', o: '#9a7444', O: '#d0aa70', q: '#5e4226', x: 'rgba(0,0,0,0.30)' },
+  slaktbank_karta: { b: '#372f25', B: '#24201d', w: '#5e3c24', W: '#7d5b40', L: '#987e62', H: '#a0947d', r: '#742a01', R: '#521100', Y: '#a14808', x: 'rgba(36,32,29,0.30)' },
+  flatarbank_karta: { D: '#24201d', d: '#372f25', w: '#5e3c24', W: '#7d5b40', L: '#987e62', H: '#a0947d', o: '#7e7362', O: '#a0947d', q: '#5e3c24', x: 'rgba(36,32,29,0.30)' },
   // halmbädden och sittplatsen vid slöjdbänken (steg 2.2.5; Björn valde kartbilderna efter v89, symbolen i listan är en platshållare)
-  halmbadd: { y: '#d8c070', Y: '#f0dc94', t: '#8a6a3a', b: '#6a4a2a' },
-  halmbadd_karta: { q: '#a88a48', t: '#7a5e34', Y: '#ecd890', y: '#c8ac5c', x: 'rgba(0,0,0,0.30)' },
-  sittplats: { r: '#a07040', C: '#ecc890', c: '#d0a46c', b: '#5e4026', B: '#86603a', d: '#3a2614', x: 'rgba(0,0,0,0.30)' },
+  halmbadd: { y: '#d8b25f', Y: '#dad0bb', t: '#7d5b40', b: '#5e3c24' },
+  halmbadd_karta: { q: '#987e62', t: '#7d5b40', Y: '#d8b25f', y: '#b2921b', x: 'rgba(36,32,29,0.30)' },
+  sittplats: { r: '#7e7362', C: '#bdb39b', c: '#a0947d', b: '#5e3c24', B: '#7d5b40', d: '#2f261d', x: 'rgba(36,32,29,0.30)' },
   // borden (steg 2.2.15; Björn valde kartbilderna efter v89). Stubbarna runt dem är sittplatsen ovan
-  bord: { w: '#5a3a1e', W: '#8b5a2b', L: '#b07a45', H: '#d0a26a', b: '#6a4a2a', B: '#9c7848', d: '#4a3018' },
-  bord2: { w: '#5a3a1e', W: '#8b5a2b', L: '#b07a45', H: '#d0a26a', b: '#6a4a2a', B: '#9c7848', d: '#4a3018' },
-  bord3: { w: '#5a3a1e', W: '#8b5a2b', L: '#b07a45', H: '#d0a26a', b: '#6a4a2a', B: '#9c7848', d: '#4a3018' },
-  bord_karta: { H: '#d0a26a', w: '#5a3a1e', L: '#b07a45', W: '#8b5a2b', b: '#5e4026', B: '#86603a', d: '#3a2614', x: 'rgba(0,0,0,0.30)' },
-  bord2_karta: { H: '#d0a26a', w: '#5a3a1e', L: '#b07a45', W: '#8b5a2b', b: '#5e4026', B: '#86603a', d: '#3a2614', x: 'rgba(0,0,0,0.30)' },
-  bord3_karta: { H: '#d0a26a', w: '#5a3a1e', L: '#b07a45', W: '#8b5a2b', b: '#5e4026', B: '#86603a', d: '#3a2614', x: 'rgba(0,0,0,0.30)' },
+  bord: { w: '#5e3c24', W: '#7d5b40', L: '#987e62', H: '#a0947d', b: '#5e3c24', B: '#7e7362', d: '#372f25' },
+  bord2: { w: '#5e3c24', W: '#7d5b40', L: '#987e62', H: '#a0947d', b: '#5e3c24', B: '#7e7362', d: '#372f25' },
+  bord3: { w: '#5e3c24', W: '#7d5b40', L: '#987e62', H: '#a0947d', b: '#5e3c24', B: '#7e7362', d: '#372f25' },
+  bord_karta: { H: '#a0947d', w: '#5e3c24', L: '#987e62', W: '#7d5b40', b: '#5e3c24', B: '#7d5b40', d: '#2f261d', x: 'rgba(36,32,29,0.30)' },
+  bord2_karta: { H: '#a0947d', w: '#5e3c24', L: '#987e62', W: '#7d5b40', b: '#5e3c24', B: '#7d5b40', d: '#2f261d', x: 'rgba(36,32,29,0.30)' },
+  bord3_karta: { H: '#a0947d', w: '#5e3c24', L: '#987e62', W: '#7d5b40', b: '#5e3c24', B: '#7d5b40', d: '#2f261d', x: 'rgba(36,32,29,0.30)' },
   // förvaringen (steg 2.3.6; Björn valde kartbilderna efter v89)
-  hylla: { w: '#5a3a1e', W: '#8b5a2b', L: '#b07a45', y: '#c8ac5c', g: '#8a8a80', r: '#c9a86a' },
-  hylla_karta: { W: '#8b5a2b', w: '#4a3018', L: '#b07a45', r: '#c8b07a', x: 'rgba(0,0,0,.30)' },
-  kista: { w: '#5a3a1e', W: '#8b5a2b', L: '#b07a45', H: '#d0a26a', g: '#6a6a60' },
-  kista_karta: { f: '#9a7650', s: '#24160a', F: '#d4b07e', z: '#3e2a18', W: '#7e4e24', w: '#2e1c0c', x: 'rgba(0,0,0,.35)' },
-  stall: { w: '#5a3a1e', W: '#8b5a2b', L: '#b07a45', g: '#8a8a80', G: '#b4b4aa' },
-  stall_karta: { W: '#8b5a2b', L: '#b07a45', w: '#4a3018', x: 'rgba(0,0,0,.30)' },
+  hylla: { w: '#5e3c24', W: '#7d5b40', L: '#987e62', y: '#b2921b', g: '#7e7362', r: '#a0947d' },
+  hylla_karta: { W: '#7d5b40', w: '#372f25', L: '#987e62', r: '#a0947d', x: 'rgba(36,32,29,.30)' },
+  kista: { w: '#5e3c24', W: '#7d5b40', L: '#987e62', H: '#a0947d', g: '#505e3e' },
+  kista_karta: { f: '#7e7362', s: '#24201d', F: '#bdb39b', z: '#2f261d', W: '#694902', w: '#24201d', x: 'rgba(36,32,29,.35)' },
+  stall: { w: '#5e3c24', W: '#7d5b40', L: '#987e62', g: '#7e7362', G: '#8a9c9e' },
+  stall_karta: { W: '#7d5b40', L: '#987e62', w: '#372f25', x: 'rgba(36,32,29,.30)' },
   // skinnfällen i halmbädden (steg 2.2.14; Björn valde kartbilden efter v89)
-  skinnfall: { b: '#8a6440', B: '#b48a5e', d: '#5e4026', w: '#d8c8a8' },
-  skinnfall_karta: { z: '#4e3c2e', S: '#a08870', s: '#7c6450', f: '#5e4a3a' },
+  skinnfall: { b: '#7d5b40', B: '#987e62', d: '#5e3c24', w: '#bdb39b' },
+  skinnfall_karta: { z: '#474138', S: '#987e62', s: '#7d5b40', f: '#474138' },
   // skinndörren i dörröppningen (steg 2.2.16; Björn valde kartbilden efter v89)
-  skinndorr: { p: '#4a3018', b: '#8a6440', B: '#b48a5e', d: '#5e4026' },
+  skinndorr: { p: '#372f25', b: '#7d5b40', B: '#987e62', d: '#5e3c24' },
   tradorr: { o: '#24201d', J: '#7d5b40', j: '#5e3c24', W: '#987e62', k: '#24201d' },
   tradorr_karta: { o: '#24201d', J: '#7d5b40', j: '#5e3c24', W: '#987e62', k: '#24201d' },
-  skinndorr_karta: { e: '#d8b480', E: '#efd3a0', o: '#6a4a2a', O: '#9c7848', S: '#a08870', s: '#7c6450', Z: '#36281e', z: '#4e3c2e', d: '#4a3018' },
-  skinn: { b: '#8a6440', B: '#b48a5e', d: '#5e4026' },
+  skinndorr_karta: { e: '#bdb39b', E: '#dad0bb', o: '#5e3c24', O: '#7e7362', S: '#987e62', s: '#7d5b40', Z: '#2f261d', z: '#474138', d: '#372f25' },
+  skinn: { b: '#7d5b40', B: '#987e62', d: '#5e3c24' },
   // vargen (steg 3.7.14, platshållare): grå päls
   varg: { o: '#24201d', G: '#61767a', H: '#8a9c9e', g: '#3e5156', W: '#dad0bb', k: '#24201d' }, // (Björn valde version 1 efter v245, steg 4.5.2)
   vargkott: { o: '#24201d', R: '#a14808', r: '#742a01', q: '#521100', w: '#dad0bb', W: '#dad0bb' },
   vargskinn: { o: '#24201d', G: '#61767a', H: '#8a9c9e', d: '#233035' },
-  metspo: { h: '#8a6a40', y: '#c8b07a', w: '#e8e2d0' },
-  korg: { t: '#6e4e2e', o: '#9a6a3e', O: '#c99a62', d: '#5e3c20' },
-  risvagg: { p: '#5a3c22', b: '#8a6a40', B: '#b08a58' },
-  timmervagg: { d: '#4a3018', b: '#8a5e34', B: '#b8885a', e: '#d8b480' },
-  hogolv: { y: '#d8c070', Y: '#f0dc94', d: '#7a5a3a' },
-  tragolv: { b: '#a07446', B: '#c09060', d: '#5a3c22' },
-  paborjat: { w: '#f2ece0', d: '#2a241e', y: '#e0b050' },
+  metspo: { h: '#7d5b40', y: '#a0947d', w: '#dad0bb' },
+  korg: { t: '#5e3c24', o: '#7d5b40', O: '#a0947d', d: '#5e3c24' },
+  risvagg: { p: '#5e3c24', b: '#7d5b40', B: '#987e62' },
+  timmervagg: { d: '#372f25', b: '#7d5b40', B: '#987e62', e: '#bdb39b' },
+  hogolv: { y: '#d8b25f', Y: '#dad0bb', d: '#7d5b40' },
+  tragolv: { b: '#7e7362', B: '#987e62', d: '#5e3c24' },
+  paborjat: { w: '#dad0bb', d: '#24201d', y: '#d8b25f' },
   a_samla: AKT,
   a_odla: AKT,
   a_jaga: AKT,
@@ -146,10 +148,10 @@ export const PAL: Record<string, Record<string, string>> = {
   a_elda: AKT,
   a_leka: AKT,
   // Björns valda symboler efter v89 (steg v91): handlingar (a_), skador (s_), näring (n_) och brister (b_)
-  a_svalka: { w: '#f4efe0', a: '#9fc6e8', y: '#f2d27a', r: '#e0604e' },
-  a_dricka: { w: '#f4efe0', a: '#9fc6e8', y: '#f2d27a', r: '#e0604e' },
-  a_fatt: { w: '#f4efe0', a: '#9fc6e8', y: '#f2d27a', r: '#e0604e' },
-  a_smalta: { w: '#f4efe0', a: '#9fc6e8', y: '#f2d27a', r: '#e0604e' },
+  a_svalka: { w: '#dad0bb', a: '#8a9c9e', y: '#d8b25f', r: '#bd753e' },
+  a_dricka: { w: '#dad0bb', a: '#8a9c9e', y: '#d8b25f', r: '#bd753e' },
+  a_fatt: { w: '#dad0bb', a: '#8a9c9e', y: '#d8b25f', r: '#bd753e' },
+  a_smalta: { w: '#dad0bb', a: '#8a9c9e', y: '#d8b25f', r: '#bd753e' },
   a_vatten: { w: '#dad0bb', a: '#8a9c9e' }, // steg 2.10.1, platshållare i bildstilens palett
   // relationstyperna (steg 3.1.1, RELATIONER i relationer.ts), platshållare i bildstilens palett
   // samtalens ämnen (steg 3.9.5, platshållare i bildstilens palett)
@@ -159,72 +161,70 @@ export const PAL: Record<string, Record<string, string>> = {
   s_barn: { o: '#24201d', b: '#7d5b40', w: '#bdb39b', h: '#a14808' }, // (Björn valde version 2 efter v245, steg 4.5.2)
   b_heder: { o: '#24201d', r: '#a14808', R: '#742a01', l: '#647025', L: '#4b4f00' },
   b_skam: { o: '#24201d', y: '#d8b25f', b: '#61767a', B: '#3e5156' },
-  utb1: { o: '#24201d', z: 'rgba(0,0,0,.30)', a: '#bdb39b', w: '#dad0bb', b: '#a0947d', t: '#8a9c9e' },
-  utb2: { o: '#24201d', z: 'rgba(0,0,0,.30)', a: '#bd753e', w: '#d8b25f', b: '#a14808' },
-  utb3: { o: '#24201d', z: 'rgba(0,0,0,.30)', a: '#a14808', w: '#d8b25f', b: '#742a01', r: '#521100' },
-  utb4: { o: '#24201d', z: 'rgba(0,0,0,.30)', a: '#742a01', w: '#dad0bb', b: '#521100', m: '#2f261d', v: '#bdb39b' },
-  utb5: { o: '#24201d', z: 'rgba(0,0,0,.30)', a: '#dad0bb', b: '#a0947d', k: '#2f261d' },
+  utb1: { o: '#24201d', z: 'rgba(36,32,29,.30)', a: '#bdb39b', w: '#dad0bb', b: '#a0947d', t: '#8a9c9e' },
+  utb2: { o: '#24201d', z: 'rgba(36,32,29,.30)', a: '#bd753e', w: '#d8b25f', b: '#a14808' },
+  utb3: { o: '#24201d', z: 'rgba(36,32,29,.30)', a: '#a14808', w: '#d8b25f', b: '#742a01', r: '#521100' },
+  utb4: { o: '#24201d', z: 'rgba(36,32,29,.30)', a: '#742a01', w: '#dad0bb', b: '#521100', m: '#2f261d', v: '#bdb39b' },
+  utb5: { o: '#24201d', z: 'rgba(36,32,29,.30)', a: '#dad0bb', b: '#a0947d', k: '#2f261d' },
   m_hardVinter: { o: '#24201d', s: '#bdb39b', S: '#dad0bb' }, // (Björn valde version 1 efter v245, steg 4.5.2)
   m_tornado: { o: '#24201d', g: '#61767a', G: '#bdb39b', d: '#5e3c24', D: '#dad0bb', k: '#2f261d', K: '#372f25', l: '#4b4f00', j: '#7d5b40' }, // (Björn valde version 2 efter v245, steg 4.5.2)
-  tornado: { o: '#24201d', g: '#61767a', G: '#a0947d', d: '#7d5b40', D: '#bdb39b' },
-  brand: { o: '#24201d', r: '#a14808', R: '#bd753e', y: '#d8b25f', Y: '#f2d27a', k: '#372f25' }, // eldsvådan (steg 3.8.5, platshållare)
   m_oversvamning: { o: '#24201d', b: '#3e5156', B: '#61767a', l: '#8a9c9e', k: '#3f2415', j: '#5e3c24', J: '#7d5b40' }, // (Björn valde version 2 efter v245, steg 4.5.2)
-  m_torka: { o: '#24201d', y: '#d8b25f', Y: '#f2d27a', r: '#bd753e', j: '#b07a45', J: '#d0a26a', k: '#5a3a1e' },
-  i_legend: { a: '#d8b25f', b: '#b2921b', g: '#906f0f', o: '#24201d', w: '#dad0bb', z: 'rgba(0,0,0,.30)' },
-  i_okand: { a: '#dad0bb', b: '#a0947d', k: '#2f261d', o: '#24201d', z: 'rgba(0,0,0,.30)' },
-  a_gott: { a: '#bdb39b', b: '#a0947d', g: '#d8b25f', o: '#24201d', w: '#dad0bb', z: 'rgba(0,0,0,.30)' },
-  a_blandat: { a: '#bdb39b', b: '#a0947d', o: '#24201d', w: '#dad0bb', z: 'rgba(0,0,0,.30)' },
-  a_daligt: { a: '#a14808', b: '#742a01', h: '#2f261d', o: '#24201d', w: '#bd753e', z: 'rgba(0,0,0,.30)' },
-  r_par: { G: '#b2921b', O: '#898b4c', Q: '#647025', R: '#bd753e', S: '#61767a', b: '#dad0bb', d: '#742a01', g: '#d8b25f', k: '#372f25', o: '#24201d', r: '#a14808', s: '#8a9c9e', z: 'rgba(0,0,0,.30)' },
-  r_gift: { G: '#b2921b', O: '#898b4c', Q: '#647025', R: '#bd753e', S: '#61767a', b: '#dad0bb', d: '#742a01', g: '#d8b25f', k: '#372f25', o: '#24201d', r: '#a14808', s: '#8a9c9e', z: 'rgba(0,0,0,.30)' },
-  r_van: { G: '#b2921b', O: '#898b4c', Q: '#647025', R: '#bd753e', S: '#61767a', b: '#dad0bb', d: '#742a01', g: '#d8b25f', k: '#372f25', o: '#24201d', r: '#a14808', s: '#8a9c9e', z: 'rgba(0,0,0,.30)' },
-  r_naravan: { G: '#b2921b', O: '#898b4c', Q: '#647025', R: '#bd753e', S: '#61767a', b: '#dad0bb', d: '#742a01', g: '#d8b25f', k: '#372f25', o: '#24201d', r: '#a14808', s: '#8a9c9e', z: 'rgba(0,0,0,.30)' },
-  r_bast: { G: '#b2921b', O: '#898b4c', Q: '#647025', R: '#bd753e', S: '#61767a', b: '#dad0bb', d: '#742a01', g: '#d8b25f', k: '#372f25', o: '#24201d', r: '#a14808', s: '#8a9c9e', z: 'rgba(0,0,0,.30)' },
-  r_mentor: { G: '#b2921b', O: '#898b4c', Q: '#647025', R: '#bd753e', S: '#61767a', b: '#dad0bb', d: '#742a01', g: '#d8b25f', k: '#372f25', o: '#24201d', r: '#a14808', s: '#8a9c9e', z: 'rgba(0,0,0,.30)' },
-  r_larling: { G: '#b2921b', O: '#898b4c', Q: '#647025', R: '#bd753e', S: '#61767a', b: '#dad0bb', d: '#742a01', g: '#d8b25f', k: '#372f25', o: '#24201d', r: '#a14808', s: '#8a9c9e', z: 'rgba(0,0,0,.30)' },
-  r_rival: { G: '#b2921b', O: '#898b4c', Q: '#647025', R: '#bd753e', S: '#61767a', b: '#dad0bb', d: '#742a01', g: '#d8b25f', k: '#372f25', o: '#24201d', r: '#a14808', s: '#8a9c9e', z: 'rgba(0,0,0,.30)' },
-  r_fiende: { G: '#b2921b', O: '#898b4c', Q: '#647025', R: '#bd753e', S: '#61767a', b: '#dad0bb', d: '#742a01', g: '#d8b25f', k: '#372f25', o: '#24201d', r: '#a14808', s: '#8a9c9e', z: 'rgba(0,0,0,.30)' },
-  r_arke: { G: '#b2921b', O: '#898b4c', Q: '#647025', R: '#bd753e', S: '#61767a', b: '#dad0bb', d: '#742a01', g: '#d8b25f', k: '#372f25', o: '#24201d', r: '#a14808', s: '#8a9c9e', z: 'rgba(0,0,0,.30)' },
-  i_valdsam: { a: '#bdb39b', b: '#a0947d', o: '#24201d', z: 'rgba(0,0,0,.30)' },
-  i_tjuv: { a: '#987e62', b: '#7d5b40', c: '#372f25', o: '#24201d', z: 'rgba(0,0,0,.30)' },
-  i_elak: { a: '#bd753e', b: '#a14808', o: '#24201d', w: '#d8b25f', z: 'rgba(0,0,0,.30)' },
-  i_logn: { a: '#bdb39b', b: '#a0947d', n: '#a14808', o: '#24201d', w: '#dad0bb', z: 'rgba(0,0,0,.30)' },
-  i_klapare: { o: '#24201d', z: 'rgba(0,0,0,.30)', a: '#a14808', b: '#742a01', w: '#bd753e' }, // (Björn valde version 1 efter v245, steg 4.5.2)
-  i_lat: { a: '#8a9c9e', b: '#bdb39b', c: '#a0947d', o: '#24201d', z: 'rgba(0,0,0,.30)' },
-  i_fattig: { a: '#7d5b40', b: '#5e3c24', o: '#24201d', w: '#987e62', z: 'rgba(0,0,0,.30)' },
-  i_generos: { a: '#647025', b: '#4b4f00', o: '#24201d', r: '#a14808', w: '#898b4c', z: 'rgba(0,0,0,.30)' },
-  i_hjalpsam: { a: '#bdb39b', b: '#a0947d', c: '#b2921b', o: '#24201d', z: 'rgba(0,0,0,.30)' },
-  i_skicklig: { a: '#d8b25f', b: '#b2921b', o: '#24201d', w: '#dad0bb', z: 'rgba(0,0,0,.30)' },
-  i_flitig: { a: '#8a9c9e', b: '#61767a', d: '#7d5b40', h: '#987e62', o: '#24201d', t: '#8a9c9e', z: 'rgba(0,0,0,.30)' },
-  i_valbargad: { a: '#987e62', b: '#7d5b40', g: '#647025', o: '#24201d', z: 'rgba(0,0,0,.30)' },
-  i_rik: { R: '#bd753e', a: '#987e62', b: '#7d5b40', g: '#647025', o: '#24201d', r: '#a14808', z: 'rgba(0,0,0,.30)' },
-  i_rattvis: { a: '#d8b25f', b: '#b2921b', c: '#7d5b40', o: '#24201d', z: 'rgba(0,0,0,.30)' },
-  i_orattvis: { a: '#bd753e', b: '#a14808', c: '#7d5b40', o: '#24201d', z: 'rgba(0,0,0,.30)' },
-  i_stark: { a: '#bd753e', b: '#a14808', o: '#24201d', w: '#d8b25f', z: 'rgba(0,0,0,.30)' },
-  i_feg: { c: '#7d5b40', o: '#24201d', v: '#bdb39b', w: '#dad0bb', z: 'rgba(0,0,0,.30)' },
-  i_vargdodare: { a: '#8a9c9e', b: '#61767a', k: '#24201d', o: '#24201d', w: '#dad0bb', z: 'rgba(0,0,0,.30)' },
-  l_fara: { a: '#b2921b', b: '#906f0f', k: '#24201d', o: '#24201d', z: 'rgba(0,0,0,.30)' },
-  a_varda: { w: '#f4efe0', a: '#9fc6e8', y: '#f2d27a', r: '#e0604e' },
-  verkstad: { l: '#6a4426', O: '#d0aa70', L: '#9a6a3e', B: '#b48a5e', b: '#8a6440', n: '#eef4fa', k: '#5e6266', d: '#3a2614' },
-  s_skarsar: { E: '#c9cdd0', r: '#b02a22', e: '#8f9396', H: '#9c7848', h: '#7a5a36', m: '#6a1612' },
-  s_bett: { m: '#6a1612', r: '#b02a22', R: '#e04a3a', w: '#ece4cc', W: '#fffaf0', b: '#b4a688' },
-  s_klos: { w: '#ece4cc', b: '#b4a688', r: '#b02a22', R: '#e04a3a', m: '#6a1612' },
-  s_benbrott: { W: '#fffaf0', w: '#ece4cc', b: '#b4a688', r: '#b02a22' },
-  s_krossar: { r: '#b02a22', R: '#e04a3a', e: '#8f9396', E: '#c9cdd0', o: '#6a5a52' },
-  s_inf: { g: '#8aa83a', G: '#c4cc50', q: '#3e4a1a' },
-  s_forb: { Z: '#7fa850', u: '#c8b07a', z: '#4f7a36', x: '#2f4a22' },
-  s_ren: { a: '#5a9ad0', f: '#f8f4e8', F: '#ffe9a0', A: '#bfe0f6', c: '#2e5e8e' },
-  s_kall: { g: '#4a2a52', G: '#6e3a7a', q: '#1e1022' },
-  n_energi: { A: '#fbe27a', a: '#e8b828', D: '#9a6a14' },
-  b_energi: { D: '#9a6a14', a: '#e8b828' },
-  n_protein: { A: '#ea9580', a: '#c04a38', D: '#74261c' },
-  b_protein: { D: '#74261c', a: '#c04a38' },
-  n_fett: { A: '#fff3d2', a: '#e2c88e', D: '#9c7e40' },
-  b_fett: { D: '#9c7e40', a: '#e2c88e' },
-  n_vitamin: { g: '#5f9a44', G: '#8cc068', a: '#7e44c8', A: '#b88cf2', D: '#46207a' },
-  b_vitamin: { D: '#46207a', a: '#7e44c8' },
-  n_mineral: { A: '#eaf5fb', a: '#9ab8cc', D: '#52728a' },
-  b_mineral: { D: '#52728a', a: '#9ab8cc' },
+  m_torka: { o: '#24201d', y: '#d8b25f', Y: '#d8b25f', r: '#bd753e', j: '#987e62', J: '#a0947d', k: '#5e3c24' },
+  i_legend: { a: '#d8b25f', b: '#b2921b', g: '#906f0f', o: '#24201d', w: '#dad0bb', z: 'rgba(36,32,29,.30)' },
+  i_okand: { a: '#dad0bb', b: '#a0947d', k: '#2f261d', o: '#24201d', z: 'rgba(36,32,29,.30)' },
+  a_gott: { a: '#bdb39b', b: '#a0947d', g: '#d8b25f', o: '#24201d', w: '#dad0bb', z: 'rgba(36,32,29,.30)' },
+  a_blandat: { a: '#bdb39b', b: '#a0947d', o: '#24201d', w: '#dad0bb', z: 'rgba(36,32,29,.30)' },
+  a_daligt: { a: '#a14808', b: '#742a01', h: '#2f261d', o: '#24201d', w: '#bd753e', z: 'rgba(36,32,29,.30)' },
+  r_par: { G: '#b2921b', O: '#898b4c', Q: '#647025', R: '#bd753e', S: '#61767a', b: '#dad0bb', d: '#742a01', g: '#d8b25f', k: '#372f25', o: '#24201d', r: '#a14808', s: '#8a9c9e', z: 'rgba(36,32,29,.30)' },
+  r_gift: { G: '#b2921b', O: '#898b4c', Q: '#647025', R: '#bd753e', S: '#61767a', b: '#dad0bb', d: '#742a01', g: '#d8b25f', k: '#372f25', o: '#24201d', r: '#a14808', s: '#8a9c9e', z: 'rgba(36,32,29,.30)' },
+  r_van: { G: '#b2921b', O: '#898b4c', Q: '#647025', R: '#bd753e', S: '#61767a', b: '#dad0bb', d: '#742a01', g: '#d8b25f', k: '#372f25', o: '#24201d', r: '#a14808', s: '#8a9c9e', z: 'rgba(36,32,29,.30)' },
+  r_naravan: { G: '#b2921b', O: '#898b4c', Q: '#647025', R: '#bd753e', S: '#61767a', b: '#dad0bb', d: '#742a01', g: '#d8b25f', k: '#372f25', o: '#24201d', r: '#a14808', s: '#8a9c9e', z: 'rgba(36,32,29,.30)' },
+  r_bast: { G: '#b2921b', O: '#898b4c', Q: '#647025', R: '#bd753e', S: '#61767a', b: '#dad0bb', d: '#742a01', g: '#d8b25f', k: '#372f25', o: '#24201d', r: '#a14808', s: '#8a9c9e', z: 'rgba(36,32,29,.30)' },
+  r_mentor: { G: '#b2921b', O: '#898b4c', Q: '#647025', R: '#bd753e', S: '#61767a', b: '#dad0bb', d: '#742a01', g: '#d8b25f', k: '#372f25', o: '#24201d', r: '#a14808', s: '#8a9c9e', z: 'rgba(36,32,29,.30)' },
+  r_larling: { G: '#b2921b', O: '#898b4c', Q: '#647025', R: '#bd753e', S: '#61767a', b: '#dad0bb', d: '#742a01', g: '#d8b25f', k: '#372f25', o: '#24201d', r: '#a14808', s: '#8a9c9e', z: 'rgba(36,32,29,.30)' },
+  r_rival: { G: '#b2921b', O: '#898b4c', Q: '#647025', R: '#bd753e', S: '#61767a', b: '#dad0bb', d: '#742a01', g: '#d8b25f', k: '#372f25', o: '#24201d', r: '#a14808', s: '#8a9c9e', z: 'rgba(36,32,29,.30)' },
+  r_fiende: { G: '#b2921b', O: '#898b4c', Q: '#647025', R: '#bd753e', S: '#61767a', b: '#dad0bb', d: '#742a01', g: '#d8b25f', k: '#372f25', o: '#24201d', r: '#a14808', s: '#8a9c9e', z: 'rgba(36,32,29,.30)' },
+  r_arke: { G: '#b2921b', O: '#898b4c', Q: '#647025', R: '#bd753e', S: '#61767a', b: '#dad0bb', d: '#742a01', g: '#d8b25f', k: '#372f25', o: '#24201d', r: '#a14808', s: '#8a9c9e', z: 'rgba(36,32,29,.30)' },
+  i_valdsam: { a: '#bdb39b', b: '#a0947d', o: '#24201d', z: 'rgba(36,32,29,.30)' },
+  i_tjuv: { a: '#987e62', b: '#7d5b40', c: '#372f25', o: '#24201d', z: 'rgba(36,32,29,.30)' },
+  i_elak: { a: '#bd753e', b: '#a14808', o: '#24201d', w: '#d8b25f', z: 'rgba(36,32,29,.30)' },
+  i_logn: { a: '#bdb39b', b: '#a0947d', n: '#a14808', o: '#24201d', w: '#dad0bb', z: 'rgba(36,32,29,.30)' },
+  i_klapare: { o: '#24201d', z: 'rgba(36,32,29,.30)', a: '#a14808', b: '#742a01', w: '#bd753e' }, // (Björn valde version 1 efter v245, steg 4.5.2)
+  i_lat: { a: '#8a9c9e', b: '#bdb39b', c: '#a0947d', o: '#24201d', z: 'rgba(36,32,29,.30)' },
+  i_fattig: { a: '#7d5b40', b: '#5e3c24', o: '#24201d', w: '#987e62', z: 'rgba(36,32,29,.30)' },
+  i_generos: { a: '#647025', b: '#4b4f00', o: '#24201d', r: '#a14808', w: '#898b4c', z: 'rgba(36,32,29,.30)' },
+  i_hjalpsam: { a: '#bdb39b', b: '#a0947d', c: '#b2921b', o: '#24201d', z: 'rgba(36,32,29,.30)' },
+  i_skicklig: { a: '#d8b25f', b: '#b2921b', o: '#24201d', w: '#dad0bb', z: 'rgba(36,32,29,.30)' },
+  i_flitig: { a: '#8a9c9e', b: '#61767a', d: '#7d5b40', h: '#987e62', o: '#24201d', t: '#8a9c9e', z: 'rgba(36,32,29,.30)' },
+  i_valbargad: { a: '#987e62', b: '#7d5b40', g: '#647025', o: '#24201d', z: 'rgba(36,32,29,.30)' },
+  i_rik: { R: '#bd753e', a: '#987e62', b: '#7d5b40', g: '#647025', o: '#24201d', r: '#a14808', z: 'rgba(36,32,29,.30)' },
+  i_rattvis: { a: '#d8b25f', b: '#b2921b', c: '#7d5b40', o: '#24201d', z: 'rgba(36,32,29,.30)' },
+  i_orattvis: { a: '#bd753e', b: '#a14808', c: '#7d5b40', o: '#24201d', z: 'rgba(36,32,29,.30)' },
+  i_stark: { a: '#bd753e', b: '#a14808', o: '#24201d', w: '#d8b25f', z: 'rgba(36,32,29,.30)' },
+  i_feg: { c: '#7d5b40', o: '#24201d', v: '#bdb39b', w: '#dad0bb', z: 'rgba(36,32,29,.30)' },
+  i_vargdodare: { a: '#8a9c9e', b: '#61767a', k: '#24201d', o: '#24201d', w: '#dad0bb', z: 'rgba(36,32,29,.30)' },
+  l_fara: { a: '#b2921b', b: '#906f0f', k: '#24201d', o: '#24201d', z: 'rgba(36,32,29,.30)' },
+  a_varda: { w: '#dad0bb', a: '#8a9c9e', y: '#d8b25f', r: '#bd753e' },
+  verkstad: { l: '#5e3c24', O: '#a0947d', L: '#7d5b40', B: '#987e62', b: '#7d5b40', n: '#dad0bb', k: '#3e5156', d: '#2f261d' },
+  s_skarsar: { E: '#bdb39b', r: '#a14808', e: '#987e62', H: '#7e7362', h: '#694902', m: '#521100' },
+  s_bett: { m: '#521100', r: '#a14808', R: '#a14808', w: '#dad0bb', W: '#dad0bb', b: '#a0947d' },
+  s_klos: { w: '#dad0bb', b: '#a0947d', r: '#a14808', R: '#a14808', m: '#521100' },
+  s_benbrott: { W: '#dad0bb', w: '#dad0bb', b: '#a0947d', r: '#a14808' },
+  s_krossar: { r: '#a14808', R: '#a14808', e: '#987e62', E: '#bdb39b', o: '#505e3e' },
+  s_inf: { g: '#898b4c', G: '#d8b25f', q: '#324726' },
+  s_forb: { Z: '#898b4c', u: '#a0947d', z: '#647025', x: '#324726' },
+  s_ren: { a: '#8a9c9e', f: '#dad0bb', F: '#dad0bb', A: '#dad0bb', c: '#3e5156' },
+  s_kall: { g: '#233035', G: '#3e5156', q: '#24201d' },
+  n_energi: { A: '#dad0bb', a: '#d8b25f', D: '#7d5b40' },
+  b_energi: { D: '#7d5b40', a: '#d8b25f' },
+  n_protein: { A: '#a0947d', a: '#a14808', D: '#742a01' },
+  b_protein: { D: '#742a01', a: '#a14808' },
+  n_fett: { A: '#dad0bb', a: '#bdb39b', D: '#906f0f' },
+  b_fett: { D: '#906f0f', a: '#bdb39b' },
+  n_vitamin: { g: '#898b4c', G: '#b2921b', a: '#61767a', A: '#8a9c9e', D: '#233035' },
+  b_vitamin: { D: '#233035', a: '#61767a' },
+  n_mineral: { A: '#dad0bb', a: '#8a9c9e', D: '#61767a' },
+  b_mineral: { D: '#61767a', a: '#8a9c9e' },
 };
 
 // trädörren (Björn valde version 2 efter v193, steg 3.10.13): i listorna och i dörröppningen
@@ -2006,74 +2006,6 @@ export const PIX: Record<string, string[]> = {
     '..dDdDdDdDdD....',
     '................',
   ],
-  tornado: [ // platshållare (steg 3.8.4): tornadon på kartan, 2 × 3 rutor, ritad där den är (vaxter.ts)
-    '..oggggggGGGGGGGGGGGGGGGgggggo..',
-    '..oggggGGGGGGGGGGGGGGGGggggggo..',
-    '...ogGGGGGGGGGGGGGGGGgggggggo...',
-    '...oGGGGGGGGGGGGGGGggggggggGo...',
-    '...oGGGGGGGGGGGGGggggggggGGGo...',
-    '....oGGGGGGGGGGggggggggGGGGGo...',
-    '....oGGGGGGGGggggggggGGGGGGGo...',
-    '....ooGGGGGggggggggGGGGGGGGoo...',
-    '.....oGGGggggggggGGGGGGGGggo....',
-    '.....oGggggggggGGGGGGGGggggo....',
-    '.....ooggggggGGGGGGGGggggggo....',
-    '......oggggGGGGGGGGggggggggo....',
-    '......oggGGGGGGGGggggggggGo.....',
-    '......oGGGGGGGGggggggggGGGo.....',
-    '.......oGGGGGggggggggGGGGGo.....',
-    '.......oGGGggggggggGGGGGGoo.....',
-    '.......oGggggggggGGGGGGGGo......',
-    '.......ogggggggGGGGGGGGggo......',
-    '.......ogggggGGGGGGGGgggo.......',
-    '.......oggGGGGGGGGggggggo.......',
-    '.......oGGGGGGGGgggggggo........',
-    '.......oGGGGGGggggggggGo........',
-    '.......oGGGGggggggggGGo.........',
-    '.......oGggggggggGGGGGo.........',
-    '.......ooggggggGGGGGGo..........',
-    '.......ooggggGGGGGGGGo..........',
-    '.......ooggGGGGGGGGgo...........',
-    '........oGGGGGGGGgggo...........',
-    '........oGGGGGGggggo............',
-    '........oGGGGggggggo............',
-    '........oGGggggggggo............',
-    '.........ogggggggGoo............',
-    '.........ogggggGGGo.............',
-    '.........ooggGGGGGo.............',
-    '..........oGGGGGGGo.............',
-    '...........oGGGGGgo.............',
-    '...........oGGGGggo.............',
-    '............oGggggoo............',
-    '............oogggggo............',
-    '.............ogggggo............',
-    '..............ogggGo............',
-    '...............oGGGo............',
-    '..........ddDddooGGodD..........',
-    '.......dDddDddDdoGGooddDd.......',
-    '......dDddDddDddDddDddDddD......',
-    '......DddDddDddDddDddDddDd......',
-    '.......dDddDddDddDddDddDd.......',
-    '..........DddDddDddDdd..........',
-  ],
-  brand: [ // platshållare (steg 3.8.5): lågor på en ruta som brinner, ritade där elden är (vaxter.ts); version 1 i bildstilens val
-    '.......o........',
-    '......oRo.......',
-    '......oRo...o...',
-    '..o..oRYRo.oRo..',
-    '.oRo.oRYRo.oRo..',
-    '.oRRooRYYRooRRo.',
-    'oRYRooRYYRooRYRo',
-    'oRYRRoRYYYRoRYRo',
-    'oRYYRRYYYYRRYYRo',
-    'oRYYYRYYYYRYYYRo',
-    '.oRYYYYYYYYYYRo.',
-    '.orRYYYYYYYYRro.',
-    '..orRRYYYYRRro..',
-    '..okrrRRRRrrko..',
-    '.okkkkkkkkkkkko.',
-    '..oooooooooooo..',
-  ],
   m_oversvamning: [ // (Björn valde version 2 efter v245, steg 4.5.2)
     '................',
     '.......oo.......',
@@ -2103,24 +2035,6 @@ export const PIX: Record<string, string[]> = {
     'ovvvvvvvvo',
     '..........',
     '..ovvvvo..',
-  ],
-  vattensack: [
-    '................',
-    '...ssssssssss...',
-    '..s..........s..',
-    '..s..........s..',
-    '..s.ooooooo..s..',
-    '..sojJJLLJJoo...',
-    '..ojJJLLJJJJjoyo',
-    '.ojJJJJJJJJJjyyo',
-    '.ojJJJJJJJJjjoyo',
-    '.ojjJJJJJJjjo.o.',
-    '..ojjjjjjjjo....',
-    '...oooooooo...b.',
-    '..............b.',
-    '.............bBb',
-    '.............bbb',
-    '................',
   ],
   // benspaden (Björn valde S1g efter v85): snett uppåt höger som de andra redskapen, tre ben som ett rakt avskuret blad lika
   // mycket åt båda hållen kring skaftet, bundna med rep
@@ -3720,9 +3634,9 @@ const PLAGG_BILD: Record<string, string[]> = {
   balte: ['..eYeY..', '.Ye..eY.', 'Ye....eY', 'y......y', 'Ye....eY', '.eYeYey.', '...dd...', '...y.y..'],
 };
 const MATERIAL_FARG: Record<string, Record<string, string>> = {
-  kaninskinn: { d: '#5e4026', w: '#d8c8a8', W: '#efe4cc', B: '#b48a5e', b: '#8a6440', s: '#f2ead2' },
-  vargskinn: { d: '#45413c', w: '#d8d2c4', W: '#ece8de', B: '#9c968c', b: '#6e6a64', s: '#eeeae0' },
-  rep: { e: '#8a7448', Y: '#e8d4a0', y: '#c8b07a', d: '#5e4026' },
+  kaninskinn: { d: '#5e3c24', w: '#bdb39b', W: '#dad0bb', B: '#987e62', b: '#7d5b40', s: '#dad0bb' },
+  vargskinn: { d: '#474138', w: '#bdb39b', W: '#dad0bb', B: '#987e62', b: '#7d5b40', s: '#dad0bb' },
+  rep: { e: '#7d5b40', Y: '#bdb39b', y: '#a0947d', d: '#5e3c24' },
 };
 for (const { k, plagg, mat } of KLADER_AV) { PIX[k] = PLAGG_BILD[plagg]; PAL[k] = MATERIAL_FARG[mat]; }
 // tekniken Bälte har bältets bild
@@ -3837,81 +3751,41 @@ PIX.lera_fukt = [
 PAL.lera_fukt = { j: '#5e3c24', J: '#7d5b40', v: '#61767a', V: '#8a9c9e' };
 for (const k in PIX) if (k.endsWith('_v')) PAL[k] ??= PAL[k.slice(0, -2)];
 
-// ---------- lägerelden (Björn valde efter v92: nr 1, stor stenring med stjärnved, men enklare) ----------
-// Två rutor bred och två och en halv hög: raderna 4–19 är de två rutorna, 0–3 luften ovanför där lågorna sticker upp.
-// Tio stenar i en ring runt en askcirkel, och fyra vedträn som ligger in mot mitten som en stjärna, helt innanför stenarna.
-// Bilderna räknas fram här, en per läge: LAGERELD_LAGEN, med och utan stenringen (den läggs första gången elden tänds)
-export const LAGERELD_LAGEN = ['tom', 'ny', 'lite', 'lite2', 'stort', 'stort2', 'glod', 'kol'] as const;
-export type LagereldLage = typeof LAGERELD_LAGEN[number];
-export const lagereldId = (l: LagereldLage, ring: boolean) => `lagereld_${l}${ring ? '' : '_utan'}_karta`;
-const ELD_PAL = {
-  h: '#b0b5b8', g: '#8a8f94', G: '#5e6266', N: '#6a6e72', a: '#4b4640', A: '#625c55', b: '#2d2620', k: '#1a1714', c: '#3a3530', C: '#55504a',
-  w: '#5a3a1e', W: '#8b5a2b', Y: '#c9a46a', D: '#2a1c12', j: '#7a5a36',
-  f: '#e2702e', F: '#ffd36b', V: '#fff2c0', e: '#b3361e', E: '#e8582a',
-  u: 'rgba(225,225,225,.30)', U: 'rgba(225,225,225,.16)', o: 'rgba(255,170,70,.20)', O: 'rgba(255,190,90,.34)',
-};
-function lagereldRader(l: LagereldLage, ring: boolean) {
-  const G = 16, H = 20, CX = 8, CY = 12, g: string[][] = Array.from({ length: H }, () => Array(G).fill('.'));
-  const hs = (a: number, b: number) => { const h = Math.sin(a * 12.9898 + b * 78.233) * 43758.5453; return h - Math.floor(h); };
-  const set = (x: number, y: number, k: string) => { x = Math.round(x); y = Math.round(y); if (g[y] && x >= 0 && x < G) g[y][x] = k; };
-  const S = (x: number, y: number, rows: string[]) => rows.forEach((r, j) => [...r].forEach((k, i) => { if (k !== '.') set(x + i, y + j, k); }));
-  const ellips = (rx: number, ry: number, yo: number, f: (d: number, x: number, y: number) => string | undefined) => {
-    for (let y = 4; y < H; y++) for (let x = 0; x < G; x++) { const d = ((x + 0.5 - CX) / rx) ** 2 + ((y + 0.5 - CY - yo) / ry) ** 2; const k = d <= 1 ? f(d, x, y) : undefined; if (k) set(x, y, k); }
-  };
-  const brinner = l === 'lite' || l === 'lite2' || l === 'stort' || l === 'stort2', stor = l === 'stort' || l === 'stort2', fro = l.endsWith('2') ? 7 : 3;
-  // skenet på marken runt en eld som brinner
-  if (brinner) ellips(7.8, 7.6, 0, d => stor && d < 0.35 ? 'O' : 'o');
-  // askcirkeln och den mörka mitten
-  ellips(5.2, 4.4, 0, (d, x, y) => d <= 0.62 ? 'b' : hs(x, y) < 0.25 ? 'A' : 'a');
-  // stenarna: de bakom elden först, de framför sist
-  const STEN = [['hhg', 'gGN'], ['.hg', 'gGN'], ['hg.', 'GNN']];
-  const stenar = (bak: boolean) => {
-    if (!ring) return;
-    for (let i = 0; i < 10; i++) {
-      const a = 0.3 + i * 2 * Math.PI / 10, s = STEN[i % 3];
-      if ((Math.sin(a) < 0.05) !== bak) continue;
-      S(Math.round(CX + Math.cos(a) * 5.8 - s[0].length / 2 + 0.5), Math.round(CY + Math.sin(a) * 4.9 - 1), s);
-    }
-  };
-  stenar(true);
-  // veden: fyra vedträn två punkter tjocka, från mitten ut till strax innanför stenarna, med en ljus snittyta i änden.
-  // Den del som brunnit är svart
-  if (l !== 'tom' && l !== 'kol') {
-    const kol = l === 'glod' ? 0.75 : stor ? 0.45 : 0, r1 = l === 'glod' ? 3.2 : 4;
-    for (let i = 0; i < 4; i++) {
-      const a = -Math.PI / 4 + i * Math.PI / 2 + 0.2, x0 = CX - 0.5 + Math.cos(a) * 1.2, y0 = CY - 0.5 + Math.sin(a) * 1.0;
-      const x1 = CX - 0.5 + Math.cos(a) * r1, y1 = CY - 0.5 + Math.sin(a) * r1 * 0.8, ligg = Math.abs(x1 - x0) >= Math.abs(y1 - y0);
-      const n = Math.max(1, Math.round(Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0))));
-      for (let t = 0; t <= n; t++) {
-        const x = x0 + (x1 - x0) * t / n, y = y0 + (y1 - y0) * t / n, brand = t / n < kol;
-        set(x, y, brand ? 'D' : 'W'); set(x + (ligg ? 0 : 1), y + (ligg ? 1 : 0), brand ? 'k' : 'w');
-      }
-      set(x1, y1, 'Y'); set(x1 + (ligg ? 0 : 1), y1 + (ligg ? 1 : 0), 'j');
-    }
+// bildstilens godkända bilder (kartbilder.ts, steg 5.2.4) som PIX och PAL med id:t kb_<id>. kartbild(k) ger id:t för sakens
+// kartbild, som ritas i sin naturliga storlek, aldrig förstorad eller förminskad (steg 5.1.2.1)
+for (const [id, b] of Object.entries(KARTBILDER)) { PIX['kb_' + id] = b.rader; PAL['kb_' + id] = b.pal; }
+// lågorna där det brinner och tornadon (Björns val i bildstilen, steg 5.1.2.2) heter som förut, så att knappen i testläget hittar dem
+for (const k of ['brand', 'tornado']) { PIX[k] = KARTBILDER[k].rader; PAL[k] = KARTBILDER[k].pal; }
+// symbolen för en lägereld (stationen som lägger ringen till en lägereld till, steg 4.5.6.8): den nylagda med stenringen under
+// (bildstilens tecken har samma färg i alla bilder, så att två bilder kan läggas på varandra tecken för tecken)
+{ const ring = KARTBILDER.lagereld_ring, ny = KARTBILDER.lagereld_ny;
+  PIX.lagereld = ring.rader.map((r, y) => [...r].map((c, x) => ny.rader[y][x] !== '.' ? ny.rader[y][x] : c).join('')); PAL.lagereld = { ...ring.pal, ...ny.pal }; }
+// vattensäcken utan mörk kant (steg 5.1.2.5): symbolen i listorna är bildstilens godkända bild, förstorad två gånger och mitt i
+// rutan på 16 × 16 punkter som de andra symbolerna (på kartan ritas den i sin naturliga storlek)
+{ const b = KARTBILDER.vattensack!, w = 16, x0 = (w - 2 * b.w) >> 1, y0 = (w - 2 * b.h) >> 1;
+  PIX.vattensack = Array.from({ length: w }, (_, y) => Array.from({ length: w }, (_, x) => b.rader[(y - y0) >> 1]?.[(x - x0) >> 1] ?? '.').join(''));
+  PAL.vattensack = b.pal; }
+// djuren på kartan (steg 5.1.11, ritade i bildstilen i 5.2.4.6): varje art har en eller flera ritningar (vargen en, haren två)
+// och fyra pälsar, och varje ritning tre håll; västerut är sidan speglad. Bilden heter djur_<art>_<ritning>_<päls>_<håll>,
+// där hållet är sida, vast, fram eller bak. Vilken ritning och päls ett djur har räknas ur dess id (djurBild)
+export const DJUR_HALL = ['sida', 'vast', 'fram', 'bak'] as const;
+export type DjurHall = typeof DJUR_HALL[number];
+for (const art of ['varg', 'kanin'] as const) DJURBILDER.ritningar[art].forEach((r, v) => DJURBILDER.pals[art].forEach((pals, p) => {
+  const pal: Record<string, string> = {};
+  for (const [ch, [ramp, ton]] of Object.entries({ ...DJURBILDER.fast, ...pals })) pal[ch] = farg(ramp, ton);
+  for (const h of DJUR_HALL) {
+    const k = `djur_${art}_${v}_${p}_${h}`, rader = r[(h === 'vast' ? 'sida' : h) as Hall];
+    PIX[k] = h === 'vast' ? rader.map(rad => [...rad].reverse().join('')) : rader; PAL[k] = pal;
   }
-  // lågan: bred w och hög h med foten på raden by. Två bilder per storlek, som byts så att elden fladdrar
-  const flamma = (by: number, w: number, h: number) => {
-    const hw = w / 2;
-    for (let x = Math.floor(CX - hw); x < Math.ceil(CX + hw); x++) {
-      const dx = (x + 0.5 - CX) / hw; if (Math.abs(dx) > 1) continue;
-      const top = Math.max(1, Math.round(h * (1 - dx * dx * 0.85) * (0.55 + 0.45 * hs(x + fro, fro * 3))));
-      for (let j = 0; j < top; j++) { const r = j / top; set(x, by - j, Math.abs(dx) < 0.25 && r < 0.35 ? 'V' : Math.abs(dx) < 0.5 && r < 0.65 ? 'F' : j === top - 1 && top > 3 ? 'E' : 'f'); }
-    }
-  };
-  if (brinner && !stor) { flamma(CY + 1, 5, 7); set(8, 4 + (fro & 1), 'u'); }
-  if (stor) { flamma(CY + 2, 8, 13); set(5, 1, 'u'); set(10, fro & 1, 'U'); set(11, 2, 'u'); }
-  if (l === 'glod') {
-    ellips(2.2, 2, -0.5, () => 'k');
-    for (let i = 0; i < 9; i++) { const a = i * 2.4, r = 0.4 + (i % 4) * 0.55; set(CX - 0.5 + Math.cos(a) * r * 1.5, CY - 0.5 + Math.sin(a) * r * 1.2, i % 2 ? 'e' : 'E'); }
-    set(CX - 1, CY - 5, 'u'); set(CX, CY - 7, 'U');
-  }
-  if (l === 'kol') { ellips(3.8, 3, 0.3, (d, x, y) => d < 0.7 ? (hs(x, y) < 0.3 ? 'C' : hs(x, y) < 0.6 ? 'c' : 'k') : 'k'); set(CX - 1, CY - 2, 'C'); }
-  stenar(false);
-  return g.map(r => r.join(''));
+}));
+// djurets bild: ritningen och pälsen ur id:t (som djurets andra egenskaper, steg 3.7.13) och hållet det rör sig åt
+const idTal = (id: number, salt: number) => { let h = Math.imul(id ^ salt, 2654435761) >>> 0; h ^= h >>> 15; h = Math.imul(h, 2246822519) >>> 0; return (h ^ (h >>> 13)) >>> 0; };
+export function djurBild(art: 'varg' | 'kanin', id: number, hall: DjurHall) {
+  const v = idTal(id, 0x51a7) % DJURBILDER.ritningar[art].length, p = idTal(id, 0x9e37) % DJURBILDER.pals[art].length;
+  return `djur_${art}_${v}_${p}_${hall}`;
 }
-for (const l of LAGERELD_LAGEN) for (const ring of [true, false]) { PIX[lagereldId(l, ring)] = lagereldRader(l, ring); PAL[lagereldId(l, ring)] = ELD_PAL; }
-// symbolen för en lägereld (stationen som lägger ringen till en lägereld till, steg 4.5.6.8): den nylagda med ring
-PIX.lagereld = lagereldRader('ny', true); PAL.lagereld = ELD_PAL;
+export const kartbild = (k: string) => KARTBILDER[k] ? 'kb_' + k : undefined;
+export const kartbildEnsam = (k: string) => !!KARTBILDER[k]?.ensam;
 
 const canvases: Record<string, HTMLCanvasElement> = {};
 const urls: Record<string, string> = {};
@@ -3926,13 +3800,13 @@ export function iconCanvas(k: string) {
 }
 export const hasIcon = (k: string) => !!PIX[k];
 // en ljus symbol utan kant (de för arbetet, ritade för en mörk ruta): i den ljusa pratbubblan ritas den mörk (steg 4.5.6.9)
-export const ljusSymbol = (k: string) => !!PIX[k] && !PAL[k]?.o && ['#f4efe0', '#dad0bb'].includes(PAL[k]?.w ?? '');
+export const ljusSymbol = (k: string) => !!PIX[k] && !PAL[k]?.o && ['#dad0bb'].includes(PAL[k]?.w ?? '');
 // framstegscirkeln för det som inte är klart (Björn valde A2 efter v55): en mörk bricka med vit kant som fylls med gult,
 // medsols från klockan tolv, ju längre arbetet kommit (p från 0 till 1)
 export function framstegSvg(p: number, size = 10) {
   const f = Math.min(1, Math.max(0, p)), a = f * 2 * Math.PI, x = 8 + 5.6 * Math.sin(a), y = 8 - 5.6 * Math.cos(a);
-  const kil = f >= 0.999 ? '<circle cx="8" cy="8" r="5.6" fill="#e0b050"/>' : f > 0 ? `<path d="M8 8V2.4A5.6 5.6 0 ${a > Math.PI ? 1 : 0} 1 ${x.toFixed(2)} ${y.toFixed(2)}Z" fill="#e0b050"/>` : '';
-  return `<svg class="ikon" width="${size}" height="${size}" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="rgba(28,24,20,0.88)" stroke="#f2ece0" stroke-width="1.4"/>${kil}</svg>`;
+  const kil = f >= 0.999 ? '<circle cx="8" cy="8" r="5.6" fill="#d8b25f"/>' : f > 0 ? `<path d="M8 8V2.4A5.6 5.6 0 ${a > Math.PI ? 1 : 0} 1 ${x.toFixed(2)} ${y.toFixed(2)}Z" fill="#d8b25f"/>` : '';
+  return `<svg class="ikon" width="${size}" height="${size}" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="rgba(36,32,29,0.88)" stroke="#dad0bb" stroke-width="1.4"/>${kil}</svg>`;
 }
 // kvalitetens märke (steg 2.2.2, Björn valde version 2 i bildstilen, byggt i steg 3.6.11): usel ett mörkt dammoln, slarvig
 // en ojämn grå fläck, normal inget, fin i silver, mästerverk i guld och det perfekta mästerverket i guld med vita gnistor. 8 × 8 punkter

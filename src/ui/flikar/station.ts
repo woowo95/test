@@ -1,10 +1,11 @@
 import { PYNT } from '../../sim/pynt';
 import { kvOf } from '../../sim/kvalitet';
-import { flyttaStation, taBortStation, sakBerattelse, ACTS, DJURARTER, STATION, bordPlatser, pilesOf, living, TEKNIK, TILLBEHOR_LIST, byId, isKlar, sakNamn, actIkon, verbOf, stationById, stationDef, stationKlar, tillbehorDef, tingOf, timeLabel, isTool, FLACKAR, smutsVid, blodVid, storlekAv, TORK, torrDel } from '../../sim';
+import { flyttaStation, sakBerattelse, ACTS, DJURARTER, STATION, bordPlatser, pilesOf, living, TEKNIK, TILLBEHOR_LIST, byId, isKlar, sakNamn, actIkon, verbOf, stationById, stationDef, stationKlar, tillbehorDef, tingOf, timeLabel, FLACKAR, condOf, smutsVid, blodVid, storlekAv, TORK, torrDel } from '../../sim';
 import { iconImg } from '../../ikoner';
-import { sakAttr } from './sak';
-import { iBruk } from '../foremal';
-import { condBar, durTxt, esc, fmtN, kvMark, kvText, pLink } from '../hjalp';
+import { frystAttr, sakAttr } from './sak';
+import { iBruk } from '../ibruk';
+import { taBortITest } from '../testborta';
+import { condBar, durTxt, esc, fmtN, kvMark, kvText, pLink, pileTxt } from '../hjalp';
 import { s, ui } from '../lage';
 import type { Flik } from '../panel';
 
@@ -35,10 +36,10 @@ export const station: Flik = {
   namn: 'Stationen',
   knapp: 'person',
   klick(el) {
-    const b = el.closest<HTMLElement>('[data-test]'), st = b && ui.testMode ? stationById(s, ui.stationId) : undefined;
+    const b = el.closest<HTMLElement>('[data-test="flytta"],[data-test="bort"]'), st = b && ui.testMode ? stationById(s, ui.stationId) : undefined;
     if (!b || !st) return false;
     ui.flyttFel = false;
-    if (b.dataset.test === 'bort') { taBortStation(s, st); ui.flytta = -1; } else ui.flytta = ui.flytta === st.id ? -1 : st.id;
+    if (b.dataset.test === 'bort') { taBortITest(s, st); ui.flytta = -1; } else ui.flytta = ui.flytta === st.id ? -1 : st.id;
     return true;
   },
   html() {
@@ -68,8 +69,11 @@ export const station: Flik = {
     // redskap och kläder som ingen använder
     const har = d.forvar && st.ag === undefined ? pilesOf(s).filter(a => a.x === st.x && a.y === st.y) : [], agare = byId(s, st.ag);
     const forvar = !d.forvar ? '' : st.ag !== undefined ? `Rymmer ${STATION.kistaTing} redskap och kläder som ägaren inte använder, och de slits som under tak.` : d.forvar.redskap ? `Rymmer ${d.forvar.rymmer} redskap eller vapen.` : `Rymmer ${d.forvar.rymmer} högar av ett slag${d.forvar.tak ? ', och det som ligger i den slits som under tak' : ''}.`;
-    const inne = st.ag !== undefined ? tingOf(s).filter(k => k.vid === st.id).map(k => `<span class="tryck" data-sak="t:${k.id}" ${tip(`${sakNamn(k.k)}, skick ${Math.round(k.c * 100)} %`)}>${iconImg(k.k)}</span>`).join(' ')
-      : har.map(a => `<span class="tryck" ${sakAttr(a)} ${tip(`${sakNamn(a.k)}: ${fmtN(a.n)} av ${fmtN(a.max)}`)}>${iconImg(a.k)}${isTool(a.k) ? '' : fmtN(a.n)}</span>`).join(' ');
+    // innehållet visas som i ett lager (steg 4.5.7.9): samma lista med symbol, antal, kvalitet och skick
+    const rad = (attr: string, txt: string, c: number, k: string) => `<dt class="tryck${frystAttr(k)}" ${attr}>${txt}</dt><dd>${condBar(c)}<span>${Math.round(c * 100)} %</span></dd>`;
+    const inne = (st.ag !== undefined
+      ? tingOf(s).filter(k => k.vid === st.id).map(k => rad(`data-sak="t:${k.id}"`, pileTxt({ k: k.k, n: 1, max: 1, q: k.q }), k.c, k.k))
+      : [...har].sort((a, b) => sakNamn(a.k).localeCompare(sakNamn(b.k), 'sv') || b.n - a.n || condOf(b) - condOf(a)).map(a => rad(sakAttr(a), pileTxt(a), condOf(a), a.k))).join('');
     // smutsen (steg 2.7.1): blodet vid slaktbänken, som bleknar på ett par dygn. Bara utseende
     const { w: bw, h: bh } = storlekAv(st), bv = blodVid(s, st, bw, bh);
     const smuts = (bv > 0 ? `<span ${tip(`Blod runt omkring, ${Math.round(bv * 100)} % färskt. Det bleknar bort på ett par dygn`)}>🩸 ${Math.round(bv * 100)} %</span> ` : '') + Object.entries(smutsVid(s, st)).filter(([, v]) => v > 0).map(([k, v]) => { const fd = (FLACKAR as Record<string, { namn: string; bleknar: number }>)[k]; return fd ? `<span ${tip(`${fd.namn} runt omkring, ${Math.round(v * 100)} %. Det bleknar bort på ${Math.round(fd.bleknar / 24)} dygn`)}>· ${Math.round(v * 100)} %</span>` : ''; }).join(' ');
@@ -89,7 +93,7 @@ export const station: Flik = {
     ${d.sover ? `<h3>Sovplats</h3><p class="muted">En sovplats. Den som sover här vilar upp sig fortare.</p>` : ''}
     ${d.platser ? `<h3>Platser</h3><p ${tip('Här äter man tillsammans och blir glad av det, och här samtalar man')}>${stubbar || `<span class="muted">${bordPlatser(st).length} stubbar när bordet är klart</span>`}</p>` : ''}
     ${tb ? `<h3>Tillbehör</h3><dl class="kv">${tb}</dl>` : ''}
-    ${d.forvar ? `<h3>Förvaring</h3><p>${inne || '<span class="muted">tom</span>'}</p><p class="muted">${forvar}</p>` : ''}
+    ${d.forvar ? `<h3>Förvaring</h3>${inne ? `<dl class="kv stk">${inne}</dl>` : '<p class="muted">tom</p>'}<p class="muted">${forvar}</p>` : ''}
     ${platser ? `<h3>Redskap</h3><dl class="kv">${platser}</dl>` : ''}
     <h3>Material</h3><p ${tip(`${d.min} minuters arbete. ${d.tek.length ? `Kräver ${d.tek.length > 1 ? 'någon av teknikerna' : 'tekniken'} ${d.tek.map(k => TEKNIK.find(q => q.id === k)?.namn ?? k).join(' eller ')}` : 'Kräver ingen teknik'}`)}>${av} <span class="muted">· ${d.min} min</span></p>
     ${testRad(st.id)}`;

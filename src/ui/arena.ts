@@ -10,7 +10,7 @@ import {
 import * as PIXI from 'pixi.js';
 import { $, esc, personFarg } from './hjalp';
 import { s } from './lage';
-import { TS, cam, layout, peopleG, world } from './scen';
+import { TS, cam, lagerEfter, layout, peopleG } from './scen';
 import { dolda } from './manniskor';
 import { stopFollow } from './portratt';
 
@@ -124,7 +124,7 @@ function visaPlats() {
   cam.x = (ox + AW / 2) * TS - ruta / 2 / sc; cam.y = (oy + AH / 2) * TS; layout();
 }
 const arenaG = new PIXI.Graphics();
-world.addChildAt(arenaG, world.getChildIndex(peopleG) + 1);
+lagerEfter(arenaG, peopleG);
 function byFolk() { dolda.clear(); if (!$('arena').hidden && st) for (const k of st.kampar) if (k.pid !== undefined) dolda.add(k.pid); }
 // ritas varje bildruta från huvudloopen (main.ts)
 export function drawArena() {

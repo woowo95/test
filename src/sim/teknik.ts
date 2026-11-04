@@ -10,7 +10,7 @@ import { DORRAR, MATERIAL } from './byggnad';
 import { tingOf } from './agande';
 import { Act, HOUR, HOUR_S, MIN, Person, Skill, State, Task, inMap } from './typer';
 import { balans } from './balans';
-import { klyvStam } from './skog';
+import { finnsKlyvStam } from './skog';
 import { ACTS, ACT_LIST } from './handlingar';
 import type { SamtalDef } from './samtal';
 import { lartUt } from './relationer';
@@ -176,7 +176,7 @@ export const TEKTAL = balans('teknik', {
 export const knows = (p: Person, id: string) => (p.tek?.[id] ?? 0) >= 1;
 // finns saken i byn: ett redskap räknas om det finns, hur slitet det än är; annat räknas i mängd
 // virket (steg 4.5.5.2) räknas som till hands när det kan klyvas: en fälld stam och en yxa i byn; annars kluvs det aldrig innan någon kan en teknik som behöver det
-export const harSak = (s: State, k: string) => isTool(k) ? tingOf(s).some(q => q.k === k) : amountOf(s, k) >= TEKTAL.materialMin || (k === 'virke' && !!klyvStam(s) && tingOf(s).some(q => q.k === 'yxa'));
+export const harSak = (s: State, k: string) => isTool(k) ? tingOf(s).some(q => q.k === k) : amountOf(s, k) >= TEKTAL.materialMin || (k === 'virke' && finnsKlyvStam(s) && tingOf(s).some(q => q.k === 'yxa'));
 // det som måste finnas i byn för att man ska komma på tekniken: en av sakerna i varje grupp. Det räknas ur receptet
 // (steg 2.12.5): det som har samma id som tekniken (en sak, station, ett tillbehör eller en dörr), annars det första
 // redskapet eller väggmaterialet som tekniken ger. Varje sak i receptet är en grupp, och verktygen (ett av dem räcker) en
@@ -258,7 +258,8 @@ export function forsokVal(s: State, p: Person): { id: string; spot?: { x: number
 }
 export function forsokSteg(s: State, p: Person, tk: Task, dtSec: number) {
   const t = tk.tool ? TEK[tk.tool] : undefined;
-  if (!t?.forsok || !canThink(p, t)) return;
+  if (!t?.forsok) return;
+  if (!canThink(p, t)) { tk.until = Math.min(tk.until, s.now); return; } // hen kan det redan (någon lärde hen under tiden): försöket slutar
   count(s, 'forsokTim', dtSec / HOUR_S);
   framat(s, p, t, dtSec);
 }
