@@ -13,8 +13,9 @@ export function setByn(n: State) {
 }
 export const ui = {
   tab: undefined as FlikId | undefined, // fliken i personens panel till vänster (personen, elden, saken …), steg 5.3.1.1
-  hoger: 'folk' as FlikId | undefined, // den öppna flikens panel till höger (Folket, Teknik, Seder …)
+  hoger: 'folk' as FlikId | undefined, // den öppna flikens panel till höger (Byn, Teknik, Krönika, Folket …)
   selected: undefined as number | undefined, // personen som visas i panelen
+  bynDel: 'seder', // delen i fliken Byn (DELAR i flikar/byn.ts)
   personDel: 'pres', // underfliken i personrutan (DELAR i flikar/person.ts)
   hovered: undefined as number | undefined, // personen under musen
   eld: undefined as number | undefined, // lägerelden som eldens flik visar: undefined = den första, annars en till (Fire.id, steg 4.5.6.8)

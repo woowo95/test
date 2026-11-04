@@ -5,9 +5,9 @@ import { s } from '../lage';
 import { sedBar } from './seder';
 import type { Flik } from '../panel';
 
-// styret (steg 3.5.4, styre.ts): ledaren, styrelseformen, legitimiteten, påbuden, vågskålarna, rättegångarna och de ledare byn haft.
-// Fliken syns först när byn fått sin första ledare
-const harHaft = () => !!s.styre?.historia.length;
+// styret (steg 3.5.4, styre.ts): ledaren, styrelseformen, legitimiteten, vågskålarna, rättegångarna och de ledare byn haft.
+// En del i fliken Byn (steg 5.3.3.2, byn.ts) som går att öppna först när byn fått sin första ledare; påbuden är en egen del där
+export const harHaft = () => !!s.styre?.historia.length;
 const dygnTxt = (ms: number) => { const d = ms / DAY; return d < 1 ? 'mindre än ett år' : `${Math.floor(d)} år`; };
 
 export const styre: Flik = {
@@ -34,14 +34,14 @@ export const styre: Flik = {
       return `<li title="${esc(d.effect)}"><div class="sedtop"><span>${esc(d.neg)}</span><span>${esc(d.pos)}</span></div>${sedBar(x)}</li>`;
     }).join('');
     const hist = st.historia.slice().reverse().map(h => `<li><span class="when">${timeLabel(s, h.fran)}</span>${pLink(byId(s, h.id)) === '–' ? esc(h.namn) : pLink(byId(s, h.id))}, ${esc([...(h.forr ?? []), h.titel].map(x => x.toLowerCase()).join(', sedan '))}${h.till !== undefined ? ` – ${dygnTxt(h.till - h.fran)}, ${esc(h.slut ?? '')}` : ''}</li>`).join('');
-    return `${ledare}<h3>Påbud</h3>${pabudDel()}<h3>Vågskålar</h3><ul class="seder">${skalar}</ul>${rattegangar()}<h3>Byns ledare</h3><ol class="logg">${hist}</ol>`;
+    return `${ledare}<h3>Vågskålar</h3><ul class="seder">${skalar}</ul>${rattegangar()}<h3>Byns ledare</h3><ol class="logg">${hist}</ol>`;
   },
 };
 
-// påbuden (steg 3.5.2): vad ledaren bestämt mot vad byn själv tycker, och hur mycket byn lyssnar. En del i Styre efter ledaren
-// och legitimiteten (steg 3.10.16; förr en egen flik). När lagarna kommer (9.2.6) blir delen Lagar
+// påbuden (steg 3.5.2): vad ledaren bestämt mot vad byn själv tycker, och hur mycket byn lyssnar. En egen del i fliken Byn
+// (steg 5.3.3.2; förr i Styre efter ledaren, och före 3.10.16 en egen flik). När lagarna kommer (9.2.6) blir delen Lagar
 const varde = (k: Pabud, v: number) => k === 'han' ? (v < -0.33 ? 'förbjudet' : v > 0.33 ? 'tillåtet' : 'ogillas') : k === 'torkat' ? `${Math.round(torkAndel(v) * 100)} %` : `${num(onskatLager(k === 'vedlager', v))} dygn`;
-function pabudDel() {
+export function pabudDel() {
   const st = s.styre, l = ledareOf(s);
   if (!l || !st?.pabud) return '<p class="muted">Inga påbud gäller. Utan ledare gör byn som den själv tycker.</p>';
   // en ruta per påbud, och påbuden med samma ruta (lagret) tillsammans i en

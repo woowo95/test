@@ -302,6 +302,7 @@ button.rw { border: none; background: none; padding: 0; font: inherit; color: in
 .pdelar { display: flex; gap: 4px; margin: 10px 0 0; border-bottom: 1px solid var(--line); }
 .pdelar button { flex: 1; min-width: 0; background: none; border: 0; border-bottom: 2px solid transparent; font-size: 18px; padding: 6px 0 4px; cursor: pointer; opacity: 0.55; }
 .pdelar button[aria-selected="true"] { border-bottom-color: var(--accent); opacity: 1; }
+.pdelar button:disabled { opacity: 0.2; cursor: default; } /* en del i Byn som inte finns än (steg 5.3.3.2) */
 .tro { display: inline-block; border: 1px solid var(--line); border-radius: 10px; padding: 0 7px; margin: 0 3px 3px 0; font-size: 13px; cursor: help; }
 .tid { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
 .tart { flex: none; } .tart g { fill: var(--f); } .tart .tl { fill: var(--panel); } /* tårtan i pixlar (steg 5.3.2.2) */

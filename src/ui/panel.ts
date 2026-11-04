@@ -8,14 +8,12 @@ import { sjo } from './flikar/sjo';
 import { falt } from './flikar/falt';
 import { station } from './flikar/station';
 import { person } from './flikar/person';
-import { seder } from './flikar/seder';
 import { teknik } from './flikar/teknik';
 import { sak } from './flikar/sak';
 import { filt } from './flikar/filt';
 import { djur } from './flikar/djur';
 import { grannar } from './flikar/grannar';
-import { styre } from './flikar/styre';
-import { religion } from './flikar/religion';
+import { byn } from './flikar/byn';
 import { $, hjalpKlick } from './hjalp';
 import { piles, s, ui } from './lage';
 import { renderPorts } from './portratt';
@@ -28,9 +26,10 @@ export interface Flik {
   knapp?: string; // visas under en annan flikknapp i stället för en egen (elden, lagret och högen öppnas från kartan)
   html(): string; // innehållet; byggs om ett par gånger i sekunden
   klick?(el: HTMLElement): boolean; // tryck i sidan som fliken tar hand om, även när den inte är öppen; true = klart
-  syns?(): boolean; // knappen visas bara när detta är sant (styret när byn haft en ledare, steg 3.5.4)
+  syns?(): boolean; // annars är knappen en blek sten som inte går att trycka på (grannarna när byn har grannar)
+  band?(): string; // bandet överst är en annan fliks (Byn visar den öppna delens band, steg 5.3.3.2)
 }
-const FLIKAR = { folk, logg, person, eld, lager, hog, hus, station, sjo, falt, seder, styre, religion, grannar, teknik, sak, djur, filt } satisfies Record<string, Flik>;
+const FLIKAR = { byn, teknik, logg, folk, grannar, person, eld, lager, hog, hus, station, sjo, falt, sak, djur, filt } satisfies Record<string, Flik>;
 export type FlikId = keyof typeof FLIKAR;
 const ALLA: Record<FlikId, Flik> = FLIKAR;
 const IDS = Object.keys(FLIKAR) as FlikId[];
@@ -62,7 +61,7 @@ function skriv(sd: Sida, id: FlikId | undefined, force: boolean) {
   sd.el.hidden = !id;
   if (!id) { sd.html = ''; return; }
   if (!force && (ui.busy || performance.now() - ui.lastPointer < 800 || sd.musOver)) return;
-  const html = bandHtml(id) + ALLA[id].html(); // bandet överst i fliken (steg 5.3.3.1)
+  const html = bandHtml(ALLA[id].band?.() ?? id) + ALLA[id].html(); // bandet överst i fliken (steg 5.3.3.1)
   if (!force && html === sd.html) return;
   sd.html = html; sd.body.innerHTML = html;
 }
