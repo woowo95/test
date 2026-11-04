@@ -12,6 +12,12 @@
 (() => {
   const RUTOR = 4, TAKT = 230;
   const SCEN = (w, h, rita) => ({ w, h, stor: true, liten: true, rutor: RUTOR, takt: TAKT, rita });
+  // hastigheten: varje effekt byter bild var n:e gång sidans klocka slår (TAKT ms). Elden fladdrar fort, vattnet rör sig
+  // långsamt så att det inte stör. En ändrad hastighet är ett tal här. bild() ger effektens egen bild ur klockans slag.
+  const HASTIGHET = { eld: 1, gnistor: 1, rok: 2, glitter: 3, vagor: 4, stranden: 8 };
+  const EGNA = { vagor: 8 }; // effekter med fler än fyra egna bilder
+  const bild = (slag, namn) => Math.floor(slag / HASTIGHET[namn]) % (EGNA[namn] || RUTOR);
+  const SLAG = 96; // så många slag innan allt börjar om: delbart med alla hastigheter gånger bilderna (12, 32)
   const prick = (B, x, y, ramp, ton) => B.satt(Math.round(x), Math.round(y), B.P.i(ramp, ton));
   const gras = B => { for (let y = 0; y < B.h; y++) for (let x = 0; x < B.w; x++) B.satt(x, y, MARK.grasPunkt(x, y, B.P, 1)); MARK.tuvor(B, 1, () => true); };
 
@@ -114,13 +120,17 @@
       if (rad && hash(Math.floor(x / 3), Math.floor(y / 2), 910 + ruta) > 0.2) prick(B, x, y, rad[1], rad[2]);
     }
   }
-  function vagor(B, d, ruta, antal) {
+  // en våg lever i åtta egna bilder: den tänds, blir ljusast mitt i och slocknar medan den rullar en punkt per bild.
+  // Vågorna är förskjutna mot varandra, så att de inte blinkar i takt; en våg flyttar tillbaka när den är släckt.
+  const VAGTON = [-1, 1, 2, 3, 3, 2, 1, -1];
+  function vagor(B, d, f, antal) {
     const i = (x, y) => (x >= 0 && y >= 0 && x < B.w && y < B.h ? d[y * B.w + x] : 0);
     for (let k = 0; k < antal; k++) {
-      const x = Math.floor(hash(k, 1, 920) * B.w) + ruta, y = Math.floor(hash(k, 2, 920) * B.h), ton = ruta === 0 || ruta === 3 ? 2 : 3;
+      const g = (f + k * 3) % 8, ton = VAGTON[g]; if (ton < 0) continue;
+      const x = Math.floor(hash(k, 1, 920) * B.w) + g, y = Math.floor(hash(k, 2, 920) * B.h);
       if (!(i(x - 1, y) > 3) || !(i(x + 5, y + 1) > 3)) continue;
-      prick(B, x - 1, y + 1, 'skiffer', 1); prick(B, x + 5, y + 1, 'skiffer', 1); // vågens flanker, en punkt lägre: en båge
-      for (let j = 0; j < 5; j++) prick(B, x + j, y, 'skiffer', j === 2 ? ton : ton - 1);
+      if (ton > 1) { prick(B, x - 1, y + 1, 'skiffer', 1); prick(B, x + 5, y + 1, 'skiffer', 1); } // flankerna en punkt lägre: en båge
+      for (let j = 0; j < 5; j++) prick(B, x + j, y, 'skiffer', j === 2 ? ton : Math.max(1, ton - 1));
     }
   }
 
@@ -205,7 +215,7 @@
   });
   const iSjo = (x, y) => ((x - 178) / 64) ** 2 + ((y - 44) / 30) ** 2 + 0.07 * Math.sin(x * 0.31) + 0.06 * Math.sin(y * 0.47 + x * 0.13) < 1;
   let SJO = null;
-  const EFFEKTKORT = SCEN(210, 72, (B, P, ruta) => {
+  const EFFEKTKORT = { ...SCEN(210, 72, null), rutor: SLAG, rita: (B, P, slag) => {
     gras(B);
     if (!SJO) SJO = strandAvst(B, iSjo, 4);
     for (let y = 0; y < B.h; y++) for (let x = 0; x < B.w; x++) {
@@ -213,15 +223,16 @@
       if (a > 0) B.satt(x, y, a > 9 ? P.i(hash(x, y, 930) < 0.5 ? 'barr' : 'skiffer', 0) : a > 4 ? P.i('skiffer', 0) : P.i('skiffer', a > 2 ? 1 : 2));
       else if (a >= -3) B.satt(x, y, P.i(hash(x, y, 931) < 0.25 ? 'jord' : 'senap', hash(x, y, 931) < 0.25 ? 2 : 0)); // sanden
     }
-    const cx = 26, cy = 50; ritaEld(B, cx, cy, P, { lagor: LAGOR[ruta] }); gnistor(B, cx, cy - 10, ruta); rok(B, cx, cy - 13, ruta, 30);
-    hydda(B, 58, 58); rok(B, 69, 40, (ruta + 2) % 4, 28);
-    vagor(B, SJO, ruta, 22); stranden(B, SJO, ruta); glitter(B, 182, 46, 30, 14, ruta);
-  });
+    const cx = 26, cy = 50, rok1 = bild(slag, 'rok');
+    ritaEld(B, cx, cy, P, { lagor: LAGOR[bild(slag, 'eld')] }); gnistor(B, cx, cy - 10, bild(slag, 'gnistor')); rok(B, cx, cy - 13, rok1, 30);
+    hydda(B, 58, 58); rok(B, 69, 40, (rok1 + 2) % 4, 28);
+    vagor(B, SJO, bild(slag, 'vagor'), 22); stranden(B, SJO, bild(slag, 'stranden')); glitter(B, 182, 46, 30, 14, bild(slag, 'glitter'));
+  } };
 
   VAL.push(
     { id: 'a_rorelser', stor: true, namn: 'Rörelserna', typ: 'janej', vad: 'Steg 5.2.4.8 (till 5.1.9.4 och 5.1.9.5): fem generella rörelser i fyra bilder, som alla handlingar använder. Varje rad är en rörelse och varje ruta en handling som använder den. Slå: hugga, slå flinta, gräva och slåss. Stöta: fiska, slåss med spjut och slakta. Plocka: bär, svamp och ved. Pyssla (sittande): tälja, sy och skrapa skinn. Kasta: sten, spjut och snöboll. Redskapet ritas ur handen som skaft och huvud, och splittret får materialets färg (trä, sten, jord, vatten, blod). En ny handling blir en rad: rörelse, redskap, effekt och material.',
       versioner: [{ text: 'Version 1: de fem rörelserna med exempel.', ...RORELSEKORT }] },
-    { id: 'a_effekter', stor: true, namn: 'Effekterna', typ: 'janej', vad: 'Steg 5.2.4.8 (till 5.1.9.1 och 5.1.9.2): lågorna, gnistorna och röken från elden, röken från rökhålet i en hydda (hyddan är en platshållare) små vågor och glitter på vattnet och vattnet som sköljer upp på stranden och drar sig tillbaka, i samma fyra bilder och takt som rörelserna. Splittret och träffen syns på kortet Rörelserna. Träd och gräs svajar inte, för då skulle hela marken ritas om hela tiden.',
+    { id: 'a_effekter', stor: true, namn: 'Effekterna', typ: 'janej', vad: 'Steg 5.2.4.8 (till 5.1.9.1 och 5.1.9.2): lågorna, gnistorna och röken från elden, röken från rökhålet i en hydda (hyddan är en platshållare) små vågor och glitter på vattnet och vattnet som sköljer upp på stranden och drar sig tillbaka. Varje effekt har sin hastighet: elden fladdrar fort, röken stiger lugnare, glittret blinkar långsamt, en våg lever i sju sekunder och stranden sköljer upp och tillbaka på sju sekunder. Splittret och träffen syns på kortet Rörelserna. Träd och gräs svajar inte, för då skulle hela marken ritas om hela tiden.',
       versioner: [{ text: 'Version 1: eld, rök, vågor och stranden.', ...EFFEKTKORT }] },
   );
 })();
