@@ -386,14 +386,6 @@
     former(5, 6, [[ell(2.5, 3.2, 2.1, 2.7), (x, y) => x < 2.2 && y < 2.6 ? 'e' : 'E']]),
   ];
 
-  // ---------- 6.5.2.2 kastträet ----------
-  const KAST_L = { j: 'jord1', J: 'jord2', l: 'jord3', r: 'senap2' };
-  const KASTTRA = [
-    former(12, 6, [[linje([[0.8, 4.6], [5.6, 1.4], [11.2, 4.4]], 0.8), (x, y) => y < 2.4 ? 'l' : 'J']]),
-    former(12, 5, [[linje([[0.8, 3.6], [10, 2]], 0.6, 1.4), (x, y) => y < 2.2 ? 'l' : x > 8 ? 'j' : 'J']]),
-    former(12, 6, [[linje([[0.8, 5], [4.8, 2.6], [11.2, 1.6]], 0.7), (x, y) => y < 2.4 ? 'l' : 'J'], [linje([[0.8, 5], [2.8, 3.8]], 0.8), 'r']]),
-  ];
-
   // ---------- 6.5.3 björnen, idet och fällen ----------
   const BJ_L = { d: 'jord0', m: 'jord1', l: 'jord2', n: 'jord3', k: 'kol0', b: 'ben2' };
   // björnen ritad om helt, utan förlaga (Björn 2026-11-04: "ändra formen på björnen, gör tre nya utan förlaga som inte ser
@@ -405,46 +397,75 @@
   // björnen efter Björns förebild (2026-11-04, en bild av en björn i pixelstil): formen ur förebilden, nerskalad till
   // vår täthet (16 punkter per ruta) och i vår palett. Tung kropp med puckel, huvudet framåt, de bortre benen mörka och
   // ljusa klor. m: pälsen, d: skuggan, D: den djupa skuggan, b: de bortre benen, k: klorna
-  const BJ_FORM = [
-    '......................m.m.m.m................',
-    '.......................mmmmm.................',
-    '.........mmmmmmmmmmmmmmmmmmmm................',
-    '.......mmmmmmmmmmmmmmmmmmmmmmmm..............',
-    '.....mmmmmmmmmmmmmmmmmmmmmmmmmmmmm...........',
-    '....mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm.........',
-    '...mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm.m....',
-    '...mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmbbhhhb...',
-    '..mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmhhbbhhhD...',
-    '..mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmhhhhDhhhh...',
-    '.mmmmmmmmdmmmmmmmmmmmmmmmmmmmmmmhhhhhhDDnn...',
-    '.mmmmmmmmDdmmmmmmmmmmmmmmmmmmmmmddhhhhhbDnn..',
-    'mmmmmmmmmDdmmmmmmmmmmDmmmmmmmmmmddhhhhhhnnnn.',
-    'mmmmmmmmmdDdmmmmmmmmDmmmmmmmmmmmDdhhhhhhnnnbb',
-    '.mmmmmmmmdDdmmmmmmmmDmmmmmmmmmmDDDhhhhhntgtg.',
-    '.mmmmmmmmdDdddmmmmmdmmmmmmmmmmDDDDhhhhhgggg..',
-    '.mmmmmmmmdDdddddddddmmmmmmmmmmDDDDDDDhhtgt...',
-    '.mmmmmmmmdDdddddddddmmmmmmmmdDDbbbb..Dhhh....',
-    '.mmmmmmmmdDDdddddddDmmmmmmmmdbbbbb...........',
-    '.mmmmmmmmdDDDDDDDDDDmmmmmmmdbbbbbb...........',
-    '.mmmmmmmmDDDDDDDDDDDmmmmmmddbbbbbb...........',
-    '.mmmmmmmdDDDDDDDDD.Dmmmmmmdbbbbbbb...........',
-    '.mmmmmmddbbbbbb.....mmmmmmdbbbbbbb...........',
-    '.mmmmmmdbbbbbbb.....mmmmmmdbbbbbb............',
-    '.mmmmmddbbbbbbb.....mmmmmm.bbbbbb............',
-    '.mmmmmddbbbbbbb.....mmmmmm.bbbbbb............',
-    '.mmmmmd.bbbbbb.......mmmmm..bbbbb............',
-    '..mmmmm..bbbbb.......mmmmm..bbbbb............',
-    '..mmmmmm.bbbbbb......mmmmmmmbbbbbb...........',
-    '...mdddkkkbbkkkkk.....mddddkkbbbkkkkk........',
-  ];
-  // h: ansiktet och n: nosen (Björn 2026-11-04: "version 1 har bäst grundfärg men ansiktet har en konstig färg"):
-  // alla tre har pälsen från version 1, och ansiktet är pälsens färg i stället för den mörka skuggan
-  const BJ_UT = [
-    { L: { m: 'jord1', h: 'jord1', n: 'jord2', d: 'jord0', D: 'kol2', b: 'kol1', k: 'ben1', t: 'ben3', g: 'rost0' } },
-    { L: { m: 'jord1', h: 'jord1', n: 'jord1', d: 'jord0', D: 'jord0', b: 'kol1', k: 'ben2', t: 'ben3', g: 'rost0' } },
-    { L: { m: 'jord1', h: 'jord2', n: 'jord3', d: 'jord0', D: 'kol2', b: 'kol1', k: 'ben1', t: 'ben3', g: 'rost0' } },
-  ];
-  function bjorn() { return MED_KONTUR(BJ_FORM); }
+  // björnen är Björns egen ritning (Björn 2026-11-04, ritad i Ritaren på version 1: "min version. som standard. öppen mun
+  // när den attackerar som i din version"); konturen är ritad, så MED_KONTUR behövs inte
+  const BJ_FARG = { k: 'kol0', s: 'jord1', r: 'jord0', m: 'kol2', l: 'kol1', t: 'jord2', V: 'ben1', T: 'ben3', g: 'rost0' };
+  const BJ_STA = ["........................k.k.k.k...................",
+    ".......................ksksksksk..................",
+    "...........kkkkkkkkkkkkkksssssk...................",
+    ".........kksssssssssssssssssssskk.................",
+    ".......kksssssssssssssssssssssssskkk..............",
+    "......kssssssssssssssssssssssssssssskk............",
+    ".....ksssssssssssssssssssssssssssssssskkk.k.......",
+    "....kssssssssssssssssssssssssssssssssssssksk......",
+    "....ksssssssssssssssssssssssssssssssssllssslk.....",
+    "...kssssssssssssssssssssssssssssssssssllsssmk.....",
+    "...ksssssssssssssssssssssssssssssssssssmssssk.....",
+    "..kssssssssrssssssssssssssssssssssssssssmmttk.....",
+    "..kssssssssmrsssssssssssssssssssssrrssssslmttk....",
+    ".ksssssssssmrssssssssssmssssssssssrrssssssttttk...",
+    ".ksssssssssrmrssssssssmsssssssssssmrsssssstttllk..",
+    "..kssssssssrmrssssssssmssssssssssmmmssssssstttk...",
+    "..kssssssssrmrrrsssssrssssssssssmmmmsssssssssk....",
+    "..kssssssssrmrrrrrrrrrssssssssssmmmmmmmssrrrk.....",
+    "..kssssssssrmrrrrrrrrrssssssssrmmllllkkmsssk......",
+    "..kssssssssrmmrrrrrrrmssssssssrlllllk..kkkk.......",
+    "..kssssssssrmmmmmmmmmmsssssssrllllllk.............",
+    "..kssssssssmmmmmmmmmmmssssssrrllllllk.............",
+    "..ksssssssrmmmmmmmmmkmssssssrlllllllk.............",
+    "..kssssssrrllllllkkk.kssssssrlllllllk.............",
+    "..kssssssrlllllllk...kssssssrllllllk..............",
+    "..ksssssrrlllllllk...ksssssskllllllk..............",
+    "..ksssssrrlllllllk...ksssssskllllllk..............",
+    "..ksssssrkllllllk.....kssssskklllllk..............",
+    "...kssssskklllllk.....kssssskklllllk..............",
+    "...ksssssskllllllkk...ksssssssllllllkkk...........",
+    "....ksrrrVVVllVVVVVk...ksrrrrVVlllVVVVVk..........",
+    ".....kkkkkkkkkkkkkk.....kkkkkkkkkkkkkkk..........."];
+  const BJ_ANFALL = ["........................k.k.k.k...................",
+    ".......................ksksksksk..................",
+    "...........kkkkkkkkkkkkkksssssk...................",
+    ".........kksssssssssssssssssssskk.................",
+    ".......kksssssssssssssssssssssssskkk..............",
+    "......kssssssssssssssssssssssssssssskk............",
+    ".....ksssssssssssssssssssssssssssssssskkk.k.......",
+    "....kssssssssssssssssssssssssssssssssssssksk......",
+    "....ksssssssssssssssssssssssssssssssssllssslk.....",
+    "...kssssssssssssssssssssssssssssssssssllsssmk.....",
+    "...ksssssssssssssssssssssssssssssssssssmssssk.....",
+    "..kssssssssrssssssssssssssssssssssssssssmmttk.....",
+    "..kssssssssmrsssssssssssssssssssssrrssssslmttk....",
+    ".ksssssssssmrssssssssssmssssssssssrrssssssttttk...",
+    ".ksssssssssrmrssssssssmsssssssssssmrsssssstttllk..",
+    "..kssssssssrmrssssssssmssssssssssmmmsssssssTgTgk..",
+    "..kssssssssrmrrrsssssrssssssssssmmmmssssssggggk...",
+    "..kssssssssrmrrrrrrrrrssssssssssmmmmmmmsstTgTk....",
+    "..kssssssssrmrrrrrrrrrssssssssrmmllllkkmssssk.....",
+    "..kssssssssrmmrrrrrrrmssssssssrlllllk..kkkkk......",
+    "..kssssssssrmmmmmmmmmmsssssssrllllllk.............",
+    "..kssssssssmmmmmmmmmmmssssssrrllllllk.............",
+    "..ksssssssrmmmmmmmmmkmssssssrlllllllk.............",
+    "..kssssssrrllllllkkk.kssssssrlllllllk.............",
+    "..kssssssrlllllllk...kssssssrllllllk..............",
+    "..ksssssrrlllllllk...ksssssskllllllk..............",
+    "..ksssssrrlllllllk...ksssssskllllllk..............",
+    "..ksssssrkllllllk.....kssssskklllllk..............",
+    "...kssssskklllllk.....kssssskklllllk..............",
+    "...ksssssskllllllkk...ksssssssllllllkkk...........",
+    "....ksrrrVVVllVVVVVk...ksrrrrVVlllVVVVVk..........",
+    ".....kkkkkkkkkkkkkk.....kkkkkkkkkkkkkkk..........."];
+  const BJ_UT = [{ r: BJ_STA, L: BJ_FARG }, { r: BJ_ANFALL, L: BJ_FARG }];
+  function bjorn(v) { return BJ_UT[v].r; }
   // björnen bredvid en människa och en varg (Björn 2026-11-04: "jag vill se björnen i relation till en människa och en
   // varg"): den vanliga kartfiguren och vargen från djur.js, med fötterna på samma rad
   const VARG_L = (() => { const D = window.DJURBILD; if (!D) return null; const L = {}; for (const [k, [r, t]] of Object.entries({ ...D.PALS.varg[0][1], ...D.FAST })) L[k] = r + t; return L; })();
@@ -496,10 +517,8 @@
       PA_MARK('Duvans grå fjäder, ljus i spetsen.', FJADRAR[0], FJ1_L[0]), PA_MARK('Ripans vita fjäder med svart spets.', FJADRAR[1], FJ1_L[1]), PA_MARK('Orrhönans bruna fjäder med mörka band.', FJADRAR[2], FJ1_L[2])]),
     KORT('f6_agg', 'Ägg', S + '6.5.1.3: ägg som hittas på våren när man samlar, en ny mat.', [
       PA_MARK('Två ägg i ett litet bo av gräs.', AGG[0], AGG_L), PA_MARK('Tre prickiga ägg på rad.', AGG[1], AGG_L), PA_MARK('Ett enda ägg.', AGG[2], AGG_L)]),
-    KORT('f6_kasttra', 'Kastträet', S + '6.5.2.2: kastvapnet mot fåglar och harar, som ligger kvar på marken efter kastet.', [
-      PA_MARK('Ett böjt kastträ.', KASTTRA[0], KAST_L), PA_MARK('En rak käpp med tjock ände.', KASTTRA[1], KAST_L), PA_MARK('En böjd käpp med rep lindat om handtaget.', KASTTRA[2], KAST_L)]),
-    KORT('f6_bjorn', 'Björnen', S + '6.5.3: björnen på kartan, sedd från sidan, bredvid en människa och en varg. Samma form och samma tre färger som förra gången, men farligare: öppen mun med tänder, ett argt ögonbryn, resta nackhår på puckeln och längre klor. Din kommentar förra gången: ”alla tre versioner är bra men gör så den ser lite farligare ut”.', [
-      BJORNSCEN('Ansiktet som pälsen, med en ljusare nos.', 0), BJORNSCEN('Ansiktet och nosen som pälsen, och mjukare skuggor.', 1), BJORNSCEN('Ett ljusare ansikte och en ljus nos.', 2)]),
+    KORT('f6_bjorn', 'Björnen', S + '6.5.3: björnen på kartan, sedd från sidan, bredvid en människa och en varg. Din egen ritning är björnen som den står och går, och när den anfaller öppnar den munnen med tänderna från min förra version. Din kommentar: ”min version. som standard. öppen mun när den attackerar som i din version”.', [
+      BJORNSCEN('Din björn, som den står och går.', 0), BJORNSCEN('Din björn när den anfaller, med öppen mun.', 1)]),
     KORT('f6_bjornskinn', 'Björnfällen', S + '6.5.3.3: björnskinnet som slakten ger.', [
       PA_MARK('Utbredd med huvudet och klorna kvar.', FALL[0], BJ_L), PA_MARK('Utbredd utan huvud.', FALL[1], BJ_L), PA_MARK('Hopvikt.', FALL[2], BJ_L)]),
   );
