@@ -3,19 +3,30 @@ import { iconImg } from '../ikoner';
 import { $, cssFarg, esc } from './hjalp';
 import { s, ui } from './lage';
 import { TS, filterG } from './scen';
+import { drawTerrain } from './terrang';
+import { visaStammar } from './trad';
 
 // filtret på kartan: en knapp per grupp (växter, djur, sten). Är den på visas alla lager i gruppen, var och en i sin
 // färg. En ring visar var det växer och en prick hur mycket som finns kvar just nu: en tom ring är plockad.
 // Ett tryck på en art i teckenförklaringen visar bara den. Det visar sanningen, inte vad byn vet.
 const knappar = $('filters'), forklaring = $('legend');
-knappar.innerHTML = (Object.keys(GRUPPER) as Grupp[]).map(g => `<button type="button" data-g="${g}" aria-pressed="false" title="${esc(GRUPPER[g].namn)}" aria-label="${esc(GRUPPER[g].namn)}">${iconImg(GRUPPER[g].ikon, 20)}</button>`).join('');
+// Sist knappen som visar alla träd som stammar (steg 5.3.6), så att det som står under kronorna syns; den går att ha på
+// samtidigt som en grupp
+knappar.innerHTML = (Object.keys(GRUPPER) as Grupp[]).map(g => `<button type="button" data-g="${g}" aria-pressed="false" title="${esc(GRUPPER[g].namn)}" aria-label="${esc(GRUPPER[g].namn)}">${iconImg(GRUPPER[g].ikon, 20)}</button>`).join('')
+  + `<button type="button" data-stam="1" aria-pressed="false" title="Träden som stammar" aria-label="Träden som stammar">${iconImg('ved', 20)}</button>`;
 knappar.addEventListener('click', e => {
   const b = (e.target as HTMLElement).closest('button');
   if (!b) return;
+  if (b.dataset.stam) {
+    ui.stammar = !ui.stammar;
+    b.setAttribute('aria-pressed', String(ui.stammar));
+    if (visaStammar(ui.stammar)) drawTerrain(true);
+    return;
+  }
   const g = b.dataset.g as Grupp;
   ui.filter = ui.filter === g ? undefined : g;
   ui.filterArt = undefined;
-  for (const k of knappar.querySelectorAll('button')) k.setAttribute('aria-pressed', String(k.dataset.g === ui.filter));
+  for (const k of knappar.querySelectorAll<HTMLElement>('button[data-g]')) k.setAttribute('aria-pressed', String(k.dataset.g === ui.filter));
   visaForklaring();
   drawFilter(true);
 });

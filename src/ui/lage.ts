@@ -45,6 +45,7 @@ export const ui = {
   lagerNr: 0, // vilken lagerplats som visas i panelen
   filter: undefined as Grupp | undefined, // värmekartan som visas på kartan
   filterArt: undefined as FyndId | undefined, // bara en art i gruppen, vald i teckenförklaringen
+  stammar: false, // träden visas som stammar (steg 5.3.6)
 };
 
 // stackarna räknas fram en gång per bildruta, inte för varje sak som ritas eller visas
