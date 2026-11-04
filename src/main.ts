@@ -138,6 +138,17 @@ function testKnappar() {
 }
 // inställningarna (testläget och ny by) öppnas med kugghjulet längst ner bland flikknapparna (steg 5.3.1.1)
 $('installKnapp').addEventListener('click', () => { const r = $('installningar'); r.hidden = !r.hidden; $('installKnapp').setAttribute('aria-expanded', String(!r.hidden)); });
+// ljust eller mörkt läge (steg 5.3.1.3): data-tema på html byter grundens färger i template.html; valet sparas i webbläsaren
+const TEMA_KEY = 'samhallssim-tema';
+function sattTema(morkt: boolean) {
+  document.documentElement.dataset.tema = morkt ? 'morkt' : 'ljust';
+  const b = $('temaKnapp'); b.setAttribute('aria-pressed', String(morkt)); b.textContent = morkt ? '◐ Ljust' : '◐ Mörkt';
+}
+try { sattTema(localStorage.getItem(TEMA_KEY) === 'morkt'); } catch { sattTema(false); }
+$('temaKnapp').addEventListener('click', () => {
+  const morkt = document.documentElement.dataset.tema !== 'morkt'; sattTema(morkt);
+  try { localStorage.setItem(TEMA_KEY, morkt ? 'morkt' : 'ljust'); } catch { /* ignoreras */ }
+});
 $('newVillage').addEventListener('click', () => { $('confirmNew').hidden = false; });
 $('cancelNew').addEventListener('click', () => { $('confirmNew').hidden = true; });
 $('okNew').addEventListener('click', () => {
