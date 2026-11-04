@@ -42,8 +42,6 @@ function narmastLab(lab: number[]) {
 }
 // närmaste färgen i paletten
 export const narmast = (hex: string) => FARGER[narmastLab(rgb2lab(hex2rgb(hex)))];
-// en färg ur spelets gamla bilder: lite mörkare och gråare, och sedan närmaste färgen i paletten (som bildstilen visar dem, P.fran)
-export const franGammal = (hex: string) => { const [L, a, b] = rgb2lab(hex2rgb(hex)); return FARGER[narmastLab([L * 0.93, a * 0.78, b * 0.78 + 0.004])]; };
 
 // ---------- skymningen och natten (steg 5.1.1.4) ----------
 // varje färg ett och två steg mörkare, som närmaste färgen i paletten (som bildstilens P.skymn och P.natt)

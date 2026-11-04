@@ -56,7 +56,7 @@ export function kartminneSteg(s: State) {
   const k = (h.kartor ??= []), dygn = Math.floor(s.now / DAY);
   if (k.length && Math.floor(k[k.length - 1][0] / DAY) === dygn) return;
   k.push([Math.round(s.now), packaKarta(kartrutor(s))]);
-  // äldre än GLES glesas bilderna ut till en per vecka (den första i varje tidsålder), så att sparningen inte växer för fort
+  // äldre än GLES glesas bilderna ut till en per vecka (den första i varje sjudagarsblock räknat från grundandet, som inte alltid börjar när tidsåldern gör), så att sparningen inte växer för fort
   const grans = s.now - GLES, vecka = (b: [number, string]) => Math.floor((b[0] - s.founded) / WEEK);
   for (let i = k.length - 1; i > 0; i--) if (k[i][0] < grans && vecka(k[i]) === vecka(k[i - 1])) k.splice(i, 1);
 }

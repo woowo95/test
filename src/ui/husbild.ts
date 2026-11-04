@@ -114,7 +114,7 @@ export function ritaHus(s: State, bits: Bit[]) {
     if (!t) { t = PIXI.Texture.from(r.c, { scaleMode: PIXI.SCALE_MODES.NEAREST }); tex.set(r.key, t); }
     let sp = husLayer.children[n++] as PIXI.Sprite | undefined;
     if (!sp) { sp = new PIXI.Sprite(); husLayer.addChild(sp); }
-    sp.texture = t; sp.position.set(b.x * TS, b.y * TS); sp.scale.set(TS / 16); sp.alpha = 1; // hel bild, även medan den byggs och när den slits (steg 5.5.1: inga genomskinliga färger) sp.visible = true;
+    sp.texture = t; sp.position.set(b.x * TS, b.y * TS); sp.scale.set(TS / 16); sp.alpha = 1; sp.visible = true; // hel bild, även medan den byggs och när den slits (steg 5.5.1: inga genomskinliga färger)
     klara.add(b.id);
     if (r.m && b.k === 'vagg' && b.b >= 1) { // en färdig vägg kastar skugga
       let f = formTex.get(r.key);

@@ -2,9 +2,9 @@
 // minnet som sparades när framträdandet slutade (framMinneAv i sim/framtradande.ts), inte ur loggen: vem som uppträdde, formen,
 // instrumentet, budskapet och om ledaren betalade, publiken och mottagningen. Symbolerna först; texten kommer fram när man
 // håller över raden
-import { BUDSKAP, FRAM_AV, FramMinne, byId, framBerattelse, framMinneAv, sakNamn } from '../../sim';
+import { BUDSKAP, FRAM_AV, FramMinne, framBerattelse, framMinneAv, sakNamn } from '../../sim';
 import { iconImg } from '../../ikoner';
-import { clockTxt, esc, pLink } from '../hjalp';
+import { clockTxt, esc, vemLank } from '../hjalp';
 import { s, ui } from '../lage';
 import { notisVal } from '../notiser';
 import type { Flik } from '../panel';
@@ -18,7 +18,7 @@ export const fram: Flik = {
     return true;
   },
 };
-const vem = (id: number, namn: string) => { const p = byId(s, id); return p ? pLink(p) : esc(namn); };
+
 // ändringen som tal och pil
 const andring = (a: number, b: number) => { const d = b - a; return d > 0 ? `{sym_pil_upp} +${d}` : d < 0 ? `{sym_pil_ned} ${d}` : '='; };
 const medel = (v: number[]) => v.length ? Math.round(v.reduce((a, b) => a + b, 0) / v.length) : 0;
@@ -28,7 +28,7 @@ export function framHtml(m?: FramMinne) {
   const d = FRAM_AV[m.k], bud = m.bud ? BUDSKAP[m.bud] : undefined;
   const huvud = `<h2>${esc(d?.namn ?? 'Framträdandet')}</h2><p class="muted">${esc(clockTxt(m.t))}</p>`;
   const fakta = [
-    `<li title="Den som uppträdde">${iconImg('scen', 16)} ${vem(m.p, m.namn)}</li>`,
+    `<li title="Den som uppträdde">${iconImg('scen', 16)} ${vemLank(m.p, m.namn)}</li>`,
     m.inst ? `<li title="${esc(`Instrumentet: ${sakNamn(m.inst).toLowerCase()}`)}">${iconImg(m.inst, 16)} ${esc(sakNamn(m.inst))}</li>` : '',
     bud ? `<li title="Budskapet">${esc(bud.namn)}${m.om ? ` <span class="muted">(${esc(m.om)})</span>` : ''}</li>` : '',
     m.betalt ? `<li title="${esc(`${m.ledare ?? 'Ledaren'} betalade för framträdandet med en ${m.betalt}`)}">${iconImg('silver', 14)} <span class="muted">betalt med</span> ${esc(m.betalt)}</li>` : '',
@@ -44,6 +44,6 @@ export function framHtml(m?: FramMinne) {
     m.rykte?.length ? `<li title="${esc(`Ryktet om ${m.om ?? 'någon'} spreds till ${m.rykte.join(', ')}`)}">Ryktet till ${esc(m.rykte.join(', '))}</li>` : '',
     m.tro?.length ? `<li title="${esc(`Tron övertygade ${m.tro.join(', ')}`)}">Tron övertygade ${esc(m.tro.join(', '))}</li>` : '',
   ].join('');
-  const lista = pub.map(x => `<li title="${esc(`${x.namn} gillar ${m.namn}: ${x.r0} före, ${x.r1} efter${x.l0 !== undefined ? `; ledaren: ${x.l0} före, ${x.l1} efter` : ''}`)}">${vem(x.id, x.namn)} <span class="muted">${x.r0} → ${x.r1}</span> ${andring(x.r0, x.r1)}</li>`).join('');
+  const lista = pub.map(x => `<li title="${esc(`${x.namn} gillar ${m.namn}: ${x.r0} före, ${x.r1} efter${x.l0 !== undefined ? `; ledaren: ${x.l0} före, ${x.l1} efter` : ''}`)}">${vemLank(x.id, x.namn)} <span class="muted">${x.r0} → ${x.r1}</span> ${andring(x.r0, x.r1)}</li>`).join('');
   return `${huvud}${text}<ul class="fame">${fakta}</ul><h3>Mottagningen</h3><ul class="fame">${mott}</ul><h3>Publiken (${m.n})</h3><ul class="fame">${lista}</ul>`;
 }

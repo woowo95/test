@@ -32,9 +32,10 @@ export const BORTA_LANGD: { till: number; dela: 'en' | 'ar' | 'alder'; max: numb
   { till: Infinity, dela: 'alder', max: 5 }, // en vecka eller mer (en tidsålder): ett stycke per tidsålder och sist byn nu
 ];
 
-type Rad = { t: number; text: string; v: number; i: number };
+type Rad = { t: number; text: string; v: number; i: number; slag?: string };
 const vikt = (slag?: string) => (slag && BORTA_VIKT[slag]) || 1;
-const isDod = (r: Rad) => r.v === BORTA_VIKT.k_dog, isFodd = (r: Rad) => r.v === BORTA_VIKT.k_fodd;
+// döda och födda efter krönikans slag (inte vikten: en återgrundad by väger lika mycket som en död)
+const isDod = (r: Rad) => r.slag === 'k_dog' || r.slag === 'k_dogSpad', isFodd = (r: Rad) => r.slag === 'k_fodd';
 // "År 5: Torkan kom." blir "Torkan kom." när stycket redan säger året
 const utanAr = (text: string) => { const t = text.replace(/^År \d+: /, ''); return t.charAt(0).toUpperCase() + t.slice(1); };
 
@@ -54,7 +55,7 @@ const tal = (rader: Rad[]) => ({ dodaTal: rader.filter(isDod).length, foddaTal: 
 // berättelsen om tiden från "fran" till nu: ett eller flera stycken (steg 5.4.4)
 export function bortaBerattelse(st: State, b: Borta): string[] {
   const ar = (st.now - b.fran) / DAY, L = BORTA_LANGD.find(l => ar < l.till)!;
-  const rader: Rad[] = (st.hist?.kronika ?? []).map((k, i) => ({ t: k[0], text: k[1], v: vikt(k[2]), i })).filter(r => r.t >= b.fran);
+  const rader: Rad[] = (st.hist?.kronika ?? []).map((k, i) => ({ t: k[0], text: k[1], v: vikt(k[2]), i, slag: k[2] })).filter(r => r.t >= b.fran);
   const kallt = kalender(st).ai === 0;
   if (!rader.length && L.dela === 'en') return [berattelse(st, 'b_lugnt', b.fran, { kallt })];
   const ut: string[] = [];

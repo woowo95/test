@@ -577,7 +577,7 @@ function svar(s: State, h: Handlare, a: Affar, p: Person, M: Part) {
     visaFiltar(s, h); // filtarna ligger som de låg när de blev överens (byteKlart tar platserna härifrån)
     genomfor(s, M, H_, fatt, betal, 'handel', false, true, lurare);
     a.bud = betal;
-    const m = s.log.slice(-8).reverse().find(l => l.byte?.nr === s.byteNr)?.byte; // minnet byteKlart just skrev
+    const m = [M.p, H_.p].flatMap(q => q?.byten ?? []).find(b => b.nr === s.byteNr); // minnet byteKlart just skrev (samma som i loggen), inte ur loggen (regel 6)
     if (m) { m.forsok = a.forsok; m.rel = [a.rel0, relTal(s, h, p)]; m.arg = a.arg; }
     return;
   }

@@ -136,13 +136,22 @@ export function carryTxt(p: Person) {
 // en rad i loggen där namnen går att trycka på
 // Namnen letas upp i den ursprungliga texten och byts i ett svep, så att samma namn två gånger, eller ett namn som är
 // början på ett annat, länkar rätt person. Ett namn står som ett eget ord (eller med genitivets s)
+// var namnet står som ett helt ord i texten (eller i genitiv, "Annas"), från plats "fran"; -1 om det inte står där
+const bokstav = (c?: string) => !!c && /\p{L}/u.test(c);
+export function namnI(txt: string, namn: string, fran = 0, ok: (i: number) => boolean = () => true) {
+  const n = namn.length;
+  for (let i = txt.indexOf(namn, fran); i >= 0; i = txt.indexOf(namn, i + 1))
+    if (!bokstav(txt[i - 1]) && (!bokstav(txt[i + n]) || txt[i + n] === 's' && !bokstav(txt[i + n + 1])) && ok(i)) return i;
+  return -1;
+}
+// en person som länk, eller bara namnet om hen inte finns kvar i byn
+export const vemLank = (id: number, namn: string) => { const p = byId(s, id); return p ? pLink(p) : esc(namn); };
 export function linkify(l: LogEntry) {
-  const txt = l.text, bitar: { i: number; n: number; p: Person }[] = [], bokstav = (c?: string) => !!c && /\p{L}/u.test(c);
-  const passar = (i: number, n: number) => !bokstav(txt[i - 1]) && (!bokstav(txt[i + n]) || txt[i + n] === 's' && !bokstav(txt[i + n + 1]))
-    && bitar.every(b => i + n <= b.i || i >= b.i + b.n);
+  const txt = l.text, bitar: { i: number; n: number; p: Person }[] = [];
   for (const id of l.ids) {
-    const p = byId(s, id);
-    if (p) for (let i = txt.indexOf(p.name); i >= 0; i = txt.indexOf(p.name, i + 1)) if (passar(i, p.name.length)) { bitar.push({ i, n: p.name.length, p }); break; }
+    const p = byId(s, id), n = p?.name.length ?? 0;
+    const i = p ? namnI(txt, p.name, 0, i => bitar.every(b => i + n <= b.i || i >= b.i + b.n)) : -1;
+    if (i >= 0) bitar.push({ i, n, p: p! });
   }
   let ut = '', fran = 0;
   for (const b of bitar.sort((a, b) => a.i - b.i)) { ut += esc(txt.slice(fran, b.i)) + pLink(b.p); fran = b.i + b.n; }

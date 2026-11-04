@@ -3,16 +3,14 @@
 // krönikan, Allt = loggen. Man bläddrar år för år med pilarna (eller ser alla år) och kan välja en person: raderna där hen
 // står med. Öppnas med runstenen Krönika. Ett nytt filter är en rad i VISNING.
 import { AGES, type LogEntry, type Person, kalender } from '../../sim';
-import { clockTxt, esc, linkify } from '../hjalp';
+import { clockTxt, esc, linkify, namnI } from '../hjalp';
 import { ritaOm, s } from '../lage';
 import type { Flik } from '../panel';
 import { kartminneHtml } from '../kartminne';
 
 interface Rad { t: number; text: string; kind?: LogEntry['kind']; ids: number[]; byte?: LogEntry['byte']; fram?: number; match?: number } // byte och fram ger knappen till redogörelsen
 // var en person står med i en krönikerad: krönikan sparar bara texten, så personen hittas på namnet
-function iText(text: string, folk: Person[]) {
-  return folk.filter(p => { const i = text.indexOf(p.name), e = text[i + p.name.length]; return i >= 0 && !/\p{L}/u.test(text[i - 1] ?? '') && (!e || !/\p{L}/u.test(e) || e === 's'); }).map(p => p.id);
-}
+const iText = (text: string, folk: Person[]) => folk.filter(p => namnI(text, p.name) >= 0).map(p => p.id);
 const VISNING: Record<string, { namn: string; title: string; rader(): Rad[] }> = {
   stort: { namn: 'Stort', title: 'Krönikan: det viktiga som hänt sedan byns början', rader: () => (s.hist?.kronika ?? []).map(([t, text]) => ({ t, text, ids: iText(text, s.people) })) },
   allt: { namn: 'Allt', title: 'Allt som hänt i byn den senaste tiden (de senaste 400 raderna)', rader: () => s.log.map(l => ({ t: l.t, text: l.text, kind: l.kind, ids: l.ids, byte: l.byte, fram: l.fram, match: l.match })) },

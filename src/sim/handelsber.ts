@@ -16,21 +16,21 @@ import { fyll, talOrd, valjVariant } from './berattelser';
 // det argumenten frågar efter: kunden, handlarens skicklighet, det kunden vill ha (q = kvaliteten), hur mycket kunden
 // behöver ett slag (som Part.varde), relationen och hur mycket handlaren gillar kunden (−1 till 1)
 export interface ArgLage { s: State; p: Person; byn: boolean; salj: boolean; kop: { k: string; q?: number }[]; varde: (k: string) => number; handel: number; hHandel: number; rel?: GastRel; gill: number }
-// registret: id (mallen h_arg har varianter för det), vem som för fram det och när det finns i affären. Ordningen är
+// registret: id (mallen h_arg har varianter för det) och när det finns i affären. Ordningen är
 // ordningen i berättelsen
-export const HANDELSARG: { id: string; vem: 'kund' | 'handlare'; om: (l: ArgLage) => boolean }[] = [
-  { id: 'byn', vem: 'kund', om: l => l.byn },
-  { id: 'kemiGod', vem: 'kund', om: l => (l.rel?.chem ?? 0) > ARG.kemi },
-  { id: 'kemiDalig', vem: 'handlare', om: l => (l.rel?.chem ?? 0) < -ARG.kemi },
-  { id: 'vanner', vem: 'kund', om: l => (l.rel?.n ?? 0) > 0 && l.gill > ARG.vanner },
-  { id: 'fint', vem: 'handlare', om: l => !l.salj && l.kop.some(w => (w.q ?? NORMAL) > NORMAL) },
-  { id: 'slitet', vem: 'kund', om: l => !l.salj && l.kop.some(w => (w.q ?? NORMAL) < NORMAL) },
-  { id: 'behov', vem: 'handlare', om: l => !l.salj && l.kop.some(w => l.varde(w.k) >= ARG.behov) },
-  { id: 'vinter', vem: 'handlare', om: l => foreIstiden(kalender(l.s).ai) },
-  { id: 'istid', vem: 'kund', om: l => iIstiden(kalender(l.s).ai) },
-  { id: 'smicker', vem: 'kund', om: l => stat(l.p, 'karisma', l.s.now) >= ARG.charm },
-  { id: 'skicklig', vem: 'kund', om: l => l.handel >= l.hHandel + ARG.skicklig },
-  { id: 'langt', vem: 'handlare', om: () => true }, // handlaren har alltid gått långt
+export const HANDELSARG: { id: string; om: (l: ArgLage) => boolean }[] = [
+  { id: 'byn', om: l => l.byn },
+  { id: 'kemiGod', om: l => (l.rel?.chem ?? 0) > ARG.kemi },
+  { id: 'kemiDalig', om: l => (l.rel?.chem ?? 0) < -ARG.kemi },
+  { id: 'vanner', om: l => (l.rel?.n ?? 0) > 0 && l.gill > ARG.vanner },
+  { id: 'fint', om: l => !l.salj && l.kop.some(w => (w.q ?? NORMAL) > NORMAL) },
+  { id: 'slitet', om: l => !l.salj && l.kop.some(w => (w.q ?? NORMAL) < NORMAL) },
+  { id: 'behov', om: l => !l.salj && l.kop.some(w => l.varde(w.k) >= ARG.behov) },
+  { id: 'vinter', om: l => foreIstiden(kalender(l.s).ai) },
+  { id: 'istid', om: l => iIstiden(kalender(l.s).ai) },
+  { id: 'smicker', om: l => stat(l.p, 'karisma', l.s.now) >= ARG.charm },
+  { id: 'skicklig', om: l => l.handel >= l.hHandel + ARG.skicklig },
+  { id: 'langt', om: () => true }, // handlaren har alltid gått långt
 ];
 export const ARG = balans('handelsber', {
   kemi: 0.4, // kemin (−1 till 1) från vilken de kom bra (eller dåligt) överens

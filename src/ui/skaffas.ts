@@ -28,7 +28,7 @@ const ANVANDS: Record<string, string[]> = {
 };
 
 const ikon = (k: string, n?: number) => `<span class="sakval" title="${esc(sakNamn(k))}">${iconImg(k, 16) || esc(sakNamn(k))}${n && n > 1 ? `<small>${n}</small>` : ''}</span>`;
-const lista = (xs: string[]) => xs.length > 1 ? xs.slice(0, -1).join(', ') + ' och ' + xs[xs.length - 1] : xs[0] ?? '';
+const lista = (xs: string[], ord = 'och') => xs.length > 1 ? xs.slice(0, -1).join(', ') + ` ${ord} ` + xs[xs.length - 1] : xs[0] ?? '';
 
 // det saken går åt till: andra saker, stationer och möbler, väggar och golv, dörrar; och arbeten där den är redskapet
 function anvandsTill(k: string) {
@@ -52,7 +52,7 @@ function skaffas(k: string) {
   const sk = SAKER[k]?.skaffa;
   const tek = sk?.tek && TEK[sk.tek] ? ` · ${esc(TEK[sk.tek].namn)}` : '';
   if (sk?.av) {
-    const verktyg = sk.verktyg ? ` med ${lista(Object.values(sk.verktyg))}` : '';
+    const verktyg = sk.verktyg ? ` med ${lista(Object.values(sk.verktyg), 'eller')}` : ''; // något av verktygen räcker
     return `Görs av ${Object.entries(sk.av).map(([q, n]) => ikon(q, n)).join('')}${esc(verktyg)}${tek}`;
   }
   const text = HITTAS[k] ?? (sk?.act ? ARBETE[sk.act] : undefined);
