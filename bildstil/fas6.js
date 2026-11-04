@@ -478,6 +478,68 @@
       lagg(B, bj, BJ_UT[v].L, 22 + bredd(varg) + 4, fot - bj.length);
     } };
   };
+  // björnungarna (steg 6.5.3.2, Björn 2026-11-04: "vi ritar björnungarna nu"): i samma färger och med samma ritade kontur
+  // som Björns björn, ungefär hälften så stora, med större huvud, runda öron, kort nos och korta ben.
+  // 0: rund och står; 1: sitter på bakbenen; 2: går, med den ljusa kragen som många björnungar har
+  const UNGE = [
+    ["..............kkk.kkk...",
+     ".............ksssksssk..",
+     "........kkkk.ksmsssmsk..",
+     ".....kkkssssssssssssssk.",
+     "....ksssssssssssssssssk.",
+     "...kssssssssssssssskssk.",
+     "..kssssssssssssssssstttk",
+     "..ksssssssssssssssssttkk",
+     "..ksssssssssssssssssstk.",
+     "..kssssssssssssssssskk..",
+     ".ksssssssssssssssskk....",
+     ".ksssrrrrrrrssssrlk.....",
+     ".ksssllkkkkkksssllk.....",
+     ".ksssllk....ksssllk.....",
+     ".kVVVllk....kVVVllk.....",
+     ".kkkkkkk....kkkkkkk....."],
+    ["........kk...kk.....",
+     ".......kmsk.kmsk....",
+     ".......ksssksssk....",
+     "......kssssssssk....",
+     "......ksssssskssk...",
+     "......ksssssssstttk.",
+     "......kssssssssttkk.",
+     ".....kkssssssssskk..",
+     "....kssssssssssk....",
+     "...ksssssssssssk....",
+     "..ksssrrsssssllsk...",
+     "..kssrssssssslssk...",
+     "..ksrsssssssslssk...",
+     "..ksrsssssssslssk...",
+     "..ksrssssrrrslssk...",
+     "..kssrrrrssskVssk...",
+     "...kssssssVVkVVVk...",
+     "....kkkkkkkkkkkk...."],
+    ["................kkk.kkk...",
+     "...............ksmsksmsk..",
+     "........kkkkkk.kssssssk...",
+     ".....kkksssssssVVssssssk..",
+     "....kssssssssssVVsssssssk.",
+     "...kssssssssssVVssssskssk.",
+     "..ksssssssssssVVssssstttkk",
+     "..ksssssssssssVVsssssstttk",
+     "..ksssssssssssVVsssssskkk.",
+     ".ksssssssssssVVssskkkk....",
+     ".ksssrrrrrrrrsssrlk.......",
+     ".ksssllkkkkkksssllk.......",
+     "..ksssllk...ksssllk.......",
+     "..kVVVllk...kVVVllk.......",
+     "..kkkkkkk...kkkkkkk......."]];
+  const UNGESCEN = (text, v) => {
+    const bj = bjorn(0), u = UNGE[v];
+    const w = 4 + 14 + 4 + bredd(bj) + 4 + bredd(u) + 4, h = Math.max(bj.length, 20) + 8, fot = h - 4;
+    return { text, w, h, rita: (B) => {
+      if (window.BYBO) { const F = window.BYBO(4242, 'sida', 'sta', 'hanga'); for (let y = 0; y < F.h; y++) for (let dx = 0; dx < F.w; dx++) { const c = F.px[y * F.w + dx]; if (c >= 0) B.satt(4 + dx, fot - F.h + y, c); } for (let dx = 0; dx < F.w; dx++) B.morka(4 + dx, fot); }
+      lagg(B, bj, BJ_FARG, 22, fot - bj.length);
+      lagg(B, u, BJ_FARG, 22 + bredd(bj) + 4, fot - u.length);
+    } };
+  };
   // idet ritas inte: det är ingen sak som ska finnas (Björn 2026-11-04)
   const FALL = [
     former(18, 14, [[och(ell(9, 7.6, 5.6, 4.6), linje([[5, 4.6], [1.4, 2]], 1.2, 0.9), linje([[13, 4.6], [16.6, 2]], 1.2, 0.9), linje([[5, 10.6], [1.4, 13]], 1.2, 0.9), linje([[13, 10.6], [16.6, 13]], 1.2, 0.9)), (x, y) => Math.abs(x - 9) < 1.2 ? 'd' : (x < 2.2 || x > 15.8) && (y < 2.8 || y > 12.2) ? 'b' : 'm'], [ell(9, 2.4, 2.6, 2.2), (x, y) => y > 3.4 ? 'n' : 'l'], [och(ell(7, 0.6, 0.9, 0.8), ell(11, 0.6, 0.9, 0.8)), 'd'], [och(punkt(8, 2), punkt(10, 2)), 'k']]),
@@ -519,6 +581,8 @@
       PA_MARK('Två ägg i ett litet bo av gräs.', AGG[0], AGG_L), PA_MARK('Tre prickiga ägg på rad.', AGG[1], AGG_L), PA_MARK('Ett enda ägg.', AGG[2], AGG_L)]),
     KORT('f6_bjorn', 'Björnen', S + '6.5.3: björnen på kartan, sedd från sidan, bredvid en människa och en varg. Din egen ritning är björnen som den står och går, och när den anfaller öppnar den munnen med tänderna från min förra version. Din kommentar: ”min version. som standard. öppen mun när den attackerar som i din version”.', [
       BJORNSCEN('Din björn, som den står och går.', 0), BJORNSCEN('Din björn när den anfaller, med öppen mun.', 1)]),
+    KORT('f6_bjornunge', 'Björnungen', S + '6.5.3.2: björnungen som följer med björnhonan, bredvid en människa och din björn. Den är ritad i samma färger och med samma kontur som din björn, ungefär hälften så stor, med större huvud, runda öron, kort nos och korta ben.', [
+      UNGESCEN('Liten och rund, står på alla fyra.', 0), UNGESCEN('Sitter på bakbenen.', 1), UNGESCEN('Går, med en ljus krage runt halsen som många björnungar har.', 2)]),
     KORT('f6_bjornskinn', 'Björnfällen', S + '6.5.3.3: björnskinnet som slakten ger.', [
       PA_MARK('Utbredd med huvudet och klorna kvar.', FALL[0], BJ_L), PA_MARK('Utbredd utan huvud.', FALL[1], BJ_L), PA_MARK('Hopvikt.', FALL[2], BJ_L)]),
   );
