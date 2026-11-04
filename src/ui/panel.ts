@@ -47,15 +47,17 @@ export const ärPersonflik = (id: FlikId | undefined) => !!id && (ALLA[id].knapp
 // personens panel står kvar (steg 5.3.5.1)
 export const ärRuta = (id: FlikId | undefined) => ärPersonflik(id) && id !== 'person';
 let tryck = { x: 0, y: 0 }, flytta = false;
+// på en liten skärm är panelerna ark nerifrån (steg 5.3.7, ui/ark.ts), och bara ett är öppet åt gången: det som öppnas sist
+export const smal = matchMedia('(max-width: 820px)');
 export function visa(id: FlikId) {
   if (ärRuta(id)) flytta = true;
-  if (ärPersonflik(id)) ui.tab = id; else ui.hoger = id;
+  if (ärPersonflik(id)) ui.tab = id; else { ui.hoger = id; if (smal.matches) { ui.selected = undefined; if (!ärRuta(ui.tab)) ui.tab = undefined; } }
   renderPanel(true);
 }
-export function selectPerson(id: number) { ui.selected = id; ui.tab = 'person'; renderPanel(true); renderPorts(); }
+export function selectPerson(id: number) { ui.selected = id; ui.tab = 'person'; if (smal.matches) ui.hoger = undefined; renderPanel(true); renderPorts(); }
 // rutan stängs: personens panel står kvar om en person är vald
 export function stangRuta() { ui.tab = ui.selected !== undefined ? 'person' : undefined; }
-function stang(sida: 'v' | 'h' | 'r') {
+export function stang(sida: 'v' | 'h' | 'r') {
   if (sida === 'h') ui.hoger = undefined;
   else if (sida === 'r') stangRuta();
   else { ui.selected = undefined; if (!ärRuta(ui.tab)) ui.tab = undefined; }

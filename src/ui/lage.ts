@@ -13,7 +13,8 @@ export function setByn(n: State) {
 }
 export const ui = {
   tab: undefined as FlikId | undefined, // fliken i personens panel till vänster (personen, elden, saken …), steg 5.3.1.1
-  hoger: 'folk' as FlikId | undefined, // den öppna flikens panel till höger (Byn, Teknik, Krönika, Folket …)
+  hoger: (typeof matchMedia === 'function' && matchMedia('(max-width: 820px)').matches ? undefined : 'folk') as FlikId | undefined, // på en liten skärm börjar kartan fri (steg 5.3.7)
+  // ↑ den öppna flikens panel till höger (Byn, Teknik, Krönika, Folket …)
   selected: undefined as number | undefined, // personen som visas i panelen
   bynDel: 'seder', // delen i fliken Byn (DELAR i flikar/byn.ts)
   personFall: {} as Record<string, boolean>, // delarna i personens flikar som man fällt ut eller ihop (steg 5.3.4.2)
