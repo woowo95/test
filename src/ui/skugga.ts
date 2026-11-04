@@ -62,10 +62,12 @@ precision highp float;
 varying vec2 vTextureCoord;
 uniform sampler2D uSampler;
 uniform sampler2D uSkugga;
+uniform sampler2D uTak;
 uniform vec4 inputSize;
 uniform vec4 outputFrame;
 uniform vec3 uPal[32];
 uniform vec3 uM1[32];
+uniform vec3 uM2[32];
 uniform vec2 uPos;
 uniform float uSkala;
 uniform vec2 uStorlek;
@@ -74,31 +76,34 @@ void main() {
   if (c.a < 0.004) { gl_FragColor = c; return; }
   vec2 w = (vTextureCoord * inputSize.xy + outputFrame.xy - uPos) / uSkala;
   vec2 uv = (floor(w) + 0.5) / uStorlek;
-  if (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0 || uv.y > 1.0 || texture2D(uSkugga, uv).a < 0.5) { gl_FragColor = c; return; }
+  if (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0 || uv.y > 1.0) { gl_FragColor = c; return; }
+  float n = step(0.5, texture2D(uSkugga, uv).a) + step(0.5, texture2D(uTak, uv).a);
+  if (n < 0.5) { gl_FragColor = c; return; }
   vec3 col = c.rgb / c.a, o = col;
   float bd = 1e9;
   for (int i = 0; i < 32; i++) {
     vec3 d = uPal[i] - col;
     float dd = dot(d, d);
-    if (dd < bd) { bd = dd; o = uM1[i]; }
+    if (dd < bd) { bd = dd; o = n > 1.5 ? uM2[i] : uM1[i]; }
   }
   gl_FragColor = vec4(o * c.a, c.a);
 }`;
 const rgb = (h: string) => { const n = parseInt(h.slice(1), 16); return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255]; };
 const platt = (fs: readonly string[]) => new Float32Array(fs.flatMap(rgb));
-let rt: PIXI.RenderTexture | undefined;
+let rt: PIXI.RenderTexture | undefined, rtTak: PIXI.RenderTexture | undefined;
 let filter: PIXI.Filter | undefined; // görs först i webbläsaren (testerna läser träden utan att rita)
 const skuggFilter = () => filter ??= new PIXI.Filter(undefined, FRAG, {
-  uPal: platt(FARGER), uM1: platt(MORKARE[1]), uPos: new Float32Array(2), uSkala: 1, uStorlek: new Float32Array([1, 1]), uSkugga: PIXI.Texture.EMPTY,
+  uPal: platt(FARGER), uM1: platt(MORKARE[1]), uM2: platt(MORKARE[2]), uPos: new Float32Array(2), uSkala: 1, uStorlek: new Float32Array([1, 1]), uSkugga: PIXI.Texture.EMPTY, uTak: PIXI.Texture.EMPTY,
 });
 
 // det som ritas i skuggbilden varje bildruta: de fasta (träden och väggarna, ritas om bara när de ändras) och de som rör sig
 // (görs först när något ritas: testerna läser träden utan webbläsare)
-let lager: { fasta: PIXI.Graphics; folk: PIXI.Graphics; vaggar: PIXI.Container; vaggHal: PIXI.Container; ikoner: PIXI.Container; scen: PIXI.Container } | undefined;
+let lager: { fasta: PIXI.Graphics; folk: PIXI.Graphics; vaggar: PIXI.Container; vaggHal: PIXI.Container; ikoner: PIXI.Container; scen: PIXI.Container; tak: PIXI.Container; takHal: PIXI.Container; takScen: PIXI.Container } | undefined;
 function delar() {
   if (lager) return lager;
-  const l = lager = { fasta: new PIXI.Graphics(), folk: new PIXI.Graphics(), vaggar: new PIXI.Container(), vaggHal: new PIXI.Container(), ikoner: new PIXI.Container(), scen: new PIXI.Container() };
+  const l = lager = { fasta: new PIXI.Graphics(), folk: new PIXI.Graphics(), vaggar: new PIXI.Container(), vaggHal: new PIXI.Container(), ikoner: new PIXI.Container(), scen: new PIXI.Container(), tak: new PIXI.Container(), takHal: new PIXI.Container(), takScen: new PIXI.Container() };
   l.scen.addChild(l.fasta, l.vaggar, l.vaggHal, l.folk, l.ikoner); // vaggHal: väggarna själva, som tas bort ur skuggan
+  l.takScen.addChild(l.tak, l.takHal);
   return l;
 }
 export const skuggTrad = () => delar().fasta; // träden
@@ -123,14 +128,34 @@ export function vaggSkuggor(lista: { x: number; y: number; t: PIXI.Texture }[]) 
   for (let i = lista.length; i < halSp.length; i++) halSp[i]!.visible = false;
 }
 
+// under taket (steg 5.1.8.3): husens golv och dörröppningar ligger i husets skugga, ett steg mörkare än ute (två där också en
+// vägg skuggar). lista = de färdiga husens rutor: bilden (golvet, och golvet i väggrutan) och för en vägg dess stock (form),
+// som inte mörkas
+const takSp: PIXI.Sprite[] = [], takHalSp: PIXI.Sprite[] = [];
+export function takYtor(lista: { x: number; y: number; t: PIXI.Texture; form?: PIXI.Texture }[]) {
+  let h = 0;
+  lista.forEach((v, i) => {
+    let a = takSp[i];
+    if (!a) { a = takSp[i] = new PIXI.Sprite(); delar().tak.addChild(a); }
+    a.texture = v.t; a.position.set(v.x, v.y); a.visible = true;
+    if (!v.form) return;
+    let b = takHalSp[h++];
+    if (!b) { b = takHalSp[h - 1] = new PIXI.Sprite(); b.blendMode = PIXI.BLEND_MODES.ERASE; delar().takHal.addChild(b); }
+    b.texture = v.form; b.position.set(v.x, v.y); b.visible = true;
+  });
+  for (let i = lista.length; i < takSp.length; i++) takSp[i]!.visible = false;
+  for (let i = h; i < takHalSp.length; i++) takHalSp[i]!.visible = false;
+}
+
 // skuggorna nu: kastare = lagren med det som står (bilderna i dem som ritats med Ikoner och skugga, ikonSkugga i sp.skuggIkon),
 // mottagare = marken och golven, som får filtret. Bredd och höjd = kartan i världens pixlar
 export function ritaSkuggor(renderer: PIXI.Renderer, varld: PIXI.Container, kastare: PIXI.Container[], mottagare: PIXI.Container[], bredd: number, hojd: number) {
-  if (!rt || rt.width !== bredd || rt.height !== hojd) {
-    rt?.destroy(true);
+  if (!rt || !rtTak || rt.width !== bredd || rt.height !== hojd) {
+    rt?.destroy(true); rtTak?.destroy(true);
     rt = PIXI.RenderTexture.create({ width: bredd, height: hojd, scaleMode: PIXI.SCALE_MODES.NEAREST, resolution: 1 });
+    rtTak = PIXI.RenderTexture.create({ width: bredd, height: hojd, scaleMode: PIXI.SCALE_MODES.NEAREST, resolution: 1 });
   }
-  const { ikoner, scen } = delar(), e = extra();
+  const { ikoner, scen, takScen } = delar(), e = extra();
   let n = 0;
   for (const k of kastare) for (const c of k.children) {
     const sp = c as PIXI.Sprite & { skuggIkon?: string };
@@ -143,8 +168,9 @@ export function ritaSkuggor(renderer: PIXI.Renderer, varld: PIXI.Container, kast
   }
   for (let i = n; i < ikoner.children.length; i++) ikoner.children[i]!.visible = false;
   renderer.render(scen, { renderTexture: rt, clear: true });
+  renderer.render(takScen, { renderTexture: rtTak, clear: true });
   const f = skuggFilter(), u = f.uniforms;
-  u.uSkugga = rt; u.uPos[0] = varld.position.x; u.uPos[1] = varld.position.y; u.uSkala = varld.scale.x;
+  u.uSkugga = rt; u.uTak = rtTak; u.uPos[0] = varld.position.x; u.uPos[1] = varld.position.y; u.uSkala = varld.scale.x;
   u.uStorlek[0] = bredd; u.uStorlek[1] = hojd;
   for (const m of mottagare) if (!m.filters) m.filters = [f];
 }

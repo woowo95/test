@@ -3,7 +3,7 @@ import { Bit, State, bitAt, housesOf } from '../sim';
 import { smutsGrad, smutsigFarg } from './slitbild';
 import { KARTBILDER } from '../kartbilder';
 import { TS, husLayer } from './scen';
-import { vaggSkuggor } from './skugga';
+import { takYtor, vaggSkuggor } from './skugga';
 
 // ---------- husets utseende: timmerväggen och golven som pixelbilder (steg 2.2.13, 16 punkter per ruta i steg 5.1.2.4) ----------
 // Varje ruta är 16 × 16 punkter (en världspixel per punkt). Bilderna är bildstilens godkända (5.2.4.4, kartbilder.ts): timmerväggen
@@ -106,7 +106,7 @@ const alfa = (b: Bit) => b.k === 'vagg' ? (b.b >= 1 ? 0.55 + 0.45 * b.c : 0.25 +
 // ritar det som har en pixelbild och säger vilka rutor det var, så att foremal.ts hoppar över dem
 export function ritaHus(s: State, bits: Bit[]) {
   let n = 0;
-  const klara = new Set<number>(), former: { x: number; y: number; t: PIXI.Texture }[] = [];
+  const klara = new Set<number>(), former: { x: number; y: number; t: PIXI.Texture }[] = [], tak: { x: number; y: number; t: PIXI.Texture; form?: PIXI.Texture }[] = [];
   for (const b of bits) {
     if (b.k === 'vagg' && (b.m !== 'timmer' || (b.b <= 0 && b.mat <= 0))) continue;
     const r = bild(s, b);
@@ -121,9 +121,10 @@ export function ritaHus(s: State, bits: Bit[]) {
       let f = formTex.get(r.key);
       if (!f) { f = PIXI.Texture.from(r.m, { scaleMode: PIXI.SCALE_MODES.NEAREST }); formTex.set(r.key, f); }
       former.push({ x: b.x * TS, y: b.y * TS, t: f });
-    }
+      tak.push({ x: b.x * TS, y: b.y * TS, t, form: f }); // golvet bredvid stocken ligger under taket
+    } else if (b.k !== 'vagg' && (b.k !== 'golv' || b.b >= 1)) tak.push({ x: b.x * TS, y: b.y * TS, t }); // golvet och dörröppningen
   }
   for (let i = n; i < husLayer.children.length; i++) husLayer.children[i].visible = false;
-  vaggSkuggor(former);
+  vaggSkuggor(former); takYtor(tak);
   return klara;
 }
