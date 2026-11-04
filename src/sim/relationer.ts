@@ -4,6 +4,7 @@ import { DAY, Person, Rel, SKILLS, Skill, State } from './typer';
 import { balans } from './balans';
 import { ACTS } from './handlingar';
 import { notis } from './notiser';
+import { kronikaBer } from './berattelser';
 
 // ---------- balanstal (regel 8) ----------
 // Relationstyperna (steg 3.1.1, "Relationstyper" i designdokumentet). Relationen (op) går från -100 till 100; vän, nära vän,
@@ -136,6 +137,7 @@ export function stepRelationer(s: State) {
     if (r.gift === undefined && s.now - r.par >= RELT.giftDygn * DAY && r.op > REL.van) {
       r.gift = s.now; count(s, 'gift');
       log(s, `${p.name} och ${q.name} har gift sig.`, 'rel', [p.id, q.id]); notis(s, 'par', `${p.name} och ${q.name} har gift sig.`, [p.id, q.id]);
+      kronikaBer(s, 'k_gift', p.id, { a: p.name, b: q.name }); // till berättelsen om tiden borta (steg 5.4.4)
       think(p, `Gifte sig med ${q.name}`, 0.15, s.now, DAY); think(q, `Gifte sig med ${p.name}`, 0.15, s.now, DAY);
     }
   }

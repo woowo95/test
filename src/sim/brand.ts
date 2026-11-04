@@ -207,7 +207,7 @@ export function brandSteg(s: State, dtSec: number) {
   log(s, `Elden har slocknat. Den ${delar.join(', ')}${b.skadade ? `, och ${b.skadade} brändes` : ''}.`, 'world');
   if (b.hot || b.ut.length >= BRAND.stor) {
     notis(s, 'motgang', `Elden har slocknat. Den ${delar.join(', ')}${b.skadade ? `, och ${b.skadade} brändes` : ''}.`);
-    kronika(s, `En eldsvåda ${b.kalla === 'blixt' ? 'efter ett blixtnedslag ' : ''}brände ${b.ut.length} rutor${b.vagg ? ` och ${b.vagg} ${b.vagg === 1 ? 'vägg' : 'väggar'}` : ''}${b.hot ? ' nära byn' : ''}.`);
+    kronika(s, `En eldsvåda ${b.kalla === 'blixt' ? 'efter ett blixtnedslag ' : ''}brände ${b.ut.length} ${b.ut.length === 1 ? 'ruta' : 'rutor'}${b.vagg ? ` och ${b.vagg} ${b.vagg === 1 ? 'vägg' : 'väggar'}` : ''}${b.hot ? ' nära byn' : ''}.`, 'motgang');
     allaBarn(s, 'brand');
     for (const p of living(s)) if (p.born < b.t) livet(s, p, 'mg:brand'); // de som klarade den (steg 3.9.8)
   }

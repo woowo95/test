@@ -7,7 +7,7 @@ import { START, STEG_DYGN, STEG_TIM } from '../kor';
 import { setItems, setMat, setFood, kor, tandEld, tomtForrad, treVuxna, SCENARIER, rikBy, medBank, utanWebblasare } from './hjalp';
 import { setByn, ui } from '../../ui/lage';
 import { notisHtml, notisKlick, notisKnapp, notisVal } from '../../ui/notiser';
-import { bortaHtml } from '../../ui/borta';
+import { bortaBerattelse, bortaHtml } from '../../ui/borta';
 import { person } from '../../ui/flikar/person';
 import { gaster } from '../../ui/gaster';
 import { filt as filtFlik } from '../../ui/flikar/filt';
@@ -1648,7 +1648,7 @@ SCENARIER.notislista = {
 };
 
 SCENARIER.sammanfattning = {
-  text: 'Sammanfattningen efter ikappräkningen (steg 5.4.3.4, ui/borta.ts): bara tiden, talen och hur många notiser som är nya, med en knapp som öppnar notiserna; ingen lista med händelser. Bara gränssnittet.',
+  text: 'Sammanfattningen efter ikappräkningen (steg 5.4.3.4 och 5.4.4, ui/borta.ts): berättelsen om tiden borta (det viktigaste ur krönikan, längre ju längre man varit borta), tiden, talen och hur många notiser som är nya, med en knapp som öppnar notiserna; ingen lista med händelser. Bara gränssnittet.',
   kor: () => {
     utanWebblasare();
     const s = createState(6, START);
@@ -1669,6 +1669,36 @@ SCENARIER.sammanfattning = {
       ['utan nya notiser ingen knapp till dem', /Inga nya notiser/.test(tom) && !tom.includes('data-notis')],
       ['ingen lista med händelser', !/<ol|<ul|<li/.test(html)],
       ['knappen öppnar notiserna med den viktigaste först', notisVal.oppen && notisVal.nr === undefined && /Död i byn/.test(notisHtml())],
+      ...berattelseKoll(s),
     ];
   },
 };
+
+// berättelsen om tiden borta (steg 5.4.4): krönikans rader väljs efter vikt och binds ihop av mallarna, längre ju längre bort
+function berattelseKoll(s: SIM.State): [string, boolean][] {
+  const H = SIM.HOUR, D = SIM.DAY, nu0 = s.now, hist = (s.hist ??= { tal: [], tim: [], dygn: [], kronika: [] });
+  const k0 = hist.kronika; hist.kronika = [];
+  const rad = (t: number, text: string, slag?: string) => hist.kronika.push(slag ? [Math.round(t), text, slag] : [Math.round(t), text]);
+  const b = (fran: number): SIM.Borta => ({ fran, fodda: s.stat?.fodda ?? 0, doda: s.stat?.doda ?? 0, folk: living(s).length });
+  const ut: [string, boolean][] = [];
+  try {
+    const tom = bortaBerattelse(s, b(s.now - 3 * H));
+    ut.push([`några timmar utan något i krönikan: en mening om att det var lugnt ("${tom[0]}")`, tom.length === 1 && (SIM.BERATTELSER.b_lugnt as SIM.Variant[]).some(v => (typeof v === 'string' ? v : v.t) === tom[0])]);
+    rad(s.now - 170 * SIM.MIN, 'Ugge bytte en skål.', 'byte'); rad(s.now - 160 * SIM.MIN, 'Mira föddes.', 'k_fodd'); rad(s.now - 150 * SIM.MIN, 'Något smått.');
+    rad(s.now - 140 * SIM.MIN, 'Den första handlaren kom.', 'handel'); rad(s.now - 130 * SIM.MIN, 'Arvid dog.', 'k_dog');
+    const kort = bortaBerattelse(s, b(s.now - 3 * H)), k = kort.join(' ');
+    ut.push([`några timmar: ett stycke med de tre viktigaste i tidsordning och resten som småsaker (${k})`,
+      kort.length === 1 && /^Mira föddes\. Den första handlaren kom\. Arvid dog\. /.test(k) && !k.includes('skål') && !k.includes('smått')]);
+    // några dygn: en inledning och ett stycke per år (ett lugnt år får sin mening); en vecka: per tidsålder och sist byn nu
+    s.now = nu0 + 3 * D; hist.kronika = []; rad(nu0 + 2.5 * D, 'Arvid dog.', 'k_dog');
+    const fa = bortaBerattelse(s, b(nu0)), ar = SIM.kalender(s, nu0).ar;
+    ut.push([`tre dygn: inledning och ett stycke per år (${fa.length} stycken: ${fa.map(x => x.slice(0, 30)).join(' | ')})`,
+      fa.length === 5 && fa.slice(1).every((x, i) => x.includes(`år ${ar + i}`) || x.includes(`År ${ar + i}`)) && fa.some(x => x.includes('Arvid dog.'))]);
+    s.now = nu0 + 9 * D;
+    const lang = bortaBerattelse(s, b(nu0));
+    ut.push([`nio dygn: per tidsålder och sist hur byn har det nu ("${lang[lang.length - 1]}")`, lang.length >= 3 && /invånare|bor .* i byn/.test(lang[lang.length - 1])]);
+    s.now = nu0;
+    ut.push(['berättelsen står i rutan, före talen', /ovBerattelse[^]*Arvid dog[^]*födda ·/.test(bortaHtml(b(s.now - 3 * H)))]);
+  } finally { s.now = nu0; hist.kronika = k0; }
+  return ut;
+}

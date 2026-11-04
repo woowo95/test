@@ -188,7 +188,7 @@ export function stepMotgang(s: State) {
   if (m.pagar && m.pagar.t !== nu?.start) {
     const dog = deadCount(s) - m.pagar.dog, d = DEF[m.pagar.k];
     log(s, `${d.slutar}${dog ? ` ${dog} dog under den.` : ' Alla klarade sig.'}`, 'world');
-    kronika(s, `${d.namn} tog slut${dog ? `. ${dog} dog under den` : ' och alla klarade sig'}.`);
+    kronika(s, `${d.namn} tog slut${dog ? `. ${dog} dog under den` : ' och alla klarade sig'}.`, 'motgang');
     for (const p of living(s)) if (p.born < m.pagar.t) livet(s, p, 'mg:' + m.pagar.k); // de som klarade den (steg 3.9.8)
     if (m.pagar.k === 'hardVinter' || m.pagar.k === 'torka') holdBarn(s, m.pagar.t, m.pagar.k === 'torka' ? 'torkan' : 'den hårda vintern');
     const tk = SLUT_TECKEN[m.pagar.k]; // det oförklarliga (steg 4.1.2.1): motgången tog slut
@@ -199,7 +199,7 @@ export function stepMotgang(s: State) {
     m.pagar = { k: nu.id, t: nu.start, dog: deadCount(s) };
     count(s, 'motgang_' + nu.id);
     log(s, DEF[nu.id].borjar, 'world'); notis(s, 'motgang', DEF[nu.id].borjar);
-    kronika(s, `År ${yearNo(s)}: ${DEF[nu.id].borjar.split('.')[0]}.`);
+    kronika(s, `År ${yearNo(s)}: ${DEF[nu.id].borjar.split('.')[0]}.`, 'motgang');
     allaBarn(s, nu.id);
   }
   for (const p of s.people) if (p.varsel && (!alive(p) || p.varsel.t < s.now - DAY * 7)) delete p.varsel;

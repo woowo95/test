@@ -239,12 +239,12 @@ function seOverTitel(s: State, l: Person) {
   st.titel = ny;
   const h = st.historia[st.historia.length - 1];
   if (h?.id === l.id && h.till === undefined) { if (forr && TITELNAMN.has(forr)) (h.forr ??= []).push(forr); h.titel = ny; }
-  if (forr && TITELNAMN.has(forr)) { log(s, `Byn kallar nu ${l.name} för ${ny.toLowerCase()}.`, 'world', [l.id]); kronika(s, `Byn började kalla ${l.name} för ${ny.toLowerCase()}.`); }
+  if (forr && TITELNAMN.has(forr)) { log(s, `Byn kallar nu ${l.name} för ${ny.toLowerCase()}.`, 'world', [l.id]); kronika(s, `Byn började kalla ${l.name} för ${ny.toLowerCase()}.`, 'ledare'); }
 }
 function slutar(s: State, varfor: string) {
   const st = s.styre!, h = st.historia[st.historia.length - 1], l = byId(s, st.ledare!);
   if (h && h.till === undefined) { h.till = s.now; h.slut = varfor; }
-  if (l) kronika(s, `${l.name} slutade leda byn (${varfor}).`);
+  if (l) kronika(s, `${l.name} slutade leda byn (${varfor}).`, 'ledare');
   st.ledare = undefined; st.sedan = undefined; st.titel = undefined; st.pabud = undefined; st.pabudAi = undefined;
   if (!vuxnaOf(s).some(p => knows(p, 'ledarskap'))) log(s, 'Ingen i byn kan leda den längre. Påbuden gäller inte mer.', 'world');
 }

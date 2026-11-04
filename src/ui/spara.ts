@@ -1,4 +1,4 @@
-import { BEAT, Borta, MIN, State, joinParts, migrate, serialize, serializeParts, step, timeLabel } from '../sim';
+import { BEAT, Borta, MIN, State, joinParts, living, migrate, serialize, serializeParts, step, timeLabel } from '../sim';
 import { $, esc } from './hjalp';
 import { bortaHtml } from './borta';
 import { s, ui } from './lage';
@@ -142,7 +142,7 @@ export async function catchUp(target: number) {
   const showOverlay = span > 10 * MIN || !!s.borta; // efter mer än tio minuter visas en sammanställning
   ui.busy = true;
   const from = s.now;
-  if (showOverlay) s.borta ??= { fran: from, fodda: s.stat?.fodda ?? 0, doda: s.stat?.doda ?? 0 };
+  if (showOverlay) s.borta ??= { fran: from, fodda: s.stat?.fodda ?? 0, doda: s.stat?.doda ?? 0, folk: living(s).length };
   const ov = $('overlay');
   if (showOverlay) { ov.hidden = false; $('ovBody').innerHTML = `<p class="ovLead">Byn har levt vidare medan du var borta.</p><div class="prog"><div id="progBar"></div></div><p class="muted" id="progTxt"></p>`; }
   await new Promise<void>((resolve, reject) => {
