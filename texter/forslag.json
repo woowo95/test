@@ -305,6 +305,78 @@
    "varfor": "toalett är ett nytt ord."
   },
   {
+   "id": "b_kon",
+   "grupp": "m mönster",
+   "fil": "src/sim/berattelser.ts:1334 (alderOrd) och 128–162 (besk_drag2, besk_drag1, besk_drag0)",
+   "nu": "{alder} är \"man\" eller \"kvinna\" för alla mellan 25 och gammal, så texten börjar med könet: \"En kvinna, vig men också minnesgod: så är Tuska.\", \"Tukstig är en man, modig och glömsk.\"",
+   "blir": "alderOrd ger inget för de medelålders ({alder} tomt), och varianterna med {alder} får om: f => !!f.alder. Nya varianter utan {alder}: \"Tuska är vig och minnesgod.\" Är ett av dragen något som syns (vacker, ful, stark, klen), står det framför i stället: \"Tuska är en vacker kvinna, och vig.\" Ung, gammal, pojke och flicka står kvar, eftersom de säger något.",
+   "varfor": "Björn (besk-1): könet säger inte så mycket; att någon är en gammal man eller en vacker kvinna är mer intressant. Gäller alla beskrivningar.",
+   "exempel": [
+    "Tukstig är en man, modig och glömsk.",
+    "Tukstig är modig men glömsk."
+   ]
+  },
+  {
+   "id": "b_men",
+   "grupp": "m mönster",
+   "fil": "src/sim/berattelser.ts:1328 (DRAG) och besk_drag2",
+   "nu": "Två drag binds alltid med och, eller alltid med men också: \"modig och glömsk\", \"vig men också minnesgod\".",
+   "blir": "DRAG får ett tecken per ord (+ bra, − dåligt; tystlåten och fridsam räknas som bra). Fältet {bind} blir \"och\" när båda är lika och \"men\" när det ena är bra och det andra dåligt, och varianterna skriver {drag1} {bind} {drag2}. Varianten \"men också\" får om: f => f.bind === 'men', och det bra draget kommer först: \"modig men glömsk\".",
+   "varfor": "Björn (besk-2): en dålig och en bra egenskap ska inte sättas ihop med och. Claude (besk-1): men också utan motsats.",
+   "exempel": [
+    "Tukstig är en man, modig och glömsk. / Tuska är vig men också minnesgod.",
+    "Tukstig är modig men glömsk. / Tuska är vig och minnesgod."
+   ]
+  },
+  {
+   "id": "b_trots",
+   "grupp": "m mönster",
+   "fil": "src/sim/berattelser.ts:1552 (beskrivning) och ny mall besk_trots",
+   "nu": "Ett drag som går emot åldern står bara i listan: \"Tukstig är en gammal man, glömsk och vig.\"",
+   "blir": "Ett drag som går emot åldern (gammal och vig, stark, uthållig eller nyfiken på allt; barn och klok, minnesgod eller modig) tas ur listan och får en egen mening ur mallen besk_trots: \"Men trots åren är han vig.\", \"Åren har inte tagit hans smidighet.\", \"Hon är ung, men klok som en gammal.\"",
+   "varfor": "Björn (besk-3): det som säger emot kan kommenteras i texten.",
+   "exempel": [
+    "Tukstig är en gammal man, glömsk och vig.",
+    "Tukstig är en gammal och glömsk man. Men trots åren är han vig."
+   ]
+  },
+  {
+   "id": "b_hus",
+   "grupp": "m mönster",
+   "fil": "src/sim/berattelser.ts:497 (besk_hus)",
+   "nu": "'{Hen} kan peka på {vad} och säga: det byggde jag.'",
+   "blir": "'Ett av husen i byn har {hen} byggt med egna händer.' (eller '{Hen} byggde {vad} med egna händer.')",
+   "varfor": "Björn (besk-4): otydlig mening. {vad} är ofta \"ett hus\", så man vet inte vilket hus hen pekar på, och repliken mitt i texten bryter av.",
+   "exempel": [
+    "Han kan peka på ett hus och säga: det byggde jag.",
+    "Ett av husen i byn har han byggt med egna händer."
+   ]
+  },
+  {
+   "id": "b_vacker",
+   "grupp": "m mönster",
+   "fil": "src/sim/berattelser.ts:1390 (SKONA) och 310 (besk_vacker, besk_ful)",
+   "nu": "Slutet \"och fler än en har tappat tråden i samtalet med honom\" står efter vad som helst (hår, leende, ögon) och kommer hos många i samma by.",
+   "blir": "Varje rad i SKONA får sin egen verkan, som passar just det: ögonen (\"man glömmer vad man skulle säga\"), rösten (\"man lyssnar gärna, vad hen än säger\"), håret (\"barnen vill gärna fläta det\"), skrattet (\"det sprider sig runt elden\"). besk_vacker får {verkan} i stället för det fasta slutet. Två levande i byn får inte samma del (undvik på de andras del), så grannar ser olika ut.",
+   "varfor": "Björn (besk-5): många beskrivningar har samma mening; det behövs fler sätt att beskriva vackra personer. Claude: besk-4, besk-5 och besk-7.",
+   "exempel": [
+    "Han har blankt, tjockt hår, och fler än en har tappat tråden i samtalet med honom.",
+    "Han har blankt, tjockt hår, som han är mån om."
+   ]
+  },
+  {
+   "id": "b_sager",
+   "grupp": "m mönster",
+   "fil": "src/sim/berattelser.ts:1368 (mening) och varianterna med säger",
+   "nu": "Varje del väljs för sig, så hörsägen kommer flera gånger: \"Ulvfrid är vacker och fridsam, säger de som känner henne. … Vacker som sin mor, säger folk om henne. De säger att hon ler …\". Och \"säger\" sist ger en baklänges ordföljd.",
+   "blir": "Varianterna med säger, säger man, talar om får taggen hors (som om), och mening() hoppar över en sådan variant när beskrivningen redan har en (samma sätt som borjan). Säger flyttas först: \"De som känner Ulvfrid säger att hon är vacker och fridsam.\" / \"Hon är lika vacker som sin mor.\"",
+   "varfor": "Björn (besk-6): konstig meningsföljd, och att folk säger saker om henne står tre gånger.",
+   "exempel": [
+    "Ulvfrid är vacker och fridsam, säger de som känner henne. Vacker som sin mor, säger folk om henne. De säger att hon ler när hon fiskar.",
+    "De som känner Ulvfrid säger att hon är vacker och fridsam. Hon är lika vacker som sin mor."
+   ]
+  },
+  {
    "id": "m_eftermale",
    "grupp": "m mönster",
    "fil": "src/sim/berattelser.ts:1536 (beskrivning) och BESK_DELAR",
