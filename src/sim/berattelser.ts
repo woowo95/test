@@ -1639,7 +1639,7 @@ export function binamnInfo(p: Person) {
 // ---------- personen (steg 3.9.2) ----------
 // orden för en egenskap som sticker ut: [hög, låg]
 const DRAG: Record<Stat, [string, string]> = {
-  styrka: ['stark', 'klen'], uthallighet: ['uthållig', 'lätt att trötta ut'], intelligens: ['klok', 'trög i tanken'],
+  styrka: ['stark', 'klen'], uthallighet: ['uthållig', 'snabbt trött'], intelligens: ['klok', 'trög i tanken'],
   nyfikenhet: ['nyfiken på allt', 'rädd för det nya'], karisma: ['talför', 'tystlåten'], skonhet: ['vacker', 'ful'],
   flit: ['arbetsam', 'bekväm av sig'], empati: ['varmhjärtad', 'kall'], mod: ['modig', 'rädd av sig'],
   minne: ['minnesgod', 'glömsk'], smidighet: ['vig', 'klumpig'], aggression: ['hetlevrad', 'fridsam'],
