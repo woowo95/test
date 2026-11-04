@@ -810,7 +810,7 @@ SCENARIER.silver = {
     // ledaren (eller den äldsta vuxna) går till filten på dagen och handlar
     const u = createState(6, START), k = fram(u);
     let gick = false;
-    for (let i = 0; i < 12 * 3600 / BEAT && !k.bynKlar && u.handlare; i++) { step(u, BEAT); if (u.log.some(l => l.byte?.an.endsWith('för byn'))) gick = true; } // affären tar bara någon minut (steg 4.5.7.4)
+    for (let i = 0; i < 12 * 3600 / BEAT && !k.bynKlar && u.handlare; i++) { step(u, BEAT); if (u.log.some(l => SIM.radByte(u, l)?.an.endsWith('för byn'))) gick = true; } // affären tar bara någon minut (steg 4.5.7.4)
     return [
       [`byn säljer det den har gott om (handlaren har nu ${h.varor.map(w => `${w.n} ${SIM.sakNamn(w.k).toLowerCase()}`).join(', ')})`, salde],
       [`byn köper det den saknar (rep ${Math.round(amountOf(s, 'rep'))})`, kopte],
@@ -1030,7 +1030,7 @@ SCENARIER.forhandling = {
     }
     a.task = undefined;
     const kopte = ownsAmount(s, a, k) >= 1 && steg.includes('Hämtar det köpta') && steg.includes('Bär hem det köpta');
-    const handslag = (s.log.slice().reverse().find(l => l.byte)?.byte?.a) === a.id;
+    const handslag = (SIM.radByte(s, s.log.slice().reverse().find(l => SIM.radByte(s, l))!)?.a) === a.id;
     // b ger upp efter tre nej (vi håller budet nere)
     const v4 = uppgift(b, SIM.handlaVal(s, b)!);
     let gav = !!v4 && v4.why.startsWith('Frågar vad'), antal = 0;
@@ -1045,8 +1045,8 @@ SCENARIER.forhandling = {
     const ma = a.byten?.[a.byten.length - 1], fa = ma?.forsok ?? [];
     const redogor = fa.length >= 2 && !!fa[fa.length - 1].ja && fa.slice(0, -1).every(f => !f.ja) && fa.every(f => f.vill.length > 0 && f.bud.length > 0 && f.krav >= 1 && f.bjod >= 1 && Number.isInteger(f.krav) && Number.isInteger(f.bjod))
       && fa[fa.length - 1].bjod >= fa[0].bjod && !!ma?.rel && ma.rel[1] > ma.rel[0];
-    const mb = b.byten?.[b.byten.length - 1], rad = s.log.slice().reverse().find(l => l.byte?.avbruten);
-    const avbr = !!mb?.avbruten && mb.forsok?.length === SIM.HANDEL.nejMax && mb.forsok.every(f => !f.ja) && rad?.byte === mb && rad.text.includes('blev inte överens') && !!mb.rel;
+    const mb = b.byten?.[b.byten.length - 1], rad = s.log.slice().reverse().find(l => SIM.radByte(s, l)?.avbruten);
+    const avbr = !!mb?.avbruten && mb.forsok?.length === SIM.HANDEL.nejMax && mb.forsok.every(f => !f.ja) && !!rad && SIM.radByte(s, rad) === mb && rad.byte === undefined && rad.text.includes('blev inte överens') && !!mb.rel;
     // berättelsen (steg 5.4.6.2): argumenten ur det som fanns i affären, samma text varje gång, och slutet stämmer
     const berA = ma ? SIM.handelBerattelse(s, ma) : '', berB = mb ? SIM.handelBerattelse(s, mb) : '';
     const ber = !!ma?.arg?.includes('langt') && berA.includes(a.name) && berA === SIM.handelBerattelse(s, ma!) && !/\{|\}|  /.test(berA + berB)
@@ -1335,7 +1335,7 @@ SCENARIER.handslag = {
     const [a, b] = treVuxna(t, 1, q => { q.warm = 1; q.pot.empati = 10; q.habit = {}; });
     a.habit = { samla: 10 }; addTool(t, 'korg', b); addTool(t, 'korg', b); gain(t, a, 'bar', 20);
     const bytte = askForTool(t, a, b) === 'byte';
-    const e = t.log.slice().reverse().find(l => l.byte), m = e?.byte;
+    const e = t.log.slice().reverse().find(l => SIM.radByte(t, l)), m = e && SIM.radByte(t, e);
     const hel = (v: SIM.ByteVara[]) => v.length > 0 && v.every(w => Number.isInteger(w.n) && w.n >= 1 && Number.isInteger(w.p) && w.p >= 1);
     const minns = !!m && [m.a, m.b].sort().join() === [a.id, b.id].sort().join() && hel(m.ag) && hel(m.bg) && !!m.fa && !!m.fb
       && !!a.byten?.some(x => x.nr === m.nr) && !!b.byten?.some(x => x.nr === m.nr);
@@ -1359,7 +1359,7 @@ SCENARIER.handslag = {
     for (const p of living(s)) if (p.task?.act === 'handla') p.task = undefined;
     SIM.put(s, 'skinn', 12, { [c.id]: 12 });
     helAffar(s, c);
-    const hm = s.log.slice().reverse().find(l => l.byte)?.byte, hf = s.filtar?.find(f => f.handlare === h.id);
+    const hm = s.log.slice().reverse().map(l => SIM.radByte(s, l)).find(Boolean), hf = s.filtar?.find(f => f.handlare === h.id);
     const hand = !!hm && hm.a === c.id && hm.b === h.id && !!hf && hm.fb?.x === hf.x && hm.fb?.y === hf.y && h.bytt?.at(-1)?.m?.nr === hm.nr
       && hm.bg.every(w => w.k === 'silver' && w.p === 1) && hel(hm.ag) && !!c.byten?.some(x => x.nr === hm.nr);
     return [

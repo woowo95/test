@@ -31,6 +31,7 @@ export const HANDELSARG: { id: string; om: (l: ArgLage) => boolean }[] = [
   { id: 'smicker', om: l => stat(l.p, 'karisma', l.s.now) >= ARG.charm },
   { id: 'skicklig', om: l => l.handel >= l.hHandel + ARG.skicklig },
   { id: 'langt', om: () => true }, // handlaren har alltid gått långt
+  { id: 'irriterad', om: () => false }, // läggs till i affären när handlaren blir irriterad på kunden (handel.ts, gastrel.ts)
 ];
 export const ARG = balans('handelsber', {
   kemi: 0.4, // kemin (−1 till 1) från vilken de kom bra (eller dåligt) överens

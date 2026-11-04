@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { BYTE, SEC, byId, clamp, filtMot } from '../sim';
+import { BYTE, SEC, byId, clamp, filtMot, radByte } from '../sim';
 import { gaster } from './gaster';
 import { iconCanvas } from '../ikoner';
 import { s, ui } from './lage';
@@ -37,7 +37,7 @@ function drawGodkant() {
   for (let i = s.log.length - 1; i >= 0; i--) {
     const e = s.log[i], d = ui.nu - e.t;
     if (d > H + F) break;
-    const b = e.byte;
+    const b = radByte(s, e);
     if (!b || d < 0) continue;
     if (d < H) {
       for (const id of [b.a, b.b]) { const q = platsAvPart(id); if (q) handIkoner.add('handslag', q.x * TS - 5, q.y * TS - 18, hs); }
