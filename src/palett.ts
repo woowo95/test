@@ -53,15 +53,19 @@ export const MORKARE: readonly (readonly string[])[] = [
   mork(([L, a, b]) => [L * 0.68, a * 0.8, b * 0.8 - 0.012]),
   mork(([L, a, b]) => [L * 0.5, a * 0.45 - 0.004, b * 0.45 - 0.028]),
 ];
+// djup natt (steg 5.1.7.2): tre steg mörkare, skymningens steg och sedan nattens, så att nästan allt blir kolsvart och bara
+// elden lyser (det ljusaste, snön och halmen, syns svagt)
+(MORKARE as string[][]).push(FARGER.map((_, i) => MORKARE[2][FARGER.indexOf(MORKARE[1][i])]));
+export const DJUPNATT = 3;
 const INDEX = new Map(FARGER.map((h, i) => [h, i]));
-// färgen i mörkret m (0 = dag, 1 = skymning, 2 = natt, och tal emellan) i punkten (x, y): mellan två steg väljer ett
+// färgen i mörkret m (0 = dag, 1 = skymning, 2 = natt, 3 = djup natt, och tal emellan) i punkten (x, y): mellan två steg väljer ett
 // rastermönster (Bayer 4 × 4) vilken av dem punkten får, så att övergången blir jämn utan nya färger
 const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
 export function rasterSteg(hex: string, m: number, x: number, y: number) {
   const i = INDEX.get(hex.toLowerCase());
   if (i === undefined || m <= 0) return hex;
-  const lag = Math.min(1, Math.floor(m)), del = Math.min(2, m) - lag;
-  const steg = del * 16 > BAYER[(y & 3) * 4 + (x & 3)] + 0.5 ? Math.min(2, lag + 1) : lag;
+  const lag = Math.min(DJUPNATT - 1, Math.floor(m)), del = Math.min(DJUPNATT, m) - lag;
+  const steg = del * 16 > BAYER[(y & 3) * 4 + (x & 3)] + 0.5 ? Math.min(DJUPNATT, lag + 1) : lag;
   return MORKARE[steg][i];
 }
 

@@ -2,7 +2,8 @@
 // ruta över kartan byts varje färg på marken, i naturen, i husen och på folket mot samma färg ett steg mörkare i paletten i
 // skymningen och två steg mörkare på natten (MORKARE i palett.ts). Mellan stegen väljer ett rastermönster (Bayer 4 × 4, en ruta
 // per punkt i bilderna) vilket steg punkten får, så att övergången blir jämn utan nya färger. Elden lyser: nära en brinnande
-// eld (eller glöd) är mörkret mindre, och det minskar i steg utåt. Bara utseende; filtret gör inget alls på dagen.
+// eld (eller glöd) är mörkret mindre, och det minskar i steg utåt. Mitt i natten (steg 5.1.7.2) är det tre steg mörkare, så
+// att nästan allt är kolsvart och bara elden lyser. Bara utseende; filtret gör inget alls på dagen.
 import * as PIXI from 'pixi.js';
 import { FARGER, MORKARE } from '../palett';
 
@@ -16,6 +17,7 @@ uniform vec4 outputFrame;
 uniform vec3 uPal[32];
 uniform vec3 uM1[32];
 uniform vec3 uM2[32];
+uniform vec3 uM3[32];
 uniform float uBayer[16];
 uniform float uMork;
 uniform vec2 uPos;
@@ -31,20 +33,20 @@ void main() {
     vec4 e = uEld[i];
     if (e.z > 0.0) ljus = max(ljus, e.w * clamp(1.0 - length(w - e.xy) / e.z, 0.0, 1.0));
   }
-  float m = max(0.0, uMork - 2.2 * ljus);
+  float m = max(0.0, uMork - 3.3 * ljus);
   float bd = 1e9;
-  vec3 b0 = col, b1 = col, b2 = col;
+  vec3 b0 = col, b1 = col, b2 = col, b3 = col;
   for (int i = 0; i < 32; i++) {
     vec3 d = uPal[i] - col;
     float dd = dot(d, d);
-    if (dd < bd) { bd = dd; b0 = uPal[i]; b1 = uM1[i]; b2 = uM2[i]; }
+    if (dd < bd) { bd = dd; b0 = uPal[i]; b1 = uM1[i]; b2 = uM2[i]; b3 = uM3[i]; }
   }
   vec2 px = floor(w);
   float k = mod(px.x, 4.0) + 4.0 * mod(px.y, 4.0), bay = 0.0;
   for (int j = 0; j < 16; j++) if (float(j) == k) bay = uBayer[j];
-  float lag = floor(min(m, 1.0));
-  float steg = lag + ((min(m, 2.0) - lag) * 16.0 > bay + 0.5 ? 1.0 : 0.0);
-  vec3 o = steg < 0.5 ? b0 : (steg < 1.5 ? b1 : b2);
+  float lag = floor(min(m, 2.0));
+  float steg = lag + ((min(m, 3.0) - lag) * 16.0 > bay + 0.5 ? 1.0 : 0.0);
+  vec3 o = steg < 0.5 ? b0 : (steg < 1.5 ? b1 : (steg < 2.5 ? b2 : b3));
   gl_FragColor = vec4(o * c.a, c.a);
 }`;
 
@@ -52,12 +54,12 @@ const rgb = (h: string) => { const n = parseInt(h.slice(1), 16); return [((n >> 
 const platt = (fs: readonly string[]) => new Float32Array(fs.flatMap(rgb));
 
 export const nattFilter = new PIXI.Filter(undefined, FRAG, {
-  uPal: platt(FARGER), uM1: platt(MORKARE[1]), uM2: platt(MORKARE[2]),
+  uPal: platt(FARGER), uM1: platt(MORKARE[1]), uM2: platt(MORKARE[2]), uM3: platt(MORKARE[3]),
   uBayer: new Float32Array([0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5]),
   uMork: 0, uPos: new Float32Array(2), uSkala: 1, uEld: new Float32Array(MAX_ELDAR * 4),
 });
 
-// mörkret m (0 dag, 1 skymning, 2 natt) och eldarna (x och y i världens punkter, hur långt ljuset når, styrkan 0–1)
+// mörkret m (0 dag, 1 skymning, 2 natt, 3 djup natt) och eldarna (x och y i världens punkter, hur långt ljuset når, styrkan 0–1)
 export function stallNatt(lager: PIXI.Container, varld: PIXI.Container, m: number, eldar: { x: number; y: number; r: number; k: number }[]) {
   if (m <= 0) { if (lager.filters) lager.filters = null; return; }
   if (!lager.filters) lager.filters = [nattFilter];

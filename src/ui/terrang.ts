@@ -2,6 +2,7 @@ import { BJORK, BRAND, DAY, H, HOUR, STADIER, T, VAG, W, tradArt, valjArt, ageIn
 import { s } from './lage';
 import { TS, figurLayer, mork, terrainG, world } from './scen';
 import { stallNatt } from './natt';
+import { DJUPNATT } from '../palett';
 import { markLayer, ritaMark, stallMark } from './mark';
 import { stallTrad, tradBild } from './trad';
 
@@ -72,7 +73,7 @@ function kantHash(x: number, y: number) {
   return (h >>> 0) / 4294967296;
 }
 // mörkret och eldens sken
-// (steg 5.1.1.4): paletten ett steg mörkare i skymningen och två på natten, med raster, och ljuset runt varje eld (ui/natt.ts)
+// (steg 5.1.1.4, 5.1.7.2): paletten ett steg mörkare i skymningen och tre mitt i natten, med raster, och ljuset runt varje eld (ui/natt.ts)
 export function drawNight(t: number) {
   const d = 1 - lightLevel(t), eldar: { x: number; y: number; r: number; k: number }[] = [];
   if (d > 0) for (const e of eldarOf(s)) { // varje lägereld lyser (steg 4.5.6.8)
@@ -81,5 +82,5 @@ export function drawNight(t: number) {
     const f = eldXY(s, e), k = I > 0 ? 0.45 + 0.55 * I : 0.12;
     eldar.push({ x: f.x * TS + TS / 2, y: f.y * TS + TS / 2, r: TS * 6 * k, k: I > 0 ? 1 : 0.5 });
   }
-  stallNatt(mork, world, 2 * d, eldar);
+  stallNatt(mork, world, DJUPNATT * d, eldar);
 }
