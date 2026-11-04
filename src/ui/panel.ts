@@ -19,6 +19,7 @@ import { religion } from './flikar/religion';
 import { $, hjalpKlick } from './hjalp';
 import { piles, s, ui } from './lage';
 import { renderPorts } from './portratt';
+import { bandHtml, stenHtml } from './runstenar';
 
 // panelerna: flikarna och listan över allt byn äger.
 // En ny flik: en fil i flikar/ som exporterar en Flik, och en rad i FLIKAR nedan. Knappen skapas av sig själv
@@ -38,7 +39,8 @@ const IDS = Object.keys(FLIKAR) as FlikId[];
 // högen, huset, stationen, sjön, fältet, saken, djuret, filten), den öppna flikens panel till höger, och flikknapparna står
 // i en kolumn längst till höger. Ett tryck på den öppna flikens knapp stänger den, och krysset stänger en panel
 const nav = document.querySelector<HTMLElement>('.tabs')!;
-nav.innerHTML = IDS.filter(id => !ALLA[id].knapp && id !== 'person').map(id => `<button type="button" role="tab" data-tab="${id}" aria-selected="false">${ALLA[id].namn}</button>`).join('');
+// knapparna är runstenar (steg 5.3.3.1, ui/runstenar.ts); namnet syns när musen är över
+nav.innerHTML = IDS.filter(id => !ALLA[id].knapp && id !== 'person').map(id => `<button type="button" role="tab" class="runsten" data-tab="${id}" aria-selected="false" title="${ALLA[id].namn}" aria-label="${ALLA[id].namn}">${stenHtml(id, ALLA[id].namn)}</button>`).join('');
 
 // flikarna som visas i personens panel (personen, elden, lagret, högen, huset, stationen, sjön, fältet, saken, djuret)
 export const ärPersonflik = (id: FlikId | undefined) => !!id && (ALLA[id].knapp ?? id) === 'person';
@@ -60,7 +62,7 @@ function skriv(sd: Sida, id: FlikId | undefined, force: boolean) {
   sd.el.hidden = !id;
   if (!id) { sd.html = ''; return; }
   if (!force && (ui.busy || performance.now() - ui.lastPointer < 800 || sd.musOver)) return;
-  const html = ALLA[id].html();
+  const html = bandHtml(id) + ALLA[id].html(); // bandet överst i fliken (steg 5.3.3.1)
   if (!force && html === sd.html) return;
   sd.html = html; sd.body.innerHTML = html;
 }
@@ -69,7 +71,9 @@ export function renderPanel(force = false) {
   for (const b of nav.querySelectorAll<HTMLButtonElement>('button')) {
     const id = b.dataset.tab as FlikId;
     b.setAttribute('aria-selected', String(id === ui.hoger));
-    b.hidden = !(ALLA[id].syns?.() ?? true);
+    // en flik som inte går att öppna än står kvar som en blek sten (steg 5.3.3.1)
+    const kan = ALLA[id].syns?.() ?? true;
+    if (b.disabled === kan) { b.disabled = !kan; b.title = kan ? ALLA[id].namn : `${ALLA[id].namn}: går inte att öppna än`; }
   }
   document.body.classList.toggle('vOppen', !!ui.tab);
   renderOwned();

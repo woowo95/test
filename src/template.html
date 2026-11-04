@@ -108,6 +108,20 @@ body.vOppen .owned { display: none; }
 .tabs button { background: none; border: 1px solid var(--line); border-radius: 18px 18px 4px 4px; color: var(--muted); font: inherit; font-size: 10px; font-weight: 500; padding: 14px 0 8px; cursor: pointer; overflow-wrap: normal; letter-spacing: -0.02em; } /* Pixelify Sans är bredare: hela ord på en rad */
 .tabs button[aria-selected="true"] { color: var(--accent-fg); background: var(--accent); border-color: var(--accent); font-weight: 700; }
 .tabs { padding-bottom: 52px; }
+/* runstenarna (steg 5.3.3.1): stenen i hel skala, i det läge som gäller; namnet bara för skärmläsare och när musen är över */
+.tabs button.runsten { border: none; border-radius: 0; background: none; padding: 2px 0; display: grid; place-items: center; }
+.tabs button.runsten[aria-selected="true"] { background: none; }
+.runsten .sten { display: none; image-rendering: pixelated; }
+.runsten .sten.stangd { display: block; }
+.runsten[aria-selected="true"] .sten.stangd, .runsten:disabled .sten.stangd { display: none; }
+.runsten[aria-selected="true"] .sten.oppen { display: block; }
+.runsten:disabled .sten.blek { display: block; }
+.runsten:disabled { cursor: default; }
+.runsten:not(:disabled):hover .sten { filter: brightness(1.12); }
+.runsten .stennamn { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+/* bandet överst i en flik */
+.band { display: flex; justify-content: center; margin: 2px 30px 8px 0; }
+.band img { image-rendering: pixelated; display: block; }
 #installKnapp { position: fixed; z-index: 3; right: 6px; bottom: 10px; width: calc(var(--stenar) - 12px); height: 34px; border-radius: 4px; border: 1px solid var(--line); background: var(--panel); color: var(--muted); font: inherit; font-size: 17px; cursor: pointer; padding: 0; }
 #installKnapp[aria-expanded="true"] { color: var(--accent-fg); background: var(--accent); border-color: var(--accent); }
 .muted { color: var(--muted); }

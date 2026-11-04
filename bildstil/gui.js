@@ -13,10 +13,10 @@
       if (ch !== '.') B.satt(x + i, y + j, B.P.av(b.pal[ch]));
     }
   }
-  // flikarnas färger: huvudfärg och andrafärg ur Starkare i paletten (Björns beslut efter v207; Tro är ett förslag)
+  // flikarnas färger: huvudfärg och andrafärg ur Starkare i paletten (Björns beslut efter v207; Tro i barr och senap är Björns val q_tro)
   const FLIK = [
     ['kronika', 'Krönika', 'rost', 'kol'], ['seder', 'Seder', 'skiffer', 'senap'], ['styre', 'Styre', 'rost', 'senap'],
-    ['teknik', 'Teknik', 'kol', 'rost'], ['forrad', 'Förråd', 'oliv', 'senap'], ['folket', 'Folket', 'barr', 'rost'], ['tro', 'Tro', 'senap', 'ben']];
+    ['teknik', 'Teknik', 'kol', 'rost'], ['forrad', 'Förråd', 'oliv', 'senap'], ['folket', 'Folket', 'barr', 'rost'], ['tro', 'Tro', 'barr', 'senap']]; // Tro i barr och senap (Björns val q_tro)
 
   // ---------- runstenarna ----------
   // en båge i flikens huvudfärg runt en grå sten med emblemet; öppen: bågen i andrafärgen och stenen i huvudfärgen;
@@ -173,19 +173,13 @@
     fyll(B, B.P.i('ben', 2)); const f = [id, '', hu, an, EMB[emb] || GUI.emblem[emb]];
     runsten(B, 5, 9, f, 'stangd'); runsten(B, 5 + SW + 4, 9, f, 'oppen'); nyttBand(B, 2 * (SW + 4) + 8, 5, hu, an, monster, f[4]);
   });
+  // till spelet (5.3.3.1): guitillspelet.cjs kör den här filen och ritar runstenarna och banden med samma funktioner
+  if (typeof window !== 'undefined') window.GUIRITA = { runsten, nyttBand, FLIK, EMB, SW, SH };
   const T = 'Steg 5.2.4.7: ';
+  // runstenarna, banden och Tros, Personens och Grannarnas förslag är inbyggda i spelet (5.3.3.1, v338) och borttagna ur valdelen;
+  // scenerna STENAR och BAND och FORSLAG ligger kvar som referens
   VAL.push(
-    { id: 'g_runsten', stor: true, namn: 'Runstenarna', typ: 'janej', vad: T + 'flikarnas knappar (till 5.3.3.1) i hel skala, 22 × 28 punkter, efter skissen: en båge i flikens färg runt en grå sten med emblemet. Översta raden stängda, i mitten öppna (bågen i andrafärgen och stenen i huvudfärgen) och nederst bleka (fliken går inte att öppna än). Tros färger (senap och ben) är ett förslag. Person och Grannar har ingen sten än.',
-      versioner: [{ text: 'Version 1: sju runstenar i tre lägen.', ...STENAR }] },
-    { id: 'g_band', stor: true, namn: 'Flikarnas band och emblem', typ: 'janej', vad: T + 'banden och emblemen överst i flikarna (till 5.3.3.1) från dina skisser efter v207, nu som bilder i paletten i hel skala, 140 × 26 punkter: Seder (orm med två huvuden och vågen), Styre (ringkedja och högsätet), Teknik (smidd kedja, hammare och tång), Förråd (sädesax), Krönika (runband och runstenen) och Folket (människor hand i hand). Tro, Person och Grannar har inget band än.',
-      versioner: [{ text: 'Version 1: de sex banden.', ...BAND }] },
     { id: 'g_vag', stor: true, namn: 'Vågbandet', typ: 'janej', vad: T + 'vågbandet längst ner i raden överst (till 5.3.1.2), spiraler i kol på beige med en linje under som ligger mot kartan. En ruta på 8 × 7 punkter som upprepas över hela bredden.',
       versioner: [{ text: 'Version 1: vågbandet mot kartan.', ...VAG }] },
-    { id: 'q_tro', stor: true, namn: 'Tros band och färger', typ: 'janej', vad: 'Steg 5.2.4.7: fliken Tro i barr och senap med en ranka med blad som livsträdets grenar, nu symmetrisk: höger sida är vänster sida speglad kring medaljongen. Din kommentar förra gången: \u201dMen gör den symmetrisk\u201d (du valde version 2).',
-      versioner: [{ text: 'Version 2, symmetrisk.', ...FORSLAG('tro', 'barr', 'senap', 'ranka', 'tro') }] },
-    { id: 'q_person', stor: true, namn: 'Personfliken', typ: 'janej', vad: 'Steg 5.2.4.7: fliken Person i rost och ben med en hand och ett pärlband, nu symmetriskt kring medaljongen. Handen själv har tummen åt ett håll; säg till om även den ska bli symmetrisk. Din kommentar förra gången: \u201dMen gör den symmetrisk\u201d (du valde version 2).',
-      versioner: [{ text: 'Version 2, symmetrisk.', ...FORSLAG('person', 'rost', 'ben', 'parlor', 'hand') }] },
-    { id: 'q_grannar', stor: true, namn: 'Grannfliken', typ: 'janej', vad: 'Steg 5.2.4.7: fliken Grannar i oliv och rost med två hus och en rad hyddor, nu symmetrisk kring medaljongen. Din kommentar förra gången: \u201dMen gör den symmetrisk\u201d (du valde version 1).',
-      versioner: [{ text: 'Version 1, symmetrisk.', ...FORSLAG('grannar', 'oliv', 'rost', 'hyddor', 'hus') }] },
   );
 })();
