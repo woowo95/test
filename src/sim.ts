@@ -16,6 +16,7 @@ export * from './sim/kartflytt';
 export * from './sim/matlagning';
 export * from './sim/brasor';
 export * from './sim/historik';
+export * from './sim/notiser';
 export * from './sim/ekonomi';
 export * from './sim/eld';
 export * from './sim/eldflytt';

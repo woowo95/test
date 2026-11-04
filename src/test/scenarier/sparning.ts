@@ -44,6 +44,42 @@ SCENARIER.historik = {
   },
 };
 
+SCENARIER.notiser = {
+  text: 'Notiserna (steg 5.4.3.1, sim/notiser.ts): samma sort samma dygn blir en notis med flera rader, en ny dygn eller sort blir en ny, de är olästa tills de läses, den viktigaste kommer först, och de sparas i en egen del och blir samma igen',
+  kor: () => {
+    const s = createState(3, START);
+    for (let i = 0; i < STEG_DYGN / 4; i++) step(s, BEAT);
+    const [a, b] = living(s), utan = serialize(s);
+    SIM.notis(s, 'fodd', `${a.name} fick ett barn.`, [a.id]);
+    SIM.notis(s, 'fodd', `${b.name} fick ett barn.`, [b.id, a.id]);
+    SIM.notis(s, 'byte', 'Ett byte.');
+    const ett = s.notiser!.lista.length, f = s.notiser!.lista[0];
+    s.now += DAY;
+    SIM.notis(s, 'fodd', 'Ännu ett barn.');
+    SIM.notis(s, 'dod', `${a.name} dog.`, [a.id], { x: 3, y: 4 });
+    const olasta = SIM.olasta(s), forst = SIM.notiserNu(s)[0];
+    SIM.lasNotis(s, f.nr);
+    const efterLas = SIM.olasta(s);
+    for (let i = 0; i < SIM.NOTIS.rader + 5; i++) SIM.notis(s, 'byte', `Byte ${i}.`);
+    const byte = s.notiser!.lista.find(n => n.id === 'byte' && n.ar === SIM.kalender(s).ar)!;
+    const delar = serializeParts(s), ater = JSON.parse(joinParts(Object.values(delar))).notiser, sammaIgen = isDeepStrictEqual(ater, JSON.parse(serialize(s)).notiser);
+    let fel = false; try { SIM.notis(s, 'finnsinte', 'x'); } catch { fel = true; }
+    const fore = s.notiser!.lista.length; SIM.taBortNotis(s, f.nr); const enMindre = s.notiser!.lista.length === fore - 1;
+    SIM.taBortNotis(s); const tomma = s.notiser!.lista.length === 0;
+    return [
+      ['samma sort samma dygn blir en notis med flera rader och alla som den gäller', ett === 2 && f.n === 2 && f.rader.length === 2 && f.ids.length === 2],
+      [`ett nytt dygn eller en ny sort blir en ny notis (${s.notiser ? fore : 0} st)`, fore === 5],
+      [`de är olästa tills de läses (${olasta} olästa, ${efterLas} efter en läst)`, olasta === 4 && efterLas === 3],
+      ['den viktigaste kommer först (döden)', forst.id === 'dod' && !!forst.plats],
+      [`en ihopslagen notis behåller de senaste raderna men räknar alla (${byte.n} st)`, byte.rader.length === SIM.NOTIS.rader && byte.n === SIM.NOTIS.rader + 5 && byte.rader[byte.rader.length - 1] === `Byte ${SIM.NOTIS.rader + 4}.`],
+      ['de sparas i en egen del och blir samma igen', !!delar.notiser && !delar.byn.includes('"notiser"') && sammaIgen],
+      ['en by utan notiser sparas som förut', !utan.includes('"notiser"')],
+      ['en okänd sort är ett fel', fel],
+      ['de tas bort en och en eller alla', enMindre && tomma],
+    ];
+  },
+};
+
 SCENARIER.sparning = {
   lang: true,
   text: 'Byn sparas i delar som var och en ryms i ett dokument i molnet, och delarna blir samma by igen',
