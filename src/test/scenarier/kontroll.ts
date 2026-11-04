@@ -5,6 +5,8 @@ import { hasIcon, PAL } from '../../ikoner';
 import { FARGER, MORKARE, PALETT, iPaletten, kornPa, rasterSteg } from '../../palett';
 import { START, STEG_TIM, korBy } from '../kor';
 import { seedAv } from '../pool';
+import { KARNA } from '../../portrattkarna';
+import { ANSIKTSORD, drag, glomArv, skapad, skonNiva } from '../../ui/utseende';
 import { Koll, kor, klockan, uiLas, SCENARIER, grenarUte, barGrenar } from './hjalp';
 
 SCENARIER['ui-ren'] = {
@@ -130,6 +132,7 @@ SCENARIER.vakt = {
 const SALLSYNT: Record<string, string> = {
   kol: 'kol blir det bara när elden brunnit ut helt',
   flyttaeld: 'elden flyttas bara när ett hus behöver platsen eller byn har minst tre hus och vuxit ifrån elden (steg 2.10.4); scenariot eldflytt prövar det',
+  tillbehor: 'skinnfällen i bädden görs bara när byn har skinn över och kommit på skinnfällen, i 1 av 4 byar på 35 dygn sedan v324; scenariot skinnfall prövar det',
   hantverk: 'handarbete utan sak väljs inte sedan v55; rep tvinnas som en egen handling och resten är projekt',
   metspo: 'sen teknik efter fiskespjutet och repet, hinner inte alltid komma på 35 dygn',
   korg: 'sen teknik efter slöjdbänken, hinner inte alltid komma på 35 dygn',
@@ -208,5 +211,60 @@ SCENARIER.aldrig = {
       [`listan över det sällsynta har bara sådant som finns i registren${okanda.length ? ` (inte: ${okanda.join(', ')})` : ''}`, !okanda.length],
       [`inga vaktlarm i byarna${vakter.length ? `: ${vakter.slice(0, 3).join('; ')}` : ''}`, !vakter.length],
     ];
+  },
+};
+
+SCENARIER.portratt = {
+  text: 'Porträtten (steg 5.2.3.1, 5.2.3.3, 5.2.3.4): varje person får sina delar ur registret PORTRATT, ett barn ärver dem från mamman och pappan, och samma person blir likadan varje gång, också i en sparad by (allt räknas ur numret och föräldrarna); skönheten väljer de fula delarna och lagren, och beskrivningens vackraste eller fulaste del tas ur ansiktet; humöret, sömnen, sjukdomen, kylan, förbandet och blodet följer spelet; porträttet och kartfiguren har bara färger ur paletten',
+  kor: () => {
+    const s = createState(3, START), vuxna = living(s).filter(p => ageOf(p, s.now) >= 20);
+    const mor = vuxna.find(p => p.sex === 'k')!, far = vuxna.find(p => p.sex === 'm')!;
+    const barn: Person[] = []; for (let i = 0; i < 30; i++) barn.push(SIM.newPerson(s, i % 2 ? 'm' : 'k', s.now, mor, far));
+    const alla = [...living(s), ...barn], ett = (p: Person) => JSON.stringify(drag(s, p));
+    const forst = alla.map(ett); glomArv(); const igen = alla.map(ett);
+    const ANSIKTE = ['huvudform', 'ora', 'nasa', 'oga', 'ogonbryn', 'mun'] as const;
+    let fran = 0, delar = 0;
+    for (const c of barn) { const d = drag(s, c), m = drag(s, mor), f = drag(s, far); for (const k of ANSIKTE) { delar++; if (d.del[k] === m.del[k] || d.del[k] === f.del[k]) fran++; } }
+    const olika = new Set(living(s).map(p => JSON.stringify(drag(s, p).del))).size;
+    let utanfor = 0, ritade = 0;
+    for (const p of alla) {
+      const q = skapad(s, p), B = KARNA.portratt(q), F = KARNA.kartFigur(q, 'fram', 'sta', 'hanga');
+      if (B.w === 64 && B.h === 64 && F.w === 14 && F.h === 20) ritade++;
+      for (const v of [...B.px, ...F.px]) if (v < -1 || v >= FARGER.length) utanfor++;
+    }
+    const kon = alla.every(p => drag(s, p).kon === (p.sex === 'k' ? 'kvinna' : 'man')) && barn.every(c => skapad(s, c).alder === 'barn');
+    // skönheten (steg 5.2.3.3): nivån följer personen, de vanliga och vackra har inga fula delar, och beskrivningen säger det
+    // vackraste eller fulaste som syns i ansiktet
+    glomArv();
+    const skonOk = alla.every(p => drag(s, p).skonhet === skonNiva(p));
+    let fulaDelar = 0;
+    for (const p of alla) if (skonNiva(p) >= 0) for (const k of ['huvudform', 'ora', 'nasa', 'oga', 'ogonbryn', 'mun']) if (KARNA.DEL[drag(s, p).del[k] ?? '']?.ful) fulaDelar++;
+    const ord = Object.values(ANSIKTSORD);
+    let sagt = 0, skona = 0;
+    for (const [i, v] of [[0, 19], [1, 2], [2, 1], [3, 20]] as const) {
+      const p = living(s)[i]; if (!p) continue;
+      p.pot.skonhet = v; glomArv(); skona++;
+      const t = SIM.beskrivning(s, p), q = skapad(s, p);
+      if (q.skonhet === (v > 10 ? 2 : -2) && (ord.some(o => t.includes(o)) || /ögon|hår/.test(t))) sagt++;
+    }
+    // kroppen följer spelet (steg 5.2.3.4): sömnen, sjukdomen, kylan, förbandet och blodet
+    const kp = living(s)[0], fore = skapad(s, kp);
+    kp.task = { act: 'sova', phase: 'do', tx: kp.x, ty: kp.y, until: s.now + 3600e3 } as SIM.Task;
+    kp.sickUntil = s.now + 3600e3; kp.warm = 0.1;
+    kp.skador = [{ d: 'huvud', k: 'skarsar', g: 0.5, b: 1, f: 1 }];
+    const efter = skapad(s, kp);
+    const kroppOk = fore.humor !== 'sover' && !fore.sjuk && !fore.blod && efter.humor === 'sover' && efter.sjuk && efter.kyla && efter.blod && efter.forband.includes('forband-huvud');
+    kp.task = undefined; kp.sickUntil = undefined; kp.warm = 0.9; kp.skador = [];
+    return [
+      ['samma person blir likadan igen, när allt räknas om', forst.every((v, i) => v === igen[i])],
+      [`porträttet följer kroppen: sover, sjuk, fryser, förband och blod (${efter.humor}, ${efter.sjuk}, ${efter.kyla}, ${efter.forband.join('/')}, ${efter.blod})`, kroppOk],
+      [`barnen ärver ansiktet: ${fran} av ${delar} delar från mamman eller pappan (minst 80 %)`, fran >= delar * 0.8],
+      [`de första i byn ser olika ut (${olika} olika av ${living(s).length})`, olika === living(s).length],
+      ['könet följer personen och barnen ritas som barn', kon],
+      ['skönheten i porträttet följer personens skönhet (−2 till 2)', skonOk],
+      [`de vanliga och vackra har inga fula delar i ansiktet (${fulaDelar})`, fulaDelar === 0],
+      [`beskrivningen säger det vackraste eller fulaste som syns i ansiktet (${sagt} av ${skona})`, sagt === skona],
+      [`porträttet (64 × 64) och kartfiguren (14 × 20) ritas för alla ${alla.length} (${ritade}) med bara palettens färger (${utanfor} utanför)`, ritade === alla.length && utanfor === 0],
+    ] as Koll[];
   },
 };

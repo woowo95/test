@@ -1,6 +1,8 @@
 import { KROPP, Person, halsa, ageOf, alive, byId, living, moodOf, taskName, yrkeNamn } from '../sim';
-import { $, LAG, bar, esc, hex, tempBar, trend } from './hjalp';
+import { $, LAG, bar, esc, tempBar, trend } from './hjalp';
 import { s, ui, uppgiftVid, vidNyBy } from './lage';
+import { portrattImg, portrattUrl } from './folkbild';
+import { skapad } from './utseende';
 
 // porträttraden överst på kartan: en knapp per invånare, med mer om personen när musen är över den.
 // Ett tryck väljer personen (data-id, fångas i panel.ts), ett dubbeltryck följer hen med kameran
@@ -21,14 +23,15 @@ export function renderPorts() {
     let el = portEls.get(p.id);
     if (!el) {
       el = document.createElement('button'); el.type = 'button'; el.className = 'port'; el.dataset.id = String(p.id);
-      el.innerHTML = `<span class="dot"></span><span class="pn"></span><span class="pi"></span><span class="pa"></span>`;
+      el.innerHTML = `<img class="pf" alt="" width="64" height="64"><span class="pn"></span><span class="pi"></span><span class="pa"></span>`;
       portEls.set(p.id, el);
     }
     if (row.children[k] !== el) row.insertBefore(el, row.children[k] ?? null);
     const low = p.hunger < LAG.hunger || halsa(p) < KROPP.svag || p.warm < LAG.varmeRad || moodOf(p, s.now) < LAG.olycklig;
     el.classList.toggle('low', low);
     el.setAttribute('aria-pressed', String(ui.selected === p.id));
-    (el.children[0] as HTMLElement).style.background = hex(p);
+    const img = el.children[0] as HTMLImageElement, u = portrattUrl(skapad(s, p));
+    if (img.getAttribute('src') !== u) img.src = u; // bara när porträttet ändrats (steg 5.2.3.2)
     el.children[1].textContent = p.name;
     el.children[2].textContent = yrkeNamn(s, p) ?? '';
     el.children[3].textContent = shortAct(p);
@@ -41,7 +44,7 @@ function showTip(id: number) {
   if (!p || !el || !alive(p)) { hideTip(); return; }
   tipId = id;
   const m = moodOf(p, s.now);
-  tip.innerHTML = `<h4>${esc(p.name)}</h4><p class="op">${p.sex === 'k' ? 'Kvinna' : 'Man'}, ${Math.floor(ageOf(p, s.now))} år${yrkeNamn(s, p) ? ' · ' + esc(yrkeNamn(s, p)!) : ''}</p>
+  tip.innerHTML = `<div class="tiphead">${portrattImg(skapad(s, p), 'big')}<h4>${esc(p.name)}</h4></div><p class="op">${p.sex === 'k' ? 'Kvinna' : 'Man'}, ${Math.floor(ageOf(p, s.now))} år${yrkeNamn(s, p) ? ' · ' + esc(yrkeNamn(s, p)!) : ''}</p>
     <p>${shortAct(p)}</p>${p.task?.why ? `<p class="op">${esc(p.task.why)}</p>` : ''}
     <dl><dt>Humör</dt><dd>${bar(m, m < LAG.humor ? 'low' : '', trend(p, 'humor', m))}</dd><dt>Mättnad</dt><dd>${bar(p.hunger, p.hunger < LAG.hunger ? 'low' : '', trend(p, 'hunger', p.hunger))}</dd>
     <dt>Vila</dt><dd>${bar(p.rest, '', trend(p, 'rest', p.rest))}</dd><dt>Hälsa</dt><dd>${bar(halsa(p), halsa(p) < LAG.halsa ? 'low' : '', trend(p, 'health', halsa(p)))}</dd><dt>Temperatur</dt><dd>${tempBar(p.warm, trend(p, 'warm', p.warm))}</dd></dl>

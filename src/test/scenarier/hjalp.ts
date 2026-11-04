@@ -190,5 +190,5 @@ export const rikBy = (s: State) => { s.delning = { andel: 0 }; };
 // symbolerna i flikarna ritas på en canvas; utan webbläsare räcker en låtsad som ger en tom bild
 export function utanWebblasare() {
   const g = globalThis as { document?: unknown };
-  g.document ??= { createElement: () => ({ getContext: () => ({ fillRect() {} }), toDataURL: () => 'data:,' }) };
+  g.document ??= { createElement: () => ({ getContext: () => ({ fillRect() {}, createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }), putImageData() {} }), toDataURL: () => 'data:,' }) };
 }

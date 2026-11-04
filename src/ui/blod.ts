@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { Blodflack, ageIndex, blodNu, blodOf } from '../sim';
+import { Blodflack, blodNu, blodOf, snoPaMarken } from '../sim';
 import { s, ui } from './lage';
 import { TS } from './scen';
 
@@ -23,7 +23,7 @@ const key = (x: number, y: number) => x * 4096 + y; // punkterna utanför kartan
 export function ritaBlod(g: PIXI.Graphics) {
   const fl = blodOf(s);
   if (!fl.length) return;
-  const now = ui.nu, sno = ageIndex(s) === 0;
+  const now = ui.nu, sno = snoPaMarken(s) >= 0.5; // blodet syns rött i snön där det ligger snö (steg 5.1.13)
   // pölarna: klickar (metabollar) som flyter ihop. Sett snett ovanifrån är de lite tillplattade (0,72). Fältet faller brant
   // (fjärde potens), så att klickar som ligger på varandra inte blir en stor rund skiva men nära klickar flyter ihop. Det
   // samlas bara där det märks, punkt för punkt, med hur färskt blodet är där

@@ -108,8 +108,15 @@ function kvistar(M: Pkt, x: number, y: number, vinkel: number, lang: number, dju
   kvistar(M, ex, ey, vinkel - a * 0.9, lang * 0.62, djup - 1, s + 2);
   if (djup > 2 && hs(x, y, s + 3) < 0.5) kvistar(M, ex, ey, vinkel - 0.1, lang * 0.5, djup - 2, s + 4); // hängande skott
 }
-function bjorkM(h: number, vinter: boolean, s: number): Pkt {
-  const M: Pkt = new Map(), cx = 0, by = 0, L = (t: number) => I('oliv', [0, 1, 2, 3][t]);
+// björkens löv efter årstiden (steg 5.1.13, bildstilens LOV i mark.js): ramp och toner för kronans fyra ljus. Ljusa
+// nyutslagna löv på våren, gröna på sommaren, gula på hösten (och röda på några björkar), och kala grenar på vintern
+export type Lov = 'var' | 'sommar' | 'host' | 'rod' | 'kal';
+const LOV: Record<Exclude<Lov, 'kal'>, [string, number[]]> = {
+  var: ['oliv', [0, 1, 3, 3]], sommar: ['oliv', [0, 1, 2, 3]], host: ['senap', [0, 1, 2, 3]], rod: ['rost', [0, 1, 2, 3]],
+};
+function bjorkM(h: number, lov: Lov, s: number): Pkt {
+  const vinter = lov === 'kal', [ramp, ton] = LOV[vinter ? 'sommar' : lov];
+  const M: Pkt = new Map(), cx = 0, by = 0, L = (t: number) => I(ramp, ton[t]);
   const kh = h < 10 ? h * 0.7 : h * 0.68, kw = Math.max(2, h * 0.3), ky = by - h + kh / 2;
   bjorkStam(M, cx, by, h, by - Math.round(h * (vinter ? 0.85 : 0.55)));
   if (h < 8) { // plantan: några blad på en pinne
@@ -148,28 +155,44 @@ function torrBjorkM(h: number): Pkt {
   kvistar(M, cx, top + h * 0.1, Math.PI / 2 - 1.0, h * 0.18, 2, 560);
   return M;
 }
-// snö på allt som vänder sig uppåt (bildstilen, årstiderna: tidTrad)
-function snoPa(M: Pkt) {
-  const ut: Pkt = new Map();
-  for (const [k, c] of M) { const [x, y] = k.split(',').map(Number); ut.set(k, !M.has(x + ',' + (y - 1)) && (c < 28 || c > 31) && hs(x, y, 722) < 0.75 ? I('ben', 3) : c); }
+// snö på allt som vänder sig uppåt (bildstilen, årstiderna: tidTrad); sno = hur mycket snö som ligger (0–1, 0.8 som i
+// bildstilen)
+function snoPa(M: Pkt, sno: number) {
+  const ut: Pkt = new Map(), f = 0.75 * Math.min(1.25, sno / 0.8);
+  for (const [k, c] of M) { const [x, y] = k.split(',').map(Number); ut.set(k, !M.has(x + ',' + (y - 1)) && (c < 28 || c > 31) && hs(x, y, 722) < f ? I('ben', 3) : c); }
   return ut;
 }
-// punkterna till en bild med foten mitt i nedre kanten
-function iBild(M: Pkt) {
-  let ux = 0, oy = 0;
-  for (const k of M.keys()) { const [x, y] = k.split(',').map(Number); ux = Math.max(ux, Math.abs(x)); oy = Math.min(oy, y); }
-  const w = 2 * ux + 1, H = 1 - oy, px = new Int8Array(w * H).fill(-1);
-  for (const [k, c] of M) { const [x, y] = k.split(',').map(Number); if (y <= 0) px[(y - oy) * w + x + ux] = c; }
-  return { w, h: H, px };
+// fallna löv på marken kring foten på hösten (bildstilen, stadierTid): gula och några röda, under trädet
+function fallnaLov(M: Pkt, h: number, s: number) {
+  if (h <= 8) return M;
+  const ut: Pkt = new Map();
+  for (let k = 0; k < h * 1.5; k++) {
+    const a = hs(k, s, 724) * 6.28, d = Math.sqrt(hs(k, s, 725)) * h * 0.4;
+    satt(ut, Math.cos(a) * d, 2 + Math.sin(a) * d * 0.35, I(hs(k, s, 726) < 0.25 ? 'rost' : 'senap', 2 + (k % 2)));
+  }
+  for (const [k, c] of M) ut.set(k, c); // trädet framför löven
+  return ut;
 }
-const bjorkPx = (h: number, vinter: boolean, s: number) => { const M = bjorkM(h, vinter, s); return iBild(vinter ? snoPa(M) : M); };
-const torrBjorkPx = (h: number, vinter: boolean) => { const M = torrBjorkM(h); return iBild(vinter ? snoPa(M) : M); };
+// punkterna till en bild med foten i mitten; fot = raderna under foten (de fallna löven)
+function iBild(M: Pkt) {
+  let ux = 0, oy = 0, ny = 0;
+  for (const k of M.keys()) { const [x, y] = k.split(',').map(Number); ux = Math.max(ux, Math.abs(x)); oy = Math.min(oy, y); ny = Math.max(ny, y); }
+  const w = 2 * ux + 1, H = ny + 1 - oy, px = new Int8Array(w * H).fill(-1);
+  for (const [k, c] of M) { const [x, y] = k.split(',').map(Number); px[(y - oy) * w + x + ux] = c; }
+  return { w, h: H, px, fot: ny };
+}
+const bjorkPx = (h: number, lov: Lov, sno: number, s: number) => {
+  let M = bjorkM(h, lov, s);
+  if (lov === 'host' || lov === 'rod') M = fallnaLov(M, h, s);
+  return iBild(lov === 'kal' && sno > 0 ? snoPa(M, sno) : M);
+};
+const torrBjorkPx = (h: number, sno: number) => { const M = torrBjorkM(h); return iBild(sno > 0 ? snoPa(M, sno) : M); };
 
-// bjork: björken i stället för granen (steg 5.1.6)
-export type TradBild = { typ: 'gran' | 'torr'; h: number; s: number; mork?: boolean; bjork?: boolean };
-function tradPx(b: TradBild, sno: number) {
+// bjork: björken i stället för granen (steg 5.1.6); lov: björkens löv nu (steg 5.1.13, sommar om inget anges)
+export type TradBild = { typ: 'gran' | 'torr'; h: number; s: number; mork?: boolean; bjork?: boolean; lov?: Lov };
+function tradPx(b: TradBild, sno: number): { w: number; h: number; px: Int8Array; fot?: number } {
   if (b.bjork) {
-    const p = b.typ === 'torr' ? torrBjorkPx(b.h, sno > 0) : bjorkPx(b.h, sno > 0, b.s);
+    const p = b.typ === 'torr' ? torrBjorkPx(b.h, sno) : bjorkPx(b.h, b.lov ?? 'sommar', sno, b.s);
     if (b.mork) for (let i = 0; i < p.px.length; i++) if (p.px[i] > 16 && p.px[i] < 20) p.px[i]--; // den gamla björken är mörkare
     return p;
   }
@@ -185,14 +208,23 @@ function tradCanvas(b: TradBild, sno: number) {
   const g = c.getContext('2d')!, img = g.createImageData(p.w, p.h), d = img.data;
   for (let i = 0; i < p.px.length; i++) { const v = p.px[i]; if (v < 0) continue; const n = RGBA[v]; d[i * 4] = n >> 16; d[i * 4 + 1] = (n >> 8) & 255; d[i * 4 + 2] = n & 255; d[i * 4 + 3] = 255; }
   g.putImageData(img, 0, 0);
-  return c;
+  return { c, fot: p.fot ?? 0 };
 }
-const bilder = new Map<string, PIXI.Texture>();
-const nyckel = (b: TradBild, sno: number) => `${b.bjork ? 'b' : ''}${b.typ}|${b.h}|${b.s}|${b.mork ? 1 : 0}|${b.typ === 'torr' && !b.bjork ? 0 : sno}`;
+const bilder = new Map<string, { t: PIXI.Texture; fot: number }>();
+// snön syns på granen, på den torra björken och på den kala björken; löven bara på den levande björken
+function nyckel(b: TradBild, sno: number) {
+  const lov = b.bjork && b.typ !== 'torr' ? b.lov ?? 'sommar' : '';
+  const sn = (b.typ === 'torr' && !b.bjork) || (lov && lov !== 'kal') ? 0 : sno;
+  return `${b.bjork ? 'b' : ''}${b.typ}|${b.h}|${b.s}|${b.mork ? 1 : 0}|${sn}|${lov}`;
+}
 function tradTex(b: TradBild, sno: number) {
   const k = nyckel(b, sno);
   let t = bilder.get(k);
-  if (!t) { t = PIXI.Texture.from(tradCanvas(b, sno), { scaleMode: PIXI.SCALE_MODES.NEAREST }); bilder.set(k, t); }
+  if (!t) {
+    const c = tradCanvas(b, sno);
+    t = { t: PIXI.Texture.from(c.c, { scaleMode: PIXI.SCALE_MODES.NEAREST }), fot: c.fot };
+    bilder.set(k, t);
+  }
   return t;
 }
 // trädets bild i panelen (flikar/sak.ts), i dubbel storlek
@@ -200,7 +232,7 @@ const urls = new Map<string, string>();
 export function tradBildUrl(b: TradBild) {
   const k = nyckel(b, 0);
   let u = urls.get(k);
-  if (!u) { u = tradCanvas(b, 0).toDataURL(); urls.set(k, u); }
+  if (!u) { u = tradCanvas(b, 0).c.toDataURL(); urls.set(k, u); }
   return u;
 }
 // trädets bild efter stadiet (sim/trad.ts) och rutans skog (0–1); x, y = rutan
@@ -222,10 +254,9 @@ export function tradBild(stadium: string, v: number, x: number, y: number, ungsk
 // ---------- träden på kartan ----------
 const sprites = new Map<number, { sp: PIXI.Sprite; k: string; b: TradBild; x: number; y: number }>();
 let skuggaAndrad = true;
-// bild(i): trädet på rutan i (eller null), vinter: snö på grenarna
+// bild(i): trädet på rutan i (eller null), sno: hur mycket snö som ligger på grenarna (0–1, steg 5.1.13)
 // lager: figurLayer (scen.ts), där träden står i ordning söderut med folket och djuren
-export function stallTrad(lager: PIXI.Container, W: number, H: number, bild: (i: number) => TradBild | null, vinter: boolean) {
-  const sno = vinter ? 0.8 : 0;
+export function stallTrad(lager: PIXI.Container, W: number, H: number, bild: (i: number) => TradBild | null, sno: number) {
   for (let i = 0; i < W * H; i++) {
     const b = bild(i), x = i % W, y = (i / W) | 0, k = b ? nyckel(b, sno) : '';
     const f = sprites.get(i);
@@ -233,9 +264,9 @@ export function stallTrad(lager: PIXI.Container, W: number, H: number, bild: (i:
     skuggaAndrad = true;
     if (!b) { if (f) { f.sp.destroy(); sprites.delete(i); } continue; }
     const sp = f?.sp ?? new PIXI.Sprite();
-    const t = sp.texture = tradTex(b, sno);
+    const tx = tradTex(b, sno), t = sp.texture = tx.t;
     const bx = x * 16 + 8 + Math.round((hash(x, y, 595) - 0.5) * 8), by = y * 16 + 14 + Math.round((hash(x, y, 596) - 0.5) * 4);
-    sp.position.set(bx - (t.width >> 1), by - t.height + 1 + (b.typ === 'torr' ? 1 : 0)); sp.zIndex = by;
+    sp.position.set(bx - (t.width >> 1), by - (t.height - tx.fot) + 1 + (b.typ === 'torr' ? 1 : 0)); sp.zIndex = by;
     if (!f) lager.addChild(sp);
     sprites.set(i, { sp, k, b, x: bx, y: by });
   }

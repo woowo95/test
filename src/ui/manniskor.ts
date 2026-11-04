@@ -1,9 +1,10 @@
 import * as PIXI from 'pixi.js';
-import { ACTS, ALDER, Person, moodOf, actIkon, utbIkon, SEC, TalkEvent, ageOf, alive, bordVid, byId, homeKind, isSocial, pratarMed, kanGa, living, load, REL, relKey, sparPlats, storlekAv, handlarNu, handlarPlats, Match, Task, dragLag, kastMal, SPORT, bakomFilt } from '../sim';
-import { PRICKAR, personFarg } from './hjalp';
+import { ACTS, ALDER, Person, actIkon, utbIkon, SEC, TalkEvent, ageOf, alive, bordVid, byId, homeKind, isSocial, pratarMed, kanGa, living, load, REL, relKey, sparPlats, storlekAv, handlarNu, handlarPlats, Match, Task, dragLag, kastMal, SPORT, bakomFilt } from '../sim';
+import { PRICKAR } from './hjalp';
 import { s, sakVar, ui, uppgiftVid, vidNyBy } from './lage';
 import { Ikoner, TS, bubbleG, figurLayer, labels, markLayer, peopleG } from './scen';
-import { BH, BW, Utseende, arv, figurTex } from './figur';
+import { type Arm, type Ben, type Rikt, figurTex } from './folkbild';
+import { skapad } from './utseende';
 import { fotSkugga, skuggFolk, skuggLangd } from './skugga';
 import { jaktPlats } from './jakt';
 import { hasIcon, iconCanvas, kartbild, ljusSymbol } from '../ikoner';
@@ -187,17 +188,21 @@ function figurAv(id: number) {
   if (!sp) { sp = new PIXI.Sprite(); figurer.set(id, sp); figurLayer.addChild(sp); }
   return sp;
 }
-const STARK = 15; // anlag (1–20) som syns på kroppen: breda axlar och bara armar, eller smal och seg
-function utseende(p: Person, a: number, col: number): Utseende {
-  const barn = a < ALDER.vuxen, gammal = a > 55, kvinna = p.sex === 'k', { hud, har } = arv(p.id, p.mother, p.father);
-  const h = (p.id * 2654435761 >>> 0) % 5;
-  const frisyr = gammal && !kvinna ? 'tunn' : kvinna ? (h < 3 ? 'lang' : 'lockig') : barn ? (h < 2 ? 'lockig' : 'kort') : h < 3 ? 'kort' : 'rufsig';
-  const skagg = kvinna || barn ? 'ingen' : gammal ? 'gra' : h === 0 || h === 3 ? 'hel' : h === 1 ? 'stubb' : 'ingen';
-  const kl = '#' + ((((col >> 16) & 255) * 0.7) << 16 | (((col >> 8) & 255) * 0.7) << 8 | (col & 255) * 0.7).toString(16).padStart(6, '0');
-  return {
-    barn, gammal, kvinna, stark: p.pot.styrka >= STARK, seg: p.pot.styrka < STARK && p.pot.uthallighet >= STARK,
-    ledsen: moodOf(p, s.now) < 0.35, bandage: !!p.skador?.length, hud, har: gammal ? '#cfcac1' : har, frisyr, skagg, klader: kl,
-  };
+// kartfigurens läge (steg 5.2.3.2, Kartfigurens lägen) efter det personen gör: riktningen efter hur hen rört sig sedan förra
+// bildrutan (står kvar när hen står still), sittande vid måltiden, samtalet och vilan, armarna fulla när hen bär något, i
+// slaget vid de tunga arbetena och framför sig vid stationen. Benen står still tills gången får liv (5.1.9)
+const SITTA = new Set(['maltid', 'samtal', 'vila', 'lyssna', 'beratta']);
+const SLA = new Set(['falla', 'bygga', 'krossa', 'slakta', 'yxa', 'dorr', 'strid']);
+const forra = new Map<number, { x: number; y: number; rikt: Rikt }>();
+vidNyBy.push(() => forra.clear());
+function riktning(id: number, x: number, y: number): Rikt {
+  const f = forra.get(id); let rikt: Rikt = f?.rikt ?? 'fram';
+  if (f) {
+    const dx = x - f.x, dy = y - f.y;
+    if (Math.abs(dx) + Math.abs(dy) > 0.01) rikt = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'sida' : 'vast') : dy > 0 ? 'fram' : 'bak';
+  }
+  forra.set(id, { x, y, rikt });
+  return rikt;
 }
 export function drawPeople(t: number) {
   peopleG.clear(); bubbleG.clear();
@@ -214,14 +219,19 @@ export function drawPeople(t: number) {
     const q = posOf(p), x = q.x * TS, y = q.y * TS;
     pos.set(p.id, q);
     const tk = uppgiftVid(p), sleeping = tk?.act === 'sova';
-    const col = personFarg(p, sleeping);
-    // figuren i pixlar (steg 5.1.3.3, ui/figur.ts) med fötterna under punkten; den som sover eller inte kan gå ligger ner
-    // (steg 3.7.19), och de minsta barnen är mindre
+    // figuren ur porträttgeneratorn (steg 5.2.3.2, ui/folkbild.ts) med fötterna under punkten; den som sover eller inte kan
+    // gå ligger ner (steg 3.7.19), under täcket när hen sover, och de minsta barnen är mindre
     const sp = figurAv(p.id), ligger = sleeping || !kanGa(p), k = a < ALDER.smabarn ? 0.75 : 1;
-    sp.texture = figurTex(utseende(p, a, col), p.id === ui.selected || p.id === harSaken);
-    sp.scale.set(k); sp.rotation = ligger ? -Math.PI / 2 : 0;
-    if (ligger) sp.position.set(x - BH * k * 0.5, y + BW * k * 0.5);
-    else sp.position.set(x - BW * k / 2, y + r * 0.9 - (BH - 1) * k);
+    const gor = tk?.phase === 'do' ? tk.act : undefined, sitter = !ligger && !!gor && SITTA.has(gor);
+    let rikt = riktning(p.id, q.x, q.y);
+    if (sitter && rikt === 'bak') rikt = 'fram';
+    const ben: Ben = sitter ? 'sitta' : 'sta';
+    const arm: Arm = tk && load(tk, s) > 0 ? 'bara' : gor && SLA.has(gor) ? 'sla' : gor === 'station' ? 'framfor' : 'hanga';
+    sp.texture = figurTex(skapad(s, p), { rikt, ben, arm, ligga: ligger, tacke: sleeping }, p.id === ui.selected || p.id === harSaken);
+    sp.scale.set(k);
+    const w = sp.texture.width * k, h = sp.texture.height * k;
+    if (ligger) sp.position.set(x - w / 2, y - h / 2);
+    else sp.position.set(x - w / 2, y + r * 0.9 - h + k);
     sp.zIndex = y + r * 0.9; // fötterna (ordningen söderut, steg 5.1.4.5)
     if (!ligger) fotSkugga(skugga, x - 4 * k, Math.round(sp.zIndex) - 1, 4 * k, 2, skuggLangd());
     sp.visible = true; sedd.add(p.id);

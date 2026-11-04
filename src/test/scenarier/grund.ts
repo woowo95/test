@@ -122,6 +122,7 @@ SCENARIER['vinter-slocknad'] = {
 };
 
 SCENARIER.knapphet = {
+  lang: true,
   text: 'Bär, rötter och vilt tar slut nära byn för en tid, så invånarna går längre bort; fiske med händerna ger få fiskar per försök',
   kor: () => {
     const s = createState(23, START); // by 15 svälter ut sedan toa-smutsen kom (steg 2.7.2), by 16 och 17 sedan kartan blev 120 × 120 (2.10.9), by 18 sedan stigarna ligger kvar längre (2.10.15) och by 22 och 26 sedan tiderna följer riktlinjen (2.12.8); det balanseras i 2.12
