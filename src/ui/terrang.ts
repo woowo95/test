@@ -1,4 +1,4 @@
-import { BRAND, DAY, H, HOUR, STADIER, T, VAG, W, ageIndex, stadium, emberOn, fireHeat, eldXY, eldarOf, groundOf, isCm, lightLevel } from '../sim';
+import { BJORK, BRAND, DAY, H, HOUR, STADIER, T, VAG, W, tradArt, valjArt, ageIndex, stadium, emberOn, fireHeat, eldXY, eldarOf, groundOf, isCm, lightLevel } from '../sim';
 import { s } from './lage';
 import { TS, figurLayer, mork, terrainG, world } from './scen';
 import { stallNatt } from './natt';
@@ -61,8 +61,9 @@ function ritaTrad(g: ReturnType<typeof groundOf>, ai: number) {
   };
   stallTrad(figurLayer, W, H, i => {
     const x = i % W, y = (i / W) | 0, st = jord(g.tiles[i]) ? stadium(g, i) : null;
-    if (st) return tradBild(st, g.trees[i], x, y, VAG.ungskog);
-    return kant(i) && kantHash(x, y) < 0.3 ? tradBild('ungtrad', VAG.ungskog + (1 - VAG.ungskog) * kantHash(y, x) * 0.7, x, y, VAG.ungskog) : null; // en ung gran i skogskanten
+    if (st) return tradBild(st, g.trees[i], x, y, VAG.ungskog, tradArt(g, i).id === 'bjork');
+    // ett ungt träd i skogskanten, med den sort som skulle slå rot där (steg 5.1.6)
+    return kant(i) && kantHash(x, y) < 0.3 ? tradBild('ungtrad', VAG.ungskog + (1 - VAG.ungskog) * kantHash(y, x) * 0.7, x, y, VAG.ungskog, valjArt(s.seed, g, i, true) === BJORK) : null;
   }, ai === 0);
 }
 function kantHash(x: number, y: number) {

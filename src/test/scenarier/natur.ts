@@ -2198,7 +2198,7 @@ SCENARIER.virke = {
 };
 
 SCENARIER.trad = {
-  text: 'Träden (steg 5.1.4.1–5.1.4.2, 5.1.4.4 och 5.1.4.5): urskogen står i dungar med gläntor på ungefär hälften av jorden, och varje träd har art, ålder och stadium: ett vuxet träd blir gammalt om det står fritt och torkar i en tät dunge, en torraka faller och lämnar en glänta, och åldern följer med i sparfilen; ett större träd ger mer trä när det fälls',
+  text: 'Träden (steg 5.1.4.1–5.1.4.2, 5.1.4.4, 5.1.4.5 och 5.1.6, gran och björk): urskogen står i dungar med gläntor på ungefär hälften av jorden, och varje träd har art, ålder och stadium: ett vuxet träd blir gammalt om det står fritt och torkar i en tät dunge, en torraka faller och lämnar en glänta, och åldern följer med i sparfilen; ett större träd ger mer trä när det fälls',
   kor: () => {
     const s = createState(3, START), g = groundOf(s);
     let jord = 0, skog = 0;
@@ -2228,7 +2228,19 @@ SCENARIER.trad = {
     // åldern följer med i sparfilen (hela dygn)
     const c = cloneState(s), gc = groundOf(c);
     let lika = true; for (let i = 0; i < g.trees.length; i++) if (g.trees[i] >= 1 && Math.abs(gc.alder![i] - g.alder![i]) > 0.5) lika = false;
-    const arter = new Set([...g.trees.keys()].filter(i => g.trees[i] > 0).map(i => SIM.tradArt(s.seed, i).id));
+    const arter = new Set([...g.trees.keys()].filter(i => g.trees[i] > 0).map(i => SIM.tradArt(g, i).id));
+    // trädsorterna (steg 5.1.6): björken helst i skogskanten och vid vattnet, områden med granskog och björkdungar, och
+    // sorten följer med i sparfilen
+    const bj = (i: number) => SIM.tradArt(g, i).id === 'bjork', vuxna = [...g.trees.keys()].filter(i => g.trees[i] >= FOREST);
+    const kanten = (i: number) => { const x = i % W, y = Math.floor(i / W); let n = 0; for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if ((dx || dy) && g.trees[(y + dy) * W + x + dx] >= FOREST) n++; return n < 5; };
+    const vatten = (i: number) => { const x = i % W, y = Math.floor(i / W); for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) if (SIM.inMap(x + dx, y + dy) && g.tiles[(y + dy) * W + x + dx] === SIM.T.Vatten) return true; return false; };
+    const del = (l: number[]) => l.length ? l.filter(bj).length / l.length : 0, pc = (v: number) => `${Math.round(v * 100)} %`;
+    const bjAlla = del(vuxna), bjKant = del(vuxna.filter(kanten)), bjInne = del(vuxna.filter(i => !kanten(i) && !vatten(i))), bjVatten = del(vuxna.filter(i => !kanten(i) && vatten(i)));
+    const block = new Map<number, number[]>(); for (const i of vuxna) { const k = Math.floor((i % W) / 16) * 100 + Math.floor(i / W / 16); block.set(k, [...(block.get(k) ?? []), i]); }
+    const blockDel = [...block.values()].filter(l => l.length >= 40).map(del), granBlock = blockDel.filter(v => v < 0.25).length, bjorkBlock = blockDel.filter(v => v > 0.5).length;
+    const artLika = vuxna.every(i => SIM.tradArt(gc, i).id === SIM.tradArt(g, i).id) && !!c.tradSort;
+    // efter en brand kommer björken: en ny planta där skogen brunnit
+    const nyBrand = vuxna.filter(i => !kanten(i) && !vatten(i)).map(i => SIM.valjArt(s.seed, g, i, true)).filter(a => a === SIM.BJORK).length / Math.max(1, vuxna.filter(i => !kanten(i) && !vatten(i)).length);
     // ett större träd ger mer trä när det fälls (steg 5.1.4.4)
     const forsta = (k: string) => [...g.trees.keys()].find(i => SIM.stadium(g, i) === k)!;
     const u = cloneState(s), gu = groundOf(u), ung = forsta('vuxet'); gu.trees[ung] = 0.4;
@@ -2245,7 +2257,11 @@ SCENARIER.trad = {
       ['torrakan faller till sist och rutan blir en glänta', fallen],
       [`en planta som växer klart blir ett vuxet träd med åldern noll (${ny}, ${nyAlder})`, ny === 'vuxet' && nyAlder === 0],
       ['trädens åldrar följer med i sparfilen', lika && !!c.tradAlder],
-      [`varje träd har en art (${[...arter].join(', ')})`, arter.size >= 1],
+      [`varje träd har en sort, gran eller björk (${[...arter].join(', ')}; björk ${pc(bjAlla)} av de vuxna)`, arter.has('gran') && arter.has('bjork') && bjAlla > 0.15 && bjAlla < 0.6],
+      [`björken växer helst i skogskanten (${pc(bjKant)}) och vid vattnet (${pc(bjVatten)}) och mindre inne i skogen (${pc(bjInne)})`, bjKant > bjInne + 0.1 && bjVatten > bjInne + 0.1],
+      [`områden med granskog och björkdungar: av ${blockDel.length} delar av skogen har ${granBlock} mest gran och ${bjorkBlock} mest björk`, granBlock >= 1 && bjorkBlock >= 1],
+      [`där skogen kommer tillbaka efter en brand blir det mer björk (${pc(nyBrand)} mot ${pc(bjInne)})`, nyBrand > bjInne + 0.1],
+      ['trädens sorter följer med i sparfilen', artLika],
       [`ett gammalt träd på var femtionde ruta är ett jätteträd (${jatteAndel.toFixed(3)}), som ger mest trä (${vedJatte} mot ${vedGammalt})`, jatteSt === 'jatte' && jatteAndel > 0.01 && jatteAndel < 0.04 && vedJatte > vedGammalt],
       [`ett större träd ger mer trä: ungträd ${vedUng}, vuxet ${vedVuxet}, gammalt ${vedGammalt}, torraka ${torr.ved} med ${torr.grenar} grenar`, vedUng < vedVuxet && vedVuxet < vedGammalt && torr.ved > vedVuxet && Number.isInteger(vedUng) && torr.grenar < SIM.SKOG.stamGrenar],
     ];

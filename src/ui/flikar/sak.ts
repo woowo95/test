@@ -66,8 +66,8 @@ function stubbe(i: number) {
 function trad(i: number) {
   const g = groundOf(s), st = stadium(g, i);
   if (!st) return '<p class="muted">Här står inget träd längre.</p>';
-  const x = i % W, y = Math.floor(i / W), b = tradBild(st, g.trees[i], x, y, VAG.ungskog);
-  const namn = STADIER.find(d => d.id === st)!.namn, art = tradArt(s.seed, i).namn;
+  const x = i % W, y = Math.floor(i / W), b = tradBild(st, g.trees[i], x, y, VAG.ungskog, tradArt(g, i).id === 'bjork');
+  const namn = STADIER.find(d => d.id === st)!.namn, art = tradArt(g, i).namn;
   const ar = Math.floor(tradAlder(g, i, MARK.tradDygn));
   const alder = ar < 1 ? 'Under ett år' : `${ar} år`, stam = stamAv(g, i); // trä och grenar när det fälls (steg 5.1.4.4)
   return `

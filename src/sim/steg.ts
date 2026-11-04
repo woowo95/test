@@ -841,7 +841,7 @@ export const cloneState = (s: State) => migrate(JSON.parse(serialize(s)));
 
 // sparfilen i delar, så att varje del ryms i ett dokument i artefaktens databas (högst 256 KB). Det som inte står här är byn.
 // Varje del skrivs direkt med samma avrundning, så texten blir densamma som om hela byn skrivits och delats upp efteråt
-export const DELAR: Record<string, string[]> = { folket: ['people', 'rels'], kartor: ['mark', 'skog', 'tradAlder', 'stubbar'], fynden: ['fynd'], loggen: ['log'] };
+export const DELAR: Record<string, string[]> = { folket: ['people', 'rels'], kartor: ['mark', 'skog', 'tradAlder', 'tradSort', 'stubbar'], fynden: ['fynd'], loggen: ['log'] };
 export function serializeParts(s: State): Record<string, string> {
   packGround(s); packFynd(s);
   const o = s as unknown as Record<string, unknown>, ut: Record<string, string> = {}, bort = new Set<string>();

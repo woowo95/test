@@ -206,4 +206,4 @@ async function boot() {
 }
 boot();
 // byn och kartan tillgängliga för felsökning i konsolen
-(window as any).__byn = { get s() { return s; }, DAY, HOUR, getMap, coverOf, groundOf, get world() { return world; } };
+(window as any).__byn = { get s() { return s; }, DAY, HOUR, getMap, coverOf, groundOf, get world() { return world; }, get app() { return app; } };
