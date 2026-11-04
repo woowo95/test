@@ -229,6 +229,17 @@ ul, ol { list-style: none; margin: 0; padding: 0; }
 .tinfo .kan { color: var(--good); font-size: 13px; }
 .tinfo .tank { display: grid; grid-template-columns: auto 1fr; gap: 2px 8px; align-items: center; font-size: 13px; margin-top: 4px; }
 .sedtop { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+/* sederna som köpmansvågar (steg 5.3.3.3, sedVag i flikar/seder.ts): balken, foten och två skålar; vikterna i senap */
+.vag { display: block; position: relative; height: 46px; margin: 2px 0; }
+.vag .balk { position: absolute; left: calc(15% - 18px); right: calc(15% - 18px); top: 4px; height: 2px; background: #474138; }
+.vag .fot { position: absolute; left: 50%; margin-left: -1px; width: 2px; top: 2px; bottom: 0; background: #474138; }
+.vag .fot::after { content: ''; position: absolute; left: -7px; width: 16px; bottom: 0; height: 2px; background: #474138; }
+.vag .skal { position: absolute; bottom: calc(14px + var(--y)); width: 36px; margin-left: -18px; display: flex; flex-direction: column-reverse; align-items: center; gap: 1px; padding-bottom: 1px; border-bottom: 2px solid #7d5b40; }
+.vag .skal::before, .vag .skal::after { content: ''; position: absolute; bottom: -2px; width: 1px; height: calc(28px - var(--y)); background: #7d5b40; }
+.vag .skal::before { left: 0; } .vag .skal::after { right: 0; }
+.vag .skal.v { left: 15%; } .vag .skal.h { left: 85%; }
+.vag .rad { display: flex; gap: 1px; }
+.vag .rad i { width: 9px; height: 5px; background: #b2921b; box-shadow: inset 0 -1px #694902, inset 0 1px #d8b25f; }
 .sbar { display: block; position: relative; height: 8px; border-radius: 4px; background: var(--barbg); }
 .sbar::after { content: ''; position: absolute; left: 50%; top: -2px; bottom: -2px; width: 1px; background: var(--muted); }
 .sbar > span { position: absolute; top: 0; bottom: 0; background: var(--accent); border-radius: 4px; }
