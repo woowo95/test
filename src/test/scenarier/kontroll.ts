@@ -215,7 +215,7 @@ SCENARIER.aldrig = {
 };
 
 SCENARIER.portratt = {
-  text: 'Porträtten (steg 5.2.3.1, 5.2.3.3): varje person får sina delar ur registret PORTRATT, ett barn ärver dem från mamman och pappan, och samma person blir likadan varje gång, också i en sparad by (allt räknas ur numret och föräldrarna); skönheten väljer de fula delarna och lagren, och beskrivningens vackraste eller fulaste del tas ur ansiktet; porträttet och kartfiguren har bara färger ur paletten',
+  text: 'Porträtten (steg 5.2.3.1, 5.2.3.3, 5.2.3.4): varje person får sina delar ur registret PORTRATT, ett barn ärver dem från mamman och pappan, och samma person blir likadan varje gång, också i en sparad by (allt räknas ur numret och föräldrarna); skönheten väljer de fula delarna och lagren, och beskrivningens vackraste eller fulaste del tas ur ansiktet; humöret, sömnen, sjukdomen, kylan, förbandet och blodet följer spelet; porträttet och kartfiguren har bara färger ur paletten',
   kor: () => {
     const s = createState(3, START), vuxna = living(s).filter(p => ageOf(p, s.now) >= 20);
     const mor = vuxna.find(p => p.sex === 'k')!, far = vuxna.find(p => p.sex === 'm')!;
@@ -247,8 +247,17 @@ SCENARIER.portratt = {
       const t = SIM.beskrivning(s, p), q = skapad(s, p);
       if (q.skonhet === (v > 10 ? 2 : -2) && (ord.some(o => t.includes(o)) || /ögon|hår/.test(t))) sagt++;
     }
+    // kroppen följer spelet (steg 5.2.3.4): sömnen, sjukdomen, kylan, förbandet och blodet
+    const kp = living(s)[0], fore = skapad(s, kp);
+    kp.task = { act: 'sova', phase: 'do', tx: kp.x, ty: kp.y, until: s.now + 3600e3 } as SIM.Task;
+    kp.sickUntil = s.now + 3600e3; kp.warm = 0.1;
+    kp.skador = [{ d: 'huvud', k: 'skarsar', g: 0.5, b: 1, f: 1 }];
+    const efter = skapad(s, kp);
+    const kroppOk = fore.humor !== 'sover' && !fore.sjuk && !fore.blod && efter.humor === 'sover' && efter.sjuk && efter.kyla && efter.blod && efter.forband.includes('forband-huvud');
+    kp.task = undefined; kp.sickUntil = undefined; kp.warm = 0.9; kp.skador = [];
     return [
       ['samma person blir likadan igen, när allt räknas om', forst.every((v, i) => v === igen[i])],
+      [`porträttet följer kroppen: sover, sjuk, fryser, förband och blod (${efter.humor}, ${efter.sjuk}, ${efter.kyla}, ${efter.forband.join('/')}, ${efter.blod})`, kroppOk],
       [`barnen ärver ansiktet: ${fran} av ${delar} delar från mamman eller pappan (minst 80 %)`, fran >= delar * 0.8],
       [`de första i byn ser olika ut (${olika} olika av ${living(s).length})`, olika === living(s).length],
       ['könet följer personen och barnen ritas som barn', kon],

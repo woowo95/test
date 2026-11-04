@@ -3,7 +3,7 @@
 // födseln: ett barn ärver dem från mamman och pappan (barnAv), och de första i byn, nykomlingarna och personerna i byar
 // som sparats före porträtten får dem slumpade ur byns frö och personens nummer. Allt räknas ur numret och föräldrarna,
 // så att samma person alltid ser likadan ut och simuleringen inte märker något. Bara utseende.
-import { ALDER, BERATT, BESK_ANSIKTE, ageOf, byId, hash } from '../sim';
+import { ALDER, BERATT, BESK_ANSIKTE, KROPP, ageOf, blodning, byId, hash, isSick, moodOf, utbrottNu } from '../sim';
 import type { Person, State } from '../sim';
 import { KARNA } from '../portrattkarna';
 
@@ -60,14 +60,29 @@ export function drag(s: State, p: Person, djup = 0): Skapad {
   return d;
 }
 // personen som skaparen ritar hen nu: arvet i rätt ålder (barnet får den vuxna frisyren och skägget när hen växer upp).
-// Det som skaparen slumpar men spelet styr börjar tomt: kläderna och redskapet (5.2.3.5), humöret, skadorna, sjukdomen,
-// kylan och blodet (5.2.3.4), huvudbonaden (när det finns huvudbonader i spelet) och ärren (när bestående skador finns)
+// Det som skaparen slumpar styr spelet: humöret, skadorna, sjukdomen, kylan och blodet (5.2.3.4, kropp) och kläderna och
+// redskapet (5.2.3.5); huvudbonaden kommer när det finns huvudbonader i spelet och ärren när bestående skador finns
+// humöret, skadorna, sjukdomen, kylan och blodet som i spelet (steg 5.2.3.4): den som sover blundar, den som har ett utbrott
+// är arg, den som flyr eller gömmer sig är rädd, och annars humöret som orden i invånarlistan (moodWord). Ett sår i huvudet
+// har förband när det är omlagt, ett blåmärke eller krossår i huvudet syns som blåmärke, och blodet syns när ett sår blöder
+export const HUMORGRANS = { glad: 0.75, nojd: 0.55, lugn: 0.4 };
+const RADD = new Set(['fly', 'gomma']);
+function kropp(s: State, p: Person, del: Record<string, string | null>) {
+  const t = p.task, gor = t?.act;
+  const m = moodOf(p, s.now);
+  const humor = gor === 'sova' && t?.phase === 'do' ? 'sover' : utbrottNu(s, p) ? 'arg' : gor && RADD.has(gor) ? 'radd'
+    : m > HUMORGRANS.glad ? 'glad' : m > HUMORGRANS.nojd ? 'nojd' : m > HUMORGRANS.lugn ? 'lugn' : 'ledsen';
+  const huvud = (p.skador ?? []).filter(w => w.d === 'huvud');
+  const forband = huvud.some(w => w.f) ? ['forband-huvud'] : [];
+  if (huvud.some(w => !w.f && (w.k === 'blamarke' || w.k === 'krossar'))) del.blamarke = 'blamarke-1';
+  return { humor, forband, ogonlapp: false, sjuk: isSick(p, s.now), kyla: p.warm < KROPP.kallt, blod: blodning(p) > 0 };
+}
 export function skapad(s: State, p: Person): Skapad {
   const d = drag(s, p), alder = alderAv(ageOf(p, s.now));
   const u: Skapad = alder !== 'barn' && d.anlag ? KARNA.somUng(d) : { ...d, del: { ...d.del } };
   u.alder = alder;
   u.del = { ...u.del, huvudbonad: null, arr: null, blamarke: null, redskap: null };
-  u.humor = 'lugn'; u.forband = []; u.ogonlapp = false; u.sjuk = false; u.kyla = false; u.blod = false;
+  Object.assign(u, kropp(s, p, u.del));
   u.klader = { rock: null, skor: false, balte: false };
   return u;
 }
