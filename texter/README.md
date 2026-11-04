@@ -2,6 +2,8 @@
 
 Textchatten har gjort grundarbetet här, på samma sätt som bildstilen: inget i `src/` är ändrat. Programmeringschatten bygger in det Björn sagt ja till i avsnittet **Texterna** på bildstilens sida (https://claude.ai/artifact/Khx8Ggn4CdRb76UpZLnQww). Björns svar ligger i bildstilens databas, samlingen `texter`: `h-<text>` är en kommentar till en hel text (`plats`, `vem`, `text`, `kommentar`), `p-<plats>` en kommentar till alla texter på ett ställe och `f-<kort>` ett förslag (`svar` = `ja` eller `nej`, och `kommentar`; korten heter `r-<rättelse>`, `k-<kontroll>` och `m-<mall>`). Läs dem med ArtifactData.
 
+**Klart (Björn 2026-11-04):** ”texterna är klara”. Avsnittet Texterna är borttaget från bildstilens sida (och `bildstil/texter.js`), men svaren ligger kvar i samlingen `texter` för programmeringschatten.
+
 Björn kommenterar hela texter, så som de syns i spelet, inte en mening i taget. Gå igenom kommentarerna så här: gäller kommentaren bara den texten, rättas mallen eller varianten. Kommer samma sak igen i flera texter eller på flera ställen (en upprepning, en ordning, ett ord som alltid sitter fel), sitter felet i hur texterna byggs (`beskrivning`, `relationText`, `fyll`, loggens rader) och rättas där.
 
 Bara texterna ändras, inte hur spelet räknar. Varianterna väljs som i dag med `valjVariant`, alltså med en hash av byns frö, nyckeln och timmen, aldrig med spelets slump. Därför ska `npm run samma` vara exakt lika efteråt, med ett undantag: namnen i punkt 1f.

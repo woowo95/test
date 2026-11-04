@@ -983,6 +983,8 @@ const BESLUT = {
   f6_radjursskinn: { val: 1, steg: '6.5.1.2' }, f6_bjornskinn: { val: 1, steg: '6.5.3.3' },
   f6_barbuske: { val: 1, steg: '6.4.1.4' }, f6_fagel: { val: 2, steg: '6.5.1.3' }, f6_fjadrar: { val: 2, steg: '6.5.1.3' }, f6_uppsatt: { val: 1, steg: '6.3.2.4' },
   f6_fagel_falld: { val: 1, text: 'Byggs in i steg 6.5.1.3, ritad om i de tre fåglarnas egna former och färger från fåglarna du valde (version 2).' },
+  f6_fackla: { val: 1, steg: '6.3.2.3' },
+  f6_radjur: { val: 1, text: 'Hinden (1) och bocken (2) används båda, i färgerna från version 3 (gråbrun päls). Byggs in i steg 6.5.1.2.' },
   f6_naver: { val: 1, text: 'Byggs in i steg 6.3.1.3 efter din ritning: tre remsor utan mörk kontur (den lösa mörka punkten till höger tas bort).' },
   f6_ljus: { val: 1, text: 'Version 1 och 2 används båda, som variationer (ljuset på stenen och i lerskålen). Byggs in i steg 6.3.2.5.' },
   f6_buske: { val: 1, text: 'Alla tre används, som variationer (rund, gles och låg). Byggs in i steg 6.4.1.3.' },
