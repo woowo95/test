@@ -1010,16 +1010,16 @@
   // ---------- databasen: Björns svar (samlingen val) och de sparade kombinationerna ----------
   let DBS = null; const SVARDEL = {}; let KOMBOS = [];
   async function anslut() {
-    const st = [$('#gr-status'), $('#sk-sparstatus')];
+    const st = [$('#sk-sparstatus')]; // granskningen är borttagen från sidan (Björn 2026-11-04: alla kort klara)
     st.forEach(e => { e.textContent = 'Ansluter till sidans databas …'; });
     try { DBS = await window.claude?.use?.('db'); } catch (e) { DBS = null; }
     if (!DBS) { st.forEach(e => { e.textContent = 'Svaren och kombinationerna går bara att spara när sidan är öppen i Claude och du är inloggad.'; }); visaGranskning(); visaKombos(); return; }
-    $('#gr-status').textContent = 'Ditt svar sparas direkt.'; $('#sk-sparstatus').textContent = '';
+    $('#sk-sparstatus').textContent = '';
     DBS.collection('val').onSnapshot(snap => {
       for (const k of Object.keys(SVARDEL)) delete SVARDEL[k];
       snap.docs.forEach(d => { if (d.exists && d.id.startsWith('del-')) SVARDEL[d.id.slice(4)] = d.data(); });
       visaGranskning();
-    }, () => { $('#gr-status').textContent = 'Kontakten med databasen bröts. Ladda om sidan.'; });
+    }, () => { $('#sk-sparstatus').textContent = 'Kontakten med databasen bröts. Ladda om sidan.'; });
     DBS.collection('kombinationer').onSnapshot(snap => {
       KOMBOS = snap.docs.filter(d => d.exists).map(d => ({ id: d.id, ...d.data() })).sort((a, b) => String(b.nar).localeCompare(String(a.nar)));
       visaKombos();
