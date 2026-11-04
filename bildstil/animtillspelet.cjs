@@ -7,7 +7,7 @@ const BS = __dirname;
 const sida = fs.readFileSync(path.join(BS, 'sida.js'), 'utf8').split('\n');
 const slut = sida.findIndex(r => r.startsWith('// ---------- kistan'));
 if (slut < 0) throw new Error('hittar inte slutet på lägerelden i sida.js');
-const UT = '\nwindow.ANIM = { TAKT, HASTIGHET, EGNA, LAGOR, rok, gnistor, brandBild, BRANDBAS, tornado, TN, bild };\n})();';
+const UT = '\nwindow.ANIM = { TAKT, HASTIGHET, EGNA, LAGOR, rok, gnistor, brandBild, BRANDBAS, tornado, TN, TNMATT, STORLEKAR, bild };\n})();';
 let anim = fs.readFileSync(path.join(BS, 'anim.js'), 'utf8').trimEnd();
 if (!anim.endsWith('})();')) throw new Error('anim.js slutar inte med })();');
 anim = anim.slice(0, -5) + UT;

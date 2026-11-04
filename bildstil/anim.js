@@ -177,8 +177,13 @@
   // molnet överst virvlar i en spiral, tratten är en cylinder med ränder som går snett runt och flyttar sig ett varv,
   // tratten svajar mest längst ner, dammet vid foten virvlar runt i en ring och kvistar och löv flyger runt tratten,
   // framför den på ena sidan och bakom den på den andra. Allt utom dammet har en mörk kant.
-  const S = 1.5; // storleken (Björn 2026-11-04: "gör den större"): 1,5 gånger kartans förra tornado, 48 × 72 punkter
-  const TN = { w: 48, h: 72, cx: 23.5, fot: 65 };
+  // storleken S (Björn 2026-11-04: "gör den större"): medel är 1,5 gånger kartans förra tornado, 48 × 72 punkter. De tre
+  // storlekarna (steg 6.3.5.8, en rad var i spelets register) ritas av samma kod: tratten och molnet så breda som kärnan
+  // (liten 1 ruta, medel 3, stor 5) och dammet vid foten ut mot nära-zonen (2, 3 och 5 rutor från mitten), räknat så att
+  // medel är som förut. TNMATT ger bildens mått och foten för en storlek.
+  const STORLEKAR = { liten: { S: 0.5, damm: 2.5 }, medel: { S: 1.5, damm: 3.5 }, stor: { S: 2.5, damm: 5.5 } };
+  const TNMATT = S => { const w = Math.round(32 * S), h = Math.round(48 * S); return { w, h, cx: w / 2 - 0.5, fot: h - Math.round(7 * S / 1.5) }; };
+  const TN = TNMATT(1.5);
   // det som flyger runt (Björn 2026-11-04: "mer kaosartad och mindre clean, mer saker som virvlar runt"): höjd, varv per
   // rörelse (negativt åt andra hållet), avstånd utanför tratten och vad det är
   const SKRAP = [
@@ -194,7 +199,8 @@
     gren: [[-2, 1, 'kol', 0], [-1, 1, 'jord', 1], [0, 0, 'jord', 2], [1, 0, 'jord', 1], [2, -1, 'jord', 2], [3, -1, 'kol', 0], [1, -1, 'oliv', 2]],
     sten: [[0, 0, 'skiffer', 2], [1, 0, 'skiffer', 0], [0, 1, 'kol', 0]], gras: [[0, 0, 'oliv', 1], [0, -1, 'oliv', 2], [1, -2, 'senap', 1]],
   };
-  function tornado(B, x0, y0, f) {
+  function tornado(B, x0, y0, f, storlek = 'medel') {
+    const { S, damm } = STORLEKAR[storlek], TN = TNMATT(S), sk = S / 1.5, DR = 23 * damm / 3.5; // sk: skalan mot medel, DR: dammets radie
     const P = B.P, ett = Array.from({ length: TN.h }, () => Array(TN.w).fill(-1)), v = 2 * Math.PI * f, bnr = Math.round(f * 8) % 8;
     const satt = (g, x, y, c) => { x = Math.round(x); y = Math.round(y); if (x >= 0 && y >= 0 && x < TN.w && y < TN.h) g[y][x] = c; };
     const mitt = y => TN.cx + Math.sin(v + y / (7 * S)) * 1.8 * S * (y / TN.fot) ** 1.3 + Math.sin(v * 2 + y / (3 * S)) * 0.5 * S; // svajet, ryckigt
@@ -219,8 +225,8 @@
       }
     }
     // molnet: en platt virvel ovanför med trasig kant och slingor
-    for (let y = 0; y < 26; y++) for (let x = 0; x < TN.w; x++) {
-      const u = (x - TN.cx) / (15 * S), w = (y - 12) / (6.2 * S), r = Math.hypot(u, w), ang = Math.atan2(w, u);
+    for (let y = 0; y < Math.round(26 * sk); y++) for (let x = 0; x < TN.w; x++) {
+      const u = (x - TN.cx) / (15 * S), w = (y - 8 * S) / (6.2 * S), r = Math.hypot(u, w), ang = Math.atan2(w, u);
       if (r > 0.9 + Math.sin(ang * 5 + v) * 0.1 + Math.sin(ang * 9 - v * 2) * 0.06) continue;
       const arm = Math.sin(ang * 2 + r * 7 - v * 2) + (hash(x >> 1, y, 983 + bnr) - 0.5) * 0.6;
       satt(ett, x, y, r < 0.16 ? P.i('kol', 2) : r > 0.8 ? P.i('skiffer', 1) : arm > 0.45 ? P.i('ben', 2) : arm < -0.3 ? P.i('skiffer', 1) : P.i('skiffer', 2));
@@ -229,13 +235,13 @@
     const kant = ett.map(r => [...r]);
     for (let y = 0; y < TN.h; y++) for (let x = 0; x < TN.w; x++) if (ett[y][x] < 0 && hash(x, y, 984 + bnr) > (y < 9 * S ? 0.2 : 0.62) && [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => (ett[y + dy]?.[x + dx] ?? -1) >= 0)) kant[y][x] = P.i('kol', 0);
     // dammet: ett moln av jord vid foten, korn som virvlar runt i en ring och damm som stiger i en spiral längs tratten
-    for (let y = -11; y <= 5; y++) for (let x = -23; x <= 23; x++) {
-      const e = (x / 23) ** 2 + (y / (y < 0 ? 10 : 6)) ** 2 + (Math.sin(Math.atan2(y, x) * 4 + v) * 0.18);
+    for (let y = Math.round(-11 * sk); y <= Math.round(5 * sk); y++) for (let x = -Math.round(DR); x <= Math.round(DR); x++) {
+      const e = (x / DR) ** 2 + (y / ((y < 0 ? 10 : 6) * DR / 23)) ** 2 + (Math.sin(Math.atan2(y, x) * 4 + v) * 0.18);
       if (e < 1 && hash(x, y, 970) < 1.2 - e) { const q = hash(x + bnr * 3, y, 971); prick(B, x0 + TN.cx + x, y0 + TN.fot + y, q < 0.2 ? 'ben' : 'jord', q < 0.2 ? 1 : q < 0.55 ? 3 : 2); }
     }
     const runt = (bak) => {
       for (let k = 0; k < 26; k++) { // ringen vid foten
-        const a = v + k * 2 * Math.PI / 26 + (k % 2) * 0.2, R = S * (7 + (k % 4) * 2.2), si = Math.sin(a); if ((si < 0) !== bak) continue;
+        const a = v + k * 2 * Math.PI / 26 + (k % 2) * 0.2, R = DR / 23 * 1.5 * (7 + (k % 4) * 2.2), si = Math.sin(a); if ((si < 0) !== bak) continue;
         const x = x0 + TN.cx + Math.cos(a) * R, y = y0 + TN.fot + si * R * 0.32 - (k % 3) * 1.5;
         prick(B, x, y, k % 3 === 0 ? 'ben' : 'jord', k % 3 === 0 ? 1 : 3); prick(B, x + 1, y, 'jord', 2); if (k % 2) prick(B, x, y - 1, 'jord', 3);
       }
@@ -247,7 +253,7 @@
         }
       }
       for (let k = 0; k < 48; k++) { // dammet som stiger längs tratten
-        const t = (f + k / 48) % 1, yy = TN.fot - 3 - t * 40, a = v * 2 + k * 2.4, si = Math.sin(a); if ((si < 0) !== bak) continue;
+        const t = (f + k / 48) % 1, yy = TN.fot - 3 - t * 40 * sk, a = v * 2 + k * 2.4, si = Math.sin(a); if ((si < 0) !== bak) continue;
         const x = x0 + mitt(yy) + Math.cos(a) * (bredd(yy) + 1.5 + (k % 3)), y = y0 + yy + si * 1.5;
         prick(B, x, y, 'jord', t > 0.6 ? 2 : 3); if (k % 3 === 0 && t < 0.5) prick(B, x + 1, y, 'jord', 2); if (k % 4 === 1 && t < 0.35) prick(B, x, y - 1, 'jord', 3);
       }
@@ -367,5 +373,6 @@
     const rutor = [[16, 36], [32, 22], [32, 38], [48, 38], [64, 24]];
     for (const del of ['rok', 'bild']) rutor.forEach(([x, y]) => brand(B, x, y, slag, (x * 31 + y * 17) % 101 / 101, del));
   } };
+  // till fas6.js: tornadons tre storlekar på ett kort (steg 6.3.5.8)
+  window.TORNADOBILD = { tornado, TNMATT, STORLEKAR, SLAG, TAKT, bild, gras };
 })();
-
