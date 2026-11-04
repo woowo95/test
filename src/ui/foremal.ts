@@ -84,7 +84,7 @@ function framsteg(cx: number, cy: number, p: number) {
   overG.lineStyle(0.5, 0xf2ece0).drawCircle(cx, cy, r).lineStyle(0);
 }
 // '_v' när stationen står vriden och har en stående bild (steg 3.10.7, regeln Det som kan vridas), annars ''
-const vriden = (st: Station) => st.rot && hasIcon((stationDef(st.k)?.ikon ?? '') + '_karta_v') ? '_v' : '';
+const vriden = (st: Station) => { const ik = stationDef(st.k)?.ikon ?? ''; return st.rot && (hasIcon(ik + '_karta_v') || hasIcon('kb_' + ik + '_v')) ? '_v' : ''; };
 // stationens yta i bilden (världspixlar från bildens övre vänstra hörn): där saken som görs ligger, och redskapet som hör
 // till den (kniven, bensylen i skåran). v = samma i den stående bilden, där sakerna ligger under varandra (steg 3.10.7)
 type Yta = { x: number; y: number; vid?: { x: number; y: number } };
@@ -149,9 +149,9 @@ export function drawStructures(t: number) {
     if (st.fyllt) overG.beginFill(0x24160a, 0.75 * clamp(st.fyllt, 0, 1)).drawEllipse(st.x * TS + TS / 2, st.y * TS + TS / 2 + 1, 5, 4).endFill(); // latrinen mörknar när den fylls (smuts.ts)
     if ((st.q ?? 0) >= MASTERVERK) glans(st.x * TS + w - 3, st.y * TS + 3, t, st.id, st.q === PERFEKT);
     // stubbarna (Björn valde den korta stocken efter v89) är en ruta stora: framför bänken och runt bordet
-    if (d?.sitt) pileIcons.add('sittplats', st.x * TS + w / 2 - TS / 2, (st.y + bh) * TS, 2);
-    for (const q of bordPlatser(st)) pileIcons.add('sittplats', q.x * TS, q.y * TS, 2);
-    for (const k of st.med ?? []) pileIcons.add(tillbehorDef(k)?.ikon + '_karta' + v, x0, y0, 2); // tillbehören i den (skinnfällen i bädden)
+    if (d?.sitt) pileIcons.add(SITT, st.x * TS + w / 2 - TS / 2, (st.y + bh) * TS, TS / iconCanvas(SITT).width);
+    for (const q of bordPlatser(st)) pileIcons.add(SITT, q.x * TS, q.y * TS, TS / iconCanvas(SITT).width);
+    for (const k of st.med ?? []) { const b = 'kb_' + tillbehorDef(k)?.ikon + v; if (kb && hasIcon(b)) pileIcons.add(b, x0, y0, 1); else pileIcons.add(tillbehorDef(k)?.ikon + '_karta' + v, x0, y0, 2); } // tillbehören i den (skinnfällen i bädden), i bildstilen lagd ovanpå bädden
     if (st.tork?.length) hangande(st, x0, y0);
     const yta = (v ? YTA[st.k]?.v : YTA[st.k]) ?? { x: 2, y: 2 };
     (iBruk(st)?.saker ?? []).slice(0, 3).forEach((k, i) => sakVid(pileIcons, k, x0 + yta.x + (v ? 0 : i * 6), y0 + yta.y + (v ? i * 7 : 0))); // sida vid sida, i den stående under varandra
@@ -159,7 +159,7 @@ export function drawStructures(t: number) {
     if (vid) sakVid(pileIcons, vid.k, x0 + yta.vid!.x, y0 + yta.vid!.y);
   }
   // dörrarna i öppningarna (DORRAR i byggnad.ts): den stående bilden (_v) när väggen går uppåt (en vägg ovanför öppningen)
-  for (const b of bitsOf(s)) if (b.dorr) { const k = dorrDef(b.dorr)?.ikon + '_karta' + (bitAt(s, b.x, b.y - 1)?.k === 'vagg' ? '_v' : ''); pileIcons.add(k, b.x * TS, b.y * TS, TS / iconCanvas(k).width); }
+  for (const b of bitsOf(s)) if (b.dorr) { const ik = dorrDef(b.dorr)?.ikon, v = bitAt(s, b.x, b.y - 1)?.k === 'vagg' ? '_v' : '', k = hasIcon('kb_' + ik + v) ? 'kb_' + ik + v : ik + '_karta' + v; pileIcons.add(k, b.x * TS, b.y * TS, TS / iconCanvas(k).width); } // bildstilens dörr (skinndörren, steg 5.1.2.3) eller den som redan hade 16 punkter
   pileIcons.end();
   // markerad hög utanför lagret: vit kant runt rutan, som lagerplatsen får
   const h = ui.hogAt;
@@ -203,7 +203,9 @@ function lagereld(f: Fire) {
   pileIcons.add('kb_lagereld_' + l, x, y, 1);
 }
 // stationens bild ur bildstilen (kartbilder.ts, steg 5.1.2.2), den stående om stationen står vriden
-const stationBild = (ikon: string, v: string) => { const id = ikon + v, b = KARTBILDER[id]; return b && (b.sort === 'kar-station' || id === 'kista') ? id : undefined; };
+// stubben att sitta på: bildstilens (steg 5.1.2.3) i en ruta
+const SITT = hasIcon('kb_sittplats') ? 'kb_sittplats' : 'sittplats';
+const stationBild = (ikon: string, v: string) => { const id = ikon + v, b = KARTBILDER[id]; return b && (b.sort === 'kar-station' || b.sort === 'kar-mobel') ? id : undefined; };
 // husen: golv, väggar av timmer (eller flätat ris i äldre byar) och öppningar. Det som är planerat syns som en svag kontur, det som byggs fylls i
 function drawBuild() {
   const klara = ritaHus(s, bitsOf(s)); // timmerväggarna och trägolven (husbild.ts)
