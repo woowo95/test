@@ -24,7 +24,7 @@ Sök i dokumentet i stället för att läsa allt; det är långt.
 
 ## Färdplanen
 
-- Färdplanen i designdokumentet är numrerad: fas, system, steg. Ett steg med tre siffror (t.ex. 2.5.1) är en prompt.
+- Färdplanen i designdokumentet är numrerad: fas, system, steg. Ett steg med tre siffror (t.ex. 2.5.1) är en prompt och en sak. Stegen delas inte i fyra siffror; har ett system många saker får det många steg, och blir det för stort delas det i två system.
 - Stegen är korta, som i fas 2 och 3: en rad om vad som byggs. Hur systemet fungerar står i dess avsnitt längre upp i dokumentet, och "Läs:" pekar dit. Ett steg säger bara det som gäller själva bygget: testerna, vad som ritas och vad det väntar på.
 - Inga datum, inget "Björn sa" eller "Björn efter vNNN" och inget "beslut" eller "förslag" i designdokumentet: det som står där gäller. Ändrar Björn något, skrivs texten om där den står, i avsnittet och i steget.
 - Ett obyggt steg som flyttas eller tas bort försvinner helt, utan en rad om att det flyttats eller strukits. Stegen efter numreras om, och hänvisningarna i dokumentet rättas.
