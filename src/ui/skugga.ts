@@ -71,6 +71,15 @@ uniform vec3 uM2[32];
 uniform vec2 uPos;
 uniform float uSkala;
 uniform vec2 uStorlek;
+uniform float uMoln;
+uniform vec2 uMolnPos;
+uniform float uMolnStorlek;
+float molnHash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+float molnBrus(vec2 p) {
+  vec2 i = floor(p), f = fract(p);
+  f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(molnHash(i), molnHash(i + vec2(1.0, 0.0)), f.x), mix(molnHash(i + vec2(0.0, 1.0)), molnHash(i + vec2(1.0, 1.0)), f.x), f.y);
+}
 void main() {
   vec4 c = texture2D(uSampler, vTextureCoord);
   if (c.a < 0.004) { gl_FragColor = c; return; }
@@ -78,6 +87,11 @@ void main() {
   vec2 uv = (floor(w) + 0.5) / uStorlek;
   if (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0 || uv.y > 1.0) { gl_FragColor = c; return; }
   float n = step(0.5, texture2D(uSkugga, uv).a) + step(0.5, texture2D(uTak, uv).a);
+  if (uMoln < 1.0) {
+    vec2 q = (floor(w) + uMolnPos) / uMolnStorlek;
+    float m = molnBrus(q) * 0.65 + molnBrus(q * 2.3 + 17.0) * 0.35;
+    n = min(2.0, n + step(uMoln, m));
+  }
   if (n < 0.5) { gl_FragColor = c; return; }
   vec3 col = c.rgb / c.a, o = col;
   float bd = 1e9;
@@ -93,8 +107,30 @@ const platt = (fs: readonly string[]) => new Float32Array(fs.flatMap(rgb));
 let rt: PIXI.RenderTexture | undefined, rtTak: PIXI.RenderTexture | undefined;
 let filter: PIXI.Filter | undefined; // görs först i webbläsaren (testerna läser träden utan att rita)
 const skuggFilter = () => filter ??= new PIXI.Filter(undefined, FRAG, {
-  uPal: platt(FARGER), uM1: platt(MORKARE[1]), uM2: platt(MORKARE[2]), uPos: new Float32Array(2), uSkala: 1, uStorlek: new Float32Array([1, 1]), uSkugga: PIXI.Texture.EMPTY, uTak: PIXI.Texture.EMPTY,
+  uPal: platt(FARGER), uM1: platt(MORKARE[1]), uM2: platt(MORKARE[2]), uPos: new Float32Array(2), uSkala: 1, uStorlek: new Float32Array([1, 1]), uSkugga: PIXI.Texture.EMPTY, uTak: PIXI.Texture.EMPTY, uMoln: 2, uMolnPos: new Float32Array(2), uMolnStorlek: 1,
 });
+
+// molnskuggorna (steg 5.1.10, Vädret under Tidsmodell): fläckar ett steg mörkare som glider över marken med vinden. Några små
+// moln när det är klart, fler ju mulnare det blir; när himlen är helt mulen gör vaderbild.ts hela bilden mörkare i stället,
+// och på natten finns inga. Bara utseende: molnen räknas i webbläsarens tid, inte ur spelets
+export const MOLN = {
+  klart: 0.1, // så stor del av marken ligger i molnskugga när himlen är klar ...
+  mest: 0.5, // ... och så stor del när det mulnat på ...
+  mulet: 0.85, // ... vid så här mycket moln (vaderNu.moln); över det försvinner fläckarna mot helt mulet
+  storlek: 150, // ett moln är ungefär så här stort, i världens punkter (16 per ruta)
+  fart: 0.004, vindFart: 0.02, // så fort molnen glider, världens punkter per millisekund (datorns tid), och så mycket fortare i den hårdaste blåsten
+  riktning: [1, 0.35], // åt öster och lite söderut
+};
+const molnPos = [0, 0];
+let molnTid = 0, molnGrans = 2;
+// moln = hur molnigt (0–1), vind = blåsten (0–1), ljus = dagsljuset (0–1), ms = datorns tid
+export function sattMoln(moln: number, vind: number, ljus: number, ms: number) {
+  const dt = molnTid ? Math.min(1000, ms - molnTid) : 0, v = MOLN.fart + MOLN.vindFart * vind;
+  molnTid = ms;
+  molnPos[0] = (molnPos[0]! - dt * v * MOLN.riktning[0]!) % 100000; molnPos[1] = (molnPos[1]! - dt * v * MOLN.riktning[1]!) % 100000;
+  const tack = ljus * (moln >= 1 ? 0 : (MOLN.klart + (MOLN.mest - MOLN.klart) * Math.min(1, moln / MOLN.mulet)) * Math.min(1, (1 - moln) / (1 - MOLN.mulet)));
+  molnGrans = tack <= 0.005 ? 2 : 0.5 + (0.5 - tack) * 0.55; // brusets gräns: över den är det moln
+}
 
 // det som ritas i skuggbilden varje bildruta: de fasta (träden och väggarna, ritas om bara när de ändras) och de som rör sig
 // (görs först när något ritas: testerna läser träden utan webbläsare)
@@ -172,5 +208,6 @@ export function ritaSkuggor(renderer: PIXI.Renderer, varld: PIXI.Container, kast
   const f = skuggFilter(), u = f.uniforms;
   u.uSkugga = rt; u.uTak = rtTak; u.uPos[0] = varld.position.x; u.uPos[1] = varld.position.y; u.uSkala = varld.scale.x;
   u.uStorlek[0] = bredd; u.uStorlek[1] = hojd;
+  u.uMoln = molnGrans; u.uMolnPos[0] = molnPos[0]; u.uMolnPos[1] = molnPos[1]; u.uMolnStorlek = MOLN.storlek;
   for (const m of mottagare) if (!m.filters) m.filters = [f];
 }

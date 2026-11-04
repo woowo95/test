@@ -1,8 +1,8 @@
 import * as PIXI from 'pixi.js';
-import { BJORK, BRAND, DAY, H, HOUR, STADIER, T, VAG, W, tradArt, valjArt, ageIndex, stadium, emberOn, fireHeat, eldXY, eldarOf, groundOf, isCm, lightLevel } from '../sim';
-import { s } from './lage';
+import { BJORK, BRAND, DAY, H, HOUR, STADIER, T, VAG, W, tradArt, valjArt, ageIndex, stadium, emberOn, fireHeat, eldXY, eldarOf, groundOf, isCm, lightLevel, vaderNu } from '../sim';
+import { s, ui } from './lage';
 import { TS, app, figurLayer, husLayer, mork, pileLayer, terrainG, world } from './scen';
-import { ritaSkuggor, skuggLangd } from './skugga';
+import { ritaSkuggor, sattMoln, skuggLangd } from './skugga';
 import { stallNatt } from './natt';
 import { DJUPNATT } from '../palett';
 import { markLayer, ritaMark, stallMark } from './mark';
@@ -90,5 +90,7 @@ export function drawNight(t: number) {
 // Efter att allt annat ställts på plats i bildrutan
 export function drawSkuggor() {
   tradSkuggor(skuggLangd());
+  const v = vaderNu(s, ui.nu);
+  sattMoln(v.moln, v.vind, lightLevel(ui.nu), performance.now()); // molnskuggorna (steg 5.1.10)
   ritaSkuggor(app.renderer as PIXI.Renderer, world, [pileLayer, figurLayer], [markLayer, husLayer], W * TS, H * TS);
 }
