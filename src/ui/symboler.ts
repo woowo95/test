@@ -42,8 +42,6 @@ function bild(id: string) {
   img.className = 'ikon sym'; img.src = url(id); img.width = b.w; img.height = b.h; img.alt = symNamn(id);
   return img;
 }
-// symbolen som html (för den som bygger en text och vill ha bilden direkt)
-export const symHtml = (id: string) => KARTBILDER[id] ? `<img class="ikon sym" src="${url(id)}" width="${KARTBILDER[id].w}" height="${KARTBILDER[id].h}" alt="${symNamn(id)}">` : '';
 
 const UTAN_BILD = new Set(['OPTION', 'TITLE', 'TEXTAREA', 'SCRIPT', 'STYLE']);
 const ATTR = ['title', 'aria-label', 'placeholder'];

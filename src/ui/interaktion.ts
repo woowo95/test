@@ -13,6 +13,7 @@ import { sakKey } from './flikar/sak';
 import { flyttaHit } from './flikar/station';
 import { renderPanel, selectPerson, stangRuta, visa, ärPersonflik, ärRuta } from './panel';
 import { renderPorts, stopFollow } from './portratt';
+import { satVisaPlats } from './notiser';
 import { TS, app, cam, layout, tileAt, toWorld, view, world, zoomAt } from './scen';
 
 // mus och tryck på kartan: välja, dra, zooma, och rutan i hörnet som visar vad som finns under musen
@@ -166,6 +167,8 @@ view.addEventListener('wheel', e => { e.preventDefault(); const r = view.getBoun
 view.addEventListener('pointerleave', () => { $('hoverBox').hidden = true; ui.hovered = undefined; });
 $('zIn').addEventListener('click', () => zoomAt(1.4));
 $('zOut').addEventListener('click', () => zoomAt(1 / 1.4));
+// en notis visar sin plats på kartan (steg 5.4.3.2)
+satVisaPlats((x, y) => { stopFollow(); cam.zoom = Math.max(cam.zoom, 2.4); cam.x = (x + 0.5) * TS; cam.y = (y + 0.5) * TS; layout(); });
 $('zHome').addEventListener('click', () => { stopFollow(); cam.zoom = 2.4; const f = campCenter(s); cam.x = f.x * TS; cam.y = f.y * TS; layout(); });
 
 // ---------- rutan i hörnet: vad som finns under musen ----------

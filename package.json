@@ -20,7 +20,8 @@
     "jamfor": "tsx src/test/jamfor.ts",
     "natur": "tsx src/test/natur.ts",
     "talen": "tsx src/test/talen.ts",
-    "texter": "tsx src/test/texter.ts"
+    "texter": "tsx src/test/texter.ts",
+    "utseende": "tsx src/test/utseende.ts"
   },
   "repository": {
     "type": "git",

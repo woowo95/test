@@ -15,6 +15,7 @@ import { rykteDod, startSmak } from './rykten';
 import { GudOmr, gudHandelse } from './religion';
 import { TEK, TEKNIK, knows, kunskapDod } from './teknik';
 import { KLAN, andraInst, klanerOf, utbrytning } from './klaner';
+import { notis } from './notiser';
 
 // ---------- balanstal (regel 8) ----------
 // Befolkningen regleras av naturen, inte av ett fast tak: en trång by får färre barn och fler som flyttar, en liten by lockar
@@ -99,7 +100,7 @@ export function die(s: State, p: Person, orsak: Dodsorsak) {
   inherit(s, p); // arvingarna får det hen ägde (arv.ts)
   releaseOwner(s, p.id); // det som blev kvar blir byns
   const a = Math.floor(ageOf(p, s.now));
-  log(s, `${p.name} dog ${cause}, ${a} år gammal.`, 'death', [p.id]);
+  log(s, `${p.name} dog ${cause}, ${a} år gammal.`, 'death', [p.id]); notis(s, 'dod', `${p.name} dog ${cause}, ${a} år gammal.`, [p.id], { x: Math.floor(p.x), y: Math.floor(p.y) });
   count(s, 'doda'); count(s, 'dog ' + cause); kronikaBer(s, a < 1 ? 'k_dogSpad' : 'k_dog', p.id, { ...personFalt(p), orsak: cause, alder: a, mor: byId(s, p.mother)?.name ?? 'Modern', partner: (q => q && alive(q) ? q.name : undefined)(byId(s, p.partner)), barn: s.people.filter(q => (q.mother === p.id || q.father === p.id) && alive(q)).length });
   gudHandelse(s, DODSORSAKER[orsak].gud ?? 'doden', `döden som tog ${p.name}`); // tron söker en gud för det (steg 4.1.5)
   if (a >= ALDER.hogAlder) p.fame.push(`Blev ${a} år gammal`);
@@ -124,7 +125,8 @@ export function birth(s: State, mother: Person) {
   const ch = newPerson(s, rnd(s, 'folk') < 0.5 ? 'm' : 'k', s.now, mother, father);
   ch.x = mother.x; ch.y = mother.y;
   s.people.push(ch);
-  log(s, `${ch.name} föddes, ${ch.sex === 'k' ? 'dotter' : 'son'} till ${mother.name}${father ? ' och ' + father.name : ''}.`, 'birth', [ch.id, mother.id, ...(father ? [father.id] : [])]);
+  const ft = `${ch.name} föddes, ${ch.sex === 'k' ? 'dotter' : 'son'} till ${mother.name}${father ? ' och ' + father.name : ''}.`;
+  log(s, ft, 'birth', [ch.id, mother.id, ...(father ? [father.id] : [])]); notis(s, 'fodd', ft, [ch.id, mother.id, ...(father ? [father.id] : [])]);
   count(s, 'fodda'); kronikaBer(s, 'k_fodd', ch.id, { namn: ch.name, barnet: ch.sex === 'k' ? 'dotter' : 'son', mor: mother.name, foraldrar: mother.name + (father ? ' och ' + father.name : ''), syskon: s.people.filter(q => q !== ch && q.mother === mother.id).length });
   uppvaxtFodd(s, ch); startSmak(s, ch);
   gudHandelse(s, 'atten', `barnet ${ch.name} som föddes`); // steg 4.1.5
@@ -194,7 +196,7 @@ export function framling(s: State, tvinga?: { tek?: string; ja?: boolean }) {
   for (const m in MEDHAVT) put(s, m, MEDHAVT[m], { [p.id]: MEDHAVT[m] });
   andraInst(k, KLAN.stannarInst); count(s, 'framling'); if (tek) count(s, 'framlingTek');
   const text = `${p.name} från ${k.namn} kom till byn${tek ? ` och kunde ${tekNamn}, som ingen i byn kunde` : ''}. ${vem} lät hen stanna.`;
-  log(s, text, 'move', [p.id]);
+  log(s, text, 'move', [p.id]); notis(s, 'inflytt', text, [p.id]);
   if (tek) kronika(s, text, 'flytt');
   return p;
 }
@@ -243,7 +245,8 @@ function emigrate(s: State) {
     if (!one.length) return;
     const p = pick(s, one, 'flytt'), med = [p, ...barn(p)]; // en ensam förälder tar med sina barn
     leave(s, ...med);
-    log(s, `${p.name} lämnade byn${med.length > 1 ? ` med ${med.length - 1} barn` : ''} för att söka lyckan på annat håll.`, 'move', med.map(g => g.id));
+    const ut = `${p.name} lämnade byn${med.length > 1 ? ` med ${med.length - 1} barn` : ''} för att söka lyckan på annat håll.`;
+    log(s, ut, 'move', med.map(g => g.id)); notis(s, 'utflytt', ut, med.map(g => g.id));
     count(s, 'utvandrade', med.length);
     return;
   }

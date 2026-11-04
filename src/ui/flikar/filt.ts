@@ -1,4 +1,4 @@
-import { ByteMinne, ByteVara, Filt, byId, filtMot, grundvarde, handlarVarde, sakNamn } from '../../sim';
+import { ByteMinne, ByteVara, Filt, byId, filtMot, grundvarde, handelBerattelse, handlarVarde, sakNamn } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { clockTxt, esc, pLink } from '../hjalp';
 import { s, ui } from '../lage';
@@ -36,7 +36,22 @@ function minneSida(id: number, namn: string, varor: ByteVara[]) {
 function minneHtml() {
   const b = byteMinne(ui.byteNr);
   if (!b) return '<p class="muted">Bytet är glömt.</p>';
-  return `<h2>Bytet</h2><p class="muted">${esc(clockTxt(b.t))}</p><div class="filtpar">${minneSida(b.a, b.an, b.ag)}${minneSida(b.b, b.bn, b.bg)}</div>`;
+  const sidor = b.avbruten ? `<p>${vem(b.a)} <span class="muted">och</span> ${esc(b.bn)} <span class="muted">blev inte överens.</span></p>` : `<div class="filtpar">${minneSida(b.a, b.an, b.ag)}${minneSida(b.b, b.bn, b.bg)}</div>`;
+  const ber = handelBerattelse(s, b);
+  return `<h2>${b.avbruten ? 'Affären' : 'Bytet'}</h2><p class="muted">${esc(clockTxt(b.t))}</p>${ber ? `<p class="ovBer">${esc(ber)}</p>` : ''}${sidor}${forsokHtml(b)}`;
+}
+// förhandlingen med handlaren (steg 5.4.6.1): varje bud som symboler (det kunden ville ha ⇐ det hen bjöd), vad budet var värt
+// och vad handlaren krävde i silver, ja eller nej, och hur relationen ändrades. Texten kommer fram när man håller över raden
+const varorSym = (v: { k: string; n: number }[]) => v.map(w => `<span title="${esc(`${w.n} ${sakNamn(w.k).toLowerCase()}`)}">${iconImg(w.k, 14)}${w.n > 1 ? w.n : ''}</span>`).join(' ') || '–';
+function forsokHtml(b: ByteMinne) {
+  if (!b.forsok?.length) return '';
+  const rader = b.forsok.map((f, i) => {
+    const t = `Bud ${i + 1}: ${b.an} ville ha ${f.vill.map(w => `${w.n} ${sakNamn(w.k).toLowerCase()}`).join(', ')} och bjöd ${f.bud.map(w => `${w.n} ${sakNamn(w.k).toLowerCase()}`).join(', ')}, värt ${f.bjod} silver för ${b.bn}, som ville ha ${f.krav}. ${b.bn} sa ${f.ja ? 'ja' : 'nej'}.`;
+    return `<li class="bud ${f.ja ? 'ja' : 'nej'}" title="${esc(t)}"><span class="muted">${i + 1}</span> ${varorSym(f.vill)} ⇐ ${varorSym(f.bud)} <span class="muted">${f.bjod}/${f.krav}</span>${iconImg('silver', 12)} ${f.ja ? '{sym_handslag}' : '{sym_nej}'}</li>`;
+  }).join('');
+  const r = b.rel, d = r ? r[1] - r[0] : 0;
+  const rel = r ? `<p title="${esc(`Hur mycket ${b.bn} gillar ${b.an} (−100 till 100): ${r[0]} före affären, ${r[1]} efter. ${d > 0 ? 'En affär som var bra för handlaren gör hen lite vänligare.' : d < 0 ? 'Ett för dåligt bud irriterar handlaren.' : ''}`)}">{sym_hjarta_rott} ${r[0]} → ${r[1]} ${d > 0 ? `{sym_pil_upp} +${d}` : d < 0 ? `{sym_pil_ned} ${d}` : ''}</p>` : '';
+  return `<h3>Förhandlingen</h3><ol class="fame forsok">${rader}</ol>${rel}`;
 }
 
 // filten som visas: den som ligger närmast platsen man tryckte på

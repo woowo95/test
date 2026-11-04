@@ -102,7 +102,6 @@ function bild(s: State, b: Bit) {
   return { key, c, m };
 }
 // genomskinligheten: det som byggs syns svagt, och en sliten vägg bleknar (som förut)
-const alfa = (b: Bit) => b.k === 'vagg' ? (b.b >= 1 ? 0.55 + 0.45 * b.c : 0.25 + 0.5 * b.b) : b.k === 'golv' ? (b.b >= 1 ? 1 : 0.12 + 0.3 * b.b) : 1;
 // ritar det som har en pixelbild och säger vilka rutor det var, så att foremal.ts hoppar över dem
 export function ritaHus(s: State, bits: Bit[]) {
   let n = 0;
@@ -115,7 +114,7 @@ export function ritaHus(s: State, bits: Bit[]) {
     if (!t) { t = PIXI.Texture.from(r.c, { scaleMode: PIXI.SCALE_MODES.NEAREST }); tex.set(r.key, t); }
     let sp = husLayer.children[n++] as PIXI.Sprite | undefined;
     if (!sp) { sp = new PIXI.Sprite(); husLayer.addChild(sp); }
-    sp.texture = t; sp.position.set(b.x * TS, b.y * TS); sp.scale.set(TS / 16); sp.alpha = alfa(b); sp.visible = true;
+    sp.texture = t; sp.position.set(b.x * TS, b.y * TS); sp.scale.set(TS / 16); sp.alpha = 1; sp.visible = true; // hel bild, även medan den byggs och när den slits (steg 5.5.1: inga genomskinliga färger)
     klara.add(b.id);
     if (r.m && b.k === 'vagg' && b.b >= 1) { // en färdig vägg kastar skugga
       let f = formTex.get(r.key);

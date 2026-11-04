@@ -6,6 +6,8 @@ import * as SIM from '../../sim';
 import { START, STEG_DYGN, STEG_TIM } from '../kor';
 import { setItems, setMat, setFood, kor, tandEld, tomtForrad, treVuxna, SCENARIER, rikBy, medBank, utanWebblasare } from './hjalp';
 import { setByn, ui } from '../../ui/lage';
+import { notisHtml, notisKlick, notisKnapp, notisVal } from '../../ui/notiser';
+import { bortaBerattelse, bortaHtml, ikappHtml } from '../../ui/borta';
 import { person } from '../../ui/flikar/person';
 import { gaster } from '../../ui/gaster';
 import { filt as filtFlik } from '../../ui/flikar/filt';
@@ -13,6 +15,7 @@ import { hjalpKlick, linkify } from '../../ui/hjalp';
 import { taBortITest, testBortaIByn } from '../../ui/testborta';
 import { station as stationFlik } from '../../ui/flikar/station';
 import { lager as lagerFlik } from '../../ui/flikar/lager';
+import { kronika as kronikaFlik, val as kronikaVal } from '../../ui/flikar/kronika';
 // handlaren väntar på kvällen innan filten läggs ut (steg 4.5.4.11): testerna som handlar på dagen hoppar över väntan
 const utanVantan = (s: State) => { if (s.handlare?.fas === 'vantar') s.handlare.kvall = s.now; };
 // p gör hela sin affär med handlaren (steg 4.5.7.4): hen får uppgiften handlaVal ger, står på platsen och gör klart den, steg för
@@ -982,7 +985,7 @@ SCENARIER.gastliv = {
   },
 };
 SCENARIER.forhandling = {
-  text: 'Handeln som förhandling (steg 4.5.7.4, handel.ts): handlarens varor ligger i packningen och filten är tom. Kunden frågar vad handlaren har (handlaren svarar med varornas symboler), väljer, och handlaren lägger det på sin filt. Kunden hämtar det hen bjuder från sina egna högar och förhandlar en kort stund; första budet är en bra affär för kunden. Handlaren svarar bara ja eller nej; vid nej bjuder kunden mer, och efter tre nej ger hen upp. Vid ja blir det handslag, var och en plockar upp det den fått och kunden bär hem det köpta. En kund i taget, också medan hen hämtar, och byn handlar genom den som handlar för byn.',
+  text: 'Handeln som förhandling (steg 4.5.7.4, handel.ts): handlarens varor ligger i packningen och filten är tom. Kunden frågar vad handlaren har (handlaren svarar med varornas symboler), väljer, och handlaren lägger det på sin filt. Kunden hämtar det hen bjuder från sina egna högar och förhandlar en kort stund; första budet är en bra affär för kunden. Handlaren svarar bara ja eller nej; vid nej bjuder kunden mer, och efter tre nej ger hen upp. Vid ja blir det handslag, var och en plockar upp det den fått och kunden bär hem det köpta. En kund i taget, också medan hen hämtar, och byn handlar genom den som handlar för byn. Buden sparas med bytet, och en affär som inte blev av får en egen rad (redogörelsen, steg 5.4.6.1), med en kort berättelse om argumenten och hur det gick (steg 5.4.6.2).',
   kor: () => {
     const s = createState(6, START);
     rikBy(s); s.nastaHandlare = s.now;
@@ -1038,6 +1041,19 @@ SCENARIER.forhandling = {
       uppgift(b, SIM.handlaVal(s, b)!);
     }
     gav = gav && antal === SIM.HANDEL.nejMax && b.thoughts.some(x => x.text.startsWith('Gick tomhänt')) && ownsAmount(s, b, k) === 0;
+    // redogörelsen (steg 5.4.6.1): buden sparas med bytet, och den som gav upp får en rad och ett minne med buden
+    const ma = a.byten?.[a.byten.length - 1], fa = ma?.forsok ?? [];
+    const redogor = fa.length >= 2 && !!fa[fa.length - 1].ja && fa.slice(0, -1).every(f => !f.ja) && fa.every(f => f.vill.length > 0 && f.bud.length > 0 && f.krav >= 1 && f.bjod >= 1 && Number.isInteger(f.krav) && Number.isInteger(f.bjod))
+      && fa[fa.length - 1].bjod >= fa[0].bjod && !!ma?.rel && ma.rel[1] > ma.rel[0];
+    const mb = b.byten?.[b.byten.length - 1], rad = s.log.slice().reverse().find(l => l.byte?.avbruten);
+    const avbr = !!mb?.avbruten && mb.forsok?.length === SIM.HANDEL.nejMax && mb.forsok.every(f => !f.ja) && rad?.byte === mb && rad.text.includes('blev inte överens') && !!mb.rel;
+    // berättelsen (steg 5.4.6.2): argumenten ur det som fanns i affären, samma text varje gång, och slutet stämmer
+    const berA = ma ? SIM.handelBerattelse(s, ma) : '', berB = mb ? SIM.handelBerattelse(s, mb) : '';
+    const ber = !!ma?.arg?.includes('langt') && berA.includes(a.name) && berA === SIM.handelBerattelse(s, ma!) && !/\{|\}|  /.test(berA + berB)
+      && berB.includes(b.name) && /gav .* upp|aldrig överens|ingen affär|utan något/.test(berB) && !/tog de i hand|var de överens|blev en affär|blev av/.test(berB);
+    // många argument: högst tre i berättelsen, och irritationen kommer alltid med
+    const manga = ma ? SIM.handelBerattelse(s, { ...ma, arg: ['byn', 'kemiGod', 'vanner', 'smicker', 'skicklig', 'irriterad', 'langt'] }) : '';
+    const irr = /irriterad|lura mig|blev sur/.test(manga) && manga.split('. ').length <= 1 + 3 + 3;
     return [
       ['handlarens filt är tom när hen lagt ut den; varorna ligger i packningen', tom],
       ['byn handlar först, genom den som handlar för byn; ingen annan går', byn],
@@ -1050,6 +1066,10 @@ SCENARIER.forhandling = {
       ['handlaren säger nej, och kunden bjuder mer', nej && hojde],
       [`vid ja blir det handslag, var och en plockar upp sitt och kunden bär hem det köpta: ${steg.join(', ')}`, kopte && handslag],
       ['efter tre nej ger kunden upp och går tomhänt', gav],
+      [`redogörelsen: bytet minns buden (${fa.map(f => `${f.bjod}/${f.krav} ${f.ja ? 'ja' : 'nej'}`).join(', ')}) och relationen före och efter (${ma?.rel?.join(' → ')})`, redogor],
+      ['den som gav upp får en rad i loggen och ett minne med alla bud, så att affären kan visas', avbr],
+      [`berättelsen om affären: "${berA}" / "${berB}"`, ber],
+      [`med många argument tar berättelsen högst tre, och irritationen kommer med: "${manga}"`, irr],
     ];
   },
 };
@@ -1583,3 +1603,120 @@ SCENARIER.forvarlista = {
     ];
   },
 };
+
+SCENARIER.kronikalista = {
+  text: 'Krönikan och händelserna i en lista (steg 5.4.2, ui/flikar/kronika.ts): Stort visar krönikan, Allt händelseloggen, senast först under en rubrik per år. Man bläddrar år för år och kan välja en person: bara raderna där hen står med. Bara panelen.',
+  kor: () => {
+    utanWebblasare();
+    const s = createState(6, START);
+    for (let i = 0; i < 2 * STEG_DYGN; i++) step(s, BEAT);
+    setByn(s);
+    const [a, b] = living(s), K = s.hist!.kronika, D = SIM.DAY;
+    K.push([s.now - D, `${a.name} hittade en sten.`], [s.now, `${b.name} och ${a.name} byggde ett hus.`]);
+    const rader = (h: string) => (h.match(/<li/g) ?? []).length;
+    Object.assign(kronikaVal, { visning: 'stort', ar: undefined, person: undefined });
+    const alla = kronikaFlik.html();
+    kronikaVal.person = a.id; const medA = kronikaFlik.html();
+    kronikaVal.person = b.id; const medB = kronikaFlik.html();
+    kronikaVal.person = undefined; kronikaVal.ar = SIM.kalender(s, s.now).ar; const iAr = kronikaFlik.html();
+    kronikaVal.ar = undefined; kronikaVal.visning = 'allt'; const allt = kronikaFlik.html();
+    Object.assign(kronikaVal, { visning: 'stort', ar: undefined, person: undefined });
+    const forst = alla.indexOf(`${b.name}</button> och`), sen = alla.indexOf(`${a.name}</button> hittade`);
+    return [
+      [`Stort visar hela krönikan (${rader(alla)} rader av ${K.length})`, rader(alla) === K.length],
+      ['senast först, med en rubrik per år', forst >= 0 && sen > forst && /<h4 class="kar">År \d+<\/h4>/.test(alla)],
+      [`personen: bara raderna där hen står med (${a.name} ${rader(medA)}, ${b.name} ${rader(medB)})`, rader(medA) === K.filter(r => r[1].includes(a.name)).length && rader(medB) === K.filter(r => r[1].includes(b.name)).length && medB.includes(`${b.name}</button> och`) && !medB.includes('hittade en sten')],
+      ['ett år visar bara det årets rader', rader(iAr) === K.filter(r => SIM.kalender(s, r[0]).ar === SIM.kalender(s, s.now).ar).length && rader(iAr) < rader(alla)],
+      [`Allt visar händelseloggen (${rader(allt)} rader)`, rader(allt) === s.log.length && s.log.length > K.length],
+    ];
+  },
+};
+
+SCENARIER.notislista = {
+  text: 'Genomgången av notiserna (steg 5.4.3.2, ui/notiser.ts): brevet i raden överst visar antalet olästa, rutan visar en notis i taget (den viktigaste först) med namnen som knappar, nästa och föregående, ta bort och ta bort alla (efter ett ja), och den som visats är läst. Bara gränssnittet.',
+  kor: () => {
+    utanWebblasare();
+    const s = createState(6, START);
+    for (let i = 0; i < STEG_DYGN / 4; i++) step(s, BEAT);
+    setByn(s); s.notiser = undefined; // bara scenariots notiser
+    const [a, b] = living(s);
+    SIM.notis(s, 'byte', 'Ett byte med handlaren.');
+    SIM.notis(s, 'fodd', `${a.name} fick ett barn.`, [a.id]);
+    SIM.notis(s, 'dod', `${b.name} dog.`, [b.id], { x: 5, y: 5 });
+    const knapp = notisKnapp();
+    Object.assign(notisVal, { oppen: false, nr: undefined, fraga: false });
+    notisKlick('oppna');
+    const forsta = notisHtml(), olastaEfter = SIM.olasta(s);
+    notisKlick('nasta'); const andra = notisHtml();
+    notisKlick('forra'); const igen = notisHtml();
+    notisKlick('nasta'); notisKlick('nasta'); const sista = notisHtml();
+    notisKlick('bort'); const efterBort = s.notiser!.lista.length, efter = notisHtml();
+    notisKlick('alla'); const fraga = notisHtml(), kvar = s.notiser!.lista.length;
+    notisKlick('allaJa');
+    return [
+      [`brevet visar tre olästa (${knapp.replace(/<[^>]*>/g, '').trim()})`, / 3$/.test(knapp)],
+      ['rutan visar den viktigaste först, döden, med namnet som knapp och platsen', forsta.includes('Död i byn') && forsta.includes(`data-id="${b.id}"`) && forsta.includes('data-notis="plats"') && forsta.includes('1 / 3')],
+      [`den som visats är läst (${olastaEfter} olästa kvar)`, olastaEfter === 2],
+      ['nästa och föregående bläddrar', andra.includes('2 / 3') && andra.includes(a.name) && igen.includes('1 / 3') && sista.includes('3 / 3') && sista.includes('Byte med handlaren')],
+      ['ta bort tar bort den som visas och visar en annan', efterBort === 2 && efter.includes('2 / 2')],
+      ['ta bort alla frågar först, och sedan är alla borta och rutan stängd', fraga.includes('data-notis="allaJa"') && kvar === 2 && s.notiser!.lista.length === 0 && !notisVal.oppen],
+    ];
+  },
+};
+
+SCENARIER.sammanfattning = {
+  text: 'Sammanfattningen efter ikappräkningen (steg 5.4.3.4 och 5.4.4, ui/borta.ts): berättelsen om tiden borta (det viktigaste ur krönikan, längre ju längre man varit borta), tiden, talen och hur många notiser som är nya, med en knapp som öppnar notiserna; ingen lista med händelser. Bara gränssnittet.',
+  kor: () => {
+    utanWebblasare();
+    const s = createState(6, START);
+    for (let i = 0; i < STEG_DYGN / 4; i++) step(s, BEAT);
+    setByn(s); s.notiser = undefined;
+    const b: SIM.Borta = { fran: s.now - 2 * SIM.DAY, fodda: (s.stat?.fodda ?? 0) - 1, doda: s.stat?.doda ?? 0 };
+    const tom = bortaHtml(b);
+    const [p] = living(s);
+    SIM.notis(s, 'fodd', `${p.name} fick ett barn.`, [p.id]); SIM.notis(s, 'dod', `${p.name} dog.`, [p.id]);
+    const html = bortaHtml(b);
+    Object.assign(notisVal, { oppen: false, nr: undefined, fraga: false });
+    notisKlick('visa');
+    const ren = (h: string) => h.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    return [
+      [`tiden i verkligheten och i spelet (${ren(html).slice(0, 60)}…)`, /gick 2(,0)? dygn \(2(,0)? år i spelet\)/.test(html)],
+      ['talen: födda, döda och invånare', /1 födda · 0 döda · \d+ lever nu i byn/.test(html)],
+      [`antalet nya notiser och en knapp till dem (${ren(html).match(/\d+ nya notiser/)?.[0]})`, /2 nya notiser/.test(html) && html.includes('data-notis="visa"')],
+      ['utan nya notiser ingen knapp till dem', /Inga nya notiser/.test(tom) && !tom.includes('data-notis')],
+      ['ingen lista med händelser', !/<ol|<ul|<li/.test(html)],
+      ['knappen öppnar notiserna med den viktigaste först', notisVal.oppen && notisVal.nr === undefined && /Död i byn/.test(notisHtml())],
+      ...berattelseKoll(s),
+      ['medan byn räknas ikapp: förloppet och en knapp som visar byn som snabbspolning (steg 5.4.5.1)', ikappHtml(false).includes('id="progBar"') && /id="ovSpola"[^>]*aria-pressed="false"[^>]*>\{sym_oga\} Se byn/.test(ikappHtml(false)) && /aria-pressed="true"[^>]*>\{sym_oga\} Dölj byn/.test(ikappHtml(true)) && !ikappHtml(false, false).includes('ovSpola')],
+    ];
+  },
+};
+
+// berättelsen om tiden borta (steg 5.4.4): krönikans rader väljs efter vikt och binds ihop av mallarna, längre ju längre bort
+function berattelseKoll(s: SIM.State): [string, boolean][] {
+  const H = SIM.HOUR, D = SIM.DAY, nu0 = s.now, hist = (s.hist ??= { tal: [], tim: [], dygn: [], kronika: [] });
+  const k0 = hist.kronika; hist.kronika = [];
+  const rad = (t: number, text: string, slag?: string) => hist.kronika.push(slag ? [Math.round(t), text, slag] : [Math.round(t), text]);
+  const b = (fran: number): SIM.Borta => ({ fran, fodda: s.stat?.fodda ?? 0, doda: s.stat?.doda ?? 0, folk: living(s).length });
+  const ut: [string, boolean][] = [];
+  try {
+    const tom = bortaBerattelse(s, b(s.now - 3 * H));
+    ut.push([`några timmar utan något i krönikan: en mening om att det var lugnt ("${tom[0]}")`, tom.length === 1 && (SIM.BERATTELSER.b_lugnt as SIM.Variant[]).some(v => (typeof v === 'string' ? v : v.t) === tom[0])]);
+    rad(s.now - 170 * SIM.MIN, 'Ugge bytte en skål.', 'byte'); rad(s.now - 160 * SIM.MIN, 'Mira föddes.', 'k_fodd'); rad(s.now - 150 * SIM.MIN, 'Något smått.');
+    rad(s.now - 140 * SIM.MIN, 'Den första handlaren kom.', 'handel'); rad(s.now - 130 * SIM.MIN, 'Arvid dog.', 'k_dog');
+    const kort = bortaBerattelse(s, b(s.now - 3 * H)), k = kort.join(' ');
+    ut.push([`några timmar: ett stycke med de tre viktigaste i tidsordning och resten som småsaker (${k})`,
+      kort.length === 1 && /^Mira föddes\. Den första handlaren kom\. Arvid dog\. /.test(k) && !k.includes('skål') && !k.includes('smått')]);
+    // några dygn: en inledning och ett stycke per år (ett lugnt år får sin mening); en vecka: per tidsålder och sist byn nu
+    s.now = nu0 + 3 * D; hist.kronika = []; rad(nu0 + 2.5 * D, 'Arvid dog.', 'k_dog');
+    const fa = bortaBerattelse(s, b(nu0)), ar = SIM.kalender(s, nu0).ar;
+    ut.push([`tre dygn: inledning och ett stycke per år (${fa.length} stycken: ${fa.map(x => x.slice(0, 30)).join(' | ')})`,
+      fa.length === 5 && fa.slice(1).every((x, i) => x.includes(`år ${ar + i}`) || x.includes(`År ${ar + i}`)) && fa.some(x => x.includes('Arvid dog.'))]);
+    s.now = nu0 + 9 * D;
+    const lang = bortaBerattelse(s, b(nu0));
+    ut.push([`nio dygn: per tidsålder och sist hur byn har det nu ("${lang[lang.length - 1]}")`, lang.length >= 3 && /invånare|bor .* i byn/.test(lang[lang.length - 1])]);
+    s.now = nu0;
+    ut.push(['berättelsen står i rutan, före talen', /ovBerattelse[^]*Arvid dog[^]*födda ·/.test(bortaHtml(b(s.now - 3 * H)))]);
+  } finally { s.now = nu0; hist.kronika = k0; }
+  return ut;
+}

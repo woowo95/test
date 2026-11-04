@@ -1,3 +1,4 @@
+import { fargTal, narmast, rasterPa } from '../palett';
 import { FLACKAR, HOUR, W, blodOf, flackNu, flackarOf } from '../sim';
 import { ritaBlod } from './blod';
 import { s, ui } from './lage';
@@ -13,14 +14,14 @@ const DEF: Record<string, { farg: number }> = FLACKAR;
 // en brun fläck utan lukt som bleknar. Från den starkaste: från vilken styrka bilden gäller, raderna (8 × 8 punkter på rutan)
 // och färgerna med genomskinlighet
 const TOA: { fran: number; rader: string[]; farg: Record<string, [number, number]> }[] = [
-  { fran: 0.7, rader: ['....v...', '..Vv....', '.V..v...', '..V..v..', '....v...', '...cCc..', '..kccck.'], farg: { v: [0xaacd5a, 0.85], V: [0xaacd5a, 0.45], c: [0x6b4a1f, 1], C: [0x8f6a34, 1], k: [0x4a3014, 1] } },
-  { fran: 0.3, rader: ['', '', '', '', '', '...hhh..', '..hhhhh.'], farg: { h: [0x5f3e18, 0.55] } },
-  { fran: 0, rader: ['', '', '', '', '', '', '...n.n..'], farg: { n: [0x5f3e18, 0.26] } },
+  { fran: 0.7, rader: ['....v...', '..Vv....', '.V..v...', '..V..v..', '....v...', '...cCc..', '..kccck.'], farg: { v: [0x898b4c, 0.85], V: [0x898b4c, 0.45], c: [0x5e3c24, 1], C: [0x7d5b40, 1], k: [0x3f2415, 1] } },
+  { fran: 0.3, rader: ['', '', '', '', '', '...hhh..', '..hhhhh.'], farg: { h: [0x5e3c24, 0.55] } },
+  { fran: 0, rader: ['', '', '', '', '', '', '...n.n..'], farg: { n: [0x5e3c24, 0.26] } },
 ];
 const P = TS / 8;
 function toaBild(x: number, y: number, v: number) {
   const b = TOA.find(t => v > t.fran) ?? TOA[TOA.length - 1];
-  b.rader.forEach((r, j) => [...r].forEach((k, i) => { const f = b.farg[k]; if (f) flackG.beginFill(f[0], f[1]).drawRect(x + i * P, y + j * P, P, P).endFill(); }));
+  b.rader.forEach((r, j) => [...r].forEach((k, i) => { const f = b.farg[k]; if (f && (f[1] >= 1 || rasterPa(f[1], i + j * 3, j))) flackG.beginFill(f[0]).drawRect(x + i * P, y + j * P, P, P).endFill(); }));
 }
 export function drawFlackar() {
   const fl = flackarOf(s), bl = blodOf(s), sist = fl.reduce((a, f) => Math.max(a, f.t), 0), blodSist = bl.reduce((a, b) => a + b.t + b.m, 0);
@@ -34,7 +35,7 @@ export function drawFlackar() {
     if (v <= 0 || !d) continue;
     const x = (f.i % W) * TS, y = Math.floor(f.i / W) * TS, n = 1 + Math.round(v * 4);
     if (f.k === 'toa') { toaBild(x, y, v); continue; }
-    flackG.beginFill(d.farg, 0.25 + 0.5 * v);
+    flackG.beginFill(fargTal(narmast('#' + d.farg.toString(16).padStart(6, '0')))); // närmaste färg i paletten; en blek fläck har färre och mindre prickar
     for (let j = 0; j < n; j++) flackG.drawEllipse(x + 2 + plats(f.i, j) * (TS - 4), y + 2 + plats(f.i, j + 9) * (TS - 4), 0.8 + v * 1.6 * plats(f.i, j + 3) + 0.6, 0.6 + v * 1.1 * plats(f.i, j + 5) + 0.4);
     flackG.endFill();
   }

@@ -1,3 +1,4 @@
+import { rasterPa } from '../palett';
 import * as PIXI from 'pixi.js';
 import { Blodflack, blodNu, blodOf, snoPaMarken } from '../sim';
 import { s, ui } from './lage';
@@ -13,7 +14,7 @@ const P = TS / 16, Q = 2; // Q: punkter i dag per punkt förut (8 på rutan), s�
 const FARG: Record<string, [number, number]> = {
   1: [0x742a01, 1], 2: [0xbd753e, 1], 4: [0xa14808, 1], 3: [0x521100, 1],
   5: [0x5e3c24, 1], 6: [0x3f2415, 1], 7: [0x3f2415, 0.45], 0: [0x3f2415, 0.3],
-  p: [0xd23c48, 0.45], q: [0xcd5a69, 0.22],
+  p: [0xa14808, 0.45], q: [0xbd753e, 0.22], // svaga: ritas glesare i ett rastermönster (rasterPa)
 };
 const hash = (a: number, b: number) => { const h = Math.sin(a * 12.9898 + b * 78.233) * 43758.5453; return h - Math.floor(h); };
 const krymp = (v: number) => v > 0.7 ? 1 : v > 0.3 ? 0.82 : 0.6;
@@ -82,8 +83,8 @@ export function ritaBlod(g: PIXI.Graphics) {
   for (const [k, l] of ut) {
     const f = FARG[k];
     if (!f) continue;
-    g.beginFill(f[0], f[1]);
-    for (let i = 0; i < l.length; i += 2) g.drawRect(l[i]! * P, l[i + 1]! * P, P, P);
+    g.beginFill(f[0]);
+    for (let i = 0; i < l.length; i += 2) if (f[1] >= 1 || rasterPa(f[1], l[i]!, l[i + 1]!)) g.drawRect(l[i]! * P, l[i + 1]! * P, P, P);
     g.endFill();
   }
 }

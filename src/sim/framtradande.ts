@@ -21,6 +21,7 @@ import { Station, isKlar, redskapVid, stationById, stationerOf, vidStation } fro
 import { kvHaller } from './kvalitet';
 import { SAKER } from './saker';
 import { balans } from './balans';
+import { notis } from './notiser';
 import { DAY, HOUR, HOUR_S, MIN, Person, Skill, State, Task } from './typer';
 
 export interface FramDef {
@@ -87,8 +88,14 @@ export const FRAM = balans('framtradande', {
 });
 
 // framträdandet som pågår: formen, den som uppträder, när det började (task.ref) och slutar, publiken som varit där och texten
-export interface Fram { k: string; p: number; start: number; slut: number; publik: number[]; text: string; inst?: string; scen?: number; bud?: Bud; om?: number; ik?: IntryckTyp; betalt?: string } // betalt = saken ledaren betalade med (steg 4.3.2.4) // bud = budskapet, om = vem det handlar om (personen eller ledaren), ik = intrycket // inst = instrumentet, scen = stationen där det sker
-export interface FramMinne { t: number; k: string; p: number; namn: string; text: string; n: number; q: number; inst?: string; bud?: Bud; betalt?: string }
+export interface Fram { k: string; p: number; start: number; slut: number; publik: number[]; text: string; amne?: string; inst?: string; scen?: number; bud?: Bud; om?: number; ik?: IntryckTyp; betalt?: string } // betalt = saken ledaren betalade med (steg 4.3.2.4) // bud = budskapet, om = vem det handlar om (personen eller ledaren), ik = intrycket // inst = instrumentet, scen = stationen där det sker
+export interface FramMinne { t: number; k: string; p: number; namn: string; text: string; n: number; q: number; inst?: string; bud?: Bud; betalt?: string
+  // redogörelsen (steg 5.4.7.1), sparad när det händer: numret (raden i loggen och notisen pekar hit), publiken med vad var och
+  // en tyckte om den som uppträdde före och efter (r0, r1) och om ledaren (l0, l1, efter en hyllning eller ett hån), glädjen
+  // (tanken i humöret), de som fick höra ryktet, de som tron övertygade, ledaren (namnet när budskapet gällde ledaren) och
+  // om ingen kom (inget)
+  nr?: number; amne?: string; publik?: FramLyss[]; glad?: number; rykte?: string[]; tro?: string[]; ledare?: string; om?: string; inget?: true }
+export interface FramLyss { id: number; namn: string; r0: number; r1: number; l0?: number; l1?: number }
 
 // kvällen: tolv timmar bakåt, så att kvällen och natten efter hör till samma dygn
 const kvall = (t: number) => Math.floor((t - 12 * HOUR) / DAY);
@@ -119,7 +126,7 @@ function minneAmne(s: State, p: Person) {
 // gärna (0 = inte), amne = texten till {amne}, verkan = vad det gör med var och en som lyssnade (q = kvaliteten, med karisman)
 const liten = (t: string) => t[0]!.toLowerCase() + t.slice(1);
 export type Bud = 'person' | 'hylla' | 'hana' | 'tro';
-interface BudDef { namn: string; vikt: (s: State, p: Person, x: BudLage) => number; amne: (s: State, p: Person, x: BudLage) => string; verkan: (s: State, p: Person, b: Person, q: number, f: Fram) => void }
+interface BudDef { namn: string; vikt: (s: State, p: Person, x: BudLage) => number; amne: (s: State, p: Person, x: BudLage) => string; verkan: (s: State, p: Person, b: Person, q: number, f: Fram) => boolean | void } // verkan: sant när ryktet spreds
 interface BudLage { e?: Intryck; ev: number; l?: Person; op: number }
 // det tillåtna hånet: 1 = fritt, 0 = förbjudet av ledaren (påbudet Hån, styre.ts)
 export const hanTillat = (s: State) => (1 + pabud(s, 'han')) / 2;
@@ -131,7 +138,7 @@ function stod(s: State, b: Person, l: Person | undefined, d: number) {
 }
 export const BUDSKAP: Record<Bud, BudDef> = {
   person: { namn: 'Om en person', vikt: (_s, _p, x) => x.e ? x.ev * FRAM.budPerson : 0, amne: (s, p, x) => intryckAmne(s, p, x.e!),
-    verkan: (s, p, b, q, f) => { const e = intryckOm(p, f.om!, f.ik); if (e && e.om !== b.id && rnd(s, 'fram', b) < FRAM.rykte * q) beratta(s, p, b, e, getRel(s, p, b)); } },
+    verkan: (s, p, b, q, f) => { const e = intryckOm(p, f.om!, f.ik); if (e && e.om !== b.id && rnd(s, 'fram', b) < FRAM.rykte * q) { beratta(s, p, b, e, getRel(s, p, b)); return true; } } },
   hylla: { namn: 'Hyllar ledaren', vikt: (_s, _p, x) => x.l && x.op > 0 ? x.op / 100 * FRAM.budStyre : 0, amne: (_s, _p, x) => `${x.l!.name}, som leder byn väl`,
     verkan: (s, _p, b, q, f) => stod(s, b, byId(s, f.om!), FRAM.styre * q) },
   hana: { namn: 'Hånar ledaren', vikt: (s, _p, x) => x.l && x.op < 0 ? -x.op / 100 * FRAM.budStyre * hanTillat(s) : 0, amne: (_s, _p, x) => `${x.l!.name}, som tror sig vara förmer än de andra`,
@@ -219,8 +226,9 @@ export function framVal(s: State, p: Person, plats: (q: Person) => { x: number; 
   const d = former[Math.floor(rnd(s, 'fram', p) * former.length)], i = d.instrument ? instrumentFor(d, inst) : undefined;
   const start = s.now, slut = start + (FRAM.minuter + rnd(s, 'fram', p) * FRAM.spann) * MIN;
   const bud = bestall(s, p, d) ?? budVal(s, p, d);
-  const text = d.text.replace('{namn}', p.name).replace('{hen}', p.sex === 'k' ? 'hon' : 'han').replace('{amne}', bud?.amne ?? AMNE[d.amne](s, p)).replace('{inst}', i ? INSTRUMENT[i].ord : '');
-  s.fram = { k: d.id, p: p.id, start, slut, publik: [], text, inst: i, scen: sc?.id, ...(bud ? { bud: bud.k, om: bud.om, ik: bud.ik, ...('betalt' in bud ? { betalt: bud.betalt as string } : {}) } : {}) };
+  const amne = bud?.amne ?? AMNE[d.amne](s, p);
+  const text = d.text.replace('{namn}', p.name).replace('{hen}', p.sex === 'k' ? 'hon' : 'han').replace('{amne}', amne).replace('{inst}', i ? INSTRUMENT[i].ord : '');
+  s.fram = { k: d.id, p: p.id, start, slut, publik: [], text, amne, inst: i, scen: sc?.id, ...(bud ? { bud: bud.k, om: bud.om, ik: bud.ik, ...('betalt' in bud ? { betalt: bud.betalt as string } : {}) } : {}) };
   s.framKvall = kvall(start);
   count(s, 'framtradanden');
   for (const q of pub) {
@@ -251,13 +259,26 @@ export function upptradaKlar(s: State, p: Person, t: Task) {
   const d = FRAM_AV[f.k], q = framKval(s, p) * (f.inst ? INSTRUMENT[f.inst].kval : 1), pub = f.publik.map(id => s.people.find(x => x.id === id)).filter((x): x is Person => !!x && alive(x));
   s.fram = undefined;
   if (f.inst) slitInstrument(s, f);
-  if (!pub.length) return;
+  const om = f.om !== undefined ? byId(s, f.om) : undefined, ledd = f.bud === 'hylla' || f.bud === 'hana' ? om : undefined;
+  const m: FramMinne = { t: f.start, k: f.k, p: p.id, namn: p.name, text: f.text, n: pub.length, q: Math.round(q * 100) / 100, inst: f.inst, bud: f.bud, betalt: f.betalt, amne: f.amne,
+    nr: s.framNr = (s.framNr ?? 0) + 1, publik: [], ...(om ? { om: om.name } : {}), ...(ledd ? { ledare: ledd.name } : {}) };
+  if (!pub.length) { // ingen kom (steg 5.4.7.1): redogörelsen säger det
+    m.inget = true;
+    framMinne(s, m, `${p.name} skulle uppträda, men ingen kom och lyssnade.`);
+    return;
+  }
+  m.glad = Math.round(FRAM.gladje * d.kval * q * 100); // i hundradelar av humöret
   for (const b of pub) {
     think(b, `Lyssnade på ${p.name}s ${d.namn.toLowerCase()}`, FRAM.gladje * d.kval * q, s.now, FRAM.gladjeTim * HOUR);
-    const r = getRel(s, b, p);
+    const r = getRel(s, b, p), r0 = r.op, l0 = ledd && b !== ledd ? getRel(s, b, ledd).op : undefined, tro0 = b.tro;
     r.op = Math.max(-100, Math.min(100, r.op + FRAM.op * (q - 0.5)));
     if (d.id === 'forelasning') share(s, p, b, getRel(s, p, b), SAMTALSSLAG['berättelse']); // föreläsningen för det hen vet vidare
-    if (f.bud) BUDSKAP[f.bud].verkan(s, p, b, q, f);
+    const spred = f.bud ? BUDSKAP[f.bud].verkan(s, p, b, q, f) : undefined;
+    const lyss: FramLyss = { id: b.id, namn: b.name, r0: Math.round(r0), r1: Math.round(getRel(s, b, p).op) };
+    if (l0 !== undefined) { lyss.l0 = Math.round(l0); lyss.l1 = Math.round(getRel(s, b, ledd!).op); }
+    m.publik!.push(lyss);
+    if (spred) (m.rykte ??= []).push(b.name);
+    if (f.bud === 'tro' && b.tro !== tro0 && b.tro === p.tro) (m.tro ??= []).push(b.name);
   }
   // den som hånar ledaren får sämre relation med ledaren (steg 4.3.2.3)
   if (f.bud) count(s, 'framBud_' + f.bud);
@@ -266,10 +287,17 @@ export function upptradaKlar(s: State, p: Person, t: Task) {
   if (pub.length >= FRAM.publik) think(p, `Uppträdde för ${pub.length} vid elden`, FRAM.egen, s.now, FRAM.gladjeTim * HOUR);
   count(s, 'framPublik', pub.length);
   gjort(s, p, 'upptradt');
-  log(s, f.text, 'world', [p.id]);
-  (s.framtradanden ??= []).push({ t: f.start, k: f.k, p: p.id, namn: p.name, text: f.text, n: pub.length, q: Math.round(q * 100) / 100, inst: f.inst, bud: f.bud, betalt: f.betalt });
+  framMinne(s, m, f.text);
+}
+// framträdandet sparas (de senaste FRAM.sparas), och raden i loggen och notisen får dess nummer (steg 5.4.7.1)
+function framMinne(s: State, m: FramMinne, text: string) {
+  log(s, text, 'world', [m.p]).fram = m.nr;
+  notis(s, 'fram', text, [m.p], undefined, { fram: m.nr });
+  (s.framtradanden ??= []).push(m);
   if (s.framtradanden.length > FRAM.sparas) s.framtradanden.splice(0, s.framtradanden.length - FRAM.sparas);
 }
+// framträdandet med numret nr, om det finns kvar
+export const framMinneAv = (s: State, nr: number) => s.framtradanden?.find(m => m.nr === nr);
 // instrumentet slits en gång per framträdande, och går det sönder står det i loggen
 function slitInstrument(s: State, f: Fram) {
   const sc = f.scen !== undefined ? stationById(s, f.scen) : undefined, r = sc && redskapVid(s, sc, f.inst!).sort((a, b) => a.c - b.c)[0];

@@ -391,3 +391,85 @@ SCENARIER.pynt = {
     ];
   },
 };
+
+SCENARIER.framrapport = {
+  text: 'Framträdandets redogörelse (steg 5.4.7.1): när framträdandet slutar sparas vem, formen, publiken och mottagningen (glädjen, vad publiken tycker om den som uppträdde före och efter, ryktet, ledaren efter en hyllning, vilka tron övertygade), och raden i Händelser och notisen pekar dit. Kommer ingen säger redogörelsen det. Högst upp en berättelse i löpande text ur det som hände (steg 5.4.7.2)',
+  kor: () => {
+    const { s, v } = kvall(), p = v[0]!;
+    upptrad(s, p); kor(s, 1.5);
+    const m = s.framtradanden?.at(-1), rad = s.log.find(l => l.fram !== undefined && l.fram === m?.nr);
+    const n = s.notiser?.lista.find(x => x.id === 'fram'), nIdx = n?.fram?.indexOf(m?.nr ?? -1) ?? -1;
+    const ok = !!m?.publik && m.publik.length === m.n && m.publik.every(x => Number.isInteger(x.r0) && Number.isInteger(x.r1));
+    // en hyllning: publiken om ledaren före och efter
+    const k = kvall(5), u = k.v[0]!, l = k.v[1]!;
+    k.s.styre = { ledare: l.id, historia: [], oppna: [] } as unknown as typeof k.s.styre;
+    SIM.getRel(k.s, u, l).op = 60;
+    let hy: SIM.FramMinne | undefined;
+    if (upptrad(k.s, u)) { kor(k.s, 1.5); hy = k.s.framtradanden?.at(-1); }
+    const hyl = hy?.publik?.filter(x => x.l0 !== undefined) ?? [];
+    // tron: någon i publiken övertygas
+    let tro: string[] = [], troM: SIM.FramMinne | undefined, troS = s;
+    for (let i = 0; i < 20 && !tro.length; i++) {
+      const t = kvall(3 + i), w = t.v[0]!;
+      t.s.tron = [{ id: 1, grundare: w.id, gnamn: w.name, t: t.s.now, k: 'blixt', bakom: 'Den som bor i åskmolnen', vill: 'att man tystnar när det mullrar', svek: 'blixten slår ner', natur: 50, manga: 50, bekr: t.s.now, ar: 0 } as SIM.Tro];
+      w.tro = 1; w.troStyrka = 100; w.andlig = 100;
+      for (const b of t.v.slice(1)) { b.andlig = 100; b.tro = undefined; }
+      if (!upptrad(t.s, w)) continue;
+      kor(t.s, 1.5);
+      const tm = t.s.framtradanden?.at(-1);
+      if (tm?.bud === 'tro' && tm.tro?.length) { tro = tm.tro.filter(x => t.v.find(b => b.name === x)?.tro === 1); troM = tm; troS = t.s; }
+    }
+    // ingen kom: publiken går därifrån innan framträdandet börjar
+    const e = kvall(7), ep = e.v[0]!;
+    let inget: SIM.FramMinne | undefined;
+    if (upptrad(e.s, ep)) { for (const q of e.v.slice(1)) q.task = { act: 'sova', phase: 'do', tx: q.x, ty: q.y, until: e.s.now + 3 * SIM.HOUR, carry: 0, dark: true }; kor(e.s, 1.5); inget = e.s.framtradanden?.at(-1); }
+    const inglog = e.s.log.find(x => x.fram === inget?.nr);
+    // berättelsen högst upp (steg 5.4.7.2): skriven ur minnet, stabil, med den som uppträdde, ledaren och den som övertygades
+    const b0 = m ? SIM.framBerattelse(s, m) : '', bh = hy ? SIM.framBerattelse(k.s, hy) : '', bt = troM ? SIM.framBerattelse(troS, troM) : '', bi = inget ? SIM.framBerattelse(e.s, inget) : '';
+    const hel = (x: string) => x.length > 0 && !/\{|undefined|NaN/.test(x);
+    return [
+      [`minnet nr ${m?.nr}: ${m?.n} lyssnade, glädje ${m?.glad}, publiken före och efter i hela tal`, ok && (m?.glad ?? 0) > 0],
+      [`raden i Händelser pekar på framträdandet: ${rad?.text ?? 'ingen'}`, !!rad],
+      [`notisen (Folket) pekar på det på rad ${nIdx + 1}`, !!n && nIdx >= 0 && n.fram!.length === n.rader.length],
+      [`hyllningen: ledaren ${hy?.ledare ?? 'ingen'}, ${hyl.length} i publiken med före och efter (${hyl.map(x => `${x.l0}→${x.l1}`).join(', ')})`, hy?.bud === 'hylla' && hy.ledare === l.name && hyl.length >= 1 && hyl.every(x => x.l1! >= x.l0!) && hyl.some(x => x.l1! > x.l0!)],
+      [`tron övertygade ${tro.join(', ') || 'ingen'}`, tro.length >= 1],
+      [`ingen kom: ${inglog?.text ?? 'ingen rad'}`, !!inget?.inget && inget.n === 0 && !!inglog],
+      [`berättelsen: ${b0}`, hel(b0) && b0.includes(p.name) && b0 === SIM.framBerattelse(s, m!)],
+      [`berättelsen om hyllningen: ${bh}`, hel(bh) && bh.includes(l.name)],
+      [`berättelsen om tron: ${bt}`, hel(bt) && tro.some(x => bt.includes(x))],
+      [`berättelsen när ingen kom: ${bi}`, hel(bi) && bi.includes(ep.name)],
+    ];
+  },
+};
+
+SCENARIER.matchrapport = {
+  text: 'Matchens sammanställning (steg 5.4.8.1): när matchen avgörs sparas sporten, hur länge den varade, spelarna med färdigheten i sportens färdighet, vem som vann och glädjen, och raden i Händelser och notisen pekar dit. Kommer det för få säger sammanställningen att det blev ingen match. Högst upp en berättelse ur det som hände (steg 5.4.8.2)',
+  kor: () => {
+    const s = rikDag(3, { rep: 4 }), v = vuxna(s), a = v[0]!, b = v[1]!;
+    a.skill.traff = 18; b.skill.traff = 2;
+    SIM.newTing(s, 'mal', 1, a.id);
+    match(s, 'kast', [a, b]); kor(s, 2);
+    const m = s.matcher?.at(-1), rad = s.log.find(l => l.match !== undefined && l.match === m?.nr);
+    const n = s.notiser?.lista.find(x => x.id === 'match'), nIdx = n?.match?.indexOf(m?.nr ?? -1) ?? -1;
+    const fa = m?.spelare.find(x => x.id === a.id);
+    // det kommer för få: ensam på lekplatsen
+    const e = rikDag(5), ep = vuxna(e)[0]!;
+    match(e, 'dragkamp', [ep]);
+    for (const q of SIM.living(e)) if (q !== ep) q.task = { act: 'sova', phase: 'do', tx: q.x, ty: q.y, until: e.now + 3 * SIM.HOUR, carry: 0, dark: true };
+    kor(e, 1.5);
+    const im = e.matcher?.at(-1), ilog = e.log.find(l => l.match === im?.nr);
+    // berättelsen högst upp (steg 5.4.8.2): skriven ur minnet, stabil, med vinnaren; en skräll när den svagare vinner
+    const hel = (x: string) => x.length > 0 && !/\{|undefined|NaN/.test(x);
+    const ber = m ? SIM.matchBerattelse(s, m) : '', iber = im ? SIM.matchBerattelse(e, im) : '';
+    const sk = m ? { ...m, nr: 7, vinnare: b.id, vnamn: b.name, spelare: m.spelare.map(x => ({ ...x, v: x.id === b.id ? 20 : 19.5 })) } : undefined, sber = sk ? SIM.matchBerattelse(s, sk) : '';
+    return [
+      [`minnet nr ${m?.nr}: ${m?.k}, ${m ? Math.round((m.slut - m.t) / SIM.MIN) : 0} minuter, ${m?.spelare.map(x => `${x.namn} ${x.f}`).join(', ')}, vann ${m?.vnamn}, glädje ${m?.glad}`, !!m && m.k === 'kast' && m.spelare.length === 2 && fa?.f === 18 && !!m.vnamn && m.slut > m.t && m.glad > 0],
+      [`raden i Händelser pekar på matchen: ${rad?.text ?? 'ingen'}`, !!rad],
+      [`notisen (Folket) pekar på den på rad ${nIdx + 1}`, !!n && nIdx >= 0 && n.match!.length === n.rader.length],
+      [`för få: ${ilog?.text ?? 'ingen rad'}`, !!im?.installd && !im.vinnare && im.spelare.length === 1 && !!ilog],
+      [`berättelsen: ${ber}`, hel(ber) && ber.includes(a.name) && ber === SIM.matchBerattelse(s, m!)],
+      [`när den svagare vinner jämnt: ${sber}`, hel(sber) && sber.includes(b.name) && sber.includes(a.name)],
+      [`när det kom för få: ${iber}`, hel(iber) && iber.includes(ep.name) || /ingen|för få|tom/.test(iber)],
+    ];
+  },
+};

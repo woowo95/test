@@ -15,6 +15,7 @@ import { ACTS, ACT_LIST } from './handlingar';
 import type { SamtalDef } from './samtal';
 import { lartUt } from './relationer';
 import { gudHandelse } from './religion';
+import { notis } from './notiser';
 
 // ---------- teknik ----------
 // Ingen föds med kunskapen om hur man gör en yxa. Den som arbetar med något kommer så småningom på hur det kan göras
@@ -205,6 +206,7 @@ function learn(s: State, p: Person, t: Tek, from?: Person) {
   if (first && t.episk) kronika(s, fyll(t.episk, personFalt(p)), 'episk');
   else if (first) kronikaBer(s, 'k_uppfann', p.id, { ...personFalt(p), teknik: t.namn.toLowerCase() });
   log(s, `${p.name} kom på hur man gör ${t.namn.toLowerCase()}. ${t.effekt}`, 'skill', [p.id]);
+  if (first) notis(s, 'teknik', `${p.name} kom på hur man gör ${t.namn.toLowerCase()}. ${t.effekt}`, [p.id]);
   think(p, `Kom på hur man gör ${t.namn.toLowerCase()}`, TEKTAL.kommaPa, s.now, TEKTAL.kommaPaTim * HOUR);
   if (first) { p.fame.push(`Uppfann ${t.namn.toLowerCase()}`); allaBarn(s, 'uppfinning', `uppfann ${t.namn.toLowerCase()}`); upplev(s, p, 'egenTeknik', t.namn.toLowerCase()); gudHandelse(s, 'hantverk', `${t.namn.toLowerCase()} som ${p.name} kom på`); }
 }

@@ -48,11 +48,13 @@ for (const [id, hu, an] of FLIKAR) {
 }
 const farg = Object.fromEntries(FLIKAR.map(([id, hu, an]) => [id, { hu: RAMPER[hu], an: RAMPER[an] }]));
 
-const ut = { horn: { val: HORN_VAL, w: HORN_RUTA.w, h: HORN_RUTA.h, kant: KANT, rader, pal }, runsten, band, farg };
-const text = `// GENERERAD av bildstil/guitillspelet.cjs ur bildstil/gui.json och gui.js (steg 5.3.1.4 och 5.3.3.1). Ändra inte här:
+// vågbandet längst ner i raden överst (steg 5.3.1.2): Björns ja till g_vag, en ruta som upprepas över hela bredden, och grunden bakom
+const vag = { ...GUI.vag, bg: GUI.vagbg };
+const ut = { horn: { val: HORN_VAL, w: HORN_RUTA.w, h: HORN_RUTA.h, kant: KANT, rader, pal }, runsten, band, farg, vag };
+const text = `// GENERERAD av bildstil/guitillspelet.cjs ur bildstil/gui.json och gui.js (steg 5.3.1.4, 5.3.3.1 och 5.3.1.2). Ändra inte här:
 // ändra i bildstilen och kör skriptet. Gränssnittets bilder: hörnet på panelerna (det övre vänstra; ui/ram.ts speglar det
 // till de andra), flikarnas runstenar i tre lägen och banden överst i flikarna (ui/runstenar.ts), och flikarnas färger
-// (huvudfärgen och andrafärgen, fyra toner var).
+// (huvudfärgen och andrafärgen, fyra toner var), och vågbandet under raden överst (ui/raden.ts).
 export interface GuiBild { w: number; h: number; rader: string[]; pal: Record<string, string> }
 export type StenLage = 'stangd' | 'oppen' | 'blek';
 export const GUI: {
@@ -60,7 +62,8 @@ export const GUI: {
   runsten: Record<string, Record<StenLage, GuiBild>>;
   band: Record<string, GuiBild>;
   farg: Record<string, { hu: string[]; an: string[] }>;
+  vag: GuiBild & { bg: string };
 } = ${JSON.stringify(ut)};
 `;
 fs.writeFileSync(path.join(BS, '..', 'src', 'guibilder.ts'), text);
-console.log(`src/guibilder.ts: hörnet ${HORN_VAL} ${HORN_RUTA.w} × ${HORN_RUTA.h}, runstenar ${Object.keys(runsten).join(' ')}, band ${Object.keys(band).join(' ')}, ${Math.round(text.length / 1024)} KB`);
+console.log(`src/guibilder.ts: hörnet ${HORN_VAL} ${HORN_RUTA.w} × ${HORN_RUTA.h}, runstenar ${Object.keys(runsten).join(' ')}, band ${Object.keys(band).join(' ')}, vågbandet ${vag.w} × ${vag.h}, ${Math.round(text.length / 1024)} KB`);

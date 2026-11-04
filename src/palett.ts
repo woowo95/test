@@ -42,8 +42,6 @@ function narmastLab(lab: number[]) {
 }
 // närmaste färgen i paletten
 export const narmast = (hex: string) => FARGER[narmastLab(rgb2lab(hex2rgb(hex)))];
-// en färg ur spelets gamla bilder: lite mörkare och gråare, och sedan närmaste färgen i paletten (som bildstilen visar dem, P.fran)
-export const franGammal = (hex: string) => { const [L, a, b] = rgb2lab(hex2rgb(hex)); return FARGER[narmastLab([L * 0.93, a * 0.78, b * 0.78 + 0.004])]; };
 
 // ---------- skymningen och natten (steg 5.1.1.4) ----------
 // varje färg ett och två steg mörkare, som närmaste färgen i paletten (som bildstilens P.skymn och P.natt)
@@ -61,6 +59,9 @@ const INDEX = new Map(FARGER.map((h, i) => [h, i]));
 // färgen i mörkret m (0 = dag, 1 = skymning, 2 = natt, 3 = djup natt, och tal emellan) i punkten (x, y): mellan två steg väljer ett
 // rastermönster (Bayer 4 × 4) vilken av dem punkten får, så att övergången blir jämn utan nya färger
 const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+// rastret i stället för genomskinlighet (steg 5.5.1): punkten (x, y) ritas helt när styrkan a (0–1) når mönstrets tröskel, annars
+// inte alls, så att något svagt syns glesare men bara i palettens färger
+export const rasterPa = (a: number, x: number, y: number) => a * 16 > BAYER[(y & 3) * 4 + (x & 3)] + 0.5;
 export function rasterSteg(hex: string, m: number, x: number, y: number) {
   const i = INDEX.get(hex.toLowerCase());
   if (i === undefined || m <= 0) return hex;

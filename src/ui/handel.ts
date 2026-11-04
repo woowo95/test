@@ -22,7 +22,7 @@ const framlingG = new PIXI.Graphics();
 handLayer.addChild(framlingG);
 function cirkel(x: number, y: number, col: number, vald: boolean) {
   const r = 5;
-  framlingG.beginFill(0x000000, 0.25).drawEllipse(x, y + r * 0.9, r * 0.9, r * 0.35).endFill();
+  framlingG.beginFill(0x372f25).drawEllipse(x, y + r * 0.9, r * 0.9, r * 0.35).endFill();
   framlingG.lineStyle(vald ? 2.5 : 1.2, vald ? 0xffffff : 0x1a1a1a, vald ? 1 : 0.8).beginFill(col).drawCircle(x, y, r).endFill().lineStyle(0);
 }
 // var en part i ett byte står: en bybo (posOf) eller en gäst, som handlaren (gaster.ts)

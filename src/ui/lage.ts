@@ -6,14 +6,18 @@ import type { FlikId } from './panel';
 // (pratbubblor, trender, vem som följs) nollställs, och moduler med eget sådant lägger en rad i vidNyBy
 export let s: State;
 export const vidNyBy: (() => void)[] = [];
+// panelen ritas om (panel.ts sätter den); för det som ändras utan ett tryck, t.ex. ett drag i en graf eller ett val i en lista
+export let ritaOm = () => {};
+export const satRitaOm = (f: () => void) => { ritaOm = f; };
 export function setByn(n: State) {
   s = n; ui.nu = n.now; useMap(n); nyBild();
-  ui.hovered = undefined; ui.husId = -1; ui.stationId = -1; ui.flytta = -1; ui.flyttFel = false; ui.hogAt = { x: 0, y: 0 }; ui.filtAt = { x: 0, y: 0 }; ui.byteNr = -1; ui.sak = ''; ui.faltId = -1; ui.faltRuta = -1; ui.djurId = -1;
+  ui.hovered = undefined; ui.husId = -1; ui.stationId = -1; ui.flytta = -1; ui.flyttFel = false; ui.hogAt = { x: 0, y: 0 }; ui.filtAt = { x: 0, y: 0 }; ui.byteNr = -1; ui.framNr = -1; ui.matchNr = -1; ui.sak = ''; ui.faltId = -1; ui.faltRuta = -1; ui.djurId = -1;
   for (const f of vidNyBy) f();
 }
 export const ui = {
   tab: undefined as FlikId | undefined, // fliken i personens panel till vänster (personen, elden, saken …), steg 5.3.1.1
-  hoger: 'folk' as FlikId | undefined, // den öppna flikens panel till höger (Byn, Teknik, Krönika, Folket …)
+  hoger: (typeof matchMedia === 'function' && matchMedia('(max-width: 820px)').matches ? undefined : 'folk') as FlikId | undefined, // på en liten skärm börjar kartan fri (steg 5.3.7)
+  // ↑ den öppna flikens panel till höger (Byn, Teknik, Krönika, Folket …)
   selected: undefined as number | undefined, // personen som visas i panelen
   bynDel: 'seder', // delen i fliken Byn (DELAR i flikar/byn.ts)
   personFall: {} as Record<string, boolean>, // delarna i personens flikar som man fällt ut eller ihop (steg 5.3.4.2)
@@ -22,6 +26,7 @@ export const ui = {
   eld: undefined as number | undefined, // lägerelden som eldens flik visar: undefined = den första, annars en till (Fire.id, steg 4.5.6.8)
   follow: undefined as number | undefined, // personen kameran följer
   busy: false, // ikappräkning pågår
+  spola: false, // ikappräkningen visas som en snabbspolning av kartan (steg 5.4.5.1; sparas i webbläsaren, ui/spara.ts)
   nu: 0, // tiden som visas (byn är räknad ett slag längre, main.ts)
   sparFel: false, // senaste sparningen i artefaktens databas misslyckades
   molnFel: false, // byn i artefaktens databas gick inte att läsa, och sparas därför inte där (spara.ts)
@@ -39,6 +44,8 @@ export const ui = {
   faltRuta: -1, // ... och rutan med grödan som visas, eller -1 för hela fältet
   hogAt: { x: 0, y: 0 }, // rutan med högar utanför lagret som visas i panelen
   filtAt: { x: 0, y: 0 }, // platsen man tryckte på en filt (flikar/filt.ts, steg 4.5.4.13)
+  framNr: -1, // framträdandet som visas i fliken Framträdandet (steg 5.4.7.1)
+  matchNr: -1, // matchen som visas i fliken Matchen (steg 5.4.8.1)
   byteNr: -1, // bytet som visas i filtfliken (ett minne, steg 4.5.4.17), eller -1 för filten man tryckte på
   djurId: -1, // djuret som visas i panelen (flikar/djur.ts)
   sak: '', // saken som visas i panelen: "t:<id>", "s:<x>,<y>,<slag>", toa-högen "f:<ruta>", stubben "u:<ruta>" eller trädet "r:<ruta>" (flikar/sak.ts)

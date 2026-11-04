@@ -136,17 +136,30 @@ export function carryTxt(p: Person) {
 // en rad i loggen där namnen går att trycka på
 // Namnen letas upp i den ursprungliga texten och byts i ett svep, så att samma namn två gånger, eller ett namn som är
 // början på ett annat, länkar rätt person. Ett namn står som ett eget ord (eller med genitivets s)
+// var namnet står som ett helt ord i texten (eller i genitiv, "Annas"), från plats "fran"; -1 om det inte står där
+const bokstav = (c?: string) => !!c && /\p{L}/u.test(c);
+export function namnI(txt: string, namn: string, fran = 0, ok: (i: number) => boolean = () => true) {
+  const n = namn.length;
+  for (let i = txt.indexOf(namn, fran); i >= 0; i = txt.indexOf(namn, i + 1))
+    if (!bokstav(txt[i - 1]) && (!bokstav(txt[i + n]) || txt[i + n] === 's' && !bokstav(txt[i + n + 1])) && ok(i)) return i;
+  return -1;
+}
+// en person som länk, eller bara namnet om hen inte finns kvar i byn
+export const vemLank = (id: number, namn: string) => { const p = byId(s, id); return p ? pLink(p) : esc(namn); };
 export function linkify(l: LogEntry) {
-  const txt = l.text, bitar: { i: number; n: number; p: Person }[] = [], bokstav = (c?: string) => !!c && /\p{L}/u.test(c);
-  const passar = (i: number, n: number) => !bokstav(txt[i - 1]) && (!bokstav(txt[i + n]) || txt[i + n] === 's' && !bokstav(txt[i + n + 1]))
-    && bitar.every(b => i + n <= b.i || i >= b.i + b.n);
+  const txt = l.text, bitar: { i: number; n: number; p: Person }[] = [];
   for (const id of l.ids) {
-    const p = byId(s, id);
-    if (p) for (let i = txt.indexOf(p.name); i >= 0; i = txt.indexOf(p.name, i + 1)) if (passar(i, p.name.length)) { bitar.push({ i, n: p.name.length, p }); break; }
+    const p = byId(s, id), n = p?.name.length ?? 0;
+    const i = p ? namnI(txt, p.name, 0, i => bitar.every(b => i + n <= b.i || i >= b.i + b.n)) : -1;
+    if (i >= 0) bitar.push({ i, n, p: p! });
   }
   let ut = '', fran = 0;
   for (const b of bitar.sort((a, b) => a.i - b.i)) { ut += esc(txt.slice(fran, b.i)) + pLink(b.p); fran = b.i + b.n; }
-  return ut + esc(txt.slice(fran)) + (l.byte ? byteKnapp(l.byte.nr) : '');
+  return ut + esc(txt.slice(fran)) + (l.byte ? byteKnapp(l.byte.nr) : '') + (l.fram ? framKnapp(l.fram) : '') + (l.match ? matchKnapp(l.match) : '');
 }
 // knappen som visar hela bytet (steg 4.5.4.17): i loggen och bland en persons byten. Trycket tas om hand i flikar/filt.ts
+// knappen som visar hela framträdandet (steg 5.4.7.1): i loggen och i notisen. Trycket tas om hand i flikar/fram.ts
+// knappen som visar hela matchen (steg 5.4.8.1), som framKnapp. Trycket tas om hand i flikar/match.ts
+export const matchKnapp = (nr: number) => ` <button type="button" class="byteknapp" data-match="${nr}" title="Visa hela matchen" aria-label="Visa hela matchen">${iconImg('boll', 14)}</button>`;
+export const framKnapp = (nr: number) => ` <button type="button" class="byteknapp" data-fram="${nr}" title="Visa hela framträdandet" aria-label="Visa hela framträdandet">${iconImg('scen', 14)}</button>`;
 export const byteKnapp = (nr: number) => ` <button type="button" class="byteknapp" data-byte="${nr}" title="Visa hela bytet" aria-label="Visa hela bytet">${iconImg('handslag', 14)}</button>`;

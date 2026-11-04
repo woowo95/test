@@ -241,18 +241,24 @@ export interface Rel { chem: number; op: number; rom: number; talks: number; fla
 // hållen (gav[0] är gåvorna från den med lägst id)
 export interface RelMinne { gral?: number; slag?: number; lek?: number; sida?: number; gav?: [number, number] }
 
-export interface LogEntry { t: number; text: string; kind: 'birth' | 'death' | 'rel' | 'skill' | 'world' | 'move'; ids: number[]; byte?: ByteMinne } // byte = bytet raden handlar om (steg 4.5.4.17)
+export interface LogEntry { t: number; text: string; kind: 'birth' | 'death' | 'rel' | 'skill' | 'world' | 'move'; ids: number[]; byte?: ByteMinne; fram?: number; match?: number } // byte = bytet raden handlar om (steg 4.5.4.17), fram = framträdandets nummer (steg 5.4.7.1), match = matchens (steg 5.4.8.1)
 // ett byte som det minns (steg 4.5.4.17): med raden i loggen, hos bybor som var med (p.byten) och hos handlaren. a köpte (m i
 // byteKlart) och gav ag, b gav bg; p = priset i silver styck när bytet gjordes. fa/fb = var a:s och b:s filt låg (där sakerna
 // syns gå från den ena filten till den andra), saknas när bytet gjordes från hand till hand
 export interface ByteVara { k: string; n: number; p: number }
-export interface ByteMinne { nr: number; t: number; a: number; an: string; b: number; bn: string; ag: ByteVara[]; bg: ByteVara[]; fa?: { x: number; y: number }; fb?: { x: number; y: number } }
+// forsok = buden i en affär med handlaren (steg 5.4.6.1), avbruten = de blev inte överens (ag och bg är då tomma), rel =
+// hur mycket handlaren gillade bybon före och efter affären (−100 till 100)
+export interface ByteMinne { nr: number; t: number; a: number; an: string; b: number; bn: string; ag: ByteVara[]; bg: ByteVara[]; fa?: { x: number; y: number }; fb?: { x: number; y: number }; forsok?: ByteForsok[]; avbruten?: true; rel?: [number, number]; arg?: string[] } // arg = argumenten i berättelsen (steg 5.4.6.2, handelsber.ts)
+// ett bud i förhandlingen (steg 5.4.6.1): det kunden ville ha, det hen bjöd, vad handlaren krävde och vad budet var värt för
+// hen (i silver), och om hen sa ja
+export interface ByteForsok { vill: { k: string; n: number }[]; bud: { k: string; n: number }[]; krav: number; bjod: number; ja?: true }
 
 export interface State {
   v: number; // numret på den senaste uppgraderingen av sparfilen (UPPGRADERINGAR i varld.ts)
   seed: number; founded: number; now: number;
   rngs?: Record<string, number>; // var i sin slumpföljd varje system är (slump.ts)
   hist?: Historik; // byns historik: nyckeltal och krönika (historik.ts)
+  notiser?: import('./notiser').Notiser; // notiserna som spelaren inte tagit bort (notiser.ts, steg 5.4.3)
   W?: number; H?: number; // kartans storlek (saknas i de äldsta byarna: 64×40)
   kart?: Kart; // var den gamla kartan ligger i en äldre by som fått den stora kartan (steg 2.10.9, kartflytt.ts)
   people: Person[]; rels: Record<string, Rel>; nextId: number;
@@ -315,8 +321,9 @@ export interface State {
   djurFlykt?: { g: number; t: number; dx: number; dy: number }[]; // kaningrupper som flytt från en jägare: från tiden t så här långt (steg 4.5.4.1, djur.ts)
   strider?: import('./strid').StridMinne[]; // de senaste striderna i byn, så att arenan kan visa dem igen (steg 3.7.2, strid.ts)
   sportBast?: Record<string, number>; // den bästa i varje sport (personens id, steg 4.3.1.2)
-  fram?: import('./framtradande').Fram; framKvall?: number; // framträdandet som pågår och kvällen då det senaste hölls (steg 4.3.2.1)
+  fram?: import('./framtradande').Fram; framKvall?: number; framNr?: number; // framträdandet som pågår och kvällen då det senaste hölls (steg 4.3.2.1)
   framtradanden?: import('./framtradande').FramMinne[]; // de senaste framträdandena
+  matcher?: import('./sport').MatchMinne[]; matchNr?: number; // de senaste matcherna (steg 5.4.8.1)
   overl?: import('./byte').Overl[]; filtar?: import('./byte').Filt[]; filtNr?: number; byteNr?: number; bytt?: import('./byte').Bytt[];
   rovare?: import('./rovare').Rovarflock; rovarNr?: number; rovarVila?: number; // rövarflocken på kartan, hur många som kommit och när nästa tidigast kommer (steg 4.4.5, rovare.ts)
   klaner?: import('./klaner').Klan[]; klanNr?: number; // grannklanerna (steg 4.4.3, klaner.ts)
@@ -326,7 +333,7 @@ export interface State {
 }
 // sammanfattningen efter bortavaron (steg 3.10.22): när den började, hur många som fötts och dött då, och vad var och en
 // kunde (kunskapen, 0–1) och trodde (lärdomarna som 'slag:plats') då. Sparas med byn tills spelaren stänger den
-export interface Borta { fran: number; fodda: number; doda: number; kan: Record<number, { k: Record<string, number>; l: string[] }> }
+export interface Borta { fran: number; fodda: number; doda: number; folk?: number; kan?: Record<number, { k: Record<string, number>; l: string[] }> } // kan: bara i äldre sparfiler (före steg 5.4.3.4)
 // en vargflock (steg 3.7.1, varg.ts): vargarnas id (den första leder flocken), var den är och vart den går (mx, my), när den
 // drar vidare, hungern (0–1), vad den gör, personen den anfaller, när den senast sågs och av vem (sag, steg 3.10.20) och jägarna efter den.
 // dorr = öppningen (rutan) där den väntar utanför en stängd dörr, och vantar = sedan när (steg 3.7.21)
@@ -360,7 +367,7 @@ export const IGNITERS: Igniter[] = [
 ];
 
 // nyckeltalen i tal-ordning: [tid, värde, värde, …] per timme och per dygn, och krönikans rader [tid, text]
-export interface Historik { tal: string[]; tim: number[][]; dygn: number[][]; kronika: ([number, string] | [number, string, string])[] }
+export interface Historik { tal: string[]; tim: number[][]; dygn: number[][]; kronika: ([number, string] | [number, string, string])[]; kartor?: [number, string][] } // kartor: en bild av kartan per dygn (kartminne.ts, steg 5.4.5.2)
 export interface FireLog { t: number; k: 'tänd' | 'fyll' | 'slocknade' | 'glöd' | 'sprack'; id?: number; n?: number }
 export interface Fire {
   hearth: string; fuel: number; lit: boolean; emberUntil?: number; ring?: boolean; // ringen av stenar runt eldplatsen

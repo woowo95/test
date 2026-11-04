@@ -1,7 +1,8 @@
 import { FOLDERS, amountOf, grundvarde, isTool, kortTal, ownedSum, sakNamn, wornOf } from '../sim';
 import { iconImg } from '../ikoner';
 import { eld } from './flikar/eld';
-import { folk, logg } from './flikar/folk';
+import { folk } from './flikar/folk';
+import { kronika } from './flikar/kronika';
 import { hog, lager } from './flikar/lager';
 import { hus } from './flikar/hus';
 import { sjo } from './flikar/sjo';
@@ -11,11 +12,13 @@ import { person } from './flikar/person';
 import { teknik } from './flikar/teknik';
 import { sak } from './flikar/sak';
 import { filt } from './flikar/filt';
+import { fram } from './flikar/fram';
+import { match } from './flikar/match';
 import { djur } from './flikar/djur';
 import { grannar } from './flikar/grannar';
 import { byn } from './flikar/byn';
 import { $, hjalpKlick } from './hjalp';
-import { piles, s, ui } from './lage';
+import { piles, s, satRitaOm, ui } from './lage';
 import { renderPorts } from './portratt';
 import { bandHtml, stenHtml } from './runstenar';
 
@@ -29,7 +32,7 @@ export interface Flik {
   syns?(): boolean; // annars är knappen en blek sten som inte går att trycka på (grannarna när byn har grannar)
   band?(): string; // bandet överst är en annan fliks (Byn visar den öppna delens band, steg 5.3.3.2)
 }
-const FLIKAR = { byn, teknik, logg, folk, grannar, person, eld, lager, hog, hus, station, sjo, falt, sak, djur, filt } satisfies Record<string, Flik>;
+const FLIKAR = { byn, teknik, kronika, folk, grannar, person, eld, lager, hog, hus, station, sjo, falt, sak, djur, filt, fram, match } satisfies Record<string, Flik>;
 export type FlikId = keyof typeof FLIKAR;
 const ALLA: Record<FlikId, Flik> = FLIKAR;
 const IDS = Object.keys(FLIKAR) as FlikId[];
@@ -47,15 +50,17 @@ export const ärPersonflik = (id: FlikId | undefined) => !!id && (ALLA[id].knapp
 // personens panel står kvar (steg 5.3.5.1)
 export const ärRuta = (id: FlikId | undefined) => ärPersonflik(id) && id !== 'person';
 let tryck = { x: 0, y: 0 }, flytta = false;
+// på en liten skärm är panelerna ark nerifrån (steg 5.3.7, ui/ark.ts), och bara ett är öppet åt gången: det som öppnas sist
+export const smal = matchMedia('(max-width: 820px)');
 export function visa(id: FlikId) {
   if (ärRuta(id)) flytta = true;
-  if (ärPersonflik(id)) ui.tab = id; else ui.hoger = id;
+  if (ärPersonflik(id)) ui.tab = id; else { ui.hoger = id; if (smal.matches) { ui.selected = undefined; if (!ärRuta(ui.tab)) ui.tab = undefined; } }
   renderPanel(true);
 }
-export function selectPerson(id: number) { ui.selected = id; ui.tab = 'person'; renderPanel(true); renderPorts(); }
+export function selectPerson(id: number) { ui.selected = id; ui.tab = 'person'; if (smal.matches) ui.hoger = undefined; renderPanel(true); renderPorts(); }
 // rutan stängs: personens panel står kvar om en person är vald
 export function stangRuta() { ui.tab = ui.selected !== undefined ? 'person' : undefined; }
-function stang(sida: 'v' | 'h' | 'r') {
+export function stang(sida: 'v' | 'h' | 'r') {
   if (sida === 'h') ui.hoger = undefined;
   else if (sida === 'r') stangRuta();
   else { ui.selected = undefined; if (!ärRuta(ui.tab)) ui.tab = undefined; }
@@ -88,6 +93,7 @@ function skriv(sd: Sida, id: FlikId | undefined, force: boolean) {
   if (!force && html === sd.html) return;
   sd.html = html; sd.body.innerHTML = html;
 }
+satRitaOm(() => renderPanel(true));
 export function renderPanel(force = false) {
   if (ui.hoger && (ALLA[ui.hoger].syns?.() ?? true) === false) ui.hoger = undefined;
   for (const b of nav.querySelectorAll<HTMLButtonElement>('button')) {

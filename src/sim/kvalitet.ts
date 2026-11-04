@@ -8,6 +8,7 @@ import { SakMinne, sakMinne } from './berattelser';
 import { gudHandelse } from './religion';
 import { SAKER } from './saker';
 import { STATIONER } from './stationer';
+import { notis } from './notiser';
 // ett-ord (ett rep, ett bord) bland sakerna och möblerna
 const arEtt = (k: string) => !!(SAKER[k]?.ett ?? (STATIONER as Record<string, { ett?: true }>)[k]?.ett);
 
@@ -66,6 +67,7 @@ export function nyKvalitet(s: State, p: Person, t: { id: number; k: string; q?: 
   if (q >= MASTERVERK || q === 0) sakMinne(s, p, t); // det berättelsen om saken behöver (steg 3.9.4)
   count(s, 'kv_' + q);
   if (KV.glad[q]) think(p, k.tanke, KV.glad[q], s.now, KV.gladTim * HOUR);
+  if (q >= MASTERVERK) notis(s, 'masterverk', `${p.name} gjorde ${q === PERFEKT ? 'ett perfekt mästerverk' : 'ett mästerverk'}: ${namn}.`, [p.id]);
   if (q >= MASTERVERK) log(s, `${p.name} gjorde ${q === PERFEKT ? 'ett perfekt mästerverk' : 'ett mästerverk'}: ${namn}${t.ber?.namn ? `, som byn kallar ${t.ber.namn}` : ''}.`, 'world', [p.id]);
   // de som ser det blir imponerade (eller avundsjuka) och skrattar åt det usla (steg 3.3.1, 3.4.3)
   if (q >= MASTERVERK) { handelse(s, p, q === PERFEKT ? 'perfekt' : 'masterverk', undefined, namn.toLowerCase()); gudHandelse(s, 'hantverk', `mästerverket som ${p.name} gjorde`); } // steg 4.1.5

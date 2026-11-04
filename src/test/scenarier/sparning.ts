@@ -26,6 +26,7 @@ SCENARIER.historik = {
     const ka = cloneState(s), kb = cloneState(s), p0 = living(s)[0];
     kb.hist!.kronika = kb.hist!.kronika.slice(0, 1);
     for (const k of [ka, kb]) for (let n = 0; n < 8; n++) SIM.kronikaBer(k, 'k_forstaEld', p0.id + n, SIM.personFalt(p0));
+    const eldSerie = SIM.historikSerie(s, 'eld');
     const sammaText = isDeepStrictEqual(ka.hist!.kronika.slice(-8).map(r => r[1]), kb.hist!.kronika.slice(-8).map(r => r[1]));
     return [
       [`en rad i timmen den senaste veckan (${h.tim.length} timmar)`, timOk],
@@ -37,6 +38,67 @@ SCENARIER.historik = {
       ['delarna blir samma historik igen', isDeepStrictEqual(ater, JSON.parse(serialize(s)).hist)],
       ['historiken ändrar inget i byn', JSON.stringify(utan) === serialize(t)],
       ['krönikans text beror inte på hur lång krönikan är', sammaText],
+      // graferna (steg 5.4.1) läser serien: ett värde per dygn och sedan per timme, i tidsordning, från byns början till nu
+      [`grafens serie för veden på elden går från byns början till nu (${eldSerie.length} punkter)`, eldSerie.length === h.dygn.length + h.tim.length && eldSerie.every((p, k) => k === 0 || p[0] > eldSerie[k - 1][0]) && eldSerie[0][0] < s.founded + DAY && eldSerie[eldSerie.length - 1][1] === sist[i('eld')]],
+    ];
+  },
+};
+
+SCENARIER.notisispelet = {
+  text: 'Notiserna i spelet (steg 5.4.3.3): det som händer i byn (födslar, död, ny kunskap, nya hus, flyttar, ledare, faror) blir notiser, och de ligger kvar när byn laddas igen',
+  kor: () => {
+    const s = createState(3, START);
+    for (let i = 0; i < 8 * STEG_DYGN; i++) step(s, BEAT);
+    const L = s.notiser?.lista ?? [], st = s.stat ?? {}, har = (id: string) => L.some(n => n.id === id);
+    const rader = (id: string) => L.filter(n => n.id === id).reduce((a, n) => a + n.n, 0);
+    const tek = Object.keys(st).filter(k => k.startsWith('tek_')).length;
+    const delar = serializeParts(s), ater = migrate(JSON.parse(joinParts(Object.values(delar))));
+    const kvar = isDeepStrictEqual(ater.notiser, JSON.parse(serialize(s)).notiser);
+    return [
+      [`byn har fått notiser (${L.length} st: ${[...new Set(L.map(n => n.id))].join(', ')})`, L.length > 0],
+      [`varje födsel är en rad i en notis (${rader('fodd')} rader, ${st.fodda ?? 0} födda)`, rader('fodd') === (st.fodda ?? 0)],
+      [`varje död är en rad i en notis (${rader('dod')} rader, ${st.doda ?? 0} döda)`, rader('dod') === (st.doda ?? 0)],
+      [`ny kunskap blir en notis (${tek} tekniker)`, har('teknik') === tek > 0],
+      [`ett nytt hus blir en notis (${housesOf(s).filter(h => h.klar || h.varKlar).length} färdiga hus)`, har('hus') === housesOf(s).some(h => h.klar || h.varKlar)],
+      ['ingen notis har fler rader än den rymmer', L.every(n => n.rader.length <= SIM.NOTIS.rader && n.n >= n.rader.length)],
+      ['notiserna ligger kvar när byn laddas igen', !!delar.notiser && kvar],
+    ];
+  },
+};
+
+SCENARIER.notiser = {
+  text: 'Notiserna (steg 5.4.3.1, sim/notiser.ts): samma sort samma dygn blir en notis med flera rader, en ny dygn eller sort blir en ny, de är olästa tills de läses, den viktigaste kommer först, och de sparas i en egen del och blir samma igen',
+  kor: () => {
+    const s = createState(3, START);
+    for (let i = 0; i < STEG_DYGN / 4; i++) step(s, BEAT);
+    s.notiser = undefined; // byns egna notiser (steg 5.4.3.3) tas bort, så att bara scenariots räknas
+    const [a, b] = living(s), utan = serialize(s);
+    SIM.notis(s, 'fodd', `${a.name} fick ett barn.`, [a.id]);
+    SIM.notis(s, 'fodd', `${b.name} fick ett barn.`, [b.id, a.id]);
+    SIM.notis(s, 'byte', 'Ett byte.');
+    const ett = s.notiser!.lista.length, f = s.notiser!.lista[0];
+    s.now += DAY;
+    SIM.notis(s, 'fodd', 'Ännu ett barn.');
+    SIM.notis(s, 'dod', `${a.name} dog.`, [a.id], { x: 3, y: 4 });
+    const olasta = SIM.olasta(s), forst = SIM.notiserNu(s)[0];
+    SIM.lasNotis(s, f.nr);
+    const efterLas = SIM.olasta(s);
+    for (let i = 0; i < SIM.NOTIS.rader + 5; i++) SIM.notis(s, 'byte', `Byte ${i}.`);
+    const byte = s.notiser!.lista.find(n => n.id === 'byte' && n.ar === SIM.kalender(s).ar)!;
+    const delar = serializeParts(s), ater = JSON.parse(joinParts(Object.values(delar))).notiser, sammaIgen = isDeepStrictEqual(ater, JSON.parse(serialize(s)).notiser);
+    let fel = false; try { SIM.notis(s, 'finnsinte', 'x'); } catch { fel = true; }
+    const fore = s.notiser!.lista.length; SIM.taBortNotis(s, f.nr); const enMindre = s.notiser!.lista.length === fore - 1;
+    SIM.taBortNotis(s); const tomma = s.notiser!.lista.length === 0;
+    return [
+      ['samma sort samma dygn blir en notis med flera rader och alla som den gäller', ett === 2 && f.n === 2 && f.rader.length === 2 && f.ids.length === 2],
+      [`ett nytt dygn eller en ny sort blir en ny notis (${s.notiser ? fore : 0} st)`, fore === 5],
+      [`de är olästa tills de läses (${olasta} olästa, ${efterLas} efter en läst)`, olasta === 4 && efterLas === 3],
+      ['den viktigaste kommer först (döden)', forst.id === 'dod' && !!forst.plats],
+      [`en ihopslagen notis behåller de senaste raderna men räknar alla (${byte.n} st)`, byte.rader.length === SIM.NOTIS.rader && byte.n === SIM.NOTIS.rader + 5 && byte.rader[byte.rader.length - 1] === `Byte ${SIM.NOTIS.rader + 4}.`],
+      ['de sparas i en egen del och blir samma igen', !!delar.notiser && !delar.byn.includes('"notiser"') && sammaIgen],
+      ['en by utan notiser sparas som förut', !utan.includes('"notiser"')],
+      ['en okänd sort är ett fel', fel],
+      ['de tas bort en och en eller alla', enMindre && tomma],
     ];
   },
 };
@@ -219,6 +281,39 @@ SCENARIER.karta = {
       [`utanför den gamla kartan fortsätter landet med skog (${land} rutor land, ${skog} med skog)`, land > 3000 && skog > 1000],
       ['byn flyttas en gång: den ligger kvar när den sparas och laddas igen', engang],
       ['byn lever vidare på den stora kartan', lever],
+    ];
+  },
+};
+
+SCENARIER.kartminne = {
+  text: 'Kartan över tid (steg 5.4.5.2): en bild av kartan per dygn (ett år i spelet) i historiken, med marken, stigarna, skogen, fälten och det som byggts men utan folk. Bilder äldre än fyra veckor glesas ut till en per vecka. De sparas i veckans del och visas i krönikan under Kartan, där ett reglage går fram och tillbaka genom åren',
+  kor: () => {
+    const s = createState(3, START), e = SIM.eldPlats(s);
+    s.hist ??= { tal: [], tim: [], dygn: [], kronika: [] };
+    const tom = SIM.kartrutor(s), forstGras = tom.findIndex((k, i) => (k === 'h' || k === 'k') && Math.abs(i % SIM.W - e.x) > 3);
+    const wx = forstGras % SIM.W, wy = Math.floor(forstGras / SIM.W);
+    (s.byggen ??= []).push({ id: 9001, x: wx, y: wy, k: 'vagg', m: 'timmer', b: 1, mat: 0, c: 1 } as SIM.Bit, { id: 9002, x: wx + 1, y: wy, k: 'golv', m: 'jord', b: 0, mat: 0, c: 1 } as SIM.Bit);
+    const r = SIM.kartrutor(s), p = SIM.packaKarta(r);
+    const bokstaver = new Set(SIM.KARTRUTA.map(k => k.k));
+    // en bild per dygn: samma dygn ger ingen ny, nästa dygn en till
+    const t0 = s.now;
+    SIM.kartminneSteg(s); SIM.kartminneSteg(s); const n1 = s.hist.kartor!.length;
+    s.now += DAY; SIM.kartminneSteg(s); const n2 = s.hist.kartor!.length;
+    // 40 dygn (40 år i spelet): de som är äldre än fyra veckor blir en per vecka
+    for (let d = 2; d <= 40; d++) { s.now = t0 + d * DAY; SIM.kartminneSteg(s); }
+    const k = s.hist.kartor!, grans = s.now - SIM.GLES;
+    const gamla = k.filter(b => b[0] < grans), veckor = new Set(gamla.map(b => Math.floor((b[0] - s.founded) / SIM.WEEK)));
+    const nya = k.filter(b => b[0] >= grans);
+    const delar = SIM.histParts(s, s.hist), ater = SIM.joinHist(Object.values(delar));
+    return [
+      [`bilden packas och läses tillbaka likadant (${Math.round(p.length / 1024 * 10) / 10} KB för ${SIM.W}×${SIM.H} rutor)`, isDeepStrictEqual(SIM.lasKarta(p), r) && p.length < 20 * 1024],
+      ['bara registrets slag på bilden (inga människor eller djur)', r.every(x => bokstaver.has(x))],
+      ['vatten, gräs och skog finns på bilden', ['v', 's'].every(x => r.includes(x)) && (r.includes('h') || r.includes('k'))],
+      ['en byggd vägg syns, ett golv som inte påbörjats syns inte', r[wy * SIM.W + wx] === 'w' && r[wy * SIM.W + wx + 1] !== 'g'],
+      ['elden syns där den är', r[Math.floor(e.y) * SIM.W + Math.floor(e.x)] === 'e'],
+      [`en bild per dygn (${n1} samma dygn, ${n2} dygnet efter)`, n1 === 1 && n2 === 2],
+      [`äldre än fyra veckor en per vecka (${gamla.length} gamla bilder i ${veckor.size} veckor, ${nya.length} nya)`, gamla.length === veckor.size && nya.length >= 28 && nya.length <= 29],
+      ['bilderna sparas i veckans del och blir samma igen', isDeepStrictEqual(ater.kartor, k)],
     ];
   },
 };

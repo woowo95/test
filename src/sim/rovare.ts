@@ -19,6 +19,7 @@ import { vaderNu } from './vader';
 import { grundvarde, rikedom } from './varde';
 import { kanterna, soker } from './varg';
 import { foddNar, gastNyckel } from './gastliv';
+import { notis } from './notiser';
 
 // ---------- rövarflocken (steg 4.4.5) ----------
 // En grundversion av anfallen (stora räder, krig, tribut och murar ligger i 11.2). När byn är rik (Byns rikedom, varde.ts, med
@@ -171,6 +172,7 @@ function ses(s: State, f: Rovarflock, folk: Person[]) {
   f.sedd = s.now; f.gissning = Math.max(1, Math.round(n * (1 + fel)));
   count(s, 'rovarSedda');
   log(s, `${p.name} såg rövare ${f.gor === 'samlas' ? 'samlas vid kartans kant' : 'på väg mot byn'}, ungefär ${f.gissning} (${fran(s, f)}).`, 'world', [p.id]);
+  notis(s, 'anfall', `${p.name} såg rövare ${f.gor === 'samlas' ? 'samlas vid kartans kant' : 'på väg mot byn'}, ungefär ${f.gissning} (${fran(s, f)}).`, [p.id], { x: Math.floor(f.x), y: Math.floor(f.y) });
   const hort = larma(s, 'rovare', f.gissning, [p]);
   vack();
   soker(s, [p, ...hort]);
@@ -229,7 +231,7 @@ export function rovarStrid(s: State, f: Rovarflock, folk: Person[]) {
   blodas(s, folk[0].x, folk[0].y, 'jakt', 1);
   const namn = folk.map(p => p.name).join(' och ');
   const text = `${namn} slogs med ${n} rövare ${fran(s, f)} vid förrådet. ${doda ? `${doda} ${doda === 1 ? 'rövare dog' : 'rövare dog'}. ` : ''}${vinnare === 1 ? 'Rövarna vann.' : 'Rövarna flydde.'}${svara.length ? ` ${svara.join(' och ')} skadades svårt.` : ''}`;
-  log(s, text, 'world', folk.map(p => p.id));
+  log(s, text, 'world', folk.map(p => p.id)); notis(s, 'strid', text, folk.map(p => p.id), { x: Math.floor(folk[0].x), y: Math.floor(folk[0].y) });
   kronika(s, text, 'rovare');
   return vinnare === 1 && f.folk.length > 0;
 }
@@ -243,7 +245,7 @@ export function plundra(s: State, f: Rovarflock, tyst: boolean) {
   count(s, 'rovarPlundring'); if (tog) count(s, 'rovat', tog);
   if (tyst) count(s, 'rovarTyst');
   const text = tog ? `Rövare ${fran(s, f)} ${tyst ? 'smög in i byn osedda och ' : ''}tog ${tagna.join(', ')} ur förrådet.` : `Rövare ${fran(s, f)} kom till förrådet men hittade inget att ta.`;
-  log(s, text, 'world');
+  log(s, text, 'world'); if (tog) notis(s, 'motgang', text);
   if (tog) kronika(s, text, 'rovare');
 }
 

@@ -966,19 +966,11 @@ const SPORT_JA = (k, namn, vad, text, komm) => ({ id: 'sport_' + k, namn, typ: '
 const SPORT_VAL = (k, namn, vad, idag, texter) => ({ id: 'sport_' + k, namn, typ: 'tre', vad: 'Steg 4.5.6.11: ' + vad + ' Sedd från sidan i rätt storlek. I spelet nu: ' + idag,
   idag: SPORT_BILD(k, 0), idagText: 'Platshållaren i spelet är enklare: ' + idag, versioner: texter.map((text, v) => ({ text, ...SPORT_BILD(k, v) })) });
 const VAL = [
-  SPORT_JA('brottning', 'Brottningen', 'två brottas i mitten och trycker mot varandra, och de andra står i en ring runt om och hejar.', 'Bara folket: brottarna i mitten och de som hejar.', 'Din kommentar förra gången (du valde version 1): ”Personerna ska ritas som dem brukar inte göras om.”. Nu ritas personerna som de brukar på kartan, och bara sportens saker är nya.'),
-  SPORT_JA('kast', 'Kast mot målet', 'de står på en rad och kastar i tur och ordning mot målet en bit bort.', 'En sten flyger mot målet, och några stenar som missat ligger i gräset.', 'Din kommentar förra gången (du valde version 1): ”Personerna ska ritas som dem brukar inte göras om”. Nu ritas personerna som de brukar på kartan, och bara sportens saker är nya.'),
-  SPORT_JA('snoboll', 'Snöbollskriget', 'två lag bakom var sin snövall kastar snöbollar på varandra.', 'Låga vallar av snö.', 'Din kommentar förra gången (du valde version 1): ”Personerna ska ritas som dem brukar inte göras om”. Nu ritas personerna som de brukar på kartan, och bara sportens saker är nya.'),
-  SPORT_JA('bollspel', 'Bollspelet', 'den som slår står i ena änden med slagträet, bollen flyger ut på planen och de andra springer efter den.', 'Slagträet, bollen i luften och de som springer.', 'Din kommentar förra gången (du valde version 1): ”personerna ska ritas som dem brukar inte göras om”. Nu ritas personerna som de brukar på kartan, och bara sportens saker är nya.'),
-  { id: 'dragkamp', namn: 'Dragkampen', typ: 'janej', vad: 'Steg 4.5.6.10: dragkampen syns. Två lag på var sin sida om strecket håller i repet. Din kommentar förra gången (du valde version 1): ”Hur har du tänkt här? karaktärerna kan inte ritas på ett helt nytt sätt bara för att dom gör en sport. bara repet ska ha ett nytt utseende karaktärerna ska ritas på samma sätt som dem alltid gör”. Nu ritas personerna som de brukar på kartan, och bara sportens saker är nya.',
-    versioner: [{ text: 'Version 1: ett streck ristat i marken och en röd tofs mitt på repet. Folket är de vanliga kartfigurerna, med händerna framför sig på repet.', ...DRAG_BILD(0) }] },
+  // sporterna och dragkampen (4.5.6.10–4.5.6.11) är inbyggda i spelet (5.5.2, v373) och borttagna ur valdelen
 ];
 // Björns val som är bestämda men inte inbyggda i spelet: de visas under Valt med den valda versionen (0 = förut-versionen
 // behålls) och steget där de byggs in. När saken är inbyggd tas raden bort här och ur VAL, och dess dokument i samlingen 'val'
 const BESLUT = {
-  dragkamp: { val: 1, steg: '5.1.2' },
-  sport_brottning: { val: 1, steg: '5.1.2' }, sport_kast: { val: 1, steg: '5.1.2' }, sport_snoboll: { val: 1, steg: '5.1.2' }, sport_bollspel: { val: 1, steg: '5.1.2' },
-  g_vag: { val: 1, steg: '5.3.1.2' },
   f6_grans: { val: 1, steg: '6.2.1.3' }, f6_talg: { val: 3, steg: '6.3.2.2' }, f6_agg: { val: 3, steg: '6.5.1.3' },
   f6_radjursskinn: { val: 1, steg: '6.5.1.2' }, f6_bjornskinn: { val: 1, steg: '6.5.3.3' },
   f6_barbuske: { val: 1, steg: '6.4.1.4' }, f6_fagel: { val: 2, steg: '6.5.1.3' }, f6_fjadrar: { val: 2, steg: '6.5.1.3' }, f6_uppsatt: { val: 1, steg: '6.3.2.4' },

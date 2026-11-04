@@ -2,6 +2,7 @@ import { BRASA, ELD, FireLog, HOUR, amountOf, byId, eldById, eldFaktor, emberOn,
 import { bar, clockTxt, durTxt, esc, fmtN, num, pLink, times } from '../hjalp';
 import { s, ui } from '../lage';
 import type { Flik } from '../panel';
+import { grafHtml } from '../graf';
 
 // elden: öppnas genom att trycka på en lägereld på kartan (den första eller en till, ui.eld, steg 4.5.6.8)
 export const eld: Flik = { namn: 'Elden', knapp: 'person', html: fireHtml };
@@ -36,6 +37,7 @@ function fireHtml() {
       ${f.wantWhy && byId(s, f.wantBy) ? `<dt>Önskas av</dt><dd>${pLink(byId(s, f.wantBy))}: ${esc(f.wantWhy).toLowerCase()}</dd>` : ''}
       ${tender ? `<dt>Hämtar trä</dt><dd>${pLink(tender)}</dd>` : ''}
     </dl>
+    ${forsta ? grafHtml('eld') : ''}
     ${f.lit ? `<h3>Denna eld</h3><dl class="kv fam">
       <dt>Brunnit i</dt><dd>${durTxt(now - (f.litAt ?? now))}</dd>
       <dt>Tändes</dt><dd>${f.litAt !== undefined ? clockTxt(f.litAt) : '–'}</dd>

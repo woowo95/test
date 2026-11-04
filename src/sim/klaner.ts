@@ -3,6 +3,7 @@ import { balans } from './balans';
 import { clamp, pick, rnd } from './slump';
 import { ALDER, ageOf, count, log, makeName } from './folk';
 import { kronika } from './historik';
+import { notis } from './notiser';
 
 // ---------- grannklanerna (steg 4.4.3) ----------
 // Byn är inte ensam i världen. Grannklanerna finns ännu inte på någon karta (den utzoomade världskartan är steg 11.1.3): de är
@@ -127,7 +128,7 @@ export function utbrytning(s: State, grupp: Person[], pop: number) {
   k.styrka = Math.max(1, vuxna.length);
   count(s, 'utbrytning');
   const text = `${namn} är en ny grannklan vid ${k.hem}: ${grupp.map(p => p.name).join(', ')} som lämnade byn.`;
-  log(s, text, 'world', grupp.map(p => p.id));
+  log(s, text, 'world', grupp.map(p => p.id)); notis(s, 'utflytt', text, grupp.map(p => p.id));
   kronika(s, text, 'flytt');
   return k;
 }

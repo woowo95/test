@@ -4,6 +4,7 @@ import { s, ui } from './lage';
 import { TS, app, figurLayer, husLayer, mork, pileLayer, terrainG, world } from './scen';
 import { ritaSkuggor, sattMoln, skuggLangd } from './skugga';
 import { stallNatt } from './natt';
+import { vaderMork } from './vaderbild';
 import { DJUPNATT } from '../palett';
 import { animMark, markLayer, ritaMark, stallMark } from './mark';
 import { animBild } from './animation';
@@ -102,15 +103,16 @@ function kantHash(x: number, y: number) {
 }
 // mörkret och eldens sken
 // (steg 5.1.1.4, 5.1.7.2): paletten ett steg mörkare i skymningen och tre mitt i natten, med raster, och ljuset runt varje eld (ui/natt.ts)
+// Molnen och regnet gör också bilden mörkare på samma sätt, en del av ett steg (vaderMork i ui/vaderbild.ts, steg 5.5.1)
 export function drawNight(t: number) {
-  const d = 1 - lightLevel(t), eldar: { x: number; y: number; r: number; k: number }[] = [];
-  if (d > 0) for (const e of eldarOf(s)) { // varje lägereld lyser (steg 4.5.6.8)
+  const m = DJUPNATT * (1 - lightLevel(t)) + vaderMork(t), eldar: { x: number; y: number; r: number; k: number }[] = [];
+  if (m > 0) for (const e of eldarOf(s)) { // varje lägereld lyser (steg 4.5.6.8)
     const I = fireHeat(s, e);
     if (!(I > 0 || emberOn(s, e))) continue;
     const f = eldXY(s, e), k = I > 0 ? 0.45 + 0.55 * I : 0.12;
     eldar.push({ x: f.x * TS + TS / 2, y: f.y * TS + TS / 2, r: TS * 6 * k, k: I > 0 ? 1 : 0.5 });
   }
-  stallNatt(mork, world, DJUPNATT * d, eldar);
+  stallNatt(mork, world, Math.min(DJUPNATT, m), eldar);
 }
 // skuggorna på marken och golven (steg 5.1.8, ui/skugga.ts): träden, folket, djuren, stationerna, sakerna och väggarna.
 // Efter att allt annat ställts på plats i bildrutan

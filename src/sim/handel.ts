@@ -1,4 +1,4 @@
-import { ByteMinne, DAY, H, HOUR, MIN, Person, SEC, State, T, Task, W, inMap } from './typer';
+import { ByteForsok, ByteMinne, DAY, H, HOUR, MIN, Person, SEC, State, T, Task, W, inMap } from './typer';
 import { balans } from './balans';
 import { ALDER, ageOf, alive, byId, count, forstaGang, living, log, stat, think } from './folk';
 import { SAMTAL, TalkEvent, isSocial } from './samtal';
@@ -20,7 +20,9 @@ import { ledareOf } from './styre';
 import { kanterna } from './varg';
 import { KLAN, KLAN_HEM, andraInst, handlarKlan, klanById, klanerOf } from './klaner';
 import { foddNar, gastNyckel } from './gastliv';
-import { affarMed, glomIrritation, kravMax, kravRel, luradMed, nejTill } from './gastrel';
+import { affarMed, gastRel, gillar, glomIrritation, kravMax, kravRel, luradMed, nejTill } from './gastrel';
+import { handelsArg } from './handelsber';
+import { notis } from './notiser';
 
 // ---------- handlarna (steg 4.4.1) ----------
 // När byns rikedom (varde.ts) passerat en gräns (HANDEL.rik) kommer en handlare gående från kartans kant, ungefär en gång per
@@ -149,6 +151,7 @@ export interface Affar {
   kop: HVara[]; bud: Vara[]; salj?: true;
   hamta: { x: number; y: number; k: string[] }[]; framme: string[];
   nej: number; f: number; t: number; dur?: number; byt?: number; hem?: { x: number; y: number };
+  forsok?: ByteForsok[]; rel0?: number; arg?: string[]; // buden, relationen före affären och argumenten (steg 5.4.6.1–5.4.6.2), för redogörelsen
 }
 // vad handlaren gör just nu (inforutan, steg 4.5.7.4)
 export function handlarFas(h: Handlare) {
@@ -265,7 +268,7 @@ function framme(s: State, h: Handlare) {
 function lagUt(s: State, h: Handlare) {
   h.fas = 'handlar'; h.kom = s.now; h.gar = nastaKl(s.now, HANDEL.morgon); h.kvall = undefined;
   (s.filtar ??= []).push({ x: h.x, y: h.y + BYTE.bakom, slut: h.gar, varor: [], handlare: h.id, vem: h.id, par: nyttPar(s) }); // varorna ligger kvar i packningen (steg 4.5.7.4)
-  log(s, `${h.namn} har brett ut en filt nära elden och väntar på kunder.`, 'world');
+  log(s, `${h.namn} har brett ut en filt nära elden och väntar på kunder.`, 'world'); notis(s, 'gast', `${h.namn} från ${h.hem} har brett ut en filt nära elden och väntar på kunder.`, [], { x: Math.floor(h.x), y: Math.floor(h.y) });
   if (forstaGang(s, 'handlareFramme')) kronika(s, `Den första handlaren kom till byn: ${h.namn} från ${h.hem}, med ${HANDLAR_UTR[h.utr].namn.toLowerCase()}en full av varor.`, 'handel');
 }
 
@@ -560,7 +563,13 @@ function affarSteg(s: State, h: Handlare, a: Affar) {
 // 4.5.7.11), annars nej. Ett alldeles för dåligt bud irriterar hen (nejTill)
 function svar(s: State, h: Handlare, a: Affar, p: Person, M: Part) {
   const H_ = handlarPart(s, h), ger = vardFor(a.kop, H_.varde), krav = ger * Math.max(HANDEL.kravMin, kravAv(h, M) * kravRel(s, h, p)), bud = vardFor(a.bud, H_.varde);
+  a.rel0 ??= relTal(s, h, p);
+  a.arg ??= handelsArg({ s, p, byn: !!a.byn, salj: !!a.salj, kop: a.kop, varde: M.varde, handel: M.handel ?? 0, hHandel: h.handel, rel: gastRel(s, h, p), gill: gillar(s, h, p) });
+  const hela = (v: Vara[]) => v.map(w => ({ k: w.k, n: Math.max(1, Math.round(w.n)) }));
+  const f: ByteForsok = { vill: hela(a.kop), bud: hela(a.bud), krav: Math.max(1, Math.round(krav)), bjod: Math.max(1, Math.round(bud)) };
+  (a.forsok ??= []).push(f);
   if (bud >= krav - 1e-9) {
+    f.ja = true;
     affarMed(s, h, p);
     const fatt: Vara[] = a.kop.map(w => ({ ...w })), betal = a.bud.map(w => ({ ...w }));
     const lurare = luraI(s, M, H_, betal, a.kop.map(w => w.k), ger);
@@ -568,9 +577,13 @@ function svar(s: State, h: Handlare, a: Affar, p: Person, M: Part) {
     visaFiltar(s, h); // filtarna ligger som de låg när de blev överens (byteKlart tar platserna härifrån)
     genomfor(s, M, H_, fatt, betal, 'handel', false, true, lurare);
     a.bud = betal;
+    const m = [M.p, H_.p].flatMap(q => q?.byten ?? []).find(b => b.nr === s.byteNr); // minnet byteKlart just skrev (samma som i loggen), inte ur loggen (regel 6)
+    if (m) { m.forsok = a.forsok; m.rel = [a.rel0, relTal(s, h, p)]; m.arg = a.arg; }
     return;
   }
+  const irr0 = gastRel(s, h, p)?.irr ?? 0;
   nejTill(s, h, p, krav > 0 ? bud / krav : 1);
+  if ((gastRel(s, h, p)?.irr ?? 0) > irr0 && !a.arg.includes('irriterad')) a.arg.push('irriterad');
   if (++a.nej >= HANDEL.nejMax || (a.f = Math.min(kravMax(), a.f + (kravMax() - HANDEL.forstaBud) / (HANDEL.nejMax - 1)), !budNu(s, h, a, M))) { slut(s, h, a, p); return; }
   nastaBud(s, h, a, p);
 }
@@ -584,6 +597,16 @@ function slut(s: State, h: Handlare, a: Affar, p: Person | undefined) {
   count(s, 'egenHandel');
   if (bytt) { count(s, 'egnaByten'); if (a.salj) count(s, 'saltOver'); }
   else { if (p) think(p, `Gick tomhänt från ${h.namn}`, HANDEL.tomTanke, s.now, HANDEL.tomTim * HOUR); count(s, 'tomhant'); }
+  if (p && !bytt && a.forsok?.length) avbrutenAffar(s, h, a, p);
+}
+// hur mycket handlaren gillar bybon, −100 till 100 (redogörelsen, steg 5.4.6.1)
+const relTal = (s: State, h: Handlare, p: Person) => Math.round(gillar(s, h, p) * 100);
+// de blev inte överens (steg 5.4.6.1): en rad i loggen och ett minne hos bybon med buden, så att redogörelsen kan visas som
+// ett byte. Bara loggen och minnet; inget i simuleringen läser det
+function avbrutenAffar(s: State, h: Handlare, a: Affar, p: Person) {
+  const minne: ByteMinne = { nr: (s.byteNr = (s.byteNr ?? 0) + 1), t: s.now, a: p.id, an: p.name, b: h.id, bn: h.namn, ag: [], bg: [], forsok: a.forsok, arg: a.arg, avbruten: true, rel: [a.rel0 ?? relTal(s, h, p), relTal(s, h, p)] };
+  log(s, `${p.name} och ${h.namn} blev inte överens efter ${a.forsok!.length === 1 ? 'ett bud' : `${a.forsok!.length} bud`}.`, 'rel', [p.id]).byte = minne;
+  const b = (p.byten ??= []); b.push(minne); if (b.length > BYTE.minnas) b.splice(0, b.length - BYTE.minnas);
 }
 // den som inte kommit tillbaka till affären på länge (somnat, blivit sjuk) har gett upp den, och den som dött är borta
 function glomAffar(s: State, h: Handlare) {
