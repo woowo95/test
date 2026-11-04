@@ -1,4 +1,4 @@
-import { AGES, BEAT, DAY, HOUR, MIN, SEC, TalkEvent, VADERLAGE, vaderNu, kalender, alive, byId, cloneState, coverOf, createState, getMap, groundOf, isLight, rikedomDelar, spar, step, temperature, visning, yearNo, State, motgangNu, motgangNasta, motgangDef, varslade, ROVARFLOCK, skickaRovare, skickaHandlare, rovarHinder, handlarHinder } from './sim';
+import { AGES, BEAT, DAY, HOUR, MIN, SEC, TalkEvent, VADERLAGE, vaderNu, kalender, alive, byId, cloneState, coverOf, createState, getMap, groundOf, isLight, rikedomDelar, spar, step, temperature, visning, yearNo, State, motgangNu, motgangNasta, motgangDef, varslade, ROVARFLOCK, skickaRovare, skickaHandlare, rovarHinder, handlarHinder, lightLevel } from './sim';
 import { brandKnapp, testSvara } from './ui/interaktion';
 import { testBortaIByn } from './ui/testborta';
 import { $ } from './ui/hjalp';
@@ -6,6 +6,7 @@ import { iconImg, tecknet } from './ikoner';
 import { s, setByn, ui, nyBild, vidNyBy } from './ui/lage';
 import { TS, app, cam, layout, view, world } from './ui/scen';
 import { drawNight, drawSkuggor, drawTerrain } from './ui/terrang';
+import { sattSkuggLangd, skuggLangdAv } from './ui/skugga';
 import { drawVader } from './ui/vaderbild';
 import { drawStructures } from './ui/foremal';
 import { drawFilter } from './ui/filter';
@@ -176,6 +177,7 @@ function tick() {
     const p = byId(s, ui.follow);
     if (p && alive(p)) { const q = posOf(p); cam.x = q.x * TS + TS / 2; cam.y = q.y * TS + TS / 2; layout(); } else stopFollow();
   }
+  sattSkuggLangd(skuggLangdAv(lightLevel(ui.nu))); // skuggan blir längre i skymningen (steg 5.1.8.2)
   drawTerrain();
   drawPlants(); drawFlackar(); drawAnimals();
   drawStructures(now);

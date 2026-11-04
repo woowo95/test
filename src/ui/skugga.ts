@@ -35,7 +35,7 @@ const ikonSkugga = (k: string) => { if (!form.has(k)) dela(k); return form.get(k
 
 // ---------- formerna ----------
 // bildstilens skugga vid foten (cx, by): en hel oval snett åt höger, w = halva bredden (ungefär kronans), ry2 = höjden i
-// kvadrat (5 för träden, två punkter upp och ned), lang = hur lång den är (1 på dagen, steg 5.1.8.2)
+// kvadrat (5 för träden, två punkter upp och ned), lang = hur lång den är (1 på dagen, längre i skymningen, steg 5.1.8.2)
 export function fotSkugga(g: PIXI.Graphics, cx: number, by: number, w: number, ry2: number, lang = 1) {
   const W = w * lang, mitt = W * 0.7, r2 = W * W + 1;
   for (let dy = -Math.floor(Math.sqrt(ry2)); dy * dy < ry2; dy++) {
@@ -46,10 +46,15 @@ export function fotSkugga(g: PIXI.Graphics, cx: number, by: number, w: number, r
   }
 }
 
-// hur lång skuggan är nu (1 på dagen; längre i skymningen kommer i steg 5.1.8.2)
+// hur lång skuggan är nu (steg 5.1.8.2): 1 på dagen och längre i skymningen, när solen står lågt, upp till SKYMNING_LANG
+// när ljuset är borta. I steg om en fjärdedel, så att trädens skuggor bara ritas om när längden byts. Ovalerna blir bredare,
+// och stationernas, sakernas, djurens och väggarnas form läggs ut fler gånger åt höger (en punkt per gång, extra())
+export const SKYMNING_LANG = 2.5;
 let langd = 1;
 export const skuggLangd = () => langd;
 export const sattSkuggLangd = (l: number) => { langd = l; };
+export const skuggLangdAv = (ljus: number) => 1 + Math.round((SKYMNING_LANG - 1) * (1 - Math.max(0, Math.min(1, ljus))) * 4) / 4;
+const extra = () => Math.round((langd - 1) * 2);
 
 // ---------- skuggbilden och filtret ----------
 const FRAG = `
@@ -102,12 +107,20 @@ export const skuggFolk = () => delar().folk; // folket
 export const VAGG_D = 2;
 const vaggSp: PIXI.Sprite[] = [], halSp: PIXI.Sprite[] = [];
 export function vaggSkuggor(lista: { x: number; y: number; t: PIXI.Texture }[]) {
+  const e = extra();
+  let n = 0;
   lista.forEach((v, i) => {
-    let a = vaggSp[i], b = halSp[i];
-    if (!a) { a = vaggSp[i] = new PIXI.Sprite(); delar().vaggar.addChild(a); b = halSp[i] = new PIXI.Sprite(); b.blendMode = PIXI.BLEND_MODES.ERASE; delar().vaggHal.addChild(b); }
-    a.texture = b!.texture = v.t; a.position.set(v.x + VAGG_D, v.y + VAGG_D); b!.position.set(v.x, v.y); a.visible = b!.visible = true;
+    let b = halSp[i];
+    if (!b) { b = halSp[i] = new PIXI.Sprite(); b.blendMode = PIXI.BLEND_MODES.ERASE; delar().vaggHal.addChild(b); }
+    b.texture = v.t; b.position.set(v.x, v.y); b.visible = true;
+    for (let k = 0; k <= e; k++) {
+      let a = vaggSp[n++];
+      if (!a) { a = vaggSp[n - 1] = new PIXI.Sprite(); delar().vaggar.addChild(a); }
+      a.texture = v.t; a.position.set(v.x + VAGG_D + k, v.y + VAGG_D); a.visible = true;
+    }
   });
-  for (let i = lista.length; i < vaggSp.length; i++) vaggSp[i]!.visible = halSp[i]!.visible = false;
+  for (let i = n; i < vaggSp.length; i++) vaggSp[i]!.visible = false;
+  for (let i = lista.length; i < halSp.length; i++) halSp[i]!.visible = false;
 }
 
 // skuggorna nu: kastare = lagren med det som står (bilderna i dem som ritats med Ikoner och skugga, ikonSkugga i sp.skuggIkon),
@@ -117,14 +130,16 @@ export function ritaSkuggor(renderer: PIXI.Renderer, varld: PIXI.Container, kast
     rt?.destroy(true);
     rt = PIXI.RenderTexture.create({ width: bredd, height: hojd, scaleMode: PIXI.SCALE_MODES.NEAREST, resolution: 1 });
   }
-  const { ikoner, scen } = delar();
+  const { ikoner, scen } = delar(), e = extra();
   let n = 0;
   for (const k of kastare) for (const c of k.children) {
     const sp = c as PIXI.Sprite & { skuggIkon?: string };
     if (!sp.skuggIkon || !sp.visible) continue;
-    let q = ikoner.children[n++] as PIXI.Sprite | undefined;
-    if (!q) { q = new PIXI.Sprite(); ikoner.addChild(q); }
-    q.texture = ikonSkugga(sp.skuggIkon); q.position.copyFrom(sp.position); q.scale.copyFrom(sp.scale); q.visible = true;
+    for (let j = 0; j <= e; j++) {
+      let q = ikoner.children[n++] as PIXI.Sprite | undefined;
+      if (!q) { q = new PIXI.Sprite(); ikoner.addChild(q); }
+      q.texture = ikonSkugga(sp.skuggIkon); q.position.set(sp.position.x + j, sp.position.y); q.scale.copyFrom(sp.scale); q.visible = true;
+    }
   }
   for (let i = n; i < ikoner.children.length; i++) ikoner.children[i]!.visible = false;
   renderer.render(scen, { renderTexture: rt, clear: true });
