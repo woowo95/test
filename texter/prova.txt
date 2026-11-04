@@ -1,0 +1,255 @@
+Provet av förslagen i texter/forslag.ts
+
+170 nya varianter i 25 mallar; 0 med fel enligt kontrollerna.
+
+== r_nara: 12 → 24 varianter
+  + Ask känner sig trygg när Ylva är nära.
+  + Ask och Ylva förstår varandra utan många ord.
+  + Blir det bråk ställer sig Ask alltid på samma sida som Ylva.
+  + Ask kan prata med Ylva om allt.
+  + Det syns på Ask att Ylva betyder mycket.
+  + Ask och Ylva har pratat så många gånger att de vet vad den andra ska säga.   [villkor]
+  + Ask och Ylva har slagits sida vid sida, och det glömmer de inte.   [villkor]
+  + Ask och Ylva har grälat, men de blev alltid sams igen.   [villkor]
+  + Ask är bara ett barn, men han följer Ylva vart Ylva än går.   [villkor]
+  + De gamla säger att Ask och Ylva är som syskon.   [villkor]
+  + Ask blir glad bara Ylva sätter sig bredvid.   [villkor]
+  + Barnen de fått tillsammans håller Ask och Ylva nära varandra.   [villkor]
+
+== r_van: 12 → 22 varianter
+  + Ask hälsar alltid glatt på Ylva.
+  + Med Ylva har Ask lätt att prata.
+  + Ask och Ylva hjälps åt när det behövs.
+  + Det är sällan ett ont ord mellan Ask och Ylva.
+  + Ask tycker att Ylva är bra att ha i byn.
+  + Ask och Ylva har pratat många kvällar vid elden.   [villkor]
+  + Ask och Ylva har slagits sida vid sida.   [villkor]
+  + Ask ser upp till Ylva och vill vara i närheten.   [villkor]
+  + Ask skrattar när Ylva är i närheten.   [villkor]
+  + Ett gräl har de haft, men Ask tycker ändå om Ylva.   [villkor]
+
+== r_bekant: 12 → 21 varianter
+  + Ask vet vad Ylva heter, och inte mycket mer.
+  + Ask och Ylva har inte mycket att säga varandra.
+  + Det är sällan Ask tänker på Ylva.
+  + Ask har inget ont att säga om Ylva, och inget gott heller.
+  + Ask och Ylva arbetar ibland nära varandra, men pratar lite.
+  + Ask och Ylva har bara pratat några få gånger.   [villkor]
+  + Ask och Ylva har aldrig pratat med varandra.   [villkor]
+  + Ask är för liten för att bry sig om Ylva.   [villkor]
+  + Ask har sett Ylva växa upp, men de står inte varandra nära.   [villkor]
+
+== r_ogillar: 12 → 20 varianter
+  + Ask tycker att Ylva är besvärlig.
+  + Ask blir trött på Ylva fort.
+  + Ask går hellre åt ett annat håll än bredvid Ylva.
+  + Det blir sällan ett vänligt ord från Ask till Ylva.
+  + Ask lyssnar inte gärna på Ylva.
+  + Ask har grälat med Ylva och har inte glömt det.   [villkor]
+  + Ask och Ylva har slagits, och det sitter kvar.   [villkor]
+  + Barnet Ask gömmer sig när Ylva kommer.   [villkor]
+  + Ask blir på sämre humör av att se Ylva.   [villkor]
+
+== r_ovan: 12 → 21 varianter
+  + Ask vill inte ens se Ylva.
+  + Om Ask fick välja skulle Ylva lämna byn.
+  + Ask tänker på Ylva med vrede.
+  + Ask vänder ryggen till när Ylva går förbi.
+  + Det finns ingen frid mellan Ask och Ylva.
+  + Ask och Ylva har slagits, och det kan hända igen.   [villkor]
+  + Ask och Ylva grälar så fort de ses.   [villkor]
+  + Ask är bara ett barn, men han är rädd för Ylva.   [villkor]
+  + Många vintrar har gått, men Ask har inte förlåtit Ylva.   [villkor]
+
+== p_vardag: 8 → 20 varianter
+  + Ask och Ylva pratade om vem som gjort vad i dag.
+  + Ask frågade Ylva hur det gått, och Ylva berättade.
+  + Ask och Ylva pratade om de andra i byn.
+  + Ask och Ylva satt tysta en stund, och sedan pratade de.
+  + Ask och Ylva skrattade åt något som hänt.
+  + Ask och Ylva pratade om vad som ska göras i morgon.
+  + Ask och Ylva pratade om hösten och vad den för med sig.   [villkor]
+  + Det var sent, och Ask och Ylva pratade lågt.   [villkor]
+  + Ask och Ylva satt nära elden och pratade om kylan.   [villkor]
+  + Regnet föll, och Ask och Ylva pratade under taket.   [villkor]
+  + Ask berättade för Ylva om arbetet som samlare.   [villkor]
+  + Ask och Ylva pratade om barnen.   [villkor]
+
+== besk_drag2: 10 → 18 varianter
+  + Stark och glömsk: så beskriver byn Ask.
+  + Arbetar man bredvid Ask märker man att han är stark och glömsk.
+  + Ask är stark. Han är också glömsk.
+  + Två saker vet alla om Ask: han är stark och glömsk.
+  + Ingen kan säga att Ask inte är stark, och glömsk är han med.
+  + Ask, stark och glömsk, är en man som syns i byn.
+  + Redan som barn är Ask stark, och glömsk likaså.   [villkor]
+  + Ask har varit stark och glömsk så länge någon minns.   [villkor]
+
+== k_dog: 12 → 19 varianter
+  + Ask Eken dog i en olycka när han fällde ett träd. Han blev 34 år.   [villkor]
+  + En olycka tog Ask Eken när han fällde ett träd. Han blev 34 år.   [villkor]
+  + Ask Eken kom aldrig tillbaka. Han dog i en olycka när han fällde ett träd, 34 år gammal.   [villkor]
+  + Ask Eken dog i en olycka, 34 år gammal. Mest av alla sörjer Ylva.   [villkor]
+  + Ingen grät som Ylva när Ask Eken dog i en olycka. Han blev 34 år.   [villkor]
+  + Ylva satt länge vid elden efter att Ask Eken dött i en olycka, 34 år gammal.   [villkor]
+  + Ask Eken dog i en olycka när han fällde ett träd, 34 år gammal, och Ylva sörjer honom.   [villkor]
+
+== hedersnamn: 10 → 15 varianter
+  + Hela byn kallar nu Oso för Smörbyttan, för han är så välbärgad.   [villkor]
+  + Alla vet att Oso är välbärgad, och nu säger de Oso Smörbyttan.   [villkor]
+  + Oso är välbärgad. Därför heter han Oso Smörbyttan i byn.   [villkor]
+  + Runt elden heter Oso nu Smörbyttan, för han är välbärgad.   [villkor]
+  + Det är inte svårt att se varför Oso kallas Smörbyttan: han är välbärgad.   [villkor]
+
+== oknamn: 10 → 15 varianter
+  + När Ask inte hör kallar byn honom Lögnaren, för han är en lögnare.   [villkor]
+  + Ask är en lögnare, och nu heter han Ask Lögnaren i allas mun.   [villkor]
+  + Alla vet att Ask är en lögnare. Därför säger man Ask Lögnaren, och fnissar.   [villkor]
+  + Ett fult namn är det, Lögnaren. Men Ask är en lögnare.   [villkor]
+  + Barnen ropar Lögnaren efter Ask, för han är en lögnare.   [villkor]
+
+== l_byte (ny mall): 0 → 8 varianter
+  + Ask och Ylva bytte: tre harkött mot sex grenar.   [villkor]
+  + Ask fick tre harkött av Ylva och gav sex grenar för det.   [villkor]
+  + Ask gav Ylva sex grenar för tre harkött.   [villkor]
+  + Ylva lät Ask få tre harkött mot sex grenar.   [villkor]
+  + Ask och Ylva kom överens: tre harkött mot sex grenar.   [villkor]
+  + Ett byte mellan Ask och Ylva: tre harkött mot sex grenar.   [villkor]
+  + Ask och Ylva bytte: tre harkött mot sex grenar. Ask höll på att dö.   [villkor]
+  + Ask höll på att dö och fick tre harkött av Ylva mot sex grenar.   [villkor]
+
+== l_gava (ny mall): 0 → 7 varianter
+  + Ylva gav ett träspjut till Ask.   [villkor]
+  + Ask fick ett träspjut av Ylva.   [villkor]
+  + Ylva lät Ask få ett träspjut.   [villkor]
+  + Ylva gav Ask ett träspjut och bad inte om något tillbaka.   [villkor]
+  + Ylva gav ett träspjut till barnet Ask.   [villkor]
+  + Ylva gav ett träspjut till Ask, som höll på att dö.   [villkor]
+  + Ask höll på att dö, och Ylva gav honom ett träspjut.   [villkor]
+
+== l_vanner (ny mall): 0 → 6 varianter
+  + Ask och Ylva har blivit nära vänner.
+  + Ask och Ylva söker sig till varandra nu. De är nära vänner.
+  + Det har vuxit fram en vänskap mellan Ask och Ylva.
+  + Ask och Ylva har blivit goda vänner.
+  + Nu är Ask och Ylva vänner, och det syns.
+  + Ask har fått en vän i Ylva, och Ylva i Ask.
+
+== l_bastaVanner (ny mall): 0 → 5 varianter
+  + Ask och Ylva har blivit bästa vänner.
+  + Ingen står Ask så nära som Ylva. De är bästa vänner.
+  + Ask och Ylva är bästa vänner nu.
+  + Av alla i byn har Ask valt Ylva. De är bästa vänner.
+  + Ask och Ylva är oskiljaktiga. De har blivit bästa vänner.
+
+== l_ovanner (ny mall): 0 → 5 varianter
+  + Ask och Ylva har blivit ovänner.
+  + Det har blivit ont blod mellan Ask och Ylva.
+  + Ask och Ylva är inte vänner längre. De är ovänner.
+  + Ask och Ylva går inte ihop. De har blivit ovänner.
+  + Mellan Ask och Ylva är det kallt nu. De är ovänner.
+
+== l_rivaler (ny mall): 0 → 4 varianter
+  + Ask och Ylva har blivit rivaler.
+  + Ask vill vara bättre än Ylva, och Ylva vill vara bättre än Ask. De är rivaler.
+  + Ask och Ylva tävlar om allt nu. De har blivit rivaler.
+  + Det är en tävlan mellan Ask och Ylva. De har blivit rivaler.
+
+== l_arke (ny mall): 0 → 4 varianter
+  + Ask ser nu Ylva som sin ärkefiende.
+  + Ingen hatar Ask som Ylva. Ylva är hans ärkefiende nu.
+  + För Ask är Ylva nu den värsta fienden.
+  + Ask har bestämt sig: Ylva är hans ärkefiende.
+
+== l_slagsmal (ny mall): 0 → 7 varianter
+  + Ask och Ylva slogs efter ett gräl. Ylva vann.   [villkor]
+  + Det blev slagsmål efter ett gräl. Ask och Ylva slogs, och Ylva vann.   [villkor]
+  + Ask och Ylva slogs efter ett gräl, och Ylva gick segrande därifrån.   [villkor]
+  + Efter ett gräl slogs Ask och Ylva. Ylva vann.   [villkor]
+  + Mitt i natten slogs Ask och Ylva. Ylva vann.   [villkor]
+  + Ask och Ylva slogs efter ett gräl. Ingen vann.   [villkor]
+  + Ask och Ylva slogs efter ett gräl, men ingen av dem vann.   [villkor]
+
+== l_larm (ny mall): 0 → 7 varianter
+  + Ask ropade larm: det slåss vid elden. Fem hörde det.   [villkor]
+  + Ask ropade att det slåss vid elden, och fem hörde ropet.   [villkor]
+  + "Det slåss vid elden!" ropade Ask. Fem hörde det.   [villkor]
+  + Ropet från Ask hördes av fem: det slåss vid elden.   [villkor]
+  + Ask ropade larm, och en hörde det: det slåss vid elden.   [villkor]
+  + Ask ropade falskt larm: det slåss vid elden. Fem hörde det.   [villkor]
+  + Ask ropade att det slåss vid elden, men det var inte sant. Fem hörde det.   [villkor]
+
+== l_magsjuk (ny mall): 0 → 5 varianter
+  + Ask blev magsjuk av skämd mat.
+  + Maten Ask åt var skämd, och nu har han ont i magen.
+  + Ask åt något som stod för länge och blev sjuk i magen.
+  + Skämd mat gjorde Ask magsjuk.
+  + Ask ligger med ont i magen. Maten var skämd.
+
+== l_raMat (ny mall): 0 → 4 varianter
+  + Ask blev matförgiftad av rått kött eller rå fisk.
+  + Ask åt rå fisk och blev sjuk av det.
+  + Det var rå fisk som gjorde Ask sjuk.
+  + Ask borde ha grillat maten. Nu är han matförgiftad.
+
+== l_svartSjuk (ny mall): 0 → 5 varianter
+  + Ask blev svårt sjuk.
+  + En svår sjukdom har drabbat Ask.
+  + Ask ligger med feber och orkar inte resa sig.
+  + Ask är mycket sjuk, och de andra oroar sig.
+  + Kylan tog Ask, som blev svårt sjuk.   [villkor]
+
+== l_lart (ny mall): 0 → 6 varianter
+  + Ask har lärt sig av Ylva att leda byn.
+  + Ylva har lärt Ask att leda byn.
+  + Nu kan Ask också leda byn. Ylva visade honom hur.
+  + Ask såg på när Ylva arbetade, och nu kan han själv leda byn.
+  + Det tog sin tid, men nu kan Ask leda byn. Det var Ylva som lärde honom.
+  + Barnet Ask har lärt sig av Ylva att leda byn.   [villkor]
+
+== l_rykte (ny mall): 0 → 6 varianter
+  + Det går rykten om att Ask är en lögnare.
+  + Folk viskar om att Ask är en lögnare.
+  + Man säger i byn att Ask är en lögnare.
+  + Ryktet går: Ask är en lögnare.
+  + Det har börjat sägas att Ask är en lögnare, och det sägs med respekt.   [villkor]
+  + Bakom ryggen på Ask säger man att han är en lögnare.   [villkor]
+
+== l_flinta (ny mall): 0 → 5 varianter
+  + Ask hittade en flintsten vid stenarna.   [villkor]
+  + Bland stenarna låg en flinta, och Ask tog den.   [villkor]
+  + Ask fick syn på en flintsten i sanden vid stranden.   [villkor]
+  + Ask hittade en flintsten.   [villkor]
+  + En flintsten! Ask hittade den vid stenarna.   [villkor]
+
+== De nya kontrollerna (och genus och nya ord) på texterna som spelet skriver i dag
+   (mallarna ur texter.json och loggens rader ur loggrader; antalet är ungefärligt för mallarna)
+  artikel: 818 gånger
+     – Byn har bestämt sig: hon är lögnare.
+     – Som fiskare är han känd i byn, och de flesta tycker att han är lögnare.
+     – Som väktare är han känd i byn, och de flesta tycker att han är klåpare.
+     – De andra vet två saker om henne: hon är väktare, och hon är tjuv.
+     – De andra vet två saker om henne: hon är mästare, och hon är lögnare.
+     – De andra vet två saker om henne: hon är berättare, och hon är lögnare.
+     – Om dagarna är hon trähuggare. Vid elden säger man att hon är lögnare.
+     – Om dagarna är hon trähuggare. Vid elden säger man att hon är klåpare.
+  logg_genus: 331 gånger
+     – Frörhild och Igik bytte: en träspjut mot 1 rötter.
+     – Igik gav en träspjut till Tukstig.
+     – Stensja och Tukstig bytte: 1 fällt vilt mot en träspjut.
+     – Tusbjörn och Fannbjörn bytte: 1 harkött mot en träspjut och 8 ved och 1 grenar.
+     – Vinnvid och Igik bytte: en träspjut mot 1 fiskkött.
+     – Frörhild och Stensja bytte: 1 harkött mot 14 grenar och en slagträ.
+     – Ija och Stensja bytte: 2 harkött mot en träspjut och 2 grenar.
+     – Ija och Frörhild bytte: 1 rovor mot en träspjut.
+  hen: 135 gånger
+     – Igik kom på hur man gör lerkruka. Den som tycker om krukor ställer en där hen sover: hen trivs där, och de som ser den tycker bättre om hen.
+     – Tuska kom på hur man gör snidat väggbräde. Den som tycker om väggbräden sätter upp ett där hen sover: hen trivs där, och de som ser det tycker bättre om hen.
+     – En främling från Älvfolket kom till byn. Igik ville inte att hen skulle stanna, och hen gick vidare.
+     – Gerve märkte att Igik hade lurat hen i ett byte.
+     – Ulva från Stenbyn kom till byn. Igik lät hen stanna.
+     – En främling från Sälfolket kom till byn och kunde rep. Igik ville inte att hen skulle stanna, och hen gick vidare.
+     – Tuska snidade byns första väggbräde och satte upp det där hen sover. Det är bara till för att vara vackert.
+     – Sige kom på hur man gör lerkruka. Den som tycker om krukor ställer en där hen sover: hen trivs där, och de som ser den tycker bättre om hen.
+
+LARA: 36 tekniker. NAR_AKT: 31 handlingar. RATTELSER: 31.

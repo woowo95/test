@@ -1,0 +1,2710 @@
+{
+ "rattelser": [
+  {
+   "id": "hen_stal",
+   "grupp": "1a hen",
+   "fil": "src/sim/behov.ts:285",
+   "nu": "hade stulit hens ${namnOf(key)}",
+   "blir": "hade stulit ${hennes(offret)} ${namnOf(key)}",
+   "varfor": "hen om en viss person; den bestulnes kön.",
+   "exempel": [
+    "Ask märkte att Ylva hade stulit hens yxa.",
+    "Ask märkte att Ylva hade stulit hans yxa."
+   ]
+  },
+  {
+   "id": "hen_lurat",
+   "grupp": "1a hen",
+   "fil": "src/sim/behov.ts:570",
+   "nu": "hade lurat hen i ett byte",
+   "blir": "hade lurat ${honom(p)} i ett byte",
+   "varfor": "Den lurade är en viss person (23 gånger på 45 dygn i fyra byar).",
+   "exempel": [
+    "Ask märkte att Ylva hade lurat hen i ett byte.",
+    "Ask märkte att Ylva hade lurat honom i ett byte."
+   ]
+  },
+  {
+   "id": "hen_handlare",
+   "grupp": "1a hen",
+   "fil": "src/sim/handel.ts:442",
+   "nu": "hade lurat hen",
+   "blir": "hade lurat ${honom(h)}",
+   "varfor": "h är handlaren; handlarens kön."
+  },
+  {
+   "id": "hen_tro",
+   "grupp": "1a hen",
+   "fil": "src/sim/religion.ts:233",
+   "nu": "och tror som hen",
+   "blir": "och tror som ${hon(samma.grundare)}",
+   "varfor": "Grundarens kön."
+  },
+  {
+   "id": "hen_sover1",
+   "grupp": "1a hen",
+   "fil": "src/sim/stationer.ts:1096 och 1098",
+   "nu": "'huset där hen sover' / där hen sover",
+   "blir": "'huset där ${hon(p)} sover'",
+   "varfor": "Ägarens kön."
+  },
+  {
+   "id": "hen_stanna",
+   "grupp": "1a hen",
+   "fil": "src/sim/liv.ts:185 och 196",
+   "nu": "ville inte att hen skulle stanna, och hen gick vidare / lät hen stanna",
+   "blir": "ville inte att ${hon(f)} skulle stanna, och ${hon(f)} gick vidare / lät ${honom(f)} stanna",
+   "varfor": "Främlingens kön."
+  },
+  {
+   "id": "hen_nar",
+   "grupp": "1a hen",
+   "fil": "src/sim/halsa.ts:126–128, brand.ts:375, jakt.ts:213",
+   "nu": "'när hen slaktade', 'när hen rensade fisk', 'när hen slog flinta', 'när hen släckte elden', 'när hen grep en hare'",
+   "blir": "nar som funktion av personen: (p) => `när ${hon(p)} slaktade`",
+   "varfor": "Används i \"${p.name} fick ett skärsår ${nar}\"; personen finns där.",
+   "exempel": [
+    "Ask fick ett skärsår när hen slaktade.",
+    "Ask fick ett skärsår när han slaktade."
+   ]
+  },
+  {
+   "id": "hen_slog",
+   "grupp": "1a hen",
+   "fil": "src/sim/humor.ts:178",
+   "nu": "när ${p.name} slog hen",
+   "blir": "när ${p.name} slog ${honom(offret)}",
+   "varfor": "Offrets kön."
+  },
+  {
+   "id": "hen_straff",
+   "grupp": "1a hen",
+   "fil": "src/sim/styre.ts:299 och 334",
+   "nu": "straffade hen / fallback hen: 'hen'",
+   "blir": "straffade ${honom(q)}; fallbacken tas bort (den dömde finns alltid)",
+   "varfor": "Den dömdes kön."
+  },
+  {
+   "id": "hen_hylla",
+   "grupp": "1a hen",
+   "fil": "src/sim/framtradande.ts:176",
+   "nu": "för att hylla hen",
+   "blir": "för att hylla ${honom(l)}",
+   "varfor": "Den som hyllas."
+  },
+  {
+   "id": "hen_varm",
+   "grupp": "1a hen",
+   "fil": "src/sim/eld.ts:139",
+   "nu": "'Det är kallt och hen vill hålla värmen'",
+   "blir": "`Det är kallt och ${hon(p)} vill hålla värmen`",
+   "varfor": "Varför-texten i personrutan gäller en viss person."
+  },
+  {
+   "id": "hen_tror",
+   "grupp": "1a hen",
+   "fil": "src/sim/minne.ts:429 och 431",
+   "nu": "än hen tror",
+   "blir": "än ${hon(p)} tror",
+   "varfor": "En viss person."
+  },
+  {
+   "id": "hen_anseende",
+   "grupp": "1a hen",
+   "fil": "src/sim/rykten.ts:479 och 482",
+   "nu": "bild av hen / tycker att hen är",
+   "blir": "bild av ${honom(q)} / tycker att ${hon(q)} är",
+   "varfor": "anseendeText gäller en viss person."
+  },
+  {
+   "id": "hen_pynt",
+   "grupp": "1a hen",
+   "fil": "src/sim/rykten.ts (HANDELSER.pynt)",
+   "nu": "'har pyntat där hen sover med {sak}'",
+   "blir": "'har pyntat där {hen} sover med {sak}' och {hen} fylls i skalTill (som {om} och {sak})",
+   "varfor": "Beviset gäller en viss person; texten hamnar i hedersnamnet (\"för hon har pyntat …\")."
+  },
+  {
+   "id": "hen_teknik",
+   "grupp": "1a hen",
+   "fil": "src/sim/stationer.ts:169–224 och teknik.ts (forsta, effekt)",
+   "nu": "Den som tycker om krukor ställer en där hen sover: hen trivs där, och de som ser den tycker bättre om hen.",
+   "blir": "Den som tycker om krukor ställer en där den sover, trivs där, och de som ser den tycker bättre om ägaren.",
+   "varfor": "Allmänna texter om \"den som …\" ska inte ha hen; skrivs om med den som, man eller ägaren (36 + 30 + 19 gånger på 45 dygn i fyra byar).",
+   "exempel": [
+    "X kom på hur man gör lerkruka. Den som tycker om krukor ställer en där hen sover: hen trivs där, och de som ser den tycker bättre om hen.",
+    "X kom på hur man gör lerkrukor. Den som tycker om krukor ställer en där den sover. Där trivs den, och den som ser krukan tycker bättre om ägaren."
+   ]
+  },
+  {
+   "id": "hen_allman",
+   "grupp": "1a hen",
+   "fil": "src/sim/typer.ts, seder.ts, slump.ts, rykten.ts (INTRYCK.betyder)",
+   "nu": "t.ex. 'Man tror mindre på det hen berättar.', 'Har ett vackert pynt där hen sover.'",
+   "blir": "'Man tror mindre på det lögnaren berättar.', 'Har ett vackert pynt där den sover.'",
+   "varfor": "Förklaringar som inte gäller någon viss person: den som, man eller ett substantiv i stället för hen."
+  },
+  {
+   "id": "andelse_bars",
+   "grupp": "1b ändelser",
+   "fil": "src/sim/stationer.ts:1109",
+   "nu": "`${d.namn}en bars in i …`",
+   "blir": "`${d.ett ? 'Ett' : 'En'} ${d.namn.toLowerCase()} bars in i …`",
+   "varfor": "Bestämd form byggs inte genom att hänga -en på namnet.",
+   "exempel": [
+    "Lerkrukaen bars in i huset. Snidat väggbrädeen bars in i huset.",
+    "En lerkruka bars in i huset. Ett snidat väggbräde bars in i huset."
+   ]
+  },
+  {
+   "id": "andelse_sport",
+   "grupp": "1b ändelser",
+   "fil": "src/sim/sport.ts:110",
+   "nu": "`Går med i ${d.namn.toLowerCase()}en`",
+   "blir": "`Går med och spelar ${d.namn.toLowerCase()}`, eller ett eget fält bestamd på raden i SPORTER (bollspelet, snöbollskriget, kastet mot målet)",
+   "varfor": "Ger Bollspelen, Snöbollskrigen, Kast mot målen.",
+   "exempel": [
+    "Går med i bollspelen.",
+    "Går med och spelar bollspel."
+   ]
+  },
+  {
+   "id": "genus_byte",
+   "grupp": "1b ändelser",
+   "fil": "src/sim/byte.ts:51 (varorText)",
+   "nu": "`${x.t ? 'en' : tal(x.n)} …`",
+   "blir": "`${x.t ? (SAKER[x.k]?.ett ? 'ett' : 'en') : tal(x.n)} …`",
+   "varfor": "Ett redskap fick alltid en (166 gånger \"gav en träspjut\" på 45 dygn i fyra byar).",
+   "exempel": [
+    "Ylva gav en träspjut till Ask.",
+    "Ylva gav ett träspjut till Ask."
+   ]
+  },
+  {
+   "id": "genus_lager",
+   "grupp": "1b ändelser",
+   "fil": "src/sim/lager.ts:771",
+   "nu": "`${zs[grew].namn ?? 'Lagret'} blev för litet`",
+   "blir": "`${namn} blev för ${namn ? 'liten' : 'litet'}`",
+   "varfor": "Lagerplats är ett en-ord: \"Lagerplats 2 blev för liten\" (26 gånger)."
+  },
+  {
+   "id": "lara_gora",
+   "grupp": "1b ändelser",
+   "fil": "src/sim/teknik.ts:201",
+   "nu": "har lärt sig av ${from.name} att göra ${t.namn.toLowerCase()}.",
+   "blir": "mallen l_lart med {lara} ur LARA (att odla, att leda byn, att bygga timmerhus, att tälja träspjut)",
+   "varfor": "\"lärt sig att göra ledarskap\", \"att göra odling\", \"att göra boll\" (över 1 000 gånger på 45 dygn i fyra byar).",
+   "exempel": [
+    "Ask har lärt sig av Ylva att göra ledarskap.",
+    "Ask har lärt sig av Ylva att leda byn."
+   ]
+  },
+  {
+   "id": "kom_pa",
+   "grupp": "1b ändelser",
+   "fil": "src/sim/teknik.ts (log när någon kommer på en teknik)",
+   "nu": "X kom på hur man gör odling. / … hur man gör ledarskap.",
+   "blir": "X kom på hur man {lara}: \"kom på hur man odlar\", eller \"X kom på odlingen\" med bestamd() från berattelser.ts",
+   "varfor": "Samma fel som ovan."
+  },
+  {
+   "id": "skal_tva",
+   "grupp": "1c skäl",
+   "fil": "src/sim/berattelser.ts:1267 (skalTill) och 1320 (binamnInfo)",
+   "nu": "skalTill ger en händelse ur HANDELSER ('vann ett slagsmål mot Ylva') eller `var så ${INTRYCK[k].namn}`",
+   "blir": "skalTill ger { skal, tillst }: tillst = true när det inte fanns något bevis. Fälten {skal} (händelsen) och {tillstand} = INTRYCK[k].som ?? INTRYCK[k].namn ('flitig', 'en lögnare'). Varianterna med {skal} får om: f => !f.tillst, och nya varianter med {tillstand} om: f => !!f.tillst (NYA_VARIANTER.hedersnamn och .oknamn). Binamn sparar tillst, och binamnInfo skriver `är ${tillstand}` i stället för `var så …`.",
+   "varfor": "\"Sedan han var så välbärgad säger alla …\" och \"för hon var så lögnare\".",
+   "exempel": [
+    "Sedan han var så välbärgad säger alla Osllo Smörbyttan.",
+    "Alla vet att Oso är välbärgad, och nu säger de Oso Smörbyttan."
+   ]
+  },
+  {
+   "id": "artikel_rykte",
+   "grupp": "1d artikel",
+   "fil": "src/sim/rykten.ts:280",
+   "nu": "`Det går rykten om att ${e.namn} är ${d.namn}.`",
+   "blir": "`… är ${d.som ?? d.namn}.`",
+   "varfor": "\"att Ask är lögnare\" (48), \"klåpare\" (41), \"tjuv\" (18) på 45 dygn i fyra byar.",
+   "exempel": [
+    "Det går rykten om att Ask är lögnare.",
+    "Det går rykten om att Ask är en lögnare."
+   ]
+  },
+  {
+   "id": "artikel_besk",
+   "grupp": "1d artikel",
+   "fil": "src/sim/berattelser.ts (beskrivning: f.rykte)",
+   "nu": "f.rykte = INTRYCK[by[0]].namn",
+   "blir": "f.rykte = INTRYCK[by[0]].som ?? INTRYCK[by[0]].namn",
+   "varfor": "\"Byn ser Ask som lögnare\"."
+  },
+  {
+   "id": "artikel_rel",
+   "grupp": "1d artikel",
+   "fil": "src/sim/berattelser.ts:1775 (relationText)",
+   "nu": "ser ${q.name} som ${t.namn}",
+   "blir": "ser ${q.name} som ${t.som ?? t.namn}",
+   "varfor": "Samma fel."
+  },
+  {
+   "id": "binamn_rik",
+   "grupp": "1e binamn",
+   "fil": "src/sim/berattelser.ts (BINAMN.rik)",
+   "nu": "['Förrådet', 'Förrådet']",
+   "blir": "['den förmögne', 'den förmögna']",
+   "varfor": "\"Sigrun Förrådet\" låter som en sak, inte ett namn."
+  },
+  {
+   "id": "binamn_smak",
+   "grupp": "1e binamn",
+   "fil": "src/sim/berattelser.ts (BINAMN.smakfull)",
+   "nu": "'Blomkrukan'",
+   "blir": "'Pärlan'",
+   "varfor": "Samma sak: en blomkruka är en sak (och blommor i kruka fanns inte)."
+  },
+  {
+   "id": "namn_uttal",
+   "grupp": "1f namn",
+   "fil": "src/sim/folk.ts (makeName)",
+   "nu": "början + mitten + slutet, alltid",
+   "blir": "foga(början, mitten, slutet) ur texter/namn.ts: mitten tas bort när namnet blir svårt att uttala med den och lättare utan den",
+   "varfor": "Osllo, Kolrkfast, Ylvlle, Irnkel, Tusskleif. Slumpen dras som förut, så bara namnen ändras: 11 948 av 27 132 möjliga namn blir kortare (Osllo → Oso, Kolrkfast → Kolfast, Ylvlle → Ylve, Irnkel → Ikel, Tusskleif → Tusleif). Sällan kan ett namn som redan finns i byn göra att ett nytt dras (ledigt), och då blir utvecklingen annan från den födseln.",
+   "exempel": [
+    "Osllo, Kolrkfast, Ylvlle, Irnkel, Tusskleif",
+    "Oso, Kolfast, Ylve, Ikel, Tusleif"
+   ]
+  },
+  {
+   "id": "ord_jobbig",
+   "grupp": "ord",
+   "fil": "src/sim/berattelser.ts (r_ogillar)",
+   "nu": "{namn} tycker att {om} är jobbig.",
+   "blir": "{namn} tycker att {om} är besvärlig.",
+   "varfor": "jobbig är ett nytt ord; NYA_ORD har jobb men inte jobbig."
+  },
+  {
+   "id": "ord_toalett",
+   "grupp": "ord",
+   "fil": "src/sim/latrin.ts (log)",
+   "nu": "Byn förstod att vattnet blir smutsigt nära toaletten.",
+   "blir": "Byn förstod att vattnet blir smutsigt nära latrinen.",
+   "varfor": "toalett är ett nytt ord."
+  }
+ ],
+ "kontroller": [
+  {
+   "id": "hen",
+   "namn": "hen, hens eller henom om en viss person"
+  },
+  {
+   "id": "artikel",
+   "namn": "Ett rykte utan en framför (som lögnare, är tjuv)"
+  },
+  {
+   "id": "andelse",
+   "namn": "En ändelse på ett namn som slutar på -a eller -e (Lerkrukaen, väggbrädeen)"
+  }
+ ],
+ "idag": {
+  "artikel": {
+   "n": 817.6666666666669,
+   "ex": [
+    "Byn har bestämt sig: hon är lögnare.",
+    "Som fiskare är han känd i byn, och de flesta tycker att han är lögnare.",
+    "Som väktare är han känd i byn, och de flesta tycker att han är klåpare.",
+    "De andra vet två saker om henne: hon är väktare, och hon är tjuv.",
+    "De andra vet två saker om henne: hon är mästare, och hon är lögnare.",
+    "De andra vet två saker om henne: hon är berättare, och hon är lögnare.",
+    "Om dagarna är hon trähuggare. Vid elden säger man att hon är lögnare.",
+    "Om dagarna är hon trähuggare. Vid elden säger man att hon är klåpare."
+   ]
+  },
+  "logg_genus": {
+   "n": 331,
+   "ex": [
+    "Frörhild och Igik bytte: en träspjut mot 1 rötter.",
+    "Igik gav en träspjut till Tukstig.",
+    "Stensja och Tukstig bytte: 1 fällt vilt mot en träspjut.",
+    "Tusbjörn och Fannbjörn bytte: 1 harkött mot en träspjut och 8 ved och 1 grenar.",
+    "Vinnvid och Igik bytte: en träspjut mot 1 fiskkött.",
+    "Frörhild och Stensja bytte: 1 harkött mot 14 grenar och en slagträ.",
+    "Ija och Stensja bytte: 2 harkött mot en träspjut och 2 grenar.",
+    "Ija och Frörhild bytte: 1 rovor mot en träspjut."
+   ]
+  },
+  "hen": {
+   "n": 135,
+   "ex": [
+    "Igik kom på hur man gör lerkruka. Den som tycker om krukor ställer en där hen sover: hen trivs där, och de som ser den tycker bättre om hen.",
+    "Tuska kom på hur man gör snidat väggbräde. Den som tycker om väggbräden sätter upp ett där hen sover: hen trivs där, och de som ser det tycker bättre om hen.",
+    "En främling från Älvfolket kom till byn. Igik ville inte att hen skulle stanna, och hen gick vidare.",
+    "Gerve märkte att Igik hade lurat hen i ett byte.",
+    "Ulva från Stenbyn kom till byn. Igik lät hen stanna.",
+    "En främling från Sälfolket kom till byn och kunde rep. Igik ville inte att hen skulle stanna, och hen gick vidare.",
+    "Tuska snidade byns första väggbräde och satte upp det där hen sover. Det är bara till för att vara vackert.",
+    "Sige kom på hur man gör lerkruka. Den som tycker om krukor ställer en där hen sover: hen trivs där, och de som ser den tycker bättre om hen."
+   ]
+  }
+ },
+ "prov": [
+  {
+   "mall": "r_nara",
+   "ny": false,
+   "fore": 12,
+   "efter": 24,
+   "varianter": [
+    {
+     "t": "{namn} tycker mycket om {om}.",
+     "villkor": false,
+     "text": "Ask tycker mycket om Ylva.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} och {om} står varandra nära.",
+     "villkor": false,
+     "text": "Ask och Ylva står varandra nära.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} skulle göra vad som helst för {om}.",
+     "villkor": false,
+     "text": "Ask skulle göra vad som helst för Ylva.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} söker sig gärna till {om}.",
+     "villkor": false,
+     "text": "Ask söker sig gärna till Ylva.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} litar på {om}.",
+     "villkor": false,
+     "text": "Ask litar på Ylva.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} och {om} har inga hemligheter för varandra.",
+     "villkor": false,
+     "text": "Ask och Ylva har inga hemligheter för varandra.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} går till {om} när något är svårt.",
+     "villkor": false,
+     "text": "Ask går till Ylva när något är svårt.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} saknar {om} när de inte ses.",
+     "villkor": false,
+     "text": "Ask saknar Ylva när de inte ses.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "När {om} är borta ser {namn} ofta bort mot stigen.",
+     "villkor": false,
+     "text": "När Ylva är borta ser Ask ofta bort mot stigen.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} sparar det bästa av maten åt {om}.",
+     "villkor": false,
+     "text": "Ask sparar det bästa av maten åt Ylva.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "Det {namn} tänker säger {namn} först till {om}.",
+     "villkor": false,
+     "text": "Det Ask tänker säger Ask först till Ylva.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} och {om} sitter ofta bredvid varandra vid elden.",
+     "villkor": false,
+     "text": "Ask och Ylva sitter ofta bredvid varandra vid elden.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} känner sig trygg när {om} är nära.",
+     "villkor": false,
+     "text": "Ask känner sig trygg när Ylva är nära.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} och {om} förstår varandra utan många ord.",
+     "villkor": false,
+     "text": "Ask och Ylva förstår varandra utan många ord.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "Blir det bråk ställer sig {namn} alltid på samma sida som {om}.",
+     "villkor": false,
+     "text": "Blir det bråk ställer sig Ask alltid på samma sida som Ylva.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} kan prata med {om} om allt.",
+     "villkor": false,
+     "text": "Ask kan prata med Ylva om allt.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "Det syns på {namn} att {om} betyder mycket.",
+     "villkor": false,
+     "text": "Det syns på Ask att Ylva betyder mycket.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} och {om} har pratat så många gånger att de vet vad den andra ska säga.",
+     "villkor": true,
+     "text": "Ask och Ylva har pratat så många gånger att de vet vad den andra ska säga.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} och {om} har slagits sida vid sida, och det glömmer de inte.",
+     "villkor": true,
+     "text": "Ask och Ylva har slagits sida vid sida, och det glömmer de inte.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} och {om} har grälat, men de blev alltid sams igen.",
+     "villkor": true,
+     "text": "Ask och Ylva har grälat, men de blev alltid sams igen.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} är bara ett barn, men {hen} följer {om} vart {om} än går.",
+     "villkor": true,
+     "text": "Ask är bara ett barn, men han följer Ylva vart Ylva än går.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "De gamla säger att {namn} och {om} är som syskon.",
+     "villkor": true,
+     "text": "De gamla säger att Ask och Ylva är som syskon.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} blir glad bara {om} sätter sig bredvid.",
+     "villkor": true,
+     "text": "Ask blir glad bara Ylva sätter sig bredvid.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "Barnen de fått tillsammans håller {namn} och {om} nära varandra.",
+     "villkor": true,
+     "text": "Barnen de fått tillsammans håller Ask och Ylva nära varandra.",
+     "fel": [],
+     "ny": true
+    }
+   ]
+  },
+  {
+   "mall": "r_van",
+   "ny": false,
+   "fore": 12,
+   "efter": 22,
+   "varianter": [
+    {
+     "t": "{namn} tycker om {om}.",
+     "villkor": false,
+     "text": "Ask tycker om Ylva.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} trivs i sällskap med {om}.",
+     "villkor": false,
+     "text": "Ask trivs i sällskap med Ylva.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} ser {om} som en vän.",
+     "villkor": false,
+     "text": "Ask ser Ylva som en vän.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} pratar gärna med {om}.",
+     "villkor": false,
+     "text": "Ask pratar gärna med Ylva.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} och {om} kommer bra överens.",
+     "villkor": false,
+     "text": "Ask och Ylva kommer bra överens.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} skrattar gärna åt det {om} säger.",
+     "villkor": false,
+     "text": "Ask skrattar gärna åt det Ylva säger.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} hjälper {om} när det behövs.",
+     "villkor": false,
+     "text": "Ask hjälper Ylva när det behövs.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} gillar {om}.",
+     "villkor": false,
+     "text": "Ask gillar Ylva.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} sätter sig gärna bredvid {om} vid elden.",
+     "villkor": false,
+     "text": "Ask sätter sig gärna bredvid Ylva vid elden.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} och {om} har roligt när de arbetar ihop.",
+     "villkor": false,
+     "text": "Ask och Ylva har roligt när de arbetar ihop.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} lyssnar när {om} berättar något.",
+     "villkor": false,
+     "text": "Ask lyssnar när Ylva berättar något.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} delar gärna med sig till {om}.",
+     "villkor": false,
+     "text": "Ask delar gärna med sig till Ylva.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} hälsar alltid glatt på {om}.",
+     "villkor": false,
+     "text": "Ask hälsar alltid glatt på Ylva.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "Med {om} har {namn} lätt att prata.",
+     "villkor": false,
+     "text": "Med Ylva har Ask lätt att prata.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} och {om} hjälps åt när det behövs.",
+     "villkor": false,
+     "text": "Ask och Ylva hjälps åt när det behövs.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "Det är sällan ett ont ord mellan {namn} och {om}.",
+     "villkor": false,
+     "text": "Det är sällan ett ont ord mellan Ask och Ylva.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} tycker att {om} är bra att ha i byn.",
+     "villkor": false,
+     "text": "Ask tycker att Ylva är bra att ha i byn.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} och {om} har pratat många kvällar vid elden.",
+     "villkor": true,
+     "text": "Ask och Ylva har pratat många kvällar vid elden.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} och {om} har slagits sida vid sida.",
+     "villkor": true,
+     "text": "Ask och Ylva har slagits sida vid sida.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} ser upp till {om} och vill vara i närheten.",
+     "villkor": true,
+     "text": "Ask ser upp till Ylva och vill vara i närheten.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} skrattar när {om} är i närheten.",
+     "villkor": true,
+     "text": "Ask skrattar när Ylva är i närheten.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "Ett gräl har de haft, men {namn} tycker ändå om {om}.",
+     "villkor": true,
+     "text": "Ett gräl har de haft, men Ask tycker ändå om Ylva.",
+     "fel": [],
+     "ny": true
+    }
+   ]
+  },
+  {
+   "mall": "r_bekant",
+   "ny": false,
+   "fore": 12,
+   "efter": 21,
+   "varianter": [
+    {
+     "t": "{namn} känner {om} men inte så väl.",
+     "villkor": false,
+     "text": "Ask känner Ylva men inte så väl.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} har inget särskilt emot {om}.",
+     "villkor": false,
+     "text": "Ask har inget särskilt emot Ylva.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} hälsar på {om} men inte mer.",
+     "villkor": false,
+     "text": "Ask hälsar på Ylva men inte mer.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} vet vem {om} är, men de står inte varandra nära.",
+     "villkor": false,
+     "text": "Ask vet vem Ylva är, men de står inte varandra nära.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} pratar med {om} ibland.",
+     "villkor": false,
+     "text": "Ask pratar med Ylva ibland.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} och {om} har inte mycket gemensamt.",
+     "villkor": false,
+     "text": "Ask och Ylva har inte mycket gemensamt.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} bryr sig inte mycket om {om}, varken åt det ena eller det andra hållet.",
+     "villkor": false,
+     "text": "Ask bryr sig inte mycket om Ylva, varken åt det ena eller det andra hållet.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} och {om} lever mest var för sig.",
+     "villkor": false,
+     "text": "Ask och Ylva lever mest var för sig.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} och {om} nickar åt varandra, mer blir det inte.",
+     "villkor": false,
+     "text": "Ask och Ylva nickar åt varandra, mer blir det inte.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} vet inte mycket om {om}, och frågar inte heller.",
+     "villkor": false,
+     "text": "Ask vet inte mycket om Ylva, och frågar inte heller.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "För {namn} är {om} en av de andra i byn, inte mer.",
+     "villkor": false,
+     "text": "För Ask är Ylva en av de andra i byn, inte mer.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} och {om} har aldrig haft mycket att säga varandra.",
+     "villkor": false,
+     "text": "Ask och Ylva har aldrig haft mycket att säga varandra.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} vet vad {om} heter, och inte mycket mer.",
+     "villkor": false,
+     "text": "Ask vet vad Ylva heter, och inte mycket mer.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} och {om} har inte mycket att säga varandra.",
+     "villkor": false,
+     "text": "Ask och Ylva har inte mycket att säga varandra.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "Det är sällan {namn} tänker på {om}.",
+     "villkor": false,
+     "text": "Det är sällan Ask tänker på Ylva.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} har inget ont att säga om {om}, och inget gott heller.",
+     "villkor": false,
+     "text": "Ask har inget ont att säga om Ylva, och inget gott heller.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} och {om} arbetar ibland nära varandra, men pratar lite.",
+     "villkor": false,
+     "text": "Ask och Ylva arbetar ibland nära varandra, men pratar lite.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} och {om} har bara pratat några få gånger.",
+     "villkor": true,
+     "text": "Ask och Ylva har bara pratat några få gånger.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} och {om} har aldrig pratat med varandra.",
+     "villkor": true,
+     "text": "Ask och Ylva har aldrig pratat med varandra.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} är för liten för att bry sig om {om}.",
+     "villkor": true,
+     "text": "Ask är för liten för att bry sig om Ylva.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} har sett {om} växa upp, men de står inte varandra nära.",
+     "villkor": true,
+     "text": "Ask har sett Ylva växa upp, men de står inte varandra nära.",
+     "fel": [],
+     "ny": true
+    }
+   ]
+  },
+  {
+   "mall": "r_ogillar",
+   "ny": false,
+   "fore": 12,
+   "efter": 20,
+   "varianter": [
+    {
+     "t": "{namn} tycker inte om {om}.",
+     "villkor": false,
+     "text": "Ask tycker inte om Ylva.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} undviker {om} när det går.",
+     "villkor": false,
+     "text": "Ask undviker Ylva när det går.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} blir på dåligt humör av {om}.",
+     "villkor": false,
+     "text": "Ask blir på dåligt humör av Ylva.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} litar inte på {om}.",
+     "villkor": false,
+     "text": "Ask litar inte på Ylva.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} himlar med ögonen åt {om}.",
+     "villkor": false,
+     "text": "Ask himlar med ögonen åt Ylva.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} och {om} kommer inte överens.",
+     "villkor": false,
+     "text": "Ask och Ylva kommer inte överens.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} säger helst inget alls till {om}.",
+     "villkor": false,
+     "text": "Ask säger helst inget alls till Ylva.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} vänder sig bort när {om} börjar prata.",
+     "villkor": false,
+     "text": "Ask vänder sig bort när Ylva börjar prata.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} suckar när {om} sätter sig vid elden.",
+     "villkor": false,
+     "text": "Ask suckar när Ylva sätter sig vid elden.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} tycker att {om} tar för mycket plats.",
+     "villkor": false,
+     "text": "Ask tycker att Ylva tar för mycket plats.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} väntar ut {om} hellre än att gå bredvid.",
+     "villkor": false,
+     "text": "Ask väntar ut Ylva hellre än att gå bredvid.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} tycker att {om} är besvärlig.",
+     "villkor": false,
+     "text": "Ask tycker att Ylva är besvärlig.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} blir trött på {om} fort.",
+     "villkor": false,
+     "text": "Ask blir trött på Ylva fort.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} går hellre åt ett annat håll än bredvid {om}.",
+     "villkor": false,
+     "text": "Ask går hellre åt ett annat håll än bredvid Ylva.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "Det blir sällan ett vänligt ord från {namn} till {om}.",
+     "villkor": false,
+     "text": "Det blir sällan ett vänligt ord från Ask till Ylva.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} lyssnar inte gärna på {om}.",
+     "villkor": false,
+     "text": "Ask lyssnar inte gärna på Ylva.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} har grälat med {om} och har inte glömt det.",
+     "villkor": true,
+     "text": "Ask har grälat med Ylva och har inte glömt det.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} och {om} har slagits, och det sitter kvar.",
+     "villkor": true,
+     "text": "Ask och Ylva har slagits, och det sitter kvar.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "Barnet {namn} gömmer sig när {om} kommer.",
+     "villkor": true,
+     "text": "Barnet Ask gömmer sig när Ylva kommer.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} blir på sämre humör av att se {om}.",
+     "villkor": true,
+     "text": "Ask blir på sämre humör av att se Ylva.",
+     "fel": [],
+     "ny": true
+    }
+   ]
+  },
+  {
+   "mall": "r_ovan",
+   "ny": false,
+   "fore": 12,
+   "efter": 21,
+   "varianter": [
+    {
+     "t": "{namn} kan inte med {om}.",
+     "villkor": false,
+     "text": "Ask kan inte med Ylva.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} hatar {om}.",
+     "villkor": false,
+     "text": "Ask hatar Ylva.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} vill inte ha med {om} att göra.",
+     "villkor": false,
+     "text": "Ask vill inte ha med Ylva att göra.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} ser {om} som en fiende.",
+     "villkor": false,
+     "text": "Ask ser Ylva som en fiende.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} blir arg bara {om} syns.",
+     "villkor": false,
+     "text": "Ask blir arg bara Ylva syns.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} och {om} är ovänner.",
+     "villkor": false,
+     "text": "Ask och Ylva är ovänner.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} har inget gott att säga om {om}.",
+     "villkor": false,
+     "text": "Ask har inget gott att säga om Ylva.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} går en omväg för att slippa {om}.",
+     "villkor": false,
+     "text": "Ask går en omväg för att slippa Ylva.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} spottar i elden när någon nämner {om}.",
+     "villkor": false,
+     "text": "Ask spottar i elden när någon nämner Ylva.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} har inte glömt vad {om} gjort, och tänker inte glömma.",
+     "villkor": false,
+     "text": "Ask har inte glömt vad Ylva gjort, och tänker inte glömma.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "Mellan {namn} och {om} finns bara kyla.",
+     "villkor": false,
+     "text": "Mellan Ask och Ylva finns bara kyla.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} skulle inte räcka {om} vatten, inte ens en varm dag.",
+     "villkor": false,
+     "text": "Ask skulle inte räcka Ylva vatten, inte ens en varm dag.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} vill inte ens se {om}.",
+     "villkor": false,
+     "text": "Ask vill inte ens se Ylva.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "Om {namn} fick välja skulle {om} lämna byn.",
+     "villkor": false,
+     "text": "Om Ask fick välja skulle Ylva lämna byn.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} tänker på {om} med vrede.",
+     "villkor": false,
+     "text": "Ask tänker på Ylva med vrede.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} vänder ryggen till när {om} går förbi.",
+     "villkor": false,
+     "text": "Ask vänder ryggen till när Ylva går förbi.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "Det finns ingen frid mellan {namn} och {om}.",
+     "villkor": false,
+     "text": "Det finns ingen frid mellan Ask och Ylva.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} och {om} har slagits, och det kan hända igen.",
+     "villkor": true,
+     "text": "Ask och Ylva har slagits, och det kan hända igen.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} och {om} grälar så fort de ses.",
+     "villkor": true,
+     "text": "Ask och Ylva grälar så fort de ses.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} är bara ett barn, men {hen} är rädd för {om}.",
+     "villkor": true,
+     "text": "Ask är bara ett barn, men han är rädd för Ylva.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "Många vintrar har gått, men {namn} har inte förlåtit {om}.",
+     "villkor": true,
+     "text": "Många vintrar har gått, men Ask har inte förlåtit Ylva.",
+     "fel": [],
+     "ny": true
+    }
+   ]
+  },
+  {
+   "mall": "p_vardag",
+   "ny": false,
+   "fore": 8,
+   "efter": 20,
+   "varianter": [
+    {
+     "t": "{namn} och {med} småpratade.",
+     "villkor": false,
+     "text": "Ask och Ylva småpratade.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} och {med} pratade om lite av varje.",
+     "villkor": false,
+     "text": "Ask och Ylva pratade om lite av varje.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} och {med} skämtade.",
+     "villkor": false,
+     "text": "Ask och Ylva skämtade.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} och {med} pratade om vad som hänt i byn.",
+     "villkor": false,
+     "text": "Ask och Ylva pratade om vad som hänt i byn.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} och {med} pratade en stund.",
+     "villkor": false,
+     "text": "Ask och Ylva pratade en stund.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} berättade en lustig historia för {med}.",
+     "villkor": false,
+     "text": "Ask berättade en lustig historia för Ylva.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} och {med} pratade om ingenting särskilt.",
+     "villkor": false,
+     "text": "Ask och Ylva pratade om ingenting särskilt.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} och {med} satt och pratade.",
+     "villkor": false,
+     "text": "Ask och Ylva satt och pratade.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} och {med} pratade om vem som gjort vad i dag.",
+     "villkor": false,
+     "text": "Ask och Ylva pratade om vem som gjort vad i dag.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} frågade {med} hur det gått, och {med} berättade.",
+     "villkor": false,
+     "text": "Ask frågade Ylva hur det gått, och Ylva berättade.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} och {med} pratade om de andra i byn.",
+     "villkor": false,
+     "text": "Ask och Ylva pratade om de andra i byn.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} och {med} satt tysta en stund, och sedan pratade de.",
+     "villkor": false,
+     "text": "Ask och Ylva satt tysta en stund, och sedan pratade de.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} och {med} skrattade åt något som hänt.",
+     "villkor": false,
+     "text": "Ask och Ylva skrattade åt något som hänt.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} och {med} pratade om vad som ska göras i morgon.",
+     "villkor": false,
+     "text": "Ask och Ylva pratade om vad som ska göras i morgon.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} och {med} pratade om {arstid} och vad den för med sig.",
+     "villkor": true,
+     "text": "Ask och Ylva pratade om hösten och vad den för med sig.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "Det var sent, och {namn} och {med} pratade lågt.",
+     "villkor": true,
+     "text": "Det var sent, och Ask och Ylva pratade lågt.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} och {med} satt nära elden och pratade om kylan.",
+     "villkor": true,
+     "text": "Ask och Ylva satt nära elden och pratade om kylan.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "Regnet föll, och {namn} och {med} pratade under taket.",
+     "villkor": true,
+     "text": "Regnet föll, och Ask och Ylva pratade under taket.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} berättade för {med} om arbetet som {yrke}.",
+     "villkor": true,
+     "text": "Ask berättade för Ylva om arbetet som samlare.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} och {med} pratade om barnen.",
+     "villkor": true,
+     "text": "Ask och Ylva pratade om barnen.",
+     "fel": [],
+     "ny": true
+    }
+   ]
+  },
+  {
+   "mall": "besk_drag2",
+   "ny": false,
+   "fore": 10,
+   "efter": 18,
+   "varianter": [
+    {
+     "t": "{namn} är en {alder}, {drag1} och {drag2}.",
+     "villkor": false,
+     "text": "Ask är en man, stark och glömsk.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} är {drag1} och {drag2}, säger de som känner {honom}.",
+     "villkor": false,
+     "text": "Ask är stark och glömsk, säger de som känner honom.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "En {alder}, {drag1} men också {drag2}: så är {namn}.",
+     "villkor": false,
+     "text": "En man, stark men också glömsk: så är Ask.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "Den som möter {namn} ser en {alder} som är {drag1} och {drag2}.",
+     "villkor": false,
+     "text": "Den som möter Ask ser en man som är stark och glömsk.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} föddes {drag1}, och {drag2} har {hen} alltid varit.",
+     "villkor": false,
+     "text": "Ask föddes stark, och glömsk har han alltid varit.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "Man vet var man har {namn}: {drag1} och {drag2}.",
+     "villkor": false,
+     "text": "Man vet var man har Ask: stark och glömsk.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn}, en {alder}, är mer {drag1} än de flesta och lika {drag2}.",
+     "villkor": false,
+     "text": "Ask, en man, är mer stark än de flesta och lika glömsk.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "Om {namn} säger man två saker: {hen} är {drag1}, och {hen} är {drag2}.",
+     "villkor": false,
+     "text": "Om Ask säger man två saker: han är stark, och han är glömsk.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} är bara ett barn men redan {drag1} och {drag2}.",
+     "villkor": true,
+     "text": "Ask är bara ett barn men redan stark och glömsk.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "Åren har gjort {namn} till en {alder}, {drag1} och {drag2}.",
+     "villkor": true,
+     "text": "Åren har gjort Ask till en man, stark och glömsk.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{Drag1} och {drag2}: så beskriver byn {namn}.",
+     "villkor": false,
+     "text": "Stark och glömsk: så beskriver byn Ask.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "Arbetar man bredvid {namn} märker man att {hen} är {drag1} och {drag2}.",
+     "villkor": false,
+     "text": "Arbetar man bredvid Ask märker man att han är stark och glömsk.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} är {drag1}. {Hen} är också {drag2}.",
+     "villkor": false,
+     "text": "Ask är stark. Han är också glömsk.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "Två saker vet alla om {namn}: {hen} är {drag1} och {drag2}.",
+     "villkor": false,
+     "text": "Två saker vet alla om Ask: han är stark och glömsk.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "Ingen kan säga att {namn} inte är {drag1}, och {drag2} är {hen} med.",
+     "villkor": false,
+     "text": "Ingen kan säga att Ask inte är stark, och glömsk är han med.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn}, {drag1} och {drag2}, är en {alder} som syns i byn.",
+     "villkor": false,
+     "text": "Ask, stark och glömsk, är en man som syns i byn.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "Redan som barn är {namn} {drag1}, och {drag2} likaså.",
+     "villkor": true,
+     "text": "Redan som barn är Ask stark, och glömsk likaså.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} har varit {drag1} och {drag2} så länge någon minns.",
+     "villkor": true,
+     "text": "Ask har varit stark och glömsk så länge någon minns.",
+     "fel": [],
+     "ny": true
+    }
+   ]
+  },
+  {
+   "mall": "k_dog",
+   "ny": false,
+   "fore": 12,
+   "efter": 19,
+   "varianter": [
+    {
+     "t": "{helt} dog {orsak}, {alder} år gammal.",
+     "villkor": false,
+     "text": "Ask Eken dog i en olycka, 34 år gammal.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "Byn sörjde när {helt} dog {orsak}. {Hen} blev {alder} år.",
+     "villkor": false,
+     "text": "Byn sörjde när Ask Eken dog i en olycka. Han blev 34 år.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{alder} år fick {namn} leva innan {hen} dog {orsak}.",
+     "villkor": false,
+     "text": "34 år fick Ask leva innan han dog i en olycka.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "Det var {arstid} när {helt} dog {orsak}, {alder} år gammal.",
+     "villkor": false,
+     "text": "Det var  när Ask Eken dog i en olycka, 34 år gammal.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{helt} är borta. {Hen} dog {orsak} vid {alder} års ålder.",
+     "villkor": false,
+     "text": "Ask Eken är borta. Han dog i en olycka vid 34 års ålder.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "En tystnad föll över byn: {helt} dog {orsak}, {alder} år gammal.",
+     "villkor": false,
+     "text": "En tystnad föll över byn: Ask Eken dog i en olycka, 34 år gammal.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "Elden brann lågt den kvällen. {helt} hade dött {orsak}, {alder} år gammal.",
+     "villkor": false,
+     "text": "Elden brann lågt den kvällen. Ask Eken hade dött i en olycka, 34 år gammal.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{helt} dog {orsak}. {Hen} hann bli {alder} år.",
+     "villkor": false,
+     "text": "Ask Eken dog i en olycka. Han hann bli 34 år.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{partner} vakade hos {helt} till slutet. {Hen} dog {orsak}, {alder} år gammal.",
+     "villkor": true,
+     "text": "",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{helt} dog {orsak}, {alder} år gammal, och lämnade {barn} barn efter sig.",
+     "villkor": true,
+     "text": "",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "Snön föll när {helt} dog {orsak}. {Hen} blev {alder} år.",
+     "villkor": true,
+     "text": "",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "Mitt i natten dog {helt} {orsak}, {alder} år gammal.",
+     "villkor": true,
+     "text": "Mitt i natten dog Ask Eken i en olycka, 34 år gammal.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{helt} dog {orsak} {nar}. {Hen} blev {alder} år.",
+     "villkor": true,
+     "text": "Ask Eken dog i en olycka när han fällde ett träd. Han blev 34 år.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "En olycka tog {helt} {nar}. {Hen} blev {alder} år.",
+     "villkor": true,
+     "text": "En olycka tog Ask Eken när han fällde ett träd. Han blev 34 år.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{helt} kom aldrig tillbaka. {Hen} dog {orsak} {nar}, {alder} år gammal.",
+     "villkor": true,
+     "text": "Ask Eken kom aldrig tillbaka. Han dog i en olycka när han fällde ett träd, 34 år gammal.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{helt} dog {orsak}, {alder} år gammal. Mest av alla sörjer {sorjer}.",
+     "villkor": true,
+     "text": "Ask Eken dog i en olycka, 34 år gammal. Mest av alla sörjer Ylva.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "Ingen grät som {sorjer} när {helt} dog {orsak}. {Hen} blev {alder} år.",
+     "villkor": true,
+     "text": "Ingen grät som Ylva när Ask Eken dog i en olycka. Han blev 34 år.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{sorjer} satt länge vid elden efter att {helt} dött {orsak}, {alder} år gammal.",
+     "villkor": true,
+     "text": "Ylva satt länge vid elden efter att Ask Eken dött i en olycka, 34 år gammal.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{helt} dog {orsak} {nar}, {alder} år gammal, och {sorjer} sörjer {honom}.",
+     "villkor": true,
+     "text": "Ask Eken dog i en olycka när han fällde ett träd, 34 år gammal, och Ylva sörjer honom.",
+     "fel": [],
+     "ny": true
+    }
+   ]
+  },
+  {
+   "mall": "hedersnamn",
+   "ny": false,
+   "fore": 10,
+   "efter": 15,
+   "varianter": [
+    {
+     "t": "Byn har börjat kalla {namn} för {binamn}, för {hen} {skal}.",
+     "villkor": false,
+     "text": "Byn har börjat kalla Oso för Smörbyttan, för han .",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "Sedan {hen} {skal} säger alla {helt}.",
+     "villkor": false,
+     "text": "Sedan han  säger alla Oso Smörbyttan.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} {skal}. Från den dagen hette {hen} {helt}.",
+     "villkor": false,
+     "text": "Oso . Från den dagen hette han Oso Smörbyttan.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "Ingen minns vem som sa det först, men nu är {namn} {binamn} för hela byn. {Hen} {skal}.",
+     "villkor": false,
+     "text": "Ingen minns vem som sa det först, men nu är Oso Smörbyttan för hela byn. Han .",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "Vid elden talar man om {namn} som {binamn}. Det var när {hen} {skal}.",
+     "villkor": false,
+     "text": "Vid elden talar man om Oso som Smörbyttan. Det var när han .",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{helt}, säger de nu, och {namn} låtsas inte höra det men ler. {Hen} {skal}.",
+     "villkor": false,
+     "text": "Oso Smörbyttan, säger de nu, och Oso låtsas inte höra det men ler. Han .",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "Barnen ropar {binamn} efter {namn}. {Hen} {skal}, och det har de inte glömt.",
+     "villkor": false,
+     "text": "Barnen ropar Smörbyttan efter Oso. Han , och det har de inte glömt.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "Så fick {namn} sitt namn: {hen} {skal}, och byn kallar {honom} {helt}.",
+     "villkor": false,
+     "text": "Så fick Oso sitt namn: han , och byn kallar honom Oso Smörbyttan.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "Det var en kall tid när {namn} {skal}. Sedan dess heter {hen} {helt}.",
+     "villkor": true,
+     "text": "Det var en kall tid när Oso . Sedan dess heter han Oso Smörbyttan.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "De gamla nickar när de säger {helt}. {Hen} {skal}, och sådant minns man.",
+     "villkor": true,
+     "text": "",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "Hela byn kallar nu {namn} för {binamn}, för {hen} är så {tillstand}.",
+     "villkor": true,
+     "text": "Hela byn kallar nu Oso för Smörbyttan, för han är så välbärgad.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "Alla vet att {namn} är {tillstand}, och nu säger de {helt}.",
+     "villkor": true,
+     "text": "Alla vet att Oso är välbärgad, och nu säger de Oso Smörbyttan.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} är {tillstand}. Därför heter {hen} {helt} i byn.",
+     "villkor": true,
+     "text": "Oso är välbärgad. Därför heter han Oso Smörbyttan i byn.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "Runt elden heter {namn} nu {binamn}, för {hen} är {tillstand}.",
+     "villkor": true,
+     "text": "Runt elden heter Oso nu Smörbyttan, för han är välbärgad.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "Det är inte svårt att se varför {namn} kallas {binamn}: {hen} är {tillstand}.",
+     "villkor": true,
+     "text": "Det är inte svårt att se varför Oso kallas Smörbyttan: han är välbärgad.",
+     "fel": [],
+     "ny": true
+    }
+   ]
+  },
+  {
+   "mall": "oknamn",
+   "ny": false,
+   "fore": 10,
+   "efter": 15,
+   "varianter": [
+    {
+     "t": "Bakom ryggen kallar byn {namn} för {binamn}. {Hen} {skal}.",
+     "villkor": false,
+     "text": "Bakom ryggen kallar byn Ask för Lögnaren. Han .",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} {skal}, och nu heter {hen} {helt} i allas mun.",
+     "villkor": false,
+     "text": "Ask , och nu heter han Ask Lögnaren i allas mun.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "Ingen säger det högt när {namn} hör, men alla vet vem {binamn} är. {Hen} {skal}.",
+     "villkor": false,
+     "text": "Ingen säger det högt när Ask hör, men alla vet vem Lögnaren är. Han .",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "Sedan {hen} {skal} säger man {helt}, och man fnissar när man säger det.",
+     "villkor": false,
+     "text": "Sedan han  säger man Ask Lögnaren, och man fnissar när man säger det.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "Det är inget fint namn, {binamn}. Men {namn} {skal}.",
+     "villkor": false,
+     "text": "Det är inget fint namn, Lögnaren. Men Ask .",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "Vid elden viskar man om {helt}. Det var när {hen} {skal}.",
+     "villkor": false,
+     "text": "Vid elden viskar man om Ask Lögnaren. Det var när han .",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "Barnen härmar {namn} och ropar {binamn}. {Hen} {skal}, och det sitter i.",
+     "villkor": false,
+     "text": "Barnen härmar Ask och ropar Lögnaren. Han , och det sitter i.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "Så fick {namn} sitt namn: {hen} {skal}, och nu är {hen} {helt}.",
+     "villkor": false,
+     "text": "Så fick Ask sitt namn: han , och nu är han Ask Lögnaren.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "{namn} blev arg när {hen} hörde att {hen} heter {binamn}. Men {hen} {skal}.",
+     "villkor": true,
+     "text": "",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "Det var i kylan som {namn} {skal}. Ingen har glömt det: {hen} heter {helt}.",
+     "villkor": true,
+     "text": "Det var i kylan som Ask . Ingen har glömt det: han heter Ask Lögnaren.",
+     "fel": [],
+     "ny": false
+    },
+    {
+     "t": "När {namn} inte hör kallar byn {honom} {binamn}, för {hen} är {tillstand}.",
+     "villkor": true,
+     "text": "När Ask inte hör kallar byn honom Lögnaren, för han är en lögnare.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} är {tillstand}, och nu heter {hen} {helt} i allas mun.",
+     "villkor": true,
+     "text": "Ask är en lögnare, och nu heter han Ask Lögnaren i allas mun.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "Alla vet att {namn} är {tillstand}. Därför säger man {helt}, och fnissar.",
+     "villkor": true,
+     "text": "Alla vet att Ask är en lögnare. Därför säger man Ask Lögnaren, och fnissar.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "Ett fult namn är det, {binamn}. Men {namn} är {tillstand}.",
+     "villkor": true,
+     "text": "Ett fult namn är det, Lögnaren. Men Ask är en lögnare.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "Barnen ropar {binamn} efter {namn}, för {hen} är {tillstand}.",
+     "villkor": true,
+     "text": "Barnen ropar Lögnaren efter Ask, för han är en lögnare.",
+     "fel": [],
+     "ny": true
+    }
+   ]
+  },
+  {
+   "mall": "l_byte",
+   "ny": true,
+   "fore": 0,
+   "efter": 8,
+   "varianter": [
+    {
+     "t": "{namn} och {med} bytte: {fatt} mot {betal}.",
+     "villkor": true,
+     "text": "Ask och Ylva bytte: tre harkött mot sex grenar.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} fick {fatt} av {med} och gav {betal} för det.",
+     "villkor": true,
+     "text": "Ask fick tre harkött av Ylva och gav sex grenar för det.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} gav {med} {betal} för {fatt}.",
+     "villkor": true,
+     "text": "Ask gav Ylva sex grenar för tre harkött.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{med} lät {namn} få {fatt} mot {betal}.",
+     "villkor": true,
+     "text": "Ylva lät Ask få tre harkött mot sex grenar.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} och {med} kom överens: {fatt} mot {betal}.",
+     "villkor": true,
+     "text": "Ask och Ylva kom överens: tre harkött mot sex grenar.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "Ett byte mellan {namn} och {med}: {fatt} mot {betal}.",
+     "villkor": true,
+     "text": "Ett byte mellan Ask och Ylva: tre harkött mot sex grenar.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} och {med} bytte: {fatt} mot {betal}. {namn} höll på att dö.",
+     "villkor": true,
+     "text": "Ask och Ylva bytte: tre harkött mot sex grenar. Ask höll på att dö.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} höll på att dö och fick {fatt} av {med} mot {betal}.",
+     "villkor": true,
+     "text": "Ask höll på att dö och fick tre harkött av Ylva mot sex grenar.",
+     "fel": [],
+     "ny": true
+    }
+   ]
+  },
+  {
+   "mall": "l_gava",
+   "ny": true,
+   "fore": 0,
+   "efter": 7,
+   "varianter": [
+    {
+     "t": "{namn} gav {varor} till {om}.",
+     "villkor": true,
+     "text": "Ylva gav ett träspjut till Ask.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{om} fick {varor} av {namn}.",
+     "villkor": true,
+     "text": "Ask fick ett träspjut av Ylva.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} lät {om} få {varor}.",
+     "villkor": true,
+     "text": "Ylva lät Ask få ett träspjut.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} gav {om} {varor} och bad inte om något tillbaka.",
+     "villkor": true,
+     "text": "Ylva gav Ask ett träspjut och bad inte om något tillbaka.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} gav {varor} till barnet {om}.",
+     "villkor": true,
+     "text": "Ylva gav ett träspjut till barnet Ask.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} gav {varor} till {om}, som höll på att dö.",
+     "villkor": true,
+     "text": "Ylva gav ett träspjut till Ask, som höll på att dö.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{om} höll på att dö, och {namn} gav {honom2} {varor}.",
+     "villkor": true,
+     "text": "Ask höll på att dö, och Ylva gav honom ett träspjut.",
+     "fel": [],
+     "ny": true
+    }
+   ]
+  },
+  {
+   "mall": "l_vanner",
+   "ny": true,
+   "fore": 0,
+   "efter": 6,
+   "varianter": [
+    {
+     "t": "{namn} och {med} har blivit nära vänner.",
+     "villkor": false,
+     "text": "Ask och Ylva har blivit nära vänner.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} och {med} söker sig till varandra nu. De är nära vänner.",
+     "villkor": false,
+     "text": "Ask och Ylva söker sig till varandra nu. De är nära vänner.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "Det har vuxit fram en vänskap mellan {namn} och {med}.",
+     "villkor": false,
+     "text": "Det har vuxit fram en vänskap mellan Ask och Ylva.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} och {med} har blivit goda vänner.",
+     "villkor": false,
+     "text": "Ask och Ylva har blivit goda vänner.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "Nu är {namn} och {med} vänner, och det syns.",
+     "villkor": false,
+     "text": "Nu är Ask och Ylva vänner, och det syns.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} har fått en vän i {med}, och {med} i {namn}.",
+     "villkor": false,
+     "text": "Ask har fått en vän i Ylva, och Ylva i Ask.",
+     "fel": [],
+     "ny": true
+    }
+   ]
+  },
+  {
+   "mall": "l_bastaVanner",
+   "ny": true,
+   "fore": 0,
+   "efter": 5,
+   "varianter": [
+    {
+     "t": "{namn} och {med} har blivit bästa vänner.",
+     "villkor": false,
+     "text": "Ask och Ylva har blivit bästa vänner.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "Ingen står {namn} så nära som {med}. De är bästa vänner.",
+     "villkor": false,
+     "text": "Ingen står Ask så nära som Ylva. De är bästa vänner.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} och {med} är bästa vänner nu.",
+     "villkor": false,
+     "text": "Ask och Ylva är bästa vänner nu.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "Av alla i byn har {namn} valt {med}. De är bästa vänner.",
+     "villkor": false,
+     "text": "Av alla i byn har Ask valt Ylva. De är bästa vänner.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} och {med} är oskiljaktiga. De har blivit bästa vänner.",
+     "villkor": false,
+     "text": "Ask och Ylva är oskiljaktiga. De har blivit bästa vänner.",
+     "fel": [],
+     "ny": true
+    }
+   ]
+  },
+  {
+   "mall": "l_ovanner",
+   "ny": true,
+   "fore": 0,
+   "efter": 5,
+   "varianter": [
+    {
+     "t": "{namn} och {med} har blivit ovänner.",
+     "villkor": false,
+     "text": "Ask och Ylva har blivit ovänner.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "Det har blivit ont blod mellan {namn} och {med}.",
+     "villkor": false,
+     "text": "Det har blivit ont blod mellan Ask och Ylva.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} och {med} är inte vänner längre. De är ovänner.",
+     "villkor": false,
+     "text": "Ask och Ylva är inte vänner längre. De är ovänner.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} och {med} går inte ihop. De har blivit ovänner.",
+     "villkor": false,
+     "text": "Ask och Ylva går inte ihop. De har blivit ovänner.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "Mellan {namn} och {med} är det kallt nu. De är ovänner.",
+     "villkor": false,
+     "text": "Mellan Ask och Ylva är det kallt nu. De är ovänner.",
+     "fel": [],
+     "ny": true
+    }
+   ]
+  },
+  {
+   "mall": "l_rivaler",
+   "ny": true,
+   "fore": 0,
+   "efter": 4,
+   "varianter": [
+    {
+     "t": "{namn} och {med} har blivit rivaler.",
+     "villkor": false,
+     "text": "Ask och Ylva har blivit rivaler.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} vill vara bättre än {med}, och {med} vill vara bättre än {namn}. De är rivaler.",
+     "villkor": false,
+     "text": "Ask vill vara bättre än Ylva, och Ylva vill vara bättre än Ask. De är rivaler.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} och {med} tävlar om allt nu. De har blivit rivaler.",
+     "villkor": false,
+     "text": "Ask och Ylva tävlar om allt nu. De har blivit rivaler.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "Det är en tävlan mellan {namn} och {med}. De har blivit rivaler.",
+     "villkor": false,
+     "text": "Det är en tävlan mellan Ask och Ylva. De har blivit rivaler.",
+     "fel": [],
+     "ny": true
+    }
+   ]
+  },
+  {
+   "mall": "l_arke",
+   "ny": true,
+   "fore": 0,
+   "efter": 4,
+   "varianter": [
+    {
+     "t": "{namn} ser nu {om} som sin ärkefiende.",
+     "villkor": false,
+     "text": "Ask ser nu Ylva som sin ärkefiende.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "Ingen hatar {namn} som {om}. {om} är {hans} ärkefiende nu.",
+     "villkor": false,
+     "text": "Ingen hatar Ask som Ylva. Ylva är hans ärkefiende nu.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "För {namn} är {om} nu den värsta fienden.",
+     "villkor": false,
+     "text": "För Ask är Ylva nu den värsta fienden.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} har bestämt sig: {om} är {hans} ärkefiende.",
+     "villkor": false,
+     "text": "Ask har bestämt sig: Ylva är hans ärkefiende.",
+     "fel": [],
+     "ny": true
+    }
+   ]
+  },
+  {
+   "mall": "l_slagsmal",
+   "ny": true,
+   "fore": 0,
+   "efter": 7,
+   "varianter": [
+    {
+     "t": "{namn} och {mot} slogs {orsak}. {vinnare} vann.",
+     "villkor": true,
+     "text": "Ask och Ylva slogs efter ett gräl. Ylva vann.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "Det blev slagsmål {orsak}. {namn} och {mot} slogs, och {vinnare} vann.",
+     "villkor": true,
+     "text": "Det blev slagsmål efter ett gräl. Ask och Ylva slogs, och Ylva vann.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} och {mot} slogs {orsak}, och {vinnare} gick segrande därifrån.",
+     "villkor": true,
+     "text": "Ask och Ylva slogs efter ett gräl, och Ylva gick segrande därifrån.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{orsak2} slogs {namn} och {mot}. {vinnare} vann.",
+     "villkor": true,
+     "text": "Efter ett gräl slogs Ask och Ylva. Ylva vann.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "Mitt i natten slogs {namn} och {mot}. {vinnare} vann.",
+     "villkor": true,
+     "text": "Mitt i natten slogs Ask och Ylva. Ylva vann.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} och {mot} slogs {orsak}. Ingen vann.",
+     "villkor": true,
+     "text": "Ask och Ylva slogs efter ett gräl. Ingen vann.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} och {mot} slogs {orsak}, men ingen av dem vann.",
+     "villkor": true,
+     "text": "Ask och Ylva slogs efter ett gräl, men ingen av dem vann.",
+     "fel": [],
+     "ny": true
+    }
+   ]
+  },
+  {
+   "mall": "l_larm",
+   "ny": true,
+   "fore": 0,
+   "efter": 7,
+   "varianter": [
+    {
+     "t": "{namn} ropade larm: {vadtext}. {N} hörde det.",
+     "villkor": true,
+     "text": "Ask ropade larm: det slåss vid elden. Fem hörde det.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} ropade att {vadtext}, och {n} hörde ropet.",
+     "villkor": true,
+     "text": "Ask ropade att det slåss vid elden, och fem hörde ropet.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "\"{Vadtext}!\" ropade {namn}. {N} hörde det.",
+     "villkor": true,
+     "text": "\"Det slåss vid elden!\" ropade Ask. Fem hörde det.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "Ropet från {namn} hördes av {n}: {vadtext}.",
+     "villkor": true,
+     "text": "Ropet från Ask hördes av fem: det slåss vid elden.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} ropade larm, och en hörde det: {vadtext}.",
+     "villkor": true,
+     "text": "Ask ropade larm, och en hörde det: det slåss vid elden.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} ropade falskt larm: {vadtext}. {N} hörde det.",
+     "villkor": true,
+     "text": "Ask ropade falskt larm: det slåss vid elden. Fem hörde det.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} ropade att {vadtext}, men det var inte sant. {N} hörde det.",
+     "villkor": true,
+     "text": "Ask ropade att det slåss vid elden, men det var inte sant. Fem hörde det.",
+     "fel": [],
+     "ny": true
+    }
+   ]
+  },
+  {
+   "mall": "l_magsjuk",
+   "ny": true,
+   "fore": 0,
+   "efter": 5,
+   "varianter": [
+    {
+     "t": "{namn} blev magsjuk av skämd mat.",
+     "villkor": false,
+     "text": "Ask blev magsjuk av skämd mat.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "Maten {namn} åt var skämd, och nu har {hen} ont i magen.",
+     "villkor": false,
+     "text": "Maten Ask åt var skämd, och nu har han ont i magen.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} åt något som stod för länge och blev sjuk i magen.",
+     "villkor": false,
+     "text": "Ask åt något som stod för länge och blev sjuk i magen.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "Skämd mat gjorde {namn} magsjuk.",
+     "villkor": false,
+     "text": "Skämd mat gjorde Ask magsjuk.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} ligger med ont i magen. Maten var skämd.",
+     "villkor": false,
+     "text": "Ask ligger med ont i magen. Maten var skämd.",
+     "fel": [],
+     "ny": true
+    }
+   ]
+  },
+  {
+   "mall": "l_raMat",
+   "ny": true,
+   "fore": 0,
+   "efter": 4,
+   "varianter": [
+    {
+     "t": "{namn} blev matförgiftad av rått kött eller rå fisk.",
+     "villkor": false,
+     "text": "Ask blev matförgiftad av rått kött eller rå fisk.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} åt {vad} och blev sjuk av det.",
+     "villkor": false,
+     "text": "Ask åt rå fisk och blev sjuk av det.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "Det var {vad} som gjorde {namn} sjuk.",
+     "villkor": false,
+     "text": "Det var rå fisk som gjorde Ask sjuk.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} borde ha grillat maten. Nu är {hen} matförgiftad.",
+     "villkor": false,
+     "text": "Ask borde ha grillat maten. Nu är han matförgiftad.",
+     "fel": [],
+     "ny": true
+    }
+   ]
+  },
+  {
+   "mall": "l_svartSjuk",
+   "ny": true,
+   "fore": 0,
+   "efter": 5,
+   "varianter": [
+    {
+     "t": "{namn} blev svårt sjuk.",
+     "villkor": false,
+     "text": "Ask blev svårt sjuk.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "En svår sjukdom har drabbat {namn}.",
+     "villkor": false,
+     "text": "En svår sjukdom har drabbat Ask.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} ligger med feber och orkar inte resa sig.",
+     "villkor": false,
+     "text": "Ask ligger med feber och orkar inte resa sig.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} är mycket sjuk, och de andra oroar sig.",
+     "villkor": false,
+     "text": "Ask är mycket sjuk, och de andra oroar sig.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "Kylan tog {namn}, som blev svårt sjuk.",
+     "villkor": true,
+     "text": "Kylan tog Ask, som blev svårt sjuk.",
+     "fel": [],
+     "ny": true
+    }
+   ]
+  },
+  {
+   "mall": "l_lart",
+   "ny": true,
+   "fore": 0,
+   "efter": 6,
+   "varianter": [
+    {
+     "t": "{namn} har lärt sig av {av} att {lara}.",
+     "villkor": false,
+     "text": "Ask har lärt sig av Ylva att leda byn.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{av} har lärt {namn} att {lara}.",
+     "villkor": false,
+     "text": "Ylva har lärt Ask att leda byn.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "Nu kan {namn} också {lara}. {av} visade {honom} hur.",
+     "villkor": false,
+     "text": "Nu kan Ask också leda byn. Ylva visade honom hur.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} såg på när {av} arbetade, och nu kan {hen} själv {lara}.",
+     "villkor": false,
+     "text": "Ask såg på när Ylva arbetade, och nu kan han själv leda byn.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "Det tog sin tid, men nu kan {namn} {lara}. Det var {av} som lärde {honom}.",
+     "villkor": false,
+     "text": "Det tog sin tid, men nu kan Ask leda byn. Det var Ylva som lärde honom.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "Barnet {namn} har lärt sig av {av} att {lara}.",
+     "villkor": true,
+     "text": "Barnet Ask har lärt sig av Ylva att leda byn.",
+     "fel": [],
+     "ny": true
+    }
+   ]
+  },
+  {
+   "mall": "l_rykte",
+   "ny": true,
+   "fore": 0,
+   "efter": 6,
+   "varianter": [
+    {
+     "t": "Det går rykten om att {namn} är {rykte}.",
+     "villkor": false,
+     "text": "Det går rykten om att Ask är en lögnare.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "Folk viskar om att {namn} är {rykte}.",
+     "villkor": false,
+     "text": "Folk viskar om att Ask är en lögnare.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "Man säger i byn att {namn} är {rykte}.",
+     "villkor": false,
+     "text": "Man säger i byn att Ask är en lögnare.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "Ryktet går: {namn} är {rykte}.",
+     "villkor": false,
+     "text": "Ryktet går: Ask är en lögnare.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "Det har börjat sägas att {namn} är {rykte}, och det sägs med respekt.",
+     "villkor": true,
+     "text": "Det har börjat sägas att Ask är en lögnare, och det sägs med respekt.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "Bakom ryggen på {namn} säger man att {hen} är {rykte}.",
+     "villkor": true,
+     "text": "Bakom ryggen på Ask säger man att han är en lögnare.",
+     "fel": [],
+     "ny": true
+    }
+   ]
+  },
+  {
+   "mall": "l_flinta",
+   "ny": true,
+   "fore": 0,
+   "efter": 5,
+   "varianter": [
+    {
+     "t": "{namn} hittade en flintsten {plats}.",
+     "villkor": true,
+     "text": "Ask hittade en flintsten vid stenarna.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "Bland stenarna låg en flinta, och {namn} tog den.",
+     "villkor": true,
+     "text": "Bland stenarna låg en flinta, och Ask tog den.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} fick syn på en flintsten i sanden vid stranden.",
+     "villkor": true,
+     "text": "Ask fick syn på en flintsten i sanden vid stranden.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "{namn} hittade en flintsten.",
+     "villkor": true,
+     "text": "Ask hittade en flintsten.",
+     "fel": [],
+     "ny": true
+    },
+    {
+     "t": "En flintsten! {namn} hittade den {plats}.",
+     "villkor": true,
+     "text": "En flintsten! Ask hittade den vid stenarna.",
+     "fel": [],
+     "ny": true
+    }
+   ]
+  }
+ ],
+ "falt": {
+  "relation": "relationText (berattelser.ts:1753): f = { namn, om, hen: hen(p), ung: ageOf(p) < ALDER.vuxen, gammal: ageOf(p) >= ALDER.gammal, omUng: ageOf(q) < ALDER.vuxen, glad: moodOf(p, s.now) >= BERATT.glad, talks: r.talks ?? 0, mycketPrat: (r.talks ?? 0) >= 20, sida: !!r.minns?.sida, gral: !!r.minns?.gral, slag: !!r.minns?.slag, barn: barn tillsammans, kin: isKin(p, q) }. t är fortfarande 0, så texten byter inte när man tittar igen.",
+  "prat": "pratText (berattelser.ts:1741): f får också arstid (ARSTIDER[kalender(s).ai]), natt (!isLight(x.t)), kallt (temperature(s) < 0), regn, inne (den som talade står i ett hus), yrke (t.tag, med gemen, utom Dagdrivare) och barn (t har barn under vuxen ålder). Vädret och tiden kommer från när samtalet hölls; gemener i arstid (\"hösten\").",
+  "dod": "die (liv.ts:103): kronikaBer får nar = vad personen gjorde, när orsak är olycka: `när ${hen} ${NAR_AKT[p.task.act]}`, om akten finns i NAR_AKT; sorjer = partnern om den lever, annars bästa vännen (p.bast), annars en förälder i livet, annars inget.",
+  "skal": "gebinamn (berattelser.ts:1305): skalTill ger { skal, tillst }; f.tillstand = INTRYCK[k].som ?? INTRYCK[k].namn, f.tillst, f.som = !!INTRYCK[k].som.",
+  "logg": "De nya loggmallarna: berattelse(s, mall, nyckel, f) med f som raden säger. Hjälpen loggBer(s, mall, nyckel, f, kind, ids) gör som kronikaBer: lägger till arstid, kallt, sno, regn och natt och skriver raden med log()."
+ },
+ "lara": {
+  "korg": "fläta korgar",
+  "yxa": "göra flintyxor",
+  "fiskespjut": "tälja träspjut",
+  "rep": "tvinna rep",
+  "flintspjut": "göra flintspjut",
+  "metspo": "göra metspön",
+  "kniv": "slå flintknivar",
+  "timmervagg": "bygga timmerhus",
+  "slaktbank": "bygga en slaktbänk",
+  "flatarbank": "bygga en slöjdbänk",
+  "halmbadd": "göra halmbäddar",
+  "bord": "bygga bord",
+  "hylla": "göra hyllor och kistor",
+  "skinnfall": "sy skinnfällar",
+  "skinndorr": "hänga dörrar av skinn",
+  "tradorr": "göra trädörrar",
+  "bensyl": "slipa bensylar",
+  "skinnklader": "sy kläder av skinn",
+  "vattensack": "sy vattensäckar",
+  "balte": "fläta bälten",
+  "mal": "binda mål",
+  "boll": "sy bollar",
+  "slagtra": "tälja slagträn",
+  "scen": "bygga en scen",
+  "trumma": "göra trummor",
+  "benflojt": "skära benflöjter",
+  "lyra": "göra lyror",
+  "kruka": "forma lerkrukor",
+  "bonad": "göra bonader",
+  "vaggbrade": "snida väggbräden",
+  "benspade": "göra benspadar",
+  "latrin": "gräva en latrin",
+  "grill": "bygga en grillställning",
+  "tork": "bygga en torkställning",
+  "odling": "odla",
+  "ledarskap": "leda byn"
+ },
+ "narAkt": {
+  "falla": "fällde ett träd",
+  "hugga": "högg ved",
+  "klyva": "klöv virke",
+  "jakt": "var ute på jakt",
+  "fiske": "fiskade",
+  "ved": "samlade grenar",
+  "samla": "samlade bär",
+  "bygga": "byggde",
+  "station": "byggde",
+  "dorr": "hängde en dörr",
+  "odla": "arbetade på fältet",
+  "bada": "badade i sjön",
+  "vatten": "hämtade vatten",
+  "dricka": "drack vid vattnet",
+  "slakta": "slaktade",
+  "rensa": "rensade fisk",
+  "elda": "lade ved på elden",
+  "tanda": "försökte tända elden",
+  "flyttaeld": "flyttade elden",
+  "kol": "hämtade kol ur elden",
+  "promenad": "var ute och gick",
+  "strand": "satt vid stranden",
+  "bara": "bar in saker till lagret",
+  "vakt": "höll vakt",
+  "leka": "lekte",
+  "sport": "spelade",
+  "yxa": "gjorde en yxa",
+  "kniv": "slog flinta",
+  "spjut": "täljde ett spjut",
+  "grilla": "grillade mat",
+  "sova": "sov"
+ },
+ "mallar": {
+  "l_byte": {
+   "fil": "src/sim/byte.ts:142",
+   "nu": "${m.namn} och ${g.namn} bytte: ${varorText(fatt)} mot ${varorText(betal)}.",
+   "falt": "{namn} = m, {med} = g, {fatt} = varorText(fatt) (det m fick), {betal} = varorText(betal), desperat"
+  },
+  "l_gava": {
+   "fil": "src/sim/byte.ts:154",
+   "nu": "${g.namn} gav ${varorText(varor)} till ${m.namn}.",
+   "falt": "{namn} = g, {om} = m, {varor}, fara, barn (m är ett barn)"
+  },
+  "l_vanner": {
+   "fil": "src/sim/samtal.ts:217",
+   "nu": "${a.name} och ${b.name} har blivit nära vänner.",
+   "falt": "{namn} = a, {med} = b, natt, arstid"
+  },
+  "l_bastaVanner": {
+   "fil": "src/sim/relationer.ts:113",
+   "nu": "${p.name} och ${q.name} har blivit bästa vänner.",
+   "falt": "{namn} = p, {med} = q"
+  },
+  "l_ovanner": {
+   "fil": "src/sim/samtal.ts:218",
+   "nu": "${a.name} och ${b.name} har blivit ovänner.",
+   "falt": "{namn} = a, {med} = b"
+  },
+  "l_rivaler": {
+   "fil": "src/sim/relationer.ts:155",
+   "nu": "${p.name} och ${q.name} har blivit rivaler.",
+   "falt": "{namn} = p, {med} = q"
+  },
+  "l_arke": {
+   "fil": "src/sim/relationer.ts:127",
+   "nu": "${p.name} ser nu ${worst.name} som sin ärkefiende.",
+   "falt": "{namn} = p, {om} = worst, {hen}"
+  },
+  "l_slagsmal": {
+   "fil": "src/sim/strid.ts:892",
+   "nu": "${namn(0)} och ${namn(1)} slogs (${orsak}). ${vinnare} vann.",
+   "falt": "{namn} = sida 0, {mot} = sida 1, {orsak} (efter ett gräl …), {vinnare} (namnet, tomt när ingen vann), ingen, natt"
+  },
+  "l_larm": {
+   "fil": "src/sim/rykten.ts:527",
+   "nu": "${ropare} ropade larm (${vad}). ${n} hörde det.",
+   "falt": "{namn} = ropare, {vad} (slagsmål, vargar, eld …), {vadtext} (ur LARM_VAD), {n} = talOrd(antal), falskt, ensam (bara en hörde)"
+  },
+  "l_magsjuk": {
+   "fil": "src/sim/behov.ts:99",
+   "nu": "${p.name} blev magsjuk av skämd mat.",
+   "falt": "{namn}, {hen}"
+  },
+  "l_raMat": {
+   "fil": "src/sim/matlagning.ts:77",
+   "nu": "${p.name} blev matförgiftad av rått kött eller rå fisk.",
+   "falt": "{namn}, {hen}, {vad} = rått kött eller rå fisk (det som åts, om det är känt), fisk"
+  },
+  "l_svartSjuk": {
+   "fil": "src/sim/steg.ts:383",
+   "nu": "${p.name} blev svårt sjuk.",
+   "falt": "{namn}, {hen}, kallt, istid"
+  },
+  "l_lart": {
+   "fil": "src/sim/teknik.ts:201 och minne.ts:336",
+   "nu": "${p.name} har lärt sig av ${from.name} att göra ${t.namn.toLowerCase()}.",
+   "falt": "{namn} = den som lärt sig, {av} = läraren, {lara} = LARA[teknik] eller larAv (minne.ts), {hen}, {honom}, ung"
+  },
+  "l_rykte": {
+   "fil": "src/sim/rykten.ts:280",
+   "nu": "Det går rykten om att ${e.namn} är ${d.namn}.",
+   "falt": "{namn} = den ryktet gäller, {rykte} = INTRYCK.som ?? namn, heder (tecken > 0)"
+  },
+  "l_flinta": {
+   "fil": "src/sim/eld.ts:363",
+   "nu": "${p.name} hittade en flintsten vid stenarna.",
+   "falt": "{namn}, {plats} = vid stenarna / i sanden vid stranden / tomt"
+  },
+  "l_fodd": {
+   "fil": "src/sim/liv.ts:127",
+   "nu": "${ch.name} föddes, ${dotter|son} till ${mor} och ${far}.",
+   "falt": "Samma som k_fodd (kronikaBer), som redan har 11 varianter: loggraden kan skrivas med den texten som krönikan får, så att mallen k_fodd används för båda"
+  }
+ },
+ "varianter": {
+  "r_nara": {
+   "varfor": "20 056 gånger, 12 varianter.",
+   "falt": "relation"
+  },
+  "r_van": {
+   "varfor": "4 414 gånger, 12 varianter.",
+   "falt": "relation"
+  },
+  "r_bekant": {
+   "varfor": "12 702 gånger, 12 varianter.",
+   "falt": "relation"
+  },
+  "r_ogillar": {
+   "varfor": "5 950 gånger, 12 varianter; \"jobbig\" är ett nytt ord.",
+   "falt": "relation",
+   "ta_bort": [
+    "{namn} tycker att {om} är jobbig."
+   ]
+  },
+  "r_ovan": {
+   "varfor": "6 388 gånger, 12 varianter.",
+   "falt": "relation"
+  },
+  "p_vardag": {
+   "varfor": "623 gånger, 8 varianter.",
+   "falt": "prat"
+  },
+  "besk_drag2": {
+   "varfor": "5 153 gånger, 10 varianter (den vanligaste mallen i beskrivningen)."
+  },
+  "k_dog": {
+   "varfor": "46 gånger, 12 varianter; säger inte vad som hände eller vem som sörjer.",
+   "falt": "dod"
+  },
+  "hedersnamn": {
+   "varfor": "Rättelse 1c: de 10 som finns får om: f => !f.tillst; de här är för tillståndet.",
+   "falt": "skal"
+  },
+  "oknamn": {
+   "varfor": "Rättelse 1c, som hedersnamnen.",
+   "falt": "skal"
+  }
+ }
+}
