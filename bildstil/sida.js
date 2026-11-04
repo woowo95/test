@@ -1004,6 +1004,12 @@ const BESLUT = {
   g_horn: { val: 1, text: 'Ormen. Ring med blad och Dubbel ögla sparas (i gui.json) om du ångrar dig. Byggs in i steg 5.3.1.4.' },
   a_tornado: { val: 1, text: 'Byggs in i steg 5.1.9.1 (tornadon på kartan).' }, a_brand: { val: 1, text: 'Byggs in i steg 5.1.9.1 (rutor som brinner på kartan).' },
   a_rorelser: { val: 1, text: 'Byggs in i steg 5.1.9.4 (arbetena) och 5.1.9.5 (striden).' }, a_effekter: { val: 1, text: 'Byggs in i steg 5.1.9.1 (elden och röken) och 5.1.9.2 (vågorna och stranden).' },
+  f6_grans: { val: 1, steg: '6.2.1.3' }, f6_talg: { val: 3, steg: '6.3.2.2' }, f6_agg: { val: 3, steg: '6.5.1.3' },
+  f6_radjursskinn: { val: 1, steg: '6.5.1.2' }, f6_bjornskinn: { val: 1, steg: '6.5.3.3' },
+  f6_naver: { val: 1, text: 'Byggs in i steg 6.3.1.3 efter din ritning: tre remsor utan mörk kontur (den lösa mörka punkten till höger tas bort).' },
+  f6_ljus: { val: 1, text: 'Version 1 och 2 används båda, som variationer (ljuset på stenen och i lerskålen). Byggs in i steg 6.3.2.5.' },
+  f6_buske: { val: 1, text: 'Alla tre används, som variationer (rund, gles och låg). Byggs in i steg 6.4.1.3.' },
+  f6_styckdel: { val: 1, text: 'Version 1 och 2 används båda, som variationer (låret och högen), i djurets färger. Byggs in i steg 6.5.1.1.' },
   v_framsteg: { val: 1, steg: '5.3.2.2' }, v_ring: { val: 1, steg: '5.3.2.2' }, v_tart: { val: 1, steg: '5.3.2.2' },
 };
 // räknas när valdelen ritas, så att korten från filerna efter denna (mark.js, djur.js, gui.js) också kommer med
