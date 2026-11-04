@@ -3,19 +3,19 @@ import { BYTE, SEC, byId, clamp, filtMot } from '../sim';
 import { gaster } from './gaster';
 import { iconCanvas } from '../ikoner';
 import { s, ui } from './lage';
-import { Ikoner, TS, peopleG, pileLayer, world } from './scen';
+import { Ikoner, TS, lagerEfter, peopleG, pileLayer } from './scen';
 import { posOf } from './manniskor';
 import { valdFilt } from './flikar/filt';
 
 // bytena på kartan (steg 4.4.1.1): filtarna med det som byts, och saken som går från hand till hand i ett litet byte eller en gåva
 const filtLayer = new PIXI.Container(), handLayer = new PIXI.Container();
-world.addChildAt(filtLayer, world.getChildIndex(pileLayer) + 1);
-world.addChildAt(handLayer, world.getChildIndex(peopleG) + 1);
+lagerEfter(filtLayer, pileLayer);
+lagerEfter(handLayer, peopleG);
 const filtIkoner = new Ikoner(filtLayer), handIkoner = new Ikoner(handLayer);
 // en markerad filt får en vit kant, som en vald person en vit ring (steg 4.5.7.2); två filtar mitt emot varandra visas
 // tillsammans (flikar/filt.ts), så båda får kanten
 const kantG = new PIXI.Graphics();
-world.addChildAt(kantG, world.getChildIndex(filtLayer) + 1);
+lagerEfter(kantG, filtLayer);
 // gästerna (handlaren och rövarna, gaster.ts) ritas som byborna, en cirkel med skugga och mörk kant (Björn efter v245, steg
 // 4.5.2 och 4.5.4.12), i sin egen färg. Den valda får en vit ring som en vald bybo
 const framlingG = new PIXI.Graphics();

@@ -23,12 +23,16 @@ export const overG = new PIXI.Graphics(); // det som ritas ovanpå stackarna och
 export const peopleG = new PIXI.Graphics();
 export const bubbleG = new PIXI.Graphics();
 export const markLayer = new PIXI.Container(); // symboler över huvudet: vad var och en håller på med
-export const nightG = new PIXI.Graphics();
-export const glowG = new PIXI.Graphics();
-glowG.blendMode = PIXI.BLEND_MODES.ADD;
 export const filterG = new PIXI.Graphics(); // värmekartan när ett filter är på
 export const labels = new PIXI.Container();
-world.addChild(terrainG, plantG, flackG, djurLayer, husLayer, structG, pileLayer, overG, djurFx, peopleG, nightG, glowG, filterG, bubbleG, markLayer, djurMarkLayer, labels);
+// det som blir mörkt på natten (steg 5.1.1.4, ui/natt.ts): marken, naturen, husen, sakerna och folket; symbolerna, namnen
+// och värmekartan ovanpå syns som på dagen. Den som lägger till ett lager bredvid ett av dem lägger det i samma behållare
+// (lagerEfter)
+export const mork = new PIXI.Container();
+mork.addChild(terrainG, plantG, flackG, djurLayer, husLayer, structG, pileLayer, overG, djurFx, peopleG);
+world.addChild(mork, filterG, bubbleG, markLayer, djurMarkLayer, labels);
+// lägg ett lager direkt ovanför ett annat, i samma behållare
+export const lagerEfter = (nytt: PIXI.DisplayObject, fore: PIXI.DisplayObject) => fore.parent!.addChildAt(nytt, fore.parent!.getChildIndex(fore) + 1);
 app.stage.addChild(world);
 
 // ikoner som sprites i ett lager. Varje bildruta börjar från första spriten; de som blir över göms

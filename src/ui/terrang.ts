@@ -1,7 +1,8 @@
 import * as PIXI from 'pixi.js';
 import { BRAND, DAY, H, HOUR, T, W, ageIndex, emberOn, fireHeat, eldXY, eldarOf, getMap, groundOf, isCm, lightLevel } from '../sim';
 import { s } from './lage';
-import { TS, glowG, nightG, terrainG, world } from './scen';
+import { TS, lagerEfter, mork, terrainG, world } from './scen';
+import { stallNatt } from './natt';
 import { PAL as IKON_PAL, PIX } from '../ikoner';
 
 // marken: vatten, sand, gräs som trampas ner till stigar, skog som växer, och natten med eldens sken
@@ -34,7 +35,7 @@ function ritaIs(is: number) {
   if (nyckel === isNyckel) return;
   isNyckel = nyckel; isSprite.visible = !!is;
   if (!is) return;
-  if (!isSprite.parent) world.addChildAt(isSprite, world.getChildIndex(terrainG) + 1);
+  if (!isSprite.parent) lagerEfter(isSprite, terrainG);
   const m = getMap(s.seed), c = document.createElement('canvas'); c.width = W * TS; c.height = H * TS;
   const g = c.getContext('2d')!, img = g.createImageData(c.width, c.height), d = img.data;
   for (let ty = 0; ty < H; ty++) for (let tx = 0; tx < W; tx++) {
@@ -141,17 +142,14 @@ function ritaLera(x: number, y: number, a: number, b: number) {
   }
 }
 // mörkret och eldens sken
+// (steg 5.1.1.4): paletten ett steg mörkare i skymningen och två på natten, med raster, och ljuset runt varje eld (ui/natt.ts)
 export function drawNight(t: number) {
-  const L = lightLevel(t);
-  nightG.clear(); glowG.clear();
-  if (L >= 1) return;
-  const d = 1 - L;
-  nightG.beginFill(0x0a1430, 0.58 * d).drawRect(0, 0, W * TS, H * TS).endFill();
-  for (const e of eldarOf(s)) { // varje lägereld lyser (steg 4.5.6.8)
+  const d = 1 - lightLevel(t), eldar: { x: number; y: number; r: number; k: number }[] = [];
+  if (d > 0) for (const e of eldarOf(s)) { // varje lägereld lyser (steg 4.5.6.8)
     const I = fireHeat(s, e);
     if (!(I > 0 || emberOn(s, e))) continue;
-    const f = eldXY(s, e), cx = f.x * TS + TS / 2, cy = f.y * TS + TS / 2;
-    const fl = 1 + Math.sin(t / 160) * 0.05, k = I > 0 ? 0.45 + 0.55 * I : 0.12;
-    for (const [r, a] of [[TS * 6, 0.035], [TS * 4, 0.06], [TS * 2.4, 0.09], [TS * 1.1, 0.13]]) glowG.beginFill(0xff8a3a, a * d * (I > 0 ? 1 : 0.5)).drawCircle(cx, cy, r * fl * k).endFill();
+    const f = eldXY(s, e), k = I > 0 ? 0.45 + 0.55 * I : 0.12;
+    eldar.push({ x: f.x * TS + TS / 2, y: f.y * TS + TS / 2, r: TS * 6 * k, k: I > 0 ? 1 : 0.5 });
   }
+  stallNatt(mork, world, 2 * d, eldar);
 }

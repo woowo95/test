@@ -1,7 +1,8 @@
 // Scenarier. Kontroller av hela spelet: gränssnittet läser utan att ändra, ikoner, vakter och det som aldrig händer.
 import { Person, createState, step, living, serializeParts, serialize, isLight, ageOf, TEKNIK, knows, housesOf, FYND, FYND_IDS, GRUPPER, DJUR, BEAT, tingOf, FN, fnId, SEC, MATERIAL, ACTS, isSick, SAKER, slagIkon } from '../../sim';
 import * as SIM from '../../sim';
-import { hasIcon } from '../../ikoner';
+import { hasIcon, PAL } from '../../ikoner';
+import { FARGER, MORKARE, PALETT, iPaletten, rasterSteg } from '../../palett';
 import { START, STEG_TIM, korBy } from '../kor';
 import { seedAv } from '../pool';
 import { Koll, kor, klockan, uiLas, SCENARIER, grenarUte, barGrenar } from './hjalp';
@@ -62,6 +63,25 @@ SCENARIER.ikoner = {
     });
     del.push(['handlingar i personens tid', utan]);
     return del.map(([namn, m]) => [m.length ? `${namn} utan symbol: ${m.join(', ')}` : `alla ${namn} har en symbol`, !m.length] as Koll);
+  },
+};
+
+// steg 5.1.1.3: varje färg i spelets pixelbilder (PAL i ikoner.ts) är en av paletten 32 (palett.ts); en halvgenomskinlig färg
+// (rgba) räknas efter sin färg utan genomskinligheten
+SCENARIER.palett = {
+  text: 'Alla pixelbilder har bara färger ur paletten (32 färger i åtta ramper), och natten är paletten ett och två steg mörkare',
+  kor: () => {
+    const utanfor: string[] = [];
+    const rgb = (f: string) => { const m = f.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/); return m ? '#' + m.slice(1, 4).map(v => (+v).toString(16).padStart(2, '0')).join('') : f; };
+    for (const [k, p] of Object.entries(PAL)) for (const [c, f] of Object.entries(p)) if (!iPaletten(rgb(f))) utanfor.push(`${k}.${c}=${f}`);
+    const morkt = MORKARE.every(m => m.length === 32 && m.every(iPaletten));
+    const raster = [0, 0.5, 1, 1.5, 2].every(m => [0, 1, 2, 3].every(x => iPaletten(rasterSteg(FARGER[13], m, x, x * 3))));
+    return [
+      [utanfor.length ? `${utanfor.length} färger utanför paletten: ${utanfor.slice(0, 12).join(', ')}` : `alla ${Object.keys(PAL).length} bilder har bara färger ur paletten`, !utanfor.length],
+      ['paletten har 32 färger i åtta ramper', FARGER.length === 32 && PALETT.length === 8],
+      ['skymningen och natten har bara färger ur paletten, också i rastret', morkt && raster],
+      ['natten är mörkare än dagen', MORKARE[2].every((h, i) => h !== FARGER[i] || i < 2)],
+    ];
   },
 };
 
