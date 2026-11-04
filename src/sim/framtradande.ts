@@ -292,7 +292,7 @@ export function upptradaKlar(s: State, p: Person, t: Task) {
 // framträdandet sparas (de senaste FRAM.sparas), och raden i loggen och notisen får dess nummer (steg 5.4.7.1)
 function framMinne(s: State, m: FramMinne, text: string) {
   log(s, text, 'world', [m.p]).fram = m.nr;
-  notis(s, 'fram', text, [m.p], undefined, m.nr);
+  notis(s, 'fram', text, [m.p], undefined, { fram: m.nr });
   (s.framtradanden ??= []).push(m);
   if (s.framtradanden.length > FRAM.sparas) s.framtradanden.splice(0, s.framtradanden.length - FRAM.sparas);
 }

@@ -28,6 +28,7 @@ export const NOTISER: Record<string, { slag: NotisSlag; rubrik: string; vikt: nu
   ledare: { slag: 'folk', rubrik: 'Ny ledare', vikt: 3 },
   par: { slag: 'folk', rubrik: 'Ett nytt par', vikt: 1 },
   fram: { slag: 'folk', rubrik: 'Ett framträdande', vikt: 1 },
+  match: { slag: 'folk', rubrik: 'En match', vikt: 1 },
   teknik: { slag: 'framsteg', rubrik: 'Ny kunskap', vikt: 2 },
   mastare: { slag: 'framsteg', rubrik: 'Byns första mästare', vikt: 2 },
   hus: { slag: 'framsteg', rubrik: 'Ett nytt hus', vikt: 2 },
@@ -45,10 +46,11 @@ export interface Notis {
   rader: string[]; n: number; // raderna (högst NOTIS.rader, de senaste) och hur många det blev
   ids: number[]; plats?: { x: number; y: number }; last?: boolean; // vem den gäller, var, och om spelaren läst den
   fram?: number[]; // framträdandets nummer för varje rad (steg 5.4.7.1), 0 = inget
+  match?: number[]; // matchens nummer för varje rad (steg 5.4.8.1), 0 = ingen
 }
 export interface Notiser { nr: number; lista: Notis[] }
 
-export function notis(s: State, id: string, text: string, ids: number[] = [], plats?: { x: number; y: number }, fram?: number) {
+export function notis(s: State, id: string, text: string, ids: number[] = [], plats?: { x: number; y: number }, ref: { fram?: number; match?: number } = {}) { // ref: framträdandet eller matchen raden pekar på
   if (!NOTISER[id]) throw new Error(`okänd notis: ${id}`);
   const N = (s.notiser ??= { nr: 0, lista: [] }), ar = kalender(s, s.now).ar;
   let n = N.lista.find(x => x.id === id && x.ar === ar);
@@ -58,8 +60,8 @@ export function notis(s: State, id: string, text: string, ids: number[] = [], pl
     if (N.lista.length > NOTIS.max) { const i = N.lista.findIndex(x => x.last); N.lista.splice(i < 0 ? 0 : i, 1); }
   }
   n.t = s.now; n.n++; n.last = undefined;
-  if (fram || n.fram) { n.fram ??= n.rader.map(() => 0); n.fram.push(fram ?? 0); }
-  n.rader.push(text); if (n.rader.length > NOTIS.rader) { n.rader.shift(); n.fram?.shift(); }
+  for (const k of ['fram', 'match'] as const) if (ref[k] || n[k]) { const v = (n[k] ??= n.rader.map(() => 0)); v.push(ref[k] ?? 0); }
+  n.rader.push(text); if (n.rader.length > NOTIS.rader) { n.rader.shift(); n.fram?.shift(); n.match?.shift(); }
   for (const i of ids) if (!n.ids.includes(i)) n.ids.push(i);
   if (plats) n.plats = plats;
   return n;

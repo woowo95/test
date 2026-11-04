@@ -441,3 +441,28 @@ SCENARIER.framrapport = {
     ];
   },
 };
+
+SCENARIER.matchrapport = {
+  text: 'Matchens sammanställning (steg 5.4.8.1): när matchen avgörs sparas sporten, hur länge den varade, spelarna med färdigheten i sportens färdighet, vem som vann och glädjen, och raden i Händelser och notisen pekar dit. Kommer det för få säger sammanställningen att det blev ingen match',
+  kor: () => {
+    const s = rikDag(3, { rep: 4 }), v = vuxna(s), a = v[0]!, b = v[1]!;
+    a.skill.traff = 18; b.skill.traff = 2;
+    SIM.newTing(s, 'mal', 1, a.id);
+    match(s, 'kast', [a, b]); kor(s, 2);
+    const m = s.matcher?.at(-1), rad = s.log.find(l => l.match !== undefined && l.match === m?.nr);
+    const n = s.notiser?.lista.find(x => x.id === 'match'), nIdx = n?.match?.indexOf(m?.nr ?? -1) ?? -1;
+    const fa = m?.spelare.find(x => x.id === a.id);
+    // det kommer för få: ensam på lekplatsen
+    const e = rikDag(5), ep = vuxna(e)[0]!;
+    match(e, 'dragkamp', [ep]);
+    for (const q of SIM.living(e)) if (q !== ep) q.task = { act: 'sova', phase: 'do', tx: q.x, ty: q.y, until: e.now + 3 * SIM.HOUR, carry: 0, dark: true };
+    kor(e, 1.5);
+    const im = e.matcher?.at(-1), ilog = e.log.find(l => l.match === im?.nr);
+    return [
+      [`minnet nr ${m?.nr}: ${m?.k}, ${m ? Math.round((m.slut - m.t) / SIM.MIN) : 0} minuter, ${m?.spelare.map(x => `${x.namn} ${x.f}`).join(', ')}, vann ${m?.vnamn}, glädje ${m?.glad}`, !!m && m.k === 'kast' && m.spelare.length === 2 && fa?.f === 18 && !!m.vnamn && m.slut > m.t && m.glad > 0],
+      [`raden i Händelser pekar på matchen: ${rad?.text ?? 'ingen'}`, !!rad],
+      [`notisen (Folket) pekar på den på rad ${nIdx + 1}`, !!n && nIdx >= 0 && n.match!.length === n.rader.length],
+      [`för få: ${ilog?.text ?? 'ingen rad'}`, !!im?.installd && !im.vinnare && im.spelare.length === 1 && !!ilog],
+    ];
+  },
+};

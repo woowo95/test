@@ -8,14 +8,14 @@ import { ritaOm, s } from '../lage';
 import type { Flik } from '../panel';
 import { kartminneHtml } from '../kartminne';
 
-interface Rad { t: number; text: string; kind?: LogEntry['kind']; ids: number[]; byte?: LogEntry['byte']; fram?: number } // byte och fram ger knappen till redogörelsen
+interface Rad { t: number; text: string; kind?: LogEntry['kind']; ids: number[]; byte?: LogEntry['byte']; fram?: number; match?: number } // byte och fram ger knappen till redogörelsen
 // var en person står med i en krönikerad: krönikan sparar bara texten, så personen hittas på namnet
 function iText(text: string, folk: Person[]) {
   return folk.filter(p => { const i = text.indexOf(p.name), e = text[i + p.name.length]; return i >= 0 && !/\p{L}/u.test(text[i - 1] ?? '') && (!e || !/\p{L}/u.test(e) || e === 's'); }).map(p => p.id);
 }
 const VISNING: Record<string, { namn: string; title: string; rader(): Rad[] }> = {
   stort: { namn: 'Stort', title: 'Krönikan: det viktiga som hänt sedan byns början', rader: () => (s.hist?.kronika ?? []).map(([t, text]) => ({ t, text, ids: iText(text, s.people) })) },
-  allt: { namn: 'Allt', title: 'Allt som hänt i byn den senaste tiden (de senaste 400 raderna)', rader: () => s.log.map(l => ({ t: l.t, text: l.text, kind: l.kind, ids: l.ids, byte: l.byte, fram: l.fram })) },
+  allt: { namn: 'Allt', title: 'Allt som hänt i byn den senaste tiden (de senaste 400 raderna)', rader: () => s.log.map(l => ({ t: l.t, text: l.text, kind: l.kind, ids: l.ids, byte: l.byte, fram: l.fram, match: l.match })) },
   kartan: { namn: 'Kartan', title: 'Kartan år för år: skogen, stigarna och husen (steg 5.4.5.2)', rader: () => [] },
 };
 export const val: { visning: string; ar?: number; person?: number } = { visning: 'stort' }; // det som visas (exporterat för scenariot kronikalista)
@@ -43,7 +43,7 @@ export const kronika: Flik = {
       const a = ar(r.t);
       if (a !== forra) { html += `${forra === undefined ? '' : '</ol>'}<h4 class="kar">År ${a}</h4><ol class="logg">`; forra = a; }
       const k = kalender(s, r.t);
-      html += `<li${r.kind ? ` class="k-${r.kind}"` : ''}><span class="when">${r.kind ? clockTxt(r.t) : AGES[k.ai]}</span>${linkify({ t: r.t, text: r.text, kind: r.kind ?? 'world', ids: r.ids, byte: r.byte, fram: r.fram })}</li>`;
+      html += `<li${r.kind ? ` class="k-${r.kind}"` : ''}><span class="when">${r.kind ? clockTxt(r.t) : AGES[k.ai]}</span>${linkify({ t: r.t, text: r.text, kind: r.kind ?? 'world', ids: r.ids, byte: r.byte, fram: r.fram, match: r.match })}</li>`;
     }
     return knappar + (html ? html + '</ol>' : '<p class="muted">Inget har hänt här än.</p>');
   },

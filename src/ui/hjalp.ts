@@ -146,9 +146,11 @@ export function linkify(l: LogEntry) {
   }
   let ut = '', fran = 0;
   for (const b of bitar.sort((a, b) => a.i - b.i)) { ut += esc(txt.slice(fran, b.i)) + pLink(b.p); fran = b.i + b.n; }
-  return ut + esc(txt.slice(fran)) + (l.byte ? byteKnapp(l.byte.nr) : '') + (l.fram ? framKnapp(l.fram) : '');
+  return ut + esc(txt.slice(fran)) + (l.byte ? byteKnapp(l.byte.nr) : '') + (l.fram ? framKnapp(l.fram) : '') + (l.match ? matchKnapp(l.match) : '');
 }
 // knappen som visar hela bytet (steg 4.5.4.17): i loggen och bland en persons byten. Trycket tas om hand i flikar/filt.ts
 // knappen som visar hela framträdandet (steg 5.4.7.1): i loggen och i notisen. Trycket tas om hand i flikar/fram.ts
+// knappen som visar hela matchen (steg 5.4.8.1), som framKnapp. Trycket tas om hand i flikar/match.ts
+export const matchKnapp = (nr: number) => ` <button type="button" class="byteknapp" data-match="${nr}" title="Visa hela matchen" aria-label="Visa hela matchen">${iconImg('boll', 14)}</button>`;
 export const framKnapp = (nr: number) => ` <button type="button" class="byteknapp" data-fram="${nr}" title="Visa hela framträdandet" aria-label="Visa hela framträdandet">${iconImg('scen', 14)}</button>`;
 export const byteKnapp = (nr: number) => ` <button type="button" class="byteknapp" data-byte="${nr}" title="Visa hela bytet" aria-label="Visa hela bytet">${iconImg('handslag', 14)}</button>`;
