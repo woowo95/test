@@ -88,13 +88,13 @@ export const FRAM = balans('framtradande', {
 });
 
 // framträdandet som pågår: formen, den som uppträder, när det började (task.ref) och slutar, publiken som varit där och texten
-export interface Fram { k: string; p: number; start: number; slut: number; publik: number[]; text: string; inst?: string; scen?: number; bud?: Bud; om?: number; ik?: IntryckTyp; betalt?: string } // betalt = saken ledaren betalade med (steg 4.3.2.4) // bud = budskapet, om = vem det handlar om (personen eller ledaren), ik = intrycket // inst = instrumentet, scen = stationen där det sker
+export interface Fram { k: string; p: number; start: number; slut: number; publik: number[]; text: string; amne?: string; inst?: string; scen?: number; bud?: Bud; om?: number; ik?: IntryckTyp; betalt?: string } // betalt = saken ledaren betalade med (steg 4.3.2.4) // bud = budskapet, om = vem det handlar om (personen eller ledaren), ik = intrycket // inst = instrumentet, scen = stationen där det sker
 export interface FramMinne { t: number; k: string; p: number; namn: string; text: string; n: number; q: number; inst?: string; bud?: Bud; betalt?: string
   // redogörelsen (steg 5.4.7.1), sparad när det händer: numret (raden i loggen och notisen pekar hit), publiken med vad var och
   // en tyckte om den som uppträdde före och efter (r0, r1) och om ledaren (l0, l1, efter en hyllning eller ett hån), glädjen
   // (tanken i humöret), de som fick höra ryktet, de som tron övertygade, ledaren (namnet när budskapet gällde ledaren) och
   // om ingen kom (inget)
-  nr?: number; publik?: FramLyss[]; glad?: number; rykte?: string[]; tro?: string[]; ledare?: string; om?: string; inget?: true }
+  nr?: number; amne?: string; publik?: FramLyss[]; glad?: number; rykte?: string[]; tro?: string[]; ledare?: string; om?: string; inget?: true }
 export interface FramLyss { id: number; namn: string; r0: number; r1: number; l0?: number; l1?: number }
 
 // kvällen: tolv timmar bakåt, så att kvällen och natten efter hör till samma dygn
@@ -226,8 +226,9 @@ export function framVal(s: State, p: Person, plats: (q: Person) => { x: number; 
   const d = former[Math.floor(rnd(s, 'fram', p) * former.length)], i = d.instrument ? instrumentFor(d, inst) : undefined;
   const start = s.now, slut = start + (FRAM.minuter + rnd(s, 'fram', p) * FRAM.spann) * MIN;
   const bud = bestall(s, p, d) ?? budVal(s, p, d);
-  const text = d.text.replace('{namn}', p.name).replace('{hen}', p.sex === 'k' ? 'hon' : 'han').replace('{amne}', bud?.amne ?? AMNE[d.amne](s, p)).replace('{inst}', i ? INSTRUMENT[i].ord : '');
-  s.fram = { k: d.id, p: p.id, start, slut, publik: [], text, inst: i, scen: sc?.id, ...(bud ? { bud: bud.k, om: bud.om, ik: bud.ik, ...('betalt' in bud ? { betalt: bud.betalt as string } : {}) } : {}) };
+  const amne = bud?.amne ?? AMNE[d.amne](s, p);
+  const text = d.text.replace('{namn}', p.name).replace('{hen}', p.sex === 'k' ? 'hon' : 'han').replace('{amne}', amne).replace('{inst}', i ? INSTRUMENT[i].ord : '');
+  s.fram = { k: d.id, p: p.id, start, slut, publik: [], text, amne, inst: i, scen: sc?.id, ...(bud ? { bud: bud.k, om: bud.om, ik: bud.ik, ...('betalt' in bud ? { betalt: bud.betalt as string } : {}) } : {}) };
   s.framKvall = kvall(start);
   count(s, 'framtradanden');
   for (const q of pub) {
@@ -259,7 +260,7 @@ export function upptradaKlar(s: State, p: Person, t: Task) {
   s.fram = undefined;
   if (f.inst) slitInstrument(s, f);
   const om = f.om !== undefined ? byId(s, f.om) : undefined, ledd = f.bud === 'hylla' || f.bud === 'hana' ? om : undefined;
-  const m: FramMinne = { t: f.start, k: f.k, p: p.id, namn: p.name, text: f.text, n: pub.length, q: Math.round(q * 100) / 100, inst: f.inst, bud: f.bud, betalt: f.betalt,
+  const m: FramMinne = { t: f.start, k: f.k, p: p.id, namn: p.name, text: f.text, n: pub.length, q: Math.round(q * 100) / 100, inst: f.inst, bud: f.bud, betalt: f.betalt, amne: f.amne,
     nr: s.framNr = (s.framNr ?? 0) + 1, publik: [], ...(om ? { om: om.name } : {}), ...(ledd ? { ledare: ledd.name } : {}) };
   if (!pub.length) { // ingen kom (steg 5.4.7.1): redogörelsen säger det
     m.inget = true;

@@ -393,7 +393,7 @@ SCENARIER.pynt = {
 };
 
 SCENARIER.framrapport = {
-  text: 'Framträdandets redogörelse (steg 5.4.7.1): när framträdandet slutar sparas vem, formen, publiken och mottagningen (glädjen, vad publiken tycker om den som uppträdde före och efter, ryktet, ledaren efter en hyllning, vilka tron övertygade), och raden i Händelser och notisen pekar dit. Kommer ingen säger redogörelsen det',
+  text: 'Framträdandets redogörelse (steg 5.4.7.1): när framträdandet slutar sparas vem, formen, publiken och mottagningen (glädjen, vad publiken tycker om den som uppträdde före och efter, ryktet, ledaren efter en hyllning, vilka tron övertygade), och raden i Händelser och notisen pekar dit. Kommer ingen säger redogörelsen det. Högst upp en berättelse i löpande text ur det som hände (steg 5.4.7.2)',
   kor: () => {
     const { s, v } = kvall(), p = v[0]!;
     upptrad(s, p); kor(s, 1.5);
@@ -408,7 +408,7 @@ SCENARIER.framrapport = {
     if (upptrad(k.s, u)) { kor(k.s, 1.5); hy = k.s.framtradanden?.at(-1); }
     const hyl = hy?.publik?.filter(x => x.l0 !== undefined) ?? [];
     // tron: någon i publiken övertygas
-    let tro: string[] = [];
+    let tro: string[] = [], troM: SIM.FramMinne | undefined, troS = s;
     for (let i = 0; i < 20 && !tro.length; i++) {
       const t = kvall(3 + i), w = t.v[0]!;
       t.s.tron = [{ id: 1, grundare: w.id, gnamn: w.name, t: t.s.now, k: 'blixt', bakom: 'Den som bor i åskmolnen', vill: 'att man tystnar när det mullrar', svek: 'blixten slår ner', natur: 50, manga: 50, bekr: t.s.now, ar: 0 } as SIM.Tro];
@@ -417,13 +417,16 @@ SCENARIER.framrapport = {
       if (!upptrad(t.s, w)) continue;
       kor(t.s, 1.5);
       const tm = t.s.framtradanden?.at(-1);
-      if (tm?.bud === 'tro' && tm.tro?.length) tro = tm.tro.filter(x => t.v.find(b => b.name === x)?.tro === 1);
+      if (tm?.bud === 'tro' && tm.tro?.length) { tro = tm.tro.filter(x => t.v.find(b => b.name === x)?.tro === 1); troM = tm; troS = t.s; }
     }
     // ingen kom: publiken går därifrån innan framträdandet börjar
     const e = kvall(7), ep = e.v[0]!;
     let inget: SIM.FramMinne | undefined;
     if (upptrad(e.s, ep)) { for (const q of e.v.slice(1)) q.task = { act: 'sova', phase: 'do', tx: q.x, ty: q.y, until: e.s.now + 3 * SIM.HOUR, carry: 0, dark: true }; kor(e.s, 1.5); inget = e.s.framtradanden?.at(-1); }
     const inglog = e.s.log.find(x => x.fram === inget?.nr);
+    // berättelsen högst upp (steg 5.4.7.2): skriven ur minnet, stabil, med den som uppträdde, ledaren och den som övertygades
+    const b0 = m ? SIM.framBerattelse(s, m) : '', bh = hy ? SIM.framBerattelse(k.s, hy) : '', bt = troM ? SIM.framBerattelse(troS, troM) : '', bi = inget ? SIM.framBerattelse(e.s, inget) : '';
+    const hel = (x: string) => x.length > 0 && !/\{|undefined|NaN/.test(x);
     return [
       [`minnet nr ${m?.nr}: ${m?.n} lyssnade, glädje ${m?.glad}, publiken före och efter i hela tal`, ok && (m?.glad ?? 0) > 0],
       [`raden i Händelser pekar på framträdandet: ${rad?.text ?? 'ingen'}`, !!rad],
@@ -431,6 +434,10 @@ SCENARIER.framrapport = {
       [`hyllningen: ledaren ${hy?.ledare ?? 'ingen'}, ${hyl.length} i publiken med före och efter (${hyl.map(x => `${x.l0}→${x.l1}`).join(', ')})`, hy?.bud === 'hylla' && hy.ledare === l.name && hyl.length >= 1 && hyl.every(x => x.l1! >= x.l0!) && hyl.some(x => x.l1! > x.l0!)],
       [`tron övertygade ${tro.join(', ') || 'ingen'}`, tro.length >= 1],
       [`ingen kom: ${inglog?.text ?? 'ingen rad'}`, !!inget?.inget && inget.n === 0 && !!inglog],
+      [`berättelsen: ${b0}`, hel(b0) && b0.includes(p.name) && b0 === SIM.framBerattelse(s, m!)],
+      [`berättelsen om hyllningen: ${bh}`, hel(bh) && bh.includes(l.name)],
+      [`berättelsen om tron: ${bt}`, hel(bt) && tro.some(x => bt.includes(x))],
+      [`berättelsen när ingen kom: ${bi}`, hel(bi) && bi.includes(ep.name)],
     ];
   },
 };

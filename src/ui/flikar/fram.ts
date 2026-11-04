@@ -2,7 +2,7 @@
 // minnet som sparades när framträdandet slutade (framMinneAv i sim/framtradande.ts), inte ur loggen: vem som uppträdde, formen,
 // instrumentet, budskapet och om ledaren betalade, publiken och mottagningen. Symbolerna först; texten kommer fram när man
 // håller över raden
-import { BUDSKAP, FRAM_AV, FramMinne, byId, framMinneAv, sakNamn } from '../../sim';
+import { BUDSKAP, FRAM_AV, FramMinne, byId, framBerattelse, framMinneAv, sakNamn } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { clockTxt, esc, pLink } from '../hjalp';
 import { s, ui } from '../lage';
@@ -33,8 +33,8 @@ export function framHtml(m?: FramMinne) {
     bud ? `<li title="Budskapet">${esc(bud.namn)}${m.om ? ` <span class="muted">(${esc(m.om)})</span>` : ''}</li>` : '',
     m.betalt ? `<li title="${esc(`${m.ledare ?? 'Ledaren'} betalade för framträdandet med en ${m.betalt}`)}">${iconImg('silver', 14)} <span class="muted">betalt med</span> ${esc(m.betalt)}</li>` : '',
   ].join('');
-  const text = `<p class="ovBer">${esc(m.text)}</p>`;
-  if (m.inget) return `${huvud}<ul class="fame">${fakta}</ul><p>{sym_nej} Ingen kom och lyssnade.</p>`;
+  const text = `<p class="ovBer">${esc(framBerattelse(s, m) || m.text)}</p>`; // berättelsen (steg 5.4.7.2)
+  if (m.inget) return `${huvud}${text}<ul class="fame">${fakta}</ul><p>{sym_nej} Ingen kom och lyssnade.</p>`;
   const pub = m.publik ?? [];
   const r0 = medel(pub.map(x => x.r0)), r1 = medel(pub.map(x => x.r1));
   const mott = [
