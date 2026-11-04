@@ -29,7 +29,7 @@ ${blandning.join('\n')}
 export const KARNA: any = (() => {
 ${karna.join('\n')}
 ${arv.join('\n')}
-  return { PR, P, portratt, kartFigur, slumpFran, slumpPerson, barnAv, somUng, neutral, effektiva };
+  return { PR, P, DEL, portratt, kartFigur, slumpFran, slumpPerson, barnAv, somUng, neutral, effektiva, radAv, mallAv };
 })();
 `;
 fs.writeFileSync(path.join(BS, '..', 'src', 'portrattkarna.ts'), text);

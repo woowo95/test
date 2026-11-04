@@ -1251,5 +1251,5 @@ export const KARNA: any = (() => {
   }
   const somUng = c => { const u = JSON.parse(JSON.stringify(c)); u.alder = 'ung'; u.del.frisyr = c.anlag.frisyr; if (u.kon === 'man') u.del.skagg = c.anlag.skagg; return u; };
 
-  return { PR, P, portratt, kartFigur, slumpFran, slumpPerson, barnAv, somUng, neutral, effektiva };
+  return { PR, P, DEL, portratt, kartFigur, slumpFran, slumpPerson, barnAv, somUng, neutral, effektiva, radAv, mallAv };
 })();

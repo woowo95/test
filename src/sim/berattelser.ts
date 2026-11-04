@@ -1385,6 +1385,9 @@ function saknad(s: State, p: Person) {
   }
   return bast;
 }
+// det vackraste eller fulaste i ansiktet (steg 5.2.3.3): porträttet sätter det (ui/utseende.ts), så att beskrivningen
+// säger det som syns. Utan porträtten (proven utan gränssnitt) väljs ur SKONA
+export const BESK_ANSIKTE: { del?: (s: State, p: Person) => string | undefined } = {};
 const SKONA: Record<'vacker' | 'ful', string[]> = {
   vacker: ['förföriska ögon', 'ett leende som får folk att stanna upp', 'ett ansikte som folk vänder sig om efter', 'blankt, tjockt hår', 'en röst som man gärna lyssnar på', 'mörka, djupa ögon', 'en hy som lyser i solen', 'ett skratt som smittar'],
   ful: ['en näsa som pekar åt sidan', 'ett ansikte som barnen stirrar på', 'tänder som spretar åt alla håll', 'en käke som en sten', 'små, misstänksamma ögon', 'en röst som skär i öronen', 'öron som står ut', 'en gång som en anka'],
@@ -1393,7 +1396,7 @@ export const BESK_DELAR: BeskDel[] = [
   { id: 'grundare', fast: true, vikt: b => b.p.grundare ? 1 : 0, text: b => mening(b, 'besk_grundare', 10) },
   { id: 'skonhet', fast: true, vikt: b => skonDel(b.s, b.p) ? 1 : 0, text: b => {
     const l = SKONA[b.p.pot.skonhet > 10 ? 'vacker' : 'ful'];
-    b.f.del = l[Math.floor(hash(b.s.seed, b.p.id, 11) * l.length)];
+    b.f.del = BESK_ANSIKTE.del?.(b.s, b.p) ?? l[Math.floor(hash(b.s.seed, b.p.id, 11) * l.length)];
     return mening(b, b.p.pot.skonhet > 10 ? 'besk_vacker' : 'besk_ful', 11);
   } },
   { id: 'aldst', fast: true, vikt: b => {

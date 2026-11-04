@@ -6,7 +6,7 @@ import { FARGER, MORKARE, PALETT, iPaletten, kornPa, rasterSteg } from '../../pa
 import { START, STEG_TIM, korBy } from '../kor';
 import { seedAv } from '../pool';
 import { KARNA } from '../../portrattkarna';
-import { drag, glomArv, skapad } from '../../ui/utseende';
+import { ANSIKTSORD, drag, glomArv, skapad, skonNiva } from '../../ui/utseende';
 import { Koll, kor, klockan, uiLas, SCENARIER, grenarUte, barGrenar } from './hjalp';
 
 SCENARIER['ui-ren'] = {
@@ -215,7 +215,7 @@ SCENARIER.aldrig = {
 };
 
 SCENARIER.portratt = {
-  text: 'Porträtten (steg 5.2.3.1): varje person får sina delar ur registret PORTRATT, ett barn ärver dem från mamman och pappan, och samma person blir likadan varje gång, också i en sparad by (allt räknas ur numret och föräldrarna); porträttet och kartfiguren har bara färger ur paletten',
+  text: 'Porträtten (steg 5.2.3.1, 5.2.3.3): varje person får sina delar ur registret PORTRATT, ett barn ärver dem från mamman och pappan, och samma person blir likadan varje gång, också i en sparad by (allt räknas ur numret och föräldrarna); skönheten väljer de fula delarna och lagren, och beskrivningens vackraste eller fulaste del tas ur ansiktet; porträttet och kartfiguren har bara färger ur paletten',
   kor: () => {
     const s = createState(3, START), vuxna = living(s).filter(p => ageOf(p, s.now) >= 20);
     const mor = vuxna.find(p => p.sex === 'k')!, far = vuxna.find(p => p.sex === 'm')!;
@@ -233,11 +233,28 @@ SCENARIER.portratt = {
       for (const v of [...B.px, ...F.px]) if (v < -1 || v >= FARGER.length) utanfor++;
     }
     const kon = alla.every(p => drag(s, p).kon === (p.sex === 'k' ? 'kvinna' : 'man')) && barn.every(c => skapad(s, c).alder === 'barn');
+    // skönheten (steg 5.2.3.3): nivån följer personen, de vanliga och vackra har inga fula delar, och beskrivningen säger det
+    // vackraste eller fulaste som syns i ansiktet
+    glomArv();
+    const skonOk = alla.every(p => drag(s, p).skonhet === skonNiva(p));
+    let fulaDelar = 0;
+    for (const p of alla) if (skonNiva(p) >= 0) for (const k of ['huvudform', 'ora', 'nasa', 'oga', 'ogonbryn', 'mun']) if (KARNA.DEL[drag(s, p).del[k] ?? '']?.ful) fulaDelar++;
+    const ord = Object.values(ANSIKTSORD);
+    let sagt = 0, skona = 0;
+    for (const [i, v] of [[0, 19], [1, 2], [2, 1], [3, 20]] as const) {
+      const p = living(s)[i]; if (!p) continue;
+      p.pot.skonhet = v; glomArv(); skona++;
+      const t = SIM.beskrivning(s, p), q = skapad(s, p);
+      if (q.skonhet === (v > 10 ? 2 : -2) && (ord.some(o => t.includes(o)) || /ögon|hår/.test(t))) sagt++;
+    }
     return [
       ['samma person blir likadan igen, när allt räknas om', forst.every((v, i) => v === igen[i])],
       [`barnen ärver ansiktet: ${fran} av ${delar} delar från mamman eller pappan (minst 80 %)`, fran >= delar * 0.8],
       [`de första i byn ser olika ut (${olika} olika av ${living(s).length})`, olika === living(s).length],
       ['könet följer personen och barnen ritas som barn', kon],
+      ['skönheten i porträttet följer personens skönhet (−2 till 2)', skonOk],
+      [`de vanliga och vackra har inga fula delar i ansiktet (${fulaDelar})`, fulaDelar === 0],
+      [`beskrivningen säger det vackraste eller fulaste som syns i ansiktet (${sagt} av ${skona})`, sagt === skona],
       [`porträttet (64 × 64) och kartfiguren (14 × 20) ritas för alla ${alla.length} (${ritade}) med bara palettens färger (${utanfor} utanför)`, ritade === alla.length && utanfor === 0],
     ] as Koll[];
   },
