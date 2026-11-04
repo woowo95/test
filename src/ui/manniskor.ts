@@ -220,6 +220,7 @@ export function drawPeople(t: number) {
     sp.scale.set(k); sp.rotation = ligger ? -Math.PI / 2 : 0;
     if (ligger) sp.position.set(x - BH * k * 0.5, y + BW * k * 0.5);
     else sp.position.set(x - BW * k / 2, y + r * 0.9 - (BH - 1) * k);
+    sp.zIndex = y + r * 0.9; // fötterna (ordningen söderut, steg 5.1.4.5)
     sp.visible = true; sedd.add(p.id);
     if (PRICKAR.sjuk.har(p)) peopleG.beginFill(PRICKAR.sjuk.farg).drawCircle(x + r * 0.7, y - r * 0.7, 1.8).endFill();
     if (PRICKAR.gravid.har(p)) peopleG.beginFill(PRICKAR.gravid.farg).drawCircle(x - r * 0.7, y - r * 0.7, 1.6).endFill();

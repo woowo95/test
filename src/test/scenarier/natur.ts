@@ -2198,7 +2198,7 @@ SCENARIER.virke = {
 };
 
 SCENARIER.trad = {
-  text: 'Träden (steg 5.1.4.1–5.1.4.2 och 5.1.4.4): urskogen står i dungar med gläntor på ungefär hälften av jorden, och varje träd har art, ålder och stadium: ett vuxet träd blir gammalt om det står fritt och torkar i en tät dunge, en torraka faller och lämnar en glänta, och åldern följer med i sparfilen; ett större träd ger mer trä när det fälls',
+  text: 'Träden (steg 5.1.4.1–5.1.4.2, 5.1.4.4 och 5.1.4.5): urskogen står i dungar med gläntor på ungefär hälften av jorden, och varje träd har art, ålder och stadium: ett vuxet träd blir gammalt om det står fritt och torkar i en tät dunge, en torraka faller och lämnar en glänta, och åldern följer med i sparfilen; ett större träd ger mer trä när det fälls',
   kor: () => {
     const s = createState(3, START), g = groundOf(s);
     let jord = 0, skog = 0;
@@ -2233,6 +2233,10 @@ SCENARIER.trad = {
     const forsta = (k: string) => [...g.trees.keys()].find(i => SIM.stadium(g, i) === k)!;
     const u = cloneState(s), gu = groundOf(u), ung = forsta('vuxet'); gu.trees[ung] = 0.4;
     const vedUng = SIM.stamAv(gu, ung).ved, vedVuxet = SIM.stamAv(g, forsta('vuxet')).ved, vedGammalt = SIM.stamAv(g, forsta('gammalt')).ved, torr = SIM.stamAv(g, forsta('torraka'));
+    // jätteträden (steg 5.1.4.5): ett gammalt träd på en jätteruta
+    const jr = [...g.trees.keys()].filter(i => SIM.arJatte(i)), jatteAndel = jr.length / g.trees.length;
+    const j = cloneState(s), gj = groundOf(j), ji = jr[0]; gj.trees[ji] = 1; gj.alder![ji] = SIM.TRAD.vuxenDygn + 1;
+    const jatteSt = SIM.stadium(gj, ji), vedJatte = SIM.stamAv(gj, ji).ved;
     return [
       [`urskogen har träd på ungefär hälften av jorden (${(andel * 100).toFixed(0)} %)`, andel > 0.38 && andel < 0.55],
       [`vuxna, gamla och några torrakor står i urskogen (${Object.entries(st).map(([k, n]) => `${k} ${n}`).join(', ')})`, ['vuxet', 'gammalt', 'torraka'].every(k => (st[k] ?? 0) > 0) && (st.torraka ?? 0) < (st.vuxet ?? 0) / 4],
@@ -2242,6 +2246,7 @@ SCENARIER.trad = {
       [`en planta som växer klart blir ett vuxet träd med åldern noll (${ny}, ${nyAlder})`, ny === 'vuxet' && nyAlder === 0],
       ['trädens åldrar följer med i sparfilen', lika && !!c.tradAlder],
       [`varje träd har en art (${[...arter].join(', ')})`, arter.size >= 1],
+      [`ett gammalt träd på var femtionde ruta är ett jätteträd (${jatteAndel.toFixed(3)}), som ger mest trä (${vedJatte} mot ${vedGammalt})`, jatteSt === 'jatte' && jatteAndel > 0.01 && jatteAndel < 0.04 && vedJatte > vedGammalt],
       [`ett större träd ger mer trä: ungträd ${vedUng}, vuxet ${vedVuxet}, gammalt ${vedGammalt}, torraka ${torr.ved} med ${torr.grenar} grenar`, vedUng < vedVuxet && vedVuxet < vedGammalt && torr.ved > vedVuxet && Number.isInteger(vedUng) && torr.grenar < SIM.SKOG.stamGrenar],
     ];
   },

@@ -1,15 +1,14 @@
 import { BRAND, DAY, H, HOUR, STADIER, T, VAG, W, ageIndex, stadium, emberOn, fireHeat, eldXY, eldarOf, groundOf, isCm, lightLevel } from '../sim';
 import { s } from './lage';
-import { TS, mork, terrainG, world } from './scen';
+import { TS, figurLayer, mork, terrainG, world } from './scen';
 import { stallNatt } from './natt';
 import { markLayer, ritaMark, stallMark } from './mark';
-import { stallTrad, tradBild, tradLayer } from './trad';
+import { stallTrad, tradBild } from './trad';
 
 // marken (steg 5.1.3.1): gräs, vatten, strand, stigar, sten, lera, aska och snö ritas i pixlar i ui/mark.ts. Här bestäms
 // när: hela marken när tidsåldern, isen, vattnet eller byn byts, annars bara de rutor som ändrats (stigarna, skogen, askan).
 // Träden är granar i pixlar efter sitt stadium (steg 5.1.3.2 och 5.1.4.3, ui/trad.ts), ovanpå marken och sorterade söderut.
 mork.addChildAt(markLayer, mork.getChildIndex(terrainG));
-mork.addChildAt(tradLayer, mork.getChildIndex(terrainG) + 1);
 // isen på sjön (steg 2.11.3, sim/is.ts): 0 = öppet vatten, 1 = tunn is (under 5 cm), 2 = tjock is
 const isNiva = () => { const cm = isCm(s); return cm <= 0 ? 0 : cm < 5 ? 1 : 2; };
 let drawnSig = -1, lastSigCheck = 0, lastDraw = -Infinity, drawnNyckel = '';
@@ -60,7 +59,7 @@ function ritaTrad(g: ReturnType<typeof groundOf>, ai: number) {
     const x = i % W, y = (i / W) | 0;
     return skog(x - 1, y) || skog(x + 1, y) || skog(x, y - 1) || skog(x, y + 1);
   };
-  stallTrad(W, H, i => {
+  stallTrad(figurLayer, W, H, i => {
     const x = i % W, y = (i / W) | 0, st = jord(g.tiles[i]) ? stadium(g, i) : null;
     if (st) return tradBild(st, g.trees[i], x, y, VAG.ungskog);
     return kant(i) && kantHash(x, y) < 0.3 ? tradBild('ungtrad', VAG.ungskog + (1 - VAG.ungskog) * kantHash(y, x) * 0.7, x, y, VAG.ungskog) : null; // en ung gran i skogskanten

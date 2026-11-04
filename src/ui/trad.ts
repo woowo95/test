@@ -4,7 +4,8 @@
 // ungträdet en halvstor gran, det vuxna trädet en hel gran, det gamla en större och mörkare gran, och torrakan bildstilens
 // döda gran (bildstil/mark.js, torraka: grå stam, kala grenar som hänger ned och en avbruten topp). I kanten av skogen står
 // några unga granar där marken är orörd (skogskanten i steg, bildstilen). På vintern ligger snö på våningarna. Varje bild
-// ritas en gång och sparas. Storlekarna görs om i 5.1.4.5.
+// ritas en gång och sparas. Storleken (steg 5.1.4.5): se HOJD nedan; kronan når in i rutorna norr om stammen, och träden
+// står i samma lager som folket och djuren, i ordning söderut.
 import * as PIXI from 'pixi.js';
 import { FARGER } from '../palett';
 
@@ -27,8 +28,8 @@ function granPx(h: number, sno: number, s: number) {
   const w = 2 * Math.ceil(h * 0.28 * 1.3 + 3) + 1, H = h + 1, cx = w >> 1, by = H - 1;
   const px = new Int8Array(w * H).fill(-1);
   const satt = (x: number, y: number, c: number) => { x = Math.round(x); y = Math.round(y); if (x >= 0 && y >= 0 && x < w && y < H) px[y * w + x] = c; };
-  const skift = hash(s, h, 401) < 0.3 ? -1 : 0; // lite mörkare granar ibland
-  const ton = (t: number) => BARR + Math.max(0, Math.min(3, t + (t > 0 ? skift : 0)));
+  const r = hash(s, h, 401), skift = r < 0.3 ? -1 : r > 0.82 ? 1 : 0; // lite mörkare eller ljusare granar ibland
+  const ton = (t: number) => BARR + Math.max(0, Math.min(3, t + (t > 0 || skift > 0 ? skift : 0)));
   const w2 = Math.max(1, Math.round(h * 0.28)), stam = Math.max(1, Math.round(h / 10));
   for (let y = 0; y < stam + 1; y++) { satt(cx, by - y, JORD); if (h > 12) satt(cx - 1, by - y, JORD + 1); }
   if (h < 8) { // plantan: några barr
@@ -107,21 +108,25 @@ export function tradBildUrl(b: TradBild) {
   return u;
 }
 // trädets bild efter stadiet (sim/trad.ts) och rutans skog (0–1); x, y = rutan
+// Höjderna (steg 5.1.4.5, som i bildstilens rad med stadierna): plantan under en halv ruta, ungträdet upp till en ruta, det
+// vuxna trädet två rutor, det gamla tre och jätteträdet fyra; torrakan som ett vuxet träd. Varje träd är lite större eller
+// mindre (VARIERA, räknat ur rutan), och barren lite mörkare eller ljusare (skift i granPx)
+const TS = 16, VARIERA = 0.2;
+const HOJD: Record<string, number> = { vuxet: 2, gammalt: 3, jatte: 4, torraka: 2 };
 export function tradBild(stadium: string, v: number, x: number, y: number, ungskog: number): TradBild {
-  const s = Math.floor(hash(x, y, 597) * 6);
-  if (stadium === 'planta') return { typ: 'gran', h: 4 + Math.round(v / ungskog * 3), s };
-  if (stadium === 'ungtrad') return { typ: 'gran', h: 8 + Math.round((v - ungskog) / (1 - ungskog) * 8), s };
-  if (stadium === 'gammalt') return { typ: 'gran', h: 38 + Math.floor(hash(x, y, 598) * 3) * 3, s, mork: true };
-  if (stadium === 'torraka') return { typ: 'torr', h: 26 + Math.floor(hash(x, y, 598) * 3) * 2, s };
-  return { typ: 'gran', h: 24 + Math.floor(hash(x, y, 598) * 4) * 3, s };
+  const s = Math.floor(hash(x, y, 597) * 6), f = 1 + (hash(x, y, 598) * 2 - 1) * VARIERA;
+  if (stadium === 'planta') return { typ: 'gran', h: 3 + Math.round(v / ungskog * 4), s };
+  if (stadium === 'ungtrad') return { typ: 'gran', h: Math.round((8 + (v - ungskog) / (1 - ungskog) * 7) * f), s };
+  const h = Math.round(HOJD[stadium] * TS * f) - 1;
+  if (stadium === 'torraka') return { typ: 'torr', h, s };
+  return { typ: 'gran', h, s, mork: stadium === 'gammalt' || stadium === 'jatte' };
 }
 
 // ---------- träden på kartan ----------
-export const tradLayer = new PIXI.Container();
-tradLayer.sortableChildren = true;
 const sprites = new Map<number, { sp: PIXI.Sprite; k: string }>();
 // bild(i): trädet på rutan i (eller null), vinter: snö på grenarna
-export function stallTrad(W: number, H: number, bild: (i: number) => TradBild | null, vinter: boolean) {
+// lager: figurLayer (scen.ts), där träden står i ordning söderut med folket och djuren
+export function stallTrad(lager: PIXI.Container, W: number, H: number, bild: (i: number) => TradBild | null, vinter: boolean) {
   const sno = vinter ? 0.8 : 0;
   for (let i = 0; i < W * H; i++) {
     const b = bild(i), x = i % W, y = (i / W) | 0, k = b ? nyckel(b, sno) : '';
@@ -132,7 +137,7 @@ export function stallTrad(W: number, H: number, bild: (i: number) => TradBild | 
     const t = sp.texture = tradTex(b, sno);
     const bx = x * 16 + 8 + Math.round((hash(x, y, 595) - 0.5) * 8), by = y * 16 + 14 + Math.round((hash(x, y, 596) - 0.5) * 4);
     sp.position.set(bx - (t.width >> 1), by - t.height + 1 + (b.typ === 'torr' ? 1 : 0)); sp.zIndex = by;
-    if (!f) tradLayer.addChild(sp);
+    if (!f) lager.addChild(sp);
     sprites.set(i, { sp, k });
   }
 }

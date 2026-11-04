@@ -1,6 +1,6 @@
 import { Djur, FYND, H, HOUR, SEC, W, ageIndex, brinnande, djurOf, fyndAt, getMap, living, plockOf, tornadoAndel, tornadoPos, vargarOf } from '../sim';
 import { s, ui, vidNyBy } from './lage';
-import { Ikoner, TS, djurFx, djurLayer, djurMarkLayer, plantG } from './scen';
+import { Ikoner, TS, djurFx, djurMarkLayer, figurLayer, plantG } from './scen'; // djuren står i figurLayer (steg 5.1.4.5)
 import { jagade, samlaJakt } from './jakt';
 import { posOf } from './manniskor';
 import { OMRITA_MS } from './terrang';
@@ -44,7 +44,7 @@ export function drawPlants(force = false) {
   }
 }
 
-const djurIkoner = new Ikoner(djurLayer), larmIkoner = new Ikoner(djurMarkLayer);
+const djurIkoner = new Ikoner(figurLayer), larmIkoner = new Ikoner(djurMarkLayer);
 // Kaninerna flyr synligt (Björn efter v159): i simuleringen hoppar en kanin undan på en gång när någon kommer nära. Här
 // springer den dit, och den som flyr har ett utropstecken och damm efter sig. Den hoppar undan från där folket syns
 // (posOf). Varje kanin som syns minns var den ritades senast

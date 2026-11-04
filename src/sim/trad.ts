@@ -14,6 +14,7 @@ export const TRAD = balans('trad', {
   vuxenDygn: 120, // ett träd är vuxet så här många dygn (år i spelet) efter att det vuxit klart ...
   gammalDygn: 60, // ... sedan gammalt så här länge (bara ett träd som står fritt; i en tät dunge torkar det i stället) ...
   torrDygn: 15, // ... och står sedan som torraka så här länge innan det faller
+  jatte: 0.02, // så stor del av de gamla träden är jätteträd (räknat ur rutan, steg 5.1.4.5)
 });
 
 // arterna (register): bara granen tills trädsorterna kommer (steg 5.1.6)
@@ -24,21 +25,24 @@ export const tradArt = (_seed: number, _i: number): TradArt => TRADARTER[0];
 // stadierna (register), i den ordning trädet går igenom dem. stam = hur mycket trä och grenar trädet ger när det fälls,
 // gånger ett vuxet träds (SKOG.stamVed och stamGrenar i skog.ts) och gånger trädets storlek (steg 5.1.4.4): ett gammalt
 // träd är grövre, och torrakan har tappat grenarna men stammen står kvar
-export type Stadium = 'planta' | 'ungtrad' | 'vuxet' | 'gammalt' | 'torraka';
+export type Stadium = 'planta' | 'ungtrad' | 'vuxet' | 'gammalt' | 'jatte' | 'torraka';
 export const STADIER: { id: Stadium; namn: string; stam: number; grenar: number }[] = [
   { id: 'planta', namn: 'Planta', stam: 1, grenar: 1 }, { id: 'ungtrad', namn: 'Ungträd', stam: 1, grenar: 1 },
   { id: 'vuxet', namn: 'Vuxet träd', stam: 1, grenar: 1 }, { id: 'gammalt', namn: 'Gammalt träd', stam: 1.5, grenar: 1.4 },
+  { id: 'jatte', namn: 'Jätteträd', stam: 2, grenar: 1.8 }, // ett sällsynt gammalt träd som blivit väldigt stort
   { id: 'torraka', namn: 'Torraka', stam: 1.25, grenar: 0.4 },
 ];
 export const stadiumAv = (id: Stadium) => STADIER.find(q => q.id === id)!;
 const GAMMAL = () => TRAD.vuxenDygn, TORR = () => TRAD.vuxenDygn + TRAD.gammalDygn, FALL = () => TRAD.vuxenDygn + TRAD.gammalDygn + TRAD.torrDygn;
+// är det gamla trädet på ruta i ett jätteträd (ett av femtio, räknat ur rutan)
+export const arJatte = (i: number) => hash(9173, i % W, (i / W) | 0) < TRAD.jatte;
 export function stadium(g: Ground, i: number): Stadium | null {
   const v = g.trees[i];
   if (v <= 0) return null;
   if (v < VAG.ungskog) return 'planta';
   if (v < 1) return 'ungtrad';
   const a = g.alder?.[i] ?? 0;
-  return a < GAMMAL() ? 'vuxet' : a < TORR() ? 'gammalt' : 'torraka';
+  return a < GAMMAL() ? 'vuxet' : a < TORR() ? (arJatte(i) ? 'jatte' : 'gammalt') : 'torraka';
 }
 // trädets ålder i dygn (år i spelet): tiden det tog att växa (tradDygn i mark.ts, efter hur stort det är) och åldern som vuxet
 export const tradAlder = (g: Ground, i: number, tradDygn: number) => g.trees[i] < 1 ? g.trees[i] * tradDygn : tradDygn + (g.alder?.[i] ?? 0);
