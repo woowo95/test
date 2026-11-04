@@ -2,6 +2,8 @@
 // varje tecken är en pixel, '.' är genomskinlig
 import { KLADER_AV } from './sim/klader';
 import { KARTBILDER } from './kartbilder';
+import { DJURBILDER, type Hall } from './djurbilder';
+import { farg } from './palett';
 
 // slagen av arbete ritas ljust i en färg (vattnet blått)
 const AKT = { w: '#dad0bb', a: '#8a9c9e' };
@@ -3763,6 +3765,25 @@ for (const k of ['brand', 'tornado']) { PIX[k] = KARTBILDER[k].rader; PAL[k] = K
 { const b = KARTBILDER.vattensack!, w = 16, x0 = (w - 2 * b.w) >> 1, y0 = (w - 2 * b.h) >> 1;
   PIX.vattensack = Array.from({ length: w }, (_, y) => Array.from({ length: w }, (_, x) => b.rader[(y - y0) >> 1]?.[(x - x0) >> 1] ?? '.').join(''));
   PAL.vattensack = b.pal; }
+// djuren på kartan (steg 5.1.11, ritade i bildstilen i 5.2.4.6): varje art har en eller flera ritningar (vargen en, haren två)
+// och fyra pälsar, och varje ritning tre håll; västerut är sidan speglad. Bilden heter djur_<art>_<ritning>_<päls>_<håll>,
+// där hållet är sida, vast, fram eller bak. Vilken ritning och päls ett djur har räknas ur dess id (djurBild)
+export const DJUR_HALL = ['sida', 'vast', 'fram', 'bak'] as const;
+export type DjurHall = typeof DJUR_HALL[number];
+for (const art of ['varg', 'kanin'] as const) DJURBILDER.ritningar[art].forEach((r, v) => DJURBILDER.pals[art].forEach((pals, p) => {
+  const pal: Record<string, string> = {};
+  for (const [ch, [ramp, ton]] of Object.entries({ ...DJURBILDER.fast, ...pals })) pal[ch] = farg(ramp, ton);
+  for (const h of DJUR_HALL) {
+    const k = `djur_${art}_${v}_${p}_${h}`, rader = r[(h === 'vast' ? 'sida' : h) as Hall];
+    PIX[k] = h === 'vast' ? rader.map(rad => [...rad].reverse().join('')) : rader; PAL[k] = pal;
+  }
+}));
+// djurets bild: ritningen och pälsen ur id:t (som djurets andra egenskaper, steg 3.7.13) och hållet det rör sig åt
+const idTal = (id: number, salt: number) => { let h = Math.imul(id ^ salt, 2654435761) >>> 0; h ^= h >>> 15; h = Math.imul(h, 2246822519) >>> 0; return (h ^ (h >>> 13)) >>> 0; };
+export function djurBild(art: 'varg' | 'kanin', id: number, hall: DjurHall) {
+  const v = idTal(id, 0x51a7) % DJURBILDER.ritningar[art].length, p = idTal(id, 0x9e37) % DJURBILDER.pals[art].length;
+  return `djur_${art}_${v}_${p}_${hall}`;
+}
 export const kartbild = (k: string) => KARTBILDER[k] ? 'kb_' + k : undefined;
 export const kartbildEnsam = (k: string) => !!KARTBILDER[k]?.ensam;
 

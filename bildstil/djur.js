@@ -4,7 +4,6 @@
 // b vit, k svart (nos, ögon, klor), r rosa. Pälsen är en tabell från bokstav till färg, så en ny färgvariant är en ny rad
 // i PALS och ingen ny ritning (5.1.11: små skillnader mellan djuren av samma art, räknade ur djurets id).
 (() => {
-  const SCEN = (w, h, rita) => ({ w, h, stor: true, rita });
   // pälsarna: [ramp, ton] per bokstav
   const PALS = {
     varg: [
@@ -238,47 +237,7 @@
         '.oko.ko.'] },
   ];
 
-  // ritar en ritning med foten (nedersta raden) på fot och mitten på x, i en päls; spegel = västerut
-  function djur(B, rader, x, fot, pals, spegel = false) {
-    const P = B.P, w = rader[0].length, h = rader.length, x0 = Math.round(x) - (w >> 1);
-    for (let y = 0; y < h; y++) for (let i = 0; i < w; i++) {
-      const ch = rader[y][spegel ? w - 1 - i : i], f = pals[ch] || FAST[ch];
-      if (f) B.satt(x0 + i, fot - h + 1 + y, P.i(f[0], f[1]));
-    }
-    for (let i = 1; i < w - 1; i++) B.morka(x0 + i + 1, fot + 1); // skuggan under djuret
-  }
-  // marken: referensgräset (mark.js)
-  function gras(B) {
-    const M = window.MARK;
-    for (let y = 0; y < B.h; y++) for (let x = 0; x < B.w; x++) B.satt(x, y, M.grasPunkt(x + 40, y + 900, B.P, 1));
-    M.tuvor(B, 1, () => true, 0.5);
-  }
-  // kortets scen: överst människan och djuret från fyra håll, nederst djuret från sidan i alla pälsar
-  function scen(art, v) {
-    const R = (art === 'varg' ? VARG : KANIN)[v], pals = PALS[art], sw = R.sida[0].length, fw = R.fram[0].length;
-    const steg = Math.max(sw, 18) + 6, w = Math.max(16 + fw + 8 + fw + 8 + sw + 8 + sw + 10, pals.length * steg + 10), h = art === 'varg' ? 76 : 60;
-    return SCEN(w, h, B => {
-      gras(B);
-      const p0 = pals[0][1], fot = art === 'varg' ? 30 : 26;
-      let x = 9;
-      window.MARK.fram(B, x, fot); x += 8 + (fw >> 1) + 2;
-      djur(B, R.fram, x, fot, p0); x += fw + 6;
-      djur(B, R.bak, x, fot, p0); x += (fw >> 1) + 6 + (sw >> 1);
-      djur(B, R.sida, x, fot, p0); x += sw + 6;
-      djur(B, R.sida, x, fot, p0, true);
-      const fot2 = h - 6;
-      pals.forEach(([, pal], i) => djur(B, R.sida, 6 + (sw >> 1) + i * steg, fot2, pal, i % 2 === 1));
-    });
-  }
-  const T = 'Steg 5.2.4.6, till 5.1.11: ';
-  const OM = ' Överst: en vuxen människa framifrån för storleken, sedan djuret framifrån (söderut), bakifrån (norrut), från sidan (österut) och speglat (västerut). Nederst fyra pälsar, små skillnader i färgen som räknas ur djurets id: ';
-  VAL.push(
-    { id: 'djur_varg', stor: true, namn: 'Vargen', typ: 'janej', vad: T + 'vargen version 1 (smal och högbent) omritad efter din kommentar: en rak, yvig svans som hänger snett bakåt och är tjockast på mitten, med svart spets; och argare: huvudet lite sänkt, gula ögon med mörk ögonvrå (inga ögonbryn), rest nackhår och en mörk mun med en vit tand. Din kommentar förra gången: \u201dJag gillade vargen men inte svansen, och den såg för snäll ut\u201d (den kom inte fram i databasen, så jag skrev in den från chatten), och sedan \u201dinga ögonbryn\u201d.' + OM + PALS.varg.map(p => p[0].toLowerCase()).join(', ') + '.',
-      versioner: [{ text: 'Version 1 omritad: ny svans och argare.', ...scen('varg', 0) }] },
-    { id: 'djur_kanin', stor: true, namn: 'Haren (kaninen)', typ: 'tre', vad: T + 'haren som springer på kartan (spelets kanin), i samma bruna toner som det fällda viltet du valt. I spelet nu 8 × 8 punkter, bara från sidan.' + OM + PALS.kanin.map(p => p[0].toLowerCase()).join(', ') + '.',
-      versioner: [
-        { text: 'Version 1: sitter med öronen rakt upp.', ...scen('kanin', 0) },
-        { text: 'Version 2: längre öron med svarta spetsar, som en skogshare.', ...scen('kanin', 1) },
-        { text: 'Version 3: hukar lågt med öronen bakåt längs ryggen.', ...scen('kanin', 2) }] },
-  );
+  // ritningarna till spelet (bildstil/djurtillspelet.cjs skriver src/djurbilder.ts). Björns val är inbyggda i steg 5.1.11:
+  // vargen version 1 och haren version 2 och 3
+  window.DJURBILD = { VARG, KANIN, PALS, FAST };
 })();
