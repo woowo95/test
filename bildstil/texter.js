@@ -1,8 +1,9 @@
-// Texterna (textchatten, texter/README.md): förslagen till grammatik och variation och massor av ifyllda exempel.
+// Texterna (textchatten, texter/README.md): hela texter så som de syns i spelet, och förslagen till grammatik och variation.
 // TEXTER kommer från texter/sida.json (node texter/bygg.cjs). Svaren ligger i databasens samling 'texter':
+//   h-<text>            { plats, vem, text, kommentar, nar }             en hel text (texter/hela.ts)
+//   p-<plats>           { plats, kommentar, nar }                        alla texter på ett ställe i spelet
 //   f-<kort>            { svar: 'ja' | 'nej', kommentar, nar }           ett förslag (rättelse, kontroll eller mall)
-//   e-<hash av texten>  { text, mall, vy, kommentar, nar }               en mening i exemplen
-//   m-<vy>-<mall>       { mall, vy, kommentar, nar }                     en hel mall i exemplen
+// (e- och m- är kommentarer till enstaka meningar från bildstil v143; vyn finns inte längre)
 (function () {
   if (typeof TEXTER === 'undefined' || !document.getElementById('texter')) return;
   const q = s => document.querySelector(s);
@@ -10,19 +11,17 @@
   const hash = s => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(36); };
   const GRUPP = { '1a': 'Rättelse · hen blir han eller hon', '1b': 'Rättelse · ändelser, genus och tal', '1c': 'Rättelse · skälet i binamnen', '1d': 'Rättelse · artikeln i ryktena', '1e': 'Rättelse · binamnen', '1f': 'Rättelse · namnen', ord: 'Rättelse · ord' };
   const VYER = {
+    hela: { namn: 'Hela texter', om: 'Texterna som spelet skriver i dag, hela och så som de syns, från varje ställe i spelet. Tre byar i 45 dygn (45 år i spelet, drygt sex veckor i verkligheten). Skriv vad som är fel eller låter konstigt under texten; det sparas när du går ur rutan.' },
     forslag: { namn: 'Förslagen', om: 'Säg ja eller nej till varje förslag.' },
-    nya: { namn: 'Nya texter', om: 'Mallarna som får fler varianter, alla varianter ifyllda med olika personer. Gröna punkter är nya varianter.', grupper: TEXTER.exempel.forslag },
-    idag: { namn: 'I dag', om: 'Det spelet skrev i 8 byar på 45 dygn (45 år i spelet), för mallarna som förslagen inte ändrar. Rött streck: ett fel som förslagen rättar.', grupper: TEXTER.exempel.idag },
-    logg: { namn: 'Loggen', om: 'De vanligaste fasta raderna i loggen i fyra byar på 45 dygn, utom de som blir mallar med förslagen. Talet är hur många gånger raden skrevs.', grupper: [{ id: 'logg', namn: 'Loggens rader', rader: TEXTER.exempel.logg }] },
   };
-  let DB = null, SVAR = {}, vy = 'forslag', oppen = null, baraObesvarade = false;
-  const raknaRader = v => VYER[v].grupper.reduce((s, g) => s + g.rader.length, 0);
-  const kommenterade = v => Object.values(SVAR).filter(d => d.vy === v && d.text && d.kommentar).length;
+  let DB = null, SVAR = {}, vy = 'hela', baraObesvarade = false;
+  const HELA = TEXTER.hela, antalHela = HELA.reduce((s, p) => s + p.texter.length, 0);
+  const kommenterade = () => Object.keys(SVAR).filter(k => k.startsWith('h-') && SVAR[k].kommentar).length;
 
   function flikar() {
     const besvarade = TEXTER.kort.filter(k => SVAR['f-' + k.id]?.svar).length;
     q('#tx-flikar').innerHTML = Object.entries(VYER).map(([id, v]) => {
-      const tal = id === 'forslag' ? `${besvarade}/${TEXTER.kort.length}` : `${raknaRader(id)}${kommenterade(id) ? ' · ' + kommenterade(id) + ' kommenterade' : ''}`;
+      const tal = id === 'forslag' ? `${besvarade}/${TEXTER.kort.length}` : `${kommenterade()}/${antalHela}`;
       return `<button type="button" data-txvy="${id}" aria-pressed="${id === vy}">${v.namn} <b>${tal}</b></button>`;
     }).join('');
   }
@@ -49,18 +48,15 @@
       <div class="sparat" aria-live="polite">${s.svar ? 'Sparat: ' + s.svar + (s.kommentar ? ', med kommentar' : '') + '.' : ''}</div></article>`;
   }
 
-  function rad(r, g) {
-    const id = 'e-' + hash(r.t), d = SVAR[id];
-    const klass = ['tx-rad', r.ny ? 'ny' : '', r.fel ? 'fel' : '', d?.kommentar ? 'kommenterad' : ''].join(' ');
-    const redigera = oppen === id ? `<div class="tx-redigera"><textarea id="tx-ed" rows="2" placeholder="Vad är fel, eller hur skulle du skriva?">${esc(d?.kommentar || '')}</textarea><div class="svar"><button type="button" data-txspara="${id}" data-mall="${esc(g.id)}">Spara</button>${d ? `<button type="button" class="nej" data-txtabort="${id}">Ta bort kommentaren</button>` : ''}<button type="button" data-txstang>Stäng</button></div></div>` : '';
-    return `<li class="${klass}"><button type="button" data-txrad="${id}" data-text="${esc(r.t)}"${DB ? '' : ' disabled'}>${r.n ? `<span class="tx-n">${r.n}</span>` : ''}${esc(r.t)}</button>${d?.kommentar && oppen !== id ? `<p class="tx-komm">${esc(d.kommentar)}</p>` : ''}${redigera}</li>`;
-  }
-
-  function grupp(g, i) {
-    const m = SVAR['m-' + vy + '-' + g.id] || {}, antal = g.rader.filter(r => SVAR['e-' + hash(r.t)]?.kommentar).length;
-    return `<details class="tx-grupp"${i === 0 || g.rader.some(r => 'e-' + hash(r.t) === oppen) ? ' open' : ''}><summary><b>${esc(g.namn)}</b> <span class="not">${g.rader.length} texter${antal ? ', ' + antal + ' kommenterade' : ''}${m.kommentar ? ', kommentar om mallen' : ''}</span></summary>
-      ${g.om ? `<p class="not">${esc(g.om)}</p>` : ''}<ul class="tx-rader">${g.rader.map(r => rad(r, g)).join('')}</ul>
-      ${vy === 'logg' ? '' : `<label class="tx-mall">Om hela ${esc(g.namn)}<textarea data-txmall="${esc(g.id)}" rows="2" placeholder="Till exempel: för många börjar likadant"${DB ? '' : ' disabled'}>${esc(m.kommentar || '')}</textarea></label>`}</details>`;
+  // ett ställe i spelet: var det syns, texterna med en ruta var, och en ruta för det som gäller alla
+  function plats(p, i) {
+    const pk = SVAR['p-' + p.id] || {}, antal = p.texter.filter(t => SVAR['h-' + t.id]?.kommentar).length;
+    return `<details class="tx-grupp"${i === 0 ? ' open' : ''} id="tx-p-${p.id}"><summary><b>${esc(p.rubrik)}</b> <span class="not">${p.texter.length} texter${antal ? ', ' + antal + ' kommenterade' : ''}${pk.kommentar ? ', kommentar om alla' : ''}</span></summary>
+      <p class="not">${esc(p.var)}</p>
+      ${p.texter.map(t => { const d = SVAR['h-' + t.id] || {}; return `<article class="tx-hel${d.kommentar ? ' kommenterad' : ''}">
+        <p class="tx-meta">${esc(t.vem)} · by ${t.by} · ${esc(t.nar)}</p><div class="tx-text">${esc(t.text)}</div>
+        <label>Vad är fel?<textarea data-txhel="${esc(t.id)}" data-plats="${esc(p.id)}" rows="2" placeholder="Till exempel: för upprepande, fel ord, konstig ordning, något saknas"${DB ? '' : ' disabled'}>${esc(d.kommentar || '')}</textarea></label></article>`; }).join('')}
+      <label class="tx-mall">Om alla texter i ${esc(p.rubrik.toLowerCase())}<textarea data-txplats="${esc(p.id)}" rows="2" placeholder="Till exempel: alla börjar likadant"${DB ? '' : ' disabled'}>${esc(pk.kommentar || '')}</textarea></label></details>`;
   }
 
   function rita() {
@@ -72,8 +68,7 @@
     if (vy === 'forslag') {
       const kort = TEXTER.kort.filter(k => !baraObesvarade || !SVAR['f-' + k.id]?.svar);
       q('#tx-innehall').innerHTML = kort.length ? `<div class="vallista">${kort.map(forslagKort).join('')}</div>` : '<p class="not">Alla förslag är besvarade.</p>';
-    } else q('#tx-innehall').innerHTML = v.grupper.map(grupp).join('');
-    if (oppen) { const t = q('#tx-ed'); if (t) t.focus(); }
+    } else q('#tx-innehall').innerHTML = HELA.map(plats).join('');
   }
 
   async function spara(id, data) {
@@ -90,26 +85,22 @@
   }
 
   document.addEventListener('click', e => {
-    const t = e.target.closest('[data-txvy],[data-txsvar],[data-txrad],[data-txspara],[data-txtabort],[data-txstang],#tx-bara');
+    const t = e.target.closest('[data-txvy],[data-txsvar],#tx-bara');
     if (!t || !t.closest('#texter')) return;
     if (t.id === 'tx-bara') { baraObesvarade = !baraObesvarade; rita(); return; }
-    if (t.dataset.txvy) { vy = t.dataset.txvy; oppen = null; rita(); return; }
+    if (t.dataset.txvy) { vy = t.dataset.txvy; rita(); return; }
     if (t.dataset.txsvar) { const k = q('#tx-k-' + t.dataset.id); spara('f-' + t.dataset.id, { svar: t.dataset.txsvar, kommentar: k ? k.value.trim() : '' }).then(rita); rita(); return; }
-    if (t.dataset.txrad) { oppen = oppen === t.dataset.txrad ? null : t.dataset.txrad; rita(); return; }
-    if (t.dataset.txspara) {
-      const text = q(`[data-txrad="${t.dataset.txspara}"]`).dataset.text, komm = q('#tx-ed').value.trim();
-      oppen = null;
-      if (komm) spara(t.dataset.txspara, { text, mall: t.dataset.mall, vy, kommentar: komm }); else taBort(t.dataset.txspara);
-      rita(); return;
-    }
-    if (t.dataset.txtabort) { oppen = null; taBort(t.dataset.txtabort); rita(); return; }
-    if (t.hasAttribute('data-txstang')) { oppen = null; rita(); }
   });
   document.addEventListener('change', e => {
     const t = e.target;
     if (!t.closest || !t.closest('#texter')) return;
     if (t.dataset.txkomm) spara('f-' + t.dataset.txkomm, { kommentar: t.value.trim() });
-    if (t.dataset.txmall) spara('m-' + vy + '-' + t.dataset.txmall, { mall: t.dataset.txmall, vy, kommentar: t.value.trim() });
+    if (t.dataset.txhel) {
+      const p = HELA.find(x => x.id === t.dataset.plats), h = p.texter.find(x => x.id === t.dataset.txhel), k = t.value.trim();
+      (k ? spara('h-' + h.id, { plats: p.rubrik, vem: h.vem, text: h.text, kommentar: k }) : taBort('h-' + h.id)).then(flikar);
+      t.closest('.tx-hel').classList.toggle('kommenterad', !!k);
+    }
+    if (t.dataset.txplats) spara('p-' + t.dataset.txplats, { plats: t.dataset.txplats, kommentar: t.value.trim() });
   });
 
   rita();

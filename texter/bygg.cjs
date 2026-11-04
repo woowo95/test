@@ -1,8 +1,8 @@
-// Bygger texter/sida.json av texter/forslag.json (prova.ts) och texter/exempel.json (exempel.ts). Bildstilens sida
-// (avsnittet Texterna, bildstil/texter.js) läser den när den byggs: ett kort per rättelse, ny kontroll och mall, som
-// Björn svarar ja eller nej på, och exemplen, där han kommenterar en mening eller en hel mall. Svaren ligger i
+// Bygger texter/sida.json av texter/hela.json (hela.ts) och texter/forslag.json (prova.ts). Bildstilens sida (avsnittet
+// Texterna, bildstil/texter.js) läser den när den byggs: de hela texterna från varje ställe i spelet, som Björn
+// kommenterar, och ett kort per rättelse, ny kontroll och mall, som han svarar ja eller nej på. Svaren ligger i
 // bildstilens databas, samlingen 'texter' (se texter/README.md).
-//   npx tsx texter/prova.ts texter/matning/texter-fore.json texter/matning/logg-*.json && npx tsx texter/exempel.ts
+//   npx tsx texter/hela.ts && npx tsx texter/prova.ts texter/matning/texter-fore.json texter/matning/logg-*.json
 //   node texter/bygg.cjs && node bildstil/bygg.cjs
 const fs = require('fs');
 const path = require('path');
@@ -30,7 +30,6 @@ for (const p of d.prov) {
     gamla: p.varianter.filter(x => !x.ny).map(x => x.text),
   });
 }
-const exempel = JSON.parse(fs.readFileSync(path.join(__dirname, 'exempel.json'), 'utf8'));
-fs.writeFileSync(path.join(__dirname, 'sida.json'), JSON.stringify({ kort, exempel }));
-const n = g => g.reduce((s, x) => s + x.rader.length, 0);
-console.log(`texter/sida.json: ${kort.length} kort (${d.rattelser.length} rättelser, ${d.kontroller.length} kontroller, ${d.prov.length} mallar) och ${n(exempel.forslag) + n(exempel.idag) + exempel.logg.length} exempel.`);
+const hela = JSON.parse(fs.readFileSync(path.join(__dirname, 'hela.json'), 'utf8'));
+fs.writeFileSync(path.join(__dirname, 'sida.json'), JSON.stringify({ hela, kort }));
+console.log(`texter/sida.json: ${hela.reduce((s, p) => s + p.texter.length, 0)} hela texter från ${hela.length} ställen och ${kort.length} kort (${d.rattelser.length} rättelser, ${d.kontroller.length} kontroller, ${d.prov.length} mallar).`);
