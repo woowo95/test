@@ -1,6 +1,8 @@
 import { Djur, FYND, H, HOUR, SEC, W, ageIndex, brinnande, djurOf, fyndAt, getMap, living, plockOf, tornadoAndel, tornadoPos, vargarOf } from '../sim';
 import { s, ui, vidNyBy } from './lage';
-import { Ikoner, TS, djurFx, djurMarkLayer, figurLayer, plantG } from './scen'; // djuren står i figurLayer (steg 5.1.4.5)
+import { Ikoner, TS, djurFx, djurMarkLayer, figurLayer, plantG, rokBakLayer } from './scen';
+import { brandBild, brandRok, tornadoBild } from './animation';
+import { ANIMTAKT } from '../animbilder'; // djuren står i figurLayer (steg 5.1.4.5)
 import { jagade, samlaJakt } from './jakt';
 import { posOf } from './manniskor';
 import { OMRITA_MS } from './terrang';
@@ -45,7 +47,7 @@ export function drawPlants(force = false) {
   }
 }
 
-const djurIkoner = new Ikoner(figurLayer, true), larmIkoner = new Ikoner(djurMarkLayer);
+const djurIkoner = new Ikoner(figurLayer, true), larmIkoner = new Ikoner(djurMarkLayer), brandRokIkoner = new Ikoner(rokBakLayer);
 // Kaninerna flyr synligt (Björn efter v159): i simuleringen hoppar en kanin undan på en gång när någon kommer nära. Här
 // springer den dit, och den som flyr har ett utropstecken och damm efter sig. Den hoppar undan från där folket syns
 // (posOf). Varje kanin som syns minns var den ritades senast
@@ -69,7 +71,7 @@ function ritaDjur(art: 'varg' | 'kanin', id: number, x: number, y: number, sedd:
 export const djurSynliga = () => synliga;
 export function drawAnimals() {
   samlaJakt();
-  djurIkoner.start(); larmIkoner.start(); djurFx.clear();
+  djurIkoner.start(); larmIkoner.start(); brandRokIkoner.start(); djurFx.clear();
   const folk = living(s).map(posOf), jagas = jagade(), sedda = new Set<number>(), ut: Djur[] = [];
   const jagadId = new Set(jagas.kaniner.map(k => k.id)), riktade = new Set<number>();
   for (const k of jagas.kaniner) { // den som jagas just nu ritas som jakten går (jakt.ts)
@@ -100,8 +102,13 @@ export function drawAnimals() {
   for (const id of visad.keys()) if (!sedda.has(id)) visad.delete(id);
   for (const d of vargarOf(s)) { ritaDjur('varg', d.id, d.x, d.y, riktade); ut.push(d); } // vargarna i verklig storlek (Björns val i bildstilen, steg 5.2.4.6)
   for (const id of hallar.keys()) if (!riktade.has(id)) hallar.delete(id);
-  if (s.tornado) { const p = tornadoPos(s.tornado, tornadoAndel(s.tornado, ui.nu)); djurIkoner.add('tornado', p.x * TS - 16, p.y * TS - 44, 1); } // tornadon där den är (steg 3.8.4), foten mitt på banan
-  for (const [i] of brinnande(s)) djurIkoner.add('brand', (i % W) * TS, Math.floor(i / W) * TS, 1); // lågorna där det brinner (steg 3.8.5)
+  // tornadon där den är (steg 3.8.4), foten mitt på banan, och lågorna där det brinner (steg 3.8.5): bildstilens animationer
+  // (steg 5.1.9.1), tornadon som virvlar i åtta bilder och branden som slår ut i sex, med röken bakom alla lågorna
+  if (s.tornado) { const p = tornadoPos(s.tornado, tornadoAndel(s.tornado, ui.nu)); djurIkoner.add(tornadoBild(), Math.round(p.x * TS - ANIMTAKT.tornado.cx), Math.round(p.y * TS - ANIMTAKT.tornado.fot), 1); }
+  for (const [i] of brinnande(s)) {
+    const x = (i % W) * TS, y = Math.floor(i / W) * TS;
+    djurIkoner.add(brandBild(i), x, y, 1); brandRokIkoner.add(brandRok(i), x, y - 26, 1);
+  }
   for (const k of jagas.kast) { // spjutet eller stenen i luften, i en låg båge
     const x = (k.fran.x + (k.till.x - k.fran.x) * k.k) * TS, y = (k.fran.y + (k.till.y - k.fran.y) * k.k) * TS - Math.sin(k.k * Math.PI) * 6;
     if (k.sten) djurFx.beginFill(0x8a8f94).drawCircle(x, y, 1.2).endFill();
@@ -114,7 +121,7 @@ export function drawAnimals() {
   const vald = ui.tab === 'djur' ? ut.find(d => d.id === ui.djurId) : undefined;
   if (vald) { const b = vald.art === 'varg' ? { w: 28, h: 19, fot: 5 } : { w: 14, h: 13, fot: 3 }; // runt djurets bild
     djurFx.lineStyle(1, 0xffffff, 0.9).drawRoundedRect(vald.x * TS - b.w / 2, vald.y * TS + b.fot - b.h, b.w, b.h, 3).lineStyle(0); }
-  djurIkoner.end(); larmIkoner.end();
+  djurIkoner.end(); larmIkoner.end(); brandRokIkoner.end();
   synliga = ut;
 }
 // utropstecknet över kaninen som ser någon och flyr
