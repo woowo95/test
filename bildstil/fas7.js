@@ -7,10 +7,11 @@
   // Björn 2026-11-04: "en stockväg … ska kunna vara olika bred och även läggas som en hel plattform till ett torg. Det ska
   // vara distinkt från trägolv inomhus". Trägolvet är platta, mörka plankor i rutans mönster; vägen är stockar som ligger
   // tvärs över färdriktningen, med rundning (ljus överkant, mörk underkant), bark och ändar som syns i kanten.
-  // Scenen i rutor: ett torg (4 × 4) med en väg en ruta bred från vänster, två rutor bred uppifrån och tre rutor bred nedåt.
+  // Scenen i rutor (efter 7.2.8: en byggd väg är alltid 2–3 rutor bred; 7.2.12: torget börjar på 10 × 10 rutor): ett hörn
+  // av torget, en väg tre rutor bred från vänster och en två rutor bred uppifrån.
   // 'h' = man färdas i sidled (stockarna står lodrätt i bilden), 'v' = man färdas uppåt och nedåt (stockarna ligger vågrätt)
-  const R = 16, VW = 10, VH = 9;
-  const DELAR = [[5, 2, 4, 4, 'h'], [0, 3, 5, 1, 'h'], [6, 0, 2, 2, 'v'], [5, 6, 3, 3, 'v']];
+  const R = 16, VW = 12, VH = 10;
+  const DELAR = [[6, 3, 6, 7, 'h'], [0, 4, 6, 3, 'h'], [8, 0, 2, 3, 'v']];
   const delOf = (x, y) => DELAR.find(([tx, ty, w, h]) => x >= tx * R && x < (tx + w) * R && y >= ty * R && y < (ty + h) * R);
   // versionerna: t = stockens bredd i punkter, ton(u, d, ...) = färgen tvärs över stocken (u) och från änden (d)
   const VAGAR = [
@@ -61,7 +62,7 @@
   const STOCKVAG = (text, v) => ({ text, w: VW * R, h: VH * R, rita: (B) => stockvag(B, v) });
 
   VAL.push(
-    KORT('f7_stockvag', 'Stockvägen', 'Steg 7.2.8.1: en väg av stockar som byn lägger på gångstråken. Stockarna ligger tvärs över färdriktningen, så att vägen inte liknar trägolvet inne (platta plankor på längden). Bilden visar vägen en, två och tre rutor bred, och som en hel plattform till ett torg (fyra × fyra rutor) där vägarna möts.', [
+    KORT('f7_stockvag', 'Stockvägen', 'Steg 7.2.8.1: en väg av stockar som byn lägger på gångstråken. Stockarna ligger tvärs över färdriktningen, så att vägen inte liknar trägolvet inne (platta plankor på längden). Bilden visar vägen tre och två rutor bred (en byggd väg är alltid 2–3 rutor bred, 7.2.8) och ett hörn av torget (7.2.12), där vägen läggs som en hel plattform och vägarna möts.', [
       STOCKVAG('Runda, gråa och väderbitna stockar tätt intill varandra, med ändarna som sticker ut ojämnt.', 0),
       STOCKVAG('Kluvna halvstockar med den flata sidan upp, och en kantstock längs båda sidorna.', 1),
       STOCKVAG('Bruna runda stockar med glipor där jorden syns, mossa på några och ojämna ändar.', 2)]),
