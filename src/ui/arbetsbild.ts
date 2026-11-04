@@ -38,7 +38,7 @@ const SAKER: Record<string, (p: (dx: number, dy: number, t: Ton) => void) => voi
   pinne: p => { for (let i = -1; i <= 2; i++) p(i, 0, ['jord', 2]); },
 };
 // en handling i spelet: rörelsen, redskapet, effekten (splitter), materialet, saken i handen och riktningen vid slaget
-export interface Arbete { rorelse: keyof typeof RORELSER; redskap?: string; effekt?: 'splitter'; material?: string; sak?: string; rSla?: [number, number] }
+export interface Arbete { rorelse: keyof typeof RORELSER; redskap?: string; effekt?: 'splitter' | 'traff'; material?: string; sak?: string; rSla?: [number, number] }
 const HUGGA: Arbete = { rorelse: 'sla', redskap: 'yxa', effekt: 'splitter', material: 'tra' };
 const FLINTA: Arbete = { rorelse: 'sla', redskap: 'sten', effekt: 'splitter', material: 'sten' };
 export const ARBETEN: Record<string, Arbete> = {
@@ -50,6 +50,13 @@ export const ARBETEN: Record<string, Arbete> = {
   slakta: { rorelse: 'stota', redskap: 'kniv', effekt: 'splitter', material: 'blod', rSla: [1, 1] },
   samla: { rorelse: 'plocka', sak: 'bar' },
   ved: { rorelse: 'plocka', sak: 'pinne' },
+};
+// striden (steg 5.1.9.5): rörelsen och redskapet efter vapnet i striden (VAPEN i sim/strid.ts), och träffen i stället för splitter
+const SLASS = (redskap?: string): Arbete => ({ rorelse: 'sla', redskap, effekt: 'traff', rSla: [1, 0] });
+const STOTA = (redskap: string): Arbete => ({ rorelse: 'stota', redskap, effekt: 'traff' });
+export const STRIDBILD: Record<string, Arbete> = {
+  hand: SLASS(), sten: SLASS('sten'), yxa: SLASS('yxa'), benspade: SLASS('spade'), klubba: SLASS('klubba'),
+  kniv: STOTA('kniv'), fiskespjut: STOTA('spjut'), flintspjut: STOTA('spjut'),
 };
 
 // bilden just nu för handlingen: benen, armen och var kroppen står (ut)
@@ -84,5 +91,10 @@ export function ritaArbete(g: PIXI.Graphics, a: Arbete, b: RorelseBild, hx: numb
     const M = MATERIAL[a.material ?? 'tra'] ?? MATERIAL.tra, liten = RORELSER[a.rorelse].sitta;
     const lista = liten ? [[1, -1]] : b.steg === 1 ? [[1, -2], [-1, -1], [2, 0]] : [[3, -4], [-2, -3], [4, -1]];
     lista.forEach(([dx, dy], i) => p(t[0] + dx * fram, t[1] + dy, M[i % 2]));
+  }
+  // träffen: en ljus stjärna där slaget tar, bara i själva träffen (som bildstilens traff)
+  if (b.steg === 1 && a.effekt === 'traff') {
+    const x = t[0] + fram, y = t[1];
+    for (const [dx, dy, ljus] of [[0, 0, 1], [-1, 0, 1], [1, 0, 1], [0, -1, 1], [0, 1, 1], [-2, -2, 0], [2, -2, 0], [-2, 2, 0], [2, 2, 0]]) p(x + dx, y + dy, ljus ? ['ben', 3] : ['senap', 3]);
   }
 }

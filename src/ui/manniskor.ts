@@ -4,7 +4,7 @@ import { PRICKAR } from './hjalp';
 import { s, sakVar, ui, uppgiftVid, vidNyBy } from './lage';
 import { Ikoner, TS, bubbleG, figurLayer, labels, markLayer, peopleG } from './scen';
 import { type Arm, type Ben, type Rikt, figurHand, figurTex } from './folkbild';
-import { ARBETEN, arbetsBild, ritaArbete } from './arbetsbild';
+import { ARBETEN, STRIDBILD, arbetsBild, ritaArbete } from './arbetsbild';
 import { skapad } from './utseende';
 import { fotSkugga, skuggFolk, skuggLangd } from './skugga';
 import { jaktPlats } from './jakt';
@@ -198,7 +198,18 @@ function figurAv(id: number) {
 // slaget vid de tunga arbetena och framför sig vid stationen. Den som rört sig nyss går (steg 5.1.9.3): gångsteg 1, stå,
 // gångsteg 2, stå, som bildstilens gång, en bild per slag i animationernas klocka (ui/animation.ts) och förskjutet per person
 const SITTA = new Set(['maltid', 'samtal', 'vila', 'lyssna', 'beratta']);
-const SLA = new Set(['falla', 'bygga', 'krossa', 'slakta', 'yxa', 'dorr', 'strid']);
+// striden hen är med i just nu (steg 5.1.9.5): vapnet och var den närmaste motståndaren står, ur byns senaste strider
+function stridNu(p: Person) {
+  for (let i = (s.strider?.length ?? 0) - 1; i >= 0; i--) {
+    const m = s.strider![i], k = m.u.kampar.find(x => x.pid === p.id);
+    if (!k) continue;
+    const mot = m.u.kampar.filter(x => x.sida !== k.sida && x.pid !== undefined).map(x => byId(s, x.pid!)).filter((x): x is Person => !!x).map(x => posOf(x))
+      .sort((a, b) => Math.hypot(a.x - p.x, a.y - p.y) - Math.hypot(b.x - p.x, b.y - p.y))[0];
+    return { vapen: k.vapen as string, mot };
+  }
+  return undefined;
+}
+const SLA = new Set(['falla', 'bygga', 'krossa', 'slakta', 'yxa', 'dorr']);
 const forra = new Map<number, { x: number; y: number; rikt: Rikt; rord: number }>();
 const GANG: [Ben, Arm][] = [['gang1', 'gang1'], ['sta', 'hanga'], ['gang2', 'gang2'], ['sta', 'hanga']];
 const GAR_MS = 300; // så länge efter senaste rörelsen (datorns tid) går figuren, så att den inte stannar mellan bildrutorna
@@ -236,9 +247,11 @@ export function drawPeople(t: number) {
     let rikt = riktning(p.id, q.x, q.y);
     if (sitter && rikt === 'bak') rikt = 'fram';
     // arbetet i bild (steg 5.1.9.4, ui/arbetsbild.ts): rörelsen från sidan, en bild per slag, förskjutet per person
-    const arb = !ligger && !sitter && gor && !(tk && load(tk, s) > 0) ? ARBETEN[gor] : undefined;
+    const strid = gor === 'strid' && !ligger ? stridNu(p) : undefined;
+    const arb = strid ? STRIDBILD[strid.vapen] ?? STRIDBILD.hand : !ligger && !sitter && gor && !(tk && load(tk, s) > 0) ? ARBETEN[gor] : undefined;
     const ab = arb ? arbetsBild(arb, slag() + p.id) : undefined;
-    if (ab && rikt !== 'sida' && rikt !== 'vast') rikt = p.id % 2 ? 'vast' : 'sida';
+    if (strid?.mot) rikt = strid.mot.x < q.x ? 'vast' : 'sida'; // vänd mot motståndaren (steg 5.1.9.5)
+    else if (ab && rikt !== 'sida' && rikt !== 'vast') rikt = p.id % 2 ? 'vast' : 'sida';
     const steg = !sitter && !ligger && gar(p.id, performance.now()) ? GANG[(slag() + p.id) % 4] : undefined;
     const ben: Ben = sitter ? 'sitta' : ab ? ab.ben : steg ? steg[0] : 'sta';
     let arm: Arm = tk && load(tk, s) > 0 ? 'bara' : gor && SLA.has(gor) ? 'sla' : gor === 'station' ? 'framfor' : 'hanga';
