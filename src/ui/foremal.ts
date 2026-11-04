@@ -2,6 +2,7 @@ import { clamp, MASTERVERK, PERFEKT, GRODOR, faltById, faltKlar, faltOf, faltRut
 import { hasIcon, iconCanvas, kartbild, kartbildEnsam } from '../ikoner';
 import { KARTBILDER } from '../kartbilder';
 import { ritaHus } from './husbild';
+import { smutsGrad, smutsIkon } from './slitbild';
 import { outPilesAt, piles, s, sakVar, ui } from './lage';
 import { Ikoner, TS, overG, pileLayer, structG } from './scen';
 import { mix } from './terrang';
@@ -144,7 +145,7 @@ export function drawStructures(t: number) {
     const kb = stationBild(d?.ikon ?? 'slaktbank', v), { w: bw, h: bh } = storlekAv(st), w = bw * TS;
     const ik = kb ? 'kb_' + kb : (d?.ikon ?? 'slaktbank') + '_karta' + v, sk = kb ? 1 : iconCanvas(ik).width > 8 * bw ? 1 : 2, upp = iconCanvas(ik).height * sk - bh * TS; // sk: 16 punkter per ruta (steg 4.3.2.2) eller 8 som förut
     const x0 = st.x * TS + (kb ? Math.round((w - iconCanvas(ik).width) / 2) : 0), y0 = st.y * TS - upp; // bildens övre vänstra hörn: bildstilens bild mitt över rutorna och med foten på den nedersta
-    pileIcons.add(ik, x0, y0, sk);
+    pileIcons.add(isKlar(st) ? smutsIkon(ik, smutsGrad(s.now, st.klar)) : ik, x0, y0, sk); // en station i bruk blir smutsigare (steg 5.1.7.3)
     if (!isKlar(st)) { framsteg(st.x * TS + w / 2, y0 + 3, stationKlar(st)); continue; }
     if (st.fyllt) overG.beginFill(0x24160a, 0.75 * clamp(st.fyllt, 0, 1)).drawEllipse(st.x * TS + TS / 2, st.y * TS + TS / 2 + 1, 5, 4).endFill(); // latrinen mörknar när den fylls (smuts.ts)
     if ((st.q ?? 0) >= MASTERVERK) glans(st.x * TS + w - 3, st.y * TS + 3, t, st.id, st.q === PERFEKT);

@@ -1,5 +1,6 @@
 import * as PIXI from 'pixi.js';
-import { Bit, State, bitAt } from '../sim';
+import { Bit, State, bitAt, housesOf } from '../sim';
+import { smutsGrad, smutsigFarg } from './slitbild';
 import { KARTBILDER } from '../kartbilder';
 import { TS, husLayer } from './scen';
 
@@ -65,15 +66,19 @@ function bild(s: State, b: Bit) {
   const n8 = nb.map(q => slag(s, q)).join(''), m8 = nb.map(q => golvM(s, q) ?? '-');
   const egen = slag(s, b), em = golvM(s, b);
   if (egen !== 'W' && !em) return undefined;
-  const key = `${b.x},${b.y},${egen},${em},${n8},${m8.join('')}`;
+  // golvet blir smutsigare ju längre huset stått färdigt (steg 5.1.7.3), och öppningen, där alla går, ett steg till
+  const hus = b.hus !== undefined ? housesOf(s).find(h => h.id === b.hus) : undefined;
+  const klar = hus?.varKlar ?? hus?.klar, sg = klar !== undefined ? smutsGrad(s.now, klar) : 0, extra = egen === 'P' ? 1 : 0;
+  const key = `${b.x},${b.y},${egen},${em},${n8},${m8.join('')},${sg}`;
   let c = cache.get(key);
   if (c) return { key, c };
   c = document.createElement('canvas'); c.width = 16; c.height = 16;
   const g = c.getContext('2d')!;
   for (let ly = 0; ly < 16; ly++) for (let lx = 0; lx < 16; lx++) {
     const gx = b.x * 16 + lx, gy = b.y * 16 + ly;
-    let col = egen === 'W' ? vagg(n8, lx, ly, gx, gy) : golvPx(em, gx, gy);
+    let col = egen === 'W' ? vagg(n8, lx, ly, gx, gy) : golvPx(em, gx, gy), golv = egen !== 'W';
     if (!col) {
+      golv = true;
       // där stocken inte täcker rutan: golvet om grannen åt det hållet har golv, annars syns marken (genomskinligt)
       const dx = lx <= 1 ? -1 : lx >= 14 ? 1 : 0, dy = ly <= 1 ? -1 : ly >= 14 ? 1 : 0;
       for (const [ax, ay] of [[dx, 0], [0, dy], [dx, dy]]) {
@@ -82,6 +87,7 @@ function bild(s: State, b: Bit) {
         if (m8[i] !== '-') { col = golvPx(m8[i], gx, gy); break; }
       }
     }
+    if (col && golv && sg) col = smutsigFarg(col, gx, gy, sg, 0, extra);
     if (col) { g.fillStyle = col; g.fillRect(lx, ly, 1, 1); }
   }
   if (cache.size > 4000) { cache.clear(); for (const t of tex.values()) t.destroy(true); tex.clear(); }

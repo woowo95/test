@@ -145,8 +145,9 @@ function punkt(x: number, y: number): number {
         c = driva(x, y) ? BEN + 3 : driva(x, y - 1) || driva(x, y - 2) ? BEN + 1 : r < 0.08 ? BEN + 1 : r > 0.95 ? BEN + 3 : BEN + 2;
       }
     } else if (p > 0.7) { // stigen: jämn bar jord med en ren kant
-      const q = hash(x, y, 562);
-      c = q < 0.1 ? JORD + 1 : q > 0.93 ? JORD + 3 : flack(x, y, 9, 562, 0.68) ? JORD + 3 : JORD + 2;
+      // mitt på stigen, där man går mest, är jorden smutsigare: fler korn ett steg mörkare (steg 5.1.7.3)
+      const q = hash(x, y, 562), mitt = p > 0.92 && hash(x >> 1, y, 563) < 0.14;
+      c = q < 0.1 || mitt ? JORD + 1 : q > 0.93 ? JORD + 3 : flack(x, y, 9, 562, 0.68) ? JORD + 3 : JORD + 2;
     } else if (p > 0.55) c = JORD + 1; // en mörkare rand av nött gräs längs kanten
     else if (kantE(x, y) > -28) { // skogskanten i steg (version 1): skogsmark, fläckar av mörkt gräs, mörkt gräs, fläckar i gräset
       const e = kantE(x, y);
