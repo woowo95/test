@@ -1,7 +1,7 @@
 <title>Samhällssimulatorn</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Grenze:wght@500;700&family=Alegreya+Sans:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=Pixelify+Sans:wght@400;500;700&display=swap">
 <style>
 /* Layout (steg 5.3.1.1): kartan täcker hela skärmen under raden överst, och panelerna ligger ovanpå: personens panel till
    vänster, den öppna flikens panel till höger och flikknapparna i en kolumn längst till höger. */
@@ -11,8 +11,8 @@
      Ljust är standard; knappen under ⚙ byter, och valet sparas i webbläsaren (data-tema på html) */
   --bg: #bdb39b; --panel: #dad0bb; --fg: #24201d; --muted: #5e3c24; --line: #a0947d; --inner: transparent; --tartblek: #a0947d;
   --accent: #a14808; --accent-fg: #dad0bb; --good: #4b4f00; --bad: #742a01; --barbg: #bdb39b; color-scheme: light;
-  --display: "Grenze", "Palatino Linotype", Georgia, serif;
-  --body: "Alegreya Sans", "Segoe UI", system-ui, sans-serif;
+  --display: "Silkscreen", "Pixelify Sans", monospace; /* pixeltypsnitten (steg 5.3.2.3, Björn): Silkscreen i rubrikerna */
+  --body: "Pixelify Sans", "Segoe UI", system-ui, sans-serif; /* och Pixelify Sans i all brödtext */
 }
 :root[data-tema="morkt"] {
   --bg: #24201d; --panel: #2f261d; --fg: #dad0bb; --muted: #a0947d; --line: #474138; --inner: #474138; --tartblek: #474138;
@@ -34,7 +34,7 @@ html, body { height: 100%; }
 body { margin: 0; overflow: hidden; background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px; line-height: 1.4; box-sizing: border-box; --topp: 52px; --stenar: 64px; }
 .app { height: 100%; }
 header { position: fixed; left: 0; right: 0; top: 0; height: var(--topp); box-sizing: border-box; z-index: 3; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 2px 18px; padding: 6px max(16px, env(safe-area-inset-right, 0px)) 6px max(16px, env(safe-area-inset-left, 0px)); background: var(--panel); border-bottom: 1px solid var(--line); overflow: hidden; }
-h1 { font-family: var(--display); font-weight: 700; font-size: 1.7rem; margin: 0; letter-spacing: 0.01em; }
+h1 { font-family: var(--display); font-weight: 700; font-size: 24px; margin: 0; letter-spacing: 0; } /* Silkscreen i hela punkter: 8, 16 och 24 */
 .cal { display: flex; flex-wrap: wrap; gap: 4px 14px; font-variant-numeric: tabular-nums; color: var(--muted); }
 .cal b { color: var(--fg); font-weight: 700; }
 .mapwrap { position: fixed; left: 0; right: 0; top: var(--topp); bottom: 0; overflow: hidden; background: #1d2420; }
@@ -54,7 +54,7 @@ h1 { font-family: var(--display); font-weight: 700; font-size: 1.7rem; margin: 0
 .port .pa { grid-area: a; opacity: 0.9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .port.low .pn::after { content: " !"; color: #ff9a8a; }
 .tip { position: absolute; z-index: 5; width: 210px; background: rgba(18, 22, 20, 0.92); color: #eef1ec; border-radius: 6px; padding: 8px 10px; font-size: 13px; pointer-events: none; }
-.tip h4 { margin: 0; font-size: 14px; }
+.tip h4 { margin: 0; font-size: 16px; font-family: var(--display); font-weight: 400; }
 .tip p { margin: 2px 0 0; }
 .tip .op { opacity: 0.75; }
 .tip dl { display: grid; grid-template-columns: 70px minmax(0, 1fr); gap: 2px 8px; margin: 6px 0 0; align-items: center; }
@@ -62,7 +62,7 @@ h1 { font-family: var(--display); font-weight: 700; font-size: 1.7rem; margin: 0
 .tip .bar { width: 100%; background: rgba(255,255,255,0.15); }
 /* lista till vänster över allt byn äger */
 .owned { position: absolute; left: 10px; top: 72px; width: 170px; max-height: calc(100% - 170px); overflow-y: auto; background: none; color: #f4f6f2; text-shadow: 0 1px 2px #000, 0 0 3px #000; padding: 0 2px; font-size: 12px; line-height: 1.4; scrollbar-width: thin; }
-.owned h4 { margin: 0 0 3px; font-size: 12px; opacity: 0.8; font-weight: 700; }
+.owned h4 { margin: 0 0 3px; font-size: 16px; opacity: 0.8; font-family: var(--display); font-weight: 400; }
 .owned .fold { display: block; width: 100%; text-align: left; border: 0; background: none; color: inherit; font: inherit; font-weight: 700; padding: 2px 0; cursor: pointer; }
 .owned .fold .n { float: right; font-weight: 400; opacity: 0.8; }
 .owned ul { list-style: none; margin: 0 0 2px; padding: 0 0 0 12px; }
@@ -105,7 +105,7 @@ img.ikon.sym { vertical-align: middle; } /* emojierna som pixelsymboler i hel sk
 body.vOppen .owned { display: none; }
 /* flikknapparna i en kolumn längst till höger (runstenarna i steg 5.3.3.1) */
 .tabs { position: fixed; z-index: 2; right: 0; top: var(--topp); bottom: 0; width: var(--stenar); box-sizing: border-box; display: flex; flex-direction: column; gap: 6px; padding: 10px 6px; background: var(--panel); border-left: 1px solid var(--line); overflow-y: auto; }
-.tabs button { background: none; border: 1px solid var(--line); border-radius: 18px 18px 4px 4px; color: var(--muted); font: inherit; font-size: 11px; font-weight: 500; padding: 14px 2px 8px; cursor: pointer; overflow-wrap: anywhere; }
+.tabs button { background: none; border: 1px solid var(--line); border-radius: 18px 18px 4px 4px; color: var(--muted); font: inherit; font-size: 10px; font-weight: 500; padding: 14px 0 8px; cursor: pointer; overflow-wrap: normal; letter-spacing: -0.02em; } /* Pixelify Sans är bredare: hela ord på en rad */
 .tabs button[aria-selected="true"] { color: var(--accent-fg); background: var(--accent); border-color: var(--accent); font-weight: 700; }
 .tabs { padding-bottom: 52px; }
 #installKnapp { position: fixed; z-index: 3; right: 6px; bottom: 10px; width: calc(var(--stenar) - 12px); height: 34px; border-radius: 4px; border: 1px solid var(--line); background: var(--panel); color: var(--muted); font: inherit; font-size: 17px; cursor: pointer; padding: 0; }
@@ -134,7 +134,7 @@ ul, ol { list-style: none; margin: 0; padding: 0; }
 .pf.big { width: 64px; height: 64px; }
 .row .pf { grid-row: 1 / span 2; grid-column: 1; }
 .tiphead { display: flex; gap: 8px; align-items: center; margin-bottom: 4px; }
-.tiphead h4 { margin: 0; }
+.tiphead h4 { margin: 0; font-family: var(--display); font-size: 16px; font-weight: 400; }
 .prick { width: 8px; height: 8px; border-radius: 50%; display: inline-block; vertical-align: middle; box-shadow: 0 0 0 1px rgba(0,0,0,0.35); }
 .bar { display: inline-block; height: 6px; border-radius: 3px; background: var(--barbg); overflow: hidden; vertical-align: middle; }
 .bar > span { display: block; height: 100%; background: var(--good); border-radius: 3px; }
@@ -182,7 +182,7 @@ ul, ol { list-style: none; margin: 0; padding: 0; }
 .tnod .antal { position: absolute; right: -6px; bottom: -6px; min-width: 18px; height: 18px; border-radius: 9px; background: var(--good); color: #fff; font-size: 11px; line-height: 18px; text-align: center; padding: 0 4px; }
 .anseende { font-size: 0.8em; cursor: help; }
 .besk { font-style: italic; margin: 4px 0 8px; line-height: 1.4; }
-.binamn { font-size: 0.7em; font-weight: normal; font-style: italic; }
+.binamn { font-family: var(--body); font-size: 16px; font-weight: normal; } /* pixeltypsnittet har ingen kursiv */
 .binamn.heder { color: var(--gul, #b2921b); }
 .binamn.skam { color: var(--rod, #a8423a); }
 .tnod .brist { cursor: help; position: absolute; left: -6px; top: -6px; width: 16px; height: 16px; border-radius: 50%; background: var(--bad); color: #fff; font-size: 11px; line-height: 16px; text-align: center; font-weight: bold; }
@@ -233,11 +233,11 @@ button.tnod.liten.ryk { cursor: pointer; width: 36px; height: 36px; }
 .logg .oratt { color: var(--bad); } /* en orättvis dom (steg 3.10.17) */
 .plink { background: none; border: 0; padding: 0; font: inherit; font-weight: 700; color: inherit; text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--accent) 60%, transparent); text-underline-offset: 2px; cursor: pointer; }
 .phead { display: flex; gap: 10px; align-items: flex-start; }
-.phead h2 { font-family: var(--display); font-size: 1.5rem; margin: 0; line-height: 1.1; }
+.phead h2 { font-family: var(--display); font-size: 24px; margin: 0; line-height: 1.1; }
 .phead p { margin: 2px 0 0; }
 .phead > .hjalp { margin-left: auto; flex: none; }
 .status { font-weight: 500; }
-h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 16px 0 6px; font-weight: 700; }
+h3 { font-family: var(--display); font-size: 16px; text-transform: uppercase; letter-spacing: 0; color: var(--muted); margin: 16px 0 6px; font-weight: 400; }
 .kv { display: grid; grid-template-columns: 100px minmax(0, 1fr); gap: 4px 10px; margin: 0; align-items: center; }
 .kv dt { color: var(--muted); }
 .kv dd { margin: 0; display: flex; align-items: center; gap: 8px; font-variant-numeric: tabular-nums; }
@@ -341,7 +341,7 @@ body.testing .mapwrap { box-shadow: inset 0 0 0 3px var(--accent); }
 #arLogg .arText { display: none; color: var(--muted); } #arLogg li.open .arText { display: block; padding-left: 3em; }
 #overlay, #loading { position: fixed; inset: 0; background: rgba(10, 14, 12, 0.55); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 20; }
 .card { background: var(--panel); color: var(--fg); border-radius: 8px; padding: 20px 22px; width: min(460px, 100%); max-height: 85vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.35); box-sizing: border-box; }
-.card h2 { font-family: var(--display); font-size: 1.6rem; margin: 0 0 4px; }
+.card h2 { font-family: var(--display); font-size: 24px; margin: 0 0 4px; }
 .ovLead { font-size: 1.1rem; margin: 0 0 6px; }
 .prog { height: 8px; border-radius: 4px; background: var(--barbg); overflow: hidden; margin: 12px 0 6px; }
 #progBar { height: 100%; width: 0; background: var(--accent); transition: width 0.1s linear; }

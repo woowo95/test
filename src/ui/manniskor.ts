@@ -177,7 +177,10 @@ function bar(k: string, cx: number, cy: number, storlek: number) {
   markIcons.add(kb ?? k, Math.round(cx - c.width * sc / 2), Math.round(cy - c.height * sc / 2), sc);
 }
 // namnet över den valda och den under musen. Två texter som återanvänds: att skapa en text varje bildruta är dyrt
-const nameStyle = new PIXI.TextStyle({ fontFamily: 'Alegreya Sans, system-ui, sans-serif', fontSize: 22, fill: 0xffffff, stroke: 0x111111, strokeThickness: 5, fontWeight: '700' });
+// Pixelify Sans som brödtexten (steg 5.3.2.3), i panelens ljusa och mörka färg; när typsnittet laddats ritas namnen om med det
+const NAMNFONT = '"Pixelify Sans", system-ui, sans-serif';
+const nameStyle = new PIXI.TextStyle({ fontFamily: NAMNFONT, fontSize: 22, fill: 0xdad0bb, stroke: 0x24201d, strokeThickness: 5, fontWeight: '700' });
+if (typeof document !== 'undefined') document.fonts?.ready.then(() => { nameStyle.fontFamily = 'system-ui'; nameStyle.fontFamily = NAMNFONT; });
 const nameTags = [0, 1].map(() => { const tx = new PIXI.Text('', nameStyle); tx.scale.set(0.5); tx.anchor.set(0.5, 1); tx.visible = false; labels.addChild(tx); return tx; });
 // de ur byn som slåss i testarenan: de syns bara i striden (ui/arena.ts)
 export const dolda = new Set<number>();
