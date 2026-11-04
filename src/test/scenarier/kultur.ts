@@ -297,6 +297,7 @@ SCENARIER.bestalld = {
 };
 SCENARIER.skaldskap = {
   text: 'Skaldskapen (steg 4.3.2.5): färdigheten för att uppträda. Den börjar av berättandet, växer när man uppträder och när man berättar i samtalen, och gör framträdandet bättre och fler former möjliga',
+  lang: true,
   kor: () => {
     const ny = createState(9, START), start = ny.people.every(p => Math.abs(p.skill.skaldskap - p.skill.berattande * SIM.SKALD_START) < 1e-9);
     const { s, v } = kvall(), p = v[0]!;

@@ -8,6 +8,7 @@ export * from './sim/slump';
 export * from './sim/kvalitet';
 export * from './sim/karta';
 export * from './sim/mark';
+export * from './sim/trad';
 export * from './sim/folk';
 export * from './sim/tid';
 export * from './sim/varld';

@@ -5,6 +5,7 @@ import { H, HOUR, OX, OY, Person, State, W, inMap } from './typer';
 import { BAR, FOREST, Ground, HIGH, VAG, decodeCover, encodeCover, isSoil } from './vag';
 import { balans } from './balans';
 import { vattenNu } from './sjo';
+import { aldras, lasAlder, packaAlder, startAlder } from './trad';
 
 // Balanstal (regel 8): ängarna, gläntan byn börjar i, hur gräset och skogen växer tillbaka och hur mycket stegen nöter. Hur
 // fort man går på marken och hur marken trampas ner står i VAG (vag.ts)
@@ -44,12 +45,13 @@ export function groundOf(s: State): Ground {
   if (!g) {
     g = { tiles: vattenNu(s), cover: decodeCover(s.mark), trees: s.skog ? decodeCover(s.skog, 0) : startForest(s.seed) };
     if (!s.skog) for (let i = 0; i < g.trees.length; i++) if (g.cover[i] < HIGH) g.trees[i] = 0; // äldre sparfil: inga träd på stigarna
+    g.alder = s.tradAlder ? lasAlder(s.tradAlder) : startAlder(s.seed, g.trees); // en äldre sparfil får trädens åldrar som urskogen
     grounds.set(s, g);
   }
   return g;
 }
 export const coverOf = (s: State) => groundOf(s).cover;
-export function packGround(s: State) { const g = groundOf(s); s.mark = encodeCover(g.cover); s.skog = encodeCover(g.trees); }
+export function packGround(s: State) { const g = groundOf(s); s.mark = encodeCover(g.cover); s.skog = encodeCover(g.trees); s.tradAlder = packaAlder(g.alder!); }
 
 // ängar: fläckar av fuktig mark där det växer högt gräs och träd har svårt att få fäste
 export const angOf = perKarta(seed => {
@@ -92,7 +94,7 @@ function startForest(seed: number) {
   return trees;
 }
 // marken som den var när byn grundades (bara ur kartan): för det som ska vara detsamma efter inläsning (djur.ts)
-export const startGround = perKarta((seed): Ground => ({ tiles: getMap(seed).tiles, cover: new Float32Array(W * H).fill(1), trees: startForest(seed) }));
+export const startGround = perKarta((seed): Ground => { const trees = startForest(seed); return { tiles: getMap(seed).tiles, cover: new Float32Array(W * H).fill(1), trees, alder: startAlder(seed, trees) }; });
 export const isForest = (s: State, i: number) => groundOf(s).trees[i] >= FOREST;
 // vad jordrutan i är: skog, ungskog, högt gräs, kort gräs eller bar jord (en stig)
 export type Markslag = 'skog' | 'ung' | 'hog' | 'kort' | 'bar';
@@ -139,8 +141,9 @@ export function growGround(s: State, hours: number, season: number) {
       const nb = c ? n / c : MARK.grasIngen;
       cover[i] = Math.min(1, old[i] + hours * MARK.grasAter * MARK.grasVaxt[season] * (MARK.grasBas + MARK.grasGrann * nb) * (old[i] < BAR ? MARK.stigAter : 1));
     }
+    if (trees[i] >= 1) aldras(g, i, hours); // ett vuxet träd åldras året runt, och torrakan faller till sist (trad.ts)
     if (!ts || old[i] < HIGH) continue; // stigar och kort gräs stoppar ny skog
-    if (trees[i] > 0) { if (trees[i] < 1) trees[i] = Math.min(1, trees[i] + hours * TREE_GROW * ts); continue; }
+    if (trees[i] > 0) { if (trees[i] < 1) { trees[i] = Math.min(1, trees[i] + hours * TREE_GROW * ts); if (trees[i] >= 1) g.alder![i] = 0; } continue; }
     let n = 0;
     for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
       const xx = x + dx, yy = y + dy;

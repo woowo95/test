@@ -967,7 +967,7 @@ SCENARIER.brand = {
         [`gnistor från lägerelden tände marken efter ${gnistTim} timmar med torr mark`, (gn.stat?.['brand gnista'] ?? 0) >= 1],
         [`skogsbranden spred sig i torr skog (${rutor} rutor på 18 timmar, ${trad} träd dog)`, rutor >= 8 && trad >= 5],
         [`när marken är blöt tar den sig inte vidare (${vatRutor} ruta)`, vatRutor <= 2],
-        [`där skogen brann står plantor (${plantor} av ${brunnen.length}) i aska (gräset högst ${askan.toFixed(2)})`, brunnen.length > 0 && plantor === brunnen.length && askan < HIGH],
+        [`där skogen brann står plantor (${plantor} av ${brunnen.length}; en torraka kan ha fallit av ålder) i aska (gräset högst ${askan.toFixed(2)})`, brunnen.length > 0 && plantor >= brunnen.length * 0.95 && askan < HIGH],
         [`plantorna växer när gräset kommit tillbaka (${vuxna} av ${brunnen.length} efter ${vaxtTim} timmar sommar)`, vuxna >= brunnen.length / 2],
         [`elden nära byn sågs (${st['brand sedd'] ?? 0}) och hotade byn (${st['brand hot'] ?? 0})`, (st['brand sedd'] ?? 0) >= 1 && (st['brand hot'] ?? 0) >= 1],
         [`de vuxna släckte: ${sack} med vattensäcken (${st['brand sack'] ?? 0} säckar), ${hand} med händerna, ${st['brand slackt'] ?? 0} rutor släckta, ${st['brand skadad'] ?? 0} brännskador`, sack >= 1 && hand >= 1 && (st['brand slackt'] ?? 0) >= 1],
