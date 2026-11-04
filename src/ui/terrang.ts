@@ -1,13 +1,13 @@
-import { BRAND, DAY, H, HOUR, T, W, ageIndex, emberOn, fireHeat, eldXY, eldarOf, groundOf, isCm, lightLevel } from '../sim';
+import { BRAND, DAY, H, HOUR, STADIER, T, VAG, W, ageIndex, stadium, emberOn, fireHeat, eldXY, eldarOf, groundOf, isCm, lightLevel } from '../sim';
 import { s } from './lage';
 import { TS, mork, terrainG, world } from './scen';
 import { stallNatt } from './natt';
 import { markLayer, ritaMark, stallMark } from './mark';
-import { stallTrad, tradLayer } from './trad';
+import { stallTrad, tradBild, tradLayer } from './trad';
 
 // marken (steg 5.1.3.1): gräs, vatten, strand, stigar, sten, lera, aska och snö ritas i pixlar i ui/mark.ts. Här bestäms
 // när: hela marken när tidsåldern, isen, vattnet eller byn byts, annars bara de rutor som ändrats (stigarna, skogen, askan).
-// Träden är granar i pixlar (steg 5.1.3.2, ui/trad.ts), ovanpå marken och sorterade söderut.
+// Träden är granar i pixlar efter sitt stadium (steg 5.1.3.2 och 5.1.4.3, ui/trad.ts), ovanpå marken och sorterade söderut.
 mork.addChildAt(markLayer, mork.getChildIndex(terrainG));
 mork.addChildAt(tradLayer, mork.getChildIndex(terrainG) + 1);
 // isen på sjön (steg 2.11.3, sim/is.ts): 0 = öppet vatten, 1 = tunn is (under 5 cm), 2 = tjock is
@@ -15,11 +15,15 @@ const isNiva = () => { const cm = isCm(s); return cm <= 0 ? 0 : cm < 5 ? 1 : 2; 
 let drawnSig = -1, lastSigCheck = 0, lastDraw = -Infinity, drawnNyckel = '';
 // marken kollas högst en gång i sekunden (datorns tid): när man snabbspolar ändras den nästan varje bildruta (steg 3.10.4)
 export const OMRITA_MS = 1000;
-// trädens storlek i fyra steg: 0 = inga, 1–2 = plantor, 3 = skog
-const treeLevel = (v: number) => v >= 0.5 ? 3 : v >= 0.25 ? 2 : v > 0 ? 1 : 0;
+// trädets stadium och storlek i steg: 0 = inget träd, plantan och ungträdet i fyra steg var, sedan vuxet, gammalt och torraka
+const STAD = Object.fromEntries(STADIER.map((d, k) => [d.id, k]));
+function treeLevel(g: ReturnType<typeof groundOf>, i: number) {
+  const st = stadium(g, i);
+  return st === null ? 0 : st === 'planta' || st === 'ungtrad' ? 1 + STAD[st] * 4 + Math.floor(g.trees[i] * 4) : 9 + STAD[st];
+}
 function coverSig() {
   const g = groundOf(s); let h = 0;
-  for (let i = 0; i < g.cover.length; i++) h = (Math.imul(h, 31) + Math.floor((1 - g.cover[i]) * 16) * 4 + treeLevel(g.trees[i])) | 0;
+  for (let i = 0; i < g.cover.length; i++) h = (Math.imul(h, 31) + Math.floor((1 - g.cover[i]) * 16) * 16 + treeLevel(g, i)) | 0;
   return h;
 }
 // färgen mellan a (f = 0) och b (f = 1)
@@ -47,7 +51,7 @@ export function drawTerrain(force = false) {
   }
   ritaMark(6, force);
 }
-// träden: en gran per ruta med skog, plantor som små granar, och unga granar i den orörda skogskanten
+// träden: ett träd per ruta efter sitt stadium, och unga granar i den orörda skogskanten
 function ritaTrad(g: ReturnType<typeof groundOf>, ai: number) {
   const tr = (i: number) => jord(g.tiles[i]) ? g.trees[i] : 0;
   const skog = (x: number, y: number) => x >= 0 && y >= 0 && x < W && y < H && tr(y * W + x) >= 0.5;
@@ -56,7 +60,16 @@ function ritaTrad(g: ReturnType<typeof groundOf>, ai: number) {
     const x = i % W, y = (i / W) | 0;
     return skog(x - 1, y) || skog(x + 1, y) || skog(x, y - 1) || skog(x, y + 1);
   };
-  stallTrad(W, H, tr, kant, ai === 0);
+  stallTrad(W, H, i => {
+    const x = i % W, y = (i / W) | 0, st = jord(g.tiles[i]) ? stadium(g, i) : null;
+    if (st) return tradBild(st, g.trees[i], x, y, VAG.ungskog);
+    return kant(i) && kantHash(x, y) < 0.3 ? tradBild('ungtrad', VAG.ungskog + (1 - VAG.ungskog) * kantHash(y, x) * 0.7, x, y, VAG.ungskog) : null; // en ung gran i skogskanten
+  }, ai === 0);
+}
+function kantHash(x: number, y: number) {
+  let h = Math.imul(x | 0, 0x27d4eb2d) ^ Math.imul(y | 0, 0x165667b1) ^ 610;
+  h = Math.imul(h ^ (h >>> 15), 0x85ebca6b); h ^= h >>> 13;
+  return (h >>> 0) / 4294967296;
 }
 // mörkret och eldens sken
 // (steg 5.1.1.4): paletten ett steg mörkare i skymningen och två på natten, med raster, och ljuset runt varje eld (ui/natt.ts)

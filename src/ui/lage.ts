@@ -38,7 +38,7 @@ export const ui = {
   filtAt: { x: 0, y: 0 }, // platsen man tryckte på en filt (flikar/filt.ts, steg 4.5.4.13)
   byteNr: -1, // bytet som visas i filtfliken (ett minne, steg 4.5.4.17), eller -1 för filten man tryckte på
   djurId: -1, // djuret som visas i panelen (flikar/djur.ts)
-  sak: '', // saken som visas i panelen: "t:<id>", "s:<x>,<y>,<slag>", toa-högen "f:<ruta>" eller stubben "u:<ruta>" (flikar/sak.ts)
+  sak: '', // saken som visas i panelen: "t:<id>", "s:<x>,<y>,<slag>", toa-högen "f:<ruta>", stubben "u:<ruta>" eller trädet "r:<ruta>" (flikar/sak.ts)
   lagerNr: 0, // vilken lagerplats som visas i panelen
   filter: undefined as Grupp | undefined, // värmekartan som visas på kartan
   filterArt: undefined as FyndId | undefined, // bara en art i gruppen, vald i teckenförklaringen
@@ -54,7 +54,7 @@ export const outPilesAt = (x: number, y: number) => piles().filter(q => q.out &&
 // den står vid eller den som har den på sig, i handen eller bär den
 export function sakVar(): { x: number; y: number } | { station: number } | { person: number } | undefined {
   const [slag, rest = ''] = ui.sak.split(':');
-  if (slag === 'f' || slag === 'u') { const i = Number(rest); return { x: i % W, y: Math.floor(i / W) }; } // toa-högen och stubben (steg 3.10.6)
+  if (slag === 'f' || slag === 'u' || slag === 'r') { const i = Number(rest); return { x: i % W, y: Math.floor(i / W) }; } // toa-högen, stubben (steg 3.10.6) och trädet (steg 5.1.4.3)
   if (slag === 's') { const [x, y] = rest.split(',').map(Number); return { x, y }; }
   const t = slag === 't' ? tingOf(s).find(k => k.id === Number(rest)) : undefined;
   if (!t) return undefined;

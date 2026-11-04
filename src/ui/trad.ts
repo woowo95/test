@@ -1,12 +1,14 @@
-// Träden på kartan i pixlar (steg 5.1.3.2, "Bildstil" under Gränssnitt i designdokumentet): granen som bildstilen ritade
-// den (bildstil/mark.js, gran version 1 renare: våningar av barr, lite osymmetriska, ljuset från vänster), en gran per ruta
-// med skog, lite flyttad i rutan. Plantorna är små granar som växer med rutans skog. I kanten av skogen står några unga
-// granar där marken är orörd (skogskanten i steg, bildstilen). På vintern ligger snö på våningarna. Varje bild ritas en gång
-// och sparas. Träden görs om i 5.1.4 (ett träd per ruta med art, ålder och stadium).
+// Träden på kartan i pixlar (steg 5.1.3.2 och 5.1.4.3, "Bildstil" under Gränssnitt i designdokumentet): granen som
+// bildstilen ritade den (bildstil/mark.js, gran version 1 renare: våningar av barr, lite osymmetriska, ljuset från vänster),
+// ett träd per ruta, lite flyttat i rutan. Stadiet syns (sim/trad.ts): plantan är en liten gran som växer med rutans skog,
+// ungträdet en halvstor gran, det vuxna trädet en hel gran, det gamla en större och mörkare gran, och torrakan bildstilens
+// döda gran (bildstil/mark.js, torraka: grå stam, kala grenar som hänger ned och en avbruten topp). I kanten av skogen står
+// några unga granar där marken är orörd (skogskanten i steg, bildstilen). På vintern ligger snö på våningarna. Varje bild
+// ritas en gång och sparas. Storlekarna görs om i 5.1.4.5.
 import * as PIXI from 'pixi.js';
 import { FARGER } from '../palett';
 
-const JORD = 4, BARR = 20, BEN = 28;
+const KOL = 0, JORD = 4, BARR = 20, BEN = 28;
 const RGBA = FARGER.map(h => parseInt(h.slice(1), 16));
 function hash(x: number, y: number, s: number) {
   let h = Math.imul(x | 0, 0x27d4eb2d) ^ Math.imul(y | 0, 0x165667b1) ^ Math.imul(s | 0, 0x2c1b3c6d);
@@ -51,42 +53,85 @@ function granPx(h: number, sno: number, s: number) {
   }
   return { w, h: H, px };
 }
-const bilder = new Map<string, PIXI.Texture>();
-function granTex(h: number, sno: number, s: number) {
-  const k = `${h}|${sno}|${s}`;
-  let t = bilder.get(k);
-  if (!t) {
-    const b = granPx(h, sno, s), c = document.createElement('canvas'); c.width = b.w; c.height = b.h;
-    const g = c.getContext('2d')!, img = g.createImageData(b.w, b.h), d = img.data;
-    for (let i = 0; i < b.px.length; i++) { const v = b.px[i]; if (v < 0) continue; const n = RGBA[v]; d[i * 4] = n >> 16; d[i * 4 + 1] = (n >> 8) & 255; d[i * 4 + 2] = n & 255; d[i * 4 + 3] = 255; }
-    g.putImageData(img, 0, 0);
-    t = PIXI.Texture.from(c, { scaleMode: PIXI.SCALE_MODES.NEAREST });
-    bilder.set(k, t);
+// torrakan h punkter hög (bildstil/mark.js, torraka): en död gran med alla grenar kvar men inga barr, grå stam, kransar
+// av kala grenar som hänger ned mot spetsarna, kortare uppåt, och en avbruten topp
+function torrakaPx(h: number, s: number) {
+  const w2 = Math.round(h * 0.3), w = 2 * w2 + 5, H = h + 2, cx = w >> 1, by = H - 2;
+  const px = new Int8Array(w * H).fill(-1);
+  const satt = (x: number, y: number, c: number) => { if (x >= 0 && y >= 0 && x < w && y < H) px[y * w + x] = c; };
+  for (let y = 0; y < h; y++) { satt(cx - 1, by - y, BEN); satt(cx, by - y, KOL + 3); }
+  satt(cx, by - h, BEN); satt(cx + 1, by - h + 1, KOL + 3); // den avbrutna toppen
+  const n = Math.round(h / 4.5);
+  for (let k = 0; k < n; k++) {
+    const y = by - Math.round(h * 0.14) - Math.round(k * (h * 0.82) / n), f = 1 - k / n;
+    for (const sida of [-1, 1]) {
+      if (hash(k, sida + s, 421) < 0.14) continue; // en gren som fallit av
+      const lang = Math.max(2, Math.round(w2 * (0.35 + f * 0.75) * (0.75 + hash(k, sida + s * 3, 422) * 0.5)));
+      for (let i = 1; i <= lang; i++) {
+        const x = cx + (sida < 0 ? -1 : 0) + sida * i, yy = y + Math.round(i * i / (lang * 2.2)); // grenen böjer sig nedåt
+        satt(x, yy, i > lang - 2 ? JORD + 1 : KOL + 3);
+        if (i > 2 && i % 3 === 0 && i < lang - 1) satt(x + sida, yy + 1, JORD + 1); // små kvistar
+      }
+    }
   }
+  return { w, h: H, px };
+}
+export type TradBild = { typ: 'gran' | 'torr'; h: number; s: number; mork?: boolean };
+function tradPx(b: TradBild, sno: number) {
+  if (b.typ === 'torr') return torrakaPx(b.h, b.s);
+  const p = granPx(b.h, sno, b.s);
+  if (b.mork) for (let i = 0; i < p.px.length; i++) if (p.px[i] > BARR && p.px[i] < BARR + 4) p.px[i]--; // det gamla trädet är mörkare
+  return p;
+}
+function tradCanvas(b: TradBild, sno: number) {
+  const p = tradPx(b, sno), c = document.createElement('canvas'); c.width = p.w; c.height = p.h;
+  const g = c.getContext('2d')!, img = g.createImageData(p.w, p.h), d = img.data;
+  for (let i = 0; i < p.px.length; i++) { const v = p.px[i]; if (v < 0) continue; const n = RGBA[v]; d[i * 4] = n >> 16; d[i * 4 + 1] = (n >> 8) & 255; d[i * 4 + 2] = n & 255; d[i * 4 + 3] = 255; }
+  g.putImageData(img, 0, 0);
+  return c;
+}
+const bilder = new Map<string, PIXI.Texture>();
+const nyckel = (b: TradBild, sno: number) => `${b.typ}|${b.h}|${b.s}|${b.mork ? 1 : 0}|${b.typ === 'torr' ? 0 : sno}`;
+function tradTex(b: TradBild, sno: number) {
+  const k = nyckel(b, sno);
+  let t = bilder.get(k);
+  if (!t) { t = PIXI.Texture.from(tradCanvas(b, sno), { scaleMode: PIXI.SCALE_MODES.NEAREST }); bilder.set(k, t); }
   return t;
+}
+// trädets bild i panelen (flikar/sak.ts), i dubbel storlek
+const urls = new Map<string, string>();
+export function tradBildUrl(b: TradBild) {
+  const k = nyckel(b, 0);
+  let u = urls.get(k);
+  if (!u) { u = tradCanvas(b, 0).toDataURL(); urls.set(k, u); }
+  return u;
+}
+// trädets bild efter stadiet (sim/trad.ts) och rutans skog (0–1); x, y = rutan
+export function tradBild(stadium: string, v: number, x: number, y: number, ungskog: number): TradBild {
+  const s = Math.floor(hash(x, y, 597) * 6);
+  if (stadium === 'planta') return { typ: 'gran', h: 4 + Math.round(v / ungskog * 3), s };
+  if (stadium === 'ungtrad') return { typ: 'gran', h: 8 + Math.round((v - ungskog) / (1 - ungskog) * 8), s };
+  if (stadium === 'gammalt') return { typ: 'gran', h: 38 + Math.floor(hash(x, y, 598) * 3) * 3, s, mork: true };
+  if (stadium === 'torraka') return { typ: 'torr', h: 26 + Math.floor(hash(x, y, 598) * 3) * 2, s };
+  return { typ: 'gran', h: 24 + Math.floor(hash(x, y, 598) * 4) * 3, s };
 }
 
 // ---------- träden på kartan ----------
 export const tradLayer = new PIXI.Container();
 tradLayer.sortableChildren = true;
 const sprites = new Map<number, { sp: PIXI.Sprite; k: string }>();
-// tr: rutans skog (0–1), kant: en orörd ruta utan skog bredvid skogen; vinter: snö på grenarna
-export function stallTrad(W: number, H: number, tr: (i: number) => number, kant: (i: number) => boolean, vinter: boolean) {
+// bild(i): trädet på rutan i (eller null), vinter: snö på grenarna
+export function stallTrad(W: number, H: number, bild: (i: number) => TradBild | null, vinter: boolean) {
   const sno = vinter ? 0.8 : 0;
   for (let i = 0; i < W * H; i++) {
-    const v = tr(i), x = i % W, y = (i / W) | 0;
-    let h = 0;
-    if (v >= 0.5) h = 24 + Math.floor(hash(x, y, 598) * 4) * 3; // vuxen gran
-    else if (v > 0) h = 5 + Math.round(v / 0.5 * 8); // plantan växer med skogen på rutan
-    else if (kant(i) && hash(x, y, 610) < 0.3) h = 8 + Math.floor(hash(x, y, 600) * 6); // en ung gran i skogskanten
-    const s = Math.floor(hash(x, y, 597) * 6), k = h ? `${h}|${sno}|${s}` : '';
+    const b = bild(i), x = i % W, y = (i / W) | 0, k = b ? nyckel(b, sno) : '';
     const f = sprites.get(i);
     if (f?.k === k) continue;
-    if (!h) { if (f) { f.sp.destroy(); sprites.delete(i); } continue; }
+    if (!b) { if (f) { f.sp.destroy(); sprites.delete(i); } continue; }
     const sp = f?.sp ?? new PIXI.Sprite();
-    const t = sp.texture = granTex(h, sno, s);
+    const t = sp.texture = tradTex(b, sno);
     const bx = x * 16 + 8 + Math.round((hash(x, y, 595) - 0.5) * 8), by = y * 16 + 14 + Math.round((hash(x, y, 596) - 0.5) * 4);
-    sp.position.set(bx - (t.width >> 1), by - t.height + 1); sp.zIndex = by;
+    sp.position.set(bx - (t.width >> 1), by - t.height + 1 + (b.typ === 'torr' ? 1 : 0)); sp.zIndex = by;
     if (!f) tradLayer.addChild(sp);
     sprites.set(i, { sp, k });
   }

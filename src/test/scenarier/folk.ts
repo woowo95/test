@@ -1883,12 +1883,13 @@ SCENARIER.samtalpar = {
     for (const seed of [3, 8]) {
       const s = createState(seed, START);
       for (let i = 0; i < 4 * 24 * 3600 / BEAT; i++) {
-        const fore = new Map(living(s).filter(p => p.task?.phase === 'do' && p.task.act !== 'samtal' && isSocial(p)).map(p => [p.id, { x: p.x, y: p.y, act: p.task!.act }]));
+        const fore = new Map(living(s).filter(p => p.task?.phase === 'do' && p.task.act !== 'samtal' && isSocial(p)).map(p => [p.id, { x: p.x, y: p.y, act: p.task!.act, task: p.task }]));
         const ev: TalkEvent[] = [];
         step(s, BEAT, ev);
         for (const p of living(s)) {
           const f = fore.get(p.id);
-          if (f && p.task?.act === f.act && p.task.phase === 'do' && (ACTS[f.act].hantverk || ACTS[f.act].arbete)) { arbeteFore++; if (Math.hypot(p.x - f.x, p.y - f.y) > 0.01 && !ACTS[f.act].vandra) { flyttad++; flyttAkt[f.act] = (flyttAkt[f.act] ?? 0) + 1; } }
+          // samma uppgift (en ny av samma slag kan ha börjat och nåtts i samma steg)
+          if (f && p.task && p.task === f.task && p.task.phase === 'do' && (ACTS[f.act].hantverk || ACTS[f.act].arbete)) { arbeteFore++; if (Math.hypot(p.x - f.x, p.y - f.y) > 0.01 && !ACTS[f.act].vandra) { flyttad++; flyttAkt[f.act] = (flyttAkt[f.act] ?? 0) + 1; } }
           const t = p.task, q = t?.med !== undefined ? byId(s, t.med) : undefined;
           if (t?.act !== 'samtal' || t.phase !== 'do' || !q || !isSocial(q) || q.task!.act === 'samtal' && q.task!.med !== p.id) continue; // (den andra kan ha gått vidare)
           par++;
