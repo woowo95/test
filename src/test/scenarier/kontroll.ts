@@ -130,6 +130,7 @@ SCENARIER.vakt = {
 const SALLSYNT: Record<string, string> = {
   kol: 'kol blir det bara när elden brunnit ut helt',
   flyttaeld: 'elden flyttas bara när ett hus behöver platsen eller byn har minst tre hus och vuxit ifrån elden (steg 2.10.4); scenariot eldflytt prövar det',
+  tillbehor: 'skinnfällen i bädden görs bara när byn har skinn över och kommit på skinnfällen, i 1 av 4 byar på 35 dygn sedan v324; scenariot skinnfall prövar det',
   hantverk: 'handarbete utan sak väljs inte sedan v55; rep tvinnas som en egen handling och resten är projekt',
   metspo: 'sen teknik efter fiskespjutet och repet, hinner inte alltid komma på 35 dygn',
   korg: 'sen teknik efter slöjdbänken, hinner inte alltid komma på 35 dygn',
@@ -210,3 +211,4 @@ SCENARIER.aldrig = {
     ];
   },
 };
+

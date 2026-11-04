@@ -47,8 +47,11 @@ export interface MarkIn {
   W: number; H: number; tiles: Uint8Array; cover: Float32Array; trees: Float32Array;
   vatten: number; sand: number; sten: number; lera: number; jord: (t: number) => boolean;
 }
-// tid: 0 istid, 1 vår, 2 sommar, 3 höst; is: 0 öppet vatten, 1 tunn is, 2 tjock is
-let IN: MarkIn, W = 0, H = 0, tid = 2, is = 0;
+// tid: 0 istid, 1 vår, 2 sommar, 3 höst, för punkten som räknas nu (steg 5.1.13: under det första dygnet av en ny
+// tidsålder har en del av marken ny tid och resten den förra, fläck för fläck, frac = hur mycket som bytt); sno = hur mycket
+// snö som ligger (0–1, vädret); is: 0 öppet vatten, 1 tunn is, 2 tjock is
+export interface MarkTid { ny: number; gammal: number; frac: number }
+let IN: MarkIn, W = 0, H = 0, tid = 2, is = 0, MT: MarkTid = { ny: 2, gammal: 2, frac: 1 }, SNO = 0;
 let SD = new Float32Array(0), FD = new Float32Array(0), NOTT = new Float32Array(0), TRAD = new Uint8Array(0), ASKA = new Float32Array(0);
 const SDMAX = 3;
 // avståndet i rutor till kanten av det inne() säger, med tecken: över 0 inne, under 0 ute (högst SDMAX)
@@ -105,6 +108,10 @@ const GRAS = 1, VASS = 2, KANT = 3, ANNAT = 0;
 let sort = ANNAT;
 function punkt(x: number, y: number): number {
   sort = ANNAT;
+  tid = MT.frac >= 1 || vn(x, y, 24, 777) < MT.frac ? MT.ny : MT.gammal;
+  // snön ligger i fläckar när det är lite, och över allt när det är mycket (steg 5.1.13)
+  const vinter = SNO > 0 && (SNO >= 1 || vn(x, y, 30, 779) < SNO * 1.1 - 0.05);
+  if (tid === 0 && !vinter) tid = 3; // istiden utan snö: vissnat gräs, som på hösten
   // kanterna mellan sorterna slingrar sig: rutan läses några punkter åt sidan, efter en långsam våg
   const jx = x + Math.round((vn(x, y, 9, 11) - 0.5) * 9), jy = y + Math.round((vn(x, y, 9, 12) - 0.5) * 9);
   const ji = tileXY(jx, jy), t = IN.tiles[ji];
@@ -112,20 +119,19 @@ function punkt(x: number, y: number): number {
   if (sd > -1.8 && sd < 2.6) sd += (vn(x, y, 22, 541) - 0.5) * 0.9 + (vn(x, y, 7, 542) - 0.5) * 0.25;
   const r = hash(x, y, 543);
   if (sd > 0) { // vattnet
-    if (tid === 0 && is) { // isen: slät, med ljusare fläckar där snön blåst upp
+    if (is) { // isen: slät, med ljusare fläckar där snön blåst upp
       if (sd < 0.12) return SKIFFER + 2;
       if (is === 1) return bayer(x, y) < 0.3 ? SKIFFER : flack(x, y, 20, 571, 0.7) ? SKIFFER + 2 : SKIFFER + 1;
       if (Math.abs(vn(x, y, 40, 31) - 0.5) < 0.012) return SKIFFER + 1; // sprickorna
       return r < 0.06 ? SKIFFER + 2 : r > 0.96 ? BEN + 1 : flack(x, y, 20, 571, 0.7) ? SKIFFER + 2 : SKIFFER + 3;
     }
     // grunt vatten med sten som syns genom ytan (version 1); djupet räknat i rutor från stranden
-    if (sd < 0.2) sort = VASS;
+    if (sd < 0.2 && !vinter) sort = VASS;
     if (sd < 0.28 && vn(x, y, 3, 544) > 0.66) return sd < 0.12 ? SKIFFER + 3 : SKIFFER + 2;
     const dj = sd > 1.3 ? 0 : sd > 0.42 ? 1 : 2, gl = vn(x, y, 5, 545) > 0.7 && (y + Math.floor(x / 6)) % 4 === 0;
     return gl ? SKIFFER + Math.min(3, dj + 1) : dj === 0 ? (r < 0.3 ? BARR : SKIFFER) : SKIFFER + dj;
   }
   let c: number;
-  const vinter = tid === 0;
   if (t === IN.sten) { // stenig mark: grå sten med ljusa ovansidor och bruna springor, så att den inte liknar vattnet
     const topp = flack(x, y, 6, 521, 0.6);
     c = vagstreck(x, y, 520, 0.03) || (!topp && flack(x, y - 1, 6, 521, 0.6)) ? JORD + 1 : topp ? BEN + 1 : r < 0.06 ? KOL + 3 : BEN;
@@ -166,6 +172,7 @@ function punkt(x: number, y: number): number {
   // marken som brann nyss: svart, och ljusare ju längre sedan
   const a = ASKA[ji];
   if (a > 0 && bayer(x, y) < a) { c = flack(x, y, 8, 530, 0.62) ? KOL + 2 : r < 0.5 ? KOL : KOL + 1; sort = ANNAT; }
+  if (vinter) sort = ANNAT; // inga tuvor och blommor i snön
   return c;
 }
 
@@ -198,7 +205,7 @@ export function rakna(x0: number, y0: number, px: Int8Array) {
   const satt = (x: number, y: number, c: number) => { x -= x0; y -= y0; if (x >= 0 && y >= 0 && x < BP && y < BP) px[y * BP + x] = c; };
   const morka = (x: number, y: number) => { x -= x0; y -= y0; if (x >= 0 && y >= 0 && x < BP && y < BP) px[y * BP + x] = morkare(px[y * BP + x]); };
   const sortAv = (x: number, y: number) => { const lx = x - x0, ly = y - y0; if (lx >= 0 && ly >= 0 && lx < BP && ly < BP) return sorter[ly * BP + lx]; punkt(x, y); return sort; };
-  if (tid === 0) return;
+  if (SNO >= 1) return; // allt under snö
   // tuvor, blommor och stenar på gräset (version 1), utlagda på ett rutnät med slump i varje cell
   for (let cy = Math.floor(y0 / 6) - 1; cy * 6 < y0 + BP + 4; cy++) for (let cx = Math.floor(x0 / 7) - 1; cx * 7 < x0 + BP + 3; cx++) {
     const x = cx * 7 + Math.floor(hash(cx, cy, 311) * 7), y = cy * 6 + Math.floor(hash(cx, cy, 312) * 6);
@@ -239,12 +246,13 @@ let sig = new Int32Array(0);
 const smutsiga = new Set<number>();
 // en rutas utseende i ett tal: sorten, hur nött, om det står träd och hur svart efter en brand
 const rutSig = (i: number, a: number) => IN.tiles[i] | Math.min(15, Math.floor((1 - IN.cover[i]) * 16)) << 4 | (IN.trees[i] >= 0.5 ? 1 : 0) << 8 | Math.min(15, Math.ceil(a * 15)) << 9;
-// in: kartan nu; glob: det som ändrar hela marken (byn, tidsåldern, isen, vattnet); aska: rutan -> hur svart (0–1)
-export function stallMark(inp: MarkIn, nyTid: number, nyIs: number, glob: string, aska: Map<number, number> | undefined) {
+// in: kartan nu; mt: tidsåldern och övergången; sno: snön (0–1); glob: det som ändrar hela marken (byn, vattnet); aska:
+// rutan -> hur svart (0–1)
+export function stallMark(inp: MarkIn, mt: MarkTid, sno: number, nyIs: number, glob: string, aska: Map<number, number> | undefined) {
   IN = inp;
-  const g = `${inp.W}|${inp.H}|${nyTid}|${nyIs}|${glob}`;
+  const g = `${inp.W}|${inp.H}|${mt.ny}|${mt.gammal}|${mt.frac}|${sno}|${nyIs}|${glob}`;
   if (g !== nyckel) {
-    nyckel = g; W = inp.W; H = inp.H; tid = nyTid; is = nyIs;
+    nyckel = g; W = inp.W; H = inp.H; MT = mt; SNO = sno; is = nyIs;
     bw = Math.ceil(W / BIT); bh = Math.ceil(H / BIT);
     raknaSD();
     NOTT = new Float32Array(W * H); TRAD = new Uint8Array(W * H); ASKA = new Float32Array(W * H); sig = new Int32Array(W * H);
