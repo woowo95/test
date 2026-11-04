@@ -8,6 +8,7 @@ import { seedAv } from '../pool';
 import { KARNA } from '../../portrattkarna';
 import { KARTBILDER, SYMNAMN } from '../../kartbilder';
 import { symDelar, symUtan } from '../../ui/symboler';
+import { anvandsKant, skaffasKant } from '../../ui/skaffas';
 import * as fs from 'fs';
 import * as path from 'path';
 import { ANSIKTSORD, drag, glomArv, skapad, skonNiva } from '../../ui/utseende';
@@ -37,6 +38,19 @@ SCENARIER['ui-ren'] = {
       [`gränssnittet läste ${n} gånger under ${DYGN} dygn (${DYGN} år i spelet), med ${living(a).length} invånare`, n > 100],
       [`läsningarna skrev inget i byn (${andrat} av ${n} gånger ändrades sparfilen)`, andrat === 0],
       [sa === sb ? 'sparfilerna är lika tecken för tecken' : `sparfilerna skiljer sig${lika > 0 ? ` redan efter ${lika} dygn` : ''}, första skillnaden: …${sa.slice(Math.max(0, d - 60), d + 40)}… mot …${sb.slice(Math.max(0, d - 60), d + 40)}…`, sa === sb],
+    ];
+  },
+};
+
+// föremålsrutan (steg 5.3.5.2): varje sak som syns har en rad om hur den skaffas och vad den används till
+SCENARIER.sakruta = {
+  text: 'Föremålsrutan säger för varje sak hur man skaffar den och vad den används till (ui/skaffas.ts)',
+  kor: () => {
+    const ks = Object.entries(SAKER).filter(([k, d]) => d && !d.dold && !d.mark && !d.i && k !== 'paborjat').map(([k]) => k);
+    const utanSkaffa = ks.filter(k => !skaffasKant(k)), utanAnv = ks.filter(k => !anvandsKant(k));
+    return [
+      [`${ks.length} saker; hur de skaffas saknas för: ${utanSkaffa.join(', ') || 'ingen'}`, ks.length > 40 && !utanSkaffa.length],
+      [`vad de används till saknas för: ${utanAnv.join(', ') || 'ingen'}`, !utanAnv.length],
     ];
   },
 };

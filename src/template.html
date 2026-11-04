@@ -69,7 +69,8 @@ h1 { font-family: var(--display); font-weight: 700; font-size: 24px; margin: 0; 
 .owned .fold .n { float: right; font-weight: 400; opacity: 0.8; }
 .owned ul { list-style: none; margin: 0 0 2px; padding: 0 0 0 12px; }
 /* en sak per rad: symbolen och antalet */
-.owned li { display: flex; gap: 5px; align-items: center; cursor: default; }
+.owned li { display: flex; gap: 5px; align-items: center; cursor: pointer; }
+.sakval { display: inline-flex; align-items: center; gap: 1px; margin-right: 4px; } .sakval small { font-size: .75em; opacity: .8; }
 .ikon { image-rendering: pixelated; flex: none; filter: drop-shadow(0 1px 1px rgba(0,0,0,0.6)); }
 img.ikon.sym { vertical-align: middle; } /* emojierna som pixelsymboler i hel skala (steg 5.3.2.1) */
 /* fryst mat i lagret: en vit och ljusblå kant av rimfrost runt symbolen (Björn valde rimfrosten efter v89) */
@@ -177,6 +178,7 @@ ul, ol { list-style: none; margin: 0; padding: 0; }
 .rutbar .bar { flex: 1; }
 .kv.smal { grid-template-columns: max-content minmax(0, 1fr); gap: 4px 8px; }
 .kv dd.helrad { grid-column: 1 / -1; display: block; }
+.kv dd.rader { display: block; } .kv dd.rader > div { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 4px; }
 .ruta.bred { grid-column: 1 / -1; }
 .kv.ensam { grid-template-columns: 1fr; justify-items: center; }
 .ruta .kv dd b { white-space: nowrap; }

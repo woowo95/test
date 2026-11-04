@@ -1,15 +1,17 @@
-import { FOREST, stamAv, MARK, STADIER, VAG, groundOf, stadium, tradAlder, tradArt, STUBBE_LIV, grundvarde, tingVarde, klenod, sakBerattelse, kladSkydd, BYN, HOUR, W, kortTal, Pile, SAKER, Slitage, Ting, byId, condOf, halvKlar, sakNamn, slitageNu, stationById, stationDef, temperature, tingOf, toaAt, toaInfo, viktOf } from '../../sim';
+import { amountOf, isTool, FOREST, stamAv, MARK, STADIER, VAG, groundOf, stadium, tradAlder, tradArt, STUBBE_LIV, grundvarde, tingVarde, klenod, sakBerattelse, kladSkydd, BYN, HOUR, W, kortTal, Pile, SAKER, Slitage, Ting, byId, condOf, halvKlar, sakNamn, slitageNu, stationById, stationDef, temperature, tingOf, toaAt, toaInfo, viktOf } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { condBar, durTxt, esc, kvMark, kvText, pLink } from '../hjalp';
 import { piles, s, ui } from '../lage';
 import type { Flik } from '../panel';
 import { tradBild, tradBildUrl } from '../trad';
+import { skaffasRader } from '../skaffas';
 
 // en sak eller en hög (steg 2.3.5): öppnas genom att trycka på den i lagret, en hög, personens utrustning eller en
 // stations redskapsplats. Symbolen och namnet, skicket, vad som sliter på den just nu och hur länge den håller i den
 // takten, vem som gjorde den och när, och kvaliteten (steg 2.2.2).
 // Det som går att trycka på har data-sak: "t:<tingets id>" för ett redskap eller plagg, "s:<x>,<y>,<slag>" för en stack.
 // En toa-hög på kartan (steg 2.10.5) öppnas som "f:<rutan>" och har en egen inforuta (toaHog)
+// Ett slag i förrådet (listan till vänster, steg 5.3.5.2) öppnas som "k:<slaget>" (slagIForradet)
 // En stubbe (steg 3.10.6) öppnas som "u:<rutan>" (stubbe) och ett träd (steg 5.1.4.3) som "r:<rutan>" (trad)
 export const sakKey = (a: { id?: number; x?: number; y?: number; k: string }) => a.id !== undefined ? `t:${a.id}` : `s:${a.x},${a.y},${a.k}`;
 export const sakAttr = (a: { id?: number; x?: number; y?: number; k: string }) => `data-sak="${sakKey(a)}"`;
@@ -77,6 +79,18 @@ function trad(i: number) {
       ${g.trees[i] >= FOREST ? `<dt>Fälls</dt><dd>${iconImg('ved', 14)} ${stam.ved} ${iconImg('grenar', 14)} ${stam.grenar}</dd>` : ''}
     </dl>`;
 }
+// ett slag i förrådet (steg 5.3.5.2): hur mycket byn har, vad det är värt och väger, vad det används till och hur man skaffar det
+function slagIForradet(k: string) {
+  const n = amountOf(s, k), v = grundvarde(k);
+  return `
+    <div class="phead">${iconImg(k, 32)}<div><h2>${esc(sakNamn(k))}</h2></div></div>
+    <dl class="kv">
+      <dt>I förrådet</dt><dd>${isTool(k) ? Math.ceil(n - 1e-9) : Math.round(n)} st</dd>
+      ${v ? `<dt title="Ungefär i arbetstimmar: det det tar att skaffa eller göra den">Värde</dt><dd>${kortTal(v)} styck</dd>` : ''}
+      <dt>Vikt</dt><dd>${kortTal(viktOf(k))} kg styck</dd>
+      ${skaffasRader(k)}
+    </dl>`;
+}
 export const sak: Flik = {
   namn: 'Saken',
   knapp: 'person',
@@ -84,6 +98,7 @@ export const sak: Flik = {
     if (ui.sak.startsWith('f:')) return toaHog(Number(ui.sak.slice(2)));
     if (ui.sak.startsWith('u:')) return stubbe(Number(ui.sak.slice(2)));
     if (ui.sak.startsWith('r:')) return trad(Number(ui.sak.slice(2)));
+    if (ui.sak.startsWith('k:')) return slagIForradet(ui.sak.slice(2));
     const { t, p } = hitta(), a = t ?? p;
     if (!a) return '<p class="muted">Den finns inte längre.</p>';
     const k = t?.halv?.gor ?? p?.gor ?? a.k, c = t ? t.c : condOf(p!), sl = slitageNu(s, { k: a.k, x: t ? t.x ?? p?.x : p!.x, y: t ? t.y ?? p?.y : p!.y }, t);
@@ -111,6 +126,7 @@ export const sak: Flik = {
       ${haller}${mangd}${varde}<dt>Vikt</dt><dd>${kortTal(viktOf(k))} kg${!t && p && p.n >= 2 ? `, ${kortTal(viktOf(k) * Math.round(p.n))} kg alla` : ''}</dd>${klad}
       ${t ? `<dt>Var</dt><dd>${var_(t, p)}</dd><dt>Ägare</dt><dd>${agare}</dd>` : ''}
       ${gjord}${klen}
+      ${t?.halv ? '' : skaffasRader(k)}
     </dl>`;
   },
   klick(el) {
