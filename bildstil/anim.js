@@ -84,11 +84,10 @@
   }
   function gnistor(B, x, y, ruta) { for (let k = 0; k < 3; k++) { const upp = ((ruta + k * 2) % 4) * 3, gx = x + ((k * 5 + ruta) % 5) - 2; prick(B, gx, y - upp, upp > 6 ? 'rost' : 'senap', upp > 6 ? 1 : 3); } }
   const LAGOR = [[2, 4, 7, 9, 6, 4, 2], [3, 6, 8, 6, 9, 3, 2], [2, 5, 10, 7, 6, 5, 3], [4, 3, 7, 10, 5, 6, 2]];
-  }
 
   // stranden och vågorna: en sjö är en funktion i(x, y) (sant i vattnet), och avståndet till stranden räknas i punkter.
   // Vågorna är korta ljusa streck som rullar en punkt per bild och tänds och slocknar, och vid stranden sköljer en
-  // skumrand upp på sanden och drar sig tillbaka, i samma fyra bilder som allt annat. Bara vattnet nära stranden och
+  // skumrand upp på sanden och drar sig tillbaka, långsamt (HASTIGHET). Bara vattnet nära stranden och
   // strecken ritas om, inte marken.
   function strandAvst(B, i, max) {
     const d = new Array(B.w * B.h).fill(-1);
