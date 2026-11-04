@@ -3,8 +3,9 @@ import { pratText, relationText, beskrivning, binamnInfo, INTRYCK, Intryck, Intr
 import { gorText } from '../jakt';
 import { portrattImg } from '../folkbild';
 import { skapad } from '../utseende';
-import { framstegSvg, hasIcon, iconImg, kvSvg, tecknet } from '../../ikoner';
-import { LAG, byteKnapp, clockTxt, ansStapel, ansTecken, fmtN, bar, cap, carryTxt, cssFarg, durTxt, esc, hsl, hjalpOppen, hjalpText, moodWord, pLink, prickar, relWord, sickNow, tempBar, tempOrd, trend, trendD } from '../hjalp';
+import { hasIcon, iconImg, kvSvg, tecknet } from '../../ikoner';
+import { framstegSvg, ringSvg, tartFarg, tartSvg } from '../framsteg';
+import { LAG, byteKnapp, clockTxt, ansStapel, ansTecken, fmtN, bar, cap, carryTxt, cssFarg, durTxt, esc, hjalpOppen, hjalpText, moodWord, pLink, prickar, relWord, sickNow, tempBar, tempOrd, trend, trendD } from '../hjalp';
 import { s, ui, uppgiftVid } from '../lage';
 import { tekInfo } from './teknik';
 import { gastById, gastRad, type Gast } from '../gaster';
@@ -416,18 +417,14 @@ function groups(ls: Lardom[]) {
 // var sin sida om den påklädda människan (bildens vänstra sida är personens högra, som i fliken Hälsa), med en stapel under
 // som visar hur mycket handen bär av det den orkar. Kroppens platser i en rad under, och sedan det hen äger. Ringen runt
 // ett redskap visar skicket; vad som sitter på platsen och vad det väger syns när man håller över eller trycker på rutan
-// skicket som en linje runt rutan, från toppen medsols: en ring runt en rund ruta, och längs kanten runt en fyrkantig (händerna,
-// med hörnen rundade som rutans, r i bildens 36 punkter; steg 2.10.19)
-function skickRing(c: number, r: number) {
-  const d = `pathLength="100" stroke-dasharray="${Math.round(c * 100)} 100"`, a = (x: number, y: number) => `A${r} ${r} 0 0 1 ${x} ${y}`;
-  if (!r) return `<svg class="ring" viewBox="0 0 36 36"><circle cx="18" cy="18" r="16" ${d}/></svg>`;
-  return `<svg class="ring fyrkant" viewBox="0 0 36 36"><path d="M18 2H${34 - r}${a(34, 2 + r)}V${34 - r}${a(34 - r, 34)}H${2 + r}${a(2, 34 - r)}V${2 + r}${a(2 + r, 2)}Z" ${d}/></svg>`;
-}
+// skicket som en linje runt rutan, från toppen medsols (pixelringen, steg 5.3.2.2): runt en rund ruta (30 punkter) och
+// längs kanten runt händernas fyrkantiga (30 eller 56 punkter, med hörnen rundade som rutans; steg 2.10.19)
+const skickRing = (c: number, hand: boolean, stor: boolean) => ringSvg(c, (stor ? 56 : 30) + 4, hand ? (stor ? 12 : 8) : 0); // yttre bredden med kanten, och hörnen som rutans border-radius
 function gearHtml(p: Person) {
   const hand = heldBy(s, p), own = ownedBy(s, p).filter(t => t !== hand && t.bar !== p.id);
   const whose = (t: Ting) => t.agare === p.id ? 'eget' : t.agare === BYN ? 'byns' : `lånat av ${byId(s, t.agare)?.name ?? 'någon'}`;
   const where = (t: Ting) => t.bar !== undefined ? `${byId(s, t.bar)?.name ?? 'någon'} har det på sig` : t.hos === undefined ? 'i förrådet' : `${byId(s, t.hos)?.name ?? 'någon'} har det i handen`;
-  const ting = (t: Ting, title: string, cls = 'kan', px = 16) => `<span class="tnod liten ${cls}" tabindex="0" data-sak="t:${t.id}" title="${esc(title)}" aria-label="${esc(title)}">${iconImg(t.halv?.gor ?? t.k, px)}${kvSvg(t.q, px > 20 ? 14 : 9) && `<span class="kvhorn">${kvSvg(t.q, px > 20 ? 14 : 9)}</span>`}${t.halv ? `<span class="halvmark">${framstegSvg(halvKlar(t.halv), 9)}</span>` : ''}${skickRing(t.c, cls.includes('hand') ? (px > 20 ? 9 : 11) : 0)}</span>`;
+  const ting = (t: Ting, title: string, cls = 'kan', px = 16) => `<span class="tnod liten ${cls}" tabindex="0" data-sak="t:${t.id}" title="${esc(title)}" aria-label="${esc(title)}">${iconImg(t.halv?.gor ?? t.k, px)}${kvSvg(t.q, px > 20 ? 14 : 9) && `<span class="kvhorn">${kvSvg(t.q, px > 20 ? 14 : 9)}</span>`}${t.halv ? `<span class="halvmark">${framstegSvg(halvKlar(t.halv), 4)}</span>` : ''}${skickRing(t.c, cls.includes('hand'), px > 20)}</span>`;
   const t = p.task, borda = t ? load(t, s) : 0, bar = !!t && borda > 0, u = utrustning(s, p, bar), kg = (n: number) => `${kortTal(n)} kg`;
   const bordaTxt = bar ? `bär ${carryTxt(p).replace(/^Bär /, '')}` : '';
   // den som äter vid bordet har maten i den första fria handen (steg 3.10.3)
@@ -524,7 +521,7 @@ function lardomHtml(p: Person, ls: Lardom[]) {
 // vad personen brukar ägna sin vakna tid åt, i grupper efter slaget av arbete (SLAG); en handling utan slag står för sig.
 // Symbolen är slagets pixelbild, annars handlingens egen (ikon, t.ex. utbrottens grader) eller slagets eller handlingens tecken.
 // Räknas första gången den behövs, när symbolerna kan ritas
-let habitGroups: { name: string; ikon: string; acts: Act[]; farg: string }[] | undefined;
+let habitGroups: { name: string; ikon: string; acts: Act[] }[] | undefined;
 const HABIT_GROUPS = () => habitGroups ??= (() => {
   const m = new Map<string, { name: string; ikon: string; acts: Act[] }>();
   for (const a of Object.keys(ACTS) as Act[]) {
@@ -533,8 +530,7 @@ const HABIT_GROUPS = () => habitGroups ??= (() => {
     const egen = !sl && (ACTS[a].ikon ?? 'a_' + a), ikon = px && hasIcon(px) ? iconImg(px, 16) : egen && hasIcon(egen) ? iconImg(egen, 16) : `<span class="tecken">${(sl ? SLAG_TECKEN[sl] : ACTS[a].tecken) ?? '•'}</span>`;
     (m.get(name) ?? m.set(name, { name, ikon, acts: [] }).get(name)!).acts.push(a);
   }
-  // en egen färg per grupp, jämnt fördelad runt färghjulet, så att samma slag alltid har samma färg
-  return [...m.values()].map((g, i, all) => ({ ...g, farg: cssFarg(hsl(i * 360 / all.length, 0.45, 0.55)) }));
+  return [...m.values()];
 })();
 // tårtdiagram över den vakna tiden de senaste dygnen (vanorna bleknar, seder.ts). Bara de allra minsta delarna slås ihop
 // till Annat (steg 3.10.5)
@@ -545,19 +541,14 @@ function tidHtml(p: Person) {
   if (!(tot > 0)) return '<p class="muted">Hen har inte hunnit göra något ännu.</p>';
   const all = HABIT_GROUPS().map(g => ({ g, v: habitShare(p, g.acts, tot) })).filter(x => x.v > 0).sort((a, b) => b.v - a.v);
   const stora = all.filter(x => x.v >= SMA), annat = all.filter(x => x.v < SMA).reduce((a, x) => a + x.v, 0);
-  const bitar = stora.map(x => ({ name: x.g.name, ikon: x.g.ikon, farg: x.g.farg, v: x.v }));
-  if (annat > 0) bitar.push({ name: 'Annat', ikon: '<span class="tecken">…</span>', farg: 'var(--barbg)', v: annat });
-  let vinkel = 0;
-  const pt = (v: number) => `${Math.sin(v * 2 * Math.PI).toFixed(4)} ${(-Math.cos(v * 2 * Math.PI)).toFixed(4)}`;
-  const tart = bitar.map((b, i) => {
-    const fran = vinkel; vinkel += b.v;
-    const titel = `<title>${esc(b.name)}: ${Math.round(b.v * 100)} %</title>`;
-    const m = `fill="${b.farg}" data-i="${i}" data-t="${esc(b.name)}"${b.name === tidVald ? ' class="vald"' : ''}`;
-    return b.v >= 0.9999 ? `<circle r="1" ${m}>${titel}</circle>` : `<path d="M0 0L${pt(fran)}A1 1 0 ${b.v > 0.5 ? 1 : 0} 1 ${pt(vinkel)}Z" ${m}>${titel}</path>`;
-  }).join('');
+  // färgerna ur paletten i tårtans ordning (steg 5.3.2.2), så att två delar bredvid varandra aldrig har samma färg
+  const bitar = stora.map(x => ({ name: x.g.name, ikon: x.g.ikon, v: x.v }));
+  if (annat > 0) bitar.push({ name: 'Annat', ikon: '<span class="tecken">…</span>', v: annat });
+  const farg = (i: number) => tartFarg(i, bitar.length);
+  const tart = tartSvg(bitar.map((b, i) => ({ v: b.v, titel: `${esc(b.name)}: ${Math.round(b.v * 100)} %`, attr: `style="--f:${farg(i)}" data-i="${i}" data-t="${esc(b.name)}"${b.name === tidVald ? ' class="vald"' : ''}` })));
   const vald = bitar.some(b => b.name === tidVald);
-  return `<div class="tid${vald ? ' har-vald' : ''}"><svg class="tart" viewBox="-1 -1 2 2" role="img" aria-label="Vad hen ägnat sin vakna tid åt">${tart}</svg>
-    <ul class="tidlista">${bitar.map((b, i) => `<li title="${esc(b.name)}: ${Math.round(b.v * 100)} %" data-i="${i}" data-t="${esc(b.name)}"${b.name === tidVald ? ' class="vald"' : ''}><span class="fg" style="background:${b.farg}"></span>${b.ikon}<span class="namn">${esc(b.name)}</span><span class="pc">${Math.round(b.v * 100)} %</span></li>`).join('')}</ul></div>
+  return `<div class="tid${vald ? ' har-vald' : ''}">${tart}
+    <ul class="tidlista">${bitar.map((b, i) => `<li title="${esc(b.name)}: ${Math.round(b.v * 100)} %" data-i="${i}" data-t="${esc(b.name)}"${b.name === tidVald ? ' class="vald"' : ''}><span class="fg" style="background:${farg(i)}"></span>${b.ikon}<span class="namn">${esc(b.name)}</span><span class="pc">${Math.round(b.v * 100)} %</span></li>`).join('')}</ul></div>
     <p class="muted small">Den vakna tiden de senaste dygnen. Tryck på en del eller en rad, eller håll musen över den, så lyser båda.</p>`;
 }
 

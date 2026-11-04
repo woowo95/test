@@ -9,13 +9,13 @@
   /* Ljust och mörkt läge (steg 5.3.1.3): grundens färger i två uppsättningar ur paletten (palett.ts). Ljust: beige (benets
      toner) och kol. Mörkt: kolets toner med en ljusare innerkant på rutorna. Flikarnas egna färger är desamma i båda.
      Ljust är standard; knappen under ⚙ byter, och valet sparas i webbläsaren (data-tema på html) */
-  --bg: #bdb39b; --panel: #dad0bb; --fg: #24201d; --muted: #5e3c24; --line: #a0947d; --inner: transparent;
+  --bg: #bdb39b; --panel: #dad0bb; --fg: #24201d; --muted: #5e3c24; --line: #a0947d; --inner: transparent; --tartblek: #a0947d;
   --accent: #a14808; --accent-fg: #dad0bb; --good: #4b4f00; --bad: #742a01; --barbg: #bdb39b; color-scheme: light;
   --display: "Grenze", "Palatino Linotype", Georgia, serif;
   --body: "Alegreya Sans", "Segoe UI", system-ui, sans-serif;
 }
 :root[data-tema="morkt"] {
-  --bg: #24201d; --panel: #2f261d; --fg: #dad0bb; --muted: #a0947d; --line: #474138; --inner: #474138;
+  --bg: #24201d; --panel: #2f261d; --fg: #dad0bb; --muted: #a0947d; --line: #474138; --inner: #474138; --tartblek: #474138;
   --accent: #d8b25f; --accent-fg: #24201d; --good: #898b4c; --bad: #bd753e; --barbg: #372f25; color-scheme: dark;
 }
 header, .tabs, .controls { box-shadow: inset 0 0 0 1px var(--inner); }
@@ -177,9 +177,7 @@ ul, ol { list-style: none; margin: 0; padding: 0; }
 .kvm { display: inline-block; line-height: 0; vertical-align: middle; margin-right: 2px; }
 .tnod.kan { border-color: var(--good); }
 .tnod.sel { box-shadow: 0 0 0 3px var(--accent); }
-.tnod .ring { position: absolute; inset: -4px; width: calc(100% + 8px); height: calc(100% + 8px); transform: rotate(-90deg); pointer-events: none; }
-.tnod .ring circle, .tnod .ring path { fill: none; stroke: var(--accent); stroke-width: 3; }
-.tnod .ring.fyrkant { transform: none; } /* runt händernas fyrkantiga rutor börjar den i toppen av sig själv (steg 2.10.19) */
+.tnod .ring { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); pointer-events: none; } /* pixelringen, fyra punkter utanför knappen åt alla håll (steg 5.3.2.2) */
 .tnod .antal.ensam { background: var(--bad); } .tinfo .fel { color: var(--bad); }
 .tnod .antal { position: absolute; right: -6px; bottom: -6px; min-width: 18px; height: 18px; border-radius: 9px; background: var(--good); color: #fff; font-size: 11px; line-height: 18px; text-align: center; padding: 0 4px; }
 .anseende { font-size: 0.8em; cursor: help; }
@@ -288,20 +286,19 @@ button.rw { border: none; background: none; padding: 0; font: inherit; color: in
 .pdelar button[aria-selected="true"] { border-bottom-color: var(--accent); opacity: 1; }
 .tro { display: inline-block; border: 1px solid var(--line); border-radius: 10px; padding: 0 7px; margin: 0 3px 3px 0; font-size: 13px; cursor: help; }
 .tid { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
-.tart { width: 120px; height: 120px; flex: none; }
-.tart path, .tart circle { stroke: var(--panel); stroke-width: 0.015; }
+.tart { flex: none; } .tart g { fill: var(--f); } .tart .tl { fill: var(--panel); } /* tårtan i pixlar (steg 5.3.2.2) */
 .tidlista { display: grid; grid-template-columns: max-content; gap: 3px; font-variant-numeric: tabular-nums; }
 .tidlista li { display: flex; align-items: center; gap: 5px; cursor: help; }
 .tidlista .fg { width: 10px; height: 10px; border-radius: 2px; flex: none; }
 .tidlista .pc { margin-left: auto; padding-left: 10px; }
 .tidlista li { border-radius: 3px; padding: 0 3px; }
-.tart path, .tart circle { cursor: help; transition: opacity .1s; }
-.tid:has([data-i]:hover) .tart [data-i] { opacity: 0.45; }
-.tid:has([data-i="0"]:hover) [data-i="0"], .tid:has([data-i="1"]:hover) [data-i="1"], .tid:has([data-i="2"]:hover) [data-i="2"], .tid:has([data-i="3"]:hover) [data-i="3"], .tid:has([data-i="4"]:hover) [data-i="4"], .tid:has([data-i="5"]:hover) [data-i="5"], .tid:has([data-i="6"]:hover) [data-i="6"], .tid:has([data-i="7"]:hover) [data-i="7"], .tid:has([data-i="8"]:hover) [data-i="8"], .tid:has([data-i="9"]:hover) [data-i="9"], .tid:has([data-i="10"]:hover) [data-i="10"], .tid:has([data-i="11"]:hover) [data-i="11"] { opacity: 1; }
+.tart g { cursor: help; }
+.tid:has([data-i]:hover) .tart [data-i] { fill: var(--tartblek); }
+.tid:has([data-i="0"]:hover) [data-i="0"], .tid:has([data-i="1"]:hover) [data-i="1"], .tid:has([data-i="2"]:hover) [data-i="2"], .tid:has([data-i="3"]:hover) [data-i="3"], .tid:has([data-i="4"]:hover) [data-i="4"], .tid:has([data-i="5"]:hover) [data-i="5"], .tid:has([data-i="6"]:hover) [data-i="6"], .tid:has([data-i="7"]:hover) [data-i="7"], .tid:has([data-i="8"]:hover) [data-i="8"], .tid:has([data-i="9"]:hover) [data-i="9"], .tid:has([data-i="10"]:hover) [data-i="10"], .tid:has([data-i="11"]:hover) [data-i="11"] { fill: var(--f); }
 .tid:has([data-i="0"]:hover) li[data-i="0"], .tid:has([data-i="1"]:hover) li[data-i="1"], .tid:has([data-i="2"]:hover) li[data-i="2"], .tid:has([data-i="3"]:hover) li[data-i="3"], .tid:has([data-i="4"]:hover) li[data-i="4"], .tid:has([data-i="5"]:hover) li[data-i="5"], .tid:has([data-i="6"]:hover) li[data-i="6"], .tid:has([data-i="7"]:hover) li[data-i="7"], .tid:has([data-i="8"]:hover) li[data-i="8"], .tid:has([data-i="9"]:hover) li[data-i="9"], .tid:has([data-i="10"]:hover) li[data-i="10"], .tid:has([data-i="11"]:hover) li[data-i="11"] { background: color-mix(in srgb, var(--accent) 18%, transparent); }
-.tid.har-vald .tart [data-i] { opacity: 0.45; } .tid .tart .vald { opacity: 1; }
+.tid.har-vald .tart [data-i] { fill: var(--tartblek); } .tid .tart .vald { fill: var(--f); }
 .tidlista li.vald { background: color-mix(in srgb, var(--accent) 28%, transparent); }
-.tart path, .tart circle, .tidlista li { cursor: pointer; }
+.tart g, .tidlista li { cursor: pointer; }
 .tidlista .tecken { width: 16px; text-align: center; font-size: 13px; line-height: 16px; }
 .controls { position: fixed; z-index: 4; right: calc(var(--stenar) + 6px); bottom: 12px; width: 340px; max-width: calc(100vw - var(--stenar) - 24px); box-sizing: border-box; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 10px 14px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
 .switch { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }

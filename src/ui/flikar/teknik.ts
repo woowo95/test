@@ -1,5 +1,6 @@
 import { ACTS, MATERIAL, SKILL_ORD, SLAG, Person, SAKER, TEK, TEKNIK, TEKTAL, Tek, amountOf, harSak, hasMaterial, knows, materialOf, living, sakNamn, stationDef } from '../../sim';
 import { iconImg } from '../../ikoner';
+import { ringSvg } from '../framsteg';
 import { bar, esc, fmtN, hjalpKnapp, hjalpText, pLink } from '../hjalp';
 import { s } from '../lage';
 import type { Flik } from '../panel';
@@ -41,7 +42,7 @@ function tekHtml() {
   const lines = VIS.flatMap(t => t.krav.filter(k => pos[k]).map(k => `<line x1="${pos[k].x}" y1="${pos[k].y}" x2="${pos[t.id].x}" y2="${pos[t.id].y}"/>`));
   const nodes = VIS.map(t => {
     const vem = ppl.filter(p => knows(p, t.id)), kan = vem.length, best = Math.max(0, ...ppl.map(p => p.tek?.[t.id] ?? 0));
-    const ring = !kan && best > 0.01 ? `<svg class="ring" viewBox="0 0 36 36"><circle cx="18" cy="18" r="16" pathLength="100" stroke-dasharray="${Math.round(best * 100)} 100"/></svg>` : '';
+    const ring = !kan && best > 0.01 ? ringSvg(best, 48) /* knappen är 44 punkter med kanten 2 */ : '';
     // ! bara när det spelar roll: ingen kan det och ingen kan komma på det, för det som behövs finns inte i byn
     const brist = !kan && !hasMaterial(s, t) ? `<span class="brist" title="${esc(`Ingen kan komma på det nu: ${saknas(t)} finns inte i byn.`)}">!</span>` : '';
     // varning när bara en kan det: dör hen försvinner kunskapen (steg 4.2.3.4)

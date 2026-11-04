@@ -7,6 +7,8 @@ import { outPilesAt, piles, s, sakVar, ui } from './lage';
 import { Ikoner, TS, overG, pileLayer, structG } from './scen';
 import { mix } from './terrang';
 import { iBruk } from './ibruk';
+import { framstegPunkter } from './framsteg';
+import { fargTal } from '../palett';
 
 // det som står på marken: lagerplatserna och stackarna, stationerna, husen, stubbar, fällda träd och elden
 const pileIcons = new Ikoner(pileLayer, true); // med skuggor på marken (steg 5.1.8)
@@ -76,13 +78,11 @@ function drawFalt() {
     if (!vaxer && !mogen) { const i = faltRuta(f, Math.min(f.klara, f.n - 1)); framsteg((i % W) * TS + TS / 2, Math.floor(i / W) * TS + 3, faltKlar(f)); }
   }
 }
-// framstegscirkeln för det som inte är klart (Björn valde A2 efter v55): en mörk bricka med vit kant som fylls med gult,
-// medsols från klockan tolv, ju längre arbetet kommit (p från 0 till 1). Samma som framstegSvg i panelerna (ikoner.ts)
+// framstegscirkeln för det som inte är klart: en mörk bricka med ljus kant som fylls med gult medsols från klockan tolv,
+// ju längre arbetet kommit (p från 0 till 1). I pixlar, 9 × 9 punkter, samma punkter som framstegSvg i panelerna (steg 5.3.2.2)
 function framsteg(cx: number, cy: number, p: number) {
-  const r = 3.6, f = clamp(p, 0, 1);
-  overG.beginFill(0x1c1814, 0.88).drawCircle(cx, cy, r).endFill();
-  if (f > 0) overG.beginFill(0xe0b050).moveTo(cx, cy).arc(cx, cy, r - 0.7, -Math.PI / 2, -Math.PI / 2 + f * 2 * Math.PI).lineTo(cx, cy).endFill();
-  overG.lineStyle(0.5, 0xf2ece0).drawCircle(cx, cy, r).lineStyle(0);
+  const x0 = Math.round(cx) - 4, y0 = Math.round(cy) - 4;
+  framstegPunkter(4, p, (x, y, c) => overG.beginFill(fargTal(c)).drawRect(x0 + x, y0 + y, 1, 1).endFill());
 }
 // '_v' när stationen står vriden och har en stående bild (steg 3.10.7, regeln Det som kan vridas), annars ''
 const vriden = (st: Station) => { const ik = stationDef(st.k)?.ikon ?? ''; return st.rot && (hasIcon(ik + '_karta_v') || hasIcon('kb_' + ik + '_v')) ? '_v' : ''; };

@@ -2511,7 +2511,7 @@ export const PIX: Record<string, string[]> = {
     'bbbbbdbb',
   ],
   // inte klart (paborjat.ts): framstegscirkeln (Björn valde A2 efter v55), här halvfylld. På kartan och i panelerna ritas
-  // den med hur långt arbetet kommit (foremal.ts, framstegSvg nedan)
+  // den med hur långt arbetet kommit (foremal.ts och framstegSvg i ui/framsteg.ts)
   paborjat: [
     '..wwww..',
     '.wddyyw.',
@@ -3801,13 +3801,6 @@ export function iconCanvas(k: string) {
 export const hasIcon = (k: string) => !!PIX[k];
 // en ljus symbol utan kant (de för arbetet, ritade för en mörk ruta): i den ljusa pratbubblan ritas den mörk (steg 4.5.6.9)
 export const ljusSymbol = (k: string) => !!PIX[k] && !PAL[k]?.o && ['#dad0bb'].includes(PAL[k]?.w ?? '');
-// framstegscirkeln för det som inte är klart (Björn valde A2 efter v55): en mörk bricka med vit kant som fylls med gult,
-// medsols från klockan tolv, ju längre arbetet kommit (p från 0 till 1)
-export function framstegSvg(p: number, size = 10) {
-  const f = Math.min(1, Math.max(0, p)), a = f * 2 * Math.PI, x = 8 + 5.6 * Math.sin(a), y = 8 - 5.6 * Math.cos(a);
-  const kil = f >= 0.999 ? '<circle cx="8" cy="8" r="5.6" fill="#d8b25f"/>' : f > 0 ? `<path d="M8 8V2.4A5.6 5.6 0 ${a > Math.PI ? 1 : 0} 1 ${x.toFixed(2)} ${y.toFixed(2)}Z" fill="#d8b25f"/>` : '';
-  return `<svg class="ikon" width="${size}" height="${size}" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="rgba(36,32,29,0.88)" stroke="#dad0bb" stroke-width="1.4"/>${kil}</svg>`;
-}
 // kvalitetens märke (steg 2.2.2, Björn valde version 2 i bildstilen, byggt i steg 3.6.11): usel ett mörkt dammoln, slarvig
 // en ojämn grå fläck, normal inget, fin i silver, mästerverk i guld och det perfekta mästerverket i guld med vita gnistor. 8 × 8 punkter
 const KV_PIX: readonly ({ pal: Record<string, string>; rader: readonly string[] } | undefined)[] = [
