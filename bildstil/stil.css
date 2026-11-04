@@ -259,3 +259,26 @@ td.tal { white-space: nowrap; }
 .resten { display: grid; gap: 14px; border-top: 6px double var(--line); padding-top: 32px; }
 details.mer summary { cursor: pointer; color: var(--dim); min-height: 40px; display: flex; align-items: center; width: fit-content; }
 details.mer p { color: var(--dim); max-width: 62ch; margin: 4px 0 0; }
+
+/* ritaren */
+.rita-bord { display: grid; grid-template-columns: minmax(0, 1fr) 236px; gap: 16px; align-items: start; }
+@media (max-width: 720px) { .rita-bord { grid-template-columns: minmax(0, 1fr); } }
+.rita-vanster, .rita-hoger { display: grid; gap: 10px; min-width: 0; }
+.rita-rad { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.rita-rad button, .rita-mitt button { min-height: 40px; min-width: 40px; }
+#rita select { background: var(--panel); border: 1px solid var(--line); padding: 6px 8px; color: var(--ink); font: inherit; max-width: 100%; }
+.rita-dukram { overflow: auto; max-width: 100%; }
+#rita-duk { display: block; touch-action: none; cursor: crosshair; image-rendering: pixelated; border: 1px solid var(--line); }
+.rita-palett { display: grid; gap: 4px; }
+.rita-ramp { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+.rita-ramp button { height: 36px; border: 2px solid var(--line); cursor: pointer; padding: 0; }
+.rita-ramp button[aria-pressed="true"] { border-color: var(--ink); outline: 2px solid var(--bg); outline-offset: -4px; }
+.rita-valdrad { display: flex; gap: 8px; align-items: center; }
+.rita-vald { width: 28px; height: 28px; border: 1px solid var(--ink); display: inline-block; }
+.rita-forhand { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; }
+.rita-forhand canvas { image-rendering: pixelated; }
+#rita input[type=text], #rita textarea { background: var(--bg); border: 1px solid var(--line); padding: 8px 10px; color: var(--ink); width: 100%; }
+#rita textarea { min-height: 4em; resize: vertical; }
+.rita-mina { display: flex; flex-wrap: wrap; gap: 12px; }
+.rita-mitt { margin: 0; background: var(--panel2); padding: 10px; display: grid; gap: 6px; max-width: 220px; }
+.rita-mitt canvas { image-rendering: pixelated; }
