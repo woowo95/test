@@ -17,6 +17,7 @@ Bara texterna ändras, inte hur spelet räknar. Varianterna väljs som i dag med
 | `sallsynt.ts` | Räknar det som de oanvända mallarna kräver (3f). |
 | `matning/` | Mätningen före: `texter-fore.txt` och `.json` från `npm run texter -- 8 45`, och loggraderna i byarna 1, 42, 777 och 5. |
 | `hela.ts` | Hela texter, så som de syns i spelet: byarna 1, 42 och 777 körs i 45 dygn, och efter 8, 20, 33 och 45 dygn tittar skriptet på varje ställe där spelet skriver text (beskrivningen, eftermälet, binamnet, relationerna och deras symboler, anseendet, intrycken, pratbubblan, sakernas berättelser, rättegångarna, loggen, arenan och krönikan), som om någon tryckte där. Några texter per ställe, spridda över byarna och tiden. Ger `hela.json`. Kör: `npx tsx texter/hela.ts` (ca 6 min datortid) |
+| `granskning.json` | Claudes genomgång av varje hel text: `{ "<id>": { k: kommentar, m: ["m_…"] } }`. `m` är mönstren, förslagen med grupp `m mönster` i `forslag.ts`, som felet hör till. `bygg.cjs` lägger kommentaren under texten på sidan, med länkar till mönstret. Görs om för hand när `hela.json` görs om (texternas id blir andra). |
 | `bygg.cjs` | Bygger `sida.json` (de hela texterna och korten) som bildstilens avsnitt Texterna läser. Kör sedan `node bildstil/bygg.cjs` och publicera bildstilen. |
 
 ## Mätningen före

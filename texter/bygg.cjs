@@ -10,7 +10,7 @@ const d = JSON.parse(fs.readFileSync(path.join(__dirname, 'forslag.json'), 'utf8
 
 const GRUPPNAMN = {
   '1a': 'hen blir han eller hon', '1b': 'Ändelser, genus och tal', '1c': 'Skälet i hedersnamn och öknamn',
-  '1d': 'Artikeln i ryktena', '1e': 'Binamnen', '1f': 'Namnen', 'ord': 'Ord',
+  '1d': 'Artikeln i ryktena', '1e': 'Binamnen', '1f': 'Namnen', 'ord': 'Ord', 'm': 'Mönster ur genomgången',
 };
 const kort = [];
 for (const r of d.rattelser) {
@@ -31,5 +31,10 @@ for (const p of d.prov) {
   });
 }
 const hela = JSON.parse(fs.readFileSync(path.join(__dirname, 'hela.json'), 'utf8'));
+// Claudes genomgång av varje hel text (granskning.json): en kommentar och mönstren (förslagen m_…) som felet hör till
+const gr = JSON.parse(fs.readFileSync(path.join(__dirname, 'granskning.json'), 'utf8'));
+for (const p of hela) for (const t of p.texter) if (gr[t.id]) { t.claude = gr[t.id].k; t.monster = gr[t.id].m; }
+const utan = hela.flatMap(p => p.texter).filter(t => !t.claude).map(t => t.id);
+if (utan.length) console.log('Utan Claudes kommentar: ' + utan.join(', '));
 fs.writeFileSync(path.join(__dirname, 'sida.json'), JSON.stringify({ hela, kort }));
 console.log(`texter/sida.json: ${hela.reduce((s, p) => s + p.texter.length, 0)} hela texter från ${hela.length} ställen och ${kort.length} kort (${d.rattelser.length} rättelser, ${d.kontroller.length} kontroller, ${d.prov.length} mallar).`);

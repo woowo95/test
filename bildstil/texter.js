@@ -9,9 +9,9 @@
   const q = s => document.querySelector(s);
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
   const hash = s => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(36); };
-  const GRUPP = { '1a': 'Rättelse · hen blir han eller hon', '1b': 'Rättelse · ändelser, genus och tal', '1c': 'Rättelse · skälet i binamnen', '1d': 'Rättelse · artikeln i ryktena', '1e': 'Rättelse · binamnen', '1f': 'Rättelse · namnen', ord: 'Rättelse · ord' };
+  const GRUPP = { '1a': 'Rättelse · hen blir han eller hon', '1b': 'Rättelse · ändelser, genus och tal', '1c': 'Rättelse · skälet i binamnen', '1d': 'Rättelse · artikeln i ryktena', '1e': 'Rättelse · binamnen', '1f': 'Rättelse · namnen', ord: 'Rättelse · ord', m: 'Mönster ur Claudes genomgång' };
   const VYER = {
-    hela: { namn: 'Hela texter', om: 'Texterna som spelet skriver i dag, hela och så som de syns, från varje ställe i spelet. Tre byar i 45 dygn (45 år i spelet, drygt sex veckor i verkligheten). Skriv vad som är fel eller låter konstigt under texten; det sparas när du går ur rutan.' },
+    hela: { namn: 'Hela texter', om: 'Texterna som spelet skriver i dag, hela och så som de syns, från varje ställe i spelet. Tre byar i 45 dygn (45 år i spelet, drygt sex veckor i verkligheten). Under varje text står vad Claude tycker, och länkar till mönstret i Förslagen. Skriv vad du själv tycker i rutan; det sparas när du går ur den.' },
     forslag: { namn: 'Förslagen', om: 'Säg ja eller nej till varje förslag.' },
   };
   let DB = null, SVAR = {}, vy = 'hela', baraObesvarade = false;
@@ -55,6 +55,7 @@
       <p class="not">${esc(p.var)}</p>
       ${p.texter.map(t => { const d = SVAR['h-' + t.id] || {}; return `<article class="tx-hel${d.kommentar ? ' kommenterad' : ''}">
         <p class="tx-meta">${esc(t.vem)} · by ${t.by} · ${esc(t.nar)}</p><div class="tx-text">${esc(t.text)}</div>
+        ${t.claude ? `<div class="tx-claude"><b>Claudes kommentar</b> ${esc(t.claude)}${t.monster?.length ? ` <span class="tx-monster">${t.monster.map(m => `<a href="#tx-f-r-${m}" data-txmonster="${m}">${esc(m.slice(2))}</a>`).join(' ')}</span>` : ''}</div>` : ''}
         <label>Vad är fel?<textarea data-txhel="${esc(t.id)}" data-plats="${esc(p.id)}" rows="2" placeholder="Till exempel: för upprepande, fel ord, konstig ordning, något saknas"${DB ? '' : ' disabled'}>${esc(d.kommentar || '')}</textarea></label></article>`; }).join('')}
       <label class="tx-mall">Om alla texter i ${esc(p.rubrik.toLowerCase())}<textarea data-txplats="${esc(p.id)}" rows="2" placeholder="Till exempel: alla börjar likadant"${DB ? '' : ' disabled'}>${esc(pk.kommentar || '')}</textarea></label></details>`;
   }
@@ -85,10 +86,11 @@
   }
 
   document.addEventListener('click', e => {
-    const t = e.target.closest('[data-txvy],[data-txsvar],#tx-bara');
+    const t = e.target.closest('[data-txvy],[data-txsvar],[data-txmonster],#tx-bara');
     if (!t || !t.closest('#texter')) return;
     if (t.id === 'tx-bara') { baraObesvarade = !baraObesvarade; rita(); return; }
     if (t.dataset.txvy) { vy = t.dataset.txvy; rita(); return; }
+    if (t.dataset.txmonster) { e.preventDefault(); vy = 'forslag'; baraObesvarade = false; rita(); q('#tx-f-r-' + t.dataset.txmonster)?.scrollIntoView({ block: 'start' }); return; }
     if (t.dataset.txsvar) { const k = q('#tx-k-' + t.dataset.id); spara('f-' + t.dataset.id, { svar: t.dataset.txsvar, kommentar: k ? k.value.trim() : '' }).then(rita); rita(); return; }
   });
   document.addEventListener('change', e => {
