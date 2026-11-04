@@ -3,6 +3,7 @@
 //   RORELSER: kroppens rörelser, som följder av kartfigurens armlägen (skapare.js) i fyra bilder: slå, stöta, plocka,
 //             pyssla och kasta (gå och bära finns redan i kartfiguren)
 //   REDSKAP:  redskapet i handen som skaft och huvud, ritat i armens riktning, så att ett nytt redskap är en rad
+//   RORLIGA:  godkända bilder som rör sig ur sin egen ritning: tornadon snurrar, branden fladdrar
 //   EFFEKTER: splitter (färgen efter materialet i MATERIAL), rök, gnistor, träffen, lågorna, vågorna och
 //             vattnet som sköljer på stranden (SKOLJ)
 // En handling (HANDLINGAR, här bara exemplen på kortet) är en rörelse, ett redskap, en effekt och ett material. Alla
@@ -14,8 +15,8 @@
   const SCEN = (w, h, rita) => ({ w, h, stor: true, liten: true, rutor: RUTOR, takt: TAKT, rita });
   // hastigheten: varje effekt byter bild var n:e gång sidans klocka slår (TAKT ms). Elden fladdrar fort, vattnet rör sig
   // långsamt så att det inte stör. En ändrad hastighet är ett tal här. bild() ger effektens egen bild ur klockans slag.
-  const HASTIGHET = { eld: 1, gnistor: 1, rok: 2, vagor: 4, stranden: 8 };
-  const EGNA = { vagor: 8 }; // effekter med fler än fyra egna bilder
+  const HASTIGHET = { eld: 1, gnistor: 1, rok: 2, vagor: 4, stranden: 8, snurra: 1, brand: 1 };
+  const EGNA = { vagor: 8, snurra: 8 }; // effekter med fler än fyra egna bilder
   const bild = (slag, namn) => Math.floor(slag / HASTIGHET[namn]) % (EGNA[namn] || RUTOR);
   const SLAG = 96; // så många slag innan allt börjar om: delbart med alla hastigheter gånger bilderna (32)
   const prick = (B, x, y, ramp, ton) => B.satt(Math.round(x), Math.round(y), B.P.i(ramp, ton));
@@ -128,6 +129,61 @@
     }
   }
 
+  // ---------- bilder som rör sig ur sin egen ritning ----------
+  // En godkänd bild (BILDFILER, samma som i spelet) blir rörlig utan nya ritningar: SNURRA roterar varje rad av
+  // bandens tecken runt (tornadon), och FLADDRA låter lågorna gunga kolumn för kolumn och röken stiga (branden).
+  // En ny sak som ska snurra eller brinna blir en rad här: bilden, tecknen som rör sig och hur.
+  const RORLIGA = {
+    tornado: { satt: 'snurra', band: 'Sq', svaj: 1.5 },
+    brand: { satt: 'fladdra', laga: 'tLs', rok: 'SR', bas: 13, rokHojd: 22, rokX: 7 }, // rökpuffarna som från lägerelden
+  };
+  const rutnat = id => BILDFILER[id].rader.map(r => [...r]);
+  function ritaRutnat(B, g, pal, x0, y0) { g.forEach((r, y) => r.forEach((c, x) => { if (c !== '.' && pal[c]) B.satt(x0 + x, y0 + y, B.P.av(pal[c])); })); }
+  // f: hur långt varvet har kommit (0–1). Varje löpning av bandtecken i en rad flyttas runt med f av sin längd, och
+  // raderna längre ner svajar åt sidan, så att foten rör sig mest
+  function snurra(g, rad, f) {
+    const h = g.length;
+    return g.map((r, y) => {
+      const ut = [...r];
+      for (let x = 0; x < r.length;) {
+        if (!rad.band.includes(r[x])) { x++; continue; }
+        let e = x; while (e < r.length && rad.band.includes(r[e])) e++;
+        const n = e - x, k = Math.round(f * n); for (let i = 0; i < n; i++) ut[x + (i + k) % n] = r[x + i];
+        x = e;
+      }
+      const sv = Math.round(Math.sin(f * 2 * Math.PI + y / 9) * rad.svaj * (y / h)); if (!sv) return ut;
+      return ut.map((_, x) => ut[x - sv] ?? '.');
+    });
+  }
+  // lågorna gungar: varje kolumn ovanför basen lyfts 0 eller 1 punkt efter en våg som går runt på fyra bilder, och
+  // de ljusa och mörka tonerna i lågan byter plats här och där. Röken stiger en punkt per bild och tunnas ut.
+  function fladdra(g, rad, b) {
+    const h = g.length, w = g[0].length, ut = g.map(r => r.map(c => (rad.rok.includes(c) ? '.' : c)));
+    for (let x = 0; x < w; x++) {
+      const lyft = (Math.sin((b / 4) * 2 * Math.PI + x * 1.3) > 0.2) ? 1 : 0; if (!lyft) continue;
+      for (let y = 0; y < rad.bas; y++) { ut[y][x] = y + 1 < h && !rad.rok.includes(g[y + 1][x]) ? g[y + 1][x] : '.'; }
+    }
+    for (let y = 0; y < rad.bas; y++) for (let x = 0; x < w; x++) {
+      const c = ut[y][x]; if (rad.laga.includes(c) && hash(x, y, 940 + b) < 0.18) ut[y][x] = c === rad.laga[1] ? rad.laga[0] : rad.laga[1];
+    }
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      const c = g[y][x]; if (!rad.rok.includes(c)) continue;
+      const ny = y - b; if (ny < 0 || (b === 3 && hash(x, y, 950) < 0.5)) continue;
+      if (ut[ny][x] === '.') ut[ny][x] = b >= 2 ? rad.rok[0] : c;
+    }
+    return ut;
+  }
+  // del: 'rok' bara röken, 'bild' bara bilden (så att röken från flera rutor hamnar bakom alla lågorna), annars båda
+  function rorlig(B, id, x0, y0, slag, fas = 0, del) {
+    const rad = RORLIGA[id], g = rutnat(id), pal = BILDFILER[id].pal;
+    if (rad.satt === 'snurra') {
+      const b = (bild(slag, 'snurra') + fas) % 8; ritaRutnat(B, snurra(g, rad, b / 8), pal, x0, y0);
+    } else {
+      if (del !== 'rok') ritaRutnat(B, fladdra(g, rad, (bild(slag, 'brand') + fas) % 4), pal, x0, y0);
+      if (rad.rokHojd && del !== 'bild') rok(B, x0 + rad.rokX, y0 + 1, (bild(slag, 'rok') + fas) % 4, rad.rokHojd);
+    }
+  }
+
   // ---------- det som står på marken i exemplen ----------
   function vatten(B, cx, cy, rx, ry) { for (let y = -ry; y <= ry; y++) for (let x = -rx; x <= rx; x++) { const e = (x / rx) ** 2 + (y / ry) ** 2; if (e <= 1) B.satt(cx + x, cy + y, B.P.i('skiffer', e > 0.7 ? 1 : y < 0 ? 0 : 1)); } }
   function knol(B, x, y) { for (const [dx, dy, t] of [[-1, 0, 1], [0, 0, 2], [1, 0, 1], [2, 0, 0], [-1, -1, 2], [0, -1, 3], [1, -1, 2], [0, -2, 2]]) B.satt(x + dx, y + dy, B.P.i('skiffer', t)); for (let dx = -1; dx <= 2; dx++) B.morka(x + dx, y + 1); }
@@ -225,7 +281,19 @@
     vagor(B, SJO, bild(slag, 'vagor'), 22); stranden(B, SJO, bild(slag, 'stranden'));
   } };
 
+  const TORNADOKORT = { ...SCEN(80, 60, null), rutor: SLAG, rita: (B, P, slag) => { gras(B); rorlig(B, 'tornado', 24, 6, slag); } };
+  const BRANDKORT = { ...SCEN(112, 56, null), rutor: SLAG, rita: (B, P, slag) => {
+    gras(B);
+    ritaGran(B, 84, 38, 26, P, { tid: 'dag' }); ritaGran(B, 100, 30, 20, P, { tid: 'dag' });
+    const rutor = [[16, 36], [32, 22], [32, 38], [48, 38], [64, 24]];
+    for (const del of ['rok', 'bild']) rutor.forEach(([x, y], i) => rorlig(B, 'brand', x, y, slag, i * 3, del));
+  } };
   VAL.push(
+    { id: 'a_tornado', stor: true, namn: 'Tornadon snurrar', typ: 'janej', vad: 'Steg 5.2.4.8 (till 5.1.9.1): den godkända tornadon (version 3) rör sig ur sin egen ritning: ringarna snurrar runt, och foten svajar. Ett varv tar knappt två sekunder. Inget nytt är ritat, så tornadon ser ut som förut.',
+      versioner: [{ text: 'Version 1: snurrar och svajar.', ...TORNADOKORT }] },
+    { id: 'a_brand', stor: true, namn: 'Elden som brinner', typ: 'janej', vad: 'Steg 5.2.4.8 (till 5.1.9.1): den godkända branden (version 2) rör sig ur sin egen ritning: lågorna gungar kolumn för kolumn, ljuset i dem fladdrar och röken stiger, med samma rökpuffar som från lägerelden. Rutorna som brinner fladdrar inte i takt. Inget nytt är ritat, så branden ser ut som förut.',
+      versioner: [{ text: 'Version 1: fem rutor som brinner bredvid två granar.', ...BRANDKORT }] },
+
     { id: 'a_rorelser', stor: true, namn: 'Rörelserna', typ: 'janej', vad: 'Steg 5.2.4.8 (till 5.1.9.4 och 5.1.9.5): fem generella rörelser i fyra bilder, som alla handlingar använder. Varje rad är en rörelse och varje ruta en handling som använder den. Slå: hugga, slå flinta, gräva och slåss. Stöta: fiska, slåss med spjut och slakta. Plocka: bär, svamp och ved. Pyssla (sittande): tälja, sy och skrapa skinn. Kasta: sten, spjut och snöboll. Redskapet ritas ur handen som skaft och huvud, och splittret får materialets färg (trä, sten, jord, vatten, blod). En ny handling blir en rad: rörelse, redskap, effekt och material.',
       versioner: [{ text: 'Version 1: de fem rörelserna med exempel.', ...RORELSEKORT }] },
     { id: 'a_effekter', stor: true, namn: 'Effekterna', typ: 'janej', vad: 'Steg 5.2.4.8 (till 5.1.9.1 och 5.1.9.2): lågorna, gnistorna och röken från elden, röken från rökhålet i en hydda (hyddan är en platshållare) små vågor på vattnet (glittret är borttaget: det såg ut som bubblor, Björn 2026-11-04) och vattnet som sköljer upp på stranden och drar sig tillbaka. Varje effekt har sin hastighet: elden fladdrar fort, röken stiger lugnare, en våg lever i sju sekunder och stranden sköljer upp och tillbaka på sju sekunder. Splittret och träffen syns på kortet Rörelserna. Träd och gräs svajar inte, för då skulle hela marken ritas om hela tiden.',
