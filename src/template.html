@@ -59,7 +59,7 @@ h1 { font-family: var(--display); font-weight: 700; font-size: 24px; margin: 0; 
 .tip .op { opacity: 0.75; }
 .tip dl { display: grid; grid-template-columns: 70px minmax(0, 1fr); gap: 2px 8px; margin: 6px 0 0; align-items: center; }
 .tip dd { margin: 0; }
-.tip .bar { width: 100%; background: rgba(255,255,255,0.15); }
+.tip .bar { width: 100%; }
 /* lista till vänster över allt byn äger */
 .owned { position: absolute; left: 10px; top: 72px; width: 170px; max-height: calc(100% - 170px); overflow-y: auto; background: none; color: #f4f6f2; text-shadow: 0 1px 2px #000, 0 0 3px #000; padding: 0 2px; font-size: 12px; line-height: 1.4; scrollbar-width: thin; }
 .owned h4 { margin: 0 0 3px; font-size: 16px; opacity: 0.8; font-family: var(--display); font-weight: 400; }
@@ -125,7 +125,7 @@ ul, ol { list-style: none; margin: 0; padding: 0; }
 .row .ans { line-height: 0; }
 .matare { display: flex; flex-direction: column; gap: 3px; } /* humör överst, hälsa under */
 .matare > span { display: flex; align-items: center; justify-content: flex-end; }
-.bar.halsa > span { background: #7fa7c9; }
+.bar.halsa > i.p { background: #61767a; } /* skiffer 2 */
 .mark { display: inline-block; vertical-align: middle; line-height: 0; } /* ledaren och skadan vid namnet */
 .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; box-shadow: 0 0 0 1px rgba(0,0,0,0.35); }
 .dot.big { width: 22px; height: 22px; flex: none; margin-top: 6px; }
@@ -136,10 +136,12 @@ ul, ol { list-style: none; margin: 0; padding: 0; }
 .tiphead { display: flex; gap: 8px; align-items: center; margin-bottom: 4px; }
 .tiphead h4 { margin: 0; font-family: var(--display); font-size: 16px; font-weight: 400; }
 .prick { width: 8px; height: 8px; border-radius: 50%; display: inline-block; vertical-align: middle; box-shadow: 0 0 0 1px rgba(0,0,0,0.35); }
-.bar { display: inline-block; height: 6px; border-radius: 3px; background: var(--barbg); overflow: hidden; vertical-align: middle; }
-.bar > span { display: block; height: 100%; background: var(--good); border-radius: 3px; }
-.bar.low > span { background: var(--bad); }
-.bar.skill > span { background: var(--accent); }
+/* mätarna: tio rutor i en mörk ram (steg 5.3.2.4, som personrutan i bildstilen) */
+.bar { display: inline-flex; box-sizing: border-box; width: 64px; height: 10px; gap: 1px; padding: 2px; background: #24201d; vertical-align: middle; }
+.bar > i { flex: 1; min-width: 1px; background: #372f25; } /* ramen kol 0, tomma rutor kol 2, fyllda ton 2 i sin färg */
+.bar > i.p { background: #647025; } /* oliv */
+.bar.low > i.p { background: #a14808; } /* rost */
+.bar.skill > i.p { background: #b2921b; } /* senap */
 .trend { font-size: 9px; margin-left: 3px; vertical-align: middle; line-height: 1; }
 .trend.up { color: var(--good); }
 .trend.down { color: var(--bad); }
@@ -262,10 +264,12 @@ h3 { font-family: var(--display); font-size: 16px; text-transform: uppercase; le
 .skador li { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 6px; align-items: baseline; font-size: 14px; }
 .skador li small { display: block; }
 .skador .gar { font-size: 13px; } .skador .pos .gar { color: var(--good); } .skador .neg .gar { color: var(--bad); }
-.bar.temp, .tip .bar.temp { position: relative; overflow: visible; background: linear-gradient(90deg, #3b7fd4, var(--barbg) 50%, #d4703b); }
-.bar.temp::after { content: ''; position: absolute; left: 50%; top: -3px; height: 12px; width: 1px; background: var(--muted); }
-.bar.temp > span { position: absolute; top: -2px; width: 4px; height: 10px; margin-left: -2px; border-radius: 2px; background: var(--fg); }
-.bar.temp.low > span, .bar.temp.high > span { background: var(--bad); }
+/* temperaturen: rutorna går från kallt (skiffer) till varmt (rost), och den där kroppen är lyser */
+.bar.temp > i { opacity: 0.4; }
+.bar.temp > .t0, .bar.temp > .t1, .bar.temp > .t2 { background: #61767a; } .bar.temp > .t3, .bar.temp > .t4 { background: #8a9c9e; }
+.bar.temp > .t5, .bar.temp > .t6 { background: #bd753e; } .bar.temp > .t7, .bar.temp > .t8, .bar.temp > .t9 { background: #a14808; }
+.bar.temp > i.p { opacity: 1; background: #dad0bb; }
+.bar.temp.low > i.p, .bar.temp.high > i.p { background: #d8b25f; }
 .filtpar { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .byteknapp { background: none; border: 0; padding: 0 2px; cursor: pointer; vertical-align: middle; }
 .filtsida p { margin: 0 0 4px; }
