@@ -251,6 +251,35 @@ export function tradBild(stadium: string, v: number, x: number, y: number, ungsk
   return { typ: 'gran', h, s, mork: stadium === 'gammalt' || stadium === 'jatte', bjork: b };
 }
 
+// Träden som stammar (steg 5.3.6, filtret på kartan): bara stammen, så att marken under kronorna syns. Granens stam i jordens
+// färg, torrakans grå och björkens vit med de svarta märkena (som bjorkStam); plantan har ingen stam och står kvar som den är
+let stammar = false;
+function stamCanvas(b: TradBild) {
+  const hs2 = Math.max(3, Math.round(b.h * 0.3)), w = b.bjork ? (b.h < 14 ? 1 : b.h < 36 ? 2 : 3) : b.h > 12 ? 2 : 1;
+  const c = document.createElement('canvas'); c.width = w; c.height = hs2;
+  const g = c.getContext('2d')!, img = g.createImageData(w, hs2), d = img.data;
+  for (let y = 0; y < hs2; y++) for (let x = 0; x < w; x++) {
+    const nere = hs2 - 1 - y;
+    const v = b.bjork ? (nere < 2 ? I('kol', 2) : hs(Math.floor(y / 2), x, 432) < 0.18 ? I('kol', 1) : x === w - 1 && w > 1 ? I('ben', 1) : I('ben', 3))
+      : b.typ === 'torr' ? (x === w - 1 && w > 1 ? I('skiffer', 1) : I('skiffer', 2)) : x === w - 1 && w > 1 ? JORD : JORD + 1;
+    const n = RGBA[v], i = (y * w + x) * 4; d[i] = n >> 16; d[i + 1] = (n >> 8) & 255; d[i + 2] = n & 255; d[i + 3] = 255;
+  }
+  g.putImageData(img, 0, 0);
+  return c;
+}
+function stamTex(b: TradBild) {
+  const k = 'S|' + nyckel(b, 0);
+  let t = bilder.get(k);
+  if (!t) { t = { t: PIXI.Texture.from(stamCanvas(b), { scaleMode: PIXI.SCALE_MODES.NEAREST }), fot: 0 }; bilder.set(k, t); }
+  return t;
+}
+// slår på eller av stammarna; true om det ändrades (då ritar terrang.ts om träden)
+export function visaStammar(pa: boolean) {
+  if (stammar === pa) return false;
+  stammar = pa;
+  return true;
+}
+
 // ---------- träden på kartan ----------
 const sprites = new Map<number, { sp: PIXI.Sprite; k: string; b: TradBild; x: number; y: number }>();
 let skuggaAndrad = true;
@@ -258,13 +287,13 @@ let skuggaAndrad = true;
 // lager: figurLayer (scen.ts), där träden står i ordning söderut med folket och djuren
 export function stallTrad(lager: PIXI.Container, W: number, H: number, bild: (i: number) => TradBild | null, sno: number) {
   for (let i = 0; i < W * H; i++) {
-    const b = bild(i), x = i % W, y = (i / W) | 0, k = b ? nyckel(b, sno) : '';
+    const b = bild(i), x = i % W, y = (i / W) | 0, stam = stammar && !!b && b.h >= 8, k = b ? (stam ? 'S|' : '') + nyckel(b, sno) : '';
     const f = sprites.get(i);
     if (f?.k === k) continue;
     skuggaAndrad = true;
     if (!b) { if (f) { f.sp.destroy(); sprites.delete(i); } continue; }
     const sp = f?.sp ?? new PIXI.Sprite();
-    const tx = tradTex(b, sno), t = sp.texture = tx.t;
+    const tx = stam ? stamTex(b) : tradTex(b, sno), t = sp.texture = tx.t;
     const bx = x * 16 + 8 + Math.round((hash(x, y, 595) - 0.5) * 8), by = y * 16 + 14 + Math.round((hash(x, y, 596) - 0.5) * 4);
     sp.position.set(bx - (t.width >> 1), by - (t.height - tx.fot) + 1 + (b.typ === 'torr' ? 1 : 0)); sp.zIndex = by;
     if (!f) lager.addChild(sp);

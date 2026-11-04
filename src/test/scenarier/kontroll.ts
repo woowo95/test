@@ -6,6 +6,11 @@ import { FARGER, MORKARE, PALETT, iPaletten, kornPa, rasterSteg } from '../../pa
 import { START, STEG_TIM, korBy } from '../kor';
 import { seedAv } from '../pool';
 import { KARNA } from '../../portrattkarna';
+import { KARTBILDER, SYMNAMN } from '../../kartbilder';
+import { symDelar, symUtan } from '../../ui/symboler';
+import { anvandsKant, skaffasKant } from '../../ui/skaffas';
+import * as fs from 'fs';
+import * as path from 'path';
 import { ANSIKTSORD, drag, glomArv, skapad, skonNiva } from '../../ui/utseende';
 import { Koll, kor, klockan, uiLas, SCENARIER, grenarUte, barGrenar } from './hjalp';
 
@@ -33,6 +38,19 @@ SCENARIER['ui-ren'] = {
       [`gränssnittet läste ${n} gånger under ${DYGN} dygn (${DYGN} år i spelet), med ${living(a).length} invånare`, n > 100],
       [`läsningarna skrev inget i byn (${andrat} av ${n} gånger ändrades sparfilen)`, andrat === 0],
       [sa === sb ? 'sparfilerna är lika tecken för tecken' : `sparfilerna skiljer sig${lika > 0 ? ` redan efter ${lika} dygn` : ''}, första skillnaden: …${sa.slice(Math.max(0, d - 60), d + 40)}… mot …${sb.slice(Math.max(0, d - 60), d + 40)}…`, sa === sb],
+    ];
+  },
+};
+
+// föremålsrutan (steg 5.3.5.2): varje sak som syns har en rad om hur den skaffas och vad den används till
+SCENARIER.sakruta = {
+  text: 'Föremålsrutan säger för varje sak hur man skaffar den och vad den används till (ui/skaffas.ts)',
+  kor: () => {
+    const ks = Object.entries(SAKER).filter(([k, d]) => d && !d.dold && !d.mark && !d.i && k !== 'paborjat').map(([k]) => k);
+    const utanSkaffa = ks.filter(k => !skaffasKant(k)), utanAnv = ks.filter(k => !anvandsKant(k));
+    return [
+      [`${ks.length} saker; hur de skaffas saknas för: ${utanSkaffa.join(', ') || 'ingen'}`, ks.length > 40 && !utanSkaffa.length],
+      [`vad de används till saknas för: ${utanAnv.join(', ') || 'ingen'}`, !utanAnv.length],
     ];
   },
 };
@@ -65,6 +83,30 @@ SCENARIER.ikoner = {
     });
     del.push(['handlingar i personens tid', utan]);
     return del.map(([namn, m]) => [m.length ? `${namn} utan symbol: ${m.join(', ')}` : `alla ${namn} har en symbol`, !m.length] as Koll);
+  },
+};
+
+SCENARIER.symboler = {
+  text: 'Emojierna blir pixelsymboler (steg 5.3.2.1): varje emoji i spelets kod har en symbol, och varje {sym_id} i koden finns i bildstilen',
+  kor: () => {
+    const filer = (d: string): string[] => fs.readdirSync(d, { withFileTypes: true }).flatMap(e => e.isDirectory() ? (e.name === 'test' ? [] : filer(path.join(d, e.name))) : e.name.endsWith('.ts') ? [path.join(d, e.name)] : []);
+    const bilder = new Set(['kartbilder.ts', 'portrattkarna.ts', 'guibilder.ts', 'djurbilder.ts']), utan = new Map<string, string>(), okanda = new Set<string>();
+    let antal = 0;
+    for (const f of filer('src')) {
+      if (bilder.has(path.basename(f))) continue;
+      const t = fs.readFileSync(f, 'utf8');
+      for (const m of t.matchAll(/\p{Extended_Pictographic}\uFE0F?(?:\u200D\p{Extended_Pictographic}\uFE0F?)*/gu)) {
+        antal++;
+        if (!symDelar(m[0]).some(x => typeof x !== 'string')) utan.set(m[0], path.relative('src', f));
+      }
+      for (const m of t.matchAll(/\{(sym_[a-z0-9_]+)\}/g)) if (!KARTBILDER[m[1]]) okanda.add(m[1]);
+    }
+    return [
+      [`${antal} emojier i koden, alla med en symbol${utan.size ? `; utan: ${[...utan].map(([e, f]) => `${e} (${f})`).join(', ')}` : ''}`, antal > 100 && utan.size === 0],
+      [`varje {sym_id} finns${okanda.size ? `; saknas: ${[...okanda].join(', ')}` : ''}`, okanda.size === 0],
+      ['emojin i en text blir en symbol, och {sym_toa} är toan', symDelar('a 💧 b').some(x => typeof x !== 'string' && x.id === 'sym_droppe') && symDelar('{sym_toa}').some(x => typeof x !== 'string' && x.id === 'sym_toa')],
+      ['utan bild (tipsrutan) stryks emojin, och ensam blir den namnet', symUtan('💧 Vätska') === 'Vätska' && symUtan('💧') === SYMNAMN.sym_droppe],
+    ];
   },
 };
 
@@ -215,7 +257,7 @@ SCENARIER.aldrig = {
 };
 
 SCENARIER.portratt = {
-  text: 'Porträtten (steg 5.2.3.1, 5.2.3.3, 5.2.3.4): varje person får sina delar ur registret PORTRATT, ett barn ärver dem från mamman och pappan, och samma person blir likadan varje gång, också i en sparad by (allt räknas ur numret och föräldrarna); skönheten väljer de fula delarna och lagren, och beskrivningens vackraste eller fulaste del tas ur ansiktet; humöret, sömnen, sjukdomen, kylan, förbandet och blodet följer spelet; porträttet och kartfiguren har bara färger ur paletten',
+  text: 'Porträtten (steg 5.2.3.1, 5.2.3.3–5.2.3.5): varje person får sina delar ur registret PORTRATT, ett barn ärver dem från mamman och pappan, och samma person blir likadan varje gång, också i en sparad by (allt räknas ur numret och föräldrarna); skönheten väljer de fula delarna och lagren, och beskrivningens vackraste eller fulaste del tas ur ansiktet; humöret, sömnen, sjukdomen, kylan, förbandet och blodet följer spelet, och kläderna och redskapet utrustningen; porträttet och kartfiguren har bara färger ur paletten',
   kor: () => {
     const s = createState(3, START), vuxna = living(s).filter(p => ageOf(p, s.now) >= 20);
     const mor = vuxna.find(p => p.sex === 'k')!, far = vuxna.find(p => p.sex === 'm')!;
@@ -255,7 +297,15 @@ SCENARIER.portratt = {
     const efter = skapad(s, kp);
     const kroppOk = fore.humor !== 'sover' && !fore.sjuk && !fore.blod && efter.humor === 'sover' && efter.sjuk && efter.kyla && efter.blod && efter.forband.includes('forband-huvud');
     kp.task = undefined; kp.sickUntil = undefined; kp.warm = 0.9; kp.skador = [];
+    // kläderna och redskapet följer utrustningen (steg 5.2.3.5): rocken av vargskinn, skorna, bältet och yxan i handen
+    for (const t of tingOf(s)) if (t.bar === kp.id || t.hos === kp.id) { t.bar = undefined; t.hos = undefined; }
+    const naken = skapad(s, kp);
+    for (const k of ['rock_vargskinn', 'skor_kaninskinn', 'balte_rep']) SIM.newTing(s, k, 0, kp.id).bar = kp.id;
+    SIM.newTing(s, 'yxa', 0, kp.id).hos = kp.id;
+    const kladd = skapad(s, kp);
+    const kladOk = !naken.klader.rock && !naken.klader.skor && !naken.del.redskap && kladd.klader.rock === 'vargskinn' && kladd.klader.skor && kladd.klader.balte && kladd.del.redskap === 'redskap-yxa';
     return [
+      [`kläderna och redskapet följer utrustningen (${kladd.klader.rock}, ${kladd.klader.skor}, ${kladd.klader.balte}, ${kladd.del.redskap})`, kladOk],
       ['samma person blir likadan igen, när allt räknas om', forst.every((v, i) => v === igen[i])],
       [`porträttet följer kroppen: sover, sjuk, fryser, förband och blod (${efter.humor}, ${efter.sjuk}, ${efter.kyla}, ${efter.forband.join('/')}, ${efter.blod})`, kroppOk],
       [`barnen ärver ansiktet: ${fran} av ${delar} delar från mamman eller pappan (minst 80 %)`, fran >= delar * 0.8],

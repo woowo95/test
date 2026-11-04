@@ -1,7 +1,7 @@
 import { KROPP, Person, halsa, ageOf, alive, byId, living, moodOf, taskName, yrkeNamn } from '../sim';
 import { $, LAG, bar, esc, tempBar, trend } from './hjalp';
 import { s, ui, uppgiftVid, vidNyBy } from './lage';
-import { portrattImg, portrattUrl } from './folkbild';
+import { figurSvg, portrattImg, portrattUrl } from './folkbild';
 import { skapad } from './utseende';
 
 // porträttraden överst på kartan: en knapp per invånare, med mer om personen när musen är över den.
@@ -44,14 +44,14 @@ function showTip(id: number) {
   if (!p || !el || !alive(p)) { hideTip(); return; }
   tipId = id;
   const m = moodOf(p, s.now);
-  tip.innerHTML = `<div class="tiphead">${portrattImg(skapad(s, p), 'big')}<h4>${esc(p.name)}</h4></div><p class="op">${p.sex === 'k' ? 'Kvinna' : 'Man'}, ${Math.floor(ageOf(p, s.now))} år${yrkeNamn(s, p) ? ' · ' + esc(yrkeNamn(s, p)!) : ''}</p>
+  tip.innerHTML = `<div class="tiphead">${portrattImg(skapad(s, p), 'big')}<h4>${esc(p.name)}</h4>${figurSvg(skapad(s, p), 'kortfigur', 'Figuren')}</div><p class="op">${p.sex === 'k' ? 'Kvinna' : 'Man'}, ${Math.floor(ageOf(p, s.now))} år${yrkeNamn(s, p) ? ' · ' + esc(yrkeNamn(s, p)!) : ''}</p>
     <p>${shortAct(p)}</p>${p.task?.why ? `<p class="op">${esc(p.task.why)}</p>` : ''}
     <dl><dt>Humör</dt><dd>${bar(m, m < LAG.humor ? 'low' : '', trend(p, 'humor', m))}</dd><dt>Mättnad</dt><dd>${bar(p.hunger, p.hunger < LAG.hunger ? 'low' : '', trend(p, 'hunger', p.hunger))}</dd>
     <dt>Vila</dt><dd>${bar(p.rest, '', trend(p, 'rest', p.rest))}</dd><dt>Hälsa</dt><dd>${bar(halsa(p), halsa(p) < LAG.halsa ? 'low' : '', trend(p, 'health', halsa(p)))}</dd><dt>Temperatur</dt><dd>${tempBar(p.warm, trend(p, 'warm', p.warm))}</dd></dl>
     <p class="op">Klicka för att välja, dubbelklicka för att följa.</p>`;
   const wrap = $('ports').parentElement!.getBoundingClientRect(), r = el.getBoundingClientRect();
   tip.hidden = false;
-  tip.style.top = `${r.bottom - wrap.top + 6}px`;
+  tip.style.top = `${Math.max(8, r.top - wrap.top - tip.offsetHeight - 6)}px`; // ovanför raden, som står längst ner (steg 5.3.3.4)
   tip.style.left = `${Math.max(8, Math.min(wrap.width - tip.offsetWidth - 8, r.left - wrap.left))}px`;
 }
 function hideTip() { tipId = undefined; $('portTip').hidden = true; }

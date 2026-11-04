@@ -1,4 +1,5 @@
-import { framstegSvg, iconImg, kvSvg, tecknet } from '../ikoner';
+import { iconImg, kvSvg, tecknet } from '../ikoner';
+import { framstegSvg } from './framsteg';
 import { NORMAL, kvEffekt, kvHaller, kvNamn, kvOf, kvVarde, BORDA_KG, bordOf, UTRUSTNING, HOUR, KROPP, LogEntry, MIN, Person, REL, byId, capacity, carryKind, clamp, isParent, isSick, ledareOf, load, num, ryktbarhet, sak, sakNamn, skadeLista, timeLabel } from '../sim';
 import { s, vidNyBy } from './lage';
 
@@ -28,7 +29,10 @@ export const personFarg = (p: Person, sover = false) => hsl(p.hue, sover ? 0.15 
 export const hex = (p: Person) => cssFarg(personFarg(p));
 
 // staplar
-export function bar(v: number, cls = '', tr = '') { return `<span class="bar ${cls}"><span style="width:${Math.round(clamp(v, 0, 1) * 100)}%"></span></span>${tr}`; }
+// en stapel i tio rutor (steg 5.3.2.4, som personrutan i bildstilen): en ruta lyser för var tionde del, avrundat
+const RUTOR = 10;
+const rutor = (tand: number, cls = 'p') => Array.from({ length: RUTOR }, (_, k) => k < tand ? `<i class="${cls}"></i>` : '<i></i>').join('');
+export function bar(v: number, cls = '', tr = '') { return `<span class="bar ${cls}">${rutor(Math.round(clamp(v, 0, 1) * RUTOR))}</span>${tr}`; }
 // när en stapel eller ett porträtt märks som låg (röd). Det är bara bildens gränser; där simuleringen har en egen gräns läser
 // bilden den (KROPP.kallt, KROPP.svag, KROPP.toaBehov). Gränserna skiljer sig med avsikt: porträttraden varnar vid sämre värden än rutan
 export const LAG = {
@@ -71,7 +75,11 @@ export function trend(p: Person, key: string, v: number) {
 // uppmätt ändring per timme (speltid) för det trend följer, eller undefined innan något är mätt
 export function trendD(p: Person, key: string) { const h = trendHist.get(p.id + ':' + key); return h?.m ? h.d : undefined; }
 // temperaturen: idealet i mitten (p.warm = 1), kallt åt vänster och för varmt åt höger (steg 2.3.4, upp till KROPP.maxVarm)
-export function tempBar(w: number, tr = '') { return `<span class="bar temp${w < KROPP.kallt ? ' low' : w > KROPP.forVarm ? ' high' : ''}"><span style="left:${Math.round(clamp(w / KROPP.maxVarm, 0, 1) * 100)}%"></span></span>${tr}`; }
+// temperaturen: kallt till vänster och varmt till höger, och rutan där kroppen är lyser
+export function tempBar(w: number, tr = '') {
+  const i = Math.min(RUTOR - 1, Math.floor(clamp(w / KROPP.maxVarm, 0, 1) * RUTOR));
+  return `<span class="bar temp${w < KROPP.kallt ? ' low' : w > KROPP.forVarm ? ' high' : ''}">${Array.from({ length: RUTOR }, (_, k) => `<i class="t${k}${k === i ? ' p' : ''}"></i>`).join('')}</span>${tr}`;
+}
 export function tempOrd(w: number) { return w > KROPP.forVarm ? 'För varm' : w > 1.1 ? 'Varm' : w >= 0.85 ? 'Lagom' : w >= KROPP.kallt ? 'Sval' : w >= KROPP.farligt ? 'Fryser' : 'Farligt kall'; }
 
 // personer
@@ -116,7 +124,7 @@ export function ansStapel(om: number) {
 const procent = (x: number) => `${x >= 1 ? '+' : '−'}${Math.round(Math.abs(x - 1) * 100)} %`;
 export const kvText = (t: { q?: number }) => kvOf(t) === NORMAL ? kvNamn(t) : `${kvNamn(t)}: håller ${procent(kvHaller(t))}, värde ${procent(kvVarde(t))}, fungerar ${procent(kvEffekt(t))}`;
 export const kvMark = (t: { q?: number }, size = 10) => { const m = kvSvg(t.q, size); return m && `<span class="kvm" title="${esc(kvText(t))}">${m}</span>`; };
-export const pileTxt = (p: { k: string; n: number; max: number; gor?: string; klar?: number; q?: number }) => p.gor ? `${iconImg(p.gor)}${framstegSvg(p.klar ?? 0, 10)}${sakNamn(p.gor)} (inte klar, ${Math.round((p.klar ?? 0) * 100)} %)` : `${iconImg(p.k)}${kvMark(p)}${sakNamn(p.k)}${p.max === 1 ? '' : ` ${fmtN(p.n)} st`}`;
+export const pileTxt = (p: { k: string; n: number; max: number; gor?: string; klar?: number; q?: number }) => p.gor ? `${iconImg(p.gor)}${framstegSvg(p.klar ?? 0)}${sakNamn(p.gor)} (inte klar, ${Math.round((p.klar ?? 0) * 100)} %)` : `${iconImg(p.k)}${kvMark(p)}${sakNamn(p.k)}${p.max === 1 ? '' : ` ${fmtN(p.n)} st`}`;
 // vad en person bär, vad det väger och hur mycket hen orkar (steg 2.3.1)
 export function carryTxt(p: Person) {
   const t = p.task, orkar = capacity(s, p), parts: string[] = [];

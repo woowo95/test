@@ -972,38 +972,13 @@ const VAL = [
   SPORT_JA('bollspel', 'Bollspelet', 'den som slår står i ena änden med slagträet, bollen flyger ut på planen och de andra springer efter den.', 'Slagträet, bollen i luften och de som springer.', 'Din kommentar förra gången (du valde version 1): ”personerna ska ritas som dem brukar inte göras om”. Nu ritas personerna som de brukar på kartan, och bara sportens saker är nya.'),
   { id: 'dragkamp', namn: 'Dragkampen', typ: 'janej', vad: 'Steg 4.5.6.10: dragkampen syns. Två lag på var sin sida om strecket håller i repet. Din kommentar förra gången (du valde version 1): ”Hur har du tänkt här? karaktärerna kan inte ritas på ett helt nytt sätt bara för att dom gör en sport. bara repet ska ha ett nytt utseende karaktärerna ska ritas på samma sätt som dem alltid gör”. Nu ritas personerna som de brukar på kartan, och bara sportens saker är nya.',
     versioner: [{ text: 'Version 1: ett streck ristat i marken och en röd tofs mitt på repet. Folket är de vanliga kartfigurerna, med händerna framför sig på repet.', ...DRAG_BILD(0) }] },
-  { id: 'm_torka', namn: 'Torkan', vad: 'Ny symbol (steg 3.8.2), 16 × 16 punkter, i kalendern bredvid temperaturen när en torka pågår (blek när de äldsta i byn bara anar den). Tre nya versioner efter version 1, solen över sprucken mark. I spelet nu: version 1 (platshållare). Din kommentar förra gången: ”Gör tre nya versioner baserat på 1”.', typ: 'tre',
-    versioner: [
-      { text: 'En större sol, och marken sprucken i flak.', ...LED_M(TK_SOL2, TK_L) },
-      { text: 'En mindre sol, och värmen som dallrar i röda vågor ovanför den spruckna marken.', ...LED_M(TK_VARME, TK_L) },
-      { text: 'Solen till höger, och en vissen tuva som hänger över den spruckna marken.', ...LED_M(TK_TUVA, TK_L) },
-    ] },
-  { id: 'a_toa', namn: 'Att gå på toa', vad: 'Ny symbol över huvudet (steg 3.10.3), 8 × 8 punkter som de andra handlingarna: den som gått avsides eller sitter i latrinen. Tre nya versioner, alla med en bajshög. I spelet nu: version 1 (platshållare). Din kommentar förra gången: ”Gör 3 nya versinner. Gör en bajshög”.', typ: 'tre',
-    versioner: [
-      { text: 'En brun bajshög i varv.', ...SYM8_M(TOA_HOG, TOA_L) },
-      { text: 'En bajshög med stanken som stiger.', ...SYM8_M(TOA_STANK, TOA_L) },
-      { text: 'En människa på huk med en liten hög bakom sig.', ...SYM8_M(TOA_HUKHOG, TOA_L) },
-    ] },
-  { id: 'a_smyga', namn: 'Att smyga', vad: 'Ny symbol över huvudet (Björn efter v159), 8 × 8 punkter som de andra handlingarna: jägaren smyger fram mot en kanin. Tre helt nya versioner. Din kommentar förra gången: ”Gör tre nya”. I spelet nu: förra version 1 (platshållare).', typ: 'tre',
-    versioner: [
-      { text: 'Två fotspår på tå, ett framför det andra.', ...SYM8_M(SMYG_SPAR, AKT_L) },
-      { text: 'En människa som kryper fram lågt på marken.', ...SYM8_M(SMYG_KRYP, AKT_L) },
-      { text: 'En människa på tå med långa försiktiga steg, lutad framåt.', ...SYM8_M(SMYG_TA, AKT_L) },
-    ] },
-  { id: 'a_sikta', namn: 'Att sikta', vad: 'Ny symbol över huvudet (Björn efter v159), 8 × 8 punkter: jägaren har stannat och siktar innan hen kastar. Version 1, pilbågen, ritad om utan att vara spänd. Din kommentar förra gången: ”version 1 fast att den inte är spänd”. I spelet nu: förra version 1 (platshållare).', typ: 'janej',
-    versioner: [{ text: 'Pilbågen snett, med rak sträng och pilen lagd mot den, inte spänd.', ...SYM8_M(SIKTA_BAGE, AKT_L) }] },
 ];
 // Björns val som är bestämda men inte inbyggda i spelet: de visas under Valt med den valda versionen (0 = förut-versionen
 // behålls) och steget där de byggs in. När saken är inbyggd tas raden bort här och ur VAL, och dess dokument i samlingen 'val'
 const BESLUT = {
-  m_torka: { val: 1, steg: '5.3.2.1' }, a_toa: { val: 2, steg: '5.3.2.1' },
-  a_sikta: { val: 1, steg: '5.3.2.1' }, a_smyga: { val: 3, steg: '5.3.2.1' }, dragkamp: { val: 1, steg: '5.1.2' },
+  dragkamp: { val: 1, steg: '5.1.2' },
   sport_brottning: { val: 1, steg: '5.1.2' }, sport_kast: { val: 1, steg: '5.1.2' }, sport_snoboll: { val: 1, steg: '5.1.2' }, sport_bollspel: { val: 1, steg: '5.1.2' },
-  q_tro: { val: 1, steg: '5.3.3.1' }, q_person: { val: 1, steg: '5.3.3.1' }, q_grannar: { val: 1, steg: '5.3.3.1' },
-  g_runsten: { val: 1, steg: '5.3.3.1' }, g_band: { val: 1, steg: '5.3.3.1' }, g_vag: { val: 1, steg: '5.3.1.2' },
-  g_horn: { val: 1, text: 'Ormen. Ring med blad och Dubbel ögla sparas (i gui.json) om du ångrar dig. Byggs in i steg 5.3.1.4.' },
-  a_tornado: { val: 1, text: 'Byggs in i steg 5.1.9.1 (tornadon på kartan).' }, a_brand: { val: 1, text: 'Byggs in i steg 5.1.9.1 (rutor som brinner på kartan).' },
-  a_rorelser: { val: 1, text: 'Byggs in i steg 5.1.9.4 (arbetena) och 5.1.9.5 (striden).' }, a_effekter: { val: 1, text: 'Byggs in i steg 5.1.9.1 (elden och röken) och 5.1.9.2 (vågorna och stranden).' },
+  g_vag: { val: 1, steg: '5.3.1.2' },
   f6_grans: { val: 1, steg: '6.2.1.3' }, f6_talg: { val: 3, steg: '6.3.2.2' }, f6_agg: { val: 3, steg: '6.5.1.3' },
   f6_radjursskinn: { val: 1, steg: '6.5.1.2' }, f6_bjornskinn: { val: 1, steg: '6.5.3.3' },
   f6_barbuske: { val: 1, steg: '6.4.1.4' }, f6_fagel: { val: 2, steg: '6.5.1.3' }, f6_fjadrar: { val: 2, steg: '6.5.1.3' }, f6_uppsatt: { val: 1, steg: '6.3.2.4' },
@@ -1012,7 +987,6 @@ const BESLUT = {
   f6_ljus: { val: 1, text: 'Version 1 och 2 används båda, som variationer (ljuset på stenen och i lerskålen). Byggs in i steg 6.3.2.5.' },
   f6_buske: { val: 1, text: 'Alla tre används, som variationer (rund, gles och låg). Byggs in i steg 6.4.1.3.' },
   f6_styckdel: { val: 1, text: 'Version 1 och 2 används båda, som variationer (låret och högen), i djurets färger. Byggs in i steg 6.5.1.1.' },
-  v_framsteg: { val: 1, steg: '5.3.2.2' }, v_ring: { val: 1, steg: '5.3.2.2' }, v_tart: { val: 1, steg: '5.3.2.2' },
 };
 // räknas när valdelen ritas, så att korten från filerna efter denna (mark.js, djur.js, gui.js) också kommer med
 const VALT = [];

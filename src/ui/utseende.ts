@@ -3,7 +3,7 @@
 // födseln: ett barn ärver dem från mamman och pappan (barnAv), och de första i byn, nykomlingarna och personerna i byar
 // som sparats före porträtten får dem slumpade ur byns frö och personens nummer. Allt räknas ur numret och föräldrarna,
 // så att samma person alltid ser likadan ut och simuleringen inte märker något. Bara utseende.
-import { ALDER, BERATT, BESK_ANSIKTE, KROPP, ageOf, blodning, byId, hash, isSick, moodOf, utbrottNu } from '../sim';
+import { ALDER, BERATT, BESK_ANSIKTE, KLADMATERIAL, KROPP, ageOf, blodning, byId, hash, isSick, kladAv, load, moodOf, utbrottNu, utrustning } from '../sim';
 import type { Person, State } from '../sim';
 import { KARNA } from '../portrattkarna';
 
@@ -83,8 +83,25 @@ export function skapad(s: State, p: Person): Skapad {
   u.alder = alder;
   u.del = { ...u.del, huvudbonad: null, arr: null, blamarke: null, redskap: null };
   Object.assign(u, kropp(s, p, u.del));
-  u.klader = { rock: null, skor: false, balte: false };
+  utrustad(s, p, u);
   return u;
+}
+// kläderna och redskapet som i spelet (steg 5.2.3.5): plaggen personen har på sig (rocken med sitt material, skorna och
+// bältet) och redskapet i handen eller i bältet, som delen i PORTRATT med samma sak. Huvudbonaden väntar på huvudbonader i
+// spelet (Kläder)
+const REDSKAP = new Map<string, string>(KARNA.PR.delar.filter((d: { sort: string; sak?: string }) => d.sort === 'redskap' && d.sak).map((d: { id: string; sak: string }) => [d.sak, d.id]));
+function utrustad(s: State, p: Person, u: Skapad) {
+  const r = utrustning(s, p, !!p.task && load(p.task, s) > 0);
+  u.klader = { rock: null, skor: false, balte: false };
+  for (const pl of Object.values(r)) {
+    const a = pl.ting && kladAv(pl.ting.k);
+    if (!a) continue;
+    if (a.plagg === 'rock') u.klader.rock = KLADMATERIAL[a.mat].namn;
+    else if (a.plagg === 'skor') u.klader.skor = true;
+    else if (a.plagg === 'balte') u.klader.balte = true;
+  }
+  const h = r.hoger.ting ?? r.krok.ting;
+  u.del.redskap = (h && REDSKAP.get(h.k)) ?? null;
 }
 
 // det vackraste eller fulaste i ansiktet, med ord (steg 5.2.3.3): beskrivningen (3.9.7) säger det som syns i porträttet.

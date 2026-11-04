@@ -379,3 +379,4 @@
       versioner: [{ text: 'Version 1: eld, rök, vågor och stranden.', ...EFFEKTKORT }] },
   );
 })();
+

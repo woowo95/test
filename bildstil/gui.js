@@ -13,10 +13,10 @@
       if (ch !== '.') B.satt(x + i, y + j, B.P.av(b.pal[ch]));
     }
   }
-  // flikarnas färger: huvudfärg och andrafärg ur Starkare i paletten (Björns beslut efter v207; Tro är ett förslag)
+  // flikarnas färger: huvudfärg och andrafärg ur Starkare i paletten (Björns beslut efter v207; Tro i barr och senap är Björns val q_tro)
   const FLIK = [
     ['kronika', 'Krönika', 'rost', 'kol'], ['seder', 'Seder', 'skiffer', 'senap'], ['styre', 'Styre', 'rost', 'senap'],
-    ['teknik', 'Teknik', 'kol', 'rost'], ['forrad', 'Förråd', 'oliv', 'senap'], ['folket', 'Folket', 'barr', 'rost'], ['tro', 'Tro', 'senap', 'ben']];
+    ['teknik', 'Teknik', 'kol', 'rost'], ['forrad', 'Förråd', 'oliv', 'senap'], ['folket', 'Folket', 'barr', 'rost'], ['tro', 'Tro', 'barr', 'senap']]; // Tro i barr och senap (Björns val q_tro)
 
   // ---------- runstenarna ----------
   // en båge i flikens huvudfärg runt en grå sten med emblemet; öppen: bågen i andrafärgen och stenen i huvudfärgen;
@@ -71,13 +71,10 @@
     if (window.MARK) window.MARK.tuvor({ ...B, satt: (x, y, c) => y > 22 + t.h && B.satt(x, y, c) }, 1, () => true, 0.6);
   });
 
-  // ---------- hörnen: tre versioner (Ormen, Ring med blad, Dubbel ögla) ----------
-  const HORN = k => SCEN(350, 124, B => {
-    const P = B.P, h = GUI.horn[k]; fyll(B, P.i('ben', 2));
-    bild(B, h.grund, 8, Math.round((B.h - h.grund.h) / 2)); bild(B, h.seder, 8 + h.grund.w + 18, Math.round((B.h - h.seder.h) / 2));
-  });
+  // hörnen: Björn valde Ormen (inbyggd i spelet i steg 5.3.1.4, v333, via guitillspelet.cjs). Ring med blad och Dubbel
+  // ögla ligger kvar i gui.json (horn.ring, horn.ogla) om Björn ångrar sig.
 
-  // ---------- vektorbilderna som pixelbilder (5.2.4.2, till 5.3.2.2) ----------
+  // ---------- vektorbilderna som pixelbilder (5.2.4.2; inbyggda i 5.3.2.2, src/ui/framsteg.ts, och borttagna ur valdelen) ----------
   // vinkeln medsols från klockan tolv, 0 till 1
   const vinkel = (dx, dy) => { const a = Math.atan2(dx, -dy) / (2 * Math.PI); return a < 0 ? a + 1 : a; };
   // framstegscirkeln: en mörk bricka med ljus kant som fylls med gult medsols från klockan tolv
@@ -176,30 +173,13 @@
     fyll(B, B.P.i('ben', 2)); const f = [id, '', hu, an, EMB[emb] || GUI.emblem[emb]];
     runsten(B, 5, 9, f, 'stangd'); runsten(B, 5 + SW + 4, 9, f, 'oppen'); nyttBand(B, 2 * (SW + 4) + 8, 5, hu, an, monster, f[4]);
   });
-  const T = 'Steg 5.2.4.7: ', T2 = 'Steg 5.2.4.2, till 5.3.2.2: ';
+  // till spelet (5.3.3.1): guitillspelet.cjs kör den här filen och ritar runstenarna och banden med samma funktioner
+  if (typeof window !== 'undefined') window.GUIRITA = { runsten, nyttBand, FLIK, EMB, SW, SH };
+  const T = 'Steg 5.2.4.7: ';
+  // runstenarna, banden och Tros, Personens och Grannarnas förslag är inbyggda i spelet (5.3.3.1, v338) och borttagna ur valdelen;
+  // scenerna STENAR och BAND och FORSLAG ligger kvar som referens
   VAL.push(
-    { id: 'g_runsten', stor: true, namn: 'Runstenarna', typ: 'janej', vad: T + 'flikarnas knappar (till 5.3.3.1) i hel skala, 22 × 28 punkter, efter skissen: en båge i flikens färg runt en grå sten med emblemet. Översta raden stängda, i mitten öppna (bågen i andrafärgen och stenen i huvudfärgen) och nederst bleka (fliken går inte att öppna än). Tros färger (senap och ben) är ett förslag. Person och Grannar har ingen sten än.',
-      versioner: [{ text: 'Version 1: sju runstenar i tre lägen.', ...STENAR }] },
-    { id: 'g_band', stor: true, namn: 'Flikarnas band och emblem', typ: 'janej', vad: T + 'banden och emblemen överst i flikarna (till 5.3.3.1) från dina skisser efter v207, nu som bilder i paletten i hel skala, 140 × 26 punkter: Seder (orm med två huvuden och vågen), Styre (ringkedja och högsätet), Teknik (smidd kedja, hammare och tång), Förråd (sädesax), Krönika (runband och runstenen) och Folket (människor hand i hand). Tro, Person och Grannar har inget band än.',
-      versioner: [{ text: 'Version 1: de sex banden.', ...BAND }] },
     { id: 'g_vag', stor: true, namn: 'Vågbandet', typ: 'janej', vad: T + 'vågbandet längst ner i raden överst (till 5.3.1.2), spiraler i kol på beige med en linje under som ligger mot kartan. En ruta på 8 × 7 punkter som upprepas över hela bredden.',
       versioner: [{ text: 'Version 1: vågbandet mot kartan.', ...VAG }] },
-    { id: 'g_horn', stor: true, namn: 'Hörnen på panelerna', typ: 'tre', vad: T + 'hörnen på panelerna (till 5.3.1.4), som sticker ut utanför ramen. De tre du sparade att fundera vidare på, i hel skala; till vänster i grundens färger och till höger i Seders färger.',
-      versioner: [
-        { text: 'Version 1: Ormen.', ...HORN('ormen') },
-        { text: 'Version 2: Ring med blad.', ...HORN('ring') },
-        { text: 'Version 3: Dubbel ögla.', ...HORN('ogla') }] },
-    { id: 'v_framsteg', stor: true, namn: 'Framstegscirkeln', typ: 'janej', vad: T2 + 'cirkeln för det som inte är klart, i pixlar i stället för en vektorbild: en mörk bricka med ljus kant som fylls med gult medsols från klockan tolv. Överst på kartan (9 × 9 punkter), nederst i panelen (15 × 15), från tomt till fullt i åttondelar.',
-      versioner: [{ text: 'Version 1: framstegscirkeln i pixlar.', ...FRAMSTEG }] },
-    { id: 'v_ring', stor: true, namn: 'Ringen runt en teknik', typ: 'janej', vad: T2 + 'ringen runt en teknik i teknikträdet (hur nära den är) och runt ett redskap i handen (skicket), i pixlar: en linje i rost som växer medsols från toppen. Överst rund, nederst fyrkantig med rundade hörn som händernas rutor; 0, 20, 40, 60, 80 och 100 %.',
-      versioner: [{ text: 'Version 1: ringarna i pixlar.', ...RINGAR }] },
-    { id: 'v_tart', stor: true, namn: 'Tårtan över den vakna tiden', typ: 'janej', vad: T2 + 'tårtan i personens tid, i pixlar: varje del i en färg ur paletten, med en tunn ljus linje mellan delarna och en mörk kant. Till höger med en del vald: den lyser och de andra bleknar.',
-      versioner: [{ text: 'Version 1: tårtan i pixlar.', ...TARTA }] },
-    { id: 'q_tro', stor: true, namn: 'Tros band och färger', typ: 'janej', vad: 'Steg 5.2.4.7: fliken Tro i barr och senap med en ranka med blad som livsträdets grenar, nu symmetrisk: höger sida är vänster sida speglad kring medaljongen. Din kommentar förra gången: \u201dMen gör den symmetrisk\u201d (du valde version 2).',
-      versioner: [{ text: 'Version 2, symmetrisk.', ...FORSLAG('tro', 'barr', 'senap', 'ranka', 'tro') }] },
-    { id: 'q_person', stor: true, namn: 'Personfliken', typ: 'janej', vad: 'Steg 5.2.4.7: fliken Person i rost och ben med en hand och ett pärlband, nu symmetriskt kring medaljongen. Handen själv har tummen åt ett håll; säg till om även den ska bli symmetrisk. Din kommentar förra gången: \u201dMen gör den symmetrisk\u201d (du valde version 2).',
-      versioner: [{ text: 'Version 2, symmetrisk.', ...FORSLAG('person', 'rost', 'ben', 'parlor', 'hand') }] },
-    { id: 'q_grannar', stor: true, namn: 'Grannfliken', typ: 'janej', vad: 'Steg 5.2.4.7: fliken Grannar i oliv och rost med två hus och en rad hyddor, nu symmetrisk kring medaljongen. Din kommentar förra gången: \u201dMen gör den symmetrisk\u201d (du valde version 1).',
-      versioner: [{ text: 'Version 1, symmetrisk.', ...FORSLAG('grannar', 'oliv', 'rost', 'hyddor', 'hus') }] },
   );
 })();

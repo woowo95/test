@@ -2,6 +2,7 @@
 // varje tecken är en pixel, '.' är genomskinlig
 import { KLADER_AV } from './sim/klader';
 import { KARTBILDER } from './kartbilder';
+import { ANIMBILDER } from './animbilder';
 import { DJURBILDER, type Hall } from './djurbilder';
 import { farg } from './palett';
 
@@ -137,7 +138,7 @@ export const PAL: Record<string, Record<string, string>> = {
   a_odla: AKT,
   a_jaga: AKT,
   a_smyga: AKT,
-  a_prata: AKT, a_toa: AKT,
+  a_prata: AKT, a_toa: { w: '#dad0bb', a: '#8a9c9e', b: '#3f2415', B: '#5e3c24', c: '#7d5b40' },
   a_sikta: AKT,
   kanin_larm: { k: '#24201d', y: '#d8b25f' },
   a_fiska: AKT,
@@ -169,7 +170,7 @@ export const PAL: Record<string, Record<string, string>> = {
   m_hardVinter: { o: '#24201d', s: '#bdb39b', S: '#dad0bb' }, // (Björn valde version 1 efter v245, steg 4.5.2)
   m_tornado: { o: '#24201d', g: '#61767a', G: '#bdb39b', d: '#5e3c24', D: '#dad0bb', k: '#2f261d', K: '#372f25', l: '#4b4f00', j: '#7d5b40' }, // (Björn valde version 2 efter v245, steg 4.5.2)
   m_oversvamning: { o: '#24201d', b: '#3e5156', B: '#61767a', l: '#8a9c9e', k: '#3f2415', j: '#5e3c24', J: '#7d5b40' }, // (Björn valde version 2 efter v245, steg 4.5.2)
-  m_torka: { o: '#24201d', y: '#d8b25f', Y: '#d8b25f', r: '#bd753e', j: '#987e62', J: '#a0947d', k: '#5e3c24' },
+  m_torka: { o: '#24201d', y: '#b2921b', Y: '#d8b25f', j: '#7d5b40', J: '#987e62', k: '#3f2415' },
   i_legend: { a: '#d8b25f', b: '#b2921b', g: '#906f0f', o: '#24201d', w: '#dad0bb', z: 'rgba(36,32,29,.30)' },
   i_okand: { a: '#dad0bb', b: '#a0947d', k: '#2f261d', o: '#24201d', z: 'rgba(36,32,29,.30)' },
   a_gott: { a: '#bdb39b', b: '#a0947d', g: '#d8b25f', o: '#24201d', w: '#dad0bb', z: 'rgba(36,32,29,.30)' },
@@ -1969,24 +1970,24 @@ export const PIX: Record<string, string[]> = {
     '....o.....o.....',
     '................',
   ],
-  // torkan (steg 3.8.2, platshållare i bildstilens palett, 16 punkter): en het sol över sprucken mark
+  // torkan (Björn valde version 1, steg 5.3.2.1): en större sol, och marken sprucken i flak
   m_torka: [
-    '.....o..o.......',
-    '..o..oyyo..o....',
-    '...ooyYYyoo.....',
-    '...oyYYYYyo.....',
-    'ooyYYYYYYYYyoo..',
-    '...oyYYYYyo.....',
-    '...ooyYYyoo.....',
-    '..o..oyyo..o....',
-    '.....o..o.......',
+    '................',
+    '..o.ooooo.o.....',
+    '...oYYYYYo......',
+    '..oYYYYYYYo.....',
+    '..oYYYYYYyo.....',
+    '.ooYYYYYyyoo....',
+    '..oYYYYyyyo.....',
+    '...oYYyyyo......',
+    '..o.ooooo.o.....',
     '................',
     'oooooooooooooooo',
-    'ojJJjkJJJjJJkJjo',
-    'ojjkjjkJjjjkjjjo',
-    'okjjkjjjkjkjjkjo',
-    'ojkjjjrjjkjjjjko',
-    'oooooooooooooooo',
+    'jkjJJjjjkjjJkjjj',
+    'jjkjjjkkjjjJjkjj',
+    'jjjkkkjjkjJJkkjj',
+    'JjjkjjjjjkkkjJkk',
+    'JJkjJJJjkjjJjjjJ',
   ],
   m_tornado: [ // (Björn valde version 2 efter v245, steg 4.5.2)
     '.ooooooooooooo..',
@@ -2511,7 +2512,7 @@ export const PIX: Record<string, string[]> = {
     'bbbbbdbb',
   ],
   // inte klart (paborjat.ts): framstegscirkeln (Björn valde A2 efter v55), här halvfylld. På kartan och i panelerna ritas
-  // den med hur långt arbetet kommit (foremal.ts, framstegSvg nedan)
+  // den med hur långt arbetet kommit (foremal.ts och framstegSvg i ui/framsteg.ts)
   paborjat: [
     '..wwww..',
     '.wddyyw.',
@@ -2556,38 +2557,38 @@ export const PIX: Record<string, string[]> = {
     '.w......',
     '........',
   ],
-  // toa (steg 3.10.3, platshållare): en droppe
+  // toa (Björn valde version 2 efter bildstil v117, steg 5.3.2.1): en bajshög med stanken som stiger
   a_toa: [
-    '...a....',
-    '...a....',
-    '..aaa...',
-    '..aaa...',
-    '.aaaaa..',
-    '.aaawa..',
-    '..aaa...',
-    '........',
+    '.w....w.',
+    'w....w..',
+    '.w....w.',
+    '...bb...',
+    '..bcBb..',
+    '.bBcBbb.',
+    '.bcBBBb.',
+    'bbbbbbbb',
   ],
-  // jägaren smyger: en fot på tå och tysta prickar (platshållare, Björn efter v159)
+  // jägaren smyger (Björn valde version 3, steg 5.3.2.1): en människa på tå med långa försiktiga steg, lutad framåt
   a_smyga: [
-    '........',
-    '.w...w..',
-    '........',
-    '...ww...',
-    '..wwww..',
-    '..www...',
-    '.ww.....',
-    '........',
-  ],
-  // jägaren siktar: ett spjut snett uppåt med spetsen åt höger (platshållare)
-  a_sikta: [
-    '......aw',
-    '.....aw.',
-    '....w...',
-    '...w....',
-    '..w.....',
+    '.....ww.',
+    '.....ww.',
+    '....ww..',
+    '...www.w',
+    '..w.ww..',
+    '...w..w.',
+    '..w....w',
     '.w......',
-    'w.......',
-    '........',
+  ],
+  // jägaren siktar (Björn valde version 1, steg 5.3.2.1): pilbågen snett, med rak sträng och pilen lagd mot den, inte spänd
+  a_sikta: [
+    '.ww...aa',
+    '..aww.aa',
+    '...a.w..',
+    '....a.w.',
+    '...a.aw.',
+    '..a...aw',
+    'aa.....w',
+    'aa......',
   ],
   // ett sikte
   a_jaga: [
@@ -3755,6 +3756,8 @@ for (const k in PIX) if (k.endsWith('_v')) PAL[k] ??= PAL[k.slice(0, -2)];
 // kartbild, som ritas i sin naturliga storlek, aldrig förstorad eller förminskad (steg 5.1.2.1)
 for (const [id, b] of Object.entries(KARTBILDER)) { PIX['kb_' + id] = b.rader; PAL['kb_' + id] = b.pal; }
 // lågorna där det brinner och tornadon (Björns val i bildstilen, steg 5.1.2.2) heter som förut, så att knappen i testläget hittar dem
+// animationernas bilder (steg 5.1.9, animbilder.ts) med id:t an_<id>; ui/animation.ts väljer bild efter klockan
+for (const [id, b] of Object.entries(ANIMBILDER)) { PIX['an_' + id] = b.rader; PAL['an_' + id] = b.pal; }
 for (const k of ['brand', 'tornado']) { PIX[k] = KARTBILDER[k].rader; PAL[k] = KARTBILDER[k].pal; }
 // symbolen för en lägereld (stationen som lägger ringen till en lägereld till, steg 4.5.6.8): den nylagda med stenringen under
 // (bildstilens tecken har samma färg i alla bilder, så att två bilder kan läggas på varandra tecken för tecken)
@@ -3801,13 +3804,6 @@ export function iconCanvas(k: string) {
 export const hasIcon = (k: string) => !!PIX[k];
 // en ljus symbol utan kant (de för arbetet, ritade för en mörk ruta): i den ljusa pratbubblan ritas den mörk (steg 4.5.6.9)
 export const ljusSymbol = (k: string) => !!PIX[k] && !PAL[k]?.o && ['#dad0bb'].includes(PAL[k]?.w ?? '');
-// framstegscirkeln för det som inte är klart (Björn valde A2 efter v55): en mörk bricka med vit kant som fylls med gult,
-// medsols från klockan tolv, ju längre arbetet kommit (p från 0 till 1)
-export function framstegSvg(p: number, size = 10) {
-  const f = Math.min(1, Math.max(0, p)), a = f * 2 * Math.PI, x = 8 + 5.6 * Math.sin(a), y = 8 - 5.6 * Math.cos(a);
-  const kil = f >= 0.999 ? '<circle cx="8" cy="8" r="5.6" fill="#d8b25f"/>' : f > 0 ? `<path d="M8 8V2.4A5.6 5.6 0 ${a > Math.PI ? 1 : 0} 1 ${x.toFixed(2)} ${y.toFixed(2)}Z" fill="#d8b25f"/>` : '';
-  return `<svg class="ikon" width="${size}" height="${size}" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="rgba(36,32,29,0.88)" stroke="#dad0bb" stroke-width="1.4"/>${kil}</svg>`;
-}
 // kvalitetens märke (steg 2.2.2, Björn valde version 2 i bildstilen, byggt i steg 3.6.11): usel ett mörkt dammoln, slarvig
 // en ojämn grå fläck, normal inget, fin i silver, mästerverk i guld och det perfekta mästerverket i guld med vita gnistor. 8 × 8 punkter
 const KV_PIX: readonly ({ pal: Record<string, string>; rader: readonly string[] } | undefined)[] = [

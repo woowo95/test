@@ -404,7 +404,7 @@ satPersonFlytt(
   (s, P, w) => {
     if (!P.p) return;
     if (w.t) { w.t.agare = P.p.id; w.t.hos = undefined; return; }
-    if (isTool(w.k)) { for (let i = 0; i < w.n; i++) { const t = newTing(s, w.k, 1, P.p.id); if (w.q !== undefined) t.q = w.q; } return; }
+    if (isTool(w.k)) { for (let i = 0; i < w.n; i++) { const t = newTing(s, w.k, 1, P.p.id); t.kopt = s.now; if (w.q !== undefined) t.q = w.q; } return; } // kopt: köpt (inforutan, steg 5.3.5.3)
     put(s, w.k, w.n, { [P.p.id]: w.n });
   },
 );

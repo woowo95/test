@@ -102,6 +102,13 @@ function lera(x: number, y: number, i: number) {
   return L[b < 0.5 ? 15 - py : py][(b * 4) % 1 < 0.5 ? 15 - px : px];
 }
 
+// avståndet till stranden i rutor för punkten x, y (över 0 i vattnet), med kantens slingor
+function sdAv(x: number, y: number) {
+  let sd = bil(SD, x, y);
+  if (sd > -1.8 && sd < 2.6) sd += (vn(x, y, 22, 541) - 0.5) * 0.9 + (vn(x, y, 7, 542) - 0.5) * 0.25;
+  return sd;
+}
+
 // ---------- en punkt ----------
 // sorten av punkten, så att tuvorna och vassen bara hamnar på gräs och i strandkanten
 const GRAS = 1, VASS = 2, KANT = 3, ANNAT = 0;
@@ -115,8 +122,7 @@ function punkt(x: number, y: number): number {
   // kanterna mellan sorterna slingrar sig: rutan läses några punkter åt sidan, efter en långsam våg
   const jx = x + Math.round((vn(x, y, 9, 11) - 0.5) * 9), jy = y + Math.round((vn(x, y, 9, 12) - 0.5) * 9);
   const ji = tileXY(jx, jy), t = IN.tiles[ji];
-  let sd = bil(SD, x, y);
-  if (sd > -1.8 && sd < 2.6) sd += (vn(x, y, 22, 541) - 0.5) * 0.9 + (vn(x, y, 7, 542) - 0.5) * 0.25;
+  const sd = sdAv(x, y);
   const r = hash(x, y, 543);
   if (sd > 0) { // vattnet
     if (is) { // isen: slät, med ljusare fläckar där snön blåst upp
@@ -183,19 +189,22 @@ interface Bit { sp: PIXI.Sprite; c: HTMLCanvasElement; g: CanvasRenderingContext
 const bitar: Bit[] = [];
 let bw = 0, bh = 0;
 export const markLayer = new PIXI.Container();
+const bitLayer = new PIXI.Container(), animLayer = new PIXI.Container();
+markLayer.addChild(bitLayer, animLayer);
 function ritaBit(bx: number, by: number) {
   let b = bitar[by * bw + bx];
   if (!b) {
     const c = document.createElement('canvas'); c.width = BP; c.height = BP;
     const g = c.getContext('2d')!, img = g.createImageData(BP, BP);
     const sp = new PIXI.Sprite(PIXI.Texture.from(c, { scaleMode: PIXI.SCALE_MODES.NEAREST }));
-    sp.position.set(bx * BP, by * BP); markLayer.addChild(sp);
+    sp.position.set(bx * BP, by * BP); bitLayer.addChild(sp);
     b = bitar[by * bw + bx] = { sp, c, g, img, u: new Uint32Array(img.data.buffer), px: new Int8Array(BP * BP) };
   }
   rakna(bx * BP, by * BP, b.px);
   for (let i = 0; i < b.px.length; i++) b.u[i] = RGBA[b.px[i]];
   b.g.putImageData(b.img, 0, 0);
   b.sp.texture.baseTexture.update();
+  const a = anim[by * bw + bx]; if (a) { a.ram = undefined; a.f = -1; } // vågorna räknas om efter den nya marken
 }
 // räknar punkterna i en bit (x0, y0 i världen) och lägger tuvorna, blommorna, stenarna och vassen ovanpå
 export function rakna(x0: number, y0: number, px: Int8Array) {
@@ -240,6 +249,90 @@ export function rakna(x0: number, y0: number, px: Int8Array) {
   }
 }
 
+// ---------- vågorna och stranden (steg 5.1.9.2) ----------
+// Bildstilens vågor och skumrand (anim.js, 5.2.4.8): vågorna är korta ljusa streck i öppet vatten som tänds, rullar en punkt
+// per bild och slocknar (VAGTON), och vid stranden sköljer en skumrand upp på sanden och drar sig tillbaka (SKOLJ). Avståndet
+// till stranden räknas i punkter (högst 4) ur samma kant som marken ritar. Vågorna byter bild var fjärde slag och stranden
+// vart åttonde, så åtta bilder räcker för båda (stranden = bild / 2). Varje bit med vatten nära har en genomskinlig bild
+// ovanpå marken, som bara ritas om när bilden byts och biten syns. Inget på isen. Bara utseende.
+interface Anim { sp: PIXI.Sprite; g: CanvasRenderingContext2D; img: ImageData; u: Uint32Array; ram?: { i: Uint16Array; c: Uint8Array }[]; f: number }
+let anim: (Anim | null | undefined)[] = [];
+const AMAX = 4, VAGOR = 32;
+const SKOLJ: [number, number][][] = [
+  [[1, BEN + 2], [2, SKIFFER + 3]],                    // vågen kommer in
+  [[-1, BEN + 3], [1, BEN + 2], [2, SKIFFER + 2]],      // skummet uppe på sanden
+  [[-1, JORD + 1], [2, BEN + 2], [3, SKIFFER + 2]],     // vattnet drar sig tillbaka, sanden är våt
+  [[-2, JORD + 1], [-1, JORD + 1], [3, SKIFFER + 3]],   // nästa våg samlas längre ut
+];
+const VAGTON = [-1, 1, 2, 3, 3, 2, 1, -1];
+// finns vatten i eller intill biten?
+function narVatten(bx: number, by: number) {
+  for (let y = Math.max(0, by * BIT - 1); y <= Math.min(H - 1, by * BIT + BIT); y++) for (let x = Math.max(0, bx * BIT - 1); x <= Math.min(W - 1, bx * BIT + BIT); x++) if (SD[y * W + x] > -1) return true;
+  return false;
+}
+// avståndet till stranden i punkter för bitens punkter (över 0 i vattnet, under 0 på land, högst AMAX) och de åtta bilderna
+function raknaAnim(bx: number, by: number) {
+  const x0 = bx * BP - AMAX, y0 = by * BP - AMAX, N = BP + 2 * AMAX, v = new Uint8Array(N * N);
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) v[y * N + x] = sdAv(x0 + x, y0 + y) > 0 ? 1 : 0;
+  const d = new Int8Array(BP * BP);
+  for (let y = 0; y < BP; y++) for (let x = 0; x < BP; x++) {
+    const vatt = v[(y + AMAX) * N + x + AMAX]; let n = AMAX + 1;
+    for (let dy = -AMAX; dy <= AMAX && n > 1; dy++) for (let dx = -AMAX; dx <= AMAX; dx++) if (v[(y + AMAX + dy) * N + x + AMAX + dx] !== vatt) n = Math.min(n, Math.max(Math.abs(dx), Math.abs(dy)));
+    d[y * BP + x] = Math.min(AMAX, n) * (vatt ? 1 : -1);
+  }
+  const ram: { i: Uint16Array; c: Uint8Array }[] = [], px = new Int16Array(BP * BP), wx = bx * BP, wy = by * BP;
+  const da = (x: number, y: number) => d[y * BP + x];
+  for (let f = 0; f < 8; f++) {
+    px.fill(-1);
+    for (let k = 0; k < VAGOR; k++) { // vågorna, helt inne i biten
+      const g = (f + k * 3) % 8, ton = VAGTON[g]; if (ton < 0) continue;
+      const x = 1 + Math.floor(hash(bx * 64 + k, by, 920) * (BP - 14)) + g, y = Math.floor(hash(bx * 64 + k, by, 921) * (BP - 2));
+      if (!(da(x - 1, y) >= AMAX) || !(da(x + 5, y + 1) >= AMAX)) continue;
+      if (ton > 1) { px[(y + 1) * BP + x - 1] = SKIFFER + 1; px[(y + 1) * BP + x + 5] = SKIFFER + 1; } // flankerna en punkt lägre: en båge
+      for (let j = 0; j < 5; j++) px[y * BP + x + j] = SKIFFER + (j === 2 ? ton : Math.max(1, ton - 1));
+    }
+    const sk = SKOLJ[f >> 1];
+    for (let y = 0; y < BP; y++) for (let x = 0; x < BP; x++) { // skumranden
+      const a = d[y * BP + x]; if (a < 0 && SNO > 0) continue; // inte på snön
+      const rad = sk.find(r => r[0] === a);
+      if (rad && hash((wx + x) / 3 | 0, (wy + y) / 2 | 0, 910 + (f >> 1)) > 0.2) px[y * BP + x] = rad[1];
+    }
+    let n = 0; for (let i = 0; i < px.length; i++) if (px[i] >= 0) n++;
+    const r = { i: new Uint16Array(n), c: new Uint8Array(n) }; n = 0;
+    for (let i = 0; i < px.length; i++) if (px[i] >= 0) { r.i[n] = i; r.c[n++] = px[i]; }
+    ram.push(r);
+  }
+  return ram;
+}
+// vågorna i den del av kartan som syns (x0, y0, x1, y1 i världens punkter): f är bilden (0–7, animation.ts);
+// högst ms millisekunder (datorns tid) för att räkna nya bitar
+export function animMark(f: number, x0: number, y0: number, x1: number, y1: number, ms = 4) {
+  if (anim.length !== bw * bh) { for (const a of anim) a?.sp.destroy(true); anim = new Array(bw * bh); }
+  const t0 = performance.now();
+  for (let by = 0; by < bh; by++) for (let bx = 0; bx < bw; bx++) {
+    const k = by * bw + bx, syns = !is && bx * BP < x1 && (bx + 1) * BP > x0 && by * BP < y1 && (by + 1) * BP > y0;
+    let a = anim[k];
+    if (a === null) continue;
+    if (!syns) { if (a) a.sp.visible = false; continue; }
+    if (a === undefined) {
+      if (!narVatten(bx, by)) { anim[k] = null; continue; }
+      const c = document.createElement('canvas'); c.width = BP; c.height = BP;
+      const g = c.getContext('2d')!, img = g.createImageData(BP, BP);
+      const sp = new PIXI.Sprite(PIXI.Texture.from(c, { scaleMode: PIXI.SCALE_MODES.NEAREST }));
+      sp.position.set(bx * BP, by * BP); animLayer.addChild(sp);
+      a = anim[k] = { sp, g, img, u: new Uint32Array(img.data.buffer), f: -1 };
+    }
+    if (!a.ram) { if (performance.now() - t0 > ms) { a.sp.visible = false; continue; } a.ram = raknaAnim(bx, by); }
+    a.sp.visible = true;
+    if (a.f === f) continue;
+    a.f = f; a.u.fill(0);
+    const r = a.ram[f]; for (let j = 0; j < r.i.length; j++) a.u[r.i[j]] = RGBA[r.c[j]];
+    a.g.putImageData(a.img, 0, 0); a.sp.texture.baseTexture.update();
+  }
+}
+// hela marken byts (vattnet, isen, snön): vågorna räknas om
+const animBort = () => { for (const a of anim) a?.sp.destroy(true); anim = []; };
+
 // ---------- vad som ändrats ----------
 let nyckel = '';
 let sig = new Int32Array(0);
@@ -254,7 +347,7 @@ export function stallMark(inp: MarkIn, mt: MarkTid, sno: number, nyIs: number, g
   if (g !== nyckel) {
     nyckel = g; W = inp.W; H = inp.H; MT = mt; SNO = sno; is = nyIs;
     bw = Math.ceil(W / BIT); bh = Math.ceil(H / BIT);
-    raknaSD();
+    raknaSD(); animBort();
     NOTT = new Float32Array(W * H); TRAD = new Uint8Array(W * H); ASKA = new Float32Array(W * H); sig = new Int32Array(W * H);
     for (let i = 0; i < W * H; i++) uppdatera(i, aska?.get(i) ?? 0);
     raknaFD();

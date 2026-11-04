@@ -170,7 +170,7 @@ export const VAPEN = {
   yxa: { namn: 'Flintyxan', skada: 0.5, takt: 1.5, rack: 1.1, slag: 'hugg', ord: 'hugger', tecken: '🪓', liten: true },
   fiskespjut: { namn: 'Träspjutet', skada: 0.32, takt: 1.3, rack: 1.8, slag: 'stick', ord: 'sticker', tecken: '🔱', kast: { rack: 6, skada: 0.3, skott: 1, fastnar: true, reserv: true } },
   flintspjut: { namn: 'Flintspjutet', skada: 0.45, takt: 1.3, rack: 1.8, slag: 'stick', ord: 'sticker', tecken: '🔱', kast: { rack: 6, skada: 0.42, skott: 1, fastnar: true, reserv: true } },
-  benspade: { namn: 'Benspaden', skada: 0.28, takt: 1.4, rack: 1.3, slag: 'slag', ord: 'slår', tecken: '🦴' },
+  benspade: { namn: 'Benspaden', skada: 0.28, takt: 1.4, rack: 1.3, slag: 'slag', ord: 'slår', tecken: '{sym_benspade}' },
   sten: { namn: 'Stenen', skada: 0.25, takt: 1.1, rack: 0.9, slag: 'slag', ord: 'slår', tecken: '🪨', kast: { rack: 8, skada: 0.22, skott: 3 } }, // tre stenar att kasta, sedan slår man med den sista
   bett: { namn: 'Tänderna', skada: 0.1, takt: 0.8, rack: 0.7, slag: 'bett', ord: 'biter', tecken: '🦷' },
   vargbett: { namn: 'Vargens käftar', skada: 0.28, takt: 1.4, rack: 0.9, slag: 'bett', ord: 'biter', tecken: '🐺' }, // vargen biter hårt (steg 3.7.1)
@@ -226,7 +226,7 @@ export const STRIDHANDELSER = {
   borjar: { tecken: '⚔️', namn: 'Striden börjar' },
   traff: { tecken: '💥', namn: 'Träff' },
   tog: { tecken: '🛡️', namn: 'Kläderna tog slaget' },
-  miss: { tecken: '💨', namn: 'Miss' },
+  miss: { tecken: '{sym_miss}', namn: 'Miss' },
   parera: { tecken: '⚔️', namn: 'Parerar' }, // steg 3.7.2
   duck: { tecken: '🌀', namn: 'Duckar' },
   backar: { tecken: '↩️', namn: 'Backar' },

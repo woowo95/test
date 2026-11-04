@@ -4,12 +4,17 @@ import { KARTBILDER } from '../kartbilder';
 import { ritaHus } from './husbild';
 import { smutsGrad, smutsIkon } from './slitbild';
 import { outPilesAt, piles, s, sakVar, ui } from './lage';
-import { Ikoner, TS, overG, pileLayer, structG } from './scen';
+import { Ikoner, TS, overG, pileLayer, rokLayer, structG } from './scen';
+import { eldBild, gnistBild, rokBild } from './animation';
+import { ANIMTAKT } from '../animbilder';
 import { mix } from './terrang';
 import { iBruk } from './ibruk';
+import { framstegPunkter } from './framsteg';
+import { fargTal } from '../palett';
 
 // det som står på marken: lagerplatserna och stackarna, stationerna, husen, stubbar, fällda träd och elden
 const pileIcons = new Ikoner(pileLayer, true); // med skuggor på marken (steg 5.1.8)
+const rokIkoner = new Ikoner(rokLayer); // gnistorna och röken över elden (steg 5.1.9.1)
 // skicket som färg: grönt, gult, rött
 const condCol = (c: number) => c >= 0.5 ? 0x6fbf5a : c >= 0.25 ? 0xe0b040 : 0xd2553f;
 // var ikonerna ligger i rutan, bakersta först
@@ -76,13 +81,11 @@ function drawFalt() {
     if (!vaxer && !mogen) { const i = faltRuta(f, Math.min(f.klara, f.n - 1)); framsteg((i % W) * TS + TS / 2, Math.floor(i / W) * TS + 3, faltKlar(f)); }
   }
 }
-// framstegscirkeln för det som inte är klart (Björn valde A2 efter v55): en mörk bricka med vit kant som fylls med gult,
-// medsols från klockan tolv, ju längre arbetet kommit (p från 0 till 1). Samma som framstegSvg i panelerna (ikoner.ts)
+// framstegscirkeln för det som inte är klart: en mörk bricka med ljus kant som fylls med gult medsols från klockan tolv,
+// ju längre arbetet kommit (p från 0 till 1). I pixlar, 9 × 9 punkter, samma punkter som framstegSvg i panelerna (steg 5.3.2.2)
 function framsteg(cx: number, cy: number, p: number) {
-  const r = 3.6, f = clamp(p, 0, 1);
-  overG.beginFill(0x1c1814, 0.88).drawCircle(cx, cy, r).endFill();
-  if (f > 0) overG.beginFill(0xe0b050).moveTo(cx, cy).arc(cx, cy, r - 0.7, -Math.PI / 2, -Math.PI / 2 + f * 2 * Math.PI).lineTo(cx, cy).endFill();
-  overG.lineStyle(0.5, 0xf2ece0).drawCircle(cx, cy, r).lineStyle(0);
+  const x0 = Math.round(cx) - 4, y0 = Math.round(cy) - 4;
+  framstegPunkter(4, p, (x, y, c) => overG.beginFill(fargTal(c)).drawRect(x0 + x, y0 + y, 1, 1).endFill());
 }
 // '_v' när stationen står vriden och har en stående bild (steg 3.10.7, regeln Det som kan vridas), annars ''
 const vriden = (st: Station) => { const ik = stationDef(st.k)?.ikon ?? ''; return st.rot && (hasIcon(ik + '_karta_v') || hasIcon('kb_' + ik + '_v')) ? '_v' : ''; };
@@ -132,7 +135,7 @@ export function drawStructures(t: number) {
     structG.beginFill(0x5b4a35, 0.22).lineStyle(1, on ? 0xffffff : 0x5b4a35, on ? 0.9 : 0.5).drawRoundedRect(z.x * TS + 0.5, z.y * TS + 0.5, z.w * TS - 1, z.h * TS - 1, 3).endFill().lineStyle(0);
   });
   drawBuild();
-  pileIcons.start();
+  pileIcons.start(); rokIkoner.start();
   drawFalt();
   for (const f of eldarOf(s)) lagereld(f); // den första och lägereldarna till (steg 4.5.6.8)
   for (const pl of piles()) if (!forvarAt(s, pl.x, pl.y)?.stangd) drawPile(pl, t); // det som ligger i en kista syns bara när man trycker på den
@@ -161,7 +164,7 @@ export function drawStructures(t: number) {
   }
   // dörrarna i öppningarna (DORRAR i byggnad.ts): den stående bilden (_v) när väggen går uppåt (en vägg ovanför öppningen)
   for (const b of bitsOf(s)) if (b.dorr) { const ik = dorrDef(b.dorr)?.ikon, v = bitAt(s, b.x, b.y - 1)?.k === 'vagg' ? '_v' : '', k = hasIcon('kb_' + ik + v) ? 'kb_' + ik + v : ik + '_karta' + v; pileIcons.add(k, b.x * TS, b.y * TS, TS / iconCanvas(k).width); } // bildstilens dörr (skinndörren, steg 5.1.2.3) eller den som redan hade 16 punkter
-  pileIcons.end();
+  pileIcons.end(); rokIkoner.end();
   // markerad hög utanför lagret: vit kant runt rutan, som lagerplatsen får
   const h = ui.hogAt;
   if (tab === 'hog' && outPilesAt(h.x, h.y).length) structG.lineStyle(1, 0xffffff, 0.9).drawRoundedRect(h.x * TS + 0.5, h.y * TS + 0.5, TS - 1, TS - 1, 3).lineStyle(0);
@@ -195,13 +198,17 @@ export function drawStructures(t: number) {
   }
 }
 // lägerelden (bildstilen, steg 5.2.4.3 och 5.1.2.2): en bild för varje läge, 20 × 20 punkter med gropen mitt på elden rutan,
-// och stenringen under när elden har en. Fladdret kommer med animationerna (5.1.9)
-const ELD = { x: 10, y: 12 }; // gropens mitt i bilden
+// och stenringen under när elden har en. Elden som brinner fladdrar, med gnistor och rök ovanför (steg 5.1.9.1, animation.ts);
+// röken från en härd stiger ur husets rökhål, där härden står
+const ELD = ANIMTAKT.eld; // gropens mitt i bilden
 function lagereld(f: Fire) {
-  const e = eldXY(s, f), x = e.x * TS + TS / 2 - ELD.x, y = e.y * TS + TS / 2 - ELD.y;
+  const e = eldXY(s, f), cx = e.x * TS + TS / 2, cy = e.y * TS + TS / 2, x = cx - ELD.x, y = cy - ELD.y;
   const l = f.lit ? (fireHeat(s, f) > 0.5 ? 'stort' : 'lite') : emberOn(s, f) ? 'glod' : (f.ash ?? 0) >= 1 ? 'kol' : f.fuel > 0 ? 'ny' : 'tom';
   if (f.ring) pileIcons.add('kb_lagereld_ring', x, y, 1);
-  pileIcons.add('kb_lagereld_' + l, x, y, 1);
+  pileIcons.add(f.lit ? eldBild(l as 'stort' | 'lite') : 'kb_lagereld_' + l, x, y, 1);
+  if (!f.lit) return;
+  if (l === 'stort') rokIkoner.add(gnistBild(), cx - ANIMTAKT.gnista.x, cy - ANIMTAKT.gnista.y, 1);
+  rokIkoner.add(rokBild(undefined, e.x + e.y), cx - ANIMTAKT.rok.x, cy - ANIMTAKT.rok.y, 1); // varje eld i sin egen takt
 }
 // stationens bild ur bildstilen (kartbilder.ts, steg 5.1.2.2), den stående om stationen står vriden
 // stubben att sitta på: bildstilens (steg 5.1.2.3) i en ruta

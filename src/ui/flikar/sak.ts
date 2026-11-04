@@ -1,15 +1,17 @@
-import { FOREST, stamAv, MARK, STADIER, VAG, groundOf, stadium, tradAlder, tradArt, STUBBE_LIV, grundvarde, tingVarde, klenod, sakBerattelse, kladSkydd, BYN, HOUR, W, kortTal, Pile, SAKER, Slitage, Ting, byId, condOf, halvKlar, sakNamn, slitageNu, stationById, stationDef, temperature, tingOf, toaAt, toaInfo, viktOf } from '../../sim';
+import { amountOf, isTool, FOREST, stamAv, MARK, STADIER, VAG, groundOf, stadium, tradAlder, tradArt, STUBBE_LIV, grundvarde, tingVarde, klenod, sakBerattelse, kladSkydd, BYN, HOUR, W, kortTal, Pile, SAKER, Slitage, Ting, byId, condOf, halvKlar, sakNamn, slitageNu, stationById, stationDef, temperature, tingOf, toaAt, toaInfo, viktOf } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { condBar, durTxt, esc, kvMark, kvText, pLink } from '../hjalp';
 import { piles, s, ui } from '../lage';
 import type { Flik } from '../panel';
 import { tradBild, tradBildUrl } from '../trad';
+import { skaffasRader } from '../skaffas';
 
 // en sak eller en hög (steg 2.3.5): öppnas genom att trycka på den i lagret, en hög, personens utrustning eller en
 // stations redskapsplats. Symbolen och namnet, skicket, vad som sliter på den just nu och hur länge den håller i den
 // takten, vem som gjorde den och när, och kvaliteten (steg 2.2.2).
 // Det som går att trycka på har data-sak: "t:<tingets id>" för ett redskap eller plagg, "s:<x>,<y>,<slag>" för en stack.
 // En toa-hög på kartan (steg 2.10.5) öppnas som "f:<rutan>" och har en egen inforuta (toaHog)
+// Ett slag i förrådet (listan till vänster, steg 5.3.5.2) öppnas som "k:<slaget>" (slagIForradet)
 // En stubbe (steg 3.10.6) öppnas som "u:<rutan>" (stubbe) och ett träd (steg 5.1.4.3) som "r:<rutan>" (trad)
 export const sakKey = (a: { id?: number; x?: number; y?: number; k: string }) => a.id !== undefined ? `t:${a.id}` : `s:${a.x},${a.y},${a.k}`;
 export const sakAttr = (a: { id?: number; x?: number; y?: number; k: string }) => `data-sak="${sakKey(a)}"`;
@@ -21,7 +23,7 @@ export const frystAttr = (k: string) => SAKER[k]?.haller !== undefined && fryst(
 const ORSAK: Record<Slitage['orsak'], string> = {
   ruttnar: 'Ruttnar', vadret: 'Ligger ute i vädret', lagret: 'Slits med tiden', tak: 'Ligger under tak',
   kista: 'Ligger i en kista', pasig: 'Slits av att bäras på kroppen',
-  anvands: 'Slits när den används', inget: 'Slits inte',
+  anvands: 'Slits när den används', handen: 'Slits med tiden i handen', bars: 'Slits med tiden i en börda', inget: 'Slits inte',
 };
 function hitta(): { t?: Ting; p?: Pile } {
   const [slag, rest] = ui.sak.split(':');
@@ -77,6 +79,49 @@ function trad(i: number) {
       ${g.trees[i] >= FOREST ? `<dt>Fälls</dt><dd>${iconImg('ved', 14)} ${stam.ved} ${iconImg('grenar', 14)} ${stam.grenar}</dd>` : ''}
     </dl>`;
 }
+// vem som äger en stack eller ett slag i förrådet (steg 5.3.5.3): byns del och varje ägares, flest först
+function agarRader(ag: Record<string, number> | undefined, n: number) {
+  const eg = Object.entries(ag ?? {}).map(([id, m]) => ({ q: byId(s, Number(id)), m: Math.round(m) })).filter(r => r.m >= 1).sort((a, b) => b.m - a.m);
+  const byns = n - eg.reduce((a, r) => a + r.m, 0);
+  return [...byns >= 1 ? [`<div>Byns ${byns}</div>`] : [], ...eg.map(r => `<div>${r.q ? pLink(r.q) : 'Någon som inte finns kvar'} ${r.m}</div>`)].join('') || '<div>Byns</div>';
+}
+// ett slag i förrådet: ägarna summeras över stackarna i förrådet, och för redskap och plagg över tingen
+function agareAvSlag(k: string) {
+  if (isTool(k)) {
+    const ag: Record<string, number> = {}; let n = 0;
+    for (const t of tingOf(s)) if (t.k === k && !t.halv) { n++; if (t.agare !== BYN) ag[t.agare] = (ag[t.agare] ?? 0) + 1; }
+    return { ag, n };
+  }
+  const ag: Record<string, number> = {}; let n = 0;
+  for (const p of piles()) if (p.k === k && p.stored) { n += p.n; for (const [id, m] of Object.entries(p.ag ?? {})) ag[id] = (ag[id] ?? 0) + m; }
+  return { ag, n: Math.round(n) };
+}
+// var slaget ligger och hur fort det slits där (steg 5.3.5.4): stackarna i förrådet och, för redskap, tingen var de än är,
+// samlade efter vad som sliter på dem, med antalet, medelskicket och slitaget per dygn
+const PLATS: Partial<Record<Slitage['orsak'], string>> = { tak: 'Under tak', kista: 'I en kista', lagret: 'I lagret', vadret: 'Ute i vädret', handen: 'I handen', bars: 'I en börda', pasig: 'På kroppen', anvands: 'Används' };
+const perDygn = (per: number) => per * 2400 < 0.1 ? 'under 0,1' : kortTal(per * 2400);
+function slitageAvSlag(k: string) {
+  const g = new Map<string, { n: number; c: number; per: number }>();
+  const lagg = (namn: string, n: number, c: number, per: number) => { const r = g.get(namn) ?? { n: 0, c: 0, per: 0 }; r.n += n; r.c += c * n; r.per += per * n; g.set(namn, r); };
+  const platsAv = (sl: Slitage) => sl.orsak === 'ruttnar' ? (fryst() ? '❄ Fryst' : sl.smuts ? 'Ruttnar fortare i smuts' : 'Ruttnar') : PLATS[sl.orsak] ?? ORSAK[sl.orsak];
+  if (isTool(k)) for (const t of tingOf(s)) { if (t.k !== k || t.halv) continue; const sl = slitageNu(s, t, t); lagg(platsAv(sl), 1, t.c, sl.per); }
+  else for (const p of piles()) if (p.k === k && p.stored && p.n > 0) { const sl = slitageNu(s, p); lagg(platsAv(sl), p.n, p.c, sl.per); }
+  return [...g].sort((a, b) => b[1].n - a[1].n).map(([namn, r]) => `<div>${esc(namn)}: ${Math.round(r.n)} st, ${Math.round(r.c / r.n * 100)} %${r.per > 0 ? `, ${perDygn(r.per / r.n)} % per dygn` : ''}</div>`).join('');
+}
+// ett slag i förrådet (steg 5.3.5.2): hur mycket byn har, vad det är värt och väger, vad det används till och hur man skaffar det
+function slagIForradet(k: string) {
+  const n = amountOf(s, k), v = grundvarde(k), ag = agareAvSlag(k), sl = slitageAvSlag(k);
+  return `
+    <div class="phead">${iconImg(k, 32)}<div><h2>${esc(sakNamn(k))}</h2></div></div>
+    <dl class="kv">
+      <dt>I förrådet</dt><dd>${isTool(k) ? Math.ceil(n - 1e-9) : Math.round(n)} st</dd>
+      ${v ? `<dt title="Ungefär i arbetstimmar: det det tar att skaffa eller göra den">Värde</dt><dd>${kortTal(v)} styck</dd>` : ''}
+      <dt>Vikt</dt><dd>${kortTal(viktOf(k))} kg styck</dd>
+      <dt>Ägare</dt><dd class="rader">${agarRader(ag.ag, ag.n)}</dd>
+      ${sl ? `<dt title="Var de ligger: antalet, skicket och hur fort de slits där">Skick</dt><dd class="rader">${sl}</dd>` : ''}
+      ${skaffasRader(k)}
+    </dl>`;
+}
 export const sak: Flik = {
   namn: 'Saken',
   knapp: 'person',
@@ -84,13 +129,15 @@ export const sak: Flik = {
     if (ui.sak.startsWith('f:')) return toaHog(Number(ui.sak.slice(2)));
     if (ui.sak.startsWith('u:')) return stubbe(Number(ui.sak.slice(2)));
     if (ui.sak.startsWith('r:')) return trad(Number(ui.sak.slice(2)));
+    if (ui.sak.startsWith('k:')) return slagIForradet(ui.sak.slice(2));
     const { t, p } = hitta(), a = t ?? p;
     if (!a) return '<p class="muted">Den finns inte längre.</p>';
     const k = t?.halv?.gor ?? p?.gor ?? a.k, c = t ? t.c : condOf(p!), sl = slitageNu(s, { k: a.k, x: t ? t.x ?? p?.x : p!.x, y: t ? t.y ?? p?.y : p!.y }, t);
     const halv = t?.halv ? ` (inte klar, ${Math.round(halvKlar(t.halv) * 100)} %)` : '';
     const mangd = !t && p && p.max > 1 ? `<dt>Mängd</dt><dd>${Math.round(p.n)} st</dd>` : '';
     const vem = t?.av !== undefined ? byId(s, t.av) : undefined;
-    const gjord = t?.gjord !== undefined ? `<dt>Gjord</dt><dd>${vem ? `av ${pLink(vem)}, ` : ''}för ${durTxt(s.now - t.gjord)} sedan</dd>` : '';
+    const gjord = t?.gjord !== undefined ? `<dt>Gjord</dt><dd>${vem ? `av ${pLink(vem)}, ` : ''}för ${durTxt(s.now - t.gjord)} sedan</dd>`
+      : t?.kopt !== undefined ? `<dt>Köpt</dt><dd>av en handlare, för ${durTxt(s.now - t.kopt)} sedan</dd>` : ''; // (steg 5.3.5.3)
     const kl = t && klenod(s, t), klen = kl ? `<dt>Klenod</dt><dd>★ Byn minns ${pLink(kl)} genom den</dd>` : ''; // (steg 3.4.3)
     const agare = t ? (t.agare === BYN ? 'Byns' : pLink(byId(s, t.agare))) : '';
     const orsak = sl.orsak === 'ruttnar' ? fryst() ? `❄ Fryst, ${Math.round(temperature(s))} grader: ruttnar nästan inte` : `Ruttnar${sl.smuts ? ' fortare i blod och smuts' : ''}, ${Math.round(temperature(s))} grader` : ORSAK[sl.orsak];
@@ -107,10 +154,11 @@ export const sak: Flik = {
     <dl class="kv">
       <dt>Skick</dt><dd>${condBar(c)}<span>${Math.round(c * 100)} %</span></dd>
       ${kv}
-      <dt>Slitage</dt><dd>${esc(orsak)}${sl.per > 0 ? ` (${sl.per * 2400 < 0.1 ? 'under 0,1' : kortTal(sl.per * 2400)} % per dygn)` : ''}</dd>
+      <dt>Slitage</dt><dd>${esc(orsak)}${sl.per > 0 ? ` (${perDygn(sl.per)} % per dygn)` : ''}</dd>
       ${haller}${mangd}${varde}<dt>Vikt</dt><dd>${kortTal(viktOf(k))} kg${!t && p && p.n >= 2 ? `, ${kortTal(viktOf(k) * Math.round(p.n))} kg alla` : ''}</dd>${klad}
-      ${t ? `<dt>Var</dt><dd>${var_(t, p)}</dd><dt>Ägare</dt><dd>${agare}</dd>` : ''}
+      ${t ? `<dt>Var</dt><dd>${var_(t, p)}</dd><dt>Ägare</dt><dd>${agare}</dd>` : p ? `<dt>Ägare</dt><dd class="rader">${agarRader(p.ag, Math.round(p.n))}</dd>` : ''}
       ${gjord}${klen}
+      ${t?.halv ? '' : skaffasRader(k)}
     </dl>`;
   },
   klick(el) {

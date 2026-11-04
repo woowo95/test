@@ -657,7 +657,7 @@ export const wearMult = (s: State, x: number, y: number) => {
 // vad som sliter på en sak just nu och hur mycket av skicket det tar per timme (inforutan, steg 2.3.5). Samma tal som
 // wearStore och wearUsed (redskap.ts) räknar med. I handen slits redskapet dessutom per gång (steg 2.3.12): gang = så mycket av
 // skicket varje träd, kanin, fiskeförsök eller djur tar, och enhet vad det är (ACTS.slits)
-export type Slitage = { orsak: 'ruttnar' | 'vadret' | 'lagret' | 'tak' | 'kista' | 'pasig' | 'anvands' | 'inget'; per: number; gang?: number; enhet?: string; smuts?: true }; // smuts: ligger i blod eller toa-smuts (steg 3.6.10)
+export type Slitage = { orsak: 'ruttnar' | 'vadret' | 'lagret' | 'tak' | 'kista' | 'pasig' | 'anvands' | 'handen' | 'bars' | 'inget'; per: number; gang?: number; enhet?: string; smuts?: true }; // smuts: ligger i blod eller toa-smuts (steg 3.6.10)
 export function slitageNu(s: State, a: { k: string; x?: number; y?: number }, t?: Ting): Slitage {
   const temp = temperature(s), kl = t?.bar !== undefined ? SAKER[a.k]?.klad : undefined;
   const hq = kvHaller(t); // ett bättre ting håller längre (kvalitet.ts); en stack har ingen kvalitet
@@ -667,7 +667,7 @@ export function slitageNu(s: State, a: { k: string; x?: number; y?: number }, t?
     const q = t.hos !== undefined ? byId(s, t.hos) : undefined, tk = q?.task, r = tk && usesTool(tk) === a.k ? toolRow(tk) : undefined;
     const slits = tk ? ACTS[tk.act]?.slits : undefined, bas = wearAt(a.k, 1, false, temp) / hq;
     if (r?.haller && slits) return { orsak: 'anvands', per: bas, gang: 1 / r.haller / hq, enhet: slits.enhet };
-    return { orsak: bas > 0 ? (SAKER[a.k]?.haller !== undefined ? 'ruttnar' : 'lagret') : 'inget', per: bas };
+    return { orsak: bas > 0 ? (SAKER[a.k]?.haller !== undefined ? 'ruttnar' : t.hos !== undefined ? 'handen' : 'bars') : 'inget', per: bas }; // i handen eller i en börda (steg 5.3.5.4)
   }
   const smuts = a.x !== undefined && SAKER[a.k]?.haller !== undefined ? ruttSmuts(s, a.x, a.y!) : 1;
   const per = wearAt(a.k, a.x !== undefined ? wearMult(s, a.x, a.y!) : 1, true, temp) / hq * smuts;

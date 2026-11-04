@@ -11,7 +11,7 @@ import { gaster } from './gaster';
 import { valdFilt } from './flikar/filt';
 import { sakKey } from './flikar/sak';
 import { flyttaHit } from './flikar/station';
-import { renderPanel, selectPerson, visa, ärPersonflik } from './panel';
+import { renderPanel, selectPerson, stangRuta, visa, ärPersonflik, ärRuta } from './panel';
 import { renderPorts, stopFollow } from './portratt';
 import { TS, app, cam, layout, tileAt, toWorld, view, world, zoomAt } from './scen';
 
@@ -59,9 +59,32 @@ app.stage.on('pointerupoutside', () => { drag = null; });
 const stubbeAt = (x: number, y: number) => (s.stubbar ?? []).some(k => k.x === x && k.y === y);
 // ett träd på rutan (steg 5.1.4.3): en planta, ett ungträd, ett vuxet eller gammalt träd eller en torraka (sim/trad.ts)
 const tradAt = (x: number, y: number) => { const g = groundOf(s), i = y * W + x; return isSoil(g.tiles[i]) && stadium(g, i) !== null; };
+// mobil och surfplatta (steg 5.3.7): två fingrar zoomar (nyper) runt punkten mellan dem, och ett tryck visar rutan i hörnet
+// som musen annars visar. Medan två fingrar ligger på kartan flyttas den inte, och när de lyfts väljer trycket inget
+const fingrar = new Map<number, { x: number; y: number }>();
+let nyp: number | undefined, nypt = false;
+const avstand = () => { const [a, b] = [...fingrar.values()]; return Math.hypot(a.x - b.x, a.y - b.y); };
+view.addEventListener('pointerdown', e => {
+  if (e.pointerType !== 'touch') return;
+  const r = view.getBoundingClientRect();
+  fingrar.set(e.pointerId, { x: e.clientX - r.left, y: e.clientY - r.top });
+  if (fingrar.size === 2) { nyp = avstand(); nypt = true; drag = null; }
+});
+view.addEventListener('pointermove', e => {
+  if (!fingrar.has(e.pointerId)) return;
+  const r = view.getBoundingClientRect();
+  fingrar.set(e.pointerId, { x: e.clientX - r.left, y: e.clientY - r.top });
+  if (fingrar.size !== 2 || !nyp) return;
+  const d = avstand(), [a, b] = [...fingrar.values()];
+  if (d > 0) { stopFollow(); zoomAt(d / nyp, (a.x + b.x) / 2, (a.y + b.y) / 2); nyp = d; }
+});
+const lyft = (e: PointerEvent) => { fingrar.delete(e.pointerId); if (fingrar.size < 2) nyp = undefined; if (!fingrar.size) setTimeout(() => { nypt = false; }, 0); };
+view.addEventListener('pointerup', lyft);
+view.addEventListener('pointercancel', lyft);
 app.stage.on('pointertap', e => {
-  if (drag && drag.moved > 6) return;
+  if (drag && drag.moved > 6 || nypt) return;
   const gx = e.global.x, gy = e.global.y, p = personAt(gx, gy), zi = storeAt(gx, gy), c = tileAt(gx, gy);
+  if (e.pointerType === 'touch') showHover(gx, gy);
   if (ui.testMode && ui.flytta >= 0) { flyttaHit(c.x, c.y); renderPanel(true); return; } // stationen som flyttas i testläget (steg 3.10.1)
   if (ui.testMode && ui.brandTest) { // branden börjar där man trycker (steg 4.5.6.6); trycket väljer ingen person eller sak
     const r = tandTest(s, c.x, c.y);
@@ -98,9 +121,10 @@ export function testSvara(text: string) {
 export function brandKnapp() { document.querySelector('#testSkicka button[data-brand]')?.classList.toggle('aktiv', ui.testMode && ui.brandTest); }
 // ett tryck där inget finns: personen släpps och personrutan stängs
 function avmarkera() {
+  if (ärRuta(ui.tab)) { stangRuta(); renderPanel(true); return; } // först stängs rutan (steg 5.3.5.1)
   if (ui.selected === undefined && !ärPersonflik(ui.tab)) return;
   ui.selected = undefined; stopFollow();
-  if (ärPersonflik(ui.tab)) ui.tab = 'folk';
+  if (ärPersonflik(ui.tab)) ui.tab = undefined;
   renderPanel(true); renderPorts();
 }
 // lagret (steg 2.10.17): första trycket visar lagerplatsen, och varje nytt tryck på samma ruta visar nästa sak på rutan, en
@@ -126,6 +150,7 @@ function valjFalt(f: Falt, x: number, y: number) {
 }
 app.stage.on('pointermove', e => {
   const gx = e.global.x, gy = e.global.y;
+  if (fingrar.size >= 2) return;
   if (drag && (e.buttons & 1 || e.pointerType === 'touch')) {
     const dx = gx - drag.x, dy = gy - drag.y;
     drag.moved = Math.max(drag.moved, Math.hypot(dx, dy));

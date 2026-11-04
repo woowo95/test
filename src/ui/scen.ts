@@ -21,6 +21,8 @@ export const structG = new PIXI.Graphics();
 export const pileLayer = new PIXI.Container();
 export const overG = new PIXI.Graphics(); // det som ritas ovanpå stackarna och stationerna: framstegscirkeln
 export const peopleG = new PIXI.Graphics();
+// röken (steg 5.1.9.1): från branden bakom allt som står upp, så att den hamnar bakom alla lågorna, och från elden överst
+export const rokBakLayer = new PIXI.Container(), rokLayer = new PIXI.Container();
 // folket i pixlar (steg 5.1.3.3, ui/figur.ts), och i samma lager träden (ui/trad.ts) och djuren (ui/vaxter.ts): allt som
 // står upp ritas i ordning efter hur långt söderut det står (zIndex = fötternas y i världens pixlar, steg 5.1.4.5), så att
 // det som står längre söderut skymmer det bakom. Golven, väggarna, stationerna och sakerna på marken ligger under
@@ -34,7 +36,7 @@ export const labels = new PIXI.Container();
 // och värmekartan ovanpå syns som på dagen. Den som lägger till ett lager bredvid ett av dem lägger det i samma behållare
 // (lagerEfter)
 export const mork = new PIXI.Container();
-mork.addChild(terrainG, plantG, flackG, husLayer, structG, pileLayer, overG, djurFx, figurLayer, peopleG);
+mork.addChild(terrainG, plantG, flackG, husLayer, structG, pileLayer, overG, djurFx, rokBakLayer, figurLayer, peopleG, rokLayer);
 world.addChild(mork, filterG, bubbleG, markLayer, djurMarkLayer, labels);
 // lägg ett lager direkt ovanför ett annat, i samma behållare
 export const lagerEfter = (nytt: PIXI.DisplayObject, fore: PIXI.DisplayObject) => fore.parent!.addChildAt(nytt, fore.parent!.getChildIndex(fore) + 1);

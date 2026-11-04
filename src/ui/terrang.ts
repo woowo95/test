@@ -5,7 +5,8 @@ import { TS, app, figurLayer, husLayer, mork, pileLayer, terrainG, world } from 
 import { ritaSkuggor, sattMoln, skuggLangd } from './skugga';
 import { stallNatt } from './natt';
 import { DJUPNATT } from '../palett';
-import { markLayer, ritaMark, stallMark } from './mark';
+import { animMark, markLayer, ritaMark, stallMark } from './mark';
+import { animBild } from './animation';
 import { type Lov, stallTrad, tradBild, tradSkuggor } from './trad';
 
 // marken (steg 5.1.3.1): gräs, vatten, strand, stigar, sten, lera, aska och snö ritas i pixlar i ui/mark.ts. Här bestäms
@@ -72,6 +73,9 @@ export function drawTerrain(force = false) {
     ritaTrad(g, sno);
   }
   ritaMark(6, force);
+  // vågorna och stranden (steg 5.1.9.2) i den del av kartan som syns
+  const a = world.toLocal({ x: 0, y: 0 }), b = world.toLocal({ x: app.screen.width, y: app.screen.height });
+  animMark(animBild('vagor'), a.x, a.y, b.x, b.y);
 }
 // träden: ett träd per ruta efter sitt stadium, och unga granar i den orörda skogskanten
 function ritaTrad(g: ReturnType<typeof groundOf>, sno: number) {

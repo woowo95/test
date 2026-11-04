@@ -18,6 +18,9 @@ import { renderPanel } from './ui/panel';
 import { renderPorts, stopFollow } from './ui/portratt';
 import { catchUp, loadSaves, nyByVald, saveDb, saveLocal } from './ui/spara';
 import './ui/interaktion';
+import './ui/ram';
+import './ui/symboler'; // emojierna blir pixelsymboler (steg 5.3.2.1)
+import './ui/trycktips'; // förklaringarna kommer fram när man trycker (steg 5.3.7)
 import { drawArena, oppnaArena } from './ui/arena';
 import { drawTona } from './ui/tona';
 
@@ -48,7 +51,7 @@ function renderClock() {
   { // byns rikedom (varde.ts): talet, och vad den består av när musen är över
     const r = rikedomDelar(s), sum = r.forrad + r.redskap + r.hus, el = $('calRik'), a = s.delning?.andel ?? 0;
     el.textContent = `⚖ ${Math.round(sum)}`;
-    el.title = `Byns rikedom: ${Math.round(sum)} (ungefär arbetstimmar)\nFörrådet ${Math.round(r.forrad)} · redskapen ${Math.round(r.redskap)} · husen ${Math.round(r.hus)}\n${a > 0 ? `${Math.round(a * 100)} % av det folk skaffar går till byn` : 'Byn är så rik att folk behåller det de skaffar'}`;
+    el.title = `Byns rikedom: ${Math.round(sum)} (ungefär arbetstimmar). Tryck för att öppna förrådet\nFörrådet ${Math.round(r.forrad)} · redskapen ${Math.round(r.redskap)} · husen ${Math.round(r.hus)}\n${a > 0 ? `${Math.round(a * 100)} % av det folk skaffar går till byn` : 'Byn är så rik att folk behåller det de skaffar'}`;
   }
   $('sparFel').hidden = !ui.sparFel;
   $('molnFel').hidden = !ui.molnFel;
@@ -83,7 +86,7 @@ async function laddaIn(by: State) {
 // byn i molnet gick att läsa först senare och är nyare än den som spelas: den tar över
 function nyareIMolnet(by: State) {
   dropTest();
-  ui.selected = undefined; ui.tab = 'folk';
+  ui.selected = undefined; ui.tab = undefined;
   laddaIn(by).then(() => { renderClock(); renderPanel(true); });
 }
 // testläget byter till en kopia av byn och tillbaka: det som är valt i panelen är kvar (finns det inte visar fliken det)
@@ -136,12 +139,25 @@ function testKnappar() {
   if (!ui.testMode || !s) return;
   for (const b of document.querySelectorAll<HTMLButtonElement>('#testSkicka button')) b.classList.toggle('ej', !!(b.dataset.flock ? rovarHinder(s) : b.dataset.handlare ? handlarHinder(s) : undefined));
 }
+// inställningarna (testläget och ny by) öppnas med kugghjulet längst ner bland flikknapparna (steg 5.3.1.1)
+$('installKnapp').addEventListener('click', () => { const r = $('installningar'); r.hidden = !r.hidden; $('installKnapp').setAttribute('aria-expanded', String(!r.hidden)); });
+// ljust eller mörkt läge (steg 5.3.1.3): data-tema på html byter grundens färger i template.html; valet sparas i webbläsaren
+const TEMA_KEY = 'samhallssim-tema';
+function sattTema(morkt: boolean) {
+  document.documentElement.dataset.tema = morkt ? 'morkt' : 'ljust';
+  const b = $('temaKnapp'); b.setAttribute('aria-pressed', String(morkt)); b.textContent = morkt ? '◐ Ljust' : '◐ Mörkt';
+}
+try { sattTema(localStorage.getItem(TEMA_KEY) === 'morkt'); } catch { sattTema(false); }
+$('temaKnapp').addEventListener('click', () => {
+  const morkt = document.documentElement.dataset.tema !== 'morkt'; sattTema(morkt);
+  try { localStorage.setItem(TEMA_KEY, morkt ? 'morkt' : 'ljust'); } catch { /* ignoreras */ }
+});
 $('newVillage').addEventListener('click', () => { $('confirmNew').hidden = false; });
 $('cancelNew').addEventListener('click', () => { $('confirmNew').hidden = true; });
 $('okNew').addEventListener('click', () => {
   $('confirmNew').hidden = true;
   dropTest(); nyByVald();
-  ui.selected = undefined; ui.tab = 'folk';
+  ui.selected = undefined; ui.tab = undefined;
   nyBy(); renderPanel(true);
 });
 

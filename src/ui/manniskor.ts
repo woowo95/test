@@ -3,10 +3,12 @@ import { ACTS, ALDER, Person, actIkon, utbIkon, SEC, TalkEvent, ageOf, alive, bo
 import { PRICKAR } from './hjalp';
 import { s, sakVar, ui, uppgiftVid, vidNyBy } from './lage';
 import { Ikoner, TS, bubbleG, figurLayer, labels, markLayer, peopleG } from './scen';
-import { type Arm, type Ben, type Rikt, figurTex } from './folkbild';
+import { type Arm, type Ben, type Rikt, figurHand, figurTex } from './folkbild';
+import { ARBETEN, STRIDBILD, arbetsBild, ritaArbete } from './arbetsbild';
 import { skapad } from './utseende';
 import { fotSkugga, skuggFolk, skuggLangd } from './skugga';
 import { jaktPlats } from './jakt';
+import { slag } from './animation';
 import { hasIcon, iconCanvas, kartbild, ljusSymbol } from '../ikoner';
 
 // människorna på kartan: kroppen, det de bär, pratbubblor, symbolen för vad de gör och namnet
@@ -177,7 +179,10 @@ function bar(k: string, cx: number, cy: number, storlek: number) {
   markIcons.add(kb ?? k, Math.round(cx - c.width * sc / 2), Math.round(cy - c.height * sc / 2), sc);
 }
 // namnet över den valda och den under musen. Två texter som återanvänds: att skapa en text varje bildruta är dyrt
-const nameStyle = new PIXI.TextStyle({ fontFamily: 'Alegreya Sans, system-ui, sans-serif', fontSize: 22, fill: 0xffffff, stroke: 0x111111, strokeThickness: 5, fontWeight: '700' });
+// Pixelify Sans som brödtexten (steg 5.3.2.3), i panelens ljusa och mörka färg; när typsnittet laddats ritas namnen om med det
+const NAMNFONT = '"Pixelify Sans", system-ui, sans-serif';
+const nameStyle = new PIXI.TextStyle({ fontFamily: NAMNFONT, fontSize: 22, fill: 0xdad0bb, stroke: 0x24201d, strokeThickness: 5, fontWeight: '700' });
+if (typeof document !== 'undefined') document.fonts?.ready.then(() => { nameStyle.fontFamily = 'system-ui'; nameStyle.fontFamily = NAMNFONT; });
 const nameTags = [0, 1].map(() => { const tx = new PIXI.Text('', nameStyle); tx.scale.set(0.5); tx.anchor.set(0.5, 1); tx.visible = false; labels.addChild(tx); return tx; });
 // de ur byn som slåss i testarenan: de syns bara i striden (ui/arena.ts)
 export const dolda = new Set<number>();
@@ -190,18 +195,34 @@ function figurAv(id: number) {
 }
 // kartfigurens läge (steg 5.2.3.2, Kartfigurens lägen) efter det personen gör: riktningen efter hur hen rört sig sedan förra
 // bildrutan (står kvar när hen står still), sittande vid måltiden, samtalet och vilan, armarna fulla när hen bär något, i
-// slaget vid de tunga arbetena och framför sig vid stationen. Benen står still tills gången får liv (5.1.9)
+// slaget vid de tunga arbetena och framför sig vid stationen. Den som rört sig nyss går (steg 5.1.9.3): gångsteg 1, stå,
+// gångsteg 2, stå, som bildstilens gång, en bild per slag i animationernas klocka (ui/animation.ts) och förskjutet per person
 const SITTA = new Set(['maltid', 'samtal', 'vila', 'lyssna', 'beratta']);
-const SLA = new Set(['falla', 'bygga', 'krossa', 'slakta', 'yxa', 'dorr', 'strid']);
-const forra = new Map<number, { x: number; y: number; rikt: Rikt }>();
+// striden hen är med i just nu (steg 5.1.9.5): vapnet och var den närmaste motståndaren står, ur byns senaste strider
+function stridNu(p: Person) {
+  for (let i = (s.strider?.length ?? 0) - 1; i >= 0; i--) {
+    const m = s.strider![i], k = m.u.kampar.find(x => x.pid === p.id);
+    if (!k) continue;
+    const mot = m.u.kampar.filter(x => x.sida !== k.sida && x.pid !== undefined).map(x => byId(s, x.pid!)).filter((x): x is Person => !!x).map(x => posOf(x))
+      .sort((a, b) => Math.hypot(a.x - p.x, a.y - p.y) - Math.hypot(b.x - p.x, b.y - p.y))[0];
+    return { vapen: k.vapen as string, mot };
+  }
+  return undefined;
+}
+const SLA = new Set(['falla', 'bygga', 'krossa', 'slakta', 'yxa', 'dorr']);
+const forra = new Map<number, { x: number; y: number; rikt: Rikt; rord: number }>();
+const GANG: [Ben, Arm][] = [['gang1', 'gang1'], ['sta', 'hanga'], ['gang2', 'gang2'], ['sta', 'hanga']];
+const GAR_MS = 300; // så länge efter senaste rörelsen (datorns tid) går figuren, så att den inte stannar mellan bildrutorna
+const gar = (id: number, nu: number) => nu - (forra.get(id)?.rord ?? -Infinity) < GAR_MS;
 vidNyBy.push(() => forra.clear());
 function riktning(id: number, x: number, y: number): Rikt {
-  const f = forra.get(id); let rikt: Rikt = f?.rikt ?? 'fram';
+  const f = forra.get(id); let rikt: Rikt = f?.rikt ?? 'fram', rord = f?.rord ?? -Infinity;
   if (f) {
     const dx = x - f.x, dy = y - f.y;
     if (Math.abs(dx) + Math.abs(dy) > 0.01) rikt = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'sida' : 'vast') : dy > 0 ? 'fram' : 'bak';
+    if (Math.abs(dx) + Math.abs(dy) > 1e-4) rord = performance.now();
   }
-  forra.set(id, { x, y, rikt });
+  forra.set(id, { x, y, rikt, rord });
   return rikt;
 }
 export function drawPeople(t: number) {
@@ -225,13 +246,24 @@ export function drawPeople(t: number) {
     const gor = tk?.phase === 'do' ? tk.act : undefined, sitter = !ligger && !!gor && SITTA.has(gor);
     let rikt = riktning(p.id, q.x, q.y);
     if (sitter && rikt === 'bak') rikt = 'fram';
-    const ben: Ben = sitter ? 'sitta' : 'sta';
-    const arm: Arm = tk && load(tk, s) > 0 ? 'bara' : gor && SLA.has(gor) ? 'sla' : gor === 'station' ? 'framfor' : 'hanga';
+    // arbetet i bild (steg 5.1.9.4, ui/arbetsbild.ts): rörelsen från sidan, en bild per slag, förskjutet per person
+    const strid = gor === 'strid' && !ligger ? stridNu(p) : undefined;
+    const arb = strid ? STRIDBILD[strid.vapen] ?? STRIDBILD.hand : !ligger && !sitter && gor && !(tk && load(tk, s) > 0) ? ARBETEN[gor] : undefined;
+    const ab = arb ? arbetsBild(arb, slag() + p.id) : undefined;
+    if (strid?.mot) rikt = strid.mot.x < q.x ? 'vast' : 'sida'; // vänd mot motståndaren (steg 5.1.9.5)
+    else if (ab && rikt !== 'sida' && rikt !== 'vast') rikt = p.id % 2 ? 'vast' : 'sida';
+    const steg = !sitter && !ligger && gar(p.id, performance.now()) ? GANG[(slag() + p.id) % 4] : undefined;
+    const ben: Ben = sitter ? 'sitta' : ab ? ab.ben : steg ? steg[0] : 'sta';
+    let arm: Arm = tk && load(tk, s) > 0 ? 'bara' : gor && SLA.has(gor) ? 'sla' : gor === 'station' ? 'framfor' : 'hanga';
+    if (steg && arm === 'hanga') arm = steg[1];
+    if (ab) arm = ab.arm;
     sp.texture = figurTex(skapad(s, p), { rikt, ben, arm, ligga: ligger, tacke: sleeping }, p.id === ui.selected || p.id === harSaken);
     sp.scale.set(k);
     const w = sp.texture.width * k, h = sp.texture.height * k;
     if (ligger) sp.position.set(x - w / 2, y - h / 2);
-    else sp.position.set(x - w / 2, y + r * 0.9 - h + k);
+    else sp.position.set(x - w / 2 + (ab?.b.ut ?? 0) * (rikt === 'vast' ? -k : k), y + r * 0.9 - h + k);
+    const hand = ab && figurHand(sp.texture);
+    if (arb && ab && hand) ritaArbete(peopleG, arb, ab.b, sp.position.x + hand[0] * k, sp.position.y + hand[1] * k, rikt === 'vast' ? -1 : 1, k);
     sp.zIndex = y + r * 0.9; // fötterna (ordningen söderut, steg 5.1.4.5)
     if (!ligger) fotSkugga(skugga, x - 4 * k, Math.round(sp.zIndex) - 1, 4 * k, 2, skuggLangd());
     sp.visible = true; sedd.add(p.id);
