@@ -13,8 +13,8 @@
   "vintermat": 220,
   "vinterved": 1177,
   "eld": 100,
-  "kb": 600,
-  "delKb": 333
+  "kb": 942,
+  "delKb": 334
  },
  "42": {
   "pop": 16,
@@ -30,8 +30,8 @@
   "vintermat": 593,
   "vinterved": 1199,
   "eld": 98,
-  "kb": 568,
-  "delKb": 282
+  "kb": 913,
+  "delKb": 283
  },
  "777": {
   "pop": 29,
@@ -47,7 +47,7 @@
   "vintermat": 175,
   "vinterved": 135,
   "eld": 99,
-  "kb": 721,
-  "delKb": 403
+  "kb": 1081,
+  "delKb": 405
  }
 }
