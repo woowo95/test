@@ -64,3 +64,35 @@ export function rasterSteg(hex: string, m: number, x: number, y: number) {
   const steg = del * 16 > BAYER[(y & 3) * 4 + (x & 3)] + 0.5 ? Math.min(2, lag + 1) : lag;
   return MORKARE[steg][i];
 }
+
+// Korn (steg 5.1.7.1, "Bildstil" under Gränssnitt: gritty, smuts 1): ingen yta är slät över mer än 4 × 4 punkter. I varje
+// cell om 4 × 4 punkter (räknat ur platsen x0 + x, y0 + y, så att kornet går ihop över bildernas kanter) flyttas en punkt och
+// grannen till höger ett steg i sin egen ramp, två gånger av tre mörkare (smutsen) och annars ljusare, men bara där ytan är
+// slät runt om: kanter, konturer och det som redan har mönster rörs inte. Korn och inte fläckar: aldrig mer än ett steg och
+// aldrig två korn bredvid varandra. px = platsen i paletten (-1 = tomt), w × h punkter
+export const KORN = { cell: 4, mork: 2 / 3 };
+function kornHash(x: number, y: number, s: number) {
+  let h = Math.imul(x | 0, 0x27d4eb2d) ^ Math.imul(y | 0, 0x165667b1) ^ Math.imul(s | 0, 0x2c1b3c6d);
+  h = Math.imul(h ^ (h >>> 15), 0x85ebca6b); h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35); h ^= h >>> 16;
+  return (h >>> 0) / 4294967296;
+}
+export const tonSteg = (c: number, d: number) => { const t = (c & 3) + d, u = t < 0 || t > 3 ? (c & 3) - d : t; return c - (c & 3) + Math.max(0, Math.min(3, u)); };
+export function kornPa(px: Int8Array, w: number, h: number, x0 = 0, y0 = 0, s = 0) {
+  const n = KORN.cell, ut = px.slice();
+  const slat = (x: number, y: number) => {
+    const c = px[y * w + x];
+    if (c < 0 || x < 1 || y < 1 || x >= w - 2 || y >= h - 1) return false;
+    return px[y * w + x - 1] === c && px[y * w + x + 1] === c && px[y * w + x + 2] === c && px[(y - 1) * w + x] === c && px[(y + 1) * w + x] === c && px[(y - 1) * w + x + 1] === c && px[(y + 1) * w + x + 1] === c;
+  };
+  for (let cy = Math.floor(y0 / n); cy * n < y0 + h; cy++) for (let cx = Math.floor(x0 / n); cx * n < x0 + w; cx++) {
+    let x = -1, y = -1;
+    for (let k = 0; k < 4 && x < 0; k++) { // en annan plats i cellen om den första inte är slät
+      const xx = cx * n + Math.floor(kornHash(cx, cy, 901 + s + k * 7) * (n - 1)) - x0, yy = cy * n + Math.floor(kornHash(cx, cy, 902 + s + k * 7) * n) - y0;
+      if (xx >= 0 && yy >= 0 && xx < w && yy < h && slat(xx, yy)) { x = xx; y = yy; }
+    }
+    if (x < 0) continue;
+    const d = kornHash(cx, cy, 903 + s) < KORN.mork ? -1 : 1, c = px[y * w + x];
+    ut[y * w + x] = ut[y * w + x + 1] = tonSteg(c, d);
+  }
+  px.set(ut);
+}

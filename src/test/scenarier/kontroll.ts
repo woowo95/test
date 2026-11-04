@@ -2,7 +2,7 @@
 import { Person, createState, step, living, serializeParts, serialize, isLight, ageOf, TEKNIK, knows, housesOf, FYND, FYND_IDS, GRUPPER, DJUR, BEAT, tingOf, FN, fnId, SEC, MATERIAL, ACTS, isSick, SAKER, slagIkon } from '../../sim';
 import * as SIM from '../../sim';
 import { hasIcon, PAL } from '../../ikoner';
-import { FARGER, MORKARE, PALETT, iPaletten, rasterSteg } from '../../palett';
+import { FARGER, MORKARE, PALETT, iPaletten, kornPa, rasterSteg } from '../../palett';
 import { START, STEG_TIM, korBy } from '../kor';
 import { seedAv } from '../pool';
 import { Koll, kor, klockan, uiLas, SCENARIER, grenarUte, barGrenar } from './hjalp';
@@ -75,12 +75,18 @@ SCENARIER.palett = {
     const rgb = (f: string) => { const m = f.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/); return m ? '#' + m.slice(1, 4).map(v => (+v).toString(16).padStart(2, '0')).join('') : f; };
     for (const [k, p] of Object.entries(PAL)) for (const [c, f] of Object.entries(p)) if (!iPaletten(rgb(f))) utanfor.push(`${k}.${c}=${f}`);
     const morkt = MORKARE.every(m => m.length === 32 && m.every(iPaletten));
+    // kornet på en slät yta: inga 5 × 5 punkter med samma färg kvar (utom längs kanten), och varje korn ett steg i samma ramp
+    const N = 64, yta = new Int8Array(N * N).fill(18); kornPa(yta, N, N, 0, 0);
+    let slata = 0, fel = 0; const platser = (N - 8) * (N - 8);
+    for (const c of yta) if (c !== 18 && (c >> 2 !== 18 >> 2 || Math.abs(c - 18) !== 1)) fel++;
+    for (let y = 2; y + 5 <= N - 2; y++) for (let x = 2; x + 5 <= N - 2; x++) { let lika = true; for (let k = 0; k < 25 && lika; k++) lika = yta[(y + Math.floor(k / 5)) * N + x + k % 5] === 18; if (lika) slata++; }
     const raster = [0, 0.5, 1, 1.5, 2].every(m => [0, 1, 2, 3].every(x => iPaletten(rasterSteg(FARGER[13], m, x, x * 3))));
     return [
       [utanfor.length ? `${utanfor.length} färger utanför paletten: ${utanfor.slice(0, 12).join(', ')}` : `alla ${Object.keys(PAL).length} bilder har bara färger ur paletten`, !utanfor.length],
       ['paletten har 32 färger i åtta ramper', FARGER.length === 32 && PALETT.length === 8],
       ['skymningen och natten har bara färger ur paletten, också i rastret', morkt && raster],
       ['natten är mörkare än dagen', MORKARE[2].every((h, i) => h !== FARGER[i] || i < 2)],
+      [`kornet (steg 5.1.7.1): en slät yta på 64 × 64 punkter har nästan inga släta fält på 5 × 5 punkter kvar (${slata} av ${platser}, högst 5 %), och kornet är ett steg i samma ramp (${fel} fel)`, slata <= platser * 0.05 && fel === 0],
     ];
   },
 };

@@ -7,7 +7,7 @@
 // ritas en gång och sparas. Storleken (steg 5.1.4.5): se HOJD nedan; kronan når in i rutorna norr om stammen, och träden
 // står i samma lager som folket och djuren, i ordning söderut.
 import * as PIXI from 'pixi.js';
-import { FARGER } from '../palett';
+import { FARGER, kornPa } from '../palett';
 
 const KOL = 0, JORD = 4, BARR = 20, BEN = 28;
 const RGBA = FARGER.map(h => parseInt(h.slice(1), 16));
@@ -178,7 +178,9 @@ function tradPx(b: TradBild, sno: number) {
   return p;
 }
 function tradCanvas(b: TradBild, sno: number) {
-  const p = tradPx(b, sno), c = document.createElement('canvas'); c.width = p.w; c.height = p.h;
+  const p = tradPx(b, sno);
+  kornPa(p.px, p.w, p.h, 0, 0, b.s); // korn i kronans släta partier (steg 5.1.7.1)
+  const c = document.createElement('canvas'); c.width = p.w; c.height = p.h;
   const g = c.getContext('2d')!, img = g.createImageData(p.w, p.h), d = img.data;
   for (let i = 0; i < p.px.length; i++) { const v = p.px[i]; if (v < 0) continue; const n = RGBA[v]; d[i * 4] = n >> 16; d[i * 4 + 1] = (n >> 8) & 255; d[i * 4 + 2] = n & 255; d[i * 4 + 3] = 255; }
   g.putImageData(img, 0, 0);

@@ -6,7 +6,7 @@
 // så att de slingrar sig tvärs över rutorna. Bara utseende: spelet ser fortfarande bara rutorna.
 // Kartan delas i bitar om 8 × 8 rutor, var och en en egen bild, och bara de bitar där något ändrats ritas om.
 import * as PIXI from 'pixi.js';
-import { FARGER } from '../palett';
+import { FARGER, kornPa } from '../palett';
 import { PAL as IKON_PAL, PIX } from '../ikoner';
 
 // palettens ramper: index = ramp * 4 + ton (mörk till ljus)
@@ -193,6 +193,7 @@ function ritaBit(bx: number, by: number) {
 export function rakna(x0: number, y0: number, px: Int8Array) {
   const sorter = new Uint8Array(BP * BP);
   for (let y = 0; y < BP; y++) for (let x = 0; x < BP; x++) { px[y * BP + x] = punkt(x0 + x, y0 + y); sorter[y * BP + x] = sort; }
+  kornPa(px, BP, BP, x0, y0); // korn i det som är slätt (steg 5.1.7.1): skogsmarken, gräset, vattnet, snön och stigarna
   const satt = (x: number, y: number, c: number) => { x -= x0; y -= y0; if (x >= 0 && y >= 0 && x < BP && y < BP) px[y * BP + x] = c; };
   const morka = (x: number, y: number) => { x -= x0; y -= y0; if (x >= 0 && y >= 0 && x < BP && y < BP) px[y * BP + x] = morkare(px[y * BP + x]); };
   const sortAv = (x: number, y: number) => { const lx = x - x0, ly = y - y0; if (lx >= 0 && ly >= 0 && lx < BP && ly < BP) return sorter[ly * BP + lx]; punkt(x, y); return sort; };
