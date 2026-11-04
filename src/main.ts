@@ -5,7 +5,7 @@ import { $ } from './ui/hjalp';
 import { iconImg, tecknet } from './ikoner';
 import { s, setByn, ui, nyBild, vidNyBy } from './ui/lage';
 import { TS, app, cam, layout, view, world } from './ui/scen';
-import { drawNight, drawTerrain } from './ui/terrang';
+import { drawNight, drawSkuggor, drawTerrain } from './ui/terrang';
 import { drawVader } from './ui/vaderbild';
 import { drawStructures } from './ui/foremal';
 import { drawFilter } from './ui/filter';
@@ -180,6 +180,7 @@ function tick() {
   drawPlants(); drawFlackar(); drawAnimals();
   drawStructures(now);
   drawPeople(now); drawHandel(); drawArena(); drawTona();
+  drawSkuggor();
   drawNight(ui.nu);
   drawFilter();
   drawVader(now);

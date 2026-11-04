@@ -4,6 +4,7 @@ import { PRICKAR, personFarg } from './hjalp';
 import { s, sakVar, ui, uppgiftVid, vidNyBy } from './lage';
 import { Ikoner, TS, bubbleG, figurLayer, labels, markLayer, peopleG } from './scen';
 import { BH, BW, Utseende, arv, figurTex } from './figur';
+import { fotSkugga, skuggFolk, skuggLangd } from './skugga';
 import { jaktPlats } from './jakt';
 import { hasIcon, iconCanvas, kartbild, ljusSymbol } from '../ikoner';
 
@@ -201,6 +202,7 @@ function utseende(p: Person, a: number, col: number): Utseende {
 export function drawPeople(t: number) {
   peopleG.clear(); bubbleG.clear();
   sedd.clear();
+  const skugga = skuggFolk().clear().beginFill(0xffffff); // skuggorna vid fötterna (steg 5.1.8, ui/skugga.ts)
   const ppl = dolda.size ? living(s).filter(p => !dolda.has(p.id)) : living(s), pos = new Map<number, { x: number; y: number }>();
   synlig = sprid(ppl); synligNu = ui.nu;
   markIcons.start();
@@ -221,6 +223,7 @@ export function drawPeople(t: number) {
     if (ligger) sp.position.set(x - BH * k * 0.5, y + BW * k * 0.5);
     else sp.position.set(x - BW * k / 2, y + r * 0.9 - (BH - 1) * k);
     sp.zIndex = y + r * 0.9; // fötterna (ordningen söderut, steg 5.1.4.5)
+    if (!ligger) fotSkugga(skugga, x - 4 * k, Math.round(sp.zIndex) - 1, 4 * k, 2, skuggLangd());
     sp.visible = true; sedd.add(p.id);
     if (PRICKAR.sjuk.har(p)) peopleG.beginFill(PRICKAR.sjuk.farg).drawCircle(x + r * 0.7, y - r * 0.7, 1.8).endFill();
     if (PRICKAR.gravid.har(p)) peopleG.beginFill(PRICKAR.gravid.farg).drawCircle(x - r * 0.7, y - r * 0.7, 1.6).endFill();

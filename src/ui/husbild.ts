@@ -3,6 +3,7 @@ import { Bit, State, bitAt, housesOf } from '../sim';
 import { smutsGrad, smutsigFarg } from './slitbild';
 import { KARTBILDER } from '../kartbilder';
 import { TS, husLayer } from './scen';
+import { vaggSkuggor } from './skugga';
 
 // ---------- husets utseende: timmerväggen och golven som pixelbilder (steg 2.2.13, 16 punkter per ruta i steg 5.1.2.4) ----------
 // Varje ruta är 16 × 16 punkter (en världspixel per punkt). Bilderna är bildstilens godkända (5.2.4.4, kartbilder.ts): timmerväggen
@@ -57,8 +58,8 @@ function vagg(n: string, lx: number, ly: number, gx: number, gy: number) {
   if (v && inne(lx) && ly >= (u ? 0 : 2) && ly <= (d ? 15 : 13)) return mallPx(lx, 16 + mod(gy, 32));
   return '';
 }
-const cache = new Map<string, HTMLCanvasElement>();
-const tex = new Map<string, PIXI.Texture>();
+const cache = new Map<string, HTMLCanvasElement>(), formCache = new Map<string, HTMLCanvasElement | null>();
+const tex = new Map<string, PIXI.Texture>(), formTex = new Map<string, PIXI.Texture>();
 // bilden för rutan b: n8 = grannarnas slag runt om (vänster, höger, upp, ner, och hörnen uppe till vänster, uppe till höger,
 // nere till vänster, nere till höger), m8 = golvet hos dem
 function bild(s: State, b: Bit) {
@@ -71,12 +72,18 @@ function bild(s: State, b: Bit) {
   const klar = hus?.varKlar ?? hus?.klar, sg = klar !== undefined ? smutsGrad(s.now, klar) : 0, extra = egen === 'P' ? 1 : 0;
   const key = `${b.x},${b.y},${egen},${em},${n8},${m8.join('')},${sg}`;
   let c = cache.get(key);
-  if (c) return { key, c };
+  if (c) return { key, c, m: formCache.get(key) ?? null };
   c = document.createElement('canvas'); c.width = 16; c.height = 16;
   const g = c.getContext('2d')!;
+  // väggens form (stockarna), som kastar skugga på marken och golvet (steg 5.1.8, ui/skugga.ts)
+  let m: HTMLCanvasElement | null = null, gm: CanvasRenderingContext2D | null = null;
   for (let ly = 0; ly < 16; ly++) for (let lx = 0; lx < 16; lx++) {
     const gx = b.x * 16 + lx, gy = b.y * 16 + ly;
     let col = egen === 'W' ? vagg(n8, lx, ly, gx, gy) : golvPx(em, gx, gy), golv = egen !== 'W';
+    if (col && !golv) {
+      if (!gm) { m = document.createElement('canvas'); m.width = 16; m.height = 16; gm = m.getContext('2d')!; gm.fillStyle = '#fff'; }
+      gm.fillRect(lx, ly, 1, 1);
+    }
     if (!col) {
       golv = true;
       // där stocken inte täcker rutan: golvet om grannen åt det hållet har golv, annars syns marken (genomskinligt)
@@ -90,16 +97,16 @@ function bild(s: State, b: Bit) {
     if (col && golv && sg) col = smutsigFarg(col, gx, gy, sg, 0, extra);
     if (col) { g.fillStyle = col; g.fillRect(lx, ly, 1, 1); }
   }
-  if (cache.size > 4000) { cache.clear(); for (const t of tex.values()) t.destroy(true); tex.clear(); }
-  cache.set(key, c);
-  return { key, c };
+  if (cache.size > 4000) { cache.clear(); formCache.clear(); for (const t of tex.values()) t.destroy(true); tex.clear(); for (const t of formTex.values()) t.destroy(true); formTex.clear(); }
+  cache.set(key, c); formCache.set(key, m);
+  return { key, c, m };
 }
 // genomskinligheten: det som byggs syns svagt, och en sliten vägg bleknar (som förut)
 const alfa = (b: Bit) => b.k === 'vagg' ? (b.b >= 1 ? 0.55 + 0.45 * b.c : 0.25 + 0.5 * b.b) : b.k === 'golv' ? (b.b >= 1 ? 1 : 0.12 + 0.3 * b.b) : 1;
 // ritar det som har en pixelbild och säger vilka rutor det var, så att foremal.ts hoppar över dem
 export function ritaHus(s: State, bits: Bit[]) {
   let n = 0;
-  const klara = new Set<number>();
+  const klara = new Set<number>(), former: { x: number; y: number; t: PIXI.Texture }[] = [];
   for (const b of bits) {
     if (b.k === 'vagg' && (b.m !== 'timmer' || (b.b <= 0 && b.mat <= 0))) continue;
     const r = bild(s, b);
@@ -110,7 +117,13 @@ export function ritaHus(s: State, bits: Bit[]) {
     if (!sp) { sp = new PIXI.Sprite(); husLayer.addChild(sp); }
     sp.texture = t; sp.position.set(b.x * TS, b.y * TS); sp.scale.set(TS / 16); sp.alpha = alfa(b); sp.visible = true;
     klara.add(b.id);
+    if (r.m && b.k === 'vagg' && b.b >= 1) { // en färdig vägg kastar skugga
+      let f = formTex.get(r.key);
+      if (!f) { f = PIXI.Texture.from(r.m, { scaleMode: PIXI.SCALE_MODES.NEAREST }); formTex.set(r.key, f); }
+      former.push({ x: b.x * TS, y: b.y * TS, t: f });
+    }
   }
   for (let i = n; i < husLayer.children.length; i++) husLayer.children[i].visible = false;
+  vaggSkuggor(former);
   return klara;
 }

@@ -3,6 +3,7 @@ import '@pixi/unsafe-eval';
 import { H, W, clamp, eldPlats } from '../sim';
 import { hasIcon, iconCanvas } from '../ikoner';
 import { $ } from './hjalp';
+import { ikonUtanSkugga } from './skugga';
 import { s } from './lage';
 
 // kartans scen: lagren som ritas ovanpå varandra och kameran
@@ -44,7 +45,9 @@ const textures: Record<string, PIXI.Texture> = {};
 export class Ikoner {
   private n = 0;
   private bilder: PIXI.Sprite[] = []; // egna bilder, så att lagret kan dela med annat (figurLayer)
-  constructor(readonly layer: PIXI.Container) {}
+  // skugga: bilderna kastar en skugga på marken (steg 5.1.8, ui/skugga.ts): den ritade halvgenomskinliga skuggan tas ur bilden
+  // och läggs i skuggbilden, där marken blir ett steg mörkare i paletten
+  constructor(readonly layer: PIXI.Container, readonly skugga = false) {}
   start() { this.n = 0; }
   // x, y = bildens övre vänstra hörn. Ingen bild vrids: det som står vridet har en egen bild (steg 3.10.7)
   add(k: string, x: number, y: number, sc: number, tint = 0xffffff) {
@@ -52,7 +55,8 @@ export class Ikoner {
     textures[k] ??= PIXI.Texture.from(iconCanvas(k), { scaleMode: PIXI.SCALE_MODES.NEAREST });
     let sp = this.bilder[this.n++];
     if (!sp) { sp = new PIXI.Sprite(); this.bilder.push(sp); this.layer.addChild(sp); }
-    sp.texture = textures[k]; sp.scale.set(sc); sp.tint = tint; sp.visible = true;
+    sp.texture = this.skugga ? ikonUtanSkugga(k) : textures[k]; sp.scale.set(sc);
+    (sp as PIXI.Sprite & { skuggIkon?: string }).skuggIkon = this.skugga ? k : undefined; sp.tint = tint; sp.visible = true;
     sp.position.set(x, y); sp.zIndex = y + textures[k].height * sc; // bildens nederkant, i ett lager som sorteras
   }
   end() { for (let i = this.n; i < this.bilder.length; i++) this.bilder[i].visible = false; }

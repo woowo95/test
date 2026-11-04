@@ -8,6 +8,7 @@
 // står i samma lager som folket och djuren, i ordning söderut.
 import * as PIXI from 'pixi.js';
 import { FARGER, kornPa } from '../palett';
+import { fotSkugga, skuggTrad } from './skugga';
 
 const KOL = 0, JORD = 4, BARR = 20, BEN = 28;
 const RGBA = FARGER.map(h => parseInt(h.slice(1), 16));
@@ -219,7 +220,8 @@ export function tradBild(stadium: string, v: number, x: number, y: number, ungsk
 }
 
 // ---------- träden på kartan ----------
-const sprites = new Map<number, { sp: PIXI.Sprite; k: string }>();
+const sprites = new Map<number, { sp: PIXI.Sprite; k: string; b: TradBild; x: number; y: number }>();
+let skuggaAndrad = true;
 // bild(i): trädet på rutan i (eller null), vinter: snö på grenarna
 // lager: figurLayer (scen.ts), där träden står i ordning söderut med folket och djuren
 export function stallTrad(lager: PIXI.Container, W: number, H: number, bild: (i: number) => TradBild | null, vinter: boolean) {
@@ -228,14 +230,29 @@ export function stallTrad(lager: PIXI.Container, W: number, H: number, bild: (i:
     const b = bild(i), x = i % W, y = (i / W) | 0, k = b ? nyckel(b, sno) : '';
     const f = sprites.get(i);
     if (f?.k === k) continue;
+    skuggaAndrad = true;
     if (!b) { if (f) { f.sp.destroy(); sprites.delete(i); } continue; }
     const sp = f?.sp ?? new PIXI.Sprite();
     const t = sp.texture = tradTex(b, sno);
     const bx = x * 16 + 8 + Math.round((hash(x, y, 595) - 0.5) * 8), by = y * 16 + 14 + Math.round((hash(x, y, 596) - 0.5) * 4);
     sp.position.set(bx - (t.width >> 1), by - t.height + 1 + (b.typ === 'torr' ? 1 : 0)); sp.zIndex = by;
     if (!f) lager.addChild(sp);
-    sprites.set(i, { sp, k });
+    sprites.set(i, { sp, k, b, x: bx, y: by });
   }
+}
+// trädens skuggor på marken (steg 5.1.8, ui/skugga.ts): bildstilens oval vid foten, ungefär så bred som kronan (den döda
+// granen har tunna grenar och en smalare skugga). Ritas om bara när träden ändras, eller när skuggan blir längre
+let skuggLang = -1;
+export function tradSkuggor(lang = 1) {
+  if (!skuggaAndrad && lang === skuggLang) return;
+  skuggaAndrad = false; skuggLang = lang;
+  const fasta = skuggTrad();
+  fasta.clear().beginFill(0xffffff);
+  for (const { b, x, y } of sprites.values()) {
+    const w = Math.max(1, Math.round(b.h * (b.typ === 'torr' && !b.bjork ? 0.2 : b.bjork ? 0.3 : 0.28)));
+    fotSkugga(fasta, x, y, w, b.h < 8 ? 2 : 5, lang);
+  }
+  fasta.endFill();
 }
 
 // Träden skymmer inte (steg 5.1.4.6): en krona som står framför (söder om) något man behöver se, folk, djur, saker på

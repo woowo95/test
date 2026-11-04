@@ -9,7 +9,7 @@ import { mix } from './terrang';
 import { iBruk } from './ibruk';
 
 // det som står på marken: lagerplatserna och stackarna, stationerna, husen, stubbar, fällda träd och elden
-const pileIcons = new Ikoner(pileLayer);
+const pileIcons = new Ikoner(pileLayer, true); // med skuggor på marken (steg 5.1.8)
 // skicket som färg: grönt, gult, rött
 const condCol = (c: number) => c >= 0.5 ? 0x6fbf5a : c >= 0.25 ? 0xe0b040 : 0xd2553f;
 // var ikonerna ligger i rutan, bakersta först

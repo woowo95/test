@@ -1,10 +1,12 @@
+import * as PIXI from 'pixi.js';
 import { BJORK, BRAND, DAY, H, HOUR, STADIER, T, VAG, W, tradArt, valjArt, ageIndex, stadium, emberOn, fireHeat, eldXY, eldarOf, groundOf, isCm, lightLevel } from '../sim';
 import { s } from './lage';
-import { TS, figurLayer, mork, terrainG, world } from './scen';
+import { TS, app, figurLayer, husLayer, mork, pileLayer, terrainG, world } from './scen';
+import { ritaSkuggor, skuggLangd } from './skugga';
 import { stallNatt } from './natt';
 import { DJUPNATT } from '../palett';
 import { markLayer, ritaMark, stallMark } from './mark';
-import { stallTrad, tradBild } from './trad';
+import { stallTrad, tradBild, tradSkuggor } from './trad';
 
 // marken (steg 5.1.3.1): gräs, vatten, strand, stigar, sten, lera, aska och snö ritas i pixlar i ui/mark.ts. Här bestäms
 // när: hela marken när tidsåldern, isen, vattnet eller byn byts, annars bara de rutor som ändrats (stigarna, skogen, askan).
@@ -83,4 +85,10 @@ export function drawNight(t: number) {
     eldar.push({ x: f.x * TS + TS / 2, y: f.y * TS + TS / 2, r: TS * 6 * k, k: I > 0 ? 1 : 0.5 });
   }
   stallNatt(mork, world, DJUPNATT * d, eldar);
+}
+// skuggorna på marken och golven (steg 5.1.8, ui/skugga.ts): träden, folket, djuren, stationerna, sakerna och väggarna.
+// Efter att allt annat ställts på plats i bildrutan
+export function drawSkuggor() {
+  tradSkuggor(skuggLangd());
+  ritaSkuggor(app.renderer as PIXI.Renderer, world, [pileLayer, figurLayer], [markLayer, husLayer], W * TS, H * TS);
 }

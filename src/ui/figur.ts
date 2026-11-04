@@ -61,7 +61,8 @@ function figur(P: Utseende) {
 const INDEX = new Map<string, number>();
 const iPal = (hex: string) => { let i = INDEX.get(hex); if (i === undefined) { i = FARGER.indexOf(narmast(hex)); INDEX.set(hex, i); } return i; };
 const RGBA = FARGER.map(h => parseInt(h.slice(1), 16));
-// bilden: 16 × 22 punkter (figuren med konturen runt), fötterna på näst nedersta raden och skuggan på marken under.
+// bilden: 16 × 22 punkter (figuren med konturen runt), fötterna på näst nedersta raden. Skuggan på marken
+// ritas i ui/skugga.ts (steg 5.1.8).
 // vald = konturen ljus (den man valt)
 export const BW = FW + 2, BH = FH + 2;
 function bild(u: Utseende, vald: boolean) {
@@ -69,7 +70,6 @@ function bild(u: Utseende, vald: boolean) {
   const px = new Int16Array(BW * BH).fill(-1), satt = (x: number, y: number, c: number) => { px[y * BW + x] = c; };
   const upp = (v: number) => v % 4 < 3 ? v + 1 : v, ner = (v: number) => v % 4 > 0 ? v - 1 : v;
   const kontur = vald ? 31 : 0; // benets ljusaste eller kolets mörkaste
-  for (let x = 3; x < FW; x++) if (x % 2 === 0) satt(x, BH - 1, -2); // skuggan, varannan punkt
   for (let y = -1; y <= FH; y++) for (let x = -1; x <= FW; x++) {
     const at = (a: number, b: number) => (x + a >= 0 && x + a < FW && y + b >= 0 && y + b < FH) ? g[(y + b) * FW + x + a] : null;
     let v = at(0, 0);
@@ -89,7 +89,6 @@ export function figurTex(u: Utseende, vald: boolean) {
     const g = c.getContext('2d')!, img = g.createImageData(BW, BH), d = img.data;
     for (let i = 0; i < px.length; i++) {
       const v = px[i]; if (v === -1) continue;
-      if (v === -2) { d[i * 4 + 3] = 70; continue; } // skuggan: svart, halvgenomskinlig
       const n = RGBA[v]; d[i * 4] = n >> 16; d[i * 4 + 1] = (n >> 8) & 255; d[i * 4 + 2] = n & 255; d[i * 4 + 3] = 255;
     }
     g.putImageData(img, 0, 0);
