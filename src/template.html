@@ -28,11 +28,11 @@ h1 { font-family: var(--display); font-weight: 700; font-size: 1.7rem; margin: 0
 .chips button.chip { pointer-events: auto; border: 0; font: inherit; font-size: 13px; cursor: pointer; }
 /* invånarna överst på kartan, som i RimWorld */
 .ports { position: absolute; left: 8px; right: 8px; top: 8px; display: flex; gap: 4px; overflow-x: auto; scrollbar-width: thin; padding-bottom: 2px; }
-.port { flex: none; width: 92px; display: grid; grid-template-columns: 14px minmax(0, 1fr); grid-template-areas: "d n" "i i" "a a"; gap: 0 5px; align-items: center; text-align: left;
+.port { flex: none; width: 92px; display: grid; grid-template-columns: 32px minmax(0, 1fr); grid-template-areas: "d n" "d i" "a a"; gap: 0 5px; align-items: center; text-align: left;
   background: rgba(18, 22, 20, 0.72); color: #eef1ec; border: 1px solid transparent; border-radius: 4px; padding: 4px 6px; font: inherit; font-size: 12px; line-height: 1.25; cursor: pointer; }
 .port:hover { background: rgba(18, 22, 20, 0.9); }
 .port[aria-pressed="true"] { border-color: #f0c070; }
-.port .dot { grid-area: d; width: 12px; height: 12px; }
+.port .pf { grid-area: d; width: 32px; height: 32px; }
 .port .pn { grid-area: n; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .port .pi { grid-area: i; opacity: 0.75; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .port .pa { grid-area: a; opacity: 0.9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -85,7 +85,7 @@ aside { background: var(--panel); border: 1px solid var(--line); border-radius: 
 .muted { color: var(--muted); }
 ul, ol { list-style: none; margin: 0; padding: 0; }
 .folk li + li { border-top: 1px solid var(--line); }
-.row { width: 100%; display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; grid-template-areas: "d n a" ". t b"; gap: 1px 8px; align-items: center; background: none; border: 0; color: inherit; font: inherit; text-align: left; padding: 7px 2px; cursor: pointer; border-radius: 4px; }
+.row { width: 100%; display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; grid-template-areas: "d n a" ". t b"; gap: 1px 8px; align-items: center; background: none; border: 0; color: inherit; font: inherit; text-align: left; padding: 7px 2px; cursor: pointer; border-radius: 4px; }
 .row:hover { background: color-mix(in srgb, var(--accent) 9%, transparent); }
 .row .dot { grid-area: d; }
 .row .nm { grid-area: n; font-weight: 700; }
@@ -101,6 +101,12 @@ ul, ol { list-style: none; margin: 0; padding: 0; }
 .mark { display: inline-block; vertical-align: middle; line-height: 0; } /* ledaren och skadan vid namnet */
 .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; box-shadow: 0 0 0 1px rgba(0,0,0,0.35); }
 .dot.big { width: 22px; height: 22px; flex: none; margin-top: 6px; }
+/* porträtten ur porträttgeneratorn (steg 5.2.3.2): i punkter, utan utjämning */
+.pf { width: 32px; height: 32px; image-rendering: pixelated; flex: none; border-radius: 3px; display: block; }
+.pf.big { width: 64px; height: 64px; }
+.row .pf { grid-row: 1 / span 2; grid-column: 1; }
+.tiphead { display: flex; gap: 8px; align-items: center; margin-bottom: 4px; }
+.tiphead h4 { margin: 0; }
 .prick { width: 8px; height: 8px; border-radius: 50%; display: inline-block; vertical-align: middle; box-shadow: 0 0 0 1px rgba(0,0,0,0.35); }
 .bar { display: inline-block; height: 6px; border-radius: 3px; background: var(--barbg); overflow: hidden; vertical-align: middle; }
 .bar > span { display: block; height: 100%; background: var(--good); border-radius: 3px; }

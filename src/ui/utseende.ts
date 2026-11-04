@@ -38,10 +38,15 @@ export function drag(s: State, p: Person, djup = 0): Skapad {
   }
   return d;
 }
-// personen som skaparen ritar hen nu: arvet i rätt ålder (barnet får den vuxna frisyren och skägget när hen växer upp)
+// personen som skaparen ritar hen nu: arvet i rätt ålder (barnet får den vuxna frisyren och skägget när hen växer upp).
+// Det som skaparen slumpar men spelet styr börjar tomt: kläderna och redskapet (5.2.3.5), humöret, skadorna, sjukdomen,
+// kylan och blodet (5.2.3.4), huvudbonaden (när det finns huvudbonader i spelet) och ärren (när bestående skador finns)
 export function skapad(s: State, p: Person): Skapad {
   const d = drag(s, p), alder = alderAv(ageOf(p, s.now));
   const u: Skapad = alder !== 'barn' && d.anlag ? KARNA.somUng(d) : { ...d, del: { ...d.del } };
   u.alder = alder;
+  u.del = { ...u.del, huvudbonad: null, arr: null, blamarke: null, redskap: null };
+  u.humor = 'lugn'; u.forband = []; u.ogonlapp = false; u.sjuk = false; u.kyla = false; u.blod = false;
+  u.klader = { rock: null, skor: false, balte: false };
   return u;
 }
